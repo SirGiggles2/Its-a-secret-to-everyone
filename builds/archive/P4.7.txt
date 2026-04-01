@@ -1,6 +1,0 @@
-build=P4.7
-phase=4
-timestamp=2026-03-31T08:18:20
-checksum=$6AE8
-rom=P4.7.md
-lst=P4.7.lst

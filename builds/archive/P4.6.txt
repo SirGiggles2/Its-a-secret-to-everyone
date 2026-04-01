@@ -1,6 +1,0 @@
-build=P4.6
-phase=4
-timestamp=2026-03-31T08:17:30
-checksum=$3CE8
-rom=P4.6.md
-lst=P4.6.lst

@@ -1,0 +1,55 @@
+=================================================================
+PPU Increment probe  T13  —  120 frames
+=================================================================
+  LoopForever=$0005F2  ExcBus=$000362  ExcAddr=$000384  ExcDef=$0003A6
+
+  f001 pc=$000306  forever=-  exc=false
+  f002 pc=$000306  forever=-  exc=false
+  f003 pc=$0002FE  forever=-  exc=false
+  f004 pc=$000306  forever=-  exc=false
+  f005 pc=$0002FE  forever=-  exc=false
+  f030 pc=$0005F2  forever=14  exc=false
+  f060 pc=$0005F2  forever=14  exc=false
+  f090 pc=$0005F2  forever=14  exc=false
+  f120 pc=$0005F2  forever=14  exc=false
+
+─── T13: PPU Increment Mode ─────────────────────────────────────
+[PASS] T13_NO_EXCEPTION            no exception handler hit
+[PASS] T13_LOOPFOREVER_HIT         frame 14
+  PPU_CTRL ($FF0804) at LoopForever = $B0
+[PASS] T13_PPUCTRL_INC_BIT         PPU_CTRL=$B0 bit2=0 (+1 horizontal increment was active)
+
+  VRAM spot-checks (BizHawk VRAM domain, word-addressed):
+    VRAM[$2000] = $2424  (expect $2424)  word 0  (NES $2000/$2001)  — baseline
+    VRAM[$2002] = $2424  (expect $2424)  word 1  (NES $2002/$2003)  — +1 increment
+    VRAM[$2020] = $2424  (expect $2424)  word 16 (NES $2040/$2041)  — row 1 start
+    VRAM[$23BE] = $2424  (expect $2424)  word 479 (NES $23BC/$23BD) — last tile row
+    VRAM[$23C0] = $2424  (expect $2424)  attr word 0 (NES $23C0/$23C1) — ClearNameTable writes $24 uniformly (no tile/attr distinction)
+    VRAM[$2800] = $2424  (expect $2424)  NT2 word 0 (NES $2800/$2801) — NT2 first tile
+    VRAM[$2802] = $2424  (expect $2424)  NT2 word 1 (NES $2802/$2803) — NT2 +1 increment
+
+[PASS] T13_VRAM_NT0_W0             VRAM[$2000]=$2424  word 0  (NES $2000/$2001)  — baseline
+[PASS] T13_VRAM_NT0_W1             VRAM[$2002]=$2424  word 1  (NES $2002/$2003)  — +1 increment
+[PASS] T13_VRAM_NT0_W16            VRAM[$2020]=$2424  word 16 (NES $2040/$2041)  — row 1 start
+[PASS] T13_VRAM_NT0_TILE479        VRAM[$23BE]=$2424  word 479 (NES $23BC/$23BD) — last tile row
+[PASS] T13_VRAM_NT0_ATTR0          VRAM[$23C0]=$2424  attr word 0 (NES $23C0/$23C1) — ClearNameTable writes $24 uniformly (no tile/attr distinction)
+[PASS] T13_VRAM_NT2_W0             VRAM[$2800]=$2424  NT2 word 0 (NES $2800/$2801) — NT2 first tile
+[PASS] T13_VRAM_NT2_W1             VRAM[$2802]=$2424  NT2 word 1 (NES $2802/$2803) — NT2 +1 increment
+
+=================================================================
+PPU INCREMENT PROBE SUMMARY  (T13)
+=================================================================
+  [PASS] T13_NO_EXCEPTION
+  [PASS] T13_LOOPFOREVER_HIT
+  [PASS] T13_PPUCTRL_INC_BIT
+  [PASS] T13_VRAM_NT0_W0
+  [PASS] T13_VRAM_NT0_W1
+  [PASS] T13_VRAM_NT0_W16
+  [PASS] T13_VRAM_NT0_TILE479
+  [PASS] T13_VRAM_NT0_ATTR0
+  [PASS] T13_VRAM_NT2_W0
+  [PASS] T13_VRAM_NT2_W1
+
+  10 PASS  /  0 FAIL  /  10 total
+
+T13 PPU INCREMENT PROBE: ALL PASS

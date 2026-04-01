@@ -60,8 +60,8 @@ rem [1] Transpiler — generate src\zelda_translated\*.asm from aldonunez source
 rem     Skipped until tools\transpile_6502.py exists (T2/T3 milestones).
 rem ---------------------------------------------------------------------------
 if exist "%ROOT%\tools\transpile_6502.py" (
-    echo [1/3] Running 6502^>M68K transpiler...
-    "%PYTHON%" "%ROOT%\tools\transpile_6502.py"
+    echo [1/3] Running 6502^>M68K transpiler ^(--all --no-stubs: nes_io.asm provides I/O^)...
+    "%PYTHON%" "%ROOT%\tools\transpile_6502.py" --all --no-stubs
     if errorlevel 1 exit /b 1
 ) else (
     echo [1/3] Transpiler not yet present -- skipping ^(T1 shell-only build^)
@@ -89,7 +89,49 @@ echo [3/3] Fixing checksum...
 if errorlevel 1 exit /b 1
 if exist "%RAW_ROM%" del "%RAW_ROM%" >nul 2>nul
 
+rem ---------------------------------------------------------------------------
+rem [4] Archive — incremental ZeldaX.Y build (X=phase, Y=global build number)
+rem ---------------------------------------------------------------------------
+echo [4/4] Archiving build...
+set "ARCHIVE_DIR=%ROOT%\builds\archive"
+set "COUNTER_FILE=%ARCHIVE_DIR%\build_counter.txt"
+set "PHASE_FILE=%ARCHIVE_DIR%\build_phase.txt"
+
+if not exist "%ARCHIVE_DIR%" mkdir "%ARCHIVE_DIR%"
+
+rem Read current build counter (default 0)
+set "BUILD_NUM=0"
+if exist "%COUNTER_FILE%" set /p BUILD_NUM=<"%COUNTER_FILE%"
+
+rem Read current phase (default 16)
+set "PHASE=16"
+if exist "%PHASE_FILE%" set /p PHASE=<"%PHASE_FILE%"
+
+rem Increment build number
+set /a BUILD_NUM=%BUILD_NUM%+1
+
+rem Archive ROM and listing via Python (reliable on all launch contexts)
+set "TAG=Zelda%PHASE%.%BUILD_NUM%"
+"%PYTHON%" -c "import shutil, sys; src_rom=sys.argv[1]; src_lst=sys.argv[2]; dst=sys.argv[3]; ctr=sys.argv[4]; shutil.copy2(src_rom, dst+'.md'); shutil.copy2(src_lst, dst+'.lst'); open(ctr,'w').write(sys.argv[5]); print('Archived as: '+dst.split('\\')[-1])" "%OUT_ROM%" "%OUT_LST%" "%ARCHIVE_DIR%\%TAG%" "%COUNTER_FILE%" "%BUILD_NUM%"
+if errorlevel 1 echo WARNING: archive step failed (non-fatal)
+
 echo.
 echo Build complete: %OUT_ROM%
 echo Listing:        %OUT_LST%
+
+rem ---------------------------------------------------------------------------
+rem [5] Git auto-commit — stage build outputs and archive, commit with tag name
+rem ---------------------------------------------------------------------------
+git -C "%ROOT%" add builds\whatif.md builds\whatif.lst builds\archive\ >nul 2>nul
+git -C "%ROOT%" diff --cached --quiet >nul 2>nul
+if errorlevel 1 (
+    git -C "%ROOT%" commit -m "build: %TAG%" >nul 2>nul
+    if errorlevel 1 (
+        echo WARNING: git commit failed
+    ) else (
+        echo Committed:   %TAG%
+    )
+) else (
+    echo No changes to commit.
+)
 exit /b 0

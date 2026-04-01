@@ -1,6 +1,0 @@
-build=P3.37
-phase=3
-timestamp=2026-03-30T13:01:09
-checksum=$6FB0
-rom=P3.37.md
-lst=P3.37.lst

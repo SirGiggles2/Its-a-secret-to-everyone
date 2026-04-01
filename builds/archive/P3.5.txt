@@ -1,6 +1,0 @@
-build=P3.5
-phase=3
-timestamp=2026-03-30T01:10:14
-checksum=$F953
-rom=P3.5.md
-lst=P3.5.lst

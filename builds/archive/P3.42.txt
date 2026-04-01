@@ -1,6 +1,0 @@
-build=P3.42
-phase=3
-timestamp=2026-03-30T13:41:37
-checksum=$9BC6
-rom=P3.42.md
-lst=P3.42.lst

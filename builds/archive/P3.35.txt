@@ -1,6 +1,0 @@
-build=P3.35
-phase=3
-timestamp=2026-03-30T12:54:07
-checksum=$5BB4
-rom=P3.35.md
-lst=P3.35.lst

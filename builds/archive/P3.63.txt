@@ -1,6 +1,0 @@
-build=P3.63
-phase=3
-timestamp=2026-03-30T20:53:04
-checksum=$8A98
-rom=P3.63.md
-lst=P3.63.lst

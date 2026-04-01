@@ -1,6 +1,0 @@
-build=P3.80
-phase=3
-timestamp=2026-03-31T09:56:07
-checksum=$5C5D
-rom=P3.80.md
-lst=P3.80.lst

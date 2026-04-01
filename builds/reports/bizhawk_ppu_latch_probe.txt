@@ -1,0 +1,45 @@
+=================================================================
+PPU Latch probe  T12  —  120 frames
+=================================================================
+  LoopForever=$0005F2  IsrNmi=$000622
+  ExcBus=$000362  ExcAddr=$000384  ExcDef=$0003A6
+
+  f001 pc=$000306  forever=-  exc=false
+  f002 pc=$000306  forever=-  exc=false
+  f003 pc=$0002FE  forever=-  exc=false
+  f004 pc=$000306  forever=-  exc=false
+  f005 pc=$0002FE  forever=-  exc=false
+  f030 pc=$0005F2  forever=14  exc=false
+  f060 pc=$0005F2  forever=14  exc=false
+  f090 pc=$0005F2  forever=14  exc=false
+  f120 pc=$0005F2  forever=14  exc=false
+
+─── T12: PPUADDR Latch Correctness ─────────────────────────────
+[PASS] T12_NO_EXCEPTION              no exception handler hit during boot
+[PASS] T12_LOOPFOREVER_HIT           reached LoopForever at frame 14
+  Snapshot at LoopForever entry (frame 14):
+    PPU_LATCH ($FF0800) = $00
+    PPU_VADDR ($FF0802) = $2B00
+    PPU_DHALF ($FF0809) = $00
+[PASS] T12_PPU_LATCH_CLEAR           PPU_LATCH=0 (w-register cleared by PPUSTATUS reads)
+[PASS] T12_PPU_DHALF_CLEAR           PPU_DHALF=0 (no pending high-byte; all pairs committed)
+[PASS] T12_PPU_VADDR_VALID           PPU_VADDR=$2B00 readable (latch tracking active)
+  VRAM[$2000] = $2424  (nametable 0, NES-native addr)
+  VRAM[$2800] = $2424  (nametable 2, NES-native addr)
+[PASS] T12_VRAM_NT0                  VRAM[$2000]=$2424 (tile $24 pair written correctly)
+[PASS] T12_VRAM_NT2                  VRAM[$2800]=$2424 (nametable 2 written correctly)
+
+=================================================================
+PPU LATCH PROBE SUMMARY  (T12)
+=================================================================
+  [PASS] T12_NO_EXCEPTION
+  [PASS] T12_LOOPFOREVER_HIT
+  [PASS] T12_PPU_LATCH_CLEAR
+  [PASS] T12_PPU_DHALF_CLEAR
+  [PASS] T12_PPU_VADDR_VALID
+  [PASS] T12_VRAM_NT0
+  [PASS] T12_VRAM_NT2
+
+  7 PASS  /  0 FAIL  /  7 total
+
+T12 PPU LATCH PROBE: ALL PASS

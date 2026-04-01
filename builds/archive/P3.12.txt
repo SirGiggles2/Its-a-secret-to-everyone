@@ -1,6 +1,0 @@
-build=P3.12
-phase=3
-timestamp=2026-03-30T08:12:28
-checksum=$1EF0
-rom=P3.12.md
-lst=P3.12.lst

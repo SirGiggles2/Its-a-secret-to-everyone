@@ -1,6 +1,0 @@
-build=P3.15
-phase=3
-timestamp=2026-03-30T08:25:24
-checksum=$A6FB
-rom=P3.15.md
-lst=P3.15.lst

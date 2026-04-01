@@ -1,6 +1,0 @@
-build=P3.57
-phase=3
-timestamp=2026-03-30T20:39:50
-checksum=$CA08
-rom=P3.57.md
-lst=P3.57.lst

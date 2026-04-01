@@ -1,6 +1,0 @@
-build=P3.69
-phase=3
-timestamp=2026-03-30T23:12:25
-checksum=$2A4C
-rom=P3.69.md
-lst=P3.69.lst

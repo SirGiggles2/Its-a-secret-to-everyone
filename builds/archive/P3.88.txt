@@ -1,6 +1,0 @@
-build=P3.88
-phase=3
-timestamp=2026-03-31T13:36:38
-checksum=$DDB2
-rom=P3.88.md
-lst=P3.88.lst

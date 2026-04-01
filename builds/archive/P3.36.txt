@@ -1,6 +1,0 @@
-build=P3.36
-phase=3
-timestamp=2026-03-30T12:59:56
-checksum=$E47E
-rom=P3.36.md
-lst=P3.36.lst

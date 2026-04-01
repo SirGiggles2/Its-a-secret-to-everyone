@@ -1,6 +1,0 @@
-build=P3.7
-phase=3
-timestamp=2026-03-30T01:13:39
-checksum=$3035
-rom=P3.7.md
-lst=P3.7.lst

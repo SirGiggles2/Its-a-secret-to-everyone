@@ -1,0 +1,46 @@
+=================================================================
+PPU Ctrl probe  T14  —  120 frames
+=================================================================
+  LoopForever=$0005F2  ExcBus=$000362  ExcAddr=$000384  ExcDef=$0003A6
+
+  f001 pc=$000306  forever=-  exc=false
+  f002 pc=$000306  forever=-  exc=false
+  f003 pc=$0002FE  forever=-  exc=false
+  f004 pc=$000306  forever=-  exc=false
+  f005 pc=$0002FE  forever=-  exc=false
+  f030 pc=$0005F2  forever=14  exc=false
+  f060 pc=$0005F2  forever=14  exc=false
+  f090 pc=$0005F2  forever=14  exc=false
+  f120 pc=$0005F2  forever=14  exc=false
+
+─── T14: PPUCTRL / PPUMASK / PPUSTATUS Semantics ───────────────
+[PASS] T14_NO_EXCEPTION            no exception handler hit
+[PASS] T14_LOOPFOREVER_HIT         frame 14
+  Snapshot at LoopForever (frame 14):
+    PPU_CTRL  ($FF0804) = $B0
+    PPU_MASK  ($FF0805) = $00
+    PPU_LATCH ($FF0800) = $00
+[PASS] T14_PPUCTRL_NMI_BIT         PPU_CTRL=$B0 bit7=1 (NMI enable set by RunGame)
+[PASS] T14_PPUCTRL_INC_BIT         PPU_CTRL=$B0 bit2=0 (+1 horizontal increment)
+[PASS] T14_PPUCTRL_BG_TABLE        PPU_CTRL=$B0 bit4=1 (BG at $1000, set by ClearAllAudioAndVideo)
+[PASS] T14_PPUCTRL_SHADOW_VAL      PPU_CTRL=$B0 matches expected boot value
+[PASS] T14_PPUMASK_STORED          PPU_MASK=$00 readable
+[PASS] T14_PPULATCH_CLEARED        PPU_LATCH=0 (PPUSTATUS reads cleared w-register)
+[PASS] T14_PPUSTATUS_RETURNS       boot reached LoopForever — $2002 returned bit7 set (warmup loops exited)
+
+=================================================================
+PPU CTRL PROBE SUMMARY  (T14)
+=================================================================
+  [PASS] T14_NO_EXCEPTION
+  [PASS] T14_LOOPFOREVER_HIT
+  [PASS] T14_PPUCTRL_NMI_BIT
+  [PASS] T14_PPUCTRL_INC_BIT
+  [PASS] T14_PPUCTRL_BG_TABLE
+  [PASS] T14_PPUCTRL_SHADOW_VAL
+  [PASS] T14_PPUMASK_STORED
+  [PASS] T14_PPULATCH_CLEARED
+  [PASS] T14_PPUSTATUS_RETURNS
+
+  9 PASS  /  0 FAIL  /  9 total
+
+T14 PPU CTRL PROBE: ALL PASS

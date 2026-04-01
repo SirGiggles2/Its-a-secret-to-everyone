@@ -1,6 +1,0 @@
-build=P3.71
-phase=3
-timestamp=2026-03-30T23:19:26
-checksum=$481C
-rom=P3.71.md
-lst=P3.71.lst

@@ -1,6 +1,0 @@
-build=P3.11
-phase=3
-timestamp=2026-03-30T08:08:21
-checksum=$1EED
-rom=P3.11.md
-lst=P3.11.lst

@@ -1,6 +1,0 @@
-build=P3.72
-phase=3
-timestamp=2026-03-30T23:21:12
-checksum=$B437
-rom=P3.72.md
-lst=P3.72.lst

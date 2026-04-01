@@ -1,6 +1,0 @@
-build=P3.65
-phase=3
-timestamp=2026-03-30T21:35:29
-checksum=$FA91
-rom=P3.65.md
-lst=P3.65.lst

@@ -1,6 +1,0 @@
-build=P3.18
-phase=3
-timestamp=2026-03-30T08:38:48
-checksum=$A78B
-rom=P3.18.md
-lst=P3.18.lst

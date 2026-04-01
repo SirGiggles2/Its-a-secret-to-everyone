@@ -1,6 +1,0 @@
-build=P3.24
-phase=3
-timestamp=2026-03-30T09:28:56
-checksum=$A430
-rom=P3.24.md
-lst=P3.24.lst

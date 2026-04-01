@@ -1,6 +1,0 @@
-build=P3.83
-phase=3
-timestamp=2026-03-31T10:12:27
-checksum=$E120
-rom=P3.83.md
-lst=P3.83.lst

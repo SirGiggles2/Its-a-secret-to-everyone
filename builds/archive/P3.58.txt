@@ -1,6 +1,0 @@
-build=P3.58
-phase=3
-timestamp=2026-03-30T20:41:12
-checksum=$C9F0
-rom=P3.58.md
-lst=P3.58.lst

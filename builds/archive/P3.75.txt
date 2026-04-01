@@ -1,6 +1,0 @@
-build=P3.75
-phase=3
-timestamp=2026-03-30T23:26:46
-checksum=$FE14
-rom=P3.75.md
-lst=P3.75.lst
