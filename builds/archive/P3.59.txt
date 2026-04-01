@@ -1,0 +1,6 @@
+build=P3.59
+phase=3
+timestamp=2026-03-30T20:43:18
+checksum=$C9F9
+rom=P3.59.md
+lst=P3.59.lst

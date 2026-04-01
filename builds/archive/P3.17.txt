@@ -1,0 +1,6 @@
+build=P3.17
+phase=3
+timestamp=2026-03-30T08:28:30
+checksum=$A58B
+rom=P3.17.md
+lst=P3.17.lst

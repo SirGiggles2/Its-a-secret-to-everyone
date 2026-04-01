@@ -1,0 +1,6 @@
+build=P3.62
+phase=3
+timestamp=2026-03-30T20:52:03
+checksum=$CA15
+rom=P3.62.md
+lst=P3.62.lst

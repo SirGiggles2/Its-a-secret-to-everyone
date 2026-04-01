@@ -1,0 +1,6 @@
+build=P3.16
+phase=3
+timestamp=2026-03-30T08:27:12
+checksum=$A5FB
+rom=P3.16.md
+lst=P3.16.lst

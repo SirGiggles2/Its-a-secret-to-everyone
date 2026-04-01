@@ -1,0 +1,6 @@
+build=P3.25
+phase=3
+timestamp=2026-03-30T09:38:27
+checksum=$A330
+rom=P3.25.md
+lst=P3.25.lst

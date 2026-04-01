@@ -1,0 +1,7 @@
+# Copyrighted ROM — never commit
+*.nes
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo

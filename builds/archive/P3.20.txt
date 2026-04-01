@@ -1,0 +1,6 @@
+build=P3.20
+phase=3
+timestamp=2026-03-30T09:18:39
+checksum=$49F5
+rom=P3.20.md
+lst=P3.20.lst

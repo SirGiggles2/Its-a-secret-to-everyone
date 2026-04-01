@@ -1,0 +1,6 @@
+build=P3.86
+phase=3
+timestamp=2026-03-31T13:06:49
+checksum=$0669
+rom=P3.86.md
+lst=P3.86.lst

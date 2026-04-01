@@ -1,0 +1,6 @@
+build=P4.8
+phase=4
+timestamp=2026-03-31T08:20:59
+checksum=$656C
+rom=P4.8.md
+lst=P4.8.lst

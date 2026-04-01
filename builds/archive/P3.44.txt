@@ -1,0 +1,6 @@
+build=P3.44
+phase=3
+timestamp=2026-03-30T13:49:14
+checksum=$C5EC
+rom=P3.44.md
+lst=P3.44.lst

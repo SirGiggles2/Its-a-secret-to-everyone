@@ -1,0 +1,6 @@
+build=P3.32
+phase=3
+timestamp=2026-03-30T12:02:14
+checksum=$A5B0
+rom=P3.32.md
+lst=P3.32.lst

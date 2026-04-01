@@ -1,0 +1,6 @@
+build=P3.73
+phase=3
+timestamp=2026-03-30T23:22:24
+checksum=$4A8D
+rom=P3.73.md
+lst=P3.73.lst

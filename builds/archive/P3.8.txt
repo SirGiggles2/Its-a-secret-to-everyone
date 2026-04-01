@@ -1,0 +1,6 @@
+build=P3.8
+phase=3
+timestamp=2026-03-30T07:46:03
+checksum=$D16B
+rom=P3.8.md
+lst=P3.8.lst

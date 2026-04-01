@@ -1,0 +1,6 @@
+build=P4.2
+phase=4
+timestamp=2026-03-31T08:05:48
+checksum=$E69A
+rom=P4.2.md
+lst=P4.2.lst
