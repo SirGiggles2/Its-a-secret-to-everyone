@@ -1,0 +1,33 @@
+T5 PPU probe starting — advancing 60 frames
+ExcBusError=$000362  ExcAddrError=$000384  DefaultException=$0003A6  LoopForever=$0005F2-$0005F5
+  frame=01 pc=$000306 exception=false loop=false stuck=0
+  frame=02 pc=$000306 exception=false loop=false stuck=1
+  frame=03 pc=$0002FE exception=false loop=false stuck=0
+  frame=10 pc=$0004DA exception=false loop=false stuck=0
+  frame=20 pc=$0005F2 exception=false loop=true stuck=6
+  frame=30 pc=$0005F2 exception=false loop=true stuck=16
+  frame=40 pc=$0005F2 exception=false loop=true stuck=26
+  frame=50 pc=$0005F2 exception=false loop=true stuck=36
+  frame=60 pc=$0005F2 exception=false loop=true stuck=46
+[PASS] CPU_ALIVE  PC at LoopForever ($0005F2) — expected steady state
+[PASS] NO_EXCEPTION  PC never hit any exception handler
+[PASS] LOOP_FOREVER  PC was in LoopForever ($0005F2-$0005F5) at least once
+  PPU_LATCH @ $FF0800 domain=M68K BUS  val=$00
+  PPU_VADDR @ $FF0802 domain=M68K BUS  val=$0000
+[PASS] PPU_LATCH  PPU_LATCH=0 (w register cleared after $2002 read)
+[PASS] PPU_VADDR  PPU_VADDR=$0000 (readable; game logic modifies after IsrNmi reset)
+  VRAM[$2000]=$2424
+  VRAM[$2800]=$2424
+[PASS] VRAM_NT0  VRAM[$2000]=$2424 (nametable 0 tile=$24 written correctly)
+[PASS] VRAM_NT2  VRAM[$2800]=$2424 (nametable 2 tile=$24 written correctly)
+
+=== T5 PPU PROBE SUMMARY ===
+  [PASS] CPU_ALIVE
+  [PASS] NO_EXCEPTION
+  [PASS] LOOP_FOREVER
+  [PASS] PPU_LATCH
+  [PASS] PPU_VADDR
+  [PASS] VRAM_NT0
+  [PASS] VRAM_NT2
+
+T5 PPU PROBE: PASS

@@ -1,0 +1,30 @@
+[1/3] Running 6502>M68K transpiler (--all --no-stubs: nes_io.asm provides I/O)...
+  Transpiling Z_00.asm -> z_00.asm  ... 1485 lines
+  Transpiling Z_01.asm -> z_01.asm  ... 7865 lines
+  Transpiling Z_02.asm -> z_02.asm  ... 5264 lines
+  Transpiling Z_03.asm -> z_03.asm  ... 352 lines
+  Transpiling Z_04.asm -> z_04.asm  ... 14793 lines
+  Transpiling Z_05.asm -> z_05.asm  ... 10079 lines
+  Transpiling Z_06.asm -> z_06.asm  ... 1119 lines
+  Transpiling Z_07.asm -> z_07.asm  ... 7825 lines
+Transpiler done.
+[2/3] Assembling...
+vasm 2.0e (c) in 2002-2026 Volker Barthelmann
+vasm M68k/CPU32/ColdFire cpu backend 2.8 (c) 2002-2025 Frank Wille
+vasm motorola syntax module 3.19d (c) 2002-2025 Frank Wille
+vasm binary output module 2.3e (c) 2002-2025 Volker Barthelmann and Frank Wille
+
+org0001:0(acrwx1):	         256 bytes
+org0002:100(acrwx1):	         256 bytes
+org0003:200(acrwx2):	       14030 bytes
+System.Management.Automation.RemoteException
+warning 40 in line 7510 of "zelda_translated\z_07.asm": label name conflicts with mnemonic
+	included from line 350 of "genesis_shell.asm"
+>Abs:
+[3/3] Fixing checksum...
+  Checksum: $AC9E
+  ROM size: 14542 bytes (14 KB)
+  Written:  C:\Users\Jake Diggity\Documents\GitHub\FINAL TRY\builds\whatif.md
+
+Build complete: C:\Users\Jake Diggity\Documents\GitHub\FINAL TRY\builds\whatif.md
+Listing:        C:\Users\Jake Diggity\Documents\GitHub\FINAL TRY\builds\whatif.lst
