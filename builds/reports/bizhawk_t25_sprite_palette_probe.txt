@@ -1,0 +1,62 @@
+=================================================================
+T25: Sprite Palette Probe  —  up to 600 frames
+=================================================================
+  LoopForever=$016568  ExcBus=$000366  ExcAddr=$000388  ExcDef=$0003AA
+
+  Display enabled at frame 32 — waiting 10 more frames...
+
+─── CRAM Snapshot (all 64 Genesis color entries) ────────────────
+  Pal0: 0222 0600 0222 0222 ---. ---. ---. ---. ---. ---. ---. ---. ---. ---. ---. ---.
+  Pal1: 0222 0004 0222 0222 ---. ---. ---. ---. ---. ---. ---. ---. ---. ---. ---. ---.
+  Pal2: 0222 0222 0222 0222 ---. ---. ---. ---. ---. ---. ---. ---. ---. ---. ---. ---.
+  Pal3: 0222 0222 0222 0222 ---. ---. ---. ---. ---. ---. ---. ---. ---. ---. ---. ---.
+
+  Total non-zero CRAM entries: 16 / 64
+  Palette 0: 4 non-zero colors
+  Palette 1: 4 non-zero colors
+  Palette 2: 4 non-zero colors
+  Palette 3: 4 non-zero colors
+
+─── Expected CRAM mapping (current implementation) ──────────────
+  NES $3F00-$3F03 (BG  pal0) → Genesis palette 0 colors 0-3 (CRAM 0-3)
+  NES $3F04-$3F07 (BG  pal1) → Genesis palette 1 colors 0-3 (CRAM 16-19)
+  NES $3F08-$3F0B (BG  pal2) → Genesis palette 2 colors 0-3 (CRAM 32-35)
+  NES $3F0C-$3F0F (BG  pal3) → Genesis palette 3 colors 0-3 (CRAM 48-51)
+  NES $3F10-$3F13 (Spr pal0) → Genesis palette 0 colors 0-3 (CRAM 0-3)  [overwrites BG pal0]
+  NES $3F14-$3F17 (Spr pal1) → Genesis palette 1 colors 0-3 (CRAM 16-19) [overwrites BG pal1]
+  NES $3F18-$3F1B (Spr pal2) → Genesis palette 2 colors 0-3 (CRAM 32-35) [overwrites BG pal2]
+  NES $3F1C-$3F1F (Spr pal3) → Genesis palette 3 colors 0-3 (CRAM 48-51) [overwrites BG pal3]
+
+─── SAT tile word palette fields (first 16 sprites) ─────────────
+  SAT palette field distribution (sprites 0-15):
+    Genesis palette 0: 0 sprites
+    Genesis palette 1: 0 sprites
+    Genesis palette 2: 16 sprites
+    Genesis palette 3: 0 sprites
+
+─── T25: Sprite Palette Tests ───────────────────────────────────
+[PASS] T25_NO_EXCEPTION              no exception handler hit
+[PASS] T25_LOOPFOREVER_HIT           frame 31
+[PASS] T25_DISPLAY_ON                display enabled at frame 32
+[PASS] T25_CRAM_WRITTEN              16/64 CRAM entries non-zero — palette data uploaded
+[PASS] T25_CRAM_MULTI_PAL            4 Genesis palettes have non-zero color data
+[FAIL] T25_SAT_PAL_FIELD             only 0/16 sprites use palette 0 (expected all — NES attr=0)
+[PASS] T25_BG_PAL_INTACT             Genesis palette 0 colors 0-3: 4 non-zero — BG palette intact
+[PASS] T25_SPRITE_PAL_DATA           CRAM palette 0 has 2 distinct non-zero colors (sprite/BG data loaded)
+
+=================================================================
+T25 SPRITE PALETTE SUMMARY
+=================================================================
+  [PASS] T25_NO_EXCEPTION
+  [PASS] T25_LOOPFOREVER_HIT
+  [PASS] T25_DISPLAY_ON
+  [PASS] T25_CRAM_WRITTEN
+  [PASS] T25_CRAM_MULTI_PAL
+  [FAIL] T25_SAT_PAL_FIELD
+  [PASS] T25_BG_PAL_INTACT
+  [PASS] T25_SPRITE_PAL_DATA
+
+  7 PASS  /  1 FAIL  /  8 total
+
+T25 SPRITE PALETTE: 1 FAILURE(S)
+

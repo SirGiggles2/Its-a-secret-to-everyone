@@ -1,0 +1,55 @@
+=================================================================
+Palette probe  T19  —  180 frames
+=================================================================
+  LoopForever=$01639C  ExcBus=$000366  ExcAddr=$000388  ExcDef=$0003AA
+
+  f001 pc=$000306  forever=-  exc=false
+  f002 pc=$000306  forever=-  exc=false
+  f003 pc=$0002FE  forever=-  exc=false
+  f004 pc=$000306  forever=-  exc=false
+  f005 pc=$0002FE  forever=-  exc=false
+  f030 pc=$00263C  forever=28  exc=false
+  f060 pc=$000484  forever=28  exc=false
+  f090 pc=$001422  forever=28  exc=false
+  f120 pc=$0014B2  forever=28  exc=false
+  f150 pc=$001466  forever=28  exc=false
+  f180 pc=$00140E  forever=28  exc=false
+
+  (waiting 30 extra frames for palette writes to complete...)
+
+─── Post-wait diagnostics ─────────────────────────────────────
+  ($00F5): $5A  ← $5A = TransferCommonPatterns ran
+
+─── Genesis CRAM dump (4 palettes × 16 colors) ────────────────
+  Pal 0: $0466 $0666 $0664 $0026 $0000 $0000 $0000 $0000 $0000 $0000 $0000 $0000 $0000 $0000 $0000 $0000
+  Pal 1: $0466 $0026 $0246 $0000 $0000 $0000 $0000 $0000 $0000 $0000 $0000 $0000 $0000 $0000 $0000 $0000
+  Pal 2: $0466 $0002 $0040 $0046 $0000 $0000 $0000 $0000 $0000 $0000 $0000 $0000 $0000 $0000 $0000 $0000
+  Pal 3: $0466 $0666 $0664 $0642 $0000 $0000 $0000 $0000 $0000 $0000 $0000 $0000 $0000 $0000 $0000 $0000
+
+  nonzero_count     = 15  (of 64 CRAM entries)
+  bad_format_count  = 0  (entries ≥$0800, invalid $0BGR format)
+
+  CRAM[0][0..3] = $0466 $0666 $0664 $0026
+
+─── T19: Palette → CRAM ─────────────────────────────────────────
+[PASS] T19_NO_EXCEPTION            no exception handler hit
+[PASS] T19_LOOPFOREVER_HIT         frame 28
+[PASS] T19_CRAM_WRITTEN            15 non-zero CRAM entries (palette data written)
+[PASS] T19_CRAM_PALETTE0           Pal0 colors 1-3: $0666 $0664 $0026 (non-trivial)
+[PASS] T19_BLACK_NOT_ALL           at least one non-black color in CRAM
+[PASS] T19_COLOR_VALID             all CRAM entries are valid $0BGR format (no bits set above bit 11)
+
+=================================================================
+PALETTE PROBE SUMMARY  (T19)
+=================================================================
+  [PASS] T19_NO_EXCEPTION
+  [PASS] T19_LOOPFOREVER_HIT
+  [PASS] T19_CRAM_WRITTEN
+  [PASS] T19_CRAM_PALETTE0
+  [PASS] T19_BLACK_NOT_ALL
+  [PASS] T19_COLOR_VALID
+
+  6 PASS  /  0 FAIL  /  6 total
+
+T19 PALETTE PROBE: ALL PASS
+

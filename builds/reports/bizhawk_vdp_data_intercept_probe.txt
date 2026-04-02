@@ -1,0 +1,70 @@
+=================================================================
+VDP DATA Intercept Probe  -- frames 1-150
+=================================================================
+
+--- CRAM CHANGES at frame 8 ---
+--- State when CRAM changed (frame 8) ---
+  DynTileBuf[$0302..]: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+  ptr=$6B/$65 (NES $656B)
+  TileBufSel=$00  subphase=$00  ppuCtrl=$00
+  PPU_VADDR=$0000  PPU_LATCH=$00
+--- ROM nes_palette_to_genesis at $000007AE (checking $36 entry) ---
+  Entry $00 @ $0722: $0333
+  Entry $0F @ $0740: $0000
+  Entry $36 @ $078E: $0567
+  Entry $30 @ $0782: $0777
+  Entry $3B @ $0798: $0675
+  CRAM[0][00] addr=  0: $0000(R0G0B0) -> $00E0(R0G7B0)
+--- Pre-palette state at frame 90 ---
+  DynTileBuf[$0302..]: FF 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+  ptr=$28/$24 (NES $2428)
+  TileBufSel=$00  subphase=$00  ppuCtrl=$30
+  PPU_VADDR=$2841  PPU_LATCH=$00
+--- Pre-palette state at frame 93 ---
+  DynTileBuf[$0302..]: FF 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+  ptr=$28/$24 (NES $2428)
+  TileBufSel=$00  subphase=$00  ppuCtrl=$30
+  PPU_VADDR=$2BEE  PPU_LATCH=$00
+--- ROM nes_palette_to_genesis at $000007AE (checking $36 entry) ---
+  Entry $00 @ $0722: $0333
+  Entry $0F @ $0740: $0000
+  Entry $36 @ $078E: $0567
+  Entry $30 @ $0782: $0777
+  Entry $3B @ $0798: $0675
+--- Pre-palette state at frame 94 ---
+  DynTileBuf[$0302..]: 3F 00 20 36 0F 00 10 36 17 27 0F 36 08 1A 28 36 30 3B 22 36 30 3B 16 36 17 27 0F 36 08 1A 28 36 30 3B 22 FF 00 00 00 00
+  ptr=$00/$03 (NES $0300)
+  TileBufSel=$00  subphase=$02  ppuCtrl=$B0
+  PPU_VADDR=$0000  PPU_LATCH=$00
+--- CRAM CHANGES at frame 95 ---
+--- State when CRAM changed (frame 95) ---
+  DynTileBuf[$0302..]: 3F 00 20 36 0F 00 10 36 17 27 0F 36 08 1A 28 36 30 3B 22 36 30 3B 16 36 17 27 0F 36 08 1A 28 36 30 3B 22 FF 00 00 00 00
+  ptr=$68/$03 (NES $0368)
+  TileBufSel=$00  subphase=$02  ppuCtrl=$30
+  PPU_VADDR=$0018  PPU_LATCH=$00
+--- ROM nes_palette_to_genesis at $000007AE (checking $36 entry) ---
+  Entry $00 @ $0722: $0333
+  Entry $0F @ $0740: $0000
+  Entry $36 @ $078E: $0567
+  Entry $30 @ $0782: $0777
+  Entry $3B @ $0798: $0675
+  CRAM[0][00] addr=  0: $00E0(R0G7B0) -> $0222(R1G1B1)
+  CRAM[0][01] addr=  2: $0000(R0G0B0) -> $0222(R1G1B1)
+  CRAM[0][02] addr=  4: $0000(R0G0B0) -> $0222(R1G1B1)
+  CRAM[0][03] addr=  6: $0000(R0G0B0) -> $0222(R1G1B1)
+  CRAM[1][00] addr= 32: $0000(R0G0B0) -> $0222(R1G1B1)
+  CRAM[1][01] addr= 34: $0000(R0G0B0) -> $0222(R1G1B1)
+  CRAM[1][02] addr= 36: $0000(R0G0B0) -> $0222(R1G1B1)
+  CRAM[1][03] addr= 38: $0000(R0G0B0) -> $0222(R1G1B1)
+  CRAM[2][00] addr= 64: $0000(R0G0B0) -> $0222(R1G1B1)
+  CRAM[2][01] addr= 66: $0000(R0G0B0) -> $0222(R1G1B1)
+  CRAM[2][02] addr= 68: $0000(R0G0B0) -> $0222(R1G1B1)
+  CRAM[2][03] addr= 70: $0000(R0G0B0) -> $0222(R1G1B1)
+  CRAM[3][00] addr= 96: $0000(R0G0B0) -> $0222(R1G1B1)
+  CRAM[3][01] addr= 98: $0000(R0G0B0) -> $0222(R1G1B1)
+  CRAM[3][02] addr=100: $0000(R0G0B0) -> $0222(R1G1B1)
+  CRAM[3][03] addr=102: $0000(R0G0B0) -> $0222(R1G1B1)
+
+=================================================================
+INTERCEPT PROBE COMPLETE
+=================================================================

@@ -15,492 +15,12 @@
 ;   A5 = NES stack pointer ($FF0200 initially, grows downward)
 ;==============================================================================
 
-NES_RAM         equ $FF0000
-NES_SRAM        equ $FF6000
-NES_STACK_BASE  equ $FF0100
-
+; (fixed equates omitted — provided by z_07.asm in --all build)
 ;==============================================================================
 ; NES RAM variable offsets (used as (offset,A4) — A4=NES_RAM)
 ; Source: Variables.inc + CommonVars.inc
 ;==============================================================================
-GLEEOK_DIRCOUNTERH                      equ $0000  ; NES RAM offset
-GLEEOK_DIRCOUNTERV                      equ $0001  ; NES RAM offset
-GLEEOK_SPEEDX                           equ $0002  ; NES RAM offset
-GLEEOK_SPEEDY                           equ $0003  ; NES RAM offset
-GLEEOK_DIRCHANGECOUNTER                 equ $0004  ; NES RAM offset
-GLEEOK_DELAY                            equ $0005  ; NES RAM offset
-CurLevel                                equ $0010  ; NES RAM offset
-IsUpdatingMode                          equ $0011  ; NES RAM offset
-GameMode                                equ $0012  ; NES RAM offset
-GameSubmode                             equ $0013  ; NES RAM offset
-TileBufSelector                         equ $0014  ; NES RAM offset
-FrameCounter                            equ $0015  ; NES RAM offset
-CurSaveSlot                             equ $0016  ; NES RAM offset
-Random                                  equ $0018  ; NES RAM offset
-StunCycle                               equ $0026  ; NES RAM offset
-DoorTimer                               equ $0027  ; NES RAM offset
-ObjTimer                                equ $0028  ; NES RAM offset
-FluteTimer                              equ $003C  ; NES RAM offset
-ObjStunTimer                            equ $003D  ; NES RAM offset
-ChaseLongTimer                          equ $004A  ; NES RAM offset
-MonstersFromEdgesLongTimer              equ $004B  ; NES RAM offset
-SwordBlockedLongTimer                   equ $004C  ; NES RAM offset
-RedLeeverLongTimer                      equ $004D  ; NES RAM offset
-EndingFlashLongTimer                    equ $004D  ; NES RAM offset
-HelpDropCount                           equ $0050  ; NES RAM offset
-HelpDropValue                           equ $0051  ; NES RAM offset
-ProcessedNarrowObj                      equ $0052  ; NES RAM offset
-DoorwayDir                              equ $0053  ; NES RAM offset
-TriggeredDoorCmd                        equ $0054  ; NES RAM offset
-TriggeredDoorDir                        equ $0055  ; NES RAM offset
-Link_GoStraightWhenDiagInput            equ $0056  ; NES RAM offset
-Link_GoStraight                         equ $0057  ; NES RAM offset
-VScrollAddrHi                           equ $0058  ; NES RAM offset
-EmptyMonsterSlot                        equ $0059  ; NES RAM offset
-UndergroundExitType                     equ $005A  ; NES RAM offset
-TargetMode                              equ $005B  ; NES RAM offset
-SwitchNameTablesReq                     equ $005C  ; NES RAM offset
-CurScanRoomId                           equ $005D  ; NES RAM offset
-SubmenuScrollProgress                   equ $005E  ; NES RAM offset
-OddBaseNameTableOverride                equ $005F  ; NES RAM offset
-ChaseOtherTarget                        equ $0060  ; NES RAM offset
-ChaseTargetX                            equ $0061  ; NES RAM offset
-ChaseTargetY                            equ $0062  ; NES RAM offset
-World_IsFillingHearts                   equ $0063  ; NES RAM offset
-LadderSlot                              equ $0064  ; NES RAM offset
-UndergroundEntranceTile                 equ $0065  ; NES RAM offset
-SongScriptPtrLo                         equ $0066  ; NES RAM offset
-SongScriptPtrHi                         equ $0067  ; NES RAM offset
-EffectCounter                           equ $0069  ; NES RAM offset
-CurNoteLowPeriodSq0                     equ $006A  ; NES RAM offset
-CurNoteLowPeriodSq1                     equ $006B  ; NES RAM offset
-SongPhraseIndex                         equ $006C  ; NES RAM offset
-CustomEnvelopeOffsetTune1               equ $006D  ; NES RAM offset
-NoteLengthTune1                         equ $006E  ; NES RAM offset
-NoteCounterTune1                        equ $006F  ; NES RAM offset
-ObjX                                    equ $0070  ; NES RAM offset
-ObjY                                    equ $0084  ; NES RAM offset
-ObjDir                                  equ $0098  ; NES RAM offset
-ObjRoomItemId                           equ $0098  ; NES RAM offset
-RoomItemId                              equ $00AB  ; NES RAM offset
-ObjState                                equ $00AC  ; NES RAM offset
-Item_ObjItemId                          equ $00AC  ; NES RAM offset
-ObjShoveDir                             equ $00C0  ; NES RAM offset
-ObjShoveDistance                        equ $00D3  ; NES RAM offset
-Paused                                  equ $00E0  ; NES RAM offset
-MenuState                               equ $00E1  ; NES RAM offset
-VScrollAddrLo                           equ $00E2  ; NES RAM offset
-IsSprite0CheckActive                    equ $00E3  ; NES RAM offset
-DeathTurns                              equ $00E5  ; NES RAM offset
-VScrollStartFrame                       equ $00E6  ; NES RAM offset
-CurColumn                               equ $00E8  ; NES RAM offset
-CurRow                                  equ $00E9  ; NES RAM offset
-WhirlwindPrevRoomId                     equ $00EA  ; NES RAM offset
-RoomId                                  equ $00EB  ; NES RAM offset
-NextRoomId                              equ $00EC  ; NES RAM offset
-PrevRow                                 equ $00ED  ; NES RAM offset
-CurOpenedDoors                          equ $00EE  ; NES RAM offset
-_Unknown_F3                             equ $00F3  ; NES RAM offset
-InitializedGame                         equ $00F4  ; NES RAM offset
-TransferredCommonPatterns               equ $00F5  ; NES RAM offset
-TransferredDemoPatterns                 equ $00F6  ; NES RAM offset
-ReturnToBank4                           equ $00F7  ; NES RAM offset
-ButtonsPressed                          equ $00F8  ; NES RAM offset
-ButtonsDown                             equ $00FA  ; NES RAM offset
-CurVScroll                              equ $00FC  ; NES RAM offset
-CurHScroll                              equ $00FD  ; NES RAM offset
-CurPpuMask_2001                         equ $00FE  ; NES RAM offset
-CurPpuControl_2000                      equ $00FF  ; NES RAM offset
-PositiveGridCellSize                    equ $010E  ; NES RAM offset
-NegativeGridCellSize                    equ $010F  ; NES RAM offset
-Sprites                                 equ $0200  ; NES RAM offset
-DynTileBufLen                           equ $0301  ; NES RAM offset
-DynTileBuf                              equ $0302  ; NES RAM offset
-OpenDoorwayMask                         equ $033F  ; NES RAM offset
-CurObjIndex                             equ $0340  ; NES RAM offset
-RollingSpriteIndex                      equ $0341  ; NES RAM offset
-FirstSpriteIndex                        equ $0342  ; NES RAM offset
-LeftSpriteOffset                        equ $0343  ; NES RAM offset
-RightSpriteOffset                       equ $0344  ; NES RAM offset
-RoomBoundLeft                           equ $0346  ; NES RAM offset
-RoomBoundRight                          equ $0347  ; NES RAM offset
-RoomBoundUp                             equ $0348  ; NES RAM offset
-RoomBoundDown                           equ $0349  ; NES RAM offset
-ObjectFirstUnwalkableTile               equ $034A  ; NES RAM offset
-ShotCollidesWithLink                    equ $034B  ; NES RAM offset
-ActiveMonsterShots                      equ $034C  ; NES RAM offset
-RoomAllDead                             equ $034D  ; NES RAM offset
-RoomObjCount                            equ $034E  ; NES RAM offset
-ObjType                                 equ $034F  ; NES RAM offset
-RoomKillCount                           equ $034F  ; NES RAM offset
-RoomObjTemplateType                     equ $035F  ; NES RAM offset
-ObjMovingLimit                          equ $0380  ; NES RAM offset
-ObjAngleFrac                            equ $0380  ; NES RAM offset
-Shot_ObjBounceDir                       equ $0380  ; NES RAM offset
-Moldorm_ObjOldDir                       equ $0380  ; NES RAM offset
-Gohma_ObjShootTimer                     equ $0380  ; NES RAM offset
-Gleook_HeadInfo2                        equ $0381  ; NES RAM offset
-Manhandla_SegmentJustDied               equ $0383  ; NES RAM offset
-Manhandla_BounceDir                     equ $0385  ; NES RAM offset
-ObjGridOffset                           equ $0394  ; NES RAM offset
-ObjRemDistance                          equ $0394  ; NES RAM offset
-ObjAngleWhole                           equ $0394  ; NES RAM offset
-Shot_ObjBounceDist                      equ $0394  ; NES RAM offset
-RedWizzrobe_ObjFadeCounter              equ $0394  ; NES RAM offset
-Gleeok_NeckXs3                          equ $0395  ; NES RAM offset
-ObjPosFrac                              equ $03A8  ; NES RAM offset
-Item_ObjItemLifetime                    equ $03A8  ; NES RAM offset
-Gleook_HeadInfo3                        equ $03A9  ; NES RAM offset
-ObjQSpeedFrac                           equ $03BC  ; NES RAM offset
-Moldorm_ObjBounceDir                    equ $03BC  ; NES RAM offset
-Gleeok_NeckYs3                          equ $03BD  ; NES RAM offset
-ObjAnimCounter                          equ $03D0  ; NES RAM offset
-ObjAnimFrame                            equ $03E4  ; NES RAM offset
-ObjInputDir                             equ $03F8  ; NES RAM offset
-ObjMetastate                            equ $0405  ; NES RAM offset
-Item_ObjMonsterType                     equ $0412  ; NES RAM offset
-StairsTargetY                           equ $0412  ; NES RAM offset
-ObjWantsToShoot                         equ $0412  ; NES RAM offset
-ObjPushTimer                            equ $0412  ; NES RAM offset
-TileObjRoomId                           equ $0412  ; NES RAM offset
-Fireball_ObjDirToTargetX                equ $0412  ; NES RAM offset
-Flyer_ObjSpeedFrac                      equ $0412  ; NES RAM offset
-Jumper_ObjSpeedWholeY                   equ $0412  ; NES RAM offset
-Wallmaster_ObjStep                      equ $0412  ; NES RAM offset
-PolsVoice_ObjSpeedWhole                 equ $0412  ; NES RAM offset
-BlueWizzrobe_ObjTurnCounter             equ $0412  ; NES RAM offset
-RedWizzrobe_ObjAnimCounter              equ $0412  ; NES RAM offset
-Manhandla_ObjSpeedAccum                 equ $0412  ; NES RAM offset
-Gohma_ObjDistTraveled                   equ $0412  ; NES RAM offset
-TriforceGlowTimer                       equ $0412  ; NES RAM offset
-PeaceCharDelayCounter                   equ $0412  ; NES RAM offset
-TriforceGlowCycle                       equ $0413  ; NES RAM offset
-Gleeok_ObjHeadInfo                      equ $0413  ; NES RAM offset
-Gleeok_ObjHeadDirCounterH               equ $0413  ; NES RAM offset
-PeaceCharIndex                          equ $0413  ; NES RAM offset
-CaveFlags                               equ $0413  ; NES RAM offset
-Gleeok_ObjHeadDirCounterV               equ $0414  ; NES RAM offset
-ScrolledScreenCount                     equ $0415  ; NES RAM offset
-Gleeok_ObjHeadSpeedX                    equ $0415  ; NES RAM offset
-PersonTextSelector                      equ $0415  ; NES RAM offset
-Gleeok_ObjHeadSpeedY                    equ $0416  ; NES RAM offset
-TextboxCharIndex                        equ $0416  ; NES RAM offset
-PersonTextIndex                         equ $0416  ; NES RAM offset
-DemoLineAttrVramAddrLo                  equ $0417  ; NES RAM offset
-Gleeok_ObjHeadDirChangeCounter          equ $0417  ; NES RAM offset
-DemoLineAttrVramAddrHi                  equ $0418  ; NES RAM offset
-Gleeok_ObjHeadDelay                     equ $0418  ; NES RAM offset
-DemoLineIndex                           equ $0419  ; NES RAM offset
-DemoTimer                               equ $041A  ; NES RAM offset
-ScrolledLineCount                       equ $041B  ; NES RAM offset
-DemoLineTileVramAddrLo                  equ $041C  ; NES RAM offset
-DemoLineTileVramAddrHi                  equ $041D  ; NES RAM offset
-ObjTurnRate                             equ $041F  ; NES RAM offset
-Fireball_ObjQSpeedX                     equ $041F  ; NES RAM offset
-Flyer_ObjSpeed                          equ $041F  ; NES RAM offset
-Jumper_ObjSpeedFracY                    equ $041F  ; NES RAM offset
-Wallmaster_ObjTilesCrossed              equ $041F  ; NES RAM offset
-Digdogger_ObjSpeedFrac                  equ $041F  ; NES RAM offset
-PolsVoice_ObjLastTile                   equ $041F  ; NES RAM offset
-Wizzrobe_ObjLastTile                    equ $041F  ; NES RAM offset
-Manhandla_ObjSpeedFrac                  equ $041F  ; NES RAM offset
-Gohma_ObjMoveAccum                      equ $041F  ; NES RAM offset
-InitializedWaterfallAnimation           equ $041F  ; NES RAM offset
-CharBoardIndex                          equ $041F  ; NES RAM offset
-Gleook_HeadInfo0                        equ $0420  ; NES RAM offset
-TitleWaveYs                             equ $0420  ; NES RAM offset
-InitializedNameField                    equ $0420  ; NES RAM offset
-NameCharOffset                          equ $0421  ; NES RAM offset
-NameInputCharBuf                        equ $0422  ; NES RAM offset
-CaveItemIds                             equ $0422  ; NES RAM offset
-StillHoldingButton                      equ $0426  ; NES RAM offset
-HeldButton                              equ $0427  ; NES RAM offset
-SubsequentButtonRepeat                  equ $0428  ; NES RAM offset
-ButtonRepeatTimer                       equ $0429  ; NES RAM offset
-ModeE_WrappedAroundBoardY               equ $042A  ; NES RAM offset
-ObjRefId                                equ $042C  ; NES RAM offset
-ObjCaptureTimer                         equ $042C  ; NES RAM offset
-Flyer_ObjTurns                          equ $042C  ; NES RAM offset
-Digdogger_ObjSpeedWhole                 equ $042C  ; NES RAM offset
-Dodongo_ObjBloatedSubstate              equ $042C  ; NES RAM offset
-PolsVoice_ObjTargetY                    equ $042C  ; NES RAM offset
-Manhandla_ObjSpeedWhole                 equ $042C  ; NES RAM offset
-Gohma_ObjNextOpenEyeCounter             equ $042C  ; NES RAM offset
-Ganon_ObjPhase                          equ $042C  ; NES RAM offset
-DemoPhase                               equ $042C  ; NES RAM offset
-DemoSubphase                            equ $042D  ; NES RAM offset
-Gleook_HeadInfo1                        equ $042D  ; NES RAM offset
-DemoLineTextIndex                       equ $042E  ; NES RAM offset
-CaveCurPriceIndex                       equ $042E  ; NES RAM offset
-DemoItemRow                             equ $042F  ; NES RAM offset
-CaveCurPriceOffset                      equ $042F  ; NES RAM offset
-CavePrices                              equ $0430  ; NES RAM offset
-Fireball_ObjDirToTargetY                equ $0437  ; NES RAM offset
-Flyer_ObjDistTraveled                   equ $0437  ; NES RAM offset
-Digdogger_ObjTargetSpeedFrac            equ $0437  ; NES RAM offset
-Dodongo_ObjBombHits                     equ $0437  ; NES RAM offset
-Manhandla_ObjPrevFrame                  equ $0437  ; NES RAM offset
-DemoPhase0Subphase1Cycle                equ $0437  ; NES RAM offset
-DemoPhase0Subphase1Timer                equ $0438  ; NES RAM offset
-Gleeok_NeckXs0                          equ $0438  ; NES RAM offset
-CaveChosenIndex                         equ $0438  ; NES RAM offset
-Fireball_ObjQSpeedY                     equ $0444  ; NES RAM offset
-Flyer_ObjFlyingState                    equ $0444  ; NES RAM offset
-Jumper_ObjTargetY                       equ $0444  ; NES RAM offset
-Digdogger_ObjTargetSpeedWhole           equ $0444  ; NES RAM offset
-PolsVoice_ObjSpeedFrac                  equ $0444  ; NES RAM offset
-Gohma_ObjEyeOpenTimer                   equ $0444  ; NES RAM offset
-DemoItemIds                             equ $0444  ; NES RAM offset
-Ganon_ScenePhase                        equ $0445  ; NES RAM offset
-Gleeok_NeckYs0                          equ $0445  ; NES RAM offset
-MoneyGameAmounts                        equ $0448  ; NES RAM offset
-ObjShootTimer                           equ $0451  ; NES RAM offset
-Fireball_ObjPosFracX                    equ $0451  ; NES RAM offset
-Jumper_ObjReversalCount                 equ $0451  ; NES RAM offset
-Manhandla_ObjFrameAccum                 equ $0451  ; NES RAM offset
-Gohma_ObjGoStraight                     equ $0451  ; NES RAM offset
-Gleeok_NeckXs1                          equ $0452  ; NES RAM offset
-Fireball_ObjPosFracY                    equ $045E  ; NES RAM offset
-Digdogger_ObjSpeedFlag                  equ $045E  ; NES RAM offset
-Dodongo_ObjBloatedTimer                 equ $045E  ; NES RAM offset
-Gohma_ObjSprints                        equ $045E  ; NES RAM offset
-Patra_ObjManeuverIndex                  equ $045E  ; NES RAM offset
-Gleeok_NeckYs1                          equ $045F  ; NES RAM offset
-TextboxCharPtr                          equ $045F  ; NES RAM offset
-PersonTextPtr                           equ $045F  ; NES RAM offset
-Flyer_ObjOffsetX                        equ $046B  ; NES RAM offset
-Digdogger_ObjIsChild                    equ $046B  ; NES RAM offset
-Gohma_ObjEyeState                       equ $046B  ; NES RAM offset
-Ganon_ObjAnimationFrame                 equ $046B  ; NES RAM offset
-Gleeok_NeckXs2                          equ $046C  ; NES RAM offset
-ObjTurnTimer                            equ $0478  ; NES RAM offset
-Flyer_ObjOffsetY                        equ $0478  ; NES RAM offset
-Digdogger_ObjCurPart                    equ $0478  ; NES RAM offset
-Aquamentus_ObjFireballOffset            equ $0478  ; NES RAM offset
-Manhandla_ObjFrame                      equ $0478  ; NES RAM offset
-Gohma_ObjEyeAnimCounter                 equ $0478  ; NES RAM offset
-Ganon_ObjCloudDist                      equ $0478  ; NES RAM offset
-Gleeok_NeckYs2                          equ $0479  ; NES RAM offset
-ObjHP                                   equ $0485  ; NES RAM offset
-ObjUninitialized                        equ $0492  ; NES RAM offset
-ObjCollidedTile                         equ $049E  ; NES RAM offset
-ObjInvincibilityMask                    equ $04B2  ; NES RAM offset
-ObjAttr                                 equ $04BF  ; NES RAM offset
-PersonFireballsEnabled                  equ $04CC  ; NES RAM offset
-LevelBlockAttrsByteF                    equ $04CD  ; NES RAM offset
-ShutterTrigger                          equ $04CE  ; NES RAM offset
-BlockPushComplete                       equ $04CF  ; NES RAM offset
-FlyingMaxSpeedFrac                      equ $04D1  ; NES RAM offset
-GleeokCurNeck                           equ $04D7  ; NES RAM offset
-GleeokSignedRefSegmentDistance          equ $04D8  ; NES RAM offset
-GleeokPrimarySegmentLimits              equ $04D9  ; NES RAM offset
-GleeokSecondarySegmentLimits            equ $04DB  ; NES RAM offset
-GleeokTertiarySegmentLimits             equ $04DD  ; NES RAM offset
-StatusBarMapTrigger                     equ $04E5  ; NES RAM offset
-GleeokAnimationTimer                    equ $04E6  ; NES RAM offset
-Lamnola_Speed                           equ $04E6  ; NES RAM offset
-GleeokBodyAnimationFrame                equ $04E7  ; NES RAM offset
-Lamnola_Type                            equ $04E7  ; NES RAM offset
-Statue_ObjFireballTimer                 equ $04E8  ; NES RAM offset
-ObjInvincibilityTimer                   equ $04F0  ; NES RAM offset
-LeftAlignHalfWidthObj                   equ $0504  ; NES RAM offset
-ItemTypeToLift                          equ $0505  ; NES RAM offset
-ItemLiftTimer                           equ $0506  ; NES RAM offset
-ChildDigdoggerCount                     equ $0507  ; NES RAM offset
-SummonedWhirlwind                       equ $0508  ; NES RAM offset
-TriforceFanfareActive                   equ $0509  ; NES RAM offset
-CreditsRow                              equ $050A  ; NES RAM offset
-CreditsTileOffset                       equ $050B  ; NES RAM offset
-CreditsVramPage                         equ $050C  ; NES RAM offset
-CreditsVramLine                         equ $050D  ; NES RAM offset
-CreditsLineIndex                        equ $050E  ; NES RAM offset
-LamnolaViableDirMask                    equ $050F  ; NES RAM offset
-ActiveRedLeeverCount                    equ $0510  ; NES RAM offset
-Gleeok_WrithingCounter                  equ $0510  ; NES RAM offset
-GleeokDeadNeckMask                      equ $0511  ; NES RAM offset
-LinkParalyzed                           equ $0512  ; NES RAM offset
-UsedCandle                              equ $0513  ; NES RAM offset
-ZoraActive                              equ $0514  ; NES RAM offset
-ActiveBoulders                          equ $0515  ; NES RAM offset
-SecretColorCycle                        equ $051A  ; NES RAM offset
-UsedFlute                               equ $051B  ; NES RAM offset
-FadeCycle                               equ $051C  ; NES RAM offset
-PatternBlockIndex                       equ $051D  ; NES RAM offset
-BrighteningRoom                         equ $051E  ; NES RAM offset
-CandleState                             equ $051F  ; NES RAM offset
-PrevOpenedDoors                         equ $0521  ; NES RAM offset
-WhirlwindTeleportingState               equ $0522  ; NES RAM offset
-TeleportingLevelIndex                   equ $0523  ; NES RAM offset
-SpawnCycle                              equ $0524  ; NES RAM offset
-CurEdgeSpawnCell                        equ $0525  ; NES RAM offset
-CaveSourceRoomId                        equ $0526  ; NES RAM offset
-CellarSourceRoomId                      equ $0527  ; NES RAM offset
-SkippedDemo                             equ $0528  ; NES RAM offset
-WorldKillCycle                          equ $052A  ; NES RAM offset
-RoomTileObjType                         equ $052B  ; NES RAM offset
-RoomTileObjX                            equ $052C  ; NES RAM offset
-RoomTileObjY                            equ $052D  ; NES RAM offset
-SwordBlocked                            equ $052E  ; NES RAM offset
-MazeStep                                equ $052F  ; NES RAM offset
-PlayAreaAttrs                           equ $0530  ; NES RAM offset
-LevelKillCounts                         equ $0560  ; NES RAM offset
-CurNoteLowPeriodTrg                     equ $05F0  ; NES RAM offset
-SampleCounter                           equ $05F2  ; NES RAM offset
-SeaSfxCounter                           equ $05F3  ; NES RAM offset
-NoteLengthTableBase                     equ $05F4  ; NES RAM offset
-FirstNoteIndexSongNoise                 equ $05F5  ; NES RAM offset
-BackgroundSample                        equ $05F6  ; NES RAM offset
-SongRequest                             equ $0600  ; NES RAM offset
-SampleRequest                           equ $0601  ; NES RAM offset
-Tune1Request                            equ $0602  ; NES RAM offset
-EffectRequest                           equ $0603  ; NES RAM offset
-Tune0Request                            equ $0604  ; NES RAM offset
-Tune0                                   equ $0605  ; NES RAM offset
-Effect                                  equ $0606  ; NES RAM offset
-Tune1                                   equ $0607  ; NES RAM offset
-Sample                                  equ $0608  ; NES RAM offset
-Song                                    equ $0609  ; NES RAM offset
-NoteOffsetSongSq1                       equ $060A  ; NES RAM offset
-NoteOffsetSongSq0                       equ $060B  ; NES RAM offset
-NoteOffsetSongTrg                       equ $060C  ; NES RAM offset
-NoteOffsetSongNoise                     equ $060D  ; NES RAM offset
-TunePtr0                                equ $060E  ; NES RAM offset
-NoteLengthSongSq0                       equ $060F  ; NES RAM offset
-NoteLengthSongSq1                       equ $0610  ; NES RAM offset
-NoteCounterSongSq1                      equ $0611  ; NES RAM offset
-CustomEnvelopeOffsetSongSq1             equ $0612  ; NES RAM offset
-NoteCounterSongSq0                      equ $0613  ; NES RAM offset
-CustomEnvelopeOffsetSongSq0             equ $0614  ; NES RAM offset
-NoteLengthSongTrg                       equ $0615  ; NES RAM offset
-NoteCounterSongTrg                      equ $0616  ; NES RAM offset
-NoteCounterSongNoise                    equ $0617  ; NES RAM offset
-TunePtr1                                equ $0618  ; NES RAM offset
-SongEnvelopeSelector                    equ $0619  ; NES RAM offset
-SongVibrationCounterSq1                 equ $061B  ; NES RAM offset
-SongVibrationCounterSq0                 equ $061C  ; NES RAM offset
-SongVibrationCounterTrg                 equ $061D  ; NES RAM offset
-SongRepetitionsTrg                      equ $061E  ; NES RAM offset
-SongRepeatStartOffset                   equ $061F  ; NES RAM offset
-CurRoomHistoryIndex                     equ $0620  ; NES RAM offset
-RoomHistory                             equ $0621  ; NES RAM offset
-WorldKillCount                          equ $0627  ; NES RAM offset
-QuestNumbers                            equ $062D  ; NES RAM offset
-DeathCounts                             equ $0630  ; NES RAM offset
-IsSaveSlotActive                        equ $0633  ; NES RAM offset
-IsRegisterSaveFileOptionEnabled         equ $0636  ; NES RAM offset
-IsEliminateSaveFileOptionEnabled        equ $0637  ; NES RAM offset
-Names                                   equ $0638  ; NES RAM offset
-SaveSlotHearts                          equ $0650  ; NES RAM offset
-SelectedItemSlot                        equ $0656  ; NES RAM offset
-Items                                   equ $0657  ; NES RAM offset
-InvBombs                                equ $0658  ; NES RAM offset
-InvArrow                                equ $0659  ; NES RAM offset
-Bow                                     equ $065A  ; NES RAM offset
-InvCandle                               equ $065B  ; NES RAM offset
-InvFood                                 equ $065D  ; NES RAM offset
-Potion                                  equ $065E  ; NES RAM offset
-InvRaft                                 equ $0660  ; NES RAM offset
-InvBook                                 equ $0661  ; NES RAM offset
-InvRing                                 equ $0662  ; NES RAM offset
-InvLadder                               equ $0663  ; NES RAM offset
-InvMagicKey                             equ $0664  ; NES RAM offset
-InvBracelet                             equ $0665  ; NES RAM offset
-InvLetter                               equ $0666  ; NES RAM offset
-InvCompass                              equ $0667  ; NES RAM offset
-InvMap                                  equ $0668  ; NES RAM offset
-InvCompass9                             equ $0669  ; NES RAM offset
-InvMap9                                 equ $066A  ; NES RAM offset
-InvClock                                equ $066C  ; NES RAM offset
-InvRupees                               equ $066D  ; NES RAM offset
-InvKeys                                 equ $066E  ; NES RAM offset
-HeartValues                             equ $066F  ; NES RAM offset
-HeartPartial                            equ $0670  ; NES RAM offset
-InvTriforce                             equ $0671  ; NES RAM offset
-LastBossDefeated                        equ $0672  ; NES RAM offset
-InvBoomerang                            equ $0674  ; NES RAM offset
-InvMagicBoomerang                       equ $0675  ; NES RAM offset
-InvMagicShield                          equ $0676  ; NES RAM offset
-MaxBombs                                equ $067C  ; NES RAM offset
-RupeesToAdd                             equ $067D  ; NES RAM offset
-RupeesToSubtract                        equ $067E  ; NES RAM offset
-WorldFlags                              equ $067F  ; NES RAM offset
-PpuControl_2000                         equ $2000  ; NES I/O
-PpuMask_2001                            equ $2001  ; NES I/O
-PpuStatus_2002                          equ $2002  ; NES I/O
-OamAddr_2003                            equ $2003  ; NES I/O
-OamData_2004                            equ $2004  ; NES I/O
-PpuScroll_2005                          equ $2005  ; NES I/O
-PpuAddr_2006                            equ $2006  ; NES I/O
-PpuData_2007                            equ $2007  ; NES I/O
-Sq0Duty_4000                            equ $4000  ; NES I/O
-Sq0Sweep_4001                           equ $4001  ; NES I/O
-Sq0Timer_4002                           equ $4002  ; NES I/O
-Sq0Length_4003                          equ $4003  ; NES I/O
-Sq1Duty_4004                            equ $4004  ; NES I/O
-Sq1Sweep_4005                           equ $4005  ; NES I/O
-Sq1Timer_4006                           equ $4006  ; NES I/O
-Sq1Length_4007                          equ $4007  ; NES I/O
-TrgLinear_4008                          equ $4008  ; NES I/O
-TrgTimer_400A                           equ $400A  ; NES I/O
-TrgLength_400B                          equ $400B  ; NES I/O
-NoiseVolume_400C                        equ $400C  ; NES I/O
-NoisePeriod_400E                        equ $400E  ; NES I/O
-NoiseLength_400F                        equ $400F  ; NES I/O
-DmcFreq_4010                            equ $4010  ; NES I/O
-DmcCounter_4011                         equ $4011  ; NES I/O
-DmcAddress_4012                         equ $4012  ; NES I/O
-DmcLength_4013                          equ $4013  ; NES I/O
-SpriteDma_4014                          equ $4014  ; NES I/O
-ApuStatus_4015                          equ $4015  ; NES I/O
-Ctrl1_4016                              equ $4016  ; NES I/O
-Ctrl2_FrameCtr_4017                     equ $4017  ; NES I/O
-SaveRamBegin                            equ $6001  ; NES SRAM
-SaveFileAName0                          equ $6002  ; NES SRAM
-SaveFileAName1                          equ $600A  ; NES SRAM
-SaveFileAName2                          equ $6012  ; NES SRAM
-SaveFileAItems0                         equ $601A  ; NES SRAM
-SaveFileAItems1                         equ $6042  ; NES SRAM
-SaveFileAItems2                         equ $606A  ; NES SRAM
-SaveFileAWorldFlags0                    equ $6092  ; NES SRAM
-SaveFileAWorldFlags1                    equ $6212  ; NES SRAM
-SaveFileAWorldFlags2                    equ $6392  ; NES SRAM
-SaveFileASlotActive0                    equ $6512  ; NES SRAM
-SaveFileASlotActive1                    equ $6513  ; NES SRAM
-SaveFileASlotActive2                    equ $6514  ; NES SRAM
-SaveFileADeathCount0                    equ $6515  ; NES SRAM
-SaveFileADeathCount1                    equ $6516  ; NES SRAM
-SaveFileADeathCount2                    equ $6517  ; NES SRAM
-SaveFileAQuestNumber0                   equ $651B  ; NES SRAM
-SaveFileAQuestNumber1                   equ $651C  ; NES SRAM
-SaveFileAQuestNumber2                   equ $651D  ; NES SRAM
-SaveFileOpenMarkers                     equ $651E  ; NES SRAM
-SaveFileCloseMarkers                    equ $6521  ; NES SRAM
-FileAChecksums                          equ $6524  ; NES SRAM
-IsSaveFileBCommitted                    equ $652A  ; NES SRAM
-PlayAreaTiles                           equ $6530  ; NES SRAM
-LevelBlockAttrsA                        equ $687E  ; NES SRAM
-LevelBlockAttrsB                        equ $68FE  ; NES SRAM
-LevelBlockAttrsC                        equ $697E  ; NES SRAM
-LevelBlockAttrsD                        equ $69FE  ; NES SRAM
-LevelBlockAttrsE                        equ $6A7E  ; NES SRAM
-LevelBlockAttrsF                        equ $6AFE  ; NES SRAM
-LevelInfo_PalettesTransferBuf           equ $6B7E  ; NES SRAM
-LevelInfo_FoeCounts                     equ $6BA2  ; NES SRAM
-LevelInfo_StartY                        equ $6BA6  ; NES SRAM
-LevelInfo_ShortcutOrItemPosArray        equ $6BA7  ; NES SRAM
-LevelInfo_SubmenuMapRotation            equ $6BAB  ; NES SRAM
-LevelInfo_StatusBarMapXOffset           equ $6BAC  ; NES SRAM
-LevelInfo_StartRoomId                   equ $6BAD  ; NES SRAM
-LevelInfo_TriforceRoomId                equ $6BAE  ; NES SRAM
-LevelInfo_WorldFlagsAddr                equ $6BAF  ; NES SRAM
-LevelInfo_LevelNumber                   equ $6BB1  ; NES SRAM
-LevelInfo_CellarRoomIdArray             equ $6BB2  ; NES SRAM
-LevelInfo_BossRoomId                    equ $6BBC  ; NES SRAM
-LevelInfo_SubmenuMapMask                equ $6BBD  ; NES SRAM
-LevelInfo_StatusBarMapTransferBuf       equ $6BCD  ; NES SRAM
-LevelInfo_PaletteCycles                 equ $6BFA  ; NES SRAM
-LevelInfo_DeathPaletteSeries            equ $6C5A  ; NES SRAM
-SaveRamEnd                              equ $7FFF  ; NES SRAM
+; (var equates omitted — provided by z_07.asm in --all build)
 ;==============================================================================
 ; Begin translated Z_04.asm code
 ;==============================================================================
@@ -732,7 +252,7 @@ InitWalker:
     ;
     moveq   #2,D3
     move.b  ($0061,A4),D0
-    ori.b   #$11,CCR  ; SEC: set C+X
+    ori     #$11,CCR  ; SEC: set C+X
 ; [SBC unhandled mode=ABS_X] SBC ObjX, X
     bcc  _anon_z04_2
     subq.b  #1,D3
@@ -752,7 +272,7 @@ _anon_z04_2:
     ;
     moveq   #4,D3
     move.b  ($0062,A4),D0
-    ori.b   #$11,CCR  ; SEC: set C+X
+    ori     #$11,CCR  ; SEC: set C+X
 ; [SBC unhandled mode=ABS_X] SBC ObjY, X
     bcc  _anon_z04_3
     moveq   #8,D3
@@ -840,7 +360,9 @@ _anon_z04_6:
     move.b  (A0,D2.W),D0
     beq  _anon_z04_7
     even
+    IFND Exit
 Exit:
+    ENDC
     rts
 
 _anon_z04_7:
@@ -873,11 +395,11 @@ _anon_z04_7:
     ; the monster and the chase target.
     ;
     move.b  ($0061,A4),D0
-    ori.b   #$11,CCR  ; SEC: set C+X
+    ori     #$11,CCR  ; SEC: set C+X
 ; [SBC unhandled mode=ABS_X] SBC ObjX, X
     bpl  _anon_z04_8
     eori.b #$FF,D0
-    andi.b  #$EE,CCR  ; CLC: clear C+X
+    andi    #$EE,CCR  ; CLC: clear C+X
     move.b  #$01,D1
     addx.b  D1,D0   ; ADC #$01 (X flag = 6502 C)
 _anon_z04_8:
@@ -904,11 +426,11 @@ _L_z04_Exit_CheckVerticalDistance:
     ; the monster and the chase target.
     ;
     move.b  ($0062,A4),D0
-    ori.b   #$11,CCR  ; SEC: set C+X
+    ori     #$11,CCR  ; SEC: set C+X
 ; [SBC unhandled mode=ABS_X] SBC ObjY, X
     bpl  _anon_z04_9
     eori.b #$FF,D0
-    andi.b  #$EE,CCR  ; CLC: clear C+X
+    andi    #$EE,CCR  ; CLC: clear C+X
     move.b  #$01,D1
     addx.b  D1,D0   ; ADC #$01 (X flag = 6502 C)
 _anon_z04_9:
@@ -1043,7 +565,7 @@ _L_z04_UpdateGoriya_AfterMove:
     move.b  D1,($0002,A4)
 _anon_z04_11:
     move.b  D3,($000E,A4)
-    ori.b   #$11,CCR  ; SEC: set C+X
+    ori     #$11,CCR  ; SEC: set C+X
     move.b  ($000E,A4),D1
     subx.b  D1,D0   ; SBC $0E
     move.b  D0,($0000,A4)
@@ -1067,7 +589,7 @@ _anon_z04_11:
     move.b  D1,($0003,A4)
 _anon_z04_12:
     move.b  D3,($000E,A4)
-    ori.b   #$11,CCR  ; SEC: set C+X
+    ori     #$11,CCR  ; SEC: set C+X
     move.b  ($000E,A4),D1
     subx.b  D1,D0   ; SBC $0E
     move.b  D0,($0001,A4)
@@ -1240,10 +762,10 @@ UpdateBlock0Idle:
     bne  _L_z04_UpdateBlock0Idle_CheckAlignedY
     moveq   #0,D3
     move.b  ($0084,A4),D0
-    andi.b  #$EE,CCR  ; CLC: clear C+X
+    andi    #$EE,CCR  ; CLC: clear C+X
     move.b  #$03,D1
     addx.b  D1,D0   ; ADC #$03 (X flag = 6502 C)
-    ori.b   #$11,CCR  ; SEC: set C+X
+    ori     #$11,CCR  ; SEC: set C+X
 ; [SBC unhandled mode=ABS_X] SBC ObjY, X
     jmp     _L_z04_UpdateBlock0Idle_TestDifference
 
@@ -1253,7 +775,7 @@ _L_z04_UpdateBlock0Idle_CheckAlignedY:
     ; go reset the push timer.
     ;
     move.b  ($0084,A4),D0
-    andi.b  #$EE,CCR  ; CLC: clear C+X
+    andi    #$EE,CCR  ; CLC: clear C+X
     move.b  #$03,D1
     addx.b  D1,D0   ; ADC #$03 (X flag = 6502 C)
     lea     ($0084,A4),A0
@@ -1265,7 +787,7 @@ _L_z04_UpdateBlock0Idle_CheckAlignedY:
     ;
     moveq   #2,D3
     move.b  ($0070,A4),D0
-    ori.b   #$11,CCR  ; SEC: set C+X
+    ori     #$11,CCR  ; SEC: set C+X
 ; [SBC unhandled mode=ABS_X] SBC ObjX, X
     even
 _L_z04_UpdateBlock0Idle_TestDifference:
@@ -1431,7 +953,7 @@ ShootFireball:
     ; Offset the new object's X right 4 pixels.
     ;
     move.b  ($70,A4,D2.W),D0
-    andi.b  #$EE,CCR  ; CLC: clear C+X
+    andi    #$EE,CCR  ; CLC: clear C+X
     move.b  #$04,D1
     addx.b  D1,D0   ; ADC #$04 (X flag = 6502 C)
     move.b  D0,($70,A4,D3.W)
@@ -1574,14 +1096,14 @@ BounceShot:
     ;
     lea     ($0084,A4),A0
     move.b  (A0,D2.W),D0
-    andi.b  #$EE,CCR  ; CLC: clear C+X
+    andi    #$EE,CCR  ; CLC: clear C+X
     lea     (ShotBounceHeights).l,A0
     move.b  (A0,D3.W),D1
     addx.b  D1,D0   ; ADC ShotBounceHeights,Y
     lea     ($0084,A4),A0
     move.b  D0,(A0,D2.W)
     move.b  ($70,A4,D2.W),D0
-    andi.b  #$EE,CCR  ; CLC: clear C+X
+    andi    #$EE,CCR  ; CLC: clear C+X
     lea     (ShotBounceWidths).l,A0
     move.b  (A0,D3.W),D1
     addx.b  D1,D0   ; ADC ShotBounceWidths,Y
@@ -1591,7 +1113,7 @@ BounceShot:
     ;
     lea     ($0394,A4),A0
     move.b  (A0,D2.W),D0
-    andi.b  #$EE,CCR  ; CLC: clear C+X
+    andi    #$EE,CCR  ; CLC: clear C+X
     move.b  #$02,D1
     addx.b  D1,D0   ; ADC #$02 (X flag = 6502 C)
     lea     ($0394,A4),A0
@@ -1830,7 +1352,7 @@ UpdateBubble:
     ;
     cmpi.b  #$2B,D0
     beq  _L_z04_UpdateBubble_Flash
-    ori.b   #$11,CCR  ; SEC: set C+X
+    ori     #$11,CCR  ; SEC: set C+X
     move.b  #$2B,D1
     subx.b  D1,D0   ; SBC #$2B
     jmp     _L_z04_UpdateBubble_Animate
@@ -1873,7 +1395,7 @@ _L_z04_UpdateBubble_Exit:
 _L_z04_UpdateBubble_BlockOrUnblock:
     ; Subtract $2C from the type to get the value for blocking: 0 or 1
     ;
-    ori.b   #$11,CCR  ; SEC: set C+X
+    ori     #$11,CCR  ; SEC: set C+X
     move.b  #$2C,D1
     subx.b  D1,D0   ; SBC #$2C
     move.b  D0,($052E,A4)
@@ -2137,7 +1659,7 @@ UpdateGel:
     ;
     move.b  ($70,A4,D2.W),D0
     move.b  D0,-(A5)  ; PHA
-    andi.b  #$EE,CCR  ; CLC: clear C+X
+    andi    #$EE,CCR  ; CLC: clear C+X
     move.b  #$04,D1
     addx.b  D1,D0   ; ADC #$04 (X flag = 6502 C)
     move.b  D0,($70,A4,D2.W)
@@ -2186,7 +1708,7 @@ _L_z04_Gel_Move_Move:
     ; Set X coordinate to ((X + 8) AND $F0).
     ;
     move.b  ($70,A4,D2.W),D0
-    andi.b  #$EE,CCR  ; CLC: clear C+X
+    andi    #$EE,CCR  ; CLC: clear C+X
     move.b  #$08,D1
     addx.b  D1,D0   ; ADC #$08 (X flag = 6502 C)
     andi.b #$F0,D0
@@ -2322,7 +1844,7 @@ _L_z04_Gel_MoveSplitting_CheckRoomBoundary:
     ; If blocked by the room boundary, then return C=1.
     ;
     bsr     BoundByRoom
-    ori.b   #$11,CCR  ; SEC: set C+X
+    ori     #$11,CCR  ; SEC: set C+X
     beq  _L_z04_Gel_MoveSplitting_Exit
     ; Move.
     ;
@@ -2333,7 +1855,7 @@ _L_z04_Gel_MoveSplitting_CheckRoomBoundary:
     lea     ($0394,A4),A0
     move.b  (A0,D2.W),D0
     andi.b #$0F,D0
-    andi.b  #$EE,CCR  ; CLC: clear C+X
+    andi    #$EE,CCR  ; CLC: clear C+X
     bne  _L_z04_Gel_MoveSplitting_Exit
     lea     ($0394,A4),A0
     move.b  D0,(A0,D2.W)
@@ -2489,7 +2011,7 @@ _L_z04_UpdateStatues_LoopFireball:
     ; Pattern
     move.b  ($000B,A4),D3
     move.b  D2,D0
-    andi.b  #$EE,CCR  ; CLC: clear C+X
+    andi    #$EE,CCR  ; CLC: clear C+X
     lea     (StatuePatternToBasePositionIndex).l,A0
     move.b  (A0,D3.W),D1
     addx.b  D1,D0   ; ADC StatuePatternToBasePositionIndex,Y
@@ -2529,7 +2051,7 @@ _L_z04_UpdateStatues_LoopFireball:
     even
 _L_z04_UpdateStatues_LoopAxis:
     move.b  ($00,A4,D3.W),D0
-    ori.b   #$11,CCR  ; SEC: set C+X
+    ori     #$11,CCR  ; SEC: set C+X
 ; [SBC unhandled mode=ABS_Y] SBC $0002, Y
     cmpi.b  #$18,D0
     bpl  _anon_z04_31
@@ -3086,7 +2608,7 @@ _L_z04_UpdateBoulderSet_SetX:
     ;
     move.b  ($0340,A4),D2
     moveq   #8,D0
-    andi.b  #$EE,CCR  ; CLC: clear C+X
+    andi    #$EE,CCR  ; CLC: clear C+X
     move.b  ($19,A4,D2.W),D1
     addx.b  D1,D0   ; ADC Random+1,X
     andi.b #$1F,D0
@@ -3098,7 +2620,7 @@ _L_z04_UpdateBoulderSet_RandomizeTimer:
     ; Randomize the object timer.
     ;
     move.b  ($28,A4,D2.W),D0
-    andi.b  #$EE,CCR  ; CLC: clear C+X
+    andi    #$EE,CCR  ; CLC: clear C+X
     move.b  ($19,A4,D2.W),D1
     addx.b  D1,D0   ; ADC Random+1,X
     move.b  D0,($28,A4,D2.W)
@@ -3245,7 +2767,7 @@ _L_z04_UpdateTektiteOrBoulder_FinishSetUpJump:
     move.b  (A0,D2.W),D3
     lea     ($0084,A4),A0
     move.b  (A0,D2.W),D0
-    andi.b  #$EE,CCR  ; CLC: clear C+X
+    andi    #$EE,CCR  ; CLC: clear C+X
     lea     (JumperYOffsets).l,A0
     move.b  (A0,D3.W),D1
     addx.b  D1,D0   ; ADC JumperYOffsets,Y
@@ -3303,7 +2825,7 @@ _anon_z04_37:
     ; So, the elements for those are used for the starting speeds
     ; at 04:88F2.
     ;
-    andi.b  #$EE,CCR  ; CLC: clear C+X
+    andi    #$EE,CCR  ; CLC: clear C+X
     lea     ($0098,A4),A0
     move.b  (A0,D2.W),D1
     addx.b  D1,D0   ; ADC ObjDir,X
@@ -3325,7 +2847,7 @@ _anon_z04_37:
     moveq   #1,D3
 _anon_z04_38:
     move.b  D3,D0
-    andi.b  #$EE,CCR  ; CLC: clear C+X
+    andi    #$EE,CCR  ; CLC: clear C+X
     move.b  ($70,A4,D2.W),D1
     addx.b  D1,D0   ; ADC ObjX,X
     move.b  D0,($70,A4,D2.W)
@@ -3342,7 +2864,7 @@ _anon_z04_38:
     ;
     lea     ($0084,A4),A0
     move.b  (A0,D2.W),D0
-    ori.b   #$11,CCR  ; SEC: set C+X
+    ori     #$11,CCR  ; SEC: set C+X
 ; [SBC unhandled mode=ABS_X] SBC Jumper_ObjTargetY, X
     bsr     Abs
     cmpi.b  #$03,D0
@@ -3363,12 +2885,12 @@ _anon_z04_38:
     ;   t := t - $40
     ;
     moveq   #16,D0
-    andi.b  #$EE,CCR  ; CLC: clear C+X
+    andi    #$EE,CCR  ; CLC: clear C+X
     move.b  ($19,A4,D2.W),D1
     addx.b  D1,D0   ; ADC Random+1,X
     cmpi.b  #$20,D0
     bcc  _anon_z04_39
-    ori.b   #$11,CCR  ; SEC: set C+X
+    ori     #$11,CCR  ; SEC: set C+X
     move.b  #$40,D1
     subx.b  D1,D0   ; SBC #$40
 _anon_z04_39:
@@ -3459,7 +2981,7 @@ _L_z04_Jumper_AnimateAndCheckCollisions_DrawBoulder:
 Jumper_GetKind:
     lea     ($034F,A4),A0
     move.b  (A0,D2.W),D0
-    ori.b   #$11,CCR  ; SEC: set C+X
+    ori     #$11,CCR  ; SEC: set C+X
     move.b  #$0D,D1
     subx.b  D1,D0   ; SBC #$0D
     move.b  D0,D3
@@ -3508,7 +3030,7 @@ Jumper_MoveY:
     ;
     lea     ($041F,A4),A0
     move.b  (A0,D2.W),D0
-    andi.b  #$EE,CCR  ; CLC: clear C+X
+    andi    #$EE,CCR  ; CLC: clear C+X
     move.b  ($0000,A4),D1
     addx.b  D1,D0   ; ADC $00
     lea     ($041F,A4),A0
@@ -3606,7 +3128,7 @@ _L_z04_UpdateBurrower_CycleState:
     ;
     lea     ($00AC,A4),A0
     move.b  (A0,D2.W),D0
-    andi.b  #$EE,CCR  ; CLC: clear C+X
+    andi    #$EE,CCR  ; CLC: clear C+X
     move.b  #$01,D1
     addx.b  D1,D0   ; ADC #$01 (X flag = 6502 C)
     cmpi.b  #$06,D0
@@ -3676,11 +3198,11 @@ _L_z04_Burrower_AnimateDrawAndCheckCollisions_CalcFrameImage:
     ;
     ; This formula is used for states 1 to 5 of non-zora burrowers.
     ;
-    ori.b   #$11,CCR  ; SEC: set C+X
+    ori     #$11,CCR  ; SEC: set C+X
     move.b  #$01,D1
     subx.b  D1,D0   ; SBC #$01
     lsl.b  #1,D0   ; ASL A
-    andi.b  #$EE,CCR  ; CLC: clear C+X
+    andi    #$EE,CCR  ; CLC: clear C+X
     lea     ($03E4,A4),A0
     move.b  (A0,D2.W),D1
     addx.b  D1,D0   ; ADC ObjAnimFrame,X
@@ -3794,7 +3316,7 @@ _anon_z04_44:
     ; Add Link's Y and the vertical offset.
     ;
     move.b  ($0084,A4),D0
-    andi.b  #$EE,CCR  ; CLC: clear C+X
+    andi    #$EE,CCR  ; CLC: clear C+X
     move.b  ($0000,A4),D1
     addx.b  D1,D0   ; ADC $00
     ; Sanitize the Y coordinate:
@@ -3844,7 +3366,7 @@ _anon_z04_45:
     move.b  D0,($0001,A4)
     ; Add Link's X and the horizontal offset.
     ;
-    andi.b  #$EE,CCR  ; CLC: clear C+X
+    andi    #$EE,CCR  ; CLC: clear C+X
     move.b  ($0000,A4),D1
     addx.b  D1,D0   ; ADC $00
     ; AND the result with $F8, so it's aligned with a tile horizontally.
@@ -3869,7 +3391,7 @@ _L_z04_UpdateRedLeever_Subtract:
     ; The point is to get the absolute distance between the two.
     ;
     move.b  ($0001,A4),D0
-    ori.b   #$11,CCR  ; SEC: set C+X
+    ori     #$11,CCR  ; SEC: set C+X
     move.b  ($0002,A4),D1
     subx.b  D1,D0   ; SBC $02
     ; If the absolute distance >= $30, then return.
@@ -3973,7 +3495,7 @@ RedLeever_CycleStateDrawAndCheckCollisions:
     ;
     lea     ($00AC,A4),A0
     move.b  (A0,D2.W),D0
-    andi.b  #$EE,CCR  ; CLC: clear C+X
+    andi    #$EE,CCR  ; CLC: clear C+X
     move.b  #$01,D1
     addx.b  D1,D0   ; ADC #$01 (X flag = 6502 C)
     cmpi.b  #$06,D0
@@ -4094,7 +3616,7 @@ _L_z04_UpdateOctorock_CalcFinalOffset:
     ; Add the base offset and the directional offset, and save the result.
     ;
     move.b  (A5)+,D0  ; PLA
-    andi.b  #$EE,CCR  ; CLC: clear C+X
+    andi    #$EE,CCR  ; CLC: clear C+X
     lea     ($03E4,A4),A0
     move.b  (A0,D2.W),D1
     addx.b  D1,D0   ; ADC ObjAnimFrame,X
@@ -4444,7 +3966,7 @@ DrawArmosAndCheckCollisions:
     bne  _anon_z04_54
     moveq   #1,D0
 _anon_z04_54:
-    andi.b  #$EE,CCR  ; CLC: clear C+X
+    andi    #$EE,CCR  ; CLC: clear C+X
     lea     ($03E4,A4),A0
     move.b  (A0,D2.W),D1
     addx.b  D1,D0   ; ADC ObjAnimFrame,X
@@ -4610,7 +4132,7 @@ _L_z04_PondFairy_MoveHearts_LoopHeart:
     ; then loop again.
     ;
     move.b  D2,D0
-    ori.b   #$11,CCR  ; SEC: set C+X
+    ori     #$11,CCR  ; SEC: set C+X
     move.b  #$03,D1
     subx.b  D1,D0   ; SBC #$03
     move.b  D0,D3
@@ -4642,7 +4164,7 @@ _L_z04_PondFairy_MoveHearts_SetUpHeart:
     ; This heart is right above the fairy. Set its Y $1C pixels above the fairy.
     ;
     move.b  ($0085,A4),D0
-    ori.b   #$11,CCR  ; SEC: set C+X
+    ori     #$11,CCR  ; SEC: set C+X
     move.b  #$1C,D1
     subx.b  D1,D0   ; SBC #$1C
     lea     ($0084,A4),A0
@@ -4726,17 +4248,17 @@ _L_z04_UpdateRockOrGravestone_CheckQuest:
     ;
     moveq   #0,D3
     move.b  ($0084,A4),D0
-    andi.b  #$EE,CCR  ; CLC: clear C+X
+    andi    #$EE,CCR  ; CLC: clear C+X
     move.b  #$03,D1
     addx.b  D1,D0   ; ADC #$03 (X flag = 6502 C)
-    ori.b   #$11,CCR  ; SEC: set C+X
+    ori     #$11,CCR  ; SEC: set C+X
 ; [SBC unhandled mode=ABS_X] SBC ObjY, X
     bpl  _L_z04_UpdateRockOrGravestone_CheckDistance
     ; Else negate it, and indicate Link is "up" from the object.
     ;
     addq.b  #1,D3
     eori.b #$FF,D0
-    andi.b  #$EE,CCR  ; CLC: clear C+X
+    andi    #$EE,CCR  ; CLC: clear C+X
     move.b  #$01,D1
     addx.b  D1,D0   ; ADC #$01 (X flag = 6502 C)
     even
@@ -4971,13 +4493,13 @@ L10F3E_Exit:
     even
 CheckTileObjWeaponCollision:
     move.b  ($70,A4,D3.W),D0
-    andi.b  #$EE,CCR  ; CLC: clear C+X
+    andi    #$EE,CCR  ; CLC: clear C+X
     move.b  #$08,D1
     addx.b  D1,D0   ; ADC #$08 (X flag = 6502 C)
     move.b  D0,($0004,A4)
     lea     ($0084,A4),A0
     move.b  (A0,D3.W),D0
-    andi.b  #$EE,CCR  ; CLC: clear C+X
+    andi    #$EE,CCR  ; CLC: clear C+X
     move.b  #$08,D1
     addx.b  D1,D0   ; ADC #$08 (X flag = 6502 C)
     move.b  D0,($0005,A4)
@@ -5025,12 +4547,12 @@ IsQuestSecretMismatch:
     beq  _L_z04_IsQuestSecretMismatch_ReturnFalse
     ; Else return C=1. There is a mismatch in quest numbers.
     ;
-    ori.b   #$11,CCR  ; SEC: set C+X
+    ori     #$11,CCR  ; SEC: set C+X
     rts
 
     even
 _L_z04_IsQuestSecretMismatch_ReturnFalse:
-    andi.b  #$EE,CCR  ; CLC: clear C+X
+    andi    #$EE,CCR  ; CLC: clear C+X
     rts
 
     even
@@ -5085,7 +4607,7 @@ _L_z04_UpdateDock_SetState:
     move.b  D3,(A0,D2.W)
     ; Show the raft beneath Link: 6 pixels down.
     ;
-    andi.b  #$EE,CCR  ; CLC: clear C+X
+    andi    #$EE,CCR  ; CLC: clear C+X
     move.b  #$06,D1
     addx.b  D1,D0   ; ADC #$06 (X flag = 6502 C)
     lea     ($0084,A4),A0
@@ -5756,14 +5278,14 @@ _anon_z04_70:
     move.b  D0,-(A5)  ; PHA
     lea     ($0412,A4),A0
     move.b  (A0,D2.W),D0
-    andi.b  #$EE,CCR  ; CLC: clear C+X
+    andi    #$EE,CCR  ; CLC: clear C+X
     move.b  #$08,D1
     addx.b  D1,D0   ; ADC #$08 (X flag = 6502 C)
     lea     ($0412,A4),A0
     move.b  D0,(A0,D2.W)
     move.b  (A5)+,D0  ; PLA
     eori.b #$FF,D0
-    andi.b  #$EE,CCR  ; CLC: clear C+X
+    andi    #$EE,CCR  ; CLC: clear C+X
     move.b  #$01,D1
     addx.b  D1,D0   ; ADC #$01 (X flag = 6502 C)
 _anon_z04_71:
@@ -5771,7 +5293,7 @@ _anon_z04_71:
     ; Wallmaster's initial minor coordinate to store in [04].
     ; In general, the monster will be put in front of Link.
     ;
-    andi.b  #$EE,CCR  ; CLC: clear C+X
+    andi    #$EE,CCR  ; CLC: clear C+X
     move.b  ($0000,A4),D1
     addx.b  D1,D0   ; ADC $00
     move.b  D0,($0004,A4)
@@ -5791,7 +5313,7 @@ _anon_z04_71:
     beq  _anon_z04_72
     lea     ($0412,A4),A0
     move.b  (A0,D2.W),D0
-    andi.b  #$EE,CCR  ; CLC: clear C+X
+    andi    #$EE,CCR  ; CLC: clear C+X
     move.b  #$10,D1
     addx.b  D1,D0   ; ADC #$10 (X flag = 6502 C)
     lea     ($0412,A4),A0
@@ -5818,7 +5340,7 @@ _L_z04_Wallmaster_PutSpriteBehindBgIfNeeded_LoopExtent:
     ;
     lea     ($0203,A4),A0
     move.b  (A0,D3.W),D0
-    andi.b  #$EE,CCR  ; CLC: clear C+X
+    andi    #$EE,CCR  ; CLC: clear C+X
     lea     (SpriteRelativeExtents).l,A0
     move.b  (A0,D2.W),D1
     addx.b  D1,D0   ; ADC SpriteRelativeExtents,X
@@ -5920,7 +5442,7 @@ _anon_z04_76:
     ; then go see if the vertical distance is smaller.
     ;
     move.b  ($0070,A4),D0
-    ori.b   #$11,CCR  ; SEC: set C+X
+    ori     #$11,CCR  ; SEC: set C+X
 ; [SBC unhandled mode=ABS_X] SBC ObjX, X
     bsr     Abs
     cmpi.b  #$08,D0
@@ -5988,7 +5510,7 @@ _L_z04_UpdateRope_CheckVertical:
     ; then go draw.
     ;
     move.b  ($0084,A4),D0
-    ori.b   #$11,CCR  ; SEC: set C+X
+    ori     #$11,CCR  ; SEC: set C+X
 ; [SBC unhandled mode=ABS_X] SBC ObjY, X
     bsr     Abs
     cmpi.b  #$08,D0
@@ -6764,14 +6286,14 @@ _L_z04_CheckBigDigdoggerCollisions_LoopCornerCollision:
     ; Change the coordinates to one corner.
     ;
     move.b  ($70,A4,D2.W),D0
-    andi.b  #$EE,CCR  ; CLC: clear C+X
+    andi    #$EE,CCR  ; CLC: clear C+X
     lea     (DigdoggerCornerOffsetsX).l,A0
     move.b  (A0,D3.W),D1
     addx.b  D1,D0   ; ADC DigdoggerCornerOffsetsX,Y
     move.b  D0,($70,A4,D2.W)
     lea     ($0084,A4),A0
     move.b  (A0,D2.W),D0
-    andi.b  #$EE,CCR  ; CLC: clear C+X
+    andi    #$EE,CCR  ; CLC: clear C+X
     lea     (DigdoggerCornerOffsetsY).l,A0
     move.b  (A0,D3.W),D1
     addx.b  D1,D0   ; ADC DigdoggerCornerOffsetsY,Y
@@ -6808,13 +6330,13 @@ L_Digdogger_DrawAsLittle:
     move.b  D0,-(A5)  ; PHA
     ; Add 8 to Y and X.
     ;
-    andi.b  #$EE,CCR  ; CLC: clear C+X
+    andi    #$EE,CCR  ; CLC: clear C+X
     move.b  #$08,D1
     addx.b  D1,D0   ; ADC #$08 (X flag = 6502 C)
     lea     ($0084,A4),A0
     move.b  D0,(A0,D2.W)
     move.b  ($70,A4,D2.W),D0
-    andi.b  #$EE,CCR  ; CLC: clear C+X
+    andi    #$EE,CCR  ; CLC: clear C+X
     move.b  #$08,D1
     addx.b  D1,D0   ; ADC #$08 (X flag = 6502 C)
     move.b  D0,($70,A4,D2.W)
@@ -6966,7 +6488,7 @@ Digdogger_Move:
     lea     ($041F,A4),A0
     move.b  (A0,D2.W),D0
     andi.b #$E0,D0
-    andi.b  #$EE,CCR  ; CLC: clear C+X
+    andi    #$EE,CCR  ; CLC: clear C+X
     lea     ($0412,A4),A0
     move.b  (A0,D2.W),D1
     addx.b  D1,D0   ; ADC $0412,X
@@ -6996,7 +6518,7 @@ Digdogger_Move:
     and.b   D0,D1   ; BIT: set Z/N/V from D1 AND A
     beq  _L_z04_Digdogger_Move_Left
     move.b  ($70,A4,D2.W),D0
-    andi.b  #$EE,CCR  ; CLC: clear C+X
+    andi    #$EE,CCR  ; CLC: clear C+X
     move.b  ($0003,A4),D1
     addx.b  D1,D0   ; ADC $03
     move.b  D0,($70,A4,D2.W)
@@ -7086,7 +6608,7 @@ _L_z04_Digdogger_Draw_LoopPart:
     ; Store in [00] the X coordinate offset for the current corner.
     ;
     move.b  ($70,A4,D2.W),D0
-    andi.b  #$EE,CCR  ; CLC: clear C+X
+    andi    #$EE,CCR  ; CLC: clear C+X
     lea     (DigdoggerSpriteOffsetsX).l,A0
     move.b  (A0,D3.W),D1
     addx.b  D1,D0   ; ADC DigdoggerSpriteOffsetsX,Y
@@ -7095,7 +6617,7 @@ _L_z04_Digdogger_Draw_LoopPart:
     ;
     lea     ($0084,A4),A0
     move.b  (A0,D2.W),D0
-    andi.b  #$EE,CCR  ; CLC: clear C+X
+    andi    #$EE,CCR  ; CLC: clear C+X
     lea     (DigdoggerSpriteOffsetsY).l,A0
     move.b  (A0,D3.W),D1
     addx.b  D1,D0   ; ADC DigdoggerSpriteOffsetsY,Y
@@ -7227,7 +6749,7 @@ _L_z04_Aquamentus_Move_ApplySpeed:
     ; Add the speed to the X coordinate.
     ;
     move.b  ($70,A4,D2.W),D0
-    andi.b  #$EE,CCR  ; CLC: clear C+X
+    andi    #$EE,CCR  ; CLC: clear C+X
     lea     (AquamentusSpeeds).l,A0
     move.b  (A0,D3.W),D1
     addx.b  D1,D0   ; ADC AquamentusSpeeds,Y
@@ -7298,7 +6820,7 @@ _L_z04_Aquamentus_Shoot_LoopObject:
     ;
     lea     ($0084,A4),A0
     move.b  (A0,D2.W),D0
-    andi.b  #$EE,CCR  ; CLC: clear C+X
+    andi    #$EE,CCR  ; CLC: clear C+X
     lea     ($0478,A4),A0
     move.b  (A0,D2.W),D1
     addx.b  D1,D0   ; ADC Aquamentus_ObjFireballOffset,X
@@ -7361,7 +6883,7 @@ _L_z04_Aquamentus_Draw_LoopSprite:
     ; Store it in [00].
     ;
     move.b  ($70,A4,D2.W),D0
-    andi.b  #$EE,CCR  ; CLC: clear C+X
+    andi    #$EE,CCR  ; CLC: clear C+X
     lea     (AquamentusSpriteOffsetsX).l,A0
     move.b  (A0,D3.W),D1
     addx.b  D1,D0   ; ADC AquamentusSpriteOffsetsX,Y
@@ -7371,7 +6893,7 @@ _L_z04_Aquamentus_Draw_LoopSprite:
     ;
     lea     ($0084,A4),A0
     move.b  (A0,D2.W),D0
-    andi.b  #$EE,CCR  ; CLC: clear C+X
+    andi    #$EE,CCR  ; CLC: clear C+X
     lea     (AquamentusSpriteOffsetsY).l,A0
     move.b  (A0,D3.W),D1
     addx.b  D1,D0   ; ADC AquamentusSpriteOffsetsY,Y
@@ -7486,7 +7008,7 @@ UpdateDodongoState0_Move:
     andi.b #$0D,D0
     beq  _L_z04_UpdateDodongoState0_Move_Move
     move.b  ($70,A4,D2.W),D0
-    andi.b  #$EE,CCR  ; CLC: clear C+X
+    andi    #$EE,CCR  ; CLC: clear C+X
     move.b  #$10,D1
     addx.b  D1,D0   ; ADC #$10 (X flag = 6502 C)
     move.b  D0,($70,A4,D2.W)
@@ -7505,7 +7027,7 @@ _L_z04_UpdateDodongoState0_Move_Move:
     ; that represents the position.
     ;
     move.b  (A5)+,D0  ; PLA
-    andi.b  #$EE,CCR  ; CLC: clear C+X
+    andi    #$EE,CCR  ; CLC: clear C+X
     move.b  ($70,A4,D2.W),D1
     addx.b  D1,D0   ; ADC ObjX,X
     move.b  D0,($70,A4,D2.W)
@@ -7582,7 +7104,7 @@ UpdateDodongoState1_Bloated_Sub_Wait:
     ;
     lea     ($0437,A4),A0
     move.b  (A0,D2.W),D0
-    andi.b  #$EE,CCR  ; CLC: clear C+X
+    andi    #$EE,CCR  ; CLC: clear C+X
     move.b  #$01,D1
     addx.b  D1,D0   ; ADC #$01 (X flag = 6502 C)
     lea     ($0437,A4),A0
@@ -7658,7 +7180,7 @@ Dodongo_CheckCollisions:
     ;
     move.b  ($70,A4,D2.W),D0
     move.b  D0,-(A5)  ; PHA
-    andi.b  #$EE,CCR  ; CLC: clear C+X
+    andi    #$EE,CCR  ; CLC: clear C+X
     move.b  #$10,D1
     addx.b  D1,D0   ; ADC #$10 (X flag = 6502 C)
     move.b  D0,($70,A4,D2.W)
@@ -7733,7 +7255,7 @@ Dodongo_CheckBombHit:
     ; Else store (X + $10).
     ;
     move.b  ($70,A4,D2.W),D0
-    andi.b  #$EE,CCR  ; CLC: clear C+X
+    andi    #$EE,CCR  ; CLC: clear C+X
     move.b  #$08,D1
     addx.b  D1,D0   ; ADC #$08 (X flag = 6502 C)
     lea     ($0098,A4),A0
@@ -7843,7 +7365,7 @@ _L_z04_Dodongo_TryEatBomb_LoopLimit:
     ; Add $A to the index to look into the second set for vertical limits.
     ;
     move.b  D3,D0
-    andi.b  #$EE,CCR  ; CLC: clear C+X
+    andi    #$EE,CCR  ; CLC: clear C+X
     move.b  #$0A,D1
     addx.b  D1,D0   ; ADC #$0A (X flag = 6502 C)
     move.b  D0,D3
@@ -7917,7 +7439,7 @@ _L_z04_Dodongo_IsBombInRange_LoopAxis:
     ; The loop index determines the coordinate.
     ;
     move.b  ($00,A4,D3.W),D0
-    ori.b   #$11,CCR  ; SEC: set C+X
+    ori     #$11,CCR  ; SEC: set C+X
 ; [SBC unhandled mode=ABS_Y] SBC $0002, Y
     ; If the distance >= positive offset, or < negative offset;
     ; then loop again.
@@ -8017,7 +7539,7 @@ Dodongo_Draw:
     ; frame images and H-flips.
     ;
     move.b  ($0000,A4),D0
-    andi.b  #$EE,CCR  ; CLC: clear C+X
+    andi    #$EE,CCR  ; CLC: clear C+X
     move.b  #$14,D1
     addx.b  D1,D0   ; ADC #$14 (X flag = 6502 C)
     move.b  D0,D3
@@ -8049,7 +7571,7 @@ _L_z04_Dodongo_Draw_DrawWalking:
     ; in order to index into the second set of frame image numbers.
     ;
     move.b  D3,D0
-    andi.b  #$EE,CCR  ; CLC: clear C+X
+    andi    #$EE,CCR  ; CLC: clear C+X
     move.b  #$05,D1
     addx.b  D1,D0   ; ADC #$05 (X flag = 6502 C)
     move.b  D0,D3
@@ -8099,7 +7621,7 @@ _L_z04_Dodongo_Draw_DrawRightSide:
     ; But, store (X + $10) in [00].
     ;
     move.b  ($70,A4,D2.W),D0
-    andi.b  #$EE,CCR  ; CLC: clear C+X
+    andi    #$EE,CCR  ; CLC: clear C+X
     move.b  #$10,D1
     addx.b  D1,D0   ; ADC #$10 (X flag = 6502 C)
     move.b  D0,($0000,A4)
@@ -8206,7 +7728,7 @@ _anon_z04_94:
     lea     ($03E4,A4),A0
     move.b  (A0,D2.W),D3
     beq  _anon_z04_95
-    andi.b  #$EE,CCR  ; CLC: clear C+X
+    andi    #$EE,CCR  ; CLC: clear C+X
     move.b  #$03,D1
     addx.b  D1,D0   ; ADC #$03 (X flag = 6502 C)
     ; Also if movement frame = 1, and facing up, then flip horizontally.
@@ -8294,7 +7816,7 @@ _L_z04_UpdatePolsVoice_State0:
     ;
     lea     ($0084,A4),A0
     move.b  (A0,D2.W),D0
-    andi.b  #$EE,CCR  ; CLC: clear C+X
+    andi    #$EE,CCR  ; CLC: clear C+X
     lea     (PolsVoiceWalkSpeedsY).l,A0
     move.b  (A0,D3.W),D1
     addx.b  D1,D0   ; ADC PolsVoiceWalkSpeedsY,Y
@@ -8390,7 +7912,7 @@ _anon_z04_98:
     ;
     lea     ($0084,A4),A0
     move.b  (A0,D2.W),D0
-    andi.b  #$EE,CCR  ; CLC: clear C+X
+    andi    #$EE,CCR  ; CLC: clear C+X
     lea     (PolsVoiceDestinationYOffsets).l,A0
     move.b  (A0,D3.W),D1
     addx.b  D1,D0   ; ADC PolsVoiceDestinationYOffsets,Y
@@ -8426,7 +7948,7 @@ UpdatePolsVoiceState1_Jumping:
     ;
     lea     ($0444,A4),A0
     move.b  (A0,D2.W),D0
-    andi.b  #$EE,CCR  ; CLC: clear C+X
+    andi    #$EE,CCR  ; CLC: clear C+X
     move.b  #$38,D1
     addx.b  D1,D0   ; ADC #$38 (X flag = 6502 C)
     lea     ($0444,A4),A0
@@ -8441,7 +7963,7 @@ UpdatePolsVoiceState1_Jumping:
     move.b  D0,(A0,D2.W)
     ; Add high speed byte to Y coordinate.
     ;
-    andi.b  #$EE,CCR  ; CLC: clear C+X
+    andi    #$EE,CCR  ; CLC: clear C+X
     lea     ($0084,A4),A0
     move.b  (A0,D2.W),D1
     addx.b  D1,D0   ; ADC ObjY,X
@@ -8494,7 +8016,7 @@ UpdatePolsVoiceState1_Jumping:
     ; If in the right half, align with the next square.
     ;
     move.b  ($70,A4,D2.W),D0
-    andi.b  #$EE,CCR  ; CLC: clear C+X
+    andi    #$EE,CCR  ; CLC: clear C+X
     move.b  #$08,D1
     addx.b  D1,D0   ; ADC #$08 (X flag = 6502 C)
     andi.b #$F0,D0
@@ -8506,13 +8028,13 @@ UpdatePolsVoiceState1_Jumping:
     ;
     lea     ($0084,A4),A0
     move.b  (A0,D2.W),D0
-    andi.b  #$EE,CCR  ; CLC: clear C+X
+    andi    #$EE,CCR  ; CLC: clear C+X
     move.b  #$08,D1
     addx.b  D1,D0   ; ADC #$08 (X flag = 6502 C)
     andi.b #$F0,D0
     ; Make sure the lower nibble of Y is $D as usual.
     ;
-    ori.b   #$11,CCR  ; SEC: set C+X
+    ori     #$11,CCR  ; SEC: set C+X
     move.b  #$03,D1
     subx.b  D1,D0   ; SBC #$03
     lea     ($0084,A4),A0
@@ -8535,7 +8057,7 @@ PolsVoice_IsSquareWalkable:
     ;
     move.b  ($70,A4,D2.W),D0
     move.b  D0,-(A5)  ; PHA
-    andi.b  #$EE,CCR  ; CLC: clear C+X
+    andi    #$EE,CCR  ; CLC: clear C+X
     move.b  #$0E,D1
     addx.b  D1,D0   ; ADC #$0E (X flag = 6502 C)
     move.b  D0,($70,A4,D2.W)
@@ -8544,7 +8066,7 @@ PolsVoice_IsSquareWalkable:
     lea     ($0084,A4),A0
     move.b  (A0,D2.W),D0
     move.b  D0,-(A5)  ; PHA
-    andi.b  #$EE,CCR  ; CLC: clear C+X
+    andi    #$EE,CCR  ; CLC: clear C+X
     move.b  #$06,D1
     addx.b  D1,D0   ; ADC #$06 (X flag = 6502 C)
     lea     ($0084,A4),A0
@@ -8598,7 +8120,7 @@ PolsVoice_MoveX:
     move.b  (A0,D2.W),D3
     subq.b  #1,D3
     move.b  ($70,A4,D2.W),D0
-    andi.b  #$EE,CCR  ; CLC: clear C+X
+    andi    #$EE,CCR  ; CLC: clear C+X
     lea     (PolsVoiceWalkSpeedsX).l,A0
     move.b  (A0,D3.W),D1
     addx.b  D1,D0   ; ADC PolsVoiceWalkSpeedsX,Y
@@ -8814,7 +8336,7 @@ UpdateVireState0:
     ;
     lea     ($0084,A4),A0
     move.b  (A0,D2.W),D0
-    andi.b  #$EE,CCR  ; CLC: clear C+X
+    andi    #$EE,CCR  ; CLC: clear C+X
     lea     (VireJumpOffsets).l,A0
     move.b  (A0,D3.W),D1
     addx.b  D1,D0   ; ADC VireJumpOffsets,Y
@@ -8862,7 +8384,7 @@ DrawVire:
     andi.b #$08,D0
     lsr.b  #1,D0   ; LSR A
     lsr.b  #1,D0   ; LSR A
-    andi.b  #$EE,CCR  ; CLC: clear C+X
+    andi    #$EE,CCR  ; CLC: clear C+X
     lea     ($03E4,A4),A0
     move.b  (A0,D2.W),D1
     addx.b  D1,D0   ; ADC ObjAnimFrame,X
@@ -9104,14 +8626,14 @@ BlueWizzrobe_Move:
     lea     ($0098,A4),A0
     move.b  (A0,D2.W),D3
     move.b  ($70,A4,D2.W),D0
-    andi.b  #$EE,CCR  ; CLC: clear C+X
+    andi    #$EE,CCR  ; CLC: clear C+X
     lea     (BlueWizzrobeTeleportOffsetsX).l,A0
     move.b  (A0,D3.W),D1
     addx.b  D1,D0   ; ADC BlueWizzrobeTeleportOffsetsX,Y
     move.b  D0,($70,A4,D2.W)
     lea     ($0084,A4),A0
     move.b  (A0,D2.W),D0
-    andi.b  #$EE,CCR  ; CLC: clear C+X
+    andi    #$EE,CCR  ; CLC: clear C+X
     lea     (BlueWizzrobeTeleportOffsetsY).l,A0
     move.b  (A0,D3.W),D1
     addx.b  D1,D0   ; ADC BlueWizzrobeTeleportOffsetsY,Y
@@ -9147,7 +8669,7 @@ BlueWizzrobe_ChooseTeleportTarget:
     ;
     move.b  ($70,A4,D2.W),D0
     move.b  D0,-(A5)  ; PHA
-    andi.b  #$EE,CCR  ; CLC: clear C+X
+    andi    #$EE,CCR  ; CLC: clear C+X
     lea     (BlueWizzrobeTeleportMaxOffsetsX).l,A0
     move.b  (A0,D3.W),D1
     addx.b  D1,D0   ; ADC BlueWizzrobeTeleportMaxOffsetsX,Y
@@ -9158,7 +8680,7 @@ BlueWizzrobe_ChooseTeleportTarget:
     lea     ($0084,A4),A0
     move.b  (A0,D2.W),D0
     move.b  D0,-(A5)  ; PHA
-    andi.b  #$EE,CCR  ; CLC: clear C+X
+    andi    #$EE,CCR  ; CLC: clear C+X
     lea     (BlueWizzrobeTeleportMaxOffsetsY).l,A0
     move.b  (A0,D3.W),D1
     addx.b  D1,D0   ; ADC BlueWizzrobeTeleportMaxOffsetsY,Y
@@ -9221,7 +8743,7 @@ BlueWizzrobe_AlignWithNearestSquare:
     ; Else jump to the next square.
     ;
     move.b  ($70,A4,D2.W),D0
-    andi.b  #$EE,CCR  ; CLC: clear C+X
+    andi    #$EE,CCR  ; CLC: clear C+X
     move.b  #$08,D1
     addx.b  D1,D0   ; ADC #$08 (X flag = 6502 C)
     andi.b #$F0,D0
@@ -9231,7 +8753,7 @@ BlueWizzrobe_AlignWithNearestSquare:
     ;
     lea     ($0084,A4),A0
     move.b  (A0,D2.W),D0
-    andi.b  #$EE,CCR  ; CLC: clear C+X
+    andi    #$EE,CCR  ; CLC: clear C+X
     move.b  #$08,D1
     addx.b  D1,D0   ; ADC #$08 (X flag = 6502 C)
 ; Params:
@@ -9240,7 +8762,7 @@ BlueWizzrobe_AlignWithNearestSquare:
     even
 RedWizzrobe_AlignAndSetY:
     andi.b #$F0,D0
-    ori.b   #$11,CCR  ; SEC: set C+X
+    ori     #$11,CCR  ; SEC: set C+X
     move.b  #$03,D1
     subx.b  D1,D0   ; SBC #$03
     lea     ($0084,A4),A0
@@ -9283,7 +8805,7 @@ Wizzrobe_GetCollidableTileForDir:
     ;
     move.b  ($70,A4,D2.W),D0
     move.b  D0,-(A5)  ; PHA
-    andi.b  #$EE,CCR  ; CLC: clear C+X
+    andi    #$EE,CCR  ; CLC: clear C+X
     lea     (WizzrobeCollisionOffsetsX).l,A0
     move.b  (A0,D3.W),D1
     addx.b  D1,D0   ; ADC WizzrobeCollisionOffsetsX,Y
@@ -9293,7 +8815,7 @@ Wizzrobe_GetCollidableTileForDir:
     lea     ($0084,A4),A0
     move.b  (A0,D2.W),D0
     move.b  D0,-(A5)  ; PHA
-    andi.b  #$EE,CCR  ; CLC: clear C+X
+    andi    #$EE,CCR  ; CLC: clear C+X
     lea     (WizzrobeCollisionOffsetsY).l,A0
     move.b  (A0,D3.W),D1
     addx.b  D1,D0   ; ADC WizzrobeCollisionOffsetsY,Y
@@ -9529,7 +9051,7 @@ UpdateRedWizzrobe_3:
     ; Add the Y offset and Link's Y to set the monster's position.
     ;
     move.b  ($0084,A4),D0
-    andi.b  #$EE,CCR  ; CLC: clear C+X
+    andi    #$EE,CCR  ; CLC: clear C+X
     move.b  #$03,D1
     addx.b  D1,D0   ; ADC #$03 (X flag = 6502 C)
     lea     (RedWizzrobeOffsetsY).l,A0
@@ -9620,7 +9142,7 @@ _anon_z04_106:
 
 _anon_z04_107:
     move.b  (A5)+,D0  ; PLA
-    andi.b  #$EE,CCR  ; CLC: clear C+X
+    andi    #$EE,CCR  ; CLC: clear C+X
     move.b  #$02,D1
     addx.b  D1,D0   ; ADC #$02 (X flag = 6502 C)
     jmp     DrawObjectMirrored
@@ -9810,13 +9332,13 @@ _anon_z04_109:
     ; Its base position is the spawn position.
     ;
     move.b  ($0075,A4),D0
-    andi.b  #$EE,CCR  ; CLC: clear C+X
+    andi    #$EE,CCR  ; CLC: clear C+X
     lea     (ManhandlaSegmentOffsetsX).l,A0
     move.b  (A0,D3.W),D1
     addx.b  D1,D0   ; ADC ManhandlaSegmentOffsetsX,Y
     move.b  D0,($71,A4,D3.W)
     move.b  ($0089,A4),D0
-    andi.b  #$EE,CCR  ; CLC: clear C+X
+    andi    #$EE,CCR  ; CLC: clear C+X
     lea     (ManhandlaSegmentOffsetsY).l,A0
     move.b  (A0,D3.W),D1
     addx.b  D1,D0   ; ADC ManhandlaSegmentOffsetsY,Y
@@ -9884,7 +9406,7 @@ _L_z04_UpdateManhandla_LoopSegment:
     ;
     lea     ($0420,A4),A0
     move.b  (A0,D3.W),D0
-    andi.b  #$EE,CCR  ; CLC: clear C+X
+    andi    #$EE,CCR  ; CLC: clear C+X
     move.b  #$80,D1
     addx.b  D1,D0   ; ADC #$80 (X flag = 6502 C)
     lea     ($0420,A4),A0
@@ -10163,7 +9685,7 @@ Manhandla_Move:
     lea     ($041F,A4),A0
     move.b  (A0,D2.W),D0
     andi.b #$E0,D0
-    andi.b  #$EE,CCR  ; CLC: clear C+X
+    andi    #$EE,CCR  ; CLC: clear C+X
     lea     ($0412,A4),A0
     move.b  (A0,D2.W),D1
     addx.b  D1,D0   ; ADC Manhandla_ObjSpeedAccum,X
@@ -10193,7 +9715,7 @@ Manhandla_Move:
     and.b   D0,D1   ; BIT: set Z/N/V from D1 AND A
     beq  _L_z04_Manhandla_Move_Left
     move.b  ($70,A4,D2.W),D0
-    andi.b  #$EE,CCR  ; CLC: clear C+X
+    andi    #$EE,CCR  ; CLC: clear C+X
     move.b  ($0003,A4),D1
     addx.b  D1,D0   ; ADC $03
     move.b  D0,($70,A4,D2.W)
@@ -10257,7 +9779,7 @@ _L_z04_Manhandla_Move_IncFrameAccum:
     ;
     move.b  ($19,A4,D2.W),D0
     andi.b #$03,D0
-    andi.b  #$EE,CCR  ; CLC: clear C+X
+    andi    #$EE,CCR  ; CLC: clear C+X
     move.b  ($0003,A4),D1
     addx.b  D1,D0   ; ADC $03
     lea     ($0451,A4),A0
@@ -10347,7 +9869,7 @@ _L_z04_UpdateGohma_Move:
     ;
     lea     ($041F,A4),A0
     move.b  (A0,D2.W),D0
-    andi.b  #$EE,CCR  ; CLC: clear C+X
+    andi    #$EE,CCR  ; CLC: clear C+X
     move.b  #$80,D1
     addx.b  D1,D0   ; ADC #$80 (X flag = 6502 C)
     lea     ($041F,A4),A0
@@ -10569,7 +10091,7 @@ Gohma_AnimateAndDraw:
     even
 Gohma_DrawLegsOneSide:
     move.b  ($70,A4,D2.W),D0
-    andi.b  #$EE,CCR  ; CLC: clear C+X
+    andi    #$EE,CCR  ; CLC: clear C+X
     lea     (GohmaLegOffsetsX).l,A0
     move.b  (A0,D3.W),D1
     addx.b  D1,D0   ; ADC GohmaLegOffsetsX,Y
@@ -10593,12 +10115,12 @@ Gohma_DrawLegsOneSide:
     ;
     bsr     Anim_SetObjHFlipForSpriteDescriptor
     move.b  D3,D0
-    andi.b  #$EE,CCR  ; CLC: clear C+X
+    andi    #$EE,CCR  ; CLC: clear C+X
     lea     ($03E4,A4),A0
     move.b  (A0,D2.W),D1
     addx.b  D1,D0   ; ADC ObjAnimFrame,X
     andi.b #$01,D0
-    andi.b  #$EE,CCR  ; CLC: clear C+X
+    andi    #$EE,CCR  ; CLC: clear C+X
     move.b  #$04,D1
     addx.b  D1,D0   ; ADC #$04 (X flag = 6502 C)
     jmp     DrawObjectNotMirrored
@@ -10611,7 +10133,7 @@ Gohma_DrawLegsOneSide:
 Gohma_SetSpriteAttributes:
     lea     ($034F,A4),A0
     move.b  (A0,D2.W),D0
-    ori.b   #$11,CCR  ; SEC: set C+X
+    ori     #$11,CCR  ; SEC: set C+X
     move.b  #$32,D1
     subx.b  D1,D0   ; SBC #$32
     jmp     Anim_SetSpriteDescriptorAttributes
@@ -10625,7 +10147,7 @@ Gohma_CheckCollisions:
     ; Subtract $10 from the X coordinate, so we start checking collisions
     ; on the left side.
     ;
-    ori.b   #$11,CCR  ; SEC: set C+X
+    ori     #$11,CCR  ; SEC: set C+X
     move.b  #$10,D1
     subx.b  D1,D0   ; SBC #$10
     move.b  D0,($70,A4,D2.W)
@@ -10640,7 +10162,7 @@ _L_z04_Gohma_CheckCollisions_LoopSprite:
     ; Add 8 to the X coordinate for the next part.
     ;
     move.b  ($70,A4,D2.W),D0
-    andi.b  #$EE,CCR  ; CLC: clear C+X
+    andi    #$EE,CCR  ; CLC: clear C+X
     move.b  #$08,D1
     addx.b  D1,D0   ; ADC #$08 (X flag = 6502 C)
     move.b  D0,($70,A4,D2.W)
@@ -10797,7 +10319,7 @@ UpdateGleeok:
     ; Subtract $42 (Gleeok1) from ObjType[1].
     ;
     move.b  ($0350,A4),D0
-    ori.b   #$11,CCR  ; SEC: set C+X
+    ori     #$11,CCR  ; SEC: set C+X
     move.b  #$42,D1
     subx.b  D1,D0   ; SBC #$42
     ; For each neck, counting down:
@@ -10975,7 +10497,7 @@ Gleeok_MoveNeck:
     ; Get the H-distance from the head to the base.
     ;
     move.b  ($0075,A4),D0
-    ori.b   #$11,CCR  ; SEC: set C+X
+    ori     #$11,CCR  ; SEC: set C+X
     move.b  ($0071,A4),D1
     subx.b  D1,D0   ; SBC ObjX+1
     ; If the difference is positive, then go divide by 4 unsigned.
@@ -11005,7 +10527,7 @@ L_Gleeok_StoreRefSegDistance:
     ; and divide it be 4.
     ;
     move.b  ($0089,A4),D0
-    ori.b   #$11,CCR  ; SEC: set C+X
+    ori     #$11,CCR  ; SEC: set C+X
     move.b  ($0085,A4),D1
     subx.b  D1,D0   ; SBC ObjY+1
     bsr     Abs
@@ -11029,7 +10551,7 @@ _L_z04_L_Gleeok_StoreRefSegDistance_KeepSegsNearNeighbors:
     ; and the previous one.
     ;
     move.b  ($71,A4,D2.W),D0
-    ori.b   #$11,CCR  ; SEC: set C+X
+    ori     #$11,CCR  ; SEC: set C+X
 ; [SBC unhandled mode=ABS_X] SBC ObjX+2, X
     bsr     Abs
     ; If H-distance < third tier H-distance, then this distance is OK.
@@ -11061,7 +10583,7 @@ _L_z04_L_Gleeok_StoreRefSegDistance_CheckDistanceV:
     ;
     lea     ($0085,A4),A0
     move.b  (A0,D2.W),D0
-    ori.b   #$11,CCR  ; SEC: set C+X
+    ori     #$11,CCR  ; SEC: set C+X
 ; [SBC unhandled mode=ABS_X] SBC ObjY+2, X
     bsr     Abs
     ; If V-distance < third tier V-distance, then this distance is OK.
@@ -11122,7 +10644,7 @@ _L_z04_L_Gleeok_StoreRefSegDistance_KeepSegsNearRefPoint:
     move.b  D0,D3
     move.b  ($0071,A4),D0
 _anon_z04_130:
-    andi.b  #$EE,CCR  ; CLC: clear C+X
+    andi    #$EE,CCR  ; CLC: clear C+X
     move.b  ($04D8,A4),D1
     addx.b  D1,D0   ; ADC GleeokSignedRefSegmentDistance
     subq.b  #1,D3
@@ -11197,7 +10719,7 @@ _anon_z04_132:
     move.b  D0,(A0,D2.W)
     ; Add 4 and store secondary distance, capped at 8.
     ;
-    andi.b  #$EE,CCR  ; CLC: clear C+X
+    andi    #$EE,CCR  ; CLC: clear C+X
     move.b  #$04,D1
     addx.b  D1,D0   ; ADC #$04 (X flag = 6502 C)
     cmpi.b  #$08,D0
@@ -11208,7 +10730,7 @@ _anon_z04_133:
     move.b  D0,(A0,D2.W)
     ; Add 4 and store tertiary distance, capped at $B.
     ;
-    andi.b  #$EE,CCR  ; CLC: clear C+X
+    andi    #$EE,CCR  ; CLC: clear C+X
     move.b  #$04,D1
     addx.b  D1,D0   ; ADC #$04 (X flag = 6502 C)
     cmpi.b  #$0B,D0
@@ -11235,7 +10757,7 @@ Gleeok_StretchNeck:
     ; then increment the routine index.
     ;
     move.b  ($73,A4,D2.W),D0
-    ori.b   #$11,CCR  ; SEC: set C+X
+    ori     #$11,CCR  ; SEC: set C+X
 ; [SBC unhandled mode=ABS_X] SBC ObjX+3, X               ; UNKNOWN: This should probably be ObjX+2, as with ObjY below.
     bsr     Abs
     move.b  ($04D9,A4),D1
@@ -11258,7 +10780,7 @@ _anon_z04_136:
     ;
     lea     ($0087,A4),A0
     move.b  (A0,D2.W),D0
-    ori.b   #$11,CCR  ; SEC: set C+X
+    ori     #$11,CCR  ; SEC: set C+X
 ; [SBC unhandled mode=ABS_X] SBC ObjY+2, X
     bsr     Abs
     move.b  ($04DA,A4),D1
@@ -11410,7 +10932,7 @@ Gleeok_WriteHeadOrBaseSpriteAndCheckCollisions:
     ;
     cmpi.b  #$05,D2
     beq  _anon_z04_139
-    andi.b  #$EE,CCR  ; CLC: clear C+X
+    andi    #$EE,CCR  ; CLC: clear C+X
     move.b  #$20,D1
     addx.b  D1,D0   ; ADC #$20 (X flag = 6502 C)
 _anon_z04_139:
@@ -11495,7 +11017,7 @@ _anon_z04_142:
     ; Switch the X register to it.
     ;
     move.b  ($04D7,A4),D0
-    andi.b  #$EE,CCR  ; CLC: clear C+X
+    andi    #$EE,CCR  ; CLC: clear C+X
     move.b  #$07,D1
     addx.b  D1,D0   ; ADC #$07 (X flag = 6502 C)
     move.b  D0,D2
@@ -11560,7 +11082,7 @@ _anon_z04_143:
     ; (object type - $41).
     ;
     move.b  ($0350,A4),D0
-    ori.b   #$11,CCR  ; SEC: set C+X
+    ori     #$11,CCR  ; SEC: set C+X
     move.b  #$41,D1
     subx.b  D1,D0   ; SBC #$41
     move.b  ($0000,A4),D1
@@ -11691,14 +11213,14 @@ Gleeok_DecHeadTimer:
     even
 Gleeok_ChangeCoordinateBySpeedFlag:
     bne  _L_z04_Gleeok_ChangeCoordinateBySpeedFlag_Subtract
-    andi.b  #$EE,CCR  ; CLC: clear C+X
+    andi    #$EE,CCR  ; CLC: clear C+X
     move.b  #$01,D1
     addx.b  D1,D0   ; ADC #$01 (X flag = 6502 C)
     rts
 
     even
 _L_z04_Gleeok_ChangeCoordinateBySpeedFlag_Subtract:
-    ori.b   #$11,CCR  ; SEC: set C+X
+    ori     #$11,CCR  ; SEC: set C+X
     move.b  #$01,D1
     subx.b  D1,D0   ; SBC #$01
     rts
@@ -11749,7 +11271,7 @@ _anon_z04_144:
     ; Cycle the animation frame from 0 to 3.
     ;
     move.b  ($04E7,A4),D0
-    andi.b  #$EE,CCR  ; CLC: clear C+X
+    andi    #$EE,CCR  ; CLC: clear C+X
     move.b  #$01,D1
     addx.b  D1,D0   ; ADC #$01 (X flag = 6502 C)
     andi.b #$03,D0
@@ -11928,7 +11450,7 @@ _anon_z04_147:
     ;
     move.b  ($0350,A4),D0
     move.b  D0,($04E7,A4)
-    ori.b   #$11,CCR  ; SEC: set C+X
+    ori     #$11,CCR  ; SEC: set C+X
     move.b  #$39,D1
     subx.b  D1,D0   ; SBC #$39
     move.b  D0,($04E6,A4)
@@ -12133,7 +11655,7 @@ _L_z04_UpdateLamnola_DrawAndCheckCollisions:
     ; Each segment is a full 16x16 object. But, it's drawn as a narrow,
     ; half-width object. So, center it by temporarily adding 4 to X.
     ;
-    andi.b  #$EE,CCR  ; CLC: clear C+X
+    andi    #$EE,CCR  ; CLC: clear C+X
     move.b  #$04,D1
     addx.b  D1,D0   ; ADC #$04 (X flag = 6502 C)
     move.b  D0,($70,A4,D2.W)
@@ -12244,7 +11766,7 @@ Lamnola_UpdateHead:
     ;
     lea     ($0084,A4),A0
     move.b  (A0,D2.W),D0
-    andi.b  #$EE,CCR  ; CLC: clear C+X
+    andi    #$EE,CCR  ; CLC: clear C+X
     move.b  #$03,D1
     addx.b  D1,D0   ; ADC #$03 (X flag = 6502 C)
     andi.b #$07,D0
@@ -12282,7 +11804,7 @@ _L_z04_Lamnola_UpdateHead_PropagateDirs:
     ;
     lea     ($0084,A4),A0
     move.b  (A0,D2.W),D0
-    andi.b  #$EE,CCR  ; CLC: clear C+X
+    andi    #$EE,CCR  ; CLC: clear C+X
     move.b  #$03,D1
     addx.b  D1,D0   ; ADC #$03 (X flag = 6502 C)
     andi.b #$0F,D0
@@ -12420,7 +11942,7 @@ _L_z04_Lamnola_UpdateHead_TurnTowardLink:
     moveq   #1,D0
     move.b  D0,($0002,A4)
     move.b  ($0070,A4),D0
-    ori.b   #$11,CCR  ; SEC: set C+X
+    ori     #$11,CCR  ; SEC: set C+X
 ; [SBC unhandled mode=ABS_X] SBC ObjX, X
     bcc  _anon_z04_153
     move.b  ($0002,A4),D1
@@ -12432,7 +11954,7 @@ _anon_z04_153:
     moveq   #4,D0
     move.b  D0,($0003,A4)
     move.b  ($0084,A4),D0
-    ori.b   #$11,CCR  ; SEC: set C+X
+    ori     #$11,CCR  ; SEC: set C+X
 ; [SBC unhandled mode=ABS_X] SBC ObjY, X
     bcc  _anon_z04_154
     move.b  ($0003,A4),D1
@@ -12483,7 +12005,7 @@ Lamnola_Move:
     and.b   D0,D1   ; BIT: set Z/N/V from D1 AND A
     beq  _L_z04_Lamnola_Move_Left
     move.b  ($70,A4,D2.W),D0
-    andi.b  #$EE,CCR  ; CLC: clear C+X
+    andi    #$EE,CCR  ; CLC: clear C+X
     move.b  ($04E6,A4),D1
     addx.b  D1,D0   ; ADC Lamnola_Speed
     move.b  D0,($70,A4,D2.W)
@@ -12698,7 +12220,7 @@ UpdatePatraChild:
     ; Subtract 3 from the object slot to get the angle where the
     ; patra child in object slot 2 should be for the current one to appear.
     ;
-    ori.b   #$11,CCR  ; SEC: set C+X
+    ori     #$11,CCR  ; SEC: set C+X
     move.b  #$03,D1
     subx.b  D1,D0   ; SBC #$03
     move.b  D0,D3
@@ -12753,7 +12275,7 @@ _anon_z04_158:
     ; Set Y coordinate to (Patra's Y - [00]).
     ;
     move.b  ($0085,A4),D0
-    ori.b   #$11,CCR  ; SEC: set C+X
+    ori     #$11,CCR  ; SEC: set C+X
     move.b  ($0000,A4),D1
     subx.b  D1,D0   ; SBC $00
     lea     ($0084,A4),A0
@@ -12767,13 +12289,13 @@ PatraChild_State1:
     ; Add Patra's distance traveled since the last frame to this child's coordinates.
     ;
     move.b  ($70,A4,D2.W),D0
-    andi.b  #$EE,CCR  ; CLC: clear C+X
+    andi    #$EE,CCR  ; CLC: clear C+X
     move.b  ($046C,A4),D1
     addx.b  D1,D0   ; ADC Flyer_ObjOffsetX+1
     move.b  D0,($70,A4,D2.W)
     lea     ($0084,A4),A0
     move.b  (A0,D2.W),D0
-    andi.b  #$EE,CCR  ; CLC: clear C+X
+    andi    #$EE,CCR  ; CLC: clear C+X
     move.b  ($0479,A4),D1
     addx.b  D1,D0   ; ADC Flyer_ObjOffsetY+1
     lea     ($0084,A4),A0
@@ -13181,7 +12703,7 @@ _L_z04_Ganon_SetUpBurstRays_LoopRay:
     ; Start each piece at offset (4, 4) from Ganon's location.
     ;
     move.b  ($70,A4,D2.W),D0
-    andi.b  #$EE,CCR  ; CLC: clear C+X
+    andi    #$EE,CCR  ; CLC: clear C+X
     move.b  #$04,D1
     addx.b  D1,D0   ; ADC #$04 (X flag = 6502 C)
     move.b  D0,($72,A4,D3.W)
@@ -13337,7 +12859,7 @@ _anon_z04_164:
     even
 Ganon_GetCurCloudLeft:
     move.b  ($70,A4,D2.W),D0
-    ori.b   #$11,CCR  ; SEC: set C+X
+    ori     #$11,CCR  ; SEC: set C+X
 ; [SBC unhandled mode=ABS_X] SBC Ganon_ObjCloudDist, X
     move.b  D0,($0000,A4)
     rts
@@ -13348,7 +12870,7 @@ Ganon_GetCurCloudLeft:
     even
 Ganon_GetCurCloudRight:
     move.b  ($70,A4,D2.W),D0
-    andi.b  #$EE,CCR  ; CLC: clear C+X
+    andi    #$EE,CCR  ; CLC: clear C+X
     lea     ($0478,A4),A0
     move.b  (A0,D2.W),D1
     addx.b  D1,D0   ; ADC Ganon_ObjCloudDist,X
@@ -13362,7 +12884,7 @@ Ganon_GetCurCloudRight:
 Ganon_GetCurCloudTop:
     lea     ($0084,A4),A0
     move.b  (A0,D2.W),D0
-    ori.b   #$11,CCR  ; SEC: set C+X
+    ori     #$11,CCR  ; SEC: set C+X
 ; [SBC unhandled mode=ABS_X] SBC Ganon_ObjCloudDist, X
     move.b  D0,($0001,A4)
     rts
@@ -13374,7 +12896,7 @@ Ganon_GetCurCloudTop:
 Ganon_GetCurCloudBottom:
     lea     ($0084,A4),A0
     move.b  (A0,D2.W),D0
-    andi.b  #$EE,CCR  ; CLC: clear C+X
+    andi    #$EE,CCR  ; CLC: clear C+X
     lea     ($0478,A4),A0
     move.b  (A0,D2.W),D1
     addx.b  D1,D0   ; ADC Ganon_ObjCloudDist,X
@@ -13410,7 +12932,7 @@ _L_z04_Ganon_DrawBody_LoopCorner:
     ; Add an offset to Ganon's X, and store the result in [00] -- the sprite's X.
     ;
     move.b  ($70,A4,D2.W),D0
-    andi.b  #$EE,CCR  ; CLC: clear C+X
+    andi    #$EE,CCR  ; CLC: clear C+X
     lea     (GanonSpriteOffsetsX).l,A0
     move.b  (A0,D3.W),D1
     addx.b  D1,D0   ; ADC GanonSpriteOffsetsX,Y
@@ -13419,7 +12941,7 @@ _L_z04_Ganon_DrawBody_LoopCorner:
     ;
     lea     ($0084,A4),A0
     move.b  (A0,D2.W),D0
-    andi.b  #$EE,CCR  ; CLC: clear C+X
+    andi    #$EE,CCR  ; CLC: clear C+X
     lea     (GanonSpriteOffsetsY).l,A0
     move.b  (A0,D3.W),D1
     addx.b  D1,D0   ; ADC GanonSpriteOffsetsY,Y
@@ -13466,13 +12988,13 @@ Ganon_CheckCollisions:
     ; Store in [02] and [03].
     ;
     move.b  ($70,A4,D2.W),D0
-    andi.b  #$EE,CCR  ; CLC: clear C+X
+    andi    #$EE,CCR  ; CLC: clear C+X
     move.b  #$10,D1
     addx.b  D1,D0   ; ADC #$10 (X flag = 6502 C)
     move.b  D0,($0002,A4)
     lea     ($0084,A4),A0
     move.b  (A0,D2.W),D0
-    andi.b  #$EE,CCR  ; CLC: clear C+X
+    andi    #$EE,CCR  ; CLC: clear C+X
     move.b  #$10,D1
     addx.b  D1,D0   ; ADC #$10 (X flag = 6502 C)
     move.b  D0,($0003,A4)
@@ -13850,7 +13372,7 @@ _L_z04_SetUpDroppedItem_LookUpItem:
     move.b  ($0001,A4),D3
     lea     (DropItemSetBaseOffsets).l,A0
     move.b  (A0,D3.W),D0
-    andi.b  #$EE,CCR  ; CLC: clear C+X
+    andi    #$EE,CCR  ; CLC: clear C+X
     move.b  ($052A,A4),D1
     addx.b  D1,D0   ; ADC WorldKillCycle
     move.b  D0,D3
@@ -14138,14 +13660,14 @@ Shoot:
     move.b  D0,(A0,D3.W)
     ; Return C=1.
     ;
-    ori.b   #$11,CCR  ; SEC: set C+X
+    ori     #$11,CCR  ; SEC: set C+X
     rts
 
     even
 ReturnDidNotShoot:
     ; Return C=0.
     ;
-    andi.b  #$EE,CCR  ; CLC: clear C+X
+    andi    #$EE,CCR  ; CLC: clear C+X
     rts
 
     even
@@ -14359,7 +13881,7 @@ MoveFlyer:
     lea     ($041F,A4),A0
     move.b  (A0,D2.W),D0
     andi.b #$E0,D0
-    andi.b  #$EE,CCR  ; CLC: clear C+X
+    andi    #$EE,CCR  ; CLC: clear C+X
     lea     ($0412,A4),A0
     move.b  (A0,D2.W),D1
     addx.b  D1,D0   ; ADC Flyer_ObjSpeedFrac,X
@@ -14463,7 +13985,7 @@ ReverseObjDir8:
     ;
     bsr     GetObjDir8Index
     move.b  D3,D0
-    andi.b  #$EE,CCR  ; CLC: clear C+X
+    andi    #$EE,CCR  ; CLC: clear C+X
     move.b  #$04,D1
     addx.b  D1,D0   ; ADC #$04 (X flag = 6502 C)
     andi.b #$07,D0
@@ -14784,7 +14306,7 @@ RotateObjectLocation:
     ;
     lea     ($0412,A4),A0
     move.b  (A0,D2.W),D0
-    ori.b   #$11,CCR  ; SEC: set C+X
+    ori     #$11,CCR  ; SEC: set C+X
     move.b  ($0002,A4),D1
     subx.b  D1,D0   ; SBC $02
     lea     ($0412,A4),A0
@@ -14803,7 +14325,7 @@ _L_z04_RotateObjectLocation_AddToX:
     ;
     lea     ($0412,A4),A0
     move.b  (A0,D2.W),D0
-    andi.b  #$EE,CCR  ; CLC: clear C+X
+    andi    #$EE,CCR  ; CLC: clear C+X
     move.b  ($0002,A4),D1
     addx.b  D1,D0   ; ADC $02
     lea     ($0412,A4),A0
@@ -14823,7 +14345,7 @@ _L_z04_RotateObjectLocation_SetXRotateY:
     ;
     lea     ($0394,A4),A0
     move.b  (A0,D2.W),D0
-    andi.b  #$EE,CCR  ; CLC: clear C+X
+    andi    #$EE,CCR  ; CLC: clear C+X
     move.b  #$08,D1
     addx.b  D1,D0   ; ADC #$08 (X flag = 6502 C)
     andi.b #$0F,D0
@@ -14843,7 +14365,7 @@ _L_z04_RotateObjectLocation_SetXRotateY:
     ;
     lea     ($0394,A4),A0
     move.b  (A0,D2.W),D0
-    ori.b   #$11,CCR  ; SEC: set C+X
+    ori     #$11,CCR  ; SEC: set C+X
     move.b  #$08,D1
     subx.b  D1,D0   ; SBC #$08
     andi.b #$18,D0
@@ -14853,7 +14375,7 @@ _L_z04_RotateObjectLocation_SetXRotateY:
     ;
     lea     ($041F,A4),A0
     move.b  (A0,D2.W),D0
-    ori.b   #$11,CCR  ; SEC: set C+X
+    ori     #$11,CCR  ; SEC: set C+X
     move.b  ($0002,A4),D1
     subx.b  D1,D0   ; SBC $02
     lea     ($041F,A4),A0
@@ -14873,7 +14395,7 @@ _L_z04_RotateObjectLocation_AddToY:
     ;
     lea     ($041F,A4),A0
     move.b  (A0,D2.W),D0
-    andi.b  #$EE,CCR  ; CLC: clear C+X
+    andi    #$EE,CCR  ; CLC: clear C+X
     move.b  ($0002,A4),D1
     addx.b  D1,D0   ; ADC $02
     lea     ($041F,A4),A0
@@ -14913,7 +14435,7 @@ _L_z04_ShiftMultiply_Loop:
     move.b  D1,($0000,A4)
     bcc  _L_z04_ShiftMultiply_Next
     move.b  ($0002,A4),D0
-    andi.b  #$EE,CCR  ; CLC: clear C+X
+    andi    #$EE,CCR  ; CLC: clear C+X
     move.b  ($0001,A4),D1
     addx.b  D1,D0   ; ADC $01
     move.b  D0,($0002,A4)
@@ -14939,7 +14461,7 @@ DecreaseObjectAngle:
     move.b  D0,($000A,A4)
     lea     ($0380,A4),A0
     move.b  (A0,D2.W),D0
-    ori.b   #$11,CCR  ; SEC: set C+X
+    ori     #$11,CCR  ; SEC: set C+X
     move.b  ($000A,A4),D1
     subx.b  D1,D0   ; SBC $0A
     lea     ($0380,A4),A0
@@ -14985,316 +14507,4 @@ DecreaseObjectAngle:
 
 ; Unknown block
     dc.b    $84, $E4, $50, $BF, $F0, $BF
-
-
-;==============================================================================
-; Import stubs (T2: defined locally so the file assembles standalone)
-;==============================================================================
-    even
-_CalcDiagonalSpeedIndex:
-    rts
-
-    even
-Abs:
-    rts
-
-    even
-Anim_EndWriteSprite:
-    rts
-
-    even
-Anim_SetSpriteDescriptorAttributes:
-    rts
-
-    even
-Anim_SetSpriteDescriptorRedPaletteRow:
-    rts
-
-    even
-Anim_WriteItemSprites:
-    rts
-
-    even
-Anim_WriteLevelPaletteSprite:
-    rts
-
-    even
-Anim_WriteSpecificSprite:
-    rts
-
-    even
-Anim_WriteSprite:
-    rts
-
-    even
-Anim_WriteStaticItemSpritesWithAttributes:
-    rts
-
-    even
-AnimateWorldFading:
-    rts
-
-    even
-BoundByRoom:
-    rts
-
-    even
-BoundByRoomWithA:
-    rts
-
-    even
-BoundDirectionHorizontally:
-    rts
-
-    even
-BoundDirectionVertically:
-    rts
-
-    even
-CheckLinkCollision:
-    rts
-
-    even
-CheckLinkCollisionPreinit:
-    rts
-
-    even
-CheckMonsterArrowOrRodCollision:
-    rts
-
-    even
-CheckMonsterBombOrFireCollision:
-    rts
-
-    even
-CheckMonsterCollisions:
-    rts
-
-    even
-CheckMonsterSwordCollision:
-    rts
-
-    even
-CheckMonsterSwordShotOrMagicShotCollision:
-    rts
-
-    even
-CycleCurSpriteIndex:
-    rts
-
-    even
-DealDamage:
-    rts
-
-    even
-DoObjectsCollide:
-    rts
-
-    even
-DrawObjectMirrored:
-    rts
-
-    even
-DrawObjectNotMirrored:
-    rts
-
-    even
-DrawObjectWithAnimAndSpecificSprites:
-    rts
-
-    even
-GetDirectionsAndDistancesToTarget:
-    rts
-
-    even
-GetObjectMiddle:
-    rts
-
-    even
-GetOppositeDir:
-    rts
-
-    even
-GetRoomFlagUWItemState:
-    rts
-
-    even
-GetShortcutOrItemXYForRoom:
-    rts
-
-    even
-Negate:
-    rts
-
-    even
-Person_Draw:
-    rts
-
-    even
-PlaySample:
-    rts
-
-    even
-ResetShoveInfoAndInvincibilityTimer:
-    rts
-
-    even
-ShowLinkSpritesBehindHorizontalDoors:
-    rts
-
-    even
-SpriteOffsets:
-    rts
-
-    even
-SpriteRelativeExtents:
-    rts
-
-    even
-TryTakeItem:
-    rts
-
-    even
-WriteBlankPrioritySprites:
-    rts
-
-    even
-_FaceUnblockedDir:
-    rts
-
-    even
-Anim_AdvanceAnimCounterAndSetObjPosForSpriteDescriptor:
-    rts
-
-    even
-Anim_FetchObjPosForSpriteDescriptor:
-    rts
-
-    even
-Anim_SetObjHFlipForSpriteDescriptor:
-    rts
-
-    even
-AnimateItemObject:
-    rts
-
-    even
-AnimateObjectWalking:
-    rts
-
-    even
-ChangeTileObjTiles:
-    rts
-
-    even
-DestroyMonster:
-    rts
-
-    even
-DrawArrow:
-    rts
-
-    even
-DrawSwordShotOrMagicShot:
-    rts
-
-    even
-FillTileMap:
-    rts
-
-    even
-FindEmptyMonsterSlot:
-    rts
-
-    even
-GetCollidableTile:
-    rts
-
-    even
-GetCollidableTileStill:
-    rts
-
-    even
-GetCollidingTileMoving:
-    rts
-
-    even
-GetRoomFlags:
-    rts
-
-    even
-GetUniqueRoomId:
-    rts
-
-    even
-GoToNextModeFromPlay:
-    rts
-
-    even
-LevelMasks:
-    rts
-
-    even
-Link_EndMoveAndAnimate_Bank4:
-    rts
-
-    even
-Link_EndMoveAndDraw_Bank4:
-    rts
-
-    even
-MarkRoomVisited:
-    rts
-
-    even
-MoveObject:
-    rts
-
-    even
-Obj_Shove:
-    rts
-
-    even
-ResetObjMetastate:
-    rts
-
-    even
-ResetObjMetastateAndTimer:
-    rts
-
-    even
-ResetObjState:
-    rts
-
-    even
-ResetShoveInfo:
-    rts
-
-    even
-ReverseObjDir:
-    rts
-
-    even
-SetShoveInfoWith0:
-    rts
-
-    even
-SetTypeAndClearObject:
-    rts
-
-    even
-TableJump:
-    rts
-
-    even
-UpdateArrowOrBoomerang:
-    rts
-
-    even
-UpdateDeadDummy:
-    rts
-
-    even
-Walker_Move:
-    rts
 

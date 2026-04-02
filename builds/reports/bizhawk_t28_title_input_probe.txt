@@ -1,0 +1,32 @@
+=================================================================
+T28: Title Input Probe  —  up to 400 frames
+=================================================================
+  LoopForever=$01660C  ExcBus=$000366  ExcAddr=$000388  ExcDef=$0003AA
+  Start button injected frames 90–130
+
+  Mode byte ($FF0012): frame-80=00  frame-100=00  final=00
+  NMI count:     start=3  end=55  delta=52
+  CheckInput:    start=3  end=55  delta=52
+  Button regs:   $F8=00 (held)  $FA=CF (new-press)
+  CTL1_LATCH=$F3  CTL1_IDX=8
+
+─── T28: Title Input Tests ──────────────────────────────────────
+[PASS] T28_NO_EXCEPTION                no exception handler hit
+[PASS] T28_NMI_CONTINUOUS              NMI advanced 52 over frames 80–400 — no hang
+[FAIL] T28_TITLE_MODE                  mode=$00 at frame 80 — expected $01 (title)
+[FAIL] T28_MODE_ADVANCE                mode stayed $00 — Start press may not have registered
+[PASS] T28_CI_POST_TRANSITION          CheckInput advanced 52 past transition — input loop intact
+
+=================================================================
+T28 TITLE INPUT SUMMARY
+=================================================================
+  [PASS] T28_NO_EXCEPTION
+  [PASS] T28_NMI_CONTINUOUS
+  [FAIL] T28_TITLE_MODE
+  [FAIL] T28_MODE_ADVANCE
+  [PASS] T28_CI_POST_TRANSITION
+
+  3 PASS  /  2 FAIL  /  5 total
+
+T28 TITLE INPUT: 2 FAILURE(S)
+

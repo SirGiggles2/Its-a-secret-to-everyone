@@ -1,0 +1,76 @@
+=================================================================
+T24: Sprite Decode Probe  —  up to 600 frames
+=================================================================
+  LoopForever=$01652C  ExcBus=$000366  ExcAddr=$000388  ExcDef=$0003AA
+
+  f001 pc=$000306  NMI=0  TCP=0  disp=-
+  f002 pc=$000306  NMI=0  TCP=0  disp=-
+  f003 pc=$0002FE  NMI=0  TCP=0  disp=-
+  f004 pc=$000306  NMI=0  TCP=0  disp=-
+  f005 pc=$0002FE  NMI=0  TCP=0  disp=-
+  f060 pc=$00070C  NMI=2  TCP=2  disp=32
+  f120 pc=$00159A  NMI=7  TCP=7  disp=32
+  f180 pc=$0015E0  NMI=7  TCP=7  disp=32
+  f240 pc=$00161E  NMI=7  TCP=7  disp=32
+  f300 pc=$001562  NMI=7  TCP=7  disp=32
+  f360 pc=$001596  NMI=7  TCP=7  disp=32
+  f420 pc=$0015DA  NMI=7  TCP=7  disp=32
+  f480 pc=$00161A  NMI=7  TCP=7  disp=32
+  f540 pc=$00155E  NMI=7  TCP=7  disp=32
+  f600 pc=$0015B2  NMI=7  TCP=7  disp=32
+  Display enabled at frame 32 — waiting 10 more frames...
+
+  NMI debug counter ($FF1003) = 7
+  TCP debug counter ($FF1007) = 7
+
+─── VRAM CHR Tile Survey ($0000-$1FFF = 256 tiles) ──────────────
+  Tiles with non-zero data: 70 / 256
+  First non-zero tiles:
+    tile   0 ($0000): 12/32 non-zero bytes
+    tile   1 ($0020): 18/32 non-zero bytes
+    tile   2 ($0040): 15/32 non-zero bytes
+    tile   3 ($0060): 21/32 non-zero bytes
+    tile   4 ($0080): 12/32 non-zero bytes
+    tile   5 ($00A0): 20/32 non-zero bytes
+    tile   6 ($00C0): 20/32 non-zero bytes
+    tile   7 ($00E0): 15/32 non-zero bytes
+
+─── VRAM Tile 1 ($0020-$003F) 4bpp detail ───────────────────────
+  row0: 00 00 00 00
+  row1: 00 03 20 03 *
+  row2: 00 23 3A 23 *
+  row3: 00 23 3A 23 *
+  row4: 00 03 3A 20 *
+  row5: 3A 00 00 03 *
+  row6: 3A 20 00 00 *
+  row7: 1A 23 00 00 *
+  Tile 1: 18/32 non-zero bytes, 7/8 non-zero rows
+
+  SAT sprite 0: Y=377 link=1 tw=$8000 X=128
+
+─── T24: Sprite Decode Tests ────────────────────────────────────
+[PASS] T24_NO_EXCEPTION              no exception handler hit
+[PASS] T24_LOOPFOREVER_HIT           frame 31
+[PASS] T24_DISPLAY_ON                display enabled at frame 32
+[PASS] T24_NMI_COUNT                 NMI debug counter=7 — IsrNmi+_oam_dma has executed
+[PASS] T24_TILE1_CHR                 VRAM tile 1 has 18/32 non-zero bytes — CHR decode correct
+[PASS] T24_TILE1_STRUCTURE           tile 1 has 7/8 non-zero rows — 4bpp row structure valid
+[PASS] T24_MULTI_TILES               70/256 VRAM tiles have non-zero data — CHR upload decoded correctly
+[PASS] T24_SAT_ACTIVE                SAT sprite 0 link=1 — sprite chain active
+
+=================================================================
+T24 SPRITE DECODE SUMMARY
+=================================================================
+  [PASS] T24_NO_EXCEPTION
+  [PASS] T24_LOOPFOREVER_HIT
+  [PASS] T24_DISPLAY_ON
+  [PASS] T24_NMI_COUNT
+  [PASS] T24_TILE1_CHR
+  [PASS] T24_TILE1_STRUCTURE
+  [PASS] T24_MULTI_TILES
+  [PASS] T24_SAT_ACTIVE
+
+  8 PASS  /  0 FAIL  /  8 total
+
+T24 SPRITE DECODE: ALL PASS
+

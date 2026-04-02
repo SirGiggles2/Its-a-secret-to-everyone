@@ -15,492 +15,12 @@
 ;   A5 = NES stack pointer ($FF0200 initially, grows downward)
 ;==============================================================================
 
-NES_RAM         equ $FF0000
-NES_SRAM        equ $FF6000
-NES_STACK_BASE  equ $FF0100
-
+; (fixed equates omitted — provided by z_07.asm in --all build)
 ;==============================================================================
 ; NES RAM variable offsets (used as (offset,A4) — A4=NES_RAM)
 ; Source: Variables.inc + CommonVars.inc
 ;==============================================================================
-GLEEOK_DIRCOUNTERH                      equ $0000  ; NES RAM offset
-GLEEOK_DIRCOUNTERV                      equ $0001  ; NES RAM offset
-GLEEOK_SPEEDX                           equ $0002  ; NES RAM offset
-GLEEOK_SPEEDY                           equ $0003  ; NES RAM offset
-GLEEOK_DIRCHANGECOUNTER                 equ $0004  ; NES RAM offset
-GLEEOK_DELAY                            equ $0005  ; NES RAM offset
-CurLevel                                equ $0010  ; NES RAM offset
-IsUpdatingMode                          equ $0011  ; NES RAM offset
-GameMode                                equ $0012  ; NES RAM offset
-GameSubmode                             equ $0013  ; NES RAM offset
-TileBufSelector                         equ $0014  ; NES RAM offset
-FrameCounter                            equ $0015  ; NES RAM offset
-CurSaveSlot                             equ $0016  ; NES RAM offset
-Random                                  equ $0018  ; NES RAM offset
-StunCycle                               equ $0026  ; NES RAM offset
-DoorTimer                               equ $0027  ; NES RAM offset
-ObjTimer                                equ $0028  ; NES RAM offset
-FluteTimer                              equ $003C  ; NES RAM offset
-ObjStunTimer                            equ $003D  ; NES RAM offset
-ChaseLongTimer                          equ $004A  ; NES RAM offset
-MonstersFromEdgesLongTimer              equ $004B  ; NES RAM offset
-SwordBlockedLongTimer                   equ $004C  ; NES RAM offset
-RedLeeverLongTimer                      equ $004D  ; NES RAM offset
-EndingFlashLongTimer                    equ $004D  ; NES RAM offset
-HelpDropCount                           equ $0050  ; NES RAM offset
-HelpDropValue                           equ $0051  ; NES RAM offset
-ProcessedNarrowObj                      equ $0052  ; NES RAM offset
-DoorwayDir                              equ $0053  ; NES RAM offset
-TriggeredDoorCmd                        equ $0054  ; NES RAM offset
-TriggeredDoorDir                        equ $0055  ; NES RAM offset
-Link_GoStraightWhenDiagInput            equ $0056  ; NES RAM offset
-Link_GoStraight                         equ $0057  ; NES RAM offset
-VScrollAddrHi                           equ $0058  ; NES RAM offset
-EmptyMonsterSlot                        equ $0059  ; NES RAM offset
-UndergroundExitType                     equ $005A  ; NES RAM offset
-TargetMode                              equ $005B  ; NES RAM offset
-SwitchNameTablesReq                     equ $005C  ; NES RAM offset
-CurScanRoomId                           equ $005D  ; NES RAM offset
-SubmenuScrollProgress                   equ $005E  ; NES RAM offset
-OddBaseNameTableOverride                equ $005F  ; NES RAM offset
-ChaseOtherTarget                        equ $0060  ; NES RAM offset
-ChaseTargetX                            equ $0061  ; NES RAM offset
-ChaseTargetY                            equ $0062  ; NES RAM offset
-World_IsFillingHearts                   equ $0063  ; NES RAM offset
-LadderSlot                              equ $0064  ; NES RAM offset
-UndergroundEntranceTile                 equ $0065  ; NES RAM offset
-SongScriptPtrLo                         equ $0066  ; NES RAM offset
-SongScriptPtrHi                         equ $0067  ; NES RAM offset
-EffectCounter                           equ $0069  ; NES RAM offset
-CurNoteLowPeriodSq0                     equ $006A  ; NES RAM offset
-CurNoteLowPeriodSq1                     equ $006B  ; NES RAM offset
-SongPhraseIndex                         equ $006C  ; NES RAM offset
-CustomEnvelopeOffsetTune1               equ $006D  ; NES RAM offset
-NoteLengthTune1                         equ $006E  ; NES RAM offset
-NoteCounterTune1                        equ $006F  ; NES RAM offset
-ObjX                                    equ $0070  ; NES RAM offset
-ObjY                                    equ $0084  ; NES RAM offset
-ObjDir                                  equ $0098  ; NES RAM offset
-ObjRoomItemId                           equ $0098  ; NES RAM offset
-RoomItemId                              equ $00AB  ; NES RAM offset
-ObjState                                equ $00AC  ; NES RAM offset
-Item_ObjItemId                          equ $00AC  ; NES RAM offset
-ObjShoveDir                             equ $00C0  ; NES RAM offset
-ObjShoveDistance                        equ $00D3  ; NES RAM offset
-Paused                                  equ $00E0  ; NES RAM offset
-MenuState                               equ $00E1  ; NES RAM offset
-VScrollAddrLo                           equ $00E2  ; NES RAM offset
-IsSprite0CheckActive                    equ $00E3  ; NES RAM offset
-DeathTurns                              equ $00E5  ; NES RAM offset
-VScrollStartFrame                       equ $00E6  ; NES RAM offset
-CurColumn                               equ $00E8  ; NES RAM offset
-CurRow                                  equ $00E9  ; NES RAM offset
-WhirlwindPrevRoomId                     equ $00EA  ; NES RAM offset
-RoomId                                  equ $00EB  ; NES RAM offset
-NextRoomId                              equ $00EC  ; NES RAM offset
-PrevRow                                 equ $00ED  ; NES RAM offset
-CurOpenedDoors                          equ $00EE  ; NES RAM offset
-_Unknown_F3                             equ $00F3  ; NES RAM offset
-InitializedGame                         equ $00F4  ; NES RAM offset
-TransferredCommonPatterns               equ $00F5  ; NES RAM offset
-TransferredDemoPatterns                 equ $00F6  ; NES RAM offset
-ReturnToBank4                           equ $00F7  ; NES RAM offset
-ButtonsPressed                          equ $00F8  ; NES RAM offset
-ButtonsDown                             equ $00FA  ; NES RAM offset
-CurVScroll                              equ $00FC  ; NES RAM offset
-CurHScroll                              equ $00FD  ; NES RAM offset
-CurPpuMask_2001                         equ $00FE  ; NES RAM offset
-CurPpuControl_2000                      equ $00FF  ; NES RAM offset
-PositiveGridCellSize                    equ $010E  ; NES RAM offset
-NegativeGridCellSize                    equ $010F  ; NES RAM offset
-Sprites                                 equ $0200  ; NES RAM offset
-DynTileBufLen                           equ $0301  ; NES RAM offset
-DynTileBuf                              equ $0302  ; NES RAM offset
-OpenDoorwayMask                         equ $033F  ; NES RAM offset
-CurObjIndex                             equ $0340  ; NES RAM offset
-RollingSpriteIndex                      equ $0341  ; NES RAM offset
-FirstSpriteIndex                        equ $0342  ; NES RAM offset
-LeftSpriteOffset                        equ $0343  ; NES RAM offset
-RightSpriteOffset                       equ $0344  ; NES RAM offset
-RoomBoundLeft                           equ $0346  ; NES RAM offset
-RoomBoundRight                          equ $0347  ; NES RAM offset
-RoomBoundUp                             equ $0348  ; NES RAM offset
-RoomBoundDown                           equ $0349  ; NES RAM offset
-ObjectFirstUnwalkableTile               equ $034A  ; NES RAM offset
-ShotCollidesWithLink                    equ $034B  ; NES RAM offset
-ActiveMonsterShots                      equ $034C  ; NES RAM offset
-RoomAllDead                             equ $034D  ; NES RAM offset
-RoomObjCount                            equ $034E  ; NES RAM offset
-ObjType                                 equ $034F  ; NES RAM offset
-RoomKillCount                           equ $034F  ; NES RAM offset
-RoomObjTemplateType                     equ $035F  ; NES RAM offset
-ObjMovingLimit                          equ $0380  ; NES RAM offset
-ObjAngleFrac                            equ $0380  ; NES RAM offset
-Shot_ObjBounceDir                       equ $0380  ; NES RAM offset
-Moldorm_ObjOldDir                       equ $0380  ; NES RAM offset
-Gohma_ObjShootTimer                     equ $0380  ; NES RAM offset
-Gleook_HeadInfo2                        equ $0381  ; NES RAM offset
-Manhandla_SegmentJustDied               equ $0383  ; NES RAM offset
-Manhandla_BounceDir                     equ $0385  ; NES RAM offset
-ObjGridOffset                           equ $0394  ; NES RAM offset
-ObjRemDistance                          equ $0394  ; NES RAM offset
-ObjAngleWhole                           equ $0394  ; NES RAM offset
-Shot_ObjBounceDist                      equ $0394  ; NES RAM offset
-RedWizzrobe_ObjFadeCounter              equ $0394  ; NES RAM offset
-Gleeok_NeckXs3                          equ $0395  ; NES RAM offset
-ObjPosFrac                              equ $03A8  ; NES RAM offset
-Item_ObjItemLifetime                    equ $03A8  ; NES RAM offset
-Gleook_HeadInfo3                        equ $03A9  ; NES RAM offset
-ObjQSpeedFrac                           equ $03BC  ; NES RAM offset
-Moldorm_ObjBounceDir                    equ $03BC  ; NES RAM offset
-Gleeok_NeckYs3                          equ $03BD  ; NES RAM offset
-ObjAnimCounter                          equ $03D0  ; NES RAM offset
-ObjAnimFrame                            equ $03E4  ; NES RAM offset
-ObjInputDir                             equ $03F8  ; NES RAM offset
-ObjMetastate                            equ $0405  ; NES RAM offset
-Item_ObjMonsterType                     equ $0412  ; NES RAM offset
-StairsTargetY                           equ $0412  ; NES RAM offset
-ObjWantsToShoot                         equ $0412  ; NES RAM offset
-ObjPushTimer                            equ $0412  ; NES RAM offset
-TileObjRoomId                           equ $0412  ; NES RAM offset
-Fireball_ObjDirToTargetX                equ $0412  ; NES RAM offset
-Flyer_ObjSpeedFrac                      equ $0412  ; NES RAM offset
-Jumper_ObjSpeedWholeY                   equ $0412  ; NES RAM offset
-Wallmaster_ObjStep                      equ $0412  ; NES RAM offset
-PolsVoice_ObjSpeedWhole                 equ $0412  ; NES RAM offset
-BlueWizzrobe_ObjTurnCounter             equ $0412  ; NES RAM offset
-RedWizzrobe_ObjAnimCounter              equ $0412  ; NES RAM offset
-Manhandla_ObjSpeedAccum                 equ $0412  ; NES RAM offset
-Gohma_ObjDistTraveled                   equ $0412  ; NES RAM offset
-TriforceGlowTimer                       equ $0412  ; NES RAM offset
-PeaceCharDelayCounter                   equ $0412  ; NES RAM offset
-TriforceGlowCycle                       equ $0413  ; NES RAM offset
-Gleeok_ObjHeadInfo                      equ $0413  ; NES RAM offset
-Gleeok_ObjHeadDirCounterH               equ $0413  ; NES RAM offset
-PeaceCharIndex                          equ $0413  ; NES RAM offset
-CaveFlags                               equ $0413  ; NES RAM offset
-Gleeok_ObjHeadDirCounterV               equ $0414  ; NES RAM offset
-ScrolledScreenCount                     equ $0415  ; NES RAM offset
-Gleeok_ObjHeadSpeedX                    equ $0415  ; NES RAM offset
-PersonTextSelector                      equ $0415  ; NES RAM offset
-Gleeok_ObjHeadSpeedY                    equ $0416  ; NES RAM offset
-TextboxCharIndex                        equ $0416  ; NES RAM offset
-PersonTextIndex                         equ $0416  ; NES RAM offset
-DemoLineAttrVramAddrLo                  equ $0417  ; NES RAM offset
-Gleeok_ObjHeadDirChangeCounter          equ $0417  ; NES RAM offset
-DemoLineAttrVramAddrHi                  equ $0418  ; NES RAM offset
-Gleeok_ObjHeadDelay                     equ $0418  ; NES RAM offset
-DemoLineIndex                           equ $0419  ; NES RAM offset
-DemoTimer                               equ $041A  ; NES RAM offset
-ScrolledLineCount                       equ $041B  ; NES RAM offset
-DemoLineTileVramAddrLo                  equ $041C  ; NES RAM offset
-DemoLineTileVramAddrHi                  equ $041D  ; NES RAM offset
-ObjTurnRate                             equ $041F  ; NES RAM offset
-Fireball_ObjQSpeedX                     equ $041F  ; NES RAM offset
-Flyer_ObjSpeed                          equ $041F  ; NES RAM offset
-Jumper_ObjSpeedFracY                    equ $041F  ; NES RAM offset
-Wallmaster_ObjTilesCrossed              equ $041F  ; NES RAM offset
-Digdogger_ObjSpeedFrac                  equ $041F  ; NES RAM offset
-PolsVoice_ObjLastTile                   equ $041F  ; NES RAM offset
-Wizzrobe_ObjLastTile                    equ $041F  ; NES RAM offset
-Manhandla_ObjSpeedFrac                  equ $041F  ; NES RAM offset
-Gohma_ObjMoveAccum                      equ $041F  ; NES RAM offset
-InitializedWaterfallAnimation           equ $041F  ; NES RAM offset
-CharBoardIndex                          equ $041F  ; NES RAM offset
-Gleook_HeadInfo0                        equ $0420  ; NES RAM offset
-TitleWaveYs                             equ $0420  ; NES RAM offset
-InitializedNameField                    equ $0420  ; NES RAM offset
-NameCharOffset                          equ $0421  ; NES RAM offset
-NameInputCharBuf                        equ $0422  ; NES RAM offset
-CaveItemIds                             equ $0422  ; NES RAM offset
-StillHoldingButton                      equ $0426  ; NES RAM offset
-HeldButton                              equ $0427  ; NES RAM offset
-SubsequentButtonRepeat                  equ $0428  ; NES RAM offset
-ButtonRepeatTimer                       equ $0429  ; NES RAM offset
-ModeE_WrappedAroundBoardY               equ $042A  ; NES RAM offset
-ObjRefId                                equ $042C  ; NES RAM offset
-ObjCaptureTimer                         equ $042C  ; NES RAM offset
-Flyer_ObjTurns                          equ $042C  ; NES RAM offset
-Digdogger_ObjSpeedWhole                 equ $042C  ; NES RAM offset
-Dodongo_ObjBloatedSubstate              equ $042C  ; NES RAM offset
-PolsVoice_ObjTargetY                    equ $042C  ; NES RAM offset
-Manhandla_ObjSpeedWhole                 equ $042C  ; NES RAM offset
-Gohma_ObjNextOpenEyeCounter             equ $042C  ; NES RAM offset
-Ganon_ObjPhase                          equ $042C  ; NES RAM offset
-DemoPhase                               equ $042C  ; NES RAM offset
-DemoSubphase                            equ $042D  ; NES RAM offset
-Gleook_HeadInfo1                        equ $042D  ; NES RAM offset
-DemoLineTextIndex                       equ $042E  ; NES RAM offset
-CaveCurPriceIndex                       equ $042E  ; NES RAM offset
-DemoItemRow                             equ $042F  ; NES RAM offset
-CaveCurPriceOffset                      equ $042F  ; NES RAM offset
-CavePrices                              equ $0430  ; NES RAM offset
-Fireball_ObjDirToTargetY                equ $0437  ; NES RAM offset
-Flyer_ObjDistTraveled                   equ $0437  ; NES RAM offset
-Digdogger_ObjTargetSpeedFrac            equ $0437  ; NES RAM offset
-Dodongo_ObjBombHits                     equ $0437  ; NES RAM offset
-Manhandla_ObjPrevFrame                  equ $0437  ; NES RAM offset
-DemoPhase0Subphase1Cycle                equ $0437  ; NES RAM offset
-DemoPhase0Subphase1Timer                equ $0438  ; NES RAM offset
-Gleeok_NeckXs0                          equ $0438  ; NES RAM offset
-CaveChosenIndex                         equ $0438  ; NES RAM offset
-Fireball_ObjQSpeedY                     equ $0444  ; NES RAM offset
-Flyer_ObjFlyingState                    equ $0444  ; NES RAM offset
-Jumper_ObjTargetY                       equ $0444  ; NES RAM offset
-Digdogger_ObjTargetSpeedWhole           equ $0444  ; NES RAM offset
-PolsVoice_ObjSpeedFrac                  equ $0444  ; NES RAM offset
-Gohma_ObjEyeOpenTimer                   equ $0444  ; NES RAM offset
-DemoItemIds                             equ $0444  ; NES RAM offset
-Ganon_ScenePhase                        equ $0445  ; NES RAM offset
-Gleeok_NeckYs0                          equ $0445  ; NES RAM offset
-MoneyGameAmounts                        equ $0448  ; NES RAM offset
-ObjShootTimer                           equ $0451  ; NES RAM offset
-Fireball_ObjPosFracX                    equ $0451  ; NES RAM offset
-Jumper_ObjReversalCount                 equ $0451  ; NES RAM offset
-Manhandla_ObjFrameAccum                 equ $0451  ; NES RAM offset
-Gohma_ObjGoStraight                     equ $0451  ; NES RAM offset
-Gleeok_NeckXs1                          equ $0452  ; NES RAM offset
-Fireball_ObjPosFracY                    equ $045E  ; NES RAM offset
-Digdogger_ObjSpeedFlag                  equ $045E  ; NES RAM offset
-Dodongo_ObjBloatedTimer                 equ $045E  ; NES RAM offset
-Gohma_ObjSprints                        equ $045E  ; NES RAM offset
-Patra_ObjManeuverIndex                  equ $045E  ; NES RAM offset
-Gleeok_NeckYs1                          equ $045F  ; NES RAM offset
-TextboxCharPtr                          equ $045F  ; NES RAM offset
-PersonTextPtr                           equ $045F  ; NES RAM offset
-Flyer_ObjOffsetX                        equ $046B  ; NES RAM offset
-Digdogger_ObjIsChild                    equ $046B  ; NES RAM offset
-Gohma_ObjEyeState                       equ $046B  ; NES RAM offset
-Ganon_ObjAnimationFrame                 equ $046B  ; NES RAM offset
-Gleeok_NeckXs2                          equ $046C  ; NES RAM offset
-ObjTurnTimer                            equ $0478  ; NES RAM offset
-Flyer_ObjOffsetY                        equ $0478  ; NES RAM offset
-Digdogger_ObjCurPart                    equ $0478  ; NES RAM offset
-Aquamentus_ObjFireballOffset            equ $0478  ; NES RAM offset
-Manhandla_ObjFrame                      equ $0478  ; NES RAM offset
-Gohma_ObjEyeAnimCounter                 equ $0478  ; NES RAM offset
-Ganon_ObjCloudDist                      equ $0478  ; NES RAM offset
-Gleeok_NeckYs2                          equ $0479  ; NES RAM offset
-ObjHP                                   equ $0485  ; NES RAM offset
-ObjUninitialized                        equ $0492  ; NES RAM offset
-ObjCollidedTile                         equ $049E  ; NES RAM offset
-ObjInvincibilityMask                    equ $04B2  ; NES RAM offset
-ObjAttr                                 equ $04BF  ; NES RAM offset
-PersonFireballsEnabled                  equ $04CC  ; NES RAM offset
-LevelBlockAttrsByteF                    equ $04CD  ; NES RAM offset
-ShutterTrigger                          equ $04CE  ; NES RAM offset
-BlockPushComplete                       equ $04CF  ; NES RAM offset
-FlyingMaxSpeedFrac                      equ $04D1  ; NES RAM offset
-GleeokCurNeck                           equ $04D7  ; NES RAM offset
-GleeokSignedRefSegmentDistance          equ $04D8  ; NES RAM offset
-GleeokPrimarySegmentLimits              equ $04D9  ; NES RAM offset
-GleeokSecondarySegmentLimits            equ $04DB  ; NES RAM offset
-GleeokTertiarySegmentLimits             equ $04DD  ; NES RAM offset
-StatusBarMapTrigger                     equ $04E5  ; NES RAM offset
-GleeokAnimationTimer                    equ $04E6  ; NES RAM offset
-Lamnola_Speed                           equ $04E6  ; NES RAM offset
-GleeokBodyAnimationFrame                equ $04E7  ; NES RAM offset
-Lamnola_Type                            equ $04E7  ; NES RAM offset
-Statue_ObjFireballTimer                 equ $04E8  ; NES RAM offset
-ObjInvincibilityTimer                   equ $04F0  ; NES RAM offset
-LeftAlignHalfWidthObj                   equ $0504  ; NES RAM offset
-ItemTypeToLift                          equ $0505  ; NES RAM offset
-ItemLiftTimer                           equ $0506  ; NES RAM offset
-ChildDigdoggerCount                     equ $0507  ; NES RAM offset
-SummonedWhirlwind                       equ $0508  ; NES RAM offset
-TriforceFanfareActive                   equ $0509  ; NES RAM offset
-CreditsRow                              equ $050A  ; NES RAM offset
-CreditsTileOffset                       equ $050B  ; NES RAM offset
-CreditsVramPage                         equ $050C  ; NES RAM offset
-CreditsVramLine                         equ $050D  ; NES RAM offset
-CreditsLineIndex                        equ $050E  ; NES RAM offset
-LamnolaViableDirMask                    equ $050F  ; NES RAM offset
-ActiveRedLeeverCount                    equ $0510  ; NES RAM offset
-Gleeok_WrithingCounter                  equ $0510  ; NES RAM offset
-GleeokDeadNeckMask                      equ $0511  ; NES RAM offset
-LinkParalyzed                           equ $0512  ; NES RAM offset
-UsedCandle                              equ $0513  ; NES RAM offset
-ZoraActive                              equ $0514  ; NES RAM offset
-ActiveBoulders                          equ $0515  ; NES RAM offset
-SecretColorCycle                        equ $051A  ; NES RAM offset
-UsedFlute                               equ $051B  ; NES RAM offset
-FadeCycle                               equ $051C  ; NES RAM offset
-PatternBlockIndex                       equ $051D  ; NES RAM offset
-BrighteningRoom                         equ $051E  ; NES RAM offset
-CandleState                             equ $051F  ; NES RAM offset
-PrevOpenedDoors                         equ $0521  ; NES RAM offset
-WhirlwindTeleportingState               equ $0522  ; NES RAM offset
-TeleportingLevelIndex                   equ $0523  ; NES RAM offset
-SpawnCycle                              equ $0524  ; NES RAM offset
-CurEdgeSpawnCell                        equ $0525  ; NES RAM offset
-CaveSourceRoomId                        equ $0526  ; NES RAM offset
-CellarSourceRoomId                      equ $0527  ; NES RAM offset
-SkippedDemo                             equ $0528  ; NES RAM offset
-WorldKillCycle                          equ $052A  ; NES RAM offset
-RoomTileObjType                         equ $052B  ; NES RAM offset
-RoomTileObjX                            equ $052C  ; NES RAM offset
-RoomTileObjY                            equ $052D  ; NES RAM offset
-SwordBlocked                            equ $052E  ; NES RAM offset
-MazeStep                                equ $052F  ; NES RAM offset
-PlayAreaAttrs                           equ $0530  ; NES RAM offset
-LevelKillCounts                         equ $0560  ; NES RAM offset
-CurNoteLowPeriodTrg                     equ $05F0  ; NES RAM offset
-SampleCounter                           equ $05F2  ; NES RAM offset
-SeaSfxCounter                           equ $05F3  ; NES RAM offset
-NoteLengthTableBase                     equ $05F4  ; NES RAM offset
-FirstNoteIndexSongNoise                 equ $05F5  ; NES RAM offset
-BackgroundSample                        equ $05F6  ; NES RAM offset
-SongRequest                             equ $0600  ; NES RAM offset
-SampleRequest                           equ $0601  ; NES RAM offset
-Tune1Request                            equ $0602  ; NES RAM offset
-EffectRequest                           equ $0603  ; NES RAM offset
-Tune0Request                            equ $0604  ; NES RAM offset
-Tune0                                   equ $0605  ; NES RAM offset
-Effect                                  equ $0606  ; NES RAM offset
-Tune1                                   equ $0607  ; NES RAM offset
-Sample                                  equ $0608  ; NES RAM offset
-Song                                    equ $0609  ; NES RAM offset
-NoteOffsetSongSq1                       equ $060A  ; NES RAM offset
-NoteOffsetSongSq0                       equ $060B  ; NES RAM offset
-NoteOffsetSongTrg                       equ $060C  ; NES RAM offset
-NoteOffsetSongNoise                     equ $060D  ; NES RAM offset
-TunePtr0                                equ $060E  ; NES RAM offset
-NoteLengthSongSq0                       equ $060F  ; NES RAM offset
-NoteLengthSongSq1                       equ $0610  ; NES RAM offset
-NoteCounterSongSq1                      equ $0611  ; NES RAM offset
-CustomEnvelopeOffsetSongSq1             equ $0612  ; NES RAM offset
-NoteCounterSongSq0                      equ $0613  ; NES RAM offset
-CustomEnvelopeOffsetSongSq0             equ $0614  ; NES RAM offset
-NoteLengthSongTrg                       equ $0615  ; NES RAM offset
-NoteCounterSongTrg                      equ $0616  ; NES RAM offset
-NoteCounterSongNoise                    equ $0617  ; NES RAM offset
-TunePtr1                                equ $0618  ; NES RAM offset
-SongEnvelopeSelector                    equ $0619  ; NES RAM offset
-SongVibrationCounterSq1                 equ $061B  ; NES RAM offset
-SongVibrationCounterSq0                 equ $061C  ; NES RAM offset
-SongVibrationCounterTrg                 equ $061D  ; NES RAM offset
-SongRepetitionsTrg                      equ $061E  ; NES RAM offset
-SongRepeatStartOffset                   equ $061F  ; NES RAM offset
-CurRoomHistoryIndex                     equ $0620  ; NES RAM offset
-RoomHistory                             equ $0621  ; NES RAM offset
-WorldKillCount                          equ $0627  ; NES RAM offset
-QuestNumbers                            equ $062D  ; NES RAM offset
-DeathCounts                             equ $0630  ; NES RAM offset
-IsSaveSlotActive                        equ $0633  ; NES RAM offset
-IsRegisterSaveFileOptionEnabled         equ $0636  ; NES RAM offset
-IsEliminateSaveFileOptionEnabled        equ $0637  ; NES RAM offset
-Names                                   equ $0638  ; NES RAM offset
-SaveSlotHearts                          equ $0650  ; NES RAM offset
-SelectedItemSlot                        equ $0656  ; NES RAM offset
-Items                                   equ $0657  ; NES RAM offset
-InvBombs                                equ $0658  ; NES RAM offset
-InvArrow                                equ $0659  ; NES RAM offset
-Bow                                     equ $065A  ; NES RAM offset
-InvCandle                               equ $065B  ; NES RAM offset
-InvFood                                 equ $065D  ; NES RAM offset
-Potion                                  equ $065E  ; NES RAM offset
-InvRaft                                 equ $0660  ; NES RAM offset
-InvBook                                 equ $0661  ; NES RAM offset
-InvRing                                 equ $0662  ; NES RAM offset
-InvLadder                               equ $0663  ; NES RAM offset
-InvMagicKey                             equ $0664  ; NES RAM offset
-InvBracelet                             equ $0665  ; NES RAM offset
-InvLetter                               equ $0666  ; NES RAM offset
-InvCompass                              equ $0667  ; NES RAM offset
-InvMap                                  equ $0668  ; NES RAM offset
-InvCompass9                             equ $0669  ; NES RAM offset
-InvMap9                                 equ $066A  ; NES RAM offset
-InvClock                                equ $066C  ; NES RAM offset
-InvRupees                               equ $066D  ; NES RAM offset
-InvKeys                                 equ $066E  ; NES RAM offset
-HeartValues                             equ $066F  ; NES RAM offset
-HeartPartial                            equ $0670  ; NES RAM offset
-InvTriforce                             equ $0671  ; NES RAM offset
-LastBossDefeated                        equ $0672  ; NES RAM offset
-InvBoomerang                            equ $0674  ; NES RAM offset
-InvMagicBoomerang                       equ $0675  ; NES RAM offset
-InvMagicShield                          equ $0676  ; NES RAM offset
-MaxBombs                                equ $067C  ; NES RAM offset
-RupeesToAdd                             equ $067D  ; NES RAM offset
-RupeesToSubtract                        equ $067E  ; NES RAM offset
-WorldFlags                              equ $067F  ; NES RAM offset
-PpuControl_2000                         equ $2000  ; NES I/O
-PpuMask_2001                            equ $2001  ; NES I/O
-PpuStatus_2002                          equ $2002  ; NES I/O
-OamAddr_2003                            equ $2003  ; NES I/O
-OamData_2004                            equ $2004  ; NES I/O
-PpuScroll_2005                          equ $2005  ; NES I/O
-PpuAddr_2006                            equ $2006  ; NES I/O
-PpuData_2007                            equ $2007  ; NES I/O
-Sq0Duty_4000                            equ $4000  ; NES I/O
-Sq0Sweep_4001                           equ $4001  ; NES I/O
-Sq0Timer_4002                           equ $4002  ; NES I/O
-Sq0Length_4003                          equ $4003  ; NES I/O
-Sq1Duty_4004                            equ $4004  ; NES I/O
-Sq1Sweep_4005                           equ $4005  ; NES I/O
-Sq1Timer_4006                           equ $4006  ; NES I/O
-Sq1Length_4007                          equ $4007  ; NES I/O
-TrgLinear_4008                          equ $4008  ; NES I/O
-TrgTimer_400A                           equ $400A  ; NES I/O
-TrgLength_400B                          equ $400B  ; NES I/O
-NoiseVolume_400C                        equ $400C  ; NES I/O
-NoisePeriod_400E                        equ $400E  ; NES I/O
-NoiseLength_400F                        equ $400F  ; NES I/O
-DmcFreq_4010                            equ $4010  ; NES I/O
-DmcCounter_4011                         equ $4011  ; NES I/O
-DmcAddress_4012                         equ $4012  ; NES I/O
-DmcLength_4013                          equ $4013  ; NES I/O
-SpriteDma_4014                          equ $4014  ; NES I/O
-ApuStatus_4015                          equ $4015  ; NES I/O
-Ctrl1_4016                              equ $4016  ; NES I/O
-Ctrl2_FrameCtr_4017                     equ $4017  ; NES I/O
-SaveRamBegin                            equ $6001  ; NES SRAM
-SaveFileAName0                          equ $6002  ; NES SRAM
-SaveFileAName1                          equ $600A  ; NES SRAM
-SaveFileAName2                          equ $6012  ; NES SRAM
-SaveFileAItems0                         equ $601A  ; NES SRAM
-SaveFileAItems1                         equ $6042  ; NES SRAM
-SaveFileAItems2                         equ $606A  ; NES SRAM
-SaveFileAWorldFlags0                    equ $6092  ; NES SRAM
-SaveFileAWorldFlags1                    equ $6212  ; NES SRAM
-SaveFileAWorldFlags2                    equ $6392  ; NES SRAM
-SaveFileASlotActive0                    equ $6512  ; NES SRAM
-SaveFileASlotActive1                    equ $6513  ; NES SRAM
-SaveFileASlotActive2                    equ $6514  ; NES SRAM
-SaveFileADeathCount0                    equ $6515  ; NES SRAM
-SaveFileADeathCount1                    equ $6516  ; NES SRAM
-SaveFileADeathCount2                    equ $6517  ; NES SRAM
-SaveFileAQuestNumber0                   equ $651B  ; NES SRAM
-SaveFileAQuestNumber1                   equ $651C  ; NES SRAM
-SaveFileAQuestNumber2                   equ $651D  ; NES SRAM
-SaveFileOpenMarkers                     equ $651E  ; NES SRAM
-SaveFileCloseMarkers                    equ $6521  ; NES SRAM
-FileAChecksums                          equ $6524  ; NES SRAM
-IsSaveFileBCommitted                    equ $652A  ; NES SRAM
-PlayAreaTiles                           equ $6530  ; NES SRAM
-LevelBlockAttrsA                        equ $687E  ; NES SRAM
-LevelBlockAttrsB                        equ $68FE  ; NES SRAM
-LevelBlockAttrsC                        equ $697E  ; NES SRAM
-LevelBlockAttrsD                        equ $69FE  ; NES SRAM
-LevelBlockAttrsE                        equ $6A7E  ; NES SRAM
-LevelBlockAttrsF                        equ $6AFE  ; NES SRAM
-LevelInfo_PalettesTransferBuf           equ $6B7E  ; NES SRAM
-LevelInfo_FoeCounts                     equ $6BA2  ; NES SRAM
-LevelInfo_StartY                        equ $6BA6  ; NES SRAM
-LevelInfo_ShortcutOrItemPosArray        equ $6BA7  ; NES SRAM
-LevelInfo_SubmenuMapRotation            equ $6BAB  ; NES SRAM
-LevelInfo_StatusBarMapXOffset           equ $6BAC  ; NES SRAM
-LevelInfo_StartRoomId                   equ $6BAD  ; NES SRAM
-LevelInfo_TriforceRoomId                equ $6BAE  ; NES SRAM
-LevelInfo_WorldFlagsAddr                equ $6BAF  ; NES SRAM
-LevelInfo_LevelNumber                   equ $6BB1  ; NES SRAM
-LevelInfo_CellarRoomIdArray             equ $6BB2  ; NES SRAM
-LevelInfo_BossRoomId                    equ $6BBC  ; NES SRAM
-LevelInfo_SubmenuMapMask                equ $6BBD  ; NES SRAM
-LevelInfo_StatusBarMapTransferBuf       equ $6BCD  ; NES SRAM
-LevelInfo_PaletteCycles                 equ $6BFA  ; NES SRAM
-LevelInfo_DeathPaletteSeries            equ $6C5A  ; NES SRAM
-SaveRamEnd                              equ $7FFF  ; NES SRAM
+; (var equates omitted — provided by z_07.asm in --all build)
 ;==============================================================================
 ; Begin translated Z_02.asm code
 ;==============================================================================
@@ -566,15 +86,15 @@ CommonPatternBlockAddrs:
 
     even
 CommonPatternBlockSizes:
-; [unknown directive] .DBYT $0700
-; [unknown directive] .DBYT $0700
-; [unknown directive] .DBYT $00E0
+    dc.w    $0700
+    dc.w    $0700
+    dc.w    $00E0
 
     even
 CommonPatternVramAddrs:
-; [unknown directive] .DBYT $0000
-; [unknown directive] .DBYT $1000
-; [unknown directive] .DBYT $1F20
+    dc.w    $0000
+    dc.w    $1000
+    dc.w    $1F20
 
     even
 TransferCommonPatterns:
@@ -590,8 +110,10 @@ _L_z02_TransferCommonPatterns_LoopBlock:
     ; The size and VRAM address have the high byte first.
     ;
     lea     (CommonPatternBlockAddrs).l,A0
-    move.b  (A0,D2.W),D0
-    move.b  D0,($0000,A4)
+    move.w  D2,D5
+    add.w   D5,D5              ; D5 = 4*block_idx (dc.l = 4 bytes)
+    move.l  (A0,D5.W),D5      ; D5 = 32-bit Genesis ROM source addr
+    move.l  D5,($04,A4)       ; store to [$04:$07] (avoids size overlap)
     lea     (CommonPatternBlockSizes).l,A0
     move.b  (A0,D2.W),D0
     move.b  D0,($0002,A4)
@@ -599,9 +121,7 @@ _L_z02_TransferCommonPatterns_LoopBlock:
     move.b  (A0,D2.W),D0
     bsr     _ppu_write_6  ; PPU $2006 write, D0=val
     addq.b  #1,D2
-    lea     (CommonPatternBlockAddrs).l,A0
-    move.b  (A0,D2.W),D0
-    move.b  D0,($0001,A4)
+    ; (32-bit Genesis ROM addr already in [$04:$07])
     lea     (CommonPatternBlockSizes).l,A0
     move.b  (A0,D2.W),D0
     move.b  D0,($0003,A4)
@@ -632,30 +152,15 @@ TransferPatternBlock_Bank2:
 _L_z02_TransferPatternBlock_Bank2_Loop:
     ; Load and transfer 1 byte to VRAM.
     ;
-    move.b  ($00,A4),D1   ; ptr lo
-    move.b  ($01,A4),D4  ; ptr hi
-    lsl.w   #8,D4
-    or.w    D1,D4             ; D4 = NES ptr addr
-    ext.l   D4
-    add.l   #NES_RAM,D4       ; → Genesis addr
-    movea.l D4,A0
+    movea.l ($04,A4),A0      ; 32-bit Genesis ROM source addr from [$04:$07]
     move.b  (A0,D3.W),D0     ; LDA ($nn),Y
     bsr     _ppu_write_7  ; PPU $2007 write, D0=val
-    ; Increment the 16-bit source address at [00:01].
-    ;
-    move.b  ($0000,A4),D0
-    andi.b  #$EE,CCR  ; CLC: clear C+X
-    move.b  #$01,D1
-    addx.b  D1,D0   ; ADC #$01 (X flag = 6502 C)
-    move.b  D0,($0000,A4)
-    move.b  ($0001,A4),D0
-    move.b  #$00,D1
-    addx.b  D1,D0   ; ADC #$00 (X flag = 6502 C)
-    move.b  D0,($0001,A4)
+    ; Increment 32-bit Genesis ROM source address at [$04:$07].
+    addq.l  #1,($04,A4)
     ; Decrement the 16-bit amount remaining in [03:02].
     ;
     move.b  ($0003,A4),D0
-    ori.b   #$11,CCR  ; SEC: set C+X
+    ori     #$11,CCR  ; SEC: set C+X
     move.b  #$01,D1
     subx.b  D1,D0   ; SBC #$01
     move.b  D0,($0003,A4)
@@ -676,24 +181,253 @@ _L_z02_TransferPatternBlock_Bank2_Loop:
 
     even
 CommonSpritePatterns:
-; .INCBIN "dat/CommonSpritePatterns.dat" not found — stub 128 zero bytes
-    rept    128
-        dc.b    0
-    endr
+; .INCBIN dat/CommonSpritePatterns.dat (1792 bytes)
+    dc.b    $00, $07, $1F, $77, $F3, $B1, $39, $1C, $00, $00, $00, $09, $0F, $0F, $1F, $1F
+    dc.b    $0F, $3E, $3E, $7E, $7F, $FF, $FF, $70, $00, $19, $3F, $3F, $1E, $C1, $E0, $70
+    dc.b    $00, $80, $F0, $F8, $F0, $20, $20, $04, $00, $00, $F0, $F8, $F0, $D0, $FC, $F4
+    dc.b    $04, $34, $34, $74, $E4, $F4, $F8, $70, $F4, $FC, $DC, $94, $24, $E4, $18, $70
+    dc.b    $07, $1F, $77, $F3, $B1, $39, $1C, $0F, $00, $00, $09, $0F, $0F, $1F, $1F, $00
+    dc.b    $3F, $78, $78, $79, $3F, $7F, $0F, $0F, $20, $77, $7F, $7E, $19, $00, $0F, $0F
+    dc.b    $80, $F0, $F8, $F0, $22, $22, $02, $02, $00, $F0, $F8, $F0, $D2, $FE, $F2, $F2
+    dc.b    $FA, $FA, $FA, $E2, $E2, $E0, $00, $80, $3E, $1E, $1A, $22, $E2, $00, $00, $80
+    dc.b    $07, $0F, $0F, $0F, $0A, $0A, $20, $39, $00, $00, $27, $2F, $3D, $3F, $3F, $37
+    dc.b    $1C, $1F, $1F, $1F, $1F, $0F, $0E, $0E, $23, $20, $13, $0E, $03, $08, $0E, $0E
+    dc.b    $E0, $F0, $F0, $F0, $50, $50, $04, $9C, $00, $00, $E4, $F4, $BC, $FC, $FC, $E4
+    dc.b    $3E, $F6, $E2, $F0, $F8, $F0, $70, $00, $CE, $0E, $9E, $FE, $84, $00, $70, $00
+    dc.b    $07, $0F, $0F, $1F, $1F, $0F, $0F, $1F, $00, $00, $20, $20, $30, $3C, $1E, $17
+    dc.b    $3F, $3F, $1F, $1F, $1F, $1F, $1E, $0C, $30, $30, $18, $07, $00, $1C, $1E, $0C
+    dc.b    $E0, $F0, $F0, $F8, $F8, $F0, $F0, $F8, $00, $00, $04, $04, $0C, $3C, $78, $E8
+    dc.b    $F8, $F8, $F8, $F0, $F8, $F0, $60, $00, $18, $1C, $1C, $EC, $00, $10, $60, $00
+    dc.b    $00, $03, $0F, $1B, $19, $38, $7C, $4E, $00, $00, $00, $04, $07, $07, $0F, $0F
+    dc.b    $0F, $1F, $1F, $3F, $7F, $FF, $FF, $70, $00, $07, $0F, $0F, $07, $C0, $E0, $70
+    dc.b    $00, $C0, $F8, $FC, $F8, $90, $90, $00, $00, $00, $78, $FC, $F8, $E8, $FE, $F8
+    dc.b    $80, $E0, $E0, $F0, $F8, $F8, $FC, $1E, $7C, $FC, $F8, $E0, $18, $F8, $0C, $1E
+    dc.b    $1B, $2F, $6F, $CF, $CA, $6A, $39, $1D, $18, $38, $73, $F7, $FD, $FF, $77, $33
+    dc.b    $0E, $0F, $0F, $0F, $1F, $3B, $00, $00, $11, $08, $05, $03, $19, $38, $00, $00
+    dc.b    $E0, $F0, $F8, $F8, $78, $58, $80, $98, $00, $00, $C0, $E2, $B6, $F4, $F8, $F8
+    dc.b    $3C, $FC, $FC, $FC, $9E, $1F, $0F, $00, $FC, $3C, $F8, $70, $F2, $E7, $EF, $00
+    dc.b    $1F, $1F, $3F, $1F, $5F, $5F, $7F, $7F, $10, $40, $60, $60, $70, $78, $6D, $67
+    dc.b    $3F, $3F, $3F, $7F, $FF, $E1, $00, $00, $20, $20, $10, $4F, $C0, $E0, $00, $00
+    dc.b    $80, $C0, $E0, $E0, $E0, $E0, $E1, $FB, $00, $00, $00, $08, $38, $F1, $D3, $BF
+    dc.b    $F7, $EF, $DE, $EC, $F0, $F8, $3C, $3C, $3F, $3F, $3E, $FC, $08, $18, $3C, $3C
+    dc.b    $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
+    dc.b    $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
+    dc.b    $E0, $80, $80, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
+    dc.b    $00, $00, $00, $00, $00, $80, $80, $E0, $00, $00, $00, $00, $00, $00, $00, $00
+    dc.b    $10, $38, $38, $38, $38, $38, $38, $38, $10, $38, $38, $38, $38, $38, $38, $38
+    dc.b    $38, $38, $38, $FE, $82, $38, $00, $38, $38, $38, $38, $00, $38, $00, $38, $00
+    dc.b    $2C, $18, $18, $3C, $7E, $AB, $7F, $EF, $2C, $18, $18, $18, $00, $54, $80, $10
+    dc.b    $5F, $FD, $56, $3C, $18, $18, $18, $34, $A0, $02, $28, $00, $18, $18, $18, $34
+    dc.b    $1C, $10, $10, $10, $10, $10, $10, $10, $00, $14, $1C, $14, $1C, $14, $1C, $14
+    dc.b    $10, $10, $10, $10, $00, $10, $10, $10, $1C, $14, $1C, $1C, $08, $1C, $14, $1C
+    dc.b    $08, $3C, $74, $6E, $24, $00, $3C, $3C, $00, $00, $08, $10, $18, $00, $3C, $3C
+    dc.b    $3C, $3C, $3C, $3C, $3C, $3C, $00, $00, $3C, $3D, $3D, $3D, $3D, $3D, $FF, $7E
+    dc.b    $00, $00, $00, $08, $08, $08, $08, $08, $08, $08, $1C, $14, $00, $00, $00, $00
+    dc.b    $08, $08, $1C, $2A, $1C, $2A, $1C, $2A, $00, $00, $14, $22, $14, $22, $14, $22
+    dc.b    $E0, $98, $8C, $86, $86, $83, $83, $83, $E0, $18, $0C, $06, $06, $03, $03, $03
+    dc.b    $83, $83, $83, $86, $86, $8C, $98, $E0, $03, $03, $03, $06, $06, $0C, $18, $E0
+    dc.b    $00, $03, $06, $01, $83, $05, $03, $06, $04, $1C, $28, $2E, $7C, $EA, $0C, $78
+    dc.b    $00, $00, $00, $00, $00, $00, $00, $00, $08, $08, $08, $08, $78, $08, $78, $08
+    dc.b    $04, $42, $A1, $C1, $C1, $01, $87, $08, $38, $7C, $C6, $82, $82, $FE, $F8, $10
+    dc.b    $08, $08, $08, $48, $08, $08, $08, $08, $10, $10, $10, $70, $70, $30, $70, $10
+    dc.b    $00, $00, $00, $78, $FC, $FC, $E6, $C3, $00, $00, $00, $78, $FC, $FC, $FE, $FF
+    dc.b    $DB, $C8, $60, $70, $30, $00, $00, $00, $E7, $F0, $70, $70, $30, $00, $00, $00
+    dc.b    $10, $30, $70, $A0, $C0, $C0, $C0, $C0, $18, $3C, $7E, $F5, $FB, $FB, $FB, $FB
+    dc.b    $C0, $C0, $C0, $A0, $10, $00, $00, $00, $FB, $FB, $FB, $FB, $F5, $7E, $3C, $18
+    dc.b    $04, $04, $02, $01, $01, $02, $3C, $4E, $04, $04, $02, $01, $01, $02, $00, $30
+    dc.b    $AF, $9F, $FF, $FF, $7E, $3C, $00, $00, $70, $60, $00, $00, $00, $00, $00, $00
+    dc.b    $00, $00, $00, $00, $14, $38, $30, $10, $00, $00, $00, $00, $0C, $08, $50, $70
+    dc.b    $10, $10, $08, $04, $00, $00, $00, $00, $70, $70, $38, $1C, $00, $00, $00, $00
+    dc.b    $00, $00, $00, $00, $40, $40, $60, $F0, $00, $00, $00, $00, $C0, $C0, $A0, $10
+    dc.b    $48, $04, $03, $00, $00, $00, $00, $00, $38, $7C, $3F, $0F, $00, $00, $00, $00
+    dc.b    $00, $00, $00, $00, $00, $00, $81, $42, $00, $00, $00, $00, $00, $00, $81, $C3
+    dc.b    $FC, $60, $00, $00, $00, $00, $00, $00, $3F, $1E, $3C, $00, $00, $00, $00, $00
+    dc.b    $00, $00, $00, $00, $44, $2D, $BE, $7C, $00, $00, $00, $00, $44, $2D, $BE, $7C
+    dc.b    $38, $7C, $90, $08, $00, $00, $00, $00, $38, $7C, $90, $08, $00, $00, $00, $00
+    dc.b    $E0, $E0, $E0, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
+    dc.b    $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
+    dc.b    $00, $18, $3C, $3C, $24, $24, $66, $81, $3C, $00, $3C, $24, $24, $24, $66, $81
+    dc.b    $81, $FF, $FD, $DF, $F7, $FF, $FF, $7E, $81, $81, $83, $A1, $89, $C3, $FF, $7E
+    dc.b    $FE, $FF, $FF, $FF, $FF, $FF, $C1, $FF, $00, $FC, $FE, $FC, $80, $80, $80, $80
+    dc.b    $D5, $FF, $FF, $F7, $E3, $F7, $7F, $7E, $80, $80, $80, $80, $80, $00, $00, $00
+    dc.b    $00, $00, $00, $3C, $7E, $66, $C3, $DB, $00, $00, $00, $00, $00, $18, $3C, $3C
+    dc.b    $DB, $C3, $66, $7E, $3C, $00, $00, $00, $3C, $3C, $18, $00, $00, $00, $00, $00
+    dc.b    $00, $00, $00, $1C, $3E, $7F, $3E, $00, $00, $00, $00, $00, $10, $00, $41, $3E
+    dc.b    $41, $00, $00, $00, $00, $00, $00, $00, $60, $41, $62, $3C, $00, $00, $00, $00
+    dc.b    $80, $C0, $E0, $E0, $70, $70, $34, $3A, $80, $C0, $E0, $E0, $70, $70, $30, $3A
+    dc.b    $1A, $5F, $4E, $2C, $18, $12, $00, $01, $18, $1C, $48, $02, $06, $05, $03, $02
+    dc.b    $18, $3C, $3C, $3C, $18, $00, $18, $00, $00, $10, $00, $24, $18, $18, $18, $18
+    dc.b    $00, $00, $00, $00, $00, $00, $00, $00, $18, $18, $18, $18, $18, $18, $18, $18
+    dc.b    $00, $00, $00, $35, $01, $2B, $06, $5E, $DB, $FF, $FF, $CB, $7F, $D7, $FE, $AE
+    dc.b    $1E, $3C, $7C, $1C, $58, $08, $08, $10, $FE, $FC, $FC, $FC, $A8, $78, $F8, $F0
+    dc.b    $00, $14, $3A, $0B, $73, $F0, $31, $D0, $00, $08, $04, $74, $08, $01, $C0, $E0
+    dc.b    $D0, $30, $F1, $70, $71, $0C, $18, $00, $E0, $C0, $00, $01, $0A, $32, $04, $00
+    dc.b    $38, $54, $FF, $C7, $C7, $6E, $46, $28, $44, $28, $81, $B9, $B9, $52, $3A, $54
+    dc.b    $38, $7C, $12, $04, $00, $00, $00, $20, $6C, $C6, $2A, $38, $30, $20, $20, $00
+    dc.b    $38, $54, $7E, $46, $47, $ED, $C7, $AE, $44, $28, $00, $38, $79, $91, $BB, $D6
+    dc.b    $12, $39, $10, $04, $00, $00, $00, $20, $46, $83, $28, $38, $30, $20, $20, $00
+    dc.b    $80, $F0, $F8, $F3, $23, $22, $02, $02, $00, $F0, $F8, $F3, $D3, $FF, $F3, $F3
+    dc.b    $FA, $FA, $FA, $E2, $E2, $E3, $03, $80, $3F, $1F, $1B, $23, $E3, $03, $03, $80
+    dc.b    $00, $00, $FF, $FF, $E7, $E7, $81, $81, $00, $00, $FF, $FF, $FF, $FF, $FF, $FF
+    dc.b    $E7, $E7, $E7, $E7, $7E, $3C, $00, $00, $FF, $FF, $FF, $FF, $7E, $3C, $00, $00
+    dc.b    $07, $0F, $0F, $0F, $0A, $0A, $00, $19, $00, $00, $27, $2F, $3D, $3F, $1F, $07
+    dc.b    $7C, $DF, $8D, $DD, $DD, $FD, $02, $0E, $7F, $FE, $FF, $FE, $FF, $FE, $7E, $0E
+    dc.b    $07, $0F, $0F, $0F, $0A, $0A, $00, $09, $00, $00, $27, $2F, $3D, $3F, $1F, $07
+    dc.b    $3E, $6F, $46, $6E, $6E, $7E, $00, $00, $3F, $7F, $7F, $7F, $7F, $7F, $3E, $00
+    dc.b    $00, $04, $29, $2B, $0F, $2D, $7B, $7A, $00, $10, $00, $00, $00, $42, $04, $05
+    dc.b    $72, $A0, $E9, $E5, $73, $73, $3C, $07, $0D, $1F, $17, $1F, $0F, $0F, $03, $00
+    dc.b    $44, $84, $A0, $E0, $E8, $DA, $DE, $FD, $00, $00, $00, $04, $00, $00, $20, $00
+    dc.b    $BD, $5F, $0F, $46, $E6, $CC, $1C, $F0, $40, $A0, $F0, $F8, $F8, $F0, $E0, $00
+    dc.b    $07, $0F, $0F, $0F, $0A, $0A, $FF, $E7, $00, $00, $27, $2F, $3D, $3F, $FF, $FF
+    dc.b    $E7, $81, $81, $E7, $E7, $E7, $7E, $3C, $FF, $FF, $FF, $FF, $FF, $FF, $7E, $3C
+    dc.b    $00, $00, $00, $10, $01, $04, $01, $0A, $00, $00, $00, $10, $01, $05, $01, $0F
+    dc.b    $0A, $01, $04, $01, $10, $00, $00, $00, $0F, $01, $05, $01, $10, $00, $00, $00
+    dc.b    $01, $40, $01, $11, $08, $05, $00, $B5, $01, $40, $21, $11, $09, $05, $03, $BF
+    dc.b    $B5, $00, $05, $08, $11, $01, $40, $01, $BF, $03, $05, $09, $11, $21, $40, $01
+    dc.b    $07, $07, $01, $07, $0E, $1F, $1F, $3F, $00, $00, $01, $00, $03, $07, $0F, $0B
+    dc.b    $3F, $2F, $3F, $3F, $1F, $1F, $0E, $07, $1D, $1E, $1F, $0F, $0F, $07, $03, $00
+    dc.b    $00, $00, $08, $3E, $3E, $7F, $3F, $7F, $00, $00, $1C, $22, $41, $40, $40, $40
+    dc.b    $1F, $3F, $0F, $0F, $03, $03, $00, $00, $20, $20, $10, $08, $04, $02, $01, $00
+    dc.b    $00, $00, $07, $09, $13, $27, $27, $23, $00, $00, $07, $0E, $1C, $38, $3F, $3B
+    dc.b    $31, $38, $3F, $1F, $1F, $07, $00, $00, $1D, $0E, $07, $00, $00, $00, $00, $00
+    dc.b    $31, $7B, $7B, $7B, $7F, $7B, $7B, $7F, $31, $7B, $7B, $7B, $40, $3B, $7B, $7B
+    dc.b    $7B, $7B, $7F, $7B, $7B, $4E, $00, $00, $7B, $7B, $40, $3B, $7B, $7B, $7B, $31
+    dc.b    $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $01, $01
+    dc.b    $00, $00, $00, $00, $00, $00, $00, $00, $03, $03, $07, $07, $0F, $0F, $1F, $1F
 
     even
 CommonBackgroundPatterns:
-; .INCBIN "dat/CommonBackgroundPatterns.dat" not found — stub 128 zero bytes
-    rept    128
-        dc.b    0
-    endr
+; .INCBIN dat/CommonBackgroundPatterns.dat (1792 bytes)
+    dc.b    $38, $4C, $C6, $C6, $C6, $64, $38, $00, $00, $00, $00, $00, $00, $00, $00, $00
+    dc.b    $18, $38, $18, $18, $18, $18, $7E, $00, $00, $00, $00, $00, $00, $00, $00, $00
+    dc.b    $7C, $C6, $0E, $3C, $78, $E0, $FE, $00, $00, $00, $00, $00, $00, $00, $00, $00
+    dc.b    $7E, $0C, $18, $3C, $06, $C6, $7C, $00, $00, $00, $00, $00, $00, $00, $00, $00
+    dc.b    $1C, $3C, $6C, $CC, $FE, $0C, $0C, $00, $00, $00, $00, $00, $00, $00, $00, $00
+    dc.b    $FC, $C0, $FC, $06, $06, $C6, $7C, $00, $00, $00, $00, $00, $00, $00, $00, $00
+    dc.b    $3C, $60, $C0, $FC, $C6, $C6, $7C, $00, $00, $00, $00, $00, $00, $00, $00, $00
+    dc.b    $FE, $C6, $0C, $18, $30, $30, $30, $00, $00, $00, $00, $00, $00, $00, $00, $00
+    dc.b    $78, $C4, $E4, $78, $86, $86, $7C, $00, $00, $00, $00, $00, $00, $00, $00, $00
+    dc.b    $7C, $C6, $C6, $7E, $06, $0C, $78, $00, $00, $00, $00, $00, $00, $00, $00, $00
+    dc.b    $38, $6C, $C6, $C6, $FE, $C6, $C6, $00, $00, $00, $00, $00, $00, $00, $00, $00
+    dc.b    $FC, $C6, $C6, $FC, $C6, $C6, $FC, $00, $00, $00, $00, $00, $00, $00, $00, $00
+    dc.b    $3C, $66, $C0, $C0, $C0, $66, $3C, $00, $00, $00, $00, $00, $00, $00, $00, $00
+    dc.b    $F8, $CC, $C6, $C6, $C6, $CC, $F8, $00, $00, $00, $00, $00, $00, $00, $00, $00
+    dc.b    $FE, $C0, $C0, $FC, $C0, $C0, $FE, $00, $00, $00, $00, $00, $00, $00, $00, $00
+    dc.b    $FE, $C0, $C0, $FC, $C0, $C0, $C0, $00, $00, $00, $00, $00, $00, $00, $00, $00
+    dc.b    $3E, $60, $C0, $CE, $C6, $66, $3E, $00, $00, $00, $00, $00, $00, $00, $00, $00
+    dc.b    $C6, $C6, $C6, $FE, $C6, $C6, $C6, $00, $00, $00, $00, $00, $00, $00, $00, $00
+    dc.b    $3C, $18, $18, $18, $18, $18, $3C, $00, $00, $00, $00, $00, $00, $00, $00, $00
+    dc.b    $1E, $06, $06, $06, $C6, $C6, $7C, $00, $00, $00, $00, $00, $00, $00, $00, $00
+    dc.b    $C6, $CC, $D8, $F0, $D8, $CC, $C6, $00, $00, $00, $00, $00, $00, $00, $00, $00
+    dc.b    $60, $60, $60, $60, $60, $60, $7E, $00, $00, $00, $00, $00, $00, $00, $00, $00
+    dc.b    $C6, $EE, $FE, $FE, $D6, $C6, $C6, $00, $00, $00, $00, $00, $00, $00, $00, $00
+    dc.b    $C6, $E6, $F6, $FE, $DE, $CE, $C6, $00, $00, $00, $00, $00, $00, $00, $00, $00
+    dc.b    $7C, $C6, $C6, $C6, $C6, $C6, $7C, $00, $00, $00, $00, $00, $00, $00, $00, $00
+    dc.b    $FC, $C6, $C6, $FC, $C0, $C0, $C0, $00, $00, $00, $00, $00, $00, $00, $00, $00
+    dc.b    $7C, $C6, $C6, $C6, $DE, $CC, $7A, $00, $00, $00, $00, $00, $00, $00, $00, $00
+    dc.b    $FC, $C6, $C6, $FC, $D8, $CC, $C6, $00, $00, $00, $00, $00, $00, $00, $00, $00
+    dc.b    $78, $CC, $C0, $7C, $06, $C6, $7C, $00, $00, $00, $00, $00, $00, $00, $00, $00
+    dc.b    $7E, $18, $18, $18, $18, $18, $18, $00, $00, $00, $00, $00, $00, $00, $00, $00
+    dc.b    $C6, $C6, $C6, $C6, $C6, $C6, $7C, $00, $00, $00, $00, $00, $00, $00, $00, $00
+    dc.b    $C6, $C6, $C6, $EE, $7C, $38, $10, $00, $00, $00, $00, $00, $00, $00, $00, $00
+    dc.b    $C6, $C6, $D6, $FE, $FE, $EE, $C6, $00, $00, $00, $00, $00, $00, $00, $00, $00
+    dc.b    $C6, $EE, $7C, $38, $7C, $EE, $C6, $00, $00, $00, $00, $00, $00, $00, $00, $00
+    dc.b    $66, $66, $66, $3C, $18, $18, $18, $00, $00, $00, $00, $00, $00, $00, $00, $00
+    dc.b    $FE, $0E, $1C, $38, $70, $E0, $FE, $00, $00, $00, $00, $00, $00, $00, $00, $00
+    dc.b    $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
+    dc.b    $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $00, $00, $00, $00, $00, $00, $00, $00
+    dc.b    $00, $00, $00, $00, $00, $00, $00, $00, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF
+    dc.b    $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF
+    dc.b    $00, $00, $00, $00, $30, $10, $20, $00, $00, $00, $00, $00, $00, $00, $00, $00
+    dc.b    $18, $18, $18, $18, $18, $00, $18, $00, $00, $00, $00, $00, $00, $00, $00, $00
+    dc.b    $30, $10, $20, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
+    dc.b    $70, $88, $50, $20, $54, $88, $76, $00, $00, $00, $00, $00, $00, $00, $00, $00
+    dc.b    $00, $00, $00, $00, $00, $30, $30, $00, $00, $00, $00, $00, $00, $00, $00, $00
+    dc.b    $24, $24, $24, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
+    dc.b    $38, $44, $04, $08, $10, $00, $10, $00, $00, $00, $00, $00, $00, $00, $00, $00
+    dc.b    $00, $00, $00, $FC, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
+    dc.b    $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
+    dc.b    $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
+    dc.b    $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
+    dc.b    $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
+    dc.b    $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
+    dc.b    $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
+    dc.b    $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
+    dc.b    $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
+    dc.b    $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
+    dc.b    $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
+    dc.b    $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
+    dc.b    $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
+    dc.b    $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
+    dc.b    $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
+    dc.b    $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
+    dc.b    $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
+    dc.b    $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
+    dc.b    $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
+    dc.b    $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
+    dc.b    $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
+    dc.b    $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
+    dc.b    $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
+    dc.b    $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
+    dc.b    $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
+    dc.b    $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
+    dc.b    $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
+    dc.b    $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
+    dc.b    $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
+    dc.b    $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
+    dc.b    $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
+    dc.b    $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
+    dc.b    $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
+    dc.b    $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
+    dc.b    $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
+    dc.b    $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
+    dc.b    $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
+    dc.b    $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
+    dc.b    $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
+    dc.b    $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
+    dc.b    $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
+    dc.b    $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
+    dc.b    $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
+    dc.b    $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
+    dc.b    $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
+    dc.b    $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
+    dc.b    $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
+    dc.b    $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
+    dc.b    $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
+    dc.b    $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
+    dc.b    $01, $1D, $2E, $5F, $5F, $BF, $7E, $3C, $00, $3C, $5E, $BF, $BF, $FF, $7E, $3C
+    dc.b    $00, $00, $00, $FC, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
+    dc.b    $00, $00, $00, $00, $00, $30, $30, $00, $00, $00, $00, $00, $00, $00, $00, $00
+    dc.b    $10, $10, $10, $FE, $10, $10, $10, $00, $00, $00, $00, $00, $00, $00, $00, $00
+    dc.b    $6C, $FE, $FE, $FE, $FE, $7C, $38, $10, $0C, $0E, $1E, $0E, $1E, $0C, $18, $00
+    dc.b    $6C, $FE, $FE, $FE, $FE, $7C, $38, $10, $6C, $FE, $FE, $FE, $FE, $7C, $38, $10
+    dc.b    $FE, $FE, $FE, $00, $00, $00, $00, $00, $FE, $FE, $FE, $00, $00, $00, $00, $00
+    dc.b    $01, $90, $00, $42, $08, $02, $20, $04, $FE, $EF, $FF, $BF, $F7, $FD, $DF, $FF
+    dc.b    $00, $00, $00, $0F, $1F, $18, $18, $18, $00, $00, $00, $0F, $1F, $18, $18, $18
+    dc.b    $00, $00, $00, $FF, $FF, $00, $00, $00, $00, $00, $00, $FF, $FF, $00, $00, $00
+    dc.b    $00, $00, $00, $F0, $F8, $18, $18, $18, $00, $00, $00, $F0, $F8, $18, $18, $18
+    dc.b    $18, $18, $18, $18, $18, $18, $18, $18, $18, $18, $18, $18, $18, $18, $18, $18
+    dc.b    $18, $18, $18, $F8, $F0, $00, $00, $00, $18, $18, $18, $F8, $F0, $00, $00, $00
+    dc.b    $18, $18, $18, $1F, $0F, $00, $00, $00, $18, $18, $18, $1F, $0F, $00, $00, $00
+    dc.b    $FF, $FF, $00, $FF, $FF, $FF, $00, $FF, $00, $00, $FF, $FF, $00, $00, $FF, $FF
 
     even
 CommonMiscPatterns:
-; .INCBIN "dat/CommonMiscPatterns.dat" not found — stub 128 zero bytes
-    rept    128
-        dc.b    0
-    endr
+; .INCBIN dat/CommonMiscPatterns.dat (224 bytes)
+    dc.b    $6C, $FE, $FE, $FE, $FE, $7C, $38, $10, $00, $00, $00, $00, $00, $00, $00, $00
+    dc.b    $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
+    dc.b    $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $00, $00, $00, $00, $00, $00, $00, $00
+    dc.b    $00, $00, $00, $00, $00, $00, $00, $00, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF
+    dc.b    $60, $40, $40, $FF, $06, $04, $04, $FF, $BF, $BF, $BF, $00, $FB, $FB, $FB, $00
+    dc.b    $0E, $20, $40, $00, $80, $80, $80, $00, $1F, $3D, $7D, $FD, $F8, $F6, $8C, $E8
+    dc.b    $00, $00, $00, $00, $00, $00, $05, $00, $00, $00, $00, $00, $00, $00, $00, $00
+    dc.b    $00, $00, $00, $00, $00, $00, $00, $00, $0E, $13, $11, $09, $16, $20, $50, $A0
+    dc.b    $FD, $01, $01, $00, $DF, $10, $10, $00, $00, $FC, $FC, $00, $00, $CF, $CF, $00
+    dc.b    $00, $00, $00, $00, $FE, $FE, $FE, $00, $00, $00, $00, $00, $FE, $FE, $FE, $00
+    dc.b    $3C, $42, $99, $A1, $A1, $99, $42, $3C, $00, $00, $00, $00, $00, $00, $00, $00
+    dc.b    $00, $00, $00, $00, $00, $00, $00, $00, $04, $16, $9E, $9F, $BF, $BF, $FF, $FF
+    dc.b    $00, $00, $00, $00, $00, $00, $00, $00, $FF, $FF, $BF, $BF, $BF, $9D, $19, $08
+    dc.b    $FE, $FE, $FE, $00, $FE, $FE, $FE, $00, $FE, $FE, $FE, $00, $FE, $FE, $FE, $00
 
 ; Unknown block
     dc.b    $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF
@@ -777,7 +511,9 @@ UpdateMode0Demo_Sub0:
     moveq   #18,D0
     move.b  D0,($0014,A4)
     even
+    IFND Exit
 Exit:
+    ENDC
     rts
 
     even
@@ -1284,7 +1020,7 @@ _L_z02_AnimateDemoPhase1Subphase2_ClearLine:
     move.b  D0,($0302,A4)
     move.b  ($041C,A4),D0
     move.b  D0,($0303,A4)
-    andi.b  #$EE,CCR  ; CLC: clear C+X
+    andi    #$EE,CCR  ; CLC: clear C+X
     move.b  #$20,D1
     addx.b  D1,D0   ; ADC #$20 (X flag = 6502 C)
     move.b  D0,($041C,A4)
@@ -1399,7 +1135,7 @@ ProcessDemoLineAttrs:
     move.b  D0,($0329,A4)
     addq.b  #1,($0416,A4)
     move.b  ($0417,A4),D0
-    andi.b  #$EE,CCR  ; CLC: clear C+X
+    andi    #$EE,CCR  ; CLC: clear C+X
     move.b  #$08,D1
     addx.b  D1,D0   ; ADC #$08 (X flag = 6502 C)
     move.b  D0,($0417,A4)
@@ -1606,7 +1342,7 @@ AnimateDemoStoryFinalItems:
     lsl.b  #1,D0   ; ASL A
     move.b  D0,($0000,A4)
     lsl.b  #1,D0   ; ASL A
-    andi.b  #$EE,CCR  ; CLC: clear C+X
+    andi    #$EE,CCR  ; CLC: clear C+X
     move.b  ($0000,A4),D1
     addx.b  D1,D0   ; ADC $00
     move.b  D0,D3
@@ -1645,7 +1381,7 @@ _L_z02_AnimateDemoStoryFinalItems_LoopSprite:
     even
 _L_z02_AnimateDemoStoryFinalItems_SkipSprite:
     move.b  ($0001,A4),D0
-    andi.b  #$EE,CCR  ; CLC: clear C+X
+    andi    #$EE,CCR  ; CLC: clear C+X
     move.b  #$08,D1
     addx.b  D1,D0   ; ADC #$08 (X flag = 6502 C)
     move.b  D0,($0001,A4)
@@ -1831,7 +1567,7 @@ _L_z02_UpdateSpritesForWaterfallWave_SetOffset:
 _L_z02_UpdateSpritesForWaterfallWave_LoopSprite:
     lea     (WaterfallWaveTiles).l,A0
     move.b  (A0,D2.W),D0
-    andi.b  #$EE,CCR  ; CLC: clear C+X
+    andi    #$EE,CCR  ; CLC: clear C+X
     move.b  ($0000,A4),D1
     addx.b  D1,D0   ; ADC $00
     lea     ($0201,A4),A0
@@ -2111,7 +1847,7 @@ FetchFileBAddressSet:
     move.b  ($0016,A4),D3
     even
 _L_z02_FetchFileBAddressSet_AddE:
-    andi.b  #$EE,CCR  ; CLC: clear C+X
+    andi    #$EE,CCR  ; CLC: clear C+X
     move.b  #$0E,D1
     addx.b  D1,D0   ; ADC #$0E (X flag = 6502 C)
     subq.b  #1,D3
@@ -2685,7 +2421,7 @@ _anon_z02_10:
     ;
     addq.b  #1,($041F,A4)
     move.b  ($0071,A4),D0
-    andi.b  #$EE,CCR  ; CLC: clear C+X
+    andi    #$EE,CCR  ; CLC: clear C+X
     move.b  #$10,D1
     addx.b  D1,D0   ; ADC #$10 (X flag = 6502 C)
     move.b  D0,($0071,A4)
@@ -2712,7 +2448,7 @@ _L_z02_ModeE_HandleDirectionButton_Left:
     ;
     subq.b  #1,($041F,A4)
     move.b  ($0071,A4),D0
-    ori.b   #$11,CCR  ; SEC: set C+X
+    ori     #$11,CCR  ; SEC: set C+X
     move.b  #$10,D1
     subx.b  D1,D0   ; SBC #$10
     move.b  D0,($0071,A4)
@@ -2738,7 +2474,7 @@ _L_z02_ModeE_HandleDirectionButton_Down:
     ; Increase CharBoardIndex [$041F] by $B (one row down).
     ;
     move.b  ($041F,A4),D0
-    andi.b  #$EE,CCR  ; CLC: clear C+X
+    andi    #$EE,CCR  ; CLC: clear C+X
     move.b  #$0B,D1
     addx.b  D1,D0   ; ADC #$0B (X flag = 6502 C)
     move.b  D0,($041F,A4)
@@ -2747,7 +2483,7 @@ _L_z02_ModeE_HandleDirectionButton_Down:
     move.b  ($042A,A4),D0
     beq  _L_z02_ModeE_HandleDirectionButton_Finish
     move.b  ($041F,A4),D0
-    ori.b   #$11,CCR  ; SEC: set C+X
+    ori     #$11,CCR  ; SEC: set C+X
     move.b  #$2C,D1
     subx.b  D1,D0   ; SBC #$2C
     move.b  D0,($041F,A4)
@@ -2764,7 +2500,7 @@ _L_z02_ModeE_HandleDirectionButton_Up:
     ; Decrease CharBoardIndex [$041F] by $B (one row up).
     ;
     move.b  ($041F,A4),D0
-    ori.b   #$11,CCR  ; SEC: set C+X
+    ori     #$11,CCR  ; SEC: set C+X
     move.b  #$0B,D1
     subx.b  D1,D0   ; SBC #$0B
     move.b  D0,($041F,A4)
@@ -2773,7 +2509,7 @@ _L_z02_ModeE_HandleDirectionButton_Up:
     move.b  ($042A,A4),D0
     beq  _L_z02_ModeE_HandleDirectionButton_FinishInput
     move.b  ($041F,A4),D0
-    andi.b  #$EE,CCR  ; CLC: clear C+X
+    andi    #$EE,CCR  ; CLC: clear C+X
     move.b  #$2C,D1
     addx.b  D1,D0   ; ADC #$2C (X flag = 6502 C)
     move.b  D0,($041F,A4)
@@ -2797,7 +2533,7 @@ _L_z02_ModeE_HandleDirectionButton_Exit:
 CycleCharBoardCursorY:
     moveq   #0,D3
     move.b  ($0085,A4),D0
-    andi.b  #$EE,CCR  ; CLC: clear C+X
+    andi    #$EE,CCR  ; CLC: clear C+X
     lea     (ModeE_CharBoardYOffsetsAndBounds).l,A0
     move.b  (A0,D2.W),D1
     addx.b  D1,D0   ; ADC ModeE_CharBoardYOffsetsAndBounds,X
@@ -2889,7 +2625,7 @@ _L_z02_ModeE_HandleAOrB_CopyHeader:
     even
 _L_z02_ModeE_HandleAOrB_MoveCursor:
     move.b  ($0070,A4),D0
-    andi.b  #$EE,CCR  ; CLC: clear C+X
+    andi    #$EE,CCR  ; CLC: clear C+X
     move.b  #$08,D1
     addx.b  D1,D0   ; ADC #$08 (X flag = 6502 C)
     move.b  D0,($0070,A4)
@@ -2918,7 +2654,7 @@ _L_z02_ModeE_HandleAOrB_MoveCursor:
     ; For example, $20D6 -> $20CE.
     ;
     move.b  ($0423,A4),D0
-    ori.b   #$11,CCR  ; SEC: set C+X
+    ori     #$11,CCR  ; SEC: set C+X
     move.b  #$08,D1
     subx.b  D1,D0   ; SBC #$08
     move.b  D0,($0423,A4)
@@ -2970,7 +2706,7 @@ _L_z02_ModeEandF_SetUpCursorSprites_CopySprites:
     ; in the bottom, move the name cursor's sprite 8 pixels
     ; above its ObjY.
     move.b  ($0084,A4),D0
-    ori.b   #$11,CCR  ; SEC: set C+X
+    ori     #$11,CCR  ; SEC: set C+X
     move.b  #$08,D1
     subx.b  D1,D0   ; SBC #$08
     move.b  D0,($0204,A4)
@@ -3035,7 +2771,7 @@ _L_z02_ModeEandF_WriteCharBoardCursorSpritePosition_WriteCursorCoords:
 ;
     even
 ModifyFlashingCursorY:
-    ori.b   #$11,CCR  ; SEC: set C+X
+    ori     #$11,CCR  ; SEC: set C+X
     move.b  #$08,D1
     subx.b  D1,D0   ; SBC #$08
     move.b  D0,D3
@@ -3069,7 +2805,7 @@ _anon_z02_14:
     cmpi.b  #$0F,D0
     beq  _L_z02_UpdateModeEandF_Idle_Exit
     move.b  ($0084,A4),D0
-    andi.b  #$EE,CCR  ; CLC: clear C+X
+    andi    #$EE,CCR  ; CLC: clear C+X
     move.b  #$18,D1
     addx.b  D1,D0   ; ADC #$18 (X flag = 6502 C)
     move.b  D0,($0084,A4)
@@ -3305,7 +3041,7 @@ _anon_z02_16:
     move.b  (A0,D3.W),D0     ; LDA ($nn),Y
     even
 AddATo0F0E:
-    andi.b  #$EE,CCR  ; CLC: clear C+X
+    andi    #$EE,CCR  ; CLC: clear C+X
     move.b  ($000F,A4),D1
     addx.b  D1,D0   ; ADC $0F
     move.b  D0,($000F,A4)
@@ -3555,7 +3291,7 @@ _anon_z02_18:
     move.b  (A0,D3.W),D0     ; LDA ($nn),Y
     even
 AddAToCFCE:
-    andi.b  #$EE,CCR  ; CLC: clear C+X
+    andi    #$EE,CCR  ; CLC: clear C+X
     move.b  ($00CF,A4),D1
     addx.b  D1,D0   ; ADC $CF
     move.b  D0,($00CF,A4)
@@ -3691,12 +3427,12 @@ _L_z02_InitMode1_Sub1_LoopSlot:
     lea     (MenuPalettesTransferBuf+20).l,A0
     move.b  D0,(A0,D2.W)
     move.b  (A5)+,D0  ; PLA
-    andi.b  #$EE,CCR  ; CLC: clear C+X
+    andi    #$EE,CCR  ; CLC: clear C+X
     move.b  #$28,D1
     addx.b  D1,D0   ; ADC #$28 (X flag = 6502 C)
     move.b  D0,D3
     move.b  D2,D0
-    andi.b  #$EE,CCR  ; CLC: clear C+X
+    andi    #$EE,CCR  ; CLC: clear C+X
     move.b  #$04,D1
     addx.b  D1,D0   ; ADC #$04 (X flag = 6502 C)
     move.b  D0,D2
@@ -3741,12 +3477,12 @@ _L_z02_InitMode1_FillAndTransferSlotTiles_CopySlotLineTemplate:
     even
 _L_z02_InitMode1_FillAndTransferSlotTiles_OffsetSlotLineAddr:
     move.b  ($0303,A4),D0
-    andi.b  #$EE,CCR  ; CLC: clear C+X
+    andi    #$EE,CCR  ; CLC: clear C+X
     move.b  #$60,D1
     addx.b  D1,D0   ; ADC #$60 (X flag = 6502 C)
     move.b  D0,($0303,A4)
     move.b  ($0317,A4),D0
-    andi.b  #$EE,CCR  ; CLC: clear C+X
+    andi    #$EE,CCR  ; CLC: clear C+X
     move.b  #$60,D1
     addx.b  D1,D0   ; ADC #$60 (X flag = 6502 C)
     move.b  D0,($0317,A4)
@@ -3847,7 +3583,7 @@ _L_z02_InitMode1_Sub6_EmitChar:
     lea     ($0304,A4),A0
     move.b  D0,(A0,D2.W)
     move.b  D2,D0
-    andi.b  #$EE,CCR  ; CLC: clear C+X
+    andi    #$EE,CCR  ; CLC: clear C+X
     move.b  #$06,D1
     addx.b  D1,D0   ; ADC #$06 (X flag = 6502 C)
     move.b  D0,($000B,A4)
@@ -3950,7 +3686,7 @@ UpdateMode1Menu_Sub1:
     cmpi.b  #$03,D0
     bcs  _L_z02_UpdateMode1Menu_Sub1_ChoseSlot
     move.b  ($0016,A4),D0
-    andi.b  #$EE,CCR  ; CLC: clear C+X
+    andi    #$EE,CCR  ; CLC: clear C+X
     move.b  #$0B,D1
     addx.b  D1,D0   ; ADC #$0B (X flag = 6502 C)
     move.b  D0,($0012,A4)
@@ -4038,11 +3774,11 @@ Mode1_WriteLinkSprites:
     even
 _L_z02_Mode1_WriteLinkSprites_LoopSlot:
     move.b  ($0343,A4),D0
-    andi.b  #$EE,CCR  ; CLC: clear C+X
+    andi    #$EE,CCR  ; CLC: clear C+X
     move.b  #$08,D1
     addx.b  D1,D0   ; ADC #$08 (X flag = 6502 C)
     move.b  D0,($0343,A4)
-    andi.b  #$EE,CCR  ; CLC: clear C+X
+    andi    #$EE,CCR  ; CLC: clear C+X
     move.b  #$04,D1
     addx.b  D1,D0   ; ADC #$04 (X flag = 6502 C)
     move.b  D0,($0344,A4)
@@ -4062,7 +3798,7 @@ _L_z02_Mode1_WriteLinkSprites_LoopSlot:
     beq  _L_z02_Mode1_WriteLinkSprites_NextSlot
     move.b  ($0343,A4),D3
     move.b  ($0001,A4),D0
-    ori.b   #$11,CCR  ; SEC: set C+X
+    ori     #$11,CCR  ; SEC: set C+X
     move.b  #$03,D1
     subx.b  D1,D0   ; SBC #$03
     lea     ($0280,A4),A0
@@ -4074,7 +3810,7 @@ _L_z02_Mode1_WriteLinkSprites_LoopSlot:
     lea     ($0282,A4),A0
     move.b  D0,(A0,D3.W)
     move.b  ($0000,A4),D0
-    andi.b  #$EE,CCR  ; CLC: clear C+X
+    andi    #$EE,CCR  ; CLC: clear C+X
     move.b  #$0C,D1
     addx.b  D1,D0   ; ADC #$0C (X flag = 6502 C)
     lea     ($0283,A4),A0
@@ -4082,7 +3818,7 @@ _L_z02_Mode1_WriteLinkSprites_LoopSlot:
     even
 _L_z02_Mode1_WriteLinkSprites_NextSlot:
     move.b  ($0001,A4),D0
-    andi.b  #$EE,CCR  ; CLC: clear C+X
+    andi    #$EE,CCR  ; CLC: clear C+X
     move.b  #$18,D1
     addx.b  D1,D0   ; ADC #$18 (X flag = 6502 C)
     move.b  D0,($0001,A4)
@@ -4921,7 +4657,7 @@ DrawLinkZeldaTriforces:
     move.b  ($0070,A4),D0
     move.b  D0,($0083,A4)
     move.b  ($0084,A4),D0
-    ori.b   #$11,CCR  ; SEC: set C+X
+    ori     #$11,CCR  ; SEC: set C+X
     move.b  #$10,D1
     subx.b  D1,D0   ; SBC #$10
     move.b  D0,($0097,A4)
@@ -4954,7 +4690,7 @@ DrawLinkZeldaTriforces:
     move.b  ($0071,A4),D0
     move.b  D0,($0072,A4)
     move.b  ($0085,A4),D0
-    ori.b   #$11,CCR  ; SEC: set C+X
+    ori     #$11,CCR  ; SEC: set C+X
     move.b  #$10,D1
     subx.b  D1,D0   ; SBC #$10
     move.b  D0,($0086,A4)
@@ -5159,7 +4895,7 @@ _anon_z02_37:
     ; Add $80 to the scroll speed fraction.
     ;
     move.b  ($0058,A4),D0
-    andi.b  #$EE,CCR  ; CLC: clear C+X
+    andi    #$EE,CCR  ; CLC: clear C+X
     move.b  #$80,D1
     addx.b  D1,D0   ; ADC #$80 (X flag = 6502 C)
     move.b  D0,($0058,A4)
@@ -5660,112 +5396,4 @@ SwitchBank_Local2:
 
 ; Unknown block
     dc.b    $84, $E4, $50, $BF, $F0, $BF
-
-
-;==============================================================================
-; Import stubs (T2: defined locally so the file assembles standalone)
-;==============================================================================
-    even
-Anim_SetSpriteDescriptorAttributes:
-    rts
-
-    even
-Anim_SetSpriteDescriptorRedPaletteRow:
-    rts
-
-    even
-Anim_WriteItemSprites:
-    rts
-
-    even
-Anim_WriteSpecificItemSprites:
-    rts
-
-    even
-Anim_WriteSpritePairNotFlashing:
-    rts
-
-    even
-BeginUpdateMode:
-    rts
-
-    even
-DrawObjectMirrored:
-    rts
-
-    even
-DrawObjectNotMirrored:
-    rts
-
-    even
-FetchFileAAddressSet:
-    rts
-
-    even
-FileBChecksums:
-    rts
-
-    even
-FormatDecimalByte:
-    rts
-
-    even
-FormatHeartsInTextBuf:
-    rts
-
-    even
-Person_Draw:
-    rts
-
-    even
-ResetRoomTileObjInfo:
-    rts
-
-    even
-SilenceAllSound:
-    rts
-
-    even
-UpdateWorldCurtainEffect_Bank2:
-    rts
-
-    even
-MenuPalettesTransferBuf:
-    rts
-
-    even
-Anim_FetchObjPosForSpriteDescriptor:
-    rts
-
-    even
-AnimateItemObject:
-    rts
-
-    even
-EndGameMode:
-    rts
-
-    even
-GoToNextMode:
-    rts
-
-    even
-HideAllSprites:
-    rts
-
-    even
-Link_EndMoveAndDraw:
-    rts
-
-    even
-TableJump:
-    rts
-
-    even
-TurnOffAllVideo:
-    rts
-
-    even
-TurnOffVideoAndClearArtifacts:
-    rts
 

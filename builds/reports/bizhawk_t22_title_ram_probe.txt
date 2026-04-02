@@ -1,0 +1,79 @@
+=================================================================
+T22: Title Screen RAM Checkpoint  —  up to 600 frames
+=================================================================
+  LoopForever=$0164A0  ExcBus=$000366  ExcAddr=$000388  ExcDef=$0003AA
+
+  f001 pc=$000306  pm805=$00 fe=$00  f5=$00  f6=$00  mode=$00  disp=-
+  f002 pc=$000306  pm805=$00 fe=$00  f5=$00  f6=$00  mode=$00  disp=-
+  f003 pc=$0002FE  pm805=$00 fe=$00  f5=$00  f6=$00  mode=$00  disp=-
+  f004 pc=$000306  pm805=$00 fe=$00  f5=$00  f6=$00  mode=$00  disp=-
+  f005 pc=$0002FE  pm805=$00 fe=$00  f5=$00  f6=$00  mode=$00  disp=-
+  f060 pc=$0052BC  pm805=$00 fe=$00  f5=$00  f6=$00  mode=$00  disp=32
+  f120 pc=$001596  pm805=$00 fe=$00  f5=$5A  f6=$A5  mode=$00  disp=32
+  f180 pc=$0014EA  pm805=$00 fe=$00  f5=$5A  f6=$A5  mode=$00  disp=32
+  f240 pc=$00152E  pm805=$00 fe=$00  f5=$5A  f6=$A5  mode=$00  disp=32
+  f300 pc=$001574  pm805=$00 fe=$00  f5=$5A  f6=$A5  mode=$00  disp=32
+  f360 pc=$0015AC  pm805=$00 fe=$00  f5=$5A  f6=$A5  mode=$00  disp=32
+  f420 pc=$0014D6  pm805=$00 fe=$00  f5=$5A  f6=$A5  mode=$00  disp=32
+  f480 pc=$00152A  pm805=$00 fe=$00  f5=$5A  f6=$A5  mode=$00  disp=32
+  f540 pc=$001570  pm805=$00 fe=$00  f5=$5A  f6=$A5  mode=$00  disp=32
+  f600 pc=$0015A6  pm805=$00 fe=$00  f5=$5A  f6=$A5  mode=$00  disp=32
+  Display enabled at frame 32 — waiting 10 more frames...
+
+─── Title Screen RAM Snapshot ───────────────────────────────────
+  $FF0011 (draw flag)     = $01  (expect $00)
+  $FF0012 (GameMode)      = $00  (expect $00 = title)
+  $FF0014 (buf idx)       = $00  (should be $00 when idle)
+  $FF0017 (music)         = $00  (expect $00 = title music active)
+  $FF00E3 (disp override) = $00  (expect $00 = normal)
+  $FF00F5 (TCP_ran)       = $5A  (expect $5A = CommonPatterns done)
+  $FF00F6 (init magic)    = $A5  (expect $A5 = InitMode0 done)
+  $FF00FE (game PPUMASK)  = $00  (expect $1E = display on)
+  $FF0805 (PPU_MASK reg)  = $00  (expect $1E = display on)
+  $FF1003 (NMI count)     = $07  debug
+  $FF1007 (TCP count)     = $07  debug
+
+─── $FF0000-$FF00FF RAM dump (first 256 bytes) ──────────────────
+  $FF0000: 00 01 00 02 02 00 61 5A 00 00 00 00 00 00 00 00
+  $FF0010: 00 01 00 00 00 06 00 00 40 00 00 00 00 00 00 00
+  $FF0020: 00 00 00 00 00 00 03 00 00 00 00 00 00 00 00 00
+  $FF0030: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+  $FF0040: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+  $FF0050: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+  $FF0060: 00 00 00 00 00 00 20 97 00 00 00 00 21 00 00 00
+  $FF0070: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+  $FF0080: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+  $FF0090: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+  $FF00A0: 00 00 00 00 00 00 00 00 00 00 00 00 00 FF FF FF
+  $FF00B0: FF FF FF FF FF FF FF 00 00 00 00 00 00 00 00 00
+  $FF00C0: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+  $FF00D0: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+  $FF00E0: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+  $FF00F0: 00 00 00 00 01 5A A5 00 00 00 00 00 00 00 00 30
+
+─── T22: Title Screen RAM Checkpoint ────────────────────────────
+[PASS] T22_NO_EXCEPTION              no exception handler hit
+[PASS] T22_LOOPFOREVER_HIT           frame 31
+[PASS] T22_DISPLAY_ON                display enabled at frame 32
+[PASS] T22_MODE_TITLE                $FF0012=0 — game is on title screen mode
+[PASS] T22_TCP_RAN                   $FF00F5=$5A — TransferCommonPatterns completed
+[PASS] T22_INIT_MAGIC                $FF00F6=$A5 — InitMode0 init flag set
+[PASS] T22_PPUMASK_LIVE              display enabled at frame 32 (PPUMASK=$1E at that moment)
+[PASS] T22_DRAW_MODE_OK              $FF0011=$01 — valid draw mode (0=init, 1=update)
+
+=================================================================
+T22 TITLE SCREEN RAM CHECKPOINT SUMMARY
+=================================================================
+  [PASS] T22_NO_EXCEPTION
+  [PASS] T22_LOOPFOREVER_HIT
+  [PASS] T22_DISPLAY_ON
+  [PASS] T22_MODE_TITLE
+  [PASS] T22_TCP_RAN
+  [PASS] T22_INIT_MAGIC
+  [PASS] T22_PPUMASK_LIVE
+  [PASS] T22_DRAW_MODE_OK
+
+  8 PASS  /  0 FAIL  /  8 total
+
+T22 TITLE SCREEN RAM: ALL PASS
+

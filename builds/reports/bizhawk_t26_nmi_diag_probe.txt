@@ -1,0 +1,1596 @@
+=================================================================
+T26 NMI Diagnostic Probe  —  up to 300 frames
+=================================================================
+  LoopForever=$016568  VBlankISR=$000306
+
+  [f001 periodic]
+    NMI=0  TCP=0  Tim=0  Aud=0  CI=0  RI=0  SC=0  SW=0
+    IGOM=0  Upd=0  IM=0  IM0=0  TCP2=0
+    DriveAudio: DT1=0  DE=0  DSa=0  DSo=0  DT0=0
+    PPU_CTRL=$00 (bit7/NMI-en=0)  PPU_MASK=$00
+    $F4=$00  $F5=$00  $F6=$00  $FF=$00
+    $11=$00  $12=$00  $13=$00  $14=$00  $42C=$00  $42D=$00
+  [f005 periodic]
+    NMI=0  TCP=0  Tim=0  Aud=0  CI=0  RI=0  SC=0  SW=0
+    IGOM=0  Upd=0  IM=0  IM0=0  TCP2=0
+    DriveAudio: DT1=0  DE=0  DSa=0  DSo=0  DT0=0
+    PPU_CTRL=$00 (bit7/NMI-en=0)  PPU_MASK=$00
+    $F4=$00  $F5=$00  $F6=$00  $FF=$00
+    $11=$00  $12=$00  $13=$00  $14=$00  $42C=$00  $42D=$00
+  [f030 periodic]
+    NMI=0  TCP=0  Tim=0  Aud=0  CI=0  RI=0  SC=0  SW=0
+    IGOM=0  Upd=0  IM=0  IM0=0  TCP2=0
+    DriveAudio: DT1=0  DE=0  DSa=0  DSo=0  DT0=0
+    PPU_CTRL=$30 (bit7/NMI-en=0)  PPU_MASK=$00
+    $F4=$00  $F5=$00  $F6=$00  $FF=$30
+    $11=$00  $12=$00  $13=$00  $14=$00  $42C=$00  $42D=$00
+  [f032 NMI#1 fired]
+    NMI=1  TCP=1  Tim=1  Aud=1  CI=1  RI=1  SC=1  SW=1
+    IGOM=1  Upd=0  IM=0  IM0=0  TCP2=0
+    DriveAudio: DT1=1  DE=1  DSa=1  DSo=1  DT0=1
+    PPU_CTRL=$30 (bit7/NMI-en=0)  PPU_MASK=$1E
+    $F4=$00  $F5=$00  $F6=$00  $FF=$30
+    $11=$00  $12=$00  $13=$00  $14=$00  $42C=$00  $42D=$00
+  [f046 NMI#2 fired]
+    NMI=2  TCP=2  Tim=2  Aud=2  CI=2  RI=2  SC=2  SW=2
+    IGOM=2  Upd=0  IM=1  IM0=1  TCP2=1
+    DriveAudio: DT1=2  DE=2  DSa=2  DSo=2  DT0=2
+    PPU_CTRL=$30 (bit7/NMI-en=0)  PPU_MASK=$00
+    $F4=$01  $F5=$00  $F6=$00  $FF=$30
+    $11=$00  $12=$00  $13=$00  $14=$00  $42C=$00  $42D=$00
+  [f060 periodic]
+    NMI=2  TCP=2  Tim=2  Aud=2  CI=2  RI=2  SC=2  SW=2
+    IGOM=2  Upd=0  IM=1  IM0=1  TCP2=1
+    DriveAudio: DT1=2  DE=2  DSa=2  DSo=2  DT0=2
+    PPU_CTRL=$30 (bit7/NMI-en=0)  PPU_MASK=$00
+    $F4=$01  $F5=$00  $F6=$00  $FF=$30
+    $11=$00  $12=$00  $13=$00  $14=$00  $42C=$00  $42D=$00
+  [f062 NMI#3 fired]
+    NMI=3  TCP=3  Tim=3  Aud=3  CI=3  RI=3  SC=3  SW=3
+    IGOM=3  Upd=0  IM=2  IM0=2  TCP2=1
+    DriveAudio: DT1=3  DE=3  DSa=3  DSo=3  DT0=3
+    PPU_CTRL=$30 (bit7/NMI-en=0)  PPU_MASK=$00
+    $F4=$01  $F5=$5A  $F6=$00  $FF=$30
+    $11=$00  $12=$00  $13=$00  $14=$00  $42C=$00  $42D=$00
+  [f082 NMI#4 fired]
+    NMI=4  TCP=4  Tim=4  Aud=4  CI=4  RI=4  SC=4  SW=4
+    IGOM=4  Upd=0  IM=3  IM0=3  TCP2=1
+    DriveAudio: DT1=4  DE=4  DSa=4  DSo=4  DT0=4
+    PPU_CTRL=$30 (bit7/NMI-en=0)  PPU_MASK=$1E
+    $F4=$01  $F5=$5A  $F6=$A5  $FF=$30
+    $11=$00  $12=$00  $13=$00  $14=$00  $42C=$00  $42D=$00
+  [f090 periodic]
+    NMI=4  TCP=4  Tim=4  Aud=4  CI=4  RI=4  SC=4  SW=4
+    IGOM=4  Upd=0  IM=3  IM0=3  TCP2=1
+    DriveAudio: DT1=4  DE=4  DSa=4  DSo=4  DT0=4
+    PPU_CTRL=$30 (bit7/NMI-en=0)  PPU_MASK=$00
+    $F4=$01  $F5=$5A  $F6=$A5  $FF=$30
+    $11=$00  $12=$00  $13=$00  $14=$00  $42C=$00  $42D=$00
+  [f093 NMI#5 fired]
+    NMI=5  TCP=4  Tim=4  Aud=4  CI=4  RI=4  SC=4  SW=4
+    IGOM=4  Upd=0  IM=3  IM0=3  TCP2=1
+    DriveAudio: DT1=4  DE=4  DSa=4  DSo=4  DT0=4
+    PPU_CTRL=$30 (bit7/NMI-en=0)  PPU_MASK=$1E
+    $F4=$01  $F5=$5A  $F6=$A5  $FF=$30
+    $11=$00  $12=$00  $13=$00  $14=$00  $42C=$00  $42D=$01
+  [f094 NMI#6 fired]
+    NMI=6  TCP=6  Tim=6  Aud=6  CI=6  RI=6  SC=6  SW=6
+    IGOM=6  Upd=0  IM=5  IM0=5  TCP2=1
+    DriveAudio: DT1=6  DE=6  DSa=6  DSo=6  DT0=6
+    PPU_CTRL=$B0 (bit7/NMI-en=1)  PPU_MASK=$00
+    $F4=$01  $F5=$5A  $F6=$A5  $FF=$B0
+    $11=$01  $12=$00  $13=$00  $14=$10  $42C=$00  $42D=$00
+  [f095 NMI#7 fired]
+    NMI=7  TCP=7  Tim=7  Aud=7  CI=7  RI=7  SC=7  SW=7
+    IGOM=6  Upd=1  IM=5  IM0=5  TCP2=1
+    DriveAudio: DT1=7  DE=7  DSa=7  DSo=7  DT0=7
+    PPU_CTRL=$B0 (bit7/NMI-en=1)  PPU_MASK=$00
+    $F4=$01  $F5=$5A  $F6=$A5  $FF=$B0
+    $11=$01  $12=$00  $13=$00  $14=$00  $42C=$00  $42D=$00
+  [f096 NMI#8 fired]
+    NMI=8  TCP=8  Tim=8  Aud=8  CI=8  RI=8  SC=8  SW=8
+    IGOM=6  Upd=2  IM=5  IM0=5  TCP2=1
+    DriveAudio: DT1=8  DE=8  DSa=8  DSo=8  DT0=8
+    PPU_CTRL=$B0 (bit7/NMI-en=1)  PPU_MASK=$1E
+    $F4=$01  $F5=$5A  $F6=$A5  $FF=$B0
+    $11=$01  $12=$00  $13=$00  $14=$00  $42C=$00  $42D=$00
+  [f097 NMI#9 fired]
+    NMI=9  TCP=9  Tim=9  Aud=9  CI=9  RI=9  SC=9  SW=9
+    IGOM=6  Upd=3  IM=5  IM0=5  TCP2=1
+    DriveAudio: DT1=9  DE=9  DSa=9  DSo=9  DT0=9
+    PPU_CTRL=$B0 (bit7/NMI-en=1)  PPU_MASK=$1E
+    $F4=$01  $F5=$5A  $F6=$A5  $FF=$B0
+    $11=$01  $12=$00  $13=$00  $14=$00  $42C=$00  $42D=$00
+  [f098 NMI#10 fired]
+    NMI=10  TCP=10  Tim=10  Aud=10  CI=10  RI=10  SC=10  SW=10
+    IGOM=6  Upd=4  IM=5  IM0=5  TCP2=1
+    DriveAudio: DT1=10  DE=10  DSa=10  DSo=10  DT0=10
+    PPU_CTRL=$B0 (bit7/NMI-en=1)  PPU_MASK=$1E
+    $F4=$01  $F5=$5A  $F6=$A5  $FF=$B0
+    $11=$01  $12=$00  $13=$00  $14=$00  $42C=$00  $42D=$00
+  [f099 NMI#11 fired]
+    NMI=11  TCP=11  Tim=11  Aud=11  CI=11  RI=11  SC=11  SW=11
+    IGOM=6  Upd=5  IM=5  IM0=5  TCP2=1
+    DriveAudio: DT1=11  DE=11  DSa=11  DSo=11  DT0=11
+    PPU_CTRL=$B0 (bit7/NMI-en=1)  PPU_MASK=$1E
+    $F4=$01  $F5=$5A  $F6=$A5  $FF=$B0
+    $11=$01  $12=$00  $13=$00  $14=$00  $42C=$00  $42D=$00
+  [f100 NMI#12 fired]
+    NMI=12  TCP=12  Tim=12  Aud=12  CI=12  RI=12  SC=12  SW=12
+    IGOM=6  Upd=6  IM=5  IM0=5  TCP2=1
+    DriveAudio: DT1=12  DE=12  DSa=12  DSo=12  DT0=12
+    PPU_CTRL=$B0 (bit7/NMI-en=1)  PPU_MASK=$1E
+    $F4=$01  $F5=$5A  $F6=$A5  $FF=$B0
+    $11=$01  $12=$00  $13=$00  $14=$00  $42C=$00  $42D=$00
+  [f101 NMI#13 fired]
+    NMI=13  TCP=13  Tim=13  Aud=13  CI=13  RI=13  SC=13  SW=13
+    IGOM=6  Upd=7  IM=5  IM0=5  TCP2=1
+    DriveAudio: DT1=13  DE=13  DSa=13  DSo=13  DT0=13
+    PPU_CTRL=$B0 (bit7/NMI-en=1)  PPU_MASK=$1E
+    $F4=$01  $F5=$5A  $F6=$A5  $FF=$B0
+    $11=$01  $12=$00  $13=$00  $14=$00  $42C=$00  $42D=$00
+  [f102 NMI#14 fired]
+    NMI=14  TCP=14  Tim=14  Aud=14  CI=14  RI=14  SC=14  SW=14
+    IGOM=6  Upd=8  IM=5  IM0=5  TCP2=1
+    DriveAudio: DT1=14  DE=14  DSa=14  DSo=14  DT0=14
+    PPU_CTRL=$B0 (bit7/NMI-en=1)  PPU_MASK=$1E
+    $F4=$01  $F5=$5A  $F6=$A5  $FF=$B0
+    $11=$01  $12=$00  $13=$00  $14=$00  $42C=$00  $42D=$00
+  [f103 NMI#15 fired]
+    NMI=15  TCP=15  Tim=15  Aud=15  CI=15  RI=15  SC=15  SW=15
+    IGOM=6  Upd=9  IM=5  IM0=5  TCP2=1
+    DriveAudio: DT1=15  DE=15  DSa=15  DSo=15  DT0=15
+    PPU_CTRL=$B0 (bit7/NMI-en=1)  PPU_MASK=$1E
+    $F4=$01  $F5=$5A  $F6=$A5  $FF=$B0
+    $11=$01  $12=$00  $13=$00  $14=$00  $42C=$00  $42D=$00
+  [f104 NMI#16 fired]
+    NMI=16  TCP=16  Tim=16  Aud=16  CI=16  RI=16  SC=16  SW=16
+    IGOM=6  Upd=10  IM=5  IM0=5  TCP2=1
+    DriveAudio: DT1=16  DE=16  DSa=16  DSo=16  DT0=16
+    PPU_CTRL=$B0 (bit7/NMI-en=1)  PPU_MASK=$1E
+    $F4=$01  $F5=$5A  $F6=$A5  $FF=$B0
+    $11=$01  $12=$00  $13=$00  $14=$00  $42C=$00  $42D=$00
+  [f105 NMI#17 fired]
+    NMI=17  TCP=17  Tim=17  Aud=17  CI=17  RI=17  SC=17  SW=17
+    IGOM=6  Upd=11  IM=5  IM0=5  TCP2=1
+    DriveAudio: DT1=17  DE=17  DSa=17  DSo=17  DT0=17
+    PPU_CTRL=$B0 (bit7/NMI-en=1)  PPU_MASK=$1E
+    $F4=$01  $F5=$5A  $F6=$A5  $FF=$B0
+    $11=$01  $12=$00  $13=$00  $14=$00  $42C=$00  $42D=$00
+  [f106 NMI#18 fired]
+    NMI=18  TCP=18  Tim=18  Aud=18  CI=18  RI=18  SC=18  SW=18
+    IGOM=6  Upd=12  IM=5  IM0=5  TCP2=1
+    DriveAudio: DT1=18  DE=18  DSa=18  DSo=18  DT0=18
+    PPU_CTRL=$B0 (bit7/NMI-en=1)  PPU_MASK=$1E
+    $F4=$01  $F5=$5A  $F6=$A5  $FF=$B0
+    $11=$01  $12=$00  $13=$00  $14=$00  $42C=$00  $42D=$00
+  [f107 NMI#19 fired]
+    NMI=19  TCP=19  Tim=19  Aud=19  CI=19  RI=19  SC=19  SW=19
+    IGOM=6  Upd=13  IM=5  IM0=5  TCP2=1
+    DriveAudio: DT1=19  DE=19  DSa=19  DSo=19  DT0=19
+    PPU_CTRL=$B0 (bit7/NMI-en=1)  PPU_MASK=$1E
+    $F4=$01  $F5=$5A  $F6=$A5  $FF=$B0
+    $11=$01  $12=$00  $13=$00  $14=$00  $42C=$00  $42D=$00
+  [f108 NMI#20 fired]
+    NMI=20  TCP=20  Tim=20  Aud=20  CI=20  RI=20  SC=20  SW=20
+    IGOM=6  Upd=14  IM=5  IM0=5  TCP2=1
+    DriveAudio: DT1=20  DE=20  DSa=20  DSo=20  DT0=20
+    PPU_CTRL=$B0 (bit7/NMI-en=1)  PPU_MASK=$1E
+    $F4=$01  $F5=$5A  $F6=$A5  $FF=$B0
+    $11=$01  $12=$00  $13=$00  $14=$00  $42C=$00  $42D=$00
+  [f109 NMI#21 fired]
+    NMI=21  TCP=21  Tim=21  Aud=21  CI=21  RI=21  SC=21  SW=21
+    IGOM=6  Upd=15  IM=5  IM0=5  TCP2=1
+    DriveAudio: DT1=21  DE=21  DSa=21  DSo=21  DT0=21
+    PPU_CTRL=$B0 (bit7/NMI-en=1)  PPU_MASK=$1E
+    $F4=$01  $F5=$5A  $F6=$A5  $FF=$B0
+    $11=$01  $12=$00  $13=$00  $14=$00  $42C=$00  $42D=$00
+  [f110 NMI#22 fired]
+    NMI=22  TCP=22  Tim=22  Aud=22  CI=22  RI=22  SC=22  SW=22
+    IGOM=6  Upd=16  IM=5  IM0=5  TCP2=1
+    DriveAudio: DT1=22  DE=22  DSa=22  DSo=22  DT0=22
+    PPU_CTRL=$B0 (bit7/NMI-en=1)  PPU_MASK=$1E
+    $F4=$01  $F5=$5A  $F6=$A5  $FF=$B0
+    $11=$01  $12=$00  $13=$00  $14=$00  $42C=$00  $42D=$00
+  [f111 NMI#23 fired]
+    NMI=23  TCP=23  Tim=23  Aud=23  CI=23  RI=23  SC=23  SW=23
+    IGOM=6  Upd=17  IM=5  IM0=5  TCP2=1
+    DriveAudio: DT1=23  DE=23  DSa=23  DSo=23  DT0=23
+    PPU_CTRL=$B0 (bit7/NMI-en=1)  PPU_MASK=$1E
+    $F4=$01  $F5=$5A  $F6=$A5  $FF=$B0
+    $11=$01  $12=$00  $13=$00  $14=$00  $42C=$00  $42D=$00
+  [f112 NMI#24 fired]
+    NMI=24  TCP=24  Tim=24  Aud=24  CI=24  RI=24  SC=24  SW=24
+    IGOM=6  Upd=18  IM=5  IM0=5  TCP2=1
+    DriveAudio: DT1=24  DE=24  DSa=24  DSo=24  DT0=24
+    PPU_CTRL=$B0 (bit7/NMI-en=1)  PPU_MASK=$1E
+    $F4=$01  $F5=$5A  $F6=$A5  $FF=$B0
+    $11=$01  $12=$00  $13=$00  $14=$00  $42C=$00  $42D=$00
+  [f113 NMI#25 fired]
+    NMI=25  TCP=25  Tim=25  Aud=25  CI=25  RI=25  SC=25  SW=25
+    IGOM=6  Upd=19  IM=5  IM0=5  TCP2=1
+    DriveAudio: DT1=25  DE=25  DSa=25  DSo=25  DT0=25
+    PPU_CTRL=$B0 (bit7/NMI-en=1)  PPU_MASK=$1E
+    $F4=$01  $F5=$5A  $F6=$A5  $FF=$B0
+    $11=$01  $12=$00  $13=$00  $14=$00  $42C=$00  $42D=$00
+  [f114 NMI#26 fired]
+    NMI=26  TCP=26  Tim=26  Aud=26  CI=26  RI=26  SC=26  SW=26
+    IGOM=6  Upd=20  IM=5  IM0=5  TCP2=1
+    DriveAudio: DT1=26  DE=26  DSa=26  DSo=26  DT0=26
+    PPU_CTRL=$B0 (bit7/NMI-en=1)  PPU_MASK=$1E
+    $F4=$01  $F5=$5A  $F6=$A5  $FF=$B0
+    $11=$01  $12=$00  $13=$00  $14=$00  $42C=$00  $42D=$00
+  [f115 NMI#27 fired]
+    NMI=27  TCP=27  Tim=27  Aud=27  CI=27  RI=27  SC=27  SW=27
+    IGOM=6  Upd=21  IM=5  IM0=5  TCP2=1
+    DriveAudio: DT1=27  DE=27  DSa=27  DSo=27  DT0=27
+    PPU_CTRL=$B0 (bit7/NMI-en=1)  PPU_MASK=$1E
+    $F4=$01  $F5=$5A  $F6=$A5  $FF=$B0
+    $11=$01  $12=$00  $13=$00  $14=$00  $42C=$00  $42D=$00
+  [f116 NMI#28 fired]
+    NMI=28  TCP=28  Tim=28  Aud=28  CI=28  RI=28  SC=28  SW=28
+    IGOM=6  Upd=22  IM=5  IM0=5  TCP2=1
+    DriveAudio: DT1=28  DE=28  DSa=28  DSo=28  DT0=28
+    PPU_CTRL=$B0 (bit7/NMI-en=1)  PPU_MASK=$1E
+    $F4=$01  $F5=$5A  $F6=$A5  $FF=$B0
+    $11=$01  $12=$00  $13=$00  $14=$00  $42C=$00  $42D=$00
+  [f117 NMI#29 fired]
+    NMI=29  TCP=29  Tim=29  Aud=29  CI=29  RI=29  SC=29  SW=29
+    IGOM=6  Upd=23  IM=5  IM0=5  TCP2=1
+    DriveAudio: DT1=29  DE=29  DSa=29  DSo=29  DT0=29
+    PPU_CTRL=$B0 (bit7/NMI-en=1)  PPU_MASK=$1E
+    $F4=$01  $F5=$5A  $F6=$A5  $FF=$B0
+    $11=$01  $12=$00  $13=$00  $14=$00  $42C=$00  $42D=$00
+  [f118 NMI#30 fired]
+    NMI=30  TCP=30  Tim=30  Aud=30  CI=30  RI=30  SC=30  SW=30
+    IGOM=6  Upd=24  IM=5  IM0=5  TCP2=1
+    DriveAudio: DT1=30  DE=30  DSa=30  DSo=30  DT0=30
+    PPU_CTRL=$B0 (bit7/NMI-en=1)  PPU_MASK=$1E
+    $F4=$01  $F5=$5A  $F6=$A5  $FF=$B0
+    $11=$01  $12=$00  $13=$00  $14=$00  $42C=$00  $42D=$00
+  [f119 NMI#31 fired]
+    NMI=31  TCP=31  Tim=31  Aud=31  CI=31  RI=31  SC=31  SW=31
+    IGOM=6  Upd=25  IM=5  IM0=5  TCP2=1
+    DriveAudio: DT1=31  DE=31  DSa=31  DSo=31  DT0=31
+    PPU_CTRL=$B0 (bit7/NMI-en=1)  PPU_MASK=$1E
+    $F4=$01  $F5=$5A  $F6=$A5  $FF=$B0
+    $11=$01  $12=$00  $13=$00  $14=$00  $42C=$00  $42D=$00
+  [f120 NMI#32 fired]
+    NMI=32  TCP=32  Tim=32  Aud=32  CI=32  RI=32  SC=32  SW=32
+    IGOM=6  Upd=26  IM=5  IM0=5  TCP2=1
+    DriveAudio: DT1=32  DE=32  DSa=32  DSo=32  DT0=32
+    PPU_CTRL=$B0 (bit7/NMI-en=1)  PPU_MASK=$1E
+    $F4=$01  $F5=$5A  $F6=$A5  $FF=$B0
+    $11=$01  $12=$00  $13=$00  $14=$00  $42C=$00  $42D=$00
+  [f120 periodic]
+    NMI=32  TCP=32  Tim=32  Aud=32  CI=32  RI=32  SC=32  SW=32
+    IGOM=6  Upd=26  IM=5  IM0=5  TCP2=1
+    DriveAudio: DT1=32  DE=32  DSa=32  DSo=32  DT0=32
+    PPU_CTRL=$B0 (bit7/NMI-en=1)  PPU_MASK=$1E
+    $F4=$01  $F5=$5A  $F6=$A5  $FF=$B0
+    $11=$01  $12=$00  $13=$00  $14=$00  $42C=$00  $42D=$00
+  [f121 NMI#33 fired]
+    NMI=33  TCP=33  Tim=33  Aud=33  CI=33  RI=33  SC=33  SW=33
+    IGOM=6  Upd=27  IM=5  IM0=5  TCP2=1
+    DriveAudio: DT1=33  DE=33  DSa=33  DSo=33  DT0=33
+    PPU_CTRL=$B0 (bit7/NMI-en=1)  PPU_MASK=$1E
+    $F4=$01  $F5=$5A  $F6=$A5  $FF=$B0
+    $11=$01  $12=$00  $13=$00  $14=$00  $42C=$00  $42D=$00
+  [f122 NMI#34 fired]
+    NMI=34  TCP=34  Tim=34  Aud=34  CI=34  RI=34  SC=34  SW=34
+    IGOM=6  Upd=28  IM=5  IM0=5  TCP2=1
+    DriveAudio: DT1=34  DE=34  DSa=34  DSo=34  DT0=34
+    PPU_CTRL=$B0 (bit7/NMI-en=1)  PPU_MASK=$1E
+    $F4=$01  $F5=$5A  $F6=$A5  $FF=$B0
+    $11=$01  $12=$00  $13=$00  $14=$00  $42C=$00  $42D=$00
+  [f123 NMI#35 fired]
+    NMI=35  TCP=35  Tim=35  Aud=35  CI=35  RI=35  SC=35  SW=35
+    IGOM=6  Upd=29  IM=5  IM0=5  TCP2=1
+    DriveAudio: DT1=35  DE=35  DSa=35  DSo=35  DT0=35
+    PPU_CTRL=$B0 (bit7/NMI-en=1)  PPU_MASK=$1E
+    $F4=$01  $F5=$5A  $F6=$A5  $FF=$B0
+    $11=$01  $12=$00  $13=$00  $14=$00  $42C=$00  $42D=$00
+  [f124 NMI#36 fired]
+    NMI=36  TCP=36  Tim=36  Aud=36  CI=36  RI=36  SC=36  SW=36
+    IGOM=6  Upd=30  IM=5  IM0=5  TCP2=1
+    DriveAudio: DT1=36  DE=36  DSa=36  DSo=36  DT0=36
+    PPU_CTRL=$B0 (bit7/NMI-en=1)  PPU_MASK=$1E
+    $F4=$01  $F5=$5A  $F6=$A5  $FF=$B0
+    $11=$01  $12=$00  $13=$00  $14=$00  $42C=$00  $42D=$00
+  [f125 NMI#37 fired]
+    NMI=37  TCP=37  Tim=37  Aud=37  CI=37  RI=37  SC=37  SW=37
+    IGOM=6  Upd=31  IM=5  IM0=5  TCP2=1
+    DriveAudio: DT1=37  DE=37  DSa=37  DSo=37  DT0=37
+    PPU_CTRL=$B0 (bit7/NMI-en=1)  PPU_MASK=$1E
+    $F4=$01  $F5=$5A  $F6=$A5  $FF=$B0
+    $11=$01  $12=$00  $13=$00  $14=$00  $42C=$00  $42D=$00
+  [f126 NMI#38 fired]
+    NMI=38  TCP=38  Tim=38  Aud=38  CI=38  RI=38  SC=38  SW=38
+    IGOM=6  Upd=32  IM=5  IM0=5  TCP2=1
+    DriveAudio: DT1=38  DE=38  DSa=38  DSo=38  DT0=38
+    PPU_CTRL=$B0 (bit7/NMI-en=1)  PPU_MASK=$1E
+    $F4=$01  $F5=$5A  $F6=$A5  $FF=$B0
+    $11=$01  $12=$00  $13=$00  $14=$00  $42C=$00  $42D=$00
+  [f127 NMI#39 fired]
+    NMI=39  TCP=39  Tim=39  Aud=39  CI=39  RI=39  SC=39  SW=39
+    IGOM=6  Upd=33  IM=5  IM0=5  TCP2=1
+    DriveAudio: DT1=39  DE=39  DSa=39  DSo=39  DT0=39
+    PPU_CTRL=$B0 (bit7/NMI-en=1)  PPU_MASK=$1E
+    $F4=$01  $F5=$5A  $F6=$A5  $FF=$B0
+    $11=$01  $12=$00  $13=$00  $14=$00  $42C=$00  $42D=$00
+  [f128 NMI#40 fired]
+    NMI=40  TCP=40  Tim=40  Aud=40  CI=40  RI=40  SC=40  SW=40
+    IGOM=6  Upd=34  IM=5  IM0=5  TCP2=1
+    DriveAudio: DT1=40  DE=40  DSa=40  DSo=40  DT0=40
+    PPU_CTRL=$B0 (bit7/NMI-en=1)  PPU_MASK=$1E
+    $F4=$01  $F5=$5A  $F6=$A5  $FF=$B0
+    $11=$01  $12=$00  $13=$00  $14=$00  $42C=$00  $42D=$00
+  [f129 NMI#41 fired]
+    NMI=41  TCP=41  Tim=41  Aud=41  CI=41  RI=41  SC=41  SW=41
+    IGOM=6  Upd=35  IM=5  IM0=5  TCP2=1
+    DriveAudio: DT1=41  DE=41  DSa=41  DSo=41  DT0=41
+    PPU_CTRL=$B0 (bit7/NMI-en=1)  PPU_MASK=$1E
+    $F4=$01  $F5=$5A  $F6=$A5  $FF=$B0
+    $11=$01  $12=$00  $13=$00  $14=$00  $42C=$00  $42D=$00
+  [f130 NMI#42 fired]
+    NMI=42  TCP=42  Tim=42  Aud=42  CI=42  RI=42  SC=42  SW=42
+    IGOM=6  Upd=36  IM=5  IM0=5  TCP2=1
+    DriveAudio: DT1=42  DE=42  DSa=42  DSo=42  DT0=42
+    PPU_CTRL=$B0 (bit7/NMI-en=1)  PPU_MASK=$1E
+    $F4=$01  $F5=$5A  $F6=$A5  $FF=$B0
+    $11=$01  $12=$00  $13=$00  $14=$00  $42C=$00  $42D=$00
+  [f131 NMI#43 fired]
+    NMI=43  TCP=43  Tim=43  Aud=43  CI=43  RI=43  SC=43  SW=43
+    IGOM=6  Upd=37  IM=5  IM0=5  TCP2=1
+    DriveAudio: DT1=43  DE=43  DSa=43  DSo=43  DT0=43
+    PPU_CTRL=$B0 (bit7/NMI-en=1)  PPU_MASK=$1E
+    $F4=$01  $F5=$5A  $F6=$A5  $FF=$B0
+    $11=$01  $12=$00  $13=$00  $14=$00  $42C=$00  $42D=$00
+  [f132 NMI#44 fired]
+    NMI=44  TCP=44  Tim=44  Aud=44  CI=44  RI=44  SC=44  SW=44
+    IGOM=6  Upd=38  IM=5  IM0=5  TCP2=1
+    DriveAudio: DT1=44  DE=44  DSa=44  DSo=44  DT0=44
+    PPU_CTRL=$B0 (bit7/NMI-en=1)  PPU_MASK=$1E
+    $F4=$01  $F5=$5A  $F6=$A5  $FF=$B0
+    $11=$01  $12=$00  $13=$00  $14=$00  $42C=$00  $42D=$00
+  [f133 NMI#45 fired]
+    NMI=45  TCP=45  Tim=45  Aud=45  CI=45  RI=45  SC=45  SW=45
+    IGOM=6  Upd=39  IM=5  IM0=5  TCP2=1
+    DriveAudio: DT1=45  DE=45  DSa=45  DSo=45  DT0=45
+    PPU_CTRL=$B0 (bit7/NMI-en=1)  PPU_MASK=$1E
+    $F4=$01  $F5=$5A  $F6=$A5  $FF=$B0
+    $11=$01  $12=$00  $13=$00  $14=$00  $42C=$00  $42D=$00
+  [f134 NMI#46 fired]
+    NMI=46  TCP=46  Tim=46  Aud=46  CI=46  RI=46  SC=46  SW=46
+    IGOM=6  Upd=40  IM=5  IM0=5  TCP2=1
+    DriveAudio: DT1=46  DE=46  DSa=46  DSo=46  DT0=46
+    PPU_CTRL=$B0 (bit7/NMI-en=1)  PPU_MASK=$1E
+    $F4=$01  $F5=$5A  $F6=$A5  $FF=$B0
+    $11=$01  $12=$00  $13=$00  $14=$00  $42C=$00  $42D=$00
+  [f135 NMI#47 fired]
+    NMI=47  TCP=47  Tim=47  Aud=47  CI=47  RI=47  SC=47  SW=47
+    IGOM=6  Upd=41  IM=5  IM0=5  TCP2=1
+    DriveAudio: DT1=47  DE=47  DSa=47  DSo=47  DT0=47
+    PPU_CTRL=$B0 (bit7/NMI-en=1)  PPU_MASK=$1E
+    $F4=$01  $F5=$5A  $F6=$A5  $FF=$B0
+    $11=$01  $12=$00  $13=$00  $14=$00  $42C=$00  $42D=$00
+  [f136 NMI#48 fired]
+    NMI=48  TCP=48  Tim=48  Aud=48  CI=48  RI=48  SC=48  SW=48
+    IGOM=6  Upd=42  IM=5  IM0=5  TCP2=1
+    DriveAudio: DT1=48  DE=48  DSa=48  DSo=48  DT0=48
+    PPU_CTRL=$B0 (bit7/NMI-en=1)  PPU_MASK=$1E
+    $F4=$01  $F5=$5A  $F6=$A5  $FF=$B0
+    $11=$01  $12=$00  $13=$00  $14=$00  $42C=$00  $42D=$00
+  [f137 NMI#49 fired]
+    NMI=49  TCP=49  Tim=49  Aud=49  CI=49  RI=49  SC=49  SW=49
+    IGOM=6  Upd=43  IM=5  IM0=5  TCP2=1
+    DriveAudio: DT1=49  DE=49  DSa=49  DSo=49  DT0=49
+    PPU_CTRL=$B0 (bit7/NMI-en=1)  PPU_MASK=$1E
+    $F4=$01  $F5=$5A  $F6=$A5  $FF=$B0
+    $11=$01  $12=$00  $13=$00  $14=$00  $42C=$00  $42D=$00
+  [f138 NMI#50 fired]
+    NMI=50  TCP=50  Tim=50  Aud=50  CI=50  RI=50  SC=50  SW=50
+    IGOM=6  Upd=44  IM=5  IM0=5  TCP2=1
+    DriveAudio: DT1=50  DE=50  DSa=50  DSo=50  DT0=50
+    PPU_CTRL=$B0 (bit7/NMI-en=1)  PPU_MASK=$1E
+    $F4=$01  $F5=$5A  $F6=$A5  $FF=$B0
+    $11=$01  $12=$00  $13=$00  $14=$00  $42C=$00  $42D=$00
+  [f139 NMI#51 fired]
+    NMI=51  TCP=51  Tim=51  Aud=51  CI=51  RI=51  SC=51  SW=51
+    IGOM=6  Upd=45  IM=5  IM0=5  TCP2=1
+    DriveAudio: DT1=51  DE=51  DSa=51  DSo=51  DT0=51
+    PPU_CTRL=$B0 (bit7/NMI-en=1)  PPU_MASK=$1E
+    $F4=$01  $F5=$5A  $F6=$A5  $FF=$B0
+    $11=$01  $12=$00  $13=$00  $14=$00  $42C=$00  $42D=$00
+  [f140 NMI#52 fired]
+    NMI=52  TCP=52  Tim=52  Aud=52  CI=52  RI=52  SC=52  SW=52
+    IGOM=6  Upd=46  IM=5  IM0=5  TCP2=1
+    DriveAudio: DT1=52  DE=52  DSa=52  DSo=52  DT0=52
+    PPU_CTRL=$B0 (bit7/NMI-en=1)  PPU_MASK=$1E
+    $F4=$01  $F5=$5A  $F6=$A5  $FF=$B0
+    $11=$01  $12=$00  $13=$00  $14=$00  $42C=$00  $42D=$00
+  [f141 NMI#53 fired]
+    NMI=53  TCP=53  Tim=53  Aud=53  CI=53  RI=53  SC=53  SW=53
+    IGOM=6  Upd=47  IM=5  IM0=5  TCP2=1
+    DriveAudio: DT1=53  DE=53  DSa=53  DSo=53  DT0=53
+    PPU_CTRL=$B0 (bit7/NMI-en=1)  PPU_MASK=$1E
+    $F4=$01  $F5=$5A  $F6=$A5  $FF=$B0
+    $11=$01  $12=$00  $13=$00  $14=$00  $42C=$00  $42D=$00
+  [f142 NMI#54 fired]
+    NMI=54  TCP=54  Tim=54  Aud=54  CI=54  RI=54  SC=54  SW=54
+    IGOM=6  Upd=48  IM=5  IM0=5  TCP2=1
+    DriveAudio: DT1=54  DE=54  DSa=54  DSo=54  DT0=54
+    PPU_CTRL=$B0 (bit7/NMI-en=1)  PPU_MASK=$1E
+    $F4=$01  $F5=$5A  $F6=$A5  $FF=$B0
+    $11=$01  $12=$00  $13=$00  $14=$00  $42C=$00  $42D=$00
+  [f143 NMI#55 fired]
+    NMI=55  TCP=55  Tim=55  Aud=55  CI=55  RI=55  SC=55  SW=55
+    IGOM=6  Upd=49  IM=5  IM0=5  TCP2=1
+    DriveAudio: DT1=55  DE=55  DSa=55  DSo=55  DT0=55
+    PPU_CTRL=$B0 (bit7/NMI-en=1)  PPU_MASK=$1E
+    $F4=$01  $F5=$5A  $F6=$A5  $FF=$B0
+    $11=$01  $12=$00  $13=$00  $14=$00  $42C=$00  $42D=$00
+  [f144 NMI#56 fired]
+    NMI=56  TCP=56  Tim=56  Aud=56  CI=56  RI=56  SC=56  SW=56
+    IGOM=6  Upd=50  IM=5  IM0=5  TCP2=1
+    DriveAudio: DT1=56  DE=56  DSa=56  DSo=56  DT0=56
+    PPU_CTRL=$B0 (bit7/NMI-en=1)  PPU_MASK=$1E
+    $F4=$01  $F5=$5A  $F6=$A5  $FF=$B0
+    $11=$01  $12=$00  $13=$00  $14=$00  $42C=$00  $42D=$00
+  [f145 NMI#57 fired]
+    NMI=57  TCP=57  Tim=57  Aud=57  CI=57  RI=57  SC=57  SW=57
+    IGOM=6  Upd=51  IM=5  IM0=5  TCP2=1
+    DriveAudio: DT1=57  DE=57  DSa=57  DSo=57  DT0=57
+    PPU_CTRL=$B0 (bit7/NMI-en=1)  PPU_MASK=$1E
+    $F4=$01  $F5=$5A  $F6=$A5  $FF=$B0
+    $11=$01  $12=$00  $13=$00  $14=$00  $42C=$00  $42D=$00
+  [f146 NMI#58 fired]
+    NMI=58  TCP=58  Tim=58  Aud=58  CI=58  RI=58  SC=58  SW=58
+    IGOM=6  Upd=52  IM=5  IM0=5  TCP2=1
+    DriveAudio: DT1=58  DE=58  DSa=58  DSo=58  DT0=58
+    PPU_CTRL=$B0 (bit7/NMI-en=1)  PPU_MASK=$1E
+    $F4=$01  $F5=$5A  $F6=$A5  $FF=$B0
+    $11=$01  $12=$00  $13=$00  $14=$00  $42C=$00  $42D=$00
+  [f147 NMI#59 fired]
+    NMI=59  TCP=59  Tim=59  Aud=59  CI=59  RI=59  SC=59  SW=59
+    IGOM=6  Upd=53  IM=5  IM0=5  TCP2=1
+    DriveAudio: DT1=59  DE=59  DSa=59  DSo=59  DT0=59
+    PPU_CTRL=$B0 (bit7/NMI-en=1)  PPU_MASK=$1E
+    $F4=$01  $F5=$5A  $F6=$A5  $FF=$B0
+    $11=$01  $12=$00  $13=$00  $14=$00  $42C=$00  $42D=$00
+  [f148 NMI#60 fired]
+    NMI=60  TCP=60  Tim=60  Aud=60  CI=60  RI=60  SC=60  SW=60
+    IGOM=6  Upd=54  IM=5  IM0=5  TCP2=1
+    DriveAudio: DT1=60  DE=60  DSa=60  DSo=60  DT0=60
+    PPU_CTRL=$B0 (bit7/NMI-en=1)  PPU_MASK=$1E
+    $F4=$01  $F5=$5A  $F6=$A5  $FF=$B0
+    $11=$01  $12=$00  $13=$00  $14=$00  $42C=$00  $42D=$00
+  [f149 NMI#61 fired]
+    NMI=61  TCP=61  Tim=61  Aud=61  CI=61  RI=61  SC=61  SW=61
+    IGOM=6  Upd=55  IM=5  IM0=5  TCP2=1
+    DriveAudio: DT1=61  DE=61  DSa=61  DSo=61  DT0=61
+    PPU_CTRL=$B0 (bit7/NMI-en=1)  PPU_MASK=$1E
+    $F4=$01  $F5=$5A  $F6=$A5  $FF=$B0
+    $11=$01  $12=$00  $13=$00  $14=$00  $42C=$00  $42D=$00
+  [f150 NMI#62 fired]
+    NMI=62  TCP=62  Tim=62  Aud=62  CI=62  RI=62  SC=62  SW=62
+    IGOM=6  Upd=56  IM=5  IM0=5  TCP2=1
+    DriveAudio: DT1=62  DE=62  DSa=62  DSo=62  DT0=62
+    PPU_CTRL=$B0 (bit7/NMI-en=1)  PPU_MASK=$1E
+    $F4=$01  $F5=$5A  $F6=$A5  $FF=$B0
+    $11=$01  $12=$00  $13=$00  $14=$00  $42C=$00  $42D=$00
+  [f150 periodic]
+    NMI=62  TCP=62  Tim=62  Aud=62  CI=62  RI=62  SC=62  SW=62
+    IGOM=6  Upd=56  IM=5  IM0=5  TCP2=1
+    DriveAudio: DT1=62  DE=62  DSa=62  DSo=62  DT0=62
+    PPU_CTRL=$B0 (bit7/NMI-en=1)  PPU_MASK=$1E
+    $F4=$01  $F5=$5A  $F6=$A5  $FF=$B0
+    $11=$01  $12=$00  $13=$00  $14=$00  $42C=$00  $42D=$00
+  [f151 NMI#63 fired]
+    NMI=63  TCP=63  Tim=63  Aud=63  CI=63  RI=63  SC=63  SW=63
+    IGOM=6  Upd=57  IM=5  IM0=5  TCP2=1
+    DriveAudio: DT1=63  DE=63  DSa=63  DSo=63  DT0=63
+    PPU_CTRL=$B0 (bit7/NMI-en=1)  PPU_MASK=$1E
+    $F4=$01  $F5=$5A  $F6=$A5  $FF=$B0
+    $11=$01  $12=$00  $13=$00  $14=$00  $42C=$00  $42D=$00
+  [f152 NMI#64 fired]
+    NMI=64  TCP=64  Tim=64  Aud=64  CI=64  RI=64  SC=64  SW=64
+    IGOM=6  Upd=58  IM=5  IM0=5  TCP2=1
+    DriveAudio: DT1=64  DE=64  DSa=64  DSo=64  DT0=64
+    PPU_CTRL=$B0 (bit7/NMI-en=1)  PPU_MASK=$1E
+    $F4=$01  $F5=$5A  $F6=$A5  $FF=$B0
+    $11=$01  $12=$00  $13=$00  $14=$00  $42C=$00  $42D=$00
+  [f153 NMI#65 fired]
+    NMI=65  TCP=65  Tim=65  Aud=65  CI=65  RI=65  SC=65  SW=65
+    IGOM=6  Upd=59  IM=5  IM0=5  TCP2=1
+    DriveAudio: DT1=65  DE=65  DSa=65  DSo=65  DT0=65
+    PPU_CTRL=$B0 (bit7/NMI-en=1)  PPU_MASK=$1E
+    $F4=$01  $F5=$5A  $F6=$A5  $FF=$B0
+    $11=$01  $12=$00  $13=$00  $14=$00  $42C=$00  $42D=$00
+  [f154 NMI#66 fired]
+    NMI=66  TCP=66  Tim=66  Aud=66  CI=66  RI=66  SC=66  SW=66
+    IGOM=6  Upd=60  IM=5  IM0=5  TCP2=1
+    DriveAudio: DT1=66  DE=66  DSa=66  DSo=66  DT0=66
+    PPU_CTRL=$B0 (bit7/NMI-en=1)  PPU_MASK=$1E
+    $F4=$01  $F5=$5A  $F6=$A5  $FF=$B0
+    $11=$01  $12=$00  $13=$00  $14=$00  $42C=$00  $42D=$00
+  [f155 NMI#67 fired]
+    NMI=67  TCP=67  Tim=67  Aud=67  CI=67  RI=67  SC=67  SW=67
+    IGOM=6  Upd=61  IM=5  IM0=5  TCP2=1
+    DriveAudio: DT1=67  DE=67  DSa=67  DSo=67  DT0=67
+    PPU_CTRL=$B0 (bit7/NMI-en=1)  PPU_MASK=$1E
+    $F4=$01  $F5=$5A  $F6=$A5  $FF=$B0
+    $11=$01  $12=$00  $13=$00  $14=$00  $42C=$00  $42D=$00
+  [f156 NMI#68 fired]
+    NMI=68  TCP=68  Tim=68  Aud=68  CI=68  RI=68  SC=68  SW=68
+    IGOM=6  Upd=62  IM=5  IM0=5  TCP2=1
+    DriveAudio: DT1=68  DE=68  DSa=68  DSo=68  DT0=68
+    PPU_CTRL=$B0 (bit7/NMI-en=1)  PPU_MASK=$1E
+    $F4=$01  $F5=$5A  $F6=$A5  $FF=$B0
+    $11=$01  $12=$00  $13=$00  $14=$00  $42C=$00  $42D=$00
+  [f157 NMI#69 fired]
+    NMI=69  TCP=69  Tim=69  Aud=69  CI=69  RI=69  SC=69  SW=69
+    IGOM=6  Upd=63  IM=5  IM0=5  TCP2=1
+    DriveAudio: DT1=69  DE=69  DSa=69  DSo=69  DT0=69
+    PPU_CTRL=$B0 (bit7/NMI-en=1)  PPU_MASK=$1E
+    $F4=$01  $F5=$5A  $F6=$A5  $FF=$B0
+    $11=$01  $12=$00  $13=$00  $14=$00  $42C=$00  $42D=$00
+  [f158 NMI#70 fired]
+    NMI=70  TCP=70  Tim=70  Aud=70  CI=70  RI=70  SC=70  SW=70
+    IGOM=6  Upd=64  IM=5  IM0=5  TCP2=1
+    DriveAudio: DT1=70  DE=70  DSa=70  DSo=70  DT0=70
+    PPU_CTRL=$B0 (bit7/NMI-en=1)  PPU_MASK=$1E
+    $F4=$01  $F5=$5A  $F6=$A5  $FF=$B0
+    $11=$01  $12=$00  $13=$00  $14=$00  $42C=$00  $42D=$00
+  [f159 NMI#71 fired]
+    NMI=71  TCP=71  Tim=71  Aud=71  CI=71  RI=71  SC=71  SW=71
+    IGOM=6  Upd=65  IM=5  IM0=5  TCP2=1
+    DriveAudio: DT1=71  DE=71  DSa=71  DSo=71  DT0=71
+    PPU_CTRL=$B0 (bit7/NMI-en=1)  PPU_MASK=$1E
+    $F4=$01  $F5=$5A  $F6=$A5  $FF=$B0
+    $11=$01  $12=$00  $13=$00  $14=$00  $42C=$00  $42D=$00
+  [f160 NMI#72 fired]
+    NMI=72  TCP=72  Tim=72  Aud=72  CI=72  RI=72  SC=72  SW=72
+    IGOM=6  Upd=66  IM=5  IM0=5  TCP2=1
+    DriveAudio: DT1=72  DE=72  DSa=72  DSo=72  DT0=72
+    PPU_CTRL=$B0 (bit7/NMI-en=1)  PPU_MASK=$1E
+    $F4=$01  $F5=$5A  $F6=$A5  $FF=$B0
+    $11=$01  $12=$00  $13=$00  $14=$00  $42C=$00  $42D=$00
+  [f161 NMI#73 fired]
+    NMI=73  TCP=73  Tim=73  Aud=73  CI=73  RI=73  SC=73  SW=73
+    IGOM=6  Upd=67  IM=5  IM0=5  TCP2=1
+    DriveAudio: DT1=73  DE=73  DSa=73  DSo=73  DT0=73
+    PPU_CTRL=$B0 (bit7/NMI-en=1)  PPU_MASK=$1E
+    $F4=$01  $F5=$5A  $F6=$A5  $FF=$B0
+    $11=$01  $12=$00  $13=$00  $14=$00  $42C=$00  $42D=$00
+  [f162 NMI#74 fired]
+    NMI=74  TCP=74  Tim=74  Aud=74  CI=74  RI=74  SC=74  SW=74
+    IGOM=6  Upd=68  IM=5  IM0=5  TCP2=1
+    DriveAudio: DT1=74  DE=74  DSa=74  DSo=74  DT0=74
+    PPU_CTRL=$B0 (bit7/NMI-en=1)  PPU_MASK=$1E
+    $F4=$01  $F5=$5A  $F6=$A5  $FF=$B0
+    $11=$01  $12=$00  $13=$00  $14=$00  $42C=$00  $42D=$00
+  [f163 NMI#75 fired]
+    NMI=75  TCP=75  Tim=75  Aud=75  CI=75  RI=75  SC=75  SW=75
+    IGOM=6  Upd=69  IM=5  IM0=5  TCP2=1
+    DriveAudio: DT1=75  DE=75  DSa=75  DSo=75  DT0=75
+    PPU_CTRL=$B0 (bit7/NMI-en=1)  PPU_MASK=$1E
+    $F4=$01  $F5=$5A  $F6=$A5  $FF=$B0
+    $11=$01  $12=$00  $13=$00  $14=$00  $42C=$00  $42D=$00
+  [f164 NMI#76 fired]
+    NMI=76  TCP=76  Tim=76  Aud=76  CI=76  RI=76  SC=76  SW=76
+    IGOM=6  Upd=70  IM=5  IM0=5  TCP2=1
+    DriveAudio: DT1=76  DE=76  DSa=76  DSo=76  DT0=76
+    PPU_CTRL=$B0 (bit7/NMI-en=1)  PPU_MASK=$1E
+    $F4=$01  $F5=$5A  $F6=$A5  $FF=$B0
+    $11=$01  $12=$00  $13=$00  $14=$00  $42C=$00  $42D=$00
+  [f165 NMI#77 fired]
+    NMI=77  TCP=77  Tim=77  Aud=77  CI=77  RI=77  SC=77  SW=77
+    IGOM=6  Upd=71  IM=5  IM0=5  TCP2=1
+    DriveAudio: DT1=77  DE=77  DSa=77  DSo=77  DT0=77
+    PPU_CTRL=$B0 (bit7/NMI-en=1)  PPU_MASK=$1E
+    $F4=$01  $F5=$5A  $F6=$A5  $FF=$B0
+    $11=$01  $12=$00  $13=$00  $14=$00  $42C=$00  $42D=$00
+  [f166 NMI#78 fired]
+    NMI=78  TCP=78  Tim=78  Aud=78  CI=78  RI=78  SC=78  SW=78
+    IGOM=6  Upd=72  IM=5  IM0=5  TCP2=1
+    DriveAudio: DT1=78  DE=78  DSa=78  DSo=78  DT0=78
+    PPU_CTRL=$B0 (bit7/NMI-en=1)  PPU_MASK=$1E
+    $F4=$01  $F5=$5A  $F6=$A5  $FF=$B0
+    $11=$01  $12=$00  $13=$00  $14=$00  $42C=$00  $42D=$00
+  [f167 NMI#79 fired]
+    NMI=79  TCP=79  Tim=79  Aud=79  CI=79  RI=79  SC=79  SW=79
+    IGOM=6  Upd=73  IM=5  IM0=5  TCP2=1
+    DriveAudio: DT1=79  DE=79  DSa=79  DSo=79  DT0=79
+    PPU_CTRL=$B0 (bit7/NMI-en=1)  PPU_MASK=$1E
+    $F4=$01  $F5=$5A  $F6=$A5  $FF=$B0
+    $11=$01  $12=$00  $13=$00  $14=$00  $42C=$00  $42D=$00
+  [f168 NMI#80 fired]
+    NMI=80  TCP=80  Tim=80  Aud=80  CI=80  RI=80  SC=80  SW=80
+    IGOM=6  Upd=74  IM=5  IM0=5  TCP2=1
+    DriveAudio: DT1=80  DE=80  DSa=80  DSo=80  DT0=80
+    PPU_CTRL=$B0 (bit7/NMI-en=1)  PPU_MASK=$1E
+    $F4=$01  $F5=$5A  $F6=$A5  $FF=$B0
+    $11=$01  $12=$00  $13=$00  $14=$00  $42C=$00  $42D=$00
+  [f169 NMI#81 fired]
+    NMI=81  TCP=81  Tim=81  Aud=81  CI=81  RI=81  SC=81  SW=81
+    IGOM=6  Upd=75  IM=5  IM0=5  TCP2=1
+    DriveAudio: DT1=81  DE=81  DSa=81  DSo=81  DT0=81
+    PPU_CTRL=$B0 (bit7/NMI-en=1)  PPU_MASK=$1E
+    $F4=$01  $F5=$5A  $F6=$A5  $FF=$B0
+    $11=$01  $12=$00  $13=$00  $14=$00  $42C=$00  $42D=$00
+  [f170 NMI#82 fired]
+    NMI=82  TCP=82  Tim=82  Aud=82  CI=82  RI=82  SC=82  SW=82
+    IGOM=6  Upd=76  IM=5  IM0=5  TCP2=1
+    DriveAudio: DT1=82  DE=82  DSa=82  DSo=82  DT0=82
+    PPU_CTRL=$B0 (bit7/NMI-en=1)  PPU_MASK=$1E
+    $F4=$01  $F5=$5A  $F6=$A5  $FF=$B0
+    $11=$01  $12=$00  $13=$00  $14=$00  $42C=$00  $42D=$00
+  [f171 NMI#83 fired]
+    NMI=83  TCP=83  Tim=83  Aud=83  CI=83  RI=83  SC=83  SW=83
+    IGOM=6  Upd=77  IM=5  IM0=5  TCP2=1
+    DriveAudio: DT1=83  DE=83  DSa=83  DSo=83  DT0=83
+    PPU_CTRL=$B0 (bit7/NMI-en=1)  PPU_MASK=$1E
+    $F4=$01  $F5=$5A  $F6=$A5  $FF=$B0
+    $11=$01  $12=$00  $13=$00  $14=$00  $42C=$00  $42D=$00
+  [f172 NMI#84 fired]
+    NMI=84  TCP=84  Tim=84  Aud=84  CI=84  RI=84  SC=84  SW=84
+    IGOM=6  Upd=78  IM=5  IM0=5  TCP2=1
+    DriveAudio: DT1=84  DE=84  DSa=84  DSo=84  DT0=84
+    PPU_CTRL=$B0 (bit7/NMI-en=1)  PPU_MASK=$1E
+    $F4=$01  $F5=$5A  $F6=$A5  $FF=$B0
+    $11=$01  $12=$00  $13=$00  $14=$00  $42C=$00  $42D=$00
+  [f173 NMI#85 fired]
+    NMI=85  TCP=85  Tim=85  Aud=85  CI=85  RI=85  SC=85  SW=85
+    IGOM=6  Upd=79  IM=5  IM0=5  TCP2=1
+    DriveAudio: DT1=85  DE=85  DSa=85  DSo=85  DT0=85
+    PPU_CTRL=$B0 (bit7/NMI-en=1)  PPU_MASK=$1E
+    $F4=$01  $F5=$5A  $F6=$A5  $FF=$B0
+    $11=$01  $12=$00  $13=$00  $14=$00  $42C=$00  $42D=$00
+  [f174 NMI#86 fired]
+    NMI=86  TCP=86  Tim=86  Aud=86  CI=86  RI=86  SC=86  SW=86
+    IGOM=6  Upd=80  IM=5  IM0=5  TCP2=1
+    DriveAudio: DT1=86  DE=86  DSa=86  DSo=86  DT0=86
+    PPU_CTRL=$B0 (bit7/NMI-en=1)  PPU_MASK=$1E
+    $F4=$01  $F5=$5A  $F6=$A5  $FF=$B0
+    $11=$01  $12=$00  $13=$00  $14=$00  $42C=$00  $42D=$00
+  [f175 NMI#87 fired]
+    NMI=87  TCP=87  Tim=87  Aud=87  CI=87  RI=87  SC=87  SW=87
+    IGOM=6  Upd=81  IM=5  IM0=5  TCP2=1
+    DriveAudio: DT1=87  DE=87  DSa=87  DSo=87  DT0=87
+    PPU_CTRL=$B0 (bit7/NMI-en=1)  PPU_MASK=$1E
+    $F4=$01  $F5=$5A  $F6=$A5  $FF=$B0
+    $11=$01  $12=$00  $13=$00  $14=$00  $42C=$00  $42D=$00
+  [f176 NMI#88 fired]
+    NMI=88  TCP=88  Tim=88  Aud=88  CI=88  RI=88  SC=88  SW=88
+    IGOM=6  Upd=82  IM=5  IM0=5  TCP2=1
+    DriveAudio: DT1=88  DE=88  DSa=88  DSo=88  DT0=88
+    PPU_CTRL=$B0 (bit7/NMI-en=1)  PPU_MASK=$1E
+    $F4=$01  $F5=$5A  $F6=$A5  $FF=$B0
+    $11=$01  $12=$00  $13=$00  $14=$00  $42C=$00  $42D=$00
+  [f177 NMI#89 fired]
+    NMI=89  TCP=89  Tim=89  Aud=89  CI=89  RI=89  SC=89  SW=89
+    IGOM=6  Upd=83  IM=5  IM0=5  TCP2=1
+    DriveAudio: DT1=89  DE=89  DSa=89  DSo=89  DT0=89
+    PPU_CTRL=$B0 (bit7/NMI-en=1)  PPU_MASK=$1E
+    $F4=$01  $F5=$5A  $F6=$A5  $FF=$B0
+    $11=$01  $12=$00  $13=$00  $14=$00  $42C=$00  $42D=$00
+  [f178 NMI#90 fired]
+    NMI=90  TCP=90  Tim=90  Aud=90  CI=90  RI=90  SC=90  SW=90
+    IGOM=6  Upd=84  IM=5  IM0=5  TCP2=1
+    DriveAudio: DT1=90  DE=90  DSa=90  DSo=90  DT0=90
+    PPU_CTRL=$B0 (bit7/NMI-en=1)  PPU_MASK=$1E
+    $F4=$01  $F5=$5A  $F6=$A5  $FF=$B0
+    $11=$01  $12=$00  $13=$00  $14=$00  $42C=$00  $42D=$00
+  [f179 NMI#91 fired]
+    NMI=91  TCP=91  Tim=91  Aud=91  CI=91  RI=91  SC=91  SW=91
+    IGOM=6  Upd=85  IM=5  IM0=5  TCP2=1
+    DriveAudio: DT1=91  DE=91  DSa=91  DSo=91  DT0=91
+    PPU_CTRL=$B0 (bit7/NMI-en=1)  PPU_MASK=$1E
+    $F4=$01  $F5=$5A  $F6=$A5  $FF=$B0
+    $11=$01  $12=$00  $13=$00  $14=$00  $42C=$00  $42D=$00
+  [f180 NMI#92 fired]
+    NMI=92  TCP=92  Tim=92  Aud=92  CI=92  RI=92  SC=92  SW=92
+    IGOM=6  Upd=86  IM=5  IM0=5  TCP2=1
+    DriveAudio: DT1=92  DE=92  DSa=92  DSo=92  DT0=92
+    PPU_CTRL=$B0 (bit7/NMI-en=1)  PPU_MASK=$1E
+    $F4=$01  $F5=$5A  $F6=$A5  $FF=$B0
+    $11=$01  $12=$00  $13=$00  $14=$00  $42C=$00  $42D=$00
+  [f180 periodic]
+    NMI=92  TCP=92  Tim=92  Aud=92  CI=92  RI=92  SC=92  SW=92
+    IGOM=6  Upd=86  IM=5  IM0=5  TCP2=1
+    DriveAudio: DT1=92  DE=92  DSa=92  DSo=92  DT0=92
+    PPU_CTRL=$B0 (bit7/NMI-en=1)  PPU_MASK=$1E
+    $F4=$01  $F5=$5A  $F6=$A5  $FF=$B0
+    $11=$01  $12=$00  $13=$00  $14=$00  $42C=$00  $42D=$00
+  [f181 NMI#93 fired]
+    NMI=93  TCP=93  Tim=93  Aud=93  CI=93  RI=93  SC=93  SW=93
+    IGOM=6  Upd=87  IM=5  IM0=5  TCP2=1
+    DriveAudio: DT1=93  DE=93  DSa=93  DSo=93  DT0=93
+    PPU_CTRL=$B0 (bit7/NMI-en=1)  PPU_MASK=$1E
+    $F4=$01  $F5=$5A  $F6=$A5  $FF=$B0
+    $11=$01  $12=$00  $13=$00  $14=$00  $42C=$00  $42D=$00
+  [f182 NMI#94 fired]
+    NMI=94  TCP=94  Tim=94  Aud=94  CI=94  RI=94  SC=94  SW=94
+    IGOM=6  Upd=88  IM=5  IM0=5  TCP2=1
+    DriveAudio: DT1=94  DE=94  DSa=94  DSo=94  DT0=94
+    PPU_CTRL=$B0 (bit7/NMI-en=1)  PPU_MASK=$1E
+    $F4=$01  $F5=$5A  $F6=$A5  $FF=$B0
+    $11=$01  $12=$00  $13=$00  $14=$00  $42C=$00  $42D=$00
+  [f183 NMI#95 fired]
+    NMI=95  TCP=95  Tim=95  Aud=95  CI=95  RI=95  SC=95  SW=95
+    IGOM=6  Upd=89  IM=5  IM0=5  TCP2=1
+    DriveAudio: DT1=95  DE=95  DSa=95  DSo=95  DT0=95
+    PPU_CTRL=$B0 (bit7/NMI-en=1)  PPU_MASK=$1E
+    $F4=$01  $F5=$5A  $F6=$A5  $FF=$B0
+    $11=$01  $12=$00  $13=$00  $14=$00  $42C=$00  $42D=$00
+  [f184 NMI#96 fired]
+    NMI=96  TCP=96  Tim=96  Aud=96  CI=96  RI=96  SC=96  SW=96
+    IGOM=6  Upd=90  IM=5  IM0=5  TCP2=1
+    DriveAudio: DT1=96  DE=96  DSa=96  DSo=96  DT0=96
+    PPU_CTRL=$B0 (bit7/NMI-en=1)  PPU_MASK=$1E
+    $F4=$01  $F5=$5A  $F6=$A5  $FF=$B0
+    $11=$01  $12=$00  $13=$00  $14=$00  $42C=$00  $42D=$00
+  [f185 NMI#97 fired]
+    NMI=97  TCP=97  Tim=97  Aud=97  CI=97  RI=97  SC=97  SW=97
+    IGOM=6  Upd=91  IM=5  IM0=5  TCP2=1
+    DriveAudio: DT1=97  DE=97  DSa=97  DSo=97  DT0=97
+    PPU_CTRL=$B0 (bit7/NMI-en=1)  PPU_MASK=$1E
+    $F4=$01  $F5=$5A  $F6=$A5  $FF=$B0
+    $11=$01  $12=$00  $13=$00  $14=$00  $42C=$00  $42D=$00
+  [f186 NMI#98 fired]
+    NMI=98  TCP=98  Tim=98  Aud=98  CI=98  RI=98  SC=98  SW=98
+    IGOM=6  Upd=92  IM=5  IM0=5  TCP2=1
+    DriveAudio: DT1=98  DE=98  DSa=98  DSo=98  DT0=98
+    PPU_CTRL=$B0 (bit7/NMI-en=1)  PPU_MASK=$1E
+    $F4=$01  $F5=$5A  $F6=$A5  $FF=$B0
+    $11=$01  $12=$00  $13=$00  $14=$00  $42C=$00  $42D=$00
+  [f187 NMI#99 fired]
+    NMI=99  TCP=99  Tim=99  Aud=99  CI=99  RI=99  SC=99  SW=99
+    IGOM=6  Upd=93  IM=5  IM0=5  TCP2=1
+    DriveAudio: DT1=99  DE=99  DSa=99  DSo=99  DT0=99
+    PPU_CTRL=$B0 (bit7/NMI-en=1)  PPU_MASK=$1E
+    $F4=$01  $F5=$5A  $F6=$A5  $FF=$B0
+    $11=$01  $12=$00  $13=$00  $14=$00  $42C=$00  $42D=$00
+  [f188 NMI#100 fired]
+    NMI=100  TCP=100  Tim=100  Aud=100  CI=100  RI=100  SC=100  SW=100
+    IGOM=6  Upd=94  IM=5  IM0=5  TCP2=1
+    DriveAudio: DT1=100  DE=100  DSa=100  DSo=100  DT0=100
+    PPU_CTRL=$B0 (bit7/NMI-en=1)  PPU_MASK=$1E
+    $F4=$01  $F5=$5A  $F6=$A5  $FF=$B0
+    $11=$01  $12=$00  $13=$00  $14=$00  $42C=$00  $42D=$00
+  [f189 NMI#101 fired]
+    NMI=101  TCP=101  Tim=101  Aud=101  CI=101  RI=101  SC=101  SW=101
+    IGOM=6  Upd=95  IM=5  IM0=5  TCP2=1
+    DriveAudio: DT1=101  DE=101  DSa=101  DSo=101  DT0=101
+    PPU_CTRL=$B0 (bit7/NMI-en=1)  PPU_MASK=$1E
+    $F4=$01  $F5=$5A  $F6=$A5  $FF=$B0
+    $11=$01  $12=$00  $13=$00  $14=$00  $42C=$00  $42D=$00
+  [f190 NMI#102 fired]
+    NMI=102  TCP=102  Tim=102  Aud=102  CI=102  RI=102  SC=102  SW=102
+    IGOM=6  Upd=96  IM=5  IM0=5  TCP2=1
+    DriveAudio: DT1=102  DE=102  DSa=102  DSo=102  DT0=102
+    PPU_CTRL=$B0 (bit7/NMI-en=1)  PPU_MASK=$1E
+    $F4=$01  $F5=$5A  $F6=$A5  $FF=$B0
+    $11=$01  $12=$00  $13=$00  $14=$00  $42C=$00  $42D=$00
+  [f191 NMI#103 fired]
+    NMI=103  TCP=103  Tim=103  Aud=103  CI=103  RI=103  SC=103  SW=103
+    IGOM=6  Upd=97  IM=5  IM0=5  TCP2=1
+    DriveAudio: DT1=103  DE=103  DSa=103  DSo=103  DT0=103
+    PPU_CTRL=$B0 (bit7/NMI-en=1)  PPU_MASK=$1E
+    $F4=$01  $F5=$5A  $F6=$A5  $FF=$B0
+    $11=$01  $12=$00  $13=$00  $14=$00  $42C=$00  $42D=$00
+  [f192 NMI#104 fired]
+    NMI=104  TCP=104  Tim=104  Aud=104  CI=104  RI=104  SC=104  SW=104
+    IGOM=6  Upd=98  IM=5  IM0=5  TCP2=1
+    DriveAudio: DT1=104  DE=104  DSa=104  DSo=104  DT0=104
+    PPU_CTRL=$B0 (bit7/NMI-en=1)  PPU_MASK=$1E
+    $F4=$01  $F5=$5A  $F6=$A5  $FF=$B0
+    $11=$01  $12=$00  $13=$00  $14=$00  $42C=$00  $42D=$00
+  [f193 NMI#105 fired]
+    NMI=105  TCP=105  Tim=105  Aud=105  CI=105  RI=105  SC=105  SW=105
+    IGOM=6  Upd=99  IM=5  IM0=5  TCP2=1
+    DriveAudio: DT1=105  DE=105  DSa=105  DSo=105  DT0=105
+    PPU_CTRL=$B0 (bit7/NMI-en=1)  PPU_MASK=$1E
+    $F4=$01  $F5=$5A  $F6=$A5  $FF=$B0
+    $11=$01  $12=$00  $13=$00  $14=$00  $42C=$00  $42D=$00
+  [f194 NMI#106 fired]
+    NMI=106  TCP=106  Tim=106  Aud=106  CI=106  RI=106  SC=106  SW=106
+    IGOM=6  Upd=100  IM=5  IM0=5  TCP2=1
+    DriveAudio: DT1=106  DE=106  DSa=106  DSo=106  DT0=106
+    PPU_CTRL=$B0 (bit7/NMI-en=1)  PPU_MASK=$1E
+    $F4=$01  $F5=$5A  $F6=$A5  $FF=$B0
+    $11=$01  $12=$00  $13=$00  $14=$00  $42C=$00  $42D=$00
+  [f195 NMI#107 fired]
+    NMI=107  TCP=107  Tim=107  Aud=107  CI=107  RI=107  SC=107  SW=107
+    IGOM=6  Upd=101  IM=5  IM0=5  TCP2=1
+    DriveAudio: DT1=107  DE=107  DSa=107  DSo=107  DT0=107
+    PPU_CTRL=$B0 (bit7/NMI-en=1)  PPU_MASK=$1E
+    $F4=$01  $F5=$5A  $F6=$A5  $FF=$B0
+    $11=$01  $12=$00  $13=$00  $14=$00  $42C=$00  $42D=$00
+  [f196 NMI#108 fired]
+    NMI=108  TCP=108  Tim=108  Aud=108  CI=108  RI=108  SC=108  SW=108
+    IGOM=6  Upd=102  IM=5  IM0=5  TCP2=1
+    DriveAudio: DT1=108  DE=108  DSa=108  DSo=108  DT0=108
+    PPU_CTRL=$B0 (bit7/NMI-en=1)  PPU_MASK=$1E
+    $F4=$01  $F5=$5A  $F6=$A5  $FF=$B0
+    $11=$01  $12=$00  $13=$00  $14=$00  $42C=$00  $42D=$00
+  [f197 NMI#109 fired]
+    NMI=109  TCP=109  Tim=109  Aud=109  CI=109  RI=109  SC=109  SW=109
+    IGOM=6  Upd=103  IM=5  IM0=5  TCP2=1
+    DriveAudio: DT1=109  DE=109  DSa=109  DSo=109  DT0=109
+    PPU_CTRL=$B0 (bit7/NMI-en=1)  PPU_MASK=$1E
+    $F4=$01  $F5=$5A  $F6=$A5  $FF=$B0
+    $11=$01  $12=$00  $13=$00  $14=$00  $42C=$00  $42D=$00
+  [f198 NMI#110 fired]
+    NMI=110  TCP=110  Tim=110  Aud=110  CI=110  RI=110  SC=110  SW=110
+    IGOM=6  Upd=104  IM=5  IM0=5  TCP2=1
+    DriveAudio: DT1=110  DE=110  DSa=110  DSo=110  DT0=110
+    PPU_CTRL=$B0 (bit7/NMI-en=1)  PPU_MASK=$1E
+    $F4=$01  $F5=$5A  $F6=$A5  $FF=$B0
+    $11=$01  $12=$00  $13=$00  $14=$00  $42C=$00  $42D=$00
+  [f199 NMI#111 fired]
+    NMI=111  TCP=111  Tim=111  Aud=111  CI=111  RI=111  SC=111  SW=111
+    IGOM=6  Upd=105  IM=5  IM0=5  TCP2=1
+    DriveAudio: DT1=111  DE=111  DSa=111  DSo=111  DT0=111
+    PPU_CTRL=$B0 (bit7/NMI-en=1)  PPU_MASK=$1E
+    $F4=$01  $F5=$5A  $F6=$A5  $FF=$B0
+    $11=$01  $12=$00  $13=$00  $14=$00  $42C=$00  $42D=$00
+  [f200 NMI#112 fired]
+    NMI=112  TCP=112  Tim=112  Aud=112  CI=112  RI=112  SC=112  SW=112
+    IGOM=6  Upd=106  IM=5  IM0=5  TCP2=1
+    DriveAudio: DT1=112  DE=112  DSa=112  DSo=112  DT0=112
+    PPU_CTRL=$B0 (bit7/NMI-en=1)  PPU_MASK=$1E
+    $F4=$01  $F5=$5A  $F6=$A5  $FF=$B0
+    $11=$01  $12=$00  $13=$00  $14=$00  $42C=$00  $42D=$00
+  [f201 NMI#113 fired]
+    NMI=113  TCP=113  Tim=113  Aud=113  CI=113  RI=113  SC=113  SW=113
+    IGOM=6  Upd=107  IM=5  IM0=5  TCP2=1
+    DriveAudio: DT1=113  DE=113  DSa=113  DSo=113  DT0=113
+    PPU_CTRL=$B0 (bit7/NMI-en=1)  PPU_MASK=$1E
+    $F4=$01  $F5=$5A  $F6=$A5  $FF=$B0
+    $11=$01  $12=$00  $13=$00  $14=$00  $42C=$00  $42D=$00
+  [f202 NMI#114 fired]
+    NMI=114  TCP=114  Tim=114  Aud=114  CI=114  RI=114  SC=114  SW=114
+    IGOM=6  Upd=108  IM=5  IM0=5  TCP2=1
+    DriveAudio: DT1=114  DE=114  DSa=114  DSo=114  DT0=114
+    PPU_CTRL=$B0 (bit7/NMI-en=1)  PPU_MASK=$1E
+    $F4=$01  $F5=$5A  $F6=$A5  $FF=$B0
+    $11=$01  $12=$00  $13=$00  $14=$00  $42C=$00  $42D=$00
+  [f203 NMI#115 fired]
+    NMI=115  TCP=115  Tim=115  Aud=115  CI=115  RI=115  SC=115  SW=115
+    IGOM=6  Upd=109  IM=5  IM0=5  TCP2=1
+    DriveAudio: DT1=115  DE=115  DSa=115  DSo=115  DT0=115
+    PPU_CTRL=$B0 (bit7/NMI-en=1)  PPU_MASK=$1E
+    $F4=$01  $F5=$5A  $F6=$A5  $FF=$B0
+    $11=$01  $12=$00  $13=$00  $14=$00  $42C=$00  $42D=$00
+  [f204 NMI#116 fired]
+    NMI=116  TCP=116  Tim=116  Aud=116  CI=116  RI=116  SC=116  SW=116
+    IGOM=6  Upd=110  IM=5  IM0=5  TCP2=1
+    DriveAudio: DT1=116  DE=116  DSa=116  DSo=116  DT0=116
+    PPU_CTRL=$B0 (bit7/NMI-en=1)  PPU_MASK=$1E
+    $F4=$01  $F5=$5A  $F6=$A5  $FF=$B0
+    $11=$01  $12=$00  $13=$00  $14=$00  $42C=$00  $42D=$00
+  [f205 NMI#117 fired]
+    NMI=117  TCP=117  Tim=117  Aud=117  CI=117  RI=117  SC=117  SW=117
+    IGOM=6  Upd=111  IM=5  IM0=5  TCP2=1
+    DriveAudio: DT1=117  DE=117  DSa=117  DSo=117  DT0=117
+    PPU_CTRL=$B0 (bit7/NMI-en=1)  PPU_MASK=$1E
+    $F4=$01  $F5=$5A  $F6=$A5  $FF=$B0
+    $11=$01  $12=$00  $13=$00  $14=$00  $42C=$00  $42D=$00
+  [f206 NMI#118 fired]
+    NMI=118  TCP=118  Tim=118  Aud=118  CI=118  RI=118  SC=118  SW=118
+    IGOM=6  Upd=112  IM=5  IM0=5  TCP2=1
+    DriveAudio: DT1=118  DE=118  DSa=118  DSo=118  DT0=118
+    PPU_CTRL=$B0 (bit7/NMI-en=1)  PPU_MASK=$1E
+    $F4=$01  $F5=$5A  $F6=$A5  $FF=$B0
+    $11=$01  $12=$00  $13=$00  $14=$00  $42C=$00  $42D=$00
+  [f207 NMI#119 fired]
+    NMI=119  TCP=119  Tim=119  Aud=119  CI=119  RI=119  SC=119  SW=119
+    IGOM=6  Upd=113  IM=5  IM0=5  TCP2=1
+    DriveAudio: DT1=119  DE=119  DSa=119  DSo=119  DT0=119
+    PPU_CTRL=$B0 (bit7/NMI-en=1)  PPU_MASK=$1E
+    $F4=$01  $F5=$5A  $F6=$A5  $FF=$B0
+    $11=$01  $12=$00  $13=$00  $14=$00  $42C=$00  $42D=$00
+  [f208 NMI#120 fired]
+    NMI=120  TCP=120  Tim=120  Aud=120  CI=120  RI=120  SC=120  SW=120
+    IGOM=6  Upd=114  IM=5  IM0=5  TCP2=1
+    DriveAudio: DT1=120  DE=120  DSa=120  DSo=120  DT0=120
+    PPU_CTRL=$B0 (bit7/NMI-en=1)  PPU_MASK=$1E
+    $F4=$01  $F5=$5A  $F6=$A5  $FF=$B0
+    $11=$01  $12=$00  $13=$00  $14=$00  $42C=$00  $42D=$00
+  [f209 NMI#121 fired]
+    NMI=121  TCP=121  Tim=121  Aud=121  CI=121  RI=121  SC=121  SW=121
+    IGOM=6  Upd=115  IM=5  IM0=5  TCP2=1
+    DriveAudio: DT1=121  DE=121  DSa=121  DSo=121  DT0=121
+    PPU_CTRL=$B0 (bit7/NMI-en=1)  PPU_MASK=$1E
+    $F4=$01  $F5=$5A  $F6=$A5  $FF=$B0
+    $11=$01  $12=$00  $13=$00  $14=$00  $42C=$00  $42D=$00
+  [f210 NMI#122 fired]
+    NMI=122  TCP=122  Tim=122  Aud=122  CI=122  RI=122  SC=122  SW=122
+    IGOM=6  Upd=116  IM=5  IM0=5  TCP2=1
+    DriveAudio: DT1=122  DE=122  DSa=122  DSo=122  DT0=122
+    PPU_CTRL=$B0 (bit7/NMI-en=1)  PPU_MASK=$1E
+    $F4=$01  $F5=$5A  $F6=$A5  $FF=$B0
+    $11=$01  $12=$00  $13=$00  $14=$00  $42C=$00  $42D=$00
+  [f210 periodic]
+    NMI=122  TCP=122  Tim=122  Aud=122  CI=122  RI=122  SC=122  SW=122
+    IGOM=6  Upd=116  IM=5  IM0=5  TCP2=1
+    DriveAudio: DT1=122  DE=122  DSa=122  DSo=122  DT0=122
+    PPU_CTRL=$B0 (bit7/NMI-en=1)  PPU_MASK=$1E
+    $F4=$01  $F5=$5A  $F6=$A5  $FF=$B0
+    $11=$01  $12=$00  $13=$00  $14=$00  $42C=$00  $42D=$00
+  [f211 NMI#123 fired]
+    NMI=123  TCP=123  Tim=123  Aud=123  CI=123  RI=123  SC=123  SW=123
+    IGOM=6  Upd=117  IM=5  IM0=5  TCP2=1
+    DriveAudio: DT1=123  DE=123  DSa=123  DSo=123  DT0=123
+    PPU_CTRL=$B0 (bit7/NMI-en=1)  PPU_MASK=$1E
+    $F4=$01  $F5=$5A  $F6=$A5  $FF=$B0
+    $11=$01  $12=$00  $13=$00  $14=$00  $42C=$00  $42D=$00
+  [f212 NMI#124 fired]
+    NMI=124  TCP=124  Tim=124  Aud=124  CI=124  RI=124  SC=124  SW=124
+    IGOM=6  Upd=118  IM=5  IM0=5  TCP2=1
+    DriveAudio: DT1=124  DE=124  DSa=124  DSo=124  DT0=124
+    PPU_CTRL=$B0 (bit7/NMI-en=1)  PPU_MASK=$1E
+    $F4=$01  $F5=$5A  $F6=$A5  $FF=$B0
+    $11=$01  $12=$00  $13=$00  $14=$00  $42C=$00  $42D=$00
+  [f213 NMI#125 fired]
+    NMI=125  TCP=125  Tim=125  Aud=125  CI=125  RI=125  SC=125  SW=125
+    IGOM=6  Upd=119  IM=5  IM0=5  TCP2=1
+    DriveAudio: DT1=125  DE=125  DSa=125  DSo=125  DT0=125
+    PPU_CTRL=$B0 (bit7/NMI-en=1)  PPU_MASK=$1E
+    $F4=$01  $F5=$5A  $F6=$A5  $FF=$B0
+    $11=$01  $12=$00  $13=$00  $14=$00  $42C=$00  $42D=$00
+  [f214 NMI#126 fired]
+    NMI=126  TCP=126  Tim=126  Aud=126  CI=126  RI=126  SC=126  SW=126
+    IGOM=6  Upd=120  IM=5  IM0=5  TCP2=1
+    DriveAudio: DT1=126  DE=126  DSa=126  DSo=126  DT0=126
+    PPU_CTRL=$B0 (bit7/NMI-en=1)  PPU_MASK=$1E
+    $F4=$01  $F5=$5A  $F6=$A5  $FF=$B0
+    $11=$01  $12=$00  $13=$00  $14=$00  $42C=$00  $42D=$00
+  [f215 NMI#127 fired]
+    NMI=127  TCP=127  Tim=127  Aud=127  CI=127  RI=127  SC=127  SW=127
+    IGOM=6  Upd=121  IM=5  IM0=5  TCP2=1
+    DriveAudio: DT1=127  DE=127  DSa=127  DSo=127  DT0=127
+    PPU_CTRL=$B0 (bit7/NMI-en=1)  PPU_MASK=$1E
+    $F4=$01  $F5=$5A  $F6=$A5  $FF=$B0
+    $11=$01  $12=$00  $13=$00  $14=$00  $42C=$00  $42D=$00
+  [f216 NMI#128 fired]
+    NMI=128  TCP=128  Tim=128  Aud=128  CI=128  RI=128  SC=128  SW=128
+    IGOM=6  Upd=122  IM=5  IM0=5  TCP2=1
+    DriveAudio: DT1=128  DE=128  DSa=128  DSo=128  DT0=128
+    PPU_CTRL=$B0 (bit7/NMI-en=1)  PPU_MASK=$1E
+    $F4=$01  $F5=$5A  $F6=$A5  $FF=$B0
+    $11=$01  $12=$00  $13=$00  $14=$00  $42C=$00  $42D=$00
+  [f217 NMI#129 fired]
+    NMI=129  TCP=129  Tim=129  Aud=129  CI=129  RI=129  SC=129  SW=129
+    IGOM=6  Upd=123  IM=5  IM0=5  TCP2=1
+    DriveAudio: DT1=129  DE=129  DSa=129  DSo=129  DT0=129
+    PPU_CTRL=$B0 (bit7/NMI-en=1)  PPU_MASK=$1E
+    $F4=$01  $F5=$5A  $F6=$A5  $FF=$B0
+    $11=$01  $12=$00  $13=$00  $14=$00  $42C=$00  $42D=$00
+  [f218 NMI#130 fired]
+    NMI=130  TCP=130  Tim=130  Aud=130  CI=130  RI=130  SC=130  SW=130
+    IGOM=6  Upd=124  IM=5  IM0=5  TCP2=1
+    DriveAudio: DT1=130  DE=130  DSa=130  DSo=130  DT0=130
+    PPU_CTRL=$B0 (bit7/NMI-en=1)  PPU_MASK=$1E
+    $F4=$01  $F5=$5A  $F6=$A5  $FF=$B0
+    $11=$01  $12=$00  $13=$00  $14=$00  $42C=$00  $42D=$00
+  [f219 NMI#131 fired]
+    NMI=131  TCP=131  Tim=131  Aud=131  CI=131  RI=131  SC=131  SW=131
+    IGOM=6  Upd=125  IM=5  IM0=5  TCP2=1
+    DriveAudio: DT1=131  DE=131  DSa=131  DSo=131  DT0=131
+    PPU_CTRL=$B0 (bit7/NMI-en=1)  PPU_MASK=$1E
+    $F4=$01  $F5=$5A  $F6=$A5  $FF=$B0
+    $11=$01  $12=$00  $13=$00  $14=$00  $42C=$00  $42D=$00
+  [f220 NMI#132 fired]
+    NMI=132  TCP=132  Tim=132  Aud=132  CI=132  RI=132  SC=132  SW=132
+    IGOM=6  Upd=126  IM=5  IM0=5  TCP2=1
+    DriveAudio: DT1=132  DE=132  DSa=132  DSo=132  DT0=132
+    PPU_CTRL=$B0 (bit7/NMI-en=1)  PPU_MASK=$1E
+    $F4=$01  $F5=$5A  $F6=$A5  $FF=$B0
+    $11=$01  $12=$00  $13=$00  $14=$00  $42C=$00  $42D=$00
+  [f221 NMI#133 fired]
+    NMI=133  TCP=133  Tim=133  Aud=133  CI=133  RI=133  SC=133  SW=133
+    IGOM=6  Upd=127  IM=5  IM0=5  TCP2=1
+    DriveAudio: DT1=133  DE=133  DSa=133  DSo=133  DT0=133
+    PPU_CTRL=$B0 (bit7/NMI-en=1)  PPU_MASK=$1E
+    $F4=$01  $F5=$5A  $F6=$A5  $FF=$B0
+    $11=$01  $12=$00  $13=$00  $14=$00  $42C=$00  $42D=$00
+  [f222 NMI#134 fired]
+    NMI=134  TCP=134  Tim=134  Aud=134  CI=134  RI=134  SC=134  SW=134
+    IGOM=6  Upd=128  IM=5  IM0=5  TCP2=1
+    DriveAudio: DT1=134  DE=134  DSa=134  DSo=134  DT0=134
+    PPU_CTRL=$B0 (bit7/NMI-en=1)  PPU_MASK=$1E
+    $F4=$01  $F5=$5A  $F6=$A5  $FF=$B0
+    $11=$01  $12=$00  $13=$00  $14=$00  $42C=$00  $42D=$00
+  [f223 NMI#135 fired]
+    NMI=135  TCP=135  Tim=135  Aud=135  CI=135  RI=135  SC=135  SW=135
+    IGOM=6  Upd=129  IM=5  IM0=5  TCP2=1
+    DriveAudio: DT1=135  DE=135  DSa=135  DSo=135  DT0=135
+    PPU_CTRL=$B0 (bit7/NMI-en=1)  PPU_MASK=$1E
+    $F4=$01  $F5=$5A  $F6=$A5  $FF=$B0
+    $11=$01  $12=$00  $13=$00  $14=$00  $42C=$00  $42D=$00
+  [f224 NMI#136 fired]
+    NMI=136  TCP=136  Tim=136  Aud=136  CI=136  RI=136  SC=136  SW=136
+    IGOM=6  Upd=130  IM=5  IM0=5  TCP2=1
+    DriveAudio: DT1=136  DE=136  DSa=136  DSo=136  DT0=136
+    PPU_CTRL=$B0 (bit7/NMI-en=1)  PPU_MASK=$1E
+    $F4=$01  $F5=$5A  $F6=$A5  $FF=$B0
+    $11=$01  $12=$00  $13=$00  $14=$00  $42C=$00  $42D=$00
+  [f225 NMI#137 fired]
+    NMI=137  TCP=137  Tim=137  Aud=137  CI=137  RI=137  SC=137  SW=137
+    IGOM=6  Upd=131  IM=5  IM0=5  TCP2=1
+    DriveAudio: DT1=137  DE=137  DSa=137  DSo=137  DT0=137
+    PPU_CTRL=$B0 (bit7/NMI-en=1)  PPU_MASK=$1E
+    $F4=$01  $F5=$5A  $F6=$A5  $FF=$B0
+    $11=$01  $12=$00  $13=$00  $14=$00  $42C=$00  $42D=$00
+  [f226 NMI#138 fired]
+    NMI=138  TCP=138  Tim=138  Aud=138  CI=138  RI=138  SC=138  SW=138
+    IGOM=6  Upd=132  IM=5  IM0=5  TCP2=1
+    DriveAudio: DT1=138  DE=138  DSa=138  DSo=138  DT0=138
+    PPU_CTRL=$B0 (bit7/NMI-en=1)  PPU_MASK=$1E
+    $F4=$01  $F5=$5A  $F6=$A5  $FF=$B0
+    $11=$01  $12=$00  $13=$00  $14=$00  $42C=$00  $42D=$00
+  [f227 NMI#139 fired]
+    NMI=139  TCP=139  Tim=139  Aud=139  CI=139  RI=139  SC=139  SW=139
+    IGOM=6  Upd=133  IM=5  IM0=5  TCP2=1
+    DriveAudio: DT1=139  DE=139  DSa=139  DSo=139  DT0=139
+    PPU_CTRL=$B0 (bit7/NMI-en=1)  PPU_MASK=$1E
+    $F4=$01  $F5=$5A  $F6=$A5  $FF=$B0
+    $11=$01  $12=$00  $13=$00  $14=$00  $42C=$00  $42D=$00
+  [f228 NMI#140 fired]
+    NMI=140  TCP=140  Tim=140  Aud=140  CI=140  RI=140  SC=140  SW=140
+    IGOM=6  Upd=134  IM=5  IM0=5  TCP2=1
+    DriveAudio: DT1=140  DE=140  DSa=140  DSo=140  DT0=140
+    PPU_CTRL=$B0 (bit7/NMI-en=1)  PPU_MASK=$1E
+    $F4=$01  $F5=$5A  $F6=$A5  $FF=$B0
+    $11=$01  $12=$00  $13=$00  $14=$00  $42C=$00  $42D=$00
+  [f229 NMI#141 fired]
+    NMI=141  TCP=141  Tim=141  Aud=141  CI=141  RI=141  SC=141  SW=141
+    IGOM=6  Upd=135  IM=5  IM0=5  TCP2=1
+    DriveAudio: DT1=141  DE=141  DSa=141  DSo=141  DT0=141
+    PPU_CTRL=$B0 (bit7/NMI-en=1)  PPU_MASK=$1E
+    $F4=$01  $F5=$5A  $F6=$A5  $FF=$B0
+    $11=$01  $12=$00  $13=$00  $14=$00  $42C=$00  $42D=$00
+  [f230 NMI#142 fired]
+    NMI=142  TCP=142  Tim=142  Aud=142  CI=142  RI=142  SC=142  SW=142
+    IGOM=6  Upd=136  IM=5  IM0=5  TCP2=1
+    DriveAudio: DT1=142  DE=142  DSa=142  DSo=142  DT0=142
+    PPU_CTRL=$B0 (bit7/NMI-en=1)  PPU_MASK=$1E
+    $F4=$01  $F5=$5A  $F6=$A5  $FF=$B0
+    $11=$01  $12=$00  $13=$00  $14=$00  $42C=$00  $42D=$00
+  [f231 NMI#143 fired]
+    NMI=143  TCP=143  Tim=143  Aud=143  CI=143  RI=143  SC=143  SW=143
+    IGOM=6  Upd=137  IM=5  IM0=5  TCP2=1
+    DriveAudio: DT1=143  DE=143  DSa=143  DSo=143  DT0=143
+    PPU_CTRL=$B0 (bit7/NMI-en=1)  PPU_MASK=$1E
+    $F4=$01  $F5=$5A  $F6=$A5  $FF=$B0
+    $11=$01  $12=$00  $13=$00  $14=$00  $42C=$00  $42D=$00
+  [f232 NMI#144 fired]
+    NMI=144  TCP=144  Tim=144  Aud=144  CI=144  RI=144  SC=144  SW=144
+    IGOM=6  Upd=138  IM=5  IM0=5  TCP2=1
+    DriveAudio: DT1=144  DE=144  DSa=144  DSo=144  DT0=144
+    PPU_CTRL=$B0 (bit7/NMI-en=1)  PPU_MASK=$1E
+    $F4=$01  $F5=$5A  $F6=$A5  $FF=$B0
+    $11=$01  $12=$00  $13=$00  $14=$00  $42C=$00  $42D=$00
+  [f233 NMI#145 fired]
+    NMI=145  TCP=145  Tim=145  Aud=145  CI=145  RI=145  SC=145  SW=145
+    IGOM=6  Upd=139  IM=5  IM0=5  TCP2=1
+    DriveAudio: DT1=145  DE=145  DSa=145  DSo=145  DT0=145
+    PPU_CTRL=$B0 (bit7/NMI-en=1)  PPU_MASK=$1E
+    $F4=$01  $F5=$5A  $F6=$A5  $FF=$B0
+    $11=$01  $12=$00  $13=$00  $14=$00  $42C=$00  $42D=$00
+  [f234 NMI#146 fired]
+    NMI=146  TCP=146  Tim=146  Aud=146  CI=146  RI=146  SC=146  SW=146
+    IGOM=6  Upd=140  IM=5  IM0=5  TCP2=1
+    DriveAudio: DT1=146  DE=146  DSa=146  DSo=146  DT0=146
+    PPU_CTRL=$B0 (bit7/NMI-en=1)  PPU_MASK=$1E
+    $F4=$01  $F5=$5A  $F6=$A5  $FF=$B0
+    $11=$01  $12=$00  $13=$00  $14=$00  $42C=$00  $42D=$00
+  [f235 NMI#147 fired]
+    NMI=147  TCP=147  Tim=147  Aud=147  CI=147  RI=147  SC=147  SW=147
+    IGOM=6  Upd=141  IM=5  IM0=5  TCP2=1
+    DriveAudio: DT1=147  DE=147  DSa=147  DSo=147  DT0=147
+    PPU_CTRL=$B0 (bit7/NMI-en=1)  PPU_MASK=$1E
+    $F4=$01  $F5=$5A  $F6=$A5  $FF=$B0
+    $11=$01  $12=$00  $13=$00  $14=$00  $42C=$00  $42D=$00
+  [f236 NMI#148 fired]
+    NMI=148  TCP=148  Tim=148  Aud=148  CI=148  RI=148  SC=148  SW=148
+    IGOM=6  Upd=142  IM=5  IM0=5  TCP2=1
+    DriveAudio: DT1=148  DE=148  DSa=148  DSo=148  DT0=148
+    PPU_CTRL=$B0 (bit7/NMI-en=1)  PPU_MASK=$1E
+    $F4=$01  $F5=$5A  $F6=$A5  $FF=$B0
+    $11=$01  $12=$00  $13=$00  $14=$00  $42C=$00  $42D=$00
+  [f237 NMI#149 fired]
+    NMI=149  TCP=149  Tim=149  Aud=149  CI=149  RI=149  SC=149  SW=149
+    IGOM=6  Upd=143  IM=5  IM0=5  TCP2=1
+    DriveAudio: DT1=149  DE=149  DSa=149  DSo=149  DT0=149
+    PPU_CTRL=$B0 (bit7/NMI-en=1)  PPU_MASK=$1E
+    $F4=$01  $F5=$5A  $F6=$A5  $FF=$B0
+    $11=$01  $12=$00  $13=$00  $14=$00  $42C=$00  $42D=$00
+  [f238 NMI#150 fired]
+    NMI=150  TCP=150  Tim=150  Aud=150  CI=150  RI=150  SC=150  SW=150
+    IGOM=6  Upd=144  IM=5  IM0=5  TCP2=1
+    DriveAudio: DT1=150  DE=150  DSa=150  DSo=150  DT0=150
+    PPU_CTRL=$B0 (bit7/NMI-en=1)  PPU_MASK=$1E
+    $F4=$01  $F5=$5A  $F6=$A5  $FF=$B0
+    $11=$01  $12=$00  $13=$00  $14=$00  $42C=$00  $42D=$00
+  [f239 NMI#151 fired]
+    NMI=151  TCP=151  Tim=151  Aud=151  CI=151  RI=151  SC=151  SW=151
+    IGOM=6  Upd=145  IM=5  IM0=5  TCP2=1
+    DriveAudio: DT1=151  DE=151  DSa=151  DSo=151  DT0=151
+    PPU_CTRL=$B0 (bit7/NMI-en=1)  PPU_MASK=$1E
+    $F4=$01  $F5=$5A  $F6=$A5  $FF=$B0
+    $11=$01  $12=$00  $13=$00  $14=$00  $42C=$00  $42D=$00
+  [f240 NMI#152 fired]
+    NMI=152  TCP=152  Tim=152  Aud=152  CI=152  RI=152  SC=152  SW=152
+    IGOM=6  Upd=146  IM=5  IM0=5  TCP2=1
+    DriveAudio: DT1=152  DE=152  DSa=152  DSo=152  DT0=152
+    PPU_CTRL=$B0 (bit7/NMI-en=1)  PPU_MASK=$1E
+    $F4=$01  $F5=$5A  $F6=$A5  $FF=$B0
+    $11=$01  $12=$00  $13=$00  $14=$00  $42C=$00  $42D=$00
+  [f240 periodic]
+    NMI=152  TCP=152  Tim=152  Aud=152  CI=152  RI=152  SC=152  SW=152
+    IGOM=6  Upd=146  IM=5  IM0=5  TCP2=1
+    DriveAudio: DT1=152  DE=152  DSa=152  DSo=152  DT0=152
+    PPU_CTRL=$B0 (bit7/NMI-en=1)  PPU_MASK=$1E
+    $F4=$01  $F5=$5A  $F6=$A5  $FF=$B0
+    $11=$01  $12=$00  $13=$00  $14=$00  $42C=$00  $42D=$00
+  [f241 NMI#153 fired]
+    NMI=153  TCP=153  Tim=153  Aud=153  CI=153  RI=153  SC=153  SW=153
+    IGOM=6  Upd=147  IM=5  IM0=5  TCP2=1
+    DriveAudio: DT1=153  DE=153  DSa=153  DSo=153  DT0=153
+    PPU_CTRL=$B0 (bit7/NMI-en=1)  PPU_MASK=$1E
+    $F4=$01  $F5=$5A  $F6=$A5  $FF=$B0
+    $11=$01  $12=$00  $13=$00  $14=$00  $42C=$00  $42D=$00
+  [f242 NMI#154 fired]
+    NMI=154  TCP=154  Tim=154  Aud=154  CI=154  RI=154  SC=154  SW=154
+    IGOM=6  Upd=148  IM=5  IM0=5  TCP2=1
+    DriveAudio: DT1=154  DE=154  DSa=154  DSo=154  DT0=154
+    PPU_CTRL=$B0 (bit7/NMI-en=1)  PPU_MASK=$1E
+    $F4=$01  $F5=$5A  $F6=$A5  $FF=$B0
+    $11=$01  $12=$00  $13=$00  $14=$00  $42C=$00  $42D=$00
+  [f243 NMI#155 fired]
+    NMI=155  TCP=155  Tim=155  Aud=155  CI=155  RI=155  SC=155  SW=155
+    IGOM=6  Upd=149  IM=5  IM0=5  TCP2=1
+    DriveAudio: DT1=155  DE=155  DSa=155  DSo=155  DT0=155
+    PPU_CTRL=$B0 (bit7/NMI-en=1)  PPU_MASK=$1E
+    $F4=$01  $F5=$5A  $F6=$A5  $FF=$B0
+    $11=$01  $12=$00  $13=$00  $14=$00  $42C=$00  $42D=$00
+  [f244 NMI#156 fired]
+    NMI=156  TCP=156  Tim=156  Aud=156  CI=156  RI=156  SC=156  SW=156
+    IGOM=6  Upd=150  IM=5  IM0=5  TCP2=1
+    DriveAudio: DT1=156  DE=156  DSa=156  DSo=156  DT0=156
+    PPU_CTRL=$B0 (bit7/NMI-en=1)  PPU_MASK=$1E
+    $F4=$01  $F5=$5A  $F6=$A5  $FF=$B0
+    $11=$01  $12=$00  $13=$00  $14=$00  $42C=$00  $42D=$00
+  [f245 NMI#157 fired]
+    NMI=157  TCP=157  Tim=157  Aud=157  CI=157  RI=157  SC=157  SW=157
+    IGOM=6  Upd=151  IM=5  IM0=5  TCP2=1
+    DriveAudio: DT1=157  DE=157  DSa=157  DSo=157  DT0=157
+    PPU_CTRL=$B0 (bit7/NMI-en=1)  PPU_MASK=$1E
+    $F4=$01  $F5=$5A  $F6=$A5  $FF=$B0
+    $11=$01  $12=$00  $13=$00  $14=$00  $42C=$00  $42D=$00
+  [f246 NMI#158 fired]
+    NMI=158  TCP=158  Tim=158  Aud=158  CI=158  RI=158  SC=158  SW=158
+    IGOM=6  Upd=152  IM=5  IM0=5  TCP2=1
+    DriveAudio: DT1=158  DE=158  DSa=158  DSo=158  DT0=158
+    PPU_CTRL=$B0 (bit7/NMI-en=1)  PPU_MASK=$1E
+    $F4=$01  $F5=$5A  $F6=$A5  $FF=$B0
+    $11=$01  $12=$00  $13=$00  $14=$00  $42C=$00  $42D=$00
+  [f247 NMI#159 fired]
+    NMI=159  TCP=159  Tim=159  Aud=159  CI=159  RI=159  SC=159  SW=159
+    IGOM=6  Upd=153  IM=5  IM0=5  TCP2=1
+    DriveAudio: DT1=159  DE=159  DSa=159  DSo=159  DT0=159
+    PPU_CTRL=$B0 (bit7/NMI-en=1)  PPU_MASK=$1E
+    $F4=$01  $F5=$5A  $F6=$A5  $FF=$B0
+    $11=$01  $12=$00  $13=$00  $14=$00  $42C=$00  $42D=$00
+  [f248 NMI#160 fired]
+    NMI=160  TCP=160  Tim=160  Aud=160  CI=160  RI=160  SC=160  SW=160
+    IGOM=6  Upd=154  IM=5  IM0=5  TCP2=1
+    DriveAudio: DT1=160  DE=160  DSa=160  DSo=160  DT0=160
+    PPU_CTRL=$B0 (bit7/NMI-en=1)  PPU_MASK=$1E
+    $F4=$01  $F5=$5A  $F6=$A5  $FF=$B0
+    $11=$01  $12=$00  $13=$00  $14=$00  $42C=$00  $42D=$00
+  [f249 NMI#161 fired]
+    NMI=161  TCP=161  Tim=161  Aud=161  CI=161  RI=161  SC=161  SW=161
+    IGOM=6  Upd=155  IM=5  IM0=5  TCP2=1
+    DriveAudio: DT1=161  DE=161  DSa=161  DSo=161  DT0=161
+    PPU_CTRL=$B0 (bit7/NMI-en=1)  PPU_MASK=$1E
+    $F4=$01  $F5=$5A  $F6=$A5  $FF=$B0
+    $11=$01  $12=$00  $13=$00  $14=$00  $42C=$00  $42D=$00
+  [f250 NMI#162 fired]
+    NMI=162  TCP=162  Tim=162  Aud=162  CI=162  RI=162  SC=162  SW=162
+    IGOM=6  Upd=156  IM=5  IM0=5  TCP2=1
+    DriveAudio: DT1=162  DE=162  DSa=162  DSo=162  DT0=162
+    PPU_CTRL=$B0 (bit7/NMI-en=1)  PPU_MASK=$1E
+    $F4=$01  $F5=$5A  $F6=$A5  $FF=$B0
+    $11=$01  $12=$00  $13=$00  $14=$00  $42C=$00  $42D=$00
+  [f251 NMI#163 fired]
+    NMI=163  TCP=163  Tim=163  Aud=163  CI=163  RI=163  SC=163  SW=163
+    IGOM=6  Upd=157  IM=5  IM0=5  TCP2=1
+    DriveAudio: DT1=163  DE=163  DSa=163  DSo=163  DT0=163
+    PPU_CTRL=$B0 (bit7/NMI-en=1)  PPU_MASK=$1E
+    $F4=$01  $F5=$5A  $F6=$A5  $FF=$B0
+    $11=$01  $12=$00  $13=$00  $14=$00  $42C=$00  $42D=$00
+  [f252 NMI#164 fired]
+    NMI=164  TCP=164  Tim=164  Aud=164  CI=164  RI=164  SC=164  SW=164
+    IGOM=6  Upd=158  IM=5  IM0=5  TCP2=1
+    DriveAudio: DT1=164  DE=164  DSa=164  DSo=164  DT0=164
+    PPU_CTRL=$B0 (bit7/NMI-en=1)  PPU_MASK=$1E
+    $F4=$01  $F5=$5A  $F6=$A5  $FF=$B0
+    $11=$01  $12=$00  $13=$00  $14=$00  $42C=$00  $42D=$00
+  [f253 NMI#165 fired]
+    NMI=165  TCP=165  Tim=165  Aud=165  CI=165  RI=165  SC=165  SW=165
+    IGOM=6  Upd=159  IM=5  IM0=5  TCP2=1
+    DriveAudio: DT1=165  DE=165  DSa=165  DSo=165  DT0=165
+    PPU_CTRL=$B0 (bit7/NMI-en=1)  PPU_MASK=$1E
+    $F4=$01  $F5=$5A  $F6=$A5  $FF=$B0
+    $11=$01  $12=$00  $13=$00  $14=$00  $42C=$00  $42D=$00
+  [f254 NMI#166 fired]
+    NMI=166  TCP=166  Tim=166  Aud=166  CI=166  RI=166  SC=166  SW=166
+    IGOM=6  Upd=160  IM=5  IM0=5  TCP2=1
+    DriveAudio: DT1=166  DE=166  DSa=166  DSo=166  DT0=166
+    PPU_CTRL=$B0 (bit7/NMI-en=1)  PPU_MASK=$1E
+    $F4=$01  $F5=$5A  $F6=$A5  $FF=$B0
+    $11=$01  $12=$00  $13=$00  $14=$00  $42C=$00  $42D=$00
+  [f255 NMI#167 fired]
+    NMI=167  TCP=167  Tim=167  Aud=167  CI=167  RI=167  SC=167  SW=167
+    IGOM=6  Upd=161  IM=5  IM0=5  TCP2=1
+    DriveAudio: DT1=167  DE=167  DSa=167  DSo=167  DT0=167
+    PPU_CTRL=$B0 (bit7/NMI-en=1)  PPU_MASK=$1E
+    $F4=$01  $F5=$5A  $F6=$A5  $FF=$B0
+    $11=$01  $12=$00  $13=$00  $14=$00  $42C=$00  $42D=$00
+  [f256 NMI#168 fired]
+    NMI=168  TCP=168  Tim=168  Aud=168  CI=168  RI=168  SC=168  SW=168
+    IGOM=6  Upd=162  IM=5  IM0=5  TCP2=1
+    DriveAudio: DT1=168  DE=168  DSa=168  DSo=168  DT0=168
+    PPU_CTRL=$B0 (bit7/NMI-en=1)  PPU_MASK=$1E
+    $F4=$01  $F5=$5A  $F6=$A5  $FF=$B0
+    $11=$01  $12=$00  $13=$00  $14=$00  $42C=$00  $42D=$00
+  [f257 NMI#169 fired]
+    NMI=169  TCP=169  Tim=169  Aud=169  CI=169  RI=169  SC=169  SW=169
+    IGOM=6  Upd=163  IM=5  IM0=5  TCP2=1
+    DriveAudio: DT1=169  DE=169  DSa=169  DSo=169  DT0=169
+    PPU_CTRL=$B0 (bit7/NMI-en=1)  PPU_MASK=$1E
+    $F4=$01  $F5=$5A  $F6=$A5  $FF=$B0
+    $11=$01  $12=$00  $13=$00  $14=$00  $42C=$00  $42D=$00
+  [f258 NMI#170 fired]
+    NMI=170  TCP=170  Tim=170  Aud=170  CI=170  RI=170  SC=170  SW=170
+    IGOM=6  Upd=164  IM=5  IM0=5  TCP2=1
+    DriveAudio: DT1=170  DE=170  DSa=170  DSo=170  DT0=170
+    PPU_CTRL=$B0 (bit7/NMI-en=1)  PPU_MASK=$1E
+    $F4=$01  $F5=$5A  $F6=$A5  $FF=$B0
+    $11=$01  $12=$00  $13=$00  $14=$00  $42C=$00  $42D=$00
+  [f259 NMI#171 fired]
+    NMI=171  TCP=171  Tim=171  Aud=171  CI=171  RI=171  SC=171  SW=171
+    IGOM=6  Upd=165  IM=5  IM0=5  TCP2=1
+    DriveAudio: DT1=171  DE=171  DSa=171  DSo=171  DT0=171
+    PPU_CTRL=$B0 (bit7/NMI-en=1)  PPU_MASK=$1E
+    $F4=$01  $F5=$5A  $F6=$A5  $FF=$B0
+    $11=$01  $12=$00  $13=$00  $14=$00  $42C=$00  $42D=$00
+  [f260 NMI#172 fired]
+    NMI=172  TCP=172  Tim=172  Aud=172  CI=172  RI=172  SC=172  SW=172
+    IGOM=6  Upd=166  IM=5  IM0=5  TCP2=1
+    DriveAudio: DT1=172  DE=172  DSa=172  DSo=172  DT0=172
+    PPU_CTRL=$B0 (bit7/NMI-en=1)  PPU_MASK=$1E
+    $F4=$01  $F5=$5A  $F6=$A5  $FF=$B0
+    $11=$01  $12=$00  $13=$00  $14=$00  $42C=$00  $42D=$00
+  [f261 NMI#173 fired]
+    NMI=173  TCP=173  Tim=173  Aud=173  CI=173  RI=173  SC=173  SW=173
+    IGOM=6  Upd=167  IM=5  IM0=5  TCP2=1
+    DriveAudio: DT1=173  DE=173  DSa=173  DSo=173  DT0=173
+    PPU_CTRL=$B0 (bit7/NMI-en=1)  PPU_MASK=$1E
+    $F4=$01  $F5=$5A  $F6=$A5  $FF=$B0
+    $11=$01  $12=$00  $13=$00  $14=$00  $42C=$00  $42D=$00
+  [f262 NMI#174 fired]
+    NMI=174  TCP=174  Tim=174  Aud=174  CI=174  RI=174  SC=174  SW=174
+    IGOM=6  Upd=168  IM=5  IM0=5  TCP2=1
+    DriveAudio: DT1=174  DE=174  DSa=174  DSo=174  DT0=174
+    PPU_CTRL=$B0 (bit7/NMI-en=1)  PPU_MASK=$1E
+    $F4=$01  $F5=$5A  $F6=$A5  $FF=$B0
+    $11=$01  $12=$00  $13=$00  $14=$00  $42C=$00  $42D=$00
+  [f263 NMI#175 fired]
+    NMI=175  TCP=175  Tim=175  Aud=175  CI=175  RI=175  SC=175  SW=175
+    IGOM=6  Upd=169  IM=5  IM0=5  TCP2=1
+    DriveAudio: DT1=175  DE=175  DSa=175  DSo=175  DT0=175
+    PPU_CTRL=$B0 (bit7/NMI-en=1)  PPU_MASK=$1E
+    $F4=$01  $F5=$5A  $F6=$A5  $FF=$B0
+    $11=$01  $12=$00  $13=$00  $14=$00  $42C=$00  $42D=$00
+  [f264 NMI#176 fired]
+    NMI=176  TCP=176  Tim=176  Aud=176  CI=176  RI=176  SC=176  SW=176
+    IGOM=6  Upd=170  IM=5  IM0=5  TCP2=1
+    DriveAudio: DT1=176  DE=176  DSa=176  DSo=176  DT0=176
+    PPU_CTRL=$B0 (bit7/NMI-en=1)  PPU_MASK=$1E
+    $F4=$01  $F5=$5A  $F6=$A5  $FF=$B0
+    $11=$01  $12=$00  $13=$00  $14=$00  $42C=$00  $42D=$00
+  [f265 NMI#177 fired]
+    NMI=177  TCP=177  Tim=177  Aud=177  CI=177  RI=177  SC=177  SW=177
+    IGOM=6  Upd=171  IM=5  IM0=5  TCP2=1
+    DriveAudio: DT1=177  DE=177  DSa=177  DSo=177  DT0=177
+    PPU_CTRL=$B0 (bit7/NMI-en=1)  PPU_MASK=$1E
+    $F4=$01  $F5=$5A  $F6=$A5  $FF=$B0
+    $11=$01  $12=$00  $13=$00  $14=$00  $42C=$00  $42D=$00
+  [f266 NMI#178 fired]
+    NMI=178  TCP=178  Tim=178  Aud=178  CI=178  RI=178  SC=178  SW=178
+    IGOM=6  Upd=172  IM=5  IM0=5  TCP2=1
+    DriveAudio: DT1=178  DE=178  DSa=178  DSo=178  DT0=178
+    PPU_CTRL=$B0 (bit7/NMI-en=1)  PPU_MASK=$1E
+    $F4=$01  $F5=$5A  $F6=$A5  $FF=$B0
+    $11=$01  $12=$00  $13=$00  $14=$00  $42C=$00  $42D=$00
+  [f267 NMI#179 fired]
+    NMI=179  TCP=179  Tim=179  Aud=179  CI=179  RI=179  SC=179  SW=179
+    IGOM=6  Upd=173  IM=5  IM0=5  TCP2=1
+    DriveAudio: DT1=179  DE=179  DSa=179  DSo=179  DT0=179
+    PPU_CTRL=$B0 (bit7/NMI-en=1)  PPU_MASK=$1E
+    $F4=$01  $F5=$5A  $F6=$A5  $FF=$B0
+    $11=$01  $12=$00  $13=$00  $14=$00  $42C=$00  $42D=$00
+  [f268 NMI#180 fired]
+    NMI=180  TCP=180  Tim=180  Aud=180  CI=180  RI=180  SC=180  SW=180
+    IGOM=6  Upd=174  IM=5  IM0=5  TCP2=1
+    DriveAudio: DT1=180  DE=180  DSa=180  DSo=180  DT0=180
+    PPU_CTRL=$B0 (bit7/NMI-en=1)  PPU_MASK=$1E
+    $F4=$01  $F5=$5A  $F6=$A5  $FF=$B0
+    $11=$01  $12=$00  $13=$00  $14=$00  $42C=$00  $42D=$00
+  [f269 NMI#181 fired]
+    NMI=181  TCP=181  Tim=181  Aud=181  CI=181  RI=181  SC=181  SW=181
+    IGOM=6  Upd=175  IM=5  IM0=5  TCP2=1
+    DriveAudio: DT1=181  DE=181  DSa=181  DSo=181  DT0=181
+    PPU_CTRL=$B0 (bit7/NMI-en=1)  PPU_MASK=$1E
+    $F4=$01  $F5=$5A  $F6=$A5  $FF=$B0
+    $11=$01  $12=$00  $13=$00  $14=$00  $42C=$00  $42D=$00
+  [f270 NMI#182 fired]
+    NMI=182  TCP=182  Tim=182  Aud=182  CI=182  RI=182  SC=182  SW=182
+    IGOM=6  Upd=176  IM=5  IM0=5  TCP2=1
+    DriveAudio: DT1=182  DE=182  DSa=182  DSo=182  DT0=182
+    PPU_CTRL=$B0 (bit7/NMI-en=1)  PPU_MASK=$1E
+    $F4=$01  $F5=$5A  $F6=$A5  $FF=$B0
+    $11=$01  $12=$00  $13=$00  $14=$00  $42C=$00  $42D=$00
+  [f270 periodic]
+    NMI=182  TCP=182  Tim=182  Aud=182  CI=182  RI=182  SC=182  SW=182
+    IGOM=6  Upd=176  IM=5  IM0=5  TCP2=1
+    DriveAudio: DT1=182  DE=182  DSa=182  DSo=182  DT0=182
+    PPU_CTRL=$B0 (bit7/NMI-en=1)  PPU_MASK=$1E
+    $F4=$01  $F5=$5A  $F6=$A5  $FF=$B0
+    $11=$01  $12=$00  $13=$00  $14=$00  $42C=$00  $42D=$00
+  [f271 NMI#183 fired]
+    NMI=183  TCP=183  Tim=183  Aud=183  CI=183  RI=183  SC=183  SW=183
+    IGOM=6  Upd=177  IM=5  IM0=5  TCP2=1
+    DriveAudio: DT1=183  DE=183  DSa=183  DSo=183  DT0=183
+    PPU_CTRL=$B0 (bit7/NMI-en=1)  PPU_MASK=$1E
+    $F4=$01  $F5=$5A  $F6=$A5  $FF=$B0
+    $11=$01  $12=$00  $13=$00  $14=$00  $42C=$00  $42D=$00
+  [f272 NMI#184 fired]
+    NMI=184  TCP=184  Tim=184  Aud=184  CI=184  RI=184  SC=184  SW=184
+    IGOM=6  Upd=178  IM=5  IM0=5  TCP2=1
+    DriveAudio: DT1=184  DE=184  DSa=184  DSo=184  DT0=184
+    PPU_CTRL=$B0 (bit7/NMI-en=1)  PPU_MASK=$1E
+    $F4=$01  $F5=$5A  $F6=$A5  $FF=$B0
+    $11=$01  $12=$00  $13=$00  $14=$00  $42C=$00  $42D=$00
+  [f273 NMI#185 fired]
+    NMI=185  TCP=185  Tim=185  Aud=185  CI=185  RI=185  SC=185  SW=185
+    IGOM=6  Upd=179  IM=5  IM0=5  TCP2=1
+    DriveAudio: DT1=185  DE=185  DSa=185  DSo=185  DT0=185
+    PPU_CTRL=$B0 (bit7/NMI-en=1)  PPU_MASK=$1E
+    $F4=$01  $F5=$5A  $F6=$A5  $FF=$B0
+    $11=$01  $12=$00  $13=$00  $14=$00  $42C=$00  $42D=$00
+  [f274 NMI#186 fired]
+    NMI=186  TCP=186  Tim=186  Aud=186  CI=186  RI=186  SC=186  SW=186
+    IGOM=6  Upd=180  IM=5  IM0=5  TCP2=1
+    DriveAudio: DT1=186  DE=186  DSa=186  DSo=186  DT0=186
+    PPU_CTRL=$B0 (bit7/NMI-en=1)  PPU_MASK=$1E
+    $F4=$01  $F5=$5A  $F6=$A5  $FF=$B0
+    $11=$01  $12=$00  $13=$00  $14=$00  $42C=$00  $42D=$00
+  [f275 NMI#187 fired]
+    NMI=187  TCP=187  Tim=187  Aud=187  CI=187  RI=187  SC=187  SW=187
+    IGOM=6  Upd=181  IM=5  IM0=5  TCP2=1
+    DriveAudio: DT1=187  DE=187  DSa=187  DSo=187  DT0=187
+    PPU_CTRL=$B0 (bit7/NMI-en=1)  PPU_MASK=$1E
+    $F4=$01  $F5=$5A  $F6=$A5  $FF=$B0
+    $11=$01  $12=$00  $13=$00  $14=$00  $42C=$00  $42D=$00
+  [f276 NMI#188 fired]
+    NMI=188  TCP=188  Tim=188  Aud=188  CI=188  RI=188  SC=188  SW=188
+    IGOM=6  Upd=182  IM=5  IM0=5  TCP2=1
+    DriveAudio: DT1=188  DE=188  DSa=188  DSo=188  DT0=188
+    PPU_CTRL=$B0 (bit7/NMI-en=1)  PPU_MASK=$1E
+    $F4=$01  $F5=$5A  $F6=$A5  $FF=$B0
+    $11=$01  $12=$00  $13=$00  $14=$00  $42C=$00  $42D=$00
+  [f277 NMI#189 fired]
+    NMI=189  TCP=189  Tim=189  Aud=189  CI=189  RI=189  SC=189  SW=189
+    IGOM=6  Upd=183  IM=5  IM0=5  TCP2=1
+    DriveAudio: DT1=189  DE=189  DSa=189  DSo=189  DT0=189
+    PPU_CTRL=$B0 (bit7/NMI-en=1)  PPU_MASK=$1E
+    $F4=$01  $F5=$5A  $F6=$A5  $FF=$B0
+    $11=$01  $12=$00  $13=$00  $14=$00  $42C=$00  $42D=$00
+  [f278 NMI#190 fired]
+    NMI=190  TCP=190  Tim=190  Aud=190  CI=190  RI=190  SC=190  SW=190
+    IGOM=6  Upd=184  IM=5  IM0=5  TCP2=1
+    DriveAudio: DT1=190  DE=190  DSa=190  DSo=190  DT0=190
+    PPU_CTRL=$B0 (bit7/NMI-en=1)  PPU_MASK=$1E
+    $F4=$01  $F5=$5A  $F6=$A5  $FF=$B0
+    $11=$01  $12=$00  $13=$00  $14=$00  $42C=$00  $42D=$00
+  [f279 NMI#191 fired]
+    NMI=191  TCP=191  Tim=191  Aud=191  CI=191  RI=191  SC=191  SW=191
+    IGOM=6  Upd=185  IM=5  IM0=5  TCP2=1
+    DriveAudio: DT1=191  DE=191  DSa=191  DSo=191  DT0=191
+    PPU_CTRL=$B0 (bit7/NMI-en=1)  PPU_MASK=$1E
+    $F4=$01  $F5=$5A  $F6=$A5  $FF=$B0
+    $11=$01  $12=$00  $13=$00  $14=$00  $42C=$00  $42D=$00
+  [f280 NMI#192 fired]
+    NMI=192  TCP=192  Tim=192  Aud=192  CI=192  RI=192  SC=192  SW=192
+    IGOM=6  Upd=186  IM=5  IM0=5  TCP2=1
+    DriveAudio: DT1=192  DE=192  DSa=192  DSo=192  DT0=192
+    PPU_CTRL=$B0 (bit7/NMI-en=1)  PPU_MASK=$1E
+    $F4=$01  $F5=$5A  $F6=$A5  $FF=$B0
+    $11=$01  $12=$00  $13=$00  $14=$00  $42C=$00  $42D=$00
+  [f281 NMI#193 fired]
+    NMI=193  TCP=193  Tim=193  Aud=193  CI=193  RI=193  SC=193  SW=193
+    IGOM=6  Upd=187  IM=5  IM0=5  TCP2=1
+    DriveAudio: DT1=193  DE=193  DSa=193  DSo=193  DT0=193
+    PPU_CTRL=$B0 (bit7/NMI-en=1)  PPU_MASK=$1E
+    $F4=$01  $F5=$5A  $F6=$A5  $FF=$B0
+    $11=$01  $12=$00  $13=$00  $14=$00  $42C=$00  $42D=$00
+  [f282 NMI#194 fired]
+    NMI=194  TCP=194  Tim=194  Aud=194  CI=194  RI=194  SC=194  SW=194
+    IGOM=6  Upd=188  IM=5  IM0=5  TCP2=1
+    DriveAudio: DT1=194  DE=194  DSa=194  DSo=194  DT0=194
+    PPU_CTRL=$B0 (bit7/NMI-en=1)  PPU_MASK=$1E
+    $F4=$01  $F5=$5A  $F6=$A5  $FF=$B0
+    $11=$01  $12=$00  $13=$00  $14=$00  $42C=$00  $42D=$00
+  [f283 NMI#195 fired]
+    NMI=195  TCP=195  Tim=195  Aud=195  CI=195  RI=195  SC=195  SW=195
+    IGOM=6  Upd=189  IM=5  IM0=5  TCP2=1
+    DriveAudio: DT1=195  DE=195  DSa=195  DSo=195  DT0=195
+    PPU_CTRL=$B0 (bit7/NMI-en=1)  PPU_MASK=$1E
+    $F4=$01  $F5=$5A  $F6=$A5  $FF=$B0
+    $11=$01  $12=$00  $13=$00  $14=$00  $42C=$00  $42D=$00
+  [f284 NMI#196 fired]
+    NMI=196  TCP=196  Tim=196  Aud=196  CI=196  RI=196  SC=196  SW=196
+    IGOM=6  Upd=190  IM=5  IM0=5  TCP2=1
+    DriveAudio: DT1=196  DE=196  DSa=196  DSo=196  DT0=196
+    PPU_CTRL=$B0 (bit7/NMI-en=1)  PPU_MASK=$1E
+    $F4=$01  $F5=$5A  $F6=$A5  $FF=$B0
+    $11=$01  $12=$00  $13=$00  $14=$00  $42C=$00  $42D=$00
+  [f285 NMI#197 fired]
+    NMI=197  TCP=197  Tim=197  Aud=197  CI=197  RI=197  SC=197  SW=197
+    IGOM=6  Upd=191  IM=5  IM0=5  TCP2=1
+    DriveAudio: DT1=197  DE=197  DSa=197  DSo=197  DT0=197
+    PPU_CTRL=$B0 (bit7/NMI-en=1)  PPU_MASK=$1E
+    $F4=$01  $F5=$5A  $F6=$A5  $FF=$B0
+    $11=$01  $12=$00  $13=$00  $14=$00  $42C=$00  $42D=$00
+  [f286 NMI#198 fired]
+    NMI=198  TCP=198  Tim=198  Aud=198  CI=198  RI=198  SC=198  SW=198
+    IGOM=6  Upd=192  IM=5  IM0=5  TCP2=1
+    DriveAudio: DT1=198  DE=198  DSa=198  DSo=198  DT0=198
+    PPU_CTRL=$B0 (bit7/NMI-en=1)  PPU_MASK=$1E
+    $F4=$01  $F5=$5A  $F6=$A5  $FF=$B0
+    $11=$01  $12=$00  $13=$00  $14=$00  $42C=$00  $42D=$00
+  [f287 NMI#199 fired]
+    NMI=199  TCP=199  Tim=199  Aud=199  CI=199  RI=199  SC=199  SW=199
+    IGOM=6  Upd=193  IM=5  IM0=5  TCP2=1
+    DriveAudio: DT1=199  DE=199  DSa=199  DSo=199  DT0=199
+    PPU_CTRL=$B0 (bit7/NMI-en=1)  PPU_MASK=$1E
+    $F4=$01  $F5=$5A  $F6=$A5  $FF=$B0
+    $11=$01  $12=$00  $13=$00  $14=$00  $42C=$00  $42D=$00
+  [f288 NMI#200 fired]
+    NMI=200  TCP=200  Tim=200  Aud=200  CI=200  RI=200  SC=200  SW=200
+    IGOM=6  Upd=194  IM=5  IM0=5  TCP2=1
+    DriveAudio: DT1=200  DE=200  DSa=200  DSo=200  DT0=200
+    PPU_CTRL=$B0 (bit7/NMI-en=1)  PPU_MASK=$1E
+    $F4=$01  $F5=$5A  $F6=$A5  $FF=$B0
+    $11=$01  $12=$00  $13=$00  $14=$00  $42C=$00  $42D=$00
+  [f289 NMI#201 fired]
+    NMI=201  TCP=201  Tim=201  Aud=201  CI=201  RI=201  SC=201  SW=201
+    IGOM=6  Upd=195  IM=5  IM0=5  TCP2=1
+    DriveAudio: DT1=201  DE=201  DSa=201  DSo=201  DT0=201
+    PPU_CTRL=$B0 (bit7/NMI-en=1)  PPU_MASK=$1E
+    $F4=$01  $F5=$5A  $F6=$A5  $FF=$B0
+    $11=$01  $12=$00  $13=$00  $14=$00  $42C=$00  $42D=$00
+  [f290 NMI#202 fired]
+    NMI=202  TCP=202  Tim=202  Aud=202  CI=202  RI=202  SC=202  SW=202
+    IGOM=6  Upd=196  IM=5  IM0=5  TCP2=1
+    DriveAudio: DT1=202  DE=202  DSa=202  DSo=202  DT0=202
+    PPU_CTRL=$B0 (bit7/NMI-en=1)  PPU_MASK=$1E
+    $F4=$01  $F5=$5A  $F6=$A5  $FF=$B0
+    $11=$01  $12=$00  $13=$00  $14=$00  $42C=$00  $42D=$00
+  [f291 NMI#203 fired]
+    NMI=203  TCP=203  Tim=203  Aud=203  CI=203  RI=203  SC=203  SW=203
+    IGOM=6  Upd=197  IM=5  IM0=5  TCP2=1
+    DriveAudio: DT1=203  DE=203  DSa=203  DSo=203  DT0=203
+    PPU_CTRL=$B0 (bit7/NMI-en=1)  PPU_MASK=$1E
+    $F4=$01  $F5=$5A  $F6=$A5  $FF=$B0
+    $11=$01  $12=$00  $13=$00  $14=$00  $42C=$00  $42D=$00
+  [f292 NMI#204 fired]
+    NMI=204  TCP=204  Tim=204  Aud=204  CI=204  RI=204  SC=204  SW=204
+    IGOM=6  Upd=198  IM=5  IM0=5  TCP2=1
+    DriveAudio: DT1=204  DE=204  DSa=204  DSo=204  DT0=204
+    PPU_CTRL=$B0 (bit7/NMI-en=1)  PPU_MASK=$1E
+    $F4=$01  $F5=$5A  $F6=$A5  $FF=$B0
+    $11=$01  $12=$00  $13=$00  $14=$00  $42C=$00  $42D=$00
+  [f293 NMI#205 fired]
+    NMI=205  TCP=205  Tim=205  Aud=205  CI=205  RI=205  SC=205  SW=205
+    IGOM=6  Upd=199  IM=5  IM0=5  TCP2=1
+    DriveAudio: DT1=205  DE=205  DSa=205  DSo=205  DT0=205
+    PPU_CTRL=$B0 (bit7/NMI-en=1)  PPU_MASK=$1E
+    $F4=$01  $F5=$5A  $F6=$A5  $FF=$B0
+    $11=$01  $12=$00  $13=$00  $14=$00  $42C=$00  $42D=$00
+  [f294 NMI#206 fired]
+    NMI=206  TCP=206  Tim=206  Aud=206  CI=206  RI=206  SC=206  SW=206
+    IGOM=6  Upd=200  IM=5  IM0=5  TCP2=1
+    DriveAudio: DT1=206  DE=206  DSa=206  DSo=206  DT0=206
+    PPU_CTRL=$B0 (bit7/NMI-en=1)  PPU_MASK=$1E
+    $F4=$01  $F5=$5A  $F6=$A5  $FF=$B0
+    $11=$01  $12=$00  $13=$00  $14=$00  $42C=$00  $42D=$00
+  [f295 NMI#207 fired]
+    NMI=207  TCP=207  Tim=207  Aud=207  CI=207  RI=207  SC=207  SW=207
+    IGOM=6  Upd=201  IM=5  IM0=5  TCP2=1
+    DriveAudio: DT1=207  DE=207  DSa=207  DSo=207  DT0=207
+    PPU_CTRL=$B0 (bit7/NMI-en=1)  PPU_MASK=$1E
+    $F4=$01  $F5=$5A  $F6=$A5  $FF=$B0
+    $11=$01  $12=$00  $13=$00  $14=$00  $42C=$00  $42D=$00
+  [f296 NMI#208 fired]
+    NMI=208  TCP=208  Tim=208  Aud=208  CI=208  RI=208  SC=208  SW=208
+    IGOM=6  Upd=202  IM=5  IM0=5  TCP2=1
+    DriveAudio: DT1=208  DE=208  DSa=208  DSo=208  DT0=208
+    PPU_CTRL=$B0 (bit7/NMI-en=1)  PPU_MASK=$1E
+    $F4=$01  $F5=$5A  $F6=$A5  $FF=$B0
+    $11=$01  $12=$00  $13=$00  $14=$00  $42C=$00  $42D=$00
+  [f297 NMI#209 fired]
+    NMI=209  TCP=209  Tim=209  Aud=209  CI=209  RI=209  SC=209  SW=209
+    IGOM=6  Upd=203  IM=5  IM0=5  TCP2=1
+    DriveAudio: DT1=209  DE=209  DSa=209  DSo=209  DT0=209
+    PPU_CTRL=$B0 (bit7/NMI-en=1)  PPU_MASK=$1E
+    $F4=$01  $F5=$5A  $F6=$A5  $FF=$B0
+    $11=$01  $12=$00  $13=$00  $14=$00  $42C=$00  $42D=$00
+  [f298 NMI#210 fired]
+    NMI=210  TCP=210  Tim=210  Aud=210  CI=210  RI=210  SC=210  SW=210
+    IGOM=6  Upd=204  IM=5  IM0=5  TCP2=1
+    DriveAudio: DT1=210  DE=210  DSa=210  DSo=210  DT0=210
+    PPU_CTRL=$B0 (bit7/NMI-en=1)  PPU_MASK=$1E
+    $F4=$01  $F5=$5A  $F6=$A5  $FF=$B0
+    $11=$01  $12=$00  $13=$00  $14=$00  $42C=$00  $42D=$00
+  [f299 NMI#211 fired]
+    NMI=211  TCP=211  Tim=211  Aud=211  CI=211  RI=211  SC=211  SW=211
+    IGOM=6  Upd=205  IM=5  IM0=5  TCP2=1
+    DriveAudio: DT1=211  DE=211  DSa=211  DSo=211  DT0=211
+    PPU_CTRL=$B0 (bit7/NMI-en=1)  PPU_MASK=$1E
+    $F4=$01  $F5=$5A  $F6=$A5  $FF=$B0
+    $11=$01  $12=$00  $13=$00  $14=$00  $42C=$00  $42D=$00
+  [f300 NMI#212 fired]
+    NMI=212  TCP=212  Tim=212  Aud=212  CI=212  RI=212  SC=212  SW=212
+    IGOM=6  Upd=206  IM=5  IM0=5  TCP2=1
+    DriveAudio: DT1=212  DE=212  DSa=212  DSo=212  DT0=212
+    PPU_CTRL=$B0 (bit7/NMI-en=1)  PPU_MASK=$1E
+    $F4=$01  $F5=$5A  $F6=$A5  $FF=$B0
+    $11=$01  $12=$00  $13=$00  $14=$00  $42C=$00  $42D=$00
+  [f300 periodic]
+    NMI=212  TCP=212  Tim=212  Aud=212  CI=212  RI=212  SC=212  SW=212
+    IGOM=6  Upd=206  IM=5  IM0=5  TCP2=1
+    DriveAudio: DT1=212  DE=212  DSa=212  DSo=212  DT0=212
+    PPU_CTRL=$B0 (bit7/NMI-en=1)  PPU_MASK=$1E
+    $F4=$01  $F5=$5A  $F6=$A5  $FF=$B0
+    $11=$01  $12=$00  $13=$00  $14=$00  $42C=$00  $42D=$00
+
+=== Final state after 300 frames ===
+  [FINAL]
+    NMI=212  TCP=212  Tim=212  Aud=212  CI=212  RI=212  SC=212  SW=212
+    IGOM=6  Upd=206  IM=5  IM0=5  TCP2=1
+    DriveAudio: DT1=212  DE=212  DSa=212  DSo=212  DT0=212
+    PPU_CTRL=$B0 (bit7/NMI-en=1)  PPU_MASK=$1E
+    $F4=$01  $F5=$5A  $F6=$A5  $FF=$B0
+    $11=$01  $12=$00  $13=$00  $14=$00  $42C=$00  $42D=$00
+  SAT[0]: Y=248 link=1 tw=$D8CA X=336
+  SAT[1]: Y=248 link=2 tw=$D8CC X=328
+  SAT[2]: Y=248 link=3 tw=$D0CA X=168
+  SAT[3]: Y=248 link=4 tw=$D0CC X=176
+  SAT[4]: Y=168 link=5 tw=$C8CA X=336
+  SAT[5]: Y=168 link=6 tw=$C8CC X=328
+  SAT[6]: Y=168 link=7 tw=$C0CA X=168
+  SAT[7]: Y=168 link=8 tw=$C0CC X=176
+
+=================================================================
+Diagnosis: NMI stopped? Check PPU_CTRL bit 7 at FINAL state.
+If NMI-en=0: NMI was disabled and never re-enabled.
+If NMI-en=1: NMI enabled but VBlank not firing (timing/exception).
+=================================================================

@@ -15,492 +15,12 @@
 ;   A5 = NES stack pointer ($FF0200 initially, grows downward)
 ;==============================================================================
 
-NES_RAM         equ $FF0000
-NES_SRAM        equ $FF6000
-NES_STACK_BASE  equ $FF0100
-
+; (fixed equates omitted — provided by z_07.asm in --all build)
 ;==============================================================================
 ; NES RAM variable offsets (used as (offset,A4) — A4=NES_RAM)
 ; Source: Variables.inc + CommonVars.inc
 ;==============================================================================
-GLEEOK_DIRCOUNTERH                      equ $0000  ; NES RAM offset
-GLEEOK_DIRCOUNTERV                      equ $0001  ; NES RAM offset
-GLEEOK_SPEEDX                           equ $0002  ; NES RAM offset
-GLEEOK_SPEEDY                           equ $0003  ; NES RAM offset
-GLEEOK_DIRCHANGECOUNTER                 equ $0004  ; NES RAM offset
-GLEEOK_DELAY                            equ $0005  ; NES RAM offset
-CurLevel                                equ $0010  ; NES RAM offset
-IsUpdatingMode                          equ $0011  ; NES RAM offset
-GameMode                                equ $0012  ; NES RAM offset
-GameSubmode                             equ $0013  ; NES RAM offset
-TileBufSelector                         equ $0014  ; NES RAM offset
-FrameCounter                            equ $0015  ; NES RAM offset
-CurSaveSlot                             equ $0016  ; NES RAM offset
-Random                                  equ $0018  ; NES RAM offset
-StunCycle                               equ $0026  ; NES RAM offset
-DoorTimer                               equ $0027  ; NES RAM offset
-ObjTimer                                equ $0028  ; NES RAM offset
-FluteTimer                              equ $003C  ; NES RAM offset
-ObjStunTimer                            equ $003D  ; NES RAM offset
-ChaseLongTimer                          equ $004A  ; NES RAM offset
-MonstersFromEdgesLongTimer              equ $004B  ; NES RAM offset
-SwordBlockedLongTimer                   equ $004C  ; NES RAM offset
-RedLeeverLongTimer                      equ $004D  ; NES RAM offset
-EndingFlashLongTimer                    equ $004D  ; NES RAM offset
-HelpDropCount                           equ $0050  ; NES RAM offset
-HelpDropValue                           equ $0051  ; NES RAM offset
-ProcessedNarrowObj                      equ $0052  ; NES RAM offset
-DoorwayDir                              equ $0053  ; NES RAM offset
-TriggeredDoorCmd                        equ $0054  ; NES RAM offset
-TriggeredDoorDir                        equ $0055  ; NES RAM offset
-Link_GoStraightWhenDiagInput            equ $0056  ; NES RAM offset
-Link_GoStraight                         equ $0057  ; NES RAM offset
-VScrollAddrHi                           equ $0058  ; NES RAM offset
-EmptyMonsterSlot                        equ $0059  ; NES RAM offset
-UndergroundExitType                     equ $005A  ; NES RAM offset
-TargetMode                              equ $005B  ; NES RAM offset
-SwitchNameTablesReq                     equ $005C  ; NES RAM offset
-CurScanRoomId                           equ $005D  ; NES RAM offset
-SubmenuScrollProgress                   equ $005E  ; NES RAM offset
-OddBaseNameTableOverride                equ $005F  ; NES RAM offset
-ChaseOtherTarget                        equ $0060  ; NES RAM offset
-ChaseTargetX                            equ $0061  ; NES RAM offset
-ChaseTargetY                            equ $0062  ; NES RAM offset
-World_IsFillingHearts                   equ $0063  ; NES RAM offset
-LadderSlot                              equ $0064  ; NES RAM offset
-UndergroundEntranceTile                 equ $0065  ; NES RAM offset
-SongScriptPtrLo                         equ $0066  ; NES RAM offset
-SongScriptPtrHi                         equ $0067  ; NES RAM offset
-EffectCounter                           equ $0069  ; NES RAM offset
-CurNoteLowPeriodSq0                     equ $006A  ; NES RAM offset
-CurNoteLowPeriodSq1                     equ $006B  ; NES RAM offset
-SongPhraseIndex                         equ $006C  ; NES RAM offset
-CustomEnvelopeOffsetTune1               equ $006D  ; NES RAM offset
-NoteLengthTune1                         equ $006E  ; NES RAM offset
-NoteCounterTune1                        equ $006F  ; NES RAM offset
-ObjX                                    equ $0070  ; NES RAM offset
-ObjY                                    equ $0084  ; NES RAM offset
-ObjDir                                  equ $0098  ; NES RAM offset
-ObjRoomItemId                           equ $0098  ; NES RAM offset
-RoomItemId                              equ $00AB  ; NES RAM offset
-ObjState                                equ $00AC  ; NES RAM offset
-Item_ObjItemId                          equ $00AC  ; NES RAM offset
-ObjShoveDir                             equ $00C0  ; NES RAM offset
-ObjShoveDistance                        equ $00D3  ; NES RAM offset
-Paused                                  equ $00E0  ; NES RAM offset
-MenuState                               equ $00E1  ; NES RAM offset
-VScrollAddrLo                           equ $00E2  ; NES RAM offset
-IsSprite0CheckActive                    equ $00E3  ; NES RAM offset
-DeathTurns                              equ $00E5  ; NES RAM offset
-VScrollStartFrame                       equ $00E6  ; NES RAM offset
-CurColumn                               equ $00E8  ; NES RAM offset
-CurRow                                  equ $00E9  ; NES RAM offset
-WhirlwindPrevRoomId                     equ $00EA  ; NES RAM offset
-RoomId                                  equ $00EB  ; NES RAM offset
-NextRoomId                              equ $00EC  ; NES RAM offset
-PrevRow                                 equ $00ED  ; NES RAM offset
-CurOpenedDoors                          equ $00EE  ; NES RAM offset
-_Unknown_F3                             equ $00F3  ; NES RAM offset
-InitializedGame                         equ $00F4  ; NES RAM offset
-TransferredCommonPatterns               equ $00F5  ; NES RAM offset
-TransferredDemoPatterns                 equ $00F6  ; NES RAM offset
-ReturnToBank4                           equ $00F7  ; NES RAM offset
-ButtonsPressed                          equ $00F8  ; NES RAM offset
-ButtonsDown                             equ $00FA  ; NES RAM offset
-CurVScroll                              equ $00FC  ; NES RAM offset
-CurHScroll                              equ $00FD  ; NES RAM offset
-CurPpuMask_2001                         equ $00FE  ; NES RAM offset
-CurPpuControl_2000                      equ $00FF  ; NES RAM offset
-PositiveGridCellSize                    equ $010E  ; NES RAM offset
-NegativeGridCellSize                    equ $010F  ; NES RAM offset
-Sprites                                 equ $0200  ; NES RAM offset
-DynTileBufLen                           equ $0301  ; NES RAM offset
-DynTileBuf                              equ $0302  ; NES RAM offset
-OpenDoorwayMask                         equ $033F  ; NES RAM offset
-CurObjIndex                             equ $0340  ; NES RAM offset
-RollingSpriteIndex                      equ $0341  ; NES RAM offset
-FirstSpriteIndex                        equ $0342  ; NES RAM offset
-LeftSpriteOffset                        equ $0343  ; NES RAM offset
-RightSpriteOffset                       equ $0344  ; NES RAM offset
-RoomBoundLeft                           equ $0346  ; NES RAM offset
-RoomBoundRight                          equ $0347  ; NES RAM offset
-RoomBoundUp                             equ $0348  ; NES RAM offset
-RoomBoundDown                           equ $0349  ; NES RAM offset
-ObjectFirstUnwalkableTile               equ $034A  ; NES RAM offset
-ShotCollidesWithLink                    equ $034B  ; NES RAM offset
-ActiveMonsterShots                      equ $034C  ; NES RAM offset
-RoomAllDead                             equ $034D  ; NES RAM offset
-RoomObjCount                            equ $034E  ; NES RAM offset
-ObjType                                 equ $034F  ; NES RAM offset
-RoomKillCount                           equ $034F  ; NES RAM offset
-RoomObjTemplateType                     equ $035F  ; NES RAM offset
-ObjMovingLimit                          equ $0380  ; NES RAM offset
-ObjAngleFrac                            equ $0380  ; NES RAM offset
-Shot_ObjBounceDir                       equ $0380  ; NES RAM offset
-Moldorm_ObjOldDir                       equ $0380  ; NES RAM offset
-Gohma_ObjShootTimer                     equ $0380  ; NES RAM offset
-Gleook_HeadInfo2                        equ $0381  ; NES RAM offset
-Manhandla_SegmentJustDied               equ $0383  ; NES RAM offset
-Manhandla_BounceDir                     equ $0385  ; NES RAM offset
-ObjGridOffset                           equ $0394  ; NES RAM offset
-ObjRemDistance                          equ $0394  ; NES RAM offset
-ObjAngleWhole                           equ $0394  ; NES RAM offset
-Shot_ObjBounceDist                      equ $0394  ; NES RAM offset
-RedWizzrobe_ObjFadeCounter              equ $0394  ; NES RAM offset
-Gleeok_NeckXs3                          equ $0395  ; NES RAM offset
-ObjPosFrac                              equ $03A8  ; NES RAM offset
-Item_ObjItemLifetime                    equ $03A8  ; NES RAM offset
-Gleook_HeadInfo3                        equ $03A9  ; NES RAM offset
-ObjQSpeedFrac                           equ $03BC  ; NES RAM offset
-Moldorm_ObjBounceDir                    equ $03BC  ; NES RAM offset
-Gleeok_NeckYs3                          equ $03BD  ; NES RAM offset
-ObjAnimCounter                          equ $03D0  ; NES RAM offset
-ObjAnimFrame                            equ $03E4  ; NES RAM offset
-ObjInputDir                             equ $03F8  ; NES RAM offset
-ObjMetastate                            equ $0405  ; NES RAM offset
-Item_ObjMonsterType                     equ $0412  ; NES RAM offset
-StairsTargetY                           equ $0412  ; NES RAM offset
-ObjWantsToShoot                         equ $0412  ; NES RAM offset
-ObjPushTimer                            equ $0412  ; NES RAM offset
-TileObjRoomId                           equ $0412  ; NES RAM offset
-Fireball_ObjDirToTargetX                equ $0412  ; NES RAM offset
-Flyer_ObjSpeedFrac                      equ $0412  ; NES RAM offset
-Jumper_ObjSpeedWholeY                   equ $0412  ; NES RAM offset
-Wallmaster_ObjStep                      equ $0412  ; NES RAM offset
-PolsVoice_ObjSpeedWhole                 equ $0412  ; NES RAM offset
-BlueWizzrobe_ObjTurnCounter             equ $0412  ; NES RAM offset
-RedWizzrobe_ObjAnimCounter              equ $0412  ; NES RAM offset
-Manhandla_ObjSpeedAccum                 equ $0412  ; NES RAM offset
-Gohma_ObjDistTraveled                   equ $0412  ; NES RAM offset
-TriforceGlowTimer                       equ $0412  ; NES RAM offset
-PeaceCharDelayCounter                   equ $0412  ; NES RAM offset
-TriforceGlowCycle                       equ $0413  ; NES RAM offset
-Gleeok_ObjHeadInfo                      equ $0413  ; NES RAM offset
-Gleeok_ObjHeadDirCounterH               equ $0413  ; NES RAM offset
-PeaceCharIndex                          equ $0413  ; NES RAM offset
-CaveFlags                               equ $0413  ; NES RAM offset
-Gleeok_ObjHeadDirCounterV               equ $0414  ; NES RAM offset
-ScrolledScreenCount                     equ $0415  ; NES RAM offset
-Gleeok_ObjHeadSpeedX                    equ $0415  ; NES RAM offset
-PersonTextSelector                      equ $0415  ; NES RAM offset
-Gleeok_ObjHeadSpeedY                    equ $0416  ; NES RAM offset
-TextboxCharIndex                        equ $0416  ; NES RAM offset
-PersonTextIndex                         equ $0416  ; NES RAM offset
-DemoLineAttrVramAddrLo                  equ $0417  ; NES RAM offset
-Gleeok_ObjHeadDirChangeCounter          equ $0417  ; NES RAM offset
-DemoLineAttrVramAddrHi                  equ $0418  ; NES RAM offset
-Gleeok_ObjHeadDelay                     equ $0418  ; NES RAM offset
-DemoLineIndex                           equ $0419  ; NES RAM offset
-DemoTimer                               equ $041A  ; NES RAM offset
-ScrolledLineCount                       equ $041B  ; NES RAM offset
-DemoLineTileVramAddrLo                  equ $041C  ; NES RAM offset
-DemoLineTileVramAddrHi                  equ $041D  ; NES RAM offset
-ObjTurnRate                             equ $041F  ; NES RAM offset
-Fireball_ObjQSpeedX                     equ $041F  ; NES RAM offset
-Flyer_ObjSpeed                          equ $041F  ; NES RAM offset
-Jumper_ObjSpeedFracY                    equ $041F  ; NES RAM offset
-Wallmaster_ObjTilesCrossed              equ $041F  ; NES RAM offset
-Digdogger_ObjSpeedFrac                  equ $041F  ; NES RAM offset
-PolsVoice_ObjLastTile                   equ $041F  ; NES RAM offset
-Wizzrobe_ObjLastTile                    equ $041F  ; NES RAM offset
-Manhandla_ObjSpeedFrac                  equ $041F  ; NES RAM offset
-Gohma_ObjMoveAccum                      equ $041F  ; NES RAM offset
-InitializedWaterfallAnimation           equ $041F  ; NES RAM offset
-CharBoardIndex                          equ $041F  ; NES RAM offset
-Gleook_HeadInfo0                        equ $0420  ; NES RAM offset
-TitleWaveYs                             equ $0420  ; NES RAM offset
-InitializedNameField                    equ $0420  ; NES RAM offset
-NameCharOffset                          equ $0421  ; NES RAM offset
-NameInputCharBuf                        equ $0422  ; NES RAM offset
-CaveItemIds                             equ $0422  ; NES RAM offset
-StillHoldingButton                      equ $0426  ; NES RAM offset
-HeldButton                              equ $0427  ; NES RAM offset
-SubsequentButtonRepeat                  equ $0428  ; NES RAM offset
-ButtonRepeatTimer                       equ $0429  ; NES RAM offset
-ModeE_WrappedAroundBoardY               equ $042A  ; NES RAM offset
-ObjRefId                                equ $042C  ; NES RAM offset
-ObjCaptureTimer                         equ $042C  ; NES RAM offset
-Flyer_ObjTurns                          equ $042C  ; NES RAM offset
-Digdogger_ObjSpeedWhole                 equ $042C  ; NES RAM offset
-Dodongo_ObjBloatedSubstate              equ $042C  ; NES RAM offset
-PolsVoice_ObjTargetY                    equ $042C  ; NES RAM offset
-Manhandla_ObjSpeedWhole                 equ $042C  ; NES RAM offset
-Gohma_ObjNextOpenEyeCounter             equ $042C  ; NES RAM offset
-Ganon_ObjPhase                          equ $042C  ; NES RAM offset
-DemoPhase                               equ $042C  ; NES RAM offset
-DemoSubphase                            equ $042D  ; NES RAM offset
-Gleook_HeadInfo1                        equ $042D  ; NES RAM offset
-DemoLineTextIndex                       equ $042E  ; NES RAM offset
-CaveCurPriceIndex                       equ $042E  ; NES RAM offset
-DemoItemRow                             equ $042F  ; NES RAM offset
-CaveCurPriceOffset                      equ $042F  ; NES RAM offset
-CavePrices                              equ $0430  ; NES RAM offset
-Fireball_ObjDirToTargetY                equ $0437  ; NES RAM offset
-Flyer_ObjDistTraveled                   equ $0437  ; NES RAM offset
-Digdogger_ObjTargetSpeedFrac            equ $0437  ; NES RAM offset
-Dodongo_ObjBombHits                     equ $0437  ; NES RAM offset
-Manhandla_ObjPrevFrame                  equ $0437  ; NES RAM offset
-DemoPhase0Subphase1Cycle                equ $0437  ; NES RAM offset
-DemoPhase0Subphase1Timer                equ $0438  ; NES RAM offset
-Gleeok_NeckXs0                          equ $0438  ; NES RAM offset
-CaveChosenIndex                         equ $0438  ; NES RAM offset
-Fireball_ObjQSpeedY                     equ $0444  ; NES RAM offset
-Flyer_ObjFlyingState                    equ $0444  ; NES RAM offset
-Jumper_ObjTargetY                       equ $0444  ; NES RAM offset
-Digdogger_ObjTargetSpeedWhole           equ $0444  ; NES RAM offset
-PolsVoice_ObjSpeedFrac                  equ $0444  ; NES RAM offset
-Gohma_ObjEyeOpenTimer                   equ $0444  ; NES RAM offset
-DemoItemIds                             equ $0444  ; NES RAM offset
-Ganon_ScenePhase                        equ $0445  ; NES RAM offset
-Gleeok_NeckYs0                          equ $0445  ; NES RAM offset
-MoneyGameAmounts                        equ $0448  ; NES RAM offset
-ObjShootTimer                           equ $0451  ; NES RAM offset
-Fireball_ObjPosFracX                    equ $0451  ; NES RAM offset
-Jumper_ObjReversalCount                 equ $0451  ; NES RAM offset
-Manhandla_ObjFrameAccum                 equ $0451  ; NES RAM offset
-Gohma_ObjGoStraight                     equ $0451  ; NES RAM offset
-Gleeok_NeckXs1                          equ $0452  ; NES RAM offset
-Fireball_ObjPosFracY                    equ $045E  ; NES RAM offset
-Digdogger_ObjSpeedFlag                  equ $045E  ; NES RAM offset
-Dodongo_ObjBloatedTimer                 equ $045E  ; NES RAM offset
-Gohma_ObjSprints                        equ $045E  ; NES RAM offset
-Patra_ObjManeuverIndex                  equ $045E  ; NES RAM offset
-Gleeok_NeckYs1                          equ $045F  ; NES RAM offset
-TextboxCharPtr                          equ $045F  ; NES RAM offset
-PersonTextPtr                           equ $045F  ; NES RAM offset
-Flyer_ObjOffsetX                        equ $046B  ; NES RAM offset
-Digdogger_ObjIsChild                    equ $046B  ; NES RAM offset
-Gohma_ObjEyeState                       equ $046B  ; NES RAM offset
-Ganon_ObjAnimationFrame                 equ $046B  ; NES RAM offset
-Gleeok_NeckXs2                          equ $046C  ; NES RAM offset
-ObjTurnTimer                            equ $0478  ; NES RAM offset
-Flyer_ObjOffsetY                        equ $0478  ; NES RAM offset
-Digdogger_ObjCurPart                    equ $0478  ; NES RAM offset
-Aquamentus_ObjFireballOffset            equ $0478  ; NES RAM offset
-Manhandla_ObjFrame                      equ $0478  ; NES RAM offset
-Gohma_ObjEyeAnimCounter                 equ $0478  ; NES RAM offset
-Ganon_ObjCloudDist                      equ $0478  ; NES RAM offset
-Gleeok_NeckYs2                          equ $0479  ; NES RAM offset
-ObjHP                                   equ $0485  ; NES RAM offset
-ObjUninitialized                        equ $0492  ; NES RAM offset
-ObjCollidedTile                         equ $049E  ; NES RAM offset
-ObjInvincibilityMask                    equ $04B2  ; NES RAM offset
-ObjAttr                                 equ $04BF  ; NES RAM offset
-PersonFireballsEnabled                  equ $04CC  ; NES RAM offset
-LevelBlockAttrsByteF                    equ $04CD  ; NES RAM offset
-ShutterTrigger                          equ $04CE  ; NES RAM offset
-BlockPushComplete                       equ $04CF  ; NES RAM offset
-FlyingMaxSpeedFrac                      equ $04D1  ; NES RAM offset
-GleeokCurNeck                           equ $04D7  ; NES RAM offset
-GleeokSignedRefSegmentDistance          equ $04D8  ; NES RAM offset
-GleeokPrimarySegmentLimits              equ $04D9  ; NES RAM offset
-GleeokSecondarySegmentLimits            equ $04DB  ; NES RAM offset
-GleeokTertiarySegmentLimits             equ $04DD  ; NES RAM offset
-StatusBarMapTrigger                     equ $04E5  ; NES RAM offset
-GleeokAnimationTimer                    equ $04E6  ; NES RAM offset
-Lamnola_Speed                           equ $04E6  ; NES RAM offset
-GleeokBodyAnimationFrame                equ $04E7  ; NES RAM offset
-Lamnola_Type                            equ $04E7  ; NES RAM offset
-Statue_ObjFireballTimer                 equ $04E8  ; NES RAM offset
-ObjInvincibilityTimer                   equ $04F0  ; NES RAM offset
-LeftAlignHalfWidthObj                   equ $0504  ; NES RAM offset
-ItemTypeToLift                          equ $0505  ; NES RAM offset
-ItemLiftTimer                           equ $0506  ; NES RAM offset
-ChildDigdoggerCount                     equ $0507  ; NES RAM offset
-SummonedWhirlwind                       equ $0508  ; NES RAM offset
-TriforceFanfareActive                   equ $0509  ; NES RAM offset
-CreditsRow                              equ $050A  ; NES RAM offset
-CreditsTileOffset                       equ $050B  ; NES RAM offset
-CreditsVramPage                         equ $050C  ; NES RAM offset
-CreditsVramLine                         equ $050D  ; NES RAM offset
-CreditsLineIndex                        equ $050E  ; NES RAM offset
-LamnolaViableDirMask                    equ $050F  ; NES RAM offset
-ActiveRedLeeverCount                    equ $0510  ; NES RAM offset
-Gleeok_WrithingCounter                  equ $0510  ; NES RAM offset
-GleeokDeadNeckMask                      equ $0511  ; NES RAM offset
-LinkParalyzed                           equ $0512  ; NES RAM offset
-UsedCandle                              equ $0513  ; NES RAM offset
-ZoraActive                              equ $0514  ; NES RAM offset
-ActiveBoulders                          equ $0515  ; NES RAM offset
-SecretColorCycle                        equ $051A  ; NES RAM offset
-UsedFlute                               equ $051B  ; NES RAM offset
-FadeCycle                               equ $051C  ; NES RAM offset
-PatternBlockIndex                       equ $051D  ; NES RAM offset
-BrighteningRoom                         equ $051E  ; NES RAM offset
-CandleState                             equ $051F  ; NES RAM offset
-PrevOpenedDoors                         equ $0521  ; NES RAM offset
-WhirlwindTeleportingState               equ $0522  ; NES RAM offset
-TeleportingLevelIndex                   equ $0523  ; NES RAM offset
-SpawnCycle                              equ $0524  ; NES RAM offset
-CurEdgeSpawnCell                        equ $0525  ; NES RAM offset
-CaveSourceRoomId                        equ $0526  ; NES RAM offset
-CellarSourceRoomId                      equ $0527  ; NES RAM offset
-SkippedDemo                             equ $0528  ; NES RAM offset
-WorldKillCycle                          equ $052A  ; NES RAM offset
-RoomTileObjType                         equ $052B  ; NES RAM offset
-RoomTileObjX                            equ $052C  ; NES RAM offset
-RoomTileObjY                            equ $052D  ; NES RAM offset
-SwordBlocked                            equ $052E  ; NES RAM offset
-MazeStep                                equ $052F  ; NES RAM offset
-PlayAreaAttrs                           equ $0530  ; NES RAM offset
-LevelKillCounts                         equ $0560  ; NES RAM offset
-CurNoteLowPeriodTrg                     equ $05F0  ; NES RAM offset
-SampleCounter                           equ $05F2  ; NES RAM offset
-SeaSfxCounter                           equ $05F3  ; NES RAM offset
-NoteLengthTableBase                     equ $05F4  ; NES RAM offset
-FirstNoteIndexSongNoise                 equ $05F5  ; NES RAM offset
-BackgroundSample                        equ $05F6  ; NES RAM offset
-SongRequest                             equ $0600  ; NES RAM offset
-SampleRequest                           equ $0601  ; NES RAM offset
-Tune1Request                            equ $0602  ; NES RAM offset
-EffectRequest                           equ $0603  ; NES RAM offset
-Tune0Request                            equ $0604  ; NES RAM offset
-Tune0                                   equ $0605  ; NES RAM offset
-Effect                                  equ $0606  ; NES RAM offset
-Tune1                                   equ $0607  ; NES RAM offset
-Sample                                  equ $0608  ; NES RAM offset
-Song                                    equ $0609  ; NES RAM offset
-NoteOffsetSongSq1                       equ $060A  ; NES RAM offset
-NoteOffsetSongSq0                       equ $060B  ; NES RAM offset
-NoteOffsetSongTrg                       equ $060C  ; NES RAM offset
-NoteOffsetSongNoise                     equ $060D  ; NES RAM offset
-TunePtr0                                equ $060E  ; NES RAM offset
-NoteLengthSongSq0                       equ $060F  ; NES RAM offset
-NoteLengthSongSq1                       equ $0610  ; NES RAM offset
-NoteCounterSongSq1                      equ $0611  ; NES RAM offset
-CustomEnvelopeOffsetSongSq1             equ $0612  ; NES RAM offset
-NoteCounterSongSq0                      equ $0613  ; NES RAM offset
-CustomEnvelopeOffsetSongSq0             equ $0614  ; NES RAM offset
-NoteLengthSongTrg                       equ $0615  ; NES RAM offset
-NoteCounterSongTrg                      equ $0616  ; NES RAM offset
-NoteCounterSongNoise                    equ $0617  ; NES RAM offset
-TunePtr1                                equ $0618  ; NES RAM offset
-SongEnvelopeSelector                    equ $0619  ; NES RAM offset
-SongVibrationCounterSq1                 equ $061B  ; NES RAM offset
-SongVibrationCounterSq0                 equ $061C  ; NES RAM offset
-SongVibrationCounterTrg                 equ $061D  ; NES RAM offset
-SongRepetitionsTrg                      equ $061E  ; NES RAM offset
-SongRepeatStartOffset                   equ $061F  ; NES RAM offset
-CurRoomHistoryIndex                     equ $0620  ; NES RAM offset
-RoomHistory                             equ $0621  ; NES RAM offset
-WorldKillCount                          equ $0627  ; NES RAM offset
-QuestNumbers                            equ $062D  ; NES RAM offset
-DeathCounts                             equ $0630  ; NES RAM offset
-IsSaveSlotActive                        equ $0633  ; NES RAM offset
-IsRegisterSaveFileOptionEnabled         equ $0636  ; NES RAM offset
-IsEliminateSaveFileOptionEnabled        equ $0637  ; NES RAM offset
-Names                                   equ $0638  ; NES RAM offset
-SaveSlotHearts                          equ $0650  ; NES RAM offset
-SelectedItemSlot                        equ $0656  ; NES RAM offset
-Items                                   equ $0657  ; NES RAM offset
-InvBombs                                equ $0658  ; NES RAM offset
-InvArrow                                equ $0659  ; NES RAM offset
-Bow                                     equ $065A  ; NES RAM offset
-InvCandle                               equ $065B  ; NES RAM offset
-InvFood                                 equ $065D  ; NES RAM offset
-Potion                                  equ $065E  ; NES RAM offset
-InvRaft                                 equ $0660  ; NES RAM offset
-InvBook                                 equ $0661  ; NES RAM offset
-InvRing                                 equ $0662  ; NES RAM offset
-InvLadder                               equ $0663  ; NES RAM offset
-InvMagicKey                             equ $0664  ; NES RAM offset
-InvBracelet                             equ $0665  ; NES RAM offset
-InvLetter                               equ $0666  ; NES RAM offset
-InvCompass                              equ $0667  ; NES RAM offset
-InvMap                                  equ $0668  ; NES RAM offset
-InvCompass9                             equ $0669  ; NES RAM offset
-InvMap9                                 equ $066A  ; NES RAM offset
-InvClock                                equ $066C  ; NES RAM offset
-InvRupees                               equ $066D  ; NES RAM offset
-InvKeys                                 equ $066E  ; NES RAM offset
-HeartValues                             equ $066F  ; NES RAM offset
-HeartPartial                            equ $0670  ; NES RAM offset
-InvTriforce                             equ $0671  ; NES RAM offset
-LastBossDefeated                        equ $0672  ; NES RAM offset
-InvBoomerang                            equ $0674  ; NES RAM offset
-InvMagicBoomerang                       equ $0675  ; NES RAM offset
-InvMagicShield                          equ $0676  ; NES RAM offset
-MaxBombs                                equ $067C  ; NES RAM offset
-RupeesToAdd                             equ $067D  ; NES RAM offset
-RupeesToSubtract                        equ $067E  ; NES RAM offset
-WorldFlags                              equ $067F  ; NES RAM offset
-PpuControl_2000                         equ $2000  ; NES I/O
-PpuMask_2001                            equ $2001  ; NES I/O
-PpuStatus_2002                          equ $2002  ; NES I/O
-OamAddr_2003                            equ $2003  ; NES I/O
-OamData_2004                            equ $2004  ; NES I/O
-PpuScroll_2005                          equ $2005  ; NES I/O
-PpuAddr_2006                            equ $2006  ; NES I/O
-PpuData_2007                            equ $2007  ; NES I/O
-Sq0Duty_4000                            equ $4000  ; NES I/O
-Sq0Sweep_4001                           equ $4001  ; NES I/O
-Sq0Timer_4002                           equ $4002  ; NES I/O
-Sq0Length_4003                          equ $4003  ; NES I/O
-Sq1Duty_4004                            equ $4004  ; NES I/O
-Sq1Sweep_4005                           equ $4005  ; NES I/O
-Sq1Timer_4006                           equ $4006  ; NES I/O
-Sq1Length_4007                          equ $4007  ; NES I/O
-TrgLinear_4008                          equ $4008  ; NES I/O
-TrgTimer_400A                           equ $400A  ; NES I/O
-TrgLength_400B                          equ $400B  ; NES I/O
-NoiseVolume_400C                        equ $400C  ; NES I/O
-NoisePeriod_400E                        equ $400E  ; NES I/O
-NoiseLength_400F                        equ $400F  ; NES I/O
-DmcFreq_4010                            equ $4010  ; NES I/O
-DmcCounter_4011                         equ $4011  ; NES I/O
-DmcAddress_4012                         equ $4012  ; NES I/O
-DmcLength_4013                          equ $4013  ; NES I/O
-SpriteDma_4014                          equ $4014  ; NES I/O
-ApuStatus_4015                          equ $4015  ; NES I/O
-Ctrl1_4016                              equ $4016  ; NES I/O
-Ctrl2_FrameCtr_4017                     equ $4017  ; NES I/O
-SaveRamBegin                            equ $6001  ; NES SRAM
-SaveFileAName0                          equ $6002  ; NES SRAM
-SaveFileAName1                          equ $600A  ; NES SRAM
-SaveFileAName2                          equ $6012  ; NES SRAM
-SaveFileAItems0                         equ $601A  ; NES SRAM
-SaveFileAItems1                         equ $6042  ; NES SRAM
-SaveFileAItems2                         equ $606A  ; NES SRAM
-SaveFileAWorldFlags0                    equ $6092  ; NES SRAM
-SaveFileAWorldFlags1                    equ $6212  ; NES SRAM
-SaveFileAWorldFlags2                    equ $6392  ; NES SRAM
-SaveFileASlotActive0                    equ $6512  ; NES SRAM
-SaveFileASlotActive1                    equ $6513  ; NES SRAM
-SaveFileASlotActive2                    equ $6514  ; NES SRAM
-SaveFileADeathCount0                    equ $6515  ; NES SRAM
-SaveFileADeathCount1                    equ $6516  ; NES SRAM
-SaveFileADeathCount2                    equ $6517  ; NES SRAM
-SaveFileAQuestNumber0                   equ $651B  ; NES SRAM
-SaveFileAQuestNumber1                   equ $651C  ; NES SRAM
-SaveFileAQuestNumber2                   equ $651D  ; NES SRAM
-SaveFileOpenMarkers                     equ $651E  ; NES SRAM
-SaveFileCloseMarkers                    equ $6521  ; NES SRAM
-FileAChecksums                          equ $6524  ; NES SRAM
-IsSaveFileBCommitted                    equ $652A  ; NES SRAM
-PlayAreaTiles                           equ $6530  ; NES SRAM
-LevelBlockAttrsA                        equ $687E  ; NES SRAM
-LevelBlockAttrsB                        equ $68FE  ; NES SRAM
-LevelBlockAttrsC                        equ $697E  ; NES SRAM
-LevelBlockAttrsD                        equ $69FE  ; NES SRAM
-LevelBlockAttrsE                        equ $6A7E  ; NES SRAM
-LevelBlockAttrsF                        equ $6AFE  ; NES SRAM
-LevelInfo_PalettesTransferBuf           equ $6B7E  ; NES SRAM
-LevelInfo_FoeCounts                     equ $6BA2  ; NES SRAM
-LevelInfo_StartY                        equ $6BA6  ; NES SRAM
-LevelInfo_ShortcutOrItemPosArray        equ $6BA7  ; NES SRAM
-LevelInfo_SubmenuMapRotation            equ $6BAB  ; NES SRAM
-LevelInfo_StatusBarMapXOffset           equ $6BAC  ; NES SRAM
-LevelInfo_StartRoomId                   equ $6BAD  ; NES SRAM
-LevelInfo_TriforceRoomId                equ $6BAE  ; NES SRAM
-LevelInfo_WorldFlagsAddr                equ $6BAF  ; NES SRAM
-LevelInfo_LevelNumber                   equ $6BB1  ; NES SRAM
-LevelInfo_CellarRoomIdArray             equ $6BB2  ; NES SRAM
-LevelInfo_BossRoomId                    equ $6BBC  ; NES SRAM
-LevelInfo_SubmenuMapMask                equ $6BBD  ; NES SRAM
-LevelInfo_StatusBarMapTransferBuf       equ $6BCD  ; NES SRAM
-LevelInfo_PaletteCycles                 equ $6BFA  ; NES SRAM
-LevelInfo_DeathPaletteSeries            equ $6C5A  ; NES SRAM
-SaveRamEnd                              equ $7FFF  ; NES SRAM
+; (var equates omitted — provided by z_07.asm in --all build)
 ;==============================================================================
 ; Begin translated Z_05.asm code
 ;==============================================================================
@@ -796,7 +316,7 @@ _anon_z05_2:
     moveq   #3,D0
     bsr     MovePositionMarkers
     move.b  ($00FC,A4),D0
-    ori.b   #$11,CCR  ; SEC: set C+X
+    ori     #$11,CCR  ; SEC: set C+X
     move.b  #$03,D1
     subx.b  D1,D0   ; SBC #$03
     move.b  D0,($00FC,A4)
@@ -858,10 +378,10 @@ _L_z05_UpdateMenuScrollDownUW_SumMarkerX:
     ; Add the offset we calculated, and $62 to [00] to get
     ; the position marker's X coordinate.
     ;
-    andi.b  #$EE,CCR  ; CLC: clear C+X
+    andi    #$EE,CCR  ; CLC: clear C+X
     move.b  ($0000,A4),D1
     addx.b  D1,D0   ; ADC $00
-    andi.b  #$EE,CCR  ; CLC: clear C+X
+    andi    #$EE,CCR  ; CLC: clear C+X
     move.b  #$62,D1
     addx.b  D1,D0   ; ADC #$62 (X flag = 6502 C)
     move.b  D0,($0253,A4)
@@ -932,7 +452,7 @@ UpdateMenuScrollUp:
     move.b  #$FD,D0
     bsr     MovePositionMarkers
     move.b  ($00FC,A4),D0
-    andi.b  #$EE,CCR  ; CLC: clear C+X
+    andi    #$EE,CCR  ; CLC: clear C+X
     move.b  #$03,D1
     addx.b  D1,D0   ; ADC #$03 (X flag = 6502 C)
     move.b  D0,($00FC,A4)
@@ -974,7 +494,7 @@ MovePositionMarkers:
     move.b  ($0254,A4),D0
     cmpi.b  #$F8,D0
     beq  _anon_z05_5
-    andi.b  #$EE,CCR  ; CLC: clear C+X
+    andi    #$EE,CCR  ; CLC: clear C+X
     move.b  ($0000,A4),D1
     addx.b  D1,D0   ; ADC $00
     move.b  D0,($0254,A4)
@@ -986,12 +506,14 @@ _anon_z05_5:
     bsr     HasCompass
     beq  Exit
     move.b  ($0258,A4),D0
-    andi.b  #$EE,CCR  ; CLC: clear C+X
+    andi    #$EE,CCR  ; CLC: clear C+X
     move.b  ($0000,A4),D1
     addx.b  D1,D0   ; ADC $00
     move.b  D0,($0258,A4)
     even
+    IFND Exit
 Exit:
+    ENDC
     rts
 
     even
@@ -1139,7 +661,7 @@ _anon_z05_8:
     move.b  D0,($0084,A4)
 _anon_z05_9:
     move.b  ($00E2,A4),D0
-    ori.b   #$11,CCR  ; SEC: set C+X
+    ori     #$11,CCR  ; SEC: set C+X
     move.b  #$20,D1
     subx.b  D1,D0   ; SBC #$20
     move.b  D0,($00E2,A4)
@@ -1195,7 +717,7 @@ ScrollWorldDownOrH:
     move.b  D0,($0084,A4)
 _anon_z05_11:
     move.b  ($00E2,A4),D0
-    andi.b  #$EE,CCR  ; CLC: clear C+X
+    andi    #$EE,CCR  ; CLC: clear C+X
     move.b  #$20,D1
     addx.b  D1,D0   ; ADC #$20 (X flag = 6502 C)
     move.b  D0,($00E2,A4)
@@ -1239,7 +761,7 @@ _anon_z05_13:
     move.b  D0,($0070,A4)
 _anon_z05_14:
     move.b  ($00FD,A4),D0
-    ori.b   #$11,CCR  ; SEC: set C+X
+    ori     #$11,CCR  ; SEC: set C+X
     move.b  ($0000,A4),D1
     subx.b  D1,D0   ; SBC $00
     move.b  D0,($00FD,A4)
@@ -1281,7 +803,7 @@ ScrollWorldRight:
     move.b  D0,($0070,A4)
 _anon_z05_15:
     move.b  ($00FD,A4),D0
-    andi.b  #$EE,CCR  ; CLC: clear C+X
+    andi    #$EE,CCR  ; CLC: clear C+X
     move.b  ($0000,A4),D1
     addx.b  D1,D0   ; ADC $00
     move.b  D0,($00FD,A4)
@@ -1402,7 +924,7 @@ InitMode7_Sub2:
     ; This assumes that you want to scroll vertically, where the
     ; two scroll areas must be contiguous vertically.
     andi.b #$0F,D0
-    andi.b  #$EE,CCR  ; CLC: clear C+X
+    andi    #$EE,CCR  ; CLC: clear C+X
     move.b  #$27,D1
     addx.b  D1,D0   ; ADC #$27 (X flag = 6502 C)
     move.b  D0,($0302,A4)
@@ -1773,7 +1295,7 @@ ChooseAttrSourceAndDestForSubmode:
     even
 GetPlayAreaAttrsBottomHalfInfo:
     moveq   #47,D3
-    andi.b  #$EE,CCR  ; CLC: clear C+X
+    andi    #$EE,CCR  ; CLC: clear C+X
     move.b  #$18,D1
     addx.b  D1,D0   ; ADC #$18 (X flag = 6502 C)
 _anon_z05_26:
@@ -1788,7 +1310,7 @@ UpdateMode7Scroll_Sub2:
     move.b  ($0015,A4),D0
     ; Add 1, so that the frame value calculated in the next frame
     ; will match the VScrollingStartFrame value we calculate here.
-    andi.b  #$EE,CCR  ; CLC: clear C+X
+    andi    #$EE,CCR  ; CLC: clear C+X
     move.b  #$01,D1
     addx.b  D1,D0   ; ADC #$01 (X flag = 6502 C)
     ; Calculate VScrollingStartFrame the same way as the frame
@@ -2069,7 +1591,7 @@ InitMode10:
     ; Set the target Y coordinate $10 pixels below current one.
     ;
     move.b  ($0084,A4),D0
-    andi.b  #$EE,CCR  ; CLC: clear C+X
+    andi    #$EE,CCR  ; CLC: clear C+X
     move.b  #$10,D1
     addx.b  D1,D0   ; ADC #$10 (X flag = 6502 C)
     move.b  D0,($0412,A4)
@@ -2175,11 +1697,11 @@ _L_z05_InitMode4_CheckSub2:
     bsr     CalcNextRoomByDir
     ; Subtract RoomId from next room ID that was calculated
     ; to get room ID offset in that direction.
-    ori.b   #$11,CCR  ; SEC: set C+X
+    ori     #$11,CCR  ; SEC: set C+X
     move.b  ($00EB,A4),D1
     subx.b  D1,D0   ; SBC RoomId
     bsr     Negate
-    andi.b  #$EE,CCR  ; CLC: clear C+X
+    andi    #$EE,CCR  ; CLC: clear C+X
     move.b  ($00EB,A4),D1
     addx.b  D1,D0   ; ADC RoomId
     move.b  D0,D3
@@ -2287,7 +1809,7 @@ InitMode_EnterRoom:
     ; Store the Y coordinate that we determined as the Target Y.
     ;
     move.b  D0,($0412,A4)
-    andi.b  #$EE,CCR  ; CLC: clear C+X
+    andi    #$EE,CCR  ; CLC: clear C+X
     move.b  #$10,D1
     addx.b  D1,D0   ; ADC #$10 (X flag = 6502 C)
     move.b  D0,($0084,A4)
@@ -2408,7 +1930,7 @@ _anon_z05_46:
     lsl.b  #1,D0   ; ASL A
     bcc  _anon_z05_47
     move.b  ($0002,A4),D0
-    andi.b  #$EE,CCR  ; CLC: clear C+X
+    andi    #$EE,CCR  ; CLC: clear C+X
     move.b  #$40,D1
     addx.b  D1,D0   ; ADC #$40 (X flag = 6502 C)
     move.b  D0,($0002,A4)
@@ -2417,7 +1939,7 @@ _anon_z05_47:
     ; Get index of monster count from high 2 bits of attribute byte C.
     ;
     andi.b #$C0,D0
-    andi.b  #$EE,CCR  ; CLC: clear C+X
+    andi    #$EE,CCR  ; CLC: clear C+X
     roxl.b  #1,D0   ; ROL A
     roxl.b  #1,D0   ; ROL A
     roxl.b  #1,D0   ; ROL A
@@ -2494,7 +2016,7 @@ _L_z05_InitMode_EnterRoom_PlaceList:
     ; Get the index of the list itself by subtracting $62.
     ;
     move.b  ($0002,A4),D0
-    ori.b   #$11,CCR  ; SEC: set C+X
+    ori     #$11,CCR  ; SEC: set C+X
     move.b  #$62,D1
     subx.b  D1,D0   ; SBC #$62
     ; Put the address of the list in [04:05].
@@ -2729,14 +2251,14 @@ _anon_z05_61:
     lea     (NES_SRAM+$08FE).l,A0
     move.b  (A0,D3.W),D0
     andi.b #$FC,D0
-    ori.b   #$11,CCR  ; SEC: set C+X
+    ori     #$11,CCR  ; SEC: set C+X
     move.b  #$40,D1
     subx.b  D1,D0   ; SBC #$40
     lsr.b  #1,D0   ; LSR A
     lsr.b  #1,D0   ; LSR A
     ; cave dweller object type = $6A + (cave index)
     ;
-    andi.b  #$EE,CCR  ; CLC: clear C+X
+    andi    #$EE,CCR  ; CLC: clear C+X
     move.b  #$6A,D1
     addx.b  D1,D0   ; ADC #$6A (X flag = 6502 C)
     move.b  D0,($0350,A4)
@@ -2776,7 +2298,7 @@ IsSafeToSpawn:
     even
 IsDistanceSafeToSpawn:
     move.b  ($0070,A4),D0
-    ori.b   #$11,CCR  ; SEC: set C+X
+    ori     #$11,CCR  ; SEC: set C+X
 ; [SBC unhandled mode=ABS_X] SBC ObjX, X
     bsr     Abs
     cmpi.b  #$22,D0
@@ -2784,18 +2306,18 @@ IsDistanceSafeToSpawn:
     ; Get the absolute Y distance to Link.
     ;
     move.b  ($0084,A4),D0
-    ori.b   #$11,CCR  ; SEC: set C+X
+    ori     #$11,CCR  ; SEC: set C+X
 ; [SBC unhandled mode=ABS_X] SBC ObjY, X
     bsr     Abs
     cmpi.b  #$22,D0
     bcs  ReturnUnsafeToSpawn
 _anon_z05_62:
-    andi.b  #$EE,CCR  ; CLC: clear C+X
+    andi    #$EE,CCR  ; CLC: clear C+X
     rts
 
     even
 ReturnUnsafeToSpawn:
-    ori.b   #$11,CCR  ; SEC: set C+X
+    ori     #$11,CCR  ; SEC: set C+X
     rts
 
     even
@@ -3242,12 +2764,12 @@ TriggerShutters:
     ;
     moveq   #1,D0
     move.b  D0,($04CE,A4)
-    ori.b   #$11,CCR  ; SEC: set C+X
+    ori     #$11,CCR  ; SEC: set C+X
     rts
 
     even
 ReturnFalse:
-    andi.b  #$EE,CCR  ; CLC: clear C+X
+    andi    #$EE,CCR  ; CLC: clear C+X
     rts
 
     even
@@ -3290,7 +2812,7 @@ _L_z05_CheckSecretTriggerRingleader_Next:
     bpl  _L_z05_CheckSecretTriggerRingleader_Loop
     ; Return C=1.
     ;
-    ori.b   #$11,CCR  ; SEC: set C+X
+    ori     #$11,CCR  ; SEC: set C+X
     rts
 
     even
@@ -3329,7 +2851,7 @@ CheckSecretTriggerBlockStairs:
     bsr     ChangeTileObjTiles
     ; Return C=1.
     ;
-    ori.b   #$11,CCR  ; SEC: set C+X
+    ori     #$11,CCR  ; SEC: set C+X
     rts
 
     even
@@ -3341,7 +2863,7 @@ CheckSecretTriggerLastBoss:
     bne  TriggerShutters
     ; Else return C=0.
     ;
-    andi.b  #$EE,CCR  ; CLC: clear C+X
+    andi    #$EE,CCR  ; CLC: clear C+X
     rts
 
     even
@@ -3353,7 +2875,7 @@ CheckSecretTriggerMoneyOrLife:
     beq  TriggerShutters
     ; Else return C=0.
     ;
-    andi.b  #$EE,CCR  ; CLC: clear C+X
+    andi    #$EE,CCR  ; CLC: clear C+X
     rts
 
     even
@@ -3417,7 +2939,7 @@ UpdateMode11Death_Sub2:
     bsr     WriteAndEnableSprite0
 _anon_z05_71:
     move.b  ($0302,A4),D0
-    andi.b  #$EE,CCR  ; CLC: clear C+X
+    andi    #$EE,CCR  ; CLC: clear C+X
     move.b  #$08,D1
     addx.b  D1,D0   ; ADC #$08 (X flag = 6502 C)
     move.b  D0,($0302,A4)
@@ -3521,7 +3043,7 @@ _anon_z05_72:
     move.b  D0,($024E,A4)
     move.b  ($0070,A4),D0
     move.b  D0,($024B,A4)
-    andi.b  #$EE,CCR  ; CLC: clear C+X
+    andi    #$EE,CCR  ; CLC: clear C+X
     move.b  #$08,D1
     addx.b  D1,D0   ; ADC #$08 (X flag = 6502 C)
     move.b  D0,($024F,A4)
@@ -3609,7 +3131,7 @@ _anon_z05_74:
     ;
     move.b  D3,D0
     move.b  D0,-(A5)  ; PHA
-    andi.b  #$EE,CCR  ; CLC: clear C+X
+    andi    #$EE,CCR  ; CLC: clear C+X
     move.b  #$08,D1
     addx.b  D1,D0   ; ADC #$08 (X flag = 6502 C)
     move.b  D0,D3
@@ -3635,7 +3157,7 @@ _anon_z05_75:
     move.b  ($0010,A4),D0
     beq  _anon_z05_76
     move.b  D3,D0
-    andi.b  #$EE,CCR  ; CLC: clear C+X
+    andi    #$EE,CCR  ; CLC: clear C+X
     move.b  #$04,D1
     addx.b  D1,D0   ; ADC #$04 (X flag = 6502 C)
     move.b  D0,D3
@@ -3889,7 +3411,7 @@ WieldWeapon:
     andi.b #$0C,D0
     beq  WieldNothing
     move.b  ($70,A4,D2.W),D0
-    andi.b  #$EE,CCR  ; CLC: clear C+X
+    andi    #$EE,CCR  ; CLC: clear C+X
     move.b  #$03,D1
     addx.b  D1,D0   ; ADC #$03 (X flag = 6502 C)
     move.b  D0,($70,A4,D2.W)
@@ -4085,7 +3607,7 @@ _anon_z05_84:
     ; after the current one.
     ;
     move.b  D3,D0
-    andi.b  #$EE,CCR  ; CLC: clear C+X
+    andi    #$EE,CCR  ; CLC: clear C+X
     move.b  ($0000,A4),D1
     addx.b  D1,D0   ; ADC $00
     ; Wrap around if needed. Go to that room by way of mode $A.
@@ -4160,10 +3682,10 @@ CheckLadder:
     cmp.b   D1,D0
     bne  _L_z05_CheckLadder_StashLadder
     move.b  ($0084,A4),D0
-    andi.b  #$EE,CCR  ; CLC: clear C+X
+    andi    #$EE,CCR  ; CLC: clear C+X
     move.b  #$03,D1
     addx.b  D1,D0   ; ADC #$03 (X flag = 6502 C)
-    ori.b   #$11,CCR  ; SEC: set C+X
+    ori     #$11,CCR  ; SEC: set C+X
 ; [SBC unhandled mode=ABS_X] SBC ObjY, X
     jmp     _L_z05_CheckLadder_CheckDistanceToLadder
 
@@ -4173,7 +3695,7 @@ _anon_z05_85:
     ; If Link's Y no longer matches the ladder's, go put the ladder away.
     ;
     move.b  ($0084,A4),D0
-    andi.b  #$EE,CCR  ; CLC: clear C+X
+    andi    #$EE,CCR  ; CLC: clear C+X
     move.b  #$03,D1
     addx.b  D1,D0   ; ADC #$03 (X flag = 6502 C)
     lea     ($0084,A4),A0
@@ -4181,7 +3703,7 @@ _anon_z05_85:
     cmp.b   D1,D0
     bne  _L_z05_CheckLadder_StashLadder
     move.b  ($0070,A4),D0
-    ori.b   #$11,CCR  ; SEC: set C+X
+    ori     #$11,CCR  ; SEC: set C+X
 ; [SBC unhandled mode=ABS_X] SBC ObjX, X
     even
 _L_z05_CheckLadder_CheckDistanceToLadder:
@@ -4316,7 +3838,7 @@ _anon_z05_86:
     ;
     move.b  ($0084,A4),D0
     move.b  D0,-(A5)  ; PHA
-    ori.b   #$11,CCR  ; SEC: set C+X
+    ori     #$11,CCR  ; SEC: set C+X
     move.b  #$08,D1
     subx.b  D1,D0   ; SBC #$08
     move.b  D0,($0084,A4)
@@ -4389,7 +3911,7 @@ _L_z05_FindNextEdgeSpawnCell_HandleLeftOrRight:
     ; and we'll move up $10 pixels.
     ;
     move.b  D3,D0
-    andi.b  #$EE,CCR  ; CLC: clear C+X
+    andi    #$EE,CCR  ; CLC: clear C+X
     move.b  ($000A,A4),D1
     addx.b  D1,D0   ; ADC $0A
     move.b  D0,($000A,A4)
@@ -4440,7 +3962,7 @@ _L_z05_FindNextEdgeSpawnCell_GetRowOffset:
     ;
     move.b  ($000A,A4),D0
     andi.b #$F0,D0
-    ori.b   #$11,CCR  ; SEC: set C+X
+    ori     #$11,CCR  ; SEC: set C+X
     move.b  #$40,D1
     subx.b  D1,D0   ; SBC #$40
     lsr.b  #1,D0   ; LSR A
@@ -4564,7 +4086,7 @@ _anon_z05_91:
     beq  _L_z05_ModifyObjCountByHistoryOW_ResetObjList
     move.b  D0,($0004,A4)
     move.b  ($0003,A4),D0
-    ori.b   #$11,CCR  ; SEC: set C+X
+    ori     #$11,CCR  ; SEC: set C+X
     move.b  ($0004,A4),D1
     subx.b  D1,D0   ; SBC $04
     bpl  _anon_z05_92
@@ -4603,7 +4125,7 @@ SaveKillCountOW:
     cmp.b   D1,D0
     bcc  _L_z05_SaveKillCountOW_LimitCount
     andi.b #$07,D0
-    andi.b  #$EE,CCR  ; CLC: clear C+X
+    andi    #$EE,CCR  ; CLC: clear C+X
     move.b  ($0002,A4),D1
     addx.b  D1,D0   ; ADC $02
     cmpi.b  #$07,D0
@@ -5132,7 +4654,7 @@ _L_z05_ModifyObjCountByHistoryUW_CalcObjCount:
     ;
     move.b  ($00EB,A4),D3
     move.b  ($0003,A4),D0
-    ori.b   #$11,CCR  ; SEC: set C+X
+    ori     #$11,CCR  ; SEC: set C+X
 ; [SBC unhandled mode=ABS_Y] SBC LevelKillCounts, Y
     bpl  _anon_z05_102
     even
@@ -5186,7 +4708,7 @@ _anon_z05_103:
     ; Add RoomKillCount to level kill count for this room.
     ;
     move.b  ($00EB,A4),D3
-    andi.b  #$EE,CCR  ; CLC: clear C+X
+    andi    #$EE,CCR  ; CLC: clear C+X
     lea     ($0560,A4),A0
     move.b  (A0,D3.W),D1
     addx.b  D1,D0   ; ADC LevelKillCounts,Y
@@ -5196,7 +4718,7 @@ _anon_z05_103:
     bcs  _anon_z05_104
     moveq   #2,D0
 _anon_z05_104:
-    andi.b  #$EE,CCR  ; CLC: clear C+X
+    andi    #$EE,CCR  ; CLC: clear C+X
     roxr.b  #1,D0   ; ROR A
     roxr.b  #1,D0   ; ROR A
     roxr.b  #1,D0   ; ROR A
@@ -5322,7 +4844,7 @@ WriteDoorFaceTileHorizontally:
     ; Add [07] to the base offset we got above. This yields one
     ; of four consecutive indexes into HorizontalDoorFaceIndexes.
     ;
-    andi.b  #$EE,CCR  ; CLC: clear C+X
+    andi    #$EE,CCR  ; CLC: clear C+X
     move.b  ($0007,A4),D1
     addx.b  D1,D0   ; ADC $07
     move.b  D0,D3
@@ -5944,7 +5466,7 @@ _L_z05_NextLoopWallTile_LoopRotate:
     movea.l D4,A0
     move.b  D0,(A0,D3.W)     ; STA ($nn),Y
 _anon_z05_110:
-    andi.b  #$EE,CCR  ; CLC: clear C+X
+    andi    #$EE,CCR  ; CLC: clear C+X
     move.b  #$01,D1
     addx.b  D1,D0   ; ADC #$01 (X flag = 6502 C)
     even
@@ -6178,7 +5700,7 @@ _anon_z05_112:
     bcs  _L_z05_L_LayOutDoors_LoopHalves_NextLoopDoorHalf
     ; For all other provisional face values, calculate:
     ; door face := provisional face - 3
-    ori.b   #$11,CCR  ; SEC: set C+X
+    ori     #$11,CCR  ; SEC: set C+X
     move.b  #$03,D1
     subx.b  D1,D0   ; SBC #$03
     move.b  D0,D3
@@ -6392,7 +5914,7 @@ _anon_z05_118:
     move.b  D3,($0028,A4)
 _anon_z05_119:
     andi.b #$03,D0
-    ori.b   #$11,CCR  ; SEC: set C+X
+    ori     #$11,CCR  ; SEC: set C+X
     move.b  #$01,D1
     subx.b  D1,D0   ; SBC #$01
     andi.b #$02,D0
@@ -6529,7 +6051,7 @@ _anon_z05_123:
     ; Get the next room's ID.
     ;
     move.b  D3,D0
-    andi.b  #$EE,CCR  ; CLC: clear C+X
+    andi    #$EE,CCR  ; CLC: clear C+X
     lea     (DoorNextRoomIdOffsets).l,A0
     move.b  (A0,D2.W),D1
     addx.b  D1,D0   ; ADC DoorNextRoomIdOffsets,X
@@ -6619,7 +6141,7 @@ _anon_z05_126:
 _anon_z05_127:
     ; Second, subtract 3 from provisional face index.
     ;
-    ori.b   #$11,CCR  ; SEC: set C+X
+    ori     #$11,CCR  ; SEC: set C+X
     move.b  #$03,D1
     subx.b  D1,D0   ; SBC #$03
     move.b  D0,D3
@@ -6646,7 +6168,7 @@ _L_z05_PrepareWriteHorizontalDoorTransferRecords_MakeForwardIndex:
     ; We want a forward direction index. So, subtract [03] from 3.
     ;
     moveq   #3,D0
-    ori.b   #$11,CCR  ; SEC: set C+X
+    ori     #$11,CCR  ; SEC: set C+X
     move.b  ($0003,A4),D1
     subx.b  D1,D0   ; SBC $03
     ; Call this to put the address of door face tiles in [02:03].
@@ -6874,7 +6396,7 @@ WriteSquareUW:
     movea.l D4,A0
     move.b  D0,(A0,D3.W)     ; STA ($nn),Y
     move.b  D3,D0
-    andi.b  #$EE,CCR  ; CLC: clear C+X
+    andi    #$EE,CCR  ; CLC: clear C+X
     move.b  #$15,D1
     addx.b  D1,D0   ; ADC #$15 (X flag = 6502 C)
     move.b  D0,D3
@@ -6930,7 +6452,7 @@ _L_z05_WriteSquareUW_WriteType2:
     move.b  D0,(A0,D3.W)     ; STA ($nn),Y
     move.b  D0,-(A5)  ; PHA
     move.b  D3,D0
-    andi.b  #$EE,CCR  ; CLC: clear C+X
+    andi    #$EE,CCR  ; CLC: clear C+X
     move.b  #$15,D1
     addx.b  D1,D0   ; ADC #$15 (X flag = 6502 C)
     move.b  D0,D3
@@ -7207,7 +6729,7 @@ CopyRowToTileBuf:
     move.b  D0,($0001,A4)
     move.b  ($00E9,A4),D0
     move.b  D0,D2
-    andi.b  #$EE,CCR  ; CLC: clear C+X
+    andi    #$EE,CCR  ; CLC: clear C+X
     move.b  #$30,D1
     addx.b  D1,D0   ; ADC #$30 (X flag = 6502 C)
     move.b  D0,($0000,A4)
@@ -7223,7 +6745,7 @@ _anon_z05_139:
     even
 _L_z05_CopyRowToTileBuf_Add20H:
     move.b  ($0303,A4),D0
-    andi.b  #$EE,CCR  ; CLC: clear C+X
+    andi    #$EE,CCR  ; CLC: clear C+X
     move.b  #$20,D1
     addx.b  D1,D0   ; ADC #$20 (X flag = 6502 C)
     move.b  D0,($0303,A4)
@@ -7533,7 +7055,7 @@ _anon_z05_145:
     lsl.b  #1,D0   ; ASL A
     lsl.b  #1,D0   ; ASL A
     lsl.b  #1,D0   ; ASL A
-    andi.b  #$EE,CCR  ; CLC: clear C+X
+    andi    #$EE,CCR  ; CLC: clear C+X
     move.b  #$40,D1
     addx.b  D1,D0   ; ADC #$40 (X flag = 6502 C)
     move.b  D0,($052D,A4)
@@ -7580,7 +7102,7 @@ WriteSquareOW:
     movea.l D4,A0
     move.b  D0,(A0,D3.W)     ; STA ($nn),Y
     move.b  D3,D0
-    andi.b  #$EE,CCR  ; CLC: clear C+X
+    andi    #$EE,CCR  ; CLC: clear C+X
     move.b  #$15,D1
     addx.b  D1,D0   ; ADC #$15 (X flag = 6502 C)
     move.b  D0,D3
@@ -7644,7 +7166,7 @@ _L_z05_WriteSquareOW_WriteType3:
     movea.l D4,A0
     move.b  D0,(A0,D3.W)     ; STA ($nn),Y
     move.b  D3,D0
-    andi.b  #$EE,CCR  ; CLC: clear C+X
+    andi    #$EE,CCR  ; CLC: clear C+X
     move.b  #$15,D1
     addx.b  D1,D0   ; ADC #$15 (X flag = 6502 C)
     move.b  D0,D3
@@ -7753,7 +7275,7 @@ CheckShortcut:
     move.b  (A0,D2.W),D0
     move.b  D0,($0001,A4)
     move.b  D3,D0
-    ori.b   #$11,CCR  ; SEC: set C+X
+    ori     #$11,CCR  ; SEC: set C+X
     move.b  #$40,D1
     subx.b  D1,D0   ; SBC #$40
     lsr.b  #1,D0   ; LSR A
@@ -7833,7 +7355,7 @@ ChangePlayMapSquareOW:
     ; Subtract $40 for the status bar; and divide by 8 for
     ; the height of each row.
     ;
-    ori.b   #$11,CCR  ; SEC: set C+X
+    ori     #$11,CCR  ; SEC: set C+X
     move.b  #$40,D1
     subx.b  D1,D0   ; SBC #$40
     lsr.b  #1,D0   ; LSR A
@@ -8488,7 +8010,7 @@ World_FillHearts:
     move.b  ($0670,A4),D0
     cmpi.b  #$F8,D0
     bcc  _L_z05_World_FillHearts_CompleteHeart
-    andi.b  #$EE,CCR  ; CLC: clear C+X
+    andi    #$EE,CCR  ; CLC: clear C+X
     move.b  #$06,D1
     addx.b  D1,D0   ; ADC #$06 (X flag = 6502 C)
     move.b  D0,($0670,A4)
@@ -8592,7 +8114,7 @@ PrepFullBlackRow:
     move.b  #$C0,D0
     even
 _L_z05_PrepFullBlackRow_Add20H:
-    andi.b  #$EE,CCR  ; CLC: clear C+X
+    andi    #$EE,CCR  ; CLC: clear C+X
     move.b  #$20,D1
     addx.b  D1,D0   ; ADC #$20 (X flag = 6502 C)
     bcc  _anon_z05_169
@@ -9011,7 +8533,7 @@ _anon_z05_183:
     bsr     Negate
     move.b  D0,($0001,A4)
     move.b  (A5)+,D0  ; PLA
-    ori.b   #$11,CCR  ; SEC: set C+X
+    ori     #$11,CCR  ; SEC: set C+X
     move.b  ($0001,A4),D1
     subx.b  D1,D0   ; SBC $01
     move.b  D0,($0394,A4)
@@ -9225,7 +8747,7 @@ _anon_z05_191:
     movea.l D4,A0
     move.b  D0,(A0,D3.W)     ; STA ($nn),Y
     move.b  ($0000,A4),D0
-    andi.b  #$EE,CCR  ; CLC: clear C+X
+    andi    #$EE,CCR  ; CLC: clear C+X
     move.b  #$01,D1
     addx.b  D1,D0   ; ADC #$01 (X flag = 6502 C)
     move.b  D0,($0000,A4)
@@ -9235,12 +8757,12 @@ _anon_z05_191:
     move.b  D0,($0001,A4)
     cmpi.b  #$80,D0
     bne  _anon_z05_191
-    ori.b   #$11,CCR  ; SEC: set C+X
+    ori     #$11,CCR  ; SEC: set C+X
     rts
 
     even
 _L_z05_InitSaveRam_ReturnFalse:
-    andi.b  #$EE,CCR  ; CLC: clear C+X
+    andi    #$EE,CCR  ; CLC: clear C+X
     rts
 
     even
@@ -9317,7 +8839,7 @@ _anon_z05_194:
     move.b  D0,($04E4,A4)
     lea     (NextRoomIdOffsets).l,A0
     move.b  (A0,D2.W),D0
-    andi.b  #$EE,CCR  ; CLC: clear C+X
+    andi    #$EE,CCR  ; CLC: clear C+X
     move.b  ($00EB,A4),D1
     addx.b  D1,D0   ; ADC RoomId
     move.b  D0,($00EC,A4)
@@ -9370,7 +8892,7 @@ _anon_z05_196:
 _anon_z05_197:
     lea     (NextRoomIdOffsets).l,A0
     move.b  (A0,D2.W),D0
-    andi.b  #$EE,CCR  ; CLC: clear C+X
+    andi    #$EE,CCR  ; CLC: clear C+X
     move.b  ($00EB,A4),D1
     addx.b  D1,D0   ; ADC RoomId
     rts
@@ -9401,7 +8923,7 @@ Submenu_WriteSheetMapRowTransferRecord:
     move.b  #$EC,D0
     even
 _L_z05_Submenu_WriteSheetMapRowTransferRecord_Add20H:
-    andi.b  #$EE,CCR  ; CLC: clear C+X
+    andi    #$EE,CCR  ; CLC: clear C+X
     move.b  #$20,D1
     addx.b  D1,D0   ; ADC #$20 (X flag = 6502 C)
     bcc  _anon_z05_198
@@ -9423,7 +8945,7 @@ _anon_z05_199:
     ; Restore the current scanned room index and subtract $10.
     ;
     move.b  (A5)+,D0  ; PLA
-    ori.b   #$11,CCR  ; SEC: set C+X
+    ori     #$11,CCR  ; SEC: set C+X
     move.b  #$10,D1
     subx.b  D1,D0   ; SBC #$10
     move.b  D0,($005D,A4)
@@ -9459,7 +8981,7 @@ _L_z05_Submenu_WriteSheetMapRowTransferRecord_DoneRotate:
     ; ((current menu scrolling value) / 2) - $D
     ;
     move.b  ($005E,A4),D0
-    ori.b   #$11,CCR  ; SEC: set C+X
+    ori     #$11,CCR  ; SEC: set C+X
     move.b  #$1A,D1
     subx.b  D1,D0   ; SBC #$1A
     lsr.b  #1,D0   ; LSR A
@@ -9505,7 +9027,7 @@ HasMap:
 _anon_z05_202:
     move.b  ($0010,A4),D0
     beq  _L_z05_HasMap_Exit
-    ori.b   #$11,CCR  ; SEC: set C+X
+    ori     #$11,CCR  ; SEC: set C+X
     move.b  #$01,D1
     subx.b  D1,D0   ; SBC #$01
     cmpi.b  #$08,D0
@@ -9592,7 +9114,7 @@ _L_z05_Submenu_WriteScanningMapRoomMark_WriteMapTile:
     ; dynamic transfer buf at the current offset.
     ;
     move.b  ($033F,A4),D0
-    andi.b  #$EE,CCR  ; CLC: clear C+X
+    andi    #$EE,CCR  ; CLC: clear C+X
     move.b  #$E2,D1
     addx.b  D1,D0   ; ADC #$E2 (X flag = 6502 C)
     lea     ($0304,A4),A0
@@ -9623,12 +9145,12 @@ CalcOpenDoorwayMask:
     move.b  D3,D0
     move.b  D0,-(A5)  ; PHA
     bsr     GetRoomFlags
-    andi.b  #$EE,CCR  ; CLC: clear C+X
+    andi    #$EE,CCR  ; CLC: clear C+X
     lea     (LevelMasks).l,A0
     move.b  (A0,D2.W),D1
     and.b  D1,D0
     beq  _anon_z05_205
-    ori.b   #$11,CCR  ; SEC: set C+X
+    ori     #$11,CCR  ; SEC: set C+X
 _anon_z05_205:
     move.b  (A5)+,D0  ; PLA
     move.b  D0,D3
@@ -9651,7 +9173,7 @@ _L_z05_CalcOpenDoorwayMask_ByDoorType:
     ;
     cmpi.b  #$00,D0
     beq  _L_z05_CalcOpenDoorwayMask_ShiftIntoMask
-    andi.b  #$EE,CCR  ; CLC: clear C+X
+    andi    #$EE,CCR  ; CLC: clear C+X
     bcc  _L_z05_CalcOpenDoorwayMask_ShiftIntoMask
     even
 AddDoorFlagsToCurOpenedDoors:
@@ -9898,7 +9420,7 @@ _L_z05_UpdateSubmenuSelection_DrawCursor:
     lea     (SubmenuCursorXs).l,A0
     move.b  (A0,D3.W),D0
     move.b  D0,($021F,A4)
-    andi.b  #$EE,CCR  ; CLC: clear C+X
+    andi    #$EE,CCR  ; CLC: clear C+X
     move.b  #$08,D1
     addx.b  D1,D0   ; ADC #$08 (X flag = 6502 C)
     move.b  D0,($0223,A4)
@@ -10173,7 +9695,7 @@ _L_z05_CreateRoomObjects_StoreLocation:
     cmpi.b  #$1B,D0
     bne  _anon_z05_224
     move.b  ($0083,A4),D0
-    ori.b   #$11,CCR  ; SEC: set C+X
+    ori     #$11,CCR  ; SEC: set C+X
     move.b  #$08,D1
     subx.b  D1,D0   ; SBC #$08
     move.b  D0,($0083,A4)
@@ -10259,328 +9781,4 @@ SwitchBank_Local5:
 
 ; Unknown block
     dc.b    $84, $E4, $50, $BF, $F0, $BF
-
-
-;==============================================================================
-; Import stubs (T2: defined locally so the file assembles standalone)
-;==============================================================================
-    even
-Abs:
-    rts
-
-    even
-Add1ToInt16At0:
-    rts
-
-    even
-Add1ToInt16At2:
-    rts
-
-    even
-Add1ToInt16At4:
-    rts
-
-    even
-AddToInt16At0:
-    rts
-
-    even
-AddToInt16At2:
-    rts
-
-    even
-AddToInt16At4:
-    rts
-
-    even
-Anim_WriteStaticItemSpritesWithAttributes:
-    rts
-
-    even
-AnimateWorldFading:
-    rts
-
-    even
-BeginUpdateMode:
-    rts
-
-    even
-CheckMazes:
-    rts
-
-    even
-CheckPersonBlocking:
-    rts
-
-    even
-CompareHeartsToContainers:
-    rts
-
-    even
-FormatStatusBarText:
-    rts
-
-    even
-GetOppositeDir:
-    rts
-
-    even
-GetRoomFlagUWItemState:
-    rts
-
-    even
-GetShortcutOrItemXY:
-    rts
-
-    even
-HideObjectSprites:
-    rts
-
-    even
-InitModeB_EnterCave_Bank5:
-    rts
-
-    even
-Negate:
-    rts
-
-    even
-PlaceWeaponForPlayerState:
-    rts
-
-    even
-PlaceWeaponForPlayerStateAndAnim:
-    rts
-
-    even
-PlaceWeaponForPlayerStateAndAnimAndWeaponState:
-    rts
-
-    even
-PlayEffect:
-    rts
-
-    even
-PlaySample:
-    rts
-
-    even
-ResetCurSpriteIndex:
-    rts
-
-    even
-ResetRoomTileObjInfo:
-    rts
-
-    even
-ReverseDirections:
-    rts
-
-    even
-SilenceAllSound:
-    rts
-
-    even
-Sub1FromInt16At4:
-    rts
-
-    even
-UpdatePlayerPositionMarker:
-    rts
-
-    even
-UpdateWorldCurtainEffect:
-    rts
-
-    even
-WieldBomb:
-    rts
-
-    even
-WieldCandle:
-    rts
-
-    even
-WriteBlankPrioritySprites:
-    rts
-
-    even
-ColumnDirectoryOW:
-    rts
-
-    even
-LevelNumberTransferBuf:
-    rts
-
-    even
-TriforceRow0TransferBuf:
-    rts
-
-    even
-Anim_FetchObjPosForSpriteDescriptor:
-    rts
-
-    even
-AnimatePond:
-    rts
-
-    even
-CalculateNextRoom:
-    rts
-
-    even
-ChangeTileObjTiles:
-    rts
-
-    even
-CheckScreenEdge:
-    rts
-
-    even
-ClearRam0300UpTo:
-    rts
-
-    even
-ClearRoomHistory:
-    rts
-
-    even
-DecrementInvincibilityTimer:
-    rts
-
-    even
-DestroyMonster:
-    rts
-
-    even
-DrawItemInInventory:
-    rts
-
-    even
-DrawLinkLiftingItem:
-    rts
-
-    even
-DrawSpritesBetweenRooms:
-    rts
-
-    even
-DrawStatusBarItemsAndEnsureItemSelected:
-    rts
-
-    even
-EndGameMode:
-    rts
-
-    even
-FillTileMap:
-    rts
-
-    even
-GetCollidableTileStill:
-    rts
-
-    even
-GetCollidingTileMoving:
-    rts
-
-    even
-GetRoomFlags:
-    rts
-
-    even
-GetUniqueRoomId:
-    rts
-
-    even
-GoToNextModeFromPlay:
-    rts
-
-    even
-HideAllSprites:
-    rts
-
-    even
-IsrReset:
-    rts
-
-    even
-LevelMasks:
-    rts
-
-    even
-Link_EndMoveAndAnimate:
-    rts
-
-    even
-Link_EndMoveAndAnimateBetweenRooms:
-    rts
-
-    even
-Link_EndMoveAndAnimateInRoom:
-    rts
-
-    even
-MarkRoomVisited:
-    rts
-
-    even
-MoveObject:
-    rts
-
-    even
-PatchAndCueLevelPalettesTransferAndAdvanceSubmode:
-    rts
-
-    even
-PlayAreaColumnAddrs:
-    rts
-
-    even
-ResetPlayerState:
-    rts
-
-    even
-ResetShoveInfo:
-    rts
-
-    even
-RunCrossRoomTasksAndBeginUpdateMode:
-    rts
-
-    even
-RunCrossRoomTasksAndBeginUpdateMode_EnterPlayModes:
-    rts
-
-    even
-SetUpAndDrawLinkLiftingItem:
-    rts
-
-    even
-TableJump:
-    rts
-
-    even
-TurnOffAllVideo:
-    rts
-
-    even
-TurnOffVideoAndClearArtifacts:
-    rts
-
-    even
-UpdateHeartsAndRupees:
-    rts
-
-    even
-UpdatePlayer:
-    rts
-
-    even
-UpdateTriforcePositionMarker:
-    rts
-
-    even
-WieldFlute:
-    rts
 

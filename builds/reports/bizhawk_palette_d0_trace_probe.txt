@@ -1,0 +1,32 @@
+=================================================================
+Palette D0 Trace Probe  -- frames 85-105
+  Hook at $5EE: lsl.w #1,D0  (D0 = NES color index before shift)
+  Hook at $5F4: move.w D2,(VDP_DATA)  (D2 = Genesis color written)
+=================================================================
+
+Register prefix detected: '' (tested: D0=0)
+WARNING: registerexec failed on 'M68K BUS'. Trying default domain...
+-- frame 86: ptr=$20/$24 (NES $2420) PPU_VADDR=$22FD ppuCtrl=$30
+-- frame 87: ptr=$20/$24 (NES $2420) PPU_VADDR=$23C1 ppuCtrl=$30
+-- frame 88: ptr=$20/$24 (NES $2420) PPU_VADDR=$23D9 ppuCtrl=$30
+-- frame 89: ptr=$20/$24 (NES $2420) PPU_VADDR=$23F2 ppuCtrl=$30
+-- frame 90: ptr=$28/$24 (NES $2428) PPU_VADDR=$2841 ppuCtrl=$30
+-- frame 91: ptr=$28/$24 (NES $2428) PPU_VADDR=$297A ppuCtrl=$30
+-- frame 92: ptr=$28/$24 (NES $2428) PPU_VADDR=$2AB4 ppuCtrl=$30
+-- frame 93: ptr=$28/$24 (NES $2428) PPU_VADDR=$2BEE ppuCtrl=$30
+-- frame 94: ptr=$00/$03 (NES $0300) PPU_VADDR=$0000 ppuCtrl=$B0
+-- frame 95: ptr=$68/$03 (NES $0368) PPU_VADDR=$0018 ppuCtrl=$30
+-- frame 96: ptr=$EE/$03 (NES $03EE) PPU_VADDR=$0016 ppuCtrl=$30
+-- frame 97: ptr=$74/$04 (NES $0474) PPU_VADDR=$0014 ppuCtrl=$30
+-- frame 98: ptr=$FA/$04 (NES $04FA) PPU_VADDR=$0012 ppuCtrl=$30
+-- frame 99: ptr=$80/$05 (NES $0580) PPU_VADDR=$0011 ppuCtrl=$30
+-- frame 100: ptr=$06/$06 (NES $0606) PPU_VADDR=$0010 ppuCtrl=$30
+-- frame 101: ptr=$8C/$06 (NES $068C) PPU_VADDR=$0010 ppuCtrl=$30
+-- frame 102: ptr=$12/$07 (NES $0712) PPU_VADDR=$0010 ppuCtrl=$30
+-- frame 103: ptr=$98/$07 (NES $0798) PPU_VADDR=$0010 ppuCtrl=$30
+-- frame 104: ptr=$1E/$08 (NES $081E) PPU_VADDR=$0010 ppuCtrl=$30
+-- frame 105: ptr=$A4/$08 (NES $08A4) PPU_VADDR=$0010 ppuCtrl=$30
+
+=================================================================
+PALETTE D0 TRACE PROBE COMPLETE
+=================================================================

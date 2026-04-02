@@ -1036,9 +1036,9 @@ _L_z07_IsrNmi_ScrambleRandom:
     andi.b #$02,D0
     move.b  ($0000,A4),D1
     eor.b  D1,D0
-    andi.b  #$EE,CCR  ; CLC: clear C+X
+    andi    #$EE,CCR  ; CLC: clear C+X
     beq  _L_z07_IsrNmi_LoopRandom
-    ori.b   #$11,CCR  ; SEC: set C+X
+    ori     #$11,CCR  ; SEC: set C+X
     even
 _L_z07_IsrNmi_LoopRandom:
     move.b  ($00,A4,D2.W),D1
@@ -1365,7 +1365,9 @@ MarkRoomVisited:
     movea.l D4,A0
     move.b  D0,(A0,D3.W)     ; STA ($nn),Y
     even
+    IFND Exit
 Exit:
+    ENDC
     rts
 
 ; Returns:
@@ -1569,7 +1571,7 @@ _L_z07_DrawItemBySlot_AddItemAndTableValue:
     ; row attribute and the element from ItemSlotToPaletteOffsetsOrValues,
     ; which here represents an offset from the palette row.
     ;
-    andi.b  #$EE,CCR  ; CLC: clear C+X
+    andi    #$EE,CCR  ; CLC: clear C+X
     move.b  ($0004,A4),D1
     addx.b  D1,D0   ; ADC $04
     cmpi.b  #$00,D2
@@ -1701,7 +1703,7 @@ SetUpAndDrawLinkLiftingItem:
     move.b  ($0070,A4),D0
     move.b  D0,($0083,A4)
     move.b  ($0084,A4),D0
-    ori.b   #$11,CCR  ; SEC: set C+X
+    ori     #$11,CCR  ; SEC: set C+X
     move.b  #$10,D1
     subx.b  D1,D0   ; SBC #$10
     move.b  D0,($0097,A4)
@@ -1831,7 +1833,7 @@ ChangeTileObjTiles:
     bcs  _L_z07_ChangeTileObjTiles_SetCountBytes
     cmpi.b  #$F3,D0
     bcc  _L_z07_ChangeTileObjTiles_SetCountBytes
-    andi.b  #$EE,CCR  ; CLC: clear C+X
+    andi    #$EE,CCR  ; CLC: clear C+X
     move.b  #$02,D1
     addx.b  D1,D0   ; ADC #$02 (X flag = 6502 C)
     lea     ($030A,A4),A0
@@ -1860,7 +1862,7 @@ _L_z07_ChangeTileObjTiles_SetCountBytes:
     ; Update dynamic buffer length with 10 new bytes.
     ;
     move.b  D2,D0
-    andi.b  #$EE,CCR  ; CLC: clear C+X
+    andi    #$EE,CCR  ; CLC: clear C+X
     move.b  #$0A,D1
     addx.b  D1,D0   ; ADC #$0A (X flag = 6502 C)
     move.b  D0,($0301,A4)
@@ -2622,7 +2624,7 @@ BeginUpdateWorld:
     move.b  ($066C,A4),D0
     beq  _L_z07_BeginUpdateWorld_NotInvincible
     move.b  ($04F0,A4),D0
-    andi.b  #$EE,CCR  ; CLC: clear C+X
+    andi    #$EE,CCR  ; CLC: clear C+X
     move.b  #$10,D1
     addx.b  D1,D0   ; ADC #$10 (X flag = 6502 C)
     move.b  D0,($04F0,A4)
@@ -2965,7 +2967,7 @@ GetCollidableTile:
     move.b  D3,($0004,A4)
     lea     ($0084,A4),A0
     move.b  (A0,D2.W),D0
-    andi.b  #$EE,CCR  ; CLC: clear C+X
+    andi    #$EE,CCR  ; CLC: clear C+X
     move.b  #$0B,D1
     addx.b  D1,D0   ; ADC #$0B (X flag = 6502 C)
     move.b  D0,D3
@@ -2980,7 +2982,7 @@ GetCollidableTile:
     even
 _L_z07_GetCollidableTile_AdjustY:
     move.b  (A5)+,D0  ; PLA
-    andi.b  #$EE,CCR  ; CLC: clear C+X
+    andi    #$EE,CCR  ; CLC: clear C+X
     move.b  ($0004,A4),D1
     addx.b  D1,D0   ; ADC $04
     move.b  D0,-(A5)  ; PHA
@@ -3011,7 +3013,7 @@ _L_z07_GetCollidableTile_CheckLeftBoundary:
     even
 _L_z07_GetCollidableTile_AddHotspotOffset:
     move.b  D3,D0
-    andi.b  #$EE,CCR  ; CLC: clear C+X
+    andi    #$EE,CCR  ; CLC: clear C+X
     move.b  ($0004,A4),D1
     addx.b  D1,D0   ; ADC $04
     move.b  D0,D3
@@ -3031,7 +3033,7 @@ _L_z07_GetCollidableTile_FetchTile:
     move.b  (A0,D3.W),D0
     move.b  D0,($0001,A4)
     move.b  (A5)+,D0  ; PLA
-    ori.b   #$11,CCR  ; SEC: set C+X
+    ori     #$11,CCR  ; SEC: set C+X
     move.b  #$40,D1
     subx.b  D1,D0   ; SBC #$40
     lsr.b  #1,D0   ; LSR A
@@ -3056,7 +3058,7 @@ _L_z07_GetCollidableTile_FetchTile:
     ; walkable tiles.
     ;
     move.b  D3,D0
-    andi.b  #$EE,CCR  ; CLC: clear C+X
+    andi    #$EE,CCR  ; CLC: clear C+X
     move.b  #$16,D1
     addx.b  D1,D0   ; ADC #$16 (X flag = 6502 C)
     move.b  D0,D3
@@ -3284,7 +3286,7 @@ _anon_z07_13:
     ;
     lea     ($0394,A4),A0
     move.b  (A0,D2.W),D0
-    andi.b  #$EE,CCR  ; CLC: clear C+X
+    andi    #$EE,CCR  ; CLC: clear C+X
     move.b  ($0002,A4),D1
     addx.b  D1,D0   ; ADC $02
     lea     ($0394,A4),A0
@@ -3311,7 +3313,7 @@ _L_z07_ShoveMoveMin_ApplySpeed:
     andi.b #$03,D0
     beq  _L_z07_ShoveMoveMin_AddToY
     move.b  ($70,A4,D2.W),D0
-    andi.b  #$EE,CCR  ; CLC: clear C+X
+    andi    #$EE,CCR  ; CLC: clear C+X
     move.b  ($0002,A4),D1
     addx.b  D1,D0   ; ADC $02
     move.b  D0,($70,A4,D2.W)
@@ -3323,7 +3325,7 @@ _L_z07_ShoveMoveMin_AddToY:
     ;
     lea     ($0084,A4),A0
     move.b  (A0,D2.W),D0
-    andi.b  #$EE,CCR  ; CLC: clear C+X
+    andi    #$EE,CCR  ; CLC: clear C+X
     move.b  ($0002,A4),D1
     addx.b  D1,D0   ; ADC $02
     lea     ($0084,A4),A0
@@ -4285,13 +4287,13 @@ _L_z07_Link_EndMoveAndAnimate_SetUpLadder:
     ; Call this for the reverse direction index.
     bsr     GetOppositeDir
     move.b  ($0070,A4),D0
-    andi.b  #$EE,CCR  ; CLC: clear C+X
+    andi    #$EE,CCR  ; CLC: clear C+X
     lea     (LinkToLadderOffsetsX).l,A0
     move.b  (A0,D3.W),D1
     addx.b  D1,D0   ; ADC LinkToLadderOffsetsX,Y
     move.b  D0,($70,A4,D2.W)
     move.b  ($0084,A4),D0
-    andi.b  #$EE,CCR  ; CLC: clear C+X
+    andi    #$EE,CCR  ; CLC: clear C+X
     lea     (LinkToLadderOffsetsY).l,A0
     move.b  (A0,D3.W),D1
     addx.b  D1,D0   ; ADC LinkToLadderOffsetsY,Y
@@ -4359,7 +4361,7 @@ _L_z07_Link_EndMoveAndAnimate_ChangeLookForState:
     even
 _L_z07_Link_EndMoveAndAnimate_WieldingObject:
     move.b  D3,D0
-    andi.b  #$EE,CCR  ; CLC: clear C+X
+    andi    #$EE,CCR  ; CLC: clear C+X
     move.b  #$04,D1
     addx.b  D1,D0   ; ADC #$04 (X flag = 6502 C)
     move.b  D0,D3
@@ -4383,7 +4385,7 @@ _L_z07_Link_EndMoveAndAnimate_Draw:
     cmpi.b  #$0B,D0
     bcc  L1F36A_Exit
     move.b  D0,-(A5)  ; PHA
-    andi.b  #$EE,CCR  ; CLC: clear C+X
+    andi    #$EE,CCR  ; CLC: clear C+X
     move.b  #$50,D1
     addx.b  D1,D0   ; ADC #$50 (X flag = 6502 C)
     jmp     _L_z07_Link_EndMoveAndAnimate_ApplyShieldSprite
@@ -4493,7 +4495,7 @@ DrawSwordShotOrMagicShot:
     andi.b #$03,D0
     beq  _L_z07_DrawSwordShotOrMagicShot_Flash
     move.b  ($0001,A4),D0
-    andi.b  #$EE,CCR  ; CLC: clear C+X
+    andi    #$EE,CCR  ; CLC: clear C+X
     move.b  #$03,D1
     addx.b  D1,D0   ; ADC #$03 (X flag = 6502 C)
     move.b  D0,($0001,A4)
@@ -4693,7 +4695,7 @@ _L_z07_SpreadShot_DrawShotCorner:
     ; current offset in [02] to set sprite X in [00].
     ;
     move.b  ($70,A4,D2.W),D0
-    andi.b  #$EE,CCR  ; CLC: clear C+X
+    andi    #$EE,CCR  ; CLC: clear C+X
     move.b  ($0002,A4),D1
     addx.b  D1,D0   ; ADC $02
     move.b  D0,($0000,A4)
@@ -4705,14 +4707,14 @@ _L_z07_SpreadShot_DrawShotCorner:
     bcs  _L_z07_SpreadShot_ReverseSub
     cmpi.b  #$FC,D0
     bcc  _L_z07_SpreadShot_NextCorner
-    ori.b   #$11,CCR  ; SEC: set C+X
+    ori     #$11,CCR  ; SEC: set C+X
 ; [SBC unhandled mode=ABS_X] SBC ObjX, X
     jmp     _L_z07_SpreadShot_CheckDistance
 
     even
 _L_z07_SpreadShot_ReverseSub:
     move.b  ($70,A4,D2.W),D0
-    ori.b   #$11,CCR  ; SEC: set C+X
+    ori     #$11,CCR  ; SEC: set C+X
     move.b  ($0000,A4),D1
     subx.b  D1,D0   ; SBC $00
     even
@@ -4726,7 +4728,7 @@ _L_z07_SpreadShot_CheckDistance:
     ;
     lea     ($0084,A4),A0
     move.b  (A0,D2.W),D0
-    andi.b  #$EE,CCR  ; CLC: clear C+X
+    andi    #$EE,CCR  ; CLC: clear C+X
     move.b  ($0003,A4),D1
     addx.b  D1,D0   ; ADC $03
     move.b  D0,($0001,A4)
@@ -4774,7 +4776,7 @@ _L_z07_SpreadShot_NextCorner:
 _anon_z07_25:
     move.b  ($00,A4,D3.W),D0
     eori.b #$FF,D0
-    andi.b  #$EE,CCR  ; CLC: clear C+X
+    andi    #$EE,CCR  ; CLC: clear C+X
     move.b  #$01,D1
     addx.b  D1,D0   ; ADC #$01 (X flag = 6502 C)
     move.b  D0,($00,A4,D3.W)
@@ -4996,7 +4998,7 @@ _L_z07_UpdateArrowOrBoomerang_CheckPlayerArrow:
     move.b  (A0,D2.W),D0
     bpl  _L_z07_UpdateArrowOrBoomerang_CompareLimit
     eori.b #$FF,D0
-    andi.b  #$EE,CCR  ; CLC: clear C+X
+    andi    #$EE,CCR  ; CLC: clear C+X
     move.b  #$01,D1
     addx.b  D1,D0   ; ADC #$01 (X flag = 6502 C)
     even
@@ -5068,16 +5070,16 @@ SetAttrAndDrawArrow:
     cmpi.b  #$5B,D0
     bne  _L_z07_SetAttrAndDrawArrow_PlayerArrow
     move.b  ($0004,A4),D0
-    andi.b  #$EE,CCR  ; CLC: clear C+X
+    andi    #$EE,CCR  ; CLC: clear C+X
     move.b  #$02,D1
     addx.b  D1,D0   ; ADC #$02 (X flag = 6502 C)
     bne  _L_z07_SetAttrAndDrawArrow_SetAttr
     even
 _L_z07_SetAttrAndDrawArrow_PlayerArrow:
-    andi.b  #$EE,CCR  ; CLC: clear C+X
+    andi    #$EE,CCR  ; CLC: clear C+X
     move.b  ($0659,A4),D1
     addx.b  D1,D0   ; ADC InvArrow
-    ori.b   #$11,CCR  ; SEC: set C+X
+    ori     #$11,CCR  ; SEC: set C+X
     move.b  #$01,D1
     subx.b  D1,D0   ; SBC #$01
     even
@@ -5158,7 +5160,7 @@ HandleArrowOrBoomerangBlocked:
     ;
     lea     ($00AC,A4),A0
     move.b  (A0,D2.W),D0
-    andi.b  #$EE,CCR  ; CLC: clear C+X
+    andi    #$EE,CCR  ; CLC: clear C+X
     move.b  #$10,D1
     addx.b  D1,D0   ; ADC #$10 (X flag = 6502 C)
     lea     ($00AC,A4),A0
@@ -5465,7 +5467,7 @@ CalcBoomerangFrame:
     move.b  ($0675,A4),D3
 _anon_z07_31:
     move.b  D3,D0
-    andi.b  #$EE,CCR  ; CLC: clear C+X
+    andi    #$EE,CCR  ; CLC: clear C+X
     move.b  ($0004,A4),D1
     addx.b  D1,D0   ; ADC $04
     move.b  D0,($0004,A4)
@@ -5493,13 +5495,13 @@ L_DrawArrowOrBoomerang:
     ; Add the weapon's true coordinates to offsets in [00] and [01].
     ;
     move.b  ($70,A4,D2.W),D0
-    andi.b  #$EE,CCR  ; CLC: clear C+X
+    andi    #$EE,CCR  ; CLC: clear C+X
     move.b  ($0000,A4),D1
     addx.b  D1,D0   ; ADC $00
     move.b  D0,($0000,A4)
     lea     ($0084,A4),A0
     move.b  (A0,D2.W),D0
-    andi.b  #$EE,CCR  ; CLC: clear C+X
+    andi    #$EE,CCR  ; CLC: clear C+X
     move.b  ($0001,A4),D1
     addx.b  D1,D0   ; ADC $01
     move.b  D0,($0001,A4)
@@ -5618,7 +5620,7 @@ _L_z07_UpdateSwordOrRod_Add4:
     ; Set [00] to (state - 1) * 4:
     ; the byte offset of the beginning of a set of pixel offsets.
     ;
-    andi.b  #$EE,CCR  ; CLC: clear C+X
+    andi    #$EE,CCR  ; CLC: clear C+X
     move.b  #$04,D1
     addx.b  D1,D0   ; ADC #$04 (X flag = 6502 C)
     subq.b  #1,D3
@@ -5635,7 +5637,7 @@ _L_z07_UpdateSwordOrRod_Add4:
     ;
     bsr     GetOppositeDir
     move.b  D3,D0
-    andi.b  #$EE,CCR  ; CLC: clear C+X
+    andi    #$EE,CCR  ; CLC: clear C+X
     move.b  ($0000,A4),D1
     addx.b  D1,D0   ; ADC $00
     move.b  D0,D3
@@ -5643,7 +5645,7 @@ _L_z07_UpdateSwordOrRod_Add4:
     ; Copy the result to [00].
     ;
     move.b  ($0070,A4),D0
-    andi.b  #$EE,CCR  ; CLC: clear C+X
+    andi    #$EE,CCR  ; CLC: clear C+X
     lea     (PlayerToWeaponOffsetsX).l,A0
     move.b  (A0,D3.W),D1
     addx.b  D1,D0   ; ADC PlayerToWeaponOffsetsX,Y
@@ -5653,7 +5655,7 @@ _L_z07_UpdateSwordOrRod_Add4:
     ; Copy the result to [01].
     ;
     move.b  ($0084,A4),D0
-    andi.b  #$EE,CCR  ; CLC: clear C+X
+    andi    #$EE,CCR  ; CLC: clear C+X
     lea     (PlayerToWeaponOffsetsY).l,A0
     move.b  (A0,D3.W),D1
     addx.b  D1,D0   ; ADC PlayerToWeaponOffsetsY,Y
@@ -5699,10 +5701,10 @@ _L_z07_UpdateSwordOrRod_CalcSwordAttrs:
     ; The weapon is the sword.
     ; To calculate the sprite attributes: (item value - 1) + base attribute
     ;
-    andi.b  #$EE,CCR  ; CLC: clear C+X
+    andi    #$EE,CCR  ; CLC: clear C+X
     move.b  ($0657,A4),D1
     addx.b  D1,D0   ; ADC Items
-    ori.b   #$11,CCR  ; SEC: set C+X
+    ori     #$11,CCR  ; SEC: set C+X
     move.b  #$01,D1
     subx.b  D1,D0   ; SBC #$01
     even
@@ -5891,7 +5893,7 @@ UpdateFire:
     ; Add grid offset after the move to the original.
     ; This makes it continuous, and useful as a distance traveled.
     ;
-    andi.b  #$EE,CCR  ; CLC: clear C+X
+    andi    #$EE,CCR  ; CLC: clear C+X
     lea     ($0394,A4),A0
     move.b  (A0,D2.W),D1
     addx.b  D1,D0   ; ADC ObjGridOffset,X
@@ -5996,13 +5998,13 @@ _L_z07_UpdateFire_DrawAndCheckCollisions:
     even
 GetWideObjectMiddle:
     move.b  ($70,A4,D2.W),D0
-    andi.b  #$EE,CCR  ; CLC: clear C+X
+    andi    #$EE,CCR  ; CLC: clear C+X
     move.b  #$08,D1
     addx.b  D1,D0   ; ADC #$08 (X flag = 6502 C)
     move.b  D0,($02,A4,D3.W)
     lea     ($0084,A4),A0
     move.b  (A0,D2.W),D0
-    andi.b  #$EE,CCR  ; CLC: clear C+X
+    andi    #$EE,CCR  ; CLC: clear C+X
     move.b  #$08,D1
     addx.b  D1,D0   ; ADC #$08 (X flag = 6502 C)
     move.b  D0,($03,A4,D3.W)
@@ -6108,7 +6110,7 @@ _L_z07_Bomb_CheckState4_LoopHotspot:
     ;
     lea     (BombableWallHotspotsX).l,A0
     move.b  (A0,D3.W),D0
-    ori.b   #$11,CCR  ; SEC: set C+X
+    ori     #$11,CCR  ; SEC: set C+X
 ; [SBC unhandled mode=ABS_X] SBC ObjX, X
     bsr     Abs
     cmpi.b  #$18,D0
@@ -6118,7 +6120,7 @@ _L_z07_Bomb_CheckState4_LoopHotspot:
     ;
     lea     (BombableWallHotspotsY).l,A0
     move.b  (A0,D3.W),D0
-    ori.b   #$11,CCR  ; SEC: set C+X
+    ori     #$11,CCR  ; SEC: set C+X
 ; [SBC unhandled mode=ABS_X] SBC ObjY, X
     bsr     Abs
     cmpi.b  #$18,D0
@@ -6186,7 +6188,7 @@ DrawBombOrCloudNoFlashing:
     lea     ($00AC,A4),A0
     move.b  (A0,D2.W),D0
     andi.b #$0F,D0
-    ori.b   #$11,CCR  ; SEC: set C+X
+    ori     #$11,CCR  ; SEC: set C+X
     move.b  #$02,D1
     subx.b  D1,D0   ; SBC #$02
 ; Params:
@@ -6242,7 +6244,7 @@ _L_z07_DrawOtherBombClouds_LoopCloud:
     lsr.b  #1,D0   ; LSR A
     bcc  _L_z07_DrawOtherBombClouds_Draw
     move.b  D3,D0
-    andi.b  #$EE,CCR  ; CLC: clear C+X
+    andi    #$EE,CCR  ; CLC: clear C+X
     move.b  #$06,D1
     addx.b  D1,D0   ; ADC #$06 (X flag = 6502 C)
     move.b  D0,D3
@@ -6252,7 +6254,7 @@ _L_z07_DrawOtherBombClouds_Draw:
     ;
     lea     ($0084,A4),A0
     move.b  (A0,D2.W),D0
-    andi.b  #$EE,CCR  ; CLC: clear C+X
+    andi    #$EE,CCR  ; CLC: clear C+X
     lea     (BombCloudOffsetsY1).l,A0
     move.b  (A0,D3.W),D1
     addx.b  D1,D0   ; ADC BombCloudOffsetsY1,Y
@@ -6260,7 +6262,7 @@ _L_z07_DrawOtherBombClouds_Draw:
     ; Set [00] to cloud position (object X + X offset).
     ;
     move.b  ($70,A4,D2.W),D0
-    andi.b  #$EE,CCR  ; CLC: clear C+X
+    andi    #$EE,CCR  ; CLC: clear C+X
     lea     (BombCloudOffsetsX1).l,A0
     move.b  (A0,D3.W),D1
     addx.b  D1,D0   ; ADC BombCloudOffsetsX1,Y
@@ -6789,7 +6791,7 @@ UpdateMetaObjectEnd:
     ; Advance the world kill cycle (0 to 9).
     ;
     move.b  ($052A,A4),D0
-    andi.b  #$EE,CCR  ; CLC: clear C+X
+    andi    #$EE,CCR  ; CLC: clear C+X
     move.b  #$01,D1
     addx.b  D1,D0   ; ADC #$01 (X flag = 6502 C)
     cmpi.b  #$0A,D0
@@ -6882,7 +6884,7 @@ _L_z07_InitObject_InitMonsterFromEdge:
     ;
     move.b  (A5)+,D0  ; PLA
     andi.b #$F0,D0
-    ori.b   #$11,CCR  ; SEC: set C+X
+    ori     #$11,CCR  ; SEC: set C+X
     move.b  #$03,D1
     subx.b  D1,D0   ; SBC #$03
     lea     ($0084,A4),A0
@@ -6892,7 +6894,7 @@ _L_z07_InitObject_InitMonsterFromEdge:
     ;
     move.b  ($19,A4,D2.W),D0
     andi.b #$03,D0
-    andi.b  #$EE,CCR  ; CLC: clear C+X
+    andi    #$EE,CCR  ; CLC: clear C+X
     move.b  #$02,D1
     addx.b  D1,D0   ; ADC #$02 (X flag = 6502 C)
     move.b  D0,($004B,A4)
@@ -7413,920 +7415,4 @@ IsrVector:
     dc.l    IsrNmi   ; NES addr vector (32-bit for M68K)
     dc.l    IsrReset   ; NES addr vector (32-bit for M68K)
     dc.l    $FFF0   ; NES addr vector (32-bit for M68K)
-
-
-;==============================================================================
-; Import stubs (T2: defined locally so the file assembles standalone)
-;==============================================================================
-    even
-DriveAudio:
-    rts
-
-    even
-CheckInitWhirlwindAndBeginUpdate:
-    rts
-
-    even
-CheckPassiveTileObjects:
-    rts
-
-    even
-CheckPowerTriforceFanfare:
-    rts
-
-    even
-CheckTileObjectsBlocking:
-    rts
-
-    even
-CopyCommonCodeToRam:
-    rts
-
-    even
-InitCave:
-    rts
-
-    even
-InitGrumble_Full:
-    rts
-
-    even
-InitRupeeStash_Full:
-    rts
-
-    even
-InitTrap_Full:
-    rts
-
-    even
-InitUnderworldPerson_Full:
-    rts
-
-    even
-InitUnderworldPersonLifeOrMoney_Full:
-    rts
-
-    even
-SummonWhirlwind:
-    rts
-
-    even
-TransferDemoPatterns:
-    rts
-
-    even
-UpdateCavePerson:
-    rts
-
-    even
-UpdateGrumble_Full:
-    rts
-
-    even
-UpdateRupeeStash_Full:
-    rts
-
-    even
-UpdateTrap_Full:
-    rts
-
-    even
-UpdateUnderworldPerson_Full:
-    rts
-
-    even
-UpdateUnderworldPersonLifeOrMoney_Full:
-    rts
-
-    even
-UpdateWhirlwind_Full:
-    rts
-
-    even
-_CalcDiagonalSpeedIndex:
-    rts
-
-    even
-Abs:
-    rts
-
-    even
-Add1ToInt16At0:
-    rts
-
-    even
-AddQSpeedToPositionFraction:
-    rts
-
-    even
-Anim_SetSpriteDescriptorAttributes:
-    rts
-
-    even
-Anim_SetSpriteDescriptorRedPaletteRow:
-    rts
-
-    even
-Anim_WriteItemSprites:
-    rts
-
-    even
-Anim_WriteSpecificItemSprites:
-    rts
-
-    even
-Anim_WriteStaticItemSpritesWithAttributes:
-    rts
-
-    even
-AnimateAndDrawObjectWalking:
-    rts
-
-    even
-BeginShove:
-    rts
-
-    even
-BeginUpdateMode:
-    rts
-
-    even
-BoundByRoom:
-    rts
-
-    even
-BoundByRoomWithA:
-    rts
-
-    even
-CheckLinkCollision:
-    rts
-
-    even
-CheckMonsterCollisions:
-    rts
-
-    even
-CheckPersonBlocking:
-    rts
-
-    even
-DestroyObject_WRAM:
-    rts
-
-    even
-DoObjectsCollide:
-    rts
-
-    even
-DrawObjectWithAnim:
-    rts
-
-    even
-DrawObjectWithType:
-    rts
-
-    even
-GetDirectionsAndDistancesToTarget:
-    rts
-
-    even
-GetOppositeDir:
-    rts
-
-    even
-GetRoomFlagUWItemState:
-    rts
-
-    even
-HideObjectSprites:
-    rts
-
-    even
-ItemIdToDescriptor:
-    rts
-
-    even
-ItemIdToSlot:
-    rts
-
-    even
-ItemSlotToPaletteOffsetsOrValues:
-    rts
-
-    even
-Link_BeHarmed:
-    rts
-
-    even
-MapScreenPosToPpuAddr:
-    rts
-
-    even
-MoveShot:
-    rts
-
-    even
-PlaceWeapon:
-    rts
-
-    even
-PlayBoomerangSfx:
-    rts
-
-    even
-PlayEffect:
-    rts
-
-    even
-PlaySample:
-    rts
-
-    even
-ReverseDirections:
-    rts
-
-    even
-SetBoomerangSpeed:
-    rts
-
-    even
-ShowLinkSpritesBehindHorizontalDoors:
-    rts
-
-    even
-SubQSpeedFromPositionFraction:
-    rts
-
-    even
-TryTakeRoomItem:
-    rts
-
-    even
-UpdateBombFlashEffect:
-    rts
-
-    even
-UpdatePlayerPositionMarker:
-    rts
-
-    even
-UpdatePositionMarker:
-    rts
-
-    even
-UpdateWorldCurtainEffect:
-    rts
-
-    even
-WieldCandle:
-    rts
-
-    even
-World_ChangeRupees:
-    rts
-
-    even
-WriteBlankPrioritySprites:
-    rts
-
-    even
-InitDemo_RunTasks:
-    rts
-
-    even
-InitMode1_Full:
-    rts
-
-    even
-InitMode13_Full:
-    rts
-
-    even
-InitModeEandF_Full:
-    rts
-
-    even
-TransferCommonPatterns:
-    rts
-
-    even
-UpdateMode0Demo:
-    rts
-
-    even
-UpdateMode13WinGame:
-    rts
-
-    even
-UpdateMode1Menu:
-    rts
-
-    even
-UpdateModeDSave:
-    rts
-
-    even
-UpdateModeERegister:
-    rts
-
-    even
-UpdateModeFElimination:
-    rts
-
-    even
-TransferLevelPatternBlocks:
-    rts
-
-    even
-_InitMonsterShot_Unknown54:
-    rts
-
-    even
-CheckZora:
-    rts
-
-    even
-DestroyCountedMonsterShot:
-    rts
-
-    even
-ExtractHitPointValue:
-    rts
-
-    even
-InitAquamentus:
-    rts
-
-    even
-InitArmosOrFlyingGhini:
-    rts
-
-    even
-InitBlueKeese:
-    rts
-
-    even
-InitBoulder:
-    rts
-
-    even
-InitBoulderSet:
-    rts
-
-    even
-InitBubble:
-    rts
-
-    even
-InitDarknut:
-    rts
-
-    even
-InitDigdogger1:
-    rts
-
-    even
-InitDigdogger2:
-    rts
-
-    even
-InitDodongo:
-    rts
-
-    even
-InitFastOctorock:
-    rts
-
-    even
-InitGanon:
-    rts
-
-    even
-InitGel:
-    rts
-
-    even
-InitGleeok:
-    rts
-
-    even
-InitGleeokHead:
-    rts
-
-    even
-InitGohma:
-    rts
-
-    even
-InitLamnola:
-    rts
-
-    even
-InitLeever:
-    rts
-
-    even
-InitManhandla:
-    rts
-
-    even
-InitMoldorm:
-    rts
-
-    even
-InitMonsterShot:
-    rts
-
-    even
-InitPatra:
-    rts
-
-    even
-InitPeahat:
-    rts
-
-    even
-InitPondFairy:
-    rts
-
-    even
-InitRedOrBlackKeese:
-    rts
-
-    even
-InitRope:
-    rts
-
-    even
-InitSlowOctorockOrGhini:
-    rts
-
-    even
-InitTektite:
-    rts
-
-    even
-InitWalker:
-    rts
-
-    even
-InitZelda:
-    rts
-
-    even
-RevealAndFlagSecretStairsObj:
-    rts
-
-    even
-SetUpDroppedItem:
-    rts
-
-    even
-UpdateAquamentus:
-    rts
-
-    even
-UpdateArmos:
-    rts
-
-    even
-UpdateBlock:
-    rts
-
-    even
-UpdateBlueLeever:
-    rts
-
-    even
-UpdateBlueWizzrobe:
-    rts
-
-    even
-UpdateBoulderSet:
-    rts
-
-    even
-UpdateBubble:
-    rts
-
-    even
-UpdateCandle:
-    rts
-
-    even
-UpdateDarknut:
-    rts
-
-    even
-UpdateDigdogger:
-    rts
-
-    even
-UpdateDock:
-    rts
-
-    even
-UpdateDodongo:
-    rts
-
-    even
-UpdateFireball:
-    rts
-
-    even
-UpdateFlyingGhini:
-    rts
-
-    even
-UpdateGanon:
-    rts
-
-    even
-UpdateGel:
-    rts
-
-    even
-UpdateGhini:
-    rts
-
-    even
-UpdateGibdo:
-    rts
-
-    even
-UpdateGleeok:
-    rts
-
-    even
-UpdateGleeokHead:
-    rts
-
-    even
-UpdateGohma:
-    rts
-
-    even
-UpdateGoriya:
-    rts
-
-    even
-UpdateGuardFire:
-    rts
-
-    even
-UpdateItem:
-    rts
-
-    even
-UpdateKeese:
-    rts
-
-    even
-UpdateLamnola:
-    rts
-
-    even
-UpdateLikeLike:
-    rts
-
-    even
-UpdateLynel:
-    rts
-
-    even
-UpdateManhandla:
-    rts
-
-    even
-UpdateMoblin:
-    rts
-
-    even
-UpdateMoldorm:
-    rts
-
-    even
-UpdateMonsterArrow:
-    rts
-
-    even
-UpdateMonsterShot:
-    rts
-
-    even
-UpdateOctorock:
-    rts
-
-    even
-UpdatePatra:
-    rts
-
-    even
-UpdatePatraChild:
-    rts
-
-    even
-UpdatePeahat:
-    rts
-
-    even
-UpdatePolsVoice:
-    rts
-
-    even
-UpdatePondFairy:
-    rts
-
-    even
-UpdateRedLeever:
-    rts
-
-    even
-UpdateRedWizzrobe:
-    rts
-
-    even
-UpdateRockOrGravestone:
-    rts
-
-    even
-UpdateRockWall:
-    rts
-
-    even
-UpdateRope:
-    rts
-
-    even
-UpdateStalfos:
-    rts
-
-    even
-UpdateStandingFire:
-    rts
-
-    even
-UpdateStatues:
-    rts
-
-    even
-UpdateTektiteOrBoulder:
-    rts
-
-    even
-UpdateTree:
-    rts
-
-    even
-UpdateVire:
-    rts
-
-    even
-UpdateWallmaster:
-    rts
-
-    even
-UpdateZelda:
-    rts
-
-    even
-UpdateZol:
-    rts
-
-    even
-UpdateZora:
-    rts
-
-    even
-AnimateAndDrawLinkBehindBackground:
-    rts
-
-    even
-CalculateNextRoomForDoor:
-    rts
-
-    even
-ChangePlayMapSquareOW:
-    rts
-
-    even
-CheckBossSoundEffectUW:
-    rts
-
-    even
-CheckDoorway:
-    rts
-
-    even
-CheckLadder:
-    rts
-
-    even
-CheckShutters:
-    rts
-
-    even
-CheckSubroom:
-    rts
-
-    even
-CheckUnderworldSecrets:
-    rts
-
-    even
-CheckWarps:
-    rts
-
-    even
-ClearRam:
-    rts
-
-    even
-CreateRoomObjects:
-    rts
-
-    even
-DrawItemInInventoryWithX:
-    rts
-
-    even
-DrawLinkBetweenRooms:
-    rts
-
-    even
-FetchTileMapAddr:
-    rts
-
-    even
-FindAndSelectOccupiedItemSlot:
-    rts
-
-    even
-FindDoorAttrByDoorBit:
-    rts
-
-    even
-FindNextEdgeSpawnCell:
-    rts
-
-    even
-HasCompass:
-    rts
-
-    even
-InitMode10:
-    rts
-
-    even
-InitMode11:
-    rts
-
-    even
-InitMode12:
-    rts
-
-    even
-InitMode3_Sub2:
-    rts
-
-    even
-InitMode3_Sub3_TransferTopHalfAttrs:
-    rts
-
-    even
-InitMode3_Sub4_TransferBottomHalfAttrs:
-    rts
-
-    even
-InitMode3_Sub5:
-    rts
-
-    even
-InitMode3_Sub6:
-    rts
-
-    even
-InitMode3_Sub7:
-    rts
-
-    even
-InitMode3_Sub8:
-    rts
-
-    even
-InitMode4:
-    rts
-
-    even
-InitMode6:
-    rts
-
-    even
-InitMode7Submodes:
-    rts
-
-    even
-InitMode8:
-    rts
-
-    even
-InitMode9:
-    rts
-
-    even
-InitModeA:
-    rts
-
-    even
-InitModeB:
-    rts
-
-    even
-InitModeC:
-    rts
-
-    even
-InitModeD:
-    rts
-
-    even
-InitSaveRam:
-    rts
-
-    even
-IsDistanceSafeToSpawn:
-    rts
-
-    even
-Link_HandleInput:
-    rts
-
-    even
-MaskCurPpuMaskGrayscale:
-    rts
-
-    even
-SetupObjRoomBounds:
-    rts
-
-    even
-UpdateDoors:
-    rts
-
-    even
-UpdateMenuAndMeters:
-    rts
-
-    even
-UpdateMode10Stairs_Full:
-    rts
-
-    even
-UpdateMode11Death_Full:
-    rts
-
-    even
-UpdateMode12EndLevel_Full:
-    rts
-
-    even
-UpdateMode7SubmodeAndDrawLink:
-    rts
-
-    even
-UpdateMode8ContinueQuestion_Full:
-    rts
-
-    even
-WaitAndScrollToSplitBottom:
-    rts
-
-    even
-World_FillHearts:
-    rts
-
-    even
-CopyCommonDataToRam:
-    rts
-
-    even
-InitMode2_Submodes:
-    rts
-
-    even
-TransferCurTileBuf:
-    rts
-
-    even
-UpdateMode2Load_Full:
-    rts
-
-    even
-LevelPaletteRow7TransferBuf:
-    rts
-
-    even
-MenuPalettesTransferBuf:
-    rts
 

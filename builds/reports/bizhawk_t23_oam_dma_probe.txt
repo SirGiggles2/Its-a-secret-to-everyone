@@ -1,0 +1,87 @@
+=================================================================
+T23: OAM DMA Probe  —  up to 600 frames
+=================================================================
+  LoopForever=$01652C  ExcBus=$000366  ExcAddr=$000388  ExcDef=$0003AA
+
+  f001 pc=$000306  disp=-  exc=false
+  f002 pc=$000306  disp=-  exc=false
+  f003 pc=$0002FE  disp=-  exc=false
+  f004 pc=$000306  disp=-  exc=false
+  f005 pc=$0002FE  disp=-  exc=false
+  f060 pc=$00070C  disp=32  exc=false
+  f120 pc=$00159A  disp=32  exc=false
+  f180 pc=$0015E0  disp=32  exc=false
+  f240 pc=$00161E  disp=32  exc=false
+  f300 pc=$001562  disp=32  exc=false
+  f360 pc=$001596  disp=32  exc=false
+  f420 pc=$0015DA  disp=32  exc=false
+  f480 pc=$00161A  disp=32  exc=false
+  f540 pc=$00155E  disp=32  exc=false
+  f600 pc=$0015B2  disp=32  exc=false
+  Display enabled at frame 32 — waiting 30 more frames for OAM DMA...
+
+─── Genesis SAT Snapshot (VRAM $D800+) ──────────────────────────
+  Spr#  Y    Link  TileWord  X    | Decoded
+  [00]   377    1   $8000      128 | tile=0 pal=0 pri=1 vf=0 hf=0
+  [01]   377    2   $8000      128 | tile=0 pal=0 pri=1 vf=0 hf=0
+  [02]   377    3   $8000      128 | tile=0 pal=0 pri=1 vf=0 hf=0
+  [03]   377    4   $8000      128 | tile=0 pal=0 pri=1 vf=0 hf=0
+  [04]   377    5   $8000      128 | tile=0 pal=0 pri=1 vf=0 hf=0
+  [05]   377    6   $8000      128 | tile=0 pal=0 pri=1 vf=0 hf=0
+  [06]   377    7   $8000      128 | tile=0 pal=0 pri=1 vf=0 hf=0
+  [07]   377    8   $8000      128 | tile=0 pal=0 pri=1 vf=0 hf=0
+  [08]   377    9   $8000      128 | tile=0 pal=0 pri=1 vf=0 hf=0
+  [09]   377   10   $8000      128 | tile=0 pal=0 pri=1 vf=0 hf=0
+  [10]   377   11   $8000      128 | tile=0 pal=0 pri=1 vf=0 hf=0
+  [11]   377   12   $8000      128 | tile=0 pal=0 pri=1 vf=0 hf=0
+  [12]   377   13   $8000      128 | tile=0 pal=0 pri=1 vf=0 hf=0
+  [13]   377   14   $8000      128 | tile=0 pal=0 pri=1 vf=0 hf=0
+  [14]   377   15   $8000      128 | tile=0 pal=0 pri=1 vf=0 hf=0
+  [15]   377   16   $8000      128 | tile=0 pal=0 pri=1 vf=0 hf=0
+  ... (sprites 16-63 not shown)
+
+─── NES OAM Buffer ($FF0200-$FF02FF) — first 16 entries ─────────
+  Spr#  NES_Y  Tile  Attr  NES_X | Expected Genesis Y/X
+  [00]  $F8    $00   $00   $00  | Genesis Y=377 X=128
+  [01]  $F8    $00   $00   $00  | Genesis Y=377 X=128
+  [02]  $F8    $00   $00   $00  | Genesis Y=377 X=128
+  [03]  $F8    $00   $00   $00  | Genesis Y=377 X=128
+  [04]  $F8    $00   $00   $00  | Genesis Y=377 X=128
+  [05]  $F8    $00   $00   $00  | Genesis Y=377 X=128
+  [06]  $F8    $00   $00   $00  | Genesis Y=377 X=128
+  [07]  $F8    $00   $00   $00  | Genesis Y=377 X=128
+  [08]  $F8    $00   $00   $00  | Genesis Y=377 X=128
+  [09]  $F8    $00   $00   $00  | Genesis Y=377 X=128
+  [10]  $F8    $00   $00   $00  | Genesis Y=377 X=128
+  [11]  $F8    $00   $00   $00  | Genesis Y=377 X=128
+  [12]  $F8    $00   $00   $00  | Genesis Y=377 X=128
+  [13]  $F8    $00   $00   $00  | Genesis Y=377 X=128
+  [14]  $F8    $00   $00   $00  | Genesis Y=377 X=128
+  [15]  $F8    $00   $00   $00  | Genesis Y=377 X=128
+
+─── T23: OAM DMA Tests ──────────────────────────────────────────
+[PASS] T23_NO_EXCEPTION              no exception handler hit
+[PASS] T23_LOOPFOREVER_HIT           frame 31
+[PASS] T23_DISPLAY_ON                display enabled at frame 32
+[PASS] T23_SAT_WRITTEN               sprite 0 Genesis Y=377 == NES_Y($F8)+129 — DMA conversion correct
+[PASS] T23_SAT_LINK_CHAIN            sprite 0 link = 1 (chain formed)
+[PASS] T23_SAT_X_RANGE               64 sprites with X in visible range [128,383]
+[PASS] T23_SAT_TILE_VALID            all 64 SAT tile fields match NES OAM tile indices (tile=$00 × 64)
+[PASS] T23_SAT_PRIORITY              64 sprites with priority bit set
+
+=================================================================
+T23 OAM DMA CHECKPOINT SUMMARY
+=================================================================
+  [PASS] T23_NO_EXCEPTION
+  [PASS] T23_LOOPFOREVER_HIT
+  [PASS] T23_DISPLAY_ON
+  [PASS] T23_SAT_WRITTEN
+  [PASS] T23_SAT_LINK_CHAIN
+  [PASS] T23_SAT_X_RANGE
+  [PASS] T23_SAT_TILE_VALID
+  [PASS] T23_SAT_PRIORITY
+
+  8 PASS  /  0 FAIL  /  8 total
+
+T23 OAM DMA: ALL PASS
+

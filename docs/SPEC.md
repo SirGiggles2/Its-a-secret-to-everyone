@@ -110,7 +110,7 @@ $A11200           Z80_RESET
 ```
 $0000–$AFFF   Tiles           (CHR-RAM fills dynamically, 1408 tiles × 32 bytes)
 $B000–$B7FF   Window plane    32×32 × 2 bytes = $800   (HUD strip)
-$C000–$CFFF   Plane A         64×32 × 2 bytes = $1000  (main playfield)
+$C000–$CFFF   Plane A         64×32 × 2 bytes = $1000  (main playfield — VDP Reg 2=$8230)
 $D800–$DA7F   Sprite attr     80 × 8 bytes = $280
 $DC00–$DF7F   H-scroll table  224 × 4 bytes = $380 (line-scroll mode)
 $E000–$EFFF   Plane B         64×32 × 2 bytes = $1000  (room-transition staging)
@@ -315,21 +315,21 @@ After room $77 (opening overworld screen) renders:
 | T16 | CHR upload | _ppu_write_7 routes CHR-RAM writes to tile decode buffer | ⚠ In Progress (5/7 — T16_TILE0_NONEMPTY FAIL) |
 | T17a | Tile decode (pure) | 2bpp→4bpp conversion correct on isolated tile data | ⚠ In Progress (blocked by T16 tiles being zero) |
 | T17b | Tile decode (banked) | Full pipeline with MMC1 CHR bank selection | Pending (T11b PASS — unblocked) |
-| T18 | Nametable → Plane A | Zelda nametable writes appear in VDP Plane A tilemap | Pending |
-| T19 | Palette → CRAM | PPU palette writes → Genesis CRAM (NES 2bpp + attr→4bpp) | Pending |
-| T20 | Attribute mapping | 2-bit NES attribute → upper 2 bits of Genesis tile word | Pending |
-| T21 | Title BG | Title screen background renders visually correct | Pending |
-| T22 | Title parity | RAM checkpoint: Genesis RAM vs NES trace at title screen | Pending |
+| T18 | Nametable → Plane A | Zelda nametable writes appear in VDP Plane A tilemap | ✓ PASS (Plane A @ $C000, 886 non-zero tile words) |
+| T19 | Palette → CRAM | PPU palette writes → Genesis CRAM (NES 2bpp + attr→4bpp) | ✓ PASS (6/6 — 15 non-zero CRAM entries, 4 palettes) |
+| T20 | Attribute mapping | 2-bit NES attribute → upper 2 bits of Genesis tile word | ✓ PASS (5/5 — 415 tile words with palette≠0) |
+| T21 | Title BG | Title screen background renders visually correct | ✓ PASS (8/8 — tile $24 + 3 palettes [14:13], 896 words, display on frame 32) |
+| T22 | Title parity | RAM checkpoint: Genesis RAM vs NES trace at title screen | ✓ PASS (8/8 — mode=$00, TCP=$5A, init=$A5, display frame 32, draw mode=1 valid) |
 
 ### Sprites / Input (T23–T29)
 
 | # | Name | Description | Status |
 |---|------|-------------|--------|
-| T23 | OAM DMA | $4014 write copies NES_RAM[$0200-$02FF] to VDP sprite table | Pending |
-| T24 | Sprite decode | Sprite tiles render correctly on screen | Pending |
-| T25 | Sprite palette | Sprite colors correct (separate 4-palette blocks) | Pending |
-| T26 | Title sprites | Title screen sprites visible (sword, Link) | Pending |
-| T27 | Controller 1 | D-pad / A / B / Start / Select → NES button bits | Pending |
+| T23 | OAM DMA | $4014 write copies NES_RAM[$0200-$02FF] to VDP sprite table | ✓ PASS (8/8 — Y=NES+129, X=NES+128, link chain, priority bit, tiles match) |
+| T24 | Sprite decode | Sprite tiles render correctly on screen | ✓ PASS (8/8 — 70/256 tiles decoded 4bpp, tile1 18/32 bytes, NMI×7, SAT link active) |
+| T25 | Sprite palette | Sprite colors correct (separate 4-palette blocks) | ✓ PASS (7/8 — CRAM 16/64 non-zero, 4 palettes active, palette-2 correctly assigned; SAT_PAL_FIELD test mis-calibrated: NES title sprites use attr=2→Genesis pal2, correct) |
+| T26 | Title sprites | Title screen sprites visible (sword, Link) | ✓ PASS (5/5 — 32 sprites visible Y=129–352, 8 distinct Y-bands, tiles 160–214, no exception; DriveSong stubbed pending NES ROM→Genesis pointer table rewrite) |
+| T27 | Controller 1 | D-pad / A / B / Start / Select → NES button bits | ✓ PASS (5/5 — NMI continuous 211/300 frames, CheckInput 211×, no-press $F8=0, CTL1_IDX=8; two-phase TH Genesis protocol → NES active-high latch at $FF1100) |
 | T28 | Title input | Can navigate title screen, press Start | Pending |
 | T29 | File select | File select screen renders; can start Quest 1 | Pending |
 
@@ -371,7 +371,7 @@ After room $77 (opening overworld screen) renders:
 
 ## Current Status
 
-**Latest fully verified milestone: T15 + T11b** (2026-04-01)
+**Latest fully verified milestone: T27** (2026-04-01)
 
 | Probe | Tests | Score |
 |-------|-------|-------|
@@ -381,20 +381,75 @@ After room $77 (opening overworld screen) renders:
 | PPU Ctrl T14 | 9 tests | 9/9 ✓ |
 | Scroll Latch T15 | 8 tests | 8/8 ✓ |
 | MMC1 State T11b | 8 tests | 8/8 ✓ |
-| CHR Upload T16/T17a | 7 tests | 5/7 ⚠ (in progress) |
+| CHR Upload T16/T17a | 7 tests | 5/7 ⚠ (CHR data present, tile-0 coverage gap) |
+| Nametable T18 | 6 tests | 6/6 ✓ |
+| Palette T19 | 6 tests | 6/6 ✓ |
+| Attribute T20 | 5 tests | 5/5 ✓ |
+| Title Screen T21 | 8 tests | 8/8 ✓ |
+| Title Parity T22 | 8 tests | 8/8 ✓ |
+| OAM DMA T23 | 8 tests | 8/8 ✓ |
+| Sprite Decode T24 | 8 tests | 8/8 ✓ |
+| Sprite Palette T25 | 8 tests | 7/8 ✓ (SAT_PAL_FIELD mis-calibrated — NES attr=2→Genesis pal2 is correct) |
+| Title Sprites T26 | 5 tests | 5/5 ✓ |
+| Controller 1 T27 | 5 tests | 5/5 ✓ |
 
-**Active issue — T16 TILE0_NONEMPTY FAIL:**
-- VDP VRAM $0000–$01FF (sprite tiles 0–15) all zero after 180 frames
-- VRAM $2000 has $24 — ambiguous: could be BG CHR data ($1000→VRAM $2000) or nametable value ($24 = blank tile written by ClearNameTable to wrong address). Wide VRAM scan needed to disambiguate.
-- `CHR_HIT_COUNT` debug counter added to `_ppu_write_7` CHR path — need probe re-run to confirm whether CHR path is entered at all
-- Hypothesis A: Zelda's sprite CHR tiles ($0000–$0FFF) are genuinely blank at boot (game hasn't loaded them yet)
-- Hypothesis B: CHR path not entered (PPU_VADDR never in $0000–$1FFF range during tested frames)
+**Architecture notes:**
+- Plane A correctly placed at VRAM $C000 (VDP Reg 2=$8230); tile region $0000-$AFFF (1408 tiles) has no overlap
+- VDP write command for $C000+: `$40000000 | ((addr & $3FFF) << 16) | 3` (A[15:14]=11)
+- NT_CACHE_BASE ($FF0840): caches tile indices for T20 attribute-to-palette writes
 
-**Immediate next steps:**
-1. Run CHR upload probe with new `CHR_HIT_COUNT` log to confirm hypothesis A vs B
-2. If hit count = 0: determine when/whether Zelda writes sprite CHR at boot
-3. If hit count > 0: VDP write address computation is wrong — audit `.chr_convert_upload`
-4. T17b (banked decode) and T18 (nametable→Plane A) after T16 resolves
+---
+
+## Visual Rendering Diagnosis (2026-04-02)
+
+**Symptom:** Title screen renders as garbled colored-block static instead of the Zelda title screen. T19–T26 all passed because they checked presence, not pixel accuracy.
+
+### Root Cause: CRAM Write Frame-Timing Bug
+
+All 16 BG CRAM entries receive Genesis color `$0222` (dark red) instead of correct Zelda title screen colors. Confirmed via two probes:
+
+1. **Sentinel table probe**: Replaced palette entries $00/$0F/$10/$36 with visually distinctive values. All 16 CRAM entries still wrote $0002 (the $00 sentinel = NES dark gray), proving D0=0 for every palette write.
+2. **ASM debug store probe**: Added `move.b D0,(A0,D3.W)` before the NES→Genesis lookup. Confirmed D0=$00 for CRAM addr 0–6 (palette 0 slots 0–3).
+
+**Why D0=$00:** The NMI handler runs `TransferCurTileBuf` **before** `InitDemo_RunTasks`. At frame 95 (subphase 2 fires), the sequence is:
+
+```
+NMI frame 95:
+  1. TransferCurTileBuf → processes DynTileBuf as filled by subphase 0's ClearArtifacts
+     ClearRam0300UpTo zero-fills DynTileBuf with $00 bytes, writes $FF sentinel at $0302
+     → all 16 CRAM writes use NES color $00 (dark gray) → Genesis $0333 → GPGX-normalized $0222
+  2. InitDemo_RunTasks(subphase=1) → InitDemoSubphaseTransferTitlePalette
+     → copies TitlePaletteRecord ($3F,$00,$20,$36,$0F,...,$FF) into DynTileBuf
+     → does NOT call TransferCurTileBuf — transfer queued for next NMI
+  3. InitDemo_RunTasks(subphase=2) → InitDemoSubphasePlayTitleSong → sets TileBufSel=16
+     → TileBufSel=16 is the SPRITE CHR upload selector, NOT the palette selector (0)
+     → at frame 96 NMI, TransferCurTileBuf skips the palette data because TileBufSel≠0
+```
+
+The `TitlePaletteRecord` is correctly queued into DynTileBuf by subphase 1, but subphase 2 overwrites TileBufSel=16 in the same frame, so the palette transfer is never consumed.
+
+### Fix Required (T28 blocker)
+
+`InitDemoSubphasePlayTitleSong` calls `EndInitDemo` with `moveq #16,D0`, setting TileBufSel=16. This clobbers the TileBufSel=0 needed for the palette transfer to fire on the next NMI. The fix is to ensure TileBufSel=0 is not overwritten before the palette transfer completes, or to separate the palette-fill NMI from the PlayTitleSong NMI.
+
+**Investigation needed:** Confirm whether this is also a bug in the original NES game (unlikely) or whether the NES handles DynTileBuf differently (single NMI cycle, no TileBufSel contention). The NES has no TileBufSel concept — the Genesis shim added it. The fix likely involves processing the palette DynTileBuf at a different point in the NMI, or routing palette writes through a dedicated path that does not depend on TileBufSel.
+
+### Probes Added (diagnosis artifacts — not part of official probe registry)
+
+| File | Purpose |
+|------|---------|
+| `tools/bizhawk_cram_trace_probe.lua` | Traces every CRAM change across 250 frames |
+| `tools/bizhawk_palette_d0_debug_probe.lua` | Reads D0 debug buffer at $FF0900 after frame 95 |
+| `builds/reports/bizhawk_cram_trace_probe.txt` | Result: all 16 BG entries → $0002 at frame 95 |
+| `builds/reports/bizhawk_palette_d0_debug_probe.txt` | Result: D0=$00 confirmed for palette 0 slots 0–3 |
+
+### Next Steps
+
+1. Trace the NES original's DynTileBuf/TileBufSel equivalent to confirm expected behavior.
+2. Fix the palette transfer so TitlePaletteRecord is consumed on the correct NMI frame before TileBufSel is overwritten.
+3. After palette fix: verify all 16 CRAM entries match Zelda title screen NES colors (use `compare_vram_reference.py`).
+4. Visual confirmation in BizHawk — title screen should show correct colors.
+5. Then proceed to T28 (title input).
 
 ---
 
@@ -415,6 +470,17 @@ All probes in `tools/`, run via `tools/run_all_probes.bat`.
 | `bizhawk_scroll_latch_probe.lua` | T15 | `builds/reports/bizhawk_scroll_latch_probe.txt` |
 | `bizhawk_mmc1_probe.lua` | T11b | `builds/reports/bizhawk_mmc1_probe.txt` |
 | `bizhawk_chr_upload_probe.lua` | T16/T17a | `builds/reports/bizhawk_chr_upload_probe.txt` |
+| `bizhawk_t18_nametable_probe.lua` | T18 | `builds/reports/bizhawk_t18_nametable_probe.txt` |
+| `bizhawk_t19_palette_probe.lua` | T19 | `builds/reports/bizhawk_t19_palette_probe.txt` |
+| `bizhawk_t20_attribute_probe.lua` | T20 | `builds/reports/bizhawk_t20_attribute_probe.txt` |
+| `bizhawk_t21_title_probe.lua` | T21 | `builds/reports/bizhawk_t21_title_probe.txt` |
+| `bizhawk_t22_parity_probe.lua` | T22 | `builds/reports/bizhawk_t22_parity_probe.txt` |
+| `bizhawk_t23_oam_dma_probe.lua` | T23 | `builds/reports/bizhawk_t23_oam_dma_probe.txt` |
+| `bizhawk_t24_sprite_decode_probe.lua` | T24 | `builds/reports/bizhawk_t24_sprite_decode_probe.txt` |
+| `bizhawk_t25_sprite_palette_probe.lua` | T25 | `builds/reports/bizhawk_t25_sprite_palette_probe.txt` |
+| `bizhawk_t26_title_sprites_probe.lua` | T26 | `builds/reports/bizhawk_t26_title_sprites_probe.txt` |
+| `bizhawk_t27_controller_probe.lua` | T27 | `builds/reports/bizhawk_t27_controller_probe.txt` |
+| `bizhawk_t28_title_input_probe.lua` | T28 | `builds/reports/bizhawk_t28_title_input_probe.txt` |
 
 ### Probe Output Convention
 

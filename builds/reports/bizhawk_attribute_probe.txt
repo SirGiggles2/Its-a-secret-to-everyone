@@ -1,0 +1,65 @@
+=================================================================
+Attribute probe  T20  —  180 frames
+=================================================================
+  LoopForever=$016494  ExcBus=$000366  ExcAddr=$000388  ExcDef=$0003AA
+
+  f001 pc=$000306  forever=-  exc=false
+  f002 pc=$000306  forever=-  exc=false
+  f003 pc=$0002FE  forever=-  exc=false
+  f004 pc=$000306  forever=-  exc=false
+  f005 pc=$0002FE  forever=-  exc=false
+  f030 pc=$000490  forever=-  exc=false
+  f060 pc=$0052AC  forever=31  exc=false
+  f090 pc=$00053A  forever=31  exc=false
+  f120 pc=$001586  forever=31  exc=false
+  f150 pc=$001530  forever=31  exc=false
+  f180 pc=$0014CA  forever=31  exc=false
+
+  (waiting 30 extra frames...)
+
+  NT_CACHE_BASE($FF0840): 886 / 960 entries non-zero
+  Plane A tile words: 960 total, 415 with palette≠0, 0 with bad upper bits
+  Palette distribution: pal0=545 pal1=240 pal2=175 pal3=0
+
+─── Plane A row 0 dump (cols 0-15) ────────────────────────────
+    VRAM[$2000] = $0024  tile=$024  pal=0
+    VRAM[$2002] = $0024  tile=$024  pal=0
+    VRAM[$2004] = $0824  tile=$024  pal=1
+    VRAM[$2006] = $0824  tile=$024  pal=1
+    VRAM[$2008] = $0024  tile=$024  pal=0
+    VRAM[$200A] = $0024  tile=$024  pal=0
+    VRAM[$200C] = $0824  tile=$024  pal=1
+    VRAM[$200E] = $0824  tile=$024  pal=1
+    VRAM[$2010] = $0024  tile=$024  pal=0
+    VRAM[$2012] = $0024  tile=$024  pal=0
+    VRAM[$2014] = $0824  tile=$024  pal=1
+    VRAM[$2016] = $0824  tile=$024  pal=1
+    VRAM[$2018] = $0024  tile=$024  pal=0
+    VRAM[$201A] = $0024  tile=$024  pal=0
+    VRAM[$201C] = $0824  tile=$024  pal=1
+    VRAM[$201E] = $0824  tile=$024  pal=1
+
+  PPU_MASK shadow ($FF0805) = $00  (bit3=BG_en, bit4=SPR_en)
+
+─── T20: Attribute → Palette Bits ─────────────────────────────
+[PASS] T20_NO_EXCEPTION              no exception handler hit
+[PASS] T20_LOOPFOREVER_HIT           frame 31
+[PASS] T20_NT_CACHE_WRITTEN          886 / 960 cache entries non-zero (tile indices stored)
+[PASS] T20_PALETTE_BITS_SET          415 tile words have palette≠0 (attribute table applied)
+[PASS] T20_TILE_WORD_VALID           no tile words have bits [15:13] set
+[FAIL] T20_DISPLAY_ENABLED           PPU_MASK=$00: BG enable (bit 3) NOT set — display remains off
+
+=================================================================
+ATTRIBUTE PROBE SUMMARY  (T20)
+=================================================================
+  [PASS] T20_NO_EXCEPTION
+  [PASS] T20_LOOPFOREVER_HIT
+  [PASS] T20_NT_CACHE_WRITTEN
+  [PASS] T20_PALETTE_BITS_SET
+  [PASS] T20_TILE_WORD_VALID
+  [FAIL] T20_DISPLAY_ENABLED
+
+  5 PASS  /  1 FAIL  /  6 total
+
+T20 ATTRIBUTE PROBE: 1 FAILURE(S)
+

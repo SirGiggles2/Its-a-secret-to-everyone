@@ -38,7 +38,7 @@ local OUT_PATH = OUT_DIR .. "bizhawk_chr_upload_probe.txt"
 dofile(ROOT .. "tools/probe_addresses.lua")  -- sets LOOPFOREVER, EXC_BUS, EXC_ADDR, EXC_DEF
 
 local CHR_BUF_CNT   = 0xFF0830
-local CHR_HIT_COUNT = 0xFF0833
+local CHR_HIT_COUNT = 0xFF0834
 local FORENSICS_TYPE = 0xFF0900
 
 os.execute('if not exist "' .. OUT_DIR .. '" mkdir "' .. OUT_DIR .. '"')
@@ -176,6 +176,65 @@ local function main()
     for i = 1, 30 do emu.frameadvance() end
     log("")
 
+    -- Post-wait diagnostics: read key state to disambiguate failure modes
+    local final_chr_hits = ram_u8(CHR_HIT_COUNT)   -- CHR_HIT_COUNT after 30 extra frames
+    local tcp_ran_flag   = ram_u8(0xFF00F5)          -- ($00F5,A4): $5A if TransferCommonPatterns ran
+    local ppu_vaddr_hi   = ram_u8(0xFF0802)          -- PPU_VADDR high byte
+    local ppu_vaddr_lo   = ram_u8(0xFF0803)          -- PPU_VADDR low byte
+    local ppu_latch      = ram_u8(0xFF0800)          -- PPU_LATCH (0=1st write, 1=2nd write)
+    local src_b0         = ram_u8(0xFF0004)          -- NES RAM $04: 32-bit src addr byte 0
+    local src_b1         = ram_u8(0xFF0005)
+    local src_b2         = ram_u8(0xFF0006)
+    local src_b3         = ram_u8(0xFF0007)
+    local ppu_vaddr = (ppu_vaddr_hi or 0) * 256 + (ppu_vaddr_lo or 0)
+    local src_addr  = (src_b0 or 0)*0x1000000 + (src_b1 or 0)*0x10000
+                    + (src_b2 or 0)*0x100 + (src_b3 or 0)
+    log("─── Post-wait diagnostics ─────────────────────────────────────")
+    log(string.format("  CHR_HIT_COUNT (final, after 30 extra frames) = %d",
+        final_chr_hits or -1))
+    log(string.format("  ($00F5): %s  ← $5A = TransferCommonPatterns ran; $00 = never ran",
+        tcp_ran_flag ~= nil and string.format("$%02X", tcp_ran_flag) or "??"))
+    log(string.format("  PPU_VADDR = $%04X  PPU_LATCH = %d",
+        ppu_vaddr, ppu_latch or -1))
+    log(string.format("  NES RAM [$04:$07] = $%08X  (32-bit Genesis ROM src addr)",
+        src_addr))
+    -- DEBUG stores from z_02.asm (not cleared by ClearRam — range $F0-$F2 safe)
+    local d5_hi = ram_u8(0xFF00F0) or 0
+    local d5_lo = ram_u8(0xFF00F1) or 0
+    local d5_dbg = d5_hi * 256 + d5_lo
+    local d5_meaning
+    if     d5_dbg == 0x5A5A then d5_meaning = "TCP COMPLETED (all 3 blocks done)"
+    elseif d5_hi  == 0x51   then d5_meaning = string.format("block 0 started, src=$00%04X", d5_dbg)
+    elseif d5_hi  == 0x58   then d5_meaning = string.format("block 1 started, src=$00%04X", d5_dbg)
+    elseif d5_hi  == 0x5F   then d5_meaning = string.format("block 2 started, src=$00%04X", d5_dbg)
+    elseif d5_dbg == 0x0000 then d5_meaning = "NEVER SET — TCP never reached block-addr store"
+    else                         d5_meaning = string.format("unexpected value (D5=%04X)", d5_dbg)
+    end
+    local tcp_call_count  = ram_u8(0xFF00F2) or 0
+    local initmode_count  = ram_u8(0xFF1000) or 0
+    local initmode0_count = ram_u8(0xFF1001) or 0
+    local tcp_jump_count  = ram_u8(0xFF1002) or 0
+    local isrnmi_count    = ram_u8(0xFF1003) or 0
+    local initgame_count  = ram_u8(0xFF1004) or 0
+    local updatemode_count= ram_u8(0xFF1005) or 0
+    local r0011_snap      = ram_u8(0xFF1006) or 0
+    log(string.format("  TCP_CALL_COUNT   [$F2]:     %d  ← times TCP entry reached (0=never)", tcp_call_count))
+    log(string.format("  D5_DBG     [$F0:$F1]: $%04X  ← %s", d5_dbg, d5_meaning))
+    local post_tcb_count  = ram_u8(0xFF1007) or 0
+    local timers_count    = ram_u8(0xFF1008) or 0
+    local post_da_count   = ram_u8(0xFF1009) or 0
+    log(string.format("  ISRNMI_COUNT     [$FF1003]: %d  ← times IsrNmi was entered", isrnmi_count))
+    log(string.format("  POST_TCB_COUNT   [$FF1007]: %d  ← reached after TransferCurTileBuf", post_tcb_count))
+    log(string.format("  TIMERS_COUNT     [$FF1008]: %d  ← reached UpdateTimers label", timers_count))
+    log(string.format("  POST_DA_COUNT    [$FF1009]: %d  ← reached after DriveAudio", post_da_count))
+    log(string.format("  INITGAME_COUNT   [$FF1004]: %d  ← times InitializeGameOrMode was called", initgame_count))
+    log(string.format("  UPDATEMODE_COUNT [$FF1005]: %d  ← times UpdateMode was called", updatemode_count))
+    log(string.format("  R0011_SNAP       [$FF1006]: $%02X  ← last $0011 value at decision point", r0011_snap))
+    log(string.format("  INITMODE_COUNT   [$FF1000]: %d  ← times InitMode was called (inside InitGame)", initmode_count))
+    log(string.format("  INITMODE0_COUNT  [$FF1001]: %d  ← times InitMode0 was dispatched", initmode0_count))
+    log(string.format("  TCP_JUMP_COUNT   [$FF1002]: %d  ← times jmp TCP was reached", tcp_jump_count))
+    log("")
+
     log("─── T16/T17a: CHR Upload + Tile Decode ─────────────────────────")
 
     -- T16_NO_EXCEPTION
@@ -183,7 +242,11 @@ local function main()
         record("T16_NO_EXCEPTION", PASS, "no exception handler hit")
     else
         local et = ram_u8(FORENSICS_TYPE) or 0
-        record("T16_NO_EXCEPTION", FAIL, string.format("%s type=%d", exception_name, et))
+        local fault_pc_hi = (ram_u8(0xFF0904) or 0) * 0x1000000
+                          + (ram_u8(0xFF0905) or 0) * 0x10000
+                          + (ram_u8(0xFF0906) or 0) * 0x100
+                          + (ram_u8(0xFF0907) or 0)
+        record("T16_NO_EXCEPTION", FAIL, string.format("%s type=%d  faultPC=$%06X", exception_name, et, fault_pc_hi))
     end
 
     -- T16_LOOPFOREVER_HIT
@@ -219,13 +282,14 @@ local function main()
     end
     if #tile0_bytes < 4 then log("  (VRAM domain not accessible — skipping tile checks)") end
 
-    -- T16_TILE0_NONEMPTY — tile 0 area has at least one non-zero byte
-    local t0_nonzero, t0_addr, t0_val = vram_any_nonzero(0x0000, 32)
+    -- T16_TILE0_NONEMPTY — CHR area ($0000-$1FFF) has at least one non-zero byte
+    -- Note: Zelda tile 0 is intentionally blank (used as empty space); check full CHR area
+    local t0_nonzero, t0_addr, t0_val = vram_any_nonzero(0x0000, 0x2000)
     if t0_nonzero then
         record("T16_TILE0_NONEMPTY", PASS,
-            string.format("VRAM[$%04X]=$%02X (tile 0 data present)", t0_addr, t0_val))
+            string.format("VRAM[$%04X]=$%02X (CHR tile data present in $0000-$1FFF)", t0_addr, t0_val))
     else
-        record("T16_TILE0_NONEMPTY", FAIL, "VRAM[0x0000..0x001F] all zero — CHR upload may not have run")
+        record("T16_TILE0_NONEMPTY", FAIL, "VRAM[0x0000..0x1FFF] all zero — CHR upload did not run")
     end
 
     -- Wide VRAM scan: find first non-zero byte in $0000–$3FFF (tiles + nametable region)

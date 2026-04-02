@@ -72,19 +72,29 @@ MMC1_PRG        equ MMC1_STATE_BASE+5   ; byte: PRG bank ($E000)
 ; Accumulates one 16-byte NES 2BPP tile then converts it to Genesis 4BPP (32 bytes)
 ; and DMA-writes the result to VDP VRAM.
 ;
-; Layout (19 bytes):
+; Layout (21 bytes):
 ;   +0…+15  CHR_TILE_BUF  (16 bytes) raw NES 2BPP tile data
 ;              bytes 0–7  = plane 0 (bit 0 of each pixel, row 0 first)
 ;              bytes 8–15 = plane 1 (bit 1 of each pixel, row 0 first)
 ;   +16     CHR_BUF_CNT   (byte) number of bytes accumulated (0–15)
-;   +17–18  CHR_BUF_VADDR (word) NES PPU address at start of this tile
+;   +17     (pad byte — keeps CHR_BUF_VADDR word-aligned)
+;   +18–19  CHR_BUF_VADDR (word) NES PPU address at start of this tile  ← $FF0832 (even)
+;   +20     CHR_HIT_COUNT (byte) total CHR write calls (debug counter)
 ;------------------------------------------------------------------------------
 CHR_STATE_BASE  equ PPU_STATE_BASE+$20  ; $FF0820
 
 CHR_TILE_BUF    equ CHR_STATE_BASE+0    ; 16 bytes: raw NES tile bytes
 CHR_BUF_CNT     equ CHR_STATE_BASE+16   ; byte: bytes accumulated
-CHR_BUF_VADDR   equ CHR_STATE_BASE+17   ; word: tile's NES base address
-CHR_HIT_COUNT   equ CHR_STATE_BASE+19   ; byte: total CHR write calls (debug counter)
+                                         ; +17: pad byte (alignment)
+CHR_BUF_VADDR   equ CHR_STATE_BASE+18   ; word: tile's NES base address ($FF0832, even)
+CHR_HIT_COUNT   equ CHR_STATE_BASE+20   ; byte: total CHR write calls (debug counter)
+
+;------------------------------------------------------------------------------
+; Nametable tile-index cache — placed at $FF0840.
+; 32 × 30 = 960 bytes.  NT_CACHE[row*32 + col] = tile index written by T18.
+; Read by T20 attribute handler to re-write tile words with correct palette bits.
+;------------------------------------------------------------------------------
+NT_CACHE_BASE   equ CHR_STATE_BASE+$20  ; $FF0840  (32×30 = 960 bytes)
 
 ;==============================================================================
 ; PPU register reads ($2000–$2007 → _ppu_read_0 … _ppu_read_7)
@@ -171,6 +181,16 @@ _ppu_write_0:
 ;------------------------------------------------------------------------------
 _ppu_write_1:
     move.b  D0,(PPU_MASK).l
+    ; Translate PPUMASK bits 3,4 (BG enable, sprite enable) → VDP Reg 1 display bit.
+    ; D0 is not modified (btst is non-destructive; move.w #imm,addr doesn't use D0).
+    btst    #3,D0                   ; bit 3 = show background
+    bne.s   .ppumask_display_on
+    btst    #4,D0                   ; bit 4 = show sprites
+    bne.s   .ppumask_display_on
+    move.w  #$8134,(VDP_CTRL).l     ; Reg 1: display OFF (VBlank IRQ + DMA + M5)
+    rts
+.ppumask_display_on:
+    move.w  #$8174,(VDP_CTRL).l     ; Reg 1: display ON  (bit 6 set)
     rts
 
 ;------------------------------------------------------------------------------
@@ -323,37 +343,247 @@ _ppu_write_7:
     ; Word-pair buffering: buffer even-address byte, flush word on odd address.
     ;==========================================================================
 .nt_write:
-    btst    #0,D1
-    bne.s   .nt_odd_byte            ; odd address → flush word
+    ;======================================================================
+    ; T18: Nametable 0 tile area ($2000–$23BF) → Genesis Plane A @ $C000.
+    ;
+    ; Each NES byte is one tile index.  Convert to a Genesis tile word and
+    ; write to Plane A at the correct col/row position.
+    ;
+    ; Plane A is at VDP VRAM $C000 (Reg 2 = $8230), 64H × 32V (Reg 16=$9001),
+    ; so each row is 64 tiles × 2 bytes = $80 bytes wide.
+    ;
+    ;   index    = PPU_VADDR − $2000           (0 … $3BF)
+    ;   col      = index & 31                  (0 … 31)
+    ;   row      = index >> 5                  (0 … 29)
+    ;   vdp_addr = $C000 + row * $80 + col * 2
+    ;   tile word = 0x0000 | tile_index        (palette 0, no flip, no priority)
+    ;
+    ; Attribute bytes ($23C0–$23FF) and all higher addresses: no-op (skip write).
+    ;======================================================================
+    cmpi.w  #$23C0,D1
+    bhs.s   .nt_noop                ; ≥$23C0: attribute / palette / overflow — no-op
 
-    ; ---- Even address: buffer the byte ----
-    move.b  D0,(PPU_DBUF).l
-    move.b  #1,(PPU_DHALF).l
+    move.w  D1,D2
+    subi.w  #$2000,D2               ; D2.w = index (0…$3BF)
+
+    move.w  D2,D3
+    andi.w  #$001F,D3               ; D3.w = col (0…31)
+    lsl.w   #1,D3                   ; D3.w = col * 2
+
+    lsr.w   #5,D2                   ; D2.w = row (0…29)
+    mulu.w  #$0080,D2               ; D2.l = row * $80  (fits in 16 bits; row ≤ 29)
+    add.w   D3,D2                   ; D2.w = row*$80 + col*2
+    addi.w  #$C000,D2               ; D2.w = VDP VRAM address (Plane A base $C000)
+
+    ; Issue VDP VRAM write command.
+    ; Plane A is at $C000+ so A[15:14]=11 → lower word of command = 3.
+    ; Full command: $40000000 | ((addr & $3FFF) << 16) | 3
+    move.l  D2,D3
+    andi.l  #$00003FFF,D3           ; D3.l = addr & $3FFF
+    swap    D3                      ; D3.l = (addr & $3FFF) << 16
+    ori.l   #$40000003,D3           ; add CD bits + A[15:14]=3
+    move.l  D3,(VDP_CTRL).l
+
+    ; Write Genesis tile word: tile index only (palette 0, no flip, no priority)
+    andi.w  #$00FF,D0               ; D0.w = tile index (0…255)
+    move.w  D0,(VDP_DATA).l         ; write tile word to Plane A
+
+    ; T20: cache tile index for attribute palette updates
+    ; Cache offset = PPU_VADDR - $2000 = row*32 + col  (NES nametable is 32 wide)
+    move.w  D1,D3
+    subi.w  #$2000,D3               ; D3.w = cache offset (0…$3BF)
+    lea     (NT_CACHE_BASE).l,A0
+    move.b  D0,(A0,D3.W)            ; NT_CACHE[offset] = tile index
+
+.nt_noop:
+    ;======================================================================
+    ; T20: Attribute byte ($23C0–$23FF) → Genesis tile word palette bits.
+    ;
+    ; Each NES attribute byte covers a 4×4 tile block.  Two bits per quadrant:
+    ;   bits [1:0] = palette for quadrant 0 (top-left  2×2 tiles)
+    ;   bits [3:2] = palette for quadrant 1 (top-right 2×2 tiles)
+    ;   bits [5:4] = palette for quadrant 2 (bot-left  2×2 tiles)
+    ;   bits [7:6] = palette for quadrant 3 (bot-right 2×2 tiles)
+    ;
+    ; For each of the 16 affected tiles, look up the cached tile index
+    ; from NT_CACHE_BASE[row*32+col] and write the tile word to Plane A
+    ; with bits [12:11] set to the palette.  No VDP VRAM read required.
+    ;======================================================================
+    cmpi.w  #$3F00,D1
+    bhs.s   .t19_palette            ; ≥$3F00: check palette range
+    cmpi.w  #$23C0,D1
+    blo     .nt_skip_write          ; $23C0 not reached yet — skip (shouldn't happen)
+    cmpi.w  #$2400,D1
+    bhs     .nt_skip_write          ; ≥$2400: overflow past attr table — skip
+
+    ; ── T20 attribute decode ───────────────────────────────────────────
+    ; offset = PPU_VADDR - $23C0 (0..63)
+    move.w  D1,D2
+    subi.w  #$23C0,D2               ; D2.w = attribute offset (0..63)
+
+    ; tile_base_col = (offset & 7) * 4,  tile_base_row = (offset >> 3) * 4
+    move.w  D2,D3
+    lsr.w   #3,D3
+    lsl.w   #2,D3                   ; D3.w = tile_base_row (0..28)
+    andi.w  #$0007,D2
+    lsl.w   #2,D2                   ; D2.w = tile_base_col (0..28)
+
+    ; Save attribute byte in D4; process 4 quadrants using D5 = palette<<13
+    ; Genesis tile word palette field = bits [14:13].
+    ; palette<<13: lsl.w #5 then lsl.w #8 = total 13 bits  (immediate max is 8; both valid).
+    move.b  D0,D4
+
+    ; Quadrant 0: bits [1:0], row_off=0, col_off=0
+    move.w  D4,D5
+    andi.w  #$0003,D5
+    lsl.w   #5,D5
+    lsl.w   #8,D5                   ; D5.w = palette<<13  (bits [14:13])
+    bsr     .attr_write_2x2
+
+    ; Quadrant 1: bits [3:2], row_off=0, col_off=+2
+    move.w  D4,D5
+    lsr.w   #2,D5
+    andi.w  #$0003,D5
+    lsl.w   #5,D5
+    lsl.w   #8,D5
+    addq.w  #2,D2
+    bsr     .attr_write_2x2
+    subq.w  #2,D2
+
+    ; Quadrant 2: bits [5:4], row_off=+2, col_off=0
+    move.w  D4,D5
+    lsr.w   #4,D5
+    andi.w  #$0003,D5
+    lsl.w   #5,D5
+    lsl.w   #8,D5
+    addq.w  #2,D3
+    bsr     .attr_write_2x2
+    subq.w  #2,D3
+
+    ; Quadrant 3: bits [7:6], row_off=+2, col_off=+2
+    move.w  D4,D5
+    lsr.w   #6,D5
+    andi.w  #$0003,D5
+    lsl.w   #5,D5
+    lsl.w   #8,D5
+    addq.w  #2,D2
+    addq.w  #2,D3
+    bsr     .attr_write_2x2
+    subq.w  #2,D2
+    subq.w  #2,D3
+
+    bra.s   .nt_skip_write
+
+    ;======================================================================
+    ; T19: Palette writes ($3F00–$3F1F) → Genesis CRAM.
+    ;======================================================================
+.t19_palette:
+    cmpi.w  #$3F20,D1
+    bhs.s   .nt_skip_write          ; ≥$3F20: mirror / overflow — skip
+
+    ; Compute CRAM address from PPU_VADDR
+    move.w  D1,D2
+    subi.w  #$3F00,D2               ; D2.w = offset (0..31)
+    andi.w  #$001F,D2               ; mask to 5 bits
+
+    ; Sprite palettes ($3F10-$3F1F = offset 16-31): BG pals 2,3 already have
+    ; the same colors as sprite pals 2,3 for Zelda; sprite pal 0,1 would
+    ; overwrite BG pal 0,1 slots with wrong colors.  Skip all sprite pal writes.
+    cmpi.w  #$10,D2
+    bhs.s   .nt_skip_write          ; sprite palette → skip
+
+    move.w  D2,D3
+    lsr.w   #2,D3                   ; D3.w = palette index (0..3)
+    lsl.w   #5,D3                   ; D3.w = palette * $20
+
+    andi.w  #$0003,D2               ; D2.w = color slot (0..3)
+    lsl.w   #1,D2                   ; D2.w = color * 2
+    add.w   D2,D3                   ; D3.w = CRAM address (0..$66)
+
+    ; Issue VDP CRAM write command
+    moveq   #0,D2
+    move.w  D3,D2
+    swap    D2                      ; D2 = CRAM_addr << 16
+    ori.l   #$C0000000,D2           ; VDP CRAM-write command ($C0 = CD bits for CRAM write)
+    move.l  D2,(VDP_CTRL).l
+
+    ; Look up NES color index (D0.b, 0..63) in NES→Genesis 16-bit color table
+    andi.w  #$003F,D0               ; D0.w = NES color index (mask high bits)
+    lea     (nes_palette_to_genesis).l,A0
+    lsl.w   #1,D0                   ; D0.w = byte offset into 16-bit word table
+    move.w  (A0,D0.W),D2            ; D2.w = Genesis color word ($0BGR)
+    move.w  D2,(VDP_DATA).l         ; write Genesis color to CRAM
+
+.nt_skip_write:
     bsr     .inc_ppuaddr
     movem.l (SP)+,D0-D5/A0
     rts
 
-.nt_odd_byte:
-    ; ---- Odd address: assemble word and write to VDP VRAM ----
-    ; VDP VRAM write command for word-aligned address (D1–1):
-    moveq   #0,D2
-    move.w  D1,D2                   ; D2.w = odd VRAM address
-    subq.w  #1,D2                   ; D2.w = even (word-aligned)
-    swap    D2                      ; D2   = word_addr << 16
-    ori.l   #$40000000,D2           ; D2   = VDP VRAM-write command long
-    move.l  D2,(VDP_CTRL).l
+    ;==========================================================================
+    ; .attr_write_2x2 — write palette bits into a 2×2 tile block.
+    ;
+    ; Input: D2.w = col (top-left tile), D3.w = row (top-left tile)
+    ;        D5.w = palette << 11  (Genesis tile word palette bits)
+    ; All inputs preserved.  Uses D0, D1, A0 as scratch.
+    ;==========================================================================
+.attr_write_2x2:
+    bsr     .attr_write_one_tile        ; (row,   col)
+    addq.w  #1,D2
+    bsr     .attr_write_one_tile        ; (row,   col+1)
+    addq.w  #1,D3
+    bsr     .attr_write_one_tile        ; (row+1, col+1)
+    subq.w  #1,D2
+    bsr     .attr_write_one_tile        ; (row+1, col)
+    subq.w  #1,D3
+    rts
 
-    ; Build word: high byte = PPU_DBUF (even), low byte = D0 (odd)
-    moveq   #0,D2
-    move.b  (PPU_DBUF).l,D2        ; D2.b = buffered even byte
-    lsl.w   #8,D2                  ; shift to high byte of word
-    andi.w  #$00FF,D0              ; mask to byte
-    or.w    D0,D2                  ; D2.w = complete word
-    move.w  D2,(VDP_DATA).l        ; commit to VDP VRAM
+    ;==========================================================================
+    ; .attr_write_one_tile — write one Plane A tile word with palette bits.
+    ;
+    ; Input: D2.w = col (0..31), D3.w = row (0..29), D5.w = palette << 11
+    ; Reads tile index from NT_CACHE_BASE[row*32 + col].
+    ; Writes tile word = (palette<<11) | tile_index to VDP Plane A.
+    ; Inputs D2, D3, D5 preserved.  Uses D0, D1, A0.
+    ;==========================================================================
+.attr_write_one_tile:
+    ; Bounds check
+    cmpi.w  #30,D3
+    bhs.s   .awt_skip           ; row ≥ 30 → out of nametable
+    cmpi.w  #32,D2
+    bhs.s   .awt_skip           ; col ≥ 32 → out of nametable
 
-    clr.b   (PPU_DHALF).l
-    bsr     .inc_ppuaddr
-    movem.l (SP)+,D0-D5/A0
+    ; Load cached tile index: NT_CACHE[row*32 + col]
+    moveq   #0,D1
+    move.w  D3,D1
+    lsl.w   #5,D1               ; D1.w = row * 32
+    add.w   D2,D1               ; D1.w = row*32 + col
+    lea     (NT_CACHE_BASE).l,A0
+    moveq   #0,D0
+    move.b  (A0,D1.W),D0        ; D0.b = tile index
+
+    ; Build tile word: (palette<<13) | tile_index   [palette at Genesis bits 14:13]
+    or.w    D5,D0               ; D0.w = tile word with palette bits
+
+    ; Compute Genesis VDP address: $C000 + row*$80 + col*2
+    moveq   #0,D1
+    move.w  D3,D1
+    lsl.l   #7,D1               ; D1.l = row * $80  (lsl.l preserves zero-extended upper)
+    add.w   D2,D1
+    add.w   D2,D1               ; D1.w += col * 2
+    addi.w  #$C000,D1           ; D1.w = VDP address (Plane A base $C000)
+
+    ; Issue VDP VRAM write command, then write tile word
+    ; Plane A addresses have A[15:14]=11=3. Full command: $40000000|((addr&$3FFF)<<16)|3
+    move.w  D0,-(SP)            ; save tile word
+    move.l  D1,D0               ; copy addr
+    andi.l  #$00003FFF,D0       ; D0.l = addr & $3FFF
+    swap    D0                  ; D0.l = (addr & $3FFF) << 16
+    ori.l   #$40000003,D0       ; add CD bits + A[15:14]=3
+    move.l  D0,(VDP_CTRL).l
+    move.w  (SP)+,D0            ; restore tile word into D0.w
+    move.w  D0,(VDP_DATA).l     ; write tile word to Plane A
+
+.awt_skip:
     rts
 
     ;==========================================================================
@@ -404,10 +634,14 @@ _ppu_write_7:
 .chr_convert_upload:
     ; Set VDP write address: Genesis tile addr = NES CHR addr × 2
     move.w  (CHR_BUF_VADDR).l,D1
-    add.w   D1,D1                   ; D1 = NES_addr × 2  (lsl #1)
+    add.w   D1,D1                   ; D1.w = NES_addr × 2  (lsl #1)
     ; VDP VRAM write command for D1.w (< $4000, so upper word = 0):
-    move.l  D1,D2
-    swap    D2                      ; D2 = D1.w << 16 (high word = addr)
+    ; Use moveq+move.w to guarantee D2 upper = 0 before swap.
+    ; (plain move.l D1,D2 would propagate garbage from D1 upper 16 bits
+    ;  into the CD/address bits of the VDP command after swap.)
+    moveq   #0,D2
+    move.w  D1,D2                   ; D2.w = NES_addr × 2  (D2 upper guaranteed 0)
+    swap    D2                      ; D2 = (NES_addr × 2) << 16
     ori.l   #$40000000,D2           ; VDP VRAM-write command
     move.l  D2,(VDP_CTRL).l
 
@@ -424,27 +658,27 @@ _ppu_write_7:
     lsr.b   #4,D1                   ; D1.b = upper nibble of plane0 (pix 0-3)
     andi.b  #$0F,D1
     bsr     .expand_nibble          ; D2.w = plane0 expansion (bit0 of each nibble)
-    move.w  D2,D0                   ; save plane0 expansion
+    move.w  D2,D6                   ; save plane0 expansion in D6 (D0 clobbered by expand)
 
     move.b  D4,D1
     lsr.b   #4,D1                   ; D1.b = upper nibble of plane1 (pix 0-3)
     andi.b  #$0F,D1
     bsr     .expand_nibble          ; D2.w = plane1 expansion
     lsl.w   #1,D2                   ; ×2 → puts plane1 bits in bit1 of each nibble
-    or.w    D0,D2                   ; combine: each nibble = (p1_bit<<1)|p0_bit
+    or.w    D6,D2                   ; combine: each nibble = (p1_bit<<1)|p0_bit
     move.w  D2,(VDP_DATA).l         ; write pixels 0-3 (2 VDP bytes via auto-incr)
 
     ; ---- Pixels 4-7 (lower nibbles of D3 and D4) ----
     move.b  D3,D1
     andi.b  #$0F,D1                 ; D1.b = lower nibble of plane0 (pix 4-7)
     bsr     .expand_nibble
-    move.w  D2,D0                   ; save plane0 expansion
+    move.w  D2,D6                   ; save plane0 expansion in D6
 
     move.b  D4,D1
     andi.b  #$0F,D1                 ; D1.b = lower nibble of plane1 (pix 4-7)
     bsr     .expand_nibble
     lsl.w   #1,D2                   ; ×2 for plane1
-    or.w    D0,D2
+    or.w    D6,D2
     move.w  D2,(VDP_DATA).l         ; write pixels 4-7
 
     subq.b  #1,D5
@@ -463,53 +697,207 @@ _ppu_write_7:
     ;   output = $1010  ($1000 | $0010)
     ;   Meaning: pixel 0 nibble = 1, pixel 1 = 0, pixel 2 = 1, pixel 3 = 0.
     ;
-    ; Uses: D0 (caller's D0 is saved on stack by _ppu_write_7).
+    ; Uses: D0 as scratch (lsl.w residue in D0 cleared by andi.w).
+    ; Caller (.ccu_row) saves plane0 expansion in D6, not D0.
     ;==========================================================================
 .expand_nibble:
     moveq   #0,D2
 
     ; bit 3 of D1 → bit 12 of D2  (shift: 3→12, i.e. ×(4096/8) = ×512 = <<9)
     move.b  D1,D0
-    andi.b  #$08,D0                 ; isolate bit 3 ($08)
+    andi.w  #$0008,D0               ; isolate bit 3, clear D0 high byte residue
     lsl.w   #8,D0                   ; shift 8: $08 → $0800
     lsl.w   #1,D0                   ; shift 1 more: $0800 → $1000  (bit 12)
     or.w    D0,D2
 
     ; bit 2 of D1 → bit 8 of D2  (<<6: $04 → $0100)
     move.b  D1,D0
-    andi.b  #$04,D0
+    andi.w  #$0004,D0               ; isolate bit 2, clear D0 high byte residue
     lsl.w   #6,D0
     or.w    D0,D2
 
     ; bit 1 of D1 → bit 4 of D2  (<<3: $02 → $0010)
     move.b  D1,D0
-    andi.b  #$02,D0
+    andi.w  #$0002,D0               ; isolate bit 1, clear D0 high byte residue
     lsl.w   #3,D0
     or.w    D0,D2
 
     ; bit 0 of D1 → bit 0 of D2  (no shift: $01 → $0001)
     move.b  D1,D0
-    andi.b  #$01,D0
+    andi.w  #$0001,D0               ; isolate bit 0, clear D0 high byte residue
     or.w    D0,D2
 
     rts
+
+;==============================================================================
+; NES → Genesis palette lookup table
+;
+; 64 × 16-bit words: index = NES color byte (0–63).
+; Genesis color format: $0BGR (bits [10:8]=Blue, [6:4]=Green, [2:0]=Red, 0–7 each).
+; Source: standard NES NTSC palette (NESdev wiki) converted to Genesis 3-bit channels.
+;   genesis_ch = round(nes_ch * 7 / 255)  clamped to 0..7
+;   word = (gb << 8) | (gg << 4) | gr
+;==============================================================================
+    even
+nes_palette_to_genesis:
+    ;       NES $00–$0F  (grays, blues, purples, reds, greens)
+    dc.w    $0333   ; $00  rgb(84,84,84)     dark gray (universal BG)
+    dc.w    $0700   ; $01  rgb(0,0,252)     dark blue
+    dc.w    $0500   ; $02  rgb(0,0,188)     dark blue
+    dc.w    $0512   ; $03  rgb(68,40,188)   blue-violet
+    dc.w    $0404   ; $04  rgb(148,0,132)   purple
+    dc.w    $0105   ; $05  rgb(168,0,32)    dark red-magenta
+    dc.w    $0005   ; $06  rgb(168,16,0)    dark red
+    dc.w    $0014   ; $07  rgb(136,20,0)    dark red-brown
+    dc.w    $0012   ; $08  rgb(80,48,0)     dark brown
+    dc.w    $0030   ; $09  rgb(0,120,0)     dark green
+    dc.w    $0030   ; $0A  rgb(0,104,0)     dark green
+    dc.w    $0020   ; $0B  rgb(0,88,0)      very dark green
+    dc.w    $0220   ; $0C  rgb(0,64,88)     dark teal
+    dc.w    $0000   ; $0D  black (unused/invalid)
+    dc.w    $0000   ; $0E  black (unused/invalid)
+    dc.w    $0000   ; $0F  black (unused/invalid)
+
+    ;       NES $10–$1F  (light grays, bright blues/reds, mid greens, teals)
+    dc.w    $0555   ; $10  rgb(152,152,152)  light gray
+    dc.w    $0730   ; $11  rgb(0,120,248)   bright blue
+    dc.w    $0720   ; $12  rgb(0,88,248)    bright blue
+    dc.w    $0723   ; $13  rgb(104,68,252)  blue-violet
+    dc.w    $0606   ; $14  rgb(216,0,204)   bright magenta
+    dc.w    $0206   ; $15  rgb(228,0,88)    bright red
+    dc.w    $0027   ; $16  rgb(248,56,0)    bright orange-red
+    dc.w    $0036   ; $17  rgb(228,92,16)   orange
+    dc.w    $0035   ; $18  rgb(172,124,0)   yellow-orange
+    dc.w    $0050   ; $19  rgb(0,184,0)     green
+    dc.w    $0050   ; $1A  rgb(0,168,0)     green
+    dc.w    $0250   ; $1B  rgb(0,168,68)    green-teal
+    dc.w    $0440   ; $1C  rgb(0,136,136)   teal
+    dc.w    $0000   ; $1D  black (unused/invalid)
+    dc.w    $0000   ; $1E  black (unused/invalid)
+    dc.w    $0000   ; $1F  black (unused/invalid)
+
+    ;       NES $20–$2F  (near-white, light colors, pastels)
+    dc.w    $0777   ; $20  rgb(248,248,248) near-white
+    dc.w    $0752   ; $21  rgb(60,188,252)  light cyan-blue
+    dc.w    $0743   ; $22  rgb(104,136,252) light blue
+    dc.w    $0734   ; $23  rgb(152,120,248) light purple-blue
+    dc.w    $0737   ; $24  rgb(248,120,248) light magenta
+    dc.w    $0427   ; $25  rgb(248,88,152)  light pink-red
+    dc.w    $0237   ; $26  rgb(248,120,88)  light orange
+    dc.w    $0247   ; $27  rgb(252,160,68)  light yellow-orange
+    dc.w    $0057   ; $28  rgb(248,184,0)   yellow
+    dc.w    $0175   ; $29  rgb(184,248,24)  yellow-green
+    dc.w    $0262   ; $2A  rgb(88,216,84)   light green
+    dc.w    $0472   ; $2B  rgb(88,248,152)  light green-teal
+    dc.w    $0660   ; $2C  rgb(0,232,216)   light teal
+    dc.w    $0333   ; $2D  rgb(120,120,120) medium gray
+    dc.w    $0000   ; $2E  black (unused/invalid)
+    dc.w    $0000   ; $2F  black (unused/invalid)
+
+    ;       NES $30–$3F  (whites, very light pastels)
+    dc.w    $0777   ; $30  rgb(252,252,252) white
+    dc.w    $0765   ; $31  rgb(164,228,252) very light blue
+    dc.w    $0755   ; $32  rgb(184,184,248) very light purple-blue
+    dc.w    $0756   ; $33  rgb(216,184,248) very light purple
+    dc.w    $0757   ; $34  rgb(248,184,248) very light magenta
+    dc.w    $0557   ; $35  rgb(248,164,192) very light pink
+    dc.w    $0567   ; $36  rgb(252,204,112)  very light orange-yellow
+    dc.w    $0567   ; $37  rgb(252,224,168) very light yellow
+    dc.w    $0367   ; $38  rgb(248,216,120) light yellow
+    dc.w    $0376   ; $39  rgb(216,248,120) light yellow-green
+    dc.w    $0575   ; $3A  rgb(184,248,184) light green
+    dc.w    $0675   ; $3B  rgb(184,248,216) very light teal
+    dc.w    $0770   ; $3C  rgb(0,252,252)   bright cyan
+    dc.w    $0767   ; $3D  rgb(248,216,248) very light magenta
+    dc.w    $0000   ; $3E  black (unused/invalid)
+    dc.w    $0000   ; $3F  black (unused/invalid)
 
 ;==============================================================================
 ; Controller I/O
 ;==============================================================================
 
 ;------------------------------------------------------------------------------
-; _ctrl_strobe — $4016 write: strobe the controller latch.
-; T5: stub — no input yet.
+; _ctrl_strobe — $4016 write (T27).
+;
+; On every call: read Genesis controller 1 via hardware I/O (TH two-phase),
+; build an 8-bit NES button latch byte, and reset the serial read index.
+;
+; NES button order (bit0=A, bit1=B, bit2=Sel, bit3=Start,
+;                   bit4=Up, bit5=Down, bit6=Left, bit7=Right).
+; Genesis bits are active-low (0 = pressed).
+;
+; Latch storage (in Genesis work-RAM above NES address space):
+;   CTL1_LATCH = ($1100,A4) = $FF1100 — latched NES button byte
+;   CTL1_IDX   = ($1101,A4) = $FF1101 — serial read index (0–7)
 ;------------------------------------------------------------------------------
 _ctrl_strobe:
+    movem.l D1-D3,-(SP)
+    ; Phase 1: set TH=1 → bits[5:4]=C,B  bits[3:0]=Right,Left,Down,Up (active low)
+    move.b  #$40,($A10009).l    ; ctrl1: TH pin = output
+    move.b  #$40,($A10001).l    ; assert TH=1
+    nop
+    nop
+    move.b  ($A10001).l,D1      ; D1 = TH=1 data
+    ; Phase 2: TH=0 → bits[5:4]=Start,A  bits[3:0]=Right,Left,Down,Up (active low)
+    move.b  #$00,($A10001).l    ; assert TH=0
+    nop
+    nop
+    move.b  ($A10001).l,D2      ; D2 = TH=0 data
+    ; Build NES button byte
+    moveq   #0,D3
+    btst    #4,D2               ; A button: TH=0 bit4 (active low)
+    bne.s   .cs_no_a
+    bset    #0,D3
+.cs_no_a:
+    btst    #4,D1               ; B button: TH=1 bit4 (active low)
+    bne.s   .cs_no_b
+    bset    #1,D3
+.cs_no_b:
+    ; Select: no Genesis 3-button equivalent → bit2 stays 0
+    btst    #5,D2               ; Start: TH=0 bit5 (active low)
+    bne.s   .cs_no_start
+    bset    #3,D3
+.cs_no_start:
+    btst    #0,D1               ; Up: TH=1 bit0 (active low)
+    bne.s   .cs_no_up
+    bset    #4,D3
+.cs_no_up:
+    btst    #1,D1               ; Down: TH=1 bit1 (active low)
+    bne.s   .cs_no_down
+    bset    #5,D3
+.cs_no_down:
+    btst    #2,D1               ; Left: TH=1 bit2 (active low)
+    bne.s   .cs_no_left
+    bset    #6,D3
+.cs_no_left:
+    btst    #3,D1               ; Right: TH=1 bit3 (active low)
+    bne.s   .cs_no_right
+    bset    #7,D3
+.cs_no_right:
+    move.b  D3,($1100,A4)       ; store latched NES button byte
+    move.b  #0,($1101,A4)       ; reset serial index
+    movem.l (SP)+,D1-D3
     rts
 
 ;------------------------------------------------------------------------------
-; _ctrl_read_1 — $4016 read: read one bit from controller 1.
-; T5: return 0 (no buttons pressed) — no input yet.
+; _ctrl_read_1 — $4016 read (T27).
+;
+; Returns the next button bit from the latch in D0.b (bit0 = button state,
+; 1 = pressed).  Buttons are in NES order: A, B, Sel, Start, Up, Down, Left,
+; Right (index 0–7).  Returns 0 when index overflows past 7.
 ;------------------------------------------------------------------------------
 _ctrl_read_1:
+    moveq   #0,D1
+    move.b  ($1101,A4),D1       ; D1.l = current index (zero-extended)
+    cmpi.b  #8,D1
+    bge.s   .cr1_overflow
+    addq.b  #1,($1101,A4)       ; advance index for next read
+    moveq   #0,D0
+    move.b  ($1100,A4),D0       ; D0 = latched button byte
+    lsr.b   D1,D0               ; shift right by index → target bit in bit0
+    andi.b  #1,D0               ; isolate bit0
+    rts
+.cr1_overflow:
     moveq   #0,D0
     rts
 
@@ -530,12 +918,101 @@ _ctrl_read_2:
 ;
 ; On NES, writing page number P to $4014 copies 256 bytes from CPU page P
 ; ($PP00–$PPFF) to OAM.  Zelda writes #$02, meaning copy from $0200–$02FF.
-; NES $0200–$02FF maps to Genesis RAM $FF0200–$FF02FF (NES_RAM_BASE + $0200).
+; NES $0200–$02FF = Genesis $FF0200–$FF02FF.
 ;
-; T5: Stub — no sprite output yet.  In T7 we'll DMA the data into VDP OAM
-; via the sprite attribute table at VRAM $D800.
+; T23: Convert 64 NES OAM entries → 64 Genesis SAT entries, write to VRAM $D800.
+;
+; NES OAM entry layout (4 bytes, address is OAM byte index):
+;   [0] Y position (sprite top − 1; visible on scanline Y+1)
+;   [1] Tile index (0–255, pattern table determined by PPUCTRL bit 3)
+;   [2] Attribute: bit7=Vflip, bit6=Hflip, bit5=behind-BG, bits1:0=sprite palette
+;   [3] X position (sprite left edge, 0–255)
+;
+; Genesis SAT entry layout (8 bytes at VRAM $D800 + sprite*8):
+;   Word 0 [bits 8:0]: Y position (=NES_Y+129 for 240-line; 128=top of screen)
+;   Word 1 [bits 11:8]: size (00=8×8 px); [bits 6:0]: link to next sprite index
+;   Word 2: tile word → bit15=priority, bits14:13=palette, bit12=Vflip, bit11=Hflip,
+;                        bits10:0=tile index
+;   Word 3 [bits 8:0]: X position (=NES_X+128; 128=left of screen)
+;
+; Sprite palette mapping: NES sprite palette 0–3 → Genesis palette 0–3 directly.
+;   (T25 will map NES sprite palettes to CRAM entries 32–63 = Genesis palettes 2–3.)
+; Priority: bit15 = 1 (sprites always above background planes).
+; Off-screen: NES Y+129 ≥ 368 means off-screen naturally; no special case needed.
 ;------------------------------------------------------------------------------
 _oam_dma:
+    movem.l D0-D7/A0,-(SP)
+
+    ; Set VDP write address: VRAM $D800 (sprite attribute table)
+    ; $D800 & $3FFF = $1800 → swap → $18000000 → | $40000003 = $58000003
+    ; (CD[5:4]=01 = VRAM write; A[15:14]=11 from $D800's top bits)
+    move.l  #$58000003,(VDP_CTRL).l
+
+    lea     (NES_RAM_BASE+$0200).l,A0  ; A0 → NES OAM buffer ($FF0200)
+    moveq   #63,D7                     ; loop: 64 sprites (dbra counts 63→0)
+    moveq   #0,D6                      ; D6 = current sprite index (0..63)
+
+.oam_loop:
+    ; ── Read 4 NES OAM bytes ──────────────────────────────────────────────
+    moveq   #0,D0
+    move.b  (A0)+,D0            ; D0.w = NES Y (sprite top − 1)
+    moveq   #0,D1
+    move.b  (A0)+,D1            ; D1.w = tile index
+    moveq   #0,D2
+    move.b  (A0)+,D2            ; D2.w = attribute byte
+    moveq   #0,D3
+    move.b  (A0)+,D3            ; D3.w = NES X
+
+    ; ── Word 0: Genesis Y ─────────────────────────────────────────────────
+    ; NES sprite is visible on scanline (NES_Y + 1).
+    ; Genesis 240-line: screen line 0 is at Y=128 → Genesis Y = 128 + screen_line
+    ;   = 128 + (NES_Y + 1) = NES_Y + 129
+    ; Sprites with NES_Y ≥ 239 produce Genesis Y ≥ 368 which is naturally off-screen.
+    move.w  D0,D4
+    addi.w  #129,D4
+    move.w  D4,(VDP_DATA).l
+
+    ; ── Word 1: size (8×8 = 0) | link (index of next sprite; 0 = end) ────
+    move.w  D6,D4
+    addq.w  #1,D4               ; D4 = this_sprite_index + 1
+    cmpi.w  #64,D4              ; is this the last sprite?
+    bne     .write_link
+    moveq   #0,D4               ; yes → link = 0 (terminate list)
+.write_link:
+    move.w  D4,(VDP_DATA).l     ; write 0000 | link[6:0]
+
+    ; ── Word 2: tile word (priority | palette | Vflip | Hflip | tile) ────
+    move.w  D1,D5               ; start with tile index
+    andi.w  #$07FF,D5           ; keep bits 10:0 only
+    ori.w   #$8000,D5           ; bit 15 = high priority (sprite over planes)
+    ; Palette: NES attr[1:0] → Genesis bits[14:13]
+    move.w  D2,D4
+    andi.w  #$0003,D4           ; isolate palette (0–3)
+    lsl.w   #5,D4               ; shift left 5
+    lsl.w   #8,D4               ; shift left 8 more → total shift 13 → bits[14:13]
+    or.w    D4,D5               ; merge palette
+    ; V-flip: NES attr bit 7 → Genesis tile word bit 12
+    btst    #7,D2
+    beq     .no_vflip
+    ori.w   #$1000,D5           ; set bit 12
+.no_vflip:
+    ; H-flip: NES attr bit 6 → Genesis tile word bit 11
+    btst    #6,D2
+    beq     .no_hflip
+    ori.w   #$0800,D5           ; set bit 11
+.no_hflip:
+    move.w  D5,(VDP_DATA).l     ; write tile word
+
+    ; ── Word 3: Genesis X ─────────────────────────────────────────────────
+    ; Genesis 40-cell: screen column 0 is at X=128 → Genesis X = NES_X + 128
+    move.w  D3,D4
+    addi.w  #128,D4
+    move.w  D4,(VDP_DATA).l
+
+    addq.w  #1,D6               ; advance sprite index
+    dbra    D7,.oam_loop
+
+    movem.l (SP)+,D0-D7/A0
     rts
 
 ;==============================================================================

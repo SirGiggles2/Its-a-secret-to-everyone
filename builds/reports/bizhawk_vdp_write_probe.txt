@@ -1,0 +1,90 @@
+=================================================================
+VDP Write Probe  —  frames 1-60
+  Watching CRAM domain for changes each frame.
+  Also dumping key M68K BUS state at frame 10, 20, 30.
+=================================================================
+
+--- State at frame 5 ---
+  PPU_LATCH=$00  PPU_VADDR=$0000
+  PPUCTRL=$00  TileBufSel=$00  DynBuf[0]=$00
+  ptr=$00/$00 (NES $0000)
+--- CRAM CHANGES at frame 8 ---
+  CRAM[00] (byte_addr=  0): $0000 → $00E0  R=0 G=7 B=0
+--- State at frame 15 ---
+  PPU_LATCH=$00  PPU_VADDR=$0000
+  PPUCTRL=$00  TileBufSel=$00  DynBuf[0]=$00
+  ptr=$8A/$77 (NES $778A)
+--- State at frame 35 ---
+  PPU_LATCH=$00  PPU_VADDR=$0000
+  PPUCTRL=$30  TileBufSel=$00  DynBuf[0]=$FF
+  ptr=$EB/$A9 (NES $A9EB)
+
+--- Final CRAM state (all 64 entries) ---
+  CRAM[0][00] addr=  0 = $00E0  R=0 G=7 B=0
+  CRAM[1][00] addr= 32 = $0000  R=0 G=0 B=0
+  CRAM[2][00] addr= 64 = $0000  R=0 G=0 B=0
+  CRAM[3][00] addr= 96 = $0000  R=0 G=0 B=0
+  CRAM[0][01] addr=  2 = $0000  R=0 G=0 B=0
+  CRAM[1][01] addr= 34 = $0000  R=0 G=0 B=0
+  CRAM[2][01] addr= 66 = $0000  R=0 G=0 B=0
+  CRAM[3][01] addr= 98 = $0000  R=0 G=0 B=0
+  CRAM[0][02] addr=  4 = $0000  R=0 G=0 B=0
+  CRAM[1][02] addr= 36 = $0000  R=0 G=0 B=0
+  CRAM[2][02] addr= 68 = $0000  R=0 G=0 B=0
+  CRAM[3][02] addr=100 = $0000  R=0 G=0 B=0
+  CRAM[0][03] addr=  6 = $0000  R=0 G=0 B=0
+  CRAM[1][03] addr= 38 = $0000  R=0 G=0 B=0
+  CRAM[2][03] addr= 70 = $0000  R=0 G=0 B=0
+  CRAM[3][03] addr=102 = $0000  R=0 G=0 B=0
+  CRAM[0][04] addr=  8 = $0000  R=0 G=0 B=0
+  CRAM[1][04] addr= 40 = $0000  R=0 G=0 B=0
+  CRAM[2][04] addr= 72 = $0000  R=0 G=0 B=0
+  CRAM[3][04] addr=104 = $0000  R=0 G=0 B=0
+  CRAM[0][05] addr= 10 = $0000  R=0 G=0 B=0
+  CRAM[1][05] addr= 42 = $0000  R=0 G=0 B=0
+  CRAM[2][05] addr= 74 = $0000  R=0 G=0 B=0
+  CRAM[3][05] addr=106 = $0000  R=0 G=0 B=0
+  CRAM[0][06] addr= 12 = $0000  R=0 G=0 B=0
+  CRAM[1][06] addr= 44 = $0000  R=0 G=0 B=0
+  CRAM[2][06] addr= 76 = $0000  R=0 G=0 B=0
+  CRAM[3][06] addr=108 = $0000  R=0 G=0 B=0
+  CRAM[0][07] addr= 14 = $0000  R=0 G=0 B=0
+  CRAM[1][07] addr= 46 = $0000  R=0 G=0 B=0
+  CRAM[2][07] addr= 78 = $0000  R=0 G=0 B=0
+  CRAM[3][07] addr=110 = $0000  R=0 G=0 B=0
+  CRAM[0][08] addr= 16 = $0000  R=0 G=0 B=0
+  CRAM[1][08] addr= 48 = $0000  R=0 G=0 B=0
+  CRAM[2][08] addr= 80 = $0000  R=0 G=0 B=0
+  CRAM[3][08] addr=112 = $0000  R=0 G=0 B=0
+  CRAM[0][09] addr= 18 = $0000  R=0 G=0 B=0
+  CRAM[1][09] addr= 50 = $0000  R=0 G=0 B=0
+  CRAM[2][09] addr= 82 = $0000  R=0 G=0 B=0
+  CRAM[3][09] addr=114 = $0000  R=0 G=0 B=0
+  CRAM[0][10] addr= 20 = $0000  R=0 G=0 B=0
+  CRAM[1][10] addr= 52 = $0000  R=0 G=0 B=0
+  CRAM[2][10] addr= 84 = $0000  R=0 G=0 B=0
+  CRAM[3][10] addr=116 = $0000  R=0 G=0 B=0
+  CRAM[0][11] addr= 22 = $0000  R=0 G=0 B=0
+  CRAM[1][11] addr= 54 = $0000  R=0 G=0 B=0
+  CRAM[2][11] addr= 86 = $0000  R=0 G=0 B=0
+  CRAM[3][11] addr=118 = $0000  R=0 G=0 B=0
+  CRAM[0][12] addr= 24 = $0000  R=0 G=0 B=0
+  CRAM[1][12] addr= 56 = $0000  R=0 G=0 B=0
+  CRAM[2][12] addr= 88 = $0000  R=0 G=0 B=0
+  CRAM[3][12] addr=120 = $0000  R=0 G=0 B=0
+  CRAM[0][13] addr= 26 = $0000  R=0 G=0 B=0
+  CRAM[1][13] addr= 58 = $0000  R=0 G=0 B=0
+  CRAM[2][13] addr= 90 = $0000  R=0 G=0 B=0
+  CRAM[3][13] addr=122 = $0000  R=0 G=0 B=0
+  CRAM[0][14] addr= 28 = $0000  R=0 G=0 B=0
+  CRAM[1][14] addr= 60 = $0000  R=0 G=0 B=0
+  CRAM[2][14] addr= 92 = $0000  R=0 G=0 B=0
+  CRAM[3][14] addr=124 = $0000  R=0 G=0 B=0
+  CRAM[0][15] addr= 30 = $0000  R=0 G=0 B=0
+  CRAM[1][15] addr= 62 = $0000  R=0 G=0 B=0
+  CRAM[2][15] addr= 94 = $0000  R=0 G=0 B=0
+  CRAM[3][15] addr=126 = $0000  R=0 G=0 B=0
+
+=================================================================
+VDP WRITE PROBE COMPLETE
+=================================================================

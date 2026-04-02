@@ -1,0 +1,32 @@
+=================================================================
+Palette D0 Debug Probe  -- reads debug buf at $FF0900 after frame 95
+=================================================================
+
+--- Debug buf $FF0900..$FF091F (raw D0 per CRAM slot) at frame 96 ---
+  Slot 0 = $3F00 (palette 0 col 0), Slot 2 = $3F01, ...
+  BG pal slot  0 (CRAM addr  0): D0=$00  CRAM=$0002 (R1G0B0)
+  BG pal slot  1 (CRAM addr  2): D0=$00  CRAM=$0002 (R1G0B0)
+  BG pal slot  2 (CRAM addr  4): D0=$00  CRAM=$0002 (R1G0B0)
+  BG pal slot  3 (CRAM addr  6): D0=$00  CRAM=$0002 (R1G0B0)
+  BG pal slot  4 (CRAM addr  8): D0=$24  CRAM=$0000 (R0G0B0)
+  BG pal slot  5 (CRAM addr 10): D0=$24  CRAM=$0000 (R0G0B0)
+  BG pal slot  6 (CRAM addr 12): D0=$24  CRAM=$0000 (R0G0B0)
+  BG pal slot  7 (CRAM addr 14): D0=$24  CRAM=$0000 (R0G0B0)
+  BG pal slot  8 (CRAM addr 16): D0=$24  CRAM=$0000 (R0G0B0)
+  BG pal slot  9 (CRAM addr 18): D0=$24  CRAM=$0000 (R0G0B0)
+  BG pal slot 10 (CRAM addr 20): D0=$24  CRAM=$0000 (R0G0B0)
+  BG pal slot 11 (CRAM addr 22): D0=$24  CRAM=$0000 (R0G0B0)
+  BG pal slot 12 (CRAM addr 24): D0=$24  CRAM=$0000 (R0G0B0)
+  BG pal slot 13 (CRAM addr 26): D0=$24  CRAM=$0000 (R0G0B0)
+  BG pal slot 14 (CRAM addr 28): D0=$24  CRAM=$0000 (R0G0B0)
+  BG pal slot 15 (CRAM addr 30): D0=$24  CRAM=$0000 (R0G0B0)
+
+--- Also DynTileBuf[$0302..] ---
+  3F 00 20 36 0F 00 10 36 17 27 0F 36 08 1A 28 36 30 3B 22 36 30 3B 16 36 17 27 0F 36 08 1A 28 36 30 3B 22 FF 00 00 00 00
+
+--- ptr / PPU state ---
+  ptr=$EE/$03  PPU_VADDR=$0015  TileBufSel=$00
+
+=================================================================
+PROBE COMPLETE
+=================================================================

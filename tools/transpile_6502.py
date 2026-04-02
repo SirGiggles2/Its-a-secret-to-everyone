@@ -452,7 +452,8 @@ BRANCH_MAP = {
     'BVC': 'bvc', 'BVS': 'bvs',
 }
 
-def translate_lines(src_lines, symtab, bank_tag, no_stubs=False):
+def translate_lines(src_lines, symtab, bank_tag, no_stubs=False, no_import_stubs=False,
+                    other_exports=None, dup_exports=None):
     """Translate list of ca65 lines to M68K lines."""
     anon_defs, anon_refs = prepass_anon(src_lines)
     local_defs, scope_at = prepass_local_labels(src_lines, bank_tag)
@@ -561,6 +562,13 @@ def translate_lines(src_lines, symtab, bank_tag, no_stubs=False):
                 emit(f'    dc.w    {data_str}')
                 continue
 
+            if uline.startswith('.DBYT'):
+                # .DBYT = big-endian 16-bit word (hi byte first); dc.w is identical on M68K
+                data_str = stripped[5:].strip()
+                data_str = re.sub(r'\s*;.*$', '', data_str)
+                emit(f'    dc.w    {data_str}')
+                continue
+
             if uline.startswith('.ADDR'):
                 data_str = stripped[5:].strip()
                 data_str = re.sub(r'\s*;.*$', '', data_str)
@@ -588,7 +596,14 @@ def translate_lines(src_lines, symtab, bank_tag, no_stubs=False):
                 # Global label
                 defined.add(lbl)
                 emit(f'    even')
-                emit(f'{lbl}:')
+                if dup_exports and lbl in dup_exports:
+                    # Symbol exported from multiple banks — IFND-guard so only the
+                    # first-included bank's definition is used; others become dead code.
+                    emit(f'    IFND {lbl}')
+                    emit(f'{lbl}:')
+                    emit(f'    ENDC')
+                else:
+                    emit(f'{lbl}:')
 
             # Any label definition is a potential branch target — carry state unknown.
             carry_state['inverted'] = False
@@ -616,13 +631,20 @@ def translate_lines(src_lines, symtab, bank_tag, no_stubs=False):
             emit(tl)
 
     # ---------------------------------------------------------------
-    # Emit stubs for all .IMPORT symbols not defined locally
+    # Emit stubs for all .IMPORT symbols not defined locally.
+    # In --all mode (no_import_stubs=True), stubs are wrapped in
+    # IFND/ENDC so that an earlier-included bank's real definition
+    # takes priority and the stub is silently skipped.
     # ---------------------------------------------------------------
-    stubs_needed = [s for s in imports if s not in defined]
+    # In --all mode, suppress stubs for symbols that are exported by OTHER banks —
+    # those banks are included in the build and will define the symbol.
+    # Only emit stubs for symbols not exported by any other bank.
+    _other = other_exports or set()
+    stubs_needed = [s for s in imports if s not in defined and s not in _other]
     if stubs_needed:
         emit('')
         emit(';==============================================================================')
-        emit('; Import stubs (T2: defined locally so the file assembles standalone)')
+        emit('; Import stubs (symbols not provided by any other included bank)')
         emit(';==============================================================================')
         for sym in stubs_needed:
             emit(f'    even')
@@ -1128,14 +1150,14 @@ def translate_one_instruction(stripped, line_idx, symtab,
 
     elif mnem == 'PLP':
         e('    move.b  (A5)+,D1  ; PLP: pop to CCR')
-        e('    move.b  D1,CCR')
+        e('    move.w  D1,CCR')
 
     elif mnem == 'CLC':
-        e('    andi.b  #$EE,CCR  ; CLC: clear C+X')
+        e('    andi    #$EE,CCR  ; CLC: clear C+X')
         carry_state['inverted'] = False  # carry explicitly cleared: M68K C=0
 
     elif mnem == 'SEC':
-        e('    ori.b   #$11,CCR  ; SEC: set C+X')
+        e('    ori     #$11,CCR  ; SEC: set C+X')
         carry_state['inverted'] = False  # carry explicitly set: M68K C=1
 
     elif mnem == 'CLD':
@@ -1198,6 +1220,40 @@ def translate_one_instruction(stripped, line_idx, symtab,
     return out
 
 # ---------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
+# Cross-bank export collection (used in --all mode for stub suppression)
+# ---------------------------------------------------------------------------
+
+def collect_exports_from_source(bank_num):
+    """Pre-scan a bank source file for .EXPORT declarations AND global label definitions.
+    Returns set of symbol names that this bank defines publicly.
+    We collect both .EXPORT symbols AND all non-anonymous labels so that utility
+    functions defined in multiple banks (like Exit) can be deduplicated.
+    """
+    src_name = f"Z_{bank_num:02d}.asm"
+    src_path = os.path.join(REF_DIR, src_name)
+    exports = set()
+    if not os.path.exists(src_path):
+        return exports
+    with open(src_path, encoding="utf-8", errors="replace") as f:
+        for line in f:
+            s = line.strip()
+            # .EXPORT declaration
+            if s.upper().startswith('.EXPORT'):
+                rest = s[7:].strip()
+                for sym in re.split(r'[\s,]+', rest):
+                    sym = sym.strip()
+                    if sym and re.match(r'^\w+$', sym):
+                        exports.add(sym)
+            # Global label definition (non-anonymous: not starting with @)
+            m = re.match(r'^([A-Za-z_]\w*)\s*:', s)
+            if m:
+                sym = m.group(1)
+                if not sym.startswith('@'):
+                    exports.add(sym)
+    return exports
+
+
 # File header and constants
 # ---------------------------------------------------------------------------
 
@@ -1219,10 +1275,7 @@ HEADER_TEMPLATE = """\
 ;   A5 = NES stack pointer ($FF0200 initially, grows downward)
 ;==============================================================================
 
-NES_RAM         equ $FF0000
-NES_SRAM        equ $FF6000
-NES_STACK_BASE  equ $FF0100
-
+{fixed_equs}
 ;==============================================================================
 ; NES RAM variable offsets (used as (offset,A4) — A4=NES_RAM)
 ; Source: Variables.inc + CommonVars.inc
@@ -1234,16 +1287,30 @@ NES_STACK_BASE  equ $FF0100
 {org_line}
 """
 
+FIXED_EQUS = """\
+NES_RAM         equ $FF0000
+NES_SRAM        equ $FF6000
+NES_STACK_BASE  equ $FF0100
+"""
+
 # ---------------------------------------------------------------------------
 # Main
 # ---------------------------------------------------------------------------
 
-def transpile_bank(bank_num, standalone=False, no_stubs=False):
+def transpile_bank(bank_num, standalone=False, no_stubs=False, no_import_stubs=False,
+                   other_exports=None, dup_exports=None):
     """Transpile one bank file (0-7). Returns True on success.
 
     standalone=True: emit 'org $C000' for isolated T2/T3 assembly testing.
     standalone=False (default): no org — code placed by genesis_shell.asm.
     no_stubs=True: skip NES I/O stubs and _indirect_stub — nes_io.asm provides them.
+    no_import_stubs=True: skip equate header for non-z07 banks in --all mode
+        (z_07.asm provides all equates; others would cause vasm duplicate-symbol errors).
+    other_exports: set of symbol names exported by OTHER banks in --all mode.
+        Stubs for these symbols are suppressed — the other banks define them.
+    dup_exports: set of symbols exported from MULTIPLE banks.
+        Label definitions for these are IFND-guarded so only the first-included
+        bank's definition is kept; duplicates become dead code.
     """
     src_name = f"Z_{bank_num:02d}.asm"
     out_name = f"z_{bank_num:02d}.asm"
@@ -1262,16 +1329,23 @@ def transpile_bank(bank_num, standalone=False, no_stubs=False):
     with open(src_path, encoding="utf-8", errors="replace") as f:
         src_lines = f.read().splitlines()
 
-    # Build var equ block for header
-    var_lines = []
-    for name, addr in sorted(symtab.items(), key=lambda kv: kv[1]):
-        if addr <= 0x07FF:
-            var_lines.append(f'{name:40s}equ ${addr:04X}  ; NES RAM offset')
-        elif 0x2000 <= addr <= 0x401F:
-            var_lines.append(f'{name:40s}equ ${addr:04X}  ; NES I/O')
-        elif 0x6000 <= addr <= 0x7FFF:
-            var_lines.append(f'{name:40s}equ ${addr:04X}  ; NES SRAM')
-    var_equs = '\n'.join(var_lines)
+    # Build var equ block for header.
+    # In --all mode (no_import_stubs=True), only z_07 emits equates;
+    # all other banks omit them to avoid vasm "symbol already defined" errors.
+    if no_import_stubs and bank_num != 7:
+        fixed_equs = '; (fixed equates omitted — provided by z_07.asm in --all build)'
+        var_equs   = '; (var equates omitted — provided by z_07.asm in --all build)'
+    else:
+        fixed_equs = FIXED_EQUS
+        var_lines = []
+        for name, addr in sorted(symtab.items(), key=lambda kv: kv[1]):
+            if addr <= 0x07FF:
+                var_lines.append(f'{name:40s}equ ${addr:04X}  ; NES RAM offset')
+            elif 0x2000 <= addr <= 0x401F:
+                var_lines.append(f'{name:40s}equ ${addr:04X}  ; NES I/O')
+            elif 0x6000 <= addr <= 0x7FFF:
+                var_lines.append(f'{name:40s}equ ${addr:04X}  ; NES SRAM')
+        var_equs = '\n'.join(var_lines)
 
     if standalone:
         org_line = f'    org     $C000   ; standalone origin (T2/T3 testing only)'
@@ -1281,11 +1355,15 @@ def transpile_bank(bank_num, standalone=False, no_stubs=False):
     header = HEADER_TEMPLATE.format(
         outname=out_name,
         srcname=src_name,
+        fixed_equs=fixed_equs,
         var_equs=var_equs,
         org_line=org_line,
     )
 
-    body_lines = translate_lines(src_lines, symtab, bank_tag, no_stubs=no_stubs)
+    body_lines = translate_lines(src_lines, symtab, bank_tag, no_stubs=no_stubs,
+                                 no_import_stubs=no_import_stubs,
+                                 other_exports=other_exports,
+                                 dup_exports=dup_exports)
 
     # Add indirect jump stub (only when not using --no-stubs;
     # nes_io.asm provides it in the production T5+ build).
@@ -1300,8 +1378,88 @@ def transpile_bank(bank_num, standalone=False, no_stubs=False):
         f.write('\n'.join(body_lines))
         f.write('\n')
 
+    # Apply bank-specific post-process patches
+    if bank_num == 2:
+        _patch_z02(out_path)
+
     print(f" {len(body_lines)} lines")
     return True
+
+
+def _patch_z02(path):
+    """Post-process patches for z_02.asm — TransferCommonPatterns / TransferPatternBlock_Bank2.
+
+    The transpiler emits dc.l (32-bit Genesis ptr) for .ADDR entries and
+    generates 16-bit NES-pointer + NES_RAM ($FF0000) address logic for
+    LDA ($00),Y accesses.  That formula only works for NES RAM addresses;
+    pattern data (CommonSpritePatterns etc.) lives in Genesis ROM at $000000+.
+
+    Fix:
+    1. TransferCommonPatterns: replace the two one-byte reads from
+       CommonPatternBlockAddrs with a single move.l that loads the full
+       32-bit Genesis ROM address into [$04:$07] (avoids the [$02:$03] size
+       overlap that would corrupt bytes 2-3 of the address).
+    2. TransferPatternBlock_Bank2 loop body: replace the 7-line 16-bit NES
+       pointer reconstruction + NES_RAM offset with movea.l ($04,A4),A0.
+    3. TransferPatternBlock_Bank2 increment: replace the 9-line 16-bit
+       carry-increment with addq.l #1,($04,A4).
+    """
+    with open(path, 'r', encoding='utf-8') as f:
+        text = f.read()
+
+    # ---- Patch 1a: first CommonPatternBlockAddrs read (before addq.b #1,D2) ----
+    old1a = ('    lea     (CommonPatternBlockAddrs).l,A0\n'
+             '    move.b  (A0,D2.W),D0\n'
+             '    move.b  D0,($0000,A4)\n'
+             '    lea     (CommonPatternBlockSizes).l,A0')
+    new1a = ('    lea     (CommonPatternBlockAddrs).l,A0\n'
+             '    move.w  D2,D5\n'
+             '    add.w   D5,D5              ; D5 = 4*block_idx (dc.l = 4 bytes)\n'
+             '    move.l  (A0,D5.W),D5      ; D5 = 32-bit Genesis ROM source addr\n'
+             '    move.l  D5,($04,A4)       ; store to [$04:$07] (avoids size overlap)\n'
+             '    lea     (CommonPatternBlockSizes).l,A0')
+    text = text.replace(old1a, new1a, 1)
+
+    # ---- Patch 1b: second CommonPatternBlockAddrs read (after addq.b #1,D2) ----
+    old1b = ('    lea     (CommonPatternBlockAddrs).l,A0\n'
+             '    move.b  (A0,D2.W),D0\n'
+             '    move.b  D0,($0001,A4)\n'
+             '    lea     (CommonPatternBlockSizes).l,A0')
+    new1b = ('    ; (32-bit Genesis ROM addr already in [$04:$07])\n'
+             '    lea     (CommonPatternBlockSizes).l,A0')
+    text = text.replace(old1b, new1b, 1)
+
+    # ---- Patch 2: TransferPatternBlock_Bank2 — replace 16-bit NES ptr calc ----
+    old2 = ('    move.b  ($00,A4),D1   ; ptr lo\n'
+            '    move.b  ($01,A4),D4  ; ptr hi\n'
+            '    lsl.w   #8,D4\n'
+            '    or.w    D1,D4             ; D4 = NES ptr addr\n'
+            '    ext.l   D4\n'
+            '    add.l   #NES_RAM,D4       ; → Genesis addr\n'
+            '    movea.l D4,A0\n'
+            '    move.b  (A0,D3.W),D0     ; LDA ($nn),Y')
+    new2 = ('    movea.l ($04,A4),A0      ; 32-bit Genesis ROM source addr from [$04:$07]\n'
+            '    move.b  (A0,D3.W),D0     ; LDA ($nn),Y')
+    text = text.replace(old2, new2, 1)
+
+    # ---- Patch 3: replace 16-bit little-endian increment with 32-bit addq ----
+    old3 = ('    ; Increment the 16-bit source address at [00:01].\n'
+            '    ;\n'
+            '    move.b  ($0000,A4),D0\n'
+            '    andi    #$EE,CCR  ; CLC: clear C+X\n'
+            '    move.b  #$01,D1\n'
+            '    addx.b  D1,D0   ; ADC #$01 (X flag = 6502 C)\n'
+            '    move.b  D0,($0000,A4)\n'
+            '    move.b  ($0001,A4),D0\n'
+            '    move.b  #$00,D1\n'
+            '    addx.b  D1,D0   ; ADC #$00 (X flag = 6502 C)\n'
+            '    move.b  D0,($0001,A4)')
+    new3 = ('    ; Increment 32-bit Genesis ROM source address at [$04:$07].\n'
+            '    addq.l  #1,($04,A4)')
+    text = text.replace(old3, new3, 1)
+
+    with open(path, 'w', encoding='utf-8') as f:
+        f.write(text)
 
 
 def main():
@@ -1323,10 +1481,32 @@ def main():
     else:
         banks = [args.bank]
 
+    # In --all mode: pre-collect exports from all banks so stubs for cross-bank
+    # symbols can be suppressed (the other banks will define them) and duplicate
+    # label definitions can be IFND-guarded (only first-included bank keeps label).
+    if args.all:
+        bank_exports = {b: collect_exports_from_source(b) for b in range(8)}
+        all_exports = set().union(*bank_exports.values())
+        # Symbols exported from 2+ banks → need IFND guard on label definitions
+        from collections import Counter
+        exp_counts = Counter(sym for exps in bank_exports.values() for sym in exps)
+        dup_exports = {sym for sym, cnt in exp_counts.items() if cnt > 1}
+    else:
+        bank_exports = {}
+        all_exports = set()
+        dup_exports = set()
+
     ok = True
     for b in banks:
+        if args.all:
+            other_exports = all_exports - bank_exports.get(b, set())
+        else:
+            other_exports = set()
         ok = transpile_bank(b, standalone=args.standalone,
-                            no_stubs=args.no_stubs) and ok
+                            no_stubs=args.no_stubs,
+                            no_import_stubs=args.all,
+                            other_exports=other_exports,
+                            dup_exports=dup_exports) and ok
 
     if ok:
         print("Transpiler done.")

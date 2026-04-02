@@ -1,0 +1,81 @@
+=================================================================
+CHR Upload probe  T16/T17a  —  180 frames
+=================================================================
+  LoopForever=$016300  ExcBus=$000366  ExcAddr=$000388  ExcDef=$0003AA
+
+  f001 pc=$000306  forever=-  exc=false
+  f002 pc=$000306  forever=-  exc=false
+  f003 pc=$0002FE  forever=-  exc=false
+  f004 pc=$000306  forever=-  exc=false
+  f005 pc=$0002FE  forever=-  exc=false
+  f030 pc=$002584  forever=28  exc=false
+  f060 pc=$00267E  forever=28  exc=false
+  f090 pc=$0013CC  forever=28  exc=false
+  f120 pc=$001376  forever=28  exc=false
+  f150 pc=$001310  forever=28  exc=false
+  f180 pc=$0013B8  forever=28  exc=false
+
+  (waiting 30 extra frames for VBlank tile uploads to complete...)
+
+─── Post-wait diagnostics ─────────────────────────────────────
+  CHR_HIT_COUNT (final, after 30 extra frames) = 128
+  ($00F5): $5A  ← $5A = TransferCommonPatterns ran; $00 = never ran
+  PPU_VADDR = $0000  PPU_LATCH = 0
+  NES RAM [$04:$07] = $02005F94  (32-bit Genesis ROM src addr)
+  TCP_CALL_COUNT   [$F2]:     0  ← times TCP entry reached (0=never)
+  D5_DBG     [$F0:$F1]: $0000  ← NEVER SET — TCP never reached block-addr store
+  ISRNMI_COUNT     [$FF1003]: 7  ← times IsrNmi was entered
+  POST_TCB_COUNT   [$FF1007]: 7  ← reached after TransferCurTileBuf
+  TIMERS_COUNT     [$FF1008]: 0  ← reached UpdateTimers label
+  POST_DA_COUNT    [$FF1009]: 0  ← reached after DriveAudio
+  INITGAME_COUNT   [$FF1004]: 6  ← times InitializeGameOrMode was called
+  UPDATEMODE_COUNT [$FF1005]: 0  ← times UpdateMode was called
+  R0011_SNAP       [$FF1006]: $00  ← last $0011 value at decision point
+  INITMODE_COUNT   [$FF1000]: 5  ← times InitMode was called (inside InitGame)
+  INITMODE0_COUNT  [$FF1001]: 5  ← times InitMode0 was dispatched
+  TCP_JUMP_COUNT   [$FF1002]: 1  ← times jmp TCP was reached
+
+─── T16/T17a: CHR Upload + Tile Decode ─────────────────────────
+[PASS] T16_NO_EXCEPTION              no exception handler hit
+[PASS] T16_LOOPFOREVER_HIT           frame 28
+[PASS] T16_CHR_BUF_CLEAN             CHR_BUF_CNT=0 (no partial tile at LoopForever)
+  CHR_HIT_COUNT=0  (CHR path entry count; 0=CHR path never ran)
+  VDP VRAM tile 0 ($0000-$001F):
+    [0000] = $00
+    [0001] = $00
+    [0002] = $00
+    [0003] = $00
+    [0004] = $00
+    [0005] = $00
+    [0006] = $00
+    [0007] = $00
+[PASS] T16_TILE0_NONEMPTY            VRAM[$0068]=$1A (CHR tile data present in $0000-$1FFF)
+  Wide VRAM scan ($0000-$3FFF, first 8 non-zero bytes):
+    VRAM[$0068] = $1A
+    VRAM[$0069] = $23
+    VRAM[$006A] = $20
+    VRAM[$006C] = $3A
+    VRAM[$006D] = $03
+    VRAM[$006E] = $20
+    VRAM[$0070] = $20
+    VRAM[$0071] = $20
+    ... (truncated)
+
+[PASS] T16_TILE_BG_NONEMPTY          VRAM[$2000]=$24 (BG tile data / nametable data present)
+[PASS] T17a_PIXEL_RANGE              row0 bytes $00 $00 $00 $00 — all nibbles 0-3 (valid 2BPP colors)
+[PASS] T17a_DECODE_SANITY            non-zero tile data found: tile 5 row 0 byte 1 = $20
+
+=================================================================
+CHR UPLOAD PROBE SUMMARY  (T16/T17a)
+=================================================================
+  [PASS] T16_NO_EXCEPTION
+  [PASS] T16_LOOPFOREVER_HIT
+  [PASS] T16_CHR_BUF_CLEAN
+  [PASS] T16_TILE0_NONEMPTY
+  [PASS] T16_TILE_BG_NONEMPTY
+  [PASS] T17a_PIXEL_RANGE
+  [PASS] T17a_DECODE_SANITY
+
+  7 PASS  /  0 FAIL  /  7 total
+
+T16/T17a CHR UPLOAD PROBE: ALL PASS

@@ -1,0 +1,63 @@
+=================================================================
+Title screen probe  T21  —  up to 600 frames
+=================================================================
+  LoopForever=$0164A0  ExcBus=$000366  ExcAddr=$000388  ExcDef=$0003AA
+
+  f001 pc=$000306  forever=-  exc=false  ppu_mask=$00  disp_on=-
+  f002 pc=$000306  forever=-  exc=false  ppu_mask=$00  disp_on=-
+  f003 pc=$0002FE  forever=-  exc=false  ppu_mask=$00  disp_on=-
+  f004 pc=$000306  forever=-  exc=false  ppu_mask=$00  disp_on=-
+  f005 pc=$0002FE  forever=-  exc=false  ppu_mask=$00  disp_on=-
+  f060 pc=$0052BC  forever=31  exc=false  ppu_mask=$00  disp_on=32
+  f120 pc=$001596  forever=31  exc=false  ppu_mask=$00  disp_on=32
+  f180 pc=$0014EA  forever=31  exc=false  ppu_mask=$00  disp_on=32
+  f240 pc=$00152E  forever=31  exc=false  ppu_mask=$00  disp_on=32
+  f300 pc=$001574  forever=31  exc=false  ppu_mask=$00  disp_on=32
+  f360 pc=$0015AC  forever=31  exc=false  ppu_mask=$00  disp_on=32
+  f420 pc=$0014D6  forever=31  exc=false  ppu_mask=$00  disp_on=32
+  f480 pc=$00152A  forever=31  exc=false  ppu_mask=$00  disp_on=32
+  f540 pc=$001570  forever=31  exc=false  ppu_mask=$00  disp_on=32
+  f600 pc=$0015A6  forever=31  exc=false  ppu_mask=$00  disp_on=32
+
+  Display enabled at frame 32 — waiting 10 more frames...
+
+  PPU_MASK = $00  TCP_ran = $5A
+  CHR VRAM: 4+ non-zero bytes (first at $000E)
+  Plane A: 896 non-zero words, 1 distinct tiles, 3 palettes used
+    pal0=448 pal1=256 pal2=192 pal3=0
+  CRAM: 14 non-zero entries, pal0 has 4 non-black colors
+
+─── Plane A rows 5-10 (title logo area) ───────────────────────
+  row05: 0024 0024 2024 2024 0024 0024 2024 2024 0024 0024 2024 2024 0024 0024 2024 2024
+  row06: 4024 4024 0024 0024 4024 4024 0024 0024 4024 4024 0024 0024 4024 4024 0024 0024
+  row07: 4024 4024 0024 0024 4024 4024 0024 0024 4024 4024 0024 0024 4024 4024 0024 0024
+  row08: 0024 0024 2024 2024 0024 0024 2024 2024 0024 0024 2024 2024 0024 0024 2024 2024
+  row09: 0024 0024 2024 2024 0024 0024 2024 2024 0024 0024 2024 2024 0024 0024 2024 2024
+  row10: 4024 4024 0024 0024 4024 4024 0024 0024 4024 4024 0024 0024 4024 4024 0024 0024
+
+─── T21: Title Screen BG Renders Correctly ─────────────────────
+[PASS] T21_NO_EXCEPTION            no exception handler hit
+[PASS] T21_LOOPFOREVER_HIT         frame 31
+[PASS] T21_DISPLAY_ON              display enabled at frame 32 (PPU_MASK=$00)
+[PASS] T21_CHR_TILES               VRAM $000E has CHR data (CHR path working)
+[PASS] T21_PLANE_A_TILES           896 non-zero tile words in Plane A
+[PASS] T21_PALETTE_COLORS          CRAM palette 0: 4 non-black colors
+[PASS] T21_MIXED_PALETTES          Plane A uses 3 different palettes
+[PASS] T21_TILE_DIVERSITY          1 distinct tiles, 3 palettes, 896 filled — screen has visual content
+
+=================================================================
+TITLE SCREEN PROBE SUMMARY  (T21)
+=================================================================
+  [PASS] T21_NO_EXCEPTION
+  [PASS] T21_LOOPFOREVER_HIT
+  [PASS] T21_DISPLAY_ON
+  [PASS] T21_CHR_TILES
+  [PASS] T21_PLANE_A_TILES
+  [PASS] T21_PALETTE_COLORS
+  [PASS] T21_MIXED_PALETTES
+  [PASS] T21_TILE_DIVERSITY
+
+  8 PASS  /  0 FAIL  /  8 total
+
+T21 TITLE SCREEN PROBE: ALL PASS
+

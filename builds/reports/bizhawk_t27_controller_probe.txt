@@ -1,0 +1,31 @@
+=================================================================
+T27: Controller 1 Probe  —  up to 300 frames
+=================================================================
+  LoopForever=$01660C  ExcBus=$000366  ExcAddr=$000388  ExcDef=$0003AA
+
+  NMI count: start=0  end=211  delta=211
+  CheckInput count: start=0  end=211  delta=211
+  Button regs: $F8=00 (ctl1-held)  $F9=00 (ctl2-held)
+  Button regs: $FA=CF (ctl1-new)   $FB=CF (ctl2-new)
+  CTL1_LATCH=$FF1100:F3  CTL1_IDX=$FF1101:08
+
+─── T27: Controller Tests ───────────────────────────────────────
+[PASS] T27_NO_EXCEPTION                no exception handler hit
+[PASS] T27_NMI_CONTINUOUS              NMI count advanced by 211 over 290 frames — ReadInputs not hanging
+[PASS] T27_CI_RUNNING                  CheckInput count advanced by 211 — ReadInputs being called
+[PASS] T27_NO_PRESS_ZERO               $F8=0x00 — no-press state correct (all buttons inactive)
+[PASS] T27_LATCH_REACHABLE             CTL1_IDX=8 — latch/index mechanism reached
+
+=================================================================
+T27 CONTROLLER SUMMARY
+=================================================================
+  [PASS] T27_NO_EXCEPTION
+  [PASS] T27_NMI_CONTINUOUS
+  [PASS] T27_CI_RUNNING
+  [PASS] T27_NO_PRESS_ZERO
+  [PASS] T27_LATCH_REACHABLE
+
+  5 PASS  /  0 FAIL  /  5 total
+
+T27 CONTROLLER: ALL PASS
+

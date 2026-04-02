@@ -1,0 +1,27 @@
+NES nametable capture starting...
+  f001  mode=$00  PPUMASK=$00  disp=-
+  f002  mode=$00  PPUMASK=$00  disp=-
+  f003  mode=$00  PPUMASK=$00  disp=-
+  f004  mode=$00  PPUMASK=$00  disp=-
+  f005  mode=$00  PPUMASK=$00  disp=-
+  f060  mode=$00  PPUMASK=$00  disp=-
+  f120  mode=$00  PPUMASK=$00  disp=-
+  f180  mode=$00  PPUMASK=$00  disp=-
+  f240  mode=$00  PPUMASK=$00  disp=-
+  f300  mode=$00  PPUMASK=$00  disp=-
+  f360  mode=$00  PPUMASK=$00  disp=-
+  WARNING: display never detected in 400 frames — capturing anyway
+  Using PPU domain: 'PPU Bus'  (test byte at $2000 = $00)
+  Distinct tile indices in nametable: 1
+  Top tile counts:
+    tile $00: 960 times
+  Nametable rows 5-10 (first 16 cols):
+    row05: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+    row06: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+    row07: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+    row08: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+    row09: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+    row10: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+
+Nametable dump: C:\Users\Jake Diggity\Documents\GitHub\FINAL TRY\builds\reports\nes_nametable.txt
+Attr table dump: C:\Users\Jake Diggity\Documents\GitHub\FINAL TRY\builds\reports\nes_attrtable.txt

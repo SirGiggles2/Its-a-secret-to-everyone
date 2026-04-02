@@ -1,0 +1,49 @@
+=================================================================
+NES ROM Palette + OAM Probe  --  frame 200
+=================================================================
+Memory domains available:
+
+--- NES PPU Palette ($3F00-$3F1F) ---
+  $3F00 = (unreadable)
+  $3F01 = (unreadable)
+  $3F02 = (unreadable)
+  $3F03 = (unreadable)
+  $3F04 = (unreadable)
+  $3F05 = (unreadable)
+  $3F06 = (unreadable)
+  $3F07 = (unreadable)
+  $3F08 = (unreadable)
+  $3F09 = (unreadable)
+  $3F0A = (unreadable)
+  $3F0B = (unreadable)
+  $3F0C = (unreadable)
+  $3F0D = (unreadable)
+  $3F0E = (unreadable)
+  $3F0F = (unreadable)
+  $3F10 = (unreadable)
+  $3F11 = (unreadable)
+  $3F12 = (unreadable)
+  $3F13 = (unreadable)
+  $3F14 = (unreadable)
+  $3F15 = (unreadable)
+  $3F16 = (unreadable)
+  $3F17 = (unreadable)
+  $3F18 = (unreadable)
+  $3F19 = (unreadable)
+  $3F1A = (unreadable)
+  $3F1B = (unreadable)
+  $3F1C = (unreadable)
+  $3F1D = (unreadable)
+  $3F1E = (unreadable)
+  $3F1F = (unreadable)
+
+--- NES OAM (first 32 sprites) ---
+  #   Y   Tile  Attr   X
+
+--- NES CHR sprite tile $24 (PPU $0240, 16 bytes) ---
+  ?? ?? ?? ?? ?? ?? ?? ?? ?? ?? ?? ?? ?? ?? ?? ?? 
+
+Screenshot: C:\Users\Jake Diggity\Documents\GitHub\FINAL TRY\builds\reports\screenshot_nes_palette.png
+=================================================================
+NES PALETTE PROBE COMPLETE
+=================================================================

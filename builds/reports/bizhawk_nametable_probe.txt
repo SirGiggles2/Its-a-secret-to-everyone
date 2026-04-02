@@ -1,0 +1,79 @@
+=================================================================
+Nametable probe  T18  —  180 frames
+=================================================================
+  LoopForever=$0162C8  ExcBus=$000366  ExcAddr=$000388  ExcDef=$0003AA
+
+  f001 pc=$000306  forever=-  exc=false
+  f002 pc=$000306  forever=-  exc=false
+  f003 pc=$0002FE  forever=-  exc=false
+  f004 pc=$000306  forever=-  exc=false
+  f005 pc=$0002FE  forever=-  exc=false
+  f030 pc=$00259C  forever=27  exc=false
+  f060 pc=$0004C4  forever=27  exc=false
+  f090 pc=$0013B2  forever=27  exc=false
+  f120 pc=$001360  forever=27  exc=false
+  f150 pc=$0012FA  forever=27  exc=false
+  f180 pc=$0013A0  forever=27  exc=false
+
+  (waiting 30 extra frames for nametable writes to complete...)
+
+─── Post-wait diagnostics ─────────────────────────────────────
+  ($00F5): $5A  ← $5A = TransferCommonPatterns ran
+─── Plane A nametable scan ($2000-$23BF in Genesis tile-word layout) ─
+  (Plane A at $2000, 64H×32V plane, row stride=$80)
+
+    VRAM[$2000] = $0024  (row=0 col=0 tile=$24)
+    VRAM[$2002] = $0024  (row=0 col=1 tile=$24)
+    VRAM[$2004] = $0024  (row=0 col=2 tile=$24)
+    VRAM[$2006] = $0024  (row=0 col=3 tile=$24)
+    VRAM[$2008] = $0024  (row=0 col=4 tile=$24)
+    VRAM[$200A] = $0024  (row=0 col=5 tile=$24)
+    VRAM[$200C] = $0024  (row=0 col=6 tile=$24)
+    VRAM[$200E] = $0024  (row=0 col=7 tile=$24)
+    VRAM[$2010] = $0024  (row=0 col=8 tile=$24)
+    VRAM[$2012] = $0024  (row=0 col=9 tile=$24)
+    VRAM[$2014] = $0024  (row=0 col=10 tile=$24)
+    VRAM[$2016] = $0024  (row=0 col=11 tile=$24)
+    ... (truncated)
+
+  nonzero_count = 886  (of 960 nametable entries)
+  bad_hi_count  = 0  (entries with high byte ≠ $00)
+
+─── Raw VRAM spot check $2000-$200F ───────────────────────────
+    VRAM[$2000] = $00
+    VRAM[$2001] = $24
+    VRAM[$2002] = $00
+    VRAM[$2003] = $24
+    VRAM[$2004] = $00
+    VRAM[$2005] = $24
+    VRAM[$2006] = $00
+    VRAM[$2007] = $24
+    VRAM[$2008] = $00
+    VRAM[$2009] = $24
+    VRAM[$200A] = $00
+    VRAM[$200B] = $24
+    VRAM[$200C] = $00
+    VRAM[$200D] = $24
+    VRAM[$200E] = $00
+    VRAM[$200F] = $24
+
+─── T18: Nametable → Plane A ─────────────────────────────────────
+[PASS] T18_NO_EXCEPTION              no exception handler hit
+[PASS] T18_LOOPFOREVER_HIT           frame 27
+[PASS] T18_NT_DATA_PRESENT           VRAM[$2000]=$0024 (first non-zero nametable word)
+[PASS] T18_NT_COVERAGE               886 non-zero entries (≥64 threshold — substantial nametable coverage)
+[PASS] T18_TILE_WORD_FORMAT          all 886 non-zero entries have high byte=$00 (valid tile word)
+
+=================================================================
+NAMETABLE PROBE SUMMARY  (T18)
+=================================================================
+  [PASS] T18_NO_EXCEPTION
+  [PASS] T18_LOOPFOREVER_HIT
+  [PASS] T18_NT_DATA_PRESENT
+  [PASS] T18_NT_COVERAGE
+  [PASS] T18_TILE_WORD_FORMAT
+
+  5 PASS  /  0 FAIL  /  5 total
+
+T18 NAMETABLE PROBE: ALL PASS
+
