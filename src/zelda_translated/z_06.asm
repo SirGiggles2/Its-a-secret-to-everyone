@@ -40,46 +40,46 @@
 
     even
 LevelBlockAddrsQ1:
-    dc.l    LevelBlockOW   ; NES addr vector (32-bit for M68K)
-    dc.l    LevelBlockUW1Q1   ; NES addr vector (32-bit for M68K)
-    dc.l    LevelBlockUW1Q1   ; NES addr vector (32-bit for M68K)
-    dc.l    LevelBlockUW1Q1   ; NES addr vector (32-bit for M68K)
-    dc.l    LevelBlockUW1Q1   ; NES addr vector (32-bit for M68K)
-    dc.l    LevelBlockUW1Q1   ; NES addr vector (32-bit for M68K)
-    dc.l    LevelBlockUW1Q1   ; NES addr vector (32-bit for M68K)
-    dc.l    LevelBlockUW2Q1   ; NES addr vector (32-bit for M68K)
-    dc.l    LevelBlockUW2Q1   ; NES addr vector (32-bit for M68K)
-    dc.l    LevelBlockUW2Q1   ; NES addr vector (32-bit for M68K)
+    dc.b    (LevelBlockOW)&$FF, (LevelBlockOW>>8)&$FF   ; NES .ADDR (little-endian)
+    dc.b    (LevelBlockUW1Q1)&$FF, (LevelBlockUW1Q1>>8)&$FF   ; NES .ADDR (little-endian)
+    dc.b    (LevelBlockUW1Q1)&$FF, (LevelBlockUW1Q1>>8)&$FF   ; NES .ADDR (little-endian)
+    dc.b    (LevelBlockUW1Q1)&$FF, (LevelBlockUW1Q1>>8)&$FF   ; NES .ADDR (little-endian)
+    dc.b    (LevelBlockUW1Q1)&$FF, (LevelBlockUW1Q1>>8)&$FF   ; NES .ADDR (little-endian)
+    dc.b    (LevelBlockUW1Q1)&$FF, (LevelBlockUW1Q1>>8)&$FF   ; NES .ADDR (little-endian)
+    dc.b    (LevelBlockUW1Q1)&$FF, (LevelBlockUW1Q1>>8)&$FF   ; NES .ADDR (little-endian)
+    dc.b    (LevelBlockUW2Q1)&$FF, (LevelBlockUW2Q1>>8)&$FF   ; NES .ADDR (little-endian)
+    dc.b    (LevelBlockUW2Q1)&$FF, (LevelBlockUW2Q1>>8)&$FF   ; NES .ADDR (little-endian)
+    dc.b    (LevelBlockUW2Q1)&$FF, (LevelBlockUW2Q1>>8)&$FF   ; NES .ADDR (little-endian)
 
     even
 LevelInfoAddrs:
-    dc.l    LevelInfoOW   ; NES addr vector (32-bit for M68K)
-    dc.l    LevelInfoUW1   ; NES addr vector (32-bit for M68K)
-    dc.l    LevelInfoUW2   ; NES addr vector (32-bit for M68K)
-    dc.l    LevelInfoUW3   ; NES addr vector (32-bit for M68K)
-    dc.l    LevelInfoUW4   ; NES addr vector (32-bit for M68K)
-    dc.l    LevelInfoUW5   ; NES addr vector (32-bit for M68K)
-    dc.l    LevelInfoUW6   ; NES addr vector (32-bit for M68K)
-    dc.l    LevelInfoUW7   ; NES addr vector (32-bit for M68K)
-    dc.l    LevelInfoUW8   ; NES addr vector (32-bit for M68K)
-    dc.l    LevelInfoUW9   ; NES addr vector (32-bit for M68K)
+    dc.b    (LevelInfoOW)&$FF, (LevelInfoOW>>8)&$FF   ; NES .ADDR (little-endian)
+    dc.b    (LevelInfoUW1)&$FF, (LevelInfoUW1>>8)&$FF   ; NES .ADDR (little-endian)
+    dc.b    (LevelInfoUW2)&$FF, (LevelInfoUW2>>8)&$FF   ; NES .ADDR (little-endian)
+    dc.b    (LevelInfoUW3)&$FF, (LevelInfoUW3>>8)&$FF   ; NES .ADDR (little-endian)
+    dc.b    (LevelInfoUW4)&$FF, (LevelInfoUW4>>8)&$FF   ; NES .ADDR (little-endian)
+    dc.b    (LevelInfoUW5)&$FF, (LevelInfoUW5>>8)&$FF   ; NES .ADDR (little-endian)
+    dc.b    (LevelInfoUW6)&$FF, (LevelInfoUW6>>8)&$FF   ; NES .ADDR (little-endian)
+    dc.b    (LevelInfoUW7)&$FF, (LevelInfoUW7>>8)&$FF   ; NES .ADDR (little-endian)
+    dc.b    (LevelInfoUW8)&$FF, (LevelInfoUW8>>8)&$FF   ; NES .ADDR (little-endian)
+    dc.b    (LevelInfoUW9)&$FF, (LevelInfoUW9>>8)&$FF   ; NES .ADDR (little-endian)
 
     even
 CommonDataBlockAddr_Bank6:
-    dc.l    CommonDataBlock_Bank6   ; NES addr vector (32-bit for M68K)
+    dc.b    (CommonDataBlock_Bank6)&$FF, (CommonDataBlock_Bank6>>8)&$FF   ; NES .ADDR (little-endian)
 
     even
 LevelBlockAddrsQ2:
-    dc.l    LevelBlockOW   ; NES addr vector (32-bit for M68K)
-    dc.l    LevelBlockUW1Q2   ; NES addr vector (32-bit for M68K)
-    dc.l    LevelBlockUW1Q2   ; NES addr vector (32-bit for M68K)
-    dc.l    LevelBlockUW1Q2   ; NES addr vector (32-bit for M68K)
-    dc.l    LevelBlockUW1Q2   ; NES addr vector (32-bit for M68K)
-    dc.l    LevelBlockUW1Q2   ; NES addr vector (32-bit for M68K)
-    dc.l    LevelBlockUW1Q2   ; NES addr vector (32-bit for M68K)
-    dc.l    LevelBlockUW2Q2   ; NES addr vector (32-bit for M68K)
-    dc.l    LevelBlockUW2Q2   ; NES addr vector (32-bit for M68K)
-    dc.l    LevelBlockUW2Q2   ; NES addr vector (32-bit for M68K)
+    dc.b    (LevelBlockOW)&$FF, (LevelBlockOW>>8)&$FF   ; NES .ADDR (little-endian)
+    dc.b    (LevelBlockUW1Q2)&$FF, (LevelBlockUW1Q2>>8)&$FF   ; NES .ADDR (little-endian)
+    dc.b    (LevelBlockUW1Q2)&$FF, (LevelBlockUW1Q2>>8)&$FF   ; NES .ADDR (little-endian)
+    dc.b    (LevelBlockUW1Q2)&$FF, (LevelBlockUW1Q2>>8)&$FF   ; NES .ADDR (little-endian)
+    dc.b    (LevelBlockUW1Q2)&$FF, (LevelBlockUW1Q2>>8)&$FF   ; NES .ADDR (little-endian)
+    dc.b    (LevelBlockUW1Q2)&$FF, (LevelBlockUW1Q2>>8)&$FF   ; NES .ADDR (little-endian)
+    dc.b    (LevelBlockUW1Q2)&$FF, (LevelBlockUW1Q2>>8)&$FF   ; NES .ADDR (little-endian)
+    dc.b    (LevelBlockUW2Q2)&$FF, (LevelBlockUW2Q2>>8)&$FF   ; NES .ADDR (little-endian)
+    dc.b    (LevelBlockUW2Q2)&$FF, (LevelBlockUW2Q2>>8)&$FF   ; NES .ADDR (little-endian)
+    dc.b    (LevelBlockUW2Q2)&$FF, (LevelBlockUW2Q2>>8)&$FF   ; NES .ADDR (little-endian)
 
     even
 InitMode2_Submodes:
@@ -87,8 +87,8 @@ InitMode2_Submodes:
     bsr     _m68k_tablejump  ; M68K-native table dispatch (replaces JSR TableJump)
     even
 InitMode2_Submodes_JumpTable:
-    dc.l    InitMode2_Sub0   ; NES addr vector (32-bit for M68K)
-    dc.l    InitMode2_Sub1   ; NES addr vector (32-bit for M68K)
+    dc.l    InitMode2_Sub0   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    InitMode2_Sub1   ; jump table entry (32-bit for _m68k_tablejump)
 
     even
 InitMode2_Sub0:
@@ -225,6 +225,7 @@ CopyBlock:
 _L_z06_CopyBlock_Loop:
     move.b  ($00,A4),D1   ; ptr lo
     move.b  ($01,A4),D4  ; ptr hi
+    andi.w  #$00FF,D1         ; zero-extend lo byte
     lsl.w   #8,D4
     or.w    D1,D4             ; D4 = NES ptr addr
     ext.l   D4
@@ -233,6 +234,7 @@ _L_z06_CopyBlock_Loop:
     move.b  (A0,D3.W),D0     ; LDA ($nn),Y
     move.b  ($02,A4),D1   ; ptr lo
     move.b  ($03,A4),D4  ; ptr hi
+    andi.w  #$00FF,D1         ; zero-extend lo byte
     lsl.w   #8,D4
     or.w    D1,D4
     ext.l   D4
@@ -308,6 +310,7 @@ _L_z06_UpdateMode2Load_Full_ReplaceInfoBytes:
     ; starting at offset $29 (shortcut position array).
     move.b  ($00,A4),D1   ; ptr lo
     move.b  ($01,A4),D4  ; ptr hi
+    andi.w  #$00FF,D1         ; zero-extend lo byte
     lsl.w   #8,D4
     or.w    D1,D4             ; D4 = NES ptr addr
     ext.l   D4
@@ -465,15 +468,15 @@ LevelInfoUWQ2Replacements9:
 
     even
 LevelInfoUWQ2ReplacementAddrs:
-    dc.l    LevelInfoUWQ2Replacements1   ; NES addr vector (32-bit for M68K)
-    dc.l    LevelInfoUWQ2Replacements2   ; NES addr vector (32-bit for M68K)
-    dc.l    LevelInfoUWQ2Replacements3   ; NES addr vector (32-bit for M68K)
-    dc.l    LevelInfoUWQ2Replacements4   ; NES addr vector (32-bit for M68K)
-    dc.l    LevelInfoUWQ2Replacements5   ; NES addr vector (32-bit for M68K)
-    dc.l    LevelInfoUWQ2Replacements6   ; NES addr vector (32-bit for M68K)
-    dc.l    LevelInfoUWQ2Replacements7   ; NES addr vector (32-bit for M68K)
-    dc.l    LevelInfoUWQ2Replacements8   ; NES addr vector (32-bit for M68K)
-    dc.l    LevelInfoUWQ2Replacements9   ; NES addr vector (32-bit for M68K)
+    dc.b    (LevelInfoUWQ2Replacements1)&$FF, (LevelInfoUWQ2Replacements1>>8)&$FF   ; NES .ADDR (little-endian)
+    dc.b    (LevelInfoUWQ2Replacements2)&$FF, (LevelInfoUWQ2Replacements2>>8)&$FF   ; NES .ADDR (little-endian)
+    dc.b    (LevelInfoUWQ2Replacements3)&$FF, (LevelInfoUWQ2Replacements3>>8)&$FF   ; NES .ADDR (little-endian)
+    dc.b    (LevelInfoUWQ2Replacements4)&$FF, (LevelInfoUWQ2Replacements4>>8)&$FF   ; NES .ADDR (little-endian)
+    dc.b    (LevelInfoUWQ2Replacements5)&$FF, (LevelInfoUWQ2Replacements5>>8)&$FF   ; NES .ADDR (little-endian)
+    dc.b    (LevelInfoUWQ2Replacements6)&$FF, (LevelInfoUWQ2Replacements6>>8)&$FF   ; NES .ADDR (little-endian)
+    dc.b    (LevelInfoUWQ2Replacements7)&$FF, (LevelInfoUWQ2Replacements7>>8)&$FF   ; NES .ADDR (little-endian)
+    dc.b    (LevelInfoUWQ2Replacements8)&$FF, (LevelInfoUWQ2Replacements8>>8)&$FF   ; NES .ADDR (little-endian)
+    dc.b    (LevelInfoUWQ2Replacements9)&$FF, (LevelInfoUWQ2Replacements9>>8)&$FF   ; NES .ADDR (little-endian)
 
     even
 LevelInfoUWQ2ReplacementSizes:
@@ -664,100 +667,81 @@ TriforceTextTransferBuf:
 
     even
 TransferBufAddrs:
-    dc.l    DynTileBuf   ; NES addr vector (32-bit for M68K)
-    dc.l    StoryTileAttrTransferBuf   ; NES addr vector (32-bit for M68K)
-    dc.l    Mode8TextTileBuffer   ; NES addr vector (32-bit for M68K)
-    dc.l    LevelPaletteRow7TransferBuf   ; NES addr vector (32-bit for M68K)
-    dc.l    AquamentusPaletteRow7TransferBuf   ; NES addr vector (32-bit for M68K)
-    dc.l    OrangeBossPaletteRow7TransferBuf   ; NES addr vector (32-bit for M68K)
-    dc.l    LevelNumberTransferBuf   ; NES addr vector (32-bit for M68K)
-    dc.l    StatusBarStaticsTransferBuf   ; NES addr vector (32-bit for M68K)
-    dc.l    GameTitleTransferBuf   ; NES addr vector (32-bit for M68K)
-    dc.l    MenuPalettesTransferBuf   ; NES addr vector (32-bit for M68K)
-    dc.l    Mode1TileTransferBuf   ; NES addr vector (32-bit for M68K)
-    dc.l    ModeFCharsTransferBuf   ; NES addr vector (32-bit for M68K)
-    dc.l    LevelInfo_PalettesTransferBuf   ; NES addr vector (32-bit for M68K)
-    dc.l    DynTileBuf   ; NES addr vector (32-bit for M68K)
-    dc.l    DynTileBuf   ; NES addr vector (32-bit for M68K)
-    dc.l    BlankTextBoxLines   ; NES addr vector (32-bit for M68K)
-    dc.l    GhostPaletteRow7TransferBuf   ; NES addr vector (32-bit for M68K)
-    dc.l    GreenBgPaletteRow7TransferBuf   ; NES addr vector (32-bit for M68K)
-    dc.l    BrownBgPaletteRow7TransferBuf   ; NES addr vector (32-bit for M68K)
-    dc.l    CellarAttrsTransferBuf   ; NES addr vector (32-bit for M68K)
-    dc.l    DynTileBuf   ; NES addr vector (32-bit for M68K)
-    dc.l    BlankPersonWares   ; NES addr vector (32-bit for M68K)
-    dc.l    Mode11DeadLinkPalette   ; NES addr vector (32-bit for M68K)
-    dc.l    LevelNumberTransferBuf   ; NES addr vector (32-bit for M68K)
-    dc.l    InventoryTextTransferBuf   ; NES addr vector (32-bit for M68K)
-    dc.l    SubmenuBoxesTopsTransferBuf   ; NES addr vector (32-bit for M68K)
-    dc.l    SubmenuBoxesSidesTransferBuf   ; NES addr vector (32-bit for M68K)
-    dc.l    GanonPaletteRow7TransferBuf   ; NES addr vector (32-bit for M68K)
-    dc.l    SelectedItemBoxBottomTransferBuf   ; NES addr vector (32-bit for M68K)
-    dc.l    UseBButtonTextTransferBuf   ; NES addr vector (32-bit for M68K)
-    dc.l    InventoryBoxBottomTransferBuf   ; NES addr vector (32-bit for M68K)
-    dc.l    CaveBgPaletteRowsTransferBuf   ; NES addr vector (32-bit for M68K)
-    dc.l    SubmenuMapRemainderTransferBuf   ; NES addr vector (32-bit for M68K)
-    dc.l    SheetMapBottomEdgeTransferBuf   ; NES addr vector (32-bit for M68K)
-    dc.l    LevelInfo_StatusBarMapTransferBuf   ; NES addr vector (32-bit for M68K)
-    dc.l    GameOverTransferBuf   ; NES addr vector (32-bit for M68K)
-    dc.l    SubmenuAttrs1TransferBuf   ; NES addr vector (32-bit for M68K)
-    dc.l    SubmenuAttrs2TransferBuf   ; NES addr vector (32-bit for M68K)
-    dc.l    BlankBottomRowNT2TransferBuf   ; NES addr vector (32-bit for M68K)
-    dc.l    BlankRowTransferBuf   ; NES addr vector (32-bit for M68K)
-    dc.l    SubmenuTriforceApexTransferBuf   ; NES addr vector (32-bit for M68K)
-    dc.l    TriforceRow0TransferBuf   ; NES addr vector (32-bit for M68K)
-    dc.l    TriforceRow1TransferBuf   ; NES addr vector (32-bit for M68K)
-    dc.l    TriforceRow2TransferBuf   ; NES addr vector (32-bit for M68K)
-    dc.l    TriforceRow3TransferBuf   ; NES addr vector (32-bit for M68K)
-    dc.l    SubmenuTriforceBottomTransferBuf   ; NES addr vector (32-bit for M68K)
-    dc.l    TriforceTextTransferBuf   ; NES addr vector (32-bit for M68K)
-    dc.l    Mode11BackgroundPaletteBottomHalfTransferBuf   ; NES addr vector (32-bit for M68K)
-    dc.l    Mode11PlayAreaAttrsTopHalfTransferBuf   ; NES addr vector (32-bit for M68K)
-    dc.l    Mode11PlayAreaAttrsBottomHalfTransferBuf   ; NES addr vector (32-bit for M68K)
-    dc.l    DynTileBuf   ; NES addr vector (32-bit for M68K)
-    dc.l    DynTileBuf   ; NES addr vector (32-bit for M68K)
-    dc.l    DynTileBuf   ; NES addr vector (32-bit for M68K)
-    dc.l    EndingPaletteTransferBuf   ; NES addr vector (32-bit for M68K)
-    dc.l    BombCapacityPriceTextTransferBuf   ; NES addr vector (32-bit for M68K)
-    dc.l    DynTileBuf   ; NES addr vector (32-bit for M68K)
-    dc.l    DynTileBuf   ; NES addr vector (32-bit for M68K)
-    dc.l    DynTileBuf   ; NES addr vector (32-bit for M68K)
-    dc.l    DynTileBuf   ; NES addr vector (32-bit for M68K)
-    dc.l    LifeOrMoneyCostTextTransferBuf   ; NES addr vector (32-bit for M68K)
-    dc.l    WhitePaletteBottomHalfTransferBuf   ; NES addr vector (32-bit for M68K)
-    dc.l    RedArmosPaletteRow7TransferBuf   ; NES addr vector (32-bit for M68K)
-    dc.l    GleeokPaletteRow7TransferBuf   ; NES addr vector (32-bit for M68K)
-    dc.l    DynTileBuf   ; NES addr vector (32-bit for M68K)
+    dc.b    (DynTileBuf)&$FF, (DynTileBuf>>8)&$FF   ; NES .ADDR (little-endian)
+    dc.b    (StoryTileAttrTransferBuf)&$FF, (StoryTileAttrTransferBuf>>8)&$FF   ; NES .ADDR (little-endian)
+    dc.b    (Mode8TextTileBuffer)&$FF, (Mode8TextTileBuffer>>8)&$FF   ; NES .ADDR (little-endian)
+    dc.b    (LevelPaletteRow7TransferBuf)&$FF, (LevelPaletteRow7TransferBuf>>8)&$FF   ; NES .ADDR (little-endian)
+    dc.b    (AquamentusPaletteRow7TransferBuf)&$FF, (AquamentusPaletteRow7TransferBuf>>8)&$FF   ; NES .ADDR (little-endian)
+    dc.b    (OrangeBossPaletteRow7TransferBuf)&$FF, (OrangeBossPaletteRow7TransferBuf>>8)&$FF   ; NES .ADDR (little-endian)
+    dc.b    (LevelNumberTransferBuf)&$FF, (LevelNumberTransferBuf>>8)&$FF   ; NES .ADDR (little-endian)
+    dc.b    (StatusBarStaticsTransferBuf)&$FF, (StatusBarStaticsTransferBuf>>8)&$FF   ; NES .ADDR (little-endian)
+    dc.b    (GameTitleTransferBuf)&$FF, (GameTitleTransferBuf>>8)&$FF   ; NES .ADDR (little-endian)
+    dc.b    (MenuPalettesTransferBuf)&$FF, (MenuPalettesTransferBuf>>8)&$FF   ; NES .ADDR (little-endian)
+    dc.b    (Mode1TileTransferBuf)&$FF, (Mode1TileTransferBuf>>8)&$FF   ; NES .ADDR (little-endian)
+    dc.b    (ModeFCharsTransferBuf)&$FF, (ModeFCharsTransferBuf>>8)&$FF   ; NES .ADDR (little-endian)
+    dc.b    (LevelInfo_PalettesTransferBuf)&$FF, (LevelInfo_PalettesTransferBuf>>8)&$FF   ; NES .ADDR (little-endian)
+    dc.b    (DynTileBuf)&$FF, (DynTileBuf>>8)&$FF   ; NES .ADDR (little-endian)
+    dc.b    (DynTileBuf)&$FF, (DynTileBuf>>8)&$FF   ; NES .ADDR (little-endian)
+    dc.b    (BlankTextBoxLines)&$FF, (BlankTextBoxLines>>8)&$FF   ; NES .ADDR (little-endian)
+    dc.b    (GhostPaletteRow7TransferBuf)&$FF, (GhostPaletteRow7TransferBuf>>8)&$FF   ; NES .ADDR (little-endian)
+    dc.b    (GreenBgPaletteRow7TransferBuf)&$FF, (GreenBgPaletteRow7TransferBuf>>8)&$FF   ; NES .ADDR (little-endian)
+    dc.b    (BrownBgPaletteRow7TransferBuf)&$FF, (BrownBgPaletteRow7TransferBuf>>8)&$FF   ; NES .ADDR (little-endian)
+    dc.b    (CellarAttrsTransferBuf)&$FF, (CellarAttrsTransferBuf>>8)&$FF   ; NES .ADDR (little-endian)
+    dc.b    (DynTileBuf)&$FF, (DynTileBuf>>8)&$FF   ; NES .ADDR (little-endian)
+    dc.b    (BlankPersonWares)&$FF, (BlankPersonWares>>8)&$FF   ; NES .ADDR (little-endian)
+    dc.b    (Mode11DeadLinkPalette)&$FF, (Mode11DeadLinkPalette>>8)&$FF   ; NES .ADDR (little-endian)
+    dc.b    (LevelNumberTransferBuf)&$FF, (LevelNumberTransferBuf>>8)&$FF   ; NES .ADDR (little-endian)
+    dc.b    (InventoryTextTransferBuf)&$FF, (InventoryTextTransferBuf>>8)&$FF   ; NES .ADDR (little-endian)
+    dc.b    (SubmenuBoxesTopsTransferBuf)&$FF, (SubmenuBoxesTopsTransferBuf>>8)&$FF   ; NES .ADDR (little-endian)
+    dc.b    (SubmenuBoxesSidesTransferBuf)&$FF, (SubmenuBoxesSidesTransferBuf>>8)&$FF   ; NES .ADDR (little-endian)
+    dc.b    (GanonPaletteRow7TransferBuf)&$FF, (GanonPaletteRow7TransferBuf>>8)&$FF   ; NES .ADDR (little-endian)
+    dc.b    (SelectedItemBoxBottomTransferBuf)&$FF, (SelectedItemBoxBottomTransferBuf>>8)&$FF   ; NES .ADDR (little-endian)
+    dc.b    (UseBButtonTextTransferBuf)&$FF, (UseBButtonTextTransferBuf>>8)&$FF   ; NES .ADDR (little-endian)
+    dc.b    (InventoryBoxBottomTransferBuf)&$FF, (InventoryBoxBottomTransferBuf>>8)&$FF   ; NES .ADDR (little-endian)
+    dc.b    (CaveBgPaletteRowsTransferBuf)&$FF, (CaveBgPaletteRowsTransferBuf>>8)&$FF   ; NES .ADDR (little-endian)
+    dc.b    (SubmenuMapRemainderTransferBuf)&$FF, (SubmenuMapRemainderTransferBuf>>8)&$FF   ; NES .ADDR (little-endian)
+    dc.b    (SheetMapBottomEdgeTransferBuf)&$FF, (SheetMapBottomEdgeTransferBuf>>8)&$FF   ; NES .ADDR (little-endian)
+    dc.b    (LevelInfo_StatusBarMapTransferBuf)&$FF, (LevelInfo_StatusBarMapTransferBuf>>8)&$FF   ; NES .ADDR (little-endian)
+    dc.b    (GameOverTransferBuf)&$FF, (GameOverTransferBuf>>8)&$FF   ; NES .ADDR (little-endian)
+    dc.b    (SubmenuAttrs1TransferBuf)&$FF, (SubmenuAttrs1TransferBuf>>8)&$FF   ; NES .ADDR (little-endian)
+    dc.b    (SubmenuAttrs2TransferBuf)&$FF, (SubmenuAttrs2TransferBuf>>8)&$FF   ; NES .ADDR (little-endian)
+    dc.b    (BlankBottomRowNT2TransferBuf)&$FF, (BlankBottomRowNT2TransferBuf>>8)&$FF   ; NES .ADDR (little-endian)
+    dc.b    (BlankRowTransferBuf)&$FF, (BlankRowTransferBuf>>8)&$FF   ; NES .ADDR (little-endian)
+    dc.b    (SubmenuTriforceApexTransferBuf)&$FF, (SubmenuTriforceApexTransferBuf>>8)&$FF   ; NES .ADDR (little-endian)
+    dc.b    (TriforceRow0TransferBuf)&$FF, (TriforceRow0TransferBuf>>8)&$FF   ; NES .ADDR (little-endian)
+    dc.b    (TriforceRow1TransferBuf)&$FF, (TriforceRow1TransferBuf>>8)&$FF   ; NES .ADDR (little-endian)
+    dc.b    (TriforceRow2TransferBuf)&$FF, (TriforceRow2TransferBuf>>8)&$FF   ; NES .ADDR (little-endian)
+    dc.b    (TriforceRow3TransferBuf)&$FF, (TriforceRow3TransferBuf>>8)&$FF   ; NES .ADDR (little-endian)
+    dc.b    (SubmenuTriforceBottomTransferBuf)&$FF, (SubmenuTriforceBottomTransferBuf>>8)&$FF   ; NES .ADDR (little-endian)
+    dc.b    (TriforceTextTransferBuf)&$FF, (TriforceTextTransferBuf>>8)&$FF   ; NES .ADDR (little-endian)
+    dc.b    (Mode11BackgroundPaletteBottomHalfTransferBuf)&$FF, (Mode11BackgroundPaletteBottomHalfTransferBuf>>8)&$FF   ; NES .ADDR (little-endian)
+    dc.b    (Mode11PlayAreaAttrsTopHalfTransferBuf)&$FF, (Mode11PlayAreaAttrsTopHalfTransferBuf>>8)&$FF   ; NES .ADDR (little-endian)
+    dc.b    (Mode11PlayAreaAttrsBottomHalfTransferBuf)&$FF, (Mode11PlayAreaAttrsBottomHalfTransferBuf>>8)&$FF   ; NES .ADDR (little-endian)
+    dc.b    (DynTileBuf)&$FF, (DynTileBuf>>8)&$FF   ; NES .ADDR (little-endian)
+    dc.b    (DynTileBuf)&$FF, (DynTileBuf>>8)&$FF   ; NES .ADDR (little-endian)
+    dc.b    (DynTileBuf)&$FF, (DynTileBuf>>8)&$FF   ; NES .ADDR (little-endian)
+    dc.b    (EndingPaletteTransferBuf)&$FF, (EndingPaletteTransferBuf>>8)&$FF   ; NES .ADDR (little-endian)
+    dc.b    (BombCapacityPriceTextTransferBuf)&$FF, (BombCapacityPriceTextTransferBuf>>8)&$FF   ; NES .ADDR (little-endian)
+    dc.b    (DynTileBuf)&$FF, (DynTileBuf>>8)&$FF   ; NES .ADDR (little-endian)
+    dc.b    (DynTileBuf)&$FF, (DynTileBuf>>8)&$FF   ; NES .ADDR (little-endian)
+    dc.b    (DynTileBuf)&$FF, (DynTileBuf>>8)&$FF   ; NES .ADDR (little-endian)
+    dc.b    (DynTileBuf)&$FF, (DynTileBuf>>8)&$FF   ; NES .ADDR (little-endian)
+    dc.b    (LifeOrMoneyCostTextTransferBuf)&$FF, (LifeOrMoneyCostTextTransferBuf>>8)&$FF   ; NES .ADDR (little-endian)
+    dc.b    (WhitePaletteBottomHalfTransferBuf)&$FF, (WhitePaletteBottomHalfTransferBuf>>8)&$FF   ; NES .ADDR (little-endian)
+    dc.b    (RedArmosPaletteRow7TransferBuf)&$FF, (RedArmosPaletteRow7TransferBuf>>8)&$FF   ; NES .ADDR (little-endian)
+    dc.b    (GleeokPaletteRow7TransferBuf)&$FF, (GleeokPaletteRow7TransferBuf>>8)&$FF   ; NES .ADDR (little-endian)
+    dc.b    (DynTileBuf)&$FF, (DynTileBuf>>8)&$FF   ; NES .ADDR (little-endian)
 
     even
 TransferCurTileBuf:
-    ; M68K fix: original NES table uses 2-byte .ADDR entries; stored value is a byte
-    ; offset into that table (e.g., $10 = entry 8).  Our table uses 4-byte dc.l.
-    ; Multiply stored byte offset by 2 to get the M68K 4-byte-table byte offset.
-    moveq   #0,D2
-    move.b  ($0014,A4),D2       ; D2 = NES byte offset (e.g., $10 for entry 8)
-    lsl.w   #1,D2               ; × 2: NES 2-byte stride → M68K 4-byte stride
+    move.b  ($0014,A4),D2
     lea     (TransferBufAddrs).l,A0
-    move.l  (A0,D2.W),D4        ; D4 = 32-bit value from table
-    ; Distinguish NES-address EQUs (< $10000, e.g. DynTileBuf=$0302) from
-    ; Genesis ROM labels (>= $10000, e.g. GameTitleTransferBuf=$00017490).
-    ; NES RAM EQU: store lo/hi bytes at $0000/$0001 for TransferTileBuf NES-ptr scheme.
-    ; ROM label: check sentinel byte directly from ROM; if bit7 set → skip (empty buf).
-    cmpi.l  #$00010000,D4
-    blo.s   .tcb_nes_addr           ; < $10000: NES address scheme
-    ; ROM label path: read first byte from Genesis ROM address
-    movea.l D4,A1
-    tst.b   (A1)
-    bmi.s   .tcb_done               ; bit7 set ($FF sentinel) = empty, skip
-    ; ROM buffer has valid data: addressing not yet supported, skip for safety
-    bra.s   .tcb_done
-.tcb_nes_addr:
-    ; NES address path: store little-endian lo/hi at $0000/$0001
-    move.b  D4,($0000,A4)           ; lo byte (6502 convention)
-    lsr.l   #8,D4
-    move.b  D4,($0001,A4)           ; hi byte
+    move.b  (A0,D2.W),D0
+    move.b  D0,($0000,A4)
+    lea     (TransferBufAddrs+1).l,A0
+    move.b  (A0,D2.W),D0
+    move.b  D0,($0001,A4)
     bsr     TransferTileBuf
-.tcb_done:
     moveq   #63,D0
     move.b  D0,($0300,A4)
     moveq   #0,D2
@@ -778,6 +762,7 @@ ContinueTransferTileBuf:
     addq.b  #1,D3
     move.b  ($00,A4),D1   ; ptr lo
     move.b  ($01,A4),D4  ; ptr hi
+    andi.w  #$00FF,D1         ; zero-extend lo byte
     lsl.w   #8,D4
     or.w    D1,D4             ; D4 = NES ptr addr
     ext.l   D4
@@ -788,6 +773,7 @@ ContinueTransferTileBuf:
     addq.b  #1,D3
     move.b  ($00,A4),D1   ; ptr lo
     move.b  ($01,A4),D4  ; ptr hi
+    andi.w  #$00FF,D1         ; zero-extend lo byte
     lsl.w   #8,D4
     or.w    D1,D4             ; D4 = NES ptr addr
     ext.l   D4
@@ -831,6 +817,7 @@ _L_z06_ContinueTransferTileBuf_Loop:
 _anon_z06_3:
     move.b  ($00,A4),D1   ; ptr lo
     move.b  ($01,A4),D4  ; ptr hi
+    andi.w  #$00FF,D1         ; zero-extend lo byte
     lsl.w   #8,D4
     or.w    D1,D4             ; D4 = NES ptr addr
     ext.l   D4
@@ -878,6 +865,7 @@ TransferTileBuf:
     moveq   #0,D3
     move.b  ($00,A4),D1   ; ptr lo
     move.b  ($01,A4),D4  ; ptr hi
+    andi.w  #$00FF,D1         ; zero-extend lo byte
     lsl.w   #8,D4
     or.w    D1,D4             ; D4 = NES ptr addr
     ext.l   D4
@@ -1114,17 +1102,15 @@ Mode11PlayAreaAttrsBottomHalfTransferBuf:
 
     even
 StoryTileAttrTransferBuf:
-; .INCBIN "dat/StoryTileAttrTransferBuf.dat" not found — stub: $FF sentinel = empty
-    dc.b    $FF
-    rept    127
+; .INCBIN "dat/StoryTileAttrTransferBuf.dat" not found — stub 128 zero bytes
+    rept    128
         dc.b    0
     endr
 
     even
 GameTitleTransferBuf:
-; .INCBIN "dat/GameTitleTransferBuf.dat" not found — stub: $FF sentinel = empty (TransferTileBuf returns immediately)
-    dc.b    $FF
-    rept    127
+; .INCBIN "dat/GameTitleTransferBuf.dat" not found — stub 128 zero bytes
+    rept    128
         dc.b    0
     endr
 

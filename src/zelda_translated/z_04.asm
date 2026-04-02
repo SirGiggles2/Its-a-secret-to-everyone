@@ -742,9 +742,9 @@ UpdateBlock:
     bsr     _m68k_tablejump  ; M68K-native table dispatch (replaces JSR TableJump)
     even
 UpdateBlock_JumpTable:
-    dc.l    UpdateBlock0Idle   ; NES addr vector (32-bit for M68K)
-    dc.l    UpdateBlock1Moving   ; NES addr vector (32-bit for M68K)
-    dc.l    UpdateBlock2Done   ; NES addr vector (32-bit for M68K)
+    dc.l    UpdateBlock0Idle   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    UpdateBlock1Moving   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    UpdateBlock2Done   ; jump table entry (32-bit for _m68k_tablejump)
 
     even
 UpdateBlock0Idle:
@@ -1443,12 +1443,12 @@ ControlKeeseFlight:
     bsr     _m68k_tablejump  ; M68K-native table dispatch (replaces JSR TableJump)
     even
 ControlKeeseFlight_JumpTable:
-    dc.l    Flyer_SpeedUp   ; NES addr vector (32-bit for M68K)
-    dc.l    Flyer_KeeseDecideState   ; NES addr vector (32-bit for M68K)
-    dc.l    Flyer_Chase   ; NES addr vector (32-bit for M68K)
-    dc.l    Flyer_Wander   ; NES addr vector (32-bit for M68K)
-    dc.l    Flyer_SlowDown   ; NES addr vector (32-bit for M68K)
-    dc.l    Flyer_Delay   ; NES addr vector (32-bit for M68K)
+    dc.l    Flyer_SpeedUp   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    Flyer_KeeseDecideState   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    Flyer_Chase   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    Flyer_Wander   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    Flyer_SlowDown   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    Flyer_Delay   ; jump table entry (32-bit for _m68k_tablejump)
 
     even
 Flyer_KeeseDecideState:
@@ -1500,9 +1500,9 @@ UpdateZolState:
     bsr     _m68k_tablejump  ; M68K-native table dispatch (replaces JSR TableJump)
     even
 UpdateZolState_JumpTable:
-    dc.l    UpdateZolState0_Wander   ; NES addr vector (32-bit for M68K)
-    dc.l    UpdateZolState1_Shove   ; NES addr vector (32-bit for M68K)
-    dc.l    UpdateZolState2_Split   ; NES addr vector (32-bit for M68K)
+    dc.l    UpdateZolState0_Wander   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    UpdateZolState1_Shove   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    UpdateZolState2_Split   ; jump table entry (32-bit for _m68k_tablejump)
 
     even
 UpdateZolState0_Wander:
@@ -4470,6 +4470,7 @@ RevealAndFlagSecretTileObj:
     ori.b #$80,D0
     move.b  ($00,A4),D1   ; ptr lo
     move.b  ($01,A4),D4  ; ptr hi
+    andi.w  #$00FF,D1         ; zero-extend lo byte
     lsl.w   #8,D4
     or.w    D1,D4
     ext.l   D4
@@ -4715,12 +4716,12 @@ ControlFlyingGhiniFlight:
     bsr     _m68k_tablejump  ; M68K-native table dispatch (replaces JSR TableJump)
     even
 ControlFlyingGhiniFlight_JumpTable:
-    dc.l    Flyer_SpeedUp   ; NES addr vector (32-bit for M68K)
-    dc.l    Flyer_GhiniDecideState   ; NES addr vector (32-bit for M68K)
-    dc.l    Flyer_Chase   ; NES addr vector (32-bit for M68K)
-    dc.l    Flyer_Wander   ; NES addr vector (32-bit for M68K)
-    dc.l    Flyer_SlowDown   ; NES addr vector (32-bit for M68K)
-    dc.l    Flyer_Delay   ; NES addr vector (32-bit for M68K)
+    dc.l    Flyer_SpeedUp   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    Flyer_GhiniDecideState   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    Flyer_Chase   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    Flyer_Wander   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    Flyer_SlowDown   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    Flyer_Delay   ; jump table entry (32-bit for _m68k_tablejump)
 
     even
 Flyer_GhiniDecideState:
@@ -4796,12 +4797,12 @@ ControlPeahatFlight:
     bsr     _m68k_tablejump  ; M68K-native table dispatch (replaces JSR TableJump)
     even
 ControlPeahatFlight_JumpTable:
-    dc.l    Flyer_SpeedUp   ; NES addr vector (32-bit for M68K)
-    dc.l    Flyer_PeahatDecideState   ; NES addr vector (32-bit for M68K)
-    dc.l    Flyer_Chase   ; NES addr vector (32-bit for M68K)
-    dc.l    Flyer_Wander   ; NES addr vector (32-bit for M68K)
-    dc.l    Flyer_SlowDown   ; NES addr vector (32-bit for M68K)
-    dc.l    Flyer_Delay   ; NES addr vector (32-bit for M68K)
+    dc.l    Flyer_SpeedUp   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    Flyer_PeahatDecideState   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    Flyer_Chase   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    Flyer_Wander   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    Flyer_SlowDown   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    Flyer_Delay   ; jump table entry (32-bit for _m68k_tablejump)
 
     even
 Flyer_PeahatDecideState:
@@ -5919,10 +5920,10 @@ ControlMoldormFlight:
     bsr     _m68k_tablejump  ; M68K-native table dispatch (replaces JSR TableJump)
     even
 ControlMoldormFlight_JumpTable:
-    dc.l    Moldorm_Chase   ; NES addr vector (32-bit for M68K)
-    dc.l    Moldorm_Chase   ; NES addr vector (32-bit for M68K)
-    dc.l    Moldorm_Chase   ; NES addr vector (32-bit for M68K)
-    dc.l    Moldorm_Wander   ; NES addr vector (32-bit for M68K)
+    dc.l    Moldorm_Chase   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    Moldorm_Chase   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    Moldorm_Chase   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    Moldorm_Wander   ; jump table entry (32-bit for _m68k_tablejump)
 
     even
 Moldorm_Chase:
@@ -6382,8 +6383,8 @@ Digdogger_ChangeSpeed:
     bsr     _m68k_tablejump  ; M68K-native table dispatch (replaces JSR TableJump)
     even
 Digdogger_ChangeSpeed_JumpTable:
-    dc.l    Digdogger_SpeedUp   ; NES addr vector (32-bit for M68K)
-    dc.l    Digdogger_SlowDown   ; NES addr vector (32-bit for M68K)
+    dc.l    Digdogger_SpeedUp   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    Digdogger_SlowDown   ; jump table entry (32-bit for _m68k_tablejump)
 
     even
 Digdogger_SpeedUp:
@@ -6986,9 +6987,9 @@ UpdateDodongoState:
     bsr     _m68k_tablejump  ; M68K-native table dispatch (replaces JSR TableJump)
     even
 UpdateDodongoState_JumpTable:
-    dc.l    UpdateDodongoState0_Move   ; NES addr vector (32-bit for M68K)
-    dc.l    UpdateDodongoState1_Bloated   ; NES addr vector (32-bit for M68K)
-    dc.l    UpdateDodongoState2_Stunned   ; NES addr vector (32-bit for M68K)
+    dc.l    UpdateDodongoState0_Move   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    UpdateDodongoState1_Bloated   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    UpdateDodongoState2_Stunned   ; jump table entry (32-bit for _m68k_tablejump)
 
     even
 UpdateDodongoState0_Move:
@@ -7064,11 +7065,11 @@ UpdateDodongoState1_Bloated:
     bsr     _m68k_tablejump  ; M68K-native table dispatch (replaces JSR TableJump)
     even
 UpdateDodongoState1_Bloated_JumpTable:
-    dc.l    UpdateDodongoState1_Bloated_Sub_Wait   ; NES addr vector (32-bit for M68K)
-    dc.l    UpdateDodongoState1_Bloated_Sub_Wait   ; NES addr vector (32-bit for M68K)
-    dc.l    UpdateDodongoState1_Bloated_Sub_Wait   ; NES addr vector (32-bit for M68K)
-    dc.l    UpdateDodongoState1_Bloated_Sub_Die   ; NES addr vector (32-bit for M68K)
-    dc.l    UpdateDodongoState1_Bloated_Sub_End   ; NES addr vector (32-bit for M68K)
+    dc.l    UpdateDodongoState1_Bloated_Sub_Wait   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    UpdateDodongoState1_Bloated_Sub_Wait   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    UpdateDodongoState1_Bloated_Sub_Wait   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    UpdateDodongoState1_Bloated_Sub_Die   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    UpdateDodongoState1_Bloated_Sub_End   ; jump table entry (32-bit for _m68k_tablejump)
 
     even
 UpdateDodongoState1_Bloated_Sub_Wait:
@@ -8300,8 +8301,8 @@ UpdateVireState:
     bsr     _m68k_tablejump  ; M68K-native table dispatch (replaces JSR TableJump)
     even
 UpdateVireState_JumpTable:
-    dc.l    UpdateVireState0   ; NES addr vector (32-bit for M68K)
-    dc.l    UpdateZolState1_Shove   ; NES addr vector (32-bit for M68K)
+    dc.l    UpdateVireState0   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    UpdateZolState1_Shove   ; jump table entry (32-bit for _m68k_tablejump)
 
     even
 VireJumpOffsets:
@@ -8971,10 +8972,10 @@ _anon_z04_103:
     bsr     _m68k_tablejump  ; M68K-native table dispatch (replaces JSR TableJump)
     even
 UpdateRedWizzrobe_JumpTable:
-    dc.l    UpdateRedWizzrobe_0   ; NES addr vector (32-bit for M68K)
-    dc.l    UpdateRedWizzrobe_1   ; NES addr vector (32-bit for M68K)
-    dc.l    UpdateRedWizzrobe_2   ; NES addr vector (32-bit for M68K)
-    dc.l    UpdateRedWizzrobe_3   ; NES addr vector (32-bit for M68K)
+    dc.l    UpdateRedWizzrobe_0   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    UpdateRedWizzrobe_1   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    UpdateRedWizzrobe_2   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    UpdateRedWizzrobe_3   ; jump table entry (32-bit for _m68k_tablejump)
 
     even
 RedWizzrobeOffsetsX:
@@ -10267,10 +10268,10 @@ ControlGleeokHeadFlight:
     bsr     _m68k_tablejump  ; M68K-native table dispatch (replaces JSR TableJump)
     even
 ControlGleeokHeadFlight_JumpTable:
-    dc.l    Flyer_SpeedUp   ; NES addr vector (32-bit for M68K)
-    dc.l    Flyer_GleeokHeadDecideState   ; NES addr vector (32-bit for M68K)
-    dc.l    Flyer_Chase   ; NES addr vector (32-bit for M68K)
-    dc.l    Flyer_Wander   ; NES addr vector (32-bit for M68K)
+    dc.l    Flyer_SpeedUp   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    Flyer_GleeokHeadDecideState   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    Flyer_Chase   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    Flyer_Wander   ; jump table entry (32-bit for _m68k_tablejump)
 
     even
 Flyer_GleeokHeadDecideState:
@@ -10352,6 +10353,7 @@ _L_z04_UpdateGleeok_LoadNeckBytes:
     ;
     move.b  ($00,A4),D1   ; ptr lo
     move.b  ($01,A4),D4  ; ptr hi
+    andi.w  #$00FF,D1         ; zero-extend lo byte
     lsl.w   #8,D4
     or.w    D1,D4             ; D4 = NES ptr addr
     ext.l   D4
@@ -10361,6 +10363,7 @@ _L_z04_UpdateGleeok_LoadNeckBytes:
     move.b  D0,($71,A4,D3.W)
     move.b  ($02,A4),D1   ; ptr lo
     move.b  ($03,A4),D4  ; ptr hi
+    andi.w  #$00FF,D1         ; zero-extend lo byte
     lsl.w   #8,D4
     or.w    D1,D4             ; D4 = NES ptr addr
     ext.l   D4
@@ -10371,6 +10374,7 @@ _L_z04_UpdateGleeok_LoadNeckBytes:
     move.b  D0,(A0,D3.W)
     move.b  ($04,A4),D1   ; ptr lo
     move.b  ($05,A4),D4  ; ptr hi
+    andi.w  #$00FF,D1         ; zero-extend lo byte
     lsl.w   #8,D4
     or.w    D1,D4             ; D4 = NES ptr addr
     ext.l   D4
@@ -10418,6 +10422,7 @@ _L_z04_UpdateGleeok_SaveNeckBytes:
     move.b  ($71,A4,D3.W),D0
     move.b  ($00,A4),D1   ; ptr lo
     move.b  ($01,A4),D4  ; ptr hi
+    andi.w  #$00FF,D1         ; zero-extend lo byte
     lsl.w   #8,D4
     or.w    D1,D4
     ext.l   D4
@@ -10428,6 +10433,7 @@ _L_z04_UpdateGleeok_SaveNeckBytes:
     move.b  (A0,D3.W),D0
     move.b  ($02,A4),D1   ; ptr lo
     move.b  ($03,A4),D4  ; ptr hi
+    andi.w  #$00FF,D1         ; zero-extend lo byte
     lsl.w   #8,D4
     or.w    D1,D4
     ext.l   D4
@@ -10438,6 +10444,7 @@ _L_z04_UpdateGleeok_SaveNeckBytes:
     move.b  (A0,D3.W),D0
     move.b  ($04,A4),D1   ; ptr lo
     move.b  ($05,A4),D4  ; ptr hi
+    andi.w  #$00FF,D1         ; zero-extend lo byte
     lsl.w   #8,D4
     or.w    D1,D4
     ext.l   D4
@@ -10804,15 +10811,15 @@ _anon_z04_138:
     bsr     _m68k_tablejump  ; M68K-native table dispatch (replaces JSR TableJump)
     even
 Gleeok_StretchNeck_JumpTable:
-    dc.l    Gleeok_ExpandSegment   ; NES addr vector (32-bit for M68K)
-    dc.l    Gleeok_IgnoreSegment   ; NES addr vector (32-bit for M68K)
-    dc.l    Gleeok_ContractSegmentX   ; NES addr vector (32-bit for M68K)
-    dc.l    Gleeok_IgnoreSegment   ; NES addr vector (32-bit for M68K)
-    dc.l    Gleeok_IgnoreSegment   ; NES addr vector (32-bit for M68K)
-    dc.l    Gleeok_ContractSegmentX   ; NES addr vector (32-bit for M68K)
-    dc.l    Gleeok_ContractSegmentY   ; NES addr vector (32-bit for M68K)
-    dc.l    Gleeok_ContractSegmentY   ; NES addr vector (32-bit for M68K)
-    dc.l    Gleeok_ContractSegment   ; NES addr vector (32-bit for M68K)
+    dc.l    Gleeok_ExpandSegment   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    Gleeok_IgnoreSegment   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    Gleeok_ContractSegmentX   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    Gleeok_IgnoreSegment   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    Gleeok_IgnoreSegment   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    Gleeok_ContractSegmentX   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    Gleeok_ContractSegmentY   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    Gleeok_ContractSegmentY   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    Gleeok_ContractSegment   ; jump table entry (32-bit for _m68k_tablejump)
 
     even
 Gleeok_ExpandSegment:
@@ -12148,10 +12155,10 @@ ControlPatraFlight:
     bsr     _m68k_tablejump  ; M68K-native table dispatch (replaces JSR TableJump)
     even
 ControlPatraFlight_JumpTable:
-    dc.l    Flyer_SpeedUp   ; NES addr vector (32-bit for M68K)
-    dc.l    Flyer_PatraDecideState   ; NES addr vector (32-bit for M68K)
-    dc.l    Flyer_Chase   ; NES addr vector (32-bit for M68K)
-    dc.l    Flyer_Wander   ; NES addr vector (32-bit for M68K)
+    dc.l    Flyer_SpeedUp   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    Flyer_PatraDecideState   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    Flyer_Chase   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    Flyer_Wander   ; jump table entry (32-bit for _m68k_tablejump)
 
     even
 Flyer_PatraDecideState:
@@ -12384,9 +12391,9 @@ UpdateGanon:
     bsr     _m68k_tablejump  ; M68K-native table dispatch (replaces JSR TableJump)
     even
 UpdateGanon_JumpTable:
-    dc.l    Ganon_ScenePhase0   ; NES addr vector (32-bit for M68K)
-    dc.l    Ganon_ScenePhase1   ; NES addr vector (32-bit for M68K)
-    dc.l    Ganon_ScenePhase2   ; NES addr vector (32-bit for M68K)
+    dc.l    Ganon_ScenePhase0   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    Ganon_ScenePhase1   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    Ganon_ScenePhase2   ; jump table entry (32-bit for _m68k_tablejump)
 
 ; Description:
 ; Lift up the Triforce of Courage while the room is dark.
@@ -13676,9 +13683,9 @@ UpdateCandle:
     bsr     _m68k_tablejump  ; M68K-native table dispatch (replaces JSR TableJump)
     even
 UpdateCandle_JumpTable:
-    dc.l    UpdateCandle_Begin   ; NES addr vector (32-bit for M68K)
-    dc.l    UpdateCandle_Brightening   ; NES addr vector (32-bit for M68K)
-    dc.l    UpdateCandle_Done   ; NES addr vector (32-bit for M68K)
+    dc.l    UpdateCandle_Begin   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    UpdateCandle_Brightening   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    UpdateCandle_Done   ; jump table entry (32-bit for _m68k_tablejump)
 
     even
 UpdateCandle_Begin:
@@ -13793,10 +13800,10 @@ ControlFairyFlight:
     bsr     _m68k_tablejump  ; M68K-native table dispatch (replaces JSR TableJump)
     even
 ControlFairyFlight_JumpTable:
-    dc.l    Flyer_SpeedUp   ; NES addr vector (32-bit for M68K)
-    dc.l    Flyer_FairyDecideState   ; NES addr vector (32-bit for M68K)
-    dc.l    Flyer_DoNothing   ; NES addr vector (32-bit for M68K)
-    dc.l    Flyer_Wander   ; NES addr vector (32-bit for M68K)
+    dc.l    Flyer_SpeedUp   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    Flyer_FairyDecideState   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    Flyer_DoNothing   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    Flyer_Wander   ; jump table entry (32-bit for _m68k_tablejump)
 
     even
 Flyer_FairyDecideState:

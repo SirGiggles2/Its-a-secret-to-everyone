@@ -4,54 +4,50 @@ CRAM Trace Probe  —  frames 1-250
 
 --- CRAM CHANGES at frame 8 ---
   PPU_LATCH=$00 PPU_VADDR=$0000  DynBuf[0]=$00
-  ptr=$6B/$65 (NES $656B)  ppuCtrl=$00 ppuCtrl_hw=$00 subphase=$00
+  ptr=$68/$65 (NES $6568)  ppuCtrl=$00 ppuCtrl_hw=$00 subphase=$00
   CRAM byte_addr=  0 (pal=0 col=0): $0000(R0G0B0) → $00E0(R0G7B0)
-f010: PPU_VADDR=$0000 DynBuf=$00 ptr=$6A98 ppuCtrl=$00 sub=$00 mode=$00
-f020: PPU_VADDR=$2068 DynBuf=$FF ptr=$2420 ppuCtrl=$30 sub=$00 mode=$00
-f030: PPU_VADDR=$2BB8 DynBuf=$FF ptr=$2428 ppuCtrl=$30 sub=$00 mode=$00
-f035: PPU_VADDR=$0000 DynBuf=$FF ptr=$A9EB ppuCtrl=$30 sub=$00 mode=$00
-f040: PPU_VADDR=$0000 DynBuf=$FF ptr=$B0A5 ppuCtrl=$30 sub=$00 mode=$00
-f045: PPU_VADDR=$0000 DynBuf=$FF ptr=$B75F ppuCtrl=$30 sub=$00 mode=$00
-f050: PPU_VADDR=$01FD DynBuf=$FF ptr=$0300 ppuCtrl=$30 sub=$00 mode=$00
-f055: PPU_VADDR=$10DA DynBuf=$FF ptr=$0300 ppuCtrl=$30 sub=$00 mode=$00
-f060: PPU_VADDR=$133A DynBuf=$FF ptr=$0300 ppuCtrl=$30 sub=$00 mode=$00
---- CRAM CHANGES at frame 95 ---
-  PPU_LATCH=$00 PPU_VADDR=$0018  DynBuf[0]=$3F
-  ptr=$68/$03 (NES $0368)  ppuCtrl=$30 ppuCtrl_hw=$30 subphase=$02
-  CRAM byte_addr=  0 (pal=0 col=0): $00E0(R0G7B0) → $0002(R1G0B0)
-  CRAM byte_addr=  2 (pal=0 col=1): $0000(R0G0B0) → $0002(R1G0B0)
-  CRAM byte_addr=  4 (pal=0 col=2): $0000(R0G0B0) → $0002(R1G0B0)
-  CRAM byte_addr=  6 (pal=0 col=3): $0000(R0G0B0) → $0002(R1G0B0)
-  CRAM byte_addr= 32 (pal=1 col=0): $0000(R0G0B0) → $0002(R1G0B0)
-  CRAM byte_addr= 34 (pal=1 col=1): $0000(R0G0B0) → $0002(R1G0B0)
-  CRAM byte_addr= 36 (pal=1 col=2): $0000(R0G0B0) → $0002(R1G0B0)
-  CRAM byte_addr= 38 (pal=1 col=3): $0000(R0G0B0) → $0002(R1G0B0)
-  CRAM byte_addr= 64 (pal=2 col=0): $0000(R0G0B0) → $0002(R1G0B0)
+f010: PPU_VADDR=$0000 DynBuf=$00 ptr=$6A61 ppuCtrl=$00 sub=$00 mode=$00
+f020: PPU_VADDR=$0000 DynBuf=$FF ptr=$0000 ppuCtrl=$00 sub=$00 mode=$00
+f030: PPU_VADDR=$0000 DynBuf=$FF ptr=$B027 ppuCtrl=$30 sub=$00 mode=$00
+f035: PPU_VADDR=$0000 DynBuf=$FF ptr=$B698 ppuCtrl=$30 sub=$00 mode=$00
+f040: PPU_VADDR=$0107 DynBuf=$FF ptr=$0300 ppuCtrl=$30 sub=$00 mode=$00
+f045: PPU_VADDR=$0009 DynBuf=$FF ptr=$8F4D ppuCtrl=$30 sub=$00 mode=$00
+f050: PPU_VADDR=$0040 DynBuf=$FF ptr=$9271 ppuCtrl=$30 sub=$00 mode=$00
+f055: PPU_VADDR=$003C DynBuf=$FF ptr=$9552 ppuCtrl=$30 sub=$00 mode=$00
+f060: PPU_VADDR=$0032 DynBuf=$FF ptr=$9876 ppuCtrl=$30 sub=$00 mode=$00
+--- CRAM CHANGES at frame 240 ---
+  PPU_LATCH=$00 PPU_VADDR=$0000  DynBuf[0]=$FF
+  ptr=$02/$03 (NES $0302)  ppuCtrl=$B0 ppuCtrl_hw=$B0 subphase=$00
+  CRAM byte_addr=  0 (pal=0 col=0): $00E0(R0G7B0) → $0466(R3G3B2)
+  CRAM byte_addr=  4 (pal=0 col=2): $0000(R0G0B0) → $0222(R1G1B1)
+  CRAM byte_addr=  6 (pal=0 col=3): $0000(R0G0B0) → $0444(R2G2B2)
+  CRAM byte_addr= 32 (pal=1 col=0): $0000(R0G0B0) → $0466(R3G3B2)
+  CRAM byte_addr= 34 (pal=1 col=1): $0000(R0G0B0) → $0026(R3G1B0)
+  CRAM byte_addr= 36 (pal=1 col=2): $0000(R0G0B0) → $0246(R3G2B1)
+  CRAM byte_addr= 64 (pal=2 col=0): $0000(R0G0B0) → $0466(R3G3B2)
   CRAM byte_addr= 66 (pal=2 col=1): $0000(R0G0B0) → $0002(R1G0B0)
-  CRAM byte_addr= 68 (pal=2 col=2): $0000(R0G0B0) → $0002(R1G0B0)
-  CRAM byte_addr= 70 (pal=2 col=3): $0000(R0G0B0) → $0002(R1G0B0)
-  CRAM byte_addr= 96 (pal=3 col=0): $0000(R0G0B0) → $0002(R1G0B0)
-  CRAM byte_addr= 98 (pal=3 col=1): $0000(R0G0B0) → $0002(R1G0B0)
-  CRAM byte_addr=100 (pal=3 col=2): $0000(R0G0B0) → $0002(R1G0B0)
-  CRAM byte_addr=102 (pal=3 col=3): $0000(R0G0B0) → $0002(R1G0B0)
+  CRAM byte_addr= 68 (pal=2 col=2): $0000(R0G0B0) → $0040(R0G2B0)
+  CRAM byte_addr= 70 (pal=2 col=3): $0000(R0G0B0) → $0046(R3G2B0)
+  CRAM byte_addr= 96 (pal=3 col=0): $0000(R0G0B0) → $0466(R3G3B2)
+  CRAM byte_addr= 98 (pal=3 col=1): $0000(R0G0B0) → $0666(R3G3B3)
+  CRAM byte_addr=100 (pal=3 col=2): $0000(R0G0B0) → $0664(R2G3B3)
+  CRAM byte_addr=102 (pal=3 col=3): $0000(R0G0B0) → $0642(R1G2B3)
 
 --- Final CRAM (all 64 entries) ---
-  CRAM[0][00] addr=  0 = $0002  R=1 G=0 B=0
-  CRAM[0][01] addr=  2 = $0002  R=1 G=0 B=0
-  CRAM[0][02] addr=  4 = $0002  R=1 G=0 B=0
-  CRAM[0][03] addr=  6 = $0002  R=1 G=0 B=0
-  CRAM[1][00] addr= 32 = $0002  R=1 G=0 B=0
-  CRAM[1][01] addr= 34 = $0002  R=1 G=0 B=0
-  CRAM[1][02] addr= 36 = $0002  R=1 G=0 B=0
-  CRAM[1][03] addr= 38 = $0002  R=1 G=0 B=0
-  CRAM[2][00] addr= 64 = $0002  R=1 G=0 B=0
+  CRAM[0][00] addr=  0 = $0466  R=3 G=3 B=2
+  CRAM[0][02] addr=  4 = $0222  R=1 G=1 B=1
+  CRAM[0][03] addr=  6 = $0444  R=2 G=2 B=2
+  CRAM[1][00] addr= 32 = $0466  R=3 G=3 B=2
+  CRAM[1][01] addr= 34 = $0026  R=3 G=1 B=0
+  CRAM[1][02] addr= 36 = $0246  R=3 G=2 B=1
+  CRAM[2][00] addr= 64 = $0466  R=3 G=3 B=2
   CRAM[2][01] addr= 66 = $0002  R=1 G=0 B=0
-  CRAM[2][02] addr= 68 = $0002  R=1 G=0 B=0
-  CRAM[2][03] addr= 70 = $0002  R=1 G=0 B=0
-  CRAM[3][00] addr= 96 = $0002  R=1 G=0 B=0
-  CRAM[3][01] addr= 98 = $0002  R=1 G=0 B=0
-  CRAM[3][02] addr=100 = $0002  R=1 G=0 B=0
-  CRAM[3][03] addr=102 = $0002  R=1 G=0 B=0
+  CRAM[2][02] addr= 68 = $0040  R=0 G=2 B=0
+  CRAM[2][03] addr= 70 = $0046  R=3 G=2 B=0
+  CRAM[3][00] addr= 96 = $0466  R=3 G=3 B=2
+  CRAM[3][01] addr= 98 = $0666  R=3 G=3 B=3
+  CRAM[3][02] addr=100 = $0664  R=2 G=3 B=3
+  CRAM[3][03] addr=102 = $0642  R=1 G=2 B=3
 
 =================================================================
 CRAM TRACE PROBE COMPLETE

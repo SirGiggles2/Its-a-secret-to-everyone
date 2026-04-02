@@ -1013,6 +1013,7 @@ KeepPlayingSong:
     addq.b  #1,($060A,A4)
     move.b  ($66,A4),D1   ; ptr lo
     move.b  ($67,A4),D4  ; ptr hi
+    andi.w  #$00FF,D1         ; zero-extend lo byte
     lsl.w   #8,D4
     or.w    D1,D4             ; D4 = NES ptr addr
     ext.l   D4
@@ -1050,6 +1051,7 @@ PrepNote:
     addq.b  #1,($060A,A4)
     move.b  ($66,A4),D1   ; ptr lo
     move.b  ($67,A4),D4  ; ptr hi
+    andi.w  #$00FF,D1         ; zero-extend lo byte
     lsl.w   #8,D4
     or.w    D1,D4             ; D4 = NES ptr addr
     ext.l   D4
@@ -1115,6 +1117,7 @@ _L_z00_ApplySq1Effects_HandleSq0:
     addq.b  #1,($060B,A4)
     move.b  ($66,A4),D1   ; ptr lo
     move.b  ($67,A4),D4  ; ptr hi
+    andi.w  #$00FF,D1         ; zero-extend lo byte
     lsl.w   #8,D4
     or.w    D1,D4             ; D4 = NES ptr addr
     ext.l   D4
@@ -1128,6 +1131,7 @@ _L_z00_ApplySq1Effects_HandleSq0:
     addq.b  #1,($060B,A4)
     move.b  ($66,A4),D1   ; ptr lo
     move.b  ($67,A4),D4  ; ptr hi
+    andi.w  #$00FF,D1         ; zero-extend lo byte
     lsl.w   #8,D4
     or.w    D1,D4             ; D4 = NES ptr addr
     ext.l   D4
@@ -1190,6 +1194,7 @@ _L_z00_ApplySq1Effects_PrepNoteOrPassage:
     addq.b  #1,($060C,A4)
     move.b  ($66,A4),D1   ; ptr lo
     move.b  ($67,A4),D4  ; ptr hi
+    andi.w  #$00FF,D1         ; zero-extend lo byte
     lsl.w   #8,D4
     or.w    D1,D4             ; D4 = NES ptr addr
     ext.l   D4
@@ -1231,6 +1236,7 @@ _L_z00_ApplySq1Effects_PrepNoteTrg:
     addq.b  #1,($060C,A4)
     move.b  ($66,A4),D1   ; ptr lo
     move.b  ($67,A4),D4  ; ptr hi
+    andi.w  #$00FF,D1         ; zero-extend lo byte
     lsl.w   #8,D4
     or.w    D1,D4             ; D4 = NES ptr addr
     ext.l   D4
@@ -1281,6 +1287,7 @@ _anon_z00_21:
     addq.b  #1,($060D,A4)
     move.b  ($66,A4),D1   ; ptr lo
     move.b  ($67,A4),D4  ; ptr hi
+    andi.w  #$00FF,D1         ; zero-extend lo byte
     lsl.w   #8,D4
     or.w    D1,D4             ; D4 = NES ptr addr
     ext.l   D4

@@ -435,15 +435,15 @@ _L_z01_UpdateCavePerson_UpdateCavePersonDirect:
     bsr     _m68k_tablejump  ; M68K-native table dispatch (replaces JSR TableJump)
     even
 UpdateCavePerson_JumpTable:
-    dc.l    UpdateCavePersonState_TransferPrices   ; NES addr vector (32-bit for M68K)
-    dc.l    UpdatePersonState_Textbox   ; NES addr vector (32-bit for M68K)
-    dc.l    UpdateCavePersonState_TalkOrShopOrDoorCharge   ; NES addr vector (32-bit for M68K)
-    dc.l    UpdatePersonState_CueTransferBlankPersonWares   ; NES addr vector (32-bit for M68K)
-    dc.l    UpdatePersonState_DelayThenHide   ; NES addr vector (32-bit for M68K)
-    dc.l    UpdateCavePersonState_HintOrMoneyGame   ; NES addr vector (32-bit for M68K)
-    dc.l    UpdatePersonState_CueTransferBlankPersonWares   ; NES addr vector (32-bit for M68K)
-    dc.l    UpdatePersonState_Textbox   ; NES addr vector (32-bit for M68K)
-    dc.l    UpdateCavePersonState_DoNothing   ; NES addr vector (32-bit for M68K)
+    dc.l    UpdateCavePersonState_TransferPrices   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    UpdatePersonState_Textbox   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    UpdateCavePersonState_TalkOrShopOrDoorCharge   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    UpdatePersonState_CueTransferBlankPersonWares   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    UpdatePersonState_DelayThenHide   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    UpdateCavePersonState_HintOrMoneyGame   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    UpdatePersonState_CueTransferBlankPersonWares   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    UpdatePersonState_Textbox   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    UpdateCavePersonState_DoNothing   ; jump table entry (32-bit for _m68k_tablejump)
 
     even
 DrawCavePerson:
@@ -723,6 +723,7 @@ _L_z01_UpdatePersonState_Textbox_WriteChar:
     ;
     move.b  ($00,A4),D1   ; ptr lo
     move.b  ($01,A4),D4  ; ptr hi
+    andi.w  #$00FF,D1         ; zero-extend lo byte
     lsl.w   #8,D4
     or.w    D1,D4             ; D4 = NES ptr addr
     ext.l   D4
@@ -747,6 +748,7 @@ _L_z01_UpdatePersonState_Textbox_WriteChar:
     ;
     move.b  ($00,A4),D1   ; ptr lo
     move.b  ($01,A4),D4  ; ptr hi
+    andi.w  #$00FF,D1         ; zero-extend lo byte
     lsl.w   #8,D4
     or.w    D1,D4             ; D4 = NES ptr addr
     ext.l   D4
@@ -1184,16 +1186,16 @@ InitUnderworldPerson_Full:
     bsr     _m68k_tablejump  ; M68K-native table dispatch (replaces JSR TableJump)
     even
 InitUnderworldPerson_Full_JumpTable:
-    dc.l    InitUnderworldPerson_DoNothing   ; NES addr vector (32-bit for M68K)
-    dc.l    InitUnderworldPersonA   ; NES addr vector (32-bit for M68K)
-    dc.l    InitUnderworldPersonA   ; NES addr vector (32-bit for M68K)
-    dc.l    InitUnderworldPersonB   ; NES addr vector (32-bit for M68K)
-    dc.l    InitUnderworldPersonB   ; NES addr vector (32-bit for M68K)
-    dc.l    InitUnderworldPersonA   ; NES addr vector (32-bit for M68K)
-    dc.l    InitUnderworldPersonB   ; NES addr vector (32-bit for M68K)
-    dc.l    InitUnderworldPersonA   ; NES addr vector (32-bit for M68K)
-    dc.l    InitUnderworldPersonB   ; NES addr vector (32-bit for M68K)
-    dc.l    InitUnderworldPersonC   ; NES addr vector (32-bit for M68K)
+    dc.l    InitUnderworldPerson_DoNothing   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    InitUnderworldPersonA   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    InitUnderworldPersonA   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    InitUnderworldPersonB   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    InitUnderworldPersonB   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    InitUnderworldPersonA   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    InitUnderworldPersonB   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    InitUnderworldPersonA   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    InitUnderworldPersonB   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    InitUnderworldPersonC   ; jump table entry (32-bit for _m68k_tablejump)
 
     even
 UnderworldPersonTextSelectorsA:
@@ -1383,9 +1385,9 @@ _L_z01_UpdateUnderworldPerson_Full_DrawAndCheckCollisions:
     bsr     _m68k_tablejump  ; M68K-native table dispatch (replaces JSR TableJump)
     even
 UpdateUnderworldPerson_Full_JumpTable:
-    dc.l    UpdatePersonState_ResetCharOffset   ; NES addr vector (32-bit for M68K)
-    dc.l    UpdatePersonState_Textbox   ; NES addr vector (32-bit for M68K)
-    dc.l    UpdatePersonState_DoNothing   ; NES addr vector (32-bit for M68K)
+    dc.l    UpdatePersonState_ResetCharOffset   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    UpdatePersonState_Textbox   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    UpdatePersonState_DoNothing   ; jump table entry (32-bit for _m68k_tablejump)
 
     even
 UpdatePersonState_ResetCharOffset:
@@ -1441,11 +1443,11 @@ _L_z01_UpdateUnderworldPersonComplex_HandleState:
     bsr     _m68k_tablejump  ; M68K-native table dispatch (replaces JSR TableJump)
     even
 UpdateUnderworldPersonComplex_JumpTable:
-    dc.l    UpdateUnderworldPersonComplexState_Begin   ; NES addr vector (32-bit for M68K)
-    dc.l    UpdatePersonState_Textbox   ; NES addr vector (32-bit for M68K)
-    dc.l    UpdateUnderworldPersonComplexState_SenseLink   ; NES addr vector (32-bit for M68K)
-    dc.l    UpdatePersonState_CueTransferBlankPersonWares   ; NES addr vector (32-bit for M68K)
-    dc.l    UpdateUnderworldPersonComplexState_DelayAndQuit   ; NES addr vector (32-bit for M68K)
+    dc.l    UpdateUnderworldPersonComplexState_Begin   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    UpdatePersonState_Textbox   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    UpdateUnderworldPersonComplexState_SenseLink   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    UpdatePersonState_CueTransferBlankPersonWares   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    UpdateUnderworldPersonComplexState_DelayAndQuit   ; jump table entry (32-bit for _m68k_tablejump)
 
     even
 UpdateUnderworldPersonComplexState_Begin:
@@ -1559,11 +1561,11 @@ _anon_z01_18:
     bsr     _m68k_tablejump  ; M68K-native table dispatch (replaces JSR TableJump)
     even
 UpdateUnderworldPersonLifeOrMoney_Full_JumpTable:
-    dc.l    UpdateUnderworldPersonLifeOrMoneyState_0   ; NES addr vector (32-bit for M68K)
-    dc.l    UpdatePersonState_Textbox   ; NES addr vector (32-bit for M68K)
-    dc.l    UpdateUnderworldPersonLifeOrMoneyState_2   ; NES addr vector (32-bit for M68K)
-    dc.l    UpdatePersonState_CueTransferBlankPersonWares   ; NES addr vector (32-bit for M68K)
-    dc.l    UpdateUnderworldPersonComplexState_DelayAndQuit   ; NES addr vector (32-bit for M68K)
+    dc.l    UpdateUnderworldPersonLifeOrMoneyState_0   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    UpdatePersonState_Textbox   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    UpdateUnderworldPersonLifeOrMoneyState_2   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    UpdatePersonState_CueTransferBlankPersonWares   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    UpdateUnderworldPersonComplexState_DelayAndQuit   ; jump table entry (32-bit for _m68k_tablejump)
 
     even
 LifeOrMoneyItemXs:
@@ -1746,10 +1748,10 @@ _anon_z01_20:
     bsr     _m68k_tablejump  ; M68K-native table dispatch (replaces JSR TableJump)
     even
 UpdateGrumble_Full_JumpTable:
-    dc.l    UpdatePersonState_Textbox   ; NES addr vector (32-bit for M68K)
-    dc.l    UpdateGrumble1   ; NES addr vector (32-bit for M68K)
-    dc.l    UpdatePersonState_CueTransferBlankPersonWares   ; NES addr vector (32-bit for M68K)
-    dc.l    UpdateGrumble3   ; NES addr vector (32-bit for M68K)
+    dc.l    UpdatePersonState_Textbox   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    UpdateGrumble1   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    UpdatePersonState_CueTransferBlankPersonWares   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    UpdateGrumble3   ; jump table entry (32-bit for _m68k_tablejump)
 
     even
 UpdateGrumble1:
@@ -1833,6 +1835,7 @@ CopyCommonCodeToRam:
 _L_z01_CopyCommonCodeToRam_Loop:
     move.b  ($00,A4),D1   ; ptr lo
     move.b  ($01,A4),D4  ; ptr hi
+    andi.w  #$00FF,D1         ; zero-extend lo byte
     lsl.w   #8,D4
     or.w    D1,D4             ; D4 = NES ptr addr
     ext.l   D4
@@ -1841,6 +1844,7 @@ _L_z01_CopyCommonCodeToRam_Loop:
     move.b  (A0,D3.W),D0     ; LDA ($nn),Y
     move.b  ($02,A4),D1   ; ptr lo
     move.b  ($03,A4),D4  ; ptr hi
+    andi.w  #$00FF,D1         ; zero-extend lo byte
     lsl.w   #8,D4
     or.w    D1,D4
     ext.l   D4
@@ -1878,8 +1882,8 @@ _L_z01_CopyCommonCodeToRam_Loop:
 
     even
 DemoPatternBlockAddrs:
-    dc.l    DemoSpritePatterns   ; NES addr vector (32-bit for M68K)
-    dc.l    DemoBackgroundPatterns   ; NES addr vector (32-bit for M68K)
+    dc.l    DemoSpritePatterns        ; 32-bit Genesis ROM address
+    dc.l    DemoBackgroundPatterns     ; 32-bit Genesis ROM address
 
     even
 DemoPatternBlockSizes:
@@ -1907,8 +1911,10 @@ _L_z01_TransferDemoPatterns_LoopBlock:
     ; The size and VRAM address have the high byte first.
     ;
     lea     (DemoPatternBlockAddrs).l,A0
-    move.b  (A0,D2.W),D0
-    move.b  D0,($0000,A4)
+    move.w  D2,D5
+    add.w   D5,D5              ; D5 = 4*block_idx (dc.l = 4 bytes)
+    move.l  (A0,D5.W),D5      ; D5 = 32-bit Genesis ROM source addr
+    move.l  D5,($04,A4)       ; store to [$04:$07]
     lea     (DemoPatternBlockSizes).l,A0
     move.b  (A0,D2.W),D0
     move.b  D0,($0002,A4)
@@ -1916,9 +1922,7 @@ _L_z01_TransferDemoPatterns_LoopBlock:
     move.b  (A0,D2.W),D0
     bsr     _ppu_write_6  ; PPU $2006 write, D0=val
     addq.b  #1,D2
-    lea     (DemoPatternBlockAddrs).l,A0
-    move.b  (A0,D2.W),D0
-    move.b  D0,($0001,A4)
+    ; (32-bit Genesis ROM addr already in [$04:$07])
     lea     (DemoPatternBlockSizes).l,A0
     move.b  (A0,D2.W),D0
     move.b  D0,($0003,A4)
@@ -1943,52 +1947,17 @@ _L_z01_TransferDemoPatterns_LoopBlock:
 ;
     even
 TransferPatternBlock_Bank1:
-    bsr     _ppu_write_6  ; PPU $2006 write, D0=val
-    moveq   #0,D3
-    even
-_L_z01_TransferPatternBlock_Bank1_Loop:
-    ; Load and transfer one byte to VRAM.
-    ;
-    move.b  ($00,A4),D1   ; ptr lo
-    move.b  ($01,A4),D4  ; ptr hi
-    lsl.w   #8,D4
-    or.w    D1,D4             ; D4 = NES ptr addr
-    ext.l   D4
-    add.l   #NES_RAM,D4       ; → Genesis addr
-    movea.l D4,A0
-    move.b  (A0,D3.W),D0     ; LDA ($nn),Y
-    bsr     _ppu_write_7  ; PPU $2007 write, D0=val
-    ; Increment the 16-bit address at [00:01].
-    ;
-    move.b  ($0000,A4),D0
-    andi    #$EE,CCR  ; CLC: clear C+X
-    move.b  #$01,D1
-    addx.b  D1,D0   ; ADC #$01 (X flag = 6502 C)
-    move.b  D0,($0000,A4)
-    move.b  ($0001,A4),D0
-    move.b  #$00,D1
-    addx.b  D1,D0   ; ADC #$00 (X flag = 6502 C)
-    move.b  D0,($0001,A4)
-    ; Decrement the 16-bit amount at [03:02].
-    ;
-    move.b  ($0003,A4),D0
-    ori     #$11,CCR  ; SEC: set C+X
-    move.b  #$01,D1
-    subx.b  D1,D0   ; SBC #$01
-    move.b  D0,($0003,A4)
-    move.b  ($0002,A4),D0
-    move.b  #$00,D1
-    subx.b  D1,D0   ; SBC #$00
-    move.b  D0,($0002,A4)
-    ; Loop again if the amount left <> 0.
-    ;
-    move.b  ($0002,A4),D0
-    bne  _L_z01_TransferPatternBlock_Bank1_Loop
-    move.b  ($0003,A4),D0
-    bne  _L_z01_TransferPatternBlock_Bank1_Loop
-    ; This block is done. Increment the block index.
-    ;
-    addq.b  #1,($051D,A4)
+    ; PATCHED: fast bulk CHR transfer (bypasses per-byte _ppu_write_7)
+    bsr     _ppu_write_6          ; complete PPU addr latch pair (sets PPU_VADDR)
+    movea.l ($04,A4),A0           ; ROM source address
+    move.w  (PPU_VADDR).l,D1      ; NES CHR destination address
+    moveq   #0,D2
+    move.b  ($0002,A4),D2         ; size hi byte
+    lsl.w   #8,D2
+    move.b  ($0003,A4),D2         ; size lo byte (D2.w = total bytes)
+    ext.l   D2                    ; D2.l = byte count
+    bsr     _transfer_chr_block_fast
+    addq.b  #1,($051D,A4)         ; increment block index
     rts
 
     even
@@ -5288,6 +5257,7 @@ SetRoomFlagUWItemState:
     ori.b #$10,D0
     move.b  ($00,A4),D1   ; ptr lo
     move.b  ($01,A4),D4  ; ptr hi
+    andi.w  #$00FF,D1         ; zero-extend lo byte
     lsl.w   #8,D4
     or.w    D1,D4
     ext.l   D4
@@ -5308,6 +5278,7 @@ GetRoomFlagUWItemState:
     move.b  ($00EB,A4),D3
     move.b  ($08,A4),D1   ; ptr lo
     move.b  ($09,A4),D4  ; ptr hi
+    andi.w  #$00FF,D1         ; zero-extend lo byte
     lsl.w   #8,D4
     or.w    D1,D4             ; D4 = NES ptr addr
     ext.l   D4

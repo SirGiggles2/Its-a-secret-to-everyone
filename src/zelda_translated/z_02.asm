@@ -80,9 +80,9 @@
 
     even
 CommonPatternBlockAddrs:
-    dc.l    CommonSpritePatterns   ; NES addr vector (32-bit for M68K)
-    dc.l    CommonBackgroundPatterns   ; NES addr vector (32-bit for M68K)
-    dc.l    CommonMiscPatterns   ; NES addr vector (32-bit for M68K)
+    dc.l    CommonSpritePatterns       ; 32-bit Genesis ROM address
+    dc.l    CommonBackgroundPatterns    ; 32-bit Genesis ROM address
+    dc.l    CommonMiscPatterns          ; 32-bit Genesis ROM address
 
     even
 CommonPatternBlockSizes:
@@ -146,37 +146,17 @@ _L_z02_TransferCommonPatterns_LoopBlock:
 ;
     even
 TransferPatternBlock_Bank2:
-    bsr     _ppu_write_6  ; PPU $2006 write, D0=val
-    moveq   #0,D3
-    even
-_L_z02_TransferPatternBlock_Bank2_Loop:
-    ; Load and transfer 1 byte to VRAM.
-    ;
-    movea.l ($04,A4),A0      ; 32-bit Genesis ROM source addr from [$04:$07]
-    move.b  (A0,D3.W),D0     ; LDA ($nn),Y
-    bsr     _ppu_write_7  ; PPU $2007 write, D0=val
-    ; Increment 32-bit Genesis ROM source address at [$04:$07].
-    addq.l  #1,($04,A4)
-    ; Decrement the 16-bit amount remaining in [03:02].
-    ;
-    move.b  ($0003,A4),D0
-    ori     #$11,CCR  ; SEC: set C+X
-    move.b  #$01,D1
-    subx.b  D1,D0   ; SBC #$01
-    move.b  D0,($0003,A4)
-    move.b  ($0002,A4),D0
-    move.b  #$00,D1
-    subx.b  D1,D0   ; SBC #$00
-    move.b  D0,($0002,A4)
-    ; Loop until the amount remaining = 0.
-    ;
-    move.b  ($0002,A4),D0
-    bne  _L_z02_TransferPatternBlock_Bank2_Loop
-    move.b  ($0003,A4),D0
-    bne  _L_z02_TransferPatternBlock_Bank2_Loop
-    ; The block is done. Increment the block index.
-    ;
-    addq.b  #1,($051D,A4)
+    ; PATCHED: fast bulk CHR transfer (bypasses per-byte _ppu_write_7)
+    bsr     _ppu_write_6          ; complete PPU addr latch pair (sets PPU_VADDR)
+    movea.l ($04,A4),A0           ; ROM source address
+    move.w  (PPU_VADDR).l,D1      ; NES CHR destination address
+    moveq   #0,D2
+    move.b  ($0002,A4),D2         ; size hi byte
+    lsl.w   #8,D2
+    move.b  ($0003,A4),D2         ; size lo byte (D2.w = total bytes)
+    ext.l   D2                    ; D2.l = byte count
+    bsr     _transfer_chr_block_fast
+    addq.b  #1,($051D,A4)         ; increment block index
     rts
 
     even
@@ -461,9 +441,9 @@ InitDemo_RunTasks:
     bsr     _m68k_tablejump  ; M68K-native table dispatch (replaces JSR TableJump)
     even
 InitDemo_RunTasks_Phase0_JumpTable:
-    dc.l    InitDemoSubphaseClearArtifacts   ; NES addr vector (32-bit for M68K)
-    dc.l    InitDemoSubphaseTransferTitlePalette   ; NES addr vector (32-bit for M68K)
-    dc.l    InitDemoSubphasePlayTitleSong   ; NES addr vector (32-bit for M68K)
+    dc.l    InitDemoSubphaseClearArtifacts   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    InitDemoSubphaseTransferTitlePalette   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    InitDemoSubphasePlayTitleSong   ; jump table entry (32-bit for _m68k_tablejump)
 
     even
 InitDemo_Phase1:
@@ -471,9 +451,9 @@ InitDemo_Phase1:
     bsr     _m68k_tablejump  ; M68K-native table dispatch (replaces JSR TableJump)
     even
 InitDemo_RunTasks_Phase1_JumpTable:
-    dc.l    InitDemoSubphaseClearArtifacts   ; NES addr vector (32-bit for M68K)
-    dc.l    InitDemoSubphaseTransferStoryPalette   ; NES addr vector (32-bit for M68K)
-    dc.l    InitDemoSubphaseTransferStoryTiles   ; NES addr vector (32-bit for M68K)
+    dc.l    InitDemoSubphaseClearArtifacts   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    InitDemoSubphaseTransferStoryPalette   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    InitDemoSubphaseTransferStoryTiles   ; jump table entry (32-bit for _m68k_tablejump)
 
     even
 UpdateMode0Demo:
@@ -490,9 +470,9 @@ _L_z02_UpdateMode0Demo_HandleSubmodes:
     bsr     _m68k_tablejump  ; M68K-native table dispatch (replaces JSR TableJump)
     even
 UpdateMode0Demo_JumpTable:
-    dc.l    UpdateMode0Demo_Sub0   ; NES addr vector (32-bit for M68K)
-    dc.l    UpdateMode0Demo_Sub1   ; NES addr vector (32-bit for M68K)
-    dc.l    UpdateMode0Demo_Sub2   ; NES addr vector (32-bit for M68K)
+    dc.l    UpdateMode0Demo_Sub0   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    UpdateMode0Demo_Sub1   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    UpdateMode0Demo_Sub2   ; jump table entry (32-bit for _m68k_tablejump)
 
     even
 UpdateMode0Demo_Sub0:
@@ -531,6 +511,7 @@ UpdateMode0Demo_Sub2:
 _L_z02_UpdateMode0Demo_Sub2_LoopFormatSlot:
     move.b  ($06,A4),D1   ; ptr lo
     move.b  ($07,A4),D4  ; ptr hi
+    andi.w  #$00FF,D1         ; zero-extend lo byte
     lsl.w   #8,D4
     or.w    D1,D4             ; D4 = NES ptr addr
     ext.l   D4
@@ -560,6 +541,7 @@ _L_z02_UpdateMode0Demo_Sub2_LoopFormatSlot:
 _L_z02_UpdateMode0Demo_Sub2_NextFormatSlot:
     move.b  ($0A,A4),D1   ; ptr lo
     move.b  ($0B,A4),D4  ; ptr hi
+    andi.w  #$00FF,D1         ; zero-extend lo byte
     lsl.w   #8,D4
     or.w    D1,D4             ; D4 = NES ptr addr
     ext.l   D4
@@ -570,6 +552,7 @@ _L_z02_UpdateMode0Demo_Sub2_NextFormatSlot:
     move.b  D0,(A0,D3.W)
     move.b  ($0C,A4),D1   ; ptr lo
     move.b  ($0D,A4),D4  ; ptr hi
+    andi.w  #$00FF,D1         ; zero-extend lo byte
     lsl.w   #8,D4
     or.w    D1,D4             ; D4 = NES ptr addr
     ext.l   D4
@@ -586,6 +569,7 @@ _L_z02_UpdateMode0Demo_Sub2_NextFormatSlot:
 _L_z02_UpdateMode0Demo_Sub2_LoopHeart:
     move.b  ($00,A4),D1   ; ptr lo
     move.b  ($01,A4),D4  ; ptr hi
+    andi.w  #$00FF,D1         ; zero-extend lo byte
     lsl.w   #8,D4
     or.w    D1,D4             ; D4 = NES ptr addr
     ext.l   D4
@@ -641,6 +625,7 @@ _L_z02_UpdateMode0Demo_Sub2_CopyNames:
 _L_z02_UpdateMode0Demo_Sub2_LoopNameByte:
     move.b  ($04,A4),D1   ; ptr lo
     move.b  ($05,A4),D4  ; ptr hi
+    andi.w  #$00FF,D1         ; zero-extend lo byte
     lsl.w   #8,D4
     or.w    D1,D4             ; D4 = NES ptr addr
     ext.l   D4
@@ -665,8 +650,8 @@ AnimateDemo:
     bsr     _m68k_tablejump  ; M68K-native table dispatch (replaces JSR TableJump)
     even
 AnimateDemo_Phase0_JumpTable:
-    dc.l    AnimateDemoPhase0Subphase0   ; NES addr vector (32-bit for M68K)
-    dc.l    AnimateDemoPhase0Subphase1   ; NES addr vector (32-bit for M68K)
+    dc.l    AnimateDemoPhase0Subphase0   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    AnimateDemoPhase0Subphase1   ; jump table entry (32-bit for _m68k_tablejump)
 
     even
 AnimateDemo_Phase1:
@@ -674,11 +659,11 @@ AnimateDemo_Phase1:
     bsr     _m68k_tablejump  ; M68K-native table dispatch (replaces JSR TableJump)
     even
 AnimateDemo_Phase1_JumpTable:
-    dc.l    AnimateDemoPhase1Subphase0   ; NES addr vector (32-bit for M68K)
-    dc.l    AnimateDemoPhase1Subphase1   ; NES addr vector (32-bit for M68K)
-    dc.l    AnimateDemoPhase1Subphase2   ; NES addr vector (32-bit for M68K)
-    dc.l    AnimateDemoPhase1Subphase3   ; NES addr vector (32-bit for M68K)
-    dc.l    AnimateDemoPhase1Subphase4   ; NES addr vector (32-bit for M68K)
+    dc.l    AnimateDemoPhase1Subphase0   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    AnimateDemoPhase1Subphase1   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    AnimateDemoPhase1Subphase2   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    AnimateDemoPhase1Subphase3   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    AnimateDemoPhase1Subphase4   ; jump table entry (32-bit for _m68k_tablejump)
 
     even
 InitialTitleSprites:
@@ -1074,6 +1059,7 @@ _L_z02_AnimateDemoPhase1Subphase2_CheckText:
     move.b  D0,($0001,A4)
     move.b  ($00,A4),D1   ; ptr lo
     move.b  ($01,A4),D4  ; ptr hi
+    andi.w  #$00FF,D1         ; zero-extend lo byte
     lsl.w   #8,D4
     or.w    D1,D4             ; D4 = NES ptr addr
     ext.l   D4
@@ -1090,6 +1076,7 @@ _L_z02_AnimateDemoPhase1Subphase2_CopyLine:
     addq.b  #1,D3
     move.b  ($00,A4),D1   ; ptr lo
     move.b  ($01,A4),D4  ; ptr hi
+    andi.w  #$00FF,D1         ; zero-extend lo byte
     lsl.w   #8,D4
     or.w    D1,D4             ; D4 = NES ptr addr
     ext.l   D4
@@ -1742,6 +1729,7 @@ AnimateDemoPhase0Subphase1:
 _L_z02_AnimateDemoPhase0Subphase1_CopyPalette:
     move.b  ($00,A4),D1   ; ptr lo
     move.b  ($01,A4),D4  ; ptr hi
+    andi.w  #$00FF,D1         ; zero-extend lo byte
     lsl.w   #8,D4
     or.w    D1,D4             ; D4 = NES ptr addr
     ext.l   D4
@@ -2167,6 +2155,7 @@ _L_z02_UpdateModeERegister_CopyName:
     move.b  ($0425,A4),D3
     move.b  ($C4,A4),D1   ; ptr lo
     move.b  ($C5,A4),D4  ; ptr hi
+    andi.w  #$00FF,D1         ; zero-extend lo byte
     lsl.w   #8,D4
     or.w    D1,D4
     ext.l   D4
@@ -2185,6 +2174,7 @@ _L_z02_UpdateModeERegister_CopyName:
     moveq   #34,D0
     move.b  ($C0,A4),D1   ; ptr lo
     move.b  ($C1,A4),D4  ; ptr hi
+    andi.w  #$00FF,D1         ; zero-extend lo byte
     lsl.w   #8,D4
     or.w    D1,D4
     ext.l   D4
@@ -2195,6 +2185,7 @@ _L_z02_UpdateModeERegister_CopyName:
     move.b  #$FF,D0
     move.b  ($C0,A4),D1   ; ptr lo
     move.b  ($C1,A4),D4  ; ptr hi
+    andi.w  #$00FF,D1         ; zero-extend lo byte
     lsl.w   #8,D4
     or.w    D1,D4
     ext.l   D4
@@ -2205,6 +2196,7 @@ _L_z02_UpdateModeERegister_CopyName:
     moveq   #8,D0
     move.b  ($C0,A4),D1   ; ptr lo
     move.b  ($C1,A4),D4  ; ptr hi
+    andi.w  #$00FF,D1         ; zero-extend lo byte
     lsl.w   #8,D4
     or.w    D1,D4
     ext.l   D4
@@ -2237,6 +2229,7 @@ _L_z02_UpdateModeERegister_CompareToZelda:
     moveq   #1,D0
     move.b  ($CC,A4),D1   ; ptr lo
     move.b  ($CD,A4),D4  ; ptr hi
+    andi.w  #$00FF,D1         ; zero-extend lo byte
     lsl.w   #8,D4
     or.w    D1,D4
     ext.l   D4
@@ -2252,6 +2245,7 @@ _L_z02_UpdateModeERegister_FlagBReady:
     moveq   #0,D3
     move.b  ($C6,A4),D1   ; ptr lo
     move.b  ($C7,A4),D4  ; ptr hi
+    andi.w  #$00FF,D1         ; zero-extend lo byte
     lsl.w   #8,D4
     or.w    D1,D4
     ext.l   D4
@@ -2356,6 +2350,7 @@ _L_z02_DeleteSlot_ClearName:
     moveq   #36,D0
     move.b  ($0C,A4),D1   ; ptr lo
     move.b  ($0D,A4),D4  ; ptr hi
+    andi.w  #$00FF,D1         ; zero-extend lo byte
     lsl.w   #8,D4
     or.w    D1,D4
     ext.l   D4
@@ -2855,13 +2850,13 @@ InitMode1_Full:
     bsr     _m68k_tablejump  ; M68K-native table dispatch (replaces JSR TableJump)
     even
 InitMode1_Full_JumpTable:
-    dc.l    UpdateMode0Demo_Sub1   ; NES addr vector (32-bit for M68K)
-    dc.l    InitMode1_Sub1   ; NES addr vector (32-bit for M68K)
-    dc.l    InitMode1_Sub2   ; NES addr vector (32-bit for M68K)
-    dc.l    InitMode1_FillAndTransferSlotTiles   ; NES addr vector (32-bit for M68K)
-    dc.l    InitMode1_FillAndTransferSlotTiles   ; NES addr vector (32-bit for M68K)
-    dc.l    InitMode1_FillAndTransferSlotTiles   ; NES addr vector (32-bit for M68K)
-    dc.l    InitMode1_Sub6   ; NES addr vector (32-bit for M68K)
+    dc.l    UpdateMode0Demo_Sub1   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    InitMode1_Sub1   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    InitMode1_Sub2   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    InitMode1_FillAndTransferSlotTiles   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    InitMode1_FillAndTransferSlotTiles   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    InitMode1_FillAndTransferSlotTiles   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    InitMode1_Sub6   ; jump table entry (32-bit for _m68k_tablejump)
 
     even
 UpdateMode0Demo_Sub1:
@@ -2956,6 +2951,7 @@ CalculateFileAChecksum:
 _L_z02_CalculateFileAChecksum_SumName:
     move.b  ($04,A4),D1   ; ptr lo
     move.b  ($05,A4),D4  ; ptr hi
+    andi.w  #$00FF,D1         ; zero-extend lo byte
     lsl.w   #8,D4
     or.w    D1,D4             ; D4 = NES ptr addr
     ext.l   D4
@@ -2970,6 +2966,7 @@ _L_z02_CalculateFileAChecksum_SumName:
 _L_z02_CalculateFileAChecksum_SumItems:
     move.b  ($00,A4),D1   ; ptr lo
     move.b  ($01,A4),D4  ; ptr hi
+    andi.w  #$00FF,D1         ; zero-extend lo byte
     lsl.w   #8,D4
     or.w    D1,D4             ; D4 = NES ptr addr
     ext.l   D4
@@ -2988,6 +2985,7 @@ _L_z02_CalculateFileAChecksum_SumItems:
 _L_z02_CalculateFileAChecksum_SumWorldFlags:
     move.b  ($02,A4),D1   ; ptr lo
     move.b  ($03,A4),D4  ; ptr hi
+    andi.w  #$00FF,D1         ; zero-extend lo byte
     lsl.w   #8,D4
     or.w    D1,D4             ; D4 = NES ptr addr
     ext.l   D4
@@ -3006,6 +3004,7 @@ _anon_z02_16:
     bpl  _L_z02_CalculateFileAChecksum_SumWorldFlags
     move.b  ($06,A4),D1   ; ptr lo
     move.b  ($07,A4),D4  ; ptr hi
+    andi.w  #$00FF,D1         ; zero-extend lo byte
     lsl.w   #8,D4
     or.w    D1,D4             ; D4 = NES ptr addr
     ext.l   D4
@@ -3015,6 +3014,7 @@ _anon_z02_16:
     bsr     AddATo0F0E
     move.b  ($08,A4),D1   ; ptr lo
     move.b  ($09,A4),D4  ; ptr hi
+    andi.w  #$00FF,D1         ; zero-extend lo byte
     lsl.w   #8,D4
     or.w    D1,D4             ; D4 = NES ptr addr
     ext.l   D4
@@ -3024,6 +3024,7 @@ _anon_z02_16:
     bsr     AddATo0F0E
     move.b  ($0A,A4),D1   ; ptr lo
     move.b  ($0B,A4),D4  ; ptr hi
+    andi.w  #$00FF,D1         ; zero-extend lo byte
     lsl.w   #8,D4
     or.w    D1,D4             ; D4 = NES ptr addr
     ext.l   D4
@@ -3033,6 +3034,7 @@ _anon_z02_16:
     bsr     AddATo0F0E
     move.b  ($0C,A4),D1   ; ptr lo
     move.b  ($0D,A4),D4  ; ptr hi
+    andi.w  #$00FF,D1         ; zero-extend lo byte
     lsl.w   #8,D4
     or.w    D1,D4             ; D4 = NES ptr addr
     ext.l   D4
@@ -3059,6 +3061,7 @@ FormatFileA:
 _L_z02_FormatFileA_ClearName:
     move.b  ($04,A4),D1   ; ptr lo
     move.b  ($05,A4),D4  ; ptr hi
+    andi.w  #$00FF,D1         ; zero-extend lo byte
     lsl.w   #8,D4
     or.w    D1,D4
     ext.l   D4
@@ -3073,6 +3076,7 @@ _L_z02_FormatFileA_ClearName:
 _L_z02_FormatFileA_ClearItems:
     move.b  ($00,A4),D1   ; ptr lo
     move.b  ($01,A4),D4  ; ptr hi
+    andi.w  #$00FF,D1         ; zero-extend lo byte
     lsl.w   #8,D4
     or.w    D1,D4
     ext.l   D4
@@ -3091,6 +3095,7 @@ _L_z02_FormatFileA_ClearWorldFlags:
     moveq   #0,D0
     move.b  ($02,A4),D1   ; ptr lo
     move.b  ($03,A4),D4  ; ptr hi
+    andi.w  #$00FF,D1         ; zero-extend lo byte
     lsl.w   #8,D4
     or.w    D1,D4
     ext.l   D4
@@ -3109,6 +3114,7 @@ _anon_z02_17:
     moveq   #0,D0
     move.b  ($06,A4),D1   ; ptr lo
     move.b  ($07,A4),D4  ; ptr hi
+    andi.w  #$00FF,D1         ; zero-extend lo byte
     lsl.w   #8,D4
     or.w    D1,D4
     ext.l   D4
@@ -3117,6 +3123,7 @@ _anon_z02_17:
     move.b  D0,(A0,D3.W)     ; STA ($nn),Y
     move.b  ($08,A4),D1   ; ptr lo
     move.b  ($09,A4),D4  ; ptr hi
+    andi.w  #$00FF,D1         ; zero-extend lo byte
     lsl.w   #8,D4
     or.w    D1,D4
     ext.l   D4
@@ -3125,6 +3132,7 @@ _anon_z02_17:
     move.b  D0,(A0,D3.W)     ; STA ($nn),Y
     move.b  ($0A,A4),D1   ; ptr lo
     move.b  ($0B,A4),D4  ; ptr hi
+    andi.w  #$00FF,D1         ; zero-extend lo byte
     lsl.w   #8,D4
     or.w    D1,D4
     ext.l   D4
@@ -3133,6 +3141,7 @@ _anon_z02_17:
     move.b  D0,(A0,D3.W)     ; STA ($nn),Y
     move.b  ($0C,A4),D1   ; ptr lo
     move.b  ($0D,A4),D4  ; ptr hi
+    andi.w  #$00FF,D1         ; zero-extend lo byte
     lsl.w   #8,D4
     or.w    D1,D4
     ext.l   D4
@@ -3206,6 +3215,7 @@ CalculateFileBChecksum:
 _L_z02_CalculateFileBChecksum_SumName:
     move.b  ($C4,A4),D1   ; ptr lo
     move.b  ($C5,A4),D4  ; ptr hi
+    andi.w  #$00FF,D1         ; zero-extend lo byte
     lsl.w   #8,D4
     or.w    D1,D4             ; D4 = NES ptr addr
     ext.l   D4
@@ -3220,6 +3230,7 @@ _L_z02_CalculateFileBChecksum_SumName:
 _L_z02_CalculateFileBChecksum_SumItems:
     move.b  ($C0,A4),D1   ; ptr lo
     move.b  ($C1,A4),D4  ; ptr hi
+    andi.w  #$00FF,D1         ; zero-extend lo byte
     lsl.w   #8,D4
     or.w    D1,D4             ; D4 = NES ptr addr
     ext.l   D4
@@ -3238,6 +3249,7 @@ _L_z02_CalculateFileBChecksum_SumItems:
 _L_z02_CalculateFileBChecksum_SumWorldFlags:
     move.b  ($C2,A4),D1   ; ptr lo
     move.b  ($C3,A4),D4  ; ptr hi
+    andi.w  #$00FF,D1         ; zero-extend lo byte
     lsl.w   #8,D4
     or.w    D1,D4             ; D4 = NES ptr addr
     ext.l   D4
@@ -3256,6 +3268,7 @@ _anon_z02_18:
     bpl  _L_z02_CalculateFileBChecksum_SumWorldFlags
     move.b  ($C6,A4),D1   ; ptr lo
     move.b  ($C7,A4),D4  ; ptr hi
+    andi.w  #$00FF,D1         ; zero-extend lo byte
     lsl.w   #8,D4
     or.w    D1,D4             ; D4 = NES ptr addr
     ext.l   D4
@@ -3265,6 +3278,7 @@ _anon_z02_18:
     bsr     AddAToCFCE
     move.b  ($C8,A4),D1   ; ptr lo
     move.b  ($C9,A4),D4  ; ptr hi
+    andi.w  #$00FF,D1         ; zero-extend lo byte
     lsl.w   #8,D4
     or.w    D1,D4             ; D4 = NES ptr addr
     ext.l   D4
@@ -3274,6 +3288,7 @@ _anon_z02_18:
     bsr     AddAToCFCE
     move.b  ($CA,A4),D1   ; ptr lo
     move.b  ($CB,A4),D4  ; ptr hi
+    andi.w  #$00FF,D1         ; zero-extend lo byte
     lsl.w   #8,D4
     or.w    D1,D4             ; D4 = NES ptr addr
     ext.l   D4
@@ -3283,6 +3298,7 @@ _anon_z02_18:
     bsr     AddAToCFCE
     move.b  ($CC,A4),D1   ; ptr lo
     move.b  ($CD,A4),D4  ; ptr hi
+    andi.w  #$00FF,D1         ; zero-extend lo byte
     lsl.w   #8,D4
     or.w    D1,D4             ; D4 = NES ptr addr
     ext.l   D4
@@ -3309,6 +3325,7 @@ FormatFileB:
 _L_z02_FormatFileB_ClearName:
     move.b  ($C4,A4),D1   ; ptr lo
     move.b  ($C5,A4),D4  ; ptr hi
+    andi.w  #$00FF,D1         ; zero-extend lo byte
     lsl.w   #8,D4
     or.w    D1,D4
     ext.l   D4
@@ -3323,6 +3340,7 @@ _L_z02_FormatFileB_ClearName:
 _L_z02_FormatFileB_ClearItems:
     move.b  ($C0,A4),D1   ; ptr lo
     move.b  ($C1,A4),D4  ; ptr hi
+    andi.w  #$00FF,D1         ; zero-extend lo byte
     lsl.w   #8,D4
     or.w    D1,D4
     ext.l   D4
@@ -3341,6 +3359,7 @@ _L_z02_FormatFileB_ClearWorldFlags:
     moveq   #0,D0
     move.b  ($C2,A4),D1   ; ptr lo
     move.b  ($C3,A4),D4  ; ptr hi
+    andi.w  #$00FF,D1         ; zero-extend lo byte
     lsl.w   #8,D4
     or.w    D1,D4
     ext.l   D4
@@ -3359,6 +3378,7 @@ _anon_z02_19:
     moveq   #0,D0
     move.b  ($C6,A4),D1   ; ptr lo
     move.b  ($C7,A4),D4  ; ptr hi
+    andi.w  #$00FF,D1         ; zero-extend lo byte
     lsl.w   #8,D4
     or.w    D1,D4
     ext.l   D4
@@ -3367,6 +3387,7 @@ _anon_z02_19:
     move.b  D0,(A0,D3.W)     ; STA ($nn),Y
     move.b  ($C8,A4),D1   ; ptr lo
     move.b  ($C9,A4),D4  ; ptr hi
+    andi.w  #$00FF,D1         ; zero-extend lo byte
     lsl.w   #8,D4
     or.w    D1,D4
     ext.l   D4
@@ -3375,6 +3396,7 @@ _anon_z02_19:
     move.b  D0,(A0,D3.W)     ; STA ($nn),Y
     move.b  ($CA,A4),D1   ; ptr lo
     move.b  ($CB,A4),D4  ; ptr hi
+    andi.w  #$00FF,D1         ; zero-extend lo byte
     lsl.w   #8,D4
     or.w    D1,D4
     ext.l   D4
@@ -3383,6 +3405,7 @@ _anon_z02_19:
     move.b  D0,(A0,D3.W)     ; STA ($nn),Y
     move.b  ($CC,A4),D1   ; ptr lo
     move.b  ($CD,A4),D4  ; ptr hi
+    andi.w  #$00FF,D1         ; zero-extend lo byte
     lsl.w   #8,D4
     or.w    D1,D4
     ext.l   D4
@@ -3413,6 +3436,7 @@ _L_z02_InitMode1_Sub1_LoopSlot:
     move.b  D0,-(A5)  ; PHA
     move.b  ($00,A4),D1   ; ptr lo
     move.b  ($01,A4),D4  ; ptr hi
+    andi.w  #$00FF,D1         ; zero-extend lo byte
     lsl.w   #8,D4
     or.w    D1,D4             ; D4 = NES ptr addr
     ext.l   D4
@@ -3620,8 +3644,8 @@ UpdateMode1Menu:
     bsr     _m68k_tablejump  ; M68K-native table dispatch (replaces JSR TableJump)
     even
 UpdateMode1Menu_JumpTable:
-    dc.l    UpdateMode1Menu_Sub0   ; NES addr vector (32-bit for M68K)
-    dc.l    UpdateMode1Menu_Sub1   ; NES addr vector (32-bit for M68K)
+    dc.l    UpdateMode1Menu_Sub0   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    UpdateMode1Menu_Sub1   ; jump table entry (32-bit for _m68k_tablejump)
 
     even
 UpdateMode1Menu_Sub0:
@@ -3703,6 +3727,7 @@ _L_z02_UpdateMode1Menu_Sub1_ChoseSlot:
 _L_z02_UpdateMode1Menu_Sub1_CopyItems:
     move.b  ($00,A4),D1   ; ptr lo
     move.b  ($01,A4),D4  ; ptr hi
+    andi.w  #$00FF,D1         ; zero-extend lo byte
     lsl.w   #8,D4
     or.w    D1,D4             ; D4 = NES ptr addr
     ext.l   D4
@@ -3724,6 +3749,7 @@ _L_z02_UpdateMode1Menu_Sub1_CopyItems:
 _L_z02_UpdateMode1Menu_Sub1_CopyWorldFlags:
     move.b  ($02,A4),D1   ; ptr lo
     move.b  ($03,A4),D4  ; ptr hi
+    andi.w  #$00FF,D1         ; zero-extend lo byte
     lsl.w   #8,D4
     or.w    D1,D4             ; D4 = NES ptr addr
     ext.l   D4
@@ -3732,6 +3758,7 @@ _L_z02_UpdateMode1Menu_Sub1_CopyWorldFlags:
     move.b  (A0,D3.W),D0     ; LDA ($nn),Y
     move.b  ($0E,A4),D1   ; ptr lo
     move.b  ($0F,A4),D4  ; ptr hi
+    andi.w  #$00FF,D1         ; zero-extend lo byte
     lsl.w   #8,D4
     or.w    D1,D4
     ext.l   D4
@@ -3859,9 +3886,9 @@ UpdateModeDSave:
     bsr     _m68k_tablejump  ; M68K-native table dispatch (replaces JSR TableJump)
     even
 UpdateModeDSave_JumpTable:
-    dc.l    UpdateModeDSave_Sub0   ; NES addr vector (32-bit for M68K)
-    dc.l    UpdateModeDSave_Sub1   ; NES addr vector (32-bit for M68K)
-    dc.l    UpdateModeDSave_Sub2   ; NES addr vector (32-bit for M68K)
+    dc.l    UpdateModeDSave_Sub0   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    UpdateModeDSave_Sub1   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    UpdateModeDSave_Sub2   ; jump table entry (32-bit for _m68k_tablejump)
 
     even
 UpdateModeDSave_Sub0:
@@ -3880,6 +3907,7 @@ _L_z02_UpdateModeDSave_Sub0_CopyItems:
     move.b  (A0,D3.W),D0
     move.b  ($C0,A4),D1   ; ptr lo
     move.b  ($C1,A4),D4  ; ptr hi
+    andi.w  #$00FF,D1         ; zero-extend lo byte
     lsl.w   #8,D4
     or.w    D1,D4
     ext.l   D4
@@ -3894,6 +3922,7 @@ _L_z02_UpdateModeDSave_Sub0_CopyItems:
     moveq   #0,D3
     move.b  ($CA,A4),D1   ; ptr lo
     move.b  ($CB,A4),D4  ; ptr hi
+    andi.w  #$00FF,D1         ; zero-extend lo byte
     lsl.w   #8,D4
     or.w    D1,D4
     ext.l   D4
@@ -3903,6 +3932,7 @@ _L_z02_UpdateModeDSave_Sub0_CopyItems:
     moveq   #1,D0
     move.b  ($C6,A4),D1   ; ptr lo
     move.b  ($C7,A4),D4  ; ptr hi
+    andi.w  #$00FF,D1         ; zero-extend lo byte
     lsl.w   #8,D4
     or.w    D1,D4
     ext.l   D4
@@ -3917,6 +3947,7 @@ _L_z02_UpdateModeDSave_Sub0_CopyItems:
     moveq   #0,D3
     move.b  ($CC,A4),D1   ; ptr lo
     move.b  ($CD,A4),D4  ; ptr hi
+    andi.w  #$00FF,D1         ; zero-extend lo byte
     lsl.w   #8,D4
     or.w    D1,D4
     ext.l   D4
@@ -3929,6 +3960,7 @@ _L_z02_UpdateModeDSave_Sub0_CopyItems:
 _L_z02_UpdateModeDSave_Sub0_CopyName:
     move.b  ($0C,A4),D1   ; ptr lo
     move.b  ($0D,A4),D4  ; ptr hi
+    andi.w  #$00FF,D1         ; zero-extend lo byte
     lsl.w   #8,D4
     or.w    D1,D4             ; D4 = NES ptr addr
     ext.l   D4
@@ -3937,6 +3969,7 @@ _L_z02_UpdateModeDSave_Sub0_CopyName:
     move.b  (A0,D3.W),D0     ; LDA ($nn),Y
     move.b  ($C4,A4),D1   ; ptr lo
     move.b  ($C5,A4),D4  ; ptr hi
+    andi.w  #$00FF,D1         ; zero-extend lo byte
     lsl.w   #8,D4
     or.w    D1,D4
     ext.l   D4
@@ -3965,6 +3998,7 @@ _L_z02_UpdateModeDSave_Sub0_CopyName:
 _L_z02_UpdateModeDSave_Sub0_CopyWorldFlags:
     move.b  ($0E,A4),D1   ; ptr lo
     move.b  ($0F,A4),D4  ; ptr hi
+    andi.w  #$00FF,D1         ; zero-extend lo byte
     lsl.w   #8,D4
     or.w    D1,D4             ; D4 = NES ptr addr
     ext.l   D4
@@ -3973,6 +4007,7 @@ _L_z02_UpdateModeDSave_Sub0_CopyWorldFlags:
     move.b  (A0,D3.W),D0     ; LDA ($nn),Y
     move.b  ($C2,A4),D1   ; ptr lo
     move.b  ($C3,A4),D4  ; ptr hi
+    andi.w  #$00FF,D1         ; zero-extend lo byte
     lsl.w   #8,D4
     or.w    D1,D4
     ext.l   D4
@@ -4061,6 +4096,7 @@ CopyFileBToFileA:
 _L_z02_CopyFileBToFileA_CopyItems:
     move.b  ($C0,A4),D1   ; ptr lo
     move.b  ($C1,A4),D4  ; ptr hi
+    andi.w  #$00FF,D1         ; zero-extend lo byte
     lsl.w   #8,D4
     or.w    D1,D4             ; D4 = NES ptr addr
     ext.l   D4
@@ -4069,6 +4105,7 @@ _L_z02_CopyFileBToFileA_CopyItems:
     move.b  (A0,D3.W),D0     ; LDA ($nn),Y
     move.b  ($00,A4),D1   ; ptr lo
     move.b  ($01,A4),D4  ; ptr hi
+    andi.w  #$00FF,D1         ; zero-extend lo byte
     lsl.w   #8,D4
     or.w    D1,D4
     ext.l   D4
@@ -4080,6 +4117,7 @@ _L_z02_CopyFileBToFileA_CopyItems:
     moveq   #0,D3
     move.b  ($C6,A4),D1   ; ptr lo
     move.b  ($C7,A4),D4  ; ptr hi
+    andi.w  #$00FF,D1         ; zero-extend lo byte
     lsl.w   #8,D4
     or.w    D1,D4             ; D4 = NES ptr addr
     ext.l   D4
@@ -4088,6 +4126,7 @@ _L_z02_CopyFileBToFileA_CopyItems:
     move.b  (A0,D3.W),D0     ; LDA ($nn),Y
     move.b  ($06,A4),D1   ; ptr lo
     move.b  ($07,A4),D4  ; ptr hi
+    andi.w  #$00FF,D1         ; zero-extend lo byte
     lsl.w   #8,D4
     or.w    D1,D4
     ext.l   D4
@@ -4096,6 +4135,7 @@ _L_z02_CopyFileBToFileA_CopyItems:
     move.b  D0,(A0,D3.W)     ; STA ($nn),Y
     move.b  ($C8,A4),D1   ; ptr lo
     move.b  ($C9,A4),D4  ; ptr hi
+    andi.w  #$00FF,D1         ; zero-extend lo byte
     lsl.w   #8,D4
     or.w    D1,D4             ; D4 = NES ptr addr
     ext.l   D4
@@ -4104,6 +4144,7 @@ _L_z02_CopyFileBToFileA_CopyItems:
     move.b  (A0,D3.W),D0     ; LDA ($nn),Y
     move.b  ($08,A4),D1   ; ptr lo
     move.b  ($09,A4),D4  ; ptr hi
+    andi.w  #$00FF,D1         ; zero-extend lo byte
     lsl.w   #8,D4
     or.w    D1,D4
     ext.l   D4
@@ -4112,6 +4153,7 @@ _L_z02_CopyFileBToFileA_CopyItems:
     move.b  D0,(A0,D3.W)     ; STA ($nn),Y
     move.b  ($CA,A4),D1   ; ptr lo
     move.b  ($CB,A4),D4  ; ptr hi
+    andi.w  #$00FF,D1         ; zero-extend lo byte
     lsl.w   #8,D4
     or.w    D1,D4             ; D4 = NES ptr addr
     ext.l   D4
@@ -4120,6 +4162,7 @@ _L_z02_CopyFileBToFileA_CopyItems:
     move.b  (A0,D3.W),D0     ; LDA ($nn),Y
     move.b  ($0A,A4),D1   ; ptr lo
     move.b  ($0B,A4),D4  ; ptr hi
+    andi.w  #$00FF,D1         ; zero-extend lo byte
     lsl.w   #8,D4
     or.w    D1,D4
     ext.l   D4
@@ -4128,6 +4171,7 @@ _L_z02_CopyFileBToFileA_CopyItems:
     move.b  D0,(A0,D3.W)     ; STA ($nn),Y
     move.b  ($CC,A4),D1   ; ptr lo
     move.b  ($CD,A4),D4  ; ptr hi
+    andi.w  #$00FF,D1         ; zero-extend lo byte
     lsl.w   #8,D4
     or.w    D1,D4             ; D4 = NES ptr addr
     ext.l   D4
@@ -4136,6 +4180,7 @@ _L_z02_CopyFileBToFileA_CopyItems:
     move.b  (A0,D3.W),D0     ; LDA ($nn),Y
     move.b  ($0C,A4),D1   ; ptr lo
     move.b  ($0D,A4),D4  ; ptr hi
+    andi.w  #$00FF,D1         ; zero-extend lo byte
     lsl.w   #8,D4
     or.w    D1,D4
     ext.l   D4
@@ -4144,6 +4189,7 @@ _L_z02_CopyFileBToFileA_CopyItems:
     move.b  D0,(A0,D3.W)     ; STA ($nn),Y
     move.b  ($06,A4),D1   ; ptr lo
     move.b  ($07,A4),D4  ; ptr hi
+    andi.w  #$00FF,D1         ; zero-extend lo byte
     lsl.w   #8,D4
     or.w    D1,D4             ; D4 = NES ptr addr
     ext.l   D4
@@ -4153,6 +4199,7 @@ _L_z02_CopyFileBToFileA_CopyItems:
     move.b  D0,-(A5)  ; PHA
     move.b  ($0A,A4),D1   ; ptr lo
     move.b  ($0B,A4),D4  ; ptr hi
+    andi.w  #$00FF,D1         ; zero-extend lo byte
     lsl.w   #8,D4
     or.w    D1,D4             ; D4 = NES ptr addr
     ext.l   D4
@@ -4162,6 +4209,7 @@ _L_z02_CopyFileBToFileA_CopyItems:
     move.b  D0,-(A5)  ; PHA
     move.b  ($0C,A4),D1   ; ptr lo
     move.b  ($0D,A4),D4  ; ptr hi
+    andi.w  #$00FF,D1         ; zero-extend lo byte
     lsl.w   #8,D4
     or.w    D1,D4             ; D4 = NES ptr addr
     ext.l   D4
@@ -4184,6 +4232,7 @@ _L_z02_CopyFileBToFileA_CopyItems:
 _L_z02_CopyFileBToFileA_CopyName:
     move.b  ($C4,A4),D1   ; ptr lo
     move.b  ($C5,A4),D4  ; ptr hi
+    andi.w  #$00FF,D1         ; zero-extend lo byte
     lsl.w   #8,D4
     or.w    D1,D4             ; D4 = NES ptr addr
     ext.l   D4
@@ -4192,6 +4241,7 @@ _L_z02_CopyFileBToFileA_CopyName:
     move.b  (A0,D3.W),D0     ; LDA ($nn),Y
     move.b  ($04,A4),D1   ; ptr lo
     move.b  ($05,A4),D4  ; ptr hi
+    andi.w  #$00FF,D1         ; zero-extend lo byte
     lsl.w   #8,D4
     or.w    D1,D4
     ext.l   D4
@@ -4207,6 +4257,7 @@ _L_z02_CopyFileBToFileA_CopyName:
 _L_z02_CopyFileBToFileA_CopyWorldFlags:
     move.b  ($C2,A4),D1   ; ptr lo
     move.b  ($C3,A4),D4  ; ptr hi
+    andi.w  #$00FF,D1         ; zero-extend lo byte
     lsl.w   #8,D4
     or.w    D1,D4             ; D4 = NES ptr addr
     ext.l   D4
@@ -4215,6 +4266,7 @@ _L_z02_CopyFileBToFileA_CopyWorldFlags:
     move.b  (A0,D3.W),D0     ; LDA ($nn),Y
     move.b  ($02,A4),D1   ; ptr lo
     move.b  ($03,A4),D4  ; ptr hi
+    andi.w  #$00FF,D1         ; zero-extend lo byte
     lsl.w   #8,D4
     or.w    D1,D4
     ext.l   D4
@@ -4302,6 +4354,7 @@ _L_z02_StoreSaveSlotHearts_CopyHearts:
     move.b  (A0,D3.W),D0
     move.b  ($0C,A4),D1   ; ptr lo
     move.b  ($0D,A4),D4  ; ptr hi
+    andi.w  #$00FF,D1         ; zero-extend lo byte
     lsl.w   #8,D4
     or.w    D1,D4
     ext.l   D4
@@ -4346,11 +4399,11 @@ InitMode13_Full:
     bsr     _m68k_tablejump  ; M68K-native table dispatch (replaces JSR TableJump)
     even
 InitMode13_Full_JumpTable:
-    dc.l    InitMode13_Sub0   ; NES addr vector (32-bit for M68K)
-    dc.l    InitMode13_Sub1   ; NES addr vector (32-bit for M68K)
-    dc.l    InitMode13_Sub2   ; NES addr vector (32-bit for M68K)
-    dc.l    InitMode13_Sub3   ; NES addr vector (32-bit for M68K)
-    dc.l    InitMode13_Sub4   ; NES addr vector (32-bit for M68K)
+    dc.l    InitMode13_Sub0   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    InitMode13_Sub1   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    InitMode13_Sub2   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    InitMode13_Sub3   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    InitMode13_Sub4   ; jump table entry (32-bit for _m68k_tablejump)
 
     even
 InitMode13_Sub0:
@@ -4490,6 +4543,7 @@ _anon_z02_32:
     ;
     move.b  ($00,A4),D1   ; ptr lo
     move.b  ($01,A4),D4  ; ptr hi
+    andi.w  #$00FF,D1         ; zero-extend lo byte
     lsl.w   #8,D4
     or.w    D1,D4             ; D4 = NES ptr addr
     ext.l   D4
@@ -4514,6 +4568,7 @@ _anon_z02_32:
     ;
     move.b  ($00,A4),D1   ; ptr lo
     move.b  ($01,A4),D4  ; ptr hi
+    andi.w  #$00FF,D1         ; zero-extend lo byte
     lsl.w   #8,D4
     or.w    D1,D4             ; D4 = NES ptr addr
     ext.l   D4
@@ -4580,11 +4635,11 @@ UpdateMode13WinGame:
     bsr     _m68k_tablejump  ; M68K-native table dispatch (replaces JSR TableJump)
     even
 UpdateMode13WinGame_JumpTable:
-    dc.l    UpdateMode13WinGame_Sub0_Flash   ; NES addr vector (32-bit for M68K)
-    dc.l    UpdateMode13WinGame_Sub1   ; NES addr vector (32-bit for M68K)
-    dc.l    UpdateMode13WinGame_Sub1   ; NES addr vector (32-bit for M68K)
-    dc.l    UpdateMode13WinGame_Sub3   ; NES addr vector (32-bit for M68K)
-    dc.l    UpdateMode13WinGame_Sub4   ; NES addr vector (32-bit for M68K)
+    dc.l    UpdateMode13WinGame_Sub0_Flash   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    UpdateMode13WinGame_Sub1   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    UpdateMode13WinGame_Sub1   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    UpdateMode13WinGame_Sub3   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    UpdateMode13WinGame_Sub4   ; jump table entry (32-bit for _m68k_tablejump)
 
     even
 EndingFlashColors:
@@ -5107,6 +5162,7 @@ _anon_z02_45:
     moveq   #0,D3
     move.b  ($00,A4),D1   ; ptr lo
     move.b  ($01,A4),D4  ; ptr hi
+    andi.w  #$00FF,D1         ; zero-extend lo byte
     lsl.w   #8,D4
     or.w    D1,D4             ; D4 = NES ptr addr
     ext.l   D4
@@ -5120,6 +5176,7 @@ _anon_z02_45:
     addq.b  #1,D3
     move.b  ($00,A4),D1   ; ptr lo
     move.b  ($01,A4),D4  ; ptr hi
+    andi.w  #$00FF,D1         ; zero-extend lo byte
     lsl.w   #8,D4
     or.w    D1,D4             ; D4 = NES ptr addr
     ext.l   D4
@@ -5133,6 +5190,7 @@ _anon_z02_45:
 _anon_z02_46:
     move.b  ($00,A4),D1   ; ptr lo
     move.b  ($01,A4),D4  ; ptr hi
+    andi.w  #$00FF,D1         ; zero-extend lo byte
     lsl.w   #8,D4
     or.w    D1,D4             ; D4 = NES ptr addr
     ext.l   D4
@@ -5324,6 +5382,7 @@ _L_z02_SwitchProfileToSecondQuest_ClearBlock:
 _anon_z02_54:
     move.b  ($00,A4),D1   ; ptr lo
     move.b  ($01,A4),D4  ; ptr hi
+    andi.w  #$00FF,D1         ; zero-extend lo byte
     lsl.w   #8,D4
     or.w    D1,D4
     ext.l   D4

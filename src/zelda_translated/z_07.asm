@@ -1087,58 +1087,9 @@ ResetPpuRegisters:
 ;
     even
 ClearNameTable:
-    move.b  D0,($0000,A4)
-    move.b  D2,($0001,A4)
-    move.b  D3,($0002,A4)
-    bsr     _ppu_read_2  ; PPU $2002 read → D0
-    move.b  ($00FF,A4),D0
-    andi.b #$FB,D0
-    bsr     _ppu_write_0  ; PPU $2000 write, D0=val
-    move.b  D0,($00FF,A4)
-    move.b  ($0000,A4),D0
-    bsr     _ppu_write_6  ; PPU $2006 write, D0=val
-    moveq   #0,D3
-    move.l  D0,-(SP)       ; save A (6502 STX/STY never modifies A)
-    move.b  D3,D0  ; D3 → D0 for I/O write
-    bsr     _ppu_write_6  ; PPU $2006 write, D0=val
-    move.l  (SP)+,D0       ; restore A
-    moveq   #4,D2
-    cmpi.b  #$20,D0
-    bcc  _anon_z07_2
-    move.b  ($0002,A4),D2
-_anon_z07_2:
-    moveq   #0,D3
-    move.b  ($0001,A4),D0
-    even
-_L_z07_ClearNameTable_LoopTile:
-    bsr     _ppu_write_7  ; PPU $2007 write, D0=val
-    subq.b  #1,D3
-    bne  _L_z07_ClearNameTable_LoopTile
-    subq.b  #1,D2
-    bne  _L_z07_ClearNameTable_LoopTile
-    move.b  ($0002,A4),D3
-    move.b  ($0000,A4),D0
-    cmpi.b  #$20,D0
-    bcs  _L_z07_ClearNameTable_RestoreX
-    move.b  #$02,D1
-    addx.b  D1,D0   ; ADC #$02 (X flag = 6502 C)
-    bsr     _ppu_write_6  ; PPU $2006 write, D0=val
-    move.b  #$C0,D0
-    bsr     _ppu_write_6  ; PPU $2006 write, D0=val
-    moveq   #64,D2
-    even
-_L_z07_ClearNameTable_LoopAttr:
-    move.l  D0,-(SP)       ; save A (6502 STX/STY never modifies A)
-    move.b  D3,D0  ; D3 → D0 for I/O write
-    bsr     _ppu_write_7  ; PPU $2007 write, D0=val
-    move.l  (SP)+,D0       ; restore A
-    subq.b  #1,D2
-    bne  _L_z07_ClearNameTable_LoopAttr
-    even
-_L_z07_ClearNameTable_RestoreX:
-    ; Set X to the passed in value.
-    ; Y was already its passed in value.
-    move.b  ($0001,A4),D2
+    ; PATCHED: fast nametable clear (bypasses 1088 _ppu_write_7 calls)
+    ; D0.b = PPU hi byte ($20/$28), D2.b = tile index, D3.b = attr byte
+    bsr     _clear_nametable_fast
     rts
 
     even
@@ -1152,6 +1103,7 @@ TableJump:
     addq.b  #1,D3
     move.b  ($00,A4),D1   ; ptr lo
     move.b  ($01,A4),D4  ; ptr hi
+    andi.w  #$00FF,D1         ; zero-extend lo byte
     lsl.w   #8,D4
     or.w    D1,D4             ; D4 = NES ptr addr
     ext.l   D4
@@ -1162,6 +1114,7 @@ TableJump:
     addq.b  #1,D3
     move.b  ($00,A4),D1   ; ptr lo
     move.b  ($01,A4),D4  ; ptr hi
+    andi.w  #$00FF,D1         ; zero-extend lo byte
     lsl.w   #8,D4
     or.w    D1,D4             ; D4 = NES ptr addr
     ext.l   D4
@@ -1208,6 +1161,7 @@ _L_z07_ClearRam0300UpTo_Loop:
     moveq   #0,D0
     move.b  ($00,A4),D1   ; ptr lo
     move.b  ($01,A4),D4  ; ptr hi
+    andi.w  #$00FF,D1         ; zero-extend lo byte
     lsl.w   #8,D4
     or.w    D1,D4
     ext.l   D4
@@ -1333,15 +1287,15 @@ CalculateNextRoom_TableJump:
     bsr     _m68k_tablejump  ; M68K-native table dispatch (replaces JSR TableJump)
     even
 CalculateNextRoom_JumpTable:
-    dc.l    CalculateNextRoomForDoor   ; NES addr vector (32-bit for M68K)
-    dc.l    $B517   ; NES addr vector (32-bit for M68K)
-    dc.l    CalculateNextRoomForDoor   ; NES addr vector (32-bit for M68K)
-    dc.l    CalculateNextRoomForDoor   ; NES addr vector (32-bit for M68K)
-    dc.l    CalculateNextRoomForDoor   ; NES addr vector (32-bit for M68K)
-    dc.l    CalculateNextRoomForDoor   ; NES addr vector (32-bit for M68K)
-    dc.l    CalculateNextRoomForDoor   ; NES addr vector (32-bit for M68K)
-    dc.l    CalculateNextRoomForDoor   ; NES addr vector (32-bit for M68K)
-    dc.l    $B517   ; NES addr vector (32-bit for M68K)
+    dc.l    CalculateNextRoomForDoor   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    $B517   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    CalculateNextRoomForDoor   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    CalculateNextRoomForDoor   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    CalculateNextRoomForDoor   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    CalculateNextRoomForDoor   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    CalculateNextRoomForDoor   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    CalculateNextRoomForDoor   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    $B517   ; jump table entry (32-bit for _m68k_tablejump)
 
     even
 CalculateNextRoomOW:
@@ -1358,6 +1312,7 @@ MarkRoomVisited:
     ori.b #$20,D0
     move.b  ($00,A4),D1   ; ptr lo
     move.b  ($01,A4),D4  ; ptr hi
+    andi.w  #$00FF,D1         ; zero-extend lo byte
     lsl.w   #8,D4
     or.w    D1,D4
     ext.l   D4
@@ -1384,6 +1339,7 @@ GetRoomFlags:
     move.b  ($00EB,A4),D3
     move.b  ($00,A4),D1   ; ptr lo
     move.b  ($01,A4),D4  ; ptr hi
+    andi.w  #$00FF,D1         ; zero-extend lo byte
     lsl.w   #8,D4
     or.w    D1,D4             ; D4 = NES ptr addr
     ext.l   D4
@@ -1899,6 +1855,7 @@ _L_z07_FillTileMap_Loop:
     move.b  ($000A,A4),D0
     move.b  ($00,A4),D1   ; ptr lo
     move.b  ($01,A4),D4  ; ptr hi
+    andi.w  #$00FF,D1         ; zero-extend lo byte
     lsl.w   #8,D4
     or.w    D1,D4
     ext.l   D4
@@ -1942,26 +1899,26 @@ InitMode:
     bsr     _m68k_tablejump  ; M68K-native table dispatch (replaces JSR TableJump)
     even
 InitMode_JumpTable:
-    dc.l    InitMode0   ; NES addr vector (32-bit for M68K)
-    dc.l    InitMode1   ; NES addr vector (32-bit for M68K)
-    dc.l    InitMode2   ; NES addr vector (32-bit for M68K)
-    dc.l    InitMode3   ; NES addr vector (32-bit for M68K)
-    dc.l    InitMode4   ; NES addr vector (32-bit for M68K)
-    dc.l    InitMode5Play   ; NES addr vector (32-bit for M68K)
-    dc.l    InitMode6   ; NES addr vector (32-bit for M68K)
-    dc.l    InitMode7   ; NES addr vector (32-bit for M68K)
-    dc.l    InitMode8   ; NES addr vector (32-bit for M68K)
-    dc.l    InitMode9   ; NES addr vector (32-bit for M68K)
-    dc.l    InitModeA   ; NES addr vector (32-bit for M68K)
-    dc.l    InitModeB   ; NES addr vector (32-bit for M68K)
-    dc.l    InitModeC   ; NES addr vector (32-bit for M68K)
-    dc.l    InitModeD   ; NES addr vector (32-bit for M68K)
-    dc.l    InitModeEandF   ; NES addr vector (32-bit for M68K)
-    dc.l    InitModeEandF   ; NES addr vector (32-bit for M68K)
-    dc.l    InitMode10   ; NES addr vector (32-bit for M68K)
-    dc.l    InitMode11   ; NES addr vector (32-bit for M68K)
-    dc.l    InitMode12   ; NES addr vector (32-bit for M68K)
-    dc.l    InitMode13   ; NES addr vector (32-bit for M68K)
+    dc.l    InitMode0   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    InitMode1   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    InitMode2   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    InitMode3   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    InitMode4   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    InitMode5Play   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    InitMode6   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    InitMode7   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    InitMode8   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    InitMode9   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    InitModeA   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    InitModeB   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    InitModeC   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    InitModeD   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    InitModeEandF   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    InitModeEandF   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    InitMode10   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    InitMode11   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    InitMode12   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    InitMode13   ; jump table entry (32-bit for _m68k_tablejump)
 
     even
 InitMode0:
@@ -2078,15 +2035,15 @@ InitMode3:
     bsr     _m68k_tablejump  ; M68K-native table dispatch (replaces JSR TableJump)
     even
 InitMode3_JumpTable:
-    dc.l    InitMode3_Sub0   ; NES addr vector (32-bit for M68K)
-    dc.l    InitMode3_Sub1   ; NES addr vector (32-bit for M68K)
-    dc.l    InitMode3_Sub2   ; NES addr vector (32-bit for M68K)
-    dc.l    InitMode3_Sub3_TransferTopHalfAttrs   ; NES addr vector (32-bit for M68K)
-    dc.l    InitMode3_Sub4_TransferBottomHalfAttrs   ; NES addr vector (32-bit for M68K)
-    dc.l    InitMode3_Sub5   ; NES addr vector (32-bit for M68K)
-    dc.l    InitMode3_Sub6   ; NES addr vector (32-bit for M68K)
-    dc.l    InitMode3_Sub7   ; NES addr vector (32-bit for M68K)
-    dc.l    InitMode3_Sub8   ; NES addr vector (32-bit for M68K)
+    dc.l    InitMode3_Sub0   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    InitMode3_Sub1   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    InitMode3_Sub2   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    InitMode3_Sub3_TransferTopHalfAttrs   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    InitMode3_Sub4_TransferBottomHalfAttrs   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    InitMode3_Sub5   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    InitMode3_Sub6   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    InitMode3_Sub7   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    InitMode3_Sub8   ; jump table entry (32-bit for _m68k_tablejump)
 
     even
 InitMode3_Sub0:
@@ -2369,26 +2326,26 @@ UpdateMode:
     bsr     _m68k_tablejump  ; M68K-native table dispatch (replaces JSR TableJump)
     even
 UpdateMode_JumpTable:
-    dc.l    UpdateMode0Demo   ; NES addr vector (32-bit for M68K)
-    dc.l    UpdateMode1Menu   ; NES addr vector (32-bit for M68K)
-    dc.l    UpdateMode2Load   ; NES addr vector (32-bit for M68K)
-    dc.l    UpdateMode3Unfurl   ; NES addr vector (32-bit for M68K)
-    dc.l    UpdateMode4and6EnterLeave   ; NES addr vector (32-bit for M68K)
-    dc.l    UpdateMode5Play   ; NES addr vector (32-bit for M68K)
-    dc.l    UpdateMode4and6EnterLeave   ; NES addr vector (32-bit for M68K)
-    dc.l    UpdateMode7Scroll   ; NES addr vector (32-bit for M68K)
-    dc.l    UpdateMode8ContinueQuestion   ; NES addr vector (32-bit for M68K)
-    dc.l    UpdateMode5Play   ; NES addr vector (32-bit for M68K)
-    dc.l    UpdateMode5Play   ; NES addr vector (32-bit for M68K)
-    dc.l    UpdateMode5Play   ; NES addr vector (32-bit for M68K)
-    dc.l    UpdateMode5Play   ; NES addr vector (32-bit for M68K)
-    dc.l    UpdateModeDSave   ; NES addr vector (32-bit for M68K)
-    dc.l    UpdateModeERegister   ; NES addr vector (32-bit for M68K)
-    dc.l    UpdateModeFElimination   ; NES addr vector (32-bit for M68K)
-    dc.l    UpdateMode10Stairs   ; NES addr vector (32-bit for M68K)
-    dc.l    UpdateMode11Death   ; NES addr vector (32-bit for M68K)
-    dc.l    UpdateMode12EndLevel   ; NES addr vector (32-bit for M68K)
-    dc.l    UpdateMode13WinGame   ; NES addr vector (32-bit for M68K)
+    dc.l    UpdateMode0Demo   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    UpdateMode1Menu   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    UpdateMode2Load   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    UpdateMode3Unfurl   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    UpdateMode4and6EnterLeave   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    UpdateMode5Play   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    UpdateMode4and6EnterLeave   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    UpdateMode7Scroll   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    UpdateMode8ContinueQuestion   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    UpdateMode5Play   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    UpdateMode5Play   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    UpdateMode5Play   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    UpdateMode5Play   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    UpdateModeDSave   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    UpdateModeERegister   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    UpdateModeFElimination   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    UpdateMode10Stairs   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    UpdateMode11Death   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    UpdateMode12EndLevel   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    UpdateMode13WinGame   ; jump table entry (32-bit for _m68k_tablejump)
 
     even
 UpdateMode7Scroll:
@@ -3042,6 +2999,7 @@ _L_z07_GetCollidableTile_FetchTile:
     move.b  D0,D3
     move.b  ($00,A4),D1   ; ptr lo
     move.b  ($01,A4),D4  ; ptr hi
+    andi.w  #$00FF,D1         ; zero-extend lo byte
     lsl.w   #8,D4
     or.w    D1,D4             ; D4 = NES ptr addr
     ext.l   D4
@@ -3064,6 +3022,7 @@ _L_z07_GetCollidableTile_FetchTile:
     move.b  D0,D3
     move.b  ($00,A4),D1   ; ptr lo
     move.b  ($01,A4),D4  ; ptr hi
+    andi.w  #$00FF,D1         ; zero-extend lo byte
     lsl.w   #8,D4
     or.w    D1,D4             ; D4 = NES ptr addr
     ext.l   D4
@@ -4003,10 +3962,10 @@ Walker_GetNextAltDir:
     bsr     _m68k_tablejump  ; M68K-native table dispatch (replaces JSR TableJump)
     even
 Walker_GetNextAltDir_JumpTable:
-    dc.l    Walker_AltDir_GetRandomObjPerpendicularDir   ; NES addr vector (32-bit for M68K)
-    dc.l    Walker_AltDir_GetMovingOppositeDir   ; NES addr vector (32-bit for M68K)
-    dc.l    ReverseObjDir   ; NES addr vector (32-bit for M68K)
-    dc.l    Walker_AltDir_EndLoop   ; NES addr vector (32-bit for M68K)
+    dc.l    Walker_AltDir_GetRandomObjPerpendicularDir   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    Walker_AltDir_GetMovingOppositeDir   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    ReverseObjDir   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    Walker_AltDir_EndLoop   ; jump table entry (32-bit for _m68k_tablejump)
 
     even
 Walker_AltDir_GetRandomObjPerpendicularDir:
@@ -6639,112 +6598,112 @@ _L_z07_UpdateObject_NormalObject:
     bsr     _m68k_tablejump  ; M68K-native table dispatch (replaces JSR TableJump)
     even
 UpdateObject_JumpTable:
-    dc.l    DoNothing   ; NES addr vector (32-bit for M68K)
-    dc.l    UpdateLynel   ; NES addr vector (32-bit for M68K)
-    dc.l    UpdateLynel   ; NES addr vector (32-bit for M68K)
-    dc.l    UpdateMoblin   ; NES addr vector (32-bit for M68K)
-    dc.l    UpdateMoblin   ; NES addr vector (32-bit for M68K)
-    dc.l    UpdateGoriya   ; NES addr vector (32-bit for M68K)
-    dc.l    UpdateGoriya   ; NES addr vector (32-bit for M68K)
-    dc.l    UpdateOctorock   ; NES addr vector (32-bit for M68K)
-    dc.l    UpdateOctorock   ; NES addr vector (32-bit for M68K)
-    dc.l    UpdateOctorock   ; NES addr vector (32-bit for M68K)
-    dc.l    UpdateOctorock   ; NES addr vector (32-bit for M68K)
-    dc.l    UpdateDarknut   ; NES addr vector (32-bit for M68K)
-    dc.l    UpdateDarknut   ; NES addr vector (32-bit for M68K)
-    dc.l    UpdateTektiteOrBoulder   ; NES addr vector (32-bit for M68K)
-    dc.l    UpdateTektiteOrBoulder   ; NES addr vector (32-bit for M68K)
-    dc.l    UpdateBlueLeever   ; NES addr vector (32-bit for M68K)
-    dc.l    UpdateRedLeever   ; NES addr vector (32-bit for M68K)
-    dc.l    UpdateZora   ; NES addr vector (32-bit for M68K)
-    dc.l    UpdateVire   ; NES addr vector (32-bit for M68K)
-    dc.l    UpdateZol   ; NES addr vector (32-bit for M68K)
-    dc.l    UpdateGel   ; NES addr vector (32-bit for M68K)
-    dc.l    UpdateGel   ; NES addr vector (32-bit for M68K)
-    dc.l    UpdatePolsVoice   ; NES addr vector (32-bit for M68K)
-    dc.l    UpdateLikeLike   ; NES addr vector (32-bit for M68K)
-    dc.l    UpdateDigdogger   ; NES addr vector (32-bit for M68K)
-    dc.l    DoNothing   ; NES addr vector (32-bit for M68K)
-    dc.l    UpdatePeahat   ; NES addr vector (32-bit for M68K)
-    dc.l    UpdateKeese   ; NES addr vector (32-bit for M68K)
-    dc.l    UpdateKeese   ; NES addr vector (32-bit for M68K)
-    dc.l    UpdateKeese   ; NES addr vector (32-bit for M68K)
-    dc.l    UpdateArmos   ; NES addr vector (32-bit for M68K)
-    dc.l    UpdateBoulderSet   ; NES addr vector (32-bit for M68K)
-    dc.l    UpdateTektiteOrBoulder   ; NES addr vector (32-bit for M68K)
-    dc.l    UpdateGhini   ; NES addr vector (32-bit for M68K)
-    dc.l    UpdateFlyingGhini   ; NES addr vector (32-bit for M68K)
-    dc.l    UpdateBlueWizzrobe   ; NES addr vector (32-bit for M68K)
-    dc.l    UpdateRedWizzrobe   ; NES addr vector (32-bit for M68K)
-    dc.l    UpdatePatraChild   ; NES addr vector (32-bit for M68K)
-    dc.l    UpdatePatraChild   ; NES addr vector (32-bit for M68K)
-    dc.l    UpdateWallmaster   ; NES addr vector (32-bit for M68K)
-    dc.l    UpdateRope   ; NES addr vector (32-bit for M68K)
-    dc.l    DoNothing   ; NES addr vector (32-bit for M68K)
-    dc.l    UpdateStalfos   ; NES addr vector (32-bit for M68K)
-    dc.l    UpdateBubble   ; NES addr vector (32-bit for M68K)
-    dc.l    UpdateBubble   ; NES addr vector (32-bit for M68K)
-    dc.l    UpdateBubble   ; NES addr vector (32-bit for M68K)
-    dc.l    UpdateWhirlwind   ; NES addr vector (32-bit for M68K)
-    dc.l    UpdatePondFairy   ; NES addr vector (32-bit for M68K)
-    dc.l    UpdateGibdo   ; NES addr vector (32-bit for M68K)
-    dc.l    UpdateDodongo   ; NES addr vector (32-bit for M68K)
-    dc.l    UpdateDodongo   ; NES addr vector (32-bit for M68K)
-    dc.l    UpdateGohma   ; NES addr vector (32-bit for M68K)
-    dc.l    UpdateGohma   ; NES addr vector (32-bit for M68K)
-    dc.l    UpdateRupeeStash   ; NES addr vector (32-bit for M68K)
-    dc.l    UpdateGrumble   ; NES addr vector (32-bit for M68K)
-    dc.l    UpdateZelda   ; NES addr vector (32-bit for M68K)
-    dc.l    UpdateDigdogger   ; NES addr vector (32-bit for M68K)
-    dc.l    UpdateDigdogger   ; NES addr vector (32-bit for M68K)
-    dc.l    UpdateLamnola   ; NES addr vector (32-bit for M68K)
-    dc.l    UpdateLamnola   ; NES addr vector (32-bit for M68K)
-    dc.l    UpdateManhandla   ; NES addr vector (32-bit for M68K)
-    dc.l    UpdateAquamentus   ; NES addr vector (32-bit for M68K)
-    dc.l    UpdateGanon   ; NES addr vector (32-bit for M68K)
-    dc.l    UpdateGuardFire   ; NES addr vector (32-bit for M68K)
-    dc.l    UpdateStandingFire   ; NES addr vector (32-bit for M68K)
-    dc.l    UpdateMoldorm   ; NES addr vector (32-bit for M68K)
-    dc.l    UpdateGleeok   ; NES addr vector (32-bit for M68K)
-    dc.l    UpdateGleeok   ; NES addr vector (32-bit for M68K)
-    dc.l    UpdateGleeok   ; NES addr vector (32-bit for M68K)
-    dc.l    UpdateGleeok   ; NES addr vector (32-bit for M68K)
-    dc.l    UpdateGleeokHead   ; NES addr vector (32-bit for M68K)
-    dc.l    UpdatePatra   ; NES addr vector (32-bit for M68K)
-    dc.l    UpdatePatra   ; NES addr vector (32-bit for M68K)
-    dc.l    UpdateTrap   ; NES addr vector (32-bit for M68K)
-    dc.l    UpdateTrap   ; NES addr vector (32-bit for M68K)
-    dc.l    UpdateUnderworldPerson   ; NES addr vector (32-bit for M68K)
-    dc.l    UpdateUnderworldPerson   ; NES addr vector (32-bit for M68K)
-    dc.l    UpdateUnderworldPerson   ; NES addr vector (32-bit for M68K)
-    dc.l    UpdateUnderworldPerson   ; NES addr vector (32-bit for M68K)
-    dc.l    UpdateUnderworldPerson   ; NES addr vector (32-bit for M68K)
-    dc.l    UpdateUnderworldPerson   ; NES addr vector (32-bit for M68K)
-    dc.l    UpdateUnderworldPersonLifeOrMoney   ; NES addr vector (32-bit for M68K)
-    dc.l    UpdateUnderworldPerson   ; NES addr vector (32-bit for M68K)
-    dc.l    UpdateMonsterShot   ; NES addr vector (32-bit for M68K)
-    dc.l    UpdateMonsterShot   ; NES addr vector (32-bit for M68K)
-    dc.l    UpdateFireball   ; NES addr vector (32-bit for M68K)
-    dc.l    UpdateFireball   ; NES addr vector (32-bit for M68K)
-    dc.l    UpdateMonsterShot   ; NES addr vector (32-bit for M68K)
-    dc.l    UpdateMonsterShot   ; NES addr vector (32-bit for M68K)
-    dc.l    UpdateMonsterShot   ; NES addr vector (32-bit for M68K)
-    dc.l    UpdateMonsterShot   ; NES addr vector (32-bit for M68K)
-    dc.l    UpdateMonsterArrow   ; NES addr vector (32-bit for M68K)
-    dc.l    UpdateArrowOrBoomerang   ; NES addr vector (32-bit for M68K)
-    dc.l    UpdateDeadDummy   ; NES addr vector (32-bit for M68K)
-    dc.l    UpdateFluteSecret   ; NES addr vector (32-bit for M68K)
-    dc.l    DoNothing   ; NES addr vector (32-bit for M68K)
-    dc.l    UpdateItem   ; NES addr vector (32-bit for M68K)
-    dc.l    UpdateDock   ; NES addr vector (32-bit for M68K)
-    dc.l    UpdateRockOrGravestone   ; NES addr vector (32-bit for M68K)
-    dc.l    UpdateRockWall   ; NES addr vector (32-bit for M68K)
-    dc.l    UpdateTree   ; NES addr vector (32-bit for M68K)
-    dc.l    UpdateRockOrGravestone   ; NES addr vector (32-bit for M68K)
-    dc.l    UpdateRockOrGravestone   ; NES addr vector (32-bit for M68K)
-    dc.l    UpdateRockWall   ; NES addr vector (32-bit for M68K)
-    dc.l    UpdateBlock   ; NES addr vector (32-bit for M68K)
-    dc.l    DoNothing   ; NES addr vector (32-bit for M68K)
+    dc.l    DoNothing   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    UpdateLynel   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    UpdateLynel   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    UpdateMoblin   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    UpdateMoblin   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    UpdateGoriya   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    UpdateGoriya   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    UpdateOctorock   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    UpdateOctorock   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    UpdateOctorock   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    UpdateOctorock   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    UpdateDarknut   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    UpdateDarknut   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    UpdateTektiteOrBoulder   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    UpdateTektiteOrBoulder   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    UpdateBlueLeever   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    UpdateRedLeever   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    UpdateZora   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    UpdateVire   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    UpdateZol   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    UpdateGel   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    UpdateGel   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    UpdatePolsVoice   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    UpdateLikeLike   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    UpdateDigdogger   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    DoNothing   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    UpdatePeahat   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    UpdateKeese   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    UpdateKeese   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    UpdateKeese   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    UpdateArmos   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    UpdateBoulderSet   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    UpdateTektiteOrBoulder   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    UpdateGhini   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    UpdateFlyingGhini   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    UpdateBlueWizzrobe   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    UpdateRedWizzrobe   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    UpdatePatraChild   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    UpdatePatraChild   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    UpdateWallmaster   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    UpdateRope   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    DoNothing   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    UpdateStalfos   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    UpdateBubble   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    UpdateBubble   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    UpdateBubble   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    UpdateWhirlwind   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    UpdatePondFairy   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    UpdateGibdo   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    UpdateDodongo   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    UpdateDodongo   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    UpdateGohma   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    UpdateGohma   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    UpdateRupeeStash   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    UpdateGrumble   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    UpdateZelda   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    UpdateDigdogger   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    UpdateDigdogger   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    UpdateLamnola   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    UpdateLamnola   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    UpdateManhandla   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    UpdateAquamentus   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    UpdateGanon   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    UpdateGuardFire   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    UpdateStandingFire   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    UpdateMoldorm   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    UpdateGleeok   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    UpdateGleeok   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    UpdateGleeok   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    UpdateGleeok   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    UpdateGleeokHead   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    UpdatePatra   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    UpdatePatra   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    UpdateTrap   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    UpdateTrap   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    UpdateUnderworldPerson   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    UpdateUnderworldPerson   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    UpdateUnderworldPerson   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    UpdateUnderworldPerson   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    UpdateUnderworldPerson   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    UpdateUnderworldPerson   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    UpdateUnderworldPersonLifeOrMoney   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    UpdateUnderworldPerson   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    UpdateMonsterShot   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    UpdateMonsterShot   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    UpdateFireball   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    UpdateFireball   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    UpdateMonsterShot   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    UpdateMonsterShot   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    UpdateMonsterShot   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    UpdateMonsterShot   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    UpdateMonsterArrow   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    UpdateArrowOrBoomerang   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    UpdateDeadDummy   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    UpdateFluteSecret   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    DoNothing   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    UpdateItem   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    UpdateDock   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    UpdateRockOrGravestone   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    UpdateRockWall   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    UpdateTree   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    UpdateRockOrGravestone   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    UpdateRockOrGravestone   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    UpdateRockWall   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    UpdateBlock   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    DoNothing   ; jump table entry (32-bit for _m68k_tablejump)
 
     even
 UpdateMetaObject:
@@ -6977,101 +6936,101 @@ _anon_z07_42:
     bsr     _m68k_tablejump  ; M68K-native table dispatch (replaces JSR TableJump)
     even
 InitObject_JumpTable:
-    dc.l    DoNothing   ; NES addr vector (32-bit for M68K)
-    dc.l    InitWalker   ; NES addr vector (32-bit for M68K)
-    dc.l    InitWalker   ; NES addr vector (32-bit for M68K)
-    dc.l    InitWalker   ; NES addr vector (32-bit for M68K)
-    dc.l    InitWalker   ; NES addr vector (32-bit for M68K)
-    dc.l    InitWalker   ; NES addr vector (32-bit for M68K)
-    dc.l    InitWalker   ; NES addr vector (32-bit for M68K)
-    dc.l    InitSlowOctorockOrGhini   ; NES addr vector (32-bit for M68K)
-    dc.l    InitFastOctorock   ; NES addr vector (32-bit for M68K)
-    dc.l    InitSlowOctorockOrGhini   ; NES addr vector (32-bit for M68K)
-    dc.l    InitFastOctorock   ; NES addr vector (32-bit for M68K)
-    dc.l    InitDarknut   ; NES addr vector (32-bit for M68K)
-    dc.l    InitDarknut   ; NES addr vector (32-bit for M68K)
-    dc.l    InitTektite   ; NES addr vector (32-bit for M68K)
-    dc.l    InitTektite   ; NES addr vector (32-bit for M68K)
-    dc.l    InitLeever   ; NES addr vector (32-bit for M68K)
-    dc.l    InitLeever   ; NES addr vector (32-bit for M68K)
-    dc.l    ResetObjMetastateAndTimer   ; NES addr vector (32-bit for M68K)
-    dc.l    InitWalker   ; NES addr vector (32-bit for M68K)
-    dc.l    InitWalker   ; NES addr vector (32-bit for M68K)
-    dc.l    InitWalker   ; NES addr vector (32-bit for M68K)
-    dc.l    InitGel   ; NES addr vector (32-bit for M68K)
-    dc.l    InitWalker   ; NES addr vector (32-bit for M68K)
-    dc.l    InitWalker   ; NES addr vector (32-bit for M68K)
-    dc.l    DoNothing   ; NES addr vector (32-bit for M68K)
-    dc.l    DoNothing   ; NES addr vector (32-bit for M68K)
-    dc.l    InitPeahat   ; NES addr vector (32-bit for M68K)
-    dc.l    InitBlueKeese   ; NES addr vector (32-bit for M68K)
-    dc.l    InitRedOrBlackKeese   ; NES addr vector (32-bit for M68K)
-    dc.l    InitRedOrBlackKeese   ; NES addr vector (32-bit for M68K)
-    dc.l    InitArmosOrFlyingGhini   ; NES addr vector (32-bit for M68K)
-    dc.l    InitBoulderSet   ; NES addr vector (32-bit for M68K)
-    dc.l    InitBoulder   ; NES addr vector (32-bit for M68K)
-    dc.l    InitSlowOctorockOrGhini   ; NES addr vector (32-bit for M68K)
-    dc.l    InitArmosOrFlyingGhini   ; NES addr vector (32-bit for M68K)
-    dc.l    ResetObjMetastateAndTimer   ; NES addr vector (32-bit for M68K)
-    dc.l    ResetObjMetastateAndTimer   ; NES addr vector (32-bit for M68K)
-    dc.l    ResetObjMetastateAndTimer   ; NES addr vector (32-bit for M68K)
-    dc.l    ResetObjMetastateAndTimer   ; NES addr vector (32-bit for M68K)
-    dc.l    ResetObjMetastateAndTimer   ; NES addr vector (32-bit for M68K)
-    dc.l    InitRope   ; NES addr vector (32-bit for M68K)
-    dc.l    DoNothing   ; NES addr vector (32-bit for M68K)
-    dc.l    InitWalker   ; NES addr vector (32-bit for M68K)
-    dc.l    InitBubble   ; NES addr vector (32-bit for M68K)
-    dc.l    InitBubble   ; NES addr vector (32-bit for M68K)
-    dc.l    InitBubble   ; NES addr vector (32-bit for M68K)
-    dc.l    DoNothing   ; NES addr vector (32-bit for M68K)
-    dc.l    InitPondFairy   ; NES addr vector (32-bit for M68K)
-    dc.l    InitWalker   ; NES addr vector (32-bit for M68K)
-    dc.l    InitDodongo   ; NES addr vector (32-bit for M68K)
-    dc.l    InitDodongo   ; NES addr vector (32-bit for M68K)
-    dc.l    InitGohma   ; NES addr vector (32-bit for M68K)
-    dc.l    InitGohma   ; NES addr vector (32-bit for M68K)
-    dc.l    InitRupeeStash   ; NES addr vector (32-bit for M68K)
-    dc.l    InitGrumble   ; NES addr vector (32-bit for M68K)
-    dc.l    InitZelda   ; NES addr vector (32-bit for M68K)
-    dc.l    InitDigdogger1   ; NES addr vector (32-bit for M68K)
-    dc.l    InitDigdogger2   ; NES addr vector (32-bit for M68K)
-    dc.l    InitLamnola   ; NES addr vector (32-bit for M68K)
-    dc.l    InitLamnola   ; NES addr vector (32-bit for M68K)
-    dc.l    InitManhandla   ; NES addr vector (32-bit for M68K)
-    dc.l    InitAquamentus   ; NES addr vector (32-bit for M68K)
-    dc.l    InitGanon   ; NES addr vector (32-bit for M68K)
-    dc.l    DoNothing   ; NES addr vector (32-bit for M68K)
-    dc.l    DoNothing   ; NES addr vector (32-bit for M68K)
-    dc.l    InitMoldorm   ; NES addr vector (32-bit for M68K)
-    dc.l    InitGleeok   ; NES addr vector (32-bit for M68K)
-    dc.l    InitGleeok   ; NES addr vector (32-bit for M68K)
-    dc.l    InitGleeok   ; NES addr vector (32-bit for M68K)
-    dc.l    InitGleeok   ; NES addr vector (32-bit for M68K)
-    dc.l    InitGleeokHead   ; NES addr vector (32-bit for M68K)
-    dc.l    InitPatra   ; NES addr vector (32-bit for M68K)
-    dc.l    InitPatra   ; NES addr vector (32-bit for M68K)
-    dc.l    InitTrap   ; NES addr vector (32-bit for M68K)
-    dc.l    InitTrap   ; NES addr vector (32-bit for M68K)
-    dc.l    InitUnderworldPerson   ; NES addr vector (32-bit for M68K)
-    dc.l    InitUnderworldPerson   ; NES addr vector (32-bit for M68K)
-    dc.l    InitUnderworldPerson   ; NES addr vector (32-bit for M68K)
-    dc.l    InitUnderworldPerson   ; NES addr vector (32-bit for M68K)
-    dc.l    InitUnderworldPerson   ; NES addr vector (32-bit for M68K)
-    dc.l    InitUnderworldPerson   ; NES addr vector (32-bit for M68K)
-    dc.l    InitUnderworldPersonLifeOrMoney   ; NES addr vector (32-bit for M68K)
-    dc.l    InitUnderworldPerson   ; NES addr vector (32-bit for M68K)
-    dc.l    InitMonsterShot   ; NES addr vector (32-bit for M68K)
-    dc.l    _InitMonsterShot_Unknown54   ; NES addr vector (32-bit for M68K)
-    dc.l    InitMonsterShot   ; NES addr vector (32-bit for M68K)
-    dc.l    InitMonsterShot   ; NES addr vector (32-bit for M68K)
-    dc.l    InitMonsterShot   ; NES addr vector (32-bit for M68K)
-    dc.l    InitMonsterShot   ; NES addr vector (32-bit for M68K)
-    dc.l    InitMonsterShot   ; NES addr vector (32-bit for M68K)
-    dc.l    InitMonsterShot   ; NES addr vector (32-bit for M68K)
-    dc.l    ResetObjMetastate   ; NES addr vector (32-bit for M68K)
-    dc.l    ResetObjMetastate   ; NES addr vector (32-bit for M68K)
-    dc.l    UpdateDeadDummy   ; NES addr vector (32-bit for M68K)
-    dc.l    InitFluteSecret   ; NES addr vector (32-bit for M68K)
+    dc.l    DoNothing   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    InitWalker   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    InitWalker   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    InitWalker   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    InitWalker   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    InitWalker   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    InitWalker   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    InitSlowOctorockOrGhini   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    InitFastOctorock   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    InitSlowOctorockOrGhini   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    InitFastOctorock   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    InitDarknut   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    InitDarknut   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    InitTektite   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    InitTektite   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    InitLeever   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    InitLeever   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    ResetObjMetastateAndTimer   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    InitWalker   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    InitWalker   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    InitWalker   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    InitGel   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    InitWalker   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    InitWalker   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    DoNothing   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    DoNothing   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    InitPeahat   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    InitBlueKeese   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    InitRedOrBlackKeese   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    InitRedOrBlackKeese   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    InitArmosOrFlyingGhini   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    InitBoulderSet   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    InitBoulder   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    InitSlowOctorockOrGhini   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    InitArmosOrFlyingGhini   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    ResetObjMetastateAndTimer   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    ResetObjMetastateAndTimer   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    ResetObjMetastateAndTimer   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    ResetObjMetastateAndTimer   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    ResetObjMetastateAndTimer   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    InitRope   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    DoNothing   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    InitWalker   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    InitBubble   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    InitBubble   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    InitBubble   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    DoNothing   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    InitPondFairy   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    InitWalker   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    InitDodongo   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    InitDodongo   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    InitGohma   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    InitGohma   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    InitRupeeStash   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    InitGrumble   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    InitZelda   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    InitDigdogger1   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    InitDigdogger2   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    InitLamnola   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    InitLamnola   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    InitManhandla   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    InitAquamentus   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    InitGanon   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    DoNothing   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    DoNothing   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    InitMoldorm   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    InitGleeok   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    InitGleeok   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    InitGleeok   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    InitGleeok   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    InitGleeokHead   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    InitPatra   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    InitPatra   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    InitTrap   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    InitTrap   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    InitUnderworldPerson   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    InitUnderworldPerson   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    InitUnderworldPerson   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    InitUnderworldPerson   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    InitUnderworldPerson   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    InitUnderworldPerson   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    InitUnderworldPersonLifeOrMoney   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    InitUnderworldPerson   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    InitMonsterShot   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    _InitMonsterShot_Unknown54   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    InitMonsterShot   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    InitMonsterShot   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    InitMonsterShot   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    InitMonsterShot   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    InitMonsterShot   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    InitMonsterShot   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    ResetObjMetastate   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    ResetObjMetastate   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    UpdateDeadDummy   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    InitFluteSecret   ; jump table entry (32-bit for _m68k_tablejump)
 
     even
 UpdateWhirlwind:
@@ -7412,7 +7371,7 @@ SwitchBank:
 
     even
 IsrVector:
-    dc.l    IsrNmi   ; NES addr vector (32-bit for M68K)
-    dc.l    IsrReset   ; NES addr vector (32-bit for M68K)
-    dc.l    $FFF0   ; NES addr vector (32-bit for M68K)
+    dc.b    (IsrNmi)&$FF, (IsrNmi>>8)&$FF   ; NES .ADDR (little-endian)
+    dc.b    (IsrReset)&$FF, (IsrReset>>8)&$FF   ; NES .ADDR (little-endian)
+    dc.b    ($FFF0)&$FF, ($FFF0>>8)&$FF   ; NES .ADDR (little-endian)
 

@@ -38,39 +38,39 @@
 
     even
 LevelPatternBlockSrcAddrs:
-    dc.l    PatternBlockUWSP127   ; NES addr vector (32-bit for M68K)
-    dc.l    PatternBlockUWSP127   ; NES addr vector (32-bit for M68K)
-    dc.l    PatternBlockUWSP127   ; NES addr vector (32-bit for M68K)
-    dc.l    PatternBlockUWSP358   ; NES addr vector (32-bit for M68K)
-    dc.l    PatternBlockUWSP469   ; NES addr vector (32-bit for M68K)
-    dc.l    PatternBlockUWSP358   ; NES addr vector (32-bit for M68K)
-    dc.l    PatternBlockUWSP469   ; NES addr vector (32-bit for M68K)
-    dc.l    PatternBlockUWSP127   ; NES addr vector (32-bit for M68K)
-    dc.l    PatternBlockUWSP358   ; NES addr vector (32-bit for M68K)
-    dc.l    PatternBlockUWSP469   ; NES addr vector (32-bit for M68K)
+    dc.b    (PatternBlockUWSP127)&$FF, (PatternBlockUWSP127>>8)&$FF   ; NES .ADDR (little-endian)
+    dc.b    (PatternBlockUWSP127)&$FF, (PatternBlockUWSP127>>8)&$FF   ; NES .ADDR (little-endian)
+    dc.b    (PatternBlockUWSP127)&$FF, (PatternBlockUWSP127>>8)&$FF   ; NES .ADDR (little-endian)
+    dc.b    (PatternBlockUWSP358)&$FF, (PatternBlockUWSP358>>8)&$FF   ; NES .ADDR (little-endian)
+    dc.b    (PatternBlockUWSP469)&$FF, (PatternBlockUWSP469>>8)&$FF   ; NES .ADDR (little-endian)
+    dc.b    (PatternBlockUWSP358)&$FF, (PatternBlockUWSP358>>8)&$FF   ; NES .ADDR (little-endian)
+    dc.b    (PatternBlockUWSP469)&$FF, (PatternBlockUWSP469>>8)&$FF   ; NES .ADDR (little-endian)
+    dc.b    (PatternBlockUWSP127)&$FF, (PatternBlockUWSP127>>8)&$FF   ; NES .ADDR (little-endian)
+    dc.b    (PatternBlockUWSP358)&$FF, (PatternBlockUWSP358>>8)&$FF   ; NES .ADDR (little-endian)
+    dc.b    (PatternBlockUWSP469)&$FF, (PatternBlockUWSP469>>8)&$FF   ; NES .ADDR (little-endian)
 
     even
 BossPatternBlockSrcAddrs:
-    dc.l    PatternBlockUWSPBoss1257   ; NES addr vector (32-bit for M68K)
-    dc.l    PatternBlockUWSPBoss1257   ; NES addr vector (32-bit for M68K)
-    dc.l    PatternBlockUWSPBoss1257   ; NES addr vector (32-bit for M68K)
-    dc.l    PatternBlockUWSPBoss3468   ; NES addr vector (32-bit for M68K)
-    dc.l    PatternBlockUWSPBoss3468   ; NES addr vector (32-bit for M68K)
-    dc.l    PatternBlockUWSPBoss1257   ; NES addr vector (32-bit for M68K)
-    dc.l    PatternBlockUWSPBoss3468   ; NES addr vector (32-bit for M68K)
-    dc.l    PatternBlockUWSPBoss1257   ; NES addr vector (32-bit for M68K)
-    dc.l    PatternBlockUWSPBoss3468   ; NES addr vector (32-bit for M68K)
-    dc.l    PatternBlockUWSPBoss9   ; NES addr vector (32-bit for M68K)
+    dc.b    (PatternBlockUWSPBoss1257)&$FF, (PatternBlockUWSPBoss1257>>8)&$FF   ; NES .ADDR (little-endian)
+    dc.b    (PatternBlockUWSPBoss1257)&$FF, (PatternBlockUWSPBoss1257>>8)&$FF   ; NES .ADDR (little-endian)
+    dc.b    (PatternBlockUWSPBoss1257)&$FF, (PatternBlockUWSPBoss1257>>8)&$FF   ; NES .ADDR (little-endian)
+    dc.b    (PatternBlockUWSPBoss3468)&$FF, (PatternBlockUWSPBoss3468>>8)&$FF   ; NES .ADDR (little-endian)
+    dc.b    (PatternBlockUWSPBoss3468)&$FF, (PatternBlockUWSPBoss3468>>8)&$FF   ; NES .ADDR (little-endian)
+    dc.b    (PatternBlockUWSPBoss1257)&$FF, (PatternBlockUWSPBoss1257>>8)&$FF   ; NES .ADDR (little-endian)
+    dc.b    (PatternBlockUWSPBoss3468)&$FF, (PatternBlockUWSPBoss3468>>8)&$FF   ; NES .ADDR (little-endian)
+    dc.b    (PatternBlockUWSPBoss1257)&$FF, (PatternBlockUWSPBoss1257>>8)&$FF   ; NES .ADDR (little-endian)
+    dc.b    (PatternBlockUWSPBoss3468)&$FF, (PatternBlockUWSPBoss3468>>8)&$FF   ; NES .ADDR (little-endian)
+    dc.b    (PatternBlockUWSPBoss9)&$FF, (PatternBlockUWSPBoss9>>8)&$FF   ; NES .ADDR (little-endian)
 
     even
 PatternBlockSrcAddrsUW:
-    dc.l    PatternBlockUWBG   ; NES addr vector (32-bit for M68K)
-    dc.l    PatternBlockUWSP   ; NES addr vector (32-bit for M68K)
+    dc.b    (PatternBlockUWBG)&$FF, (PatternBlockUWBG>>8)&$FF   ; NES .ADDR (little-endian)
+    dc.b    (PatternBlockUWSP)&$FF, (PatternBlockUWSP>>8)&$FF   ; NES .ADDR (little-endian)
 
     even
 PatternBlockSrcAddrsOW:
-    dc.l    PatternBlockOWBG   ; NES addr vector (32-bit for M68K)
-    dc.l    PatternBlockOWSP   ; NES addr vector (32-bit for M68K)
+    dc.b    (PatternBlockOWBG)&$FF, (PatternBlockOWBG>>8)&$FF   ; NES .ADDR (little-endian)
+    dc.b    (PatternBlockOWSP)&$FF, (PatternBlockOWSP>>8)&$FF   ; NES .ADDR (little-endian)
 
     even
 PatternBlockPpuAddrs:
@@ -232,6 +232,7 @@ TransferPatternBlock_Bank3:
 _L_z03_TransferPatternBlock_Bank3_LoopCopy:
     move.b  ($00,A4),D1   ; ptr lo
     move.b  ($01,A4),D4  ; ptr hi
+    andi.w  #$00FF,D1         ; zero-extend lo byte
     lsl.w   #8,D4
     or.w    D1,D4             ; D4 = NES ptr addr
     ext.l   D4

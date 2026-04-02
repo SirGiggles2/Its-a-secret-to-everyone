@@ -294,10 +294,10 @@ _ppu_write_6:
 ; VDP auto-increment = 2 (Reg 15 = $8F02 set by genesis_shell).
 ; PPU_VADDR increments by 1 (horizontal mode, bit 2 of PPUCTRL = 0).
 ;
-; Preserves: D0–D5, A0–A6 (all saved/restored).
+; Preserves: D0–D6, A0–A6 (all saved/restored).
 ;------------------------------------------------------------------------------
 _ppu_write_7:
-    movem.l D0-D5/A0,-(SP)          ; save all working registers (D0 = NES acc)
+    movem.l D0-D6/A0-A1,-(SP)       ; save all working registers (A1 used by LUT in .chr_convert_upload)
 
     move.w  (PPU_VADDR).l,D1        ; D1 = current NES PPU address
 
@@ -334,7 +334,7 @@ _ppu_write_7:
     clr.b   (CHR_BUF_CNT).l
 
 .chr_ret:
-    movem.l (SP)+,D0-D5/A0
+    movem.l (SP)+,D0-D6/A0-A1
     rts
 
     ;==========================================================================
@@ -516,7 +516,7 @@ _ppu_write_7:
 
 .nt_skip_write:
     bsr     .inc_ppuaddr
-    movem.l (SP)+,D0-D5/A0
+    movem.l (SP)+,D0-D6/A0-A1
     rts
 
     ;==========================================================================
@@ -646,6 +646,7 @@ _ppu_write_7:
     move.l  D2,(VDP_CTRL).l
 
     lea     (CHR_TILE_BUF).l,A0     ; A0 → plane-0 row bytes (0..7)
+    lea     (.expand_nibble_lut).l,A1 ; A1 → LUT (kept across all rows)
     moveq   #7,D5                   ; 8 rows, counter 7..0
 
 .ccu_row:
@@ -690,42 +691,38 @@ _ppu_write_7:
     ;
     ; Input:  D1.b = 4-bit value n (bits 3..0 = pixels 0..3 of one plane)
     ; Output: D2.w = bit3→pos12, bit2→pos8, bit1→pos4, bit0→pos0
-    ;         Represents the plane-0 (or plane-1) contribution to 4 pixels.
-    ;         Caller left-shifts by 1 for plane-1 (bit-1 contribution).
     ;
-    ; Example: n = 0b1010 (pixels 0,2 set; pixels 1,3 clear)
-    ;   output = $1010  ($1000 | $0010)
-    ;   Meaning: pixel 0 nibble = 1, pixel 1 = 0, pixel 2 = 1, pixel 3 = 0.
-    ;
-    ; Uses: D0 as scratch (lsl.w residue in D0 cleared by andi.w).
-    ; Caller (.ccu_row) saves plane0 expansion in D6, not D0.
+    ; Uses lookup table for speed: 2 instructions instead of ~24.
     ;==========================================================================
 .expand_nibble:
-    moveq   #0,D2
+    andi.w  #$000F,D1               ; mask to 4 bits, zero-extend
+    add.w   D1,D1                   ; word offset into table
+    move.w  (A1,D1.W),D2            ; D2.w = expanded nibble (A1 = LUT base)
+    rts
 
-    ; bit 3 of D1 → bit 12 of D2  (shift: 3→12, i.e. ×(4096/8) = ×512 = <<9)
-    move.b  D1,D0
-    andi.w  #$0008,D0               ; isolate bit 3, clear D0 high byte residue
-    lsl.w   #8,D0                   ; shift 8: $08 → $0800
-    lsl.w   #1,D0                   ; shift 1 more: $0800 → $1000  (bit 12)
-    or.w    D0,D2
-
-    ; bit 2 of D1 → bit 8 of D2  (<<6: $04 → $0100)
-    move.b  D1,D0
-    andi.w  #$0004,D0               ; isolate bit 2, clear D0 high byte residue
-    lsl.w   #6,D0
-    or.w    D0,D2
-
-    ; bit 1 of D1 → bit 4 of D2  (<<3: $02 → $0010)
-    move.b  D1,D0
-    andi.w  #$0002,D0               ; isolate bit 1, clear D0 high byte residue
-    lsl.w   #3,D0
-    or.w    D0,D2
-
-    ; bit 0 of D1 → bit 0 of D2  (no shift: $01 → $0001)
-    move.b  D1,D0
-    andi.w  #$0001,D0               ; isolate bit 0, clear D0 high byte residue
-    or.w    D0,D2
+    ;==========================================================================
+    ; 16-entry lookup table: nibble → scattered bits.
+    ;   Entry n: bit3→bit12, bit2→bit8, bit1→bit4, bit0→bit0
+    ;   e.g. $F (1111) → $1111, $A (1010) → $1010, $5 (0101) → $0101
+    ;==========================================================================
+    even
+.expand_nibble_lut:
+    dc.w    $0000   ; 0000
+    dc.w    $0001   ; 0001
+    dc.w    $0010   ; 0010
+    dc.w    $0011   ; 0011
+    dc.w    $0100   ; 0100
+    dc.w    $0101   ; 0101
+    dc.w    $0110   ; 0110
+    dc.w    $0111   ; 0111
+    dc.w    $1000   ; 1000
+    dc.w    $1001   ; 1001
+    dc.w    $1010   ; 1010
+    dc.w    $1011   ; 1011
+    dc.w    $1100   ; 1100
+    dc.w    $1101   ; 1101
+    dc.w    $1110   ; 1110
+    dc.w    $1111   ; 1111
 
     rts
 
@@ -1161,3 +1158,187 @@ _m68k_tablejump:
     lsl.w   #2,D0           ; D0.w = index × 4  (each dc.l = 4 bytes)
     movea.l (A0,D0.W),A0   ; load 32-bit target address from table
     jmp     (A0)            ; dispatch (no return)
+
+;==============================================================================
+; _clear_nametable_fast — Fast replacement for ClearNameTable.
+;
+; Fills Plane A with a tile word directly via VDP_DATA (bypassing _ppu_write_7)
+; and clears NT_CACHE.  For nametable 1 ($28xx), the original code's writes
+; all hit .nt_skip_write (address ≥$2400), so we simply skip.
+;
+; Input:
+;   D0.b = hi byte of NES PPU address ($20 = nametable 0, $28 = nametable 1)
+;   D2.b = tile index to fill with
+;   D3.b = attribute byte (always 0 for Zelda clear; palette 0 used)
+;
+; Preserves all NES registers (D0, D2, D3, D7, A4, A5).
+; Updates PPU_VADDR to the post-clear address (matching original behavior).
+;==============================================================================
+    even
+_clear_nametable_fast:
+    movem.l D0-D4/A0,-(SP)
+
+    ; Compute the end PPU_VADDR: start + 1024 tiles + 64 attributes = +$0440
+    ; ClearNameTable writes 1024+64 bytes through _ppu_write_7 which each
+    ; increment PPU_VADDR.  The second pass also sets PPU_VADDR for attributes.
+    ; For simplicity, set PPU_VADDR to the post-attribute address.
+    move.b  D0,D4                   ; D4.b = hi byte ($20 or $28)
+    andi.w  #$00FF,D4
+    lsl.w   #8,D4                   ; D4.w = PPU base ($2000 or $2800)
+    addi.w  #$0440,D4               ; +1024 tiles + 64 attrs (each increments by 1)
+    move.w  D4,(PPU_VADDR).l        ; set PPU_VADDR to expected end value
+
+    ; Only nametable 0 ($20xx) maps to Plane A.  $28xx is a no-op in _ppu_write_7.
+    cmpi.b  #$20,D0
+    bne.s   .cnf_done
+
+    ; ---- Fill Plane A (960 tile words = 32 cols × 30 rows) ----
+    ; VDP VRAM write to $C000 (Plane A base):
+    ;   command = $40000003  (VRAM write, address $C000)
+    move.l  #$40000003,(VDP_CTRL).l
+
+    ; Build tile word: palette 0 | tile_index (no flip, no priority)
+    andi.w  #$00FF,D2               ; D2.w = tile index
+    move.w  D2,D1                   ; D1.w = tile word to write
+
+    ; Write 960 tiles (32×30 NES nametable).  Plane A is 64 tiles wide,
+    ; so after each 32-tile NES row we must skip 32 unused tiles.
+    moveq   #30-1,D3                ; 30 rows
+.cnf_row:
+    moveq   #32-1,D4                ; 32 cols per row
+.cnf_col:
+    move.w  D1,(VDP_DATA).l
+    dbf     D4,.cnf_col
+
+    ; Skip 32 unused tile slots (64 bytes) in Plane A row.
+    ; Re-set VDP write address to start of next row.
+    ; Current address after 32 writes = row_base + 64.
+    ; Next row base = row_base + 128.  So skip 64 bytes (32 words).
+    moveq   #32-1,D4
+.cnf_skip:
+    move.w  D1,(VDP_DATA).l         ; write same tile to unused slots (harmless)
+    dbf     D4,.cnf_skip
+
+    dbf     D3,.cnf_row
+
+    ; ---- Clear NT_CACHE (960 bytes, fill with tile index) ----
+    lea     (NT_CACHE_BASE).l,A0
+    move.w  #960-1,D3
+    move.b  D1,D0                   ; fill byte = tile index
+.cnf_cache:
+    move.b  D0,(A0)+
+    dbf     D3,.cnf_cache
+
+.cnf_done:
+    movem.l (SP)+,D0-D4/A0
+    rts
+
+;==============================================================================
+; _transfer_chr_block_fast — Bulk 2BPP→4BPP tile transfer to VDP VRAM.
+;
+; Bypasses _ppu_write_7 entirely.  Reads NES 2BPP tile data from a ROM source
+; address, converts each 16-byte tile to 32-byte Genesis 4BPP, and writes
+; directly to VDP VRAM.  Processes full tiles (16 bytes each).
+;
+; Input:
+;   A0     = ROM source address (32-bit, points to NES 2BPP tile data)
+;   D1.w   = NES PPU destination address (CHR range $0000–$1FFF)
+;   D2.l   = byte count (must be multiple of 16)
+;
+; Output:
+;   PPU_VADDR updated to D1 + D2 (post-transfer address)
+;
+; Preserves all NES registers (D0, D2, D3, D7, A4, A5).
+;==============================================================================
+    even
+_transfer_chr_block_fast:
+    movem.l D0-D6/A0-A2,-(SP)
+
+    ; Save byte count for PPU_VADDR update at end
+    move.l  D2,D0                   ; D0.l = total byte count
+
+    ; A2 = LUT base (kept across all tiles)
+    lea     (.fast_expand_lut).l,A2
+
+    ; A0 = ROM source (already set by caller)
+    ; D1.w = NES PPU dest address
+
+.ftcb_tile:
+    tst.l   D2
+    ble     .ftcb_done
+
+    ; Set VDP write address: Genesis VRAM addr = NES CHR addr × 2
+    move.w  D1,D3
+    add.w   D3,D3                   ; D3.w = VDP VRAM address
+    moveq   #0,D4
+    move.w  D3,D4
+    swap    D4                      ; D4 = addr << 16
+    ori.l   #$40000000,D4           ; VDP VRAM-write command
+    move.l  D4,(VDP_CTRL).l
+
+    ; Convert 8 rows of this tile
+    moveq   #7,D5                   ; row counter
+
+.ftcb_row:
+    ; plane0 = (A0), plane1 = 8(A0)
+    moveq   #0,D3
+    move.b  (A0),D3                 ; D3.b = plane 0 row byte
+    moveq   #0,D4
+    move.b  8(A0),D4                ; D4.b = plane 1 row byte
+
+    ; ---- Pixels 0-3 (upper nibbles) ----
+    move.b  D3,D6
+    lsr.b   #4,D6
+    andi.w  #$000F,D6
+    add.w   D6,D6
+    move.w  (A2,D6.W),D6           ; D6.w = plane0 upper expanded
+
+    move.b  D4,D0
+    lsr.b   #4,D0
+    andi.w  #$000F,D0
+    add.w   D0,D0
+    move.w  (A2,D0.W),D0           ; D0.w = plane1 upper expanded
+    lsl.w   #1,D0                   ; shift plane1 to bit 1
+    or.w    D6,D0                   ; combine
+    move.w  D0,(VDP_DATA).l         ; write pixels 0-3
+
+    ; ---- Pixels 4-7 (lower nibbles) ----
+    move.b  D3,D6
+    andi.w  #$000F,D6
+    add.w   D6,D6
+    move.w  (A2,D6.W),D6           ; D6.w = plane0 lower expanded
+
+    move.b  D4,D0
+    andi.w  #$000F,D0
+    add.w   D0,D0
+    move.w  (A2,D0.W),D0           ; D0.w = plane1 lower expanded
+    lsl.w   #1,D0
+    or.w    D6,D0
+    move.w  D0,(VDP_DATA).l         ; write pixels 4-7
+
+    addq.l  #1,A0                   ; next plane-0 row
+    subq.b  #1,D5
+    bge.s   .ftcb_row
+
+    ; Skip past plane-1 bytes (A0 is now at +8, plane1 starts at +8 from tile start)
+    addq.l  #8,A0                   ; A0 now points to next tile
+
+    addi.w  #16,D1                  ; advance NES PPU address by 16 (one tile)
+    subi.l  #16,D2                  ; decrement remaining byte count
+    bgt     .ftcb_tile
+
+.ftcb_done:
+    ; Update PPU_VADDR to expected post-transfer value
+    move.w  D1,(PPU_VADDR).l
+
+    movem.l (SP)+,D0-D6/A0-A2
+    rts
+
+    ;==========================================================================
+    ; LUT for fast CHR conversion: 4-bit nibble → scattered 16-bit word.
+    ; Same logic as .expand_nibble_lut but placed here for locality.
+    ;==========================================================================
+    even
+.fast_expand_lut:
+    dc.w    $0000,$0001,$0010,$0011,$0100,$0101,$0110,$0111
+    dc.w    $1000,$1001,$1010,$1011,$1100,$1101,$1110,$1111

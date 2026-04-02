@@ -1,7 +1,7 @@
 =================================================================
 Boot probe  T7/T8/T9/T10/T11  —  300 frames
 =================================================================
-  IsrReset=$01A560  RunGame=$017646  LoopForever=$01766C  IsrNmi=$01769A
+  IsrReset=$01A752  RunGame=$017894  LoopForever=$0178BA  IsrNmi=$0178E8
   ExcBus=$000366  ExcAddr=$000388  ExcDef=$0003AA
 
   f001 pc=$000306  reset=- game=- forever=- nmi=- exc=false
@@ -9,33 +9,33 @@ Boot probe  T7/T8/T9/T10/T11  —  300 frames
   f003 pc=$0002FE  reset=- game=- forever=- nmi=- exc=false
   f004 pc=$000306  reset=- game=- forever=- nmi=- exc=false
   f005 pc=$0002FE  reset=- game=- forever=- nmi=- exc=false
-  f060 pc=$00071E  reset=8 game=8 forever=31 nmi=32 exc=false
-  f120 pc=$0004C4  reset=8 game=8 forever=31 nmi=32 exc=false
-  f180 pc=$00070E  reset=8 game=8 forever=31 nmi=32 exc=false
-  f240 pc=$000700  reset=8 game=8 forever=31 nmi=32 exc=false
-  f300 pc=$0004C0  reset=8 game=8 forever=31 nmi=32 exc=false
+  f060 pc=$00048C  reset=8 game=8 forever=21 nmi=22 exc=false
+  f120 pc=$000490  reset=8 game=8 forever=21 nmi=22 exc=false
+  f180 pc=$000490  reset=8 game=8 forever=21 nmi=22 exc=false
+  f240 pc=$0178BA  reset=8 game=8 forever=21 nmi=22 exc=false
+  f300 pc=$000666  reset=8 game=8 forever=21 nmi=22 exc=false
 
 ─── T7: Reset Trace Sanity ─────────────────────────────────────
 [PASS] T7_ISRRESET_HIT                 frame 8
 [PASS] T7_RUNGAME_HIT                  frame 8
-[PASS] T7_LOOPFOREVER_HIT              frame 31
-[PASS] T7_ISRNMI_HIT                   frame 32
-[PASS] T7_ORDER                        Reset(f8)≤Game(f8)≤Forever(f31)≤Nmi(f32)
+[PASS] T7_LOOPFOREVER_HIT              frame 21
+[PASS] T7_ISRNMI_HIT                   frame 22
+[PASS] T7_ORDER                        Reset(f8)≤Game(f8)≤Forever(f21)≤Nmi(f22)
 [PASS] T7_NO_EXCEPTION                 no exception handler executed
 
 ─── T8: Frame / NMI Cadence ────────────────────────────────────
-  first_nmi=f32  eligible=268  with_nmi=1  multi_nmi=0  rate=0.4%
-[FAIL] T8_NMI_CADENCE                  0.4% < 95% (1/268)
+  first_nmi=f22  eligible=278  with_nmi=7  multi_nmi=0  rate=2.5%
+[FAIL] T8_NMI_CADENCE                  2.5% < 95% (7/278)
 [PASS] T8_NMI_NO_DOUBLE                no frame had >1 IsrNmi call
 
 ─── T9: No Hidden Exceptions (300-frame soak) ──────────────────
 [PASS] T9_NO_EXCEPTION                 300 frames clean
 
 ─── T10: NES RAM Map Soundness ─────────────────────────────────
-  $FF00F4 InitializedGame  = $00  (domain=M68K BUS)
+  $FF00F4 InitializedGame  = $01  (domain=M68K BUS)
   $FF00FF CurPpuControl    = $30  (domain=M68K BUS)
   $FF0804 PPU_CTRL shadow  = $30  (domain=M68K BUS)
-[PASS] T10_RAM_READABLE                NES RAM accessible ($FF00F4=$00)
+[PASS] T10_RAM_READABLE                NES RAM accessible ($FF00F4=$01)
 [FAIL] T10_PPUCTRL_SET                 $FF00FF=$30 — NMI enable bit (bit 7) not set or zero
 [PASS] T10_PPU_STATE                   $FF0804=$30 (PPU_CTRL shadow non-zero)
 

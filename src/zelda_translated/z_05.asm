@@ -191,15 +191,15 @@ UpdateMenu:
     bsr     _m68k_tablejump  ; M68K-native table dispatch (replaces JSR TableJump)
     even
 UpdateMenuUW_JumpTable:
-    dc.l    UpdateMenu_Return   ; NES addr vector (32-bit for M68K)
-    dc.l    UpdateMenuCommon1   ; NES addr vector (32-bit for M68K)
-    dc.l    UpdateMenuCommon2   ; NES addr vector (32-bit for M68K)
-    dc.l    UpdateMenuCommon3   ; NES addr vector (32-bit for M68K)
-    dc.l    UpdateMenuCommon4   ; NES addr vector (32-bit for M68K)
-    dc.l    UpdateMenu5UW   ; NES addr vector (32-bit for M68K)
-    dc.l    UpdateMenuScrollDownUW   ; NES addr vector (32-bit for M68K)
-    dc.l    UpdateMenuActive   ; NES addr vector (32-bit for M68K)
-    dc.l    UpdateMenuScrollUp   ; NES addr vector (32-bit for M68K)
+    dc.l    UpdateMenu_Return   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    UpdateMenuCommon1   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    UpdateMenuCommon2   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    UpdateMenuCommon3   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    UpdateMenuCommon4   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    UpdateMenu5UW   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    UpdateMenuScrollDownUW   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    UpdateMenuActive   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    UpdateMenuScrollUp   ; jump table entry (32-bit for _m68k_tablejump)
 
 _anon_z05_0:
     ; Update menu in OW.
@@ -207,16 +207,16 @@ _anon_z05_0:
     bsr     _m68k_tablejump  ; M68K-native table dispatch (replaces JSR TableJump)
     even
 UpdateMenuOW_JumpTable:
-    dc.l    UpdateMenu_Return   ; NES addr vector (32-bit for M68K)
-    dc.l    UpdateMenuStartOW   ; NES addr vector (32-bit for M68K)
-    dc.l    UpdateMenuCommon1   ; NES addr vector (32-bit for M68K)
-    dc.l    UpdateMenuCommon2   ; NES addr vector (32-bit for M68K)
-    dc.l    UpdateMenuCommon3   ; NES addr vector (32-bit for M68K)
-    dc.l    UpdateMenuCommon4   ; NES addr vector (32-bit for M68K)
-    dc.l    UpdateMenu5OW   ; NES addr vector (32-bit for M68K)
-    dc.l    UpdateMenuScrollDownOW   ; NES addr vector (32-bit for M68K)
-    dc.l    UpdateMenuActive   ; NES addr vector (32-bit for M68K)
-    dc.l    UpdateMenuScrollUp   ; NES addr vector (32-bit for M68K)
+    dc.l    UpdateMenu_Return   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    UpdateMenuStartOW   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    UpdateMenuCommon1   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    UpdateMenuCommon2   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    UpdateMenuCommon3   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    UpdateMenuCommon4   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    UpdateMenu5OW   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    UpdateMenuScrollDownOW   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    UpdateMenuActive   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    UpdateMenuScrollUp   ; jump table entry (32-bit for _m68k_tablejump)
 
     even
 UpdateMenuCommon1:
@@ -822,13 +822,13 @@ InitMode7Submodes:
     bsr     _m68k_tablejump  ; M68K-native table dispatch (replaces JSR TableJump)
     even
 InitMode7Submodes_JumpTable:
-    dc.l    InitMode7_Sub0   ; NES addr vector (32-bit for M68K)
-    dc.l    InitMode7_Sub1   ; NES addr vector (32-bit for M68K)
-    dc.l    InitMode7_Sub2   ; NES addr vector (32-bit for M68K)
-    dc.l    InitMode7_Sub3And4_TransferPlayAreaAttrsToNT2   ; NES addr vector (32-bit for M68K)
-    dc.l    InitMode7_Sub3And4_TransferPlayAreaAttrsToNT2   ; NES addr vector (32-bit for M68K)
-    dc.l    InitMode7_Sub5   ; NES addr vector (32-bit for M68K)
-    dc.l    InitMode7_Sub6   ; NES addr vector (32-bit for M68K)
+    dc.l    InitMode7_Sub0   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    InitMode7_Sub1   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    InitMode7_Sub2   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    InitMode7_Sub3And4_TransferPlayAreaAttrsToNT2   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    InitMode7_Sub3And4_TransferPlayAreaAttrsToNT2   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    InitMode7_Sub5   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    InitMode7_Sub6   ; jump table entry (32-bit for _m68k_tablejump)
 
     even
 InitMode7_Sub1:
@@ -1183,14 +1183,14 @@ UpdateMode7ScrollSubmode:
     bsr     _m68k_tablejump  ; M68K-native table dispatch (replaces JSR TableJump)
     even
 UpdateMode7ScrollSubmode_JumpTable:
-    dc.l    UpdateMode7Scroll_Sub0   ; NES addr vector (32-bit for M68K)
-    dc.l    UpdateMode7Scroll_Sub1   ; NES addr vector (32-bit for M68K)
-    dc.l    UpdateMode7Scroll_Sub2   ; NES addr vector (32-bit for M68K)
-    dc.l    UpdateMode7Scroll_Sub3   ; NES addr vector (32-bit for M68K)
-    dc.l    UpdateMode7Scroll_Sub4   ; NES addr vector (32-bit for M68K)
-    dc.l    UpdateMode7Scroll_Sub4And5_TransferNTAttrs   ; NES addr vector (32-bit for M68K)
-    dc.l    UpdateMode7Scroll_Sub6   ; NES addr vector (32-bit for M68K)
-    dc.l    UpdateMode7Scroll_Sub7   ; NES addr vector (32-bit for M68K)
+    dc.l    UpdateMode7Scroll_Sub0   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    UpdateMode7Scroll_Sub1   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    UpdateMode7Scroll_Sub2   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    UpdateMode7Scroll_Sub3   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    UpdateMode7Scroll_Sub4   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    UpdateMode7Scroll_Sub4And5_TransferNTAttrs   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    UpdateMode7Scroll_Sub6   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    UpdateMode7Scroll_Sub7   ; jump table entry (32-bit for _m68k_tablejump)
 
     even
 UpdateMode7Scroll_Sub0:
@@ -2036,6 +2036,7 @@ _L_z05_InitMode_EnterRoom_PlaceList:
 _anon_z05_51:
     move.b  ($04,A4),D1   ; ptr lo
     move.b  ($05,A4),D4  ; ptr hi
+    andi.w  #$00FF,D1         ; zero-extend lo byte
     lsl.w   #8,D4
     or.w    D1,D4             ; D4 = NES ptr addr
     ext.l   D4
@@ -2173,6 +2174,7 @@ _anon_z05_57:
 _L_z05_AssignObjSpawnPositions_LoopSpawnSpot:
     move.b  ($06,A4),D1   ; ptr lo
     move.b  ($07,A4),D4  ; ptr hi
+    andi.w  #$00FF,D1         ; zero-extend lo byte
     lsl.w   #8,D4
     or.w    D1,D4             ; D4 = NES ptr addr
     ext.l   D4
@@ -2397,6 +2399,7 @@ SetDoorFlag:
     or.b  D1,D0
     move.b  ($00,A4),D1   ; ptr lo
     move.b  ($01,A4),D4  ; ptr hi
+    andi.w  #$00FF,D1         ; zero-extend lo byte
     lsl.w   #8,D4
     or.w    D1,D4
     ext.l   D4
@@ -2420,6 +2423,7 @@ ResetDoorFlag:
     eori.b #$FF,D0
     move.b  ($00,A4),D1
     move.b  ($01,A4),D4
+    andi.w  #$00FF,D1         ; zero-extend lo byte
     lsl.w   #8,D4
     or.w    D1,D4
     ext.l   D4
@@ -2429,6 +2433,7 @@ ResetDoorFlag:
     and.b  D1,D0
     move.b  ($00,A4),D1   ; ptr lo
     move.b  ($01,A4),D4  ; ptr hi
+    andi.w  #$00FF,D1         ; zero-extend lo byte
     lsl.w   #8,D4
     or.w    D1,D4
     ext.l   D4
@@ -2712,14 +2717,14 @@ CheckSecretTrigger:
     bsr     _m68k_tablejump  ; M68K-native table dispatch (replaces JSR TableJump)
     even
 CheckSecretTrigger_JumpTable:
-    dc.l    CheckSecretTriggerNone   ; NES addr vector (32-bit for M68K)
-    dc.l    CheckSecretTriggerAllDead   ; NES addr vector (32-bit for M68K)
-    dc.l    CheckSecretTriggerRingleader   ; NES addr vector (32-bit for M68K)
-    dc.l    CheckSecretTriggerLastBoss   ; NES addr vector (32-bit for M68K)
-    dc.l    CheckSecretTriggerBlockDoor   ; NES addr vector (32-bit for M68K)
-    dc.l    CheckSecretTriggerBlockStairs   ; NES addr vector (32-bit for M68K)
-    dc.l    CheckSecretTriggerMoneyOrLife   ; NES addr vector (32-bit for M68K)
-    dc.l    CheckSecretTriggerAllDead   ; NES addr vector (32-bit for M68K)
+    dc.l    CheckSecretTriggerNone   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    CheckSecretTriggerAllDead   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    CheckSecretTriggerRingleader   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    CheckSecretTriggerLastBoss   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    CheckSecretTriggerBlockDoor   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    CheckSecretTriggerBlockStairs   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    CheckSecretTriggerMoneyOrLife   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    CheckSecretTriggerAllDead   ; jump table entry (32-bit for _m68k_tablejump)
 
     even
 CheckHasLivingMonsters:
@@ -2884,19 +2889,19 @@ UpdateMode11Death_Full:
     bsr     _m68k_tablejump  ; M68K-native table dispatch (replaces JSR TableJump)
     even
 UpdateMode11Death_Full_JumpTable:
-    dc.l    UpdateMode11Death_Sub0   ; NES addr vector (32-bit for M68K)
-    dc.l    UpdateMode11Death_Sub1   ; NES addr vector (32-bit for M68K)
-    dc.l    UpdateMode11Death_Sub2   ; NES addr vector (32-bit for M68K)
-    dc.l    UpdateMode11Death_Sub3   ; NES addr vector (32-bit for M68K)
-    dc.l    UpdateMode11Death_Sub4   ; NES addr vector (32-bit for M68K)
-    dc.l    UpdateMode11Death_Sub5   ; NES addr vector (32-bit for M68K)
-    dc.l    UpdateMode11Death_Sub6   ; NES addr vector (32-bit for M68K)
-    dc.l    UpdateMode11Death_Sub7   ; NES addr vector (32-bit for M68K)
-    dc.l    UpdateMode11Death_Sub8_AnimateFade   ; NES addr vector (32-bit for M68K)
-    dc.l    UpdateMode11Death_Sub9   ; NES addr vector (32-bit for M68K)
-    dc.l    UpdateMode11Death_SubA   ; NES addr vector (32-bit for M68K)
-    dc.l    UpdateMode11Death_SubB   ; NES addr vector (32-bit for M68K)
-    dc.l    UpdateMode11Death_SubC   ; NES addr vector (32-bit for M68K)
+    dc.l    UpdateMode11Death_Sub0   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    UpdateMode11Death_Sub1   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    UpdateMode11Death_Sub2   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    UpdateMode11Death_Sub3   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    UpdateMode11Death_Sub4   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    UpdateMode11Death_Sub5   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    UpdateMode11Death_Sub6   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    UpdateMode11Death_Sub7   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    UpdateMode11Death_Sub8_AnimateFade   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    UpdateMode11Death_Sub9   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    UpdateMode11Death_SubA   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    UpdateMode11Death_SubB   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    UpdateMode11Death_SubC   ; jump table entry (32-bit for _m68k_tablejump)
 
     even
 UpdateMode11Death_Sub1:
@@ -3288,15 +3293,15 @@ WieldItem:
     bsr     _m68k_tablejump  ; M68K-native table dispatch (replaces JSR TableJump)
     even
 WieldItem_JumpTable:
-    dc.l    WieldBoomerang   ; NES addr vector (32-bit for M68K)
-    dc.l    WieldBomb   ; NES addr vector (32-bit for M68K)
-    dc.l    WieldArrow   ; NES addr vector (32-bit for M68K)
-    dc.l    WieldNothing   ; NES addr vector (32-bit for M68K)
-    dc.l    WieldCandle   ; NES addr vector (32-bit for M68K)
-    dc.l    WieldFlute   ; NES addr vector (32-bit for M68K)
-    dc.l    WieldFood   ; NES addr vector (32-bit for M68K)
-    dc.l    WieldPotion   ; NES addr vector (32-bit for M68K)
-    dc.l    WieldRod   ; NES addr vector (32-bit for M68K)
+    dc.l    WieldBoomerang   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    WieldBomb   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    WieldArrow   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    WieldNothing   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    WieldCandle   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    WieldFlute   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    WieldFood   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    WieldPotion   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    WieldRod   ; jump table entry (32-bit for _m68k_tablejump)
 
     even
 WieldBoomerang:
@@ -3975,6 +3980,7 @@ _L_z05_FindNextEdgeSpawnCell_GetRowOffset:
     ;
     move.b  ($00,A4),D1   ; ptr lo
     move.b  ($01,A4),D4  ; ptr hi
+    andi.w  #$00FF,D1         ; zero-extend lo byte
     lsl.w   #8,D4
     or.w    D1,D4             ; D4 = NES ptr addr
     ext.l   D4
@@ -4004,15 +4010,15 @@ InitModeB:
     bsr     _m68k_tablejump  ; M68K-native table dispatch (replaces JSR TableJump)
     even
 InitModeB_JumpTable:
-    dc.l    InitModeSubroom_Sub0   ; NES addr vector (32-bit for M68K)
-    dc.l    InitModeB_Sub1   ; NES addr vector (32-bit for M68K)
-    dc.l    InitModeSubroom_AdvanceSubmode   ; NES addr vector (32-bit for M68K)
-    dc.l    LayoutCaveAndAvanceSubmode   ; NES addr vector (32-bit for M68K)
-    dc.l    CopyNextRowToTransferBufAndAdvanceSubmodeWhenDone   ; NES addr vector (32-bit for M68K)
-    dc.l    InitModeB_Sub5_FillTileAttrsAndTransferTopHalf   ; NES addr vector (32-bit for M68K)
-    dc.l    InitModeAOrB_TransferBottomHalfAttrs   ; NES addr vector (32-bit for M68K)
-    dc.l    InitModeB_EnterCave_Bank5   ; NES addr vector (32-bit for M68K)
-    dc.l    InitMode_WalkCave   ; NES addr vector (32-bit for M68K)
+    dc.l    InitModeSubroom_Sub0   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    InitModeB_Sub1   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    InitModeSubroom_AdvanceSubmode   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    LayoutCaveAndAvanceSubmode   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    CopyNextRowToTransferBufAndAdvanceSubmodeWhenDone   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    InitModeB_Sub5_FillTileAttrsAndTransferTopHalf   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    InitModeAOrB_TransferBottomHalfAttrs   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    InitModeB_EnterCave_Bank5   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    InitMode_WalkCave   ; jump table entry (32-bit for _m68k_tablejump)
 
     even
 InitModeC:
@@ -4020,15 +4026,15 @@ InitModeC:
     bsr     _m68k_tablejump  ; M68K-native table dispatch (replaces JSR TableJump)
     even
 InitModeC_JumpTable:
-    dc.l    InitModeSubroom_Sub0   ; NES addr vector (32-bit for M68K)
-    dc.l    InitModeB_Sub1   ; NES addr vector (32-bit for M68K)
-    dc.l    InitModeSubroom_AdvanceSubmode   ; NES addr vector (32-bit for M68K)
-    dc.l    LayoutShortcutAndAdvanceSubmode   ; NES addr vector (32-bit for M68K)
-    dc.l    CopyNextRowToTransferBufAndAdvanceSubmodeWhenDone   ; NES addr vector (32-bit for M68K)
-    dc.l    InitModeB_Sub5_FillTileAttrsAndTransferTopHalf   ; NES addr vector (32-bit for M68K)
-    dc.l    InitModeAOrB_TransferBottomHalfAttrs   ; NES addr vector (32-bit for M68K)
-    dc.l    InitModeB_EnterCave_Bank5   ; NES addr vector (32-bit for M68K)
-    dc.l    InitMode_WalkCave   ; NES addr vector (32-bit for M68K)
+    dc.l    InitModeSubroom_Sub0   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    InitModeB_Sub1   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    InitModeSubroom_AdvanceSubmode   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    LayoutShortcutAndAdvanceSubmode   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    CopyNextRowToTransferBufAndAdvanceSubmodeWhenDone   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    InitModeB_Sub5_FillTileAttrsAndTransferTopHalf   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    InitModeAOrB_TransferBottomHalfAttrs   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    InitModeB_EnterCave_Bank5   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    InitMode_WalkCave   ; jump table entry (32-bit for _m68k_tablejump)
 
     even
 ModifyObjCountByHistoryOW:
@@ -4054,6 +4060,7 @@ _anon_z05_90:
     ;
     move.b  ($00,A4),D1   ; ptr lo
     move.b  ($01,A4),D4  ; ptr hi
+    andi.w  #$00FF,D1         ; zero-extend lo byte
     lsl.w   #8,D4
     or.w    D1,D4             ; D4 = NES ptr addr
     ext.l   D4
@@ -4063,6 +4070,7 @@ _anon_z05_90:
     andi.b #$F8,D0
     move.b  ($00,A4),D1   ; ptr lo
     move.b  ($01,A4),D4  ; ptr hi
+    andi.w  #$00FF,D1         ; zero-extend lo byte
     lsl.w   #8,D4
     or.w    D1,D4
     ext.l   D4
@@ -4105,6 +4113,7 @@ SaveKillCountOW:
     move.b  D0,($0002,A4)
     move.b  ($00,A4),D1   ; ptr lo
     move.b  ($01,A4),D4  ; ptr hi
+    andi.w  #$00FF,D1         ; zero-extend lo byte
     lsl.w   #8,D4
     or.w    D1,D4             ; D4 = NES ptr addr
     ext.l   D4
@@ -4114,6 +4123,7 @@ SaveKillCountOW:
     andi.b #$F8,D0
     move.b  ($00,A4),D1   ; ptr lo
     move.b  ($01,A4),D4  ; ptr hi
+    andi.w  #$00FF,D1         ; zero-extend lo byte
     lsl.w   #8,D4
     or.w    D1,D4
     ext.l   D4
@@ -4136,6 +4146,7 @@ _L_z05_SaveKillCountOW_LimitCount:
 _anon_z05_93:
     move.b  ($00,A4),D1
     move.b  ($01,A4),D4
+    andi.w  #$00FF,D1         ; zero-extend lo byte
     lsl.w   #8,D4
     or.w    D1,D4
     ext.l   D4
@@ -4145,6 +4156,7 @@ _anon_z05_93:
     or.b  D1,D0
     move.b  ($00,A4),D1   ; ptr lo
     move.b  ($01,A4),D4  ; ptr hi
+    andi.w  #$00FF,D1         ; zero-extend lo byte
     lsl.w   #8,D4
     or.w    D1,D4
     ext.l   D4
@@ -4159,16 +4171,16 @@ InitMode9:
     bsr     _m68k_tablejump  ; M68K-native table dispatch (replaces JSR TableJump)
     even
 InitMode9_JumpTable:
-    dc.l    InitModeSubroom_Sub0   ; NES addr vector (32-bit for M68K)
-    dc.l    InitMode9_FadeToDark   ; NES addr vector (32-bit for M68K)
-    dc.l    InitModeSubroom_AnimateFade   ; NES addr vector (32-bit for M68K)
-    dc.l    LayoutCellarAndAdvanceSubmode   ; NES addr vector (32-bit for M68K)
-    dc.l    CopyNextRowToTransferBufAndAdvanceSubmodeWhenDone   ; NES addr vector (32-bit for M68K)
-    dc.l    InitMode9_TransferAttrs   ; NES addr vector (32-bit for M68K)
-    dc.l    InitMode9_FadeToLight   ; NES addr vector (32-bit for M68K)
-    dc.l    InitModeSubroom_AnimateFade   ; NES addr vector (32-bit for M68K)
-    dc.l    InitMode9_EnterCellar   ; NES addr vector (32-bit for M68K)
-    dc.l    InitMode9_WalkCellar   ; NES addr vector (32-bit for M68K)
+    dc.l    InitModeSubroom_Sub0   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    InitMode9_FadeToDark   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    InitModeSubroom_AnimateFade   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    LayoutCellarAndAdvanceSubmode   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    CopyNextRowToTransferBufAndAdvanceSubmodeWhenDone   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    InitMode9_TransferAttrs   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    InitMode9_FadeToLight   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    InitModeSubroom_AnimateFade   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    InitMode9_EnterCellar   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    InitMode9_WalkCellar   ; jump table entry (32-bit for _m68k_tablejump)
 
 ; Unknown block
     dc.b    $A0, $00, $F0, $02, $A0, $01, $84, $0C
@@ -4475,14 +4487,14 @@ TouchDoor:
     bsr     _m68k_tablejump  ; M68K-native table dispatch (replaces JSR TableJump)
     even
 TouchDoor_JumpTable:
-    dc.l    TouchDoorOpen   ; NES addr vector (32-bit for M68K)
-    dc.l    TouchDoorWall   ; NES addr vector (32-bit for M68K)
-    dc.l    TouchDoorFalse   ; NES addr vector (32-bit for M68K)
-    dc.l    TouchDoorFalse   ; NES addr vector (32-bit for M68K)
-    dc.l    TouchDoorBombable   ; NES addr vector (32-bit for M68K)
-    dc.l    TouchDoorKey   ; NES addr vector (32-bit for M68K)
-    dc.l    TouchDoorKey   ; NES addr vector (32-bit for M68K)
-    dc.l    TouchDoorShutter   ; NES addr vector (32-bit for M68K)
+    dc.l    TouchDoorOpen   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    TouchDoorWall   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    TouchDoorFalse   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    TouchDoorFalse   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    TouchDoorBombable   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    TouchDoorKey   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    TouchDoorKey   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    TouchDoorShutter   ; jump table entry (32-bit for _m68k_tablejump)
 
     even
 TouchDoorWall:
@@ -4628,6 +4640,7 @@ _anon_z05_101:
     ;
     move.b  ($00,A4),D1   ; ptr lo
     move.b  ($01,A4),D4  ; ptr hi
+    andi.w  #$00FF,D1         ; zero-extend lo byte
     lsl.w   #8,D4
     or.w    D1,D4             ; D4 = NES ptr addr
     ext.l   D4
@@ -4637,6 +4650,7 @@ _anon_z05_101:
     andi.b #$3F,D0
     move.b  ($00,A4),D1   ; ptr lo
     move.b  ($01,A4),D4  ; ptr hi
+    andi.w  #$00FF,D1         ; zero-extend lo byte
     lsl.w   #8,D4
     or.w    D1,D4
     ext.l   D4
@@ -4671,6 +4685,7 @@ SaveKillCountUW:
     andi.b #$3F,D0
     move.b  ($00,A4),D1   ; ptr lo
     move.b  ($01,A4),D4  ; ptr hi
+    andi.w  #$00FF,D1         ; zero-extend lo byte
     lsl.w   #8,D4
     or.w    D1,D4
     ext.l   D4
@@ -4735,6 +4750,7 @@ _L_z05_SaveKillCountUW_StoreMax:
 _L_z05_SaveKillCountUW_CombineWithFlags:
     move.b  ($00,A4),D1
     move.b  ($01,A4),D4
+    andi.w  #$00FF,D1         ; zero-extend lo byte
     lsl.w   #8,D4
     or.w    D1,D4
     ext.l   D4
@@ -4744,6 +4760,7 @@ _L_z05_SaveKillCountUW_CombineWithFlags:
     or.b  D1,D0
     move.b  ($00,A4),D1   ; ptr lo
     move.b  ($01,A4),D4  ; ptr hi
+    andi.w  #$00FF,D1         ; zero-extend lo byte
     lsl.w   #8,D4
     or.w    D1,D4
     ext.l   D4
@@ -4762,6 +4779,7 @@ CheckBossSoundEffectUW:
     move.b  (NES_SRAM+$0BBC).l,D3
     move.b  ($00,A4),D1   ; ptr lo
     move.b  ($01,A4),D4  ; ptr hi
+    andi.w  #$00FF,D1         ; zero-extend lo byte
     lsl.w   #8,D4
     or.w    D1,D4             ; D4 = NES ptr addr
     ext.l   D4
@@ -4859,6 +4877,7 @@ WriteDoorFaceTileHorizontally:
     ;
     move.b  ($02,A4),D1   ; ptr lo
     move.b  ($03,A4),D4  ; ptr hi
+    andi.w  #$00FF,D1         ; zero-extend lo byte
     lsl.w   #8,D4
     or.w    D1,D4             ; D4 = NES ptr addr
     ext.l   D4
@@ -5078,11 +5097,11 @@ ColumnHeapOWF:
 
     even
 RoomLayoutsOWAddr:
-    dc.l    RoomLayoutsOW   ; NES addr vector (32-bit for M68K)
+    dc.b    (RoomLayoutsOW)&$FF, (RoomLayoutsOW>>8)&$FF   ; NES .ADDR (little-endian)
 
     even
 ColumnHeapOWAddr:
-    dc.l    ColumnHeapOW0   ; NES addr vector (32-bit for M68K)
+    dc.b    (ColumnHeapOW0)&$FF, (ColumnHeapOW0>>8)&$FF   ; NES .ADDR (little-endian)
 
     even
 WallTileList:
@@ -5354,6 +5373,7 @@ FillWalls:
 LoopWallTile:
     move.b  ($00,A4),D1   ; ptr lo
     move.b  ($01,A4),D4  ; ptr hi
+    andi.w  #$00FF,D1         ; zero-extend lo byte
     lsl.w   #8,D4
     or.w    D1,D4             ; D4 = NES ptr addr
     ext.l   D4
@@ -5363,6 +5383,7 @@ LoopWallTile:
     beq  ReachedTopWallBottom
     move.b  ($02,A4),D1   ; ptr lo
     move.b  ($03,A4),D4  ; ptr hi
+    andi.w  #$00FF,D1         ; zero-extend lo byte
     lsl.w   #8,D4
     or.w    D1,D4
     ext.l   D4
@@ -5371,6 +5392,7 @@ LoopWallTile:
     move.b  D0,(A0,D3.W)     ; STA ($nn),Y
     move.b  ($04,A4),D1   ; ptr lo
     move.b  ($05,A4),D4  ; ptr hi
+    andi.w  #$00FF,D1         ; zero-extend lo byte
     lsl.w   #8,D4
     or.w    D1,D4
     ext.l   D4
@@ -5388,6 +5410,7 @@ LoopWallTile:
     addx.b  D1,D0   ; ADC #$01 (X flag = 6502 C)
     move.b  ($04,A4),D1   ; ptr lo
     move.b  ($05,A4),D4  ; ptr hi
+    andi.w  #$00FF,D1         ; zero-extend lo byte
     lsl.w   #8,D4
     or.w    D1,D4
     ext.l   D4
@@ -5435,6 +5458,7 @@ NextLoopWallTile:
 _L_z05_NextLoopWallTile_LoopRotate:
     move.b  ($02,A4),D1   ; ptr lo
     move.b  ($03,A4),D4  ; ptr hi
+    andi.w  #$00FF,D1         ; zero-extend lo byte
     lsl.w   #8,D4
     or.w    D1,D4             ; D4 = NES ptr addr
     ext.l   D4
@@ -5443,6 +5467,7 @@ _L_z05_NextLoopWallTile_LoopRotate:
     move.b  (A0,D3.W),D0     ; LDA ($nn),Y
     move.b  ($04,A4),D1   ; ptr lo
     move.b  ($05,A4),D4  ; ptr hi
+    andi.w  #$00FF,D1         ; zero-extend lo byte
     lsl.w   #8,D4
     or.w    D1,D4
     ext.l   D4
@@ -5459,6 +5484,7 @@ _L_z05_NextLoopWallTile_LoopRotate:
     addx.b  D1,D0   ; ADC #$01 (X flag = 6502 C)
     move.b  ($04,A4),D1   ; ptr lo
     move.b  ($05,A4),D4  ; ptr hi
+    andi.w  #$00FF,D1         ; zero-extend lo byte
     lsl.w   #8,D4
     or.w    D1,D4
     ext.l   D4
@@ -5473,6 +5499,7 @@ _anon_z05_110:
 _L_z05_NextLoopWallTile_SetRotatedTile:
     move.b  ($04,A4),D1   ; ptr lo
     move.b  ($05,A4),D4  ; ptr hi
+    andi.w  #$00FF,D1         ; zero-extend lo byte
     lsl.w   #8,D4
     or.w    D1,D4
     ext.l   D4
@@ -5760,6 +5787,7 @@ _L_z05_L_LayOutDoors_LoopHalves_LoopColumn:
 _L_z05_L_LayOutDoors_LoopHalves_LoopRowTile:
     move.b  ($02,A4),D1   ; ptr lo
     move.b  ($03,A4),D4  ; ptr hi
+    andi.w  #$00FF,D1         ; zero-extend lo byte
     lsl.w   #8,D4
     or.w    D1,D4             ; D4 = NES ptr addr
     ext.l   D4
@@ -5768,6 +5796,7 @@ _L_z05_L_LayOutDoors_LoopHalves_LoopRowTile:
     move.b  (A0,D3.W),D0     ; LDA ($nn),Y
     move.b  ($00,A4),D1   ; ptr lo
     move.b  ($01,A4),D4  ; ptr hi
+    andi.w  #$00FF,D1         ; zero-extend lo byte
     lsl.w   #8,D4
     or.w    D1,D4
     ext.l   D4
@@ -6065,6 +6094,7 @@ _anon_z05_123:
     ;
     move.b  ($00,A4),D1   ; ptr lo
     move.b  ($01,A4),D4  ; ptr hi
+    andi.w  #$00FF,D1         ; zero-extend lo byte
     lsl.w   #8,D4
     or.w    D1,D4             ; D4 = NES ptr addr
     ext.l   D4
@@ -6076,6 +6106,7 @@ _anon_z05_123:
     or.b  D1,D0
     move.b  ($00,A4),D1   ; ptr lo
     move.b  ($01,A4),D4  ; ptr hi
+    andi.w  #$00FF,D1         ; zero-extend lo byte
     lsl.w   #8,D4
     or.w    D1,D4
     ext.l   D4
@@ -6199,16 +6230,16 @@ _L_z05_PrepareWriteHorizontalDoorTransferRecords_MakeForwardIndex:
 
     even
 ColumnDirectoryUW:
-    dc.l    ColumnHeapUW0   ; NES addr vector (32-bit for M68K)
-    dc.l    ColumnHeapUW1   ; NES addr vector (32-bit for M68K)
-    dc.l    ColumnHeapUW2   ; NES addr vector (32-bit for M68K)
-    dc.l    ColumnHeapUW3   ; NES addr vector (32-bit for M68K)
-    dc.l    ColumnHeapUW4   ; NES addr vector (32-bit for M68K)
-    dc.l    ColumnHeapUW5   ; NES addr vector (32-bit for M68K)
-    dc.l    ColumnHeapUW6   ; NES addr vector (32-bit for M68K)
-    dc.l    ColumnHeapUW7   ; NES addr vector (32-bit for M68K)
-    dc.l    ColumnHeapUW8   ; NES addr vector (32-bit for M68K)
-    dc.l    ColumnHeapUW9   ; NES addr vector (32-bit for M68K)
+    dc.b    (ColumnHeapUW0)&$FF, (ColumnHeapUW0>>8)&$FF   ; NES .ADDR (little-endian)
+    dc.b    (ColumnHeapUW1)&$FF, (ColumnHeapUW1>>8)&$FF   ; NES .ADDR (little-endian)
+    dc.b    (ColumnHeapUW2)&$FF, (ColumnHeapUW2>>8)&$FF   ; NES .ADDR (little-endian)
+    dc.b    (ColumnHeapUW3)&$FF, (ColumnHeapUW3>>8)&$FF   ; NES .ADDR (little-endian)
+    dc.b    (ColumnHeapUW4)&$FF, (ColumnHeapUW4>>8)&$FF   ; NES .ADDR (little-endian)
+    dc.b    (ColumnHeapUW5)&$FF, (ColumnHeapUW5>>8)&$FF   ; NES .ADDR (little-endian)
+    dc.b    (ColumnHeapUW6)&$FF, (ColumnHeapUW6>>8)&$FF   ; NES .ADDR (little-endian)
+    dc.b    (ColumnHeapUW7)&$FF, (ColumnHeapUW7>>8)&$FF   ; NES .ADDR (little-endian)
+    dc.b    (ColumnHeapUW8)&$FF, (ColumnHeapUW8>>8)&$FF   ; NES .ADDR (little-endian)
+    dc.b    (ColumnHeapUW9)&$FF, (ColumnHeapUW9>>8)&$FF   ; NES .ADDR (little-endian)
 
     even
 PrimarySquaresUW:
@@ -6244,6 +6275,7 @@ _L_z05_LayoutUWFloor_LoopColumnUW:
     move.b  ($0006,A4),D3
     move.b  ($02,A4),D1   ; ptr lo
     move.b  ($03,A4),D4  ; ptr hi
+    andi.w  #$00FF,D1         ; zero-extend lo byte
     lsl.w   #8,D4
     or.w    D1,D4             ; D4 = NES ptr addr
     ext.l   D4
@@ -6263,6 +6295,7 @@ _L_z05_LayoutUWFloor_LoopColumnUW:
     move.b  D0,($0005,A4)
     move.b  ($02,A4),D1   ; ptr lo
     move.b  ($03,A4),D4  ; ptr hi
+    andi.w  #$00FF,D1         ; zero-extend lo byte
     lsl.w   #8,D4
     or.w    D1,D4             ; D4 = NES ptr addr
     ext.l   D4
@@ -6276,6 +6309,7 @@ _L_z05_LayoutUWFloor_LoopColumnUW:
 _L_z05_LayoutUWFloor_FindSquare:
     move.b  ($04,A4),D1   ; ptr lo
     move.b  ($05,A4),D4  ; ptr hi
+    andi.w  #$00FF,D1         ; zero-extend lo byte
     lsl.w   #8,D4
     or.w    D1,D4             ; D4 = NES ptr addr
     ext.l   D4
@@ -6305,6 +6339,7 @@ _L_z05_LayoutUWFloor_LoopSquareRow:
     moveq   #0,D3
     move.b  ($04,A4),D1   ; ptr lo
     move.b  ($05,A4),D4  ; ptr hi
+    andi.w  #$00FF,D1         ; zero-extend lo byte
     lsl.w   #8,D4
     or.w    D1,D4             ; D4 = NES ptr addr
     ext.l   D4
@@ -6322,6 +6357,7 @@ _L_z05_LayoutUWFloor_LoopSquareRow:
     moveq   #0,D3
     move.b  ($04,A4),D1   ; ptr lo
     move.b  ($05,A4),D4  ; ptr hi
+    andi.w  #$00FF,D1         ; zero-extend lo byte
     lsl.w   #8,D4
     or.w    D1,D4             ; D4 = NES ptr addr
     ext.l   D4
@@ -6378,6 +6414,7 @@ WriteSquareUW:
     move.b  D0,D2
     move.b  ($00,A4),D1   ; ptr lo
     move.b  ($01,A4),D4  ; ptr hi
+    andi.w  #$00FF,D1         ; zero-extend lo byte
     lsl.w   #8,D4
     or.w    D1,D4
     ext.l   D4
@@ -6389,6 +6426,7 @@ WriteSquareUW:
     move.b  D2,D0
     move.b  ($00,A4),D1   ; ptr lo
     move.b  ($01,A4),D4  ; ptr hi
+    andi.w  #$00FF,D1         ; zero-extend lo byte
     lsl.w   #8,D4
     or.w    D1,D4
     ext.l   D4
@@ -6404,6 +6442,7 @@ WriteSquareUW:
     move.b  D2,D0
     move.b  ($00,A4),D1   ; ptr lo
     move.b  ($01,A4),D4  ; ptr hi
+    andi.w  #$00FF,D1         ; zero-extend lo byte
     lsl.w   #8,D4
     or.w    D1,D4
     ext.l   D4
@@ -6417,6 +6456,7 @@ _L_z05_WriteSquareUW_WriteLastTile:
     addq.b  #1,D3
     move.b  ($00,A4),D1   ; ptr lo
     move.b  ($01,A4),D4  ; ptr hi
+    andi.w  #$00FF,D1         ; zero-extend lo byte
     lsl.w   #8,D4
     or.w    D1,D4
     ext.l   D4
@@ -6435,6 +6475,7 @@ _L_z05_WriteSquareUW_WriteType2:
     ; Write tile to (col, row).
     move.b  ($00,A4),D1   ; ptr lo
     move.b  ($01,A4),D4  ; ptr hi
+    andi.w  #$00FF,D1         ; zero-extend lo byte
     lsl.w   #8,D4
     or.w    D1,D4
     ext.l   D4
@@ -6444,6 +6485,7 @@ _L_z05_WriteSquareUW_WriteType2:
     addq.b  #1,D3
     move.b  ($00,A4),D1   ; ptr lo
     move.b  ($01,A4),D4  ; ptr hi
+    andi.w  #$00FF,D1         ; zero-extend lo byte
     lsl.w   #8,D4
     or.w    D1,D4
     ext.l   D4
@@ -6459,6 +6501,7 @@ _L_z05_WriteSquareUW_WriteType2:
     move.b  (A5)+,D0  ; PLA
     move.b  ($00,A4),D1   ; ptr lo
     move.b  ($01,A4),D4  ; ptr hi
+    andi.w  #$00FF,D1         ; zero-extend lo byte
     lsl.w   #8,D4
     or.w    D1,D4
     ext.l   D4
@@ -6503,6 +6546,7 @@ _L_z05_FindAndCreatePushBlockObject_LoopColumn:
     move.b  D0,($0001,A4)
     move.b  ($00,A4),D1   ; ptr lo
     move.b  ($01,A4),D4  ; ptr hi
+    andi.w  #$00FF,D1         ; zero-extend lo byte
     lsl.w   #8,D4
     or.w    D1,D4             ; D4 = NES ptr addr
     ext.l   D4
@@ -6562,11 +6606,11 @@ UpdateMode12EndLevel_Full:
     bsr     _m68k_tablejump  ; M68K-native table dispatch (replaces JSR TableJump)
     even
 UpdateMode12EndLevel_Full_JumpTable:
-    dc.l    UpdateMode12EndLevel_Sub0   ; NES addr vector (32-bit for M68K)
-    dc.l    UpdateMode12EndLevel_Sub1   ; NES addr vector (32-bit for M68K)
-    dc.l    UpdateMode12EndLevel_Sub2   ; NES addr vector (32-bit for M68K)
-    dc.l    UpdateMode12EndLevel_Sub3   ; NES addr vector (32-bit for M68K)
-    dc.l    UpdateMode12EndLevel_Sub4   ; NES addr vector (32-bit for M68K)
+    dc.l    UpdateMode12EndLevel_Sub0   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    UpdateMode12EndLevel_Sub1   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    UpdateMode12EndLevel_Sub2   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    UpdateMode12EndLevel_Sub3   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    UpdateMode12EndLevel_Sub4   ; jump table entry (32-bit for _m68k_tablejump)
 
     even
 UpdateMode12EndLevel_Sub0:
@@ -6701,6 +6745,7 @@ _anon_z05_137:
 _anon_z05_138:
     move.b  ($00,A4),D1   ; ptr lo
     move.b  ($01,A4),D4  ; ptr hi
+    andi.w  #$00FF,D1         ; zero-extend lo byte
     lsl.w   #8,D4
     or.w    D1,D4             ; D4 = NES ptr addr
     ext.l   D4
@@ -6764,6 +6809,7 @@ _anon_z05_140:
 _anon_z05_141:
     move.b  ($00,A4),D1   ; ptr lo
     move.b  ($01,A4),D4  ; ptr hi
+    andi.w  #$00FF,D1         ; zero-extend lo byte
     lsl.w   #8,D4
     or.w    D1,D4             ; D4 = NES ptr addr
     ext.l   D4
@@ -6867,6 +6913,7 @@ _L_z05_LayoutRoomOrCaveOW_LoopColumnOW:
     move.b  ($0006,A4),D3
     move.b  ($02,A4),D1   ; ptr lo
     move.b  ($03,A4),D4  ; ptr hi
+    andi.w  #$00FF,D1         ; zero-extend lo byte
     lsl.w   #8,D4
     or.w    D1,D4             ; D4 = NES ptr addr
     ext.l   D4
@@ -6888,6 +6935,7 @@ _L_z05_LayoutRoomOrCaveOW_LoopColumnOW:
     move.b  D0,($0005,A4)
     move.b  ($02,A4),D1   ; ptr lo
     move.b  ($03,A4),D4  ; ptr hi
+    andi.w  #$00FF,D1         ; zero-extend lo byte
     lsl.w   #8,D4
     or.w    D1,D4             ; D4 = NES ptr addr
     ext.l   D4
@@ -6903,6 +6951,7 @@ _anon_z05_142:
     addq.b  #1,D3
     move.b  ($04,A4),D1   ; ptr lo
     move.b  ($05,A4),D4  ; ptr hi
+    andi.w  #$00FF,D1         ; zero-extend lo byte
     lsl.w   #8,D4
     or.w    D1,D4             ; D4 = NES ptr addr
     ext.l   D4
@@ -6923,6 +6972,7 @@ _L_z05_LayoutRoomOrCaveOW_LoopSquareOW:
     moveq   #0,D3
     move.b  ($04,A4),D1   ; ptr lo
     move.b  ($05,A4),D4  ; ptr hi
+    andi.w  #$00FF,D1         ; zero-extend lo byte
     lsl.w   #8,D4
     or.w    D1,D4             ; D4 = NES ptr addr
     ext.l   D4
@@ -6938,6 +6988,7 @@ _L_z05_LayoutRoomOrCaveOW_LoopSquareOW:
     move.b  ($00EB,A4),D3
     move.b  ($08,A4),D1   ; ptr lo
     move.b  ($09,A4),D4  ; ptr hi
+    andi.w  #$00FF,D1         ; zero-extend lo byte
     lsl.w   #8,D4
     or.w    D1,D4             ; D4 = NES ptr addr
     ext.l   D4
@@ -6985,6 +7036,7 @@ _L_z05_LayoutRoomOrCaveOW_SkipSecret:
     moveq   #0,D3
     move.b  ($04,A4),D1   ; ptr lo
     move.b  ($05,A4),D4  ; ptr hi
+    andi.w  #$00FF,D1         ; zero-extend lo byte
     lsl.w   #8,D4
     or.w    D1,D4             ; D4 = NES ptr addr
     ext.l   D4
@@ -7084,6 +7136,7 @@ WriteSquareOW:
     move.b  D0,D2
     move.b  ($00,A4),D1   ; ptr lo
     move.b  ($01,A4),D4  ; ptr hi
+    andi.w  #$00FF,D1         ; zero-extend lo byte
     lsl.w   #8,D4
     or.w    D1,D4
     ext.l   D4
@@ -7095,6 +7148,7 @@ WriteSquareOW:
     move.b  D2,D0
     move.b  ($00,A4),D1   ; ptr lo
     move.b  ($01,A4),D4  ; ptr hi
+    andi.w  #$00FF,D1         ; zero-extend lo byte
     lsl.w   #8,D4
     or.w    D1,D4
     ext.l   D4
@@ -7110,6 +7164,7 @@ WriteSquareOW:
     move.b  D2,D0
     move.b  ($00,A4),D1   ; ptr lo
     move.b  ($01,A4),D4  ; ptr hi
+    andi.w  #$00FF,D1         ; zero-extend lo byte
     lsl.w   #8,D4
     or.w    D1,D4
     ext.l   D4
@@ -7123,6 +7178,7 @@ _L_z05_WriteSquareOW_WriteLastTile:
     addq.b  #1,D3
     move.b  ($00,A4),D1   ; ptr lo
     move.b  ($01,A4),D4  ; ptr hi
+    andi.w  #$00FF,D1         ; zero-extend lo byte
     lsl.w   #8,D4
     or.w    D1,D4
     ext.l   D4
@@ -7147,6 +7203,7 @@ _L_z05_WriteSquareOW_WriteType3:
     move.b  (A0,D2.W),D0
     move.b  ($00,A4),D1   ; ptr lo
     move.b  ($01,A4),D4  ; ptr hi
+    andi.w  #$00FF,D1         ; zero-extend lo byte
     lsl.w   #8,D4
     or.w    D1,D4
     ext.l   D4
@@ -7159,6 +7216,7 @@ _L_z05_WriteSquareOW_WriteType3:
     move.b  (A0,D2.W),D0
     move.b  ($00,A4),D1   ; ptr lo
     move.b  ($01,A4),D4  ; ptr hi
+    andi.w  #$00FF,D1         ; zero-extend lo byte
     lsl.w   #8,D4
     or.w    D1,D4
     ext.l   D4
@@ -7175,6 +7233,7 @@ _L_z05_WriteSquareOW_WriteType3:
     move.b  (A0,D2.W),D0
     move.b  ($00,A4),D1   ; ptr lo
     move.b  ($01,A4),D4  ; ptr hi
+    andi.w  #$00FF,D1         ; zero-extend lo byte
     lsl.w   #8,D4
     or.w    D1,D4
     ext.l   D4
@@ -7205,10 +7264,10 @@ _anon_z05_146:
 
     even
 SubroomLayoutAddrs:
-    dc.l    RoomLayoutOWCave0   ; NES addr vector (32-bit for M68K)
-    dc.l    RoomLayoutOWCave1   ; NES addr vector (32-bit for M68K)
-    dc.l    RoomLayoutUWCellar0   ; NES addr vector (32-bit for M68K)
-    dc.l    RoomLayoutUWCellar1   ; NES addr vector (32-bit for M68K)
+    dc.b    (RoomLayoutOWCave0)&$FF, (RoomLayoutOWCave0>>8)&$FF   ; NES .ADDR (little-endian)
+    dc.b    (RoomLayoutOWCave1)&$FF, (RoomLayoutOWCave1>>8)&$FF   ; NES .ADDR (little-endian)
+    dc.b    (RoomLayoutUWCellar0)&$FF, (RoomLayoutUWCellar0>>8)&$FF   ; NES .ADDR (little-endian)
+    dc.b    (RoomLayoutUWCellar1)&$FF, (RoomLayoutUWCellar1>>8)&$FF   ; NES .ADDR (little-endian)
 
     even
 LayoutCaveAndAvanceSubmode:
@@ -7251,6 +7310,7 @@ CheckShortcut:
     bcs  _L_z05_CheckShortcut_Exit
     move.b  ($00,A4),D1   ; ptr lo
     move.b  ($01,A4),D4  ; ptr hi
+    andi.w  #$00FF,D1         ; zero-extend lo byte
     lsl.w   #8,D4
     or.w    D1,D4             ; D4 = NES ptr addr
     ext.l   D4
@@ -7284,6 +7344,7 @@ CheckShortcut:
     move.b  D0,D3
     move.b  ($00,A4),D1   ; ptr lo
     move.b  ($01,A4),D4  ; ptr hi
+    andi.w  #$00FF,D1         ; zero-extend lo byte
     lsl.w   #8,D4
     or.w    D1,D4             ; D4 = NES ptr addr
     ext.l   D4
@@ -7804,17 +7865,17 @@ InitModeA:
     bsr     _m68k_tablejump  ; M68K-native table dispatch (replaces JSR TableJump)
     even
 InitModeA_JumpTable:
-    dc.l    InitModeSubroom_Sub0   ; NES addr vector (32-bit for M68K)
-    dc.l    InitModeA_Sub1   ; NES addr vector (32-bit for M68K)
-    dc.l    InitModeA_Sub2   ; NES addr vector (32-bit for M68K)
-    dc.l    InitModeSubroom_AnimateFade   ; NES addr vector (32-bit for M68K)
-    dc.l    LayoutRoom_SubmodeTask   ; NES addr vector (32-bit for M68K)
-    dc.l    CopyNextRowToTransferBufAndAdvanceSubmodeWhenDone   ; NES addr vector (32-bit for M68K)
-    dc.l    InitModeA_Sub6_FillTileAttrsAndTransferTopHalf   ; NES addr vector (32-bit for M68K)
-    dc.l    InitModeAOrB_TransferBottomHalfAttrs   ; NES addr vector (32-bit for M68K)
-    dc.l    InitModeA_Sub8   ; NES addr vector (32-bit for M68K)
-    dc.l    InitModeSubroom_AnimateFade   ; NES addr vector (32-bit for M68K)
-    dc.l    InitModeA_SubA_GoToMode4   ; NES addr vector (32-bit for M68K)
+    dc.l    InitModeSubroom_Sub0   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    InitModeA_Sub1   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    InitModeA_Sub2   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    InitModeSubroom_AnimateFade   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    LayoutRoom_SubmodeTask   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    CopyNextRowToTransferBufAndAdvanceSubmodeWhenDone   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    InitModeA_Sub6_FillTileAttrsAndTransferTopHalf   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    InitModeAOrB_TransferBottomHalfAttrs   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    InitModeA_Sub8   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    InitModeSubroom_AnimateFade   ; jump table entry (32-bit for _m68k_tablejump)
+    dc.l    InitModeA_SubA_GoToMode4   ; jump table entry (32-bit for _m68k_tablejump)
 
     even
 InitModeSubroom_Sub0:
@@ -8740,6 +8801,7 @@ _anon_z05_191:
     moveq   #0,D0
     move.b  ($00,A4),D1   ; ptr lo
     move.b  ($01,A4),D4  ; ptr hi
+    andi.w  #$00FF,D1         ; zero-extend lo byte
     lsl.w   #8,D4
     or.w    D1,D4
     ext.l   D4
@@ -9075,6 +9137,7 @@ Submenu_WriteScanningMapRoomMark:
     move.b  ($00EB,A4),D3
     move.b  ($00,A4),D1   ; ptr lo
     move.b  ($01,A4),D4  ; ptr hi
+    andi.w  #$00FF,D1         ; zero-extend lo byte
     lsl.w   #8,D4
     or.w    D1,D4             ; D4 = NES ptr addr
     ext.l   D4
@@ -9183,6 +9246,7 @@ AddDoorFlagsToCurOpenedDoors:
 _L_z05_AddDoorFlagsToCurOpenedDoors_LoopDoorBit:
     move.b  ($00,A4),D1   ; ptr lo
     move.b  ($01,A4),D4  ; ptr hi
+    andi.w  #$00FF,D1         ; zero-extend lo byte
     lsl.w   #8,D4
     or.w    D1,D4             ; D4 = NES ptr addr
     ext.l   D4

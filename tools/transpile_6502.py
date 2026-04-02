@@ -471,6 +471,10 @@ def translate_lines(src_lines, symtab, bank_tag, no_stubs=False, no_import_stubs
     # We track whether C is "inverted" relative to M68K expectations.
     carry_state = {'inverted': False}
 
+    # Track whether the next .ADDR block is a _m68k_tablejump table (dc.l)
+    # vs a data pointer table (dc.b little-endian).
+    in_jump_table = [False]
+
     def emit(s):
         out.append(s)
 
@@ -572,7 +576,14 @@ def translate_lines(src_lines, symtab, bank_tag, no_stubs=False, no_import_stubs
             if uline.startswith('.ADDR'):
                 data_str = stripped[5:].strip()
                 data_str = re.sub(r'\s*;.*$', '', data_str)
-                emit(f'    dc.l    {data_str}   ; NES addr vector (32-bit for M68K)')
+                if in_jump_table[0]:
+                    # Jump table entry: _m68k_tablejump reads dc.l (32-bit M68K addresses)
+                    emit(f'    dc.l    {data_str}   ; jump table entry (32-bit for _m68k_tablejump)')
+                else:
+                    # Data pointer table: NES .ADDR is 16-bit little-endian (lo byte first).
+                    # Emit dc.b to preserve NES byte order; M68K dc.w would
+                    # big-endian-swap and break byte-indexed table reads.
+                    emit(f'    dc.b    ({data_str})&$FF, ({data_str}>>8)&$FF   ; NES .ADDR (little-endian)')
                 continue
 
             # Unknown directive — comment it out
@@ -610,6 +621,7 @@ def translate_lines(src_lines, symtab, bank_tag, no_stubs=False, no_import_stubs
 
             # If there's code after the label on the same line, process it
             if rest and not rest.startswith(';'):
+                in_jump_table[0] = False
                 translated = translate_one_instruction(rest, i, symtab,
                                                         anon_defs, anon_refs,
                                                         bank_tag,
@@ -617,11 +629,15 @@ def translate_lines(src_lines, symtab, bank_tag, no_stubs=False, no_import_stubs
                                                         carry_state=carry_state)
                 for tl in translated:
                     emit(tl)
+                    if '_m68k_tablejump' in tl:
+                        in_jump_table[0] = True
             continue
 
         # ---------------------------------------------------------------
-        # Instruction line
+        # Instruction line — clear jump table context, then check if
+        # this instruction sets up a new jump table
         # ---------------------------------------------------------------
+        in_jump_table[0] = False
         translated = translate_one_instruction(stripped, i, symtab,
                                                 anon_defs, anon_refs,
                                                 bank_tag,
@@ -629,6 +645,8 @@ def translate_lines(src_lines, symtab, bank_tag, no_stubs=False, no_import_stubs
                                                 carry_state=carry_state)
         for tl in translated:
             emit(tl)
+            if '_m68k_tablejump' in tl:
+                in_jump_table[0] = True
 
     # ---------------------------------------------------------------
     # Emit stubs for all .IMPORT symbols not defined locally.
@@ -774,6 +792,7 @@ def translate_one_instruction(stripped, line_idx, symtab,
             addr = resolve_sym(val, symtab) or 0
             e(f'    move.b  (${addr:02X},A4),D1   ; ptr lo')
             e(f'    move.b  (${addr+1:02X},A4),D4  ; ptr hi')
+            e(f'    andi.w  #$00FF,D1         ; zero-extend lo byte')
             e(f'    lsl.w   #8,D4')
             e(f'    or.w    D1,D4             ; D4 = NES ptr addr')
             e(f'    ext.l   D4')
@@ -789,6 +808,7 @@ def translate_one_instruction(stripped, line_idx, symtab,
             e(f'    move.b  (D1.W,A4),D4     ; ptr lo')
             e(f'    addq.w  #1,D1')
             e(f'    move.b  (D1.W,A4),D5     ; ptr hi')
+            e(f'    andi.w  #$00FF,D4         ; zero-extend lo byte')
             e(f'    lsl.w   #8,D5')
             e(f'    or.w    D4,D5')
             e(f'    ext.l   D5')
@@ -809,6 +829,7 @@ def translate_one_instruction(stripped, line_idx, symtab,
             addr = resolve_sym(val, symtab) or 0
             e(f'    move.b  (${addr:02X},A4),D1   ; ptr lo')
             e(f'    move.b  (${addr+1:02X},A4),D4  ; ptr hi')
+            e(f'    andi.w  #$00FF,D1         ; zero-extend lo byte')
             e(f'    lsl.w   #8,D4')
             e(f'    or.w    D1,D4')
             e(f'    ext.l   D4')
@@ -823,6 +844,7 @@ def translate_one_instruction(stripped, line_idx, symtab,
             e(f'    move.b  (D1.W,A4),D4')
             e(f'    addq.w  #1,D1')
             e(f'    move.b  (D1.W,A4),D5')
+            e(f'    andi.w  #$00FF,D4         ; zero-extend lo byte')
             e(f'    lsl.w   #8,D5')
             e(f'    or.w    D4,D5')
             e(f'    ext.l   D5')
@@ -960,6 +982,7 @@ def translate_one_instruction(stripped, line_idx, symtab,
             addr = resolve_sym(val, symtab) or 0
             e(f'    move.b  (${addr:02X},A4),D1')
             e(f'    move.b  (${addr+1:02X},A4),D4')
+            e(f'    andi.w  #$00FF,D1         ; zero-extend lo byte')
             e(f'    lsl.w   #8,D4')
             e(f'    or.w    D1,D4')
             e(f'    ext.l   D4')
@@ -1001,6 +1024,7 @@ def translate_one_instruction(stripped, line_idx, symtab,
             addr = resolve_sym(val, symtab) or 0
             e(f'    move.b  (${addr:02X},A4),D1')
             e(f'    move.b  (${addr+1:02X},A4),D4')
+            e(f'    andi.w  #$00FF,D1         ; zero-extend lo byte')
             e(f'    lsl.w   #8,D4')
             e(f'    or.w    D1,D4')
             e(f'    ext.l   D4')
@@ -1027,6 +1051,7 @@ def translate_one_instruction(stripped, line_idx, symtab,
             addr = resolve_sym(val, symtab) or 0
             e(f'    move.b  (${addr:02X},A4),D1')
             e(f'    move.b  (${addr+1:02X},A4),D4')
+            e(f'    andi.w  #$00FF,D1         ; zero-extend lo byte')
             e(f'    lsl.w   #8,D4')
             e(f'    or.w    D1,D4')
             e(f'    ext.l   D4')
@@ -1379,11 +1404,110 @@ def transpile_bank(bank_num, standalone=False, no_stubs=False, no_import_stubs=F
         f.write('\n')
 
     # Apply bank-specific post-process patches
+    if bank_num == 1:
+        _patch_z01(out_path)
     if bank_num == 2:
         _patch_z02(out_path)
+    if bank_num == 7:
+        _patch_z07(out_path)
 
     print(f" {len(body_lines)} lines")
     return True
+
+
+def _patch_z01(path):
+    """Post-process patches for z_01.asm — TransferDemoPatterns / TransferPatternBlock_Bank1.
+
+    Same approach as _patch_z02: fix 32-bit ROM addresses and replace the
+    per-byte _ppu_write_7 loop with _transfer_chr_block_fast.
+    """
+    with open(path, 'r', encoding='utf-8') as f:
+        lines = f.readlines()
+
+    text = ''.join(lines)
+
+    # ---- Patch 0: Convert DemoPatternBlockAddrs from dc.b (2-byte NES) to dc.l (32-bit) ----
+    old_tbl = ('DemoPatternBlockAddrs:\n'
+               '    dc.b    (DemoSpritePatterns)&$FF, (DemoSpritePatterns>>8)&$FF   ; NES .ADDR (little-endian)\n'
+               '    dc.b    (DemoBackgroundPatterns)&$FF, (DemoBackgroundPatterns>>8)&$FF   ; NES .ADDR (little-endian)')
+    new_tbl = ('DemoPatternBlockAddrs:\n'
+               '    dc.l    DemoSpritePatterns        ; 32-bit Genesis ROM address\n'
+               '    dc.l    DemoBackgroundPatterns     ; 32-bit Genesis ROM address')
+    if old_tbl in text:
+        text = text.replace(old_tbl, new_tbl, 1)
+        print("  _patch_z01 P0: DemoPatternBlockAddrs dc.b -> dc.l")
+    else:
+        print("  WARNING: _patch_z01 P0 -- table not found")
+
+    # ---- Patch 1: Fix TransferDemoPatterns to use 32-bit ROM addresses ----
+    # Replace the first DemoPatternBlockAddrs read (before addq.b #1,D2)
+    old1a = ('    lea     (DemoPatternBlockAddrs).l,A0\n'
+             '    move.b  (A0,D2.W),D0\n'
+             '    move.b  D0,($0000,A4)\n'
+             '    lea     (DemoPatternBlockSizes).l,A0')
+    new1a = ('    lea     (DemoPatternBlockAddrs).l,A0\n'
+             '    move.w  D2,D5\n'
+             '    add.w   D5,D5              ; D5 = 4*block_idx (dc.l = 4 bytes)\n'
+             '    move.l  (A0,D5.W),D5      ; D5 = 32-bit Genesis ROM source addr\n'
+             '    move.l  D5,($04,A4)       ; store to [$04:$07]\n'
+             '    lea     (DemoPatternBlockSizes).l,A0')
+    if old1a in text:
+        text = text.replace(old1a, new1a, 1)
+        print("  _patch_z01 P1a: DemoPatternBlockAddrs -> 32-bit ROM addr")
+    else:
+        print("  WARNING: _patch_z01 P1a -- old text not found")
+
+    # Replace the second DemoPatternBlockAddrs read (after addq.b #1,D2)
+    old1b = ('    lea     (DemoPatternBlockAddrs).l,A0\n'
+             '    move.b  (A0,D2.W),D0\n'
+             '    move.b  D0,($0001,A4)\n'
+             '    lea     (DemoPatternBlockSizes).l,A0')
+    new1b = ('    ; (32-bit Genesis ROM addr already in [$04:$07])\n'
+             '    lea     (DemoPatternBlockSizes).l,A0')
+    if old1b in text:
+        text = text.replace(old1b, new1b, 1)
+        print("  _patch_z01 P1b: removed second DemoPatternBlockAddrs read")
+    else:
+        print("  WARNING: _patch_z01 P1b -- old text not found")
+
+    # ---- Patch 2: Replace TransferPatternBlock_Bank1 with fast bulk transfer ----
+    lines = text.split('\n')
+    start = None
+    end = None
+    for i, line in enumerate(lines):
+        if line.strip() == 'TransferPatternBlock_Bank1:':
+            start = i
+        if start is not None and i > start + 2 and 'addq.b  #1,($051D,A4)' in line:
+            for j in range(i+1, min(i+3, len(lines))):
+                if 'rts' in lines[j]:
+                    end = j
+                    break
+            break
+
+    if start is not None and end is not None:
+        replacement = [
+            'TransferPatternBlock_Bank1:',
+            '    ; PATCHED: fast bulk CHR transfer (bypasses per-byte _ppu_write_7)',
+            '    bsr     _ppu_write_6          ; complete PPU addr latch pair (sets PPU_VADDR)',
+            '    movea.l ($04,A4),A0           ; ROM source address',
+            '    move.w  (PPU_VADDR).l,D1      ; NES CHR destination address',
+            '    moveq   #0,D2',
+            '    move.b  ($0002,A4),D2         ; size hi byte',
+            '    lsl.w   #8,D2',
+            '    move.b  ($0003,A4),D2         ; size lo byte (D2.w = total bytes)',
+            '    ext.l   D2                    ; D2.l = byte count',
+            '    bsr     _transfer_chr_block_fast',
+            '    addq.b  #1,($051D,A4)         ; increment block index',
+            '    rts',
+        ]
+        lines[start:end+1] = replacement
+        text = '\n'.join(lines)
+        print("  _patch_z01 P2: TransferPatternBlock_Bank1 -> _transfer_chr_block_fast")
+    else:
+        print("  WARNING: _patch_z01 P2 -- TransferPatternBlock_Bank1 not found")
+
+    with open(path, 'w', encoding='utf-8') as f:
+        f.write(text)
 
 
 def _patch_z02(path):
@@ -1406,6 +1530,21 @@ def _patch_z02(path):
     """
     with open(path, 'r', encoding='utf-8') as f:
         text = f.read()
+
+    # ---- Patch 0: Convert CommonPatternBlockAddrs from dc.b (2-byte NES) to dc.l (32-bit) ----
+    old_tbl = ('CommonPatternBlockAddrs:\n'
+               '    dc.b    (CommonSpritePatterns)&$FF, (CommonSpritePatterns>>8)&$FF   ; NES .ADDR (little-endian)\n'
+               '    dc.b    (CommonBackgroundPatterns)&$FF, (CommonBackgroundPatterns>>8)&$FF   ; NES .ADDR (little-endian)\n'
+               '    dc.b    (CommonMiscPatterns)&$FF, (CommonMiscPatterns>>8)&$FF   ; NES .ADDR (little-endian)')
+    new_tbl = ('CommonPatternBlockAddrs:\n'
+               '    dc.l    CommonSpritePatterns       ; 32-bit Genesis ROM address\n'
+               '    dc.l    CommonBackgroundPatterns    ; 32-bit Genesis ROM address\n'
+               '    dc.l    CommonMiscPatterns          ; 32-bit Genesis ROM address')
+    if old_tbl in text:
+        text = text.replace(old_tbl, new_tbl, 1)
+        print("  _patch_z02 P0: CommonPatternBlockAddrs dc.b -> dc.l")
+    else:
+        print("  WARNING: _patch_z02 P0 -- table not found")
 
     # ---- Patch 1a: first CommonPatternBlockAddrs read (before addq.b #1,D2) ----
     old1a = ('    lea     (CommonPatternBlockAddrs).l,A0\n'
@@ -1432,6 +1571,7 @@ def _patch_z02(path):
     # ---- Patch 2: TransferPatternBlock_Bank2 — replace 16-bit NES ptr calc ----
     old2 = ('    move.b  ($00,A4),D1   ; ptr lo\n'
             '    move.b  ($01,A4),D4  ; ptr hi\n'
+            '    andi.w  #$00FF,D1         ; zero-extend lo byte\n'
             '    lsl.w   #8,D4\n'
             '    or.w    D1,D4             ; D4 = NES ptr addr\n'
             '    ext.l   D4\n'
@@ -1458,8 +1598,87 @@ def _patch_z02(path):
             '    addq.l  #1,($04,A4)')
     text = text.replace(old3, new3, 1)
 
+    # ---- Patch 4: Replace TransferPatternBlock_Bank2 with fast bulk transfer ----
+    # Find the function from label to rts (line-based for encoding safety)
+    lines = text.split('\n')
+    start = None
+    end = None
+    for i, line in enumerate(lines):
+        if line.strip() == 'TransferPatternBlock_Bank2:':
+            start = i
+        if start is not None and i > start + 2 and 'addq.b  #1,($051D,A4)' in line:
+            # rts is next non-blank line
+            for j in range(i+1, min(i+3, len(lines))):
+                if 'rts' in lines[j]:
+                    end = j
+                    break
+            break
+
+    if start is not None and end is not None:
+        replacement = [
+            'TransferPatternBlock_Bank2:',
+            '    ; PATCHED: fast bulk CHR transfer (bypasses per-byte _ppu_write_7)',
+            '    bsr     _ppu_write_6          ; complete PPU addr latch pair (sets PPU_VADDR)',
+            '    movea.l ($04,A4),A0           ; ROM source address',
+            '    move.w  (PPU_VADDR).l,D1      ; NES CHR destination address',
+            '    moveq   #0,D2',
+            '    move.b  ($0002,A4),D2         ; size hi byte',
+            '    lsl.w   #8,D2',
+            '    move.b  ($0003,A4),D2         ; size lo byte (D2.w = total bytes)',
+            '    ext.l   D2                    ; D2.l = byte count',
+            '    bsr     _transfer_chr_block_fast',
+            '    addq.b  #1,($051D,A4)         ; increment block index',
+            '    rts',
+        ]
+        lines[start:end+1] = replacement
+        text = '\n'.join(lines)
+        print("  _patch_z02 P4: TransferPatternBlock_Bank2 -> _transfer_chr_block_fast")
+    else:
+        print("  WARNING: _patch_z02 P4 -- TransferPatternBlock_Bank2 not found")
+
     with open(path, 'w', encoding='utf-8') as f:
         f.write(text)
+
+
+def _patch_z07(path):
+    """Post-process patches for z_07.asm — ClearNameTable fast path.
+
+    Replace the slow ClearNameTable (1024+64 individual _ppu_write_7 calls)
+    with a single call to _clear_nametable_fast in nes_io.asm.
+    """
+    with open(path, 'r', encoding='utf-8') as f:
+        lines = f.readlines()
+
+    # Find ClearNameTable label and replace through _L_z07_ClearNameTable_RestoreX rts
+    start_idx = None
+    end_idx = None
+    for i, line in enumerate(lines):
+        if line.strip() == 'ClearNameTable:':
+            start_idx = i
+        if start_idx is not None and 'move.b  ($0001,A4),D2' in line and i > start_idx + 10:
+            # This is the RestoreX line; rts is on the next line
+            end_idx = i + 1  # include the rts line
+            break
+
+    if start_idx is None or end_idx is None or end_idx >= len(lines):
+        print("  WARNING: _patch_z07 ClearNameTable -- markers not found, skipping")
+    else:
+        # Verify the rts is there
+        if 'rts' not in lines[end_idx]:
+            print("  WARNING: _patch_z07 ClearNameTable -- expected rts, skipping")
+        else:
+            replacement = [
+                'ClearNameTable:\n',
+                '    ; PATCHED: fast nametable clear (bypasses 1088 _ppu_write_7 calls)\n',
+                '    ; D0.b = PPU hi byte ($20/$28), D2.b = tile index, D3.b = attr byte\n',
+                '    bsr     _clear_nametable_fast\n',
+                '    rts\n',
+            ]
+            lines[start_idx:end_idx+1] = replacement
+            print("  _patch_z07: ClearNameTable -> _clear_nametable_fast")
+
+    with open(path, 'w', encoding='utf-8') as f:
+        f.writelines(lines)
 
 
 def main():
