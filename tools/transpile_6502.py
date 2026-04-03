@@ -1726,6 +1726,241 @@ def _patch_z02(path):
         else:
             print(f"  WARNING: _patch_z02 P5 -- waterfall attr pattern not found (count={count},{c2})")
 
+    # ---- Patch 6: Fix fade palette pointer arithmetic ----
+    # The NES original computes DemoPhase0Subphase1Palettes + (cycle * 32)
+    # using ADC #<label / ADC #>label. The transpiler emits the cycle*32 math
+    # but drops the base-address addition, so the code reads from NES RAM
+    # zero-page instead of the ROM palette table. Replace with direct M68K lea.
+    old_fade = (
+        '    ; Calculate the address to the palette to transfer.\n'
+        '    ; Addr = DemoPhase0Subphase1Palettes + (DemoPhase0Subphase1Palettes * $20)\n'
+        '    moveq   #0,D0\n'
+        '    move.b  D0,($0001,A4)\n'
+        '    move.b  ($0437,A4),D0\n'
+        '    lsl.b  #1,D0   ; ASL A\n'
+        '    lsl.b  #1,D0   ; ASL A\n'
+        '    lsl.b  #1,D0   ; ASL A\n'
+        '    lsl.b  #1,D0   ; ASL A\n'
+        '    move.b  ($0001,A4),D1\n'
+        '    roxl.b  #1,D1   ; ROL $01\n'
+        '    move.b  D1,($0001,A4)\n'
+        '    lsl.b  #1,D0   ; ASL A\n'
+        '    move.b  ($0001,A4),D1\n'
+        '    roxl.b  #1,D1   ; ROL $01\n'
+        '    move.b  D1,($0001,A4)\n'
+        '    move.b  #$00,D1\n'
+        '    addx.b  D1,D0   ; ADC #$00 (X flag = 6502 C)\n'
+        '    move.b  D0,($0000,A4)\n'
+        '    move.b  ($0001,A4),D0\n'
+        '    move.b  #$00,D1\n'
+        '    addx.b  D1,D0   ; ADC #$00 (X flag = 6502 C)\n'
+        '    move.b  D0,($0001,A4)\n'
+        '    moveq   #63,D0\n'
+        '    move.b  D0,($0302,A4)\n'
+        '    moveq   #0,D0\n'
+        '    move.b  D0,($0303,A4)\n'
+        '    moveq   #32,D0\n'
+        '    move.b  D0,($0304,A4)\n'
+        '    moveq   #31,D3\n'
+        '    move.b  #$FF,D0\n'
+        '    lea     ($0306,A4),A0\n'
+        '    move.b  D0,(A0,D3.W)\n'
+        '    even\n'
+        '_L_z02_AnimateDemoPhase0Subphase1_CopyPalette:\n'
+        '    move.b  ($00,A4),D1   ; ptr lo\n'
+        '    move.b  ($01,A4),D4  ; ptr hi\n'
+        '    andi.w  #$00FF,D1         ; zero-extend lo byte\n'
+        '    lsl.w   #8,D4\n'
+        '    or.w    D1,D4             ; D4 = NES ptr addr\n'
+        '    ext.l   D4\n'
+        '    add.l   #NES_RAM,D4       ; \u2192 Genesis addr\n'
+        '    movea.l D4,A0\n'
+        '    move.b  (A0,D3.W),D0     ; LDA ($nn),Y\n'
+        '    lea     ($0305,A4),A0\n'
+        '    move.b  D0,(A0,D3.W)\n'
+        '    subq.b  #1,D3\n'
+        '    bpl  _L_z02_AnimateDemoPhase0Subphase1_CopyPalette'
+    )
+    new_fade = (
+        '    ; PATCHED (P6): Replace broken NES indirect-pointer math with direct\n'
+        '    ; M68K addressing. The original ADC #<label / ADC #>label that adds\n'
+        '    ; DemoPhase0Subphase1Palettes base address was lost in transpilation.\n'
+        '    moveq   #0,D0\n'
+        '    move.b  ($0437,A4),D0        ; cycle index (0-13)\n'
+        '    lsl.w   #5,D0                ; * 32 = byte offset into palette table\n'
+        '    lea     (DemoPhase0Subphase1Palettes).l,A0\n'
+        '    adda.w  D0,A0                ; A0 -> palette for this cycle\n'
+        '    ; Set up DynTileBuf header: $3F, $00, $20\n'
+        '    move.b  #$3F,($0302,A4)\n'
+        '    move.b  #$00,($0303,A4)\n'
+        '    moveq   #32,D0\n'
+        '    move.b  D0,($0304,A4)\n'
+        '    ; End marker at DynTileBuf+4+31\n'
+        '    moveq   #31,D3\n'
+        '    move.b  #$FF,D0\n'
+        '    lea     ($0306,A4),A1\n'
+        '    move.b  D0,(A1,D3.W)\n'
+        '    even\n'
+        '_L_z02_AnimateDemoPhase0Subphase1_CopyPalette:\n'
+        '    move.b  (A0,D3.W),D0        ; read from ROM palette table\n'
+        '    lea     ($0305,A4),A1\n'
+        '    move.b  D0,(A1,D3.W)\n'
+        '    subq.b  #1,D3\n'
+        '    bpl  _L_z02_AnimateDemoPhase0Subphase1_CopyPalette'
+    )
+    if old_fade in text:
+        text = text.replace(old_fade, new_fade, 1)
+        print("  _patch_z02 P6: fade palette pointer -> direct M68K lea")
+    else:
+        print("  WARNING: _patch_z02 P6 -- fade palette pattern not found")
+
+    # ---- Patch 7: Replace DemoTextFields stub with extracted NES ROM data ----
+    old_text_stub = (
+        'DemoTextFields:\n'
+        '; .INCBIN "dat/DemoTextFields.dat" not found \u2014 stub 128 zero bytes\n'
+        '    rept    128\n'
+        '        dc.b    0\n'
+        '    endr\n'
+        '\n'
+        '    even\n'
+        'DemoLineTextAddrs:\n'
+        '; [skipped] .INCLUDE "dat/DemoLineTextAddrs.inc"'
+    )
+    new_text_data = (
+        'DemoTextFields:\n'
+        '; Extracted from NES ROM bank 2, CPU $929A-$94AC (531 bytes)\n'
+        '    dc.b    $00, $E4, $E5, $E4, $E5, $E4, $E5, $E6, $24, $0A, $15, $15, $24, $18, $0F, $24\n'
+        '    dc.b    $1D, $1B, $0E, $0A, $1C, $1E, $1B, $0E, $1C, $24, $E6, $E4, $E5, $E4, $E5, $E4\n'
+        '    dc.b    $E5, $FF, $07, $11, $0E, $0A, $1B, $1D, $24, $24, $24, $24, $24, $0C, $18, $17\n'
+        '    dc.b    $1D, $0A, $12, $17, $0E, $1B, $FF, $14, $11, $0E, $0A, $1B, $1D, $FF, $07, $0F\n'
+        '    dc.b    $0A, $12, $1B, $22, $24, $24, $24, $24, $24, $24, $24, $24, $0C, $15, $18, $0C\n'
+        '    dc.b    $14, $FF, $07, $1B, $1E, $19, $22, $24, $24, $24, $24, $24, $24, $24, $05, $24\n'
+        '    dc.b    $1B, $1E, $19, $12, $0E, $1C, $FF, $07, $1C, $20, $18, $1B, $0D, $24, $24, $24\n'
+        '    dc.b    $24, $24, $24, $24, $24, $20, $11, $12, $1D, $0E, $FF, $14, $1C, $20, $18, $1B\n'
+        '    dc.b    $0D, $FF, $06, $16, $0A, $10, $12, $0C, $0A, $15, $24, $24, $24, $24, $24, $24\n'
+        '    dc.b    $16, $0A, $10, $12, $0C, $0A, $15, $FF, $07, $1C, $20, $18, $1B, $0D, $24, $24\n'
+        '    dc.b    $24, $24, $24, $24, $24, $24, $1C, $11, $12, $0E, $15, $0D, $FF, $05, $0B, $18\n'
+        '    dc.b    $18, $16, $0E, $1B, $0A, $17, $10, $24, $24, $24, $24, $24, $16, $0A, $10, $12\n'
+        '    dc.b    $0C, $0A, $15, $FF, $12, $0B, $18, $18, $16, $0E, $1B, $0A, $17, $10, $FF, $07\n'
+        '    dc.b    $0B, $18, $16, $0B, $24, $24, $24, $24, $24, $24, $24, $24, $24, $24, $0B, $18\n'
+        '    dc.b    $20, $FF, $07, $0A, $1B, $1B, $18, $20, $24, $24, $24, $24, $24, $24, $24, $24\n'
+        '    dc.b    $1C, $12, $15, $1F, $0E, $1B, $FF, $14, $0A, $1B, $1B, $18, $20, $FF, $07, $0B\n'
+        '    dc.b    $15, $1E, $0E, $24, $24, $24, $24, $24, $24, $24, $24, $24, $24, $1B, $0E, $0D\n'
+        '    dc.b    $FF, $06, $0C, $0A, $17, $0D, $15, $0E, $24, $24, $24, $24, $24, $24, $24, $24\n'
+        '    dc.b    $0C, $0A, $17, $0D, $15, $0E, $FF, $07, $0B, $15, $1E, $0E, $24, $24, $24, $24\n'
+        '    dc.b    $24, $24, $24, $24, $24, $24, $1B, $0E, $0D, $FF, $07, $1B, $12, $17, $10, $24\n'
+        '    dc.b    $24, $24, $24, $24, $24, $24, $24, $24, $24, $1B, $12, $17, $10, $FF, $07, $19\n'
+        '    dc.b    $18, $20, $0E, $1B, $24, $24, $24, $24, $24, $24, $24, $1B, $0E, $0C, $18, $1B\n'
+        '    dc.b    $0D, $0E, $1B, $FF, $05, $0B, $1B, $0A, $0C, $0E, $15, $0E, $1D, $FF, $07, $1B\n'
+        '    dc.b    $0A, $0F, $1D, $24, $24, $24, $24, $24, $24, $24, $1C, $1D, $0E, $19, $15, $0A\n'
+        '    dc.b    $0D, $0D, $0E, $1B, $FF, $06, $16, $0A, $10, $12, $0C, $0A, $15, $24, $24, $24\n'
+        '    dc.b    $24, $24, $24, $0B, $18, $18, $14, $24, $18, $0F, $FF, $08, $1B, $18, $0D, $24\n'
+        '    dc.b    $24, $24, $24, $24, $24, $24, $24, $24, $16, $0A, $10, $12, $0C, $FF, $08, $14\n'
+        '    dc.b    $0E, $22, $24, $24, $24, $24, $24, $24, $24, $24, $16, $0A, $10, $12, $0C, $0A\n'
+        '    dc.b    $15, $FF, $15, $14, $0E, $22, $FF, $08, $16, $0A, $19, $24, $24, $24, $24, $24\n'
+        '    dc.b    $24, $24, $24, $0C, $18, $16, $19, $0A, $1C, $1C, $FF, $0C, $1D, $1B, $12, $0F\n'
+        '    dc.b    $18, $1B, $0C, $0E, $FF, $04, $15, $12, $0F, $0E, $24, $19, $18, $1D, $12, $18\n'
+        '    dc.b    $17, $24, $24, $24, $02, $17, $0D, $24, $19, $18, $1D, $12, $18, $17, $FF, $06\n'
+        '    dc.b    $15, $0E, $1D, $1D, $0E, $1B, $24, $24, $24, $24, $24, $24, $24, $24, $0F, $18\n'
+        '    dc.b    $18, $0D, $FF\n'
+        '\n'
+        '    even\n'
+        'DemoLineTextAddrs:\n'
+        '; 29 word offsets into DemoTextFields (for M68K direct ROM addressing)\n'
+        '    dc.w    $0000, $0022, $0037, $003E, $0052, $01E5, $01FF, $0067\n'
+        '    dc.w    $007B, $0082, $0098, $00AD, $00C4, $00CF, $00E2, $00F7\n'
+        '    dc.w    $00FE, $0111, $0127, $013A, $014E, $0164, $016E, $0185\n'
+        '    dc.w    $019B, $01AE, $01C2, $01C7, $01DB'
+    )
+    if old_text_stub in text:
+        text = text.replace(old_text_stub, new_text_data, 1)
+        print("  _patch_z02 P7: DemoTextFields/DemoLineTextAddrs data extracted from NES ROM")
+    else:
+        print("  WARNING: _patch_z02 P7 -- DemoTextFields stub not found")
+
+    # ---- Patch 8: Fix story text pointer resolution ----
+    # Replace NES indirect-pointer text lookup with direct M68K addressing.
+    # DemoLineTextAddrs now contains word offsets into DemoTextFields.
+    old_text_ptr = (
+        '    move.b  ($042E,A4),D0\n'
+        '    lsl.b  #1,D0   ; ASL A\n'
+        '    moveq   #0,D2\n'
+        '    move.b  D0,D2\n'
+        '    moveq   #0,D3\n'
+        '    lea     (DemoLineTextAddrs).l,A0\n'
+        '    move.b  (A0,D2.W),D0\n'
+        '    move.b  D0,($0000,A4)\n'
+        '    lea     (DemoLineTextAddrs+1).l,A0\n'
+        '    move.b  (A0,D2.W),D0\n'
+        '    move.b  D0,($0001,A4)\n'
+        '    move.b  ($00,A4),D1   ; ptr lo\n'
+        '    move.b  ($01,A4),D4  ; ptr hi\n'
+        '    andi.w  #$00FF,D1         ; zero-extend lo byte\n'
+        '    lsl.w   #8,D4\n'
+        '    or.w    D1,D4             ; D4 = NES ptr addr\n'
+        '    ext.l   D4\n'
+        '    add.l   #NES_RAM,D4       ; \u2192 Genesis addr\n'
+        '    movea.l D4,A0\n'
+        '    move.b  (A0,D3.W),D0     ; LDA ($nn),Y\n'
+        '    moveq   #0,D2\n'
+        '    move.b  D0,D2\n'
+        '    even\n'
+        '_L_z02_AnimateDemoPhase1Subphase2_CopyLine:\n'
+        '    ; X is an offset into the destination line.\n'
+        '    ; Y is an offset into the source tiles of the current record.\n'
+        '    ;\n'
+        '    ; Get the next source tile.\n'
+        '    addq.b  #1,D3\n'
+        '    move.b  ($00,A4),D1   ; ptr lo\n'
+        '    move.b  ($01,A4),D4  ; ptr hi\n'
+        '    andi.w  #$00FF,D1         ; zero-extend lo byte\n'
+        '    lsl.w   #8,D4\n'
+        '    or.w    D1,D4             ; D4 = NES ptr addr\n'
+        '    ext.l   D4\n'
+        '    add.l   #NES_RAM,D4       ; \u2192 Genesis addr\n'
+        '    movea.l D4,A0\n'
+        '    move.b  (A0,D3.W),D0     ; LDA ($nn),Y\n'
+        '    cmpi.b  #$FF,D0\n'
+        '    beq  _L_z02_AnimateDemoPhase1Subphase2_EndLine\n'
+        '    lea     ($0305,A4),A0\n'
+        '    move.b  D0,(A0,D2.W)\n'
+        '    addq.b  #1,D2\n'
+        '    jmp     _L_z02_AnimateDemoPhase1Subphase2_CopyLine'
+    )
+    new_text_ptr = (
+        '    ; PATCHED (P8): Replace broken NES indirect-pointer text lookup with\n'
+        '    ; direct M68K addressing. DemoLineTextAddrs contains word offsets.\n'
+        '    move.b  ($042E,A4),D0\n'
+        '    andi.w  #$00FF,D0\n'
+        '    lsl.w   #1,D0                ; * 2 for word-sized offset table\n'
+        '    lea     (DemoLineTextAddrs).l,A0\n'
+        '    move.w  (A0,D0.W),D0        ; D0.w = offset into DemoTextFields\n'
+        '    lea     (DemoTextFields).l,A0\n'
+        '    adda.w  D0,A0               ; A0 -> text field entry in ROM\n'
+        '    moveq   #0,D3               ; Y index into text field\n'
+        '    move.b  (A0,D3.W),D0        ; first byte = column offset\n'
+        '    moveq   #0,D2\n'
+        '    move.b  D0,D2\n'
+        '    even\n'
+        '_L_z02_AnimateDemoPhase1Subphase2_CopyLine:\n'
+        '    ; X (D2) = offset into destination line.\n'
+        '    ; Y (D3) = offset into source tiles of current text record.\n'
+        '    ; A0 = pointer to current text field (preserved across loop).\n'
+        '    addq.b  #1,D3\n'
+        '    move.b  (A0,D3.W),D0        ; read next tile from ROM\n'
+        '    cmpi.b  #$FF,D0\n'
+        '    beq  _L_z02_AnimateDemoPhase1Subphase2_EndLine\n'
+        '    lea     ($0305,A4),A1\n'
+        '    move.b  D0,(A1,D2.W)\n'
+        '    addq.b  #1,D2\n'
+        '    jmp     _L_z02_AnimateDemoPhase1Subphase2_CopyLine'
+    )
+    if old_text_ptr in text:
+        text = text.replace(old_text_ptr, new_text_ptr, 1)
+        print("  _patch_z02 P8: story text pointer -> direct M68K addressing")
+    else:
+        print("  WARNING: _patch_z02 P8 -- story text pointer pattern not found")
+
     with open(path, 'w', encoding='utf-8') as f:
         f.write(text)
 
@@ -1997,8 +2232,31 @@ def _patch_z07(path):
             lines[start_idx:end_idx+1] = replacement
             print("  _patch_z07: ClearNameTable -> _clear_nametable_fast")
 
+    # ---- Patch 1: Wire PPU scroll to VDP VSRAM ----
+    # After the NMI handler's SetScroll block writes CurHScroll/CurVScroll
+    # to PPU shadows, call _apply_genesis_scroll to push them to VDP VSRAM.
+    text = ''.join(lines)
+    old_scroll = (
+        '    move.b  ($00FF,A4),D0\n'
+        '    bsr     _ppu_write_0  ; PPU $2000 write, D0=val\n'
+        '    even\n'
+        '_L_z07_IsrNmi_UpdateTimers:'
+    )
+    new_scroll = (
+        '    move.b  ($00FF,A4),D0\n'
+        '    bsr     _ppu_write_0  ; PPU $2000 write, D0=val\n'
+        '    bsr     _apply_genesis_scroll  ; Apply scroll shadows to VDP VSRAM/H-scroll\n'
+        '    even\n'
+        '_L_z07_IsrNmi_UpdateTimers:'
+    )
+    if old_scroll in text:
+        text = text.replace(old_scroll, new_scroll, 1)
+        print("  _patch_z07 P1: added _apply_genesis_scroll call after SetScroll")
+    else:
+        print("  WARNING: _patch_z07 P1 -- SetScroll pattern not found")
+
     with open(path, 'w', encoding='utf-8') as f:
-        f.writelines(lines)
+        f.write(text)
 
 
 def main():

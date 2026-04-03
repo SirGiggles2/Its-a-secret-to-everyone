@@ -271,6 +271,36 @@ _ppu_write_5:
     rts
 
 ;------------------------------------------------------------------------------
+; _apply_genesis_scroll — Apply PPU scroll shadows to VDP VSRAM / H-scroll.
+;
+; Called from IsrNmi after SetScroll writes CurVScroll/CurHScroll to shadows.
+; Converts NES PPU scroll values to Genesis VDP scroll registers.
+; Preserves: D1-D7, A0-A6.
+;------------------------------------------------------------------------------
+_apply_genesis_scroll:
+    movem.l D0-D1,-(SP)
+    ; Vertical scroll -> VSRAM word 0 (Plane A)
+    moveq   #0,D0
+    move.b  (PPU_SCRL_Y).l,D0
+    move.l  #VSRAM_WRITE_0000,(VDP_CTRL).l
+    move.w  D0,(VDP_DATA).l         ; Plane A V-scroll
+    moveq   #0,D0
+    move.w  D0,(VDP_DATA).l         ; Plane B V-scroll = 0
+    ; Horizontal scroll -> H-scroll table at VRAM $DC00
+    ; Genesis H-scroll scrolls opposite direction to NES:
+    ; NES HScroll=N shifts viewport right; Genesis HScroll=N shifts plane right.
+    moveq   #0,D0
+    move.b  (PPU_SCRL_X).l,D0
+    neg.w   D0
+    andi.w  #$01FF,D0
+    move.l  #$7C000003,(VDP_CTRL).l  ; VRAM write at $DC00
+    move.w  D0,(VDP_DATA).l         ; Plane A H-scroll
+    moveq   #0,D0
+    move.w  D0,(VDP_DATA).l         ; Plane B H-scroll = 0
+    movem.l (SP)+,D0-D1
+    rts
+
+;------------------------------------------------------------------------------
 ; _ppu_write_6 — PPUADDR ($2006)  ← T5 key implementation
 ;
 ; The NES PPU address register uses a two-write protocol (shared "w" latch):
@@ -1010,17 +1040,8 @@ _ctrl_read_2:
 _oam_dma:
     movem.l D0-D7/A0,-(SP)
 
-    ; Title-mode framing in Genesis lands 8 px too low relative to the
-    ; NES capture. Until full PPUSCROLL-to-VSRAM support is wired in,
-    ; bias both planes up by 8 px for mode $00 only and clear it elsewhere.
-    moveq   #0,D4
-    tst.b   ($0012,A4)
-    bne.s   .oam_store_vscroll
-    moveq   #8,D4
-.oam_store_vscroll:
-    move.l  #VSRAM_WRITE_0000,(VDP_CTRL).l
-    move.w  D4,(VDP_DATA).l
-    move.w  D4,(VDP_DATA).l
+    ; VSRAM scroll is now driven by _apply_genesis_scroll in IsrNmi.
+    ; The old static 8px bias has been removed.
 
     ; Set VDP write address: VRAM $D800 (sprite attribute table)
     ; $D800 & $3FFF = $1800 → swap → $18000000 → | $40000003 = $58000003
@@ -1544,11 +1565,17 @@ _transfer_tilebuf_fast:
     cmpi.w  #$2000,D5
     blo     .ttf_chr_range          ; $0000-$1FFF = CHR
     cmpi.w  #$23C0,D5
-    blo     .ttf_nt_range           ; $2000-$23BF = nametable
+    blo     .ttf_nt_range           ; $2000-$23BF = nametable 0 tiles
     cmpi.w  #$2400,D5
-    blo     .ttf_attr_range         ; $23C0-$23FF = attributes
+    blo     .ttf_attr_range         ; $23C0-$23FF = nametable 0 attributes
+    cmpi.w  #$2800,D5
+    blo     .ttf_skip_range         ; $2400-$27FF = NT mirror (unused w/ vert mirror)
+    cmpi.w  #$2BC0,D5
+    blo     .ttf_nt1_range          ; $2800-$2BBF = nametable 1 tiles
+    cmpi.w  #$2C00,D5
+    blo     .ttf_attr1_range        ; $2BC0-$2BFF = nametable 1 attributes
     cmpi.w  #$3F00,D5
-    blo     .ttf_skip_range         ; $2400-$3EFF = unhandled
+    blo     .ttf_skip_range         ; $2C00-$3EFF = unhandled
     cmpi.w  #$3F20,D5
     blo     .ttf_palette_range      ; $3F00-$3F1F = palette
     bra     .ttf_skip_range         ; $3F20+ = unhandled
@@ -1762,6 +1789,149 @@ _transfer_tilebuf_fast:
     move.w  D5,(PPU_VADDR).l
     subq.w  #1,D3
     bne     .ttf_attr_loop
+    bra     .ttf_post_record
+
+    ;==========================================================================
+    ; NAMETABLE 1 RANGE ($2800-$2BBF): tile index -> Plane A word
+    ; Maps NT1 tiles to the same Plane A rows as NT0 (for vertical scroll).
+    ;==========================================================================
+.ttf_nt1_range:
+    lea     (NT_CACHE_BASE).l,A2
+
+.ttf_nt1_loop:
+    ; Get data byte
+    tst.b   D4                      ; repeat mode?
+    bne.s   .ttf_nt1_have_byte
+    move.b  (A0)+,D2                ; sequential: read next byte
+.ttf_nt1_have_byte:
+
+    ; Bounds check
+    cmpi.w  #$2BC0,D5
+    bhs.s   .ttf_nt1_skip
+
+    ; Compute index = PPU_VADDR - $2800 (same NT layout, different base)
+    move.w  D5,D0
+    subi.w  #$2800,D0               ; D0.w = index (0..$3BF)
+
+    ; Cache tile index in NT_CACHE (same cache, shared with NT0)
+    move.b  D2,(A2,D0.W)
+
+    ; Compute VDP address: $C000 + row*$80 + col*2
+    move.w  D0,D6                   ; save index
+    andi.w  #$001F,D6               ; col = index & 31
+    lsl.w   #1,D6                   ; col * 2
+    lsr.w   #5,D0                   ; row = index >> 5
+    mulu.w  #$0080,D0              ; row * $80
+    add.w   D6,D0                   ; row*$80 + col*2
+    addi.w  #$C000,D0              ; + Plane A base
+
+    ; Issue VDP VRAM write command
+    moveq   #0,D6
+    move.w  D0,D6
+    andi.l  #$00003FFF,D6
+    swap    D6
+    ori.l   #$40000003,D6          ; CD bits + A[15:14]
+    move.l  D6,(VDP_CTRL).l
+
+    ; Write tile word: tile index + BG pattern table offset
+    moveq   #0,D0
+    move.b  D2,D0
+    bsr     _compose_bg_tile_word
+    move.w  D0,(VDP_DATA).l
+
+.ttf_nt1_skip:
+    add.w   D1,D5                   ; advance PPU_VADDR
+    andi.w  #$3FFF,D5
+    subq.w  #1,D3
+    bne.s   .ttf_nt1_loop
+    bra     .ttf_post_record
+
+    ;==========================================================================
+    ; ATTRIBUTE 1 RANGE ($2BC0-$2BFF): NT1 palette bits -> Plane A tile words
+    ;==========================================================================
+.ttf_attr1_range:
+
+.ttf_attr1_loop:
+    ; Get data byte
+    tst.b   D4                      ; repeat mode?
+    bne.s   .ttf_attr1_have_byte
+    move.b  (A0)+,D2                ; sequential: read next byte
+.ttf_attr1_have_byte:
+
+    ; Bounds check
+    cmpi.w  #$2BC0,D5
+    blo     .ttf_attr1_skip
+    cmpi.w  #$2C00,D5
+    bhs     .ttf_attr1_skip
+
+    ; Compute attr offset (same as NT0 but from $2BC0 base)
+    move.w  D5,D0
+    subi.w  #$2BC0,D0               ; D0.w = attr offset (0..63)
+
+    ; Save regs (attr helper clobbers D1-D4 and A0)
+    move.l  A0,-(SP)
+    movem.l D1-D4,-(SP)
+
+    move.w  D0,D3
+    lsr.w   #3,D3
+    lsl.w   #2,D3                   ; D3.w = tile_base_row
+    andi.w  #$0007,D0
+    lsl.w   #2,D0
+    move.w  D0,D2                   ; D2.w = tile_base_col
+
+    ; Get attribute byte from saved D2 on stack
+    move.l  (4,SP),D0
+    move.b  D0,D4                  ; D4.b = attribute byte
+
+    ; Quadrant 0: bits [1:0]
+    move.w  D4,D5
+    andi.w  #$0003,D5
+    lsl.w   #5,D5
+    lsl.w   #8,D5
+    bsr     _attr_write_2x2
+
+    ; Quadrant 1: bits [3:2], col_off=+2
+    move.w  D4,D5
+    lsr.w   #2,D5
+    andi.w  #$0003,D5
+    lsl.w   #5,D5
+    lsl.w   #8,D5
+    addq.w  #2,D2
+    bsr     _attr_write_2x2
+    subq.w  #2,D2
+
+    ; Quadrant 2: bits [5:4], row_off=+2
+    move.w  D4,D5
+    lsr.w   #4,D5
+    andi.w  #$0003,D5
+    lsl.w   #5,D5
+    lsl.w   #8,D5
+    addq.w  #2,D3
+    bsr     _attr_write_2x2
+    subq.w  #2,D3
+
+    ; Quadrant 3: bits [7:6], row_off=+2, col_off=+2
+    move.w  D4,D5
+    lsr.w   #6,D5
+    andi.w  #$0003,D5
+    lsl.w   #5,D5
+    lsl.w   #8,D5
+    addq.w  #2,D2
+    addq.w  #2,D3
+    bsr     _attr_write_2x2
+    subq.w  #2,D2
+    subq.w  #2,D3
+
+    movem.l (SP)+,D1-D4
+    movea.l (SP)+,A0
+    move.w  (PPU_VADDR).l,D5
+
+.ttf_attr1_skip:
+    add.w   D1,D5                   ; advance PPU_VADDR
+    andi.w  #$3FFF,D5
+    move.w  D5,(PPU_VADDR).l
+    subq.w  #1,D3
+    bne     .ttf_attr1_loop
     bra     .ttf_post_record
 
     ;==========================================================================
