@@ -1,0 +1,85 @@
+  NMI#2 +1f: PC=$000A28 F5=$00 F6=$00 dyn=$FF blk=0
+  NMI#2 +2f: PC=$000A40 F5=$00 F6=$00 dyn=$FF blk=0
+  NMI#2 +3f: PC=$000A4A F5=$00 F6=$00 dyn=$FF blk=1
+  NMI#2 +4f: PC=$000A5C F5=$00 F6=$00 dyn=$FF blk=1
+  NMI#2 +5f: PC=$000A16 F5=$00 F6=$00 dyn=$FF blk=1
+  NMI#2 +6f: PC=$000A5A F5=$00 F6=$00 dyn=$FF blk=1
+  NMI#2 +7f: PC=$000A12 F5=$00 F6=$00 dyn=$FF blk=1
+  NMI#3 +1f: PC=$000A44 F5=$5A F6=$00 dyn=$FF blk=0
+  NMI#3 +2f: PC=$000A5A F5=$5A F6=$00 dyn=$FF blk=0
+  NMI#3 +3f: PC=$000A14 F5=$5A F6=$00 dyn=$FF blk=0
+  NMI#3 +4f: PC=$0009E2 F5=$5A F6=$00 dyn=$FF blk=0
+  NMI#3 +5f: PC=$000A2E F5=$5A F6=$00 dyn=$FF blk=0
+  NMI#3 +6f: PC=$000A46 F5=$5A F6=$00 dyn=$FF blk=0
+  NMI#3 +7f: PC=$000A5C F5=$5A F6=$00 dyn=$FF blk=0
+  NMI#3 +8f: PC=$000A3E F5=$5A F6=$00 dyn=$FF blk=0
+  NMI#3 +9f: PC=$000A22 F5=$5A F6=$00 dyn=$FF blk=0
+  NMI#3 +10f: PC=$000A38 F5=$5A F6=$00 dyn=$FF blk=0
+  NMI#3 +15f: PC=$000A08 F5=$5A F6=$00 dyn=$FF blk=0
+  NMI#3 +20f: PC=$000A0E F5=$5A F6=$00 dyn=$FF blk=0
+  NMI#3 +25f: PC=$000A38 F5=$5A F6=$00 dyn=$FF blk=0
+  NMI#3 +30f: PC=$000A7A F5=$5A F6=$00 dyn=$FF blk=0
+  NMI#3 +35f: PC=$000A38 F5=$5A F6=$00 dyn=$FF blk=0
+  NMI#3 +40f: PC=$000A0A F5=$5A F6=$00 dyn=$FF blk=0
+  NMI#3 +45f: PC=$000A12 F5=$5A F6=$00 dyn=$FF blk=0
+  NMI#3 +50f: PC=$000A38 F5=$5A F6=$00 dyn=$FF blk=0
+  NMI#3 +55f: PC=$000A12 F5=$5A F6=$00 dyn=$FF blk=0
+  NMI#3 +60f: PC=$000A38 F5=$5A F6=$00 dyn=$FF blk=0
+=================================================================
+NMI #3 Diagnostic Probe — 300 frames
+=================================================================
+
+Total NMI entries: 7
+
+NMI #1: frames 21-35 (15 frames)
+  F5=$00 F6=$00 initGame=$01 mode=$00 sub=$00 isUpd=$00 dynBuf0=$FF tileBufSel=0 blk=0
+  PC histogram:
+    zelda_2000           14 frames (93.3%)
+    z_01                 1 frames (6.7%)
+
+
+NMI #2: frames 36-42 (7 frames)
+  F5=$5A F6=$00 initGame=$01 mode=$00 sub=$00 isUpd=$00 dynBuf0=$FF tileBufSel=0 blk=0
+  PC histogram:
+    chr_block_fast       7 frames (100.0%)
+
+
+NMI #3: frames 43-106 (64 frames)
+  F5=$5A F6=$A5 initGame=$01 mode=$00 sub=$00 isUpd=$00 dynBuf0=$FF tileBufSel=0 blk=0
+  PC histogram:
+    chr_block_fast       62 frames (96.9%)
+    tilebuf_fast         2 frames (3.1%)
+
+
+NMI #4: frames 107-161 (55 frames)
+  F5=$5A F6=$A5 initGame=$01 mode=$00 sub=$00 isUpd=$00 dynBuf0=$FF tileBufSel=0 blk=0
+  PC histogram:
+    tilebuf_fast         55 frames (100.0%)
+
+
+NMI #5: frames 162-162 (1 frames)
+  F5=$5A F6=$A5 initGame=$01 mode=$00 sub=$00 isUpd=$00 dynBuf0=$3F tileBufSel=0 blk=0
+  PC histogram:
+    other_000874         1 frames (100.0%)
+
+
+NMI #6: frames 163-163 (1 frames)
+  F5=$5A F6=$A5 initGame=$01 mode=$00 sub=$00 isUpd=$01 dynBuf0=$FF tileBufSel=16 blk=0
+  PC histogram:
+    z_07_nmi             1 frames (100.0%)
+
+
+NMI #7: frames 164-299 (136 frames)
+  F5=$5A F6=$A5 initGame=$01 mode=$00 sub=$00 isUpd=$01 dynBuf0=$FF tileBufSel=0 blk=0
+  PC histogram:
+    zelda_1000           98 frames (72.1%)
+    chr_block_fast       36 frames (26.5%)
+    other_000842         1 frames (0.7%)
+    tilebuf_fast         1 frames (0.7%)
+
+
+--- Raw PC trace for NMI #2 and #3 ---
+
+=================================================================
+NMI3 DIAG PROBE COMPLETE
+=================================================================

@@ -1,0 +1,80 @@
+=================================================================
+NMI Trace Probe  --  frames 1-300
+  IsrNmi=$017A68
+=================================================================
+
+f001: PC=$000306 ppuCtrl=$00 hw=$00 nmiThisFrame=0 initGame=$00 F5=$00 F6=$00 mode=$00 sub=$00 phase=$00 isUpd=$00 tileBuf=0 blk=0 VADDR=$0000 dyn=$00 nmi#=0
+f002: PC=$000306 ppuCtrl=$00 hw=$00 nmiThisFrame=0 initGame=$00 F5=$00 F6=$00 mode=$00 sub=$00 phase=$00 isUpd=$00 tileBuf=0 blk=0 VADDR=$0000 dyn=$00 nmi#=0
+f003: PC=$0002FE ppuCtrl=$00 hw=$00 nmiThisFrame=0 initGame=$00 F5=$00 F6=$00 mode=$00 sub=$00 phase=$00 isUpd=$00 tileBuf=0 blk=0 VADDR=$0000 dyn=$00 nmi#=0
+f004: PC=$000306 ppuCtrl=$00 hw=$00 nmiThisFrame=0 initGame=$00 F5=$00 F6=$00 mode=$00 sub=$00 phase=$00 isUpd=$00 tileBuf=0 blk=0 VADDR=$0000 dyn=$00 nmi#=0
+f005: PC=$0002FE ppuCtrl=$00 hw=$00 nmiThisFrame=0 initGame=$00 F5=$00 F6=$00 mode=$00 sub=$00 phase=$00 isUpd=$00 tileBuf=0 blk=0 VADDR=$0000 dyn=$00 nmi#=0
+f006: PC=$000306 ppuCtrl=$00 hw=$00 nmiThisFrame=0 initGame=$00 F5=$00 F6=$00 mode=$00 sub=$00 phase=$00 isUpd=$00 tileBuf=0 blk=0 VADDR=$0000 dyn=$00 nmi#=0
+f007: PC=$0002FE ppuCtrl=$00 hw=$00 nmiThisFrame=0 initGame=$00 F5=$00 F6=$00 mode=$00 sub=$00 phase=$00 isUpd=$00 tileBuf=0 blk=0 VADDR=$0000 dyn=$00 nmi#=0
+f008: PC=$015F6E ppuCtrl=$00 hw=$00 nmiThisFrame=0 initGame=$00 F5=$00 F6=$00 mode=$00 sub=$00 phase=$00 isUpd=$00 tileBuf=0 blk=0 VADDR=$0000 dyn=$00 nmi#=0
+f009: PC=$015F88 ppuCtrl=$00 hw=$00 nmiThisFrame=0 initGame=$00 F5=$00 F6=$00 mode=$00 sub=$00 phase=$00 isUpd=$00 tileBuf=0 blk=0 VADDR=$0000 dyn=$00 nmi#=0
+f010: PC=$015F5A ppuCtrl=$00 hw=$00 nmiThisFrame=0 initGame=$00 F5=$00 F6=$00 mode=$00 sub=$00 phase=$00 isUpd=$00 tileBuf=0 blk=0 VADDR=$0000 dyn=$00 nmi#=0
+f020: PC=$017C76 ppuCtrl=$00 hw=$00 nmiThisFrame=0 initGame=$00 F5=$00 F6=$00 mode=$00 sub=$00 phase=$00 isUpd=$00 tileBuf=0 blk=0 VADDR=$0000 dyn=$FF nmi#=0
+f021: PC=$017A3A ppuCtrl=$B0 hw=$B0 nmiThisFrame=0 initGame=$00 F5=$00 F6=$00 mode=$00 sub=$00 phase=$00 isUpd=$00 tileBuf=0 blk=0 VADDR=$2C40 dyn=$FF nmi#=0
+f022: PC=$002C50 ppuCtrl=$30 hw=$30 nmiThisFrame=1 initGame=$00 F5=$00 F6=$00 mode=$00 sub=$00 phase=$00 isUpd=$00 tileBuf=0 blk=0 VADDR=$0000 dyn=$FF nmi#=1
+f023: PC=$002C46 ppuCtrl=$30 hw=$30 nmiThisFrame=0 initGame=$00 F5=$00 F6=$00 mode=$00 sub=$00 phase=$00 isUpd=$00 tileBuf=0 blk=0 VADDR=$0000 dyn=$FF nmi#=1
+f024: PC=$002C3A ppuCtrl=$30 hw=$30 nmiThisFrame=0 initGame=$00 F5=$00 F6=$00 mode=$00 sub=$00 phase=$00 isUpd=$00 tileBuf=0 blk=0 VADDR=$0000 dyn=$FF nmi#=1
+f025: PC=$002CAA ppuCtrl=$30 hw=$30 nmiThisFrame=0 initGame=$00 F5=$00 F6=$00 mode=$00 sub=$00 phase=$00 isUpd=$00 tileBuf=0 blk=0 VADDR=$0000 dyn=$FF nmi#=1
+f026: PC=$002C9E ppuCtrl=$30 hw=$30 nmiThisFrame=0 initGame=$00 F5=$00 F6=$00 mode=$00 sub=$00 phase=$00 isUpd=$00 tileBuf=0 blk=0 VADDR=$0000 dyn=$FF nmi#=1
+f027: PC=$002C94 ppuCtrl=$30 hw=$30 nmiThisFrame=0 initGame=$00 F5=$00 F6=$00 mode=$00 sub=$00 phase=$00 isUpd=$00 tileBuf=0 blk=0 VADDR=$0000 dyn=$FF nmi#=1
+f028: PC=$002C86 ppuCtrl=$30 hw=$30 nmiThisFrame=0 initGame=$00 F5=$00 F6=$00 mode=$00 sub=$00 phase=$00 isUpd=$00 tileBuf=0 blk=0 VADDR=$0000 dyn=$FF nmi#=1
+f029: PC=$002C7A ppuCtrl=$30 hw=$30 nmiThisFrame=0 initGame=$00 F5=$00 F6=$00 mode=$00 sub=$00 phase=$00 isUpd=$00 tileBuf=0 blk=0 VADDR=$0000 dyn=$FF nmi#=1
+f030: PC=$002C74 ppuCtrl=$30 hw=$30 nmiThisFrame=0 initGame=$00 F5=$00 F6=$00 mode=$00 sub=$00 phase=$00 isUpd=$00 tileBuf=0 blk=0 VADDR=$0000 dyn=$FF nmi#=1
+f031: PC=$002C64 ppuCtrl=$30 hw=$30 nmiThisFrame=0 initGame=$00 F5=$00 F6=$00 mode=$00 sub=$00 phase=$00 isUpd=$00 tileBuf=0 blk=0 VADDR=$0000 dyn=$FF nmi#=1
+f032: PC=$002C5E ppuCtrl=$30 hw=$30 nmiThisFrame=0 initGame=$00 F5=$00 F6=$00 mode=$00 sub=$00 phase=$00 isUpd=$00 tileBuf=0 blk=0 VADDR=$0000 dyn=$FF nmi#=1
+f033: PC=$002C52 ppuCtrl=$30 hw=$30 nmiThisFrame=0 initGame=$00 F5=$00 F6=$00 mode=$00 sub=$00 phase=$00 isUpd=$00 tileBuf=0 blk=0 VADDR=$0000 dyn=$FF nmi#=1
+f034: PC=$002C46 ppuCtrl=$30 hw=$30 nmiThisFrame=0 initGame=$00 F5=$00 F6=$00 mode=$00 sub=$00 phase=$00 isUpd=$00 tileBuf=0 blk=0 VADDR=$0000 dyn=$FF nmi#=1
+f035: PC=$002C40 ppuCtrl=$30 hw=$30 nmiThisFrame=0 initGame=$00 F5=$00 F6=$00 mode=$00 sub=$00 phase=$00 isUpd=$00 tileBuf=0 blk=0 VADDR=$0000 dyn=$FF nmi#=1
+f036: PC=$016880 ppuCtrl=$30 hw=$30 nmiThisFrame=0 initGame=$00 F5=$00 F6=$00 mode=$00 sub=$00 phase=$00 isUpd=$00 tileBuf=0 blk=0 VADDR=$0000 dyn=$FF nmi#=1
+f037: PC=$000A28 ppuCtrl=$30 hw=$30 nmiThisFrame=1 initGame=$01 F5=$00 F6=$00 mode=$00 sub=$00 phase=$00 isUpd=$00 tileBuf=0 blk=0 VADDR=$0000 dyn=$FF nmi#=2
+f038: PC=$000A40 ppuCtrl=$30 hw=$30 nmiThisFrame=0 initGame=$01 F5=$00 F6=$00 mode=$00 sub=$00 phase=$00 isUpd=$00 tileBuf=0 blk=0 VADDR=$0000 dyn=$FF nmi#=2
+f039: PC=$000A4A ppuCtrl=$30 hw=$30 nmiThisFrame=0 initGame=$01 F5=$00 F6=$00 mode=$00 sub=$00 phase=$00 isUpd=$00 tileBuf=0 blk=1 VADDR=$0107 dyn=$FF nmi#=2
+f040: PC=$000A5C ppuCtrl=$30 hw=$30 nmiThisFrame=0 initGame=$01 F5=$00 F6=$00 mode=$00 sub=$00 phase=$00 isUpd=$00 tileBuf=0 blk=1 VADDR=$0107 dyn=$FF nmi#=2
+f041: PC=$000A16 ppuCtrl=$30 hw=$30 nmiThisFrame=0 initGame=$01 F5=$00 F6=$00 mode=$00 sub=$00 phase=$00 isUpd=$00 tileBuf=0 blk=1 VADDR=$0107 dyn=$FF nmi#=2
+f042: PC=$000A5A ppuCtrl=$30 hw=$30 nmiThisFrame=0 initGame=$01 F5=$00 F6=$00 mode=$00 sub=$00 phase=$00 isUpd=$00 tileBuf=0 blk=1 VADDR=$0107 dyn=$FF nmi#=2
+f043: PC=$000A12 ppuCtrl=$30 hw=$30 nmiThisFrame=0 initGame=$01 F5=$00 F6=$00 mode=$00 sub=$00 phase=$00 isUpd=$00 tileBuf=0 blk=1 VADDR=$0107 dyn=$FF nmi#=2
+f044: PC=$000A44 ppuCtrl=$30 hw=$30 nmiThisFrame=1 initGame=$01 F5=$5A F6=$00 mode=$00 sub=$00 phase=$00 isUpd=$00 tileBuf=0 blk=0 VADDR=$0000 dyn=$FF nmi#=3
+f045: PC=$000A5A ppuCtrl=$30 hw=$30 nmiThisFrame=0 initGame=$01 F5=$5A F6=$00 mode=$00 sub=$00 phase=$00 isUpd=$00 tileBuf=0 blk=0 VADDR=$0000 dyn=$FF nmi#=3
+f046: PC=$000A14 ppuCtrl=$30 hw=$30 nmiThisFrame=0 initGame=$01 F5=$5A F6=$00 mode=$00 sub=$00 phase=$00 isUpd=$00 tileBuf=0 blk=0 VADDR=$0000 dyn=$FF nmi#=3
+f047: PC=$0009E2 ppuCtrl=$30 hw=$30 nmiThisFrame=0 initGame=$01 F5=$5A F6=$00 mode=$00 sub=$00 phase=$00 isUpd=$00 tileBuf=0 blk=0 VADDR=$0000 dyn=$FF nmi#=3
+f048: PC=$000A2E ppuCtrl=$30 hw=$30 nmiThisFrame=0 initGame=$01 F5=$5A F6=$00 mode=$00 sub=$00 phase=$00 isUpd=$00 tileBuf=0 blk=0 VADDR=$0000 dyn=$FF nmi#=3
+f049: PC=$000A46 ppuCtrl=$30 hw=$30 nmiThisFrame=0 initGame=$01 F5=$5A F6=$00 mode=$00 sub=$00 phase=$00 isUpd=$00 tileBuf=0 blk=0 VADDR=$0000 dyn=$FF nmi#=3
+f050: PC=$000A5C ppuCtrl=$30 hw=$30 nmiThisFrame=0 initGame=$01 F5=$5A F6=$00 mode=$00 sub=$00 phase=$00 isUpd=$00 tileBuf=0 blk=0 VADDR=$0000 dyn=$FF nmi#=3
+f060: PC=$000AE6 ppuCtrl=$30 hw=$30 nmiThisFrame=0 initGame=$01 F5=$5A F6=$00 mode=$00 sub=$00 phase=$00 isUpd=$00 tileBuf=0 blk=0 VADDR=$0000 dyn=$FF nmi#=3
+f070: PC=$000A5A ppuCtrl=$30 hw=$30 nmiThisFrame=0 initGame=$01 F5=$5A F6=$00 mode=$00 sub=$00 phase=$00 isUpd=$00 tileBuf=0 blk=0 VADDR=$0000 dyn=$FF nmi#=3
+f080: PC=$000A2E ppuCtrl=$30 hw=$30 nmiThisFrame=0 initGame=$01 F5=$5A F6=$00 mode=$00 sub=$00 phase=$00 isUpd=$00 tileBuf=0 blk=0 VADDR=$0000 dyn=$FF nmi#=3
+f090: PC=$000A2E ppuCtrl=$30 hw=$30 nmiThisFrame=0 initGame=$01 F5=$5A F6=$00 mode=$00 sub=$00 phase=$00 isUpd=$00 tileBuf=0 blk=0 VADDR=$0000 dyn=$FF nmi#=3
+f100: PC=$000A5E ppuCtrl=$30 hw=$30 nmiThisFrame=0 initGame=$01 F5=$5A F6=$00 mode=$00 sub=$00 phase=$00 isUpd=$00 tileBuf=0 blk=0 VADDR=$0000 dyn=$FF nmi#=3
+f108: PC=$000B86 ppuCtrl=$34 hw=$34 nmiThisFrame=1 initGame=$01 F5=$5A F6=$A5 mode=$00 sub=$00 phase=$00 isUpd=$00 tileBuf=0 blk=0 VADDR=$0000 dyn=$FF nmi#=4
+f110: PC=$000B96 ppuCtrl=$34 hw=$34 nmiThisFrame=0 initGame=$01 F5=$5A F6=$A5 mode=$00 sub=$00 phase=$00 isUpd=$00 tileBuf=0 blk=0 VADDR=$0000 dyn=$FF nmi#=4
+f120: PC=$000B88 ppuCtrl=$34 hw=$34 nmiThisFrame=0 initGame=$01 F5=$5A F6=$A5 mode=$00 sub=$00 phase=$00 isUpd=$00 tileBuf=0 blk=0 VADDR=$0000 dyn=$FF nmi#=4
+f130: PC=$000B76 ppuCtrl=$34 hw=$34 nmiThisFrame=0 initGame=$01 F5=$5A F6=$A5 mode=$00 sub=$00 phase=$00 isUpd=$00 tileBuf=0 blk=0 VADDR=$0000 dyn=$FF nmi#=4
+f140: PC=$000B6A ppuCtrl=$34 hw=$34 nmiThisFrame=0 initGame=$01 F5=$5A F6=$A5 mode=$00 sub=$00 phase=$00 isUpd=$00 tileBuf=0 blk=0 VADDR=$0000 dyn=$FF nmi#=4
+f150: PC=$000B96 ppuCtrl=$34 hw=$34 nmiThisFrame=0 initGame=$01 F5=$5A F6=$A5 mode=$00 sub=$00 phase=$00 isUpd=$00 tileBuf=0 blk=0 VADDR=$0000 dyn=$FF nmi#=4
+f160: PC=$000B88 ppuCtrl=$34 hw=$34 nmiThisFrame=0 initGame=$01 F5=$5A F6=$A5 mode=$00 sub=$00 phase=$00 isUpd=$00 tileBuf=0 blk=0 VADDR=$0000 dyn=$FF nmi#=4
+f163: PC=$000874 ppuCtrl=$30 hw=$30 nmiThisFrame=1 initGame=$01 F5=$5A F6=$A5 mode=$00 sub=$01 phase=$00 isUpd=$00 tileBuf=0 blk=0 VADDR=$2C40 dyn=$FF nmi#=5
+f164: PC=$017A3A ppuCtrl=$B0 hw=$B0 nmiThisFrame=1 initGame=$01 F5=$5A F6=$A5 mode=$00 sub=$00 phase=$00 isUpd=$01 tileBuf=16 blk=0 VADDR=$0000 dyn=$FF nmi#=6
+f165: PC=$000A24 ppuCtrl=$30 hw=$30 nmiThisFrame=1 initGame=$01 F5=$5A F6=$A5 mode=$00 sub=$00 phase=$00 isUpd=$01 tileBuf=16 blk=0 VADDR=$0000 dyn=$FF nmi#=7
+f170: PC=$000A50 ppuCtrl=$30 hw=$30 nmiThisFrame=0 initGame=$01 F5=$5A F6=$A5 mode=$00 sub=$00 phase=$00 isUpd=$01 tileBuf=16 blk=0 VADDR=$0000 dyn=$FF nmi#=7
+f180: PC=$000A50 ppuCtrl=$30 hw=$30 nmiThisFrame=0 initGame=$01 F5=$5A F6=$A5 mode=$00 sub=$00 phase=$00 isUpd=$01 tileBuf=16 blk=0 VADDR=$0000 dyn=$FF nmi#=7
+f190: PC=$000A24 ppuCtrl=$30 hw=$30 nmiThisFrame=0 initGame=$01 F5=$5A F6=$A5 mode=$00 sub=$00 phase=$00 isUpd=$01 tileBuf=16 blk=0 VADDR=$0000 dyn=$FF nmi#=7
+f200: PC=$000A5A ppuCtrl=$30 hw=$30 nmiThisFrame=0 initGame=$01 F5=$5A F6=$A5 mode=$00 sub=$00 phase=$00 isUpd=$01 tileBuf=16 blk=0 VADDR=$0000 dyn=$FF nmi#=7
+f210: PC=$001AB6 ppuCtrl=$30 hw=$30 nmiThisFrame=0 initGame=$01 F5=$5A F6=$A5 mode=$00 sub=$00 phase=$00 isUpd=$01 tileBuf=0 blk=0 VADDR=$0000 dyn=$FF nmi#=7
+f220: PC=$001A3A ppuCtrl=$30 hw=$30 nmiThisFrame=0 initGame=$01 F5=$5A F6=$A5 mode=$00 sub=$00 phase=$00 isUpd=$01 tileBuf=0 blk=0 VADDR=$0000 dyn=$FF nmi#=7
+f230: PC=$001A86 ppuCtrl=$30 hw=$30 nmiThisFrame=0 initGame=$01 F5=$5A F6=$A5 mode=$00 sub=$00 phase=$00 isUpd=$01 tileBuf=0 blk=0 VADDR=$0000 dyn=$FF nmi#=7
+f240: PC=$001A06 ppuCtrl=$30 hw=$30 nmiThisFrame=0 initGame=$01 F5=$5A F6=$A5 mode=$00 sub=$00 phase=$00 isUpd=$01 tileBuf=0 blk=0 VADDR=$0000 dyn=$FF nmi#=7
+f250: PC=$001A76 ppuCtrl=$30 hw=$30 nmiThisFrame=0 initGame=$01 F5=$5A F6=$A5 mode=$00 sub=$00 phase=$00 isUpd=$01 tileBuf=0 blk=0 VADDR=$0000 dyn=$FF nmi#=7
+f260: PC=$0019F4 ppuCtrl=$30 hw=$30 nmiThisFrame=0 initGame=$01 F5=$5A F6=$A5 mode=$00 sub=$00 phase=$00 isUpd=$01 tileBuf=0 blk=0 VADDR=$0000 dyn=$FF nmi#=7
+f270: PC=$001A68 ppuCtrl=$30 hw=$30 nmiThisFrame=0 initGame=$01 F5=$5A F6=$A5 mode=$00 sub=$00 phase=$00 isUpd=$01 tileBuf=0 blk=0 VADDR=$0000 dyn=$FF nmi#=7
+f280: PC=$0019D2 ppuCtrl=$30 hw=$30 nmiThisFrame=0 initGame=$01 F5=$5A F6=$A5 mode=$00 sub=$00 phase=$00 isUpd=$01 tileBuf=0 blk=0 VADDR=$0000 dyn=$FF nmi#=7
+f290: PC=$001A54 ppuCtrl=$30 hw=$30 nmiThisFrame=0 initGame=$01 F5=$5A F6=$A5 mode=$00 sub=$00 phase=$00 isUpd=$01 tileBuf=0 blk=0 VADDR=$0000 dyn=$FF nmi#=7
+f300: PC=$001A9A ppuCtrl=$30 hw=$30 nmiThisFrame=0 initGame=$01 F5=$5A F6=$A5 mode=$00 sub=$00 phase=$00 isUpd=$01 tileBuf=0 blk=0 VADDR=$0000 dyn=$FF nmi#=7
+
+Total NMI entries (exec hook): 7  in 300 frames = 2.3%
+=================================================================
+NMI TRACE PROBE COMPLETE
+=================================================================

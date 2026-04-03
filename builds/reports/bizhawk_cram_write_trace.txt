@@ -1,0 +1,92 @@
+=================================================================
+CRAM Write Trace — focused on frame 94-100
+=================================================================
+
+=== CRAM CHANGE frame 9  PC=$01656C ===
+  VADDR=$0000 latch=0 ctrl=$00
+  ZP: $AE $66 $00 $00 (ptr=$66AE)
+  DynBuf[0]=$FF DynBuf[1]=$00 DynBuf[2]=$00 DynBuf[3]=$00
+  CRAM[0][00] = $0000 → $00E0
+
+=== CRAM CHANGE frame 35  PC=$018930 ===
+  VADDR=$0000 latch=0 ctrl=$B0
+  ZP: $02 $7A $CF $02 (ptr=$7A02)
+  DynBuf[0]=$FF DynBuf[1]=$00 DynBuf[2]=$20 DynBuf[3]=$36
+  CRAM[0][00] = $00E0 → $0ACE
+  CRAM[0][02] = $0000 → $0666
+  CRAM[0][03] = $0000 → $0AAA
+  CRAM[1][00] = $0000 → $0ACE
+  CRAM[1][01] = $0000 → $006C
+  CRAM[1][02] = $0000 → $048E
+  CRAM[2][00] = $0000 → $0ACE
+  CRAM[2][01] = $0000 → $0024
+  CRAM[2][02] = $0000 → $00A0
+  CRAM[2][03] = $0000 → $00AE
+  CRAM[3][00] = $0000 → $0ACE
+  CRAM[3][01] = $0000 → $0EEE
+  CRAM[3][02] = $0000 → $0CEA
+  CRAM[3][03] = $0000 → $0E86
+
+=== CRAM CHANGE frame 47  PC=$018930 ===
+  VADDR=$0000 latch=0 ctrl=$B0
+  ZP: $10 $7A $00 $02 (ptr=$7A10)
+  DynBuf[0]=$FF DynBuf[1]=$04 DynBuf[2]=$04 DynBuf[3]=$36
+  CRAM[1][02] = $048E → $0ACE
+
+=== CRAM CHANGE frame 59  PC=$018930 ===
+  VADDR=$0000 latch=0 ctrl=$B0
+  ZP: $10 $7A $00 $02 (ptr=$7A10)
+  DynBuf[0]=$FF DynBuf[1]=$04 DynBuf[2]=$04 DynBuf[3]=$36
+  CRAM[1][02] = $0ACE → $048E
+
+=== CRAM CHANGE frame 65  PC=$018930 ===
+  VADDR=$0000 latch=0 ctrl=$B0
+  ZP: $00 $7A $00 $02 (ptr=$7A00)
+  DynBuf[0]=$FF DynBuf[1]=$04 DynBuf[2]=$04 DynBuf[3]=$36
+  CRAM[1][02] = $048E → $006C
+
+=== CRAM CHANGE frame 71  PC=$018930 ===
+  VADDR=$0000 latch=0 ctrl=$B0
+  ZP: $10 $7A $00 $02 (ptr=$7A10)
+  DynBuf[0]=$FF DynBuf[1]=$04 DynBuf[2]=$04 DynBuf[3]=$36
+  CRAM[1][02] = $006C → $0028
+
+=== CRAM CHANGE frame 83  PC=$018930 ===
+  VADDR=$0000 latch=0 ctrl=$B0
+  ZP: $10 $7A $00 $02 (ptr=$7A10)
+  DynBuf[0]=$FF DynBuf[1]=$04 DynBuf[2]=$04 DynBuf[3]=$36
+  CRAM[1][02] = $0028 → $006C
+
+f090: PC=$018930 VADDR=$0000 latch=0 ZP=$7A00 DynBuf[0]=$FF sub=$00
+f091: PC=$018930 VADDR=$0000 latch=0 ZP=$7A08 DynBuf[0]=$FF sub=$00
+f092: PC=$018930 VADDR=$0000 latch=0 ZP=$7A08 DynBuf[0]=$FF sub=$00
+f093: PC=$018930 VADDR=$0000 latch=0 ZP=$7A08 DynBuf[0]=$FF sub=$00
+f094: PC=$018930 VADDR=$0000 latch=0 ZP=$7A08 DynBuf[0]=$FF sub=$00
+f095: PC=$018930 VADDR=$0000 latch=0 ZP=$7A10 DynBuf[0]=$FF sub=$00
+f096: PC=$018930 VADDR=$0000 latch=0 ZP=$7A10 DynBuf[0]=$FF sub=$00
+f097: PC=$018930 VADDR=$0000 latch=0 ZP=$7A10 DynBuf[0]=$FF sub=$00
+f098: PC=$018930 VADDR=$0000 latch=0 ZP=$7A10 DynBuf[0]=$3F sub=$00
+=== CRAM CHANGE frame 99  PC=$018930 ===
+  VADDR=$0000 latch=0 ctrl=$B0
+  ZP: $10 $7A $00 $02 (ptr=$7A10)
+  DynBuf[0]=$FF DynBuf[1]=$04 DynBuf[2]=$04 DynBuf[3]=$36
+  CRAM[1][02] = $006C → $048E
+
+f099: PC=$018930 VADDR=$0000 latch=0 ZP=$7A10 DynBuf[0]=$FF sub=$00
+f100: PC=$018930 VADDR=$0000 latch=0 ZP=$7A10 DynBuf[0]=$FF sub=$00
+=== CRAM CHANGE frame 105  PC=$018930 ===
+  VADDR=$0000 latch=0 ctrl=$B0
+  ZP: $10 $7A $00 $02 (ptr=$7A10)
+  DynBuf[0]=$FF DynBuf[1]=$04 DynBuf[2]=$04 DynBuf[3]=$36
+  CRAM[1][02] = $048E → $0ACE
+
+=== CRAM CHANGE frame 117  PC=$018930 ===
+  VADDR=$0000 latch=0 ctrl=$B0
+  ZP: $08 $7A $00 $02 (ptr=$7A08)
+  DynBuf[0]=$FF DynBuf[1]=$04 DynBuf[2]=$04 DynBuf[3]=$36
+  CRAM[1][02] = $0ACE → $048E
+
+
+=================================================================
+CRAM WRITE TRACE COMPLETE
+=================================================================

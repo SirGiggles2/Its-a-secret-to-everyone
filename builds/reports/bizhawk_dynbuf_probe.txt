@@ -1,0 +1,666 @@
+=================================================================
+DynTileBuf Diagnostic Probe  —  frames 1-350
+=================================================================
+
+Early init (frame 1):
+  ppuCtrl=$00 hw=$00 VADDR=$0000 TileBufSel=0 sub=$00 mode=$00 isUpd=$00 initGame=$00
+  $F5=$00 $F6=$00  CRAM[0]=$0000 CRAM[1]=$0000 CRAM[2]=$0000 CRAM[3]=$0000
+  DynTileBuf[0..35]: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
+  Decoded: PPU=$0000 ctrl=$00 count=64 incr=+1
+  Data bytes[3..10]: $00 $00 $00 $00 $00 $00 $00 $00 
+
+CRAM[0] CHANGED (frame 8):
+  ppuCtrl=$00 hw=$00 VADDR=$0000 TileBufSel=0 sub=$00 mode=$00 isUpd=$00 initGame=$00
+  $F5=$00 $F6=$00  CRAM[0]=$00E0 CRAM[1]=$0000 CRAM[2]=$0000 CRAM[3]=$0000
+  DynTileBuf[0..35]: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
+  Decoded: PPU=$0000 ctrl=$00 count=64 incr=+1
+  Data bytes[3..10]: $00 $00 $00 $00 $00 $00 $00 $00 
+
+Early init (frame 10):
+  ppuCtrl=$00 hw=$00 VADDR=$0000 TileBufSel=0 sub=$00 mode=$00 isUpd=$00 initGame=$00
+  $F5=$00 $F6=$00  CRAM[0]=$00E0 CRAM[1]=$0000 CRAM[2]=$0000 CRAM[3]=$0000
+  DynTileBuf[0..35]: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
+  Decoded: PPU=$0000 ctrl=$00 count=64 incr=+1
+  Data bytes[3..10]: $00 $00 $00 $00 $00 $00 $00 $00 
+
+Early init (frame 20):
+  ppuCtrl=$30 hw=$30 VADDR=$2065 TileBufSel=0 sub=$00 mode=$00 isUpd=$00 initGame=$00
+  $F5=$00 $F6=$00  CRAM[0]=$00E0 CRAM[1]=$0000 CRAM[2]=$0000 CRAM[3]=$0000
+  DynTileBuf[0..35]: FF 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
+  Sentinel: $FF (buffer empty)
+
+Early init (frame 30):
+  ppuCtrl=$30 hw=$30 VADDR=$2B6D TileBufSel=0 sub=$00 mode=$00 isUpd=$00 initGame=$00
+  $F5=$00 $F6=$00  CRAM[0]=$00E0 CRAM[1]=$0000 CRAM[2]=$0000 CRAM[3]=$0000
+  DynTileBuf[0..35]: FF 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
+  Sentinel: $FF (buffer empty)
+
+NMI region (frame 32):
+  ppuCtrl=$30 hw=$30 VADDR=$0000 TileBufSel=0 sub=$00 mode=$00 isUpd=$00 initGame=$00
+  $F5=$00 $F6=$00  CRAM[0]=$00E0 CRAM[1]=$0000 CRAM[2]=$0000 CRAM[3]=$0000
+  DynTileBuf[0..35]: FF 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
+  Sentinel: $FF (buffer empty)
+
+NMI region (frame 33):
+  ppuCtrl=$30 hw=$30 VADDR=$0000 TileBufSel=0 sub=$00 mode=$00 isUpd=$00 initGame=$00
+  $F5=$00 $F6=$00  CRAM[0]=$00E0 CRAM[1]=$0000 CRAM[2]=$0000 CRAM[3]=$0000
+  DynTileBuf[0..35]: FF 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
+  Sentinel: $FF (buffer empty)
+
+NMI region (frame 34):
+  ppuCtrl=$30 hw=$30 VADDR=$0000 TileBufSel=0 sub=$00 mode=$00 isUpd=$00 initGame=$00
+  $F5=$00 $F6=$00  CRAM[0]=$00E0 CRAM[1]=$0000 CRAM[2]=$0000 CRAM[3]=$0000
+  DynTileBuf[0..35]: FF 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
+  Sentinel: $FF (buffer empty)
+
+NMI region (frame 35):
+  ppuCtrl=$30 hw=$30 VADDR=$0000 TileBufSel=0 sub=$00 mode=$00 isUpd=$00 initGame=$00
+  $F5=$00 $F6=$00  CRAM[0]=$00E0 CRAM[1]=$0000 CRAM[2]=$0000 CRAM[3]=$0000
+  DynTileBuf[0..35]: FF 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
+  Sentinel: $FF (buffer empty)
+
+NMI region (frame 36):
+  ppuCtrl=$30 hw=$30 VADDR=$0000 TileBufSel=0 sub=$00 mode=$00 isUpd=$00 initGame=$00
+  $F5=$00 $F6=$00  CRAM[0]=$00E0 CRAM[1]=$0000 CRAM[2]=$0000 CRAM[3]=$0000
+  DynTileBuf[0..35]: FF 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
+  Sentinel: $FF (buffer empty)
+
+NMI region (frame 37):
+  ppuCtrl=$30 hw=$30 VADDR=$0000 TileBufSel=0 sub=$00 mode=$00 isUpd=$00 initGame=$00
+  $F5=$00 $F6=$00  CRAM[0]=$00E0 CRAM[1]=$0000 CRAM[2]=$0000 CRAM[3]=$0000
+  DynTileBuf[0..35]: FF 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
+  Sentinel: $FF (buffer empty)
+
+NMI region (frame 38):
+  ppuCtrl=$30 hw=$30 VADDR=$0000 TileBufSel=0 sub=$00 mode=$00 isUpd=$00 initGame=$00
+  $F5=$00 $F6=$00  CRAM[0]=$00E0 CRAM[1]=$0000 CRAM[2]=$0000 CRAM[3]=$0000
+  DynTileBuf[0..35]: FF 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
+  Sentinel: $FF (buffer empty)
+
+NMI region (frame 39):
+  ppuCtrl=$30 hw=$30 VADDR=$0000 TileBufSel=0 sub=$00 mode=$00 isUpd=$00 initGame=$00
+  $F5=$00 $F6=$00  CRAM[0]=$00E0 CRAM[1]=$0000 CRAM[2]=$0000 CRAM[3]=$0000
+  DynTileBuf[0..35]: FF 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
+  Sentinel: $FF (buffer empty)
+
+NMI region (frame 40):
+  ppuCtrl=$30 hw=$30 VADDR=$0000 TileBufSel=0 sub=$00 mode=$00 isUpd=$00 initGame=$00
+  $F5=$00 $F6=$00  CRAM[0]=$00E0 CRAM[1]=$0000 CRAM[2]=$0000 CRAM[3]=$0000
+  DynTileBuf[0..35]: FF 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
+  Sentinel: $FF (buffer empty)
+
+Periodic (frame 60):
+  ppuCtrl=$30 hw=$30 VADDR=$1320 TileBufSel=0 sub=$00 mode=$00 isUpd=$00 initGame=$01
+  $F5=$00 $F6=$00  CRAM[0]=$00E0 CRAM[1]=$0000 CRAM[2]=$0000 CRAM[3]=$0000
+  DynTileBuf[0..35]: FF 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
+  Sentinel: $FF (buffer empty)
+
+Periodic (frame 80):
+  ppuCtrl=$30 hw=$30 VADDR=$1A0C TileBufSel=0 sub=$00 mode=$00 isUpd=$00 initGame=$01
+  $F5=$5A $F6=$00  CRAM[0]=$00E0 CRAM[1]=$0000 CRAM[2]=$0000 CRAM[3]=$0000
+  DynTileBuf[0..35]: FF 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
+  Sentinel: $FF (buffer empty)
+
+Subphase=2 (frame 95):
+  ppuCtrl=$B0 hw=$B0 VADDR=$0000 TileBufSel=0 sub=$02 mode=$00 isUpd=$00 initGame=$01
+  $F5=$5A $F6=$A5  CRAM[0]=$00E0 CRAM[1]=$0000 CRAM[2]=$0000 CRAM[3]=$0000
+  DynTileBuf[0..35]: 3F 00 20 36 0F 00 10 36 17 27 0F 36 08 1A 28 36 30 3B 22 36 30 3B 16 36 17 27 0F 36 08 1A 28 36 30 3B 22 FF 
+  Decoded: PPU=$3F00 ctrl=$20 count=32 incr=+1
+  Data bytes[3..10]: $36 $0F $00 $10 $36 $17 $27 $0F 
+
+CRAM[0] CHANGED (frame 96):
+  ppuCtrl=$30 hw=$30 VADDR=$0014 TileBufSel=0 sub=$02 mode=$00 isUpd=$00 initGame=$01
+  $F5=$5A $F6=$A5  CRAM[0]=$0222 CRAM[1]=$0222 CRAM[2]=$0222 CRAM[3]=$0222
+  DynTileBuf[0..35]: 3F 00 20 36 0F 00 10 36 17 27 0F 36 08 1A 28 36 30 3B 22 36 30 3B 16 36 17 27 0F 36 08 1A 28 36 30 3B 22 FF 
+  Decoded: PPU=$3F00 ctrl=$20 count=32 incr=+1
+  Data bytes[3..10]: $36 $0F $00 $10 $36 $17 $27 $0F 
+
+DynBuf active (frame 100):
+  ppuCtrl=$30 hw=$30 VADDR=$000B TileBufSel=0 sub=$02 mode=$00 isUpd=$00 initGame=$01
+  $F5=$5A $F6=$A5  CRAM[0]=$0222 CRAM[1]=$0222 CRAM[2]=$0222 CRAM[3]=$0222
+  DynTileBuf[0..35]: 3F 00 20 36 0F 00 10 36 17 27 0F 36 08 1A 28 36 30 3B 22 36 30 3B 16 36 17 27 0F 36 08 1A 28 36 30 3B 22 FF 
+  Decoded: PPU=$3F00 ctrl=$20 count=32 incr=+1
+  Data bytes[3..10]: $36 $0F $00 $10 $36 $17 $27 $0F 
+
+Periodic (frame 100):
+  ppuCtrl=$30 hw=$30 VADDR=$000B TileBufSel=0 sub=$02 mode=$00 isUpd=$00 initGame=$01
+  $F5=$5A $F6=$A5  CRAM[0]=$0222 CRAM[1]=$0222 CRAM[2]=$0222 CRAM[3]=$0222
+  DynTileBuf[0..35]: 3F 00 20 36 0F 00 10 36 17 27 0F 36 08 1A 28 36 30 3B 22 36 30 3B 16 36 17 27 0F 36 08 1A 28 36 30 3B 22 FF 
+  Decoded: PPU=$3F00 ctrl=$20 count=32 incr=+1
+  Data bytes[3..10]: $36 $0F $00 $10 $36 $17 $27 $0F 
+
+Subphase=2 (frame 100):
+  ppuCtrl=$30 hw=$30 VADDR=$000B TileBufSel=0 sub=$02 mode=$00 isUpd=$00 initGame=$01
+  $F5=$5A $F6=$A5  CRAM[0]=$0222 CRAM[1]=$0222 CRAM[2]=$0222 CRAM[3]=$0222
+  DynTileBuf[0..35]: 3F 00 20 36 0F 00 10 36 17 27 0F 36 08 1A 28 36 30 3B 22 36 30 3B 16 36 17 27 0F 36 08 1A 28 36 30 3B 22 FF 
+  Decoded: PPU=$3F00 ctrl=$20 count=32 incr=+1
+  Data bytes[3..10]: $36 $0F $00 $10 $36 $17 $27 $0F 
+
+Subphase=2 (frame 105):
+  ppuCtrl=$30 hw=$30 VADDR=$003E TileBufSel=0 sub=$02 mode=$00 isUpd=$00 initGame=$01
+  $F5=$5A $F6=$A5  CRAM[0]=$0222 CRAM[1]=$0222 CRAM[2]=$0222 CRAM[3]=$0222
+  DynTileBuf[0..35]: 3F 00 20 36 0F 00 10 36 17 27 0F 36 08 1A 28 36 30 3B 22 36 30 3B 16 36 17 27 0F 36 08 1A 28 36 30 3B 22 FF 
+  Decoded: PPU=$3F00 ctrl=$20 count=32 incr=+1
+  Data bytes[3..10]: $36 $0F $00 $10 $36 $17 $27 $0F 
+
+DynBuf active (frame 110):
+  ppuCtrl=$30 hw=$30 VADDR=$0030 TileBufSel=0 sub=$02 mode=$00 isUpd=$00 initGame=$01
+  $F5=$5A $F6=$A5  CRAM[0]=$0222 CRAM[1]=$0222 CRAM[2]=$0222 CRAM[3]=$0222
+  DynTileBuf[0..35]: 3F 00 20 36 0F 00 10 36 17 27 0F 36 08 1A 28 36 30 3B 22 36 30 3B 16 36 17 27 0F 36 08 1A 28 36 30 3B 22 FF 
+  Decoded: PPU=$3F00 ctrl=$20 count=32 incr=+1
+  Data bytes[3..10]: $36 $0F $00 $10 $36 $17 $27 $0F 
+
+Subphase=2 (frame 110):
+  ppuCtrl=$30 hw=$30 VADDR=$0030 TileBufSel=0 sub=$02 mode=$00 isUpd=$00 initGame=$01
+  $F5=$5A $F6=$A5  CRAM[0]=$0222 CRAM[1]=$0222 CRAM[2]=$0222 CRAM[3]=$0222
+  DynTileBuf[0..35]: 3F 00 20 36 0F 00 10 36 17 27 0F 36 08 1A 28 36 30 3B 22 36 30 3B 16 36 17 27 0F 36 08 1A 28 36 30 3B 22 FF 
+  Decoded: PPU=$3F00 ctrl=$20 count=32 incr=+1
+  Data bytes[3..10]: $36 $0F $00 $10 $36 $17 $27 $0F 
+
+Subphase=2 (frame 115):
+  ppuCtrl=$30 hw=$30 VADDR=$0020 TileBufSel=0 sub=$02 mode=$00 isUpd=$00 initGame=$01
+  $F5=$5A $F6=$A5  CRAM[0]=$0222 CRAM[1]=$0222 CRAM[2]=$0222 CRAM[3]=$0222
+  DynTileBuf[0..35]: 3F 00 20 36 0F 00 10 36 17 27 0F 36 08 1A 28 36 30 3B 22 36 30 3B 16 36 17 27 0F 36 08 1A 28 36 30 3B 22 FF 
+  Decoded: PPU=$3F00 ctrl=$20 count=32 incr=+1
+  Data bytes[3..10]: $36 $0F $00 $10 $36 $17 $27 $0F 
+
+DynBuf active (frame 120):
+  ppuCtrl=$30 hw=$30 VADDR=$0010 TileBufSel=0 sub=$02 mode=$00 isUpd=$00 initGame=$01
+  $F5=$5A $F6=$A5  CRAM[0]=$0222 CRAM[1]=$0222 CRAM[2]=$0222 CRAM[3]=$0222
+  DynTileBuf[0..35]: 3F 00 20 36 0F 00 10 36 17 27 0F 36 08 1A 28 36 30 3B 22 36 30 3B 16 36 17 27 0F 36 08 1A 28 36 30 3B 22 FF 
+  Decoded: PPU=$3F00 ctrl=$20 count=32 incr=+1
+  Data bytes[3..10]: $36 $0F $00 $10 $36 $17 $27 $0F 
+
+Periodic (frame 120):
+  ppuCtrl=$30 hw=$30 VADDR=$0010 TileBufSel=0 sub=$02 mode=$00 isUpd=$00 initGame=$01
+  $F5=$5A $F6=$A5  CRAM[0]=$0222 CRAM[1]=$0222 CRAM[2]=$0222 CRAM[3]=$0222
+  DynTileBuf[0..35]: 3F 00 20 36 0F 00 10 36 17 27 0F 36 08 1A 28 36 30 3B 22 36 30 3B 16 36 17 27 0F 36 08 1A 28 36 30 3B 22 FF 
+  Decoded: PPU=$3F00 ctrl=$20 count=32 incr=+1
+  Data bytes[3..10]: $36 $0F $00 $10 $36 $17 $27 $0F 
+
+Subphase=2 (frame 120):
+  ppuCtrl=$30 hw=$30 VADDR=$0010 TileBufSel=0 sub=$02 mode=$00 isUpd=$00 initGame=$01
+  $F5=$5A $F6=$A5  CRAM[0]=$0222 CRAM[1]=$0222 CRAM[2]=$0222 CRAM[3]=$0222
+  DynTileBuf[0..35]: 3F 00 20 36 0F 00 10 36 17 27 0F 36 08 1A 28 36 30 3B 22 36 30 3B 16 36 17 27 0F 36 08 1A 28 36 30 3B 22 FF 
+  Decoded: PPU=$3F00 ctrl=$20 count=32 incr=+1
+  Data bytes[3..10]: $36 $0F $00 $10 $36 $17 $27 $0F 
+
+Subphase=2 (frame 125):
+  ppuCtrl=$30 hw=$30 VADDR=$0040 TileBufSel=0 sub=$02 mode=$00 isUpd=$00 initGame=$01
+  $F5=$5A $F6=$A5  CRAM[0]=$0222 CRAM[1]=$0222 CRAM[2]=$0222 CRAM[3]=$0222
+  DynTileBuf[0..35]: 3F 00 20 36 0F 00 10 36 17 27 0F 36 08 1A 28 36 30 3B 22 36 30 3B 16 36 17 27 0F 36 08 1A 28 36 30 3B 22 FF 
+  Decoded: PPU=$3F00 ctrl=$20 count=32 incr=+1
+  Data bytes[3..10]: $36 $0F $00 $10 $36 $17 $27 $0F 
+
+DynBuf active (frame 130):
+  ppuCtrl=$30 hw=$30 VADDR=$0030 TileBufSel=0 sub=$02 mode=$00 isUpd=$00 initGame=$01
+  $F5=$5A $F6=$A5  CRAM[0]=$0222 CRAM[1]=$0222 CRAM[2]=$0222 CRAM[3]=$0222
+  DynTileBuf[0..35]: 3F 00 20 36 0F 00 10 36 17 27 0F 36 08 1A 28 36 30 3B 22 36 30 3B 16 36 17 27 0F 36 08 1A 28 36 30 3B 22 FF 
+  Decoded: PPU=$3F00 ctrl=$20 count=32 incr=+1
+  Data bytes[3..10]: $36 $0F $00 $10 $36 $17 $27 $0F 
+
+Subphase=2 (frame 130):
+  ppuCtrl=$30 hw=$30 VADDR=$0030 TileBufSel=0 sub=$02 mode=$00 isUpd=$00 initGame=$01
+  $F5=$5A $F6=$A5  CRAM[0]=$0222 CRAM[1]=$0222 CRAM[2]=$0222 CRAM[3]=$0222
+  DynTileBuf[0..35]: 3F 00 20 36 0F 00 10 36 17 27 0F 36 08 1A 28 36 30 3B 22 36 30 3B 16 36 17 27 0F 36 08 1A 28 36 30 3B 22 FF 
+  Decoded: PPU=$3F00 ctrl=$20 count=32 incr=+1
+  Data bytes[3..10]: $36 $0F $00 $10 $36 $17 $27 $0F 
+
+Subphase=2 (frame 135):
+  ppuCtrl=$30 hw=$30 VADDR=$0020 TileBufSel=0 sub=$02 mode=$00 isUpd=$00 initGame=$01
+  $F5=$5A $F6=$A5  CRAM[0]=$0222 CRAM[1]=$0222 CRAM[2]=$0222 CRAM[3]=$0222
+  DynTileBuf[0..35]: 3F 00 20 36 0F 00 10 36 17 27 0F 36 08 1A 28 36 30 3B 22 36 30 3B 16 36 17 27 0F 36 08 1A 28 36 30 3B 22 FF 
+  Decoded: PPU=$3F00 ctrl=$20 count=32 incr=+1
+  Data bytes[3..10]: $36 $0F $00 $10 $36 $17 $27 $0F 
+
+DynBuf active (frame 140):
+  ppuCtrl=$30 hw=$30 VADDR=$0010 TileBufSel=0 sub=$02 mode=$00 isUpd=$00 initGame=$01
+  $F5=$5A $F6=$A5  CRAM[0]=$0222 CRAM[1]=$0222 CRAM[2]=$0222 CRAM[3]=$0222
+  DynTileBuf[0..35]: 3F 00 20 36 0F 00 10 36 17 27 0F 36 08 1A 28 36 30 3B 22 36 30 3B 16 36 17 27 0F 36 08 1A 28 36 30 3B 22 FF 
+  Decoded: PPU=$3F00 ctrl=$20 count=32 incr=+1
+  Data bytes[3..10]: $36 $0F $00 $10 $36 $17 $27 $0F 
+
+Periodic (frame 140):
+  ppuCtrl=$30 hw=$30 VADDR=$0010 TileBufSel=0 sub=$02 mode=$00 isUpd=$00 initGame=$01
+  $F5=$5A $F6=$A5  CRAM[0]=$0222 CRAM[1]=$0222 CRAM[2]=$0222 CRAM[3]=$0222
+  DynTileBuf[0..35]: 3F 00 20 36 0F 00 10 36 17 27 0F 36 08 1A 28 36 30 3B 22 36 30 3B 16 36 17 27 0F 36 08 1A 28 36 30 3B 22 FF 
+  Decoded: PPU=$3F00 ctrl=$20 count=32 incr=+1
+  Data bytes[3..10]: $36 $0F $00 $10 $36 $17 $27 $0F 
+
+Subphase=2 (frame 140):
+  ppuCtrl=$30 hw=$30 VADDR=$0010 TileBufSel=0 sub=$02 mode=$00 isUpd=$00 initGame=$01
+  $F5=$5A $F6=$A5  CRAM[0]=$0222 CRAM[1]=$0222 CRAM[2]=$0222 CRAM[3]=$0222
+  DynTileBuf[0..35]: 3F 00 20 36 0F 00 10 36 17 27 0F 36 08 1A 28 36 30 3B 22 36 30 3B 16 36 17 27 0F 36 08 1A 28 36 30 3B 22 FF 
+  Decoded: PPU=$3F00 ctrl=$20 count=32 incr=+1
+  Data bytes[3..10]: $36 $0F $00 $10 $36 $17 $27 $0F 
+
+Subphase=2 (frame 145):
+  ppuCtrl=$30 hw=$30 VADDR=$0000 TileBufSel=0 sub=$02 mode=$00 isUpd=$00 initGame=$01
+  $F5=$5A $F6=$A5  CRAM[0]=$0222 CRAM[1]=$0222 CRAM[2]=$0222 CRAM[3]=$0222
+  DynTileBuf[0..35]: 3F 00 20 36 0F 00 10 36 17 27 0F 36 08 1A 28 36 30 3B 22 36 30 3B 16 36 17 27 0F 36 08 1A 28 36 30 3B 22 FF 
+  Decoded: PPU=$3F00 ctrl=$20 count=32 incr=+1
+  Data bytes[3..10]: $36 $0F $00 $10 $36 $17 $27 $0F 
+
+DynBuf active (frame 150):
+  ppuCtrl=$30 hw=$30 VADDR=$0033 TileBufSel=0 sub=$02 mode=$00 isUpd=$00 initGame=$01
+  $F5=$5A $F6=$A5  CRAM[0]=$0222 CRAM[1]=$0222 CRAM[2]=$0222 CRAM[3]=$0222
+  DynTileBuf[0..35]: 3F 00 20 36 0F 00 10 36 17 27 0F 36 08 1A 28 36 30 3B 22 36 30 3B 16 36 17 27 0F 36 08 1A 28 36 30 3B 22 FF 
+  Decoded: PPU=$3F00 ctrl=$20 count=32 incr=+1
+  Data bytes[3..10]: $36 $0F $00 $10 $36 $17 $27 $0F 
+
+Subphase=2 (frame 150):
+  ppuCtrl=$30 hw=$30 VADDR=$0033 TileBufSel=0 sub=$02 mode=$00 isUpd=$00 initGame=$01
+  $F5=$5A $F6=$A5  CRAM[0]=$0222 CRAM[1]=$0222 CRAM[2]=$0222 CRAM[3]=$0222
+  DynTileBuf[0..35]: 3F 00 20 36 0F 00 10 36 17 27 0F 36 08 1A 28 36 30 3B 22 36 30 3B 16 36 17 27 0F 36 08 1A 28 36 30 3B 22 FF 
+  Decoded: PPU=$3F00 ctrl=$20 count=32 incr=+1
+  Data bytes[3..10]: $36 $0F $00 $10 $36 $17 $27 $0F 
+
+Subphase=2 (frame 155):
+  ppuCtrl=$30 hw=$30 VADDR=$0024 TileBufSel=0 sub=$02 mode=$00 isUpd=$00 initGame=$01
+  $F5=$5A $F6=$A5  CRAM[0]=$0222 CRAM[1]=$0222 CRAM[2]=$0222 CRAM[3]=$0222
+  DynTileBuf[0..35]: 3F 00 20 36 0F 00 10 36 17 27 0F 36 08 1A 28 36 30 3B 22 36 30 3B 16 36 17 27 0F 36 08 1A 28 36 30 3B 22 FF 
+  Decoded: PPU=$3F00 ctrl=$20 count=32 incr=+1
+  Data bytes[3..10]: $36 $0F $00 $10 $36 $17 $27 $0F 
+
+DynBuf active (frame 160):
+  ppuCtrl=$30 hw=$30 VADDR=$0016 TileBufSel=0 sub=$02 mode=$00 isUpd=$00 initGame=$01
+  $F5=$5A $F6=$A5  CRAM[0]=$0222 CRAM[1]=$0222 CRAM[2]=$0222 CRAM[3]=$0222
+  DynTileBuf[0..35]: 3F 00 20 36 0F 00 10 36 17 27 0F 36 08 1A 28 36 30 3B 22 36 30 3B 16 36 17 27 0F 36 08 1A 28 36 30 3B 22 FF 
+  Decoded: PPU=$3F00 ctrl=$20 count=32 incr=+1
+  Data bytes[3..10]: $36 $0F $00 $10 $36 $17 $27 $0F 
+
+Periodic (frame 160):
+  ppuCtrl=$30 hw=$30 VADDR=$0016 TileBufSel=0 sub=$02 mode=$00 isUpd=$00 initGame=$01
+  $F5=$5A $F6=$A5  CRAM[0]=$0222 CRAM[1]=$0222 CRAM[2]=$0222 CRAM[3]=$0222
+  DynTileBuf[0..35]: 3F 00 20 36 0F 00 10 36 17 27 0F 36 08 1A 28 36 30 3B 22 36 30 3B 16 36 17 27 0F 36 08 1A 28 36 30 3B 22 FF 
+  Decoded: PPU=$3F00 ctrl=$20 count=32 incr=+1
+  Data bytes[3..10]: $36 $0F $00 $10 $36 $17 $27 $0F 
+
+Subphase=2 (frame 160):
+  ppuCtrl=$30 hw=$30 VADDR=$0016 TileBufSel=0 sub=$02 mode=$00 isUpd=$00 initGame=$01
+  $F5=$5A $F6=$A5  CRAM[0]=$0222 CRAM[1]=$0222 CRAM[2]=$0222 CRAM[3]=$0222
+  DynTileBuf[0..35]: 3F 00 20 36 0F 00 10 36 17 27 0F 36 08 1A 28 36 30 3B 22 36 30 3B 16 36 17 27 0F 36 08 1A 28 36 30 3B 22 FF 
+  Decoded: PPU=$3F00 ctrl=$20 count=32 incr=+1
+  Data bytes[3..10]: $36 $0F $00 $10 $36 $17 $27 $0F 
+
+Subphase=2 (frame 165):
+  ppuCtrl=$30 hw=$30 VADDR=$0007 TileBufSel=0 sub=$02 mode=$00 isUpd=$00 initGame=$01
+  $F5=$5A $F6=$A5  CRAM[0]=$0222 CRAM[1]=$0222 CRAM[2]=$0222 CRAM[3]=$0222
+  DynTileBuf[0..35]: 3F 00 20 36 0F 00 10 36 17 27 0F 36 08 1A 28 36 30 3B 22 36 30 3B 16 36 17 27 0F 36 08 1A 28 36 30 3B 22 FF 
+  Decoded: PPU=$3F00 ctrl=$20 count=32 incr=+1
+  Data bytes[3..10]: $36 $0F $00 $10 $36 $17 $27 $0F 
+
+DynBuf active (frame 170):
+  ppuCtrl=$30 hw=$30 VADDR=$003A TileBufSel=0 sub=$02 mode=$00 isUpd=$00 initGame=$01
+  $F5=$5A $F6=$A5  CRAM[0]=$0222 CRAM[1]=$0222 CRAM[2]=$0222 CRAM[3]=$0222
+  DynTileBuf[0..35]: 3F 00 20 36 0F 00 10 36 17 27 0F 36 08 1A 28 36 30 3B 22 36 30 3B 16 36 17 27 0F 36 08 1A 28 36 30 3B 22 FF 
+  Decoded: PPU=$3F00 ctrl=$20 count=32 incr=+1
+  Data bytes[3..10]: $36 $0F $00 $10 $36 $17 $27 $0F 
+
+Subphase=2 (frame 170):
+  ppuCtrl=$30 hw=$30 VADDR=$003A TileBufSel=0 sub=$02 mode=$00 isUpd=$00 initGame=$01
+  $F5=$5A $F6=$A5  CRAM[0]=$0222 CRAM[1]=$0222 CRAM[2]=$0222 CRAM[3]=$0222
+  DynTileBuf[0..35]: 3F 00 20 36 0F 00 10 36 17 27 0F 36 08 1A 28 36 30 3B 22 36 30 3B 16 36 17 27 0F 36 08 1A 28 36 30 3B 22 FF 
+  Decoded: PPU=$3F00 ctrl=$20 count=32 incr=+1
+  Data bytes[3..10]: $36 $0F $00 $10 $36 $17 $27 $0F 
+
+Subphase=2 (frame 175):
+  ppuCtrl=$30 hw=$30 VADDR=$002C TileBufSel=0 sub=$02 mode=$00 isUpd=$00 initGame=$01
+  $F5=$5A $F6=$A5  CRAM[0]=$0222 CRAM[1]=$0222 CRAM[2]=$0222 CRAM[3]=$0222
+  DynTileBuf[0..35]: 3F 00 20 36 0F 00 10 36 17 27 0F 36 08 1A 28 36 30 3B 22 36 30 3B 16 36 17 27 0F 36 08 1A 28 36 30 3B 22 FF 
+  Decoded: PPU=$3F00 ctrl=$20 count=32 incr=+1
+  Data bytes[3..10]: $36 $0F $00 $10 $36 $17 $27 $0F 
+
+DynBuf active (frame 180):
+  ppuCtrl=$30 hw=$30 VADDR=$001D TileBufSel=0 sub=$02 mode=$00 isUpd=$00 initGame=$01
+  $F5=$5A $F6=$A5  CRAM[0]=$0222 CRAM[1]=$0222 CRAM[2]=$0222 CRAM[3]=$0222
+  DynTileBuf[0..35]: 3F 00 20 36 0F 00 10 36 17 27 0F 36 08 1A 28 36 30 3B 22 36 30 3B 16 36 17 27 0F 36 08 1A 28 36 30 3B 22 FF 
+  Decoded: PPU=$3F00 ctrl=$20 count=32 incr=+1
+  Data bytes[3..10]: $36 $0F $00 $10 $36 $17 $27 $0F 
+
+Periodic (frame 180):
+  ppuCtrl=$30 hw=$30 VADDR=$001D TileBufSel=0 sub=$02 mode=$00 isUpd=$00 initGame=$01
+  $F5=$5A $F6=$A5  CRAM[0]=$0222 CRAM[1]=$0222 CRAM[2]=$0222 CRAM[3]=$0222
+  DynTileBuf[0..35]: 3F 00 20 36 0F 00 10 36 17 27 0F 36 08 1A 28 36 30 3B 22 36 30 3B 16 36 17 27 0F 36 08 1A 28 36 30 3B 22 FF 
+  Decoded: PPU=$3F00 ctrl=$20 count=32 incr=+1
+  Data bytes[3..10]: $36 $0F $00 $10 $36 $17 $27 $0F 
+
+Subphase=2 (frame 180):
+  ppuCtrl=$30 hw=$30 VADDR=$001D TileBufSel=0 sub=$02 mode=$00 isUpd=$00 initGame=$01
+  $F5=$5A $F6=$A5  CRAM[0]=$0222 CRAM[1]=$0222 CRAM[2]=$0222 CRAM[3]=$0222
+  DynTileBuf[0..35]: 3F 00 20 36 0F 00 10 36 17 27 0F 36 08 1A 28 36 30 3B 22 36 30 3B 16 36 17 27 0F 36 08 1A 28 36 30 3B 22 FF 
+  Decoded: PPU=$3F00 ctrl=$20 count=32 incr=+1
+  Data bytes[3..10]: $36 $0F $00 $10 $36 $17 $27 $0F 
+
+Subphase=2 (frame 185):
+  ppuCtrl=$30 hw=$30 VADDR=$000F TileBufSel=0 sub=$02 mode=$00 isUpd=$00 initGame=$01
+  $F5=$5A $F6=$A5  CRAM[0]=$0222 CRAM[1]=$0222 CRAM[2]=$0222 CRAM[3]=$0222
+  DynTileBuf[0..35]: 3F 00 20 36 0F 00 10 36 17 27 0F 36 08 1A 28 36 30 3B 22 36 30 3B 16 36 17 27 0F 36 08 1A 28 36 30 3B 22 FF 
+  Decoded: PPU=$3F00 ctrl=$20 count=32 incr=+1
+  Data bytes[3..10]: $36 $0F $00 $10 $36 $17 $27 $0F 
+
+DynBuf active (frame 190):
+  ppuCtrl=$30 hw=$30 VADDR=$0040 TileBufSel=0 sub=$02 mode=$00 isUpd=$00 initGame=$01
+  $F5=$5A $F6=$A5  CRAM[0]=$0222 CRAM[1]=$0222 CRAM[2]=$0222 CRAM[3]=$0222
+  DynTileBuf[0..35]: 3F 00 20 36 0F 00 10 36 17 27 0F 36 08 1A 28 36 30 3B 22 36 30 3B 16 36 17 27 0F 36 08 1A 28 36 30 3B 22 FF 
+  Decoded: PPU=$3F00 ctrl=$20 count=32 incr=+1
+  Data bytes[3..10]: $36 $0F $00 $10 $36 $17 $27 $0F 
+
+Subphase=2 (frame 190):
+  ppuCtrl=$30 hw=$30 VADDR=$0040 TileBufSel=0 sub=$02 mode=$00 isUpd=$00 initGame=$01
+  $F5=$5A $F6=$A5  CRAM[0]=$0222 CRAM[1]=$0222 CRAM[2]=$0222 CRAM[3]=$0222
+  DynTileBuf[0..35]: 3F 00 20 36 0F 00 10 36 17 27 0F 36 08 1A 28 36 30 3B 22 36 30 3B 16 36 17 27 0F 36 08 1A 28 36 30 3B 22 FF 
+  Decoded: PPU=$3F00 ctrl=$20 count=32 incr=+1
+  Data bytes[3..10]: $36 $0F $00 $10 $36 $17 $27 $0F 
+
+Subphase=2 (frame 195):
+  ppuCtrl=$30 hw=$30 VADDR=$0030 TileBufSel=0 sub=$02 mode=$00 isUpd=$00 initGame=$01
+  $F5=$5A $F6=$A5  CRAM[0]=$0222 CRAM[1]=$0222 CRAM[2]=$0222 CRAM[3]=$0222
+  DynTileBuf[0..35]: 3F 00 20 36 0F 00 10 36 17 27 0F 36 08 1A 28 36 30 3B 22 36 30 3B 16 36 17 27 0F 36 08 1A 28 36 30 3B 22 FF 
+  Decoded: PPU=$3F00 ctrl=$20 count=32 incr=+1
+  Data bytes[3..10]: $36 $0F $00 $10 $36 $17 $27 $0F 
+
+DynBuf active (frame 200):
+  ppuCtrl=$30 hw=$30 VADDR=$0020 TileBufSel=0 sub=$02 mode=$00 isUpd=$00 initGame=$01
+  $F5=$5A $F6=$A5  CRAM[0]=$0222 CRAM[1]=$0222 CRAM[2]=$0222 CRAM[3]=$0222
+  DynTileBuf[0..35]: 3F 00 20 36 0F 00 10 36 17 27 0F 36 08 1A 28 36 30 3B 22 36 30 3B 16 36 17 27 0F 36 08 1A 28 36 30 3B 22 FF 
+  Decoded: PPU=$3F00 ctrl=$20 count=32 incr=+1
+  Data bytes[3..10]: $36 $0F $00 $10 $36 $17 $27 $0F 
+
+Periodic (frame 200):
+  ppuCtrl=$30 hw=$30 VADDR=$0020 TileBufSel=0 sub=$02 mode=$00 isUpd=$00 initGame=$01
+  $F5=$5A $F6=$A5  CRAM[0]=$0222 CRAM[1]=$0222 CRAM[2]=$0222 CRAM[3]=$0222
+  DynTileBuf[0..35]: 3F 00 20 36 0F 00 10 36 17 27 0F 36 08 1A 28 36 30 3B 22 36 30 3B 16 36 17 27 0F 36 08 1A 28 36 30 3B 22 FF 
+  Decoded: PPU=$3F00 ctrl=$20 count=32 incr=+1
+  Data bytes[3..10]: $36 $0F $00 $10 $36 $17 $27 $0F 
+
+Subphase=2 (frame 200):
+  ppuCtrl=$30 hw=$30 VADDR=$0020 TileBufSel=0 sub=$02 mode=$00 isUpd=$00 initGame=$01
+  $F5=$5A $F6=$A5  CRAM[0]=$0222 CRAM[1]=$0222 CRAM[2]=$0222 CRAM[3]=$0222
+  DynTileBuf[0..35]: 3F 00 20 36 0F 00 10 36 17 27 0F 36 08 1A 28 36 30 3B 22 36 30 3B 16 36 17 27 0F 36 08 1A 28 36 30 3B 22 FF 
+  Decoded: PPU=$3F00 ctrl=$20 count=32 incr=+1
+  Data bytes[3..10]: $36 $0F $00 $10 $36 $17 $27 $0F 
+
+Subphase=2 (frame 205):
+  ppuCtrl=$30 hw=$30 VADDR=$0010 TileBufSel=0 sub=$02 mode=$00 isUpd=$00 initGame=$01
+  $F5=$5A $F6=$A5  CRAM[0]=$0222 CRAM[1]=$0222 CRAM[2]=$0222 CRAM[3]=$0222
+  DynTileBuf[0..35]: 3F 00 20 36 0F 00 10 36 17 27 0F 36 08 1A 28 36 30 3B 22 36 30 3B 16 36 17 27 0F 36 08 1A 28 36 30 3B 22 FF 
+  Decoded: PPU=$3F00 ctrl=$20 count=32 incr=+1
+  Data bytes[3..10]: $36 $0F $00 $10 $36 $17 $27 $0F 
+
+DynBuf active (frame 210):
+  ppuCtrl=$30 hw=$30 VADDR=$0040 TileBufSel=0 sub=$02 mode=$00 isUpd=$00 initGame=$01
+  $F5=$5A $F6=$A5  CRAM[0]=$0222 CRAM[1]=$0222 CRAM[2]=$0222 CRAM[3]=$0222
+  DynTileBuf[0..35]: 3F 00 20 36 0F 00 10 36 17 27 0F 36 08 1A 28 36 30 3B 22 36 30 3B 16 36 17 27 0F 36 08 1A 28 36 30 3B 22 FF 
+  Decoded: PPU=$3F00 ctrl=$20 count=32 incr=+1
+  Data bytes[3..10]: $36 $0F $00 $10 $36 $17 $27 $0F 
+
+Subphase=2 (frame 210):
+  ppuCtrl=$30 hw=$30 VADDR=$0040 TileBufSel=0 sub=$02 mode=$00 isUpd=$00 initGame=$01
+  $F5=$5A $F6=$A5  CRAM[0]=$0222 CRAM[1]=$0222 CRAM[2]=$0222 CRAM[3]=$0222
+  DynTileBuf[0..35]: 3F 00 20 36 0F 00 10 36 17 27 0F 36 08 1A 28 36 30 3B 22 36 30 3B 16 36 17 27 0F 36 08 1A 28 36 30 3B 22 FF 
+  Decoded: PPU=$3F00 ctrl=$20 count=32 incr=+1
+  Data bytes[3..10]: $36 $0F $00 $10 $36 $17 $27 $0F 
+
+Subphase=2 (frame 215):
+  ppuCtrl=$30 hw=$30 VADDR=$0030 TileBufSel=0 sub=$02 mode=$00 isUpd=$00 initGame=$01
+  $F5=$5A $F6=$A5  CRAM[0]=$0222 CRAM[1]=$0222 CRAM[2]=$0222 CRAM[3]=$0222
+  DynTileBuf[0..35]: 3F 00 20 36 0F 00 10 36 17 27 0F 36 08 1A 28 36 30 3B 22 36 30 3B 16 36 17 27 0F 36 08 1A 28 36 30 3B 22 FF 
+  Decoded: PPU=$3F00 ctrl=$20 count=32 incr=+1
+  Data bytes[3..10]: $36 $0F $00 $10 $36 $17 $27 $0F 
+
+DynBuf active (frame 220):
+  ppuCtrl=$30 hw=$30 VADDR=$0021 TileBufSel=0 sub=$02 mode=$00 isUpd=$00 initGame=$01
+  $F5=$5A $F6=$A5  CRAM[0]=$0222 CRAM[1]=$0222 CRAM[2]=$0222 CRAM[3]=$0222
+  DynTileBuf[0..35]: 3F 00 20 36 0F 00 10 36 17 27 0F 36 08 1A 28 36 30 3B 22 36 30 3B 16 36 17 27 0F 36 08 1A 28 36 30 3B 22 FF 
+  Decoded: PPU=$3F00 ctrl=$20 count=32 incr=+1
+  Data bytes[3..10]: $36 $0F $00 $10 $36 $17 $27 $0F 
+
+Periodic (frame 220):
+  ppuCtrl=$30 hw=$30 VADDR=$0021 TileBufSel=0 sub=$02 mode=$00 isUpd=$00 initGame=$01
+  $F5=$5A $F6=$A5  CRAM[0]=$0222 CRAM[1]=$0222 CRAM[2]=$0222 CRAM[3]=$0222
+  DynTileBuf[0..35]: 3F 00 20 36 0F 00 10 36 17 27 0F 36 08 1A 28 36 30 3B 22 36 30 3B 16 36 17 27 0F 36 08 1A 28 36 30 3B 22 FF 
+  Decoded: PPU=$3F00 ctrl=$20 count=32 incr=+1
+  Data bytes[3..10]: $36 $0F $00 $10 $36 $17 $27 $0F 
+
+Subphase=2 (frame 220):
+  ppuCtrl=$30 hw=$30 VADDR=$0021 TileBufSel=0 sub=$02 mode=$00 isUpd=$00 initGame=$01
+  $F5=$5A $F6=$A5  CRAM[0]=$0222 CRAM[1]=$0222 CRAM[2]=$0222 CRAM[3]=$0222
+  DynTileBuf[0..35]: 3F 00 20 36 0F 00 10 36 17 27 0F 36 08 1A 28 36 30 3B 22 36 30 3B 16 36 17 27 0F 36 08 1A 28 36 30 3B 22 FF 
+  Decoded: PPU=$3F00 ctrl=$20 count=32 incr=+1
+  Data bytes[3..10]: $36 $0F $00 $10 $36 $17 $27 $0F 
+
+Subphase=2 (frame 225):
+  ppuCtrl=$30 hw=$30 VADDR=$0012 TileBufSel=0 sub=$02 mode=$00 isUpd=$00 initGame=$01
+  $F5=$5A $F6=$A5  CRAM[0]=$0222 CRAM[1]=$0222 CRAM[2]=$0222 CRAM[3]=$0222
+  DynTileBuf[0..35]: 3F 00 20 36 0F 00 10 36 17 27 0F 36 08 1A 28 36 30 3B 22 36 30 3B 16 36 17 27 0F 36 08 1A 28 36 30 3B 22 FF 
+  Decoded: PPU=$3F00 ctrl=$20 count=32 incr=+1
+  Data bytes[3..10]: $36 $0F $00 $10 $36 $17 $27 $0F 
+
+DynBuf active (frame 230):
+  ppuCtrl=$30 hw=$30 VADDR=$0003 TileBufSel=0 sub=$02 mode=$00 isUpd=$00 initGame=$01
+  $F5=$5A $F6=$A5  CRAM[0]=$0222 CRAM[1]=$0222 CRAM[2]=$0222 CRAM[3]=$0222
+  DynTileBuf[0..35]: 3F 00 20 36 0F 00 10 36 17 27 0F 36 08 1A 28 36 30 3B 22 36 30 3B 16 36 17 27 0F 36 08 1A 28 36 30 3B 22 FF 
+  Decoded: PPU=$3F00 ctrl=$20 count=32 incr=+1
+  Data bytes[3..10]: $36 $0F $00 $10 $36 $17 $27 $0F 
+
+Subphase=2 (frame 230):
+  ppuCtrl=$30 hw=$30 VADDR=$0003 TileBufSel=0 sub=$02 mode=$00 isUpd=$00 initGame=$01
+  $F5=$5A $F6=$A5  CRAM[0]=$0222 CRAM[1]=$0222 CRAM[2]=$0222 CRAM[3]=$0222
+  DynTileBuf[0..35]: 3F 00 20 36 0F 00 10 36 17 27 0F 36 08 1A 28 36 30 3B 22 36 30 3B 16 36 17 27 0F 36 08 1A 28 36 30 3B 22 FF 
+  Decoded: PPU=$3F00 ctrl=$20 count=32 incr=+1
+  Data bytes[3..10]: $36 $0F $00 $10 $36 $17 $27 $0F 
+
+Subphase=2 (frame 235):
+  ppuCtrl=$30 hw=$30 VADDR=$0037 TileBufSel=0 sub=$02 mode=$00 isUpd=$00 initGame=$01
+  $F5=$5A $F6=$A5  CRAM[0]=$0222 CRAM[1]=$0222 CRAM[2]=$0222 CRAM[3]=$0222
+  DynTileBuf[0..35]: 3F 00 20 36 0F 00 10 36 17 27 0F 36 08 1A 28 36 30 3B 22 36 30 3B 16 36 17 27 0F 36 08 1A 28 36 30 3B 22 FF 
+  Decoded: PPU=$3F00 ctrl=$20 count=32 incr=+1
+  Data bytes[3..10]: $36 $0F $00 $10 $36 $17 $27 $0F 
+
+DynBuf active (frame 240):
+  ppuCtrl=$30 hw=$30 VADDR=$0028 TileBufSel=0 sub=$02 mode=$00 isUpd=$00 initGame=$01
+  $F5=$5A $F6=$A5  CRAM[0]=$0222 CRAM[1]=$0222 CRAM[2]=$0222 CRAM[3]=$0222
+  DynTileBuf[0..35]: 3F 00 20 36 0F 00 10 36 17 27 0F 36 08 1A 28 36 30 3B 22 36 30 3B 16 36 17 27 0F 36 08 1A 28 36 30 3B 22 FF 
+  Decoded: PPU=$3F00 ctrl=$20 count=32 incr=+1
+  Data bytes[3..10]: $36 $0F $00 $10 $36 $17 $27 $0F 
+
+Periodic (frame 240):
+  ppuCtrl=$30 hw=$30 VADDR=$0028 TileBufSel=0 sub=$02 mode=$00 isUpd=$00 initGame=$01
+  $F5=$5A $F6=$A5  CRAM[0]=$0222 CRAM[1]=$0222 CRAM[2]=$0222 CRAM[3]=$0222
+  DynTileBuf[0..35]: 3F 00 20 36 0F 00 10 36 17 27 0F 36 08 1A 28 36 30 3B 22 36 30 3B 16 36 17 27 0F 36 08 1A 28 36 30 3B 22 FF 
+  Decoded: PPU=$3F00 ctrl=$20 count=32 incr=+1
+  Data bytes[3..10]: $36 $0F $00 $10 $36 $17 $27 $0F 
+
+Subphase=2 (frame 240):
+  ppuCtrl=$30 hw=$30 VADDR=$0028 TileBufSel=0 sub=$02 mode=$00 isUpd=$00 initGame=$01
+  $F5=$5A $F6=$A5  CRAM[0]=$0222 CRAM[1]=$0222 CRAM[2]=$0222 CRAM[3]=$0222
+  DynTileBuf[0..35]: 3F 00 20 36 0F 00 10 36 17 27 0F 36 08 1A 28 36 30 3B 22 36 30 3B 16 36 17 27 0F 36 08 1A 28 36 30 3B 22 FF 
+  Decoded: PPU=$3F00 ctrl=$20 count=32 incr=+1
+  Data bytes[3..10]: $36 $0F $00 $10 $36 $17 $27 $0F 
+
+Subphase=2 (frame 245):
+  ppuCtrl=$30 hw=$30 VADDR=$001A TileBufSel=0 sub=$02 mode=$00 isUpd=$00 initGame=$01
+  $F5=$5A $F6=$A5  CRAM[0]=$0222 CRAM[1]=$0222 CRAM[2]=$0222 CRAM[3]=$0222
+  DynTileBuf[0..35]: 3F 00 20 36 0F 00 10 36 17 27 0F 36 08 1A 28 36 30 3B 22 36 30 3B 16 36 17 27 0F 36 08 1A 28 36 30 3B 22 FF 
+  Decoded: PPU=$3F00 ctrl=$20 count=32 incr=+1
+  Data bytes[3..10]: $36 $0F $00 $10 $36 $17 $27 $0F 
+
+DynBuf active (frame 250):
+  ppuCtrl=$30 hw=$30 VADDR=$000B TileBufSel=0 sub=$02 mode=$00 isUpd=$00 initGame=$01
+  $F5=$5A $F6=$A5  CRAM[0]=$0222 CRAM[1]=$0222 CRAM[2]=$0222 CRAM[3]=$0222
+  DynTileBuf[0..35]: 3F 00 20 36 0F 00 10 36 17 27 0F 36 08 1A 28 36 30 3B 22 36 30 3B 16 36 17 27 0F 36 08 1A 28 36 30 3B 22 FF 
+  Decoded: PPU=$3F00 ctrl=$20 count=32 incr=+1
+  Data bytes[3..10]: $36 $0F $00 $10 $36 $17 $27 $0F 
+
+Subphase=2 (frame 250):
+  ppuCtrl=$30 hw=$30 VADDR=$000B TileBufSel=0 sub=$02 mode=$00 isUpd=$00 initGame=$01
+  $F5=$5A $F6=$A5  CRAM[0]=$0222 CRAM[1]=$0222 CRAM[2]=$0222 CRAM[3]=$0222
+  DynTileBuf[0..35]: 3F 00 20 36 0F 00 10 36 17 27 0F 36 08 1A 28 36 30 3B 22 36 30 3B 16 36 17 27 0F 36 08 1A 28 36 30 3B 22 FF 
+  Decoded: PPU=$3F00 ctrl=$20 count=32 incr=+1
+  Data bytes[3..10]: $36 $0F $00 $10 $36 $17 $27 $0F 
+
+Subphase=2 (frame 255):
+  ppuCtrl=$30 hw=$30 VADDR=$003E TileBufSel=0 sub=$02 mode=$00 isUpd=$00 initGame=$01
+  $F5=$5A $F6=$A5  CRAM[0]=$0222 CRAM[1]=$0222 CRAM[2]=$0222 CRAM[3]=$0222
+  DynTileBuf[0..35]: 3F 00 20 36 0F 00 10 36 17 27 0F 36 08 1A 28 36 30 3B 22 36 30 3B 16 36 17 27 0F 36 08 1A 28 36 30 3B 22 FF 
+  Decoded: PPU=$3F00 ctrl=$20 count=32 incr=+1
+  Data bytes[3..10]: $36 $0F $00 $10 $36 $17 $27 $0F 
+
+DynBuf active (frame 260):
+  ppuCtrl=$30 hw=$30 VADDR=$0030 TileBufSel=0 sub=$02 mode=$00 isUpd=$00 initGame=$01
+  $F5=$5A $F6=$A5  CRAM[0]=$0222 CRAM[1]=$0222 CRAM[2]=$0222 CRAM[3]=$0222
+  DynTileBuf[0..35]: 3F 00 20 36 0F 00 10 36 17 27 0F 36 08 1A 28 36 30 3B 22 36 30 3B 16 36 17 27 0F 36 08 1A 28 36 30 3B 22 FF 
+  Decoded: PPU=$3F00 ctrl=$20 count=32 incr=+1
+  Data bytes[3..10]: $36 $0F $00 $10 $36 $17 $27 $0F 
+
+Periodic (frame 260):
+  ppuCtrl=$30 hw=$30 VADDR=$0030 TileBufSel=0 sub=$02 mode=$00 isUpd=$00 initGame=$01
+  $F5=$5A $F6=$A5  CRAM[0]=$0222 CRAM[1]=$0222 CRAM[2]=$0222 CRAM[3]=$0222
+  DynTileBuf[0..35]: 3F 00 20 36 0F 00 10 36 17 27 0F 36 08 1A 28 36 30 3B 22 36 30 3B 16 36 17 27 0F 36 08 1A 28 36 30 3B 22 FF 
+  Decoded: PPU=$3F00 ctrl=$20 count=32 incr=+1
+  Data bytes[3..10]: $36 $0F $00 $10 $36 $17 $27 $0F 
+
+Subphase=2 (frame 260):
+  ppuCtrl=$30 hw=$30 VADDR=$0030 TileBufSel=0 sub=$02 mode=$00 isUpd=$00 initGame=$01
+  $F5=$5A $F6=$A5  CRAM[0]=$0222 CRAM[1]=$0222 CRAM[2]=$0222 CRAM[3]=$0222
+  DynTileBuf[0..35]: 3F 00 20 36 0F 00 10 36 17 27 0F 36 08 1A 28 36 30 3B 22 36 30 3B 16 36 17 27 0F 36 08 1A 28 36 30 3B 22 FF 
+  Decoded: PPU=$3F00 ctrl=$20 count=32 incr=+1
+  Data bytes[3..10]: $36 $0F $00 $10 $36 $17 $27 $0F 
+
+Subphase=2 (frame 265):
+  ppuCtrl=$30 hw=$30 VADDR=$0020 TileBufSel=0 sub=$02 mode=$00 isUpd=$00 initGame=$01
+  $F5=$5A $F6=$A5  CRAM[0]=$0222 CRAM[1]=$0222 CRAM[2]=$0222 CRAM[3]=$0222
+  DynTileBuf[0..35]: 3F 00 20 36 0F 00 10 36 17 27 0F 36 08 1A 28 36 30 3B 22 36 30 3B 16 36 17 27 0F 36 08 1A 28 36 30 3B 22 FF 
+  Decoded: PPU=$3F00 ctrl=$20 count=32 incr=+1
+  Data bytes[3..10]: $36 $0F $00 $10 $36 $17 $27 $0F 
+
+DynBuf active (frame 270):
+  ppuCtrl=$30 hw=$30 VADDR=$0010 TileBufSel=0 sub=$02 mode=$00 isUpd=$00 initGame=$01
+  $F5=$5A $F6=$A5  CRAM[0]=$0222 CRAM[1]=$0222 CRAM[2]=$0222 CRAM[3]=$0222
+  DynTileBuf[0..35]: 3F 00 20 36 0F 00 10 36 17 27 0F 36 08 1A 28 36 30 3B 22 36 30 3B 16 36 17 27 0F 36 08 1A 28 36 30 3B 22 FF 
+  Decoded: PPU=$3F00 ctrl=$20 count=32 incr=+1
+  Data bytes[3..10]: $36 $0F $00 $10 $36 $17 $27 $0F 
+
+Subphase=2 (frame 270):
+  ppuCtrl=$30 hw=$30 VADDR=$0010 TileBufSel=0 sub=$02 mode=$00 isUpd=$00 initGame=$01
+  $F5=$5A $F6=$A5  CRAM[0]=$0222 CRAM[1]=$0222 CRAM[2]=$0222 CRAM[3]=$0222
+  DynTileBuf[0..35]: 3F 00 20 36 0F 00 10 36 17 27 0F 36 08 1A 28 36 30 3B 22 36 30 3B 16 36 17 27 0F 36 08 1A 28 36 30 3B 22 FF 
+  Decoded: PPU=$3F00 ctrl=$20 count=32 incr=+1
+  Data bytes[3..10]: $36 $0F $00 $10 $36 $17 $27 $0F 
+
+Subphase=2 (frame 275):
+  ppuCtrl=$30 hw=$30 VADDR=$0040 TileBufSel=0 sub=$02 mode=$00 isUpd=$00 initGame=$01
+  $F5=$5A $F6=$A5  CRAM[0]=$0222 CRAM[1]=$0222 CRAM[2]=$0222 CRAM[3]=$0222
+  DynTileBuf[0..35]: 3F 00 20 36 0F 00 10 36 17 27 0F 36 08 1A 28 36 30 3B 22 36 30 3B 16 36 17 27 0F 36 08 1A 28 36 30 3B 22 FF 
+  Decoded: PPU=$3F00 ctrl=$20 count=32 incr=+1
+  Data bytes[3..10]: $36 $0F $00 $10 $36 $17 $27 $0F 
+
+DynBuf active (frame 280):
+  ppuCtrl=$30 hw=$30 VADDR=$0030 TileBufSel=0 sub=$02 mode=$00 isUpd=$00 initGame=$01
+  $F5=$5A $F6=$A5  CRAM[0]=$0222 CRAM[1]=$0222 CRAM[2]=$0222 CRAM[3]=$0222
+  DynTileBuf[0..35]: 3F 00 20 36 0F 00 10 36 17 27 0F 36 08 1A 28 36 30 3B 22 36 30 3B 16 36 17 27 0F 36 08 1A 28 36 30 3B 22 FF 
+  Decoded: PPU=$3F00 ctrl=$20 count=32 incr=+1
+  Data bytes[3..10]: $36 $0F $00 $10 $36 $17 $27 $0F 
+
+Periodic (frame 280):
+  ppuCtrl=$30 hw=$30 VADDR=$0030 TileBufSel=0 sub=$02 mode=$00 isUpd=$00 initGame=$01
+  $F5=$5A $F6=$A5  CRAM[0]=$0222 CRAM[1]=$0222 CRAM[2]=$0222 CRAM[3]=$0222
+  DynTileBuf[0..35]: 3F 00 20 36 0F 00 10 36 17 27 0F 36 08 1A 28 36 30 3B 22 36 30 3B 16 36 17 27 0F 36 08 1A 28 36 30 3B 22 FF 
+  Decoded: PPU=$3F00 ctrl=$20 count=32 incr=+1
+  Data bytes[3..10]: $36 $0F $00 $10 $36 $17 $27 $0F 
+
+Subphase=2 (frame 280):
+  ppuCtrl=$30 hw=$30 VADDR=$0030 TileBufSel=0 sub=$02 mode=$00 isUpd=$00 initGame=$01
+  $F5=$5A $F6=$A5  CRAM[0]=$0222 CRAM[1]=$0222 CRAM[2]=$0222 CRAM[3]=$0222
+  DynTileBuf[0..35]: 3F 00 20 36 0F 00 10 36 17 27 0F 36 08 1A 28 36 30 3B 22 36 30 3B 16 36 17 27 0F 36 08 1A 28 36 30 3B 22 FF 
+  Decoded: PPU=$3F00 ctrl=$20 count=32 incr=+1
+  Data bytes[3..10]: $36 $0F $00 $10 $36 $17 $27 $0F 
+
+Subphase=2 (frame 285):
+  ppuCtrl=$30 hw=$30 VADDR=$0020 TileBufSel=0 sub=$02 mode=$00 isUpd=$00 initGame=$01
+  $F5=$5A $F6=$A5  CRAM[0]=$0222 CRAM[1]=$0222 CRAM[2]=$0222 CRAM[3]=$0222
+  DynTileBuf[0..35]: 3F 00 20 36 0F 00 10 36 17 27 0F 36 08 1A 28 36 30 3B 22 36 30 3B 16 36 17 27 0F 36 08 1A 28 36 30 3B 22 FF 
+  Decoded: PPU=$3F00 ctrl=$20 count=32 incr=+1
+  Data bytes[3..10]: $36 $0F $00 $10 $36 $17 $27 $0F 
+
+DynBuf active (frame 290):
+  ppuCtrl=$30 hw=$30 VADDR=$0010 TileBufSel=0 sub=$02 mode=$00 isUpd=$00 initGame=$01
+  $F5=$5A $F6=$A5  CRAM[0]=$0222 CRAM[1]=$0222 CRAM[2]=$0222 CRAM[3]=$0222
+  DynTileBuf[0..35]: 3F 00 20 36 0F 00 10 36 17 27 0F 36 08 1A 28 36 30 3B 22 36 30 3B 16 36 17 27 0F 36 08 1A 28 36 30 3B 22 FF 
+  Decoded: PPU=$3F00 ctrl=$20 count=32 incr=+1
+  Data bytes[3..10]: $36 $0F $00 $10 $36 $17 $27 $0F 
+
+Subphase=2 (frame 290):
+  ppuCtrl=$30 hw=$30 VADDR=$0010 TileBufSel=0 sub=$02 mode=$00 isUpd=$00 initGame=$01
+  $F5=$5A $F6=$A5  CRAM[0]=$0222 CRAM[1]=$0222 CRAM[2]=$0222 CRAM[3]=$0222
+  DynTileBuf[0..35]: 3F 00 20 36 0F 00 10 36 17 27 0F 36 08 1A 28 36 30 3B 22 36 30 3B 16 36 17 27 0F 36 08 1A 28 36 30 3B 22 FF 
+  Decoded: PPU=$3F00 ctrl=$20 count=32 incr=+1
+  Data bytes[3..10]: $36 $0F $00 $10 $36 $17 $27 $0F 
+
+Subphase=2 (frame 295):
+  ppuCtrl=$30 hw=$30 VADDR=$0000 TileBufSel=0 sub=$02 mode=$00 isUpd=$00 initGame=$01
+  $F5=$5A $F6=$A5  CRAM[0]=$0222 CRAM[1]=$0222 CRAM[2]=$0222 CRAM[3]=$0222
+  DynTileBuf[0..35]: 3F 00 20 36 0F 00 10 36 17 27 0F 36 08 1A 28 36 30 3B 22 36 30 3B 16 36 17 27 0F 36 08 1A 28 36 30 3B 22 FF 
+  Decoded: PPU=$3F00 ctrl=$20 count=32 incr=+1
+  Data bytes[3..10]: $36 $0F $00 $10 $36 $17 $27 $0F 
+
+DynBuf active (frame 300):
+  ppuCtrl=$30 hw=$30 VADDR=$0033 TileBufSel=0 sub=$02 mode=$00 isUpd=$00 initGame=$01
+  $F5=$5A $F6=$A5  CRAM[0]=$0222 CRAM[1]=$0222 CRAM[2]=$0222 CRAM[3]=$0222
+  DynTileBuf[0..35]: 3F 00 20 36 0F 00 10 36 17 27 0F 36 08 1A 28 36 30 3B 22 36 30 3B 16 36 17 27 0F 36 08 1A 28 36 30 3B 22 FF 
+  Decoded: PPU=$3F00 ctrl=$20 count=32 incr=+1
+  Data bytes[3..10]: $36 $0F $00 $10 $36 $17 $27 $0F 
+
+Periodic (frame 300):
+  ppuCtrl=$30 hw=$30 VADDR=$0033 TileBufSel=0 sub=$02 mode=$00 isUpd=$00 initGame=$01
+  $F5=$5A $F6=$A5  CRAM[0]=$0222 CRAM[1]=$0222 CRAM[2]=$0222 CRAM[3]=$0222
+  DynTileBuf[0..35]: 3F 00 20 36 0F 00 10 36 17 27 0F 36 08 1A 28 36 30 3B 22 36 30 3B 16 36 17 27 0F 36 08 1A 28 36 30 3B 22 FF 
+  Decoded: PPU=$3F00 ctrl=$20 count=32 incr=+1
+  Data bytes[3..10]: $36 $0F $00 $10 $36 $17 $27 $0F 
+
+DynBuf active (frame 310):
+  ppuCtrl=$30 hw=$30 VADDR=$0016 TileBufSel=0 sub=$02 mode=$00 isUpd=$00 initGame=$01
+  $F5=$5A $F6=$A5  CRAM[0]=$0222 CRAM[1]=$0222 CRAM[2]=$0222 CRAM[3]=$0222
+  DynTileBuf[0..35]: 3F 00 20 36 0F 00 10 36 17 27 0F 36 08 1A 28 36 30 3B 22 36 30 3B 16 36 17 27 0F 36 08 1A 28 36 30 3B 22 FF 
+  Decoded: PPU=$3F00 ctrl=$20 count=32 incr=+1
+  Data bytes[3..10]: $36 $0F $00 $10 $36 $17 $27 $0F 
+
+DynBuf active (frame 320):
+  ppuCtrl=$30 hw=$30 VADDR=$003A TileBufSel=0 sub=$02 mode=$00 isUpd=$00 initGame=$01
+  $F5=$5A $F6=$A5  CRAM[0]=$0222 CRAM[1]=$0222 CRAM[2]=$0222 CRAM[3]=$0222
+  DynTileBuf[0..35]: 3F 00 20 36 0F 00 10 36 17 27 0F 36 08 1A 28 36 30 3B 22 36 30 3B 16 36 17 27 0F 36 08 1A 28 36 30 3B 22 FF 
+  Decoded: PPU=$3F00 ctrl=$20 count=32 incr=+1
+  Data bytes[3..10]: $36 $0F $00 $10 $36 $17 $27 $0F 
+
+DynBuf active (frame 330):
+  ppuCtrl=$30 hw=$30 VADDR=$001D TileBufSel=0 sub=$02 mode=$00 isUpd=$00 initGame=$01
+  $F5=$5A $F6=$A5  CRAM[0]=$0222 CRAM[1]=$0222 CRAM[2]=$0222 CRAM[3]=$0222
+  DynTileBuf[0..35]: 3F 00 20 36 0F 00 10 36 17 27 0F 36 08 1A 28 36 30 3B 22 36 30 3B 16 36 17 27 0F 36 08 1A 28 36 30 3B 22 FF 
+  Decoded: PPU=$3F00 ctrl=$20 count=32 incr=+1
+  Data bytes[3..10]: $36 $0F $00 $10 $36 $17 $27 $0F 
+
+DynBuf active (frame 340):
+  ppuCtrl=$30 hw=$30 VADDR=$0040 TileBufSel=0 sub=$02 mode=$00 isUpd=$00 initGame=$01
+  $F5=$5A $F6=$A5  CRAM[0]=$0222 CRAM[1]=$0222 CRAM[2]=$0222 CRAM[3]=$0222
+  DynTileBuf[0..35]: 3F 00 20 36 0F 00 10 36 17 27 0F 36 08 1A 28 36 30 3B 22 36 30 3B 16 36 17 27 0F 36 08 1A 28 36 30 3B 22 FF 
+  Decoded: PPU=$3F00 ctrl=$20 count=32 incr=+1
+  Data bytes[3..10]: $36 $0F $00 $10 $36 $17 $27 $0F 
+
+DynBuf active (frame 350):
+  ppuCtrl=$30 hw=$30 VADDR=$0020 TileBufSel=0 sub=$02 mode=$00 isUpd=$00 initGame=$01
+  $F5=$5A $F6=$A5  CRAM[0]=$0222 CRAM[1]=$0222 CRAM[2]=$0222 CRAM[3]=$0222
+  DynTileBuf[0..35]: 3F 00 20 36 0F 00 10 36 17 27 0F 36 08 1A 28 36 30 3B 22 36 30 3B 16 36 17 27 0F 36 08 1A 28 36 30 3B 22 FF 
+  Decoded: PPU=$3F00 ctrl=$20 count=32 incr=+1
+  Data bytes[3..10]: $36 $0F $00 $10 $36 $17 $27 $0F 
+
+
+--- Final CRAM (BG palettes 0-3) ---
+  Pal 0: $0222 $0222 $0222 $0222
+  Pal 1: $0222 $0222 $0222 $0222
+  Pal 2: $0222 $0222 $0222 $0222
+  Pal 3: $0222 $0222 $0222 $0222
+
+=================================================================
+DYNBUF PROBE COMPLETE
+=================================================================

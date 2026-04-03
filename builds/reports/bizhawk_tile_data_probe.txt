@@ -1,0 +1,93 @@
+=== Tile Data Probe (frame 300) ===
+
+--- Genesis tile $1E4 (VRAM $3C80) ---
+  row0: 33 33 33 33  pixels: 33 33 33 33
+  row1: 33 33 33 33  pixels: 33 33 33 33
+  row2: 33 33 33 33  pixels: 33 33 33 33
+  row3: 33 33 33 33  pixels: 33 33 33 33
+  row4: 33 33 33 33  pixels: 33 33 33 33
+  row5: 33 33 33 33  pixels: 33 33 33 33
+  row6: 33 33 33 33  pixels: 33 33 33 33
+  row7: 33 33 33 33  pixels: 33 33 33 33
+  non-zero bytes: 32/32
+
+--- Genesis tile $1E5 (VRAM $3CA0) ---
+  row0: 33 33 33 33  pixels: 33 33 33 33
+  row1: 33 33 33 33  pixels: 33 33 33 33
+  row2: 33 33 33 33  pixels: 33 33 33 33
+  row3: 33 33 33 33  pixels: 33 33 33 33
+  row4: 33 33 33 33  pixels: 33 33 33 33
+  row5: 33 33 33 33  pixels: 33 33 33 33
+  row6: 33 33 33 33  pixels: 33 33 33 33
+  row7: 33 33 33 33  pixels: 33 33 33 33
+  non-zero bytes: 32/32
+
+--- Genesis tile $171 (VRAM $2E20) ---
+  row0: 23 33 22 22  pixels: 23 33 22 22
+  row1: 23 33 22 22  pixels: 23 33 22 22
+  row2: 33 33 22 20  pixels: 33 33 22 20
+  row3: 33 33 22 20  pixels: 33 33 22 20
+  row4: 11 11 11 22  pixels: 11 11 11 22
+  row5: 11 11 13 32  pixels: 11 11 13 32
+  row6: 11 11 33 33  pixels: 11 11 33 33
+  row7: 11 11 33 33  pixels: 11 11 33 33
+  non-zero bytes: 32/32
+
+--- Genesis tile $172 (VRAM $2E40) ---
+  row0: 20 01 33 33  pixels: 20 01 33 33
+  row1: 00 01 13 33  pixels: 00 01 13 33
+  row2: 00 01 13 33  pixels: 00 01 13 33
+  row3: 00 01 11 33  pixels: 00 01 11 33
+  row4: 22 22 11 11  pixels: 22 22 11 11
+  row5: 22 22 33 11  pixels: 22 22 33 11
+  row6: 22 23 33 33  pixels: 22 23 33 33
+  row7: 32 33 33 33  pixels: 32 33 33 33
+  non-zero bytes: 29/32
+
+--- Genesis tile $1DC (VRAM $3B80) ---
+  row0: 10 02 22 20  pixels: 10 02 22 20
+  row1: 13 22 22 20  pixels: 13 22 22 20
+  row2: 33 22 22 20  pixels: 33 22 22 20
+  row3: 33 32 22 00  pixels: 33 32 22 00
+  row4: 00 00 00 00  pixels: 00 00 00 00
+  row5: 33 33 00 00  pixels: 33 33 00 00
+  row6: 32 32 10 00  pixels: 32 32 10 00
+  row7: 22 22 11 00  pixels: 22 22 11 00
+  non-zero bytes: 23/32
+
+--- Genesis tile $1D7 (VRAM $3AE0) ---
+  row0: 10 11 00 10  pixels: 10 11 00 10
+  row1: 10 01 00 10  pixels: 10 01 00 10
+  row2: 11 01 00 10  pixels: 11 01 00 10
+  row3: 01 01 10 00  pixels: 01 01 10 00
+  row4: 00 22 20 00  pixels: 00 22 20 00
+  row5: 00 22 20 33  pixels: 00 22 20 33
+  row6: 00 02 33 30  pixels: 00 02 33 30
+  row7: 00 02 22 00  pixels: 00 02 22 00
+  non-zero bytes: 22/32
+
+--- Genesis tile $101 (VRAM $2020) ---
+  row0: 00 01 10 00  pixels: 00 01 10 00
+  row1: 00 11 10 00  pixels: 00 11 10 00
+  row2: 00 01 10 00  pixels: 00 01 10 00
+  row3: 00 01 10 00  pixels: 00 01 10 00
+  row4: 00 01 10 00  pixels: 00 01 10 00
+  row5: 00 01 10 00  pixels: 00 01 10 00
+  row6: 01 11 11 10  pixels: 01 11 11 10
+  row7: 00 00 00 00  pixels: 00 00 00 00
+  non-zero bytes: 16/32
+
+--- Genesis tile $109 (VRAM $2120) ---
+  row0: 01 11 11 00  pixels: 01 11 11 00
+  row1: 11 00 01 10  pixels: 11 00 01 10
+  row2: 11 00 01 10  pixels: 11 00 01 10
+  row3: 01 11 11 10  pixels: 01 11 11 10
+  row4: 00 00 01 10  pixels: 00 00 01 10
+  row5: 00 00 11 00  pixels: 00 00 11 00
+  row6: 01 11 10 00  pixels: 01 11 10 00
+  row7: 00 00 00 00  pixels: 00 00 00 00
+  non-zero bytes: 19/32
+
+--- Tile data presence in $100-$1FF range ---
+  Tiles with data: 205
+  Empty tiles: 51

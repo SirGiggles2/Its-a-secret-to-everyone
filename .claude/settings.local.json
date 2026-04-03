@@ -1,7 +1,30 @@
 {
   "permissions": {
     "allow": [
-      "Bash(cmd /c build.bat)"
+      "Bash(cmd /c build.bat)",
+      "Bash(grep -n \"TransferCurTileBuf\\\\|IsrNmi\" /c/Users/Jake Diggity/Documents/GitHub/FINAL TRY/src/zelda_translated/*.asm)",
+      "Bash(./build.bat)",
+      "Bash(grep \"dc.w.*NES 16-bit\" src/zelda_translated/*.asm)",
+      "Bash(grep -v \"^$\")",
+      "Bash(node:*)",
+      "Bash(python tools/transpile_6502.py --all --no-stubs)",
+      "Bash(\"D:/Zelda port/vasmm68k_mot.exe\" -Fbin -m68000 -maxerrors=5000 -L builds/whatif.lst -o builds/whatif_raw.md src/genesis_shell.asm)",
+      "Bash(python tools/fix_checksum.py builds/whatif_raw.md builds/whatif.md)",
+      "Bash(\"D:\\\\Zelda port\\\\vasmm68k_mot.exe\" -Fbin -m68000 -maxerrors=5000 -L builds/whatif.lst -o builds/whatif_raw.md src/genesis_shell.asm)",
+      "Bash(timeout 240 bash -c 'while [ ! -f \"C:/Users/Jake Diggity/Documents/GitHub/FINAL TRY/builds/reports/bizhawk_cram_trace_probe.txt\" ] || ! grep -q \"CRAM TRACE PROBE COMPLETE\" \"C:/Users/Jake Diggity/Documents/GitHub/FINAL TRY/builds/reports/bizhawk_cram_trace_probe.txt\" 2>/dev/null; do sleep 5; done; echo \"Probe complete\"')",
+      "Bash(grep -n \"TransferDemoPatterns:\" src/zelda_translated/*.asm)",
+      "Bash(grep -n \"ContinueTransferTileBuf:\" src/zelda_translated/*.asm)",
+      "Bash(grep -n \"DemoPatternBlockSizes\\\\|DemoPatternBlockAddrs\\\\|DemoPatternVramAddrs\" src/zelda_translated/*.asm)",
+      "Bash(grep -n \"TransferCurTileBuf:\" src/zelda_translated/*.asm)",
+      "Bash(grep -n \"^TransferTileBuf:\" src/zelda_translated/*.asm)",
+      "Bash(find 'C:\\\\Users\\\\Jake Diggity\\\\Documents\\\\GitHub\\\\NES-TO-SEGA-GENESIS/build' -maxdepth 2 -type f -name *.asm -o -name *.s)",
+      "Bash(grep:*)",
+      "Bash(find 'C:\\\\Users\\\\Jake Diggity\\\\Documents\\\\GitHub\\\\NES-TO-SEGA-GENESIS/src' -type f -name *.asm)",
+      "Bash(find 'C:\\\\Users\\\\Jake Diggity\\\\Documents\\\\GitHub\\\\NES-TO-SEGA-GENESIS' -name *.py -type f)",
+      "Read(//c/Users/Jake Diggity/Documents/GitHub/FINAL TRY/**)",
+      "Bash(ls -la \"C:/Users/Jake Diggity/Documents/GitHub/FINAL TRY/Legend of Zelda, The \\(USA\\).nes\")",
+      "Bash(python tools/extract_frontend.py)",
+      "Read(//tmp/**)"
     ]
   }
 }

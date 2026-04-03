@@ -1,0 +1,79 @@
+=================================================================
+VDP State Probe — frame 300
+=================================================================
+
+─── VDP Register State ───────────────────────────────────
+  VDP R00 = $00  (Mode 1)
+  VDP R01 = $FF  (Mode 2)
+  VDP R02 = $FF  (Plane A addr)
+  VDP R03 = $FE  (Window addr)
+  VDP R04 = $00  (Plane B addr)
+  VDP R05 = $00  (Sprite table)
+  VDP R06 = $02  (---)
+  VDP R07 = $00  (BG color)
+  VDP R08 = $00  ()
+  VDP R09 = $00  ()
+  VDP R10 = $03  (H-int counter)
+  VDP R11 = $6C  (Mode 3 (scroll))
+  VDP R12 = $00  (Mode 4 (H res))
+  VDP R13 = $00  (H-scroll addr)
+  VDP R14 = $03  ()
+  VDP R15 = $8E  (Auto-increment)
+  VDP R16 = $00  (Plane size)
+  VDP R17 = $00  (Window H pos)
+  VDP R18 = $03  (Window V pos)
+  VDP R19 = $B0  ()
+  VDP R20 = $00  ()
+  VDP R21 = $00  ()
+  VDP R22 = $03  ()
+  VDP R23 = $B0  ()
+
+─── Memory Domains ───────────────────────────────────────
+  Z80 RAM
+  MD CART
+  CRAM
+  VSRAM
+  VRAM
+  M68K BUS
+  Waterbox PageData
+
+─── Tile Data Integrity Check ────────────────────────────
+  Tile $024 (VRAM $0480): 00 01 11 00 00 03 02 00 00 03 22 00 00 03 02 00 00 03 22 00 00 03 02 00 00 03 22 00 00 03 02 00  [16 non-zero bytes]
+  Tile $0E0 (VRAM $1C00): 10 11 11 10 10 11 11 10 11 11 11 11 11 11 11 11 22 22 22 22 22 22 22 22 22 20 22 00 02 00 02 02  [30 non-zero bytes]
+  Tile $0D5 (VRAM $1AA0): 01 01 01 11 00 01 00 01 01 01 01 11 01 01 01 11 22 22 20 22 22 22 22 22 22 22 22 22 22 22 22 22  [30 non-zero bytes]
+  Tile $071 (VRAM $0E20): 00 00 00 00 00 00 00 00 00 00 00 00 22 22 22 20 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00  [4 non-zero bytes]
+
+─── VDP Auto-Increment ───────────────────────────────────
+  R15 (auto-increment) = $13 (19 bytes)
+  WARNING: auto-increment is NOT 2! This will garble VRAM writes!
+
+─── Plane A Configuration ────────────────────────────────
+  R02 = $00 → Plane A base = $0000
+  WARNING: Plane A is NOT at $C000!
+  R16 = $11 → Plane size = 64x32 tiles
+  WARNING: Plane width is NOT 32! Row stride mismatch will garble display!
+
+─── CRAM (all 64 entries) ────────────────────────────────
+  pal0: 0466 0000 0222 0444 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000
+  pal1: 0466 0026 0026 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000
+  pal2: 0466 0002 0040 0046 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000
+  pal3: 0466 0666 0664 0642 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000
+
+─── Nametable Spot Check (row 5 = border with palette data) ───
+  col00: word=$00DE tile=$0DE pal=0 hf=0 vf=0
+  col01: word=$00D7 tile=$0D7 pal=0 hf=0 vf=0
+  col02: word=$4024 tile=$024 pal=2 hf=0 vf=0
+  col03: word=$4024 tile=$024 pal=2 hf=0 vf=0
+  col04: word=$4024 tile=$024 pal=2 hf=0 vf=0
+  col05: word=$40E6 tile=$0E6 pal=2 hf=0 vf=0
+  col26: word=$40E6 tile=$0E6 pal=2 hf=0 vf=0
+  col27: word=$4024 tile=$024 pal=2 hf=0 vf=0
+  col28: word=$4024 tile=$024 pal=2 hf=0 vf=0
+  col29: word=$4024 tile=$024 pal=2 hf=0 vf=0
+  col30: word=$00D6 tile=$0D6 pal=0 hf=0 vf=0
+  col31: word=$00DB tile=$0DB pal=0 hf=0 vf=0
+
+─── Scroll State ─────────────────────────────────────────
+  H-scroll table at VRAM $4400
+  H-scroll A = 0, H-scroll B = 0
+  V-scroll A = 0, V-scroll B = 0
