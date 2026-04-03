@@ -151,6 +151,9 @@ EntryPoint:
     andi.b  #$0F,D0
     beq.s   .skip_tmss
     move.l  #$53454741,(TMSS_PORT).l   ; 'S','E','G','A'
+    moveq   #15,D0
+.tmss_delay:
+    dbra    D0,.tmss_delay              ; ~80 cycles delay for VDP unlock
 .skip_tmss:
 
     ;--------------------------------------------------------------------------
@@ -230,10 +233,6 @@ EntryPoint:
     ;--------------------------------------------------------------------------
     move.w  #$8174,(VDP_CTRL).l  ; Reg 1: DISP=1, VBlank IRQ, DMA, M5
 
-    ; Stage-color diagnostic: red = VDP init + display on complete.
-    move.l  #CRAM_WRITE_0000,(VDP_CTRL).l
-    move.w  #$000E,(VDP_DATA).l     ; red
-
     ;--------------------------------------------------------------------------
     ; Clear NES RAM ($FF0000–$FF07FF) — 2KB of NES work RAM mapped into
     ; Genesis RAM at the top of the address space.
@@ -268,10 +267,6 @@ EntryPoint:
     ;--------------------------------------------------------------------------
     andi.w  #$F8FF,SR               ; IPL → 0: enable VBlank
 
-    ; Stage-color diagnostic: green = interrupts enabled, about to enter Zelda.
-    move.l  #CRAM_WRITE_0000,(VDP_CTRL).l
-    move.w  #$00E0,(VDP_DATA).l     ; green
-
     ;--------------------------------------------------------------------------
     ; Hand off to Zelda — jump to IsrReset (the NES Reset vector handler).
     ; IsrReset polls PPU $2002 (VBlank) twice, initialises MMC1, then jumps
@@ -299,9 +294,6 @@ HaltForever:
 ;==============================================================================
 VBlankISR:
     movem.l D0-D7/A0-A6,-(SP)
-    ; Stage-color diagnostic: white = VBlank ISR fired.
-    move.l  #CRAM_WRITE_0000,(VDP_CTRL).l
-    move.w  #$0EEE,(VDP_DATA).l
     ; Only call IsrNmi if PPUCTRL bit 7 = 1 (NMI enable).
     ; On NES, VBlank NMI fires only when PPUCTRL.$80 is set.
     ; During IsrReset warmup PPUCTRL=0, so IsrNmi is suppressed

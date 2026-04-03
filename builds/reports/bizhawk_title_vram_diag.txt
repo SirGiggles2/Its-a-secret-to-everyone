@@ -3,16 +3,16 @@ Title Screen VRAM Diagnostic - Frame 200
 =================================================================
 
 PPU_CTRL=$B0  PPU_MASK=$00  GameMode=$00  InitFlag=$01  Phase=$00  Subphase=$00
-Symbols: DemoSP=$002F58 DemoBG=$003858 CommonBG=$00714C TitleSprites=$007BEC
+Symbols: DemoSP=$002F48 DemoBG=$003848 CommonBG=$00713C TitleSprites=$007BDC
 
 VSRAM A=$0008  VSRAM B=$0008
-Waterfall state: 01 C8 DA B8 C0 D0 DD
+Waterfall state: 01 C6 D8 B6 C0 D0 DD
 
 --- CRAM (all 4 palettes) ---
   pal0: 0CCE 0000 0666 0AAA 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000
   pal1: 0CCE 004A 0028 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000
   pal2: 0CCE 0044 0080 00CC 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000
-  pal3: 0CCE 0EEE 0CEA 0E88 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000
+  pal3: 0CCE 0EEE 0CEA 0E86 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000
 
 --- Title sanity tiles ---
   Tile $024: 00 01 11 00 | 00 03 02 00 | 00 03 22 00 | 00 03 02 00 | 00 03 22 00 | 00 03 02 00 | 00 03 22 00 | 00 03 02 00
@@ -72,32 +72,32 @@ Waterfall state: 01 C8 DA B8 C0 D0 DD
   25  224  248  0A0   3   1   0  0   26   template match
   26  224  256  0A0   3   1   0  0   27   template match
   27  224  264  0A0   3   1   0  0   28   template match
-  28  319  232  0C8   2   1   0  0   29   waterfall body / animated title sprites
-  29  319  224  0C6   2   1   0  0   30   waterfall body / animated title sprites
-  30  319  216  0C4   2   1   0  0   31   waterfall body / animated title sprites
-  31  319  208  0C2   2   1   0  0   32   waterfall body / animated title sprites
-  32  337  232  0C8   2   1   0  0   33   waterfall body / animated title sprites
-  33  337  224  0C6   2   1   0  0   34   waterfall body / animated title sprites
-  34  337  216  0C4   2   1   0  0   35   waterfall body / animated title sprites
-  35  337  208  0C2   2   1   0  0   36   waterfall body / animated title sprites
-  36  303  232  0B8   2   1   0  0   37   waterfall body / animated title sprites
-  37  303  224  0B6   2   1   0  0   38   waterfall body / animated title sprites
-  38  303  216  0B4   2   1   0  0   39   waterfall body / animated title sprites
-  39  303  208  0B2   2   1   0  0   40   waterfall body / animated title sprites
+  28  317  232  0C8   3   1   0  0   29   waterfall body / animated title sprites
+  29  317  224  0C6   3   1   0  0   30   waterfall body / animated title sprites
+  30  317  216  0C4   3   1   0  0   31   waterfall body / animated title sprites
+  31  317  208  0C2   3   1   0  0   32   waterfall body / animated title sprites
+  32  335  232  0C8   3   1   0  0   33   waterfall body / animated title sprites
+  33  335  224  0C6   3   1   0  0   34   waterfall body / animated title sprites
+  34  335  216  0C4   3   1   0  0   35   waterfall body / animated title sprites
+  35  335  208  0C2   3   1   0  0   36   waterfall body / animated title sprites
+  36  301  232  0B8   3   1   0  0   37   waterfall body / animated title sprites
+  37  301  224  0B6   3   1   0  0   38   waterfall body / animated title sprites
+  38  301  216  0B4   3   1   0  0   39   waterfall body / animated title sprites
+  39  301  208  0B2   3   1   0  0   40   waterfall body / animated title sprites
 
 --- SAT sprites 60-63 (waterfall crest) ---
   #   Y    X    Tile Pal Pri VF HF Link  Notes
-  60  289  232  0A8   2   1   0  0   61   waterfall crest / animated title sprites
-  61  289  224  0A6   2   1   0  0   62   waterfall crest / animated title sprites
-  62  289  216  0A4   2   1   0  0   63   waterfall crest / animated title sprites
-  63  289  208  0A2   2   1   0  0   00   waterfall crest / animated title sprites
+  60  289  232  0A8   3   1   0  0   61   waterfall crest / animated title sprites
+  61  289  224  0A6   3   1   0  0   62   waterfall crest / animated title sprites
+  62  289  216  0A4   3   1   0  0   63   waterfall crest / animated title sprites
+  63  289  208  0A2   3   1   0  0   00   waterfall crest / animated title sprites
 
 --- Genesis OAM buffer sprites 60-63 (pre-DMA, NES_RAM+$0200) ---
   #   y     tile  attr  x
-  60  $A8   $A8   $00   $68
-  61  $A8   $A6   $00   $60
-  62  $A8   $A4   $00   $58
-  63  $A8   $A2   $00   $50
+  60  $A8   $A8   $03   $68
+  61  $A8   $A6   $03   $60
+  62  $A8   $A4   $03   $58
+  63  $A8   $A2   $03   $50
 
 --- High-risk tile comparisons ---
 --- Tile $0A0  <=  DemoSpritePatterns[$30]  title sprite tile ---
