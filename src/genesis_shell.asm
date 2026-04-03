@@ -191,11 +191,10 @@ EntryPoint:
     move.w  #$9001,(VDP_CTRL).l  ; Reg 16: scroll size 64H × 32V → $01
     move.w  #$9100,(VDP_CTRL).l  ; Reg 17: window H position = 0
     move.w  #$9200,(VDP_CTRL).l  ; Reg 18: window V position = 0
-    move.w  #$9300,(VDP_CTRL).l  ; Reg 19: DMA length low = 0
-    move.w  #$9400,(VDP_CTRL).l  ; Reg 20: DMA length high = 0
-    move.w  #$9500,(VDP_CTRL).l  ; Reg 21: DMA source low = 0
-    move.w  #$9600,(VDP_CTRL).l  ; Reg 22: DMA source mid = 0
-    move.w  #$9700,(VDP_CTRL).l  ; Reg 23: DMA source high/type = 0 (ROM→VRAM)
+    ; Regs 19-23 (DMA) intentionally SKIPPED — writing reg 23 arms the
+    ; VDP DMA pending state on real hardware, causing subsequent CRAM/VRAM
+    ; commands to be intercepted as DMA triggers.  DMA regs default to 0
+    ; and must only be written immediately before a DMA operation.
 
     ;--------------------------------------------------------------------------
     ; Clear VRAM — write 0 to all 32768 words (64KB) via CPU loop.
