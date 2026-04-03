@@ -1,0 +1,415 @@
+=================================================================
+Title Screen VRAM Diagnostic - Frame 200
+=================================================================
+
+PPU_CTRL=$B0  PPU_MASK=$00  GameMode=$00  InitFlag=$01  Phase=$00  Subphase=$00
+Symbols: DemoSP=$002F58 DemoBG=$003858 CommonBG=$00714C TitleSprites=$007BEC
+
+VSRAM A=$0008  VSRAM B=$0008
+Waterfall state: 01 C8 DA B8 C0 D0 DD
+
+--- CRAM (all 4 palettes) ---
+  pal0: 0CCE 0000 0666 0AAA 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000
+  pal1: 0CCE 004A 0028 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000
+  pal2: 0CCE 0044 0080 00CC 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000
+  pal3: 0CCE 0EEE 0CEA 0E88 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000
+
+--- Title sanity tiles ---
+  Tile $024: 00 01 11 00 | 00 03 02 00 | 00 03 22 00 | 00 03 02 00 | 00 03 22 00 | 00 03 02 00 | 00 03 22 00 | 00 03 02 00
+  Tile $124: 00 00 00 00 | 00 00 00 00 | 00 00 00 00 | 00 00 00 00 | 00 00 00 00 | 00 00 00 00 | 00 00 00 00 | 00 00 00 00
+  Tile $170: 00 00 00 00 | 00 00 00 00 | 00 00 00 00 | 00 00 00 00 | 00 00 00 00 | 00 00 00 00 | 00 00 00 00 | 00 00 00 00
+  Tile $171: 00 00 00 00 | 00 00 00 00 | 00 03 33 03 | 00 00 30 03 | 00 00 30 03 | 00 00 30 03 | 00 00 30 03 | 00 00 00 00
+  Tile $124 blank: YES
+
+--- Plane A rows 7-15 (logo box) ---
+  r07: 0:1DE 0:1EE 0:124 0:124 2:124 2:1E3 1:124 1:124 1:171 1:172 1:173 1:174 1:175 1:176 1:177 1:178 1:179 1:179 1:179 1:17A 1:17B 1:124 1:124 1:124 1:124 1:124 2:1E2 2:124 2:124 2:124 0:1D6 0:1DB
+  r08: 0:1DE 0:1D8 0:1EF 0:124 2:124 2:1E2 1:124 1:17C 1:17D 1:17E 1:17F 1:180 1:181 1:182 1:183 1:184 1:185 1:186 1:187 1:188 1:189 1:18A 1:18B 1:124 1:124 1:124 2:1E3 2:124 0:124 0:124 0:1D6 0:1DF
+  r09: 0:1DC 0:1DA 0:1D7 0:124 2:124 2:1E3 1:124 1:18C 1:18D 1:18E 1:18F 1:190 1:191 1:192 1:193 1:194 1:195 1:196 1:197 1:198 1:199 1:19A 1:19B 1:19C 1:124 1:124 2:1E2 2:124 0:124 0:1D4 0:1D9 0:1DB
+  r10: 0:1DC 0:1D9 0:1EE 0:124 2:124 2:1E2 1:124 1:19D 1:19E 1:19F 1:1A0 1:1A1 1:1A2 1:1A3 1:1A4 1:1A5 1:1A6 1:1A7 1:1A8 1:1A9 1:1AA 1:1AB 1:1AC 1:1AD 1:1AE 1:124 2:1E3 2:124 0:124 0:1D6 0:1DB 0:1DF
+  r11: 0:1DE 0:1DB 0:1D7 0:124 2:124 2:1E3 1:170 1:1AF 1:1B0 1:1B1 1:1B2 1:1B3 1:1B4 1:1B5 1:1B6 1:1B7 1:1B8 1:1B9 1:1BA 1:1BB 1:1BC 1:1BD 1:1BE 1:1BF 1:1C0 1:124 2:1E2 2:124 0:124 0:1D6 0:1DB 0:1DB
+  r12: 0:1DC 0:1DD 0:1D7 0:124 2:124 2:1E2 3:124 3:124 3:124 3:124 3:124 3:124 1:124 1:1C1 1:1C2 1:1C3 1:1C4 1:1C5 3:124 3:124 3:124 3:124 3:124 3:124 3:124 3:124 2:1E3 2:124 0:124 0:1D6 0:1DB 0:1DF
+  r13: 0:1DE 0:1DB 0:1EE 0:124 2:124 2:1E3 3:124 3:1C6 3:1C7 3:1C8 3:1C8 3:1C8 1:124 1:1C9 1:1CA 1:1CB 1:1CC 1:1CD 3:1C8 3:1C8 3:1C8 3:1C8 3:1E8 3:1E9 3:1D3 3:124 2:1E2 2:124 0:124 0:1D6 0:1DB 0:1DB
+  r14: 0:1DC 0:1DB 0:1D7 0:124 2:124 2:1E2 1:124 1:124 1:124 1:124 1:124 1:124 1:124 1:124 1:124 1:1CE 1:1CF 1:124 1:124 1:124 1:124 1:124 3:1EA 3:1EB 3:1EC 3:124 2:1E3 2:124 0:124 0:1D6 0:1DB 0:1DF
+  r15: 0:1DC 0:1DB 0:1D7 0:124 2:124 2:1E3 1:124 1:124 1:124 1:124 1:124 1:124 1:124 1:124 1:124 1:1D1 1:1D2 1:124 1:124 1:124 1:124 1:124 3:124 3:124 3:124 3:124 2:1E2 2:124 0:124 0:1D6 0:1DB 0:1DB
+
+--- Plane A rows 22-29 (lower title scene) ---
+  r22: 0:1DD 0:1DB 0:1DE 0:1DA 0:1DC 0:1DD 0:1D8 0:1E0 0:1E0 0:1EF 3:124 3:124 3:124 3:124 0:1D4 0:1E0 0:1E0 0:1D5 0:124 0:124 0:124 0:124 0:124 0:124 0:124 0:124 0:1D4 0:1EF 0:1DA 0:1DA 0:1DF 0:1DB
+  r23: 0:1DF 0:1DB 0:1DC 0:1DA 0:1DE 0:1DF 0:1DA 0:1DC 0:1DD 0:1DB 3:126 3:126 3:126 3:126 0:1DA 0:1DC 0:1DD 0:1ED 0:1E0 0:1E0 0:1EF 0:124 0:1D4 0:1E0 0:1E0 0:1E0 0:1D9 0:1DB 0:1DA 0:1DA 0:1DF 0:1DB
+  r24: 0:1ED 0:1D8 0:1E1 0:1D9 0:1DE 0:1D8 0:1E1 0:1D9 0:1DF 0:1DB 3:126 3:126 3:126 3:126 0:1DA 0:1DC 0:1D8 0:1E1 0:1D9 0:1DC 0:1D8 0:1E0 0:1D9 0:1DC 0:1DD 0:1DD 0:1D8 0:1E1 0:1E1 0:1D9 0:1DD 0:1ED
+  r25: 0:1ED 0:1DA 0:1DD 0:1ED 0:1DE 0:1DA 0:1DC 0:1DB 0:1DD 0:1DB 3:126 3:126 3:126 3:126 0:1DA 0:1DE 0:1DA 0:1DC 0:1DB 0:1DE 0:1DA 0:1DD 0:1ED 0:1DC 0:1DC 0:1DD 0:1DA 0:1DC 0:1DC 0:1DB 0:1DD 0:1ED
+  r26: 0:1ED 0:1DA 0:1DD 0:1D8 0:1E1 0:1DA 0:1DC 0:1DB 0:1DF 0:1DB 3:126 3:126 3:126 3:126 0:1DA 0:1D8 0:1D9 0:1DC 0:1DB 0:1DC 0:1DA 0:1D8 0:1E1 0:1D9 0:1DE 0:1DF 0:1DA 0:1D8 0:1E1 0:1E1 0:1D9 0:1E1
+  r27: 0:1ED 0:1D9 0:1DF 0:1DA 0:1DC 0:1DA 0:1DE 0:1DB 0:1DD 0:1DB 3:126 3:126 3:126 3:126 0:1DA 0:1DA 0:1ED 0:1DE 0:1D8 0:1E1 0:1E1 0:1D9 0:1DC 0:1DB 0:1DE 0:1D8 0:1E1 0:1D9 0:1DD 0:1DD 0:1DB 0:1DC
+  r28: 0:1DF 0:1DB 0:1DF 0:1DA 0:1DC 0:1DB 0:1DE 0:1DB 0:1DD 0:1DB 3:126 3:126 3:126 3:126 0:1DA 0:1DA 0:1DB 0:1DD 0:1DA 0:1DE 0:1D8 0:1E1 0:1D9 0:1DB 0:1DE 0:1DA 0:1DD 0:1DB 0:1DE 0:1DF 0:1D8 0:1E1
+  r29: 0:1DF 0:1DB 0:1DF 0:1DA 0:1DC 0:1DB 0:1DE 0:1DB 0:1DD 0:1DB 3:126 3:126 3:126 3:126 0:1DA 0:1DA 0:1DB 0:1DD 0:1DA 0:1DE 0:1DA 0:1DD 0:1DB 0:1DB 0:1DE 0:1DA 0:1DD 0:1DB 0:1DE 0:1DF 0:1DC 0:1DF
+
+--- SAT sprites 0-39 (title template + waterfall body) ---
+  #   Y    X    Tile Pal Pri VF HF Link  Notes
+  00  240  336  0CA   2   1   1  1   01   template match
+  01  240  328  0CC   2   1   1  1   02   template match
+  02  240  168  0CA   2   1   1  0   03   template match
+  03  240  176  0CC   2   1   1  0   04   template match
+  04  160  336  0CA   2   1   0  1   05   template match
+  05  160  328  0CC   2   1   0  1   06   template match
+  06  160  168  0CA   2   1   0  0   07   template match
+  07  160  176  0CC   2   1   0  0   08   template match
+  08  208  244  0CE   2   1   0  0   09   template match
+  09  208  252  0D0   2   1   0  0   10   template match
+  10  170  215  0D2   2   1   0  0   11   template match
+  11  200  332  0D2   2   1   0  0   12   template match
+  12  224  251  0D2   2   1   0  0   13   template match
+  13  252  208  0D2   2   1   0  0   14   template match
+  14  170  223  0D4   2   1   0  0   15   template match
+  15  184  164  0D4   2   1   0  0   16   template match
+  16  186  228  0D4   2   1   0  0   17   template match
+  17  244  272  0D4   2   1   0  0   18   template match
+  18  160  208  0D6   2   1   0  0   19   template match
+  19  164  288  0D6   2   1   0  0   20   template match
+  20  200  172  0D6   2   1   0  0   21   template match
+  21  244  316  0D6   2   1   0  0   22   template match
+  22  224  224  0A0   3   1   0  0   23   template match
+  23  224  232  0A0   3   1   0  0   24   template match
+  24  224  240  0A0   3   1   0  0   25   template match
+  25  224  248  0A0   3   1   0  0   26   template match
+  26  224  256  0A0   3   1   0  0   27   template match
+  27  224  264  0A0   3   1   0  0   28   template match
+  28  319  232  0C8   2   1   0  0   29   waterfall body / animated title sprites
+  29  319  224  0C6   2   1   0  0   30   waterfall body / animated title sprites
+  30  319  216  0C4   2   1   0  0   31   waterfall body / animated title sprites
+  31  319  208  0C2   2   1   0  0   32   waterfall body / animated title sprites
+  32  337  232  0C8   2   1   0  0   33   waterfall body / animated title sprites
+  33  337  224  0C6   2   1   0  0   34   waterfall body / animated title sprites
+  34  337  216  0C4   2   1   0  0   35   waterfall body / animated title sprites
+  35  337  208  0C2   2   1   0  0   36   waterfall body / animated title sprites
+  36  303  232  0B8   2   1   0  0   37   waterfall body / animated title sprites
+  37  303  224  0B6   2   1   0  0   38   waterfall body / animated title sprites
+  38  303  216  0B4   2   1   0  0   39   waterfall body / animated title sprites
+  39  303  208  0B2   2   1   0  0   40   waterfall body / animated title sprites
+
+--- SAT sprites 60-63 (waterfall crest) ---
+  #   Y    X    Tile Pal Pri VF HF Link  Notes
+  60  289  232  0A8   2   1   0  0   61   waterfall crest / animated title sprites
+  61  289  224  0A6   2   1   0  0   62   waterfall crest / animated title sprites
+  62  289  216  0A4   2   1   0  0   63   waterfall crest / animated title sprites
+  63  289  208  0A2   2   1   0  0   00   waterfall crest / animated title sprites
+
+--- Genesis OAM buffer sprites 60-63 (pre-DMA, NES_RAM+$0200) ---
+  #   y     tile  attr  x
+  60  $A8   $A8   $00   $68
+  61  $A8   $A6   $00   $60
+  62  $A8   $A4   $00   $58
+  63  $A8   $A2   $00   $50
+
+--- High-risk tile comparisons ---
+--- Tile $0A0  <=  DemoSpritePatterns[$30]  title sprite tile ---
+  Actual  : 00 00 00 00 | 00 00 00 00 | 00 00 00 00 | 11 11 11 11 | 22 22 22 22 | 11 11 11 11 | 11 11 11 11 | 00 00 00 00
+  Expected: 00 00 00 00 | 00 00 00 00 | 00 00 00 00 | 11 11 11 11 | 22 22 22 22 | 11 11 11 11 | 11 11 11 11 | 00 00 00 00
+  NES 2BPP: 00 00 00 FF | 00 FF FF 00 | 00 00 00 00 | FF 00 00 00
+  Match   : YES
+
+--- Tile $0CA  <=  DemoSpritePatterns[$5A]  title sprite tile ---
+  Actual  : 00 00 00 00 | 00 30 00 00 | 00 30 00 01 | 03 00 00 01 | 03 03 33 01 | 00 32 22 20 | 00 11 12 22 | 00 11 11 22
+  Expected: 00 00 00 00 | 00 30 00 00 | 00 30 00 01 | 03 00 00 01 | 03 03 33 01 | 00 32 22 20 | 00 11 12 22 | 00 11 11 22
+  NES 2BPP: 00 20 21 41 | 5D 20 38 3C | 00 20 20 40 | 5C 3E 07 03
+  Match   : YES
+
+--- Tile $0CC  <=  DemoSpritePatterns[$5C]  title sprite tile ---
+  Actual  : 00 00 00 00 | 12 00 33 00 | 22 23 00 30 | 20 00 11 20 | 00 01 12 22 | 03 11 12 22 | 30 33 22 20 | 23 00 02 00
+  Expected: 00 00 00 00 | 12 00 33 00 | 22 23 00 30 | 20 00 11 20 | 00 01 12 22 | 03 11 12 22 | 30 33 22 20 | 23 00 02 00
+  NES 2BPP: 00 8C 12 0C | 18 78 B0 40 | 00 4C F2 82 | 07 47 BE C4
+  Match   : YES
+
+--- Tile $0CE  <=  DemoSpritePatterns[$5E]  title sprite tile ---
+  Actual  : 00 00 00 00 | 00 00 01 10 | 00 12 11 22 | 01 22 22 22 | 01 21 12 22 | 01 01 22 20 | 00 01 22 30 | 00 00 20 33
+  Expected: 00 00 00 00 | 00 00 01 10 | 00 12 11 22 | 01 22 22 22 | 01 21 12 22 | 01 01 22 20 | 00 01 22 30 | 00 00 20 33
+  NES 2BPP: 00 06 2C 40 | 58 50 12 03 | 00 00 13 3F | 27 0E 0E 0B
+  Match   : YES
+
+--- Tile $0D0  <=  DemoSpritePatterns[$60]  title sprite tile ---
+  Actual  : 02 00 00 00 | 01 20 11 00 | 03 20 12 20 | 23 00 31 22 | 21 22 00 00 | 11 12 20 00 | 11 12 20 10 | 11 22 20 11
+  Expected: 02 00 00 00 | 01 20 11 00 | 03 20 12 20 | 23 00 31 22 | 21 22 00 00 | 11 12 20 00 | 11 12 20 10 | 11 22 20 11
+  NES 2BPP: 00 4C 48 4C | 40 E0 E2 C3 | 40 20 66 CB | B0 18 18 38
+  Match   : YES
+
+--- Tile $0D2  <=  DemoSpritePatterns[$62]  title sprite tile ---
+  Actual  : 00 11 20 00 | 01 12 22 00 | 11 12 22 30 | 11 22 20 33 | 11 22 31 23 | 01 22 31 12 | 01 20 03 12 | 00 20 00 32
+  Expected: 00 11 20 00 | 01 12 22 00 | 11 12 22 30 | 11 22 20 33 | 11 22 31 23 | 01 22 31 12 | 01 20 03 12 | 00 20 00 32
+  NES 2BPP: 30 60 E2 C3 | CD 4E 46 02 | 08 1C 1E 3B | 3B 39 25 23
+  Match   : YES
+
+--- Tile $0D4  <=  DemoSpritePatterns[$64]  title sprite tile ---
+  Actual  : 01 12 00 00 | 11 22 20 00 | 11 22 20 00 | 01 22 00 00 | 32 22 01 10 | 30 23 03 21 | 00 03 30 02 | 00 00 00 00
+  Expected: 01 12 00 00 | 11 22 20 00 | 11 22 20 00 | 01 22 00 00 | 32 22 01 10 | 30 23 03 21 | 00 03 30 02 | 00 00 00 00
+  NES 2BPP: 60 C0 C0 40 | 86 95 18 00 | 10 38 38 30 | F0 B6 19 00
+  Match   : YES
+
+--- Tile $0D6  <=  DemoSpritePatterns[$66]  title sprite tile ---
+  Actual  : 02 01 10 00 | 22 11 00 20 | 01 33 12 22 | 11 13 11 22 | 10 11 21 22 | 02 21 02 20 | 22 22 20 00 | 02 22 00 00
+  Expected: 02 01 10 00 | 22 11 00 20 | 01 33 12 22 | 11 13 11 22 | 10 11 21 22 | 02 21 02 20 | 22 22 20 00 | 02 22 00 00
+  NES 2BPP: 18 30 78 FC | B4 10 00 00 | 40 C2 37 13 | 0B 66 F8 70
+  Match   : YES
+
+--- Tile $126  <=  CommonBackgroundPatterns[$26]  lower scene blank/fill tile ---
+  Actual  : 22 22 22 22 | 22 22 22 22 | 22 22 22 22 | 22 22 22 22 | 22 22 22 22 | 22 22 22 22 | 22 22 22 22 | 22 22 22 22
+  Expected: 22 22 22 22 | 22 22 22 22 | 22 22 22 22 | 22 22 22 22 | 22 22 22 22 | 22 22 22 22 | 22 22 22 22 | 22 22 22 22
+  NES 2BPP: 00 00 00 00 | 00 00 00 00 | FF FF FF FF | FF FF FF FF
+  Match   : YES
+
+--- Tile $1C6  <=  DemoBackgroundPatterns[$56]  sword/triforce title BG ---
+  Actual  : 00 00 00 00 | 00 00 00 00 | 00 00 00 00 | 01 11 11 11 | 11 11 11 11 | 00 01 11 11 | 00 00 00 00 | 00 00 00 00
+  Expected: 00 00 00 00 | 00 00 00 00 | 00 00 00 00 | 01 11 11 11 | 11 11 11 11 | 00 01 11 11 | 00 00 00 00 | 00 00 00 00
+  NES 2BPP: 00 00 00 7F | FF 1F 00 00 | 00 00 00 00 | 00 00 00 00
+  Match   : YES
+
+--- Tile $1C7  <=  DemoBackgroundPatterns[$57]  sword/triforce title BG ---
+  Actual  : 00 00 00 00 | 00 00 00 00 | 00 00 00 00 | 11 11 11 11 | 11 11 11 11 | 11 11 11 11 | 00 00 00 00 | 00 00 00 00
+  Expected: 00 00 00 00 | 00 00 00 00 | 00 00 00 00 | 11 11 11 11 | 11 11 11 11 | 11 11 11 11 | 00 00 00 00 | 00 00 00 00
+  NES 2BPP: 00 00 00 FF | FF FF 00 00 | 00 00 00 00 | 00 00 00 00
+  Match   : YES
+
+--- Tile $1C8  <=  DemoBackgroundPatterns[$58]  sword/triforce title BG ---
+  Actual  : 00 00 00 00 | 00 00 00 00 | 00 00 00 00 | 11 11 11 11 | 22 22 22 22 | 11 11 11 11 | 11 11 11 11 | 00 00 00 00
+  Expected: 00 00 00 00 | 00 00 00 00 | 00 00 00 00 | 11 11 11 11 | 22 22 22 22 | 11 11 11 11 | 11 11 11 11 | 00 00 00 00
+  NES 2BPP: 00 00 00 FF | 00 FF FF 00 | 00 00 00 00 | FF 00 00 00
+  Match   : YES
+
+--- Tile $1C9  <=  DemoBackgroundPatterns[$59]  sword/triforce title BG ---
+  Actual  : 00 00 00 00 | 00 00 00 00 | 00 00 00 00 | 00 00 00 00 | 00 00 00 00 | 00 00 00 00 | 00 00 00 00 | 00 00 00 00
+  Expected: 00 00 00 00 | 00 00 00 00 | 00 00 00 00 | 00 00 00 00 | 00 00 00 00 | 00 00 00 00 | 00 00 00 00 | 00 00 00 00
+  NES 2BPP: 00 00 00 00 | 00 00 00 00 | 00 00 00 00 | 00 00 00 00
+  Match   : YES
+
+--- Tile $1CA  <=  DemoBackgroundPatterns[$5A]  sword/triforce title BG ---
+  Actual  : 00 02 22 23 | 00 00 22 22 | 00 00 22 22 | 00 00 02 22 | 00 00 02 22 | 00 00 00 22 | 00 00 00 22 | 00 00 00 02
+  Expected: 00 02 22 23 | 00 00 22 22 | 00 00 22 22 | 00 00 02 22 | 00 00 02 22 | 00 00 00 22 | 00 00 00 22 | 00 00 00 02
+  NES 2BPP: 01 00 00 00 | 00 00 00 00 | 1F 0F 0F 07 | 07 03 03 01
+  Match   : YES
+
+--- Tile $1CB  <=  DemoBackgroundPatterns[$5B]  sword/triforce title BG ---
+  Actual  : 32 22 22 22 | 32 22 22 22 | 33 22 22 22 | 23 22 22 22 | 23 32 22 22 | 22 32 22 22 | 22 33 22 22 | 22 23 22 22
+  Expected: 32 22 22 22 | 32 22 22 22 | 33 22 22 22 | 23 22 22 22 | 23 32 22 22 | 22 32 22 22 | 22 33 22 22 | 22 23 22 22
+  NES 2BPP: 80 80 C0 40 | 60 20 30 10 | FF FF FF FF | FF FF FF FF
+  Match   : YES
+
+--- Tile $1CC  <=  DemoBackgroundPatterns[$5C]  sword/triforce title BG ---
+  Actual  : 22 22 22 32 | 22 22 23 22 | 22 22 23 22 | 22 22 32 22 | 22 22 32 22 | 22 23 22 22 | 22 23 22 22 | 22 32 22 23
+  Expected: 22 22 22 32 | 22 22 23 22 | 22 22 23 22 | 22 22 32 22 | 22 22 32 22 | 22 23 22 22 | 22 23 22 22 | 22 32 22 23
+  NES 2BPP: 02 04 04 08 | 08 10 10 21 | FF FF FF FF | FF FF FF FF
+  Match   : YES
+
+--- Tile $1CD  <=  DemoBackgroundPatterns[$5D]  sword/triforce title BG ---
+  Actual  : 22 23 00 00 | 22 33 00 00 | 22 30 00 00 | 23 30 00 00 | 23 00 00 00 | 33 00 00 00 | 30 00 00 00 | 30 00 00 00
+  Expected: 22 23 00 00 | 22 33 00 00 | 22 30 00 00 | 23 30 00 00 | 23 00 00 00 | 33 00 00 00 | 30 00 00 00 | 30 00 00 00
+  NES 2BPP: 10 30 20 60 | 40 C0 80 80 | F0 F0 E0 E0 | C0 C0 80 80
+  Match   : YES
+
+--- Tile $1CE  <=  DemoBackgroundPatterns[$5E]  sword/triforce title BG ---
+  Actual  : 22 23 32 22 | 22 22 32 22 | 22 22 33 22 | 02 22 23 22 | 02 22 23 32 | 00 22 22 33 | 00 22 22 22 | 00 02 22 22
+  Expected: 22 23 32 22 | 22 22 32 22 | 22 22 33 22 | 02 22 23 22 | 02 22 23 32 | 00 22 22 33 | 00 22 22 22 | 00 02 22 22
+  NES 2BPP: 18 08 0C 04 | 06 03 00 00 | FF FF FF 7F | 7F 3F 3F 1F
+  Match   : YES
+
+--- Tile $1CF  <=  DemoBackgroundPatterns[$5F]  sword/triforce title BG ---
+  Actual  : 22 32 22 23 | 23 22 22 33 | 23 22 22 30 | 32 22 23 30 | 32 22 23 00 | 22 22 33 00 | 22 22 30 00 | 22 23 30 00
+  Expected: 22 32 22 23 | 23 22 22 33 | 23 22 22 30 | 32 22 23 30 | 32 22 23 00 | 22 22 33 00 | 22 22 30 00 | 22 23 30 00
+  NES 2BPP: 21 43 42 86 | 84 0C 08 18 | FF FF FE FE | FC FC F8 F8
+  Match   : YES
+
+--- Tile $1D0  <=  DemoBackgroundPatterns[$60]  sword/triforce title BG ---
+  Actual  : 00 00 00 00 | 00 00 00 00 | 00 00 00 00 | 00 00 00 00 | 00 00 01 11 | 00 00 01 01 | 00 00 01 11 | 00 00 00 00
+  Expected: 00 00 00 00 | 00 00 00 00 | 00 00 00 00 | 00 00 00 00 | 00 00 01 11 | 00 00 01 01 | 00 00 01 11 | 00 00 00 00
+  NES 2BPP: 00 00 00 00 | 07 05 07 00 | 00 00 00 00 | 00 00 00 00
+  Match   : YES
+
+--- Tile $1D1  <=  DemoBackgroundPatterns[$61]  sword/triforce title BG ---
+  Actual  : 00 02 22 22 | 00 00 22 22 | 00 00 22 22 | 00 00 02 22 | 00 00 02 22 | 00 00 00 22 | 00 00 00 22 | 00 00 00 03
+  Expected: 00 02 22 22 | 00 00 22 22 | 00 00 22 22 | 00 00 02 22 | 00 00 02 22 | 00 00 00 22 | 00 00 00 22 | 00 00 00 03
+  NES 2BPP: 00 00 00 00 | 00 00 00 01 | 1F 0F 0F 07 | 07 03 03 01
+  Match   : YES
+
+--- Tile $1D2  <=  DemoBackgroundPatterns[$62]  sword/triforce title BG ---
+  Actual  : 22 23 00 00 | 22 33 00 00 | 22 30 00 00 | 23 30 00 00 | 23 00 00 00 | 33 00 00 00 | 30 00 00 00 | 30 00 00 00
+  Expected: 22 23 00 00 | 22 33 00 00 | 22 30 00 00 | 23 30 00 00 | 23 00 00 00 | 33 00 00 00 | 30 00 00 00 | 30 00 00 00
+  NES 2BPP: 10 30 20 60 | 40 C0 80 80 | F0 F0 E0 E0 | C0 C0 80 80
+  Match   : YES
+
+--- Tile $1D4  <=  DemoBackgroundPatterns[$64]  wall/waterfall/lower title BG ---
+  Actual  : 00 33 33 33 | 03 33 33 33 | 03 33 33 33 | 33 33 33 33 | 33 33 33 22 | 33 33 33 22 | 33 33 33 22 | 33 33 32 22
+  Expected: 00 33 33 33 | 03 33 33 33 | 03 33 33 33 | 33 33 33 33 | 33 33 33 22 | 33 33 33 22 | 33 33 33 22 | 33 33 32 22
+  NES 2BPP: 3F 7F 7F FF | FC FC FC F8 | 3F 7F 7F FF | FF FF FF FF
+  Match   : YES
+
+--- Tile $1D5  <=  DemoBackgroundPatterns[$65]  wall/waterfall/lower title BG ---
+  Actual  : 00 00 00 00 | 33 33 30 00 | 31 31 11 00 | 11 11 11 00 | 11 11 11 10 | 21 11 11 10 | 11 11 11 11 | 11 11 11 11
+  Expected: 00 00 00 00 | 33 33 30 00 | 31 31 11 00 | 11 11 11 00 | 11 11 11 10 | 21 11 11 10 | 11 11 11 11 | 11 11 11 11
+  NES 2BPP: 00 F8 FC FC | FE 7E FF FF | 00 F8 A0 00 | 00 80 00 00
+  Match   : YES
+
+--- Tile $1D6  <=  DemoBackgroundPatterns[$66]  wall/waterfall/lower title BG ---
+  Actual  : 33 33 32 21 | 33 33 22 21 | 03 33 32 11 | 03 33 32 21 | 03 33 22 22 | 03 33 32 22 | 00 33 33 22 | 03 33 33 22
+  Expected: 33 33 32 21 | 33 33 22 21 | 03 33 32 11 | 03 33 32 21 | 03 33 22 22 | 03 33 32 22 | 00 33 33 22 | 03 33 33 22
+  NES 2BPP: F9 F1 7B 79 | 70 78 3C 7C | FE FE 7C 7E | 7F 7F 3F 7F
+  Match   : YES
+
+--- Tile $1D7  <=  DemoBackgroundPatterns[$67]  wall/waterfall/lower title BG ---
+  Actual  : 11 11 11 10 | 11 11 11 10 | 11 11 11 00 | 11 11 11 00 | 21 11 11 10 | 22 11 11 10 | 21 11 11 11 | 21 11 11 11
+  Expected: 11 11 11 10 | 11 11 11 10 | 11 11 11 00 | 11 11 11 00 | 21 11 11 10 | 22 11 11 10 | 21 11 11 11 | 21 11 11 11
+  NES 2BPP: FE FE FC FC | 7E 3E 7F 7F | 00 00 00 00 | 80 C0 80 80
+  Match   : YES
+
+--- Tile $1D8  <=  DemoBackgroundPatterns[$68]  wall/waterfall/lower title BG ---
+  Actual  : 21 23 31 12 | 12 33 33 11 | 12 33 33 33 | 13 33 33 22 | 33 33 22 22 | 33 33 32 22 | 33 33 32 22 | 33 33 22 22
+  Expected: 21 23 31 12 | 12 33 33 11 | 12 33 33 33 | 13 33 33 22 | 33 33 22 22 | 33 33 32 22 | 33 33 32 22 | 33 33 22 22
+  NES 2BPP: 5E BF BF FC | F0 F8 F8 F0 | B9 7C 7F 7F | FF FF FF FF
+  Match   : YES
+
+--- Tile $1D9  <=  DemoBackgroundPatterns[$69]  wall/waterfall/lower title BG ---
+  Actual  : 23 33 32 22 | 33 33 32 22 | 33 31 12 22 | 33 11 11 12 | 21 11 11 12 | 11 11 11 11 | 11 11 11 11 | 21 11 11 11
+  Expected: 23 33 32 22 | 33 33 32 22 | 33 31 12 22 | 33 11 11 12 | 21 11 11 12 | 11 11 11 11 | 11 11 11 11 | 21 11 11 11
+  NES 2BPP: 78 F8 F8 FE | 7E FF FF 7F | FF FF E7 C1 | 81 00 00 80
+  Match   : YES
+
+--- Tile $1DA  <=  DemoBackgroundPatterns[$6A]  wall/waterfall/lower title BG ---
+  Actual  : 23 33 32 22 | 22 23 33 32 | 22 33 33 22 | 23 33 33 22 | 23 33 33 22 | 23 33 22 22 | 23 33 32 22 | 33 33 33 22
+  Expected: 23 33 32 22 | 22 23 33 32 | 22 33 33 22 | 23 33 33 22 | 23 33 33 22 | 23 33 22 22 | 23 33 32 22 | 33 33 33 22
+  NES 2BPP: 78 1E 3C 7C | 7C 70 78 FC | FF FF FF FF | FF FF FF FF
+  Match   : YES
+
+--- Tile $1DB  <=  DemoBackgroundPatterns[$6B]  wall/waterfall/lower title BG ---
+  Actual  : 11 11 11 12 | 11 11 11 12 | 21 11 11 22 | 22 11 11 22 | 21 11 11 12 | 21 11 11 12 | 11 11 11 11 | 11 11 11 11
+  Expected: 11 11 11 12 | 11 11 11 12 | 21 11 11 22 | 22 11 11 22 | 21 11 11 12 | 21 11 11 12 | 11 11 11 11 | 11 11 11 11
+  NES 2BPP: FE FE 7C 3C | 7E 7E FF FF | 01 01 83 C3 | 81 81 00 00
+  Match   : YES
+
+--- Tile $1DC  <=  DemoBackgroundPatterns[$6C]  wall/waterfall/lower title BG ---
+  Actual  : 23 32 23 31 | 23 33 33 11 | 33 33 32 22 | 33 33 32 23 | 33 32 23 32 | 33 22 23 22 | 33 22 22 32 | 33 33 22 32
+  Expected: 23 32 23 31 | 23 33 33 11 | 33 33 32 22 | 33 33 32 23 | 33 32 23 32 | 33 22 23 22 | 33 22 22 32 | 33 33 22 32
+  NES 2BPP: 67 7F F8 F9 | E6 C4 C2 F2 | FE FC FF FF | FF FF FF FF
+  Match   : YES
+
+--- Tile $1DD  <=  DemoBackgroundPatterns[$6D]  wall/waterfall/lower title BG ---
+  Actual  : 11 12 11 12 | 12 11 11 12 | 33 11 11 12 | 22 21 11 11 | 11 22 11 11 | 21 12 11 11 | 21 11 11 11 | 22 11 11 11
+  Expected: 11 12 11 12 | 12 11 11 12 | 33 11 11 12 | 22 21 11 11 | 11 22 11 11 | 21 12 11 11 | 21 11 11 11 | 22 11 11 11
+  NES 2BPP: EE BE FE 1F | CF 6F 7F 3F | 11 41 C1 E0 | 30 90 80 C0
+  Match   : YES
+
+--- Tile $1DE  <=  DemoBackgroundPatterns[$6E]  wall/waterfall/lower title BG ---
+  Actual  : 33 33 32 32 | 33 33 23 32 | 23 33 23 22 | 23 33 23 22 | 22 32 32 22 | 22 32 32 22 | 23 33 33 22 | 33 33 23 22
+  Expected: 33 33 32 32 | 33 33 23 32 | 23 33 23 22 | 23 33 23 22 | 22 32 32 22 | 22 32 32 22 | 23 33 33 22 | 33 33 23 22
+  NES 2BPP: FA F6 74 74 | 28 28 7C F4 | FF FF FF FF | FF FF FF FF
+  Match   : YES
+
+--- Tile $1DF  <=  DemoBackgroundPatterns[$6F]  wall/waterfall/lower title BG ---
+  Actual  : 22 11 11 12 | 21 11 11 22 | 21 12 11 12 | 21 12 21 12 | 21 11 21 11 | 22 11 22 11 | 21 12 21 11 | 21 12 11 11
+  Expected: 22 11 11 12 | 21 11 11 22 | 21 12 11 12 | 21 12 21 12 | 21 11 21 11 | 22 11 22 11 | 21 12 21 11 | 21 12 11 11
+  NES 2BPP: 3E 7C 6E 66 | 77 33 67 6F | C1 83 91 99 | 88 CC 98 90
+  Match   : YES
+
+--- Tile $1E0  <=  DemoBackgroundPatterns[$70]  wall/waterfall/lower title BG ---
+  Actual  : 00 00 00 33 | 33 30 03 33 | 33 11 33 33 | 33 11 33 31 | 31 13 32 21 | 23 33 22 22 | 22 23 22 22 | 22 22 22 22
+  Expected: 00 00 00 33 | 33 30 03 33 | 33 11 33 33 | 33 11 33 31 | 31 13 32 21 | 23 33 22 22 | 22 23 22 22 | 22 22 22 22
+  NES 2BPP: 03 E7 FF FF | F9 70 10 00 | 03 E7 CF CE | 9E FF FF FF
+  Match   : YES
+
+--- Tile $1E1  <=  DemoBackgroundPatterns[$71]  wall/waterfall/lower title BG ---
+  Actual  : 33 13 12 33 | 31 11 33 33 | 11 13 33 33 | 11 13 32 33 | 11 11 32 22 | 22 11 32 22 | 22 11 22 22 | 22 22 22 22
+  Expected: 33 13 12 33 | 31 11 33 33 | 11 13 33 33 | 11 13 32 33 | 11 11 32 22 | 22 11 32 22 | 22 11 22 22 | 22 22 22 22
+  NES 2BPP: FB FF FF FB | F8 38 30 00 | D7 8F 1F 1F | 0F CF CF FF
+  Match   : YES
+
+--- Tile $1E2  <=  DemoBackgroundPatterns[$72]  wall/waterfall/lower title BG ---
+  Actual  : 01 23 31 20 | 01 23 21 00 | 02 10 20 00 | 22 22 00 30 | 00 13 21 33 | 03 31 22 30 | 33 31 23 20 | 00 31 00 00
+  Expected: 01 23 31 20 | 01 23 21 00 | 02 10 20 00 | 22 22 00 30 | 00 13 21 33 | 03 31 22 30 | 33 31 23 20 | 00 31 00 00
+  NES 2BPP: 5C 54 20 02 | 37 72 F4 30 | 3A 38 48 F2 | 1B 6E EE 20
+  Match   : YES
+
+--- Tile $1E3  <=  DemoBackgroundPatterns[$73]  wall/waterfall/lower title BG ---
+  Actual  : 03 21 00 00 | 32 22 00 00 | 02 30 10 00 | 32 01 32 22 | 30 33 12 20 | 00 33 21 22 | 00 32 12 12 | 00 00 10 02
+  Expected: 03 21 00 00 | 32 22 00 00 | 02 30 10 00 | 32 01 32 22 | 30 33 12 20 | 00 33 21 22 | 00 32 12 12 | 00 00 10 02
+  NES 2BPP: 50 80 28 98 | B8 34 2A 08 | 60 F0 60 CF | B6 3B 35 01
+  Match   : YES
+
+--- Tile $1E4  <=  DemoBackgroundPatterns[$74]  wall/waterfall/lower title BG ---
+  Actual  : 00 00 00 00 | 21 33 32 20 | 13 31 32 00 | 33 32 13 12 | 03 22 21 01 | 02 00 22 20 | 00 12 02 20 | 02 20 00 00
+  Expected: 00 00 00 00 | 21 33 32 20 | 13 31 32 00 | 33 32 13 12 | 03 22 21 01 | 02 00 22 20 | 00 12 02 20 | 02 20 00 00
+  NES 2BPP: 00 78 F8 EE | 45 00 20 00 | 00 BE 6C F5 | 78 4E 16 60
+  Match   : YES
+
+--- Tile $1E5  <=  DemoBackgroundPatterns[$75]  wall/waterfall/lower title BG ---
+  Actual  : 00 00 00 00 | 00 23 30 00 | 02 33 12 20 | 02 31 22 02 | 13 12 20 31 | 23 22 01 20 | 01 20 02 20 | 00 00 00 00
+  Expected: 00 00 00 00 | 00 23 30 00 | 02 33 12 20 | 02 31 22 02 | 13 12 20 31 | 23 22 01 20 | 01 20 02 20 | 00 00 00 00
+  NES 2BPP: 00 18 38 30 | E3 44 40 00 | 00 38 76 6D | 5A F2 26 00
+  Match   : YES
+
+--- Tile $1E6  <=  DemoBackgroundPatterns[$76]  wall/waterfall/lower title BG ---
+  Actual  : 00 00 01 00 | 33 03 12 02 | 01 33 22 11 | 22 32 01 00 | 03 22 02 30 | 02 31 22 23 | 02 33 12 22 | 00 13 12 00
+  Expected: 00 00 01 00 | 33 03 12 02 | 01 33 22 11 | 22 32 01 00 | 03 22 02 30 | 02 31 22 23 | 02 33 12 22 | 00 13 12 00
+  NES 2BPP: 04 D8 73 24 | 42 31 38 38 | 00 D5 3C F0 | 76 6F 77 14
+  Match   : YES
+
+--- Tile $1E7  <=  DemoBackgroundPatterns[$77]  wall/waterfall/lower title BG ---
+  Actual  : 00 00 00 00 | 00 00 00 00 | 00 00 00 00 | 00 00 00 00 | 00 00 00 00 | 00 10 00 00 | 00 11 00 00 | 00 11 00 00
+  Expected: 00 00 00 00 | 00 00 00 00 | 00 00 00 00 | 00 00 00 00 | 00 00 00 00 | 00 10 00 00 | 00 11 00 00 | 00 11 00 00
+  NES 2BPP: 00 00 00 00 | 00 20 30 30 | 00 00 00 00 | 00 00 00 00
+  Match   : YES
+
+--- Tile $1E8  <=  DemoBackgroundPatterns[$78]  wall/waterfall/lower title BG ---
+  Actual  : 00 02 03 33 | 00 22 33 00 | 33 23 30 11 | 13 22 12 11 | 11 23 33 33 | 31 22 12 13 | 33 22 12 11 | 33 22 10 11
+  Expected: 00 02 03 33 | 00 22 33 00 | 33 23 30 11 | 13 22 12 11 | 11 23 33 33 | 31 22 12 13 | 33 22 12 11 | 33 22 10 11
+  NES 2BPP: 07 0C DB CB | DF CB CB CB | 17 3C F8 74 | 3F B5 F4 F0
+  Match   : YES
+
+--- Tile $1E9  <=  DemoBackgroundPatterns[$79]  wall/waterfall/lower title BG ---
+  Actual  : 30 00 00 00 | 33 00 00 00 | 03 30 11 01 | 21 32 11 21 | 21 33 11 21 | 31 13 11 21 | 33 13 11 21 | 03 13 31 01
+  Expected: 30 00 00 00 | 33 00 00 00 | 03 30 11 01 | 21 32 11 21 | 21 33 11 21 | 31 13 11 21 | 33 13 11 21 | 03 13 31 01
+  NES 2BPP: 80 C0 6D 6D | 7D FD FD 7D | 80 C0 60 B2 | B2 92 D2 58
+  Match   : YES
+
+--- Tile $1EA  <=  DemoBackgroundPatterns[$7A]  wall/waterfall/lower title BG ---
+  Actual  : 00 22 20 00 | 00 22 20 33 | 00 02 33 30 | 00 02 22 00 | 00 00 22 20 | 00 00 22 22 | 00 00 02 22 | 00 00 00 02
+  Expected: 00 22 20 00 | 00 22 20 33 | 00 02 33 30 | 00 02 22 00 | 00 00 22 20 | 00 00 22 22 | 00 00 02 22 | 00 00 00 02
+  NES 2BPP: 00 03 0E 00 | 00 00 00 00 | 38 3B 1E 1C | 0E 0F 07 01
+  Match   : YES
+
+--- Tile $1EB  <=  DemoBackgroundPatterns[$7B]  wall/waterfall/lower title BG ---
+  Actual  : 03 30 30 00 | 30 33 30 00 | 33 32 30 00 | 03 21 20 00 | 00 32 30 00 | 00 03 33 00 | 22 23 33 22 | 22 22 32 22
+  Expected: 03 30 30 00 | 30 33 30 00 | 33 32 30 00 | 03 21 20 00 | 00 32 30 00 | 00 03 33 00 | 22 23 33 22 | 22 22 32 22
+  NES 2BPP: 68 B8 E8 50 | 28 1C 1C 08 | 68 B8 F8 68 | 38 1C FF FF
+  Match   : YES
+
+--- Tile $1EC  <=  DemoBackgroundPatterns[$7C]  wall/waterfall/lower title BG ---
+  Actual  : 00 00 02 20 | 00 00 02 20 | 00 00 22 20 | 00 00 22 00 | 00 02 22 00 | 02 22 20 00 | 22 22 00 00 | 22 00 00 00
+  Expected: 00 00 02 20 | 00 00 02 20 | 00 00 22 20 | 00 00 22 00 | 00 02 22 00 | 02 22 20 00 | 22 22 00 00 | 22 00 00 00
+  NES 2BPP: 00 00 00 00 | 00 00 00 00 | 06 06 0E 0C | 1C 78 F0 C0
+  Match   : YES
+
+--- Tile $1ED  <=  DemoBackgroundPatterns[$7D]  wall/waterfall/lower title BG ---
+  Actual  : 22 11 11 12 | 22 21 11 12 | 22 21 11 22 | 22 11 11 22 | 21 11 11 12 | 21 11 11 12 | 21 11 11 11 | 11 11 11 11
+  Expected: 22 11 11 12 | 22 21 11 12 | 22 21 11 22 | 22 11 11 22 | 21 11 11 12 | 21 11 11 12 | 21 11 11 11 | 11 11 11 11
+  NES 2BPP: 3E 1E 1C 3C | 7E 7E 7F FF | C1 E1 E3 C3 | 81 81 80 00
+  Match   : YES
+
+--- Tile $1EE  <=  DemoBackgroundPatterns[$7E]  wall/waterfall/lower title BG ---
+  Actual  : 22 11 11 11 | 22 11 11 00 | 21 11 10 00 | 21 10 00 00 | 21 10 00 00 | 22 11 11 00 | 22 11 11 11 | 22 21 11 11
+  Expected: 22 11 11 11 | 22 11 11 00 | 21 11 10 00 | 21 10 00 00 | 21 10 00 00 | 22 11 11 00 | 22 11 11 11 | 22 21 11 11
+  NES 2BPP: 3F 3C 78 60 | 60 3C 3F 1F | C0 C0 80 80 | 80 C0 C0 E0
+  Match   : YES
+
+--- Tile $1EF  <=  DemoBackgroundPatterns[$7F]  wall/waterfall/lower title BG ---
+  Actual  : 00 00 00 00 | 33 33 00 00 | 32 32 10 00 | 22 22 11 00 | 22 21 11 10 | 21 11 11 10 | 11 11 11 10 | 11 11 11 00
+  Expected: 00 00 00 00 | 33 33 00 00 | 32 32 10 00 | 22 22 11 00 | 22 21 11 10 | 21 11 11 10 | 11 11 11 10 | 11 11 11 00
+  NES 2BPP: 00 F0 A8 0C | 1E 7E FE FC | 00 F0 F0 F0 | E0 80 00 00
+  Match   : YES
+
+--- Tile $1F0  <=  DemoBackgroundPatterns[$80]  wall/waterfall/lower title BG ---
+  Actual  : 00 11 11 00 | 01 00 00 10 | 10 01 10 01 | 10 10 00 01 | 10 10 00 01 | 10 01 10 01 | 01 00 00 10 | 00 11 11 00
+  Expected: 00 11 11 00 | 01 00 00 10 | 10 01 10 01 | 10 10 00 01 | 10 10 00 01 | 10 01 10 01 | 01 00 00 10 | 00 11 11 00
+  NES 2BPP: 3C 42 99 A1 | A1 99 42 3C | 00 00 00 00 | 00 00 00 00
+  Match   : YES
+
+Total tile mismatches in checked title set: 0
+
+Screenshot written to: C:/Users/Jake Diggity/Documents/GitHub/FINAL TRY/builds/reports/screenshot_frame200.png
+
+=================================================================
+DIAGNOSTIC COMPLETE
+=================================================================
