@@ -808,9 +808,8 @@ _attr_write_one_tile:
 ;
 ; 64 × 16-bit words: index = NES color byte (0–63).
 ; Genesis color format: $0BGR (bits [10:8]=Blue, [6:4]=Green, [2:0]=Red, 0–7 each).
-; Source: standard NES NTSC palette (NESdev wiki) converted to Genesis 3-bit channels.
-;   genesis_ch = round(nes_ch * 7 / 255)  clamped to 0..7
-;   word = (gb << 8) | (gg << 4) | gr
+; Source: title-calibrated NES palette approximations tuned against BizHawk
+; frame-200 NES reference captures, quantized to Genesis 3-bit channels.
 ;==============================================================================
     even
 nes_palette_to_genesis:
@@ -824,7 +823,7 @@ nes_palette_to_genesis:
     dc.w    $020A   ; $05  rgb(168,0,32)    dark red-magenta
     dc.w    $000A   ; $06  rgb(168,16,0)    dark red
     dc.w    $0028   ; $07  rgb(136,20,0)    dark red-brown
-    dc.w    $0024   ; $08  rgb(80,48,0)     dark brown
+    dc.w    $0044   ; $08  dark olive-brown
     dc.w    $0060   ; $09  rgb(0,120,0)     dark green
     dc.w    $0060   ; $0A  rgb(0,104,0)     dark green
     dc.w    $0040   ; $0B  rgb(0,88,0)      very dark green
@@ -840,11 +839,11 @@ nes_palette_to_genesis:
     dc.w    $0E46   ; $13  rgb(104,68,252)  blue-violet
     dc.w    $0C0C   ; $14  rgb(216,0,204)   bright magenta
     dc.w    $040C   ; $15  rgb(228,0,88)    bright red
-    dc.w    $004E   ; $16  rgb(248,56,0)    bright orange-red
-    dc.w    $006C   ; $17  rgb(228,92,16)   orange
+    dc.w    $004A   ; $16  orange-red
+    dc.w    $004A   ; $17  orange
     dc.w    $006A   ; $18  rgb(172,124,0)   yellow-orange
     dc.w    $00A0   ; $19  rgb(0,184,0)     green
-    dc.w    $00A0   ; $1A  rgb(0,168,0)     green
+    dc.w    $0080   ; $1A  green
     dc.w    $04A0   ; $1B  rgb(0,168,68)    green-teal
     dc.w    $0880   ; $1C  rgb(0,136,136)   teal
     dc.w    $0000   ; $1D  black (unused/invalid)
@@ -854,13 +853,13 @@ nes_palette_to_genesis:
     ;       NES $20–$2F  (near-white, light colors, pastels)
     dc.w    $0EEE   ; $20  rgb(248,248,248) near-white
     dc.w    $0EA4   ; $21  rgb(60,188,252)  light cyan-blue
-    dc.w    $0E86   ; $22  rgb(104,136,252) light blue
+    dc.w    $0E86   ; $22  light blue
     dc.w    $0E68   ; $23  rgb(152,120,248) light purple-blue
     dc.w    $0E6E   ; $24  rgb(248,120,248) light magenta
     dc.w    $084E   ; $25  rgb(248,88,152)  light pink-red
     dc.w    $046E   ; $26  rgb(248,120,88)  light orange
     dc.w    $048E   ; $27  rgb(252,160,68)  light yellow-orange
-    dc.w    $00AE   ; $28  rgb(248,184,0)   yellow
+    dc.w    $00CC   ; $28  yellow
     dc.w    $02EA   ; $29  rgb(184,248,24)  yellow-green
     dc.w    $04C4   ; $2A  rgb(88,216,84)   light green
     dc.w    $08E4   ; $2B  rgb(88,248,152)  light green-teal
@@ -876,7 +875,7 @@ nes_palette_to_genesis:
     dc.w    $0EAC   ; $33  rgb(216,184,248) very light purple
     dc.w    $0EAE   ; $34  rgb(248,184,248) very light magenta
     dc.w    $0AAE   ; $35  rgb(248,164,192) very light pink
-    dc.w    $0ACE   ; $36  rgb(252,204,112)  very light orange-yellow
+    dc.w    $0CCE   ; $36  very light pink-beige
     dc.w    $0ACE   ; $37  rgb(252,224,168) very light yellow
     dc.w    $06CE   ; $38  rgb(248,216,120) light yellow
     dc.w    $06EC   ; $39  rgb(216,248,120) light yellow-green
@@ -1018,6 +1017,18 @@ _ctrl_read_2:
 _oam_dma:
     movem.l D0-D7/A0,-(SP)
 
+    ; Title-mode framing in Genesis lands 8 px too low relative to the
+    ; NES capture. Until full PPUSCROLL-to-VSRAM support is wired in,
+    ; bias both planes up by 8 px for mode $00 only and clear it elsewhere.
+    moveq   #0,D4
+    tst.b   ($0012,A4)
+    bne.s   .oam_store_vscroll
+    moveq   #8,D4
+.oam_store_vscroll:
+    move.l  #VSRAM_WRITE_0000,(VDP_CTRL).l
+    move.w  D4,(VDP_DATA).l
+    move.w  D4,(VDP_DATA).l
+
     ; Set VDP write address: VRAM $D800 (sprite attribute table)
     ; $D800 & $3FFF = $1800 → swap → $18000000 → | $40000003 = $58000003
     ; (CD[5:4]=01 = VRAM write; A[15:14]=11 from $D800's top bits)
@@ -1045,6 +1056,10 @@ _oam_dma:
     ; Sprites with NES_Y ≥ 239 produce Genesis Y ≥ 368 which is naturally off-screen.
     move.w  D0,D4
     addi.w  #129,D4
+    tst.b   ($0012,A4)
+    bne.s   .oam_write_y
+    subi.w  #8,D4
+.oam_write_y:
     move.w  D4,(VDP_DATA).l
 
     ; ── Word 1: size | link ─────────────────────────────────────────────

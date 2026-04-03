@@ -1695,6 +1695,37 @@ def _patch_z02(path):
     else:
         print("  WARNING: _patch_z02 P4 -- TransferPatternBlock_Bank2 not found")
 
+    # ---- Patch 5: Waterfall sprite palette override (NES pal 0 → Genesis pal 3) ----
+    # NES writes attr=$00 (sprite palette 0) for wave and crest sprites.
+    # Genesis only has 4 palette rows; NES sprite pal 0 maps to Genesis pal 2
+    # via OAM DMA, but pal 2 is occupied by BG palette 2.  Force palette 3
+    # which carries the same $30/$3B waterfall colors from NES sprite pal 3.
+    #
+    # Both the wave loop and crest loop have:
+    #     moveq   #0,D0          ; LDA #$00  (NES attr = palette 0)
+    #     lea     ($0202,A4),A0  ; Sprites+2
+    #     move.b  D0,(A0,D3.W)  ; STA Sprites+2, Y
+    # Change moveq #0 → moveq #3 in both loops.
+    wave_pat = "    moveq   #0,D0\n    lea     ($0202,A4),A0\n    move.b  D0,(A0,D3.W)\n    addq.b  #1,D3"
+    wave_fix = "    moveq   #3,D0\n    lea     ($0202,A4),A0\n    move.b  D0,(A0,D3.W)\n    addq.b  #1,D3"
+    count = text.count(wave_pat)
+    if count >= 2:
+        text = text.replace(wave_pat, wave_fix)
+        print(f"  _patch_z02 P5: waterfall sprite palette 0->3 ({count} loops patched)")
+    else:
+        # Try to patch the crest loop which ends with subq instead of addq
+        crest_pat = "    moveq   #0,D0\n    lea     ($0202,A4),A0\n    move.b  D0,(A0,D3.W)\n    addq.b  #1,D3"
+        crest_pat2 = "    moveq   #0,D0\n    lea     ($0202,A4),A0\n    move.b  D0,(A0,D3.W)\n    subq.b"
+        # Patch all occurrences of the attr write
+        old_attr = "    moveq   #0,D0\n    lea     ($0202,A4),A0\n    move.b  D0,(A0,D3.W)"
+        new_attr = "    ; Genesis only has 4 shared palette rows, so force the title waterfall\n    ; sprites onto the mint/white title row instead of NES sprite palette 0.\n    moveq   #3,D0\n    lea     ($0202,A4),A0\n    move.b  D0,(A0,D3.W)"
+        c2 = text.count(old_attr)
+        if c2 >= 2:
+            text = text.replace(old_attr, new_attr)
+            print(f"  _patch_z02 P5: waterfall sprite palette 0->3 ({c2} loops patched, broad match)")
+        else:
+            print(f"  WARNING: _patch_z02 P5 -- waterfall attr pattern not found (count={count},{c2})")
+
     with open(path, 'w', encoding='utf-8') as f:
         f.write(text)
 
@@ -1919,11 +1950,11 @@ def _patch_z06(path):
                 '    bsr     TransferTileBuf\n'
                 '.skip_main_dispatch:\n'
                 '    moveq   #63,D0\n')
-    if False:  # P3 DISABLED — caused regression, needs rework
+    if old_tcb3 in text:
         text = text.replace(old_tcb3, new_tcb3, 1)
         print("  _patch_z06 P3: DynTileBuf palette pre-check added")
     else:
-        print("  _patch_z06 P3: SKIPPED (disabled for regression test)")
+        print("  WARNING: _patch_z06 P3 -- TransferCurTileBuf body not found")
 
     with open(path, 'w', encoding='utf-8') as f:
         f.write(text)
