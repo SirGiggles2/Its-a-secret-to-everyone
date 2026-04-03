@@ -172,7 +172,55 @@ _ppu_read_7:
 ; Zelda controls this register to gate per-frame updates.
 ;------------------------------------------------------------------------------
 _ppu_write_0:
-    move.b  D0,(PPU_CTRL).l
+    ; Check if bit 4 (BG pattern table) changed — if so, update Plane A tiles
+    move.b  (PPU_CTRL).l,D1
+    eor.b   D0,D1                   ; D1 = changed bits
+    move.b  D0,(PPU_CTRL).l         ; store new value
+    btst    #4,D1
+    bne.s   .ppuw0_pt_changed
+    rts
+.ppuw0_pt_changed:
+    ; BG pattern table bit changed.  Rebuild all 960 Plane A tile words from
+    ; NT_CACHE, applying the new PPUCTRL bit 4 offset.  Palette bits are set
+    ; to 0 (subsequent attribute processing will restore correct palettes).
+    movem.l D0-D5/A0-A1,-(SP)
+
+    ; D5.w = pattern table offset ($0100 if bit 4 set, $0000 if clear)
+    moveq   #0,D5
+    move.b  (PPU_CTRL).l,D0
+    btst    #4,D0
+    beq.s   .ppuw0_no_offset
+    move.w  #$0100,D5
+.ppuw0_no_offset:
+
+    lea     (NT_CACHE_BASE).l,A0
+    move.w  #$C000,D2               ; Plane A VDP address
+
+    moveq   #30-1,D3                ; 30 rows
+.ppuw0_row:
+    moveq   #32-1,D4                ; 32 cols
+.ppuw0_col:
+    ; Build tile word from NT_CACHE
+    moveq   #0,D0
+    move.b  (A0)+,D0                ; raw tile index from cache
+    or.w    D5,D0                   ; add pattern table offset
+
+    ; Issue VDP write command for current Plane A address
+    moveq   #0,D1
+    move.w  D2,D1
+    andi.l  #$00003FFF,D1
+    swap    D1
+    ori.l   #$40000003,D1
+    move.l  D1,(VDP_CTRL).l
+    move.w  D0,(VDP_DATA).l
+
+    addq.w  #2,D2                   ; next col
+    dbf     D4,.ppuw0_col
+
+    addi.w  #$40,D2                 ; skip 32 unused cols in 64-wide plane
+    dbf     D3,.ppuw0_row
+
+    movem.l (SP)+,D0-D5/A0-A1
     rts
 
 ;------------------------------------------------------------------------------
@@ -384,16 +432,22 @@ _ppu_write_7:
     ori.l   #$40000003,D3           ; add CD bits + A[15:14]=3
     move.l  D3,(VDP_CTRL).l
 
-    ; Write Genesis tile word: tile index only (palette 0, no flip, no priority)
+    ; Write Genesis tile word: tile index + BG pattern table offset
     andi.w  #$00FF,D0               ; D0.w = tile index (0…255)
-    move.w  D0,(VDP_DATA).l         ; write tile word to Plane A
 
-    ; T20: cache tile index for attribute palette updates
-    ; Cache offset = PPU_VADDR - $2000 = row*32 + col  (NES nametable is 32 wide)
+    ; T20: cache raw tile index for attribute palette updates
+    ; (cache BEFORE applying offset so _attr_write_one_tile can re-apply)
     move.w  D1,D3
     subi.w  #$2000,D3               ; D3.w = cache offset (0…$3BF)
     lea     (NT_CACHE_BASE).l,A0
-    move.b  D0,(A0,D3.W)            ; NT_CACHE[offset] = tile index
+    move.b  D0,(A0,D3.W)            ; NT_CACHE[offset] = raw tile index
+
+    ; Add BG pattern table offset: PPUCTRL bit 4 → +$100
+    btst    #4,(PPU_CTRL).l
+    beq.s   .nt_no_pt
+    ori.w   #$0100,D0
+.nt_no_pt:
+    move.w  D0,(VDP_DATA).l         ; write tile word to Plane A
 
 .nt_noop:
     ;======================================================================
@@ -486,19 +540,39 @@ _ppu_write_7:
     subi.w  #$3F00,D2               ; D2.w = offset (0..31)
     andi.w  #$001F,D2               ; mask to 5 bits
 
-    ; Sprite palettes ($3F10-$3F1F = offset 16-31): BG pals 2,3 already have
-    ; the same colors as sprite pals 2,3 for Zelda; sprite pal 0,1 would
-    ; overwrite BG pal 0,1 slots with wrong colors.  Skip all sprite pal writes.
+    ; NES palette handling:
+    ; Offsets 0-15  ($3F00-$3F0F): BG palettes → Genesis CRAM pal 0-3
+    ; Offset entry-0s (0,4,8,12,16,20,24,28): universal BG color mirror
+    ; Offsets 16-31 ($3F10-$3F1F): sprite palettes → Genesis CRAM pal 2-3
+    ;   (NES sprite pal 0,2→Genesis pal 2; NES sprite pal 1,3→Genesis pal 3)
     cmpi.w  #$10,D2
-    bhs.s   .nt_skip_write          ; sprite palette → skip
-
+    blo.s   .t19_bg_color           ; offset < 16: BG palette
+    ; Sprite palette (offset 16-31)
+    move.w  D2,D3
+    andi.w  #$0003,D3               ; color slot within palette
+    beq.s   .t19_spr_entry0         ; slot 0 → BG mirror
+    ; Non-entry-0 sprite color: remap to Genesis pal 2-3
+    move.w  D2,D3
+    subi.w  #$10,D3                 ; 0-15 range
+    lsr.w   #2,D3                   ; NES sprite pal (0-3)
+    ori.w   #$0002,D3               ; Genesis pal = NES_pal | 2 (→ 2,3,2,3)
+    lsl.w   #5,D3                   ; * $20 = CRAM palette base
+    move.w  D2,D2
+    andi.w  #$0003,D2               ; color slot (1-3)
+    lsl.w   #1,D2                   ; * 2
+    add.w   D2,D3                   ; D3 = CRAM address
+    bra.s   .t19_have_cram
+.t19_spr_entry0:
+    ; Sprite entry-0 = BG mirror: remap 16→0, 20→4, 24→8, 28→12
+    subi.w  #$10,D2
+.t19_bg_color:
     move.w  D2,D3
     lsr.w   #2,D3                   ; D3.w = palette index (0..3)
     lsl.w   #5,D3                   ; D3.w = palette * $20
-
     andi.w  #$0003,D2               ; D2.w = color slot (0..3)
     lsl.w   #1,D2                   ; D2.w = color * 2
     add.w   D2,D3                   ; D3.w = CRAM address (0..$66)
+.t19_have_cram:
 
     ; Issue VDP CRAM write command
     moveq   #0,D2
@@ -701,6 +775,11 @@ _attr_write_one_tile:
     moveq   #0,D0
     move.b  (A0,D1.W),D0        ; D0.b = tile index
 
+    ; Add BG pattern table offset: PPUCTRL bit 4 → +$100
+    btst    #4,(PPU_CTRL).l
+    beq.s   .awot_no_pt
+    ori.w   #$0100,D0
+.awot_no_pt:
     ; Build tile word: (palette<<13) | tile_index
     or.w    D5,D0               ; D0.w = tile word with palette bits
 
@@ -968,22 +1047,49 @@ _oam_dma:
     addi.w  #129,D4
     move.w  D4,(VDP_DATA).l
 
-    ; ── Word 1: size (8×8 = 0) | link (index of next sprite; 0 = end) ────
+    ; ── Word 1: size | link ─────────────────────────────────────────────
+    ; Link field: chain sprites 0→1→2→...→63→0
     move.w  D6,D4
     addq.w  #1,D4               ; D4 = this_sprite_index + 1
     cmpi.w  #64,D4              ; is this the last sprite?
     bne     .write_link
     moveq   #0,D4               ; yes → link = 0 (terminate list)
 .write_link:
-    move.w  D4,(VDP_DATA).l     ; write 0000 | link[6:0]
+    ; Size: check PPUCTRL bit 5 for 8×16 sprite mode
+    ; Genesis SAT word 1: [11:10]=H-size, [9:8]=V-size, [6:0]=link
+    btst    #5,(PPU_CTRL).l
+    beq.s   .oam_size_done
+    ori.w   #$0100,D4           ; V-size = 2 (8×16: two 8×8 cells stacked)
+.oam_size_done:
+    move.w  D4,(VDP_DATA).l     ; write size | link
 
     ; ── Word 2: tile word (priority | palette | Vflip | Hflip | tile) ────
-    move.w  D1,D5               ; start with tile index
+    ; Compute Genesis tile index based on sprite size mode
+    btst    #5,(PPU_CTRL).l
+    beq.s   .oam_8x8
+    ; 8×16 mode: tile byte bit 0 = pattern table, bits 7:1 = tile pair
+    move.w  D1,D5
+    andi.w  #$0001,D5           ; pattern table bit
+    lsl.w   #8,D5               ; $0000 or $0100
+    move.w  D1,D4
+    andi.w  #$00FE,D4           ; tile pair (even tile number)
+    or.w    D4,D5               ; Genesis tile index
+    bra.s   .oam_have_tile
+.oam_8x8:
+    ; 8×8 mode: check PPUCTRL bit 3 for sprite pattern table
+    move.w  D1,D5
+    andi.w  #$00FF,D5
+    btst    #3,(PPU_CTRL).l
+    beq.s   .oam_have_tile
+    ori.w   #$0100,D5           ; pattern table $1000 → tile +$100
+.oam_have_tile:
     andi.w  #$07FF,D5           ; keep bits 10:0 only
     ori.w   #$8000,D5           ; bit 15 = high priority (sprite over planes)
-    ; Palette: NES attr[1:0] → Genesis bits[14:13]
+    ; Palette: NES sprite attr[1:0] → Genesis bits[14:13], offset +2
     move.w  D2,D4
-    andi.w  #$0003,D4           ; isolate palette (0–3)
+    andi.w  #$0003,D4           ; isolate NES sprite palette (0–3)
+    ori.w   #$0002,D4           ; offset: NES sprite pal 0,1→Genesis pal 2,3
+    andi.w  #$0003,D4           ; mask (0→2, 1→3, 2→2, 3→3)
     lsl.w   #5,D4               ; shift left 5
     lsl.w   #8,D4               ; shift left 8 more → total shift 13 → bits[14:13]
     or.w    D4,D5               ; merge palette
@@ -1196,7 +1302,8 @@ _clear_nametable_fast:
     ;   command = $40000003  (VRAM write, address $C000)
     move.l  #$40000003,(VDP_CTRL).l
 
-    ; Build tile word: palette 0 | tile_index (no flip, no priority)
+    ; Build tile word: palette 0 | tile_index (no offset — ClearNameTable runs
+    ; before PPUCTRL is set; _ppu_write_0 will fix up when bit 4 changes)
     andi.w  #$00FF,D2               ; D2.w = tile index
     move.w  D2,D1                   ; D1.w = tile word to write
 
@@ -1543,9 +1650,14 @@ _transfer_tilebuf_fast:
     ori.l   #$40000003,D6          ; CD bits + A[15:14]=3 for $C000+
     move.l  D6,(VDP_CTRL).l
 
-    ; Write tile word (palette 0, tile index in low byte)
+    ; Write tile word: tile index + BG pattern table offset
     moveq   #0,D0
     move.b  D2,D0
+    ; Add BG pattern table offset: PPUCTRL bit 4 → tiles at $1000 → +$100
+    btst    #4,(PPU_CTRL).l
+    beq.s   .ttf_nt_no_pt
+    ori.w   #$0100,D0
+.ttf_nt_no_pt:
     move.w  D0,(VDP_DATA).l
 
 .ttf_nt_skip:
@@ -1669,18 +1781,38 @@ _transfer_tilebuf_fast:
     subi.w  #$3F00,D0
     andi.w  #$001F,D0               ; offset 0..31
 
-    ; Skip sprite palettes (offset >= 16)
+    ; NES palette mirroring & sprite palette remap
+    ; Entry-0 offsets (16,20,24,28) mirror universal BG color → remap to BG
+    ; Non-entry-0 sprite colors → remap to Genesis CRAM palettes 2-3
     cmpi.w  #$10,D0
-    bhs.s   .ttf_pal_skip
+    blo.s   .ttf_pal_bg
+    move.w  D0,D6
+    andi.w  #$0003,D6
+    bne.s   .ttf_pal_spr            ; non-zero slot → sprite palette
+    subi.w  #$10,D0                 ; entry-0: remap 16→0, 20→4, 24→8, 28→12
+    bra.s   .ttf_pal_bg
+.ttf_pal_spr:
+    ; Sprite non-entry-0: remap NES sprite pal 0-3 → Genesis pal 2-3
+    move.w  D0,D6
+    subi.w  #$10,D6
+    lsr.w   #2,D6                   ; NES sprite pal (0-3)
+    ori.w   #$0002,D6               ; Genesis pal = NES_pal | 2 (0→2, 1→3, 2→2, 3→3)
+    andi.w  #$0003,D6
+    lsl.w   #5,D6                   ; * $20
+    andi.w  #$0003,D0               ; color slot
+    lsl.w   #1,D0                   ; * 2
+    add.w   D0,D6                   ; D6.w = CRAM address
+    bra.s   .ttf_pal_have_cram
+.ttf_pal_bg:
 
     ; Compute CRAM address: palette_idx*$20 + color_slot*2
     move.w  D0,D6
     lsr.w   #2,D6                   ; palette index (0..3)
     lsl.w   #5,D6                   ; * $20
-    move.w  D0,D0
     andi.w  #$0003,D0               ; color slot
     lsl.w   #1,D0                   ; * 2
     add.w   D0,D6                   ; D6.w = CRAM address
+.ttf_pal_have_cram:
 
     ; VDP CRAM write command
     moveq   #0,D0
@@ -1701,7 +1833,7 @@ _transfer_tilebuf_fast:
     add.w   D1,D5                   ; advance PPU_VADDR
     andi.w  #$3FFF,D5
     subq.w  #1,D3
-    bne.s   .ttf_pal_loop
+    bne     .ttf_pal_loop
 
     ; Palette post-reset: set PPU_VADDR to $0000, clear latch
     move.w  #$0000,(PPU_VADDR).l
@@ -1729,7 +1861,9 @@ _transfer_tilebuf_fast:
     ; DONE: update ZP pointer and return
     ;==========================================================================
 .ttf_done:
-    ; Caller (TransferCurTileBuf) handles post-transfer cleanup.
-    ; No ZP writeback needed — A0 may point to ROM, not NES RAM.
+    ; Reset VDP to VRAM write mode so stale CRAM targeting doesn't
+    ; corrupt palette on subsequent VDP_DATA writes.
+    ; Target $FFFC (unused VRAM) to avoid corrupting tile 0 on stray writes.
+    move.l  #$7FFC0003,(VDP_CTRL).l
     movem.l (SP)+,D0-D6/A0-A3
     rts
