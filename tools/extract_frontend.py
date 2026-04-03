@@ -303,6 +303,36 @@ def extract_credits_text_data(prg_data, blocks):
     }
 
 
+def parse_transfer_buf_end(data, start):
+    """Parse NES PPU transfer buffer records to find the true $FF terminator.
+
+    Record format:
+      byte 0: PPU addr hi (>= $80 = terminator, buffer ends here)
+      byte 1: PPU addr lo
+      byte 2: control (bits 5:0 = count [0=64], bit 6 = inc mode, bit 7 = repeat)
+      If repeat (bit 7): 1 data byte (repeated count times)
+      If sequential: count data bytes
+    """
+    pos = start
+    while pos < len(data):
+        first = data[pos]
+        if first >= 0x80:
+            return pos  # terminator byte
+        # Skip header (3 bytes)
+        if pos + 2 >= len(data):
+            raise ValueError(f"Transfer buf truncated at offset {pos}")
+        control = data[pos + 2]
+        count = control & 0x3F
+        if count == 0:
+            count = 64
+        pos += 3  # past header
+        if control & 0x80:
+            pos += 1  # repeat mode: 1 data byte
+        else:
+            pos += count  # sequential: count data bytes
+    raise ValueError(f"Transfer buf: no terminator found starting at {start}")
+
+
 def extract_frontend_transfer_blobs(prg_data, z06_blocks):
     bank6_data = prg_data[6 * PRG_BANK_SIZE : 7 * PRG_BANK_SIZE]
     mode11_bottom = bytes(z06_blocks["Mode11PlayAreaAttrsBottomHalfTransferBuf"])
@@ -313,14 +343,12 @@ def extract_frontend_transfer_blobs(prg_data, z06_blocks):
     )
 
     story_start = marker_pos + len(mode11_bottom)
-    story_length = len(mode11_bottom)
-    story_blob = bytes(bank6_data[story_start:story_start + story_length])
+    story_term = parse_transfer_buf_end(bank6_data, story_start)
+    story_blob = bytes(bank6_data[story_start : story_term + 1])
 
-    game_title_start = story_start + story_length
-    game_title_end = bank6_data.find(b"\xFF", game_title_start)
-    if game_title_end < 0:
-        raise ValueError("Could not locate GameTitleTransferBuf terminator")
-    game_title_blob = bytes(bank6_data[game_title_start : game_title_end + 1])
+    game_title_start = story_term + 1
+    game_title_term = parse_transfer_buf_end(bank6_data, game_title_start)
+    game_title_blob = bytes(bank6_data[game_title_start : game_title_term + 1])
 
     return {
         "story_tile_attr_transfer_buf": story_blob,
@@ -468,6 +496,19 @@ def write_frontend_transfers_file(data_dir, transfer_blobs):
     write_text_file(os.path.join(data_dir, "frontend_transfers.inc"), lines)
 
 
+def write_raw_dat_files(ref_dat_dir, transfer_blobs):
+    """Write raw binary .dat files so the transpiler's .INCBIN can find them."""
+    os.makedirs(ref_dat_dir, exist_ok=True)
+    for filename, key in [
+        ("StoryTileAttrTransferBuf.dat", "story_tile_attr_transfer_buf"),
+        ("GameTitleTransferBuf.dat", "game_title_transfer_buf"),
+    ]:
+        path = os.path.join(ref_dat_dir, filename)
+        with open(path, "wb") as f:
+            f.write(transfer_blobs[key])
+        print(f"  Wrote {path} ({len(transfer_blobs[key])} bytes)")
+
+
 def write_text_tables(data_dir, blocks):
     ordered = [
         "PlayAreaAttr0TransferBuf",
@@ -531,6 +572,8 @@ def main():
     write_demo_text_file(data_dir, blocks, demo_text_data)
     write_credits_text_file(data_dir, credits_text_data)
     write_frontend_transfers_file(data_dir, frontend_transfer_blobs)
+    ref_dat_dir = os.path.join(project_root, "reference", "aldonunez", "dat")
+    write_raw_dat_files(ref_dat_dir, frontend_transfer_blobs)
 
     total_bytes = sum(len(block) for block in blocks.values())
     total_bytes += len(demo_text_data["fields_blob"])
