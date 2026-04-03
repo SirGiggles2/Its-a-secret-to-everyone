@@ -104,6 +104,7 @@ TransferCommonPatterns:
 _L_z02_TransferCommonPatterns_LoopBlock:
     move.b  ($051D,A4),D0
     lsl.b  #1,D0   ; ASL A
+    moveq   #0,D2
     move.b  D0,D2
     ; Put block address in [00:01] and size in [03:02].
     ; Load destination VRAM address and set it.
@@ -536,6 +537,7 @@ _L_z02_UpdateMode0Demo_Sub2_LoopFormatSlot:
     ; definitely be clear.
     bsr     FetchFileAAddressSet
     move.b  (A5)+,D0  ; PLA
+    moveq   #0,D3
     move.b  D0,D3
     even
 _L_z02_UpdateMode0Demo_Sub2_NextFormatSlot:
@@ -615,6 +617,7 @@ _L_z02_UpdateMode0Demo_Sub2_StoreValue:
     move.b  D3,D0
     move.b  #$26,D1
     addx.b  D1,D0   ; ADC #$26 (X flag = 6502 C)
+    moveq   #0,D3
     move.b  D0,D3
     jmp     _L_z02_UpdateMode0Demo_Sub2_LoopHeart
 
@@ -1042,6 +1045,7 @@ _L_z02_AnimateDemoPhase1Subphase2_ResetVramLo:
 _L_z02_AnimateDemoPhase1Subphase2_CheckText:
     ; Check text and NT attributes.
     ;
+    moveq   #0,D2
     move.b  ($0419,A4),D2
     lea     (DemoLineAttrs).l,A0
     move.b  (A0,D2.W),D0
@@ -1049,6 +1053,7 @@ _L_z02_AnimateDemoPhase1Subphase2_CheckText:
     beq  _L_z02_AnimateDemoPhase1Subphase2_ProcessAttrs
     move.b  ($042E,A4),D0
     lsl.b  #1,D0   ; ASL A
+    moveq   #0,D2
     move.b  D0,D2
     moveq   #0,D3
     lea     (DemoLineTextAddrs).l,A0
@@ -1066,6 +1071,7 @@ _L_z02_AnimateDemoPhase1Subphase2_CheckText:
     add.l   #NES_RAM,D4       ; → Genesis addr
     movea.l D4,A0
     move.b  (A0,D3.W),D0     ; LDA ($nn),Y
+    moveq   #0,D2
     move.b  D0,D2
     even
 _L_z02_AnimateDemoPhase1Subphase2_CopyLine:
@@ -1103,6 +1109,7 @@ _L_z02_AnimateDemoPhase1Subphase2_ProcessAttrs:
 
     even
 ProcessDemoLineAttrs:
+    moveq   #0,D2
     move.b  ($0419,A4),D2
     lea     (DemoLineAttrs).l,A0
     move.b  (A0,D2.W),D0
@@ -1176,6 +1183,7 @@ _L_z02_DisableFallenObjects_Next:
 
     even
 ProcessDemoLineItems:
+    moveq   #0,D3
     move.b  ($0419,A4),D3
     lea     (DemoLineAttrs).l,A0
     move.b  (A0,D3.W),D0
@@ -1196,6 +1204,7 @@ _L_z02_ProcessDemoLineItems_FindDisabled:
 
     even
 _L_z02_ProcessDemoLineItems_SetUpObject:
+    moveq   #0,D3
     move.b  ($042F,A4),D3
     lea     (DemoLeftItemIds).l,A0
     move.b  (A0,D3.W),D0
@@ -1288,6 +1297,7 @@ _L_z02_Demo_AnimateObjects_AnimateFinal:
     even
 _L_z02_Demo_AnimateObjects_PopAndNextObject:
     move.b  (A5)+,D0  ; PLA
+    moveq   #0,D2
     move.b  D0,D2
     even
 _L_z02_Demo_AnimateObjects_NextObject:
@@ -1332,6 +1342,7 @@ AnimateDemoStoryFinalItems:
     andi    #$EE,CCR  ; CLC: clear C+X
     move.b  ($0000,A4),D1
     addx.b  D1,D0   ; ADC $00
+    moveq   #0,D3
     move.b  D0,D3
     lea     ($0084,A4),A0
     move.b  (A0,D2.W),D0
@@ -1343,6 +1354,7 @@ AnimateDemoStoryFinalItems:
     move.b  D3,D0
     lsl.b  #1,D0   ; ASL A
     lsl.b  #1,D0   ; ASL A
+    moveq   #0,D2
     move.b  D0,D2
     even
 _L_z02_AnimateDemoStoryFinalItems_LoopSprite:
@@ -1442,6 +1454,7 @@ _L_z02_AnimateDemoPhase0Subphase0Artifacts_CopyTriforcePalette:
     bpl  _L_z02_AnimateDemoPhase0Subphase0Artifacts_CopyTriforcePalette
     ; Patch the palette record with the color
     ; for the current point in the cycle.
+    moveq   #0,D3
     move.b  ($0413,A4),D3
     lea     (TriforceGlowingColors).l,A0
     move.b  (A0,D3.W),D0
@@ -1535,6 +1548,7 @@ _anon_z02_3:
     ; < $B9, use tile offset 0
     ; < $C2, use tile offset 8
     ; else, use tile offset $10
+    moveq   #0,D3
     move.b  D0,D3
     moveq   #16,D0
     cmpi.b  #$C2,D3
@@ -1547,6 +1561,7 @@ _anon_z02_3:
 _L_z02_UpdateSpritesForWaterfallWave_SetOffset:
     move.b  D0,($0000,A4)
     move.b  D2,($0002,A4)
+    moveq   #0,D3
     lea     (WaterfallWaveSpriteOffsets).l,A0
     move.b  (A0,D2.W),D3
     moveq   #3,D2
@@ -1575,6 +1590,7 @@ _L_z02_UpdateSpritesForWaterfallWave_LoopSprite:
     addq.b  #1,D3
     subq.b  #1,D2
     bpl  _L_z02_UpdateSpritesForWaterfallWave_LoopSprite
+    moveq   #0,D2
     move.b  ($0002,A4),D2
     rts
 
@@ -1745,6 +1761,7 @@ _L_z02_AnimateDemoPhase0Subphase1_CopyPalette:
     addq.b  #1,($0437,A4)
     ; Set the timer to the delay for the current point in the cycle.
     ;
+    moveq   #0,D3
     move.b  ($0437,A4),D3
     lea     (DemoPhase0Subphase1Delays-1).l,A0
     move.b  (A0,D3.W),D0
@@ -1832,6 +1849,7 @@ SaveFileBAddressSet2:
     even
 FetchFileBAddressSet:
     move.b  #$FF,D0
+    moveq   #0,D3
     move.b  ($0016,A4),D3
     even
 _L_z02_FetchFileBAddressSet_AddE:
@@ -1840,6 +1858,7 @@ _L_z02_FetchFileBAddressSet_AddE:
     addx.b  D1,D0   ; ADC #$0E (X flag = 6502 C)
     subq.b  #1,D3
     bpl  _L_z02_FetchFileBAddressSet_AddE
+    moveq   #0,D3
     move.b  D0,D3
     ; Copy the file address set (14 bytes) for the current
     ; save file to [$C0] to make it easier to work with.
@@ -2054,6 +2073,7 @@ _L_z02_InitModeEandF_Full_CheckSub3:
     cmpi.b  #$03,D0
     bne  _L_z02_InitModeEandF_Full_Sub4
     moveq   #21,D0
+    moveq   #0,D3
     move.b  ($0012,A4),D3
     cmpi.b  #$0F,D3
     bne  _anon_z02_4
@@ -2125,15 +2145,18 @@ _L_z02_UpdateModeERegister_ChoseEnd:
     move.b  D0,($0425,A4)
     move.b  D0,($0423,A4)
     move.b  D0,($0016,A4)
+    moveq   #0,D2
     move.b  D0,D2
     even
 _L_z02_UpdateModeERegister_LoopSaveSlot:
+    moveq   #0,D3
     move.b  ($0016,A4),D3
     move.b  #$FF,D0
     lea     (NES_SRAM+$052A).l,A0
     move.b  D0,(A0,D3.W)
     move.b  D3,D0
     lsl.b  #1,D0   ; ASL A
+    moveq   #0,D3
     move.b  D0,D3
     moveq   #0,D0
     move.b  D0,($0426,A4)
@@ -2146,12 +2169,15 @@ _L_z02_UpdateModeERegister_LoopSaveSlot:
     move.b  D0,-(A5)  ; PHA
     bsr     FetchFileBAddressSet
     move.b  (A5)+,D0  ; PLA
+    moveq   #0,D2
     move.b  D0,D2
     even
 _L_z02_UpdateModeERegister_CopyName:
+    moveq   #0,D3
     move.b  ($0423,A4),D3
     lea     ($0638,A4),A0
     move.b  (A0,D3.W),D0
+    moveq   #0,D3
     move.b  ($0425,A4),D3
     move.b  ($C4,A4),D1   ; ptr lo
     move.b  ($C5,A4),D4  ; ptr hi
@@ -2208,6 +2234,7 @@ _L_z02_UpdateModeERegister_CopyName:
     lsl.b  #1,D0   ; ASL A
     lsl.b  #1,D0   ; ASL A
     lsl.b  #1,D0   ; ASL A
+    moveq   #0,D3
     move.b  D0,D3
     moveq   #0,D2
     even
@@ -2224,6 +2251,7 @@ _L_z02_UpdateModeERegister_CompareToZelda:
     bcs  _L_z02_UpdateModeERegister_CompareToZelda
     move.b  (A5)+,D0  ; PLA
     move.b  D0,-(A5)  ; PHA
+    moveq   #0,D2
     move.b  D0,D2
     moveq   #0,D3
     moveq   #1,D0
@@ -2239,6 +2267,7 @@ _L_z02_UpdateModeERegister_CompareToZelda:
     even
 _L_z02_UpdateModeERegister_FlagBReady:
     move.b  (A5)+,D0  ; PLA
+    moveq   #0,D2
     move.b  D0,D2
     moveq   #1,D0
     move.b  D0,($0426,A4)
@@ -2326,7 +2355,9 @@ ModeE_ResetVariables:
 DeleteSlot:
     moveq   #8,D0
     move.b  D0,($0601,A4)
+    moveq   #0,D3
     move.b  ($0016,A4),D3
+    moveq   #0,D2
     lea     (SlotToBlankNameTransferBufEndOffset).l,A0
     move.b  (A0,D3.W),D2
     ; Copy the appropriate transfer buf of a blank name for
@@ -2375,6 +2406,7 @@ ResetButtonRepeatState:
 
     even
 ModeE_HandleDirectionButton:
+    moveq   #0,D3
     move.b  D0,D3
     move.b  ($0426,A4),D0
     bne  _L_z02_ModeE_HandleDirectionButton_CheckSameButton
@@ -2556,6 +2588,7 @@ ModeE_HandleAOrB:
     ; If InitializedNameField [$0420] is set, then skip initializing
     ; the name field.
     bne  _L_z02_ModeE_HandleAOrB_CheckAB
+    moveq   #0,D3
     move.b  ($0016,A4),D3
     cmpi.b  #$03,D3
     beq  LA10A_Exit
@@ -2566,6 +2599,7 @@ ModeE_HandleAOrB:
     move.b  D0,($0421,A4)
     ; Get the offset of the end of the initial name character
     ; transfer record header for the current slot.
+    moveq   #0,D2
     lea     (SlotToInitialNameCharTransferHeaderEndOffsets).l,A0
     move.b  (A0,D3.W),D2
     moveq   #2,D3
@@ -2610,7 +2644,9 @@ _L_z02_ModeE_HandleAOrB_CopyHeader:
     subq.b  #1,D3
     bpl  _L_z02_ModeE_HandleAOrB_CopyHeader
     move.b  D3,($0306,A4)
+    moveq   #0,D2
     move.b  ($0421,A4),D2
+    moveq   #0,D3
     move.b  ($041F,A4),D3
     lea     (ModeE_CharMap).l,A0
     move.b  (A0,D3.W),D0
@@ -2655,6 +2691,7 @@ _L_z02_ModeE_HandleAOrB_MoveCursor:
     move.b  D0,($0423,A4)
     ; It also means that we went past the end of the save slot
     ; info name. Set the offset to the beginning of the name.
+    moveq   #0,D3
     move.b  ($0016,A4),D3
     lea     (SlotToNameOffset).l,A0
     move.b  (A0,D3.W),D0
@@ -2684,6 +2721,7 @@ _L_z02_ModeEandF_SetUpCursorSprites_CopySprites:
     move.b  D0,(A0,D3.W)
     subq.b  #1,D3
     bpl  _L_z02_ModeEandF_SetUpCursorSprites_CopySprites
+    moveq   #0,D3
     move.b  ($0016,A4),D3
     lea     (ModeEandFSlotCursorYs).l,A0
     move.b  (A0,D3.W),D0
@@ -2769,6 +2807,7 @@ ModifyFlashingCursorY:
     ori     #$11,CCR  ; SEC: set C+X
     move.b  #$08,D1
     subx.b  D1,D0   ; SBC #$08
+    moveq   #0,D3
     move.b  D0,D3
     move.b  ($0015,A4),D0
     andi.b #$08,D0
@@ -2787,6 +2826,7 @@ _L_z02_UpdateModeEandF_Idle_ChangeSelection:
     moveq   #1,D0
     move.b  D0,($0602,A4)
     addq.b  #1,($0016,A4)
+    moveq   #0,D3
     move.b  ($0016,A4),D3
     cmpi.b  #$04,D3
     bne  _anon_z02_14
@@ -2816,6 +2856,7 @@ _anon_z02_15:
     moveq   #0,D0
     move.b  D0,($0420,A4)
     move.b  D0,($0421,A4)
+    moveq   #0,D3
     move.b  ($0016,A4),D3
     cmpi.b  #$03,D3
     beq  _L_z02_UpdateModeEandF_Idle_Exit
@@ -2873,6 +2914,7 @@ UpdateMode0Demo_Sub1:
     move.b  D0,($0016,A4)
     even
 _L_z02_UpdateMode0Demo_Sub1_LoopSlot:
+    moveq   #0,D3
     move.b  ($0016,A4),D3
     lea     (NES_SRAM+$052A).l,A0
     move.b  (A0,D3.W),D0
@@ -2881,6 +2923,7 @@ _L_z02_UpdateMode0Demo_Sub1_LoopSlot:
     bsr     CalculateFileBChecksum
     move.b  ($0016,A4),D0
     lsl.b  #1,D0   ; ASL A
+    moveq   #0,D3
     move.b  D0,D3
     lea     (FileBChecksums).l,A0
     move.b  (A0,D3.W),D0
@@ -2902,6 +2945,7 @@ _L_z02_UpdateMode0Demo_Sub1_CheckFileA:
     ; It's only a sum.
     bsr     FetchFileAAddressSet
     bsr     CalculateFileAChecksum
+    moveq   #0,D3
     move.b  ($0016,A4),D3
     lea     (NES_SRAM+$051E).l,A0
     move.b  (A0,D3.W),D0
@@ -2913,6 +2957,7 @@ _L_z02_UpdateMode0Demo_Sub1_CheckFileA:
     bne  _L_z02_UpdateMode0Demo_Sub1_FormatA
     move.b  ($0016,A4),D0
     lsl.b  #1,D0   ; ASL A
+    moveq   #0,D3
     move.b  D0,D3
     lea     (NES_SRAM+$0524).l,A0
     move.b  (A0,D3.W),D0
@@ -3150,6 +3195,7 @@ _anon_z02_17:
     move.b  D0,(A0,D3.W)     ; STA ($nn),Y
     bsr     FetchFileAAddressSet
     bsr     CalculateFileAChecksum
+    moveq   #0,D3
     move.b  ($0016,A4),D3
     ; Be proactive and reset these values in save slot info.
     ;
@@ -3173,6 +3219,7 @@ _anon_z02_17:
     move.b  D0,(A0,D3.W)
     move.b  D3,D0
     lsl.b  #1,D0   ; ASL A
+    moveq   #0,D3
     move.b  D0,D3
     move.b  ($000E,A4),D0
     lea     (NES_SRAM+$0524).l,A0
@@ -3186,12 +3233,14 @@ _anon_z02_17:
     even
 CalculateAndStoreFileBChecksumUncommitted:
     bsr     CalculateFileBChecksum
+    moveq   #0,D3
     move.b  ($0016,A4),D3
     moveq   #0,D0
     lea     (NES_SRAM+$052A).l,A0
     move.b  D0,(A0,D3.W)
     move.b  D3,D0
     lsl.b  #1,D0   ; ASL A
+    moveq   #0,D3
     move.b  D0,D3
     move.b  ($00CE,A4),D0
     lea     (FileBChecksums).l,A0
@@ -3415,6 +3464,7 @@ _anon_z02_19:
     bsr     FetchFileBAddressSet
     bsr     CalculateFileBChecksum
     move.b  #$FF,D0
+    moveq   #0,D3
     move.b  ($0016,A4),D3
     lea     (NES_SRAM+$052A).l,A0
     move.b  D0,(A0,D3.W)
@@ -3443,6 +3493,7 @@ _L_z02_InitMode1_Sub1_LoopSlot:
     add.l   #NES_RAM,D4       ; → Genesis addr
     movea.l D4,A0
     move.b  (A0,D3.W),D0     ; LDA ($nn),Y
+    moveq   #0,D3
     move.b  D0,D3
     lea     (LinkColors).l,A0
     move.b  (A0,D3.W),D0
@@ -3454,11 +3505,13 @@ _L_z02_InitMode1_Sub1_LoopSlot:
     andi    #$EE,CCR  ; CLC: clear C+X
     move.b  #$28,D1
     addx.b  D1,D0   ; ADC #$28 (X flag = 6502 C)
+    moveq   #0,D3
     move.b  D0,D3
     move.b  D2,D0
     andi    #$EE,CCR  ; CLC: clear C+X
     move.b  #$04,D1
     addx.b  D1,D0   ; ADC #$04 (X flag = 6502 C)
+    moveq   #0,D2
     move.b  D0,D2
     cmpi.b  #$0C,D2
     bcs  _L_z02_InitMode1_Sub1_LoopSlot
@@ -3497,6 +3550,7 @@ _L_z02_InitMode1_FillAndTransferSlotTiles_CopySlotLineTemplate:
     move.b  D0,(A0,D3.W)
     subq.b  #1,D3
     bpl  _L_z02_InitMode1_FillAndTransferSlotTiles_CopySlotLineTemplate
+    moveq   #0,D3
     move.b  ($0016,A4),D3
     even
 _L_z02_InitMode1_FillAndTransferSlotTiles_OffsetSlotLineAddr:
@@ -3523,6 +3577,7 @@ _L_z02_InitMode1_FillAndTransferSlotTiles_OffsetSlotLineAddr:
     lsl.b  #1,D0   ; ASL A
     lsl.b  #1,D0   ; ASL A
     lsl.b  #1,D0   ; ASL A
+    moveq   #0,D2
     move.b  D0,D2
     moveq   #3,D3
     even
@@ -3539,6 +3594,7 @@ _L_z02_InitMode1_FillAndTransferSlotTiles_CopyName:
     ; to [$0E:0F] for formatting.
     move.b  ($0016,A4),D0
     lsl.b  #1,D0   ; ASL A
+    moveq   #0,D3
     move.b  D0,D3
     lea     ($0650,A4),A0
     move.b  (A0,D3.W),D0
@@ -3572,10 +3628,12 @@ _L_z02_InitMode1_Sub6_CopyTemplate:
     move.b  D0,($000B,A4)
     even
 _L_z02_InitMode1_Sub6_LoopSlot:
+    moveq   #0,D3
     move.b  ($000A,A4),D3
     lea     ($0630,A4),A0
     move.b  (A0,D3.W),D0
     bsr     FormatDecimalByte
+    moveq   #0,D2
     move.b  ($000B,A4),D2
     move.b  ($0001,A4),D0
     lea     ($0302,A4),A0
@@ -3593,6 +3651,7 @@ _L_z02_InitMode1_Sub6_LoopSlot:
     move.b  ($0002,A4),D0
     cmpi.b  #$24,D0
     bne  _L_z02_InitMode1_Sub6_Emit0
+    moveq   #0,D3
     move.b  ($000A,A4),D3
     lea     ($0633,A4),A0
     move.b  (A0,D3.W),D0
@@ -3666,6 +3725,7 @@ _L_z02_UpdateMode1Menu_Sub0_ChangeSelection:
     moveq   #0,D0
     move.b  D0,($0016,A4)
 _anon_z02_21:
+    moveq   #0,D3
     move.b  ($0016,A4),D3
     ; Since CurSaveSlot is used to index menu choices, which
     ; includes register and eliminate in addition to save slots;
@@ -3683,6 +3743,7 @@ _L_z02_UpdateMode1Menu_Sub0_WriteCursorSprite:
     move.b  D0,(A0,D3.W)
     subq.b  #1,D3
     bpl  _L_z02_UpdateMode1Menu_Sub0_WriteCursorSprite
+    moveq   #0,D3
     move.b  ($0016,A4),D3
     lea     (Mode1CursorSpriteYs).l,A0
     move.b  (A0,D3.W),D0
@@ -3744,6 +3805,7 @@ _L_z02_UpdateMode1Menu_Sub1_CopyItems:
     move.b  D0,($066C,A4)
     ; Copy WorldFlags block from file A to profile.
     ;
+    moveq   #0,D3
     move.b  D0,D3
     even
 _L_z02_UpdateMode1Menu_Sub1_CopyWorldFlags:
@@ -3816,13 +3878,16 @@ _L_z02_Mode1_WriteLinkSprites_LoopSlot:
     move.b  ($0000,A4),D0
     move.b  D0,-(A5)  ; PHA
     bsr     Anim_WriteSpritePairNotFlashing
+    moveq   #0,D2
     move.b  D0,D2
     move.b  (A5)+,D0  ; PLA
     move.b  D0,($0000,A4)
+    moveq   #0,D3
     move.b  ($0004,A4),D3
     lea     ($062D,A4),A0
     move.b  (A0,D3.W),D0
     beq  _L_z02_Mode1_WriteLinkSprites_NextSlot
+    moveq   #0,D3
     move.b  ($0343,A4),D3
     move.b  ($0001,A4),D0
     ori     #$11,CCR  ; SEC: set C+X
@@ -3916,6 +3981,7 @@ _L_z02_UpdateModeDSave_Sub0_CopyItems:
     move.b  D0,(A0,D3.W)     ; STA ($nn),Y
     subq.b  #1,D3
     bpl  _L_z02_UpdateModeDSave_Sub0_CopyItems
+    moveq   #0,D3
     move.b  ($0016,A4),D3
     lea     ($0630,A4),A0
     move.b  (A0,D3.W),D0
@@ -3939,6 +4005,7 @@ _L_z02_UpdateModeDSave_Sub0_CopyItems:
     add.l   #NES_RAM,D4
     movea.l D4,A0
     move.b  D0,(A0,D3.W)     ; STA ($nn),Y
+    moveq   #0,D3
     move.b  ($0016,A4),D3
     lea     ($0633,A4),A0
     move.b  D0,(A0,D3.W)
@@ -4035,6 +4102,7 @@ _anon_z02_25:
 
     even
 UpdateModeDSave_Sub1:
+    moveq   #0,D3
     move.b  ($0016,A4),D3
     lea     (NES_SRAM+$052A).l,A0
     move.b  (A0,D3.W),D0
@@ -4043,6 +4111,7 @@ UpdateModeDSave_Sub1:
     bsr     CalculateFileBChecksum
     move.b  ($0016,A4),D0
     lsl.b  #1,D0   ; ASL A
+    moveq   #0,D3
     move.b  D0,D3
     lea     (FileBChecksums).l,A0
     move.b  (A0,D3.W),D0
@@ -4065,6 +4134,7 @@ _L_z02_UpdateModeDSave_Sub1_IncSubmode:
 _L_z02_UpdateModeDSave_Sub1_DiscardFileB:
     ; Discard file B, because it couldn't be validated.
     ;
+    moveq   #0,D3
     move.b  ($0016,A4),D3
     move.b  #$FF,D0
     lea     (NES_SRAM+$052A).l,A0
@@ -4074,6 +4144,7 @@ _L_z02_UpdateModeDSave_Sub1_DiscardFileB:
 
     even
 CopyFileBToFileA:
+    moveq   #0,D3
     move.b  ($0016,A4),D3
     moveq   #0,D0
     lea     (NES_SRAM+$051E).l,A0
@@ -4082,6 +4153,7 @@ CopyFileBToFileA:
     move.b  D0,(A0,D3.W)
     move.b  D3,D0
     lsl.b  #1,D0   ; ASL A
+    moveq   #0,D3
     move.b  D0,D3
     moveq   #0,D0
     lea     (NES_SRAM+$0524).l,A0
@@ -4217,6 +4289,7 @@ _L_z02_CopyFileBToFileA_CopyItems:
     movea.l D4,A0
     move.b  (A0,D3.W),D0     ; LDA ($nn),Y
     move.b  D0,-(A5)  ; PHA
+    moveq   #0,D3
     move.b  ($0016,A4),D3
     move.b  (A5)+,D0  ; PLA
     lea     ($062D,A4),A0
@@ -4291,6 +4364,7 @@ _anon_z02_28:
     move.b  ($000F,A4),D0
     cmpi.b  #$07,D0
     bne  _L_z02_CopyFileBToFileA_CopyWorldFlags
+    moveq   #0,D3
     move.b  ($0016,A4),D3
     moveq   #90,D0
     lea     (NES_SRAM+$051E).l,A0
@@ -4300,6 +4374,7 @@ _anon_z02_28:
     move.b  D0,(A0,D3.W)
     move.b  D3,D0
     lsl.b  #1,D0   ; ASL A
+    moveq   #0,D3
     move.b  D0,D3
     lea     (FileBChecksums).l,A0
     move.b  (A0,D3.W),D0
@@ -4310,6 +4385,7 @@ _anon_z02_28:
     move.b  (A0,D3.W),D0
     lea     (NES_SRAM+$0524).l,A0
     move.b  D0,(A0,D3.W)
+    moveq   #0,D3
     move.b  ($0016,A4),D3
     move.b  #$FF,D0
     lea     (NES_SRAM+$052A).l,A0
@@ -4329,6 +4405,7 @@ UpdateModeDSave_Sub2:
 ;
     even
 FetchProfileNameAddress:
+    moveq   #0,D3
     move.b  ($0016,A4),D3
     lea     (ProfileNameAddrsLo).l,A0
     move.b  (A0,D3.W),D0
@@ -4340,6 +4417,7 @@ FetchProfileNameAddress:
 
     even
 StoreSaveSlotHearts:
+    moveq   #0,D3
     move.b  ($0016,A4),D3
     lea     (SaveSlotHeartsAddrsLo).l,A0
     move.b  (A0,D3.W),D0
@@ -4534,6 +4612,7 @@ _anon_z02_32:
     move.b  D0,($0001,A4)
     ; Load the person text current character index.
     ;
+    moveq   #0,D3
     move.b  ($0416,A4),D3
     ; Increment the index variable to point to the next character
     ; for the next time.
@@ -4655,6 +4734,7 @@ UpdateMode13WinGame_Sub0_Flash:
     bsr     DrawLinkZeldaTriforces
     even
 _L_z02_UpdateMode13WinGame_Sub0_Flash_ChangePalette:
+    moveq   #0,D2
     move.b  ($0506,A4),D2
     ; Don't flash until $40 frames have passed.
     ;
@@ -4674,6 +4754,7 @@ _anon_z02_34:
     ;
     move.b  D2,D0
     andi.b #$03,D0
+    moveq   #0,D2
     move.b  D0,D2
     ; Change element 0 of palette 4 in buffer to change
     ; the background color.
@@ -4840,6 +4921,7 @@ _anon_z02_35:
     ; Load a character from the string and copy it to
     ; the transfer record until we read character $FF.
     ;
+    moveq   #0,D3
     move.b  ($0413,A4),D3
     lea     (PeaceText).l,A0
     move.b  (A0,D3.W),D0
@@ -4981,6 +5063,7 @@ _anon_z02_39:
     ; Put the quest number in Y register.
     ;
     moveq   #0,D3
+    moveq   #0,D2
     move.b  ($0016,A4),D2
     lea     ($062D,A4),A0
     move.b  (A0,D2.W),D0
@@ -5097,6 +5180,7 @@ _L_z02_DrawCredits_TerminateRecords:
     move.b  D0,($0304,A4)
     ; Write the high byte of the current VRAM page.
     ;
+    moveq   #0,D2
     move.b  ($050C,A4),D2
     lea     (CreditLineVramAddrsHi).l,A0
     move.b  (A0,D2.W),D0
@@ -5104,6 +5188,7 @@ _L_z02_DrawCredits_TerminateRecords:
     ; The line number will be used to shift the task mask below.
     ;
     move.b  ($050D,A4),D0
+    moveq   #0,D3
     move.b  D0,D3
     ; Multiply the VRAM line number by $20 to get the low VRAM address.
     ;
@@ -5128,11 +5213,13 @@ _anon_z02_43:
     ; The mask inidcates that it should have text.
     ; But if line index >= $17, then it doesn't.
     ;
+    moveq   #0,D3
     move.b  ($050E,A4),D3
     cmpi.b  #$17,D3
     bcc  _L_z02_DrawCredits_IncVramLine
     ; In the first quest, don't consider line numbers >= $10.
     ;
+    moveq   #0,D2
     move.b  ($0016,A4),D2
     lea     ($062D,A4),A0
     move.b  (A0,D2.W),D0
@@ -5140,6 +5227,7 @@ _anon_z02_43:
     cmpi.b  #$10,D3
     bcc  _L_z02_DrawCredits_IncLine
 _anon_z02_44:
+    moveq   #0,D2
     move.b  ($0016,A4),D2
     lea     ($062D,A4),A0
     move.b  (A0,D2.W),D0
@@ -5183,6 +5271,7 @@ _anon_z02_45:
     add.l   #NES_RAM,D4       ; → Genesis addr
     movea.l D4,A0
     move.b  (A0,D3.W),D0     ; LDA ($nn),Y
+    moveq   #0,D2
     move.b  D0,D2
     ; Loop over each character in the rest of the credits source record.
     ;
@@ -5205,6 +5294,7 @@ _anon_z02_46:
     bne  _anon_z02_46
     ; If line index <> $11, go increment.
     ;
+    moveq   #0,D3
     move.b  ($050E,A4),D3
     cmpi.b  #$0C,D3
     bcs  _L_z02_DrawCredits_IncLine
@@ -5216,6 +5306,7 @@ _anon_z02_46:
     lsl.b  #1,D0   ; ASL A
     lsl.b  #1,D0   ; ASL A
     lsl.b  #1,D0   ; ASL A
+    moveq   #0,D3
     move.b  D0,D3
     ; Copy the player's name at offset 9 in string to transfer.
     ;
@@ -5231,6 +5322,7 @@ _anon_z02_47:
     bcs  _anon_z02_47
     ; Format the death count for the current save slot.
     ;
+    moveq   #0,D3
     move.b  ($0016,A4),D3
     lea     ($0630,A4),A0
     move.b  (A0,D3.W),D0
@@ -5244,6 +5336,7 @@ _anon_z02_48:
     move.b  D0,(A0,D2.W)
     subq.b  #1,D2
     bpl  _anon_z02_48
+    moveq   #0,D3
     move.b  ($050E,A4),D3
     even
 _L_z02_DrawCredits_IncLine:
@@ -5274,12 +5367,14 @@ _anon_z02_49:
     move.b  D0,($050D,A4)
     ; Increment the VRAM page number.
     ;
+    moveq   #0,D3
     move.b  ($050C,A4),D3
     addq.b  #1,D3
     ; If it has reached $C, then roll it over to 0.
     ;
     cmpi.b  #$0C,D3
     bcs  _anon_z02_50
+    moveq   #0,D3
     move.b  D0,D3
 _anon_z02_50:
     move.b  D3,($050C,A4)
@@ -5302,6 +5397,7 @@ _L_z02_DrawCredits_WriteAttributes:
     ; NT attribute block row. Look up the attribute byte to use
     ; for almost every block in this NT attribute block row.
     ;
+    moveq   #0,D3
     move.b  D0,D3
     lea     (CreditsAttrs).l,A0
     move.b  (A0,D3.W),D0
@@ -5342,6 +5438,7 @@ _anon_z02_52:
 _L_z02_DrawCredits_IncRow:
     ; Add 1 to the row.
     ;
+    moveq   #0,D3
     move.b  ($050A,A4),D3
     addq.b  #1,D3
     ; Skip the last two rows in each cycle.
@@ -5409,6 +5506,7 @@ _anon_z02_55:
     subq.b  #1,($0670,A4)
     moveq   #8,D0
     move.b  D0,($067C,A4)
+    moveq   #0,D3
     move.b  ($0016,A4),D3
     moveq   #1,D0
     lea     ($062D,A4),A0

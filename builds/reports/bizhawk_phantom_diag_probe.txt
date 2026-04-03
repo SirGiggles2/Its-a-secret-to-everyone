@@ -1,0 +1,21 @@
+=================================================================
+Phantom D2=$40 Diagnostic Probe — 200 frames
+=================================================================
+  LEGIT   f036 NMI#0  D2=$00000700  A0=$000068E6  ret=$0068E0  sent=$FF  idx=$00  ptr=$0300
+  LEGIT   f038 NMI#0  D2=$00000700  A0=$00006FE6  ret=$0068E0  sent=$FF  idx=$00  ptr=$0300
+  LEGIT   f040 NMI#0  D2=$000000E0  A0=$000076E6  ret=$0068E0  sent=$FF  idx=$00  ptr=$0300
+  LEGIT   f041 NMI#0  D2=$00000900  A0=$00002DF2  ret=$002DEC  sent=$FF  idx=$00  ptr=$0300
+  LEGIT   f043 NMI#0  D2=$00000820  A0=$000036F2  ret=$002DEC  sent=$FF  idx=$00  ptr=$0300
+
+=================================================================
+SUMMARY
+=================================================================
+  Total NMIs: 0
+  Total legit calls: 5
+  Total phantom D2=$40 calls: 0
+  Frames: 200
+
+
+DynTileBuf ($0302) dump at frame 200:
+  FF 00 20 36 0F 00 10 36 17 27 0F 36 08 1A 28 36 
+  30 3B 22 36 30 3B 16 36 17 27 0F 36 08 1A 28 36 

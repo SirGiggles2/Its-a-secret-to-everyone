@@ -551,6 +551,7 @@ _L_z04_UpdateGoriya_AfterMove:
     moveq   #4,D0
     move.b  D0,($0002,A4)
     move.b  ($0062,A4),D0
+    moveq   #0,D3
     lea     ($0084,A4),A0
     move.b  (A0,D2.W),D3
     lea     ($0084,A4),A0
@@ -559,6 +560,7 @@ _L_z04_UpdateGoriya_AfterMove:
     bcc  _anon_z04_11
     lea     ($0084,A4),A0
     move.b  (A0,D2.W),D0
+    moveq   #0,D3
     move.b  ($0062,A4),D3
     move.b  ($0002,A4),D1
     lsl.b  #1,D1   ; ASL $02
@@ -578,11 +580,13 @@ _anon_z04_11:
     moveq   #1,D0
     move.b  D0,($0003,A4)
     move.b  ($0061,A4),D0
+    moveq   #0,D3
     move.b  ($70,A4,D2.W),D3
     move.b  ($70,A4,D2.W),D1
     cmp.b   D1,D0
     bcc  _anon_z04_12
     move.b  ($70,A4,D2.W),D0
+    moveq   #0,D3
     move.b  ($0061,A4),D3
     move.b  ($0003,A4),D1
     lsl.b  #1,D1   ; ASL $03
@@ -636,6 +640,7 @@ L_Walker_SetInputDirAndTryShootingBoomerang:
     moveq   #92,D0
     ; If the monster is a blue goriya, go check the timer.
     ;
+    moveq   #0,D3
     lea     ($034F,A4),A0
     move.b  (A0,D2.W),D3
     cmpi.b  #$05,D3
@@ -660,6 +665,7 @@ _L_z04_L_Walker_SetInputDirAndTryShootingBoomerang_CheckTimerToShootBoomerang:
 _L_z04_L_Walker_SetInputDirAndTryShootingBoomerang_CheckTimerToShoot:
     ; If object timer <> 0, return.
     ;
+    moveq   #0,D3
     move.b  ($28,A4,D2.W),D3
     bne  _L_z04_L_Walker_SetInputDirAndTryShootingBoomerang_Exit
     ; Store in [00] the type of projectile the monster will throw.
@@ -824,6 +830,7 @@ _anon_z04_14:
     addq.b  #1,(A0,D2.W)
     ; If the push timer still < $10, return.
     ;
+    moveq   #0,D3
     lea     ($0412,A4),A0
     move.b  (A0,D2.W),D3
     cmpi.b  #$10,D3
@@ -915,6 +922,7 @@ _anon_z04_16:
     ; The animation index is (object type + 1) to account for Link
     ; having two animation indexes.
     ;
+    moveq   #0,D3
     lea     ($034F,A4),A0
     move.b  (A0,D2.W),D3
     addq.b  #1,D3
@@ -942,12 +950,15 @@ ShootFireball:
     move.b  D2,D0
     move.b  D0,-(A5)  ; PHA
     move.b  D3,D0
+    moveq   #0,D2
     move.b  D0,D2
     move.b  ($0000,A4),D0
     bsr     SetTypeAndClearObject
     move.b  D2,D0
+    moveq   #0,D3
     move.b  D0,D3
     move.b  (A5)+,D0  ; PLA
+    moveq   #0,D2
     move.b  D0,D2
     ; Set the new object's location to the shooter's.
     ; Offset the new object's X right 4 pixels.
@@ -1052,6 +1063,7 @@ _L_z04_L_DrawShot_DrawOthers:
     ; If object type < $55 (flying rock is $53), then
     ; add 4 to X coordinate, and use sprite attributes 0.
     ;
+    moveq   #0,D3
     lea     ($034F,A4),A0
     move.b  (A0,D2.W),D3
     cmpi.b  #$55,D3
@@ -1251,6 +1263,7 @@ _L_z04_UpdateFireball_Move:
     ;
     lea     ($041F,A4),A0
     move.b  (A0,D2.W),D0
+    moveq   #0,D3
     lea     ($0451,A4),A0
     move.b  (A0,D2.W),D3
     bsr     Fireball_MoveOneAxis
@@ -1266,6 +1279,7 @@ _L_z04_UpdateFireball_Move:
     ;
     lea     ($0444,A4),A0
     move.b  (A0,D2.W),D0
+    moveq   #0,D3
     lea     ($045E,A4),A0
     move.b  (A0,D2.W),D3
     bsr     Fireball_MoveOneAxis
@@ -1317,6 +1331,7 @@ InitBlueKeese:
     ;
     move.b  ($18,A4,D2.W),D0
     andi.b #$07,D0
+    moveq   #0,D3
     move.b  D0,D3
     lea     (Directions8).l,A0
     move.b  (A0,D3.W),D0
@@ -1686,6 +1701,7 @@ _anon_z04_29:
 Gel_Move:
     ; Go handle state 0 or 2 as appropriate.
     ;
+    moveq   #0,D3
     lea     ($00AC,A4),A0
     move.b  (A0,D2.W),D3
     beq  _L_z04_Gel_Move_State0
@@ -1784,6 +1800,7 @@ UpdateNormalZolOrGel:
     ;
     move.b  ($18,A4,D2.W),D0
     andi.b #$03,D0
+    moveq   #0,D3
     move.b  D0,D3
     ; If the monster is Zol, then go use this index as is.
     ;
@@ -1966,7 +1983,9 @@ _L_z04_UpdateStatues_Shoot:
     move.b  D0,($000B,A4)
     ; Look for the number of fireballs to make (minus 1) by pattern number.
     ;
+    moveq   #0,D3
     move.b  D0,D3
+    moveq   #0,D2
     lea     (StatueFireballCounts).l,A0
     move.b  (A0,D3.W),D2
     even
@@ -1975,6 +1994,7 @@ _L_z04_UpdateStatues_LoopFireball:
     ;
     ; Decrement the fireball timer at this index.
     ;
+    moveq   #0,D3
     lea     ($04E8,A4),A0
     move.b  (A0,D2.W),D3
     subq.b  #1,D3
@@ -1996,6 +2016,7 @@ _L_z04_UpdateStatues_LoopFireball:
     ; the random value.
     ;
     andi.b #$03,D0
+    moveq   #0,D3
     move.b  D0,D3
     lea     (StatueFireballStartTimes).l,A0
     move.b  (A0,D3.W),D0
@@ -2009,12 +2030,14 @@ _L_z04_UpdateStatues_LoopFireball:
     ;
     ;
     ; Pattern
+    moveq   #0,D3
     move.b  ($000B,A4),D3
     move.b  D2,D0
     andi    #$EE,CCR  ; CLC: clear C+X
     lea     (StatuePatternToBasePositionIndex).l,A0
     move.b  (A0,D3.W),D1
     addx.b  D1,D0   ; ADC StatuePatternToBasePositionIndex,Y
+    moveq   #0,D3
     move.b  D0,D3
     move.b  D2,D0
     move.b  D0,-(A5)  ; PHA
@@ -2024,6 +2047,7 @@ _L_z04_UpdateStatues_LoopFireball:
     bsr     Anim_FetchObjPosForSpriteDescriptor
     ; Switch to the new fireball's object slot.
     ;
+    moveq   #0,D2
     move.b  ($000A,A4),D2
     ; Look up and set the X coordinate for the fireball object.
     ; Also store it in [02].
@@ -2077,6 +2101,7 @@ _anon_z04_31:
     bsr     ShootFireball
 _anon_z04_32:
     move.b  (A5)+,D0  ; PLA
+    moveq   #0,D2
     move.b  D0,D2
     even
 _L_z04_UpdateStatues_NextLoopFireball:
@@ -2096,6 +2121,7 @@ _L_z04_UpdateStatues_Exit:
 CheckZora:
     ; If the zora attribute of this room is off, return.
     ;
+    moveq   #0,D3
     move.b  ($00EB,A4),D3
     lea     (NES_SRAM+$087E).l,A0
     move.b  (A0,D3.W),D0
@@ -2116,12 +2142,14 @@ CheckZora:
     move.b  D0,($000D,A4)
     ; Switch to the new object slot.
     ;
+    moveq   #0,D2
     move.b  ($0059,A4),D2
     even
 _L_z04_CheckZora_LoopTileCandidate:
     ; Turn the random value at this index into a $10 pixel aligned X coordinate.
     ; If it = 0 or $F0, go loop again.
     ;
+    moveq   #0,D3
     move.b  ($000D,A4),D3
     move.b  ($18,A4,D3.W),D0
     andi.b #$F0,D0
@@ -2189,6 +2217,7 @@ InitTektite:
     ;
     move.b  ($19,A4,D2.W),D0
     andi.b #$03,D0
+    moveq   #0,D3
     move.b  D0,D3
     lea     (TektiteStartingDirs).l,A0
     move.b  (A0,D3.W),D0
@@ -2396,6 +2425,7 @@ _L_z04__TryShooting_TryShootingNow:
     bne  _L_z04__TryShooting_SetShootTimer
     ; then Y := shoot timer - 1
     ;
+    moveq   #0,D3
     lea     ($0451,A4),A0
     move.b  (A0,D2.W),D3
     subq.b  #1,D3
@@ -2522,6 +2552,7 @@ _L_z04_UpdateMonsterArrow_CheckShooter:
     ; If the shooter is gone, then reset the arrow's object timer;
     ; so that it flies right away.
     ;
+    moveq   #0,D3
     lea     ($042C,A4),A0
     move.b  (A0,D2.W),D3
     lea     ($034F,A4),A0
@@ -2579,6 +2610,7 @@ UpdateBoulderSet:
     ; Set the boulder monster type, and increase the number
     ; of active boulders.
     ;
+    moveq   #0,D2
     move.b  ($0059,A4),D2
     addq.b  #1,($0515,A4)
     moveq   #32,D0
@@ -2587,6 +2619,7 @@ UpdateBoulderSet:
     ; of the screen as the chase target.
     ;
     move.b  ($19,A4,D2.W),D0
+    moveq   #0,D3
     move.b  ($0061,A4),D3
     cmpi.b  #$80,D3
     bcc  _L_z04_UpdateBoulderSet_RightHalf
@@ -2606,6 +2639,7 @@ _L_z04_UpdateBoulderSet_SetX:
     move.b  D0,(A0,D2.W)
     ; Set the boulder set's timer to ((Random + 8) AND $1F).
     ;
+    moveq   #0,D2
     move.b  ($0340,A4),D2
     moveq   #8,D0
     andi    #$EE,CCR  ; CLC: clear C+X
@@ -2763,6 +2797,7 @@ _L_z04_UpdateTektiteOrBoulder_FinishSetUpJump:
     ;
     ; Add it to the object's Y, and store this destination Y.
     ;
+    moveq   #0,D3
     lea     ($0098,A4),A0
     move.b  (A0,D2.W),D3
     lea     ($0084,A4),A0
@@ -2829,6 +2864,7 @@ _anon_z04_37:
     lea     ($0098,A4),A0
     move.b  (A0,D2.W),D1
     addx.b  D1,D0   ; ADC ObjDir,X
+    moveq   #0,D3
     move.b  D0,D3
     lea     (JumperYAccelerations).l,A0
     move.b  (A0,D3.W),D0
@@ -2874,6 +2910,7 @@ _anon_z04_38:
     ; If the object is a boulder, then go reset timer, animate, draw.
     ;
     bsr     ResetObjState
+    moveq   #0,D3
     lea     ($034F,A4),A0
     move.b  (A0,D2.W),D3
     cmpi.b  #$20,D3
@@ -2896,6 +2933,7 @@ _anon_z04_38:
 _anon_z04_39:
     ; If the object is a blue tektite, then go use this t.
     ;
+    moveq   #0,D3
     lea     ($034F,A4),A0
     move.b  (A0,D2.W),D3
     cmpi.b  #$0D,D3
@@ -2905,6 +2943,7 @@ _anon_z04_39:
     andi.b #$7F,D0
     ; If Random < $A0, then go use this t.
     ;
+    moveq   #0,D3
     move.b  ($19,A4,D2.W),D3
     cmpi.b  #$A0,D3
     bcs  _L_z04_UpdateTektiteOrBoulder_SetTimerAndAnimate
@@ -2936,6 +2975,7 @@ Jumper_AnimateAndCheckCollisions:
     bne  _L_z04_Jumper_AnimateAndCheckCollisions_DrawTektite
     ; If object timer < $21, go draw frame image 0, and check collisions.
     ;
+    moveq   #0,D3
     move.b  ($28,A4,D2.W),D3
     cmpi.b  #$21,D3
     bcs  _L_z04_Jumper_AnimateAndCheckCollisions_DrawTektite
@@ -2984,6 +3024,7 @@ Jumper_GetKind:
     ori     #$11,CCR  ; SEC: set C+X
     move.b  #$0D,D1
     subx.b  D1,D0   ; SBC #$0D
+    moveq   #0,D3
     move.b  D0,D3
     cmpi.b  #$02,D3
     bcs  L10A10_Exit
@@ -3101,6 +3142,7 @@ UpdateBurrower:
     move.b  (A0,D2.W),D0
     cmpi.b  #$11,D0
     bne  _L_z04_UpdateBurrower_CycleState
+    moveq   #0,D3
     lea     ($00AC,A4),A0
     move.b  (A0,D2.W),D3
     subq.b  #1,D3
@@ -3139,6 +3181,7 @@ _anon_z04_41:
     move.b  D0,(A0,D2.W)
     ; Look up and set the speed and timer for the current state.
     ;
+    moveq   #0,D3
     move.b  D0,D3
     lea     (BlueLeeverStateQSpeeds).l,A0
     move.b  (A0,D3.W),D0
@@ -3152,6 +3195,7 @@ _L_z04_UpdateBurrower_Animate:
     ; Advance the animation counter; possibly setting a new
     ; value according to the new state.
     ;
+    moveq   #0,D3
     lea     ($00AC,A4),A0
     move.b  (A0,D2.W),D3
     lea     (BlueLeeverStateAnimTimes).l,A0
@@ -3174,10 +3218,12 @@ Burrower_AnimateDrawAndCheckCollisions:
     ; If is zora, and state >= 2 and < 5, then use frame image 2 or 3
     ; (front or back), which was stored in ObjDir above.
     ;
+    moveq   #0,D3
     lea     ($034F,A4),A0
     move.b  (A0,D2.W),D3
     cmpi.b  #$11,D3
     bne  _L_z04_Burrower_AnimateDrawAndCheckCollisions_CalcFrameImage
+    moveq   #0,D3
     lea     ($00AC,A4),A0
     move.b  (A0,D2.W),D3
     cmpi.b  #$02,D3
@@ -3508,6 +3554,7 @@ _anon_z04_47:
     ; Look up and set the speed, timer, and animation counter
     ; for the current state.
     ;
+    moveq   #0,D3
     move.b  D0,D3
     lea     (RedLeeverStateQSpeeds).l,A0
     move.b  (A0,D3.W),D0
@@ -3518,6 +3565,7 @@ _anon_z04_47:
     move.b  D0,($28,A4,D2.W)
     even
 RedLeever_AnimateAndCheckCollisions:
+    moveq   #0,D3
     lea     ($00AC,A4),A0
     move.b  (A0,D2.W),D3
     lea     (RedLeeverStateAnimTimes).l,A0
@@ -3533,6 +3581,7 @@ UpdateOctorock:
     ; Else use turn rate $70.
     ;
     move.b  #$A0,D0
+    moveq   #0,D3
     lea     ($034F,A4),A0
     move.b  (A0,D2.W),D3
     cmpi.b  #$09,D3
@@ -3546,6 +3595,7 @@ _anon_z04_48:
     ; Else double it.
     ;
     moveq   #32,D0
+    moveq   #0,D3
     lea     ($034F,A4),A0
     move.b  (A0,D2.W),D3
     cmpi.b  #$07,D3
@@ -3564,6 +3614,7 @@ _L_z04_UpdateOctorock_Shoot:
     ;
     lea     ($0098,A4),A0
     move.b  (A0,D2.W),D0
+    moveq   #0,D3
     move.b  D0,D3
     andi.b #$0C,D0
     beq  _L_z04_UpdateOctorock_CheckHorizontal
@@ -3875,6 +3926,7 @@ _anon_z04_51:
     ; $60 otherwise
     ;
     moveq   #32,D0
+    moveq   #0,D3
     move.b  ($19,A4,D2.W),D3
     cmpi.b  #$80,D3
     bcs  _anon_z04_52
@@ -3957,6 +4009,7 @@ UpdateArmos:
     even
 DrawArmosAndCheckCollisions:
     bsr     Anim_FetchObjPosForSpriteDescriptor
+    moveq   #0,D3
     lea     ($0098,A4),A0
     move.b  (A0,D2.W),D3
     ; If facing up, then use the second frame image in the set ("back").
@@ -4087,6 +4140,7 @@ _L_z04_PondFairy_HandleOtherStates_DrawLinkAndHearts:
     bsr     PondFairy_MoveHearts
     ; Restore the object slot.
     ;
+    moveq   #0,D2
     move.b  ($0340,A4),D2
     even
 _L_z04_PondFairy_HandleOtherStates_Exit:
@@ -4135,6 +4189,7 @@ _L_z04_PondFairy_MoveHearts_LoopHeart:
     ori     #$11,CCR  ; SEC: set C+X
     move.b  #$03,D1
     subx.b  D1,D0   ; SBC #$03
+    moveq   #0,D3
     move.b  D0,D3
     move.b  ($0396,A4),D0
     lea     (PondHeartStartAngles).l,A0
@@ -4182,6 +4237,7 @@ _L_z04_PondFairy_MoveHearts_MoveHeart:
     ; for a large ring.
     ;
     moveq   #6,D0
+    moveq   #0,D3
     move.b  D0,D3
     bsr     RotateObjectLocation
     lea     ($0084,A4),A0
@@ -4193,9 +4249,11 @@ _L_z04_PondFairy_MoveHearts_MoveHeart:
     ; The variable for the currently updating object slot has to be
     ; set to the heart's object slot for this drawing routine to work.
     ;
+    moveq   #0,D2
     move.b  ($0340,A4),D2
     bsr     DrawObjectNotMirrored
     move.b  (A5)+,D0  ; PLA
+    moveq   #0,D2
     move.b  D0,D2
     even
 _L_z04_PondFairy_MoveHearts_NextLoopHeart:
@@ -4338,6 +4396,7 @@ _anon_z04_56:
     ; If object is a rock ($62), go use a rock tile ($C8).
     ;
     move.b  #$C8,D0
+    moveq   #0,D3
     lea     ($034F,A4),A0
     move.b  (A0,D2.W),D3
     cmpi.b  #$62,D3
@@ -4362,6 +4421,7 @@ _L_z04_UpdateRockOrGravestone_ReplaceTiles:
     move.b  D0,($0000,A4)
     ; Get the position of the stairs in this room, and set it for the object.
     ;
+    moveq   #0,D3
     lea     ($0412,A4),A0
     move.b  (A0,D2.W),D3
     bsr     GetShortcutOrItemXYForRoom
@@ -4535,12 +4595,14 @@ IsQuestSecretMismatch:
     beq  _L_z04_IsQuestSecretMismatch_ReturnFalse
     ; Look up a quest number (0 or 1) indexed by quest secret (0 or 1).
     ;
+    moveq   #0,D3
     move.b  D0,D3
     lea     (SecretQuestNumbers).l,A0
     move.b  (A0,D3.W),D0
     ; If the save slot's quest number matches the room's
     ; secret quest number, then return C=0.
     ;
+    moveq   #0,D3
     move.b  ($0016,A4),D3
     lea     ($062D,A4),A0
     move.b  (A0,D3.W),D1
@@ -4576,6 +4638,7 @@ UpdateDock:
     ; $60 in the other room ($3F)
     ;
     move.b  #$80,D0
+    moveq   #0,D3
     move.b  ($00EB,A4),D3
     cmpi.b  #$55,D3
     beq  _anon_z04_57
@@ -4631,6 +4694,7 @@ _L_z04_UpdateDock_Exit:
 _L_z04_UpdateDock_HandleOtherStates:
     ; Is state = 1?
     ;
+    moveq   #0,D3
     lea     ($00AC,A4),A0
     move.b  (A0,D2.W),D3
     subq.b  #1,D3
@@ -4650,6 +4714,7 @@ _L_z04_UpdateDock_HandleOtherStates:
     move.b  D0,-(A5)  ; PHA
     bsr     GoToNextModeFromPlay
     move.b  (A5)+,D0  ; PLA
+    moveq   #0,D2
     move.b  D0,D2
     jmp     _L_z04_UpdateDock_ResetLinkAndRaftStateAndDraw
 
@@ -4682,6 +4747,7 @@ _L_z04_UpdateDock_Draw:
     move.b  D0,-(A5)  ; PHA
     bsr     Link_EndMoveAndAnimate_Bank4
     move.b  (A5)+,D0  ; PLA
+    moveq   #0,D2
     move.b  D0,D2
     ; TODO: Why animate the raft?
     ;
@@ -4990,6 +5056,7 @@ _L_z04_UpdateWallmaster_SetUpToEmerge:
     move.b  D0,($70,A4,D2.W)
     ; Look up and set the facing direction for the first step.
     ;
+    moveq   #0,D3
     lea     ($0412,A4),A0
     move.b  (A0,D2.W),D3
     lea     (WallmasterDirsAndAttrsLeft).l,A0
@@ -5071,6 +5138,7 @@ _anon_z04_66:
     addq.b  #1,(A0,D2.W)
     ; Set facing direction to the one for this new step.
     ;
+    moveq   #0,D3
     lea     ($0412,A4),A0
     move.b  (A0,D2.W),D3
     lea     (WallmasterDirsAndAttrsLeft).l,A0
@@ -5146,6 +5214,7 @@ _anon_z04_67:
     ; Store the offset of the left sprite record in [00],
     ; and the right one in [01].
     ;
+    moveq   #0,D3
     move.b  D0,D3
     lea     (SpriteOffsets).l,A0
     move.b  (A0,D3.W),D0
@@ -5159,6 +5228,7 @@ _L_z04_L_Wallmaster_State1_PatchSprites:
     ; The default image is the hand open.
     ; If animation frame = 0, then return.
     ;
+    moveq   #0,D2
     move.b  ($0340,A4),D2
     lea     ($03E4,A4),A0
     move.b  (A0,D2.W),D0
@@ -5171,11 +5241,13 @@ _L_z04_L_Wallmaster_State1_PatchSprites:
     ;
     ; Keep in mind that left and right sprites might be flipped.
     ;
+    moveq   #0,D3
     move.b  ($0000,A4),D3
     lea     ($0201,A4),A0
     move.b  (A0,D3.W),D0
     cmpi.b  #$9C,D0
     beq  _anon_z04_68
+    moveq   #0,D3
     move.b  ($0001,A4),D3
 _anon_z04_68:
     move.b  #$AC,D0
@@ -5198,6 +5270,7 @@ _L_z04_L_Wallmaster_State1_DrawWithCapturedLink:
     move.b  D0,($0084,A4)
     bsr     Link_EndMoveAndAnimate_Bank4
     bsr     ShowLinkSpritesBehindHorizontalDoors
+    moveq   #0,D2
     move.b  ($0340,A4),D2
     bsr     Wallmaster_PrepareToDraw
     ; Force animation frame 1: hand closed.
@@ -5222,6 +5295,7 @@ Wallmaster_PrepareToDraw:
     bsr     Anim_AdvanceAnimCounterAndSetObjPosForSpriteDescriptor
     ; For the current step, look up the sprite flipping attributes.
     ;
+    moveq   #0,D3
     lea     ($0412,A4),A0
     move.b  (A0,D2.W),D3
     lea     (WallmasterDirsAndAttrsLeft).l,A0
@@ -5263,6 +5337,7 @@ Wallmaster_CalcStartPosition:
     ; If Link is still (input dir = 0), then use distance $24, else $32.
     ;
     moveq   #36,D0
+    moveq   #0,D3
     move.b  ($03F8,A4),D3
     beq  _anon_z04_70
     moveq   #50,D0
@@ -5272,6 +5347,7 @@ _anon_z04_70:
     ; 2. add 8 to the instruction offset to access
     ;    the opposite direction for the same wall
     ;
+    moveq   #0,D3
     move.b  ($0098,A4),D3
     move.b  ($0002,A4),D1
     cmp.b   D1,D3
@@ -5325,8 +5401,10 @@ _anon_z04_72:
 
     even
 Wallmaster_PutSpritesBehindBgIfNeeded:
+    moveq   #0,D3
     move.b  ($0000,A4),D3
     bsr     Wallmaster_PutSpriteBehindBgIfNeeded
+    moveq   #0,D3
     move.b  ($0001,A4),D3
     even
 Wallmaster_PutSpriteBehindBgIfNeeded:
@@ -5368,6 +5446,7 @@ InitRope:
     moveq   #16,D0
     lea     ($0485,A4),A0
     move.b  D0,(A0,D2.W)
+    moveq   #0,D3
     move.b  ($0016,A4),D3
     lea     ($062D,A4),A0
     move.b  (A0,D3.W),D0
@@ -5489,6 +5568,7 @@ _L_z04_UpdateRope_Animate:
     ; In the second quest, ropes always flash.
     ; So, set sprite attributes to all the cycled palette rows.
     ;
+    moveq   #0,D3
     move.b  ($0016,A4),D3
     lea     ($062D,A4),A0
     move.b  (A0,D3.W),D0
@@ -5540,6 +5620,7 @@ UpdateStalfos:
     move.b  D0,($0001,A4)
     ; If in the first quest, return. Stalfos can't shoot in this quest.
     ;
+    moveq   #0,D3
     move.b  ($0016,A4),D3
     lea     ($062D,A4),A0
     move.b  (A0,D3.W),D0
@@ -5566,6 +5647,7 @@ _L_z04_UpdateStalfos_PrepareToShoot:
     bne  _L_z04_UpdateStalfos_SetShootTimer
     ; If shoot timer >= 1, then decrement and go set shoot timer.
     ;
+    moveq   #0,D3
     lea     ($0451,A4),A0
     move.b  (A0,D2.W),D3
     subq.b  #1,D3
@@ -5695,6 +5777,7 @@ _anon_z04_77:
     ;
     move.b  ($001D,A4),D0
     andi.b #$07,D0
+    moveq   #0,D3
     move.b  D0,D3
     lea     (Directions8).l,A0
     move.b  (A0,D3.W),D0
@@ -5702,6 +5785,7 @@ _anon_z04_77:
     move.b  D0,($0385,A4)
     move.b  ($0022,A4),D0
     andi.b #$07,D0
+    moveq   #0,D3
     move.b  D0,D3
     lea     (Directions8).l,A0
     move.b  (A0,D3.W),D0
@@ -5750,6 +5834,7 @@ InitDigdogger1:
     ;
     move.b  ($18,A4,D2.W),D0
     andi.b #$07,D0
+    moveq   #0,D3
     move.b  D0,D3
     lea     (Directions8).l,A0
     move.b  (A0,D3.W),D0
@@ -6195,6 +6280,7 @@ _L_z04_L_Digdogger_AfterFlute_LoopMakeChild:
     subq.b  #1,($0000,A4)
     bne  _L_z04_L_Digdogger_AfterFlute_LoopMakeChild
     move.b  (A5)+,D0  ; PLA
+    moveq   #0,D2
     move.b  D0,D2
     bsr     PlayBossDeathCry
     ; Destroy the big digdogger by resetting the object type.
@@ -6229,6 +6315,7 @@ UpdateDigdogger:
     ; If the flute was used, then go start splitting up,
     ; or handling a child digdogger.
     ;
+    moveq   #0,D3
     move.b  ($051B,A4),D3
     bne  L_Digdogger_AfterFlute
     even
@@ -6282,6 +6369,7 @@ _L_z04_CheckBigDigdoggerCollisions_LoopCornerCollision:
     ;
     ; Loop 4 times, from 0 to 3.
     ;
+    moveq   #0,D3
     lea     ($0478,A4),A0
     move.b  (A0,D2.W),D3
     ; Change the coordinates to one corner.
@@ -6638,6 +6726,7 @@ _L_z04_Digdogger_Draw_LoopPart:
     moveq   #0,D0
     bsr     DrawObjectNotMirrored
     move.b  (A5)+,D0  ; PLA
+    moveq   #0,D3
     move.b  D0,D3
     ; Bottom of the loop.
     ; Increment Y register until = 4.
@@ -6695,6 +6784,7 @@ Aquamentus_Move:
     ; Randomly head left or right.
     ;
     andi.b #$01,D0
+    moveq   #0,D3
     move.b  D0,D3
     addq.b  #1,D3
     lea     ($0098,A4),A0
@@ -6744,6 +6834,7 @@ _L_z04_Aquamentus_Move_ApplySpeed:
     ; Use (direction - 1) to index the speeds.
     ; This yields 0 for right, 1 for left.
     ;
+    moveq   #0,D3
     lea     ($0098,A4),A0
     move.b  (A0,D2.W),D3
     subq.b  #1,D3
@@ -6835,6 +6926,7 @@ _L_z04_Aquamentus_Shoot_NextLoopObject:
     bpl  _L_z04_Aquamentus_Shoot_LoopObject
     ; Restore the boss's slot number.
     ;
+    moveq   #0,D2
     move.b  ($0340,A4),D2
     rts
 
@@ -6879,6 +6971,7 @@ _anon_z04_88:
     move.b  D0,($000B,A4)
     even
 _L_z04_Aquamentus_Draw_LoopSprite:
+    moveq   #0,D3
     move.b  ($000B,A4),D3
     ; Add the current sprite's offset to the boss's X coordinate.
     ; Store it in [00].
@@ -6913,6 +7006,7 @@ _L_z04_Aquamentus_Draw_LoopSprite:
     andi.b #$03,D0
     eori.b #$03,D0
     move.b  D0,($0003,A4)
+    moveq   #0,D3
     move.b  ($000A,A4),D3
     ; Look up the tile for this sprite.
     ; If it's not the first one (face), then go write the sprite record.
@@ -6928,6 +7022,7 @@ _L_z04_Aquamentus_Draw_LoopSprite:
     ; $CC/CD shows the closed mouth face.
     ; $C0/C1 shows the open mouth face.
     ;
+    moveq   #0,D3
     move.b  ($28,A4,D2.W),D3
     cmpi.b  #$20,D3
     bcc  _L_z04_Aquamentus_Draw_WriteSprite
@@ -6953,9 +7048,11 @@ _L_z04_Aquamentus_Draw_WriteSprite:
     even
 WriteBossSprite:
     move.b  D0,-(A5)  ; PHA
+    moveq   #0,D3
     move.b  ($0341,A4),D3
     lea     (SpriteOffsets).l,A0
     move.b  (A0,D3.W),D0
+    moveq   #0,D3
     move.b  D0,D3
     move.b  (A5)+,D0  ; PLA
     lea     ($0201,A4),A0
@@ -7049,6 +7146,7 @@ UpdateDodongoState2_Stunned:
     ; 1:     go back to state 0
     ; other: return
     ;
+    moveq   #0,D3
     move.b  ($3D,A4,D2.W),D3
     subq.b  #1,D3
     beq  UpdateDodongoState1_Bloated_Sub_End
@@ -7078,6 +7176,7 @@ UpdateDodongoState1_Bloated_Sub_Wait:
     ; 1:     go advance the substate
     ; other: go decrement Bloated timer
     ;
+    moveq   #0,D3
     lea     ($045E,A4),A0
     move.b  (A0,D2.W),D3
     subq.b  #1,D3
@@ -7085,6 +7184,7 @@ UpdateDodongoState1_Bloated_Sub_Wait:
     bpl  L_Dodongo_DecrementBloatedTimer
     ; Set the bloated timer according to the substate.
     ;
+    moveq   #0,D3
     lea     ($042C,A4),A0
     move.b  (A0,D2.W),D3
     lea     (DodongoBloatedWaitTimes).l,A0
@@ -7134,6 +7234,7 @@ _L_z04_UpdateDodongoState1_Bloated_Sub_Wait_AdvanceSubstate:
     ;   and then transition to substate 3.
     ; - If new substate = 3, then the next frame the monster will die.
     ;
+    moveq   #0,D3
     lea     ($0437,A4),A0
     move.b  (A0,D2.W),D3
     cmpi.b  #$02,D3
@@ -7259,6 +7360,7 @@ Dodongo_CheckBombHit:
     andi    #$EE,CCR  ; CLC: clear C+X
     move.b  #$08,D1
     addx.b  D1,D0   ; ADC #$08 (X flag = 6502 C)
+    moveq   #0,D3
     lea     ($0098,A4),A0
     move.b  (A0,D2.W),D3
     cmpi.b  #$04,D3
@@ -7338,6 +7440,7 @@ Dodongo_TryEatBomb:
     lea     ($0098,A4),A0
     move.b  (A0,D2.W),D0
     lsr.b  #1,D0   ; LSR A
+    moveq   #0,D3
     move.b  D0,D3
     ; Now we have to see if it's near the mouth. But the mouth
     ; position depends on the orientation of the monster.
@@ -7369,6 +7472,7 @@ _L_z04_Dodongo_TryEatBomb_LoopLimit:
     andi    #$EE,CCR  ; CLC: clear C+X
     move.b  #$0A,D1
     addx.b  D1,D0   ; ADC #$0A (X flag = 6502 C)
+    moveq   #0,D3
     move.b  D0,D3
     ; Bottom of the loop.
     ;
@@ -7511,6 +7615,7 @@ Dodongo_Draw:
     move.b  D0,($0000,A4)
     ; If state = 0, go handle animating the two frames of this state.
     ;
+    moveq   #0,D3
     lea     ($00AC,A4),A0
     move.b  (A0,D2.W),D3
     beq  _L_z04_Dodongo_Draw_DrawWalkingFast
@@ -7524,6 +7629,7 @@ Dodongo_Draw:
     ;
     ; In substate 0, go animate as usual for walking.
     ;
+    moveq   #0,D3
     lea     ($042C,A4),A0
     move.b  (A0,D2.W),D3
     beq  _L_z04_Dodongo_Draw_DrawWalkingFast
@@ -7543,6 +7649,7 @@ Dodongo_Draw:
     andi    #$EE,CCR  ; CLC: clear C+X
     move.b  #$14,D1
     addx.b  D1,D0   ; ADC #$14 (X flag = 6502 C)
+    moveq   #0,D3
     move.b  D0,D3
     jmp     _L_z04_Dodongo_Draw_PrepareToDraw
 
@@ -7554,6 +7661,7 @@ _L_z04_Dodongo_Draw_DrawFaded:
     move.b  ($0015,A4),D0
     andi.b #$02,D0
     beq  L11B00_Exit
+    moveq   #0,D3
     move.b  ($0000,A4),D3
     jmp     _L_z04_Dodongo_Draw_PrepareToDraw
 
@@ -7564,6 +7672,7 @@ _L_z04_Dodongo_Draw_DrawWalkingFast:
     moveq   #8,D0
     even
 _L_z04_Dodongo_Draw_DrawWalking:
+    moveq   #0,D3
     move.b  ($0000,A4),D3
     move.b  ($0015,A4),D1
     and.b  D1,D0
@@ -7575,6 +7684,7 @@ _L_z04_Dodongo_Draw_DrawWalking:
     andi    #$EE,CCR  ; CLC: clear C+X
     move.b  #$05,D1
     addx.b  D1,D0   ; ADC #$05 (X flag = 6502 C)
+    moveq   #0,D3
     move.b  D0,D3
     even
 _L_z04_Dodongo_Draw_PrepareToDraw:
@@ -7609,6 +7719,7 @@ _L_z04_Dodongo_Draw_DrawLeftSide:
     even
 _L_z04_Dodongo_Draw_DrawRightSide:
     move.b  (A5)+,D0  ; PLA
+    moveq   #0,D3
     move.b  D0,D3
     ; If facing vertically, then return. There's no other side to draw.
     ;
@@ -7676,6 +7787,7 @@ InitDarknut:
     ; If the darknut is red, then move at q-speed $20 (0.5 pixels a frame).
     ;
     moveq   #32,D0
+    moveq   #0,D3
     lea     ($034F,A4),A0
     move.b  (A0,D2.W),D3
     cmpi.b  #$0B,D3
@@ -7726,6 +7838,7 @@ _anon_z04_94:
     ; If movement frame = 1, add 3 to frame image to access
     ; the second animation frame's images.
     ;
+    moveq   #0,D3
     lea     ($03E4,A4),A0
     move.b  (A0,D2.W),D3
     beq  _anon_z04_95
@@ -7737,6 +7850,7 @@ _anon_z04_94:
     ; Down has two frame images, but up only has one. By flipping
     ; horizontally, you get two frame images.
     ;
+    moveq   #0,D3
     lea     ($0098,A4),A0
     move.b  (A0,D2.W),D3
     cmpi.b  #$08,D3
@@ -7885,6 +7999,7 @@ _L_z04_UpdatePolsVoice_SetState1:
     addq.b  #1,(A0,D2.W)
     ; Subtract 1 from facing direction to make an index.
     ;
+    moveq   #0,D3
     lea     ($0098,A4),A0
     move.b  (A0,D2.W),D3
     subq.b  #1,D3
@@ -7998,6 +8113,7 @@ UpdatePolsVoiceState1_Jumping:
     ;
     move.b  ($18,A4,D2.W),D0
     andi.b #$03,D0
+    moveq   #0,D3
     move.b  D0,D3
     lea     (PolsVoiceDirections).l,A0
     move.b  (A0,D3.W),D0
@@ -8117,6 +8233,7 @@ PolsVoice_GetCollidingTile:
 ;
     even
 PolsVoice_MoveX:
+    moveq   #0,D3
     lea     ($0098,A4),A0
     move.b  (A0,D2.W),D3
     subq.b  #1,D3
@@ -8146,6 +8263,7 @@ UpdateLikeLike:
     moveq   #8,D0
     lea     ($03D0,A4),A0
     move.b  D0,(A0,D2.W)
+    moveq   #0,D3
     lea     ($03E4,A4),A0
     move.b  (A0,D2.W),D3
     addq.b  #1,D3
@@ -8289,6 +8407,7 @@ _L_z04_UpdateVire_LoopMakeKeese:
     even
 _L_z04_UpdateVire_NextLoopMakeKeese:
     move.b  (A5)+,D0  ; PLA
+    moveq   #0,D3
     move.b  D0,D3
     subq.b  #1,D3
     bpl  _L_z04_UpdateVire_LoopMakeKeese
@@ -8331,6 +8450,7 @@ UpdateVireState0:
     lea     ($0394,A4),A0
     move.b  (A0,D2.W),D0
     bsr     Abs
+    moveq   #0,D3
     move.b  D0,D3
     ; Add the vertical offset; so that as the vire moves left or right,
     ; it jumps.
@@ -8511,6 +8631,7 @@ _L_z04_BlueWizzrobe_MoveAndCheckTile_HitWall:
     ; The monster hit a wall.
     ; If facing direction has a vertical component, then flip it.
     ;
+    moveq   #0,D3
     lea     ($0098,A4),A0
     move.b  (A0,D2.W),D3
     move.b  D3,D0
@@ -8520,6 +8641,7 @@ _L_z04_BlueWizzrobe_MoveAndCheckTile_HitWall:
     eori.b #$0C,D0
     lea     ($0098,A4),A0
     move.b  D0,(A0,D2.W)
+    moveq   #0,D3
     move.b  D0,D3
     even
 _L_z04_BlueWizzrobe_MoveAndCheckTile_CheckHorizontal:
@@ -8572,6 +8694,7 @@ BlueWizzrobe_TurnTowardLink:
     ; If the monster's X >= Link's X, then choose left, else right.
     ;
     moveq   #2,D0
+    moveq   #0,D3
     move.b  ($70,A4,D2.W),D3
     move.b  ($0070,A4),D1
     cmp.b   D1,D3
@@ -8585,6 +8708,7 @@ _L_z04_BlueWizzrobe_TurnTowardLink_TurnVertically:
     ; If the monster's Y >= Link's Y, then choose up, else down.
     ;
     moveq   #8,D0
+    moveq   #0,D3
     lea     ($0084,A4),A0
     move.b  (A0,D2.W),D3
     move.b  ($0084,A4),D1
@@ -8624,6 +8748,7 @@ BlueWizzrobe_Move:
     ;
     ; Index the offsets using the direction value directly.
     ;
+    moveq   #0,D3
     lea     ($0098,A4),A0
     move.b  (A0,D2.W),D3
     move.b  ($70,A4,D2.W),D0
@@ -8663,6 +8788,7 @@ BlueWizzrobe_ChooseTeleportTarget:
     ;
     move.b  ($18,A4,D2.W),D0
     andi.b #$03,D0
+    moveq   #0,D3
     move.b  D0,D3
     ; The random value implies a random direction.
     ; Save the original X coordinate; and add to it the offset for
@@ -8693,9 +8819,11 @@ BlueWizzrobe_ChooseTeleportTarget:
     ;
     lea     (BlueWizzrobeTeleportDirs).l,A0
     move.b  (A0,D3.W),D0
+    moveq   #0,D3
     move.b  D0,D3
     bsr     Wizzrobe_GetCollidableTileForDir
     move.b  (A5)+,D0  ; PLA
+    moveq   #0,D3
     move.b  D0,D3
     move.b  (A5)+,D0  ; PLA
     lea     ($0084,A4),A0
@@ -8788,6 +8916,7 @@ WizzrobeCollisionOffsetsY:
 ;
     even
 Wizzrobe_GetCollidableTile:
+    moveq   #0,D3
     lea     ($0098,A4),A0
     move.b  (A0,D2.W),D3
 ; Params:
@@ -8878,6 +9007,7 @@ BlueWizzrobe_TryShooting:
     ; Else choose right.
     ;
     moveq   #2,D0
+    moveq   #0,D3
     move.b  ($70,A4,D2.W),D3
     move.b  ($0070,A4),D1
     cmp.b   D1,D3
@@ -8911,6 +9041,7 @@ BlueWizzrobe_CheckSquareColumn:
     ; Else choose down.
     ;
     moveq   #8,D0
+    moveq   #0,D3
     lea     ($0084,A4),A0
     move.b  (A0,D2.W),D3
     move.b  ($0084,A4),D1
@@ -9020,6 +9151,7 @@ UpdateRedWizzrobe_3:
     ;
     ; If state <> $FF, go fade as in state group 1.
     ;
+    moveq   #0,D3
     lea     ($00AC,A4),A0
     move.b  (A0,D2.W),D3
     addq.b  #1,D3
@@ -9031,6 +9163,7 @@ UpdateRedWizzrobe_3:
     move.b  ($18,A4,D2.W),D0
     move.b  D0,-(A5)  ; PHA
     andi.b #$03,D0
+    moveq   #0,D3
     move.b  D0,D3
     lea     (RedWizzrobeDirections).l,A0
     move.b  (A0,D3.W),D0
@@ -9040,6 +9173,7 @@ UpdateRedWizzrobe_3:
     ; Use a random value from 0 to $F to index into an array of offsets.
     ;
     andi.b #$0F,D0
+    moveq   #0,D3
     move.b  D0,D3
     move.b  ($0070,A4),D0
     ; Add the X offset and Link's X to set the monster's position.
@@ -9277,6 +9411,7 @@ InitManhandla:
     ;
     move.b  ($18,A4,D2.W),D0
     andi.b #$07,D0
+    moveq   #0,D3
     move.b  D0,D3
     lea     (Directions8).l,A0
     move.b  (A0,D3.W),D0
@@ -9845,6 +9980,7 @@ UpdateGohma:
     ;   Else:   down
     ;
     moveq   #1,D0
+    moveq   #0,D3
     move.b  ($18,A4,D2.W),D3
     cmpi.b  #$B0,D3
     bcc  _L_z04_UpdateGohma_ChangeDir
@@ -10331,6 +10467,7 @@ _L_z04_UpdateGleeok_LoopNeck:
     ; If the bit for this neck is in the dead neck mask,
     ; then go loop again.
     ;
+    moveq   #0,D3
     move.b  ($04D7,A4),D3
     lea     (LevelMasks).l,A0
     move.b  (A0,D3.W),D0
@@ -10471,6 +10608,7 @@ _L_z04_UpdateGleeok_NextLoopNeck:
 ;
     even
 Gleeok_FetchNeckAddrs:
+    moveq   #0,D2
     move.b  ($04D7,A4),D2
     lea     (GleeokNeckXAddrsLo).l,A0
     move.b  (A0,D2.W),D0
@@ -10571,6 +10709,7 @@ _L_z04_L_Gleeok_StoreRefSegDistance_KeepSegsNearNeighbors:
     ; the previous one by 2 pixels.
     ;
     move.b  ($72,A4,D2.W),D0
+    moveq   #0,D3
     move.b  D0,D3
     addq.b  #1,D3
     addq.b  #1,D3
@@ -10604,6 +10743,7 @@ _L_z04_L_Gleeok_StoreRefSegDistance_CheckDistanceV:
     ;
     lea     ($0086,A4),A0
     move.b  (A0,D2.W),D0
+    moveq   #0,D3
     move.b  D0,D3
     addq.b  #1,D3
     addq.b  #1,D3
@@ -10648,6 +10788,7 @@ _L_z04_L_Gleeok_StoreRefSegDistance_KeepSegsNearRefPoint:
     ;   base X + ([04D8] * (loop index + 1))
     ;
     move.b  D2,D0
+    moveq   #0,D3
     move.b  D0,D3
     move.b  ($0071,A4),D0
 _anon_z04_130:
@@ -10659,6 +10800,7 @@ _anon_z04_130:
     ; If current segment X < reference X, add 1 to it.
     ; Else subtract 1.
     ;
+    moveq   #0,D3
     move.b  ($72,A4,D2.W),D3
     addq.b  #1,D3
     move.b  ($72,A4,D2.W),D1
@@ -10831,6 +10973,7 @@ Gleeok_ExpandSegment:
     ;
     lea     ($0086,A4),A0
     move.b  (A0,D2.W),D0
+    moveq   #0,D3
     move.b  D0,D3
     addq.b  #1,D3
     addq.b  #1,D3
@@ -10859,6 +11002,7 @@ Gleeok_ContractSegmentY:
     ;
     lea     ($0086,A4),A0
     move.b  (A0,D2.W),D0
+    moveq   #0,D3
     move.b  D0,D3
     addq.b  #1,D3
     addq.b  #1,D3
@@ -10873,6 +11017,7 @@ L_Gleeok_ExpandHorizontally:
     ; Move away from the next segment horizontally.
     ;
     move.b  ($72,A4,D2.W),D0
+    moveq   #0,D3
     move.b  D0,D3
     addq.b  #1,D3
     addq.b  #1,D3
@@ -10885,6 +11030,7 @@ Gleeok_ContractSegmentX:
     ; Move toward the next segment horizontally.
     ;
     move.b  ($72,A4,D2.W),D0
+    moveq   #0,D3
     move.b  D0,D3
     addq.b  #1,D3
     addq.b  #1,D3
@@ -10943,6 +11089,7 @@ Gleeok_WriteHeadOrBaseSpriteAndCheckCollisions:
     move.b  #$20,D1
     addx.b  D1,D0   ; ADC #$20 (X flag = 6502 C)
 _anon_z04_139:
+    moveq   #0,D3
     move.b  D0,D3
     move.b  (A5)+,D0  ; PLA
     bsr     Anim_WriteSpecificSprite
@@ -11027,6 +11174,7 @@ _anon_z04_142:
     andi    #$EE,CCR  ; CLC: clear C+X
     move.b  #$07,D1
     addx.b  D1,D0   ; ADC #$07 (X flag = 6502 C)
+    moveq   #0,D2
     move.b  D0,D2
     ; Flag it uninitialized, so that it will be initialized next frame.
     ;
@@ -11048,6 +11196,7 @@ _anon_z04_142:
     even
 _L_z04_Gleeok_CheckCollisions_DestroyNeck:
     move.b  (A5)+,D0  ; PLA
+    moveq   #0,D2
     move.b  D0,D2
     ; Hide the original head's sprite, and the base segment's sprite.
     ;
@@ -11055,6 +11204,7 @@ _L_z04_Gleeok_CheckCollisions_DestroyNeck:
     lsl.b  #1,D0   ; ASL A
     lsl.b  #1,D0   ; ASL A
     lsl.b  #1,D0   ; ASL A
+    moveq   #0,D3
     move.b  D0,D3
     move.b  #$F8,D0
     lea     ($0200,A4),A0
@@ -11064,6 +11214,7 @@ _L_z04_Gleeok_CheckCollisions_DestroyNeck:
     ; Add the bit for this neck to the dead neck mask.
     ; Copy it to [00].
     ;
+    moveq   #0,D3
     move.b  ($04D7,A4),D3
     lea     (LevelMasks).l,A0
     move.b  (A0,D3.W),D0
@@ -11154,12 +11305,14 @@ Gleeok_MoveHead:
     ; Add 1 or -1 to X as needed.
     ;
     move.b  ($0075,A4),D0
+    moveq   #0,D3
     move.b  ($0415,A4),D3
     bsr     Gleeok_ChangeCoordinateBySpeedFlag
     move.b  D0,($0075,A4)
     ; Add 1 or -1 to Y as needed.
     ;
     move.b  ($0089,A4),D0
+    moveq   #0,D3
     move.b  ($0416,A4),D3
     bsr     Gleeok_ChangeCoordinateBySpeedFlag
     move.b  D0,($0089,A4)
@@ -11269,6 +11422,7 @@ Gleeok_DrawBody:
     ; Otherwise, set a longer time ($10).
     ;
     moveq   #16,D0
+    moveq   #0,D3
     move.b  ($0510,A4),D3
     beq  _anon_z04_144
     subq.b  #1,($0510,A4)
@@ -11291,7 +11445,9 @@ L_Gleeok_WriteSprites:
     move.b  D0,($0006,A4)
     ; Get the base tile offset for the current animation frame.
     ;
+    moveq   #0,D3
     move.b  ($04E7,A4),D3
+    moveq   #0,D2
     lea     (GleeokBodyBaseTileOffsets).l,A0
     move.b  (A0,D3.W),D2
     even
@@ -11304,9 +11460,11 @@ _L_z04_L_Gleeok_WriteSprites_LoopDrawRow:
 _L_z04_L_Gleeok_WriteSprites_LoopDrawColumn:
     ; Point to the next rolling sprite record.
     ;
+    moveq   #0,D3
     move.b  ($0341,A4),D3
     lea     (SpriteOffsets).l,A0
     move.b  (A0,D3.W),D0
+    moveq   #0,D3
     move.b  D0,D3
     ; Set sprite's Y to ($57 + row * $10).
     ;
@@ -11501,6 +11659,7 @@ InitPatra:
     ; Patra type $48 goes with Patra Child type $26.
     ;
     moveq   #37,D0
+    moveq   #0,D3
     move.b  ($0350,A4),D3
     cmpi.b  #$47,D3
     beq  _anon_z04_148
@@ -11845,6 +12004,7 @@ _L_z04_Lamnola_UpdateHead_PropagateDirs:
     move.b  (A0,D2.W),D0
     ; Load the next random number into Y register.
     ;
+    moveq   #0,D3
     move.b  ($19,A4,D2.W),D3
     ; Based on it, there's a 50% chance of skipping the loop,
     ; to keep moving straight.
@@ -12230,6 +12390,7 @@ UpdatePatraChild:
     ori     #$11,CCR  ; SEC: set C+X
     move.b  #$03,D1
     subx.b  D1,D0   ; SBC #$03
+    moveq   #0,D3
     move.b  D0,D3
     ; If the patra child in slot 2 has not reached the required angle,
     ; then return.
@@ -12271,6 +12432,7 @@ _anon_z04_157:
     ; Else use radius $18. Store the chosen value in [00].
     ;
     moveq   #44,D0
+    moveq   #0,D3
     lea     ($034F,A4),A0
     move.b  (A0,D2.W),D3
     cmpi.b  #$25,D3
@@ -12315,6 +12477,7 @@ PatraChild_State1:
     ; monster's angle by $70, else by $60 to go slower.
     ;
     moveq   #112,D0
+    moveq   #0,D3
     lea     ($034F,A4),A0
     move.b  (A0,D2.W),D3
     cmpi.b  #$25,D3
@@ -12325,6 +12488,7 @@ _anon_z04_159:
     ; Load Patra's maneuver index.
     ; It determines which counts of bits are looked up below.
     ;
+    moveq   #0,D3
     move.b  ($045F,A4),D3
     ; If the monster is Patra Child 1 ($25), then look up two separate
     ; counts of bits to use for Y and X increment calculations in rotation.
@@ -12339,6 +12503,7 @@ _anon_z04_159:
     move.b  D0,-(A5)  ; PHA
     lea     (PatraChild1RotationSineBits).l,A0
     move.b  (A0,D3.W),D0
+    moveq   #0,D3
     move.b  D0,D3
     move.b  (A5)+,D0  ; PLA
     jmp     _L_z04_PatraChild_State1_Rotate
@@ -12351,6 +12516,7 @@ _L_z04_PatraChild_State1_UsePatraChild2Bits:
     ;
     lea     (PatraChild2RotationBits).l,A0
     move.b  (A0,D3.W),D0
+    moveq   #0,D3
     move.b  D0,D3
     even
 _L_z04_PatraChild_State1_Rotate:
@@ -12415,6 +12581,7 @@ Ganon_ScenePhase0:
     move.b  D0,-(A5)  ; PHA
     bsr     UpdateCandle
     move.b  (A5)+,D0  ; PLA
+    moveq   #0,D2
     move.b  D0,D2
     ; Turn off the room brightening flag, because we're controlling it
     ; here instead of in the Mode 5 object update loop.
@@ -12532,6 +12699,7 @@ Ganon_RandomizeLocation:
     move.b  D0,(A0,D2.W)
     move.b  ($0015,A4),D0
     andi.b #$01,D0
+    moveq   #0,D3
     move.b  D0,D3
     lea     (GanonStartXs).l,A0
     move.b  (A0,D3.W),D0
@@ -12746,6 +12914,7 @@ Ganon_DrawCloud:
     ; Else use frame image $D (low).
     ;
     moveq   #12,D0
+    moveq   #0,D3
     lea     ($0478,A4),A0
     move.b  (A0,D2.W),D3
     cmpi.b  #$06,D3
@@ -12977,6 +13146,7 @@ _L_z04_Ganon_DrawBody_LoopCorner:
     ;
     move.b  ($0007,A4),D1
     addx.b  D1,D0   ; ADC $07
+    moveq   #0,D3
     move.b  D0,D3
     lea     (GanonFrameImages).l,A0
     move.b  (A0,D3.W),D0
@@ -12984,6 +13154,7 @@ _L_z04_Ganon_DrawBody_LoopCorner:
     move.b  (A5)+,D0  ; PLA
     ; Bottom of the part loop.
     ;
+    moveq   #0,D3
     move.b  D0,D3
     subq.b  #1,D3
     bpl  _L_z04_Ganon_DrawBody_LoopCorner
@@ -13141,6 +13312,7 @@ _anon_z04_165:
     move.b  D0,-(A5)  ; PHA
     ; Get the length, to append to the dynamic transfer buf.
     ;
+    moveq   #0,D2
     move.b  ($0301,A4),D2
     ; Copy the 8 bytes of the palette row transfer record template.
     ;
@@ -13157,6 +13329,7 @@ _L_z04_Ganon_AppendPaletteRowTransferRecord_Triforce_CopyBytes:
     bne  _L_z04_Ganon_AppendPaletteRowTransferRecord_Triforce_CopyBytes
     move.b  D2,($0301,A4)
     move.b  (A5)+,D0  ; PLA
+    moveq   #0,D3
     move.b  D0,D3
     ; Overwrite the last 3 colors in the record, with the ones
     ; ending at the index passed in.
@@ -13171,6 +13344,7 @@ _L_z04_Ganon_AppendPaletteRowTransferRecord_Triforce_OverwriteColors:
     subq.b  #1,D3
     subq.b  #1,D2
     bpl  _L_z04_Ganon_AppendPaletteRowTransferRecord_Triforce_OverwriteColors
+    moveq   #0,D2
     move.b  ($0340,A4),D2
     rts
 
@@ -13376,12 +13550,14 @@ _L_z04_SetUpDroppedItem_LookUpItem:
     ; Add it and WorldKillCycle to look up the dropped item for
     ; this object type and store it in [00].
     ;
+    moveq   #0,D3
     move.b  ($0001,A4),D3
     lea     (DropItemSetBaseOffsets).l,A0
     move.b  (A0,D3.W),D0
     andi    #$EE,CCR  ; CLC: clear C+X
     move.b  ($052A,A4),D1
     addx.b  D1,D0   ; ADC WorldKillCycle
+    moveq   #0,D3
     move.b  D0,D3
     lea     (DropItemTable).l,A0
     move.b  (A0,D3.W),D0
@@ -13389,6 +13565,7 @@ _L_z04_SetUpDroppedItem_LookUpItem:
     ; If the global kill count = $10, set the dropped item to a fairy.
     ;
     moveq   #35,D0
+    moveq   #0,D3
     move.b  ($0627,A4),D3
     cmpi.b  #$10,D3
     beq  _L_z04_SetUpDroppedItem_SetHelpItem
@@ -13404,6 +13581,7 @@ _L_z04_SetUpDroppedItem_LookUpItem:
     ; - other: bomb
     ;
     moveq   #15,D0
+    moveq   #0,D3
     move.b  ($0051,A4),D3
     beq  _L_z04_SetUpDroppedItem_SetHelpItem
     moveq   #0,D0
@@ -13422,6 +13600,7 @@ _L_z04_SetUpDroppedItem_RandomlyCancel:
     ; If the random value >= drop item rate for the monster's group,
     ; then go destroy the monster.
     ;
+    moveq   #0,D3
     move.b  ($0001,A4),D3
     move.b  ($18,A4,D2.W),D0
     lea     (DropItemRates).l,A0
@@ -13511,7 +13690,9 @@ _L_z04_UpdateItem_LoopItemTaker:
     move.b  D0,-(A5)  ; PHA
     ; Set Link's location to this object's.
     ;
+    moveq   #0,D3
     move.b  ($000D,A4),D3
+    moveq   #0,D2
     lea     (ItemTakerObjSlots-1).l,A0
     move.b  (A0,D3.W),D2
     move.b  ($70,A4,D2.W),D0
@@ -13532,6 +13713,7 @@ _L_z04_UpdateItem_LoopItemTaker:
 _L_z04_UpdateItem_TryToTake:
     ; Try to take the item.
     ;
+    moveq   #0,D2
     move.b  ($0340,A4),D2
     lea     ($00AC,A4),A0
     move.b  (A0,D2.W),D0
@@ -13545,6 +13727,7 @@ _L_z04_UpdateItem_SkipTaking:
     move.b  D0,($0084,A4)
     move.b  (A5)+,D0  ; PLA
     move.b  D0,($0070,A4)
+    moveq   #0,D2
     move.b  ($0340,A4),D2
     ; If item object's item type is invalid, then the item was taken.
     ; So, go destroy this object.
@@ -13641,12 +13824,15 @@ ShootLimited:
 ;
     even
 Shoot:
+    moveq   #0,D2
     move.b  ($0059,A4),D2
     move.b  ($0000,A4),D0
     bsr     SetTypeAndClearObject
     ; Set state to $10 and reset timer, so that the shot moves right away.
     ;
+    moveq   #0,D3
     move.b  ($0059,A4),D3
+    moveq   #0,D2
     move.b  ($0340,A4),D2
     moveq   #16,D0
     lea     ($00AC,A4),A0
@@ -13689,6 +13875,7 @@ UpdateCandle_JumpTable:
 
     even
 UpdateCandle_Begin:
+    moveq   #0,D3
     move.b  ($00EB,A4),D3
     bsr     IsDarkRoom_Bank4
     beq  UpdateCandle_Done
@@ -13996,6 +14183,7 @@ ReverseObjDir8:
     move.b  #$04,D1
     addx.b  D1,D0   ; ADC #$04 (X flag = 6502 C)
     andi.b #$07,D0
+    moveq   #0,D3
     move.b  D0,D3
     ; If the object type = $41 (moldorm), then go see if we need
     ; to set the deferred bounce direction.
@@ -14127,6 +14315,7 @@ _L_z04_TurnTowardsPlayer8_SkipVertical:
 _L_z04_TurnTowardsPlayer8_LoopLeft:
     move.b  D3,D0
     andi.b #$07,D0
+    moveq   #0,D3
     move.b  D0,D3
     lea     (Directions8).l,A0
     move.b  (A0,D3.W),D0
@@ -14151,6 +14340,7 @@ _L_z04_TurnTowardsPlayer8_LoopLeft:
 LoopRight:
     move.b  D3,D0
     andi.b #$07,D0
+    moveq   #0,D3
     move.b  D0,D3
     lea     (Directions8).l,A0
     move.b  (A0,D3.W),D0
@@ -14237,6 +14427,7 @@ TurnRandomlyDir8:
 _L_z04_TurnRandomlyDir8_SetDir:
     move.b  D3,D0
     andi.b #$07,D0
+    moveq   #0,D3
     move.b  D0,D3
     jmp     SetDir8ForIndex
 
@@ -14288,6 +14479,7 @@ RotateObjectLocation:
     lea     ($0394,A4),A0
     move.b  (A0,D2.W),D0
     andi.b #$0F,D0
+    moveq   #0,D3
     move.b  D0,D3
     lea     (PatraSines).l,A0
     move.b  (A0,D3.W),D0
@@ -14298,6 +14490,7 @@ RotateObjectLocation:
     ;
     lea     ($03BC,A4),A0
     move.b  (A0,D2.W),D0
+    moveq   #0,D3
     move.b  ($0005,A4),D3
     bsr     ShiftMultiply
     ; The absolute X increment for the current angle is now in [02:03].
@@ -14356,6 +14549,7 @@ _L_z04_RotateObjectLocation_SetXRotateY:
     move.b  #$08,D1
     addx.b  D1,D0   ; ADC #$08 (X flag = 6502 C)
     andi.b #$0F,D0
+    moveq   #0,D3
     move.b  D0,D3
     lea     (PatraSines).l,A0
     move.b  (A0,D3.W),D0
@@ -14364,6 +14558,7 @@ _L_z04_RotateObjectLocation_SetXRotateY:
     ;
     lea     ($03BC,A4),A0
     move.b  (A0,D2.W),D0
+    moveq   #0,D3
     move.b  ($0006,A4),D3
     bsr     ShiftMultiply
     ; The absolute Y increment for the current angle is now in [02:03].

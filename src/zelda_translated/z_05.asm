@@ -184,6 +184,7 @@ UpdateMenuAndMeters:
     even
 UpdateMenu:
     move.b  ($00E1,A4),D0
+    moveq   #0,D3
     move.b  ($0010,A4),D3
     beq  _anon_z05_0
     ; Update menu in UW.
@@ -541,6 +542,7 @@ UpdateMenuStartOW:
     ;
     moveq   #23,D3
 _anon_z05_6:
+    moveq   #0,D2
     lea     (TriforceTransferBufOffsets).l,A0
     move.b  (A0,D3.W),D2
     lea     (TriforceTransferBufTiles).l,A0
@@ -571,6 +573,7 @@ _L_z05_UpdateMenuStartOW_LoopTile:
     ; Get the offset into the submenu triforce transfer buffers of
     ; the current tile slot.
     ;
+    moveq   #0,D2
     lea     (TriforceTransferBufOffsets).l,A0
     move.b  (A0,D3.W),D2
     ; If the level test bit is not in the triforce mask, then we don't
@@ -638,6 +641,7 @@ ScrollWorld:
     ; UW: once every four frames
     ; Horizontal scrolling happens every frame.
     andi.b #$03,D0
+    moveq   #0,D3
     move.b  ($0010,A4),D3
     bne  _anon_z05_8
     andi.b #$01,D0
@@ -739,6 +743,7 @@ _anon_z05_12:
 ScrollWorldH:
     moveq   #2,D0
     move.b  #$FE,D2
+    moveq   #0,D3
     move.b  ($0010,A4),D3
     bne  _anon_z05_13
     lsl.b  #1,D0   ; ASL A
@@ -850,6 +855,7 @@ InitMode7_Sub1:
     bmi  _L_z05_InitMode7_Sub1_Exit
     move.b  ($00EB,A4),D0
     move.b  D0,-(A5)  ; PHA
+    moveq   #0,D3
     move.b  ($0098,A4),D3
     cmpi.b  #$08,D3
     ; If we're not going up, then temporarily set RoomId to next
@@ -864,6 +870,7 @@ _anon_z05_16:
     bsr     FillPlayAreaAttrs
     moveq   #21,D0
     move.b  D0,($00E9,A4)
+    moveq   #0,D3
     move.b  ($0098,A4),D3
     cmpi.b  #$08,D3
     beq  _anon_z05_17
@@ -972,6 +979,7 @@ _L_z05_InitMode7_Sub3And4_TransferPlayAreaAttrsToNT2_Vertical:
     even
 _L_z05_InitMode7_Sub3And4_TransferPlayAreaAttrsToNT2_TransferHalfPlayAreaAttrs:
     moveq   #23,D3
+    moveq   #0,D2
     move.b  ($0013,A4),D2
     cmpi.b  #$03,D2
     beq  _anon_z05_22
@@ -1026,11 +1034,13 @@ _L_z05_InitMode7_Sub5_Vertical:
 _L_z05_InitMode7_Sub5_CheckDark:
     ; Scrolling in any direction.
     ;
+    moveq   #0,D3
     move.b  ($00EC,A4),D3
     bsr     IsDarkRoom_Bank5
     beq  InitMode7_Finish
     ; The next room is dark.
     ;
+    moveq   #0,D3
     move.b  ($00EB,A4),D3
     bsr     IsDarkRoom_Bank5
     bne  _L_z05_InitMode7_Sub5_CheckIfLit
@@ -1114,10 +1124,12 @@ RoomPaletteSelectorToNTAttr:
 ; Look up room attributes A for the room.
     even
 FillPlayAreaAttrs:
+    moveq   #0,D3
     move.b  D0,D3
     lea     (NES_SRAM+$087E).l,A0
     move.b  (A0,D3.W),D0
     andi.b #$03,D0
+    moveq   #0,D2
     move.b  D0,D2
     lea     (RoomPaletteSelectorToNTAttr).l,A0
     move.b  (A0,D2.W),D0
@@ -1130,6 +1142,7 @@ _anon_z05_24:
     lea     (NES_SRAM+$08FE).l,A0
     move.b  (A0,D3.W),D0
     andi.b #$03,D0
+    moveq   #0,D2
     move.b  D0,D2
     ; Fill the inner play area NT attributes (offset 9 to $26).
     ;
@@ -1233,6 +1246,7 @@ ScrollHorizontal:
     ;
     ; $A0 in UW.
     move.b  #$A0,D3
+    moveq   #0,D2
     move.b  ($0010,A4),D2
     bne  _anon_z05_25
     move.b  #$E0,D3
@@ -1246,6 +1260,7 @@ _anon_z05_25:
     ;
     ; $81 in UW.
     move.b  #$81,D3
+    moveq   #0,D2
     move.b  ($0010,A4),D2
     bne  _L_z05_ScrollHorizontal_SetColumn
     moveq   #65,D3
@@ -1281,6 +1296,7 @@ ChooseAttrSourceAndDestForSubmode:
     ; Low byte $D0 mean destination PPU address of $23D0, $27D0, $2BD0, or $2FD0.
     move.b  #$D0,D0
     moveq   #23,D3
+    moveq   #0,D2
     move.b  ($0013,A4),D2
     beq  _anon_z05_26
 ; Params:
@@ -1316,6 +1332,7 @@ UpdateMode7Scroll_Sub2:
     ; Calculate VScrollingStartFrame the same way as the frame
     ; value in the next submode.
     andi.b #$03,D0
+    moveq   #0,D3
     move.b  ($0010,A4),D3
     bne  _anon_z05_27
     andi.b #$01,D0
@@ -1342,6 +1359,7 @@ _anon_z05_28:
 UpdateMode7Scroll_Sub6:
     move.b  ($0010,A4),D0
     beq  UpdateMode7Scroll_Sub7
+    moveq   #0,D3
     move.b  ($00EB,A4),D3
     bsr     IsDarkRoom_Bank5
     beq  UpdateMode7Scroll_Sub7
@@ -1382,6 +1400,7 @@ UpdateMode7Scroll_Sub4:
 UpdateMode7Scroll_Sub4And5_TransferNTAttrs:
     move.b  #$D0,D0
     moveq   #23,D3
+    moveq   #0,D2
     move.b  ($0013,A4),D2
     cmpi.b  #$04,D2
     beq  CueTransferPlayAreaAttrsHalfAndAdvanceSubmodeNT0
@@ -1490,6 +1509,7 @@ _anon_z05_32:
     ; Set PPUADDR mid-frame to 
     ; achieve split-frame scrolling.
     move.b  ($0058,A4),D0
+    moveq   #0,D3
     move.b  ($00E2,A4),D3
     bsr     _ppu_write_6  ; PPU $2006 write, D0=val
     move.l  D0,-(SP)       ; save A (6502 STX/STY never modifies A)
@@ -1650,6 +1670,7 @@ ObjListAddrs:
 
     even
 InitMode4:
+    moveq   #0,D2
     move.b  ($0013,A4),D2
     beq  InitMode_EnterRoom
     subq.b  #1,D2
@@ -1687,6 +1708,7 @@ _L_z05_InitMode4_CheckSub2:
     bne  InitMode4_Sub3
     ; Submode 2.
     ;
+    moveq   #0,D3
     move.b  ($00EB,A4),D3
     bsr     IsDarkRoom_Bank5
     bne  InitMode4_GoToSub0
@@ -1704,6 +1726,7 @@ _L_z05_InitMode4_CheckSub2:
     andi    #$EE,CCR  ; CLC: clear C+X
     move.b  ($00EB,A4),D1
     addx.b  D1,D0   ; ADC RoomId
+    moveq   #0,D3
     move.b  D0,D3
     bsr     IsDarkRoom_Bank5
     beq  InitMode4_GoToSub0
@@ -1759,6 +1782,7 @@ InitMode_EnterRoom:
     move.b  D0,($0055,A4)
     ; Store level block attribute byte F for convenience.
     ;
+    moveq   #0,D3
     move.b  ($00EB,A4),D3
     lea     (NES_SRAM+$0AFE).l,A0
     move.b  (A0,D3.W),D0
@@ -1781,6 +1805,7 @@ InitMode_EnterRoom:
     ;
     ; Set up Link's exit from underground.
     ;
+    moveq   #0,D3
     move.b  ($00EB,A4),D3
     lea     (NES_SRAM+$087E).l,A0
     move.b  (A0,D3.W),D0
@@ -1801,6 +1826,7 @@ InitMode_EnterRoom:
     ; If the player didn't step on a cave entrance to go underground,
     ; then he used the stairs. So, skip starting the exit effect (method 1-b).
     ;
+    moveq   #0,D3
     move.b  ($0065,A4),D3
     cmpi.b  #$24,D3
     bne  _anon_z05_42
@@ -1919,6 +1945,7 @@ _anon_z05_46:
     bne  _anon_z05_46
     ; Put the monster list ID in [02].
     ;
+    moveq   #0,D3
     move.b  ($00EB,A4),D3
     lea     (NES_SRAM+$097E).l,A0
     move.b  (A0,D3.W),D0
@@ -1943,6 +1970,7 @@ _anon_z05_47:
     roxl.b  #1,D0   ; ROL A
     roxl.b  #1,D0   ; ROL A
     roxl.b  #1,D0   ; ROL A
+    moveq   #0,D3
     move.b  D0,D3
     ; Get the object count from level info.
     ;
@@ -1951,6 +1979,7 @@ _anon_z05_47:
     ; But make the count 1, if  the object list ID >= $32 and < $62.
     ; This includes bosses and other non-recurring objects.
     ;
+    moveq   #0,D3
     move.b  ($0002,A4),D3
     cmpi.b  #$62,D3
     bcc  _anon_z05_48
@@ -2022,6 +2051,7 @@ _L_z05_InitMode_EnterRoom_PlaceList:
     ; Put the address of the list in [04:05].
     ;
     lsl.b  #1,D0   ; ASL A
+    moveq   #0,D3
     move.b  D0,D3
     lea     (ObjListAddrs).l,A0
     move.b  (A0,D3.W),D0
@@ -2132,6 +2162,7 @@ CellarKeeseYs:
 ;
     even
 AssignObjSpawnPositions:
+    moveq   #0,D3
     move.b  ($034E,A4),D3
     ; If object template type = 0 or refers to Zelda, then
     ; skip spawning normal objects.
@@ -2168,6 +2199,7 @@ _anon_z05_57:
     move.b  D0,($0007,A4)
     ; Assign spawn coordinates to 9 object slots.
     ;
+    moveq   #0,D3
     move.b  ($0524,A4),D3
     moveq   #1,D2
     even
@@ -2249,6 +2281,7 @@ _anon_z05_61:
     bpl  _anon_z05_61
     ; cave index = ((cave value) >> 2) - $10
     ;
+    moveq   #0,D3
     move.b  ($00EB,A4),D3
     lea     (NES_SRAM+$08FE).l,A0
     move.b  (A0,D3.W),D0
@@ -2282,6 +2315,7 @@ IsSafeToSpawn:
     move.b  D0,-(A5)  ; PHA
     bsr     GetCollidableTileStill
     move.b  (A5)+,D0  ; PLA
+    moveq   #0,D3
     move.b  D0,D3
     lea     ($049E,A4),A0
     move.b  (A0,D2.W),D0
@@ -2564,6 +2598,7 @@ _anon_z05_66:
     bpl  _anon_z05_66
     ; Set Y for selection sprite.
     ;
+    moveq   #0,D3
     move.b  ($0013,A4),D3
     lea     (Mode8SpriteYs).l,A0
     move.b  (A0,D3.W),D0
@@ -2598,6 +2633,7 @@ _anon_z05_67:
     ; the selection.
     move.b  ($0013,A4),D0
     andi.b #$03,D0
+    moveq   #0,D3
     move.b  D0,D3
     lea     (Mode8FlashAttrsAddrLo).l,A0
     move.b  (A0,D3.W),D0
@@ -2623,6 +2659,7 @@ _L_z05_UpdateMode8ContinueQuestion_Full_HandleActivated:
     ; 3: Continue
     ; D: Save
     ; 0: Retry
+    moveq   #0,D3
     move.b  ($0013,A4),D3
     lea     (Mode8SelectionToMode).l,A0
     move.b  (A0,D3.W),D0
@@ -2734,6 +2771,7 @@ CheckHasLivingMonsters:
     ; Else flag Link not paralyzed (to cancel the effects of a like-like),
     ; and set the all-dead-in-room flag.
     ;
+    moveq   #0,D3
     move.b  ($0340,A4),D3
     even
 _L_z05_CheckHasLivingMonsters_Loop:
@@ -2795,6 +2833,7 @@ _L_z05_CheckSecretTriggerRingleader_KillMonsters:
     ; If the slot is empty, or has something not a monster, or is
     ; already dying; then go loop again.
     ;
+    moveq   #0,D3
     move.b  ($0340,A4),D3
     even
 _L_z05_CheckSecretTriggerRingleader_Loop:
@@ -3086,6 +3125,7 @@ UpdateMode11Death_SubC:
     move.b  D0,($0012,A4)
     moveq   #64,D0
     move.b  D0,($0602,A4)
+    moveq   #0,D2
     move.b  ($0016,A4),D2
     lea     ($0630,A4),A0
     move.b  (A0,D2.W),D0
@@ -3139,10 +3179,12 @@ _anon_z05_74:
     andi    #$EE,CCR  ; CLC: clear C+X
     move.b  #$08,D1
     addx.b  D1,D0   ; ADC #$08 (X flag = 6502 C)
+    moveq   #0,D3
     move.b  D0,D3
     move.b  #$80,D0
     bsr     MaskInputInBorder
     move.b  (A5)+,D0  ; PLA
+    moveq   #0,D3
     move.b  D0,D3
     ; If inner boundary was not crossed, then we'll check the outer
     ; boundary using player's direction and reverse direction index.
@@ -3165,6 +3207,7 @@ _anon_z05_75:
     andi    #$EE,CCR  ; CLC: clear C+X
     move.b  #$04,D1
     addx.b  D1,D0   ; ADC #$04 (X flag = 6502 C)
+    moveq   #0,D3
     move.b  D0,D3
 _anon_z05_76:
     ; We won't mask buttons (A) this time. Only directions now.
@@ -3330,6 +3373,7 @@ _anon_z05_78:
     ; Set the farthest distance the boomerang can fly based on
     ; the type of boomerang.
     ;
+    moveq   #0,D3
     move.b  ($0675,A4),D3
     lea     (BoomerangLimits).l,A0
     move.b  (A0,D3.W),D0
@@ -3520,6 +3564,7 @@ _anon_z05_81:
     ; Note that in cellars, level block attributes A and B indicate
     ; the destination room ID only.
     ;
+    moveq   #0,D3
     move.b  D0,D3
     move.b  ($0070,A4),D0
     cmpi.b  #$80,D0
@@ -3537,6 +3582,7 @@ _anon_z05_82:
     ; Set Link's position in the destination room.
     ;
     move.b  (A5)+,D0  ; PLA
+    moveq   #0,D3
     move.b  D0,D3
     lea     (NES_SRAM+$097E).l,A0
     move.b  (A0,D3.W),D0
@@ -3618,6 +3664,7 @@ _anon_z05_84:
     ; Wrap around if needed. Go to that room by way of mode $A.
     ;
     andi.b #$03,D0
+    moveq   #0,D3
     move.b  D0,D3
     lea     (NES_SRAM+$0BB2).l,A0
     move.b  (A0,D3.W),D0
@@ -3667,6 +3714,7 @@ CheckCaveEdge:
 ;
     even
 CheckLadder:
+    moveq   #0,D2
     move.b  ($0064,A4),D2
     beq  _L_z05_CheckLadder_Exit
     ; If the ladder is done (state 0), go put away the ladder.
@@ -3780,6 +3828,7 @@ _L_z05_CheckLadder_HandleInput:
     ; and was allowed to move onto the tiles after the ladder.
     ;
     move.b  ($0098,A4),D0
+    moveq   #0,D3
     move.b  ($0000,A4),D3
     beq  _anon_z05_86
     lea     ($0098,A4),A0
@@ -3855,6 +3904,7 @@ _anon_z05_86:
     ; Else fall thru to reset moving direction and draw the ladder.
     ;
     move.b  ($000F,A4),D0
+    moveq   #0,D3
     move.b  ($049E,A4),D3
     move.b  ($034A,A4),D1
     cmp.b   D1,D3
@@ -3868,6 +3918,7 @@ _L_z05_CheckLadder_DrawLadder:
     ; Draw the ladder.
     ;
     move.b  D0,-(A5)  ; PHA
+    moveq   #0,D2
     move.b  ($0064,A4),D2
     bsr     Anim_FetchObjPosForSpriteDescriptor
     moveq   #12,D3
@@ -3953,6 +4004,7 @@ _L_z05_FindNextEdgeSpawnCell_PointToColumn:
     ;
     move.b  ($000A,A4),D0
     andi.b #$0F,D0
+    moveq   #0,D3
     move.b  D0,D3
     beq  _L_z05_FindNextEdgeSpawnCell_GetRowOffset
 _anon_z05_89:
@@ -3973,6 +4025,7 @@ _L_z05_FindNextEdgeSpawnCell_GetRowOffset:
     lsr.b  #1,D0   ; LSR A
     lsr.b  #1,D0   ; LSR A
     lsr.b  #1,D0   ; LSR A
+    moveq   #0,D3
     move.b  D0,D3
     ; If the tile < $84, then it's walkable. So, go use it.
     ; $84 is a sand tile, which is OK for many monsters; but not
@@ -4198,6 +4251,7 @@ Link_ModifyDirInDoorway:
     ;
     move.b  ($0053,A4),D0
     beq  _L_z05_Link_ModifyDirInDoorway_Exit
+    moveq   #0,D3
     move.b  ($03F8,A4),D3
     beq  _L_z05_Link_ModifyDirInDoorway_Exit
     ; If the facing direction is part of the input direction, then
@@ -4423,6 +4477,7 @@ _L_z05_CheckDoorway_TestDoorwayDoor:
     bsr     TouchDoor
     ; If blocked, then return and leave DoorwayDir as it was.
     ;
+    moveq   #0,D3
     move.b  ($000E,A4),D3
     bmi  _L_z05_CheckDoorway_Exit
     ; Set variables to doorway direction found.
@@ -4463,11 +4518,15 @@ _anon_z05_97:
 ;
     even
 GetPlayerCoordsForDirection:
+    moveq   #0,D2
     move.b  ($0070,A4),D2
+    moveq   #0,D3
     move.b  ($0084,A4),D3
     andi.b #$03,D0
     beq  _anon_z05_98
+    moveq   #0,D3
     move.b  ($0070,A4),D3
+    moveq   #0,D2
     move.b  ($0084,A4),D2
 _anon_z05_98:
     move.b  D2,($0000,A4)
@@ -4666,6 +4725,7 @@ _anon_z05_101:
 _L_z05_ModifyObjCountByHistoryUW_CalcObjCount:
     ; Subtract the level block's kill count from the object count.
     ;
+    moveq   #0,D3
     move.b  ($00EB,A4),D3
     move.b  ($0003,A4),D0
     ori     #$11,CCR  ; SEC: set C+X
@@ -4704,6 +4764,7 @@ SaveKillCountUW:
     ; then it refers to a non-recurring foe that shouldn't be made
     ; again. So, go store the max kill count for the room.
     ; 
+    moveq   #0,D3
     move.b  ($035F,A4),D3
     cmpi.b  #$32,D3
     bcs  _anon_z05_103
@@ -4722,6 +4783,7 @@ _anon_z05_103:
     ; RoomKillCount < _RoomObjCount.
     ; Add RoomKillCount to level kill count for this room.
     ;
+    moveq   #0,D3
     move.b  ($00EB,A4),D3
     andi    #$EE,CCR  ; CLC: clear C+X
     lea     ($0560,A4),A0
@@ -4741,6 +4803,7 @@ _anon_z05_104:
 
     even
 _L_z05_SaveKillCountUW_StoreMax:
+    moveq   #0,D3
     move.b  ($00EB,A4),D3
     moveq   #15,D0
     lea     ($0560,A4),A0
@@ -4776,6 +4839,7 @@ BossSoundEffects:
     even
 CheckBossSoundEffectUW:
     bsr     GetRoomFlags
+    moveq   #0,D3
     move.b  (NES_SRAM+$0BBC).l,D3
     move.b  ($00,A4),D1   ; ptr lo
     move.b  ($01,A4),D4  ; ptr hi
@@ -4789,6 +4853,7 @@ CheckBossSoundEffectUW:
     andi.b #$C0,D0
     cmpi.b  #$C0,D0
     beq  _anon_z05_105
+    moveq   #0,D3
     move.b  ($00EB,A4),D3
     lea     (NES_SRAM+$0A7E).l,A0
     move.b  (A0,D3.W),D0
@@ -4797,6 +4862,7 @@ CheckBossSoundEffectUW:
     roxl.b  #1,D0   ; ROL A
     roxl.b  #1,D0   ; ROL A
     roxl.b  #1,D0   ; ROL A
+    moveq   #0,D2
     move.b  D0,D2
     lea     (BossSoundEffects).l,A0
     move.b  (A0,D2.W),D0
@@ -4856,6 +4922,7 @@ _anon_z05_105:
 ;
     even
 WriteDoorFaceTileHorizontally:
+    moveq   #0,D3
     move.b  ($0009,A4),D3
     lea     (HorizontalDoorFaceIndexesBaseOffsets).l,A0
     move.b  (A0,D3.W),D0
@@ -4865,12 +4932,14 @@ WriteDoorFaceTileHorizontally:
     andi    #$EE,CCR  ; CLC: clear C+X
     move.b  ($0007,A4),D1
     addx.b  D1,D0   ; ADC $07
+    moveq   #0,D3
     move.b  D0,D3
     ; With that index, look up the index to use with the door face
     ; list of tiles at [02:03].
     ;
     lea     (HorizontalDoorFaceIndexes).l,A0
     move.b  (A0,D3.W),D0
+    moveq   #0,D3
     move.b  D0,D3
     ; Now we can read one of four tiles inside a door face tile map,
     ; and copy it to the dynamic transfer buf.
@@ -5276,12 +5345,15 @@ FindDoorAttrByDoorBit:
     move.b  D0,($0003,A4)
     even
 _L_z05_FindDoorAttrByDoorBit_LoopDoorBit:
+    moveq   #0,D3
     move.b  ($00EB,A4),D3
     lea     (NES_SRAM+$087E).l,A0
     move.b  (A0,D3.W),D0
+    moveq   #0,D3
     move.b  ($0003,A4),D3
     cmpi.b  #$02,D3
     bcs  _anon_z05_106
+    moveq   #0,D3
     move.b  ($00EB,A4),D3
     lea     (NES_SRAM+$08FE).l,A0
     move.b  (A0,D3.W),D0
@@ -5661,6 +5733,7 @@ _L_z05_L_LayOutDoors_LoopHalves_DoneClosedPF:
     move.b  ($00EE,A4),D0
     move.b  ($0002,A4),D1
     and.b  D1,D0
+    moveq   #0,D2
     move.b  D0,D2
     move.b  (A5)+,D0  ; PLA
     move.b  ($0002,A4),D1
@@ -5671,9 +5744,11 @@ _L_z05_L_LayOutDoors_LoopHalves_DoneClosedPF:
     ;
     ;
     ; Save provisional door face in Y register.
+    moveq   #0,D3
     move.b  D0,D3
     move.b  (A5)+,D0  ; PLA
     move.b  D0,-(A5)  ; PHA
+    moveq   #0,D2
     move.b  D0,D2
     move.b  D3,D0
     ; If provisional door face is not for a shutter, then
@@ -5712,8 +5787,10 @@ _L_z05_L_LayOutDoors_LoopHalves_DoneOpenPF:
     ;
     ; If handling the first half [06], then calculate OpenDoorwayMask.
     ;
+    moveq   #0,D2
     move.b  ($0006,A4),D2
     beq  _anon_z05_112
+    moveq   #0,D2
     move.b  ($000B,A4),D2
     move.b  D0,-(A5)  ; PHA
     bsr     FindDoorAttrByDoorBit
@@ -5730,6 +5807,7 @@ _anon_z05_112:
     ori     #$11,CCR  ; SEC: set C+X
     move.b  #$03,D1
     subx.b  D1,D0   ; SBC #$03
+    moveq   #0,D3
     move.b  D0,D3
     ; Furthermore, if the latest provisional door face >= 3, then
     ; subtract one.
@@ -5776,12 +5854,14 @@ _L_z05_L_LayOutDoors_LoopHalves_LoopColumn:
     ;
     move.b  (A5)+,D0  ; PLA
     move.b  D0,-(A5)  ; PHA
+    moveq   #0,D2
     move.b  D0,D2
     ; For each row (2 or 3) in the door, indexed by X,
     ; starting from highest index down to 0:
     ;
     lea     (DirIndexToDoorRowCountMinusOne).l,A0
     move.b  (A0,D2.W),D0
+    moveq   #0,D2
     move.b  D0,D2
     even
 _L_z05_L_LayOutDoors_LoopHalves_LoopRowTile:
@@ -5834,6 +5914,7 @@ _L_z05_L_LayOutDoors_LoopHalves_NextLoopDoorHalf:
     ; Bottom of the door halves loop.
     ;
     move.b  (A5)+,D0  ; PLA
+    moveq   #0,D2
     move.b  D0,D2
     subq.b  #1,($0006,A4)
     bmi  _anon_z05_116
@@ -5858,6 +5939,7 @@ _anon_z05_116:
 ;
     even
 FetchDoorAddrsFaceTilesSrcAndPlayAreaDst:
+    moveq   #0,D2
     move.b  D0,D2
     lea     (DoorFaceTilesAddrsLo).l,A0
     move.b  (A0,D2.W),D0
@@ -6044,6 +6126,7 @@ _anon_z05_122:
     move.b  ($0054,A4),D0
     cmpi.b  #$04,D0
     bne  _anon_z05_123
+    moveq   #0,D2
     move.b  ($0009,A4),D2
     bsr     ResetDoorFlag
     move.b  ($0055,A4),D0
@@ -6075,6 +6158,7 @@ _anon_z05_123:
     ;
     ;
     ; [09] door direction index
+    moveq   #0,D2
     move.b  ($0009,A4),D2
     bsr     SetDoorFlag
     ; Get the next room's ID.
@@ -6084,11 +6168,13 @@ _anon_z05_123:
     lea     (DoorNextRoomIdOffsets).l,A0
     move.b  (A0,D2.W),D1
     addx.b  D1,D0   ; ADC DoorNextRoomIdOffsets,X
+    moveq   #0,D3
     move.b  D0,D3
     ; Flip the door direction index.
     ;
     move.b  D2,D0
     eori.b #$01,D0
+    moveq   #0,D2
     move.b  D0,D2
     ; Set the door flag for the opposite door in the next room.
     ;
@@ -6175,6 +6261,7 @@ _anon_z05_127:
     ori     #$11,CCR  ; SEC: set C+X
     move.b  #$03,D1
     subx.b  D1,D0   ; SBC #$03
+    moveq   #0,D3
     move.b  D0,D3
     ; Lastly, if the door is closed ([08] = 0) and provisional
     ; face index >= 3, then subtract 1 from it.
@@ -6218,6 +6305,7 @@ _L_z05_PrepareWriteHorizontalDoorTransferRecords_MakeForwardIndex:
     ; transfer buf length in X register.
     ;
     move.b  D2,($0009,A4)
+    moveq   #0,D2
     move.b  ($0301,A4),D2
     ; Return some hardcoded values in [05], [06], [07]. See the comments above.
     ;
@@ -6272,6 +6360,7 @@ LayoutUWFloor:
     move.b  D3,($0006,A4)
     even
 _L_z05_LayoutUWFloor_LoopColumnUW:
+    moveq   #0,D3
     move.b  ($0006,A4),D3
     move.b  ($02,A4),D1   ; ptr lo
     move.b  ($03,A4),D4  ; ptr hi
@@ -6286,6 +6375,7 @@ _L_z05_LayoutUWFloor_LoopColumnUW:
     lsr.b  #1,D0   ; LSR A
     lsr.b  #1,D0   ; LSR A
     lsr.b  #1,D0   ; LSR A
+    moveq   #0,D2
     move.b  D0,D2
     lea     (ColumnDirectoryUW).l,A0
     move.b  (A0,D2.W),D0
@@ -6303,6 +6393,7 @@ _L_z05_LayoutUWFloor_LoopColumnUW:
     movea.l D4,A0
     move.b  (A0,D3.W),D0     ; LDA ($nn),Y
     andi.b #$0F,D0
+    moveq   #0,D2
     move.b  D0,D2
     moveq   #0,D3
     even
@@ -6347,6 +6438,7 @@ _L_z05_LayoutUWFloor_LoopSquareRow:
     movea.l D4,A0
     move.b  (A0,D3.W),D0     ; LDA ($nn),Y
     andi.b #$07,D0
+    moveq   #0,D2
     move.b  D0,D2
     lea     (PrimarySquaresUW).l,A0
     move.b  (A0,D2.W),D0
@@ -6411,6 +6503,7 @@ WriteSquareUW:
     ; Primary is the first tile. Next 3 tiles in CHR form the rest of the square.
     ; Primary >= $70 and < $F3.
     ;
+    moveq   #0,D2
     move.b  D0,D2
     move.b  ($00,A4),D1   ; ptr lo
     move.b  ($01,A4),D4  ; ptr hi
@@ -6437,6 +6530,7 @@ WriteSquareUW:
     andi    #$EE,CCR  ; CLC: clear C+X
     move.b  #$15,D1
     addx.b  D1,D0   ; ADC #$15 (X flag = 6502 C)
+    moveq   #0,D3
     move.b  D0,D3
     addq.b  #1,D2
     move.b  D2,D0
@@ -6497,6 +6591,7 @@ _L_z05_WriteSquareUW_WriteType2:
     andi    #$EE,CCR  ; CLC: clear C+X
     move.b  #$15,D1
     addx.b  D1,D0   ; ADC #$15 (X flag = 6502 C)
+    moveq   #0,D3
     move.b  D0,D3
     move.b  (A5)+,D0  ; PLA
     move.b  ($00,A4),D1   ; ptr lo
@@ -6716,9 +6811,11 @@ CopyColumnToTileBuf:
     move.b  D0,($0000,A4)
     moveq   #101,D0
     move.b  D0,($0001,A4)
+    moveq   #0,D2
     move.b  ($00E8,A4),D2
     subq.b  #1,D2
     move.b  D2,D0
+    moveq   #0,D3
     move.b  ($0301,A4),D3
     lea     ($0303,A4),A0
     move.b  D0,(A0,D3.W)
@@ -6739,6 +6836,7 @@ _anon_z05_137:
     lea     ($031B,A4),A0
     move.b  D0,(A0,D3.W)
     move.b  D3,D0
+    moveq   #0,D2
     move.b  D0,D2
     moveq   #0,D3
     move.b  D3,($0006,A4)
@@ -6773,6 +6871,7 @@ CopyRowToTileBuf:
     moveq   #101,D0
     move.b  D0,($0001,A4)
     move.b  ($00E9,A4),D0
+    moveq   #0,D2
     move.b  D0,D2
     andi    #$EE,CCR  ; CLC: clear C+X
     move.b  #$30,D1
@@ -6866,6 +6965,7 @@ LayoutRoomOW:
     move.b  D0,($0003,A4)
     moveq   #0,D0
     move.b  D0,($0006,A4)
+    moveq   #0,D2
     move.b  ($00EB,A4),D2
     lea     (NES_SRAM+$09FE).l,A0
     move.b  (A0,D2.W),D0
@@ -6910,6 +7010,7 @@ LayoutRoomOrCaveOW:
     move.b  D0,($0006,A4)
     even
 _L_z05_LayoutRoomOrCaveOW_LoopColumnOW:
+    moveq   #0,D3
     move.b  ($0006,A4),D3
     move.b  ($02,A4),D1   ; ptr lo
     move.b  ($03,A4),D4  ; ptr hi
@@ -6924,6 +7025,7 @@ _L_z05_LayoutRoomOrCaveOW_LoopColumnOW:
     lsr.b  #1,D0   ; LSR A
     lsr.b  #1,D0   ; LSR A
     lsr.b  #1,D0   ; LSR A
+    moveq   #0,D2
     move.b  D0,D2
     ; Load the column table address for this descriptor in [$04:05].
     ;
@@ -6943,6 +7045,7 @@ _L_z05_LayoutRoomOrCaveOW_LoopColumnOW:
     movea.l D4,A0
     move.b  (A0,D3.W),D0     ; LDA ($nn),Y
     andi.b #$0F,D0
+    moveq   #0,D2
     move.b  D0,D2
     move.b  #$FF,D3
 _anon_z05_142:
@@ -6981,10 +7084,12 @@ _L_z05_LayoutRoomOrCaveOW_LoopSquareOW:
     move.b  (A0,D3.W),D0     ; LDA ($nn),Y
     andi.b #$3F,D0
     move.b  D0,($000D,A4)
+    moveq   #0,D2
     move.b  D0,D2
     lea     (PrimarySquaresOW).l,A0
     move.b  (A0,D2.W),D0
     move.b  D0,-(A5)  ; PHA
+    moveq   #0,D3
     move.b  ($00EB,A4),D3
     move.b  ($08,A4),D1   ; ptr lo
     move.b  ($09,A4),D4  ; ptr hi
@@ -7126,6 +7231,7 @@ L16AF0_Exit:
 ; Get square index.
     even
 WriteSquareOW:
+    moveq   #0,D2
     move.b  ($000D,A4),D2
     cmpi.b  #$10,D2
     bcs  _L_z05_WriteSquareOW_WriteType3
@@ -7133,6 +7239,7 @@ WriteSquareOW:
     ; Primary is the first tile. Next 3 tiles in CHR form the rest of the square.
     ; Square index >= $10.
     ;
+    moveq   #0,D2
     move.b  D0,D2
     move.b  ($00,A4),D1   ; ptr lo
     move.b  ($01,A4),D4  ; ptr hi
@@ -7159,6 +7266,7 @@ WriteSquareOW:
     andi    #$EE,CCR  ; CLC: clear C+X
     move.b  #$15,D1
     addx.b  D1,D0   ; ADC #$15 (X flag = 6502 C)
+    moveq   #0,D3
     move.b  D0,D3
     addq.b  #1,D2
     move.b  D2,D0
@@ -7198,6 +7306,7 @@ _L_z05_WriteSquareOW_WriteType3:
     move.b  D2,D0
     lsl.b  #1,D0   ; ASL A
     lsl.b  #1,D0   ; ASL A
+    moveq   #0,D2
     move.b  D0,D2
     lea     (SecondarySquaresOW).l,A0
     move.b  (A0,D2.W),D0
@@ -7227,6 +7336,7 @@ _L_z05_WriteSquareOW_WriteType3:
     andi    #$EE,CCR  ; CLC: clear C+X
     move.b  #$15,D1
     addx.b  D1,D0   ; ADC #$15 (X flag = 6502 C)
+    moveq   #0,D3
     move.b  D0,D3
     addq.b  #1,D2
     lea     (SecondarySquaresOW).l,A0
@@ -7250,7 +7360,9 @@ PatchColumnDirectoryForCellar:
     ; In OW, set first address of directory to start of OW column heap, as expected.
     ;
     move.b  (ColumnHeapOWAddr).l,D0
+    moveq   #0,D2
     move.b  (ColumnHeapOWAddr+1).l,D2
+    moveq   #0,D3
     move.b  ($0010,A4),D3
     beq  _anon_z05_146
     ; In UW, set the first address of column directory to start of UW cellar column heap.
@@ -7327,6 +7439,7 @@ CheckShortcut:
     ;
     lsr.b  #1,D0   ; LSR A
     lsr.b  #1,D0   ; LSR A
+    moveq   #0,D2
     move.b  D0,D2
     lea     (PlayAreaColumnAddrs).l,A0
     move.b  (A0,D2.W),D0
@@ -7341,6 +7454,7 @@ CheckShortcut:
     lsr.b  #1,D0   ; LSR A
     lsr.b  #1,D0   ; LSR A
     lsr.b  #1,D0   ; LSR A
+    moveq   #0,D3
     move.b  D0,D3
     move.b  ($00,A4),D1   ; ptr lo
     move.b  ($01,A4),D4  ; ptr hi
@@ -7396,6 +7510,7 @@ ChangePlayMapSquareOW:
     ;
     lsr.b  #1,D0   ; LSR A
     lsr.b  #1,D0   ; LSR A
+    moveq   #0,D2
     move.b  D0,D2
     ; Store the address of the column in [00:01].
     ;
@@ -7407,6 +7522,7 @@ ChangePlayMapSquareOW:
     move.b  D0,($0001,A4)
     move.b  (A5)+,D0  ; PLA
     move.b  D0,-(A5)  ; PHA
+    moveq   #0,D2
     move.b  D0,D2
     ; Align the object's Y coordinate with 16 pixels.
     ;
@@ -7459,6 +7575,7 @@ _L_z05_ChangePlayMapSquareOW_Write:
     move.b  D2,($000D,A4)
     bsr     WriteSquareOW
     move.b  (A5)+,D0  ; PLA
+    moveq   #0,D2
     move.b  D0,D2
     rts
 
@@ -7825,6 +7942,7 @@ _anon_z05_159:
     ; If in mode 6, use Link's direction to get a door attribute.
     ; Else use the opposite direction.
     move.b  ($0098,A4),D0
+    moveq   #0,D3
     move.b  ($0012,A4),D3
     cmpi.b  #$06,D3
     beq  _anon_z05_160
@@ -7832,6 +7950,7 @@ _anon_z05_159:
 _anon_z05_160:
     move.b  D0,($0002,A4)
     bsr     FindDoorAttrByDoorBit
+    moveq   #0,D3
     move.b  ($000F,A4),D3
     rts
 
@@ -7907,11 +8026,13 @@ InitModeSubroom_AdvanceSubmode:
 InitMode9_FadeToDark:
     moveq   #0,D0
 _anon_z05_162:
+    moveq   #0,D3
     move.b  ($0010,A4),D3
     beq  InitModeSubroom_AdvanceSubmode
     bsr     SetFadeCycleAndAdvanceSubmode
     even
 InitModeSubroom_AnimateFade:
+    moveq   #0,D3
     move.b  ($0010,A4),D3
     beq  InitModeSubroom_AdvanceSubmode
     jmp     UpdateMode11Death_Sub8_AnimateFade
@@ -8013,6 +8134,7 @@ InitMode9_EnterCellar:
     ; then look up the X coordinate of the ladder on the left at index 0.
     ; Else use index 1 to get the X coordinate on the right.
     ;
+    moveq   #0,D3
     move.b  ($00EB,A4),D3
     moveq   #0,D2
     move.b  ($0527,A4),D0
@@ -8125,6 +8247,7 @@ Submenu_CueTransferRowUW:
     ; If the bottom bit is set, go prepare the full black row.
     ;
     lsr.b  #1,D0   ; LSR A
+    moveq   #0,D3
     move.b  D0,D3
     bcs  PrepFullBlackRow
     ; Submenu rows $D to $15 are parts of the map.
@@ -8209,6 +8332,7 @@ Submenu_CueTransferRowOW:
     ; If the bottom bit is set, go prepare the full black row.
     ;
     lsr.b  #1,D0   ; LSR A
+    moveq   #0,D3
     move.b  D0,D3
     bcs  PrepFullBlackRow
     ; There's nothing to do for row $15.
@@ -8323,6 +8447,7 @@ _L_z05_Link_ModifyDirAtGridPoint_LoopDir:
     addq.b  #1,($000C,A4)
 _anon_z05_173:
     move.b  (A5)+,D0  ; PLA
+    moveq   #0,D3
     move.b  D0,D3
     even
 _L_z05_Link_ModifyDirAtGridPoint_NextLoopDir:
@@ -8330,6 +8455,7 @@ _L_z05_Link_ModifyDirAtGridPoint_NextLoopDir:
     bpl  _L_z05_Link_ModifyDirAtGridPoint_LoopDir
     ; If there were no input directions, then return.
     ;
+    moveq   #0,D3
     move.b  ($000B,A4),D3
     bne  HaveInput
     even
@@ -8362,6 +8488,7 @@ _anon_z05_174:
     ;
     ; Make Link go straight in one direction on the next grid line.
     ;
+    moveq   #0,D3
     move.b  D0,D3
     addq.b  #1,($0057,A4)
     ; If in OW or only one direction of the two is walkable, then go set
@@ -8374,6 +8501,7 @@ _anon_z05_174:
     move.b  ($000D,A4),D0
     cmpi.b  #$01,D3
     beq  _L_z05_HaveInput_SetLinkDirAndSpeed
+    moveq   #0,D3
     move.b  ($0010,A4),D3
     beq  _L_z05_HaveInput_SetLinkDirAndSpeed
     ; In UW. There are two input directions, and they're both walkable.
@@ -8395,12 +8523,14 @@ _anon_z05_174:
     ;   Else
     ;     Go turn to the perpendicular direction
     ;
+    moveq   #0,D3
     move.b  ($0070,A4),D3
     cmpi.b  #$20,D3
     beq  _anon_z05_175
     cmpi.b  #$D0,D3
     bne  _anon_z05_176
 _anon_z05_175:
+    moveq   #0,D3
     move.b  ($0084,A4),D3
     cmpi.b  #$85,D3
     bne  _anon_z05_177
@@ -8416,6 +8546,7 @@ _anon_z05_176:
     ; go take the direction perpendicular to object direction.
     ;
     move.b  ($0098,A4),D0
+    moveq   #0,D2
     move.b  ($0056,A4),D2
     beq  _anon_z05_177
     ; At this point, Link_GoStraightWhenDiagInput is true.
@@ -8428,11 +8559,14 @@ _anon_z05_176:
     ;   direction, and set Link's speed. Also, *SET*
     ;   Link_GoStraightWhenDiagInput.
     ;
+    moveq   #0,D3
     move.b  ($0010,A4),D3
     beq  _L_z05_HaveInput_SetLinkDirAndSpeed
+    moveq   #0,D3
     move.b  ($0070,A4),D3
     cmpi.b  #$78,D3
     bne  _L_z05_HaveInput_SetLinkDirAndSpeed
+    moveq   #0,D3
     move.b  ($0084,A4),D3
     cmpi.b  #$5D,D3
     bne  _L_z05_HaveInput_SetLinkDirAndSpeed
@@ -8585,6 +8719,7 @@ _L_z05_SetLinkInputDir_ReverseDir:
     ; Negative offset:  8 - -offset
     ;
     moveq   #8,D0
+    moveq   #0,D3
     move.b  ($0394,A4),D3
     bmi  _anon_z05_183
     move.b  #$F8,D0
@@ -8644,6 +8779,7 @@ _L_z05_CheckWarps_EnsureSquareY:
     ; If in OW, go handle the tile separately.
     ;
     move.b  ($049E,A4),D0
+    moveq   #0,D3
     move.b  ($0010,A4),D3
     beq  HandleWarpOW
     ; In UW.
@@ -8667,6 +8803,7 @@ _anon_z05_184:
     addq.b  #1,D2
     lea     (NES_SRAM+$0BB2).l,A0
     move.b  (A0,D2.W),D0
+    moveq   #0,D3
     move.b  D0,D3
     move.b  ($00EB,A4),D0
     lea     (NES_SRAM+$087E).l,A0
@@ -8739,6 +8876,7 @@ _anon_z05_188:
     bsr     SaveKillCount
     ; Get the cave index attribute.
     ;
+    moveq   #0,D3
     move.b  ($00EB,A4),D3
     lea     (NES_SRAM+$08FE).l,A0
     move.b  (A0,D3.W),D0
@@ -8970,6 +9108,7 @@ Submenu_WriteSheetMapRowTransferRecord:
     ;
     move.b  ($005E,A4),D0
     lsr.b  #1,D0   ; LSR A
+    moveq   #0,D2
     move.b  D0,D2
     ; Write an end marker at the end of the row data.
     ;
@@ -9015,6 +9154,7 @@ _anon_z05_199:
     ; rotated horizontally, then loop to rotate right the number of
     ; bytes indicated.
     ;
+    moveq   #0,D2
     move.b  (NES_SRAM+$0BAB).l,D2
     even
 _L_z05_Submenu_WriteSheetMapRowTransferRecord_Rotate:
@@ -9047,6 +9187,7 @@ _L_z05_Submenu_WriteSheetMapRowTransferRecord_DoneRotate:
     move.b  #$1A,D1
     subx.b  D1,D0   ; SBC #$1A
     lsr.b  #1,D0   ; LSR A
+    moveq   #0,D2
     move.b  D0,D2
     moveq   #15,D3
     even
@@ -9098,6 +9239,7 @@ _anon_z05_202:
     addq.b  #1,D2
 _anon_z05_203:
     andi.b #$07,D0
+    moveq   #0,D3
     move.b  D0,D3
     lea     ($0657,A4),A0
     move.b  (A0,D2.W),D0
@@ -9134,6 +9276,7 @@ Submenu_WriteScanningMapRoomMark:
     move.b  D0,($033F,A4)
     ; Get the currently scanned room's visit state.
     ;
+    moveq   #0,D3
     move.b  ($00EB,A4),D3
     move.b  ($00,A4),D1   ; ptr lo
     move.b  ($01,A4),D4  ; ptr hi
@@ -9169,6 +9312,7 @@ _L_z05_Submenu_WriteScanningMapRoomMark_WriteMapTile:
     move.b  (A5)+,D0  ; PLA
     move.b  D0,($00EB,A4)
     move.b  (A5)+,D0  ; PLA
+    moveq   #0,D3
     move.b  D0,D3
     ; The map marks are arranged in the same order as all the
     ; possible values of OpenDoorMask.
@@ -9216,8 +9360,10 @@ CalcOpenDoorwayMask:
     ori     #$11,CCR  ; SEC: set C+X
 _anon_z05_205:
     move.b  (A5)+,D0  ; PLA
+    moveq   #0,D3
     move.b  D0,D3
     move.b  (A5)+,D0  ; PLA
+    moveq   #0,D2
     move.b  D0,D2
     even
 _L_z05_CalcOpenDoorwayMask_ShiftIntoMask:
@@ -9270,12 +9416,14 @@ SplitRoomId:
     move.b  ($00EB,A4),D0
     move.b  D0,-(A5)  ; PHA
     andi.b #$0F,D0
+    moveq   #0,D3
     move.b  D0,D3
     move.b  (A5)+,D0  ; PLA
     lsr.b  #1,D0   ; LSR A
     lsr.b  #1,D0   ; LSR A
     lsr.b  #1,D0   ; LSR A
     lsr.b  #1,D0   ; LSR A
+    moveq   #0,D2
     move.b  D0,D2
     rts
 
@@ -9321,6 +9469,7 @@ _L_z05_DrawSubmenuItems_FoundBoomerang:
     move.b  #$80,D0
     move.b  D0,($0000,A4)
     move.b  D2,D0
+    moveq   #0,D3
     move.b  D0,D3
     bsr     DrawItemInInventory
     even
@@ -9361,6 +9510,7 @@ _anon_z05_210:
 _anon_z05_211:
     move.b  D2,D0
     move.b  D0,-(A5)  ; PHA
+    moveq   #0,D3
     move.b  D0,D3
     ; Look up and set the X coordinate of this item.
     ;
@@ -9401,6 +9551,7 @@ _L_z05_DrawSubmenuItems_Draw:
     move.b  D0,($0001,A4)
     bsr     DrawItemInInventoryWithX
     move.b  (A5)+,D0  ; PLA
+    moveq   #0,D2
     move.b  D0,D2
     even
 _L_z05_DrawSubmenuItems_NextLoopDrawItem:
@@ -9421,6 +9572,7 @@ UpdateSubmenuSelection:
     ; Pseudo-item slot 0 is for boomerangs.
     ; If it's not the currently selected item slot, then skip this.
     ;
+    moveq   #0,D2
     move.b  ($0656,A4),D2
     bne  _L_z05_UpdateSubmenuSelection_DrawBreakoutItem
     ; Look for a magic boomerang, then a wooden boomerang.
@@ -9467,6 +9619,7 @@ _L_z05_UpdateSubmenuSelection_AfterBreakoutItem:
     ; If the selected item slot is the letter's and we have potions,
     ; then select the potion item slot.
     ;
+    moveq   #0,D3
     move.b  ($0656,A4),D3
     cmpi.b  #$0F,D3
     bne  _L_z05_UpdateSubmenuSelection_DrawCursor
@@ -9524,6 +9677,7 @@ _anon_z05_214:
     move.b  ($00EF,A4),D1
     cmp.b   D1,D0
     beq  L177F1_Exit
+    moveq   #0,D2
     move.b  D0,D2
     ; If input direction = 0, up, or down; then we won't change
     ; the change the selected item slot forward or backward.
@@ -9542,6 +9696,7 @@ _anon_z05_214:
     ;
     ;
     ; Save the input direction.
+    moveq   #0,D2
     move.b  D0,D2
     move.b  ($0656,A4),D0
     move.b  D0,-(A5)  ; PHA
@@ -9559,6 +9714,7 @@ _anon_z05_214:
     ; Else the selection changed. The new slot should have an item.
     ; If it does not, then cancel the "selection changed" tune.
     ;
+    moveq   #0,D3
     move.b  ($0656,A4),D3
     lea     ($0657,A4),A0
     move.b  (A0,D3.W),D0
@@ -9654,6 +9810,7 @@ DrawItemInInventoryWithX:
     ; X: item slot
     ;
     move.b  D2,D0
+    moveq   #0,D3
     move.b  D0,D3
     jmp     DrawItemInInventory
 
@@ -9710,6 +9867,7 @@ CreateRoomObjects:
     ; block attribute for a room item (up to $1F); use 3 to
     ; stand in for it.
     ;
+    moveq   #0,D3
     move.b  ($00EB,A4),D3
     lea     (NES_SRAM+$0A7E).l,A0
     move.b  (A0,D3.W),D0
@@ -9752,6 +9910,7 @@ _L_z05_CreateRoomObjects_StoreLocation:
     move.b  D3,($0097,A4)
     ; If the room item is a triforce piece,
     ; the move it left 8 pixels.
+    moveq   #0,D3
     move.b  ($00EB,A4),D3
     lea     (NES_SRAM+$0A7E).l,A0
     move.b  (A0,D3.W),D0
@@ -9782,9 +9941,11 @@ _L_z05_CreateRoomObjects_MakeHeartContainerOW:
     ; If in mode 5, and in room $5F, then go store the coordinates
     ; in the object slot.
     ;
+    moveq   #0,D2
     move.b  ($0012,A4),D2
     cmpi.b  #$05,D2
     bne  _anon_z05_225
+    moveq   #0,D2
     move.b  ($00EB,A4),D2
     cmpi.b  #$5F,D2
     beq  _L_z05_CreateRoomObjects_StoreLocation

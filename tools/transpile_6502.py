@@ -859,6 +859,7 @@ def translate_one_instruction(stripped, line_idx, symtab,
             e(f'    moveq   #{val},D2') if -128 <= val <= 127 else e(f'    move.b  #${val:02X},D2')
         elif mode in ('ABS', 'ABS_Y'):
             idx = 'Y' if mode == 'ABS_Y' else None
+            e('    moveq   #0,D2')      # clear D2.w high byte (D2.W used as index)
             gen_read('D2', val, idx)
         else:
             e(f'; [LDX unhandled mode={mode}] {stripped}')
@@ -868,6 +869,7 @@ def translate_one_instruction(stripped, line_idx, symtab,
             e(f'    moveq   #{val},D3') if -128 <= val <= 127 else e(f'    move.b  #${val:02X},D3')
         elif mode in ('ABS', 'ABS_X'):
             idx = 'X' if mode == 'ABS_X' else None
+            e('    moveq   #0,D3')      # clear D3.w high byte (D3.W used as index)
             gen_read('D3', val, idx)
         else:
             e(f'; [LDY unhandled mode={mode}] {stripped}')
@@ -889,8 +891,10 @@ def translate_one_instruction(stripped, line_idx, symtab,
             e(f'; [STY unhandled mode={mode}] {stripped}')
 
     elif mnem == 'TAX':
+        e('    moveq   #0,D2')     # clear D2.w high byte before TAX
         e('    move.b  D0,D2')
     elif mnem == 'TAY':
+        e('    moveq   #0,D3')     # clear D3.w high byte before TAY
         e('    move.b  D0,D3')
     elif mnem == 'TXA':
         e('    move.b  D2,D0')
@@ -899,6 +903,7 @@ def translate_one_instruction(stripped, line_idx, symtab,
     elif mnem == 'TXS':
         e('    move.b  D2,D7   ; TXS: fake SP update (D7=NES SP shadow)')
     elif mnem == 'TSX':
+        e('    moveq   #0,D2')     # clear D2.w high byte before TSX
         e('    move.b  D7,D2   ; TSX: fake SP to X')
 
     elif mnem == 'INX':
@@ -1404,15 +1409,52 @@ def transpile_bank(bank_num, standalone=False, no_stubs=False, no_import_stubs=F
         f.write('\n')
 
     # Apply bank-specific post-process patches
+    if bank_num == 0:
+        _patch_z00(out_path)
     if bank_num == 1:
         _patch_z01(out_path)
     if bank_num == 2:
         _patch_z02(out_path)
+    if bank_num == 6:
+        _patch_z06(out_path)
     if bank_num == 7:
         _patch_z07(out_path)
 
     print(f" {len(body_lines)} lines")
     return True
+
+
+def _patch_z00(path):
+    """Post-process patches for z_00.asm — NOP DriveAudio.
+
+    The audio driver dereferences NES ROM pointers via ZP indirect addressing.
+    These resolve to zeroed NES RAM instead of ROM data, causing the driver
+    to loop for 250+ frames parsing invalid music data.  NOP until bank
+    mapping is implemented.
+    """
+    with open(path, 'r', encoding='utf-8') as f:
+        text = f.read()
+
+    old = ('DriveAudio:\n'
+           '    ; If the game is paused, then silence all channels\n'
+           '    ; by first disabling them, then enabling them.\n'
+           '    ;\n'
+           '    ; Then go drive tune channel 0 only.')
+    new = ('DriveAudio:\n'
+           '    ; PATCHED: NOP — audio data requires NES bank mapping not yet implemented.\n'
+           '    rts\n'
+           '    ; If the game is paused, then silence all channels\n'
+           '    ; by first disabling them, then enabling them.\n'
+           '    ;\n'
+           '    ; Then go drive tune channel 0 only.')
+    if old in text:
+        text = text.replace(old, new, 1)
+        print("  _patch_z00: DriveAudio -> rts (NOP)")
+    else:
+        print("  WARNING: _patch_z00 -- DriveAudio not found")
+
+    with open(path, 'w', encoding='utf-8') as f:
+        f.write(text)
 
 
 def _patch_z01(path):
@@ -1505,6 +1547,23 @@ def _patch_z01(path):
         print("  _patch_z01 P2: TransferPatternBlock_Bank1 -> _transfer_chr_block_fast")
     else:
         print("  WARNING: _patch_z01 P2 -- TransferPatternBlock_Bank1 not found")
+
+    # ---- Patch 3: NOP CopyCommonCodeToRam ----
+    # All code is in flat ROM on Genesis; byte-by-byte copy from NES ROM
+    # addresses resolves to zeroed NES RAM, wasting 15 frames.
+    old_copy = ('CopyCommonCodeToRam:\n'
+                '    moveq   #0,D0\n'
+                '    move.b  D0,($0000,A4)')
+    new_copy = ('CopyCommonCodeToRam:\n'
+                '    ; PATCHED: NOP — all code is in flat ROM on Genesis.\n'
+                '    rts\n'
+                '    moveq   #0,D0\n'
+                '    move.b  D0,($0000,A4)')
+    if old_copy in text:
+        text = text.replace(old_copy, new_copy, 1)
+        print("  _patch_z01 P3: CopyCommonCodeToRam -> rts (NOP)")
+    else:
+        print("  WARNING: _patch_z01 P3 -- CopyCommonCodeToRam not found")
 
     with open(path, 'w', encoding='utf-8') as f:
         f.write(text)
@@ -1635,6 +1694,189 @@ def _patch_z02(path):
         print("  _patch_z02 P4: TransferPatternBlock_Bank2 -> _transfer_chr_block_fast")
     else:
         print("  WARNING: _patch_z02 P4 -- TransferPatternBlock_Bank2 not found")
+
+    with open(path, 'w', encoding='utf-8') as f:
+        f.write(text)
+
+
+def _patch_z06(path):
+    """Post-process patches for z_06.asm -- replace TransferTileBuf/ContinueTransferTileBuf.
+
+    Replace the slow byte-by-byte tile buffer executor (ContinueTransferTileBuf
+    calling _ppu_write_7 per byte) with a single call to _transfer_tilebuf_fast
+    in nes_io.asm.  This is the main NMI cadence fix.
+    """
+    with open(path, 'r', encoding='utf-8') as f:
+        lines = f.readlines()
+
+    # Find ContinueTransferTileBuf: label (start of region to replace)
+    ctb_start = None
+    for i, line in enumerate(lines):
+        if line.strip() == 'ContinueTransferTileBuf:':
+            ctb_start = i
+            break
+
+    if ctb_start is None:
+        print("  WARNING: _patch_z06 -- ContinueTransferTileBuf label not found")
+        return
+
+    # Find TransferTileBuf: label
+    ttb_label = None
+    for i in range(ctb_start, len(lines)):
+        if lines[i].strip() == 'TransferTileBuf:':
+            ttb_label = i
+            break
+
+    if ttb_label is None:
+        print("  WARNING: _patch_z06 -- TransferTileBuf label not found")
+        return
+
+    # Find the end of TransferTileBuf: the next top-level label after it
+    # (e.g., Mode1TileTransferBuf:) that isn't _anon_ or _L_ prefixed
+    ttb_end = None
+    for i in range(ttb_label + 1, len(lines)):
+        stripped = lines[i].strip()
+        if (stripped.endswith(':')
+                and not stripped.startswith('_')
+                and not stripped.startswith('.')
+                and not stripped.startswith(';')):
+            ttb_end = i
+            break
+
+    if ttb_end is None:
+        print("  WARNING: _patch_z06 -- could not find end of TransferTileBuf region")
+        return
+
+    replacement = [
+        'ContinueTransferTileBuf:\n',
+        'TransferTileBuf:\n',
+        '    ; PATCHED: fast tile buffer interpreter (bypasses per-byte _ppu_write_7)\n',
+        '    bsr     _transfer_tilebuf_fast\n',
+        '    rts\n',
+        '\n',
+        '    even\n',
+    ]
+
+    lines[ctb_start:ttb_end] = replacement
+    print("  _patch_z06: TransferTileBuf -> _transfer_tilebuf_fast")
+
+    # ---- Patch 2: Add TransferBufPtrs 32-bit table and fix TransferCurTileBuf ----
+    text = ''.join(lines)
+
+    # 2a: Replace TransferCurTileBuf's 16-bit lookup with 32-bit lookup
+    old_tcb = ('TransferCurTileBuf:\n'
+               '    moveq   #0,D2\n'
+               '    move.b  ($0014,A4),D2\n'
+               '    lea     (TransferBufAddrs).l,A0\n'
+               '    move.b  (A0,D2.W),D0\n'
+               '    move.b  D0,($0000,A4)\n'
+               '    lea     (TransferBufAddrs+1).l,A0\n'
+               '    move.b  (A0,D2.W),D0\n'
+               '    move.b  D0,($0001,A4)\n'
+               '    bsr     TransferTileBuf')
+    new_tcb = ('TransferCurTileBuf:\n'
+               '    ; PATCHED: use 32-bit pointer table to resolve ROM-resident buffers.\n'
+               '    ; $0014 is a 2-byte index (0, 2, 4, …).  Convert to 4-byte index and\n'
+               '    ; load the full 68K address from TransferBufPtrs.\n'
+               '    moveq   #0,D2\n'
+               '    move.b  ($0014,A4),D2\n'
+               '    add.w   D2,D2                       ; 2-byte index -> 4-byte index\n'
+               '    lea     (TransferBufPtrs).l,A0\n'
+               '    movea.l (A0,D2.W),A0               ; A0 = 32-bit buffer pointer\n'
+               '    bsr     TransferTileBuf')
+    if old_tcb in text:
+        text = text.replace(old_tcb, new_tcb, 1)
+        print("  _patch_z06 P2a: TransferCurTileBuf -> 32-bit lookup")
+    else:
+        print("  WARNING: _patch_z06 P2a -- TransferCurTileBuf not found")
+
+    # 2b: Add TransferBufPtrs 32-bit table after TransferBufAddrs
+    # Find the last DynTileBuf entry in TransferBufAddrs
+    marker = ("    dc.b    (DynTileBuf)&$FF, (DynTileBuf>>8)&$FF"
+              "   ; NES .ADDR (little-endian)\n"
+              "\n"
+              "    even\n"
+              "TransferCurTileBuf:")
+    ptrs_table = ("    dc.b    (DynTileBuf)&$FF, (DynTileBuf>>8)&$FF"
+                  "   ; NES .ADDR (little-endian)\n"
+                  "\n"
+                  "; -- 32-bit absolute pointer table (same order as TransferBufAddrs) --\n"
+                  "; EQU symbols (NES RAM offsets): NES_RAM + offset\n"
+                  "; ROM labels: assembler resolves to 68K ROM addr\n"
+                  "    even\n"
+                  "TransferBufPtrs:\n"
+                  "    dc.l    NES_RAM+DynTileBuf                              ; idx  0 ($00)\n"
+                  "    dc.l    StoryTileAttrTransferBuf                         ; idx  1 ($02)\n"
+                  "    dc.l    Mode8TextTileBuffer                              ; idx  2 ($04)\n"
+                  "    dc.l    LevelPaletteRow7TransferBuf                      ; idx  3 ($06)\n"
+                  "    dc.l    AquamentusPaletteRow7TransferBuf                 ; idx  4 ($08)\n"
+                  "    dc.l    OrangeBossPaletteRow7TransferBuf                 ; idx  5 ($0A)\n"
+                  "    dc.l    LevelNumberTransferBuf                           ; idx  6 ($0C)\n"
+                  "    dc.l    StatusBarStaticsTransferBuf                      ; idx  7 ($0E)\n"
+                  "    dc.l    GameTitleTransferBuf                              ; idx  8 ($10)\n"
+                  "    dc.l    MenuPalettesTransferBuf                           ; idx  9 ($12)\n"
+                  "    dc.l    Mode1TileTransferBuf                              ; idx 10 ($14)\n"
+                  "    dc.l    ModeFCharsTransferBuf                             ; idx 11 ($16)\n"
+                  "    dc.l    NES_RAM+LevelInfo_PalettesTransferBuf             ; idx 12 ($18)\n"
+                  "    dc.l    NES_RAM+DynTileBuf                              ; idx 13 ($1A)\n"
+                  "    dc.l    NES_RAM+DynTileBuf                              ; idx 14 ($1C)\n"
+                  "    dc.l    BlankTextBoxLines                                 ; idx 15 ($1E)\n"
+                  "    dc.l    GhostPaletteRow7TransferBuf                      ; idx 16 ($20)\n"
+                  "    dc.l    GreenBgPaletteRow7TransferBuf                    ; idx 17 ($22)\n"
+                  "    dc.l    BrownBgPaletteRow7TransferBuf                    ; idx 18 ($24)\n"
+                  "    dc.l    CellarAttrsTransferBuf                            ; idx 19 ($26)\n"
+                  "    dc.l    NES_RAM+DynTileBuf                              ; idx 20 ($28)\n"
+                  "    dc.l    BlankPersonWares                                  ; idx 21 ($2A)\n"
+                  "    dc.l    Mode11DeadLinkPalette                             ; idx 22 ($2C)\n"
+                  "    dc.l    LevelNumberTransferBuf                           ; idx 23 ($2E)\n"
+                  "    dc.l    InventoryTextTransferBuf                          ; idx 24 ($30)\n"
+                  "    dc.l    SubmenuBoxesTopsTransferBuf                       ; idx 25 ($32)\n"
+                  "    dc.l    SubmenuBoxesSidesTransferBuf                     ; idx 26 ($34)\n"
+                  "    dc.l    GanonPaletteRow7TransferBuf                      ; idx 27 ($36)\n"
+                  "    dc.l    SelectedItemBoxBottomTransferBuf                  ; idx 28 ($38)\n"
+                  "    dc.l    UseBButtonTextTransferBuf                         ; idx 29 ($3A)\n"
+                  "    dc.l    InventoryBoxBottomTransferBuf                     ; idx 30 ($3C)\n"
+                  "    dc.l    CaveBgPaletteRowsTransferBuf                     ; idx 31 ($3E)\n"
+                  "    dc.l    SubmenuMapRemainderTransferBuf                    ; idx 32 ($40)\n"
+                  "    dc.l    SheetMapBottomEdgeTransferBuf                     ; idx 33 ($42)\n"
+                  "    dc.l    NES_RAM+LevelInfo_StatusBarMapTransferBuf         ; idx 34 ($44)\n"
+                  "    dc.l    GameOverTransferBuf                               ; idx 35 ($46)\n"
+                  "    dc.l    SubmenuAttrs1TransferBuf                          ; idx 36 ($48)\n"
+                  "    dc.l    SubmenuAttrs2TransferBuf                          ; idx 37 ($4A)\n"
+                  "    dc.l    BlankBottomRowNT2TransferBuf                      ; idx 38 ($4C)\n"
+                  "    dc.l    BlankRowTransferBuf                               ; idx 39 ($4E)\n"
+                  "    dc.l    SubmenuTriforceApexTransferBuf                    ; idx 40 ($50)\n"
+                  "    dc.l    TriforceRow0TransferBuf                           ; idx 41 ($52)\n"
+                  "    dc.l    TriforceRow1TransferBuf                           ; idx 42 ($54)\n"
+                  "    dc.l    TriforceRow2TransferBuf                           ; idx 43 ($56)\n"
+                  "    dc.l    TriforceRow3TransferBuf                           ; idx 44 ($58)\n"
+                  "    dc.l    SubmenuTriforceBottomTransferBuf                  ; idx 45 ($5A)\n"
+                  "    dc.l    TriforceTextTransferBuf                           ; idx 46 ($5C)\n"
+                  "    dc.l    Mode11BackgroundPaletteBottomHalfTransferBuf      ; idx 47 ($5E)\n"
+                  "    dc.l    Mode11PlayAreaAttrsTopHalfTransferBuf             ; idx 48 ($60)\n"
+                  "    dc.l    Mode11PlayAreaAttrsBottomHalfTransferBuf          ; idx 49 ($62)\n"
+                  "    dc.l    NES_RAM+DynTileBuf                              ; idx 50 ($64)\n"
+                  "    dc.l    NES_RAM+DynTileBuf                              ; idx 51 ($66)\n"
+                  "    dc.l    NES_RAM+DynTileBuf                              ; idx 52 ($68)\n"
+                  "    dc.l    EndingPaletteTransferBuf                          ; idx 53 ($6A)\n"
+                  "    dc.l    BombCapacityPriceTextTransferBuf                  ; idx 54 ($6C)\n"
+                  "    dc.l    NES_RAM+DynTileBuf                              ; idx 55 ($6E)\n"
+                  "    dc.l    NES_RAM+DynTileBuf                              ; idx 56 ($70)\n"
+                  "    dc.l    NES_RAM+DynTileBuf                              ; idx 57 ($72)\n"
+                  "    dc.l    NES_RAM+DynTileBuf                              ; idx 58 ($74)\n"
+                  "    dc.l    LifeOrMoneyCostTextTransferBuf                    ; idx 59 ($76)\n"
+                  "    dc.l    WhitePaletteBottomHalfTransferBuf                 ; idx 60 ($78)\n"
+                  "    dc.l    RedArmosPaletteRow7TransferBuf                   ; idx 61 ($7A)\n"
+                  "    dc.l    GleeokPaletteRow7TransferBuf                     ; idx 62 ($7C)\n"
+                  "    dc.l    NES_RAM+DynTileBuf                              ; idx 63 ($7E)\n"
+                  "\n"
+                  "    even\n"
+                  "TransferCurTileBuf:")
+    if marker in text:
+        text = text.replace(marker, ptrs_table, 1)
+        print("  _patch_z06 P2b: TransferBufPtrs 32-bit table added")
+    else:
+        print("  WARNING: _patch_z06 P2b -- TransferBufAddrs marker not found")
 
     with open(path, 'w', encoding='utf-8') as f:
         f.write(text)

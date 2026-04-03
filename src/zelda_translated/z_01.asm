@@ -149,6 +149,7 @@ InitCaveContinue:
     ori     #$11,CCR  ; SEC: set C+X
     move.b  #$6A,D1
     subx.b  D1,D0   ; SBC #$6A
+    moveq   #0,D3
     move.b  D0,D3
     ; Get the person text selector by looking up the text selector byte
     ; for this index, and masking it with $3F.
@@ -174,6 +175,7 @@ _anon_z01_0:
     addx.b  D1,D0   ; ADC #$03 (X flag = 6502 C)
     subq.b  #1,D3
     bpl  _anon_z01_0
+    moveq   #0,D3
     move.b  D0,D3
     ; Loop over the wares from 0 to 2.
     ;
@@ -263,6 +265,7 @@ _L_z01_InitCaveContinue_ChoosePermutation:
 _L_z01_InitCaveContinue_FoundPermutation:
     ; The index chooses the last offset of a permutation of three indexes.
     ;
+    moveq   #0,D2
     lea     (MoneyGamePermutationEndIndexes).l,A0
     move.b  (A0,D3.W),D2
     ; Copy the permutation of 3 indexes to [046C] to [046E].
@@ -282,6 +285,7 @@ _L_z01_InitCaveContinue_CopyPermutation:
     ;
     move.b  ($001A,A4),D0
     andi.b #$01,D0
+    moveq   #0,D3
     move.b  D0,D3
     lea     (MoneyGameLossAmounts).l,A0
     move.b  (A0,D3.W),D0
@@ -307,6 +311,7 @@ _anon_z01_1:
     moveq   #2,D2
     even
 _L_z01_InitCaveContinue_ArrangeAmounts:
+    moveq   #0,D3
     lea     ($046C,A4),A0
     move.b  (A0,D2.W),D3
     lea     ($046F,A4),A0
@@ -394,6 +399,7 @@ _anon_z01_2:
     beq  _L_z01_UpdateCavePerson_DrawItems
     ; If the letter is selected, and B is pressed, then go use the letter.
     ;
+    moveq   #0,D3
     move.b  ($0656,A4),D3
     cmpi.b  #$0F,D3
     bne  _L_z01_UpdateCavePerson_Unhalt
@@ -451,6 +457,7 @@ DrawCavePerson:
     ; If the cave/person type >= $7B, then the visual is a moblin.
     ; So, go draw not mirrored.
     ;
+    moveq   #0,D3
     move.b  ($0350,A4),D3
     cmpi.b  #$7B,D3
     bcc  _anon_z01_4
@@ -479,6 +486,7 @@ DrawCaveItems:
     move.b  D0,($0421,A4)
     even
 _L_z01_DrawCaveItems_LoopWare:
+    moveq   #0,D2
     move.b  ($0421,A4),D2
     ; Look up and set the X coordinate for the current item.
     ;
@@ -581,6 +589,7 @@ _L_z01_WritePricesToDynamicTransferBuf_Align:
     move.b  D2,($0004,A4)
     ; Move the dash closer to the number.
     ;
+    moveq   #0,D3
     move.b  ($042F,A4),D3
     move.b  ($0002,A4),D0
     bsr     SwapSpaceAndSign
@@ -603,6 +612,7 @@ _L_z01_WritePricesToDynamicTransferBuf_Align:
     ; Bottom of the price loop. Increment the index of the item until = 3.
     ;
     addq.b  #1,($042E,A4)
+    moveq   #0,D2
     move.b  ($042E,A4),D2
     cmpi.b  #$03,D2
     bne  _L_z01_WritePricesToDynamicTransferBuf_LoopPrice
@@ -640,6 +650,7 @@ IncCaveState:
 SwapSpaceAndSign:
     cmpi.b  #$24,D0
     bne  _anon_z01_5
+    moveq   #0,D2
     move.b  D0,D2
     move.b  ($0004,A4),D0
     move.b  D2,($0004,A4)
@@ -704,6 +715,7 @@ _L_z01_UpdatePersonState_Textbox_WriteChar:
     ; Use the person text selector to look up the address of the
     ; text for the textbox. Store the address in [00:01].
     ;
+    moveq   #0,D3
     move.b  ($0415,A4),D3
     lea     (PersonTextAddrs).l,A0
     move.b  (A0,D3.W),D0
@@ -714,6 +726,7 @@ _L_z01_UpdatePersonState_Textbox_WriteChar:
     move.b  D0,($0001,A4)
     ; Load the person text current character index.
     ;
+    moveq   #0,D3
     move.b  ($0416,A4),D3
     ; Increment the index variable to point to the next character
     ; for next time.
@@ -1022,6 +1035,7 @@ UpdateCavePersonState_HintOrMoneyGame:
     ; the first set of text selectors, else 3 for the second.
     ;
     moveq   #0,D0
+    moveq   #0,D3
     move.b  ($0350,A4),D3
     cmpi.b  #$75,D3
     beq  _anon_z01_9
@@ -1033,6 +1047,7 @@ _anon_z01_9:
     ;
     move.b  ($0438,A4),D1
     addx.b  D1,D0   ; ADC CaveChosenIndex
+    moveq   #0,D3
     move.b  D0,D3
     ; Look up text selector by the index calculated above.
     ;
@@ -1118,6 +1133,7 @@ _anon_z01_10:
     ; If the amount chosen = 20 or 50, then add it;
     ; else subtract it.
     ;
+    moveq   #0,D2
     move.b  ($0438,A4),D2
     lea     ($0448,A4),A0
     move.b  (A0,D2.W),D0
@@ -1215,6 +1231,7 @@ InitUnderworldPersonA:
     ori     #$11,CCR  ; SEC: set C+X
     move.b  #$4B,D1
     subx.b  D1,D0   ; SBC #$4B
+    moveq   #0,D3
     move.b  D0,D3
     ; Look up and store the text selector.
     ;
@@ -1275,6 +1292,7 @@ InitUnderworldPersonB:
     ori     #$11,CCR  ; SEC: set C+X
     move.b  #$4B,D1
     subx.b  D1,D0   ; SBC #$4B
+    moveq   #0,D3
     move.b  D0,D3
     ; Look up and store the text selector.
     ;
@@ -1303,6 +1321,7 @@ InitUnderworldPersonC:
     ori     #$11,CCR  ; SEC: set C+X
     move.b  #$4B,D1
     subx.b  D1,D0   ; SBC #$4B
+    moveq   #0,D3
     move.b  D0,D3
     ; Look up and store the text selector.
     ;
@@ -1600,6 +1619,7 @@ _L_z01_DrawLifeOrMoneyItems_LoopWare:
     moveq   #19,D2
     bsr     AnimateItemObject
     move.b  (A5)+,D0  ; PLA
+    moveq   #0,D2
     move.b  D0,D2
     subq.b  #1,D2
     bpl  _L_z01_DrawLifeOrMoneyItems_LoopWare
@@ -1822,6 +1842,8 @@ InitUnderworldPerson_DoNothing:
 
     even
 CopyCommonCodeToRam:
+    ; PATCHED: NOP — all code is in flat ROM on Genesis.
+    rts
     moveq   #0,D0
     move.b  D0,($0000,A4)
     move.b  #$A5,D0
@@ -1905,6 +1927,7 @@ _L_z01_TransferDemoPatterns_LoopBlock:
     ;
     move.b  ($051D,A4),D0
     lsl.b  #1,D0   ; ASL A
+    moveq   #0,D2
     move.b  D0,D2
     ; Put block address in [00:01] and size in [03:02].
     ; Load destination VRAM address and set it.
@@ -2317,6 +2340,7 @@ UpdateWhirlwind_Full:
     ;
     move.b  ($00AC,A4),D0
     andi.b #$40,D0
+    moveq   #0,D3
     move.b  D0,D3
     ; Add 2 to whirlwind X.
     ;
@@ -2330,6 +2354,7 @@ UpdateWhirlwind_Full:
     ;
     cmpi.b  #$40,D3
     bne  _L_z01_UpdateWhirlwind_Full_CheckCollision
+    moveq   #0,D3
     move.b  ($0522,A4),D3
     beq  _L_z01_UpdateWhirlwind_Full_CheckCollision
     ; Else Link is halted (state $40) and teleporting state <> 0.
@@ -2359,6 +2384,7 @@ UpdateWhirlwind_Full:
     move.b  D0,-(A5)  ; PHA
     bsr     UpdatePlayerPositionMarker
     move.b  (A5)+,D0  ; PLA
+    moveq   #0,D2
     move.b  D0,D2
     jmp     _L_z01_UpdateWhirlwind_Full_Draw
 
@@ -2395,6 +2421,7 @@ _L_z01_UpdateWhirlwind_Full_CheckCollision:
     ;
     move.b  ($0523,A4),D0
     andi.b #$07,D0
+    moveq   #0,D3
     move.b  D0,D3
     lea     (WhirlwindPrevRoomIdList).l,A0
     move.b  (A0,D3.W),D0
@@ -2425,6 +2452,7 @@ _L_z01_UpdateWhirlwind_Full_CheckRightEdge:
     move.b  D0,-(A5)  ; PHA
     bsr     GoToNextModeFromPlay
     move.b  (A5)+,D0  ; PLA
+    moveq   #0,D2
     move.b  D0,D2
     even
 _L_z01_UpdateWhirlwind_Full_Draw:
@@ -2464,6 +2492,7 @@ SummonWhirlwind:
     bsr     AdvanceTeleportingLevelIndex
     move.b  ($0523,A4),D0
     andi.b #$07,D0
+    moveq   #0,D3
     move.b  D0,D3
     lea     (LevelMasks).l,A0
     move.b  (A0,D3.W),D0
@@ -2533,6 +2562,7 @@ _L_z01_SummonWhirlwind_MakeWhirlwind:
     ;
     addq.b  #1,($0508,A4)
     move.b  D3,D0
+    moveq   #0,D2
     move.b  D0,D2
     jmp     SetUpWhirlwind
 
@@ -2589,6 +2619,7 @@ CheckInitWhirlwindAndBeginUpdate:
     moveq   #9,D2
     move.b  ($0523,A4),D0
     andi.b #$07,D0
+    moveq   #0,D3
     move.b  D0,D3
     lea     (TeleportYs).l,A0
     move.b  (A0,D3.W),D0
@@ -2745,6 +2776,7 @@ _anon_z01_23:
     move.b  D0,-(A5)  ; PHA
     ; Get the dynamic transfer buf length, so we write from were we last wrote.
     ;
+    moveq   #0,D2
     move.b  ($0301,A4),D2
     ; Copy the palette row 7 transfer record to dynamic transfer buf (8 bytes).
     ;
@@ -2763,6 +2795,7 @@ _L_z01_ReplaceAshesPaletteRow_CopyPaletteRecord:
     ;
     move.b  D2,($0301,A4)
     move.b  (A5)+,D0  ; PLA
+    moveq   #0,D3
     move.b  D0,D3
     ; Replace the last 3 color bytes (brown shades) that we just
     ; copied to the dynamic transfer buf with the colors of the
@@ -2784,6 +2817,7 @@ _L_z01_ReplaceAshesPaletteRow_ReplaceColors:
     bpl  _L_z01_ReplaceAshesPaletteRow_ReplaceColors
     ; Switch back to the current object slot.
     ;
+    moveq   #0,D2
     move.b  ($0340,A4),D2
     rts
 
@@ -2855,6 +2889,7 @@ _L_z01_CheckPassiveTileObjects_TestTile:
     ;
     move.b  ($0002,A4),D0
     andi.b #$03,D0
+    moveq   #0,D3
     move.b  D0,D3
     move.b  ($0000,A4),D0
     cmpi.b  #$02,D3
@@ -2892,6 +2927,7 @@ _L_z01_CheckPassiveTileObjects_FindSlot:
     ; When dealing with objects, X usually indicates the slot number
     ; of the object. Set it to the empty slot found.
     ;
+    moveq   #0,D2
     move.b  ($0059,A4),D2
     ; Offset the coordinates we calculated by a square length
     ; in the direction Link is facing.
@@ -2959,6 +2995,7 @@ _L_z01_CheckPassiveTileObjects_ChooseObjType:
     ;
     ; Armos
     moveq   #30,D0
+    moveq   #0,D3
     move.b  ($0002,A4),D3
     cmpi.b  #$C0,D3
     bcc  _anon_z01_25
@@ -3072,6 +3109,7 @@ _L_z01_InitTrap_Full_LoopTrap:
     ;
     move.b  ($0340,A4),D1
     addx.b  D1,D0   ; ADC CurObjIndex
+    moveq   #0,D2
     move.b  D0,D2
     ; Look up and set the location for this iteration's individual trap.
     ;
@@ -3206,6 +3244,7 @@ _anon_z01_28:
     ; If moving horizontally, then set target coordinate in [00] to $78
     ; and current coordinate to the trap's X.
     ;
+    moveq   #0,D3
     move.b  ($70,A4,D2.W),D3
     moveq   #120,D0
     move.b  D0,($0000,A4)
@@ -3216,6 +3255,7 @@ _anon_z01_28:
     ; Else moving vertically. Set target coordinate in [00] to $90
     ; and current coordinate to the trap's Y.
     ;
+    moveq   #0,D3
     lea     ($0084,A4),A0
     move.b  (A0,D2.W),D3
     move.b  #$90,D0
@@ -3317,6 +3357,7 @@ _L_z01_UpdateRupeeStash_Full_DrawRupee:
     even
 _L_z01_UpdateRupeeStash_Full_ExitRestoreX:
     move.b  (A5)+,D0  ; PLA
+    moveq   #0,D2
     move.b  D0,D2
     rts
 
@@ -3610,6 +3651,7 @@ FormatDecimalCountByteInTextBuf:
     even
 CopyTripletToTextBuf:
     moveq   #2,D3
+    moveq   #0,D2
     move.b  ($0000,A4),D2
 _anon_z01_31:
     move.b  ($01,A4,D3.W),D0
@@ -3758,6 +3800,7 @@ SaveFileAAddressSet2:
     even
 FetchFileAAddressSet:
     move.b  #$FF,D0
+    moveq   #0,D3
     move.b  ($0016,A4),D3
 _anon_z01_35:
     andi    #$EE,CCR  ; CLC: clear C+X
@@ -3765,6 +3808,7 @@ _anon_z01_35:
     addx.b  D1,D0   ; ADC #$0E (X flag = 6502 C)
     subq.b  #1,D3
     bpl  _anon_z01_35
+    moveq   #0,D3
     move.b  D0,D3
     ; Copy the save file address set (14 bytes) for the current
     ; save file to [$00] to make it easier to work with.
@@ -4005,10 +4049,12 @@ _L_z01_FormatHeartsInTextBuf_EmitEmptyHeart:
     even
 _L_z01_FormatHeartsInTextBuf_EmitChar:
     move.b  D3,($000C,A4)
+    moveq   #0,D3
     move.b  ($000B,A4),D3
     lea     ($0302,A4),A0
     move.b  D0,(A0,D3.W)
     subq.b  #1,($000B,A4)
+    moveq   #0,D3
     move.b  ($000C,A4),D3
     subq.b  #1,D3
     addq.b  #1,D2
@@ -4443,6 +4489,7 @@ MoveShot:
     ; If [0E] is set, keep the original value in grid offset,
     ; or else add the new amount to it.
     ;
+    moveq   #0,D3
     move.b  ($000E,A4),D3
     bne  _anon_z01_51
     andi    #$EE,CCR  ; CLC: clear C+X
@@ -4478,10 +4525,12 @@ _L_z01_MoveShot_ReturnBlocked:
     even
 GetDirectionsAndDistancesToTarget:
     move.b  D0,-(A5)  ; PHA
+    moveq   #0,D3
     move.b  D0,D3
     moveq   #2,D0
     move.b  D0,($000A,A4)
     move.b  ($70,A4,D3.W),D0
+    moveq   #0,D3
     move.b  ($70,A4,D2.W),D3
     bsr     GetOneDirectionAndDistanceToTarget
     move.b  D0,($0003,A4)
@@ -4490,11 +4539,13 @@ GetDirectionsAndDistancesToTarget:
     ; Handle the vertical.
     ;
     move.b  (A5)+,D0  ; PLA
+    moveq   #0,D3
     move.b  D0,D3
     moveq   #8,D0
     move.b  D0,($000A,A4)
     lea     ($0084,A4),A0
     move.b  (A0,D3.W),D0
+    moveq   #0,D3
     lea     ($0084,A4),A0
     move.b  (A0,D2.W),D3
     bsr     GetOneDirectionAndDistanceToTarget
@@ -4590,6 +4641,7 @@ _L_z01__CalcDiagonalSpeedIndex_Return:
     ; TODO: call it speed index or angle?
     ; Return the speed index (angle) we found.
     ;
+    moveq   #0,D3
     move.b  ($0000,A4),D3
     rts
 
@@ -4705,6 +4757,7 @@ _L_z01_WieldBomb_FoundSlot:
     ;
     move.b  D2,D0
     eori.b #$01,D0
+    moveq   #0,D3
     move.b  D0,D3
     lea     ($00AC,A4),A0
     move.b  (A0,D3.W),D0
@@ -4889,6 +4942,7 @@ _anon_z01_53:
 ;
     even
 GetShortcutOrItemXY:
+    moveq   #0,D3
     move.b  ($00EB,A4),D3
 ; Params:
 ; Y: room ID
@@ -4906,6 +4960,7 @@ GetShortcutOrItemXYForRoom:
     lsr.b  #1,D0   ; LSR A
     lsr.b  #1,D0   ; LSR A
     lsr.b  #1,D0   ; LSR A
+    moveq   #0,D3
     move.b  D0,D3
     lea     (NES_SRAM+$0BA7).l,A0
     move.b  (A0,D3.W),D0
@@ -4915,6 +4970,7 @@ GetShortcutOrItemXYForRoom:
     lsl.b  #1,D0   ; ASL A
     lsl.b  #1,D0   ; ASL A
     lsl.b  #1,D0   ; ASL A
+    moveq   #0,D3
     move.b  D0,D3
     move.b  (A5)+,D0  ; PLA
     andi.b #$F0,D0
@@ -4961,6 +5017,7 @@ UpdateBombFlashEffect:
     lsr.b  #1,D0   ; LSR A
     ; Then, based on the timer value, shift in a 1 or 0 in the low bit.
     ;
+    moveq   #0,D3
     move.b  ($28,A4,D2.W),D3
     ; At times $16 and $11, rotate carry=1 to the low bit.
     ; Carry will have been set, because of the comparison (CPY).
@@ -4998,6 +5055,7 @@ UpdatePlayerPositionMarker:
     move.b  ($0012,A4),D0
     cmpi.b  #$09,D0
     beq  L6AAF_Exit
+    moveq   #0,D2
     move.b  ($0522,A4),D2
     bne  L6AAF_Exit
     move.b  ($00EB,A4),D0
@@ -5018,6 +5076,7 @@ UpdatePositionMarker:
     lea     ($0254,A4),A0
     move.b  D0,(A0,D2.W)
     moveq   #17,D0
+    moveq   #0,D3
     move.b  ($0010,A4),D3
     beq  _anon_z01_56
     moveq   #18,D0
@@ -5045,6 +5104,7 @@ _anon_z01_57:
     beq  _L_z01_UpdatePositionMarker_SetAttr
     moveq   #3,D0
     move.b  D0,-(A5)  ; PHA
+    moveq   #0,D3
     move.b  ($0010,A4),D3
     cmpi.b  #$09,D3
     beq  _anon_z01_58
@@ -5092,6 +5152,7 @@ UpdateWorldCurtainEffect:
     move.b  D0,($000A,A4)
     even
 _L_z01_UpdateWorldCurtainEffect_LoopColumn:
+    moveq   #0,D2
     move.b  ($000A,A4),D2
     move.b  ($7C,A4,D2.W),D0
     move.b  D0,($00E8,A4)
@@ -5275,6 +5336,7 @@ GetRoomFlagUWItemState:
     move.b  D0,($0008,A4)
     move.b  (NES_SRAM+$0BB0).l,D0
     move.b  D0,($0009,A4)
+    moveq   #0,D3
     move.b  ($00EB,A4),D3
     move.b  ($08,A4),D1   ; ptr lo
     move.b  ($09,A4),D4  ; ptr hi
@@ -5388,6 +5450,7 @@ _anon_z01_65:
     ; If we're in a cave or cellar, then
     ; prepare to lift the item.
     ;
+    moveq   #0,D2
     move.b  ($0012,A4),D2
     cmpi.b  #$05,D2
     beq  _L_z01_TakeItem_SkipLift
@@ -5400,9 +5463,11 @@ _anon_z01_65:
 _L_z01_TakeItem_SkipLift:
     ; Look up the item slot and sprite attributes by the item type.
     ;
+    moveq   #0,D2
     move.b  D0,D2
     lea     (ItemIdToSlot).l,A0
     move.b  (A0,D2.W),D0
+    moveq   #0,D3
     move.b  D0,D3
     lea     (ItemIdToDescriptor).l,A0
     move.b  (A0,D2.W),D0
@@ -5573,6 +5638,7 @@ _anon_z01_71:
     addq.b  #1,D3
 _anon_z01_72:
     andi.b #$07,D0
+    moveq   #0,D2
     move.b  D0,D2
     ; Combine the mask for this level with the mask in the item slot.
     ;
@@ -5612,6 +5678,7 @@ _L_z01_TakeHeartsNoSound_CompareHearts:
     bne  _L_z01_TakeHeartsNoSound_AddWholeHeart
     ; If partial heart is not full, then fill it and return.
     ;
+    moveq   #0,D2
     move.b  ($0670,A4),D2
     addq.b  #1,D2
     bne  _L_z01_TakeHeartsNoSound_FillHeartPartial
@@ -5677,10 +5744,13 @@ HandleClass2:
     bne  L6D1B_Exit
     ; We took a ring. Change Link's color.
     ;
+    moveq   #0,D2
     move.b  ($0016,A4),D2
+    moveq   #0,D3
     move.b  ($0662,A4),D3
     lea     (LinkColors_CommonCode).l,A0
     move.b  (A0,D3.W),D0
+    moveq   #0,D3
     lea     (SaveSlotToPaletteRowOffset).l,A0
     move.b  (A0,D2.W),D3
     lea     (MenuPalettesTransferBuf+20).l,A0
@@ -5729,9 +5799,11 @@ _anon_z01_73:
     move.b  ($0000,A4),D1
     addx.b  D1,D0   ; ADC $00
     andi.b #$FC,D0
+    moveq   #0,D3
     move.b  D0,D3
     ; Start writing in dynamic transfer buf from the next position
     ; available. X holds this offset.
+    moveq   #0,D2
     move.b  ($0301,A4),D2
     moveq   #63,D0
     lea     ($0302,A4),A0
@@ -5803,6 +5875,7 @@ _anon_z01_74:
     addq.b  #1,D2
     move.b  D2,D0
     andi.b #$07,D0
+    moveq   #0,D2
     move.b  D0,D2
     addq.b  #1,D3
     cmpi.b  #$40,D3
@@ -5822,8 +5895,10 @@ MountainMazeDirs:
 ;
     even
 CheckMazes:
+    moveq   #0,D2
     move.b  ($052F,A4),D2
     move.b  ($0098,A4),D0
+    moveq   #0,D3
     move.b  ($00EB,A4),D3
     cmpi.b  #$61,D3
     bne  _L_z01_CheckMazes_CheckMountainMaze
@@ -6052,6 +6127,7 @@ _anon_z01_75:
     move.b  D3,($000C,A4)
     ; Set animation index = object type + 1.
     ;
+    moveq   #0,D3
     lea     ($034F,A4),A0
     move.b  (A0,D2.W),D3
 ; Params:
@@ -6094,6 +6170,7 @@ DrawObjectWithAnim:
     move.b  D2,($0008,A4)
     ; Set the left and right sprite record offsets for CurSpriteIndex.
     ;
+    moveq   #0,D3
     move.b  ($0341,A4),D3
     lea     (SpriteOffsets).l,A0
     move.b  (A0,D3.W),D0
@@ -6110,6 +6187,7 @@ DrawObjectWithAnim:
     even
 DrawObjectWithAnimAndSpecificSprites:
     move.b  D0,($0344,A4)
+    moveq   #0,D3
     move.b  ($000E,A4),D3
     moveq   #1,D0
     move.b  D0,($0007,A4)
@@ -6120,6 +6198,7 @@ DrawObjectWithAnimAndSpecificSprites:
     andi    #$EE,CCR  ; CLC: clear C+X
     move.b  ($000D,A4),D1
     addx.b  D1,D0   ; ADC $0D
+    moveq   #0,D3
     move.b  D0,D3
     lea     (ObjAnimFrameHeap).l,A0
     move.b  (A0,D3.W),D0
@@ -6164,6 +6243,7 @@ _anon_z01_76:
     ; If mirrored [0C], then draw it mirrored.
     ; Else draw it horizontally flippable, controlled by [0F].
     ;
+    moveq   #0,D3
     move.b  ($000C,A4),D3
     beq  Anim_WriteHorizontallyFlippableSpritePair
     jmp     Anim_WriteMirroredSpritePair
@@ -6226,6 +6306,7 @@ Anim_WriteHorizontallyFlippableSpritePair:
 ;
     even
 Anim_WriteSpritePair:
+    moveq   #0,D3
     lea     ($04F0,A4),A0
     move.b  (A0,D2.W),D3
     beq  Anim_WriteSpritePairNotFlashing
@@ -6246,6 +6327,7 @@ _anon_z01_77:
     bpl  _anon_z01_77
     even
 Anim_WriteSpritePairNotFlashing:
+    moveq   #0,D2
     move.b  ($0343,A4),D2
     moveq   #0,D3
     even
@@ -6266,6 +6348,7 @@ _L_z01_Anim_WriteSpritePairNotFlashing_LoopSprite:
     move.b  ($04,A4,D3.W),D0
     lea     ($0202,A4),A0
     move.b  D0,(A0,D2.W)
+    moveq   #0,D2
     move.b  ($0344,A4),D2
     move.b  ($0008,A4),D0
     beq  _anon_z01_78
@@ -6274,6 +6357,7 @@ _anon_z01_78:
     addq.b  #1,D3
     subq.b  #1,($0007,A4)
     bpl  _L_z01_Anim_WriteSpritePairNotFlashing_LoopSprite
+    moveq   #0,D2
     move.b  ($0008,A4),D2
     rts
 
@@ -6328,6 +6412,7 @@ Anim_WriteItemSprites:
     move.b  D0,-(A5)  ; PHA
     moveq   #0,D0
     move.b  D0,($0052,A4)
+    moveq   #0,D3
     move.b  ($0341,A4),D3
     lea     (SpriteOffsets).l,A0
     move.b  (A0,D3.W),D0
@@ -6336,6 +6421,7 @@ Anim_WriteItemSprites:
     move.b  (A0,D3.W),D0
     move.b  D0,($0344,A4)
     move.b  (A5)+,D0  ; PLA
+    moveq   #0,D3
     move.b  D0,D3
 ; Params:
 ; X: cycle sprite index / object index
@@ -6366,6 +6452,7 @@ Anim_WriteSpecificItemSprites:
     andi    #$EE,CCR  ; CLC: clear C+X
     move.b  ($000C,A4),D1
     addx.b  D1,D0   ; ADC $0C
+    moveq   #0,D3
     move.b  D0,D3
     lea     (Anim_ItemFrameTiles).l,A0
     move.b  (A0,D3.W),D0
@@ -6478,9 +6565,11 @@ Anim_WriteSprite:
     andi.b #$03,D0
     move.b  D0,($0003,A4)
 _anon_z01_80:
+    moveq   #0,D3
     move.b  ($0341,A4),D3
     lea     (SpriteOffsets).l,A0
     move.b  (A0,D3.W),D0
+    moveq   #0,D3
     move.b  D0,D3
     move.b  (A5)+,D0  ; PLA
 ; Params:
@@ -6573,6 +6662,7 @@ _L_z01_CheckMonsterCollisions_CheckLink:
     ;
     lea     ($034F,A4),A0
     move.b  (A0,D2.W),D0
+    moveq   #0,D3
     lea     ($0405,A4),A0
     move.b  (A0,D2.W),D3
     beq  _L_z01_CheckMonsterCollisions_CheckCaptors
@@ -6588,6 +6678,7 @@ _anon_z01_81:
     lea     ($00AC,A4),A0
     move.b  (A0,D2.W),D0
     bpl  _L_z01_CheckMonsterCollisions_Exit
+    moveq   #0,D3
     lea     ($042C,A4),A0
     move.b  (A0,D2.W),D3
     moveq   #0,D0
@@ -6830,6 +6921,7 @@ HarmLink:
     ; The low nibble is the high byte.
     ; (Damage points byte AND $F0) is the low byte.
     ;
+    moveq   #0,D3
     lea     ($034F,A4),A0
     move.b  (A0,D2.W),D3
     lea     (ObjTypeToDamagePoints).l,A0
@@ -6850,6 +6942,7 @@ HarmLink:
 ;
     even
 Link_BeHarmed:
+    moveq   #0,D3
     lea     ($034F,A4),A0
     move.b  (A0,D2.W),D3
     cmpi.b  #$2E,D3
@@ -6859,6 +6952,7 @@ Link_BeHarmed:
 _anon_z01_85:
     ; For every level of ring (1 or 2), divide the 16-bit damage amount in [0E:0D] by 2.
     ;
+    moveq   #0,D3
     move.b  ($0662,A4),D3
     beq  _L_z01_Link_BeHarmed_ResetHelp
 _anon_z01_86:
@@ -7013,6 +7107,7 @@ CheckMonsterWeaponCollision:
     move.b  D0,($0006,A4)
     ; If the weapon's not active (state = 0), then return.
     ;
+    moveq   #0,D3
     move.b  ($0000,A4),D3
     lea     ($00AC,A4),A0
     move.b  (A0,D3.W),D0
@@ -7256,6 +7351,7 @@ _L_z01_CheckMonsterSwordShotOrMagicShotCollision_CheckCollision:
     moveq   #14,D2
     bsr     HandleShotBlocked
     move.b  (A5)+,D0  ; PLA
+    moveq   #0,D2
     move.b  D0,D2
     even
 _L_z01_CheckMonsterSwordShotOrMagicShotCollision_Exit:
@@ -7363,6 +7459,7 @@ CheckMonsterSwordCollision:
     bne  L7595_Exit
     ; Look up and set the damage points for the sword type.
     ;
+    moveq   #0,D3
     move.b  ($0657,A4),D3
     lea     (SwordDamagePoints-1).l,A0
     move.b  (A0,D3.W),D0
@@ -7448,6 +7545,7 @@ _anon_z01_93:
     ; Use $20 damage points for wooden arrows, and $40 for silver ones.
     ;
     moveq   #32,D0
+    moveq   #0,D3
     move.b  ($0659,A4),D3
     cmpi.b  #$01,D3
     beq  _anon_z01_94
@@ -7571,6 +7669,7 @@ CheckMonsterSlenderWeaponCollision:
 ;
     even
 CheckMonsterSlenderWeaponCollision2:
+    moveq   #0,D3
     move.b  ($0000,A4),D3
     ; If Link is facing vertically, then:
     ; [04] := (weapon X + 6)
@@ -7664,6 +7763,7 @@ DoObjectsCollide:
 DoObjectsCollideWithThresholds:
     moveq   #0,D0
     move.b  D0,($0006,A4)
+    moveq   #0,D3
     move.b  ($0000,A4),D3
     ; Store in [0A] the horizontal distance between the two objects.
     ;
@@ -7727,6 +7827,7 @@ _L_z01_DoObjectsCollideWithThresholds_ReturnValue:
 ;
     even
 BeginShove:
+    moveq   #0,D3
     move.b  ($0000,A4),D3
     cmpi.b  #$0D,D2
     bcc  _anon_z01_99

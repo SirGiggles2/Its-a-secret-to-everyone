@@ -135,6 +135,7 @@ TransferLevelPatternBlocksUW:
 FetchPatternBlockAddrUW:
     move.b  ($051D,A4),D0
     lsl.b  #1,D0   ; ASL A
+    moveq   #0,D2
     move.b  D0,D2
     lea     (PatternBlockSrcAddrsUW).l,A0
     move.b  (A0,D2.W),D0
@@ -153,6 +154,7 @@ FetchPatternBlockAddrUW:
 FetchPatternBlockInfoOW:
     move.b  ($051D,A4),D0
     lsl.b  #1,D0   ; ASL A
+    moveq   #0,D2
     move.b  D0,D2
     lea     (PatternBlockSrcAddrsOW).l,A0
     move.b  (A0,D2.W),D0
@@ -173,6 +175,7 @@ FetchPatternBlockInfoOW:
 FetchPatternBlockAddrUWSpecial:
     move.b  ($0010,A4),D0
     lsl.b  #1,D0   ; ASL A
+    moveq   #0,D2
     move.b  D0,D2
     lea     (LevelPatternBlockSrcAddrs).l,A0
     move.b  (A0,D2.W),D0
@@ -187,6 +190,7 @@ FetchPatternBlockAddrUWSpecial:
 FetchPatternBlockUWBoss:
     move.b  ($0010,A4),D0
     lsl.b  #1,D0   ; ASL A
+    moveq   #0,D2
     move.b  D0,D2
     lea     (BossPatternBlockSrcAddrs).l,A0
     move.b  (A0,D2.W),D0
@@ -201,6 +205,7 @@ FetchPatternBlockUWBoss:
 FetchPatternBlockSizeUW:
     move.b  ($051D,A4),D0
     lsl.b  #1,D0   ; ASL A
+    moveq   #0,D2
     move.b  D0,D2
     lea     (PatternBlockSizesUW).l,A0
     move.b  (A0,D2.W),D0
@@ -219,6 +224,7 @@ FetchPatternBlockSizeUW:
 TransferPatternBlock_Bank3:
     move.b  ($051D,A4),D0
     lsl.b  #1,D0   ; ASL A
+    moveq   #0,D2
     move.b  D0,D2
     lea     (PatternBlockPpuAddrs).l,A0
     move.b  (A0,D2.W),D0

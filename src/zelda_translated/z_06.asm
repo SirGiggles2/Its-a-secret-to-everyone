@@ -96,7 +96,9 @@ InitMode2_Sub0:
     ;
     move.b  ($0010,A4),D0
     lsl.b  #1,D0   ; ASL A
+    moveq   #0,D2
     move.b  D0,D2
+    moveq   #0,D3
     move.b  ($0016,A4),D3
     lea     ($062D,A4),A0
     move.b  (A0,D3.W),D0
@@ -134,6 +136,7 @@ InitMode2_Sub1:
     ;
     move.b  ($0010,A4),D0
     lsl.b  #1,D0   ; ASL A
+    moveq   #0,D2
     move.b  D0,D2
     lea     (LevelInfoAddrs).l,A0
     move.b  (A0,D2.W),D0
@@ -278,14 +281,17 @@ _L_z06_CopyBlock_Next:
 UpdateMode2Load_Full:
     ; Make replacements for the second quest.
     ;
+    moveq   #0,D3
     move.b  ($0016,A4),D3
     lea     ($062D,A4),A0
     move.b  (A0,D3.W),D0
     beq  _L_z06_UpdateMode2Load_Full_Exit
     move.b  ($0010,A4),D0
     beq  _L_z06_UpdateMode2Load_Full_PatchQ2Rooms
+    moveq   #0,D2
     move.b  D0,D2
     lsl.b  #1,D0   ; ASL A
+    moveq   #0,D3
     move.b  D0,D3
     ; Get an address for the current level that points
     ; to an array of replacement bytes for Q2 UW level info.
@@ -302,6 +308,7 @@ UpdateMode2Load_Full:
     ; Get the number of replacement bytes for Q2 UW level info.
     ; This address array doesn't access the OW element (0).
     ;
+    moveq   #0,D3
     lea     (LevelInfoUWQ2ReplacementSizes-1).l,A0
     move.b  (A0,D2.W),D3
     even
@@ -332,6 +339,7 @@ _L_z06_UpdateMode2Load_Full_PatchQ2Rooms:
     moveq   #7,D3
     even
 _L_z06_UpdateMode2Load_Full_ReplaceRoomBytes:
+    moveq   #0,D2
     lea     (LevelBlockAttrsBQ2ReplacementOffsets).l,A0
     move.b  (A0,D3.W),D2
     lea     (LevelBlockAttrsBQ2ReplacementValues).l,A0
@@ -732,15 +740,86 @@ TransferBufAddrs:
     dc.b    (GleeokPaletteRow7TransferBuf)&$FF, (GleeokPaletteRow7TransferBuf>>8)&$FF   ; NES .ADDR (little-endian)
     dc.b    (DynTileBuf)&$FF, (DynTileBuf>>8)&$FF   ; NES .ADDR (little-endian)
 
+; -- 32-bit absolute pointer table (same order as TransferBufAddrs) --
+; EQU symbols (NES RAM offsets): NES_RAM + offset
+; ROM labels: assembler resolves to 68K ROM addr
+    even
+TransferBufPtrs:
+    dc.l    NES_RAM+DynTileBuf                              ; idx  0 ($00)
+    dc.l    StoryTileAttrTransferBuf                         ; idx  1 ($02)
+    dc.l    Mode8TextTileBuffer                              ; idx  2 ($04)
+    dc.l    LevelPaletteRow7TransferBuf                      ; idx  3 ($06)
+    dc.l    AquamentusPaletteRow7TransferBuf                 ; idx  4 ($08)
+    dc.l    OrangeBossPaletteRow7TransferBuf                 ; idx  5 ($0A)
+    dc.l    LevelNumberTransferBuf                           ; idx  6 ($0C)
+    dc.l    StatusBarStaticsTransferBuf                      ; idx  7 ($0E)
+    dc.l    GameTitleTransferBuf                              ; idx  8 ($10)
+    dc.l    MenuPalettesTransferBuf                           ; idx  9 ($12)
+    dc.l    Mode1TileTransferBuf                              ; idx 10 ($14)
+    dc.l    ModeFCharsTransferBuf                             ; idx 11 ($16)
+    dc.l    NES_RAM+LevelInfo_PalettesTransferBuf             ; idx 12 ($18)
+    dc.l    NES_RAM+DynTileBuf                              ; idx 13 ($1A)
+    dc.l    NES_RAM+DynTileBuf                              ; idx 14 ($1C)
+    dc.l    BlankTextBoxLines                                 ; idx 15 ($1E)
+    dc.l    GhostPaletteRow7TransferBuf                      ; idx 16 ($20)
+    dc.l    GreenBgPaletteRow7TransferBuf                    ; idx 17 ($22)
+    dc.l    BrownBgPaletteRow7TransferBuf                    ; idx 18 ($24)
+    dc.l    CellarAttrsTransferBuf                            ; idx 19 ($26)
+    dc.l    NES_RAM+DynTileBuf                              ; idx 20 ($28)
+    dc.l    BlankPersonWares                                  ; idx 21 ($2A)
+    dc.l    Mode11DeadLinkPalette                             ; idx 22 ($2C)
+    dc.l    LevelNumberTransferBuf                           ; idx 23 ($2E)
+    dc.l    InventoryTextTransferBuf                          ; idx 24 ($30)
+    dc.l    SubmenuBoxesTopsTransferBuf                       ; idx 25 ($32)
+    dc.l    SubmenuBoxesSidesTransferBuf                     ; idx 26 ($34)
+    dc.l    GanonPaletteRow7TransferBuf                      ; idx 27 ($36)
+    dc.l    SelectedItemBoxBottomTransferBuf                  ; idx 28 ($38)
+    dc.l    UseBButtonTextTransferBuf                         ; idx 29 ($3A)
+    dc.l    InventoryBoxBottomTransferBuf                     ; idx 30 ($3C)
+    dc.l    CaveBgPaletteRowsTransferBuf                     ; idx 31 ($3E)
+    dc.l    SubmenuMapRemainderTransferBuf                    ; idx 32 ($40)
+    dc.l    SheetMapBottomEdgeTransferBuf                     ; idx 33 ($42)
+    dc.l    NES_RAM+LevelInfo_StatusBarMapTransferBuf         ; idx 34 ($44)
+    dc.l    GameOverTransferBuf                               ; idx 35 ($46)
+    dc.l    SubmenuAttrs1TransferBuf                          ; idx 36 ($48)
+    dc.l    SubmenuAttrs2TransferBuf                          ; idx 37 ($4A)
+    dc.l    BlankBottomRowNT2TransferBuf                      ; idx 38 ($4C)
+    dc.l    BlankRowTransferBuf                               ; idx 39 ($4E)
+    dc.l    SubmenuTriforceApexTransferBuf                    ; idx 40 ($50)
+    dc.l    TriforceRow0TransferBuf                           ; idx 41 ($52)
+    dc.l    TriforceRow1TransferBuf                           ; idx 42 ($54)
+    dc.l    TriforceRow2TransferBuf                           ; idx 43 ($56)
+    dc.l    TriforceRow3TransferBuf                           ; idx 44 ($58)
+    dc.l    SubmenuTriforceBottomTransferBuf                  ; idx 45 ($5A)
+    dc.l    TriforceTextTransferBuf                           ; idx 46 ($5C)
+    dc.l    Mode11BackgroundPaletteBottomHalfTransferBuf      ; idx 47 ($5E)
+    dc.l    Mode11PlayAreaAttrsTopHalfTransferBuf             ; idx 48 ($60)
+    dc.l    Mode11PlayAreaAttrsBottomHalfTransferBuf          ; idx 49 ($62)
+    dc.l    NES_RAM+DynTileBuf                              ; idx 50 ($64)
+    dc.l    NES_RAM+DynTileBuf                              ; idx 51 ($66)
+    dc.l    NES_RAM+DynTileBuf                              ; idx 52 ($68)
+    dc.l    EndingPaletteTransferBuf                          ; idx 53 ($6A)
+    dc.l    BombCapacityPriceTextTransferBuf                  ; idx 54 ($6C)
+    dc.l    NES_RAM+DynTileBuf                              ; idx 55 ($6E)
+    dc.l    NES_RAM+DynTileBuf                              ; idx 56 ($70)
+    dc.l    NES_RAM+DynTileBuf                              ; idx 57 ($72)
+    dc.l    NES_RAM+DynTileBuf                              ; idx 58 ($74)
+    dc.l    LifeOrMoneyCostTextTransferBuf                    ; idx 59 ($76)
+    dc.l    WhitePaletteBottomHalfTransferBuf                 ; idx 60 ($78)
+    dc.l    RedArmosPaletteRow7TransferBuf                   ; idx 61 ($7A)
+    dc.l    GleeokPaletteRow7TransferBuf                     ; idx 62 ($7C)
+    dc.l    NES_RAM+DynTileBuf                              ; idx 63 ($7E)
+
     even
 TransferCurTileBuf:
+    ; PATCHED: use 32-bit pointer table to resolve ROM-resident buffers.
+    ; $0014 is a 2-byte index (0, 2, 4, …).  Convert to 4-byte index and
+    ; load the full 68K address from TransferBufPtrs.
+    moveq   #0,D2
     move.b  ($0014,A4),D2
-    lea     (TransferBufAddrs).l,A0
-    move.b  (A0,D2.W),D0
-    move.b  D0,($0000,A4)
-    lea     (TransferBufAddrs+1).l,A0
-    move.b  (A0,D2.W),D0
-    move.b  D0,($0001,A4)
+    add.w   D2,D2                       ; 2-byte index -> 4-byte index
+    lea     (TransferBufPtrs).l,A0
+    movea.l (A0,D2.W),A0               ; A0 = 32-bit buffer pointer
     bsr     TransferTileBuf
     moveq   #63,D0
     move.b  D0,($0300,A4)
@@ -754,125 +833,9 @@ TransferCurTileBuf:
 
     even
 ContinueTransferTileBuf:
-    ;
-    ;
-    ; Save VRAM address high byte.
-    move.b  D0,-(A5)  ; PHA
-    bsr     _ppu_write_6  ; PPU $2006 write, D0=val
-    addq.b  #1,D3
-    move.b  ($00,A4),D1   ; ptr lo
-    move.b  ($01,A4),D4  ; ptr hi
-    andi.w  #$00FF,D1         ; zero-extend lo byte
-    lsl.w   #8,D4
-    or.w    D1,D4             ; D4 = NES ptr addr
-    ext.l   D4
-    add.l   #NES_RAM,D4       ; → Genesis addr
-    movea.l D4,A0
-    move.b  (A0,D3.W),D0     ; LDA ($nn),Y
-    bsr     _ppu_write_6  ; PPU $2006 write, D0=val
-    addq.b  #1,D3
-    move.b  ($00,A4),D1   ; ptr lo
-    move.b  ($01,A4),D4  ; ptr hi
-    andi.w  #$00FF,D1         ; zero-extend lo byte
-    lsl.w   #8,D4
-    or.w    D1,D4             ; D4 = NES ptr addr
-    ext.l   D4
-    add.l   #NES_RAM,D4       ; → Genesis addr
-    movea.l D4,A0
-    move.b  (A0,D3.W),D0     ; LDA ($nn),Y
-    lsl.b  #1,D0   ; ASL A
-    move.b  D0,-(A5)  ; PHA
-    move.b  ($00FF,A4),D0
-    ori.b #$04,D0
-    bcs  _anon_z06_0
-    andi.b #$FB,D0
-_anon_z06_0:
-    bsr     _ppu_write_0  ; PPU $2000 write, D0=val
-    move.b  D0,($00FF,A4)
-    move.b  (A5)+,D0  ; PLA
-    lsl.b  #1,D0   ; ASL A
-    move.w  SR,D1
-    move.b  D1,-(A5)  ; PHP: push CCR
-    bcc  _anon_z06_1
-    ori.b #$02,D0
-    addq.b  #1,D3
-_anon_z06_1:
-    move.b  (A5)+,D1  ; PLP: pop to CCR
-    move.w  D1,CCR
-    ; If the count was 0 (bottom 6 bits),
-    ; then make it 64.
-    andi    #$EE,CCR  ; CLC: clear C+X
-    bne  _anon_z06_2
-    ori     #$11,CCR  ; SEC: set C+X
-_anon_z06_2:
-    roxr.b  #1,D0   ; ROR A
-    lsr.b  #1,D0   ; LSR A
-    ; We pulled the flags out, and we're left with a count in A.
-    ; Move it to X.
-    move.b  D0,D2
-    even
-_L_z06_ContinueTransferTileBuf_Loop:
-    bcs  _anon_z06_3
-    addq.b  #1,D3
-_anon_z06_3:
-    move.b  ($00,A4),D1   ; ptr lo
-    move.b  ($01,A4),D4  ; ptr hi
-    andi.w  #$00FF,D1         ; zero-extend lo byte
-    lsl.w   #8,D4
-    or.w    D1,D4             ; D4 = NES ptr addr
-    ext.l   D4
-    add.l   #NES_RAM,D4       ; → Genesis addr
-    movea.l D4,A0
-    move.b  (A0,D3.W),D0     ; LDA ($nn),Y
-    bsr     _ppu_write_7  ; PPU $2007 write, D0=val
-    subq.b  #1,D2
-    bne  _L_z06_ContinueTransferTileBuf_Loop
-    move.b  (A5)+,D0  ; PLA
-    ; If we wrote to $3Fxx, then set PPUADDR to $3F00, then $0000.
-    ;
-    cmpi.b  #$3F,D0
-    bne  _L_z06_ContinueTransferTileBuf_AdvanceSource
-    bsr     _ppu_write_6  ; PPU $2006 write, D0=val
-    move.l  D0,-(SP)       ; save A (6502 STX/STY never modifies A)
-    move.b  D2,D0  ; D2 → D0 for I/O write
-    bsr     _ppu_write_6  ; PPU $2006 write, D0=val
-    move.l  (SP)+,D0       ; restore A
-    move.l  D0,-(SP)       ; save A (6502 STX/STY never modifies A)
-    move.b  D2,D0  ; D2 → D0 for I/O write
-    bsr     _ppu_write_6  ; PPU $2006 write, D0=val
-    move.l  (SP)+,D0       ; restore A
-    move.l  D0,-(SP)       ; save A (6502 STX/STY never modifies A)
-    move.b  D2,D0  ; D2 → D0 for I/O write
-    bsr     _ppu_write_6  ; PPU $2006 write, D0=val
-    move.l  (SP)+,D0       ; restore A
-    even
-_L_z06_ContinueTransferTileBuf_AdvanceSource:
-    ; Advance the source address to one after the last byte read.
-    ;
-    ori     #$11,CCR  ; SEC: set C+X
-    move.b  D3,D0
-    move.b  ($0000,A4),D1
-    addx.b  D1,D0   ; ADC $00
-    move.b  D0,($0000,A4)
-    moveq   #0,D0
-    move.b  ($0001,A4),D1
-    addx.b  D1,D0   ; ADC $01
-    move.b  D0,($0001,A4)
-    even
 TransferTileBuf:
-    bsr     _ppu_read_2  ; PPU $2002 read → D0
-    move.b  D0,D2
-    moveq   #0,D3
-    move.b  ($00,A4),D1   ; ptr lo
-    move.b  ($01,A4),D4  ; ptr hi
-    andi.w  #$00FF,D1         ; zero-extend lo byte
-    lsl.w   #8,D4
-    or.w    D1,D4             ; D4 = NES ptr addr
-    ext.l   D4
-    add.l   #NES_RAM,D4       ; → Genesis addr
-    movea.l D4,A0
-    move.b  (A0,D3.W),D0     ; LDA ($nn),Y
-    bpl  ContinueTransferTileBuf
+    ; PATCHED: fast tile buffer interpreter (bypasses per-byte _ppu_write_7)
+    bsr     _transfer_tilebuf_fast
     rts
 
     even

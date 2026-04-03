@@ -3,21 +3,15 @@ CRAM Trace Probe  —  frames 1-250
 =================================================================
 
 --- CRAM CHANGES at frame 8 ---
-  PPU_LATCH=$00 PPU_VADDR=$0000  DynBuf[0]=$00
+  PPU_LATCH=$00 PPU_VADDR=$0000  DynBuf[0]=$FF
   ptr=$68/$65 (NES $6568)  ppuCtrl=$00 ppuCtrl_hw=$00 subphase=$00
   CRAM byte_addr=  0 (pal=0 col=0): $0000(R0G0B0) → $00E0(R0G7B0)
-f010: PPU_VADDR=$0000 DynBuf=$00 ptr=$6A61 ppuCtrl=$00 sub=$00 mode=$00
+f010: PPU_VADDR=$0000 DynBuf=$FF ptr=$6A61 ppuCtrl=$00 sub=$00 mode=$00
 f020: PPU_VADDR=$0000 DynBuf=$FF ptr=$0000 ppuCtrl=$00 sub=$00 mode=$00
-f030: PPU_VADDR=$0000 DynBuf=$FF ptr=$B027 ppuCtrl=$30 sub=$00 mode=$00
-f035: PPU_VADDR=$0000 DynBuf=$FF ptr=$B698 ppuCtrl=$30 sub=$00 mode=$00
-f040: PPU_VADDR=$0107 DynBuf=$FF ptr=$0300 ppuCtrl=$30 sub=$00 mode=$00
-f045: PPU_VADDR=$0009 DynBuf=$FF ptr=$8F4D ppuCtrl=$30 sub=$00 mode=$00
-f050: PPU_VADDR=$0040 DynBuf=$FF ptr=$9271 ppuCtrl=$30 sub=$00 mode=$00
-f055: PPU_VADDR=$003C DynBuf=$FF ptr=$9552 ppuCtrl=$30 sub=$00 mode=$00
-f060: PPU_VADDR=$0032 DynBuf=$FF ptr=$9876 ppuCtrl=$30 sub=$00 mode=$00
---- CRAM CHANGES at frame 240 ---
+f030: PPU_VADDR=$1700 DynBuf=$FF ptr=$7800 ppuCtrl=$30 sub=$00 mode=$00
+--- CRAM CHANGES at frame 34 ---
   PPU_LATCH=$00 PPU_VADDR=$0000  DynBuf[0]=$FF
-  ptr=$02/$03 (NES $0302)  ppuCtrl=$B0 ppuCtrl_hw=$B0 subphase=$00
+  ptr=$02/$78 (NES $7802)  ppuCtrl=$B0 ppuCtrl_hw=$B0 subphase=$00
   CRAM byte_addr=  0 (pal=0 col=0): $00E0(R0G7B0) → $0466(R3G3B2)
   CRAM byte_addr=  4 (pal=0 col=2): $0000(R0G0B0) → $0222(R1G1B1)
   CRAM byte_addr=  6 (pal=0 col=3): $0000(R0G0B0) → $0444(R2G2B2)
@@ -32,6 +26,100 @@ f060: PPU_VADDR=$0032 DynBuf=$FF ptr=$9876 ppuCtrl=$30 sub=$00 mode=$00
   CRAM byte_addr= 98 (pal=3 col=1): $0000(R0G0B0) → $0666(R3G3B3)
   CRAM byte_addr=100 (pal=3 col=2): $0000(R0G0B0) → $0664(R2G3B3)
   CRAM byte_addr=102 (pal=3 col=3): $0000(R0G0B0) → $0642(R1G2B3)
+f035: PPU_VADDR=$0000 DynBuf=$3F ptr=$7800 ppuCtrl=$B4 sub=$00 mode=$01
+f040: PPU_VADDR=$0000 DynBuf=$FF ptr=$7810 ppuCtrl=$B0 sub=$00 mode=$01
+--- CRAM CHANGES at frame 42 ---
+  PPU_LATCH=$00 PPU_VADDR=$0000  DynBuf[0]=$FF
+  ptr=$10/$78 (NES $7810)  ppuCtrl=$B0 ppuCtrl_hw=$B0 subphase=$00
+  CRAM byte_addr= 36 (pal=1 col=2): $0246(R3G2B1) → $0466(R3G3B2)
+f045: PPU_VADDR=$0000 DynBuf=$FF ptr=$7810 ppuCtrl=$B0 sub=$00 mode=$01
+f050: PPU_VADDR=$0000 DynBuf=$FF ptr=$7810 ppuCtrl=$B0 sub=$00 mode=$01
+--- CRAM CHANGES at frame 54 ---
+  PPU_LATCH=$00 PPU_VADDR=$0000  DynBuf[0]=$FF
+  ptr=$10/$78 (NES $7810)  ppuCtrl=$B0 ppuCtrl_hw=$B0 subphase=$00
+  CRAM byte_addr= 36 (pal=1 col=2): $0466(R3G3B2) → $0246(R3G2B1)
+f055: PPU_VADDR=$0000 DynBuf=$FF ptr=$7810 ppuCtrl=$B0 sub=$00 mode=$01
+--- CRAM CHANGES at frame 60 ---
+  PPU_LATCH=$00 PPU_VADDR=$0000  DynBuf[0]=$FF
+  ptr=$00/$78 (NES $7800)  ppuCtrl=$B0 ppuCtrl_hw=$B0 subphase=$00
+  CRAM byte_addr= 36 (pal=1 col=2): $0246(R3G2B1) → $0026(R3G1B0)
+f060: PPU_VADDR=$0000 DynBuf=$FF ptr=$7800 ppuCtrl=$B0 sub=$00 mode=$01
+--- CRAM CHANGES at frame 66 ---
+  PPU_LATCH=$00 PPU_VADDR=$0000  DynBuf[0]=$FF
+  ptr=$10/$78 (NES $7810)  ppuCtrl=$B0 ppuCtrl_hw=$B0 subphase=$00
+  CRAM byte_addr= 36 (pal=1 col=2): $0026(R3G1B0) → $0004(R2G0B0)
+--- CRAM CHANGES at frame 78 ---
+  PPU_LATCH=$00 PPU_VADDR=$0000  DynBuf[0]=$FF
+  ptr=$10/$78 (NES $7810)  ppuCtrl=$B0 ppuCtrl_hw=$B0 subphase=$00
+  CRAM byte_addr= 36 (pal=1 col=2): $0004(R2G0B0) → $0026(R3G1B0)
+--- CRAM CHANGES at frame 94 ---
+  PPU_LATCH=$00 PPU_VADDR=$0000  DynBuf[0]=$FF
+  ptr=$10/$78 (NES $7810)  ppuCtrl=$B0 ppuCtrl_hw=$B0 subphase=$00
+  CRAM byte_addr= 36 (pal=1 col=2): $0026(R3G1B0) → $0246(R3G2B1)
+--- CRAM CHANGES at frame 100 ---
+  PPU_LATCH=$00 PPU_VADDR=$0000  DynBuf[0]=$FF
+  ptr=$10/$78 (NES $7810)  ppuCtrl=$B0 ppuCtrl_hw=$B0 subphase=$00
+  CRAM byte_addr= 36 (pal=1 col=2): $0246(R3G2B1) → $0466(R3G3B2)
+--- CRAM CHANGES at frame 112 ---
+  PPU_LATCH=$00 PPU_VADDR=$0000  DynBuf[0]=$FF
+  ptr=$08/$78 (NES $7808)  ppuCtrl=$B0 ppuCtrl_hw=$B0 subphase=$00
+  CRAM byte_addr= 36 (pal=1 col=2): $0466(R3G3B2) → $0246(R3G2B1)
+--- CRAM CHANGES at frame 118 ---
+  PPU_LATCH=$00 PPU_VADDR=$0000  DynBuf[0]=$FF
+  ptr=$10/$78 (NES $7810)  ppuCtrl=$B0 ppuCtrl_hw=$B0 subphase=$00
+  CRAM byte_addr= 36 (pal=1 col=2): $0246(R3G2B1) → $0026(R3G1B0)
+--- CRAM CHANGES at frame 124 ---
+  PPU_LATCH=$00 PPU_VADDR=$0000  DynBuf[0]=$FF
+  ptr=$10/$78 (NES $7810)  ppuCtrl=$B0 ppuCtrl_hw=$B0 subphase=$00
+  CRAM byte_addr= 36 (pal=1 col=2): $0026(R3G1B0) → $0004(R2G0B0)
+--- CRAM CHANGES at frame 136 ---
+  PPU_LATCH=$00 PPU_VADDR=$0000  DynBuf[0]=$FF
+  ptr=$08/$78 (NES $7808)  ppuCtrl=$B0 ppuCtrl_hw=$B0 subphase=$00
+  CRAM byte_addr= 36 (pal=1 col=2): $0004(R2G0B0) → $0026(R3G1B0)
+--- CRAM CHANGES at frame 152 ---
+  PPU_LATCH=$00 PPU_VADDR=$0000  DynBuf[0]=$FF
+  ptr=$10/$78 (NES $7810)  ppuCtrl=$B0 ppuCtrl_hw=$B0 subphase=$00
+  CRAM byte_addr= 36 (pal=1 col=2): $0026(R3G1B0) → $0246(R3G2B1)
+--- CRAM CHANGES at frame 158 ---
+  PPU_LATCH=$00 PPU_VADDR=$0000  DynBuf[0]=$FF
+  ptr=$00/$78 (NES $7800)  ppuCtrl=$B0 ppuCtrl_hw=$B0 subphase=$00
+  CRAM byte_addr= 36 (pal=1 col=2): $0246(R3G2B1) → $0466(R3G3B2)
+--- CRAM CHANGES at frame 170 ---
+  PPU_LATCH=$00 PPU_VADDR=$0000  DynBuf[0]=$FF
+  ptr=$10/$78 (NES $7810)  ppuCtrl=$B0 ppuCtrl_hw=$B0 subphase=$00
+  CRAM byte_addr= 36 (pal=1 col=2): $0466(R3G3B2) → $0246(R3G2B1)
+--- CRAM CHANGES at frame 176 ---
+  PPU_LATCH=$00 PPU_VADDR=$0000  DynBuf[0]=$FF
+  ptr=$10/$78 (NES $7810)  ppuCtrl=$B0 ppuCtrl_hw=$B0 subphase=$00
+  CRAM byte_addr= 36 (pal=1 col=2): $0246(R3G2B1) → $0026(R3G1B0)
+--- CRAM CHANGES at frame 182 ---
+  PPU_LATCH=$00 PPU_VADDR=$0000  DynBuf[0]=$FF
+  ptr=$00/$78 (NES $7800)  ppuCtrl=$B0 ppuCtrl_hw=$B0 subphase=$00
+  CRAM byte_addr= 36 (pal=1 col=2): $0026(R3G1B0) → $0004(R2G0B0)
+--- CRAM CHANGES at frame 194 ---
+  PPU_LATCH=$00 PPU_VADDR=$0000  DynBuf[0]=$FF
+  ptr=$10/$78 (NES $7810)  ppuCtrl=$B0 ppuCtrl_hw=$B0 subphase=$00
+  CRAM byte_addr= 36 (pal=1 col=2): $0004(R2G0B0) → $0026(R3G1B0)
+--- CRAM CHANGES at frame 210 ---
+  PPU_LATCH=$00 PPU_VADDR=$0000  DynBuf[0]=$FF
+  ptr=$00/$78 (NES $7800)  ppuCtrl=$B0 ppuCtrl_hw=$B0 subphase=$00
+  CRAM byte_addr= 36 (pal=1 col=2): $0026(R3G1B0) → $0246(R3G2B1)
+--- CRAM CHANGES at frame 216 ---
+  PPU_LATCH=$00 PPU_VADDR=$0000  DynBuf[0]=$FF
+  ptr=$10/$78 (NES $7810)  ppuCtrl=$B0 ppuCtrl_hw=$B0 subphase=$00
+  CRAM byte_addr= 36 (pal=1 col=2): $0246(R3G2B1) → $0466(R3G3B2)
+--- CRAM CHANGES at frame 228 ---
+  PPU_LATCH=$00 PPU_VADDR=$0000  DynBuf[0]=$FF
+  ptr=$10/$78 (NES $7810)  ppuCtrl=$B0 ppuCtrl_hw=$B0 subphase=$00
+  CRAM byte_addr= 36 (pal=1 col=2): $0466(R3G3B2) → $0246(R3G2B1)
+--- CRAM CHANGES at frame 234 ---
+  PPU_LATCH=$00 PPU_VADDR=$0000  DynBuf[0]=$FF
+  ptr=$00/$78 (NES $7800)  ppuCtrl=$B0 ppuCtrl_hw=$B0 subphase=$00
+  CRAM byte_addr= 36 (pal=1 col=2): $0246(R3G2B1) → $0026(R3G1B0)
+--- CRAM CHANGES at frame 240 ---
+  PPU_LATCH=$00 PPU_VADDR=$0000  DynBuf[0]=$FF
+  ptr=$10/$78 (NES $7810)  ppuCtrl=$B0 ppuCtrl_hw=$B0 subphase=$00
+  CRAM byte_addr= 36 (pal=1 col=2): $0026(R3G1B0) → $0004(R2G0B0)
 
 --- Final CRAM (all 64 entries) ---
   CRAM[0][00] addr=  0 = $0466  R=3 G=3 B=2
@@ -39,7 +127,7 @@ f060: PPU_VADDR=$0032 DynBuf=$FF ptr=$9876 ppuCtrl=$30 sub=$00 mode=$00
   CRAM[0][03] addr=  6 = $0444  R=2 G=2 B=2
   CRAM[1][00] addr= 32 = $0466  R=3 G=3 B=2
   CRAM[1][01] addr= 34 = $0026  R=3 G=1 B=0
-  CRAM[1][02] addr= 36 = $0246  R=3 G=2 B=1
+  CRAM[1][02] addr= 36 = $0004  R=2 G=0 B=0
   CRAM[2][00] addr= 64 = $0466  R=3 G=3 B=2
   CRAM[2][01] addr= 66 = $0002  R=1 G=0 B=0
   CRAM[2][02] addr= 68 = $0040  R=0 G=2 B=0

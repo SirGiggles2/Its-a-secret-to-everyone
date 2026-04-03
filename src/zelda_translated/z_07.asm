@@ -899,6 +899,7 @@ ClearNameTableWithHiAddr:
     even
 IsrNmi:
     move.b  ($00FF,A4),D0
+    moveq   #0,D2
     move.b  ($005C,A4),D2
     beq  _anon_z07_0
     eori.b #$02,D0
@@ -910,10 +911,13 @@ _anon_z07_0:
     ; Set PPUMASK.
     ; Start with curren mask value, but ...
     move.b  ($00FE,A4),D0
+    moveq   #0,D3
     move.b  ($00E3,A4),D3
     bne  _L_z07_IsrNmi_EnableAllVideo
+    moveq   #0,D3
     move.b  ($0014,A4),D3
     bne  _L_z07_IsrNmi_SetPpuMask
+    moveq   #0,D3
     move.b  ($0017,A4),D3
     bne  _L_z07_IsrNmi_SetPpuMask
     even
@@ -1007,6 +1011,7 @@ _L_z07_IsrNmi_UpdateTimers:
     move.b  D3,D0
     even
 _L_z07_IsrNmi_DecTimers:
+    moveq   #0,D2
     move.b  D0,D2
     even
 _L_z07_IsrNmi_LoopTimer:
@@ -1095,6 +1100,7 @@ ClearNameTable:
     even
 TableJump:
     lsl.b  #1,D0   ; ASL A
+    moveq   #0,D3
     move.b  D0,D3
     move.b  (A5)+,D0  ; PLA
     move.b  D0,($0000,A4)
@@ -1197,6 +1203,7 @@ ReadInputs:
     bsr     _ctrl_strobe     ; $4016 controller strobe
     move.b  D0,($0003,A4)
     move.b  D0,($0004,A4)
+    moveq   #0,D2
     move.b  D0,D2
     bsr     ReadOneController
     addq.b  #1,D2
@@ -1234,6 +1241,7 @@ _L_z07_ReadOneController_Read:
     cmp.b   D1,D0
     bne  ReadOneController
     addq.b  #1,($03,A4,D2.W)
+    moveq   #0,D3
     move.b  ($03,A4,D2.W),D3
     cmpi.b  #$02,D3
     bcs  ReadOneController
@@ -1271,6 +1279,7 @@ UpdateTriforcePositionMarker:
 
     even
 CalculateNextRoom:
+    moveq   #0,D3
     move.b  ($0010,A4),D3
     beq  CalculateNextRoomOW
     ; Look up door attribute for player's direction.
@@ -1280,6 +1289,7 @@ CalculateNextRoom:
     moveq   #5,D0
     bsr     SwitchBank
     bsr     FindDoorAttrByDoorBit
+    moveq   #0,D3
     move.b  ($0001,A4),D3
     even
 CalculateNextRoom_TableJump:
@@ -1299,6 +1309,7 @@ CalculateNextRoom_JumpTable:
 
     even
 CalculateNextRoomOW:
+    moveq   #0,D3
     move.b  ($0098,A4),D3
     moveq   #0,D0
     beq  CalculateNextRoom_TableJump
@@ -1336,6 +1347,7 @@ GetRoomFlags:
     move.b  D0,($0000,A4)
     move.b  (NES_SRAM+$0BB0).l,D0
     move.b  D0,($0001,A4)
+    moveq   #0,D3
     move.b  ($00EB,A4),D3
     move.b  ($00,A4),D1   ; ptr lo
     move.b  ($01,A4),D4  ; ptr hi
@@ -1428,6 +1440,7 @@ _anon_z07_4:
     ;
     ; Restore the item ID.
     move.b  (A5)+,D0  ; PLA
+    moveq   #0,D2
     move.b  D0,D2
     lea     (ItemIdToDescriptor).l,A0
     move.b  (A0,D2.W),D0
@@ -1441,7 +1454,9 @@ _L_z07_AnimateItemObject_SetItemValue:
     ;
     lea     (ItemIdToSlot).l,A0
     move.b  (A0,D2.W),D0
+    moveq   #0,D2
     move.b  D0,D2
+    moveq   #0,D3
     move.b  D0,D3
     jmp     DrawItemBySlot
 
@@ -1559,6 +1574,7 @@ DrawStatusBarItemsAndEnsureItemSelected:
     ; check swords. When it's used as the selected item index;
     ; it's a pseudo-slot used for checking boomerangs.
     ;
+    moveq   #0,D2
     move.b  ($0656,A4),D2
     beq  DrawStatusBarBoomerang
     lea     ($0657,A4),A0
@@ -1566,6 +1582,7 @@ DrawStatusBarItemsAndEnsureItemSelected:
     beq  CheckMissingItem
     cmpi.b  #$0F,D2
     bne  DrawStatusBarItemB
+    moveq   #0,D3
     move.b  ($065E,A4),D3
     bne  DrawStatusBarPotion
     lsr.b  #1,D0   ; LSR A
@@ -1607,6 +1624,7 @@ FindItemOrDrawSword:
     even
 EnsureSelectedItem:
     move.b  D2,D0
+    moveq   #0,D3
     move.b  D0,D3
     moveq   #5,D0
     bsr     SwitchBank
@@ -1704,6 +1722,7 @@ EndLinkLiftingItem:
     move.b  D0,($0505,A4)
     ; If in UW, play the level's song again.
     ;
+    moveq   #0,D3
     move.b  ($0010,A4),D3
     beq  L1E859_Exit
     lea     (LevelSongIds).l,A0
@@ -1719,6 +1738,7 @@ L1E859_Exit:
 ;
     even
 GetUniqueRoomId:
+    moveq   #0,D3
     move.b  ($00EB,A4),D3
     lea     (NES_SRAM+$09FE).l,A0
     move.b  (A0,D3.W),D0
@@ -1745,6 +1765,7 @@ ChangeTileObjTiles:
     move.b  (A0,D2.W),D0
     move.b  D0,($0002,A4)
     bsr     MapScreenPosToPpuAddr
+    moveq   #0,D2
     move.b  ($0301,A4),D2
     ; Two transfer records will be written to the buffer and an end marker.
     ;
@@ -1823,6 +1844,7 @@ _L_z07_ChangeTileObjTiles_SetCountBytes:
     addx.b  D1,D0   ; ADC #$0A (X flag = 6502 C)
     move.b  D0,($0301,A4)
     move.b  (A5)+,D0  ; PLA
+    moveq   #0,D2
     move.b  D0,D2
     moveq   #5,D0
     bsr     SwitchBank
@@ -2102,7 +2124,9 @@ _L_z07_InitMode3_Sub1_SetRoomId:
     move.b  D0,($0526,A4)
     even
 PatchAndCueLevelPalettesTransferAndAdvanceSubmode:
+    moveq   #0,D2
     move.b  ($0016,A4),D2
+    moveq   #0,D3
     lea     (SaveSlotToPaletteRowOffset).l,A0
     move.b  (A0,D2.W),D3
     ; Get the color at byte 1 of row 4, 5, or 6 of menu palettes,
@@ -2165,6 +2189,7 @@ _L_z07_InitMode5Play_FindSpecialBoss:
     move.b  (A0,D3.W),D1
     cmp.b   D1,D0
     bne  _L_z07_InitMode5Play_NextSpecialBoss
+    moveq   #0,D2
     lea     (SpecialBossPaletteTransferBufSelectors).l,A0
     move.b  (A0,D3.W),D2
     bne  _L_z07_InitMode5Play_SelectTransferBufAndFinishInitPlay
@@ -2210,6 +2235,7 @@ _L_z07_InitMode5Play_ChooseTileObjPalette:
     moveq   #36,D2
     even
 _L_z07_InitMode5Play_UseXOrGreenPalette:
+    moveq   #0,D3
     move.b  ($00EB,A4),D3
     lea     (NES_SRAM+$08FE).l,A0
     move.b  (A0,D3.W),D0
@@ -2282,6 +2308,7 @@ _anon_z07_8:
     ;
     cmpi.b  #$00,D3
     bne  _L_z07_RunCrossRoomTasksAndBeginUpdateMode_RunTasksMode5
+    moveq   #0,D2
     move.b  ($0620,A4),D2
     lea     ($0621,A4),A0
     move.b  D0,(A0,D2.W)
@@ -2454,6 +2481,7 @@ LevelSongIds:
 
     even
 GoToNextModePlayLevelSong:
+    moveq   #0,D3
     move.b  ($0010,A4),D3
     lea     (LevelSongIds).l,A0
     move.b  (A0,D3.W),D0
@@ -2661,6 +2689,7 @@ _L_z07_BeginUpdateWorld_UpdateWeapons:
 _L_z07_BeginUpdateWorld_LoopObject:
     ; Update objects from $B to 1.
     ;
+    moveq   #0,D2
     move.b  ($0340,A4),D2
     bsr     DecrementInvincibilityTimer
     lea     ($034F,A4),A0
@@ -2674,6 +2703,7 @@ _L_z07_BeginUpdateWorld_LoopObject:
     ;
     ; Else go loop again.
     ;
+    moveq   #0,D2
     move.b  ($0340,A4),D2
     lea     ($0405,A4),A0
     move.b  (A0,D2.W),D0
@@ -2692,6 +2722,7 @@ _L_z07_BeginUpdateWorld_LoopObject:
 _anon_z07_10:
     ; Either way, we'll check collisions.
     ;
+    moveq   #0,D2
     move.b  ($0340,A4),D2
     bsr     CheckMonsterCollisions
     even
@@ -2749,6 +2780,7 @@ _L_z07_BeginUpdateWorld_CheckOW:
     move.b  ($0012,A4),D0
     cmpi.b  #$05,D0
     bne  _L_z07_BeginUpdateWorld_CheckZora
+    moveq   #0,D3
     move.b  ($00EB,A4),D3
     lea     (NES_SRAM+$087E).l,A0
     move.b  (A0,D3.W),D0
@@ -2927,6 +2959,7 @@ GetCollidableTile:
     andi    #$EE,CCR  ; CLC: clear C+X
     move.b  #$0B,D1
     addx.b  D1,D0   ; ADC #$0B (X flag = 6502 C)
+    moveq   #0,D3
     move.b  D0,D3
     move.b  D0,-(A5)  ; PHA
     move.b  ($000F,A4),D0
@@ -2947,6 +2980,7 @@ _L_z07_GetCollidableTile_AdjustY:
 _L_z07_GetCollidableTile_AsIsX:
     ; Take the X coordinate as is.
     ;
+    moveq   #0,D3
     move.b  ($70,A4,D2.W),D3
     jmp     _L_z07_GetCollidableTile_FetchTile
 
@@ -2954,6 +2988,7 @@ _L_z07_GetCollidableTile_AsIsX:
 _L_z07_GetCollidableTile_AdjustX:
     ; Adjust the X coordinate.
     ;
+    moveq   #0,D3
     move.b  ($70,A4,D2.W),D3
     ; If direction is left and X coordinate >= $10
     ; or direction is right and X coordinate < $F0,
@@ -2973,6 +3008,7 @@ _L_z07_GetCollidableTile_AddHotspotOffset:
     andi    #$EE,CCR  ; CLC: clear C+X
     move.b  ($0004,A4),D1
     addx.b  D1,D0   ; ADC $04
+    moveq   #0,D3
     move.b  D0,D3
     even
 _L_z07_GetCollidableTile_FetchTile:
@@ -2982,6 +3018,7 @@ _L_z07_GetCollidableTile_FetchTile:
     ;
     lsr.b  #1,D0   ; LSR A
     lsr.b  #1,D0   ; LSR A
+    moveq   #0,D3
     move.b  D0,D3
     lea     (PlayAreaColumnAddrs).l,A0
     move.b  (A0,D3.W),D0
@@ -2996,6 +3033,7 @@ _L_z07_GetCollidableTile_FetchTile:
     lsr.b  #1,D0   ; LSR A
     lsr.b  #1,D0   ; LSR A
     lsr.b  #1,D0   ; LSR A
+    moveq   #0,D3
     move.b  D0,D3
     move.b  ($00,A4),D1   ; ptr lo
     move.b  ($01,A4),D4  ; ptr hi
@@ -3019,6 +3057,7 @@ _L_z07_GetCollidableTile_FetchTile:
     andi    #$EE,CCR  ; CLC: clear C+X
     move.b  #$16,D1
     addx.b  D1,D0   ; ADC #$16 (X flag = 6502 C)
+    moveq   #0,D3
     move.b  D0,D3
     move.b  ($00,A4),D1   ; ptr lo
     move.b  ($01,A4),D4  ; ptr hi
@@ -3039,6 +3078,7 @@ _L_z07_GetCollidableTile_FetchTile:
 _L_z07_GetCollidableTile_CheckWalkable:
     lea     ($049E,A4),A0
     move.b  (A0,D2.W),D0
+    moveq   #0,D3
     move.b  ($0010,A4),D3
     bne  _L_z07_GetCollidableTile_Exit
     ; Look for the tile in a list of walkable tiles. If it's found,
@@ -3105,6 +3145,7 @@ Obj_Shove:
     ; If the object faces horizontally, go check which axis shove
     ; direction is on.
     ;
+    moveq   #0,D3
     lea     ($0098,A4),A0
     move.b  (A0,D2.W),D3
     cmpi.b  #$03,D3
@@ -3323,6 +3364,7 @@ WieldFlute:
     bne  _L_z07_WieldFlute_Exit
     ; Get and save the quest number.
     ;
+    moveq   #0,D3
     move.b  ($0016,A4),D3
     lea     ($062D,A4),A0
     move.b  (A0,D3.W),D0
@@ -3880,6 +3922,7 @@ GoWalkableDir:
     bne  ExitX0
     even
 CheckScreenEdge:
+    moveq   #0,D2
     move.b  ($0084,A4),D2
     ; If not moving, then return.
     ;
@@ -3895,6 +3938,7 @@ CheckScreenEdge:
     move.b  (A0,D3.W),D0
     andi.b #$0C,D0
     bne  _anon_z07_17
+    moveq   #0,D2
     move.b  ($0070,A4),D2
 _anon_z07_17:
     move.b  D2,($0000,A4)
@@ -4127,6 +4171,7 @@ Link_EndMoveAndAnimate:
     bne  L1F1FC_Exit
     ; If mode 4 or 6 (not a playing mode), then go check warps and animate.
     ;
+    moveq   #0,D2
     move.b  D0,D2
     move.b  ($0012,A4),D0
     cmpi.b  #$06,D0
@@ -4151,6 +4196,7 @@ _L_z07_Link_EndMoveAndAnimate_TruncGridOffset:
     ;
     moveq   #0,D0
     move.b  D0,($0394,A4)
+    moveq   #0,D3
     move.b  ($0012,A4),D3
     cmpi.b  #$05,D3
     bne  _L_z07_Link_EndMoveAndAnimate_CheckWarpsAndAnimate
@@ -4208,6 +4254,7 @@ _L_z07_Link_EndMoveAndAnimate_CheckLadder:
     ; go check warps and animate.
     ; If in UW, and tile <> $F4, go check warps and animate.
     ;
+    moveq   #0,D3
     move.b  ($0010,A4),D3
     beq  _L_z07_Link_EndMoveAndAnimate_CheckWaterOW
     cmpi.b  #$F4,D0
@@ -4229,6 +4276,7 @@ _L_z07_Link_EndMoveAndAnimate_SetUpLadder:
     beq  _L_z07_Link_EndMoveAndAnimate_CheckWarps
     move.b  ($03F8,A4),D0
     beq  _L_z07_Link_EndMoveAndAnimate_CheckWarps
+    moveq   #0,D2
     move.b  ($0059,A4),D2
     move.b  ($0098,A4),D1
     cmp.b   D1,D0
@@ -4323,6 +4371,7 @@ _L_z07_Link_EndMoveAndAnimate_WieldingObject:
     andi    #$EE,CCR  ; CLC: clear C+X
     move.b  #$04,D1
     addx.b  D1,D0   ; ADC #$04 (X flag = 6502 C)
+    moveq   #0,D3
     move.b  D0,D3
     even
 _L_z07_Link_EndMoveAndAnimate_Draw:
@@ -4693,6 +4742,7 @@ _L_z07_SpreadShot_CheckDistance:
     move.b  D0,($0001,A4)
     ; If in UW, and (sprite Y < $3E or >= $E8), then skip this corner.
     ;
+    moveq   #0,D3
     move.b  ($0010,A4),D3
     beq  _L_z07_SpreadShot_Draw
     cmpi.b  #$3E,D0
@@ -4728,6 +4778,7 @@ _L_z07_SpreadShot_NextCorner:
     ; Get the loop index.
     move.b  (A5)+,D0  ; PLA
     move.b  D0,-(A5)  ; PHA
+    moveq   #0,D3
     move.b  D0,D3
     cmpi.b  #$01,D3
     bne  _anon_z07_25
@@ -4742,6 +4793,7 @@ _anon_z07_25:
     ; Restore the loop index, decrement it, and loop again if >= 0.
     ;
     move.b  (A5)+,D0  ; PLA
+    moveq   #0,D3
     move.b  D0,D3
     subq.b  #1,D3
     bpl  _L_z07_SpreadShot_DrawShotCorner
@@ -5299,6 +5351,7 @@ _L_z07_CheckState30_CatchBoomerang:
     even
 _L_z07_CheckState30_SetThrowerTimer:
     move.b  D3,D0
+    moveq   #0,D3
     lea     ($042C,A4),A0
     move.b  (A0,D2.W),D3
     move.b  D0,($28,A4,D3.W)
@@ -5333,6 +5386,7 @@ _L_z07_CheckState30_MoveTowardThrower:
     ; Move horizontally towards the thrower.
     ;
     move.b  (A5)+,D0  ; PLA
+    moveq   #0,D3
     move.b  D0,D3
     lea     (BoomerangQSpeedFracsX).l,A0
     move.b  (A0,D3.W),D0
@@ -5397,6 +5451,7 @@ CalcBoomerangFrame:
     lea     ($00AC,A4),A0
     move.b  (A0,D2.W),D0
     andi.b #$0F,D0
+    moveq   #0,D3
     move.b  D0,D3
     moveq   #0,D0
     move.b  D0,($0001,A4)
@@ -5423,6 +5478,7 @@ CalcBoomerangFrame:
     moveq   #0,D3
     cmpi.b  #$08,D0
     beq  _anon_z07_31
+    moveq   #0,D3
     move.b  ($0675,A4),D3
 _anon_z07_31:
     move.b  D3,D0
@@ -5530,6 +5586,7 @@ UpdateSwordOrRod:
     lea     ($00AC,A4),A0
     move.b  (A0,D2.W),D0
     andi.b #$0F,D0
+    moveq   #0,D3
     move.b  D0,D3
     moveq   #8,D0
     subq.b  #1,D3
@@ -5570,6 +5627,7 @@ _L_z07_UpdateSwordOrRod_DrawSwordOrRod:
     lea     ($00AC,A4),A0
     move.b  (A0,D2.W),D0
     andi.b #$0F,D0
+    moveq   #0,D3
     move.b  D0,D3
     move.b  #$FC,D0
     cmpi.b  #$05,D3
@@ -5599,6 +5657,7 @@ _L_z07_UpdateSwordOrRod_Add4:
     andi    #$EE,CCR  ; CLC: clear C+X
     move.b  ($0000,A4),D1
     addx.b  D1,D0   ; ADC $00
+    moveq   #0,D3
     move.b  D0,D3
     ; Set object's X to player's X + offset for state and direction.
     ; Copy the result to [00].
@@ -5627,6 +5686,7 @@ _L_z07_UpdateSwordOrRod_Add4:
     lea     ($00AC,A4),A0
     move.b  (A0,D2.W),D0
     andi.b #$0F,D0
+    moveq   #0,D3
     move.b  D0,D3
     moveq   #8,D0
     subq.b  #1,D3
@@ -5889,6 +5949,7 @@ _L_z07_UpdateFire_StandingFie:
     bsr     SwitchBank
     bsr     UpdateCandle
     move.b  (A5)+,D0  ; PLA
+    moveq   #0,D2
     move.b  D0,D2
     even
 _L_z07_UpdateFire_DrawAndCheckCollisions:
@@ -5920,11 +5981,13 @@ _L_z07_UpdateFire_DrawAndCheckCollisions:
     bsr     GetWideObjectMiddle
     ; Store the fire's center point coordinates in [02] and [03].
     ;
+    moveq   #0,D2
     move.b  ($0000,A4),D2
     moveq   #0,D3
     bsr     GetWideObjectMiddle
     ; If the objects don't collide (< $E pixels in X and Y), then return.
     ;
+    moveq   #0,D3
     move.b  ($0000,A4),D3
     moveq   #0,D2
     moveq   #14,D0
@@ -5934,6 +5997,7 @@ _L_z07_UpdateFire_DrawAndCheckCollisions:
     ;
     ; Make the fire shove the player.
     ;
+    moveq   #0,D2
     move.b  ($0000,A4),D2
     moveq   #0,D3
     move.b  D3,($0000,A4)
@@ -6011,6 +6075,7 @@ UpdateBomb:
     lea     ($00AC,A4),A0
     move.b  (A0,D2.W),D0
     andi.b #$0F,D0
+    moveq   #0,D3
     move.b  D0,D3
     lea     (BombTimes-1).l,A0
     move.b  (A0,D3.W),D0
@@ -6206,6 +6271,7 @@ _L_z07_DrawOtherBombClouds_LoopCloud:
     andi    #$EE,CCR  ; CLC: clear C+X
     move.b  #$06,D1
     addx.b  D1,D0   ; ADC #$06 (X flag = 6502 C)
+    moveq   #0,D3
     move.b  D0,D3
     even
 _L_z07_DrawOtherBombClouds_Draw:
@@ -6230,6 +6296,7 @@ _L_z07_DrawOtherBombClouds_Draw:
     ;
     bsr     DrawBombOrCloudNoFlashing
     move.b  (A5)+,D0  ; PLA
+    moveq   #0,D3
     move.b  D0,D3
     ; Loop while >= 0.
     ;
@@ -6538,6 +6605,7 @@ UpdateObject:
     move.b  (A5)+,D0  ; PLA
     ; If the object was initialized, go update it.
     ;
+    moveq   #0,D3
     lea     ($0492,A4),A0
     move.b  (A0,D2.W),D3
     move.b  D3,($000F,A4)
@@ -6574,6 +6642,7 @@ _L_z07_UpdateObject_Update:
     ; If meta-state <> 0, go update the meta-object
     ; (spawning cloud or dying sparkle).
     ;
+    moveq   #0,D3
     lea     ($0405,A4),A0
     move.b  (A0,D2.W),D3
     beq  _anon_z07_40
@@ -6784,6 +6853,7 @@ _L_z07_UpdateMetaObjectEnd_Reset:
 
     even
 InitObject:
+    moveq   #0,D2
     move.b  ($0340,A4),D2
     ; We want to handle "enemies from the edges of the screen".
     ;
@@ -6824,6 +6894,7 @@ _L_z07_InitObject_UninitMonsterFromEdge:
 
     even
 _L_z07_InitObject_InitMonsterFromEdge:
+    moveq   #0,D2
     move.b  ($0340,A4),D2
     moveq   #5,D0
     bsr     SwitchBank
@@ -6879,7 +6950,9 @@ _L_z07_InitObject_NormalSpawn:
     ; the same value as the object slot; so that they all start
     ; moving at different times.
     ;
+    moveq   #0,D2
     move.b  ($0340,A4),D2
+    moveq   #0,D3
     lea     ($034F,A4),A0
     move.b  (A0,D2.W),D3
     cmpi.b  #$1E,D3
@@ -6905,6 +6978,7 @@ _L_z07_InitObject_FetchAttrs:
     ; into the hit points table.
     ;
     lsr.b  #1,D0   ; LSR A
+    moveq   #0,D3
     move.b  D0,D3
     lea     (ObjectTypeToHpPairs).l,A0
     move.b  (A0,D3.W),D0
@@ -7217,6 +7291,7 @@ PondCycleColors:
 UpdateFluteSecret:
     ; If secret color cycle >= $C, return.
     ;
+    moveq   #0,D3
     move.b  ($051A,A4),D3
     cmpi.b  #$0C,D3
     bcc  L1FF28_Exit
@@ -7255,6 +7330,7 @@ _L_z07_CueTransferPondPaletteRow_CopyBytes:
     subq.b  #1,D3
     bpl  _L_z07_CueTransferPondPaletteRow_CopyBytes
     move.b  (A5)+,D0  ; PLA
+    moveq   #0,D3
     move.b  D0,D3
     lea     (PondCycleColors).l,A0
     move.b  (A0,D3.W),D0
@@ -7288,6 +7364,7 @@ AnimatePond:
     andi.b #$04,D0
     beq  L1FF28_Exit
     subq.b  #1,($051A,A4)
+    moveq   #0,D3
     move.b  ($051A,A4),D3
     jmp     CueTransferPondPaletteRow
 

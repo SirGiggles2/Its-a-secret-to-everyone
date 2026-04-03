@@ -330,7 +330,7 @@ _ppu_write_7:
     bne.s   .chr_ret                ; not yet 16 bytes — keep buffering
 
     ; Complete tile — convert 2BPP → 4BPP and upload to VDP VRAM
-    bsr     .chr_convert_upload
+    bsr     _chr_convert_upload
     clr.b   (CHR_BUF_CNT).l
 
 .chr_ret:
@@ -438,7 +438,7 @@ _ppu_write_7:
     andi.w  #$0003,D5
     lsl.w   #5,D5
     lsl.w   #8,D5                   ; D5.w = palette<<13  (bits [14:13])
-    bsr     .attr_write_2x2
+    bsr     _attr_write_2x2
 
     ; Quadrant 1: bits [3:2], row_off=0, col_off=+2
     move.w  D4,D5
@@ -447,7 +447,7 @@ _ppu_write_7:
     lsl.w   #5,D5
     lsl.w   #8,D5
     addq.w  #2,D2
-    bsr     .attr_write_2x2
+    bsr     _attr_write_2x2
     subq.w  #2,D2
 
     ; Quadrant 2: bits [5:4], row_off=+2, col_off=0
@@ -457,7 +457,7 @@ _ppu_write_7:
     lsl.w   #5,D5
     lsl.w   #8,D5
     addq.w  #2,D3
-    bsr     .attr_write_2x2
+    bsr     _attr_write_2x2
     subq.w  #2,D3
 
     ; Quadrant 3: bits [7:6], row_off=+2, col_off=+2
@@ -468,7 +468,7 @@ _ppu_write_7:
     lsl.w   #8,D5
     addq.w  #2,D2
     addq.w  #2,D3
-    bsr     .attr_write_2x2
+    bsr     _attr_write_2x2
     subq.w  #2,D2
     subq.w  #2,D3
 
@@ -520,73 +520,6 @@ _ppu_write_7:
     rts
 
     ;==========================================================================
-    ; .attr_write_2x2 — write palette bits into a 2×2 tile block.
-    ;
-    ; Input: D2.w = col (top-left tile), D3.w = row (top-left tile)
-    ;        D5.w = palette << 11  (Genesis tile word palette bits)
-    ; All inputs preserved.  Uses D0, D1, A0 as scratch.
-    ;==========================================================================
-.attr_write_2x2:
-    bsr     .attr_write_one_tile        ; (row,   col)
-    addq.w  #1,D2
-    bsr     .attr_write_one_tile        ; (row,   col+1)
-    addq.w  #1,D3
-    bsr     .attr_write_one_tile        ; (row+1, col+1)
-    subq.w  #1,D2
-    bsr     .attr_write_one_tile        ; (row+1, col)
-    subq.w  #1,D3
-    rts
-
-    ;==========================================================================
-    ; .attr_write_one_tile — write one Plane A tile word with palette bits.
-    ;
-    ; Input: D2.w = col (0..31), D3.w = row (0..29), D5.w = palette << 11
-    ; Reads tile index from NT_CACHE_BASE[row*32 + col].
-    ; Writes tile word = (palette<<11) | tile_index to VDP Plane A.
-    ; Inputs D2, D3, D5 preserved.  Uses D0, D1, A0.
-    ;==========================================================================
-.attr_write_one_tile:
-    ; Bounds check
-    cmpi.w  #30,D3
-    bhs.s   .awt_skip           ; row ≥ 30 → out of nametable
-    cmpi.w  #32,D2
-    bhs.s   .awt_skip           ; col ≥ 32 → out of nametable
-
-    ; Load cached tile index: NT_CACHE[row*32 + col]
-    moveq   #0,D1
-    move.w  D3,D1
-    lsl.w   #5,D1               ; D1.w = row * 32
-    add.w   D2,D1               ; D1.w = row*32 + col
-    lea     (NT_CACHE_BASE).l,A0
-    moveq   #0,D0
-    move.b  (A0,D1.W),D0        ; D0.b = tile index
-
-    ; Build tile word: (palette<<13) | tile_index   [palette at Genesis bits 14:13]
-    or.w    D5,D0               ; D0.w = tile word with palette bits
-
-    ; Compute Genesis VDP address: $C000 + row*$80 + col*2
-    moveq   #0,D1
-    move.w  D3,D1
-    lsl.l   #7,D1               ; D1.l = row * $80  (lsl.l preserves zero-extended upper)
-    add.w   D2,D1
-    add.w   D2,D1               ; D1.w += col * 2
-    addi.w  #$C000,D1           ; D1.w = VDP address (Plane A base $C000)
-
-    ; Issue VDP VRAM write command, then write tile word
-    ; Plane A addresses have A[15:14]=11=3. Full command: $40000000|((addr&$3FFF)<<16)|3
-    move.w  D0,-(SP)            ; save tile word
-    move.l  D1,D0               ; copy addr
-    andi.l  #$00003FFF,D0       ; D0.l = addr & $3FFF
-    swap    D0                  ; D0.l = (addr & $3FFF) << 16
-    ori.l   #$40000003,D0       ; add CD bits + A[15:14]=3
-    move.l  D0,(VDP_CTRL).l
-    move.w  (SP)+,D0            ; restore tile word into D0.w
-    move.w  D0,(VDP_DATA).l     ; write tile word to Plane A
-
-.awt_skip:
-    rts
-
-    ;==========================================================================
     ; .inc_ppuaddr — advance PPU_VADDR by 1 or 32.
     ; PPUCTRL bit 2: 0 → +1 horizontal, 1 → +32 vertical.
     ; Modifies D1.w.
@@ -631,7 +564,7 @@ _ppu_write_7:
     ;
     ; Uses D0–D5/A0 (all caller-saved at _ppu_write_7 entry).
     ;==========================================================================
-.chr_convert_upload:
+_chr_convert_upload:
     ; Set VDP write address: Genesis tile addr = NES CHR addr × 2
     move.w  (CHR_BUF_VADDR).l,D1
     add.w   D1,D1                   ; D1.w = NES_addr × 2  (lsl #1)
@@ -724,6 +657,72 @@ _ppu_write_7:
     dc.w    $1110   ; 1110
     dc.w    $1111   ; 1111
 
+    rts
+
+;==============================================================================
+; _attr_write_2x2 — write palette bits into a 2x2 tile block.
+;
+; Input: D2.w = col (top-left tile), D3.w = row (top-left tile)
+;        D5.w = palette << 13  (Genesis tile word palette bits [14:13])
+; All inputs preserved.  Uses D0, D1, A0 as scratch.
+;==============================================================================
+_attr_write_2x2:
+    bsr     _attr_write_one_tile        ; (row,   col)
+    addq.w  #1,D2
+    bsr     _attr_write_one_tile        ; (row,   col+1)
+    addq.w  #1,D3
+    bsr     _attr_write_one_tile        ; (row+1, col+1)
+    subq.w  #1,D2
+    bsr     _attr_write_one_tile        ; (row+1, col)
+    subq.w  #1,D3
+    rts
+
+;==============================================================================
+; _attr_write_one_tile — write one Plane A tile word with palette bits.
+;
+; Input: D2.w = col (0..31), D3.w = row (0..29), D5.w = palette << 13
+; Reads tile index from NT_CACHE_BASE[row*32 + col].
+; Writes tile word = (palette<<13) | tile_index to VDP Plane A.
+; Inputs D2, D3, D5 preserved.  Uses D0, D1, A0.
+;==============================================================================
+_attr_write_one_tile:
+    ; Bounds check
+    cmpi.w  #30,D3
+    bhs.s   .awt_skip           ; row >= 30 -> out of nametable
+    cmpi.w  #32,D2
+    bhs.s   .awt_skip           ; col >= 32 -> out of nametable
+
+    ; Load cached tile index: NT_CACHE[row*32 + col]
+    moveq   #0,D1
+    move.w  D3,D1
+    lsl.w   #5,D1               ; D1.w = row * 32
+    add.w   D2,D1               ; D1.w = row*32 + col
+    lea     (NT_CACHE_BASE).l,A0
+    moveq   #0,D0
+    move.b  (A0,D1.W),D0        ; D0.b = tile index
+
+    ; Build tile word: (palette<<13) | tile_index
+    or.w    D5,D0               ; D0.w = tile word with palette bits
+
+    ; Compute Genesis VDP address: $C000 + row*$80 + col*2
+    moveq   #0,D1
+    move.w  D3,D1
+    lsl.l   #7,D1               ; D1.l = row * $80
+    add.w   D2,D1
+    add.w   D2,D1               ; D1.w += col * 2
+    addi.w  #$C000,D1           ; D1.w = VDP address
+
+    ; Issue VDP VRAM write command
+    move.w  D0,-(SP)            ; save tile word
+    move.l  D1,D0
+    andi.l  #$00003FFF,D0
+    swap    D0
+    ori.l   #$40000003,D0       ; CD bits + A[15:14]=3
+    move.l  D0,(VDP_CTRL).l
+    move.w  (SP)+,D0            ; restore tile word
+    move.w  D0,(VDP_DATA).l     ; write to Plane A
+
+.awt_skip:
     rts
 
 ;==============================================================================
@@ -1342,3 +1341,393 @@ _transfer_chr_block_fast:
 .fast_expand_lut:
     dc.w    $0000,$0001,$0010,$0011,$0100,$0101,$0110,$0111
     dc.w    $1000,$1001,$1010,$1011,$1100,$1101,$1110,$1111
+
+;==============================================================================
+; _transfer_tilebuf_fast -- Native tile buffer interpreter.
+;
+; Replaces TransferTileBuf + ContinueTransferTileBuf.
+; Parses tile buffer records and dispatches by PPU address range into
+; tight inner loops, avoiding per-byte _ppu_write_7 overhead.
+;
+; Input:
+;   ($0000,A4) / ($0001,A4) = 16-bit NES RAM pointer to buffer start
+;   A4 = NES_RAM ($FF0000)
+;
+; Output:
+;   ($0000,A4) / ($0001,A4) updated past last consumed record
+;   PPU_VADDR, PPU_CTRL, NT_CACHE, CRAM updated per record contents
+;
+; Preserves: D0, D2, D3, D7, A4, A5 (6502 register convention)
+;==============================================================================
+    even
+_transfer_tilebuf_fast:
+    ; Caller passes buffer pointer in A0 (32-bit absolute address).
+    movem.l D0-D6/A0-A3,-(SP)
+
+    ; Reset PPU latch (matches _ppu_read_2 in original TransferTileBuf)
+    clr.b   (PPU_LATCH).l
+
+    ; A0 = buffer pointer (set by caller via TransferBufPtrs)
+    ; A3 = safety limit: bail after 128 records to prevent runaway parsing
+    lea     (128*3,A0),A3           ; worst-case: 128 records × 3 header bytes
+
+.ttf_next_record:
+    cmpa.l  A3,A0                   ; safety limit: bail if past 128 records
+    bge     .ttf_done
+    move.b  (A0)+,D0                ; first byte of record
+    bmi     .ttf_done               ; bit 7 set ($80-$FF) = sentinel -> done
+
+    ; --- Parse record header ---
+    ; D0.b = PPU addr hi byte
+    moveq   #0,D5
+    move.b  D0,D5
+    lsl.w   #8,D5
+    move.b  (A0)+,D5                ; D5.w = PPU address
+    andi.w  #$3FFF,D5
+
+    move.b  (A0)+,D6                ; D6.b = control byte
+
+    ; Decode count (bits 5:0, 0 means 64)
+    moveq   #0,D3
+    move.b  D6,D3
+    andi.w  #$003F,D3
+    bne.s   .ttf_count_ok
+    moveq   #64,D3
+.ttf_count_ok:
+
+    ; Decode repeat mode (bit 7): prefetch single data byte
+    moveq   #0,D4                   ; D4.b = 0 = sequential mode
+    btst    #7,D6
+    beq.s   .ttf_no_repeat
+    move.b  (A0)+,D2                ; D2.b = repeat data byte
+    moveq   #-1,D4                  ; D4.b = $FF = repeat mode
+.ttf_no_repeat:
+
+    ; Decode increment (bit 6): 1 or 32
+    moveq   #1,D1                   ; D1.w = increment
+    btst    #6,D6
+    beq.s   .ttf_inc_ok
+    moveq   #32,D1
+.ttf_inc_ok:
+
+    ; Update PPU_CTRL bit 2 (increment mode) + NES RAM $00FF
+    move.b  ($00FF,A4),D0
+    btst    #6,D6
+    beq.s   .ttf_ctrl_h
+    ori.b   #$04,D0                 ; set bit 2 = +32 mode
+    bra.s   .ttf_ctrl_s
+.ttf_ctrl_h:
+    andi.b  #$FB,D0                 ; clear bit 2 = +1 mode
+.ttf_ctrl_s:
+    move.b  D0,($00FF,A4)          ; update NES RAM CurPpuControl
+    move.b  D0,(PPU_CTRL).l        ; update PPU_CTRL shadow
+    move.w  D5,(PPU_VADDR).l       ; set PPU_VADDR to record start
+
+    ; --- Dispatch by PPU address range ---
+    cmpi.w  #$2000,D5
+    blo     .ttf_chr_range          ; $0000-$1FFF = CHR
+    cmpi.w  #$23C0,D5
+    blo     .ttf_nt_range           ; $2000-$23BF = nametable
+    cmpi.w  #$2400,D5
+    blo     .ttf_attr_range         ; $23C0-$23FF = attributes
+    cmpi.w  #$3F00,D5
+    blo     .ttf_skip_range         ; $2400-$3EFF = unhandled
+    cmpi.w  #$3F20,D5
+    blo     .ttf_palette_range      ; $3F00-$3F1F = palette
+    bra     .ttf_skip_range         ; $3F20+ = unhandled
+
+    ;==========================================================================
+    ; CHR RANGE ($0000-$1FFF): 2BPP tile data -> VDP VRAM
+    ;==========================================================================
+.ttf_chr_range:
+    ; Fast path: sequential + horizontal (+1) + tile-aligned
+    cmp.w   #1,D1                   ; horizontal increment?
+    bne.s   .ttf_chr_slow
+    tst.b   D4                      ; sequential mode?
+    bne.s   .ttf_chr_slow
+    move.w  D5,D0
+    andi.w  #$000F,D0               ; offset within tile
+    tst.w   D0
+    bne.s   .ttf_chr_slow           ; not tile-aligned
+
+    ; Delegate to _transfer_chr_block_fast (A0=source, D1.w=dest, D2.l=count)
+    movea.l A0,A1                   ; save source pointer
+    move.w  D5,D1                   ; D1.w = PPU dest
+    moveq   #0,D2
+    move.w  D3,D2                   ; D2.l = byte count
+    bsr     _transfer_chr_block_fast
+    adda.l  D3,A1                   ; advance past consumed bytes
+    movea.l A1,A0
+    bra     .ttf_post_record
+
+.ttf_chr_slow:
+    ; Byte-by-byte CHR buffering (handles non-aligned, vertical, repeat)
+    ; Use existing CHR_TILE_BUF accumulation logic
+    lea     (CHR_TILE_BUF).l,A2
+
+.ttf_chr_slow_loop:
+    ; Get data byte
+    tst.b   D4                      ; repeat mode?
+    bne.s   .ttf_chr_have_byte
+    move.b  (A0)+,D2                ; sequential: read next byte
+.ttf_chr_have_byte:
+
+    ; Store in CHR_TILE_BUF at (PPU_VADDR & $F)
+    move.w  D5,D0
+    andi.w  #$000F,D0
+    move.b  D2,(A2,D0.W)           ; CHR_TILE_BUF[offset] = byte
+
+    ; Check if first byte of tile: save base address
+    tst.w   D0
+    bne.s   .ttf_chr_no_base
+    move.w  D5,D0
+    andi.w  #$FFF0,D0
+    move.w  D0,(CHR_BUF_VADDR).l
+.ttf_chr_no_base:
+
+    ; Advance PPU_VADDR
+    add.w   D1,D5
+
+    ; Check if we just completed a tile (16 bytes)
+    move.w  D5,D0
+    andi.w  #$000F,D0
+    tst.w   D0
+    bne.s   .ttf_chr_no_convert
+
+    ; Convert and upload the completed tile
+    bsr     _chr_convert_upload
+.ttf_chr_no_convert:
+
+    subq.w  #1,D3
+    bne.s   .ttf_chr_slow_loop
+    bra     .ttf_post_record
+
+    ;==========================================================================
+    ; NAMETABLE RANGE ($2000-$23BF): tile index -> Plane A word
+    ;==========================================================================
+.ttf_nt_range:
+    lea     (NT_CACHE_BASE).l,A2
+
+.ttf_nt_loop:
+    ; Get data byte
+    tst.b   D4                      ; repeat mode?
+    bne.s   .ttf_nt_have_byte
+    move.b  (A0)+,D2                ; sequential: read next byte
+.ttf_nt_have_byte:
+
+    ; Bounds check
+    cmpi.w  #$23C0,D5
+    bhs.s   .ttf_nt_skip
+
+    ; Compute index = PPU_VADDR - $2000
+    move.w  D5,D0
+    subi.w  #$2000,D0               ; D0.w = index (0..$3BF)
+
+    ; Cache tile index in NT_CACHE
+    move.b  D2,(A2,D0.W)
+
+    ; Compute VDP address: $C000 + row*$80 + col*2
+    move.w  D0,D6                   ; save index
+    andi.w  #$001F,D6               ; col = index & 31
+    lsl.w   #1,D6                   ; col * 2
+    lsr.w   #5,D0                   ; row = index >> 5
+    mulu.w  #$0080,D0              ; row * $80
+    add.w   D6,D0                   ; row*$80 + col*2
+    addi.w  #$C000,D0              ; + Plane A base
+
+    ; Issue VDP VRAM write command
+    moveq   #0,D6
+    move.w  D0,D6
+    andi.l  #$00003FFF,D6
+    swap    D6
+    ori.l   #$40000003,D6          ; CD bits + A[15:14]=3 for $C000+
+    move.l  D6,(VDP_CTRL).l
+
+    ; Write tile word (palette 0, tile index in low byte)
+    moveq   #0,D0
+    move.b  D2,D0
+    move.w  D0,(VDP_DATA).l
+
+.ttf_nt_skip:
+    add.w   D1,D5                   ; advance PPU_VADDR
+    andi.w  #$3FFF,D5
+    subq.w  #1,D3
+    bne.s   .ttf_nt_loop
+    bra     .ttf_post_record
+
+    ;==========================================================================
+    ; ATTRIBUTE RANGE ($23C0-$23FF): palette bits -> Plane A tile words
+    ;==========================================================================
+.ttf_attr_range:
+
+.ttf_attr_loop:
+    ; Get data byte
+    tst.b   D4                      ; repeat mode?
+    bne.s   .ttf_attr_have_byte
+    move.b  (A0)+,D2                ; sequential: read next byte
+.ttf_attr_have_byte:
+
+    ; Bounds check
+    cmpi.w  #$23C0,D5
+    blo.s   .ttf_attr_skip
+    cmpi.w  #$2400,D5
+    bhs.s   .ttf_attr_skip
+
+    ; Compute attr offset and tile base col/row
+    move.w  D5,D0
+    subi.w  #$23C0,D0               ; D0.w = attr offset (0..63)
+
+    ; tile_base_col = (offset & 7) * 4, tile_base_row = (offset >> 3) * 4
+    ; Save current D2/D3 (clobbered by attr helper which uses them as col/row)
+    movem.l D1-D4,-(SP)
+
+    move.w  D0,D3
+    lsr.w   #3,D3
+    lsl.w   #2,D3                   ; D3.w = tile_base_row
+    andi.w  #$0007,D0
+    lsl.w   #2,D0
+    move.w  D0,D2                   ; D2.w = tile_base_col
+
+    ; Get attribute byte from saved D2 on stack
+    ; movem.l D1-D4,-(SP) pushes: SP+0=D1, SP+4=D2, SP+8=D3, SP+12=D4
+    move.l  (4,SP),D0              ; D0.l = old D2 (the attr data byte)
+    move.b  D0,D4                  ; D4.b = attribute byte
+
+    ; Quadrant 0: bits [1:0], row_off=0, col_off=0
+    move.w  D4,D5
+    andi.w  #$0003,D5
+    lsl.w   #5,D5
+    lsl.w   #8,D5                   ; D5.w = palette<<13
+    bsr     _attr_write_2x2
+
+    ; Quadrant 1: bits [3:2], col_off=+2
+    move.w  D4,D5
+    lsr.w   #2,D5
+    andi.w  #$0003,D5
+    lsl.w   #5,D5
+    lsl.w   #8,D5
+    addq.w  #2,D2
+    bsr     _attr_write_2x2
+    subq.w  #2,D2
+
+    ; Quadrant 2: bits [5:4], row_off=+2
+    move.w  D4,D5
+    lsr.w   #4,D5
+    andi.w  #$0003,D5
+    lsl.w   #5,D5
+    lsl.w   #8,D5
+    addq.w  #2,D3
+    bsr     _attr_write_2x2
+    subq.w  #2,D3
+
+    ; Quadrant 3: bits [7:6], row_off=+2, col_off=+2
+    move.w  D4,D5
+    lsr.w   #6,D5
+    andi.w  #$0003,D5
+    lsl.w   #5,D5
+    lsl.w   #8,D5
+    addq.w  #2,D2
+    addq.w  #2,D3
+    bsr     _attr_write_2x2
+    subq.w  #2,D2
+    subq.w  #2,D3
+
+    movem.l (SP)+,D1-D4
+    ; Restore D5 = PPU_VADDR from PPU state (was clobbered by palette bits)
+    move.w  (PPU_VADDR).l,D5
+
+.ttf_attr_skip:
+    add.w   D1,D5                   ; advance PPU_VADDR
+    andi.w  #$3FFF,D5
+    move.w  D5,(PPU_VADDR).l
+    subq.w  #1,D3
+    bne     .ttf_attr_loop
+    bra     .ttf_post_record
+
+    ;==========================================================================
+    ; PALETTE RANGE ($3F00-$3F1F): NES color -> Genesis CRAM
+    ;==========================================================================
+.ttf_palette_range:
+    move.l  A3,-(SP)                ; save safety limit
+    lea     (nes_palette_to_genesis).l,A3
+
+.ttf_pal_loop:
+    ; Get data byte
+    tst.b   D4                      ; repeat mode?
+    bne.s   .ttf_pal_have_byte
+    move.b  (A0)+,D2                ; sequential: read next byte
+.ttf_pal_have_byte:
+
+    ; Bounds check
+    cmpi.w  #$3F20,D5
+    bhs.s   .ttf_pal_skip
+
+    ; Compute palette offset
+    move.w  D5,D0
+    subi.w  #$3F00,D0
+    andi.w  #$001F,D0               ; offset 0..31
+
+    ; Skip sprite palettes (offset >= 16)
+    cmpi.w  #$10,D0
+    bhs.s   .ttf_pal_skip
+
+    ; Compute CRAM address: palette_idx*$20 + color_slot*2
+    move.w  D0,D6
+    lsr.w   #2,D6                   ; palette index (0..3)
+    lsl.w   #5,D6                   ; * $20
+    move.w  D0,D0
+    andi.w  #$0003,D0               ; color slot
+    lsl.w   #1,D0                   ; * 2
+    add.w   D0,D6                   ; D6.w = CRAM address
+
+    ; VDP CRAM write command
+    moveq   #0,D0
+    move.w  D6,D0
+    swap    D0
+    ori.l   #$C0000000,D0
+    move.l  D0,(VDP_CTRL).l
+
+    ; Look up NES->Genesis color
+    moveq   #0,D0
+    move.b  D2,D0
+    andi.w  #$003F,D0               ; mask to valid color index
+    lsl.w   #1,D0                   ; word offset
+    move.w  (A3,D0.W),D0           ; Genesis color word
+    move.w  D0,(VDP_DATA).l
+
+.ttf_pal_skip:
+    add.w   D1,D5                   ; advance PPU_VADDR
+    andi.w  #$3FFF,D5
+    subq.w  #1,D3
+    bne.s   .ttf_pal_loop
+
+    ; Palette post-reset: set PPU_VADDR to $0000, clear latch
+    move.w  #$0000,(PPU_VADDR).l
+    clr.b   (PPU_LATCH).l
+    movea.l (SP)+,A3                ; restore safety limit
+    bra     .ttf_next_record        ; skip .ttf_post_record
+
+    ;==========================================================================
+    ; SKIP: unhandled PPU address range — consume payload and continue
+    ;==========================================================================
+.ttf_skip_range:
+    tst.b   D4                      ; repeat mode?
+    bne.s   .ttf_post_record        ; repeat: 1 byte already consumed
+    adda.w  D3,A0                   ; sequential: skip D3 bytes
+    bra.s   .ttf_post_record
+
+    ;==========================================================================
+    ; POST-RECORD: update PPU_VADDR and loop to next record
+    ;==========================================================================
+.ttf_post_record:
+    move.w  D5,(PPU_VADDR).l
+    bra     .ttf_next_record
+
+    ;==========================================================================
+    ; DONE: update ZP pointer and return
+    ;==========================================================================
+.ttf_done:
+    ; Caller (TransferCurTileBuf) handles post-transfer cleanup.
+    ; No ZP writeback needed — A0 may point to ROM, not NES RAM.
+    movem.l (SP)+,D0-D6/A0-A3
+    rts

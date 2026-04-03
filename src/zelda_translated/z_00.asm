@@ -177,6 +177,8 @@ SongScriptZelda0:
 
     even
 DriveAudio:
+    ; PATCHED: NOP — audio data requires NES bank mapping not yet implemented.
+    rts
     ; If the game is paused, then silence all channels
     ; by first disabling them, then enabling them.
     ;
@@ -250,6 +252,7 @@ DriveTune0:
     bne  _L_z00_DriveTune0_ChangeTune
     ; Else only play "heart warning" if nothing else is playing.
     ;
+    moveq   #0,D2
     move.b  ($0605,A4),D2
     beq  _L_z00_DriveTune0_ChangeTune
     even
@@ -273,6 +276,7 @@ _anon_z00_0:
     move.b  D0,($060E,A4)
     even
 _L_z00_DriveTune0_KeepPlaying:
+    moveq   #0,D3
     move.b  ($060E,A4),D3
     addq.b  #1,($060E,A4)
     lea     (TuneScripts0).l,A0
@@ -302,6 +306,7 @@ _L_z00_DriveTune0_KeepPlaying:
     even
 _L_z00_DriveTune0_PrepNote:
     bsr     _apu_write_4000  ; APU/IO write
+    moveq   #0,D3
     move.b  ($060E,A4),D3
     addq.b  #1,($060E,A4)
     lea     (TuneScripts0).l,A0
@@ -337,6 +342,7 @@ PlayArrowSfx:
     move.b  D0,($0604,A4)
     even
 ContinueArrowSfx:
+    moveq   #0,D3
     move.b  ($0069,A4),D3
     lea     (ArrowSfxNotes-1).l,A0
     move.b  (A0,D3.W),D0
@@ -352,6 +358,7 @@ _anon_z00_1:
     even
 ContinueStairsSfx:
     subq.b  #1,($0068,A4)
+    moveq   #0,D3
     move.b  ($0068,A4),D3
     beq  _anon_z00_1
     cmpi.b  #$07,D3
@@ -363,6 +370,7 @@ _anon_z00_2:
     move.b  (A0,D3.W),D0
     even
 PlaySfxNote:
+    moveq   #0,D2
     move.b  D0,D2
     andi.b #$0F,D0
     bsr     _apu_write_400e  ; APU/IO write
@@ -395,12 +403,14 @@ PlaySwordSfx:
     move.b  D0,($0069,A4)
     even
 ContinueSwordSfx:
+    moveq   #0,D3
     move.b  ($0069,A4),D3
     lea     (SwordSfxNotes-1).l,A0
     move.b  (A0,D3.W),D0
     bne  PlaySfxNote
     even
 DriveEffect:
+    moveq   #0,D3
     move.b  ($0603,A4),D3
     ; $80 is a signal to silence samples and tune 1.
     ;
@@ -451,6 +461,7 @@ _L_z00_DriveEffect_PlayBombSfx:
     move.b  D0,($0069,A4)
     even
 _L_z00_DriveEffect_ContinueBombSfx:
+    moveq   #0,D3
     move.b  ($0069,A4),D3
     lea     (BombSfxNotes-1).l,A0
     move.b  (A0,D3.W),D0
@@ -464,6 +475,7 @@ _L_z00_DriveEffect_PlayFlameSfx:
 _L_z00_DriveEffect_ContinueFlameSfx:
     move.b  ($0069,A4),D0
     lsr.b  #1,D0   ; LSR A
+    moveq   #0,D3
     move.b  D0,D3
     moveq   #14,D2
     move.l  D0,-(SP)       ; save A (6502 STX/STY never modifies A)
@@ -576,6 +588,7 @@ _anon_z00_5:
 _L_z00_DriveTune1_KeepPlaying:
     subq.b  #1,($006F,A4)
     bne  _L_z00_DriveTune1_CheckVibrate
+    moveq   #0,D3
     move.b  ($0618,A4),D3
     addq.b  #1,($0618,A4)
     lea     (TuneScripts1).l,A0
@@ -611,6 +624,7 @@ _L_z00_DriveTune1_KeepPlaying:
 _L_z00_DriveTune1_PrepNote:
     andi.b #$7F,D0
     move.b  D0,($006E,A4)
+    moveq   #0,D3
     move.b  ($0618,A4),D3
     addq.b  #1,($0618,A4)
     lea     (TuneScripts1).l,A0
@@ -633,6 +647,7 @@ _L_z00_DriveTune1_CheckVibrate:
     move.b  ($0607,A4),D0
     andi.b #$90,D0
     beq  _L_z00_DriveTune1_Exit
+    moveq   #0,D3
     move.b  ($006D,A4),D3
     beq  _anon_z00_6
     subq.b  #1,($006D,A4)
@@ -641,6 +656,7 @@ _anon_z00_6:
     move.b  (A0,D3.W),D0
     bsr     _apu_write_4004  ; APU/IO write
     move.b  ($006F,A4),D0
+    moveq   #0,D2
     move.b  ($006B,A4),D2
     bsr     VibratePitch
     move.l  D0,-(SP)       ; save A (6502 STX/STY never modifies A)
@@ -697,6 +713,7 @@ _anon_z00_7:
     bsr     _apu_write_4011  ; APU/IO write
     move.l  (SP)+,D0       ; restore A
     move.b  D0,($0608,A4)
+    moveq   #0,D2
     move.b  D0,D2
     andi.b #$F0,D0
     beq  _anon_z00_8
@@ -761,6 +778,7 @@ EmitSquareNoteWithDutyAndSweep0:
 ;
     even
 EmitSquareNote0:
+    moveq   #0,D3
     move.b  D0,D3
     lea     (NotePeriodTable+1).l,A0
     move.b  (A0,D3.W),D0
@@ -805,6 +823,7 @@ EmitSquareNoteWithDutyAndSweep1:
 ;
     even
 EmitSquareNote1:
+    moveq   #0,D3
     move.b  D0,D3
     lea     (NotePeriodTable+1).l,A0
     move.b  (A0,D3.W),D0
@@ -822,6 +841,7 @@ EmitSquareNote1:
 ;
     even
 EmitTriangleNote:
+    moveq   #0,D3
     move.b  D0,D3
     lea     (NotePeriodTable+1).l,A0
     move.b  (A0,D3.W),D0
@@ -868,6 +888,7 @@ _L_z00_VibratePitch_GoDown:
     move.b  #$FF,D1
     addx.b  D1,D0   ; ADC #$FF (X flag = 6502 C)
 _anon_z00_10:
+    moveq   #0,D2
     move.b  D0,D2
     even
 _L_z00_VibratePitch_Exit:
@@ -918,6 +939,7 @@ SetPrevPhraseIndex:
     move.b  D3,($006C,A4)
     even
 PlayNextPhrase:
+    moveq   #0,D2
     move.b  D0,D2
     bmi  _L_z00_PlayNextPhrase_PlayNextDemoPhrase
     cmpi.b  #$01,D0
@@ -929,6 +951,7 @@ PlayNextPhrase:
     ; Play the next phrase of the ending song.
     ;
     addq.b  #1,($006C,A4)
+    moveq   #0,D3
     move.b  ($006C,A4),D3
     cmpi.b  #$1A,D3
     bne  PrepPhrase
@@ -937,6 +960,7 @@ PlayNextPhrase:
     even
 _L_z00_PlayNextPhrase_PlayNextUnderworldPhrase:
     addq.b  #1,($006C,A4)
+    moveq   #0,D3
     move.b  ($006C,A4),D3
     cmpi.b  #$12,D3
     bne  PrepPhrase
@@ -945,6 +969,7 @@ _L_z00_PlayNextPhrase_PlayNextUnderworldPhrase:
     even
 _L_z00_PlayNextPhrase_PlayNextOverworldPhrase:
     addq.b  #1,($006C,A4)
+    moveq   #0,D3
     move.b  ($006C,A4),D3
     cmpi.b  #$10,D3
     bne  PrepPhrase
@@ -953,6 +978,7 @@ _L_z00_PlayNextPhrase_PlayNextOverworldPhrase:
     even
 _L_z00_PlayNextPhrase_PlayNextDemoPhrase:
     addq.b  #1,($006C,A4)
+    moveq   #0,D3
     move.b  ($006C,A4),D3
     cmpi.b  #$24,D3
     bne  PrepPhrase
@@ -972,6 +998,7 @@ _anon_z00_12:
 PrepPhrase:
     lea     (SongTable-1).l,A0
     move.b  (A0,D3.W),D0
+    moveq   #0,D3
     move.b  D0,D3
     lea     (SongTable).l,A0
     move.b  (A0,D3.W),D0
@@ -1009,6 +1036,7 @@ PrepPhrase:
 KeepPlayingSong:
     subq.b  #1,($0611,A4)
     bne  ApplySq1Effects
+    moveq   #0,D3
     move.b  ($060A,A4),D3
     addq.b  #1,($060A,A4)
     move.b  ($66,A4),D1   ; ptr lo
@@ -1047,6 +1075,7 @@ PlayAgain:
 PrepNote:
     bsr     GetSongNoteLength
     move.b  D0,($0610,A4)
+    moveq   #0,D3
     move.b  ($060A,A4),D3
     addq.b  #1,($060A,A4)
     move.b  ($66,A4),D1   ; ptr lo
@@ -1063,6 +1092,7 @@ PlayNote:
     ; If something is playing in tune channel 1, then
     ; don't play a square note here.
     ;
+    moveq   #0,D2
     move.b  ($0607,A4),D2
     bne  _L_z00_PlayNote_SkipSq1
     bsr     EmitSquareNote1
@@ -1082,9 +1112,11 @@ ApplySq1Effects:
     ; If something is playing in tune channel 1, then
     ; skip effects for square channel 1.
     ;
+    moveq   #0,D3
     move.b  ($0607,A4),D3
     bne  _L_z00_ApplySq1Effects_HandleSq0
     addq.b  #1,($061B,A4)
+    moveq   #0,D3
     move.b  ($0612,A4),D3
     beq  _anon_z00_14
     subq.b  #1,($0612,A4)
@@ -1101,6 +1133,7 @@ _anon_z00_14:
     ; The demo/title song ($80) vibrates the pitch.
     ;
     move.b  ($061B,A4),D0
+    moveq   #0,D2
     move.b  ($006B,A4),D2
     bsr     VibratePitch
     move.l  D0,-(SP)       ; save A (6502 STX/STY never modifies A)
@@ -1109,10 +1142,12 @@ _anon_z00_14:
     move.l  (SP)+,D0       ; restore A
     even
 _L_z00_ApplySq1Effects_HandleSq0:
+    moveq   #0,D3
     move.b  ($060B,A4),D3
     beq  _L_z00_ApplySq1Effects_HandleTrg
     subq.b  #1,($0613,A4)
     bne  _L_z00_ApplySq1Effects_ApplySq0Effects
+    moveq   #0,D3
     move.b  ($060B,A4),D3
     addq.b  #1,($060B,A4)
     move.b  ($66,A4),D1   ; ptr lo
@@ -1127,6 +1162,7 @@ _L_z00_ApplySq1Effects_HandleSq0:
     bpl  _L_z00_ApplySq1Effects_PlaySq0
     bsr     GetSongNoteLength
     move.b  D0,($060F,A4)
+    moveq   #0,D3
     move.b  ($060B,A4),D3
     addq.b  #1,($060B,A4)
     move.b  ($66,A4),D1   ; ptr lo
@@ -1140,6 +1176,7 @@ _L_z00_ApplySq1Effects_HandleSq0:
     move.b  (A0,D3.W),D0     ; LDA ($nn),Y
     even
 _L_z00_ApplySq1Effects_PlaySq0:
+    moveq   #0,D2
     move.b  ($0605,A4),D2
     bne  _L_z00_ApplySq1Effects_SkipSq0
     bsr     EmitSquareNote0
@@ -1156,9 +1193,11 @@ _L_z00_ApplySq1Effects_SkipSq0:
     move.b  D0,($0613,A4)
     even
 _L_z00_ApplySq1Effects_ApplySq0Effects:
+    moveq   #0,D2
     move.b  ($0605,A4),D2
     bne  _L_z00_ApplySq1Effects_HandleTrg
     addq.b  #1,($061C,A4)
+    moveq   #0,D3
     move.b  ($0614,A4),D3
     beq  _anon_z00_16
     subq.b  #1,($0614,A4)
@@ -1170,6 +1209,7 @@ _anon_z00_16:
     ; The demo/title song ($80) vibrates the pitch.
     ;
     move.b  ($061C,A4),D0
+    moveq   #0,D2
     move.b  ($006A,A4),D2
     bsr     VibratePitch
     move.l  D0,-(SP)       ; save A (6502 STX/STY never modifies A)
@@ -1190,6 +1230,7 @@ _anon_z00_18:
     bne  _L_z00_ApplySq1Effects_ApplyTrgEffects
     even
 _L_z00_ApplySq1Effects_PrepNoteOrPassage:
+    moveq   #0,D3
     move.b  ($060C,A4),D3
     addq.b  #1,($060C,A4)
     move.b  ($66,A4),D1   ; ptr lo
@@ -1232,6 +1273,7 @@ _L_z00_ApplySq1Effects_PrepNoteTrg:
     move.b  D0,($0615,A4)
     moveq   #31,D0
     bsr     _apu_write_4008  ; APU/IO write
+    moveq   #0,D3
     move.b  ($060C,A4),D3
     addq.b  #1,($060C,A4)
     move.b  ($66,A4),D1   ; ptr lo
@@ -1249,12 +1291,14 @@ _L_z00_ApplySq1Effects_PlayNoteTrg:
     bsr     EmitTriangleNote
     moveq   #0,D0
     move.b  D0,($061D,A4)
+    moveq   #0,D2
     move.b  ($0615,A4),D2
     move.b  D2,($0616,A4)
     even
 _L_z00_ApplySq1Effects_ApplyTrgEffects:
     addq.b  #1,($061D,A4)
     move.b  ($061D,A4),D0
+    moveq   #0,D2
     move.b  ($05F0,A4),D2
     bsr     VibratePitch
     move.l  D0,-(SP)       ; save A (6502 STX/STY never modifies A)
@@ -1283,6 +1327,7 @@ _L_z00_ApplySq1Effects_HandleNoise:
     subq.b  #1,($0617,A4)
     bne  _L_z00_ApplySq1Effects_Exit
 _anon_z00_21:
+    moveq   #0,D3
     move.b  ($060D,A4),D3
     addq.b  #1,($060D,A4)
     move.b  ($66,A4),D1   ; ptr lo
@@ -1312,6 +1357,7 @@ _anon_z00_22:
     lsr.b  #1,D0   ; LSR A
     lsr.b  #1,D0   ; LSR A
     lsr.b  #1,D0   ; LSR A
+    moveq   #0,D3
     move.b  D0,D3
     lea     (NoiseVolumes).l,A0
     move.b  (A0,D3.W),D0
@@ -1349,6 +1395,7 @@ NoiseLengths:
 ;
     even
 GetSongNoiseNoteLength:
+    moveq   #0,D2
     move.b  D0,D2
     roxr.b  #1,D0   ; ROR A
     move.b  D2,D0
@@ -1367,6 +1414,7 @@ GetSongNoteLength:
     andi    #$EE,CCR  ; CLC: clear C+X
     move.b  ($05F4,A4),D1
     addx.b  D1,D0   ; ADC NoteLengthTableBase
+    moveq   #0,D3
     move.b  D0,D3
     lea     (NoteLengthTable0).l,A0
     move.b  (A0,D3.W),D0
@@ -1375,6 +1423,7 @@ GetSongNoteLength:
     even
 GetSongNoteLengthWithAbsIndex:
     andi.b #$07,D0
+    moveq   #0,D3
     move.b  D0,D3
     lea     (NoteLengthTable0).l,A0
     move.b  (A0,D3.W),D0

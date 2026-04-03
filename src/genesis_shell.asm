@@ -241,6 +241,10 @@ EntryPoint:
     movea.l #NES_STACK_INIT,A5
     moveq   #-1,D7                  ; D7 = $FF (NES SP shadow)
 
+    ; Pre-write tile buffer sentinel so the first NMI's TransferCurTileBuf
+    ; doesn't parse zeroed RAM as phantom records.  DynTileBuf = NES $0302.
+    move.b  #$FF,($0302,A4)
+
     ;--------------------------------------------------------------------------
     ; Lower interrupt mask so VBlank (level 6) can fire.
     ; A4/A5/D7 are initialised above — IsrNmi is now safe to execute.
