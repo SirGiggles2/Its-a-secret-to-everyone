@@ -1919,11 +1919,11 @@ def _patch_z06(path):
                 '    bsr     TransferTileBuf\n'
                 '.skip_main_dispatch:\n'
                 '    moveq   #63,D0\n')
-    if old_tcb3 in text:
+    if False:  # P3 DISABLED — caused regression, needs rework
         text = text.replace(old_tcb3, new_tcb3, 1)
         print("  _patch_z06 P3: DynTileBuf palette pre-check added")
     else:
-        print("  WARNING: _patch_z06 P3 -- TransferCurTileBuf P2a pattern not found")
+        print("  _patch_z06 P3: SKIPPED (disabled for regression test)")
 
     with open(path, 'w', encoding='utf-8') as f:
         f.write(text)

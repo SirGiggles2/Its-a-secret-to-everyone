@@ -289,20 +289,6 @@ HaltForever:
 ; Once RunGame hits LoopForever and we lower SR (T5+), this fires every frame.
 ;==============================================================================
 VBlankISR:
-    ;--------------------------------------------------------------------------
-    ; Defensive VDP register restore — clears stale command state and prevents
-    ; register corruption from persisting across frames.
-    ; Read VDP status first: (1) clears any pending two-word command state,
-    ; (2) checks DMA busy flag to avoid interrupting in-flight DMA.
-    ;--------------------------------------------------------------------------
-    move.w  (VDP_CTRL).l,D0         ; read status: clears pending cmd state
-    btst    #1,D0                   ; bit 1 = DMA busy
-    bne.s   .skip_restore           ; don't touch VDP regs during DMA
-    move.w  #$8F02,(VDP_CTRL).l    ; Reg 15: auto-increment = 2
-    move.w  #$8230,(VDP_CTRL).l    ; Reg  2: Plane A @ $C000
-    move.w  #$9001,(VDP_CTRL).l    ; Reg 16: scroll size 64H x 32V
-.skip_restore:
-
     ; Only call IsrNmi if PPUCTRL bit 7 = 1 (NMI enable).
     ; On NES, VBlank NMI fires only when PPUCTRL.$80 is set.
     ; During IsrReset warmup PPUCTRL=0, so IsrNmi is suppressed
