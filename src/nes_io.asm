@@ -185,14 +185,6 @@ _ppu_write_0:
     ; to 0 (subsequent attribute processing will restore correct palettes).
     movem.l D0-D5/A0-A1,-(SP)
 
-    ; D5.w = pattern table offset ($0100 if bit 4 set, $0000 if clear)
-    moveq   #0,D5
-    move.b  (PPU_CTRL).l,D0
-    btst    #4,D0
-    beq.s   .ppuw0_no_offset
-    move.w  #$0100,D5
-.ppuw0_no_offset:
-
     lea     (NT_CACHE_BASE).l,A0
     move.w  #$C000,D2               ; Plane A VDP address
 
@@ -203,7 +195,7 @@ _ppu_write_0:
     ; Build tile word from NT_CACHE
     moveq   #0,D0
     move.b  (A0)+,D0                ; raw tile index from cache
-    or.w    D5,D0                   ; add pattern table offset
+    bsr     _compose_bg_tile_word
 
     ; Issue VDP write command for current Plane A address
     moveq   #0,D1
@@ -404,7 +396,7 @@ _ppu_write_7:
     ;   col      = index & 31                  (0 … 31)
     ;   row      = index >> 5                  (0 … 29)
     ;   vdp_addr = $C000 + row * $80 + col * 2
-    ;   tile word = 0x0000 | tile_index        (palette 0, no flip, no priority)
+    ;   tile word = bg_pattern_offset | tile_index
     ;
     ; Attribute bytes ($23C0–$23FF) and all higher addresses: no-op (skip write).
     ;======================================================================
@@ -442,11 +434,7 @@ _ppu_write_7:
     lea     (NT_CACHE_BASE).l,A0
     move.b  D0,(A0,D3.W)            ; NT_CACHE[offset] = raw tile index
 
-    ; Add BG pattern table offset: PPUCTRL bit 4 → +$100
-    btst    #4,(PPU_CTRL).l
-    beq.s   .nt_no_pt
-    ori.w   #$0100,D0
-.nt_no_pt:
+    bsr     _compose_bg_tile_word
     move.w  D0,(VDP_DATA).l         ; write tile word to Plane A
 
 .nt_noop:
@@ -734,6 +722,21 @@ _chr_convert_upload:
     rts
 
 ;==============================================================================
+; _compose_bg_tile_word — add the active BG pattern-table offset to a raw tile.
+;
+; Input:  D0.w = raw NES BG tile index (0..255)
+; Output: D0.w = Genesis tile index with PPUCTRL bit 4 applied
+; Uses no other registers.
+;==============================================================================
+_compose_bg_tile_word:
+    andi.w  #$00FF,D0               ; raw tile index only
+    btst    #4,(PPU_CTRL).l
+    beq.s   .cbgtw_done
+    ori.w   #$0100,D0               ; BG pattern table 1 → VRAM $1000
+.cbgtw_done:
+    rts
+
+;==============================================================================
 ; _attr_write_2x2 — write palette bits into a 2x2 tile block.
 ;
 ; Input: D2.w = col (top-left tile), D3.w = row (top-left tile)
@@ -775,11 +778,7 @@ _attr_write_one_tile:
     moveq   #0,D0
     move.b  (A0,D1.W),D0        ; D0.b = tile index
 
-    ; Add BG pattern table offset: PPUCTRL bit 4 → +$100
-    btst    #4,(PPU_CTRL).l
-    beq.s   .awot_no_pt
-    ori.w   #$0100,D0
-.awot_no_pt:
+    bsr     _compose_bg_tile_word
     ; Build tile word: (palette<<13) | tile_index
     or.w    D5,D0               ; D0.w = tile word with palette bits
 
@@ -1303,10 +1302,12 @@ _clear_nametable_fast:
     ;   command = $40000003  (VRAM write, address $C000)
     move.l  #$40000003,(VDP_CTRL).l
 
-    ; Build tile word: palette 0 | tile_index (no offset — ClearNameTable runs
-    ; before PPUCTRL is set; _ppu_write_0 will fix up when bit 4 changes)
-    andi.w  #$00FF,D2               ; D2.w = tile index
-    move.w  D2,D1                   ; D1.w = tile word to write
+    ; Build tile word from the current BG pattern-table selection so untouched
+    ; blank regions keep using the correct filler tile after title/demo clears.
+    moveq   #0,D0
+    move.b  D2,D0                   ; D0.w = raw tile index
+    bsr     _compose_bg_tile_word
+    move.w  D0,D1                   ; D1.w = tile word to write
 
     ; Write 960 tiles (32×30 NES nametable).  Plane A is 64 tiles wide,
     ; so after each 32-tile NES row we must skip 32 unused tiles.
@@ -1654,11 +1655,7 @@ _transfer_tilebuf_fast:
     ; Write tile word: tile index + BG pattern table offset
     moveq   #0,D0
     move.b  D2,D0
-    ; Add BG pattern table offset: PPUCTRL bit 4 → tiles at $1000 → +$100
-    btst    #4,(PPU_CTRL).l
-    beq.s   .ttf_nt_no_pt
-    ori.w   #$0100,D0
-.ttf_nt_no_pt:
+    bsr     _compose_bg_tile_word
     move.w  D0,(VDP_DATA).l
 
 .ttf_nt_skip:
