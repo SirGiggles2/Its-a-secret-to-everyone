@@ -221,16 +221,9 @@ _ppu_write_0:
 ;------------------------------------------------------------------------------
 _ppu_write_1:
     move.b  D0,(PPU_MASK).l
-    ; Translate PPUMASK bits 3,4 (BG enable, sprite enable) → VDP Reg 1 display bit.
-    ; D0 is not modified (btst is non-destructive; move.w #imm,addr doesn't use D0).
-    btst    #3,D0                   ; bit 3 = show background
-    bne.s   .ppumask_display_on
-    btst    #4,D0                   ; bit 4 = show sprites
-    bne.s   .ppumask_display_on
-    move.w  #$8134,(VDP_CTRL).l     ; Reg 1: display OFF (VBlank IRQ + DMA + M5)
-    rts
-.ppumask_display_on:
-    move.w  #$8174,(VDP_CTRL).l     ; Reg 1: display ON  (bit 6 set)
+    ; Shadow-only: do NOT toggle VDP Reg 1 display enable.
+    ; The Genesis shell owns master display (set ON at boot).
+    ; NES-style "blank during transfer" is unnecessary on Genesis VDP.
     rts
 
 ;------------------------------------------------------------------------------
