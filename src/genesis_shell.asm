@@ -204,6 +204,17 @@ EntryPoint:
     dbra    D0,.vramclear
 
     ;--------------------------------------------------------------------------
+    ; Plane B blank fill — write tile $0200 to entire Plane B nametable at
+    ; $E000.  Prevents tile-0 pattern data from leaking through transparent
+    ; Plane A pixels.  64×32 = 2048 entries (H32 mode, 64H×32V scroll size).
+    ;--------------------------------------------------------------------------
+    move.l  #$60000003,(VDP_CTRL).l  ; VRAM write to $E000
+    move.w  #2047,D0
+.planeb_fill:
+    move.w  #$0200,(VDP_DATA).l
+    dbra    D0,.planeb_fill
+
+    ;--------------------------------------------------------------------------
     ; Write test palette — pure green to CRAM[0] (background color slot).
     ; Reg 7 above set background = palette 0, color 0 → CRAM entry 0.
     ;

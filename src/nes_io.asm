@@ -816,74 +816,75 @@ _attr_write_one_tile:
     even
 nes_palette_to_genesis:
     ;       NES $00–$0F  (grays, blues, purples, reds, greens)
-    dc.w    $0333   ; $00  rgb(84,84,84)     dark gray (universal BG)
-    dc.w    $0700   ; $01  rgb(0,0,252)     dark blue
-    dc.w    $0500   ; $02  rgb(0,0,188)     dark blue
-    dc.w    $0512   ; $03  rgb(68,40,188)   blue-violet
-    dc.w    $0404   ; $04  rgb(148,0,132)   purple
-    dc.w    $0105   ; $05  rgb(168,0,32)    dark red-magenta
-    dc.w    $0005   ; $06  rgb(168,16,0)    dark red
-    dc.w    $0014   ; $07  rgb(136,20,0)    dark red-brown
-    dc.w    $0012   ; $08  rgb(80,48,0)     dark brown
-    dc.w    $0030   ; $09  rgb(0,120,0)     dark green
-    dc.w    $0030   ; $0A  rgb(0,104,0)     dark green
-    dc.w    $0020   ; $0B  rgb(0,88,0)      very dark green
-    dc.w    $0220   ; $0C  rgb(0,64,88)     dark teal
+    ;       Genesis CRAM = (B<<9)|(G<<5)|(R<<1)  — NOT raw $0BGR nibbles
+    dc.w    $0666   ; $00  rgb(84,84,84)     dark gray (universal BG)
+    dc.w    $0E00   ; $01  rgb(0,0,252)     dark blue
+    dc.w    $0A00   ; $02  rgb(0,0,188)     dark blue
+    dc.w    $0A24   ; $03  rgb(68,40,188)   blue-violet
+    dc.w    $0808   ; $04  rgb(148,0,132)   purple
+    dc.w    $020A   ; $05  rgb(168,0,32)    dark red-magenta
+    dc.w    $000A   ; $06  rgb(168,16,0)    dark red
+    dc.w    $0028   ; $07  rgb(136,20,0)    dark red-brown
+    dc.w    $0024   ; $08  rgb(80,48,0)     dark brown
+    dc.w    $0060   ; $09  rgb(0,120,0)     dark green
+    dc.w    $0060   ; $0A  rgb(0,104,0)     dark green
+    dc.w    $0040   ; $0B  rgb(0,88,0)      very dark green
+    dc.w    $0440   ; $0C  rgb(0,64,88)     dark teal
     dc.w    $0000   ; $0D  black (unused/invalid)
     dc.w    $0000   ; $0E  black (unused/invalid)
     dc.w    $0000   ; $0F  black (unused/invalid)
 
     ;       NES $10–$1F  (light grays, bright blues/reds, mid greens, teals)
-    dc.w    $0555   ; $10  rgb(152,152,152)  light gray
-    dc.w    $0730   ; $11  rgb(0,120,248)   bright blue
-    dc.w    $0720   ; $12  rgb(0,88,248)    bright blue
-    dc.w    $0723   ; $13  rgb(104,68,252)  blue-violet
-    dc.w    $0606   ; $14  rgb(216,0,204)   bright magenta
-    dc.w    $0206   ; $15  rgb(228,0,88)    bright red
-    dc.w    $0027   ; $16  rgb(248,56,0)    bright orange-red
-    dc.w    $0036   ; $17  rgb(228,92,16)   orange
-    dc.w    $0035   ; $18  rgb(172,124,0)   yellow-orange
-    dc.w    $0050   ; $19  rgb(0,184,0)     green
-    dc.w    $0050   ; $1A  rgb(0,168,0)     green
-    dc.w    $0250   ; $1B  rgb(0,168,68)    green-teal
-    dc.w    $0440   ; $1C  rgb(0,136,136)   teal
+    dc.w    $0AAA   ; $10  rgb(152,152,152)  light gray
+    dc.w    $0E60   ; $11  rgb(0,120,248)   bright blue
+    dc.w    $0E40   ; $12  rgb(0,88,248)    bright blue
+    dc.w    $0E46   ; $13  rgb(104,68,252)  blue-violet
+    dc.w    $0C0C   ; $14  rgb(216,0,204)   bright magenta
+    dc.w    $040C   ; $15  rgb(228,0,88)    bright red
+    dc.w    $004E   ; $16  rgb(248,56,0)    bright orange-red
+    dc.w    $006C   ; $17  rgb(228,92,16)   orange
+    dc.w    $006A   ; $18  rgb(172,124,0)   yellow-orange
+    dc.w    $00A0   ; $19  rgb(0,184,0)     green
+    dc.w    $00A0   ; $1A  rgb(0,168,0)     green
+    dc.w    $04A0   ; $1B  rgb(0,168,68)    green-teal
+    dc.w    $0880   ; $1C  rgb(0,136,136)   teal
     dc.w    $0000   ; $1D  black (unused/invalid)
     dc.w    $0000   ; $1E  black (unused/invalid)
     dc.w    $0000   ; $1F  black (unused/invalid)
 
     ;       NES $20–$2F  (near-white, light colors, pastels)
-    dc.w    $0777   ; $20  rgb(248,248,248) near-white
-    dc.w    $0752   ; $21  rgb(60,188,252)  light cyan-blue
-    dc.w    $0743   ; $22  rgb(104,136,252) light blue
-    dc.w    $0734   ; $23  rgb(152,120,248) light purple-blue
-    dc.w    $0737   ; $24  rgb(248,120,248) light magenta
-    dc.w    $0427   ; $25  rgb(248,88,152)  light pink-red
-    dc.w    $0237   ; $26  rgb(248,120,88)  light orange
-    dc.w    $0247   ; $27  rgb(252,160,68)  light yellow-orange
-    dc.w    $0057   ; $28  rgb(248,184,0)   yellow
-    dc.w    $0175   ; $29  rgb(184,248,24)  yellow-green
-    dc.w    $0262   ; $2A  rgb(88,216,84)   light green
-    dc.w    $0472   ; $2B  rgb(88,248,152)  light green-teal
-    dc.w    $0660   ; $2C  rgb(0,232,216)   light teal
-    dc.w    $0333   ; $2D  rgb(120,120,120) medium gray
+    dc.w    $0EEE   ; $20  rgb(248,248,248) near-white
+    dc.w    $0EA4   ; $21  rgb(60,188,252)  light cyan-blue
+    dc.w    $0E86   ; $22  rgb(104,136,252) light blue
+    dc.w    $0E68   ; $23  rgb(152,120,248) light purple-blue
+    dc.w    $0E6E   ; $24  rgb(248,120,248) light magenta
+    dc.w    $084E   ; $25  rgb(248,88,152)  light pink-red
+    dc.w    $046E   ; $26  rgb(248,120,88)  light orange
+    dc.w    $048E   ; $27  rgb(252,160,68)  light yellow-orange
+    dc.w    $00AE   ; $28  rgb(248,184,0)   yellow
+    dc.w    $02EA   ; $29  rgb(184,248,24)  yellow-green
+    dc.w    $04C4   ; $2A  rgb(88,216,84)   light green
+    dc.w    $08E4   ; $2B  rgb(88,248,152)  light green-teal
+    dc.w    $0CC0   ; $2C  rgb(0,232,216)   light teal
+    dc.w    $0666   ; $2D  rgb(120,120,120) medium gray
     dc.w    $0000   ; $2E  black (unused/invalid)
     dc.w    $0000   ; $2F  black (unused/invalid)
 
     ;       NES $30–$3F  (whites, very light pastels)
-    dc.w    $0777   ; $30  rgb(252,252,252) white
-    dc.w    $0765   ; $31  rgb(164,228,252) very light blue
-    dc.w    $0755   ; $32  rgb(184,184,248) very light purple-blue
-    dc.w    $0756   ; $33  rgb(216,184,248) very light purple
-    dc.w    $0757   ; $34  rgb(248,184,248) very light magenta
-    dc.w    $0557   ; $35  rgb(248,164,192) very light pink
-    dc.w    $0567   ; $36  rgb(252,204,112)  very light orange-yellow
-    dc.w    $0567   ; $37  rgb(252,224,168) very light yellow
-    dc.w    $0367   ; $38  rgb(248,216,120) light yellow
-    dc.w    $0376   ; $39  rgb(216,248,120) light yellow-green
-    dc.w    $0575   ; $3A  rgb(184,248,184) light green
-    dc.w    $0675   ; $3B  rgb(184,248,216) very light teal
-    dc.w    $0770   ; $3C  rgb(0,252,252)   bright cyan
-    dc.w    $0767   ; $3D  rgb(248,216,248) very light magenta
+    dc.w    $0EEE   ; $30  rgb(252,252,252) white
+    dc.w    $0ECA   ; $31  rgb(164,228,252) very light blue
+    dc.w    $0EAA   ; $32  rgb(184,184,248) very light purple-blue
+    dc.w    $0EAC   ; $33  rgb(216,184,248) very light purple
+    dc.w    $0EAE   ; $34  rgb(248,184,248) very light magenta
+    dc.w    $0AAE   ; $35  rgb(248,164,192) very light pink
+    dc.w    $0ACE   ; $36  rgb(252,204,112)  very light orange-yellow
+    dc.w    $0ACE   ; $37  rgb(252,224,168) very light yellow
+    dc.w    $06CE   ; $38  rgb(248,216,120) light yellow
+    dc.w    $06EC   ; $39  rgb(216,248,120) light yellow-green
+    dc.w    $0AEA   ; $3A  rgb(184,248,184) light green
+    dc.w    $0CEA   ; $3B  rgb(184,248,216) very light teal
+    dc.w    $0EE0   ; $3C  rgb(0,252,252)   bright cyan
+    dc.w    $0ECE   ; $3D  rgb(248,216,248) very light magenta
     dc.w    $0000   ; $3E  black (unused/invalid)
     dc.w    $0000   ; $3F  black (unused/invalid)
 
