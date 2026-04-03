@@ -1,0 +1,30 @@
+=================================================================
+Attribute Diagnostic Probe — frame 300
+=================================================================
+
+─── NT_CACHE ($FF0840) rows 0-10 ────────────────────────────
+  row00: 24 24 24 24 24 24 24 24 24 24 24 24 24 24 24 24 24 24 24 24 24 24 24 24 24 24 24 24 24 24 24 24
+  row01: 24 24 24 24 24 24 24 24 24 24 24 24 24 24 24 24 24 24 24 24 24 24 24 24 24 24 24 24 24 24 24 24
+  row02: E0 D5 24 24 24 24 24 24 24 24 24 24 24 24 24 24 24 24 24 24 24 24 24 24 24 24 24 24 24 24 D4 E0
+  row03: DC D7 24 24 24 24 24 24 24 24 24 24 24 24 24 24 24 24 24 24 24 24 24 24 24 24 24 24 24 24 D6 DD
+  row04: DC EE 24 24 24 24 24 24 24 24 24 24 24 24 24 24 24 24 24 24 24 24 24 24 24 24 24 24 24 24 D6 DB
+  row05: DE D7 24 24 24 E6 E4 E5 E4 E5 E4 E5 E4 E5 E4 E5 E4 E5 E4 E5 E4 E5 E4 E5 E4 E5 E6 24 24 24 D6 DB
+  row06: DC D7 24 24 24 E2 24 24 24 24 24 24 24 24 24 24 24 24 24 24 24 24 24 24 24 24 E3 24 24 24 D6 DF
+  row07: DE EE 24 24 24 E3 24 24 71 72 73 74 75 76 77 78 79 79 79 7A 7B 24 24 24 24 24 E2 24 24 24 D6 DB
+  row08: DE D8 EF 24 24 E2 24 7C 7D 7E 7F 80 81 82 83 84 85 86 87 88 89 8A 8B 24 24 24 E3 24 24 24 D6 DF
+  row09: DC DA D7 24 24 E3 24 8C 8D 8E 8F 90 91 92 93 94 95 96 97 98 99 9A 9B 9C 24 24 E2 24 24 D4 D9 DB
+  row10: DC D9 EE 24 24 E2 24 9D 9E 9F A0 A1 A2 A3 A4 A5 A6 A7 A8 A9 AA AB AC AD AE 24 E3 24 24 D6 DB DF
+
+─── Plane A vs NT_CACHE comparison (rows 0-5) ───────────────
+  row00: 0 mismatches
+  row01: 0 mismatches
+  row02: 0 mismatches
+  row03: 0 mismatches
+  row04: 0 mismatches
+  row05: 0 mismatches
+
+  CurTileBufIdx ($FF0300) = $3F
+  DynTileBuf sentinel ($FF0302) = $FF
+  DynTileBufLen ($FF0301) = $00
+
+  Palette distribution: pal0=960 pal1=0 pal2=0 pal3=0

@@ -1,7 +1,7 @@
 =================================================================
 Boot probe  T7/T8/T9/T10/T11  —  300 frames
 =================================================================
-  IsrReset=$01AF46  RunGame=$017FEC  LoopForever=$018012  IsrNmi=$018040
+  IsrReset=$01B720  RunGame=$0187C4  LoopForever=$0187EA  IsrNmi=$018818
   ExcBus=$00036C  ExcAddr=$00038E  ExcDef=$0003B0
 
   f001 pc=$000306  reset=- game=- forever=- nmi=- exc=false
@@ -9,11 +9,11 @@ Boot probe  T7/T8/T9/T10/T11  —  300 frames
   f003 pc=$0002FE  reset=- game=- forever=- nmi=- exc=false
   f004 pc=$000306  reset=- game=- forever=- nmi=- exc=false
   f005 pc=$0002FE  reset=- game=- forever=- nmi=- exc=false
-  f060 pc=$018012  reset=8 game=8 forever=21 nmi=22 exc=false
-  f120 pc=$018012  reset=8 game=8 forever=21 nmi=22 exc=false
-  f180 pc=$018012  reset=8 game=8 forever=21 nmi=22 exc=false
-  f240 pc=$018012  reset=8 game=8 forever=21 nmi=22 exc=false
-  f300 pc=$018012  reset=8 game=8 forever=21 nmi=22 exc=false
+  f060 pc=$0187EA  reset=8 game=8 forever=21 nmi=22 exc=false
+  f120 pc=$0187EA  reset=8 game=8 forever=21 nmi=22 exc=false
+  f180 pc=$0187EA  reset=8 game=8 forever=21 nmi=22 exc=false
+  f240 pc=$0187EA  reset=8 game=8 forever=21 nmi=22 exc=false
+  f300 pc=$0187EA  reset=8 game=8 forever=21 nmi=22 exc=false
 
 ─── T7: Reset Trace Sanity ─────────────────────────────────────
 [PASS] T7_ISRRESET_HIT                 frame 8
@@ -24,8 +24,8 @@ Boot probe  T7/T8/T9/T10/T11  —  300 frames
 [PASS] T7_NO_EXCEPTION                 no exception handler executed
 
 ─── T8: Frame / NMI Cadence ────────────────────────────────────
-  first_nmi=f22  eligible=278  with_nmi=272  multi_nmi=0  rate=97.8%
-[PASS] T8_NMI_CADENCE                  IsrNmi in 272/278 frames (97.8%)
+  first_nmi=f22  eligible=278  with_nmi=268  multi_nmi=0  rate=96.4%
+[PASS] T8_NMI_CADENCE                  IsrNmi in 268/278 frames (96.4%)
 [PASS] T8_NMI_NO_DOUBLE                no frame had >1 IsrNmi call
 
 ─── T9: No Hidden Exceptions (300-frame soak) ──────────────────

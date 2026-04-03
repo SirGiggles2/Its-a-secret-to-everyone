@@ -1,0 +1,119 @@
+  attr_loop#1 D5=$23C0 D2=$DF D3=32 D4=$00
+  attr_loop#2 D5=$23C1 D2=$05 D3=31 D4=$00
+  attr_loop#3 D5=$23C2 D2=$05 D3=30 D4=$00
+  attr_loop#4 D5=$23C3 D2=$05 D3=29 D4=$00
+  attr_loop#5 D5=$23C4 D2=$05 D3=28 D4=$00
+  attr_loop#6 D5=$23C5 D2=$05 D3=27 D4=$00
+  attr_loop#7 D5=$23C6 D2=$05 D3=26 D4=$00
+  attr_loop#8 D5=$23C7 D2=$05 D3=25 D4=$00
+  attr_loop#9 D5=$23C8 D2=$05 D3=24 D4=$00
+  attr_loop#10 D5=$23C9 D2=$08 D3=23 D4=$00
+=================================================================
+Attribute Exec Probe v2 — frame 300
+=================================================================
+
+Total records parsed: 70
+--- Record PPU addresses (first 40) ---
+  rec#1: PPU=$3F00 A0=$00FF0304
+  rec#2: PPU=$2000 A0=$0001822E
+  rec#3: PPU=$2020 A0=$00018251
+  rec#4: PPU=$2040 A0=$00018274
+  rec#5: PPU=$2060 A0=$00018297
+  rec#6: PPU=$2080 A0=$000182BA
+  rec#7: PPU=$20A0 A0=$000182DD
+  rec#8: PPU=$20C0 A0=$00018300
+  rec#9: PPU=$20E0 A0=$00018323
+  rec#10: PPU=$2100 A0=$00018346
+  rec#11: PPU=$2120 A0=$00018369
+  rec#12: PPU=$2140 A0=$0001838C
+  rec#13: PPU=$2160 A0=$000183AF
+  rec#14: PPU=$2180 A0=$000183D2
+  rec#15: PPU=$21A0 A0=$000183F5
+  rec#16: PPU=$21C0 A0=$00018418
+  rec#17: PPU=$21E0 A0=$0001843B
+  rec#18: PPU=$2200 A0=$0001845E
+  rec#19: PPU=$2220 A0=$00018481
+  rec#20: PPU=$2240 A0=$000184A4
+  rec#21: PPU=$2260 A0=$000184C7
+  rec#22: PPU=$2280 A0=$000184EA
+  rec#23: PPU=$22A0 A0=$0001850D
+  rec#24: PPU=$22C0 A0=$00018530
+  rec#25: PPU=$22E0 A0=$00018553
+  rec#26: PPU=$2300 A0=$00018576
+  rec#27: PPU=$2320 A0=$00018599
+  rec#28: PPU=$2340 A0=$000185BC
+  rec#29: PPU=$2360 A0=$000185DF
+  rec#30: PPU=$2380 A0=$00018602
+  rec#31: PPU=$23A0 A0=$00018625
+  rec#32: PPU=$23C0 A0=$00018648
+  rec#33: PPU=$23E0 A0=$0001866B
+  rec#34: PPU=$3F04 A0=$00FF0304
+  rec#35: PPU=$3F04 A0=$00FF0304
+  rec#36: PPU=$3F04 A0=$00FF0304
+  rec#37: PPU=$3F04 A0=$00FF0304
+  rec#38: PPU=$3F04 A0=$00FF0304
+  rec#39: PPU=$3F04 A0=$00FF0304
+  rec#40: PPU=$3F04 A0=$00FF0304
+
+Attr dispatch hits ($0B22): 20
+--- D5 at attr dispatch (first 20) ---
+  D5=$3F00
+  D5=$23C0
+  D5=$23E0
+  D5=$3F04
+  D5=$3F04
+  D5=$3F04
+  D5=$3F04
+  D5=$3F04
+  D5=$3F04
+  D5=$3F04
+  D5=$3F04
+  D5=$3F04
+  D5=$3F04
+  D5=$3F04
+  D5=$3F04
+  D5=$3F04
+  D5=$3F04
+  D5=$3F04
+  D5=$3F04
+  D5=$3F04
+
+attr_loop_hits ($0C00): 64
+write_2x2_hits ($06D0): 256
+write_one_hits ($06E2): 1024
+
+--- _attr_write_one_tile samples ---
+  col=0 row=0 pal=$2000
+  col=1 row=0 pal=$2000
+  col=1 row=1 pal=$2000
+  col=0 row=1 pal=$2000
+  col=2 row=0 pal=$2000
+  col=3 row=0 pal=$2000
+  col=3 row=1 pal=$2000
+  col=2 row=1 pal=$2000
+  col=0 row=2 pal=$0000
+  col=1 row=2 pal=$0000
+  col=1 row=3 pal=$0000
+  col=0 row=3 pal=$0000
+  col=2 row=2 pal=$0000
+  col=3 row=2 pal=$0000
+  col=3 row=3 pal=$0000
+  col=2 row=3 pal=$0000
+  col=4 row=0 pal=$2000
+  col=5 row=0 pal=$2000
+  col=5 row=1 pal=$2000
+  col=4 row=1 pal=$2000
+
+--- BMI terminator events ---
+  D0=$FF A0=$00FF0303
+  D0=$FF A0=$00FF0303
+  D0=$FF A0=$00FF0303
+  D0=$FF A0=$00FF0303
+  D0=$FF A0=$00FF0303
+  D0=$FF A0=$00FF0326
+  D0=$FF A0=$0001868D
+  D0=$FF A0=$00FF030A
+  D0=$FF A0=$00FF0303
+  D0=$FF A0=$00FF0303
+
+Plane A palette: pal0=460 pal1=228 pal2=148 pal3=60

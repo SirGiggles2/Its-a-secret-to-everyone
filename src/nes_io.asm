@@ -1368,8 +1368,8 @@ _transfer_tilebuf_fast:
     clr.b   (PPU_LATCH).l
 
     ; A0 = buffer pointer (set by caller via TransferBufPtrs)
-    ; A3 = safety limit: bail after 128 records to prevent runaway parsing
-    lea     (128*3,A0),A3           ; worst-case: 128 records × 3 header bytes
+    ; A3 = safety limit: bail if buffer exceeds 2048 bytes (prevents runaway parsing)
+    lea     (2048,A0),A3            ; largest buffer is ~1121 bytes
 
 .ttf_next_record:
     cmpa.l  A3,A0                   ; safety limit: bail if past 128 records
@@ -1569,16 +1569,17 @@ _transfer_tilebuf_fast:
 
     ; Bounds check
     cmpi.w  #$23C0,D5
-    blo.s   .ttf_attr_skip
+    blo     .ttf_attr_skip
     cmpi.w  #$2400,D5
-    bhs.s   .ttf_attr_skip
+    bhs     .ttf_attr_skip
 
     ; Compute attr offset and tile base col/row
     move.w  D5,D0
     subi.w  #$23C0,D0               ; D0.w = attr offset (0..63)
 
     ; tile_base_col = (offset & 7) * 4, tile_base_row = (offset >> 3) * 4
-    ; Save current D2/D3 (clobbered by attr helper which uses them as col/row)
+    ; Save current regs (D1-D4 clobbered by attr helper, A0 clobbered by NT_CACHE read)
+    move.l  A0,-(SP)                ; save buffer pointer (attr helper clobbers A0)
     movem.l D1-D4,-(SP)
 
     move.w  D0,D3
@@ -1633,6 +1634,7 @@ _transfer_tilebuf_fast:
     subq.w  #2,D3
 
     movem.l (SP)+,D1-D4
+    movea.l (SP)+,A0                ; restore buffer pointer
     ; Restore D5 = PPU_VADDR from PPU state (was clobbered by palette bits)
     move.w  (PPU_VADDR).l,D5
 
