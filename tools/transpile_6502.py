@@ -1878,6 +1878,53 @@ def _patch_z06(path):
     else:
         print("  WARNING: _patch_z06 P2b -- TransferBufAddrs marker not found")
 
+    # ---- Patch 3: DynTileBuf palette pre-check in TransferCurTileBuf ----
+    # Bug C fix: On NES, palette records in DynTileBuf are consumed before
+    # TileBufSelector changes. On Genesis, timing difference can cause the
+    # selector to be overwritten before NMI processes the palette. Fix: always
+    # drain DynTileBuf palette records ($3F prefix) before normal dispatch.
+    old_tcb3 = ('TransferCurTileBuf:\n'
+                '    ; PATCHED: use 32-bit pointer table to resolve ROM-resident buffers.\n'
+                '    ; $0014 is a 2-byte index (0, 2, 4, …).  Convert to 4-byte index and\n'
+                '    ; load the full 68K address from TransferBufPtrs.\n'
+                '    moveq   #0,D2\n'
+                '    move.b  ($0014,A4),D2\n'
+                '    add.w   D2,D2                       ; 2-byte index -> 4-byte index\n'
+                '    lea     (TransferBufPtrs).l,A0\n'
+                '    movea.l (A0,D2.W),A0               ; A0 = 32-bit buffer pointer\n'
+                '    bsr     TransferTileBuf\n'
+                '    moveq   #63,D0\n')
+    new_tcb3 = ('TransferCurTileBuf:\n'
+                '    ; PATCHED: DynTileBuf palette pre-check (Bug C fix).\n'
+                '    ; On NES, palette records in DynTileBuf are consumed before TileBufSelector\n'
+                '    ; changes.  On Genesis, a timing difference can cause the selector to be\n'
+                '    ; overwritten before NMI fires, so the palette is never processed.\n'
+                '    ; Fix: always drain DynTileBuf palette records ($3F prefix) first.\n'
+                '    lea     (NES_RAM+DynTileBuf).l,A0\n'
+                '    cmpi.b  #$3F,(A0)                  ; $3F = palette PPU addr high byte?\n'
+                '    bne.s   .no_pending_palette\n'
+                '    movem.l D0-D2/A0,-(SP)             ; save regs around BSR\n'
+                '    bsr     _transfer_tilebuf_fast      ; process palette from DynTileBuf\n'
+                '    movem.l (SP)+,D0-D2/A0             ; restore regs\n'
+                '    move.b  #$FF,(NES_RAM+DynTileBuf).l ; reset sentinel\n'
+                '    tst.b   ($0014,A4)                  ; TileBufSelector = 0?\n'
+                '    beq.s   .skip_main_dispatch         ; already processed DynTileBuf\n'
+                '.no_pending_palette:\n'
+                '    ; 32-bit pointer table lookup for main dispatch.\n'
+                '    moveq   #0,D2\n'
+                '    move.b  ($0014,A4),D2\n'
+                '    add.w   D2,D2                       ; 2-byte index -> 4-byte index\n'
+                '    lea     (TransferBufPtrs).l,A0\n'
+                '    movea.l (A0,D2.W),A0               ; A0 = 32-bit buffer pointer\n'
+                '    bsr     TransferTileBuf\n'
+                '.skip_main_dispatch:\n'
+                '    moveq   #63,D0\n')
+    if old_tcb3 in text:
+        text = text.replace(old_tcb3, new_tcb3, 1)
+        print("  _patch_z06 P3: DynTileBuf palette pre-check added")
+    else:
+        print("  WARNING: _patch_z06 P3 -- TransferCurTileBuf P2a pattern not found")
+
     with open(path, 'w', encoding='utf-8') as f:
         f.write(text)
 

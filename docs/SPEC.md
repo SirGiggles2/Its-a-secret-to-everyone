@@ -330,7 +330,7 @@ After room $77 (opening overworld screen) renders:
 | T25 | Sprite palette | Sprite colors correct (separate 4-palette blocks) | ✓ PASS (7/8 — CRAM 16/64 non-zero, 4 palettes active, palette-2 correctly assigned; SAT_PAL_FIELD test mis-calibrated: NES title sprites use attr=2→Genesis pal2, correct) |
 | T26 | Title sprites | Title screen sprites visible (sword, Link) | ✓ PASS (5/5 — 32 sprites visible Y=129–352, 8 distinct Y-bands, tiles 160–214, no exception; DriveSong stubbed pending NES ROM→Genesis pointer table rewrite) |
 | T27 | Controller 1 | D-pad / A / B / Start / Select → NES button bits | ✓ PASS (5/5 — NMI continuous 211/300 frames, CheckInput 211×, no-press $F8=0, CTL1_IDX=8; two-phase TH Genesis protocol → NES active-high latch at $FF1100) |
-| T28 | Title input | Can navigate title screen, press Start | Pending |
+| T28 | Title input | Can navigate title screen, press Start | In progress (palette fix applied Zelda27.12, awaiting BizHawk verify) |
 | T29 | File select | File select screen renders; can start Quest 1 | Pending |
 
 ### Gameplay (T30–T36)
@@ -428,28 +428,44 @@ NMI frame 95:
 
 The `TitlePaletteRecord` is correctly queued into DynTileBuf by subphase 1, but subphase 2 overwrites TileBufSel=16 in the same frame, so the palette transfer is never consumed.
 
-### Fix Required (T28 blocker)
+### Fix Applied (Zelda27.12 — 2026-04-03)
 
-`InitDemoSubphasePlayTitleSong` calls `EndInitDemo` with `moveq #16,D0`, setting TileBufSel=16. This clobbers the TileBufSel=0 needed for the palette transfer to fire on the next NMI. The fix is to ensure TileBufSel=0 is not overwritten before the palette transfer completes, or to separate the palette-fill NMI from the PlayTitleSong NMI.
+**Bug C fix (palette contention):** Added transpiler patch P3 (`_patch_z06 P3`) that inserts a DynTileBuf palette pre-check at the top of `TransferCurTileBuf`. Before the normal `TileBufSelector` dispatch, the code checks if `DynTileBuf[0] == $3F` (palette PPU address high byte). If so, it processes the palette record immediately via `_transfer_tilebuf_fast`, resets the sentinel to `$FF`, and skips the main dispatch if `TileBufSelector == 0`. This ensures the `TitlePaletteTransferRecord` is always consumed regardless of `TileBufSelector` state.
 
-**Investigation needed:** Confirm whether this is also a bug in the original NES game (unlikely) or whether the NES handles DynTileBuf differently (single NMI cycle, no TileBufSel contention). The NES has no TileBufSel concept — the Genesis shim added it. The fix likely involves processing the palette DynTileBuf at a different point in the NMI, or routing palette writes through a dedicated path that does not depend on TileBufSel.
+**Bug B mitigation (VDP register corruption):** Added defensive VDP register restore at VBlank entry in `genesis_shell.asm`. Reads VDP status first (clears pending command state), checks DMA-busy before writing R02=$30, R15=$02, R16=$01. Code analysis found no VDP register corruption source in `nes_io.asm` — all VDP_CTRL writes use correct command construction patterns. Bug B root cause is likely VDP command port latch state or BizHawk-specific behavior; the defensive restore prevents it from persisting.
 
-### Probes Added (diagnosis artifacts — not part of official probe registry)
+**Console hardening verified:**
+- All CRAM writes occur inside VBlank (via IsrNmi)
+- No byte-width writes to VDP_DATA or VDP_CTRL
+- VDP auto-increment always restored to $02
+- Safety catch at end of `_transfer_tilebuf_fast` resets VDP to VRAM write mode ($7FFC)
+
+### Expected CRAM After Fix
+
+| Palette | C0 | C1 | C2 | C3 |
+|---------|-------|-------|-------|-------|
+| BG0 | $0ACE | $0000 | $0666 | $0AAA |
+| BG1 | $0ACE | $006C | $048E | $0000 |
+| BG2 | $0ACE | $0024 | $00A0 | $00AE |
+| BG3 | $0ACE | $0EEE | $0CEA | $0E86 |
+
+(NES colors: $36→$0ACE, $0F→$0000, $00→$0666, $10→$0AAA, $17→$006C, $27→$048E, etc.)
+
+### Probes
 
 | File | Purpose |
 |------|---------|
 | `tools/bizhawk_cram_trace_probe.lua` | Traces every CRAM change across 250 frames |
-| `tools/bizhawk_palette_d0_debug_probe.lua` | Reads D0 debug buffer at $FF0900 after frame 95 |
-| `builds/reports/bizhawk_cram_trace_probe.txt` | Result: all 16 BG entries → $0002 at frame 95 |
-| `builds/reports/bizhawk_palette_d0_debug_probe.txt` | Result: D0=$00 confirmed for palette 0 slots 0–3 |
+| `tools/bizhawk_vdp_reg_trace_probe.lua` | Tracks R02/R15/R16 for unexpected values, 400 frames |
+| `tools/bizhawk_subphase_timing_probe.lua` | Verifies one subphase per NMI, palette timing |
 
-### Next Steps
+### Verification Pending
 
-1. Trace the NES original's DynTileBuf/TileBufSel equivalent to confirm expected behavior.
-2. Fix the palette transfer so TitlePaletteRecord is consumed on the correct NMI frame before TileBufSel is overwritten.
-3. After palette fix: verify all 16 CRAM entries match Zelda title screen NES colors (use `compare_vram_reference.py`).
-4. Visual confirmation in BizHawk — title screen should show correct colors.
-5. Then proceed to T28 (title input).
+User to run BizHawk with Zelda27.12+ ROM and `bizhawk_vdp_reg_trace_probe.lua` to confirm:
+1. CRAM[0] = $0ACE (not $0466) after frame 35
+2. All 4 BG palettes match expected table above
+3. VDP R02/R15/R16 remain stable (or are corrected by defensive restore)
+4. Visual title screen matches NES reference
 
 ---
 
@@ -481,6 +497,9 @@ All probes in `tools/`, run via `tools/run_all_probes.bat`.
 | `bizhawk_t26_title_sprites_probe.lua` | T26 | `builds/reports/bizhawk_t26_title_sprites_probe.txt` |
 | `bizhawk_t27_controller_probe.lua` | T27 | `builds/reports/bizhawk_t27_controller_probe.txt` |
 | `bizhawk_t28_title_input_probe.lua` | T28 | `builds/reports/bizhawk_t28_title_input_probe.txt` |
+| `bizhawk_vdp_reg_trace_probe.lua` | Bug B diag | `builds/reports/bizhawk_vdp_reg_trace_probe.txt` |
+| `bizhawk_subphase_timing_probe.lua` | Bug C diag | `builds/reports/bizhawk_subphase_timing_probe.txt` |
+| `bizhawk_t29_file_select_probe.lua` | T29 | `builds/reports/bizhawk_t29_file_select_probe.txt` |
 
 ### Probe Output Convention
 
