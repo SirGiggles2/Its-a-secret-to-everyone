@@ -1091,6 +1091,7 @@ UpdateSpritesForWaterfallCrest:
     ; the two frames of animation.
     LDA FrameCounter
     AND #$08
+    CLC
     ADC WaterfallCrestTiles, X
     STA Sprites+1, Y
     LDA #$A8                    ; The Y coordinate is fixed in place.

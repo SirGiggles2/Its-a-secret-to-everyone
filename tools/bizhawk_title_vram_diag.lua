@@ -1,116 +1,151 @@
 -- bizhawk_title_vram_diag.lua
--- Comprehensive title screen VRAM diagnostic.
--- Captures at frame 100 (after all init subphases complete):
---   1. VRAM tile data for known tiles (text vs artwork)
---   2. Plane A nametable entries for key rows
---   3. CRAM palette data
---   4. Expected vs actual tile data comparison
+-- Fixed-frame title screen diagnostic.
+-- Captures at frame 200 and reports:
+--   1. CRAM palette state
+--   2. Plane A rows for the logo box and lower title scene
+--   3. SAT decode for the first 32 sprites
+--   4. High-risk VRAM tile comparisons against the embedded pattern blocks
+--   5. A screenshot for direct visual comparison
 
-local ROOT   = "C:/Users/Jake Diggity/Documents/GitHub/FINAL TRY/"
-local REPORT = ROOT .. "builds/reports/bizhawk_title_vram_diag.txt"
+local ROOT       = "C:/Users/Jake Diggity/Documents/GitHub/FINAL TRY/"
+local REPORT     = ROOT .. "builds/reports/bizhawk_title_vram_diag.txt"
+local SCREENSHOT = ROOT .. "builds/reports/screenshot_frame200.png"
+local LISTING    = ROOT .. "builds/whatif.lst"
+local CAPTURE_FRAME = 200
 
 local lines = {}
-local function log(s) lines[#lines+1] = s print(s) end
-
-local function vram_read_byte(addr)
-    local ok, v = pcall(function()
-        memory.usememorydomain("VRAM")
-        return memory.read_u8(addr)
-    end)
-    return ok and v or 0
+local function log(s)
+    lines[#lines + 1] = s
+    print(s)
 end
 
-local function vram_read_word(addr)
-    local ok, v = pcall(function()
-        memory.usememorydomain("VRAM")
-        return memory.read_u16_be(addr)
+local function try_read(domain, addr, width)
+    local ok, value = pcall(function()
+        memory.usememorydomain(domain)
+        if width == 2 then
+            return memory.read_u16_be(addr)
+        end
+        return memory.read_u8(addr)
     end)
-    return ok and v or 0
+    return ok and value or nil
+end
+
+local function vram_u8(addr)
+    return try_read("VRAM", addr, 1) or 0
+end
+
+local function vram_u16(addr)
+    return try_read("VRAM", addr, 2) or 0
 end
 
 local function cram_u16(addr)
-    local ok, v = pcall(function()
-        memory.usememorydomain("CRAM")
-        return memory.read_u16_be(addr)
-    end)
-    return ok and v or 0
+    return try_read("CRAM", addr, 2) or 0
 end
 
-local function bus_read(addr)
-    local ok, v = pcall(function()
-        memory.usememorydomain("M68K BUS")
-        return memory.read_u8(addr)
-    end)
-    return ok and v or 0
+local function vsram_u16(addr)
+    return try_read("VSRAM", addr, 2) or 0
 end
 
--- Dump 32 bytes of VRAM (one Genesis tile)
+local function bus_u8(addr)
+    return try_read("M68K BUS", addr, 1) or 0
+end
+
+local function read_listing_addrs(path)
+    local addrs = {}
+    local f = io.open(path, "r")
+    if not f then
+        return addrs
+    end
+
+    for line in f:lines() do
+        local hex1, name1 = line:match("^(%x%x%x%x%x%x%x%x) (%w+)$")
+        if hex1 and name1 then
+            addrs[name1] = tonumber(hex1, 16)
+        end
+        local name2, hex2 = line:match("^(%w+)%s+A:(%x+)$")
+        if name2 and hex2 then
+            addrs[name2] = tonumber(hex2, 16)
+        end
+    end
+
+    f:close()
+    return addrs
+end
+
+local SYM = read_listing_addrs(LISTING)
+
+local function require_sym(name)
+    local value = SYM[name]
+    if not value then
+        error("title_vram_diag: symbol '" .. name .. "' missing from builds/whatif.lst")
+    end
+    return value
+end
+
+local DEMO_SPRITE_PATTERNS     = require_sym("DemoSpritePatterns")
+local DEMO_BACKGROUND_PATTERNS = require_sym("DemoBackgroundPatterns")
+local COMMON_BACKGROUND_PATTERNS = require_sym("CommonBackgroundPatterns")
+local INITIAL_TITLE_SPRITES    = require_sym("InitialTitleSprites")
+
 local function dump_vram_tile(tile_idx)
     local base = tile_idx * 32
-    local s = ""
+    local parts = {}
     for i = 0, 31 do
-        if i > 0 and i % 4 == 0 then s = s .. " | " end
-        s = s .. string.format("%02X", vram_read_byte(base + i))
+        parts[#parts + 1] = string.format("%02X", vram_u8(base + i))
     end
-    return s
+    return table.concat(parts, "")
+end
+
+local function dump_vram_tile_grouped(tile_idx)
+    local base = tile_idx * 32
+    local parts = {}
+    for i = 0, 31 do
+        if i > 0 and i % 4 == 0 then
+            parts[#parts + 1] = "|"
+        end
+        parts[#parts + 1] = string.format("%02X", vram_u8(base + i))
+    end
+    return table.concat(parts, " ")
 end
 
 local function tile_is_blank(tile_idx)
     local base = tile_idx * 32
     for i = 0, 31 do
-        if vram_read_byte(base + i) ~= 0 then
+        if vram_u8(base + i) ~= 0 then
             return false
         end
     end
     return true
 end
 
--- Dump Plane A entry (16-bit word) at row, col
--- Plane A at $C000, 64 tiles wide (128 bytes per row)
 local function plane_a_word(row, col)
-    local addr = 0xC000 + row * 128 + col * 2
-    return vram_read_word(addr)
+    return vram_u16(0xC000 + row * 128 + col * 2)
 end
 
--- Decode Plane A word
-local function decode_plane_a(w)
-    local pri = (w >> 15) & 1
-    local pal = (w >> 13) & 3
-    local vf  = (w >> 12) & 1
-    local hf  = (w >> 11) & 1
-    local tile = w & 0x7FF
+local function decode_plane_a(word)
+    local pri = (word >> 15) & 1
+    local pal = (word >> 13) & 3
+    local vf  = (word >> 12) & 1
+    local hf  = (word >> 11) & 1
+    local tile = word & 0x7FF
     return string.format("t$%03X p%d pri%d vf%d hf%d", tile, pal, pri, vf, hf)
 end
 
-local function log_decoded_row_entries(label, row, start_col, end_col)
-    log(label)
-    for col = start_col, end_col do
-        local w = plane_a_word(row, col)
-        log(string.format("    col%02d: $%04X = %s", col, w, decode_plane_a(w)))
-    end
-    log("")
-end
-
--- Expected 4BPP conversion of NES 2BPP tile
--- NES tile: 8 bytes plane0, 8 bytes plane1
 local expand_lut = {
-    [0]= 0x0000, 0x0001, 0x0010, 0x0011, 0x0100, 0x0101, 0x0110, 0x0111,
-          0x1000, 0x1001, 0x1010, 0x1011, 0x1100, 0x1101, 0x1110, 0x1111
+    [0] = 0x0000, 0x0001, 0x0010, 0x0011, 0x0100, 0x0101, 0x0110, 0x0111,
+            0x1000, 0x1001, 0x1010, 0x1011, 0x1100, 0x1101, 0x1110, 0x1111
 }
 
 local function nes_2bpp_to_4bpp(tile_bytes)
-    -- tile_bytes: array of 16 bytes (plane0[0..7], plane1[0..7])
     local result = {}
     for row = 0, 7 do
         local p0 = tile_bytes[row + 1]
         local p1 = tile_bytes[row + 9]
 
-        -- Upper nibble (pixels 0-3)
         local p0_hi = math.floor(p0 / 16) % 16
         local p1_hi = math.floor(p1 / 16) % 16
         local w_hi = expand_lut[p0_hi] + expand_lut[p1_hi] * 2
 
-        -- Lower nibble (pixels 4-7)
         local p0_lo = p0 % 16
         local p1_lo = p1 % 16
         local w_lo = expand_lut[p0_lo] + expand_lut[p1_lo] * 2
@@ -123,161 +158,248 @@ local function nes_2bpp_to_4bpp(tile_bytes)
     return result
 end
 
-local CAPTURE_FRAME = 100
+local function expected_tile_bytes(source_base, tile_offset)
+    local nes_tile = {}
+    for i = 0, 15 do
+        nes_tile[#nes_tile + 1] = bus_u8(source_base + tile_offset * 16 + i)
+    end
+    return nes_2bpp_to_4bpp(nes_tile), nes_tile
+end
+
+local function actual_tile_bytes(tile_idx)
+    local out = {}
+    local base = tile_idx * 32
+    for i = 0, 31 do
+        out[#out + 1] = vram_u8(base + i)
+    end
+    return out
+end
+
+local function bytes_to_string(bytes)
+    local parts = {}
+    for i = 1, #bytes do
+        if i > 1 and (i - 1) % 4 == 0 then
+            parts[#parts + 1] = "|"
+        end
+        parts[#parts + 1] = string.format("%02X", bytes[i])
+    end
+    return table.concat(parts, " ")
+end
+
+local function compare_tile(tile_idx, source_label, source_base, source_tile, note)
+    local expected, raw_nes = expected_tile_bytes(source_base, source_tile)
+    local actual = actual_tile_bytes(tile_idx)
+    local match = true
+    for i = 1, 32 do
+        if actual[i] ~= expected[i] then
+            match = false
+            break
+        end
+    end
+
+    log(string.format("--- Tile $%03X  <=  %s[$%02X]  %s ---",
+        tile_idx, source_label, source_tile, note or ""))
+    log("  Actual  : " .. bytes_to_string(actual))
+    log("  Expected: " .. bytes_to_string(expected))
+    log("  NES 2BPP: " .. bytes_to_string(raw_nes))
+    log("  Match   : " .. (match and "YES" or "NO *** MISMATCH ***"))
+    log("")
+    return match
+end
+
+local function log_plane_rows(title, row_start, row_end)
+    log(title)
+    for row = row_start, row_end do
+        local parts = {}
+        for col = 0, 31 do
+            local word = plane_a_word(row, col)
+            local tile = word & 0x7FF
+            local pal = (word >> 13) & 3
+            parts[#parts + 1] = string.format("%d:%03X", pal, tile)
+        end
+        log(string.format("  r%02d: %s", row, table.concat(parts, " ")))
+    end
+    log("")
+end
+
+local function sat_entry(idx)
+    local base = 0xD800 + idx * 8
+    local word0 = vram_u16(base + 0)
+    local word1 = vram_u16(base + 2)
+    local word2 = vram_u16(base + 4)
+    local word3 = vram_u16(base + 6)
+    return {
+        y = word0 & 0x1FF,
+        link = word1 & 0x7F,
+        szv = (word1 >> 8) & 0x3,
+        szh = (word1 >> 10) & 0x3,
+        pri = (word2 >> 15) & 0x1,
+        pal = (word2 >> 13) & 0x3,
+        vf = (word2 >> 12) & 0x1,
+        hf = (word2 >> 11) & 0x1,
+        tile = word2 & 0x7FF,
+        x = word3 & 0x1FF,
+    }
+end
+
+local function expected_sat_from_oam(sprite_index, ppu_ctrl, game_mode)
+    local base = INITIAL_TITLE_SPRITES + sprite_index * 4
+    local nes_y = bus_u8(base + 0)
+    local nes_tile = bus_u8(base + 1)
+    local attr = bus_u8(base + 2)
+    local nes_x = bus_u8(base + 3)
+
+    local tile = nes_tile
+    if ((ppu_ctrl >> 5) & 1) ~= 0 then
+        tile = ((nes_tile & 1) << 8) | (nes_tile & 0xFE)
+    elseif ((ppu_ctrl >> 3) & 1) ~= 0 then
+        tile = 0x100 | nes_tile
+    end
+
+    local title_y_bias = 0
+    if game_mode == 0x00 then
+        title_y_bias = -8
+    end
+
+    return {
+        y = nes_y + 129 + title_y_bias,
+        x = nes_x + 128,
+        tile = tile,
+        pal = attr & 0x03,
+        vf = (attr >> 7) & 1,
+        hf = (attr >> 6) & 1,
+        pri = 1,
+        link = (sprite_index == 63) and 0 or (sprite_index + 1),
+    }
+end
+
+local function log_sat_range(header, start_idx, end_idx, ppu_ctrl, game_mode)
+    log(header)
+    log("  #   Y    X    Tile Pal Pri VF HF Link  Notes")
+    for idx = start_idx, end_idx do
+        local actual = sat_entry(idx)
+        local note = ""
+        if idx < 28 then
+            local expected = expected_sat_from_oam(idx, ppu_ctrl, game_mode)
+            local ok = actual.y == expected.y
+                and actual.x == expected.x
+                and actual.tile == expected.tile
+                and actual.pal == expected.pal
+                and actual.pri == expected.pri
+                and actual.vf == expected.vf
+                and actual.hf == expected.hf
+                and actual.link == expected.link
+            note = ok and "template match" or string.format(
+                "expected Y=%d X=%d T=%03X P=%d VF=%d HF=%d L=%d",
+                expected.y, expected.x, expected.tile, expected.pal,
+                expected.vf, expected.hf, expected.link
+            )
+        elseif idx <= 39 then
+            note = "waterfall body / animated title sprites"
+        elseif idx >= 60 and idx <= 63 then
+            note = "waterfall crest / animated title sprites"
+        else
+            note = "animated title sprites"
+        end
+
+        log(string.format("  %02d  %03d  %03d  %03X   %d   %d   %d  %d   %02d   %s",
+            idx, actual.y, actual.x, actual.tile, actual.pal,
+            actual.pri, actual.vf, actual.hf, actual.link, note))
+    end
+    log("")
+end
 
 local function main()
     for _ = 1, CAPTURE_FRAME do
         emu.frameadvance()
     end
 
+    local ppu_ctrl = bus_u8(0xFF00FF)
+    local ppu_mask = bus_u8(0xFF0100)
+    local game_mode = bus_u8(0xFF0012)
+    local init_flag = bus_u8(0xFF0011)
+    local phase = bus_u8(0xFF042C)
+    local subphase = bus_u8(0xFF042D)
+
     log("=================================================================")
-    log("Title Screen VRAM Diagnostic — Frame " .. CAPTURE_FRAME)
+    log("Title Screen VRAM Diagnostic - Frame " .. CAPTURE_FRAME)
     log("=================================================================")
     log("")
-
-    -- 1. PPU state
-    local ppu_ctrl = bus_read(0xFF0804 + 4)   -- PPU_CTRL
-    local ppu_mask = bus_read(0xFF0804 + 5)   -- PPU_MASK
-    local ppu_vaddr_hi = bus_read(0xFF0804 + 0)
-    local ppu_vaddr_lo = bus_read(0xFF0804 + 1)
-    local tilebuf_sel = bus_read(0xFF0014)
-    local game_mode = bus_read(0xFF0012)
-    local init_flag = bus_read(0xFF0011)
-    local subphase = bus_read(0xFF042D)
-    local phase = bus_read(0xFF042C)
-
-    log(string.format("PPU_CTRL=$%02X  PPU_MASK=$%02X  PPU_VADDR=$%02X%02X",
-        ppu_ctrl, ppu_mask, ppu_vaddr_hi, ppu_vaddr_lo))
-    log(string.format("TileBufSel=$%02X  GameMode=$%02X  InitFlag=$%02X  Phase=$%02X  Subphase=$%02X",
-        tilebuf_sel, game_mode, init_flag, phase, subphase))
+    log(string.format("PPU_CTRL=$%02X  PPU_MASK=$%02X  GameMode=$%02X  InitFlag=$%02X  Phase=$%02X  Subphase=$%02X",
+        ppu_ctrl, ppu_mask, game_mode, init_flag, phase, subphase))
+    log(string.format("Symbols: DemoSP=$%06X DemoBG=$%06X CommonBG=$%06X TitleSprites=$%06X",
+        DEMO_SPRITE_PATTERNS, DEMO_BACKGROUND_PATTERNS,
+        COMMON_BACKGROUND_PATTERNS, INITIAL_TITLE_SPRITES))
+    log("")
+    log(string.format("VSRAM A=$%04X  VSRAM B=$%04X", vsram_u16(0), vsram_u16(2)))
+    log(string.format("Waterfall state: %02X %02X %02X %02X %02X %02X %02X",
+        bus_u8(0xFF041F), bus_u8(0xFF0420), bus_u8(0xFF0421), bus_u8(0xFF0422),
+        bus_u8(0xFF0423), bus_u8(0xFF0424), bus_u8(0xFF0425)))
     log("")
 
-    -- 2. CRAM dump (all 4 palettes)
     log("--- CRAM (all 4 palettes) ---")
     for pal = 0, 3 do
-        local s = string.format("  pal%d:", pal)
-        for c = 0, 15 do
-            s = s .. string.format(" %04X", cram_u16((pal * 16 + c) * 2))
+        local parts = {}
+        for col = 0, 15 do
+            parts[#parts + 1] = string.format("%04X", cram_u16((pal * 16 + col) * 2))
         end
-        log(s)
+        log(string.format("  pal%d: %s", pal, table.concat(parts, " ")))
     end
     log("")
 
-    -- 3. Plane A entries for key rows
-    log("--- Plane A Row 0 (should be blank $24 tiles) ---")
-    local s = "  "
-    for col = 0, 31 do
-        local w = plane_a_word(0, col)
-        s = s .. string.format("%04X ", w)
-        if col == 15 then log(s); s = "  " end
-    end
-    log(s)
-    log("")
-    log_decoded_row_entries("--- Plane A Row 0 decoded blank entries ---", 0, 0, 7)
-
-    log("--- Plane A Row 7 (first artwork row: $71-$7B in cols 8-20) ---")
-    s = "  "
-    for col = 0, 31 do
-        local w = plane_a_word(7, col)
-        s = s .. string.format("%04X ", w)
-        if col == 15 then log(s); s = "  " end
-    end
-    log(s)
-    log_decoded_row_entries("  Decoded key entries:", 7, 6, 22)
-
-    log("--- Plane A Row 17 (PUSH START BUTTON text area) ---")
-    s = "  "
-    for col = 0, 31 do
-        local w = plane_a_word(17, col)
-        s = s .. string.format("%04X ", w)
-        if col == 15 then log(s); s = "  " end
-    end
-    log(s)
+    log("--- Title sanity tiles ---")
+    log("  Tile $024: " .. dump_vram_tile_grouped(0x024))
+    log("  Tile $124: " .. dump_vram_tile_grouped(0x124))
+    log("  Tile $170: " .. dump_vram_tile_grouped(0x170))
+    log("  Tile $171: " .. dump_vram_tile_grouped(0x171))
+    log("  Tile $124 blank: " .. (tile_is_blank(0x124) and "YES" or "NO"))
     log("")
 
-    -- 4. VRAM tile data comparison
-    -- First artwork tile: NES tile $70, Genesis tile $170
-    -- DemoBackgroundPatterns first 16 bytes: $00,$00,$00,$FC,$C7,$E7,$F7,$FF,$FF,$FF,$FF,$FF,$38,$38,$38,$78
-    local nes_tile_70 = {0x00,0x00,0x00,0xFC,0xC7,0xE7,0xF7,0xFF,
-                         0xFF,0xFF,0xFF,0xFF,0x38,0x38,0x38,0x78}
-    local expected_4bpp = nes_2bpp_to_4bpp(nes_tile_70)
+    log_plane_rows("--- Plane A rows 7-15 (logo box) ---", 7, 15)
+    log_plane_rows("--- Plane A rows 22-29 (lower title scene) ---", 22, 29)
 
-    log("--- VRAM Tile $170 (first artwork tile = NES BG $70) ---")
-    log("  Actual VRAM:   " .. dump_vram_tile(0x170))
-    s = ""
-    for i = 1, 32 do
-        if i > 1 and (i-1) % 4 == 0 then s = s .. " | " end
-        s = s .. string.format("%02X", expected_4bpp[i])
+    log_sat_range("--- SAT sprites 0-39 (title template + waterfall body) ---", 0, 39, ppu_ctrl, game_mode)
+    log_sat_range("--- SAT sprites 60-63 (waterfall crest) ---", 60, 63, ppu_ctrl, game_mode)
+
+    log("--- Genesis OAM buffer sprites 60-63 (pre-DMA, NES_RAM+$0200) ---")
+    log("  #   y     tile  attr  x")
+    for idx = 60, 63 do
+        local base = 0xFF0200 + idx * 4
+        local y    = bus_u8(base + 0)
+        local tile = bus_u8(base + 1)
+        local attr = bus_u8(base + 2)
+        local x    = bus_u8(base + 3)
+        log(string.format("  %02d  $%02X   $%02X   $%02X   $%02X", idx, y, tile, attr, x))
     end
-    log("  Expected 4BPP: " .. s)
+    log("")
 
-    local match = true
-    for i = 1, 32 do
-        if vram_read_byte(0x170 * 32 + i - 1) ~= expected_4bpp[i] then
-            match = false
-            break
+    log("--- High-risk tile comparisons ---")
+    local mismatches = 0
+    local function check(match)
+        if not match then
+            mismatches = mismatches + 1
         end
     end
-    log("  Match: " .. (match and "YES" or "NO *** MISMATCH ***"))
-    log("")
 
-    -- Blank filler tile in sprite half: Genesis tile $024
-    log("--- VRAM Tile $024 (sprite-half slot used if BG offset is missing) ---")
-    log("  Actual:  " .. dump_vram_tile(0x024))
-    log("")
-
-    -- Text tile: NES tile $24 (blank), Genesis tile $124
-    log("--- VRAM Tile $124 (blank tile $24) ---")
-    log("  Actual:  " .. dump_vram_tile(0x124))
-    log("  Blank:   " .. (tile_is_blank(0x124) and "YES" or "NO *** SHOULD BE ALL ZEROS ***"))
-    log("")
-
-    -- Common BG tile 0: Genesis tile $100
-    log("--- VRAM Tile $100 (first common BG tile) ---")
-    log("  Actual:  " .. dump_vram_tile(0x100))
-    log("")
-
-    -- A text tile: NES tile $19 = 'P', Genesis tile $119
-    log("--- VRAM Tile $119 (letter 'P') ---")
-    log("  Actual:  " .. dump_vram_tile(0x119))
-    log("")
-
-    -- Second artwork tile: tile $171
-    log("--- VRAM Tile $171 (second artwork tile) ---")
-    log("  Actual:  " .. dump_vram_tile(0x171))
-    log("")
-
-    -- 5. Check if Genesis tile $70 (without +$100) has any data
-    -- This would be in sprite area
-    log("--- VRAM Tile $070 (sprite area, should NOT be artwork) ---")
-    log("  Actual:  " .. dump_vram_tile(0x070))
-    log("")
-
-    -- 6. Check DynTileBuf state
-    log("--- DynTileBuf ($FF0302) first 4 bytes ---")
-    s = "  "
-    for i = 0, 3 do
-        s = s .. string.format("%02X ", bus_read(0xFF0302 + i))
+    for _, tile in ipairs({0x0A0, 0x0CA, 0x0CC, 0x0CE, 0x0D0, 0x0D2, 0x0D4, 0x0D6}) do
+        check(compare_tile(tile, "DemoSpritePatterns", DEMO_SPRITE_PATTERNS, tile - 0x070, "title sprite tile"))
     end
-    log(s)
+
+    check(compare_tile(0x126, "CommonBackgroundPatterns", COMMON_BACKGROUND_PATTERNS, 0x26, "lower scene blank/fill tile"))
+
+    for tile = 0x1C6, 0x1D2 do
+        check(compare_tile(tile, "DemoBackgroundPatterns", DEMO_BACKGROUND_PATTERNS, tile - 0x170, "sword/triforce title BG"))
+    end
+
+    for tile = 0x1D4, 0x1F0 do
+        check(compare_tile(tile, "DemoBackgroundPatterns", DEMO_BACKGROUND_PATTERNS, tile - 0x170, "wall/waterfall/lower title BG"))
+    end
+
+    log(string.format("Total tile mismatches in checked title set: %d", mismatches))
     log("")
 
-    -- 7. Plane A entries for rows 20-25 (waterfall area)
-    log("--- Plane A Row 22 (waterfall/bottom area) ---")
-    s = "  "
-    for col = 0, 31 do
-        local w = plane_a_word(22, col)
-        s = s .. string.format("%04X ", w)
-        if col == 15 then log(s); s = "  " end
-    end
-    log(s)
-    log("")
-
-    -- 8. Check a few more artwork tiles
-    for _, tidx in ipairs({0x180, 0x190, 0x1A0, 0x1B0}) do
-        log(string.format("--- VRAM Tile $%03X ---", tidx))
-        log("  Actual:  " .. dump_vram_tile(tidx))
-    end
+    client.screenshot(SCREENSHOT)
+    log("Screenshot written to: " .. SCREENSHOT)
     log("")
 
     log("=================================================================")
