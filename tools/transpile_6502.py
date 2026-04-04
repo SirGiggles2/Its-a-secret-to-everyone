@@ -2289,6 +2289,10 @@ def _patch_z07(path):
     # ---- Patch 1: Wire PPU scroll to VDP VSRAM ----
     # After the NMI handler's SetScroll block writes CurHScroll/CurVScroll
     # to PPU shadows, call _apply_genesis_scroll to push them to VDP VSRAM.
+    # This only runs when SetScroll executes (game modes 0,5,9,$B,$C,$13 with
+    # $0011!=0).  During init frames when NMI is gated or SetScroll is skipped,
+    # VSRAM retains its previous value — matching NES behavior where scroll
+    # doesn't change when PPU rendering is disabled.
     text = ''.join(lines)
     old_scroll = (
         '    move.b  ($00FF,A4),D0\n'
@@ -2305,7 +2309,7 @@ def _patch_z07(path):
     )
     if old_scroll in text:
         text = text.replace(old_scroll, new_scroll, 1)
-        print("  _patch_z07 P1: added _apply_genesis_scroll call after SetScroll")
+        print("  _patch_z07 P1: added _apply_genesis_scroll after SetScroll")
     else:
         print("  WARNING: _patch_z07 P1 -- SetScroll pattern not found")
 

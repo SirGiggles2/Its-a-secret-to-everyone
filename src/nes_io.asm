@@ -221,9 +221,20 @@ _ppu_write_0:
 ;------------------------------------------------------------------------------
 _ppu_write_1:
     move.b  D0,(PPU_MASK).l
-    ; Shadow-only: do NOT toggle VDP Reg 1 display enable.
-    ; The Genesis shell owns master display (set ON at boot).
-    ; NES-style "blank during transfer" is unnecessary on Genesis VDP.
+    ; Toggle VDP display enable to match NES PPUMASK rendering state.
+    ; When NES BG+sprites are off (bits 3-4 = 0), blank the Genesis display
+    ; to prevent stale VRAM content from showing during mode transitions.
+    move.w  D0,-(SP)
+    andi.b  #$18,D0                 ; isolate BG (bit 3) + sprites (bit 4)
+    bne.s   .ppuw1_display_on
+    ; Display OFF: VDP Reg 1 = $34 (display disabled, VBlank IRQ, DMA, M5)
+    move.w  #$8134,(VDP_CTRL).l
+    move.w  (SP)+,D0
+    rts
+.ppuw1_display_on:
+    ; Display ON: VDP Reg 1 = $74 (display enabled, VBlank IRQ, DMA, M5)
+    move.w  #$8174,(VDP_CTRL).l
+    move.w  (SP)+,D0
     rts
 
 ;------------------------------------------------------------------------------
@@ -282,6 +293,7 @@ _apply_genesis_scroll:
     ; Vertical scroll -> VSRAM word 0 (Plane A)
     ; V64 plane: NT0 = rows 0-29 (px 0-239), NT1 = rows 30-59 (px 240-479).
     ; PPUCTRL bit 1 selects NT: 0 = NT0, 1 = NT1 (+240px offset).
+    ; Called from SetScroll after _ppu_write_5 updates PPU shadows.
     moveq   #0,D0
     move.b  (PPU_SCRL_Y).l,D0
     addi.w  #8,D0                       ; +8px: hide NES top overscan row
