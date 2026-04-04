@@ -286,44 +286,74 @@ _ppu_write_5:
 ;
 ; Called from IsrNmi after SetScroll writes CurVScroll/CurHScroll to shadows.
 ; Converts NES PPU scroll values to Genesis VDP scroll registers.
+;
+; Dead-zone elimination via H-Int VSRAM split:
+;   V64 plane = 512px, NES NTs = 480px.  Rows 60-63 (px 480-511) are a 32px
+;   dead zone.  Three VSRAM ranges:
+;     8-256  : dead zone off-screen, no action
+;     257-479: H-int at scanline (480-VSRAM-1) adds 32 to skip dead zone
+;     480-487: subtract 480, dead zone at top is skipped entirely
+;
 ; Preserves: D1-D7, A0-A6.
 ;------------------------------------------------------------------------------
 _apply_genesis_scroll:
     movem.l D0-D1,-(SP)
-    ; Vertical scroll -> VSRAM word 0 (Plane A)
-    ; V64 plane: NT0 = rows 0-29 (px 0-239), NT1 = rows 30-59 (px 240-479).
-    ; PPUCTRL bit 1 selects NT: 0 = NT0, 1 = NT1 (+240px offset).
-    ; Called from SetScroll after _ppu_write_5 updates PPU shadows.
+    ; --- Compute base VSRAM: vs + 8 + (nt ? 240 : 0) ---
     moveq   #0,D0
-    move.b  ($00FC,A4),D0               ; CurVScroll (latest, not PPU shadow)
-    addi.w  #8,D0                       ; +8px: hide NES top overscan row
-    move.b  ($00FF,A4),D1               ; CurPpuControl (latest, not PPU shadow)
-    ; If a nametable toggle is pending (game logic set $005C this frame but
-    ; IsrNmi entry won't process it until next frame), pre-apply it so VSRAM
-    ; is correct immediately.  On NES the PPU applies $2000/$2005 atomically;
-    ; on Genesis the 1-frame deferral causes a visible scroll jump.
+    move.b  ($00FC,A4),D0               ; CurVScroll (0-239)
+    addi.w  #8,D0                       ; +8px overscan
+    move.b  ($00FF,A4),D1               ; CurPpuControl
     tst.b   ($005C,A4)                  ; SwitchNameTablesReq pending?
     beq.s   .ags_no_pending
-    eori.b  #$02,D1                     ; pre-toggle NT select bit (local copy)
+    eori.b  #$02,D1                     ; pre-toggle NT select bit
 .ags_no_pending:
     btst    #1,D1                       ; nametable Y select?
     beq.s   .ags_no_nt_offset
-    addi.w  #240,D0                     ; NT1 starts 240px into V64 plane
+    addi.w  #240,D0                     ; NT1: +240
 .ags_no_nt_offset:
+    ; --- Dead-zone elimination ---
+    ; D0 = VSRAM base (8-487).
+    cmpi.w  #480,D0
+    bge.s   .dz_top
+    cmpi.w  #257,D0
+    bge.s   .dz_hint
+    ; --- Case 1: no dead zone visible (VSRAM 8-256) ---
+    move.w  #$8AFF,(VDP_CTRL).l        ; Reg 10: H-int counter = disabled
+    move.w  #$8004,(VDP_CTRL).l        ; Reg 0: H-int disabled
+    bra.s   .dz_vsram_write
+.dz_top:
+    ; --- Case 3: dead zone at top, VSRAM >= 480 ---
+    subi.w  #480,D0                     ; skip past dead zone (VSRAM 0-7)
+    move.w  #$8AFF,(VDP_CTRL).l        ; disable H-int
+    move.w  #$8004,(VDP_CTRL).l
+    bra.s   .dz_vsram_write
+.dz_hint:
+    ; --- Case 2: dead zone in middle/bottom (VSRAM 257-479) ---
+    move.w  D0,D1
+    addi.w  #32,D1                      ; adjusted VSRAM = base + 32
+    move.w  D1,(DZ_HINT_VSRAM).l       ; store for HBlankISR
+    moveq   #0,D1
+    move.w  #480,D1
+    sub.w   D0,D1
+    subq.w  #1,D1                       ; H-int scanline = 480-VSRAM-1
+    or.w    #$8A00,D1
+    move.w  D1,(VDP_CTRL).l            ; Reg 10: set H-int counter
+    move.w  #$8014,(VDP_CTRL).l        ; Reg 0: enable H-int (bit 4 + bit 2 colorfix)
+.dz_vsram_write:
+    ; --- Write VSRAM ---
     move.l  #VSRAM_WRITE_0000,(VDP_CTRL).l
-    move.w  D0,(VDP_DATA).l         ; Plane A V-scroll
+    move.w  D0,(VDP_DATA).l            ; Plane A V-scroll
     moveq   #0,D0
-    move.w  D0,(VDP_DATA).l         ; Plane B V-scroll = 0
-    ; Horizontal scroll -> H-scroll table at VRAM $FC00
-    ; Genesis H-scroll scrolls opposite direction to NES.
+    move.w  D0,(VDP_DATA).l            ; Plane B V-scroll = 0
+    ; --- H-scroll ---
     moveq   #0,D0
-    move.b  ($00FD,A4),D0               ; CurHScroll (latest, not PPU shadow)
+    move.b  ($00FD,A4),D0              ; CurHScroll
     neg.w   D0
     andi.w  #$01FF,D0
-    move.l  #$7C000003,(VDP_CTRL).l  ; VRAM write at $FC00
-    move.w  D0,(VDP_DATA).l         ; Plane A H-scroll
+    move.l  #$7C000003,(VDP_CTRL).l    ; VRAM write at $FC00
+    move.w  D0,(VDP_DATA).l            ; Plane A H-scroll
     moveq   #0,D0
-    move.w  D0,(VDP_DATA).l         ; Plane B H-scroll = 0
+    move.w  D0,(VDP_DATA).l            ; Plane B H-scroll = 0
     movem.l (SP)+,D0-D1
     rts
 

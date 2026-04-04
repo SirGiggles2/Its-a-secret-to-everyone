@@ -33,6 +33,7 @@ NES_RAM_BASE    equ $00FF0000   ; Maps NES $0000-$07FF (8 pages × 256 bytes)
 NES_RAM_SIZE    equ $0800       ; 2KB NES work RAM
 NES_STACK_INIT  equ $00FF0200   ; NES SP=$FF → A5 = NES_RAM+$0100+$FF+1 = $FF0200
 PPU_STATE_SIZE  equ $40         ; 64 bytes: PPU ($FF0800-$FF080F) + MMC1 ($FF0810-$FF081F) + CHR buf ($FF0820-$FF083F)
+DZ_HINT_VSRAM   equ $00FF080A  ; word: VSRAM for H-int dead-zone skip (PPU_STATE_BASE+$0A)
 
 ;==============================================================================
 ; VDP command long-words (written to VDP_CTRL to set VRAM/CRAM address)
@@ -92,7 +93,7 @@ COLOR_BLACK     equ $0000
     dc.l    DefaultException    ; vec 25: IRQ level 1 (auto)
     dc.l    DefaultException    ; vec 26: IRQ level 2 (EXT)
     dc.l    DefaultException    ; vec 27: IRQ level 3 (auto)
-    dc.l    DefaultException    ; vec 28: IRQ level 4 (H-int)
+    dc.l    HBlankISR           ; vec 28: IRQ level 4 (H-int)
     dc.l    DefaultException    ; vec 29: IRQ level 5 (auto)
     dc.l    VBlankISR           ; vec 30: IRQ level 6 (V-int / VBlank) ←
     dc.l    DefaultException    ; vec 31: IRQ level 7 (NMI)
@@ -302,6 +303,19 @@ VBlankISR:
     jsr     IsrNmi
 .nmi_off:
     movem.l (SP)+,D0-D7/A0-A6
+    rte
+
+;==============================================================================
+; HBlankISR — H-blank interrupt handler for dead-zone skip.
+; Writes adjusted VSRAM (skipping 32px dead zone) and disables H-int
+; to prevent re-triggering on subsequent scanlines.
+;==============================================================================
+HBlankISR:
+    move.l  D0,-(SP)
+    move.l  #VSRAM_WRITE_0000,(VDP_CTRL).l
+    move.w  (DZ_HINT_VSRAM).l,(VDP_DATA).l
+    move.w  #$8AFF,(VDP_CTRL).l             ; Reg 10: disable H-int counter
+    move.l  (SP)+,D0
     rte
 
 ;==============================================================================
