@@ -282,11 +282,32 @@ _ppu_write_5:
     rts
 
 ;------------------------------------------------------------------------------
-; _apply_genesis_scroll — Apply PPU scroll shadows to VDP VSRAM / H-scroll
-;                          and prime the H-int event queue.
+; _apply_genesis_scroll — transpiler-injection stub (no-op).
 ;
-; Called from IsrNmi after SetScroll writes CurVScroll/CurHScroll to shadows.
-; Converts NES PPU scroll values to Genesis VDP scroll registers.
+; The 6502→68K transpiler injects `bsr _apply_genesis_scroll` at two points in
+; IsrNmi (z_07.asm P1 at ~:995 after SetScroll, P2 at ~:1075 after game logic)
+; because the NES source writes PPUSCROLL twice per NMI. On Genesis we must
+; NOT reconfigure VSRAM + Reg 10 twice mid-NMI: the second reconfig clobbers
+; the first's latch and re-arms the H-int counter, producing visible tearing
+; (observed as missing FAIRY/CLOCK labels on the intro story scroll — see
+; probe_vsram_raster.lua output showing alternating D0 values between P1 & P2).
+;
+; Fix: defer all VDP scroll programming to a single flush point at NMI tail
+; (VBlankISR, post-IsrNmi). This routine is now a no-op; the real work lives
+; in _ags_flush below, which VBlankISR calls exactly once per frame.
+;
+; Preserves: everything.
+;------------------------------------------------------------------------------
+_apply_genesis_scroll:
+    rts
+
+;------------------------------------------------------------------------------
+; _ags_flush — Apply PPU scroll shadows to VDP VSRAM / H-scroll and prime
+;              the H-int event queue. Called ONCE per frame from VBlankISR
+;              after IsrNmi has returned (scroll shadows are finalized).
+;
+; Converts NES PPU scroll values to Genesis VDP scroll registers. Assumes
+; A4 = NES RAM base ($FF0000) — set by the VBlankISR caller.
 ;
 ; Two mid-frame mechanisms are multiplexed through a single event queue
 ; (HINT_Q_* in genesis_shell.asm) that HBlankISR consumes:
@@ -308,7 +329,7 @@ _ppu_write_5:
 ;
 ; Preserves: D5-D7, A0-A6.
 ;------------------------------------------------------------------------------
-_apply_genesis_scroll:
+_ags_flush:
     movem.l D0-D4,-(SP)
 
     ; --- Compute base VSRAM: vs + 8 + (nt ? 240 : 0) ---
@@ -554,22 +575,71 @@ _ppu_write_7:
     ;==========================================================================
 .nt_write:
     ;======================================================================
-    ; T18: Nametable 0 tile area ($2000–$23BF) → Genesis Plane A @ $C000.
+    ; Nametable → Genesis Plane A row mapping:
+    ;   NES NT_A tiles ($2000–$23BF, and mirrored $2400–$27BF)
+    ;       → Plane A rows 0–29  (VDP $C000–$C5FF)
+    ;   NES NT_B tiles ($2800–$2BBF, and mirrored $2C00–$2FBF)
+    ;       → Plane A rows 30–59 (VDP $CF00–$D4FF)
     ;
-    ; Each NES byte is one tile index.  Convert to a Genesis tile word and
-    ; write to Plane A at the correct col/row position.
+    ; Zelda uses vertical mirroring so NT_A and NT_B are the only two
+    ; physical nametables. Story-scroll (intro) writes new rows to NT_B
+    ; via $2800+ as the scroll crosses the NT boundary — previously these
+    ; writes were dropped, leaving Plane A rows 30..59 stale.
     ;
-    ; Plane A is at VDP VRAM $C000 (Reg 2 = $8230), 64H × 64V (Reg 16=$9011),
-    ; so each row is 64 tiles × 2 bytes = $80 bytes wide.
-    ;
-    ;   index    = PPU_VADDR − $2000           (0 … $3BF)
-    ;   col      = index & 31                  (0 … 31)
-    ;   row      = index >> 5                  (0 … 29)
+    ; Each row is 64 tiles × 2 bytes = $80 bytes wide in Plane A.
     ;   vdp_addr = $C000 + row * $80 + col * 2
-    ;   tile word = bg_pattern_offset | tile_index
-    ;
-    ; Attribute bytes ($23C0–$23FF) and all higher addresses: no-op (skip write).
     ;======================================================================
+    ; Fold $2C00 mirror → $2800 (vertical mirroring alias for NT_B).
+    cmpi.w  #$2C00,D1
+    blo.s   .nt_no_b_mirror
+    cmpi.w  #$3000,D1
+    bhs.s   .nt_no_b_mirror
+    subi.w  #$0400,D1
+.nt_no_b_mirror:
+    ; Fold $2400 mirror → $2000 (vertical mirroring alias for NT_A).
+    cmpi.w  #$2400,D1
+    blo.s   .nt_no_a_mirror
+    cmpi.w  #$2800,D1
+    bhs.s   .nt_no_a_mirror
+    subi.w  #$0400,D1
+.nt_no_a_mirror:
+
+    ; Dispatch on NT_A vs NT_B tile ranges.
+    cmpi.w  #$2800,D1
+    blo.s   .nt_write_a              ; $2000-$27FF → NT_A path
+    cmpi.w  #$2C00,D1
+    bhs     .nt_noop                 ; ≥$2C00 → palette/skip
+    cmpi.w  #$2BC0,D1
+    bhs     .nt_noop                 ; $2BC0-$2BFF → NT_B attribute (skip for now)
+
+    ; ---- NT_B tile write: $2800-$2BBF → Plane A rows 30..59 ----
+    move.w  D1,D2
+    subi.w  #$2800,D2                ; D2.w = index within NT_B (0…$3BF)
+
+    move.w  D2,D3
+    andi.w  #$001F,D3
+    lsl.w   #1,D3                    ; D3.w = col * 2
+
+    lsr.w   #5,D2                    ; D2.w = row within NT_B (0…29)
+    addi.w  #30,D2                   ; offset into Plane A rows 30..59
+    mulu.w  #$0080,D2                ; D2.l = row * $80 (row ≤ 59)
+    add.w   D3,D2
+    addi.w  #$C000,D2                ; D2.w = VDP VRAM addr
+
+    move.l  D2,D3
+    andi.l  #$00003FFF,D3
+    swap    D3
+    ori.l   #$40000003,D3
+    move.l  D3,(VDP_CTRL).l
+
+    andi.w  #$00FF,D0                ; D0.w = tile index
+    bsr     _compose_bg_tile_word
+    move.w  D0,(VDP_DATA).l
+
+    movem.l (SP)+,D0-D6/A0-A1
+    rts
+
+.nt_write_a:
     cmpi.w  #$23C0,D1
     bhs.s   .nt_noop                ; ≥$23C0: attribute / palette / overflow — no-op
 

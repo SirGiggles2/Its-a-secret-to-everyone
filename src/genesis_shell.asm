@@ -311,6 +311,14 @@ VBlankISR:
     btst    #7,($00FF0804).l        ; PPU_CTRL = $FF0804, bit 7 = NMI enable
     beq.s   .nmi_off
     jsr     IsrNmi
+    ; Flush PPU scroll shadows → VDP VSRAM / H-scroll / H-int queue.
+    ; Deferred to here (post-NMI, still in VBlank) so the two transpiler-
+    ; injected `bsr _apply_genesis_scroll` sites inside IsrNmi cannot
+    ; double-program the VDP mid-NMI. _ags_flush reads CurVScroll/
+    ; CurHScroll/IsSprite0CheckActive from NES zero-page via A4, which
+    ; VBlankISR's movem preserved from the interrupted caller (RunGame
+    ; establishes A4 = $FF0000 before LoopForever).
+    bsr     _ags_flush
 .nmi_off:
     movem.l (SP)+,D0-D7/A0-A6
     rte
