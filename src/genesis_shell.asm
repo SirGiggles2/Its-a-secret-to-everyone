@@ -33,7 +33,17 @@ NES_RAM_BASE    equ $00FF0000   ; Maps NES $0000-$07FF (8 pages × 256 bytes)
 NES_RAM_SIZE    equ $0800       ; 2KB NES work RAM
 NES_STACK_INIT  equ $00FF0200   ; NES SP=$FF → A5 = NES_RAM+$0100+$FF+1 = $FF0200
 PPU_STATE_SIZE  equ $40         ; 64 bytes: PPU ($FF0800-$FF080F) + MMC1 ($FF0810-$FF081F) + CHR buf ($FF0820-$FF083F)
-DZ_HINT_VSRAM   equ $00FF080A  ; word: VSRAM for H-int dead-zone skip (PPU_STATE_BASE+$0A)
+
+; H-int event queue — up to 2 chained VSRAM writes per frame.
+; Used by _apply_genesis_scroll (producer, in NMI) and HBlankISR (consumer).
+; Queue entries are written sorted by ascending scanline.
+; Q1_CTR is stored as a *delta* from Q0 (Reg 10 reload value).
+; Lives in MMC1 state tail ($FF0816-$FF081D) — MMC1 only uses +0..+5.
+HINT_Q_COUNT    equ $00FF0816  ; byte: pending events (0, 1, or 2)
+HINT_Q0_CTR     equ $00FF0817  ; byte: Reg 10 counter for event 0 (abs scanline)
+HINT_Q0_VSRAM   equ $00FF0818  ; word: VSRAM to write at event 0
+HINT_Q1_CTR     equ $00FF081A  ; byte: Reg 10 reload for event 1 (delta)
+HINT_Q1_VSRAM   equ $00FF081C  ; word: VSRAM to write at event 1
 
 ;==============================================================================
 ; VDP command long-words (written to VDP_CTRL to set VRAM/CRAM address)
@@ -306,14 +316,42 @@ VBlankISR:
     rte
 
 ;==============================================================================
-; HBlankISR — H-blank interrupt handler for dead-zone skip.
-; Writes adjusted VSRAM (skipping 32px dead zone) and disables H-int
-; to prevent re-triggering on subsequent scanlines.
+; HBlankISR — queue-popping H-int dispatcher.
+;
+; Reads the next queued event from HINT_Q0_* state, writes VSRAM, then either
+; re-arms Reg 10 with the delta counter to fire the second event, or disables
+; H-int. VSRAM write comes FIRST (critical path — must complete before active
+; display resumes on the next scanline).
+;
+; State contract (producer = _apply_genesis_scroll):
+;   HINT_Q_COUNT   ≥ 1  when H-int is armed via Reg 0 bit 4
+;   HINT_Q0_CTR    = initial Reg 10 value (written by producer before RTE)
+;   HINT_Q0_VSRAM  = VSRAM value for first fire
+;   HINT_Q1_CTR    = delta for second fire (only valid when COUNT == 2)
+;   HINT_Q1_VSRAM  = VSRAM value for second fire
 ;==============================================================================
 HBlankISR:
+    movem.l D0-D1/A0,-(SP)
+    lea     (HINT_Q_COUNT).l,A0
+    move.b  (A0),D0
+    beq.s   .hi_disable                     ; defensive: empty queue
+    subq.b  #1,(A0)                         ; decrement remaining count
+    ; Write queued VSRAM FIRST (critical path)
     move.l  #VSRAM_WRITE_0000,(VDP_CTRL).l
-    move.w  (DZ_HINT_VSRAM).l,(VDP_DATA).l  ; write VSRAM FIRST — critical path
-    move.w  #$8004,(VDP_CTRL).l             ; Reg 0: disable H-int (prevent re-fire)
+    move.w  (HINT_Q0_VSRAM).l,(VDP_DATA).l
+    ; If another event is pending, re-arm Reg 10 and promote Q1 → Q0
+    tst.b   (A0)
+    beq.s   .hi_disable
+    moveq   #0,D1
+    move.b  (HINT_Q1_CTR).l,D1
+    or.w    #$8A00,D1
+    move.w  D1,(VDP_CTRL).l                 ; Reg 10 = delta to next event
+    move.w  (HINT_Q1_VSRAM).l,(HINT_Q0_VSRAM).l
+    bra.s   .hi_done
+.hi_disable:
+    move.w  #$8004,(VDP_CTRL).l             ; Reg 0: disable H-int
+.hi_done:
+    movem.l (SP)+,D0-D1/A0
     rte
 
 ;==============================================================================

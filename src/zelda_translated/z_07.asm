@@ -992,6 +992,7 @@ _L_z07_IsrNmi_SetScroll:
     bsr     _ppu_write_5  ; PPU $2005 write, D0=val
     move.b  ($00FF,A4),D0
     bsr     _ppu_write_0  ; PPU $2000 write, D0=val
+    bsr     _apply_genesis_scroll  ; Apply scroll shadows to VDP VSRAM/H-scroll
     even
 _L_z07_IsrNmi_UpdateTimers:
     ; If paused or in menu, then don't decrement timers.
@@ -1071,6 +1072,7 @@ _L_z07_IsrNmi_EnableNMI:
     ori.b #$80,D0
     bsr     _ppu_write_0  ; PPU $2000 write, D0=val
     move.b  D0,($00FF,A4)
+    bsr     _apply_genesis_scroll  ; P2: re-apply scroll after game logic
     rts   ; RTI → RTS (IsrNmi is a subroutine; VBlankISR handles the RTE)
 
     even

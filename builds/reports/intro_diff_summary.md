@@ -3,7 +3,7 @@
 - Paired frames: 631
 - Semantic alignment: best_k=20, ratio=0.954, growing_drift=False
 - meanDelta (raw Y0): avg=13.86  median=12.13
-- meanDelta (Y+8 shifted): avg=16.69
+- meanDelta (Y+8 shifted): avg=16.68
 - Spikes (>3× median): 0
 
 ## Suspect signatures detected

@@ -282,22 +282,35 @@ _ppu_write_5:
     rts
 
 ;------------------------------------------------------------------------------
-; _apply_genesis_scroll — Apply PPU scroll shadows to VDP VSRAM / H-scroll.
+; _apply_genesis_scroll — Apply PPU scroll shadows to VDP VSRAM / H-scroll
+;                          and prime the H-int event queue.
 ;
 ; Called from IsrNmi after SetScroll writes CurVScroll/CurHScroll to shadows.
 ; Converts NES PPU scroll values to Genesis VDP scroll registers.
 ;
-; Dead-zone elimination via H-Int VSRAM split:
-;   V64 plane = 512px, NES NTs = 480px.  Rows 60-63 (px 480-511) are a 32px
-;   dead zone.  Three VSRAM ranges:
-;     8-256  : dead zone off-screen, no action
-;     257-479: H-int at scanline (480-VSRAM-1) adds 32 to skip dead zone
-;     480-487: subtract 480, dead zone at top is skipped entirely
+; Two mid-frame mechanisms are multiplexed through a single event queue
+; (HINT_Q_* in genesis_shell.asm) that HBlankISR consumes:
 ;
-; Preserves: D1-D7, A0-A6.
+;   (A) Sprite-0 split (IsSprite0CheckActive=1): title pinned at rows 0..39
+;       via VSRAM=0, then the story half uses the actual scroll base at
+;       scanline 40 onward. Implements the NES WaitAndScrollToSplitBottom
+;       mid-frame PPUADDR rewrite using a VDP-native H-int.
+;
+;   (B) Dead-zone skip: V64 plane = 512px, NES NTs = 480px. Rows 60..63
+;       (px 480..511) are a 32px dead zone. VSRAM base in [257,479] means
+;       the dead zone falls within the visible area; schedule an H-int at
+;       scanline (479-base) that shifts VSRAM to base+32, skipping it.
+;
+; When both (A) and (B) apply in the same frame, the queue holds 2 events
+; ordered by scanline; HBlankISR re-arms Reg 10 with the delta between them.
+; If the DZ boundary falls inside the title band (line ≤ 40), the two events
+; collapse into a single post-DZ top-split.
+;
+; Preserves: D5-D7, A0-A6.
 ;------------------------------------------------------------------------------
 _apply_genesis_scroll:
-    movem.l D0-D1,-(SP)
+    movem.l D0-D4,-(SP)
+
     ; --- Compute base VSRAM: vs + 8 + (nt ? 240 : 0) ---
     moveq   #0,D0
     move.b  ($00FC,A4),D0               ; CurVScroll (0-239)
@@ -311,43 +324,118 @@ _apply_genesis_scroll:
     beq.s   .ags_no_nt_offset
     addi.w  #240,D0                     ; NT1: +240
 .ags_no_nt_offset:
-    ; --- Dead-zone elimination ---
-    ; D0 = VSRAM base (8-487).
+    ; D0 = raw base VSRAM (8-487)
+
+    ; --- Case 3 collapse: VSRAM >= 480 → subtract dead zone size ---
     cmpi.w  #480,D0
-    bge.s   .dz_top
+    blt.s   .ags_have_base
+    subi.w  #480,D0
+.ags_have_base:
+    ; D0 = effective base VSRAM (0..479)
+
+    ; --- Branch on sprite-0 split mode ---
+    tst.b   ($00E3,A4)                  ; IsSprite0CheckActive
+    beq     .ags_no_split
+
+    ;========================================================================
+    ; SPLIT MODE: title pinned (VSRAM=0) for rows 0..39, story scrolled for
+    ; rows 40.. .  Queue up to 2 H-int events: top-split at line 39, and
+    ; optionally dead-zone-skip at line (479-D0) when D0 ∈ [257,479].
+    ;========================================================================
     cmpi.w  #257,D0
-    bge.s   .dz_hint
-    ; --- Case 1: no dead zone visible (VSRAM 8-256) ---
-    move.w  #$8AFF,(VDP_CTRL).l        ; Reg 10: H-int counter = disabled
-    move.w  #$8004,(VDP_CTRL).l        ; Reg 0: H-int disabled
-    bra.s   .dz_vsram_write
-.dz_top:
-    ; --- Case 3: dead zone at top, VSRAM >= 480 ---
-    subi.w  #480,D0                     ; skip past dead zone (VSRAM 0-7)
-    move.w  #$8AFF,(VDP_CTRL).l        ; disable H-int
-    move.w  #$8004,(VDP_CTRL).l
-    bra.s   .dz_vsram_write
-.dz_hint:
-    ; --- Case 2: dead zone in middle/bottom (VSRAM 257-479) ---
-    ; Counter K = 479-VSRAM. Reg 10 = K fires h-int at end of scanline K,
-    ; so scanline K+1 uses new VSRAM (base+32). Line K+1 = VSRAM_new + K+1
-    ; = (base+32) + (479-base+1) = 512 mod 512 = 0 (NT0 row 0). Perfect.
-    move.w  D0,D1
-    addi.w  #32,D1                      ; adjusted VSRAM = base + 32
-    move.w  D1,(DZ_HINT_VSRAM).l       ; store for HBlankISR
-    moveq   #0,D1
-    move.w  #479,D1
-    sub.w   D0,D1                       ; D1 = 479 - VSRAM (counter value)
-    or.w    #$8A00,D1
-    move.w  D1,(VDP_CTRL).l            ; Reg 10: set H-int counter
-    move.w  #$8014,(VDP_CTRL).l        ; Reg 0: enable H-int (bit 4 + bit 2 colorfix)
-.dz_vsram_write:
-    ; --- Write VSRAM ---
+    blt     .ags_split_only             ; no DZ event needed
+    ; D0 ∈ [257,479] → DZ case 2 applies
+    move.w  #479,D4
+    sub.w   D0,D4                       ; D4 = DZ abs scanline (0..222)
+    cmpi.w  #41,D4
+    bge.s   .ags_split_then_dz
+    cmpi.w  #39,D4
+    ble.s   .ags_dz_in_title
+    ; D4 == 39 or 40: collides with top-split boundary — collapse to DZ'd VSRAM
+    bra.s   .ags_dz_in_title
+
+.ags_split_then_dz:
+    ; Order: top-split at line 39 (→ vsram=D0), then DZ at line D4 (→ vsram=D0+32)
+    ; Delta = D4 - 39 - 1 = D4 - 40
+    move.b  #39,(HINT_Q0_CTR).l
+    move.w  D0,(HINT_Q0_VSRAM).l
+    move.w  D4,D1
+    subi.w  #40,D1
+    move.b  D1,(HINT_Q1_CTR).l
+    move.w  D0,D2
+    addi.w  #32,D2
+    move.w  D2,(HINT_Q1_VSRAM).l
+    move.b  #2,(HINT_Q_COUNT).l
+    bra.s   .ags_arm_split
+
+.ags_dz_in_title:
+    ; DZ boundary is inside (or at) the title band. Collapse into a single
+    ; top-split event whose VSRAM is already past the dead zone.
+    move.b  #39,(HINT_Q0_CTR).l
+    move.w  D0,D2
+    addi.w  #32,D2
+    move.w  D2,(HINT_Q0_VSRAM).l
+    move.b  #1,(HINT_Q_COUNT).l
+    bra.s   .ags_arm_split
+
+.ags_split_only:
+    ; No dead-zone event. Single top-split at line 39 → vsram=D0.
+    move.b  #39,(HINT_Q0_CTR).l
+    move.w  D0,(HINT_Q0_VSRAM).l
+    move.b  #1,(HINT_Q_COUNT).l
+
+.ags_arm_split:
+    ; Initial VSRAM = 0 (title pinned for rows 0..39)
     move.l  #VSRAM_WRITE_0000,(VDP_CTRL).l
-    move.w  D0,(VDP_DATA).l            ; Plane A V-scroll
-    moveq   #0,D0
-    move.w  D0,(VDP_DATA).l            ; Plane B V-scroll = 0
-    ; --- H-scroll ---
+    moveq   #0,D1
+    move.w  D1,(VDP_DATA).l             ; Plane A V-scroll = 0
+    move.w  D1,(VDP_DATA).l             ; Plane B V-scroll = 0
+    ; Arm H-int with Q0 counter
+    moveq   #0,D1
+    move.b  (HINT_Q0_CTR).l,D1
+    or.w    #$8A00,D1
+    move.w  D1,(VDP_CTRL).l             ; Reg 10 = abs scanline
+    move.w  #$8014,(VDP_CTRL).l         ; Reg 0: enable H-int
+    bra     .ags_hscroll
+
+    ;========================================================================
+    ; NO-SPLIT MODE: original scroll behavior (title screen, gameplay, etc).
+    ; DZ case 2 still uses H-int to skip the dead zone mid-frame.
+    ;========================================================================
+.ags_no_split:
+    cmpi.w  #257,D0
+    blt.s   .ags_ns_case1
+    ; DZ case 2: schedule a single event at line (479-D0)
+    move.w  D0,D2
+    addi.w  #32,D2                      ; D2 = base+32
+    move.w  D2,(HINT_Q0_VSRAM).l
+    move.w  #479,D1
+    sub.w   D0,D1                       ; D1 = counter
+    move.b  D1,(HINT_Q0_CTR).l
+    move.b  #1,(HINT_Q_COUNT).l
+    ; Initial VSRAM = D0 (pre-wrap)
+    move.l  #VSRAM_WRITE_0000,(VDP_CTRL).l
+    move.w  D0,(VDP_DATA).l
+    moveq   #0,D2
+    move.w  D2,(VDP_DATA).l
+    ; Arm H-int
+    or.w    #$8A00,D1
+    move.w  D1,(VDP_CTRL).l
+    move.w  #$8014,(VDP_CTRL).l
+    bra.s   .ags_hscroll
+
+.ags_ns_case1:
+    ; No H-int needed. VSRAM = D0 directly, H-int disabled.
+    move.b  #0,(HINT_Q_COUNT).l
+    move.w  #$8AFF,(VDP_CTRL).l
+    move.w  #$8004,(VDP_CTRL).l
+    move.l  #VSRAM_WRITE_0000,(VDP_CTRL).l
+    move.w  D0,(VDP_DATA).l
+    moveq   #0,D2
+    move.w  D2,(VDP_DATA).l
+
+.ags_hscroll:
+    ; --- H-scroll (Plane A H-scroll table entry 0) ---
     moveq   #0,D0
     move.b  ($00FD,A4),D0              ; CurHScroll
     neg.w   D0
@@ -356,7 +444,7 @@ _apply_genesis_scroll:
     move.w  D0,(VDP_DATA).l            ; Plane A H-scroll
     moveq   #0,D0
     move.w  D0,(VDP_DATA).l            ; Plane B H-scroll = 0
-    movem.l (SP)+,D0-D1
+    movem.l (SP)+,D0-D4
     rts
 
 ;------------------------------------------------------------------------------

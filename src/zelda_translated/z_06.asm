@@ -812,15 +812,29 @@ TransferBufPtrs:
 
     even
 TransferCurTileBuf:
-    ; PATCHED: use 32-bit pointer table to resolve ROM-resident buffers.
-    ; $0014 is a 2-byte index (0, 2, 4, …).  Convert to 4-byte index and
-    ; load the full 68K address from TransferBufPtrs.
+    ; PATCHED: DynTileBuf palette pre-check (Bug C fix).
+    ; On NES, palette records in DynTileBuf are consumed before TileBufSelector
+    ; changes.  On Genesis, a timing difference can cause the selector to be
+    ; overwritten before NMI fires, so the palette is never processed.
+    ; Fix: always drain DynTileBuf palette records ($3F prefix) first.
+    lea     (NES_RAM+DynTileBuf).l,A0
+    cmpi.b  #$3F,(A0)                  ; $3F = palette PPU addr high byte?
+    bne.s   .no_pending_palette
+    movem.l D0-D2/A0,-(SP)             ; save regs around BSR
+    bsr     _transfer_tilebuf_fast      ; process palette from DynTileBuf
+    movem.l (SP)+,D0-D2/A0             ; restore regs
+    move.b  #$FF,(NES_RAM+DynTileBuf).l ; reset sentinel
+    tst.b   ($0014,A4)                  ; TileBufSelector = 0?
+    beq.s   .skip_main_dispatch         ; already processed DynTileBuf
+.no_pending_palette:
+    ; 32-bit pointer table lookup for main dispatch.
     moveq   #0,D2
     move.b  ($0014,A4),D2
     add.w   D2,D2                       ; 2-byte index -> 4-byte index
     lea     (TransferBufPtrs).l,A0
     movea.l (A0,D2.W),A0               ; A0 = 32-bit buffer pointer
     bsr     TransferTileBuf
+.skip_main_dispatch:
     moveq   #63,D0
     move.b  D0,($0300,A4)
     moveq   #0,D2
