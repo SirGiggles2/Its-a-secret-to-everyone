@@ -1961,6 +1961,76 @@ def _patch_z02(path):
     else:
         print("  WARNING: _patch_z02 P8 -- story text pointer pattern not found")
 
+    # ---- Patch 9: Trim StoryPaletteTransferRecord to 24 bytes ----
+    # Genesis has only 4 palettes shared between BG and sprites.
+    # NES sprite pals 0-1 map to Gen pals 2-3.  NES sprite pals 2-3
+    # also map to pals 2-3, overwriting spr 0-1.  On the title screen
+    # spr 2/3 colours match BG 2/3 (harmless), but on the story screen
+    # they differ, causing sprites (Triforce, Link) to show wrong colours.
+    # Fix: write only 24 palette bytes (BG 0-3 + spr 0-1), skipping spr 2-3.
+    # Also adjust the copy-loop count from 35 to 27.
+    old_story_pal = (
+        'StoryPaletteTransferRecord:\n'
+        '    dc.b    $3F, $00, $20, $0F, $30, $30, $30, $0F\n'
+        '    dc.b    $21, $30, $30, $0F, $16, $30, $30, $0F\n'
+        '    dc.b    $29, $1A, $09, $0F, $29, $37, $17, $0F\n'
+        '    dc.b    $02, $22, $30, $0F, $16, $27, $30, $0F\n'
+        '    dc.b    $0B, $1B, $2B, $FF'
+    )
+    new_story_pal = (
+        'StoryPaletteTransferRecord:\n'
+        '    ; PATCHED (P9): 24 bytes (BG 0-3 + spr 0-1 only, skip spr 2-3)\n'
+        '    ; Spr pal 2-3 would overwrite spr pal 0-1 in Gen CRAM pals 2-3.\n'
+        '    dc.b    $3F, $00, $18, $0F, $30, $30, $30, $0F\n'
+        '    dc.b    $21, $30, $30, $0F, $16, $30, $30, $0F\n'
+        '    dc.b    $29, $1A, $09, $0F, $29, $37, $17, $0F\n'
+        '    dc.b    $02, $22, $30, $FF'
+    )
+    if old_story_pal in text:
+        text = text.replace(old_story_pal, new_story_pal, 1)
+        print("  _patch_z02 P9: trim StoryPaletteTransferRecord to 24 bytes (drop spr pal 2-3)")
+    else:
+        print("  WARNING: _patch_z02 P9 -- StoryPaletteTransferRecord not found")
+
+    # Also fix the copy count from 35 to 27 (28 bytes: 3 header + 24 data + 1 sentinel)
+    old_copy_count = (
+        'InitDemoSubphaseTransferStoryPalette:\n'
+        '    moveq   #35,D2\n'
+        '    move.b  D2,($0300,A4)\n'
+        '    move.b  D2,($0301,A4)'
+    )
+    new_copy_count = (
+        'InitDemoSubphaseTransferStoryPalette:\n'
+        '    moveq   #27,D2\n'
+        '    move.b  D2,($0300,A4)\n'
+        '    move.b  D2,($0301,A4)'
+    )
+    if old_copy_count in text:
+        text = text.replace(old_copy_count, new_copy_count, 1)
+        print("  _patch_z02 P9b: fix StoryPalette copy count 35->27")
+    else:
+        print("  WARNING: _patch_z02 P9b -- copy count pattern not found")
+
+    # ---- Patch 10: Clear Plane A during Phase 1 init ----
+    # After title screen fades to black, stale title nametable tiles
+    # (decorative chain border) remain in VRAM and become visible during
+    # the story scroll. Clear Plane A before the story scroll starts.
+    old_story_tiles_init = (
+        'InitDemoSubphaseTransferStoryTiles:\n'
+        '    addq.b  #1,($005C,A4)'
+    )
+    new_story_tiles_init = (
+        'InitDemoSubphaseTransferStoryTiles:\n'
+        '    ; PATCHED (P10): Clear Plane A to remove stale title screen tiles\n'
+        '    bsr     _clear_nametable_fast\n'
+        '    addq.b  #1,($005C,A4)'
+    )
+    if old_story_tiles_init in text:
+        text = text.replace(old_story_tiles_init, new_story_tiles_init, 1)
+        print("  _patch_z02 P10: clear Plane A at story scroll init")
+    else:
+        print("  WARNING: _patch_z02 P10 -- InitDemoSubphaseTransferStoryTiles not found")
+
     with open(path, 'w', encoding='utf-8') as f:
         f.write(text)
 

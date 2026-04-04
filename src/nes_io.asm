@@ -282,6 +282,7 @@ _apply_genesis_scroll:
     ; Vertical scroll -> VSRAM word 0 (Plane A)
     moveq   #0,D0
     move.b  (PPU_SCRL_Y).l,D0
+    addi.w  #8,D0                       ; +8px: hide NES top overscan row
     move.l  #VSRAM_WRITE_0000,(VDP_CTRL).l
     move.w  D0,(VDP_DATA).l         ; Plane A V-scroll
     moveq   #0,D0
