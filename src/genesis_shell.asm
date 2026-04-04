@@ -177,7 +177,7 @@ EntryPoint:
     move.w  #$8230,(VDP_CTRL).l  ; Reg  2: Plane A @ $C000  ($C000/$2000=6 → $30)
     move.w  #$832C,(VDP_CTRL).l  ; Reg  3: Window  @ $B000  (bits[5:1]=22 → $2C)
     move.w  #$8407,(VDP_CTRL).l  ; Reg  4: Plane B @ $E000  ($E000/$2000=7 → $07)
-    move.w  #$856C,(VDP_CTRL).l  ; Reg  5: Sprite table @ $D800 ($D800/$200=108 → $6C)
+    move.w  #$857C,(VDP_CTRL).l  ; Reg  5: Sprite table @ $F800 ($F800/$200=124 → $7C)
     move.w  #$8600,(VDP_CTRL).l  ; Reg  6: sprite table high bit = 0
     move.w  #$8700,(VDP_CTRL).l  ; Reg  7: BG color = palette 0, color 0
     move.w  #$8800,(VDP_CTRL).l  ; Reg  8: SMS compat = 0 (unused in M5)
@@ -185,10 +185,10 @@ EntryPoint:
     move.w  #$8AFF,(VDP_CTRL).l  ; Reg 10: H-int counter = $FF (effectively disabled)
     move.w  #$8B00,(VDP_CTRL).l  ; Reg 11: full-screen V-scroll, full H-scroll
     move.w  #$8C00,(VDP_CTRL).l  ; Reg 12: H32 (bits7,0=0), no interlace, no shadow/hl
-    move.w  #$8D37,(VDP_CTRL).l  ; Reg 13: H-scroll table @ $DC00 ($DC00/$400=55 → $37)
+    move.w  #$8D3F,(VDP_CTRL).l  ; Reg 13: H-scroll table @ $FC00 ($FC00/$400=63 → $3F)
     move.w  #$8E00,(VDP_CTRL).l  ; Reg 14: pattern gen base = 0 (SMS compat, unused M5)
     move.w  #$8F02,(VDP_CTRL).l  ; Reg 15: auto-increment = 2 (word per VRAM access)
-    move.w  #$9001,(VDP_CTRL).l  ; Reg 16: scroll size 64H × 32V → $01
+    move.w  #$9011,(VDP_CTRL).l  ; Reg 16: scroll size 64H × 64V → $11
     move.w  #$9100,(VDP_CTRL).l  ; Reg 17: window H position = 0
     move.w  #$9200,(VDP_CTRL).l  ; Reg 18: window V position = 0
     ; Regs 19-23 (DMA) intentionally SKIPPED — writing reg 23 arms the
@@ -209,7 +209,7 @@ EntryPoint:
     ;--------------------------------------------------------------------------
     ; Plane B blank fill — write tile $0200 to entire Plane B nametable at
     ; $E000.  Prevents tile-0 pattern data from leaking through transparent
-    ; Plane A pixels.  64×32 = 2048 entries (H32 mode, 64H×32V scroll size).
+    ; Plane A pixels.  64×64 = 4096 entries (H32 mode, 64H×64V scroll size).
     ;--------------------------------------------------------------------------
     move.l  #$60000003,(VDP_CTRL).l  ; VRAM write to $E000
     move.w  #2047,D0

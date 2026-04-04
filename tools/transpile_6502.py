@@ -2011,23 +2011,27 @@ def _patch_z02(path):
     else:
         print("  WARNING: _patch_z02 P9b -- copy count pattern not found")
 
-    # ---- Patch 10: Clear Plane A during Phase 1 init ----
+    # ---- Patch 10: Clear both nametables during Phase 1 init ----
     # After title screen fades to black, stale title nametable tiles
-    # (decorative chain border) remain in VRAM and become visible during
-    # the story scroll. Clear Plane A before the story scroll starts.
+    # remain in VRAM.  Clear both NT0 and NT1 in V64 plane before story scroll.
     old_story_tiles_init = (
         'InitDemoSubphaseTransferStoryTiles:\n'
         '    addq.b  #1,($005C,A4)'
     )
     new_story_tiles_init = (
         'InitDemoSubphaseTransferStoryTiles:\n'
-        '    ; PATCHED (P10): Clear Plane A to remove stale title screen tiles\n'
+        '    ; PATCHED (P10): Clear both nametables (V64 plane) at story scroll init\n'
+        '    move.b  #$20,D0\n'
+        '    move.b  #$24,D2\n'
+        '    moveq   #0,D3\n'
+        '    bsr     _clear_nametable_fast\n'
+        '    move.b  #$28,D0\n'
         '    bsr     _clear_nametable_fast\n'
         '    addq.b  #1,($005C,A4)'
     )
     if old_story_tiles_init in text:
         text = text.replace(old_story_tiles_init, new_story_tiles_init, 1)
-        print("  _patch_z02 P10: clear Plane A at story scroll init")
+        print("  _patch_z02 P10: clear both NTs (V64) at story scroll init")
     else:
         print("  WARNING: _patch_z02 P10 -- InitDemoSubphaseTransferStoryTiles not found")
 

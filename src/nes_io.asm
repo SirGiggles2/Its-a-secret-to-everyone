@@ -91,10 +91,10 @@ CHR_HIT_COUNT   equ CHR_STATE_BASE+20   ; byte: total CHR write calls (debug cou
 
 ;------------------------------------------------------------------------------
 ; Nametable tile-index cache — placed at $FF0840.
-; 32 × 30 = 960 bytes.  NT_CACHE[row*32 + col] = tile index written by T18.
-; Read by T20 attribute handler to re-write tile words with correct palette bits.
+; 32 × 60 = 1920 bytes (NT0 rows 0-29 + NT1 rows 30-59 for V64 plane).
+; NT_CACHE[row*32 + col] = tile index.  NT1 entries at offset 960.
 ;------------------------------------------------------------------------------
-NT_CACHE_BASE   equ CHR_STATE_BASE+$20  ; $FF0840  (32×30 = 960 bytes)
+NT_CACHE_BASE   equ CHR_STATE_BASE+$20  ; $FF0840  (32×60 = 1920 bytes)
 
 ;==============================================================================
 ; PPU register reads ($2000–$2007 → _ppu_read_0 … _ppu_read_7)
@@ -280,21 +280,27 @@ _ppu_write_5:
 _apply_genesis_scroll:
     movem.l D0-D1,-(SP)
     ; Vertical scroll -> VSRAM word 0 (Plane A)
+    ; V64 plane: NT0 = rows 0-29 (px 0-239), NT1 = rows 30-59 (px 240-479).
+    ; PPUCTRL bit 1 selects NT: 0 = NT0, 1 = NT1 (+240px offset).
     moveq   #0,D0
     move.b  (PPU_SCRL_Y).l,D0
     addi.w  #8,D0                       ; +8px: hide NES top overscan row
+    move.b  (PPU_CTRL).l,D1
+    btst    #1,D1                       ; nametable Y select?
+    beq.s   .ags_no_nt_offset
+    addi.w  #240,D0                     ; NT1 starts 240px into V64 plane
+.ags_no_nt_offset:
     move.l  #VSRAM_WRITE_0000,(VDP_CTRL).l
     move.w  D0,(VDP_DATA).l         ; Plane A V-scroll
     moveq   #0,D0
     move.w  D0,(VDP_DATA).l         ; Plane B V-scroll = 0
-    ; Horizontal scroll -> H-scroll table at VRAM $DC00
-    ; Genesis H-scroll scrolls opposite direction to NES:
-    ; NES HScroll=N shifts viewport right; Genesis HScroll=N shifts plane right.
+    ; Horizontal scroll -> H-scroll table at VRAM $FC00
+    ; Genesis H-scroll scrolls opposite direction to NES.
     moveq   #0,D0
     move.b  (PPU_SCRL_X).l,D0
     neg.w   D0
     andi.w  #$01FF,D0
-    move.l  #$7C000003,(VDP_CTRL).l  ; VRAM write at $DC00
+    move.l  #$7C000003,(VDP_CTRL).l  ; VRAM write at $FC00
     move.w  D0,(VDP_DATA).l         ; Plane A H-scroll
     moveq   #0,D0
     move.w  D0,(VDP_DATA).l         ; Plane B H-scroll = 0
@@ -413,7 +419,7 @@ _ppu_write_7:
     ; Each NES byte is one tile index.  Convert to a Genesis tile word and
     ; write to Plane A at the correct col/row position.
     ;
-    ; Plane A is at VDP VRAM $C000 (Reg 2 = $8230), 64H × 32V (Reg 16=$9001),
+    ; Plane A is at VDP VRAM $C000 (Reg 2 = $8230), 64H × 64V (Reg 16=$9011),
     ; so each row is 64 tiles × 2 bytes = $80 bytes wide.
     ;
     ;   index    = PPU_VADDR − $2000           (0 … $3BF)
@@ -787,9 +793,9 @@ _attr_write_2x2:
 ; Inputs D2, D3, D5 preserved.  Uses D0, D1, A0.
 ;==============================================================================
 _attr_write_one_tile:
-    ; Bounds check
-    cmpi.w  #30,D3
-    bhs.s   .awt_skip           ; row >= 30 -> out of nametable
+    ; Bounds check (V64: NT0 rows 0-29, NT1 rows 30-59)
+    cmpi.w  #60,D3
+    bhs.s   .awt_skip           ; row >= 60 -> out of nametable
     cmpi.w  #32,D2
     bhs.s   .awt_skip           ; col >= 32 -> out of nametable
 
@@ -1044,10 +1050,9 @@ _oam_dma:
     ; VSRAM scroll is now driven by _apply_genesis_scroll in IsrNmi.
     ; The old static 8px bias has been removed.
 
-    ; Set VDP write address: VRAM $D800 (sprite attribute table)
-    ; $D800 & $3FFF = $1800 → swap → $18000000 → | $40000003 = $58000003
-    ; (CD[5:4]=01 = VRAM write; A[15:14]=11 from $D800's top bits)
-    move.l  #$58000003,(VDP_CTRL).l
+    ; Set VDP write address: VRAM $F800 (sprite attribute table)
+    ; $F800 & $3FFF = $3800 → swap → $38000000 → | $40000003 = $78000003
+    move.l  #$78000003,(VDP_CTRL).l
 
     lea     (NES_RAM_BASE+$0200).l,A0  ; A0 → NES OAM buffer ($FF0200)
     moveq   #63,D7                     ; loop: 64 sprites (dbra counts 63→0)
@@ -1298,8 +1303,7 @@ _m68k_tablejump:
 ; _clear_nametable_fast — Fast replacement for ClearNameTable.
 ;
 ; Fills Plane A with a tile word directly via VDP_DATA (bypassing _ppu_write_7)
-; and clears NT_CACHE.  For nametable 1 ($28xx), the original code's writes
-; all hit .nt_skip_write (address ≥$2400), so we simply skip.
+; and clears NT_CACHE.  V64 plane: NT0 ($20) → rows 0-29, NT1 ($28) → rows 30-59.
 ;
 ; Input:
 ;   D0.b = hi byte of NES PPU address ($20 = nametable 0, $28 = nametable 1)
@@ -1313,32 +1317,39 @@ _m68k_tablejump:
 _clear_nametable_fast:
     movem.l D0-D4/A0,-(SP)
 
+    ; Save NT selection before D0 is clobbered
+    move.b  D0,D4                   ; D4.b = NT hi byte ($20 or $28)
+
     ; Compute the end PPU_VADDR: start + 1024 tiles + 64 attributes = +$0440
-    ; ClearNameTable writes 1024+64 bytes through _ppu_write_7 which each
-    ; increment PPU_VADDR.  The second pass also sets PPU_VADDR for attributes.
-    ; For simplicity, set PPU_VADDR to the post-attribute address.
-    move.b  D0,D4                   ; D4.b = hi byte ($20 or $28)
-    andi.w  #$00FF,D4
-    lsl.w   #8,D4                   ; D4.w = PPU base ($2000 or $2800)
-    addi.w  #$0440,D4               ; +1024 tiles + 64 attrs (each increments by 1)
-    move.w  D4,(PPU_VADDR).l        ; set PPU_VADDR to expected end value
+    andi.w  #$00FF,D0
+    lsl.w   #8,D0                   ; D0.w = PPU base ($2000 or $2800)
+    addi.w  #$0440,D0
+    move.w  D0,(PPU_VADDR).l        ; set PPU_VADDR to expected end value
 
-    ; Only nametable 0 ($20xx) maps to Plane A.  $28xx is a no-op in _ppu_write_7.
-    cmpi.b  #$20,D0
-    bne.s   .cnf_done
-
-    ; ---- Fill Plane A (960 tile words = 32 cols × 30 rows) ----
-    ; VDP VRAM write to $C000 (Plane A base):
-    ;   command = $40000003  (VRAM write, address $C000)
-    move.l  #$40000003,(VDP_CTRL).l
-
-    ; Build tile word from the current BG pattern-table selection so untouched
-    ; blank regions keep using the correct filler tile after title/demo clears.
+    ; Build tile word from the current BG pattern-table selection
     moveq   #0,D0
     move.b  D2,D0                   ; D0.w = raw tile index
     bsr     _compose_bg_tile_word
     move.w  D0,D1                   ; D1.w = tile word to write
 
+    ; Determine VRAM start address based on NT selection
+    cmpi.b  #$28,D4
+    beq.s   .cnf_nt1
+
+    ; ---- NT0: Fill Plane A rows 0-29 starting at $C000 ----
+    move.l  #$40000003,(VDP_CTRL).l ; VRAM write at $C000
+    ; Clear NT_CACHE offsets 0-959 (NT0)
+    lea     (NT_CACHE_BASE).l,A0
+    bra.s   .cnf_fill
+
+.cnf_nt1:
+    ; ---- NT1: Fill Plane A rows 30-59 starting at $CF00 ----
+    ; $CF00 = $C000 + 30*$80.  VDP command: ($CF00 & $3FFF)<<16 | $40000003
+    move.l  #$4F000003,(VDP_CTRL).l ; VRAM write at $CF00
+    ; Clear NT_CACHE offsets 960-1919 (NT1)
+    lea     (NT_CACHE_BASE+960).l,A0
+
+.cnf_fill:
     ; Write 960 tiles (32×30 NES nametable).  Plane A is 64 tiles wide,
     ; so after each 32-tile NES row we must skip 32 unused tiles.
     moveq   #30-1,D3                ; 30 rows
@@ -1349,9 +1360,6 @@ _clear_nametable_fast:
     dbf     D4,.cnf_col
 
     ; Skip 32 unused tile slots (64 bytes) in Plane A row.
-    ; Re-set VDP write address to start of next row.
-    ; Current address after 32 writes = row_base + 64.
-    ; Next row base = row_base + 128.  So skip 64 bytes (32 words).
     moveq   #32-1,D4
 .cnf_skip:
     move.w  D1,(VDP_DATA).l         ; write same tile to unused slots (harmless)
@@ -1359,8 +1367,7 @@ _clear_nametable_fast:
 
     dbf     D3,.cnf_row
 
-    ; ---- Clear NT_CACHE (960 bytes, fill with tile index) ----
-    lea     (NT_CACHE_BASE).l,A0
+    ; ---- Clear NT_CACHE (960 bytes for the selected NT) ----
     move.w  #960-1,D3
     move.b  D1,D0                   ; fill byte = tile index
 .cnf_cache:
@@ -1798,7 +1805,7 @@ _transfer_tilebuf_fast:
 
     ;==========================================================================
     ; NAMETABLE 1 RANGE ($2800-$2BBF): tile index -> Plane A word
-    ; Maps NT1 tiles to the same Plane A rows as NT0 (for vertical scroll).
+    ; Maps NT1 tiles to Plane A rows 30-59 (V64 plane, below NT0 rows 0-29).
     ;==========================================================================
 .ttf_nt1_range:
     lea     (NT_CACHE_BASE).l,A2
@@ -1814,20 +1821,23 @@ _transfer_tilebuf_fast:
     cmpi.w  #$2BC0,D5
     bhs.s   .ttf_nt1_skip
 
-    ; Compute index = PPU_VADDR - $2800 (same NT layout, different base)
+    ; Compute index = PPU_VADDR - $2800
     move.w  D5,D0
     subi.w  #$2800,D0               ; D0.w = index (0..$3BF)
 
-    ; Cache tile index in NT_CACHE (same cache, shared with NT0)
-    move.b  D2,(A2,D0.W)
+    ; Cache tile index in NT_CACHE at NT1 offset (+960)
+    move.w  D0,D6
+    addi.w  #960,D6
+    move.b  D2,(A2,D6.W)
 
-    ; Compute VDP address: $C000 + row*$80 + col*2
+    ; Compute VDP address: $C000 + (row+30)*$80 + col*2
     move.w  D0,D6                   ; save index
     andi.w  #$001F,D6               ; col = index & 31
     lsl.w   #1,D6                   ; col * 2
     lsr.w   #5,D0                   ; row = index >> 5
-    mulu.w  #$0080,D0              ; row * $80
-    add.w   D6,D0                   ; row*$80 + col*2
+    addi.w  #30,D0                  ; +30: NT1 rows 30-59 in V64 plane
+    mulu.w  #$0080,D0              ; (row+30) * $80
+    add.w   D6,D0                   ; + col*2
     addi.w  #$C000,D0              ; + Plane A base
 
     ; Issue VDP VRAM write command
@@ -1879,7 +1889,8 @@ _transfer_tilebuf_fast:
 
     move.w  D0,D3
     lsr.w   #3,D3
-    lsl.w   #2,D3                   ; D3.w = tile_base_row
+    lsl.w   #2,D3                   ; D3.w = tile_base_row (0-28)
+    addi.w  #30,D3                  ; +30: NT1 rows 30-59 in V64 plane
     andi.w  #$0007,D0
     lsl.w   #2,D0
     move.w  D0,D2                   ; D2.w = tile_base_col
