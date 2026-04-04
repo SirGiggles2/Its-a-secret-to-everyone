@@ -2313,6 +2313,29 @@ def _patch_z07(path):
     else:
         print("  WARNING: _patch_z07 P1 -- SetScroll pattern not found")
 
+    # P2: Add a second _apply_genesis_scroll in EnableNMI (after game logic).
+    # Game logic updates CurVScroll and sets SwitchNameTablesReq ($005C) AFTER
+    # SetScroll runs, so the P1 call sees stale values.  This second call at
+    # EnableNMI picks up the latest scroll state.  The pre-toggle in
+    # _apply_genesis_scroll reads $005C (not yet cleared — that happens in
+    # next frame's TransferCurTileBuf) and anticipates the NT flip.
+    old_enablenmi = (
+        '    bsr     _ppu_write_0  ; PPU $2000 write, D0=val\n'
+        '    move.b  D0,($00FF,A4)\n'
+        '    rts   ; RTI'
+    )
+    new_enablenmi = (
+        '    bsr     _ppu_write_0  ; PPU $2000 write, D0=val\n'
+        '    move.b  D0,($00FF,A4)\n'
+        '    bsr     _apply_genesis_scroll  ; P2: re-apply scroll after game logic\n'
+        '    rts   ; RTI'
+    )
+    if old_enablenmi in text:
+        text = text.replace(old_enablenmi, new_enablenmi, 1)
+        print("  _patch_z07 P2: added _apply_genesis_scroll in EnableNMI")
+    else:
+        print("  WARNING: _patch_z07 P2 -- EnableNMI pattern not found")
+
     with open(path, 'w', encoding='utf-8') as f:
         f.write(text)
 

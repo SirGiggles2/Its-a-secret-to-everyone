@@ -295,9 +295,17 @@ _apply_genesis_scroll:
     ; PPUCTRL bit 1 selects NT: 0 = NT0, 1 = NT1 (+240px offset).
     ; Called from SetScroll after _ppu_write_5 updates PPU shadows.
     moveq   #0,D0
-    move.b  (PPU_SCRL_Y).l,D0
+    move.b  ($00FC,A4),D0               ; CurVScroll (latest, not PPU shadow)
     addi.w  #8,D0                       ; +8px: hide NES top overscan row
-    move.b  (PPU_CTRL).l,D1
+    move.b  ($00FF,A4),D1               ; CurPpuControl (latest, not PPU shadow)
+    ; If a nametable toggle is pending (game logic set $005C this frame but
+    ; IsrNmi entry won't process it until next frame), pre-apply it so VSRAM
+    ; is correct immediately.  On NES the PPU applies $2000/$2005 atomically;
+    ; on Genesis the 1-frame deferral causes a visible scroll jump.
+    tst.b   ($005C,A4)                  ; SwitchNameTablesReq pending?
+    beq.s   .ags_no_pending
+    eori.b  #$02,D1                     ; pre-toggle NT select bit (local copy)
+.ags_no_pending:
     btst    #1,D1                       ; nametable Y select?
     beq.s   .ags_no_nt_offset
     addi.w  #240,D0                     ; NT1 starts 240px into V64 plane
@@ -309,7 +317,7 @@ _apply_genesis_scroll:
     ; Horizontal scroll -> H-scroll table at VRAM $FC00
     ; Genesis H-scroll scrolls opposite direction to NES.
     moveq   #0,D0
-    move.b  (PPU_SCRL_X).l,D0
+    move.b  ($00FD,A4),D0               ; CurHScroll (latest, not PPU shadow)
     neg.w   D0
     andi.w  #$01FF,D0
     move.l  #$7C000003,(VDP_CTRL).l  ; VRAM write at $FC00
