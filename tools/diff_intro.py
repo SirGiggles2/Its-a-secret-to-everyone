@@ -203,7 +203,7 @@ def semantic_state(rec):
     )
 
 
-def find_best_offset(nes_trace, gen_trace, search=5):
+def find_best_offset(nes_trace, gen_trace, search=30):
     """
     Find constant integer offset k such that for most frames f,
     semantic_state(gen_trace[f+k]) == semantic_state(nes_trace[f]).

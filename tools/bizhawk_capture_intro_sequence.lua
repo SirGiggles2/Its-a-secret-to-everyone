@@ -28,8 +28,11 @@ local function rd_nes(addr)
 end
 
 local function rd_68k(addr)
-    -- Genesis 68K RAM — PPU_STATE_BASE lives at $FF0800.
-    local ok, v = pcall(function() return memory.read_u8(addr, "68K RAM") end)
+    -- Genesis 68K RAM domain covers $FF0000-$FFFFFF mapped as offsets
+    -- 0..0xFFFF. PPU_STATE_BASE lives at $FF0800 → offset $0800.
+    local off = addr - 0xFF0000
+    if off < 0 or off > 0xFFFF then return 0xFF end
+    local ok, v = pcall(function() return memory.read_u8(off, "68K RAM") end)
     return ok and v or 0xFF
 end
 
