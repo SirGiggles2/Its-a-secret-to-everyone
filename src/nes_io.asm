@@ -1343,16 +1343,23 @@ _clear_nametable_fast:
     bra.s   .cnf_fill
 
 .cnf_nt1:
-    ; ---- NT1: Fill Plane A rows 30-59 starting at $CF00 ----
+    ; ---- NT1: Fill Plane A rows 30-63 starting at $CF00 ----
+    ; 34 rows = 30 NT1 rows + 4 gap rows (prevents garbage when scroll wraps).
     ; $CF00 = $C000 + 30*$80.  VDP command: ($CF00 & $3FFF)<<16 | $40000003
     move.l  #$4F000003,(VDP_CTRL).l ; VRAM write at $CF00
     ; Clear NT_CACHE offsets 960-1919 (NT1)
     lea     (NT_CACHE_BASE+960).l,A0
 
 .cnf_fill:
-    ; Write 960 tiles (32×30 NES nametable).  Plane A is 64 tiles wide,
+    ; Write tiles to Plane A rows.  Plane A is 64 tiles wide,
     ; so after each 32-tile NES row we must skip 32 unused tiles.
-    moveq   #30-1,D3                ; 30 rows
+    ; NT0: 30 rows (0-29).  NT1: 34 rows (30-63, includes 4 gap rows).
+    cmpi.b  #$28,D4
+    bne.s   .cnf_nt0_count
+    moveq   #34-1,D3                ; NT1: 34 rows (fills gap rows 60-63)
+    bra.s   .cnf_row
+.cnf_nt0_count:
+    moveq   #30-1,D3                ; NT0: 30 rows
 .cnf_row:
     moveq   #32-1,D4                ; 32 cols per row
 .cnf_col:
