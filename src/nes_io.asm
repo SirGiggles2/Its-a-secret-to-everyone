@@ -1533,24 +1533,28 @@ _transfer_tilebuf_fast:
     moveq   #64,D3
 .ttf_count_ok:
 
-    ; Decode repeat mode (bit 7): prefetch single data byte
-    moveq   #0,D4                   ; D4.b = 0 = sequential mode
+    ; NES control byte layout (after two ASLs in original 6502):
+    ;   Bit 7 = increment mode: 0 = horizontal (+1), 1 = vertical (+32)
+    ;   Bit 6 = repeat mode:    0 = sequential,      1 = repeat single byte
+
+    ; Decode increment (bit 7): 1 or 32
+    moveq   #1,D1                   ; D1.w = increment
     btst    #7,D6
+    beq.s   .ttf_inc_ok
+    moveq   #32,D1
+.ttf_inc_ok:
+
+    ; Decode repeat mode (bit 6): prefetch single data byte
+    moveq   #0,D4                   ; D4.b = 0 = sequential mode
+    btst    #6,D6
     beq.s   .ttf_no_repeat
     move.b  (A0)+,D2                ; D2.b = repeat data byte
     moveq   #-1,D4                  ; D4.b = $FF = repeat mode
 .ttf_no_repeat:
 
-    ; Decode increment (bit 6): 1 or 32
-    moveq   #1,D1                   ; D1.w = increment
-    btst    #6,D6
-    beq.s   .ttf_inc_ok
-    moveq   #32,D1
-.ttf_inc_ok:
-
     ; Update PPU_CTRL bit 2 (increment mode) + NES RAM $00FF
     move.b  ($00FF,A4),D0
-    btst    #6,D6
+    btst    #7,D6
     beq.s   .ttf_ctrl_h
     ori.b   #$04,D0                 ; set bit 2 = +32 mode
     bra.s   .ttf_ctrl_s
