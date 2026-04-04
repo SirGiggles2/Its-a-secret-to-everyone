@@ -302,30 +302,24 @@ _apply_genesis_scroll:
     rts
 
 ;------------------------------------------------------------------------------
-; _ags_flush — Apply PPU scroll shadows to VDP VSRAM / H-scroll and prime
-;              the H-int event queue. Called ONCE per frame from VBlankISR
-;              after IsrNmi has returned (scroll shadows are finalized).
+; _ags_flush — Apply PPU scroll shadows to VDP VSRAM / H-scroll. Called ONCE
+;              per frame from VBlankISR after IsrNmi has returned (scroll
+;              shadows are finalized).
 ;
 ; Converts NES PPU scroll values to Genesis VDP scroll registers. Assumes
 ; A4 = NES RAM base ($FF0000) — set by the VBlankISR caller.
 ;
-; Two mid-frame mechanisms are multiplexed through a single event queue
-; (HINT_Q_* in genesis_shell.asm) that HBlankISR consumes:
+; Sprite-0 split support (IsSprite0CheckActive=1): title pinned at rows 0..39
+; via VSRAM=0, then the story half uses the actual scroll base at scanline 40
+; onward. Implemented by priming HINT_Q0 with one event; HBlankISR consumes it.
+; Without split, H-int is disabled and VSRAM is written once directly.
 ;
-;   (A) Sprite-0 split (IsSprite0CheckActive=1): title pinned at rows 0..39
-;       via VSRAM=0, then the story half uses the actual scroll base at
-;       scanline 40 onward. Implements the NES WaitAndScrollToSplitBottom
-;       mid-frame PPUADDR rewrite using a VDP-native H-int.
-;
-;   (B) Dead-zone skip: V64 plane = 512px, NES NTs = 480px. Rows 60..63
-;       (px 480..511) are a 32px dead zone. VSRAM base in [257,479] means
-;       the dead zone falls within the visible area; schedule an H-int at
-;       scanline (479-base) that shifts VSRAM to base+32, skipping it.
-;
-; When both (A) and (B) apply in the same frame, the queue holds 2 events
-; ordered by scanline; HBlankISR re-arms Reg 10 with the delta between them.
-; If the DZ boundary falls inside the title band (line ≤ 40), the two events
-; collapse into a single post-DZ top-split.
+; NOTE: The V64 plane's 32px dead-zone (rows 60..63) is handled passively —
+; _clear_nametable_fast pre-fills those rows with blank tiles, so when VSRAM
+; wraps through them they render as black and blend with the background. An
+; earlier H-int "dead-zone skip" mechanism was removed after it was proven to
+; cause visible jitter/tile-duplication during the items scroll (see prior
+; commit); the blank pre-fill is the correct long-term solution.
 ;
 ; Preserves: D5-D7, A0-A6.
 ;------------------------------------------------------------------------------
@@ -347,7 +341,7 @@ _ags_flush:
 .ags_no_nt_offset:
     ; D0 = raw base VSRAM (8-487)
 
-    ; --- Case 3 collapse: VSRAM >= 480 → subtract dead zone size ---
+    ; --- Case 3 collapse: VSRAM >= 480 → subtract plane gap (32) ---
     cmpi.w  #480,D0
     blt.s   .ags_have_base
     subi.w  #480,D0
@@ -360,93 +354,25 @@ _ags_flush:
 
     ;========================================================================
     ; SPLIT MODE: title pinned (VSRAM=0) for rows 0..39, story scrolled for
-    ; rows 40.. .  Queue up to 2 H-int events: top-split at line 39, and
-    ; optionally dead-zone-skip at line (479-D0) when D0 ∈ [257,479].
+    ; rows 40.. .  Single H-int event at line 39 → vsram=D0.
     ;========================================================================
-    cmpi.w  #257,D0
-    blt     .ags_split_only             ; no DZ event needed
-    ; D0 ∈ [257,479] → DZ case 2 applies
-    move.w  #479,D4
-    sub.w   D0,D4                       ; D4 = DZ abs scanline (0..222)
-    cmpi.w  #41,D4
-    bge.s   .ags_split_then_dz
-    cmpi.w  #39,D4
-    ble.s   .ags_dz_in_title
-    ; D4 == 39 or 40: collides with top-split boundary — collapse to DZ'd VSRAM
-    bra.s   .ags_dz_in_title
-
-.ags_split_then_dz:
-    ; Order: top-split at line 39 (→ vsram=D0), then DZ at line D4 (→ vsram=D0+32)
-    ; Delta = D4 - 39 - 1 = D4 - 40
-    move.b  #39,(HINT_Q0_CTR).l
-    move.w  D0,(HINT_Q0_VSRAM).l
-    move.w  D4,D1
-    subi.w  #40,D1
-    move.b  D1,(HINT_Q1_CTR).l
-    move.w  D0,D2
-    addi.w  #32,D2
-    move.w  D2,(HINT_Q1_VSRAM).l
-    move.b  #2,(HINT_Q_COUNT).l
-    bra.s   .ags_arm_split
-
-.ags_dz_in_title:
-    ; DZ boundary is inside (or at) the title band. Collapse into a single
-    ; top-split event whose VSRAM is already past the dead zone.
-    move.b  #39,(HINT_Q0_CTR).l
-    move.w  D0,D2
-    addi.w  #32,D2
-    move.w  D2,(HINT_Q0_VSRAM).l
-    move.b  #1,(HINT_Q_COUNT).l
-    bra.s   .ags_arm_split
-
-.ags_split_only:
-    ; No dead-zone event. Single top-split at line 39 → vsram=D0.
     move.b  #39,(HINT_Q0_CTR).l
     move.w  D0,(HINT_Q0_VSRAM).l
     move.b  #1,(HINT_Q_COUNT).l
-
-.ags_arm_split:
     ; Initial VSRAM = 0 (title pinned for rows 0..39)
     move.l  #VSRAM_WRITE_0000,(VDP_CTRL).l
     moveq   #0,D1
     move.w  D1,(VDP_DATA).l             ; Plane A V-scroll = 0
     move.w  D1,(VDP_DATA).l             ; Plane B V-scroll = 0
     ; Arm H-int with Q0 counter
-    moveq   #0,D1
-    move.b  (HINT_Q0_CTR).l,D1
-    or.w    #$8A00,D1
-    move.w  D1,(VDP_CTRL).l             ; Reg 10 = abs scanline
+    move.w  #$8A27,(VDP_CTRL).l         ; Reg 10 = 39
     move.w  #$8014,(VDP_CTRL).l         ; Reg 0: enable H-int
-    bra     .ags_hscroll
-
-    ;========================================================================
-    ; NO-SPLIT MODE: original scroll behavior (title screen, gameplay, etc).
-    ; DZ case 2 still uses H-int to skip the dead zone mid-frame.
-    ;========================================================================
-.ags_no_split:
-    cmpi.w  #257,D0
-    blt.s   .ags_ns_case1
-    ; DZ case 2: schedule a single event at line (479-D0)
-    move.w  D0,D2
-    addi.w  #32,D2                      ; D2 = base+32
-    move.w  D2,(HINT_Q0_VSRAM).l
-    move.w  #479,D1
-    sub.w   D0,D1                       ; D1 = counter
-    move.b  D1,(HINT_Q0_CTR).l
-    move.b  #1,(HINT_Q_COUNT).l
-    ; Initial VSRAM = D0 (pre-wrap)
-    move.l  #VSRAM_WRITE_0000,(VDP_CTRL).l
-    move.w  D0,(VDP_DATA).l
-    moveq   #0,D2
-    move.w  D2,(VDP_DATA).l
-    ; Arm H-int
-    or.w    #$8A00,D1
-    move.w  D1,(VDP_CTRL).l
-    move.w  #$8014,(VDP_CTRL).l
     bra.s   .ags_hscroll
 
-.ags_ns_case1:
-    ; No H-int needed. VSRAM = D0 directly, H-int disabled.
+    ;========================================================================
+    ; NO-SPLIT MODE: VSRAM = D0 directly, H-int disabled.
+    ;========================================================================
+.ags_no_split:
     move.b  #0,(HINT_Q_COUNT).l
     move.w  #$8AFF,(VDP_CTRL).l
     move.w  #$8004,(VDP_CTRL).l
