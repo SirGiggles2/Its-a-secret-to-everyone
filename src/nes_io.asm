@@ -329,13 +329,15 @@ _apply_genesis_scroll:
     bra.s   .dz_vsram_write
 .dz_hint:
     ; --- Case 2: dead zone in middle/bottom (VSRAM 257-479) ---
+    ; Counter K = 479-VSRAM. Reg 10 = K fires h-int at end of scanline K,
+    ; so scanline K+1 uses new VSRAM (base+32). Line K+1 = VSRAM_new + K+1
+    ; = (base+32) + (479-base+1) = 512 mod 512 = 0 (NT0 row 0). Perfect.
     move.w  D0,D1
     addi.w  #32,D1                      ; adjusted VSRAM = base + 32
     move.w  D1,(DZ_HINT_VSRAM).l       ; store for HBlankISR
     moveq   #0,D1
-    move.w  #480,D1
-    sub.w   D0,D1
-    subq.w  #1,D1                       ; H-int scanline = 480-VSRAM-1
+    move.w  #479,D1
+    sub.w   D0,D1                       ; D1 = 479 - VSRAM (counter value)
     or.w    #$8A00,D1
     move.w  D1,(VDP_CTRL).l            ; Reg 10: set H-int counter
     move.w  #$8014,(VDP_CTRL).l        ; Reg 0: enable H-int (bit 4 + bit 2 colorfix)

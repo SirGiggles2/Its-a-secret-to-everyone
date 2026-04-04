@@ -311,11 +311,9 @@ VBlankISR:
 ; to prevent re-triggering on subsequent scanlines.
 ;==============================================================================
 HBlankISR:
-    move.l  D0,-(SP)
     move.l  #VSRAM_WRITE_0000,(VDP_CTRL).l
-    move.w  (DZ_HINT_VSRAM).l,(VDP_DATA).l
-    move.w  #$8AFF,(VDP_CTRL).l             ; Reg 10: disable H-int counter
-    move.l  (SP)+,D0
+    move.w  (DZ_HINT_VSRAM).l,(VDP_DATA).l  ; write VSRAM FIRST — critical path
+    move.w  #$8004,(VDP_CTRL).l             ; Reg 0: disable H-int (prevent re-fire)
     rte
 
 ;==============================================================================
