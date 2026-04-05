@@ -532,15 +532,23 @@ _ppu_write_7:
 
     ; Dispatch on NT_A vs NT_B tile ranges.
     cmpi.w  #$2800,D1
-    blo.s   .nt_write_a              ; $2000-$27FF → NT_A path
+    blo     .nt_write_a              ; $2000-$27FF → NT_A path
     cmpi.w  #$2C00,D1
     bhs     .nt_noop                 ; ≥$2C00 → palette/skip
     cmpi.w  #$2BC0,D1
-    bhs     .nt_noop                 ; $2BC0-$2BFF → NT_B attribute (skip for now)
+    bhs     .nt_attr_b               ; $2BC0-$2BFF → NT_B attribute decode
 
     ; ---- NT_B tile write: $2800-$2BBF → Plane A rows 30..59 ----
     move.w  D1,D2
     subi.w  #$2800,D2                ; D2.w = index within NT_B (0…$3BF)
+
+    ; T21: cache raw tile index for attribute palette updates.
+    ; NT_B cache lives at NT_CACHE_BASE + 960 (rows 30..59 slot).
+    andi.w  #$00FF,D0                ; D0.w = tile index
+    move.w  D2,D3
+    addi.w  #960,D3                  ; D3.w = NT_B cache offset (960..1919)
+    lea     (NT_CACHE_BASE).l,A0
+    move.b  D0,(A0,D3.W)
 
     move.w  D2,D3
     andi.w  #$001F,D3
@@ -558,12 +566,74 @@ _ppu_write_7:
     ori.l   #$40000003,D3
     move.l  D3,(VDP_CTRL).l
 
-    andi.w  #$00FF,D0                ; D0.w = tile index
     bsr     _compose_bg_tile_word
     move.w  D0,(VDP_DATA).l
 
     movem.l (SP)+,D0-D6/A0-A1
     rts
+
+    ;======================================================================
+    ; NT_B attribute decode ($2BC0-$2BFF) — parallel to NT_A .nt_noop path
+    ; but writes to Plane A rows 30..59 by adding +30 to tile_base_row.
+    ; _attr_write_one_tile reads NT_CACHE[row*32+col], so row≥30 naturally
+    ; indexes into the NT_B cache slot at offset 960+.
+    ;======================================================================
+.nt_attr_b:
+    cmpi.w  #$2C00,D1
+    bhs     .nt_skip_write           ; safety: ≥$2C00 handled upstream
+
+    move.w  D1,D2
+    subi.w  #$2BC0,D2                ; D2.w = attribute offset (0..63)
+
+    move.w  D2,D3
+    lsr.w   #3,D3
+    lsl.w   #2,D3                    ; D3.w = tile_base_row (0..28)
+    addi.w  #30,D3                   ; +30: NT_B rows 30..59
+    andi.w  #$0007,D2
+    lsl.w   #2,D2                    ; D2.w = tile_base_col (0..28)
+
+    move.b  D0,D4
+
+    ; Quadrant 0: bits [1:0]
+    move.w  D4,D5
+    andi.w  #$0003,D5
+    lsl.w   #5,D5
+    lsl.w   #8,D5                    ; D5.w = palette<<13
+    bsr     _attr_write_2x2
+
+    ; Quadrant 1: bits [3:2], col_off=+2
+    move.w  D4,D5
+    lsr.w   #2,D5
+    andi.w  #$0003,D5
+    lsl.w   #5,D5
+    lsl.w   #8,D5
+    addq.w  #2,D2
+    bsr     _attr_write_2x2
+    subq.w  #2,D2
+
+    ; Quadrant 2: bits [5:4], row_off=+2
+    move.w  D4,D5
+    lsr.w   #4,D5
+    andi.w  #$0003,D5
+    lsl.w   #5,D5
+    lsl.w   #8,D5
+    addq.w  #2,D3
+    bsr     _attr_write_2x2
+    subq.w  #2,D3
+
+    ; Quadrant 3: bits [7:6], row_off=+2, col_off=+2
+    move.w  D4,D5
+    lsr.w   #6,D5
+    andi.w  #$0003,D5
+    lsl.w   #5,D5
+    lsl.w   #8,D5
+    addq.w  #2,D2
+    addq.w  #2,D3
+    bsr     _attr_write_2x2
+    subq.w  #2,D2
+    subq.w  #2,D3
+
+    bra     .nt_skip_write
 
 .nt_write_a:
     cmpi.w  #$23C0,D1
@@ -699,6 +769,10 @@ _ppu_write_7:
     ; Offset entry-0s (0,4,8,12,16,20,24,28): universal BG color mirror
     ; Offsets 16-31 ($3F10-$3F1F): sprite palettes → Genesis CRAM pal 2-3
     ;   (NES sprite pal 0,2→Genesis pal 2; NES sprite pal 1,3→Genesis pal 3)
+    ; Sequential last-write-wins: sprite pals 2,3 end up in PAL2/PAL3 which
+    ; gives correct sprite colors (red hearts, green grass) while BG text
+    ; only uses PAL0/PAL1 during the story phase, so BG2/BG3 clobber is OK.
+    ; _oam_dma maps NES sprite pal bits → Gen pal 2/3 to match.
     cmpi.w  #$10,D2
     blo.s   .t19_bg_color           ; offset < 16: BG palette
     ; Sprite palette (offset 16-31)
