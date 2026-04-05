@@ -64,13 +64,28 @@ COLOR_BLACK     equ $0000
 ;==============================================================================
 ; VRAM layout
 ;
-;   $0000–$AFFF   Tiles (CHR-RAM fills dynamically, space for 1408 tiles)
+;   $0000–$1FFF   Sprite CHR copy 0 (sub-pal 0, bias +4) — 256 tiles
+;   $2000–$3FFF   BG CHR (nametable tiles) — 256 tiles
+;   $4000–$5FFF   Sprite CHR copy 1 (sub-pal 1, bias +8) — 256 tiles
+;   $6000–$7FFF   Sprite CHR copy 2 (sub-pal 2, bias +C) — 256 tiles
+;   $8000–$9FFF   Sprite CHR copy 3 (sub-pal 3, bias +4, OAM=PAL1) — 256 tiles
+;   $A000–$AFFF   Free / reserved tile area
 ;   $B000–$B7FF   Window plane   32×32 × 2 bytes = $800  (HUD strip)
 ;   $C000–$CFFF   Plane A        64×32 × 2 bytes = $1000 (main playfield)
 ;   $D800–$DA7F   Sprite attr    80 × 8 bytes = $280
 ;   $DC00–$DF7F   H-scroll tbl   224 × 4 bytes = $380 (line-scroll mode)
 ;   $E000–$EFFF   Plane B        64×32 × 2 bytes = $1000 (transition staging)
 ;   $F000–$FFFF   Free / reserved
+;
+; T-CHR v8 sprite sub-palette packing (each NES sprite CHR tile is uploaded
+; to 4 VRAM copies with pre-biased pixel values — _chr_upload_sprite_4x):
+;   sub-pal 0 → copy 0 @ $0000, pixels+$4 → CRAM PAL0[4..7]
+;   sub-pal 1 → copy 1 @ $4000, pixels+$8 → CRAM PAL0[8..11]
+;   sub-pal 2 → copy 2 @ $6000, pixels+$C → CRAM PAL0[12..15]
+;   sub-pal 3 → copy 3 @ $8000, pixels+$4 → CRAM PAL1[4..7]
+; BG palettes PAL0[0..3]/PAL1[0..3]/PAL2/PAL3 remain 100% untouched.
+; OAM dispatch (_oam_dma) selects the correct VRAM copy via tile bias and
+; the correct Gen palette (PAL0 for sub-pal 0/1/2, PAL1 for sub-pal 3).
 ;==============================================================================
 
 ;==============================================================================
