@@ -1022,6 +1022,7 @@ _chr_convert_upload:
 ; Clobbers D0-D7, A0-A2.
 ;==============================================================================
 _chr_upload_sprite_4x:
+    movem.l D0-D7/A0-A2,-(SP)           ; save everything (helper clobbers D0-D7, A0-A2)
     move.w  (CHR_BUF_VADDR).l,D3
     add.w   D3,D3                       ; D3.w = gen tile offset (NES_addr * 2)
     andi.l  #$0000FFFF,D3               ; zero-extend for safe .l math
@@ -1092,6 +1093,7 @@ _chr_upload_sprite_4x:
     bge.s   .csfx_row
 
     dbra    D5,.csfx_copy_loop
+    movem.l (SP)+,D0-D7/A0-A2
     rts
 
     ;==========================================================================
