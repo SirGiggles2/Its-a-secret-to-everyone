@@ -34,7 +34,7 @@
 ;
 ; See memory/project_chr_expansion.md for the staged rollout plan.
 ;------------------------------------------------------------------------------
-CHR_EXPANSION_ENABLED equ 0
+CHR_EXPANSION_ENABLED equ 1
 
 ;------------------------------------------------------------------------------
 ; PPU state RAM — placed at $FF0800 (immediately after 2KB NES work RAM).
@@ -814,11 +814,22 @@ _ppu_write_7:
     beq.s   .t19_spr_entry0         ; slot 0 → BG mirror
     ; Non-entry-0 sprite color: remap
     ifne CHR_EXPANSION_ENABLED
-    ; T-CHR S8: pack 4 NES sprite sub-palettes into Gen PAL2 slots 0..15.
-    ; CRAM = (offset - $10) * 2 + $40 = offset*2 + $20  (range $42..$5E).
+    ; T-CHR S8 (v2): pack sprite sub-palettes into unused tail slots of BG
+    ; palettes so BG PAL0-3[0..3] stay untouched.
+    ;   sub-pal 0 → PAL0[4..7]   (CRAM base $08, bias +4 pixels)
+    ;   sub-pal 1 → PAL0[8..11]  (CRAM base $10, bias +8 pixels)
+    ;   sub-pal 2 → PAL0[12..15] (CRAM base $18, bias +12 pixels)
+    ;   sub-pal 3 → PAL1[4..7]   (CRAM base $28, bias +4 pixels, different palette)
     move.w  D2,D3
-    lsl.w   #1,D3
-    addi.w  #$20,D3                 ; D3 = CRAM address in PAL2
+    subi.w  #$10,D3                 ; D3 = 0..15 within sprite range
+    lsr.w   #2,D3                   ; D3 = sub-pal (0..3)
+    add.w   D3,D3                   ; * 2 for word index
+    lea     (.t19_spr_cram_base).l,A1
+    move.w  (A1,D3.W),D3            ; D3 = CRAM base for this sub-pal
+    move.w  D2,D4
+    andi.w  #$0003,D4               ; color slot (1..3)
+    add.w   D4,D4                   ; * 2
+    add.w   D4,D3                   ; D3 = CRAM address
     else
     ; Legacy last-write-wins: NES sprite pal 0-3 → Gen pal 2|3 (2,3,2,3).
     move.w  D2,D3
@@ -862,6 +873,16 @@ _ppu_write_7:
     bsr     .inc_ppuaddr
     movem.l (SP)+,D0-D6/A0-A1
     rts
+
+    ifne CHR_EXPANSION_ENABLED
+    ; T-CHR S8 v2: NES sprite sub-palette → CRAM base address (PAL slot 4).
+    ; Slots 1..3 (color indices 1..3) are written relative to this base.
+.t19_spr_cram_base:
+    dc.w    $08                 ; sub-pal 0 → PAL0[4]  (CRAM $08..$0E)
+    dc.w    $10                 ; sub-pal 1 → PAL0[8]  (CRAM $10..$16)
+    dc.w    $18                 ; sub-pal 2 → PAL0[12] (CRAM $18..$1E)
+    dc.w    $28                 ; sub-pal 3 → PAL1[4]  (CRAM $28..$2E)
+    endc
 
     ;==========================================================================
     ; .inc_ppuaddr — advance PPU_VADDR by 1 or 32.
@@ -1147,10 +1168,15 @@ _chr_upload_sprite_4x:
     ; 4 entries, 8 bytes each: (base_vram .l, bias_word_as_long .l)
     ; Bias word sits in the low 16 bits of the long so `move.l (A2)+,D7`
     ; leaves the bias in D7.w for the .w AND in .csfx_apply_bias.
-    dc.l    $00000000,$00000000
-    dc.l    $00004000,$00004444
-    dc.l    $00006000,$00008888
-    dc.l    $00008000,$0000CCCC
+    ; T-CHR v8: sub-pal→CRAM slot mapping via pixel bias + Gen-pal bits (OAM).
+    ;   copy 0 (sub-pal 0): bias +$4, OAM=PAL0 → PAL0[4..7]
+    ;   copy 1 (sub-pal 1): bias +$8, OAM=PAL0 → PAL0[8..11]
+    ;   copy 2 (sub-pal 2): bias +$C, OAM=PAL0 → PAL0[12..15]
+    ;   copy 3 (sub-pal 3): bias +$4, OAM=PAL1 → PAL1[4..7]
+    dc.l    $00000000,$00004444
+    dc.l    $00004000,$00008888
+    dc.l    $00006000,$0000CCCC
+    dc.l    $00008000,$00004444
     endc
 
 ;==============================================================================
@@ -1525,17 +1551,19 @@ _oam_dma:
     ori.w   #$0100,D5           ; pattern table $1000 → tile +$100
 .oam_have_tile:
     ifne CHR_EXPANSION_ENABLED
-    ; T-CHR S9: every NES sprite sub-palette is packed into Gen PAL2 slots
-    ; 0..15, and its CHR tiles live in copy N (0..3) at VRAM $0000/$4000/
-    ; $6000/$8000. Tile base offsets: 0, 512, 768, 1024.
-    lea     (.oam_tile_bias_tbl,PC),A1
+    ; T-CHR S9 v8: NES sprite sub-palettes packed into UNUSED TAIL SLOTS of BG
+    ; palettes — sub-pal 0/1/2 → PAL0 (biased to slots 4/8/12), sub-pal 3 → PAL1
+    ; (biased to slot 4).  BG palettes themselves untouched.  CHR tiles live in
+    ; copy N (0..3) at VRAM $0000/$4000/$6000/$8000.
     move.w  D2,D4
     andi.w  #$0003,D4           ; NES sub-palette (0..3)
     add.w   D4,D4               ; word index
+    lea     (.oam_tile_bias_tbl,PC),A1
     add.w   (A1,D4.W),D5        ; apply per-copy tile bias
     andi.w  #$07FF,D5           ; keep bits 10:0 only
     ori.w   #$8000,D5           ; bit 15 = high priority
-    ori.w   #$4000,D5           ; palette = PAL2 (bits 14:13 = 10)
+    lea     (.oam_pal_bits_tbl,PC),A1
+    or.w    (A1,D4.W),D5        ; OR in palette bits (PAL0/PAL0/PAL0/PAL1)
     else
     andi.w  #$07FF,D5           ; keep bits 10:0 only
     ori.w   #$8000,D5           ; bit 15 = high priority (sprite over planes)
@@ -1582,6 +1610,11 @@ _oam_dma:
     dc.w    512                 ; NES sub-pal 1 → copy 1 @ VRAM $4000 (tile 512)
     dc.w    768                 ; NES sub-pal 2 → copy 2 @ VRAM $6000 (tile 768)
     dc.w    1024                ; NES sub-pal 3 → copy 3 @ VRAM $8000 (tile 1024)
+.oam_pal_bits_tbl:
+    dc.w    $0000               ; sub-pal 0 → PAL0 (bits 14:13 = 00)
+    dc.w    $0000               ; sub-pal 1 → PAL0
+    dc.w    $0000               ; sub-pal 2 → PAL0
+    dc.w    $2000               ; sub-pal 3 → PAL1 (bits 14:13 = 01)
     endc
 
 ;==============================================================================
@@ -2462,11 +2495,26 @@ _transfer_tilebuf_fast:
     bra.s   .ttf_pal_bg
 .ttf_pal_spr:
     ifne CHR_EXPANSION_ENABLED
-    ; T-CHR S8: pack 4 NES sprite sub-palettes into Gen PAL2 slots 0..15.
-    ; CRAM = (offset - $10) * 2 + $40 = offset*2 + $20  (range $42..$5E).
+    ; T-CHR S8 v2: pack sprite sub-palettes into unused tail slots of BG
+    ; palettes (PAL0[4..15] + PAL1[4..7]).  See .t19_spr_cram_base for the
+    ; mapping table.  Using an inline table to avoid cross-scope lea.
     move.w  D0,D6
-    lsl.w   #1,D6
-    addi.w  #$20,D6                 ; D6.w = CRAM address in PAL2
+    subi.w  #$10,D6
+    lsr.w   #2,D6                   ; D6 = sub-pal (0..3)
+    add.w   D6,D6                   ; * 2 for word index
+    lea     (.ttf_spr_cram_base,PC),A2
+    move.w  (A2,D6.W),D6            ; D6 = CRAM base for this sub-pal
+    andi.w  #$0003,D0               ; color slot (1..3)
+    add.w   D0,D0                   ; * 2
+    add.w   D0,D6                   ; D6 = CRAM address
+    ; D2 preserved (holds palette data byte for later .ttf_pal_have_cram lookup)
+    bra.s   .ttf_pal_have_cram_new
+.ttf_spr_cram_base:
+    dc.w    $08                     ; sub-pal 0 → PAL0[4]
+    dc.w    $10                     ; sub-pal 1 → PAL0[8]
+    dc.w    $18                     ; sub-pal 2 → PAL0[12]
+    dc.w    $28                     ; sub-pal 3 → PAL1[4]
+.ttf_pal_have_cram_new:
     else
     ; Legacy: remap NES sprite pal 0-3 → Genesis pal 2-3 (last-write-wins).
     move.w  D0,D6

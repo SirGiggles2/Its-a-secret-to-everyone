@@ -1,0 +1,98 @@
+# NES BG + sprite sub-palette usage probe
+
+# Available memory domains:
+#   WRAM
+#   CHR
+#   CIRAM (nametables)
+#   PRG ROM
+#   PALRAM
+#   OAM
+#   System Bus
+
+# VRAM_DOM=CIRAM (nametables)
+# PALRAM_DOM=PALRAM
+
+=== boot  frame=90 ===
+  NES palette RAM $3F00-$3F1F:
+    $3F00: 36 0F 00 10
+    $3F04: 36 17 27 0F
+    $3F08: 36 08 1A 28
+    $3F0C: 36 30 3B 22
+    $3F10: 00 30 3B 16
+    $3F14: 00 17 27 0F
+    $3F18: 00 08 1A 28
+    $3F1C: 00 30 3B 22
+  BG sub-palette quadrant counts (NT_A + NT_B, 512 total):
+    pal 0: 136
+    pal 1: 57
+    pal 2: 38
+    pal 3: 281
+  Sprite OAM: 44 visible sprites (Y<240)
+    sub-pal 0: 16 sprites
+    sub-pal 1: 0 sprites
+    sub-pal 2: 22 sprites
+    sub-pal 3: 6 sprites
+
+=== title  frame=600 ===
+  NES palette RAM $3F00-$3F1F:
+    $3F00: 0F 0F 0F 00
+    $3F04: 0F 01 11 0F
+    $3F08: 0F 0C 01 02
+    $3F0C: 0F 00 01 0C
+    $3F10: 00 00 01 0C
+    $3F14: 00 01 11 0F
+    $3F18: 00 0C 01 02
+    $3F1C: 00 00 01 0C
+  BG sub-palette quadrant counts (NT_A + NT_B, 512 total):
+    pal 0: 136
+    pal 1: 57
+    pal 2: 38
+    pal 3: 281
+  Sprite OAM: 44 visible sprites (Y<240)
+    sub-pal 0: 16 sprites
+    sub-pal 1: 0 sprites
+    sub-pal 2: 22 sprites
+    sub-pal 3: 6 sprites
+
+=== intro  frame=2000 ===
+  NES palette RAM $3F00-$3F1F:
+    $3F00: 0F 30 30 30
+    $3F04: 0F 21 30 30
+    $3F08: 0F 16 30 30
+    $3F0C: 0F 29 1A 09
+    $3F10: 00 29 37 17
+    $3F14: 00 02 22 30
+    $3F18: 00 16 27 30
+    $3F1C: 00 0B 1B 2B
+  BG sub-palette quadrant counts (NT_A + NT_B, 512 total):
+    pal 0: 101
+    pal 1: 10
+    pal 2: 42
+    pal 3: 359
+  Sprite OAM: 3 visible sprites (Y<240)
+    sub-pal 0: 0 sprites
+    sub-pal 1: 0 sprites
+    sub-pal 2: 3 sprites
+    sub-pal 3: 0 sprites
+
+=== items  frame=2400 ===
+  NES palette RAM $3F00-$3F1F:
+    $3F00: 0F 30 30 30
+    $3F04: 0F 21 30 30
+    $3F08: 0F 16 30 30
+    $3F0C: 0F 29 1A 09
+    $3F10: 00 29 37 17
+    $3F14: 00 02 22 30
+    $3F18: 00 16 27 30
+    $3F1C: 00 0B 1B 2B
+  BG sub-palette quadrant counts (NT_A + NT_B, 512 total):
+    pal 0: 192
+    pal 1: 0
+    pal 2: 19
+    pal 3: 301
+  Sprite OAM: 7 visible sprites (Y<240)
+    sub-pal 0: 0 sprites
+    sub-pal 1: 2 sprites
+    sub-pal 2: 5 sprites
+    sub-pal 3: 0 sprites
+
