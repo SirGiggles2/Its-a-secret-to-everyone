@@ -1104,12 +1104,15 @@ _chr_convert_upload:
 ;==============================================================================
 _chr_upload_sprite_4x:
     movem.l D0-D7/A0-A2,-(SP)           ; save everything (helper clobbers D0-D7, A0-A2)
-    move.w  (CHR_BUF_VADDR).l,D3
-    add.w   D3,D3                       ; D3.w = gen tile offset (NES_addr * 2)
-    andi.l  #$0000FFFF,D3               ; zero-extend for safe .l math
     lea     (.csfx_copy_base_tbl).l,A2
     moveq   #3,D5                       ; 4 copies, counter 3..0
 .csfx_copy_loop:
+    ; Recompute tile offset each iteration because .csfx_row (below) clobbers
+    ; D3/D4 with plane0/plane1 row bytes. Previously this lived before the
+    ; loop and caused copies 1-3 to land at misaligned VRAM addresses.
+    move.w  (CHR_BUF_VADDR).l,D3
+    add.w   D3,D3                       ; D3.w = gen tile offset (NES_addr * 2)
+    andi.l  #$0000FFFF,D3               ; zero-extend for safe .l math
     move.l  (A2)+,D4                    ; D4.l = copy base VRAM addr
     add.l   D3,D4                       ; D4.l = tile VRAM addr for this copy
     move.l  (A2)+,D7                    ; D7.l = bias word (low 16 bits used)
