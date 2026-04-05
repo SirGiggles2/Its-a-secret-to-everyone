@@ -42,8 +42,14 @@ PPU_STATE_SIZE  equ $40         ; 64 bytes: PPU ($FF0800-$FF080F) + MMC1 ($FF081
 HINT_Q_COUNT    equ $00FF0816  ; byte: pending events (0, 1, or 2)
 HINT_Q0_CTR     equ $00FF0817  ; byte: Reg 10 counter for event 0 (abs scanline)
 HINT_Q0_VSRAM   equ $00FF0818  ; word: VSRAM to write at event 0
-HINT_Q1_CTR     equ $00FF081A  ; byte: Reg 10 reload for event 1 (delta)
-HINT_Q1_VSRAM   equ $00FF081C  ; word: VSRAM to write at event 1
+HINT_Q1_CTR     equ $00FF081A  ; byte: Reg 10 reload for event 1 (delta, unused)
+HINT_Q1_VSRAM   equ $00FF081C  ; word: VSRAM to write at event 1 (unused)
+
+; Pre-arm state — _ags_flush writes these at end of NMI; _ags_prearm consumes
+; them at START of the next VBlankISR (before IsrNmi runs) so VSRAM/H-int
+; programming lands inside vblank even when IsrNmi extends past scanline 40.
+HINT_PEND_SPLIT equ $00FF081E  ; byte: 1 = split armed for next frame
+HINT_PEND_VSRAM equ $00FF081F  ; byte: hi byte of D0 (unused — we store word in Q0_VSRAM)
 
 ;==============================================================================
 ; VDP command long-words (written to VDP_CTRL to set VRAM/CRAM address)
@@ -233,14 +239,25 @@ EntryPoint:
     dbra    D0,.vramclear
 
     ;--------------------------------------------------------------------------
-    ; Plane B blank fill — write tile $0200 to entire Plane B nametable at
-    ; $E000.  Prevents tile-0 pattern data from leaking through transparent
-    ; Plane A pixels.  64×64 = 4096 entries (H32 mode, 64H×64V scroll size).
+    ; Plane B blank fill — use tile $05FF (VRAM $BFE0) as a dedicated blank.
+    ; Tile $05FF lives in the gap between Zelda CHR ($0000-$BE00 worst case)
+    ; and Plane A nametable ($C000), so Zelda's dynamic CHR uploads never
+    ; stomp it. Upload 32 zero bytes to tile $05FF explicitly (VRAM is already
+    ; zeroed above, but we re-assert post-CHR-load safety by keeping the tile
+    ; outside the Zelda CHR window). Fill plane B with tile index $05FF.
+    ; This replaces tile $0200, which was inside Zelda's BG CHR bank and
+    ; held octorok-sprite data after CHR upload → visible blue-checker
+    ; leak through transparent plane A pixels during intro story scroll.
     ;--------------------------------------------------------------------------
-    move.l  #$60000003,(VDP_CTRL).l  ; VRAM write to $E000
+    move.l  #$BFE00003,(VDP_CTRL).l  ; VRAM write to $BFE0 (tile $5FF data)
+    moveq   #15,D0
+.blank_tile_fill:
+    move.w  #0,(VDP_DATA).l
+    dbra    D0,.blank_tile_fill
+    move.l  #$60000003,(VDP_CTRL).l  ; VRAM write to $E000 (plane B map)
     move.w  #2047,D0
 .planeb_fill:
-    move.w  #$0200,(VDP_DATA).l
+    move.w  #$05FF,(VDP_DATA).l
     dbra    D0,.planeb_fill
 
     ;--------------------------------------------------------------------------
@@ -325,6 +342,12 @@ VBlankISR:
     ; until RunGame writes $A0 to $2000.
     btst    #7,($00FF0804).l        ; PPU_CTRL = $FF0804, bit 7 = NMI enable
     beq.s   .nmi_off
+    ; Pre-arm pending VSRAM + H-int state from previous frame's _ags_flush.
+    ; Must run BEFORE IsrNmi: IsrNmi can extend into active display past
+    ; scanline 40, so doing the VDP writes after-the-fact (inside _ags_flush)
+    ; misses the pinned-title band. _ags_prearm guarantees the write lands
+    ; in vblank.
+    bsr     _ags_prearm
     jsr     IsrNmi
     ; Flush PPU scroll shadows → VDP VSRAM / H-scroll / H-int queue.
     ; Deferred to here (post-NMI, still in VBlank) so the two transpiler-

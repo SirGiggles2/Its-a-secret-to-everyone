@@ -365,38 +365,44 @@ _ags_flush:
 .ags_have_base:
     ; D0 = effective base VSRAM (0..479)
 
-    ; --- Branch on sprite-0 split mode ---
+    ; --- Branch on split-scroll mode ---
+    ; Split is enabled when EITHER of these is true:
+    ;   (a) IsSprite0CheckActive=1 (Mode7/11/Subroom gameplay scroll split)
+    ;   (b) Intro demo story scroll: GameMode=0, DemoPhase=1, DemoSubphase>=2
+    ;       (NES uses a hidden pin mechanism during this phase; we emulate it
+    ;        with an H-int driven VSRAM flip at scanline 40 so "THE LEGEND OF
+    ;        ZELDA" stays pinned while the story text scrolls underneath.)
     tst.b   ($00E3,A4)                  ; IsSprite0CheckActive
-    beq     .ags_no_split
+    bne.s   .ags_do_split
+    tst.b   ($0012,A4)                  ; GameMode (0 == demo)
+    bne     .ags_no_split
+    cmpi.b  #1,($042C,A4)               ; DemoPhase == 1 (story)?
+    bne     .ags_no_split
+    cmpi.b  #2,($042D,A4)               ; DemoSubphase == 2 (active story scroll)?
+    bne     .ags_no_split
+.ags_do_split:
 
     ;========================================================================
-    ; SPLIT MODE: title pinned (VSRAM=0) for rows 0..39, story scrolled for
-    ; rows 40.. .  Single H-int event at line 39 → vsram=D0.
+    ; SPLIT MODE: mark pending-split and stash D0 into HINT_Q0_VSRAM so
+    ; _ags_prearm (called at start of next vblank, BEFORE IsrNmi) can
+    ; write VSRAM=0 + arm H-int reliably during vblank. HBlankISR then
+    ; fires at scanline 39 and swaps VSRAM to D0 for the story half.
+    ; We do NOT touch the VDP here — IsrNmi may have pushed us past line
+    ; 40 already, which would produce visible tearing.
     ;========================================================================
     move.b  #39,(HINT_Q0_CTR).l
     move.w  D0,(HINT_Q0_VSRAM).l
-    move.b  #1,(HINT_Q_COUNT).l
-    ; Initial VSRAM = 0 (title pinned for rows 0..39)
-    move.l  #VSRAM_WRITE_0000,(VDP_CTRL).l
-    moveq   #0,D1
-    move.w  D1,(VDP_DATA).l             ; Plane A V-scroll = 0
-    move.w  D1,(VDP_DATA).l             ; Plane B V-scroll = 0
-    ; Arm H-int with Q0 counter
-    move.w  #$8A27,(VDP_CTRL).l         ; Reg 10 = 39
-    move.w  #$8014,(VDP_CTRL).l         ; Reg 0: enable H-int
+    move.b  #1,(HINT_PEND_SPLIT).l
     bra.s   .ags_hscroll
 
     ;========================================================================
-    ; NO-SPLIT MODE: VSRAM = D0 directly, H-int disabled.
+    ; NO-SPLIT MODE: publish D0 via HINT_Q0_VSRAM, mark split inactive.
+    ; _ags_prearm will write VSRAM=D0 directly (and disable H-int) on the
+    ; next vblank entry. Still no VDP writes here.
     ;========================================================================
 .ags_no_split:
-    move.b  #0,(HINT_Q_COUNT).l
-    move.w  #$8AFF,(VDP_CTRL).l
-    move.w  #$8004,(VDP_CTRL).l
-    move.l  #VSRAM_WRITE_0000,(VDP_CTRL).l
-    move.w  D0,(VDP_DATA).l
-    moveq   #0,D2
-    move.w  D2,(VDP_DATA).l
+    move.w  D0,(HINT_Q0_VSRAM).l
+    move.b  #0,(HINT_PEND_SPLIT).l
 
 .ags_hscroll:
     ; --- H-scroll (Plane A H-scroll table entry 0) ---
@@ -409,6 +415,51 @@ _ags_flush:
     moveq   #0,D0
     move.w  D0,(VDP_DATA).l            ; Plane B H-scroll = 0
     movem.l (SP)+,D0-D4
+    rts
+
+;------------------------------------------------------------------------------
+; _ags_prearm — Apply pending VSRAM / H-int state at START of vblank, BEFORE
+;               IsrNmi runs.  This is the reliability fix for the intro
+;               split-scroll: IsrNmi during the story phase can extend past
+;               scanline 40, so _ags_flush's post-NMI VDP writes land too
+;               late to cover the pinned-title band.  By consuming the
+;               previous frame's computed queue state here (during
+;               guaranteed vblank), VSRAM=0 and Reg 10/Reg 0 take effect
+;               before active display begins.  One-frame latency is
+;               acceptable — the transpiled scroll writes already buffer a
+;               frame of state.
+;
+; Reads:  HINT_PEND_SPLIT, HINT_Q0_VSRAM, HINT_Q0_CTR
+; Writes: HINT_Q_COUNT (rearmed to 1 per frame when split is active)
+; Preserves: D1-D7, A0-A6  (clobbers D0 internally, saved/restored)
+;------------------------------------------------------------------------------
+_ags_prearm:
+    movem.l D0,-(SP)
+    tst.b   (HINT_PEND_SPLIT).l
+    beq.s   .pa_no_split
+    ; --- SPLIT PATH: pin VSRAM=0 now, arm H-int to swap at scanline 39 ---
+    move.b  #1,(HINT_Q_COUNT).l             ; re-arm event queue for this frame
+    move.l  #VSRAM_WRITE_0000,(VDP_CTRL).l
+    moveq   #0,D0
+    move.w  D0,(VDP_DATA).l                 ; Plane A V-scroll = 0
+    move.w  D0,(VDP_DATA).l                 ; Plane B V-scroll = 0
+    move.b  (HINT_Q0_CTR).l,D0
+    andi.w  #$00FF,D0
+    or.w    #$8A00,D0
+    move.w  D0,(VDP_CTRL).l                 ; Reg 10 = HINT_Q0_CTR (=39)
+    move.w  #$8014,(VDP_CTRL).l             ; Reg 0: enable H-int (+colorfix bit)
+    bra.s   .pa_done
+.pa_no_split:
+    ; --- NO-SPLIT PATH: direct VSRAM write, H-int disabled ---
+    move.b  #0,(HINT_Q_COUNT).l
+    move.w  #$8AFF,(VDP_CTRL).l             ; Reg 10 = $FF (inactive)
+    move.w  #$8004,(VDP_CTRL).l             ; Reg 0: H-int off
+    move.l  #VSRAM_WRITE_0000,(VDP_CTRL).l
+    move.w  (HINT_Q0_VSRAM).l,(VDP_DATA).l  ; Plane A V-scroll = D0
+    moveq   #0,D0
+    move.w  D0,(VDP_DATA).l                 ; Plane B V-scroll = 0
+.pa_done:
+    movem.l (SP)+,D0
     rts
 
 ;------------------------------------------------------------------------------
