@@ -504,7 +504,23 @@ _ppu_write_7:
     bne.s   .chr_ret                ; not yet 16 bytes — keep buffering
 
     ; Complete tile — convert 2BPP → 4BPP and upload to VDP VRAM
+    ifne CHR_EXPANSION_ENABLED
+    ; Dispatch by NES address bit 12:
+    ;   bit12=0 ($0000-$0FFF) → sprite half → _chr_upload_sprite_4x (4 copies)
+    ;   bit12=1 ($1000-$1FFF) → BG half     → _chr_convert_upload   (1 copy)
+    ; Preflight (reports/chr_preflight.txt) confirms PPUCTRL bit 3 = 0 always,
+    ; so sprites live at $0000-$0FFF for all current scenes.
+    move.w  (CHR_BUF_VADDR).l,D2
+    btst    #12,D2
+    bne.s   .chr_bg_dispatch
+    bsr     _chr_upload_sprite_4x
+    bra.s   .chr_uploaded
+.chr_bg_dispatch:
     bsr     _chr_convert_upload
+.chr_uploaded:
+    else
+    bsr     _chr_convert_upload
+    endc
     clr.b   (CHR_BUF_CNT).l
 
 .chr_ret:
@@ -1779,6 +1795,33 @@ _clear_nametable_fast:
 ;==============================================================================
     even
 _transfer_chr_block_fast:
+    ifne CHR_EXPANSION_ENABLED
+    ; If destination is sprite half ($0000-$0FFF), stage each 16-byte tile
+    ; through CHR_TILE_BUF and call _chr_upload_sprite_4x (emits 4 biased
+    ; copies).  BG half ($1000-$1FFF) takes the legacy 1x fast path below.
+    move.w  D1,D5
+    andi.w  #$1000,D5
+    bne.s   .tcbf_legacy_entry
+    movem.l D0-D7/A0-A2,-(SP)
+.tcbf_4x_loop:
+    tst.l   D2
+    ble.s   .tcbf_4x_done
+    lea     (CHR_TILE_BUF).l,A1
+    move.l  (A0)+,(A1)+
+    move.l  (A0)+,(A1)+
+    move.l  (A0)+,(A1)+
+    move.l  (A0)+,(A1)+
+    move.w  D1,(CHR_BUF_VADDR).l
+    bsr     _chr_upload_sprite_4x
+    addi.w  #16,D1
+    subi.l  #16,D2
+    bra.s   .tcbf_4x_loop
+.tcbf_4x_done:
+    move.w  D1,(PPU_VADDR).l
+    movem.l (SP)+,D0-D7/A0-A2
+    rts
+.tcbf_legacy_entry:
+    endc
     movem.l D0-D6/A0-A2,-(SP)
 
     ; Save byte count for PPU_VADDR update at end
@@ -2033,7 +2076,18 @@ _transfer_tilebuf_fast:
     bne.s   .ttf_chr_no_convert
 
     ; Convert and upload the completed tile
+    ifne CHR_EXPANSION_ENABLED
+    move.w  (CHR_BUF_VADDR).l,D0
+    btst    #12,D0
+    bne.s   .ttf_chr_bg_dispatch
+    bsr     _chr_upload_sprite_4x
+    bra.s   .ttf_chr_uploaded
+.ttf_chr_bg_dispatch:
     bsr     _chr_convert_upload
+.ttf_chr_uploaded:
+    else
+    bsr     _chr_convert_upload
+    endc
 .ttf_chr_no_convert:
 
     subq.w  #1,D3
