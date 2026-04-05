@@ -20,6 +20,23 @@
 ;==============================================================================
 
 ;------------------------------------------------------------------------------
+; CHR_EXPANSION_ENABLED — feature flag for the 4x sprite CHR expansion.
+;
+; When 1: every sprite CHR tile is stored in Gen VRAM as 4 copies, each with
+;   pixel values pre-biased +0/+4/+8/+12 to index into packed PAL2 slots
+;   0..15.  _oam_dma selects the copy via tile-index bias; tile word palette
+;   bits are always %10 (PAL2).  NES $3F10-$3F1F palette writes pack into
+;   PAL2 slots 0..15 sequentially.  This preserves all 4 NES sprite sub-
+;   palettes simultaneously, eliminating the multiplex loss.
+;
+; When 0: legacy last-write-wins sprite palette multiplex (SP0,SP2→PAL2,
+;   SP1,SP3→PAL3).  Default until the expansion path is fully verified.
+;
+; See memory/project_chr_expansion.md for the staged rollout plan.
+;------------------------------------------------------------------------------
+CHR_EXPANSION_ENABLED equ 0
+
+;------------------------------------------------------------------------------
 ; PPU state RAM — placed at $FF0800 (immediately after 2KB NES work RAM).
 ; Initialised to zero by genesis_shell before jsr IsrReset.
 ;
@@ -960,6 +977,154 @@ _chr_convert_upload:
     dc.w    $1111   ; 1111
 
     rts
+
+    ifne CHR_EXPANSION_ENABLED
+;==============================================================================
+; _chr_upload_sprite_4x — upload one NES sprite CHR tile to 4 Gen VRAM copies
+;                         with pre-biased pixel values.
+;
+; Input:  CHR_TILE_BUF     = 16 NES 2bpp tile bytes
+;         CHR_BUF_VADDR    = NES CHR address (16-aligned, < $1000)
+;
+; Output: 4 Gen tiles written to VRAM:
+;           copy 0 at $0000 + NES_addr*2  (bias +0, pixels 0..3)
+;           copy 1 at $4000 + NES_addr*2  (bias +4, pixels 0,4..7)
+;           copy 2 at $6000 + NES_addr*2  (bias +8, pixels 0,8..11)
+;           copy 3 at $8000 + NES_addr*2  (bias +12, pixels 0,12..15)
+;
+; Pixel 0 (transparent) is preserved across all 4 copies — bias is only
+; applied to nonzero pixels via a nibble mask.
+;
+; Bias mechanism (mask-based, no per-copy LUTs):
+;   1. expand plane0 and plane1 via existing 16-entry .expand_nibble_lut
+;   2. nonzero_mask = plane0_exp | plane1_exp  ($0 or $1 per nibble)
+;   3. bias_word_per_copy:  $0000, $4444, $8888, $CCCC
+;   4. mask_F = mask | mask<<1 | mask<<2 | mask<<3 ($0 or $F per nibble)
+;   5. bias_add = mask_F & bias_word  ($0 or bias per nonzero nibble)
+;   6. final = orig_pixels | bias_add  (no nibble overflow: orig <= 3, bias <= 12)
+;
+; Clobbers D0-D7, A0-A2.
+;==============================================================================
+_chr_upload_sprite_4x:
+    move.w  (CHR_BUF_VADDR).l,D3
+    add.w   D3,D3                       ; D3.w = gen tile offset (NES_addr * 2)
+    andi.l  #$0000FFFF,D3               ; zero-extend for safe .l math
+    lea     (.csfx_copy_base_tbl).l,A2
+    moveq   #3,D5                       ; 4 copies, counter 3..0
+.csfx_copy_loop:
+    move.l  (A2)+,D4                    ; D4.l = copy base VRAM addr
+    add.l   D3,D4                       ; D4.l = tile VRAM addr for this copy
+    move.l  (A2)+,D7                    ; D7.l = bias word (low 16 bits used)
+    ; Build VDP VRAM write command in D2.l:
+    ;   cmd = $40000000 | ((addr & $3FFF) << 16) | ((addr >> 14) & $0003)
+    move.l  D4,D0
+    andi.l  #$00003FFF,D0
+    swap    D0
+    ori.l   #$40000000,D0
+    move.l  D4,D2
+    lsr.l   #8,D2
+    lsr.l   #6,D2
+    andi.l  #$00000003,D2
+    or.l    D2,D0
+    move.l  D0,(VDP_CTRL).l
+
+    lea     (CHR_TILE_BUF).l,A0
+    lea     (.csfx_expand_lut).l,A1
+    move.l  #7,D0
+    ; Using D0 as row counter conflicts with expand_nibble which clobbers D0/D1/D2.
+    ; Save row counter on stack per iteration.
+.csfx_row:
+    move.l  D0,-(SP)                    ; save row counter
+    move.b  0(A0),D3                    ; D3.b = plane0 row
+    move.b  8(A0),D4                    ; D4.b = plane1 row
+    addq.l  #1,A0
+
+    ; ---- Pixels 0-3 (upper nibbles) ----
+    move.b  D3,D1
+    lsr.b   #4,D1
+    andi.b  #$0F,D1
+    bsr     .csfx_expand                ; D2.w = plane0 expand
+    move.w  D2,D6                       ; D6 = plane0 expand
+    move.b  D4,D1
+    lsr.b   #4,D1
+    andi.b  #$0F,D1
+    bsr     .csfx_expand              ; D2.w = plane1 expand
+    move.w  D2,D0                       ; D0.w = plane1 expand
+    or.w    D6,D0                       ; D0.w = nonzero mask ($0/$1 per nibble)
+    lsl.w   #1,D2
+    or.w    D6,D2                       ; D2.w = raw pixel nibbles
+    bsr     .csfx_apply_bias            ; merges bias using D0(mask), D7(bias)
+    move.w  D2,(VDP_DATA).l
+
+    ; ---- Pixels 4-7 (lower nibbles) ----
+    move.b  D3,D1
+    andi.b  #$0F,D1
+    bsr     .csfx_expand
+    move.w  D2,D6
+    move.b  D4,D1
+    andi.b  #$0F,D1
+    bsr     .csfx_expand
+    move.w  D2,D0
+    or.w    D6,D0
+    lsl.w   #1,D2
+    or.w    D6,D2
+    bsr     .csfx_apply_bias
+    move.w  D2,(VDP_DATA).l
+
+    move.l  (SP)+,D0                    ; restore row counter
+    subq.l  #1,D0
+    bge.s   .csfx_row
+
+    dbra    D5,.csfx_copy_loop
+    rts
+
+    ;==========================================================================
+    ; .csfx_apply_bias — add per-copy bias to nonzero pixel nibbles.
+    ; In:  D0.w = nonzero mask ($0/$1 per nibble)
+    ;      D2.w = raw pixel nibbles
+    ;      D7.w = bias word ($0000/$4444/$8888/$CCCC)
+    ; Out: D2.w = biased pixel nibbles
+    ; Clobbers D0, D1.
+    ;==========================================================================
+.csfx_apply_bias:
+    move.w  D0,D1
+    lsl.w   #1,D1
+    or.w    D1,D0
+    move.w  D0,D1
+    lsl.w   #2,D1
+    or.w    D1,D0                       ; D0 now has $F per nonzero nibble
+    and.w   D7,D0                       ; D0 = bias_add (bias per nonzero nibble)
+    or.w    D0,D2                       ; merge into pixel nibbles
+    rts
+
+    ;==========================================================================
+    ; .csfx_expand — local copy of the nibble expander used by _chr_convert_upload.
+    ; In:  D1.b = 4-bit nibble, A1 = .csfx_expand_lut
+    ; Out: D2.w = bit3→pos12, bit2→pos8, bit1→pos4, bit0→pos0
+    ;==========================================================================
+.csfx_expand:
+    andi.w  #$000F,D1
+    add.w   D1,D1
+    move.w  (A1,D1.W),D2
+    rts
+
+    even
+.csfx_expand_lut:
+    dc.w    $0000,$0001,$0010,$0011
+    dc.w    $0100,$0101,$0110,$0111
+    dc.w    $1000,$1001,$1010,$1011
+    dc.w    $1100,$1101,$1110,$1111
+
+    even
+.csfx_copy_base_tbl:
+    ; 4 entries, 8 bytes each: (base_vram .l, bias_word_as_long .l)
+    ; Bias word sits in the low 16 bits of the long so `move.l (A2)+,D7`
+    ; leaves the bias in D7.w for the .w AND in .csfx_apply_bias.
+    dc.l    $00000000,$00000000
+    dc.l    $00004000,$00004444
+    dc.l    $00006000,$00008888
+    dc.l    $00008000,$0000CCCC
+    endc
 
 ;==============================================================================
 ; _compose_bg_tile_word — add the active BG pattern-table offset to a raw tile.
