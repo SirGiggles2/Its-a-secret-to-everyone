@@ -812,7 +812,15 @@ _ppu_write_7:
     move.w  D2,D3
     andi.w  #$0003,D3               ; color slot within palette
     beq.s   .t19_spr_entry0         ; slot 0 → BG mirror
-    ; Non-entry-0 sprite color: remap to Genesis pal 2-3
+    ; Non-entry-0 sprite color: remap
+    ifne CHR_EXPANSION_ENABLED
+    ; T-CHR S8: pack 4 NES sprite sub-palettes into Gen PAL2 slots 0..15.
+    ; CRAM = (offset - $10) * 2 + $40 = offset*2 + $20  (range $42..$5E).
+    move.w  D2,D3
+    lsl.w   #1,D3
+    addi.w  #$20,D3                 ; D3 = CRAM address in PAL2
+    else
+    ; Legacy last-write-wins: NES sprite pal 0-3 → Gen pal 2|3 (2,3,2,3).
     move.w  D2,D3
     subi.w  #$10,D3                 ; 0-15 range
     lsr.w   #2,D3                   ; NES sprite pal (0-3)
@@ -822,6 +830,7 @@ _ppu_write_7:
     andi.w  #$0003,D2               ; color slot (1-3)
     lsl.w   #1,D2                   ; * 2
     add.w   D2,D3                   ; D3 = CRAM address
+    endc
     bra.s   .t19_have_cram
 .t19_spr_entry0:
     ; Sprite entry-0 = BG mirror: remap 16→0, 20→4, 24→8, 28→12
@@ -1438,7 +1447,11 @@ _ctrl_read_2:
 ; Off-screen: NES Y+129 ≥ 368 means off-screen naturally; no special case needed.
 ;------------------------------------------------------------------------------
 _oam_dma:
+    ifne CHR_EXPANSION_ENABLED
+    movem.l D0-D7/A0-A1,-(SP)
+    else
     movem.l D0-D7/A0,-(SP)
+    endc
 
     ; VSRAM scroll is now driven by _apply_genesis_scroll in IsrNmi.
     ; The old static 8px bias has been removed.
@@ -1511,6 +1524,19 @@ _oam_dma:
     beq.s   .oam_have_tile
     ori.w   #$0100,D5           ; pattern table $1000 → tile +$100
 .oam_have_tile:
+    ifne CHR_EXPANSION_ENABLED
+    ; T-CHR S9: every NES sprite sub-palette is packed into Gen PAL2 slots
+    ; 0..15, and its CHR tiles live in copy N (0..3) at VRAM $0000/$4000/
+    ; $6000/$8000. Tile base offsets: 0, 512, 768, 1024.
+    lea     (.oam_tile_bias_tbl,PC),A1
+    move.w  D2,D4
+    andi.w  #$0003,D4           ; NES sub-palette (0..3)
+    add.w   D4,D4               ; word index
+    add.w   (A1,D4.W),D5        ; apply per-copy tile bias
+    andi.w  #$07FF,D5           ; keep bits 10:0 only
+    ori.w   #$8000,D5           ; bit 15 = high priority
+    ori.w   #$4000,D5           ; palette = PAL2 (bits 14:13 = 10)
+    else
     andi.w  #$07FF,D5           ; keep bits 10:0 only
     ori.w   #$8000,D5           ; bit 15 = high priority (sprite over planes)
     ; Palette: NES sprite attr[1:0] → Genesis bits[14:13], offset +2
@@ -1521,6 +1547,7 @@ _oam_dma:
     lsl.w   #5,D4               ; shift left 5
     lsl.w   #8,D4               ; shift left 8 more → total shift 13 → bits[14:13]
     or.w    D4,D5               ; merge palette
+    endc
     ; V-flip: NES attr bit 7 → Genesis tile word bit 12
     btst    #7,D2
     beq     .no_vflip
@@ -1542,8 +1569,20 @@ _oam_dma:
     addq.w  #1,D6               ; advance sprite index
     dbra    D7,.oam_loop
 
+    ifne CHR_EXPANSION_ENABLED
+    movem.l (SP)+,D0-D7/A0-A1
+    else
     movem.l (SP)+,D0-D7/A0
+    endc
     rts
+
+    ifne CHR_EXPANSION_ENABLED
+.oam_tile_bias_tbl:
+    dc.w    0                   ; NES sub-pal 0 → copy 0 @ VRAM $0000 (tile 0)
+    dc.w    512                 ; NES sub-pal 1 → copy 1 @ VRAM $4000 (tile 512)
+    dc.w    768                 ; NES sub-pal 2 → copy 2 @ VRAM $6000 (tile 768)
+    dc.w    1024                ; NES sub-pal 3 → copy 3 @ VRAM $8000 (tile 1024)
+    endc
 
 ;==============================================================================
 ; MMC1 mapper writes ($8000 / $A000 / $C000 / $E000)
@@ -2422,7 +2461,14 @@ _transfer_tilebuf_fast:
     subi.w  #$10,D0                 ; entry-0: remap 16→0, 20→4, 24→8, 28→12
     bra.s   .ttf_pal_bg
 .ttf_pal_spr:
-    ; Sprite non-entry-0: remap NES sprite pal 0-3 → Genesis pal 2-3
+    ifne CHR_EXPANSION_ENABLED
+    ; T-CHR S8: pack 4 NES sprite sub-palettes into Gen PAL2 slots 0..15.
+    ; CRAM = (offset - $10) * 2 + $40 = offset*2 + $20  (range $42..$5E).
+    move.w  D0,D6
+    lsl.w   #1,D6
+    addi.w  #$20,D6                 ; D6.w = CRAM address in PAL2
+    else
+    ; Legacy: remap NES sprite pal 0-3 → Genesis pal 2-3 (last-write-wins).
     move.w  D0,D6
     subi.w  #$10,D6
     lsr.w   #2,D6                   ; NES sprite pal (0-3)
@@ -2432,6 +2478,7 @@ _transfer_tilebuf_fast:
     andi.w  #$0003,D0               ; color slot
     lsl.w   #1,D0                   ; * 2
     add.w   D0,D6                   ; D6.w = CRAM address
+    endc
     bra.s   .ttf_pal_have_cram
 .ttf_pal_bg:
 
