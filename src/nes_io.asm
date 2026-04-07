@@ -568,9 +568,9 @@ _ags_compute_stage:
     move.w  D0,(STAGED_EVENT_VSRAM).l
     rts
 
-    ; --- Case 3 collapse: raw VSRAM >= 480 → wrap to top of the 480px map ---
+    ; --- Case 3 collapse: raw VSRAM >= 472 → wrap to top of the 480px map ---
 .agc_case3_collapse:
-    cmpi.w  #480,D0
+    cmpi.w  #472,D0
     blt.s   .agc_have_base
     subi.w  #480,D0
 .agc_have_base:
@@ -621,13 +621,13 @@ _ags_compute_stage:
     ; bottom stays inside the valid V64 area, so no split needed.
     cmpi.w  #257,D3
     blo     .agc_done
-    cmpi.w  #480,D3
+    cmpi.w  #472,D3
     bhs     .agc_done                      ; collapsed frames ok as-is
     bra.s   .agc_story_enter_wrap          ; shared DZ_SKIP entry
 .agc_story_phase2_active:
     cmpi.w  #257,D3
     blo     .agc_done                      ; story_full_scroll / offscreen_finish
-    cmpi.w  #480,D3
+    cmpi.w  #472,D3
     bhi     .agc_done                      ; wrapped direct scroll after release
     move.b  ($00FC,A4),D1
     cmpi.b  #$E8,D1
@@ -636,14 +636,14 @@ _ags_compute_stage:
     bne     .agc_done                      ; first E8 frame: next frame is
                                           ; plain direct-scroll $0000
 .agc_story_phase2_seam_checks:
-    cmpi.w  #480,D3
+    cmpi.w  #472,D3
     beq.s   .agc_story_seam_frame          ; first seam frame: predicted next scroll lands on seam
 .agc_story_enter_wrap:
     move.b  #INTRO_SCROLL_DZ_SKIP,(STAGED_SCROLL_MODE).l
     move.w  (STAGED_BASE_VSRAM).l,D1
     addi.w  #32,D1
     move.w  D1,(STAGED_EVENT_VSRAM).l
-    move.w  #480,D1
+    move.w  #472,D1
     sub.w   D3,D1
     subq.w  #1,D1
     move.b  D1,(STAGED_HINT_CTR).l

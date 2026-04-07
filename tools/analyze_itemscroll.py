@@ -11,8 +11,8 @@ import numpy as np
 
 ROOT = Path(r"C:\Users\Jake Diggity\Documents\GitHub\FINAL TRY")
 REPORT_DIR = ROOT / "builds" / "reports" / "item_scroll"
-GEN_DIR = ROOT / "builds" / "reports" / "items_seq_gen"
-NES_DIR = ROOT / "builds" / "reports" / "items_seq_nes"
+GEN_DIR = ROOT / "builds" / "reports" / "items_fix2_gen"
+NES_DIR = ROOT / "builds" / "reports" / "items_baseline_nes"
 
 
 @dataclass
