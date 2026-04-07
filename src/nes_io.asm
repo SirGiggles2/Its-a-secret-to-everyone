@@ -449,10 +449,12 @@ _ags_compute_stage:
 .agc_story0_base_done:
 
     ; _ags_flush stages the NEXT intro frame before that frame's NMI runs.
-    ; During phase 1, UpdateMode advances the story scroll every other frame
-    ; after FrameCounter increments inside IsrNmi. If the current counter is
-    ; even, the next frame's finalized scroll will be one tick ahead of the
-    ; PREARM-time shadows unless we predict it here.
+    ; During phase 1, UpdateMode advances the demo/item scroll every other
+    ; frame after FrameCounter increments inside IsrNmi. We only need to
+    ; predict that next tick while approaching the seam/hold logic; predicting
+    ; ordinary direct-scroll frames makes the item roll move one frame earlier
+    ; than the NES and causes the text/items to "jump" on the wrong half of
+    ; the two-frame cadence.
     cmpi.b  #AGS_SEG_OTHER,D4
     beq.s   .agc_have_prediction
     cmpi.b  #AGS_SEG_STORY0_SCROLL_ON,D4
@@ -463,6 +465,13 @@ _ags_compute_stage:
     beq.s   .agc_have_prediction
     btst    #0,($0015,A4)               ; FrameCounter odd?
     bne.s   .agc_have_prediction        ; odd => next frame keeps same scroll
+    cmpi.b  #AGS_SEG_STORY2_SCROLL_BODY,D4
+    bne.s   .agc_do_predict
+    cmpi.w  #256,D2                     ; direct-scroll item/body frames keep
+    blo.s   .agc_have_prediction        ; the current visible cadence; only
+                                        ; predict once the next frame can
+                                        ; enter seam logic
+.agc_do_predict:
     addq.w  #1,D0                       ; even => next frame scrolls one tick
 .agc_have_prediction:
     move.w  D0,D3                       ; D3 = predicted raw base before wrap
@@ -784,6 +793,14 @@ _ppu_write_7:
     bra.s   .chr_uploaded
 .chr_bg_dispatch:
     bsr     _chr_convert_upload
+    btst    #5,(PPU_CTRL).l
+    beq.s   .chr_uploaded
+    move.w  (CHR_BUF_VADDR).l,D0
+    cmpi.w  #$1F20,D0
+    blo.s   .chr_uploaded
+    cmpi.w  #$1F40,D0
+    bhs.s   .chr_uploaded
+    bsr     _chr_upload_sprite_4x
 .chr_uploaded:
     else
     bsr     _chr_convert_upload
@@ -1322,13 +1339,12 @@ _chr_convert_upload:
 ;                         with pre-biased pixel values.
 ;
 ; Input:  CHR_TILE_BUF     = 16 NES 2bpp tile bytes
-;         CHR_BUF_VADDR    = NES CHR address (16-aligned, < $1000)
+;         CHR_BUF_VADDR    = NES CHR address (16-aligned)
 ;
-; Output: 4 Gen tiles written to VRAM:
-;           copy 0 at $0000 + NES_addr*2  (bias +0, pixels 0..3)
-;           copy 1 at $4000 + NES_addr*2  (bias +4, pixels 0,4..7)
-;           copy 2 at $6000 + NES_addr*2  (bias +8, pixels 0,8..11)
-;           copy 3 at $8000 + NES_addr*2  (bias +12, pixels 0,12..15)
+; Output: lower-half sprite CHR populates the normal sprite-copy banks.
+;         upper-half CHR during NES 8x16 mode populates only the safe banks
+;         used by the nonzero sprite sub-palettes, so BG pattern-table 1 tiles
+;         are not clobbered.
 ;
 ; Pixel 0 (transparent) is preserved across all 4 copies — bias is only
 ; applied to nonzero pixels via a nibble mask.
@@ -1345,6 +1361,15 @@ _chr_convert_upload:
 ;==============================================================================
 _chr_upload_sprite_4x:
     movem.l D0-D7/A0-A2,-(SP)           ; save everything (helper clobbers D0-D7, A0-A2)
+    move.w  (CHR_BUF_VADDR).l,D0
+    btst    #12,D0
+    beq.s   .csfx_use_lo_tbl
+    btst    #5,(PPU_CTRL).l
+    beq.s   .csfx_use_lo_tbl
+    lea     (.csfx_hi_copy_base_tbl).l,A2
+    moveq   #1,D5                       ; upper-half 8x16 support: banks B/C only
+    bra.s   .csfx_copy_loop
+.csfx_use_lo_tbl:
     lea     (.csfx_copy_base_tbl).l,A2
     moveq   #3,D5                       ; 4 copies, counter 3..0
 .csfx_copy_loop:
@@ -1463,15 +1488,23 @@ _chr_upload_sprite_4x:
     ; 4 entries, 8 bytes each: (base_vram .l, bias_word_as_long .l)
     ; Bias word sits in the low 16 bits of the long so `move.l (A2)+,D7`
     ; leaves the bias in D7.w for the .w AND in .csfx_apply_bias.
-    ; T-CHR v8: sub-pal→CRAM slot mapping via pixel bias + Gen-pal bits (OAM).
-    ;   copy 0 (sub-pal 0): bias +$4, OAM=PAL0 → PAL0[4..7]
-    ;   copy 1 (sub-pal 1): bias +$8, OAM=PAL0 → PAL0[8..11]
-    ;   copy 2 (sub-pal 2): bias +$C, OAM=PAL0 → PAL0[12..15]
-    ;   copy 3 (sub-pal 3): bias +$4, OAM=PAL1 → PAL1[4..7]
+    ; T-CHR v9: sub-pal→CRAM slot mapping via pixel bias + Gen-pal bits (OAM).
+    ;   copy 0 / shared bank A (sub-pal 0 + sub-pal 3): bias +$4
+    ;   copy 1 / bank B (sub-pal 1): bias +$8
+    ;   copy 2 / bank C (sub-pal 2): bias +$C
+    ;   copy 3 reuses bank A because sub-pal 3 needs the same +$4 biased pixels
+    ;   as sub-pal 0; only the SAT palette bits differ. This frees the old bank-C
+    ;   overlap so 8x16 table-1 sprites like the item-roll heart can use upper-half
+    ;   tile pairs without colliding with another sprite copy.
     dc.l    $00000000,$00004444
     dc.l    $00004000,$00008888
-    dc.l    $00006000,$0000CCCC
-    dc.l    $00008000,$00004444
+    dc.l    $00008000,$0000CCCC
+    dc.l    $00000000,$00004444
+.csfx_hi_copy_base_tbl:
+    ; Upper-half CHR mirrored for NES 8x16 sprites. Only the safe banks used by
+    ; sub-pal 1 (+8) and sub-pal 2 (+C) are populated here.
+    dc.l    $00004000,$00008888
+    dc.l    $00008000,$0000CCCC
     endc
 
 ;==============================================================================
@@ -1929,10 +1962,10 @@ _oam_dma:
 
     ifne CHR_EXPANSION_ENABLED
 .oam_tile_bias_tbl:
-    dc.w    0                   ; NES sub-pal 0 → copy 0 @ VRAM $0000 (tile 0)
-    dc.w    512                 ; NES sub-pal 1 → copy 1 @ VRAM $4000 (tile 512)
-    dc.w    768                 ; NES sub-pal 2 → copy 2 @ VRAM $6000 (tile 768)
-    dc.w    1024                ; NES sub-pal 3 → copy 3 @ VRAM $8000 (tile 1024)
+    dc.w    0                   ; NES sub-pal 0 → shared bank A @ VRAM $0000
+    dc.w    512                 ; NES sub-pal 1 → bank B @ VRAM $4000 (tile 512)
+    dc.w    1024                ; NES sub-pal 2 → bank C @ VRAM $8000 (tile 1024)
+    dc.w    0                   ; NES sub-pal 3 → shared bank A @ VRAM $0000
 .oam_pal_bits_tbl:
     dc.w    $0000               ; sub-pal 0 → PAL0 (bits 14:13 = 00)
     dc.w    $0000               ; sub-pal 1 → PAL0
@@ -2234,6 +2267,20 @@ _transfer_chr_block_fast:
     tst.l   D2
     ble     .ftcb_done
 
+    btst    #5,(PPU_CTRL).l
+    beq.s   .ftcb_no_stage_hi_sprite
+    cmpi.w  #$1F20,D1
+    blo.s   .ftcb_no_stage_hi_sprite
+    cmpi.w  #$1F40,D1
+    bhs.s   .ftcb_no_stage_hi_sprite
+    lea     (CHR_TILE_BUF).l,A1
+    move.l  0(A0),(A1)
+    move.l  4(A0),4(A1)
+    move.l  8(A0),8(A1)
+    move.l  12(A0),12(A1)
+    move.w  D1,(CHR_BUF_VADDR).l
+.ftcb_no_stage_hi_sprite:
+
     ; Set VDP write address: Genesis VRAM addr = NES CHR addr × 2
     move.w  D1,D3
     add.w   D3,D3                   ; D3.w = VDP VRAM address
@@ -2289,6 +2336,15 @@ _transfer_chr_block_fast:
 
     ; Skip past plane-1 bytes (A0 is now at +8, plane1 starts at +8 from tile start)
     addq.l  #8,A0                   ; A0 now points to next tile
+
+    btst    #5,(PPU_CTRL).l
+    beq.s   .ftcb_no_hi_sprite_upload
+    cmpi.w  #$1F20,D1
+    blo.s   .ftcb_no_hi_sprite_upload
+    cmpi.w  #$1F40,D1
+    bhs.s   .ftcb_no_hi_sprite_upload
+    bsr     _chr_upload_sprite_4x
+.ftcb_no_hi_sprite_upload:
 
     addi.w  #16,D1                  ; advance NES PPU address by 16 (one tile)
     subi.l  #16,D2                  ; decrement remaining byte count
@@ -2481,6 +2537,14 @@ _transfer_tilebuf_fast:
     bra.s   .ttf_chr_uploaded
 .ttf_chr_bg_dispatch:
     bsr     _chr_convert_upload
+    btst    #5,(PPU_CTRL).l
+    beq.s   .ttf_chr_uploaded
+    move.w  (CHR_BUF_VADDR).l,D0
+    cmpi.w  #$1F20,D0
+    blo.s   .ttf_chr_uploaded
+    cmpi.w  #$1F40,D0
+    bhs.s   .ttf_chr_uploaded
+    bsr     _chr_upload_sprite_4x
 .ttf_chr_uploaded:
     else
     bsr     _chr_convert_upload
@@ -2685,6 +2749,20 @@ _transfer_tilebuf_fast:
     moveq   #0,D0
     move.b  D2,D0
     bsr     _compose_bg_tile_word
+    ; Item-screen title flourish color fix:
+    ; the ALL OF TREASURES side ornaments live on NT1 row $2900-$291F and use
+    ; tiles $E4-$E6. On NES those blocks inherit palette 3; Genesis leaves them
+    ; at palette 0 unless we force the same green palette here.
+    cmpi.w  #$2900,D5
+    blo.s   .ttf_nt1_write
+    cmpi.w  #$2920,D5
+    bhs.s   .ttf_nt1_write
+    cmpi.b  #$E4,D2
+    blo.s   .ttf_nt1_write
+    cmpi.b  #$E6,D2
+    bhi.s   .ttf_nt1_write
+    ori.w   #$6000,D0
+.ttf_nt1_write:
     move.w  D0,(VDP_DATA).l
 
 .ttf_nt1_skip:
