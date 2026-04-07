@@ -1,0 +1,26 @@
+[OLD-early]
+1468->1469 storyShift=0 storyResidual=0.00000 titleShift=0 titleResidual=0.00000
+1469->1470 storyShift=-1 storyResidual=0.14366 titleShift=0 titleResidual=0.04386
+1470->1471 storyShift=0 storyResidual=0.00000 titleShift=0 titleResidual=0.00000
+
+[NEW-early]
+1468->1469 storyShift=-1 storyResidual=0.00000 titleShift=0 titleResidual=0.00000
+1469->1470 storyShift=0 storyResidual=0.00000 titleShift=0 titleResidual=0.00000
+1470->1471 storyShift=-1 storyResidual=0.02784 titleShift=0 titleResidual=0.04386
+
+[OLD-late]
+2622->2623 storyShift=0 storyResidual=0.00315 titleShift=-1 titleResidual=0.00000
+2623->2624 storyShift=-1 storyResidual=0.00317 titleShift=0 titleResidual=0.00000
+2624->2625 storyShift=0 storyResidual=0.00315 titleShift=-1 titleResidual=0.00000
+
+[NEW-late]
+2622->2623 storyShift=-1 storyResidual=0.01632 titleShift=0 titleResidual=0.00000
+2623->2624 storyShift=0 storyResidual=0.01622 titleShift=-1 titleResidual=0.00000
+2624->2625 storyShift=-1 storyResidual=0.00317 titleShift=0 titleResidual=0.00000
+
+new1468_vs_nes1411 meanDelta=0.07946 inkMismatch=0.11520
+new1469_vs_nes1411 meanDelta=0.02886 inkMismatch=0.04185
+new1469_vs_nes1412 meanDelta=0.08001 inkMismatch=0.11639
+new1470_vs_nes1412 meanDelta=0.08001 inkMismatch=0.11639
+new2623_vs_old2623 meanDelta=0.01914 inkMismatch=0.02044
+new2624_vs_old2624 meanDelta=0.02848 inkMismatch=0.03052

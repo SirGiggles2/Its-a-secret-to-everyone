@@ -1,0 +1,6 @@
+frame,gameMode,phase,subphase,curVScroll,demoLineTextIndex,demoNTWraps,lineCounter,lineAttrIndex,lineDstLo,lineDstHi,attrDstLo,attrDstHi,switchReq,ppuCtrl,ppuScrlY,vsram0,hintQCount,hintPendSplit,introScrollMode
+2684,00,01,02,E7,09,01,CF,39,A0,28,D0,2B,00,B2,E6,01FF,00,01,02
+2685,00,01,02,E7,09,01,CF,39,A0,28,D0,2B,00,B2,E7,01FF,00,01,02
+2686,00,01,02,E8,0A,01,D0,3A,C0,28,D0,2B,00,B2,E7,0020,00,01,02
+2687,00,01,02,E8,0A,01,D0,3A,C0,28,D0,2B,00,B2,E8,0000,00,01,02
+2688,00,01,02,E9,0A,01,D1,3A,C0,28,D0,2B,00,B2,E8,0000,00,01,02

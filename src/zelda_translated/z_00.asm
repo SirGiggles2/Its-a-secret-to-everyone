@@ -187,9 +187,9 @@ DriveAudio:
     move.b  ($00E0,A4),D0
     beq  _L_z00_DriveAudio_Play
     moveq   #0,D0
-    bsr     _apu_write_4015  ; APU/IO write
+    jsr     _apu_write_4015  ; APU/IO write
     moveq   #15,D0
-    bsr     _apu_write_4015  ; APU/IO write
+    jsr     _apu_write_4015  ; APU/IO write
     bne  _L_z00_DriveAudio_Paused
     even
 _L_z00_DriveAudio_Play:
@@ -198,16 +198,16 @@ _L_z00_DriveAudio_Play:
     ; Synchronize the APU frame counter once a video frame.
     ;
     move.b  #$FF,D0
-    bsr     _apu_write_4017  ; APU/IO write
+    jsr     _apu_write_4017  ; APU/IO write
     ; Drive each game sound channel.
     ;
-    bsr     DriveTune1
-    bsr     DriveEffect
-    bsr     DriveSample
-    bsr     DriveSong
+    jsr     DriveTune1
+    jsr     DriveEffect
+    jsr     DriveSample
+    jsr     DriveSong
     even
 _L_z00_DriveAudio_Paused:
-    bsr     DriveTune0
+    jsr     DriveTune0
     ; Reset all requests for sound.
     ;
     moveq   #0,D0
@@ -244,7 +244,9 @@ DriveTune0:
     move.b  ($0604,A4),D0
     ; Tune $80 is only a signal to silence the song.
     ;
-    bmi  L18C9_SilenceSong
+    bpl.s  __far_z_00_0000
+    jmp  L18C9_SilenceSong
+__far_z_00_0000:
     beq  _L_z00_DriveTune0_CheckCurrentTune
     ; If the requested tune is not "heart warning", then go play it.
     ;
@@ -288,24 +290,24 @@ _L_z00_DriveTune0_KeepPlaying:
     move.b  #$90,D2
     move.l  D0,-(SP)       ; save A (6502 STX/STY never modifies A)
     move.b  D2,D0  ; D2 → D0 for I/O write
-    bsr     _apu_write_4000  ; APU/IO write
+    jsr     _apu_write_4000  ; APU/IO write
     move.l  (SP)+,D0       ; restore A
     moveq   #24,D2
     move.l  D0,-(SP)       ; save A (6502 STX/STY never modifies A)
     move.b  D2,D0  ; D2 → D0 for I/O write
-    bsr     _apu_write_4003  ; APU/IO write
+    jsr     _apu_write_4003  ; APU/IO write
     move.l  (SP)+,D0       ; restore A
     moveq   #0,D2
     move.l  D0,-(SP)       ; save A (6502 STX/STY never modifies A)
     move.b  D2,D0  ; D2 → D0 for I/O write
-    bsr     _apu_write_4002  ; APU/IO write
+    jsr     _apu_write_4002  ; APU/IO write
     move.l  (SP)+,D0       ; restore A
     move.b  D2,($0605,A4)
     rts
 
     even
 _L_z00_DriveTune0_PrepNote:
-    bsr     _apu_write_4000  ; APU/IO write
+    jsr     _apu_write_4000  ; APU/IO write
     moveq   #0,D3
     move.b  ($060E,A4),D3
     addq.b  #1,($060E,A4)
@@ -313,15 +315,15 @@ _L_z00_DriveTune0_PrepNote:
     move.b  (A0,D3.W),D0
     even
 _L_z00_DriveTune0_PlayNote:
-    bsr     EmitSquareNote0
+    jsr     EmitSquareNote0
     moveq   #127,D0
-    bsr     _apu_write_4001  ; APU/IO write
+    jsr     _apu_write_4001  ; APU/IO write
     rts
 
     even
 SilenceSample:
     moveq   #15,D0
-    bsr     _apu_write_4015  ; APU/IO write
+    jsr     _apu_write_4015  ; APU/IO write
     moveq   #0,D0
     move.b  D0,($0608,A4)
     move.b  D0,($0607,A4)
@@ -338,7 +340,9 @@ PlayArrowSfx:
     ;
     move.b  ($0604,A4),D0
     andi.b #$EF,D0
-    bne  ContinueArrowSfx
+    beq.s  __far_z_00_0001
+    jmp  ContinueArrowSfx
+__far_z_00_0001:
     move.b  D0,($0604,A4)
     even
 ContinueArrowSfx:
@@ -346,7 +350,9 @@ ContinueArrowSfx:
     move.b  ($0069,A4),D3
     lea     (ArrowSfxNotes-1).l,A0
     move.b  (A0,D3.W),D0
-    bne  PlaySfxNote
+    beq.s  __far_z_00_0002
+    jmp  PlaySfxNote
+__far_z_00_0002:
     even
 PlayStairsSfx:
     move.b  D3,($0606,A4)
@@ -364,7 +370,9 @@ ContinueStairsSfx:
     cmpi.b  #$07,D3
     bcs  _anon_z00_2
     moveq   #16,D0
-    bne  SetSfxVolumeLength
+    beq.s  __far_z_00_0003
+    jmp  SetSfxVolumeLength
+__far_z_00_0003:
 _anon_z00_2:
     lea     (StairsSfxNotes-1).l,A0
     move.b  (A0,D3.W),D0
@@ -373,7 +381,7 @@ PlaySfxNote:
     moveq   #0,D2
     move.b  D0,D2
     andi.b #$0F,D0
-    bsr     _apu_write_400e  ; APU/IO write
+    jsr     _apu_write_400e  ; APU/IO write
     move.b  D2,D0
     lsr.b  #1,D0   ; LSR A
     lsr.b  #1,D0   ; LSR A
@@ -382,15 +390,15 @@ PlaySfxNote:
     ori.b #$10,D0
     even
 SetSfxVolumeLength:
-    bsr     _apu_write_400c  ; APU/IO write
+    jsr     _apu_write_400c  ; APU/IO write
     moveq   #8,D0
-    bsr     _apu_write_400f  ; APU/IO write
+    jsr     _apu_write_400f  ; APU/IO write
     subq.b  #1,($0069,A4)
     even
 SilenceSfxIfEnded:
     bne  _anon_z00_3
     move.b  #$F0,D0
-    bsr     _apu_write_400c  ; APU/IO write
+    jsr     _apu_write_400c  ; APU/IO write
     moveq   #0,D0
     move.b  D0,($0606,A4)
 _anon_z00_3:
@@ -407,27 +415,39 @@ ContinueSwordSfx:
     move.b  ($0069,A4),D3
     lea     (SwordSfxNotes-1).l,A0
     move.b  (A0,D3.W),D0
-    bne  PlaySfxNote
+    beq.s  __far_z_00_0004
+    jmp  PlaySfxNote
+__far_z_00_0004:
     even
 DriveEffect:
     moveq   #0,D3
     move.b  ($0603,A4),D3
     ; $80 is a signal to silence samples and tune 1.
     ;
-    bmi  SilenceSample
+    bpl.s  __far_z_00_0005
+    jmp  SilenceSample
+__far_z_00_0005:
     move.b  ($0606,A4),D0
     move.b  ($0603,A4),D1
     lsr.b  #1,D1   ; LSR EffectRequest
     move.b  D1,($0603,A4)
-    bcs  PlaySwordSfx
+    bcc.s  __far_z_00_0006
+    jmp  PlaySwordSfx
+__far_z_00_0006:
     lsr.b  #1,D0   ; LSR A
-    bcs  ContinueSwordSfx
+    bcc.s  __far_z_00_0007
+    jmp  ContinueSwordSfx
+__far_z_00_0007:
     move.b  ($0603,A4),D1
     lsr.b  #1,D1   ; LSR EffectRequest
     move.b  D1,($0603,A4)
-    bcs  PlayArrowSfx
+    bcc.s  __far_z_00_0008
+    jmp  PlayArrowSfx
+__far_z_00_0008:
     lsr.b  #1,D0   ; LSR A
-    bcs  ContinueArrowSfx
+    bcc.s  __far_z_00_0009
+    jmp  ContinueArrowSfx
+__far_z_00_0009:
     move.b  ($0603,A4),D1
     lsr.b  #1,D1   ; LSR EffectRequest
     move.b  D1,($0603,A4)
@@ -437,9 +457,13 @@ DriveEffect:
     move.b  ($0603,A4),D1
     lsr.b  #1,D1   ; LSR EffectRequest
     move.b  D1,($0603,A4)
-    bcs  PlayStairsSfx
+    bcc.s  __far_z_00_0010
+    jmp  PlayStairsSfx
+__far_z_00_0010:
     lsr.b  #1,D0   ; LSR A
-    bcs  ContinueStairsSfx
+    bcc.s  __far_z_00_0011
+    jmp  ContinueStairsSfx
+__far_z_00_0011:
     move.b  ($0603,A4),D1
     lsr.b  #1,D1   ; LSR EffectRequest
     move.b  D1,($0603,A4)
@@ -465,7 +489,9 @@ _L_z00_DriveEffect_ContinueBombSfx:
     move.b  ($0069,A4),D3
     lea     (BombSfxNotes-1).l,A0
     move.b  (A0,D3.W),D0
-    bne  PlaySfxNote
+    beq.s  __far_z_00_0012
+    jmp  PlaySfxNote
+__far_z_00_0012:
     even
 _L_z00_DriveEffect_PlayFlameSfx:
     move.b  D3,($0606,A4)
@@ -480,7 +506,7 @@ _L_z00_DriveEffect_ContinueFlameSfx:
     moveq   #14,D2
     move.l  D0,-(SP)       ; save A (6502 STX/STY never modifies A)
     move.b  D2,D0  ; D2 → D0 for I/O write
-    bsr     _apu_write_400e  ; APU/IO write
+    jsr     _apu_write_400e  ; APU/IO write
     move.l  (SP)+,D0       ; restore A
     lea     (FlameSfxNotes-1).l,A0
     move.b  (A0,D3.W),D0
@@ -520,14 +546,14 @@ _anon_z00_4:
     even
 _L_z00_DriveEffect_SetSeaSfxParams:
     move.b  ($0068,A4),D0
-    bsr     _apu_write_400c  ; APU/IO write
+    jsr     _apu_write_400c  ; APU/IO write
     moveq   #3,D2
     move.l  D0,-(SP)       ; save A (6502 STX/STY never modifies A)
     move.b  D2,D0  ; D2 → D0 for I/O write
-    bsr     _apu_write_400e  ; APU/IO write
+    jsr     _apu_write_400e  ; APU/IO write
     move.l  (SP)+,D0       ; restore A
     moveq   #8,D0
-    bsr     _apu_write_400f  ; APU/IO write
+    jsr     _apu_write_400f  ; APU/IO write
     subq.b  #1,($05F3,A4)
     jmp     SilenceSfxIfEnded
 
@@ -567,7 +593,7 @@ DriveTune1:
 
     even
 _L_z00_DriveTune1_SilenceThenPlay:
-    bsr     SilenceSong
+    jsr     SilenceSong
     move.b  #$80,D0
     even
 _L_z00_DriveTune1_ChangeTune:
@@ -605,18 +631,18 @@ _L_z00_DriveTune1_KeepPlaying:
     move.b  #$90,D2
     move.l  D0,-(SP)       ; save A (6502 STX/STY never modifies A)
     move.b  D2,D0  ; D2 → D0 for I/O write
-    bsr     _apu_write_4004  ; APU/IO write
+    jsr     _apu_write_4004  ; APU/IO write
     move.l  (SP)+,D0       ; restore A
     moveq   #24,D2
     move.l  D0,-(SP)       ; save A (6502 STX/STY never modifies A)
     move.b  D2,D0  ; D2 → D0 for I/O write
-    bsr     _apu_write_4007  ; APU/IO write
+    jsr     _apu_write_4007  ; APU/IO write
     move.l  (SP)+,D0       ; restore A
     moveq   #0,D2
     move.b  D2,($0607,A4)
     move.l  D0,-(SP)       ; save A (6502 STX/STY never modifies A)
     move.b  D2,D0  ; D2 → D0 for I/O write
-    bsr     _apu_write_4006  ; APU/IO write
+    jsr     _apu_write_4006  ; APU/IO write
     move.l  (SP)+,D0       ; restore A
     rts
 
@@ -631,11 +657,11 @@ _L_z00_DriveTune1_PrepNote:
     move.b  (A0,D3.W),D0
     even
 _L_z00_DriveTune1_PlayNote:
-    bsr     EmitSquareNote1
+    jsr     EmitSquareNote1
     moveq   #127,D0
-    bsr     _apu_write_4005  ; APU/IO write
+    jsr     _apu_write_4005  ; APU/IO write
     move.b  #$86,D0
-    bsr     _apu_write_4004  ; APU/IO write
+    jsr     _apu_write_4004  ; APU/IO write
     move.b  ($006E,A4),D0
     move.b  D0,($006F,A4)
     moveq   #31,D0
@@ -654,14 +680,14 @@ _L_z00_DriveTune1_CheckVibrate:
 _anon_z00_6:
     lea     (CustomEnvelopeTune1).l,A0
     move.b  (A0,D3.W),D0
-    bsr     _apu_write_4004  ; APU/IO write
+    jsr     _apu_write_4004  ; APU/IO write
     move.b  ($006F,A4),D0
     moveq   #0,D2
     move.b  ($006B,A4),D2
-    bsr     VibratePitch
+    jsr     VibratePitch
     move.l  D0,-(SP)       ; save A (6502 STX/STY never modifies A)
     move.b  D2,D0  ; D2 → D0 for I/O write
-    bsr     _apu_write_4006  ; APU/IO write
+    jsr     _apu_write_4006  ; APU/IO write
     move.l  (SP)+,D0       ; restore A
     even
 _L_z00_DriveTune1_Exit:
@@ -690,7 +716,7 @@ DriveSample:
     moveq   #0,D0
     move.b  D0,($0608,A4)
     moveq   #15,D0
-    bsr     _apu_write_4015  ; APU/IO write
+    jsr     _apu_write_4015  ; APU/IO write
     even
 _L_z00_DriveSample_CheckBgSample:
     move.b  ($05F6,A4),D0
@@ -710,7 +736,7 @@ _L_z00_DriveSample_ChangeSampleMid:
 _anon_z00_7:
     move.l  D0,-(SP)       ; save A (6502 STX/STY never modifies A)
     move.b  D2,D0  ; D2 → D0 for I/O write
-    bsr     _apu_write_4011  ; APU/IO write
+    jsr     _apu_write_4011  ; APU/IO write
     move.l  (SP)+,D0       ; restore A
     move.b  D0,($0608,A4)
     moveq   #0,D2
@@ -727,19 +753,19 @@ _anon_z00_9:
     bcc  _anon_z00_9
     lea     (SampleRates-1).l,A0
     move.b  (A0,D3.W),D0
-    bsr     _apu_write_4010  ; APU/IO write
+    jsr     _apu_write_4010  ; APU/IO write
     lea     (SampleAddrs-1).l,A0
     move.b  (A0,D3.W),D0
-    bsr     _apu_write_4012  ; APU/IO write
+    jsr     _apu_write_4012  ; APU/IO write
     lea     (SampleLengths-1).l,A0
     move.b  (A0,D3.W),D0
-    bsr     _apu_write_4013  ; APU/IO write
+    jsr     _apu_write_4013  ; APU/IO write
     move.b  #$A0,D0
     move.b  D0,($05F2,A4)
     moveq   #15,D0
-    bsr     _apu_write_4015  ; APU/IO write
+    jsr     _apu_write_4015  ; APU/IO write
     moveq   #31,D0
-    bsr     _apu_write_4015  ; APU/IO write
+    jsr     _apu_write_4015  ; APU/IO write
     rts
 
     even
@@ -762,17 +788,17 @@ SampleRates:
 SetSq0DutyAndSweep:
     move.l  D0,-(SP)       ; save A (6502 STX/STY never modifies A)
     move.b  D3,D0  ; D3 → D0 for I/O write
-    bsr     _apu_write_4001  ; APU/IO write
+    jsr     _apu_write_4001  ; APU/IO write
     move.l  (SP)+,D0       ; restore A
     move.l  D0,-(SP)       ; save A (6502 STX/STY never modifies A)
     move.b  D2,D0  ; D2 → D0 for I/O write
-    bsr     _apu_write_4000  ; APU/IO write
+    jsr     _apu_write_4000  ; APU/IO write
     move.l  (SP)+,D0       ; restore A
     rts
 
     even
 EmitSquareNoteWithDutyAndSweep0:
-    bsr     SetSq0DutyAndSweep
+    jsr     SetSq0DutyAndSweep
 ; Params:
 ; A: offset of a note in period table
 ;
@@ -782,13 +808,15 @@ EmitSquareNote0:
     move.b  D0,D3
     lea     (NotePeriodTable+1).l,A0
     move.b  (A0,D3.W),D0
-    beq  Exit
+    bne.s  __far_z_00_0013
+    jmp  Exit
+__far_z_00_0013:
     move.b  D0,($006A,A4)
-    bsr     _apu_write_4002  ; APU/IO write
+    jsr     _apu_write_4002  ; APU/IO write
     lea     (NotePeriodTable).l,A0
     move.b  (A0,D3.W),D0
     ori.b #$08,D0
-    bsr     _apu_write_4003  ; APU/IO write
+    jsr     _apu_write_4003  ; APU/IO write
     even
     IFND Exit
 Exit:
@@ -803,17 +831,17 @@ Exit:
 SetSq1DutyAndSweep:
     move.l  D0,-(SP)       ; save A (6502 STX/STY never modifies A)
     move.b  D2,D0  ; D2 → D0 for I/O write
-    bsr     _apu_write_4004  ; APU/IO write
+    jsr     _apu_write_4004  ; APU/IO write
     move.l  (SP)+,D0       ; restore A
     move.l  D0,-(SP)       ; save A (6502 STX/STY never modifies A)
     move.b  D3,D0  ; D3 → D0 for I/O write
-    bsr     _apu_write_4005  ; APU/IO write
+    jsr     _apu_write_4005  ; APU/IO write
     move.l  (SP)+,D0       ; restore A
     rts
 
     even
 EmitSquareNoteWithDutyAndSweep1:
-    bsr     SetSq1DutyAndSweep
+    jsr     SetSq1DutyAndSweep
 ; Params:
 ; A: note ID (offset of note in period table)
 ;
@@ -827,13 +855,15 @@ EmitSquareNote1:
     move.b  D0,D3
     lea     (NotePeriodTable+1).l,A0
     move.b  (A0,D3.W),D0
-    beq  Exit
+    bne.s  __far_z_00_0014
+    jmp  Exit
+__far_z_00_0014:
     move.b  D0,($006B,A4)
-    bsr     _apu_write_4006  ; APU/IO write
+    jsr     _apu_write_4006  ; APU/IO write
     lea     (NotePeriodTable).l,A0
     move.b  (A0,D3.W),D0
     ori.b #$08,D0
-    bsr     _apu_write_4007  ; APU/IO write
+    jsr     _apu_write_4007  ; APU/IO write
     rts
 
 ; Params:
@@ -845,13 +875,15 @@ EmitTriangleNote:
     move.b  D0,D3
     lea     (NotePeriodTable+1).l,A0
     move.b  (A0,D3.W),D0
-    beq  Exit
+    bne.s  __far_z_00_0015
+    jmp  Exit
+__far_z_00_0015:
     move.b  D0,($05F0,A4)
-    bsr     _apu_write_400a  ; APU/IO write
+    jsr     _apu_write_400a  ; APU/IO write
     lea     (NotePeriodTable).l,A0
     move.b  (A0,D3.W),D0
     ori.b #$08,D0
-    bsr     _apu_write_400b  ; APU/IO write
+    jsr     _apu_write_400b  ; APU/IO write
     rts
 
 ; Params:
@@ -903,7 +935,9 @@ DriveSong:
     move.b  ($0600,A4),D0
     bne  _L_z00_DriveSong_ChangeSong
     move.b  ($0609,A4),D0
-    bne  KeepPlaying
+    beq.s  __far_z_00_0016
+    jmp  KeepPlaying
+__far_z_00_0016:
     rts
 
     even
@@ -913,24 +947,34 @@ _L_z00_DriveSong_ChangeSong:
     cmpi.b  #$06,D0
     bne  _anon_z00_11
     moveq   #36,D3
-    bne  PrepPhrase
+    beq.s  __far_z_00_0017
+    jmp  PrepPhrase
+__far_z_00_0017:
 _anon_z00_11:
     cmpi.b  #$01,D0
     beq  _L_z00_DriveSong_PlayFirstOverworldPhrase
     cmpi.b  #$40,D0
     beq  _L_z00_DriveSong_PlayFirstUnderworldPhrase
     cmpi.b  #$10,D0
-    bne  PlayNextPhrase
+    beq.s  __far_z_00_0018
+    jmp  PlayNextPhrase
+__far_z_00_0018:
     moveq   #17,D3
-    bne  SetPrevPhraseIndex
+    beq.s  __far_z_00_0019
+    jmp  SetPrevPhraseIndex
+__far_z_00_0019:
     even
 _L_z00_DriveSong_PlayFirstDemoPhrase:
     moveq   #25,D3
-    bne  SetPrevPhraseIndex
+    beq.s  __far_z_00_0020
+    jmp  SetPrevPhraseIndex
+__far_z_00_0020:
     even
 _L_z00_DriveSong_PlayFirstUnderworldPhrase:
     moveq   #15,D3
-    bne  SetPrevPhraseIndex
+    beq.s  __far_z_00_0021
+    jmp  SetPrevPhraseIndex
+__far_z_00_0021:
     even
 _L_z00_DriveSong_PlayFirstOverworldPhrase:
     moveq   #8,D3
@@ -954,36 +998,52 @@ PlayNextPhrase:
     moveq   #0,D3
     move.b  ($006C,A4),D3
     cmpi.b  #$1A,D3
-    bne  PrepPhrase
+    beq.s  __far_z_00_0022
+    jmp  PrepPhrase
+__far_z_00_0022:
     moveq   #20,D3
-    bne  SetPrevPhraseIndex
+    beq.s  __far_z_00_0023
+    jmp  SetPrevPhraseIndex
+__far_z_00_0023:
     even
 _L_z00_PlayNextPhrase_PlayNextUnderworldPhrase:
     addq.b  #1,($006C,A4)
     moveq   #0,D3
     move.b  ($006C,A4),D3
     cmpi.b  #$12,D3
-    bne  PrepPhrase
+    beq.s  __far_z_00_0024
+    jmp  PrepPhrase
+__far_z_00_0024:
     moveq   #15,D3
-    bne  SetPrevPhraseIndex
+    beq.s  __far_z_00_0025
+    jmp  SetPrevPhraseIndex
+__far_z_00_0025:
     even
 _L_z00_PlayNextPhrase_PlayNextOverworldPhrase:
     addq.b  #1,($006C,A4)
     moveq   #0,D3
     move.b  ($006C,A4),D3
     cmpi.b  #$10,D3
-    bne  PrepPhrase
+    beq.s  __far_z_00_0026
+    jmp  PrepPhrase
+__far_z_00_0026:
     moveq   #9,D3
-    bne  SetPrevPhraseIndex
+    beq.s  __far_z_00_0027
+    jmp  SetPrevPhraseIndex
+__far_z_00_0027:
     even
 _L_z00_PlayNextPhrase_PlayNextDemoPhrase:
     addq.b  #1,($006C,A4)
     moveq   #0,D3
     move.b  ($006C,A4),D3
     cmpi.b  #$24,D3
-    bne  PrepPhrase
+    beq.s  __far_z_00_0028
+    jmp  PrepPhrase
+__far_z_00_0028:
     moveq   #25,D3
-    bne  SetPrevPhraseIndex
+    beq.s  __far_z_00_0029
+    jmp  SetPrevPhraseIndex
+__far_z_00_0029:
     even
 _L_z00_PlayNextPhrase_PlaySinglePhraseSong:
     ; Get the index for the song bit: 2 to 6.
@@ -1035,7 +1095,9 @@ PrepPhrase:
     even
 KeepPlayingSong:
     subq.b  #1,($0611,A4)
-    bne  ApplySq1Effects
+    beq.s  __far_z_00_0030
+    jmp  ApplySq1Effects
+__far_z_00_0030:
     moveq   #0,D3
     move.b  ($060A,A4),D3
     addq.b  #1,($060A,A4)
@@ -1049,22 +1111,28 @@ KeepPlayingSong:
     movea.l D4,A0
     move.b  (A0,D3.W),D0     ; LDA ($nn),Y
     beq  _L_z00_KeepPlayingSong_SongEnded
-    bpl  PlayNote
-    bne  PrepNote
+    bmi.s  __far_z_00_0031
+    jmp  PlayNote
+__far_z_00_0031:
+    beq.s  __far_z_00_0032
+    jmp  PrepNote
+__far_z_00_0032:
     even
 _L_z00_KeepPlayingSong_SongEnded:
     ; If this is a song that repeats, then go play again.
     ;
     move.b  ($0609,A4),D0
     andi.b #$F1,D0
-    bne  PlayAgain
+    beq.s  __far_z_00_0033
+    jmp  PlayAgain
+__far_z_00_0033:
     even
 SilenceSong:
     moveq   #0,D0
     move.b  D0,($0609,A4)
-    bsr     _apu_write_4015  ; APU/IO write
+    jsr     _apu_write_4015  ; APU/IO write
     moveq   #15,D0
-    bsr     _apu_write_4015  ; APU/IO write
+    jsr     _apu_write_4015  ; APU/IO write
     rts
 
     even
@@ -1073,7 +1141,7 @@ PlayAgain:
 
     even
 PrepNote:
-    bsr     GetSongNoteLength
+    jsr     GetSongNoteLength
     move.b  D0,($0610,A4)
     moveq   #0,D3
     move.b  ($060A,A4),D3
@@ -1095,12 +1163,12 @@ PlayNote:
     moveq   #0,D2
     move.b  ($0607,A4),D2
     bne  _L_z00_PlayNote_SkipSq1
-    bsr     EmitSquareNote1
+    jsr     EmitSquareNote1
     beq  _anon_z00_13
-    bsr     PrepareCustomSongEnvelope
+    jsr     PrepareCustomSongEnvelope
 _anon_z00_13:
     move.b  D0,($0612,A4)
-    bsr     SetSq1DutyAndSweep
+    jsr     SetSq1DutyAndSweep
     moveq   #0,D0
     move.b  D0,($061B,A4)
     even
@@ -1121,12 +1189,12 @@ ApplySq1Effects:
     beq  _anon_z00_14
     subq.b  #1,($0612,A4)
 _anon_z00_14:
-    bsr     ShapeSongVolume
-    bsr     _apu_write_4004  ; APU/IO write
+    jsr     ShapeSongVolume
+    jsr     _apu_write_4004  ; APU/IO write
     moveq   #127,D2
     move.l  D0,-(SP)       ; save A (6502 STX/STY never modifies A)
     move.b  D2,D0  ; D2 → D0 for I/O write
-    bsr     _apu_write_4005  ; APU/IO write
+    jsr     _apu_write_4005  ; APU/IO write
     move.l  (SP)+,D0       ; restore A
     move.b  ($0609,A4),D0
     bpl  _L_z00_ApplySq1Effects_HandleSq0
@@ -1135,10 +1203,10 @@ _anon_z00_14:
     move.b  ($061B,A4),D0
     moveq   #0,D2
     move.b  ($006B,A4),D2
-    bsr     VibratePitch
+    jsr     VibratePitch
     move.l  D0,-(SP)       ; save A (6502 STX/STY never modifies A)
     move.b  D2,D0  ; D2 → D0 for I/O write
-    bsr     _apu_write_4006  ; APU/IO write
+    jsr     _apu_write_4006  ; APU/IO write
     move.l  (SP)+,D0       ; restore A
     even
 _L_z00_ApplySq1Effects_HandleSq0:
@@ -1160,7 +1228,7 @@ _L_z00_ApplySq1Effects_HandleSq0:
     movea.l D4,A0
     move.b  (A0,D3.W),D0     ; LDA ($nn),Y
     bpl  _L_z00_ApplySq1Effects_PlaySq0
-    bsr     GetSongNoteLength
+    jsr     GetSongNoteLength
     move.b  D0,($060F,A4)
     moveq   #0,D3
     move.b  ($060B,A4),D3
@@ -1179,12 +1247,12 @@ _L_z00_ApplySq1Effects_PlaySq0:
     moveq   #0,D2
     move.b  ($0605,A4),D2
     bne  _L_z00_ApplySq1Effects_SkipSq0
-    bsr     EmitSquareNote0
+    jsr     EmitSquareNote0
     beq  _anon_z00_15
-    bsr     PrepareCustomSongEnvelope
+    jsr     PrepareCustomSongEnvelope
 _anon_z00_15:
     move.b  D0,($0614,A4)
-    bsr     SetSq0DutyAndSweep
+    jsr     SetSq0DutyAndSweep
     moveq   #0,D0
     move.b  D0,($061C,A4)
     even
@@ -1202,8 +1270,8 @@ _L_z00_ApplySq1Effects_ApplySq0Effects:
     beq  _anon_z00_16
     subq.b  #1,($0614,A4)
 _anon_z00_16:
-    bsr     ShapeSongVolume
-    bsr     _apu_write_4000  ; APU/IO write
+    jsr     ShapeSongVolume
+    jsr     _apu_write_4000  ; APU/IO write
     move.b  ($0609,A4),D0
     bpl  _anon_z00_17
     ; The demo/title song ($80) vibrates the pitch.
@@ -1211,14 +1279,14 @@ _anon_z00_16:
     move.b  ($061C,A4),D0
     moveq   #0,D2
     move.b  ($006A,A4),D2
-    bsr     VibratePitch
+    jsr     VibratePitch
     move.l  D0,-(SP)       ; save A (6502 STX/STY never modifies A)
     move.b  D2,D0  ; D2 → D0 for I/O write
-    bsr     _apu_write_4002  ; APU/IO write
+    jsr     _apu_write_4002  ; APU/IO write
     move.l  (SP)+,D0       ; restore A
 _anon_z00_17:
     moveq   #127,D0
-    bsr     _apu_write_4001  ; APU/IO write
+    jsr     _apu_write_4001  ; APU/IO write
     even
 _L_z00_ApplySq1Effects_HandleTrg:
     move.b  ($060C,A4),D0
@@ -1269,10 +1337,10 @@ _anon_z00_19:
 
     even
 _L_z00_ApplySq1Effects_PrepNoteTrg:
-    bsr     GetSongNoteLength
+    jsr     GetSongNoteLength
     move.b  D0,($0615,A4)
     moveq   #31,D0
-    bsr     _apu_write_4008  ; APU/IO write
+    jsr     _apu_write_4008  ; APU/IO write
     moveq   #0,D3
     move.b  ($060C,A4),D3
     addq.b  #1,($060C,A4)
@@ -1288,7 +1356,7 @@ _L_z00_ApplySq1Effects_PrepNoteTrg:
     beq  _L_z00_ApplySq1Effects_SetTrgLinear
     even
 _L_z00_ApplySq1Effects_PlayNoteTrg:
-    bsr     EmitTriangleNote
+    jsr     EmitTriangleNote
     moveq   #0,D0
     move.b  D0,($061D,A4)
     moveq   #0,D2
@@ -1300,10 +1368,10 @@ _L_z00_ApplySq1Effects_ApplyTrgEffects:
     move.b  ($061D,A4),D0
     moveq   #0,D2
     move.b  ($05F0,A4),D2
-    bsr     VibratePitch
+    jsr     VibratePitch
     move.l  D0,-(SP)       ; save A (6502 STX/STY never modifies A)
     move.b  D2,D0  ; D2 → D0 for I/O write
-    bsr     _apu_write_400a  ; APU/IO write
+    jsr     _apu_write_400a  ; APU/IO write
     move.l  (SP)+,D0       ; restore A
     ; TODO: [05F1] ?
     ;
@@ -1315,7 +1383,7 @@ _anon_z00_20:
     move.b  #$FF,D0
     even
 _L_z00_ApplySq1Effects_SetTrgLinear:
-    bsr     _apu_write_4008  ; APU/IO write
+    jsr     _apu_write_4008  ; APU/IO write
     even
 _L_z00_ApplySq1Effects_HandleNoise:
     ; If the song is not demo nor ending, then return.
@@ -1346,7 +1414,7 @@ _anon_z00_21:
     move.b  D0,($060D,A4)
     bne  _anon_z00_21
 _anon_z00_22:
-    bsr     GetSongNoiseNoteLength
+    jsr     GetSongNoiseNoteLength
     move.b  D0,($0617,A4)
     ; From the original control note, extract an index 0-3
     ; to look up noise parameters.
@@ -1361,13 +1429,13 @@ _anon_z00_22:
     move.b  D0,D3
     lea     (NoiseVolumes).l,A0
     move.b  (A0,D3.W),D0
-    bsr     _apu_write_400c  ; APU/IO write
+    jsr     _apu_write_400c  ; APU/IO write
     lea     (NoisePeriods).l,A0
     move.b  (A0,D3.W),D0
-    bsr     _apu_write_400e  ; APU/IO write
+    jsr     _apu_write_400e  ; APU/IO write
     lea     (NoiseLengths).l,A0
     move.b  (A0,D3.W),D0
-    bsr     _apu_write_400f  ; APU/IO write
+    jsr     _apu_write_400f  ; APU/IO write
     even
 _L_z00_ApplySq1Effects_Exit:
     rts

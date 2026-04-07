@@ -1,0 +1,28 @@
+[OLD-early]
+1468->1469 storyShift=0 storyResidual=0.00000 titleShift=0 titleResidual=0.00000
+1469->1470 storyShift=-1 storyResidual=0.14366 titleShift=0 titleResidual=0.04386
+1470->1471 storyShift=0 storyResidual=0.00000 titleShift=0 titleResidual=0.00000
+
+[NEW-early]
+1468->1469 storyShift=-1 storyResidual=0.00146 titleShift=0 titleResidual=0.00000
+1469->1470 storyShift=0 storyResidual=0.00000 titleShift=0 titleResidual=0.00000
+1470->1471 storyShift=-1 storyResidual=0.02929 titleShift=0 titleResidual=0.04386
+
+[OLD-late]
+2622->2623 storyShift=0 storyResidual=0.00315 titleShift=-1 titleResidual=0.00000
+2623->2624 storyShift=-1 storyResidual=0.00317 titleShift=0 titleResidual=0.00000
+2624->2625 storyShift=0 storyResidual=0.00315 titleShift=-1 titleResidual=0.00000
+
+[NEW-late]
+2622->2623 storyShift=-1 storyResidual=0.01386 titleShift=0 titleResidual=0.00000
+2623->2624 storyShift=0 storyResidual=0.01622 titleShift=-1 titleResidual=0.00000
+2624->2625 storyShift=-1 storyResidual=0.00317 titleShift=0 titleResidual=0.00000
+
+NEW 1468 best NES [(0.07946278120623249, 1410), (0.07946278120623249, 1411), (0.0981259984462535, 1412)]
+NEW 1469 best NES [(0.029752057072829134, 1410), (0.029752057072829134, 1411), (0.08058958935136555, 1412)]
+NEW 1470 best NES [(0.029752057072829134, 1410), (0.029752057072829134, 1411), (0.08058958935136555, 1412)]
+NEW 1471 best NES [(0.007153251925770308, 1412), (0.007153251925770308, 1413), (0.07181215259541317, 1414)]
+NEW 2622 best OLD [(0.023111979166666668, 2621), (0.026953125, 2622), (0.029617745535714286, 2623)]
+NEW 2623 best OLD [(0.016471354166666667, 2622), (0.019135974702380956, 2623), (0.0203125, 2621)]
+NEW 2624 best OLD [(0.024641927083333334, 2623), (0.02730654761904762, 2622), (0.028483072916666668, 2624)]
+NEW 2625 best OLD [(0.024641927083333334, 2624), (0.027329046853116247, 2625), (0.028483072916666668, 2623)]

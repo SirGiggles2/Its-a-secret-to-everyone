@@ -1,0 +1,25 @@
+frame,gameMode,phase,subphase,curVScroll,curHScroll,ppuScrlX,ppuScrlY,demoLineTextIndex,lineCounter,lineAttrIndex,lineDst,attrDst,switchReq,hintQCount,hintQ0Ctr,hintQ0Vsram,hintQ1Ctr,hintQ1Vsram,hintPendSplit,introScrollMode,activeBase,activeEvent,activeHintCtr,stagedSegment,activeSegment,vsram0,vsram1,screenshot
+1458,00,01,00,E2,00,00,E1,00,00,00,0000,0000,00,00,00,0000,00,0000,00,00,01FA,01FA,00,01,01,01FA,0000,C:/Users/Jake Diggity/Documents/GitHub/FINAL TRY/builds/reports/intro_jump_probe/gen_f01458.png
+1459,00,01,00,E2,00,00,E2,00,00,00,0000,0000,00,00,00,0000,00,0000,00,00,01F9,01F9,00,01,01,01F9,0000,C:/Users/Jake Diggity/Documents/GitHub/FINAL TRY/builds/reports/intro_jump_probe/gen_f01459.png
+1460,00,01,00,E3,00,00,E2,00,00,00,0000,0000,00,00,00,0000,00,0000,00,00,01FB,01FB,00,01,01,01FB,0000,C:/Users/Jake Diggity/Documents/GitHub/FINAL TRY/builds/reports/intro_jump_probe/gen_f01460.png
+1461,00,01,00,E3,00,00,E3,00,00,00,0000,0000,00,00,00,0000,00,0000,00,00,01FA,01FA,00,01,01,01FA,0000,C:/Users/Jake Diggity/Documents/GitHub/FINAL TRY/builds/reports/intro_jump_probe/gen_f01461.png
+1462,00,01,00,E4,00,00,E3,00,00,00,0000,0000,00,00,00,0000,00,0000,00,00,01FC,01FC,00,01,01,01FC,0000,C:/Users/Jake Diggity/Documents/GitHub/FINAL TRY/builds/reports/intro_jump_probe/gen_f01462.png
+1463,00,01,00,E4,00,00,E4,00,00,00,0000,0000,00,00,00,0000,00,0000,00,00,01FB,01FB,00,01,01,01FB,0000,C:/Users/Jake Diggity/Documents/GitHub/FINAL TRY/builds/reports/intro_jump_probe/gen_f01463.png
+1464,00,01,00,E5,00,00,E4,00,00,00,0000,0000,00,00,00,0000,00,0000,00,00,01FD,01FD,00,01,01,01FD,0000,C:/Users/Jake Diggity/Documents/GitHub/FINAL TRY/builds/reports/intro_jump_probe/gen_f01464.png
+1465,00,01,00,E5,00,00,E5,00,00,00,0000,0000,00,00,00,0000,00,0000,00,00,01FC,01FC,00,01,01,01FC,0000,C:/Users/Jake Diggity/Documents/GitHub/FINAL TRY/builds/reports/intro_jump_probe/gen_f01465.png
+1466,00,01,00,E6,00,00,E5,00,00,00,0000,0000,00,00,00,0000,00,0000,00,00,01FE,01FE,00,01,01,01FE,0000,C:/Users/Jake Diggity/Documents/GitHub/FINAL TRY/builds/reports/intro_jump_probe/gen_f01466.png
+1467,00,01,00,E6,00,00,E6,00,00,00,0000,0000,00,00,00,0000,00,0000,00,00,01FD,01FD,00,01,01,01FD,0000,C:/Users/Jake Diggity/Documents/GitHub/FINAL TRY/builds/reports/intro_jump_probe/gen_f01467.png
+1468,00,01,00,E7,00,00,E6,00,00,00,0000,0000,00,00,00,0000,00,0000,00,00,01FF,01FF,00,01,01,01FF,0000,C:/Users/Jake Diggity/Documents/GitHub/FINAL TRY/builds/reports/intro_jump_probe/gen_f01468.png
+1469,00,01,00,E7,00,00,E7,00,00,00,0000,0000,00,00,00,0000,00,0000,00,00,01FE,01FE,00,01,01,01FE,0000,C:/Users/Jake Diggity/Documents/GitHub/FINAL TRY/builds/reports/intro_jump_probe/gen_f01469.png
+1470,00,01,00,E8,00,00,E7,00,00,00,0000,0000,00,00,00,0000,00,0000,00,00,0000,0000,00,01,01,0000,0000,C:/Users/Jake Diggity/Documents/GitHub/FINAL TRY/builds/reports/intro_jump_probe/gen_f01470.png
+1471,00,01,00,E8,00,00,E8,00,00,00,0000,0000,00,00,00,0000,00,0000,00,00,01FF,01FF,00,01,01,01FF,0000,C:/Users/Jake Diggity/Documents/GitHub/FINAL TRY/builds/reports/intro_jump_probe/gen_f01471.png
+1472,00,01,00,E9,00,00,E8,00,00,00,0000,0000,00,00,00,0000,00,0000,00,00,0001,0001,00,01,01,0001,0000,C:/Users/Jake Diggity/Documents/GitHub/FINAL TRY/builds/reports/intro_jump_probe/gen_f01472.png
+1473,00,01,00,E9,00,00,E9,00,00,00,0000,0000,00,00,00,0000,00,0000,00,00,0000,0000,00,01,01,0000,0000,C:/Users/Jake Diggity/Documents/GitHub/FINAL TRY/builds/reports/intro_jump_probe/gen_f01473.png
+2669,00,01,02,DF,00,00,DF,09,C7,38,8028,C82B,00,00,08,01F7,00,0000,01,02,01D7,01F7,08,02,02,01F7,0000,C:/Users/Jake Diggity/Documents/GitHub/FINAL TRY/builds/reports/intro_jump_probe/gen_f02669.png
+2670,00,01,02,E0,00,00,DF,09,C8,39,A028,D02B,00,00,07,01F8,00,0000,01,02,01D8,01F8,07,02,02,01F8,0000,C:/Users/Jake Diggity/Documents/GitHub/FINAL TRY/builds/reports/intro_jump_probe/gen_f02670.png
+2671,00,01,02,E0,00,00,E0,09,C8,39,A028,D02B,00,01,07,01F8,00,0000,01,02,01D8,01F8,07,03,02,01D8,0000,C:/Users/Jake Diggity/Documents/GitHub/FINAL TRY/builds/reports/intro_jump_probe/gen_f02671.png
+2672,00,01,02,E1,00,00,E0,09,C9,39,A028,D02B,00,00,06,01F9,00,0000,01,02,01D9,01F9,06,02,02,01F9,0000,C:/Users/Jake Diggity/Documents/GitHub/FINAL TRY/builds/reports/intro_jump_probe/gen_f02672.png
+2685,00,01,02,E7,00,00,E7,09,CF,39,A028,D02B,00,00,00,01FF,00,0000,01,02,01DF,01FF,00,04,02,01FF,0000,C:/Users/Jake Diggity/Documents/GitHub/FINAL TRY/builds/reports/intro_jump_probe/gen_f02685.png
+2686,00,01,02,E8,00,00,E7,0A,D0,3A,C028,D02B,00,00,00,01FF,00,0000,00,00,01FF,01FF,00,04,04,01FF,0000,C:/Users/Jake Diggity/Documents/GitHub/FINAL TRY/builds/reports/intro_jump_probe/gen_f02686.png
+2687,00,01,02,E8,00,00,E8,0A,D0,3A,C028,D02B,00,00,17,0000,00,0000,01,02,01FF,0000,17,02,04,0000,0000,C:/Users/Jake Diggity/Documents/GitHub/FINAL TRY/builds/reports/intro_jump_probe/gen_f02687.png
+2688,00,01,02,E9,00,00,E8,0A,D1,3A,C028,D02B,00,00,17,0000,00,0000,00,00,0001,0001,00,02,02,0001,0000,C:/Users/Jake Diggity/Documents/GitHub/FINAL TRY/builds/reports/intro_jump_probe/gen_f02688.png

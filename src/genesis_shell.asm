@@ -31,25 +31,22 @@ Z80_RESET       equ $00A11200
 ;==============================================================================
 NES_RAM_BASE    equ $00FF0000   ; Maps NES $0000-$07FF (8 pages × 256 bytes)
 NES_RAM_SIZE    equ $0800       ; 2KB NES work RAM
-NES_STACK_INIT  equ $00FF0200   ; NES SP=$FF → A5 = NES_RAM+$0100+$FF+1 = $FF0200
+NES_STACK_INIT  equ $00FF0200   ; NES SP=$FF -> A5 = NES_RAM+$0100+$FF+1 = $FF0200
 PPU_STATE_SIZE  equ $40         ; 64 bytes: PPU ($FF0800-$FF080F) + MMC1 ($FF0810-$FF081F) + CHR buf ($FF0820-$FF083F)
 
-; H-int event queue — up to 2 chained VSRAM writes per frame.
-; Used by _apply_genesis_scroll (producer, in NMI) and HBlankISR (consumer).
-; Queue entries are written sorted by ascending scanline.
-; Q1_CTR is stored as a *delta* from Q0 (Reg 10 reload value).
-; Lives in MMC1 state tail ($FF0816-$FF081D) — MMC1 only uses +0..+5.
-HINT_Q_COUNT    equ $00FF0816  ; byte: pending events (0, 1, or 2)
-HINT_Q0_CTR     equ $00FF0817  ; byte: Reg 10 counter for event 0 (abs scanline)
-HINT_Q0_VSRAM   equ $00FF0818  ; word: VSRAM to write at event 0
-HINT_Q1_CTR     equ $00FF081A  ; byte: Reg 10 reload for event 1 (delta, unused)
-HINT_Q1_VSRAM   equ $00FF081C  ; word: VSRAM to write at event 1 (unused)
+; Active H-int event queue for the frame currently being rendered.
+; _ags_prearm promotes staged state into this queue and HBlankISR consumes it.
+; Q1 remains available for future chained events but is currently unused.
+HINT_Q_COUNT    equ $00FF0816  ; byte: pending active events (0, 1, or 2)
+HINT_Q0_CTR     equ $00FF0817  ; byte: Reg 10 counter for active event 0 (abs scanline)
+HINT_Q0_VSRAM   equ $00FF0818  ; word: VSRAM to write at active event 0
+HINT_Q1_CTR     equ $00FF081A  ; byte: Reg 10 reload for active event 1 (delta)
+HINT_Q1_VSRAM   equ $00FF081C  ; word: VSRAM to write at active event 1
 
-; Pre-arm state — _ags_flush writes these at end of NMI; _ags_prearm consumes
-; them at START of the next VBlankISR (before IsrNmi runs) so VSRAM/H-int
-; programming lands inside vblank even when IsrNmi extends past scanline 40.
-HINT_PEND_SPLIT equ $00FF081E  ; byte: 1 = split armed for next frame
-HINT_PEND_VSRAM equ $00FF081F  ; byte: hi byte of D0 (unused — we store word in Q0_VSRAM)
+; Active-frame debug state. Probes sample these after the frame has been staged
+; and/or rendered to distinguish direct scroll from one-shot H-int composition.
+HINT_PEND_SPLIT equ $00FF081E  ; byte: 1 = current frame has an armed H-int split
+INTRO_SCROLL_MODE equ $00FF081F ; byte: active scroll mode for the current frame
 
 ;==============================================================================
 ; VDP command long-words (written to VDP_CTRL to set VRAM/CRAM address)
@@ -369,12 +366,13 @@ VBlankISR:
 ; H-int. VSRAM write comes FIRST (critical path — must complete before active
 ; display resumes on the next scanline).
 ;
-; State contract (producer = _apply_genesis_scroll):
-;   HINT_Q_COUNT   ≥ 1  when H-int is armed via Reg 0 bit 4
-;   HINT_Q0_CTR    = initial Reg 10 value (written by producer before RTE)
-;   HINT_Q0_VSRAM  = VSRAM value for first fire
-;   HINT_Q1_CTR    = delta for second fire (only valid when COUNT == 2)
-;   HINT_Q1_VSRAM  = VSRAM value for second fire
+; State contract:
+;   _ags_flush   writes NEXT-frame staged state (STAGED_*)
+;   _ags_prearm  promotes STAGED_* -> active HINT_Q* before display starts
+;   HINT_Q_COUNT ≥ 1 when H-int is armed via Reg 0 bit 4 for the CURRENT frame
+;   HINT_Q0_CTR  = initial Reg 10 value for the current frame
+;   HINT_Q0_VSRAM = VSRAM value to write when the current frame's H-int fires
+;   HINT_Q1_* remain available for future chained events
 ;==============================================================================
 HBlankISR:
     movem.l D0-D1/A0,-(SP)

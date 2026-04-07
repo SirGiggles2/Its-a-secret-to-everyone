@@ -84,7 +84,7 @@ LevelBlockAddrsQ2:
     even
 InitMode2_Submodes:
     move.b  ($0013,A4),D0
-    bsr     _m68k_tablejump  ; M68K-native table dispatch (replaces JSR TableJump)
+    jsr     _m68k_tablejump  ; M68K-native table dispatch (replaces JSR TableJump)
     even
 InitMode2_Submodes_JumpTable:
     dc.l    InitMode2_Sub0   ; jump table entry (32-bit for _m68k_tablejump)
@@ -126,8 +126,8 @@ _L_z06_InitMode2_Sub0_SecondQuest:
     even
 _L_z06_InitMode2_Sub0_Copy:
     move.b  D0,($0001,A4)
-    bsr     FetchLevelBlockDestInfo
-    bsr     CopyBlock
+    jsr     FetchLevelBlockDestInfo
+    jsr     CopyBlock
     rts
 
     even
@@ -145,8 +145,8 @@ InitMode2_Sub1:
     lea     (LevelInfoAddrs).l,A0
     move.b  (A0,D2.W),D0
     move.b  D0,($0001,A4)
-    bsr     FetchLevelInfoDestInfo
-    bsr     CopyBlock
+    jsr     FetchLevelInfoDestInfo
+    jsr     CopyBlock
     moveq   #0,D0
     move.b  D0,($0013,A4)
     addq.b  #1,($0011,A4)
@@ -162,8 +162,8 @@ CopyCommonDataToRam:
     lea     (CommonDataBlockAddr_Bank6).l,A0
     move.b  (A0,D2.W),D0
     move.b  D0,($0001,A4)
-    bsr     FetchDestAddrForCommonDataBlock
-    bsr     CopyBlock
+    jsr     FetchDestAddrForCommonDataBlock
+    jsr     CopyBlock
     moveq   #0,D0
     move.b  D0,($0013,A4)
     rts
@@ -821,7 +821,7 @@ TransferCurTileBuf:
     cmpi.b  #$3F,(A0)                  ; $3F = palette PPU addr high byte?
     bne.s   .no_pending_palette
     movem.l D0-D2/A0,-(SP)             ; save regs around BSR
-    bsr     _transfer_tilebuf_fast      ; process palette from DynTileBuf
+    jsr     _transfer_tilebuf_fast      ; process palette from DynTileBuf
     movem.l (SP)+,D0-D2/A0             ; restore regs
     move.b  #$FF,(NES_RAM+DynTileBuf).l ; reset sentinel
     tst.b   ($0014,A4)                  ; TileBufSelector = 0?
@@ -833,7 +833,7 @@ TransferCurTileBuf:
     add.w   D2,D2                       ; 2-byte index -> 4-byte index
     lea     (TransferBufPtrs).l,A0
     movea.l (A0,D2.W),A0               ; A0 = 32-bit buffer pointer
-    bsr     TransferTileBuf
+    jsr     TransferTileBuf
 .skip_main_dispatch:
     moveq   #63,D0
     move.b  D0,($0300,A4)
@@ -849,7 +849,7 @@ TransferCurTileBuf:
 ContinueTransferTileBuf:
 TransferTileBuf:
     ; PATCHED: fast tile buffer interpreter (bypasses per-byte _ppu_write_7)
-    bsr     _transfer_tilebuf_fast
+    jsr     _transfer_tilebuf_fast
     rts
 
     even

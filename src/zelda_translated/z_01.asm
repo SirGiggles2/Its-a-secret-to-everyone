@@ -108,7 +108,7 @@ InitCave:
     ;
     moveq   #120,D0
     move.b  #$80,D3
-    bsr     SetUpCommonCaveObjects
+    jsr     SetUpCommonCaveObjects
     ; If the cave/person does not remember state (give item, door charge),
     ; then go handle other kinds.
     ;
@@ -120,7 +120,9 @@ InitCave:
     cmpi.b  #$7B,D0
     bcc  _L_z01_InitCave_TakeType
     cmpi.b  #$6E,D0
-    bcc  InitCaveContinue
+    bcs.s  __far_z_01_0000
+    jmp  InitCaveContinue
+__far_z_01_0000:
     even
 _L_z01_InitCave_TakeType:
     ; Else the cave/person simply does:
@@ -129,8 +131,10 @@ _L_z01_InitCave_TakeType:
     ;
     ; So, if the item was not taken, then go set up the text.
     ;
-    bsr     GetRoomFlagUWItemState
-    beq  InitCaveContinue
+    jsr     GetRoomFlagUWItemState
+    bne.s  __far_z_01_0001
+    jmp  InitCaveContinue
+__far_z_01_0001:
     ; Otherwise destroy the person object, and let Link continue.
     ;
     moveq   #0,D0
@@ -386,7 +390,7 @@ UpdateCavePerson:
     andi.b #$01,D0
     bne  _L_z01_UpdateCavePerson_UpdateCavePersonDirect
 _anon_z01_2:
-    bsr     DrawCavePerson
+    jsr     DrawCavePerson
     ; If the cave type is not $74 medicine shop,
     ; or it is but the letter has not been used, then
     ; go draw items and run the state code.
@@ -413,7 +417,7 @@ _L_z01_UpdateCavePerson_Unhalt:
     move.b  ($00AC,A4),D0
     cmpi.b  #$40,D0
     bne  _anon_z01_3
-    bsr     UnhaltLink
+    jsr     UnhaltLink
 _anon_z01_3:
     rts
 
@@ -434,11 +438,11 @@ _L_z01_UpdateCavePerson_UseLetter:
     move.b  D0,($0656,A4)
     even
 _L_z01_UpdateCavePerson_DrawItems:
-    bsr     DrawCaveItems
+    jsr     DrawCaveItems
     even
 _L_z01_UpdateCavePerson_UpdateCavePersonDirect:
     move.b  ($00AD,A4),D0
-    bsr     _m68k_tablejump  ; M68K-native table dispatch (replaces JSR TableJump)
+    jsr     _m68k_tablejump  ; M68K-native table dispatch (replaces JSR TableJump)
     even
 UpdateCavePerson_JumpTable:
     dc.l    UpdateCavePersonState_TransferPrices   ; jump table entry (32-bit for _m68k_tablejump)
@@ -453,7 +457,7 @@ UpdateCavePerson_JumpTable:
 
     even
 DrawCavePerson:
-    bsr     Anim_FetchObjPosForSpriteDescriptor
+    jsr     Anim_FetchObjPosForSpriteDescriptor
     ; If the cave/person type >= $7B, then the visual is a moblin.
     ; So, go draw not mirrored.
     ;
@@ -507,7 +511,7 @@ _L_z01_DrawCaveItems_LoopWare:
     ; Switch to the room item object slot, and draw it.
     ;
     moveq   #19,D2
-    bsr     AnimateItemObject
+    jsr     AnimateItemObject
     even
 _L_z01_DrawCaveItems_NextWare:
     ; Bottom of the item drawing loop. Decrement this index until < 0.
@@ -529,7 +533,7 @@ _L_z01_DrawCaveItems_ShowPriceRupee:
     move.b  D0,($0097,A4)
     moveq   #24,D0
     moveq   #19,D2
-    bsr     AnimateItemObject
+    jsr     AnimateItemObject
     even
 _L_z01_DrawCaveItems_Exit:
     rts
@@ -541,10 +545,12 @@ UpdateCavePersonState_TransferPrices:
     ;
     move.b  ($0413,A4),D0
     andi.b #$08,D0
-    beq  IncCaveState
+    bne.s  __far_z_01_0002
+    jmp  IncCaveState
+__far_z_01_0002:
     even
 WritePricesTransferBuf:
-    bsr     CopyPriceListTemplate
+    jsr     CopyPriceListTemplate
     moveq   #33,D0
 ; Params:
 ; A: price character
@@ -575,7 +581,7 @@ _L_z01_WritePricesToDynamicTransferBuf_LoopPrice:
 
     even
 _L_z01_WritePricesToDynamicTransferBuf_Format:
-    bsr     FormatDecimalByte
+    jsr     FormatDecimalByte
     ; If the cave flags call for negative amounts, then
     ; store a dash in prefix byte [04]. Else store a space ($24).
     ;
@@ -592,11 +598,11 @@ _L_z01_WritePricesToDynamicTransferBuf_Align:
     moveq   #0,D3
     move.b  ($042F,A4),D3
     move.b  ($0002,A4),D0
-    bsr     SwapSpaceAndSign
+    jsr     SwapSpaceAndSign
     lea     ($0308,A4),A0
     move.b  D0,(A0,D3.W)
     move.b  ($0001,A4),D0
-    bsr     SwapSpaceAndSign
+    jsr     SwapSpaceAndSign
     lea     ($0307,A4),A0
     move.b  D0,(A0,D3.W)
     move.b  ($0003,A4),D0
@@ -622,7 +628,9 @@ _L_z01_WritePricesToDynamicTransferBuf_Align:
     move.b  D0,($0029,A4)
     ; Go to the next state and return.
     ;
-    bne  IncCaveState
+    beq.s  __far_z_01_0003
+    jmp  IncCaveState
+__far_z_01_0003:
 ; Params:
 ; A: selector
 ;
@@ -681,7 +689,7 @@ TextboxLineAddrsLo:
 
     even
 UpdatePersonState_Textbox:
-    bsr     Link_EndMoveAndDraw_Bank1
+    jsr     Link_EndMoveAndDraw_Bank1
     ; If the person's timer has not expired, then return.
     ;
     move.b  ($0029,A4),D0
@@ -802,7 +810,7 @@ _L_z01_UpdatePersonState_Textbox_ChangeLine:
     cmpi.b  #$02,D3
     bne  _L_z01_UpdatePersonState_Textbox_Exit
     addq.b  #1,($00AD,A4)
-    bsr     UnhaltLink
+    jsr     UnhaltLink
     even
 _L_z01_UpdatePersonState_Textbox_Exit:
     rts
@@ -834,7 +842,7 @@ UpdateCavePersonState_TalkOrShopOrDoorCharge:
     move.b  D0,($067E,A4)
     ; Mark this secret taken.
     ;
-    bsr     SetRoomFlagUWItemState
+    jsr     SetRoomFlagUWItemState
     even
 _L_z01_UpdateCavePersonState_TalkOrShopOrDoorCharge_Exit:
     rts
@@ -877,7 +885,7 @@ _L_z01_UpdateCavePersonState_TalkOrShopOrDoorCharge_LoopWare:
     ori     #$11,CCR  ; SEC: set C+X
     move.b  #$98,D1
     subx.b  D1,D0   ; SBC #$98
-    bsr     Abs
+    jsr     Abs
     cmpi.b  #$06,D0
     bcs  _L_z01_UpdateCavePersonState_TalkOrShopOrDoorCharge_PickedUp
     even
@@ -911,12 +919,14 @@ _L_z01_UpdateCavePersonState_TalkOrShopOrDoorCharge_PickedUp:
     lea     ($0430,A4),A0
     move.b  (A0,D2.W),D1
     cmp.b   D1,D0
-    bcs  Exit
+    bcc.s  __far_z_01_0004
+    jmp  Exit
+__far_z_01_0004:
     ; Pass the price to pay for the hint.
     ;
     lea     ($0430,A4),A0
     move.b  (A0,D2.W),D0
-    bsr     PostDebit
+    jsr     PostDebit
     even
 _L_z01_UpdateCavePersonState_TalkOrShopOrDoorCharge_MadeWager:
     ; Go to state 5. It runs the hint cave and money game.
@@ -940,12 +950,14 @@ _L_z01_UpdateCavePersonState_TalkOrShopOrDoorCharge_PickedUpWare:
     lea     ($0430,A4),A0
     move.b  (A0,D2.W),D1
     cmp.b   D1,D0
-    bcs  Exit
+    bcc.s  __far_z_01_0005
+    jmp  Exit
+__far_z_01_0005:
     ; Pass the price to pay for the item.
     ;
     lea     ($0430,A4),A0
     move.b  (A0,D2.W),D0
-    bsr     PostDebit
+    jsr     PostDebit
     even
 _L_z01_UpdateCavePersonState_TalkOrShopOrDoorCharge_TryToTake:
     ; If "heart requirement" cave flag is missing, then
@@ -976,7 +988,7 @@ _anon_z01_8:
 
     even
 _L_z01_UpdateCavePersonState_TalkOrShopOrDoorCharge_Take:
-    bsr     SetRoomFlagUWItemState
+    jsr     SetRoomFlagUWItemState
     lea     ($0422,A4),A0
     move.b  (A0,D2.W),D0
     andi.b #$3F,D0
@@ -987,9 +999,9 @@ _L_z01_UpdateCavePersonState_TalkOrShopOrDoorCharge_Take:
     lea     ($0422,A4),A0
     move.b  D0,(A0,D2.W)
     move.b  (A5)+,D0  ; PLA
-    bsr     TakeItem
+    jsr     TakeItem
     moveq   #30,D0
-    bsr     CueTransferBufAndAdvanceState
+    jsr     CueTransferBufAndAdvanceState
     ; Set timer to $40 for when we delay in state 4.
     ;
     moveq   #64,D0
@@ -1010,7 +1022,9 @@ Exit:
     even
 UpdatePersonState_DelayThenHide:
     move.b  ($0029,A4),D0
-    bne  L493A_Exit
+    beq.s  __far_z_01_0006
+    jmp  L493A_Exit
+__far_z_01_0006:
     move.b  D0,($0350,A4)
     even
 L493A_Exit:
@@ -1062,7 +1076,7 @@ _anon_z01_9:
     ;
     moveq   #0,D0
     move.b  D0,($0416,A4)
-    bsr     ClearPricesCaveFlag
+    jsr     ClearPricesCaveFlag
     moveq   #30,D0
     jmp     CueTransferBufAndAdvanceState
 
@@ -1075,15 +1089,15 @@ _L_z01_UpdateCavePersonState_HintOrMoneyGame_HandleMoneyGameOrGiveaway:
     move.b  ($0350,A4),D0
     cmpi.b  #$7B,D0
     bcs  _L_z01_UpdateCavePersonState_HintOrMoneyGame_HandleMoneyGame
-    bsr     CopyPriceListTemplate
+    jsr     CopyPriceListTemplate
     ; Write a price list into the dynamic transfer buf,
     ; but with a space instead of "X".
     ;
     moveq   #36,D0
-    bsr     WritePricesToDynamicTransferBuf
+    jsr     WritePricesToDynamicTransferBuf
     moveq   #8,D0
     move.b  D0,($0604,A4)
-    bsr     SetRoomFlagUWItemState
+    jsr     SetRoomFlagUWItemState
     ; Go to state 8 to do nothing but show the person.
     ;
     moveq   #8,D0
@@ -1101,7 +1115,9 @@ _L_z01_UpdateCavePersonState_HintOrMoneyGame_HandleMoneyGame:
     ;
     move.b  ($066D,A4),D0
     cmpi.b  #$0A,D0
-    bcs  L493A_Exit
+    bcc.s  __far_z_01_0007
+    jmp  L493A_Exit
+__far_z_01_0007:
     moveq   #8,D0
     move.b  D0,($0604,A4)
     ; Copy amounts in [0448][Y] for money game to prices [0430][Y].
@@ -1114,7 +1130,7 @@ _anon_z01_10:
     move.b  D0,(A0,D3.W)
     subq.b  #1,D3
     bpl  _anon_z01_10
-    bsr     WritePricesTransferBuf
+    jsr     WritePricesTransferBuf
     ; Go to state 8 to do nothing but show the person.
     ;
     moveq   #8,D0
@@ -1123,13 +1139,13 @@ _anon_z01_10:
     ;
     moveq   #1,D3
     move.b  ($0448,A4),D0
-    bsr     PrependSignToPrice
+    jsr     PrependSignToPrice
     moveq   #5,D3
     move.b  ($0449,A4),D0
-    bsr     PrependSignToPrice
+    jsr     PrependSignToPrice
     moveq   #9,D3
     move.b  ($044A,A4),D0
-    bsr     PrependSignToPrice
+    jsr     PrependSignToPrice
     ; If the amount chosen = 20 or 50, then add it;
     ; else subtract it.
     ;
@@ -1138,9 +1154,13 @@ _anon_z01_10:
     lea     ($0448,A4),A0
     move.b  (A0,D2.W),D0
     cmpi.b  #$14,D0
-    beq  PostCredit
+    bne.s  __far_z_01_0008
+    jmp  PostCredit
+__far_z_01_0008:
     cmpi.b  #$32,D0
-    bne  PostDebit
+    beq.s  __far_z_01_0009
+    jmp  PostDebit
+__far_z_01_0009:
     even
 PostCredit:
     andi    #$EE,CCR  ; CLC: clear C+X
@@ -1199,7 +1219,7 @@ InitUnderworldPerson_Full:
     move.b  (TextboxLineAddrsLo+2).l,D0
     move.b  D0,($045F,A4)
     move.b  ($0010,A4),D0
-    bsr     _m68k_tablejump  ; M68K-native table dispatch (replaces JSR TableJump)
+    jsr     _m68k_tablejump  ; M68K-native table dispatch (replaces JSR TableJump)
     even
 InitUnderworldPerson_Full_JumpTable:
     dc.l    InitUnderworldPerson_DoNothing   ; jump table entry (32-bit for _m68k_tablejump)
@@ -1223,7 +1243,7 @@ InitUnderworldPersonA:
     ;
     moveq   #120,D0
     move.b  #$80,D3
-    bsr     SetUpCommonCaveObjects
+    jsr     SetUpCommonCaveObjects
     ; Subtract $4B from the object type to get the old man's index.
     ;
     lea     ($034F,A4),A0
@@ -1243,15 +1263,19 @@ InitUnderworldPersonA:
     ;
     move.b  ($0350,A4),D0
     cmpi.b  #$4F,D0
-    bne  L_PlayCharacterSfx
-    beq  UnderworldPerson_DestroyIfTaken
+    beq.s  __far_z_01_0010
+    jmp  L_PlayCharacterSfx
+__far_z_01_0010:
+    bne.s  __far_z_01_0011
+    jmp  UnderworldPerson_DestroyIfTaken
+__far_z_01_0011:
     even
 InitUnderworldPersonLifeOrMoney_Full:
     ; The person goes at location ($78, $80).
     ;
     moveq   #120,D0
     move.b  #$80,D3
-    bsr     SetUpCommonCaveObjects
+    jsr     SetUpCommonCaveObjects
     ; Set text selector for "life or money".
     ;
     moveq   #54,D0
@@ -1264,8 +1288,10 @@ InitUnderworldPersonLifeOrMoney_Full:
 UnderworldPerson_DestroyIfTaken:
     ; Destroy this object if the secret/item was already taken.
     ;
-    bsr     GetRoomFlagUWItemState
-    beq  L_PlayCharacterSfx
+    jsr     GetRoomFlagUWItemState
+    bne.s  __far_z_01_0012
+    jmp  L_PlayCharacterSfx
+__far_z_01_0012:
     moveq   #0,D0
     move.b  D0,($00AC,A4)
     jmp     DestroyMonster
@@ -1284,7 +1310,7 @@ InitUnderworldPersonB:
     ;
     moveq   #120,D0
     move.b  #$80,D3
-    bsr     SetUpCommonCaveObjects
+    jsr     SetUpCommonCaveObjects
     ; Subtract $4B from the object type to get the old man's index.
     ;
     lea     ($034F,A4),A0
@@ -1311,8 +1337,8 @@ InitUnderworldPersonC:
     ;
     moveq   #120,D0
     move.b  #$80,D3
-    bsr     SetUpCommonCaveObjects
-    bsr     PlayCharacterSfx
+    jsr     SetUpCommonCaveObjects
+    jsr     PlayCharacterSfx
     lea     ($034F,A4),A0
     move.b  (A0,D2.W),D0
     move.b  D0,-(A5)  ; PHA
@@ -1343,7 +1369,7 @@ InitUnderworldPersonC:
     move.b  D0,($04CE,A4)
     lsr.b  #1,D0   ; LSR A
     move.b  D0,($00AC,A4)
-    bsr     DestroyMonster
+    jsr     DestroyMonster
     even
 _L_z01_InitUnderworldPersonC_Exit:
     rts
@@ -1354,7 +1380,7 @@ InitGrumble_Full:
     ;
     moveq   #120,D0
     move.b  #$80,D3
-    bsr     SetUpCommonCaveObjects
+    jsr     SetUpCommonCaveObjects
     ; Store text selector $24.
     ;
     moveq   #36,D0
@@ -1367,8 +1393,10 @@ InitGrumble_Full:
     ; If Grumble already got the food, then
     ; reset his type and state to get rid of him.
     ;
-    bsr     GetRoomFlagUWItemState
-    beq  PlayCharacterSfx
+    jsr     GetRoomFlagUWItemState
+    bne.s  __far_z_01_0013
+    jmp  PlayCharacterSfx
+__far_z_01_0013:
     moveq   #0,D0
     move.b  D0,($00AC,A4)
     move.b  D0,($0350,A4)
@@ -1399,9 +1427,9 @@ _anon_z01_12:
 _L_z01_UpdateUnderworldPerson_Full_DrawAndCheckCollisions:
     ; Else simply draw, check collisions, and show the text.
     ;
-    bsr     Person_DrawAndCheckCollisions
+    jsr     Person_DrawAndCheckCollisions
     move.b  ($00AD,A4),D0
-    bsr     _m68k_tablejump  ; M68K-native table dispatch (replaces JSR TableJump)
+    jsr     _m68k_tablejump  ; M68K-native table dispatch (replaces JSR TableJump)
     even
 UpdateUnderworldPerson_Full_JumpTable:
     dc.l    UpdatePersonState_ResetCharOffset   ; jump table entry (32-bit for _m68k_tablejump)
@@ -1419,7 +1447,7 @@ UpdatePersonState_DoNothing:
 
     even
 Person_CheckCollisions:
-    bsr     CheckMonsterCollisions
+    jsr     CheckMonsterCollisions
     ; If the person died, then Link hit him. So, start shooting
     ; fireballs, then reset the metastate, so that he's not dead.
     ;
@@ -1442,7 +1470,7 @@ UpdateUnderworldPersonComplex:
     andi.b #$01,D0
     bne  _L_z01_UpdateUnderworldPersonComplex_HandleState
 _anon_z01_14:
-    bsr     Person_DrawAndCheckCollisions
+    jsr     Person_DrawAndCheckCollisions
     ; If this is the "more bombs" man, then show a rupee
     ; at ($78, $98) using room item object slot $13.
     ;
@@ -1455,11 +1483,11 @@ _anon_z01_14:
     move.b  D0,($0097,A4)
     moveq   #24,D0
     moveq   #19,D2
-    bsr     AnimateItemObject
+    jsr     AnimateItemObject
     even
 _L_z01_UpdateUnderworldPersonComplex_HandleState:
     move.b  ($00AD,A4),D0
-    bsr     _m68k_tablejump  ; M68K-native table dispatch (replaces JSR TableJump)
+    jsr     _m68k_tablejump  ; M68K-native table dispatch (replaces JSR TableJump)
     even
 UpdateUnderworldPersonComplex_JumpTable:
     dc.l    UpdateUnderworldPersonComplexState_Begin   ; jump table entry (32-bit for _m68k_tablejump)
@@ -1506,7 +1534,7 @@ UpdateUnderworldPersonComplexState_SenseLink:
     ori     #$11,CCR  ; SEC: set C+X
     move.b  #$98,D1
     subx.b  D1,D0   ; SBC #$98
-    bsr     Abs
+    jsr     Abs
     cmpi.b  #$06,D0
     bcs  _L_z01_UpdateUnderworldPersonComplexState_SenseLink_CheckCanPay
     even
@@ -1557,8 +1585,8 @@ _anon_z01_17:
 
     even
 Person_DrawAndCheckCollisions:
-    bsr     Person_CheckCollisions
-    bsr     Anim_FetchObjPosForSpriteDescriptor
+    jsr     Person_CheckCollisions
+    jsr     Anim_FetchObjPosForSpriteDescriptor
     jmp     DrawObjectMirrored
 
     even
@@ -1573,11 +1601,11 @@ UpdateUnderworldPersonLifeOrMoney_Full:
     bne  _anon_z01_18
     even
 _L_z01_UpdateUnderworldPersonLifeOrMoney_Full_Draw:
-    bsr     Person_DrawAndCheckCollisions
-    bsr     DrawLifeOrMoneyItems
+    jsr     Person_DrawAndCheckCollisions
+    jsr     DrawLifeOrMoneyItems
 _anon_z01_18:
     move.b  ($00AD,A4),D0
-    bsr     _m68k_tablejump  ; M68K-native table dispatch (replaces JSR TableJump)
+    jsr     _m68k_tablejump  ; M68K-native table dispatch (replaces JSR TableJump)
     even
 UpdateUnderworldPersonLifeOrMoney_Full_JumpTable:
     dc.l    UpdateUnderworldPersonLifeOrMoneyState_0   ; jump table entry (32-bit for _m68k_tablejump)
@@ -1617,7 +1645,7 @@ _L_z01_DrawLifeOrMoneyItems_LoopWare:
     ; Switch to the room item object slot.
     ;
     moveq   #19,D2
-    bsr     AnimateItemObject
+    jsr     AnimateItemObject
     move.b  (A5)+,D0  ; PLA
     moveq   #0,D2
     move.b  D0,D2
@@ -1655,7 +1683,7 @@ _L_z01_UpdateUnderworldPersonLifeOrMoneyState_2_LoopWare:
     ori     #$11,CCR  ; SEC: set C+X
     move.b  #$98,D1
     subx.b  D1,D0   ; SBC #$98
-    bsr     Abs
+    jsr     Abs
     cmpi.b  #$06,D0
     bcs  _L_z01_UpdateUnderworldPersonLifeOrMoneyState_2_Pay
     even
@@ -1760,12 +1788,12 @@ UpdateGrumble_Full:
     bne  _anon_z01_20
     even
 _L_z01_UpdateGrumble_Full_DrawAndCheckCollisions:
-    bsr     Person_CheckCollisions
-    bsr     Anim_FetchObjPosForSpriteDescriptor
-    bsr     DrawObjectNotMirrored
+    jsr     Person_CheckCollisions
+    jsr     Anim_FetchObjPosForSpriteDescriptor
+    jsr     DrawObjectNotMirrored
 _anon_z01_20:
     move.b  ($00AD,A4),D0
-    bsr     _m68k_tablejump  ; M68K-native table dispatch (replaces JSR TableJump)
+    jsr     _m68k_tablejump  ; M68K-native table dispatch (replaces JSR TableJump)
     even
 UpdateGrumble_Full_JumpTable:
     dc.l    UpdatePersonState_Textbox   ; jump table entry (32-bit for _m68k_tablejump)
@@ -1781,7 +1809,9 @@ UpdateGrumble1:
     lea     ($00AC,A4),A0
     move.b  (A0,D3.W),D0
     lsl.b  #1,D0   ; ASL A
-    bcc  InitUnderworldPerson_DoNothing
+    bcs.s  __far_z_01_0014
+    jmp  InitUnderworldPerson_DoNothing
+__far_z_01_0014:
     ; Else halt Link and play the "secret found" tune.
     ;
     moveq   #64,D0
@@ -1792,7 +1822,7 @@ UpdateGrumble1:
 L_Person_FlagItemTakenAndAdvanceState:
     ; Flag the secret/item of this room taken.
     ;
-    bsr     SetRoomFlagUWItemState
+    jsr     SetRoomFlagUWItemState
     ; Set object timer $40 for when we get to state 3.
     ;
     moveq   #64,D0
@@ -1806,11 +1836,13 @@ L_Person_FlagItemTakenAndAdvanceState:
 
     even
 UpdateGrumble3:
-    bsr     Link_EndMoveAndAnimate_Bank1
+    jsr     Link_EndMoveAndAnimate_Bank1
     ; If the timer has not expired, then return.
     ;
     move.b  ($0029,A4),D0
-    bne  InitUnderworldPerson_DoNothing
+    beq.s  __far_z_01_0015
+    jmp  InitUnderworldPerson_DoNothing
+__far_z_01_0015:
     ; Deactivate the food object in slot $F.
     ;
     moveq   #15,D3
@@ -1919,8 +1951,8 @@ DemoPatternVramAddrs:
 
     even
 TransferDemoPatterns:
-    bsr     TurnOffAllVideo
-    bsr     _ppu_read_2  ; PPU $2002 read → D0
+    jsr     TurnOffAllVideo
+    jsr     _ppu_read_2  ; PPU $2002 read → D0
     even
 _L_z01_TransferDemoPatterns_LoopBlock:
     ; Loop over each block.
@@ -1943,7 +1975,7 @@ _L_z01_TransferDemoPatterns_LoopBlock:
     move.b  D0,($0002,A4)
     lea     (DemoPatternVramAddrs).l,A0
     move.b  (A0,D2.W),D0
-    bsr     _ppu_write_6  ; PPU $2006 write, D0=val
+    jsr     _ppu_write_6  ; PPU $2006 write, D0=val
     addq.b  #1,D2
     ; (32-bit Genesis ROM addr already in [$04:$07])
     lea     (DemoPatternBlockSizes).l,A0
@@ -1951,7 +1983,7 @@ _L_z01_TransferDemoPatterns_LoopBlock:
     move.b  D0,($0003,A4)
     lea     (DemoPatternVramAddrs).l,A0
     move.b  (A0,D2.W),D0
-    bsr     TransferPatternBlock_Bank1
+    jsr     TransferPatternBlock_Bank1
     ; Loop until pattern block index = 2.
     ;
     move.b  ($051D,A4),D0
@@ -1971,7 +2003,7 @@ _L_z01_TransferDemoPatterns_LoopBlock:
     even
 TransferPatternBlock_Bank1:
     ; PATCHED: fast bulk CHR transfer (bypasses per-byte _ppu_write_7)
-    bsr     _ppu_write_6          ; complete PPU addr latch pair (sets PPU_VADDR)
+    jsr     _ppu_write_6          ; complete PPU addr latch pair (sets PPU_VADDR)
     movea.l ($04,A4),A0           ; ROM source address
     move.w  (PPU_VADDR).l,D1      ; NES CHR destination address
     moveq   #0,D2
@@ -1979,7 +2011,7 @@ TransferPatternBlock_Bank1:
     lsl.w   #8,D2
     move.b  ($0003,A4),D2         ; size lo byte (D2.w = total bytes)
     ext.l   D2                    ; D2.l = byte count
-    bsr     _transfer_chr_block_fast
+    jsr     _transfer_chr_block_fast
     addq.b  #1,($051D,A4)         ; increment block index
     rts
 
@@ -2382,7 +2414,7 @@ UpdateWhirlwind_Full:
     ;
     move.b  D2,D0
     move.b  D0,-(A5)  ; PHA
-    bsr     UpdatePlayerPositionMarker
+    jsr     UpdatePlayerPositionMarker
     move.b  (A5)+,D0  ; PLA
     moveq   #0,D2
     move.b  D0,D2
@@ -2396,7 +2428,7 @@ _L_z01_UpdateWhirlwind_Full_CheckCollision:
     ; If the whirlwind does not collide with Link, then go check
     ; for the screen's right edge.
     ;
-    bsr     CheckLinkCollision
+    jsr     CheckLinkCollision
     move.b  ($0006,A4),D0
     beq  _L_z01_UpdateWhirlwind_Full_CheckRightEdge
     ; Collided with Link.
@@ -2440,7 +2472,7 @@ _L_z01_UpdateWhirlwind_Full_CheckRightEdge:
     ;
     ; Destroy the object.
     ;
-    bsr     DestroyWhirlwind
+    jsr     DestroyWhirlwind
     ; If teleporting state <> 0, we picked up Link.
     ; So, go to the next mode.
     ;
@@ -2450,7 +2482,7 @@ _L_z01_UpdateWhirlwind_Full_CheckRightEdge:
     beq  _L_z01_UpdateWhirlwind_Full_Draw
     move.b  D2,D0
     move.b  D0,-(A5)  ; PHA
-    bsr     GoToNextModeFromPlay
+    jsr     GoToNextModeFromPlay
     move.b  (A5)+,D0  ; PLA
     moveq   #0,D2
     move.b  D0,D2
@@ -2486,10 +2518,12 @@ SummonWhirlwind:
     ;
     move.b  ($0012,A4),D0
     cmpi.b  #$05,D0
-    bne  L6104_Exit
+    beq.s  __far_z_01_0016
+    jmp  L6104_Exit
+__far_z_01_0016:
     ; Advance the teleporting index, and store the mask for its level in [00].
     ;
-    bsr     AdvanceTeleportingLevelIndex
+    jsr     AdvanceTeleportingLevelIndex
     move.b  ($0523,A4),D0
     andi.b #$07,D0
     moveq   #0,D3
@@ -2502,7 +2536,9 @@ _L_z01_SummonWhirlwind_LoopTriforcePiece:
     ; If there are no triforce pieces, then return.
     ;
     move.b  ($0671,A4),D0
-    beq  L6104_Exit
+    bne.s  __far_z_01_0017
+    jmp  L6104_Exit
+__far_z_01_0017:
     ; If we have gotten this triforce piece, then go try to make a
     ; whirlwind.
     ;
@@ -2512,7 +2548,7 @@ _L_z01_SummonWhirlwind_LoopTriforcePiece:
     ; We have not gotten this piece.
     ; First, advance the teleporting index again.
     ;
-    bsr     AdvanceTeleportingLevelIndex
+    jsr     AdvanceTeleportingLevelIndex
     ; If the direction Link is facing is an increasing one, then
     ; rotate the level mask in [00] left to correspond to the higher
     ; level number. Then go test this new mask.
@@ -2552,11 +2588,15 @@ _L_z01_SummonWhirlwind_MakeWhirlwind:
     move.b  ($0508,A4),D0
     move.b  ($0522,A4),D1
     or.b  D1,D0
-    bne  L6104_Exit
+    beq.s  __far_z_01_0018
+    jmp  L6104_Exit
+__far_z_01_0018:
     ; Return if we can't find an empty monster slot.
     ;
-    bsr     FindEmptyMonsterSlot
-    beq  L6104_Exit
+    jsr     FindEmptyMonsterSlot
+    bne.s  __far_z_01_0019
+    jmp  L6104_Exit
+__far_z_01_0019:
     ; An empty slot was found. Flag that summoned the whirlwind.
     ; Switch to the empty slot, and go set up a whirlwind object.
     ;
@@ -2574,7 +2614,9 @@ AdvanceTeleportingLevelIndex:
     addq.b  #1,($0523,A4)
     move.b  ($0098,A4),D0
     andi.b #$09,D0
-    bne  L6104_Exit
+    beq.s  __far_z_01_0020
+    jmp  L6104_Exit
+__far_z_01_0020:
     subq.b  #1,($0523,A4)
     subq.b  #1,($0523,A4)
     even
@@ -2586,17 +2628,17 @@ DrawWhirlwind:
     ; Frames last 1 screen frame.
     ;
     moveq   #1,D0
-    bsr     Anim_AdvanceAnimCounterAndSetObjPosForSpriteDescriptor
+    jsr     Anim_AdvanceAnimCounterAndSetObjPosForSpriteDescriptor
     ; The whirlwind flashes by using a palette row based on the
     ; screen frame counter.
     ;
     move.b  ($0015,A4),D0
     andi.b #$03,D0
-    bsr     Anim_SetSpriteDescriptorAttributes
+    jsr     Anim_SetSpriteDescriptorAttributes
     ; Flip horizontally based on movement frame, which is
     ; switched based on animation counter.
     ;
-    bsr     Anim_SetObjHFlipForSpriteDescriptor
+    jsr     Anim_SetObjHFlipForSpriteDescriptor
     moveq   #0,D0
     jmp     DrawObjectNotMirrored
 
@@ -2623,7 +2665,7 @@ CheckInitWhirlwindAndBeginUpdate:
     move.b  D0,D3
     lea     (TeleportYs).l,A0
     move.b  (A0,D3.W),D0
-    bsr     InitWhirlwind
+    jsr     InitWhirlwind
 _anon_z01_21:
     jmp     BeginUpdateMode
 
@@ -2663,7 +2705,7 @@ _L_z01_CheckTileObjectsBlocking_Found:
     move.b  ($0070,A4),D0
     ori     #$11,CCR  ; SEC: set C+X
 ; [SBC unhandled mode=ABS_X] SBC ObjX, X
-    bsr     Abs
+    jsr     Abs
     cmpi.b  #$10,D0
     bcc  _L_z01_CheckTileObjectsBlocking_NextTileObj
     ; If Y distance between Link and the object >= $10, skip it.
@@ -2674,7 +2716,7 @@ _L_z01_CheckTileObjectsBlocking_Found:
     addx.b  D1,D0   ; ADC #$03 (X flag = 6502 C)
     ori     #$11,CCR  ; SEC: set C+X
 ; [SBC unhandled mode=ABS_X] SBC ObjY, X
-    bsr     Abs
+    jsr     Abs
     cmpi.b  #$10,D0
     bcc  _L_z01_CheckTileObjectsBlocking_NextTileObj
     ; Link is near the object. Reset movement direction.
@@ -2724,7 +2766,7 @@ _L_z01_CheckPowerTriforceFanfare_FillHearts:
 _L_z01_CheckPowerTriforceFanfare_EndFanfare:
     ; The fanfare is done.
     ;
-    bsr     ReplaceAshesPaletteRow
+    jsr     ReplaceAshesPaletteRow
     moveq   #32,D0
     move.b  D0,($0600,A4)
     moveq   #1,D0
@@ -2922,7 +2964,7 @@ _L_z01_CheckPassiveTileObjects_FindSlot:
     ; Look for an empty slot to instantiate a monster in.
     ; If none was found, then return.
     ;
-    bsr     FindEmptyMonsterSlot
+    jsr     FindEmptyMonsterSlot
     beq  _L_z01_CheckPassiveTileObjects_ExitX0
     ; When dealing with objects, X usually indicates the slot number
     ; of the object. Set it to the empty slot found.
@@ -2935,7 +2977,7 @@ _L_z01_CheckPassiveTileObjects_FindSlot:
     ; Set the new object's location to them.
     ;
     move.b  ($0098,A4),D0
-    bsr     GetOppositeDir
+    jsr     GetOppositeDir
     move.b  ($0000,A4),D0
     andi    #$EE,CCR  ; CLC: clear C+X
     lea     (LinkToSquareOffsetsX).l,A0
@@ -3003,7 +3045,7 @@ _L_z01_CheckPassiveTileObjects_ChooseObjType:
 _anon_z01_25:
     lea     ($034F,A4),A0
     move.b  D0,(A0,D2.W)
-    bsr     ResetObjMetastate
+    jsr     ResetObjMetastate
     moveq   #63,D0
     move.b  D0,($28,A4,D2.W)
     even
@@ -3037,7 +3079,7 @@ InitRupeeStash_Full:
     moveq   #10,D2
     even
 _L_z01_InitRupeeStash_Full_LoopRupee:
-    bsr     InitOneSimpleObject
+    jsr     InitOneSimpleObject
     ; Look up and set the coordinates for one rupee stash/rupee.
     ;
     lea     (RupeeStashXs-1).l,A0
@@ -3120,7 +3162,7 @@ _L_z01_InitTrap_Full_LoopTrap:
     move.b  (A0,D3.W),D0
     lea     ($0084,A4),A0
     move.b  D0,(A0,D2.W)
-    bsr     InitOneSimpleObject
+    jsr     InitOneSimpleObject
     subq.b  #1,D2
     subq.b  #1,D3
     bpl  _L_z01_InitTrap_Full_LoopTrap
@@ -3143,7 +3185,7 @@ UpdateTrap_Full:
     move.b  ($0084,A4),D0
     ori     #$11,CCR  ; SEC: set C+X
 ; [SBC unhandled mode=ABS_X] SBC ObjY, X
-    bsr     Abs
+    jsr     Abs
     cmpi.b  #$0E,D0
     bcc  _L_z01_UpdateTrap_Full_CheckHorizontal
     ; Determine the horizontal direction toward Link;
@@ -3197,7 +3239,7 @@ _L_z01_UpdateTrap_Full_CheckHorizontal:
     move.b  ($0070,A4),D0
     ori     #$11,CCR  ; SEC: set C+X
 ; [SBC unhandled mode=ABS_X] SBC ObjX, X
-    bsr     Abs
+    jsr     Abs
     cmpi.b  #$0E,D0
     bcc  _L_z01_UpdateTrap_Full_DrawAndCheckCollisions
     ; Determine the vertical direction toward Link;
@@ -3228,7 +3270,7 @@ _L_z01_UpdateTrap_Full_UpdateMovingStates:
     lea     ($0098,A4),A0
     move.b  (A0,D2.W),D0
     move.b  D0,($000F,A4)
-    bsr     MoveObject
+    jsr     MoveObject
     ; Truncate the grid offset to square length ($10).
     ;
     lea     ($0394,A4),A0
@@ -3240,7 +3282,7 @@ _L_z01_UpdateTrap_Full_UpdateMovingStates:
 _anon_z01_28:
     ; The trap cannot be harmed. So, only check for collision with Link.
     ;
-    bsr     CheckLinkCollision
+    jsr     CheckLinkCollision
     ; If moving horizontally, then set target coordinate in [00] to $78
     ; and current coordinate to the trap's X.
     ;
@@ -3276,7 +3318,7 @@ _L_z01_UpdateTrap_Full_Finish:
     ori     #$11,CCR  ; SEC: set C+X
     move.b  ($0000,A4),D1
     subx.b  D1,D0   ; SBC $00
-    bsr     Abs
+    jsr     Abs
     ; If distance >= 5, go draw.
     ;
     cmpi.b  #$05,D0
@@ -3286,7 +3328,7 @@ _L_z01_UpdateTrap_Full_Finish:
     ;
     lea     ($0098,A4),A0
     move.b  (A0,D2.W),D0
-    bsr     GetOppositeDir
+    jsr     GetOppositeDir
     lea     ($0098,A4),A0
     move.b  D0,(A0,D2.W)
     moveq   #32,D0
@@ -3308,7 +3350,9 @@ _L_z01_UpdateTrap_Full_FinishState2:
     lea     ($0380,A4),A0
     move.b  (A0,D2.W),D1
     cmp.b   D1,D0
-    bne  L_Trap_DrawAndCheckCollisions
+    beq.s  __far_z_01_0021
+    jmp  L_Trap_DrawAndCheckCollisions
+__far_z_01_0021:
     moveq   #0,D0
     lea     ($00AC,A4),A0
     move.b  D0,(A0,D2.W)
@@ -3326,19 +3370,19 @@ UpdateRupeeStash_Full:
     move.b  ($0084,A4),D0
     ori     #$11,CCR  ; SEC: set C+X
 ; [SBC unhandled mode=ABS_X] SBC ObjY, X
-    bsr     Abs
+    jsr     Abs
     cmpi.b  #$09,D0
     bcc  _L_z01_UpdateRupeeStash_Full_DrawRupee
     move.b  ($0070,A4),D0
     ori     #$11,CCR  ; SEC: set C+X
 ; [SBC unhandled mode=ABS_X] SBC ObjX, X
-    bsr     Abs
+    jsr     Abs
     cmpi.b  #$09,D0
     bcc  _L_z01_UpdateRupeeStash_Full_DrawRupee
     ; Else Link is close enough. Add 1 rupee, and destroy this object.
     ;
-    bsr     TakeOneRupee
-    bsr     DestroyMonster
+    jsr     TakeOneRupee
+    jsr     DestroyMonster
     ; Once you've taken one, it counts as taking them all
     ; once you leave the room.
     ;
@@ -3350,10 +3394,10 @@ UpdateRupeeStash_Full:
 _L_z01_UpdateRupeeStash_Full_DrawRupee:
     ; Draw a rupee.
     ;
-    bsr     Anim_FetchObjPosForSpriteDescriptor
+    jsr     Anim_FetchObjPosForSpriteDescriptor
     moveq   #22,D2
     moveq   #22,D3
-    bsr     DrawItemInInventory
+    jsr     DrawItemInInventory
     even
 _L_z01_UpdateRupeeStash_Full_ExitRestoreX:
     move.b  (A5)+,D0  ; PLA
@@ -3555,9 +3599,13 @@ StatusBarTransferBufTemplate:
     even
 World_ChangeRupees:
     move.b  ($0014,A4),D0
-    bne  L6506_Exit
+    beq.s  __far_z_01_0022
+    jmp  L6506_Exit
+__far_z_01_0022:
     move.b  ($0302,A4),D0
-    bpl  L6506_Exit
+    bmi.s  __far_z_01_0023
+    jmp  L6506_Exit
+__far_z_01_0023:
     ; Reset RupeesToAdd or RupeesToSubtract as appropriate,
     ; if reached 0 or max.
     ;
@@ -3577,7 +3625,9 @@ _L_z01_World_ChangeRupees_ResetSlot:
 _anon_z01_29:
     move.b  ($0015,A4),D0
     lsr.b  #1,D0   ; LSR A
-    bcs  L6506_Exit
+    bcc.s  __far_z_01_0024
+    jmp  L6506_Exit
+__far_z_01_0024:
     move.b  ($067D,A4),D0
     beq  _L_z01_World_ChangeRupees_CheckSubtract
     subq.b  #1,($067D,A4)
@@ -3589,7 +3639,9 @@ _anon_z01_29:
     even
 _L_z01_World_ChangeRupees_CheckSubtract:
     move.b  ($067E,A4),D0
-    beq  FormatStatusBarText
+    bne.s  __far_z_01_0025
+    jmp  FormatStatusBarText
+__far_z_01_0025:
     subq.b  #1,($067E,A4)
     subq.b  #1,($066D,A4)
     moveq   #16,D0
@@ -3609,11 +3661,11 @@ _anon_z01_30:
     move.b  D0,($000E,A4)
     move.b  ($0670,A4),D0
     move.b  D0,($000F,A4)
-    bsr     FormatHeartsInTextBuf
+    jsr     FormatHeartsInTextBuf
     moveq   #2,D2
     move.b  ($066D,A4),D0
     moveq   #27,D3
-    bsr     FormatDecimalCountByteInTextBuf
+    jsr     FormatDecimalCountByteInTextBuf
     moveq   #33,D3
     move.b  ($0664,A4),D0
     beq  _L_z01_FormatStatusBarText_FormatKeyCount
@@ -3621,16 +3673,16 @@ _anon_z01_30:
     moveq   #33,D0
     move.b  D0,($0001,A4)
     moveq   #10,D0
-    bsr     FormatCharDoublet
+    jsr     FormatCharDoublet
     moveq   #8,D2
-    bsr     CopyTripletToTextBuf
+    jsr     CopyTripletToTextBuf
     jmp     _L_z01_FormatStatusBarText_FormatBombCount
 
     even
 _L_z01_FormatStatusBarText_FormatKeyCount:
     moveq   #8,D2
     move.b  ($066E,A4),D0
-    bsr     FormatDecimalCountByteInTextBuf
+    jsr     FormatDecimalCountByteInTextBuf
     even
 _L_z01_FormatStatusBarText_FormatBombCount:
     moveq   #14,D2
@@ -3644,7 +3696,7 @@ _L_z01_FormatStatusBarText_FormatBombCount:
     even
 FormatDecimalCountByteInTextBuf:
     move.b  D3,($0000,A4)
-    bsr     FormatDecimalCountByte
+    jsr     FormatDecimalCountByte
 ; Params:
 ; [$00]: offset to first character in buffer
 ;
@@ -3677,7 +3729,7 @@ _anon_z01_31:
 ;
     even
 FormatDecimalCountByte:
-    bsr     FormatDecimalByte
+    jsr     FormatDecimalByte
     cmpi.b  #$24,D3
     bne  _anon_z01_32
     moveq   #33,D3
@@ -3722,8 +3774,8 @@ InitModeB_EnterCave_Bank5:
     ;
     move.b  ($0013,A4),D0
     move.b  D0,-(A5)  ; PHA
-    bsr     InitMode_EnterRoom
-    bsr     ResetInvObjState
+    jsr     InitMode_EnterRoom
+    jsr     ResetInvObjState
     ; Put Link at the cave entrance ($70, $DD), and facing up.
     ;
     moveq   #112,D0
@@ -3734,8 +3786,8 @@ InitModeB_EnterCave_Bank5:
     even
 FileBChecksums:
     move.b  D0,($0098,A4)
-    bsr     Link_EndMoveAndAnimate
-    bsr     RunCrossRoomTasksAndBeginUpdateMode_PlayModesNoCellar
+    jsr     Link_EndMoveAndAnimate
+    jsr     RunCrossRoomTasksAndBeginUpdateMode_PlayModesNoCellar
     ; Restore the submode.
     ;
     move.b  (A5)+,D0  ; PLA
@@ -3837,7 +3889,7 @@ PlayBoomerangSfx:
     move.b  ($003B,A4),D0
     bne  _anon_z01_37
     move.b  D3,D0
-    bsr     PlayEffect
+    jsr     PlayEffect
     moveq   #10,D0
     move.b  D0,($003B,A4)
 _anon_z01_37:
@@ -3859,7 +3911,7 @@ _anon_z01_38:
     cmpi.b  #$00,D2
     bne  _anon_z01_38
     move.b  ($0342,A4),D0
-    bsr     CycleSpriteIndexInA
+    jsr     CycleSpriteIndexInA
     move.b  D0,($0342,A4)
     rts
 
@@ -3911,10 +3963,10 @@ CheckPersonBlocking:
 ;
     even
 FormatDecimalByte:
-    bsr     DivideBy10
+    jsr     DivideBy10
     move.b  D0,($0003,A4)
     move.b  D3,D0
-    bsr     DivideBy10
+    jsr     DivideBy10
     cmpi.b  #$00,D3
     bne  _L_z01_FormatDecimalByte_WriteHighChars
     moveq   #36,D3
@@ -4155,7 +4207,9 @@ _L_z01_BoundDirectionHorizontally_Left:
     move.b  ($0000,A4),D0
     move.b  ($0346,A4),D1
     cmp.b   D1,D0
-    bcs  BoundDirectionReturn
+    bcc.s  __far_z_01_0026
+    jmp  BoundDirectionReturn
+__far_z_01_0026:
     ; If object is not the player and (slot >= $D or type = $5C),
     ; then subtract $17 from X coordinate in order to check the
     ; right bound.
@@ -4183,7 +4237,9 @@ _L_z01_BoundDirectionHorizontally_Right:
     move.b  ($0000,A4),D0
     move.b  ($0347,A4),D1
     cmp.b   D1,D0
-    bcs  L6825_Exit
+    bcc.s  __far_z_01_0027
+    jmp  L6825_Exit
+__far_z_01_0027:
     even
 BoundDirectionReturn:
     ; If the reference direction in Y register is 0, then
@@ -4193,7 +4249,9 @@ BoundDirectionReturn:
     move.b  D3,D0
     move.b  ($000F,A4),D1
     and.b  D1,D0
-    beq  L6825_Exit
+    bne.s  __far_z_01_0028
+    jmp  L6825_Exit
+__far_z_01_0028:
     jmp     ResetMovingDir
 
 ; Params:
@@ -4237,7 +4295,9 @@ _L_z01_BoundDirectionVertically_Up:
     move.b  ($0000,A4),D0
     move.b  ($0348,A4),D1
     cmp.b   D1,D0
-    bcs  BoundDirectionReturn
+    bcc.s  __far_z_01_0029
+    jmp  BoundDirectionReturn
+__far_z_01_0029:
     ; If object is not the player and (slot >= $D or type = $5C),
     ; then subtract $21 from Y coordinate in order to check the
     ; down bound.
@@ -4265,7 +4325,9 @@ _L_z01_BoundDirectionVertically_Down:
     move.b  ($0000,A4),D0
     move.b  ($0349,A4),D1
     cmp.b   D1,D0
-    bcc  BoundDirectionReturn
+    bcs.s  __far_z_01_0030
+    jmp  BoundDirectionReturn
+__far_z_01_0030:
     even
 L6825_Exit:
     rts
@@ -4295,8 +4357,8 @@ BoundByRoomWithA:
 ;
     even
 BoundByRoom:
-    bsr     BoundDirectionHorizontally
-    bsr     BoundDirectionVertically
+    jsr     BoundDirectionHorizontally
+    jsr     BoundDirectionVertically
     move.b  ($000F,A4),D0
     rts
 
@@ -4474,7 +4536,7 @@ _anon_z01_50:
 ;
     even
 MoveShot:
-    bsr     BoundByRoomWithA
+    jsr     BoundByRoomWithA
     beq  _L_z01_MoveShot_ReturnBlocked
     ; Move the object as if grid offset were 0.
     ;
@@ -4484,7 +4546,7 @@ MoveShot:
     moveq   #0,D0
     lea     ($0394,A4),A0
     move.b  D0,(A0,D2.W)
-    bsr     MoveObject
+    jsr     MoveObject
     move.b  (A5)+,D0  ; PLA
     ; If [0E] is set, keep the original value in grid offset,
     ; or else add the new amount to it.
@@ -4532,7 +4594,7 @@ GetDirectionsAndDistancesToTarget:
     move.b  ($70,A4,D3.W),D0
     moveq   #0,D3
     move.b  ($70,A4,D2.W),D3
-    bsr     GetOneDirectionAndDistanceToTarget
+    jsr     GetOneDirectionAndDistanceToTarget
     move.b  D0,($0003,A4)
     move.b  ($000A,A4),D0
     move.b  D0,($000B,A4)
@@ -4548,7 +4610,7 @@ GetDirectionsAndDistancesToTarget:
     moveq   #0,D3
     lea     ($0084,A4),A0
     move.b  (A0,D2.W),D3
-    bsr     GetOneDirectionAndDistanceToTarget
+    jsr     GetOneDirectionAndDistanceToTarget
     move.b  D0,($0004,A4)
     rts
 
@@ -4748,7 +4810,9 @@ WieldBomb:
     beq  _L_z01_WieldBomb_FoundSlot
     andi.b #$F0,D0
     cmpi.b  #$10,D0
-    beq  L69AB_Exit
+    bne.s  __far_z_01_0031
+    jmp  L69AB_Exit
+__far_z_01_0031:
     even
 _L_z01_WieldBomb_FoundSlot:
     ; We found a slot that's empty or has a fire. It could be $10 or $11.
@@ -4763,7 +4827,9 @@ _L_z01_WieldBomb_FoundSlot:
     move.b  (A0,D3.W),D0
     beq  _L_z01_WieldBomb_Activate
     cmpi.b  #$13,D0
-    bcs  L69AB_Exit
+    bcc.s  __far_z_01_0032
+    jmp  L69AB_Exit
+__far_z_01_0032:
     even
 _L_z01_WieldBomb_Activate:
     ; We're using a bomb. Decrement the count.
@@ -4826,7 +4892,7 @@ PlaceWeapon:
     move.b  D0,(A0,D2.W)
     ; Set object's X to player's X + offset for direction.
     ;
-    bsr     ChooseOffsetForDirectionH
+    jsr     ChooseOffsetForDirectionH
     move.b  ($0070,A4),D1
     addx.b  D1,D0   ; ADC ObjX
     move.b  D0,($70,A4,D2.W)
@@ -4835,7 +4901,7 @@ PlaceWeapon:
     move.b  ($0098,A4),D0
     lsr.b  #1,D0   ; LSR A
     lsr.b  #1,D0   ; LSR A
-    bsr     ChooseOffsetForDirectionH
+    jsr     ChooseOffsetForDirectionH
     move.b  ($0084,A4),D1
     addx.b  D1,D0   ; ADC ObjY
     lea     ($0084,A4),A0
@@ -4895,7 +4961,9 @@ WieldCandle:
     addq.b  #1,D2
     lea     ($00AC,A4),A0
     move.b  (A0,D2.W),D0
-    bne  L69BE_Exit
+    beq.s  __far_z_01_0033
+    jmp  L69BE_Exit
+__far_z_01_0033:
     even
 _L_z01_WieldCandle_NotInUse:
     ; If we have the blue candle and it was used, then return.
@@ -4904,7 +4972,9 @@ _L_z01_WieldCandle_NotInUse:
     cmpi.b  #$01,D0
     bne  _anon_z01_53
     move.b  ($0513,A4),D0
-    bne  L69BE_Exit
+    beq.s  __far_z_01_0034
+    jmp  L69BE_Exit
+__far_z_01_0034:
 _anon_z01_53:
     ; Set the candle used.
     ;
@@ -4927,13 +4997,13 @@ _anon_z01_53:
     lea     ($00AC,A4),A0
     move.b  D0,(A0,D2.W)
     moveq   #4,D0
-    bsr     PlayEffect
+    jsr     PlayEffect
     ; Each animation frame lasts 4 frames.
     ;
     moveq   #4,D0
     lea     ($03D0,A4),A0
     move.b  D0,(A0,D2.W)
-    bsr     PlaceWeaponForPlayerState
+    jsr     PlaceWeaponForPlayerState
     rts
 
 ; Returns:
@@ -5054,10 +5124,14 @@ _L_z01_UpdateBombFlashEffect_Exit:
 UpdatePlayerPositionMarker:
     move.b  ($0012,A4),D0
     cmpi.b  #$09,D0
-    beq  L6AAF_Exit
+    bne.s  __far_z_01_0035
+    jmp  L6AAF_Exit
+__far_z_01_0035:
     moveq   #0,D2
     move.b  ($0522,A4),D2
-    bne  L6AAF_Exit
+    beq.s  __far_z_01_0036
+    jmp  L6AAF_Exit
+__far_z_01_0036:
     move.b  ($00EB,A4),D0
     moveq   #0,D2
 ; Params:
@@ -5134,7 +5208,7 @@ L6AAF_Exit:
 
     even
 UpdateWorldCurtainEffect_Bank2:
-    bsr     UpdateWorldCurtainEffect
+    jsr     UpdateWorldCurtainEffect
     moveq   #2,D0
     jmp     SwitchBank_Local2
 
@@ -5157,10 +5231,10 @@ _L_z01_UpdateWorldCurtainEffect_LoopColumn:
     move.b  ($7C,A4,D2.W),D0
     move.b  D0,($00E8,A4)
     moveq   #5,D0
-    bsr     SwitchBank_Local5
+    jsr     SwitchBank_Local5
     moveq   #14,D0
-    bsr     SetMMC1Control_Local5
-    bsr     CopyColumnToTileBuf
+    jsr     SetMMC1Control_Local5
+    jsr     CopyColumnToTileBuf
     subq.b  #1,($000A,A4)
     bpl  _L_z01_UpdateWorldCurtainEffect_LoopColumn
     move.b  #$FF,D0
@@ -5314,7 +5388,7 @@ ItemSlotToPaletteOffsetsOrValues:
 
     even
 SetRoomFlagUWItemState:
-    bsr     GetRoomFlags
+    jsr     GetRoomFlags
     ori.b #$10,D0
     move.b  ($00,A4),D1   ; ptr lo
     move.b  ($01,A4),D4  ; ptr hi
@@ -5365,7 +5439,7 @@ TryTakeRoomItem:
     beq  _anon_z01_63
     ; If player took the room item, then return.
     ;
-    bsr     GetRoomFlagUWItemState
+    jsr     GetRoomFlagUWItemState
     bne  _anon_z01_63
     ; Switch to room item object slot $13.
     ;
@@ -5395,7 +5469,9 @@ TryTakeItem:
     lea     ($03A8,A4),A0
     move.b  (A0,D2.W),D0
     cmpi.b  #$F0,D0
-    bcc  L6C28_Exit
+    bcs.s  __far_z_01_0037
+    jmp  L6C28_Exit
+__far_z_01_0037:
     ; If Y distance between Link and the item >= 9, return.
     ;
     move.b  ($0084,A4),D0
@@ -5404,17 +5480,21 @@ TryTakeItem:
     addx.b  D1,D0   ; ADC #$03 (X flag = 6502 C)
     ori     #$11,CCR  ; SEC: set C+X
 ; [SBC unhandled mode=ABS_X] SBC ObjY, X
-    bsr     Abs
+    jsr     Abs
     cmpi.b  #$09,D0
-    bcc  L6C28_Exit
+    bcs.s  __far_z_01_0038
+    jmp  L6C28_Exit
+__far_z_01_0038:
     ; If X distance between Link and the item >= 9, return.
     ;
     move.b  ($0070,A4),D0
     ori     #$11,CCR  ; SEC: set C+X
 ; [SBC unhandled mode=ABS_X] SBC ObjX, X
-    bsr     Abs
+    jsr     Abs
     cmpi.b  #$09,D0
-    bcc  L6C28_Exit
+    bcs.s  __far_z_01_0039
+    jmp  L6C28_Exit
+__far_z_01_0039:
     ; In case this is the room item, set state to $FF to deactivate it.
     ;
     move.b  #$FF,D0
@@ -5427,7 +5507,7 @@ TryTakeItem:
     ;
     cmpi.b  #$13,D2
     bne  _anon_z01_64
-    bsr     SetRoomFlagUWItemState
+    jsr     SetRoomFlagUWItemState
 _anon_z01_64:
     move.b  ($0004,A4),D0
 ; Params:
@@ -5484,7 +5564,9 @@ _L_z01_TakeItem_SkipLift:
     ; Y: item slot
     ;
     andi.b #$F0,D0
-    bne  CheckClass1
+    beq.s  __far_z_01_0040
+    jmp  CheckClass1
+__far_z_01_0040:
     ; Class 0. We have an item of a type that's unique or complex.
     ;
     ; First, check the exceptions. If the item is a map, compass, or triforce; then go handle them.
@@ -5492,13 +5574,21 @@ _L_z01_TakeItem_SkipLift:
     ;
     ; Map item slot
     cmpi.b  #$11,D3
-    beq  TakeClass0Complex
+    bne.s  __far_z_01_0041
+    jmp  TakeClass0Complex
+__far_z_01_0041:
     cmpi.b  #$10,D3
-    beq  TakeClass0Complex
+    bne.s  __far_z_01_0042
+    jmp  TakeClass0Complex
+__far_z_01_0042:
     cmpi.b  #$1A,D3
-    beq  TakeClass0Complex
+    bne.s  __far_z_01_0043
+    jmp  TakeClass0Complex
+__far_z_01_0043:
     cmpi.b  #$1B,D3
-    beq  TakeClass0Complex
+    bne.s  __far_z_01_0044
+    jmp  TakeClass0Complex
+__far_z_01_0044:
     ; Finally, this is a simple item. Put the item value in the item slot.
     ;
     move.b  ($000A,A4),D0
@@ -5516,7 +5606,7 @@ Take5Rupees:
     ;
     moveq   #4,D3
 _anon_z01_66:
-    bsr     TakeOneRupee
+    jsr     TakeOneRupee
     subq.b  #1,D3
     bpl  _anon_z01_66
     rts
@@ -5537,22 +5627,28 @@ CheckClass1:
     cmpi.b  #$18,D3
     beq  _L_z01_CheckClass1_TakeHeartContainer
     cmpi.b  #$1C,D3
-    beq  Take5Rupees
+    bne.s  __far_z_01_0045
+    jmp  Take5Rupees
+__far_z_01_0045:
     cmpi.b  #$16,D3
     beq  _L_z01_CheckClass1_TakeRupee
     cmpi.b  #$19,D3
-    beq  TakeHearts
+    bne.s  __far_z_01_0046
+    jmp  TakeHearts
+__far_z_01_0046:
     ; For key item slot, play the tune here.
     ; Add to the amount below.
     ;
     cmpi.b  #$17,D3
     bne  _anon_z01_67
-    bsr     PlayKeyTakenTune
+    jsr     PlayKeyTakenTune
 _anon_z01_67:
     ; For fairy item slot, go handle it where hearts are increased.
     ;
     cmpi.b  #$14,D3
-    beq  TakeHeartsNoSound
+    bne.s  __far_z_01_0047
+    jmp  TakeHeartsNoSound
+__far_z_01_0047:
     ; Keys and other items.
     ; Add item value and value in item slot.
     ;
@@ -5593,7 +5689,9 @@ _L_z01_CheckClass1_TakeHeartContainer:
     lea     ($0657,A4),A0
     move.b  (A0,D3.W),D0
     cmpi.b  #$F0,D0
-    bcc  L6C28_Exit
+    bcs.s  __far_z_01_0048
+    jmp  L6C28_Exit
+__far_z_01_0048:
     move.b  #$11,D1
     addx.b  D1,D0   ; ADC #$11 (X flag = 6502 C)
     jmp     SetItemValue
@@ -5609,7 +5707,9 @@ _L_z01_CheckClass1_CheckClass2:
     ;
     cmpi.b  #$20,D0
     bne  _L_z01_CheckClass1_SetItemValueFF
-    beq  HandleClass2
+    bne.s  __far_z_01_0049
+    jmp  HandleClass2
+__far_z_01_0049:
     even
 TakeClass0Complex:
     ; We're taking a class 0 complex item found in UW.
@@ -5621,7 +5721,9 @@ TakeClass0Complex:
     move.b  ($0010,A4),D0
     beq  _L_z01_TakeClass0Complex_Exit
     cmpi.b  #$1B,D3
-    beq  L_TakePowerTriforce
+    bne.s  __far_z_01_0050
+    jmp  L_TakePowerTriforce
+__far_z_01_0050:
     cmpi.b  #$11,D3
     bne  _anon_z01_71
     moveq   #1,D2
@@ -5653,7 +5755,7 @@ _anon_z01_72:
     ;
     cmpi.b  #$1A,D3
     bne  _L_z01_TakeClass0Complex_Exit
-    bsr     EndGameMode
+    jsr     EndGameMode
     moveq   #18,D0
     move.b  D0,($0012,A4)
     even
@@ -5665,7 +5767,7 @@ _L_z01_TakeClass0Complex_Exit:
 ;
     even
 TakeHearts:
-    bsr     PlayKeyTakenTune
+    jsr     PlayKeyTakenTune
     even
 TakeHeartsNoSound:
     move.b  ($000A,A4),D0
@@ -5674,7 +5776,7 @@ TakeHeartsNoSound:
 _L_z01_TakeHeartsNoSound_CompareHearts:
     ; For that many hearts, add them one by one.
     ;
-    bsr     CompareHeartsToContainers
+    jsr     CompareHeartsToContainers
     bne  _L_z01_TakeHeartsNoSound_AddWholeHeart
     ; If partial heart is not full, then fill it and return.
     ;
@@ -5720,7 +5822,7 @@ CompareHeartsToContainers:
     even
 L_TakePowerTriforce:
     moveq   #1,D0
-    bsr     SwitchBank_Local5
+    jsr     SwitchBank_Local5
     jmp     TakePowerTriforce
 
     even
@@ -5737,11 +5839,15 @@ HandleClass2:
     lea     ($0657,A4),A0
     move.b  (A0,D3.W),D1
     cmp.b   D1,D0
-    bcs  L6D1B_Exit
+    bcc.s  __far_z_01_0051
+    jmp  L6D1B_Exit
+__far_z_01_0051:
     lea     ($0657,A4),A0
     move.b  D0,(A0,D3.W)
     cmpi.b  #$0B,D3
-    bne  L6D1B_Exit
+    beq.s  __far_z_01_0052
+    jmp  L6D1B_Exit
+__far_z_01_0052:
     ; We took a ring. Change Link's color.
     ;
     moveq   #0,D2
@@ -6097,7 +6203,7 @@ SpriteOffsets:
 
     even
 AnimateAndDrawObjectWalking:
-    bsr     AnimateObjectWalking
+    jsr     AnimateObjectWalking
     move.b  D3,D0
     jmp     DrawObjectNotMirrored
 
@@ -6180,7 +6286,9 @@ DrawObjectWithAnim:
     ; But if it's Link, then hardcode them to sprites $12 and $13.
     ;
     cmpi.b  #$00,D2
-    bne  DrawObjectWithAnimAndSpecificSprites
+    beq.s  __far_z_01_0053
+    jmp  DrawObjectWithAnimAndSpecificSprites
+__far_z_01_0053:
     moveq   #72,D0
     move.b  D0,($0343,A4)
     moveq   #76,D0
@@ -6232,12 +6340,14 @@ DrawObjectWithAnimAndSpecificSprites:
 _L_z01_DrawObjectWithAnimAndSpecificSprites_UseTableAttr:
     lea     (ObjAnimAttrHeap).l,A0
     move.b  (A0,D3.W),D0
-    bsr     Anim_SetSpriteDescriptorAttributes
+    jsr     Anim_SetSpriteDescriptorAttributes
 _anon_z01_76:
     ; If it's Link, write the sprites. He's never mirrored.
     ;
     cmpi.b  #$00,D2
-    beq  Anim_WriteHorizontallyFlippableSpritePair
+    bne.s  __far_z_01_0054
+    jmp  Anim_WriteHorizontallyFlippableSpritePair
+__far_z_01_0054:
     ; For other objects, the caller controls mirroring and flipping.
     ;
     ; If mirrored [0C], then draw it mirrored.
@@ -6245,7 +6355,9 @@ _anon_z01_76:
     ;
     moveq   #0,D3
     move.b  ($000C,A4),D3
-    beq  Anim_WriteHorizontallyFlippableSpritePair
+    bne.s  __far_z_01_0055
+    jmp  Anim_WriteHorizontallyFlippableSpritePair
+__far_z_01_0055:
     jmp     Anim_WriteMirroredSpritePair
 
     even
@@ -6272,7 +6384,9 @@ _L_z01_DrawObjectWithAnimAndSpecificSprites_DrawHalfWidth:
     even
 Anim_WriteHorizontallyFlippableSpritePair:
     move.b  ($000F,A4),D0
-    beq  Anim_WriteSpritePair
+    bne.s  __far_z_01_0056
+    jmp  Anim_WriteSpritePair
+__far_z_01_0056:
     ; Otherwise, reverse the two sides.
     ;
     move.b  ($0002,A4),D0
@@ -6309,7 +6423,9 @@ Anim_WriteSpritePair:
     moveq   #0,D3
     lea     ($04F0,A4),A0
     move.b  (A0,D2.W),D3
-    beq  Anim_WriteSpritePairNotFlashing
+    bne.s  __far_z_01_0057
+    jmp  Anim_WriteSpritePairNotFlashing
+__far_z_01_0057:
     ; For both left and right sprites, indexed by Y register:
     ;
     moveq   #1,D3
@@ -6352,7 +6468,7 @@ _L_z01_Anim_WriteSpritePairNotFlashing_LoopSprite:
     move.b  ($0344,A4),D2
     move.b  ($0008,A4),D0
     beq  _anon_z01_78
-    bsr     CycleCurSpriteIndex
+    jsr     CycleCurSpriteIndex
 _anon_z01_78:
     addq.b  #1,D3
     subq.b  #1,($0007,A4)
@@ -6387,7 +6503,7 @@ Anim_WriteStaticItemSpritesWithAttributes:
     ; [00]: X
     ; [01]: Y
     ;
-    bsr     Anim_SetSpriteDescriptorAttributes
+    jsr     Anim_SetSpriteDescriptorAttributes
     moveq   #0,D0
     move.b  D0,($000F,A4)
     move.b  D0,($000C,A4)
@@ -6490,7 +6606,9 @@ _L_z01_Anim_WriteSpecificItemSprites_Wide:
     cmpi.b  #$6C,D0
     bcs  _L_z01_Anim_WriteSpecificItemSprites__Slim
     cmpi.b  #$7C,D0
-    bcs  Anim_WriteMirroredSpritePair
+    bcc.s  __far_z_01_0058
+    jmp  Anim_WriteMirroredSpritePair
+__far_z_01_0058:
     jmp     Anim_WriteHorizontallyFlippableSpritePair
 
     even
@@ -6603,12 +6721,14 @@ Anim_EndWriteSprite:
 
     even
 Person_DrawAndCheckCollisions_Common:
-    bsr     CheckMonsterCollisions
+    jsr     CheckMonsterCollisions
     ; If the person is flagged dead, then
     ; enable fireballs from the two flames, and reset the metastate.
     ;
     move.b  ($0406,A4),D0
-    beq  Person_Draw
+    bne.s  __far_z_01_0059
+    jmp  Person_Draw
+__far_z_01_0059:
     move.b  D0,($04CC,A4)
     moveq   #0,D0
     move.b  D0,($0406,A4)
@@ -6616,7 +6736,7 @@ Person_DrawAndCheckCollisions_Common:
 Person_Draw:
     ; Either way, draw the object.
     ;
-    bsr     Anim_FetchObjPosForSpriteDescriptor
+    jsr     Anim_FetchObjPosForSpriteDescriptor
     jmp     DrawObjectMirrored
 
 ; Params:
@@ -6627,7 +6747,7 @@ Person_Draw:
 ;
     even
 CheckMonsterCollisions:
-    bsr     GetObjectMiddle
+    jsr     GetObjectMiddle
     ; If the object is invincible, skip checking collisions with Link's weapons.
     ; But go check for a collision with Link.
     ;
@@ -6643,20 +6763,20 @@ CheckMonsterCollisions:
     ; Check for collisions with each weapon.
     ;
     moveq   #15,D3
-    bsr     CheckMonsterBoomerangOrFoodCollision
+    jsr     CheckMonsterBoomerangOrFoodCollision
     moveq   #14,D3
-    bsr     CheckMonsterSwordShotOrMagicShotCollision
+    jsr     CheckMonsterSwordShotOrMagicShotCollision
     moveq   #16,D3
-    bsr     CheckMonsterBombOrFireCollision
+    jsr     CheckMonsterBombOrFireCollision
     moveq   #17,D3
-    bsr     CheckMonsterBombOrFireCollision
+    jsr     CheckMonsterBombOrFireCollision
     moveq   #13,D3
-    bsr     CheckMonsterSwordCollision
+    jsr     CheckMonsterSwordCollision
     moveq   #18,D3
-    bsr     CheckMonsterArrowOrRodCollision
+    jsr     CheckMonsterArrowOrRodCollision
     even
 _L_z01_CheckMonsterCollisions_CheckLink:
-    bsr     CheckLinkCollision
+    jsr     CheckLinkCollision
     ; If the monster is not dying, then go see about monsters
     ; that capture Link.
     ;
@@ -6774,7 +6894,7 @@ ObjTypeToDamagePoints:
 ;
     even
 CheckLinkCollision:
-    bsr     GetObjectMiddle
+    jsr     GetObjectMiddle
     ; Reset variables to return.
     ;
     moveq   #0,D0
@@ -6795,16 +6915,22 @@ CheckLinkCollision:
     or.b  D1,D0
     move.b  ($3D,A4,D2.W),D1
     or.b  D1,D0
-    bne  L73A9_Exit
+    beq.s  __far_z_01_0060
+    jmp  L73A9_Exit
+__far_z_01_0060:
     even
 CheckLinkCollisionPreinit:
     ; If Link is halted or paralyzed, then return no collision.
     ;
     move.b  ($00AC,A4),D0
     cmpi.b  #$40,D0
-    beq  L73A9_Exit
+    bne.s  __far_z_01_0061
+    jmp  L73A9_Exit
+__far_z_01_0061:
     move.b  ($0512,A4),D0
-    bne  L73A9_Exit
+    beq.s  __far_z_01_0062
+    jmp  L73A9_Exit
+__far_z_01_0062:
     ; If the object is a monster's shot/projectile, and it's not in a
     ; state that it can do damage; then return no collision.
     ;
@@ -6816,7 +6942,9 @@ CheckLinkCollisionPreinit:
     move.b  (A0,D2.W),D0
     andi.b #$F0,D0
     cmpi.b  #$10,D0
-    bne  L73A9_Exit
+    beq.s  __far_z_01_0063
+    jmp  L73A9_Exit
+__far_z_01_0063:
 _anon_z01_84:
     ; Store Link's midpoint coordinates in [04] and [05].
     ;
@@ -6833,8 +6961,10 @@ _anon_z01_84:
     ; If both objects are 9 pixels apart or more, then return no collision.
     ;
     moveq   #9,D0
-    bsr     DoObjectsCollide
-    beq  L73A9_Exit
+    jsr     DoObjectsCollide
+    bne.s  __far_z_01_0064
+    jmp  L73A9_Exit
+__far_z_01_0064:
     ; They collide. Now find out how they collide.
     ;
     ; If it's a regular monster, go harm Link.
@@ -6842,7 +6972,9 @@ _anon_z01_84:
     lea     ($034F,A4),A0
     move.b  (A0,D2.W),D0
     cmpi.b  #$53,D0
-    bcs  HarmLink
+    bcc.s  __far_z_01_0065
+    jmp  HarmLink
+__far_z_01_0065:
     ; Here, the attacker is a monster's shot/projectile.
     ; Flag this kind of collision.
     ;
@@ -6851,12 +6983,18 @@ _anon_z01_84:
     ; then go harm Link.
     ;
     cmpi.b  #$56,D0
-    beq  HarmLink
+    bne.s  __far_z_01_0066
+    jmp  HarmLink
+__far_z_01_0066:
     cmpi.b  #$5A,D0
-    beq  HarmLink
+    bne.s  __far_z_01_0067
+    jmp  HarmLink
+__far_z_01_0067:
     move.b  ($00AC,A4),D0
     andi.b #$F0,D0
-    bne  HarmLink
+    beq.s  __far_z_01_0068
+    jmp  HarmLink
+__far_z_01_0068:
     ; If Link and the shot are not facing opposite directions,
     ; then go harm Link.
     ;
@@ -6876,7 +7014,9 @@ _anon_z01_84:
     or.b  D1,D0
     andi.b #$03,D0
     cmpi.b  #$03,D0
-    bne  HarmLink
+    beq.s  __far_z_01_0069
+    jmp  HarmLink
+__far_z_01_0069:
     even
 _L_z01_CheckLinkCollisionPreinit_FacingOpposite:
     ; Link and the shot are facing opposite directions.
@@ -6896,7 +7036,9 @@ _L_z01_CheckLinkCollisionPreinit_FacingOpposite:
     ; So, go harm Link.
     ;
     move.b  ($0676,A4),D0
-    beq  HarmLink
+    bne.s  __far_z_01_0070
+    jmp  HarmLink
+__far_z_01_0070:
     even
 _L_z01_CheckLinkCollisionPreinit_Parry:
     ; Else Link parries.
@@ -6913,7 +7055,7 @@ L73A9_Exit:
 
     even
 HarmLink:
-    bsr     BeginShove
+    jsr     BeginShove
     ; Flag collision with [0C], even though [06] was already set.
     ;
     addq.b  #1,($000C,A4)
@@ -6948,7 +7090,7 @@ Link_BeHarmed:
     cmpi.b  #$2E,D3
     beq  _anon_z01_85
     moveq   #8,D0
-    bsr     PlaySample
+    jsr     PlaySample
 _anon_z01_85:
     ; For every level of ring (1 or 2), divide the 16-bit damage amount in [0E:0D] by 2.
     ;
@@ -7031,7 +7173,7 @@ _L_z01_Link_BeHarmed_HandleDied:
     move.b  ($066F,A4),D0
     andi.b #$F0,D0
     move.b  D0,($066F,A4)
-    bsr     EndGameMode
+    jsr     EndGameMode
     move.b  D0,($0670,A4)
     move.b  D0,($00AC,A4)
     moveq   #17,D0
@@ -7111,15 +7253,21 @@ CheckMonsterWeaponCollision:
     move.b  ($0000,A4),D3
     lea     ($00AC,A4),A0
     move.b  (A0,D3.W),D0
-    beq  L74D8_Exit
+    bne.s  __far_z_01_0071
+    jmp  L74D8_Exit
+__far_z_01_0071:
     ; If the objects do not collide, then return.
     ;
-    bsr     DoObjectsCollideWithThresholds
-    beq  L74D8_Exit
+    jsr     DoObjectsCollideWithThresholds
+    bne.s  __far_z_01_0072
+    jmp  L74D8_Exit
+__far_z_01_0072:
     ; If the weapon is a boomerang ...
     ;
     cmpi.b  #$0F,D3
-    bne  HandleMonsterWeaponCollision
+    beq.s  __far_z_01_0073
+    jmp  HandleMonsterWeaponCollision
+__far_z_01_0073:
     ; ... and the monster is invincible to it,
     ; then play the parry sound.
     ;
@@ -7128,7 +7276,7 @@ CheckMonsterWeaponCollision:
     move.b  ($0009,A4),D1
     and.b  D1,D0
     beq  _anon_z01_88
-    bsr     PlayParryTune
+    jsr     PlayParryTune
 _anon_z01_88:
     ; Set the boomerang state to return fast to the thrower.
     ;
@@ -7141,7 +7289,9 @@ _anon_z01_88:
     move.b  (A0,D2.W),D0
     move.b  ($0009,A4),D1
     and.b  D1,D0
-    bne  L74D8_Exit
+    beq.s  __far_z_01_0074
+    jmp  L74D8_Exit
+__far_z_01_0074:
     ; Still the boomerang.
     ; Reset [07] damage points, and set the monster's stun timer to $10 ($A0 frames).
     ;
@@ -7158,7 +7308,9 @@ HandleMonsterWeaponCollision:
     move.b  (A0,D2.W),D0
     move.b  ($0009,A4),D1
     and.b  D1,D0
-    bne  L_PlayParrySoundForDamageType
+    beq.s  __far_z_01_0075
+    jmp  L_PlayParrySoundForDamageType
+__far_z_01_0075:
     ; If the monster is Blue Gohma or Red Gohma, then
     ; let it handle the collision.
     ;
@@ -7184,7 +7336,9 @@ _L_z01_HandleMonsterWeaponCollision_CheckZolVire:
     bne  _L_z01_HandleMonsterWeaponCollision_CheckDarknut
 _anon_z01_90:
     cmpi.b  #$0F,D3
-    beq  DealDamage
+    bne.s  __far_z_01_0076
+    jmp  DealDamage
+__far_z_01_0076:
     lea     ($0098,A4),A0
     move.b  (A0,D3.W),D0
     lea     ($0098,A4),A0
@@ -7199,7 +7353,9 @@ _L_z01_HandleMonsterWeaponCollision_CheckDarknut:
     cmpi.b  #$0B,D0
     beq  _anon_z01_91
     cmpi.b  #$0C,D0
-    bne  DealDamage
+    beq.s  __far_z_01_0077
+    jmp  DealDamage
+__far_z_01_0077:
 _anon_z01_91:
     lea     ($0098,A4),A0
     move.b  (A0,D3.W),D0
@@ -7207,9 +7363,13 @@ _anon_z01_91:
     move.b  (A0,D2.W),D1
     or.b  D1,D0
     cmpi.b  #$0C,D0
-    beq  L_PlayParrySoundForDamageType
+    bne.s  __far_z_01_0078
+    jmp  L_PlayParrySoundForDamageType
+__far_z_01_0078:
     cmpi.b  #$03,D0
-    beq  L_PlayParrySoundForDamageType
+    bne.s  __far_z_01_0079
+    jmp  L_PlayParrySoundForDamageType
+__far_z_01_0079:
     even
 DealDamage:
     ; Play the "harmed" sound.
@@ -7223,13 +7383,17 @@ DealDamage:
     move.b  (A0,D2.W),D0
     move.b  ($0007,A4),D1
     cmp.b   D1,D0
-    bcs  HandleMonsterDied
+    bcc.s  __far_z_01_0080
+    jmp  HandleMonsterDied
+__far_z_01_0080:
     ori     #$11,CCR  ; SEC: set C+X
     move.b  ($0007,A4),D1
     subx.b  D1,D0   ; SBC $07
     lea     ($0485,A4),A0
     move.b  D0,(A0,D2.W)
-    beq  HandleMonsterDied
+    bne.s  __far_z_01_0081
+    jmp  HandleMonsterDied
+__far_z_01_0081:
     even
 L74D8_Exit:
     rts
@@ -7240,9 +7404,13 @@ L_PlayParrySoundForDamageType:
     ;
     move.b  ($0009,A4),D0
     cmpi.b  #$20,D0
-    beq  L74D8_Exit
+    bne.s  __far_z_01_0082
+    jmp  L74D8_Exit
+__far_z_01_0082:
     cmpi.b  #$08,D0
-    beq  L74D8_Exit
+    bne.s  __far_z_01_0083
+    jmp  L74D8_Exit
+__far_z_01_0083:
     jmp     PlayParryTune
 
     even
@@ -7270,7 +7438,7 @@ HandleMonsterDied:
 _L_z01_HandleMonsterDied_SetDyingMetastate:
     ; Set the dying metastate, and reset some object info.
     ;
-    bsr     UpdateDeadDummy
+    jsr     UpdateDeadDummy
     moveq   #0,D0
     move.b  D0,($3D,A4,D2.W)
 ; Params:
@@ -7278,7 +7446,7 @@ _L_z01_HandleMonsterDied_SetDyingMetastate:
 ;
     even
 ResetShoveInfoAndInvincibilityTimer:
-    bsr     SetShoveInfoWith0
+    jsr     SetShoveInfoWith0
     lea     ($04F0,A4),A0
     move.b  D0,(A0,D2.W)
     rts
@@ -7339,7 +7507,7 @@ CheckMonsterSwordShotOrMagicShotCollision:
     even
 _L_z01_CheckMonsterSwordShotOrMagicShotCollision_CheckCollision:
     move.b  D3,D0
-    bsr     CheckMonsterShotCollision
+    jsr     CheckMonsterShotCollision
     ; If no collision, then return.
     ;
     move.b  ($0006,A4),D0
@@ -7349,7 +7517,7 @@ _L_z01_CheckMonsterSwordShotOrMagicShotCollision_CheckCollision:
     move.b  D2,D0
     move.b  D0,-(A5)  ; PHA
     moveq   #14,D2
-    bsr     HandleShotBlocked
+    jsr     HandleShotBlocked
     move.b  (A5)+,D0  ; PLA
     moveq   #0,D2
     move.b  D0,D2
@@ -7386,7 +7554,9 @@ CheckMonsterBombOrFireCollision:
     cmpi.b  #$20,D0
     bcc  _L_z01_CheckMonsterBombOrFireCollision_SetHotspot
     cmpi.b  #$13,D0
-    bne  L7595_Exit
+    beq.s  __far_z_01_0084
+    jmp  L7595_Exit
+__far_z_01_0084:
     ; Else set up parameters for a bomb.
     ;
     moveq   #8,D0
@@ -7414,17 +7584,21 @@ _L_z01_CheckMonsterBombOrFireCollision_SetHotspot:
     move.b  ($000D,A4),D0
     ; If the objects do not collide, then return.
     ;
-    bsr     DoObjectsCollide
-    beq  L7595_Exit
-    bsr     HandleMonsterWeaponCollision
+    jsr     DoObjectsCollide
+    bne.s  __far_z_01_0085
+    jmp  L7595_Exit
+__far_z_01_0085:
+    jsr     HandleMonsterWeaponCollision
     ; If the monster is weak to the damage type, then shove it.
     ;
     lea     ($04B2,A4),A0
     move.b  (A0,D2.W),D0
     move.b  ($0009,A4),D1
     and.b  D1,D0
-    bne  L7595_Exit
-    bsr     BeginShove
+    beq.s  __far_z_01_0086
+    jmp  L7595_Exit
+__far_z_01_0086:
+    jsr     BeginShove
     even
 L7595_Exit:
     rts
@@ -7456,7 +7630,9 @@ CheckMonsterSwordCollision:
     lea     ($00AC,A4),A0
     move.b  (A0,D3.W),D0
     cmpi.b  #$02,D0
-    bne  L7595_Exit
+    beq.s  __far_z_01_0087
+    jmp  L7595_Exit
+__far_z_01_0087:
     ; Look up and set the damage points for the sword type.
     ;
     moveq   #0,D3
@@ -7501,11 +7677,13 @@ _L_z01_CheckMonsterStabbingCollision_Horizontal:
     moveq   #12,D0
 _anon_z01_92:
     move.b  D0,($000E,A4)
-    bsr     CheckMonsterSlenderWeaponCollision2
+    jsr     CheckMonsterSlenderWeaponCollision2
     ; If no collision, then return.
     ;
     move.b  ($0006,A4),D0
-    beq  L7595_Exit
+    bne.s  __far_z_01_0088
+    jmp  L7595_Exit
+__far_z_01_0088:
     jmp     ParryOrShove
 
 ; Params:
@@ -7532,12 +7710,16 @@ CheckMonsterArrowOrRodCollision:
     moveq   #1,D0
     move.b  D0,($0009,A4)
     moveq   #32,D0
-    bne  CheckMonsterStabbingCollision
+    beq.s  __far_z_01_0089
+    jmp  CheckMonsterStabbingCollision
+__far_z_01_0089:
 _anon_z01_93:
     ; We have an arrow. If it's no longer flying, then return.
     ;
     cmpi.b  #$20,D0
-    bcc  L763A_Exit
+    bcs.s  __far_z_01_0090
+    jmp  L763A_Exit
+__far_z_01_0090:
     ; Set up arrow parameters.
     ;
     moveq   #4,D0
@@ -7567,11 +7749,13 @@ _anon_z01_94:
 ;
     even
 CheckMonsterShotCollision:
-    bsr     CheckMonsterSlenderWeaponCollision
+    jsr     CheckMonsterSlenderWeaponCollision
     ; If no collision, return.
     ;
     move.b  ($0006,A4),D0
-    beq  L763A_Exit
+    bne.s  __far_z_01_0091
+    jmp  L763A_Exit
+__far_z_01_0091:
     ; $12 is the arrow and rod slot. But this routine will only
     ; be called if it's an arrow.
     ;
@@ -7580,7 +7764,9 @@ CheckMonsterShotCollision:
     ; checking routine above dealt some. This way it dies for sure.
     ;
     cmpi.b  #$12,D3
-    bne  ParryOrShove
+    beq.s  __far_z_01_0092
+    jmp  ParryOrShove
+__far_z_01_0092:
     lea     ($034F,A4),A0
     move.b  (A0,D2.W),D0
     cmpi.b  #$16,D0
@@ -7619,9 +7805,13 @@ _anon_z01_96:
     move.b  (A0,D2.W),D1
     or.b  D1,D0
     cmpi.b  #$0C,D0
-    beq  PlayParryTune
+    bne.s  __far_z_01_0093
+    jmp  PlayParryTune
+__far_z_01_0093:
     cmpi.b  #$03,D0
-    beq  PlayParryTune
+    bne.s  __far_z_01_0094
+    jmp  PlayParryTune
+__far_z_01_0094:
 _anon_z01_97:
     ; Else shove the monster.
     ;
@@ -7771,7 +7961,7 @@ DoObjectsCollideWithThresholds:
     ori     #$11,CCR  ; SEC: set C+X
     move.b  ($0004,A4),D1
     subx.b  D1,D0   ; SBC $04
-    bsr     Abs
+    jsr     Abs
     move.b  D0,($000A,A4)
     ; If distance >= horizontal threshold in [0D], return 0.
     ;
@@ -7784,7 +7974,7 @@ DoObjectsCollideWithThresholds:
     ori     #$11,CCR  ; SEC: set C+X
     move.b  ($0005,A4),D1
     subx.b  D1,D0   ; SBC $05
-    bsr     Abs
+    jsr     Abs
     move.b  D0,($000B,A4)
     ; If distance >= vertical threshold in [0E], return 0.
     ;
@@ -7961,7 +8151,7 @@ _anon_z01_101:
     ;
     lea     ($0098,A4),A0
     move.b  (A0,D2.W),D0
-    bsr     GetOppositeDir
+    jsr     GetOppositeDir
     lea     ($0098,A4),A0
     move.b  D0,(A0,D2.W)
     even
@@ -8073,15 +8263,15 @@ Filler_7751:
 
     even
 SwitchBank_Local1:
-    bsr     _mmc1_write_e000  ; MMC1 reg write, D0=val
+    jsr     _mmc1_write_e000  ; MMC1 reg write, D0=val
     lsr.b  #1,D0   ; LSR A
-    bsr     _mmc1_write_e000  ; MMC1 reg write, D0=val
+    jsr     _mmc1_write_e000  ; MMC1 reg write, D0=val
     lsr.b  #1,D0   ; LSR A
-    bsr     _mmc1_write_e000  ; MMC1 reg write, D0=val
+    jsr     _mmc1_write_e000  ; MMC1 reg write, D0=val
     lsr.b  #1,D0   ; LSR A
-    bsr     _mmc1_write_e000  ; MMC1 reg write, D0=val
+    jsr     _mmc1_write_e000  ; MMC1 reg write, D0=val
     lsr.b  #1,D0   ; LSR A
-    bsr     _mmc1_write_e000  ; MMC1 reg write, D0=val
+    jsr     _mmc1_write_e000  ; MMC1 reg write, D0=val
     rts
 
 

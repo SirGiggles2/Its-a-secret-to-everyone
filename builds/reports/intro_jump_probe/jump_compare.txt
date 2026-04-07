@@ -1,0 +1,24 @@
+[EARLY]
+1468->1469 storyShift=0 storyResidual=0.00692 titleShift=0 titleResidual=0.00000
+1469->1470 storyShift=-1 storyResidual=0.00697 titleShift=0 titleResidual=0.00000
+1470->1471 storyShift=0 storyResidual=0.03320 titleShift=0 titleResidual=0.04386
+1471->1472 storyShift=0 storyResidual=0.00000 titleShift=0 titleResidual=0.00000
+
+[LATE]
+2622->2623 storyShift=0 storyResidual=0.00971 titleShift=0 titleResidual=0.00000
+2623->2624 storyShift=-1 storyResidual=0.01140 titleShift=-1 titleResidual=0.00000
+2624->2625 storyShift=0 storyResidual=0.01159 titleShift=0 titleResidual=0.00000
+
+[EARLY best NES matches]
+gen 1468: nes 1410 score=0.03220, nes 1411 score=0.03220, nes 1408 score=0.07895, nes 1409 score=0.07895
+gen 1469: nes 1410 score=0.03181, nes 1411 score=0.03181, nes 1408 score=0.07935, nes 1409 score=0.07935
+gen 1470: nes 1412 score=0.03221, nes 1413 score=0.03221, nes 1414 score=0.07942, nes 1415 score=0.07942
+gen 1471: nes 1412 score=0.00715, nes 1413 score=0.00715, nes 1414 score=0.07181, nes 1415 score=0.07181
+gen 1472: nes 1412 score=0.00715, nes 1413 score=0.00715, nes 1414 score=0.07181, nes 1415 score=0.07181
+
+[LATE best NES matches]
+gen 2622: nes 2564 score=0.01720, nes 2565 score=0.01979, nes 2563 score=0.02170, nes 2562 score=0.02428
+gen 2623: nes 2564 score=0.01943, nes 2565 score=0.02202, nes 2563 score=0.02279, nes 2562 score=0.02537
+gen 2624: nes 2566 score=0.01619, nes 2567 score=0.01880, nes 2565 score=0.02072, nes 2564 score=0.02330
+gen 2625: nes 2566 score=0.01279, nes 2567 score=0.01540, nes 2565 score=0.01862, nes 2564 score=0.02120
+

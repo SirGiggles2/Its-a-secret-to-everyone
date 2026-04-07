@@ -62,6 +62,7 @@ PPU_SCRL_X      equ PPU_STATE_BASE+6    ; byte: horizontal scroll value
 PPU_SCRL_Y      equ PPU_STATE_BASE+7    ; byte: vertical scroll value
 PPU_DBUF        equ PPU_STATE_BASE+8    ; byte: buffered even-addr byte
 PPU_DHALF       equ PPU_STATE_BASE+9    ; byte: 1 if even-addr byte pending
+AGS_PREDICT_NEXT equ PPU_STATE_BASE+1   ; byte: transient flag for predictive intro staging
 
 ;------------------------------------------------------------------------------
 ; MMC1 state RAM — placed at $FF0810 (immediately after 16-byte PPU block).
@@ -112,6 +113,42 @@ CHR_HIT_COUNT   equ CHR_STATE_BASE+20   ; byte: total CHR write calls (debug cou
 ; NT_CACHE[row*32 + col] = tile index.  NT1 entries at offset 960.
 ;------------------------------------------------------------------------------
 NT_CACHE_BASE   equ CHR_STATE_BASE+$20  ; $FF0840  (32×60 = 1920 bytes)
+
+;------------------------------------------------------------------------------
+; Staged scroll state written by _ags_flush and consumed by _ags_prearm on the
+; next frame. Lives in the unused tail of the PPU shadow block at $FF080A..0F.
+;------------------------------------------------------------------------------
+STAGED_SCROLL_MODE equ PPU_STATE_BASE+$0A ; byte: next-frame mode
+STAGED_HINT_CTR    equ PPU_STATE_BASE+$0B ; byte: next-frame Reg 10 counter
+STAGED_BASE_VSRAM  equ PPU_STATE_BASE+$0C ; word: next-frame start-of-frame VSRAM
+STAGED_EVENT_VSRAM equ PPU_STATE_BASE+$0E ; word: next-frame H-int VSRAM
+
+;------------------------------------------------------------------------------
+; Active scroll state promoted by _ags_prearm and consumed by the currently
+; rendered frame. Stored in the unused tail between CHR state and NT cache.
+;------------------------------------------------------------------------------
+ACTIVE_BASE_VSRAM  equ CHR_STATE_BASE+$16 ; $FF0836 word: current-frame base VSRAM
+ACTIVE_EVENT_VSRAM equ CHR_STATE_BASE+$18 ; $FF0838 word: current-frame event VSRAM
+ACTIVE_HINT_CTR    equ CHR_STATE_BASE+$1A ; $FF083A byte: current-frame Reg 10 counter
+STAGED_SEGMENT     equ CHR_STATE_BASE+$1B ; $FF083B byte: next-frame story segment
+ACTIVE_SEGMENT     equ CHR_STATE_BASE+$1C ; $FF083C byte: current-frame story segment
+
+;------------------------------------------------------------------------------
+; Scroll composition modes shared between staged state and INTRO_SCROLL_MODE.
+; Mode 1 is gameplay sprite-0 split only; intro phase 1 uses mode 2.
+;------------------------------------------------------------------------------
+INTRO_SCROLL_NO_SPLIT   equ 0
+INTRO_SCROLL_GAME_SPLIT equ 1
+INTRO_SCROLL_DZ_SKIP    equ 2
+
+;------------------------------------------------------------------------------
+; Story segment classifier used by _ags_compute_stage and the live hook.
+;------------------------------------------------------------------------------
+AGS_SEG_OTHER               equ 0
+AGS_SEG_STORY0_SCROLL_ON    equ 1
+AGS_SEG_STORY2_SCROLL_BODY  equ 2
+AGS_SEG_STORY2_HOLD_STOP    equ 3
+AGS_SEG_STORY2_WRAP_RELEASE equ 4
 
 ;==============================================================================
 ; PPU register reads ($2000–$2007 → _ppu_read_0 … _ppu_read_7)
@@ -299,110 +336,252 @@ _ppu_write_5:
     rts
 
 ;------------------------------------------------------------------------------
-; _apply_genesis_scroll — transpiler-injection stub (no-op).
+; _apply_genesis_scroll — current-frame scroll apply hook.
 ;
-; The 6502→68K transpiler injects `bsr _apply_genesis_scroll` at two points in
-; IsrNmi (z_07.asm P1 at ~:995 after SetScroll, P2 at ~:1075 after game logic)
-; because the NES source writes PPUSCROLL twice per NMI. On Genesis we must
-; NOT reconfigure VSRAM + Reg 10 twice mid-NMI: the second reconfig clobbers
-; the first's latch and re-arms the H-int counter, producing visible tearing
-; (observed as missing FAIRY/CLOCK labels on the intro story scroll — see
-; probe_vsram_raster.lua output showing alternating D0 values between P1 & P2).
+; The transpiler injects `bsr _apply_genesis_scroll` twice inside IsrNmi:
+;   P1 after SetScroll updates the current frame's PPU shadows
+;   P2 after later game logic may have prepared next-frame shadows
 ;
-; Fix: defer all VDP scroll programming to a single flush point at NMI tail
-; (VBlankISR, post-IsrNmi). This routine is now a no-op; the real work lives
-; in _ags_flush below, which VBlankISR calls exactly once per frame.
-;
-; Preserves: everything.
-;------------------------------------------------------------------------------
-_apply_genesis_scroll:
-    rts
-
-;------------------------------------------------------------------------------
-; _ags_flush — Apply PPU scroll shadows to VDP VSRAM / H-scroll. Called ONCE
-;              per frame from VBlankISR after IsrNmi has returned (scroll
-;              shadows are finalized).
-;
-; Converts NES PPU scroll values to Genesis VDP scroll registers. Assumes
-; A4 = NES RAM base ($FF0000) — set by the VBlankISR caller.
-;
-; Sprite-0 split support (IsSprite0CheckActive=1): title pinned at rows 0..39
-; via VSRAM=0, then the story half uses the actual scroll base at scanline 40
-; onward. Implemented by priming HINT_Q0 with one event; HBlankISR consumes it.
-; Without split, H-int is disabled and VSRAM is written once directly.
-;
-; NOTE: The V64 plane's 32px dead-zone (rows 60..63) is handled passively —
-; _clear_nametable_fast pre-fills those rows with blank tiles, so when VSRAM
-; wraps through them they render as black and blend with the background. An
-; earlier H-int "dead-zone skip" mechanism was removed after it was proven to
-; cause visible jitter/tile-duplication during the items scroll (see prior
-; commit); the blank pre-fill is the correct long-term solution.
+; We want the CURRENT frame's VDP state to come from the latest finalized
+; scroll shadows that are still available during vblank. So each hook always
+; recomputes staged state, but it only promotes/applies that state while the
+; VDP still reports vblank active. Once vblank has ended, the hook stages
+; state for the NEXT frame only and leaves the live frame alone.
 ;
 ; Preserves: D5-D7, A0-A6.
 ;------------------------------------------------------------------------------
-_ags_flush:
+_apply_genesis_scroll:
     movem.l D0-D4,-(SP)
+    bsr     _ags_compute_stage
+    ; Story frames are owned entirely by PREARM's promoted active state. If a
+    ; later IsrNmi hook rewrites VSRAM mid-NMI, visible rows can come from two
+    ; different frame states and the full screen appears to vibrate/teleport.
+    cmpi.b  #AGS_SEG_STORY2_HOLD_STOP,D4
+    beq.s   .ags_maybe_apply
+    tst.b   D4
+    bne.s   .ags_hook_done
+.ags_maybe_apply:
+    move.w  (VDP_CTRL).l,D0            ; VDP status read
+    btst    #3,D0                      ; bit 3 = VBlank active
+    beq.s   .ags_hook_done
+    bsr     _ags_activate_staged
+    bsr     _ags_apply_active
+.ags_hook_done:
+    movem.l (SP)+,D0-D4
+    rts
 
+;------------------------------------------------------------------------------
+; _ags_compute_stage — Convert current NES scroll shadows into staged Genesis
+;                      composition state for one whole frame.
+;
+; Assumes A4 = NES RAM base ($FF0000). Writes STAGED_* only.
+; Clobbers D0-D4, leaving D4 = AGS_SEG_* for the staged story segment.
+;------------------------------------------------------------------------------
+_ags_compute_stage:
     ; --- Compute base VSRAM: vs + 8 + (nt ? 240 : 0) ---
     moveq   #0,D0
     move.b  ($00FC,A4),D0               ; CurVScroll (0-239)
     addi.w  #8,D0                       ; +8px overscan
     move.b  ($00FF,A4),D1               ; CurPpuControl
     tst.b   ($005C,A4)                  ; SwitchNameTablesReq pending?
-    beq.s   .ags_no_pending
+    beq.s   .agc_no_pending
     eori.b  #$02,D1                     ; pre-toggle NT select bit
-.ags_no_pending:
+.agc_no_pending:
     btst    #1,D1                       ; nametable Y select?
-    beq.s   .ags_no_nt_offset
+    beq.s   .agc_no_nt_offset
     addi.w  #240,D0                     ; NT1: +240
-.ags_no_nt_offset:
+.agc_no_nt_offset:
     ; D0 = raw base VSRAM (8-487)
+    move.w  D0,D2                       ; D2 = current raw base before prediction
 
-    ; --- Case 3 collapse: VSRAM >= 480 → subtract plane gap (32) ---
+    ; Story segment classifier. Story frames are staged for PREARM ownership;
+    ; gameplay and everything else stay on the old live-apply path.
+    moveq   #AGS_SEG_OTHER,D4
+    tst.b   ($0012,A4)                  ; gameMode == 0?
+    bne.s   .agc_have_segment
+    cmpi.b  #$01,($042C,A4)             ; phase == 1?
+    bne.s   .agc_have_segment
+    move.b  ($042D,A4),D4               ; subphase
+    beq.s   .agc_seg_story0
+    cmpi.b  #$02,D4
+    bne.s   .agc_seg_other
+    moveq   #AGS_SEG_STORY2_SCROLL_BODY,D4
+    cmpi.b  #$E0,($00FC,A4)             ; first full-screen E0 frame predicts
+    bne.s   .agc_story2_hold_ctrl       ; the next frame's pause/hold state
+    move.b  (PPU_SCRL_Y).l,D3
+    cmp.b   ($00FC,A4),D3
+    bne.s   .agc_seg_story2_hold
+.agc_story2_hold_ctrl:
+    btst    #7,($00FF,A4)               ; transient hold frame clears NMI bit
+    bne.s   .agc_have_segment
+ .agc_seg_story2_hold:
+    moveq   #AGS_SEG_STORY2_HOLD_STOP,D4
+    bra.s   .agc_have_segment
+.agc_seg_story0:
+    moveq   #AGS_SEG_STORY0_SCROLL_ON,D4
+    bra.s   .agc_have_segment
+.agc_seg_other:
+    moveq   #AGS_SEG_OTHER,D4
+.agc_have_segment:
+    move.b  D4,(STAGED_SEGMENT).l
+
+    ; Scroll-on frames need two distinct formulas:
+    ;   before the page fills the screen, follow the prebuilt V64 page using
+    ;   the visible PPU scroll shadow
+    ;   after the page has wrapped once, follow CurVScroll directly so the
+    ;   fully-visible story keeps the NES move/hold cadence instead of
+    ;   jumping when the NES nametable bit flips
+    cmpi.b  #AGS_SEG_STORY0_SCROLL_ON,D4
+    bne.s   .agc_story0_base_done
+    moveq   #0,D0
+    tst.b   ($0415,A4)                   ; DemoNTWraps == 0 until the story
+    bne.s   .agc_story0_post_top         ; first reaches the top of the screen
+    move.b  (PPU_SCRL_Y).l,D0            ; visible scroll shadow for the
+                                         ; prebuilt story page
+    addi.w  #40,D0                       ; overscan + V64 dead-zone
+    addi.w  #240,D0                      ; story page starts in the upper half
+    bra.s   .agc_story0_have_base_src
+.agc_story0_post_top:
+    move.b  ($00FC,A4),D0                ; once fully on-screen, CurVScroll
+    addi.w  #7,D0                        ; gives the NES-consistent cadence
+.agc_story0_have_base_src:
+    move.w  D0,D2
+.agc_story0_base_done:
+
+    ; _ags_flush stages the NEXT intro frame before that frame's NMI runs.
+    ; During phase 1, UpdateMode advances the story scroll every other frame
+    ; after FrameCounter increments inside IsrNmi. If the current counter is
+    ; even, the next frame's finalized scroll will be one tick ahead of the
+    ; PREARM-time shadows unless we predict it here.
+    cmpi.b  #AGS_SEG_OTHER,D4
+    beq.s   .agc_have_prediction
+    cmpi.b  #AGS_SEG_STORY0_SCROLL_ON,D4
+    beq.s   .agc_have_prediction         ; story0 already stages the visible
+                                         ; frame; predicting it causes the
+                                         ; top-hit teleport cadence
+    tst.b   (AGS_PREDICT_NEXT).l
+    beq.s   .agc_have_prediction
+    btst    #0,($0015,A4)               ; FrameCounter odd?
+    bne.s   .agc_have_prediction        ; odd => next frame keeps same scroll
+    addq.w  #1,D0                       ; even => next frame scrolls one tick
+.agc_have_prediction:
+    move.w  D0,D3                       ; D3 = predicted raw base before wrap
+
+    ; Story scroll-on uses the full 0..511 V64 range. Do not collapse the
+    ; final dead-zone rows into 0..31 until the seam is actually crossed.
+    cmpi.b  #AGS_SEG_STORY0_SCROLL_ON,D4
+    bne.s   .agc_case3_collapse
+    cmpi.w  #512,D0
+    blo.s   .agc_story0_have_base
+    subi.w  #512,D0
+.agc_story0_have_base:
+    move.b  #INTRO_SCROLL_NO_SPLIT,(STAGED_SCROLL_MODE).l
+    move.w  D0,(STAGED_BASE_VSRAM).l
+    clr.b   (STAGED_HINT_CTR).l
+    move.w  D0,(STAGED_EVENT_VSRAM).l
+    rts
+
+    ; --- Case 3 collapse: raw VSRAM >= 480 → wrap to top of the 480px map ---
+.agc_case3_collapse:
     cmpi.w  #480,D0
-    blt.s   .ags_have_base
+    blt.s   .agc_have_base
     subi.w  #480,D0
-.ags_have_base:
+.agc_have_base:
     ; D0 = effective base VSRAM (0..479)
 
-    ; --- Branch on split-scroll mode ---
-    ; Split is enabled when EITHER of these is true:
-    ;   (a) IsSprite0CheckActive=1 (Mode7/11/Subroom gameplay scroll split)
-    ;   (b) Intro demo story scroll: GameMode=0, DemoPhase=1, DemoSubphase>=2
-    ;       (NES uses a hidden pin mechanism during this phase; we emulate it
-    ;        with an H-int driven VSRAM flip at scanline 40 so "THE LEGEND OF
-    ;        ZELDA" stays pinned while the story text scrolls underneath.)
+    ; --- Default staged state: direct scroll, no H-int event ---
+    move.b  #INTRO_SCROLL_NO_SPLIT,(STAGED_SCROLL_MODE).l
+    move.w  D0,(STAGED_BASE_VSRAM).l
+    clr.b   (STAGED_HINT_CTR).l
+    move.w  D0,(STAGED_EVENT_VSRAM).l
+
+    ; Gameplay sprite-0 split: pin the top band at VSRAM=0, then switch to
+    ; the real base at scanline 40.
     tst.b   ($00E3,A4)                  ; IsSprite0CheckActive
-    bne.s   .ags_do_split
-    tst.b   ($0012,A4)                  ; GameMode (0 == demo)
-    bne     .ags_no_split
-    cmpi.b  #1,($042C,A4)               ; DemoPhase == 1 (story)?
-    bne     .ags_no_split
-    cmpi.b  #2,($042D,A4)               ; DemoSubphase == 2 (active story scroll)?
-    bne     .ags_no_split
-.ags_do_split:
+    bne     .agc_stage_game_split
 
-    ;========================================================================
-    ; SPLIT MODE: mark pending-split and stash D0 into HINT_Q0_VSRAM so
-    ; _ags_prearm (called at start of next vblank, BEFORE IsrNmi) can
-    ; write VSRAM=0 + arm H-int reliably during vblank. HBlankISR then
-    ; fires at scanline 39 and swaps VSRAM to D0 for the story half.
-    ; We do NOT touch the VDP here — IsrNmi may have pushed us past line
-    ; 40 already, which would produce visible tearing.
-    ;========================================================================
-    move.b  #39,(HINT_Q0_CTR).l
-    move.w  D0,(HINT_Q0_VSRAM).l
-    move.b  #1,(HINT_PEND_SPLIT).l
-    bra.s   .ags_hscroll
+    ; Transient full-screen hold frame: preserve the already-promoted active
+    ; base for this frame and keep H-int disabled.
+    cmpi.b  #AGS_SEG_STORY2_HOLD_STOP,D4
+    bne.s   .agc_story_phase2
+    move.w  (ACTIVE_EVENT_VSRAM).l,D1
+    move.w  D1,(STAGED_BASE_VSRAM).l
+    clr.b   (STAGED_HINT_CTR).l
+    move.w  D1,(STAGED_EVENT_VSRAM).l
+    rts
 
-    ;========================================================================
-    ; NO-SPLIT MODE: publish D0 via HINT_Q0_VSRAM, mark split inactive.
-    ; _ags_prearm will write VSRAM=D0 directly (and disable H-int) on the
-    ; next vblank entry. Still no VDP writes here.
-    ;========================================================================
-.ags_no_split:
-    move.w  D0,(HINT_Q0_VSRAM).l
-    move.b  #0,(HINT_PEND_SPLIT).l
+.agc_story_phase2:
+    ; Intro phase 1 story scroll is treated as an explicit composition state
+    ; machine:
+    ;   direct scroll      -> story not intersecting the V64 dead-zone
+    ;   enter/full wrap    -> split from wrapped base to wrapped base+32
+    ;   exit wrap          -> one release frame from $01FF -> $0000
+    ;   offscreen finish   -> pure direct scroll after the release frame
+    cmpi.b  #AGS_SEG_STORY2_SCROLL_BODY,D4
+    beq.s   .agc_story_phase2_active
+    cmpi.b  #AGS_SEG_STORY2_WRAP_RELEASE,D4
+    beq.s   .agc_story_phase2_active
+    bra     .agc_done
+.agc_story_phase2_active:
+    cmpi.w  #257,D3
+    blo     .agc_done                      ; story_full_scroll / offscreen_finish
+    cmpi.w  #480,D3
+    bhi     .agc_done                      ; wrapped direct scroll after release
+    move.b  ($00FC,A4),D1
+    cmpi.b  #$E8,D1
+    bne.s   .agc_story_phase2_seam_checks
+    cmp.b   (PPU_SCRL_Y).l,D1
+    bne     .agc_done                      ; first E8 frame: next frame is
+                                          ; plain direct-scroll $0000
+.agc_story_phase2_seam_checks:
+    cmpi.w  #480,D3
+    beq.s   .agc_story_seam_frame          ; first seam frame: predicted next scroll lands on seam
+.agc_story_enter_wrap:
+    move.b  #INTRO_SCROLL_DZ_SKIP,(STAGED_SCROLL_MODE).l
+    move.w  (STAGED_BASE_VSRAM).l,D1
+    addi.w  #32,D1
+    move.w  D1,(STAGED_EVENT_VSRAM).l
+    move.w  #480,D1
+    sub.w   D3,D1
+    subq.w  #1,D1
+    move.b  D1,(STAGED_HINT_CTR).l
+    rts
+
+.agc_story_seam_frame:
+    move.b  #AGS_SEG_STORY2_WRAP_RELEASE,(STAGED_SEGMENT).l
+    moveq   #AGS_SEG_STORY2_WRAP_RELEASE,D4
+    ; Predicted seam frame: let the new top-of-page content appear immediately
+    ; in the top band, but keep the old wrapped seam in the lower band until
+    ; visible row 24. This matches the NES's last seam transition much more
+    ; closely than "top old / bottom new".
+    move.b  #INTRO_SCROLL_DZ_SKIP,(STAGED_SCROLL_MODE).l
+    clr.w   (STAGED_BASE_VSRAM).l
+    move.w  #$01FF,(STAGED_EVENT_VSRAM).l
+    move.b  #23,(STAGED_HINT_CTR).l        ; release lower band at visible row 24
+    rts
+
+.agc_stage_game_split:
+    move.b  #INTRO_SCROLL_GAME_SPLIT,(STAGED_SCROLL_MODE).l
+    clr.w   (STAGED_BASE_VSRAM).l
+    move.b  #39,(STAGED_HINT_CTR).l
+    move.w  D0,(STAGED_EVENT_VSRAM).l
+.agc_done:
+    rts
+
+;------------------------------------------------------------------------------
+; _ags_flush — Stage the NEXT frame's Genesis composition state and write
+;              H-scroll after IsrNmi has finalized the scroll shadows.
+;
+; This must not touch active-frame VSRAM/H-int state; the first
+; _apply_genesis_scroll hook inside IsrNmi owns current-frame application.
+;
+; Preserves: D5-D7, A0-A6.
+;------------------------------------------------------------------------------
+_ags_flush:
+    movem.l D0-D4,-(SP)
+    move.b  #1,(AGS_PREDICT_NEXT).l
+    bsr     _ags_compute_stage
+    clr.b   (AGS_PREDICT_NEXT).l
 
 .ags_hscroll:
     ; --- H-scroll (Plane A H-scroll table entry 0) ---
@@ -418,49 +597,86 @@ _ags_flush:
     rts
 
 ;------------------------------------------------------------------------------
-; _ags_prearm — Apply pending VSRAM / H-int state at START of vblank, BEFORE
-;               IsrNmi runs.  This is the reliability fix for the intro
-;               split-scroll: IsrNmi during the story phase can extend past
-;               scanline 40, so _ags_flush's post-NMI VDP writes land too
-;               late to cover the pinned-title band.  By consuming the
-;               previous frame's computed queue state here (during
-;               guaranteed vblank), VSRAM=0 and Reg 10/Reg 0 take effect
-;               before active display begins.  One-frame latency is
-;               acceptable — the transpiled scroll writes already buffer a
-;               frame of state.
+; _ags_prearm — Promote the previously staged scroll state into the active
+;               queue at START of vblank, BEFORE IsrNmi runs. This guarantees
+;               a coherent current-frame fallback even if the post-NMI flush
+;               finishes too late to safely touch VDP state for the same frame.
 ;
-; Reads:  HINT_PEND_SPLIT, HINT_Q0_VSRAM, HINT_Q0_CTR
-; Writes: HINT_Q_COUNT (rearmed to 1 per frame when split is active)
+; Promotes the staged scroll state prepared by the previous frame's _ags_flush
+; into the active queue consumed by HBlankISR, then applies it immediately.
+;
+; Reads:  STAGED_SCROLL_MODE, STAGED_HINT_CTR, STAGED_BASE_VSRAM,
+;         STAGED_EVENT_VSRAM
+; Writes: HINT_Q_COUNT, HINT_Q0_CTR, HINT_Q0_VSRAM, HINT_PEND_SPLIT,
+;         INTRO_SCROLL_MODE
 ; Preserves: D1-D7, A0-A6  (clobbers D0 internally, saved/restored)
 ;------------------------------------------------------------------------------
 _ags_prearm:
     movem.l D0,-(SP)
-    tst.b   (HINT_PEND_SPLIT).l
-    beq.s   .pa_no_split
-    ; --- SPLIT PATH: pin VSRAM=0 now, arm H-int to swap at scanline 39 ---
-    move.b  #1,(HINT_Q_COUNT).l             ; re-arm event queue for this frame
-    move.l  #VSRAM_WRITE_0000,(VDP_CTRL).l
-    moveq   #0,D0
-    move.w  D0,(VDP_DATA).l                 ; Plane A V-scroll = 0
-    move.w  D0,(VDP_DATA).l                 ; Plane B V-scroll = 0
-    move.b  (HINT_Q0_CTR).l,D0
-    andi.w  #$00FF,D0
-    or.w    #$8A00,D0
-    move.w  D0,(VDP_CTRL).l                 ; Reg 10 = HINT_Q0_CTR (=39)
-    move.w  #$8014,(VDP_CTRL).l             ; Reg 0: enable H-int (+colorfix bit)
-    bra.s   .pa_done
-.pa_no_split:
-    ; --- NO-SPLIT PATH: direct VSRAM write, H-int disabled ---
+    bsr     _ags_activate_staged
+    bsr     _ags_apply_active
+    movem.l (SP)+,D0
+    rts
+
+;------------------------------------------------------------------------------
+; _ags_activate_staged — Promote STAGED_* into the active queue/debug state.
+; Clobbers D0.
+;------------------------------------------------------------------------------
+_ags_activate_staged:
+    move.b  (STAGED_SCROLL_MODE).l,D0
+    move.b  D0,(INTRO_SCROLL_MODE).l
+    move.w  (STAGED_BASE_VSRAM).l,(ACTIVE_BASE_VSRAM).l
+    move.w  (STAGED_EVENT_VSRAM).l,(ACTIVE_EVENT_VSRAM).l
+    move.b  (STAGED_HINT_CTR).l,(ACTIVE_HINT_CTR).l
+    move.b  (STAGED_SEGMENT).l,(ACTIVE_SEGMENT).l
+    cmpi.b  #INTRO_SCROLL_NO_SPLIT,D0
+    beq.s   .aas_no_split
+    move.b  #1,(HINT_PEND_SPLIT).l
+    move.b  #1,(HINT_Q_COUNT).l
+    move.b  (STAGED_HINT_CTR).l,(HINT_Q0_CTR).l
+    move.w  (STAGED_EVENT_VSRAM).l,(HINT_Q0_VSRAM).l
+    rts
+.aas_no_split:
+    move.b  #0,(HINT_PEND_SPLIT).l
     move.b  #0,(HINT_Q_COUNT).l
+    rts
+
+;------------------------------------------------------------------------------
+; _ags_apply_active — Program VDP VSRAM/H-int state for the current frame from
+; the active queue/debug state set by _ags_activate_staged. For no-split and
+; intro dead-zone modes, the base VSRAM comes from ACTIVE_BASE_VSRAM.
+;
+; Clobbers D0.
+;------------------------------------------------------------------------------
+_ags_apply_active:
+    cmpi.b  #INTRO_SCROLL_NO_SPLIT,(INTRO_SCROLL_MODE).l
+    bne.s   .aaa_split
     move.w  #$8AFF,(VDP_CTRL).l             ; Reg 10 = $FF (inactive)
     move.w  #$8004,(VDP_CTRL).l             ; Reg 0: H-int off
     move.l  #VSRAM_WRITE_0000,(VDP_CTRL).l
-    move.w  (HINT_Q0_VSRAM).l,(VDP_DATA).l  ; Plane A V-scroll = D0
+    move.w  (ACTIVE_BASE_VSRAM).l,(VDP_DATA).l
     moveq   #0,D0
-    move.w  D0,(VDP_DATA).l                 ; Plane B V-scroll = 0
-.pa_done:
-    movem.l (SP)+,D0
+    move.w  D0,(VDP_DATA).l
     rts
+.aaa_split:
+    move.l  #VSRAM_WRITE_0000,(VDP_CTRL).l
+    moveq   #0,D0
+    cmpi.b  #INTRO_SCROLL_GAME_SPLIT,(INTRO_SCROLL_MODE).l
+    beq.s   .aaa_base_ready
+    move.w  (ACTIVE_BASE_VSRAM).l,D0
+.aaa_base_ready:
+    move.w  D0,(VDP_DATA).l
+    moveq   #0,D0
+    move.w  D0,(VDP_DATA).l
+    moveq   #0,D0
+    move.b  (HINT_Q0_CTR).l,D0
+    andi.w  #$00FF,D0
+    or.w    #$8A00,D0
+    move.w  D0,(VDP_CTRL).l                 ; Reg 10 = active H-int scanline
+    move.w  #$8014,(VDP_CTRL).l             ; Reg 0: enable H-int (+colorfix bit)
+    rts
+
+
 
 ;------------------------------------------------------------------------------
 ; _ppu_write_6 — PPUADDR ($2006)  ← T5 key implementation
@@ -721,7 +937,7 @@ _ppu_write_7:
 
 .nt_write_a:
     cmpi.w  #$23C0,D1
-    bhs.s   .nt_noop                ; ≥$23C0: attribute / palette / overflow — no-op
+    bhs     .nt_noop                ; ≥$23C0: attribute / palette / overflow — no-op
 
     move.w  D1,D2
     subi.w  #$2000,D2               ; D2.w = index (0…$3BF)
@@ -729,8 +945,10 @@ _ppu_write_7:
     move.w  D2,D3
     andi.w  #$001F,D3               ; D3.w = col (0…31)
     lsl.w   #1,D3                   ; D3.w = col * 2
+    move.w  D3,D5                   ; D5.w = cached col * 2 for tail-row mirror
 
     lsr.w   #5,D2                   ; D2.w = row (0…29)
+    move.w  D2,D4                   ; D4.w = cached row for tail-row mirror
     mulu.w  #$0080,D2               ; D2.l = row * $80  (fits in 16 bits; row ≤ 29)
     add.w   D3,D2                   ; D2.w = row*$80 + col*2
     addi.w  #$C000,D2               ; D2.w = VDP VRAM address (Plane A base $C000)
@@ -756,6 +974,29 @@ _ppu_write_7:
 
     bsr     _compose_bg_tile_word
     move.w  D0,(VDP_DATA).l         ; write tile word to Plane A
+
+    ; Mirror top rows 0..3 into rows 60..63 only during intro phase-1
+    ; subphase 0, so the prebuilt story page wraps onto the screen cleanly
+    ; without leaking story-specific map continuity into gameplay/credits.
+    tst.b   ($0012,A4)
+    bne.s   .nt_noop
+    cmpi.b  #$01,($042C,A4)
+    bne.s   .nt_noop
+    cmpi.b  #$00,($042D,A4)
+    bne.s   .nt_noop
+    cmpi.w  #4,D4
+    bhs.s   .nt_noop
+    move.w  D4,D2
+    addi.w  #60,D2
+    mulu.w  #$0080,D2
+    add.w   D5,D2
+    addi.w  #$C000,D2
+    move.l  D2,D3
+    andi.l  #$00003FFF,D3
+    swap    D3
+    ori.l   #$40000003,D3
+    move.l  D3,(VDP_CTRL).l
+    move.w  D0,(VDP_DATA).l
 
 .nt_noop:
     ;======================================================================
@@ -1277,9 +1518,9 @@ _attr_write_2x2:
 _attr_write_one_tile:
     ; Bounds check (V64: NT0 rows 0-29, NT1 rows 30-59)
     cmpi.w  #60,D3
-    bhs.s   .awt_skip           ; row >= 60 -> out of nametable
+    bhs     .awt_skip           ; row >= 60 -> out of nametable
     cmpi.w  #32,D2
-    bhs.s   .awt_skip           ; col >= 32 -> out of nametable
+    bhs     .awt_skip           ; col >= 32 -> out of nametable
 
     ; Load cached tile index: NT_CACHE[row*32 + col]
     moveq   #0,D1
@@ -1311,6 +1552,34 @@ _attr_write_one_tile:
     move.l  D0,(VDP_CTRL).l
     move.w  (SP)+,D0            ; restore tile word
     move.w  D0,(VDP_DATA).l     ; write to Plane A
+
+    ; Mirror top rows 0..3 into rows 60..63 only during intro phase-1
+    ; subphase 0, matching the gated tile-word mirror above.
+    tst.b   ($0012,A4)
+    bne.s   .awt_skip
+    cmpi.b  #$01,($042C,A4)
+    bne.s   .awt_skip
+    cmpi.b  #$00,($042D,A4)
+    bne.s   .awt_skip
+    cmpi.w  #4,D3
+    bhs.s   .awt_skip
+    move.w  D0,-(SP)
+    moveq   #0,D1
+    move.w  D3,D1
+    addi.w  #60,D1
+    lsl.l   #7,D1
+    moveq   #0,D0
+    move.w  D2,D0
+    add.w   D0,D1
+    add.w   D0,D1
+    addi.w  #$C000,D1
+    move.l  D1,D0
+    andi.l  #$00003FFF,D0
+    swap    D0
+    ori.l   #$40000003,D0
+    move.l  D0,(VDP_CTRL).l
+    move.w  (SP)+,D0
+    move.w  D0,(VDP_DATA).l
 
 .awt_skip:
     rts
@@ -2627,7 +2896,7 @@ _transfer_tilebuf_fast:
     tst.b   D4                      ; repeat mode?
     bne.s   .ttf_post_record        ; repeat: 1 byte already consumed
     adda.w  D3,A0                   ; sequential: skip D3 bytes
-    bra.s   .ttf_post_record
+    bra     .ttf_post_record
 
     ;==========================================================================
     ; POST-RECORD: update PPU_VADDR and loop to next record

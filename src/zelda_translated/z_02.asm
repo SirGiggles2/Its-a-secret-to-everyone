@@ -98,8 +98,8 @@ CommonPatternVramAddrs:
 
     even
 TransferCommonPatterns:
-    bsr     TurnOffAllVideo
-    bsr     _ppu_read_2  ; PPU $2002 read → D0
+    jsr     TurnOffAllVideo
+    jsr     _ppu_read_2  ; PPU $2002 read → D0
     even
 _L_z02_TransferCommonPatterns_LoopBlock:
     move.b  ($051D,A4),D0
@@ -120,7 +120,7 @@ _L_z02_TransferCommonPatterns_LoopBlock:
     move.b  D0,($0002,A4)
     lea     (CommonPatternVramAddrs).l,A0
     move.b  (A0,D2.W),D0
-    bsr     _ppu_write_6  ; PPU $2006 write, D0=val
+    jsr     _ppu_write_6  ; PPU $2006 write, D0=val
     addq.b  #1,D2
     ; (32-bit Genesis ROM addr already in [$04:$07])
     lea     (CommonPatternBlockSizes).l,A0
@@ -128,7 +128,7 @@ _L_z02_TransferCommonPatterns_LoopBlock:
     move.b  D0,($0003,A4)
     lea     (CommonPatternVramAddrs).l,A0
     move.b  (A0,D2.W),D0
-    bsr     TransferPatternBlock_Bank2
+    jsr     TransferPatternBlock_Bank2
     ; Loop until pattern block index = 3.
     ;
     move.b  ($051D,A4),D0
@@ -148,7 +148,7 @@ _L_z02_TransferCommonPatterns_LoopBlock:
     even
 TransferPatternBlock_Bank2:
     ; PATCHED: fast bulk CHR transfer (bypasses per-byte _ppu_write_7)
-    bsr     _ppu_write_6          ; complete PPU addr latch pair (sets PPU_VADDR)
+    jsr     _ppu_write_6          ; complete PPU addr latch pair (sets PPU_VADDR)
     movea.l ($04,A4),A0           ; ROM source address
     move.w  (PPU_VADDR).l,D1      ; NES CHR destination address
     moveq   #0,D2
@@ -156,7 +156,7 @@ TransferPatternBlock_Bank2:
     lsl.w   #8,D2
     move.b  ($0003,A4),D2         ; size lo byte (D2.w = total bytes)
     ext.l   D2                    ; D2.l = byte count
-    bsr     _transfer_chr_block_fast
+    jsr     _transfer_chr_block_fast
     addq.b  #1,($051D,A4)         ; increment block index
     rts
 
@@ -435,11 +435,13 @@ CommonMiscPatterns:
 
     even
 InitDemo_RunTasks:
-    bsr     TurnOffAllVideo
+    jsr     TurnOffAllVideo
     move.b  ($042C,A4),D0
-    bne  InitDemo_Phase1
+    beq.s  __far_z_02_0000
+    jmp  InitDemo_Phase1
+__far_z_02_0000:
     move.b  ($042D,A4),D0
-    bsr     _m68k_tablejump  ; M68K-native table dispatch (replaces JSR TableJump)
+    jsr     _m68k_tablejump  ; M68K-native table dispatch (replaces JSR TableJump)
     even
 InitDemo_RunTasks_Phase0_JumpTable:
     dc.l    InitDemoSubphaseClearArtifacts   ; jump table entry (32-bit for _m68k_tablejump)
@@ -449,7 +451,7 @@ InitDemo_RunTasks_Phase0_JumpTable:
     even
 InitDemo_Phase1:
     move.b  ($042D,A4),D0
-    bsr     _m68k_tablejump  ; M68K-native table dispatch (replaces JSR TableJump)
+    jsr     _m68k_tablejump  ; M68K-native table dispatch (replaces JSR TableJump)
     even
 InitDemo_RunTasks_Phase1_JumpTable:
     dc.l    InitDemoSubphaseClearArtifacts   ; jump table entry (32-bit for _m68k_tablejump)
@@ -462,13 +464,15 @@ UpdateMode0Demo:
     bne  _L_z02_UpdateMode0Demo_HandleSubmodes
     move.b  ($0528,A4),D0
     bne  _L_z02_UpdateMode0Demo_HandleSubmodes
-    bsr     AnimateDemo
+    jsr     AnimateDemo
     move.b  ($0011,A4),D0
-    beq  Exit
+    bne.s  __far_z_02_0001
+    jmp  Exit
+__far_z_02_0001:
     even
 _L_z02_UpdateMode0Demo_HandleSubmodes:
     move.b  ($0013,A4),D0
-    bsr     _m68k_tablejump  ; M68K-native table dispatch (replaces JSR TableJump)
+    jsr     _m68k_tablejump  ; M68K-native table dispatch (replaces JSR TableJump)
     even
 UpdateMode0Demo_JumpTable:
     dc.l    UpdateMode0Demo_Sub0   ; jump table entry (32-bit for _m68k_tablejump)
@@ -479,16 +483,18 @@ UpdateMode0Demo_JumpTable:
 UpdateMode0Demo_Sub0:
     move.b  ($00F8,A4),D0
     andi.b #$10,D0
-    beq  Exit
+    bne.s  __far_z_02_0002
+    jmp  Exit
+__far_z_02_0002:
     move.b  D0,($00F6,A4)
     moveq   #0,D0
     move.b  D0,($0600,A4)
-    bsr     SilenceAllSound
+    jsr     SilenceAllSound
     moveq   #90,D0
     move.b  D0,($0528,A4)
     addq.b  #1,($0013,A4)
-    bsr     TurnOffAllVideo
-    bsr     HideAllSprites
+    jsr     TurnOffAllVideo
+    jsr     HideAllSprites
     moveq   #18,D0
     move.b  D0,($0014,A4)
     even
@@ -503,10 +509,10 @@ UpdateMode0Demo_Sub2:
     ; Most of the game will deal with save slot info.
     ; Format each inactive file A, to make sure it's clear.
     ;
-    bsr     TurnOffAllVideo
+    jsr     TurnOffAllVideo
     moveq   #0,D0
     move.b  D0,($0016,A4)
-    bsr     FetchFileAAddressSet
+    jsr     FetchFileAAddressSet
     moveq   #2,D3
     even
 _L_z02_UpdateMode0Demo_Sub2_LoopFormatSlot:
@@ -525,8 +531,8 @@ _L_z02_UpdateMode0Demo_Sub2_LoopFormatSlot:
     move.b  D3,D0
     move.b  D0,-(A5)  ; PHA
     move.b  D3,($0016,A4)
-    bsr     FetchFileAAddressSet
-    bsr     FormatFileA
+    jsr     FetchFileAAddressSet
+    jsr     FormatFileA
     moveq   #0,D0
     move.b  D0,($0016,A4)
     ; Fetch the address set for slot 0 again,
@@ -535,7 +541,7 @@ _L_z02_UpdateMode0Demo_Sub2_LoopFormatSlot:
     ;
     ; After this, the slot is still not active, but it will
     ; definitely be clear.
-    bsr     FetchFileAAddressSet
+    jsr     FetchFileAAddressSet
     move.b  (A5)+,D0  ; PLA
     moveq   #0,D3
     move.b  D0,D3
@@ -648,9 +654,11 @@ _L_z02_UpdateMode0Demo_Sub2_LoopNameByte:
     even
 AnimateDemo:
     move.b  ($042C,A4),D0
-    bne  AnimateDemo_Phase1
+    beq.s  __far_z_02_0003
+    jmp  AnimateDemo_Phase1
+__far_z_02_0003:
     move.b  ($042D,A4),D0
-    bsr     _m68k_tablejump  ; M68K-native table dispatch (replaces JSR TableJump)
+    jsr     _m68k_tablejump  ; M68K-native table dispatch (replaces JSR TableJump)
     even
 AnimateDemo_Phase0_JumpTable:
     dc.l    AnimateDemoPhase0Subphase0   ; jump table entry (32-bit for _m68k_tablejump)
@@ -659,7 +667,7 @@ AnimateDemo_Phase0_JumpTable:
     even
 AnimateDemo_Phase1:
     move.b  ($042D,A4),D0
-    bsr     _m68k_tablejump  ; M68K-native table dispatch (replaces JSR TableJump)
+    jsr     _m68k_tablejump  ; M68K-native table dispatch (replaces JSR TableJump)
     even
 AnimateDemo_Phase1_JumpTable:
     dc.l    AnimateDemoPhase1Subphase0   ; jump table entry (32-bit for _m68k_tablejump)
@@ -799,7 +807,7 @@ DemoLineTextAddrs:
 
     even
 InitDemoSubphaseClearArtifacts:
-    bsr     TurnOffVideoAndClearArtifacts
+    jsr     TurnOffVideoAndClearArtifacts
     even
 IncSubphase:
     addq.b  #1,($042D,A4)
@@ -905,9 +913,9 @@ InitDemoSubphaseTransferStoryTiles:
     move.b  #$20,D0
     move.b  #$24,D2
     moveq   #0,D3
-    bsr     _clear_nametable_fast
+    jsr     _clear_nametable_fast
     move.b  #$28,D0
-    bsr     _clear_nametable_fast
+    jsr     _clear_nametable_fast
     addq.b  #1,($005C,A4)
     moveq   #16,D0
     move.b  D0,($00FC,A4)
@@ -936,7 +944,7 @@ AnimateDemoPhase0Subphase0:
 
     even
 _L_z02_AnimateDemoPhase0Subphase0_SkipTimer:
-    bsr     AnimateDemoPhase0Subphase0Artifacts
+    jsr     AnimateDemoPhase0Subphase0Artifacts
     rts
 
     even
@@ -989,9 +997,9 @@ _anon_z02_0:
 
     even
 AnimateDemoPhase1Subphase2:
-    bsr     HideAllSprites
-    bsr     DisableFallenObjects
-    bsr     Demo_AnimateObjects
+    jsr     HideAllSprites
+    jsr     DisableFallenObjects
+    jsr     Demo_AnimateObjects
     move.b  ($0015,A4),D0
     andi.b #$01,D0
     beq  _L_z02_AnimateDemoPhase1Subphase2_Exit
@@ -1032,7 +1040,7 @@ _L_z02_AnimateDemoPhase1Subphase2_CheckLine:
     move.b  ($041B,A4),D0
     andi.b #$07,D0
     bne  _L_z02_AnimateDemoPhase1Subphase2_Exit
-    bsr     ProcessDemoLineItems
+    jsr     ProcessDemoLineItems
     ; Append a request to transfer a line.
     ; It's blank by default. Change it later.
     moveq   #32,D2
@@ -1130,7 +1138,7 @@ _L_z02_AnimateDemoPhase1Subphase2_EndLine:
 _L_z02_AnimateDemoPhase1Subphase2_ProcessAttrs:
     ; Finished processing attribute $80.
     ;
-    bsr     ProcessDemoLineAttrs
+    jsr     ProcessDemoLineAttrs
     addq.b  #1,($0419,A4)
     rts
 
@@ -1303,7 +1311,7 @@ _L_z02_Demo_AnimateObjects_LoopObject:
     move.b  (A0,D2.W),D0
     cmpi.b  #$23,D0
     bne  _L_z02_Demo_AnimateObjects_AnimateNormal
-    bsr     AnimateStationaryFairy
+    jsr     AnimateStationaryFairy
     jmp     _L_z02_Demo_AnimateObjects_PopAndNextObject
 
     even
@@ -1312,7 +1320,7 @@ _L_z02_Demo_AnimateObjects_AnimateNormal:
     ;
     cmpi.b  #$30,D0
     bcc  _L_z02_Demo_AnimateObjects_AnimateFinal
-    bsr     AnimateItemObject
+    jsr     AnimateItemObject
     jmp     _L_z02_Demo_AnimateObjects_PopAndNextObject
 
     even
@@ -1320,7 +1328,7 @@ _L_z02_Demo_AnimateObjects_AnimateFinal:
     ; At the end of the list of items are special items for Link
     ; and the sheet of paper.
     ;
-    bsr     AnimateDemoStoryFinalItems
+    jsr     AnimateDemoStoryFinalItems
     even
 _L_z02_Demo_AnimateObjects_PopAndNextObject:
     move.b  (A5)+,D0  ; PLA
@@ -1339,8 +1347,8 @@ _L_z02_Demo_AnimateObjects_NextObject:
 
     even
 AnimateStationaryFairy:
-    bsr     Anim_FetchObjPosForSpriteDescriptor
-    bsr     Anim_SetSpriteDescriptorRedPaletteRow
+    jsr     Anim_FetchObjPosForSpriteDescriptor
+    jsr     Anim_SetSpriteDescriptorRedPaletteRow
     ; Rely on the fact that 2 represents normal sprite
     ; attributes with palette 6.
     ; Shift the value to make it 4.
@@ -1420,7 +1428,9 @@ _L_z02_AnimateDemoStoryFinalItems_SkipSprite:
 AnimateDemoPhase1Subphase3:
     addq.b  #1,($041A,A4)
     move.b  ($041A,A4),D0
-    bne  AnimateDemoPhase1End_AnimateObjects
+    beq.s  __far_z_02_0004
+    jmp  AnimateDemoPhase1End_AnimateObjects
+__far_z_02_0004:
     addq.b  #1,($042D,A4)
     rts
 
@@ -1429,7 +1439,9 @@ AnimateDemoPhase1Subphase4:
     addq.b  #1,($041A,A4)
     move.b  ($041A,A4),D0
     cmpi.b  #$39,D0
-    bne  AnimateDemoPhase1End_AnimateObjects
+    beq.s  __far_z_02_0005
+    jmp  AnimateDemoPhase1End_AnimateObjects
+__far_z_02_0005:
     moveq   #0,D0
     move.b  D0,($0011,A4)
     move.b  D0,($041A,A4)
@@ -1439,8 +1451,8 @@ AnimateDemoPhase1Subphase4:
 
     even
 AnimateDemoPhase1End_AnimateObjects:
-    bsr     HideAllSprites
-    bsr     Demo_AnimateObjects
+    jsr     HideAllSprites
+    jsr     Demo_AnimateObjects
     rts
 
     even
@@ -1464,7 +1476,7 @@ _L_z02_AnimateDemoPhase0Subphase0Artifacts_CopySprites:
     move.b  D0,(A0,D3.W)
     subq.b  #1,D3
     bne  _L_z02_AnimateDemoPhase0Subphase0Artifacts_CopySprites
-    bsr     UpdateWaterfallAnimation
+    jsr     UpdateWaterfallAnimation
     ; When you reach the end of the glow cycle,
     ; Append a transfer record for the triforce palette.
     ;
@@ -1545,10 +1557,10 @@ UpdateWaterfallAnimation:
 _L_z02_UpdateWaterfallAnimation_UpdateSprites:
     moveq   #2,D2
 _anon_z02_2:
-    bsr     UpdateSpritesForWaterfallWave
+    jsr     UpdateSpritesForWaterfallWave
     subq.b  #1,D2
     bpl  _anon_z02_2
-    bsr     UpdateSpritesForWaterfallCrest
+    jsr     UpdateSpritesForWaterfallCrest
     rts
 
     even
@@ -1782,7 +1794,7 @@ _L_z02_AnimateDemoPhase0Subphase1_CopyPalette:
     even
 _L_z02_AnimateDemoPhase0Subphase1_UpdateAnimation:
     subq.b  #1,($0438,A4)
-    bsr     UpdateWaterfallAnimation
+    jsr     UpdateWaterfallAnimation
     rts
 
 ; Unknown block
@@ -1955,19 +1967,19 @@ SlotToInitialNameCharTransferHeaderEndOffsets:
 InitModeEandF_Full:
     moveq   #0,D0
     move.b  D0,($0016,A4)
-    bsr     ModeE_ResetVariables
-    bsr     TurnOffAllVideo
+    jsr     ModeE_ResetVariables
+    jsr     TurnOffAllVideo
     move.b  ($0013,A4),D0
     bne  _L_z02_InitModeEandF_Full_CheckSub1
     ; Submode 0:
     ;
-    bsr     TurnOffVideoAndClearArtifacts
+    jsr     TurnOffVideoAndClearArtifacts
     even
 _L_z02_InitModeEandF_Full_FormatSlotsB:
     ; Format all file B's.
     ;
-    bsr     FetchFileBAddressSet
-    bsr     FormatFileB
+    jsr     FetchFileBAddressSet
+    jsr     FormatFileB
     addq.b  #1,($0016,A4)
     move.b  ($0016,A4),D0
     cmpi.b  #$03,D0
@@ -2110,7 +2122,7 @@ _L_z02_InitModeEandF_Full_FindInactiveSlot:
     bpl  _L_z02_InitModeEandF_Full_FindInactiveSlot
     even
 _L_z02_InitModeEandF_Full_FoundInactiveSlot:
-    bsr     ModeEandF_SetUpCursorSprites
+    jsr     ModeEandF_SetUpCursorSprites
     move.b  ($0016,A4),D0
     cmpi.b  #$03,D0
     bne  _anon_z02_5
@@ -2172,7 +2184,7 @@ _L_z02_UpdateModeERegister_LoopSaveSlot:
     move.b  D0,(A0,D3.W)
     move.b  D2,D0
     move.b  D0,-(A5)  ; PHA
-    bsr     FetchFileBAddressSet
+    jsr     FetchFileBAddressSet
     move.b  (A5)+,D0  ; PLA
     moveq   #0,D2
     move.b  D0,D2
@@ -2298,7 +2310,7 @@ _L_z02_UpdateModeERegister_NextChar:
     move.b  D0,($0425,A4)
     move.b  ($0426,A4),D0
     beq  _anon_z02_6
-    bsr     CalculateAndStoreFileBChecksumUncommitted
+    jsr     CalculateAndStoreFileBChecksumUncommitted
 _anon_z02_6:
     addq.b  #1,($0016,A4)
     move.b  ($0016,A4),D0
@@ -2310,7 +2322,7 @@ _anon_z02_7:
     moveq   #0,D0
     move.b  D0,($0426,A4)
     move.b  D0,($0016,A4)
-    bsr     ModeE_ResetVariables
+    jsr     ModeE_ResetVariables
     moveq   #1,D0
     move.b  D0,($0011,A4)
     jmp     UpdateModeDSave_Sub2
@@ -2322,11 +2334,11 @@ _L_z02_UpdateModeERegister_Idle:
     move.b  ($0016,A4),D0
     cmpi.b  #$03,D0
     beq  _anon_z02_8
-    bsr     ModeE_HandleDirections
+    jsr     ModeE_HandleDirections
 _anon_z02_8:
-    bsr     UpdateModeEandF_Idle
-    bsr     ModeEandF_WriteNameCursorSpritePosition
-    bsr     ModeEandF_WriteCharBoardCursorSpritePosition
+    jsr     UpdateModeEandF_Idle
+    jsr     ModeEandF_WriteNameCursorSpritePosition
+    jsr     ModeEandF_WriteCharBoardCursorSpritePosition
     jmp     ModeE_HandleAOrB
 
     even
@@ -2341,7 +2353,9 @@ _anon_z02_9:
     ;
     move.b  ($0016,A4),D0
     cmpi.b  #$03,D0
-    bne  DeleteSlot
+    beq.s  __far_z_02_0006
+    jmp  DeleteSlot
+__far_z_02_0006:
     moveq   #14,D0
     move.b  D0,($0012,A4)
     moveq   #0,D0
@@ -2377,9 +2391,9 @@ _L_z02_DeleteSlot_CopyBlankBuf:
     subq.b  #1,D2
     subq.b  #1,D3
     bpl  _L_z02_DeleteSlot_CopyBlankBuf
-    bsr     FetchFileAAddressSet
-    bsr     FormatFileA
-    bsr     FetchProfileNameAddress
+    jsr     FetchFileAAddressSet
+    jsr     FormatFileA
+    jsr     FetchProfileNameAddress
     moveq   #7,D3
     even
 _L_z02_DeleteSlot_ClearName:
@@ -2401,7 +2415,9 @@ _L_z02_DeleteSlot_ClearName:
 ModeE_HandleDirections:
     move.b  ($00FA,A4),D0
     andi.b #$0F,D0
-    bne  ModeE_HandleDirectionButton
+    beq.s  __far_z_02_0007
+    jmp  ModeE_HandleDirectionButton
+__far_z_02_0007:
     even
 ResetButtonRepeatState:
     move.b  D0,($0426,A4)
@@ -2425,7 +2441,7 @@ _L_z02_ModeE_HandleDirectionButton_CheckSameButton:
     cmp.b   D1,D0
     beq  _L_z02_ModeE_HandleDirectionButton_CheckRepeat
     moveq   #0,D0
-    bsr     ResetButtonRepeatState
+    jsr     ResetButtonRepeatState
     even
 _L_z02_ModeE_HandleDirectionButton_CheckRepeat:
     move.b  ($0429,A4),D0
@@ -2462,7 +2478,7 @@ _anon_z02_10:
     moveq   #48,D0
     move.b  D0,($0071,A4)
     moveq   #0,D2
-    bsr     CycleCharBoardCursorY
+    jsr     CycleCharBoardCursorY
     move.b  ($042A,A4),D0
     beq  _anon_z02_11
     moveq   #0,D0
@@ -2489,7 +2505,7 @@ _L_z02_ModeE_HandleDirectionButton_Left:
     move.b  #$D0,D0
     move.b  D0,($0071,A4)
     moveq   #3,D2
-    bsr     CycleCharBoardCursorY
+    jsr     CycleCharBoardCursorY
     move.b  ($042A,A4),D0
     beq  _anon_z02_12
     moveq   #43,D0
@@ -2511,7 +2527,7 @@ _L_z02_ModeE_HandleDirectionButton_Down:
     addx.b  D1,D0   ; ADC #$0B (X flag = 6502 C)
     move.b  D0,($041F,A4)
     moveq   #0,D2
-    bsr     CycleCharBoardCursorY
+    jsr     CycleCharBoardCursorY
     move.b  ($042A,A4),D0
     beq  _L_z02_ModeE_HandleDirectionButton_Finish
     move.b  ($041F,A4),D0
@@ -2537,7 +2553,7 @@ _L_z02_ModeE_HandleDirectionButton_Up:
     subx.b  D1,D0   ; SBC #$0B
     move.b  D0,($041F,A4)
     moveq   #3,D2
-    bsr     CycleCharBoardCursorY
+    jsr     CycleCharBoardCursorY
     move.b  ($042A,A4),D0
     beq  _L_z02_ModeE_HandleDirectionButton_FinishInput
     move.b  ($041F,A4),D0
@@ -2596,7 +2612,9 @@ ModeE_HandleAOrB:
     moveq   #0,D3
     move.b  ($0016,A4),D3
     cmpi.b  #$03,D3
-    beq  LA10A_Exit
+    bne.s  __far_z_02_0008
+    jmp  LA10A_Exit
+__far_z_02_0008:
     ; Set NameCharOffset [$0421] to the offset of first char
     ; in the current slot's name.
     lea     (SlotToNameOffset).l,A0
@@ -2770,7 +2788,7 @@ ModeEandF_WriteNameCursorSpritePosition:
     even
 _L_z02_ModeEandF_WriteNameCursorSpritePosition_WriteCursorY:
     move.b  ($0084,A4),D0
-    bsr     ModifyFlashingCursorY
+    jsr     ModifyFlashingCursorY
     move.b  D3,($0204,A4)
     even
 ModeE_SetNameCursorSpriteX:
@@ -2790,7 +2808,7 @@ ModeEandF_WriteCharBoardCursorSpritePosition:
     even
 _L_z02_ModeEandF_WriteCharBoardCursorSpritePosition_WriteCursorCoords:
     move.b  ($0085,A4),D0
-    bsr     ModifyFlashingCursorY
+    jsr     ModifyFlashingCursorY
     move.b  D3,($0208,A4)
     move.b  ($0071,A4),D0
     move.b  D0,($020B,A4)
@@ -2891,9 +2909,9 @@ LinkColors:
 
     even
 InitMode1_Full:
-    bsr     TurnOffAllVideo
+    jsr     TurnOffAllVideo
     move.b  ($0013,A4),D0
-    bsr     _m68k_tablejump  ; M68K-native table dispatch (replaces JSR TableJump)
+    jsr     _m68k_tablejump  ; M68K-native table dispatch (replaces JSR TableJump)
     even
 InitMode1_Full_JumpTable:
     dc.l    UpdateMode0Demo_Sub1   ; jump table entry (32-bit for _m68k_tablejump)
@@ -2914,7 +2932,7 @@ UpdateMode0Demo_Sub1:
     ;
     ; TODO: This is also mode 1 submode 0 init.
     ;
-    bsr     TurnOffAllVideo
+    jsr     TurnOffAllVideo
     moveq   #0,D0
     move.b  D0,($0016,A4)
     even
@@ -2924,8 +2942,8 @@ _L_z02_UpdateMode0Demo_Sub1_LoopSlot:
     lea     (NES_SRAM+$052A).l,A0
     move.b  (A0,D3.W),D0
     bne  _L_z02_UpdateMode0Demo_Sub1_CheckFileA
-    bsr     FetchFileBAddressSet
-    bsr     CalculateFileBChecksum
+    jsr     FetchFileBAddressSet
+    jsr     CalculateFileBChecksum
     move.b  ($0016,A4),D0
     lsl.b  #1,D0   ; ASL A
     moveq   #0,D3
@@ -2941,15 +2959,15 @@ _L_z02_UpdateMode0Demo_Sub1_LoopSlot:
     move.b  ($00CF,A4),D1
     cmp.b   D1,D0
     bne  _L_z02_UpdateMode0Demo_Sub1_CheckFileA
-    bsr     CopyFileBToFileA
+    jsr     CopyFileBToFileA
     jmp     _L_z02_UpdateMode0Demo_Sub1_NextSlot
 
     even
 _L_z02_UpdateMode0Demo_Sub1_CheckFileA:
     ; Calculate the checksum of the save file.
     ; It's only a sum.
-    bsr     FetchFileAAddressSet
-    bsr     CalculateFileAChecksum
+    jsr     FetchFileAAddressSet
+    jsr     CalculateFileAChecksum
     moveq   #0,D3
     move.b  ($0016,A4),D3
     lea     (NES_SRAM+$051E).l,A0
@@ -2977,8 +2995,8 @@ _L_z02_UpdateMode0Demo_Sub1_CheckFileA:
     beq  _L_z02_UpdateMode0Demo_Sub1_NextSlot
     even
 _L_z02_UpdateMode0Demo_Sub1_FormatA:
-    bsr     FetchFileAAddressSet
-    bsr     FormatFileA
+    jsr     FetchFileAAddressSet
+    jsr     FormatFileA
     even
 _L_z02_UpdateMode0Demo_Sub1_NextSlot:
     addq.b  #1,($0016,A4)
@@ -3008,7 +3026,7 @@ _L_z02_CalculateFileAChecksum_SumName:
     add.l   #NES_RAM,D4       ; → Genesis addr
     movea.l D4,A0
     move.b  (A0,D3.W),D0     ; LDA ($nn),Y
-    bsr     AddATo0F0E
+    jsr     AddATo0F0E
     subq.b  #1,D3
     bpl  _L_z02_CalculateFileAChecksum_SumName
     moveq   #39,D3
@@ -3023,7 +3041,7 @@ _L_z02_CalculateFileAChecksum_SumItems:
     add.l   #NES_RAM,D4       ; → Genesis addr
     movea.l D4,A0
     move.b  (A0,D3.W),D0     ; LDA ($nn),Y
-    bsr     AddATo0F0E
+    jsr     AddATo0F0E
     subq.b  #1,D3
     bpl  _L_z02_CalculateFileAChecksum_SumItems
     move.b  #$80,D0
@@ -3042,7 +3060,7 @@ _L_z02_CalculateFileAChecksum_SumWorldFlags:
     add.l   #NES_RAM,D4       ; → Genesis addr
     movea.l D4,A0
     move.b  (A0,D3.W),D0     ; LDA ($nn),Y
-    bsr     AddATo0F0E
+    jsr     AddATo0F0E
     addq.b  #1,($0002,A4)
     bne  _anon_z02_16
     addq.b  #1,($0003,A4)
@@ -3061,7 +3079,7 @@ _anon_z02_16:
     add.l   #NES_RAM,D4       ; → Genesis addr
     movea.l D4,A0
     move.b  (A0,D3.W),D0     ; LDA ($nn),Y
-    bsr     AddATo0F0E
+    jsr     AddATo0F0E
     move.b  ($08,A4),D1   ; ptr lo
     move.b  ($09,A4),D4  ; ptr hi
     andi.w  #$00FF,D1         ; zero-extend lo byte
@@ -3071,7 +3089,7 @@ _anon_z02_16:
     add.l   #NES_RAM,D4       ; → Genesis addr
     movea.l D4,A0
     move.b  (A0,D3.W),D0     ; LDA ($nn),Y
-    bsr     AddATo0F0E
+    jsr     AddATo0F0E
     move.b  ($0A,A4),D1   ; ptr lo
     move.b  ($0B,A4),D4  ; ptr hi
     andi.w  #$00FF,D1         ; zero-extend lo byte
@@ -3081,7 +3099,7 @@ _anon_z02_16:
     add.l   #NES_RAM,D4       ; → Genesis addr
     movea.l D4,A0
     move.b  (A0,D3.W),D0     ; LDA ($nn),Y
-    bsr     AddATo0F0E
+    jsr     AddATo0F0E
     move.b  ($0C,A4),D1   ; ptr lo
     move.b  ($0D,A4),D4  ; ptr hi
     andi.w  #$00FF,D1         ; zero-extend lo byte
@@ -3198,8 +3216,8 @@ _anon_z02_17:
     add.l   #NES_RAM,D4
     movea.l D4,A0
     move.b  D0,(A0,D3.W)     ; STA ($nn),Y
-    bsr     FetchFileAAddressSet
-    bsr     CalculateFileAChecksum
+    jsr     FetchFileAAddressSet
+    jsr     CalculateFileAChecksum
     moveq   #0,D3
     move.b  ($0016,A4),D3
     ; Be proactive and reset these values in save slot info.
@@ -3237,7 +3255,7 @@ _anon_z02_17:
 
     even
 CalculateAndStoreFileBChecksumUncommitted:
-    bsr     CalculateFileBChecksum
+    jsr     CalculateFileBChecksum
     moveq   #0,D3
     move.b  ($0016,A4),D3
     moveq   #0,D0
@@ -3276,7 +3294,7 @@ _L_z02_CalculateFileBChecksum_SumName:
     add.l   #NES_RAM,D4       ; → Genesis addr
     movea.l D4,A0
     move.b  (A0,D3.W),D0     ; LDA ($nn),Y
-    bsr     AddAToCFCE
+    jsr     AddAToCFCE
     subq.b  #1,D3
     bpl  _L_z02_CalculateFileBChecksum_SumName
     moveq   #39,D3
@@ -3291,7 +3309,7 @@ _L_z02_CalculateFileBChecksum_SumItems:
     add.l   #NES_RAM,D4       ; → Genesis addr
     movea.l D4,A0
     move.b  (A0,D3.W),D0     ; LDA ($nn),Y
-    bsr     AddAToCFCE
+    jsr     AddAToCFCE
     subq.b  #1,D3
     bpl  _L_z02_CalculateFileBChecksum_SumItems
     move.b  #$80,D0
@@ -3310,7 +3328,7 @@ _L_z02_CalculateFileBChecksum_SumWorldFlags:
     add.l   #NES_RAM,D4       ; → Genesis addr
     movea.l D4,A0
     move.b  (A0,D3.W),D0     ; LDA ($nn),Y
-    bsr     AddAToCFCE
+    jsr     AddAToCFCE
     addq.b  #1,($00C2,A4)
     bne  _anon_z02_18
     addq.b  #1,($00C3,A4)
@@ -3329,7 +3347,7 @@ _anon_z02_18:
     add.l   #NES_RAM,D4       ; → Genesis addr
     movea.l D4,A0
     move.b  (A0,D3.W),D0     ; LDA ($nn),Y
-    bsr     AddAToCFCE
+    jsr     AddAToCFCE
     move.b  ($C8,A4),D1   ; ptr lo
     move.b  ($C9,A4),D4  ; ptr hi
     andi.w  #$00FF,D1         ; zero-extend lo byte
@@ -3339,7 +3357,7 @@ _anon_z02_18:
     add.l   #NES_RAM,D4       ; → Genesis addr
     movea.l D4,A0
     move.b  (A0,D3.W),D0     ; LDA ($nn),Y
-    bsr     AddAToCFCE
+    jsr     AddAToCFCE
     move.b  ($CA,A4),D1   ; ptr lo
     move.b  ($CB,A4),D4  ; ptr hi
     andi.w  #$00FF,D1         ; zero-extend lo byte
@@ -3349,7 +3367,7 @@ _anon_z02_18:
     add.l   #NES_RAM,D4       ; → Genesis addr
     movea.l D4,A0
     move.b  (A0,D3.W),D0     ; LDA ($nn),Y
-    bsr     AddAToCFCE
+    jsr     AddAToCFCE
     move.b  ($CC,A4),D1   ; ptr lo
     move.b  ($CD,A4),D4  ; ptr hi
     andi.w  #$00FF,D1         ; zero-extend lo byte
@@ -3466,8 +3484,8 @@ _anon_z02_19:
     add.l   #NES_RAM,D4
     movea.l D4,A0
     move.b  D0,(A0,D3.W)     ; STA ($nn),Y
-    bsr     FetchFileBAddressSet
-    bsr     CalculateFileBChecksum
+    jsr     FetchFileBAddressSet
+    jsr     CalculateFileBChecksum
     move.b  #$FF,D0
     moveq   #0,D3
     move.b  ($0016,A4),D3
@@ -3482,7 +3500,7 @@ InitMode1_Sub1:
     ; that generate and transfer save slot graphics.
     moveq   #0,D0
     move.b  D0,($0016,A4)
-    bsr     FetchFileAAddressSet
+    jsr     FetchFileAAddressSet
     moveq   #11,D3
     moveq   #0,D2
     even
@@ -3520,11 +3538,11 @@ _L_z02_InitMode1_Sub1_LoopSlot:
     move.b  D0,D2
     cmpi.b  #$0C,D2
     bcs  _L_z02_InitMode1_Sub1_LoopSlot
-    bsr     ResetRoomTileObjInfo
+    jsr     ResetRoomTileObjInfo
     moveq   #18,D0
     move.b  D0,($0014,A4)
     addq.b  #1,($0013,A4)
-    bsr     TurnOffVideoAndClearArtifacts
+    jsr     TurnOffVideoAndClearArtifacts
     moveq   #4,D3
     moveq   #0,D0
     move.b  D0,($0529,A4)
@@ -3609,7 +3627,7 @@ _L_z02_InitMode1_FillAndTransferSlotTiles_CopyName:
     move.b  (A0,D3.W),D0
     move.b  D0,($000F,A4)
     moveq   #12,D3
-    bsr     FormatHeartsInTextBuf
+    jsr     FormatHeartsInTextBuf
     addq.b  #1,($0016,A4)
     addq.b  #1,($0013,A4)
     rts
@@ -3637,7 +3655,7 @@ _L_z02_InitMode1_Sub6_LoopSlot:
     move.b  ($000A,A4),D3
     lea     ($0630,A4),A0
     move.b  (A0,D3.W),D0
-    bsr     FormatDecimalByte
+    jsr     FormatDecimalByte
     moveq   #0,D2
     move.b  ($000B,A4),D2
     move.b  ($0001,A4),D0
@@ -3705,7 +3723,7 @@ Mode1CursorSpriteYs:
     even
 UpdateMode1Menu:
     move.b  ($0013,A4),D0
-    bsr     _m68k_tablejump  ; M68K-native table dispatch (replaces JSR TableJump)
+    jsr     _m68k_tablejump  ; M68K-native table dispatch (replaces JSR TableJump)
     even
 UpdateMode1Menu_JumpTable:
     dc.l    UpdateMode1Menu_Sub0   ; jump table entry (32-bit for _m68k_tablejump)
@@ -3771,7 +3789,7 @@ UpdateMode1Menu_Sub1:
     moveq   #0,D0
     move.b  D0,($0010,A4)
     move.b  D0,($0656,A4)
-    bsr     TurnOffAllVideo
+    jsr     TurnOffAllVideo
     move.b  ($0016,A4),D0
     cmpi.b  #$03,D0
     bcs  _L_z02_UpdateMode1Menu_Sub1_ChoseSlot
@@ -3786,8 +3804,8 @@ UpdateMode1Menu_Sub1:
 _L_z02_UpdateMode1Menu_Sub1_ChoseSlot:
     ; The player chose a save slot.
     ;
-    bsr     TurnOffAllVideo
-    bsr     FetchFileAAddressSet
+    jsr     TurnOffAllVideo
+    jsr     FetchFileAAddressSet
     moveq   #39,D3
     even
 _L_z02_UpdateMode1Menu_Sub1_CopyItems:
@@ -3859,7 +3877,7 @@ Mode1_WriteLinkSprites:
     ; As an index, it represents a save slot.
     ; As attributes, these values represent palettes 4 to 6.
     moveq   #0,D0
-    bsr     Anim_SetSpriteDescriptorAttributes
+    jsr     Anim_SetSpriteDescriptorAttributes
     ; We want to start with sprite 4 (offset $10).
     ; Begin with 8, so that the loop will add 8 and
     ; put us at the offset we want.
@@ -3882,7 +3900,7 @@ _L_z02_Mode1_WriteLinkSprites_LoopSlot:
     move.b  D0,($000A,A4)
     move.b  ($0000,A4),D0
     move.b  D0,-(A5)  ; PHA
-    bsr     Anim_WriteSpritePairNotFlashing
+    jsr     Anim_WriteSpritePairNotFlashing
     moveq   #0,D2
     move.b  D0,D2
     move.b  (A5)+,D0  ; PLA
@@ -3953,7 +3971,7 @@ ProfileNameAddrsHi:
     even
 UpdateModeDSave:
     move.b  ($0013,A4),D0
-    bsr     _m68k_tablejump  ; M68K-native table dispatch (replaces JSR TableJump)
+    jsr     _m68k_tablejump  ; M68K-native table dispatch (replaces JSR TableJump)
     even
 UpdateModeDSave_JumpTable:
     dc.l    UpdateModeDSave_Sub0   ; jump table entry (32-bit for _m68k_tablejump)
@@ -3966,10 +3984,10 @@ UpdateModeDSave_Sub0:
     ; Calculate and store file B checksum.
     ; Mark file B uncommitted.
     ;
-    bsr     FetchFileBAddressSet
-    bsr     FormatFileB
-    bsr     FetchFileBAddressSet
-    bsr     FetchFileAAddressSet
+    jsr     FetchFileBAddressSet
+    jsr     FormatFileB
+    jsr     FetchFileBAddressSet
+    jsr     FetchFileAAddressSet
     moveq   #39,D3
     even
 _L_z02_UpdateModeDSave_Sub0_CopyItems:
@@ -4026,7 +4044,7 @@ _L_z02_UpdateModeDSave_Sub0_CopyItems:
     add.l   #NES_RAM,D4
     movea.l D4,A0
     move.b  D0,(A0,D3.W)     ; STA ($nn),Y
-    bsr     FetchProfileNameAddress
+    jsr     FetchProfileNameAddress
     moveq   #7,D3
     even
 _L_z02_UpdateModeDSave_Sub0_CopyName:
@@ -4064,7 +4082,7 @@ _L_z02_UpdateModeDSave_Sub0_CopyName:
     move.b  D0,($066F,A4)
     move.b  #$FF,D0
     move.b  D0,($0670,A4)
-    bsr     StoreSaveSlotHearts
+    jsr     StoreSaveSlotHearts
     moveq   #0,D3
     even
 _L_z02_UpdateModeDSave_Sub0_CopyWorldFlags:
@@ -4100,8 +4118,8 @@ _anon_z02_25:
     move.b  ($000F,A4),D0
     cmpi.b  #$07,D0
     bne  _L_z02_UpdateModeDSave_Sub0_CopyWorldFlags
-    bsr     FetchFileBAddressSet
-    bsr     CalculateAndStoreFileBChecksumUncommitted
+    jsr     FetchFileBAddressSet
+    jsr     CalculateAndStoreFileBChecksumUncommitted
     addq.b  #1,($0013,A4)
     rts
 
@@ -4112,8 +4130,8 @@ UpdateModeDSave_Sub1:
     lea     (NES_SRAM+$052A).l,A0
     move.b  (A0,D3.W),D0
     bne  _L_z02_UpdateModeDSave_Sub1_IncSubmode
-    bsr     FetchFileBAddressSet
-    bsr     CalculateFileBChecksum
+    jsr     FetchFileBAddressSet
+    jsr     CalculateFileBChecksum
     move.b  ($0016,A4),D0
     lsl.b  #1,D0   ; ASL A
     moveq   #0,D3
@@ -4129,7 +4147,7 @@ UpdateModeDSave_Sub1:
     move.b  ($00CF,A4),D1
     cmp.b   D1,D0
     bne  _L_z02_UpdateModeDSave_Sub1_DiscardFileB
-    bsr     CopyFileBToFileA
+    jsr     CopyFileBToFileA
     even
 _L_z02_UpdateModeDSave_Sub1_IncSubmode:
     addq.b  #1,($0013,A4)
@@ -4166,8 +4184,8 @@ CopyFileBToFileA:
     addq.b  #1,D3
     lea     (NES_SRAM+$0524).l,A0
     move.b  D0,(A0,D3.W)
-    bsr     FetchFileBAddressSet
-    bsr     FetchFileAAddressSet
+    jsr     FetchFileBAddressSet
+    jsr     FetchFileAAddressSet
     moveq   #39,D3
     even
 _L_z02_CopyFileBToFileA_CopyItems:
@@ -4479,7 +4497,7 @@ _L_z02_StoreSaveSlotHearts_CopyHearts:
     even
 InitMode13_Full:
     move.b  ($0013,A4),D0
-    bsr     _m68k_tablejump  ; M68K-native table dispatch (replaces JSR TableJump)
+    jsr     _m68k_tablejump  ; M68K-native table dispatch (replaces JSR TableJump)
     even
 InitMode13_Full_JumpTable:
     dc.l    InitMode13_Sub0   ; jump table entry (32-bit for _m68k_tablejump)
@@ -4490,11 +4508,13 @@ InitMode13_Full_JumpTable:
 
     even
 InitMode13_Sub0:
-    bsr     UpdateEndGameCurtainEffect
+    jsr     UpdateEndGameCurtainEffect
     move.b  ($0013,A4),D0
-    beq  LA958_Exit
-    bsr     HideAllSprites
-    bsr     Link_EndMoveAndDraw
+    bne.s  __far_z_02_0009
+    jmp  LA958_Exit
+__far_z_02_0009:
+    jsr     HideAllSprites
+    jsr     Link_EndMoveAndDraw
     moveq   #1,D2
     jmp     Person_Draw
 
@@ -4504,7 +4524,7 @@ UpdateEndGameCurtainEffect:
     bne  _L_z02_UpdateEndGameCurtainEffect_Exit
     move.b  ($0609,A4),D0
     bne  _L_z02_UpdateEndGameCurtainEffect_Exit
-    bsr     UpdateWorldCurtainEffect_Bank2
+    jsr     UpdateWorldCurtainEffect_Bank2
     ; When the right curtain edge reaches the middle (< $11),
     ; go to the next submode.
     ;
@@ -4557,7 +4577,7 @@ ThanksText:
 
     even
 InitMode13_Sub2:
-    bsr     UpdateZeldaTextbox
+    jsr     UpdateZeldaTextbox
     move.b  ($00AD,A4),D0
     beq  _anon_z02_30
     ; Set a delay of $50 frames in the next submode.
@@ -4581,11 +4601,13 @@ ThanksTextboxLineAddrsLo:
 ;
     even
 UpdateZeldaTextbox:
-    bsr     Link_EndMoveAndDraw
+    jsr     Link_EndMoveAndDraw
     ; If Zelda's timer has not expired, then return.
     ;
     move.b  ($0029,A4),D0
-    bne  LA9F4_Exit
+    beq.s  __far_z_02_0010
+    jmp  LA9F4_Exit
+__far_z_02_0010:
     ; Set the timer to wait 6 frames after the next character about
     ; to be shown.
     ;
@@ -4660,7 +4682,9 @@ _anon_z02_32:
     movea.l D4,A0
     move.b  (A0,D3.W),D0     ; LDA ($nn),Y
     andi.b #$C0,D0
-    beq  LA9F4_Exit
+    bne.s  __far_z_02_0011
+    jmp  LA9F4_Exit
+__far_z_02_0011:
     ; Determine an index based on the high 2 bits of the character element:
     ;   $80: 0
     ;   $40: 1
@@ -4688,7 +4712,9 @@ _anon_z02_33:
     ; So, advance the state of the person object, and unhalt Link.
     ;
     cmpi.b  #$02,D3
-    bne  LA9F4_Exit
+    beq.s  __far_z_02_0012
+    jmp  LA9F4_Exit
+__far_z_02_0012:
     addq.b  #1,($00AD,A4)
     moveq   #0,D0
     move.b  D0,($00AC,A4)
@@ -4699,8 +4725,10 @@ LA9F4_Exit:
     even
 InitMode13_Sub3:
     move.b  ($0029,A4),D0
-    bne  LA9F4_Exit
-    bsr     SilenceAllSound
+    beq.s  __far_z_02_0013
+    jmp  LA9F4_Exit
+__far_z_02_0013:
+    jsr     SilenceAllSound
     addq.b  #1,($0013,A4)
     rts
 
@@ -4708,7 +4736,7 @@ InitMode13_Sub3:
 InitMode13_Sub4:
     moveq   #8,D0
     move.b  D0,($050B,A4)
-    bsr     BeginUpdateMode
+    jsr     BeginUpdateMode
     move.b  D0,($0412,A4)
     move.b  D0,($0413,A4)
     jmp     HideAllSprites
@@ -4716,7 +4744,7 @@ InitMode13_Sub4:
     even
 UpdateMode13WinGame:
     move.b  ($0013,A4),D0
-    bsr     _m68k_tablejump  ; M68K-native table dispatch (replaces JSR TableJump)
+    jsr     _m68k_tablejump  ; M68K-native table dispatch (replaces JSR TableJump)
     even
 UpdateMode13WinGame_JumpTable:
     dc.l    UpdateMode13WinGame_Sub0_Flash   ; jump table entry (32-bit for _m68k_tablejump)
@@ -4731,12 +4759,12 @@ EndingFlashColors:
 
     even
 UpdateMode13WinGame_Sub0_Flash:
-    bsr     HideAllSprites
+    jsr     HideAllSprites
     addq.b  #1,($0506,A4)
     move.b  ($0506,A4),D0
     cmpi.b  #$C0,D0
     beq  _L_z02_UpdateMode13WinGame_Sub0_Flash_AdvanceSubmode
-    bsr     DrawLinkZeldaTriforces
+    jsr     DrawLinkZeldaTriforces
     even
 _L_z02_UpdateMode13WinGame_Sub0_Flash_ChangePalette:
     moveq   #0,D2
@@ -4805,26 +4833,26 @@ DrawLinkZeldaTriforces:
     ; Draw Link.
     ;
     moveq   #0,D2
-    bsr     Anim_FetchObjPosForSpriteDescriptor
-    bsr     Anim_SetSpriteDescriptorAttributes
+    jsr     Anim_FetchObjPosForSpriteDescriptor
+    jsr     Anim_SetSpriteDescriptorAttributes
     move.b  D0,($000C,A4)
     moveq   #72,D0
     move.b  D0,($0343,A4)
     moveq   #76,D0
     move.b  D0,($0344,A4)
     moveq   #33,D3
-    bsr     Anim_WriteSpecificItemSprites
+    jsr     Anim_WriteSpecificItemSprites
     ; Draw triforce over Link.
     ;
     moveq   #27,D0
     moveq   #19,D2
-    bsr     AnimateItemObject
+    jsr     AnimateItemObject
     moveq   #1,D2
-    bsr     Anim_FetchObjPosForSpriteDescriptor
+    jsr     Anim_FetchObjPosForSpriteDescriptor
     ; Draw Zelda.
     ;
     move.b  D2,D0
-    bsr     DrawObjectMirrored
+    jsr     DrawObjectMirrored
     ; The triforce over Zelda goes in slot 2.
     ; Set its location $10 pixels above her.
     ;
@@ -4839,14 +4867,14 @@ DrawLinkZeldaTriforces:
     ;
     moveq   #2,D2
     moveq   #27,D0
-    bsr     AnimateItemObject
+    jsr     AnimateItemObject
     rts
 
     even
 UpdateMode13WinGame_Sub1:
     move.b  ($004D,A4),D0
     beq  _L_z02_UpdateMode13WinGame_Sub1_AdvanceSubmode
-    bsr     HideAllSprites
+    jsr     HideAllSprites
     ; Characters stop emitting when the long timer is $10.
     ; So, keep showing Link and Zelda until it reaches 4.
     ; Then hide them and wait until it reaches 0.
@@ -4854,7 +4882,7 @@ UpdateMode13WinGame_Sub1:
     move.b  ($004D,A4),D0
     cmpi.b  #$04,D0
     bcs  _L_z02_UpdateMode13WinGame_Sub1_Exit
-    bsr     DrawLinkZeldaTriforces
+    jsr     DrawLinkZeldaTriforces
     ; Once in submode 2, only delay, instead of emitting characters.
     ;
     move.b  ($0013,A4),D0
@@ -4864,7 +4892,7 @@ UpdateMode13WinGame_Sub1:
     ;
     move.b  ($0028,A4),D0
     bne  _L_z02_UpdateMode13WinGame_Sub1_Exit
-    bsr     UpdatePeaceTextbox
+    jsr     UpdatePeaceTextbox
     even
 _L_z02_UpdateMode13WinGame_Sub1_Exit:
     rts
@@ -4970,7 +4998,7 @@ LAB7E_Exit:
 
     even
 UpdateMode13WinGame_Sub4:
-    bsr     HideAllSprites
+    jsr     HideAllSprites
     ; Put the triforce in object slot 2 at location ($78, $88).
     ;
     moveq   #2,D2
@@ -4980,36 +5008,40 @@ UpdateMode13WinGame_Sub4:
     lea     ($0084,A4),A0
     move.b  D0,(A0,D2.W)
     moveq   #14,D0
-    bsr     AnimateItemObject
+    jsr     AnimateItemObject
     ; Reuse object slot 2 for the ash pile.
     ;
     moveq   #2,D2
     moveq   #62,D0
     lea     ($034F,A4),A0
     move.b  D0,(A0,D2.W)
-    bsr     DrawAshPile
+    jsr     DrawAshPile
     ; Don't let the player skip ahead for a little while.
     ;
     move.b  ($0028,A4),D0
-    bne  LAB7E_Exit
+    beq.s  __far_z_02_0014
+    jmp  LAB7E_Exit
+__far_z_02_0014:
     ; If Start hasn't been pressed, then return.
     ;
     move.b  ($00F8,A4),D0
     andi.b #$10,D0
-    beq  LAB7E_Exit
+    bne.s  __far_z_02_0015
+    jmp  LAB7E_Exit
+__far_z_02_0015:
     ; Start was pressed. We'll transition to mode $D to save.
     ;
-    bsr     EndGameMode
+    jsr     EndGameMode
     moveq   #13,D0
     move.b  D0,($0012,A4)
-    bsr     TurnOffAllVideo
-    bsr     TurnOffVideoAndClearArtifacts
-    bsr     SilenceAllSound
+    jsr     TurnOffAllVideo
+    jsr     TurnOffVideoAndClearArtifacts
+    jsr     SilenceAllSound
     jmp     SwitchProfileToSecondQuest
 
     even
 DrawAshPile:
-    bsr     Anim_FetchObjPosForSpriteDescriptor
+    jsr     Anim_FetchObjPosForSpriteDescriptor
     moveq   #11,D0
     jmp     DrawObjectNotMirrored
 
@@ -5032,7 +5064,7 @@ UpdateMode13WinGame_Sub3:
     move.b  #$08,D1
     subx.b  D1,D0   ; SBC #$08
     move.b  D0,($050B,A4)
-    bsr     DrawCredits
+    jsr     DrawCredits
 _anon_z02_37:
     ; Add $80 to the scroll speed fraction.
     ;
@@ -5331,7 +5363,7 @@ _anon_z02_47:
     move.b  ($0016,A4),D3
     lea     ($0630,A4),A0
     move.b  (A0,D3.W),D0
-    bsr     FormatDecimalByte
+    jsr     FormatDecimalByte
     ; Copy the decimal death count at offset 19 in string to transfer.
     ;
     moveq   #2,D2
@@ -5540,15 +5572,15 @@ _anon_z02_55:
 
     even
 SwitchBank_Local2:
-    bsr     _mmc1_write_e000  ; MMC1 reg write, D0=val
+    jsr     _mmc1_write_e000  ; MMC1 reg write, D0=val
     lsr.b  #1,D0   ; LSR A
-    bsr     _mmc1_write_e000  ; MMC1 reg write, D0=val
+    jsr     _mmc1_write_e000  ; MMC1 reg write, D0=val
     lsr.b  #1,D0   ; LSR A
-    bsr     _mmc1_write_e000  ; MMC1 reg write, D0=val
+    jsr     _mmc1_write_e000  ; MMC1 reg write, D0=val
     lsr.b  #1,D0   ; LSR A
-    bsr     _mmc1_write_e000  ; MMC1 reg write, D0=val
+    jsr     _mmc1_write_e000  ; MMC1 reg write, D0=val
     lsr.b  #1,D0   ; LSR A
-    bsr     _mmc1_write_e000  ; MMC1 reg write, D0=val
+    jsr     _mmc1_write_e000  ; MMC1 reg write, D0=val
     rts
 
 

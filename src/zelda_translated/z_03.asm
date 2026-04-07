@@ -96,15 +96,17 @@ PatternBlockSizesUW:
 
     even
 TransferLevelPatternBlocks:
-    bsr     TurnOffAllVideo
-    bsr     _ppu_read_2  ; PPU $2002 read → D0
-    bsr     ResetPatternBlockIndex
+    jsr     TurnOffAllVideo
+    jsr     _ppu_read_2  ; PPU $2002 read → D0
+    jsr     ResetPatternBlockIndex
     move.b  ($0010,A4),D0
-    bne  TransferLevelPatternBlocksUW
+    beq.s  __far_z_03_0000
+    jmp  TransferLevelPatternBlocksUW
+__far_z_03_0000:
     even
 _L_z03_TransferLevelPatternBlocks_LoopBlockOW:
-    bsr     FetchPatternBlockInfoOW
-    bsr     TransferPatternBlock_Bank3
+    jsr     FetchPatternBlockInfoOW
+    jsr     TransferPatternBlock_Bank3
     move.b  ($051D,A4),D0
     cmpi.b  #$02,D0
     bne  _L_z03_TransferLevelPatternBlocks_LoopBlockOW
@@ -116,19 +118,21 @@ ResetPatternBlockIndex:
 
     even
 TransferLevelPatternBlocksUW:
-    bsr     FetchPatternBlockAddrUW
-    bsr     FetchPatternBlockSizeUW
+    jsr     FetchPatternBlockAddrUW
+    jsr     FetchPatternBlockSizeUW
     move.b  ($051D,A4),D0
     cmpi.b  #$02,D0
-    bne  TransferLevelPatternBlocksUW
+    beq.s  __far_z_03_0001
+    jmp  TransferLevelPatternBlocksUW
+__far_z_03_0001:
     ; At this point, we've transferred two common blocks
     ; (BG and sprites). Now UW, transfer bosses and other
     ; specialized sprite patterns.
     ;
-    bsr     FetchPatternBlockAddrUWSpecial
-    bsr     FetchPatternBlockSizeUW
-    bsr     FetchPatternBlockUWBoss
-    bsr     FetchPatternBlockSizeUW
+    jsr     FetchPatternBlockAddrUWSpecial
+    jsr     FetchPatternBlockSizeUW
+    jsr     FetchPatternBlockUWBoss
+    jsr     FetchPatternBlockSizeUW
     jmp     ResetPatternBlockIndex
 
     even
@@ -228,11 +232,11 @@ TransferPatternBlock_Bank3:
     move.b  D0,D2
     lea     (PatternBlockPpuAddrs).l,A0
     move.b  (A0,D2.W),D0
-    bsr     _ppu_write_6  ; PPU $2006 write, D0=val
+    jsr     _ppu_write_6  ; PPU $2006 write, D0=val
     addq.b  #1,D2
     lea     (PatternBlockPpuAddrs).l,A0
     move.b  (A0,D2.W),D0
-    bsr     _ppu_write_6  ; PPU $2006 write, D0=val
+    jsr     _ppu_write_6  ; PPU $2006 write, D0=val
     moveq   #0,D3
     even
 _L_z03_TransferPatternBlock_Bank3_LoopCopy:
@@ -245,7 +249,7 @@ _L_z03_TransferPatternBlock_Bank3_LoopCopy:
     add.l   #NES_RAM,D4       ; → Genesis addr
     movea.l D4,A0
     move.b  (A0,D3.W),D0     ; LDA ($nn),Y
-    bsr     _ppu_write_7  ; PPU $2007 write, D0=val
+    jsr     _ppu_write_7  ; PPU $2007 write, D0=val
     ; Increment source address.
     ;
     move.b  ($0000,A4),D0

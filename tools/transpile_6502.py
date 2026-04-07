@@ -1419,9 +1419,84 @@ def transpile_bank(bank_num, standalone=False, no_stubs=False, no_import_stubs=F
         _patch_z06(out_path)
     if bank_num == 7:
         _patch_z07(out_path)
+    _promote_nonlocal_bsr_to_jsr(out_path)
 
     print(f" {len(body_lines)} lines")
     return True
+
+
+def _promote_nonlocal_bsr_to_jsr(path):
+    """Promote translated-bank control flow to stable long forms."""
+    with open(path, 'r', encoding='utf-8') as f:
+        text = f.read()
+    stem = os.path.splitext(os.path.basename(path))[0]
+
+    jsr_count = 0
+
+    def repl(match):
+        nonlocal jsr_count
+        target = match.group(3)
+        if target.startswith(('_L_', '_anon_', '.')):
+            return match.group(0)
+        jsr_count += 1
+        comment = match.group(4) or ''
+        return f"{match.group(1)}jsr{match.group(2)}{target}{comment}"
+
+    text = re.sub(r'^(\s*)bsr(\s+)([A-Za-z_][A-Za-z0-9_]*)(\s*;.*)?$',
+                  repl, text, flags=re.MULTILINE)
+
+    opposite = {
+        'beq': 'bne',
+        'bne': 'beq',
+        'bcc': 'bcs',
+        'bcs': 'bcc',
+        'bpl': 'bmi',
+        'bmi': 'bpl',
+        'bvc': 'bvs',
+        'bvs': 'bvc',
+        'bhi': 'bls',
+        'bls': 'bhi',
+        'bge': 'blt',
+        'blt': 'bge',
+        'bgt': 'ble',
+        'ble': 'bgt',
+    }
+    jump_count = 0
+    branch_count = 0
+    hardened_lines = []
+    for line in text.splitlines():
+        m = re.match(r'^(\s*)(b(?:ra|eq|ne|cc|cs|pl|mi|vc|vs|hi|ls|ge|gt|lt|le))(\s+)([A-Za-z_][A-Za-z0-9_]*)(\s*;.*)?$', line)
+        if not m:
+            hardened_lines.append(line)
+            continue
+
+        indent, op, ws, target, comment = m.groups()
+        if target.startswith(('_L_', '_anon_', '.')):
+            hardened_lines.append(line)
+            continue
+
+        comment = comment or ''
+        if op == 'bra':
+            hardened_lines.append(f"{indent}jmp{ws}{target}{comment}")
+            jump_count += 1
+            continue
+
+        skip = f"__far_{stem}_{branch_count:04d}"
+        hardened_lines.append(f"{indent}{opposite[op]}.s  {skip}")
+        hardened_lines.append(f"{indent}jmp{ws}{target}{comment}")
+        hardened_lines.append(f"{skip}:")
+        branch_count += 1
+
+    text = '\n'.join(hardened_lines) + '\n'
+
+    with open(path, 'w', encoding='utf-8') as f:
+        f.write(text)
+
+    if jsr_count or jump_count or branch_count:
+        print(
+            f"  _patch_common: promote {jsr_count} BSR->JSR, "
+            f"{jump_count} BRA->JMP, {branch_count} Bcc->far JMP"
+        )
 
 
 def _patch_z00(path):
@@ -1700,12 +1775,8 @@ def _patch_z02(path):
     # Genesis only has 4 palette rows; NES sprite pal 0 maps to Genesis pal 2
     # via OAM DMA, but pal 2 is occupied by BG palette 2.  Force palette 3
     # which carries the same $30/$3B waterfall colors from NES sprite pal 3.
-    #
-    # Both the wave loop and crest loop have:
-    #     moveq   #0,D0          ; LDA #$00  (NES attr = palette 0)
-    #     lea     ($0202,A4),A0  ; Sprites+2
-    #     move.b  D0,(A0,D3.W)  ; STA Sprites+2, Y
-    # Change moveq #0 → moveq #3 in both loops.
+    # NOTE: When CHR_EXPANSION_ENABLED=1 this patch becomes harmful; retire in
+    # Stage 12 when the flag is flipped permanently.
     wave_pat = "    moveq   #0,D0\n    lea     ($0202,A4),A0\n    move.b  D0,(A0,D3.W)\n    addq.b  #1,D3"
     wave_fix = "    moveq   #3,D0\n    lea     ($0202,A4),A0\n    move.b  D0,(A0,D3.W)\n    addq.b  #1,D3"
     count = text.count(wave_pat)
@@ -1713,10 +1784,6 @@ def _patch_z02(path):
         text = text.replace(wave_pat, wave_fix)
         print(f"  _patch_z02 P5: waterfall sprite palette 0->3 ({count} loops patched)")
     else:
-        # Try to patch the crest loop which ends with subq instead of addq
-        crest_pat = "    moveq   #0,D0\n    lea     ($0202,A4),A0\n    move.b  D0,(A0,D3.W)\n    addq.b  #1,D3"
-        crest_pat2 = "    moveq   #0,D0\n    lea     ($0202,A4),A0\n    move.b  D0,(A0,D3.W)\n    subq.b"
-        # Patch all occurrences of the attr write
         old_attr = "    moveq   #0,D0\n    lea     ($0202,A4),A0\n    move.b  D0,(A0,D3.W)"
         new_attr = "    ; Genesis only has 4 shared palette rows, so force the title waterfall\n    ; sprites onto the mint/white title row instead of NES sprite palette 0.\n    moveq   #3,D0\n    lea     ($0202,A4),A0\n    move.b  D0,(A0,D3.W)"
         c2 = text.count(old_attr)

@@ -297,13 +297,13 @@ _L_z04_InitWalker_Exit:
 
     even
 UpdateStandingFire:
-    bsr     CheckLinkCollision
+    jsr     CheckLinkCollision
     moveq   #2,D0
-    bsr     Anim_SetSpriteDescriptorAttributes
+    jsr     Anim_SetSpriteDescriptorAttributes
     moveq   #8,D0
     lea     ($0098,A4),A0
     move.b  D0,(A0,D2.W)
-    bsr     AnimateObjectWalking
+    jsr     AnimateObjectWalking
     ; If type <> $40, then never use horizontal mirroring. Dead code?
     ;
     lea     ($034F,A4),A0
@@ -337,7 +337,9 @@ _anon_z04_5:
     move.b  ($066C,A4),D0
     move.b  ($3D,A4,D2.W),D1
     or.b  D1,D0
-    bne  Exit
+    beq.s  __far_z_04_0000
+    jmp  Exit
+__far_z_04_0000:
     jmp     Wanderer_TargetPlayer
 
 ; Unknown block
@@ -355,7 +357,7 @@ Wanderer_TargetPlayer:
     lea     ($0478,A4),A0
     subq.b  #1,(A0,D2.W)
 _anon_z04_6:
-    bsr     Walker_Move
+    jsr     Walker_Move
     lea     ($00C0,A4),A0
     move.b  (A0,D2.W),D0
     beq  _anon_z04_7
@@ -511,7 +513,7 @@ UpdateGoriya:
     move.b  (A0,D2.W),D0
     bmi  _L_z04_UpdateGoriya_Exit
 _anon_z04_10:
-    bsr     Walker_Move
+    jsr     Walker_Move
     ; If not being shoved, then go handle other activities.
     ;
     lea     ($00C0,A4),A0
@@ -527,11 +529,15 @@ _L_z04_UpdateGoriya_AfterMove:
     ;
     lea     ($03BC,A4),A0
     move.b  (A0,D2.W),D0
-    beq  L_Walker_SetInputDirAndTryShootingBoomerang
+    bne.s  __far_z_04_0001
+    jmp  L_Walker_SetInputDirAndTryShootingBoomerang
+__far_z_04_0001:
     lea     ($0394,A4),A0
     move.b  (A0,D2.W),D0
     andi.b #$0F,D0
-    bne  L_Walker_SetInputDirAndTryShootingBoomerang
+    beq.s  __far_z_04_0002
+    jmp  L_Walker_SetInputDirAndTryShootingBoomerang
+__far_z_04_0002:
     ; Store the truncated grid offset.
     ;
     lea     ($0394,A4),A0
@@ -541,7 +547,9 @@ _L_z04_UpdateGoriya_AfterMove:
     ;
     move.b  ($00AC,A4),D0
     cmpi.b  #$FF,D0
-    beq  L_Walker_SetInputDirAndTryShootingBoomerang
+    bne.s  __far_z_04_0003
+    jmp  L_Walker_SetInputDirAndTryShootingBoomerang
+__far_z_04_0003:
     ; Store in [00] the absolute vertical distance between
     ; the chase target and the walker.
     ;
@@ -621,7 +629,9 @@ _anon_z04_13:
     ;
     move.b  ($00,A4,D3.W),D0
     cmpi.b  #$51,D0
-    bcc  L_Walker_SetInputDirAndTryShootingBoomerang
+    bcs.s  __far_z_04_0004
+    jmp  L_Walker_SetInputDirAndTryShootingBoomerang
+__far_z_04_0004:
     lea     ($0412,A4),A0
     addq.b  #1,(A0,D2.W)
     move.b  ($02,A4,D3.W),D0
@@ -680,7 +690,7 @@ _L_z04_L_Walker_SetInputDirAndTryShootingBoomerang_CheckTimerToShoot:
     ; Try to shoot. Return, if it failed.
     ;
     move.b  ($0000,A4),D0
-    bsr     _ShootIfWanted
+    jsr     _ShootIfWanted
     bcc  _L_z04_L_Walker_SetInputDirAndTryShootingBoomerang_Exit
     ; Set monster's state to $80 for delaying after shooting.
     ;
@@ -745,7 +755,7 @@ UpdateBlock:
     lea     ($00AC,A4),A0
     move.b  (A0,D2.W),D0
     andi.b #$03,D0
-    bsr     _m68k_tablejump  ; M68K-native table dispatch (replaces JSR TableJump)
+    jsr     _m68k_tablejump  ; M68K-native table dispatch (replaces JSR TableJump)
     even
 UpdateBlock_JumpTable:
     dc.l    UpdateBlock0Idle   ; jump table entry (32-bit for _m68k_tablejump)
@@ -757,7 +767,9 @@ UpdateBlock0Idle:
     ; If there are monsters in the room, go reset the push timer and return.
     ;
     move.b  ($034D,A4),D0
-    beq  ResetPushTimer
+    bne.s  __far_z_04_0005
+    jmp  ResetPushTimer
+__far_z_04_0005:
     ; If Link's X is aligned with the block's, then get the difference
     ; between Link's (Y + 3) and the block's Y.
     ; Then go test the difference.
@@ -787,7 +799,9 @@ _L_z04_UpdateBlock0Idle_CheckAlignedY:
     lea     ($0084,A4),A0
     move.b  (A0,D2.W),D1
     cmp.b   D1,D0
-    bne  ResetPushTimer
+    beq.s  __far_z_04_0006
+    jmp  ResetPushTimer
+__far_z_04_0006:
     ; Link's (Y + 3) is aligned with the block's Y.
     ; Get the difference in X.
     ;
@@ -806,12 +820,14 @@ _L_z04_UpdateBlock0Idle_TestDifference:
     ;
     bpl  _anon_z04_14
     addq.b  #1,D3
-    bsr     Negate
+    jsr     Negate
 _anon_z04_14:
     ; If the distance >= $11, then go reset the push timer and return.
     ;
     cmpi.b  #$11,D0
-    bcc  ResetPushTimer
+    bcs.s  __far_z_04_0007
+    jmp  ResetPushTimer
+__far_z_04_0007:
     ; At this point, Link is aligned with the block.
     ;
     ; If the input direction is not the required direction based on
@@ -821,7 +837,9 @@ _anon_z04_14:
     lea     (BlockPushDirections).l,A0
     move.b  (A0,D3.W),D1
     cmp.b   D1,D0
-    bne  ResetPushTimer
+    beq.s  __far_z_04_0008
+    jmp  ResetPushTimer
+__far_z_04_0008:
     ; Link is truly pushing the block.
     ;
     ; Increase the push timer.
@@ -834,7 +852,9 @@ _anon_z04_14:
     lea     ($0412,A4),A0
     move.b  (A0,D2.W),D3
     cmpi.b  #$10,D3
-    bcs  L10262_Exit
+    bcc.s  __far_z_04_0009
+    jmp  L10262_Exit
+__far_z_04_0009:
     ; Link has pushed enough.
     ; Set the block's direction to Link's, set state 1,
     ; and change tiles at the source to a floor tile.
@@ -845,10 +865,10 @@ _anon_z04_14:
     addq.b  #1,(A0,D2.W)
     addq.b  #1,($00F7,A4)
     moveq   #116,D0
-    bsr     ChangeTileObjTiles
+    jsr     ChangeTileObjTiles
     even
 DrawBlock:
-    bsr     Anim_FetchObjPosForSpriteDescriptor
+    jsr     Anim_FetchObjPosForSpriteDescriptor
     subq.b  #1,($0001,A4)
     moveq   #0,D0
     jmp     DrawObjectNotMirrored
@@ -871,8 +891,8 @@ UpdateBlock1Moving:
     lea     ($0098,A4),A0
     move.b  (A0,D2.W),D0
     move.b  D0,($000F,A4)
-    bsr     MoveObject
-    bsr     DrawBlock
+    jsr     MoveObject
+    jsr     DrawBlock
     ; If the block has not moved $10 pixels, then return.
     ;
     lea     ($0394,A4),A0
@@ -880,7 +900,9 @@ UpdateBlock1Moving:
     cmpi.b  #$10,D0
     beq  _anon_z04_15
     cmpi.b  #$F0,D0
-    bne  UpdateBlock2Done
+    beq.s  __far_z_04_0010
+    jmp  UpdateBlock2Done
+__far_z_04_0010:
 _anon_z04_15:
     ; The block has moved enough.
     ; Play the "secret revealed" tune.
@@ -891,7 +913,7 @@ _anon_z04_15:
     move.b  D0,($0602,A4)
     addq.b  #1,($00F7,A4)
     move.b  #$B0,D0
-    bsr     ChangeTileObjTiles
+    jsr     ChangeTileObjTiles
     lea     ($00AC,A4),A0
     addq.b  #1,(A0,D2.W)
     addq.b  #1,($04CF,A4)
@@ -945,7 +967,7 @@ ShootFireball:
     move.b  D0,($0000,A4)
     ; Return, if there's no empty slot.
     ;
-    bsr     FindEmptyMonsterSlot
+    jsr     FindEmptyMonsterSlot
     beq  _anon_z04_17
     move.b  D2,D0
     move.b  D0,-(A5)  ; PHA
@@ -953,7 +975,7 @@ ShootFireball:
     moveq   #0,D2
     move.b  D0,D2
     move.b  ($0000,A4),D0
-    bsr     SetTypeAndClearObject
+    jsr     SetTypeAndClearObject
     move.b  D2,D0
     moveq   #0,D3
     move.b  D0,D3
@@ -996,7 +1018,9 @@ UpdateMonsterShot:
     move.b  (A0,D2.W),D0
     andi.b #$F0,D0
     cmpi.b  #$10,D0
-    bne  BounceShot
+    beq.s  __far_z_04_0011
+    jmp  BounceShot
+__far_z_04_0011:
     ; If object type < $55 (like flying rock $53), then
     ; check for tile collision in addition to other checks.
     ;
@@ -1011,25 +1035,31 @@ UpdateMonsterShot:
     bne  _L_z04_UpdateMonsterShot_CheckLinkCollision
     ; If the flying rock hit a tile or room boundary, then go destroy it.
     ;
-    bsr     GetCollidingTileMoving
+    jsr     GetCollidingTileMoving
     move.b  ($034A,A4),D1
     cmp.b   D1,D0
-    bcc  DestroyMonsterShot
+    bcs.s  __far_z_04_0012
+    jmp  DestroyMonsterShot
+__far_z_04_0012:
     even
 _L_z04_UpdateMonsterShot_CheckBoundary:
     ; No shots can cross the room boundary.
     ;
-    bsr     BoundByRoom
-    beq  DestroyMonsterShot
+    jsr     BoundByRoom
+    bne.s  __far_z_04_0013
+    jmp  DestroyMonsterShot
+__far_z_04_0013:
     ; Move the object, and check for a collision with Link.
     ; Go destroy the shot object, if there was a harmful collision.
     ;
-    bsr     MoveObject
+    jsr     MoveObject
     even
 _L_z04_UpdateMonsterShot_CheckLinkCollision:
-    bsr     CheckShotLinkCollision
+    jsr     CheckShotLinkCollision
     move.b  ($0006,A4),D0
-    bne  DestroyMonsterShot
+    beq.s  __far_z_04_0014
+    jmp  DestroyMonsterShot
+__far_z_04_0014:
     even
 L_DrawShot:
     ; If object type = arrow ($5B), then draw an arrow, and return.
@@ -1053,7 +1083,7 @@ _anon_z04_18:
 _L_z04_L_DrawShot_DrawOthers:
     ; Prepare to draw other shot types.
     ;
-    bsr     Anim_FetchObjPosForSpriteDescriptor
+    jsr     Anim_FetchObjPosForSpriteDescriptor
     move.b  D0,($000D,A4)
     ; Assume object type >= $55. Prepare sprite attributes that
     ; make the shot flash.
@@ -1076,7 +1106,7 @@ _anon_z04_19:
     moveq   #0,D0
     even
 _L_z04_L_DrawShot_Draw:
-    bsr     Anim_SetSpriteDescriptorAttributes
+    jsr     Anim_SetSpriteDescriptorAttributes
     move.b  ($000D,A4),D0
     jmp     DrawObjectNotMirrored
 
@@ -1102,7 +1132,7 @@ BounceShot:
     ;
     lea     ($0380,A4),A0
     move.b  (A0,D2.W),D0
-    bsr     GetOppositeDir
+    jsr     GetOppositeDir
     ; Modify the coordinates according to the displacements for
     ; the bounce direction.
     ;
@@ -1134,8 +1164,12 @@ BounceShot:
     ; Otherwise, go draw.
     ;
     cmpi.b  #$20,D0
-    bcc  DestroyMonsterShot
-    bcc  L_DrawShot
+    bcs.s  __far_z_04_0015
+    jmp  DestroyMonsterShot
+__far_z_04_0015:
+    bcs.s  __far_z_04_0016
+    jmp  L_DrawShot
+__far_z_04_0016:
 ; Params:
 ; X: monster object index
 ;
@@ -1153,7 +1187,7 @@ CheckShotLinkCollision:
     moveq   #0,D0
     lea     ($0394,A4),A0
     move.b  D0,(A0,D2.W)
-    bsr     CheckLinkCollision
+    jsr     CheckLinkCollision
     move.b  ($034B,A4),D0
     beq  _anon_z04_21
     ; If the shot hits Link, then start to bounce off of Link's shield.
@@ -1193,7 +1227,7 @@ UpdateFireball:
     move.b  D0,(A0,D2.W)
     ; Link is the target. So, register A has 0 -- his object slot.
     ;
-    bsr     GetDirectionsAndDistancesToTarget
+    jsr     GetDirectionsAndDistancesToTarget
     ; Remember the horizontal and vertical directions toward target.
     ;
     move.b  ($000B,A4),D0
@@ -1209,7 +1243,7 @@ UpdateFireball:
     lea     ($0098,A4),A0
     move.b  D0,(A0,D2.W)
     moveq   #4,D3
-    bsr     _CalcDiagonalSpeedIndex
+    jsr     _CalcDiagonalSpeedIndex
     ; Look up and set the horizontal and vertical q-speeds.
     ;
     lea     (FireballQSpeedsX).l,A0
@@ -1242,7 +1276,7 @@ _L_z04_UpdateFireball_State1:
     ;
     lea     ($0098,A4),A0
     move.b  (A0,D2.W),D0
-    bsr     BoundByRoomWithA
+    jsr     BoundByRoomWithA
     bne  _L_z04_UpdateFireball_Move
     even
 _L_z04_UpdateFireball_DestroyMonster:
@@ -1266,7 +1300,7 @@ _L_z04_UpdateFireball_Move:
     moveq   #0,D3
     lea     ($0451,A4),A0
     move.b  (A0,D2.W),D3
-    bsr     Fireball_MoveOneAxis
+    jsr     Fireball_MoveOneAxis
     lea     ($0451,A4),A0
     move.b  D0,(A0,D2.W)
     ; Second, load the vertical direction into [0F].
@@ -1282,14 +1316,14 @@ _L_z04_UpdateFireball_Move:
     moveq   #0,D3
     lea     ($045E,A4),A0
     move.b  (A0,D2.W),D3
-    bsr     Fireball_MoveOneAxis
+    jsr     Fireball_MoveOneAxis
     lea     ($045E,A4),A0
     move.b  D0,(A0,D2.W)
     even
 _L_z04_UpdateFireball_CheckCollisionAndDraw:
     ; Check for collision with Link. If hit, then go destroy the fireball.
     ;
-    bsr     CheckShotLinkCollision
+    jsr     CheckShotLinkCollision
     move.b  ($034B,A4),D0
     bne  _L_z04_UpdateFireball_DestroyMonster
     jmp     L_DrawShot
@@ -1311,7 +1345,7 @@ Fireball_MoveOneAxis:
     move.b  D3,D0
     lea     ($03A8,A4),A0
     move.b  D0,(A0,D2.W)
-    bsr     MoveObject
+    jsr     MoveObject
     ; Return the updated position fraction.
     ;
     lea     ($03A8,A4),A0
@@ -1337,7 +1371,7 @@ InitBlueKeese:
     move.b  (A0,D3.W),D0
     lea     ($0098,A4),A0
     move.b  D0,(A0,D2.W)
-    bsr     ResetFlyerState
+    jsr     ResetFlyerState
     move.b  #$C0,D0
     move.b  D0,($04D1,A4)
     moveq   #31,D0
@@ -1347,7 +1381,7 @@ InitBlueKeese:
 
     even
 InitRedOrBlackKeese:
-    bsr     InitBlueKeese
+    jsr     InitBlueKeese
     ; Red and black keeses are like blue ones, but faster.
     ;
     moveq   #127,D0
@@ -1358,7 +1392,7 @@ InitRedOrBlackKeese:
     even
 UpdateBubble:
     moveq   #64,D0
-    bsr     UpdateCommonWanderer
+    jsr     UpdateCommonWanderer
     lea     ($034F,A4),A0
     move.b  (A0,D2.W),D0
     ; If the bubble is not type $2B that temporarily blocks the sword;
@@ -1380,12 +1414,12 @@ _L_z04_UpdateBubble_Flash:
     andi.b #$03,D0
     even
 _L_z04_UpdateBubble_Animate:
-    bsr     Anim_SetSpriteDescriptorAttributes
+    jsr     Anim_SetSpriteDescriptorAttributes
     ; Animation counter 1 to switch animation frames every screen frame.
     ;
     moveq   #1,D0
-    bsr     AnimateAndDrawCommonObject
-    bsr     CheckLinkCollision
+    jsr     AnimateAndDrawCommonObject
+    jsr     CheckLinkCollision
     ; If no collision, then return.
     ;
     move.b  ($0006,A4),D0
@@ -1422,8 +1456,8 @@ _L_z04_UpdateBubble_BlockOrUnblock:
 ;
     even
 AnimateAndDrawCommonObject:
-    bsr     Anim_AdvanceAnimCounterAndSetObjPosForSpriteDescriptor
-    bsr     Anim_SetObjHFlipForSpriteDescriptor
+    jsr     Anim_AdvanceAnimCounterAndSetObjPosForSpriteDescriptor
+    jsr     Anim_SetObjHFlipForSpriteDescriptor
     moveq   #0,D0
     jmp     DrawObjectNotMirrored
 
@@ -1436,10 +1470,10 @@ UpdateKeese:
     move.b  ($0506,A4),D1
     or.b  D1,D0
     bne  _anon_z04_22
-    bsr     ControlKeeseFlight
-    bsr     MoveFlyer
+    jsr     ControlKeeseFlight
+    jsr     MoveFlyer
 _anon_z04_22:
-    bsr     Anim_FetchObjPosForSpriteDescriptor
+    jsr     Anim_FetchObjPosForSpriteDescriptor
     ; Like peahats, keeses animate as fast as they move.
     ; But keese beat their wings at half the rate.
     ;
@@ -1447,15 +1481,15 @@ _anon_z04_22:
     move.b  (A0,D2.W),D0
     andi.b #$02,D0
     lsr.b  #1,D0   ; LSR A
-    bsr     DrawObjectMirrored
-    bsr     CheckMonsterCollisions
+    jsr     DrawObjectMirrored
+    jsr     CheckMonsterCollisions
     jmp     ResetShoveInfo
 
     even
 ControlKeeseFlight:
     lea     ($0444,A4),A0
     move.b  (A0,D2.W),D0
-    bsr     _m68k_tablejump  ; M68K-native table dispatch (replaces JSR TableJump)
+    jsr     _m68k_tablejump  ; M68K-native table dispatch (replaces JSR TableJump)
     even
 ControlKeeseFlight_JumpTable:
     dc.l    Flyer_SpeedUp   ; jump table entry (32-bit for _m68k_tablejump)
@@ -1477,10 +1511,14 @@ Flyer_KeeseDecideState:
     moveq   #2,D3
     move.b  ($19,A4,D2.W),D0
     cmpi.b  #$A0,D0
-    bcc  Flyer_SetStateAndTurns
+    bcs.s  __far_z_04_0017
+    jmp  Flyer_SetStateAndTurns
+__far_z_04_0017:
     addq.b  #1,D3
     cmpi.b  #$20,D0
-    bcc  Flyer_SetStateAndTurns
+    bcs.s  __far_z_04_0018
+    jmp  Flyer_SetStateAndTurns
+__far_z_04_0018:
     addq.b  #1,D3
     even
 Flyer_SetStateAndTurns:
@@ -1494,9 +1532,9 @@ Flyer_SetStateAndTurns:
 
     even
 UpdateZol:
-    bsr     UpdateZolState
-    bsr     Zol_CheckCollisions
-    bsr     Anim_FetchObjPosForSpriteDescriptor
+    jsr     UpdateZolState
+    jsr     Zol_CheckCollisions
+    jsr     Anim_FetchObjPosForSpriteDescriptor
     ; Every 8 screen frames, switch between frame image 0 and 1.
     ;
     moveq   #0,D3
@@ -1512,7 +1550,7 @@ _anon_z04_23:
 UpdateZolState:
     lea     ($00AC,A4),A0
     move.b  (A0,D2.W),D0
-    bsr     _m68k_tablejump  ; M68K-native table dispatch (replaces JSR TableJump)
+    jsr     _m68k_tablejump  ; M68K-native table dispatch (replaces JSR TableJump)
     even
 UpdateZolState_JumpTable:
     dc.l    UpdateZolState0_Wander   ; jump table entry (32-bit for _m68k_tablejump)
@@ -1528,7 +1566,7 @@ UpdateZolState0_Wander:
 UpdateZolState1_Shove:
     ; Move straight and fast until blocked. Then go to state 2.
     ;
-    bsr     Gel_MoveSplitting
+    jsr     Gel_MoveSplitting
     bcc  _anon_z04_24
     lea     ($00AC,A4),A0
     addq.b  #1,(A0,D2.W)
@@ -1541,8 +1579,8 @@ UpdateZolState2_Split:
     ; the object count by 1 only.
     ;
     addq.b  #1,($034E,A4)
-    bsr     DestroyMonster
-    bsr     CreateChildGel
+    jsr     DestroyMonster
+    jsr     CreateChildGel
     ; If the zol's direction is vertical, then set the first child gel's
     ; direction to left, else up.
     ;
@@ -1556,7 +1594,7 @@ _anon_z04_25:
     lea     ($0098,A4),A0
     move.b  D0,(A0,D3.W)
     move.b  D0,-(A5)  ; PHA
-    bsr     CreateChildGel
+    jsr     CreateChildGel
     move.b  (A5)+,D0  ; PLA
     ; Set the second child gel's direction to the opposite of the first one's.
     ;
@@ -1571,7 +1609,7 @@ CreateChildGel:
     ; Use the shooting operation to create the gel object.
     ;
     move.b  D0,($0000,A4)
-    bsr     ShootLimited
+    jsr     ShootLimited
     ; Shots start in state $10. But Child Gel needs to start in state 0.
     ;
     moveq   #0,D0
@@ -1597,7 +1635,7 @@ Zol_CheckCollisions:
     ; If killed, or got hit but didn't get hurt (invincibility timer = 0),
     ; then return.
     ;
-    bsr     Gel_CheckCollisions
+    jsr     Gel_CheckCollisions
     lea     ($0405,A4),A0
     move.b  (A0,D2.W),D0
     bne  _L_z04_Zol_CheckCollisions_Exit
@@ -1667,8 +1705,8 @@ InitGel:
 
     even
 UpdateGel:
-    bsr     Gel_Move
-    bsr     Gel_CheckCollisions
+    jsr     Gel_Move
+    jsr     Gel_CheckCollisions
     ; Gels are narrow. So, temporarily shift the X coordinate
     ; 4 pixels to the right.
     ;
@@ -1678,7 +1716,7 @@ UpdateGel:
     move.b  #$04,D1
     addx.b  D1,D0   ; ADC #$04 (X flag = 6502 C)
     move.b  D0,($70,A4,D2.W)
-    bsr     Anim_FetchObjPosForSpriteDescriptor
+    jsr     Anim_FetchObjPosForSpriteDescriptor
     ; Every two screen frames, switch between frame image 0 and 1.
     ;
     moveq   #0,D3
@@ -1690,9 +1728,9 @@ _anon_z04_29:
     ; Set sprite attributes 3: normal sprite, palette row "level".
     ;
     moveq   #3,D0
-    bsr     Anim_SetSpriteDescriptorAttributes
+    jsr     Anim_SetSpriteDescriptorAttributes
     move.b  D3,D0
-    bsr     DrawObjectNotMirrored
+    jsr     DrawObjectNotMirrored
     move.b  (A5)+,D0  ; PLA
     move.b  D0,($70,A4,D2.W)
     rts
@@ -1713,7 +1751,7 @@ Gel_Move:
     ;
     move.b  ($28,A4,D2.W),D0
     beq  _L_z04_Gel_Move_Move
-    bsr     Gel_MoveSplitting
+    jsr     Gel_MoveSplitting
     ; If not blocked while moving, then return.
     ;
     bcc  _L_z04_Gel_Move_Exit
@@ -1788,7 +1826,7 @@ UpdateNormalZolOrGel:
     moveq   #32,D0
     lea     ($041F,A4),A0
     move.b  D0,(A0,D2.W)
-    bsr     Wanderer_TargetPlayer
+    jsr     Wanderer_TargetPlayer
     ; If the monster is between squares, or timer <> 0; then return.
     ;
     lea     ($0394,A4),A0
@@ -1850,7 +1888,7 @@ Gel_MoveSplitting:
     lea     ($0394,A4),A0
     move.b  (A0,D2.W),D0
     bne  _L_z04_Gel_MoveSplitting_CheckRoomBoundary
-    bsr     GetCollidingTileMoving
+    jsr     GetCollidingTileMoving
     ; If blocked by a tile, then return C=1.
     ;
     move.b  ($034A,A4),D1
@@ -1860,12 +1898,12 @@ Gel_MoveSplitting:
 _L_z04_Gel_MoveSplitting_CheckRoomBoundary:
     ; If blocked by the room boundary, then return C=1.
     ;
-    bsr     BoundByRoom
+    jsr     BoundByRoom
     ori     #$11,CCR  ; SEC: set C+X
     beq  _L_z04_Gel_MoveSplitting_Exit
     ; Move.
     ;
-    bsr     MoveObject
+    jsr     MoveObject
     ; Mask the grid offset with $F (to a square length),
     ; and return C=0.
     ;
@@ -1934,7 +1972,7 @@ UpdateStatues:
     ; - layout $23: pattern 1: 2 statues
     ; - layout $24: pattern 0: 4 statues
     ;
-    bsr     GetUniqueRoomId
+    jsr     GetUniqueRoomId
     moveq   #1,D3
 _anon_z04_30:
     lea     (StatueRoomLayouts).l,A0
@@ -1968,7 +2006,7 @@ _L_z04_UpdateStatues_Shoot:
     ; Save the fireball pattern.
     move.b  D3,D0
     move.b  D0,-(A5)  ; PHA
-    bsr     FindEmptyMonsterSlot
+    jsr     FindEmptyMonsterSlot
     cmpi.b  #$01,D0
     move.b  (A5)+,D0  ; PLA
     bcc  _L_z04_UpdateStatues_Exit
@@ -2044,7 +2082,7 @@ _L_z04_UpdateStatues_LoopFireball:
     ; Get Link's coordinates into [00] and [01].
     ;
     moveq   #0,D2
-    bsr     Anim_FetchObjPosForSpriteDescriptor
+    jsr     Anim_FetchObjPosForSpriteDescriptor
     ; Switch to the new fireball's object slot.
     ;
     moveq   #0,D2
@@ -2098,7 +2136,7 @@ _anon_z04_31:
     move.b  ($0004,A4),D0
     beq  _anon_z04_32
     moveq   #85,D0
-    bsr     ShootFireball
+    jsr     ShootFireball
 _anon_z04_32:
     move.b  (A5)+,D0  ; PLA
     moveq   #0,D2
@@ -2133,7 +2171,7 @@ CheckZora:
     bne  _L_z04_CheckZora_Exit
     ; Look for an empty monster slot. If none is found, return.
     ;
-    bsr     FindEmptyMonsterSlot
+    jsr     FindEmptyMonsterSlot
     beq  _L_z04_CheckZora_Exit
     ; Loop $D times looking for a water tile to put a zora on.
     ; Indexed by [0D].
@@ -2177,7 +2215,7 @@ _L_z04_CheckZora_LoopTileCandidate:
     ; Get the tile at that location.
     ; If it's not a water tile, then go loop again.
     ;
-    bsr     GetCollidableTileStill
+    jsr     GetCollidableTileStill
     cmpi.b  #$8D,D0
     bcs  _L_z04_CheckZora_NextLoopTileCandidate
     cmpi.b  #$99,D0
@@ -2210,7 +2248,7 @@ InitBoulderSet:
     move.b  D0,($0515,A4)
     even
 InitBoulder:
-    bsr     ResetObjMetastateAndTimer
+    jsr     ResetObjMetastateAndTimer
     even
 InitTektite:
     ; Set a random starting direction.
@@ -2237,7 +2275,7 @@ InitLeever:
     ;
     moveq   #5,D0
     move.b  D0,($004D,A4)
-    bsr     ResetObjMetastateAndTimer
+    jsr     ResetObjMetastateAndTimer
     even
 InitSlowOctorockOrGhini:
     ; Assign QSpeed $20 (0.5 pixels a frame).
@@ -2263,7 +2301,7 @@ _anon_z04_33:
     lsl.b  #1,D0   ; ASL A
     lsl.b  #1,D0   ; ASL A
     move.b  D0,($28,A4,D2.W)
-    bsr     ResetObjState
+    jsr     ResetObjState
     lea     ($03E4,A4),A0
     move.b  D0,(A0,D2.W)
     moveq   #6,D0
@@ -2275,13 +2313,13 @@ _anon_z04_33:
 InitPeahat:
     ; Peahats do not use a spawn cloud. Also, go up at first.
     ;
-    bsr     ResetObjMetastateAndTimer
+    jsr     ResetObjMetastateAndTimer
     moveq   #8,D0
     lea     ($0098,A4),A0
     move.b  D0,(A0,D2.W)
     even
 EndInitFlyer:
-    bsr     ResetFlyerState
+    jsr     ResetFlyerState
     move.b  #$A0,D0
     move.b  D0,($04D1,A4)
     moveq   #31,D0
@@ -2311,8 +2349,10 @@ UpdateZora:
     ; If we have the magic clock, then return.
     ;
     move.b  ($066C,A4),D0
-    bne  L10797_Exit
-    bsr     UpdateBurrower
+    beq.s  __far_z_04_0019
+    jmp  L10797_Exit
+__far_z_04_0019:
+    jsr     UpdateBurrower
     ; If zora died in the call above, then it happened while in
     ; states 2, 3, or 4. In the code below, the state won't be 0.
     ; So, it won't flag the zora inactive. This is why the zora does
@@ -2331,7 +2371,7 @@ UpdateZora:
     ; Shoot a fireball; and set the timer so that it expires faster.
     ;
     moveq   #85,D0
-    bsr     ShootFireball
+    jsr     ShootFireball
     moveq   #32,D0
     move.b  D0,($28,A4,D2.W)
     even
@@ -2342,7 +2382,9 @@ _L_z04_UpdateZora_DestroyWhenDone:
     ;
     lea     ($00AC,A4),A0
     move.b  (A0,D2.W),D0
-    bne  L10797_Exit
+    beq.s  __far_z_04_0020
+    jmp  L10797_Exit
+__far_z_04_0020:
     subq.b  #1,($0514,A4)
     jmp     DestroyMonster
 
@@ -2353,13 +2395,13 @@ UpdateMoblin:
     move.b  #$A0,D0
     lea     ($041F,A4),A0
     move.b  D0,(A0,D2.W)
-    bsr     Wanderer_TargetPlayer
+    jsr     Wanderer_TargetPlayer
     moveq   #91,D3
     jmp     _anon_z04_34
 
     even
 UpdateLynel:
-    bsr     UpdateGoriya
+    jsr     UpdateGoriya
     moveq   #87,D3
 _anon_z04_34:
     moveq   #32,D0
@@ -2463,7 +2505,7 @@ _L_z04__TryShooting_SetShootTimer:
     ; Shoot.
     ;
     move.b  ($0000,A4),D0
-    bsr     _ShootIfWanted2
+    jsr     _ShootIfWanted2
     ; If it failed, go set a non-zero speed.
     ;
     bcc  _L_z04__TryShooting_SetSpeed
@@ -2498,14 +2540,16 @@ _L_z04__TryShooting_Exit:
 ;
     even
 _ShootIfWanted2:
-    bsr     _ShootIfWanted
+    jsr     _ShootIfWanted
     ; TODO:
     ; If succeeded, then set object timer to $80, and decrement [0437][X].
     ;
     ; TODO:
     ; What are object timer and [0437] used for?
     ;
-    bcc  L1083E_Exit
+    bcs.s  __far_z_04_0021
+    jmp  L1083E_Exit
+__far_z_04_0021:
     move.b  #$80,D0
     move.b  D0,($28,A4,D2.W)
     lea     ($0437,A4),A0
@@ -2564,7 +2608,7 @@ _anon_z04_35:
 
     even
 _L_z04_UpdateMonsterArrow_UpdateBase:
-    bsr     UpdateArrowOrBoomerang
+    jsr     UpdateArrowOrBoomerang
     ; If the arrow is no longer flying, then
     ; go handle it sparking or bouncing.
     ;
@@ -2573,13 +2617,15 @@ _L_z04_UpdateMonsterArrow_UpdateBase:
     andi.b #$F0,D0
     cmpi.b  #$10,D0
     bne  _L_z04_UpdateMonsterArrow_CheckBounce
-    bsr     CheckShotLinkCollision
+    jsr     CheckShotLinkCollision
     ; If [06] = 0, then there was no collision with Link that harmed him
     ; Either there was no collision at all, or it bounced off of the shield.
     ; So, return.
     ;
     move.b  ($0006,A4),D0
-    beq  L1083E_Exit
+    bne.s  __far_z_04_0022
+    jmp  L1083E_Exit
+__far_z_04_0022:
     ; Else there was a collision with Link that harmed him.
     ; So, destroy the arrow.
     ;
@@ -2588,7 +2634,9 @@ _L_z04_UpdateMonsterArrow_UpdateBase:
     even
 _L_z04_UpdateMonsterArrow_CheckBounce:
     cmpi.b  #$30,D0
-    bne  L1083E_Exit
+    beq.s  __far_z_04_0023
+    jmp  L1083E_Exit
+__far_z_04_0023:
     jmp     BounceShot
 
     even
@@ -2605,7 +2653,7 @@ UpdateBoulderSet:
     beq  _L_z04_UpdateBoulderSet_RandomizeTimer
     ; If no empty monster slot is found, then return.
     ;
-    bsr     FindEmptyMonsterSlot
+    jsr     FindEmptyMonsterSlot
     beq  _L_z04_UpdateBoulderSet_Exit
     ; Set the boulder monster type, and increase the number
     ; of active boulders.
@@ -2614,7 +2662,7 @@ UpdateBoulderSet:
     move.b  ($0059,A4),D2
     addq.b  #1,($0515,A4)
     moveq   #32,D0
-    bsr     SetTypeAndClearObject
+    jsr     SetTypeAndClearObject
     ; Give the boulder a random X coordinate in the same half
     ; of the screen as the chase target.
     ;
@@ -2727,7 +2775,7 @@ _L_z04_UpdateTektiteOrBoulder_CheckStunned:
     ;
     ; First, turn 1 step toward the chase target.
     ;
-    bsr     TurnTowardsPlayer8
+    jsr     TurnTowardsPlayer8
     ; If the facing direction has no horizontal component, then
     ; find the horizontal direction toward the chase target.
     ;
@@ -2791,7 +2839,7 @@ _L_z04_UpdateTektiteOrBoulder_FinishSetUpJump:
     ; If the object is a boulder, then make sure its facing direction
     ; has a down vertical component.
     ;
-    bsr     Jumper_PointBoulderDownward
+    jsr     Jumper_PointBoulderDownward
     ; For the given direction, get the Y offset of the destination
     ; of the jump.
     ;
@@ -2810,7 +2858,7 @@ _L_z04_UpdateTektiteOrBoulder_FinishSetUpJump:
     move.b  D0,(A0,D2.W)
     ; Set the starting speed, depending on the object type.
     ;
-    bsr     Jumper_GetKind
+    jsr     Jumper_GetKind
     lea     (JumperStartSpeedsHi).l,A0
     move.b  (A0,D3.W),D0
     lea     ($0412,A4),A0
@@ -2818,7 +2866,7 @@ _L_z04_UpdateTektiteOrBoulder_FinishSetUpJump:
     ; Reset the vertical speed low byte.
     ; Then go animate, draw, and check collisions.
     ;
-    bsr     Jumper_ResetVSpeedFrac
+    jsr     Jumper_ResetVSpeedFrac
     even
 _L_z04_UpdateTektiteOrBoulder_Animate:
     jmp     Jumper_AnimateAndCheckCollisions
@@ -2829,7 +2877,7 @@ _L_z04_UpdateTektiteOrBoulder_State1:
     ;
     ; Keep the object inside the bounds of the room.
     ;
-    bsr     BoundFlyer
+    jsr     BoundFlyer
     ; If the object was blocked at the room boundary, then
     ; increase boundary reversal count, and go set up another jump.
     ;
@@ -2840,7 +2888,7 @@ _L_z04_UpdateTektiteOrBoulder_State1:
     jmp     _L_z04_UpdateTektiteOrBoulder_SetUpJump
 
 _anon_z04_37:
-    bsr     Jumper_PointBoulderDownward
+    jsr     Jumper_PointBoulderDownward
     ; This step in the jump succeeded. So, reset the reversal count.
     ;
     moveq   #0,D0
@@ -2848,7 +2896,7 @@ _anon_z04_37:
     move.b  D0,(A0,D2.W)
     ; Get the base offset for the kind of jumper the object is.
     ;
-    bsr     Jumper_GetKind
+    jsr     Jumper_GetKind
     lea     (JumperYAccelerationBaseOffsets).l,A0
     move.b  (A0,D3.W),D0
     ; Get the acceleration by indexing with (base offset + direction).
@@ -2869,7 +2917,7 @@ _anon_z04_37:
     lea     (JumperYAccelerations).l,A0
     move.b  (A0,D3.W),D0
     moveq   #2,D3
-    bsr     Jumper_MoveY
+    jsr     Jumper_MoveY
     ; If the facing direction has a left component, then
     ; subtract 1 from the object's X.
     ;
@@ -2892,7 +2940,9 @@ _anon_z04_38:
     ;
     lea     ($0412,A4),A0
     move.b  (A0,D2.W),D0
-    bmi  Jumper_AnimateAndCheckCollisions
+    bpl.s  __far_z_04_0024
+    jmp  Jumper_AnimateAndCheckCollisions
+__far_z_04_0024:
     ; Going down. We have to consider the target Y.
     ;
     ; If the absolute vertical distance to the target position >= 3,
@@ -2902,14 +2952,16 @@ _anon_z04_38:
     move.b  (A0,D2.W),D0
     ori     #$11,CCR  ; SEC: set C+X
 ; [SBC unhandled mode=ABS_X] SBC Jumper_ObjTargetY, X
-    bsr     Abs
+    jsr     Abs
     cmpi.b  #$03,D0
-    bcc  Jumper_AnimateAndCheckCollisions
+    bcs.s  __far_z_04_0025
+    jmp  Jumper_AnimateAndCheckCollisions
+__far_z_04_0025:
     ; Distance < 3. Go to state 0.
     ;
     ; If the object is a boulder, then go reset timer, animate, draw.
     ;
-    bsr     ResetObjState
+    jsr     ResetObjState
     moveq   #0,D3
     lea     ($034F,A4),A0
     move.b  (A0,D2.W),D3
@@ -2955,7 +3007,7 @@ _L_z04_UpdateTektiteOrBoulder_SetTimerAndAnimate:
     move.b  D0,($28,A4,D2.W)
     even
 Jumper_AnimateAndCheckCollisions:
-    bsr     Anim_FetchObjPosForSpriteDescriptor
+    jsr     Anim_FetchObjPosForSpriteDescriptor
     ; TODO: [0D] ?
     ; [0D] doesn't seem to be used.
     ;
@@ -2984,7 +3036,7 @@ Jumper_AnimateAndCheckCollisions:
     ; The movement frame determines the frame image.
     ;
     moveq   #16,D0
-    bsr     Anim_AdvanceAnimCounterAndSetObjPosForSpriteDescriptor
+    jsr     Anim_AdvanceAnimCounterAndSetObjPosForSpriteDescriptor
     lea     ($03E4,A4),A0
     move.b  (A0,D2.W),D0
     even
@@ -2996,16 +3048,18 @@ _L_z04_Jumper_AnimateAndCheckCollisions_DrawBoulder:
     ; Draw a boulder.
     ;
     moveq   #6,D0
-    bsr     Anim_AdvanceAnimCounterAndSetObjPosForSpriteDescriptor
+    jsr     Anim_AdvanceAnimCounterAndSetObjPosForSpriteDescriptor
     lea     ($03E4,A4),A0
     move.b  (A0,D2.W),D0
-    bsr     DrawObjectNotMirroredAndCheckLinkCollision
+    jsr     DrawObjectNotMirroredAndCheckLinkCollision
     ; If the boulder's Y < $F0, return.
     ;
     lea     ($0084,A4),A0
     move.b  (A0,D2.W),D0
     cmpi.b  #$F0,D0
-    bcs  L10A10_Exit
+    bcc.s  __far_z_04_0026
+    jmp  L10A10_Exit
+__far_z_04_0026:
     ; Else the boulder is close enough to the bottom of the screen
     ; to destroy it.
     ;
@@ -3027,7 +3081,9 @@ Jumper_GetKind:
     moveq   #0,D3
     move.b  D0,D3
     cmpi.b  #$02,D3
-    bcs  L10A10_Exit
+    bcc.s  __far_z_04_0027
+    jmp  L10A10_Exit
+__far_z_04_0027:
     moveq   #2,D3
     even
 L10A10_Exit:
@@ -3093,13 +3149,17 @@ Jumper_MoveY:
     ;
     move.b  ($0002,A4),D1
     cmp.b   D1,D0
-    bmi  L10A52_Exit
+    bpl.s  __far_z_04_0028
+    jmp  L10A52_Exit
+__far_z_04_0028:
     ; Limit the speed to the max speed.
     ;
     lea     ($041F,A4),A0
     move.b  (A0,D2.W),D0
     cmpi.b  #$80,D0
-    bcs  L10A52_Exit
+    bcc.s  __far_z_04_0029
+    jmp  L10A52_Exit
+__far_z_04_0029:
     move.b  ($0002,A4),D0
     lea     ($0412,A4),A0
     move.b  D0,(A0,D2.W)
@@ -3129,7 +3189,7 @@ UpdateBlueLeever:
     move.b  #$A0,D0
     lea     ($041F,A4),A0
     move.b  D0,(A0,D2.W)
-    bsr     Wanderer_TargetPlayer
+    jsr     Wanderer_TargetPlayer
     even
 UpdateBurrower:
     ; If object timer <> 0, then go animate, draw, and check for collisions.
@@ -3209,7 +3269,7 @@ _L_z04_UpdateBurrower_Animate:
 ;
     even
 Burrower_AnimateDrawAndCheckCollisions:
-    bsr     Anim_AdvanceAnimCounterAndSetObjPosForSpriteDescriptor
+    jsr     Anim_AdvanceAnimCounterAndSetObjPosForSpriteDescriptor
     ; If state = 0, return.
     ;
     lea     ($00AC,A4),A0
@@ -3254,7 +3314,7 @@ _L_z04_Burrower_AnimateDrawAndCheckCollisions_CalcFrameImage:
     addx.b  D1,D0   ; ADC ObjAnimFrame,X
     even
 _L_z04_Burrower_AnimateDrawAndCheckCollisions_Draw:
-    bsr     DrawObjectMirrored
+    jsr     DrawObjectMirrored
     ; If not zora and state <> 3, 
     ; or zora and state <> 2, 3, 4;
     ; then return.
@@ -3277,7 +3337,7 @@ _L_z04_Burrower_AnimateDrawAndCheckCollisions_NoState3Collisions:
     bne  _L_z04_Burrower_AnimateDrawAndCheckCollisions_Exit
     even
 _L_z04_Burrower_AnimateDrawAndCheckCollisions_CheckCollisions:
-    bsr     CheckMonsterCollisions
+    jsr     CheckMonsterCollisions
     ; If not dying, then return.
     ;
     lea     ($0405,A4),A0
@@ -3336,7 +3396,7 @@ _anon_z04_42:
     move.b  ($19,A4,D2.W),D0
     cmpi.b  #$C0,D0
     bcs  _anon_z04_43
-    bsr     ReverseObjDir
+    jsr     ReverseObjDir
 _anon_z04_43:
     ; If facing horizontally, go place the leever to the left or right of Link.
     ;
@@ -3450,7 +3510,7 @@ _L_z04_UpdateRedLeever_Subtract:
 _L_z04_UpdateRedLeever_CheckSafeToSpawn:
     ; The leever can't come out of an unwalkable tile. So, return.
     ;
-    bsr     GetCollidableTileStill
+    jsr     GetCollidableTileStill
     move.b  ($034A,A4),D1
     cmp.b   D1,D0
     bcc  _L_z04_UpdateRedLeever_Exit
@@ -3465,10 +3525,10 @@ _L_z04_UpdateRedLeever_CheckSafeToSpawn:
     ;
     lsl.b  #1,D0   ; ASL A
     move.b  D0,($004D,A4)
-    bsr     RedLeever_CycleStateDrawAndCheckCollisions
+    jsr     RedLeever_CycleStateDrawAndCheckCollisions
     ; The leever has to face Link in order to move toward him.
     ;
-    bsr     ReverseObjDir
+    jsr     ReverseObjDir
     even
 _L_z04_UpdateRedLeever_CheckOtherStates:
     ; If not in state 3, go check the object timer in order to draw and such.
@@ -3484,7 +3544,7 @@ _L_z04_UpdateRedLeever_CheckOtherStates:
     lea     ($00C0,A4),A0
     move.b  (A0,D2.W),D0
     beq  _L_z04_UpdateRedLeever_CheckStunned
-    bsr     Obj_Shove
+    jsr     Obj_Shove
     jmp     RedLeever_AnimateAndCheckCollisions
 
     even
@@ -3495,7 +3555,9 @@ _L_z04_UpdateRedLeever_CheckStunned:
     move.b  ($066C,A4),D0
     move.b  ($3D,A4,D2.W),D1
     or.b  D1,D0
-    bne  RedLeever_AnimateAndCheckCollisions
+    beq.s  __far_z_04_0030
+    jmp  RedLeever_AnimateAndCheckCollisions
+__far_z_04_0030:
     ; If the leever is blocked by a tile or the room boundary,
     ; then go to the next state, in addition to animating, drawing,
     ; and checking for collisions.
@@ -3503,15 +3565,19 @@ _L_z04_UpdateRedLeever_CheckStunned:
     lea     ($0098,A4),A0
     move.b  (A0,D2.W),D0
     move.b  D0,($000F,A4)
-    bsr     GetCollidingTileMoving
+    jsr     GetCollidingTileMoving
     move.b  ($034A,A4),D1
     cmp.b   D1,D0
-    bcc  RedLeever_CycleStateDrawAndCheckCollisions
-    bsr     BoundByRoom
-    beq  RedLeever_CycleStateDrawAndCheckCollisions
+    bcs.s  __far_z_04_0031
+    jmp  RedLeever_CycleStateDrawAndCheckCollisions
+__far_z_04_0031:
+    jsr     BoundByRoom
+    bne.s  __far_z_04_0032
+    jmp  RedLeever_CycleStateDrawAndCheckCollisions
+__far_z_04_0032:
     ; Move.
     ;
-    bsr     MoveObject
+    jsr     MoveObject
     ; Truncate the grid offset.
     ;
     lea     ($0394,A4),A0
@@ -3531,7 +3597,9 @@ _L_z04_UpdateRedLeever_AnimateIfTime:
     ; go animate, draw, and check for collisions.
     ;
     move.b  ($28,A4,D2.W),D0
-    bne  RedLeever_AnimateAndCheckCollisions
+    beq.s  __far_z_04_0033
+    jmp  RedLeever_AnimateAndCheckCollisions
+__far_z_04_0033:
     even
 RedLeever_CycleStateDrawAndCheckCollisions:
     ; Cycle the state between 0 and 5.
@@ -3590,7 +3658,7 @@ UpdateOctorock:
 _anon_z04_48:
     lea     ($041F,A4),A0
     move.b  D0,(A0,D2.W)
-    bsr     Wanderer_TargetPlayer
+    jsr     Wanderer_TargetPlayer
     ; If the octorock is slow, then use q-speed $20.
     ; Else double it.
     ;
@@ -3608,8 +3676,8 @@ _L_z04_UpdateOctorock_Shoot:
     ; Shoot a flying rock (object type $53).
     ;
     moveq   #83,D3
-    bsr     _TryShooting
-    bsr     Anim_FetchObjPosForSpriteDescriptor
+    jsr     _TryShooting
+    jsr     Anim_FetchObjPosForSpriteDescriptor
     ; If facing down, then use frame image offset 2.
     ;
     lea     ($0098,A4),A0
@@ -3681,7 +3749,7 @@ _L_z04_UpdateOctorock_CalcFinalOffset:
     ; Else draw not mirrored.
     ;
     move.b  (A5)+,D0  ; PLA
-    bsr     DrawObjectNotMirrored
+    jsr     DrawObjectNotMirrored
     jmp     CheckMonsterCollisions
 
     even
@@ -3695,15 +3763,15 @@ _L_z04_UpdateOctorock_DrawMirrored:
 ;
     even
 DrawObjectMirroredAndCheckCollisions:
-    bsr     DrawObjectMirrored
+    jsr     DrawObjectMirrored
     jmp     CheckMonsterCollisions
 
     even
 UpdateGhini:
     move.b  #$FF,D0
-    bsr     UpdateCommonWanderer
-    bsr     DrawGhiniAndCheckCollisions
-    bsr     CheckMonsterCollisions
+    jsr     UpdateCommonWanderer
+    jsr     DrawGhiniAndCheckCollisions
+    jsr     CheckMonsterCollisions
     ; If the monster is still alive, then return.
     ;
     lea     ($0405,A4),A0
@@ -3732,7 +3800,7 @@ _L_z04_UpdateGhini_Exit:
 
     even
 DrawGhiniAndCheckCollisions:
-    bsr     Anim_FetchObjPosForSpriteDescriptor
+    jsr     Anim_FetchObjPosForSpriteDescriptor
     move.b  D0,($000D,A4)
     ; If the direction has an "up" component, then keep the
     ; frame image 0, and go figure out horizontal flipping.
@@ -3786,7 +3854,7 @@ _L_z04_DrawGhiniAndCheckCollisions_DrawAndCheckCollisions:
 ;
     even
 DrawObjectNotMirroredAndCheckLinkCollision:
-    bsr     DrawObjectNotMirrored
+    jsr     DrawObjectNotMirrored
     jmp     CheckLinkCollision
 
     even
@@ -3879,9 +3947,9 @@ _L_z04_InitArmosOrFlyingGhini_LoopArmosRoom:
     ; it will be ignored, because that routine checks whether
     ; the item was taken.
     ;
-    bsr     GetRoomFlagUWItemState
+    jsr     GetRoomFlagUWItemState
     bne  _L_z04_InitArmosOrFlyingGhini_UseFloorTile
-    bsr     PlaySecretFoundTune
+    jsr     PlaySecretFoundTune
     bne  _L_z04_InitArmosOrFlyingGhini_UseFloorTile
     even
 _L_z04_InitArmosOrFlyingGhini_NextLoopArmosRoom:
@@ -3904,13 +3972,13 @@ _L_z04_InitArmosOrFlyingGhini_UseChosenTile:
     move.b  D0,-(A5)  ; PHA
     cmpi.b  #$70,D0
     bne  _anon_z04_51
-    bsr     PlaySecretFoundTune
+    jsr     PlaySecretFoundTune
 _anon_z04_51:
     ; Replace the tile where the armos was.
     ;
     addq.b  #1,($00F7,A4)
     move.b  (A5)+,D0  ; PLA
-    bsr     ChangeTileObjTiles
+    jsr     ChangeTileObjTiles
     ; Because the armos object is aligned to the square grid
     ; (because it was made from a square),
     ; set its grid offset to 3 to compensate.
@@ -3953,31 +4021,35 @@ _L_z04_InitArmosOrFlyingGhini_FinishInit:
     lea     ($034F,A4),A0
     move.b  (A0,D2.W),D0
     cmpi.b  #$22,D0
-    beq  L_EndInitFlyingGhini
-    bsr     DrawArmosAndCheckCollisions
+    bne.s  __far_z_04_0034
+    jmp  L_EndInitFlyingGhini
+__far_z_04_0034:
+    jsr     DrawArmosAndCheckCollisions
 _anon_z04_53:
     rts
 
     even
 L_EndInitFlyingGhini:
-    bsr     DrawGhiniAndCheckCollisions
+    jsr     DrawGhiniAndCheckCollisions
     ; If we're finally leaving the object flagged "initialized",
     ; then reset metastate and initialize this as a flyer.
     ;
     lea     ($0492,A4),A0
     move.b  (A0,D2.W),D0
     bne  _anon_z04_53
-    bsr     ResetObjMetastateAndTimer
+    jsr     ResetObjMetastateAndTimer
     jmp     EndInitFlyer
 
     even
 UpdateArmos:
-    bsr     UpdateGoriya
+    jsr     UpdateGoriya
     ; If it's still shoved, then don't animate. Only go draw.
     ;
     lea     ($00C0,A4),A0
     move.b  (A0,D2.W),D0
-    bne  DrawArmosAndCheckCollisions
+    beq.s  __far_z_04_0035
+    jmp  DrawArmosAndCheckCollisions
+__far_z_04_0035:
     ; Animate.
     ;
     ; Decrement the animation counter. But if it hasn't reached 0,
@@ -3985,7 +4057,9 @@ UpdateArmos:
     ;
     lea     ($03D0,A4),A0
     subq.b  #1,(A0,D2.W)
-    bne  DrawArmosAndCheckCollisions
+    beq.s  __far_z_04_0036
+    jmp  DrawArmosAndCheckCollisions
+__far_z_04_0036:
     ; Armos animation frames last 6 screen frames.
     ;
     moveq   #6,D0
@@ -4008,7 +4082,7 @@ UpdateArmos:
     move.b  D0,(A0,D2.W)
     even
 DrawArmosAndCheckCollisions:
-    bsr     Anim_FetchObjPosForSpriteDescriptor
+    jsr     Anim_FetchObjPosForSpriteDescriptor
     moveq   #0,D3
     lea     ($0098,A4),A0
     move.b  (A0,D2.W),D3
@@ -4023,7 +4097,7 @@ _anon_z04_54:
     lea     ($03E4,A4),A0
     move.b  (A0,D2.W),D1
     addx.b  D1,D0   ; ADC ObjAnimFrame,X
-    bsr     DrawObjectNotMirrored
+    jsr     DrawObjectNotMirrored
     ; If the armos is still fading in, then go for check collision with Link,
     ; but not with weapons.
     ;
@@ -4031,7 +4105,7 @@ _anon_z04_54:
     bne  _L_z04_DrawArmosAndCheckCollisions_CheckLinkCollision
     ; Else check for all collisions.
     ;
-    bsr     CheckMonsterCollisions
+    jsr     CheckMonsterCollisions
     ; If the armos has died, then set object type to $5D (dead dummy).
     ;
     lea     ($0405,A4),A0
@@ -4049,11 +4123,13 @@ _L_z04_DrawArmosAndCheckCollisions_CheckLinkCollision:
 
     even
 UpdatePondFairy:
-    bsr     DrawFairy
+    jsr     DrawFairy
     ; If not in state 0, then go handle states 1 to 3.
     ;
     move.b  ($00AD,A4),D0
-    bne  PondFairy_HandleOtherStates
+    beq.s  __far_z_04_0037
+    jmp  PondFairy_HandleOtherStates
+__far_z_04_0037:
     ; State 0.
     ;
     ; If Link is not at the edge of the pond (Y=$AD), then return.
@@ -4132,12 +4208,12 @@ _L_z04_PondFairy_HandleOtherStates_DrawLinkAndHearts:
     move.b  ($00AC,A4),D0
     move.b  D0,-(A5)  ; PHA
     move.b  D3,($00AC,A4)
-    bsr     Link_EndMoveAndAnimate_Bank4
+    jsr     Link_EndMoveAndAnimate_Bank4
     ; Restore Link's state.
     ;
     move.b  (A5)+,D0  ; PLA
     move.b  D0,($00AC,A4)
-    bsr     PondFairy_MoveHearts
+    jsr     PondFairy_MoveHearts
     ; Restore the object slot.
     ;
     moveq   #0,D2
@@ -4231,7 +4307,7 @@ _L_z04_PondFairy_MoveHearts_MoveHeart:
     moveq   #0,D0
     move.b  D0,($000B,A4)
     moveq   #96,D0
-    bsr     DecreaseObjectAngle
+    jsr     DecreaseObjectAngle
     ; Rotate the heart's location by the change in angle.
     ; Use 6 for the number of bits of sine/cosine to use
     ; for a large ring.
@@ -4239,19 +4315,19 @@ _L_z04_PondFairy_MoveHearts_MoveHeart:
     moveq   #6,D0
     moveq   #0,D3
     move.b  D0,D3
-    bsr     RotateObjectLocation
+    jsr     RotateObjectLocation
     lea     ($0084,A4),A0
     move.b  D0,(A0,D2.W)
     move.b  D2,D0
     move.b  D0,-(A5)  ; PHA
-    bsr     Anim_SetSpriteDescriptorRedPaletteRow
-    bsr     Anim_FetchObjPosForSpriteDescriptor
+    jsr     Anim_SetSpriteDescriptorRedPaletteRow
+    jsr     Anim_FetchObjPosForSpriteDescriptor
     ; The variable for the currently updating object slot has to be
     ; set to the heart's object slot for this drawing routine to work.
     ;
     moveq   #0,D2
     move.b  ($0340,A4),D2
-    bsr     DrawObjectNotMirrored
+    jsr     DrawObjectNotMirrored
     move.b  (A5)+,D0  ; PLA
     moveq   #0,D2
     move.b  D0,D2
@@ -4291,7 +4367,7 @@ _L_z04_UpdateRockOrGravestone_CheckQuest:
     ; If there is a mismatch between the current quest and the quest
     ; needed for the secret in this room, then return.
     ;
-    bsr     IsQuestSecretMismatch
+    jsr     IsQuestSecretMismatch
     bcs  _L_z04_UpdateRockOrGravestone_Exit
     ; The gravestone and rocks can only be pushed vertically.
     ; Return, if X's don't match.
@@ -4353,7 +4429,7 @@ _L_z04_UpdateRockOrGravestone_CheckDistance:
     ;
     addq.b  #1,($00F7,A4)
     moveq   #38,D0
-    bsr     ChangeTileObjTiles
+    jsr     ChangeTileObjTiles
     even
 _L_z04_UpdateRockOrGravestone_Exit:
     rts
@@ -4367,12 +4443,12 @@ _L_z04_UpdateRockOrGravestone_State1:
     lea     ($0098,A4),A0
     move.b  (A0,D2.W),D0
     move.b  D0,($000F,A4)
-    bsr     MoveObject
+    jsr     MoveObject
     ; Draw the sprites one pixel above the object's location.
     ;
-    bsr     Anim_FetchObjPosForSpriteDescriptor
+    jsr     Anim_FetchObjPosForSpriteDescriptor
     subq.b  #1,($0001,A4)
-    bsr     DrawObjectNotMirrored
+    jsr     DrawObjectNotMirrored
     ; If the object's grid offset (distance moved) <> $10 nor -$10,
     ; then return.
     ;
@@ -4390,7 +4466,7 @@ _anon_z04_56:
     lea     ($0412,A4),A0
     move.b  (A0,D2.W),D0
     move.b  D0,($00EB,A4)
-    bsr     MarkRoomVisited
+    jsr     MarkRoomVisited
     move.b  (A5)+,D0  ; PLA
     move.b  D0,($00EB,A4)
     ; If object is a rock ($62), go use a rock tile ($C8).
@@ -4414,7 +4490,7 @@ _L_z04_UpdateRockOrGravestone_ReplaceTiles:
     ; Change the tiles at the end location.
     ;
     addq.b  #1,($00F7,A4)
-    bsr     ChangeTileObjTiles
+    jsr     ChangeTileObjTiles
     ; Store the stairs tile in [00] for use in revealing the secret.
     ;
     moveq   #112,D0
@@ -4424,7 +4500,7 @@ _L_z04_UpdateRockOrGravestone_ReplaceTiles:
     moveq   #0,D3
     lea     ($0412,A4),A0
     move.b  (A0,D2.W),D3
-    bsr     GetShortcutOrItemXYForRoom
+    jsr     GetShortcutOrItemXYForRoom
     move.b  D0,($70,A4,D2.W)
     lea     ($0084,A4),A0
     move.b  D3,(A0,D2.W)
@@ -4436,8 +4512,8 @@ _L_z04_UpdateRockOrGravestone_ReplaceTiles:
     even
 RevealSecretTileObj:
     addq.b  #1,($00F7,A4)
-    bsr     ChangeTileObjTiles
-    bsr     DestroyMonster_Bank4
+    jsr     ChangeTileObjTiles
+    jsr     DestroyMonster_Bank4
     jmp     PlaySecretFoundTune
 
     even
@@ -4445,7 +4521,7 @@ UpdateRockWall:
     ; If the secret in this room does not apply to the current quest,
     ; then return.
     ;
-    bsr     IsQuestSecretMismatch
+    jsr     IsQuestSecretMismatch
     bcs  _L_z04_UpdateRockWall_Exit
     ; If there is no detonating bomb (state $13) in slots $10 and $11,
     ; then return.
@@ -4467,10 +4543,10 @@ _L_z04_UpdateRockWall_FoundBomb:
     move.b  D3,($0000,A4)
     ; If the tile object and weapon collide, then reveal the secret.
     ;
-    bsr     CheckTileObjWeaponCollision
+    jsr     CheckTileObjWeaponCollision
     beq  _L_z04_UpdateRockWall_Exit
     moveq   #36,D0
-    bsr     RevealAndFlagSecretTileObj
+    jsr     RevealAndFlagSecretTileObj
     even
 _L_z04_UpdateRockWall_Exit:
     rts
@@ -4480,8 +4556,10 @@ UpdateTree:
     ; If the secret in this room does not apply to the current quest,
     ; then return.
     ;
-    bsr     IsQuestSecretMismatch
-    bcs  L10F3E_Exit
+    jsr     IsQuestSecretMismatch
+    bcc.s  __far_z_04_0038
+    jmp  L10F3E_Exit
+__far_z_04_0038:
     ; If there is no standing fire (state $22) in slots $10 and $11,
     ; then return.
     ;
@@ -4494,7 +4572,9 @@ UpdateTree:
     lea     ($00AC,A4),A0
     move.b  (A0,D3.W),D0
     cmpi.b  #$22,D0
-    bne  L10F3E_Exit
+    beq.s  __far_z_04_0039
+    jmp  L10F3E_Exit
+__far_z_04_0039:
     even
 _L_z04_UpdateTree_FoundFire:
     ; Store the fire's object slot in [00].
@@ -4504,11 +4584,15 @@ _L_z04_UpdateTree_FoundFire:
     ;
     move.b  ($28,A4,D3.W),D0
     cmpi.b  #$02,D0
-    bcc  L10F3E_Exit
+    bcs.s  __far_z_04_0040
+    jmp  L10F3E_Exit
+__far_z_04_0040:
     ; If the tile object and weapon collide, then reveal the secret.
     ;
-    bsr     CheckTileObjWeaponCollision
-    beq  L10F3E_Exit
+    jsr     CheckTileObjWeaponCollision
+    bne.s  __far_z_04_0041
+    jmp  L10F3E_Exit
+__far_z_04_0041:
 ; Params:
 ; X: object index of the tile object
 ;
@@ -4523,10 +4607,10 @@ RevealAndFlagSecretStairsObj:
 ;
     even
 RevealAndFlagSecretTileObj:
-    bsr     RevealSecretTileObj
+    jsr     RevealSecretTileObj
     ; Flag the secret found in this room.
     ;
-    bsr     GetRoomFlags
+    jsr     GetRoomFlags
     ori.b #$80,D0
     move.b  ($00,A4),D1   ; ptr lo
     move.b  ($01,A4),D4  ; ptr hi
@@ -4566,7 +4650,7 @@ CheckTileObjWeaponCollision:
     move.b  D0,($0005,A4)
     ; Put the tile object's midpoint coordinates in [02] and [03].
     ;
-    bsr     GetObjectMiddle
+    jsr     GetObjectMiddle
     moveq   #16,D0
     jmp     DoObjectsCollide
 
@@ -4678,7 +4762,7 @@ _L_z04_UpdateDock_SetState:
     move.b  D0,(A0,D2.W)
     ; Play the "secret found" tune, and halt Link.
     ;
-    bsr     PlaySecretFoundTune
+    jsr     PlaySecretFoundTune
     moveq   #64,D0
     move.b  D0,($00AC,A4)
     ; Set Link's direction based on the raft's state.
@@ -4712,7 +4796,7 @@ _L_z04_UpdateDock_HandleOtherStates:
     bne  _L_z04_UpdateDock_Draw
     move.b  D2,D0
     move.b  D0,-(A5)  ; PHA
-    bsr     GoToNextModeFromPlay
+    jsr     GoToNextModeFromPlay
     move.b  (A5)+,D0  ; PLA
     moveq   #0,D2
     move.b  D0,D2
@@ -4745,13 +4829,13 @@ _L_z04_UpdateDock_ResetLinkAndRaftStateAndDraw:
 _L_z04_UpdateDock_Draw:
     move.b  D2,D0
     move.b  D0,-(A5)  ; PHA
-    bsr     Link_EndMoveAndAnimate_Bank4
+    jsr     Link_EndMoveAndAnimate_Bank4
     move.b  (A5)+,D0  ; PLA
     moveq   #0,D2
     move.b  D0,D2
     ; TODO: Why animate the raft?
     ;
-    bsr     AnimateObjectWalking
+    jsr     AnimateObjectWalking
     moveq   #0,D0
     moveq   #9,D3
     jmp     Anim_WriteStaticItemSpritesWithAttributes
@@ -4762,10 +4846,10 @@ UpdateFlyingGhini:
     ;
     move.b  ($066C,A4),D0
     bne  _anon_z04_58
-    bsr     ControlFlyingGhiniFlight
-    bsr     MoveFlyer
+    jsr     ControlFlyingGhiniFlight
+    jsr     MoveFlyer
 _anon_z04_58:
-    bsr     Anim_FetchObjPosForSpriteDescriptor
+    jsr     Anim_FetchObjPosForSpriteDescriptor
     ; Get the low bit of the flying distance traveled.
     ; But this doesn't seem to be used.
     ; The following call clobbers the A register.
@@ -4779,7 +4863,7 @@ _anon_z04_58:
 ControlFlyingGhiniFlight:
     lea     ($0444,A4),A0
     move.b  (A0,D2.W),D0
-    bsr     _m68k_tablejump  ; M68K-native table dispatch (replaces JSR TableJump)
+    jsr     _m68k_tablejump  ; M68K-native table dispatch (replaces JSR TableJump)
     even
 ControlFlyingGhiniFlight_JumpTable:
     dc.l    Flyer_SpeedUp   ; jump table entry (32-bit for _m68k_tablejump)
@@ -4817,7 +4901,7 @@ UpdatePeahat:
     lea     ($00C0,A4),A0
     move.b  (A0,D2.W),D0
     beq  _anon_z04_60
-    bsr     Obj_Shove
+    jsr     Obj_Shove
     even
 _L_z04_UpdatePeahat_L_DrawAndCheckCollisions:
     jmp     _L_z04_UpdatePeahat_DrawAndCheckCollisions
@@ -4832,18 +4916,18 @@ _anon_z04_60:
     bne  _L_z04_UpdatePeahat_L_DrawAndCheckCollisions
     ; Else move around.
     ;
-    bsr     ControlPeahatFlight
-    bsr     MoveFlyer
+    jsr     ControlPeahatFlight
+    jsr     MoveFlyer
     even
 _L_z04_UpdatePeahat_DrawAndCheckCollisions:
-    bsr     Anim_FetchObjPosForSpriteDescriptor
+    jsr     Anim_FetchObjPosForSpriteDescriptor
     ; Take low bit of the flying distance traveled as the frame image.
     ; So, the faster it moves, the faster it animates.
     ;
     lea     ($0437,A4),A0
     move.b  (A0,D2.W),D0
     andi.b #$01,D0
-    bsr     DrawObjectMirrored
+    jsr     DrawObjectMirrored
     ; In flying state 5, check for all collisions (so it can get hurt).
     ; In all other states, only check for collisions with Link.
     ;
@@ -4860,7 +4944,7 @@ _anon_z04_61:
 ControlPeahatFlight:
     lea     ($0444,A4),A0
     move.b  (A0,D2.W),D0
-    bsr     _m68k_tablejump  ; M68K-native table dispatch (replaces JSR TableJump)
+    jsr     _m68k_tablejump  ; M68K-native table dispatch (replaces JSR TableJump)
     even
 ControlPeahatFlight_JumpTable:
     dc.l    Flyer_SpeedUp   ; jump table entry (32-bit for _m68k_tablejump)
@@ -4882,10 +4966,14 @@ Flyer_PeahatDecideState:
     moveq   #2,D3
     move.b  ($18,A4,D2.W),D0
     cmpi.b  #$B0,D0
-    bcc  Flyer_SetFlyingStateAnd6Turns
+    bcs.s  __far_z_04_0042
+    jmp  Flyer_SetFlyingStateAnd6Turns
+__far_z_04_0042:
     addq.b  #1,D3
     cmpi.b  #$20,D0
-    bcc  Flyer_SetFlyingStateAnd6Turns
+    bcs.s  __far_z_04_0043
+    jmp  Flyer_SetFlyingStateAnd6Turns
+__far_z_04_0043:
     addq.b  #1,D3
     even
 Flyer_SetFlyingStateAnd6Turns:
@@ -5004,7 +5092,7 @@ _anon_z04_64:
     move.b  D0,($0002,A4)
     moveq   #32,D3
     moveq   #0,D0
-    bsr     Wallmaster_CalcStartPosition
+    jsr     Wallmaster_CalcStartPosition
     ; Set Y coordinate to initial minor value returned.
     ;
     move.b  ($0004,A4),D0
@@ -5041,7 +5129,7 @@ _anon_z04_65:
     move.b  D0,($0002,A4)
     moveq   #93,D3
     moveq   #32,D0
-    bsr     Wallmaster_CalcStartPosition
+    jsr     Wallmaster_CalcStartPosition
     ; Look up and set Y coordinate according to the index returned.
     ;
     lea     (WallmasterInitialYs).l,A0
@@ -5099,7 +5187,7 @@ L_Wallmaster_State1:
     lea     ($00C0,A4),A0
     move.b  (A0,D2.W),D0
     beq  _L_z04_L_Wallmaster_State1_CheckStunned
-    bsr     Obj_Shove
+    jsr     Obj_Shove
     even
 _L_z04_L_Wallmaster_State1_DrawAndCheckCollisions:
     jmp     _L_z04_L_Wallmaster_State1_Wallmaster_DrawAndCheckCollisions
@@ -5116,7 +5204,7 @@ _L_z04_L_Wallmaster_State1_CheckStunned:
     lea     ($0098,A4),A0
     move.b  (A0,D2.W),D0
     move.b  D0,($000F,A4)
-    bsr     MoveObject
+    jsr     MoveObject
     ; If grid offset <> $10 nor $F0 (so not square aligned), then
     ; go draw and check collisions.
     ;
@@ -5169,7 +5257,7 @@ _anon_z04_66:
     ; 2. go to mode 3 "unfurl" to go the level's entrance
     ; 3. reset Link's state, so he's idle
     ;
-    bsr     HideSpritesOverLink
+    jsr     HideSpritesOverLink
     moveq   #3,D0
     move.b  D0,($0012,A4)
     moveq   #0,D0
@@ -5189,7 +5277,7 @@ _L_z04_L_Wallmaster_State1_Wallmaster_DrawAndCheckCollisions:
     lea     ($042C,A4),A0
     move.b  (A0,D2.W),D0
     bne  _L_z04_L_Wallmaster_State1_DrawWithCapturedLink
-    bsr     CheckMonsterCollisions
+    jsr     CheckMonsterCollisions
     ; If after checking object collisions, Link was captured, then
     ; halt Link and keep him from being shoved.
     ;
@@ -5206,10 +5294,10 @@ _anon_z04_67:
     ;
     move.b  ($0341,A4),D0
     move.b  D0,-(A5)  ; PHA
-    bsr     Wallmaster_PrepareToDraw
+    jsr     Wallmaster_PrepareToDraw
     lea     ($03E4,A4),A0
     move.b  (A0,D2.W),D0
-    bsr     DrawObjectNotMirrored
+    jsr     DrawObjectNotMirrored
     move.b  (A5)+,D0  ; PLA
     ; Store the offset of the left sprite record in [00],
     ; and the right one in [01].
@@ -5224,7 +5312,7 @@ _anon_z04_67:
     even
 _L_z04_L_Wallmaster_State1_PatchSprites:
     move.b  D0,($0001,A4)
-    bsr     Wallmaster_PutSpritesBehindBgIfNeeded
+    jsr     Wallmaster_PutSpritesBehindBgIfNeeded
     ; The default image is the hand open.
     ; If animation frame = 0, then return.
     ;
@@ -5268,17 +5356,17 @@ _L_z04_L_Wallmaster_State1_DrawWithCapturedLink:
     lea     ($0084,A4),A0
     move.b  (A0,D2.W),D0
     move.b  D0,($0084,A4)
-    bsr     Link_EndMoveAndAnimate_Bank4
-    bsr     ShowLinkSpritesBehindHorizontalDoors
+    jsr     Link_EndMoveAndAnimate_Bank4
+    jsr     ShowLinkSpritesBehindHorizontalDoors
     moveq   #0,D2
     move.b  ($0340,A4),D2
-    bsr     Wallmaster_PrepareToDraw
+    jsr     Wallmaster_PrepareToDraw
     ; Force animation frame 1: hand closed.
     ;
     moveq   #1,D0
     lea     ($03E4,A4),A0
     move.b  D0,(A0,D2.W)
-    bsr     DrawObjectNotMirroredOverLink
+    jsr     DrawObjectNotMirroredOverLink
     ; Store the offsets of the sprites to show over Link
     ; ($10 and $11) in [00] and [01] for use in patching the right sprite.
     ;
@@ -5292,7 +5380,7 @@ _L_z04_L_Wallmaster_State1_DrawWithCapturedLink:
     even
 Wallmaster_PrepareToDraw:
     moveq   #8,D0
-    bsr     Anim_AdvanceAnimCounterAndSetObjPosForSpriteDescriptor
+    jsr     Anim_AdvanceAnimCounterAndSetObjPosForSpriteDescriptor
     ; For the current step, look up the sprite flipping attributes.
     ;
     moveq   #0,D3
@@ -5302,7 +5390,7 @@ Wallmaster_PrepareToDraw:
     move.b  (A0,D3.W),D0
     andi.b #$F0,D0
     ori.b #$01,D0
-    bsr     Anim_SetSpriteDescriptorAttributes
+    jsr     Anim_SetSpriteDescriptorAttributes
     ; If the sprite attributes for this step have horizontal flipping ($40),
     ; then mask it off, and turn on horizontal flipping with [0F].
     ;
@@ -5310,7 +5398,7 @@ Wallmaster_PrepareToDraw:
     beq  _anon_z04_69
     move.b  ($0004,A4),D0
     andi.b #$8F,D0
-    bsr     Anim_SetSpriteDescriptorAttributes
+    jsr     Anim_SetSpriteDescriptorAttributes
     addq.b  #1,($000F,A4)
 _anon_z04_69:
     rts
@@ -5403,7 +5491,7 @@ _anon_z04_72:
 Wallmaster_PutSpritesBehindBgIfNeeded:
     moveq   #0,D3
     move.b  ($0000,A4),D3
-    bsr     Wallmaster_PutSpriteBehindBgIfNeeded
+    jsr     Wallmaster_PutSpriteBehindBgIfNeeded
     moveq   #0,D3
     move.b  ($0001,A4),D3
     even
@@ -5472,7 +5560,7 @@ UpdateRope:
     move.b  ($3D,A4,D2.W),D1
     or.b  D1,D0
     bne  _L_z04_UpdateRope_CheckSpeed
-    bsr     Walker_Move
+    jsr     Walker_Move
     ; Truncate the grid offset at $10.
     ;
     lea     ($0394,A4),A0
@@ -5495,7 +5583,7 @@ _anon_z04_75:
     move.b  ($18,A4,D2.W),D0
     andi.b #$3F,D0
     move.b  D0,($28,A4,D2.W)
-    bsr     _FaceUnblockedDir
+    jsr     _FaceUnblockedDir
     even
 _L_z04_UpdateRope_CheckSpeed:
     move.b  (A5)+,D0  ; PLA
@@ -5524,7 +5612,7 @@ _anon_z04_76:
     move.b  ($0070,A4),D0
     ori     #$11,CCR  ; SEC: set C+X
 ; [SBC unhandled mode=ABS_X] SBC ObjX, X
-    bsr     Abs
+    jsr     Abs
     cmpi.b  #$08,D0
     bcc  _L_z04_UpdateRope_CheckVertical
     ; Face up.
@@ -5555,7 +5643,7 @@ _L_z04_UpdateRope_Rush:
     even
 _L_z04_UpdateRope_Animate:
     moveq   #10,D0
-    bsr     Anim_AdvanceAnimCounterAndSetObjPosForSpriteDescriptor
+    jsr     Anim_AdvanceAnimCounterAndSetObjPosForSpriteDescriptor
     ; If facing left, then flip horizontally.
     ;
     lea     ($0098,A4),A0
@@ -5564,7 +5652,7 @@ _L_z04_UpdateRope_Animate:
     lsr.b  #1,D0   ; LSR A
     move.b  D0,($000F,A4)
     moveq   #2,D0
-    bsr     Anim_SetSpriteDescriptorAttributes
+    jsr     Anim_SetSpriteDescriptorAttributes
     ; In the second quest, ropes always flash.
     ; So, set sprite attributes to all the cycled palette rows.
     ;
@@ -5575,14 +5663,14 @@ _L_z04_UpdateRope_Animate:
     beq  _L_z04_UpdateRope_Draw
     move.b  ($0015,A4),D0
     andi.b #$03,D0
-    bsr     Anim_SetSpriteDescriptorAttributes
+    jsr     Anim_SetSpriteDescriptorAttributes
     even
 _L_z04_UpdateRope_Draw:
     ; The frame image is based on the movement frame.
     ;
     lea     ($03E4,A4),A0
     move.b  (A0,D2.W),D0
-    bsr     DrawObjectNotMirrored
+    jsr     DrawObjectNotMirrored
     jmp     CheckMonsterCollisions
 
     even
@@ -5593,7 +5681,7 @@ _L_z04_UpdateRope_CheckVertical:
     move.b  ($0084,A4),D0
     ori     #$11,CCR  ; SEC: set C+X
 ; [SBC unhandled mode=ABS_X] SBC ObjY, X
-    bsr     Abs
+    jsr     Abs
     cmpi.b  #$08,D0
     bcc  _L_z04_UpdateRope_Animate
     ; Face left.
@@ -5612,10 +5700,10 @@ _L_z04_UpdateRope_CheckVertical:
     even
 UpdateStalfos:
     move.b  #$80,D0
-    bsr     UpdateCommonWanderer
-    bsr     CheckMonsterCollisions
+    jsr     UpdateCommonWanderer
+    jsr     CheckMonsterCollisions
     moveq   #8,D0
-    bsr     AnimateAndDrawCommonObject
+    jsr     AnimateAndDrawCommonObject
     moveq   #32,D0
     move.b  D0,($0001,A4)
     ; If in the first quest, return. Stalfos can't shoot in this quest.
@@ -5685,7 +5773,7 @@ _L_z04_UpdateStalfos_SetShootTimer:
     ;
     moveq   #87,D0
     move.b  D0,($0000,A4)
-    bsr     _ShootIfWanted
+    jsr     _ShootIfWanted
     ; If failed, then go set the qspeed.
     ;
     bcc  _L_z04_UpdateStalfos_CheckResult
@@ -5862,7 +5950,7 @@ InitDigdogger1:
 
     even
 InitDigdogger2:
-    bsr     InitDigdogger1
+    jsr     InitDigdogger1
     ; TODO:
     ; Change object type to $38 (Digdogger1).
     ;
@@ -5904,15 +5992,15 @@ UpdateMoldorm:
     ;
     move.b  ($066C,A4),D0
     bne  _anon_z04_79
-    bsr     ControlMoldormFlight
-    bsr     MoveFlyer
+    jsr     ControlMoldormFlight
+    jsr     MoveFlyer
 _anon_z04_79:
     ; Draw with sprite attributes: normal, red palette row
     ;
     moveq   #2,D0
     move.b  D0,($0003,A4)
     moveq   #68,D0
-    bsr     Anim_WriteSprite
+    jsr     Anim_WriteSprite
     ; Check collisions, but never let them interfere with movement.
     ;
     lea     ($0098,A4),A0
@@ -5920,7 +6008,7 @@ _anon_z04_79:
     move.b  D0,-(A5)  ; PHA
     move.b  ($28,A4,D2.W),D0
     move.b  D0,-(A5)  ; PHA
-    bsr     CheckMonsterCollisions
+    jsr     CheckMonsterCollisions
     move.b  (A5)+,D0  ; PLA
     move.b  D0,($28,A4,D2.W)
     move.b  (A5)+,D0  ; PLA
@@ -5943,7 +6031,7 @@ _anon_z04_79:
     moveq   #32,D0
     lea     ($0485,A4),A0
     move.b  D0,(A0,D2.W)
-    bsr     CheckBossHitReaction
+    jsr     CheckBossHitReaction
     ; Look for the tail segment, starting from the low end
     ; of the chain that this dead segment belongs to.
     ;
@@ -5993,7 +6081,7 @@ _anon_z04_80:
     ; Reset the metastate of the current segment, so that it comes
     ; back to life.
     ;
-    bsr     ResetObjMetastate
+    jsr     ResetObjMetastate
     even
 _L_z04_UpdateMoldorm_Exit:
     rts
@@ -6002,7 +6090,7 @@ _L_z04_UpdateMoldorm_Exit:
 ControlMoldormFlight:
     lea     ($0444,A4),A0
     move.b  (A0,D2.W),D0
-    bsr     _m68k_tablejump  ; M68K-native table dispatch (replaces JSR TableJump)
+    jsr     _m68k_tablejump  ; M68K-native table dispatch (replaces JSR TableJump)
     even
 ControlMoldormFlight_JumpTable:
     dc.l    Moldorm_Chase   ; jump table entry (32-bit for _m68k_tablejump)
@@ -6018,21 +6106,25 @@ Moldorm_Chase:
     cmpi.b  #$05,D2
     beq  _anon_z04_81
     cmpi.b  #$0A,D2
-    bne  L1156B_Exit
+    beq.s  __far_z_04_0044
+    jmp  L1156B_Exit
+__far_z_04_0044:
 _anon_z04_81:
     ; Chase while flying, as usual.
     ;
-    bsr     Flyer_Chase
+    jsr     Flyer_Chase
     ; If timer has not expired, then
     ; go see if it's time to propagate direction changes down the chain.
     ;
     move.b  ($28,A4,D2.W),D0
-    bne  Moldorm_PropagateDirs
+    beq.s  __far_z_04_0045
+    jmp  Moldorm_PropagateDirs
+__far_z_04_0045:
     even
 Moldorm_ChangeFlyingState:
     ; Timer = 0. Choose a new flying state, and arm the timer.
     ;
-    bsr     Flyer_MoldormDecideState
+    jsr     Flyer_MoldormDecideState
     moveq   #16,D0
     move.b  D0,($28,A4,D2.W)
     ; If the next lower slot's direction <> 0, then
@@ -6056,7 +6148,9 @@ Moldorm_ChangeFlyingState:
     ;
     lea     ($0097,A4),A0
     move.b  (A0,D2.W),D0
-    bne  Moldorm_PropagateDirs
+    beq.s  __far_z_04_0046
+    jmp  Moldorm_PropagateDirs
+__far_z_04_0046:
     rts
 
     even
@@ -6067,11 +6161,13 @@ Moldorm_Wander:
     cmpi.b  #$05,D2
     beq  _anon_z04_82
     cmpi.b  #$0A,D2
-    bne  L1156B_Exit
+    beq.s  __far_z_04_0047
+    jmp  L1156B_Exit
+__far_z_04_0047:
 _anon_z04_82:
     ; Turn randomly while flying, as usual.
     ;
-    bsr     Flyer_Wander
+    jsr     Flyer_Wander
     ; After every turn, the common flyer routines set timer to $10.
     ; This can be used as a signal for moldorm to propagate
     ; direction changes down the chain.
@@ -6090,14 +6186,18 @@ _anon_z04_82:
     ; arm the timer again, and shift directions down the chain.
     ;
     move.b  ($28,A4,D2.W),D0
-    beq  Moldorm_ChangeFlyingState
+    bne.s  __far_z_04_0048
+    jmp  Moldorm_ChangeFlyingState
+__far_z_04_0048:
     even
 Moldorm_PropagateDirs:
     ; If timer <> $10 (rearmed in this frame), then return.
     ;
     move.b  ($28,A4,D2.W),D0
     cmpi.b  #$10,D0
-    bne  L1156B_Exit
+    beq.s  __far_z_04_0049
+    jmp  L1156B_Exit
+__far_z_04_0049:
     ; Timer = $10.
     ;
     ; If deferred bounce direction <> 0, then
@@ -6197,7 +6297,9 @@ L_Digdogger_AfterFlute:
     ;
     lea     ($046B,A4),A0
     move.b  (A0,D2.W),D0
-    bne  L_Digdogger_Turn
+    beq.s  __far_z_04_0050
+    jmp  L_Digdogger_Turn
+__far_z_04_0050:
     ; Set object timer to $40, and increase flute state to 2.
     ; Then go check collisions as a big digdogger.
     ;
@@ -6227,7 +6329,9 @@ _L_z04_L_Digdogger_AfterFlute_SplitUp:
     eori.b #$01,D0
     lea     ($046B,A4),A0
     move.b  D0,(A0,D2.W)
-    beq  CheckBigDigdoggerCollisions
+    bne.s  __far_z_04_0051
+    jmp  CheckBigDigdoggerCollisions
+__far_z_04_0051:
 _anon_z04_84:
     jmp     L_Digdogger_DrawAsLittle
 
@@ -6248,7 +6352,7 @@ _L_z04_L_Digdogger_AfterFlute_LoopMakeChild:
     ; Initialize a child digdogger (type $18) in the next object slot.
     ;
     addq.b  #1,D2
-    bsr     InitDigdogger1
+    jsr     InitDigdogger1
     moveq   #24,D0
     lea     ($034F,A4),A0
     move.b  D0,(A0,D2.W)
@@ -6282,7 +6386,7 @@ _L_z04_L_Digdogger_AfterFlute_LoopMakeChild:
     move.b  (A5)+,D0  ; PLA
     moveq   #0,D2
     move.b  D0,D2
-    bsr     PlayBossDeathCry
+    jsr     PlayBossDeathCry
     ; Destroy the big digdogger by resetting the object type.
     ;
     moveq   #0,D0
@@ -6300,7 +6404,7 @@ _L_z04_L_Digdogger_AfterFlute_LoopMakeChild:
 
     even
 L_Digdogger_TurnTowardLink:
-    bsr     TurnTowardsPlayer8
+    jsr     TurnTowardsPlayer8
     jmp     L_Digdogger_Move
 
     even
@@ -6311,39 +6415,49 @@ UpdateDigdogger:
     move.b  ($066C,A4),D0
     move.b  ($3D,A4,D2.W),D1
     or.b  D1,D0
-    bne  L_Digdogger_DrawAndCheckCollisions
+    beq.s  __far_z_04_0052
+    jmp  L_Digdogger_DrawAndCheckCollisions
+__far_z_04_0052:
     ; If the flute was used, then go start splitting up,
     ; or handling a child digdogger.
     ;
     moveq   #0,D3
     move.b  ($051B,A4),D3
-    bne  L_Digdogger_AfterFlute
+    beq.s  __far_z_04_0053
+    jmp  L_Digdogger_AfterFlute
+__far_z_04_0053:
     even
 L_Digdogger_Turn:
-    bsr     Digdogger_ChangeSpeed
+    jsr     Digdogger_ChangeSpeed
     ; If the object timer has expired, then set it to $10,
     ; and randomly choose to turn toward Link or randomly.
     ;
     move.b  ($28,A4,D2.W),D0
-    bne  L_Digdogger_Move
+    beq.s  __far_z_04_0054
+    jmp  L_Digdogger_Move
+__far_z_04_0054:
     moveq   #16,D0
     move.b  D0,($28,A4,D2.W)
     move.b  ($18,A4,D2.W),D0
     cmpi.b  #$80,D0
-    bcc  L_Digdogger_TurnTowardLink
-    bsr     TurnRandomlyDir8
+    bcs.s  __far_z_04_0055
+    jmp  L_Digdogger_TurnTowardLink
+__far_z_04_0055:
+    jsr     TurnRandomlyDir8
     even
 L_Digdogger_Move:
-    bsr     Digdogger_Move
+    jsr     Digdogger_Move
     even
 L_Digdogger_DrawAndCheckCollisions:
     ; If this is a child, then finish updating this little digdogger.
     ;
     lea     ($046B,A4),A0
     move.b  (A0,D2.W),D0
-    beq  CheckBigDigdoggerCollisions
-    bsr     BoundFlyer
-    bsr     CheckMonsterCollisions
+    bne.s  __far_z_04_0056
+    jmp  CheckBigDigdoggerCollisions
+__far_z_04_0056:
+    jsr     BoundFlyer
+    jsr     CheckMonsterCollisions
     jmp     Digdogger_Draw
 
     even
@@ -6390,8 +6504,8 @@ _L_z04_CheckBigDigdoggerCollisions_LoopCornerCollision:
     move.b  D0,(A0,D2.W)
     ; Check the room boundary and object collisions in this temporary location.
     ;
-    bsr     BoundFlyer
-    bsr     CheckMonsterCollisions
+    jsr     BoundFlyer
+    jsr     CheckMonsterCollisions
     ; Increase the loop index, and loop again until it = 4.
     ;
     lea     ($0478,A4),A0
@@ -6407,7 +6521,7 @@ _L_z04_CheckBigDigdoggerCollisions_LoopCornerCollision:
     move.b  D0,(A0,D2.W)
     move.b  (A5)+,D0  ; PLA
     move.b  D0,($70,A4,D2.W)
-    bsr     Digdogger_Draw
+    jsr     Digdogger_Draw
     even
 L_Digdogger_DrawAsLittle:
     ; Save the original coordinates.
@@ -6446,7 +6560,7 @@ L_Digdogger_DrawAsLittle:
     moveq   #1,D0
     lea     ($046B,A4),A0
     move.b  D0,(A0,D2.W)
-    bsr     Digdogger_Draw
+    jsr     Digdogger_Draw
     ; Restore the child flag and object type.
     ;
     move.b  (A5)+,D0  ; PLA
@@ -6468,7 +6582,7 @@ L_Digdogger_DrawAsLittle:
 Digdogger_ChangeSpeed:
     lea     ($045E,A4),A0
     move.b  (A0,D2.W),D0
-    bsr     _m68k_tablejump  ; M68K-native table dispatch (replaces JSR TableJump)
+    jsr     _m68k_tablejump  ; M68K-native table dispatch (replaces JSR TableJump)
     even
 Digdogger_ChangeSpeed_JumpTable:
     dc.l    Digdogger_SpeedUp   ; jump table entry (32-bit for _m68k_tablejump)
@@ -6491,13 +6605,17 @@ _anon_z04_85:
     lea     ($0437,A4),A0
     move.b  (A0,D2.W),D1
     cmp.b   D1,D0
-    bne  L116EA_Exit
+    beq.s  __far_z_04_0057
+    jmp  L116EA_Exit
+__far_z_04_0057:
     lea     ($042C,A4),A0
     move.b  (A0,D2.W),D0
     lea     ($0444,A4),A0
     move.b  (A0,D2.W),D1
     cmp.b   D1,D0
-    bne  L116EA_Exit
+    beq.s  __far_z_04_0058
+    jmp  L116EA_Exit
+__far_z_04_0058:
     ; Set speed flag to 1 meaning decelerate.
     ;
     lea     ($045E,A4),A0
@@ -6528,13 +6646,17 @@ _anon_z04_86:
     lea     ($0437,A4),A0
     move.b  (A0,D2.W),D1
     cmp.b   D1,D0
-    bne  L116EA_Exit
+    beq.s  __far_z_04_0059
+    jmp  L116EA_Exit
+__far_z_04_0059:
     lea     ($042C,A4),A0
     move.b  (A0,D2.W),D0
     lea     ($0444,A4),A0
     move.b  (A0,D2.W),D1
     cmp.b   D1,D0
-    bne  L116EA_Exit
+    beq.s  __far_z_04_0060
+    jmp  L116EA_Exit
+__far_z_04_0060:
     ; Set speed flag to 0 meaning accelerate.
     ;
     lea     ($045E,A4),A0
@@ -6553,7 +6675,9 @@ SetTargetSpeed:
     ;
     lea     ($046B,A4),A0
     move.b  (A0,D2.W),D0
-    beq  L116EA_Exit
+    bne.s  __far_z_04_0061
+    jmp  L116EA_Exit
+__far_z_04_0061:
     lea     ($0444,A4),A0
     addq.b  #1,(A0,D2.W)
     even
@@ -6682,7 +6806,7 @@ DigdoggerSpriteAttrs:
     even
 Digdogger_Draw:
     moveq   #6,D0
-    bsr     Anim_AdvanceAnimCounterAndSetObjPosForSpriteDescriptor
+    jsr     Anim_AdvanceAnimCounterAndSetObjPosForSpriteDescriptor
     ; If this is a child digdogger, then go draw it.
     ;
     lea     ($046B,A4),A0
@@ -6716,7 +6840,7 @@ _L_z04_Digdogger_Draw_LoopPart:
     ;
     lea     (DigdoggerSpriteAttrs).l,A0
     move.b  (A0,D3.W),D0
-    bsr     Anim_SetSpriteDescriptorAttributes
+    jsr     Anim_SetSpriteDescriptorAttributes
     move.b  D3,D0
     move.b  D0,-(A5)  ; PHA
     ; Parts at odd indexes are flipped horizontally.
@@ -6724,7 +6848,7 @@ _L_z04_Digdogger_Draw_LoopPart:
     andi.b #$01,D0
     move.b  D0,($000F,A4)
     moveq   #0,D0
-    bsr     DrawObjectNotMirrored
+    jsr     DrawObjectNotMirrored
     move.b  (A5)+,D0  ; PLA
     moveq   #0,D3
     move.b  D0,D3
@@ -6740,7 +6864,7 @@ _L_z04_Digdogger_Draw_LoopPart:
 _L_z04_Digdogger_Draw_DrawLittle:
     ; A little digdogger is easy to draw.
     ;
-    bsr     Anim_SetSpriteDescriptorLevelPaletteRow
+    jsr     Anim_SetSpriteDescriptorLevelPaletteRow
     lea     ($03E4,A4),A0
     move.b  (A0,D2.W),D0
     jmp     DrawObjectMirrored
@@ -6749,15 +6873,15 @@ _L_z04_Digdogger_Draw_DrawLittle:
 UpdateAquamentus:
     move.b  ($066C,A4),D0
     bne  _anon_z04_87
-    bsr     Aquamentus_Move
-    bsr     Aquamentus_Shoot
+    jsr     Aquamentus_Move
+    jsr     Aquamentus_Shoot
 _anon_z04_87:
-    bsr     Aquamentus_Draw
-    bsr     CheckMonsterCollisions
-    bsr     PlayBossHitCryIfNeeded
+    jsr     Aquamentus_Draw
+    jsr     CheckMonsterCollisions
+    jsr     PlayBossHitCryIfNeeded
     even
 CheckBossHitReaction:
-    bsr     PlayBossDeathCryIfNeeded
+    jsr     PlayBossDeathCryIfNeeded
     jmp     ResetShoveInfo
 
     even
@@ -6870,19 +6994,19 @@ Aquamentus_Shoot:
     move.b  D0,($28,A4,D2.W)
     ; Shoot the middle fireball. Its vertical displacement is 0.
     ;
-    bsr     ShootFireball55
+    jsr     ShootFireball55
     moveq   #0,D0
     lea     ($0478,A4),A0
     move.b  D0,(A0,D3.W)
     ; Shoot the lower fireball. Its vertical displacement is 1.
     ;
-    bsr     ShootFireball55
+    jsr     ShootFireball55
     moveq   #1,D0
     lea     ($0478,A4),A0
     move.b  D0,(A0,D3.W)
     ; Shoot the upper fireball. Its vertical displacement is -1.
     ;
-    bsr     ShootFireball55
+    jsr     ShootFireball55
     move.b  #$FF,D0
     lea     ($0478,A4),A0
     move.b  D0,(A0,D3.W)
@@ -7029,7 +7153,7 @@ _L_z04_Aquamentus_Draw_LoopSprite:
     move.b  #$C0,D0
     even
 _L_z04_Aquamentus_Draw_WriteSprite:
-    bsr     WriteBossSprite
+    jsr     WriteBossSprite
     ; Bottom of the loop.
     ; Decrement tile index and loop index.
     ;
@@ -7065,9 +7189,9 @@ WriteBossSprite:
 
     even
 UpdateDodongo:
-    bsr     UpdateDodongoState
-    bsr     Dodongo_CheckCollisions
-    bsr     Dodongo_CheckBombHit
+    jsr     UpdateDodongoState
+    jsr     Dodongo_CheckCollisions
+    jsr     Dodongo_CheckBombHit
     jmp     Dodongo_Draw
 
 ; Unknown block
@@ -7081,7 +7205,7 @@ DodongoBloatedWaitTimes:
 UpdateDodongoState:
     lea     ($00AC,A4),A0
     move.b  (A0,D2.W),D0
-    bsr     _m68k_tablejump  ; M68K-native table dispatch (replaces JSR TableJump)
+    jsr     _m68k_tablejump  ; M68K-native table dispatch (replaces JSR TableJump)
     even
 UpdateDodongoState_JumpTable:
     dc.l    UpdateDodongoState0_Move   ; jump table entry (32-bit for _m68k_tablejump)
@@ -7118,7 +7242,7 @@ _L_z04_UpdateDodongoState0_Move_Move:
     moveq   #32,D0
     lea     ($041F,A4),A0
     move.b  D0,(A0,D2.W)
-    bsr     Wanderer_TargetPlayer
+    jsr     Wanderer_TargetPlayer
     ; Pop the offset and add it to the X coordinate.
     ;
     ; This brings the X coordinate back to the unique value
@@ -7149,7 +7273,9 @@ UpdateDodongoState2_Stunned:
     moveq   #0,D3
     move.b  ($3D,A4,D2.W),D3
     subq.b  #1,D3
-    beq  UpdateDodongoState1_Bloated_Sub_End
+    bne.s  __far_z_04_0062
+    jmp  UpdateDodongoState1_Bloated_Sub_End
+__far_z_04_0062:
     bpl  _anon_z04_90
     moveq   #32,D0
     move.b  D0,($3D,A4,D2.W)
@@ -7160,7 +7286,7 @@ _anon_z04_90:
 UpdateDodongoState1_Bloated:
     lea     ($042C,A4),A0
     move.b  (A0,D2.W),D0
-    bsr     _m68k_tablejump  ; M68K-native table dispatch (replaces JSR TableJump)
+    jsr     _m68k_tablejump  ; M68K-native table dispatch (replaces JSR TableJump)
     even
 UpdateDodongoState1_Bloated_JumpTable:
     dc.l    UpdateDodongoState1_Bloated_Sub_Wait   ; jump table entry (32-bit for _m68k_tablejump)
@@ -7181,7 +7307,9 @@ UpdateDodongoState1_Bloated_Sub_Wait:
     move.b  (A0,D2.W),D3
     subq.b  #1,D3
     beq  _L_z04_UpdateDodongoState1_Bloated_Sub_Wait_AdvanceSubstate
-    bpl  L_Dodongo_DecrementBloatedTimer
+    bmi.s  __far_z_04_0063
+    jmp  L_Dodongo_DecrementBloatedTimer
+__far_z_04_0063:
     ; Set the bloated timer according to the substate.
     ;
     moveq   #0,D3
@@ -7194,7 +7322,9 @@ UpdateDodongoState1_Bloated_Sub_Wait:
     ; If substate <> 0, go decrement bloated timer.
     ;
     cmpi.b  #$00,D3
-    bne  L_Dodongo_DecrementBloatedTimer
+    beq.s  __far_z_04_0064
+    jmp  L_Dodongo_DecrementBloatedTimer
+__far_z_04_0064:
     ; Deactivate the bomb in the first bomb slot ($10).
     ;
     moveq   #16,D3
@@ -7223,7 +7353,9 @@ _L_z04_UpdateDodongoState1_Bloated_Sub_Wait_AdvanceSubstate:
     lea     ($042C,A4),A0
     move.b  (A0,D2.W),D0
     cmpi.b  #$02,D0
-    bcs  L_Dodongo_DecrementBloatedTimer
+    bcc.s  __far_z_04_0065
+    jmp  L_Dodongo_DecrementBloatedTimer
+__far_z_04_0065:
     ; New bloated substate >= 2.
     ;
     ; If bomb hits < 2, then set bloated substate 4,
@@ -7238,7 +7370,9 @@ _L_z04_UpdateDodongoState1_Bloated_Sub_Wait_AdvanceSubstate:
     lea     ($0437,A4),A0
     move.b  (A0,D2.W),D3
     cmpi.b  #$02,D3
-    bcc  L_Dodongo_DecrementBloatedTimer
+    bcs.s  __far_z_04_0066
+    jmp  L_Dodongo_DecrementBloatedTimer
+__far_z_04_0066:
     moveq   #4,D0
     lea     ($042C,A4),A0
     move.b  D0,(A0,D2.W)
@@ -7252,11 +7386,11 @@ L_Dodongo_DecrementBloatedTimer:
 
     even
 UpdateDodongoState1_Bloated_Sub_Die:
-    bsr     UpdateDeadDummy
-    bsr     PlayBossDeathCry
+    jsr     UpdateDeadDummy
+    jsr     PlayBossDeathCry
     even
 UpdateDodongoState1_Bloated_Sub_End:
-    bsr     ResetObjState
+    jsr     ResetObjState
     lea     ($042C,A4),A0
     move.b  D0,(A0,D2.W)
     rts
@@ -7265,7 +7399,7 @@ UpdateDodongoState1_Bloated_Sub_End:
 Dodongo_CheckCollisions:
     ; Check for collisions using a regular monster size.
     ;
-    bsr     Dodongo_CheckCollisionsStandardSize
+    jsr     Dodongo_CheckCollisionsStandardSize
     ; If harmed, then go die.
     ;
     lea     ($04F0,A4),A0
@@ -7276,7 +7410,9 @@ Dodongo_CheckCollisions:
     lea     ($0098,A4),A0
     move.b  (A0,D2.W),D0
     cmpi.b  #$04,D0
-    bcc  L11989_Exit
+    bcs.s  __far_z_04_0067
+    jmp  L11989_Exit
+__far_z_04_0067:
     ; Save the X coordinate.
     ; Then add $10 to check the right-hand side.
     ;
@@ -7286,7 +7422,7 @@ Dodongo_CheckCollisions:
     move.b  #$10,D1
     addx.b  D1,D0   ; ADC #$10 (X flag = 6502 C)
     move.b  D0,($70,A4,D2.W)
-    bsr     Dodongo_CheckCollisionsStandardSize
+    jsr     Dodongo_CheckCollisionsStandardSize
     ; Restore the X coordinate.
     ;
     move.b  (A5)+,D0  ; PLA
@@ -7295,10 +7431,12 @@ Dodongo_CheckCollisions:
     ;
     lea     ($04F0,A4),A0
     move.b  (A0,D2.W),D0
-    beq  L11989_Exit
+    bne.s  __far_z_04_0068
+    jmp  L11989_Exit
+__far_z_04_0068:
     even
 _L_z04_Dodongo_CheckCollisions_Die:
-    bsr     UpdateDodongoState1_Bloated_Sub_Die
+    jsr     UpdateDodongoState1_Bloated_Sub_Die
     ; Drop a bomb from this fight.
     ;
     moveq   #10,D0
@@ -7313,20 +7451,22 @@ Dodongo_CheckCollisionsStandardSize:
     move.b  #$FF,D0
     lea     ($04B2,A4),A0
     move.b  D0,(A0,D2.W)
-    bsr     CheckMonsterCollisions
+    jsr     CheckMonsterCollisions
     ; If state <> 2 (stunned), then return.
     ;
     lea     ($00AC,A4),A0
     move.b  (A0,D2.W),D0
     cmpi.b  #$02,D0
-    bne  L11989_Exit
+    beq.s  __far_z_04_0069
+    jmp  L11989_Exit
+__far_z_04_0069:
     ; Take out the bit for the sword in the invincibility mask.
     ; Check for collision with Link's sword.
     ;
     move.b  #$FE,D0
     lea     ($04B2,A4),A0
     move.b  D0,(A0,D2.W)
-    bsr     GetObjectMiddle
+    jsr     GetObjectMiddle
     moveq   #13,D3
     jmp     CheckMonsterSwordCollision
 
@@ -7401,7 +7541,9 @@ _anon_z04_91:
     ; go see if Dodongo will eat it.
     ;
     cmpi.b  #$12,D0
-    beq  Dodongo_TryEatBomb
+    bne.s  __far_z_04_0070
+    jmp  Dodongo_TryEatBomb
+__far_z_04_0070:
     ; If the object in the slot is actually a fire, then return.
     ;
     cmpi.b  #$20,D0
@@ -7411,7 +7553,7 @@ _anon_z04_91:
     ; then set stunned state (2).
     ;
     moveq   #0,D3
-    bsr     Dodongo_IsBombInRange
+    jsr     Dodongo_IsBombInRange
     bne  _L_z04_Dodongo_CheckBombHit_Exit
     moveq   #2,D0
     lea     ($00AC,A4),A0
@@ -7429,7 +7571,7 @@ Dodongo_TryEatBomb:
     ; This is a coarse test, to see if the bomb is over any part of the monster.
     ;
     moveq   #1,D3
-    bsr     Dodongo_IsBombInRange
+    jsr     Dodongo_IsBombInRange
     bne  _L_z04_Dodongo_TryEatBomb_Exit
     ; Will loop from 1 to 0, indexed by [00].
     ;
@@ -7605,7 +7747,7 @@ DodongoFrameHFlipsBloated:
 
     even
 Dodongo_Draw:
-    bsr     Anim_SetSpriteDescriptorLevelPaletteRow
+    jsr     Anim_SetSpriteDescriptorLevelPaletteRow
     ; Make a 5-way direction index out of the facing direction
     ; by shifting right once, and store it in [00].
     ;
@@ -7660,7 +7802,9 @@ _L_z04_Dodongo_Draw_DrawFaded:
     ;
     move.b  ($0015,A4),D0
     andi.b #$02,D0
-    beq  L11B00_Exit
+    bne.s  __far_z_04_0071
+    jmp  L11B00_Exit
+__far_z_04_0071:
     moveq   #0,D3
     move.b  ($0000,A4),D3
     jmp     _L_z04_Dodongo_Draw_PrepareToDraw
@@ -7690,7 +7834,7 @@ _L_z04_Dodongo_Draw_DrawWalking:
 _L_z04_Dodongo_Draw_PrepareToDraw:
     ; Start preparing sprites.
     ;
-    bsr     Anim_FetchObjPosForSpriteDescriptor
+    jsr     Anim_FetchObjPosForSpriteDescriptor
     move.b  D3,D0
     move.b  D0,-(A5)  ; PHA
     ; Get the horizontal flipping and frame image number for this frame image.
@@ -7708,14 +7852,14 @@ _L_z04_Dodongo_Draw_PrepareToDraw:
     cmpi.b  #$09,D0
     bne  _L_z04_Dodongo_Draw_DrawLeftSide
 _anon_z04_92:
-    bsr     DrawObjectMirrored
+    jsr     DrawObjectMirrored
     jmp     _L_z04_Dodongo_Draw_DrawRightSide
 
     even
 _L_z04_Dodongo_Draw_DrawLeftSide:
     ; No other frame images are mirrored.
     ;
-    bsr     DrawObjectNotMirrored
+    jsr     DrawObjectNotMirrored
     even
 _L_z04_Dodongo_Draw_DrawRightSide:
     move.b  (A5)+,D0  ; PLA
@@ -7726,7 +7870,9 @@ _L_z04_Dodongo_Draw_DrawRightSide:
     lea     ($0098,A4),A0
     move.b  (A0,D2.W),D0
     andi.b #$03,D0
-    beq  L11B00_Exit
+    bne.s  __far_z_04_0072
+    jmp  L11B00_Exit
+__far_z_04_0072:
     ; Else draw the right side.
     ;
     ; Keep the Y coordinate in [01].
@@ -7737,7 +7883,7 @@ _L_z04_Dodongo_Draw_DrawRightSide:
     move.b  #$10,D1
     addx.b  D1,D0   ; ADC #$10 (X flag = 6502 C)
     move.b  D0,($0000,A4)
-    bsr     Anim_SetSpriteDescriptorLevelPaletteRow
+    jsr     Anim_SetSpriteDescriptorLevelPaletteRow
     ; XOR'ing the low bit swaps the left and right frame numbers.
     ;
     ; So, if we had animation frame 1, direction left:
@@ -7768,7 +7914,7 @@ _L_z04_Dodongo_Draw_DrawRightSide:
     even
 Anim_SetSpriteDescriptorLevelPaletteRow:
     moveq   #3,D0
-    bsr     Anim_SetSpriteDescriptorAttributes
+    jsr     Anim_SetSpriteDescriptorAttributes
     even
 L11B00_Exit:
     rts
@@ -7803,25 +7949,25 @@ _anon_z04_93:
     even
 UpdateGibdo:
     move.b  #$80,D0
-    bsr     UpdateCommonWanderer
-    bsr     CheckMonsterCollisions
+    jsr     UpdateCommonWanderer
+    jsr     CheckMonsterCollisions
     moveq   #8,D0
-    bsr     Anim_AdvanceAnimCounterAndSetObjPosForSpriteDescriptor
-    bsr     Anim_SetObjHFlipForSpriteDescriptor
+    jsr     Anim_AdvanceAnimCounterAndSetObjPosForSpriteDescriptor
+    jsr     Anim_SetObjHFlipForSpriteDescriptor
     moveq   #0,D0
     jmp     DrawObjectNotMirrored
 
     even
 UpdateDarknut:
     move.b  #$80,D0
-    bsr     UpdateCommonWanderer
-    bsr     CheckMonsterCollisions
+    jsr     UpdateCommonWanderer
+    jsr     CheckMonsterCollisions
     ; Darknuts are never stunned.
     ;
     moveq   #0,D0
     move.b  D0,($3D,A4,D2.W)
     moveq   #8,D0
-    bsr     Anim_AdvanceAnimCounterAndSetObjPosForSpriteDescriptor
+    jsr     Anim_AdvanceAnimCounterAndSetObjPosForSpriteDescriptor
     ; If facing left, then enable horizontal flipping.
     ;
     lea     ($0098,A4),A0
@@ -7857,7 +8003,7 @@ _anon_z04_94:
     bne  _anon_z04_95
     addq.b  #1,($000F,A4)
 _anon_z04_95:
-    bsr     DrawObjectNotMirrored
+    jsr     DrawObjectNotMirrored
     rts
 
     even
@@ -7899,17 +8045,19 @@ _anon_z04_96:
     ;
     move.b  ($0015,A4),D0
     lsr.b  #1,D0   ; LSR A
-    bcs  L_PolsVoice_DrawAndCheckCollisions
+    bcc.s  __far_z_04_0073
+    jmp  L_PolsVoice_DrawAndCheckCollisions
+__far_z_04_0073:
     ; Otherwise move horizontally.
     ;
-    bsr     PolsVoice_MoveX
+    jsr     PolsVoice_MoveX
     ; If state <> 0, then the monster is jumping.
     ; Go handle vertical movement.
     ;
     lea     ($00AC,A4),A0
     move.b  (A0,D2.W),D0
     beq  _L_z04_UpdatePolsVoice_State0
-    bsr     UpdatePolsVoiceState1_Jumping
+    jsr     UpdatePolsVoiceState1_Jumping
     jmp     _L_z04_UpdatePolsVoice_CheckWalkability
 
     even
@@ -7942,7 +8090,7 @@ _L_z04_UpdatePolsVoice_CheckWalkability:
     ; If the square the monster is over is walkable, then
     ; go draw and check object collisions.
     ;
-    bsr     PolsVoice_IsSquareWalkable
+    jsr     PolsVoice_IsSquareWalkable
     bcc  _L_z04_UpdatePolsVoice_DrawAndCheckCollisions
     ; If the unwalkable tile is a block, or >= $F4 (water, screen edge bricks),
     ; then go change to state 1.
@@ -7980,8 +8128,8 @@ _L_z04_UpdatePolsVoice_FlipHorizontally:
     eori.b #$03,D0
     lea     ($0098,A4),A0
     move.b  D0,(A0,D2.W)
-    bsr     PolsVoice_MoveX
-    bsr     PolsVoice_MoveX
+    jsr     PolsVoice_MoveX
+    jsr     PolsVoice_MoveX
     even
 _L_z04_UpdatePolsVoice_DrawAndCheckCollisions:
     jmp     L_PolsVoice_DrawAndCheckCollisions
@@ -7992,7 +8140,9 @@ _L_z04_UpdatePolsVoice_SetState1:
     ;
     lea     ($00AC,A4),A0
     move.b  (A0,D2.W),D0
-    bne  L_PolsVoice_DrawAndCheckCollisions
+    beq.s  __far_z_04_0074
+    jmp  L_PolsVoice_DrawAndCheckCollisions
+__far_z_04_0074:
     ; Go to state 1.
     ;
     lea     ($00AC,A4),A0
@@ -8043,10 +8193,10 @@ _anon_z04_98:
     even
 L_PolsVoice_DrawAndCheckCollisions:
     moveq   #8,D0
-    bsr     Anim_AdvanceAnimCounterAndSetObjPosForSpriteDescriptor
+    jsr     Anim_AdvanceAnimCounterAndSetObjPosForSpriteDescriptor
     lea     ($03E4,A4),A0
     move.b  (A0,D2.W),D0
-    bsr     DrawObjectMirrored
+    jsr     DrawObjectMirrored
     ; Pols Voice is invincible to everything but the sword,
     ; during normal collision detection.
     ;
@@ -8055,7 +8205,7 @@ L_PolsVoice_DrawAndCheckCollisions:
     move.b  #$FE,D0
     lea     ($04B2,A4),A0
     move.b  D0,(A0,D2.W)
-    bsr     CheckMonsterCollisions
+    jsr     CheckMonsterCollisions
     rts
 
     even
@@ -8166,7 +8316,7 @@ _L_z04_UpdatePolsVoiceState1_Jumping_Exit:
 ;
     even
 PolsVoice_IsSquareWalkable:
-    bsr     PolsVoice_GetCollidingTile
+    jsr     PolsVoice_GetCollidingTile
     ; If there's an unwalkable tile at the usual hotspot, then return.
     ;
     bcs  _L_z04_PolsVoice_IsSquareWalkable_Exit
@@ -8190,7 +8340,7 @@ PolsVoice_IsSquareWalkable:
     move.b  D0,(A0,D2.W)
     ; Check again at relative hotspot ($E, $E).
     ;
-    bsr     PolsVoice_GetCollidingTile
+    jsr     PolsVoice_GetCollidingTile
     ; Restore the original coordinates.
     ;
     move.b  (A5)+,D0  ; PLA
@@ -8213,7 +8363,7 @@ _L_z04_PolsVoice_IsSquareWalkable_Exit:
     even
 PolsVoice_GetCollidingTile:
     moveq   #0,D3
-    bsr     GetCollidableTile
+    jsr     GetCollidableTile
     lea     ($049E,A4),A0
     move.b  (A0,D2.W),D0
     ; Return C=0 if walkable.
@@ -8253,7 +8403,7 @@ UpdateLikeLike:
     move.b  (A0,D2.W),D0
     bne  _L_z04_UpdateLikeLike_HandleCaptured
     move.b  #$80,D0
-    bsr     UpdateCommonWanderer
+    jsr     UpdateCommonWanderer
     ; Like-like has a 4 animation frame cycle unlike most monsters
     ; which have 2.
     ;
@@ -8275,13 +8425,13 @@ UpdateLikeLike:
 _L_z04_UpdateLikeLike_Draw:
     ; Draw.
     ;
-    bsr     Anim_FetchObjPosForSpriteDescriptor
+    jsr     Anim_FetchObjPosForSpriteDescriptor
     lea     ($03E4,A4),A0
     move.b  (A0,D2.W),D0
-    bsr     DrawObjectMirrored
+    jsr     DrawObjectMirrored
     ; Check collisions. If Link was not captured, then return.
     ;
-    bsr     CheckMonsterCollisions
+    jsr     CheckMonsterCollisions
     lea     ($042C,A4),A0
     move.b  (A0,D2.W),D0
     beq  _L_z04_UpdateLikeLike_Exit
@@ -8355,14 +8505,14 @@ _L_z04_UpdateLikeLike_DrawAfterCapture:
     ; In this state, we have to draw Like-like over Link.
     ; So, don't use the usual sprite writing code that cycles sprites.
     ;
-    bsr     Anim_FetchObjPosForSpriteDescriptor
+    jsr     Anim_FetchObjPosForSpriteDescriptor
     lea     ($03E4,A4),A0
     move.b  (A0,D2.W),D0
-    bsr     DrawObjectMirroredOverLink
+    jsr     DrawObjectMirroredOverLink
     ; Check object collisions.
     ; If this monster hasn't died, then return.
     ;
-    bsr     CheckMonsterCollisions
+    jsr     CheckMonsterCollisions
     lea     ($0405,A4),A0
     move.b  (A0,D2.W),D0
     beq  _L_z04_UpdateLikeLike_Exit
@@ -8374,14 +8524,14 @@ _L_z04_UpdateLikeLike_DrawAfterCapture:
 
     even
 UpdateVire:
-    bsr     UpdateVireState
+    jsr     UpdateVireState
     ; If state >= 2, then go split up into 2 keeses.
     ;
     lea     ($00AC,A4),A0
     move.b  (A0,D2.W),D0
     cmpi.b  #$02,D0
     bcc  _L_z04_UpdateVire_SplitUp
-    bsr     CheckVireCollisions
+    jsr     CheckVireCollisions
     jmp     DrawVire
 
     even
@@ -8390,7 +8540,7 @@ _L_z04_UpdateVire_SplitUp:
     ; So, increase object count by 1.
     ;
     addq.b  #1,($034E,A4)
-    bsr     DestroyMonster
+    jsr     DestroyMonster
     ; Two times, look for an empty monster slot.
     ; If one is found, then use the "shoot" operation to create a red keese.
     ;
@@ -8399,11 +8549,11 @@ _L_z04_UpdateVire_SplitUp:
 _L_z04_UpdateVire_LoopMakeKeese:
     move.b  D3,D0
     move.b  D0,-(A5)  ; PHA
-    bsr     FindEmptyMonsterSlot
+    jsr     FindEmptyMonsterSlot
     beq  _L_z04_UpdateVire_NextLoopMakeKeese
     moveq   #28,D0
     move.b  D0,($0000,A4)
-    bsr     Shoot
+    jsr     Shoot
     even
 _L_z04_UpdateVire_NextLoopMakeKeese:
     move.b  (A5)+,D0  ; PLA
@@ -8417,7 +8567,7 @@ _L_z04_UpdateVire_NextLoopMakeKeese:
 UpdateVireState:
     lea     ($00AC,A4),A0
     move.b  (A0,D2.W),D0
-    bsr     _m68k_tablejump  ; M68K-native table dispatch (replaces JSR TableJump)
+    jsr     _m68k_tablejump  ; M68K-native table dispatch (replaces JSR TableJump)
     even
 UpdateVireState_JumpTable:
     dc.l    UpdateVireState0   ; jump table entry (32-bit for _m68k_tablejump)
@@ -8431,7 +8581,7 @@ VireJumpOffsets:
     even
 UpdateVireState0:
     move.b  #$80,D0
-    bsr     UpdateCommonWanderer
+    jsr     UpdateCommonWanderer
     ; If we have the clock, or monster is stunned; then return.
     ;
     move.b  ($066C,A4),D0
@@ -8449,7 +8599,7 @@ UpdateVireState0:
     ;
     lea     ($0394,A4),A0
     move.b  (A0,D2.W),D0
-    bsr     Abs
+    jsr     Abs
     moveq   #0,D3
     move.b  D0,D3
     ; Add the vertical offset; so that as the vire moves left or right,
@@ -8475,7 +8625,7 @@ CheckVireCollisions:
     lea     ($00AC,A4),A0
     move.b  (A0,D2.W),D0
     bne  _L_z04_CheckVireCollisions_Exit
-    bsr     CheckMonsterCollisions
+    jsr     CheckMonsterCollisions
     ; If it was killed, then return.
     ;
     lea     ($0405,A4),A0
@@ -8496,7 +8646,7 @@ _L_z04_CheckVireCollisions_Exit:
     even
 DrawVire:
     moveq   #10,D0
-    bsr     Anim_AdvanceAnimCounterAndSetObjPosForSpriteDescriptor
+    jsr     Anim_AdvanceAnimCounterAndSetObjPosForSpriteDescriptor
     ; The movement frame is the fram image number, unless facing up.
     ; In this case, add 2 to the frame image.
     ;
@@ -8521,9 +8671,11 @@ DrawVire:
     even
 UpdateBlueWizzrobe:
     move.b  ($066C,A4),D0
-    bne  L_Wizzrobe_DrawAndCheckCollisions
-    bsr     BlueWizzrobe_WalkOrTeleport
-    bsr     BlueWizzrobe_TryShooting
+    beq.s  __far_z_04_0075
+    jmp  L_Wizzrobe_DrawAndCheckCollisions
+__far_z_04_0075:
+    jsr     BlueWizzrobe_WalkOrTeleport
+    jsr     BlueWizzrobe_TryShooting
     even
 Wizzrobe_DrawAndCheckCollisionsIntermittently:
     ; If the teleporting distance remaining is even, then draw
@@ -8538,7 +8690,9 @@ Wizzrobe_DrawAndCheckCollisionsIntermittently:
     lea     ($0394,A4),A0
     move.b  (A0,D2.W),D0
     lsr.b  #1,D0   ; LSR A
-    bcs  L11E17_Exit
+    bcc.s  __far_z_04_0076
+    jmp  L11E17_Exit
+__far_z_04_0076:
     even
 L_Wizzrobe_DrawAndCheckCollisions:
     jmp     Wizzrobe_DrawAndCheckCollisions
@@ -8565,7 +8719,7 @@ BlueWizzrobe_WalkOrTeleport:
 _L_z04_BlueWizzrobe_WalkOrTeleport_WalkAgain:
     ; Distance remaining = 0. Still teleporting.
     ;
-    bsr     BlueWizzrobe_AlignWithNearestSquareAndRandomizeTimer
+    jsr     BlueWizzrobe_AlignWithNearestSquareAndRandomizeTimer
     jmp     BlueWizzrobe_TurnTowardLink
 
     even
@@ -8579,10 +8733,14 @@ _L_z04_BlueWizzrobe_WalkOrTeleport_Walk:
     ; a pause of $10 frames at the end.
     ;
     cmpi.b  #$10,D0
-    bcc  GoEveryOtherFrame
+    bcs.s  __far_z_04_0077
+    jmp  GoEveryOtherFrame
+__far_z_04_0077:
     cmpi.b  #$01,D0
-    bne  L11E17_Exit
-    bsr     BlueWizzrobe_ChooseTeleportTarget
+    beq.s  __far_z_04_0078
+    jmp  L11E17_Exit
+__far_z_04_0078:
+    jsr     BlueWizzrobe_ChooseTeleportTarget
     even
 L11E17_Exit:
     rts
@@ -8594,14 +8752,16 @@ GoEveryOtherFrame:
     ;
     move.b  ($0015,A4),D0
     lsr.b  #1,D0   ; LSR A
-    bcs  L_BlueWizzrobe_TurnTowardLinkIfNeeded
+    bcc.s  __far_z_04_0079
+    jmp  L_BlueWizzrobe_TurnTowardLinkIfNeeded
+__far_z_04_0079:
     even
 BlueWizzrobe_TurnSometimesAndMoveAndCheckTile:
-    bsr     BlueWizzrobe_AdvanceCounterAndTurnTowardLinkIfNeeded
+    jsr     BlueWizzrobe_AdvanceCounterAndTurnTowardLinkIfNeeded
     even
 BlueWizzrobe_MoveAndCheckTile:
-    bsr     BlueWizzrobe_Move
-    bsr     Wizzrobe_GetCollidableTile
+    jsr     BlueWizzrobe_Move
+    jsr     Wizzrobe_GetCollidableTile
     ; If walkable, then return.
     ;
     bcc  _L_z04_BlueWizzrobe_MoveAndCheckTile_Exit
@@ -8621,7 +8781,9 @@ _L_z04_BlueWizzrobe_MoveAndCheckTile_HitBlockOrWater:
     ;
     lea     ($0394,A4),A0
     move.b  (A0,D2.W),D0
-    bne  L11E17_Exit
+    beq.s  __far_z_04_0080
+    jmp  L11E17_Exit
+__far_z_04_0080:
     ; Else go start teleporting thru this obstacle.
     ;
     jmp     BeginTeleporting
@@ -8681,7 +8843,9 @@ L_BlueWizzrobe_TurnTowardLinkIfNeeded:
     lea     ($0412,A4),A0
     move.b  (A0,D2.W),D0
     andi.b #$3F,D0
-    bne  L11EAF_Exit
+    beq.s  __far_z_04_0081
+    jmp  L11EAF_Exit
+__far_z_04_0081:
     even
 BlueWizzrobe_TurnTowardLink:
     ; If the multiple of $40 is even, then turn horizontally,
@@ -8722,7 +8886,9 @@ _L_z04_BlueWizzrobe_TurnTowardLink_SetDir:
     lea     ($0098,A4),A0
     move.b  (A0,D2.W),D1
     cmp.b   D1,D0
-    beq  L11EAF_Exit
+    bne.s  __far_z_04_0082
+    jmp  L11EAF_Exit
+__far_z_04_0082:
     ; Else face toward Link.
     ;
     lea     ($0098,A4),A0
@@ -8821,7 +8987,7 @@ BlueWizzrobe_ChooseTeleportTarget:
     move.b  (A0,D3.W),D0
     moveq   #0,D3
     move.b  D0,D3
-    bsr     Wizzrobe_GetCollidableTileForDir
+    jsr     Wizzrobe_GetCollidableTileForDir
     move.b  (A5)+,D0  ; PLA
     moveq   #0,D3
     move.b  D0,D3
@@ -8832,7 +8998,9 @@ BlueWizzrobe_ChooseTeleportTarget:
     move.b  D0,($70,A4,D2.W)
     ; If not walkable, then all we can do is align with the nearest square.
     ;
-    bcs  BlueWizzrobe_AlignWithNearestSquareAndRandomizeTimer
+    bcc.s  __far_z_04_0083
+    jmp  BlueWizzrobe_AlignWithNearestSquareAndRandomizeTimer
+__far_z_04_0083:
     ; Set the random diagonal direction.
     ;
     lea     (BlueWizzrobeTeleportDirs).l,A0
@@ -8951,7 +9119,7 @@ Wizzrobe_GetCollidableTileForDir:
     addx.b  D1,D0   ; ADC WizzrobeCollisionOffsetsY,Y
     lea     ($0084,A4),A0
     move.b  D0,(A0,D2.W)
-    bsr     Wizzrobe_GetBaseCollidableTile
+    jsr     Wizzrobe_GetBaseCollidableTile
     move.b  (A5)+,D0  ; PLA
     lea     ($0084,A4),A0
     move.b  D0,(A0,D2.W)
@@ -8967,7 +9135,7 @@ Wizzrobe_GetCollidableTileForDir:
 ;
     even
 Wizzrobe_GetBaseCollidableTile:
-    bsr     GetCollidableTileStill
+    jsr     GetCollidableTileStill
     lea     ($049E,A4),A0
     move.b  (A0,D2.W),D0
     ; Return C=0 if walkable.
@@ -8987,10 +9155,14 @@ BlueWizzrobe_TryShooting:
     ;
     lea     ($0394,A4),A0
     move.b  (A0,D2.W),D0
-    bne  L11F7E_Exit
+    beq.s  __far_z_04_0084
+    jmp  L11F7E_Exit
+__far_z_04_0084:
     move.b  ($0015,A4),D0
     andi.b #$1F,D0
-    bne  L11F7E_Exit
+    beq.s  __far_z_04_0085
+    jmp  L11F7E_Exit
+__far_z_04_0085:
     ; If Link and the monster are not within the same square row,
     ; then go see about the same square column.
     ;
@@ -9002,7 +9174,9 @@ BlueWizzrobe_TryShooting:
     andi.b #$F0,D0
     move.b  ($0000,A4),D1
     cmp.b   D1,D0
-    bne  BlueWizzrobe_CheckSquareColumn
+    beq.s  __far_z_04_0086
+    jmp  BlueWizzrobe_CheckSquareColumn
+__far_z_04_0086:
     ; If the monster is to the right of Link, then choose left.
     ; Else choose right.
     ;
@@ -9020,7 +9194,9 @@ _anon_z04_101:
     lea     ($0098,A4),A0
     move.b  (A0,D2.W),D1
     cmp.b   D1,D0
-    beq  ShootMagicShot58
+    bne.s  __far_z_04_0087
+    jmp  ShootMagicShot58
+__far_z_04_0087:
     even
 L11F7E_Exit:
     rts
@@ -9036,7 +9212,9 @@ BlueWizzrobe_CheckSquareColumn:
     move.b  ($0070,A4),D0
     move.b  ($0000,A4),D1
     cmp.b   D1,D0
-    bne  L11F7E_Exit
+    beq.s  __far_z_04_0088
+    jmp  L11F7E_Exit
+__far_z_04_0088:
     ; If the monster is down from Link, then choose up.
     ; Else choose down.
     ;
@@ -9055,7 +9233,9 @@ _anon_z04_102:
     lea     ($0098,A4),A0
     move.b  (A0,D2.W),D1
     cmp.b   D1,D0
-    bne  L11F7E_Exit
+    beq.s  __far_z_04_0089
+    jmp  L11F7E_Exit
+__far_z_04_0089:
     even
 ShootMagicShot58:
     moveq   #88,D0
@@ -9068,7 +9248,9 @@ ShootMagicShot:
     ; If we have the magic clock, then return.
     ;
     move.b  ($066C,A4),D0
-    bne  L11F7E_Exit
+    beq.s  __far_z_04_0090
+    jmp  L11F7E_Exit
+__far_z_04_0090:
     ; Else play the magic sound, shoot, and return.
     ;
     moveq   #4,D0
@@ -9100,7 +9282,7 @@ _anon_z04_103:
     lsr.b  #1,D0   ; LSR A
     lsr.b  #1,D0   ; LSR A
     lsr.b  #1,D0   ; LSR A
-    bsr     _m68k_tablejump  ; M68K-native table dispatch (replaces JSR TableJump)
+    jsr     _m68k_tablejump  ; M68K-native table dispatch (replaces JSR TableJump)
     even
 UpdateRedWizzrobe_JumpTable:
     dc.l    UpdateRedWizzrobe_0   ; jump table entry (32-bit for _m68k_tablejump)
@@ -9155,7 +9337,9 @@ UpdateRedWizzrobe_3:
     lea     ($00AC,A4),A0
     move.b  (A0,D2.W),D3
     addq.b  #1,D3
-    bne  UpdateRedWizzrobe_1
+    beq.s  __far_z_04_0091
+    jmp  UpdateRedWizzrobe_1
+__far_z_04_0091:
     ; State $FF.
     ;
     ; Face in a random direction.
@@ -9192,7 +9376,7 @@ UpdateRedWizzrobe_3:
     lea     (RedWizzrobeOffsetsY).l,A0
     move.b  (A0,D3.W),D1
     addx.b  D1,D0   ; ADC RedWizzrobeOffsetsY,Y
-    bsr     RedWizzrobe_AlignAndSetY
+    jsr     RedWizzrobe_AlignAndSetY
     ; If Y coordinate >= $5D and < $C4, then the monster
     ; is not in a wall. So, check tile collision.
     ;
@@ -9200,11 +9384,13 @@ UpdateRedWizzrobe_3:
     bcs  _anon_z04_105
     cmpi.b  #$C4,D0
     bcc  _anon_z04_105
-    bsr     Wizzrobe_GetCollidableTile
+    jsr     Wizzrobe_GetCollidableTile
     ; If walkable, then return.
     ; Else increase state to 0, in order to check again next frame.
     ;
-    bcc  UpdateRedWizzrobe_0
+    bcs.s  __far_z_04_0092
+    jmp  UpdateRedWizzrobe_0
+__far_z_04_0092:
 _anon_z04_105:
     lea     ($00AC,A4),A0
     addq.b  #1,(A0,D2.W)
@@ -9221,9 +9407,11 @@ UpdateRedWizzrobe_2:
     lea     ($00AC,A4),A0
     move.b  (A0,D2.W),D0
     cmpi.b  #$B0,D0
-    bne  Wizzrobe_DrawAndCheckCollisions
+    beq.s  __far_z_04_0093
+    jmp  Wizzrobe_DrawAndCheckCollisions
+__far_z_04_0093:
     moveq   #89,D0
-    bsr     ShootMagicShot
+    jsr     ShootMagicShot
     even
 Wizzrobe_DrawAndCheckCollisions:
     ; Invincible to everything but sword and bomb.
@@ -9231,25 +9419,25 @@ Wizzrobe_DrawAndCheckCollisions:
     move.b  #$F6,D0
     lea     ($04B2,A4),A0
     move.b  D0,(A0,D2.W)
-    bsr     GetObjectMiddle
+    jsr     GetObjectMiddle
     ; If invincibility timer = 0, then check collisions with weapons.
     ;
     lea     ($04F0,A4),A0
     move.b  (A0,D2.W),D0
     bne  _anon_z04_106
     moveq   #14,D3
-    bsr     CheckMonsterSwordShotOrMagicShotCollision
+    jsr     CheckMonsterSwordShotOrMagicShotCollision
     moveq   #16,D3
-    bsr     CheckMonsterBombOrFireCollision
+    jsr     CheckMonsterBombOrFireCollision
     moveq   #17,D3
-    bsr     CheckMonsterBombOrFireCollision
+    jsr     CheckMonsterBombOrFireCollision
     moveq   #13,D3
-    bsr     CheckMonsterSwordCollision
+    jsr     CheckMonsterSwordCollision
 _anon_z04_106:
     ; In this state, the monster can always harm Link,
     ; even if it can't be harmed.
     ;
-    bsr     CheckLinkCollision
+    jsr     CheckLinkCollision
     ; Every 4 frames switch between two frame images.
     ;
     lea     ($0412,A4),A0
@@ -9258,7 +9446,7 @@ _anon_z04_106:
     lsr.b  #1,D0   ; LSR A
     andi.b #$01,D0
     move.b  D0,-(A5)  ; PHA
-    bsr     Anim_FetchObjPosForSpriteDescriptor
+    jsr     Anim_FetchObjPosForSpriteDescriptor
     ; If facing up, then go add 2 to frame image number, and draw mirrored.
     ;
     lea     ($0098,A4),A0
@@ -9513,7 +9701,7 @@ InitGohma:
 
     even
 InitGleeokHead:
-    bsr     InitBlueKeese
+    jsr     InitBlueKeese
     ; Set flying speed $BF and maximum $E0.
     ;
     move.b  #$E0,D0
@@ -9568,7 +9756,7 @@ _L_z04_UpdateManhandla_BounceIfNeeded:
     ;
     move.b  ($0385,A4),D0
     beq  _L_z04_UpdateManhandla_TurnIfNeeded
-    bsr     Manhandla_SetAllSegmentsDirection
+    jsr     Manhandla_SetAllSegmentsDirection
     even
 _L_z04_UpdateManhandla_TurnIfNeeded:
     ; If object timer = 0, then
@@ -9583,12 +9771,12 @@ _L_z04_UpdateManhandla_TurnIfNeeded:
     move.b  ($18,A4,D2.W),D0
     cmpi.b  #$80,D0
     bcc  _L_z04_UpdateManhandla_TurnTowardLink
-    bsr     TurnRandomlyDir8
+    jsr     TurnRandomlyDir8
     even
 _L_z04_UpdateManhandla_CopyDirToHands:
     move.b  ($009D,A4),D0
     move.b  D0,($0385,A4)
-    bsr     Manhandla_SetAllSegmentsDirection
+    jsr     Manhandla_SetAllSegmentsDirection
     even
 _L_z04_UpdateManhandla_MoveBase:
     ; If this segment is the base, then remember the
@@ -9603,8 +9791,8 @@ _L_z04_UpdateManhandla_MoveBase:
     move.b  (A0,D2.W),D0
     move.b  D0,($0384,A4)
 _anon_z04_110:
-    bsr     Manhandla_Move
-    bsr     Manhandla_CheckCollisions
+    jsr     Manhandla_Move
+    jsr     Manhandla_CheckCollisions
     ; If the direction changed after moving, then
     ; copy it to the bounce direction.
     ;
@@ -9674,14 +9862,14 @@ _anon_z04_111:
     move.b  ($0356,A4),D0
     bne  _L_z04_UpdateManhandla_Draw
     moveq   #86,D0
-    bsr     ShootFireball
+    jsr     ShootFireball
     even
 _L_z04_UpdateManhandla_Draw:
     jmp     Manhandla_Draw
 
     even
 _L_z04_UpdateManhandla_TurnTowardLink:
-    bsr     TurnTowardsPlayer8
+    jsr     TurnTowardsPlayer8
     jmp     _L_z04_UpdateManhandla_CopyDirToHands
 
     even
@@ -9693,7 +9881,7 @@ Manhandla_CheckCollisions:
     move.b  D0,-(A5)  ; PHA
     move.b  ($28,A4,D2.W),D0
     move.b  D0,-(A5)  ; PHA
-    bsr     CheckMonsterCollisions
+    jsr     CheckMonsterCollisions
     move.b  (A5)+,D0  ; PLA
     move.b  D0,($28,A4,D2.W)
     move.b  (A5)+,D0  ; PLA
@@ -9707,13 +9895,13 @@ Manhandla_CheckCollisions:
     lea     ($04F0,A4),A0
     move.b  D0,(A0,D2.W)
 _anon_z04_112:
-    bsr     PlayBossHitCryIfNeeded
+    jsr     PlayBossHitCryIfNeeded
     ; If still alive, then return.
     ;
     lea     ($0405,A4),A0
     move.b  (A0,D2.W),D0
     beq  _L_z04_Manhandla_CheckCollisions_Exit
-    bsr     ResetShoveInfo
+    jsr     ResetShoveInfo
     ; Don't let the base die on its own.
     ; If this is the base, then reset metastate, and return.
     ;
@@ -9764,7 +9952,7 @@ _anon_z04_114:
     ; the dead dummy object's update routine to do it.
     ; Also set its timer to $10.
     ;
-    bsr     PlayBossDeathCry
+    jsr     PlayBossDeathCry
     moveq   #93,D0
     move.b  D0,($0354,A4)
     moveq   #16,D0
@@ -9923,7 +10111,7 @@ _L_z04_Manhandla_Move_IncFrameAccum:
     addx.b  D1,D0   ; ADC Manhandla_ObjFrameAccum,X
     lea     ($0451,A4),A0
     move.b  D0,(A0,D2.W)
-    bsr     BoundFlyer
+    jsr     BoundFlyer
     ; TODO:
     ; I don't see why this is needed.
     ;
@@ -9931,7 +10119,7 @@ _L_z04_Manhandla_Move_IncFrameAccum:
 
     even
 Manhandla_Draw:
-    bsr     Anim_FetchObjPosForSpriteDescriptor
+    jsr     Anim_FetchObjPosForSpriteDescriptor
     ; Push the "frame image and sprite attributes" value.
     ;
     lea     ($0478,A4),A0
@@ -9942,7 +10130,7 @@ Manhandla_Draw:
     ;
     andi.b #$80,D0
     ori.b #$01,D0
-    bsr     Anim_SetSpriteDescriptorAttributes
+    jsr     Anim_SetSpriteDescriptorAttributes
     move.b  (A5)+,D0  ; PLA
     move.b  D0,-(A5)  ; PHA
     ; If bit 6 is set, then enable horizontal flipping in [0F].
@@ -10075,7 +10263,7 @@ _anon_z04_121:
     moveq   #0,D0
     lea     ($0412,A4),A0
     move.b  D0,(A0,D2.W)
-    bsr     ReverseObjDir8
+    jsr     ReverseObjDir8
     lea     ($045E,A4),A0
     move.b  (A0,D2.W),D0
     lea     ($045E,A4),A0
@@ -10158,14 +10346,14 @@ _L_z04_UpdateGohma_ShootAnimateCollide:
     lea     ($0380,A4),A0
     move.b  D0,(A0,D2.W)
     moveq   #86,D0
-    bsr     ShootFireball
+    jsr     ShootFireball
     even
 _L_z04_UpdateGohma_AnimateAndCheckCollisions:
     ; Pass the frame image for the eye.
     ;
     lea     ($046B,A4),A0
     move.b  (A0,D2.W),D0
-    bsr     Gohma_AnimateAndDraw
+    jsr     Gohma_AnimateAndDraw
     jmp     Gohma_CheckCollisions
 
     even
@@ -10206,16 +10394,16 @@ GohmaLegOffsetsX:
     even
 Gohma_AnimateAndDraw:
     move.b  D0,-(A5)  ; PHA
-    bsr     Anim_FetchObjPosForSpriteDescriptor
-    bsr     Gohma_SetSpriteAttributes
+    jsr     Anim_FetchObjPosForSpriteDescriptor
+    jsr     Gohma_SetSpriteAttributes
     move.b  (A5)+,D0  ; PLA
-    bsr     DrawObjectMirrored
+    jsr     DrawObjectMirrored
     moveq   #16,D0
-    bsr     Anim_AdvanceAnimCounterAndSetObjPosForSpriteDescriptor
+    jsr     Anim_AdvanceAnimCounterAndSetObjPosForSpriteDescriptor
     ; Draw the right legs.
     ;
     moveq   #1,D3
-    bsr     Gohma_DrawLegsOneSide
+    jsr     Gohma_DrawLegsOneSide
     ; Draw the left legs.
     ;
     moveq   #0,D3
@@ -10238,7 +10426,7 @@ Gohma_DrawLegsOneSide:
     lea     ($0084,A4),A0
     move.b  (A0,D2.W),D0
     move.b  D0,($0001,A4)
-    bsr     Gohma_SetSpriteAttributes
+    jsr     Gohma_SetSpriteAttributes
     ; There are only two frame images for legs: left and right.
     ; There are two animation frames. They are animated as follows:
     ;
@@ -10250,7 +10438,7 @@ Gohma_DrawLegsOneSide:
     ; ((leg index + frame number) AND 1) = 1 or 0
     ; horizontal flipping = frame number = 1
     ;
-    bsr     Anim_SetObjHFlipForSpriteDescriptor
+    jsr     Anim_SetObjHFlipForSpriteDescriptor
     move.b  D3,D0
     andi    #$EE,CCR  ; CLC: clear C+X
     lea     ($03E4,A4),A0
@@ -10295,7 +10483,7 @@ Gohma_CheckCollisions:
     move.b  D0,($000F,A4)
     even
 _L_z04_Gohma_CheckCollisions_LoopSprite:
-    bsr     CheckMonsterCollisions
+    jsr     CheckMonsterCollisions
     ; Add 8 to the X coordinate for the next part.
     ;
     move.b  ($70,A4,D2.W),D0
@@ -10353,8 +10541,8 @@ _L_z04_Gohma_HandleWeaponCollision_CheckEyeOpen:
     move.b  D0,($0601,A4)
     ; Deal damage and cry out.
     ;
-    bsr     DealDamage
-    bsr     PlayBossDeathCryIfNeeded
+    jsr     DealDamage
+    jsr     PlayBossDeathCryIfNeeded
     even
 _L_z04_Gohma_HandleWeaponCollision_PlayParryTune:
     moveq   #1,D0
@@ -10363,8 +10551,8 @@ _L_z04_Gohma_HandleWeaponCollision_PlayParryTune:
 
     even
 UpdateGleeokHead:
-    bsr     ControlGleeokHeadFlight
-    bsr     MoveFlyer
+    jsr     ControlGleeokHeadFlight
+    jsr     MoveFlyer
     ; If the low bit of the distance traveled is clear,
     ; and Random < $20,
     ; and there's no object (fireball) in slot $B,
@@ -10380,19 +10568,19 @@ UpdateGleeokHead:
     move.b  ($035A,A4),D0
     bne  _anon_z04_124
     moveq   #86,D0
-    bsr     ShootFireball
+    jsr     ShootFireball
 _anon_z04_124:
     moveq   #1,D0
-    bsr     Anim_AdvanceAnimCounterAndSetObjPosForSpriteDescriptor
+    jsr     Anim_AdvanceAnimCounterAndSetObjPosForSpriteDescriptor
     lea     ($03E4,A4),A0
     move.b  (A0,D2.W),D0
-    bsr     DrawObjectMirrored
-    bsr     CheckMonsterCollisions
+    jsr     DrawObjectMirrored
+    jsr     CheckMonsterCollisions
     ; Reset object state, shove info, and invincibility timer,
     ; because this monster can't get hurt nor die.
     ;
-    bsr     ResetObjMetastate
-    bsr     SetShoveInfoWith0
+    jsr     ResetObjMetastate
+    jsr     SetShoveInfoWith0
     lea     ($04F0,A4),A0
     move.b  D0,(A0,D2.W)
     rts
@@ -10401,7 +10589,7 @@ _anon_z04_124:
 ControlGleeokHeadFlight:
     lea     ($0444,A4),A0
     move.b  (A0,D2.W),D0
-    bsr     _m68k_tablejump  ; M68K-native table dispatch (replaces JSR TableJump)
+    jsr     _m68k_tablejump  ; M68K-native table dispatch (replaces JSR TableJump)
     even
 ControlGleeokHeadFlight_JumpTable:
     dc.l    Flyer_SpeedUp   ; jump table entry (32-bit for _m68k_tablejump)
@@ -10451,7 +10639,7 @@ GleeokNeckMiscAddrsHi:
 
     even
 UpdateGleeok:
-    bsr     Gleeok_DrawBody
+    jsr     Gleeok_DrawBody
     ; Calculate the index of the last neck of this kind of gleeok.
     ; Subtract $42 (Gleeok1) from ObjType[1].
     ;
@@ -10479,7 +10667,7 @@ _L_z04_UpdateGleeok_LoopNeck:
 _anon_z04_126:
     ; Get the addresses of this neck's segment data arrays.
     ;
-    bsr     Gleeok_FetchNeckAddrs
+    jsr     Gleeok_FetchNeckAddrs
     even
 _L_z04_UpdateGleeok_LoadNeckBytes:
     ; Load neck data.
@@ -10530,8 +10718,8 @@ _L_z04_UpdateGleeok_LoadNeckBytes:
     move.b  ($0000,A4),D1
     cmp.b   D1,D2
     bne  _L_z04_UpdateGleeok_DrawAndCheckCollisions
-    bsr     Gleeok_MoveNeck
-    bsr     Gleeok_MoveHead
+    jsr     Gleeok_MoveNeck
+    jsr     Gleeok_MoveHead
     ; The head is in object slot 5. Set it for when we want to shoot,
     ; so that it looks like the fireball came from the head.
     ;
@@ -10545,15 +10733,15 @@ _L_z04_UpdateGleeok_LoadNeckBytes:
     move.b  ($035A,A4),D0
     bne  _L_z04_UpdateGleeok_DrawAndCheckCollisions
     moveq   #86,D0
-    bsr     ShootFireball
+    jsr     ShootFireball
     even
 _L_z04_UpdateGleeok_DrawAndCheckCollisions:
     ; This is run for all necks.
     ;
-    bsr     Gleeok_DrawHeadAndCheckCollisions
+    jsr     Gleeok_DrawHeadAndCheckCollisions
     ; Store the neck data.
     ;
-    bsr     Gleeok_FetchNeckAddrs
+    jsr     Gleeok_FetchNeckAddrs
     even
 _L_z04_UpdateGleeok_SaveNeckBytes:
     move.b  ($71,A4,D3.W),D0
@@ -10647,13 +10835,15 @@ Gleeok_MoveNeck:
     subx.b  D1,D0   ; SBC ObjX+1
     ; If the difference is positive, then go divide by 4 unsigned.
     ;
-    bpl  L_Gleeok_UDiv4
+    bmi.s  __far_z_04_0094
+    jmp  L_Gleeok_UDiv4
+__far_z_04_0094:
     ; Else divide by 4 signed.
     ;
-    bsr     Negate
+    jsr     Negate
     lsr.b  #1,D0   ; LSR A
     lsr.b  #1,D0   ; LSR A
-    bsr     Negate
+    jsr     Negate
     even
 L_Gleeok_StoreRefSegDistance:
     ; Store the signed reference segment distance.
@@ -10665,9 +10855,9 @@ L_Gleeok_StoreRefSegDistance:
     ; Pass the value here to calculate and store the
     ; second and third tier horizontal distances.
     ;
-    bsr     Abs
+    jsr     Abs
     moveq   #0,D2
-    bsr     Gleeok_CalcSegmentLimits
+    jsr     Gleeok_CalcSegmentLimits
     ; Get the absolute V-distance from the head to the base,
     ; and divide it be 4.
     ;
@@ -10675,13 +10865,13 @@ L_Gleeok_StoreRefSegDistance:
     ori     #$11,CCR  ; SEC: set C+X
     move.b  ($0085,A4),D1
     subx.b  D1,D0   ; SBC ObjY+1
-    bsr     Abs
+    jsr     Abs
     lsr.b  #1,D0   ; LSR A
     lsr.b  #1,D0   ; LSR A
     ; Calculate and store the second and third tier vertical distances.
     ;
     addq.b  #1,D2
-    bsr     Gleeok_CalcSegmentLimits
+    jsr     Gleeok_CalcSegmentLimits
     ; Keep segments within the third tier distance of each other.
     ; Any segment that is too far from the previous one is moved
     ; 2 pixels toward it.
@@ -10698,7 +10888,7 @@ _L_z04_L_Gleeok_StoreRefSegDistance_KeepSegsNearNeighbors:
     move.b  ($71,A4,D2.W),D0
     ori     #$11,CCR  ; SEC: set C+X
 ; [SBC unhandled mode=ABS_X] SBC ObjX+2, X
-    bsr     Abs
+    jsr     Abs
     ; If H-distance < third tier H-distance, then this distance is OK.
     ; Go look at the vertical distance.
     ;
@@ -10731,7 +10921,7 @@ _L_z04_L_Gleeok_StoreRefSegDistance_CheckDistanceV:
     move.b  (A0,D2.W),D0
     ori     #$11,CCR  ; SEC: set C+X
 ; [SBC unhandled mode=ABS_X] SBC ObjY+2, X
-    bsr     Abs
+    jsr     Abs
     ; If V-distance < third tier V-distance, then this distance is OK.
     ; Go loop again.
     ;
@@ -10769,7 +10959,7 @@ _L_z04_L_Gleeok_StoreRefSegDistance_NextKeepSegsNearNeighbors:
     ;
     moveq   #0,D2
 _anon_z04_129:
-    bsr     Gleeok_StretchNeck
+    jsr     Gleeok_StretchNeck
     addq.b  #1,D2
     cmpi.b  #$03,D2
     bcs  _anon_z04_129
@@ -10908,7 +11098,7 @@ Gleeok_StretchNeck:
     move.b  ($73,A4,D2.W),D0
     ori     #$11,CCR  ; SEC: set C+X
 ; [SBC unhandled mode=ABS_X] SBC ObjX+3, X               ; UNKNOWN: This should probably be ObjX+2, as with ObjY below.
-    bsr     Abs
+    jsr     Abs
     move.b  ($04D9,A4),D1
     cmp.b   D1,D0
     bcs  _anon_z04_135
@@ -10931,7 +11121,7 @@ _anon_z04_136:
     move.b  (A0,D2.W),D0
     ori     #$11,CCR  ; SEC: set C+X
 ; [SBC unhandled mode=ABS_X] SBC ObjY+2, X
-    bsr     Abs
+    jsr     Abs
     move.b  ($04DA,A4),D1
     cmp.b   D1,D0
     bcs  _anon_z04_137
@@ -10950,7 +11140,7 @@ _anon_z04_137:
     addq.b  #1,D3
 _anon_z04_138:
     move.b  D3,D0
-    bsr     _m68k_tablejump  ; M68K-native table dispatch (replaces JSR TableJump)
+    jsr     _m68k_tablejump  ; M68K-native table dispatch (replaces JSR TableJump)
     even
 Gleeok_StretchNeck_JumpTable:
     dc.l    Gleeok_ExpandSegment   ; jump table entry (32-bit for _m68k_tablejump)
@@ -10968,7 +11158,9 @@ Gleeok_ExpandSegment:
     ; Randomly, 50% of the time, go move away from the next segment horizontally.
     ;
     move.b  ($0018,A4),D0
-    bpl  L_Gleeok_ExpandHorizontally
+    bmi.s  __far_z_04_0095
+    jmp  L_Gleeok_ExpandHorizontally
+__far_z_04_0095:
     ; Else move away vertically.
     ;
     lea     ($0086,A4),A0
@@ -10980,8 +11172,12 @@ Gleeok_ExpandSegment:
     lea     ($0087,A4),A0
     move.b  (A0,D2.W),D1
     cmp.b   D1,D0
-    beq  L_Gleeok_DecSegmentY
-    bcs  L_Gleeok_SetSegmentY
+    bne.s  __far_z_04_0096
+    jmp  L_Gleeok_DecSegmentY
+__far_z_04_0096:
+    bcc.s  __far_z_04_0097
+    jmp  L_Gleeok_SetSegmentY
+__far_z_04_0097:
     even
 L_Gleeok_DecSegmentY:
     subq.b  #1,D3
@@ -11009,9 +11205,15 @@ Gleeok_ContractSegmentY:
     lea     ($0087,A4),A0
     move.b  (A0,D2.W),D1
     cmp.b   D1,D0
-    beq  L_Gleeok_SetSegmentY
-    bcc  L_Gleeok_SetSegmentY
-    bcs  L_Gleeok_DecSegmentY
+    bne.s  __far_z_04_0098
+    jmp  L_Gleeok_SetSegmentY
+__far_z_04_0098:
+    bcs.s  __far_z_04_0099
+    jmp  L_Gleeok_SetSegmentY
+__far_z_04_0099:
+    bcc.s  __far_z_04_0100
+    jmp  L_Gleeok_DecSegmentY
+__far_z_04_0100:
     even
 L_Gleeok_ExpandHorizontally:
     ; Move away from the next segment horizontally.
@@ -11023,8 +11225,12 @@ L_Gleeok_ExpandHorizontally:
     addq.b  #1,D3
     move.b  ($73,A4,D2.W),D1
     cmp.b   D1,D0
-    bcc  L_Gleeok_SetSegmentX
-    bcc  L_Gleeok_DecSegmentX
+    bcs.s  __far_z_04_0101
+    jmp  L_Gleeok_SetSegmentX
+__far_z_04_0101:
+    bcs.s  __far_z_04_0102
+    jmp  L_Gleeok_DecSegmentX
+__far_z_04_0102:
     even
 Gleeok_ContractSegmentX:
     ; Move toward the next segment horizontally.
@@ -11036,7 +11242,9 @@ Gleeok_ContractSegmentX:
     addq.b  #1,D3
     move.b  ($73,A4,D2.W),D1
     cmp.b   D1,D0
-    bcs  L_Gleeok_SetSegmentX
+    bcc.s  __far_z_04_0103
+    jmp  L_Gleeok_SetSegmentX
+__far_z_04_0103:
     even
 L_Gleeok_DecSegmentX:
     subq.b  #1,D3
@@ -11054,8 +11262,12 @@ Gleeok_ContractSegment:
     ; Else go move vertically.
     ;
     move.b  ($0018,A4),D0
-    bpl  Gleeok_ContractSegmentX
-    bmi  Gleeok_ContractSegmentY
+    bmi.s  __far_z_04_0104
+    jmp  Gleeok_ContractSegmentX
+__far_z_04_0104:
+    bpl.s  __far_z_04_0105
+    jmp  Gleeok_ContractSegmentY
+__far_z_04_0105:
 ; Description:
 ; This block applies to heads and the bottom segment of a neck.
 ; These are drawn with sprites that come first in order, so that
@@ -11092,7 +11304,7 @@ _anon_z04_139:
     moveq   #0,D3
     move.b  D0,D3
     move.b  (A5)+,D0  ; PLA
-    bsr     Anim_WriteSpecificSprite
+    jsr     Anim_WriteSpecificSprite
     jmp     Gleeok_CheckCollisions
 
     even
@@ -11106,14 +11318,18 @@ Gleeok_DrawSegmentAndCheckCollisions:
     move.b  #$DC,D0
 _anon_z04_140:
     cmpi.b  #$05,D2
-    beq  Gleeok_WriteHeadOrBaseSpriteAndCheckCollisions
+    bne.s  __far_z_04_0106
+    jmp  Gleeok_WriteHeadOrBaseSpriteAndCheckCollisions
+__far_z_04_0106:
     cmpi.b  #$01,D2
-    beq  Gleeok_WriteHeadOrBaseSpriteAndCheckCollisions
+    bne.s  __far_z_04_0107
+    jmp  Gleeok_WriteHeadOrBaseSpriteAndCheckCollisions
+__far_z_04_0107:
     ; The segment is not a head nor bottom. So, we can use a
     ; standard routine to draw. It uses one of the rolling sprites
     ; that is drawn under Link and the heads.
     ;
-    bsr     Anim_WriteLevelPaletteSprite
+    jsr     Anim_WriteLevelPaletteSprite
     even
 Gleeok_CheckCollisions:
     ; If this segment is not the head nor the bottom of the neck,
@@ -11129,7 +11345,7 @@ Gleeok_CheckCollisions:
     jmp     _L_z04_Gleeok_CheckCollisions_NextLoopSegment
 
 _anon_z04_141:
-    bsr     CheckMonsterCollisions
+    jsr     CheckMonsterCollisions
     ; If this segment was harmed, then set the writhing counter,
     ; and the animation counter to its lower value.
     ;
@@ -11140,13 +11356,13 @@ _anon_z04_141:
     move.b  D0,($04E6,A4)
     move.b  D0,($0510,A4)
 _anon_z04_142:
-    bsr     ResetShoveInfo
+    jsr     ResetShoveInfo
     ; If this is the bottom segment, then go reset metastate and loop again.
     ; Gleeok can writhe when it's hit here, but it can't die.
     ;
     cmpi.b  #$01,D2
     beq  _L_z04_Gleeok_CheckCollisions_ResetMetastate
-    bsr     PlayBossHitCryIfNeeded
+    jsr     PlayBossHitCryIfNeeded
     ; If this neck has not died, then go loop again.
     ;
     lea     ($0405,A4),A0
@@ -11254,7 +11470,7 @@ _anon_z04_143:
 
     even
 _L_z04_Gleeok_CheckCollisions_ResetMetastate:
-    bsr     ResetObjMetastate
+    jsr     ResetObjMetastate
     even
 _L_z04_Gleeok_CheckCollisions_NextLoopSegment:
     ; Bottom of the segment loop.
@@ -11265,7 +11481,9 @@ _L_z04_Gleeok_CheckCollisions_NextLoopSegment:
     ;
     subq.b  #1,D2
     cmpi.b  #$01,D2
-    bcs  L127FA_Exit
+    bcc.s  __far_z_04_0108
+    jmp  L127FA_Exit
+__far_z_04_0108:
     jmp     Gleeok_DrawSegmentAndCheckCollisions
 
     even
@@ -11274,8 +11492,8 @@ _L_z04_Gleeok_CheckCollisions_BossDied:
     ;
     ; First, hide the first $10 sprites: the attached heads.
     ;
-    bsr     WriteBlankPrioritySprites
-    bsr     PlayBossDeathCry
+    jsr     WriteBlankPrioritySprites
+    jsr     PlayBossDeathCry
     ; We want a death spark. So, set the metastate of the first
     ; monster slot to $11.
     ;
@@ -11301,20 +11519,22 @@ Gleeok_MoveHead:
     ; Don't do anything until the head's initial timer expires.
     ;
     move.b  ($0418,A4),D0
-    bne  Gleeok_DecHeadTimer
+    beq.s  __far_z_04_0109
+    jmp  Gleeok_DecHeadTimer
+__far_z_04_0109:
     ; Add 1 or -1 to X as needed.
     ;
     move.b  ($0075,A4),D0
     moveq   #0,D3
     move.b  ($0415,A4),D3
-    bsr     Gleeok_ChangeCoordinateBySpeedFlag
+    jsr     Gleeok_ChangeCoordinateBySpeedFlag
     move.b  D0,($0075,A4)
     ; Add 1 or -1 to Y as needed.
     ;
     move.b  ($0089,A4),D0
     moveq   #0,D3
     move.b  ($0416,A4),D3
-    bsr     Gleeok_ChangeCoordinateBySpeedFlag
+    jsr     Gleeok_ChangeCoordinateBySpeedFlag
     move.b  D0,($0089,A4)
     ; Increment the counter to change directions.
     ; If it's still < 4, then return.
@@ -11322,7 +11542,9 @@ Gleeok_MoveHead:
     addq.b  #1,($0417,A4)
     move.b  ($0417,A4),D0
     cmpi.b  #$04,D0
-    bcs  L127FA_Exit
+    bcc.s  __far_z_04_0110
+    jmp  L127FA_Exit
+__far_z_04_0110:
     ; The counter reached 4. So, reset it.
     ; Then check the individual direction counters.
     ;
@@ -11348,7 +11570,9 @@ _L_z04_Gleeok_MoveHead_CheckVertical:
     addq.b  #1,($0414,A4)
     move.b  ($0414,A4),D0
     cmpi.b  #$06,D0
-    bcs  L127FA_Exit
+    bcc.s  __far_z_04_0111
+    jmp  L127FA_Exit
+__far_z_04_0111:
     moveq   #0,D0
     move.b  D0,($0414,A4)
     move.b  ($0416,A4),D0
@@ -11414,7 +11638,9 @@ Gleeok_DrawBody:
     ; If it has not expired, then go decrement it and draw.
     ;
     move.b  ($04E6,A4),D0
-    bne  L_Gleeok_DecAnimTimerAndDraw
+    beq.s  __far_z_04_0112
+    jmp  L_Gleeok_DecAnimTimerAndDraw
+__far_z_04_0112:
     ; The animation timer has expired. There are two choices for arming it.
     ;
     ; When writhing after a hit, Gleeok animates faster.
@@ -11508,7 +11734,7 @@ _anon_z04_145:
     ; Increment the index for fetching tiles.
     ;
     addq.b  #1,D2
-    bsr     CycleCurSpriteIndex
+    jsr     CycleCurSpriteIndex
     ; Bottom of the column loop.
     ; Increment the column until it = 3.
     ;
@@ -11698,27 +11924,35 @@ InitGanon:
     moveq   #2,D0
     move.b  D0,($0601,A4)
     moveq   #16,D0
-    bsr     PlaySample
+    jsr     PlaySample
     jmp     ResetObjMetastateAndTimer
 
     even
 UpdateZelda:
-    bsr     Person_Draw
+    jsr     Person_Draw
     lea     ($00AC,A4),A0
     move.b  (A0,D2.W),D0
-    bne  UpdateZelda_State1
+    beq.s  __far_z_04_0113
+    jmp  UpdateZelda_State1
+__far_z_04_0113:
     ; State 0.
     ;
     ; If Link's X < $70 or >= $81, or Link's Y <> $95, then return.
     ;
     move.b  ($0070,A4),D0
     cmpi.b  #$70,D0
-    bcs  L129B7_Exit
+    bcc.s  __far_z_04_0114
+    jmp  L129B7_Exit
+__far_z_04_0114:
     cmpi.b  #$81,D0
-    bcc  L129B7_Exit
+    bcs.s  __far_z_04_0115
+    jmp  L129B7_Exit
+__far_z_04_0115:
     move.b  ($0084,A4),D0
     cmpi.b  #$95,D0
-    bne  L129B7_Exit
+    beq.s  __far_z_04_0116
+    jmp  L129B7_Exit
+__far_z_04_0116:
     ; Else Link is near enough to Zelda.
     ; Go to state 1, and halt Link.
     ;
@@ -11751,9 +11985,11 @@ UpdateZelda_State1:
     ;
     ; Draw Link, then return if the object timer <> 0.
     ;
-    bsr     Link_EndMoveAndDraw_Bank4
+    jsr     Link_EndMoveAndDraw_Bank4
     move.b  ($28,A4,D2.W),D0
-    bne  L129B7_Exit
+    beq.s  __far_z_04_0117
+    jmp  L129B7_Exit
+__far_z_04_0117:
     ; Go to mode $13.
     ;
     move.b  D0,($0011,A4)
@@ -11776,14 +12012,16 @@ UpdateZelda_State1:
     even
 UpdateGuardFire:
     moveq   #6,D0
-    bsr     AnimateAndDrawCommonObject
-    bsr     CheckMonsterCollisions
+    jsr     AnimateAndDrawCommonObject
+    jsr     CheckMonsterCollisions
     ; If the object has not been killed, then return.
     ; Else change the object type to dead dummy.
     ;
     lea     ($0405,A4),A0
     move.b  (A0,D2.W),D0
-    beq  L129EA_Exit
+    bne.s  __far_z_04_0118
+    jmp  L129EA_Exit
+__far_z_04_0118:
     even
 SetDeadDummyObjType:
     moveq   #93,D0
@@ -11800,12 +12038,14 @@ UpdateLamnola:
     ;
     lea     ($0098,A4),A0
     move.b  (A0,D2.W),D0
-    beq  L129EA_Exit
+    bne.s  __far_z_04_0119
+    jmp  L129EA_Exit
+__far_z_04_0119:
     ; If we have the magic clock, then go draw and check collisions.
     ;
     move.b  ($066C,A4),D0
     bne  _L_z04_UpdateLamnola_DrawAndCheckCollisions
-    bsr     Lamnola_Move
+    jsr     Lamnola_Move
     ; If the current segment is a head, then update the direction it's facing.
     ;
     cmpi.b  #$05,D2
@@ -11813,7 +12053,7 @@ UpdateLamnola:
     cmpi.b  #$0A,D2
     bne  _L_z04_UpdateLamnola_DrawAndCheckCollisions
 _anon_z04_150:
-    bsr     Lamnola_UpdateHead
+    jsr     Lamnola_UpdateHead
     even
 _L_z04_UpdateLamnola_DrawAndCheckCollisions:
     move.b  ($70,A4,D2.W),D0
@@ -11841,13 +12081,13 @@ _L_z04_UpdateLamnola_DrawAndCheckCollisions:
     move.b  #$A0,D0
     even
 _L_z04_UpdateLamnola_Draw:
-    bsr     Anim_WriteSprite
+    jsr     Anim_WriteSprite
     move.b  (A5)+,D0  ; PLA
     move.b  D0,($70,A4,D2.W)
     lea     ($0098,A4),A0
     move.b  (A0,D2.W),D0
     move.b  D0,-(A5)  ; PHA
-    bsr     CheckMonsterCollisions
+    jsr     CheckMonsterCollisions
     move.b  (A5)+,D0  ; PLA
     lea     ($0098,A4),A0
     move.b  D0,(A0,D2.W)
@@ -11855,10 +12095,12 @@ _L_z04_UpdateLamnola_Draw:
     ;
     lea     ($0405,A4),A0
     move.b  (A0,D2.W),D0
-    beq  L129EA_Exit
+    bne.s  __far_z_04_0120
+    jmp  L129EA_Exit
+__far_z_04_0120:
     ; Otherwise, the segment is dead.
     ;
-    bsr     ResetShoveInfo
+    jsr     ResetShoveInfo
     ; Set the current segment's HP to the initial value in anticipation
     ; of bringing this segment back to life.
     ;
@@ -11905,9 +12147,13 @@ _L_z04_UpdateLamnola_FindTail:
     ; So, return and leave it dead.
     ;
     cmpi.b  #$04,D3
-    beq  L129EA_Exit
+    bne.s  __far_z_04_0121
+    jmp  L129EA_Exit
+__far_z_04_0121:
     cmpi.b  #$09,D3
-    beq  L129EA_Exit
+    bne.s  __far_z_04_0122
+    jmp  L129EA_Exit
+__far_z_04_0122:
     ; Change the tail segment to the dead dummy object, and
     ; bring the current segment back to life.
     ;
@@ -11926,7 +12172,9 @@ Lamnola_UpdateHead:
     ;
     move.b  ($70,A4,D2.W),D0
     andi.b #$07,D0
-    bne  L12A6F_Exit
+    beq.s  __far_z_04_0123
+    jmp  L12A6F_Exit
+__far_z_04_0123:
     ; If (Y + 3) is not a multiple of 8, then return.
     ; We had to account for the usual offset of 3.
     ;
@@ -11936,7 +12184,9 @@ Lamnola_UpdateHead:
     move.b  #$03,D1
     addx.b  D1,D0   ; ADC #$03 (X flag = 6502 C)
     andi.b #$07,D0
-    bne  L12A6F_Exit
+    beq.s  __far_z_04_0124
+    jmp  L12A6F_Exit
+__far_z_04_0124:
     ; Will loop 4 times, propagating directions down the chain,
     ; by pulling from the bottom.
     ;
@@ -12050,7 +12300,7 @@ _L_z04_Lamnola_UpdateHead_SetDirAndCheckTiles:
     ; Set moving direction [0F] for boundary and tile checks.
     ;
     move.b  D0,($000F,A4)
-    bsr     BoundByRoom
+    jsr     BoundByRoom
     ; If not blocked by the room boundary, then go check tile collision.
     ;
     move.b  ($000F,A4),D0
@@ -12084,7 +12334,7 @@ _L_z04_Lamnola_UpdateHead_CheckTileCollision:
     ; We found a direction that was not blocked by the room boundary.
     ; Check tile collision. If blocked by a tile, then go look for another direction.
     ;
-    bsr     GetCollidingTileMoving
+    jsr     GetCollidingTileMoving
     move.b  ($034A,A4),D1
     cmp.b   D1,D0
     bcc  _L_z04_Lamnola_UpdateHead_FindNonOpposite
@@ -12244,7 +12494,7 @@ PatraManeuverTime:
 
     even
 UpdatePatra:
-    bsr     ControlPatraFlight
+    jsr     ControlPatraFlight
     ; Reset flying distance traveled, so that we know what offset to
     ; apply to the children.
     ;
@@ -12253,9 +12503,9 @@ UpdatePatra:
     move.b  D0,(A0,D2.W)
     lea     ($0478,A4),A0
     move.b  D0,(A0,D2.W)
-    bsr     MoveFlyer
+    jsr     MoveFlyer
     moveq   #2,D0
-    bsr     AnimateAndDrawCommonObject
+    jsr     AnimateAndDrawCommonObject
     ; Loop over the object slots of the 8 children.
     ; If any are found, then go check for collision with Link only.
     ;
@@ -12272,9 +12522,9 @@ _L_z04_UpdatePatra_LoopChildren:
     bne  _L_z04_UpdatePatra_LoopChildren
     ; If there are no children, then Link can harm Patra.
     ;
-    bsr     CheckMonsterCollisions
-    bsr     PlayBossHitCryIfNeeded
-    bsr     PlayBossDeathCryIfNeeded
+    jsr     CheckMonsterCollisions
+    jsr     PlayBossHitCryIfNeeded
+    jsr     PlayBossDeathCryIfNeeded
     jmp     _L_z04_UpdatePatra_TryChangeManeuver
 
     even
@@ -12282,7 +12532,7 @@ _L_z04_UpdatePatra_CheckLinkCollision:
     ; Else there are child patras left.
     ; Link cannot harm Patra, but it can harm Link.
     ;
-    bsr     CheckLinkCollision
+    jsr     CheckLinkCollision
     even
 _L_z04_UpdatePatra_TryChangeManeuver:
     ; If timer = 0 and the angle of patra child in slot 3 = 0, then
@@ -12312,7 +12562,7 @@ _L_z04_UpdatePatra_Exit:
 ControlPatraFlight:
     lea     ($0444,A4),A0
     move.b  (A0,D2.W),D0
-    bsr     _m68k_tablejump  ; M68K-native table dispatch (replaces JSR TableJump)
+    jsr     _m68k_tablejump  ; M68K-native table dispatch (replaces JSR TableJump)
     even
 ControlPatraFlight_JumpTable:
     dc.l    Flyer_SpeedUp   ; jump table entry (32-bit for _m68k_tablejump)
@@ -12364,7 +12614,9 @@ UpdatePatraChild:
     ;
     lea     ($00AC,A4),A0
     move.b  (A0,D2.W),D0
-    bne  PatraChild_State1
+    beq.s  __far_z_04_0125
+    jmp  PatraChild_State1
+__far_z_04_0125:
     ; State = 0.
     ;
     ; If the current object slot is 2, then go initialize the patra child.
@@ -12484,7 +12736,7 @@ PatraChild_State1:
     beq  _anon_z04_159
     moveq   #96,D0
 _anon_z04_159:
-    bsr     DecreaseObjectAngle
+    jsr     DecreaseObjectAngle
     ; Load Patra's maneuver index.
     ; It determines which counts of bits are looked up below.
     ;
@@ -12520,33 +12772,33 @@ _L_z04_PatraChild_State1_UsePatraChild2Bits:
     move.b  D0,D3
     even
 _L_z04_PatraChild_State1_Rotate:
-    bsr     RotateObjectLocation
+    jsr     RotateObjectLocation
     lea     ($0084,A4),A0
     move.b  D0,(A0,D2.W)
-    bsr     PatraChild_Draw
+    jsr     PatraChild_Draw
     ; If Patra's state still = 0, then the last patra child has not
     ; shown up yet. In this case don't check collisions yet, only return.
     ;
     move.b  ($00AD,A4),D0
     beq  _L_z04_PatraChild_State1_Exit
-    bsr     CheckMonsterCollisions
+    jsr     CheckMonsterCollisions
     ; If the monster died, then change to the dead dummy object.
     ;
     lea     ($0405,A4),A0
     move.b  (A0,D2.W),D0
     beq  _L_z04_PatraChild_State1_Exit
-    bsr     SetDeadDummyObjType
+    jsr     SetDeadDummyObjType
     even
 _L_z04_PatraChild_State1_Exit:
     rts
 
     even
 PatraChild_Draw:
-    bsr     Anim_SetSpriteDescriptorRedPaletteRow
+    jsr     Anim_SetSpriteDescriptorRedPaletteRow
     ; 2 was returned from the routine above in A.
     ; Pass it as the animation counter value to the routine below.
     ;
-    bsr     Anim_AdvanceAnimCounterAndSetObjPosForSpriteDescriptor
+    jsr     Anim_AdvanceAnimCounterAndSetObjPosForSpriteDescriptor
     lea     ($03E4,A4),A0
     move.b  (A0,D2.W),D0
     jmp     DrawObjectNotMirrored
@@ -12554,7 +12806,7 @@ PatraChild_Draw:
     even
 UpdateGanon:
     move.b  ($0445,A4),D0
-    bsr     _m68k_tablejump  ; M68K-native table dispatch (replaces JSR TableJump)
+    jsr     _m68k_tablejump  ; M68K-native table dispatch (replaces JSR TableJump)
     even
 UpdateGanon_JumpTable:
     dc.l    Ganon_ScenePhase0   ; jump table entry (32-bit for _m68k_tablejump)
@@ -12579,7 +12831,7 @@ Ganon_ScenePhase0:
     ; Save the current object slot.
     move.b  D2,D0
     move.b  D0,-(A5)  ; PHA
-    bsr     UpdateCandle
+    jsr     UpdateCandle
     move.b  (A5)+,D0  ; PLA
     moveq   #0,D2
     move.b  D0,D2
@@ -12603,7 +12855,9 @@ _L_z04_Ganon_ScenePhase0_CheckFadeCycle:
     move.b  ($051C,A4),D0
     andi.b #$0F,D0
     cmpi.b  #$04,D0
-    bne  Ganon_DrawBodyFrame0
+    beq.s  __far_z_04_0126
+    jmp  Ganon_DrawBodyFrame0
+__far_z_04_0126:
     ; Set Link's timer to $C0 for the next scene phase.
     ;
     move.b  #$C0,D0
@@ -12611,7 +12865,9 @@ _L_z04_Ganon_ScenePhase0_CheckFadeCycle:
     ; Set scene phase 1, and go draw Ganon.
     ;
     addq.b  #1,($0445,A4)
-    bne  Ganon_DrawBodyFrame0
+    beq.s  __far_z_04_0127
+    jmp  Ganon_DrawBodyFrame0
+__far_z_04_0127:
     even
 _L_z04_Ganon_ScenePhase0_CheckTimeToShout:
     ; If timer = 1, then play Boss hit/hurt sound effect.
@@ -12636,7 +12892,9 @@ Ganon_ScenePhase1:
     ; If Link's timer hasn't expired, then go draw Ganon.
     ;
     move.b  ($0028,A4),D0
-    bne  Ganon_DrawBodyFrame0
+    beq.s  __far_z_04_0128
+    jmp  Ganon_DrawBodyFrame0
+__far_z_04_0128:
     ; Once the timer expires:
     ; 1. unhalt Link
     ; 2. clear the item to lift
@@ -12667,20 +12925,26 @@ Ganon_DrawBodyFrame0:
 Ganon_ScenePhase2:
     lea     ($042C,A4),A0
     move.b  (A0,D2.W),D0
-    bne  Ganon_Dying
-    bsr     Ganon_CheckCollisions
-    bsr     PlayBossHitCryIfNeeded
+    beq.s  __far_z_04_0129
+    jmp  Ganon_Dying
+__far_z_04_0129:
+    jsr     Ganon_CheckCollisions
+    jsr     PlayBossHitCryIfNeeded
     ; Go handle the brown state specially.
     ;
     lea     ($00AC,A4),A0
     move.b  (A0,D2.W),D0
-    bne  Ganon_UpdateBrownState
+    beq.s  __far_z_04_0130
+    jmp  Ganon_UpdateBrownState
+__far_z_04_0130:
     ; State = 0: Blue
     ;
     ; If timer = 0, then go move around and shoot.
     ;
     move.b  ($28,A4,D2.W),D0
-    beq  Ganon_MoveAndShoot
+    bne.s  __far_z_04_0131
+    jmp  Ganon_MoveAndShoot
+__far_z_04_0131:
     ; If timer > 1, then Ganon is blue and visible. Only draw.
     ; Collisions were checked already.
     ;
@@ -12688,7 +12952,9 @@ Ganon_ScenePhase2:
     ; in anticipation of moving around when timer becomes 0 next frame.
     ;
     cmpi.b  #$01,D0
-    bne  L_Ganon_DrawBody
+    beq.s  __far_z_04_0132
+    jmp  L_Ganon_DrawBody
+__far_z_04_0132:
 ; Description:
 ; Put Ganon at Y=$A0, and a random X of $30 or $B0.
 ;
@@ -12729,14 +12995,14 @@ _L_z04_Ganon_MoveAndShoot_Move:
     moveq   #1,D0
     lea     ($0394,A4),A0
     move.b  D0,(A0,D2.W)
-    bsr     BlueWizzrobe_TurnSometimesAndMoveAndCheckTile
+    jsr     BlueWizzrobe_TurnSometimesAndMoveAndCheckTile
     ; Shoot every $40 frames.
     ;
     move.b  ($0015,A4),D0
     andi.b #$3F,D0
     bne  _L_z04_Ganon_MoveAndShoot_Exit
     moveq   #86,D0
-    bsr     ShootFireball
+    jsr     ShootFireball
     even
 _L_z04_Ganon_MoveAndShoot_Exit:
     rts
@@ -12759,7 +13025,7 @@ Ganon_UpdateBrownState:
     ; Go switch his palette row to reflect it.
     ;
     bne  _L_z04_Ganon_UpdateBrownState_Draw
-    bsr     Ganon_RandomizeLocation
+    jsr     Ganon_RandomizeLocation
     jmp     Ganon_AppendPaletteRowTransferRecord_Blue
 
     even
@@ -12770,13 +13036,15 @@ _L_z04_Ganon_UpdateBrownState_Draw:
     lea     ($00AC,A4),A0
     move.b  (A0,D2.W),D0
     cmpi.b  #$30,D0
-    bcc  L_Ganon_DrawBody
+    bcs.s  __far_z_04_0133
+    jmp  L_Ganon_DrawBody
+__far_z_04_0133:
     move.b  ($0015,A4),D0
     lsr.b  #1,D0   ; LSR A
     bcc  _anon_z04_161
     even
 L_Ganon_DrawBody:
-    bsr     Ganon_DrawBody
+    jsr     Ganon_DrawBody
 _anon_z04_161:
     rts
 
@@ -12799,14 +13067,16 @@ _anon_z04_162:
     ; If Ganon phase < $50, then go draw only.
     ;
     cmpi.b  #$50,D0
-    bcs  L_Ganon_DrawBody
+    bcc.s  __far_z_04_0134
+    jmp  L_Ganon_DrawBody
+__far_z_04_0134:
     ; If > $50, then go handle ashes only.
     ;
     bne  _L_z04_Ganon_Dying_HandleAshes
     ; Otherwise Ganon phase = $50.
     ; Set up the burst and ashes.
     ;
-    bsr     Ganon_AppendPaletteRowTransferRecord_Triforce
+    jsr     Ganon_AppendPaletteRowTransferRecord_Triforce
     ; Ganon is now a pile of ashes at offset (7, 8) from where he was.
     ;
     move.b  ($70,A4,D2.W),D0
@@ -12819,26 +13089,28 @@ _anon_z04_162:
     addx.b  D1,D0   ; ADC #$08 (X flag = 6502 C)
     lea     ($0084,A4),A0
     move.b  D0,(A0,D2.W)
-    bsr     Ganon_SetUpBurstRays
-    bsr     PlayBossDeathCry
+    jsr     Ganon_SetUpBurstRays
+    jsr     PlayBossDeathCry
     moveq   #2,D0
     move.b  D0,($0600,A4)
     even
 _L_z04_Ganon_Dying_HandleAshes:
-    bsr     Ganon_DrawAshes
+    jsr     Ganon_DrawAshes
     ; Keep drawing the burst artifacts while Ganon phase < $A0.
     ;
     lea     ($042C,A4),A0
     move.b  (A0,D2.W),D0
     cmpi.b  #$A0,D0
-    bcs  Ganon_DrawBurst
+    bcc.s  __far_z_04_0135
+    jmp  Ganon_DrawBurst
+__far_z_04_0135:
     ; If > $A0, then there's nothing left to do, except return.
     ;
     bne  _L_z04_Ganon_Dying_Exit
     ; Otherwise Ganon phase = $A0.
     ; Activate the room item (triforce of power).
     ;
-    bsr     Ganon_ActivateRoomItem
+    jsr     Ganon_ActivateRoomItem
     ; Put it at Ganon's ashes' location.
     ;
     move.b  ($70,A4,D2.W),D0
@@ -12923,7 +13195,7 @@ Ganon_DrawCloud:
 _anon_z04_163:
     moveq   #0,D3
     move.b  D3,($000F,A4)
-    bsr     DrawObjectMirrored
+    jsr     DrawObjectMirrored
     ; Restore the coordinates.
     ;
     move.b  (A5)+,D0  ; PLA
@@ -12948,33 +13220,33 @@ Ganon_DrawBurst:
 _L_z04_Ganon_DrawBurst_DrawClouds:
     ; Draw the four clouds at diagonal corners.
     ;
-    bsr     Ganon_GetCurCloudLeft
-    bsr     Ganon_GetCurCloudTop
-    bsr     Ganon_DrawCloud
-    bsr     Ganon_GetCurCloudRight
-    bsr     Ganon_DrawCloud
-    bsr     Ganon_GetCurCloudLeft
-    bsr     Ganon_GetCurCloudBottom
-    bsr     Ganon_DrawCloud
-    bsr     Ganon_GetCurCloudRight
-    bsr     Ganon_DrawCloud
+    jsr     Ganon_GetCurCloudLeft
+    jsr     Ganon_GetCurCloudTop
+    jsr     Ganon_DrawCloud
+    jsr     Ganon_GetCurCloudRight
+    jsr     Ganon_DrawCloud
+    jsr     Ganon_GetCurCloudLeft
+    jsr     Ganon_GetCurCloudBottom
+    jsr     Ganon_DrawCloud
+    jsr     Ganon_GetCurCloudRight
+    jsr     Ganon_DrawCloud
     ; Draw the top and bottom clouds.
     ;
     move.b  ($70,A4,D2.W),D0
     move.b  D0,($0000,A4)
-    bsr     Ganon_GetCurCloudTop
-    bsr     Ganon_DrawCloud
-    bsr     Ganon_GetCurCloudBottom
-    bsr     Ganon_DrawCloud
+    jsr     Ganon_GetCurCloudTop
+    jsr     Ganon_DrawCloud
+    jsr     Ganon_GetCurCloudBottom
+    jsr     Ganon_DrawCloud
     ; Draw the left and right clouds.
     ;
-    bsr     Ganon_GetCurCloudLeft
+    jsr     Ganon_GetCurCloudLeft
     lea     ($0084,A4),A0
     move.b  (A0,D2.W),D0
     move.b  D0,($0001,A4)
-    bsr     Ganon_DrawCloud
-    bsr     Ganon_GetCurCloudRight
-    bsr     Ganon_DrawCloud
+    jsr     Ganon_DrawCloud
+    jsr     Ganon_GetCurCloudRight
+    jsr     Ganon_DrawCloud
     ; Save the object index.
     ;
     move.b  ($0340,A4),D0
@@ -13001,9 +13273,9 @@ _L_z04_Ganon_DrawBurst_LoopRay:
     beq  _anon_z04_164
     even
 _L_z04_Ganon_DrawBurst_Move:
-    bsr     BlueWizzrobe_Move
+    jsr     BlueWizzrobe_Move
 _anon_z04_164:
-    bsr     Anim_FetchObjPosForSpriteDescriptor
+    jsr     Anim_FetchObjPosForSpriteDescriptor
     ; The frame counter will make the sprite flash.
     ; The array has the horizontal and vertical flipping attributes.
     ; Combine them into [03].
@@ -13016,7 +13288,7 @@ _anon_z04_164:
     move.b  D0,($0003,A4)
     lea     (GanonBurstTiles).l,A0
     move.b  (A0,D2.W),D0
-    bsr     Anim_WriteSprite
+    jsr     Anim_WriteSprite
     ; Bottom of the loop.
     ; Increment object slot while <= 9.
     ;
@@ -13150,7 +13422,7 @@ _L_z04_Ganon_DrawBody_LoopCorner:
     move.b  D0,D3
     lea     (GanonFrameImages).l,A0
     move.b  (A0,D3.W),D0
-    bsr     DrawObjectNotMirrored
+    jsr     DrawObjectNotMirrored
     move.b  (A5)+,D0  ; PLA
     ; Bottom of the part loop.
     ;
@@ -13193,7 +13465,7 @@ Ganon_CheckCollisions:
     move.b  D0,($000C,A4)
     moveq   #0,D3
     move.b  D3,($0000,A4)
-    bsr     CheckLinkCollisionPreinit
+    jsr     CheckLinkCollisionPreinit
     even
 _L_z04_Ganon_CheckCollisions_SkipLinkCollision:
     ; If Ganon is not in state 0, then he's brown.
@@ -13208,7 +13480,7 @@ _L_z04_Ganon_CheckCollisions_SkipLinkCollision:
     move.b  ($28,A4,D2.W),D0
     bne  _L_z04_Ganon_CheckCollisions_Exit
     moveq   #13,D3
-    bsr     CheckMonsterSwordCollision
+    jsr     CheckMonsterSwordCollision
     ; If Ganon has died according to the usual collision check rules
     ; (HP = 0), then:
     ; 1. Restore HP to the initial value $F0
@@ -13223,7 +13495,7 @@ _L_z04_Ganon_CheckCollisions_SkipLinkCollision:
     move.b  D0,(A0,D2.W)
     lea     ($00AC,A4),A0
     subq.b  #1,(A0,D2.W)
-    bsr     Ganon_AppendPaletteRowTransferRecord_Brown
+    jsr     Ganon_AppendPaletteRowTransferRecord_Brown
     even
 _L_z04_Ganon_CheckCollisions_CheckHarmed:
     ; If Ganon was harmed, then play the sound effect
@@ -13232,18 +13504,18 @@ _L_z04_Ganon_CheckCollisions_CheckHarmed:
     lea     ($04F0,A4),A0
     move.b  (A0,D2.W),D0
     beq  _L_z04_Ganon_CheckCollisions_UndoDeath
-    bsr     PlayBossHitCryIfNeeded
+    jsr     PlayBossHitCryIfNeeded
     moveq   #64,D0
     move.b  D0,($28,A4,D2.W)
     even
 _L_z04_Ganon_CheckCollisions_UndoDeath:
     ; Reset metastate, because Ganon cannot die this way.
     ;
-    bsr     ResetObjMetastate
+    jsr     ResetObjMetastate
     ; Reset shove info and invincibility timer, because Ganon
     ; doesn't react at all as a usual monster.
     ;
-    bsr     ResetShoveInfoAndInvincibilityTimer
+    jsr     ResetShoveInfoAndInvincibilityTimer
     even
 _L_z04_Ganon_CheckCollisions_Exit:
     rts
@@ -13268,7 +13540,7 @@ _L_z04_Ganon_CheckCollisions_CheckArrowCollision:
     bne  _L_z04_Ganon_CheckCollisions_Exit
     ; Check for collision with an arrow; and return if no collision.
     ;
-    bsr     CheckMonsterArrowOrRodCollision
+    jsr     CheckMonsterArrowOrRodCollision
     move.b  ($0006,A4),D0
     beq  _L_z04_Ganon_CheckCollisions_Exit
     ; Set the Ganon phase to "dying".
@@ -13350,7 +13622,7 @@ _L_z04_Ganon_AppendPaletteRowTransferRecord_Triforce_OverwriteColors:
 
     even
 Ganon_DrawAshes:
-    bsr     Anim_FetchObjPosForSpriteDescriptor
+    jsr     Anim_FetchObjPosForSpriteDescriptor
     moveq   #11,D0
     jmp     DrawObjectNotMirrored
 
@@ -13360,7 +13632,7 @@ Ganon_ActivateRoomItem:
     ;
     move.b  ($00BF,A4),D0
     beq  _L_z04_Ganon_ActivateRoomItem_Exit
-    bsr     GetRoomFlagUWItemState
+    jsr     GetRoomFlagUWItemState
     bne  _L_z04_Ganon_ActivateRoomItem_Exit
     ; Activate the room item, by setting its state to 0.
     ;
@@ -13650,19 +13922,21 @@ _anon_z04_167:
     ;
     lea     ($03A8,A4),A0
     move.b  (A0,D2.W),D0
-    beq  DestroyMonster_Bank4
+    bne.s  __far_z_04_0136
+    jmp  DestroyMonster_Bank4
+__far_z_04_0136:
     ; Draw the item. Fairies are animated separately.
     ;
     lea     ($00AC,A4),A0
     move.b  (A0,D2.W),D0
     cmpi.b  #$23,D0
     beq  _L_z04_UpdateItem_AnimateFairy
-    bsr     AnimateItemObject
+    jsr     AnimateItemObject
     jmp     _anon_z04_168
 
     even
 _L_z04_UpdateItem_AnimateFairy:
-    bsr     UpdateFairyObject
+    jsr     UpdateFairyObject
 _anon_z04_168:
     ; If the player is halted, then return.
     ;
@@ -13718,7 +13992,7 @@ _L_z04_UpdateItem_TryToTake:
     lea     ($00AC,A4),A0
     move.b  (A0,D2.W),D0
     move.b  D0,($0004,A4)
-    bsr     TryTakeItem
+    jsr     TryTakeItem
     even
 _L_z04_UpdateItem_SkipTaking:
     ; Restore Link's location.
@@ -13735,7 +14009,9 @@ _L_z04_UpdateItem_SkipTaking:
     lea     ($00AC,A4),A0
     move.b  (A0,D2.W),D0
     cmpi.b  #$FF,D0
-    beq  DestroyMonster_Bank4
+    bne.s  __far_z_04_0137
+    jmp  DestroyMonster_Bank4
+__far_z_04_0137:
     subq.b  #1,($000D,A4)
     bne  _L_z04_UpdateItem_LoopItemTaker
     even
@@ -13750,7 +14026,7 @@ DestroyMonster_Bank4:
     moveq   #0,D0
     lea     ($034F,A4),A0
     move.b  D0,(A0,D2.W)
-    bsr     SetShoveInfoWith0
+    jsr     SetShoveInfoWith0
     move.b  D0,($28,A4,D2.W)
     lea     ($00AC,A4),A0
     move.b  D0,(A0,D2.W)
@@ -13782,7 +14058,9 @@ _ShootIfWanted:
     ;
     lea     ($0412,A4),A0
     move.b  (A0,D2.W),D0
-    beq  ReturnDidNotShoot
+    bne.s  __far_z_04_0138
+    jmp  ReturnDidNotShoot
+__far_z_04_0138:
 ; Params:
 ; [00]: shot object type
 ;
@@ -13797,17 +14075,23 @@ _ShootIfWanted:
 ;
     even
 ShootLimited:
-    bsr     FindEmptyMonsterSlot
-    beq  ReturnDidNotShoot
+    jsr     FindEmptyMonsterSlot
+    bne.s  __far_z_04_0139
+    jmp  ReturnDidNotShoot
+__far_z_04_0139:
     ; If the object type to shoot is a true shot (projectile),
     ; and we're at the limit of active shots (4), then return C=0.
     ;
     move.b  ($0000,A4),D0
     cmpi.b  #$53,D0
-    bcs  Shoot
+    bcc.s  __far_z_04_0140
+    jmp  Shoot
+__far_z_04_0140:
     move.b  ($034C,A4),D0
     cmpi.b  #$04,D0
-    bcc  ReturnDidNotShoot
+    bcs.s  __far_z_04_0141
+    jmp  ReturnDidNotShoot
+__far_z_04_0141:
     ; Else increase the number of active shots.
     ;
     addq.b  #1,($034C,A4)
@@ -13827,7 +14111,7 @@ Shoot:
     moveq   #0,D2
     move.b  ($0059,A4),D2
     move.b  ($0000,A4),D0
-    bsr     SetTypeAndClearObject
+    jsr     SetTypeAndClearObject
     ; Set state to $10 and reset timer, so that the shot moves right away.
     ;
     moveq   #0,D3
@@ -13866,7 +14150,7 @@ ReturnDidNotShoot:
     even
 UpdateCandle:
     move.b  ($051F,A4),D0
-    bsr     _m68k_tablejump  ; M68K-native table dispatch (replaces JSR TableJump)
+    jsr     _m68k_tablejump  ; M68K-native table dispatch (replaces JSR TableJump)
     even
 UpdateCandle_JumpTable:
     dc.l    UpdateCandle_Begin   ; jump table entry (32-bit for _m68k_tablejump)
@@ -13877,8 +14161,10 @@ UpdateCandle_JumpTable:
 UpdateCandle_Begin:
     moveq   #0,D3
     move.b  ($00EB,A4),D3
-    bsr     IsDarkRoom_Bank4
-    beq  UpdateCandle_Done
+    jsr     IsDarkRoom_Bank4
+    bne.s  __far_z_04_0142
+    jmp  UpdateCandle_Done
+__far_z_04_0142:
     move.b  #$C0,D0
     move.b  D0,($051C,A4)
     addq.b  #1,($051E,A4)
@@ -13895,13 +14181,17 @@ L_Candle_StopBrightening:
     ;
     moveq   #0,D0
     move.b  D0,($051E,A4)
-    beq  L_Candle_IncState
+    bne.s  __far_z_04_0143
+    jmp  L_Candle_IncState
+__far_z_04_0143:
     even
 UpdateCandle_Brightening:
     ; Animating a brightening cycle.
     ;
-    bsr     AnimateWorldFading
-    beq  L_Candle_StopBrightening
+    jsr     AnimateWorldFading
+    bne.s  __far_z_04_0144
+    jmp  L_Candle_StopBrightening
+__far_z_04_0144:
     rts
 
 ; Params:
@@ -13926,7 +14216,7 @@ SetUpFairyObject:
     ;
     moveq   #8,D0
     move.b  D0,($0602,A4)
-    bsr     ResetFlyerState
+    jsr     ResetFlyerState
     ; Face up at first.
     ;
     moveq   #8,D0
@@ -13963,12 +14253,12 @@ ResetFlyerState:
 ;
     even
 UpdateFairyObject:
-    bsr     ControlFairyFlight
-    bsr     MoveFlyer
+    jsr     ControlFairyFlight
+    jsr     MoveFlyer
     even
 DrawFairy:
-    bsr     Anim_FetchObjPosForSpriteDescriptor
-    bsr     Anim_SetSpriteDescriptorRedPaletteRow
+    jsr     Anim_FetchObjPosForSpriteDescriptor
+    jsr     Anim_SetSpriteDescriptorRedPaletteRow
     ; Every 4 frames, switch between the two sprite frames.
     ;
     lsl.b  #1,D0   ; ASL A
@@ -13984,7 +14274,7 @@ DrawFairy:
 ControlFairyFlight:
     lea     ($0444,A4),A0
     move.b  (A0,D2.W),D0
-    bsr     _m68k_tablejump  ; M68K-native table dispatch (replaces JSR TableJump)
+    jsr     _m68k_tablejump  ; M68K-native table dispatch (replaces JSR TableJump)
     even
 ControlFairyFlight_JumpTable:
     dc.l    Flyer_SpeedUp   ; jump table entry (32-bit for _m68k_tablejump)
@@ -14042,7 +14332,9 @@ _anon_z04_171:
     lea     ($041F,A4),A0
     move.b  (A0,D2.W),D0
     andi.b #$E0,D0
-    bne  Flyer_CompareMaxSpeed
+    beq.s  __far_z_04_0145
+    jmp  Flyer_CompareMaxSpeed
+__far_z_04_0145:
     ; (whole_speed & $E0) = 0
     ; Set a random timer between $40 and $7F.
     ;
@@ -14146,7 +14438,7 @@ _L_z04_MoveFlyer_End:
     ;
     lea     ($0437,A4),A0
     addq.b  #1,(A0,D2.W)
-    bsr     BoundFlyer
+    jsr     BoundFlyer
     even
 _L_z04_MoveFlyer_Exit:
     rts
@@ -14160,24 +14452,26 @@ BoundFlyer:
     lea     ($0098,A4),A0
     move.b  (A0,D2.W),D0
     move.b  D0,($000F,A4)
-    bsr     BoundDirectionHorizontally
+    jsr     BoundDirectionHorizontally
     ; Check vertical boundaries, if object is not a boulder.
     ;
     lea     ($034F,A4),A0
     move.b  (A0,D2.W),D0
     cmpi.b  #$20,D0
     beq  _anon_z04_173
-    bsr     BoundDirectionVertically
+    jsr     BoundDirectionVertically
 _anon_z04_173:
     ; If movement wasn't restricted, then return.
     ;
     move.b  ($000F,A4),D0
-    bne  L132F8_Exit
+    beq.s  __far_z_04_0146
+    jmp  L132F8_Exit
+__far_z_04_0146:
     even
 ReverseObjDir8:
     ; Get the opposite direction of the one the object is facing.
     ;
-    bsr     GetObjDir8Index
+    jsr     GetObjDir8Index
     move.b  D3,D0
     andi    #$EE,CCR  ; CLC: clear C+X
     move.b  #$04,D1
@@ -14191,7 +14485,9 @@ ReverseObjDir8:
     lea     ($034F,A4),A0
     move.b  (A0,D2.W),D0
     cmpi.b  #$41,D0
-    beq  DeferBounce
+    bne.s  __far_z_04_0147
+    jmp  DeferBounce
+__far_z_04_0147:
     ; Apply the new direction.
     ;
     lea     (Directions8).l,A0
@@ -14210,7 +14506,9 @@ DeferBounce:
     cmpi.b  #$05,D2
     beq  _anon_z04_174
     cmpi.b  #$0A,D2
-    bne  L13307_Exit
+    beq.s  __far_z_04_0148
+    jmp  L13307_Exit
+__far_z_04_0148:
 _anon_z04_174:
     lea     (Directions8).l,A0
     move.b  (A0,D3.W),D0
@@ -14230,13 +14528,17 @@ L13307_Exit:
     even
 Flyer_Chase:
     move.b  ($28,A4,D2.W),D0
-    bne  L13307_Exit
+    beq.s  __far_z_04_0149
+    jmp  L13307_Exit
+__far_z_04_0149:
     ; Decrease the turn counter.
     ; Once there are no more turns, go to flying state 1.
     ;
     lea     ($042C,A4),A0
     subq.b  #1,(A0,D2.W)
-    bne  SetDelayAndTurn
+    beq.s  __far_z_04_0150
+    jmp  SetDelayAndTurn
+__far_z_04_0150:
     even
 SetFlyingState1:
     moveq   #1,D0
@@ -14299,7 +14601,7 @@ _anon_z04_176:
 _L_z04_TurnTowardsPlayer8_SkipVertical:
     ; Get the index of the object's direction.
     ;
-    bsr     GetObjDir8Index
+    jsr     GetObjDir8Index
     ; Check 3 directions turning left:
     ; 1. right from object direction
     ; 2. object direction
@@ -14321,7 +14623,9 @@ _L_z04_TurnTowardsPlayer8_LoopLeft:
     move.b  (A0,D3.W),D0
     move.b  ($0000,A4),D1
     cmp.b   D1,D0
-    beq  L1336F_Exit
+    bne.s  __far_z_04_0151
+    jmp  L1336F_Exit
+__far_z_04_0151:
     subq.b  #1,D3
     subq.b  #1,($0001,A4)
     bne  _L_z04_TurnTowardsPlayer8_LoopLeft
@@ -14346,12 +14650,16 @@ LoopRight:
     move.b  (A0,D3.W),D0
     move.b  ($0000,A4),D1
     and.b   D0,D1   ; BIT: set Z/N/V from D1 AND A
-    bne  TestDir
+    beq.s  __far_z_04_0152
+    jmp  TestDir
+__far_z_04_0152:
     even
 NextLoopRight:
     addq.b  #1,D3
     subq.b  #1,($0001,A4)
-    bne  LoopRight
+    beq.s  __far_z_04_0153
+    jmp  LoopRight
+__far_z_04_0153:
     ; We didn't find a direction to switch to.
     ; So turn left once; to one turn right of object direction.
     ;
@@ -14381,8 +14689,12 @@ TestDir:
     move.b  ($0000,A4),D1
     or.b  D1,D0
     cmpi.b  #$07,D0
-    bcc  NextLoopRight
-    bcc  SetDir8ForIndex
+    bcs.s  __far_z_04_0154
+    jmp  NextLoopRight
+__far_z_04_0154:
+    bcs.s  __far_z_04_0155
+    jmp  SetDir8ForIndex
+__far_z_04_0155:
 ; Description:
 ; Delay and turn randomly a number of times.
 ; The go to state 1. After each turn, delay $10 frames.
@@ -14393,7 +14705,9 @@ TestDir:
     even
 Flyer_Wander:
     move.b  ($28,A4,D2.W),D0
-    bne  L133AC_Exit
+    beq.s  __far_z_04_0156
+    jmp  L133AC_Exit
+__far_z_04_0156:
     ; Decrease the turn counter.
     ; Once there are no more turns, go to flying state 1.
     ;
@@ -14414,7 +14728,7 @@ TurnRandomlyDir8:
     ; >= $50: turn right
     ; Else:   turn left
     ;
-    bsr     GetObjDir8Index
+    jsr     GetObjDir8Index
     move.b  ($19,A4,D2.W),D0
     cmpi.b  #$A0,D0
     bcc  _L_z04_TurnRandomlyDir8_SetDir
@@ -14443,7 +14757,9 @@ _anon_z04_178:
     lea     (Directions8).l,A0
     move.b  (A0,D3.W),D1
     cmp.b   D1,D0
-    beq  L133AC_Exit
+    bne.s  __far_z_04_0157
+    jmp  L133AC_Exit
+__far_z_04_0157:
     subq.b  #1,D3
     bpl  _anon_z04_178
 ; If not found, then use index 0.
@@ -14492,7 +14808,7 @@ RotateObjectLocation:
     move.b  (A0,D2.W),D0
     moveq   #0,D3
     move.b  ($0005,A4),D3
-    bsr     ShiftMultiply
+    jsr     ShiftMultiply
     ; The absolute X increment for the current angle is now in [02:03].
     ;
     ; If angle >= $10, then the monster is in the top half of circle going left.
@@ -14560,7 +14876,7 @@ _L_z04_RotateObjectLocation_SetXRotateY:
     move.b  (A0,D2.W),D0
     moveq   #0,D3
     move.b  ($0006,A4),D3
-    bsr     ShiftMultiply
+    jsr     ShiftMultiply
     ; The absolute Y increment for the current angle is now in [02:03].
     ;
     ; If (angle - 8) >= $10, then the monster is in the right half of circle going up.
