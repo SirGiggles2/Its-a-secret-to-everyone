@@ -93,6 +93,19 @@ if is_genesis then
         i, y - 128, x - 128, tw, pal, math.floor(sl / 256)))
     end
   end
+  f:write("raw SAT sprites:\n")
+  for i = 0, 79 do
+    local base = 0xF800 + i * 8
+    local y = memory.read_u16_be(base + 0, "VRAM")
+    local sl = memory.read_u16_be(base + 2, "VRAM")
+    local tw = memory.read_u16_be(base + 4, "VRAM")
+    local x = memory.read_u16_be(base + 6, "VRAM")
+    if y ~= 0 or sl ~= 0 or tw ~= 0 or x ~= 0 then
+      local pal = math.floor(tw / 8192) % 4
+      f:write(string.format("  RAW%02d Y=%04X SL=%04X TW=%04X X=%04X pal=%d\n",
+        i, y, sl, tw, x, pal))
+    end
+  end
 else
   local oam = pick_domain({"OAM"})
   f:write(string.format("oamDomain=%s\n", tostring(oam)))

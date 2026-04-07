@@ -3,7 +3,7 @@ from __future__ import annotations
 import csv
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Dict, Iterable, List, Tuple
+from typing import Dict, Iterable, List, Optional, Tuple
 
 from PIL import Image
 import numpy as np
@@ -48,6 +48,8 @@ class TraceRow:
     active_base: int
     active_event: int
     sprite_visible: int
+    attr_index: int
+    item_row: int
 
     @property
     def key(self) -> Tuple[int, int, int, int, int, int]:
@@ -99,6 +101,8 @@ def parse_trace(path: Path) -> List[TraceRow]:
                 active_base=int(raw["activeBase"], 16),
                 active_event=int(raw["activeEvent"], 16),
                 sprite_visible=int(raw["spriteVisible"]),
+                attr_index=int(raw.get("attrIndex", "FF"), 16),
+                item_row=int(raw.get("itemRow", "FF"), 16),
             )
         )
     return rows
@@ -146,8 +150,51 @@ def frame_path(directory: Path, label: str, frame: int) -> Path:
     return directory / f"{label}_f{frame:05d}.png"
 
 
-def s2_rows(rows: Iterable[TraceRow]) -> List[TraceRow]:
-    return [r for r in rows if r.phase == 0x01 and r.subphase == 0x02]
+def item_rows(rows: Iterable[TraceRow]) -> List[TraceRow]:
+    return [r for r in rows if r.phase == 0x01 and r.subphase == 0x02 and r.text_index >= 0x05]
+
+
+def region_slice(img: np.ndarray, rect: Tuple[int, int, int, int]) -> np.ndarray:
+    x0, y0, x1, y1 = rect
+    return img[y0:y1, x0:x1]
+
+
+def ink_bbox(img: np.ndarray, rect: Tuple[int, int, int, int], threshold: int = 24) -> Optional[Tuple[int, int, int, int]]:
+    x0, y0, x1, y1 = rect
+    region = region_slice(img, rect)
+    ys, xs = np.nonzero(region > threshold)
+    if len(xs) == 0:
+        return None
+    return (x0 + int(xs.min()), y0 + int(ys.min()), x0 + int(xs.max()), y0 + int(ys.max()))
+
+
+def region_mismatch(a: np.ndarray, b: np.ndarray, rect: Tuple[int, int, int, int], threshold: int = 20) -> float:
+    aa = region_slice(a, rect)
+    bb = region_slice(b, rect)
+    diff = np.abs(aa - bb)
+    return float((diff > threshold).mean())
+
+
+def bbox_anchor_delta(nes_bbox: Optional[Tuple[int, int, int, int]], gen_bbox: Optional[Tuple[int, int, int, int]]) -> Tuple[int, int]:
+    if nes_bbox is None or gen_bbox is None:
+        return (999, 999)
+    return (gen_bbox[0] - nes_bbox[0], gen_bbox[1] - nes_bbox[1])
+
+
+def bbox_fields(prefix: str, bbox: Optional[Tuple[int, int, int, int]]) -> Dict[str, int]:
+    if bbox is None:
+        return {
+            f"{prefix}X0": -1,
+            f"{prefix}Y0": -1,
+            f"{prefix}X1": -1,
+            f"{prefix}Y1": -1,
+        }
+    return {
+        f"{prefix}X0": bbox[0],
+        f"{prefix}Y0": bbox[1],
+        f"{prefix}X1": bbox[2],
+        f"{prefix}Y1": bbox[3],
+    }
 
 
 def main() -> None:
@@ -155,8 +202,8 @@ def main() -> None:
 
     gen_rows = parse_trace(GEN_DIR / "gen_trace.txt")
     nes_rows = parse_trace(NES_DIR / "nes_trace.txt")
-    gen_s2 = s2_rows(gen_rows)
-    nes_s2 = s2_rows(nes_rows)
+    gen_s2 = item_rows(gen_rows)
+    nes_s2 = item_rows(nes_rows)
 
     gen_by_key: Dict[Tuple[int, int, int, int, int, int], TraceRow] = {}
     nes_by_key: Dict[Tuple[int, int, int, int, int, int], TraceRow] = {}
@@ -197,6 +244,13 @@ def main() -> None:
                 "genHintQ": gr.hint_q_count,
                 "genHintPend": gr.hint_pend_split,
                 "genMode": gr.intro_scroll_mode,
+                "genActiveSeg": gr.active_segment,
+                "genActiveBase": gr.active_base,
+                "genActiveEvent": gr.active_event,
+                "nesAttrIndex": nr.attr_index,
+                "genAttrIndex": gr.attr_index,
+                "nesItemRow": nr.item_row,
+                "genItemRow": gr.item_row,
             }
         )
 
@@ -222,6 +276,10 @@ def main() -> None:
                 "nextLineCounter": b.line_counter,
                 "textIndex": a.text_index,
                 "nextTextIndex": b.text_index,
+                "attrIndex": a.attr_index,
+                "nextAttrIndex": b.attr_index,
+                "itemRow": a.item_row,
+                "nextItemRow": b.item_row,
                 "tileBufSel": a.tile_buf_sel,
                 "nextTileBufSel": b.tile_buf_sel,
                 "bestShiftY": shift_y,
@@ -251,6 +309,10 @@ def main() -> None:
                 "nextLineCounter": gt["nextLineCounter"],
                 "textIndex": gt["textIndex"],
                 "nextTextIndex": gt["nextTextIndex"],
+                "attrIndex": gt["attrIndex"],
+                "nextAttrIndex": gt["nextAttrIndex"],
+                "itemRow": gt["itemRow"],
+                "nextItemRow": gt["nextItemRow"],
                 "nesFrom": nt["fromFrame"],
                 "nesTo": nt["toFrame"],
                 "genFrom": gt["fromFrame"],
@@ -274,6 +336,62 @@ def main() -> None:
         writer = csv.DictWriter(f, fieldnames=list(continuity_rows[0].keys()))
         writer.writeheader()
         writer.writerows(continuity_rows)
+
+    regions = {
+        "titleHeart": (0, 0, 256, 64),
+        "rupeeText": (24, 80, 232, 144),
+        "triforceBlock": (56, 88, 200, 176),
+        "triforceCaption": (64, 144, 208, 208),
+    }
+    layout_targets = {
+        "title_heart": 2303,
+        "rupee_text": 2601,
+        "late_triforce": 2704,
+    }
+
+    def closest_pair(target_gen_frame: int) -> dict:
+        return min(pair_rows, key=lambda row: (abs(row["genFrame"] - target_gen_frame), abs(row["nesFrame"] - (target_gen_frame - 60))))
+
+    layout_rows = []
+    for anchor, target_gen_frame in layout_targets.items():
+        pair = closest_pair(target_gen_frame)
+        gimg = load_gray(frame_path(GEN_DIR, "gen", pair["genFrame"]))
+        nimg = load_gray(frame_path(NES_DIR, "nes", pair["nesFrame"]))
+        for region_name, rect in regions.items():
+            nes_bbox = ink_bbox(nimg, rect)
+            gen_bbox = ink_bbox(gimg, rect)
+            dx, dy = bbox_anchor_delta(nes_bbox, gen_bbox)
+            row = {
+                "anchor": anchor,
+                "region": region_name,
+                "nesFrame": pair["nesFrame"],
+                "genFrame": pair["genFrame"],
+                "curV": pair["curV"],
+                "lineCounter": pair["lineCounter"],
+                "textIndex": pair["textIndex"],
+                "nesAttrIndex": pair["nesAttrIndex"],
+                "genAttrIndex": pair["genAttrIndex"],
+                "nesItemRow": pair["nesItemRow"],
+                "genItemRow": pair["genItemRow"],
+                "nesSprites": pair["nesSprites"],
+                "genSprites": pair["genSprites"],
+                "genMode": pair["genMode"],
+                "genActiveSeg": pair["genActiveSeg"],
+                "genActiveBase": pair["genActiveBase"],
+                "genActiveEvent": pair["genActiveEvent"],
+                "maskRaw": round(region_mismatch(nimg, gimg, rect), 5),
+                "anchorDx": dx,
+                "anchorDy": dy,
+            }
+            row.update(bbox_fields("nes", nes_bbox))
+            row.update(bbox_fields("gen", gen_bbox))
+            layout_rows.append(row)
+
+    layout_csv = REPORT_DIR / "item_layout.csv"
+    with layout_csv.open("w", newline="") as f:
+        writer = csv.DictWriter(f, fieldnames=list(layout_rows[0].keys()))
+        writer.writeheader()
+        writer.writerows(layout_rows)
 
     worst_pairs = sorted(pair_rows, key=lambda r: r["maskRaw"], reverse=True)[:12]
     motion_bad = [r for r in continuity_rows if r["classification"] != "ok"]
@@ -301,6 +419,32 @@ def main() -> None:
             f.write(
                 f"| {row['curV']:02X} | {row['nextCurV']:02X} | {row['nesFrom']}->{row['nesTo']} | {row['genFrom']}->{row['genTo']} | {row['nesShiftY']} | {row['genShiftY']} | {row['nesRows']} | {row['genRows']} |\n"
             )
+
+    layout_md = REPORT_DIR / "item_layout.md"
+    with layout_md.open("w", encoding="utf-8") as f:
+        f.write("# Item Layout Summary\n\n")
+        for anchor in layout_targets:
+            anchor_rows = [row for row in layout_rows if row["anchor"] == anchor]
+            if not anchor_rows:
+                continue
+            pair = anchor_rows[0]
+            f.write(f"## {anchor}\n\n")
+            f.write(
+                f"- paired frames: NES {pair['nesFrame']} vs GEN {pair['genFrame']}\n"
+                f"- state: curV={pair['curV']:02X} line={pair['lineCounter']:02X} text={pair['textIndex']:02X} "
+                f"attr={pair['nesAttrIndex']:02X}/{pair['genAttrIndex']:02X} itemRow={pair['nesItemRow']:02X}/{pair['genItemRow']:02X}\n"
+                f"- Genesis active state: seg={pair['genActiveSeg']:02X} base={pair['genActiveBase']:04X} event={pair['genActiveEvent']:04X} mode={pair['genMode']:02X}\n"
+                f"- sprites: nes={pair['nesSprites']} gen={pair['genSprites']}\n\n"
+            )
+            f.write("| region | maskRaw | dx | dy | nes bbox | gen bbox |\n")
+            f.write("|---|---:|---:|---:|---|---|\n")
+            for row in anchor_rows:
+                f.write(
+                    f"| {row['region']} | {row['maskRaw']:.5f} | {row['anchorDx']} | {row['anchorDy']} | "
+                    f"({row['nesX0']},{row['nesY0']})-({row['nesX1']},{row['nesY1']}) | "
+                    f"({row['genX0']},{row['genY0']})-({row['genX1']},{row['genY1']}) |\n"
+                )
+            f.write("\n")
 
 
 if __name__ == "__main__":

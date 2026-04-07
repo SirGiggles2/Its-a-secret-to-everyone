@@ -149,6 +149,9 @@ AGS_SEG_STORY0_SCROLL_ON    equ 1
 AGS_SEG_STORY2_SCROLL_BODY  equ 2
 AGS_SEG_STORY2_HOLD_STOP    equ 3
 AGS_SEG_STORY2_WRAP_RELEASE equ 4
+AGS_SEG_ITEM_BODY_DIRECT    equ 5
+AGS_SEG_ITEM_BODY_WRAP      equ 6
+AGS_SEG_ITEM_TAIL_RELEASE   equ 7
 
 ;==============================================================================
 ; PPU register reads ($2000–$2007 → _ppu_read_0 … _ppu_read_7)
@@ -405,6 +408,8 @@ _ags_compute_stage:
     beq.s   .agc_seg_story0
     cmpi.b  #$02,D4
     bne.s   .agc_seg_other
+    cmpi.b  #$05,($042E,A4)             ; item-roll pages start at text index 5
+    bcc.s   .agc_seg_item
     moveq   #AGS_SEG_STORY2_SCROLL_BODY,D4
     cmpi.b  #$E0,($00FC,A4)             ; first full-screen E0 frame predicts
     bne.s   .agc_story2_hold_ctrl       ; the next frame's pause/hold state
@@ -417,6 +422,19 @@ _ags_compute_stage:
  .agc_seg_story2_hold:
     moveq   #AGS_SEG_STORY2_HOLD_STOP,D4
     bra.s   .agc_have_segment
+.agc_seg_item:
+    moveq   #AGS_SEG_ITEM_BODY_DIRECT,D4
+    tst.b   ($005C,A4)                  ; wrapped item-roll seam pending?
+    beq.s   .agc_have_segment
+    tst.b   ($00FC,A4)                  ; only classify the seam at curV == 0
+    bne.s   .agc_have_segment
+    cmpi.b  #$0B,($042E,A4)             ; final item page uses a distinct tail release
+    bcs.s   .agc_seg_item_wrap
+    moveq   #AGS_SEG_ITEM_TAIL_RELEASE,D4
+    bra.s   .agc_have_segment
+.agc_seg_item_wrap:
+    moveq   #AGS_SEG_ITEM_BODY_WRAP,D4
+    bra.s   .agc_have_segment
 .agc_seg_story0:
     moveq   #AGS_SEG_STORY0_SCROLL_ON,D4
     bra.s   .agc_have_segment
@@ -425,6 +443,53 @@ _ags_compute_stage:
 .agc_have_segment:
     move.b  D4,(STAGED_SEGMENT).l
 
+    ; Phase-1/subphase-2 body frames (story tail + attract item roll) do not
+    ; want the freshly-updated CurVScroll as their visible source. The NES-like
+    ; cadence in these long direct-scroll windows comes from the current frame's
+    ; visible scroll shadow ($2005 Y / PPU_SCRL_Y), which lags CurVScroll by one
+    ; half-step. Using CurVScroll here advances the whole picture on the wrong
+    ; half of the two-frame cadence and makes the item/text roll jump.
+    cmpi.b  #AGS_SEG_STORY2_SCROLL_BODY,D4
+    beq.s   .agc_phase12_body_base
+    cmpi.b  #AGS_SEG_ITEM_BODY_DIRECT,D4
+    beq.s   .agc_phase12_body_base
+    cmpi.b  #AGS_SEG_ITEM_BODY_WRAP,D4
+    beq.s   .agc_phase12_body_base
+    cmpi.b  #AGS_SEG_ITEM_TAIL_RELEASE,D4
+    beq.s   .agc_item_tail_base
+    bne.s   .agc_story0_base_setup
+.agc_phase12_body_base:
+    moveq   #0,D0
+    move.b  (PPU_SCRL_Y).l,D0
+    addi.w  #8,D0
+    move.b  ($00FF,A4),D1
+    tst.b   ($005C,A4)
+    beq.s   .agc_story2_no_pending
+    eori.b  #$02,D1
+.agc_story2_no_pending:
+    btst    #1,D1
+    beq.s   .agc_story2_base_ready
+    addi.w  #240,D0
+.agc_story2_base_ready:
+    move.w  D0,D2
+    bra.s   .agc_story0_base_setup
+
+.agc_item_tail_base:
+    moveq   #0,D0
+    move.b  ($00FC,A4),D0
+    addi.w  #8,D0
+    move.b  ($00FF,A4),D1
+    tst.b   ($005C,A4)
+    beq.s   .agc_item_tail_no_pending
+    eori.b  #$02,D1
+.agc_item_tail_no_pending:
+    btst    #1,D1
+    beq.s   .agc_item_tail_base_ready
+    addi.w  #240,D0
+.agc_item_tail_base_ready:
+    move.w  D0,D2
+
+ .agc_story0_base_setup:
     ; Scroll-on frames need two distinct formulas:
     ;   before the page fills the screen, follow the prebuilt V64 page using
     ;   the visible PPU scroll shadow
@@ -463,16 +528,29 @@ _ags_compute_stage:
                                          ; top-hit teleport cadence
     tst.b   (AGS_PREDICT_NEXT).l
     beq.s   .agc_have_prediction
+    cmpi.b  #AGS_SEG_STORY2_SCROLL_BODY,D4
+    beq.s   .agc_body_predict_parity
+    cmpi.b  #AGS_SEG_ITEM_BODY_DIRECT,D4
+    beq.s   .agc_body_predict_parity
+    cmpi.b  #AGS_SEG_ITEM_BODY_WRAP,D4
+    beq.s   .agc_item_wrap_predict
+    cmpi.b  #AGS_SEG_ITEM_TAIL_RELEASE,D4
+    beq.s   .agc_have_prediction        ; tail release shows the new-page
+                                        ; curV=0 frame before ordinary body
+                                        ; cadence resumes on the next frame
+    bne.s   .agc_default_predict
+.agc_item_wrap_predict:
+    move.w  #$00F8,D0                   ; first wrapped item-body frame = old-page tail
+    bra.s   .agc_have_prediction
+.agc_body_predict_parity:
+    btst    #0,($0015,A4)               ; body cadence: odd frame -> next frame
+    beq.s   .agc_have_prediction        ; advances one visible tick
+    bra.s   .agc_do_predict
+.agc_default_predict:
     btst    #0,($0015,A4)               ; FrameCounter odd?
     bne.s   .agc_have_prediction        ; odd => next frame keeps same scroll
-    cmpi.b  #AGS_SEG_STORY2_SCROLL_BODY,D4
-    bne.s   .agc_do_predict
-    cmpi.w  #256,D2                     ; direct-scroll item/body frames keep
-    blo.s   .agc_have_prediction        ; the current visible cadence; only
-                                        ; predict once the next frame can
-                                        ; enter seam logic
 .agc_do_predict:
-    addq.w  #1,D0                       ; even => next frame scrolls one tick
+    addq.w  #1,D0                       ; predict one visible scroll tick
 .agc_have_prediction:
     move.w  D0,D3                       ; D3 = predicted raw base before wrap
 
@@ -1866,6 +1944,21 @@ _oam_dma:
     addi.w  #129,D4
     tst.b   ($0012,A4)
     bne.s   .oam_write_y
+    ; Preserve top-edge visibility for attract sprites that are just entering
+    ; from the top. The global attract-mode lift would otherwise clip NES
+    ; OAM Y=0..7 sprites entirely one frame too early.
+    cmpi.b  #8,D0
+    bcs.s   .oam_write_y
+    ; Attract/story gameMode 0 uses an 8px sprite lift in most scenes, but the
+    ; post-story item roll needs NES-accurate top-edge positioning so the first
+    ; row of item sprites remains visible as it crosses the top boundary.
+    cmpi.b  #$01,($042C,A4)
+    bne.s   .oam_apply_attract_bias
+    cmpi.b  #$02,($042D,A4)
+    bne.s   .oam_apply_attract_bias
+    cmpi.b  #$05,($042E,A4)
+    bcc.s   .oam_write_y
+.oam_apply_attract_bias:
     subi.w  #8,D4
 .oam_write_y:
     move.w  D4,(VDP_DATA).l
@@ -1952,7 +2045,6 @@ _oam_dma:
 
     addq.w  #1,D6               ; advance sprite index
     dbra    D7,.oam_loop
-
     ifne CHR_EXPANSION_ENABLED
     movem.l (SP)+,D0-D7/A0-A1
     else
@@ -2716,7 +2808,7 @@ _transfer_tilebuf_fast:
 
     ; Bounds check
     cmpi.w  #$2BC0,D5
-    bhs.s   .ttf_nt1_skip
+    bhs     .ttf_nt1_skip
 
     ; Compute index = PPU_VADDR - $2800
     move.w  D5,D0
@@ -2769,7 +2861,7 @@ _transfer_tilebuf_fast:
     add.w   D1,D5                   ; advance PPU_VADDR
     andi.w  #$3FFF,D5
     subq.w  #1,D3
-    bne.s   .ttf_nt1_loop
+    bne     .ttf_nt1_loop
     bra     .ttf_post_record
 
     ;==========================================================================

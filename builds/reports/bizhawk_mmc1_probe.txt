@@ -1,47 +1,47 @@
 =================================================================
 MMC1 State probe  T11b  —  120 frames
 =================================================================
-  LoopForever=$000670  ExcBus=$000362  ExcAddr=$000384  ExcDef=$0003A6
+  LoopForever=$019012  ExcBus=$0003E0  ExcAddr=$000402  ExcDef=$000424
 
-  f001 pc=$000306  forever=-  exc=false
-  f002 pc=$000306  forever=-  exc=false
-  f003 pc=$0002FE  forever=-  exc=false
-  f004 pc=$000306  forever=-  exc=false
-  f005 pc=$0002FE  forever=-  exc=false
-  f030 pc=$000670  forever=14  exc=false
-  f060 pc=$000670  forever=14  exc=false
-  f090 pc=$000670  forever=14  exc=false
-  f120 pc=$000670  forever=14  exc=false
+  f001 pc=$000338  forever=-  exc=false
+  f002 pc=$0005DC  forever=-  exc=false
+  f003 pc=$019A8A  forever=-  exc=false
+  f004 pc=$017464  forever=-  exc=false
+  f005 pc=$0009A0  forever=-  exc=false
+  f030 pc=$019800  forever=-  exc=false
+  f060 pc=$019800  forever=-  exc=false
+  f090 pc=$019800  forever=-  exc=false
+  f120 pc=$019800  forever=-  exc=false
 
 ─── T11b: MMC1 Shift-Register State ────────────────────────────
 [PASS] T11b_NO_EXCEPTION           no exception handler hit
-[PASS] T11b_LOOPFOREVER_HIT        frame 14
-  Snapshot at LoopForever (frame 14):
-    MMC1_SHIFT ($FF0810) = $00
-    MMC1_COUNT ($FF0811) = $00
-    MMC1_CTRL  ($FF0812) = $0F
-    MMC1_CHR0  ($FF0813) = $00
-    MMC1_CHR1  ($FF0814) = $00
-    MMC1_PRG   ($FF0815) = $05
-[PASS] T11b_SHIFT_CLEAR            MMC1_SHIFT=$00 (accumulator clean)
-[PASS] T11b_COUNT_CLEAR            MMC1_COUNT=$00 (count reset)
-[PASS] T11b_CTRL_VALUE             MMC1_CTRL=$0F (SetMMC1Control applied correctly)
-[PASS] T11b_CHR0_ZERO              MMC1_CHR0=$00 (no CHR bank write at boot)
-[PASS] T11b_CHR1_ZERO              MMC1_CHR1=$00 (no CHR bank write at boot)
-[PASS] T11b_PRG_VALUE              MMC1_PRG=$05 (SwitchBank(5) applied correctly)
+[FAIL] T11b_LOOPFOREVER_HIT        never reached LoopForever
+  Snapshot at LoopForever (frame ???):
+    MMC1_SHIFT ($FF0810) = ??
+    MMC1_COUNT ($FF0811) = ??
+    MMC1_CTRL  ($FF0812) = ??
+    MMC1_CHR0  ($FF0813) = ??
+    MMC1_CHR1  ($FF0814) = ??
+    MMC1_PRG   ($FF0815) = ??
+[FAIL] T11b_SHIFT_CLEAR            snapshot not captured
+[FAIL] T11b_COUNT_CLEAR            snapshot not captured
+[FAIL] T11b_CTRL_VALUE             snapshot not captured
+[FAIL] T11b_CHR0_ZERO              snapshot not captured
+[FAIL] T11b_CHR1_ZERO              snapshot not captured
+[FAIL] T11b_PRG_VALUE              snapshot not captured
 
 =================================================================
 MMC1 STATE PROBE SUMMARY  (T11b)
 =================================================================
   [PASS] T11b_NO_EXCEPTION
-  [PASS] T11b_LOOPFOREVER_HIT
-  [PASS] T11b_SHIFT_CLEAR
-  [PASS] T11b_COUNT_CLEAR
-  [PASS] T11b_CTRL_VALUE
-  [PASS] T11b_CHR0_ZERO
-  [PASS] T11b_CHR1_ZERO
-  [PASS] T11b_PRG_VALUE
+  [FAIL] T11b_LOOPFOREVER_HIT
+  [FAIL] T11b_SHIFT_CLEAR
+  [FAIL] T11b_COUNT_CLEAR
+  [FAIL] T11b_CTRL_VALUE
+  [FAIL] T11b_CHR0_ZERO
+  [FAIL] T11b_CHR1_ZERO
+  [FAIL] T11b_PRG_VALUE
 
-  8 PASS  /  0 FAIL  /  8 total
+  1 PASS  /  7 FAIL  /  8 total
 
-T11b MMC1 STATE PROBE: ALL PASS
+T11b MMC1 STATE PROBE: FAIL

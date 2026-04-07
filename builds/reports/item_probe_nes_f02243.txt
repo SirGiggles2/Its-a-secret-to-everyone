@@ -1,0 +1,12 @@
+system=NES frame=2243 ramDomain=nil
+gameMode=00 phase=01 subphase=02 curV=28 line=10 text=06 vram=2180
+oamDomain=OAM
+visible OAM sprites:
+  OAM32 y= 72 x= 72 tile=F3 attr=02
+  OAM33 y= 72 x=179 tile=68 attr=42
+  OAM34 y=136 x=172 tile=66 attr=02
+  OAM35 y=200 x= 72 tile=32 attr=02
+  OAM52 y=200 x=176 tile=32 attr=01
+  OAM53 y=136 x=179 tile=66 attr=42
+  OAM54 y=136 x= 72 tile=50 attr=02
+  OAM55 y= 72 x=172 tile=68 attr=02

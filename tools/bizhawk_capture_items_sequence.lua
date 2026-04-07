@@ -115,7 +115,8 @@ table.insert(trace, string.format("# label=%s system=%s ramDomain=%s start=%d en
 table.insert(trace, "# frame,gameMode,phase,subphase,frameCtr,curVScroll,curHScroll,ppuCtrl,switchReq,"
   .. "tileBufSel,lineCounter,vramHi,vramLo,textIndex,objYTick,vsram0,ppuScrlX,ppuScrlY,"
   .. "hintQCount,hintPendSplit,introScrollMode,stagedMode,stagedHintCtr,stagedBase,stagedEvent,"
-  .. "activeHintCtr,stagedSegment,activeSegment,activeBase,activeEvent,spriteVisible")
+  .. "activeHintCtr,stagedSegment,activeSegment,activeBase,activeEvent,spriteVisible,"
+  .. "attrIndex,itemRow")
 
 while framecount() < end_frame do
   emu.frameadvance()
@@ -135,6 +136,8 @@ while framecount() < end_frame do
     local vramLo = rd_shared(0x041C)
     local textIndex = rd_shared(0x042E)
     local objYTick = rd_shared(0x0415)
+    local attrIndex = rd_shared(0x0419)
+    local itemRow = rd_shared(0x042F)
 
     local vsram0 = 0xFFFF
     local ppuScrlX = 0xFF
@@ -171,13 +174,13 @@ while framecount() < end_frame do
     end
 
     table.insert(trace, string.format(
-      "%05d,%02X,%02X,%02X,%02X,%02X,%02X,%02X,%02X,%02X,%02X,%02X,%02X,%02X,%02X,%04X,%02X,%02X,%02X,%02X,%02X,%02X,%02X,%04X,%04X,%02X,%02X,%02X,%04X,%04X,%d",
+      "%05d,%02X,%02X,%02X,%02X,%02X,%02X,%02X,%02X,%02X,%02X,%02X,%02X,%02X,%02X,%04X,%02X,%02X,%02X,%02X,%02X,%02X,%02X,%04X,%04X,%02X,%02X,%02X,%04X,%04X,%d,%02X,%02X",
       frame, gameMode, phase, subphase, frameCtr, curV, curH, ppuCtrl, switchReq, tileBufSel,
       lineCounter, vramHi, vramLo, textIndex, objYTick, vsram0 & 0xFFFF, ppuScrlX & 0xFF,
       ppuScrlY & 0xFF, hintQCount & 0xFF, hintPendSplit & 0xFF, introScrollMode & 0xFF,
       stagedMode & 0xFF, stagedHintCtr & 0xFF, stagedBase & 0xFFFF, stagedEvent & 0xFFFF,
       activeHintCtr & 0xFF, stagedSegment & 0xFF, activeSegment & 0xFF, activeBase & 0xFFFF,
-      activeEvent & 0xFFFF, visible_sprite_count()
+      activeEvent & 0xFFFF, visible_sprite_count(), attrIndex & 0xFF, itemRow & 0xFF
     ))
 
     client.screenshot(string.format("%s/%s_f%05d.png", out_dir, label, frame))

@@ -1,0 +1,6 @@
+frame,curVScroll,demoLineTextIndex,lineCounter,vsram0,ppuScrlY,hintQCount,hintPendSplit,vdpR00,vdpR10,vdpR11,vdpR17,vdpR18,agsFlushHits,agsPrearmHits,hblankHits,agsFlushFirstRel,agsPrearmFirstRel,hblankFirstRel,firstNonBlackRow,lastNonBlackRow,titleBandRow,titleBandScore,screenshot
+1508,08,00,00,0010,08,00,00,FF,FF,FF,FF,FF,1,0,0,0,-1,-1,16,223,32,0.00,C:/Users/Jake Diggity/Documents/GitHub/FINAL TRY/builds/reports/intro_late_probe/gen_f01508.png
+1772,0F,00,07,0017,0F,00,01,FF,FF,FF,FF,FF,1,0,1,0,-1,0,16,216,32,0.00,C:/Users/Jake Diggity/Documents/GitHub/FINAL TRY/builds/reports/intro_late_probe/gen_f01772.png
+1901,50,01,48,0057,4F,00,00,FF,FF,FF,FF,FF,1,0,0,0,-1,-1,0,223,25,17.39,C:/Users/Jake Diggity/Documents/GitHub/FINAL TRY/builds/reports/intro_late_probe/gen_f01901.png
+1965,70,03,68,0077,6F,00,00,FF,FF,FF,FF,FF,1,0,0,0,-1,-1,0,192,9,20.51,C:/Users/Jake Diggity/Documents/GitHub/FINAL TRY/builds/reports/intro_late_probe/gen_f01965.png
+2147,CB,04,C3,00D2,CA,00,00,FF,FF,FF,FF,FF,1,0,0,0,-1,-1,0,221,30,27.12,C:/Users/Jake Diggity/Documents/GitHub/FINAL TRY/builds/reports/intro_late_probe/gen_f02147.png

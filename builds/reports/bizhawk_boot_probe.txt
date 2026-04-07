@@ -1,69 +1,73 @@
 =================================================================
 Boot probe  T7/T8/T9/T10/T11  —  300 frames
 =================================================================
-  IsrReset=$01B7D2  RunGame=$018876  LoopForever=$01889C  IsrNmi=$0188CA
-  ExcBus=$00036C  ExcAddr=$00038E  ExcDef=$0003B0
+  IsrReset=$01BF4E  RunGame=$018FEA  LoopForever=$019010  IsrNmi=$01903E
+  ExcBus=$0003E0  ExcAddr=$000402  ExcDef=$000424
 
-  f001 pc=$000306  reset=- game=- forever=- nmi=- exc=false
-  f002 pc=$000306  reset=- game=- forever=- nmi=- exc=false
-  f003 pc=$0002FE  reset=- game=- forever=- nmi=- exc=false
-  f004 pc=$000306  reset=- game=- forever=- nmi=- exc=false
-  f005 pc=$0002FE  reset=- game=- forever=- nmi=- exc=false
-  f060 pc=$01880A  reset=8 game=- forever=22 nmi=- exc=false
-  f120 pc=$01880A  reset=8 game=- forever=22 nmi=- exc=false
-  f180 pc=$01880A  reset=8 game=- forever=22 nmi=- exc=false
-  f240 pc=$01880A  reset=8 game=- forever=22 nmi=- exc=false
-  f300 pc=$01880A  reset=8 game=- forever=22 nmi=- exc=false
+  f001 pc=$000338  reset=- game=- forever=- nmi=- exc=false
+  f002 pc=$000600  reset=- game=- forever=- nmi=- exc=false
+  f003 pc=$019F08  reset=- game=- forever=- nmi=- exc=true
+  f004 pc=$0178F6  reset=- game=- forever=- nmi=- exc=true
+  f005 pc=$0004F4  reset=- game=- forever=- nmi=- exc=true
+  ** stuck at exception for 20 frames — stopping early at f48
 
 ─── T7: Reset Trace Sanity ─────────────────────────────────────
-[PASS] T7_ISRRESET_HIT                 frame 8
-[FAIL] T7_RUNGAME_HIT                  RunGame ($018876) never hit
-[PASS] T7_LOOPFOREVER_HIT              frame 22
-[FAIL] T7_ISRNMI_HIT                   IsrNmi ($0188CA) never hit
+[FAIL] T7_ISRRESET_HIT                 IsrReset ($01BF4E) never hit
+[FAIL] T7_RUNGAME_HIT                  RunGame ($018FEA) never hit
+[FAIL] T7_LOOPFOREVER_HIT              LoopForever never hit
+[FAIL] T7_ISRNMI_HIT                   IsrNmi ($01903E) never hit
 [FAIL] T7_ORDER                        cannot verify — some landmarks missing
-[PASS] T7_NO_EXCEPTION                 no exception handler executed
+[FAIL] T7_NO_EXCEPTION                 ExcAddrError type=0 SR=$2600 faulting_PC=$000E68
 
 ─── T8: Frame / NMI Cadence ────────────────────────────────────
 [FAIL] T8_NMI_CADENCE                  IsrNmi never hit
 [FAIL] T8_NMI_NO_DOUBLE                IsrNmi never hit
 
 ─── T9: No Hidden Exceptions (300-frame soak) ──────────────────
-[PASS] T9_NO_EXCEPTION                 300 frames clean
+[FAIL] T9_NO_EXCEPTION                 ExcAddrError type=0 SR=$2600 faulting_PC=$000E68
+    D0=$00000028
+    D1=$00000000
+    D2=$00000000
+    D3=$0000DA7A
+    D4=$00000000
+    D5=$00000000
+    D6=$00000000
+    D7=$FFFFFFFF
 
 ─── T10: NES RAM Map Soundness ─────────────────────────────────
   $FF00F4 InitializedGame  = $01  (domain=M68K BUS)
-  $FF00FF CurPpuControl    = $B0  (domain=M68K BUS)
-  $FF0804 PPU_CTRL shadow  = $B0  (domain=M68K BUS)
+  $FF00FF CurPpuControl    = $30  (domain=M68K BUS)
+  $FF0804 PPU_CTRL shadow  = $30  (domain=M68K BUS)
 [PASS] T10_RAM_READABLE                NES RAM accessible ($FF00F4=$01)
-[PASS] T10_PPUCTRL_SET                 $FF00FF=$B0 (PPU_CTRL active, non-zero)
-[PASS] T10_PPU_STATE                   $FF0804=$B0 (PPU_CTRL shadow non-zero)
+[PASS] T10_PPUCTRL_SET                 $FF00FF=$30 (PPU_CTRL active, non-zero)
+[PASS] T10_PPU_STATE                   $FF0804=$30 (PPU_CTRL shadow non-zero)
 
 ─── T11: RAM Snapshot Parity (pre-PPU scope) ───────────────────
   Snapshot taken at LoopForever-entry (RunGame done, IsrNmi not yet run).
-  snap_initgame=$00  snap_ppuctrl_ne=$30  snap_ppuctrl_sh=$30
-[PASS] T11_INIT_GAME                   snap $FF00F4=0 matches NES (RunGame clears InitializedGame)
-[FAIL] T11_PPUCTRL_PARITY              snap $FF00FF=$30 expected $B0
+  snap_initgame=$??  snap_ppuctrl_ne=$??  snap_ppuctrl_sh=$??
+[FAIL] T11_INIT_GAME                   snapshot not captured (LoopForever hook may have missed)
+[FAIL] T11_PPUCTRL_PARITY              snapshot not captured (LoopForever hook may have missed)
 [PASS] T11_SP_SHADOW                   D7 low byte=$FF (NES SP=$FF, TXS in IsrReset)
 
 =================================================================
 BOOT PROBE SUMMARY  (T7 / T8 / T9 / T10 / T11)
 =================================================================
-  [PASS] T7_ISRRESET_HIT
+  [FAIL] T7_ISRRESET_HIT
   [FAIL] T7_RUNGAME_HIT
-  [PASS] T7_LOOPFOREVER_HIT
+  [FAIL] T7_LOOPFOREVER_HIT
   [FAIL] T7_ISRNMI_HIT
   [FAIL] T7_ORDER
-  [PASS] T7_NO_EXCEPTION
+  [FAIL] T7_NO_EXCEPTION
   [FAIL] T8_NMI_CADENCE
   [FAIL] T8_NMI_NO_DOUBLE
-  [PASS] T9_NO_EXCEPTION
+  [FAIL] T9_NO_EXCEPTION
   [PASS] T10_RAM_READABLE
   [PASS] T10_PPUCTRL_SET
   [PASS] T10_PPU_STATE
-  [PASS] T11_INIT_GAME
+  [FAIL] T11_INIT_GAME
   [FAIL] T11_PPUCTRL_PARITY
   [PASS] T11_SP_SHADOW
 
-  9 PASS  /  6 FAIL  /  15 total
+  4 PASS  /  11 FAIL  /  15 total
 
 BOOT PROBE: FAIL

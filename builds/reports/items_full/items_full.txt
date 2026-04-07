@@ -1,0 +1,109 @@
+
+=== frame 1800 ===
+  CRAM:
+    PAL0: 0000 0EEE 0EEE 0EEE 0000 02EA 0ACE 004A 0000 0A00 0E86 0EEE 0000 004A 048E 0EEE 
+    PAL1: 0000 0EA4 0EEE 0EEE 0000 0040 04A0 08E4 0000 0000 0000 0000 0000 0000 0000 0000 
+    PAL2: 0000 004A 0EEE 0EEE 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 
+    PAL3: 0000 02EA 0080 0060 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 
+  Visible sprites (Y in [128,352], X in [128,448]):
+  (0 visible sprites)
+  Plane A nonzero tiles=4096  pal histogram: P0=3380 P1=40 P2=168 P3=508
+
+=== frame 2000 ===
+  CRAM:
+    PAL0: 0000 0EEE 0EEE 0EEE 0000 02EA 0ACE 004A 0000 0A00 0E86 0EEE 0000 004A 048E 0EEE 
+    PAL1: 0000 0EA4 0EEE 0EEE 0000 0040 04A0 08E4 0000 0000 0000 0000 0000 0000 0000 0000 
+    PAL2: 0000 004A 0EEE 0EEE 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 
+    PAL3: 0000 02EA 0080 0060 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 
+  Visible sprites (Y in [128,352], X in [128,448]):
+    SPR34: screenY=216 screenX=172 tile=8368 pal=0 size=01
+    SPR53: screenY=216 screenX=179 tile=8B68 pal=0 size=01
+    SPR54: screenY=216 screenX= 72 tile=84F2 pal=0 size=01
+  (3 visible sprites)
+  Plane A nonzero tiles=4096  pal histogram: P0=3412 P1=40 P2=168 P3=476
+
+=== frame 2200 ===
+  CRAM:
+    PAL0: 0000 0EEE 0EEE 0EEE 0000 02EA 0ACE 004A 0000 0A00 0E86 0EEE 0000 004A 048E 0EEE 
+    PAL1: 0000 0EA4 0EEE 0EEE 0000 0040 04A0 08E4 0000 0000 0000 0000 0000 0000 0000 0000 
+    PAL2: 0000 004A 0EEE 0EEE 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 
+    PAL3: 0000 02EA 0080 0060 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 
+  Visible sprites (Y in [128,352], X in [128,448]):
+    SPR31: screenY=116 screenX= 72 tile=83F2 pal=0 size=01
+    SPR32: screenY=116 screenX=179 tile=8B68 pal=0 size=01
+    SPR33: screenY=180 screenX=172 tile=8366 pal=0 size=01
+    SPR48: screenY=116 screenX=172 tile=8368 pal=0 size=01
+    SPR54: screenY=180 screenX=179 tile=8B66 pal=0 size=01
+    SPR55: screenY=180 screenX= 72 tile=8352 pal=0 size=01
+  (6 visible sprites)
+  Plane A nonzero tiles=4096  pal histogram: P0=3508 P1=40 P2=148 P3=400
+
+=== frame 2400 ===
+  CRAM:
+    PAL0: 0000 0EEE 0EEE 0EEE 0000 02EA 0ACE 004A 0000 0A00 0E86 0EEE 0000 004A 048E 0EEE 
+    PAL1: 0000 0EA4 0EEE 0EEE 0000 0040 04A0 08E4 0000 0000 0000 0000 0000 0000 0000 0000 
+    PAL2: 0000 004A 0EEE 0EEE 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 
+    PAL3: 0000 02EA 0080 0060 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 
+  Visible sprites (Y in [128,352], X in [128,448]):
+    SPR37: screenY= 16 screenX= 72 tile=84F2 pal=0 size=01
+    SPR38: screenY= 16 screenX=179 tile=8B68 pal=0 size=01
+    SPR39: screenY= 80 screenX=172 tile=8366 pal=0 size=01
+    SPR40: screenY=144 screenX= 72 tile=8332 pal=0 size=01
+    SPR41: screenY=208 screenX= 72 tile=8240 pal=0 size=01
+    SPR56: screenY= 80 screenX=179 tile=8B66 pal=0 size=01
+    SPR57: screenY= 80 screenX= 72 tile=8352 pal=0 size=01
+    SPR58: screenY= 16 screenX=172 tile=8368 pal=0 size=01
+    SPR62: screenY=208 screenX=176 tile=8340 pal=0 size=01
+    SPR63: screenY=144 screenX=176 tile=8232 pal=0 size=01
+  (10 visible sprites)
+  Plane A nonzero tiles=4096  pal histogram: P0=3724 P1=0 P2=96 P3=276
+
+=== frame 2600 ===
+  CRAM:
+    PAL0: 0000 0EEE 0EEE 0EEE 0000 02EA 0ACE 004A 0000 0A00 0E86 0EEE 0000 004A 048E 0EEE 
+    PAL1: 0000 0EA4 0EEE 0EEE 0000 0040 04A0 08E4 0000 0000 0000 0000 0000 0000 0000 0000 
+    PAL2: 0000 004A 0EEE 0EEE 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 
+    PAL3: 0000 02EA 0080 0060 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 
+  Visible sprites (Y in [128,352], X in [128,448]):
+    SPR34: screenY=172 screenX=176 tile=8322 pal=0 size=01
+    SPR36: screenY= 44 screenX= 72 tile=8232 pal=0 size=01
+    SPR37: screenY=108 screenX= 72 tile=8240 pal=0 size=01
+    SPR54: screenY=172 screenX= 72 tile=824C pal=0 size=01
+    SPR58: screenY=108 screenX=176 tile=8340 pal=0 size=01
+    SPR59: screenY= 44 screenX=176 tile=8232 pal=0 size=01
+  (6 visible sprites)
+  Plane A nonzero tiles=4096  pal histogram: P0=4032 P1=0 P2=0 P3=64
+
+=== frame 2800 ===
+  CRAM:
+    PAL0: 0000 0EEE 0EEE 0EEE 0000 02EA 0ACE 004A 0000 0A00 0E86 0EEE 0000 004A 048E 0EEE 
+    PAL1: 0000 0EA4 0EEE 0EEE 0000 0040 04A0 08E4 0000 0000 0000 0000 0000 0000 0000 0000 
+    PAL2: 0000 004A 0EEE 0EEE 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 
+    PAL3: 0000 02EA 0080 0060 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 
+  Visible sprites (Y in [128,352], X in [128,448]):
+    SPR32: screenY= 72 screenX= 72 tile=824C pal=0 size=01
+    SPR33: screenY=136 screenX= 72 tile=8020 pal=0 size=01
+    SPR34: screenY=200 screenX= 72 tile=8348 pal=0 size=01
+    SPR35: screenY=  8 screenX= 72 tile=8240 pal=0 size=01
+    SPR52: screenY=  8 screenX=176 tile=8340 pal=0 size=01
+    SPR53: screenY=200 screenX=176 tile=8056 pal=0 size=01
+    SPR54: screenY=136 screenX=176 tile=8220 pal=0 size=01
+    SPR55: screenY= 72 screenX=176 tile=8322 pal=0 size=01
+  (8 visible sprites)
+  Plane A nonzero tiles=4096  pal histogram: P0=4032 P1=0 P2=0 P3=64
+
+=== frame 3000 ===
+  CRAM:
+    PAL0: 0000 0EEE 0EEE 0EEE 0000 02EA 0ACE 004A 0000 0A00 0E86 0EEE 0000 004A 048E 0EEE 
+    PAL1: 0000 0EA4 0EEE 0EEE 0000 0040 04A0 08E4 0000 0000 0000 0000 0000 0000 0000 0000 
+    PAL2: 0000 004A 0EEE 0EEE 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 
+    PAL3: 0000 02EA 0080 0060 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 
+  Visible sprites (Y in [128,352], X in [128,448]):
+    SPR29: screenY= 36 screenX= 72 tile=8020 pal=0 size=01
+    SPR30: screenY=100 screenX= 72 tile=8348 pal=0 size=01
+    SPR31: screenY=164 screenX= 72 tile=8036 pal=0 size=01
+    SPR48: screenY=164 screenX=176 tile=8236 pal=0 size=01
+    SPR49: screenY=100 screenX=176 tile=8056 pal=0 size=01
+    SPR50: screenY= 36 screenX=176 tile=8220 pal=0 size=01
+  (6 visible sprites)
+  Plane A nonzero tiles=4096  pal histogram: P0=4032 P1=0 P2=0 P3=64

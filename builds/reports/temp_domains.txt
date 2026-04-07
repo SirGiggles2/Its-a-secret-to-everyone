@@ -1,0 +1,57 @@
+Using SDL2 for host input (keyboard + gamepads)
+Game was not in DB. CRC: 2B9761A6 MD5: 6772ABB98B4C643FB6AD0B3F504EED6B
+MemoryBlock created for address 36f00000000:36f034ff000 with mirror 18fe6880000:18fe9d7f000
+Mouting `gpgx.wbx` @36f00000000
+  Sections:
+    @0:0     `` 0 bytes
+    @36f00000270:36f000002be R   `.interp` 78 bytes
+    @36f000002c0:36f000002d8 R   `.note.gnu.build-id` 24 bytes
+    @36f00001000:36f00001003 R X `.init` 3 bytes
+    @36f00001010:36f001c643f R X `.text` 1856559 bytes
+    @36f001c643f:36f001c6442 R X `.fini` 3 bytes
+    @36f001c7000:36f002fde00 R   `.rodata` 1273344 bytes
+    @36f002fde00:36f00307f7c R   `.eh_frame_hdr` 41340 bytes
+    @36f00307f80:36f0034cee4 R   `.eh_frame` 282468 bytes
+    @36f0034d000:36f0034d000 R   `.init_array` 0 bytes
+    @36f0034d000:36f0034dd10 RW  `.invis` 3344 bytes
+    @36f0034e000:36f0034ee80 RW  `.data` 3712 bytes
+    @36f0034ee80:36f0257df00 RW  `.bss` 35844224 bytes
+    @36f0257ef00:36f0257ef00 RW  `.ldata` 0 bytes
+    @0:3b     `.comment` 59 bytes
+    @0:229b0     `.symtab` 141744 bytes
+    @0:96     `.shstrtab` 150 bytes
+    @0:17e26     `.strtab` 97830 bytes
+  Segments:
+    %36f00000040:36f00000270 R   560 bytes
+    %36f00000270:36f000002be R   78 bytes
+    %36f00000000:36f000002d8 R   728 bytes
+    %36f00001000:36f001c6442 R X 1856578 bytes
+    %36f001c7000:36f0034d000 R   1597440 bytes
+    %36f0034d000:36f0257ef00 RW  35856128 bytes
+    %36f0034d000:36f0034d000 R   0 bytes
+    %36f002fde00:36f00307f7c R   41340 bytes
+    %36f000002c0:36f000002d8 R   24 bytes
+Calling _start()
+Initializing heap invisible at 0x36f02bff000:0x36f02fff000
+Allocated 2097152 bytes on invisible heap, usage 2097152/4194304
+Allocated 1056768 bytes on invisible heap, usage 3153920/4194304
+Declined to satisfy firmware request PRIMARY_CD because PRIMARY_ROM was provided.
+Declined to satisfy firmware request PRIMARY_CD because PRIMARY_ROM was provided.
+Firmware request PRIMARY_ROM satisfied at size 131072
+Initializing heap sbrk at 36f0277f000:36f027ff000
+Allocated 4096 bytes on sbrk heap, usage 4096/524288
+Allocated 20480 bytes on sbrk heap, usage 24576/524288
+Allocated 20480 bytes on sbrk heap, usage 45056/524288
+Calling ecl_seal()
+WaterboxHost Sealed!
+GPGX Controller report:
+  S:SYSTEM_GAMEPAD
+  S:SYSTEM_GAMEPAD
+  D:DEVICE_PAD3B
+  D:DEVICE_NONE
+  D:DEVICE_NONE
+  D:DEVICE_NONE
+  D:DEVICE_PAD3B
+  D:DEVICE_NONE
+  D:DEVICE_NONE
+  D:DEVICE_NONE

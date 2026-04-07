@@ -1,0 +1,13 @@
+anchor,region,nesFrame,genFrame,curV,lineCounter,textIndex,nesAttrIndex,genAttrIndex,nesItemRow,genItemRow,nesSprites,genSprites,genMode,genActiveSeg,genActiveBase,genActiveEvent,maskRaw,anchorDx,anchorDy,nesX0,nesY0,nesX1,nesY1,genX0,genY0,genX1,genY1
+title_heart,titleHeart,2243,2303,40,16,6,34,34,3,3,8,8,0,5,287,287,0.00671,0,0,0,17,255,24,0,17,255,24
+title_heart,rupeeText,2243,2303,40,16,6,34,34,3,3,8,8,0,5,287,287,0.01908,0,-9,56,89,206,143,56,80,206,143
+title_heart,triforceBlock,2243,2303,40,16,6,34,34,3,3,8,8,0,5,287,287,0.02407,0,0,56,89,198,159,56,89,198,159
+title_heart,triforceCaption,2243,2303,40,16,6,34,34,3,3,8,8,0,5,287,287,0.02995,0,0,64,144,198,207,64,144,198,207
+rupee_text,titleHeart,2541,2601,189,165,9,52,52,5,5,6,6,0,5,436,436,0.01404,0,0,56,4,198,59,56,4,198,63
+rupee_text,rupeeText,2541,2601,189,165,9,52,52,5,5,6,6,0,5,436,436,0.07812,23,-8,33,108,222,138,56,100,206,131
+rupee_text,triforceBlock,2541,2601,189,165,9,52,52,5,5,6,6,0,5,436,436,0.10014,0,-8,56,108,198,175,56,100,198,170
+rupee_text,triforceCaption,2541,2601,189,165,9,52,52,5,5,6,6,0,5,436,436,0.09039,7,-8,65,172,190,202,72,164,205,195
+late_triforce,titleHeart,2643,2703,0,216,11,59,59,6,6,8,8,0,5,7,7,0.01373,0,2,56,0,206,63,56,2,206,23
+late_triforce,rupeeText,2643,2703,0,216,11,59,59,6,6,8,8,0,5,7,7,0.02111,0,-1,33,81,222,136,33,80,222,143
+late_triforce,triforceBlock,2643,2703,0,216,11,59,59,6,6,8,8,0,5,7,7,0.02178,0,8,56,121,190,151,56,129,190,151
+late_triforce,triforceCaption,2643,2703,0,216,11,59,59,6,6,8,8,0,5,7,7,0.01508,0,-1,65,145,190,200,65,144,190,207

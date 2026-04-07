@@ -1,0 +1,6 @@
+frame,gameMode,phase,subphase,curVScroll,curHScroll,demoLineTextIndex,lineCounter,lineAttrIndex,switchReq,ppuCtrl,ppuScrlX,ppuScrlY,vsram0,vsram1,hintQCount,hintQ0Ctr,hintQ0Vsram,hintPendSplit,vdpR00,vdpR10,vdpR11,vdpR17,vdpR18,agsFlushHits,agsFlushFirstRel,agsPrearmHits,agsPrearmFirstRel,hblankHits,hblankFirstRel,screenshot
+1508,00,01,01,08,00,00,00,00,00,B0,00,08,0010,0000,00,27,0010,00,FF,FF,FF,FF,FF,1,0,0,-1,0,-1,C:/Users/Jake Diggity/Documents/GitHub/FINAL TRY/builds/reports/intro_late_probe/gen_f01508.png
+1772,00,01,02,0F,00,00,07,00,00,B0,00,0F,0017,0010,00,27,0017,01,FF,FF,FF,FF,FF,1,0,0,-1,1,0,C:/Users/Jake Diggity/Documents/GitHub/FINAL TRY/builds/reports/intro_late_probe/gen_f01772.png
+1901,00,01,02,50,00,01,48,09,00,B0,00,4F,0057,0000,00,27,0058,00,FF,FF,FF,FF,FF,1,0,0,-1,0,-1,C:/Users/Jake Diggity/Documents/GitHub/FINAL TRY/builds/reports/intro_late_probe/gen_f01901.png
+1965,00,01,02,70,00,03,68,0D,00,B0,00,6F,0077,0000,00,27,0078,00,FF,FF,FF,FF,FF,1,0,0,-1,0,-1,C:/Users/Jake Diggity/Documents/GitHub/FINAL TRY/builds/reports/intro_late_probe/gen_f01965.png
+2147,00,01,02,CB,00,04,C3,18,00,B0,00,CA,00D2,0000,00,27,00D3,00,FF,FF,FF,FF,FF,1,0,0,-1,0,-1,C:/Users/Jake Diggity/Documents/GitHub/FINAL TRY/builds/reports/intro_late_probe/gen_f02147.png

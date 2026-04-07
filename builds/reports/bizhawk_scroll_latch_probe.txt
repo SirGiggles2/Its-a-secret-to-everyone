@@ -1,31 +1,31 @@
 =================================================================
 Scroll Latch probe  T15  —  300 frames
 =================================================================
-  LoopForever=$0005F2  ExcBus=$000362  ExcAddr=$000384  ExcDef=$0003A6
+  LoopForever=$019012  ExcBus=$0003E0  ExcAddr=$000402  ExcDef=$000424
 
-  f001 pc=$000306  forever=-  exc=false
-  f002 pc=$000306  forever=-  exc=false
-  f003 pc=$0002FE  forever=-  exc=false
-  f004 pc=$000306  forever=-  exc=false
-  f005 pc=$0002FE  forever=-  exc=false
-  f060 pc=$0005F2  forever=14  exc=false
-  f120 pc=$0005F2  forever=14  exc=false
-  f180 pc=$0005F2  forever=14  exc=false
-  f240 pc=$0005F2  forever=14  exc=false
-  f300 pc=$0005F2  forever=14  exc=false
+  f001 pc=$000338  forever=-  exc=false
+  f002 pc=$0005DC  forever=-  exc=false
+  f003 pc=$019A8A  forever=-  exc=false
+  f004 pc=$017464  forever=-  exc=false
+  f005 pc=$0009A0  forever=-  exc=false
+  f060 pc=$019800  forever=-  exc=false
+  f120 pc=$019800  forever=-  exc=false
+  f180 pc=$019800  forever=-  exc=false
+  f240 pc=$019800  forever=-  exc=false
+  f300 pc=$019800  forever=-  exc=false
 
 ─── T15: Scroll Latch Correctness ──────────────────────────────
 [PASS] T15_NO_EXCEPTION          no exception handler hit
-[PASS] T15_LOOPFOREVER_HIT       frame 14
-  Snapshot at LoopForever (frame 14):
-    PPU_SCRL_X ($FF0806) = $00
-    PPU_SCRL_Y ($FF0807) = $00
-    PPU_LATCH  ($FF0800) = $00
-[PASS] T15_SCRL_X_READABLE       PPU_SCRL_X=$00 at LoopForever entry
-[PASS] T15_SCRL_Y_READABLE       PPU_SCRL_Y=$00 at LoopForever entry
-[PASS] T15_LATCH_CLEAN           PPU_LATCH=0 (no pending scroll half-write)
-[PASS] T15_SCRL_BOOT_X           PPU_SCRL_X=0 at LoopForever (IsrReset cleared scroll)
-[PASS] T15_SCRL_BOOT_Y           PPU_SCRL_Y=0 at LoopForever (IsrReset cleared scroll)
+[FAIL] T15_LOOPFOREVER_HIT       never reached LoopForever
+  Snapshot at LoopForever (frame ???):
+    PPU_SCRL_X ($FF0806) = ??
+    PPU_SCRL_Y ($FF0807) = ??
+    PPU_LATCH  ($FF0800) = ??
+[FAIL] T15_SCRL_X_READABLE       PPU_SCRL_X not readable
+[FAIL] T15_SCRL_Y_READABLE       PPU_SCRL_Y not readable
+[FAIL] T15_LATCH_CLEAN           PPU_LATCH not readable
+[FAIL] T15_SCRL_BOOT_X           snapshot not captured
+[FAIL] T15_SCRL_BOOT_Y           snapshot not captured
   Final frame scroll: SCRL_X=$00  SCRL_Y=$00  LATCH=$00
 [PASS] T15_SCRL_STABLE           scroll readable at frame 300: X=$00 Y=$00 LATCH=$00
 
@@ -33,14 +33,14 @@ Scroll Latch probe  T15  —  300 frames
 SCROLL LATCH PROBE SUMMARY  (T15)
 =================================================================
   [PASS] T15_NO_EXCEPTION
-  [PASS] T15_LOOPFOREVER_HIT
-  [PASS] T15_SCRL_X_READABLE
-  [PASS] T15_SCRL_Y_READABLE
-  [PASS] T15_LATCH_CLEAN
-  [PASS] T15_SCRL_BOOT_X
-  [PASS] T15_SCRL_BOOT_Y
+  [FAIL] T15_LOOPFOREVER_HIT
+  [FAIL] T15_SCRL_X_READABLE
+  [FAIL] T15_SCRL_Y_READABLE
+  [FAIL] T15_LATCH_CLEAN
+  [FAIL] T15_SCRL_BOOT_X
+  [FAIL] T15_SCRL_BOOT_Y
   [PASS] T15_SCRL_STABLE
 
-  8 PASS  /  0 FAIL  /  8 total
+  2 PASS  /  6 FAIL  /  8 total
 
-T15 SCROLL LATCH PROBE: ALL PASS
+T15 SCROLL LATCH PROBE: FAIL

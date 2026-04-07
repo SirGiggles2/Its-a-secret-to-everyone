@@ -1,0 +1,1 @@
+frame=1470 hook=00037C ctr_ok=true vs_ok=true cnt_ok=true reg10_ok=false force_ctr=1F force_vs=0000

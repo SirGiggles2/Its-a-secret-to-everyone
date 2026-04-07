@@ -1,0 +1,21 @@
+system=GEN frame=2301 ramDomain=M68K BUS
+gameMode=00 phase=01 subphase=02 curV=27 line=0F text=05 vram=2160
+vsram0=013F ppuY=27 introMode=02 activeSeg=02
+visible OAM shadow sprites:
+  OAM32 y= 72 x= 72 tile=F3 attr=02
+  OAM33 y= 72 x=179 tile=68 attr=42
+  OAM34 y=136 x=172 tile=66 attr=02
+  OAM35 y=200 x= 72 tile=32 attr=02
+  OAM52 y=200 x=176 tile=32 attr=01
+  OAM53 y=136 x=179 tile=66 attr=42
+  OAM54 y=136 x= 72 tile=50 attr=02
+  OAM55 y= 72 x=172 tile=68 attr=02
+visible SAT sprites:
+  SPR28 y= 66 x= 72 tile=84F2 pal=0 size=01
+  SPR29 y= 66 x=179 tile=8B68 pal=0 size=01
+  SPR30 y=130 x=172 tile=8366 pal=0 size=01
+  SPR31 y=194 x= 72 tile=8332 pal=0 size=01
+  SPR48 y=194 x=176 tile=8232 pal=0 size=01
+  SPR49 y=130 x=179 tile=8B66 pal=0 size=01
+  SPR50 y=130 x= 72 tile=8350 pal=0 size=01
+  SPR51 y= 66 x=172 tile=8368 pal=0 size=01

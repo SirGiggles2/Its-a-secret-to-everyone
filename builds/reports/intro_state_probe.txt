@@ -1,0 +1,12 @@
+f0600 f=600  GameMode=00  DemoPhase=00  DemoSubphase=01  IsSpr0=00  HINT_Q_CNT=00  Q0_CTR=00  Q0_VSRAM=0000  CurVScroll=00  PPUCTRL=B0
+f0900 f=900  GameMode=00  DemoPhase=00  DemoSubphase=01  IsSpr0=00  HINT_Q_CNT=00  Q0_CTR=00  Q0_VSRAM=0000  CurVScroll=00  PPUCTRL=B0
+f1100 f=1100  GameMode=00  DemoPhase=01  DemoSubphase=00  IsSpr0=00  HINT_Q_CNT=00  Q0_CTR=27  Q0_VSRAM=0008  CurVScroll=2F  PPUCTRL=B2
+f1200 f=1200  GameMode=00  DemoPhase=01  DemoSubphase=00  IsSpr0=00  HINT_Q_CNT=00  Q0_CTR=27  Q0_VSRAM=0008  CurVScroll=61  PPUCTRL=B2
+f1300 f=1300  GameMode=00  DemoPhase=01  DemoSubphase=00  IsSpr0=00  HINT_Q_CNT=00  Q0_CTR=27  Q0_VSRAM=0008  CurVScroll=93  PPUCTRL=B2
+f1400 f=1400  GameMode=00  DemoPhase=01  DemoSubphase=00  IsSpr0=00  HINT_Q_CNT=00  Q0_CTR=27  Q0_VSRAM=0008  CurVScroll=C5  PPUCTRL=B2
+f1500 f=1500  GameMode=00  DemoPhase=01  DemoSubphase=00  IsSpr0=00  HINT_Q_CNT=00  Q0_CTR=27  Q0_VSRAM=0008  CurVScroll=07  PPUCTRL=B0
+f1600 f=1600  GameMode=00  DemoPhase=01  DemoSubphase=01  IsSpr0=00  HINT_Q_CNT=00  Q0_CTR=27  Q0_VSRAM=0008  CurVScroll=08  PPUCTRL=B0
+f1800 f=1800  GameMode=00  DemoPhase=01  DemoSubphase=02  IsSpr0=00  HINT_Q_CNT=00  Q0_CTR=27  Q0_VSRAM=0025  CurVScroll=1D  PPUCTRL=B0
+f2000 f=2000  GameMode=00  DemoPhase=01  DemoSubphase=02  IsSpr0=00  HINT_Q_CNT=00  Q0_CTR=27  Q0_VSRAM=0089  CurVScroll=81  PPUCTRL=B0
+f2200 f=2200  GameMode=00  DemoPhase=01  DemoSubphase=02  IsSpr0=00  HINT_Q_CNT=00  Q0_CTR=27  Q0_VSRAM=00ED  CurVScroll=E5  PPUCTRL=B0
+f2400 f=2400  GameMode=00  DemoPhase=01  DemoSubphase=02  IsSpr0=00  HINT_Q_CNT=00  Q0_CTR=27  Q0_VSRAM=0151  CurVScroll=59  PPUCTRL=B2
