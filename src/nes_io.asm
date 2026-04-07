@@ -608,7 +608,22 @@ _ags_compute_stage:
     beq.s   .agc_story_phase2_active
     cmpi.b  #AGS_SEG_STORY2_WRAP_RELEASE,D4
     beq.s   .agc_story_phase2_active
+    ; Item scroll segments need the same DZ_SKIP when their VSRAM enters the
+    ; dead-zone range.  Without this, curV $E0-$E7 on NT1 shows 32 garbage
+    ; rows mid-screen where the NES wraps cleanly.
+    cmpi.b  #AGS_SEG_ITEM_BODY_DIRECT,D4
+    beq.s   .agc_item_dz_check
     bra     .agc_done
+.agc_item_dz_check:
+    ; Item body direct: apply DZ_SKIP when predicted raw VSRAM (D3) would
+    ; cross the dead zone.  At D3>=480 the collapse to 0 is already correct
+    ; (the +8 overscan hides the remaining NT1 rows).  At D3<257 the display
+    ; bottom stays inside the valid V64 area, so no split needed.
+    cmpi.w  #257,D3
+    blo     .agc_done
+    cmpi.w  #480,D3
+    bhs     .agc_done                      ; collapsed frames ok as-is
+    bra.s   .agc_story_enter_wrap          ; shared DZ_SKIP entry
 .agc_story_phase2_active:
     cmpi.w  #257,D3
     blo     .agc_done                      ; story_full_scroll / offscreen_finish
