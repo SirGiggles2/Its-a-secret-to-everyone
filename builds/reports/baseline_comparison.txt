@@ -1,0 +1,53 @@
+Total NES frames: 551
+Total GEN frames: 551
+Shared state keys: 521
+
+=== State: phase=01 sub=02 curV=00 lineC=D8 ===
+  NES frame=02644  GEN frame=02704  (offset=60)
+  NES: ppuCtrl=B0 switchReq=00 textIdx=0B itemRow=06 attrIdx=3B
+  GEN: ppuCtrl=B0 switchReq=00 textIdx=0B itemRow=06 attrIdx=3B
+  GEN scroll: vsram0=0008 ppuScrlY=00 activeBase=0008 activeEvent=0008
+  GEN mode: introScrollMode=00 activeSeg=07 stagedSeg=05
+  Sprites: NES=8 GEN=8
+
+=== State: phase=01 sub=02 curV=28 lineC=10 ===
+  NES frame=02244  GEN frame=02304  (offset=60)
+  NES: ppuCtrl=B2 switchReq=00 textIdx=06 itemRow=03 attrIdx=22
+  GEN: ppuCtrl=32 switchReq=00 textIdx=06 itemRow=03 attrIdx=22
+  GEN scroll: vsram0=0120 ppuScrlY=28 activeBase=0120 activeEvent=0120
+  GEN mode: introScrollMode=00 activeSeg=05 stagedSeg=05
+  Sprites: NES=8 GEN=8
+
+=== State: phase=01 sub=02 curV=E8 lineC=D0 ===
+  NES frame=02628  GEN frame=02688  (offset=60)
+  NES: ppuCtrl=B2 switchReq=00 textIdx=0A itemRow=06 attrIdx=3A
+  GEN: ppuCtrl=B2 switchReq=00 textIdx=0A itemRow=06 attrIdx=3A
+  GEN scroll: vsram0=0000 ppuScrlY=E8 activeBase=0000 activeEvent=0000
+  GEN mode: introScrollMode=00 activeSeg=05 stagedSeg=05
+  Sprites: NES=8 GEN=8
+
+=== State: phase=01 sub=02 curV=BD lineC=A5 ===
+  NES frame=02542  GEN frame=02602  (offset=60)
+  NES: ppuCtrl=B2 switchReq=00 textIdx=09 itemRow=05 attrIdx=34
+  GEN: ppuCtrl=B2 switchReq=00 textIdx=09 itemRow=05 attrIdx=34
+  GEN scroll: vsram0=01B5 ppuScrlY=BD activeBase=01B5 activeEvent=01B5
+  GEN mode: introScrollMode=00 activeSeg=05 stagedSeg=05
+  Sprites: NES=6 GEN=6
+
+=== State: phase=01 sub=02 curV=DA lineC=C2 ===
+  NES frame=02600  GEN frame=02660  (offset=60)
+  NES: ppuCtrl=B2 switchReq=00 textIdx=09 itemRow=06 attrIdx=38
+  GEN: ppuCtrl=B2 switchReq=00 textIdx=09 itemRow=06 attrIdx=38
+  GEN scroll: vsram0=01D2 ppuScrlY=DA activeBase=01D2 activeEvent=01D2
+  GEN mode: introScrollMode=00 activeSeg=05 stagedSeg=05
+  Sprites: NES=8 GEN=8
+
+=== First 3 shared pairs ===
+  phase=01 sub=02 curV=00 lineC=C8 | NES=03124 GEN=03184 off=60
+  phase=01 sub=02 curV=00 lineC=D8 | NES=02644 GEN=02704 off=60
+  phase=01 sub=02 curV=00 lineC=E8 | NES=02164 GEN=02224 off=60
+
+=== Last 3 shared pairs ===
+  phase=01 sub=02 curV=EF lineC=C7 | NES=03122 GEN=03182 off=60
+  phase=01 sub=02 curV=EF lineC=D7 | NES=02642 GEN=02702 off=60
+  phase=01 sub=02 curV=EF lineC=E7 | NES=02162 GEN=02222 off=60
