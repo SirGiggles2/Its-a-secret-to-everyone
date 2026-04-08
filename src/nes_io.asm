@@ -761,12 +761,16 @@ _v32_scroll_enter:
     ; Clear all 32 rows of the now-smaller Plane A (rows 0-31).
     ; Each row = 64 tiles × 2 bytes = $80 bytes.  32 rows = $1000 bytes.
     ; Plane A base = $C000.
+    ; Fill with tile $24 (the NES blank/black tile), composed through
+    ; _compose_bg_tile_word to apply the correct BG pattern-table offset.
+    moveq   #$24,D0
+    bsr     _compose_bg_tile_word       ; D0.w = correct blank tile word
+    move.w  D0,D1                       ; D1.w = fill tile word
     move.l  #$40000003,(VDP_CTRL).l     ; VRAM write at $C000
-    move.w  #($1000/2)-1,D1             ; 2048 words
-    moveq   #0,D0
+    move.w  #($1000/2)-1,D0             ; 2048 words
 .v32_clear:
-    move.w  D0,(VDP_DATA).l
-    dbf     D1,.v32_clear
+    move.w  D1,(VDP_DATA).l
+    dbf     D0,.v32_clear
     ; Also clear PREV_SCROLL_MODE so the scroll cache doesn't skip first write
     clr.b   (PREV_SCROLL_MODE).l
     clr.w   (PREV_BASE_VSRAM).l
