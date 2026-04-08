@@ -115,6 +115,17 @@ CHR_HIT_COUNT   equ CHR_STATE_BASE+20   ; byte: total CHR write calls (debug cou
 NT_CACHE_BASE   equ CHR_STATE_BASE+$20  ; $FF0840  (32×60 = 1920 bytes)
 
 ;------------------------------------------------------------------------------
+; CHR tile write cache — placed at $FF0FC0 (right after NT_CACHE).
+; 512 tiles × 16 bytes = 8192 bytes.  Indexed by (NES_addr & $1FF0).
+; Tiles $0000-$0FFF = sprite half (256 tiles), $1000-$1FFF = BG half (256 tiles).
+; On each tile upload, compare new data vs cache.  If identical, skip the
+; VRAM write entirely.  For sprite tiles this saves 4× VRAM copies.
+;------------------------------------------------------------------------------
+CHR_CACHE_BASE  equ $FF0FC0              ; 8192 bytes: $FF0FC0..$FF2FBF
+CHR_CACHE_HITS  equ $FF2FC0              ; word: cache hit count (debug)
+CHR_CACHE_MISS  equ $FF2FC2              ; word: cache miss count (debug)
+
+;------------------------------------------------------------------------------
 ; Staged scroll state written by _ags_flush and consumed by _ags_prearm on the
 ; next frame. Lives in the unused tail of the PPU shadow block at $FF080A..0F.
 ;------------------------------------------------------------------------------
@@ -865,13 +876,41 @@ _ppu_write_7:
     cmpi.b  #16,(CHR_BUF_CNT).l
     bne.s   .chr_ret                ; not yet 16 bytes — keep buffering
 
-    ; Complete tile — convert 2BPP → 4BPP and upload to VDP VRAM
+    ; Complete tile — check cache, then convert 2BPP → 4BPP and upload to VDP VRAM
     ifne CHR_EXPANSION_ENABLED
+    ; --- Tile write cache: skip VRAM upload if tile data unchanged ---
+    move.w  (CHR_BUF_VADDR).l,D2
+    andi.w  #$1FF0,D2               ; cache offset (0..$1FF0)
+    lea     (CHR_CACHE_BASE).l,A1
+    adda.w  D2,A1                   ; A1 → cached tile entry
+    lea     (CHR_TILE_BUF).l,A0
+    move.l  (A0),D3
+    cmp.l   (A1),D3
+    bne.s   .chr_cache_miss
+    move.l  4(A0),D3
+    cmp.l   4(A1),D3
+    bne.s   .chr_cache_miss
+    move.l  8(A0),D3
+    cmp.l   8(A1),D3
+    bne.s   .chr_cache_miss
+    move.l  12(A0),D3
+    cmp.l   12(A1),D3
+    bne.s   .chr_cache_miss
+    ; Cache hit — tile unchanged, skip VRAM upload
+    addq.w  #1,(CHR_CACHE_HITS).l
+    bra.s   .chr_uploaded
+
+.chr_cache_miss:
+    ; Update cache with new tile data
+    move.l  (A0)+,(A1)+
+    move.l  (A0)+,(A1)+
+    move.l  (A0)+,(A1)+
+    move.l  (A0)+,(A1)+
+    addq.w  #1,(CHR_CACHE_MISS).l
+
     ; Dispatch by NES address bit 12:
     ;   bit12=0 ($0000-$0FFF) → sprite half → _chr_upload_sprite_4x (4 copies)
     ;   bit12=1 ($1000-$1FFF) → BG half     → _chr_convert_upload   (1 copy)
-    ; Preflight (reports/chr_preflight.txt) confirms PPUCTRL bit 3 = 0 always,
-    ; so sprites live at $0000-$0FFF for all current scenes.
     move.w  (CHR_BUF_VADDR).l,D2
     btst    #12,D2
     bne.s   .chr_bg_dispatch

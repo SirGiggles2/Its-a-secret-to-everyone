@@ -273,12 +273,11 @@ EntryPoint:
     move.w  #$8174,(VDP_CTRL).l  ; Reg 1: DISP=1, VBlank IRQ, DMA, M5
 
     ;--------------------------------------------------------------------------
-    ; Clear NES RAM ($FF0000–$FF07FF) — 2KB of NES work RAM mapped into
-    ; Genesis RAM at the top of the address space.
-    ; Also clears PPU state block ($FF0800–$FF080F) in the same pass.
+    ; Clear NES RAM ($FF0000–$FF07FF), PPU state, NT cache, and CHR tile
+    ; write cache in one pass.  Covers $FF0000–$FF2FC3 (12228 words).
     ;--------------------------------------------------------------------------
     movea.l #NES_RAM_BASE,A0
-    move.w  #(NES_RAM_SIZE+PPU_STATE_SIZE)/2-1,D0  ; 1031 words
+    move.w  #($2FC4/2)-1,D0            ; clear $FF0000..$FF2FC3
 .nesramclear:
     move.w  #0,(A0)+
     dbra    D0,.nesramclear
