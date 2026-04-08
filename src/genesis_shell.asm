@@ -273,11 +273,12 @@ EntryPoint:
     move.w  #$8174,(VDP_CTRL).l  ; Reg 1: DISP=1, VBlank IRQ, DMA, M5
 
     ;--------------------------------------------------------------------------
-    ; Clear NES RAM ($FF0000–$FF07FF), PPU state, NT cache, and CHR tile
-    ; write cache in one pass.  Covers $FF0000–$FF2FC3 (12228 words).
+    ; Clear NES RAM ($FF0000–$FF07FF), PPU state, NT cache, CHR tile
+    ; write cache, and scroll register cache in one pass.
+    ; Covers $FF0000–$FF2FCB (12262 words).
     ;--------------------------------------------------------------------------
     movea.l #NES_RAM_BASE,A0
-    move.w  #($2FC4/2)-1,D0            ; clear $FF0000..$FF2FC3
+    move.w  #($2FCC/2)-1,D0            ; clear $FF0000..$FF2FCB
 .nesramclear:
     move.w  #0,(A0)+
     dbra    D0,.nesramclear

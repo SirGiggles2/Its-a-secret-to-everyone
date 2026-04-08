@@ -126,6 +126,17 @@ CHR_CACHE_HITS  equ $FF2FC0              ; word: cache hit count (debug)
 CHR_CACHE_MISS  equ $FF2FC2              ; word: cache miss count (debug)
 
 ;------------------------------------------------------------------------------
+; Scroll register cache — skip VDP writes when values are unchanged.
+; Placed at $FF2FC4 (right after CHR cache debug counters).
+; 8 bytes: $FF2FC4..$FF2FCB.  Cleared to zero by genesis_shell RAM init.
+;------------------------------------------------------------------------------
+PREV_SCROLL_MODE equ $FF2FC4             ; byte: last-written INTRO_SCROLL_MODE
+PREV_HINT_CTR    equ $FF2FC5             ; byte: last-written H-int Reg 10 counter
+PREV_BASE_VSRAM  equ $FF2FC6             ; word: last-written base VSRAM value
+PREV_EVENT_VSRAM equ $FF2FC8             ; word: last-written event VSRAM value
+PREV_HSCROLL     equ $FF2FCA             ; word: last-written H-scroll value
+
+;------------------------------------------------------------------------------
 ; Staged scroll state written by _ags_flush and consumed by _ags_prearm on the
 ; next frame. Lives in the unused tail of the PPU shadow block at $FF080A..0F.
 ;------------------------------------------------------------------------------
@@ -695,10 +706,14 @@ _ags_flush:
     move.b  ($00FD,A4),D0              ; CurHScroll
     neg.w   D0
     andi.w  #$01FF,D0
+    cmp.w   (PREV_HSCROLL).l,D0
+    beq.s   .ags_hscroll_skip          ; unchanged — skip VRAM write
+    move.w  D0,(PREV_HSCROLL).l
     move.l  #$7C000003,(VDP_CTRL).l    ; VRAM write at $FC00
     move.w  D0,(VDP_DATA).l            ; Plane A H-scroll
     moveq   #0,D0
     move.w  D0,(VDP_DATA).l            ; Plane B H-scroll = 0
+.ags_hscroll_skip:
     movem.l (SP)+,D0-D4
     rts
 
@@ -755,6 +770,27 @@ _ags_activate_staged:
 ; Clobbers D0.
 ;------------------------------------------------------------------------------
 _ags_apply_active:
+    ; --- Scroll register cache: skip VDP writes if nothing changed ---
+    move.b  (INTRO_SCROLL_MODE).l,D0
+    cmp.b   (PREV_SCROLL_MODE).l,D0
+    bne.s   .aaa_changed
+    move.w  (ACTIVE_BASE_VSRAM).l,D0
+    cmp.w   (PREV_BASE_VSRAM).l,D0
+    bne.s   .aaa_changed
+    move.w  (ACTIVE_EVENT_VSRAM).l,D0
+    cmp.w   (PREV_EVENT_VSRAM).l,D0
+    bne.s   .aaa_changed
+    move.b  (ACTIVE_HINT_CTR).l,D0
+    cmp.b   (PREV_HINT_CTR).l,D0
+    bne.s   .aaa_changed
+    rts                                         ; all unchanged — skip VDP writes
+.aaa_changed:
+    ; Update previous-value cache
+    move.b  (INTRO_SCROLL_MODE).l,(PREV_SCROLL_MODE).l
+    move.w  (ACTIVE_BASE_VSRAM).l,(PREV_BASE_VSRAM).l
+    move.w  (ACTIVE_EVENT_VSRAM).l,(PREV_EVENT_VSRAM).l
+    move.b  (ACTIVE_HINT_CTR).l,(PREV_HINT_CTR).l
+
     cmpi.b  #INTRO_SCROLL_NO_SPLIT,(INTRO_SCROLL_MODE).l
     bne.s   .aaa_split
     move.w  #$8AFF,(VDP_CTRL).l             ; Reg 10 = $FF (inactive)
