@@ -10,9 +10,9 @@ import numpy as np
 
 
 ROOT = Path(r"C:\Users\Jake Diggity\Documents\GitHub\FINAL TRY")
-REPORT_DIR = ROOT / "builds" / "reports" / "item_scroll_fix"
-GEN_DIR = ROOT / "builds" / "reports" / "items_seq_gen_fix2"
-NES_DIR = ROOT / "builds" / "reports" / "items_baseline_nes"
+REPORT_DIR = ROOT / "builds" / "reports" / "item_scroll_fresh"
+GEN_DIR = ROOT / "builds" / "reports" / "items_seq_gen"
+NES_DIR = ROOT / "builds" / "reports" / "items_seq_nes"
 
 
 @dataclass
@@ -200,7 +200,7 @@ def bbox_fields(prefix: str, bbox: Optional[Tuple[int, int, int, int]]) -> Dict[
 def main() -> None:
     REPORT_DIR.mkdir(parents=True, exist_ok=True)
 
-    gen_rows = parse_trace(GEN_DIR / "gen_fix2_trace.txt")
+    gen_rows = parse_trace(GEN_DIR / "gen_trace.txt")
     nes_rows = parse_trace(NES_DIR / "nes_trace.txt")
     gen_s2 = item_rows(gen_rows)
     nes_s2 = item_rows(nes_rows)
@@ -218,7 +218,7 @@ def main() -> None:
     for key in shared_keys:
         gr = gen_by_key[key]
         nr = nes_by_key[key]
-        gimg = load_gray(frame_path(GEN_DIR, "gen_fix2", gr.frame))
+        gimg = load_gray(frame_path(GEN_DIR, "gen", gr.frame))
         nimg = load_gray(frame_path(NES_DIR, "nes", nr.frame))
         ratio = mismatch_ratio(gimg, nimg)
         first, last, count = changed_rows(nimg, gimg)
@@ -290,7 +290,7 @@ def main() -> None:
             }
         return out
 
-    gen_trans = build_transitions(gen_s2, "gen_fix2", GEN_DIR)
+    gen_trans = build_transitions(gen_s2, "gen", GEN_DIR)
     nes_trans = build_transitions(nes_s2, "nes", NES_DIR)
     shared_trans = sorted(set(gen_trans) & set(nes_trans), key=lambda item: (item[0][2], item[1][2], item[0][3]))
 
@@ -355,7 +355,7 @@ def main() -> None:
     layout_rows = []
     for anchor, target_gen_frame in layout_targets.items():
         pair = closest_pair(target_gen_frame)
-        gimg = load_gray(frame_path(GEN_DIR, "gen_fix2", pair["genFrame"]))
+        gimg = load_gray(frame_path(GEN_DIR, "gen", pair["genFrame"]))
         nimg = load_gray(frame_path(NES_DIR, "nes", pair["nesFrame"]))
         for region_name, rect in regions.items():
             nes_bbox = ink_bbox(nimg, rect)

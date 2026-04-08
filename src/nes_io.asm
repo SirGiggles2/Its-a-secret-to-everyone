@@ -608,22 +608,15 @@ _ags_compute_stage:
     beq.s   .agc_story_phase2_active
     cmpi.b  #AGS_SEG_STORY2_WRAP_RELEASE,D4
     beq.s   .agc_story_phase2_active
-    ; Item scroll segments need the same DZ_SKIP when their VSRAM enters the
-    ; dead-zone range.  Without this, curV $E0-$E7 on NT1 shows 32 garbage
-    ; rows mid-screen where the NES wraps cleanly.
     cmpi.b  #AGS_SEG_ITEM_BODY_DIRECT,D4
     beq.s   .agc_item_dz_check
     bra     .agc_done
 .agc_item_dz_check:
-    ; Item body direct: apply DZ_SKIP when predicted raw VSRAM (D3) would
-    ; cross the dead zone.  At D3>=480 the collapse to 0 is already correct
-    ; (the +8 overscan hides the remaining NT1 rows).  At D3<257 the display
-    ; bottom stays inside the valid V64 area, so no split needed.
     cmpi.w  #257,D3
     blo     .agc_done
-    cmpi.w  #472,D3
-    bhs     .agc_done                      ; collapsed frames ok as-is
-    bra.s   .agc_story_enter_wrap          ; shared DZ_SKIP entry
+    cmpi.w  #480,D3
+    bhs     .agc_done
+    bra.s   .agc_story_enter_wrap
 .agc_story_phase2_active:
     cmpi.w  #257,D3
     blo     .agc_done                      ; story_full_scroll / offscreen_finish
@@ -643,7 +636,7 @@ _ags_compute_stage:
     move.w  (STAGED_BASE_VSRAM).l,D1
     addi.w  #32,D1
     move.w  D1,(STAGED_EVENT_VSRAM).l
-    move.w  #472,D1
+    move.w  #480,D1                     ; dead zone starts at V64 row 480
     sub.w   D3,D1
     subq.w  #1,D1
     move.b  D1,(STAGED_HINT_CTR).l
@@ -1085,14 +1078,12 @@ _ppu_write_7:
     bsr     _compose_bg_tile_word
     move.w  D0,(VDP_DATA).l         ; write tile word to Plane A
 
-    ; Mirror top rows 0..3 into rows 60..63 only during intro phase-1
-    ; subphase 0, so the prebuilt story page wraps onto the screen cleanly
-    ; without leaking story-specific map continuity into gameplay/credits.
+    ; Mirror top rows 0..3 into rows 60..63 during intro phase-1
+    ; (all subphases) so the V64 dead zone is always filled with valid
+    ; content, eliminating DZ_SKIP H-int artifacts.
     tst.b   ($0012,A4)
     bne.s   .nt_noop
     cmpi.b  #$01,($042C,A4)
-    bne.s   .nt_noop
-    cmpi.b  #$00,($042D,A4)
     bne.s   .nt_noop
     cmpi.w  #4,D4
     bhs.s   .nt_noop
@@ -1679,13 +1670,11 @@ _attr_write_one_tile:
     move.w  (SP)+,D0            ; restore tile word
     move.w  D0,(VDP_DATA).l     ; write to Plane A
 
-    ; Mirror top rows 0..3 into rows 60..63 only during intro phase-1
-    ; subphase 0, matching the gated tile-word mirror above.
+    ; Mirror top rows 0..3 into rows 60..63 during intro phase-1
+    ; (all subphases) so the V64 dead zone always has valid content.
     tst.b   ($0012,A4)
     bne.s   .awt_skip
     cmpi.b  #$01,($042C,A4)
-    bne.s   .awt_skip
-    cmpi.b  #$00,($042D,A4)
     bne.s   .awt_skip
     cmpi.w  #4,D3
     bhs.s   .awt_skip
