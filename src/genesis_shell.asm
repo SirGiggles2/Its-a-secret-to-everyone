@@ -484,6 +484,12 @@ DefaultException:
     include "zelda_translated/z_07.asm"
 
 ;==============================================================================
+; Pre-computed scroll row data — placed at end of ROM to avoid shifting
+; code labels and causing branch-out-of-range errors.
+;==============================================================================
+    include "scroll_row_data.asm"
+
+;==============================================================================
 ; End-of-ROM marker — used by ROM header dc.l RomEnd-1
 ;==============================================================================
 RomEnd:

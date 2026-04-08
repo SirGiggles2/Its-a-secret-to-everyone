@@ -793,6 +793,580 @@ _v32_scroll_exit:
     move.w  #$9011,(VDP_CTRL).l
     rts
 
+;==============================================================================
+; NATIVE INTRO SCROLL DRIVER
+;
+; Replaces ALL Phase 1 subphase handlers with native M68K code that drives
+; the VDP directly in V32 mode using pre-computed row data from
+; scroll_row_data.asm.  Eliminates the V64 dead zone and all transpiled
+; nametable code paths during the intro sequence.
+;
+; V32 ring buffer: 32 rows in plane, 28 visible (224px).
+; VSRAM wraps at 256.  Every other frame: VSRAM += 1.
+; Every 8 VSRAM increments: write next content row to the row that just
+; scrolled off the top of the viewport.
+;
+; NES RAM variables used (compatible with existing transpiled code):
+;   $0011,A4 = gameMode (cleared to exit demo)
+;   $0015,A4 = frameCounter (bit 0 = every-other-frame toggle)
+;   $00FC,A4 = curVScroll (NES scroll counter, 0-239/$F0 wrap)
+;   $005C,A4 = nametable select (incremented on wrap)
+;   $0415,A4 = scrollPassCount (story: wraps to advance subphase)
+;   $041A,A4 = timer (subphase 1 wait: 256 frames, subphase 3: 256 frames)
+;   $041B,A4 = objectYDecrementer (item scroll: sprite Y adjust counter)
+;   $0419,A4 = demoLineIndex (current DemoLineAttrs index)
+;   $042D,A4 = subphase counter (incremented to advance)
+;   $042F,A4 = itemRowIndex (item spawn table index)
+;==============================================================================
+
+;------------------------------------------------------------------------------
+; Native driver state — placed at $FF2FD0 (after SCROLL_V32_ACTIVE at $FF2FCC)
+;------------------------------------------------------------------------------
+NATIVE_VSRAM      equ $FF2FD0    ; word: current VSRAM value (0-255)
+NATIVE_WRITE_ROW  equ $FF2FD2    ; word: next plane row to write (0-31 ring)
+NATIVE_DATA_IDX   equ $FF2FD4    ; word: next row index into data table
+NATIVE_DATA_MAX   equ $FF2FD6    ; word: total rows in current data table
+NATIVE_DATA_PTR   equ $FF2FD8    ; long: pointer to current row data table
+NATIVE_PAL_PTR    equ $FF2FDC    ; long: pointer to current palette table
+NATIVE_PHASE      equ $FF2FE0    ; byte: 0=story, 1=wait, 2=items, 3=hold, 4=exit
+NATIVE_VSCROLL_ACC equ $FF2FE1   ; byte: VSRAM sub-counter (counts to 8)
+NATIVE_BLANK_TILE equ $FF2FE2    ; word: pre-composed blank tile word ($24 + BG offset)
+NATIVE_HOLD_TIMER equ $FF2FE4    ; word: countdown timer for hold/exit phases
+
+;==============================================================================
+; _native_scroll_init — Called from InitDemoSubphaseTransferStoryTiles.
+;
+; Sets up V32 mode, clears the plane, pre-fills 28 visible rows with
+; story text, initializes all native driver state.
+; Preserves D2-D7, A4-A6.
+;==============================================================================
+_native_scroll_init:
+    movem.l D0-D3/A0-A1,-(SP)
+
+    ; --- Activate V32 mode ---
+    move.b  #1,(SCROLL_V32_ACTIVE).l
+    move.w  #$9001,(VDP_CTRL).l        ; 64H × 32V
+
+    ; --- Compose the blank tile word ---
+    moveq   #$24,D0
+    bsr     _compose_bg_tile_word
+    move.w  D0,(NATIVE_BLANK_TILE).l
+
+    ; --- Clear entire 32-row plane with blank tiles ---
+    move.w  D0,D1                       ; D1 = blank tile word
+    move.l  #$40000003,(VDP_CTRL).l     ; VRAM write at $C000
+    move.w  #($1000/2)-1,D0
+.nsi_clear:
+    move.w  D1,(VDP_DATA).l
+    dbf     D0,.nsi_clear
+
+    ; --- Pre-fill only 6 rows (0-5) with story data ---
+    ; With VSRAM=48, viewport shows pixels 48-255 and 0-15 (all blank).
+    ; Off-screen band: pixels 16-47 (rows 2-5).
+    ; Rows 0-1 = StoryRowData[0-1] (blank, visible at screen bottom).
+    ; Rows 2-5 = StoryRowData[2-5] (text, off-screen write-ahead buffer).
+    ; Row 2 ("THE LEGEND OF ZELDA") at pixel 16 enters viewport bottom
+    ; after 1 VSRAM increment (VSRAM=49), matching NES curVScroll $10→$11.
+    ; Remaining rows (6-29) written via ring buffer as scroll advances.
+    lea     (StoryRowData).l,A0
+    moveq   #0,D1                       ; plane row counter
+.nsi_prefill:
+    cmpi.w  #6,D1
+    bge.s   .nsi_prefill_done
+    ; Compute VDP write address: $C000 + row * $80
+    move.w  D1,D2
+    lsl.w   #7,D2                       ; row * 128
+    addi.w  #$C000,D2
+    ; Set VDP write command
+    moveq   #0,D3
+    move.w  D2,D3
+    andi.l  #$3FFF,D3
+    swap    D3
+    ori.l   #$40000003,D3
+    move.l  D3,(VDP_CTRL).l
+    ; Write 32 tiles from row data
+    bsr     .nsi_write_row_from_a0
+    lea     (32,A0),A0                  ; advance to next row
+    addq.w  #1,D1
+    bra.s   .nsi_prefill
+.nsi_prefill_done:
+
+    ; --- Initialize native driver state ---
+    ; VSRAM=48: viewport = pixels 48-255 + 0-15 (224px, all blank).
+    ; Off-screen = pixels 16-47 (rows 2-5, pre-filled above).
+    ; Ring buffer writes start at row 6, data index 6.
+    move.w  #48,(NATIVE_VSRAM).l
+    move.w  #6,(NATIVE_WRITE_ROW).l     ; next ring write = row 6
+    move.w  #6,(NATIVE_DATA_IDX).l      ; next data = StoryRowData[6]
+    move.w  #STORY_ROW_COUNT,(NATIVE_DATA_MAX).l
+    move.l  #StoryRowData,(NATIVE_DATA_PTR).l
+    move.l  #StoryRowPalette,(NATIVE_PAL_PTR).l
+    clr.b   (NATIVE_PHASE).l            ; phase 0 = story scroll
+    clr.b   (NATIVE_VSCROLL_ACC).l
+
+    ; --- Set VSRAM to 48 ---
+    move.l  #VSRAM_WRITE_0000,(VDP_CTRL).l
+    move.w  #48,(VDP_DATA).l
+
+    ; --- Clear AGS cache so it doesn't fight us ---
+    clr.b   (PREV_SCROLL_MODE).l
+    clr.w   (PREV_BASE_VSRAM).l
+    clr.w   (PREV_EVENT_VSRAM).l
+    clr.w   (PREV_HSCROLL).l
+
+    ; --- Initialize NES RAM state for compatibility ---
+    moveq   #16,D0
+    move.b  D0,($00FC,A4)              ; curVScroll = 16 (same as original)
+    moveq   #0,D0
+    move.b  D0,($0415,A4)              ; scrollPassCount = 0
+    move.b  D0,($0419,A4)              ; demoLineIndex = 0
+    move.b  D0,($042F,A4)              ; itemRowIndex = 0
+
+    movem.l (SP)+,D0-D3/A0-A1
+    rts
+
+; --- Helper: write 32 tiles from A0 to VDP using _compose_bg_tile_word ---
+; A0 points to 32 raw tile indices. VDP write address already set.
+; Preserves A0, clobbers D0.
+.nsi_write_row_from_a0:
+    movem.l D4/A1,-(SP)
+    move.l  A0,A1
+    moveq   #31,D4
+.nsi_wr_tile:
+    moveq   #0,D0
+    move.b  (A1)+,D0
+    bsr     _compose_bg_tile_word
+    move.w  D0,(VDP_DATA).l
+    dbf     D4,.nsi_wr_tile
+    ; Fill remaining 32 columns (64-wide plane, only 32 visible in H32)
+    move.w  (NATIVE_BLANK_TILE).l,D0
+    moveq   #31,D4
+.nsi_wr_pad:
+    move.w  D0,(VDP_DATA).l
+    dbf     D4,.nsi_wr_pad
+    movem.l (SP)+,D4/A1
+    rts
+
+;==============================================================================
+; _write_scroll_row — Write one pre-computed row to the V32 ring buffer.
+;
+; Input:  D0.w = data row index (into current data table)
+;         D1.w = plane row (0-31, will be masked)
+; Clobbers: D0-D3, A0-A1
+;==============================================================================
+_write_scroll_row:
+    movem.l D4,-(SP)
+    andi.w  #$001F,D1               ; mask to 0-31
+
+    ; Compute source pointer: NATIVE_DATA_PTR + dataIdx * 32
+    move.l  (NATIVE_DATA_PTR).l,A0
+    move.w  D0,D2
+    lsl.w   #5,D2                   ; dataIdx * 32
+    adda.w  D2,A0                   ; A0 = row data
+
+    ; Compute VDP write address: $C000 + planeRow * $80
+    move.w  D1,D2
+    lsl.w   #7,D2
+    addi.w  #$C000,D2
+    moveq   #0,D3
+    move.w  D2,D3
+    andi.l  #$3FFF,D3
+    swap    D3
+    ori.l   #$40000003,D3
+    move.l  D3,(VDP_CTRL).l
+
+    ; Write 32 composed tiles
+    moveq   #31,D4
+.wsr_tile:
+    moveq   #0,D0
+    move.b  (A0)+,D0
+    bsr     _compose_bg_tile_word
+    move.w  D0,(VDP_DATA).l
+    dbf     D4,.wsr_tile
+
+    ; Pad remaining 32 columns
+    move.w  (NATIVE_BLANK_TILE).l,D0
+    moveq   #31,D4
+.wsr_pad:
+    move.w  D0,(VDP_DATA).l
+    dbf     D4,.wsr_pad
+
+    movem.l (SP)+,D4
+    rts
+
+;==============================================================================
+; _native_story_scroll_frame — Replaces AnimateDemoPhase1Subphase0.
+;
+; Scrolls the story text upward at 0.5 pixels/frame (1 pixel every 2 frames).
+; Every 8 pixels of scroll writes the next story row to the ring buffer.
+; When all story rows are exhausted, advances to subphase 1 (wait).
+; Preserves D2-D7, A4-A6.
+;==============================================================================
+_native_story_scroll_frame:
+    ; Lazy init: _native_scroll_init can't run during Phase 0 init because
+    ; the title screen needs V64 mode.  Initialize on first Phase 1 frame.
+    tst.b   (SCROLL_V32_ACTIVE).l
+    bne.s   .nssf_already_init
+    bsr     _native_scroll_init
+.nssf_already_init:
+    movem.l D0-D3/A0-A1,-(SP)
+
+    ; Only scroll every other frame (same as NES: frameCounter bit 0)
+    move.b  ($0015,A4),D0
+    andi.b  #$01,D0
+    beq     .nssf_done
+
+    ; Increment VSRAM
+    move.w  (NATIVE_VSRAM).l,D0
+    addq.w  #1,D0
+    andi.w  #$00FF,D0               ; wrap at 256 for V32
+    move.w  D0,(NATIVE_VSRAM).l
+
+    ; Write VSRAM to VDP
+    move.l  #VSRAM_WRITE_0000,(VDP_CTRL).l
+    move.w  D0,(VDP_DATA).l
+
+    ; Also update NES curVScroll for AGS compatibility
+    addq.b  #1,($00FC,A4)
+    move.b  ($00FC,A4),D0
+    cmpi.b  #$F0,D0
+    bne.s   .nssf_no_wrap
+    clr.b   ($00FC,A4)
+    addq.b  #1,($005C,A4)           ; nametable toggle
+    addq.b  #1,($0415,A4)           ; scrollPassCount
+.nssf_no_wrap:
+
+    ; Check if we should write a new row (every 8 VSRAM increments)
+    move.b  (NATIVE_VSCROLL_ACC).l,D0
+    addq.b  #1,D0
+    cmpi.b  #8,D0
+    bne.s   .nssf_no_row
+    clr.b   (NATIVE_VSCROLL_ACC).l
+
+    ; Check if there are more rows to write
+    move.w  (NATIVE_DATA_IDX).l,D0
+    cmp.w   (NATIVE_DATA_MAX).l,D0
+    bge.s   .nssf_check_exit
+
+    ; Write next row
+    move.w  (NATIVE_WRITE_ROW).l,D1
+    bsr     _write_scroll_row
+
+    ; Advance indices
+    addq.w  #1,(NATIVE_DATA_IDX).l
+    move.w  (NATIVE_WRITE_ROW).l,D0
+    addq.w  #1,D0
+    andi.w  #$001F,D0
+    move.w  D0,(NATIVE_WRITE_ROW).l
+    bra.s   .nssf_done
+
+.nssf_no_row:
+    move.b  D0,(NATIVE_VSCROLL_ACC).l
+    bra.s   .nssf_done
+
+.nssf_check_exit:
+    ; All story rows written.  Check if we've scrolled enough for
+    ; the text to clear the screen (NES waits for curVScroll=$08
+    ; after a wrap).
+    move.b  ($00FC,A4),D0
+    cmpi.b  #$08,D0
+    bne.s   .nssf_done
+    move.b  ($0415,A4),D0
+    beq.s   .nssf_done
+    ; Story scroll complete — advance to subphase 1
+    clr.b   ($0415,A4)
+    addq.b  #1,($042D,A4)
+
+.nssf_done:
+    movem.l (SP)+,D0-D3/A0-A1
+    rts
+
+;==============================================================================
+; _native_scroll_wait — Replaces AnimateDemoPhase1Subphase1.
+;
+; 256-frame wait between story and item scroll.
+; Sets up item scroll state when the wait completes.
+; Preserves D2-D7, A4-A6.
+;==============================================================================
+_native_scroll_wait:
+    addq.b  #1,($041A,A4)          ; increment timer (wraps 0→255→0)
+    move.b  ($041A,A4),D0
+    beq.s   .nsw_setup_items        ; timer wrapped to 0 → 256 frames elapsed
+    ; Timer hasn't wrapped yet — set up initial values and return
+    ; (these run every frame during the wait, same as original NES code)
+    moveq   #41,D0
+    move.b  D0,($041D,A4)
+    moveq   #0,D0
+    move.b  D0,($041C,A4)
+    moveq   #43,D0
+    move.b  D0,($0418,A4)
+    move.b  #$E0,D0
+    move.b  D0,($0417,A4)
+    rts
+
+.nsw_setup_items:
+    ; Wait complete — transition to item scroll.
+    ; Re-initialize the ring buffer with item data.
+    movem.l D0-D3/A0-A1,-(SP)
+
+    ; Clear the plane again for item scroll
+    move.w  (NATIVE_BLANK_TILE).l,D1
+    move.l  #$40000003,(VDP_CTRL).l
+    move.w  #($1000/2)-1,D0
+.nsw_clear:
+    move.w  D1,(VDP_DATA).l
+    dbf     D0,.nsw_clear
+
+    ; Pre-fill rows 0-27 with first 28 item rows
+    lea     (ItemRowData).l,A0
+    moveq   #0,D1
+.nsw_prefill:
+    cmpi.w  #28,D1
+    bge.s   .nsw_prefill_done
+    move.w  D1,D2
+    lsl.w   #7,D2
+    addi.w  #$C000,D2
+    moveq   #0,D3
+    move.w  D2,D3
+    andi.l  #$3FFF,D3
+    swap    D3
+    ori.l   #$40000003,D3
+    move.l  D3,(VDP_CTRL).l
+    ; Write 32 tiles
+    move.l  A0,A1
+    moveq   #31,D3
+.nsw_wr_tile:
+    moveq   #0,D0
+    move.b  (A1)+,D0
+    bsr     _compose_bg_tile_word
+    move.w  D0,(VDP_DATA).l
+    dbf     D3,.nsw_wr_tile
+    ; Pad 32
+    move.w  (NATIVE_BLANK_TILE).l,D0
+    moveq   #31,D3
+.nsw_wr_pad:
+    move.w  D0,(VDP_DATA).l
+    dbf     D3,.nsw_wr_pad
+    adda.l  #32,A0
+    addq.w  #1,D1
+    bra.s   .nsw_prefill
+.nsw_prefill_done:
+
+    ; Set item scroll state
+    clr.w   (NATIVE_VSRAM).l
+    move.w  #28,(NATIVE_WRITE_ROW).l
+    move.w  #28,(NATIVE_DATA_IDX).l
+    move.w  #ITEM_ROW_COUNT,(NATIVE_DATA_MAX).l
+    move.l  #ItemRowData,(NATIVE_DATA_PTR).l
+    move.l  #ItemRowPalette,(NATIVE_PAL_PTR).l
+    move.b  #2,(NATIVE_PHASE).l
+    clr.b   (NATIVE_VSCROLL_ACC).l
+
+    ; Reset VSRAM to 0
+    move.l  #VSRAM_WRITE_0000,(VDP_CTRL).l
+    move.w  #0,(VDP_DATA).l
+
+    ; Reset NES scroll state for item phase
+    clr.b   ($00FC,A4)
+    clr.b   ($005C,A4)
+    clr.b   ($0415,A4)
+    clr.b   ($041B,A4)
+    clr.b   ($0419,A4)
+    clr.b   ($042F,A4)
+
+    ; Process any item spawns that fall within the first 28 rows
+    lea     (ItemSpawnTable).l,A0
+.nsw_check_spawns:
+    move.b  (A0),D0
+    cmpi.b  #$FF,D0
+    beq.s   .nsw_spawns_done
+    andi.w  #$00FF,D0
+    cmpi.w  #28,D0
+    bge.s   .nsw_spawns_done
+    ; This spawn is in the pre-filled area — trigger it
+    ; Set demoLineIndex to this line so ProcessDemoLineItems finds the $20 flag
+    move.b  (A0),D0
+    move.b  D0,($0419,A4)
+    jsr     ProcessDemoLineItems
+    addq.l  #3,A0                   ; next spawn entry
+    bra.s   .nsw_check_spawns
+.nsw_spawns_done:
+
+    movem.l (SP)+,D0-D3/A0-A1
+
+    ; Advance subphase
+    addq.b  #1,($042D,A4)
+    rts
+
+;==============================================================================
+; _native_item_scroll_frame — Replaces AnimateDemoPhase1Subphase2.
+;
+; Scrolls the item list upward.  Runs HideAllSprites, DisableFallenObjects,
+; Demo_AnimateObjects for sprite animation.  Spawns item sprites at the
+; correct scroll lines using ItemSpawnTable.
+; Preserves D2-D7, A4-A6.
+;==============================================================================
+_native_item_scroll_frame:
+    ; Sprite pipeline — same as original
+    jsr     HideAllSprites
+    jsr     DisableFallenObjects
+    jsr     Demo_AnimateObjects
+
+    ; Only scroll every other frame
+    move.b  ($0015,A4),D0
+    andi.b  #$01,D0
+    beq     .nisf_done
+
+    ; Decrement object Y positions (objects 1-10), same as original
+    movem.l D2,-(SP)
+    moveq   #10,D2
+.nisf_dec_y:
+    lea     ($0084,A4),A0
+    subq.b  #1,(A0,D2.W)
+    subq.b  #1,D2
+    bne.s   .nisf_dec_y
+    movem.l (SP)+,D2
+
+    ; Increment objectYDecrementer
+    addq.b  #1,($041B,A4)
+    move.b  ($041B,A4),D0
+    bne.s   .nisf_no_pass_inc
+    addq.b  #1,($0415,A4)           ; scrollPassCount
+.nisf_no_pass_inc:
+
+    ; Check exit: 5 full passes + 128 extra frames
+    move.b  ($0415,A4),D0
+    cmpi.b  #$05,D0
+    bne.s   .nisf_scroll
+    move.b  ($041B,A4),D0
+    cmpi.b  #$80,D0
+    bne.s   .nisf_scroll
+    ; Item scroll complete — advance to subphase 3
+    addq.b  #1,($042D,A4)
+    bra     .nisf_done
+
+.nisf_scroll:
+    ; Increment VSRAM
+    move.w  (NATIVE_VSRAM).l,D0
+    addq.w  #1,D0
+    andi.w  #$00FF,D0
+    move.w  D0,(NATIVE_VSRAM).l
+
+    ; Write VSRAM to VDP
+    move.l  #VSRAM_WRITE_0000,(VDP_CTRL).l
+    move.w  D0,(VDP_DATA).l
+
+    ; Update NES curVScroll for compatibility
+    addq.b  #1,($00FC,A4)
+    move.b  ($00FC,A4),D0
+    cmpi.b  #$F0,D0
+    bne.s   .nisf_no_wrap
+    clr.b   ($00FC,A4)
+    addq.b  #1,($005C,A4)
+.nisf_no_wrap:
+
+    ; Check if we should write a new row (every 8 VSRAM increments)
+    move.b  (NATIVE_VSCROLL_ACC).l,D0
+    addq.b  #1,D0
+    cmpi.b  #8,D0
+    bne.s   .nisf_no_row
+    clr.b   (NATIVE_VSCROLL_ACC).l
+
+    ; Check if there are more rows
+    move.w  (NATIVE_DATA_IDX).l,D0
+    cmp.w   (NATIVE_DATA_MAX).l,D0
+    bge.s   .nisf_done_row
+
+    ; Write the row
+    move.w  (NATIVE_WRITE_ROW).l,D1
+    bsr     _write_scroll_row
+
+    ; Check ItemSpawnTable for spawns at this data index
+    movem.l D2-D3/A0,-(SP)
+    move.w  (NATIVE_DATA_IDX).l,D2  ; current data row index
+    lea     (ItemSpawnTable).l,A0
+.nisf_spawn_scan:
+    move.b  (A0),D0
+    cmpi.b  #$FF,D0
+    beq.s   .nisf_spawn_done
+    andi.w  #$00FF,D0
+    cmp.w   D2,D0
+    beq.s   .nisf_do_spawn
+    bgt.s   .nisf_spawn_done        ; table is sorted, stop early
+    addq.l  #3,A0
+    bra.s   .nisf_spawn_scan
+.nisf_do_spawn:
+    ; Set demoLineIndex and call ProcessDemoLineItems
+    move.b  D2,($0419,A4)
+    jsr     ProcessDemoLineItems
+.nisf_spawn_done:
+    movem.l (SP)+,D2-D3/A0
+
+    ; Advance indices
+    addq.w  #1,(NATIVE_DATA_IDX).l
+    move.w  (NATIVE_WRITE_ROW).l,D0
+    addq.w  #1,D0
+    andi.w  #$001F,D0
+    move.w  D0,(NATIVE_WRITE_ROW).l
+    bra.s   .nisf_done
+
+.nisf_no_row:
+    move.b  D0,(NATIVE_VSCROLL_ACC).l
+.nisf_done_row:
+.nisf_done:
+    rts
+
+;==============================================================================
+; _native_scroll_hold — Replaces AnimateDemoPhase1Subphase3.
+;
+; 256-frame hold with sprite animation continuing.
+; Preserves D2-D7, A4-A6.
+;==============================================================================
+_native_scroll_hold:
+    addq.b  #1,($041A,A4)          ; increment timer (wraps at 256)
+    move.b  ($041A,A4),D0
+    beq.s   .nsh_advance
+    ; Still holding — continue sprite animation
+    jsr     HideAllSprites
+    jsr     Demo_AnimateObjects
+    rts
+
+.nsh_advance:
+    ; Hold complete — advance to subphase 4
+    addq.b  #1,($042D,A4)
+    rts
+
+;==============================================================================
+; _native_scroll_exit — Replaces AnimateDemoPhase1Subphase4.
+;
+; 57-frame fade timer with sprite animation, then restore V64 and clear
+; all demo state.
+; Preserves D2-D7, A4-A6.
+;==============================================================================
+_native_scroll_exit:
+    addq.b  #1,($041A,A4)
+    move.b  ($041A,A4),D0
+    cmpi.b  #$39,D0                 ; 57 frames
+    beq.s   .nse_finish
+    ; Still fading — continue sprite animation
+    jsr     HideAllSprites
+    jsr     Demo_AnimateObjects
+    rts
+
+.nse_finish:
+    ; Restore V64 mode
+    clr.b   (SCROLL_V32_ACTIVE).l
+    move.w  #$9011,(VDP_CTRL).l     ; 64H × 64V
+    ; Clear all demo state (same as original subphase 4)
+    moveq   #0,D0
+    move.b  D0,($0011,A4)          ; gameMode = 0
+    move.b  D0,($041A,A4)
+    move.b  D0,($042C,A4)
+    move.b  D0,($042D,A4)
+    ; Clear native driver state
+    clr.b   (NATIVE_PHASE).l
+    rts
+
 ;------------------------------------------------------------------------------
 ; _ags_prearm — Promote the previously staged scroll state into the active
 ;               queue at START of vblank, BEFORE IsrNmi runs. This guarantees
@@ -846,6 +1420,11 @@ _ags_activate_staged:
 ; Clobbers D0.
 ;------------------------------------------------------------------------------
 _ags_apply_active:
+    ; V32 native driver bypass: when SCROLL_V32_ACTIVE, the native driver
+    ; writes VSRAM directly — skip all AGS VDP writes to avoid conflicts.
+    tst.b   (SCROLL_V32_ACTIVE).l
+    bne     .aaa_v32_skip
+
     ; --- Scroll register cache: skip VDP writes if nothing changed ---
     ; DZ_SKIP mode must re-arm H-int every frame (HBlankISR disables it
     ; after firing), so never cache DZ_SKIP frames.
@@ -898,6 +1477,11 @@ _ags_apply_active:
     move.w  #$8014,(VDP_CTRL).l             ; Reg 0: enable H-int (+colorfix bit)
     rts
 
+.aaa_v32_skip:
+    ; V32 native driver is active — disable H-int and skip VSRAM writes
+    move.w  #$8AFF,(VDP_CTRL).l             ; Reg 10 = $FF (inactive)
+    move.w  #$8004,(VDP_CTRL).l             ; Reg 0: H-int off
+    rts
 
 
 ;------------------------------------------------------------------------------
