@@ -2082,6 +2082,66 @@ def _patch_z02(path):
     else:
         print("  WARNING: _patch_z02 P10 -- InitDemoSubphaseTransferStoryTiles not found")
 
+    # ---- Patch 11: V32 scroll enter — switch to 64×32 cell plane at item scroll start ----
+    # AnimateDemoPhase1Subphase1 counts a timer; when it wraps to 0 it
+    # increments subphase from 1 to 2 (item scroll).  Insert _v32_scroll_enter
+    # call immediately after the subphase increment.
+    old_sp1_transition = (
+        'AnimateDemoPhase1Subphase1:\n'
+        '    addq.b  #1,($041A,A4)\n'
+        '    move.b  ($041A,A4),D0\n'
+        '    bne  _anon_z02_0\n'
+        '    addq.b  #1,($042D,A4)\n'
+        '_anon_z02_0:'
+    )
+    new_sp1_transition = (
+        'AnimateDemoPhase1Subphase1:\n'
+        '    addq.b  #1,($041A,A4)\n'
+        '    move.b  ($041A,A4),D0\n'
+        '    bne  _anon_z02_0\n'
+        '    addq.b  #1,($042D,A4)\n'
+        '    ; PATCHED (P11): switch to 64x32 cell plane for item scroll\n'
+        '    jsr     _v32_scroll_enter\n'
+        '_anon_z02_0:'
+    )
+    if old_sp1_transition in text:
+        text = text.replace(old_sp1_transition, new_sp1_transition, 1)
+        print("  _patch_z02 P11: V32 scroll enter at subphase 1->2 transition")
+    else:
+        print("  WARNING: _patch_z02 P11 -- AnimateDemoPhase1Subphase1 transition not found")
+
+    # ---- Patch 12: V32 scroll exit — restore 64×64 cell plane at item scroll end ----
+    # AnimateDemoPhase1Subphase4 clears gameMode/phase/subphase when its
+    # timer hits $39.  Insert _v32_scroll_exit before the state clear.
+    # Match the PRE-HARDENED code (before _promote_nonlocal_bsr_to_jsr runs).
+    # At this point the branch is still "bne  AnimateDemoPhase1End_AnimateObjects",
+    # not yet hardened to "beq.s __far_z_02_XXXX / jmp ...".
+    old_sp4_exit = (
+        '    bne  AnimateDemoPhase1End_AnimateObjects\n'
+        '    moveq   #0,D0\n'
+        '    move.b  D0,($0011,A4)\n'
+        '    move.b  D0,($041A,A4)\n'
+        '    move.b  D0,($042C,A4)\n'
+        '    move.b  D0,($042D,A4)\n'
+        '    rts'
+    )
+    new_sp4_exit = (
+        '    bne  AnimateDemoPhase1End_AnimateObjects\n'
+        '    ; PATCHED (P12): restore 64x64 cell plane after item scroll\n'
+        '    jsr     _v32_scroll_exit\n'
+        '    moveq   #0,D0\n'
+        '    move.b  D0,($0011,A4)\n'
+        '    move.b  D0,($041A,A4)\n'
+        '    move.b  D0,($042C,A4)\n'
+        '    move.b  D0,($042D,A4)\n'
+        '    rts'
+    )
+    if old_sp4_exit in text:
+        text = text.replace(old_sp4_exit, new_sp4_exit, 1)
+        print("  _patch_z02 P12: V32 scroll exit at subphase 4 completion")
+    else:
+        print("  WARNING: _patch_z02 P12 -- subphase 4 exit pattern not found")
+
     with open(path, 'w', encoding='utf-8') as f:
         f.write(text)
 

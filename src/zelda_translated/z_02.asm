@@ -984,6 +984,8 @@ AnimateDemoPhase1Subphase1:
     move.b  ($041A,A4),D0
     bne  _anon_z02_0
     addq.b  #1,($042D,A4)
+    ; PATCHED (P11): switch to 64x32 cell plane for item scroll
+    jsr     _v32_scroll_enter
 _anon_z02_0:
     moveq   #41,D0
     move.b  D0,($041D,A4)
@@ -1442,6 +1444,8 @@ AnimateDemoPhase1Subphase4:
     beq.s  __far_z_02_0005
     jmp  AnimateDemoPhase1End_AnimateObjects
 __far_z_02_0005:
+    ; PATCHED (P12): restore 64x64 cell plane after item scroll
+    jsr     _v32_scroll_exit
     moveq   #0,D0
     move.b  D0,($0011,A4)
     move.b  D0,($041A,A4)

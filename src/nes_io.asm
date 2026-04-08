@@ -137,6 +137,12 @@ PREV_EVENT_VSRAM equ $FF2FC8             ; word: last-written event VSRAM value
 PREV_HSCROLL     equ $FF2FCA             ; word: last-written H-scroll value
 
 ;------------------------------------------------------------------------------
+; V32 scroll mode flag — set to 1 during item scroll to use 64×32 cell plane.
+; When active, NT row addresses wrap at 32 and VSRAM stays in 0-255.
+;------------------------------------------------------------------------------
+SCROLL_V32_ACTIVE equ $FF2FCC            ; byte: 1 = 64×32 plane active
+
+;------------------------------------------------------------------------------
 ; Staged scroll state written by _ags_flush and consumed by _ags_prearm on the
 ; next frame. Lives in the unused tail of the PPU shadow block at $FF080A..0F.
 ;------------------------------------------------------------------------------
@@ -607,6 +613,16 @@ _ags_compute_stage:
     clr.b   (STAGED_HINT_CTR).l
     move.w  D0,(STAGED_EVENT_VSRAM).l
 
+    ; V32 mode: 64×32 cell plane wraps VSRAM at 256, no dead zone exists.
+    ; Mask VSRAM to 0-255 and skip all DZ/H-int logic.
+    tst.b   (SCROLL_V32_ACTIVE).l
+    beq.s   .agc_v64_continue
+    andi.w  #$00FF,D0
+    move.w  D0,(STAGED_BASE_VSRAM).l
+    move.w  D0,(STAGED_EVENT_VSRAM).l
+    bra     .agc_done
+.agc_v64_continue:
+
     ; Gameplay sprite-0 split: pin the top band at VSRAM=0, then switch to
     ; the real base at scanline 40.
     tst.b   ($00E3,A4)                  ; IsSprite0CheckActive
@@ -726,6 +742,51 @@ _ags_flush:
     ; Mirroring rows 0-3 → 60-63 was tested but the 32px duplication artifact
     ; is nearly as bad as stale content. The only true fix is V32 mode.
     movem.l (SP)+,D0-D4
+    rts
+
+;==============================================================================
+; _v32_scroll_enter — Switch VDP to 64×32 cell plane for item scroll.
+;
+; Eliminates the V64 dead zone (rows 60-63) by using a 32-row plane where
+; VSRAM wraps at 256 naturally and rows 60-63 don't exist.
+;
+; Called once when phase 1 subphase transitions from 1 to 2.
+; Preserves all registers.
+;==============================================================================
+_v32_scroll_enter:
+    movem.l D0-D1,-(SP)
+    move.b  #1,(SCROLL_V32_ACTIVE).l
+    ; Switch Reg 16: 64H × 64V ($11) → 64H × 32V ($01)
+    move.w  #$9001,(VDP_CTRL).l
+    ; Clear all 32 rows of the now-smaller Plane A (rows 0-31).
+    ; Each row = 64 tiles × 2 bytes = $80 bytes.  32 rows = $1000 bytes.
+    ; Plane A base = $C000.
+    move.l  #$40000003,(VDP_CTRL).l     ; VRAM write at $C000
+    move.w  #($1000/2)-1,D1             ; 2048 words
+    moveq   #0,D0
+.v32_clear:
+    move.w  D0,(VDP_DATA).l
+    dbf     D1,.v32_clear
+    ; Also clear PREV_SCROLL_MODE so the scroll cache doesn't skip first write
+    clr.b   (PREV_SCROLL_MODE).l
+    clr.w   (PREV_BASE_VSRAM).l
+    clr.w   (PREV_EVENT_VSRAM).l
+    clr.w   (PREV_HSCROLL).l
+    movem.l (SP)+,D0-D1
+    rts
+
+;==============================================================================
+; _v32_scroll_exit — Restore VDP to 64×64 cell plane after item scroll.
+;
+; Called when phase 1 subphase 4 completes and clears gameMode.
+; The game's TurnOffVideoAndClearArtifacts will rebuild VRAM from scratch,
+; so we only need to restore the register and clear the flag.
+; Preserves all registers.
+;==============================================================================
+_v32_scroll_exit:
+    clr.b   (SCROLL_V32_ACTIVE).l
+    ; Restore Reg 16: 64H × 32V ($01) → 64H × 64V ($11)
+    move.w  #$9011,(VDP_CTRL).l
     rts
 
 ;------------------------------------------------------------------------------
@@ -1049,7 +1110,12 @@ _ppu_write_7:
 
     lsr.w   #5,D2                    ; D2.w = row within NT_B (0…29)
     addi.w  #30,D2                   ; offset into Plane A rows 30..59
-    mulu.w  #$0080,D2                ; D2.l = row * $80 (row ≤ 59)
+    ; V32 mode: wrap row to 0-31 (64×32 cell plane, rows 32+ don't exist)
+    tst.b   (SCROLL_V32_ACTIVE).l
+    beq.s   .ntb_no_v32_wrap
+    andi.w  #$001F,D2               ; row % 32
+.ntb_no_v32_wrap:
+    mulu.w  #$0080,D2                ; D2.l = row * $80
     add.w   D3,D2
     addi.w  #$C000,D2                ; D2.w = VDP VRAM addr
 
@@ -1724,6 +1790,11 @@ _attr_write_one_tile:
     ; Compute Genesis VDP address: $C000 + row*$80 + col*2
     moveq   #0,D1
     move.w  D3,D1
+    ; V32 mode: wrap row to 0-31 for VDP address (cache lookup above uses full row)
+    tst.b   (SCROLL_V32_ACTIVE).l
+    beq.s   .awt_no_v32_wrap
+    andi.w  #$001F,D1           ; row % 32
+.awt_no_v32_wrap:
     lsl.l   #7,D1               ; D1.l = row * $80
     add.w   D2,D1
     add.w   D2,D1               ; D1.w += col * 2
@@ -2303,7 +2374,13 @@ _clear_nametable_fast:
     ; NT0: 30 rows (0-29).  NT1: 34 rows (30-63, includes 4 gap rows).
     cmpi.b  #$28,D4
     bne.s   .cnf_nt0_count
-    moveq   #34-1,D3                ; NT1: 34 rows (fills gap rows 60-63)
+    ; NT1 row count: V32 mode uses 2 rows (30-31), V64 uses 34 rows (30-63)
+    tst.b   (SCROLL_V32_ACTIVE).l
+    beq.s   .cnf_nt1_v64
+    moveq   #2-1,D3                 ; V32: only rows 30-31 fit in 32-row plane
+    bra.s   .cnf_row
+.cnf_nt1_v64:
+    moveq   #34-1,D3                ; V64: 34 rows (fills gap rows 60-63)
     bra.s   .cnf_row
 .cnf_nt0_count:
     moveq   #30-1,D3                ; NT0: 30 rows
