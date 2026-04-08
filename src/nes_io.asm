@@ -590,9 +590,12 @@ _ags_compute_stage:
     move.w  D0,(STAGED_EVENT_VSRAM).l
     rts
 
-    ; --- Case 3 collapse: raw VSRAM >= 472 → wrap to top of the 480px map ---
+    ; --- Case 3 collapse: raw VSRAM >= 480 → wrap to top of the 480px map ---
+    ; Values 472-479 stay uncollapsed so DZ_SKIP handles them properly;
+    ; the old threshold of 472 produced negative VSRAM (e.g. 472-480=-8)
+    ; which the VDP masked to 504 (dead zone), causing duplicate text rows.
 .agc_case3_collapse:
-    cmpi.w  #472,D0
+    cmpi.w  #480,D0
     blt.s   .agc_have_base
     subi.w  #480,D0
 .agc_have_base:
@@ -714,6 +717,17 @@ _ags_flush:
     moveq   #0,D0
     move.w  D0,(VDP_DATA).l            ; Plane B H-scroll = 0
 .ags_hscroll_skip:
+    ; --- Clear dead zone (V64 rows 60-63) every frame ---
+    ; Prevents duplicate text: an unknown write path mirrors NT_A rows 0-3
+    ; into the 4 gap rows.  By zeroing them post-NMI, the DZ_SKIP H-int
+    ; only needs to hide blank tiles even if timing leaks a pixel.
+    move.l  #$5E000003,(VDP_CTRL).l ; VRAM write at $DE00 (row 60, col 0)
+    move.w  #$0124,D0               ; space tile ($24 + BG pattern table $100)
+    move.w  #(4*64)-1,D1            ; 4 rows × 64 cols
+.ags_dz_clear:
+    move.w  D0,(VDP_DATA).l
+    dbf     D1,.ags_dz_clear
+
     movem.l (SP)+,D0-D4
     rts
 
@@ -771,7 +785,11 @@ _ags_activate_staged:
 ;------------------------------------------------------------------------------
 _ags_apply_active:
     ; --- Scroll register cache: skip VDP writes if nothing changed ---
+    ; DZ_SKIP mode must re-arm H-int every frame (HBlankISR disables it
+    ; after firing), so never cache DZ_SKIP frames.
     move.b  (INTRO_SCROLL_MODE).l,D0
+    cmpi.b  #INTRO_SCROLL_DZ_SKIP,D0
+    beq.s   .aaa_changed                        ; always re-arm DZ_SKIP
     cmp.b   (PREV_SCROLL_MODE).l,D0
     bne.s   .aaa_changed
     move.w  (ACTIVE_BASE_VSRAM).l,D0
@@ -910,7 +928,7 @@ _ppu_write_7:
     bsr     .inc_ppuaddr            ; advance PPU_VADDR
 
     cmpi.b  #16,(CHR_BUF_CNT).l
-    bne.s   .chr_ret                ; not yet 16 bytes — keep buffering
+    bne     .chr_ret                ; not yet 16 bytes — keep buffering
 
     ; Complete tile — check cache, then convert 2BPP → 4BPP and upload to VDP VRAM
     ifne CHR_EXPANSION_ENABLED
@@ -1153,26 +1171,9 @@ _ppu_write_7:
     bsr     _compose_bg_tile_word
     move.w  D0,(VDP_DATA).l         ; write tile word to Plane A
 
-    ; Mirror top rows 0..3 into rows 60..63 during intro phase-1
-    ; (all subphases) so the V64 dead zone is always filled with valid
-    ; content, eliminating DZ_SKIP H-int artifacts.
-    tst.b   ($0012,A4)
-    bne.s   .nt_noop
-    cmpi.b  #$01,($042C,A4)
-    bne.s   .nt_noop
-    cmpi.w  #4,D4
-    bhs.s   .nt_noop
-    move.w  D4,D2
-    addi.w  #60,D2
-    mulu.w  #$0080,D2
-    add.w   D5,D2
-    addi.w  #$C000,D2
-    move.l  D2,D3
-    andi.l  #$00003FFF,D3
-    swap    D3
-    ori.l   #$40000003,D3
-    move.l  D3,(VDP_CTRL).l
-    move.w  D0,(VDP_DATA).l
+    ; Dead zone rows 60-63 are kept empty — DZ_SKIP H-int skips them.
+    ; Mirroring rows 0-3 there caused duplicate text when H-int timing
+    ; leaked even one pixel of dead zone content.
 
 .nt_noop:
     ;======================================================================
@@ -1745,31 +1746,7 @@ _attr_write_one_tile:
     move.w  (SP)+,D0            ; restore tile word
     move.w  D0,(VDP_DATA).l     ; write to Plane A
 
-    ; Mirror top rows 0..3 into rows 60..63 during intro phase-1
-    ; (all subphases) so the V64 dead zone always has valid content.
-    tst.b   ($0012,A4)
-    bne.s   .awt_skip
-    cmpi.b  #$01,($042C,A4)
-    bne.s   .awt_skip
-    cmpi.w  #4,D3
-    bhs.s   .awt_skip
-    move.w  D0,-(SP)
-    moveq   #0,D1
-    move.w  D3,D1
-    addi.w  #60,D1
-    lsl.l   #7,D1
-    moveq   #0,D0
-    move.w  D2,D0
-    add.w   D0,D1
-    add.w   D0,D1
-    addi.w  #$C000,D1
-    move.l  D1,D0
-    andi.l  #$00003FFF,D0
-    swap    D0
-    ori.l   #$40000003,D0
-    move.l  D0,(VDP_CTRL).l
-    move.w  (SP)+,D0
-    move.w  D0,(VDP_DATA).l
+    ; Dead zone rows 60-63 kept empty — DZ_SKIP handles the gap.
 
 .awt_skip:
     rts
