@@ -540,7 +540,7 @@ _ags_compute_stage:
                                         ; cadence resumes on the next frame
     bne.s   .agc_default_predict
 .agc_item_wrap_predict:
-    move.w  #$00F8,D0                   ; first wrapped item-body frame = old-page tail
+    move.w  #$0007,D0                   ; first wrapped item-body frame aligns to NT0 top perfectly (-1px for NES deferred wrap)
     bra.s   .agc_have_prediction
 .agc_body_predict_parity:
     btst    #0,($0015,A4)               ; body cadence: odd frame -> next frame
@@ -1959,21 +1959,8 @@ _oam_dma:
     addi.w  #129,D4
     tst.b   ($0012,A4)
     bne.s   .oam_write_y
-    ; Preserve top-edge visibility for attract sprites that are just entering
-    ; from the top. The global attract-mode lift would otherwise clip NES
-    ; OAM Y=0..7 sprites entirely one frame too early.
-    cmpi.b  #8,D0
-    bcs.s   .oam_write_y
-    ; Attract/story gameMode 0 uses an 8px sprite lift in most scenes, but the
-    ; post-story item roll needs NES-accurate top-edge positioning so the first
-    ; row of item sprites remains visible as it crosses the top boundary.
-    cmpi.b  #$01,($042C,A4)
-    bne.s   .oam_apply_attract_bias
-    cmpi.b  #$02,($042D,A4)
-    bne.s   .oam_apply_attract_bias
-    cmpi.b  #$05,($042E,A4)
-    bcc.s   .oam_write_y
-.oam_apply_attract_bias:
+    ; Apply the global attract-mode lift cleanly across all subphases without
+    ; checking for top-edge continuity drops, as the VDP seamlessly processes Y < 128.
     subi.w  #8,D4
 .oam_write_y:
     move.w  D4,(VDP_DATA).l
