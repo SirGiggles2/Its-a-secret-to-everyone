@@ -3,9 +3,9 @@ from pathlib import Path
 from PIL import Image, ImageChops
 
 ROOT = Path(r"C:\Users\Jake Diggity\Documents\GitHub\FINAL TRY")
-GEN_DIR = ROOT / "builds" / "reports" / "items_seq_gen_fix2"
-NES_DIR = ROOT / "builds" / "reports" / "items_baseline_nes"
-OUT_DIR = ROOT / "builds" / "reports" / "item_scroll_analysis"
+GEN_DIR = ROOT / "builds" / "reports" / "items_seq_gen"
+NES_DIR = ROOT / "builds" / "reports" / "items_seq_nes"
+OUT_DIR = ROOT / "builds" / "reports" / "item_scroll_analysis_fresh"
 OUT_DIR.mkdir(parents=True, exist_ok=True)
 
 def parse_trace(path):
@@ -15,7 +15,7 @@ def parse_trace(path):
     header = lines[1][2:].split(",")
     return list(csv.DictReader(lines[2:], fieldnames=header))
 
-gen_rows = parse_trace(GEN_DIR / "gen_fix2_trace.txt")
+gen_rows = parse_trace(GEN_DIR / "gen_trace.txt")
 nes_rows = parse_trace(NES_DIR / "nes_trace.txt")
 
 gen_by_v = {int(r["curVScroll"], 16): r for r in gen_rows if int(r["phase"], 16) == 1 and int(r["subphase"], 16) == 2}
@@ -32,7 +32,7 @@ for v in v_targets:
     gen_frame = int(gen_by_v[v]["frame"])
     nes_frame = int(nes_by_v[v]["frame"])
     
-    gen_path = GEN_DIR / f"gen_fix2_f{gen_frame:05d}.png"
+    gen_path = GEN_DIR / f"gen_f{gen_frame:05d}.png"
     nes_path = NES_DIR / f"nes_f{nes_frame:05d}.png"
     
     if not gen_path.exists() or not nes_path.exists():

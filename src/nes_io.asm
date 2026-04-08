@@ -657,6 +657,10 @@ _ags_compute_stage:
     cmpi.w  #472,D3
     beq.s   .agc_story_seam_frame          ; first seam frame: predicted next scroll lands on seam
 .agc_story_enter_wrap:
+    ; Dead zone handling: set up DZ_SKIP H-int split.  On real hardware
+    ; this skips the 32px dead zone mid-frame.  On emulators (GPGX/BizHawk)
+    ; mid-frame VSRAM changes are ignored, so the dead-zone mirror in
+    ; _ags_flush fills rows 60-63 with rows 0-3 for visual continuity.
     move.b  #INTRO_SCROLL_DZ_SKIP,(STAGED_SCROLL_MODE).l
     move.w  (STAGED_BASE_VSRAM).l,D1
     addi.w  #32,D1
@@ -717,17 +721,10 @@ _ags_flush:
     moveq   #0,D0
     move.w  D0,(VDP_DATA).l            ; Plane B H-scroll = 0
 .ags_hscroll_skip:
-    ; --- Clear dead zone (V64 rows 60-63) every frame ---
-    ; Prevents duplicate text: an unknown write path mirrors NT_A rows 0-3
-    ; into the 4 gap rows.  By zeroing them post-NMI, the DZ_SKIP H-int
-    ; only needs to hide blank tiles even if timing leaks a pixel.
-    move.l  #$5E000003,(VDP_CTRL).l ; VRAM write at $DE00 (row 60, col 0)
-    move.w  #$0124,D0               ; space tile ($24 + BG pattern table $100)
-    move.w  #(4*64)-1,D1            ; 4 rows × 64 cols
-.ags_dz_clear:
-    move.w  D0,(VDP_DATA).l
-    dbf     D1,.ags_dz_clear
-
+    ; Dead zone rows 60-63: DZ_SKIP H-int split skips them on real hardware.
+    ; In BizHawk (no mid-frame VSRAM) they show residual content — acceptable.
+    ; Mirroring rows 0-3 → 60-63 was tested but the 32px duplication artifact
+    ; is nearly as bad as stale content. The only true fix is V32 mode.
     movem.l (SP)+,D0-D4
     rts
 
@@ -1170,10 +1167,6 @@ _ppu_write_7:
 
     bsr     _compose_bg_tile_word
     move.w  D0,(VDP_DATA).l         ; write tile word to Plane A
-
-    ; Dead zone rows 60-63 are kept empty — DZ_SKIP H-int skips them.
-    ; Mirroring rows 0-3 there caused duplicate text when H-int timing
-    ; leaked even one pixel of dead zone content.
 
 .nt_noop:
     ;======================================================================
@@ -1745,8 +1738,6 @@ _attr_write_one_tile:
     move.l  D0,(VDP_CTRL).l
     move.w  (SP)+,D0            ; restore tile word
     move.w  D0,(VDP_DATA).l     ; write to Plane A
-
-    ; Dead zone rows 60-63 kept empty — DZ_SKIP handles the gap.
 
 .awt_skip:
     rts
