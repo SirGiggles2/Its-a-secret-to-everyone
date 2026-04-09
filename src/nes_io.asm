@@ -1085,15 +1085,8 @@ _ppu_write_7:
     bsr     _compose_bg_tile_word
     move.w  D0,(VDP_DATA).l         ; write tile word to Plane A
 
-    ; Mirror top rows 0..3 into rows 60..63 only during intro phase-1
-    ; subphase 0, so the prebuilt story page wraps onto the screen cleanly
-    ; without leaking story-specific map continuity into gameplay/credits.
-    tst.b   ($0012,A4)
-    bne.s   .nt_noop
-    cmpi.b  #$01,($042C,A4)
-    bne.s   .nt_noop
-    cmpi.b  #$00,($042D,A4)
-    bne.s   .nt_noop
+    ; Mirror top rows 0..3 into rows 60..63 unconditionally
+    ; so the V64 dead zone always has valid content.
     cmpi.w  #4,D4
     bhs.s   .nt_noop
     move.w  D4,D2
@@ -1679,14 +1672,7 @@ _attr_write_one_tile:
     move.w  (SP)+,D0            ; restore tile word
     move.w  D0,(VDP_DATA).l     ; write to Plane A
 
-    ; Mirror top rows 0..3 into rows 60..63 only during intro phase-1
-    ; subphase 0, matching the gated tile-word mirror above.
-    tst.b   ($0012,A4)
-    bne.s   .awt_skip
-    cmpi.b  #$01,($042C,A4)
-    bne.s   .awt_skip
-    cmpi.b  #$00,($042D,A4)
-    bne.s   .awt_skip
+    ; Mirror top rows 0..3 into rows 60..63 unconditionally.
     cmpi.w  #4,D3
     bhs.s   .awt_skip
     move.w  D0,-(SP)
