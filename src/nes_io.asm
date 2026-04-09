@@ -568,9 +568,9 @@ _ags_compute_stage:
     move.w  D0,(STAGED_EVENT_VSRAM).l
     rts
 
-    ; --- Case 3 collapse: raw VSRAM >= 472 → wrap to top of the 480px map ---
+    ; --- Case 3 collapse: raw VSRAM >= 480 → wrap to top of the 480px map ---
 .agc_case3_collapse:
-    cmpi.w  #472,D0
+    cmpi.w  #480,D0
     blt.s   .agc_have_base
     subi.w  #480,D0
 .agc_have_base:
