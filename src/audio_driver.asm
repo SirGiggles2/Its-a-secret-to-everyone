@@ -50,12 +50,15 @@ APU_SH_4015     equ APU_SH_BASE+$10    ; Channel enable flags
 ; YM2612:       f = (F_num * 2^block * YM_CLK) / (144 * 2^20)
 ;                   YM_CLK = 7,670,453
 ;
-; K_pulse = CPU_CLK * 144 * 2^20 / (16 * YM_CLK) = 2,201,710
-; K5_pulse = K_pulse >> 5 = 68,803   (base block = 5)
-; K5_tri   = K5_pulse / 2 = 34,401
+; K_pulse = CPU_CLK * 144 * 2^20 / (16 * YM_CLK) ≈ 4,403,410
+; K5_pulse = K_pulse >> 5 = 137,606    (base block = 5)
+; K5_tri   = K5_pulse / 2 = 68,803     (triangle is one octave below pulse)
+;
+; Sanity check: NES A4 (P=253, P+1=254) → K5/254 = 541.75
+;               Standard YM2612 F_num for A4 at block 5 = 541. ✓
 ;----------------------------------------------------------------------
-NES_YM_K5_PULSE equ 68803
-NES_YM_K5_TRI   equ 34401
+NES_YM_K5_PULSE equ 137606
+NES_YM_K5_TRI   equ 68803
 
 ;==============================================================================
 ; ym_write1 — Write one register to YM2612 Part I
@@ -320,7 +323,15 @@ PATCH_VOICE07:
 ;----------------------------------------------------------------------
 ; Music state RAM ($FF0B00-$FF0B3F, 64 bytes)
 ;----------------------------------------------------------------------
-MUSIC_BASE          equ $FF0B00
+; ============================================================================
+; MUSIC_BASE must be OUTSIDE the NES RAM mirror range.
+; Real NES mirrors its 2 KB RAM through $0000-$1FFF, so any transpiled access
+; through a pointer in zero-page that lands in $0800-$1FFF on 6502 will on our
+; M68K map hit $FF0800-$FF1FFF directly (transpiler does not wrap mirrors).
+; $FF0B00 got continuously clobbered by such accesses during the intro.
+; $FFE000 is safely past $FF1FFF and well below the stack at $FFFFFE.
+; ============================================================================
+MUSIC_BASE          equ $FFE000
 MUSIC_STATE_SIZE    equ $40
 
 m_song              equ MUSIC_BASE+$00  ; current song bitmap
@@ -595,26 +606,26 @@ play_next_phrase_no_tick:
     addq.b  #1,(m_phrase).l
     cmpi.b  #$1A,(m_phrase).l
     bne     prep_phrase
-    move.b  #$14,(m_phrase).l
-    bra     prep_phrase
+    move.b  #$14,(m_phrase).l         ; wrap: set prev, re-enter (will +1)
+    bra     play_next_phrase_no_tick
 .nsp_uw:
     addq.b  #1,(m_phrase).l
     cmpi.b  #$12,(m_phrase).l
     bne     prep_phrase
     move.b  #$0F,(m_phrase).l
-    bra     prep_phrase
+    bra     play_next_phrase_no_tick
 .nsp_ow:
     addq.b  #1,(m_phrase).l
     cmpi.b  #$10,(m_phrase).l
     bne     prep_phrase
     move.b  #$09,(m_phrase).l
-    bra     prep_phrase
+    bra     play_next_phrase_no_tick
 .nsp_demo:
     addq.b  #1,(m_phrase).l
     cmpi.b  #$24,(m_phrase).l
     bne     prep_phrase
     move.b  #$19,(m_phrase).l
-    bra     prep_phrase
+    bra     play_next_phrase_no_tick
 
 ;==============================================================================
 ; tick_sq0 — Sq0 channel update
@@ -780,10 +791,14 @@ emit_note_sq1:
     move.w  D3,D2
     move.l  #NES_YM_K5_PULSE,D3
     bsr     nes_to_ym_freq                ; D2=A4val, D3=A0val
-    move.b  #$A4,D0                        ; ch 0
+    ; Key off first so the next key-on retriggers envelopes from attack
+    move.b  #$28,D0
+    moveq   #$00,D1                        ; ch 0, all ops off
+    bsr     ym_write1
+    move.b  #$A4,D0                        ; ch 0 freq high
     move.b  D2,D1
     bsr     ym_write1
-    move.b  #$A0,D0
+    move.b  #$A0,D0                        ; ch 0 freq low
     move.b  D3,D1
     bsr     ym_write1
     ; Key on ch 0, all ops
@@ -809,10 +824,14 @@ emit_note_sq0:
     move.w  D3,D2
     move.l  #NES_YM_K5_PULSE,D3
     bsr     nes_to_ym_freq
-    move.b  #$A5,D0                        ; ch 1
+    ; Key off first so the envelope attack phase retriggers
+    move.b  #$28,D0
+    moveq   #$01,D1                        ; ch 1 all ops off
+    bsr     ym_write1
+    move.b  #$A5,D0                        ; ch 1 freq high
     move.b  D2,D1
     bsr     ym_write1
-    move.b  #$A1,D0
+    move.b  #$A1,D0                        ; ch 1 freq low
     move.b  D3,D1
     bsr     ym_write1
     move.b  #$28,D0
@@ -837,10 +856,14 @@ emit_note_trg:
     move.w  D3,D2
     move.l  #NES_YM_K5_TRI,D3
     bsr     nes_to_ym_freq
-    move.b  #$A6,D0                        ; ch 2
+    ; Key off first so the bass envelope retriggers per note
+    move.b  #$28,D0
+    moveq   #$02,D1                        ; ch 2 all ops off
+    bsr     ym_write1
+    move.b  #$A6,D0                        ; ch 2 freq high
     move.b  D2,D1
     bsr     ym_write1
-    move.b  #$A2,D0
+    move.b  #$A2,D0                        ; ch 2 freq low
     move.b  D3,D1
     bsr     ym_write1
     move.b  #$28,D0
