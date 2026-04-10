@@ -374,22 +374,24 @@ FM_PATCH_REGS:
 ; authoritative byte order here.
 ;==============================================================================
 
-; Voice $00 — Clean pad, built on proven-clean Voice $03 skeleton.
+; Voice $00 — Bell-like pad.
 ;
-; Sonic 2's actual EHZ Voice $00 has MUL values (5/0.5/1/2 in Alg 7) that
-; produce the characteristic SMPS "jangly pad" sound — fine at Sonic's
-; upbeat tempo, too harsh for Zelda's exposed melodies.  Replace with
-; Voice $03's FM topology (Alg 5, FB 7) and only differ in release rate
-; (slower, for pad sustain) and TL (slightly quieter).  Same timbral
-; family as the lead = guaranteed clean.
+; Classic FM bell recipe:
+;   Alg 5 (3 carriers modulated by op1)
+;   FB 5 for brightness without the FB 7 "hard bite"
+;   Op1 MUL 4 → produces inharmonic overtones at 4x the carrier pitch,
+;     which is what gives bells their characteristic "chime" quality
+;   Op1 TL $14 → modulator loud enough to shape the bell spectrum
+;   Carriers at MUL 1, tuned unison (no detune beating)
+;   Fast attack, medium D1R, low DL, slow RR = bell strike + sustain tail
 PATCH_VOICE00:
-    dc.b    $3D                     ; FB/ALG: (7<<3)|5 — same as Voice $03
-    dc.b    $01,$51,$21,$01         ; DT/MUL — same as Voice $03 (proven clean)
-    dc.b    $1F,$1F,$1F,$1F         ; RS/AR
-    dc.b    $0A,$05,$05,$05         ; AM/D1R
+    dc.b    $2D                     ; FB/ALG: (5<<3)|5 — FB 5 bell pad
+    dc.b    $04,$01,$01,$01         ; DT/MUL — op1 MUL 4 (bell modulator)
+    dc.b    $1F,$1F,$1F,$1F         ; RS/AR max
+    dc.b    $08,$04,$04,$04         ; AM/D1R — bell-decay shape
     dc.b    $00,$00,$00,$00         ; D2R
-    dc.b    $25,$25,$25,$15         ; DL 2 / RR 5 — slower release for pad sustain
-    dc.b    $1B,$1A,$1A,$1A         ; TL slightly quieter than Voice $03 ($19,$18...)
+    dc.b    $47,$37,$37,$17         ; DL 4/3 + RR 7/7/7/7 — bell tail
+    dc.b    $14,$1E,$1E,$1E         ; TL — op1 mod loud ($14), carriers quieter ($1E)
     even
 
 ; Voice $03 — EHZ FM3 opening voice (iconic lead)
@@ -404,21 +406,20 @@ PATCH_VOICE03:
     dc.b    $19,$18,$18,$18         ; TL (slot1=modulator $19; slots 2/3/4 carriers +$18 for mix)
     even
 
-; Voice $07 — Clean bass, built on proven-clean Voice $03 skeleton.
+; Voice $07 — Clean bass.
 ;
-; Sonic 2's EHZ Voice $07 is Alg 0 with op1 MUL 10 — a cascade modulator
-; stack that produces the signature "metallic zing" SMPS bass.  At Zelda's
-; tempo the sidebands scream as sustained buzz.  Replace with Voice $03's
-; clean Alg 5 / FB 7 topology, differ only in release rate (fast, for bass
-; punch) and TL (slightly louder on the carriers for bass presence).
+; Pure sine-ish bass: Alg 5, low FB, all operators at MUL 1 with no detune.
+; This is the cleanest possible FM bass — no harmonics beyond what the fun-
+; damental already provides.  Moderately quiet so it supports the lead
+; without fighting it.
 PATCH_VOICE07:
-    dc.b    $3D                     ; FB/ALG: (7<<3)|5 — same as Voice $03
-    dc.b    $01,$51,$21,$01         ; DT/MUL — same as Voice $03 (proven clean)
+    dc.b    $0D                     ; FB/ALG: (1<<3)|5 — FB 1 (minimal grit)
+    dc.b    $01,$01,$01,$01         ; DT/MUL — unison, no beating
     dc.b    $1F,$1F,$1F,$1F         ; RS/AR
     dc.b    $0A,$05,$05,$05         ; AM/D1R
     dc.b    $00,$00,$00,$00         ; D2R
-    dc.b    $28,$28,$28,$18         ; DL 2 / RR 8 — faster release for bass punch
-    dc.b    $17,$16,$16,$16         ; TL slightly louder than Voice $03 for bass presence
+    dc.b    $28,$28,$28,$18         ; DL 2 / RR 8 — bass punch
+    dc.b    $22,$20,$20,$20         ; TL — moderately quiet (less than 27.81's $28)
     even
 
 ;==============================================================================
