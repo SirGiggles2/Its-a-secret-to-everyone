@@ -295,6 +295,13 @@ EntryPoint:
     movea.l #NES_STACK_INIT,A5
     moveq   #-1,D7                  ; D7 = $FF (NES SP shadow)
 
+    jsr     audio_init              ; Initialize YM2612 + PSG
+
+    ; Request the title/demo song on boot as a smoke test for the native
+    ; M68K music player.  music_tick (called from VBlank) will pick this
+    ; up on the first frame after SR is lowered.
+    move.b  #$80,(m_song_req).l
+
     ; Pre-write tile buffer sentinel so the first NMI's TransferCurTileBuf
     ; doesn't parse zeroed RAM as phantom records.  DynTileBuf = NES $0302.
     move.b  #$FF,($0302,A4)
@@ -346,6 +353,9 @@ VBlankISR:
     ; in vblank.
     bsr     _ags_prearm
     jsr     IsrNmi
+    ; Advance the native music player one tick (YM2612 + PSG writes).
+    ; Mirrors the original NES engine which drove music from NMI.
+    bsr     music_tick
     ; Flush PPU scroll shadows → VDP VSRAM / H-scroll / H-int queue.
     ; Deferred to here (post-NMI, still in VBlank) so the two transpiler-
     ; injected `bsr _apply_genesis_scroll` sites inside IsrNmi cannot
@@ -454,6 +464,7 @@ DefaultException:
 ; so all helpers are defined when z_XX.asm code references them.
 ; (With --no-stubs the bank files no longer emit these labels themselves.)
 ;==============================================================================
+    include "audio_driver.asm"
     include "nes_io.asm"
 
 ;==============================================================================

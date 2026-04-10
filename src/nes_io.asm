@@ -2153,28 +2153,420 @@ _mmc1_common:
     rts
 
 ;==============================================================================
-; APU writes ($4000–$4017)  — T5: silent stubs, audio in T10+
+; APU writes ($4000–$4017) — YM2612/PSG audio driver
+;
+; Channel mapping (Sonic 2 Emerald Hill Zone patches):
+;   Pulse 1 ($4000–$4003) → YM2612 ch 0 (EHZ Voice $00, Alg 7)
+;   Pulse 2 ($4004–$4007) → YM2612 ch 1 (EHZ Voice $03, Alg 5)
+;   Triangle ($4008–$400B) → YM2612 ch 2 (EHZ Voice $07, Alg 0)
+;   Noise ($400C–$400F)   → PSG noise channel
+;
+; Each stub receives the NES register value in D0.b.
+; All stubs preserve D0 and any other registers they use.
 ;==============================================================================
+
+;----------------------------------------------------------------------
+; $4015 — Channel enable/disable
+; Bits: ---D NT21 (Pulse1, Pulse2, Triangle, Noise, DMC)
+; Clear bit → key-off / mute the corresponding channel
+;----------------------------------------------------------------------
+_apu_write_4015:
+    movem.l D0-D1,-(SP)
+    move.b  D0,(APU_SH_4015).l
+
+    ; Pulse 1 (bit 0)
+    btst    #0,D0
+    bne.s   .p1_on
+    move.b  #$28,D0
+    moveq   #$00,D1                 ; key-off ch 0
+    bsr     ym_write1
+    move.b  (APU_SH_4015).l,D0     ; reload for next test
+.p1_on:
+    ; Pulse 2 (bit 1)
+    btst    #1,D0
+    bne.s   .p2_on
+    move.b  #$28,D0
+    moveq   #$01,D1                 ; key-off ch 1
+    bsr     ym_write1
+    move.b  (APU_SH_4015).l,D0
+.p2_on:
+    ; Triangle (bit 2)
+    btst    #2,D0
+    bne.s   .tri_on
+    move.b  #$28,D0
+    moveq   #$02,D1                 ; key-off ch 2
+    bsr     ym_write1
+    move.b  (APU_SH_4015).l,D0
+.tri_on:
+    ; Noise (bit 3)
+    btst    #3,D0
+    bne.s   .noise_on
+    move.b  #$FF,(PSG_PORT).l       ; mute PSG noise
+.noise_on:
+    movem.l (SP)+,D0-D1
+    rts
+
+;----------------------------------------------------------------------
+; $4000 — Pulse 1 duty/volume
+; Bits 3:0 = volume (0=silent, 15=loudest)
+; Voice $00 Algorithm 7: all 4 slots are carriers → update all 4 TLs
+;----------------------------------------------------------------------
 _apu_write_4000:
+    movem.l D0-D1,-(SP)
+    move.b  D0,(APU_SH_4000).l
+
+    ; Convert NES volume (0-15) to YM2612 TL attenuation
+    ; TL = (15 - vol) * 8,  range 0 (loudest) to 120 (near-silent)
+    move.b  D0,D1
+    andi.b  #$0F,D1
+    eori.b  #$0F,D1                 ; invert: 15→0, 0→15
+    lsl.b   #3,D1                   ; * 8 → TL value
+
+    ; Write TL to all 4 carrier ops on ch 0
+    move.b  #$40,D0                 ; slot 1 TL, ch 0
+    bsr     ym_write1
+    move.b  #$44,D0                 ; slot 3 TL
+    bsr     ym_write1
+    move.b  #$48,D0                 ; slot 2 TL
+    bsr     ym_write1
+    move.b  #$4C,D0                 ; slot 4 TL
+    bsr     ym_write1
+
+    movem.l (SP)+,D0-D1
+    rts
+
+;----------------------------------------------------------------------
+; $4001 — Pulse 1 sweep (unused by Zelda engine — manual pitch bending)
+;----------------------------------------------------------------------
 _apu_write_4001:
+    rts
+
+;----------------------------------------------------------------------
+; $4002 — Pulse 1 period low (pitch update, no key-on)
+;----------------------------------------------------------------------
 _apu_write_4002:
+    movem.l D0-D5,-(SP)
+    move.b  D0,(APU_SH_4002).l
+
+    ; Reconstruct 11-bit period from shadow regs
+    moveq   #0,D2
+    move.b  (APU_SH_4003).l,D2
+    andi.w  #$07,D2                 ; high 3 bits
+    lsl.w   #8,D2
+    move.b  (APU_SH_4002).l,D2     ; D2.w = full 11-bit period
+
+    ; Convert to YM2612 frequency
+    move.l  #NES_YM_K5_PULSE,D3
+    bsr     nes_to_ym_freq          ; D2.b = A4 val, D3.b = A0 val
+
+    ; Write frequency to ch 0 (high byte first per YM2612 spec)
+    move.b  #$A4,D0                 ; freq high, ch 0
+    move.b  D2,D1
+    bsr     ym_write1
+    move.b  #$A0,D0                 ; freq low, ch 0
+    move.b  D3,D1
+    bsr     ym_write1
+
+    movem.l (SP)+,D0-D5
+    rts
+
+;----------------------------------------------------------------------
+; $4003 — Pulse 1 period high + length counter (triggers key-on)
+;----------------------------------------------------------------------
 _apu_write_4003:
+    movem.l D0-D5,-(SP)
+    move.b  D0,(APU_SH_4003).l
+
+    ; Check if Pulse 1 is enabled
+    btst    #0,(APU_SH_4015).l
+    beq.s   .skip_4003
+
+    ; Reconstruct period
+    moveq   #0,D2
+    move.b  (APU_SH_4003).l,D2
+    andi.w  #$07,D2
+    lsl.w   #8,D2
+    move.b  (APU_SH_4002).l,D2
+
+    ; Convert
+    move.l  #NES_YM_K5_PULSE,D3
+    bsr     nes_to_ym_freq
+
+    ; Write frequency
+    move.b  #$A4,D0
+    move.b  D2,D1
+    bsr     ym_write1
+    move.b  #$A0,D0
+    move.b  D3,D1
+    bsr     ym_write1
+
+    ; Key-on ch 0 (all operators)
+    move.b  #$28,D0
+    move.b  #$F0,D1                 ; ops 1-4 on + channel 0
+    bsr     ym_write1
+
+.skip_4003:
+    movem.l (SP)+,D0-D5
+    rts
+
+;----------------------------------------------------------------------
+; $4004 — Pulse 2 duty/volume
+; Voice $03 Algorithm 5: slots 2,3,4 are carriers; slot 1 is modulator
+;----------------------------------------------------------------------
 _apu_write_4004:
+    movem.l D0-D1,-(SP)
+    move.b  D0,(APU_SH_4004).l
+
+    move.b  D0,D1
+    andi.b  #$0F,D1
+    eori.b  #$0F,D1
+    lsl.b   #3,D1                   ; TL attenuation
+
+    ; Write TL to 3 carrier ops on ch 1 (skip slot 1 = modulator TL $19)
+    move.b  #$45,D0                 ; slot 3 TL, ch 1
+    bsr     ym_write1
+    move.b  #$49,D0                 ; slot 2 TL, ch 1
+    bsr     ym_write1
+    move.b  #$4D,D0                 ; slot 4 TL, ch 1
+    bsr     ym_write1
+
+    movem.l (SP)+,D0-D1
+    rts
+
+;----------------------------------------------------------------------
+; $4005 — Pulse 2 sweep (unused)
+;----------------------------------------------------------------------
 _apu_write_4005:
+    rts
+
+;----------------------------------------------------------------------
+; $4006 — Pulse 2 period low (pitch update, no key-on)
+;----------------------------------------------------------------------
 _apu_write_4006:
+    movem.l D0-D5,-(SP)
+    move.b  D0,(APU_SH_4006).l
+
+    moveq   #0,D2
+    move.b  (APU_SH_4007).l,D2
+    andi.w  #$07,D2
+    lsl.w   #8,D2
+    move.b  (APU_SH_4006).l,D2
+
+    move.l  #NES_YM_K5_PULSE,D3
+    bsr     nes_to_ym_freq
+
+    move.b  #$A5,D0                 ; freq high, ch 1
+    move.b  D2,D1
+    bsr     ym_write1
+    move.b  #$A1,D0                 ; freq low, ch 1
+    move.b  D3,D1
+    bsr     ym_write1
+
+    movem.l (SP)+,D0-D5
+    rts
+
+;----------------------------------------------------------------------
+; $4007 — Pulse 2 period high + key-on
+;----------------------------------------------------------------------
 _apu_write_4007:
+    movem.l D0-D5,-(SP)
+    move.b  D0,(APU_SH_4007).l
+
+    btst    #1,(APU_SH_4015).l
+    beq.s   .skip_4007
+
+    moveq   #0,D2
+    move.b  (APU_SH_4007).l,D2
+    andi.w  #$07,D2
+    lsl.w   #8,D2
+    move.b  (APU_SH_4006).l,D2
+
+    move.l  #NES_YM_K5_PULSE,D3
+    bsr     nes_to_ym_freq
+
+    move.b  #$A5,D0
+    move.b  D2,D1
+    bsr     ym_write1
+    move.b  #$A1,D0
+    move.b  D3,D1
+    bsr     ym_write1
+
+    ; Key-on ch 1
+    move.b  #$28,D0
+    move.b  #$F1,D1                 ; all ops on + channel 1
+    bsr     ym_write1
+
+.skip_4007:
+    movem.l (SP)+,D0-D5
+    rts
+
+;----------------------------------------------------------------------
+; $4008 — Triangle linear counter
+; Bits 6:0 = counter reload.  If 0, triangle is off → key-off ch 2.
+; If > 0, triangle is enabled (key-on happens in $400B).
+;----------------------------------------------------------------------
 _apu_write_4008:
+    movem.l D0-D1,-(SP)
+    move.b  D0,(APU_SH_4008).l
+
+    ; Check if triangle should be silenced
+    move.b  D0,D1
+    andi.b  #$7F,D1
+    bne.s   .tri_enabled
+
+    ; Counter reload = 0 → key-off channel 2
+    move.b  #$28,D0
+    moveq   #$02,D1                 ; key-off ch 2
+    bsr     ym_write1
+
+.tri_enabled:
+    movem.l (SP)+,D0-D1
+    rts
+
+;----------------------------------------------------------------------
+; $400A — Triangle period low (pitch update, no key-on)
+;----------------------------------------------------------------------
 _apu_write_400a:
+    movem.l D0-D5,-(SP)
+    move.b  D0,(APU_SH_400A).l
+
+    ; Only update if triangle is enabled
+    move.b  (APU_SH_4008).l,D1
+    andi.b  #$7F,D1
+    beq.s   .skip_400a
+
+    moveq   #0,D2
+    move.b  (APU_SH_400B).l,D2
+    andi.w  #$07,D2
+    lsl.w   #8,D2
+    move.b  (APU_SH_400A).l,D2
+
+    move.l  #NES_YM_K5_TRI,D3
+    bsr     nes_to_ym_freq
+
+    move.b  #$A6,D0                 ; freq high, ch 2
+    move.b  D2,D1
+    bsr     ym_write1
+    move.b  #$A2,D0                 ; freq low, ch 2
+    move.b  D3,D1
+    bsr     ym_write1
+
+.skip_400a:
+    movem.l (SP)+,D0-D5
+    rts
+
+;----------------------------------------------------------------------
+; $400B — Triangle period high + key-on
+;----------------------------------------------------------------------
 _apu_write_400b:
+    movem.l D0-D5,-(SP)
+    move.b  D0,(APU_SH_400B).l
+
+    ; Check triangle enabled AND channel enabled
+    move.b  (APU_SH_4008).l,D1
+    andi.b  #$7F,D1
+    beq.s   .skip_400b
+    btst    #2,(APU_SH_4015).l
+    beq.s   .skip_400b
+
+    ; Reconstruct period
+    moveq   #0,D2
+    move.b  (APU_SH_400B).l,D2
+    andi.w  #$07,D2
+    lsl.w   #8,D2
+    move.b  (APU_SH_400A).l,D2
+
+    move.l  #NES_YM_K5_TRI,D3
+    bsr     nes_to_ym_freq
+
+    move.b  #$A6,D0
+    move.b  D2,D1
+    bsr     ym_write1
+    move.b  #$A2,D0
+    move.b  D3,D1
+    bsr     ym_write1
+
+    ; Key-on ch 2
+    move.b  #$28,D0
+    move.b  #$F2,D1                 ; all ops on + channel 2
+    bsr     ym_write1
+
+.skip_400b:
+    movem.l (SP)+,D0-D5
+    rts
+
+;----------------------------------------------------------------------
+; $400C — Noise volume/envelope
+; Bits 3:0 = volume → PSG attenuation (15 - vol)
+;----------------------------------------------------------------------
 _apu_write_400c:
+    movem.l D0-D1,-(SP)
+    move.b  D0,(APU_SH_400C).l
+
+    move.b  D0,D1
+    andi.b  #$0F,D1                 ; NES volume 0-15
+    eori.b  #$0F,D1                 ; PSG attenuation 0-15 (inverted)
+    ori.b   #$F0,D1                 ; PSG command: ch3 attenuation
+    move.b  D1,(PSG_PORT).l
+
+    movem.l (SP)+,D0-D1
+    rts
+
+;----------------------------------------------------------------------
+; $400E — Noise mode + period
+; Bit 7: mode (0=long/white, 1=short/periodic)
+; Bits 3:0: period index (0-15) → PSG shift rate (0-2)
+;----------------------------------------------------------------------
 _apu_write_400e:
+    movem.l D0-D1,-(SP)
+    move.b  D0,(APU_SH_400E).l
+
+    ; Map NES period (0-15) to PSG shift rate (0-2)
+    move.b  D0,D1
+    andi.b  #$0F,D1
+    lsr.b   #2,D1                   ; period >> 2 → 0-3
+    cmp.b   #2,D1
+    bls.s   .rate_ok
+    moveq   #2,D1                   ; clamp (don't use "tone 3" rate)
+.rate_ok:
+    ; NES mode bit → PSG feedback bit
+    ; NES mode 0 (long) = white noise → PSG FB=1 (bit 2)
+    ; NES mode 1 (short) = periodic  → PSG FB=0
+    btst    #7,D0
+    bne.s   .periodic
+    ori.b   #$04,D1                 ; white noise feedback
+.periodic:
+    ori.b   #$E0,D1                 ; PSG noise command: %1110_0FRR
+    move.b  D1,(PSG_PORT).l
+
+    movem.l (SP)+,D0-D1
+    rts
+
+;----------------------------------------------------------------------
+; $400F — Noise length counter load (shadow only)
+;----------------------------------------------------------------------
 _apu_write_400f:
+    move.b  D0,(APU_SH_400F).l
+    rts
+
+;----------------------------------------------------------------------
+; $4010–$4013 — DMC (skip for now — Zelda barely uses DMC)
+;----------------------------------------------------------------------
 _apu_write_4010:
 _apu_write_4011:
 _apu_write_4012:
 _apu_write_4013:
-_apu_write_4015:
+    rts
+
+;----------------------------------------------------------------------
+; $4016 — Joypad strobe (handled by controller code elsewhere)
+;----------------------------------------------------------------------
 _apu_write_4016:
+    rts
+
+;----------------------------------------------------------------------
+; $4017 — Frame counter (NES engine handles timing in software)
+;----------------------------------------------------------------------
 _apu_write_4017:
     rts
 
