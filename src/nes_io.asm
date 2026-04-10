@@ -799,21 +799,9 @@ _ppu_write_7:
     bsr     _compose_bg_tile_word
     move.w  D0,(VDP_DATA).l         ; write tile word to Plane A
 
-    ; Mirror top rows 0..3 into rows 60..63 unconditionally
-    ; so the V64 dead zone always has valid content.
-    cmpi.w  #4,D4
-    bhs.s   .nt_noop
-    move.w  D4,D2
-    addi.w  #60,D2
-    mulu.w  #$0080,D2
-    add.w   D5,D2
-    addi.w  #$C000,D2
-    move.l  D2,D3
-    andi.l  #$00003FFF,D3
-    swap    D3
-    ori.l   #$40000003,D3
-    move.l  D3,(VDP_CTRL).l
-    move.w  D0,(VDP_DATA).l
+    ; V64 gap rows 60-63 are left blank (_clear_nametable_fast fills them).
+    ; Mirroring rows 0-3 here caused visible text duplication when the
+    ; display window straddled the 512→0 plane boundary.
 
 .nt_noop:
     ;======================================================================
@@ -1386,26 +1374,7 @@ _attr_write_one_tile:
     move.w  (SP)+,D0            ; restore tile word
     move.w  D0,(VDP_DATA).l     ; write to Plane A
 
-    ; Mirror top rows 0..3 into rows 60..63 unconditionally.
-    cmpi.w  #4,D3
-    bhs.s   .awt_skip
-    move.w  D0,-(SP)
-    moveq   #0,D1
-    move.w  D3,D1
-    addi.w  #60,D1
-    lsl.l   #7,D1
-    moveq   #0,D0
-    move.w  D2,D0
-    add.w   D0,D1
-    add.w   D0,D1
-    addi.w  #$C000,D1
-    move.l  D1,D0
-    andi.l  #$00003FFF,D0
-    swap    D0
-    ori.l   #$40000003,D0
-    move.l  D0,(VDP_CTRL).l
-    move.w  (SP)+,D0
-    move.w  D0,(VDP_DATA).l
+    ; V64 gap rows 60-63 left blank — see _ppu_write_7 comment.
 
 .awt_skip:
     rts
