@@ -1,12 +1,41 @@
 [1/3] Running 6502>M68K transpiler (--all --no-stubs: nes_io.asm provides I/O)...
-  Transpiling Z_00.asm -> z_00.asm  ... 1485 lines
-  Transpiling Z_01.asm -> z_01.asm  ... 7865 lines
-  Transpiling Z_02.asm -> z_02.asm  ... 5264 lines
-  Transpiling Z_03.asm -> z_03.asm  ... 352 lines
-  Transpiling Z_04.asm -> z_04.asm  ... 14793 lines
-  Transpiling Z_05.asm -> z_05.asm  ... 10079 lines
-  Transpiling Z_06.asm -> z_06.asm  ... 1119 lines
-  Transpiling Z_07.asm -> z_07.asm  ... 7825 lines
+  Transpiling Z_00.asm -> z_00.asm  ...  _patch_z00: DriveAudio -> rts (NOP)
+  _patch_common: promote 82 BSR->JSR, 0 BRA->JMP, 34 Bcc->far JMP
+ 1675 lines
+  Transpiling Z_01.asm -> z_01.asm  ...  _patch_z01 P0: DemoPatternBlockAddrs dc.b -> dc.l
+  _patch_z01 P1a: DemoPatternBlockAddrs -> 32-bit ROM addr
+  _patch_z01 P1b: removed second DemoPatternBlockAddrs read
+  _patch_z01 P2: TransferPatternBlock_Bank1 -> _transfer_chr_block_fast
+  _patch_z01 P3: CopyCommonCodeToRam -> rts (NOP)
+  _patch_common: promote 175 BSR->JSR, 0 BRA->JMP, 95 Bcc->far JMP
+ 8101 lines
+  Transpiling Z_02.asm -> z_02.asm  ...  _patch_z02 P0: CommonPatternBlockAddrs dc.b -> dc.l
+  _patch_z02 P4: TransferPatternBlock_Bank2 -> _transfer_chr_block_fast
+  _patch_z02 P5: waterfall sprite palette 0->3 (2 loops patched)
+  _patch_z02 P6: fade palette pointer -> direct M68K lea
+  _patch_z02 P7: DemoTextFields/DemoLineTextAddrs data extracted from NES ROM
+  _patch_z02 P8: story text pointer -> direct M68K addressing
+  _patch_z02 P9: add comment to StoryPaletteTransferRecord (data unchanged)
+  _patch_z02 P10: clear both NTs (V64) at story scroll init
+  _patch_common: promote 153 BSR->JSR, 0 BRA->JMP, 16 Bcc->far JMP
+ 5566 lines
+  Transpiling Z_03.asm -> z_03.asm  ...  _patch_common: promote 14 BSR->JSR, 0 BRA->JMP, 2 Bcc->far JMP
+ 351 lines
+  Transpiling Z_04.asm -> z_04.asm  ...  _patch_common: promote 480 BSR->JSR, 0 BRA->JMP, 158 Bcc->far JMP
+ 14685 lines
+  Transpiling Z_05.asm -> z_05.asm  ...  _patch_common: promote 301 BSR->JSR, 0 BRA->JMP, 143 Bcc->far JMP
+ 9982 lines
+  Transpiling Z_06.asm -> z_06.asm  ...  _patch_z06: TransferTileBuf -> _transfer_tilebuf_fast
+  _patch_z06 P2a: TransferCurTileBuf -> 32-bit lookup
+  _patch_z06 P2b: TransferBufPtrs 32-bit table added
+  _patch_z06 P3: DynTileBuf palette pre-check added
+  _patch_common: promote 10 BSR->JSR, 0 BRA->JMP, 0 Bcc->far JMP
+ 1265 lines
+  Transpiling Z_07.asm -> z_07.asm  ...  _patch_z07: ClearNameTable -> _clear_nametable_fast
+  _patch_z07 P1: added _apply_genesis_scroll after SetScroll
+  _patch_z07 P2: added _apply_genesis_scroll in EnableNMI
+  _patch_common: promote 336 BSR->JSR, 0 BRA->JMP, 137 Bcc->far JMP
+ 6999 lines
 Transpiler done.
 [2/3] Assembling...
 vasm 2.0e (c) in 2002-2026 Volker Barthelmann
@@ -16,15 +45,27 @@ vasm binary output module 2.3e (c) 2002-2025 Volker Barthelmann and Frank Wille
 
 org0001:0(acrwx1):	         256 bytes
 org0002:100(acrwx1):	         256 bytes
-org0003:200(acrwx2):	       14030 bytes
-System.Management.Automation.RemoteException
-warning 40 in line 7510 of "zelda_translated\z_07.asm": label name conflicts with mnemonic
-	included from line 350 of "genesis_shell.asm"
->Abs:
-[3/3] Fixing checksum...
-  Checksum: $AC9E
-  ROM size: 14542 bytes (14 KB)
-  Written:  C:\Users\Jake Diggity\Documents\GitHub\FINAL TRY\builds\whatif.md
+org0003:200(acrwx2):	      123208 bytes
 
-Build complete: C:\Users\Jake Diggity\Documents\GitHub\FINAL TRY\builds\whatif.md
-Listing:        C:\Users\Jake Diggity\Documents\GitHub\FINAL TRY\builds\whatif.lst
+warning 40 in line 4508 of "zelda_translated\z_01.asm": label name conflicts with mnemonic
+	included from line 489 of "genesis_shell.asm"
+>Abs:
+
+warning 51 in line 6644 of "zelda_translated\z_04.asm": instruction has been auto-aligned
+	included from line 492 of "genesis_shell.asm"
+>    lea     ($041F,A4),A0
+
+warning 51 in line 11120 of "zelda_translated\z_04.asm": instruction has been auto-aligned
+	included from line 492 of "genesis_shell.asm"
+>    lea     ($0087,A4),A0
+[3/3] Fixing checksum...
+  Checksum:  $161F
+  ROM size:  131072 bytes (128 KB)
+  ROM end:   $0001FFFF
+  Written:   C:\Users\Jake Diggity\Documents\GitHub\FINAL TRY\.claude\worktrees\magical-chatelet\builds\whatif.md
+[4/4] Archiving build...
+Archived as: Zelda27.52
+
+Build complete: C:\Users\Jake Diggity\Documents\GitHub\FINAL TRY\.claude\worktrees\magical-chatelet\builds\whatif.md
+Listing:        C:\Users\Jake Diggity\Documents\GitHub\FINAL TRY\.claude\worktrees\magical-chatelet\builds\whatif.lst
+Committed:   Zelda27.52
