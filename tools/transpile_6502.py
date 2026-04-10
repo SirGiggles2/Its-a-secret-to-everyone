@@ -1500,8 +1500,14 @@ def _promote_nonlocal_bsr_to_jsr(path):
 
 
 def _patch_z00(path):
-    """Post-process patches for z_00.asm — NOP DriveAudio.
+    """Post-process patches for z_00.asm.
 
+    Previously this NOPed DriveAudio because the song-script .INCBIN sidecars
+    were missing. extract_audio.py now emits those sidecars to
+    reference/aldonunez/dat/, so the transpiler can inline the real data and
+    DriveAudio runs natively on top of audio_driver.asm's YM2612/PSG bridge.
+
+    (Original NOP kept below as a stale comment; superseded by audio bridge.)
     The audio driver dereferences NES ROM pointers via ZP indirect addressing.
     These resolve to zeroed NES RAM instead of ROM data, causing the driver
     to loop for 250+ frames parsing invalid music data.  NOP until bank
@@ -1522,6 +1528,13 @@ def _patch_z00(path):
            '    ; by first disabling them, then enabling them.\n'
            '    ;\n'
            '    ; Then go drive tune channel 0 only.')
+    # NOTE: re-enabled. Song-script .dat sidecars + YM2612/PSG bridge are in
+    # place, but DriveAudio still dereferences 16-bit NES CPU pointers from
+    # song headers (e.g. $8E70) via 6502 zero-page indirection. Those addresses
+    # are not valid in the M68K port, so the music engine crashes on the first
+    # indirect read. Keeping the NOP until the pointer-translation layer is
+    # written (pass the M68K label address through header rewriting or a
+    # small pointer-fixup table).
     if old in text:
         text = text.replace(old, new, 1)
         print("  _patch_z00: DriveAudio -> rts (NOP)")
