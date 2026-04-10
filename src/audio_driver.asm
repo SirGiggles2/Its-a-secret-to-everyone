@@ -16,8 +16,10 @@
 ;----------------------------------------------------------------------
 ; Hardware ports
 ;----------------------------------------------------------------------
-YM_ADDR1        equ $A04000     ; YM2612 Part I address
+YM_ADDR1        equ $A04000     ; YM2612 Part I address  (ch 0-2 + global regs)
 YM_DATA1        equ $A04001     ; YM2612 Part I data
+YM_ADDR2        equ $A04002     ; YM2612 Part II address (ch 3-5 / ch 6 DAC pan)
+YM_DATA2        equ $A04003     ; YM2612 Part II data
 PSG_PORT        equ $C00011     ; SN76489 PSG data
 
 ;----------------------------------------------------------------------
@@ -77,6 +79,28 @@ ym_write1:
     nop
     nop
     move.b  D1,(YM_DATA1).l         ; write data
+    rts
+
+;==============================================================================
+; ym_write2 — Write one register to YM2612 Part II
+;
+; Used for ch 4-5 regs and ch 6 pan ($B4+2 = $B6 on Part II).  The busy flag
+; is shared across both parts so we still poll Part I.
+;
+; Input:  D0.b = register address
+;         D1.b = data value
+; Output: none
+; Preserves: all registers
+;==============================================================================
+ym_write2:
+.wait:
+    tst.b   (YM_ADDR1).l            ; busy flag is shared between parts
+    bmi.s   .wait
+    move.b  D0,(YM_ADDR2).l         ; write register address (Part II)
+    nop
+    nop
+    nop
+    move.b  D1,(YM_DATA2).l         ; write data (Part II)
     rts
 
 ;==============================================================================
@@ -171,10 +195,11 @@ audio_init:
     bsr     ym_write1               ; ch 6 off
 
     ;------------------------------------------------------------------
-    ; Disable DAC (register $2B bit 7 = 0)
+    ; ISOLATION TEST: PSG drums only.  FM emit_note_* are rts-stubbed,
+    ; DAC is explicitly off, ch 6 pan stays at power-on $00 mute.
     ;------------------------------------------------------------------
-    move.b  #$2B,D0
-    moveq   #0,D1
+    move.b  #$2B,D0                 ; DAC enable register
+    moveq   #0,D1                   ; DAC off
     bsr     ym_write1
 
     ;------------------------------------------------------------------
@@ -182,6 +207,45 @@ audio_init:
     ;------------------------------------------------------------------
     move.b  #$22,D0
     moveq   #0,D1
+    bsr     ym_write1
+
+    ;------------------------------------------------------------------
+    ; Clear SSG-EG for every operator on ch 0, 1, 2 ($90-$9E on Part I).
+    ;
+    ; The YM2612 SSG-EG register per operator has no power-on guarantee
+    ; on Genesis hardware and may hold leftover state across soft resets.
+    ; If bit 3 (SSG enable) is set, the envelope generator runs in a
+    ; sawtooth/square-like "SSG mode" that produces an audible buzz or
+    ; hiss alongside the clean FM output — we were hearing that on ch 1
+    ; (Voice $00 pad) and ch 2 (Voice $07 bass).
+    ;
+    ; Zero-ing $90+op+ch for all 4 operators on each used channel puts
+    ; every envelope generator back in standard mode.  12 writes total.
+    ;------------------------------------------------------------------
+    moveq   #0,D1                   ; data = 0 for all
+    move.b  #$90,D0                 ; slot1 ch0
+    bsr     ym_write1
+    move.b  #$91,D0                 ; slot1 ch1
+    bsr     ym_write1
+    move.b  #$92,D0                 ; slot1 ch2
+    bsr     ym_write1
+    move.b  #$94,D0                 ; slot3 ch0
+    bsr     ym_write1
+    move.b  #$95,D0                 ; slot3 ch1
+    bsr     ym_write1
+    move.b  #$96,D0                 ; slot3 ch2
+    bsr     ym_write1
+    move.b  #$98,D0                 ; slot2 ch0
+    bsr     ym_write1
+    move.b  #$99,D0                 ; slot2 ch1
+    bsr     ym_write1
+    move.b  #$9A,D0                 ; slot2 ch2
+    bsr     ym_write1
+    move.b  #$9C,D0                 ; slot4 ch0
+    bsr     ym_write1
+    move.b  #$9D,D0                 ; slot4 ch1
+    bsr     ym_write1
+    move.b  #$9E,D0                 ; slot4 ch2
     bsr     ym_write1
 
     ;------------------------------------------------------------------
@@ -246,6 +310,15 @@ audio_init:
     clr.l   (A0)+
     dbra    D0,.clr_music
 
+    ;------------------------------------------------------------------
+    ; Clear DMC state block ($FFE100, 12 bytes).  Zero dmc_active,
+    ; dmc_ptr, dmc_remain, and all shadow registers.
+    ;------------------------------------------------------------------
+    lea     (DMC_BASE).l,A0
+    clr.l   (A0)+                   ; dmc_active + padding + dmc_ptr high
+    clr.l   (A0)+                   ; dmc_ptr low + dmc_remain
+    clr.l   (A0)+                   ; rate_sel + addr_sel + len_sel + pad
+
     movem.l (SP)+,D0-D6/A0
     rts
 
@@ -282,7 +355,7 @@ PATCH_VOICE00:
     dc.b    $0E,$0E,$0E,$0E         ; AM/D1R
     dc.b    $02,$02,$02,$02         ; D2R
     dc.b    $55,$55,$55,$54         ; DL/RR
-    dc.b    $18,$18,$18,$18         ; TL (all 4 carriers attenuated ~18 dB to let PSG drums breathe)
+    dc.b    $18,$18,$18,$18         ; TL
     even
 
 ; Voice $03 — EHZ FM3 opening voice (iconic lead)
@@ -380,6 +453,22 @@ m_noise_cnt         equ MUSIC_BASE+$25
 m_noise_level       equ MUSIC_BASE+$26  ; byte: current envelope level ($00-$FF)
 m_noise_decay       equ MUSIC_BASE+$27  ; byte: current linear decay rate (per tick)
 m_last_psg_nc       equ MUSIC_BASE+$28  ; byte: last noise-control byte written
+
+;----------------------------------------------------------------------
+; DMC → YM2612 DAC state (Phase A of DMC port — see
+; C:\Users\Jake Diggity\.claude\plans\quirky-baking-goose.md).
+;
+; Lives at $FFE100, clear of the music-state block at $FFE000-$FFE03F.
+; Written by the DMC APU stubs in nes_io.asm, consumed by dmc_feed which
+; runs at the tail of music_tick and bursts PCM bytes to YM reg $2A.
+;----------------------------------------------------------------------
+DMC_BASE            equ $FFE100
+dmc_active          equ DMC_BASE+$00    ; byte: 0 = idle, 1 = playing
+dmc_ptr             equ DMC_BASE+$02    ; long: current M68K pointer into blob
+dmc_remain          equ DMC_BASE+$06    ; word: PCM bytes left in current sample
+dmc_rate_sel        equ DMC_BASE+$08    ; byte: shadow of last $4010 write
+dmc_addr_sel        equ DMC_BASE+$09    ; byte: shadow of last $4012 write
+dmc_len_sel         equ DMC_BASE+$0A    ; byte: shadow of last $4013 write
 
 ;==============================================================================
 ; music_play — request a song change
