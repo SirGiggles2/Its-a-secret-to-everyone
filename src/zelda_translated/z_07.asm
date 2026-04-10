@@ -904,6 +904,7 @@ IsrNmi:
     beq  _anon_z07_0
     eori.b #$02,D0
 _anon_z07_0:
+    clr.b   ($005C,A4)  ; PATCH P3: clear NMI NT toggle request flag
     andi.b #$7F,D0
     move.b  D0,($00FF,A4)
     andi.b #$7E,D0

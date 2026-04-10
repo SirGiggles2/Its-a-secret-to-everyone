@@ -2403,6 +2403,39 @@ def _patch_z07(path):
     else:
         print("  WARNING: _patch_z07 P2 -- EnableNMI pattern not found")
 
+    # P3: Clear SwitchNameTablesReq ($005C) immediately after IsrNmi consumes it.
+    # On NES the toggle request is implicitly one-shot (the code path that sets
+    # it runs only when a toggle is wanted).  Transpiled to M68K the flag lingers
+    # until z_06 TransferCurTileBuf finally clears it — several frames too late.
+    # Meanwhile _apply_genesis_scroll (called by P1 *inside* IsrNmi right after
+    # the PPU $2000 write) polls $005C in _ags_compute_stage to "anticipate" a
+    # toggle; because the flag is still set, it pre-toggles a second time on a
+    # $00FF value that IsrNmi just finished toggling — a double flip.  Clearing
+    # the flag right after IsrNmi XORs the PPU shadow restores one-shot NES
+    # semantics and prevents the double-toggle contamination.
+    old_isrnmi_clear = (
+        '    moveq   #0,D2\n'
+        '    move.b  ($005C,A4),D2\n'
+        '    beq  _anon_z07_0\n'
+        '    eori.b #$02,D0\n'
+        '_anon_z07_0:\n'
+        '    andi.b #$7F,D0'
+    )
+    new_isrnmi_clear = (
+        '    moveq   #0,D2\n'
+        '    move.b  ($005C,A4),D2\n'
+        '    beq  _anon_z07_0\n'
+        '    eori.b #$02,D0\n'
+        '_anon_z07_0:\n'
+        '    clr.b   ($005C,A4)  ; PATCH P3: clear NMI NT toggle request flag\n'
+        '    andi.b #$7F,D0'
+    )
+    if old_isrnmi_clear in text:
+        text = text.replace(old_isrnmi_clear, new_isrnmi_clear, 1)
+        print("  _patch_z07 P3: cleared $005C one-shot after IsrNmi consumes it")
+    else:
+        print("  WARNING: _patch_z07 P3 -- IsrNmi $005C read block not found")
+
     with open(path, 'w', encoding='utf-8') as f:
         f.write(text)
 

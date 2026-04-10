@@ -62,8 +62,6 @@ PPU_SCRL_X      equ PPU_STATE_BASE+6    ; byte: horizontal scroll value
 PPU_SCRL_Y      equ PPU_STATE_BASE+7    ; byte: vertical scroll value
 PPU_DBUF        equ PPU_STATE_BASE+8    ; byte: buffered even-addr byte
 PPU_DHALF       equ PPU_STATE_BASE+9    ; byte: 1 if even-addr byte pending
-AGS_PREDICT_NEXT equ PPU_STATE_BASE+1   ; byte: transient flag for predictive intro staging
-
 ;------------------------------------------------------------------------------
 ; MMC1 state RAM — placed at $FF0810 (immediately after 16-byte PPU block).
 ; Initialised to zero by genesis_shell before jsr IsrReset.
@@ -130,28 +128,11 @@ STAGED_EVENT_VSRAM equ PPU_STATE_BASE+$0E ; word: next-frame H-int VSRAM
 ACTIVE_BASE_VSRAM  equ CHR_STATE_BASE+$16 ; $FF0836 word: current-frame base VSRAM
 ACTIVE_EVENT_VSRAM equ CHR_STATE_BASE+$18 ; $FF0838 word: current-frame event VSRAM
 ACTIVE_HINT_CTR    equ CHR_STATE_BASE+$1A ; $FF083A byte: current-frame Reg 10 counter
-STAGED_SEGMENT     equ CHR_STATE_BASE+$1B ; $FF083B byte: next-frame story segment
-ACTIVE_SEGMENT     equ CHR_STATE_BASE+$1C ; $FF083C byte: current-frame story segment
-
 ;------------------------------------------------------------------------------
 ; Scroll composition modes shared between staged state and INTRO_SCROLL_MODE.
-; Mode 1 is gameplay sprite-0 split only; intro phase 1 uses mode 2.
 ;------------------------------------------------------------------------------
 INTRO_SCROLL_NO_SPLIT   equ 0
 INTRO_SCROLL_GAME_SPLIT equ 1
-INTRO_SCROLL_DZ_SKIP    equ 2
-
-;------------------------------------------------------------------------------
-; Story segment classifier used by _ags_compute_stage and the live hook.
-;------------------------------------------------------------------------------
-AGS_SEG_OTHER               equ 0
-AGS_SEG_STORY0_SCROLL_ON    equ 1
-AGS_SEG_STORY2_SCROLL_BODY  equ 2
-AGS_SEG_STORY2_HOLD_STOP    equ 3
-AGS_SEG_STORY2_WRAP_RELEASE equ 4
-AGS_SEG_ITEM_BODY_DIRECT    equ 5
-AGS_SEG_ITEM_BODY_WRAP      equ 6
-AGS_SEG_ITEM_TAIL_RELEASE   equ 7
 
 ;==============================================================================
 ; PPU register reads ($2000–$2007 → _ppu_read_0 … _ppu_read_7)
@@ -356,16 +337,8 @@ _ppu_write_5:
 _apply_genesis_scroll:
     movem.l D0-D4,-(SP)
     bsr     _ags_compute_stage
-    ; Story frames are owned entirely by PREARM's promoted active state. If a
-    ; later IsrNmi hook rewrites VSRAM mid-NMI, visible rows can come from two
-    ; different frame states and the full screen appears to vibrate/teleport.
-    cmpi.b  #AGS_SEG_STORY2_HOLD_STOP,D4
-    beq.s   .ags_maybe_apply
-    tst.b   D4
-    bne.s   .ags_hook_done
-.ags_maybe_apply:
-    move.w  (VDP_CTRL).l,D0            ; VDP status read
-    btst    #3,D0                      ; bit 3 = VBlank active
+    move.w  (VDP_CTRL).l,D0
+    btst    #3,D0                      ; VBlank still active?
     beq.s   .ags_hook_done
     bsr     _ags_activate_staged
     bsr     _ags_apply_active
@@ -378,296 +351,46 @@ _apply_genesis_scroll:
 ;                      composition state for one whole frame.
 ;
 ; Assumes A4 = NES RAM base ($FF0000). Writes STAGED_* only.
-; Clobbers D0-D4, leaving D4 = AGS_SEG_* for the staged story segment.
+; Clobbers D0-D4.
 ;------------------------------------------------------------------------------
 _ags_compute_stage:
-    ; --- Compute base VSRAM: vs + 8 + (nt ? 240 : 0) ---
     moveq   #0,D0
-    move.b  ($00FC,A4),D0               ; CurVScroll (0-239)
-    addi.w  #8,D0                       ; +8px overscan
-    move.b  ($00FF,A4),D1               ; CurPpuControl
-    tst.b   ($005C,A4)                  ; SwitchNameTablesReq pending?
-    beq.s   .agc_no_pending
-    eori.b  #$02,D1                     ; pre-toggle NT select bit
-.agc_no_pending:
-    btst    #1,D1                       ; nametable Y select?
-    beq.s   .agc_no_nt_offset
-    addi.w  #240,D0                     ; NT1: +240
-.agc_no_nt_offset:
-    ; D0 = raw base VSRAM (8-487)
-    move.w  D0,D2                       ; D2 = current raw base before prediction
+    move.b  ($00FC,A4),D0              ; CurVScroll
+    addi.w  #8,D0                      ; overscan
 
-    ; Story segment classifier. Story frames are staged for PREARM ownership;
-    ; gameplay and everything else stay on the old live-apply path.
-    moveq   #AGS_SEG_OTHER,D4
-    tst.b   ($0012,A4)                  ; gameMode == 0?
-    bne.s   .agc_have_segment
-    cmpi.b  #$01,($042C,A4)             ; phase == 1?
-    bne.s   .agc_have_segment
-    move.b  ($042D,A4),D4               ; subphase
-    beq.s   .agc_seg_story0
-    cmpi.b  #$02,D4
-    bne.s   .agc_seg_other
-    cmpi.b  #$05,($042E,A4)             ; item-roll pages start at text index 5
-    bcc.s   .agc_seg_item
-    moveq   #AGS_SEG_STORY2_SCROLL_BODY,D4
-    cmpi.b  #$E0,($00FC,A4)             ; first full-screen E0 frame predicts
-    bne.s   .agc_story2_hold_ctrl       ; the next frame's pause/hold state
-    move.b  (PPU_SCRL_Y).l,D3
-    cmp.b   ($00FC,A4),D3
-    bne.s   .agc_seg_story2_hold
-.agc_story2_hold_ctrl:
-    btst    #7,($00FF,A4)               ; transient hold frame clears NMI bit
-    bne.s   .agc_have_segment
- .agc_seg_story2_hold:
-    moveq   #AGS_SEG_STORY2_HOLD_STOP,D4
-    bra.s   .agc_have_segment
-.agc_seg_item:
-    moveq   #AGS_SEG_ITEM_BODY_DIRECT,D4
-    tst.b   ($005C,A4)                  ; wrapped item-roll seam pending?
-    beq.s   .agc_have_segment
-    tst.b   ($00FC,A4)                  ; only classify the seam at curV == 0
-    bne.s   .agc_have_segment
-    cmpi.b  #$0B,($042E,A4)             ; final item page uses a distinct tail release
-    bcs.s   .agc_seg_item_wrap
-    moveq   #AGS_SEG_ITEM_TAIL_RELEASE,D4
-    bra.s   .agc_have_segment
-.agc_seg_item_wrap:
-    moveq   #AGS_SEG_ITEM_BODY_WRAP,D4
-    bra.s   .agc_have_segment
-.agc_seg_story0:
-    moveq   #AGS_SEG_STORY0_SCROLL_ON,D4
-    bra.s   .agc_have_segment
-.agc_seg_other:
-    moveq   #AGS_SEG_OTHER,D4
-.agc_have_segment:
-    move.b  D4,(STAGED_SEGMENT).l
-
-    ; Phase-1/subphase-2 body frames (story tail + attract item roll) do not
-    ; want the freshly-updated CurVScroll as their visible source. The NES-like
-    ; cadence in these long direct-scroll windows comes from the current frame's
-    ; visible scroll shadow ($2005 Y / PPU_SCRL_Y), which lags CurVScroll by one
-    ; half-step. Using CurVScroll here advances the whole picture on the wrong
-    ; half of the two-frame cadence and makes the item/text roll jump.
-    cmpi.b  #AGS_SEG_STORY2_SCROLL_BODY,D4
-    beq.s   .agc_phase12_body_base
-    cmpi.b  #AGS_SEG_ITEM_BODY_DIRECT,D4
-    beq.s   .agc_phase12_body_base
-    cmpi.b  #AGS_SEG_ITEM_BODY_WRAP,D4
-    beq.s   .agc_phase12_body_base
-    cmpi.b  #AGS_SEG_ITEM_TAIL_RELEASE,D4
-    beq.s   .agc_item_tail_base
-    bne.s   .agc_story0_base_setup
-.agc_phase12_body_base:
-    moveq   #0,D0
-    move.b  (PPU_SCRL_Y).l,D0
-    addi.w  #8,D0
     move.b  ($00FF,A4),D1
     tst.b   ($005C,A4)
-    beq.s   .agc_story2_no_pending
+    beq.s   .no_toggle
     eori.b  #$02,D1
-.agc_story2_no_pending:
+.no_toggle:
     btst    #1,D1
-    beq.s   .agc_story2_base_ready
+    beq.s   .no_nt
     addi.w  #240,D0
-.agc_story2_base_ready:
-    move.w  D0,D2
-    bra.s   .agc_story0_base_setup
-
-.agc_item_tail_base:
-    moveq   #0,D0
-    move.b  ($00FC,A4),D0
-    addi.w  #8,D0
-    move.b  ($00FF,A4),D1
-    tst.b   ($005C,A4)
-    beq.s   .agc_item_tail_no_pending
-    eori.b  #$02,D1
-.agc_item_tail_no_pending:
-    btst    #1,D1
-    beq.s   .agc_item_tail_base_ready
-    addi.w  #240,D0
-.agc_item_tail_base_ready:
-    move.w  D0,D2
-
- .agc_story0_base_setup:
-    ; Scroll-on frames need two distinct formulas:
-    ;   before the page fills the screen, follow the prebuilt V64 page using
-    ;   the visible PPU scroll shadow
-    ;   after the page has wrapped once, follow CurVScroll directly so the
-    ;   fully-visible story keeps the NES move/hold cadence instead of
-    ;   jumping when the NES nametable bit flips
-    cmpi.b  #AGS_SEG_STORY0_SCROLL_ON,D4
-    bne.s   .agc_story0_base_done
-    moveq   #0,D0
-    tst.b   ($0415,A4)                   ; DemoNTWraps == 0 until the story
-    bne.s   .agc_story0_post_top         ; first reaches the top of the screen
-    move.b  (PPU_SCRL_Y).l,D0            ; visible scroll shadow for the
-                                         ; prebuilt story page
-    addi.w  #40,D0                       ; overscan + V64 dead-zone
-    addi.w  #240,D0                      ; story page starts in the upper half
-    bra.s   .agc_story0_have_base_src
-.agc_story0_post_top:
-    move.b  ($00FC,A4),D0                ; once fully on-screen, CurVScroll
-    addi.w  #7,D0                        ; gives the NES-consistent cadence
-.agc_story0_have_base_src:
-    move.w  D0,D2
-.agc_story0_base_done:
-
-    ; _ags_flush stages the NEXT intro frame before that frame's NMI runs.
-    ; During phase 1, UpdateMode advances the demo/item scroll every other
-    ; frame after FrameCounter increments inside IsrNmi. We only need to
-    ; predict that next tick while approaching the seam/hold logic; predicting
-    ; ordinary direct-scroll frames makes the item roll move one frame earlier
-    ; than the NES and causes the text/items to "jump" on the wrong half of
-    ; the two-frame cadence.
-    cmpi.b  #AGS_SEG_OTHER,D4
-    beq.s   .agc_have_prediction
-    cmpi.b  #AGS_SEG_STORY0_SCROLL_ON,D4
-    beq.s   .agc_have_prediction         ; story0 already stages the visible
-                                         ; frame; predicting it causes the
-                                         ; top-hit teleport cadence
-    tst.b   (AGS_PREDICT_NEXT).l
-    beq.s   .agc_have_prediction
-    cmpi.b  #AGS_SEG_STORY2_SCROLL_BODY,D4
-    beq.s   .agc_body_predict_parity
-    cmpi.b  #AGS_SEG_ITEM_BODY_DIRECT,D4
-    beq.s   .agc_body_predict_parity
-    cmpi.b  #AGS_SEG_ITEM_BODY_WRAP,D4
-    beq.s   .agc_item_wrap_predict
-    cmpi.b  #AGS_SEG_ITEM_TAIL_RELEASE,D4
-    beq.s   .agc_have_prediction        ; tail release shows the new-page
-                                        ; curV=0 frame before ordinary body
-                                        ; cadence resumes on the next frame
-    bne.s   .agc_default_predict
-.agc_item_wrap_predict:
-    move.w  #$00F8,D0                   ; first wrapped item-body frame = old-page tail
-    bra.s   .agc_have_prediction
-.agc_body_predict_parity:
-    btst    #0,($0015,A4)               ; body cadence: odd frame -> next frame
-    beq.s   .agc_have_prediction        ; advances one visible tick
-    bra.s   .agc_do_predict
-.agc_default_predict:
-    btst    #0,($0015,A4)               ; FrameCounter odd?
-    bne.s   .agc_have_prediction        ; odd => next frame keeps same scroll
-.agc_do_predict:
-    addq.w  #1,D0                       ; predict one visible scroll tick
-.agc_have_prediction:
-    move.w  D0,D3                       ; D3 = predicted raw base before wrap
-
-    ; Story scroll-on uses the full 0..511 V64 range. Do not collapse the
-    ; final dead-zone rows into 0..31 until the seam is actually crossed.
-    cmpi.b  #AGS_SEG_STORY0_SCROLL_ON,D4
-    bne.s   .agc_case3_collapse
-    cmpi.w  #512,D0
-    blo.s   .agc_story0_have_base
-    subi.w  #512,D0
-.agc_story0_have_base:
-    move.b  #INTRO_SCROLL_NO_SPLIT,(STAGED_SCROLL_MODE).l
-    move.w  D0,(STAGED_BASE_VSRAM).l
-    clr.b   (STAGED_HINT_CTR).l
-    move.w  D0,(STAGED_EVENT_VSRAM).l
-    rts
-
-    ; --- Case 3 collapse: raw VSRAM >= 480 → wrap to top of the 480px map ---
-.agc_case3_collapse:
+.no_nt:
+    ; Wrap at 480 (NOT 512): plane rows 60-63 (VSRAM 480-511) are the
+    ; V64 blank dead zone — no tile content lives there.  The NES scroll
+    ; model wraps at 480 (two 240-row NTs), so end-of-NT_B (VSRAM 479)
+    ; must fold directly to start-of-NT_A (VSRAM 0).  Letting VSRAM climb
+    ; into 480-511 puts a blank strip at the top of the screen until the
+    ; next NT toggle triggers a visible teleport.
     cmpi.w  #480,D0
-    blt.s   .agc_have_base
+    blo.s   .no_wrap
     subi.w  #480,D0
-.agc_have_base:
-    ; D0 = effective base VSRAM (0..479)
+.no_wrap:
 
-    ; --- Default staged state: direct scroll, no H-int event ---
-    move.b  #INTRO_SCROLL_NO_SPLIT,(STAGED_SCROLL_MODE).l
     move.w  D0,(STAGED_BASE_VSRAM).l
-    clr.b   (STAGED_HINT_CTR).l
     move.w  D0,(STAGED_EVENT_VSRAM).l
 
-    ; Gameplay sprite-0 split: pin the top band at VSRAM=0, then switch to
-    ; the real base at scanline 40.
-    tst.b   ($00E3,A4)                  ; IsSprite0CheckActive
-    bne     .agc_stage_game_split
-
-    ; Transient full-screen hold frame: preserve the already-promoted active
-    ; base for this frame and keep H-int disabled.
-    cmpi.b  #AGS_SEG_STORY2_HOLD_STOP,D4
-    bne.s   .agc_story_phase2
-    move.w  (ACTIVE_EVENT_VSRAM).l,D1
-    move.w  D1,(STAGED_BASE_VSRAM).l
-    clr.b   (STAGED_HINT_CTR).l
-    move.w  D1,(STAGED_EVENT_VSRAM).l
-    rts
-
-.agc_story_phase2:
-    ; Intro phase 1 story scroll is treated as an explicit composition state
-    ; machine:
-    ;   direct scroll      -> story not intersecting the V64 dead-zone
-    ;   enter/full wrap    -> split from wrapped base to wrapped base+32
-    ;   exit wrap          -> one release frame from $01FF -> $0000
-    ;   offscreen finish   -> pure direct scroll after the release frame
-    cmpi.b  #AGS_SEG_STORY2_SCROLL_BODY,D4
-    beq.s   .agc_story_phase2_active
-    cmpi.b  #AGS_SEG_STORY2_WRAP_RELEASE,D4
-    beq.s   .agc_story_phase2_active
-    ; Item scroll segments need the same DZ_SKIP when their VSRAM enters the
-    ; dead-zone range.  Without this, curV $E0-$E7 on NT1 shows 32 garbage
-    ; rows mid-screen where the NES wraps cleanly.
-    cmpi.b  #AGS_SEG_ITEM_BODY_DIRECT,D4
-    beq.s   .agc_item_dz_check
-    bra     .agc_done
-.agc_item_dz_check:
-    ; Item body direct: apply DZ_SKIP when predicted raw VSRAM (D3) would
-    ; cross the dead zone.  At D3>=480 the collapse to 0 is already correct
-    ; (the +8 overscan hides the remaining NT1 rows).  At D3<257 the display
-    ; bottom stays inside the valid V64 area, so no split needed.
-    cmpi.w  #257,D3
-    blo     .agc_done
-    cmpi.w  #472,D3
-    bhs     .agc_done                      ; collapsed frames ok as-is
-    bra.s   .agc_story_enter_wrap          ; shared DZ_SKIP entry
-.agc_story_phase2_active:
-    cmpi.w  #257,D3
-    blo     .agc_done                      ; story_full_scroll / offscreen_finish
-    cmpi.w  #472,D3
-    bhi     .agc_done                      ; wrapped direct scroll after release
-    move.b  ($00FC,A4),D1
-    cmpi.b  #$E8,D1
-    bne.s   .agc_story_phase2_seam_checks
-    cmp.b   (PPU_SCRL_Y).l,D1
-    bne     .agc_done                      ; first E8 frame: next frame is
-                                          ; plain direct-scroll $0000
-.agc_story_phase2_seam_checks:
-    cmpi.w  #472,D3
-    beq.s   .agc_story_seam_frame          ; first seam frame: predicted next scroll lands on seam
-.agc_story_enter_wrap:
-    move.b  #INTRO_SCROLL_DZ_SKIP,(STAGED_SCROLL_MODE).l
-    move.w  (STAGED_BASE_VSRAM).l,D1
-    addi.w  #32,D1
-    move.w  D1,(STAGED_EVENT_VSRAM).l
-    move.w  #472,D1
-    sub.w   D3,D1
-    subq.w  #1,D1
-    move.b  D1,(STAGED_HINT_CTR).l
-    rts
-
-.agc_story_seam_frame:
-    move.b  #AGS_SEG_STORY2_WRAP_RELEASE,(STAGED_SEGMENT).l
-    moveq   #AGS_SEG_STORY2_WRAP_RELEASE,D4
-    ; Predicted seam frame: let the new top-of-page content appear immediately
-    ; in the top band, but keep the old wrapped seam in the lower band until
-    ; visible row 24. This matches the NES's last seam transition much more
-    ; closely than "top old / bottom new".
-    move.b  #INTRO_SCROLL_DZ_SKIP,(STAGED_SCROLL_MODE).l
-    clr.w   (STAGED_BASE_VSRAM).l
-    move.w  #$01FF,(STAGED_EVENT_VSRAM).l
-    move.b  #23,(STAGED_HINT_CTR).l        ; release lower band at visible row 24
-    rts
-
-.agc_stage_game_split:
+    tst.b   ($00E3,A4)
+    beq.s   .no_split
     move.b  #INTRO_SCROLL_GAME_SPLIT,(STAGED_SCROLL_MODE).l
     clr.w   (STAGED_BASE_VSRAM).l
     move.b  #39,(STAGED_HINT_CTR).l
     move.w  D0,(STAGED_EVENT_VSRAM).l
-.agc_done:
+    rts
+.no_split:
+    move.b  #INTRO_SCROLL_NO_SPLIT,(STAGED_SCROLL_MODE).l
+    clr.b   (STAGED_HINT_CTR).l
     rts
 
 ;------------------------------------------------------------------------------
@@ -681,9 +404,7 @@ _ags_compute_stage:
 ;------------------------------------------------------------------------------
 _ags_flush:
     movem.l D0-D4,-(SP)
-    move.b  #1,(AGS_PREDICT_NEXT).l
     bsr     _ags_compute_stage
-    clr.b   (AGS_PREDICT_NEXT).l
 
 .ags_hscroll:
     ; --- H-scroll (Plane A H-scroll table entry 0) ---
@@ -730,7 +451,6 @@ _ags_activate_staged:
     move.w  (STAGED_BASE_VSRAM).l,(ACTIVE_BASE_VSRAM).l
     move.w  (STAGED_EVENT_VSRAM).l,(ACTIVE_EVENT_VSRAM).l
     move.b  (STAGED_HINT_CTR).l,(ACTIVE_HINT_CTR).l
-    move.b  (STAGED_SEGMENT).l,(ACTIVE_SEGMENT).l
     cmpi.b  #INTRO_SCROLL_NO_SPLIT,D0
     beq.s   .aas_no_split
     move.b  #1,(HINT_PEND_SPLIT).l
@@ -1085,21 +805,9 @@ _ppu_write_7:
     bsr     _compose_bg_tile_word
     move.w  D0,(VDP_DATA).l         ; write tile word to Plane A
 
-    ; Mirror top rows 0..3 into rows 60..63 unconditionally
-    ; so the V64 dead zone always has valid content.
-    cmpi.w  #4,D4
-    bhs.s   .nt_noop
-    move.w  D4,D2
-    addi.w  #60,D2
-    mulu.w  #$0080,D2
-    add.w   D5,D2
-    addi.w  #$C000,D2
-    move.l  D2,D3
-    andi.l  #$00003FFF,D3
-    swap    D3
-    ori.l   #$40000003,D3
-    move.l  D3,(VDP_CTRL).l
-    move.w  D0,(VDP_DATA).l
+    ; V64 gap rows 60-63 are left blank (_clear_nametable_fast fills them).
+    ; Mirroring rows 0-3 here caused visible text duplication when the
+    ; display window straddled the 512→0 plane boundary.
 
 .nt_noop:
     ;======================================================================
@@ -1672,26 +1380,7 @@ _attr_write_one_tile:
     move.w  (SP)+,D0            ; restore tile word
     move.w  D0,(VDP_DATA).l     ; write to Plane A
 
-    ; Mirror top rows 0..3 into rows 60..63 unconditionally.
-    cmpi.w  #4,D3
-    bhs.s   .awt_skip
-    move.w  D0,-(SP)
-    moveq   #0,D1
-    move.w  D3,D1
-    addi.w  #60,D1
-    lsl.l   #7,D1
-    moveq   #0,D0
-    move.w  D2,D0
-    add.w   D0,D1
-    add.w   D0,D1
-    addi.w  #$C000,D1
-    move.l  D1,D0
-    andi.l  #$00003FFF,D0
-    swap    D0
-    ori.l   #$40000003,D0
-    move.l  D0,(VDP_CTRL).l
-    move.w  (SP)+,D0
-    move.w  D0,(VDP_DATA).l
+    ; V64 gap rows 60-63 left blank — see _ppu_write_7 comment.
 
 .awt_skip:
     rts
@@ -1924,6 +1613,20 @@ _oam_dma:
     lea     (NES_RAM_BASE+$0200).l,A0  ; A0 → NES OAM buffer ($FF0200)
     moveq   #63,D7                     ; loop: 64 sprites (dbra counts 63→0)
     moveq   #0,D6                      ; D6 = current sprite index (0..63)
+    ; V64 gap compensation: when the display wraps through the 32px gap
+    ; at pixels 480-511, BG content below the gap is shifted 32px down.
+    ; Compute the Genesis Y threshold: sprites at or below this line need
+    ; +32 to match their shifted BG text.  Store in D6 upper word (0=no gap).
+    move.w  (ACTIVE_EVENT_VSRAM).l,D5
+    addi.w  #224,D5
+    cmpi.w  #512,D5
+    bls.s   .oam_no_gap_setup          ; display doesn't wrap through gap
+    move.w  #608,D5                    ; 608 = 480 (gap start) + 128 (Y origin)
+    sub.w   (ACTIVE_EVENT_VSRAM).l,D5  ; D5 = gap threshold in Genesis Y
+    swap    D6
+    move.w  D5,D6
+    swap    D6
+.oam_no_gap_setup:
 
 .oam_loop:
     ; ── Read 4 NES OAM bytes ──────────────────────────────────────────────
@@ -1944,23 +1647,39 @@ _oam_dma:
     move.w  D0,D4
     addi.w  #129,D4
     tst.b   ($0012,A4)
-    bne.s   .oam_write_y
+    bne.s   .oam_gap_check
     ; Preserve top-edge visibility for attract sprites that are just entering
     ; from the top. The global attract-mode lift would otherwise clip NES
     ; OAM Y=0..7 sprites entirely one frame too early.
     cmpi.b  #8,D0
-    bcs.s   .oam_write_y
-    ; Attract/story gameMode 0 uses an 8px sprite lift in most scenes, but the
-    ; post-story item roll needs NES-accurate top-edge positioning so the first
-    ; row of item sprites remains visible as it crosses the top boundary.
-    cmpi.b  #$01,($042C,A4)
-    bne.s   .oam_apply_attract_bias
-    cmpi.b  #$02,($042D,A4)
-    bne.s   .oam_apply_attract_bias
-    cmpi.b  #$05,($042E,A4)
-    bcc.s   .oam_write_y
+    bcs.s   .oam_gap_check
+    ; Attract/story gameMode 0 uses an 8px sprite lift to match the +8 overscan
+    ; bias in _ags_compute_stage.  Applied uniformly — no textIdx threshold —
+    ; so sprites don't jump at page transitions.  Top-edge sprites (Y<8) are
+    ; already handled by the check above.
 .oam_apply_attract_bias:
     subi.w  #8,D4
+.oam_gap_check:
+    swap    D6                      ; access gap threshold from upper word
+    tst.w   D6
+    beq.s   .oam_gap_done           ; 0 = no gap visible
+    ; Gradual ramp: offset = clamp(sprite_Y - gap_top + 1, 0, 32).
+    ; Sprites well above the gap get 0 (untouched); sprites crossing the gap
+    ; boundary ramp in at 1px/frame up to a max +32 shift to match the shifted
+    ; BG below the V64 dead zone.  Avoids the single-frame 32px teleport that
+    ; occurred with a hard threshold.  D0 is scratch here — it's reloaded at
+    ; the top of the next .oam_loop iteration.
+    move.w  D4,D0                   ; D0 = adjusted sprite Y
+    sub.w   D6,D0                   ; D0 = Y - gap_top
+    addq.w  #1,D0                   ; D0 = Y - gap_top + 1
+    ble.s   .oam_gap_done           ; <= 0: sprite above gap, no offset
+    cmpi.w  #32,D0
+    bls.s   .oam_gap_apply
+    moveq   #32,D0                  ; cap ramp at full 32px shift
+.oam_gap_apply:
+    add.w   D0,D4                   ; apply gradual offset
+.oam_gap_done:
+    swap    D6                      ; restore sprite index in low word
 .oam_write_y:
     move.w  D4,(VDP_DATA).l
 

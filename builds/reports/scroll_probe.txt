@@ -1,0 +1,490 @@
+=== Scroll Probe ===
+Waiting for subphase transition to $02 (item roll)...
+
+Frame   sub    curV     scrlY    ntTog   ctrl    ntBit   wraps   vsram(curV)    vsram(scrlY)  
+--------------------------------------------------------------------------------------------------------------
+F00030  sub=00  curV=  0  scrlY=  0  ntTog=0  ctrl=30  ntBit=0  wraps=0  vsram(curV)=  8  vsram(scrlY)=  8
+F00060  sub=00  curV=  0  scrlY=  0  ntTog=0  ctrl=30  ntBit=0  wraps=0  vsram(curV)=  8  vsram(scrlY)=  8
+
+>>> SUBPHASE TRANSITION TO $02 at frame 77 <<<
+
+F00077  sub=02  curV=  0  scrlY=  0  ntTog=0  ctrl=B0  ntBit=0  wraps=0  vsram(curV)=  8  vsram(scrlY)=  8
+F00078  sub=00  curV=  0  scrlY=  0  ntTog=0  ctrl=B0  ntBit=0  wraps=0  vsram(curV)=  8  vsram(scrlY)=  8
+F00078  sub=00  curV=  0  scrlY=  0  ntTog=0  ctrl=B0  ntBit=0  wraps=0  vsram(curV)=  8  vsram(scrlY)=  8
+
+>>> Subphase left $02 at frame 78 <<<
+F00079  sub=00  curV=  0  scrlY=  0  ntTog=0  ctrl=30  ntBit=0  wraps=0  vsram(curV)=  8  vsram(scrlY)=  8
+F00079  sub=00  curV=  0  scrlY=  0  ntTog=0  ctrl=30  ntBit=0  wraps=0  vsram(curV)=  8  vsram(scrlY)=  8
+
+>>> Subphase left $02 at frame 79 <<<
+F00080  sub=00  curV=  0  scrlY=  0  ntTog=0  ctrl=30  ntBit=0  wraps=0  vsram(curV)=  8  vsram(scrlY)=  8
+F00080  sub=00  curV=  0  scrlY=  0  ntTog=0  ctrl=30  ntBit=0  wraps=0  vsram(curV)=  8  vsram(scrlY)=  8
+
+>>> Subphase left $02 at frame 80 <<<
+F00081  sub=00  curV=  0  scrlY=  0  ntTog=0  ctrl=30  ntBit=0  wraps=0  vsram(curV)=  8  vsram(scrlY)=  8
+F00081  sub=00  curV=  0  scrlY=  0  ntTog=0  ctrl=30  ntBit=0  wraps=0  vsram(curV)=  8  vsram(scrlY)=  8
+
+>>> Subphase left $02 at frame 81 <<<
+F00082  sub=00  curV=  0  scrlY=  0  ntTog=0  ctrl=30  ntBit=0  wraps=0  vsram(curV)=  8  vsram(scrlY)=  8
+F00082  sub=00  curV=  0  scrlY=  0  ntTog=0  ctrl=30  ntBit=0  wraps=0  vsram(curV)=  8  vsram(scrlY)=  8
+
+>>> Subphase left $02 at frame 82 <<<
+F00083  sub=00  curV=  0  scrlY=  0  ntTog=0  ctrl=30  ntBit=0  wraps=0  vsram(curV)=  8  vsram(scrlY)=  8
+F00083  sub=00  curV=  0  scrlY=  0  ntTog=0  ctrl=30  ntBit=0  wraps=0  vsram(curV)=  8  vsram(scrlY)=  8
+
+>>> Subphase left $02 at frame 83 <<<
+F00084  sub=00  curV=  0  scrlY=  0  ntTog=0  ctrl=30  ntBit=0  wraps=0  vsram(curV)=  8  vsram(scrlY)=  8
+F00084  sub=00  curV=  0  scrlY=  0  ntTog=0  ctrl=30  ntBit=0  wraps=0  vsram(curV)=  8  vsram(scrlY)=  8
+
+>>> Subphase left $02 at frame 84 <<<
+F00085  sub=00  curV=  0  scrlY=  0  ntTog=0  ctrl=30  ntBit=0  wraps=0  vsram(curV)=  8  vsram(scrlY)=  8
+F00085  sub=00  curV=  0  scrlY=  0  ntTog=0  ctrl=30  ntBit=0  wraps=0  vsram(curV)=  8  vsram(scrlY)=  8
+
+>>> Subphase left $02 at frame 85 <<<
+F00086  sub=00  curV=  0  scrlY=  0  ntTog=0  ctrl=B0  ntBit=0  wraps=0  vsram(curV)=  8  vsram(scrlY)=  8
+F00086  sub=00  curV=  0  scrlY=  0  ntTog=0  ctrl=B0  ntBit=0  wraps=0  vsram(curV)=  8  vsram(scrlY)=  8
+
+>>> Subphase left $02 at frame 86 <<<
+F00087  sub=00  curV=  0  scrlY=  0  ntTog=0  ctrl=B0  ntBit=0  wraps=0  vsram(curV)=  8  vsram(scrlY)=  8
+F00087  sub=00  curV=  0  scrlY=  0  ntTog=0  ctrl=B0  ntBit=0  wraps=0  vsram(curV)=  8  vsram(scrlY)=  8
+
+>>> Subphase left $02 at frame 87 <<<
+F00088  sub=00  curV=  0  scrlY=  0  ntTog=0  ctrl=B0  ntBit=0  wraps=0  vsram(curV)=  8  vsram(scrlY)=  8
+F00088  sub=00  curV=  0  scrlY=  0  ntTog=0  ctrl=B0  ntBit=0  wraps=0  vsram(curV)=  8  vsram(scrlY)=  8
+
+>>> Subphase left $02 at frame 88 <<<
+F00089  sub=00  curV=  0  scrlY=  0  ntTog=0  ctrl=B0  ntBit=0  wraps=0  vsram(curV)=  8  vsram(scrlY)=  8
+F00089  sub=00  curV=  0  scrlY=  0  ntTog=0  ctrl=B0  ntBit=0  wraps=0  vsram(curV)=  8  vsram(scrlY)=  8
+
+>>> Subphase left $02 at frame 89 <<<
+F00090  sub=00  curV=  0  scrlY=  0  ntTog=0  ctrl=B0  ntBit=0  wraps=0  vsram(curV)=  8  vsram(scrlY)=  8
+F00090  sub=00  curV=  0  scrlY=  0  ntTog=0  ctrl=B0  ntBit=0  wraps=0  vsram(curV)=  8  vsram(scrlY)=  8
+F00090  sub=00  curV=  0  scrlY=  0  ntTog=0  ctrl=B0  ntBit=0  wraps=0  vsram(curV)=  8  vsram(scrlY)=  8
+
+>>> Subphase left $02 at frame 90 <<<
+F00091  sub=00  curV=  0  scrlY=  0  ntTog=0  ctrl=B0  ntBit=0  wraps=0  vsram(curV)=  8  vsram(scrlY)=  8
+F00091  sub=00  curV=  0  scrlY=  0  ntTog=0  ctrl=B0  ntBit=0  wraps=0  vsram(curV)=  8  vsram(scrlY)=  8
+
+>>> Subphase left $02 at frame 91 <<<
+F00092  sub=00  curV=  0  scrlY=  0  ntTog=0  ctrl=B0  ntBit=0  wraps=0  vsram(curV)=  8  vsram(scrlY)=  8
+F00092  sub=00  curV=  0  scrlY=  0  ntTog=0  ctrl=B0  ntBit=0  wraps=0  vsram(curV)=  8  vsram(scrlY)=  8
+
+>>> Subphase left $02 at frame 92 <<<
+F00093  sub=00  curV=  0  scrlY=  0  ntTog=0  ctrl=B0  ntBit=0  wraps=0  vsram(curV)=  8  vsram(scrlY)=  8
+F00093  sub=00  curV=  0  scrlY=  0  ntTog=0  ctrl=B0  ntBit=0  wraps=0  vsram(curV)=  8  vsram(scrlY)=  8
+
+>>> Subphase left $02 at frame 93 <<<
+F00094  sub=00  curV=  0  scrlY=  0  ntTog=0  ctrl=B0  ntBit=0  wraps=0  vsram(curV)=  8  vsram(scrlY)=  8
+F00094  sub=00  curV=  0  scrlY=  0  ntTog=0  ctrl=B0  ntBit=0  wraps=0  vsram(curV)=  8  vsram(scrlY)=  8
+
+>>> Subphase left $02 at frame 94 <<<
+F00095  sub=00  curV=  0  scrlY=  0  ntTog=0  ctrl=B0  ntBit=0  wraps=0  vsram(curV)=  8  vsram(scrlY)=  8
+F00095  sub=00  curV=  0  scrlY=  0  ntTog=0  ctrl=B0  ntBit=0  wraps=0  vsram(curV)=  8  vsram(scrlY)=  8
+
+>>> Subphase left $02 at frame 95 <<<
+F00096  sub=00  curV=  0  scrlY=  0  ntTog=0  ctrl=B0  ntBit=0  wraps=0  vsram(curV)=  8  vsram(scrlY)=  8
+F00096  sub=00  curV=  0  scrlY=  0  ntTog=0  ctrl=B0  ntBit=0  wraps=0  vsram(curV)=  8  vsram(scrlY)=  8
+
+>>> Subphase left $02 at frame 96 <<<
+F00097  sub=00  curV=  0  scrlY=  0  ntTog=0  ctrl=B0  ntBit=0  wraps=0  vsram(curV)=  8  vsram(scrlY)=  8
+F00097  sub=00  curV=  0  scrlY=  0  ntTog=0  ctrl=B0  ntBit=0  wraps=0  vsram(curV)=  8  vsram(scrlY)=  8
+
+>>> Subphase left $02 at frame 97 <<<
+F00098  sub=00  curV=  0  scrlY=  0  ntTog=0  ctrl=B0  ntBit=0  wraps=0  vsram(curV)=  8  vsram(scrlY)=  8
+F00098  sub=00  curV=  0  scrlY=  0  ntTog=0  ctrl=B0  ntBit=0  wraps=0  vsram(curV)=  8  vsram(scrlY)=  8
+
+>>> Subphase left $02 at frame 98 <<<
+F00099  sub=00  curV=  0  scrlY=  0  ntTog=0  ctrl=B0  ntBit=0  wraps=0  vsram(curV)=  8  vsram(scrlY)=  8
+F00099  sub=00  curV=  0  scrlY=  0  ntTog=0  ctrl=B0  ntBit=0  wraps=0  vsram(curV)=  8  vsram(scrlY)=  8
+
+>>> Subphase left $02 at frame 99 <<<
+F00100  sub=00  curV=  0  scrlY=  0  ntTog=0  ctrl=B0  ntBit=0  wraps=0  vsram(curV)=  8  vsram(scrlY)=  8
+F00100  sub=00  curV=  0  scrlY=  0  ntTog=0  ctrl=B0  ntBit=0  wraps=0  vsram(curV)=  8  vsram(scrlY)=  8
+
+>>> Subphase left $02 at frame 100 <<<
+F00101  sub=00  curV=  0  scrlY=  0  ntTog=0  ctrl=B0  ntBit=0  wraps=0  vsram(curV)=  8  vsram(scrlY)=  8
+F00101  sub=00  curV=  0  scrlY=  0  ntTog=0  ctrl=B0  ntBit=0  wraps=0  vsram(curV)=  8  vsram(scrlY)=  8
+
+>>> Subphase left $02 at frame 101 <<<
+F00102  sub=00  curV=  0  scrlY=  0  ntTog=0  ctrl=B0  ntBit=0  wraps=0  vsram(curV)=  8  vsram(scrlY)=  8
+F00102  sub=00  curV=  0  scrlY=  0  ntTog=0  ctrl=B0  ntBit=0  wraps=0  vsram(curV)=  8  vsram(scrlY)=  8
+
+>>> Subphase left $02 at frame 102 <<<
+F00103  sub=00  curV=  0  scrlY=  0  ntTog=0  ctrl=B0  ntBit=0  wraps=0  vsram(curV)=  8  vsram(scrlY)=  8
+F00103  sub=00  curV=  0  scrlY=  0  ntTog=0  ctrl=B0  ntBit=0  wraps=0  vsram(curV)=  8  vsram(scrlY)=  8
+
+>>> Subphase left $02 at frame 103 <<<
+F00104  sub=00  curV=  0  scrlY=  0  ntTog=0  ctrl=B0  ntBit=0  wraps=0  vsram(curV)=  8  vsram(scrlY)=  8
+F00104  sub=00  curV=  0  scrlY=  0  ntTog=0  ctrl=B0  ntBit=0  wraps=0  vsram(curV)=  8  vsram(scrlY)=  8
+
+>>> Subphase left $02 at frame 104 <<<
+F00105  sub=00  curV=  0  scrlY=  0  ntTog=0  ctrl=B0  ntBit=0  wraps=0  vsram(curV)=  8  vsram(scrlY)=  8
+F00105  sub=00  curV=  0  scrlY=  0  ntTog=0  ctrl=B0  ntBit=0  wraps=0  vsram(curV)=  8  vsram(scrlY)=  8
+
+>>> Subphase left $02 at frame 105 <<<
+F00106  sub=00  curV=  0  scrlY=  0  ntTog=0  ctrl=B0  ntBit=0  wraps=0  vsram(curV)=  8  vsram(scrlY)=  8
+F00106  sub=00  curV=  0  scrlY=  0  ntTog=0  ctrl=B0  ntBit=0  wraps=0  vsram(curV)=  8  vsram(scrlY)=  8
+
+>>> Subphase left $02 at frame 106 <<<
+F00107  sub=00  curV=  0  scrlY=  0  ntTog=0  ctrl=B0  ntBit=0  wraps=0  vsram(curV)=  8  vsram(scrlY)=  8
+F00107  sub=00  curV=  0  scrlY=  0  ntTog=0  ctrl=B0  ntBit=0  wraps=0  vsram(curV)=  8  vsram(scrlY)=  8
+
+>>> Subphase left $02 at frame 107 <<<
+F00108  sub=00  curV=  0  scrlY=  0  ntTog=0  ctrl=B0  ntBit=0  wraps=0  vsram(curV)=  8  vsram(scrlY)=  8
+F00108  sub=00  curV=  0  scrlY=  0  ntTog=0  ctrl=B0  ntBit=0  wraps=0  vsram(curV)=  8  vsram(scrlY)=  8
+
+>>> Subphase left $02 at frame 108 <<<
+F00109  sub=00  curV=  0  scrlY=  0  ntTog=0  ctrl=B0  ntBit=0  wraps=0  vsram(curV)=  8  vsram(scrlY)=  8
+F00109  sub=00  curV=  0  scrlY=  0  ntTog=0  ctrl=B0  ntBit=0  wraps=0  vsram(curV)=  8  vsram(scrlY)=  8
+
+>>> Subphase left $02 at frame 109 <<<
+F00110  sub=00  curV=  0  scrlY=  0  ntTog=0  ctrl=B0  ntBit=0  wraps=0  vsram(curV)=  8  vsram(scrlY)=  8
+F00110  sub=00  curV=  0  scrlY=  0  ntTog=0  ctrl=B0  ntBit=0  wraps=0  vsram(curV)=  8  vsram(scrlY)=  8
+
+>>> Subphase left $02 at frame 110 <<<
+F00111  sub=00  curV=  0  scrlY=  0  ntTog=0  ctrl=B0  ntBit=0  wraps=0  vsram(curV)=  8  vsram(scrlY)=  8
+F00111  sub=00  curV=  0  scrlY=  0  ntTog=0  ctrl=B0  ntBit=0  wraps=0  vsram(curV)=  8  vsram(scrlY)=  8
+
+>>> Subphase left $02 at frame 111 <<<
+F00112  sub=00  curV=  0  scrlY=  0  ntTog=0  ctrl=B0  ntBit=0  wraps=0  vsram(curV)=  8  vsram(scrlY)=  8
+F00112  sub=00  curV=  0  scrlY=  0  ntTog=0  ctrl=B0  ntBit=0  wraps=0  vsram(curV)=  8  vsram(scrlY)=  8
+
+>>> Subphase left $02 at frame 112 <<<
+F00113  sub=00  curV=  0  scrlY=  0  ntTog=0  ctrl=B0  ntBit=0  wraps=0  vsram(curV)=  8  vsram(scrlY)=  8
+F00113  sub=00  curV=  0  scrlY=  0  ntTog=0  ctrl=B0  ntBit=0  wraps=0  vsram(curV)=  8  vsram(scrlY)=  8
+
+>>> Subphase left $02 at frame 113 <<<
+F00114  sub=00  curV=  0  scrlY=  0  ntTog=0  ctrl=B0  ntBit=0  wraps=0  vsram(curV)=  8  vsram(scrlY)=  8
+F00114  sub=00  curV=  0  scrlY=  0  ntTog=0  ctrl=B0  ntBit=0  wraps=0  vsram(curV)=  8  vsram(scrlY)=  8
+
+>>> Subphase left $02 at frame 114 <<<
+F00115  sub=00  curV=  0  scrlY=  0  ntTog=0  ctrl=B0  ntBit=0  wraps=0  vsram(curV)=  8  vsram(scrlY)=  8
+F00115  sub=00  curV=  0  scrlY=  0  ntTog=0  ctrl=B0  ntBit=0  wraps=0  vsram(curV)=  8  vsram(scrlY)=  8
+
+>>> Subphase left $02 at frame 115 <<<
+F00116  sub=00  curV=  0  scrlY=  0  ntTog=0  ctrl=B0  ntBit=0  wraps=0  vsram(curV)=  8  vsram(scrlY)=  8
+F00116  sub=00  curV=  0  scrlY=  0  ntTog=0  ctrl=B0  ntBit=0  wraps=0  vsram(curV)=  8  vsram(scrlY)=  8
+
+>>> Subphase left $02 at frame 116 <<<
+F00117  sub=00  curV=  0  scrlY=  0  ntTog=0  ctrl=B0  ntBit=0  wraps=0  vsram(curV)=  8  vsram(scrlY)=  8
+F00117  sub=00  curV=  0  scrlY=  0  ntTog=0  ctrl=B0  ntBit=0  wraps=0  vsram(curV)=  8  vsram(scrlY)=  8
+
+>>> Subphase left $02 at frame 117 <<<
+F00118  sub=00  curV=  0  scrlY=  0  ntTog=0  ctrl=B0  ntBit=0  wraps=0  vsram(curV)=  8  vsram(scrlY)=  8
+F00118  sub=00  curV=  0  scrlY=  0  ntTog=0  ctrl=B0  ntBit=0  wraps=0  vsram(curV)=  8  vsram(scrlY)=  8
+
+>>> Subphase left $02 at frame 118 <<<
+F00119  sub=00  curV=  0  scrlY=  0  ntTog=0  ctrl=B0  ntBit=0  wraps=0  vsram(curV)=  8  vsram(scrlY)=  8
+F00119  sub=00  curV=  0  scrlY=  0  ntTog=0  ctrl=B0  ntBit=0  wraps=0  vsram(curV)=  8  vsram(scrlY)=  8
+
+>>> Subphase left $02 at frame 119 <<<
+F00120  sub=00  curV=  0  scrlY=  0  ntTog=0  ctrl=B0  ntBit=0  wraps=0  vsram(curV)=  8  vsram(scrlY)=  8
+F00120  sub=00  curV=  0  scrlY=  0  ntTog=0  ctrl=B0  ntBit=0  wraps=0  vsram(curV)=  8  vsram(scrlY)=  8
+F00120  sub=00  curV=  0  scrlY=  0  ntTog=0  ctrl=B0  ntBit=0  wraps=0  vsram(curV)=  8  vsram(scrlY)=  8
+
+>>> Subphase left $02 at frame 120 <<<
+F00121  sub=00  curV=  0  scrlY=  0  ntTog=0  ctrl=B0  ntBit=0  wraps=0  vsram(curV)=  8  vsram(scrlY)=  8
+F00121  sub=00  curV=  0  scrlY=  0  ntTog=0  ctrl=B0  ntBit=0  wraps=0  vsram(curV)=  8  vsram(scrlY)=  8
+
+>>> Subphase left $02 at frame 121 <<<
+F00122  sub=00  curV=  0  scrlY=  0  ntTog=0  ctrl=B0  ntBit=0  wraps=0  vsram(curV)=  8  vsram(scrlY)=  8
+F00122  sub=00  curV=  0  scrlY=  0  ntTog=0  ctrl=B0  ntBit=0  wraps=0  vsram(curV)=  8  vsram(scrlY)=  8
+
+>>> Subphase left $02 at frame 122 <<<
+F00123  sub=00  curV=  0  scrlY=  0  ntTog=0  ctrl=B0  ntBit=0  wraps=0  vsram(curV)=  8  vsram(scrlY)=  8
+F00123  sub=00  curV=  0  scrlY=  0  ntTog=0  ctrl=B0  ntBit=0  wraps=0  vsram(curV)=  8  vsram(scrlY)=  8
+
+>>> Subphase left $02 at frame 123 <<<
+F00124  sub=00  curV=  0  scrlY=  0  ntTog=0  ctrl=B0  ntBit=0  wraps=0  vsram(curV)=  8  vsram(scrlY)=  8
+F00124  sub=00  curV=  0  scrlY=  0  ntTog=0  ctrl=B0  ntBit=0  wraps=0  vsram(curV)=  8  vsram(scrlY)=  8
+
+>>> Subphase left $02 at frame 124 <<<
+F00125  sub=00  curV=  0  scrlY=  0  ntTog=0  ctrl=B0  ntBit=0  wraps=0  vsram(curV)=  8  vsram(scrlY)=  8
+F00125  sub=00  curV=  0  scrlY=  0  ntTog=0  ctrl=B0  ntBit=0  wraps=0  vsram(curV)=  8  vsram(scrlY)=  8
+
+>>> Subphase left $02 at frame 125 <<<
+F00126  sub=00  curV=  0  scrlY=  0  ntTog=0  ctrl=B0  ntBit=0  wraps=0  vsram(curV)=  8  vsram(scrlY)=  8
+F00126  sub=00  curV=  0  scrlY=  0  ntTog=0  ctrl=B0  ntBit=0  wraps=0  vsram(curV)=  8  vsram(scrlY)=  8
+
+>>> Subphase left $02 at frame 126 <<<
+F00127  sub=00  curV=  0  scrlY=  0  ntTog=0  ctrl=B0  ntBit=0  wraps=0  vsram(curV)=  8  vsram(scrlY)=  8
+F00127  sub=00  curV=  0  scrlY=  0  ntTog=0  ctrl=B0  ntBit=0  wraps=0  vsram(curV)=  8  vsram(scrlY)=  8
+
+>>> Subphase left $02 at frame 127 <<<
+F00128  sub=00  curV=  0  scrlY=  0  ntTog=0  ctrl=B0  ntBit=0  wraps=0  vsram(curV)=  8  vsram(scrlY)=  8
+F00128  sub=00  curV=  0  scrlY=  0  ntTog=0  ctrl=B0  ntBit=0  wraps=0  vsram(curV)=  8  vsram(scrlY)=  8
+
+>>> Subphase left $02 at frame 128 <<<
+F00129  sub=00  curV=  0  scrlY=  0  ntTog=0  ctrl=B0  ntBit=0  wraps=0  vsram(curV)=  8  vsram(scrlY)=  8
+F00129  sub=00  curV=  0  scrlY=  0  ntTog=0  ctrl=B0  ntBit=0  wraps=0  vsram(curV)=  8  vsram(scrlY)=  8
+
+>>> Subphase left $02 at frame 129 <<<
+F00130  sub=00  curV=  0  scrlY=  0  ntTog=0  ctrl=B0  ntBit=0  wraps=0  vsram(curV)=  8  vsram(scrlY)=  8
+F00130  sub=00  curV=  0  scrlY=  0  ntTog=0  ctrl=B0  ntBit=0  wraps=0  vsram(curV)=  8  vsram(scrlY)=  8
+
+>>> Subphase left $02 at frame 130 <<<
+F00131  sub=00  curV=  0  scrlY=  0  ntTog=0  ctrl=B0  ntBit=0  wraps=0  vsram(curV)=  8  vsram(scrlY)=  8
+F00131  sub=00  curV=  0  scrlY=  0  ntTog=0  ctrl=B0  ntBit=0  wraps=0  vsram(curV)=  8  vsram(scrlY)=  8
+
+>>> Subphase left $02 at frame 131 <<<
+F00132  sub=00  curV=  0  scrlY=  0  ntTog=0  ctrl=B0  ntBit=0  wraps=0  vsram(curV)=  8  vsram(scrlY)=  8
+F00132  sub=00  curV=  0  scrlY=  0  ntTog=0  ctrl=B0  ntBit=0  wraps=0  vsram(curV)=  8  vsram(scrlY)=  8
+
+>>> Subphase left $02 at frame 132 <<<
+F00133  sub=00  curV=  0  scrlY=  0  ntTog=0  ctrl=B0  ntBit=0  wraps=0  vsram(curV)=  8  vsram(scrlY)=  8
+F00133  sub=00  curV=  0  scrlY=  0  ntTog=0  ctrl=B0  ntBit=0  wraps=0  vsram(curV)=  8  vsram(scrlY)=  8
+
+>>> Subphase left $02 at frame 133 <<<
+F00134  sub=00  curV=  0  scrlY=  0  ntTog=0  ctrl=B0  ntBit=0  wraps=0  vsram(curV)=  8  vsram(scrlY)=  8
+F00134  sub=00  curV=  0  scrlY=  0  ntTog=0  ctrl=B0  ntBit=0  wraps=0  vsram(curV)=  8  vsram(scrlY)=  8
+
+>>> Subphase left $02 at frame 134 <<<
+F00135  sub=00  curV=  0  scrlY=  0  ntTog=0  ctrl=B0  ntBit=0  wraps=0  vsram(curV)=  8  vsram(scrlY)=  8
+F00135  sub=00  curV=  0  scrlY=  0  ntTog=0  ctrl=B0  ntBit=0  wraps=0  vsram(curV)=  8  vsram(scrlY)=  8
+
+>>> Subphase left $02 at frame 135 <<<
+F00136  sub=00  curV=  0  scrlY=  0  ntTog=0  ctrl=B0  ntBit=0  wraps=0  vsram(curV)=  8  vsram(scrlY)=  8
+F00136  sub=00  curV=  0  scrlY=  0  ntTog=0  ctrl=B0  ntBit=0  wraps=0  vsram(curV)=  8  vsram(scrlY)=  8
+
+>>> Subphase left $02 at frame 136 <<<
+F00137  sub=00  curV=  0  scrlY=  0  ntTog=0  ctrl=B0  ntBit=0  wraps=0  vsram(curV)=  8  vsram(scrlY)=  8
+F00137  sub=00  curV=  0  scrlY=  0  ntTog=0  ctrl=B0  ntBit=0  wraps=0  vsram(curV)=  8  vsram(scrlY)=  8
+
+>>> Subphase left $02 at frame 137 <<<
+F00138  sub=00  curV=  0  scrlY=  0  ntTog=0  ctrl=B0  ntBit=0  wraps=0  vsram(curV)=  8  vsram(scrlY)=  8
+F00138  sub=00  curV=  0  scrlY=  0  ntTog=0  ctrl=B0  ntBit=0  wraps=0  vsram(curV)=  8  vsram(scrlY)=  8
+
+>>> Subphase left $02 at frame 138 <<<
+F00139  sub=00  curV=  0  scrlY=  0  ntTog=0  ctrl=B0  ntBit=0  wraps=0  vsram(curV)=  8  vsram(scrlY)=  8
+F00139  sub=00  curV=  0  scrlY=  0  ntTog=0  ctrl=B0  ntBit=0  wraps=0  vsram(curV)=  8  vsram(scrlY)=  8
+
+>>> Subphase left $02 at frame 139 <<<
+F00140  sub=00  curV=  0  scrlY=  0  ntTog=0  ctrl=B0  ntBit=0  wraps=0  vsram(curV)=  8  vsram(scrlY)=  8
+F00140  sub=00  curV=  0  scrlY=  0  ntTog=0  ctrl=B0  ntBit=0  wraps=0  vsram(curV)=  8  vsram(scrlY)=  8
+
+>>> Subphase left $02 at frame 140 <<<
+F00141  sub=00  curV=  0  scrlY=  0  ntTog=0  ctrl=B0  ntBit=0  wraps=0  vsram(curV)=  8  vsram(scrlY)=  8
+F00141  sub=00  curV=  0  scrlY=  0  ntTog=0  ctrl=B0  ntBit=0  wraps=0  vsram(curV)=  8  vsram(scrlY)=  8
+
+>>> Subphase left $02 at frame 141 <<<
+F00142  sub=00  curV=  0  scrlY=  0  ntTog=0  ctrl=B0  ntBit=0  wraps=0  vsram(curV)=  8  vsram(scrlY)=  8
+F00142  sub=00  curV=  0  scrlY=  0  ntTog=0  ctrl=B0  ntBit=0  wraps=0  vsram(curV)=  8  vsram(scrlY)=  8
+
+>>> Subphase left $02 at frame 142 <<<
+F00143  sub=00  curV=  0  scrlY=  0  ntTog=0  ctrl=B0  ntBit=0  wraps=0  vsram(curV)=  8  vsram(scrlY)=  8
+F00143  sub=00  curV=  0  scrlY=  0  ntTog=0  ctrl=B0  ntBit=0  wraps=0  vsram(curV)=  8  vsram(scrlY)=  8
+
+>>> Subphase left $02 at frame 143 <<<
+F00144  sub=00  curV=  0  scrlY=  0  ntTog=0  ctrl=B0  ntBit=0  wraps=0  vsram(curV)=  8  vsram(scrlY)=  8
+F00144  sub=00  curV=  0  scrlY=  0  ntTog=0  ctrl=B0  ntBit=0  wraps=0  vsram(curV)=  8  vsram(scrlY)=  8
+
+>>> Subphase left $02 at frame 144 <<<
+F00145  sub=00  curV=  0  scrlY=  0  ntTog=0  ctrl=B0  ntBit=0  wraps=0  vsram(curV)=  8  vsram(scrlY)=  8
+F00145  sub=00  curV=  0  scrlY=  0  ntTog=0  ctrl=B0  ntBit=0  wraps=0  vsram(curV)=  8  vsram(scrlY)=  8
+
+>>> Subphase left $02 at frame 145 <<<
+F00146  sub=00  curV=  0  scrlY=  0  ntTog=0  ctrl=B0  ntBit=0  wraps=0  vsram(curV)=  8  vsram(scrlY)=  8
+F00146  sub=00  curV=  0  scrlY=  0  ntTog=0  ctrl=B0  ntBit=0  wraps=0  vsram(curV)=  8  vsram(scrlY)=  8
+
+>>> Subphase left $02 at frame 146 <<<
+F00147  sub=00  curV=  0  scrlY=  0  ntTog=0  ctrl=B0  ntBit=0  wraps=0  vsram(curV)=  8  vsram(scrlY)=  8
+F00147  sub=00  curV=  0  scrlY=  0  ntTog=0  ctrl=B0  ntBit=0  wraps=0  vsram(curV)=  8  vsram(scrlY)=  8
+
+>>> Subphase left $02 at frame 147 <<<
+F00148  sub=00  curV=  0  scrlY=  0  ntTog=0  ctrl=B0  ntBit=0  wraps=0  vsram(curV)=  8  vsram(scrlY)=  8
+F00148  sub=00  curV=  0  scrlY=  0  ntTog=0  ctrl=B0  ntBit=0  wraps=0  vsram(curV)=  8  vsram(scrlY)=  8
+
+>>> Subphase left $02 at frame 148 <<<
+F00149  sub=00  curV=  0  scrlY=  0  ntTog=0  ctrl=B0  ntBit=0  wraps=0  vsram(curV)=  8  vsram(scrlY)=  8
+F00149  sub=00  curV=  0  scrlY=  0  ntTog=0  ctrl=B0  ntBit=0  wraps=0  vsram(curV)=  8  vsram(scrlY)=  8
+
+>>> Subphase left $02 at frame 149 <<<
+F00150  sub=00  curV=  0  scrlY=  0  ntTog=0  ctrl=B0  ntBit=0  wraps=0  vsram(curV)=  8  vsram(scrlY)=  8
+F00150  sub=00  curV=  0  scrlY=  0  ntTog=0  ctrl=B0  ntBit=0  wraps=0  vsram(curV)=  8  vsram(scrlY)=  8
+F00150  sub=00  curV=  0  scrlY=  0  ntTog=0  ctrl=B0  ntBit=0  wraps=0  vsram(curV)=  8  vsram(scrlY)=  8
+
+>>> Subphase left $02 at frame 150 <<<
+F00151  sub=00  curV=  0  scrlY=  0  ntTog=0  ctrl=B0  ntBit=0  wraps=0  vsram(curV)=  8  vsram(scrlY)=  8
+F00151  sub=00  curV=  0  scrlY=  0  ntTog=0  ctrl=B0  ntBit=0  wraps=0  vsram(curV)=  8  vsram(scrlY)=  8
+
+>>> Subphase left $02 at frame 151 <<<
+F00152  sub=00  curV=  0  scrlY=  0  ntTog=0  ctrl=B0  ntBit=0  wraps=0  vsram(curV)=  8  vsram(scrlY)=  8
+F00152  sub=00  curV=  0  scrlY=  0  ntTog=0  ctrl=B0  ntBit=0  wraps=0  vsram(curV)=  8  vsram(scrlY)=  8
+
+>>> Subphase left $02 at frame 152 <<<
+F00153  sub=00  curV=  0  scrlY=  0  ntTog=0  ctrl=B0  ntBit=0  wraps=0  vsram(curV)=  8  vsram(scrlY)=  8
+F00153  sub=00  curV=  0  scrlY=  0  ntTog=0  ctrl=B0  ntBit=0  wraps=0  vsram(curV)=  8  vsram(scrlY)=  8
+
+>>> Subphase left $02 at frame 153 <<<
+F00154  sub=00  curV=  0  scrlY=  0  ntTog=0  ctrl=B0  ntBit=0  wraps=0  vsram(curV)=  8  vsram(scrlY)=  8
+F00154  sub=00  curV=  0  scrlY=  0  ntTog=0  ctrl=B0  ntBit=0  wraps=0  vsram(curV)=  8  vsram(scrlY)=  8
+
+>>> Subphase left $02 at frame 154 <<<
+F00155  sub=00  curV=  0  scrlY=  0  ntTog=0  ctrl=B0  ntBit=0  wraps=0  vsram(curV)=  8  vsram(scrlY)=  8
+F00155  sub=00  curV=  0  scrlY=  0  ntTog=0  ctrl=B0  ntBit=0  wraps=0  vsram(curV)=  8  vsram(scrlY)=  8
+
+>>> Subphase left $02 at frame 155 <<<
+F00156  sub=00  curV=  0  scrlY=  0  ntTog=0  ctrl=B0  ntBit=0  wraps=0  vsram(curV)=  8  vsram(scrlY)=  8
+F00156  sub=00  curV=  0  scrlY=  0  ntTog=0  ctrl=B0  ntBit=0  wraps=0  vsram(curV)=  8  vsram(scrlY)=  8
+
+>>> Subphase left $02 at frame 156 <<<
+F00157  sub=00  curV=  0  scrlY=  0  ntTog=0  ctrl=B0  ntBit=0  wraps=0  vsram(curV)=  8  vsram(scrlY)=  8
+F00157  sub=00  curV=  0  scrlY=  0  ntTog=0  ctrl=B0  ntBit=0  wraps=0  vsram(curV)=  8  vsram(scrlY)=  8
+
+>>> Subphase left $02 at frame 157 <<<
+F00158  sub=00  curV=  0  scrlY=  0  ntTog=0  ctrl=B0  ntBit=0  wraps=0  vsram(curV)=  8  vsram(scrlY)=  8
+F00158  sub=00  curV=  0  scrlY=  0  ntTog=0  ctrl=B0  ntBit=0  wraps=0  vsram(curV)=  8  vsram(scrlY)=  8
+
+>>> Subphase left $02 at frame 158 <<<
+F00159  sub=00  curV=  0  scrlY=  0  ntTog=0  ctrl=B0  ntBit=0  wraps=0  vsram(curV)=  8  vsram(scrlY)=  8
+F00159  sub=00  curV=  0  scrlY=  0  ntTog=0  ctrl=B0  ntBit=0  wraps=0  vsram(curV)=  8  vsram(scrlY)=  8
+
+>>> Subphase left $02 at frame 159 <<<
+F00160  sub=00  curV=  0  scrlY=  0  ntTog=0  ctrl=B0  ntBit=0  wraps=0  vsram(curV)=  8  vsram(scrlY)=  8
+F00160  sub=00  curV=  0  scrlY=  0  ntTog=0  ctrl=B0  ntBit=0  wraps=0  vsram(curV)=  8  vsram(scrlY)=  8
+
+>>> Subphase left $02 at frame 160 <<<
+F00161  sub=00  curV=  0  scrlY=  0  ntTog=0  ctrl=B0  ntBit=0  wraps=0  vsram(curV)=  8  vsram(scrlY)=  8
+F00161  sub=00  curV=  0  scrlY=  0  ntTog=0  ctrl=B0  ntBit=0  wraps=0  vsram(curV)=  8  vsram(scrlY)=  8
+
+>>> Subphase left $02 at frame 161 <<<
+F00162  sub=00  curV=  0  scrlY=  0  ntTog=0  ctrl=B0  ntBit=0  wraps=0  vsram(curV)=  8  vsram(scrlY)=  8
+F00162  sub=00  curV=  0  scrlY=  0  ntTog=0  ctrl=B0  ntBit=0  wraps=0  vsram(curV)=  8  vsram(scrlY)=  8
+
+>>> Subphase left $02 at frame 162 <<<
+F00163  sub=00  curV=  0  scrlY=  0  ntTog=0  ctrl=B0  ntBit=0  wraps=0  vsram(curV)=  8  vsram(scrlY)=  8
+F00163  sub=00  curV=  0  scrlY=  0  ntTog=0  ctrl=B0  ntBit=0  wraps=0  vsram(curV)=  8  vsram(scrlY)=  8
+
+>>> Subphase left $02 at frame 163 <<<
+F00164  sub=00  curV=  0  scrlY=  0  ntTog=0  ctrl=B0  ntBit=0  wraps=0  vsram(curV)=  8  vsram(scrlY)=  8
+F00164  sub=00  curV=  0  scrlY=  0  ntTog=0  ctrl=B0  ntBit=0  wraps=0  vsram(curV)=  8  vsram(scrlY)=  8
+
+>>> Subphase left $02 at frame 164 <<<
+F00165  sub=00  curV=  0  scrlY=  0  ntTog=0  ctrl=B0  ntBit=0  wraps=0  vsram(curV)=  8  vsram(scrlY)=  8
+F00165  sub=00  curV=  0  scrlY=  0  ntTog=0  ctrl=B0  ntBit=0  wraps=0  vsram(curV)=  8  vsram(scrlY)=  8
+
+>>> Subphase left $02 at frame 165 <<<
+F00166  sub=00  curV=  0  scrlY=  0  ntTog=0  ctrl=B0  ntBit=0  wraps=0  vsram(curV)=  8  vsram(scrlY)=  8
+F00166  sub=00  curV=  0  scrlY=  0  ntTog=0  ctrl=B0  ntBit=0  wraps=0  vsram(curV)=  8  vsram(scrlY)=  8
+
+>>> Subphase left $02 at frame 166 <<<
+F00167  sub=00  curV=  0  scrlY=  0  ntTog=0  ctrl=B0  ntBit=0  wraps=0  vsram(curV)=  8  vsram(scrlY)=  8
+F00167  sub=00  curV=  0  scrlY=  0  ntTog=0  ctrl=B0  ntBit=0  wraps=0  vsram(curV)=  8  vsram(scrlY)=  8
+
+>>> Subphase left $02 at frame 167 <<<
+F00168  sub=00  curV=  0  scrlY=  0  ntTog=0  ctrl=B0  ntBit=0  wraps=0  vsram(curV)=  8  vsram(scrlY)=  8
+F00168  sub=00  curV=  0  scrlY=  0  ntTog=0  ctrl=B0  ntBit=0  wraps=0  vsram(curV)=  8  vsram(scrlY)=  8
+
+>>> Subphase left $02 at frame 168 <<<
+F00169  sub=00  curV=  0  scrlY=  0  ntTog=0  ctrl=B0  ntBit=0  wraps=0  vsram(curV)=  8  vsram(scrlY)=  8
+F00169  sub=00  curV=  0  scrlY=  0  ntTog=0  ctrl=B0  ntBit=0  wraps=0  vsram(curV)=  8  vsram(scrlY)=  8
+
+>>> Subphase left $02 at frame 169 <<<
+F00170  sub=00  curV=  0  scrlY=  0  ntTog=0  ctrl=B0  ntBit=0  wraps=0  vsram(curV)=  8  vsram(scrlY)=  8
+F00170  sub=00  curV=  0  scrlY=  0  ntTog=0  ctrl=B0  ntBit=0  wraps=0  vsram(curV)=  8  vsram(scrlY)=  8
+
+>>> Subphase left $02 at frame 170 <<<
+F00171  sub=00  curV=  0  scrlY=  0  ntTog=0  ctrl=B0  ntBit=0  wraps=0  vsram(curV)=  8  vsram(scrlY)=  8
+F00171  sub=00  curV=  0  scrlY=  0  ntTog=0  ctrl=B0  ntBit=0  wraps=0  vsram(curV)=  8  vsram(scrlY)=  8
+
+>>> Subphase left $02 at frame 171 <<<
+F00172  sub=00  curV=  0  scrlY=  0  ntTog=0  ctrl=B0  ntBit=0  wraps=0  vsram(curV)=  8  vsram(scrlY)=  8
+F00172  sub=00  curV=  0  scrlY=  0  ntTog=0  ctrl=B0  ntBit=0  wraps=0  vsram(curV)=  8  vsram(scrlY)=  8
+
+>>> Subphase left $02 at frame 172 <<<
+F00173  sub=00  curV=  0  scrlY=  0  ntTog=0  ctrl=B0  ntBit=0  wraps=0  vsram(curV)=  8  vsram(scrlY)=  8
+F00173  sub=00  curV=  0  scrlY=  0  ntTog=0  ctrl=B0  ntBit=0  wraps=0  vsram(curV)=  8  vsram(scrlY)=  8
+
+>>> Subphase left $02 at frame 173 <<<
+F00174  sub=00  curV=  0  scrlY=  0  ntTog=0  ctrl=B0  ntBit=0  wraps=0  vsram(curV)=  8  vsram(scrlY)=  8
+F00174  sub=00  curV=  0  scrlY=  0  ntTog=0  ctrl=B0  ntBit=0  wraps=0  vsram(curV)=  8  vsram(scrlY)=  8
+
+>>> Subphase left $02 at frame 174 <<<
+F00175  sub=00  curV=  0  scrlY=  0  ntTog=0  ctrl=B0  ntBit=0  wraps=0  vsram(curV)=  8  vsram(scrlY)=  8
+F00175  sub=00  curV=  0  scrlY=  0  ntTog=0  ctrl=B0  ntBit=0  wraps=0  vsram(curV)=  8  vsram(scrlY)=  8
+
+>>> Subphase left $02 at frame 175 <<<
+F00176  sub=00  curV=  0  scrlY=  0  ntTog=0  ctrl=B0  ntBit=0  wraps=0  vsram(curV)=  8  vsram(scrlY)=  8
+F00176  sub=00  curV=  0  scrlY=  0  ntTog=0  ctrl=B0  ntBit=0  wraps=0  vsram(curV)=  8  vsram(scrlY)=  8
+
+>>> Subphase left $02 at frame 176 <<<
+F00177  sub=00  curV=  0  scrlY=  0  ntTog=0  ctrl=B0  ntBit=0  wraps=0  vsram(curV)=  8  vsram(scrlY)=  8
+F00177  sub=00  curV=  0  scrlY=  0  ntTog=0  ctrl=B0  ntBit=0  wraps=0  vsram(curV)=  8  vsram(scrlY)=  8
+
+>>> Subphase left $02 at frame 177 <<<
+F00178  sub=00  curV=  0  scrlY=  0  ntTog=0  ctrl=B0  ntBit=0  wraps=0  vsram(curV)=  8  vsram(scrlY)=  8
+F00178  sub=00  curV=  0  scrlY=  0  ntTog=0  ctrl=B0  ntBit=0  wraps=0  vsram(curV)=  8  vsram(scrlY)=  8
+
+>>> Subphase left $02 at frame 178 <<<
+F00179  sub=00  curV=  0  scrlY=  0  ntTog=0  ctrl=B0  ntBit=0  wraps=0  vsram(curV)=  8  vsram(scrlY)=  8
+F00179  sub=00  curV=  0  scrlY=  0  ntTog=0  ctrl=B0  ntBit=0  wraps=0  vsram(curV)=  8  vsram(scrlY)=  8
+
+>>> Subphase left $02 at frame 179 <<<
+F00180  sub=00  curV=  0  scrlY=  0  ntTog=0  ctrl=B0  ntBit=0  wraps=0  vsram(curV)=  8  vsram(scrlY)=  8
+F00180  sub=00  curV=  0  scrlY=  0  ntTog=0  ctrl=B0  ntBit=0  wraps=0  vsram(curV)=  8  vsram(scrlY)=  8
+F00180  sub=00  curV=  0  scrlY=  0  ntTog=0  ctrl=B0  ntBit=0  wraps=0  vsram(curV)=  8  vsram(scrlY)=  8
+
+>>> Subphase left $02 at frame 180 <<<
+F00181  sub=00  curV=  0  scrlY=  0  ntTog=0  ctrl=B0  ntBit=0  wraps=0  vsram(curV)=  8  vsram(scrlY)=  8
+F00181  sub=00  curV=  0  scrlY=  0  ntTog=0  ctrl=B0  ntBit=0  wraps=0  vsram(curV)=  8  vsram(scrlY)=  8
+
+>>> Subphase left $02 at frame 181 <<<
+F00182  sub=00  curV=  0  scrlY=  0  ntTog=0  ctrl=B0  ntBit=0  wraps=0  vsram(curV)=  8  vsram(scrlY)=  8
+F00182  sub=00  curV=  0  scrlY=  0  ntTog=0  ctrl=B0  ntBit=0  wraps=0  vsram(curV)=  8  vsram(scrlY)=  8
+
+>>> Subphase left $02 at frame 182 <<<
+F00183  sub=00  curV=  0  scrlY=  0  ntTog=0  ctrl=B0  ntBit=0  wraps=0  vsram(curV)=  8  vsram(scrlY)=  8
+F00183  sub=00  curV=  0  scrlY=  0  ntTog=0  ctrl=B0  ntBit=0  wraps=0  vsram(curV)=  8  vsram(scrlY)=  8
+
+>>> Subphase left $02 at frame 183 <<<
+F00184  sub=00  curV=  0  scrlY=  0  ntTog=0  ctrl=B0  ntBit=0  wraps=0  vsram(curV)=  8  vsram(scrlY)=  8
+F00184  sub=00  curV=  0  scrlY=  0  ntTog=0  ctrl=B0  ntBit=0  wraps=0  vsram(curV)=  8  vsram(scrlY)=  8
+
+>>> Subphase left $02 at frame 184 <<<
+F00185  sub=00  curV=  0  scrlY=  0  ntTog=0  ctrl=B0  ntBit=0  wraps=0  vsram(curV)=  8  vsram(scrlY)=  8
+F00185  sub=00  curV=  0  scrlY=  0  ntTog=0  ctrl=B0  ntBit=0  wraps=0  vsram(curV)=  8  vsram(scrlY)=  8
+
+>>> Subphase left $02 at frame 185 <<<
+F00186  sub=00  curV=  0  scrlY=  0  ntTog=0  ctrl=B0  ntBit=0  wraps=0  vsram(curV)=  8  vsram(scrlY)=  8
+F00186  sub=00  curV=  0  scrlY=  0  ntTog=0  ctrl=B0  ntBit=0  wraps=0  vsram(curV)=  8  vsram(scrlY)=  8
+
+>>> Subphase left $02 at frame 186 <<<
+F00187  sub=00  curV=  0  scrlY=  0  ntTog=0  ctrl=B0  ntBit=0  wraps=0  vsram(curV)=  8  vsram(scrlY)=  8
+F00187  sub=00  curV=  0  scrlY=  0  ntTog=0  ctrl=B0  ntBit=0  wraps=0  vsram(curV)=  8  vsram(scrlY)=  8
+
+>>> Subphase left $02 at frame 187 <<<
+F00188  sub=00  curV=  0  scrlY=  0  ntTog=0  ctrl=B0  ntBit=0  wraps=0  vsram(curV)=  8  vsram(scrlY)=  8
+F00188  sub=00  curV=  0  scrlY=  0  ntTog=0  ctrl=B0  ntBit=0  wraps=0  vsram(curV)=  8  vsram(scrlY)=  8
+
+>>> Subphase left $02 at frame 188 <<<
+F00189  sub=00  curV=  0  scrlY=  0  ntTog=0  ctrl=B0  ntBit=0  wraps=0  vsram(curV)=  8  vsram(scrlY)=  8
+F00189  sub=00  curV=  0  scrlY=  0  ntTog=0  ctrl=B0  ntBit=0  wraps=0  vsram(curV)=  8  vsram(scrlY)=  8
+
+>>> Subphase left $02 at frame 189 <<<
+F00190  sub=00  curV=  0  scrlY=  0  ntTog=0  ctrl=B0  ntBit=0  wraps=0  vsram(curV)=  8  vsram(scrlY)=  8
+F00190  sub=00  curV=  0  scrlY=  0  ntTog=0  ctrl=B0  ntBit=0  wraps=0  vsram(curV)=  8  vsram(scrlY)=  8
+
+>>> Subphase left $02 at frame 190 <<<
+F00191  sub=00  curV=  0  scrlY=  0  ntTog=0  ctrl=B0  ntBit=0  wraps=0  vsram(curV)=  8  vsram(scrlY)=  8
+F00191  sub=00  curV=  0  scrlY=  0  ntTog=0  ctrl=B0  ntBit=0  wraps=0  vsram(curV)=  8  vsram(scrlY)=  8
+
+>>> Subphase left $02 at frame 191 <<<
+F00192  sub=00  curV=  0  scrlY=  0  ntTog=0  ctrl=B0  ntBit=0  wraps=0  vsram(curV)=  8  vsram(scrlY)=  8
+F00192  sub=00  curV=  0  scrlY=  0  ntTog=0  ctrl=B0  ntBit=0  wraps=0  vsram(curV)=  8  vsram(scrlY)=  8
+
+>>> Subphase left $02 at frame 192 <<<
+F00193  sub=00  curV=  0  scrlY=  0  ntTog=0  ctrl=B0  ntBit=0  wraps=0  vsram(curV)=  8  vsram(scrlY)=  8
+F00193  sub=00  curV=  0  scrlY=  0  ntTog=0  ctrl=B0  ntBit=0  wraps=0  vsram(curV)=  8  vsram(scrlY)=  8
+
+>>> Subphase left $02 at frame 193 <<<
+F00194  sub=00  curV=  0  scrlY=  0  ntTog=0  ctrl=B0  ntBit=0  wraps=0  vsram(curV)=  8  vsram(scrlY)=  8
+F00194  sub=00  curV=  0  scrlY=  0  ntTog=0  ctrl=B0  ntBit=0  wraps=0  vsram(curV)=  8  vsram(scrlY)=  8
+
+>>> Subphase left $02 at frame 194 <<<
+F00195  sub=00  curV=  0  scrlY=  0  ntTog=0  ctrl=B0  ntBit=0  wraps=0  vsram(curV)=  8  vsram(scrlY)=  8
+F00195  sub=00  curV=  0  scrlY=  0  ntTog=0  ctrl=B0  ntBit=0  wraps=0  vsram(curV)=  8  vsram(scrlY)=  8
+
+>>> Subphase left $02 at frame 195 <<<
+F00196  sub=00  curV=  0  scrlY=  0  ntTog=0  ctrl=B0  ntBit=0  wraps=0  vsram(curV)=  8  vsram(scrlY)=  8
+
+>>> Capture complete (120 frames). <<<
