@@ -185,17 +185,20 @@ audio_init:
     bsr     ym_write1
 
     ;------------------------------------------------------------------
-    ; Load EHZ Voice $00 into ch 0 (Pulse 1 — Algorithm 7, pad)
+    ; Load EHZ Voice $03 into ch 0 (m_sq1 = NES Sq1 = Pulse 2 = LEAD melody)
+    ; NES naming: Sq1/Sq0 are reversed from intuition — Sq1 writes $4006/$4007
+    ; (Pulse 2) and owns the primary melody.  Put the snappy EHZ lead here.
     ;------------------------------------------------------------------
-    lea     PATCH_VOICE00(PC),A0
-    moveq   #0,D6                   ; channel 0
+    lea     PATCH_VOICE03(PC),A0
+    moveq   #0,D6                   ; channel 0 (emit_note_sq1 target)
     bsr     load_fm_patch
 
     ;------------------------------------------------------------------
-    ; Load EHZ Voice $03 into ch 1 (Pulse 2 — Algorithm 5, lead)
+    ; Load EHZ Voice $00 into ch 1 (m_sq0 = NES Sq0 = Pulse 1 = harmony/arp)
+    ; The slow-decay pad fits arpeggiated harmony better than a sharp lead.
     ;------------------------------------------------------------------
-    lea     PATCH_VOICE03(PC),A0
-    moveq   #1,D6                   ; channel 1
+    lea     PATCH_VOICE00(PC),A0
+    moveq   #1,D6                   ; channel 1 (emit_note_sq0 target)
     bsr     load_fm_patch
 
     ;------------------------------------------------------------------
@@ -279,7 +282,7 @@ PATCH_VOICE00:
     dc.b    $0E,$0E,$0E,$0E         ; AM/D1R
     dc.b    $02,$02,$02,$02         ; D2R
     dc.b    $55,$55,$55,$54         ; DL/RR
-    dc.b    $00,$00,$00,$00         ; TL (all carriers at max)
+    dc.b    $18,$18,$18,$18         ; TL (all 4 carriers attenuated ~18 dB to let PSG drums breathe)
     even
 
 ; Voice $03 — EHZ FM3 opening voice (iconic lead)
@@ -287,11 +290,11 @@ PATCH_VOICE00:
 PATCH_VOICE03:
     dc.b    $3D                     ; FB/ALG: (7<<3)|5
     dc.b    $01,$51,$21,$01         ; DT/MUL
-    dc.b    $12,$14,$14,$0F         ; RS/AR
+    dc.b    $1F,$1F,$1F,$1F         ; RS/AR (max — EHZ's slow-attack swell was delaying Zelda's Pulse 2 melody)
     dc.b    $0A,$05,$05,$05         ; AM/D1R
     dc.b    $00,$00,$00,$00         ; D2R
     dc.b    $2B,$2B,$2B,$1B         ; DL/RR
-    dc.b    $19,$00,$00,$00         ; TL (slot1=mod $19, rest=carrier $00)
+    dc.b    $19,$18,$18,$18         ; TL (slot1=modulator $19; slots 2/3/4 carriers +$18 for mix)
     even
 
 ; Voice $07 — EHZ FM1 bass voice
@@ -303,7 +306,7 @@ PATCH_VOICE07:
     dc.b    $12,$0A,$0E,$0A         ; AM/D1R
     dc.b    $00,$04,$04,$03         ; D2R
     dc.b    $2F,$2F,$2F,$2F         ; DL/RR
-    dc.b    $24,$13,$2D,$00         ; TL (slot4=carrier $00, rest=modulators)
+    dc.b    $24,$13,$2D,$20         ; TL (slot4=carrier +$20, pulled down a touch more than pulses)
     even
 
 ;==============================================================================
@@ -369,6 +372,14 @@ m_trg_rep_s         equ MUSIC_BASE+$22
 ; Noise (→ PSG ch 3)
 m_noise_off         equ MUSIC_BASE+$24
 m_noise_cnt         equ MUSIC_BASE+$25
+; Software ADSR state for the PSG noise drum channel (Kroc Sonic 1 SMS pattern).
+; SN76489 has no envelope hardware, so we run a linear software envelope and
+; map it to the 4-bit PSG attenuation every frame.  Writing the noise control
+; register resets the LFSR, so we also cache the last-written control byte and
+; skip redundant writes to preserve the decay tail.
+m_noise_level       equ MUSIC_BASE+$26  ; byte: current envelope level ($00-$FF)
+m_noise_decay       equ MUSIC_BASE+$27  ; byte: current linear decay rate (per tick)
+m_last_psg_nc       equ MUSIC_BASE+$28  ; byte: last noise-control byte written
 
 ;==============================================================================
 ; music_play — request a song change
@@ -710,6 +721,10 @@ tick_noise:
     move.b  (m_song).l,D0
     andi.b  #$91,D0
     beq     .tn_done
+    ; Always run the per-tick envelope decay step, regardless of whether a new
+    ; drum hit fires this frame.  set_psg_noise will overwrite the envelope if
+    ; a hit fires below.
+    bsr     noise_decay_tick
     subq.b  #1,(m_noise_cnt).l
     bne     .tn_done
 .read:
@@ -887,26 +902,77 @@ key_off_trg:
     bra     ym_write1
 
 ;==============================================================================
-; set_psg_noise — Program PSG noise channel
-; Input: D1.w = noise index 0-3 (into NoiseVolumes/Periods/Lengths)
+; set_psg_noise — Trigger a drum hit on the PSG noise channel.
+; Input: D1.w = drum index 0-3 (engine index, extracted from noise script byte)
+;
+; Pattern lifted from Kroc's Sonic 1 SMS disassembly (Z80 → M68K):
+;   - Each drum has a (noise_mode, attack_level, decay_rate) entry in
+;     PsgDrumTable.
+;   - The noise control byte is ONLY written when it differs from the cached
+;     last-written byte — writing it re-seeds the SN76489 LFSR which would
+;     otherwise chop off the decay tail of an in-flight hit.
+;   - Envelope level is reset to the attack_level; per-tick decay is done by
+;     noise_decay_tick.
+;   - Index 0 is treated as a rest: volume goes to mute but the noise control
+;     latch is untouched so pending decays on adjacent channels are preserved.
 ;==============================================================================
 set_psg_noise:
-    lea     (NoiseVolumesTbl).l,A1
-    move.b  (A1,D1.w),D0                   ; NES noise "volume" ($10/$1C/$1C/$1C)
-    ; Bits 3:0 of $400C = volume. We translate to PSG attenuation:
-    ; atten = 15 - (vol & $0F).  $10→0 (off), $1C→$F-$C=$3, etc.
-    andi.b  #$0F,D0
-    neg.b   D0
-    addi.b  #$0F,D0
-    andi.b  #$0F,D0
-    ori.b   #$F0,D0                        ; PSG noise atten latch
+    tst.b   D1
+    bne.s   .not_rest
+    ; Rest: silence the PSG noise channel immediately.
+    clr.b   (m_noise_level).l
+    clr.b   (m_noise_decay).l
+    move.b  #$FF,(PSG_PORT).l              ; ch3 attenuation = max (mute)
+    rts
+.not_rest:
+    moveq   #0,D0
+    move.b  D1,D0
+    lsl.w   #2,D0                          ; 4 bytes per drum entry
+    lea     (PsgDrumTable).l,A1
+    adda.l  D0,A1
+    move.b  (A1)+,D0                       ; byte 0: noise control byte ($Ex)
+    ; Write control byte only if different from cached value (preserves LFSR).
+    cmp.b   (m_last_psg_nc).l,D0
+    beq.s   .nc_same
+    move.b  D0,(m_last_psg_nc).l
     move.b  D0,(PSG_PORT).l
-    ; Set noise mode/period: bit 2 = mode (1=periodic), bits 1:0 = shift rate
-    lea     (NoisePeriodsTbl).l,A1
-    move.b  (A1,D1.w),D0
-    andi.b  #$07,D0
-    ori.b   #$E0,D0                        ; PSG noise control latch
+.nc_same:
+    move.b  (A1)+,D0                       ; byte 1: attack level ($00-$FF)
+    move.b  D0,(m_noise_level).l
+    move.b  (A1)+,D0                       ; byte 2: decay rate per tick
+    move.b  D0,(m_noise_decay).l
+    bra     write_psg_noise_vol
+
+;==============================================================================
+; write_psg_noise_vol — emit PSG ch3 attenuation from the software envelope.
+; Uses m_noise_level (8-bit) → 4-bit PSG atten by shifting and inverting.
+; Preserves D1.
+;==============================================================================
+write_psg_noise_vol:
+    moveq   #0,D0
+    move.b  (m_noise_level).l,D0
+    lsr.b   #4,D0                          ; level $00-$FF → 0-15
+    eori.b  #$0F,D0                        ; invert: SN76489 0=loud, 15=silent
+    ori.b   #$F0,D0                        ; ch3 attenuation latch
     move.b  D0,(PSG_PORT).l
+    rts
+
+;==============================================================================
+; noise_decay_tick — linear envelope decay step.
+; Called every music tick (before any new-hit check) to fade the current drum
+; toward silence.  Underflow clamps to 0 so the envelope stops.
+; Preserves D1.
+;==============================================================================
+noise_decay_tick:
+    move.b  (m_noise_level).l,D0
+    beq.s   .nd_done                        ; already silent
+    sub.b   (m_noise_decay).l,D0
+    bcc.s   .nd_store                       ; no underflow → new level
+    moveq   #0,D0                           ; underflow → silent
+.nd_store:
+    move.b  D0,(m_noise_level).l
+    bra     write_psg_noise_vol
+.nd_done:
     rts
 
 ;==============================================================================
@@ -960,9 +1026,26 @@ NoteLengthTables:
 NoiseVolumesTbl:
     dc.b    $10,$1C,$1C,$1C
 NoisePeriodsTbl:
-    dc.b    $00,$03,$0A,$03
+    dc.b    $00,$03,$0A,$03            ; original NES $400E values (kept for ref)
 NoiseLengthsTbl:
     dc.b    $00,$18,$18,$58
+
+;----------------------------------------------------------------------
+; PsgDrumTable — 4 drum slots × 4 bytes each (Kroc Sonic 1 SMS pattern).
+; Layout per slot:
+;   +0 noise control byte ($Ex): bit2=FB (1=white), bits 1-0=NF shift rate
+;   +1 attack level ($00-$FF): starting software-envelope level
+;   +2 decay rate   (per tick): envelope subtracted each music_tick
+;   +3 reserved
+;
+; Index 0 is the "rest" slot but set_psg_noise short-circuits it, so its
+; values are placeholders.
+;----------------------------------------------------------------------
+PsgDrumTable:
+    dc.b    $E7, $00, $00, $00         ; 0: rest (handled by early-out)
+    dc.b    $E4, $E0, 48,  $00         ; 1: hi-hat  — white NF=00, ~5 frames
+    dc.b    $E5, $FF, 14,  $00         ; 2: snare   — white NF=01, ~18 frames
+    dc.b    $E4, $E0, 48,  $00         ; 3: hi-hat alt
     even
 
 ;==============================================================================
