@@ -1664,15 +1664,10 @@ _oam_dma:
     ; OAM Y=0..7 sprites entirely one frame too early.
     cmpi.b  #8,D0
     bcs.s   .oam_write_y
-    ; Attract/story gameMode 0 uses an 8px sprite lift in most scenes, but the
-    ; post-story item roll needs NES-accurate top-edge positioning so the first
-    ; row of item sprites remains visible as it crosses the top boundary.
-    cmpi.b  #$01,($042C,A4)
-    bne.s   .oam_apply_attract_bias
-    cmpi.b  #$02,($042D,A4)
-    bne.s   .oam_apply_attract_bias
-    cmpi.b  #$05,($042E,A4)
-    bcc.s   .oam_write_y
+    ; Attract/story gameMode 0 uses an 8px sprite lift to match the +8 overscan
+    ; bias in _ags_compute_stage.  Applied uniformly — no textIdx threshold —
+    ; so sprites don't jump at page transitions.  Top-edge sprites (Y<8) are
+    ; already handled by the check above.
 .oam_apply_attract_bias:
     subi.w  #8,D4
 .oam_write_y:

@@ -12,30 +12,43 @@ Launch BizHawk with a Lua probe script and the current ROM build.
 ## Instructions
 
 1. The argument is the path to the Lua script. It can be a relative path from the project root (e.g. `tools/scroll_watch.lua`) or an absolute path.
-2. If the argument is a relative path, prepend the project root: `C:\Users\Jake Diggity\Documents\GitHub\FINAL TRY\`
-3. The ROM is always: `C:\Users\Jake Diggity\Documents\GitHub\FINAL TRY\builds\whatif.md`
-4. The BizHawk directory is: `C:\Users\Jake Diggity\Documents\GitHub\VDP rebirth tools and asms\BizHawk-2.11-win-x64`
-5. The executable is `EmuHawk.exe` inside that directory.
+2. The BizHawk directory is: `C:\Users\Jake Diggity\Documents\GitHub\VDP rebirth tools and asms\BizHawk-2.11-win-x64`
+3. The executable is `EmuHawk.exe` inside that directory.
 
-## Launch command
+## Launch procedure
 
-Use PowerShell `Start-Process` — this is the only reliable way to launch BizHawk GUI from Claude Code on this system.
+BizHawk crashes on paths containing `.claude` or other dotfile directories due to .NET path validation. To avoid this:
+
+1. **Copy the Lua script** into the BizHawk directory (`C:\Users\Jake Diggity\Documents\GitHub\VDP rebirth tools and asms\BizHawk-2.11-win-x64\`).
+2. **Copy the ROM** into the BizHawk directory as `whatif.md`.
+3. **Launch with relative filenames only** — no absolute paths in the arguments.
+
+```bash
+# Step 1: Copy files into BizHawk dir
+cp "<SCRIPT_PATH>" "/c/Users/Jake Diggity/Documents/GitHub/VDP rebirth tools and asms/BizHawk-2.11-win-x64/<SCRIPT_NAME>"
+cp "<ROM_PATH>" "/c/Users/Jake Diggity/Documents/GitHub/VDP rebirth tools and asms/BizHawk-2.11-win-x64/whatif.md"
+
+# Step 2: Launch with relative names
+powershell -Command "Start-Process -FilePath 'C:\Users\Jake Diggity\Documents\GitHub\VDP rebirth tools and asms\BizHawk-2.11-win-x64\EmuHawk.exe' -ArgumentList @('--lua=<SCRIPT_NAME>','whatif.md') -WorkingDirectory 'C:\Users\Jake Diggity\Documents\GitHub\VDP rebirth tools and asms\BizHawk-2.11-win-x64'"
+```
 
 **Without Lua script (ROM only):**
 
 ```bash
-powershell -Command "Start-Process -FilePath 'C:\Users\Jake Diggity\Documents\GitHub\VDP rebirth tools and asms\BizHawk-2.11-win-x64\EmuHawk.exe' -ArgumentList '\"C:\Users\Jake Diggity\Documents\GitHub\FINAL TRY\builds\whatif.md\"' -WorkingDirectory 'C:\Users\Jake Diggity\Documents\GitHub\VDP rebirth tools and asms\BizHawk-2.11-win-x64'"
+cp "<ROM_PATH>" "/c/Users/Jake Diggity/Documents/GitHub/VDP rebirth tools and asms/BizHawk-2.11-win-x64/whatif.md"
+powershell -Command "Start-Process -FilePath 'C:\Users\Jake Diggity\Documents\GitHub\VDP rebirth tools and asms\BizHawk-2.11-win-x64\EmuHawk.exe' -ArgumentList @('whatif.md') -WorkingDirectory 'C:\Users\Jake Diggity\Documents\GitHub\VDP rebirth tools and asms\BizHawk-2.11-win-x64'"
 ```
 
-**With Lua script:**
+## Lua script rules for Genesis
 
-```bash
-powershell -Command "Start-Process -FilePath 'C:\Users\Jake Diggity\Documents\GitHub\VDP rebirth tools and asms\BizHawk-2.11-win-x64\EmuHawk.exe' -ArgumentList '\"--lua=<ABSOLUTE_SCRIPT_PATH>\",\"<ROM_PATH>\"' -WorkingDirectory 'C:\Users\Jake Diggity\Documents\GitHub\VDP rebirth tools and asms\BizHawk-2.11-win-x64'"
-```
+- BizHawk Genesis `mainmemory` domain is 64KB (68K work RAM at $FF0000-$FFFFFF).
+- Use **offsets from 0x0000**, not absolute 68K addresses. E.g. `$FF00FC` → `mainmemory.read_u8(0x00FC)`.
+- Use Lua 5.4 operators (`>>`, `&`) instead of deprecated `bit.rshift`/`bit.band`.
+- Use `gui.drawText` (not `gui.text`) and `gui.drawBox` for overlays.
 
 ## Rules
 
-- Always use `powershell -Command "Start-Process ..."` to launch.
-- All paths must be absolute Windows paths with backslashes.
+- Always use `powershell -Command "Start-Process ..."` with `-ArgumentList @(...)` array syntax to launch.
+- Always copy files into BizHawk dir first — never pass paths containing `.claude` or dotfile directories.
 - Verify the Lua script file exists before launching.
 - Do NOT use `cmd.exe /c`, `start ""`, bat files, or `&` backgrounding.
