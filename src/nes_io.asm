@@ -367,6 +367,12 @@ _ags_compute_stage:
     beq.s   .no_nt
     addi.w  #240,D0
 .no_nt:
+    ; Wrap at 480 (NOT 512): plane rows 60-63 (VSRAM 480-511) are the
+    ; V64 blank dead zone — no tile content lives there.  The NES scroll
+    ; model wraps at 480 (two 240-row NTs), so end-of-NT_B (VSRAM 479)
+    ; must fold directly to start-of-NT_A (VSRAM 0).  Letting VSRAM climb
+    ; into 480-511 puts a blank strip at the top of the screen until the
+    ; next NT toggle triggers a visible teleport.
     cmpi.w  #480,D0
     blo.s   .no_wrap
     subi.w  #480,D0
@@ -1607,6 +1613,20 @@ _oam_dma:
     lea     (NES_RAM_BASE+$0200).l,A0  ; A0 → NES OAM buffer ($FF0200)
     moveq   #63,D7                     ; loop: 64 sprites (dbra counts 63→0)
     moveq   #0,D6                      ; D6 = current sprite index (0..63)
+    ; V64 gap compensation: when the display wraps through the 32px gap
+    ; at pixels 480-511, BG content below the gap is shifted 32px down.
+    ; Compute the Genesis Y threshold: sprites at or below this line need
+    ; +32 to match their shifted BG text.  Store in D6 upper word (0=no gap).
+    move.w  (ACTIVE_EVENT_VSRAM).l,D5
+    addi.w  #224,D5
+    cmpi.w  #512,D5
+    bls.s   .oam_no_gap_setup          ; display doesn't wrap through gap
+    move.w  #608,D5                    ; 608 = 480 (gap start) + 128 (Y origin)
+    sub.w   (ACTIVE_EVENT_VSRAM).l,D5  ; D5 = gap threshold in Genesis Y
+    swap    D6
+    move.w  D5,D6
+    swap    D6
+.oam_no_gap_setup:
 
 .oam_loop:
     ; ── Read 4 NES OAM bytes ──────────────────────────────────────────────
@@ -1627,18 +1647,39 @@ _oam_dma:
     move.w  D0,D4
     addi.w  #129,D4
     tst.b   ($0012,A4)
-    bne.s   .oam_write_y
+    bne.s   .oam_gap_check
     ; Preserve top-edge visibility for attract sprites that are just entering
     ; from the top. The global attract-mode lift would otherwise clip NES
     ; OAM Y=0..7 sprites entirely one frame too early.
     cmpi.b  #8,D0
-    bcs.s   .oam_write_y
+    bcs.s   .oam_gap_check
     ; Attract/story gameMode 0 uses an 8px sprite lift to match the +8 overscan
     ; bias in _ags_compute_stage.  Applied uniformly — no textIdx threshold —
     ; so sprites don't jump at page transitions.  Top-edge sprites (Y<8) are
     ; already handled by the check above.
 .oam_apply_attract_bias:
     subi.w  #8,D4
+.oam_gap_check:
+    swap    D6                      ; access gap threshold from upper word
+    tst.w   D6
+    beq.s   .oam_gap_done           ; 0 = no gap visible
+    ; Gradual ramp: offset = clamp(sprite_Y - gap_top + 1, 0, 32).
+    ; Sprites well above the gap get 0 (untouched); sprites crossing the gap
+    ; boundary ramp in at 1px/frame up to a max +32 shift to match the shifted
+    ; BG below the V64 dead zone.  Avoids the single-frame 32px teleport that
+    ; occurred with a hard threshold.  D0 is scratch here — it's reloaded at
+    ; the top of the next .oam_loop iteration.
+    move.w  D4,D0                   ; D0 = adjusted sprite Y
+    sub.w   D6,D0                   ; D0 = Y - gap_top
+    addq.w  #1,D0                   ; D0 = Y - gap_top + 1
+    ble.s   .oam_gap_done           ; <= 0: sprite above gap, no offset
+    cmpi.w  #32,D0
+    bls.s   .oam_gap_apply
+    moveq   #32,D0                  ; cap ramp at full 32px shift
+.oam_gap_apply:
+    add.w   D0,D4                   ; apply gradual offset
+.oam_gap_done:
+    swap    D6                      ; restore sprite index in low word
 .oam_write_y:
     move.w  D4,(VDP_DATA).l
 
