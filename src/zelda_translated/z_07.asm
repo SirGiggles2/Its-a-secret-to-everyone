@@ -903,9 +903,8 @@ IsrNmi:
     move.b  ($005C,A4),D2
     beq  _anon_z07_0
     eori.b #$02,D0
-    clr.b   ($005C,A4)            ; consume request once
 _anon_z07_0:
-    andi.b  #$7F,D0
+    andi.b #$7F,D0
     move.b  D0,($00FF,A4)
     andi.b #$7E,D0
     jsr     _ppu_write_0  ; PPU $2000 write, D0=val
