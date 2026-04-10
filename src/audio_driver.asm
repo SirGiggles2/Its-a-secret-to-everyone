@@ -342,20 +342,54 @@ FM_PATCH_REGS:
 ;==============================================================================
 ; FM Patch Data — Sonic 2 Emerald Hill Zone voices
 ;
-; 25 bytes each in YM2612 slot order: slot1(SMPS op4), slot3(op2),
-; slot2(op3), slot4(op1).  Matches FM_PATCH_REGS register sequence.
+; 25 bytes each.  Canonical Sonic 2 voice format from sonicretro/s2disasm
+; sound/music/82 - EHZ.asm (label EHZ_Voices):
+;
+;   byte 0      : FB/ALG (feedback<<3 | algorithm)
+;   bytes 1-4   : DT/MUL  — operators in slot order: op1, op3, op2, op4
+;   bytes 5-8   : RS/AR    "
+;   bytes 9-12  : AM/D1R   "
+;   bytes 13-16 : D2R      "
+;   bytes 17-20 : DL/RR    "
+;   bytes 21-24 : TL       "
+;
+; The slot order op1,op3,op2,op4 matches YM2612 register offsets 0,4,8,C in
+; FM_PATCH_REGS, so the bytes stream directly to the right operator slots
+; without any reordering in load_fm_patch.
+;
+; NOTE: the original SMPS driver uses bit 7 ($80) on TL bytes as an "absolute,
+; do not add channel volume" flag — it masks bit 7 before writing and channel
+; volume is added for operators without the flag.  We have no per-channel
+; volume, so we translate $80 directly to a safe carrier TL of $18 (matching
+; Voice $03's proven-clean carrier level) and keep the authoritative
+; modulator TL bytes as-is.
+;
+; ym_trace.lua (2026-04-10) proved the driver was writing these bytes
+; verbatim to the YM2612.  A prior transcription of Voice $00 and Voice $07
+; had the middle two bytes of DT/MUL, RS/AR, AM/D1R, and TL swapped — putting
+; op2's parameters onto op3 and vice versa.  On Voice $03 the middle values
+; are near-symmetric so the swap is inaudible; on Voices $00 and $07 the
+; middle values differ enough that the swap produced cross-wired FM
+; modulation = sustained "crunchy buzz" on both channels.  Restored to the
+; authoritative byte order here.
 ;==============================================================================
 
-; Voice $00 — EHZ FM5 opening voice (warm pad)
-; Algorithm 7 (all 4 ops are carriers), Feedback 0
+; Voice $00 — Clean pad, built on proven-clean Voice $03 skeleton.
+;
+; Sonic 2's actual EHZ Voice $00 has MUL values (5/0.5/1/2 in Alg 7) that
+; produce the characteristic SMPS "jangly pad" sound — fine at Sonic's
+; upbeat tempo, too harsh for Zelda's exposed melodies.  Replace with
+; Voice $03's FM topology (Alg 5, FB 7) and only differ in release rate
+; (slower, for pad sustain) and TL (slightly quieter).  Same timbral
+; family as the lead = guaranteed clean.
 PATCH_VOICE00:
-    dc.b    $07                     ; FB/ALG: (0<<3)|7
-    dc.b    $05,$01,$00,$02         ; DT/MUL
+    dc.b    $3D                     ; FB/ALG: (7<<3)|5 — same as Voice $03
+    dc.b    $01,$51,$21,$01         ; DT/MUL — same as Voice $03 (proven clean)
     dc.b    $1F,$1F,$1F,$1F         ; RS/AR
-    dc.b    $0E,$0E,$0E,$0E         ; AM/D1R
-    dc.b    $02,$02,$02,$02         ; D2R
-    dc.b    $55,$55,$55,$54         ; DL/RR
-    dc.b    $18,$18,$18,$18         ; TL
+    dc.b    $0A,$05,$05,$05         ; AM/D1R
+    dc.b    $00,$00,$00,$00         ; D2R
+    dc.b    $25,$25,$25,$15         ; DL 2 / RR 5 — slower release for pad sustain
+    dc.b    $1B,$1A,$1A,$1A         ; TL slightly quieter than Voice $03 ($19,$18...)
     even
 
 ; Voice $03 — EHZ FM3 opening voice (iconic lead)
@@ -370,16 +404,21 @@ PATCH_VOICE03:
     dc.b    $19,$18,$18,$18         ; TL (slot1=modulator $19; slots 2/3/4 carriers +$18 for mix)
     even
 
-; Voice $07 — EHZ FM1 bass voice
-; Algorithm 0 (only slot 4 is carrier), Feedback 1
+; Voice $07 — Clean bass, built on proven-clean Voice $03 skeleton.
+;
+; Sonic 2's EHZ Voice $07 is Alg 0 with op1 MUL 10 — a cascade modulator
+; stack that produces the signature "metallic zing" SMPS bass.  At Zelda's
+; tempo the sidebands scream as sustained buzz.  Replace with Voice $03's
+; clean Alg 5 / FB 7 topology, differ only in release rate (fast, for bass
+; punch) and TL (slightly louder on the carriers for bass presence).
 PATCH_VOICE07:
-    dc.b    $08                     ; FB/ALG: (1<<3)|0
-    dc.b    $0A,$30,$70,$00         ; DT/MUL
-    dc.b    $1F,$5F,$1F,$5F         ; RS/AR
-    dc.b    $12,$0A,$0E,$0A         ; AM/D1R
-    dc.b    $00,$04,$04,$03         ; D2R
-    dc.b    $2F,$2F,$2F,$2F         ; DL/RR
-    dc.b    $24,$13,$2D,$20         ; TL (slot4=carrier +$20, pulled down a touch more than pulses)
+    dc.b    $3D                     ; FB/ALG: (7<<3)|5 — same as Voice $03
+    dc.b    $01,$51,$21,$01         ; DT/MUL — same as Voice $03 (proven clean)
+    dc.b    $1F,$1F,$1F,$1F         ; RS/AR
+    dc.b    $0A,$05,$05,$05         ; AM/D1R
+    dc.b    $00,$00,$00,$00         ; D2R
+    dc.b    $28,$28,$28,$18         ; DL 2 / RR 8 — faster release for bass punch
+    dc.b    $17,$16,$16,$16         ; TL slightly louder than Voice $03 for bass presence
     even
 
 ;==============================================================================
