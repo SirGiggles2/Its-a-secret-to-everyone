@@ -753,6 +753,28 @@ music_tick:
     ; labeled rts — the call costs ~20 cycles total and lets us defer
     ; removing it to a later cleanup pass.
     ;------------------------------------------------------------------
+    ; Attract-mode-exit hook: the game's DriveAudio is NOP'd, so the
+    ; audio driver's own SilenceSong paths (via DriveTune0 → $0604 bit7
+    ; and DriveTune1 → $0602 bit7) never run.  Game logic still writes
+    ; the request bytes at state transitions.  The attract-to-file-menu
+    ; path (UpdateMode0Demo_Sub0 → SilenceAllSound in z_01.asm:4118)
+    ; sets $0604 = $80 and $0603 = $80.  Poll both $0604 and $0602 for
+    ; the silence-request bit 7 and route it into native music_silence.
+    ; Also clear $0605/$0607 (current-tune shadows) so the game's own
+    ; "nothing playing" markers stay coherent with our silenced state.
+    move.b  ($FF0604).l,D0          ; Tune 0 request (SilenceAllSound)
+    bmi.s   .do_silence
+    move.b  ($FF0602).l,D0          ; Tune 1 request (silence-then-play)
+    bpl.s   .no_silence_req
+.do_silence:
+    clr.b   ($FF0602).l
+    clr.b   ($FF0603).l
+    clr.b   ($FF0604).l
+    clr.b   ($FF0605).l
+    clr.b   ($FF0607).l
+    bsr     music_silence
+    bra.s   .dmc_poll
+.no_silence_req:
     move.b  (m_song_req).l,D0
     beq.s   .no_req
     clr.b   (m_song_req).l
