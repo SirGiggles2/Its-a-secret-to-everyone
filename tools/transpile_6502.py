@@ -2516,6 +2516,41 @@ def _patch_z02(path):
     else:
         print("  WARNING: _patch_z02 P22 -- no anchors matched (FS1-B)")
 
+    # ------------------------------------------------------------------
+    # P23a: Phase 10 FS1-A — Mode 1 slot-Link Y seed
+    #
+    # The Mode 1 cursor writer at z_02.asm:3822-3823 seeds the Link ladder
+    # at $0001 = 88.  Mode1_WriteLinkSprites then writes the three slot
+    # Link pairs at Y = 88, 112, 136 (seed, seed+24, seed+48).  The heart
+    # cursor table Mode1CursorSpriteYs is $5C,$74,$8C,$A8,$B8 = 92,116,
+    # 140,168,184, so the three save-slot cursor positions are 92/116/
+    # 140 — the Link ladder is 4 pixels higher than the cursor row on
+    # every slot.  Fix the seed from 88 to 92.
+    #
+    # Anchored on the exact 4-line sequence immediately after the
+    # Mode1CursorSpriteYs store at 3820-3821 so we can't match a stray
+    # `moveq #88,D0` elsewhere in z_02.asm.
+    # ------------------------------------------------------------------
+    p23a_old = (
+        '    move.b  D0,($0200,A4)\n'
+        '    moveq   #88,D0\n'
+        '    move.b  D0,($0001,A4)\n'
+        '    moveq   #48,D0\n'
+        '    move.b  D0,($0000,A4)\n'
+    )
+    p23a_new = (
+        '    move.b  D0,($0200,A4)\n'
+        '    moveq   #92,D0   ; PATCH P23a: Phase 10 FS1-A Link seed Y\n'
+        '    move.b  D0,($0001,A4)\n'
+        '    moveq   #48,D0\n'
+        '    move.b  D0,($0000,A4)\n'
+    )
+    if p23a_old in text:
+        text = text.replace(p23a_old, p23a_new, 1)
+        print("  _patch_z02 P23a: Mode 1 Link seed 88 -> 92 (FS1-A)")
+    else:
+        print("  WARNING: _patch_z02 P23a -- Mode 1 Link seed anchor not found (FS1-A)")
+
     with open(path, 'w', encoding='utf-8') as f:
         f.write(text)
 

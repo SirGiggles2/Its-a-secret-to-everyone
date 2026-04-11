@@ -3819,7 +3819,7 @@ _L_z02_UpdateMode1Menu_Sub0_WriteCursorSprite:
     lea     (Mode1CursorSpriteYs).l,A0
     move.b  (A0,D3.W),D0
     move.b  D0,($0200,A4)
-    moveq   #88,D0
+    moveq   #92,D0   ; PATCH P23a: Phase 10 FS1-A Link seed Y
     move.b  D0,($0001,A4)
     moveq   #48,D0
     move.b  D0,($0000,A4)
