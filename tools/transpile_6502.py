@@ -2108,6 +2108,7 @@ def _patch_z02(path):
         '    andi.b #$10,D0\n'
         '    beq  Exit\n'
         '    move.b  #1,($00FF083D).l    ; PATCH P11: hold VRamForceBlankGate\n'
+        '    move.b  #1,($00FF042B).l    ; PATCH P12: arm FrontendStartReleaseGate\n'
         '    move.b  D0,($00F6,A4)\n'
         '    moveq   #0,D0\n'
         '    move.b  D0,($0600,A4)\n'
@@ -2148,6 +2149,191 @@ def _patch_z02(path):
         print("  _patch_z02 P11b: clear VRamForceBlankGate at end of InitMode1_Sub6")
     else:
         print("  WARNING: _patch_z02 P11b -- InitMode1_Sub6 tail not found")
+
+    # ---- Patch 12: FrontendStartReleaseGate in UpdateMode1Menu_Sub0 ----
+    # Attempt 6a (diary 2026-04-04 13:16:58).  When the title -> file-select
+    # transition fires, the Start button is still held from the tap that caused
+    # it.  The unpatched UpdateMode1Menu_Sub0 treats that held press as "user
+    # wants to leave file-select" and instantly advances to Sub1 (gameplay).
+    # Gate the Sub0 entry on $00FF042B: while the gate is non-zero and Start
+    # is still held, Sub0 returns without advancing.  The moment Start
+    # releases, the gate is cleared and normal Sub0 logic resumes.
+    old_sub0_menu = (
+        'UpdateMode1Menu_Sub0:\n'
+        '    move.b  ($00F8,A4),D0\n'
+        '    andi.b #$10,D0\n'
+        '    bne  _L_z02_UpdateMode1Menu_Sub0_Exit\n'
+    )
+    new_sub0_menu = (
+        'UpdateMode1Menu_Sub0:\n'
+        '    tst.b   ($00FF042B).l          ; PATCH P12: FrontendStartReleaseGate\n'
+        '    beq.s   .p12_mode1_sub0_pass\n'
+        '    move.b  ($00F8,A4),D0\n'
+        '    andi.b  #$10,D0\n'
+        '    beq.s   .p12_mode1_sub0_release\n'
+        '    rts                             ; Start still held -> stay in Sub0\n'
+        '.p12_mode1_sub0_release:\n'
+        '    clr.b   ($00FF042B).l          ; Start released -> clear gate\n'
+        '.p12_mode1_sub0_pass:\n'
+        '    move.b  ($00F8,A4),D0\n'
+        '    andi.b #$10,D0\n'
+        '    bne  _L_z02_UpdateMode1Menu_Sub0_Exit\n'
+    )
+    if old_sub0_menu in text:
+        text = text.replace(old_sub0_menu, new_sub0_menu, 1)
+        print("  _patch_z02 P12: FrontendStartReleaseGate in UpdateMode1Menu_Sub0")
+    else:
+        print("  WARNING: _patch_z02 P12 -- UpdateMode1Menu_Sub0 head not found")
+
+    # ---- Patch 13: ModeE_SyncCharBoardCursorToIndex (Attempt 6a part 2) ----
+    # Diary 2026-04-04 13:16:58.  Replace the old Attempt-5f hidden-slot clamp
+    # with a source-of-truth sync between CharBoardIndex ($041F) and the char
+    # board cursor (ObjX=$0071, ObjY=$0085).  Called from FinishInput so that
+    # after every direction move the index is clamped mod 44 and the cursor
+    # coords are regenerated from a small lookup (col*$10+$30, row*$10+$87).
+    # Hidden slot = idx 43; it is snapped to idx 9 ('J').  The existing Right
+    # wrap code already maps idx 42->0 through CycleCharBoardCursorY, so the
+    # "right-from-hidden -> A" rule is handled by the existing path; the sync
+    # only fixes "other hidden landings -> 9".
+    old_finish_input = (
+        '_L_z02_ModeE_HandleDirectionButton_FinishInput:\n'
+        '    moveq   #1,D0\n'
+        '    move.b  D0,($0428,A4)\n'
+        '    move.b  D0,($0602,A4)\n'
+    )
+    new_finish_input = (
+        '_L_z02_ModeE_HandleDirectionButton_FinishInput:\n'
+        '    jsr     ModeE_SyncCharBoardCursorToIndex  ; PATCH P13\n'
+        '    moveq   #1,D0\n'
+        '    move.b  D0,($0428,A4)\n'
+        '    move.b  D0,($0602,A4)\n'
+    )
+    if old_finish_input in text:
+        text = text.replace(old_finish_input, new_finish_input, 1)
+        print("  _patch_z02 P13a: jsr ModeE_SyncCharBoardCursorToIndex in FinishInput")
+    else:
+        print("  WARNING: _patch_z02 P13a -- FinishInput head not found")
+
+    # Inject the sync function body right after LA10A_Exit (the CycleCharBoard
+    # tail) so it sits adjacent to the code it supports.
+    old_la10a_tail = (
+        '_L_z02_CycleCharBoardCursorY_ReturnValue:\n'
+        '    move.b  D3,($042A,A4)\n'
+        '    even\n'
+        'LA10A_Exit:\n'
+        '    rts\n'
+    )
+    new_la10a_tail = (
+        '_L_z02_CycleCharBoardCursorY_ReturnValue:\n'
+        '    move.b  D3,($042A,A4)\n'
+        '    even\n'
+        'LA10A_Exit:\n'
+        '    rts\n'
+        '\n'
+        '; PATCH P13: ModeE_SyncCharBoardCursorToIndex (Attempt 6a part 2).\n'
+        '; Source-of-truth sync for the char board cursor.  Normalizes\n'
+        '; CharBoardIndex ($041F) mod 44, snaps the hidden slot (idx 43)\n'
+        '; to idx 9, and regenerates (ObjX=$0071, ObjY=$0085) from the\n'
+        '; index using row = idx/11, col = idx%11, ObjX = $30+col*$10,\n'
+        '; ObjY = $87+row*$10.  Call this after any direction move.\n'
+        '    even\n'
+        'ModeE_SyncCharBoardCursorToIndex:\n'
+        '    move.l  D0,-(A7)\n'
+        '    move.l  D1,-(A7)\n'
+        '    move.b  ($041F,A4),D0\n'
+        '    btst    #7,D0\n'
+        '    beq.s   .p13_ck_high\n'
+        '    addi.b  #44,D0         ; underflow wrap (-1 -> 43)\n'
+        '.p13_ck_high:\n'
+        '    cmpi.b  #44,D0\n'
+        '    bcs.s   .p13_ck_hidden\n'
+        '    subi.b  #44,D0         ; overflow wrap\n'
+        '.p13_ck_hidden:\n'
+        '    cmpi.b  #43,D0\n'
+        '    bne.s   .p13_compute\n'
+        '    moveq   #9,D0          ; hidden slot -> idx 9\n'
+        '.p13_compute:\n'
+        '    move.b  D0,($041F,A4)\n'
+        '    moveq   #0,D1\n'
+        '.p13_row_loop:\n'
+        '    cmpi.b  #11,D0\n'
+        '    bcs.s   .p13_row_done\n'
+        '    subi.b  #11,D0\n'
+        '    addq.b  #1,D1\n'
+        '    bra.s   .p13_row_loop\n'
+        '.p13_row_done:\n'
+        '    lsl.b   #4,D0\n'
+        '    addi.b  #$30,D0\n'
+        '    move.b  D0,($0071,A4)\n'
+        '    lsl.b   #4,D1\n'
+        '    addi.b  #$87,D1\n'
+        '    move.b  D1,($0085,A4)\n'
+        '    move.l  (A7)+,D1\n'
+        '    move.l  (A7)+,D0\n'
+        '    rts\n'
+    )
+    if old_la10a_tail in text:
+        text = text.replace(old_la10a_tail, new_la10a_tail, 1)
+        print("  _patch_z02 P13b: ModeE_SyncCharBoardCursorToIndex body injected")
+    else:
+        print("  WARNING: _patch_z02 P13b -- LA10A_Exit tail not found")
+
+    # ---- Patch 14: Zelda16.11 -- 9th letter wrap gate on $0070==$B0 ----
+    # Diary Finding #29.  The old gate tested "$0423 & $0F == 6" to decide
+    # whether the VRAM address had walked past the name field.  But
+    # UpdateWaterfallAnimation in title mode rewrites $0423 to $C0 during its
+    # BG animation, so by the time REGISTER runs the gate's premise is dead
+    # and the wrap never fires.  Re-gate on the cursor pixel X instead: the
+    # cursor is at $0070=$B0 exactly when it has walked off the 8th letter
+    # column, which is the true wrap condition.  The secondary clamp at
+    # line ~2770 ("cmpi.b #$B0" before the 112/$70 reset) already keys on
+    # $0070 and stays as-is.
+    old_wrap_gate = (
+        '    move.b  ($0423,A4),D0\n'
+        '    andi.b #$0F,D0\n'
+        '    cmpi.b  #$06,D0\n'
+        '    bne  _L_z02_ModeE_HandleAOrB_Exit\n'
+    )
+    new_wrap_gate = (
+        '    move.b  ($0070,A4),D0      ; PATCH P14: Zelda16.11\n'
+        '    cmpi.b  #$B0,D0\n'
+        '    bne  _L_z02_ModeE_HandleAOrB_Exit\n'
+    )
+    if old_wrap_gate in text:
+        text = text.replace(old_wrap_gate, new_wrap_gate, 1)
+        print("  _patch_z02 P14: Zelda16.11 9th letter wrap gate -> $0070==$B0")
+    else:
+        print("  WARNING: _patch_z02 P14 -- wrap gate pattern not found")
+
+    # ---- Patch 15: Zelda16.12 -- SEC;SBC #$08 -1 fix at wrap site ----
+    # Diary Finding #30.  Systemic SEC;SBC #imm transpile bug: the pattern
+    # "ori #$11,CCR; subx.b D1,D0" subtracts imm+1 instead of imm because
+    # the X flag is still set.  At this specific wrap site the 9th letter
+    # ends up in column $CD instead of $CE.  Replace with a plain sub.b.
+    # Anchored on the "$20D6 -> $20CE" comment to uniquely hit this site
+    # without touching ModifyFlashingCursorY or ModeEandF_SetUpCursorSprites
+    # (whose callers are tuned around the off-by-one, per diary scope note).
+    old_sec_sbc_wrap = (
+        '    ; For example, $20D6 -> $20CE.\n'
+        '    ;\n'
+        '    move.b  ($0423,A4),D0\n'
+        '    ori     #$11,CCR  ; SEC: set C+X\n'
+        '    move.b  #$08,D1\n'
+        '    subx.b  D1,D0   ; SBC #$08\n'
+        '    move.b  D0,($0423,A4)\n'
+    )
+    new_sec_sbc_wrap = (
+        '    ; For example, $20D6 -> $20CE.\n'
+        '    ;\n'
+        '    move.b  ($0423,A4),D0  ; PATCH P15: Zelda16.12\n'
+        '    sub.b   #$08,D0\n'
+        '    move.b  D0,($0423,A4)\n'
+    )
+    if old_sec_sbc_wrap in text:
+        text = text.replace(old_sec_sbc_wrap, new_sec_sbc_wrap, 1)
+        print("  _patch_z02 P15: Zelda16.12 SEC;SBC -1 fix at wrap site")
+    else:
+        print("  WARNING: _patch_z02 P15 -- SEC;SBC wrap pattern not found")
 
     with open(path, 'w', encoding='utf-8') as f:
         f.write(text)

@@ -146,6 +146,12 @@ ACTIVE_HINT_CTR    equ CHR_STATE_BASE+$1A ; $FF083A byte: current-frame Reg 10 c
 ;------------------------------------------------------------------------------
 VRamForceBlankGate equ CHR_STATE_BASE+$1D ; $FF083D byte: 1 = force-blank hold
 LAST_GAMEMODE      equ PPU_STATE_BASE+$10 ; $FF0810 byte: shadow of $0012
+; Attempt 6a: FrontendStartReleaseGate — set by UpdateMode0Demo_Sub0 at the
+; moment title mode accepts Start and begins the file-select init chain.
+; While non-zero, UpdateMode1Menu_Sub0 ignores Start so the held press from
+; the title transition cannot immediately punch through to gameplay.
+; Cleared the frame the Start button bit ($00F8 & $10) first becomes zero.
+FrontendStartReleaseGate equ $FF042B ; 1 byte in NES scratch-record region
 ;------------------------------------------------------------------------------
 ; Scroll composition modes shared between staged state and INTRO_SCROLL_MODE.
 ;------------------------------------------------------------------------------
@@ -1378,8 +1384,13 @@ _chr_upload_sprite_4x:
 ; _compose_bg_tile_word — add the active BG pattern-table offset to a raw tile.
 ;
 ; Input:  D0.w = raw NES BG tile index (0..255)
-; Output: D0.w = Genesis tile index with PPUCTRL bit 4 applied
+; Output: D0.w = Genesis tile word: bit 15 (high prio) | tile index
 ; Uses no other registers.
+;
+; Attempt 5g (diary 2026-04-04 12:37:44): Plane A BG tiles are promoted to
+; high priority so text and board glyphs can sit in front of sprites that
+; NES OAM marks as behind-background (attr bit 5). _oam_dma pairs with this
+; by honoring attr bit 5 and leaving those sprites low-priority.
 ;==============================================================================
 _compose_bg_tile_word:
     andi.w  #$00FF,D0               ; raw tile index only
@@ -1387,6 +1398,7 @@ _compose_bg_tile_word:
     beq.s   .cbgtw_done
     ori.w   #$0100,D0               ; BG pattern table 1 → VRAM $1000
 .cbgtw_done:
+    ori.w   #$8000,D0               ; bit 15 = high priority (Attempt 5g)
     rts
 
 ;==============================================================================
@@ -1730,19 +1742,15 @@ _oam_dma:
     ; Sprites with NES_Y ≥ 239 produce Genesis Y ≥ 368 which is naturally off-screen.
     move.w  D0,D4
     addi.w  #129,D4
-    ; Phase 2.1: apply frontend 8 px sprite lift for GameMode < 2 (attract
-    ; $00 + file-select $01).  Gameplay modes ($02+) skip the lift so HUD
-    ; sprites sit on their correct scanlines.  The earlier code used a
-    ; stricter tst (GameMode == 0 only), which left file-select Links 8 px
-    ; low.  Diary Attempt 4b / 5d confirmed "modes 0-1" is the target.
-    cmpi.b  #2,($0012,A4)
-    bhs.s   .oam_gap_check
-    ; Preserve top-edge visibility for attract sprites that are just entering
-    ; from the top. The global attract-mode lift would otherwise clip NES
-    ; OAM Y=0..7 sprites entirely one frame too early.
+    ; Zelda16.9 / Diary Finding #26 (narrowed): dropping the lift for
+    ; file-select ($0012=$01) fixes the save-slot Links (+VSRAM=0 in
+    ; _mode_transition_check). BUT the title/attract sword (GameMode=$00)
+    ; was tuned around the -8 lift and breaks without it. So keep the lift
+    ; for attract-only, not for file-select or gameplay.
+    tst.b   ($0012,A4)
+    bne.s   .oam_gap_check          ; mode != 0 → no lift
     cmpi.b  #8,D0
-    bcs.s   .oam_gap_check
-.oam_apply_attract_bias:
+    bcs.s   .oam_gap_check          ; NES Y < 8 → skip lift (top-edge)
     subi.w  #8,D4
 .oam_gap_check:
     swap    D6                      ; access gap threshold from upper word
@@ -1815,12 +1823,22 @@ _oam_dma:
     lea     (.oam_tile_bias_tbl,PC),A1
     add.w   (A1,D4.W),D5        ; apply per-copy tile bias
     andi.w  #$07FF,D5           ; keep bits 10:0 only
+    ; Attempt 5g: honor NES sprite attr bit 5 (behind background).  When set,
+    ; leave bit 15 clear so Plane A (now high priority) renders in front.
+    btst    #5,D2
+    bne.s   .spr_low_prio_che
     ori.w   #$8000,D5           ; bit 15 = high priority
+.spr_low_prio_che:
     lea     (.oam_pal_bits_tbl,PC),A1
     or.w    (A1,D4.W),D5        ; OR in palette bits (PAL0/PAL0/PAL0/PAL1)
     else
     andi.w  #$07FF,D5           ; keep bits 10:0 only
+    ; Attempt 5g: honor NES sprite attr bit 5 (behind background).  When set,
+    ; leave bit 15 clear so Plane A (now high priority) renders in front.
+    btst    #5,D2
+    bne.s   .spr_low_prio_noche
     ori.w   #$8000,D5           ; bit 15 = high priority (sprite over planes)
+.spr_low_prio_noche:
     ; Palette: NES sprite attr[1:0] → Genesis bits[14:13], offset +2
     move.w  D2,D4
     andi.w  #$0003,D4           ; isolate NES sprite palette (0–3)
