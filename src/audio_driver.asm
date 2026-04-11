@@ -684,47 +684,20 @@ dmc_feed:
     rts
 
 ;==============================================================================
-; dmc_dbg_poll - Phase-C scaffold: watch the NES-format controller latch that
-; _ctrl_strobe populates (proven working at T27/T28 PASS).  On the rising
-; edge of the Start button, trigger the next DMC sample and wrap the index
-; 1..7 so repeated presses cycle through every sample.
+; dmc_dbg_poll - Phase-C/D scaffold (REMOVED in Phase E).
 ;
-; Latch at $FF1100 is the NES-order byte (bit0=A, bit1=B, bit2=Sel,
-; bit3=Start, bit4=Up, bit5=Down, bit6=Left, bit7=Right), *active-high*
-; (1 = pressed).  We never touch $A10001/$A10009 here because
-; `_ctrl_strobe` already drives the two-phase TH protocol every frame when
-; the game writes $4016; re-strobing from inside music_tick would collide
-; with it and corrupt the latch.
+; Previously watched the NES-format controller latch for a Start rising edge
+; and cycled through the 7 DMC samples.  That scaffold served its purpose at
+; T27/T28 PASS — DMC triggering is now fully driven by the game's own APU
+; $4015 writes via the _apu_write_4015 stub in nes_io.asm (Phase D), and
+; Start has a real game function (exit attract mode).  Polling it here would
+; fire a stray DMC burst every time the player presses Start on the title
+; screen, masking real game audio events.
 ;
-; This whole routine is temporary and will be removed in Phase D when the
-; APU $4013 stub takes over sample triggering.
+; The label is kept as a labeled rts for backward-compat with the call in
+; music_tick, which we'll peel out in a later cleanup pass.
 ;==============================================================================
 dmc_dbg_poll:
-    movem.l D0-D1,-(SP)
-    move.b  ($FF1100).l,D0          ; NES-format button byte, active-high
-    andi.b  #$08,D0                 ; isolate Start bit (NES bit3)
-
-    move.b  (dmc_dbg_prev_btn).l,D1
-    move.b  D0,(dmc_dbg_prev_btn).l
-    ; Rising edge: pressed this frame AND not last frame.
-    tst.b   D0
-    beq.s   .done
-    tst.b   D1
-    bne.s   .done
-
-    ; Trigger dmc_dbg_next, then advance.
-    moveq   #0,D0
-    move.b  (dmc_dbg_next).l,D0
-    bsr     dmc_trigger
-    move.b  (dmc_dbg_next).l,D1
-    addq.b  #1,D1
-    cmpi.b  #DMC_SAMPLE_COUNT,D1
-    bls.s   .store_next
-    moveq   #1,D1
-.store_next:
-    move.b  D1,(dmc_dbg_next).l
-.done:
-    movem.l (SP)+,D0-D1
     rts
 
 ;==============================================================================
