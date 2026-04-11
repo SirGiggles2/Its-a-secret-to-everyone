@@ -2195,6 +2195,14 @@ def _patch_z02(path):
     # wrap code already maps idx 42->0 through CycleCharBoardCursorY, so the
     # "right-from-hidden -> A" rule is handled by the existing path; the sync
     # only fixes "other hidden landings -> 9".
+    # P25 (Phase 10.5-fix, Zelda27.81): FS2-F console-freeze suspect.
+    # Builds/reports/fs2f_audit.md identifies P13 as the only helper reached
+    # by the direction handlers that the A-press path does NOT call.  On
+    # BizHawk the grid walk is clean; on real MegaDrive hardware EVERY
+    # direction press stalls.  Disable the FinishInput jsr into P13 to see
+    # whether the freeze clears.  The P13 body at 2240+ stays injected as
+    # dead code (no caller) so the file still assembles and 10.7's P13 Y
+    # constant fix still has an anchor if we re-enable it later.
     old_finish_input = (
         '_L_z02_ModeE_HandleDirectionButton_FinishInput:\n'
         '    moveq   #1,D0\n'
@@ -2203,7 +2211,7 @@ def _patch_z02(path):
     )
     new_finish_input = (
         '_L_z02_ModeE_HandleDirectionButton_FinishInput:\n'
-        '    jsr     ModeE_SyncCharBoardCursorToIndex  ; PATCH P13\n'
+        '    ; PATCH P25: P13 sync call DISABLED for FS2-F console freeze\n'
         '    moveq   #1,D0\n'
         '    move.b  D0,($0428,A4)\n'
         '    move.b  D0,($0602,A4)\n'

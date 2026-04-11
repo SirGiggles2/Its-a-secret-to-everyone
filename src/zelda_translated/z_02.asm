@@ -2561,7 +2561,7 @@ _L_z02_ModeE_HandleDirectionButton_Up:
     move.b  D0,($041F,A4)
     even
 _L_z02_ModeE_HandleDirectionButton_FinishInput:
-    jsr     ModeE_SyncCharBoardCursorToIndex  ; PATCH P13
+    ; PATCH P25: P13 sync call DISABLED for FS2-F console freeze
     moveq   #1,D0
     move.b  D0,($0428,A4)
     move.b  D0,($0602,A4)
