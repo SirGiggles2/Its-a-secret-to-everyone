@@ -2692,7 +2692,7 @@ _L_z02_ModeE_HandleAOrB_CheckAB:
     ; A or B was pressed.
     ;
     cmpi.b  #$80,D0
-    bne  _L_z02_ModeE_HandleAOrB_MoveCursor
+    bne  _L_z02_ModeE_HandleAOrB_Backspace   ; PATCH P25b: B = backspace
     ; A was pressed.
     ;
     ; Request to play the character click tune (same as bomb set).
@@ -2764,6 +2764,33 @@ _L_z02_ModeE_HandleAOrB_MoveCursor:
     bne  _L_z02_ModeE_HandleAOrB_Exit
     moveq   #112,D0
     move.b  D0,($0070,A4)
+    even
+; PATCH P25b: FS2-E backspace handler.
+; Entered when bit $40 (B) is set in $00F8 & $C0. Decrements
+; NameCharOffset, VRAM low byte, and name cursor sprite X by
+; one column (8 px), and writes a space ($24) to the erased
+; position. Clamps at SlotToNameOffset[$0016] so the backspace
+; cannot cross into a previous slot's name field.
+_L_z02_ModeE_HandleAOrB_Backspace:
+    moveq   #0,D3
+    move.b  ($0016,A4),D3        ; D3 = current slot
+    lea     (SlotToNameOffset).l,A0
+    move.b  (A0,D3.W),D1         ; D1 = slot start offset
+    move.b  ($0421,A4),D0        ; D0 = current NameCharOffset
+    cmp.b   D1,D0
+    bls     _L_z02_ModeE_HandleAOrB_Exit   ; at/below start, no-op
+    subq.b  #1,D0
+    move.b  D0,($0421,A4)        ; NameCharOffset -= 1
+    subq.b  #1,($0423,A4)        ; VRAM low byte -= 1
+    move.b  ($0070,A4),D1
+    subi.b  #8,D1
+    move.b  D1,($0070,A4)        ; name cursor X -= 8
+    moveq   #$24,D1              ; space tile
+    moveq   #0,D3
+    move.b  D0,D3                ; D3 = erased offset
+    lea     ($0638,A4),A0
+    move.b  D1,(A0,D3.W)         ; namebuf[offset] = space
+    jmp     _L_z02_ModeE_HandleAOrB_Exit
     even
 _L_z02_ModeE_HandleAOrB_Exit:
     jmp     ModeE_SetNameCursorSpriteX

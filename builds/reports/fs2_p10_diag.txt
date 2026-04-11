@@ -127,64 +127,64 @@ f= 140 post-Start1 mode=0E sub=04 idx=00 off=00 x=30 y=87 $0423=CE
 --- (8) B-press (backspace) test ---
   after A#1 namebuf: 0A 24 24 24 24 24 24 24 off=01
   after A#2 namebuf: 0A 0A 24 24 24 24 24 24 off=02
-  after B#1 namebuf: 0A 0A 24 24 24 24 24 24 off=03
-  after B#2 namebuf: 0A 0A 24 24 24 24 24 24 off=04
+  after B#1 namebuf: 0A 24 24 24 24 24 24 24 off=01
+  after B#2 namebuf: 24 24 24 24 24 24 24 24 off=00
 --- (9) D-pad grid walk ---
-  start mode=0E sub=04 idx=00 off=04 x=30 y=87 $0423=D3
-  R#1 mode=0E sub=04 idx=01 off=04 x=40 y=87 $0423=D3
-  R#2 mode=0E sub=04 idx=02 off=04 x=50 y=87 $0423=D3
-  R#3 mode=0E sub=04 idx=03 off=04 x=60 y=87 $0423=D3
-  R#4 mode=0E sub=04 idx=04 off=04 x=70 y=87 $0423=D3
-  R#5 mode=0E sub=04 idx=05 off=04 x=80 y=87 $0423=D3
-  R#6 mode=0E sub=04 idx=06 off=04 x=90 y=87 $0423=D3
-  R#7 mode=0E sub=04 idx=07 off=04 x=A0 y=87 $0423=D3
-  R#8 mode=0E sub=04 idx=08 off=04 x=B0 y=87 $0423=D3
-  R#9 mode=0E sub=04 idx=09 off=04 x=C0 y=87 $0423=D3
-  R#10 mode=0E sub=04 idx=0A off=04 x=D0 y=87 $0423=D3
-  R#11 mode=0E sub=04 idx=0B off=04 x=30 y=97 $0423=D3
-  D#1 mode=0E sub=04 idx=16 off=04 x=30 y=A7 $0423=D3
-  R#1 mode=0E sub=04 idx=17 off=04 x=40 y=A7 $0423=D3
-  R#2 mode=0E sub=04 idx=18 off=04 x=50 y=A7 $0423=D3
-  R#3 mode=0E sub=04 idx=19 off=04 x=60 y=A7 $0423=D3
-  R#4 mode=0E sub=04 idx=1A off=04 x=70 y=A7 $0423=D3
-  R#5 mode=0E sub=04 idx=1B off=04 x=80 y=A7 $0423=D3
-  R#6 mode=0E sub=04 idx=1C off=04 x=90 y=A7 $0423=D3
-  R#7 mode=0E sub=04 idx=1D off=04 x=A0 y=A7 $0423=D3
-  R#8 mode=0E sub=04 idx=1E off=04 x=B0 y=A7 $0423=D3
-  R#9 mode=0E sub=04 idx=1F off=04 x=C0 y=A7 $0423=D3
-  R#10 mode=0E sub=04 idx=20 off=04 x=D0 y=A7 $0423=D3
-  R#11 mode=0E sub=04 idx=21 off=04 x=30 y=B7 $0423=D3
-  D#1 mode=0E sub=04 idx=00 off=04 x=30 y=87 $0423=D3
-  L#1 mode=0E sub=04 idx=09 off=04 x=C0 y=87 $0423=D3
-  L#2 mode=0E sub=04 idx=08 off=04 x=B0 y=87 $0423=D3
-  L#3 mode=0E sub=04 idx=07 off=04 x=A0 y=87 $0423=D3
-  L#4 mode=0E sub=04 idx=06 off=04 x=90 y=87 $0423=D3
-  L#5 mode=0E sub=04 idx=05 off=04 x=80 y=87 $0423=D3
-  L#6 mode=0E sub=04 idx=04 off=04 x=70 y=87 $0423=D3
-  L#7 mode=0E sub=04 idx=03 off=04 x=60 y=87 $0423=D3
-  L#8 mode=0E sub=04 idx=02 off=04 x=50 y=87 $0423=D3
-  L#9 mode=0E sub=04 idx=01 off=04 x=40 y=87 $0423=D3
-  L#10 mode=0E sub=04 idx=00 off=04 x=30 y=87 $0423=D3
-  L#11 mode=0E sub=04 idx=09 off=04 x=C0 y=87 $0423=D3
-  D#1 mode=0E sub=04 idx=14 off=04 x=C0 y=97 $0423=D3
-  R#1 mode=0E sub=04 idx=15 off=04 x=D0 y=97 $0423=D3
-  R#2 mode=0E sub=04 idx=16 off=04 x=30 y=A7 $0423=D3
-  R#3 mode=0E sub=04 idx=17 off=04 x=40 y=A7 $0423=D3
-  R#4 mode=0E sub=04 idx=18 off=04 x=50 y=A7 $0423=D3
-  R#5 mode=0E sub=04 idx=19 off=04 x=60 y=A7 $0423=D3
-  R#6 mode=0E sub=04 idx=1A off=04 x=70 y=A7 $0423=D3
-  R#7 mode=0E sub=04 idx=1B off=04 x=80 y=A7 $0423=D3
-  R#8 mode=0E sub=04 idx=1C off=04 x=90 y=A7 $0423=D3
-  R#9 mode=0E sub=04 idx=1D off=04 x=A0 y=A7 $0423=D3
-  R#10 mode=0E sub=04 idx=1E off=04 x=B0 y=A7 $0423=D3
-  R#11 mode=0E sub=04 idx=1F off=04 x=C0 y=A7 $0423=D3
-  U#1 mode=0E sub=04 idx=14 off=04 x=C0 y=97 $0423=D3
-  U#2 mode=0E sub=04 idx=09 off=04 x=C0 y=87 $0423=D3
-  U#3 mode=0E sub=04 idx=2A off=04 x=C0 y=B7 $0423=D3
+  start mode=0E sub=04 idx=00 off=00 x=30 y=87 $0423=CF
+  R#1 mode=0E sub=04 idx=01 off=00 x=40 y=87 $0423=CF
+  R#2 mode=0E sub=04 idx=02 off=00 x=50 y=87 $0423=CF
+  R#3 mode=0E sub=04 idx=03 off=00 x=60 y=87 $0423=CF
+  R#4 mode=0E sub=04 idx=04 off=00 x=70 y=87 $0423=CF
+  R#5 mode=0E sub=04 idx=05 off=00 x=80 y=87 $0423=CF
+  R#6 mode=0E sub=04 idx=06 off=00 x=90 y=87 $0423=CF
+  R#7 mode=0E sub=04 idx=07 off=00 x=A0 y=87 $0423=CF
+  R#8 mode=0E sub=04 idx=08 off=00 x=B0 y=87 $0423=CF
+  R#9 mode=0E sub=04 idx=09 off=00 x=C0 y=87 $0423=CF
+  R#10 mode=0E sub=04 idx=0A off=00 x=D0 y=87 $0423=CF
+  R#11 mode=0E sub=04 idx=0B off=00 x=30 y=97 $0423=CF
+  D#1 mode=0E sub=04 idx=16 off=00 x=30 y=A7 $0423=CF
+  R#1 mode=0E sub=04 idx=17 off=00 x=40 y=A7 $0423=CF
+  R#2 mode=0E sub=04 idx=18 off=00 x=50 y=A7 $0423=CF
+  R#3 mode=0E sub=04 idx=19 off=00 x=60 y=A7 $0423=CF
+  R#4 mode=0E sub=04 idx=1A off=00 x=70 y=A7 $0423=CF
+  R#5 mode=0E sub=04 idx=1B off=00 x=80 y=A7 $0423=CF
+  R#6 mode=0E sub=04 idx=1C off=00 x=90 y=A7 $0423=CF
+  R#7 mode=0E sub=04 idx=1D off=00 x=A0 y=A7 $0423=CF
+  R#8 mode=0E sub=04 idx=1E off=00 x=B0 y=A7 $0423=CF
+  R#9 mode=0E sub=04 idx=1F off=00 x=C0 y=A7 $0423=CF
+  R#10 mode=0E sub=04 idx=20 off=00 x=D0 y=A7 $0423=CF
+  R#11 mode=0E sub=04 idx=21 off=00 x=30 y=B7 $0423=CF
+  D#1 mode=0E sub=04 idx=00 off=00 x=30 y=87 $0423=CF
+  L#1 mode=0E sub=04 idx=FF off=00 x=1F y=87 $0423=CF
+  L#2 mode=0E sub=04 idx=FE off=00 x=0E y=87 $0423=CF
+  L#3 mode=0E sub=04 idx=FD off=00 x=FD y=87 $0423=CF
+  L#4 mode=0E sub=04 idx=FC off=00 x=EC y=87 $0423=CF
+  L#5 mode=0E sub=04 idx=FB off=00 x=DB y=87 $0423=CF
+  L#6 mode=0E sub=04 idx=FA off=00 x=CA y=87 $0423=CF
+  L#7 mode=0E sub=04 idx=F9 off=00 x=B9 y=87 $0423=CF
+  L#8 mode=0E sub=04 idx=F8 off=00 x=A8 y=87 $0423=CF
+  L#9 mode=0E sub=04 idx=F7 off=00 x=97 y=87 $0423=CF
+  L#10 mode=0E sub=04 idx=F6 off=00 x=86 y=87 $0423=CF
+  L#11 mode=0E sub=04 idx=F5 off=00 x=75 y=87 $0423=CF
+  D#1 mode=0E sub=04 idx=00 off=00 x=75 y=97 $0423=CF
+  R#1 mode=0E sub=04 idx=01 off=00 x=85 y=97 $0423=CF
+  R#2 mode=0E sub=04 idx=02 off=00 x=95 y=97 $0423=CF
+  R#3 mode=0E sub=04 idx=03 off=00 x=A5 y=97 $0423=CF
+  R#4 mode=0E sub=04 idx=04 off=00 x=B5 y=97 $0423=CF
+  R#5 mode=0E sub=04 idx=05 off=00 x=C5 y=97 $0423=CF
+  R#6 mode=0E sub=04 idx=06 off=00 x=D5 y=97 $0423=CF
+  R#7 mode=0E sub=04 idx=07 off=00 x=E5 y=97 $0423=CF
+  R#8 mode=0E sub=04 idx=08 off=00 x=F5 y=97 $0423=CF
+  R#9 mode=0E sub=04 idx=09 off=00 x=05 y=97 $0423=CF
+  R#10 mode=0E sub=04 idx=0A off=00 x=15 y=97 $0423=CF
+  R#11 mode=0E sub=04 idx=0B off=00 x=25 y=97 $0423=CF
+  U#1 mode=0E sub=04 idx=00 off=00 x=25 y=87 $0423=CF
+  U#2 mode=0E sub=04 idx=21 off=00 x=25 y=B7 $0423=CF
+  U#3 mode=0E sub=04 idx=16 off=00 x=25 y=A7 $0423=CF
 --- (10) Post-walk OAM + work-RAM state ---
   spr00: Y=$2F Tile=$F3 Attr=$03 X=$43
-  spr01: Y=$F8 Tile=$25 Attr=$23 X=$98
-  spr02: Y=$F8 Tile=$25 Attr=$23 X=$C0
+  spr01: Y=$F8 Tile=$25 Attr=$23 X=$78
+  spr02: Y=$F8 Tile=$25 Attr=$23 X=$25
   spr03: Y=$F8 Tile=$CC Attr=$82 X=$30
   spr04: Y=$5C Tile=$08 Attr=$00 X=$30
   spr05: Y=$5C Tile=$0A Attr=$00 X=$38
@@ -197,5 +197,5 @@ f= 140 post-Start1 mode=0E sub=04 idx=00 off=00 x=30 y=87 $0423=CE
   spr12: Y=$F8 Tile=$D2 Attr=$02 X=$7B
   $FF0000=$00 $FF0001=$A4 $FF0004=$02 $FF0005=$00
   $FF0343=$20 $FF0344=$24
-  namebuf $FF0638..$FF063F: 0A 0A 24 24 24 24 24 24
+  namebuf $FF0638..$FF063F: 24 24 24 24 24 24 24 24
 === fs2_p10_diag end ===

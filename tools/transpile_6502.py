@@ -2595,6 +2595,91 @@ def _patch_z02(path):
     else:
         print("  WARNING: _patch_z02 P24 -- _anon_z02_5 seed anchor not found (FS2-A)")
 
+    # ------------------------------------------------------------------
+    # P25b: Phase 10.6 FS2-E — REGISTER-mode backspace
+    #
+    # _L_z02_ModeE_HandleAOrB_CheckAB (z_02.asm:2681) dispatches:
+    #   - A (bit $80) -> char write, falls into MoveCursor (advance)
+    #   - B (bit $40) -> jumps directly to MoveCursor (advance only)
+    #
+    # User expectation: B = backspace = retreat cursor one slot and erase.
+    # Split the B branch to a new handler _L_z02_ModeE_HandleAOrB_Backspace
+    # that decrements NameCharOffset ($0421), VRAM low byte ($0423), and
+    # the name cursor sprite X ($0070), and writes a space tile ($24) to
+    # the erased position in the name buffer ($0638 + $0421).  Clamps at
+    # SlotToNameOffset[$0016] so we cannot backspace into the previous
+    # slot's name.
+    #
+    # Two-anchor patch:
+    #   (a) redirect the cmpi/bne in CheckAB from MoveCursor -> Backspace
+    #   (b) inject the Backspace body immediately before the existing
+    #       _L_z02_ModeE_HandleAOrB_Exit label
+    # ------------------------------------------------------------------
+    p25b_old_dispatch = (
+        '    ; A or B was pressed.\n'
+        '    ;\n'
+        '    cmpi.b  #$80,D0\n'
+        '    bne  _L_z02_ModeE_HandleAOrB_MoveCursor\n'
+    )
+    p25b_new_dispatch = (
+        '    ; A or B was pressed.\n'
+        '    ;\n'
+        '    cmpi.b  #$80,D0\n'
+        '    bne  _L_z02_ModeE_HandleAOrB_Backspace   ; PATCH P25b: B = backspace\n'
+    )
+    p25b_old_exit = (
+        '    moveq   #112,D0\n'
+        '    move.b  D0,($0070,A4)\n'
+        '    even\n'
+        '_L_z02_ModeE_HandleAOrB_Exit:\n'
+        '    jmp     ModeE_SetNameCursorSpriteX\n'
+    )
+    p25b_new_exit = (
+        '    moveq   #112,D0\n'
+        '    move.b  D0,($0070,A4)\n'
+        '    even\n'
+        '; PATCH P25b: FS2-E backspace handler.\n'
+        '; Entered when bit $40 (B) is set in $00F8 & $C0. Decrements\n'
+        '; NameCharOffset, VRAM low byte, and name cursor sprite X by\n'
+        '; one column (8 px), and writes a space ($24) to the erased\n'
+        '; position. Clamps at SlotToNameOffset[$0016] so the backspace\n'
+        '; cannot cross into a previous slot\'s name field.\n'
+        '_L_z02_ModeE_HandleAOrB_Backspace:\n'
+        '    moveq   #0,D3\n'
+        '    move.b  ($0016,A4),D3        ; D3 = current slot\n'
+        '    lea     (SlotToNameOffset).l,A0\n'
+        '    move.b  (A0,D3.W),D1         ; D1 = slot start offset\n'
+        '    move.b  ($0421,A4),D0        ; D0 = current NameCharOffset\n'
+        '    cmp.b   D1,D0\n'
+        '    bls     _L_z02_ModeE_HandleAOrB_Exit   ; at/below start, no-op\n'
+        '    subq.b  #1,D0\n'
+        '    move.b  D0,($0421,A4)        ; NameCharOffset -= 1\n'
+        '    subq.b  #1,($0423,A4)        ; VRAM low byte -= 1\n'
+        '    move.b  ($0070,A4),D1\n'
+        '    subi.b  #8,D1\n'
+        '    move.b  D1,($0070,A4)        ; name cursor X -= 8\n'
+        '    moveq   #$24,D1              ; space tile\n'
+        '    moveq   #0,D3\n'
+        '    move.b  D0,D3                ; D3 = erased offset\n'
+        '    lea     ($0638,A4),A0\n'
+        '    move.b  D1,(A0,D3.W)         ; namebuf[offset] = space\n'
+        '    jmp     _L_z02_ModeE_HandleAOrB_Exit\n'
+        '    even\n'
+        '_L_z02_ModeE_HandleAOrB_Exit:\n'
+        '    jmp     ModeE_SetNameCursorSpriteX\n'
+    )
+    p25b_hits = 0
+    if p25b_old_dispatch in text:
+        text = text.replace(p25b_old_dispatch, p25b_new_dispatch, 1)
+        p25b_hits += 1
+    if p25b_old_exit in text:
+        text = text.replace(p25b_old_exit, p25b_new_exit, 1)
+        p25b_hits += 1
+    if p25b_hits == 2:
+        print("  _patch_z02 P25b: FS2-E REGISTER backspace handler")
+    else:
+        print(f"  WARNING: _patch_z02 P25b -- only {p25b_hits}/2 anchors matched (FS2-E)")
+
     with open(path, 'w', encoding='utf-8') as f:
         f.write(text)
 
