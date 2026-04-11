@@ -69,6 +69,42 @@ def dmc_rate_hz(rate_idx: int) -> float:
     return CPU_HZ_NTSC / DMC_PERIOD_NTSC[rate_idx & 0xF]
 
 
+# Target rate for the Genesis DAC stream.  The HBlank-driven streamer in
+# audio_driver.asm fires once per visible scanline while dmc_active is set;
+# the Genesis NTSC VDP renders 224 active display lines per frame at 60 Hz
+# (plus a single HINT on the first VBlank line).  224 * 60 = 13440 Hz, so
+# we resample every sample to exactly 13440 Hz ahead of time.  That lets
+# the HBlank handler be trivial: read one byte per HINT, advance, write.
+# No fractional-step accumulator needed at runtime.
+DAC_HZ = 13440
+
+
+def resample_linear(src: list[int], src_hz: float, dst_hz: float) -> list[int]:
+    """Linear-interpolation resample of a PCM sample list.
+
+    src is a list of integers (7-bit 0..127 levels from decode_dmc).
+    src_hz is the NES DMC playback rate; dst_hz is the Genesis DAC rate.
+    Downsample is the common case here (21..33 kHz -> 13.44 kHz); no
+    anti-alias prefilter is applied because (a) the samples are already
+    low-fidelity NES DMC content and (b) aliasing on sub-half-second sound
+    effects is acoustically masked by their impulsive envelopes.
+    """
+    n_src = len(src)
+    if n_src == 0:
+        return []
+    ratio = src_hz / dst_hz
+    n_dst = int(n_src / ratio)
+    out = [0] * n_dst
+    for i in range(n_dst):
+        pos = i * ratio
+        lo = int(pos)
+        hi = lo + 1 if lo + 1 < n_src else lo
+        frac = pos - lo
+        v = src[lo] * (1.0 - frac) + src[hi] * frac
+        out[i] = max(0, min(127, int(round(v))))
+    return out
+
+
 # --- ROM IO -----------------------------------------------------------------
 
 def read_ines(rom_path: Path):
@@ -175,20 +211,24 @@ def main(argv: list[str]) -> int:
         nes_addrs.append(nes_addr)
         blob.extend(sample)
 
-        # Decode delta -> 7-bit DAC levels (0..127), then shift <<1 to 8-bit
-        # unsigned (0..254) centered at 128 to match YM2612 reg $2A encoding.
+        # Decode delta -> 7-bit DAC levels (0..127).
         decoded = decode_dmc(sample)
+
+        # Resample from the native NES DMC rate down to the Genesis DAC
+        # rate (13 440 Hz = 224 lines * 60 fps).  Shift <<1 to 8-bit
+        # unsigned (0..254) centered at 128 to match YM2612 reg $2A.
+        resampled = resample_linear(decoded, rate_hz, DAC_HZ)
         pcm_offsets.append(len(pcm_blob))
-        pcm_lengths.append(len(decoded))
-        pcm_blob.extend(bytes((v << 1) & 0xFF for v in decoded))
+        pcm_lengths.append(len(resampled))
+        pcm_blob.extend(bytes((v << 1) & 0xFF for v in resampled))
 
         wav_path = wav_dir / f"{i+1:02d}_{name}.wav"
         write_wav(wav_path, decoded, rate_hz)
 
         print(f"  [{i+1}] {name}: NES ${nes_addr:04X} "
               f"(PRG ${prg_off:05X})  {length} B delta / "
-              f"{len(decoded)} B pcm  "
-              f"rate_idx=${rate_idx:X} ({rate_hz:7.1f} Hz)")
+              f"{len(resampled)} B pcm @ {DAC_HZ} Hz "
+              f"(src rate_idx=${rate_idx:X} {rate_hz:7.1f} Hz)")
 
     # align blobs to even byte for M68K rept loads
     if len(blob) & 1:
@@ -257,34 +297,23 @@ def main(argv: list[str]) -> int:
         lines.append(f"    dc.b    DMC_{name}_RATE          ; {i+1}")
     lines.append("    even")
     lines.append("")
-    lines.append("; Per-frame burst size at ~60 Hz VBlank.  Computed as")
-    lines.append("; round(dmc_rate_hz / 60) so playback speed matches the NES")
-    lines.append("; original.  Used by dmc_feed to drain exactly one frame's")
-    lines.append("; worth of PCM bytes per music_tick.")
-    lines.append("    even")
-    lines.append("DMC_SAMPLE_BURST60:")
-    for i, name in enumerate(SAMPLE_NAMES):
-        burst60 = int(round(dmc_rate_hz(SAMPLE_RATE_BYTES[i]) / 60.0))
-        lines.append(f"    dc.w    {burst60}                     ; {i+1} "
-                     f"({dmc_rate_hz(SAMPLE_RATE_BYTES[i]):.0f} Hz)")
+    lines.append(f"DMC_DAC_HZ          equ     {DAC_HZ}")
     lines.append("")
-    lines.append("; dbra-count per sample for dmc_trigger's synchronous cycle-paced")
-    lines.append("; streamer.  M68K runs at 7.67 MHz NTSC; a sample at rate_hz needs")
-    lines.append("; one DAC write every (7670000 / rate_hz) cycles.  Fixed overhead")
-    lines.append("; per byte in the streamer inner loop is ~50 cycles; the dbra spin")
-    lines.append("; loop contributes 10*N + 4 cycles for dbra count N.  So:")
-    lines.append(";     N = round((cycles_per_byte - 54) / 10)")
-    lines.append("; Clamp to zero so a too-slow-CPU assumption never goes negative.")
+    lines.append("; (addr, rate, index) lookup: the NES SelectDMC routine writes")
+    lines.append("; $4010 (rate) and $4012 (addr high) before $4013/$4015 to trigger")
+    lines.append("; DMC playback.  The (addr, rate) tuple is unique across all 7")
+    lines.append("; samples — $4C appears twice (samples 2 and 7) but with different")
+    lines.append("; rates ($0F vs $0E), so shadowing both bytes lets the APU stub")
+    lines.append("; recover the 1-based sample index when $4015 fires.")
+    lines.append(";")
+    lines.append("; Record layout: {addr_byte, rate_byte, index, 0-pad}.  4 bytes per")
+    lines.append("; entry so the search loop can step with addq.l #4,A0.")
     lines.append("    even")
-    lines.append("DMC_SAMPLE_SPIN:")
-    M68K_HZ = 7670000
-    FIXED_OVERHEAD = 54  # cycles of non-spin work per byte in streamer inner loop
+    lines.append("DMC_SAMPLE_LOOKUP:")
     for i, name in enumerate(SAMPLE_NAMES):
-        hz = dmc_rate_hz(SAMPLE_RATE_BYTES[i])
-        cyc = M68K_HZ / hz
-        spin = max(0, int(round((cyc - FIXED_OVERHEAD) / 10.0)))
-        lines.append(f"    dc.w    {spin:<5}                  ; {i+1} "
-                     f"({hz:.0f} Hz, {cyc:.0f} cyc/byte)")
+        lines.append(f"    dc.b    ${SAMPLE_ADDR_BYTES[i]:02X},${SAMPLE_RATE_BYTES[i]:02X},"
+                     f"{i+1:>2},0  ; {i+1} {name}")
+    lines.append("DMC_SAMPLE_LOOKUP_END:")
     lines.append("")
     lines.append("; --- Blobs ------------------------------------------------------------")
     lines.append("    even")

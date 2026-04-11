@@ -69,8 +69,18 @@ NES_YM_K5_TRI   equ 68803
 ;         D1.b = data value
 ; Output: none
 ; Preserves: all registers
+;
+; SR lockout: the address+data pair MUST go out as an atomic latched write.
+; With the HBlank-driven DMC streamer enabled, the HINT handler also writes
+; $2A + data to YM2612 Part I; if it preempts between our address write and
+; data write, the YM latch is left pointing at $2A and our subsequent data
+; byte lands in the DAC instead of the intended register.  Mask HINT (level
+; 4) for the duration of the pair by raising SR interrupt level to 6, then
+; restore the caller's SR on exit.  Cost: ~16 cycles per call.
 ;==============================================================================
 ym_write1:
+    move.w  SR,-(SP)                ; save caller's SR
+    ori.w   #$0600,SR               ; mask HINT (level 4) + its below
 .wait:
     tst.b   (YM_ADDR1).l            ; bit 7 = busy flag
     bmi.s   .wait
@@ -79,13 +89,15 @@ ym_write1:
     nop
     nop
     move.b  D1,(YM_DATA1).l         ; write data
+    move.w  (SP)+,SR                ; restore SR (re-enables HINT)
     rts
 
 ;==============================================================================
 ; ym_write2 — Write one register to YM2612 Part II
 ;
 ; Used for ch 4-5 regs and ch 6 pan ($B4+2 = $B6 on Part II).  The busy flag
-; is shared across both parts so we still poll Part I.
+; is shared across both parts so we still poll Part I.  Same SR lockout as
+; ym_write1 to prevent HINT-based DMC streamer from stomping the latch.
 ;
 ; Input:  D0.b = register address
 ;         D1.b = data value
@@ -93,6 +105,8 @@ ym_write1:
 ; Preserves: all registers
 ;==============================================================================
 ym_write2:
+    move.w  SR,-(SP)
+    ori.w   #$0600,SR
 .wait:
     tst.b   (YM_ADDR1).l            ; busy flag is shared between parts
     bmi.s   .wait
@@ -101,6 +115,7 @@ ym_write2:
     nop
     nop
     move.b  D1,(YM_DATA2).l         ; write data (Part II)
+    move.w  (SP)+,SR
     rts
 
 ;==============================================================================
@@ -296,36 +311,12 @@ audio_init:
     bsr     ym_write1               ; ch 2 panning
 
     ;------------------------------------------------------------------
-    ; Phase-C DMC isolation: force every FM operator on ch 0/1/2 to max
-    ; attenuation ($7F) so even if a stray key-on fires, the FM path is
-    ; silent and only the DAC on ch 6 is audible.  This is a temporary
-    ; override for debugging the DAC pipeline; Phase D removes it.
+    ; (Phase E polish: the Phase-C FM isolation mute that forced every
+    ; operator TL to $7F has been removed — FM music plays again alongside
+    ; the DMC DAC stream now that HBlank-driven non-blocking playback is
+    ; in place.  Patches loaded by load_fm_patch above already set the
+    ; authoritative TL bytes for each voice.)
     ;------------------------------------------------------------------
-    move.b  #$7F,D1                 ; TL = $7F = full attenuation (silent)
-    move.b  #$40,D0                 ; ch0 op1
-    bsr     ym_write1
-    move.b  #$41,D0                 ; ch1 op1
-    bsr     ym_write1
-    move.b  #$42,D0                 ; ch2 op1
-    bsr     ym_write1
-    move.b  #$44,D0                 ; ch0 op3
-    bsr     ym_write1
-    move.b  #$45,D0                 ; ch1 op3
-    bsr     ym_write1
-    move.b  #$46,D0                 ; ch2 op3
-    bsr     ym_write1
-    move.b  #$48,D0                 ; ch0 op2
-    bsr     ym_write1
-    move.b  #$49,D0                 ; ch1 op2
-    bsr     ym_write1
-    move.b  #$4A,D0                 ; ch2 op2
-    bsr     ym_write1
-    move.b  #$4C,D0                 ; ch0 op4
-    bsr     ym_write1
-    move.b  #$4D,D0                 ; ch1 op4
-    bsr     ym_write1
-    move.b  #$4E,D0                 ; ch2 op4
-    bsr     ym_write1
 
     ;------------------------------------------------------------------
     ; Mute all 4 PSG channels (attenuation = $F = maximum)
@@ -555,7 +546,7 @@ m_last_psg_nc       equ MUSIC_BASE+$28  ; byte: last noise-control byte written
 ;----------------------------------------------------------------------
 DMC_BASE            equ $FFE100
 dmc_active          equ DMC_BASE+$00    ; byte: 0 = idle, 1 = playing
-dmc_burst           equ DMC_BASE+$02    ; word: PCM bytes to drain per frame
+dmc_last_idx        equ DMC_BASE+$01    ; byte: last triggered sample index (for HUD)
 dmc_ptr             equ DMC_BASE+$04    ; long: current M68K pointer into PCM blob
 dmc_remain          equ DMC_BASE+$08    ; long: PCM bytes left in current sample
 dmc_rate_sel        equ DMC_BASE+$0C    ; byte: shadow of last $4010 write
@@ -565,63 +556,42 @@ dmc_dbg_prev_btn    equ DMC_BASE+$0F    ; byte: pad state from last frame (edge 
 dmc_dbg_next        equ DMC_BASE+$10    ; byte: next sample index (1..7) to trigger
 
 ;==============================================================================
-; dmc_trigger — synchronous cycle-paced DMC sample playback (Phase C scaffold).
+; dmc_trigger — non-blocking DMC sample launch (Phase E polish).
 ;
 ; Input:  D0.b = 1-based sample index (1..DMC_SAMPLE_COUNT)
 ; Output: none
-; Trashes: D0-D4, A0-A1
+; Trashes: D0, D1, A0
 ;
-; This routine BLOCKS until the entire PCM sample has been streamed to the
-; YM2612 DAC.  The previous (27.88) design deferred streaming to dmc_feed
-; called from music_tick's VBlank tail, but that crammed every frame's
-; ~552 bytes into a ~1 ms burst at ~kHz rates and then held silence for the
-; remainder of the 16.6 ms frame — producing a 60 Hz amplitude-modulation
-; buzz plus wildly incorrect pitch.
+; Sets up dmc_ptr / dmc_remain / dmc_active and arms the VDP HBlank
+; interrupt to fire on every scanline.  Control returns immediately; the
+; HBlank handler dmc_hint_tick (called from HBlankISR in genesis_shell.asm)
+; then streams one PCM byte per line to YM2612 reg $2A.  When dmc_remain
+; underflows, the handler clears dmc_active, parks the DAC at $80, and
+; disables HINT in VDP reg 0.
 ;
-; Instead, we here stream every byte with a per-sample cycle-paced spin
-; delay so the DAC receives data at the sample's native NES rate.  The
-; M68K freezes for ~55-130 ms per SFX (longest sample = 3329 delta bytes =
-; 26632 PCM bytes @ 24.8 kHz = 1.07 s wall-clock).  That hitch is fine for
-; the Phase-C test scaffold; a Z80-streamer or HBlank-driven ring buffer
-; will replace this in Phase D/E to allow non-blocking playback.
+; Rate: samples are pre-resampled to DMC_DAC_HZ (13 440 Hz) by
+; tools/extract_dmc_samples.py.  That matches 224 display lines * 60 fps
+; exactly, so the HBlank handler needs no fractional-step accumulator —
+; just advance one byte per fire.
 ;
-; Inner-loop timing (calibrated in tools/extract_dmc_samples.py):
-;     move.b  (A1)+,(YM_DATA1).l    ~20 cyc  (bus wait-state)
-;     move.w  D3,D4                  4 cyc
-;   .spin:
-;     dbra    D4,.spin              10N+4 cyc (N = DMC_SAMPLE_SPIN entry)
-;     subq.l  #1,D2                  8 cyc
-;     bne.s   .stream               10 cyc
-;   ----------------------------
-;     total                         46 + 10N + 4 = 50 + 10N cycles
-;
-; target cyc_per_byte = 7670000 / rate_hz, so N = (target - 54)/10 which
-; matches what the extractor emits into DMC_SAMPLE_SPIN.
-;
-; We pre-select YM reg $2A once at the top and then bang $A04001 directly,
-; trusting the spin delay to keep us well clear of the busy flag.  A single
-; busy-poll guard still sits above the stream loop as insurance against
-; whatever music_tick last wrote.
+; VDP register state:
+;   Reg 10 ($0A) = 0   → HINT fires every line
+;   Reg 0  ($00) = $14 → preserve bit2 (colorfix) + enable HINT (bit4)
+; Idle state after sample finish: reg 0 reverts to $04 (HINT off).
 ;
 ; Invalid indices are silently ignored.
 ;==============================================================================
 dmc_trigger:
     tst.b   D0
-    beq     .done
+    beq.s   .bad
     cmp.b   #DMC_SAMPLE_COUNT,D0
-    bhi     .done
-    movem.l D2-D4/A0-A1,-(SP)
+    bhi.s   .bad
+    movem.l D0-D2/A0-A1,-(SP)
+    move.b  D0,(dmc_last_idx).l     ; remember for HUD
     moveq   #0,D1
     move.b  D0,D1                   ; D1.l = 1-based index
     subq.l  #1,D1                   ; D1.l = 0-based index
 
-    ; D3 = spin dbra count for this sample (word table, idx*2)
-    move.l  D1,D4
-    add.l   D4,D4                   ; D4 = idx * 2
-    lea     (DMC_SAMPLE_SPIN).l,A0
-    move.w  (A0,D4.l),D3
-
-    ; long-index for PCM offset / length tables
     add.l   D1,D1                   ; D1.l = idx * 2
     add.l   D1,D1                   ; D1.l = idx * 4
 
@@ -631,52 +601,84 @@ dmc_trigger:
     lea     (DMC_SAMPLE_PCM_BLOB).l,A1
     add.l   D2,A1
 
-    ; D2 = remaining PCM bytes (long; longest sample ~26 KB)
+    ; D2 = remaining PCM bytes
     lea     (DMC_SAMPLE_PCM_LENS).l,A0
     move.l  (A0,D1.l),D2
     tst.l   D2
-    beq.s   .end                    ; zero-length guard
+    beq.s   .bad_restore            ; zero-length guard
 
-    ; mark active for the probe HUD; cleared after last byte
+    ; Publish state in one atomic-ish block, then arm HINT.
+    move.l  A1,(dmc_ptr).l
+    move.l  D2,(dmc_remain).l
     move.b  #1,(dmc_active).l
 
-    ; Select YM2612 Part I register $2A once
+    ; Arm VDP HBlank every line, then enable HINT in reg 0 (preserve bit2
+    ; colorfix).  Both writes must go in order: counter first, then enable.
+    move.w  #$8A00,(VDP_CTRL).l     ; Reg 10 = 0 → fire every line
+    move.w  #$8014,(VDP_CTRL).l     ; Reg  0 = $14 → HINT on + colorfix
+
+.bad_restore:
+    movem.l (SP)+,D0-D2/A0-A1
+.bad:
+    rts
+
+;==============================================================================
+; dmc_hint_tick — HBlank DMC-streaming inner body.
+;
+; Called from HBlankISR (genesis_shell.asm) when dmc_active is set.  Reads
+; one byte from (dmc_ptr), writes it to YM2612 reg $2A, advances the ptr,
+; decrements dmc_remain, and on underflow tears down the HINT arming.
+;
+; Preserves: all registers except the ones HBlankISR pushed for us
+; (HBlankISR wraps this in movem.l D0/A0 save/restore).
+;
+; Contract with caller: D0 and A0 are already free to clobber.  SR is
+; already at level 4+ (we're in the ISR), so no further lockout needed.
+; The YM2612 busy flag is polled here defensively — the 63.5 μs between
+; HINTs is vastly larger than the ~17 μs YM drain, so in practice the wait
+; is zero iterations, but we keep the poll for robustness against main-
+; thread writes that might have just fired.
+;==============================================================================
+dmc_hint_tick:
+    ; Fetch next PCM byte
+    move.l  (dmc_ptr).l,A0
+    move.b  (A0)+,D0
+    move.l  A0,(dmc_ptr).l
+
+    ; Busy-poll + YM2612 DAC write.  Re-select reg $2A every time because
+    ; main-thread music code writes other YM addresses between HINTs, and
+    ; we don't know what address is currently latched.
     lea     (YM_ADDR1).l,A0
 .wait:
     tst.b   (A0)
     bmi.s   .wait
     move.b  #$2A,(A0)
+    move.b  D0,(YM_DATA1).l
 
-    ; Streaming loop: one byte, spin, decrement, loop.
-    ; A1 = src ptr, D2.l = bytes remaining, D3.w = spin count.
-.stream:
-    move.b  (A1)+,(YM_DATA1).l      ; ~20 cyc bus-stalled write to $A04001
-    move.w  D3,D4                   ; 4 cyc
-.spin:
-    dbra    D4,.spin                ; 10N+4 cyc
-    subq.l  #1,D2                   ; 8 cyc
-    bne.s   .stream                 ; 10 cyc
+    ; Decrement remain; on underflow, end of sample.
+    subq.l  #1,(dmc_remain).l
+    beq.s   .end
+    rts
 
 .end:
-    clr.b   (dmc_active).l
-    ; Park DAC at mid-rail so we don't hold the last sample value forever.
+    ; Park DAC at mid-rail ($80) and mark idle.  Disable HINT in VDP reg 0
+    ; so subsequent frames don't keep firing this handler for no reason.
+    lea     (YM_ADDR1).l,A0
 .wait2:
-    tst.b   (YM_ADDR1).l
+    tst.b   (A0)
     bmi.s   .wait2
-    move.b  #$2A,(YM_ADDR1).l
+    move.b  #$2A,(A0)
     move.b  #$80,(YM_DATA1).l
-
-    movem.l (SP)+,D2-D4/A0-A1
-.done:
+    clr.b   (dmc_active).l
+    move.w  #$8004,(VDP_CTRL).l     ; Reg 0 = $04 → HINT off, colorfix on
     rts
 
 ;==============================================================================
-; dmc_feed — legacy VBlank entry point, now a no-op.
+; dmc_feed — legacy VBlank entry point, retained as labeled rts.
 ;
-; Phase C used this to drain one frame's worth of PCM from VBlank, but that
-; produced the 60 Hz buzz described above.  All streaming now happens
-; synchronously inside dmc_trigger.  Kept as a labeled rts so the existing
-; call from music_tick's tail remains a cheap nop.
+; music_tick used to call this to drain a frame's worth of PCM in VBlank.
+; All streaming now happens from HBlank via dmc_hint_tick.  Kept as a cheap
+; rts so we don't have to surgically delete the call from music_tick.
 ;==============================================================================
 dmc_feed:
     rts
@@ -739,20 +741,31 @@ music_play:
 music_tick:
     movem.l D0-D7/A0-A2,-(SP)
     ;------------------------------------------------------------------
-    ; Phase-C DMC isolation test:
-    ;   * FM / PSG music path is SHORT-CIRCUITED — no tick_sq1 call.
-    ;     That guarantees nothing else writes the YM2612 while we're
-    ;     streaming PCM to reg $2A.
-    ;   * dmc_dbg_poll reads Start on controller 1 and cycles through
-    ;     samples 1..7 on each rising edge.
+    ; Phase E polish: FM music path restored.  DMC streams independently
+    ; from HBlank via dmc_hint_tick, so the main-thread music tick no
+    ; longer needs to stay muted.  ym_write1/2 carry SR lockout so the
+    ; HINT-driven DAC streamer can't corrupt the YM2612 latch between
+    ; address and data bytes.
+    ;
+    ; Structure matches the pre-isolation (Zelda27.82) tick: consume
+    ; song_req via change_song, otherwise tick_sq1 if a song is playing.
+    ; dmc_dbg_poll + dmc_feed run after either path.  dmc_feed is now a
+    ; labeled rts — the call costs ~20 cycles total and lets us defer
+    ; removing it to a later cleanup pass.
     ;------------------------------------------------------------------
-    move.b  (m_song_req).l,D0       ; still consume song-change requests
-    beq.s   .no_req                 ; so the game state machine is happy
+    move.b  (m_song_req).l,D0
+    beq.s   .no_req
     clr.b   (m_song_req).l
     move.b  D0,(m_song).l
+    bsr     change_song
+    bra.s   .dmc_poll
 .no_req:
-    bsr     dmc_dbg_poll
-    bsr     dmc_feed
+    tst.b   (m_song).l
+    beq.s   .dmc_poll
+    bsr     tick_sq1
+.dmc_poll:
+    bsr     dmc_dbg_poll            ; scaffold: Start cycles DMC samples
+    bsr     dmc_feed                ; no-op stub (backward-compat call)
     movem.l (SP)+,D0-D7/A0-A2
     rts
 
