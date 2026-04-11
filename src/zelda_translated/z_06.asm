@@ -831,8 +831,9 @@ TransferCurTileBuf:
     moveq   #0,D2
     move.b  ($0014,A4),D2
     add.w   D2,D2                       ; 2-byte index -> 4-byte index
-    lea     (TransferBufPtrs).l,A0
-    movea.l (A0,D2.W),A0               ; A0 = 32-bit buffer pointer
+    lea     (TransferBufPtrs).l,A1
+    move.l  (A1,D2.W),D0               ; D0 = 32-bit buffer pointer
+    movea.l D0,A0                      ; A0 = 32-bit buffer pointer
     jsr     TransferTileBuf
 .skip_main_dispatch:
     moveq   #63,D0

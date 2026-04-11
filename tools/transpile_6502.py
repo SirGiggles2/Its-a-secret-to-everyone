@@ -2421,8 +2421,9 @@ def _patch_z06(path):
                '    moveq   #0,D2\n'
                '    move.b  ($0014,A4),D2\n'
                '    add.w   D2,D2                       ; 2-byte index -> 4-byte index\n'
-               '    lea     (TransferBufPtrs).l,A0\n'
-               '    movea.l (A0,D2.W),A0               ; A0 = 32-bit buffer pointer\n'
+               '    lea     (TransferBufPtrs).l,A1\n'
+               '    move.l  (A1,D2.W),D0               ; D0 = 32-bit buffer pointer\n'
+               '    movea.l D0,A0                      ; A0 = 32-bit buffer pointer\n'
                '    bsr     TransferTileBuf')
     if old_tcb in text:
         text = text.replace(old_tcb, new_tcb, 1)
@@ -2530,8 +2531,9 @@ def _patch_z06(path):
                 '    moveq   #0,D2\n'
                 '    move.b  ($0014,A4),D2\n'
                 '    add.w   D2,D2                       ; 2-byte index -> 4-byte index\n'
-                '    lea     (TransferBufPtrs).l,A0\n'
-                '    movea.l (A0,D2.W),A0               ; A0 = 32-bit buffer pointer\n'
+                '    lea     (TransferBufPtrs).l,A1\n'
+                '    move.l  (A1,D2.W),D0               ; D0 = 32-bit buffer pointer\n'
+                '    movea.l D0,A0                      ; A0 = 32-bit buffer pointer\n'
                 '    bsr     TransferTileBuf\n'
                 '    moveq   #63,D0\n')
     new_tcb3 = ('TransferCurTileBuf:\n'
@@ -2554,8 +2556,9 @@ def _patch_z06(path):
                 '    moveq   #0,D2\n'
                 '    move.b  ($0014,A4),D2\n'
                 '    add.w   D2,D2                       ; 2-byte index -> 4-byte index\n'
-                '    lea     (TransferBufPtrs).l,A0\n'
-                '    movea.l (A0,D2.W),A0               ; A0 = 32-bit buffer pointer\n'
+                '    lea     (TransferBufPtrs).l,A1\n'
+                '    move.l  (A1,D2.W),D0               ; D0 = 32-bit buffer pointer\n'
+                '    movea.l D0,A0                      ; A0 = 32-bit buffer pointer\n'
                 '    bsr     TransferTileBuf\n'
                 '.skip_main_dispatch:\n'
                 '    moveq   #63,D0\n')

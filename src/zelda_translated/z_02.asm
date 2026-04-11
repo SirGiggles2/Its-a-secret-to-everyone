@@ -487,6 +487,7 @@ UpdateMode0Demo_Sub0:
     jmp  Exit
 __far_z_02_0002:
     move.b  #1,($00FF083D).l    ; PATCH P11: hold VRamForceBlankGate
+    move.b  #1,($00FF042B).l    ; PATCH P12: arm FrontendStartReleaseGate
     move.b  D0,($00F6,A4)
     moveq   #0,D0
     move.b  D0,($0600,A4)
@@ -2564,6 +2565,7 @@ _L_z02_ModeE_HandleDirectionButton_Up:
     move.b  D0,($041F,A4)
     even
 _L_z02_ModeE_HandleDirectionButton_FinishInput:
+    jsr     ModeE_SyncCharBoardCursorToIndex  ; PATCH P13
     moveq   #1,D0
     move.b  D0,($0428,A4)
     move.b  D0,($0602,A4)
@@ -2602,6 +2604,48 @@ _L_z02_CycleCharBoardCursorY_ReturnValue:
     move.b  D3,($042A,A4)
     even
 LA10A_Exit:
+    rts
+
+; PATCH P13: ModeE_SyncCharBoardCursorToIndex (Attempt 6a part 2).
+; Source-of-truth sync for the char board cursor.  Normalizes
+; CharBoardIndex ($041F) mod 44, snaps the hidden slot (idx 43)
+; to idx 9, and regenerates (ObjX=$0071, ObjY=$0085) from the
+; index using row = idx/11, col = idx%11, ObjX = $30+col*$10,
+; ObjY = $87+row*$10.  Call this after any direction move.
+    even
+ModeE_SyncCharBoardCursorToIndex:
+    move.l  D0,-(A7)
+    move.l  D1,-(A7)
+    move.b  ($041F,A4),D0
+    btst    #7,D0
+    beq.s   .p13_ck_high
+    addi.b  #44,D0         ; underflow wrap (-1 -> 43)
+.p13_ck_high:
+    cmpi.b  #44,D0
+    bcs.s   .p13_ck_hidden
+    subi.b  #44,D0         ; overflow wrap
+.p13_ck_hidden:
+    cmpi.b  #43,D0
+    bne.s   .p13_compute
+    moveq   #9,D0          ; hidden slot -> idx 9
+.p13_compute:
+    move.b  D0,($041F,A4)
+    moveq   #0,D1
+.p13_row_loop:
+    cmpi.b  #11,D0
+    bcs.s   .p13_row_done
+    subi.b  #11,D0
+    addq.b  #1,D1
+    bra.s   .p13_row_loop
+.p13_row_done:
+    lsl.b   #4,D0
+    addi.b  #$30,D0
+    move.b  D0,($0071,A4)
+    lsl.b   #4,D1
+    addi.b  #$87,D1
+    move.b  D1,($0085,A4)
+    move.l  (A7)+,D1
+    move.l  (A7)+,D0
     rts
 
     even
@@ -2699,19 +2743,16 @@ _L_z02_ModeE_HandleAOrB_MoveCursor:
     ; Keep in mind that [0423] is the second byte of the transfer
     ; record header.
     ;
-    move.b  ($0423,A4),D0
-    andi.b #$0F,D0
-    cmpi.b  #$06,D0
+    move.b  ($0070,A4),D0      ; PATCH P14: Zelda16.11
+    cmpi.b  #$B0,D0
     bne  _L_z02_ModeE_HandleAOrB_Exit
     ; The VRAM address now points outside the name field.
     ; So, wrap around to the beginning of the name field.
     ;
     ; For example, $20D6 -> $20CE.
     ;
-    move.b  ($0423,A4),D0
-    ori     #$11,CCR  ; SEC: set C+X
-    move.b  #$08,D1
-    subx.b  D1,D0   ; SBC #$08
+    move.b  ($0423,A4),D0  ; PATCH P15: Zelda16.12
+    sub.b   #$08,D0
     move.b  D0,($0423,A4)
     ; It also means that we went past the end of the save slot
     ; info name. Set the offset to the beginning of the name.
@@ -3733,6 +3774,15 @@ UpdateMode1Menu_JumpTable:
 
     even
 UpdateMode1Menu_Sub0:
+    tst.b   ($00FF042B).l          ; PATCH P12: FrontendStartReleaseGate
+    beq.s   .p12_mode1_sub0_pass
+    move.b  ($00F8,A4),D0
+    andi.b  #$10,D0
+    beq.s   .p12_mode1_sub0_release
+    rts                             ; Start still held -> stay in Sub0
+.p12_mode1_sub0_release:
+    clr.b   ($00FF042B).l          ; Start released -> clear gate
+.p12_mode1_sub0_pass:
     move.b  ($00F8,A4),D0
     andi.b #$10,D0
     bne  _L_z02_UpdateMode1Menu_Sub0_Exit

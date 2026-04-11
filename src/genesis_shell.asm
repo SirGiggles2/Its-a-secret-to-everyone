@@ -327,7 +327,7 @@ EntryPoint:
     ; Seed LAST_GAMEMODE to $FF so the first _mode_transition_check always
     ; fires a transition (harmless because PPU latches are already zero but
     ; forces a clean VSRAM init).
-    move.b  #$FF,($00FF0810).l       ; LAST_GAMEMODE
+    move.b  #$FF,($00FF083E).l       ; LAST_GAMEMODE
 
     ;--------------------------------------------------------------------------
     ; Lower interrupt mask so VBlank (level 6) can fire.

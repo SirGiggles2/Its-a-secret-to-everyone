@@ -142,10 +142,11 @@ ACTIVE_HINT_CTR    equ CHR_STATE_BASE+$1A ; $FF083A byte: current-frame Reg 10 c
 ;   from VBlankISR.  On change the check re-zeros PPU latch/address/scroll
 ;   state and direct-writes 0 to VSRAM[0]/[1] so scroll bleed from the prior
 ;   mode cannot contaminate the new mode's first frame.  Seeded to $FF at
-;   cold boot so the first frame always fires a transition.
+;   cold boot so the first frame always fires a transition. Kept out of the
+;   MMC1 block so mapper writes cannot stomp the mode-transition shadow.
 ;------------------------------------------------------------------------------
 VRamForceBlankGate equ CHR_STATE_BASE+$1D ; $FF083D byte: 1 = force-blank hold
-LAST_GAMEMODE      equ PPU_STATE_BASE+$10 ; $FF0810 byte: shadow of $0012
+LAST_GAMEMODE      equ CHR_STATE_BASE+$1E ; $FF083E byte: shadow of $0012
 ; Attempt 6a: FrontendStartReleaseGate — set by UpdateMode0Demo_Sub0 at the
 ; moment title mode accepts Start and begins the file-select init chain.
 ; While non-zero, UpdateMode1Menu_Sub0 ignores Start so the held press from
