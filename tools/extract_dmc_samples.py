@@ -257,6 +257,35 @@ def main(argv: list[str]) -> int:
         lines.append(f"    dc.b    DMC_{name}_RATE          ; {i+1}")
     lines.append("    even")
     lines.append("")
+    lines.append("; Per-frame burst size at ~60 Hz VBlank.  Computed as")
+    lines.append("; round(dmc_rate_hz / 60) so playback speed matches the NES")
+    lines.append("; original.  Used by dmc_feed to drain exactly one frame's")
+    lines.append("; worth of PCM bytes per music_tick.")
+    lines.append("    even")
+    lines.append("DMC_SAMPLE_BURST60:")
+    for i, name in enumerate(SAMPLE_NAMES):
+        burst60 = int(round(dmc_rate_hz(SAMPLE_RATE_BYTES[i]) / 60.0))
+        lines.append(f"    dc.w    {burst60}                     ; {i+1} "
+                     f"({dmc_rate_hz(SAMPLE_RATE_BYTES[i]):.0f} Hz)")
+    lines.append("")
+    lines.append("; dbra-count per sample for dmc_trigger's synchronous cycle-paced")
+    lines.append("; streamer.  M68K runs at 7.67 MHz NTSC; a sample at rate_hz needs")
+    lines.append("; one DAC write every (7670000 / rate_hz) cycles.  Fixed overhead")
+    lines.append("; per byte in the streamer inner loop is ~50 cycles; the dbra spin")
+    lines.append("; loop contributes 10*N + 4 cycles for dbra count N.  So:")
+    lines.append(";     N = round((cycles_per_byte - 54) / 10)")
+    lines.append("; Clamp to zero so a too-slow-CPU assumption never goes negative.")
+    lines.append("    even")
+    lines.append("DMC_SAMPLE_SPIN:")
+    M68K_HZ = 7670000
+    FIXED_OVERHEAD = 54  # cycles of non-spin work per byte in streamer inner loop
+    for i, name in enumerate(SAMPLE_NAMES):
+        hz = dmc_rate_hz(SAMPLE_RATE_BYTES[i])
+        cyc = M68K_HZ / hz
+        spin = max(0, int(round((cyc - FIXED_OVERHEAD) / 10.0)))
+        lines.append(f"    dc.w    {spin:<5}                  ; {i+1} "
+                     f"({hz:.0f} Hz, {cyc:.0f} cyc/byte)")
+    lines.append("")
     lines.append("; --- Blobs ------------------------------------------------------------")
     lines.append("    even")
     lines.append("DMC_SAMPLE_BLOB:")

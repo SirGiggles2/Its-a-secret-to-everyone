@@ -98,6 +98,37 @@ DMC_SAMPLE_RATES:
     dc.b    DMC_SFX_07_RATE          ; 7
     even
 
+; Per-frame burst size at ~60 Hz VBlank.  Computed as
+; round(dmc_rate_hz / 60) so playback speed matches the NES
+; original.  Used by dmc_feed to drain exactly one frame's
+; worth of PCM bytes per music_tick.
+    even
+DMC_SAMPLE_BURST60:
+    dc.w    552                     ; 1 (33144 Hz)
+    dc.w    552                     ; 2 (33144 Hz)
+    dc.w    355                     ; 3 (21307 Hz)
+    dc.w    552                     ; 4 (33144 Hz)
+    dc.w    414                     ; 5 (24858 Hz)
+    dc.w    552                     ; 6 (33144 Hz)
+    dc.w    414                     ; 7 (24858 Hz)
+
+; dbra-count per sample for dmc_trigger's synchronous cycle-paced
+; streamer.  M68K runs at 7.67 MHz NTSC; a sample at rate_hz needs
+; one DAC write every (7670000 / rate_hz) cycles.  Fixed overhead
+; per byte in the streamer inner loop is ~50 cycles; the dbra spin
+; loop contributes 10*N + 4 cycles for dbra count N.  So:
+;     N = round((cycles_per_byte - 54) / 10)
+; Clamp to zero so a too-slow-CPU assumption never goes negative.
+    even
+DMC_SAMPLE_SPIN:
+    dc.w    18                     ; 1 (33144 Hz, 231 cyc/byte)
+    dc.w    18                     ; 2 (33144 Hz, 231 cyc/byte)
+    dc.w    31                     ; 3 (21307 Hz, 360 cyc/byte)
+    dc.w    18                     ; 4 (33144 Hz, 231 cyc/byte)
+    dc.w    25                     ; 5 (24858 Hz, 309 cyc/byte)
+    dc.w    18                     ; 6 (33144 Hz, 231 cyc/byte)
+    dc.w    25                     ; 7 (24858 Hz, 309 cyc/byte)
+
 ; --- Blobs ------------------------------------------------------------
     even
 DMC_SAMPLE_BLOB:

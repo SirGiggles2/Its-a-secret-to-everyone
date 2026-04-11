@@ -354,16 +354,18 @@ audio_init:
     dbra    D0,.clr_music
 
     ;------------------------------------------------------------------
-    ; Clear DMC state block ($FFE100, 16 bytes).  Zero dmc_active,
-    ; dmc_ptr, dmc_remain, shadow registers, and debug scaffold state.
+    ; Clear DMC state block ($FFE100, 17 bytes — rounded to 20).  Zero
+    ; dmc_active, dmc_burst, dmc_ptr, dmc_remain, shadow registers, and
+    ; debug scaffold state.
     ;------------------------------------------------------------------
     lea     (DMC_BASE).l,A0
-    clr.l   (A0)+                   ; dmc_active + pad + dmc_ptr[hi]
-    clr.l   (A0)+                   ; dmc_ptr[lo] + dmc_remain[hi]
-    clr.l   (A0)+                   ; dmc_remain[lo] + rate/addr/len sel
-    clr.l   (A0)+                   ; prev_btn + dbg_next + pad
+    clr.l   (A0)+                   ; active + burst
+    clr.l   (A0)+                   ; dmc_ptr
+    clr.l   (A0)+                   ; dmc_remain
+    clr.l   (A0)+                   ; rate/addr/len sel + prev_btn
+    clr.l   (A0)+                   ; dbg_next + pad (over-clear, safe)
     ;------------------------------------------------------------------
-    ; Scaffold: preload dmc_dbg_next = 1 so the first C-button press fires
+    ; Scaffold: preload dmc_dbg_next = 1 so the first Start press fires
     ; sample #1.  dmc_trigger wraps 1..7 from there.
     ;------------------------------------------------------------------
     move.b  #1,(dmc_dbg_next).l
@@ -553,104 +555,130 @@ m_last_psg_nc       equ MUSIC_BASE+$28  ; byte: last noise-control byte written
 ;----------------------------------------------------------------------
 DMC_BASE            equ $FFE100
 dmc_active          equ DMC_BASE+$00    ; byte: 0 = idle, 1 = playing
-dmc_ptr             equ DMC_BASE+$02    ; long: current M68K pointer into PCM blob
-dmc_remain          equ DMC_BASE+$06    ; long: PCM bytes left in current sample
-dmc_rate_sel        equ DMC_BASE+$0A    ; byte: shadow of last $4010 write
-dmc_addr_sel        equ DMC_BASE+$0B    ; byte: shadow of last $4012 write
-dmc_len_sel         equ DMC_BASE+$0C    ; byte: shadow of last $4013 write
-dmc_dbg_prev_btn    equ DMC_BASE+$0D    ; byte: pad state from last frame (edge det)
-dmc_dbg_next        equ DMC_BASE+$0E    ; byte: next sample index (1..7) to trigger
-dmc_dbg_pad0        equ DMC_BASE+$0F    ; byte: padding
+dmc_burst           equ DMC_BASE+$02    ; word: PCM bytes to drain per frame
+dmc_ptr             equ DMC_BASE+$04    ; long: current M68K pointer into PCM blob
+dmc_remain          equ DMC_BASE+$08    ; long: PCM bytes left in current sample
+dmc_rate_sel        equ DMC_BASE+$0C    ; byte: shadow of last $4010 write
+dmc_addr_sel        equ DMC_BASE+$0D    ; byte: shadow of last $4012 write
+dmc_len_sel         equ DMC_BASE+$0E    ; byte: shadow of last $4013 write
+dmc_dbg_prev_btn    equ DMC_BASE+$0F    ; byte: pad state from last frame (edge det)
+dmc_dbg_next        equ DMC_BASE+$10    ; byte: next sample index (1..7) to trigger
 
 ;==============================================================================
-; dmc_trigger — kick off a DMC sample
+; dmc_trigger — synchronous cycle-paced DMC sample playback (Phase C scaffold).
 ;
 ; Input:  D0.b = 1-based sample index (1..DMC_SAMPLE_COUNT)
 ; Output: none
-; Trashes: D0, D1, A0
+; Trashes: D0-D4, A0-A1
 ;
-; Sets dmc_ptr = DMC_SAMPLE_PCM_BLOB + per-sample offset, dmc_remain = length,
-; dmc_active = 1.  dmc_feed (called from music_tick) then streams the PCM
-; bytes to YM2612 reg $2A.
+; This routine BLOCKS until the entire PCM sample has been streamed to the
+; YM2612 DAC.  The previous (27.88) design deferred streaming to dmc_feed
+; called from music_tick's VBlank tail, but that crammed every frame's
+; ~552 bytes into a ~1 ms burst at ~kHz rates and then held silence for the
+; remainder of the 16.6 ms frame — producing a 60 Hz amplitude-modulation
+; buzz plus wildly incorrect pitch.
+;
+; Instead, we here stream every byte with a per-sample cycle-paced spin
+; delay so the DAC receives data at the sample's native NES rate.  The
+; M68K freezes for ~55-130 ms per SFX (longest sample = 3329 delta bytes =
+; 26632 PCM bytes @ 24.8 kHz = 1.07 s wall-clock).  That hitch is fine for
+; the Phase-C test scaffold; a Z80-streamer or HBlank-driven ring buffer
+; will replace this in Phase D/E to allow non-blocking playback.
+;
+; Inner-loop timing (calibrated in tools/extract_dmc_samples.py):
+;     move.b  (A1)+,(YM_DATA1).l    ~20 cyc  (bus wait-state)
+;     move.w  D3,D4                  4 cyc
+;   .spin:
+;     dbra    D4,.spin              10N+4 cyc (N = DMC_SAMPLE_SPIN entry)
+;     subq.l  #1,D2                  8 cyc
+;     bne.s   .stream               10 cyc
+;   ----------------------------
+;     total                         46 + 10N + 4 = 50 + 10N cycles
+;
+; target cyc_per_byte = 7670000 / rate_hz, so N = (target - 54)/10 which
+; matches what the extractor emits into DMC_SAMPLE_SPIN.
+;
+; We pre-select YM reg $2A once at the top and then bang $A04001 directly,
+; trusting the spin delay to keep us well clear of the busy flag.  A single
+; busy-poll guard still sits above the stream loop as insurance against
+; whatever music_tick last wrote.
 ;
 ; Invalid indices are silently ignored.
 ;==============================================================================
 dmc_trigger:
     tst.b   D0
-    beq.s   .bad
+    beq     .done
     cmp.b   #DMC_SAMPLE_COUNT,D0
-    bhi.s   .bad
-    movem.l D2/A1,-(SP)
+    bhi     .done
+    movem.l D2-D4/A0-A1,-(SP)
     moveq   #0,D1
     move.b  D0,D1                   ; D1.l = 1-based index
     subq.l  #1,D1                   ; D1.l = 0-based index
-    lsl.l   #2,D1                   ; x 4 (long-word table entry)
 
-    ; dmc_ptr = DMC_SAMPLE_PCM_BLOB + DMC_SAMPLE_PCM_OFFS[idx]
-    ; Tables and blob are in the same include far outside PC-relative range,
-    ; so use absolute (long) addressing.
+    ; D3 = spin dbra count for this sample (word table, idx*2)
+    move.l  D1,D4
+    add.l   D4,D4                   ; D4 = idx * 2
+    lea     (DMC_SAMPLE_SPIN).l,A0
+    move.w  (A0,D4.l),D3
+
+    ; long-index for PCM offset / length tables
+    add.l   D1,D1                   ; D1.l = idx * 2
+    add.l   D1,D1                   ; D1.l = idx * 4
+
+    ; A1 = PCM start ptr = DMC_SAMPLE_PCM_BLOB + OFFS[idx]
     lea     (DMC_SAMPLE_PCM_OFFS).l,A0
-    move.l  (A0,D1.l),D2            ; D2 = byte offset in PCM blob
+    move.l  (A0,D1.l),D2
     lea     (DMC_SAMPLE_PCM_BLOB).l,A1
-    add.l   A1,D2
-    move.l  D2,(dmc_ptr).l
+    add.l   D2,A1
 
-    ; dmc_remain = DMC_SAMPLE_PCM_LENS[idx]
+    ; D2 = remaining PCM bytes (long; longest sample ~26 KB)
     lea     (DMC_SAMPLE_PCM_LENS).l,A0
     move.l  (A0,D1.l),D2
-    move.l  D2,(dmc_remain).l
+    tst.l   D2
+    beq.s   .end                    ; zero-length guard
 
+    ; mark active for the probe HUD; cleared after last byte
     move.b  #1,(dmc_active).l
-    movem.l (SP)+,D2/A1
-.bad:
+
+    ; Select YM2612 Part I register $2A once
+    lea     (YM_ADDR1).l,A0
+.wait:
+    tst.b   (A0)
+    bmi.s   .wait
+    move.b  #$2A,(A0)
+
+    ; Streaming loop: one byte, spin, decrement, loop.
+    ; A1 = src ptr, D2.l = bytes remaining, D3.w = spin count.
+.stream:
+    move.b  (A1)+,(YM_DATA1).l      ; ~20 cyc bus-stalled write to $A04001
+    move.w  D3,D4                   ; 4 cyc
+.spin:
+    dbra    D4,.spin                ; 10N+4 cyc
+    subq.l  #1,D2                   ; 8 cyc
+    bne.s   .stream                 ; 10 cyc
+
+.end:
+    clr.b   (dmc_active).l
+    ; Park DAC at mid-rail so we don't hold the last sample value forever.
+.wait2:
+    tst.b   (YM_ADDR1).l
+    bmi.s   .wait2
+    move.b  #$2A,(YM_ADDR1).l
+    move.b  #$80,(YM_DATA1).l
+
+    movem.l (SP)+,D2-D4/A0-A1
+.done:
     rts
 
 ;==============================================================================
-; dmc_feed — stream a chunk of PCM bytes to YM2612 reg $2A (DAC).
+; dmc_feed — legacy VBlank entry point, now a no-op.
 ;
-; Called unconditionally from music_tick tail.  If dmc_active=0, does nothing.
-; Otherwise writes up to DMC_FEED_BURST bytes from (dmc_ptr) to reg $2A,
-; advancing dmc_ptr and decrementing dmc_remain.  When dmc_remain reaches 0,
-; clears dmc_active.
-;
-; Scaffold burst size is tuned to ~8 kHz playback - about 1/4 the true NES
-; DMC rate at index $0F.  Samples will sound pitched-down, but this is the
-; simplest thing that demonstrates the end-to-end pipeline.  Phase E will
-; replace this with a proper rate-divided pump.
+; Phase C used this to drain one frame's worth of PCM from VBlank, but that
+; produced the 60 Hz buzz described above.  All streaming now happens
+; synchronously inside dmc_trigger.  Kept as a labeled rts so the existing
+; call from music_tick's tail remains a cheap nop.
 ;==============================================================================
-DMC_FEED_BURST      equ 128
-
 dmc_feed:
-    tst.b   (dmc_active).l
-    beq.s   .done
-    movem.l D0-D3/A0,-(SP)
-    move.l  (dmc_ptr).l,A0
-    move.l  (dmc_remain).l,D2
-    move.w  #DMC_FEED_BURST-1,D3
-.wait:
-    tst.b   (YM_ADDR1).l            ; poll shared busy flag
-    bmi.s   .wait
-.loop:
-    tst.l   D2
-    beq.s   .end_of_sample
-    move.b  #$2A,(YM_ADDR1).l       ; DAC data register
-    nop
-    nop
-    nop
-    move.b  (A0)+,(YM_DATA1).l      ; stream one PCM byte
-    subq.l  #1,D2
-    dbra    D3,.loop
-    ; burst done, still bytes left
-    move.l  A0,(dmc_ptr).l
-    move.l  D2,(dmc_remain).l
-    bra.s   .restore
-.end_of_sample:
-    clr.b   (dmc_active).l
-    move.l  A0,(dmc_ptr).l
-    move.l  D2,(dmc_remain).l
-.restore:
-    movem.l (SP)+,D0-D3/A0
-.done:
     rts
 
 ;==============================================================================
