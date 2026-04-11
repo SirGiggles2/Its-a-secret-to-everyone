@@ -4465,6 +4465,7 @@ _anon_z02_28:
 
     even
 UpdateModeDSave_Sub2:
+    jsr     _sram_commit_save_slots  ; PATCH P21: Phase 9.8 persist save slots
     moveq   #0,D0
     move.b  D0,($0012,A4)
     moveq   #1,D0

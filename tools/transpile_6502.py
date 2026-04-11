@@ -2394,6 +2394,38 @@ def _patch_z02(path):
     else:
         print("  WARNING: _patch_z02 P19b -- Down wrap SEC;SBC pattern not found")
 
+    # ------------------------------------------------------------------
+    # P21: Phase 9.8 — wire save-slot writes through cart SRAM.
+    #
+    # NES Zelda's three save slots live in the work-RAM mirror at NES_SRAM
+    # ($FF6000-$FF67FF) and are written by FormatFileB / UpdateModeERegister
+    # / various in-game save paths.  All of those eventually return through
+    # UpdateModeDSave_Sub2 (the "save → return to title" funnel at z_02.asm
+    # line 4467 area).  Inserting `jsr _sram_commit_save_slots` at the head
+    # of that function copies the entire 2 KB mirror to cart SRAM in one
+    # shot, persisting all three slots in a single hook point.
+    #
+    # The matching boot-time `jsr _sram_load_save_slots` lives in
+    # genesis_shell.asm EntryPoint and restores the mirror from cart SRAM
+    # before Zelda runs.
+    # ------------------------------------------------------------------
+    old_save_sub2_head = (
+        'UpdateModeDSave_Sub2:\n'
+        '    moveq   #0,D0\n'
+        '    move.b  D0,($0012,A4)\n'
+    )
+    new_save_sub2_head = (
+        'UpdateModeDSave_Sub2:\n'
+        '    jsr     _sram_commit_save_slots  ; PATCH P21: Phase 9.8 persist save slots\n'
+        '    moveq   #0,D0\n'
+        '    move.b  D0,($0012,A4)\n'
+    )
+    if old_save_sub2_head in text:
+        text = text.replace(old_save_sub2_head, new_save_sub2_head, 1)
+        print("  _patch_z02 P21: Phase 9.8 SRAM commit hook in UpdateModeDSave_Sub2")
+    else:
+        print("  WARNING: _patch_z02 P21 -- UpdateModeDSave_Sub2 head not found")
+
     with open(path, 'w', encoding='utf-8') as f:
         f.write(text)
 

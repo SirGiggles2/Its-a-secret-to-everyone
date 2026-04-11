@@ -1663,6 +1663,112 @@ _ctrl_read_2:
     rts
 
 ;==============================================================================
+; SRAM helpers (Phase 9.7)
+;==============================================================================
+;
+; Genesis cartridges declare battery-backed SRAM in the ROM header at
+; $1B0-$1BB.  We declare a 4 KB odd-byte SRAM region at $200001-$203FFF
+; (genesis_shell.asm).  In gpgx and on real Mega Everdrive flashcarts the
+; cart area at $200000 is shared between ROM and SRAM; writing $01 to the
+; mapper port at $A130F1 swaps SRAM in.  Writing $00 swaps ROM back.
+;
+; Logical SRAM offset N (0 .. $1FFF) maps to bus address $200001 + (N << 1):
+; only the odd byte of each word is wired up, hence the 8 KB cart-address
+; window for 4 KB of usable storage.
+;
+; Helpers leave the mapping in the SRAM-enabled state after _sram_enable so
+; the save-slot read/write helpers in 9.8 don't have to toggle the port on
+; every byte.  Boot calls _sram_enable once from EntryPoint.
+;------------------------------------------------------------------------------
+
+SRAM_PORT       equ $A130F1
+SRAM_BASE_ODD   equ $200001
+
+;------------------------------------------------------------------------------
+; _sram_enable — switch cart area to SRAM mapping.  Clobbers nothing.
+;------------------------------------------------------------------------------
+_sram_enable:
+    move.b  #$01,(SRAM_PORT).l
+    rts
+
+;------------------------------------------------------------------------------
+; _sram_disable — switch cart area back to ROM.  Used by tooling only;
+; gameplay leaves SRAM mapped in continuously.
+;------------------------------------------------------------------------------
+_sram_disable:
+    move.b  #$00,(SRAM_PORT).l
+    rts
+
+;------------------------------------------------------------------------------
+; _sram_read_byte — read one byte from logical SRAM offset.
+; In:  D0.w = offset (0 .. $1FFF)
+; Out: D0.b = byte
+;------------------------------------------------------------------------------
+_sram_read_byte:
+    movem.l A0,-(SP)
+    andi.l  #$00001FFF,D0
+    add.l   D0,D0                       ; offset *= 2 (odd-byte stride)
+    movea.l #SRAM_BASE_ODD,A0
+    move.b  (A0,D0.L),D0
+    movem.l (SP)+,A0
+    rts
+
+;------------------------------------------------------------------------------
+; _sram_write_byte — write one byte to logical SRAM offset.
+; In:  D0.w = offset (0 .. $1FFF)
+;      D1.b = byte to store
+;------------------------------------------------------------------------------
+_sram_write_byte:
+    movem.l A0/D0,-(SP)
+    andi.l  #$00001FFF,D0
+    add.l   D0,D0                       ; offset *= 2 (odd-byte stride)
+    movea.l #SRAM_BASE_ODD,A0
+    move.b  D1,(A0,D0.L)
+    movem.l (SP)+,A0/D0
+    rts
+
+;------------------------------------------------------------------------------
+; Phase 9.8 — bulk save-slot copy helpers.
+;
+; NES Zelda's three save slots live at NES $6000-$67FF (2 KB), which the
+; shell mirrors at work RAM $FF6000-$FF67FF.  z_02 reads/writes go to that
+; mirror via NES_SRAM equ $FF6000.  To make saves persist across power
+; cycles we copy:
+;   _sram_load_save_slots    cart SRAM → mirror   (called once at boot)
+;   _sram_commit_save_slots  mirror   → cart SRAM (called from save funnel)
+;
+; Cart SRAM is odd-byte at $200001 with stride 2; logical offset N (0..$7FF)
+; lands at bus $200001 + N*2.
+;
+; Both helpers preserve all caller registers.
+;------------------------------------------------------------------------------
+_sram_load_save_slots:
+    movem.l D0/D1/A0/A1,-(SP)
+    movea.l #$00FF6000,A0               ; mirror destination
+    movea.l #SRAM_BASE_ODD,A1           ; cart SRAM source ($200001)
+    move.w  #$07FF,D1                   ; 2048 bytes - 1
+.lsl_loop:
+    move.b  (A1),D0
+    move.b  D0,(A0)+
+    addq.l  #2,A1                       ; advance odd-byte stride
+    dbra    D1,.lsl_loop
+    movem.l (SP)+,D0/D1/A0/A1
+    rts
+
+_sram_commit_save_slots:
+    movem.l D0/D1/A0/A1,-(SP)
+    movea.l #$00FF6000,A0               ; mirror source
+    movea.l #SRAM_BASE_ODD,A1           ; cart SRAM destination
+    move.w  #$07FF,D1                   ; 2048 bytes - 1
+.csl_loop:
+    move.b  (A0)+,D0
+    move.b  D0,(A1)
+    addq.l  #2,A1
+    dbra    D1,.csl_loop
+    movem.l (SP)+,D0/D1/A0/A1
+    rts
+
+;==============================================================================
 ; OAM DMA
 ;==============================================================================
 
