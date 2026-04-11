@@ -4,7 +4,7 @@ f= 118 post-Start mode=01 slot=03
 f= 118 pre-Start slot=03
 f= 140 post-Start1 mode=0E sub=04 idx=00 off=00 x=30 y=87 $0423=CE
 --- (1) Work-RAM seeds $FF0000/$FF0001 after _anon_z02_5 ---
-  $FF0000 = $00 (0)  $FF0001 = $78 (120)
+  $FF0000 = $00 (0)  $FF0001 = $A4 (164)
   NOTE: Mode1_WriteLinkSprites reads $0001 as Y, $0000 as X.
   _L_z02_UpdateMode1Menu_Sub0_WriteCursorSprite seeds $0001=$58 (Y), $0000=$30 (X).
   _anon_z02_5 (Mode $0E) seeds $0000=80 first, then $0001=48 — X/Y MAY be swapped.
@@ -13,12 +13,12 @@ f= 140 post-Start1 mode=0E sub=04 idx=00 off=00 x=30 y=87 $0423=CE
   spr01: Y=$F8 Tile=$25 Attr=$23 X=$70
   spr02: Y=$F8 Tile=$25 Attr=$23 X=$30
   spr03: Y=$F8 Tile=$CC Attr=$82 X=$30
-  spr04: Y=$30 Tile=$08 Attr=$00 X=$50
-  spr05: Y=$30 Tile=$0A Attr=$00 X=$58
-  spr06: Y=$48 Tile=$08 Attr=$01 X=$50
-  spr07: Y=$48 Tile=$0A Attr=$01 X=$58
-  spr08: Y=$60 Tile=$08 Attr=$02 X=$50
-  spr09: Y=$60 Tile=$0A Attr=$02 X=$58
+  spr04: Y=$5C Tile=$08 Attr=$00 X=$30
+  spr05: Y=$5C Tile=$0A Attr=$00 X=$38
+  spr06: Y=$74 Tile=$08 Attr=$00 X=$30
+  spr07: Y=$74 Tile=$0A Attr=$00 X=$38
+  spr08: Y=$8C Tile=$08 Attr=$00 X=$30
+  spr09: Y=$8C Tile=$0A Attr=$00 X=$38
   spr10: Y=$F8 Tile=$D2 Attr=$02 X=$57
   spr11: Y=$F8 Tile=$D2 Attr=$02 X=$CC
   spr12: Y=$F8 Tile=$D2 Attr=$02 X=$7B
@@ -31,12 +31,12 @@ f= 140 post-Start1 mode=0E sub=04 idx=00 off=00 x=30 y=87 $0423=CE
   sat01: Y=0179 SL=0102 AT=2124(pal=1) X=00F0
   sat02: Y=0179 SL=0103 AT=2124(pal=1) X=00B0
   sat03: Y=0179 SL=0104 AT=94CC(pal=0) X=00B0
-  sat04: Y=00B1 SL=0105 AT=8008(pal=0) X=00D0
-  sat05: Y=00B1 SL=0106 AT=800A(pal=0) X=00D8
-  sat06: Y=00C9 SL=0107 AT=8208(pal=0) X=00D0
-  sat07: Y=00C9 SL=0108 AT=820A(pal=0) X=00D8
-  sat08: Y=00E1 SL=0109 AT=8408(pal=0) X=00D0
-  sat09: Y=00E1 SL=010A AT=840A(pal=0) X=00D8
+  sat04: Y=00DD SL=0105 AT=8008(pal=0) X=00B0
+  sat05: Y=00DD SL=0106 AT=800A(pal=0) X=00B8
+  sat06: Y=00F5 SL=0107 AT=8008(pal=0) X=00B0
+  sat07: Y=00F5 SL=0108 AT=800A(pal=0) X=00B8
+  sat08: Y=010D SL=0109 AT=8008(pal=0) X=00B0
+  sat09: Y=010D SL=010A AT=800A(pal=0) X=00B8
   sat10: Y=0179 SL=010B AT=84D2(pal=0) X=00D7
   sat11: Y=0179 SL=010C AT=84D2(pal=0) X=014C
   sat12: Y=0179 SL=010D AT=84D2(pal=0) X=00FB
@@ -186,16 +186,16 @@ f= 140 post-Start1 mode=0E sub=04 idx=00 off=00 x=30 y=87 $0423=CE
   spr01: Y=$F8 Tile=$25 Attr=$23 X=$98
   spr02: Y=$F8 Tile=$25 Attr=$23 X=$C0
   spr03: Y=$F8 Tile=$CC Attr=$82 X=$30
-  spr04: Y=$30 Tile=$08 Attr=$00 X=$50
-  spr05: Y=$30 Tile=$0A Attr=$00 X=$58
-  spr06: Y=$48 Tile=$08 Attr=$01 X=$50
-  spr07: Y=$48 Tile=$0A Attr=$01 X=$58
-  spr08: Y=$60 Tile=$08 Attr=$02 X=$50
-  spr09: Y=$60 Tile=$0A Attr=$02 X=$58
+  spr04: Y=$5C Tile=$08 Attr=$00 X=$30
+  spr05: Y=$5C Tile=$0A Attr=$00 X=$38
+  spr06: Y=$74 Tile=$08 Attr=$00 X=$30
+  spr07: Y=$74 Tile=$0A Attr=$00 X=$38
+  spr08: Y=$8C Tile=$08 Attr=$00 X=$30
+  spr09: Y=$8C Tile=$0A Attr=$00 X=$38
   spr10: Y=$F8 Tile=$D2 Attr=$02 X=$57
   spr11: Y=$F8 Tile=$D2 Attr=$02 X=$CC
   spr12: Y=$F8 Tile=$D2 Attr=$02 X=$7B
-  $FF0000=$00 $FF0001=$78 $FF0004=$02 $FF0005=$03
+  $FF0000=$00 $FF0001=$A4 $FF0004=$02 $FF0005=$00
   $FF0343=$20 $FF0344=$24
   namebuf $FF0638..$FF063F: 0A 0A 24 24 24 24 24 24
 === fs2_p10_diag end ===

@@ -2131,9 +2131,9 @@ _L_z02_InitModeEandF_Full_FoundInactiveSlot:
     move.b  #$F8,D0
     move.b  D0,($0208,A4)
 _anon_z02_5:
-    moveq   #80,D0
+    moveq   #48,D0   ; PATCH P24: Phase 10 FS2-A Link seed X
     move.b  D0,($0000,A4)
-    moveq   #48,D0
+    moveq   #92,D0   ; PATCH P24: Phase 10 FS2-A Link seed Y
     move.b  D0,($0001,A4)
     addq.b  #1,($0011,A4)
     jmp     Mode1_WriteLinkSprites

@@ -2551,6 +2551,42 @@ def _patch_z02(path):
     else:
         print("  WARNING: _patch_z02 P23a -- Mode 1 Link seed anchor not found (FS1-A)")
 
+    # ------------------------------------------------------------------
+    # P24: Phase 10 FS2-A — Mode $0E Link ladder seed
+    #
+    # InitModeEandF_Full's tail (`_anon_z02_5` at z_02.asm:2133-2139) seeds
+    # the three slot Link positions before jumping into
+    # Mode1_WriteLinkSprites.  The NES source stores X -> $0000 first then
+    # Y -> $0001; Mode1_WriteLinkSprites reads $0001 as Y and $0000 as X.
+    # Current seeds: $0000=80 ($50), $0001=48 ($30).  That drops Link at
+    # Y=48,72,96 and X=80 - too high and off-center, floating above the
+    # REGISTER/ELIMINATE keyboard.
+    #
+    # The Mode 1 slot display uses X=48 Y=92 (matching
+    # Mode1CursorSpriteYs after P23a).  Mode $0E's three-slot list is the
+    # same layout with a keyboard added below, so reuse the Mode 1 seeds
+    # exactly: X=48, Y=92.  Link Ys become 92/116/140 matching FS1.
+    # ------------------------------------------------------------------
+    p24_old = (
+        '_anon_z02_5:\n'
+        '    moveq   #80,D0\n'
+        '    move.b  D0,($0000,A4)\n'
+        '    moveq   #48,D0\n'
+        '    move.b  D0,($0001,A4)\n'
+    )
+    p24_new = (
+        '_anon_z02_5:\n'
+        '    moveq   #48,D0   ; PATCH P24: Phase 10 FS2-A Link seed X\n'
+        '    move.b  D0,($0000,A4)\n'
+        '    moveq   #92,D0   ; PATCH P24: Phase 10 FS2-A Link seed Y\n'
+        '    move.b  D0,($0001,A4)\n'
+    )
+    if p24_old in text:
+        text = text.replace(p24_old, p24_new, 1)
+        print("  _patch_z02 P24: Mode $0E Link seeds X=48 Y=92 (FS2-A)")
+    else:
+        print("  WARNING: _patch_z02 P24 -- _anon_z02_5 seed anchor not found (FS2-A)")
+
     with open(path, 'w', encoding='utf-8') as f:
         f.write(text)
 
