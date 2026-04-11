@@ -3926,6 +3926,8 @@ Mode1_WriteLinkSprites:
     ; As attributes, these values represent palettes 4 to 6.
     moveq   #0,D0
     jsr     Anim_SetSpriteDescriptorAttributes
+    moveq   #0,D0
+    move.b  D0,($0006,A4)   ; PATCH P22: init slot counter
     ; We want to start with sprite 4 (offset $10).
     ; Begin with 8, so that the loop will add 8 and
     ; put us at the offset we want.
@@ -3954,7 +3956,7 @@ _L_z02_Mode1_WriteLinkSprites_LoopSlot:
     move.b  (A5)+,D0  ; PLA
     move.b  D0,($0000,A4)
     moveq   #0,D3
-    move.b  ($0004,A4),D3
+    move.b  ($0006,A4),D3   ; PATCH P22: read slot idx from scratch
     lea     ($062D,A4),A0
     move.b  (A0,D3.W),D0
     beq  _L_z02_Mode1_WriteLinkSprites_NextSlot
@@ -3985,9 +3987,8 @@ _L_z02_Mode1_WriteLinkSprites_NextSlot:
     move.b  #$18,D1
     addx.b  D1,D0   ; ADC #$18 (X flag = 6502 C)
     move.b  D0,($0001,A4)
-    addq.b  #1,($0004,A4)
-    addq.b  #1,($0005,A4)
-    move.b  ($0004,A4),D0
+    addq.b  #1,($0006,A4)   ; PATCH P22: slot counter in scratch byte
+    move.b  ($0006,A4),D0
     cmpi.b  #$03,D0
     bne  _L_z02_Mode1_WriteLinkSprites_LoopSlot
     rts

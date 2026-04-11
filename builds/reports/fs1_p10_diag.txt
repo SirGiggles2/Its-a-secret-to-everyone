@@ -7,10 +7,10 @@ f=220 GameMode=$01 Sub=$00 CurSaveSlot=$03
   spr03: Y=$F8 Tile=$CC Attr=$82 X=$30
   spr04: Y=$58 Tile=$08 Attr=$00 X=$30
   spr05: Y=$58 Tile=$0A Attr=$00 X=$38
-  spr06: Y=$70 Tile=$08 Attr=$01 X=$30
-  spr07: Y=$70 Tile=$0A Attr=$01 X=$38
-  spr08: Y=$88 Tile=$08 Attr=$02 X=$30
-  spr09: Y=$88 Tile=$0A Attr=$02 X=$38
+  spr06: Y=$70 Tile=$08 Attr=$00 X=$30
+  spr07: Y=$70 Tile=$0A Attr=$00 X=$38
+  spr08: Y=$88 Tile=$08 Attr=$00 X=$30
+  spr09: Y=$88 Tile=$0A Attr=$00 X=$38
   spr10: Y=$F8 Tile=$D2 Attr=$02 X=$57
   spr11: Y=$F8 Tile=$D2 Attr=$02 X=$CC
   spr12: Y=$F8 Tile=$D2 Attr=$02 X=$7B
@@ -25,10 +25,10 @@ f=220 GameMode=$01 Sub=$00 CurSaveSlot=$03
   sat03: Y=0179 SL=0104 AT=94CC(pal=0 pri=1) X=00B0
   sat04: Y=00D9 SL=0105 AT=8008(pal=0 pri=1) X=00B0
   sat05: Y=00D9 SL=0106 AT=800A(pal=0 pri=1) X=00B8
-  sat06: Y=00F1 SL=0107 AT=8208(pal=0 pri=1) X=00B0
-  sat07: Y=00F1 SL=0108 AT=820A(pal=0 pri=1) X=00B8
-  sat08: Y=0109 SL=0109 AT=8408(pal=0 pri=1) X=00B0
-  sat09: Y=0109 SL=010A AT=840A(pal=0 pri=1) X=00B8
+  sat06: Y=00F1 SL=0107 AT=8008(pal=0 pri=1) X=00B0
+  sat07: Y=00F1 SL=0108 AT=800A(pal=0 pri=1) X=00B8
+  sat08: Y=0109 SL=0109 AT=8008(pal=0 pri=1) X=00B0
+  sat09: Y=0109 SL=010A AT=800A(pal=0 pri=1) X=00B8
   sat10: Y=0179 SL=010B AT=84D2(pal=0 pri=1) X=00D7
   sat11: Y=0179 SL=010C AT=84D2(pal=0 pri=1) X=014C
   sat12: Y=0179 SL=010D AT=84D2(pal=0 pri=1) X=00FB
@@ -104,12 +104,12 @@ f=220 GameMode=$01 Sub=$00 CurSaveSlot=$03
   observed Link-pair Ys (sprites 4..9 inclusive):
     spr4: Y=$58 (88) Attr=$00
     spr5: Y=$58 (88) Attr=$00
-    spr6: Y=$70 (112) Attr=$01
-    spr7: Y=$70 (112) Attr=$01
-    spr8: Y=$88 (136) Attr=$02
-    spr9: Y=$88 (136) Attr=$02
+    spr6: Y=$70 (112) Attr=$00
+    spr7: Y=$70 (112) Attr=$00
+    spr8: Y=$88 (136) Attr=$00
+    spr9: Y=$88 (136) Attr=$00
 --- (6b) Work-RAM state ---
-  $FF0000 = $30  $FF0001 = $A0  $FF0004 = $03  $FF0343 = $20
+  $FF0000 = $30  $FF0001 = $A0  $FF0004 = $00  $FF0343 = $20
   $FF062D..$FF062F (IsSaveSlotActive[0..2]) = $00 $00 $00
   $FF0016 (CurSaveSlot) = $03
 --- (7) After +10 frames: OAM shadow spr0..spr12 Y/Attr ---
@@ -119,10 +119,10 @@ f=220 GameMode=$01 Sub=$00 CurSaveSlot=$03
   spr03: Y=$F8 Attr=$82
   spr04: Y=$58 Attr=$00
   spr05: Y=$58 Attr=$00
-  spr06: Y=$70 Attr=$01
-  spr07: Y=$70 Attr=$01
-  spr08: Y=$88 Attr=$02
-  spr09: Y=$88 Attr=$02
+  spr06: Y=$70 Attr=$00
+  spr07: Y=$70 Attr=$00
+  spr08: Y=$88 Attr=$00
+  spr09: Y=$88 Attr=$00
   spr10: Y=$F8 Attr=$02
   spr11: Y=$F8 Attr=$02
   spr12: Y=$F8 Attr=$02

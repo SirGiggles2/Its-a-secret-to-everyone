@@ -2426,6 +2426,96 @@ def _patch_z02(path):
     else:
         print("  WARNING: _patch_z02 P21 -- UpdateModeDSave_Sub2 head not found")
 
+    # ------------------------------------------------------------------
+    # P22: Phase 10 FS1-B — stop the Mode 1 Link slot loop from drifting
+    # the sprite descriptor attrs between iterations.
+    #
+    # `Mode1_WriteLinkSprites` reuses ($0004,A4)/($0005,A4) as BOTH the
+    # Anim_SetSpriteDescriptorAttributes attr bytes AND as the slot-loop
+    # counter.  At the bottom of the loop it does:
+    #
+    #     addq.b #1,($0004,A4)
+    #     addq.b #1,($0005,A4)
+    #     move.b ($0004,A4),D0
+    #     cmpi.b #$03,D0
+    #     bne    _L_z02_Mode1_WriteLinkSprites_LoopSlot
+    #
+    # On NES that is harmless because sprite sub-palettes 0/1/2 all carry
+    # the same Link colors.  On Genesis via the CHR-expansion palette
+    # bridge, sub-pal N routes to CRAM PAL N, so slots 1 and 2 render with
+    # PAL1/PAL2 (blue/green) instead of PAL0.  FS1 probe fs1_p10_diag.txt
+    # confirms spr04/05 attr=$00, spr06/07 attr=$01, spr08/09 attr=$02.
+    #
+    # Fix: route the slot counter through a fresh scratch byte ($0006,A4)
+    # — unused anywhere else in z_02.asm per grep — so the descriptor
+    # attrs remain at $00 for every slot.  The Anim setup at 3927 already
+    # seeds both halves to $00 via `moveq #0,D0 ; jsr
+    # Anim_SetSpriteDescriptorAttributes`, so the loop body can stop
+    # touching $0004/$0005 entirely.
+    # ------------------------------------------------------------------
+    p22_old_loop_tail = (
+        '    move.b  D0,($0001,A4)\n'
+        '    addq.b  #1,($0004,A4)\n'
+        '    addq.b  #1,($0005,A4)\n'
+        '    move.b  ($0004,A4),D0\n'
+        '    cmpi.b  #$03,D0\n'
+        '    bne  _L_z02_Mode1_WriteLinkSprites_LoopSlot\n'
+        '    rts\n'
+    )
+    p22_new_loop_tail = (
+        '    move.b  D0,($0001,A4)\n'
+        '    addq.b  #1,($0006,A4)   ; PATCH P22: slot counter in scratch byte\n'
+        '    move.b  ($0006,A4),D0\n'
+        '    cmpi.b  #$03,D0\n'
+        '    bne  _L_z02_Mode1_WriteLinkSprites_LoopSlot\n'
+        '    rts\n'
+    )
+    p22_old_slot_lookup = (
+        '    moveq   #0,D3\n'
+        '    move.b  ($0004,A4),D3\n'
+        '    lea     ($062D,A4),A0\n'
+        '    move.b  (A0,D3.W),D0\n'
+        '    beq  _L_z02_Mode1_WriteLinkSprites_NextSlot\n'
+    )
+    p22_new_slot_lookup = (
+        '    moveq   #0,D3\n'
+        '    move.b  ($0006,A4),D3   ; PATCH P22: read slot idx from scratch\n'
+        '    lea     ($062D,A4),A0\n'
+        '    move.b  (A0,D3.W),D0\n'
+        '    beq  _L_z02_Mode1_WriteLinkSprites_NextSlot\n'
+    )
+    # NOTE: _patch_common promotes bsr->jsr AFTER _patch_z02 runs, so the
+    # init anchor must match the pre-promotion `bsr` form.
+    p22_old_init = (
+        '    moveq   #0,D0\n'
+        '    bsr     Anim_SetSpriteDescriptorAttributes\n'
+        '    ; We want to start with sprite 4 (offset $10).\n'
+    )
+    p22_new_init = (
+        '    moveq   #0,D0\n'
+        '    bsr     Anim_SetSpriteDescriptorAttributes\n'
+        '    moveq   #0,D0\n'
+        '    move.b  D0,($0006,A4)   ; PATCH P22: init slot counter\n'
+        '    ; We want to start with sprite 4 (offset $10).\n'
+    )
+
+    p22_hits = 0
+    if p22_old_loop_tail in text:
+        text = text.replace(p22_old_loop_tail, p22_new_loop_tail, 1)
+        p22_hits += 1
+    if p22_old_slot_lookup in text:
+        text = text.replace(p22_old_slot_lookup, p22_new_slot_lookup, 1)
+        p22_hits += 1
+    if p22_old_init in text:
+        text = text.replace(p22_old_init, p22_new_init, 1)
+        p22_hits += 1
+    if p22_hits == 3:
+        print("  _patch_z02 P22: Mode1_WriteLinkSprites attr drift fix (FS1-B)")
+    elif p22_hits > 0:
+        print(f"  WARNING: _patch_z02 P22 -- only {p22_hits}/3 anchors matched (FS1-B)")
+    else:
+        print("  WARNING: _patch_z02 P22 -- no anchors matched (FS1-B)")
+
     with open(path, 'w', encoding='utf-8') as f:
         f.write(text)
 
