@@ -2082,6 +2082,73 @@ def _patch_z02(path):
     else:
         print("  WARNING: _patch_z02 P10 -- InitDemoSubphaseTransferStoryTiles not found")
 
+    # ---- Patch 11: Set/clear VRamForceBlankGate around file-select init chain ----
+    # Sets VRamForceBlankGate=1 at the top of UpdateMode0Demo_Sub0 (the Start-press
+    # handler that kicks off the file-select init chain) and clears it at the end
+    # of InitMode1_Sub6 (the last InitMode1 submode before the game transitions
+    # to normal Mode1 gameplay).  While the gate is held, _ppu_write_1 in
+    # nes_io.asm masks BG+sprite enable bits off so the VDP stays in force-blank,
+    # preventing a beam-race if the user presses Start mid-frame while CHR/VRAM
+    # is still streaming.  VRamForceBlankGate lives at $FF083D.
+    # NOTE: _patch_z02 runs BEFORE _promote_nonlocal_bsr_to_jsr, so the input
+    # text here still has the pre-promotion short forms ("beq Exit", "bsr ...").
+    old_sub0_force_blank = (
+        'UpdateMode0Demo_Sub0:\n'
+        '    move.b  ($00F8,A4),D0\n'
+        '    andi.b #$10,D0\n'
+        '    beq  Exit\n'
+        '    move.b  D0,($00F6,A4)\n'
+        '    moveq   #0,D0\n'
+        '    move.b  D0,($0600,A4)\n'
+        '    bsr     SilenceAllSound'
+    )
+    new_sub0_force_blank = (
+        'UpdateMode0Demo_Sub0:\n'
+        '    move.b  ($00F8,A4),D0\n'
+        '    andi.b #$10,D0\n'
+        '    beq  Exit\n'
+        '    move.b  #1,($00FF083D).l    ; PATCH P11: hold VRamForceBlankGate\n'
+        '    move.b  D0,($00F6,A4)\n'
+        '    moveq   #0,D0\n'
+        '    move.b  D0,($0600,A4)\n'
+        '    bsr     SilenceAllSound'
+    )
+    if old_sub0_force_blank in text:
+        text = text.replace(old_sub0_force_blank, new_sub0_force_blank, 1)
+        print("  _patch_z02 P11a: set VRamForceBlankGate in UpdateMode0Demo_Sub0")
+    else:
+        idx_dbg = text.find('UpdateMode0Demo_Sub0:')
+        if idx_dbg < 0:
+            print("  WARNING: _patch_z02 P11a -- label 'UpdateMode0Demo_Sub0:' absent entirely")
+        else:
+            print("  WARNING: _patch_z02 P11a -- region mismatch, first 300 chars:")
+            print("    " + repr(text[idx_dbg:idx_dbg+300]))
+
+    old_sub6_release = (
+        '    moveq   #0,D0\n'
+        '    move.b  D0,($0013,A4)\n'
+        '    addq.b  #1,($0011,A4)\n'
+        '    rts\n'
+        '\n'
+        '    even\n'
+        'Mode1CursorSpriteTriplet:'
+    )
+    new_sub6_release = (
+        '    moveq   #0,D0\n'
+        '    move.b  D0,($0013,A4)\n'
+        '    addq.b  #1,($0011,A4)\n'
+        '    clr.b   ($00FF083D).l       ; PATCH P11: release VRamForceBlankGate\n'
+        '    rts\n'
+        '\n'
+        '    even\n'
+        'Mode1CursorSpriteTriplet:'
+    )
+    if old_sub6_release in text:
+        text = text.replace(old_sub6_release, new_sub6_release, 1)
+        print("  _patch_z02 P11b: clear VRamForceBlankGate at end of InitMode1_Sub6")
+    else:
+        print("  WARNING: _patch_z02 P11b -- InitMode1_Sub6 tail not found")
+
     with open(path, 'w', encoding='utf-8') as f:
         f.write(text)
 
