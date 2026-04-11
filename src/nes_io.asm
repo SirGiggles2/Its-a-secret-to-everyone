@@ -1574,6 +1574,13 @@ nes_palette_to_genesis:
 _ctrl_strobe:
     movem.l D1-D3,-(SP)
     ; Phase 1: set TH=1 → bits[5:4]=C,B  bits[3:0]=Right,Left,Down,Up (active low)
+    ;
+    ; NOTE: The Genesis I/O chip puts JOY1_DATA at $A10003, NOT $A10001 —
+    ; $A10001 is the version register and always reads back the hardware
+    ; revision byte.  The T27_T29_FRONTEND_DIARY attempt 1 documents the
+    ; fix; this worktree branched from main before it landed, so every
+    ; read of "button state" was actually the version reg and Start never
+    ; fired.  Restored to the correct $A10003 path here.
     move.b  #$40,($A10009).l    ; ctrl1: TH pin = output
     move.b  #$40,($A10003).l    ; assert TH=1
     nop

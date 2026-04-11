@@ -195,12 +195,23 @@ audio_init:
     bsr     ym_write1               ; ch 6 off
 
     ;------------------------------------------------------------------
-    ; ISOLATION TEST: PSG drums only.  FM emit_note_* are rts-stubbed,
-    ; DAC is explicitly off, ch 6 pan stays at power-on $00 mute.
+    ; DMC scaffold (Phase C): enable YM2612 DAC on ch 6 and unmute its
+    ; pan register so PCM bytes streamed to reg $2A become audible.
+    ;
+    ; $2B bit 7 = DAC enable (replaces ch 6's FM synth path).  We also
+    ; write a center value ($80) to $2A so the DAC sits at mid-scale
+    ; until dmc_feed starts pushing real samples.  $B6 (Part II) is ch 6
+    ; pan/AMS/PMS — $C0 enables both L+R outputs.
     ;------------------------------------------------------------------
     move.b  #$2B,D0                 ; DAC enable register
-    moveq   #0,D1                   ; DAC off
+    move.b  #$80,D1                 ; bit 7 = DAC on
     bsr     ym_write1
+    move.b  #$2A,D0                 ; DAC data
+    move.b  #$80,D1                 ; center value = silence
+    bsr     ym_write1
+    move.b  #$B6,D0                 ; ch 6 pan/AMS/PMS (Part II)
+    move.b  #$C0,D1                 ; L+R enabled
+    bsr     ym_write2
 
     ;------------------------------------------------------------------
     ; LFO off (register $22 = 0)
@@ -285,6 +296,38 @@ audio_init:
     bsr     ym_write1               ; ch 2 panning
 
     ;------------------------------------------------------------------
+    ; Phase-C DMC isolation: force every FM operator on ch 0/1/2 to max
+    ; attenuation ($7F) so even if a stray key-on fires, the FM path is
+    ; silent and only the DAC on ch 6 is audible.  This is a temporary
+    ; override for debugging the DAC pipeline; Phase D removes it.
+    ;------------------------------------------------------------------
+    move.b  #$7F,D1                 ; TL = $7F = full attenuation (silent)
+    move.b  #$40,D0                 ; ch0 op1
+    bsr     ym_write1
+    move.b  #$41,D0                 ; ch1 op1
+    bsr     ym_write1
+    move.b  #$42,D0                 ; ch2 op1
+    bsr     ym_write1
+    move.b  #$44,D0                 ; ch0 op3
+    bsr     ym_write1
+    move.b  #$45,D0                 ; ch1 op3
+    bsr     ym_write1
+    move.b  #$46,D0                 ; ch2 op3
+    bsr     ym_write1
+    move.b  #$48,D0                 ; ch0 op2
+    bsr     ym_write1
+    move.b  #$49,D0                 ; ch1 op2
+    bsr     ym_write1
+    move.b  #$4A,D0                 ; ch2 op2
+    bsr     ym_write1
+    move.b  #$4C,D0                 ; ch0 op4
+    bsr     ym_write1
+    move.b  #$4D,D0                 ; ch1 op4
+    bsr     ym_write1
+    move.b  #$4E,D0                 ; ch2 op4
+    bsr     ym_write1
+
+    ;------------------------------------------------------------------
     ; Mute all 4 PSG channels (attenuation = $F = maximum)
     ;------------------------------------------------------------------
     move.b  #$9F,(PSG_PORT).l       ; Tone 1 mute
@@ -311,13 +354,19 @@ audio_init:
     dbra    D0,.clr_music
 
     ;------------------------------------------------------------------
-    ; Clear DMC state block ($FFE100, 12 bytes).  Zero dmc_active,
-    ; dmc_ptr, dmc_remain, and all shadow registers.
+    ; Clear DMC state block ($FFE100, 16 bytes).  Zero dmc_active,
+    ; dmc_ptr, dmc_remain, shadow registers, and debug scaffold state.
     ;------------------------------------------------------------------
     lea     (DMC_BASE).l,A0
-    clr.l   (A0)+                   ; dmc_active + padding + dmc_ptr high
-    clr.l   (A0)+                   ; dmc_ptr low + dmc_remain
-    clr.l   (A0)+                   ; rate_sel + addr_sel + len_sel + pad
+    clr.l   (A0)+                   ; dmc_active + pad + dmc_ptr[hi]
+    clr.l   (A0)+                   ; dmc_ptr[lo] + dmc_remain[hi]
+    clr.l   (A0)+                   ; dmc_remain[lo] + rate/addr/len sel
+    clr.l   (A0)+                   ; prev_btn + dbg_next + pad
+    ;------------------------------------------------------------------
+    ; Scaffold: preload dmc_dbg_next = 1 so the first C-button press fires
+    ; sample #1.  dmc_trigger wraps 1..7 from there.
+    ;------------------------------------------------------------------
+    move.b  #1,(dmc_dbg_next).l
 
     movem.l (SP)+,D0-D6/A0
     rts
@@ -504,11 +553,149 @@ m_last_psg_nc       equ MUSIC_BASE+$28  ; byte: last noise-control byte written
 ;----------------------------------------------------------------------
 DMC_BASE            equ $FFE100
 dmc_active          equ DMC_BASE+$00    ; byte: 0 = idle, 1 = playing
-dmc_ptr             equ DMC_BASE+$02    ; long: current M68K pointer into blob
-dmc_remain          equ DMC_BASE+$06    ; word: PCM bytes left in current sample
-dmc_rate_sel        equ DMC_BASE+$08    ; byte: shadow of last $4010 write
-dmc_addr_sel        equ DMC_BASE+$09    ; byte: shadow of last $4012 write
-dmc_len_sel         equ DMC_BASE+$0A    ; byte: shadow of last $4013 write
+dmc_ptr             equ DMC_BASE+$02    ; long: current M68K pointer into PCM blob
+dmc_remain          equ DMC_BASE+$06    ; long: PCM bytes left in current sample
+dmc_rate_sel        equ DMC_BASE+$0A    ; byte: shadow of last $4010 write
+dmc_addr_sel        equ DMC_BASE+$0B    ; byte: shadow of last $4012 write
+dmc_len_sel         equ DMC_BASE+$0C    ; byte: shadow of last $4013 write
+dmc_dbg_prev_btn    equ DMC_BASE+$0D    ; byte: pad state from last frame (edge det)
+dmc_dbg_next        equ DMC_BASE+$0E    ; byte: next sample index (1..7) to trigger
+dmc_dbg_pad0        equ DMC_BASE+$0F    ; byte: padding
+
+;==============================================================================
+; dmc_trigger — kick off a DMC sample
+;
+; Input:  D0.b = 1-based sample index (1..DMC_SAMPLE_COUNT)
+; Output: none
+; Trashes: D0, D1, A0
+;
+; Sets dmc_ptr = DMC_SAMPLE_PCM_BLOB + per-sample offset, dmc_remain = length,
+; dmc_active = 1.  dmc_feed (called from music_tick) then streams the PCM
+; bytes to YM2612 reg $2A.
+;
+; Invalid indices are silently ignored.
+;==============================================================================
+dmc_trigger:
+    tst.b   D0
+    beq.s   .bad
+    cmp.b   #DMC_SAMPLE_COUNT,D0
+    bhi.s   .bad
+    movem.l D2/A1,-(SP)
+    moveq   #0,D1
+    move.b  D0,D1                   ; D1.l = 1-based index
+    subq.l  #1,D1                   ; D1.l = 0-based index
+    lsl.l   #2,D1                   ; x 4 (long-word table entry)
+
+    ; dmc_ptr = DMC_SAMPLE_PCM_BLOB + DMC_SAMPLE_PCM_OFFS[idx]
+    ; Tables and blob are in the same include far outside PC-relative range,
+    ; so use absolute (long) addressing.
+    lea     (DMC_SAMPLE_PCM_OFFS).l,A0
+    move.l  (A0,D1.l),D2            ; D2 = byte offset in PCM blob
+    lea     (DMC_SAMPLE_PCM_BLOB).l,A1
+    add.l   A1,D2
+    move.l  D2,(dmc_ptr).l
+
+    ; dmc_remain = DMC_SAMPLE_PCM_LENS[idx]
+    lea     (DMC_SAMPLE_PCM_LENS).l,A0
+    move.l  (A0,D1.l),D2
+    move.l  D2,(dmc_remain).l
+
+    move.b  #1,(dmc_active).l
+    movem.l (SP)+,D2/A1
+.bad:
+    rts
+
+;==============================================================================
+; dmc_feed — stream a chunk of PCM bytes to YM2612 reg $2A (DAC).
+;
+; Called unconditionally from music_tick tail.  If dmc_active=0, does nothing.
+; Otherwise writes up to DMC_FEED_BURST bytes from (dmc_ptr) to reg $2A,
+; advancing dmc_ptr and decrementing dmc_remain.  When dmc_remain reaches 0,
+; clears dmc_active.
+;
+; Scaffold burst size is tuned to ~8 kHz playback - about 1/4 the true NES
+; DMC rate at index $0F.  Samples will sound pitched-down, but this is the
+; simplest thing that demonstrates the end-to-end pipeline.  Phase E will
+; replace this with a proper rate-divided pump.
+;==============================================================================
+DMC_FEED_BURST      equ 128
+
+dmc_feed:
+    tst.b   (dmc_active).l
+    beq.s   .done
+    movem.l D0-D3/A0,-(SP)
+    move.l  (dmc_ptr).l,A0
+    move.l  (dmc_remain).l,D2
+    move.w  #DMC_FEED_BURST-1,D3
+.wait:
+    tst.b   (YM_ADDR1).l            ; poll shared busy flag
+    bmi.s   .wait
+.loop:
+    tst.l   D2
+    beq.s   .end_of_sample
+    move.b  #$2A,(YM_ADDR1).l       ; DAC data register
+    nop
+    nop
+    nop
+    move.b  (A0)+,(YM_DATA1).l      ; stream one PCM byte
+    subq.l  #1,D2
+    dbra    D3,.loop
+    ; burst done, still bytes left
+    move.l  A0,(dmc_ptr).l
+    move.l  D2,(dmc_remain).l
+    bra.s   .restore
+.end_of_sample:
+    clr.b   (dmc_active).l
+    move.l  A0,(dmc_ptr).l
+    move.l  D2,(dmc_remain).l
+.restore:
+    movem.l (SP)+,D0-D3/A0
+.done:
+    rts
+
+;==============================================================================
+; dmc_dbg_poll - Phase-C scaffold: watch the NES-format controller latch that
+; _ctrl_strobe populates (proven working at T27/T28 PASS).  On the rising
+; edge of the Start button, trigger the next DMC sample and wrap the index
+; 1..7 so repeated presses cycle through every sample.
+;
+; Latch at $FF1100 is the NES-order byte (bit0=A, bit1=B, bit2=Sel,
+; bit3=Start, bit4=Up, bit5=Down, bit6=Left, bit7=Right), *active-high*
+; (1 = pressed).  We never touch $A10001/$A10009 here because
+; `_ctrl_strobe` already drives the two-phase TH protocol every frame when
+; the game writes $4016; re-strobing from inside music_tick would collide
+; with it and corrupt the latch.
+;
+; This whole routine is temporary and will be removed in Phase D when the
+; APU $4013 stub takes over sample triggering.
+;==============================================================================
+dmc_dbg_poll:
+    movem.l D0-D1,-(SP)
+    move.b  ($FF1100).l,D0          ; NES-format button byte, active-high
+    andi.b  #$08,D0                 ; isolate Start bit (NES bit3)
+
+    move.b  (dmc_dbg_prev_btn).l,D1
+    move.b  D0,(dmc_dbg_prev_btn).l
+    ; Rising edge: pressed this frame AND not last frame.
+    tst.b   D0
+    beq.s   .done
+    tst.b   D1
+    bne.s   .done
+
+    ; Trigger dmc_dbg_next, then advance.
+    moveq   #0,D0
+    move.b  (dmc_dbg_next).l,D0
+    bsr     dmc_trigger
+    move.b  (dmc_dbg_next).l,D1
+    addq.b  #1,D1
+    cmpi.b  #DMC_SAMPLE_COUNT,D1
+    bls.s   .store_next
+    moveq   #1,D1
+.store_next:
+    move.b  D1,(dmc_dbg_next).l
+.done:
+    movem.l (SP)+,D0-D1
+    rts
 
 ;==============================================================================
 ; music_play — request a song change
@@ -523,17 +710,21 @@ music_play:
 ;==============================================================================
 music_tick:
     movem.l D0-D7/A0-A2,-(SP)
-    move.b  (m_song_req).l,D0
-    beq.s   .no_req
+    ;------------------------------------------------------------------
+    ; Phase-C DMC isolation test:
+    ;   * FM / PSG music path is SHORT-CIRCUITED — no tick_sq1 call.
+    ;     That guarantees nothing else writes the YM2612 while we're
+    ;     streaming PCM to reg $2A.
+    ;   * dmc_dbg_poll reads Start on controller 1 and cycles through
+    ;     samples 1..7 on each rising edge.
+    ;------------------------------------------------------------------
+    move.b  (m_song_req).l,D0       ; still consume song-change requests
+    beq.s   .no_req                 ; so the game state machine is happy
     clr.b   (m_song_req).l
     move.b  D0,(m_song).l
-    bsr     change_song
-    bra.s   .done
 .no_req:
-    tst.b   (m_song).l
-    beq.s   .done
-    bsr     tick_sq1
-.done:
+    bsr     dmc_dbg_poll
+    bsr     dmc_feed
     movem.l (SP)+,D0-D7/A0-A2
     rts
 
@@ -1184,3 +1375,10 @@ PsgDrumTable:
 MusicBlob:
     incbin  "data/music_blob.dat"
     even
+
+;==============================================================================
+; DMC sample tables + PCM blob (auto-generated from Zelda NES ROM).
+; See tools/extract_dmc_samples.py.  Always included at the end of
+; audio_driver.asm so absolute references from dmc_trigger/dmc_feed resolve.
+;==============================================================================
+    include "data/dmc_samples.inc"
