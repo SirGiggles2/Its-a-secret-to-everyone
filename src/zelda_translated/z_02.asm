@@ -486,6 +486,7 @@ UpdateMode0Demo_Sub0:
     bne.s  __far_z_02_0002
     jmp  Exit
 __far_z_02_0002:
+    move.b  #1,($00FF083D).l    ; PATCH P11: hold VRamForceBlankGate
     move.b  D0,($00F6,A4)
     moveq   #0,D0
     move.b  D0,($0600,A4)
@@ -3710,6 +3711,7 @@ _L_z02_InitMode1_Sub6_FindActiveSlot:
     moveq   #0,D0
     move.b  D0,($0013,A4)
     addq.b  #1,($0011,A4)
+    clr.b   ($00FF083D).l       ; PATCH P11: release VRamForceBlankGate
     rts
 
     even

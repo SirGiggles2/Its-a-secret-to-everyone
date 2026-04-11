@@ -128,6 +128,24 @@ STAGED_EVENT_VSRAM equ PPU_STATE_BASE+$0E ; word: next-frame H-int VSRAM
 ACTIVE_BASE_VSRAM  equ CHR_STATE_BASE+$16 ; $FF0836 word: current-frame base VSRAM
 ACTIVE_EVENT_VSRAM equ CHR_STATE_BASE+$18 ; $FF0838 word: current-frame event VSRAM
 ACTIVE_HINT_CTR    equ CHR_STATE_BASE+$1A ; $FF083A byte: current-frame Reg 10 counter
+
+;------------------------------------------------------------------------------
+; Phase 1 (diary re-integration) state.
+;
+; VRamForceBlankGate — when set (=1), _ppu_write_1 forces PPUMASK video-enable
+;   bits ($18) off so the VDP stays in force-blank.  Held while UpdateMode0/1
+;   init is streaming CHR/VRAM and cleared by the transpiler-injected marker
+;   at the end of the full init chain (_patch_z02).  Prevents a beam-race
+;   visible when Start is pressed at certain frame phases.
+;
+; LAST_GAMEMODE — shadow of $0012 (GameMode) read by _mode_transition_check
+;   from VBlankISR.  On change the check re-zeros PPU latch/address/scroll
+;   state and direct-writes 0 to VSRAM[0]/[1] so scroll bleed from the prior
+;   mode cannot contaminate the new mode's first frame.  Seeded to $FF at
+;   cold boot so the first frame always fires a transition.
+;------------------------------------------------------------------------------
+VRamForceBlankGate equ CHR_STATE_BASE+$1D ; $FF083D byte: 1 = force-blank hold
+LAST_GAMEMODE      equ PPU_STATE_BASE+$10 ; $FF0810 byte: shadow of $0012
 ;------------------------------------------------------------------------------
 ; Scroll composition modes shared between staged state and INTRO_SCROLL_MODE.
 ;------------------------------------------------------------------------------
@@ -256,8 +274,20 @@ _ppu_write_0:
 ;------------------------------------------------------------------------------
 ; _ppu_write_1 — PPUMASK ($2001)
 ; Store shadow for potential video-enable logic in T6+.
+;
+; Phase 1 gate: if VRamForceBlankGate is set, the incoming D0 has its
+; BG/sprite enable bits ($18) masked off and the PPU_MASK shadow is stored
+; with those bits cleared.  This keeps the VDP in force-blank while an init
+; chain (UpdateMode0Demo_Sub0 → InitMode1_Sub6) is still streaming VRAM,
+; so an ill-timed Start press cannot make the VDP race the beam while tiles
+; are mid-DMA.  The gate is released by the transpiler marker at the end of
+; InitMode1_Sub6 (see _patch_z02 P11).
 ;------------------------------------------------------------------------------
 _ppu_write_1:
+    tst.b   (VRamForceBlankGate).l
+    beq.s   .ppuw1_no_gate
+    andi.b  #$E7,D0                 ; clear bits 3+4 (BG + sprite enable)
+.ppuw1_no_gate:
     move.b  D0,(PPU_MASK).l
     ; Toggle VDP display enable to match NES PPUMASK rendering state.
     ; When NES BG+sprites are off (bits 3-4 = 0), blank the Genesis display
@@ -496,6 +526,49 @@ _ags_apply_active:
     or.w    #$8A00,D0
     move.w  D0,(VDP_CTRL).l                 ; Reg 10 = active H-int scanline
     move.w  #$8014,(VDP_CTRL).l             ; Reg 0: enable H-int (+colorfix bit)
+    rts
+
+;------------------------------------------------------------------------------
+; _mode_transition_check — runs from VBlankISR after _ags_prearm, before
+; IsrNmi.  Detects a change in GameMode ($0012) against the LAST_GAMEMODE
+; shadow and, on transition, purges stale scroll latches, zeros the two
+; VSRAM words directly via the VDP control port, and rewinds the DynTileBuf
+; palette-precheck state so _patch_z06 P3 runs fresh on the new mode's
+; first tile transfer.
+;
+; Fixes VSRAM bleed-through seen when leaving attract → file-select →
+; gameplay: the new mode inherited the old mode's vertical scroll register
+; value for a single frame before the first _ags_flush landed.
+;
+; Preserves: D1-D7, A0-A6 (clobbers D0 internally and restores it).
+;------------------------------------------------------------------------------
+_mode_transition_check:
+    move.l  D0,-(SP)
+    move.b  ($0012,A4),D0
+    cmp.b   (LAST_GAMEMODE).l,D0
+    beq.s   .mtc_done
+    ; --- mode changed: latch new shadow and purge stale PPU state ---
+    move.b  D0,(LAST_GAMEMODE).l
+    clr.b   (PPU_LATCH).l
+    clr.w   (PPU_VADDR).l
+    clr.b   (PPU_DHALF).l
+    clr.b   (PPU_DBUF).l
+    clr.b   ($0014,A4)               ; PPU update request byte
+    clr.b   ($005C,A4)               ; SwitchNameTablesReq one-shot
+    clr.b   (PPU_SCRL_X).l
+    clr.b   (PPU_SCRL_Y).l
+    ; Direct VSRAM[0] + VSRAM[1] = 0 (inside vblank window).
+    move.l  #VSRAM_WRITE_0000,(VDP_CTRL).l
+    move.w  #0,(VDP_DATA).l          ; Plane A V-scroll
+    move.w  #0,(VDP_DATA).l          ; Plane B V-scroll
+    ; DynTileBuf palette-precheck rewind (Phase 1.3): reset the three NES
+    ; zero-page bytes _patch_z06 P3 keys off so it re-enters its rewind
+    ; cycle on the new mode's first CHR transfer.
+    move.b  #63,($0300,A4)
+    move.b  #0,($0301,A4)
+    move.b  #$FF,($0302,A4)
+.mtc_done:
+    move.l  (SP)+,D0
     rts
 
 
@@ -1490,26 +1563,36 @@ _ctrl_strobe:
     movem.l D1-D3,-(SP)
     ; Phase 1: set TH=1 → bits[5:4]=C,B  bits[3:0]=Right,Left,Down,Up (active low)
     move.b  #$40,($A10009).l    ; ctrl1: TH pin = output
-    move.b  #$40,($A10001).l    ; assert TH=1
+    move.b  #$40,($A10003).l    ; assert TH=1
     nop
     nop
-    move.b  ($A10001).l,D1      ; D1 = TH=1 data
+    move.b  ($A10003).l,D1      ; D1 = TH=1 data
     ; Phase 2: TH=0 → bits[5:4]=Start,A  bits[3:0]=Right,Left,Down,Up (active low)
-    move.b  #$00,($A10001).l    ; assert TH=0
+    move.b  #$00,($A10003).l    ; assert TH=0
     nop
     nop
-    move.b  ($A10001).l,D2      ; D2 = TH=0 data
+    move.b  ($A10003).l,D2      ; D2 = TH=0 data
     ; Build NES button byte
+    ; Button mapping (user request): NES B = Genesis A, NES A = Genesis B.
+    ; Genesis B sits where the user's primary attack thumb lands, so it
+    ; drives the NES "sword/attack" (NES A).  Genesis A falls to NES B
+    ; ("item" — boomerang, bombs, candle, etc.).
     moveq   #0,D3
-    btst    #4,D2               ; A button: TH=0 bit4 (active low)
+    btst    #4,D1               ; Genesis B: TH=1 bit4 (active low) → NES A
     bne.s   .cs_no_a
     bset    #0,D3
 .cs_no_a:
-    btst    #4,D1               ; B button: TH=1 bit4 (active low)
+    btst    #4,D2               ; Genesis A: TH=0 bit4 (active low) → NES B
     bne.s   .cs_no_b
     bset    #1,D3
 .cs_no_b:
-    ; Select: no Genesis 3-button equivalent → bit2 stays 0
+    ; Phase 2.3: Genesis C → NES Select remap.  The 3-button pad has no
+    ; hardware Select; the diary standardized on C so the user can
+    ; eliminate save slots in file-select and access the NES pause menu.
+    btst    #5,D1               ; C button: TH=1 bit5 (active low)
+    bne.s   .cs_no_select
+    bset    #2,D3               ; NES Select
+.cs_no_select:
     btst    #5,D2               ; Start: TH=0 bit5 (active low)
     bne.s   .cs_no_start
     bset    #3,D3
@@ -1532,6 +1615,7 @@ _ctrl_strobe:
 .cs_no_right:
     move.b  D3,($1100,A4)       ; store latched NES button byte
     move.b  #0,($1101,A4)       ; reset serial index
+    addq.b  #1,($00FF100A).l    ; Phase 2.4: input-poll probe counter
     movem.l (SP)+,D1-D3
     rts
 
@@ -1646,17 +1730,18 @@ _oam_dma:
     ; Sprites with NES_Y ≥ 239 produce Genesis Y ≥ 368 which is naturally off-screen.
     move.w  D0,D4
     addi.w  #129,D4
-    tst.b   ($0012,A4)
-    bne.s   .oam_gap_check
+    ; Phase 2.1: apply frontend 8 px sprite lift for GameMode < 2 (attract
+    ; $00 + file-select $01).  Gameplay modes ($02+) skip the lift so HUD
+    ; sprites sit on their correct scanlines.  The earlier code used a
+    ; stricter tst (GameMode == 0 only), which left file-select Links 8 px
+    ; low.  Diary Attempt 4b / 5d confirmed "modes 0-1" is the target.
+    cmpi.b  #2,($0012,A4)
+    bhs.s   .oam_gap_check
     ; Preserve top-edge visibility for attract sprites that are just entering
     ; from the top. The global attract-mode lift would otherwise clip NES
     ; OAM Y=0..7 sprites entirely one frame too early.
     cmpi.b  #8,D0
     bcs.s   .oam_gap_check
-    ; Attract/story gameMode 0 uses an 8px sprite lift to match the +8 overscan
-    ; bias in _ags_compute_stage.  Applied uniformly — no textIdx threshold —
-    ; so sprites don't jump at page transitions.  Top-edge sprites (Y<8) are
-    ; already handled by the check above.
 .oam_apply_attract_bias:
     subi.w  #8,D4
 .oam_gap_check:

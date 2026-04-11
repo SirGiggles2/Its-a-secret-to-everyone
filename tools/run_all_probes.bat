@@ -35,8 +35,12 @@ set PROBE[2]=PPU Increment T13|bizhawk_ppu_increment_probe.lua|bizhawk_ppu_incre
 set PROBE[3]=PPU Ctrl T14|bizhawk_ppu_ctrl_probe.lua|bizhawk_ppu_ctrl_probe.txt
 set PROBE[4]=Scroll Latch T15|bizhawk_scroll_latch_probe.lua|bizhawk_scroll_latch_probe.txt
 set PROBE[5]=MMC1 State T11b|bizhawk_mmc1_probe.lua|bizhawk_mmc1_probe.txt
+:: Phase 1/2/6 diary-reintegration (Zelda27.48+): exercises $005C one-shot,
+:: VRamForceBlankGate, _mode_transition_check, $A10003 controller port,
+:: C→Select remap, NMI/input probe counters, and Phase 6 DMA VRAM clear.
+set PROBE[6]=Phase 1/2/6 Verify|bizhawk_phase1_verify.lua|bizhawk_phase1_verify.txt
 
-for /l %%i in (0,1,5) do (
+for /l %%i in (0,1,6) do (
     for /f "tokens=1,2,3 delims=|" %%a in ("!PROBE[%%i]!") do (
         set "PNAME=%%a"
         set "PLUA=%ROOT%\tools\%%b"
