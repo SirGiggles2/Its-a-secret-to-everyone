@@ -2335,6 +2335,65 @@ def _patch_z02(path):
     else:
         print("  WARNING: _patch_z02 P15 -- SEC;SBC wrap pattern not found")
 
+    # ---- Patch 19: Phase 9.6 -- SEC;SBC -1 fix in Mode E direction handlers ----
+    # Same systemic SEC;SBC transpile bug as P15, but in
+    # _L_z02_ModeE_HandleDirectionButton_Up (idx -= $0B per Up press) and
+    # the Down-wrap fixup (idx -= $2C when Down rolls past row 3).  Both
+    # sites operate on CharBoardIndex [$041F], and P13's source-of-truth
+    # sync makes the IDX off-by-one VISIBLE because P13 derives ObjX/ObjY
+    # from idx after the move.
+    #
+    # Symptoms in tools/bizhawk_fs2_keyboard.lua before fix:
+    #   - Every Up press shifts col -1 (idx -= 12 instead of -11) → diagonal
+    #   - Down from row 3 col 0 wraps to row 0 col 9 (idx -= 45 instead of
+    #     -44 → 255 → P13 hidden-slot snap to 9)
+    #
+    # Sites kept narrow: this does NOT touch the Left ObjX SEC;SBC at line
+    # 2499-2503 (P13 overwrites ObjX from idx so the user never sees the
+    # buggy x).  Only the two CharBoardIndex SEC;SBC instances are fixed.
+
+    # P19a: Up move (idx -= $0B per Up press)
+    old_up_idx_subx = (
+        '    ; Decrease CharBoardIndex [$041F] by $B (one row up).\n'
+        '    ;\n'
+        '    move.b  ($041F,A4),D0\n'
+        '    ori     #$11,CCR  ; SEC: set C+X\n'
+        '    move.b  #$0B,D1\n'
+        '    subx.b  D1,D0   ; SBC #$0B\n'
+        '    move.b  D0,($041F,A4)\n'
+    )
+    new_up_idx_subx = (
+        '    ; Decrease CharBoardIndex [$041F] by $B (one row up).\n'
+        '    ;\n'
+        '    move.b  ($041F,A4),D0  ; PATCH P19a: Phase 9.6 SEC;SBC -1 fix\n'
+        '    sub.b   #$0B,D0\n'
+        '    move.b  D0,($041F,A4)\n'
+    )
+    if old_up_idx_subx in text:
+        text = text.replace(old_up_idx_subx, new_up_idx_subx, 1)
+        print("  _patch_z02 P19a: SEC;SBC -1 fix in Up move (idx -= $0B)")
+    else:
+        print("  WARNING: _patch_z02 P19a -- Up SEC;SBC pattern not found")
+
+    # P19b: Down wrap fixup (idx -= $2C when row3 -> row0)
+    old_down_wrap_subx = (
+        '    move.b  ($041F,A4),D0\n'
+        '    ori     #$11,CCR  ; SEC: set C+X\n'
+        '    move.b  #$2C,D1\n'
+        '    subx.b  D1,D0   ; SBC #$2C\n'
+        '    move.b  D0,($041F,A4)\n'
+    )
+    new_down_wrap_subx = (
+        '    move.b  ($041F,A4),D0  ; PATCH P19b: Phase 9.6 SEC;SBC -1 fix\n'
+        '    sub.b   #$2C,D0\n'
+        '    move.b  D0,($041F,A4)\n'
+    )
+    if old_down_wrap_subx in text:
+        text = text.replace(old_down_wrap_subx, new_down_wrap_subx, 1)
+        print("  _patch_z02 P19b: SEC;SBC -1 fix in Down wrap (idx -= $2C)")
+    else:
+        print("  WARNING: _patch_z02 P19b -- Down wrap SEC;SBC pattern not found")
+
     with open(path, 'w', encoding='utf-8') as f:
         f.write(text)
 

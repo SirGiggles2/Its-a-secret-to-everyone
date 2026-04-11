@@ -2532,10 +2532,8 @@ _L_z02_ModeE_HandleDirectionButton_Down:
     jsr     CycleCharBoardCursorY
     move.b  ($042A,A4),D0
     beq  _L_z02_ModeE_HandleDirectionButton_Finish
-    move.b  ($041F,A4),D0
-    ori     #$11,CCR  ; SEC: set C+X
-    move.b  #$2C,D1
-    subx.b  D1,D0   ; SBC #$2C
+    move.b  ($041F,A4),D0  ; PATCH P19b: Phase 9.6 SEC;SBC -1 fix
+    sub.b   #$2C,D0
     move.b  D0,($041F,A4)
     even
 _L_z02_ModeE_HandleDirectionButton_Finish:
@@ -2549,10 +2547,8 @@ _L_z02_ModeE_HandleDirectionButton_Up:
     ;
     ; Decrease CharBoardIndex [$041F] by $B (one row up).
     ;
-    move.b  ($041F,A4),D0
-    ori     #$11,CCR  ; SEC: set C+X
-    move.b  #$0B,D1
-    subx.b  D1,D0   ; SBC #$0B
+    move.b  ($041F,A4),D0  ; PATCH P19a: Phase 9.6 SEC;SBC -1 fix
+    sub.b   #$0B,D0
     move.b  D0,($041F,A4)
     moveq   #3,D2
     jsr     CycleCharBoardCursorY
