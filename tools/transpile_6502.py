@@ -2274,7 +2274,7 @@ def _patch_z02(path):
         '    addi.b  #$30,D0\n'
         '    move.b  D0,($0071,A4)\n'
         '    lsl.b   #4,D1\n'
-        '    addi.b  #$87,D1\n'
+        '    addi.b  #$88,D1         ; PATCH P26: Phase 10 FS2-B Y base +1 px\n'
         '    move.b  D1,($0085,A4)\n'
         '    move.l  (A7)+,D1\n'
         '    move.l  (A7)+,D0\n'
