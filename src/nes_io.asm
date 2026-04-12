@@ -1573,10 +1573,22 @@ nes_palette_to_genesis:
 ;   CTL1_IDX   = ($1101,A4) = $FF1101 — serial read index (0–7)
 ;------------------------------------------------------------------------------
 _ctrl_strobe:
+    ; Gate: the NES protocol writes $01 then $00 to $4016.  The transpiled
+    ; code preserves this as two jsr _ctrl_strobe calls — first with D0=1
+    ; (strobe-on), then D0=0 (strobe-off = latch).  Only the D0=0 call
+    ; needs to actually poll the pad.  Skipping the D0=1 call halves the
+    ; TH toggle frequency, which prevents ReadOneController's debounce
+    ; loop from trapping on real hardware where rapid toggling produces
+    ; inconsistent reads from the 3-button pad multiplexer.
+    tst.b   D0
+    bne     .cs_skip             ; D0 != 0 → strobe-on phase, no-op
+
     movem.l D1-D3,-(SP)
-    ; Phase 1: set TH=1 → bits[5:4]=C,B  bits[3:0]=Right,Left,Down,Up (active low)
-    move.b  #$40,($A10009).l    ; ctrl1: TH pin = output
+    ; Phase 1: TH=1 → bits[5:4]=C,B  bits[3:0]=Right,Left,Down,Up (active low)
+    ; CTRL register ($A10009) already set to $40 by EntryPoint init.
     move.b  #$40,($A10003).l    ; assert TH=1
+    nop                          ; 4 NOPs settling time for real hardware
+    nop
     nop
     nop
     move.b  ($A10003).l,D1      ; D1 = TH=1 data
@@ -1584,7 +1596,11 @@ _ctrl_strobe:
     move.b  #$00,($A10003).l    ; assert TH=0
     nop
     nop
+    nop
+    nop
     move.b  ($A10003).l,D2      ; D2 = TH=0 data
+    ; Restore TH=1 idle state (standard Genesis practice)
+    move.b  #$40,($A10003).l
     ; Build NES button byte
     ; Button mapping (user request): NES B = Genesis A, NES A = Genesis B.
     ; Genesis B sits where the user's primary attack thumb lands, so it
@@ -1630,6 +1646,7 @@ _ctrl_strobe:
     move.b  #0,($1101,A4)       ; reset serial index
     addq.b  #1,($00FF100A).l    ; Phase 2.4: input-poll probe counter
     movem.l (SP)+,D1-D3
+.cs_skip:
     rts
 
 ;------------------------------------------------------------------------------
@@ -1849,13 +1866,12 @@ _oam_dma:
     ; Sprites with NES_Y ≥ 239 produce Genesis Y ≥ 368 which is naturally off-screen.
     move.w  D0,D4
     addi.w  #129,D4
-    ; Zelda16.9 / Diary Finding #26 (narrowed): dropping the lift for
-    ; file-select ($0012=$01) fixes the save-slot Links (+VSRAM=0 in
-    ; _mode_transition_check). BUT the title/attract sword (GameMode=$00)
-    ; was tuned around the -8 lift and breaks without it. So keep the lift
-    ; for attract-only, not for file-select or gameplay.
-    tst.b   ($0012,A4)
-    bne.s   .oam_gap_check          ; mode != 0 → no lift
+    ; Phase 12: _ags_compute_stage adds +8 to VSRAM for overscan in ALL
+    ; modes.  This shifts the BG up 8px.  Sprites must compensate with a
+    ; matching -8 Y lift, otherwise they appear 8px too low relative to
+    ; background text/tiles.  Previously gated to Mode 0 only (Diary #26),
+    ; but fs2_probe confirmed VSRAM=8 during file-select, proving the lift
+    ; must be unconditional.
     cmpi.b  #8,D0
     bcs.s   .oam_gap_check          ; NES Y < 8 → skip lift (top-edge)
     subi.w  #8,D4

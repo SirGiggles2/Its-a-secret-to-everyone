@@ -2507,22 +2507,25 @@ def _patch_z02(path):
         '    ; We want to start with sprite 4 (offset $10).\n'
     )
 
-    p22_hits = 0
-    if p22_old_loop_tail in text:
-        text = text.replace(p22_old_loop_tail, p22_new_loop_tail, 1)
-        p22_hits += 1
-    if p22_old_slot_lookup in text:
-        text = text.replace(p22_old_slot_lookup, p22_new_slot_lookup, 1)
-        p22_hits += 1
-    if p22_old_init in text:
-        text = text.replace(p22_old_init, p22_new_init, 1)
-        p22_hits += 1
-    if p22_hits == 3:
-        print("  _patch_z02 P22: Mode1_WriteLinkSprites attr drift fix (FS1-B)")
-    elif p22_hits > 0:
-        print(f"  WARNING: _patch_z02 P22 -- only {p22_hits}/3 anchors matched (FS1-B)")
+    if False:  # PHASE 12 REVERTED -- P22 does not fix per-slot Link attr (Fact A/B)
+        p22_hits = 0
+        if p22_old_loop_tail in text:
+            text = text.replace(p22_old_loop_tail, p22_new_loop_tail, 1)
+            p22_hits += 1
+        if p22_old_slot_lookup in text:
+            text = text.replace(p22_old_slot_lookup, p22_new_slot_lookup, 1)
+            p22_hits += 1
+        if p22_old_init in text:
+            text = text.replace(p22_old_init, p22_new_init, 1)
+            p22_hits += 1
+        if p22_hits == 3:
+            print("  _patch_z02 P22: Mode1_WriteLinkSprites attr drift fix (FS1-B)")
+        elif p22_hits > 0:
+            print(f"  WARNING: _patch_z02 P22 -- only {p22_hits}/3 anchors matched (FS1-B)")
+        else:
+            print("  WARNING: _patch_z02 P22 -- no anchors matched (FS1-B)")
     else:
-        print("  WARNING: _patch_z02 P22 -- no anchors matched (FS1-B)")
+        print("  _patch_z02 P22: REVERTED (Phase 12)")
 
     # ------------------------------------------------------------------
     # P23a: Phase 10 FS1-A — Mode 1 slot-Link Y seed
@@ -2553,11 +2556,11 @@ def _patch_z02(path):
         '    moveq   #48,D0\n'
         '    move.b  D0,($0000,A4)\n'
     )
-    if p23a_old in text:
+    if False and p23a_old in text:  # PHASE 12 REVERTED: user says sprites too low; 88 is correct NES value
         text = text.replace(p23a_old, p23a_new, 1)
         print("  _patch_z02 P23a: Mode 1 Link seed 88 -> 92 (FS1-A)")
     else:
-        print("  WARNING: _patch_z02 P23a -- Mode 1 Link seed anchor not found (FS1-A)")
+        print("  _patch_z02 P23a: REVERTED (Phase 12 — NES seed 88 correct)")
 
     # ------------------------------------------------------------------
     # P24: Phase 10 FS2-A — Mode $0E Link ladder seed
@@ -2589,11 +2592,14 @@ def _patch_z02(path):
         '    moveq   #92,D0   ; PATCH P24: Phase 10 FS2-A Link seed Y\n'
         '    move.b  D0,($0001,A4)\n'
     )
-    if p24_old in text:
-        text = text.replace(p24_old, p24_new, 1)
-        print("  _patch_z02 P24: Mode $0E Link seeds X=48 Y=92 (FS2-A)")
+    if False:  # PHASE 12 REVERTED -- user reports FS2 Link "way too far down" after P24
+        if p24_old in text:
+            text = text.replace(p24_old, p24_new, 1)
+            print("  _patch_z02 P24: Mode $0E Link seeds X=48 Y=92 (FS2-A)")
+        else:
+            print("  WARNING: _patch_z02 P24 -- _anon_z02_5 seed anchor not found (FS2-A)")
     else:
-        print("  WARNING: _patch_z02 P24 -- _anon_z02_5 seed anchor not found (FS2-A)")
+        print("  _patch_z02 P24: REVERTED (Phase 12)")
 
     # ------------------------------------------------------------------
     # P25b: Phase 10.6 FS2-E — REGISTER-mode backspace
@@ -2624,7 +2630,7 @@ def _patch_z02(path):
     p25b_new_dispatch = (
         '    ; A or B was pressed.\n'
         '    ;\n'
-        '    cmpi.b  #$80,D0\n'
+        '    cmpi.b  #$40,D0  ; PATCH P29: swap so NES-B (Gen A) = write, NES-A (Gen B) = bksp\n'
         '    bne  _L_z02_ModeE_HandleAOrB_Backspace   ; PATCH P25b: B = backspace\n'
     )
     p25b_old_exit = (
@@ -2676,9 +2682,73 @@ def _patch_z02(path):
         text = text.replace(p25b_old_exit, p25b_new_exit, 1)
         p25b_hits += 1
     if p25b_hits == 2:
-        print("  _patch_z02 P25b: FS2-E REGISTER backspace handler")
+        print("  _patch_z02 P25b: FS2-E REGISTER backspace handler (+ P29 button swap)")
     else:
         print(f"  WARNING: _patch_z02 P25b -- only {p25b_hits}/2 anchors matched (FS2-E)")
+
+    # ------------------------------------------------------------------
+    # P28: Phase 12 FS1-A heart cursor horizontal alignment.
+    #
+    # Probe data (phase12_probe.txt) shows heart sprite X=40 vs Link X=48.
+    # P23a moved Link X to $30 but the Mode1CursorSpriteTriplet table
+    # still has heart X=$28. Bump it 8 pixels right so the heart
+    # visually lines up with the Link sprite pair on each save slot row.
+    # ------------------------------------------------------------------
+    p28_old = (
+        'Mode1CursorSpriteTriplet:\n'
+        '    dc.b    $F3, $03, $28\n'
+    )
+    p28_new = (
+        'Mode1CursorSpriteTriplet:\n'
+        '    dc.b    $F3, $03, $30       ; PATCH P28: heart X $28->$30 align Link\n'
+    )
+    if False and p28_old in text:  # PHASE 12 REVERTED: fs_compare proved NES heart X~41, Gen pre-P28 X=40 was closer than X=48
+        text = text.replace(p28_old, p28_new, 1)
+        print("  _patch_z02 P28: FS1 heart cursor X align with Link (FS1-A)")
+    else:
+        print("  _patch_z02 P28: REVERTED (compare data showed wrong direction)")
+
+    # ------------------------------------------------------------------
+    # P30: Phase 12 FS1-B Link sprite color fix.
+    #
+    # Mode1_WriteLinkSprites steps ($0004,A4)/($0005,A4) per slot so that
+    # Anim_WriteSpritePairNotFlashing reads a different NES sub-palette
+    # (0->1->2) on each iteration. On NES all 4 sub-pals held the same
+    # Link tunic green, so stepping was invisible. Under CHR_EXPANSION,
+    # each sub-pal routes to a DIFFERENT packed tile bank — which is why
+    # fs1_compare.png showed slot 0 = green (bank A correct), slot 1 =
+    # blue (bank B), slot 2 = red (bank C).
+    #
+    # Fix: save/restore $04/$05 around the jsr and clear them to 0 during
+    # the call, pinning the descriptor attr to 0 for ALL slots (force
+    # bank A). The surrounding loop still uses $04 as the slot index for
+    # IsSaveSlotActive lookup (3984) and the loop-exit check (4017), so
+    # we MUST restore the original value immediately after the jsr.
+    # ------------------------------------------------------------------
+    # NOTE: _patch_common's bsr->jsr promotion runs AFTER _patch_z02, so the
+    # anchor here must use `bsr` not `jsr`. The promoter will rewrite the jsr
+    # form in our replacement back to bsr only if it's a local call; since
+    # Anim_WriteSpritePairNotFlashing is non-local the promoter will upgrade.
+    p30_old = (
+        '    move.b  D0,-(A5)  ; PHA\n'
+        '    bsr     Anim_WriteSpritePairNotFlashing\n'
+        '    moveq   #0,D2\n'
+    )
+    p30_new = (
+        '    move.b  D0,-(A5)  ; PHA\n'
+        '    move.w  ($0004,A4),D1       ; PATCH P30: save $04/$05\n'
+        '    move.w  D1,-(A7)            ; PATCH P30: push to stack\n'
+        '    clr.w   ($0004,A4)          ; PATCH P30: pin Link attr=0 (bank A = green)\n'
+        '    bsr     Anim_WriteSpritePairNotFlashing\n'
+        '    move.w  (A7)+,D1            ; PATCH P30: pop\n'
+        '    move.w  D1,($0004,A4)       ; PATCH P30: restore slot index\n'
+        '    moveq   #0,D2\n'
+    )
+    if p30_old in text:
+        text = text.replace(p30_old, p30_new, 1)
+        print("  _patch_z02 P30: Mode1 Link attr=0 pin (FS1-B green Link)")
+    else:
+        print("  WARNING: _patch_z02 P30 -- Mode1 Link bsr anchor not found")
 
     with open(path, 'w', encoding='utf-8') as f:
         f.write(text)

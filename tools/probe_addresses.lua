@@ -30,15 +30,27 @@ local function read_listing_addrs(lst_path)
     return addrs
 end
 
-local _ADDR_ROOT = "C:\\Users\\Jake Diggity\\Documents\\GitHub\\FINAL TRY\\"
-local _a = read_listing_addrs(_ADDR_ROOT .. "builds\\whatif.lst")
+do
+    local source = debug.getinfo(1, "S").source
+    if source:sub(1, 1) == "@" then
+        source = source:sub(2)
+    end
+    source = source:gsub("/", "\\")
+    local tools_dir = source:match("^(.*)\\[^\\]+$")
+    if not tools_dir then
+        error("probe_addresses.lua: unable to resolve helper path from '" .. source .. "'")
+    end
+    dofile(tools_dir .. "\\probe_root.lua")
+end
+
+local _a = read_listing_addrs(repo_path("builds\\whatif.lst"))
 
 -- Fail loudly if a required symbol is missing — means listing is stale or
 -- the symbol was renamed.  Probes must not run silently against wrong addresses.
 local function require_sym(name)
     local v = _a[name]
     if not v then
-        error("probe_addresses.lua: symbol '" .. name .. "' not found in builds/whatif.lst — rebuild first")
+        error("probe_addresses.lua: symbol '" .. name .. "' not found in " .. repo_path("builds\\whatif.lst") .. " -- rebuild first")
     end
     return v
 end

@@ -341,6 +341,16 @@ EntryPoint:
     ; without the port write the bus reads back $FF, with it the writes
     ; persist into the gpgx SRAM domain).
     ;--------------------------------------------------------------------------
+    ;--------------------------------------------------------------------------
+    ; Controller port 1 — set TH pin as output once during init.
+    ; Doing this inside _ctrl_strobe on every call caused rapid CTRL-register
+    ; writes that destabilised the 3-button pad multiplexer on real hardware,
+    ; producing inconsistent reads that trapped the ReadOneController
+    ; debounce loop in an infinite retry → d-pad freeze while held.
+    ;--------------------------------------------------------------------------
+    move.b  #$40,($A10009).l        ; Port 1 CTRL: bit6 (TH) = output
+    move.b  #$40,($A10003).l        ; Port 1 DATA: TH=1 (idle state)
+
     move.b  #$01,($A130F1).l        ; SRAM mapper enable (write-only port)
     ; Phase 9.7 SRAM self-test: write a sentinel pattern to the LAST four
     ; odd-byte slots of cart SRAM ($203FF9/$203FFB/$203FFD/$203FFF).  This
