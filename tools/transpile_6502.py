@@ -1653,6 +1653,19 @@ def _patch_z01(path):
     else:
         print("  WARNING: _patch_z01 P3 -- CopyCommonCodeToRam not found")
 
+    # ---- Patch 4 (P31): Remove FileBChecksums code label ----
+    # FileBChecksums was a NES RAM variable but the transpiler placed it as a
+    # code label in z_01.asm (ROM on Genesis).  Writes to ROM silently fail on
+    # real hardware, breaking the save checksum chain.  The equ is now defined
+    # in nes_io.asm pointing to writable work RAM ($FF1200).
+    old_fbc = 'FileBChecksums:\n'
+    new_fbc = '; FileBChecksums: REMOVED by P31 — relocated to writable RAM ($FF1200 in nes_io.asm)\n'
+    if old_fbc in text:
+        text = text.replace(old_fbc, new_fbc, 1)
+        print("  _patch_z01 P4 (P31): FileBChecksums label removed (relocated to RAM)")
+    else:
+        print("  WARNING: _patch_z01 P4 (P31) -- FileBChecksums label not found")
+
     with open(path, 'w', encoding='utf-8') as f:
         f.write(text)
 
