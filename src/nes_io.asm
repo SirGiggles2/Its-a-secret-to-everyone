@@ -142,10 +142,11 @@ ACTIVE_HINT_CTR    equ CHR_STATE_BASE+$1A ; $FF083A byte: current-frame Reg 10 c
 ;   from VBlankISR.  On change the check re-zeros PPU latch/address/scroll
 ;   state and direct-writes 0 to VSRAM[0]/[1] so scroll bleed from the prior
 ;   mode cannot contaminate the new mode's first frame.  Seeded to $FF at
-;   cold boot so the first frame always fires a transition.
+;   cold boot so the first frame always fires a transition. Kept out of the
+;   MMC1 block so mapper writes cannot stomp the mode-transition shadow.
 ;------------------------------------------------------------------------------
 VRamForceBlankGate equ CHR_STATE_BASE+$1D ; $FF083D byte: 1 = force-blank hold
-LAST_GAMEMODE      equ PPU_STATE_BASE+$10 ; $FF0810 byte: shadow of $0012
+LAST_GAMEMODE      equ CHR_STATE_BASE+$1E ; $FF083E byte: shadow of $0012
 ; Attempt 6a: FrontendStartReleaseGate — set by UpdateMode0Demo_Sub0 at the
 ; moment title mode accepts Start and begins the file-select init chain.
 ; While non-zero, UpdateMode1Menu_Sub0 ignores Start so the held press from
@@ -1572,17 +1573,22 @@ nes_palette_to_genesis:
 ;   CTL1_IDX   = ($1101,A4) = $FF1101 — serial read index (0–7)
 ;------------------------------------------------------------------------------
 _ctrl_strobe:
+    ; Gate: the NES protocol writes $01 then $00 to $4016.  The transpiled
+    ; code preserves this as two jsr _ctrl_strobe calls — first with D0=1
+    ; (strobe-on), then D0=0 (strobe-off = latch).  Only the D0=0 call
+    ; needs to actually poll the pad.  Skipping the D0=1 call halves the
+    ; TH toggle frequency, which prevents ReadOneController's debounce
+    ; loop from trapping on real hardware where rapid toggling produces
+    ; inconsistent reads from the 3-button pad multiplexer.
+    tst.b   D0
+    bne     .cs_skip             ; D0 != 0 → strobe-on phase, no-op
+
     movem.l D1-D3,-(SP)
-    ; Phase 1: set TH=1 → bits[5:4]=C,B  bits[3:0]=Right,Left,Down,Up (active low)
-    ;
-    ; NOTE: The Genesis I/O chip puts JOY1_DATA at $A10003, NOT $A10001 —
-    ; $A10001 is the version register and always reads back the hardware
-    ; revision byte.  The T27_T29_FRONTEND_DIARY attempt 1 documents the
-    ; fix; this worktree branched from main before it landed, so every
-    ; read of "button state" was actually the version reg and Start never
-    ; fired.  Restored to the correct $A10003 path here.
-    move.b  #$40,($A10009).l    ; ctrl1: TH pin = output
+    ; Phase 1: TH=1 → bits[5:4]=C,B  bits[3:0]=Right,Left,Down,Up (active low)
+    ; CTRL register ($A10009) already set to $40 by EntryPoint init.
     move.b  #$40,($A10003).l    ; assert TH=1
+    nop                          ; 4 NOPs settling time for real hardware
+    nop
     nop
     nop
     move.b  ($A10003).l,D1      ; D1 = TH=1 data
@@ -1590,7 +1596,11 @@ _ctrl_strobe:
     move.b  #$00,($A10003).l    ; assert TH=0
     nop
     nop
+    nop
+    nop
     move.b  ($A10003).l,D2      ; D2 = TH=0 data
+    ; Restore TH=1 idle state (standard Genesis practice)
+    move.b  #$40,($A10003).l
     ; Build NES button byte
     ; Button mapping (user request): NES B = Genesis A, NES A = Genesis B.
     ; Genesis B sits where the user's primary attack thumb lands, so it
@@ -1636,6 +1646,7 @@ _ctrl_strobe:
     move.b  #0,($1101,A4)       ; reset serial index
     addq.b  #1,($00FF100A).l    ; Phase 2.4: input-poll probe counter
     movem.l (SP)+,D1-D3
+.cs_skip:
     rts
 
 ;------------------------------------------------------------------------------
@@ -1666,6 +1677,112 @@ _ctrl_read_1:
 ;------------------------------------------------------------------------------
 _ctrl_read_2:
     moveq   #0,D0
+    rts
+
+;==============================================================================
+; SRAM helpers (Phase 9.7)
+;==============================================================================
+;
+; Genesis cartridges declare battery-backed SRAM in the ROM header at
+; $1B0-$1BB.  We declare a 4 KB odd-byte SRAM region at $200001-$203FFF
+; (genesis_shell.asm).  In gpgx and on real Mega Everdrive flashcarts the
+; cart area at $200000 is shared between ROM and SRAM; writing $01 to the
+; mapper port at $A130F1 swaps SRAM in.  Writing $00 swaps ROM back.
+;
+; Logical SRAM offset N (0 .. $1FFF) maps to bus address $200001 + (N << 1):
+; only the odd byte of each word is wired up, hence the 8 KB cart-address
+; window for 4 KB of usable storage.
+;
+; Helpers leave the mapping in the SRAM-enabled state after _sram_enable so
+; the save-slot read/write helpers in 9.8 don't have to toggle the port on
+; every byte.  Boot calls _sram_enable once from EntryPoint.
+;------------------------------------------------------------------------------
+
+SRAM_PORT       equ $A130F1
+SRAM_BASE_ODD   equ $200001
+
+;------------------------------------------------------------------------------
+; _sram_enable — switch cart area to SRAM mapping.  Clobbers nothing.
+;------------------------------------------------------------------------------
+_sram_enable:
+    move.b  #$01,(SRAM_PORT).l
+    rts
+
+;------------------------------------------------------------------------------
+; _sram_disable — switch cart area back to ROM.  Used by tooling only;
+; gameplay leaves SRAM mapped in continuously.
+;------------------------------------------------------------------------------
+_sram_disable:
+    move.b  #$00,(SRAM_PORT).l
+    rts
+
+;------------------------------------------------------------------------------
+; _sram_read_byte — read one byte from logical SRAM offset.
+; In:  D0.w = offset (0 .. $1FFF)
+; Out: D0.b = byte
+;------------------------------------------------------------------------------
+_sram_read_byte:
+    movem.l A0,-(SP)
+    andi.l  #$00001FFF,D0
+    add.l   D0,D0                       ; offset *= 2 (odd-byte stride)
+    movea.l #SRAM_BASE_ODD,A0
+    move.b  (A0,D0.L),D0
+    movem.l (SP)+,A0
+    rts
+
+;------------------------------------------------------------------------------
+; _sram_write_byte — write one byte to logical SRAM offset.
+; In:  D0.w = offset (0 .. $1FFF)
+;      D1.b = byte to store
+;------------------------------------------------------------------------------
+_sram_write_byte:
+    movem.l A0/D0,-(SP)
+    andi.l  #$00001FFF,D0
+    add.l   D0,D0                       ; offset *= 2 (odd-byte stride)
+    movea.l #SRAM_BASE_ODD,A0
+    move.b  D1,(A0,D0.L)
+    movem.l (SP)+,A0/D0
+    rts
+
+;------------------------------------------------------------------------------
+; Phase 9.8 — bulk save-slot copy helpers.
+;
+; NES Zelda's three save slots live at NES $6000-$67FF (2 KB), which the
+; shell mirrors at work RAM $FF6000-$FF67FF.  z_02 reads/writes go to that
+; mirror via NES_SRAM equ $FF6000.  To make saves persist across power
+; cycles we copy:
+;   _sram_load_save_slots    cart SRAM → mirror   (called once at boot)
+;   _sram_commit_save_slots  mirror   → cart SRAM (called from save funnel)
+;
+; Cart SRAM is odd-byte at $200001 with stride 2; logical offset N (0..$7FF)
+; lands at bus $200001 + N*2.
+;
+; Both helpers preserve all caller registers.
+;------------------------------------------------------------------------------
+_sram_load_save_slots:
+    movem.l D0/D1/A0/A1,-(SP)
+    movea.l #$00FF6000,A0               ; mirror destination
+    movea.l #SRAM_BASE_ODD,A1           ; cart SRAM source ($200001)
+    move.w  #$07FF,D1                   ; 2048 bytes - 1
+.lsl_loop:
+    move.b  (A1),D0
+    move.b  D0,(A0)+
+    addq.l  #2,A1                       ; advance odd-byte stride
+    dbra    D1,.lsl_loop
+    movem.l (SP)+,D0/D1/A0/A1
+    rts
+
+_sram_commit_save_slots:
+    movem.l D0/D1/A0/A1,-(SP)
+    movea.l #$00FF6000,A0               ; mirror source
+    movea.l #SRAM_BASE_ODD,A1           ; cart SRAM destination
+    move.w  #$07FF,D1                   ; 2048 bytes - 1
+.csl_loop:
+    move.b  (A0)+,D0
+    move.b  D0,(A1)
+    addq.l  #2,A1
+    dbra    D1,.csl_loop
+    movem.l (SP)+,D0/D1/A0/A1
     rts
 
 ;==============================================================================
@@ -1749,13 +1866,12 @@ _oam_dma:
     ; Sprites with NES_Y ≥ 239 produce Genesis Y ≥ 368 which is naturally off-screen.
     move.w  D0,D4
     addi.w  #129,D4
-    ; Zelda16.9 / Diary Finding #26 (narrowed): dropping the lift for
-    ; file-select ($0012=$01) fixes the save-slot Links (+VSRAM=0 in
-    ; _mode_transition_check). BUT the title/attract sword (GameMode=$00)
-    ; was tuned around the -8 lift and breaks without it. So keep the lift
-    ; for attract-only, not for file-select or gameplay.
-    tst.b   ($0012,A4)
-    bne.s   .oam_gap_check          ; mode != 0 → no lift
+    ; Phase 12: _ags_compute_stage adds +8 to VSRAM for overscan in ALL
+    ; modes.  This shifts the BG up 8px.  Sprites must compensate with a
+    ; matching -8 Y lift, otherwise they appear 8px too low relative to
+    ; background text/tiles.  Previously gated to Mode 0 only (Diary #26),
+    ; but fs2_probe confirmed VSRAM=8 during file-select, proving the lift
+    ; must be unconditional.
     cmpi.b  #8,D0
     bcs.s   .oam_gap_check          ; NES Y < 8 → skip lift (top-edge)
     subi.w  #8,D4
@@ -1982,14 +2098,8 @@ _mmc1_common:
     rts
 
 ;==============================================================================
-; APU writes ($4000–$4017) — NEUTRALIZED
-;
-; The native M68K music player in audio_driver.asm owns the YM2612 and PSG
-; exclusively.  Any NES-engine writes to APU registers (e.g. from game state
-; transitions like the story scroll) would clobber the native player's
-; channel state, so every stub here is a plain rts.
+; APU writes ($4000–$4017)  — T5: silent stubs, audio in T10+
 ;==============================================================================
-
 _apu_write_4000:
 _apu_write_4001:
 _apu_write_4002:
@@ -2004,85 +2114,13 @@ _apu_write_400b:
 _apu_write_400c:
 _apu_write_400e:
 _apu_write_400f:
+_apu_write_4010:
 _apu_write_4011:
+_apu_write_4012:
+_apu_write_4013:
+_apu_write_4015:
 _apu_write_4016:
 _apu_write_4017:
-    rts
-
-;==============================================================================
-; DMC APU register stubs (Phase D)
-;
-; Zelda's SelectDMC routine (transpiled at z_00.asm:_L_z00_DriveSample_*)
-; writes the APU DMC registers in a fixed order whenever it wants to play
-; a sample effect:
-;
-;     $4010  <- SampleRates[idx-1]   ; rate nibble (low 4 bits)
-;     $4012  <- SampleAddrs[idx-1]   ; start addr high byte ($C000 + b*64)
-;     $4013  <- SampleLengths[idx-1] ; length byte (length = b*16 + 1)
-;     $4015  <- $0F                  ; enable all non-DMC channels
-;     $4015  <- $1F                  ; OR in bit 4 -> DMC playback
-;
-; The three sample tables live at z_00.asm:SampleAddrs / SampleLengths /
-; SampleRates and match the hardcoded tables in tools/extract_dmc_samples.py.
-; We shadow $4010 and $4012 on write so that when $4015 arrives with bit 4
-; set we can recover the intended sample index via DMC_SAMPLE_LOOKUP (emitted
-; by the extractor as {addr, rate, idx, pad} quads).
-;
-; $4013 is recorded but does not itself trigger playback — the SelectDMC
-; sequence always follows up with $4015 and we want to match the hardware
-; semantics.  $4011 (direct DAC load) is ignored for now; the YM2612 DAC
-; already runs in streaming mode and any direct writes would stomp the
-; in-flight sample.
-;==============================================================================
-_apu_write_4010:
-    move.b  D0,(dmc_rate_sel).l
-    rts
-
-_apu_write_4012:
-    move.b  D0,(dmc_addr_sel).l
-    rts
-
-_apu_write_4013:
-    move.b  D0,(dmc_len_sel).l
-    rts
-
-_apu_write_4015:
-    btst    #4,D0                       ; DMC enable bit?
-    beq.s   .no_dmc                     ; clearing → stop playback
-    ; Look up (addr, rate) in DMC_SAMPLE_LOOKUP.  Walk 7 {addr,rate,idx,0}
-    ; quads; on match, load the 1-based index into D1 and call dmc_trigger.
-    movem.l D1-D3/A0,-(SP)
-    move.b  (dmc_addr_sel).l,D2
-    move.b  (dmc_rate_sel).l,D3
-    lea     (DMC_SAMPLE_LOOKUP).l,A0
-    moveq   #DMC_SAMPLE_COUNT-1,D1
-.scan:
-    cmp.b   (A0),D2
-    bne.s   .next
-    cmp.b   1(A0),D3
-    bne.s   .next
-    ; Match: 3rd byte of the quad is the 1-based index
-    moveq   #0,D1
-    move.b  2(A0),D1
-    move.b  D1,D0                       ; dmc_trigger wants index in D0.b
-    bsr     dmc_trigger
-    bra.s   .done
-.next:
-    addq.l  #4,A0
-    dbra    D1,.scan
-    ; No match — silently ignore (unknown rate/addr combo, not fatal)
-.done:
-    movem.l (SP)+,D1-D3/A0
-    rts
-.no_dmc:
-    ; Bit 4 clear — if DMC currently playing, stop it.  The HINT handler's
-    ; end-of-sample path already tears down its own state, so all we need
-    ; here is to force an immediate end by zeroing the remain counter.
-    ; The next HBlank fire will then run .end and clean up.
-    tst.b   (dmc_active).l
-    beq.s   .no_dmc_done
-    clr.l   (dmc_remain).l
-.no_dmc_done:
     rts
 
 ;==============================================================================

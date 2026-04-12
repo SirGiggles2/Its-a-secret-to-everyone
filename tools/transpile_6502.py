@@ -2208,6 +2208,14 @@ def _patch_z02(path):
     # wrap code already maps idx 42->0 through CycleCharBoardCursorY, so the
     # "right-from-hidden -> A" rule is handled by the existing path; the sync
     # only fixes "other hidden landings -> 9".
+    # P25 (Phase 10.5-fix, Zelda27.81): FS2-F console-freeze suspect.
+    # Builds/reports/fs2f_audit.md identifies P13 as the only helper reached
+    # by the direction handlers that the A-press path does NOT call.  On
+    # BizHawk the grid walk is clean; on real MegaDrive hardware EVERY
+    # direction press stalls.  Disable the FinishInput jsr into P13 to see
+    # whether the freeze clears.  The P13 body at 2240+ stays injected as
+    # dead code (no caller) so the file still assembles and 10.7's P13 Y
+    # constant fix still has an anchor if we re-enable it later.
     old_finish_input = (
         '_L_z02_ModeE_HandleDirectionButton_FinishInput:\n'
         '    moveq   #1,D0\n'
@@ -2216,7 +2224,7 @@ def _patch_z02(path):
     )
     new_finish_input = (
         '_L_z02_ModeE_HandleDirectionButton_FinishInput:\n'
-        '    jsr     ModeE_SyncCharBoardCursorToIndex  ; PATCH P13\n'
+        '    ; PATCH P25: P13 sync call DISABLED for FS2-F console freeze\n'
         '    moveq   #1,D0\n'
         '    move.b  D0,($0428,A4)\n'
         '    move.b  D0,($0602,A4)\n'
@@ -2279,7 +2287,7 @@ def _patch_z02(path):
         '    addi.b  #$30,D0\n'
         '    move.b  D0,($0071,A4)\n'
         '    lsl.b   #4,D1\n'
-        '    addi.b  #$87,D1\n'
+        '    addi.b  #$88,D1         ; PATCH P26: Phase 10 FS2-B Y base +1 px\n'
         '    move.b  D1,($0085,A4)\n'
         '    move.l  (A7)+,D1\n'
         '    move.l  (A7)+,D0\n'
@@ -2347,6 +2355,413 @@ def _patch_z02(path):
         print("  _patch_z02 P15: Zelda16.12 SEC;SBC -1 fix at wrap site")
     else:
         print("  WARNING: _patch_z02 P15 -- SEC;SBC wrap pattern not found")
+
+    # ---- Patch 19: Phase 9.6 -- SEC;SBC -1 fix in Mode E direction handlers ----
+    # Same systemic SEC;SBC transpile bug as P15, but in
+    # _L_z02_ModeE_HandleDirectionButton_Up (idx -= $0B per Up press) and
+    # the Down-wrap fixup (idx -= $2C when Down rolls past row 3).  Both
+    # sites operate on CharBoardIndex [$041F], and P13's source-of-truth
+    # sync makes the IDX off-by-one VISIBLE because P13 derives ObjX/ObjY
+    # from idx after the move.
+    #
+    # Symptoms in tools/bizhawk_fs2_keyboard.lua before fix:
+    #   - Every Up press shifts col -1 (idx -= 12 instead of -11) → diagonal
+    #   - Down from row 3 col 0 wraps to row 0 col 9 (idx -= 45 instead of
+    #     -44 → 255 → P13 hidden-slot snap to 9)
+    #
+    # Sites kept narrow: this does NOT touch the Left ObjX SEC;SBC at line
+    # 2499-2503 (P13 overwrites ObjX from idx so the user never sees the
+    # buggy x).  Only the two CharBoardIndex SEC;SBC instances are fixed.
+
+    # P19a: Up move (idx -= $0B per Up press)
+    old_up_idx_subx = (
+        '    ; Decrease CharBoardIndex [$041F] by $B (one row up).\n'
+        '    ;\n'
+        '    move.b  ($041F,A4),D0\n'
+        '    ori     #$11,CCR  ; SEC: set C+X\n'
+        '    move.b  #$0B,D1\n'
+        '    subx.b  D1,D0   ; SBC #$0B\n'
+        '    move.b  D0,($041F,A4)\n'
+    )
+    new_up_idx_subx = (
+        '    ; Decrease CharBoardIndex [$041F] by $B (one row up).\n'
+        '    ;\n'
+        '    move.b  ($041F,A4),D0  ; PATCH P19a: Phase 9.6 SEC;SBC -1 fix\n'
+        '    sub.b   #$0B,D0\n'
+        '    move.b  D0,($041F,A4)\n'
+    )
+    if old_up_idx_subx in text:
+        text = text.replace(old_up_idx_subx, new_up_idx_subx, 1)
+        print("  _patch_z02 P19a: SEC;SBC -1 fix in Up move (idx -= $0B)")
+    else:
+        print("  WARNING: _patch_z02 P19a -- Up SEC;SBC pattern not found")
+
+    # P19b: Down wrap fixup (idx -= $2C when row3 -> row0)
+    old_down_wrap_subx = (
+        '    move.b  ($041F,A4),D0\n'
+        '    ori     #$11,CCR  ; SEC: set C+X\n'
+        '    move.b  #$2C,D1\n'
+        '    subx.b  D1,D0   ; SBC #$2C\n'
+        '    move.b  D0,($041F,A4)\n'
+    )
+    new_down_wrap_subx = (
+        '    move.b  ($041F,A4),D0  ; PATCH P19b: Phase 9.6 SEC;SBC -1 fix\n'
+        '    sub.b   #$2C,D0\n'
+        '    move.b  D0,($041F,A4)\n'
+    )
+    if old_down_wrap_subx in text:
+        text = text.replace(old_down_wrap_subx, new_down_wrap_subx, 1)
+        print("  _patch_z02 P19b: SEC;SBC -1 fix in Down wrap (idx -= $2C)")
+    else:
+        print("  WARNING: _patch_z02 P19b -- Down wrap SEC;SBC pattern not found")
+
+    # ------------------------------------------------------------------
+    # P21: Phase 9.8 — wire save-slot writes through cart SRAM.
+    #
+    # NES Zelda's three save slots live in the work-RAM mirror at NES_SRAM
+    # ($FF6000-$FF67FF) and are written by FormatFileB / UpdateModeERegister
+    # / various in-game save paths.  All of those eventually return through
+    # UpdateModeDSave_Sub2 (the "save → return to title" funnel at z_02.asm
+    # line 4467 area).  Inserting `jsr _sram_commit_save_slots` at the head
+    # of that function copies the entire 2 KB mirror to cart SRAM in one
+    # shot, persisting all three slots in a single hook point.
+    #
+    # The matching boot-time `jsr _sram_load_save_slots` lives in
+    # genesis_shell.asm EntryPoint and restores the mirror from cart SRAM
+    # before Zelda runs.
+    # ------------------------------------------------------------------
+    old_save_sub2_head = (
+        'UpdateModeDSave_Sub2:\n'
+        '    moveq   #0,D0\n'
+        '    move.b  D0,($0012,A4)\n'
+    )
+    new_save_sub2_head = (
+        'UpdateModeDSave_Sub2:\n'
+        '    jsr     _sram_commit_save_slots  ; PATCH P21: Phase 9.8 persist save slots\n'
+        '    moveq   #0,D0\n'
+        '    move.b  D0,($0012,A4)\n'
+    )
+    if old_save_sub2_head in text:
+        text = text.replace(old_save_sub2_head, new_save_sub2_head, 1)
+        print("  _patch_z02 P21: Phase 9.8 SRAM commit hook in UpdateModeDSave_Sub2")
+    else:
+        print("  WARNING: _patch_z02 P21 -- UpdateModeDSave_Sub2 head not found")
+
+    # ------------------------------------------------------------------
+    # P22: Phase 10 FS1-B — stop the Mode 1 Link slot loop from drifting
+    # the sprite descriptor attrs between iterations.
+    #
+    # `Mode1_WriteLinkSprites` reuses ($0004,A4)/($0005,A4) as BOTH the
+    # Anim_SetSpriteDescriptorAttributes attr bytes AND as the slot-loop
+    # counter.  At the bottom of the loop it does:
+    #
+    #     addq.b #1,($0004,A4)
+    #     addq.b #1,($0005,A4)
+    #     move.b ($0004,A4),D0
+    #     cmpi.b #$03,D0
+    #     bne    _L_z02_Mode1_WriteLinkSprites_LoopSlot
+    #
+    # On NES that is harmless because sprite sub-palettes 0/1/2 all carry
+    # the same Link colors.  On Genesis via the CHR-expansion palette
+    # bridge, sub-pal N routes to CRAM PAL N, so slots 1 and 2 render with
+    # PAL1/PAL2 (blue/green) instead of PAL0.  FS1 probe fs1_p10_diag.txt
+    # confirms spr04/05 attr=$00, spr06/07 attr=$01, spr08/09 attr=$02.
+    #
+    # Fix: route the slot counter through a fresh scratch byte ($0006,A4)
+    # — unused anywhere else in z_02.asm per grep — so the descriptor
+    # attrs remain at $00 for every slot.  The Anim setup at 3927 already
+    # seeds both halves to $00 via `moveq #0,D0 ; jsr
+    # Anim_SetSpriteDescriptorAttributes`, so the loop body can stop
+    # touching $0004/$0005 entirely.
+    # ------------------------------------------------------------------
+    p22_old_loop_tail = (
+        '    move.b  D0,($0001,A4)\n'
+        '    addq.b  #1,($0004,A4)\n'
+        '    addq.b  #1,($0005,A4)\n'
+        '    move.b  ($0004,A4),D0\n'
+        '    cmpi.b  #$03,D0\n'
+        '    bne  _L_z02_Mode1_WriteLinkSprites_LoopSlot\n'
+        '    rts\n'
+    )
+    p22_new_loop_tail = (
+        '    move.b  D0,($0001,A4)\n'
+        '    addq.b  #1,($0006,A4)   ; PATCH P22: slot counter in scratch byte\n'
+        '    move.b  ($0006,A4),D0\n'
+        '    cmpi.b  #$03,D0\n'
+        '    bne  _L_z02_Mode1_WriteLinkSprites_LoopSlot\n'
+        '    rts\n'
+    )
+    p22_old_slot_lookup = (
+        '    moveq   #0,D3\n'
+        '    move.b  ($0004,A4),D3\n'
+        '    lea     ($062D,A4),A0\n'
+        '    move.b  (A0,D3.W),D0\n'
+        '    beq  _L_z02_Mode1_WriteLinkSprites_NextSlot\n'
+    )
+    p22_new_slot_lookup = (
+        '    moveq   #0,D3\n'
+        '    move.b  ($0006,A4),D3   ; PATCH P22: read slot idx from scratch\n'
+        '    lea     ($062D,A4),A0\n'
+        '    move.b  (A0,D3.W),D0\n'
+        '    beq  _L_z02_Mode1_WriteLinkSprites_NextSlot\n'
+    )
+    # NOTE: _patch_common promotes bsr->jsr AFTER _patch_z02 runs, so the
+    # init anchor must match the pre-promotion `bsr` form.
+    p22_old_init = (
+        '    moveq   #0,D0\n'
+        '    bsr     Anim_SetSpriteDescriptorAttributes\n'
+        '    ; We want to start with sprite 4 (offset $10).\n'
+    )
+    p22_new_init = (
+        '    moveq   #0,D0\n'
+        '    bsr     Anim_SetSpriteDescriptorAttributes\n'
+        '    moveq   #0,D0\n'
+        '    move.b  D0,($0006,A4)   ; PATCH P22: init slot counter\n'
+        '    ; We want to start with sprite 4 (offset $10).\n'
+    )
+
+    if False:  # PHASE 12 REVERTED -- P22 does not fix per-slot Link attr (Fact A/B)
+        p22_hits = 0
+        if p22_old_loop_tail in text:
+            text = text.replace(p22_old_loop_tail, p22_new_loop_tail, 1)
+            p22_hits += 1
+        if p22_old_slot_lookup in text:
+            text = text.replace(p22_old_slot_lookup, p22_new_slot_lookup, 1)
+            p22_hits += 1
+        if p22_old_init in text:
+            text = text.replace(p22_old_init, p22_new_init, 1)
+            p22_hits += 1
+        if p22_hits == 3:
+            print("  _patch_z02 P22: Mode1_WriteLinkSprites attr drift fix (FS1-B)")
+        elif p22_hits > 0:
+            print(f"  WARNING: _patch_z02 P22 -- only {p22_hits}/3 anchors matched (FS1-B)")
+        else:
+            print("  WARNING: _patch_z02 P22 -- no anchors matched (FS1-B)")
+    else:
+        print("  _patch_z02 P22: REVERTED (Phase 12)")
+
+    # ------------------------------------------------------------------
+    # P23a: Phase 10 FS1-A — Mode 1 slot-Link Y seed
+    #
+    # The Mode 1 cursor writer at z_02.asm:3822-3823 seeds the Link ladder
+    # at $0001 = 88.  Mode1_WriteLinkSprites then writes the three slot
+    # Link pairs at Y = 88, 112, 136 (seed, seed+24, seed+48).  The heart
+    # cursor table Mode1CursorSpriteYs is $5C,$74,$8C,$A8,$B8 = 92,116,
+    # 140,168,184, so the three save-slot cursor positions are 92/116/
+    # 140 — the Link ladder is 4 pixels higher than the cursor row on
+    # every slot.  Fix the seed from 88 to 92.
+    #
+    # Anchored on the exact 4-line sequence immediately after the
+    # Mode1CursorSpriteYs store at 3820-3821 so we can't match a stray
+    # `moveq #88,D0` elsewhere in z_02.asm.
+    # ------------------------------------------------------------------
+    p23a_old = (
+        '    move.b  D0,($0200,A4)\n'
+        '    moveq   #88,D0\n'
+        '    move.b  D0,($0001,A4)\n'
+        '    moveq   #48,D0\n'
+        '    move.b  D0,($0000,A4)\n'
+    )
+    p23a_new = (
+        '    move.b  D0,($0200,A4)\n'
+        '    moveq   #92,D0   ; PATCH P23a: Phase 10 FS1-A Link seed Y\n'
+        '    move.b  D0,($0001,A4)\n'
+        '    moveq   #48,D0\n'
+        '    move.b  D0,($0000,A4)\n'
+    )
+    if False and p23a_old in text:  # PHASE 12 REVERTED: user says sprites too low; 88 is correct NES value
+        text = text.replace(p23a_old, p23a_new, 1)
+        print("  _patch_z02 P23a: Mode 1 Link seed 88 -> 92 (FS1-A)")
+    else:
+        print("  _patch_z02 P23a: REVERTED (Phase 12 — NES seed 88 correct)")
+
+    # ------------------------------------------------------------------
+    # P24: Phase 10 FS2-A — Mode $0E Link ladder seed
+    #
+    # InitModeEandF_Full's tail (`_anon_z02_5` at z_02.asm:2133-2139) seeds
+    # the three slot Link positions before jumping into
+    # Mode1_WriteLinkSprites.  The NES source stores X -> $0000 first then
+    # Y -> $0001; Mode1_WriteLinkSprites reads $0001 as Y and $0000 as X.
+    # Current seeds: $0000=80 ($50), $0001=48 ($30).  That drops Link at
+    # Y=48,72,96 and X=80 - too high and off-center, floating above the
+    # REGISTER/ELIMINATE keyboard.
+    #
+    # The Mode 1 slot display uses X=48 Y=92 (matching
+    # Mode1CursorSpriteYs after P23a).  Mode $0E's three-slot list is the
+    # same layout with a keyboard added below, so reuse the Mode 1 seeds
+    # exactly: X=48, Y=92.  Link Ys become 92/116/140 matching FS1.
+    # ------------------------------------------------------------------
+    p24_old = (
+        '_anon_z02_5:\n'
+        '    moveq   #80,D0\n'
+        '    move.b  D0,($0000,A4)\n'
+        '    moveq   #48,D0\n'
+        '    move.b  D0,($0001,A4)\n'
+    )
+    p24_new = (
+        '_anon_z02_5:\n'
+        '    moveq   #48,D0   ; PATCH P24: Phase 10 FS2-A Link seed X\n'
+        '    move.b  D0,($0000,A4)\n'
+        '    moveq   #92,D0   ; PATCH P24: Phase 10 FS2-A Link seed Y\n'
+        '    move.b  D0,($0001,A4)\n'
+    )
+    if False:  # PHASE 12 REVERTED -- user reports FS2 Link "way too far down" after P24
+        if p24_old in text:
+            text = text.replace(p24_old, p24_new, 1)
+            print("  _patch_z02 P24: Mode $0E Link seeds X=48 Y=92 (FS2-A)")
+        else:
+            print("  WARNING: _patch_z02 P24 -- _anon_z02_5 seed anchor not found (FS2-A)")
+    else:
+        print("  _patch_z02 P24: REVERTED (Phase 12)")
+
+    # ------------------------------------------------------------------
+    # P25b: Phase 10.6 FS2-E — REGISTER-mode backspace
+    #
+    # _L_z02_ModeE_HandleAOrB_CheckAB (z_02.asm:2681) dispatches:
+    #   - A (bit $80) -> char write, falls into MoveCursor (advance)
+    #   - B (bit $40) -> jumps directly to MoveCursor (advance only)
+    #
+    # User expectation: B = backspace = retreat cursor one slot and erase.
+    # Split the B branch to a new handler _L_z02_ModeE_HandleAOrB_Backspace
+    # that decrements NameCharOffset ($0421), VRAM low byte ($0423), and
+    # the name cursor sprite X ($0070), and writes a space tile ($24) to
+    # the erased position in the name buffer ($0638 + $0421).  Clamps at
+    # SlotToNameOffset[$0016] so we cannot backspace into the previous
+    # slot's name.
+    #
+    # Two-anchor patch:
+    #   (a) redirect the cmpi/bne in CheckAB from MoveCursor -> Backspace
+    #   (b) inject the Backspace body immediately before the existing
+    #       _L_z02_ModeE_HandleAOrB_Exit label
+    # ------------------------------------------------------------------
+    p25b_old_dispatch = (
+        '    ; A or B was pressed.\n'
+        '    ;\n'
+        '    cmpi.b  #$80,D0\n'
+        '    bne  _L_z02_ModeE_HandleAOrB_MoveCursor\n'
+    )
+    p25b_new_dispatch = (
+        '    ; A or B was pressed.\n'
+        '    ;\n'
+        '    cmpi.b  #$40,D0  ; PATCH P29: swap so NES-B (Gen A) = write, NES-A (Gen B) = bksp\n'
+        '    bne  _L_z02_ModeE_HandleAOrB_Backspace   ; PATCH P25b: B = backspace\n'
+    )
+    p25b_old_exit = (
+        '    moveq   #112,D0\n'
+        '    move.b  D0,($0070,A4)\n'
+        '    even\n'
+        '_L_z02_ModeE_HandleAOrB_Exit:\n'
+        '    jmp     ModeE_SetNameCursorSpriteX\n'
+    )
+    p25b_new_exit = (
+        '    moveq   #112,D0\n'
+        '    move.b  D0,($0070,A4)\n'
+        '    even\n'
+        '; PATCH P25b: FS2-E backspace handler.\n'
+        '; Entered when bit $40 (B) is set in $00F8 & $C0. Decrements\n'
+        '; NameCharOffset, VRAM low byte, and name cursor sprite X by\n'
+        '; one column (8 px), and writes a space ($24) to the erased\n'
+        '; position. Clamps at SlotToNameOffset[$0016] so the backspace\n'
+        '; cannot cross into a previous slot\'s name field.\n'
+        '_L_z02_ModeE_HandleAOrB_Backspace:\n'
+        '    moveq   #0,D3\n'
+        '    move.b  ($0016,A4),D3        ; D3 = current slot\n'
+        '    lea     (SlotToNameOffset).l,A0\n'
+        '    move.b  (A0,D3.W),D1         ; D1 = slot start offset\n'
+        '    move.b  ($0421,A4),D0        ; D0 = current NameCharOffset\n'
+        '    cmp.b   D1,D0\n'
+        '    bls     _L_z02_ModeE_HandleAOrB_Exit   ; at/below start, no-op\n'
+        '    subq.b  #1,D0\n'
+        '    move.b  D0,($0421,A4)        ; NameCharOffset -= 1\n'
+        '    subq.b  #1,($0423,A4)        ; VRAM low byte -= 1\n'
+        '    move.b  ($0070,A4),D1\n'
+        '    subi.b  #8,D1\n'
+        '    move.b  D1,($0070,A4)        ; name cursor X -= 8\n'
+        '    moveq   #$24,D1              ; space tile\n'
+        '    moveq   #0,D3\n'
+        '    move.b  D0,D3                ; D3 = erased offset\n'
+        '    lea     ($0638,A4),A0\n'
+        '    move.b  D1,(A0,D3.W)         ; namebuf[offset] = space\n'
+        '    jmp     _L_z02_ModeE_HandleAOrB_Exit\n'
+        '    even\n'
+        '_L_z02_ModeE_HandleAOrB_Exit:\n'
+        '    jmp     ModeE_SetNameCursorSpriteX\n'
+    )
+    p25b_hits = 0
+    if p25b_old_dispatch in text:
+        text = text.replace(p25b_old_dispatch, p25b_new_dispatch, 1)
+        p25b_hits += 1
+    if p25b_old_exit in text:
+        text = text.replace(p25b_old_exit, p25b_new_exit, 1)
+        p25b_hits += 1
+    if p25b_hits == 2:
+        print("  _patch_z02 P25b: FS2-E REGISTER backspace handler (+ P29 button swap)")
+    else:
+        print(f"  WARNING: _patch_z02 P25b -- only {p25b_hits}/2 anchors matched (FS2-E)")
+
+    # ------------------------------------------------------------------
+    # P28: Phase 12 FS1-A heart cursor horizontal alignment.
+    #
+    # Probe data (phase12_probe.txt) shows heart sprite X=40 vs Link X=48.
+    # P23a moved Link X to $30 but the Mode1CursorSpriteTriplet table
+    # still has heart X=$28. Bump it 8 pixels right so the heart
+    # visually lines up with the Link sprite pair on each save slot row.
+    # ------------------------------------------------------------------
+    p28_old = (
+        'Mode1CursorSpriteTriplet:\n'
+        '    dc.b    $F3, $03, $28\n'
+    )
+    p28_new = (
+        'Mode1CursorSpriteTriplet:\n'
+        '    dc.b    $F3, $03, $30       ; PATCH P28: heart X $28->$30 align Link\n'
+    )
+    if False and p28_old in text:  # PHASE 12 REVERTED: fs_compare proved NES heart X~41, Gen pre-P28 X=40 was closer than X=48
+        text = text.replace(p28_old, p28_new, 1)
+        print("  _patch_z02 P28: FS1 heart cursor X align with Link (FS1-A)")
+    else:
+        print("  _patch_z02 P28: REVERTED (compare data showed wrong direction)")
+
+    # ------------------------------------------------------------------
+    # P30: Phase 12 FS1-B Link sprite color fix.
+    #
+    # Mode1_WriteLinkSprites steps ($0004,A4)/($0005,A4) per slot so that
+    # Anim_WriteSpritePairNotFlashing reads a different NES sub-palette
+    # (0->1->2) on each iteration. On NES all 4 sub-pals held the same
+    # Link tunic green, so stepping was invisible. Under CHR_EXPANSION,
+    # each sub-pal routes to a DIFFERENT packed tile bank — which is why
+    # fs1_compare.png showed slot 0 = green (bank A correct), slot 1 =
+    # blue (bank B), slot 2 = red (bank C).
+    #
+    # Fix: save/restore $04/$05 around the jsr and clear them to 0 during
+    # the call, pinning the descriptor attr to 0 for ALL slots (force
+    # bank A). The surrounding loop still uses $04 as the slot index for
+    # IsSaveSlotActive lookup (3984) and the loop-exit check (4017), so
+    # we MUST restore the original value immediately after the jsr.
+    # ------------------------------------------------------------------
+    # NOTE: _patch_common's bsr->jsr promotion runs AFTER _patch_z02, so the
+    # anchor here must use `bsr` not `jsr`. The promoter will rewrite the jsr
+    # form in our replacement back to bsr only if it's a local call; since
+    # Anim_WriteSpritePairNotFlashing is non-local the promoter will upgrade.
+    p30_old = (
+        '    move.b  D0,-(A5)  ; PHA\n'
+        '    bsr     Anim_WriteSpritePairNotFlashing\n'
+        '    moveq   #0,D2\n'
+    )
+    p30_new = (
+        '    move.b  D0,-(A5)  ; PHA\n'
+        '    move.w  ($0004,A4),D1       ; PATCH P30: save $04/$05\n'
+        '    move.w  D1,-(A7)            ; PATCH P30: push to stack\n'
+        '    clr.w   ($0004,A4)          ; PATCH P30: pin Link attr=0 (bank A = green)\n'
+        '    bsr     Anim_WriteSpritePairNotFlashing\n'
+        '    move.w  (A7)+,D1            ; PATCH P30: pop\n'
+        '    move.w  D1,($0004,A4)       ; PATCH P30: restore slot index\n'
+        '    moveq   #0,D2\n'
+    )
+    if p30_old in text:
+        text = text.replace(p30_old, p30_new, 1)
+        print("  _patch_z02 P30: Mode1 Link attr=0 pin (FS1-B green Link)")
+    else:
+        print("  WARNING: _patch_z02 P30 -- Mode1 Link bsr anchor not found")
 
     with open(path, 'w', encoding='utf-8') as f:
         f.write(text)
@@ -2434,8 +2849,9 @@ def _patch_z06(path):
                '    moveq   #0,D2\n'
                '    move.b  ($0014,A4),D2\n'
                '    add.w   D2,D2                       ; 2-byte index -> 4-byte index\n'
-               '    lea     (TransferBufPtrs).l,A0\n'
-               '    movea.l (A0,D2.W),A0               ; A0 = 32-bit buffer pointer\n'
+               '    lea     (TransferBufPtrs).l,A1\n'
+               '    move.l  (A1,D2.W),D0               ; D0 = 32-bit buffer pointer\n'
+               '    movea.l D0,A0                      ; A0 = 32-bit buffer pointer\n'
                '    bsr     TransferTileBuf')
     if old_tcb in text:
         text = text.replace(old_tcb, new_tcb, 1)
@@ -2543,8 +2959,9 @@ def _patch_z06(path):
                 '    moveq   #0,D2\n'
                 '    move.b  ($0014,A4),D2\n'
                 '    add.w   D2,D2                       ; 2-byte index -> 4-byte index\n'
-                '    lea     (TransferBufPtrs).l,A0\n'
-                '    movea.l (A0,D2.W),A0               ; A0 = 32-bit buffer pointer\n'
+                '    lea     (TransferBufPtrs).l,A1\n'
+                '    move.l  (A1,D2.W),D0               ; D0 = 32-bit buffer pointer\n'
+                '    movea.l D0,A0                      ; A0 = 32-bit buffer pointer\n'
                 '    bsr     TransferTileBuf\n'
                 '    moveq   #63,D0\n')
     new_tcb3 = ('TransferCurTileBuf:\n'
@@ -2567,8 +2984,9 @@ def _patch_z06(path):
                 '    moveq   #0,D2\n'
                 '    move.b  ($0014,A4),D2\n'
                 '    add.w   D2,D2                       ; 2-byte index -> 4-byte index\n'
-                '    lea     (TransferBufPtrs).l,A0\n'
-                '    movea.l (A0,D2.W),A0               ; A0 = 32-bit buffer pointer\n'
+                '    lea     (TransferBufPtrs).l,A1\n'
+                '    move.l  (A1,D2.W),D0               ; D0 = 32-bit buffer pointer\n'
+                '    movea.l D0,A0                      ; A0 = 32-bit buffer pointer\n'
                 '    bsr     TransferTileBuf\n'
                 '.skip_main_dispatch:\n'
                 '    moveq   #63,D0\n')

@@ -9,6 +9,32 @@ $ErrorActionPreference = "Stop"
 
 $Root = (Resolve-Path (Join-Path $PSScriptRoot "..")).Path
 
+function Get-SearchRoots {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$StartPath
+    )
+
+    $roots = New-Object System.Collections.Generic.List[string]
+    $seen = @{}
+    $current = (Resolve-Path -LiteralPath $StartPath).Path
+
+    while (-not [string]::IsNullOrWhiteSpace($current)) {
+        if (-not $seen.ContainsKey($current)) {
+            $seen[$current] = $true
+            [void]$roots.Add($current)
+        }
+
+        $parent = Split-Path -Parent $current
+        if ([string]::IsNullOrWhiteSpace($parent) -or $parent -eq $current) {
+            break
+        }
+        $current = $parent
+    }
+
+    return $roots
+}
+
 Add-Type -Namespace Win32 -Name Native -MemberDefinition @'
 [System.Runtime.InteropServices.DllImport("kernel32.dll", CharSet=System.Runtime.InteropServices.CharSet.Auto)]
 public static extern int GetShortPathName(string lpszLongPath, System.Text.StringBuilder lpszShortPath, int cchBuffer);
@@ -54,10 +80,32 @@ function Get-ShortPath {
 }
 
 function Resolve-BizHawkExe {
-    $candidates = @(
-        (Join-Path $Root "BizHawk-2.11-win-x64\EmuHawk.exe"),
-        (Join-Path (Split-Path $Root -Parent) "VDP rebirth tools and asms\BizHawk-2.11-win-x64\EmuHawk.exe")
-    )
+    $candidates = New-Object System.Collections.Generic.List[string]
+    $seen = @{}
+
+    foreach ($searchRoot in Get-SearchRoots -StartPath $Root) {
+        $parent = Split-Path -Parent $searchRoot
+        $searchCandidates = @(
+            (Join-Path $searchRoot "BizHawk-2.11-win-x64\EmuHawk.exe"),
+            (Join-Path $searchRoot "WHAT IF\BizHawk-2.11-win-x64\EmuHawk.exe")
+        )
+        if (-not [string]::IsNullOrWhiteSpace($parent)) {
+            $searchCandidates += @(
+                (Join-Path $parent "VDP rebirth tools and asms\BizHawk-2.11-win-x64\EmuHawk.exe"),
+                (Join-Path $parent "VDP rebirth tools and asms\WHAT IF\BizHawk-2.11-win-x64\EmuHawk.exe")
+            )
+        }
+
+        foreach ($candidate in $searchCandidates) {
+            if ([string]::IsNullOrWhiteSpace($candidate)) {
+                continue
+            }
+            if (-not $seen.ContainsKey($candidate)) {
+                $seen[$candidate] = $true
+                [void]$candidates.Add($candidate)
+            }
+        }
+    }
 
     foreach ($candidate in $candidates) {
         if (Test-Path -LiteralPath $candidate) {
@@ -65,12 +113,14 @@ function Resolve-BizHawkExe {
         }
     }
 
-    throw "EmuHawk.exe not found in known locations."
+    throw "EmuHawk.exe not found from '$Root' or its ancestor/sibling worktree locations."
 }
 
 if ([string]::IsNullOrWhiteSpace($RomPath)) {
     $RomPath = "builds\whatif.md"
 }
+
+$env:CODEX_BIZHAWK_ROOT = $Root
 
 $emuLong = Resolve-BizHawkExe
 $emuDirLong = Split-Path -Parent $emuLong

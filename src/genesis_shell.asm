@@ -148,8 +148,12 @@ COLOR_BLACK     equ $0000
     dc.l    RomEnd-1                            ; $1A4 ROM end
     dc.l    $00FF0000                           ; $1A8 RAM start
     dc.l    $00FFFFFF                           ; $1AC RAM end
-    dc.b    $00,$00,$00,$00,$00,$00,$00,$00     ; $1B0 no SRAM          (12)
-    dc.b    $00,$00,$00,$00
+    ; $1B0 SRAM declaration — Phase 9.7.  "RA" + $F8 (odd-byte battery)
+    ; + $20 (pad).  Start = $200001, end = $203FFF (4 KB of odd bytes).
+    ; gpgx requires both the marker and matching start/end addresses.
+    dc.b    "RA",$F8,$20                        ; $1B0 SRAM marker      (4)
+    dc.l    $00200001                           ; $1B4 SRAM start
+    dc.l    $00203FFF                           ; $1B8 SRAM end
     rept    12
         dc.b    $20                             ; $1BC modem (spaces)   (12)
     endr
@@ -334,7 +338,44 @@ EntryPoint:
     ; Seed LAST_GAMEMODE to $FF so the first _mode_transition_check always
     ; fires a transition (harmless because PPU latches are already zero but
     ; forces a clean VSRAM init).
-    move.b  #$FF,($00FF0810).l       ; LAST_GAMEMODE
+    move.b  #$FF,($00FF083E).l       ; LAST_GAMEMODE
+
+    ;--------------------------------------------------------------------------
+    ; Phase 9.7 — Cartridge SRAM declared in header at $1B0-$1BB.  The header
+    ; alone is enough for gpgx to allocate the SRAM domain, but writes to
+    ; $200001+ via the M68K bus are routed to ROM unless the SRAM mapper
+    ; port at $A130F1 is set to $01 (verified by bizhawk_sram_smoke probe:
+    ; without the port write the bus reads back $FF, with it the writes
+    ; persist into the gpgx SRAM domain).
+    ;--------------------------------------------------------------------------
+    ;--------------------------------------------------------------------------
+    ; Controller port 1 — set TH pin as output once during init.
+    ; Doing this inside _ctrl_strobe on every call caused rapid CTRL-register
+    ; writes that destabilised the 3-button pad multiplexer on real hardware,
+    ; producing inconsistent reads that trapped the ReadOneController
+    ; debounce loop in an infinite retry → d-pad freeze while held.
+    ;--------------------------------------------------------------------------
+    move.b  #$40,($A10009).l        ; Port 1 CTRL: bit6 (TH) = output
+    move.b  #$40,($A10003).l        ; Port 1 DATA: TH=1 (idle state)
+
+    move.b  #$01,($A130F1).l        ; SRAM mapper enable (write-only port)
+    ; Phase 9.7 SRAM self-test: write a sentinel pattern to the LAST four
+    ; odd-byte slots of cart SRAM ($203FF9/$203FFB/$203FFD/$203FFF).  This
+    ; lives at the very end of the declared SRAM window, far away from
+    ; the NES save-slot range that Phase 9.8 will use ($200001-$200CFF
+    ; covering NES $6000-$67FF).  Purpose: gives the smoke probe a
+    ; deterministic check that the M68K bus path actually writes through
+    ; the cart mapper into the gpgx SRAM file (BizHawk's Lua "M68K BUS"
+    ; domain bypasses the mapper and is unreliable for this).
+    move.b  #$5A,($203FF9).l
+    move.b  #$A5,($203FFB).l
+    move.b  #$C3,($203FFD).l
+    move.b  #$3C,($203FFF).l
+    ; Phase 9.8 — Restore the three NES save slots (NES $6000-$67FF) from
+    ; cart SRAM into the work-RAM mirror at $FF6000 BEFORE Zelda runs.
+    ; The mirror is what z_02 reads/writes via NES_SRAM equ $FF6000.
+    ; Without this restore, every cold boot would see all-$FF SRAM data.
+    jsr     _sram_load_save_slots
 
     ;--------------------------------------------------------------------------
     ; Lower interrupt mask so VBlank (level 6) can fire.

@@ -2131,9 +2131,9 @@ _L_z02_InitModeEandF_Full_FoundInactiveSlot:
     move.b  #$F8,D0
     move.b  D0,($0208,A4)
 _anon_z02_5:
-    moveq   #80,D0
+    moveq   #48,D0   ; PATCH P24: Phase 10 FS2-A Link seed X
     move.b  D0,($0000,A4)
-    moveq   #48,D0
+    moveq   #92,D0   ; PATCH P24: Phase 10 FS2-A Link seed Y
     move.b  D0,($0001,A4)
     addq.b  #1,($0011,A4)
     jmp     Mode1_WriteLinkSprites
@@ -2532,10 +2532,8 @@ _L_z02_ModeE_HandleDirectionButton_Down:
     jsr     CycleCharBoardCursorY
     move.b  ($042A,A4),D0
     beq  _L_z02_ModeE_HandleDirectionButton_Finish
-    move.b  ($041F,A4),D0
-    ori     #$11,CCR  ; SEC: set C+X
-    move.b  #$2C,D1
-    subx.b  D1,D0   ; SBC #$2C
+    move.b  ($041F,A4),D0  ; PATCH P19b: Phase 9.6 SEC;SBC -1 fix
+    sub.b   #$2C,D0
     move.b  D0,($041F,A4)
     even
 _L_z02_ModeE_HandleDirectionButton_Finish:
@@ -2549,10 +2547,8 @@ _L_z02_ModeE_HandleDirectionButton_Up:
     ;
     ; Decrease CharBoardIndex [$041F] by $B (one row up).
     ;
-    move.b  ($041F,A4),D0
-    ori     #$11,CCR  ; SEC: set C+X
-    move.b  #$0B,D1
-    subx.b  D1,D0   ; SBC #$0B
+    move.b  ($041F,A4),D0  ; PATCH P19a: Phase 9.6 SEC;SBC -1 fix
+    sub.b   #$0B,D0
     move.b  D0,($041F,A4)
     moveq   #3,D2
     jsr     CycleCharBoardCursorY
@@ -2565,7 +2561,7 @@ _L_z02_ModeE_HandleDirectionButton_Up:
     move.b  D0,($041F,A4)
     even
 _L_z02_ModeE_HandleDirectionButton_FinishInput:
-    jsr     ModeE_SyncCharBoardCursorToIndex  ; PATCH P13
+    ; PATCH P25: P13 sync call DISABLED for FS2-F console freeze
     moveq   #1,D0
     move.b  D0,($0428,A4)
     move.b  D0,($0602,A4)
@@ -2696,7 +2692,7 @@ _L_z02_ModeE_HandleAOrB_CheckAB:
     ; A or B was pressed.
     ;
     cmpi.b  #$80,D0
-    bne  _L_z02_ModeE_HandleAOrB_MoveCursor
+    bne  _L_z02_ModeE_HandleAOrB_Backspace   ; PATCH P25b: B = backspace
     ; A was pressed.
     ;
     ; Request to play the character click tune (same as bomb set).
@@ -2768,6 +2764,33 @@ _L_z02_ModeE_HandleAOrB_MoveCursor:
     bne  _L_z02_ModeE_HandleAOrB_Exit
     moveq   #112,D0
     move.b  D0,($0070,A4)
+    even
+; PATCH P25b: FS2-E backspace handler.
+; Entered when bit $40 (B) is set in $00F8 & $C0. Decrements
+; NameCharOffset, VRAM low byte, and name cursor sprite X by
+; one column (8 px), and writes a space ($24) to the erased
+; position. Clamps at SlotToNameOffset[$0016] so the backspace
+; cannot cross into a previous slot's name field.
+_L_z02_ModeE_HandleAOrB_Backspace:
+    moveq   #0,D3
+    move.b  ($0016,A4),D3        ; D3 = current slot
+    lea     (SlotToNameOffset).l,A0
+    move.b  (A0,D3.W),D1         ; D1 = slot start offset
+    move.b  ($0421,A4),D0        ; D0 = current NameCharOffset
+    cmp.b   D1,D0
+    bls     _L_z02_ModeE_HandleAOrB_Exit   ; at/below start, no-op
+    subq.b  #1,D0
+    move.b  D0,($0421,A4)        ; NameCharOffset -= 1
+    subq.b  #1,($0423,A4)        ; VRAM low byte -= 1
+    move.b  ($0070,A4),D1
+    subi.b  #8,D1
+    move.b  D1,($0070,A4)        ; name cursor X -= 8
+    moveq   #$24,D1              ; space tile
+    moveq   #0,D3
+    move.b  D0,D3                ; D3 = erased offset
+    lea     ($0638,A4),A0
+    move.b  D1,(A0,D3.W)         ; namebuf[offset] = space
+    jmp     _L_z02_ModeE_HandleAOrB_Exit
     even
 _L_z02_ModeE_HandleAOrB_Exit:
     jmp     ModeE_SetNameCursorSpriteX
@@ -3823,7 +3846,7 @@ _L_z02_UpdateMode1Menu_Sub0_WriteCursorSprite:
     lea     (Mode1CursorSpriteYs).l,A0
     move.b  (A0,D3.W),D0
     move.b  D0,($0200,A4)
-    moveq   #88,D0
+    moveq   #92,D0   ; PATCH P23a: Phase 10 FS1-A Link seed Y
     move.b  D0,($0001,A4)
     moveq   #48,D0
     move.b  D0,($0000,A4)
@@ -3930,6 +3953,8 @@ Mode1_WriteLinkSprites:
     ; As attributes, these values represent palettes 4 to 6.
     moveq   #0,D0
     jsr     Anim_SetSpriteDescriptorAttributes
+    moveq   #0,D0
+    move.b  D0,($0006,A4)   ; PATCH P22: init slot counter
     ; We want to start with sprite 4 (offset $10).
     ; Begin with 8, so that the loop will add 8 and
     ; put us at the offset we want.
@@ -3958,7 +3983,7 @@ _L_z02_Mode1_WriteLinkSprites_LoopSlot:
     move.b  (A5)+,D0  ; PLA
     move.b  D0,($0000,A4)
     moveq   #0,D3
-    move.b  ($0004,A4),D3
+    move.b  ($0006,A4),D3   ; PATCH P22: read slot idx from scratch
     lea     ($062D,A4),A0
     move.b  (A0,D3.W),D0
     beq  _L_z02_Mode1_WriteLinkSprites_NextSlot
@@ -3989,9 +4014,8 @@ _L_z02_Mode1_WriteLinkSprites_NextSlot:
     move.b  #$18,D1
     addx.b  D1,D0   ; ADC #$18 (X flag = 6502 C)
     move.b  D0,($0001,A4)
-    addq.b  #1,($0004,A4)
-    addq.b  #1,($0005,A4)
-    move.b  ($0004,A4),D0
+    addq.b  #1,($0006,A4)   ; PATCH P22: slot counter in scratch byte
+    move.b  ($0006,A4),D0
     cmpi.b  #$03,D0
     bne  _L_z02_Mode1_WriteLinkSprites_LoopSlot
     rts
@@ -4469,6 +4493,7 @@ _anon_z02_28:
 
     even
 UpdateModeDSave_Sub2:
+    jsr     _sram_commit_save_slots  ; PATCH P21: Phase 9.8 persist save slots
     moveq   #0,D0
     move.b  D0,($0012,A4)
     moveq   #1,D0
