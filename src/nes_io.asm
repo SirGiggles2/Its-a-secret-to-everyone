@@ -1702,6 +1702,19 @@ SRAM_PORT       equ $A130F1
 SRAM_BASE_ODD   equ $200001
 
 ;------------------------------------------------------------------------------
+; P31: FileBChecksums — relocated from ROM code label to writable work RAM.
+;
+; On NES, this was a RAM variable holding 6 bytes (3 slots × 2-byte checksum).
+; The transpiler incorrectly placed it as a code label inside z_01.asm, which
+; maps to ROM on Genesis.  All writes silently fail on real hardware, breaking
+; the File B → File A copy chain (checksums never match on re-read).
+;
+; $FF1200 is in the NES RAM mirror range ($0800-$1FFF) which is valid writable
+; work RAM on Genesis but unused by any NES game code.
+;------------------------------------------------------------------------------
+FileBChecksums  equ $00FF1200
+
+;------------------------------------------------------------------------------
 ; _sram_enable — switch cart area to SRAM mapping.  Clobbers nothing.
 ;------------------------------------------------------------------------------
 _sram_enable:
