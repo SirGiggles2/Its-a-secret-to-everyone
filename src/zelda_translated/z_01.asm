@@ -3784,7 +3784,7 @@ InitModeB_EnterCave_Bank5:
     move.b  D0,($0084,A4)
     moveq   #8,D0
     even
-FileBChecksums:
+; FileBChecksums: REMOVED by P31 — relocated to writable RAM ($FF1200 in nes_io.asm)
     move.b  D0,($0098,A4)
     jsr     Link_EndMoveAndAnimate
     jsr     RunCrossRoomTasksAndBeginUpdateMode_PlayModesNoCellar

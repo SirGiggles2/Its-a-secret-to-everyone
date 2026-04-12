@@ -2131,9 +2131,9 @@ _L_z02_InitModeEandF_Full_FoundInactiveSlot:
     move.b  #$F8,D0
     move.b  D0,($0208,A4)
 _anon_z02_5:
-    moveq   #48,D0   ; PATCH P24: Phase 10 FS2-A Link seed X
+    moveq   #80,D0
     move.b  D0,($0000,A4)
-    moveq   #92,D0   ; PATCH P24: Phase 10 FS2-A Link seed Y
+    moveq   #48,D0
     move.b  D0,($0001,A4)
     addq.b  #1,($0011,A4)
     jmp     Mode1_WriteLinkSprites
@@ -2638,7 +2638,7 @@ ModeE_SyncCharBoardCursorToIndex:
     addi.b  #$30,D0
     move.b  D0,($0071,A4)
     lsl.b   #4,D1
-    addi.b  #$87,D1
+    addi.b  #$88,D1         ; PATCH P26: Phase 10 FS2-B Y base +1 px
     move.b  D1,($0085,A4)
     move.l  (A7)+,D1
     move.l  (A7)+,D0
@@ -2691,7 +2691,7 @@ _L_z02_ModeE_HandleAOrB_CheckAB:
     beq  _L_z02_ModeE_HandleAOrB_Exit
     ; A or B was pressed.
     ;
-    cmpi.b  #$80,D0
+    cmpi.b  #$40,D0  ; PATCH P29: swap so NES-B (Gen A) = write, NES-A (Gen B) = bksp
     bne  _L_z02_ModeE_HandleAOrB_Backspace   ; PATCH P25b: B = backspace
     ; A was pressed.
     ;
@@ -3846,7 +3846,7 @@ _L_z02_UpdateMode1Menu_Sub0_WriteCursorSprite:
     lea     (Mode1CursorSpriteYs).l,A0
     move.b  (A0,D3.W),D0
     move.b  D0,($0200,A4)
-    moveq   #92,D0   ; PATCH P23a: Phase 10 FS1-A Link seed Y
+    moveq   #88,D0
     move.b  D0,($0001,A4)
     moveq   #48,D0
     move.b  D0,($0000,A4)
@@ -3953,8 +3953,6 @@ Mode1_WriteLinkSprites:
     ; As attributes, these values represent palettes 4 to 6.
     moveq   #0,D0
     jsr     Anim_SetSpriteDescriptorAttributes
-    moveq   #0,D0
-    move.b  D0,($0006,A4)   ; PATCH P22: init slot counter
     ; We want to start with sprite 4 (offset $10).
     ; Begin with 8, so that the loop will add 8 and
     ; put us at the offset we want.
@@ -3977,13 +3975,18 @@ _L_z02_Mode1_WriteLinkSprites_LoopSlot:
     move.b  D0,($000A,A4)
     move.b  ($0000,A4),D0
     move.b  D0,-(A5)  ; PHA
+    move.w  ($0004,A4),D1       ; PATCH P30: save $04/$05
+    move.w  D1,-(A7)            ; PATCH P30: push to stack
+    clr.w   ($0004,A4)          ; PATCH P30: pin Link attr=0 (bank A = green)
     jsr     Anim_WriteSpritePairNotFlashing
+    move.w  (A7)+,D1            ; PATCH P30: pop
+    move.w  D1,($0004,A4)       ; PATCH P30: restore slot index
     moveq   #0,D2
     move.b  D0,D2
     move.b  (A5)+,D0  ; PLA
     move.b  D0,($0000,A4)
     moveq   #0,D3
-    move.b  ($0006,A4),D3   ; PATCH P22: read slot idx from scratch
+    move.b  ($0004,A4),D3
     lea     ($062D,A4),A0
     move.b  (A0,D3.W),D0
     beq  _L_z02_Mode1_WriteLinkSprites_NextSlot
@@ -4014,8 +4017,9 @@ _L_z02_Mode1_WriteLinkSprites_NextSlot:
     move.b  #$18,D1
     addx.b  D1,D0   ; ADC #$18 (X flag = 6502 C)
     move.b  D0,($0001,A4)
-    addq.b  #1,($0006,A4)   ; PATCH P22: slot counter in scratch byte
-    move.b  ($0006,A4),D0
+    addq.b  #1,($0004,A4)
+    addq.b  #1,($0005,A4)
+    move.b  ($0004,A4),D0
     cmpi.b  #$03,D0
     bne  _L_z02_Mode1_WriteLinkSprites_LoopSlot
     rts
