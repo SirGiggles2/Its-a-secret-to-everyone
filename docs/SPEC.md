@@ -338,8 +338,8 @@ After room $77 (opening overworld screen) renders:
 | # | Name | Description | Status |
 |---|------|-------------|--------|
 | T30 | Room load | Room $77 (opening screen) loads without exception | PASS (8/8 in `builds/reports/bizhawk_t30_room_load_probe.txt`: natural path reaches Mode 3/Submode 8, leaves Submode 8, and reaches Mode 5 with no exception.) |
-| T31 | Room render | Room $77 BG tiles and palette correct | Evidence captured (`builds/reports/bizhawk_t31_room77.png` captured at Mode5 with `roomId=$77`); full visual parity review still pending. |
-| T32 | Room parity | RAM checkpoint: Genesis RAM vs NES trace at room $77 | Evidence captured (`builds/reports/bizhawk_t32_ram_ff0000_ff07ff.bin` + probe proof `roomId=$77`); full Genesis-vs-NES parity analysis still pending. |
+| T31 | Room render | Room $77 BG tiles and palette correct | ✓ PASS — parity green: 0 tile mismatches (stages 1-3), 0 palette mismatches. Screenshot: `builds/reports/bizhawk_t31_room77.png` (Mode5, roomId=$77). Report: `builds/reports/room77_parity_report.txt` |
+| T32 | Room parity | RAM checkpoint: Genesis RAM vs NES trace at room $77 | ✓ PASS — transfer_stream_mismatch_count=0, producer_match=True, 27/27 events. RAM dump: `builds/reports/bizhawk_t32_ram_ff0000_ff07ff.bin`. Report: `builds/reports/room77_parity_report.txt` |
 | T33 | Link spawn | Link sprite appears at starting position | Pending |
 | T34 | D-pad movement | Link moves through overworld room | Pending |
 | T35 | Screen scroll | Room-to-room scroll transition completes correctly | Pending |
@@ -371,12 +371,12 @@ After room $77 (opening overworld screen) renders:
 
 ## Current Status
 
-**As of 2026-04-12** — latest local evidence run is from the refreshed T28/T29/T30 probes against `builds/whatif.md` in this worktree. Audio tier **T42–T44 remains complete**, T30 is now probe-green, and the current blocker has shifted to story-scroll stability.
+**As of 2026-04-13** — room $77 BG parity is fully green. Palette cache (NT_ATTR_CACHE_BASE), bank window, and transfer interpreter fixes landed. T30/T31/T32 all PASS. Next target: T33 (Link spawn).
 
-- **Last continuously-verified milestone (green probe chain):** T27 (Controller 1). Verified probes T1–T27 still hold per the table below.
+- **Last continuously-verified milestone (green probe chain):** T32 (Room Parity). Verified probes T1–T27 still hold per the table below; T30/T31/T32 green via parity report.
 - **Out-of-order complete:** T42, T43, T44 (audio tier) — see Audio Bridge Plan for implementation details.
-- **In progress:** T28 (story-scroll stall reproduced at frame 2107 with no exception), T29 (natural file-select flow works but probe threshold still flags `T29_NMI_CONTINUOUS`), T31/T32 (artifacts captured, strict parity analysis pending).
-- **Probe pass:** T30 (`bizhawk_t30_room_load_probe.txt` is 8/8 PASS: bank window load observed, Mode3/Sub8 reached and exited, Mode5 reached, room `$77` observed).
+- **In progress:** T28 (story-scroll stall reproduced at frame 2107 with no exception), T29 (natural file-select flow works but probe threshold still flags `T29_NMI_CONTINUOUS`).
+- **Probe pass:** T30 (8/8 PASS), T31 (parity green: 0 tile/palette mismatches across stages 1-3), T32 (transfer stream 27/27 matched, producer_match=True).
 - **Not yet started:** T33–T41 (gameplay/fidelity), T45–T48 (save RAM, hardware test, Quest 1 completion).
 
 | Probe | Tests | Score |
@@ -401,16 +401,20 @@ After room $77 (opening overworld screen) renders:
 | Title Input T28 | 5 tests | 3/5 ⚠ (story-soak reproduces deterministic stall: `NMI`/`CheckInput` stop at frame 2107 in `DemoPhase=$01` / `DemoSubphase=$02`) |
 | File Select T29 | 7 tests | 6/7 ⚠ (natural mode progression verified; only `T29_NMI_CONTINUOUS` threshold fails) |
 | Room Load T30 | 8 tests | 8/8 PASS (natural path to room `$77`, Mode3/Sub8 progression, bank-window load observed, Mode5 reached) |
-| Room Render T31 | artifact | evidence captured (`builds/reports/bizhawk_t31_room77.png` at Mode5, `roomId=$77`) |
-| Room Parity T32 | artifact | evidence captured (`builds/reports/bizhawk_t32_ram_ff0000_ff07ff.bin`, room gate from `$00EB`) |
+| Room Render T31 | 6 metrics | 6/6 PASS (stage1=0, stage2=0, stage3=0, tile_mismatch=0, palette_mismatch=0, bg_palette=0) |
+| Room Parity T32 | 3 metrics | 3/3 PASS (transfer_stream_mismatch=0, producer_match=True, 27/27 events) |
 
-### Next Steps (Story-scroll crash)
+### Next Steps (T33 Link Spawn)
 
-- **Primary target:** eliminate the T28 story-scroll stall without any "input faster" workaround.
-- **Repro signature to preserve:** frame ~2107 freeze in `DemoPhase=$01` / `DemoSubphase=$02`, with no exception but stalled `NMI` + `CheckInput` counters (`builds/reports/bizhawk_t28_title_input_probe.txt`).
-- **Telemetry contract:** keep `GameMode`, `GameSubmode`, `DemoPhase`, `DemoSubphase`, `DemoTimer`, `TileBufSelector`, scroll state, and exception vector/PC logging in the story-soak probe.
-- **Fix path contract:** land code changes through transpiler patch path (no hand-edits to generated `src/zelda_translated/z_02.asm`).
-- **Acceptance gates:** updated T28 passes continuous-loop checks through story window, updated T29 remains stable in natural flow, and T30 stays 8/8 PASS.
+- **Primary target:** T33 — Link sprite visible at starting position in room $77.
+- **Sprite infra already proven:** T23–T26 PASS (OAM DMA, sprite decode, sprite palette, title sprites all working).
+- **Likely failure modes (if Link not visible):** sprite CHR bank not loaded for OW, OAM DMA timing in Mode 5, Y-position offset edge case, sprite priority/layer ordering.
+- **Acceptance gates:** T33 probe passes, T30 stays 8/8 PASS, room $77 parity stays green.
+
+### Deferred
+
+- **T28 story-scroll stall:** deterministic freeze at frame 2107 (`DemoPhase=$01`/`DemoSubphase=$02`). Cosmetic — T30 bypasses via fast Start press. Fix path: transpiler patch in z_02.
+- **Frontend transfer divergence:** 7 mismatches (12 gen vs 18 nes events). Producer/dispatch issue, not interpreter. Investigate after gameplay milestones.
 
 **Architecture notes:**
 - Plane A correctly placed at VRAM $C000 (VDP Reg 2=$8230); tile region $0000-$AFFF (1408 tiles) has no overlap
