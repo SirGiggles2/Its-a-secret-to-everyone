@@ -40,46 +40,46 @@
 
     even
 LevelBlockAddrsQ1:
-    dc.b    (LevelBlockOW)&$FF, (LevelBlockOW>>8)&$FF   ; NES .ADDR (little-endian)
-    dc.b    (LevelBlockUW1Q1)&$FF, (LevelBlockUW1Q1>>8)&$FF   ; NES .ADDR (little-endian)
-    dc.b    (LevelBlockUW1Q1)&$FF, (LevelBlockUW1Q1>>8)&$FF   ; NES .ADDR (little-endian)
-    dc.b    (LevelBlockUW1Q1)&$FF, (LevelBlockUW1Q1>>8)&$FF   ; NES .ADDR (little-endian)
-    dc.b    (LevelBlockUW1Q1)&$FF, (LevelBlockUW1Q1>>8)&$FF   ; NES .ADDR (little-endian)
-    dc.b    (LevelBlockUW1Q1)&$FF, (LevelBlockUW1Q1>>8)&$FF   ; NES .ADDR (little-endian)
-    dc.b    (LevelBlockUW1Q1)&$FF, (LevelBlockUW1Q1>>8)&$FF   ; NES .ADDR (little-endian)
-    dc.b    (LevelBlockUW2Q1)&$FF, (LevelBlockUW2Q1>>8)&$FF   ; NES .ADDR (little-endian)
-    dc.b    (LevelBlockUW2Q1)&$FF, (LevelBlockUW2Q1>>8)&$FF   ; NES .ADDR (little-endian)
-    dc.b    (LevelBlockUW2Q1)&$FF, (LevelBlockUW2Q1>>8)&$FF   ; NES .ADDR (little-endian)
+    dc.l    LevelBlockOW
+    dc.l    LevelBlockUW1Q1
+    dc.l    LevelBlockUW1Q1
+    dc.l    LevelBlockUW1Q1
+    dc.l    LevelBlockUW1Q1
+    dc.l    LevelBlockUW1Q1
+    dc.l    LevelBlockUW1Q1
+    dc.l    LevelBlockUW2Q1
+    dc.l    LevelBlockUW2Q1
+    dc.l    LevelBlockUW2Q1
 
     even
 LevelInfoAddrs:
-    dc.b    (LevelInfoOW)&$FF, (LevelInfoOW>>8)&$FF   ; NES .ADDR (little-endian)
-    dc.b    (LevelInfoUW1)&$FF, (LevelInfoUW1>>8)&$FF   ; NES .ADDR (little-endian)
-    dc.b    (LevelInfoUW2)&$FF, (LevelInfoUW2>>8)&$FF   ; NES .ADDR (little-endian)
-    dc.b    (LevelInfoUW3)&$FF, (LevelInfoUW3>>8)&$FF   ; NES .ADDR (little-endian)
-    dc.b    (LevelInfoUW4)&$FF, (LevelInfoUW4>>8)&$FF   ; NES .ADDR (little-endian)
-    dc.b    (LevelInfoUW5)&$FF, (LevelInfoUW5>>8)&$FF   ; NES .ADDR (little-endian)
-    dc.b    (LevelInfoUW6)&$FF, (LevelInfoUW6>>8)&$FF   ; NES .ADDR (little-endian)
-    dc.b    (LevelInfoUW7)&$FF, (LevelInfoUW7>>8)&$FF   ; NES .ADDR (little-endian)
-    dc.b    (LevelInfoUW8)&$FF, (LevelInfoUW8>>8)&$FF   ; NES .ADDR (little-endian)
-    dc.b    (LevelInfoUW9)&$FF, (LevelInfoUW9>>8)&$FF   ; NES .ADDR (little-endian)
+    dc.l    LevelInfoOW
+    dc.l    LevelInfoUW1
+    dc.l    LevelInfoUW2
+    dc.l    LevelInfoUW3
+    dc.l    LevelInfoUW4
+    dc.l    LevelInfoUW5
+    dc.l    LevelInfoUW6
+    dc.l    LevelInfoUW7
+    dc.l    LevelInfoUW8
+    dc.l    LevelInfoUW9
 
     even
 CommonDataBlockAddr_Bank6:
-    dc.b    (CommonDataBlock_Bank6)&$FF, (CommonDataBlock_Bank6>>8)&$FF   ; NES .ADDR (little-endian)
+    dc.l    CommonDataBlock_Bank6
 
     even
 LevelBlockAddrsQ2:
-    dc.b    (LevelBlockOW)&$FF, (LevelBlockOW>>8)&$FF   ; NES .ADDR (little-endian)
-    dc.b    (LevelBlockUW1Q2)&$FF, (LevelBlockUW1Q2>>8)&$FF   ; NES .ADDR (little-endian)
-    dc.b    (LevelBlockUW1Q2)&$FF, (LevelBlockUW1Q2>>8)&$FF   ; NES .ADDR (little-endian)
-    dc.b    (LevelBlockUW1Q2)&$FF, (LevelBlockUW1Q2>>8)&$FF   ; NES .ADDR (little-endian)
-    dc.b    (LevelBlockUW1Q2)&$FF, (LevelBlockUW1Q2>>8)&$FF   ; NES .ADDR (little-endian)
-    dc.b    (LevelBlockUW1Q2)&$FF, (LevelBlockUW1Q2>>8)&$FF   ; NES .ADDR (little-endian)
-    dc.b    (LevelBlockUW1Q2)&$FF, (LevelBlockUW1Q2>>8)&$FF   ; NES .ADDR (little-endian)
-    dc.b    (LevelBlockUW2Q2)&$FF, (LevelBlockUW2Q2>>8)&$FF   ; NES .ADDR (little-endian)
-    dc.b    (LevelBlockUW2Q2)&$FF, (LevelBlockUW2Q2>>8)&$FF   ; NES .ADDR (little-endian)
-    dc.b    (LevelBlockUW2Q2)&$FF, (LevelBlockUW2Q2>>8)&$FF   ; NES .ADDR (little-endian)
+    dc.l    LevelBlockOW
+    dc.l    LevelBlockUW1Q2
+    dc.l    LevelBlockUW1Q2
+    dc.l    LevelBlockUW1Q2
+    dc.l    LevelBlockUW1Q2
+    dc.l    LevelBlockUW1Q2
+    dc.l    LevelBlockUW1Q2
+    dc.l    LevelBlockUW2Q2
+    dc.l    LevelBlockUW2Q2
+    dc.l    LevelBlockUW2Q2
 
     even
 InitMode2_Submodes:
@@ -92,88 +92,57 @@ InitMode2_Submodes_JumpTable:
 
     even
 InitMode2_Sub0:
-    ; Copy level block for level.
-    ;
+    ; PATCH P32f: load level block source from 32-bit table and copy from ROM.
     move.b  ($0010,A4),D0
     lsl.b  #1,D0   ; ASL A
     moveq   #0,D2
     move.b  D0,D2
+    add.w   D2,D2                       ; 2-byte index -> 4-byte dc.l index
     moveq   #0,D3
     move.b  ($0016,A4),D3
     lea     ($062D,A4),A0
     move.b  (A0,D3.W),D0
-    bne  _L_z06_InitMode2_Sub0_SecondQuest
-    ; First quest.
-    ;
+    bne.s   _L_z06_InitMode2_Sub0_SecondQuest_P32
     lea     (LevelBlockAddrsQ1).l,A0
-    move.b  (A0,D2.W),D0
-    move.b  D0,($0000,A4)
-    addq.b  #1,D2
-    lea     (LevelBlockAddrsQ1).l,A0
-    move.b  (A0,D2.W),D0
-    jmp     _L_z06_InitMode2_Sub0_Copy
+    bra.s   _L_z06_InitMode2_Sub0_LoadSrc_P32
 
     even
-_L_z06_InitMode2_Sub0_SecondQuest:
-    ; Second quest.
-    ;
+_L_z06_InitMode2_Sub0_SecondQuest_P32:
     lea     (LevelBlockAddrsQ2).l,A0
-    move.b  (A0,D2.W),D0
-    move.b  D0,($0000,A4)
-    addq.b  #1,D2
-    lea     (LevelBlockAddrsQ2).l,A0
-    move.b  (A0,D2.W),D0
+
     even
-_L_z06_InitMode2_Sub0_Copy:
-    move.b  D0,($0001,A4)
+_L_z06_InitMode2_Sub0_LoadSrc_P32:
+    movea.l (A0,D2.W),A2
     jsr     FetchLevelBlockDestInfo
-    jsr     CopyBlock
+    jsr     CopyBlock_ROM
     rts
 
-    even
 InitMode2_Sub1:
-    ; Copy level info.
-    ;
+    ; PATCH P32g: load level info source from 32-bit table and copy from ROM.
     move.b  ($0010,A4),D0
     lsl.b  #1,D0   ; ASL A
     moveq   #0,D2
     move.b  D0,D2
+    add.w   D2,D2                       ; 2-byte index -> 4-byte dc.l index
     lea     (LevelInfoAddrs).l,A0
-    move.b  (A0,D2.W),D0
-    move.b  D0,($0000,A4)
-    addq.b  #1,D2
-    lea     (LevelInfoAddrs).l,A0
-    move.b  (A0,D2.W),D0
-    move.b  D0,($0001,A4)
+    movea.l (A0,D2.W),A2
     jsr     FetchLevelInfoDestInfo
-    jsr     CopyBlock
+    jsr     CopyBlock_ROM
     moveq   #0,D0
     move.b  D0,($0013,A4)
     addq.b  #1,($0011,A4)
     rts
 
-    even
 CopyCommonDataToRam:
-    moveq   #0,D2
+    ; PATCH P32h: copy common data directly from ROM source pointer.
     lea     (CommonDataBlockAddr_Bank6).l,A0
-    move.b  (A0,D2.W),D0
-    move.b  D0,($0000,A4)
-    addq.b  #1,D2
-    lea     (CommonDataBlockAddr_Bank6).l,A0
-    move.b  (A0,D2.W),D0
-    move.b  D0,($0001,A4)
+    movea.l (A0),A2
     jsr     FetchDestAddrForCommonDataBlock
-    jsr     CopyBlock
+    jsr     CopyBlock_ROM
     moveq   #0,D0
     move.b  D0,($0013,A4)
     rts
 
-; Returns:
-; [$02:03]: destination address
-; [$04:05]: end address
-;
-; Destination address $687E.
-    even
 FetchLevelBlockDestInfo:
     moveq   #126,D0
     move.b  D0,($0002,A4)
@@ -223,18 +192,15 @@ FetchDestAddrForCommonDataBlock:
 ;
     even
 CopyBlock:
+    ; PATCH P32e: compatibility wrapper now routes through ROM source path.
+    jmp     CopyBlock_ROM
+
+    even
+CopyBlock_ROM:
     moveq   #0,D3
     even
-_L_z06_CopyBlock_Loop:
-    move.b  ($00,A4),D1   ; ptr lo
-    move.b  ($01,A4),D4  ; ptr hi
-    andi.w  #$00FF,D1         ; zero-extend lo byte
-    lsl.w   #8,D4
-    or.w    D1,D4             ; D4 = NES ptr addr
-    ext.l   D4
-    add.l   #NES_RAM,D4       ; → Genesis addr
-    movea.l D4,A0
-    move.b  (A0,D3.W),D0     ; LDA ($nn),Y
+_L_z06_CopyBlock_ROM_Loop:
+    move.b  (A2,D3.W),D0               ; source byte from ROM
     move.b  ($02,A4),D1   ; ptr lo
     move.b  ($03,A4),D4  ; ptr hi
     andi.w  #$00FF,D1         ; zero-extend lo byte
@@ -247,16 +213,16 @@ _L_z06_CopyBlock_Loop:
     move.b  ($0002,A4),D0
     move.b  ($0004,A4),D1
     cmp.b   D1,D0
-    bne  _L_z06_CopyBlock_Next
+    bne.s   _L_z06_CopyBlock_ROM_Next
     move.b  ($0003,A4),D0
     move.b  ($0005,A4),D1
     cmp.b   D1,D0
-    bne  _L_z06_CopyBlock_Next
+    bne.s   _L_z06_CopyBlock_ROM_Next
     addq.b  #1,($0013,A4)
     rts
 
     even
-_L_z06_CopyBlock_Next:
+_L_z06_CopyBlock_ROM_Next:
     move.b  ($0002,A4),D0
     andi    #$EE,CCR  ; CLC: clear C+X
     move.b  #$01,D1
@@ -266,19 +232,12 @@ _L_z06_CopyBlock_Next:
     move.b  #$00,D1
     addx.b  D1,D0   ; ADC #$00 (X flag = 6502 C)
     move.b  D0,($0003,A4)
-    move.b  ($0000,A4),D0
-    andi    #$EE,CCR  ; CLC: clear C+X
-    move.b  #$01,D1
-    addx.b  D1,D0   ; ADC #$01 (X flag = 6502 C)
-    move.b  D0,($0000,A4)
-    move.b  ($0001,A4),D0
-    move.b  #$00,D1
-    addx.b  D1,D0   ; ADC #$00 (X flag = 6502 C)
-    move.b  D0,($0001,A4)
-    jmp     _L_z06_CopyBlock_Loop
+    addq.l  #1,A2
+    jmp     _L_z06_CopyBlock_ROM_Loop
 
-    even
 UpdateMode2Load_Full:
+    moveq   #6,D0
+    jsr     _copy_bank_to_window   ; PATCH P33b: force window bank 6
     ; Make replacements for the second quest.
     ;
     moveq   #0,D3
@@ -476,15 +435,15 @@ LevelInfoUWQ2Replacements9:
 
     even
 LevelInfoUWQ2ReplacementAddrs:
-    dc.b    (LevelInfoUWQ2Replacements1)&$FF, (LevelInfoUWQ2Replacements1>>8)&$FF   ; NES .ADDR (little-endian)
-    dc.b    (LevelInfoUWQ2Replacements2)&$FF, (LevelInfoUWQ2Replacements2>>8)&$FF   ; NES .ADDR (little-endian)
-    dc.b    (LevelInfoUWQ2Replacements3)&$FF, (LevelInfoUWQ2Replacements3>>8)&$FF   ; NES .ADDR (little-endian)
-    dc.b    (LevelInfoUWQ2Replacements4)&$FF, (LevelInfoUWQ2Replacements4>>8)&$FF   ; NES .ADDR (little-endian)
-    dc.b    (LevelInfoUWQ2Replacements5)&$FF, (LevelInfoUWQ2Replacements5>>8)&$FF   ; NES .ADDR (little-endian)
-    dc.b    (LevelInfoUWQ2Replacements6)&$FF, (LevelInfoUWQ2Replacements6>>8)&$FF   ; NES .ADDR (little-endian)
-    dc.b    (LevelInfoUWQ2Replacements7)&$FF, (LevelInfoUWQ2Replacements7>>8)&$FF   ; NES .ADDR (little-endian)
-    dc.b    (LevelInfoUWQ2Replacements8)&$FF, (LevelInfoUWQ2Replacements8>>8)&$FF   ; NES .ADDR (little-endian)
-    dc.b    (LevelInfoUWQ2Replacements9)&$FF, (LevelInfoUWQ2Replacements9>>8)&$FF   ; NES .ADDR (little-endian)
+    dc.b    $6F, $81   ; NES .ADDR (bank window, NES=$816F = LevelInfoUWQ2Replacements1)
+    dc.b    $A8, $81   ; NES .ADDR (bank window, NES=$81A8 = LevelInfoUWQ2Replacements2)
+    dc.b    $DF, $81   ; NES .ADDR (bank window, NES=$81DF = LevelInfoUWQ2Replacements3)
+    dc.b    $1C, $82   ; NES .ADDR (bank window, NES=$821C = LevelInfoUWQ2Replacements4)
+    dc.b    $55, $82   ; NES .ADDR (bank window, NES=$8255 = LevelInfoUWQ2Replacements5)
+    dc.b    $98, $82   ; NES .ADDR (bank window, NES=$8298 = LevelInfoUWQ2Replacements6)
+    dc.b    $D8, $82   ; NES .ADDR (bank window, NES=$82D8 = LevelInfoUWQ2Replacements7)
+    dc.b    $17, $83   ; NES .ADDR (bank window, NES=$8317 = LevelInfoUWQ2Replacements8)
+    dc.b    $5A, $83   ; NES .ADDR (bank window, NES=$835A = LevelInfoUWQ2Replacements9)
 
     even
 LevelInfoUWQ2ReplacementSizes:
@@ -504,108 +463,463 @@ LevelInfoUWQ2ReplacementSizes:
 
     even
 LevelBlockOW:
-; .INCBIN "dat/LevelBlockOW.dat" not found — stub 128 zero bytes
-    rept    128
-        dc.b    0
-    endr
+; .INCBIN dat/LevelBlockOW.dat (768 bytes)
+    dc.b    $A3, $93, $63, $73, $C3, $53, $B3, $A3, $03, $93, $2B, $73, $83, $93, $57, $87
+    dc.b    $93, $53, $83, $23, $C3, $C3, $63, $0B, $CB, $4B, $6B, $93, $33, $27, $CF, $67
+    dc.b    $50, $50, $73, $43, $03, $A3, $3B, $EB, $EB, $B3, $03, $B3, $93, $5F, $0F, $60
+    dc.b    $70, $70, $03, $A3, $43, $0B, $0B, $73, $0B, $03, $C3, $63, $72, $92, $0F, $0F
+    dc.b    $00, $00, $63, $03, $4B, $83, $8A, $BA, $BA, $32, $B2, $C2, $02, $C2, $72, $0F
+    dc.b    $00, $A3, $03, $83, $0A, $0A, $BA, $02, $C2, $0A, $0A, $32, $02, $02, $72, $0F
+    dc.b    $C3, $03, $63, $73, $72, $0A, $72, $72, $32, $0A, $DA, $52, $42, $62, $C2, $3F
+    dc.b    $B3, $53, $43, $03, $82, $2A, $62, $42, $52, $63, $03, $9F, $6F, $6F, $0F, $0F
+    dc.b    $27, $5F, $6B, $5F, $6B, $27, $47, $5F, $03, $4F, $4B, $17, $7B, $6B, $63, $8B
+    dc.b    $5B, $63, $7F, $87, $5F, $7B, $5B, $03, $6B, $1F, $6F, $17, $57, $53, $5F, $5A
+    dc.b    $44, $4C, $18, $53, $03, $77, $7F, $6B, $86, $6B, $03, $8F, $47, $87, $03, $44
+    dc.b    $18, $00, $03, $68, $83, $03, $03, $07, $03, $02, $47, $03, $0A, $86, $03, $03
+    dc.b    $00, $00, $1F, $02, $76, $12, $7E, $46, $86, $52, $76, $6A, $02, $7E, $8E, $03
+    dc.b    $00, $8F, $03, $8A, $02, $02, $8E, $02, $86, $02, $02, $8E, $02, $02, $7A, $03
+    dc.b    $5B, $03, $8B, $5F, $6A, $03, $7B, $86, $5E, $02, $5E, $8A, $22, $22, $8E, $77
+    dc.b    $73, $87, $5F, $03, $0F, $66, $5A, $42, $6A, $53, $03, $47, $5B, $5F, $03, $03
+    dc.b    $00, $42, $42, $1F, $C1, $E6, $E4, $02, $1F, $00, $01, $10, $CE, $CE, $00, $00
+    dc.b    $41, $E4, $C1, $65, $42, $E4, $1F, $1F, $1F, $1F, $CE, $00, $00, $DA, $CE, $DA
+    dc.b    $21, $21, $02, $42, $00, $5A, $DA, $DA, $DA, $50, $CF, $E7, $4E, $AA, $49, $00
+    dc.b    $21, $21, $E4, $00, $4F, $00, $00, $08, $E8, $2F, $E7, $4F, $0A, $43, $AA, $09
+    dc.b    $21, $21, $04, $2F, $47, $1A, $00, $00, $50, $E8, $CD, $C4, $AA, $43, $43, $AB
+    dc.b    $82, $83, $63, $A2, $69, $07, $47, $69, $69, $5A, $47, $63, $43, $43, $83, $AA
+    dc.b    $E4, $83, $83, $EC, $AA, $69, $69, $47, $47, $47, $69, $EC, $44, $44, $EC, $A8
+    dc.b    $5A, $83, $62, $43, $0E, $E7, $4E, $00, $47, $8D, $4D, $D0, $D0, $49, $48, $09
+    dc.b    $00, $01, $02, $03, $04, $85, $86, $07, $06, $08, $09, $0A, $0B, $0C, $0D, $0E
+    dc.b    $0F, $90, $11, $92, $13, $94, $15, $16, $17, $18, $19, $1A, $1B, $1C, $1D, $1E
+    dc.b    $1F, $20, $21, $22, $23, $24, $25, $26, $27, $28, $29, $AA, $2B, $AC, $2D, $2E
+    dc.b    $2F, $30, $B1, $32, $33, $34, $35, $36, $B7, $38, $B9, $3A, $0A, $3B, $BC, $3D
+    dc.b    $3E, $3F, $38, $38, $40, $41, $42, $43, $44, $C5, $46, $47, $C8, $49, $4A, $CB
+    dc.b    $4C, $4D, $CE, $CF, $D0, $51, $52, $D3, $D4, $55, $56, $D7, $58, $59, $5A, $CB
+    dc.b    $DB, $5C, $5D, $DE, $DF, $E0, $E1, $62, $63, $64, $E5, $E6, $67, $68, $E9, $EA
+    dc.b    $6B, $6C, $ED, $6E, $6F, $F0, $71, $72, $73, $74, $06, $75, $76, $76, $77, $78
+    dc.b    $3F, $01, $7F, $20, $3F, $5A, $7F, $02, $7F, $7F, $03, $7F, $3F, $3F, $3F, $3F
+    dc.b    $3F, $3F, $98, $98, $D8, $3F, $3F, $3F, $3F, $15, $7F, $3F, $3F, $3F, $1F, $3F
+    dc.b    $E0, $98, $58, $D8, $98, $58, $D8, $1C, $00, $C8, $1C, $19, $C6, $1C, $04, $E2
+    dc.b    $19, $12, $C4, $3F, $98, $7F, $3F, $98, $7F, $3F, $98, $7F, $00, $00, $00, $00
+    dc.b    $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $0A, $0A
+    dc.b    $0A, $00, $00, $00, $00, $00, $00, $00, $00, $00, $28, $00, $44, $05, $0A, $14
+    dc.b    $0A, $1E, $32, $82, $14, $50, $A0, $64, $3C, $5A, $64, $0A, $50, $FA, $3C, $00
+    dc.b    $1E, $00, $00, $64, $00, $00, $0A, $00, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF
+    dc.b    $83, $00, $83, $03, $00, $45, $84, $03, $00, $A4, $00, $03, $00, $00, $0B, $03
+    dc.b    $00, $A4, $00, $00, $00, $80, $00, $00, $82, $82, $03, $A4, $02, $02, $00, $03
+    dc.b    $B3, $62, $03, $11, $00, $00, $00, $40, $05, $84, $00, $84, $45, $00, $00, $03
+    dc.b    $84, $04, $00, $00, $02, $00, $00, $03, $00, $80, $84, $02, $03, $02, $00, $00
+    dc.b    $00, $00, $01, $00, $00, $03, $06, $45, $02, $02, $00, $09, $00, $0C, $0A, $00
+    dc.b    $00, $05, $08, $85, $00, $00, $06, $08, $8C, $00, $00, $0D, $08, $08, $00, $00
+    dc.b    $84, $08, $4B, $05, $00, $00, $00, $40, $0C, $00, $05, $4D, $89, $49, $84, $00
+    dc.b    $00, $48, $8C, $08, $03, $00, $00, $00, $0C, $22, $00, $40, $00, $00, $00, $00
 
     even
 LevelBlockUW1Q1:
-; .INCBIN "dat/LevelBlockUW1Q1.dat" not found — stub 128 zero bytes
-    rept    128
-        dc.b    0
-    endr
+; .INCBIN dat/LevelBlockUW1Q1.dat (768 bytes)
+    dc.b    $22, $32, $22, $22, $05, $26, $36, $64, $3A, $36, $3E, $22, $22, $26, $22, $69
+    dc.b    $FE, $92, $06, $E6, $22, $32, $A6, $26, $3E, $B6, $06, $E6, $F6, $22, $FE, $22
+    dc.b    $16, $96, $26, $36, $E2, $86, $26, $22, $1E, $A2, $26, $22, $A2, $06, $E2, $12
+    dc.b    $A2, $A6, $26, $A2, $E6, $36, $26, $02, $FE, $E6, $26, $F6, $E6, $22, $02, $92
+    dc.b    $02, $26, $36, $12, $32, $A6, $36, $02, $02, $22, $22, $A2, $22, $FE, $1E, $92
+    dc.b    $06, $22, $A6, $82, $86, $22, $A2, $06, $E2, $1E, $06, $02, $06, $E6, $02, $92
+    dc.b    $32, $02, $26, $16, $26, $E6, $E2, $32, $02, $06, $36, $02, $26, $22, $02, $86
+    dc.b    $26, $02, $26, $A2, $26, $09, $02, $86, $06, $22, $A6, $06, $22, $02, $06, $22
+    dc.b    $34, $A3, $07, $26, $05, $36, $A6, $06, $1D, $32, $92, $84, $26, $22, $E6, $69
+    dc.b    $32, $92, $9E, $E6, $26, $24, $33, $84, $3E, $03, $03, $06, $26, $26, $32, $84
+    dc.b    $23, $07, $36, $A7, $36, $A2, $17, $A7, $32, $87, $3E, $04, $22, $07, $36, $A6
+    dc.b    $37, $BF, $06, $27, $26, $3E, $06, $27, $26, $3F, $06, $26, $27, $26, $21, $06
+    dc.b    $27, $20, $E2, $16, $A2, $06, $23, $07, $26, $22, $16, $B6, $B2, $85, $22, $06
+    dc.b    $23, $06, $3E, $02, $06, $3F, $E2, $07, $27, $36, $A2, $12, $9E, $E6, $36, $A6
+    dc.b    $32, $36, $A7, $26, $32, $92, $97, $A4, $26, $26, $24, $26, $22, $E2, $16, $A6
+    dc.b    $22, $07, $22, $03, $06, $09, $23, $06, $36, $A3, $07, $22, $07, $23, $06, $22
+    dc.b    $0E, $DB, $09, $00, $98, $8C, $00, $69, $69, $7B, $B3, $0C, $00, $00, $32, $68
+    dc.b    $3C, $35, $52, $03, $00, $0D, $DB, $0F, $04, $B3, $A4, $FC, $34, $B3, $46, $0B
+    dc.b    $52, $55, $0A, $06, $39, $56, $70, $B0, $7B, $7B, $DB, $0B, $F7, $72, $E8, $55
+    dc.b    $72, $52, $B3, $2A, $B0, $3D, $00, $0B, $FC, $52, $FC, $AD, $7B, $00, $01, $EE
+    dc.b    $53, $0C, $15, $55, $06, $E7, $00, $70, $09, $EF, $5B, $13, $AD, $3C, $68, $05
+    dc.b    $52, $DB, $9B, $6A, $DB, $53, $31, $53, $DB, $4B, $EE, $0B, $0B, $EF, $46, $55
+    dc.b    $CB, $12, $52, $2A, $4C, $70, $30, $0E, $53, $CB, $0D, $53, $A8, $68, $28, $95
+    dc.b    $DB, $00, $1B, $00, $6A, $C8, $00, $56, $64, $00, $64, $93, $00, $00, $68, $6A
+    dc.b    $A6, $16, $81, $29, $3F, $62, $5A, $3E, $3E, $CA, $8A, $A6, $29, $29, $25, $3F
+    dc.b    $06, $26, $4A, $85, $29, $A6, $18, $A6, $85, $93, $18, $83, $06, $9B, $0D, $A6
+    dc.b    $15, $12, $DA, $15, $24, $07, $14, $95, $8D, $94, $1D, $A6, $80, $93, $1D, $00
+    dc.b    $98, $17, $CA, $17, $1E, $04, $29, $17, $CA, $13, $E2, $CA, $97, $29, $A5, $80
+    dc.b    $15, $A6, $62, $1F, $02, $0D, $12, $15, $81, $80, $0F, $08, $80, $25, $02, $24
+    dc.b    $11, $03, $1E, $02, $03, $13, $00, $17, $24, $1D, $80, $00, $1F, $9E, $1F, $03
+    dc.b    $3F, $02, $0C, $1E, $5A, $02, $18, $A6, $1D, $1B, $A6, $11, $00, $03, $0D, $1E
+    dc.b    $00, $21, $00, $21, $1D, $3F, $21, $1D, $1F, $21, $03, $03, $21, $21, $00, $3F
+    dc.b    $03, $99, $83, $1B, $05, $03, $03, $03, $03, $03, $03, $03, $1B, $1B, $1A, $0C
+    dc.b    $03, $03, $23, $1A, $1B, $03, $19, $03, $03, $17, $99, $43, $1A, $43, $40, $03
+    dc.b    $03, $97, $03, $19, $1A, $63, $19, $99, $0F, $99, $19, $03, $43, $99, $03, $0F
+    dc.b    $83, $03, $03, $19, $63, $1A, $1B, $96, $03, $83, $03, $03, $80, $1B, $19, $00
+    dc.b    $99, $03, $03, $17, $1D, $39, $97, $19, $03, $19, $00, $19, $77, $1A, $19, $1E
+    dc.b    $83, $19, $03, $19, $16, $19, $00, $8F, $19, $03, $16, $00, $03, $6F, $03, $17
+    dc.b    $0D, $03, $96, $03, $03, $00, $99, $03, $16, $00, $03, $19, $19, $03, $03, $16
+    dc.b    $19, $03, $19, $03, $19, $10, $03, $19, $03, $03, $99, $19, $03, $03, $19, $0A
+    dc.b    $00, $20, $00, $30, $30, $05, $00, $00, $00, $05, $01, $00, $00, $00, $07, $00
+    dc.b    $01, $00, $04, $07, $30, $00, $20, $00, $01, $07, $00, $01, $07, $00, $17, $00
+    dc.b    $00, $00, $20, $37, $07, $00, $27, $20, $17, $00, $01, $00, $00, $07, $01, $07
+    dc.b    $10, $01, $05, $20, $01, $07, $20, $27, $04, $01, $05, $04, $07, $00, $07, $00
+    dc.b    $20, $00, $04, $00, $37, $10, $20, $27, $00, $00, $07, $07, $00, $07, $07, $07
+    dc.b    $00, $10, $01, $37, $00, $27, $07, $27, $07, $01, $00, $07, $11, $27, $02, $00
+    dc.b    $30, $00, $20, $00, $00, $10, $11, $00, $07, $07, $00, $07, $00, $01, $00, $10
+    dc.b    $17, $00, $17, $00, $00, $00, $00, $27, $02, $00, $07, $00, $00, $00, $07, $20
 
     even
 LevelBlockUW2Q1:
-; .INCBIN "dat/LevelBlockUW2Q1.dat" not found — stub 128 zero bytes
-    rept    128
-        dc.b    0
-    endr
+; .INCBIN dat/LevelBlockUW2Q1.dat (768 bytes)
+    dc.b    $07, $3E, $22, $26, $26, $26, $36, $32, $32, $3E, $26, $36, $22, $26, $3E, $1F
+    dc.b    $32, $1E, $F6, $36, $22, $32, $A2, $92, $9E, $E6, $26, $A6, $E6, $22, $F6, $26
+    dc.b    $86, $1E, $A6, $B6, $02, $92, $16, $92, $16, $26, $26, $26, $22, $06, $B2, $4C
+    dc.b    $36, $1E, $3E, $A6, $06, $86, $A6, $82, $A6, $22, $26, $22, $F2, $22, $96, $26
+    dc.b    $B6, $1E, $FE, $32, $22, $32, $22, $02, $36, $E2, $1A, $06, $86, $E2, $A2, $10
+    dc.b    $A6, $02, $E6, $96, $02, $92, $02, $06, $A2, $12, $32, $22, $26, $06, $F2, $26
+    dc.b    $14, $02, $26, $B6, $06, $86, $E2, $30, $02, $82, $82, $E6, $26, $26, $82, $7C
+    dc.b    $63, $06, $71, $A6, $26, $20, $02, $52, $06, $02, $06, $29, $26, $26, $02, $26
+    dc.b    $07, $37, $A4, $32, $86, $32, $84, $26, $32, $9E, $E6, $25, $33, $86, $26, $1F
+    dc.b    $26, $26, $36, $A7, $36, $A3, $06, $26, $37, $B2, $92, $96, $A6, $32, $9F, $06
+    dc.b    $26, $32, $96, $B3, $87, $36, $B2, $86, $24, $32, $9E, $06, $26, $32, $86, $3F
+    dc.b    $32, $86, $26, $33, $87, $26, $32, $86, $3E, $13, $86, $30, $86, $24, $3F, $E6
+    dc.b    $27, $27, $27, $24, $22, $02, $06, $26, $24, $27, $1A, $3F, $E6, $36, $A6, $10
+    dc.b    $3F, $E6, $26, $27, $32, $92, $87, $27, $22, $1E, $07, $24, $22, $03, $F7, $A7
+    dc.b    $55, $22, $16, $A6, $22, $03, $E4, $04, $32, $83, $03, $02, $02, $07, $26, $7C
+    dc.b    $05, $26, $74, $36, $A6, $61, $26, $03, $26, $23, $06, $0D, $22, $E3, $03, $07
+    dc.b    $69, $EF, $0E, $B3, $F7, $7B, $0D, $F1, $35, $BA, $45, $01, $31, $F9, $4B, $69
+    dc.b    $F1, $3B, $3A, $B3, $57, $23, $08, $FC, $F5, $85, $BA, $85, $38, $56, $33, $B8
+    dc.b    $7B, $07, $B3, $D5, $52, $B3, $D5, $08, $36, $BA, $3D, $00, $00, $35, $3C, $77
+    dc.b    $F7, $FC, $37, $D5, $DB, $7B, $EF, $92, $BA, $38, $01, $10, $05, $0F, $8C, $F4
+    dc.b    $7B, $F6, $3E, $0C, $A4, $FC, $A3, $F1, $0F, $F5, $69, $8B, $D6, $33, $F4, $69
+    dc.b    $53, $97, $07, $FC, $7B, $3A, $B3, $7B, $31, $BA, $EA, $10, $0B, $B0, $4C, $D6
+    dc.b    $69, $07, $DB, $53, $FC, $F1, $0B, $C6, $EE, $45, $DB, $85, $39, $EA, $3C, $69
+    dc.b    $A9, $00, $69, $F1, $3B, $69, $00, $69, $68, $00, $01, $69, $F4, $3C, $00, $EF
+    dc.b    $3F, $93, $A6, $DA, $DA, $CA, $A6, $DA, $26, $8A, $24, $A5, $23, $C8, $00, $3F
+    dc.b    $C8, $25, $26, $80, $1C, $14, $8A, $9F, $96, $1F, $DA, $00, $24, $11, $24, $DA
+    dc.b    $DA, $A5, $9D, $12, $17, $8E, $03, $8A, $26, $DA, $04, $29, $29, $26, $00, $3E
+    dc.b    $CA, $A5, $27, $19, $14, $A6, $80, $63, $8D, $24, $A5, $A6, $85, $A6, $23, $9B
+    dc.b    $96, $80, $28, $A6, $00, $80, $25, $9E, $A6, $98, $3F, $23, $1C, $25, $80, $3F
+    dc.b    $14, $11, $9B, $A3, $8C, $5A, $99, $94, $00, $82, $19, $A6, $24, $91, $24, $18
+    dc.b    $3E, $DA, $26, $1B, $9F, $98, $A6, $3E, $80, $23, $09, $1E, $24, $13, $25, $3F
+    dc.b    $3E, $1B, $3E, $9F, $5A, $3E, $21, $3E, $23, $21, $9D, $3E, $DA, $23, $21, $96
+    dc.b    $13, $83, $03, $03, $03, $03, $03, $03, $03, $0F, $19, $00, $00, $03, $00, $0B
+    dc.b    $03, $00, $0F, $83, $03, $8F, $00, $03, $97, $03, $23, $00, $03, $00, $03, $03
+    dc.b    $03, $03, $03, $00, $83, $00, $0F, $17, $03, $23, $1A, $1B, $1B, $03, $17, $03
+    dc.b    $03, $03, $03, $83, $0F, $16, $03, $00, $0F, $03, $39, $23, $1A, $23, $03, $00
+    dc.b    $0F, $A3, $8E, $23, $0F, $03, $03, $19, $03, $03, $07, $99, $39, $03, $0F, $09
+    dc.b    $83, $03, $23, $03, $03, $03, $19, $99, $0F, $03, $96, $03, $19, $99, $19, $96
+    dc.b    $03, $19, $0F, $03, $03, $83, $03, $03, $00, $00, $83, $03, $00, $19, $0F, $11
+    dc.b    $03, $03, $03, $03, $03, $03, $03, $03, $19, $03, $00, $03, $03, $0F, $03, $99
+    dc.b    $00, $00, $00, $00, $00, $05, $00, $00, $00, $07, $01, $07, $07, $05, $07, $00
+    dc.b    $05, $07, $07, $00, $00, $07, $07, $10, $01, $01, $00, $07, $01, $07, $01, $01
+    dc.b    $00, $20, $00, $10, $00, $07, $07, $07, $00, $00, $07, $00, $00, $00, $07, $00
+    dc.b    $05, $00, $01, $00, $07, $07, $00, $07, $17, $00, $07, $00, $37, $00, $01, $07
+    dc.b    $07, $00, $03, $00, $07, $00, $00, $10, $10, $01, $00, $01, $11, $01, $07, $00
+    dc.b    $01, $01, $01, $00, $00, $00, $07, $07, $07, $01, $00, $00, $07, $00, $07, $00
+    dc.b    $00, $10, $07, $00, $00, $00, $00, $00, $07, $07, $02, $01, $07, $00, $07, $00
+    dc.b    $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $07, $00, $10, $07, $00, $00
 
     even
 LevelBlockUW1Q2:
-; .INCBIN "dat/LevelBlockUW1Q2.dat" not found — stub 128 zero bytes
-    rept    128
-        dc.b    0
-    endr
+; .INCBIN dat/LevelBlockUW1Q2.dat (768 bytes)
+    dc.b    $22, $26, $22, $04, $32, $26, $26, $32, $26, $3B, $36, $3A, $2A, $32, $26, $0E
+    dc.b    $E6, $26, $06, $22, $82, $36, $22, $86, $26, $22, $A2, $22, $52, $82, $22, $22
+    dc.b    $22, $01, $22, $02, $02, $A2, $FE, $3E, $18, $E2, $0A, $F6, $82, $02, $E6, $FE
+    dc.b    $E6, $22, $E6, $0A, $12, $02, $06, $02, $3E, $1E, $46, $A6, $1E, $06, $26, $EA
+    dc.b    $3E, $06, $36, $46, $92, $E2, $51, $02, $E6, $02, $32, $22, $1E, $26, $26, $42
+    dc.b    $1E, $26, $A6, $22, $82, $02, $30, $02, $11, $1E, $86, $02, $E2, $26, $46, $F6
+    dc.b    $06, $36, $22, $06, $02, $02, $36, $02, $32, $02, $1F, $FE, $06, $22, $22, $A6
+    dc.b    $26, $A6, $02, $06, $02, $02, $A6, $02, $86, $02, $12, $06, $26, $02, $06, $5E
+    dc.b    $26, $3E, $06, $24, $36, $BE, $06, $3E, $06, $7B, $27, $3A, $28, $5C, $06, $6F
+    dc.b    $36, $A6, $26, $3F, $E7, $26, $26, $37, $A6, $22, $06, $26, $2B, $47, $27, $06
+    dc.b    $26, $71, $26, $2B, $46, $24, $27, $26, $68, $33, $86, $26, $23, $12, $87, $27
+    dc.b    $26, $23, $05, $33, $86, $27, $26, $36, $A6, $26, $46, $26, $23, $12, $86, $27
+    dc.b    $22, $E6, $30, $83, $07, $27, $51, $23, $07, $37, $A2, $06, $36, $AA, $44, $46
+    dc.b    $27, $22, $17, $A3, $07, $26, $76, $26, $22, $36, $B2, $87, $37, $BE, $06, $27
+    dc.b    $23, $02, $07, $23, $07, $36, $A6, $32, $86, $26, $1F, $26, $22, $E3, $06, $26
+    dc.b    $2B, $46, $27, $36, $27, $27, $26, $23, $06, $27, $12, $26, $23, $03, $06, $5E
+    dc.b    $00, $63, $33, $69, $DB, $03, $6D, $3D, $00, $68, $AD, $68, $12, $11, $2C, $6B
+    dc.b    $04, $52, $2D, $7B, $7B, $86, $00, $05, $F9, $3C, $4B, $00, $FE, $DB, $8C, $B8
+    dc.b    $00, $68, $DD, $52, $2C, $36, $33, $01, $6A, $DB, $DB, $03, $53, $00, $32, $31
+    dc.b    $86, $FC, $3C, $FD, $DB, $AA, $3C, $D5, $32, $70, $00, $0B, $AD, $B0, $35, $0B
+    dc.b    $F7, $53, $12, $F6, $F1, $45, $69, $05, $EE, $DB, $B0, $4B, $8C, $4B, $0F, $00
+    dc.b    $FD, $09, $FC, $72, $FC, $A8, $69, $6A, $68, $13, $0B, $EE, $FE, $3D, $B0, $38
+    dc.b    $72, $F6, $AD, $FD, $7B, $86, $31, $06, $9B, $70, $6A, $13, $B8, $38, $6C, $2D
+    dc.b    $DD, $FD, $00, $6A, $00, $C0, $E7, $00, $46, $00, $69, $70, $EF, $00, $6D, $6A
+    dc.b    $29, $5C, $06, $3E, $1C, $85, $46, $04, $29, $3E, $A3, $3F, $A6, $A6, $5F, $3E
+    dc.b    $85, $1B, $1B, $A4, $8B, $03, $29, $24, $9B, $00, $02, $29, $95, $13, $23, $CC
+    dc.b    $29, $3E, $1C, $19, $47, $26, $24, $9D, $3E, $23, $0E, $85, $17, $60, $24, $24
+    dc.b    $1B, $98, $25, $93, $0E, $23, $4A, $1E, $25, $07, $1C, $1B, $95, $83, $26, $23
+    dc.b    $8D, $26, $A6, $94, $98, $24, $3F, $15, $98, $23, $8D, $0A, $06, $0A, $A6, $29
+    dc.b    $95, $C1, $A3, $95, $A4, $11, $3E, $1F, $3E, $4A, $1E, $A3, $9F, $04, $CD, $24
+    dc.b    $97, $9D, $A3, $96, $8C, $0D, $25, $23, $5A, $10, $3F, $11, $9D, $23, $1F, $1B
+    dc.b    $00, $9B, $21, $3E, $21, $21, $48, $21, $02, $21, $3F, $1B, $91, $21, $00, $3F
+    dc.b    $1B, $03, $19, $03, $03, $0F, $03, $1A, $1B, $03, $17, $05, $03, $03, $03, $03
+    dc.b    $1A, $23, $03, $00, $19, $1E, $1B, $23, $19, $19, $03, $1B, $83, $99, $17, $03
+    dc.b    $1B, $03, $03, $03, $03, $03, $1A, $03, $03, $03, $39, $1A, $80, $03, $03, $03
+    dc.b    $19, $19, $0F, $03, $16, $19, $43, $0F, $03, $03, $03, $20, $03, $19, $03, $03
+    dc.b    $03, $16, $03, $17, $03, $17, $0D, $00, $17, $19, $19, $00, $19, $00, $03, $1B
+    dc.b    $83, $0F, $0F, $03, $03, $00, $03, $16, $03, $03, $16, $19, $83, $03, $63, $1A
+    dc.b    $97, $0F, $83, $99, $80, $03, $1A, $19, $03, $19, $0C, $19, $16, $03, $03, $63
+    dc.b    $99, $03, $03, $03, $03, $03, $16, $03, $1D, $03, $0A, $0F, $99, $03, $03, $11
+    dc.b    $20, $04, $17, $00, $00, $07, $05, $07, $20, $00, $27, $20, $00, $06, $05, $00
+    dc.b    $07, $02, $00, $27, $31, $37, $20, $00, $27, $27, $02, $20, $00, $07, $27, $05
+    dc.b    $20, $00, $02, $00, $05, $00, $37, $01, $00, $01, $30, $07, $27, $00, $01, $01
+    dc.b    $01, $30, $07, $00, $00, $27, $05, $07, $01, $01, $00, $27, $00, $27, $06, $01
+    dc.b    $01, $27, $00, $17, $00, $21, $20, $17, $31, $20, $17, $27, $27, $27, $00, $20
+    dc.b    $01, $35, $27, $00, $00, $27, $00, $17, $00, $04, $17, $27, $01, $01, $05, $07
+    dc.b    $27, $07, $00, $10, $27, $00, $17, $27, $00, $17, $20, $17, $27, $01, $00, $00
+    dc.b    $27, $00, $00, $00, $00, $00, $25, $00, $27, $00, $20, $27, $27, $00, $00, $20
 
     even
 LevelBlockUW2Q2:
-; .INCBIN "dat/LevelBlockUW2Q2.dat" not found — stub 128 zero bytes
-    rept    128
-        dc.b    0
-    endr
+; .INCBIN dat/LevelBlockUW2Q2.dat (768 bytes)
+    dc.b    $26, $22, $18, $29, $19, $49, $26, $3E, $22, $26, $26, $26, $26, $26, $26, $22
+    dc.b    $26, $06, $26, $3E, $22, $22, $46, $E6, $EA, $26, $22, $26, $26, $26, $26, $02
+    dc.b    $08, $6A, $32, $02, $02, $02, $69, $78, $56, $32, $06, $38, $48, $22, $22, $02
+    dc.b    $5B, $3E, $92, $F6, $12, $06, $3E, $5C, $A6, $86, $3E, $3E, $3E, $F6, $E2, $02
+    dc.b    $22, $16, $8A, $A2, $82, $52, $12, $2A, $26, $22, $16, $1E, $1E, $B2, $1E, $02
+    dc.b    $06, $B6, $22, $02, $02, $82, $82, $46, $2A, $EA, $A6, $06, $06, $82, $E2, $02
+    dc.b    $4A, $A6, $06, $12, $E2, $06, $26, $1A, $46, $46, $26, $26, $26, $06, $02, $02
+    dc.b    $2A, $73, $01, $86, $02, $06, $45, $00, $26, $22, $26, $26, $26, $26, $06, $02
+    dc.b    $2A, $46, $6F, $5F, $4F, $0A, $26, $26, $32, $87, $22, $F7, $B3, $9F, $FE, $E7
+    dc.b    $3F, $E3, $0B, $48, $22, $12, $9F, $E7, $22, $E6, $26, $22, $FE, $F7, $A6, $27
+    dc.b    $58, $4D, $37, $A3, $E3, $06, $3F, $3A, $23, $E6, $26, $38, $48, $26, $26, $24
+    dc.b    $2E, $22, $03, $E2, $02, $26, $06, $1E, $26, $27, $3E, $04, $27, $27, $27, $26
+    dc.b    $32, $9E, $02, $3F, $E7, $2A, $53, $87, $36, $A6, $3E, $02, $E4, $26, $27, $27
+    dc.b    $37, $A7, $26, $27, $2B, $4B, $5E, $06, $3E, $06, $27, $26, $26, $26, $27, $26
+    dc.b    $7D, $23, $1F, $E3, $FC, $03, $07, $7C, $23, $16, $A6, $20, $E2, $E6, $27, $26
+    dc.b    $2A, $35, $15, $22, $27, $57, $45, $00, $22, $03, $03, $E3, $02, $FE, $07, $27
+    dc.b    $3B, $07, $69, $69, $69, $69, $EC, $37, $01, $31, $AD, $31, $FF, $38, $85, $45
+    dc.b    $72, $F1, $F6, $0D, $ED, $7B, $08, $3E, $86, $6C, $DB, $00, $05, $4C, $FE, $EE
+    dc.b    $69, $39, $A3, $FC, $00, $00, $C5, $39, $31, $F5, $B8, $39, $69, $00, $EE, $36
+    dc.b    $6A, $F7, $FD, $00, $00, $2D, $72, $69, $FF, $45, $2D, $11, $3C, $31, $33, $38
+    dc.b    $AD, $00, $53, $A4, $08, $7B, $07, $B3, $AA, $FF, $F0, $00, $11, $01, $8C, $85
+    dc.b    $3A, $DD, $F1, $F7, $AD, $DD, $7B, $FD, $E8, $00, $8C, $CC, $8C, $BA, $4C, $E8
+    dc.b    $69, $52, $F6, $3B, $0B, $7B, $FC, $69, $F5, $DB, $85, $0F, $FF, $3D, $FE, $AD
+    dc.b    $39, $38, $C5, $FD, $00, $B5, $CA, $46, $AD, $00, $B8, $FE, $F4, $3C, $FE, $00
+    dc.b    $4A, $CA, $3E, $3E, $3E, $3E, $62, $27, $DA, $24, $5F, $24, $95, $24, $0C, $23
+    dc.b    $95, $A3, $99, $A6, $00, $CE, $A3, $28, $62, $4A, $5A, $29, $85, $24, $9B, $96
+    dc.b    $3E, $3E, $23, $96, $60, $60, $3E, $3E, $23, $CD, $DF, $3F, $3F, $29, $C1, $26
+    dc.b    $3E, $81, $A3, $60, $60, $4A, $88, $3E, $C8, $23, $62, $A6, $24, $24, $23, $46
+    dc.b    $23, $60, $26, $12, $A3, $E2, $A4, $A3, $51, $C8, $4A, $60, $A6, $C7, $23, $18
+    dc.b    $24, $0D, $83, $94, $96, $0F, $8C, $DF, $62, $60, $23, $5F, $51, $9E, $24, $51
+    dc.b    $3E, $23, $A3, $1D, $A6, $95, $A3, $3E, $96, $0F, $5A, $A6, $C8, $04, $98, $4A
+    dc.b    $3F, $3E, $3E, $9D, $21, $3E, $3F, $3F, $DF, $21, $A3, $93, $D1, $46, $95, $21
+    dc.b    $03, $03, $03, $03, $03, $03, $03, $03, $03, $19, $19, $03, $80, $0F, $03, $19
+    dc.b    $0F, $03, $03, $03, $03, $03, $23, $8E, $03, $03, $03, $1B, $1A, $20, $03, $96
+    dc.b    $03, $03, $03, $03, $83, $03, $03, $03, $03, $03, $19, $10, $0B, $1B, $19, $03
+    dc.b    $03, $03, $19, $03, $03, $03, $03, $03, $03, $17, $03, $03, $0F, $1A, $03, $03
+    dc.b    $03, $03, $16, $03, $0F, $03, $17, $03, $03, $03, $03, $03, $03, $43, $03, $03
+    dc.b    $00, $83, $03, $03, $83, $8F, $03, $03, $03, $03, $00, $03, $03, $0F, $0F, $03
+    dc.b    $03, $0F, $03, $80, $03, $83, $0F, $03, $0F, $03, $00, $03, $03, $03, $97, $03
+    dc.b    $07, $03, $03, $03, $03, $03, $09, $13, $16, $03, $03, $83, $03, $03, $83, $03
+    dc.b    $05, $05, $00, $00, $00, $00, $05, $20, $00, $27, $15, $01, $17, $17, $01, $27
+    dc.b    $17, $01, $00, $00, $00, $05, $01, $03, $05, $05, $00, $20, $17, $27, $00, $37
+    dc.b    $00, $20, $00, $10, $00, $00, $00, $00, $00, $05, $05, $20, $20, $20, $25, $00
+    dc.b    $00, $01, $27, $00, $00, $05, $00, $00, $05, $27, $05, $06, $07, $07, $01, $05
+    dc.b    $00, $00, $17, $01, $27, $05, $27, $00, $05, $05, $05, $00, $06, $05, $01, $00
+    dc.b    $17, $00, $00, $00, $00, $37, $00, $05, $05, $00, $27, $05, $05, $17, $27, $05
+    dc.b    $00, $17, $01, $27, $00, $00, $27, $00, $37, $00, $17, $00, $04, $01, $37, $05
+    dc.b    $20, $00, $00, $00, $00, $00, $20, $20, $15, $00, $00, $01, $05, $04, $00, $00
 
     even
 LevelInfoOW:
-; .INCBIN "dat/LevelInfoOW.dat" not found — stub 128 zero bytes
-    rept    128
-        dc.b    0
-    endr
+; .INCBIN dat/LevelInfoOW.dat (256 bytes)
+    dc.b    $3F, $00, $20, $0F, $30, $00, $12, $0F, $16, $27, $36, $0F, $1A, $37, $12, $0F
+    dc.b    $17, $37, $12, $0F, $29, $27, $17, $0F, $02, $22, $30, $0F, $16, $27, $30, $0F
+    dc.b    $0C, $1C, $2C, $FF, $01, $04, $05, $06, $8D, $57, $49, $99, $69, $00, $00, $77
+    dc.b    $2A, $7F, $06, $00, $1D, $23, $49, $79, $FF, $FF, $FF, $FF, $FF, $FF, $2A, $FF
+    dc.b    $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $20
+    dc.b    $62, $48, $F5, $20, $82, $48, $F5, $20, $A2, $48, $F5, $20, $C2, $48, $F5, $FF
+    dc.b    $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF
+    dc.b    $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF
+    dc.b    $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF
+    dc.b    $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF
+    dc.b    $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF
+    dc.b    $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF
+    dc.b    $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF
+    dc.b    $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $0F, $06, $17, $16
+    dc.b    $0F, $06, $17, $16, $0F, $07, $06, $16, $0F, $07, $06, $16, $0F, $0F, $07, $06
+    dc.b    $0F, $0F, $07, $06, $0F, $0F, $0F, $0F, $0F, $0F, $0F, $0F, $3F, $00, $20, $0F
 
     even
 LevelInfoUW1:
-; .INCBIN "dat/LevelInfoUW1.dat" not found — stub 128 zero bytes
-    rept    128
-        dc.b    0
-    endr
+; .INCBIN dat/LevelInfoUW1.dat (256 bytes)
+    dc.b    $30, $00, $12, $0F, $16, $27, $36, $0F, $0C, $1C, $2C, $0F, $12, $1C, $2C, $0F
+    dc.b    $29, $27, $17, $0F, $02, $22, $30, $0F, $16, $27, $30, $0F, $0C, $1C, $2C, $FF
+    dc.b    $03, $05, $06, $08, $DD, $C9, $AC, $89, $87, $04, $00, $73, $36, $FF, $06, $01
+    dc.b    $7F, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $35, $00, $00, $00, $00, $00
+    dc.b    $08, $2D, $3F, $0D, $18, $10, $00, $00, $00, $00, $00, $20, $84, $05, $67, $FF
+    dc.b    $24, $FB, $FB, $20, $A3, $05, $67, $FF, $FF, $FF, $67, $20, $C4, $03, $FB, $FF
+    dc.b    $FB, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF
+    dc.b    $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $0F, $0C, $1C, $2C, $0F, $12, $1C, $2C
+    dc.b    $0F, $0C, $0C, $1C, $0F, $11, $0C, $1C, $0F, $0F, $0C, $0C, $0F, $02, $0C, $0C
+    dc.b    $0F, $0F, $0F, $0F, $0F, $0F, $0F, $0F, $0F, $00, $10, $30, $0F, $00, $10, $30
+    dc.b    $0F, $00, $00, $10, $0F, $00, $00, $10, $0F, $0F, $00, $00, $0F, $0F, $00, $00
+    dc.b    $0F, $0F, $0F, $0F, $0F, $0F, $0F, $0F, $0F, $0C, $1C, $2C, $0F, $12, $1C, $2C
+    dc.b    $0F, $0C, $0C, $1C, $0F, $11, $0C, $1C, $0F, $0F, $0C, $0C, $0F, $02, $0C, $0C
+    dc.b    $0F, $0F, $0F, $0C, $0F, $0F, $0F, $0F, $0F, $06, $17, $16, $0F, $06, $17, $16
+    dc.b    $0F, $07, $06, $16, $0F, $07, $06, $16, $0F, $0F, $07, $06, $0F, $0F, $07, $06
+    dc.b    $0F, $0F, $0F, $0F, $0F, $0F, $0F, $0F, $3F, $00, $20, $0F, $30, $00, $12, $0F
 
     even
 LevelInfoUW2:
-; .INCBIN "dat/LevelInfoUW2.dat" not found — stub 128 zero bytes
-    rept    128
-        dc.b    0
-    endr
+; .INCBIN dat/LevelInfoUW2.dat (256 bytes)
+    dc.b    $16, $27, $36, $0F, $02, $12, $22, $0F, $16, $12, $22, $0F, $29, $27, $17, $0F
+    dc.b    $02, $22, $30, $0F, $16, $27, $30, $0F, $02, $12, $22, $FF, $03, $05, $06, $08
+    dc.b    $DD, $89, $D6, $26, $2C, $0A, $B0, $7D, $0D, $FF, $06, $02, $FF, $FF, $FF, $FF
+    dc.b    $FF, $FF, $FF, $FF, $FF, $FF, $0E, $00, $00, $00, $00, $00, $00, $02, $83, $FF
+    dc.b    $7E, $00, $00, $00, $00, $00, $00, $20, $65, $03, $67, $FF, $FB, $20, $86, $02
+    dc.b    $FF, $FF, $20, $A6, $02, $FF, $FF, $20, $C4, $04, $67, $FF, $FF, $67, $FF, $FF
+    dc.b    $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF
+    dc.b    $FF, $FF, $FF, $FF, $0F, $02, $12, $22, $0F, $16, $12, $22, $0F, $01, $02, $12
+    dc.b    $0F, $17, $02, $12, $0F, $0F, $01, $02, $0F, $06, $01, $02, $0F, $0F, $0F, $0F
+    dc.b    $0F, $0F, $0F, $0F, $0F, $00, $10, $30, $0F, $00, $10, $30, $0F, $00, $00, $10
+    dc.b    $0F, $00, $00, $10, $0F, $0F, $00, $00, $0F, $0F, $00, $00, $0F, $0F, $0F, $0F
+    dc.b    $0F, $0F, $0F, $0F, $0F, $02, $12, $22, $0F, $16, $12, $22, $0F, $01, $02, $12
+    dc.b    $0F, $17, $02, $12, $0F, $0F, $01, $02, $0F, $06, $01, $02, $0F, $0F, $0F, $01
+    dc.b    $0F, $0F, $0F, $0F, $0F, $06, $17, $16, $0F, $06, $17, $16, $0F, $07, $06, $16
+    dc.b    $0F, $07, $06, $16, $0F, $0F, $07, $06, $0F, $0F, $07, $06, $0F, $0F, $0F, $0F
+    dc.b    $0F, $0F, $0F, $0F, $3F, $00, $20, $0F, $30, $00, $12, $0F, $16, $27, $36, $0F
 
     even
 LevelInfoUW3:
-; .INCBIN "dat/LevelInfoUW3.dat" not found — stub 128 zero bytes
-    rept    128
-        dc.b    0
-    endr
+; .INCBIN dat/LevelInfoUW3.dat (256 bytes)
+    dc.b    $0B, $1B, $2B, $0F, $16, $1B, $2B, $0F, $29, $37, $17, $0F, $02, $22, $30, $0F
+    dc.b    $16, $27, $30, $0F, $0B, $1B, $2B, $FF, $03, $05, $06, $08, $DD, $89, $D6, $26
+    dc.b    $2C, $0C, $C0, $7C, $3D, $FF, $06, $03, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF
+    dc.b    $FF, $FF, $4D, $00, $00, $00, $00, $00, $0E, $2C, $3F, $0D, $1C, $00, $00, $00
+    dc.b    $00, $00, $00, $20, $84, $04, $67, $FF, $24, $FB, $20, $A3, $05, $FF, $FF, $FF
+    dc.b    $FF, $FF, $20, $C3, $04, $67, $24, $FF, $FB, $FF, $FF, $FF, $FF, $FF, $FF, $FF
+    dc.b    $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF
+    dc.b    $0F, $0B, $1B, $2B, $0F, $16, $1B, $2B, $0F, $0B, $0B, $1B, $0F, $17, $0B, $1B
+    dc.b    $0F, $0F, $0B, $0B, $0F, $06, $0B, $0B, $0F, $0F, $0F, $0F, $0F, $0F, $0F, $0F
+    dc.b    $0F, $00, $10, $30, $0F, $00, $10, $30, $0F, $00, $00, $10, $0F, $00, $00, $10
+    dc.b    $0F, $0F, $00, $00, $0F, $0F, $00, $00, $0F, $0F, $0F, $0F, $0F, $0F, $0F, $0F
+    dc.b    $0F, $0B, $1B, $2B, $0F, $16, $1B, $2B, $0F, $0B, $0B, $1B, $0F, $17, $0B, $1B
+    dc.b    $0F, $0F, $0B, $0B, $0F, $06, $0B, $0B, $0F, $0F, $0F, $0B, $0F, $0F, $0F, $0F
+    dc.b    $0F, $06, $17, $16, $0F, $06, $17, $16, $0F, $07, $06, $16, $0F, $07, $06, $16
+    dc.b    $0F, $0F, $07, $06, $0F, $0F, $07, $06, $0F, $0F, $0F, $0F, $0F, $0F, $0F, $0F
+    dc.b    $3F, $00, $20, $0F, $30, $00, $12, $0F, $16, $27, $36, $0F, $08, $18, $28, $0F
 
     even
 LevelInfoUW4:
-; .INCBIN "dat/LevelInfoUW4.dat" not found — stub 128 zero bytes
-    rept    128
-        dc.b    0
-    endr
+; .INCBIN dat/LevelInfoUW4.dat (256 bytes)
+    dc.b    $12, $18, $28, $0F, $29, $27, $17, $0F, $02, $22, $30, $0F, $16, $27, $30, $0F
+    dc.b    $0F, $18, $28, $FF, $03, $05, $06, $08, $DD, $DC, $99, $88, $89, $06, $10, $71
+    dc.b    $03, $FF, $06, $04, $60, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $13, $00
+    dc.b    $00, $00, $00, $00, $00, $FD, $B7, $D2, $C0, $00, $00, $00, $00, $00, $00, $20
+    dc.b    $64, $04, $FF, $67, $FF, $FF, $20, $84, $03, $FF, $FF, $FB, $20, $A4, $02, $FF
+    dc.b    $FB, $20, $C4, $03, $FB, $FF, $67, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF
+    dc.b    $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $0F, $08, $18, $28
+    dc.b    $0F, $12, $18, $28, $0F, $08, $08, $18, $0F, $11, $08, $18, $0F, $0F, $08, $08
+    dc.b    $0F, $02, $08, $08, $0F, $0F, $0F, $0F, $0F, $0F, $0F, $0F, $0F, $00, $10, $30
+    dc.b    $0F, $00, $10, $30, $0F, $00, $00, $10, $0F, $00, $00, $10, $0F, $0F, $00, $00
+    dc.b    $0F, $0F, $00, $00, $0F, $0F, $0F, $0F, $0F, $0F, $0F, $0F, $0F, $08, $18, $28
+    dc.b    $0F, $12, $18, $28, $0F, $08, $08, $18, $0F, $11, $08, $18, $0F, $0F, $08, $08
+    dc.b    $0F, $02, $08, $08, $0F, $0F, $0F, $08, $0F, $0F, $0F, $0F, $0F, $06, $17, $16
+    dc.b    $0F, $06, $17, $16, $0F, $07, $06, $16, $0F, $07, $06, $16, $0F, $0F, $07, $06
+    dc.b    $0F, $0F, $07, $06, $0F, $0F, $0F, $0F, $0F, $0F, $0F, $0F, $3F, $00, $20, $0F
+    dc.b    $30, $00, $12, $0F, $16, $27, $36, $0F, $0A, $1A, $2A, $0F, $16, $1A, $2A, $0F
 
     even
 LevelInfoUW5:
-; .INCBIN "dat/LevelInfoUW5.dat" not found — stub 128 zero bytes
-    rept    128
-        dc.b    0
-    endr
+; .INCBIN dat/LevelInfoUW5.dat (256 bytes)
+    dc.b    $29, $27, $17, $0F, $02, $22, $30, $0F, $16, $27, $30, $0F, $0A, $1A, $2A, $FF
+    dc.b    $03, $05, $06, $08, $DD, $87, $C8, $8A, $89, $02, $F0, $76, $14, $FF, $06, $05
+    dc.b    $07, $04, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $24, $00, $00, $00, $00, $00
+    dc.b    $00, $72, $A6, $EF, $7F, $00, $00, $00, $00, $00, $00, $20, $64, $04, $FB, $67
+    dc.b    $FF, $FB, $20, $84, $04, $FF, $67, $67, $FF, $20, $A5, $03, $FB, $FF, $FF, $20
+    dc.b    $C4, $04, $67, $67, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF
+    dc.b    $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $0F, $0A, $1A, $2A, $0F, $16, $1A, $2A
+    dc.b    $0F, $0A, $0A, $1A, $0F, $17, $0A, $1A, $0F, $0F, $0A, $0A, $0F, $06, $0A, $0A
+    dc.b    $0F, $0F, $0F, $0F, $0F, $0F, $0F, $0F, $0F, $00, $10, $30, $0F, $00, $10, $30
+    dc.b    $0F, $00, $00, $10, $0F, $00, $00, $10, $0F, $0F, $00, $00, $0F, $0F, $00, $00
+    dc.b    $0F, $0F, $0F, $0F, $0F, $0F, $0F, $0F, $0F, $0A, $1A, $2A, $0F, $16, $1A, $2A
+    dc.b    $0F, $0A, $0A, $1A, $0F, $17, $0A, $1A, $0F, $0F, $0A, $0A, $0F, $06, $0A, $0A
+    dc.b    $0F, $0F, $0F, $0A, $0F, $0F, $0F, $0F, $0F, $06, $17, $16, $0F, $06, $17, $16
+    dc.b    $0F, $07, $06, $16, $0F, $07, $06, $16, $0F, $0F, $07, $06, $0F, $0F, $07, $06
+    dc.b    $0F, $0F, $0F, $0F, $0F, $0F, $0F, $0F, $3F, $00, $20, $0F, $30, $00, $12, $0F
+    dc.b    $16, $27, $36, $0F, $08, $18, $28, $0F, $16, $18, $28, $0F, $29, $27, $17, $0F
 
     even
 LevelInfoUW6:
-; .INCBIN "dat/LevelInfoUW6.dat" not found — stub 128 zero bytes
-    rept    128
-        dc.b    0
-    endr
+; .INCBIN dat/LevelInfoUW6.dat (256 bytes)
+    dc.b    $02, $22, $30, $0F, $16, $27, $30, $0F, $08, $18, $28, $FF, $03, $05, $06, $08
+    dc.b    $DD, $89, $D6, $26, $2C, $0D, $C8, $79, $0C, $FF, $06, $06, $08, $75, $FF, $FF
+    dc.b    $FF, $FF, $FF, $FF, $FF, $FF, $1C, $00, $00, $00, $00, $00, $7F, $F1, $D3, $C0
+    dc.b    $F0, $60, $00, $00, $00, $00, $00, $20, $63, $06, $FB, $FF, $FF, $FF, $FF, $FB
+    dc.b    $20, $83, $06, $FF, $FF, $FB, $24, $FF, $67, $20, $A3, $01, $FF, $20, $C3, $03
+    dc.b    $FF, $FB, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF
+    dc.b    $FF, $FF, $FF, $FF, $0F, $08, $18, $28, $0F, $16, $18, $28, $0F, $08, $08, $18
+    dc.b    $0F, $17, $08, $18, $0F, $0F, $08, $08, $0F, $06, $08, $08, $0F, $0F, $0F, $0F
+    dc.b    $0F, $0F, $0F, $0F, $0F, $00, $10, $30, $0F, $00, $10, $30, $0F, $00, $00, $10
+    dc.b    $0F, $00, $00, $10, $0F, $0F, $00, $00, $0F, $0F, $00, $00, $0F, $0F, $0F, $0F
+    dc.b    $0F, $0F, $0F, $0F, $0F, $08, $18, $28, $0F, $16, $18, $28, $0F, $08, $08, $18
+    dc.b    $0F, $17, $08, $18, $0F, $0F, $08, $08, $0F, $06, $08, $08, $0F, $0F, $0F, $08
+    dc.b    $0F, $0F, $0F, $0F, $0F, $06, $17, $16, $0F, $06, $17, $16, $0F, $07, $06, $16
+    dc.b    $0F, $07, $06, $16, $0F, $0F, $07, $06, $0F, $0F, $07, $06, $0F, $0F, $0F, $0F
+    dc.b    $0F, $0F, $0F, $0F, $3F, $00, $20, $0F, $30, $00, $12, $0F, $16, $27, $36, $0F
+    dc.b    $0A, $1A, $2A, $0F, $12, $1A, $2A, $0F, $29, $27, $17, $0F, $02, $22, $30, $0F
 
     even
 LevelInfoUW7:
-; .INCBIN "dat/LevelInfoUW7.dat" not found — stub 128 zero bytes
-    rept    128
-        dc.b    0
-    endr
+; .INCBIN dat/LevelInfoUW7.dat (256 bytes)
+    dc.b    $16, $27, $30, $0F, $0A, $1A, $2A, $FF, $03, $05, $06, $08, $DD, $89, $D6, $26
+    dc.b    $2C, $0D, $C8, $79, $2B, $7F, $07, $07, $7B, $4A, $FF, $FF, $FF, $FF, $FF, $FF
+    dc.b    $FF, $FF, $2A, $00, $00, $00, $00, $00, $7F, $FF, $B7, $E6, $C2, $82, $00, $00
+    dc.b    $00, $00, $00, $20, $63, $06, $FB, $FF, $67, $FF, $FF, $67, $20, $83, $04, $FF
+    dc.b    $FF, $FF, $67, $20, $A3, $04, $FF, $FF, $FB, $FB, $20, $C3, $06, $FF, $FF, $FF
+    dc.b    $67, $67, $67, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF
+    dc.b    $0F, $0A, $1A, $2A, $0F, $12, $1A, $2A, $0F, $0A, $0A, $1A, $0F, $11, $0A, $1A
+    dc.b    $0F, $0F, $0A, $0A, $0F, $02, $0A, $0A, $0F, $0F, $0F, $0F, $0F, $0F, $0F, $0F
+    dc.b    $0F, $00, $10, $30, $0F, $00, $10, $30, $0F, $00, $00, $10, $0F, $00, $00, $10
+    dc.b    $0F, $0F, $00, $00, $0F, $0F, $00, $00, $0F, $0F, $0F, $0F, $0F, $0F, $0F, $0F
+    dc.b    $0F, $0A, $1A, $2A, $0F, $12, $1A, $2A, $0F, $0A, $0A, $1A, $0F, $11, $0A, $1A
+    dc.b    $0F, $0F, $0A, $0A, $0F, $02, $0A, $0A, $0F, $0F, $0F, $0A, $0F, $0F, $0F, $0F
+    dc.b    $0F, $06, $17, $16, $0F, $06, $17, $16, $0F, $07, $06, $16, $0F, $07, $06, $16
+    dc.b    $0F, $0F, $07, $06, $0F, $0F, $07, $06, $0F, $0F, $0F, $0F, $0F, $0F, $0F, $0F
+    dc.b    $3F, $00, $20, $0F, $30, $00, $12, $0F, $16, $27, $36, $0F, $00, $10, $30, $0F
+    dc.b    $22, $10, $30, $0F, $29, $27, $17, $0F, $02, $22, $30, $0F, $16, $27, $30, $0F
 
     even
 LevelInfoUW8:
-; .INCBIN "dat/LevelInfoUW8.dat" not found — stub 128 zero bytes
-    rept    128
-        dc.b    0
-    endr
+; .INCBIN dat/LevelInfoUW8.dat (256 bytes)
+    dc.b    $00, $10, $30, $FF, $03, $05, $06, $08, $DD, $89, $D6, $26, $2C, $0A, $B0, $7E
+    dc.b    $2C, $7F, $07, $08, $2F, $0F, $6F, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $3C, $00
+    dc.b    $00, $00, $00, $00, $18, $3D, $5D, $FF, $55, $00, $00, $00, $00, $00, $00, $20
+    dc.b    $65, $03, $FB, $FF, $FB, $20, $83, $05, $FB, $FF, $FB, $FF, $FB, $20, $A3, $05
+    dc.b    $67, $FF, $FF, $FF, $FB, $20, $C4, $04, $FB, $FB, $FF, $FB, $FF, $FF, $FF, $FF
+    dc.b    $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $0F, $00, $10, $30
+    dc.b    $0F, $22, $10, $30, $0F, $00, $00, $10, $0F, $12, $00, $10, $0F, $0F, $00, $00
+    dc.b    $0F, $02, $00, $00, $0F, $0F, $0F, $0F, $0F, $0F, $0F, $0F, $0F, $00, $10, $30
+    dc.b    $0F, $00, $10, $30, $0F, $00, $00, $10, $0F, $00, $00, $10, $0F, $0F, $00, $00
+    dc.b    $0F, $0F, $00, $00, $0F, $0F, $0F, $0F, $0F, $0F, $0F, $0F, $0F, $00, $10, $30
+    dc.b    $0F, $22, $10, $30, $0F, $00, $00, $10, $0F, $12, $00, $10, $0F, $0F, $00, $00
+    dc.b    $0F, $02, $00, $00, $0F, $0F, $0F, $00, $0F, $0F, $0F, $0F, $0F, $06, $17, $16
+    dc.b    $0F, $06, $17, $16, $0F, $07, $06, $16, $0F, $07, $06, $16, $0F, $0F, $07, $06
+    dc.b    $0F, $0F, $07, $06, $0F, $0F, $0F, $0F, $0F, $0F, $0F, $0F, $3F, $00, $20, $0F
+    dc.b    $30, $00, $12, $0F, $16, $27, $36, $0F, $00, $10, $30, $0F, $16, $10, $30, $0F
+    dc.b    $29, $27, $17, $0F, $02, $22, $30, $0F, $16, $27, $30, $0F, $0F, $10, $30, $FF
 
     even
 LevelInfoUW9:
-; .INCBIN "dat/LevelInfoUW9.dat" not found — stub 128 zero bytes
-    rept    128
-        dc.b    0
-    endr
+; .INCBIN dat/LevelInfoUW9.dat (256 bytes)
+    dc.b    $03, $05, $06, $08, $DD, $89, $D6, $26, $2C, $04, $00, $76, $32, $7F, $07, $09
+    dc.b    $60, $70, $72, $75, $67, $77, $00, $4F, $FF, $FF, $42, $00, $00, $00, $00, $7C
+    dc.b    $FF, $EE, $FF, $FF, $EE, $FF, $7C, $00, $00, $00, $00, $20, $62, $08, $FB, $FF
+    dc.b    $FF, $FF, $FF, $FF, $FF, $FB, $20, $82, $08, $FF, $FF, $67, $FF, $FF, $67, $FF
+    dc.b    $FF, $20, $A2, $48, $FF, $20, $C3, $06, $FF, $67, $FF, $FF, $67, $FF, $FF, $FF
+    dc.b    $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $0F, $00, $10, $30, $0F, $16, $10, $30
+    dc.b    $0F, $00, $00, $10, $0F, $17, $00, $10, $0F, $0F, $00, $00, $0F, $06, $00, $00
+    dc.b    $0F, $0F, $0F, $0F, $0F, $0F, $0F, $0F, $0F, $00, $10, $30, $0F, $00, $10, $30
+    dc.b    $0F, $00, $00, $10, $0F, $00, $00, $10, $0F, $0F, $00, $00, $0F, $0F, $00, $00
+    dc.b    $0F, $0F, $0F, $0F, $0F, $0F, $0F, $0F, $0F, $00, $10, $30, $0F, $16, $10, $30
+    dc.b    $0F, $00, $00, $10, $0F, $17, $00, $10, $0F, $0F, $00, $00, $0F, $06, $00, $00
+    dc.b    $0F, $0F, $0F, $00, $0F, $0F, $0F, $0F, $0F, $06, $17, $16, $0F, $06, $17, $16
+    dc.b    $0F, $07, $06, $16, $0F, $07, $06, $16, $0F, $0F, $07, $06, $0F, $0F, $07, $06
+    dc.b    $0F, $0F, $0F, $0F, $0F, $0F, $0F, $0F, $3F, $00, $20, $0F, $30, $00, $12, $0F
+    dc.b    $16, $27, $36, $0F, $0C, $1C, $2C, $0F, $12, $1C, $2C, $0F, $29, $27, $07, $0F
+    dc.b    $22, $27, $07, $0F, $26, $27, $07, $0F, $15, $27, $30, $FF, $3F, $1C, $04, $0F
 
     even
 CommonDataBlock_Bank6:
@@ -676,68 +990,68 @@ TriforceTextTransferBuf:
     even
 TransferBufAddrs:
     dc.b    (DynTileBuf)&$FF, (DynTileBuf>>8)&$FF   ; NES .ADDR (little-endian)
-    dc.b    (StoryTileAttrTransferBuf)&$FF, (StoryTileAttrTransferBuf>>8)&$FF   ; NES .ADDR (little-endian)
-    dc.b    (Mode8TextTileBuffer)&$FF, (Mode8TextTileBuffer>>8)&$FF   ; NES .ADDR (little-endian)
-    dc.b    (LevelPaletteRow7TransferBuf)&$FF, (LevelPaletteRow7TransferBuf>>8)&$FF   ; NES .ADDR (little-endian)
-    dc.b    (AquamentusPaletteRow7TransferBuf)&$FF, (AquamentusPaletteRow7TransferBuf>>8)&$FF   ; NES .ADDR (little-endian)
-    dc.b    (OrangeBossPaletteRow7TransferBuf)&$FF, (OrangeBossPaletteRow7TransferBuf>>8)&$FF   ; NES .ADDR (little-endian)
-    dc.b    (LevelNumberTransferBuf)&$FF, (LevelNumberTransferBuf>>8)&$FF   ; NES .ADDR (little-endian)
-    dc.b    (StatusBarStaticsTransferBuf)&$FF, (StatusBarStaticsTransferBuf>>8)&$FF   ; NES .ADDR (little-endian)
-    dc.b    (GameTitleTransferBuf)&$FF, (GameTitleTransferBuf>>8)&$FF   ; NES .ADDR (little-endian)
-    dc.b    (MenuPalettesTransferBuf)&$FF, (MenuPalettesTransferBuf>>8)&$FF   ; NES .ADDR (little-endian)
-    dc.b    (Mode1TileTransferBuf)&$FF, (Mode1TileTransferBuf>>8)&$FF   ; NES .ADDR (little-endian)
-    dc.b    (ModeFCharsTransferBuf)&$FF, (ModeFCharsTransferBuf>>8)&$FF   ; NES .ADDR (little-endian)
+    dc.b    $8C, $A1   ; NES .ADDR (bank window, NES=$A18C = StoryTileAttrTransferBuf)
+    dc.b    $42, $A0   ; NES .ADDR (bank window, NES=$A042 = Mode8TextTileBuffer)
+    dc.b    $24, $9D   ; NES .ADDR (bank window, NES=$9D24 = LevelPaletteRow7TransferBuf)
+    dc.b    $1C, $A0   ; NES .ADDR (bank window, NES=$A01C = AquamentusPaletteRow7TransferBuf)
+    dc.b    $24, $A0   ; NES .ADDR (bank window, NES=$A024 = OrangeBossPaletteRow7TransferBuf)
+    dc.b    $2C, $9D   ; NES .ADDR (bank window, NES=$9D2C = LevelNumberTransferBuf)
+    dc.b    $61, $A0   ; NES .ADDR (bank window, NES=$A061 = StatusBarStaticsTransferBuf)
+    dc.b    $F7, $A5   ; NES .ADDR (bank window, NES=$A5F7 = GameTitleTransferBuf)
+    dc.b    $00, $9D   ; NES .ADDR (bank window, NES=$9D00 = MenuPalettesTransferBuf)
+    dc.b    $8E, $9E   ; NES .ADDR (bank window, NES=$9E8E = Mode1TileTransferBuf)
+    dc.b    $11, $9F   ; NES .ADDR (bank window, NES=$9F11 = ModeFCharsTransferBuf)
     dc.b    (LevelInfo_PalettesTransferBuf)&$FF, (LevelInfo_PalettesTransferBuf>>8)&$FF   ; NES .ADDR (little-endian)
     dc.b    (DynTileBuf)&$FF, (DynTileBuf>>8)&$FF   ; NES .ADDR (little-endian)
     dc.b    (DynTileBuf)&$FF, (DynTileBuf>>8)&$FF   ; NES .ADDR (little-endian)
-    dc.b    (BlankTextBoxLines)&$FF, (BlankTextBoxLines>>8)&$FF   ; NES .ADDR (little-endian)
-    dc.b    (GhostPaletteRow7TransferBuf)&$FF, (GhostPaletteRow7TransferBuf>>8)&$FF   ; NES .ADDR (little-endian)
-    dc.b    (GreenBgPaletteRow7TransferBuf)&$FF, (GreenBgPaletteRow7TransferBuf>>8)&$FF   ; NES .ADDR (little-endian)
-    dc.b    (BrownBgPaletteRow7TransferBuf)&$FF, (BrownBgPaletteRow7TransferBuf>>8)&$FF   ; NES .ADDR (little-endian)
-    dc.b    (CellarAttrsTransferBuf)&$FF, (CellarAttrsTransferBuf>>8)&$FF   ; NES .ADDR (little-endian)
+    dc.b    $AB, $9F   ; NES .ADDR (bank window, NES=$9FAB = BlankTextBoxLines)
+    dc.b    $D3, $9F   ; NES .ADDR (bank window, NES=$9FD3 = GhostPaletteRow7TransferBuf)
+    dc.b    $DB, $9F   ; NES .ADDR (bank window, NES=$9FDB = GreenBgPaletteRow7TransferBuf)
+    dc.b    $E3, $9F   ; NES .ADDR (bank window, NES=$9FE3 = BrownBgPaletteRow7TransferBuf)
+    dc.b    $F7, $9F   ; NES .ADDR (bank window, NES=$9FF7 = CellarAttrsTransferBuf)
     dc.b    (DynTileBuf)&$FF, (DynTileBuf>>8)&$FF   ; NES .ADDR (little-endian)
-    dc.b    (BlankPersonWares)&$FF, (BlankPersonWares>>8)&$FF   ; NES .ADDR (little-endian)
-    dc.b    (Mode11DeadLinkPalette)&$FF, (Mode11DeadLinkPalette>>8)&$FF   ; NES .ADDR (little-endian)
-    dc.b    (LevelNumberTransferBuf)&$FF, (LevelNumberTransferBuf>>8)&$FF   ; NES .ADDR (little-endian)
-    dc.b    (InventoryTextTransferBuf)&$FF, (InventoryTextTransferBuf>>8)&$FF   ; NES .ADDR (little-endian)
-    dc.b    (SubmenuBoxesTopsTransferBuf)&$FF, (SubmenuBoxesTopsTransferBuf>>8)&$FF   ; NES .ADDR (little-endian)
-    dc.b    (SubmenuBoxesSidesTransferBuf)&$FF, (SubmenuBoxesSidesTransferBuf>>8)&$FF   ; NES .ADDR (little-endian)
-    dc.b    (GanonPaletteRow7TransferBuf)&$FF, (GanonPaletteRow7TransferBuf>>8)&$FF   ; NES .ADDR (little-endian)
-    dc.b    (SelectedItemBoxBottomTransferBuf)&$FF, (SelectedItemBoxBottomTransferBuf>>8)&$FF   ; NES .ADDR (little-endian)
-    dc.b    (UseBButtonTextTransferBuf)&$FF, (UseBButtonTextTransferBuf>>8)&$FF   ; NES .ADDR (little-endian)
-    dc.b    (InventoryBoxBottomTransferBuf)&$FF, (InventoryBoxBottomTransferBuf>>8)&$FF   ; NES .ADDR (little-endian)
-    dc.b    (CaveBgPaletteRowsTransferBuf)&$FF, (CaveBgPaletteRowsTransferBuf>>8)&$FF   ; NES .ADDR (little-endian)
-    dc.b    (SubmenuMapRemainderTransferBuf)&$FF, (SubmenuMapRemainderTransferBuf>>8)&$FF   ; NES .ADDR (little-endian)
-    dc.b    (SheetMapBottomEdgeTransferBuf)&$FF, (SheetMapBottomEdgeTransferBuf>>8)&$FF   ; NES .ADDR (little-endian)
+    dc.b    $B4, $9F   ; NES .ADDR (bank window, NES=$9FB4 = BlankPersonWares)
+    dc.b    $56, $A1   ; NES .ADDR (bank window, NES=$A156 = Mode11DeadLinkPalette)
+    dc.b    $2C, $9D   ; NES .ADDR (bank window, NES=$9D2C = LevelNumberTransferBuf)
+    dc.b    $A4, $A0   ; NES .ADDR (bank window, NES=$A0A4 = InventoryTextTransferBuf)
+    dc.b    $B1, $A0   ; NES .ADDR (bank window, NES=$A0B1 = SubmenuBoxesTopsTransferBuf)
+    dc.b    $C5, $A0   ; NES .ADDR (bank window, NES=$A0C5 = SubmenuBoxesSidesTransferBuf)
+    dc.b    $90, $9F   ; NES .ADDR (bank window, NES=$9F90 = GanonPaletteRow7TransferBuf)
+    dc.b    $D6, $A0   ; NES .ADDR (bank window, NES=$A0D6 = SelectedItemBoxBottomTransferBuf)
+    dc.b    $DE, $A0   ; NES .ADDR (bank window, NES=$A0DE = UseBButtonTextTransferBuf)
+    dc.b    $EE, $A0   ; NES .ADDR (bank window, NES=$A0EE = InventoryBoxBottomTransferBuf)
+    dc.b    $EB, $9F   ; NES .ADDR (bank window, NES=$9FEB = CaveBgPaletteRowsTransferBuf)
+    dc.b    $06, $A1   ; NES .ADDR (bank window, NES=$A106 = SubmenuMapRemainderTransferBuf)
+    dc.b    $2A, $A1   ; NES .ADDR (bank window, NES=$A12A = SheetMapBottomEdgeTransferBuf)
     dc.b    (LevelInfo_StatusBarMapTransferBuf)&$FF, (LevelInfo_StatusBarMapTransferBuf>>8)&$FF   ; NES .ADDR (little-endian)
-    dc.b    (GameOverTransferBuf)&$FF, (GameOverTransferBuf>>8)&$FF   ; NES .ADDR (little-endian)
-    dc.b    (SubmenuAttrs1TransferBuf)&$FF, (SubmenuAttrs1TransferBuf>>8)&$FF   ; NES .ADDR (little-endian)
-    dc.b    (SubmenuAttrs2TransferBuf)&$FF, (SubmenuAttrs2TransferBuf>>8)&$FF   ; NES .ADDR (little-endian)
-    dc.b    (BlankBottomRowNT2TransferBuf)&$FF, (BlankBottomRowNT2TransferBuf>>8)&$FF   ; NES .ADDR (little-endian)
-    dc.b    (BlankRowTransferBuf)&$FF, (BlankRowTransferBuf>>8)&$FF   ; NES .ADDR (little-endian)
-    dc.b    (SubmenuTriforceApexTransferBuf)&$FF, (SubmenuTriforceApexTransferBuf>>8)&$FF   ; NES .ADDR (little-endian)
-    dc.b    (TriforceRow0TransferBuf)&$FF, (TriforceRow0TransferBuf>>8)&$FF   ; NES .ADDR (little-endian)
-    dc.b    (TriforceRow1TransferBuf)&$FF, (TriforceRow1TransferBuf>>8)&$FF   ; NES .ADDR (little-endian)
-    dc.b    (TriforceRow2TransferBuf)&$FF, (TriforceRow2TransferBuf>>8)&$FF   ; NES .ADDR (little-endian)
-    dc.b    (TriforceRow3TransferBuf)&$FF, (TriforceRow3TransferBuf>>8)&$FF   ; NES .ADDR (little-endian)
-    dc.b    (SubmenuTriforceBottomTransferBuf)&$FF, (SubmenuTriforceBottomTransferBuf>>8)&$FF   ; NES .ADDR (little-endian)
-    dc.b    (TriforceTextTransferBuf)&$FF, (TriforceTextTransferBuf>>8)&$FF   ; NES .ADDR (little-endian)
-    dc.b    (Mode11BackgroundPaletteBottomHalfTransferBuf)&$FF, (Mode11BackgroundPaletteBottomHalfTransferBuf>>8)&$FF   ; NES .ADDR (little-endian)
-    dc.b    (Mode11PlayAreaAttrsTopHalfTransferBuf)&$FF, (Mode11PlayAreaAttrsTopHalfTransferBuf>>8)&$FF   ; NES .ADDR (little-endian)
-    dc.b    (Mode11PlayAreaAttrsBottomHalfTransferBuf)&$FF, (Mode11PlayAreaAttrsBottomHalfTransferBuf>>8)&$FF   ; NES .ADDR (little-endian)
+    dc.b    $5E, $A1   ; NES .ADDR (bank window, NES=$A15E = GameOverTransferBuf)
+    dc.b    $3E, $A1   ; NES .ADDR (bank window, NES=$A13E = SubmenuAttrs1TransferBuf)
+    dc.b    $47, $A1   ; NES .ADDR (bank window, NES=$A147 = SubmenuAttrs2TransferBuf)
+    dc.b    $4C, $A1   ; NES .ADDR (bank window, NES=$A14C = BlankBottomRowNT2TransferBuf)
+    dc.b    $51, $A1   ; NES .ADDR (bank window, NES=$A151 = BlankRowTransferBuf)
+    dc.b    $BD, $9F   ; NES .ADDR (bank window, NES=$9FBD = SubmenuTriforceApexTransferBuf)
+    dc.b    $57, $9D   ; NES .ADDR (bank window, NES=$9D57 = TriforceRow0TransferBuf)
+    dc.b    $5F, $9D   ; NES .ADDR (bank window, NES=$9D5F = TriforceRow1TransferBuf)
+    dc.b    $69, $9D   ; NES .ADDR (bank window, NES=$9D69 = TriforceRow2TransferBuf)
+    dc.b    $75, $9D   ; NES .ADDR (bank window, NES=$9D75 = TriforceRow3TransferBuf)
+    dc.b    $C3, $9F   ; NES .ADDR (bank window, NES=$9FC3 = SubmenuTriforceBottomTransferBuf)
+    dc.b    $83, $9D   ; NES .ADDR (bank window, NES=$9D83 = TriforceTextTransferBuf)
+    dc.b    $76, $A1   ; NES .ADDR (bank window, NES=$A176 = Mode11BackgroundPaletteBottomHalfTransferBuf)
+    dc.b    $82, $A1   ; NES .ADDR (bank window, NES=$A182 = Mode11PlayAreaAttrsTopHalfTransferBuf)
+    dc.b    $87, $A1   ; NES .ADDR (bank window, NES=$A187 = Mode11PlayAreaAttrsBottomHalfTransferBuf)
     dc.b    (DynTileBuf)&$FF, (DynTileBuf>>8)&$FF   ; NES .ADDR (little-endian)
     dc.b    (DynTileBuf)&$FF, (DynTileBuf>>8)&$FF   ; NES .ADDR (little-endian)
     dc.b    (DynTileBuf)&$FF, (DynTileBuf>>8)&$FF   ; NES .ADDR (little-endian)
-    dc.b    (EndingPaletteTransferBuf)&$FF, (EndingPaletteTransferBuf>>8)&$FF   ; NES .ADDR (little-endian)
-    dc.b    (BombCapacityPriceTextTransferBuf)&$FF, (BombCapacityPriceTextTransferBuf>>8)&$FF   ; NES .ADDR (little-endian)
+    dc.b    $98, $9F   ; NES .ADDR (bank window, NES=$9F98 = EndingPaletteTransferBuf)
+    dc.b    $2C, $A0   ; NES .ADDR (bank window, NES=$A02C = BombCapacityPriceTextTransferBuf)
     dc.b    (DynTileBuf)&$FF, (DynTileBuf>>8)&$FF   ; NES .ADDR (little-endian)
     dc.b    (DynTileBuf)&$FF, (DynTileBuf>>8)&$FF   ; NES .ADDR (little-endian)
     dc.b    (DynTileBuf)&$FF, (DynTileBuf>>8)&$FF   ; NES .ADDR (little-endian)
     dc.b    (DynTileBuf)&$FF, (DynTileBuf>>8)&$FF   ; NES .ADDR (little-endian)
-    dc.b    (LifeOrMoneyCostTextTransferBuf)&$FF, (LifeOrMoneyCostTextTransferBuf>>8)&$FF   ; NES .ADDR (little-endian)
-    dc.b    (WhitePaletteBottomHalfTransferBuf)&$FF, (WhitePaletteBottomHalfTransferBuf>>8)&$FF   ; NES .ADDR (little-endian)
-    dc.b    (RedArmosPaletteRow7TransferBuf)&$FF, (RedArmosPaletteRow7TransferBuf>>8)&$FF   ; NES .ADDR (little-endian)
-    dc.b    (GleeokPaletteRow7TransferBuf)&$FF, (GleeokPaletteRow7TransferBuf>>8)&$FF   ; NES .ADDR (little-endian)
+    dc.b    $34, $A0   ; NES .ADDR (bank window, NES=$A034 = LifeOrMoneyCostTextTransferBuf)
+    dc.b    $00, $A0   ; NES .ADDR (bank window, NES=$A000 = WhitePaletteBottomHalfTransferBuf)
+    dc.b    $0C, $A0   ; NES .ADDR (bank window, NES=$A00C = RedArmosPaletteRow7TransferBuf)
+    dc.b    $14, $A0   ; NES .ADDR (bank window, NES=$A014 = GleeokPaletteRow7TransferBuf)
     dc.b    (DynTileBuf)&$FF, (DynTileBuf>>8)&$FF   ; NES .ADDR (little-endian)
 
 ; -- 32-bit absolute pointer table (same order as TransferBufAddrs) --
@@ -812,21 +1126,27 @@ TransferBufPtrs:
 
     even
 TransferCurTileBuf:
-    ; PATCHED: DynTileBuf palette pre-check (Bug C fix).
-    ; On NES, palette records in DynTileBuf are consumed before TileBufSelector
-    ; changes.  On Genesis, a timing difference can cause the selector to be
-    ; overwritten before NMI fires, so the palette is never processed.
-    ; Fix: always drain DynTileBuf palette records ($3F prefix) first.
+    ; PATCHED: DynTileBuf pending-record pre-check (generalized Bug C fix).
+    ; If DynTileBuf is non-empty while TileBufSelector already points at a
+    ; later static buffer, consume DynTileBuf first and leave selector intact
+    ; for the next NMI. This preserves NES ordering for dynamic room/menu
+    ; records that would otherwise be dropped by selector timing drift.
     lea     (NES_RAM+DynTileBuf).l,A0
-    cmpi.b  #$3F,(A0)                  ; $3F = palette PPU addr high byte?
-    bne.s   .no_pending_palette
-    movem.l D0-D2/A0,-(SP)             ; save regs around BSR
-    jsr     _transfer_tilebuf_fast      ; process palette from DynTileBuf
+    cmpi.b  #$FF,(A0)                  ; DynTileBuf empty sentinel?
+    beq.s   .no_pending_dyn
+    tst.b   ($0014,A4)                  ; TileBufSelector = 0 => normal DynTileBuf path
+    beq.s   .no_pending_dyn
+    movem.l D0-D2/A0,-(SP)             ; save regs around JSR
+    jsr     _transfer_tilebuf_fast      ; process pending DynTileBuf now
     movem.l (SP)+,D0-D2/A0             ; restore regs
     move.b  #$FF,(NES_RAM+DynTileBuf).l ; reset sentinel
-    tst.b   ($0014,A4)                  ; TileBufSelector = 0?
-    beq.s   .skip_main_dispatch         ; already processed DynTileBuf
-.no_pending_palette:
+    moveq   #63,D0
+    move.b  D0,($0300,A4)
+    moveq   #0,D2
+    move.b  D2,($005C,A4)
+    move.b  D2,($0301,A4)
+    rts
+.no_pending_dyn:
     ; 32-bit pointer table lookup for main dispatch.
     moveq   #0,D2
     move.b  ($0014,A4),D2
@@ -835,7 +1155,6 @@ TransferCurTileBuf:
     move.l  (A1,D2.W),D0               ; D0 = 32-bit buffer pointer
     movea.l D0,A0                      ; A0 = 32-bit buffer pointer
     jsr     TransferTileBuf
-.skip_main_dispatch:
     moveq   #63,D0
     move.b  D0,($0300,A4)
     moveq   #0,D2
@@ -1256,4 +1575,3 @@ GameTitleTransferBuf:
 
 ; Unknown block
     dc.b    $84, $E4, $50, $BF, $F0, $BF
-

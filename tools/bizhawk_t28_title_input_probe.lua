@@ -1,204 +1,289 @@
 -- bizhawk_t28_title_input_probe.lua
--- T28: Title Input — inject Start button press on title screen,
---      verify game transitions away from title mode.
+-- T28 story-soak profile (no forced mode writes, no "input faster" workaround).
 --
--- Verifies that:
---   1. No exception during title → file-select transition
---   2. NMI keeps firing through transition (game not hanging)
---   3. Mode byte at $FF0012 starts at 1 (title) during title phase
---   4. Mode byte advances after Start is pressed (transition occurred)
---   5. CheckInput continues running after transition
+-- Goal for this phase: stress the title/story scroll path with no Start presses
+-- and detect crash/hang behavior with rich telemetry.
 --
--- Note: Manual active-button confirmation is tested here via joypad injection.
+-- Captures:
+--   GameMode/GameSubmode
+--   DemoPhase/DemoSubphase
+--   DemoTimer/TileBufSelector
+--   Scroll state (CurVScroll/CurHScroll/VScrollStartFrame/ScrolledLineCount)
+--   Exception PC/vector hits
 
-local ROOT     = "C:\\Users\\Jake Diggity\\Documents\\GitHub\\FINAL TRY\\"
-local OUT_DIR  = ROOT .. "builds\\reports\\"
-local OUT_PATH = OUT_DIR .. "bizhawk_t28_title_input_probe.txt"
+dofile((function()
+    local env_root = os.getenv("CODEX_BIZHAWK_ROOT")
+    if env_root and env_root ~= "" then
+        env_root = env_root:gsub("/", "\\")
+        return env_root .. "\\tools\\probe_root.lua"
+    end
+    local source = debug.getinfo(1, "S").source
+    if source:sub(1, 1) == "@" then
+        source = source:sub(2)
+    end
+    source = source:gsub("/", "\\")
+    local tools_dir = source:match("^(.*)\\[^\\]+$")
+    if not tools_dir then
+        error("unable to resolve tools directory from '" .. source .. "'")
+    end
+    return tools_dir .. "\\probe_root.lua"
+end)())
 
-dofile(ROOT .. "tools/probe_addresses.lua")
+dofile(repo_path("tools\\probe_addresses.lua"))
+
+local OUT_DIR = repo_path("builds\\reports")
+local OUT_TXT = repo_path("builds\\reports\\bizhawk_t28_title_input_probe.txt")
 
 os.execute('if not exist "' .. OUT_DIR .. '" mkdir "' .. OUT_DIR .. '"')
-local f = assert(io.open(OUT_PATH, "w"))
-local function log(msg) f:write(msg.."\n") f:flush() print(msg) end
 
-local PASS, FAIL = "PASS", "FAIL"
-local results = {}
-local function record(name, status, detail)
-    log(string.format("[%s] %-30s  %s", status, name, detail))
-    results[#results+1] = {name=name, status=status}
-end
-
-local function try_dom(dom, offset, width)
-    local ok, v = pcall(function()
-        memory.usememorydomain(dom)
-        if     width == 1 then return memory.read_u8(offset)
-        elseif width == 2 then return memory.read_u16_be(offset)
-        else                    return memory.read_u32_be(offset) end
+local function try_read(domain, addr, width)
+    local ok, value = pcall(function()
+        memory.usememorydomain(domain)
+        if width == 1 then
+            return memory.read_u8(addr)
+        end
+        if width == 2 then
+            return memory.read_u16_be(addr)
+        end
+        return memory.read_u32_be(addr)
     end)
-    return ok and v or nil
-end
-
-local function ram_read(bus_addr, width)
-    local ofs = bus_addr - 0xFF0000
-    for _, spec in ipairs({
-        {"M68K BUS", bus_addr}, {"68K RAM", ofs},
-        {"System Bus", bus_addr}, {"Main RAM", ofs},
-    }) do
-        local v = try_dom(spec[1], spec[2], width or 1)
-        if v ~= nil then return v end
+    if ok then
+        return value
     end
     return nil
 end
 
--- Press Start for a window of frames (before frameadvance).
--- BizHawk 2.x joypad.set: button names for GPGX 3-button pad are "P1 X"
-local function press_start()
-    joypad.set({["P1 Start"] = true})
+local function ram_u8(bus_addr)
+    local ofs = bus_addr - 0xFF0000
+    local domains = {
+        {"68K RAM", ofs},
+        {"M68K BUS", bus_addr},
+        {"System Bus", bus_addr},
+        {"Main RAM", ofs},
+    }
+    for _, spec in ipairs(domains) do
+        local v = try_read(spec[1], spec[2], 1)
+        if v ~= nil then
+            return v
+        end
+    end
+    return 0
 end
 
-local function main()
-    local MAX_FRAMES    = 400
-    local PRESS_START   = 90    -- begin pressing Start at this frame
-    local PRESS_END     = 130   -- stop pressing Start
-
-    log("=================================================================")
-    log("T28: Title Input Probe  —  up to " .. MAX_FRAMES .. " frames")
-    log("=================================================================")
-    log(string.format("  LoopForever=$%06X  ExcBus=$%06X  ExcAddr=$%06X  ExcDef=$%06X",
-        LOOPFOREVER, EXC_BUS, EXC_ADDR, EXC_DEF))
-    log(string.format("  Start button injected frames %d–%d", PRESS_START, PRESS_END))
-    log("")
-
-    local exception_hit  = false
-    local exception_name = nil
-    local nmi_start  = 0
-    local nmi_end    = 0
-    local ci_start   = 0
-    local ci_end     = 0
-    local mode_early = 0
-    local mode_mid   = 0
-    local mode_late  = 0
-
-    for frame = 1, MAX_FRAMES do
-        -- Inject Start button press BEFORE frameadvance so the NMI sees it
-        if frame >= PRESS_START and frame <= PRESS_END then
-            press_start()
-        end
-
-        emu.frameadvance()
-
-        local pc = emu.getregister("M68K PC") or 0
-        if pc == EXC_BUS or pc == EXC_ADDR or pc == EXC_DEF then
-            if not exception_hit then
-                exception_hit  = true
-                exception_name = (pc==EXC_BUS  and "ExcBusError")
-                              or (pc==EXC_ADDR and "ExcAddrError")
-                              or "DefaultException"
-            end
-        end
-
-        if frame == 80 then
-            nmi_start  = ram_read(0xFF1003, 1) or 0
-            ci_start   = ram_read(0xFF100A, 1) or 0
-            mode_early = ram_read(0xFF0012, 1) or 0xFF
-        end
-        if frame == PRESS_START + 10 then
-            mode_mid = ram_read(0xFF0012, 1) or 0xFF
-        end
-
-        if exception_hit and frame > 50 then break end
-    end
-
-    nmi_end   = ram_read(0xFF1003, 1) or 0
-    ci_end    = ram_read(0xFF100A, 1) or 0
-    mode_late = ram_read(0xFF0012, 1) or 0xFF
-
-    -- Additional state
-    local btn1  = ram_read(0xFF00F8, 1) or 0
-    local new1  = ram_read(0xFF00FA, 1) or 0
-    local latch = ram_read(0xFF1100, 1) or 0
-    local idx   = ram_read(0xFF1101, 1) or 0
-
-    log(string.format("  Mode byte ($FF0012): frame-80=%02X  frame-%d=%02X  final=%02X",
-        mode_early, PRESS_START+10, mode_mid, mode_late))
-    log(string.format("  NMI count:     start=%d  end=%d  delta=%d",
-        nmi_start, nmi_end, nmi_end - nmi_start))
-    log(string.format("  CheckInput:    start=%d  end=%d  delta=%d",
-        ci_start, ci_end, ci_end - ci_start))
-    log(string.format("  Button regs:   $F8=%02X (held)  $FA=%02X (new-press)",
-        btn1, new1))
-    log(string.format("  CTL1_LATCH=$%02X  CTL1_IDX=%d", latch, idx))
-    log("")
-
-    -- ── Tests ──────────────────────────────────────────────────────────
-    log("─── T28: Title Input Tests ──────────────────────────────────────")
-
-    -- T28_NO_EXCEPTION
-    if not exception_hit then
-        record("T28_NO_EXCEPTION", PASS, "no exception handler hit")
-    else
-        record("T28_NO_EXCEPTION", FAIL, "exception: " .. (exception_name or "?"))
-    end
-
-    -- T28_NMI_CONTINUOUS: NMI keeps firing through and after transition
-    local nmi_delta = nmi_end - nmi_start
-    if nmi_delta >= 50 then
-        record("T28_NMI_CONTINUOUS", PASS,
-            string.format("NMI advanced %d over frames 80–%d — no hang", nmi_delta, MAX_FRAMES))
-    else
-        record("T28_NMI_CONTINUOUS", FAIL,
-            string.format("NMI advanced only %d — game may be hanging", nmi_delta))
-    end
-
-    -- T28_TITLE_MODE: mode byte was 1 (title) at frame 80
-    if mode_early == 0x01 then
-        record("T28_TITLE_MODE", PASS,
-            string.format("mode=$%02X at frame 80 — title screen confirmed", mode_early))
-    else
-        record("T28_TITLE_MODE", FAIL,
-            string.format("mode=$%02X at frame 80 — expected $01 (title)", mode_early))
-    end
-
-    -- T28_MODE_ADVANCE: mode changed after Start press
-    if mode_late ~= mode_early then
-        record("T28_MODE_ADVANCE", PASS,
-            string.format("mode $%02X → $%02X after Start press — transition fired",
-                mode_early, mode_late))
-    else
-        record("T28_MODE_ADVANCE", FAIL,
-            string.format("mode stayed $%02X — Start press may not have registered",
-                mode_early))
-    end
-
-    -- T28_CI_POST_TRANSITION: CheckInput still running after mode change
-    local ci_delta = ci_end - ci_start
-    if ci_delta >= 50 then
-        record("T28_CI_POST_TRANSITION", PASS,
-            string.format("CheckInput advanced %d past transition — input loop intact", ci_delta))
-    else
-        record("T28_CI_POST_TRANSITION", FAIL,
-            string.format("CheckInput advanced only %d — may have stalled", ci_delta))
-    end
-
-    -- Summary
-    log("")
-    log("=================================================================")
-    log("T28 TITLE INPUT SUMMARY")
-    log("=================================================================")
-    local pass_cnt, fail_cnt = 0, 0
-    for _, res in ipairs(results) do
-        log(string.format("  [%s] %s", res.status, res.name))
-        if res.status == PASS then pass_cnt = pass_cnt + 1
-        else                       fail_cnt = fail_cnt + 1 end
-    end
-    log("")
-    log(string.format("  %d PASS  /  %d FAIL  /  %d total", pass_cnt, fail_cnt, #results))
-    log("")
-    if fail_cnt == 0 then log("T28 TITLE INPUT: ALL PASS")
-    else                  log("T28 TITLE INPUT: " .. fail_cnt .. " FAILURE(S)") end
-    log("")
-    f:close()
-    client.exit()
+local function record(lines, text)
+    lines[#lines + 1] = text
+    print(text)
 end
 
-main()
+local lines = {}
+local mode_changes = {}
+local phase_changes = {}
+
+local MAX_FRAMES = 3200
+local LOG_PERIOD = 60
+local STALL_LIMIT = 180
+
+local exception_hit = false
+local exception_name = ""
+local exception_frame = -1
+
+local saw_demo_phase1 = false
+local saw_story_scroll = false
+local max_vscroll = 0
+local max_scrolled_lines = 0
+
+local nmi_start = 0
+local nmi_end = 0
+local ci_start = 0
+local ci_end = 0
+local nmi_stall_hit = false
+local ci_stall_hit = false
+local nmi_stall_frame = -1
+local ci_stall_frame = -1
+
+local last_mode = nil
+local last_sub = nil
+local last_demo_phase = nil
+local last_demo_sub = nil
+local last_nmi = nil
+local last_ci = nil
+local nmi_stall_len = 0
+local ci_stall_len = 0
+
+record(lines, "=================================================================")
+record(lines, "T28 story-soak probe (no Start press)")
+record(lines, "=================================================================")
+record(lines, string.format("LoopForever=$%06X  IsrNmi=$%06X", LOOPFOREVER, ISRNMI))
+record(lines, string.format("frames=%d  log_period=%d  stall_limit=%d", MAX_FRAMES, LOG_PERIOD, STALL_LIMIT))
+record(lines, "")
+
+for frame = 1, MAX_FRAMES do
+    emu.frameadvance()
+
+    local mode = ram_u8(0xFF0012)
+    local sub = ram_u8(0xFF0013)
+    local tile_sel = ram_u8(0xFF0014)
+    local demo_phase = ram_u8(0xFF042C)
+    local demo_sub = ram_u8(0xFF042D)
+    local demo_timer = ram_u8(0xFF041A)
+    local cur_vscroll = ram_u8(0xFF00FC)
+    local cur_hscroll = ram_u8(0xFF00FD)
+    local vscroll_start = ram_u8(0xFF00E6)
+    local scrolled_lines = ram_u8(0xFF041B)
+    local nmi = ram_u8(0xFF1003)
+    local ci = ram_u8(0xFF100A)
+    local pc = emu.getregister("M68K PC") or 0
+
+    if frame == 1 then
+        nmi_start = nmi
+        ci_start = ci
+        last_nmi = nmi
+        last_ci = ci
+    end
+
+    if mode ~= last_mode or sub ~= last_sub then
+        mode_changes[#mode_changes + 1] = {frame = frame, mode = mode, sub = sub}
+        record(lines, string.format(
+            "f%04d mode=$%02X sub=$%02X tileSel=$%02X vscroll=%3d hscroll=%3d vStart=%3d lines=%3d",
+            frame, mode, sub, tile_sel, cur_vscroll, cur_hscroll, vscroll_start, scrolled_lines
+        ))
+        last_mode = mode
+        last_sub = sub
+    end
+
+    if demo_phase ~= last_demo_phase or demo_sub ~= last_demo_sub then
+        phase_changes[#phase_changes + 1] = {
+            frame = frame,
+            phase = demo_phase,
+            sub = demo_sub,
+            timer = demo_timer,
+            tile_sel = tile_sel,
+        }
+        record(lines, string.format(
+            "f%04d demoPhase=$%02X demoSub=$%02X demoTimer=$%02X tileSel=$%02X",
+            frame, demo_phase, demo_sub, demo_timer, tile_sel
+        ))
+        last_demo_phase = demo_phase
+        last_demo_sub = demo_sub
+    end
+
+    if demo_phase >= 0x01 then
+        saw_demo_phase1 = true
+    end
+
+    if cur_vscroll > max_vscroll then
+        max_vscroll = cur_vscroll
+    end
+    if scrolled_lines > max_scrolled_lines then
+        max_scrolled_lines = scrolled_lines
+    end
+    if cur_vscroll ~= 0 or scrolled_lines ~= 0 then
+        saw_story_scroll = true
+    end
+
+    if nmi == last_nmi then
+        nmi_stall_len = nmi_stall_len + 1
+        if not nmi_stall_hit and nmi_stall_len >= STALL_LIMIT then
+            nmi_stall_hit = true
+            nmi_stall_frame = frame
+            record(lines, string.format("f%04d NMI stall detected (%d frames unchanged)", frame, nmi_stall_len))
+        end
+    else
+        nmi_stall_len = 0
+    end
+    last_nmi = nmi
+
+    if ci == last_ci then
+        ci_stall_len = ci_stall_len + 1
+        if not ci_stall_hit and ci_stall_len >= STALL_LIMIT then
+            ci_stall_hit = true
+            ci_stall_frame = frame
+            record(lines, string.format("f%04d CheckInput stall detected (%d frames unchanged)", frame, ci_stall_len))
+        end
+    else
+        ci_stall_len = 0
+    end
+    last_ci = ci
+
+    if not exception_hit and (pc == EXC_BUS or pc == EXC_ADDR or pc == EXC_DEF) then
+        exception_hit = true
+        exception_frame = frame
+        if pc == EXC_BUS then
+            exception_name = "ExcBusError"
+        elseif pc == EXC_ADDR then
+            exception_name = "ExcAddrError"
+        else
+            exception_name = "DefaultException"
+        end
+        record(lines, string.format("f%04d EXCEPTION %s PC=$%06X", frame, exception_name, pc))
+        break
+    end
+
+    if frame % LOG_PERIOD == 0 then
+        record(lines, string.format(
+            "f%04d telemetry mode=$%02X/$%02X demo=$%02X/$%02X timer=$%02X tileSel=$%02X v=%3d h=%3d lines=%3d nmi=%3d ci=%3d",
+            frame, mode, sub, demo_phase, demo_sub, demo_timer, tile_sel, cur_vscroll, cur_hscroll, scrolled_lines, nmi, ci
+        ))
+    end
+end
+
+nmi_end = ram_u8(0xFF1003)
+ci_end = ram_u8(0xFF100A)
+
+local function verdict(name, ok, detail)
+    record(lines, string.format("[%s] %-30s %s", ok and "PASS" or "FAIL", name, detail))
+    return ok and 1 or 0
+end
+
+record(lines, "")
+record(lines, "Mode changes (first 24):")
+for i = 1, math.min(#mode_changes, 24) do
+    local m = mode_changes[i]
+    record(lines, string.format("  f%04d mode=$%02X sub=$%02X", m.frame, m.mode, m.sub))
+end
+
+record(lines, "")
+record(lines, "Demo phase changes (first 24):")
+for i = 1, math.min(#phase_changes, 24) do
+    local p = phase_changes[i]
+    record(lines, string.format("  f%04d phase=$%02X sub=$%02X timer=$%02X tileSel=$%02X", p.frame, p.phase, p.sub, p.timer, p.tile_sel))
+end
+
+record(lines, "")
+record(lines, string.format("NMI delta: %d", (nmi_end - nmi_start) % 0x100))
+record(lines, string.format("CheckInput delta: %d", (ci_end - ci_start) % 0x100))
+record(lines, string.format("max_vscroll: %d  max_scrolled_lines: %d", max_vscroll, max_scrolled_lines))
+record(lines, "")
+
+local pass = 0
+local total = 0
+
+total = total + 1
+pass = pass + verdict("T28_NO_EXCEPTION", not exception_hit,
+    exception_hit and (exception_name .. " at frame " .. tostring(exception_frame)) or "no exception")
+
+total = total + 1
+pass = pass + verdict("T28_NMI_CONTINUOUS", not nmi_stall_hit,
+    nmi_stall_hit and ("stalled at frame " .. tostring(nmi_stall_frame)) or "no long NMI stall")
+
+total = total + 1
+pass = pass + verdict("T28_CHECKINPUT_CONTINUOUS", not ci_stall_hit,
+    ci_stall_hit and ("stalled at frame " .. tostring(ci_stall_frame)) or "no long CheckInput stall")
+
+total = total + 1
+pass = pass + verdict("T28_DEMOPHASE_ADVANCE", saw_demo_phase1,
+    saw_demo_phase1 and "reached demo phase >= 1" or "never reached demo phase 1")
+
+total = total + 1
+pass = pass + verdict("T28_STORY_SCROLL_ACTIVITY", saw_story_scroll,
+    saw_story_scroll and "vscroll/scrolled-line activity observed" or "no story-scroll activity observed")
+
+record(lines, "")
+record(lines, string.format("T28 STORY-SOAK SUMMARY: %d PASS / %d FAIL", pass, total - pass))
+record(lines, (pass == total) and "T28 STORY-SOAK: ALL PASS" or "T28 STORY-SOAK: FAIL")
+
+local out = assert(io.open(OUT_TXT, "w"))
+out:write(table.concat(lines, "\n"))
+out:write("\n")
+out:close()
+client.exit()

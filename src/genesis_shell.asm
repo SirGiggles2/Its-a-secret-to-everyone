@@ -332,6 +332,7 @@ EntryPoint:
     ; fires a transition (harmless because PPU latches are already zero but
     ; forces a clean VSRAM init).
     move.b  #$FF,($00FF083E).l       ; LAST_GAMEMODE
+    move.b  #$FF,(_current_window_bank).l ; P33: force first bank-window copy
 
     ;--------------------------------------------------------------------------
     ; Phase 9.7 — Cartridge SRAM declared in header at $1B0-$1BB.  The header

@@ -1,0 +1,428 @@
+{
+  "hard_pass": true,
+  "route_code": "ROUTE_NONE",
+  "route_detail": "PARITY_GREEN: Room-$77 BG tile/palette byte parity is green.",
+  "first_bad_tile": {
+    "stage": "NONE",
+    "row": -1,
+    "col": -1,
+    "nes_value": -1,
+    "gen_value": -1
+  },
+  "counts": {
+    "nes_to_gen_plane_tile_mismatches": 0,
+    "nes_to_gen_plane_palette_mismatches": 0,
+    "stage1_nes_workbuf_to_gen_workbuf_tile_mismatches": 0,
+    "stage2_nes_visible_to_gen_ntcache_tile_mismatches": 0,
+    "stage2_interior_tile_mismatches": 0,
+    "stage2_edge_tile_mismatches": 0,
+    "stage3_gen_ntcache_to_plane_tile_mismatches": 0,
+    "nes_visible_to_gen_workbuf_tile_mismatches": 272,
+    "nes_workbuf_to_gen_workbuf_tile_mismatches": 0,
+    "nes_to_gen_ntcache_tile_mismatches": 0,
+    "nes_to_gen_playmap_tile_mismatches": 0,
+    "nes_tile_to_nes_playmap_mismatches": 272,
+    "gen_playmap_to_ntcache_tile_mismatches": 272,
+    "bg_palette_mismatches": 0,
+    "trace_ptr_mismatches": 6,
+    "trace_source_byte_mismatches": 0,
+    "stage1_trace_mismatch_count": 0,
+    "stage1_rt_trace_mismatch_count": 704,
+    "transfer_stream_mismatch_count": 0,
+    "transfer_touches_edge_columns": true,
+    "edge_owner_gen_count": 44,
+    "edge_owner_nes_count": 44,
+    "edge_owner_mismatch_count": 44
+  },
+  "samples": {
+    "nes_to_gen_plane_tile_mismatches": [],
+    "nes_to_gen_plane_palette_mismatches": [],
+    "stage1_nes_workbuf_to_gen_workbuf_tile_mismatches": [],
+    "stage2_nes_visible_to_gen_ntcache_tile_mismatches": [],
+    "stage2_interior_tile_mismatches": [],
+    "stage2_edge_tile_mismatches": [],
+    "stage3_gen_ntcache_to_plane_tile_mismatches": [],
+    "nes_visible_to_gen_workbuf_tile_mismatches": [
+      {
+        "row": 0,
+        "col": 0,
+        "nes_tile": 36,
+        "source_tile": 216
+      },
+      {
+        "row": 0,
+        "col": 1,
+        "nes_tile": 36,
+        "source_tile": 218
+      },
+      {
+        "row": 0,
+        "col": 2,
+        "nes_tile": 245,
+        "source_tile": 216
+      },
+      {
+        "row": 0,
+        "col": 3,
+        "nes_tile": 245,
+        "source_tile": 218
+      },
+      {
+        "row": 0,
+        "col": 4,
+        "nes_tile": 245,
+        "source_tile": 216
+      },
+      {
+        "row": 0,
+        "col": 5,
+        "nes_tile": 245,
+        "source_tile": 218
+      },
+      {
+        "row": 0,
+        "col": 6,
+        "nes_tile": 245,
+        "source_tile": 216
+      },
+      {
+        "row": 0,
+        "col": 7,
+        "nes_tile": 245,
+        "source_tile": 218
+      },
+      {
+        "row": 0,
+        "col": 8,
+        "nes_tile": 245,
+        "source_tile": 216
+      },
+      {
+        "row": 0,
+        "col": 9,
+        "nes_tile": 245,
+        "source_tile": 218
+      },
+      {
+        "row": 0,
+        "col": 10,
+        "nes_tile": 36,
+        "source_tile": 216
+      },
+      {
+        "row": 0,
+        "col": 11,
+        "nes_tile": 97,
+        "source_tile": 218
+      },
+      {
+        "row": 0,
+        "col": 12,
+        "nes_tile": 33,
+        "source_tile": 216
+      },
+      {
+        "row": 0,
+        "col": 13,
+        "nes_tile": 0,
+        "source_tile": 218
+      },
+      {
+        "row": 0,
+        "col": 14,
+        "nes_tile": 36,
+        "source_tile": 38
+      },
+      {
+        "row": 0,
+        "col": 15,
+        "nes_tile": 110,
+        "source_tile": 38
+      },
+      {
+        "row": 0,
+        "col": 16,
+        "nes_tile": 106,
+        "source_tile": 38
+      },
+      {
+        "row": 0,
+        "col": 17,
+        "nes_tile": 109,
+        "source_tile": 38
+      },
+      {
+        "row": 0,
+        "col": 18,
+        "nes_tile": 110,
+        "source_tile": 216
+      },
+      {
+        "row": 0,
+        "col": 19,
+        "nes_tile": 106,
+        "source_tile": 218
+      }
+    ],
+    "nes_workbuf_to_gen_workbuf_tile_mismatches": [],
+    "nes_to_gen_ntcache_tile_mismatches": [],
+    "nes_to_gen_playmap_tile_mismatches": [],
+    "gen_playmap_to_ntcache_tile_mismatches": [
+      {
+        "row": 0,
+        "col": 0,
+        "nes_tile": 216,
+        "source_tile": 36
+      },
+      {
+        "row": 0,
+        "col": 1,
+        "nes_tile": 218,
+        "source_tile": 36
+      },
+      {
+        "row": 0,
+        "col": 2,
+        "nes_tile": 216,
+        "source_tile": 245
+      },
+      {
+        "row": 0,
+        "col": 3,
+        "nes_tile": 218,
+        "source_tile": 245
+      },
+      {
+        "row": 0,
+        "col": 4,
+        "nes_tile": 216,
+        "source_tile": 245
+      },
+      {
+        "row": 0,
+        "col": 5,
+        "nes_tile": 218,
+        "source_tile": 245
+      },
+      {
+        "row": 0,
+        "col": 6,
+        "nes_tile": 216,
+        "source_tile": 245
+      },
+      {
+        "row": 0,
+        "col": 7,
+        "nes_tile": 218,
+        "source_tile": 245
+      },
+      {
+        "row": 0,
+        "col": 8,
+        "nes_tile": 216,
+        "source_tile": 245
+      },
+      {
+        "row": 0,
+        "col": 9,
+        "nes_tile": 218,
+        "source_tile": 245
+      },
+      {
+        "row": 0,
+        "col": 10,
+        "nes_tile": 216,
+        "source_tile": 36
+      },
+      {
+        "row": 0,
+        "col": 11,
+        "nes_tile": 218,
+        "source_tile": 97
+      },
+      {
+        "row": 0,
+        "col": 12,
+        "nes_tile": 216,
+        "source_tile": 33
+      },
+      {
+        "row": 0,
+        "col": 13,
+        "nes_tile": 218,
+        "source_tile": 0
+      },
+      {
+        "row": 0,
+        "col": 14,
+        "nes_tile": 38,
+        "source_tile": 36
+      },
+      {
+        "row": 0,
+        "col": 15,
+        "nes_tile": 38,
+        "source_tile": 110
+      },
+      {
+        "row": 0,
+        "col": 16,
+        "nes_tile": 38,
+        "source_tile": 106
+      },
+      {
+        "row": 0,
+        "col": 17,
+        "nes_tile": 38,
+        "source_tile": 109
+      },
+      {
+        "row": 0,
+        "col": 18,
+        "nes_tile": 216,
+        "source_tile": 110
+      },
+      {
+        "row": 0,
+        "col": 19,
+        "nes_tile": 218,
+        "source_tile": 106
+      }
+    ],
+    "bg_palette_mismatches": []
+  },
+  "alignment": {
+    "row_delta": 0,
+    "col_delta": 0,
+    "tile_mismatches": 0,
+    "pal_mismatches": 0,
+    "perfect_nonzero_offset": false
+  },
+  "trace_summary": {
+    "common_snapshots": [
+      "layoutroomow_exit_snapshot",
+      "mode3_sub8_first",
+      "mode5_room_stable"
+    ],
+    "compared_snapshots": [
+      "layoutroomow_exit_snapshot"
+    ],
+    "authoritative_snapshot": "layoutroomow_exit_snapshot",
+    "authoritative_diag": {
+      "gen_room_attr_raw": 114,
+      "gen_room_attr_masked": 50,
+      "gen_layout_ptr_effective": 214392,
+      "nes_room_attr_raw": 50,
+      "nes_room_attr_masked": 50,
+      "nes_layout_ptr_effective": 39736
+    },
+    "ptr_mismatches": 6,
+    "source_byte_mismatches": 0,
+    "first_divergence": {}
+  },
+  "decode_write_trace_summary": {
+    "gen_len": 64,
+    "nes_len": 64,
+    "mismatch_count": 0,
+    "first_divergence": {}
+  },
+  "decode_write_trace_rt_summary": {
+    "gen_len": 704,
+    "nes_len": 0,
+    "mismatch_count": 704,
+    "first_divergence": {
+      "seq": 1,
+      "field": "trace_length",
+      "gen_value": 704,
+      "nes_value": 0
+    },
+    "divergence_class": "UNKNOWN",
+    "gen_valid": true,
+    "nes_valid": false
+  },
+  "transfer_stream_summary": {
+    "gen_len": 27,
+    "nes_len": 27,
+    "mismatch_count": 0,
+    "first_divergence": {},
+    "producer_match": true,
+    "gen_valid": true,
+    "nes_valid": true
+  },
+  "edge_transfer_summary": {
+    "edge_columns_touched": [
+      0,
+      31
+    ],
+    "all_columns_touched": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12,
+      13,
+      14,
+      15,
+      16,
+      17,
+      18,
+      19,
+      20,
+      21,
+      22,
+      23,
+      24,
+      25,
+      26,
+      27,
+      28,
+      29,
+      30,
+      31
+    ],
+    "transfer_touches_edge_columns": true
+  },
+  "edge_owner_summary": {
+    "gen_valid": true,
+    "nes_valid": true,
+    "gen_count": 44,
+    "nes_count": 44,
+    "mismatch_count": 44,
+    "writer_classes_gen": [
+      "transfer_cur_tilebuf"
+    ],
+    "writer_classes_nes": [
+      "isr_nmi"
+    ],
+    "first_divergence": {
+      "entry_index": 0,
+      "field": "writer_class",
+      "gen_value": "transfer_cur_tilebuf",
+      "nes_value": "isr_nmi"
+    }
+  },
+  "stage1_matrices": {
+    "gen": "gen.layoutroomow_exit_workbuf_rows",
+    "nes": "nes.layoutroomow_exit_workbuf_rows"
+  },
+  "screenshot_diff_diag": {
+    "available": true,
+    "reason": "",
+    "nonzero_pixels": 42414,
+    "total_pixels": 45056,
+    "ratio": 0.9413618607954546
+  },
+  "inputs": {
+    "gen_json": "C:\\Users\\Jake Diggity\\Documents\\GitHub\\FINAL TRY\\.claude\\worktrees\\nifty-chandrasekhar\\builds\\reports\\room77_gen_capture.json",
+    "nes_json": "C:\\Users\\Jake Diggity\\Documents\\GitHub\\FINAL TRY\\.claude\\worktrees\\nifty-chandrasekhar\\builds\\reports\\room77_nes_capture.json",
+    "nes_io_asm": "C:\\Users\\Jake Diggity\\Documents\\GitHub\\FINAL TRY\\.claude\\worktrees\\nifty-chandrasekhar\\src\\nes_io.asm"
+  }
+}

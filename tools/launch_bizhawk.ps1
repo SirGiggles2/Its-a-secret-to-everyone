@@ -1,6 +1,7 @@
 param(
     [string]$RomPath = "",
     [string]$LuaPath = "",
+    [string]$Core = "",
     [switch]$Wait
 )
 
@@ -116,6 +117,39 @@ function Resolve-BizHawkExe {
     throw "EmuHawk.exe not found from '$Root' or its ancestor/sibling worktree locations."
 }
 
+function New-BizHawkConfigOverride {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$CoreName
+    )
+
+    $baseConfig = Join-Path (Split-Path -Parent (Resolve-BizHawkExe)) "config.ini"
+    if (-not (Test-Path -LiteralPath $baseConfig)) {
+        throw "BizHawk config.ini not found beside EmuHawk.exe."
+    }
+
+    $content = Get-Content -LiteralPath $baseConfig -Raw
+    $updated = [System.Text.RegularExpressions.Regex]::Replace(
+        $content,
+        '"NES"\s*:\s*"[^"]+"',
+        ('"NES": "' + $CoreName + '"'),
+        [System.Text.RegularExpressions.RegexOptions]::Singleline
+    )
+    if ($updated -eq $content) {
+        throw "Failed to rewrite PreferredCores.NES in BizHawk config."
+    }
+
+    $outDir = Join-Path $Root "builds\reports"
+    if (-not (Test-Path -LiteralPath $outDir)) {
+        New-Item -ItemType Directory -Path $outDir | Out-Null
+    }
+
+    $safeCore = ($CoreName -replace '[^A-Za-z0-9_.-]', '_')
+    $outPath = Join-Path $outDir ("bizhawk_config_{0}.ini" -f $safeCore)
+    Set-Content -LiteralPath $outPath -Value $updated -Encoding UTF8
+    return $outPath
+}
+
 if ([string]::IsNullOrWhiteSpace($RomPath)) {
     $RomPath = "builds\whatif.md"
 }
@@ -129,6 +163,12 @@ $emuShort = Get-ShortPath $emuLong
 $emuDirShort = Get-ShortPath $emuDirLong
 
 $args = @()
+if (-not [string]::IsNullOrWhiteSpace($Core)) {
+    $configOverride = New-BizHawkConfigOverride -CoreName $Core
+    $configShort = Get-ShortPath $configOverride
+    $args += "--config"
+    $args += $configShort
+}
 if (-not [string]::IsNullOrWhiteSpace($LuaPath)) {
     $luaShort = Get-ShortPath $LuaPath
     $args += "--lua=$luaShort"

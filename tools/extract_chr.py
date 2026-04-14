@@ -59,6 +59,14 @@ DEMO_BLOCKS = {
     'DemoBackgroundPatterns': 0x0820,
 }
 
+# Zelda 1 bank-1 demo/title pattern seam verified from retail USA PRG-ROM:
+#   DemoSpritePatterns      $0DB4-$16B3
+#   DemoBackgroundPatterns  $16B4-$1ED3
+#
+# The old ISR-backtracking heuristic drifted into unrelated bytes and yielded
+# "close but wrong" title-screen art on Genesis.
+BANK1_PATTERN_DATA_START = 0x0DB4
+
 # Bank 2 blocks (common patterns) - from Z_02.asm
 COMMON_BLOCKS = {
     'CommonSpritePatterns':     0x0700,
@@ -167,22 +175,25 @@ def find_bank3_pattern_data(prg_data):
 
 def find_demo_pattern_data(prg_data):
     """Find demo/title pattern data in bank 1."""
-    # Demo patterns are at the end of bank 1's data section
-    # We need to search for them by finding the INCBIN data
-    # For now, search for known patterns near the end of bank 1
     bank1_offset = 1 * PRG_BANK_SIZE
     bank1_data = prg_data[bank1_offset:bank1_offset + PRG_BANK_SIZE]
 
-    # Search for the ISR signature in bank 1 (same reset code appears in each bank's ISR)
+    # Keep ISR lookup as a guardrail only; the seam itself is explicit.
     isr_pos = bank1_data.find(BANK3_ISR_SIGNATURE)
     if isr_pos < 0:
-        print("  WARNING: Could not find ISR signature in bank 1, using end-of-bank heuristic")
-        # Pattern data is typically before the ISR vectors at end of bank
-        # Bank vectors are at $FFFA-$FFFF relative to bank start = last 6 bytes
-        isr_pos = PRG_BANK_SIZE - 84  # Approximate ISR start (78 bytes code + 6 bytes vectors)
+        raise ValueError("Could not find BANK_01_ISR signature in bank 1")
 
     total_size = sum(DEMO_BLOCKS.values())
-    data_start = isr_pos - total_size
+    data_start = BANK1_PATTERN_DATA_START
+    data_end = data_start + total_size
+    if data_end > isr_pos:
+        raise ValueError(
+            f"Verified bank-1 demo seam ${data_start:04X}-${data_end - 1:04X} overlaps ISR at ${isr_pos:04X}"
+        )
+
+    print(f"  Found BANK_01_ISR at bank 1 offset ${isr_pos:04X} (ROM ${bank1_offset + isr_pos:05X})")
+    print(f"  Total bank 1 demo data: ${total_size:04X} ({total_size} bytes)")
+    print(f"  Using verified bank 1 demo seam at offset ${data_start:04X}")
 
     blocks = {}
     offset = data_start

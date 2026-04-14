@@ -5,3 +5,9 @@
 __pycache__/
 *.pyc
 *.pyo
+
+# Build artifacts / transient logs
+.agents/
+build_out.txt
+build_output.log
+*_run.log

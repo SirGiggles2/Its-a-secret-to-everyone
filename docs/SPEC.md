@@ -330,16 +330,16 @@ After room $77 (opening overworld screen) renders:
 | T25 | Sprite palette | Sprite colors correct (separate 4-palette blocks) | ✓ PASS (7/8 — CRAM 16/64 non-zero, 4 palettes active, palette-2 correctly assigned; SAT_PAL_FIELD test mis-calibrated: NES title sprites use attr=2→Genesis pal2, correct) |
 | T26 | Title sprites | Title screen sprites visible (sword, Link) | ✓ PASS (5/5 — 32 sprites visible Y=129–352, 8 distinct Y-bands, tiles 160–214, no exception; DriveSong stubbed pending NES ROM→Genesis pointer table rewrite) |
 | T27 | Controller 1 | D-pad / A / B / Start / Select → NES button bits | ✓ PASS (5/5 — NMI continuous 211/300 frames, CheckInput 211×, no-press $F8=0, CTL1_IDX=8; two-phase TH Genesis protocol → NES active-high latch at $FF1100) |
-| T28 | Title input | Can navigate title screen, press Start | In progress (palette fix applied Zelda27.12, awaiting BizHawk verify) |
-| T29 | File select | File select screen renders; can start Quest 1 | Pending |
+| T28 | Title input | Can navigate title screen, press Start | ⚠ In Progress (story-soak probe now reproduces a deterministic stall instead of a Start-gating failure: no exception, but `NMI` and `CheckInput` stop advancing at frame 2107 while `DemoPhase=$01` / `DemoSubphase=$02` in `builds/reports/bizhawk_t28_title_input_probe.txt`. Legacy title-mode assumptions are stale because natural T30 flow reaches menu/file-select/gameplay modes.) |
+| T29 | File select | File select screen renders; can start Quest 1 | ⚠ In Progress (operational evidence is present via natural T30 flow: Mode `$01` and register mode `$0E` are observed before gameplay. Dedicated T29 refresh is still pending final threshold tuning; latest `builds/reports/bizhawk_t29_file_select_probe.txt` is 6/7 PASS with only `T29_NMI_CONTINUOUS` failing.) |
 
 ### Gameplay (T30–T36)
 
 | # | Name | Description | Status |
 |---|------|-------------|--------|
-| T30 | Room load | Room $77 (opening screen) loads without exception | Pending |
-| T31 | Room render | Room $77 BG tiles and palette correct | Pending |
-| T32 | Room parity | RAM checkpoint: Genesis RAM vs NES trace at room $77 | Pending |
+| T30 | Room load | Room $77 (opening screen) loads without exception | PASS (8/8 in `builds/reports/bizhawk_t30_room_load_probe.txt`: natural path reaches Mode 3/Submode 8, leaves Submode 8, and reaches Mode 5 with no exception.) |
+| T31 | Room render | Room $77 BG tiles and palette correct | Evidence captured (`builds/reports/bizhawk_t31_room77.png` captured at Mode5 with `roomId=$77`); full visual parity review still pending. |
+| T32 | Room parity | RAM checkpoint: Genesis RAM vs NES trace at room $77 | Evidence captured (`builds/reports/bizhawk_t32_ram_ff0000_ff07ff.bin` + probe proof `roomId=$77`); full Genesis-vs-NES parity analysis still pending. |
 | T33 | Link spawn | Link sprite appears at starting position | Pending |
 | T34 | D-pad movement | Link moves through overworld room | Pending |
 | T35 | Screen scroll | Room-to-room scroll transition completes correctly | Pending |
@@ -371,7 +371,13 @@ After room $77 (opening overworld screen) renders:
 
 ## Current Status
 
-**Latest fully verified milestone: T27** (2026-04-01)
+**As of 2026-04-12** — latest local evidence run is from the refreshed T28/T29/T30 probes against `builds/whatif.md` in this worktree. Audio tier **T42–T44 remains complete**, T30 is now probe-green, and the current blocker has shifted to story-scroll stability.
+
+- **Last continuously-verified milestone (green probe chain):** T27 (Controller 1). Verified probes T1–T27 still hold per the table below.
+- **Out-of-order complete:** T42, T43, T44 (audio tier) — see Audio Bridge Plan for implementation details.
+- **In progress:** T28 (story-scroll stall reproduced at frame 2107 with no exception), T29 (natural file-select flow works but probe threshold still flags `T29_NMI_CONTINUOUS`), T31/T32 (artifacts captured, strict parity analysis pending).
+- **Probe pass:** T30 (`bizhawk_t30_room_load_probe.txt` is 8/8 PASS: bank window load observed, Mode3/Sub8 reached and exited, Mode5 reached, room `$77` observed).
+- **Not yet started:** T33–T41 (gameplay/fidelity), T45–T48 (save RAM, hardware test, Quest 1 completion).
 
 | Probe | Tests | Score |
 |-------|-------|-------|
@@ -392,6 +398,19 @@ After room $77 (opening overworld screen) renders:
 | Sprite Palette T25 | 8 tests | 7/8 ✓ (SAT_PAL_FIELD mis-calibrated — NES attr=2→Genesis pal2 is correct) |
 | Title Sprites T26 | 5 tests | 5/5 ✓ |
 | Controller 1 T27 | 5 tests | 5/5 ✓ |
+| Title Input T28 | 5 tests | 3/5 ⚠ (story-soak reproduces deterministic stall: `NMI`/`CheckInput` stop at frame 2107 in `DemoPhase=$01` / `DemoSubphase=$02`) |
+| File Select T29 | 7 tests | 6/7 ⚠ (natural mode progression verified; only `T29_NMI_CONTINUOUS` threshold fails) |
+| Room Load T30 | 8 tests | 8/8 PASS (natural path to room `$77`, Mode3/Sub8 progression, bank-window load observed, Mode5 reached) |
+| Room Render T31 | artifact | evidence captured (`builds/reports/bizhawk_t31_room77.png` at Mode5, `roomId=$77`) |
+| Room Parity T32 | artifact | evidence captured (`builds/reports/bizhawk_t32_ram_ff0000_ff07ff.bin`, room gate from `$00EB`) |
+
+### Next Steps (Story-scroll crash)
+
+- **Primary target:** eliminate the T28 story-scroll stall without any "input faster" workaround.
+- **Repro signature to preserve:** frame ~2107 freeze in `DemoPhase=$01` / `DemoSubphase=$02`, with no exception but stalled `NMI` + `CheckInput` counters (`builds/reports/bizhawk_t28_title_input_probe.txt`).
+- **Telemetry contract:** keep `GameMode`, `GameSubmode`, `DemoPhase`, `DemoSubphase`, `DemoTimer`, `TileBufSelector`, scroll state, and exception vector/PC logging in the story-soak probe.
+- **Fix path contract:** land code changes through transpiler patch path (no hand-edits to generated `src/zelda_translated/z_02.asm`).
+- **Acceptance gates:** updated T28 passes continuous-loop checks through story window, updated T29 remains stable in natural flow, and T30 stays 8/8 PASS.
 
 **Architecture notes:**
 - Plane A correctly placed at VRAM $C000 (VDP Reg 2=$8230); tile region $0000-$AFFF (1408 tiles) has no overlap
@@ -500,6 +519,10 @@ All probes in `tools/`, run via `tools/run_all_probes.bat`.
 | `bizhawk_vdp_reg_trace_probe.lua` | Bug B diag | `builds/reports/bizhawk_vdp_reg_trace_probe.txt` |
 | `bizhawk_subphase_timing_probe.lua` | Bug C diag | `builds/reports/bizhawk_subphase_timing_probe.txt` |
 | `bizhawk_t29_file_select_probe.lua` | T29 | `builds/reports/bizhawk_t29_file_select_probe.txt` |
+| `bizhawk_t30_room_load_probe.lua` | T30/T31/T32 | `builds/reports/bizhawk_t30_room_load_probe.txt` |
+
+- `bizhawk_t30_room_load_probe.lua` room gate uses `RoomId` at NES RAM `$00EB`.
+- NES RAM `$003C` is logged as diagnostic-only telemetry in this flow and is not used for pass/fail room gating.
 
 ### Probe Output Convention
 

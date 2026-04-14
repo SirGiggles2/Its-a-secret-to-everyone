@@ -1,50 +1,79 @@
 -- bizhawk_t29_file_select_probe.lua
--- T29: File Select — press Start on title, verify file select screen renders.
+-- T29: title -> file-select transition + frontend readiness (natural flow).
 --
--- Verifies that:
---   1. No exception during title → file select transition
---   2. Mode byte transitions from $00 (title) to $0E/$0F (file select)
---   3. Nametable is populated after transition (not blank)
---   4. CRAM has non-zero palette entries (file select palette loaded)
---   5. NMI keeps firing through transition (no hang)
+-- This probe does not force GameMode/Submode values.
+-- It injects Start with hold/release cadence and validates:
+--   - no exception
+--   - continuous NMI/input loop
+--   - transition away from title mode
+--   - file-select operational mode observed (Mode $01 or Mode $0E/$0F)
+--   - frontend visual readiness (Plane A + CRAM non-zero)
 
-local ROOT     = "C:\\Users\\Jake Diggity\\Documents\\GitHub\\FINAL TRY\\"
-local OUT_DIR  = ROOT .. "builds\\reports\\"
-local OUT_PATH = OUT_DIR .. "bizhawk_t29_file_select_probe.txt"
+dofile((function()
+    local env_root = os.getenv("CODEX_BIZHAWK_ROOT")
+    if env_root and env_root ~= "" then
+        env_root = env_root:gsub("/", "\\")
+        return env_root .. "\\tools\\probe_root.lua"
+    end
+    local source = debug.getinfo(1, "S").source
+    if source:sub(1, 1) == "@" then
+        source = source:sub(2)
+    end
+    source = source:gsub("/", "\\")
+    local tools_dir = source:match("^(.*)\\[^\\]+$")
+    if not tools_dir then
+        error("unable to resolve tools directory from '" .. source .. "'")
+    end
+    return tools_dir .. "\\probe_root.lua"
+end)())
 
-dofile(ROOT .. "tools/probe_addresses.lua")
+dofile(repo_path("tools\\probe_addresses.lua"))
+
+local OUT_DIR = repo_path("builds\\reports")
+local OUT_TXT = repo_path("builds\\reports\\bizhawk_t29_file_select_probe.txt")
 
 os.execute('if not exist "' .. OUT_DIR .. '" mkdir "' .. OUT_DIR .. '"')
-local f = assert(io.open(OUT_PATH, "w"))
-local function log(msg) f:write(msg.."\n") f:flush() print(msg) end
 
-local PASS, FAIL = "PASS", "FAIL"
-local results = {}
-local function record(name, status, detail)
-    log(string.format("[%s] %-35s  %s", status, name, detail))
-    results[#results+1] = {name=name, status=status}
-end
-
-local function try_dom(dom, offset, width)
-    local ok, v = pcall(function()
-        memory.usememorydomain(dom)
-        if     width == 1 then return memory.read_u8(offset)
-        elseif width == 2 then return memory.read_u16_be(offset)
-        else                    return memory.read_u32_be(offset) end
+local function try_read(domain, addr, width)
+    local ok, value = pcall(function()
+        memory.usememorydomain(domain)
+        if width == 1 then
+            return memory.read_u8(addr)
+        end
+        if width == 2 then
+            return memory.read_u16_be(addr)
+        end
+        return memory.read_u32_be(addr)
     end)
-    return ok and v or nil
-end
-
-local function ram_read(bus_addr, width)
-    local ofs = bus_addr - 0xFF0000
-    for _, spec in ipairs({
-        {"M68K BUS", bus_addr}, {"68K RAM", ofs},
-        {"System Bus", bus_addr}, {"Main RAM", ofs},
-    }) do
-        local v = try_dom(spec[1], spec[2], width or 1)
-        if v ~= nil then return v end
+    if ok then
+        return value
     end
     return nil
+end
+
+local function ram_u8(bus_addr)
+    local ofs = bus_addr - 0xFF0000
+    local domains = {
+        {"68K RAM", ofs},
+        {"M68K BUS", bus_addr},
+        {"System Bus", bus_addr},
+        {"Main RAM", ofs},
+    }
+    for _, spec in ipairs(domains) do
+        local v = try_read(spec[1], spec[2], 1)
+        if v ~= nil then
+            return v
+        end
+    end
+    return 0
+end
+
+local function vram_u16(addr)
+    local ok, v = pcall(function()
+        memory.usememorydomain("VRAM")
+        return memory.read_u16_be(addr)
+    end)
+    return ok and v or 0
 end
 
 local function cram_u16(addr)
@@ -55,172 +84,202 @@ local function cram_u16(addr)
     return ok and v or 0
 end
 
-local function vram_u8(addr)
-    local ok, v = pcall(function()
-        memory.usememorydomain("VRAM")
-        return memory.read_u8(addr)
+local function safe_set(pad)
+    local ok = pcall(function()
+        joypad.set(pad or {}, 1)
     end)
-    return ok and v or 0
+    if not ok then
+        joypad.set(pad or {})
+    end
 end
 
-local function press_start()
-    joypad.set({["P1 Start"] = true})
+local function record(lines, text)
+    lines[#lines + 1] = text
+    print(text)
 end
 
-local function main()
-    local MAX_FRAMES    = 600
-    local PRESS_START   = 90
-    local PRESS_END     = 130
-    local CHECK_FRAME   = 500   -- check file select state at this frame
-
-    log("=================================================================")
-    log("T29: File Select Probe  —  up to " .. MAX_FRAMES .. " frames")
-    log("=================================================================")
-    log(string.format("  LoopForever=$%06X  ExcBus=$%06X  ExcAddr=$%06X  ExcDef=$%06X",
-        LOOPFOREVER, EXC_BUS, EXC_ADDR, EXC_DEF))
-    log(string.format("  Start button injected frames %d–%d", PRESS_START, PRESS_END))
-    log(string.format("  File select check at frame %d", CHECK_FRAME))
-    log("")
-
-    local exception_hit  = false
-    local exception_name = nil
-    local exception_frame = 0
-    local nmi_at_80      = 0
-    local mode_history   = {}
-
-    for frame = 1, MAX_FRAMES do
-        if frame >= PRESS_START and frame <= PRESS_END then
-            press_start()
-        end
-
-        emu.frameadvance()
-
-        local pc = emu.getregister("M68K PC") or 0
-        if pc == EXC_BUS or pc == EXC_ADDR or pc == EXC_DEF then
-            if not exception_hit then
-                exception_hit  = true
-                exception_frame = frame
-                exception_name = (pc==EXC_BUS  and "ExcBusError")
-                              or (pc==EXC_ADDR and "ExcAddrError")
-                              or "DefaultException"
-                log(string.format("  *** EXCEPTION at frame %d: %s (PC=$%06X)", frame, exception_name, pc))
-            end
-        end
-
-        if frame == 80 then
-            nmi_at_80 = ram_read(0xFF1003, 1) or 0
-        end
-
-        -- Log mode changes
-        local mode = ram_read(0xFF0012, 1) or 0xFF
-        if #mode_history == 0 or mode_history[#mode_history].mode ~= mode then
-            mode_history[#mode_history+1] = {frame=frame, mode=mode}
-            log(string.format("  f%03d: mode=$%02X", frame, mode))
-        end
-
-        if exception_hit and frame > PRESS_END + 50 then break end
-    end
-
-    local nmi_final = ram_read(0xFF1003, 1) or 0
-    local final_mode = ram_read(0xFF0012, 1) or 0xFF
-
-    -- Check CRAM state
-    local cram_nonzero = 0
-    for i = 0, 63 do
-        local v = cram_u16(i * 2)
-        if v ~= 0 then cram_nonzero = cram_nonzero + 1 end
-    end
-
-    -- Check nametable at Plane A ($C000) — sample first 64 tiles
-    local nt_nonzero = 0
-    for i = 0, 63 do
-        local tile = vram_u8(0xC000 + i * 2) * 256 + vram_u8(0xC000 + i * 2 + 1)
-        if tile ~= 0 then nt_nonzero = nt_nonzero + 1 end
-    end
-
-    log("")
-    log(string.format("  Final mode: $%02X", final_mode))
-    log(string.format("  NMI delta: %d (frames 80–end)", nmi_final - nmi_at_80))
-    log(string.format("  CRAM non-zero entries: %d/64", cram_nonzero))
-    log(string.format("  NT non-zero tiles (first 64): %d/64", nt_nonzero))
-    log("")
-
-    -- ── Tests ──────────────────────────────────────────────────────────
-    log("─── T29: File Select Tests ─────────────────────────────────────")
-
-    -- T29_NO_EXCEPTION
-    if not exception_hit then
-        record("T29_NO_EXCEPTION", PASS, "no exception handler hit")
-    else
-        record("T29_NO_EXCEPTION", FAIL,
-            string.format("exception: %s at frame %d", exception_name or "?", exception_frame))
-    end
-
-    -- T29_NMI_CONTINUOUS
-    local nmi_delta = nmi_final - nmi_at_80
-    if nmi_delta >= 100 then
-        record("T29_NMI_CONTINUOUS", PASS,
-            string.format("NMI advanced %d — no hang", nmi_delta))
-    else
-        record("T29_NMI_CONTINUOUS", FAIL,
-            string.format("NMI advanced only %d — possible hang", nmi_delta))
-    end
-
-    -- T29_MODE_TRANSITION: mode left $00 (title)
-    local reached_file_select = false
-    for _, entry in ipairs(mode_history) do
-        if entry.mode >= 0x0E and entry.mode <= 0x0F then
-            reached_file_select = true
-        end
-    end
-    if reached_file_select then
-        record("T29_MODE_TRANSITION", PASS,
-            "mode reached $0E or $0F (file select)")
-    elseif final_mode ~= 0x00 then
-        record("T29_MODE_TRANSITION", PASS,
-            string.format("mode changed from $00 to $%02X", final_mode))
-    else
-        record("T29_MODE_TRANSITION", FAIL,
-            string.format("mode still $%02X — no transition occurred", final_mode))
-    end
-
-    -- T29_CRAM_POPULATED
-    if cram_nonzero >= 4 then
-        record("T29_CRAM_POPULATED", PASS,
-            string.format("%d/64 CRAM entries non-zero", cram_nonzero))
-    else
-        record("T29_CRAM_POPULATED", FAIL,
-            string.format("only %d/64 CRAM entries non-zero — palette not loaded", cram_nonzero))
-    end
-
-    -- T29_NT_POPULATED
-    if nt_nonzero >= 4 then
-        record("T29_NT_POPULATED", PASS,
-            string.format("%d/64 nametable tiles non-zero", nt_nonzero))
-    else
-        record("T29_NT_POPULATED", FAIL,
-            string.format("only %d/64 nametable tiles non-zero — screen may be blank", nt_nonzero))
-    end
-
-    -- Summary
-    log("")
-    log("=================================================================")
-    log("T29 FILE SELECT SUMMARY")
-    log("=================================================================")
-    local pass_cnt, fail_cnt = 0, 0
-    for _, res in ipairs(results) do
-        log(string.format("  [%s] %s", res.status, res.name))
-        if res.status == PASS then pass_cnt = pass_cnt + 1
-        else                       fail_cnt = fail_cnt + 1 end
-    end
-    log("")
-    log(string.format("  %d PASS  /  %d FAIL  /  %d total", pass_cnt, fail_cnt, #results))
-    log("")
-    if fail_cnt == 0 then log("T29 FILE SELECT: ALL PASS")
-    else                  log("T29 FILE SELECT: " .. fail_cnt .. " FAILURE(S)") end
-    log("")
-    f:close()
-    client.exit()
+local function build_start_pad()
+    return {
+        ["Start"] = true,
+        ["P1 Start"] = true,
+    }
 end
 
-main()
+local lines = {}
+local mode_changes = {}
+
+local MAX_FRAMES = 1200
+local START_FROM = 90
+local START_TO = 260
+local START_HOLD = 2
+local START_RELEASE = 4
+
+local hold_left = 0
+local release_left = 0
+local start_pulses = 0
+
+local exception_hit = false
+local exception_name = ""
+local exception_frame = -1
+
+local nmi_start = 0
+local nmi_end = 0
+local ci_start = 0
+local ci_end = 0
+
+local saw_mode1 = false
+local saw_mode0e_or_0f = false
+local first_mode_nonzero = nil
+
+local last_mode = nil
+local last_sub = nil
+
+record(lines, "=================================================================")
+record(lines, "T29 file-select probe (natural title->frontend flow)")
+record(lines, "=================================================================")
+record(lines, string.format("LoopForever=$%06X  IsrNmi=$%06X", LOOPFOREVER, ISRNMI))
+record(lines, string.format("Start pulse window: f%04d..f%04d  hold=%d release=%d", START_FROM, START_TO, START_HOLD, START_RELEASE))
+record(lines, "")
+
+for frame = 1, MAX_FRAMES do
+    local mode = ram_u8(0xFF0012)
+    local sub = ram_u8(0xFF0013)
+    local nmi = ram_u8(0xFF1003)
+    local ci = ram_u8(0xFF100A)
+
+    if frame == 1 then
+        nmi_start = nmi
+        ci_start = ci
+    end
+
+    if mode ~= last_mode or sub ~= last_sub then
+        mode_changes[#mode_changes + 1] = {frame = frame, mode = mode, sub = sub}
+        record(lines, string.format("f%04d mode=$%02X sub=$%02X", frame, mode, sub))
+        last_mode = mode
+        last_sub = sub
+    end
+
+    if mode == 0x01 then
+        saw_mode1 = true
+    end
+    if mode == 0x0E or mode == 0x0F then
+        saw_mode0e_or_0f = true
+    end
+    if mode ~= 0x00 and not first_mode_nonzero then
+        first_mode_nonzero = mode
+    end
+
+    if frame >= START_FROM and frame <= START_TO then
+        if hold_left == 0 and release_left == 0 then
+            hold_left = START_HOLD
+            release_left = START_RELEASE
+            start_pulses = start_pulses + 1
+            record(lines, string.format("f%04d input Start pulse #%d", frame, start_pulses))
+        end
+    end
+
+    local pad = {}
+    if hold_left > 0 then
+        pad = build_start_pad()
+        hold_left = hold_left - 1
+    elseif release_left > 0 then
+        release_left = release_left - 1
+    end
+    safe_set(pad)
+
+    emu.frameadvance()
+
+    local pc = emu.getregister("M68K PC") or 0
+    if not exception_hit and (pc == EXC_BUS or pc == EXC_ADDR or pc == EXC_DEF) then
+        exception_hit = true
+        exception_frame = frame
+        if pc == EXC_BUS then
+            exception_name = "ExcBusError"
+        elseif pc == EXC_ADDR then
+            exception_name = "ExcAddrError"
+        else
+            exception_name = "DefaultException"
+        end
+        record(lines, string.format("f%04d EXCEPTION %s PC=$%06X", frame, exception_name, pc))
+        break
+    end
+end
+
+nmi_end = ram_u8(0xFF1003)
+ci_end = ram_u8(0xFF100A)
+
+local final_mode = ram_u8(0xFF0012)
+
+local nt_nonzero = 0
+for i = 0, 63 do
+    local word = vram_u16(0xC000 + i * 2)
+    if word ~= 0 then
+        nt_nonzero = nt_nonzero + 1
+    end
+end
+
+local cram_nonzero = 0
+for i = 0, 63 do
+    if cram_u16(i * 2) ~= 0 then
+        cram_nonzero = cram_nonzero + 1
+    end
+end
+
+local function verdict(name, ok, detail)
+    record(lines, string.format("[%s] %-30s %s", ok and "PASS" or "FAIL", name, detail))
+    return ok and 1 or 0
+end
+
+record(lines, "")
+record(lines, "Mode transitions (first 24):")
+for i = 1, math.min(#mode_changes, 24) do
+    local m = mode_changes[i]
+    record(lines, string.format("  f%04d mode=$%02X sub=$%02X", m.frame, m.mode, m.sub))
+end
+
+record(lines, "")
+record(lines, string.format("final_mode=$%02X first_nonzero_mode=%s", final_mode, first_mode_nonzero and string.format("$%02X", first_mode_nonzero) or "none"))
+record(lines, string.format("start_pulses=%d  nmi_delta=%d  checkinput_delta=%d", start_pulses, (nmi_end - nmi_start) % 0x100, (ci_end - ci_start) % 0x100))
+record(lines, string.format("nt_nonzero(first64)=%d  cram_nonzero(64)=%d", nt_nonzero, cram_nonzero))
+record(lines, "")
+
+local pass = 0
+local total = 0
+
+total = total + 1
+pass = pass + verdict("T29_NO_EXCEPTION", not exception_hit,
+    exception_hit and (exception_name .. " at frame " .. tostring(exception_frame)) or "no exception")
+
+total = total + 1
+pass = pass + verdict("T29_NMI_CONTINUOUS", ((nmi_end - nmi_start) % 0x100) >= 100,
+    string.format("delta=%d", (nmi_end - nmi_start) % 0x100))
+
+total = total + 1
+pass = pass + verdict("T29_CHECKINPUT_CONTINUOUS", ((ci_end - ci_start) % 0x100) >= 100,
+    string.format("delta=%d", (ci_end - ci_start) % 0x100))
+
+total = total + 1
+pass = pass + verdict("T29_MODE_TRANSITION", first_mode_nonzero ~= nil,
+    first_mode_nonzero and ("left title mode, first non-zero mode " .. string.format("$%02X", first_mode_nonzero)) or "mode remained $00")
+
+total = total + 1
+pass = pass + verdict("T29_FILESELECT_MODE_OBSERVED", saw_mode1 or saw_mode0e_or_0f,
+    (saw_mode1 and "Mode $01 observed") or (saw_mode0e_or_0f and "Mode $0E/$0F observed") or "no file-select mode observed")
+
+total = total + 1
+pass = pass + verdict("T29_NT_POPULATED", nt_nonzero >= 4,
+    string.format("%d/64 non-zero tile words", nt_nonzero))
+
+total = total + 1
+pass = pass + verdict("T29_CRAM_POPULATED", cram_nonzero >= 4,
+    string.format("%d/64 non-zero CRAM words", cram_nonzero))
+
+record(lines, "")
+record(lines, string.format("T29 FILE-SELECT SUMMARY: %d PASS / %d FAIL", pass, total - pass))
+record(lines, (pass == total) and "T29 FILE-SELECT: ALL PASS" or "T29 FILE-SELECT: FAIL")
+
+local out = assert(io.open(OUT_TXT, "w"))
+out:write(table.concat(lines, "\n"))
+out:write("\n")
+out:close()
+client.exit()
