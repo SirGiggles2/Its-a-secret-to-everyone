@@ -342,8 +342,10 @@ After room $77 (opening overworld screen) renders:
 | T32 | Room parity | RAM checkpoint: Genesis RAM vs NES trace at room $77 | ✓ PASS — transfer_stream_mismatch_count=0, producer_match=True, 27/27 events. RAM dump: `builds/reports/bizhawk_t32_ram_ff0000_ff07ff.bin`. Report: `builds/reports/room77_parity_report.txt` |
 | T33 | Link spawn | Link sprite appears at starting position | ✓ PASS (7/7 — OAM tile data loaded, SAT tile words present, 8×16 mode active, Link visible at starting position in `builds/reports/bizhawk_t33_link_spawn.png`) |
 | T34 | D-pad movement | Link moves through overworld room | Pending |
-| T35 | Screen scroll | Room-to-room scroll transition completes correctly | Pending |
+| T35 | Screen scroll | Left transition from room $77 into overworld room $76 completes correctly; scroll settles and final room graphics match NES | Pending |
 | T36 | Cave enter | Can enter first cave (room $76) and exit | Pending |
+
+Note: room $76 is both the left-adjacent overworld room from the opening room $77 and the room containing the first cave. Adjacency is proven by room-id offset logic and the left-navigation probe, not by the cave milestone alone.
 
 ### Fidelity (T37–T41)
 
@@ -371,13 +373,15 @@ After room $77 (opening overworld screen) renders:
 
 ## Current Status
 
-**As of 2026-04-13** — room $77 BG parity is fully green. Palette cache (NT_ATTR_CACHE_BASE), bank window, and transfer interpreter fixes landed. T30/T31/T32 all PASS. Next target: T33 (Link spawn).
+**As of 2026-04-13** — room $77 BG parity is fully green. Palette cache (NT_ATTR_CACHE_BASE), bank window, and transfer interpreter fixes landed. T30/T31/T32 all PASS. T33 (Link spawn) is also PASS. Next graphics target: room $76 reached by the left transition from room $77.
 
 - **Last continuously-verified milestone (green probe chain):** T32 (Room Parity). Verified probes T1–T27 still hold per the table below; T30/T31/T32 green via parity report.
 - **Out-of-order complete:** T42, T43, T44 (audio tier) — see Audio Bridge Plan for implementation details.
 - **In progress:** T28 (story-scroll stall reproduced at frame 2107 with no exception), T29 (natural file-select flow works but probe threshold still flags `T29_NMI_CONTINUOUS`).
 - **Probe pass:** T30 (8/8 PASS), T31 (parity green: 0 tile/palette mismatches across stages 1-3), T32 (transfer stream 27/27 matched, producer_match=True).
-- **Not yet started:** T33–T41 (gameplay/fidelity), T45–T48 (save RAM, hardware test, Quest 1 completion).
+- **Transition note:** room $77 steady-state parity is green, but room-to-room transition ownership remains separate work. Mode 4/6/7 transition choreography and dynamic transfer lifetime are in scope for room $76.
+- **Transition fixture:** room $76 is the canonical first non-$77 graphics target because it exercises room transition ownership, not just steady-state room decode.
+- **Not yet started:** T34–T41 (remaining gameplay/fidelity), T45–T48 (save RAM, hardware test, Quest 1 completion).
 
 | Probe | Tests | Score |
 |-------|-------|-------|

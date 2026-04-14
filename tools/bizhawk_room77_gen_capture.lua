@@ -39,8 +39,11 @@ local OUT_DIR = repo_path("builds\\reports")
 local OUT_TXT = repo_path("builds\\reports\\" .. ROOM_TAG .. "_gen_capture.txt")
 local OUT_JSON = repo_path("builds\\reports\\" .. ROOM_TAG .. "_gen_capture.json")
 local OUT_PNG = repo_path("builds\\reports\\" .. ROOM_TAG .. "_gen_capture.png")
+local OUT_DEBUG = repo_path("builds\\reports\\" .. ROOM_TAG .. "_gen_capture_debug.txt")
 
 os.execute('if not exist "' .. OUT_DIR .. '" mkdir "' .. OUT_DIR .. '"')
+
+local SYSTEM_ID = emu.getsystemid() or "?"
 
 local MAX_FRAMES = 7000
 local MODE0_BOOT_TIMEOUT = 900
@@ -69,11 +72,13 @@ local TRACE_RT_MIN_VALID = 32
 local TRANSFER_STREAM_MAX_BYTES = 1024
 local TRANSFER_STREAM_MAX_EVENTS = 128
 local TRANSFER_STREAM_MAX_RECORDS = 128
+local TRANSITION_STATE_MAX_FRAMES = 1024
+local TRANSFER_EXEC_HIT_LOG_MAX = 1024
+local TRANSFER_EXEC_ERROR_MAX = 32
 local EDGE_TRACE_TOP_PPU = 0x2100
 local EDGE_TRACE_TOP_NT_ROW = 8
 local EDGE_TRACE_ROWS = 22
 local EDGE_TRACE_MAX_ENTRIES = 256
-local ROOM_TRANSITION_ACTIVE = 0xFF004C
 
 local function read_listing_addr(symbol)
     local f = io.open(repo_path("builds\\whatif.lst"), "r")
@@ -240,6 +245,38 @@ local function record(lines, text)
     print(text)
 end
 
+local function debug_mark(text)
+    pcall(function()
+        local fh = io.open(OUT_DEBUG, "a")
+        if fh then
+            fh:write(tostring(text), "\n")
+            fh:close()
+        end
+    end)
+end
+
+local json_escape
+
+local function write_fatal_capture(lines, reason)
+    record(lines, "fatal_error=" .. reason)
+    local out = assert(io.open(OUT_TXT, "w"))
+    out:write(table.concat(lines, "\n"))
+    out:write("\n")
+    out:close()
+
+    local jf = assert(io.open(OUT_JSON, "w"))
+    jf:write("{\n")
+    jf:write('  "capture_valid": false,\n')
+    jf:write('  "fatal_error": "', json_escape(reason), '",\n')
+    jf:write('  "system_id": "', json_escape(SYSTEM_ID), '",\n')
+    jf:write('  "available_memory_domains": "', json_escape(available_domains_csv()), '",\n')
+    jf:write('  "target_room_id": ', tostring(TARGET_ROOM_ID), "\n")
+    jf:write("}\n")
+    jf:close()
+    debug_mark("fatal_exit reason=" .. reason)
+    client.exit()
+end
+
 local function schedule_input(state, button, hold_frames, release_frames, frame, why, lines)
     if state.hold_left > 0 or state.release_left > 0 then
         return false
@@ -275,7 +312,7 @@ local function build_pad_for_frame(state)
     return pad
 end
 
-local function json_escape(s)
+json_escape = function(s)
     s = s:gsub("\\", "\\\\")
     s = s:gsub('"', '\\"')
     s = s:gsub("\n", "\\n")
@@ -746,81 +783,103 @@ local input_state = {
     release_after = 0,
 }
 
-local register_mode_seen = false
-local name_progress_events = 0
-local last_name_offset = 0
-local last_cur_slot = 0xFF
-local exception_hit = false
-local exception_name = ""
-local exception_frame = -1
-local reached_target = false
-local target_frame = nil
-local mode3_sub8_snapshot = nil
-local mode5_stable_snapshot = nil
-local layoutroomow_exit_snapshot = nil
-local layoutroomow_exit_workbuf_rows = nil
-local mode3_sub8_workbuf_rows = nil
-local mode5_stable_count = 0
-local trace_snapshots = {}
-local prev_mode = nil
-local prev_sub = nil
-local trace_rt_active = false
-local trace_rt_started = false
-local decode_write_trace_rt = {}
-local runtime_trace_summary = nil
-local runtime_write_hooks_enabled = false
-local transfer_stream_events = {}
-local last_transfer_stream_sig = nil
-local transfer_exec_hook_armed = false
-local transfer_exec_hook_hits = 0
-local transfer_exec_samples = {}
-local edge_owner_trace = {}
-local edge_trace_started = false
-local edge_trace_active = false
-local edge_trace_prev_window = nil
-local edge_writer_frame_classes = {}
-local edge_writer_last_pc = -1
-local walk_started = false
-local walk_index = 1
-local walk_prev_room = 0x77
-local start_room_stable_count = 0
+local CAPTURE = {
+    register_mode_seen = false,
+    name_progress_events = 0,
+    last_name_offset = 0,
+    last_cur_slot = 0xFF,
+    exception_hit = false,
+    exception_name = "",
+    exception_frame = -1,
+    reached_target = false,
+    target_frame = nil,
+    mode3_sub8_snapshot = nil,
+    mode5_stable_snapshot = nil,
+    layoutroomow_exit_snapshot = nil,
+    layoutroomow_exit_workbuf_rows = nil,
+    mode3_sub8_workbuf_rows = nil,
+    mode5_stable_count = 0,
+    trace_snapshots = {},
+    prev_mode = nil,
+    prev_sub = nil,
+}
+
+local RUNTIME = {
+    trace_rt_active = false,
+    trace_rt_started = false,
+    trace_rt_prev_window = nil,
+    decode_write_trace_rt = {},
+    runtime_trace_summary = nil,
+    runtime_write_hooks_enabled = false,
+    transfer_stream_events = {},
+    last_transfer_stream_sig = nil,
+    transfer_exec_hook_armed = false,
+    transfer_exec_hook_hits = 0,
+    transfer_exec_samples = {},
+    transfer_exec_hits_by_frame = {},
+    transfer_exec_callback_errors = {},
+    edge_owner_trace = {},
+    edge_trace_started = false,
+    edge_trace_active = false,
+    edge_trace_prev_window = nil,
+    edge_writer_frame_classes = {},
+    edge_writer_last_pc = -1,
+    transition_trace_start_frame = nil,
+    transition_state_frames = {},
+}
+
+local WALK = {
+    started = false,
+    index = 1,
+    prev_room = 0x77,
+    step_room = nil,
+    step_mode5_stable_count = 0,
+    start_room_stable_count = 0,
+}
 
 local function reset_target_transition_capture(frame, lines)
-    reached_target = false
-    target_frame = nil
-    mode3_sub8_snapshot = nil
-    mode5_stable_snapshot = nil
-    layoutroomow_exit_snapshot = nil
-    layoutroomow_exit_workbuf_rows = nil
-    mode3_sub8_workbuf_rows = nil
-    mode5_stable_count = 0
-    trace_snapshots = {}
+    CAPTURE.reached_target = false
+    CAPTURE.target_frame = nil
+    CAPTURE.mode3_sub8_snapshot = nil
+    CAPTURE.mode5_stable_snapshot = nil
+    CAPTURE.layoutroomow_exit_snapshot = nil
+    CAPTURE.layoutroomow_exit_workbuf_rows = nil
+    CAPTURE.mode3_sub8_workbuf_rows = nil
+    CAPTURE.mode5_stable_count = 0
+    CAPTURE.trace_snapshots = {}
     mode_changes = {}
-    prev_mode = nil
-    prev_sub = nil
-    trace_rt_active = false
-    trace_rt_started = false
-    trace_rt_prev_window = nil
-    decode_write_trace_rt = {}
-    runtime_trace_summary = nil
-    transfer_stream_events = {}
-    last_transfer_stream_sig = nil
-    transfer_exec_hook_hits = 0
-    transfer_exec_samples = {}
-    edge_owner_trace = {}
-    edge_trace_started = false
-    edge_trace_active = false
-    edge_trace_prev_window = nil
-    edge_writer_frame_classes = {}
-    edge_writer_last_pc = -1
+    CAPTURE.prev_mode = nil
+    CAPTURE.prev_sub = nil
+    RUNTIME.trace_rt_active = false
+    RUNTIME.trace_rt_started = false
+    RUNTIME.trace_rt_prev_window = nil
+    RUNTIME.decode_write_trace_rt = {}
+    RUNTIME.runtime_trace_summary = nil
+    RUNTIME.transfer_stream_events = {}
+    RUNTIME.last_transfer_stream_sig = nil
+    RUNTIME.transfer_exec_hook_hits = 0
+    RUNTIME.transfer_exec_samples = {}
+    RUNTIME.transfer_exec_hits_by_frame = {}
+    RUNTIME.transfer_exec_callback_errors = {}
+    RUNTIME.edge_owner_trace = {}
+    RUNTIME.edge_trace_started = false
+    RUNTIME.edge_trace_active = false
+    RUNTIME.edge_trace_prev_window = nil
+    RUNTIME.edge_writer_frame_classes = {}
+    RUNTIME.edge_writer_last_pc = -1
+    WALK.step_room = nil
+    WALK.step_mode5_stable_count = 0
+    RUNTIME.transition_trace_start_frame = frame
+    RUNTIME.transition_state_frames = {}
     record(lines, string.format("f%04d reset capture state for target-room transition path=%s", frame, TARGET_WALK_PATH))
+    debug_mark(string.format("reset capture frame=%d path=%s", frame, TARGET_WALK_PATH))
 end
 
 local function apply_walk_pad(pad)
-    if not walk_started or walk_index > #TARGET_WALK_PATH then
+    if not WALK.started or WALK.index > #TARGET_WALK_PATH then
         return pad
     end
-    local d = TARGET_WALK_PATH:sub(walk_index, walk_index)
+    local d = TARGET_WALK_PATH:sub(WALK.index, WALK.index)
     if d == "L" then
         pad["Left"] = true
         pad["P1 Left"] = true
@@ -846,6 +905,66 @@ local function read_transfer_state()
     }
 end
 
+local function read_transition_state(frame, mode, sub, room_id)
+    return {
+        frame = frame,
+        transition_frame = (RUNTIME.transition_trace_start_frame and (frame - RUNTIME.transition_trace_start_frame)) or -1,
+        mode = mode % 0x100,
+        submode = sub % 0x100,
+        cur_level = ram_u8(0xFF0010) % 0x100,
+        is_updating_mode = ram_u8(0xFF0011) % 0x100,
+        room_id = room_id % 0x100,
+        next_room_id = ram_u8(0xFF00EC) % 0x100,
+        obj_dir = ram_u8(0xFF0098) % 0x100,
+        tile_buf_selector = ram_u8(0xFF0014) % 0x100,
+        ppu_update_0017 = ram_u8(0xFF0017) % 0x100,
+        dyn_tile_buf_len = ram_u8(0xFF0301) % 0x100,
+        dyn_tile_buf_head = ram_u8(0xFF0302) % 0x100,
+        sprite0_check_active = ram_u8(0xFF00E3) % 0x100,
+        shadow_f3 = ram_u8(0xFF00F3) % 0x100,
+        switch_nametables_req = ram_u8(0xFF005C) % 0x100,
+        vscroll_addr_hi = ram_u8(0xFF0058) % 0x100,
+        vscroll_start_frame = ram_u8(0xFF00E6) % 0x100,
+        cur_column = ram_u8(0xFF00E8) % 0x100,
+        cur_row = ram_u8(0xFF00E9) % 0x100,
+        prev_row = ram_u8(0xFF00ED) % 0x100,
+        cur_hscroll = ram_u8(0xFF00FD) % 0x100,
+        cur_vscroll = ram_u8(0xFF00FC) % 0x100,
+    }
+end
+
+local function capture_transition_state(frame, mode, sub, room_id)
+    if RUNTIME.transition_trace_start_frame == nil or #RUNTIME.transition_state_frames >= TRANSITION_STATE_MAX_FRAMES then
+        return
+    end
+    RUNTIME.transition_state_frames[#RUNTIME.transition_state_frames + 1] = read_transition_state(frame, mode, sub, room_id)
+end
+
+local function note_transfer_exec_hit(frame)
+    if frame == nil or frame <= 0 then
+        return
+    end
+    local last = RUNTIME.transfer_exec_hits_by_frame[#RUNTIME.transfer_exec_hits_by_frame]
+    if last and last.frame == frame then
+        last.hits = last.hits + 1
+        return
+    end
+    if #RUNTIME.transfer_exec_hits_by_frame >= TRANSFER_EXEC_HIT_LOG_MAX then
+        return
+    end
+    RUNTIME.transfer_exec_hits_by_frame[#RUNTIME.transfer_exec_hits_by_frame + 1] = {frame = frame, hits = 1}
+end
+
+local function note_transfer_exec_error(frame, err)
+    if #RUNTIME.transfer_exec_callback_errors >= TRANSFER_EXEC_ERROR_MAX then
+        return
+    end
+    RUNTIME.transfer_exec_callback_errors[#RUNTIME.transfer_exec_callback_errors + 1] = {
+        frame = frame or -1,
+        error = tostring(err or "unknown"),
+    }
+end
+
 local function read_ptr00_01()
     return ((ram_u8(0xFF0001) % 0x100) * 0x100 + (ram_u8(0xFF0000) % 0x100)) % 0x10000
 end
@@ -855,30 +974,30 @@ local function read_ptr04_05()
 end
 
 local function reset_edge_writer_activity()
-    edge_writer_frame_classes = {}
-    edge_writer_last_pc = -1
+    RUNTIME.edge_writer_frame_classes = {}
+    RUNTIME.edge_writer_last_pc = -1
 end
 
 local function mark_edge_writer_activity(writer_class, pc)
     if writer_class == nil or writer_class == "" then
         return
     end
-    edge_writer_frame_classes[writer_class] = true
+    RUNTIME.edge_writer_frame_classes[writer_class] = true
     if pc ~= nil then
-        edge_writer_last_pc = pc
+        RUNTIME.edge_writer_last_pc = pc
     end
 end
 
 local function edge_writer_summary()
     local classes = {}
-    for k, _ in pairs(edge_writer_frame_classes) do
+    for k, _ in pairs(RUNTIME.edge_writer_frame_classes) do
         classes[#classes + 1] = k
     end
     table.sort(classes)
     if #classes == 0 then
-        return "direct_ntcache_or_external", edge_writer_last_pc
+        return "direct_ntcache_or_external", RUNTIME.edge_writer_last_pc
     end
-    return table.concat(classes, "|"), edge_writer_last_pc
+    return table.concat(classes, "|"), RUNTIME.edge_writer_last_pc
 end
 
 local function dump_edge_owner_window()
@@ -894,15 +1013,15 @@ local function dump_edge_owner_window()
 end
 
 local function append_edge_owner_trace(addr, value)
-    if not edge_trace_active then
+    if not RUNTIME.edge_trace_active then
         return
     end
-    if #edge_owner_trace >= EDGE_TRACE_MAX_ENTRIES then
+    if #RUNTIME.edge_owner_trace >= EDGE_TRACE_MAX_ENTRIES then
         return
     end
     local writer_class, pc = edge_writer_summary()
-    edge_owner_trace[#edge_owner_trace + 1] = {
-        seq = #edge_owner_trace + 1,
+    RUNTIME.edge_owner_trace[#RUNTIME.edge_owner_trace + 1] = {
+        seq = #RUNTIME.edge_owner_trace + 1,
         frame = current_frame,
         mode = ram_u8(0xFF0012) % 0x100,
         submode = ram_u8(0xFF0013) % 0x100,
@@ -914,20 +1033,20 @@ local function append_edge_owner_trace(addr, value)
 end
 
 local function capture_edge_owner_deltas()
-    if not edge_trace_active then
+    if not RUNTIME.edge_trace_active then
         return
     end
     local cur = dump_edge_owner_window()
-    if edge_trace_prev_window == nil then
-        edge_trace_prev_window = cur
+    if RUNTIME.edge_trace_prev_window == nil then
+        RUNTIME.edge_trace_prev_window = cur
         return
     end
     for i = 1, #cur do
-        if cur[i].value ~= edge_trace_prev_window[i].value then
+        if cur[i].value ~= RUNTIME.edge_trace_prev_window[i].value then
             append_edge_owner_trace(cur[i].addr, cur[i].value)
         end
     end
-    edge_trace_prev_window = cur
+    RUNTIME.edge_trace_prev_window = cur
 end
 
 local function build_edge_owner_summary(entries, valid)
@@ -953,18 +1072,18 @@ local function build_edge_owner_summary(entries, valid)
 end
 
 local function append_runtime_trace(addr, value)
-    if not trace_rt_active then
+    if not RUNTIME.trace_rt_active then
         return
     end
-    if #decode_write_trace_rt >= TRACE_RT_MAX_WRITES then
+    if #RUNTIME.decode_write_trace_rt >= TRACE_RT_MAX_WRITES then
         return
     end
     local mode = ram_u8(0xFF0012)
     local sub = ram_u8(0xFF0013)
     local room_id = ram_u8(0xFF00EB) % 0x100
     local room_attr_raw = ram_u8(0xFF6000 + 0x09FE + room_id) % 0x100
-    decode_write_trace_rt[#decode_write_trace_rt + 1] = {
-        seq = #decode_write_trace_rt + 1,
+    RUNTIME.decode_write_trace_rt[#RUNTIME.decode_write_trace_rt + 1] = {
+        seq = #RUNTIME.decode_write_trace_rt + 1,
         frame = current_frame,
         addr = addr % 0x10000,
         value = value % 0x100,
@@ -983,7 +1102,7 @@ end
 
 local function register_runtime_trace_hooks()
     if RAM_DOMAIN == nil then
-        runtime_write_hooks_enabled = false
+        RUNTIME.runtime_write_hooks_enabled = false
         record(lines, "runtime write hooks unavailable (no RAM domain); using delta trace fallback")
         return
     end
@@ -1017,10 +1136,10 @@ local function register_runtime_trace_hooks()
         end
     end
     if callbacks_supported and hook_count > 0 then
-        runtime_write_hooks_enabled = true
+        RUNTIME.runtime_write_hooks_enabled = true
         record(lines, string.format("runtime write hooks armed: %d (%s)", hook_count, RAM_DOMAIN))
     else
-        runtime_write_hooks_enabled = false
+        RUNTIME.runtime_write_hooks_enabled = false
         record(lines, "runtime write hooks unavailable on this core; using delta trace fallback")
     end
 end
@@ -1097,7 +1216,7 @@ local function json_edge_owner_point(e)
 end
 
 register_runtime_trace_hooks()
-trace_rt_prev_window = trace_rt_prev_window or nil
+RUNTIME.trace_rt_prev_window = RUNTIME.trace_rt_prev_window or nil
 
 local function register_edge_exec_hooks()
     local specs = {
@@ -1130,15 +1249,15 @@ end
 
 local function capture_runtime_trace_deltas()
     local cur = dump_playmap_linear()
-    if trace_rt_prev_window == nil then
-        trace_rt_prev_window = cur
+    if RUNTIME.trace_rt_prev_window == nil then
+        RUNTIME.trace_rt_prev_window = cur
         return
     end
     for i = 1, #cur do
-        if #decode_write_trace_rt >= TRACE_RT_MAX_WRITES then
+        if #RUNTIME.decode_write_trace_rt >= TRACE_RT_MAX_WRITES then
             break
         end
-        if cur[i] ~= trace_rt_prev_window[i] then
+        if cur[i] ~= RUNTIME.trace_rt_prev_window[i] then
             local idx = i - 1
             local col = math.floor(idx / ROOM_ROWS)
             local row = idx % ROOM_ROWS
@@ -1146,7 +1265,7 @@ local function capture_runtime_trace_deltas()
             append_runtime_trace(addr, cur[i])
         end
     end
-    trace_rt_prev_window = cur
+    RUNTIME.trace_rt_prev_window = cur
 end
 
 local function analyze_runtime_trace_rt(entries, final_rows)
@@ -1290,10 +1409,10 @@ local function decode_transfer_stream_from_abs(abs_ptr)
 end
 
 local function capture_transfer_stream_event(frame, mode, sub, selector, dyn_len, source_ptr, source_kind, dispatch_role)
-    if #transfer_stream_events >= TRANSFER_STREAM_MAX_EVENTS then
+    if #RUNTIME.transfer_stream_events >= TRANSFER_STREAM_MAX_EVENTS then
         return
     end
-    if mode ~= 0x03 and mode ~= 0x04 and mode ~= 0x05 then
+    if mode ~= 0x03 and mode ~= 0x04 and mode ~= 0x05 and mode ~= 0x06 and mode ~= 0x07 then
         return
     end
     local parsed = decode_transfer_stream_from_abs(source_ptr)
@@ -1311,15 +1430,15 @@ local function capture_transfer_stream_event(frame, mode, sub, selector, dyn_len
         source_ptr % 0x100000000,
         table.concat(parsed.raw_stream_bytes, ",")
     )
-    if sig == last_transfer_stream_sig then
+    if sig == RUNTIME.last_transfer_stream_sig then
         return
     end
-    last_transfer_stream_sig = sig
+    RUNTIME.last_transfer_stream_sig = sig
     local state = read_transfer_state()
     local status = read_status_inputs()
 
-    transfer_stream_events[#transfer_stream_events + 1] = {
-        seq = #transfer_stream_events + 1,
+    RUNTIME.transfer_stream_events[#RUNTIME.transfer_stream_events + 1] = {
+        seq = #RUNTIME.transfer_stream_events + 1,
         frame = frame,
         mode = mode % 0x100,
         submode = sub % 0x100,
@@ -1360,39 +1479,46 @@ local function register_transfer_exec_hook()
     end
     local ok = pcall(function()
         event.onmemoryexecute(function()
-            local mode = ram_u8(0xFF0012)
-            local sub = ram_u8(0xFF0013)
-            transfer_exec_hook_hits = transfer_exec_hook_hits + 1
-            mark_edge_writer_activity("transfer_cur_tilebuf", TRANSFER_CUR_TILEBUF_ADDR)
-            local selector = ram_u8(0xFF0014) % 0x100
-            local dyn_len = ram_u8(0xFF0301) % 0x100
-            local source_ptr = resolve_transfer_source_ptr(selector)
-            local source_kind = (source_ptr == 0xFF0302) and "dyn" or "static"
-            if #transfer_exec_samples < 192 and (mode == 0x03 or mode == 0x04 or mode == 0x05) then
-                local state = read_transfer_state()
-                transfer_exec_samples[#transfer_exec_samples + 1] = {
-                    frame = current_frame,
-                    mode = mode,
-                    submode = sub,
-                    dyn_tile_buf_len = dyn_len,
-                    tile_buf_selector = selector,
-                    source_kind = source_kind,
-                    dispatch_role = "transfer",
-                    source_ptr = source_ptr,
-                    cur_column = state.cur_column,
-                    cur_row = state.cur_row,
-                    prev_column = state.prev_column,
-                    prev_row = state.prev_row,
-                    bytes_head = read_source_bytes_from_abs(source_ptr, 8),
-                }
-            end
-            if source_ptr > 0 then
-                capture_transfer_stream_event(current_frame, mode, sub, selector, dyn_len, source_ptr, source_kind, "transfer")
+            local cb_ok, cb_err = pcall(function()
+                local mode = ram_u8(0xFF0012)
+                local sub = ram_u8(0xFF0013)
+                RUNTIME.transfer_exec_hook_hits = RUNTIME.transfer_exec_hook_hits + 1
+                note_transfer_exec_hit(current_frame)
+                mark_edge_writer_activity("transfer_cur_tilebuf", TRANSFER_CUR_TILEBUF_ADDR)
+                local selector = ram_u8(0xFF0014) % 0x100
+                local dyn_len = ram_u8(0xFF0301) % 0x100
+                local source_ptr = resolve_transfer_source_ptr(selector)
+                local source_kind = (source_ptr == 0xFF0302) and "dyn" or "static"
+                if #RUNTIME.transfer_exec_samples < 256
+                    and (mode == 0x03 or mode == 0x04 or mode == 0x05 or mode == 0x06 or mode == 0x07 or RUNTIME.transition_trace_start_frame ~= nil) then
+                    local state = read_transfer_state()
+                    RUNTIME.transfer_exec_samples[#RUNTIME.transfer_exec_samples + 1] = {
+                        frame = current_frame,
+                        mode = mode,
+                        submode = sub,
+                        dyn_tile_buf_len = dyn_len,
+                        tile_buf_selector = selector,
+                        source_kind = source_kind,
+                        dispatch_role = "transfer",
+                        source_ptr = source_ptr,
+                        cur_column = state.cur_column,
+                        cur_row = state.cur_row,
+                        prev_column = state.prev_column,
+                        prev_row = state.prev_row,
+                        bytes_head = read_source_bytes_from_abs(source_ptr, 8),
+                    }
+                end
+                if source_ptr > 0 then
+                    capture_transfer_stream_event(current_frame, mode, sub, selector, dyn_len, source_ptr, source_kind, "transfer")
+                end
+            end)
+            if not cb_ok then
+                note_transfer_exec_error(current_frame, cb_err)
             end
         end, TRANSFER_CUR_TILEBUF_ADDR, ROOM_TAG .. "_transfercurtilebuf", "M68K BUS")
     end)
     if ok then
-        transfer_exec_hook_armed = true
+        RUNTIME.transfer_exec_hook_armed = true
         record(lines, string.format("transfer exec hook armed at TransferCurTileBuf $%06X", TRANSFER_CUR_TILEBUF_ADDR))
     else
         record(lines, string.format("transfer exec hook failed at TransferCurTileBuf $%06X; polling fallback only", TRANSFER_CUR_TILEBUF_ADDR))
@@ -1420,6 +1546,62 @@ local function json_transfer_exec_samples(entries)
             e.prev_column or 0,
             e.prev_row or 0,
             json_num_array(e.bytes_head or {})
+        )
+    end
+    return "[" .. table.concat(out, ",") .. "]"
+end
+
+local function json_transfer_exec_hits(entries)
+    local out = {}
+    for i = 1, #entries do
+        local e = entries[i]
+        out[#out + 1] = string.format('{"frame":%d,"hits":%d}', e.frame or 0, e.hits or 0)
+    end
+    return "[" .. table.concat(out, ",") .. "]"
+end
+
+local function json_transfer_exec_errors(entries)
+    local out = {}
+    for i = 1, #entries do
+        local e = entries[i]
+        out[#out + 1] = string.format('{"frame":%d,"error":"%s"}', e.frame or -1, json_escape(e.error or ""))
+    end
+    return "[" .. table.concat(out, ",") .. "]"
+end
+
+local function json_transition_state_frames(entries)
+    local out = {}
+    for i = 1, #entries do
+        local e = entries[i]
+        out[#out + 1] = string.format(
+            '{"frame":%d,"transition_frame":%d,"mode":%d,"submode":%d,"cur_level":%d,"is_updating_mode":%d,' ..
+            '"room_id":%d,"next_room_id":%d,"obj_dir":%d,"tile_buf_selector":%d,"ppu_update_0017":%d,' ..
+            '"dyn_tile_buf_len":%d,"dyn_tile_buf_head":%d,"sprite0_check_active":%d,"shadow_f3":%d,' ..
+            '"switch_nametables_req":%d,"vscroll_addr_hi":%d,"vscroll_start_frame":%d,' ..
+            '"cur_column":%d,"cur_row":%d,"prev_row":%d,"cur_hscroll":%d,"cur_vscroll":%d}',
+            e.frame or 0,
+            e.transition_frame or -1,
+            e.mode or 0,
+            e.submode or 0,
+            e.cur_level or 0,
+            e.is_updating_mode or 0,
+            e.room_id or 0,
+            e.next_room_id or 0,
+            e.obj_dir or 0,
+            e.tile_buf_selector or 0,
+            e.ppu_update_0017 or 0,
+            e.dyn_tile_buf_len or 0,
+            e.dyn_tile_buf_head or 0,
+            e.sprite0_check_active or 0,
+            e.shadow_f3 or 0,
+            e.switch_nametables_req or 0,
+            e.vscroll_addr_hi or 0,
+            e.vscroll_start_frame or 0,
+            e.cur_column or 0,
+            e.cur_row or 0,
+            e.prev_row or 0,
+            e.cur_hscroll or 0,
+            e.cur_vscroll or 0
         )
     end
     return "[" .. table.concat(out, ",") .. "]"
@@ -1482,6 +1664,21 @@ local function json_transfer_stream_events(entries)
     return "[" .. table.concat(out, ",") .. "]"
 end
 
+local function json_mode_changes(entries)
+    local out = {}
+    for i = 1, #entries do
+        local e = entries[i]
+        out[#out + 1] = string.format(
+            '{"frame":%d,"mode":%d,"submode":%d,"room":%d}',
+            e.frame or 0,
+            e.mode or 0,
+            e.sub or 0,
+            e.room or 0
+        )
+    end
+    return "[" .. table.concat(out, ",") .. "]"
+end
+
 register_transfer_exec_hook()
 register_edge_exec_hooks()
 
@@ -1501,8 +1698,15 @@ record(lines, string.format("ROOM %02X GEN CAPTURE: natural path -> Mode5 roomId
 record(lines, string.format("target_walk_path=%s", TARGET_WALK_PATH ~= "" and TARGET_WALK_PATH or "<none>"))
 record(lines, "==============================================================")
 record(lines, string.format("LoopForever=$%06X IsrNmi=$%06X", LOOPFOREVER, ISRNMI))
+record(lines, "system_id=" .. SYSTEM_ID)
 record(lines, "available_memory_domains=" .. available_domains_csv())
 record(lines, "selected_ram_domain=" .. (RAM_DOMAIN or "none"))
+debug_mark(string.format("start room=%02X walk=%s", TARGET_ROOM_ID, TARGET_WALK_PATH ~= "" and TARGET_WALK_PATH or "<none>"))
+
+if SYSTEM_ID ~= "GEN" and SYSTEM_ID ~= "SAT" then
+    write_fatal_capture(lines, "wrong_system_loaded_expected_GEN")
+    return
+end
 
 for frame = 1, MAX_FRAMES do
     current_frame = frame
@@ -1516,12 +1720,12 @@ for frame = 1, MAX_FRAMES do
     local slot_active1 = ram_u8(0xFF0634)
     local slot_active2 = ram_u8(0xFF0635)
 
-    if cur_slot ~= last_cur_slot then
+    if cur_slot ~= CAPTURE.last_cur_slot then
         record(lines, string.format(
             "f%04d CurSaveSlot=$%02X active=%02X/%02X/%02X",
             frame, cur_slot, slot_active0, slot_active1, slot_active2
         ))
-        last_cur_slot = cur_slot
+        CAPTURE.last_cur_slot = cur_slot
     end
 
     if mode ~= (mode_changes[#mode_changes] and mode_changes[#mode_changes].mode or nil)
@@ -1529,17 +1733,19 @@ for frame = 1, MAX_FRAMES do
         mode_changes[#mode_changes + 1] = {frame = frame, mode = mode, sub = sub, room = room_id}
     end
 
-    if not trace_rt_started and mode == 0x03 then
-        trace_rt_started = true
-        trace_rt_active = true
-        trace_rt_prev_window = dump_playmap_linear()
+    if not RUNTIME.trace_rt_started and mode == 0x03 then
+        RUNTIME.trace_rt_started = true
+        RUNTIME.trace_rt_active = true
+        RUNTIME.trace_rt_prev_window = dump_playmap_linear()
         record(lines, string.format("f%04d runtime decode trace armed (Mode3 entry)", frame))
+        debug_mark(string.format("trace rt armed pre frame=%d", frame))
     end
-    if not edge_trace_started and mode == 0x03 then
-        edge_trace_started = true
-        edge_trace_active = true
-        edge_trace_prev_window = dump_edge_owner_window()
+    if not RUNTIME.edge_trace_started and mode == 0x03 then
+        RUNTIME.edge_trace_started = true
+        RUNTIME.edge_trace_active = true
+        RUNTIME.edge_trace_prev_window = dump_edge_owner_window()
         record(lines, string.format("f%04d edge owner trace armed (Mode3 entry)", frame))
+        debug_mark(string.format("edge trace armed pre frame=%d", frame))
     end
 
     if flow_state == FLOW_BOOT_TO_FS1 then
@@ -1564,20 +1770,20 @@ for frame = 1, MAX_FRAMES do
     elseif flow_state == FLOW_FS1_ENTER_REGISTER then
         if mode == 0x0E then
             set_flow_state(FLOW_MODEE_TYPE_NAME, frame, "entered ModeE")
-            register_mode_seen = true
-            last_name_offset = name_ofs
+            CAPTURE.register_mode_seen = true
+            CAPTURE.last_name_offset = name_ofs
         elseif mode == 0x01 then
             schedule_input(input_state, "Start", 2, 14, frame, "enter register mode", lines)
         end
 
     elseif flow_state == FLOW_MODEE_TYPE_NAME then
-        register_mode_seen = true
-        if name_ofs ~= last_name_offset then
-            name_progress_events = name_progress_events + 1
-            record(lines, string.format("f%04d name progress $0421 %02X -> %02X", frame, last_name_offset, name_ofs))
-            last_name_offset = name_ofs
+        CAPTURE.register_mode_seen = true
+        if name_ofs ~= CAPTURE.last_name_offset then
+            CAPTURE.name_progress_events = CAPTURE.name_progress_events + 1
+            record(lines, string.format("f%04d name progress $0421 %02X -> %02X", frame, CAPTURE.last_name_offset, name_ofs))
+            CAPTURE.last_name_offset = name_ofs
         end
-        if name_progress_events >= TARGET_NAME_PROGRESS then
+        if CAPTURE.name_progress_events >= TARGET_NAME_PROGRESS then
             set_flow_state(FLOW_MODEE_FINISH, frame, "name progress target reached")
         else
             schedule_input(input_state, "A", 1, 10, frame, "ModeE char pulse", lines)
@@ -1622,17 +1828,18 @@ for frame = 1, MAX_FRAMES do
         end
     end
 
-    local transition_active = ram_u8(ROOM_TRANSITION_ACTIVE)
-    if TARGET_WALK_PATH ~= "" and not walk_started and mode == 0x05 and room_id == 0x77 and transition_active == 0 then
-        start_room_stable_count = start_room_stable_count + 1
-        if start_room_stable_count == MODE5_STABLE_FRAMES then
-            walk_started = true
-            walk_index = 1
-            walk_prev_room = room_id
+    if TARGET_WALK_PATH ~= "" and not WALK.started and mode == 0x05 and room_id == 0x77 then
+        WALK.start_room_stable_count = WALK.start_room_stable_count + 1
+        if WALK.start_room_stable_count == MODE5_STABLE_FRAMES then
+            WALK.started = true
+            WALK.index = 1
+            WALK.prev_room = room_id
+            WALK.step_room = nil
+            WALK.step_mode5_stable_count = 0
             reset_target_transition_capture(frame, lines)
         end
     else
-        start_room_stable_count = 0
+        WALK.start_room_stable_count = 0
     end
 
     local pad = build_pad_for_frame(input_state)
@@ -1641,102 +1848,132 @@ for frame = 1, MAX_FRAMES do
     emu.frameadvance()
 
     local pc = emu.getregister("M68K PC") or 0
-    if not exception_hit and (pc == EXC_BUS or pc == EXC_ADDR or pc == EXC_DEF) then
-        exception_hit = true
-        exception_frame = frame
+    if not CAPTURE.exception_hit and (pc == EXC_BUS or pc == EXC_ADDR or pc == EXC_DEF) then
+        CAPTURE.exception_hit = true
+        CAPTURE.exception_frame = frame
         if pc == EXC_BUS then
-            exception_name = "ExcBusError"
+            CAPTURE.exception_name = "ExcBusError"
         elseif pc == EXC_ADDR then
-            exception_name = "ExcAddrError"
+            CAPTURE.exception_name = "ExcAddrError"
         else
-            exception_name = "DefaultException"
+            CAPTURE.exception_name = "DefaultException"
         end
-        record(lines, string.format("f%04d EXCEPTION %s PC=$%06X", frame, exception_name, pc))
+        record(lines, string.format("f%04d EXCEPTION %s PC=$%06X", frame, CAPTURE.exception_name, pc))
+        debug_mark(string.format("exception frame=%d name=%s pc=%06X", frame, CAPTURE.exception_name, pc))
         break
     end
 
     mode = ram_u8(0xFF0012)
     sub = ram_u8(0xFF0013)
     room_id = ram_u8(0xFF00EB)
-    transition_active = ram_u8(ROOM_TRANSITION_ACTIVE)
-    if walk_started and walk_index <= #TARGET_WALK_PATH and transition_active == 0 and room_id ~= walk_prev_room then
-        record(lines, string.format("f%04d walk step %d arrived roomId=$%02X", frame, walk_index, room_id))
-        walk_prev_room = room_id
-        walk_index = walk_index + 1
+    capture_transition_state(frame, mode, sub, room_id)
+    if WALK.started and WALK.index <= #TARGET_WALK_PATH then
+        if room_id ~= WALK.prev_room and WALK.step_room ~= room_id then
+            WALK.step_room = room_id
+            WALK.step_mode5_stable_count = 0
+            record(lines, string.format("f%04d walk step %d entered roomId=$%02X", frame, WALK.index, room_id))
+            debug_mark(string.format("walk entered frame=%d step=%d room=%02X", frame, WALK.index, room_id))
+        end
+        if WALK.step_room ~= nil and room_id == WALK.step_room and mode == 0x05 then
+            WALK.step_mode5_stable_count = WALK.step_mode5_stable_count + 1
+            if WALK.step_mode5_stable_count == MODE5_STABLE_FRAMES then
+                record(lines, string.format("f%04d walk step %d settled roomId=$%02X", frame, WALK.index, room_id))
+                debug_mark(string.format("walk settled frame=%d step=%d room=%02X", frame, WALK.index, room_id))
+                WALK.prev_room = room_id
+                WALK.step_room = nil
+                WALK.step_mode5_stable_count = 0
+                WALK.index = WALK.index + 1
+            end
+        else
+            WALK.step_mode5_stable_count = 0
+        end
     end
-    if not trace_rt_started and mode == 0x03 then
-        trace_rt_started = true
-        trace_rt_active = true
-        trace_rt_prev_window = dump_playmap_linear()
+    if not RUNTIME.trace_rt_started and mode == 0x03 then
+        RUNTIME.trace_rt_started = true
+        RUNTIME.trace_rt_active = true
+        RUNTIME.trace_rt_prev_window = dump_playmap_linear()
         record(lines, string.format("f%04d runtime decode trace armed (Mode3 post-frame)", frame))
+        debug_mark(string.format("trace rt armed post frame=%d", frame))
     end
-    if not edge_trace_started and mode == 0x03 then
-        edge_trace_started = true
-        edge_trace_active = true
-        edge_trace_prev_window = dump_edge_owner_window()
+    if not RUNTIME.edge_trace_started and mode == 0x03 then
+        RUNTIME.edge_trace_started = true
+        RUNTIME.edge_trace_active = true
+        RUNTIME.edge_trace_prev_window = dump_edge_owner_window()
         record(lines, string.format("f%04d edge owner trace armed (Mode3 post-frame)", frame))
+        debug_mark(string.format("edge trace armed post frame=%d", frame))
     end
 
-    if trace_rt_active then
+    if RUNTIME.trace_rt_active then
         capture_runtime_trace_deltas()
     end
-    if edge_trace_active then
+    if RUNTIME.edge_trace_active then
         capture_edge_owner_deltas()
     end
 
-    if not mode3_sub8_snapshot and mode == 0x03 and sub == 0x08 then
-        if not trace_rt_started then
-            trace_rt_started = true
-            trace_rt_active = true
-            trace_rt_prev_window = dump_playmap_linear()
+    if not CAPTURE.mode3_sub8_snapshot and mode == 0x03 and sub == 0x08 then
+        if not RUNTIME.trace_rt_started then
+            RUNTIME.trace_rt_started = true
+            RUNTIME.trace_rt_active = true
+            RUNTIME.trace_rt_prev_window = dump_playmap_linear()
             record(lines, string.format("f%04d runtime decode trace armed (Mode3 first observed)", frame))
         end
-        mode3_sub8_snapshot = build_trace_snapshot("mode3_sub8_first", frame, mode, sub, room_id)
-        trace_snapshots[#trace_snapshots + 1] = mode3_sub8_snapshot
-        local sub8_workbuf_base = mode3_sub8_snapshot.workbuf_base_ptr or PLAYMAP_BASE
-        mode3_sub8_workbuf_rows = dump_workbuf_rows(sub8_workbuf_base)
+        CAPTURE.mode3_sub8_snapshot = build_trace_snapshot("mode3_sub8_first", frame, mode, sub, room_id)
+        CAPTURE.trace_snapshots[#CAPTURE.trace_snapshots + 1] = CAPTURE.mode3_sub8_snapshot
+        local sub8_workbuf_base = CAPTURE.mode3_sub8_snapshot.workbuf_base_ptr or PLAYMAP_BASE
+        CAPTURE.mode3_sub8_workbuf_rows = dump_workbuf_rows(sub8_workbuf_base)
         record(lines, string.format("f%04d trace captured: mode3/sub8 first", frame))
+        debug_mark(string.format("captured sub8 frame=%d room=%02X", frame, room_id))
     end
 
-    if not layoutroomow_exit_snapshot and prev_mode == 0x03 and prev_sub == 0x08 and not (mode == 0x03 and sub == 0x08) then
-        trace_rt_active = false
-        trace_rt_prev_window = nil
-        layoutroomow_exit_snapshot = build_layoutroomow_exit_snapshot(frame, mode, sub, room_id)
-        trace_snapshots[#trace_snapshots + 1] = layoutroomow_exit_snapshot
-        local exit_workbuf_base = layoutroomow_exit_snapshot.workbuf_base_ptr or PLAYMAP_BASE
-        layoutroomow_exit_workbuf_rows = dump_workbuf_rows(exit_workbuf_base)
+    if not CAPTURE.layoutroomow_exit_snapshot and CAPTURE.prev_mode == 0x03 and CAPTURE.prev_sub == 0x08 and not (mode == 0x03 and sub == 0x08) then
+        RUNTIME.trace_rt_active = false
+        RUNTIME.trace_rt_prev_window = nil
+        CAPTURE.layoutroomow_exit_snapshot = build_layoutroomow_exit_snapshot(frame, mode, sub, room_id)
+        CAPTURE.trace_snapshots[#CAPTURE.trace_snapshots + 1] = CAPTURE.layoutroomow_exit_snapshot
+        local exit_workbuf_base = CAPTURE.layoutroomow_exit_snapshot.workbuf_base_ptr or PLAYMAP_BASE
+        CAPTURE.layoutroomow_exit_workbuf_rows = dump_workbuf_rows(exit_workbuf_base)
         record(lines, string.format(
             "f%04d trace captured: LayoutRoomOW exit ptr02_03=$%04X ptr04_05=$%04X mmc1=$%02X win=$%02X",
             frame,
-            layoutroomow_exit_snapshot.ptr_02_03 or 0,
-            layoutroomow_exit_snapshot.ptr_04_05 or 0,
-            layoutroomow_exit_snapshot.mmc1_prg or 0,
-            layoutroomow_exit_snapshot.current_window_bank or 0
+            CAPTURE.layoutroomow_exit_snapshot.ptr_02_03 or 0,
+            CAPTURE.layoutroomow_exit_snapshot.ptr_04_05 or 0,
+            CAPTURE.layoutroomow_exit_snapshot.mmc1_prg or 0,
+            CAPTURE.layoutroomow_exit_snapshot.current_window_bank or 0
         ))
+        debug_mark(string.format("captured layout exit frame=%d room=%02X", frame, room_id))
     end
 
     if mode == 0x05 and room_id == TARGET_ROOM_ID then
-        mode5_stable_count = mode5_stable_count + 1
-        if mode5_stable_count == MODE5_STABLE_FRAMES and not mode5_stable_snapshot then
-            reached_target = true
-            target_frame = frame
-            mode5_stable_snapshot = build_trace_snapshot("mode5_room_stable", frame, mode, sub, room_id)
-            trace_snapshots[#trace_snapshots + 1] = mode5_stable_snapshot
+        CAPTURE.mode5_stable_count = CAPTURE.mode5_stable_count + 1
+        if CAPTURE.mode5_stable_count == 1 then
+            debug_mark(string.format("first target frame=%d mode=%02X sub=%02X room=%02X", frame, mode, sub, room_id))
+        end
+        if CAPTURE.mode5_stable_count == MODE5_STABLE_FRAMES and not CAPTURE.mode5_stable_snapshot then
+            CAPTURE.reached_target = true
+            CAPTURE.target_frame = frame
+            debug_mark(string.format("before stable snapshot frame=%d", frame))
+            CAPTURE.mode5_stable_snapshot = build_trace_snapshot("mode5_room_stable", frame, mode, sub, room_id)
+            CAPTURE.trace_snapshots[#CAPTURE.trace_snapshots + 1] = CAPTURE.mode5_stable_snapshot
             record(lines, string.format("f%04d reached stable target: mode=$%02X sub=$%02X roomId=$%02X", frame, mode, sub, room_id))
+            debug_mark(string.format("after stable snapshot frame=%d", frame))
             break
         end
     else
-        mode5_stable_count = 0
+        CAPTURE.mode5_stable_count = 0
     end
-    prev_mode = mode
-    prev_sub = sub
+    CAPTURE.prev_mode = mode
+    CAPTURE.prev_sub = sub
 end
 
-if reached_target then
+debug_mark(string.format("after main loop reached=%s frame=%s", CAPTURE.reached_target and "yes" or "no", tostring(CAPTURE.target_frame or -1)))
+
+if CAPTURE.reached_target then
+    debug_mark("before cooldown frames")
     for _ = 1, 20 do
         safe_set({})
         emu.frameadvance()
     end
+    debug_mark("after cooldown frames")
 end
 
 local final_mode = ram_u8(0xFF0012)
@@ -1747,9 +1984,17 @@ local final_mmc1 = ram_u8(0xFF0815)
 local final_bank = ram_u8(0xFF083F)
 local final_ppu_ctrl = ram_u8(0xFF00FF)
 local final_bg_half = math.floor(final_ppu_ctrl / 16) % 2
+local final_transition_diag_004C = ram_u8(0xFF004C)
+local final_cur_vscroll = ram_u8(0xFF00FC)
+local final_cur_hscroll = ram_u8(0xFF00FD)
+local final_switch_nt_req = ram_u8(0xFF005C)
+local final_cur_column = ram_u8(0xFF00E8)
+local final_cur_row = ram_u8(0xFF00E9)
 
-if reached_target then
+if CAPTURE.reached_target then
+    debug_mark("before screenshot")
     client.screenshot(OUT_PNG)
+    debug_mark("after screenshot")
 end
 
 local plane_words = {}
@@ -1775,14 +2020,14 @@ for row = 0, ROOM_ROWS - 1 do
 end
 
 local workbuf_base_ptr = PLAYMAP_BASE
-if layoutroomow_exit_snapshot and (layoutroomow_exit_snapshot.workbuf_base_ptr or -1) >= 0 then
-    workbuf_base_ptr = layoutroomow_exit_snapshot.workbuf_base_ptr
+if CAPTURE.layoutroomow_exit_snapshot and (CAPTURE.layoutroomow_exit_snapshot.workbuf_base_ptr or -1) >= 0 then
+    workbuf_base_ptr = CAPTURE.layoutroomow_exit_snapshot.workbuf_base_ptr
 end
 local workbuf_rows = dump_workbuf_rows(workbuf_base_ptr)
 local decode_write_trace = {}
-if layoutroomow_exit_snapshot then
+if CAPTURE.layoutroomow_exit_snapshot then
     decode_write_trace = build_decode_write_trace(
-        layoutroomow_exit_snapshot.layout_ptr_effective or 0,
+        CAPTURE.layoutroomow_exit_snapshot.layout_ptr_effective or 0,
         workbuf_base_ptr,
         workbuf_rows
     )
@@ -1793,59 +2038,75 @@ local cram_words = {}
 for i = 0, 63 do
     cram_words[#cram_words + 1] = cram_u16(i * 2)
 end
-local edge_owner_summary = build_edge_owner_summary(edge_owner_trace, edge_trace_started and reached_target)
+local edge_owner_summary = build_edge_owner_summary(RUNTIME.edge_owner_trace, RUNTIME.edge_trace_started and CAPTURE.reached_target)
+debug_mark("after summaries")
 
 record(lines, "")
-record(lines, string.format("register_mode_seen=%s name_progress_events=%d", register_mode_seen and "yes" or "no", name_progress_events))
+record(lines, string.format("register_mode_seen=%s name_progress_events=%d", CAPTURE.register_mode_seen and "yes" or "no", CAPTURE.name_progress_events))
 record(lines, string.format("final mode=$%02X sub=$%02X roomId=$%02X room03C=$%02X", final_mode, final_sub, final_room, final_room_diag))
 record(lines, string.format("final mmc1PRG=$%02X currentWindowBank=$%02X", final_mmc1, final_bank))
 record(lines, string.format("final PPUCTRL=$%02X bgPatternHalf=%d", final_ppu_ctrl, final_bg_half))
+record(lines, string.format(
+    "final diag004C=$%02X curV=$%02X curH=$%02X switchNT=$%02X curCol=$%02X curRow=$%02X",
+    final_transition_diag_004C, final_cur_vscroll, final_cur_hscroll, final_switch_nt_req, final_cur_column, final_cur_row
+))
 record(lines, string.format("workbuf_base_ptr=$%04X", workbuf_base_ptr))
 record(lines, string.format("decode_write_trace_entries=%d", #decode_write_trace))
-record(lines, string.format("decode_write_trace_rt_entries=%d", #decode_write_trace_rt))
-record(lines, string.format("decode_write_trace_rt_valid=%s", (#decode_write_trace_rt >= TRACE_RT_MIN_VALID) and "yes" or "no"))
-record(lines, string.format("decode_write_trace_rt_hooks=%s", runtime_write_hooks_enabled and "enabled" or "fallback"))
-record(lines, string.format("transfer_exec_hook=%s", transfer_exec_hook_armed and "armed" or "off"))
-record(lines, string.format("transfer_exec_hook_hits=%d", transfer_exec_hook_hits))
-record(lines, string.format("transfer_stream_events=%d", #transfer_stream_events))
-record(lines, string.format("transfer_stream_capture_valid=%s", (#transfer_stream_events > 0) and "yes" or "no"))
+record(lines, string.format("decode_write_trace_rt_entries=%d", #RUNTIME.decode_write_trace_rt))
+record(lines, string.format("decode_write_trace_rt_valid=%s", (#RUNTIME.decode_write_trace_rt >= TRACE_RT_MIN_VALID) and "yes" or "no"))
+record(lines, string.format("decode_write_trace_rt_hooks=%s", RUNTIME.runtime_write_hooks_enabled and "enabled" or "fallback"))
+record(lines, string.format("transfer_exec_hook=%s", RUNTIME.transfer_exec_hook_armed and "armed" or "off"))
+record(lines, string.format("transfer_exec_hook_hits=%d", RUNTIME.transfer_exec_hook_hits))
+record(lines, string.format("transfer_exec_hit_frames=%d", #RUNTIME.transfer_exec_hits_by_frame))
+record(lines, string.format("transfer_exec_callback_errors=%d", #RUNTIME.transfer_exec_callback_errors))
+record(lines, string.format("transfer_stream_events=%d", #RUNTIME.transfer_stream_events))
+record(lines, string.format("transfer_stream_capture_valid=%s", (#RUNTIME.transfer_stream_events > 0) and "yes" or "no"))
 record(lines, string.format("edge_owner_trace_entries=%d", edge_owner_summary.entries or 0))
 record(lines, string.format("edge_owner_trace_valid=%s", edge_owner_summary.valid and "yes" or "no"))
 record(lines, string.format("edge_owner_writer_classes=%s", table.concat(edge_owner_summary.writer_classes or {}, ",")))
-runtime_trace_summary = analyze_runtime_trace_rt(decode_write_trace_rt, layoutroomow_exit_workbuf_rows)
+RUNTIME.runtime_trace_summary = analyze_runtime_trace_rt(RUNTIME.decode_write_trace_rt, CAPTURE.layoutroomow_exit_workbuf_rows)
 record(lines, string.format(
     "rt_first_repeat addr=$%04X seq=%d prev=%d",
-    runtime_trace_summary.first_repeated_write_addr >= 0 and runtime_trace_summary.first_repeated_write_addr or 0xFFFF,
-    runtime_trace_summary.first_repeated_write_seq or -1,
-    runtime_trace_summary.first_repeated_write_prev_seq or -1
+    RUNTIME.runtime_trace_summary.first_repeated_write_addr >= 0 and RUNTIME.runtime_trace_summary.first_repeated_write_addr or 0xFFFF,
+    RUNTIME.runtime_trace_summary.first_repeated_write_seq or -1,
+    RUNTIME.runtime_trace_summary.first_repeated_write_prev_seq or -1
 ))
 record(lines, string.format(
     "rt_first_final_diff addr=$%04X first=$%02X final=$%02X lastSeq=%d",
-    runtime_trace_summary.first_final_diff_addr >= 0 and runtime_trace_summary.first_final_diff_addr or 0xFFFF,
-    runtime_trace_summary.first_final_diff_first_value >= 0 and runtime_trace_summary.first_final_diff_first_value or 0xFF,
-    runtime_trace_summary.first_final_diff_final_value >= 0 and runtime_trace_summary.first_final_diff_final_value or 0xFF,
-    runtime_trace_summary.first_final_diff_last_seq or -1
+    RUNTIME.runtime_trace_summary.first_final_diff_addr >= 0 and RUNTIME.runtime_trace_summary.first_final_diff_addr or 0xFFFF,
+    RUNTIME.runtime_trace_summary.first_final_diff_first_value >= 0 and RUNTIME.runtime_trace_summary.first_final_diff_first_value or 0xFF,
+    RUNTIME.runtime_trace_summary.first_final_diff_final_value >= 0 and RUNTIME.runtime_trace_summary.first_final_diff_final_value or 0xFF,
+    RUNTIME.runtime_trace_summary.first_final_diff_last_seq or -1
 ))
-record(lines, string.format("target_reached=%s frame=%s", reached_target and "yes" or "no", tostring(target_frame or -1)))
-record(lines, string.format("trace_snapshots=%d", #trace_snapshots))
-if exception_hit then
-    record(lines, string.format("exception=%s frame=%d", exception_name, exception_frame))
+record(lines, string.format("target_reached=%s frame=%s", CAPTURE.reached_target and "yes" or "no", tostring(CAPTURE.target_frame or -1)))
+record(lines, string.format("transition_state_frames=%d", #RUNTIME.transition_state_frames))
+record(lines, string.format("trace_snapshots=%d", #CAPTURE.trace_snapshots))
+if CAPTURE.exception_hit then
+    record(lines, string.format("exception=%s frame=%d", CAPTURE.exception_name, CAPTURE.exception_frame))
 end
 
 local out = assert(io.open(OUT_TXT, "w"))
 out:write(table.concat(lines, "\n"))
 out:write("\n")
 out:close()
+debug_mark("after txt write")
 
 local jf = assert(io.open(OUT_JSON, "w"))
 jf:write("{\n")
-jf:write('  "target_reached": ', reached_target and "true" or "false", ",\n")
+jf:write('  "target_reached": ', CAPTURE.reached_target and "true" or "false", ",\n")
 jf:write('  "target_room_id": ', tostring(TARGET_ROOM_ID), ",\n")
-jf:write('  "target_frame": ', tostring(target_frame or -1), ",\n")
+jf:write('  "target_frame": ', tostring(CAPTURE.target_frame or -1), ",\n")
 jf:write('  "final_mode": ', tostring(final_mode), ",\n")
 jf:write('  "final_submode": ', tostring(final_sub), ",\n")
 jf:write('  "room_id": ', tostring(final_room), ",\n")
 jf:write('  "room_diag_003C": ', tostring(final_room_diag), ",\n")
+jf:write('  "final_transition_active": ', tostring(final_transition_diag_004C), ",\n")
+jf:write('  "final_transition_diag_004C": ', tostring(final_transition_diag_004C), ",\n")
+jf:write('  "final_cur_vscroll": ', tostring(final_cur_vscroll), ",\n")
+jf:write('  "final_cur_hscroll": ', tostring(final_cur_hscroll), ",\n")
+jf:write('  "final_switch_nametables_req": ', tostring(final_switch_nt_req), ",\n")
+jf:write('  "final_cur_column": ', tostring(final_cur_column), ",\n")
+jf:write('  "final_cur_row": ', tostring(final_cur_row), ",\n")
 jf:write('  "mmc1_prg": ', tostring(final_mmc1), ",\n")
 jf:write('  "current_window_bank": ', tostring(final_bank), ",\n")
 jf:write('  "ppu_ctrl_shadow": ', tostring(final_ppu_ctrl), ",\n")
@@ -1856,34 +2117,39 @@ jf:write('  "plane_a_top_row": ', tostring(PLANE_A_TOP_ROW), ",\n")
 jf:write('  "plane_a_rows": ', tostring(ROOM_ROWS), ",\n")
 jf:write('  "plane_a_cols": ', tostring(ROOM_COLS), ",\n")
 jf:write('  "screenshot_path": "', json_escape(OUT_PNG), '",\n')
-jf:write('  "exception": "', json_escape(exception_name), '",\n')
+jf:write('  "exception": "', json_escape(CAPTURE.exception_name), '",\n')
 jf:write('  "plane_words": ', json_matrix(plane_words), ",\n")
-jf:write('  "layoutroomow_exit_workbuf_rows": ', json_matrix(layoutroomow_exit_workbuf_rows or {}), ",\n")
-jf:write('  "mode3_sub8_workbuf_rows": ', json_matrix(mode3_sub8_workbuf_rows or {}), ",\n")
+jf:write('  "layoutroomow_exit_workbuf_rows": ', json_matrix(CAPTURE.layoutroomow_exit_workbuf_rows or {}), ",\n")
+jf:write('  "mode3_sub8_workbuf_rows": ', json_matrix(CAPTURE.mode3_sub8_workbuf_rows or {}), ",\n")
 jf:write('  "workbuf_rows": ', json_matrix(workbuf_rows), ",\n")
 jf:write('  "decode_write_trace": ', json_decode_write_trace(decode_write_trace), ",\n")
-jf:write('  "decode_write_trace_rt": ', json_decode_write_trace_rt(decode_write_trace_rt), ",\n")
-jf:write('  "decode_write_trace_rt_entries": ', tostring(#decode_write_trace_rt), ",\n")
-jf:write('  "decode_write_trace_rt_valid": ', (#decode_write_trace_rt >= TRACE_RT_MIN_VALID) and "true" or "false", ",\n")
-jf:write('  "decode_write_trace_rt_hooks": "', runtime_write_hooks_enabled and "enabled" or "fallback", '",\n')
-jf:write('  "transfer_exec_hook_armed": ', transfer_exec_hook_armed and "true" or "false", ",\n")
-jf:write('  "transfer_exec_hook_hits": ', tostring(transfer_exec_hook_hits), ",\n")
-jf:write('  "transfer_exec_samples": ', json_transfer_exec_samples(transfer_exec_samples), ",\n")
-jf:write('  "transfer_stream_events": ', json_transfer_stream_events(transfer_stream_events), ",\n")
-jf:write('  "transfer_stream_event_entries": ', tostring(#transfer_stream_events), ",\n")
-jf:write('  "transfer_stream_capture_valid": ', (#transfer_stream_events > 0) and "true" or "false", ",\n")
-jf:write('  "edge_owner_trace": ', json_edge_owner_trace(edge_owner_trace), ",\n")
+jf:write('  "decode_write_trace_rt": ', json_decode_write_trace_rt(RUNTIME.decode_write_trace_rt), ",\n")
+jf:write('  "decode_write_trace_rt_entries": ', tostring(#RUNTIME.decode_write_trace_rt), ",\n")
+jf:write('  "decode_write_trace_rt_valid": ', (#RUNTIME.decode_write_trace_rt >= TRACE_RT_MIN_VALID) and "true" or "false", ",\n")
+jf:write('  "decode_write_trace_rt_hooks": "', RUNTIME.runtime_write_hooks_enabled and "enabled" or "fallback", '",\n')
+jf:write('  "transfer_exec_hook_armed": ', RUNTIME.transfer_exec_hook_armed and "true" or "false", ",\n")
+jf:write('  "transfer_exec_hook_hits": ', tostring(RUNTIME.transfer_exec_hook_hits), ",\n")
+jf:write('  "transfer_exec_samples": ', json_transfer_exec_samples(RUNTIME.transfer_exec_samples), ",\n")
+jf:write('  "transfer_exec_hits_by_frame": ', json_transfer_exec_hits(RUNTIME.transfer_exec_hits_by_frame), ",\n")
+jf:write('  "transfer_exec_callback_errors": ', json_transfer_exec_errors(RUNTIME.transfer_exec_callback_errors), ",\n")
+jf:write('  "transfer_stream_events": ', json_transfer_stream_events(RUNTIME.transfer_stream_events), ",\n")
+jf:write('  "transfer_stream_event_entries": ', tostring(#RUNTIME.transfer_stream_events), ",\n")
+jf:write('  "transfer_stream_capture_valid": ', (#RUNTIME.transfer_stream_events > 0) and "true" or "false", ",\n")
+jf:write('  "edge_owner_trace": ', json_edge_owner_trace(RUNTIME.edge_owner_trace), ",\n")
 jf:write('  "edge_owner_trace_entries": ', tostring(edge_owner_summary.entries or 0), ",\n")
 jf:write('  "edge_owner_trace_valid": ', edge_owner_summary.valid and "true" or "false", ",\n")
 jf:write('  "edge_owner_writer_classes": ', json_string_array(edge_owner_summary.writer_classes or {}), ",\n")
 jf:write('  "edge_owner_first_write": ', json_edge_owner_point(edge_owner_summary.first_write), ",\n")
 jf:write('  "edge_owner_last_write": ', json_edge_owner_point(edge_owner_summary.last_write), ",\n")
-jf:write('  "runtime_trace_summary": ', json_runtime_trace_summary(runtime_trace_summary), ",\n")
+jf:write('  "runtime_trace_summary": ', json_runtime_trace_summary(RUNTIME.runtime_trace_summary), ",\n")
 jf:write('  "nt_cache_rows": ', json_matrix(nt_cache_rows), ",\n")
 jf:write('  "playmap_rows": ', json_matrix(playmap_rows), ",\n")
-jf:write('  "trace_snapshots": ', json_trace_snapshots(trace_snapshots), ",\n")
+jf:write('  "mode_changes": ', json_mode_changes(mode_changes), ",\n")
+jf:write('  "transition_state_frames": ', json_transition_state_frames(RUNTIME.transition_state_frames), ",\n")
+jf:write('  "trace_snapshots": ', json_trace_snapshots(CAPTURE.trace_snapshots), ",\n")
 jf:write('  "cram_words": ', json_num_array(cram_words), "\n")
 jf:write("}\n")
 jf:close()
+debug_mark("after json write")
 
 client.exit()

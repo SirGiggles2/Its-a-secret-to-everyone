@@ -39,6 +39,7 @@ ROUTE_EDGE_SEED_MISSING = "ROUTE_EDGE_SEED_MISSING"
 ROUTE_EDGE_RUNTIME_DIVERGENCE = "ROUTE_EDGE_RUNTIME_DIVERGENCE"
 ROUTE_EDGE_WINDOW_CONTRACT = "ROUTE_EDGE_WINDOW_CONTRACT"
 ROUTE_CAPTURE_ALIGNMENT = "ROUTE_CAPTURE_ALIGNMENT"
+ROUTE_TRANSITION_SETTLE = "ROUTE_TRANSITION_SETTLE"
 ROUTE_NONE = "ROUTE_NONE"
 
 
@@ -844,14 +845,41 @@ def compare_edge_owner_traces(gen: dict[str, Any], nes: dict[str, Any]) -> dict[
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--room-id", default="0x77")
+    parser.add_argument(
+        "--fixture-mode",
+        choices=("auto", "steady_room", "transition_room"),
+        default="auto",
+    )
     args = parser.parse_args()
 
     room_id = parse_room_id(args.room_id)
+    fixture_mode = args.fixture_mode
+    if fixture_mode == "auto":
+        fixture_mode = "transition_room" if room_id == 0x76 else "steady_room"
     gen_json, nes_json, out_txt, out_json = report_paths(room_id)
 
     gen = load_json(gen_json)
     nes = load_json(nes_json)
     lut = parse_nes_to_gen_lut(NES_IO_ASM)
+    gen_target_reached = bool(gen.get("target_reached"))
+    nes_target_reached = bool(nes.get("target_reached"))
+    gen_room_id = int(gen.get("room_id", -1))
+    nes_room_id = int(nes.get("room_id", -1))
+    gen_final_mode = int(gen.get("final_mode", -1))
+    nes_final_mode = int(nes.get("final_mode", -1))
+    gen_final_submode = int(gen.get("final_submode", -1))
+    nes_final_submode = int(nes.get("final_submode", -1))
+
+    transition_settle_ok = True
+    if fixture_mode == "transition_room":
+        transition_settle_ok = (
+            gen_target_reached
+            and nes_target_reached
+            and gen_room_id == room_id
+            and nes_room_id == room_id
+            and gen_final_mode == nes_final_mode
+            and gen_final_submode == nes_final_submode
+        )
 
     plane_words = expect_matrix("gen.plane_words", gen.get("plane_words"), ROWS, COLS)
     gen_ntcache_rows = expect_matrix("gen.nt_cache_rows", gen.get("nt_cache_rows"), ROWS, COLS)
@@ -934,11 +962,22 @@ def main() -> int:
         len(nes_plane_tile) == 0
         and len(nes_plane_pal) == 0
         and len(bg_palette) == 0
+        and transition_settle_ok
     )
 
     if hard_pass:
         route_code = ROUTE_NONE
         route_detail = f"PARITY_GREEN: Room-${room_id:02X} BG tile/palette byte parity is green."
+    elif fixture_mode == "transition_room" and not transition_settle_ok:
+        route_code = ROUTE_TRANSITION_SETTLE
+        route_detail = (
+            "Transition fixture fail: Genesis does not settle to the same final transition state as NES. "
+            f"GEN target_reached={gen_target_reached} room=${gen_room_id & 0xFF:02X} "
+            f"mode/sub=${gen_final_mode & 0xFF:02X}/${gen_final_submode & 0xFF:02X}; "
+            f"NES target_reached={nes_target_reached} room=${nes_room_id & 0xFF:02X} "
+            f"mode/sub=${nes_final_mode & 0xFF:02X}/${nes_final_submode & 0xFF:02X}. "
+            "Patch transition state/update path before tile-parity routing."
+        )
     elif bool(alignment.get("perfect_nonzero_offset")):
         route_code = ROUTE_CAPTURE_ALIGNMENT
         route_detail = (
@@ -1051,8 +1090,12 @@ def main() -> int:
     txt_lines: list[str] = []
     txt_lines.append(f"ROOM ${room_id:02X} PARITY REPORT")
     txt_lines.append("=" * 72)
+    txt_lines.append(f"fixture_mode: {fixture_mode}")
     txt_lines.append(f"gen target_reached: {gen.get('target_reached')} room_id: ${int(gen.get('room_id', 0)):02X}")
     txt_lines.append(f"nes target_reached: {nes.get('target_reached')} room_id: ${int(nes.get('room_id', 0)):02X}")
+    txt_lines.append(f"gen final_mode/submode: ${gen_final_mode & 0xFF:02X}/${gen_final_submode & 0xFF:02X}")
+    txt_lines.append(f"nes final_mode/submode: ${nes_final_mode & 0xFF:02X}/${nes_final_submode & 0xFF:02X}")
+    txt_lines.append(f"transition_settle_ok: {transition_settle_ok}")
     txt_lines.append("")
     txt_lines.append(f"nes_to_gen_plane_tile_mismatches: {len(nes_plane_tile)}")
     txt_lines.append(f"nes_to_gen_plane_palette_mismatches: {len(nes_plane_pal)}")
@@ -1220,6 +1263,8 @@ def main() -> int:
         "hard_pass": hard_pass,
         "route_code": route_code,
         "route_detail": route_detail,
+        "fixture_mode": fixture_mode,
+        "transition_settle_ok": transition_settle_ok,
         "first_bad_tile": first_bad_tile,
         "counts": {
             "nes_to_gen_plane_tile_mismatches": len(nes_plane_tile),
