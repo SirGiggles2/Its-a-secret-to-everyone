@@ -577,13 +577,21 @@ _mode_transition_check:
     move.l  #VSRAM_WRITE_0000,(VDP_CTRL).l
     move.w  #0,(VDP_DATA).l          ; Plane A V-scroll
     move.w  #0,(VDP_DATA).l          ; Plane B V-scroll
-    ; Preserve a live DynTileBuf across a mode transition. Some producers emit
-    ; their final dynamic transfer at the end of the outgoing mode and expect
-    ; the first NMI of the new mode to consume it.
+    ; Preserve any live transfer work across a mode transition.
+    ;
+    ; Two cases matter:
+    ;  1) DynTileBuf non-empty: pending dynamic record must survive.
+    ;  2) TileBufSelector non-zero: pending static transfer request must survive.
+    ;
+    ; Room scroll transitions rely on selector-driven transfers after the mode
+    ; has already changed, so clearing $0014 here when DynTileBuf is empty is
+    ; too aggressive.
+    tst.b   ($0014,A4)
+    bne.s   .mtc_keep_pending
     cmpi.b  #$FF,($0302,A4)
     bne.s   .mtc_keep_pending
-    ; DynTileBuf empty: safe to rewind the palette-precheck state and clear any
-    ; stale selector/NT-toggle requests from the old mode.
+    ; No pending selector and DynTileBuf empty: safe to rewind the
+    ; palette-precheck state and clear stale one-shots from the old mode.
     clr.b   ($0014,A4)               ; PPU update request byte
     clr.b   ($005C,A4)               ; SwitchNameTablesReq one-shot
     move.b  #63,($0300,A4)

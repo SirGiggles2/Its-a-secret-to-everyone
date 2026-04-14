@@ -1,7 +1,7 @@
 =================================================================
 T30/T31/T32 probe: room-load progression (natural path)
 =================================================================
-LoopForever=$03C76E  IsrNmi=$03C7A0
+LoopForever=$03C774  IsrNmi=$03C7A6
 
 f0001 CurSaveSlot=$00 active=00/00/00
 f0001 input Start     hold=2 release=3 (fast title->file-select)
