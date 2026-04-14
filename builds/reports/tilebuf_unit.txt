@@ -1,0 +1,3 @@
+before nt0=24 dyn0=FF sel=00
+injected dyn record 20 00 01 01 FF
+after nt0=24 dyn0=20 sel=00

@@ -1,0 +1,12 @@
+{
+  "hard_pass": false,
+  "transfer_stream_mismatch_count": 7,
+  "first_divergence": {
+    "event_index": 4,
+    "field": "submode",
+    "gen_value": 1,
+    "nes_value": 0
+  },
+  "gen_mode1_dyn_present": true,
+  "nes_mode1_dyn_present": true
+}

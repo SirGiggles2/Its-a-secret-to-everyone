@@ -1,0 +1,70 @@
+system_id=NES
+available_memory_domains=Battery RAM, CIRAM (nametables), OAM, PALRAM, PPU Bus, PRG ROM, System Bus, VRAM, WRAM
+selected_ram_domain=System Bus
+bank6_bin_loaded=yes bytes_a000=02 03 FE A3 B4 A2 14 68
+runtime write hooks disabled on NES core; using delta trace fallback
+transfer exec hook armed at IsrNmi $E484 (3 variants)
+==============================================================
+ROOM 76 NES CAPTURE: natural path -> mode=$05 roomId=$76
+target_walk_path=L
+==============================================================
+f0001 input Start     hold=2 release=3 (fast title->file-select)
+f0003 CurSaveSlot=$00 active=00/00/00
+f0006 input Start     hold=2 release=3 (fast title->file-select)
+f0011 input Start     hold=2 release=3 (fast title->file-select)
+f0016 input Start     hold=2 release=3 (fast title->file-select)
+f0021 input Start     hold=2 release=3 (fast title->file-select)
+f0026 input Start     hold=2 release=3 (fast title->file-select)
+f0031 input Start     hold=2 release=3 (fast title->file-select)
+f0034 CurSaveSlot=$01 active=00/00/00
+f0035 CurSaveSlot=$02 active=00/00/00
+f0036 CurSaveSlot=$03 active=00/00/00
+f0036 input Start     hold=2 release=3 (fast title->file-select)
+f0037 CurSaveSlot=$02 active=00/00/00
+f0038 CurSaveSlot=$01 active=00/00/00
+f0039 CurSaveSlot=$00 active=01/00/00
+f0039 flow BOOT_TO_FS1 -> FS1_SELECT_REGISTER (entered Mode1)
+f0040 CurSaveSlot=$01 active=01/00/00
+f0041 CurSaveSlot=$02 active=01/00/00
+f0041 input Down      hold=1 release=10 (move to REGISTER (slot 3))
+f0042 CurSaveSlot=$03 active=01/00/00
+f0042 flow FS1_SELECT_REGISTER -> FS1_ENTER_REGISTER (CurSaveSlot reached 3)
+f0043 CurSaveSlot=$00 active=01/00/00
+f0045 CurSaveSlot=$01 active=01/00/00
+f0046 CurSaveSlot=$02 active=01/00/00
+f0047 CurSaveSlot=$03 active=01/00/00
+f0048 CurSaveSlot=$00 active=01/00/00
+f0052 input Start     hold=2 release=14 (enter register mode)
+f0072 runtime decode trace armed (Mode3 post-frame)
+f0072 edge owner trace armed (Mode3 post-frame)
+f0080 trace captured: mode3/sub8 first
+f0083 trace captured: LayoutRoomOW exit ptr02_03=$9B38 ptr04_05=$9BE2
+f0171 reset capture state for target-room transition path=L
+f0264 walk step 1 entered roomId=$76
+f0373 walk step 1 settled roomId=$76
+f0373 reached stable target: mode=$05 sub=$00 roomId=$76
+
+register_mode_seen=no name_progress_events=0
+final mode=$05 sub=$00 roomId=$76 room03C=$00
+PPUCTRL(shadow $00FF)=$B0 PPUMASK(shadow $00FE)=$1E
+active_nt_index=0 nt_base=$000 bg_pattern_table=1
+final diag004C=$00 curV=$00 curH=$00 switchNT=$00 curCol=$00 curRow=$FF
+workbuf_base_ptr=$6530
+decode_write_trace_entries=0
+decode_write_trace_rt_entries=0
+decode_write_trace_rt_valid=no
+decode_write_trace_rt_hooks=fallback
+transfer_exec_hook=armed
+transfer_exec_hook_hits=663
+transfer_exec_hit_frames=201
+transfer_exec_callback_errors=0
+transfer_stream_events=109
+transfer_stream_capture_valid=yes
+edge_owner_trace_entries=0
+edge_owner_trace_valid=no
+edge_owner_writer_classes=
+transfer_parse_consistency_errors=0
+target_reached=yes frame=373
+chr_dump_available=no
+transition_state_frames=203
+trace_snapshots=1

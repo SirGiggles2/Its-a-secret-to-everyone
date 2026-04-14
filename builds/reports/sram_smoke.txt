@@ -1,0 +1,30 @@
+=== sram_smoke probe start ===
+SRAM domain found: SRAM  size=16384
+header marker $1B0-$1B3 = 52 41 F8 20 (expect 52 41 F8 20)
+header start  $1B4-$1B7 = 00 20 00 01 (expect 00 20 00 01)
+header end    $1B8-$1BB = 00 20 3F FF (expect 00 20 3F FF)
+--- (A) M68K boot sentinel check ---
+  SRAM file[$3FF9] = $5A (boot wrote $5A) MATCH
+  SRAM file[$3FFB] = $A5 (boot wrote $A5) MATCH
+  SRAM file[$3FFD] = $C3 (boot wrote $C3) MATCH
+  SRAM file[$3FFF] = $3C (boot wrote $3C) MATCH
+  sentinel pass=4 fail=0
+--- (B) Battery persistence across reboot ---
+  wrote persistence pattern at file[9,11,13,15]
+    pre-reboot file[9] = $11 (want $11)
+    pre-reboot file[11] = $22 (want $22)
+    pre-reboot file[13] = $33 (want $33)
+    pre-reboot file[15] = $44 (want $44)
+  triggering client.reboot_core() ...
+    post-reboot file[9] = $11 (want $11) MATCH
+    post-reboot file[11] = $22 (want $22) MATCH
+    post-reboot file[13] = $33 (want $33) MATCH
+    post-reboot file[15] = $44 (want $44) MATCH
+  persistence pass=4 fail=0
+  post-reboot sentinel re-check:
+    file[$3FF9] = $5A (want $5A)
+    file[$3FFB] = $A5 (want $A5)
+    file[$3FFD] = $C3 (want $C3)
+    file[$3FFF] = $3C (want $3C)
+=== sram_smoke end sentinel=4/4 persist=4/4 ===
+RESULT: PASS

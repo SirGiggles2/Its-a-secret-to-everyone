@@ -1,0 +1,140 @@
+ROOM $76 PARITY REPORT
+========================================================================
+fixture_mode: transition_room
+gen target_reached: False room_id: $76
+nes target_reached: True room_id: $76
+gen final_mode/submode: $07/$00
+nes final_mode/submode: $05/$00
+transition_settle_ok: False
+
+nes_to_gen_plane_tile_mismatches: 220
+nes_to_gen_plane_palette_mismatches: 0
+stage1_nes_workbuf_to_gen_workbuf_tile_mismatches: 4
+stage2_nes_visible_to_gen_ntcache_tile_mismatches: 220
+stage2_interior_tile_mismatches: 202
+stage2_edge_tile_mismatches: 18
+stage3_gen_ntcache_to_plane_tile_mismatches: 0
+nes_visible_to_gen_workbuf_tile_mismatches: 320
+nes_workbuf_to_gen_workbuf_tile_mismatches: 4
+nes_to_gen_ntcache_tile_mismatches: 220
+nes_to_gen_playmap_tile_mismatches: 4
+nes_tile_to_nes_playmap_mismatches: 316
+gen_playmap_to_ntcache_tile_mismatches: 408
+bg_palette_mismatches: 0
+
+trace_ptr_mismatches: 0
+trace_source_byte_mismatches: 0
+stage1_decode_trace_gen_len: 0
+stage1_decode_trace_nes_len: 0
+stage1_trace_mismatch_count: 0
+stage1_rt_trace_gen_len: 0
+stage1_rt_trace_nes_len: 0
+stage1_rt_trace_mismatch_count: 0
+stage1_rt_trace_gen_valid: False
+stage1_rt_trace_nes_valid: False
+stage1_rt_divergence_class: UNKNOWN
+transfer_event_gen_len: 41
+transfer_event_nes_len: 109
+transfer_capture_gen_valid: True
+transfer_capture_nes_valid: True
+transfer_stream_mismatch_count: 93
+transfer_producer_match: False
+transfer_touches_edge_columns: False
+edge_columns_touched: []
+first_bad_tile: {"stage": "SOURCE_DECODE", "row": 2, "col": 12, "nes_value": 216, "gen_value": 230}
+edge_owner_gen_count: 0
+edge_owner_nes_count: 0
+edge_owner_mismatch_count: 0
+edge_owner_writer_classes_gen: []
+edge_owner_writer_classes_nes: []
+stage1_matrix_gen: gen.workbuf_rows
+stage1_matrix_nes: nes.workbuf_rows
+trace_common_snapshots: (none)
+trace_compared_snapshots: (none)
+transfer_first_divergence: {"event_index": 16, "field": "raw_stream_bytes", "gen_value": [40, 160, 32, 217, 219, 217, 219, 217, 219, 217, 219, 217, 219, 217, 219, 217, 219, 217, 219, 217, 219, 217, 219, 217, 219, 217, 219, 217, 219, 217, 219, 217, 219, 217, 219, 255], "nes_value": [32, 182, 8, 36, 36, 36, 36, 36, 36, 36, 36, 32, 214, 8, 242, 242, 242, 36, 36, 36, 36, 36, 32, 108, 3, 33, 0, 36, 32, 172, 3, 33, 0, 36, 32, 204, 3, 33, 0, 36, 255]}
+
+First NES->Plane tile mismatches:
+  row02 col14 expected_idx=$1D8 actual_idx=$126 nes_tile=$D8
+  row02 col15 expected_idx=$1DA actual_idx=$126 nes_tile=$DA
+  row02 col16 expected_idx=$1D8 actual_idx=$126 nes_tile=$D8
+  row02 col17 expected_idx=$1DA actual_idx=$126 nes_tile=$DA
+  row02 col24 expected_idx=$126 actual_idx=$1D8 nes_tile=$26
+  row02 col25 expected_idx=$126 actual_idx=$1DA nes_tile=$26
+  row02 col26 expected_idx=$126 actual_idx=$1D8 nes_tile=$26
+  row02 col27 expected_idx=$126 actual_idx=$1DA nes_tile=$26
+  row03 col14 expected_idx=$1D9 actual_idx=$126 nes_tile=$D9
+  row03 col15 expected_idx=$1DB actual_idx=$126 nes_tile=$DB
+  row03 col16 expected_idx=$1D9 actual_idx=$126 nes_tile=$D9
+  row03 col17 expected_idx=$1DB actual_idx=$126 nes_tile=$DB
+  row03 col24 expected_idx=$126 actual_idx=$1D9 nes_tile=$26
+  row03 col25 expected_idx=$126 actual_idx=$1DB nes_tile=$26
+  row03 col26 expected_idx=$126 actual_idx=$1D9 nes_tile=$26
+  row03 col27 expected_idx=$126 actual_idx=$1DB nes_tile=$26
+  row04 col08 expected_idx=$1D8 actual_idx=$1F3 nes_tile=$D8
+  row04 col09 expected_idx=$1DA actual_idx=$1F3 nes_tile=$DA
+  row04 col12 expected_idx=$1D8 actual_idx=$1DC nes_tile=$D8
+  row04 col13 expected_idx=$1DA actual_idx=$1DE nes_tile=$DA
+
+First NES workbuf->GEN workbuf tile mismatches:
+  row02 col12 nes_workbuf_tile=$D8 gen_workbuf_tile=$E6
+  row02 col13 nes_workbuf_tile=$DA gen_workbuf_tile=$E8
+  row03 col12 nes_workbuf_tile=$D9 gen_workbuf_tile=$E7
+  row03 col13 nes_workbuf_tile=$DB gen_workbuf_tile=$E9
+
+First NES visible->GEN workbuf tile mismatches:
+  row00 col00 nes_tile=$24 gen_workbuf_tile=$D8
+  row00 col01 nes_tile=$24 gen_workbuf_tile=$DA
+  row00 col02 nes_tile=$F5 gen_workbuf_tile=$D8
+  row00 col03 nes_tile=$F5 gen_workbuf_tile=$DA
+  row00 col04 nes_tile=$F5 gen_workbuf_tile=$D8
+  row00 col05 nes_tile=$F5 gen_workbuf_tile=$DA
+  row00 col06 nes_tile=$F5 gen_workbuf_tile=$D8
+  row00 col07 nes_tile=$F5 gen_workbuf_tile=$DA
+  row00 col08 nes_tile=$F5 gen_workbuf_tile=$D8
+  row00 col09 nes_tile=$F5 gen_workbuf_tile=$DA
+  row00 col10 nes_tile=$24 gen_workbuf_tile=$D8
+  row00 col11 nes_tile=$61 gen_workbuf_tile=$DA
+  row00 col12 nes_tile=$21 gen_workbuf_tile=$D8
+  row00 col13 nes_tile=$00 gen_workbuf_tile=$DA
+  row00 col14 nes_tile=$24 gen_workbuf_tile=$D8
+  row00 col15 nes_tile=$6E gen_workbuf_tile=$DA
+  row00 col16 nes_tile=$6A gen_workbuf_tile=$D8
+  row00 col17 nes_tile=$6D gen_workbuf_tile=$DA
+  row00 col18 nes_tile=$6E gen_workbuf_tile=$D8
+  row00 col19 nes_tile=$6A gen_workbuf_tile=$DA
+
+First workbuf->NT cache tile mismatches:
+  row00 col00 workbuf_tile=$D8 nt_cache_tile=$24
+  row00 col01 workbuf_tile=$DA nt_cache_tile=$24
+  row00 col02 workbuf_tile=$D8 nt_cache_tile=$F5
+  row00 col03 workbuf_tile=$DA nt_cache_tile=$F5
+  row00 col04 workbuf_tile=$D8 nt_cache_tile=$F5
+  row00 col05 workbuf_tile=$DA nt_cache_tile=$F5
+  row00 col06 workbuf_tile=$D8 nt_cache_tile=$F5
+  row00 col07 workbuf_tile=$DA nt_cache_tile=$F5
+  row00 col08 workbuf_tile=$D8 nt_cache_tile=$F5
+  row00 col09 workbuf_tile=$DA nt_cache_tile=$F5
+  row00 col10 workbuf_tile=$D8 nt_cache_tile=$24
+  row00 col11 workbuf_tile=$DA nt_cache_tile=$61
+  row00 col12 workbuf_tile=$D8 nt_cache_tile=$21
+  row00 col13 workbuf_tile=$DA nt_cache_tile=$00
+  row00 col14 workbuf_tile=$D8 nt_cache_tile=$24
+  row00 col15 workbuf_tile=$DA nt_cache_tile=$6E
+  row00 col16 workbuf_tile=$D8 nt_cache_tile=$6A
+  row00 col17 workbuf_tile=$DA nt_cache_tile=$6D
+  row00 col18 workbuf_tile=$D8 nt_cache_tile=$6E
+  row00 col19 workbuf_tile=$DA nt_cache_tile=$6A
+
+First NES->playmap tile mismatches:
+  row02 col12 nes_tile=$D8 playmap_tile=$E6
+  row02 col13 nes_tile=$DA playmap_tile=$E8
+  row03 col12 nes_tile=$D9 playmap_tile=$E7
+  row03 col13 nes_tile=$DB playmap_tile=$E9
+
+alignment_best_offset: row_delta=0 col_delta=0 tile_mismatches=220 pal_mismatches=0
+screenshot_diff_diag: skipped (missing screenshot artifact(s))
+
+route_code: ROUTE_TRANSITION_SETTLE
+route_detail: Transition fixture fail: Genesis does not settle to the same final transition state as NES. GEN target_reached=False room=$76 mode/sub=$07/$00; NES target_reached=True room=$76 mode/sub=$05/$00. Patch transition state/update path before tile-parity routing.
+
+ROOM76_PARITY: FAIL

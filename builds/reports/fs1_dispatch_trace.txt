@@ -1,0 +1,343 @@
+=== fs1_dispatch_trace start ===
+f=  18 MTC#1 mode=00 sub=00 last=FF sel=00 dyn0=FF
+f=  18 MTC_CLR14#1 mode=00 sub=00 last=00 sel=00 dyn0=FF (about to clr $0014)
+f=  18 TCB#1 mode=00 sub=00 last=00 sel=00 dyn0=FF
+f=  18 TBUF#1 mode=00 sub=00 last=00 sel=00 dyn0=FF A0=00FF0302 expect=00018A5C bytes=FF 00 00 00 00 00 00 00
+f=  19 MTC#2 mode=00 sub=00 last=00 sel=00 dyn0=FF
+f=  19 TCB#2 mode=00 sub=00 last=00 sel=00 dyn0=FF
+f=  19 TBUF#2 mode=00 sub=00 last=00 sel=00 dyn0=FF A0=00FF0302 expect=00018A5C bytes=FF 00 00 00 00 00 00 00
+f=  40 MTC#3 mode=00 sub=00 last=00 sel=00 dyn0=FF
+f=  40 TCB#3 mode=00 sub=00 last=00 sel=00 dyn0=FF
+f=  40 TBUF#3 mode=00 sub=00 last=00 sel=00 dyn0=FF A0=00FF0302 expect=00018A5C bytes=FF 00 00 00 00 00 00 00
+f=  67 MTC#4 mode=00 sub=00 last=00 sel=00 dyn0=FF
+f=  67 TCB#4 mode=00 sub=00 last=00 sel=00 dyn0=FF
+f=  67 TBUF#4 mode=00 sub=00 last=00 sel=00 dyn0=FF A0=00FF0302 expect=00018A5C bytes=FF 00 00 00 00 00 00 00
+f=  69 MTC#5 mode=00 sub=00 last=00 sel=00 dyn0=FF
+f=  69 TCB#5 mode=00 sub=00 last=00 sel=00 dyn0=FF
+f=  69 TBUF#5 mode=00 sub=00 last=00 sel=00 dyn0=FF A0=00FF0302 expect=00018A5C bytes=FF 00 00 00 00 00 00 00
+f=  70 MTC#6 mode=00 sub=00 last=00 sel=00 dyn0=3F
+f=  70 TCB#6 mode=00 sub=00 last=00 sel=00 dyn0=3F
+f=  71 MTC#7 mode=00 sub=00 last=00 sel=10 dyn0=FF
+f=  71 TCB#7 mode=00 sub=00 last=00 sel=10 dyn0=FF
+f=  71 TBUF#6 mode=00 sub=00 last=00 sel=10 dyn0=FF A0=000191D6 expect=00018A5C bytes=20 00 20 24 24 24 24 24
+f=  77 MTC#8 mode=00 sub=00 last=00 sel=00 dyn0=3F
+f=  77 TCB#8 mode=00 sub=00 last=00 sel=00 dyn0=3F
+f=  78 MTC#9 mode=00 sub=00 last=00 sel=00 dyn0=FF
+f=  78 TCB#9 mode=00 sub=00 last=00 sel=00 dyn0=FF
+f=  78 TBUF#7 mode=00 sub=00 last=00 sel=00 dyn0=FF A0=00FF0302 expect=00018A5C bytes=FF 04 04 36 17 27 0F FF
+f=  79 MTC#10 mode=00 sub=00 last=00 sel=00 dyn0=FF
+f=  79 TCB#10 mode=00 sub=00 last=00 sel=00 dyn0=FF
+f=  79 TBUF#8 mode=00 sub=00 last=00 sel=00 dyn0=FF A0=00FF0302 expect=00018A5C bytes=FF 04 04 36 17 27 0F FF
+f=  80 MTC#11 mode=00 sub=00 last=00 sel=00 dyn0=FF
+f=  80 TCB#11 mode=00 sub=00 last=00 sel=00 dyn0=FF
+f=  80 TBUF#9 mode=00 sub=00 last=00 sel=00 dyn0=FF A0=00FF0302 expect=00018A5C bytes=FF 04 04 36 17 27 0F FF
+f=  81 MTC#12 mode=00 sub=00 last=00 sel=00 dyn0=FF
+f=  81 TCB#12 mode=00 sub=00 last=00 sel=00 dyn0=FF
+f=  81 TBUF#10 mode=00 sub=00 last=00 sel=00 dyn0=FF A0=00FF0302 expect=00018A5C bytes=FF 04 04 36 17 27 0F FF
+f=  82 MTC#13 mode=00 sub=00 last=00 sel=00 dyn0=FF
+f=  82 TCB#13 mode=00 sub=00 last=00 sel=00 dyn0=FF
+f=  82 TBUF#11 mode=00 sub=00 last=00 sel=00 dyn0=FF A0=00FF0302 expect=00018A5C bytes=FF 04 04 36 17 27 0F FF
+f=  83 MTC#14 mode=00 sub=00 last=00 sel=00 dyn0=3F
+f=  83 TCB#14 mode=00 sub=00 last=00 sel=00 dyn0=3F
+f=  84 MTC#15 mode=00 sub=00 last=00 sel=00 dyn0=FF
+f=  84 TCB#15 mode=00 sub=00 last=00 sel=00 dyn0=FF
+f=  84 TBUF#12 mode=00 sub=00 last=00 sel=00 dyn0=FF A0=00FF0302 expect=00018A5C bytes=FF 04 04 36 17 37 0F FF
+f=  85 MTC#16 mode=00 sub=00 last=00 sel=00 dyn0=FF
+f=  85 TCB#16 mode=00 sub=00 last=00 sel=00 dyn0=FF
+f=  85 TBUF#13 mode=00 sub=00 last=00 sel=00 dyn0=FF A0=00FF0302 expect=00018A5C bytes=FF 04 04 36 17 37 0F FF
+f=  86 MTC#17 mode=00 sub=00 last=00 sel=00 dyn0=FF
+f=  86 TCB#17 mode=00 sub=00 last=00 sel=00 dyn0=FF
+f=  86 TBUF#14 mode=00 sub=00 last=00 sel=00 dyn0=FF A0=00FF0302 expect=00018A5C bytes=FF 04 04 36 17 37 0F FF
+f=  87 MTC#18 mode=00 sub=00 last=00 sel=00 dyn0=FF
+f=  87 TCB#18 mode=00 sub=00 last=00 sel=00 dyn0=FF
+f=  87 TBUF#15 mode=00 sub=00 last=00 sel=00 dyn0=FF A0=00FF0302 expect=00018A5C bytes=FF 04 04 36 17 37 0F FF
+f=  88 MTC#19 mode=00 sub=00 last=00 sel=00 dyn0=FF
+f=  88 TCB#19 mode=00 sub=00 last=00 sel=00 dyn0=FF
+f=  88 TBUF#16 mode=00 sub=00 last=00 sel=00 dyn0=FF A0=00FF0302 expect=00018A5C bytes=FF 04 04 36 17 37 0F FF
+f=  89 MTC#20 mode=00 sub=00 last=00 sel=00 dyn0=3F
+f=  89 TCB#20 mode=00 sub=00 last=00 sel=00 dyn0=3F
+f=  90 MTC#21 mode=00 sub=00 last=00 sel=00 dyn0=FF
+f=  90 TCB#21 mode=00 sub=00 last=00 sel=00 dyn0=FF
+f=  90 TBUF#17 mode=00 sub=00 last=00 sel=00 dyn0=FF A0=00FF0302 expect=00018A5C bytes=FF 04 04 36 17 37 0F FF
+f=  91 MTC#22 mode=00 sub=01 last=00 sel=12 dyn0=FF
+f=  91 TCB#22 mode=00 sub=01 last=00 sel=12 dyn0=FF
+f=  91 TBUF#18 mode=00 sub=01 last=00 sel=12 dyn0=FF A0=000187EE expect=00018A5C bytes=3F 00 20 0F 30 00 12 0F
+f=  98 MTC#23 mode=00 sub=02 last=00 sel=00 dyn0=FF
+f=  98 TCB#23 mode=00 sub=02 last=00 sel=00 dyn0=FF
+f=  98 TBUF#19 mode=00 sub=02 last=00 sel=00 dyn0=FF A0=00FF0302 expect=00018A5C bytes=FF 04 04 36 17 37 0F FF
+f= 103 MTC#24 mode=01 sub=00 last=00 sel=00 dyn0=FF
+f= 103 MTC_CLR14#2 mode=01 sub=00 last=01 sel=00 dyn0=FF (about to clr $0014)
+f= 103 TCB#24 mode=01 sub=00 last=01 sel=00 dyn0=FF
+f= 103 TBUF#20 mode=01 sub=00 last=01 sel=00 dyn0=FF A0=00FF0302 expect=00018A5C bytes=FF 04 04 36 17 37 0F FF
+f= 106 MTC#25 mode=01 sub=01 last=01 sel=00 dyn0=FF
+f= 106 TCB#25 mode=01 sub=01 last=01 sel=00 dyn0=FF
+f= 106 TBUF#21 mode=01 sub=01 last=01 sel=00 dyn0=FF A0=00FF0302 expect=00018A5C bytes=FF 04 04 36 17 37 0F FF
+f= 107 SUB1#1 mode=01 sub=01 last=01 sel=00 dyn0=FF
+f= 108 MTC#26 mode=01 sub=02 last=01 sel=12 dyn0=FF
+f= 108 TCB#26 mode=01 sub=02 last=01 sel=12 dyn0=FF
+f= 108 TBUF#22 mode=01 sub=02 last=01 sel=12 dyn0=FF A0=000187EE expect=00018A5C bytes=3F 00 20 0F 30 00 12 0F
+f= 108 SUB2#1 mode=01 sub=02 last=01 sel=00 dyn0=FF
+f= 108 SUB2_SEL#1 mode=01 sub=02 last=01 sel=00 dyn0=FF D0=00000014 (about to MOVE.B D0,$14)
+f= 109 MTC#27 mode=01 sub=03 last=01 sel=14 dyn0=FF
+f= 109 TCB#27 mode=01 sub=03 last=01 sel=14 dyn0=FF
+f= 109 TBUF#23 mode=01 sub=03 last=01 sel=14 dyn0=FF A0=00018A5C expect=00018A5C bytes=23 C0 7F 00 23 D4 03 40
+f= 113 FILL#1 mode=01 sub=03 last=01 sel=00 dyn0=FF
+f= 113 MTC#28 mode=01 sub=04 last=01 sel=00 dyn0=21
+f= 113 TCB#28 mode=01 sub=04 last=01 sel=00 dyn0=21
+f= 113 TBUF#24 mode=01 sub=04 last=01 sel=00 dyn0=21 A0=00FF0302 expect=00018A5C bytes=21 69 11 24 24 24 24 24
+f= 114 FILL#2 mode=01 sub=04 last=01 sel=00 dyn0=FF
+f= 114 MTC#29 mode=01 sub=05 last=01 sel=00 dyn0=21
+f= 114 TCB#29 mode=01 sub=05 last=01 sel=00 dyn0=21
+f= 114 TBUF#25 mode=01 sub=05 last=01 sel=00 dyn0=21 A0=00FF0302 expect=00018A5C bytes=21 C9 11 24 24 24 24 24
+f= 114 FILL#3 mode=01 sub=05 last=01 sel=00 dyn0=FF
+f= 115 MTC#30 mode=01 sub=06 last=01 sel=00 dyn0=22
+f= 115 TCB#30 mode=01 sub=06 last=01 sel=00 dyn0=22
+f= 115 TBUF#26 mode=01 sub=06 last=01 sel=00 dyn0=22 A0=00FF0302 expect=00018A5C bytes=22 29 11 24 24 24 24 24
+f= 116 MTC#31 mode=01 sub=00 last=01 sel=00 dyn0=21
+f= 116 TCB#31 mode=01 sub=00 last=01 sel=00 dyn0=21
+f= 116 TBUF#27 mode=01 sub=00 last=01 sel=00 dyn0=21 A0=00FF0302 expect=00018A5C bytes=21 89 03 24 24 24 21 E9
+f= 117 MTC#32 mode=01 sub=00 last=01 sel=00 dyn0=FF
+f= 117 TCB#32 mode=01 sub=00 last=01 sel=00 dyn0=FF
+f= 117 TBUF#28 mode=01 sub=00 last=01 sel=00 dyn0=FF A0=00FF0302 expect=00018A5C bytes=FF 89 03 24 24 24 21 E9
+f= 118 MTC#33 mode=01 sub=00 last=01 sel=00 dyn0=FF
+f= 118 TCB#33 mode=01 sub=00 last=01 sel=00 dyn0=FF
+f= 118 TBUF#29 mode=01 sub=00 last=01 sel=00 dyn0=FF A0=00FF0302 expect=00018A5C bytes=FF 89 03 24 24 24 21 E9
+f= 119 MTC#34 mode=01 sub=00 last=01 sel=00 dyn0=FF
+f= 119 TCB#34 mode=01 sub=00 last=01 sel=00 dyn0=FF
+f= 119 TBUF#30 mode=01 sub=00 last=01 sel=00 dyn0=FF A0=00FF0302 expect=00018A5C bytes=FF 89 03 24 24 24 21 E9
+f= 120 MTC#35 mode=01 sub=00 last=01 sel=00 dyn0=FF
+f= 120 TCB#35 mode=01 sub=00 last=01 sel=00 dyn0=FF
+f= 120 TBUF#31 mode=01 sub=00 last=01 sel=00 dyn0=FF A0=00FF0302 expect=00018A5C bytes=FF 89 03 24 24 24 21 E9
+f= 121 MTC#36 mode=01 sub=00 last=01 sel=00 dyn0=FF
+f= 121 TCB#36 mode=01 sub=00 last=01 sel=00 dyn0=FF
+f= 121 TBUF#32 mode=01 sub=00 last=01 sel=00 dyn0=FF A0=00FF0302 expect=00018A5C bytes=FF 89 03 24 24 24 21 E9
+f= 122 MTC#37 mode=01 sub=00 last=01 sel=00 dyn0=FF
+f= 122 TCB#37 mode=01 sub=00 last=01 sel=00 dyn0=FF
+f= 122 TBUF#33 mode=01 sub=00 last=01 sel=00 dyn0=FF A0=00FF0302 expect=00018A5C bytes=FF 89 03 24 24 24 21 E9
+f= 123 MTC#38 mode=01 sub=00 last=01 sel=00 dyn0=FF
+f= 123 TCB#38 mode=01 sub=00 last=01 sel=00 dyn0=FF
+f= 123 TBUF#34 mode=01 sub=00 last=01 sel=00 dyn0=FF A0=00FF0302 expect=00018A5C bytes=FF 89 03 24 24 24 21 E9
+f= 124 MTC#39 mode=01 sub=00 last=01 sel=00 dyn0=FF
+f= 124 TCB#39 mode=01 sub=00 last=01 sel=00 dyn0=FF
+f= 124 TBUF#35 mode=01 sub=00 last=01 sel=00 dyn0=FF A0=00FF0302 expect=00018A5C bytes=FF 89 03 24 24 24 21 E9
+f= 125 MTC#40 mode=01 sub=00 last=01 sel=00 dyn0=FF
+f= 125 TCB#40 mode=01 sub=00 last=01 sel=00 dyn0=FF
+f= 125 TBUF#36 mode=01 sub=00 last=01 sel=00 dyn0=FF A0=00FF0302 expect=00018A5C bytes=FF 89 03 24 24 24 21 E9
+f= 126 MTC#41 mode=01 sub=00 last=01 sel=00 dyn0=FF
+f= 126 TCB#41 mode=01 sub=00 last=01 sel=00 dyn0=FF
+f= 126 TBUF#37 mode=01 sub=00 last=01 sel=00 dyn0=FF A0=00FF0302 expect=00018A5C bytes=FF 89 03 24 24 24 21 E9
+f= 127 MTC#42 mode=01 sub=00 last=01 sel=00 dyn0=FF
+f= 127 TCB#42 mode=01 sub=00 last=01 sel=00 dyn0=FF
+f= 127 TBUF#38 mode=01 sub=00 last=01 sel=00 dyn0=FF A0=00FF0302 expect=00018A5C bytes=FF 89 03 24 24 24 21 E9
+f= 128 MTC#43 mode=01 sub=00 last=01 sel=00 dyn0=FF
+f= 128 TCB#43 mode=01 sub=00 last=01 sel=00 dyn0=FF
+f= 128 TBUF#39 mode=01 sub=00 last=01 sel=00 dyn0=FF A0=00FF0302 expect=00018A5C bytes=FF 89 03 24 24 24 21 E9
+f= 129 MTC#44 mode=01 sub=00 last=01 sel=00 dyn0=FF
+f= 129 TCB#44 mode=01 sub=00 last=01 sel=00 dyn0=FF
+f= 129 TBUF#40 mode=01 sub=00 last=01 sel=00 dyn0=FF A0=00FF0302 expect=00018A5C bytes=FF 89 03 24 24 24 21 E9
+f= 130 MTC#45 mode=01 sub=00 last=01 sel=00 dyn0=FF
+f= 130 TCB#45 mode=01 sub=00 last=01 sel=00 dyn0=FF
+f= 130 TBUF#41 mode=01 sub=00 last=01 sel=00 dyn0=FF A0=00FF0302 expect=00018A5C bytes=FF 89 03 24 24 24 21 E9
+f= 131 MTC#46 mode=01 sub=00 last=01 sel=00 dyn0=FF
+f= 131 TCB#46 mode=01 sub=00 last=01 sel=00 dyn0=FF
+f= 131 TBUF#42 mode=01 sub=00 last=01 sel=00 dyn0=FF A0=00FF0302 expect=00018A5C bytes=FF 89 03 24 24 24 21 E9
+f= 132 MTC#47 mode=01 sub=00 last=01 sel=00 dyn0=FF
+f= 132 TCB#47 mode=01 sub=00 last=01 sel=00 dyn0=FF
+f= 132 TBUF#43 mode=01 sub=00 last=01 sel=00 dyn0=FF A0=00FF0302 expect=00018A5C bytes=FF 89 03 24 24 24 21 E9
+f= 133 MTC#48 mode=01 sub=00 last=01 sel=00 dyn0=FF
+f= 133 TCB#48 mode=01 sub=00 last=01 sel=00 dyn0=FF
+f= 133 TBUF#44 mode=01 sub=00 last=01 sel=00 dyn0=FF A0=00FF0302 expect=00018A5C bytes=FF 89 03 24 24 24 21 E9
+f= 134 MTC#49 mode=01 sub=00 last=01 sel=00 dyn0=FF
+f= 134 TCB#49 mode=01 sub=00 last=01 sel=00 dyn0=FF
+f= 134 TBUF#45 mode=01 sub=00 last=01 sel=00 dyn0=FF A0=00FF0302 expect=00018A5C bytes=FF 89 03 24 24 24 21 E9
+f= 135 MTC#50 mode=01 sub=00 last=01 sel=00 dyn0=FF
+f= 135 TCB#50 mode=01 sub=00 last=01 sel=00 dyn0=FF
+f= 135 TBUF#46 mode=01 sub=00 last=01 sel=00 dyn0=FF A0=00FF0302 expect=00018A5C bytes=FF 89 03 24 24 24 21 E9
+f= 136 MTC#51 mode=01 sub=00 last=01 sel=00 dyn0=FF
+f= 136 TCB#51 mode=01 sub=00 last=01 sel=00 dyn0=FF
+f= 136 TBUF#47 mode=01 sub=00 last=01 sel=00 dyn0=FF A0=00FF0302 expect=00018A5C bytes=FF 89 03 24 24 24 21 E9
+f= 137 MTC#52 mode=01 sub=00 last=01 sel=00 dyn0=FF
+f= 137 TCB#52 mode=01 sub=00 last=01 sel=00 dyn0=FF
+f= 137 TBUF#48 mode=01 sub=00 last=01 sel=00 dyn0=FF A0=00FF0302 expect=00018A5C bytes=FF 89 03 24 24 24 21 E9
+f= 138 MTC#53 mode=01 sub=00 last=01 sel=00 dyn0=FF
+f= 138 TCB#53 mode=01 sub=00 last=01 sel=00 dyn0=FF
+f= 138 TBUF#49 mode=01 sub=00 last=01 sel=00 dyn0=FF A0=00FF0302 expect=00018A5C bytes=FF 89 03 24 24 24 21 E9
+f= 139 MTC#54 mode=01 sub=00 last=01 sel=00 dyn0=FF
+f= 139 TCB#54 mode=01 sub=00 last=01 sel=00 dyn0=FF
+f= 139 TBUF#50 mode=01 sub=00 last=01 sel=00 dyn0=FF A0=00FF0302 expect=00018A5C bytes=FF 89 03 24 24 24 21 E9
+f= 140 MTC#55 mode=01 sub=00 last=01 sel=00 dyn0=FF
+f= 140 TCB#55 mode=01 sub=00 last=01 sel=00 dyn0=FF
+f= 140 TBUF#51 mode=01 sub=00 last=01 sel=00 dyn0=FF A0=00FF0302 expect=00018A5C bytes=FF 89 03 24 24 24 21 E9
+f= 141 MTC#56 mode=01 sub=00 last=01 sel=00 dyn0=FF
+f= 141 TCB#56 mode=01 sub=00 last=01 sel=00 dyn0=FF
+f= 141 TBUF#52 mode=01 sub=00 last=01 sel=00 dyn0=FF A0=00FF0302 expect=00018A5C bytes=FF 89 03 24 24 24 21 E9
+f= 142 MTC#57 mode=01 sub=00 last=01 sel=00 dyn0=FF
+f= 142 TCB#57 mode=01 sub=00 last=01 sel=00 dyn0=FF
+f= 142 TBUF#53 mode=01 sub=00 last=01 sel=00 dyn0=FF A0=00FF0302 expect=00018A5C bytes=FF 89 03 24 24 24 21 E9
+f= 143 MTC#58 mode=01 sub=00 last=01 sel=00 dyn0=FF
+f= 143 TCB#58 mode=01 sub=00 last=01 sel=00 dyn0=FF
+f= 143 TBUF#54 mode=01 sub=00 last=01 sel=00 dyn0=FF A0=00FF0302 expect=00018A5C bytes=FF 89 03 24 24 24 21 E9
+f= 144 MTC#59 mode=01 sub=00 last=01 sel=00 dyn0=FF
+f= 144 TCB#59 mode=01 sub=00 last=01 sel=00 dyn0=FF
+f= 144 TBUF#55 mode=01 sub=00 last=01 sel=00 dyn0=FF A0=00FF0302 expect=00018A5C bytes=FF 89 03 24 24 24 21 E9
+f= 145 MTC#60 mode=01 sub=00 last=01 sel=00 dyn0=FF
+f= 145 TCB#60 mode=01 sub=00 last=01 sel=00 dyn0=FF
+f= 145 TBUF#56 mode=01 sub=00 last=01 sel=00 dyn0=FF A0=00FF0302 expect=00018A5C bytes=FF 89 03 24 24 24 21 E9
+f= 146 MTC#61 mode=01 sub=00 last=01 sel=00 dyn0=FF
+f= 146 TCB#61 mode=01 sub=00 last=01 sel=00 dyn0=FF
+f= 146 TBUF#57 mode=01 sub=00 last=01 sel=00 dyn0=FF A0=00FF0302 expect=00018A5C bytes=FF 89 03 24 24 24 21 E9
+f= 147 MTC#62 mode=01 sub=00 last=01 sel=00 dyn0=FF
+f= 147 TCB#62 mode=01 sub=00 last=01 sel=00 dyn0=FF
+f= 147 TBUF#58 mode=01 sub=00 last=01 sel=00 dyn0=FF A0=00FF0302 expect=00018A5C bytes=FF 89 03 24 24 24 21 E9
+f= 148 MTC#63 mode=01 sub=00 last=01 sel=00 dyn0=FF
+f= 148 TCB#63 mode=01 sub=00 last=01 sel=00 dyn0=FF
+f= 148 TBUF#59 mode=01 sub=00 last=01 sel=00 dyn0=FF A0=00FF0302 expect=00018A5C bytes=FF 89 03 24 24 24 21 E9
+f= 149 MTC#64 mode=01 sub=00 last=01 sel=00 dyn0=FF
+f= 149 TCB#64 mode=01 sub=00 last=01 sel=00 dyn0=FF
+f= 149 TBUF#60 mode=01 sub=00 last=01 sel=00 dyn0=FF A0=00FF0302 expect=00018A5C bytes=FF 89 03 24 24 24 21 E9
+f= 150 MTC#65 mode=01 sub=00 last=01 sel=00 dyn0=FF
+f= 150 TCB#65 mode=01 sub=00 last=01 sel=00 dyn0=FF
+f= 150 TBUF#61 mode=01 sub=00 last=01 sel=00 dyn0=FF A0=00FF0302 expect=00018A5C bytes=FF 89 03 24 24 24 21 E9
+f= 151 MTC#66 mode=01 sub=00 last=01 sel=00 dyn0=FF
+f= 151 TCB#66 mode=01 sub=00 last=01 sel=00 dyn0=FF
+f= 151 TBUF#62 mode=01 sub=00 last=01 sel=00 dyn0=FF A0=00FF0302 expect=00018A5C bytes=FF 89 03 24 24 24 21 E9
+f= 152 MTC#67 mode=01 sub=00 last=01 sel=00 dyn0=FF
+f= 152 TCB#67 mode=01 sub=00 last=01 sel=00 dyn0=FF
+f= 152 TBUF#63 mode=01 sub=00 last=01 sel=00 dyn0=FF A0=00FF0302 expect=00018A5C bytes=FF 89 03 24 24 24 21 E9
+f= 153 MTC#68 mode=01 sub=00 last=01 sel=00 dyn0=FF
+f= 153 TCB#68 mode=01 sub=00 last=01 sel=00 dyn0=FF
+f= 153 TBUF#64 mode=01 sub=00 last=01 sel=00 dyn0=FF A0=00FF0302 expect=00018A5C bytes=FF 89 03 24 24 24 21 E9
+f= 154 MTC#69 mode=01 sub=00 last=01 sel=00 dyn0=FF
+f= 154 TCB#69 mode=01 sub=00 last=01 sel=00 dyn0=FF
+f= 154 TBUF#65 mode=01 sub=00 last=01 sel=00 dyn0=FF A0=00FF0302 expect=00018A5C bytes=FF 89 03 24 24 24 21 E9
+f= 155 MTC#70 mode=01 sub=00 last=01 sel=00 dyn0=FF
+f= 155 TCB#70 mode=01 sub=00 last=01 sel=00 dyn0=FF
+f= 155 TBUF#66 mode=01 sub=00 last=01 sel=00 dyn0=FF A0=00FF0302 expect=00018A5C bytes=FF 89 03 24 24 24 21 E9
+f= 156 MTC#71 mode=01 sub=00 last=01 sel=00 dyn0=FF
+f= 156 TCB#71 mode=01 sub=00 last=01 sel=00 dyn0=FF
+f= 156 TBUF#67 mode=01 sub=00 last=01 sel=00 dyn0=FF A0=00FF0302 expect=00018A5C bytes=FF 89 03 24 24 24 21 E9
+f= 157 MTC#72 mode=01 sub=00 last=01 sel=00 dyn0=FF
+f= 157 TCB#72 mode=01 sub=00 last=01 sel=00 dyn0=FF
+f= 157 TBUF#68 mode=01 sub=00 last=01 sel=00 dyn0=FF A0=00FF0302 expect=00018A5C bytes=FF 89 03 24 24 24 21 E9
+f= 158 MTC#73 mode=01 sub=00 last=01 sel=00 dyn0=FF
+f= 158 TCB#73 mode=01 sub=00 last=01 sel=00 dyn0=FF
+f= 158 TBUF#69 mode=01 sub=00 last=01 sel=00 dyn0=FF A0=00FF0302 expect=00018A5C bytes=FF 89 03 24 24 24 21 E9
+f= 159 MTC#74 mode=01 sub=00 last=01 sel=00 dyn0=FF
+f= 159 TCB#74 mode=01 sub=00 last=01 sel=00 dyn0=FF
+f= 159 TBUF#70 mode=01 sub=00 last=01 sel=00 dyn0=FF A0=00FF0302 expect=00018A5C bytes=FF 89 03 24 24 24 21 E9
+f= 160 MTC#75 mode=01 sub=00 last=01 sel=00 dyn0=FF
+f= 160 TCB#75 mode=01 sub=00 last=01 sel=00 dyn0=FF
+f= 160 TBUF#71 mode=01 sub=00 last=01 sel=00 dyn0=FF A0=00FF0302 expect=00018A5C bytes=FF 89 03 24 24 24 21 E9
+f= 161 MTC#76 mode=01 sub=00 last=01 sel=00 dyn0=FF
+f= 161 TCB#76 mode=01 sub=00 last=01 sel=00 dyn0=FF
+f= 161 TBUF#72 mode=01 sub=00 last=01 sel=00 dyn0=FF A0=00FF0302 expect=00018A5C bytes=FF 89 03 24 24 24 21 E9
+f= 162 MTC#77 mode=01 sub=00 last=01 sel=00 dyn0=FF
+f= 162 TCB#77 mode=01 sub=00 last=01 sel=00 dyn0=FF
+f= 162 TBUF#73 mode=01 sub=00 last=01 sel=00 dyn0=FF A0=00FF0302 expect=00018A5C bytes=FF 89 03 24 24 24 21 E9
+f= 163 MTC#78 mode=01 sub=00 last=01 sel=00 dyn0=FF
+f= 163 TCB#78 mode=01 sub=00 last=01 sel=00 dyn0=FF
+f= 163 TBUF#74 mode=01 sub=00 last=01 sel=00 dyn0=FF A0=00FF0302 expect=00018A5C bytes=FF 89 03 24 24 24 21 E9
+f= 164 MTC#79 mode=01 sub=00 last=01 sel=00 dyn0=FF
+f= 164 TCB#79 mode=01 sub=00 last=01 sel=00 dyn0=FF
+f= 164 TBUF#75 mode=01 sub=00 last=01 sel=00 dyn0=FF A0=00FF0302 expect=00018A5C bytes=FF 89 03 24 24 24 21 E9
+f= 165 MTC#80 mode=01 sub=00 last=01 sel=00 dyn0=FF
+f= 165 TCB#80 mode=01 sub=00 last=01 sel=00 dyn0=FF
+f= 165 TBUF#76 mode=01 sub=00 last=01 sel=00 dyn0=FF A0=00FF0302 expect=00018A5C bytes=FF 89 03 24 24 24 21 E9
+f= 166 TBUF#77 mode=01 sub=00 last=01 sel=00 dyn0=FF A0=00FF0302 expect=00018A5C bytes=FF 89 03 24 24 24 21 E9
+f= 167 TBUF#78 mode=01 sub=00 last=01 sel=00 dyn0=FF A0=00FF0302 expect=00018A5C bytes=FF 89 03 24 24 24 21 E9
+f= 168 TBUF#79 mode=01 sub=00 last=01 sel=00 dyn0=FF A0=00FF0302 expect=00018A5C bytes=FF 89 03 24 24 24 21 E9
+f= 169 TBUF#80 mode=01 sub=00 last=01 sel=00 dyn0=FF A0=00FF0302 expect=00018A5C bytes=FF 89 03 24 24 24 21 E9
+f= 170 TBUF#81 mode=01 sub=00 last=01 sel=00 dyn0=FF A0=00FF0302 expect=00018A5C bytes=FF 89 03 24 24 24 21 E9
+f= 171 TBUF#82 mode=01 sub=00 last=01 sel=00 dyn0=FF A0=00FF0302 expect=00018A5C bytes=FF 89 03 24 24 24 21 E9
+f= 172 TBUF#83 mode=01 sub=00 last=01 sel=00 dyn0=FF A0=00FF0302 expect=00018A5C bytes=FF 89 03 24 24 24 21 E9
+f= 173 TBUF#84 mode=01 sub=00 last=01 sel=00 dyn0=FF A0=00FF0302 expect=00018A5C bytes=FF 89 03 24 24 24 21 E9
+f= 174 TBUF#85 mode=01 sub=00 last=01 sel=00 dyn0=FF A0=00FF0302 expect=00018A5C bytes=FF 89 03 24 24 24 21 E9
+f= 175 TBUF#86 mode=01 sub=00 last=01 sel=00 dyn0=FF A0=00FF0302 expect=00018A5C bytes=FF 89 03 24 24 24 21 E9
+f= 176 TBUF#87 mode=01 sub=00 last=01 sel=00 dyn0=FF A0=00FF0302 expect=00018A5C bytes=FF 89 03 24 24 24 21 E9
+f= 177 TBUF#88 mode=01 sub=00 last=01 sel=00 dyn0=FF A0=00FF0302 expect=00018A5C bytes=FF 89 03 24 24 24 21 E9
+f= 178 TBUF#89 mode=01 sub=00 last=01 sel=00 dyn0=FF A0=00FF0302 expect=00018A5C bytes=FF 89 03 24 24 24 21 E9
+f= 179 TBUF#90 mode=01 sub=00 last=01 sel=00 dyn0=FF A0=00FF0302 expect=00018A5C bytes=FF 89 03 24 24 24 21 E9
+f= 180 TBUF#91 mode=01 sub=00 last=01 sel=00 dyn0=FF A0=00FF0302 expect=00018A5C bytes=FF 89 03 24 24 24 21 E9
+f= 181 TBUF#92 mode=01 sub=00 last=01 sel=00 dyn0=FF A0=00FF0302 expect=00018A5C bytes=FF 89 03 24 24 24 21 E9
+f= 182 TBUF#93 mode=01 sub=00 last=01 sel=00 dyn0=FF A0=00FF0302 expect=00018A5C bytes=FF 89 03 24 24 24 21 E9
+f= 183 TBUF#94 mode=01 sub=00 last=01 sel=00 dyn0=FF A0=00FF0302 expect=00018A5C bytes=FF 89 03 24 24 24 21 E9
+f= 184 TBUF#95 mode=01 sub=00 last=01 sel=00 dyn0=FF A0=00FF0302 expect=00018A5C bytes=FF 89 03 24 24 24 21 E9
+f= 185 TBUF#96 mode=01 sub=00 last=01 sel=00 dyn0=FF A0=00FF0302 expect=00018A5C bytes=FF 89 03 24 24 24 21 E9
+f= 186 TBUF#97 mode=01 sub=00 last=01 sel=00 dyn0=FF A0=00FF0302 expect=00018A5C bytes=FF 89 03 24 24 24 21 E9
+f= 187 TBUF#98 mode=01 sub=00 last=01 sel=00 dyn0=FF A0=00FF0302 expect=00018A5C bytes=FF 89 03 24 24 24 21 E9
+f= 188 TBUF#99 mode=01 sub=00 last=01 sel=00 dyn0=FF A0=00FF0302 expect=00018A5C bytes=FF 89 03 24 24 24 21 E9
+f= 189 TBUF#100 mode=01 sub=00 last=01 sel=00 dyn0=FF A0=00FF0302 expect=00018A5C bytes=FF 89 03 24 24 24 21 E9
+f= 190 TBUF#101 mode=01 sub=00 last=01 sel=00 dyn0=FF A0=00FF0302 expect=00018A5C bytes=FF 89 03 24 24 24 21 E9
+f= 191 TBUF#102 mode=01 sub=00 last=01 sel=00 dyn0=FF A0=00FF0302 expect=00018A5C bytes=FF 89 03 24 24 24 21 E9
+f= 192 TBUF#103 mode=01 sub=00 last=01 sel=00 dyn0=FF A0=00FF0302 expect=00018A5C bytes=FF 89 03 24 24 24 21 E9
+f= 193 TBUF#104 mode=01 sub=00 last=01 sel=00 dyn0=FF A0=00FF0302 expect=00018A5C bytes=FF 89 03 24 24 24 21 E9
+f= 194 TBUF#105 mode=01 sub=00 last=01 sel=00 dyn0=FF A0=00FF0302 expect=00018A5C bytes=FF 89 03 24 24 24 21 E9
+f= 195 TBUF#106 mode=01 sub=00 last=01 sel=00 dyn0=FF A0=00FF0302 expect=00018A5C bytes=FF 89 03 24 24 24 21 E9
+f= 196 TBUF#107 mode=01 sub=00 last=01 sel=00 dyn0=FF A0=00FF0302 expect=00018A5C bytes=FF 89 03 24 24 24 21 E9
+f= 197 TBUF#108 mode=01 sub=00 last=01 sel=00 dyn0=FF A0=00FF0302 expect=00018A5C bytes=FF 89 03 24 24 24 21 E9
+f= 198 TBUF#109 mode=01 sub=00 last=01 sel=00 dyn0=FF A0=00FF0302 expect=00018A5C bytes=FF 89 03 24 24 24 21 E9
+f= 199 TBUF#110 mode=01 sub=00 last=01 sel=00 dyn0=FF A0=00FF0302 expect=00018A5C bytes=FF 89 03 24 24 24 21 E9
+f= 200 TBUF#111 mode=01 sub=00 last=01 sel=00 dyn0=FF A0=00FF0302 expect=00018A5C bytes=FF 89 03 24 24 24 21 E9
+f= 201 TBUF#112 mode=01 sub=00 last=01 sel=00 dyn0=FF A0=00FF0302 expect=00018A5C bytes=FF 89 03 24 24 24 21 E9
+f= 202 TBUF#113 mode=01 sub=00 last=01 sel=00 dyn0=FF A0=00FF0302 expect=00018A5C bytes=FF 89 03 24 24 24 21 E9
+f= 203 TBUF#114 mode=01 sub=00 last=01 sel=00 dyn0=FF A0=00FF0302 expect=00018A5C bytes=FF 89 03 24 24 24 21 E9
+f= 204 TBUF#115 mode=01 sub=00 last=01 sel=00 dyn0=FF A0=00FF0302 expect=00018A5C bytes=FF 89 03 24 24 24 21 E9
+f= 205 TBUF#116 mode=01 sub=00 last=01 sel=00 dyn0=FF A0=00FF0302 expect=00018A5C bytes=FF 89 03 24 24 24 21 E9
+f= 206 TBUF#117 mode=01 sub=00 last=01 sel=00 dyn0=FF A0=00FF0302 expect=00018A5C bytes=FF 89 03 24 24 24 21 E9
+f= 207 TBUF#118 mode=01 sub=00 last=01 sel=00 dyn0=FF A0=00FF0302 expect=00018A5C bytes=FF 89 03 24 24 24 21 E9
+f= 208 TBUF#119 mode=01 sub=00 last=01 sel=00 dyn0=FF A0=00FF0302 expect=00018A5C bytes=FF 89 03 24 24 24 21 E9
+f= 209 TBUF#120 mode=01 sub=00 last=01 sel=00 dyn0=FF A0=00FF0302 expect=00018A5C bytes=FF 89 03 24 24 24 21 E9
+f= 210 TBUF#121 mode=01 sub=00 last=01 sel=00 dyn0=FF A0=00FF0302 expect=00018A5C bytes=FF 89 03 24 24 24 21 E9
+f= 211 TBUF#122 mode=01 sub=00 last=01 sel=00 dyn0=FF A0=00FF0302 expect=00018A5C bytes=FF 89 03 24 24 24 21 E9
+f= 212 TBUF#123 mode=01 sub=00 last=01 sel=00 dyn0=FF A0=00FF0302 expect=00018A5C bytes=FF 89 03 24 24 24 21 E9
+f= 213 TBUF#124 mode=01 sub=00 last=01 sel=00 dyn0=FF A0=00FF0302 expect=00018A5C bytes=FF 89 03 24 24 24 21 E9
+f= 214 TBUF#125 mode=01 sub=00 last=01 sel=00 dyn0=FF A0=00FF0302 expect=00018A5C bytes=FF 89 03 24 24 24 21 E9
+f= 215 TBUF#126 mode=01 sub=00 last=01 sel=00 dyn0=FF A0=00FF0302 expect=00018A5C bytes=FF 89 03 24 24 24 21 E9
+f= 216 TBUF#127 mode=01 sub=00 last=01 sel=00 dyn0=FF A0=00FF0302 expect=00018A5C bytes=FF 89 03 24 24 24 21 E9
+f= 217 TBUF#128 mode=01 sub=00 last=01 sel=00 dyn0=FF A0=00FF0302 expect=00018A5C bytes=FF 89 03 24 24 24 21 E9
+f= 218 TBUF#129 mode=01 sub=00 last=01 sel=00 dyn0=FF A0=00FF0302 expect=00018A5C bytes=FF 89 03 24 24 24 21 E9
+f= 219 TBUF#130 mode=01 sub=00 last=01 sel=00 dyn0=FF A0=00FF0302 expect=00018A5C bytes=FF 89 03 24 24 24 21 E9
+f= 220 TBUF#131 mode=01 sub=00 last=01 sel=00 dyn0=FF A0=00FF0302 expect=00018A5C bytes=FF 89 03 24 24 24 21 E9
+f= 221 TBUF#132 mode=01 sub=00 last=01 sel=00 dyn0=FF A0=00FF0302 expect=00018A5C bytes=FF 89 03 24 24 24 21 E9
+f= 222 TBUF#133 mode=01 sub=00 last=01 sel=00 dyn0=FF A0=00FF0302 expect=00018A5C bytes=FF 89 03 24 24 24 21 E9
+f= 223 TBUF#134 mode=01 sub=00 last=01 sel=00 dyn0=FF A0=00FF0302 expect=00018A5C bytes=FF 89 03 24 24 24 21 E9
+f= 224 TBUF#135 mode=01 sub=00 last=01 sel=00 dyn0=FF A0=00FF0302 expect=00018A5C bytes=FF 89 03 24 24 24 21 E9
+f= 225 TBUF#136 mode=01 sub=00 last=01 sel=00 dyn0=FF A0=00FF0302 expect=00018A5C bytes=FF 89 03 24 24 24 21 E9
+f= 226 TBUF#137 mode=01 sub=00 last=01 sel=00 dyn0=FF A0=00FF0302 expect=00018A5C bytes=FF 89 03 24 24 24 21 E9
+f= 227 TBUF#138 mode=01 sub=00 last=01 sel=00 dyn0=FF A0=00FF0302 expect=00018A5C bytes=FF 89 03 24 24 24 21 E9
+f= 228 TBUF#139 mode=01 sub=00 last=01 sel=00 dyn0=FF A0=00FF0302 expect=00018A5C bytes=FF 89 03 24 24 24 21 E9
+f= 229 TBUF#140 mode=01 sub=00 last=01 sel=00 dyn0=FF A0=00FF0302 expect=00018A5C bytes=FF 89 03 24 24 24 21 E9
+f= 230 TBUF#141 mode=01 sub=00 last=01 sel=00 dyn0=FF A0=00FF0302 expect=00018A5C bytes=FF 89 03 24 24 24 21 E9
+f= 231 TBUF#142 mode=01 sub=00 last=01 sel=00 dyn0=FF A0=00FF0302 expect=00018A5C bytes=FF 89 03 24 24 24 21 E9
+f= 232 TBUF#143 mode=01 sub=00 last=01 sel=00 dyn0=FF A0=00FF0302 expect=00018A5C bytes=FF 89 03 24 24 24 21 E9
+f= 233 TBUF#144 mode=01 sub=00 last=01 sel=00 dyn0=FF A0=00FF0302 expect=00018A5C bytes=FF 89 03 24 24 24 21 E9
+f= 234 TBUF#145 mode=01 sub=00 last=01 sel=00 dyn0=FF A0=00FF0302 expect=00018A5C bytes=FF 89 03 24 24 24 21 E9
+f= 235 TBUF#146 mode=01 sub=00 last=01 sel=00 dyn0=FF A0=00FF0302 expect=00018A5C bytes=FF 89 03 24 24 24 21 E9
+f= 236 TBUF#147 mode=01 sub=00 last=01 sel=00 dyn0=FF A0=00FF0302 expect=00018A5C bytes=FF 89 03 24 24 24 21 E9
+f= 237 TBUF#148 mode=01 sub=00 last=01 sel=00 dyn0=FF A0=00FF0302 expect=00018A5C bytes=FF 89 03 24 24 24 21 E9
+f= 238 TBUF#149 mode=01 sub=00 last=01 sel=00 dyn0=FF A0=00FF0302 expect=00018A5C bytes=FF 89 03 24 24 24 21 E9
+f= 239 TBUF#150 mode=01 sub=00 last=01 sel=00 dyn0=FF A0=00FF0302 expect=00018A5C bytes=FF 89 03 24 24 24 21 E9
+f= 240 TBUF#151 mode=01 sub=00 last=01 sel=00 dyn0=FF A0=00FF0302 expect=00018A5C bytes=FF 89 03 24 24 24 21 E9
+f= 241 TBUF#152 mode=01 sub=00 last=01 sel=00 dyn0=FF A0=00FF0302 expect=00018A5C bytes=FF 89 03 24 24 24 21 E9
+f= 242 TBUF#153 mode=01 sub=00 last=01 sel=00 dyn0=FF A0=00FF0302 expect=00018A5C bytes=FF 89 03 24 24 24 21 E9
+f= 243 TBUF#154 mode=01 sub=00 last=01 sel=00 dyn0=FF A0=00FF0302 expect=00018A5C bytes=FF 89 03 24 24 24 21 E9
+f= 244 TBUF#155 mode=01 sub=00 last=01 sel=00 dyn0=FF A0=00FF0302 expect=00018A5C bytes=FF 89 03 24 24 24 21 E9
+f= 245 TBUF#156 mode=01 sub=00 last=01 sel=00 dyn0=FF A0=00FF0302 expect=00018A5C bytes=FF 89 03 24 24 24 21 E9
+f= 246 TBUF#157 mode=01 sub=00 last=01 sel=00 dyn0=FF A0=00FF0302 expect=00018A5C bytes=FF 89 03 24 24 24 21 E9
+f= 247 TBUF#158 mode=01 sub=00 last=01 sel=00 dyn0=FF A0=00FF0302 expect=00018A5C bytes=FF 89 03 24 24 24 21 E9
+f= 248 TBUF#159 mode=01 sub=00 last=01 sel=00 dyn0=FF A0=00FF0302 expect=00018A5C bytes=FF 89 03 24 24 24 21 E9
+f= 249 TBUF#160 mode=01 sub=00 last=01 sel=00 dyn0=FF A0=00FF0302 expect=00018A5C bytes=FF 89 03 24 24 24 21 E9
+f= 250 TBUF#161 mode=01 sub=00 last=01 sel=00 dyn0=FF A0=00FF0302 expect=00018A5C bytes=FF 89 03 24 24 24 21 E9
+f= 251 TBUF#162 mode=01 sub=00 last=01 sel=00 dyn0=FF A0=00FF0302 expect=00018A5C bytes=FF 89 03 24 24 24 21 E9
+f= 252 TBUF#163 mode=01 sub=00 last=01 sel=00 dyn0=FF A0=00FF0302 expect=00018A5C bytes=FF 89 03 24 24 24 21 E9
+f= 253 TBUF#164 mode=01 sub=00 last=01 sel=00 dyn0=FF A0=00FF0302 expect=00018A5C bytes=FF 89 03 24 24 24 21 E9
+f= 254 TBUF#165 mode=01 sub=00 last=01 sel=00 dyn0=FF A0=00FF0302 expect=00018A5C bytes=FF 89 03 24 24 24 21 E9
+f= 255 TBUF#166 mode=01 sub=00 last=01 sel=00 dyn0=FF A0=00FF0302 expect=00018A5C bytes=FF 89 03 24 24 24 21 E9
+f= 256 TBUF#167 mode=01 sub=00 last=01 sel=00 dyn0=FF A0=00FF0302 expect=00018A5C bytes=FF 89 03 24 24 24 21 E9
+f= 257 TBUF#168 mode=01 sub=00 last=01 sel=00 dyn0=FF A0=00FF0302 expect=00018A5C bytes=FF 89 03 24 24 24 21 E9
+f= 258 TBUF#169 mode=01 sub=00 last=01 sel=00 dyn0=FF A0=00FF0302 expect=00018A5C bytes=FF 89 03 24 24 24 21 E9
+f= 259 TBUF#170 mode=01 sub=00 last=01 sel=00 dyn0=FF A0=00FF0302 expect=00018A5C bytes=FF 89 03 24 24 24 21 E9
+f= 260 TBUF#171 mode=01 sub=00 last=01 sel=00 dyn0=FF A0=00FF0302 expect=00018A5C bytes=FF 89 03 24 24 24 21 E9
+=== fs1_dispatch_trace end frame=260 ===
+totals mtc=175 mtc_clr=2 sub1=1 sub2=1 sub2_sel=1 fill=3 cur=175 buf=171 sel_w=0 dyn_w=0
+final mode=01 sub=00 last=01 sel=00 dyn0=FF

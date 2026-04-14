@@ -1,0 +1,113 @@
+runtime write hooks unavailable (no RAM domain); using delta trace fallback
+transfer exec hook armed at TransferCurTileBuf $039648
+==============================================================
+ROOM 76 GEN CAPTURE: natural path -> Mode5 roomId=$76
+target_walk_path=L
+==============================================================
+LoopForever=$03C774 IsrNmi=$03C7A6
+system_id=GEN
+available_memory_domains=CRAM, M68K BUS, MD CART, SRAM, VRAM, VSRAM, Waterbox PageData, Z80 RAM
+selected_ram_domain=none
+f0001 CurSaveSlot=$00 active=00/00/00
+f0001 input Start     hold=2 release=3 (fast title->file-select)
+f0006 input Start     hold=2 release=3 (fast title->file-select)
+f0011 input Start     hold=2 release=3 (fast title->file-select)
+f0016 input Start     hold=2 release=3 (fast title->file-select)
+f0021 input Start     hold=2 release=3 (fast title->file-select)
+f0026 input Start     hold=2 release=3 (fast title->file-select)
+f0031 input Start     hold=2 release=3 (fast title->file-select)
+f0036 input Start     hold=2 release=3 (fast title->file-select)
+f0041 input Start     hold=2 release=3 (fast title->file-select)
+f0046 input Start     hold=2 release=3 (fast title->file-select)
+f0051 input Start     hold=2 release=3 (fast title->file-select)
+f0056 input Start     hold=2 release=3 (fast title->file-select)
+f0061 input Start     hold=2 release=3 (fast title->file-select)
+f0066 input Start     hold=2 release=3 (fast title->file-select)
+f0071 input Start     hold=2 release=3 (fast title->file-select)
+f0076 input Start     hold=2 release=3 (fast title->file-select)
+f0081 input Start     hold=2 release=3 (fast title->file-select)
+f0084 CurSaveSlot=$01 active=00/00/00
+f0085 CurSaveSlot=$02 active=00/00/00
+f0086 input Start     hold=2 release=3 (fast title->file-select)
+f0088 CurSaveSlot=$01 active=00/00/00
+f0089 CurSaveSlot=$00 active=00/00/00
+f0091 flow BOOT_TO_FS1 -> FS1_SELECT_REGISTER (entered Mode1)
+f0092 CurSaveSlot=$01 active=00/00/00
+f0092 input Down      hold=1 release=10 (move to REGISTER (slot 3))
+f0093 CurSaveSlot=$02 active=00/00/00
+f0094 CurSaveSlot=$00 active=00/00/00
+f0102 CurSaveSlot=$02 active=00/00/00
+f0103 CurSaveSlot=$03 active=00/00/00
+f0103 flow FS1_SELECT_REGISTER -> FS1_ENTER_REGISTER (CurSaveSlot reached 3)
+f0104 input Start     hold=2 release=14 (enter register mode)
+f0120 input Start     hold=2 release=14 (enter register mode)
+f0122 flow FS1_ENTER_REGISTER -> MODEE_TYPE_NAME (entered ModeE)
+f0123 CurSaveSlot=$00 active=00/00/00
+f0123 name progress $0421 D0 -> 00
+f0126 CurSaveSlot=$01 active=00/00/00
+f0127 CurSaveSlot=$02 active=00/00/00
+f0129 CurSaveSlot=$00 active=00/00/00
+f0136 input A         hold=1 release=10 (ModeE char pulse)
+f0137 name progress $0421 00 -> 01
+f0147 input A         hold=1 release=10 (ModeE char pulse)
+f0148 name progress $0421 01 -> 02
+f0158 input A         hold=1 release=10 (ModeE char pulse)
+f0159 name progress $0421 02 -> 03
+f0169 input A         hold=1 release=10 (ModeE char pulse)
+f0170 name progress $0421 03 -> 04
+f0170 flow MODEE_TYPE_NAME -> MODEE_FINISH (name progress target reached)
+f0180 input C         hold=1 release=10 (cycle to END slot)
+f0181 CurSaveSlot=$01 active=00/00/00
+f0191 input C         hold=1 release=10 (cycle to END slot)
+f0192 CurSaveSlot=$02 active=00/00/00
+f0202 input C         hold=1 release=10 (cycle to END slot)
+f0203 CurSaveSlot=$03 active=00/00/00
+f0213 input Start     hold=2 release=14 (confirm END)
+f0214 CurSaveSlot=$00 active=00/00/00
+f0215 flow MODEE_FINISH -> WAIT_GAMEPLAY (left ModeE)
+f0218 CurSaveSlot=$01 active=01/00/00
+f0219 CurSaveSlot=$02 active=01/00/00
+f0222 CurSaveSlot=$01 active=01/00/00
+f0223 CurSaveSlot=$00 active=01/00/00
+f0223 flow WAIT_GAMEPLAY -> FS1_START_GAME (back to Mode1 after register)
+f0224 CurSaveSlot=$01 active=01/00/00
+f0225 CurSaveSlot=$02 active=01/00/00
+f0226 CurSaveSlot=$03 active=01/00/00
+f0227 CurSaveSlot=$00 active=01/00/00
+f0229 input Start     hold=2 release=14 (start game)
+f0234 CurSaveSlot=$02 active=01/00/00
+f0235 CurSaveSlot=$03 active=01/00/00
+f0236 CurSaveSlot=$00 active=01/00/00
+f0245 input Start     hold=2 release=14 (start game)
+f0248 flow FS1_START_GAME -> WAIT_GAMEPLAY (left Mode1)
+f0275 runtime decode trace armed (Mode3 post-frame)
+f0275 edge owner trace armed (Mode3 post-frame)
+f0285 trace captured: mode3/sub8 first
+f0288 trace captured: LayoutRoomOW exit ptr02_03=$0200 ptr04_05=$6C02 mmc1=$05 win=$05
+f0375 reset capture state for target-room transition path=L
+f0409 walk step 1 entered roomId=$76
+
+register_mode_seen=yes name_progress_events=5
+final mode=$07 sub=$00 roomId=$76 room03C=$00
+final mmc1PRG=$05 currentWindowBank=$05
+final PPUCTRL=$30 bgPatternHalf=1
+final diag004C=$00 curV=$00 curH=$00 switchNT=$00 curCol=$FF curRow=$FF
+workbuf_base_ptr=$6530
+decode_write_trace_entries=0
+decode_write_trace_rt_entries=0
+decode_write_trace_rt_valid=no
+decode_write_trace_rt_hooks=fallback
+transfer_exec_hook=armed
+transfer_exec_hook_hits=61
+transfer_exec_hit_frames=60
+transfer_exec_callback_errors=0
+transfer_stream_events=41
+transfer_stream_capture_valid=yes
+edge_owner_trace_entries=0
+edge_owner_trace_valid=no
+edge_owner_writer_classes=
+rt_first_repeat addr=$FFFF seq=-1 prev=-1
+rt_first_final_diff addr=$FFFF first=$FF final=$FF lastSeq=-1
+target_reached=no frame=-1
+transition_state_frames=1024
+trace_snapshots=0

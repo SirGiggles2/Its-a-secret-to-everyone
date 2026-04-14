@@ -1,0 +1,273 @@
+cur_hit=1 mode=00 sub=00 last=00 sel=00 dyn0=FF
+hit=1 sel=00 A0=00FF0302 expected=00018A5C bytes=FF 00 00 00 00 00 00 00
+cur_hit=2 mode=00 sub=00 last=00 sel=00 dyn0=FF
+hit=2 sel=00 A0=00FF0302 expected=00018A5C bytes=FF 00 00 00 00 00 00 00
+cur_hit=3 mode=00 sub=00 last=00 sel=00 dyn0=FF
+hit=3 sel=00 A0=00FF0302 expected=00018A5C bytes=FF 00 00 00 00 00 00 00
+cur_hit=4 mode=00 sub=00 last=00 sel=00 dyn0=FF
+hit=4 sel=00 A0=00FF0302 expected=00018A5C bytes=FF 00 00 00 00 00 00 00
+cur_hit=5 mode=00 sub=00 last=00 sel=00 dyn0=FF
+hit=5 sel=00 A0=00FF0302 expected=00018A5C bytes=FF 00 00 00 00 00 00 00
+cur_hit=6 mode=00 sub=00 last=00 sel=00 dyn0=3F
+cur_hit=7 mode=00 sub=00 last=00 sel=10 dyn0=FF
+hit=6 sel=10 A0=000191D6 expected=00018A5C bytes=20 00 20 24 24 24 24 24
+cur_hit=8 mode=00 sub=00 last=00 sel=00 dyn0=3F
+cur_hit=9 mode=00 sub=00 last=00 sel=00 dyn0=FF
+hit=7 sel=00 A0=00FF0302 expected=00018A5C bytes=FF 04 04 36 17 27 0F FF
+cur_hit=10 mode=00 sub=00 last=00 sel=00 dyn0=FF
+hit=8 sel=00 A0=00FF0302 expected=00018A5C bytes=FF 04 04 36 17 27 0F FF
+cur_hit=11 mode=00 sub=00 last=00 sel=00 dyn0=FF
+hit=9 sel=00 A0=00FF0302 expected=00018A5C bytes=FF 04 04 36 17 27 0F FF
+cur_hit=12 mode=00 sub=00 last=00 sel=00 dyn0=FF
+hit=10 sel=00 A0=00FF0302 expected=00018A5C bytes=FF 04 04 36 17 27 0F FF
+cur_hit=13 mode=00 sub=00 last=00 sel=00 dyn0=FF
+hit=11 sel=00 A0=00FF0302 expected=00018A5C bytes=FF 04 04 36 17 27 0F FF
+cur_hit=14 mode=00 sub=00 last=00 sel=00 dyn0=3F
+cur_hit=15 mode=00 sub=00 last=00 sel=00 dyn0=FF
+hit=12 sel=00 A0=00FF0302 expected=00018A5C bytes=FF 04 04 36 17 37 0F FF
+cur_hit=16 mode=00 sub=00 last=00 sel=00 dyn0=FF
+hit=13 sel=00 A0=00FF0302 expected=00018A5C bytes=FF 04 04 36 17 37 0F FF
+cur_hit=17 mode=00 sub=00 last=00 sel=00 dyn0=FF
+hit=14 sel=00 A0=00FF0302 expected=00018A5C bytes=FF 04 04 36 17 37 0F FF
+cur_hit=18 mode=00 sub=00 last=00 sel=00 dyn0=FF
+hit=15 sel=00 A0=00FF0302 expected=00018A5C bytes=FF 04 04 36 17 37 0F FF
+cur_hit=19 mode=00 sub=00 last=00 sel=00 dyn0=FF
+hit=16 sel=00 A0=00FF0302 expected=00018A5C bytes=FF 04 04 36 17 37 0F FF
+cur_hit=20 mode=00 sub=00 last=00 sel=00 dyn0=3F
+cur_hit=21 mode=00 sub=00 last=00 sel=00 dyn0=FF
+hit=17 sel=00 A0=00FF0302 expected=00018A5C bytes=FF 04 04 36 17 37 0F FF
+cur_hit=22 mode=00 sub=01 last=00 sel=12 dyn0=FF
+hit=18 sel=12 A0=000187EE expected=00018A5C bytes=3F 00 20 0F 30 00 12 0F
+cur_hit=23 mode=00 sub=02 last=00 sel=00 dyn0=FF
+hit=19 sel=00 A0=00FF0302 expected=00018A5C bytes=FF 04 04 36 17 37 0F FF
+cur_hit=24 mode=01 sub=00 last=00 sel=00 dyn0=FF
+hit=20 sel=00 A0=00FF0302 expected=00018A5C bytes=FF 04 04 36 17 37 0F FF
+cur_hit=25 mode=01 sub=01 last=00 sel=00 dyn0=FF
+hit=21 sel=00 A0=00FF0302 expected=00018A5C bytes=FF 04 04 36 17 37 0F FF
+cur_hit=26 mode=01 sub=02 last=00 sel=00 dyn0=FF
+hit=22 sel=00 A0=00FF0302 expected=00018A5C bytes=FF 04 04 36 17 37 0F FF
+cur_hit=27 mode=01 sub=03 last=00 sel=00 dyn0=FF
+hit=23 sel=00 A0=00FF0302 expected=00018A5C bytes=FF 04 04 36 17 37 0F FF
+cur_hit=28 mode=01 sub=04 last=00 sel=00 dyn0=FF
+hit=24 sel=00 A0=00FF0302 expected=00018A5C bytes=FF 69 11 24 24 24 24 24
+cur_hit=29 mode=01 sub=05 last=00 sel=00 dyn0=FF
+hit=25 sel=00 A0=00FF0302 expected=00018A5C bytes=FF C9 11 24 24 24 24 24
+cur_hit=30 mode=01 sub=06 last=00 sel=00 dyn0=FF
+hit=26 sel=00 A0=00FF0302 expected=00018A5C bytes=FF 29 11 24 24 24 24 24
+cur_hit=31 mode=01 sub=00 last=00 sel=00 dyn0=FF
+hit=27 sel=00 A0=00FF0302 expected=00018A5C bytes=FF 89 03 24 24 24 21 E9
+cur_hit=32 mode=01 sub=00 last=00 sel=00 dyn0=FF
+hit=28 sel=00 A0=00FF0302 expected=00018A5C bytes=FF 89 03 24 24 24 21 E9
+cur_hit=33 mode=01 sub=00 last=00 sel=00 dyn0=FF
+hit=29 sel=00 A0=00FF0302 expected=00018A5C bytes=FF 89 03 24 24 24 21 E9
+cur_hit=34 mode=01 sub=00 last=00 sel=00 dyn0=FF
+hit=30 sel=00 A0=00FF0302 expected=00018A5C bytes=FF 89 03 24 24 24 21 E9
+cur_hit=35 mode=01 sub=00 last=00 sel=00 dyn0=FF
+hit=31 sel=00 A0=00FF0302 expected=00018A5C bytes=FF 89 03 24 24 24 21 E9
+cur_hit=36 mode=01 sub=00 last=00 sel=00 dyn0=FF
+hit=32 sel=00 A0=00FF0302 expected=00018A5C bytes=FF 89 03 24 24 24 21 E9
+cur_hit=37 mode=01 sub=00 last=00 sel=00 dyn0=FF
+hit=33 sel=00 A0=00FF0302 expected=00018A5C bytes=FF 89 03 24 24 24 21 E9
+cur_hit=38 mode=01 sub=00 last=00 sel=00 dyn0=FF
+hit=34 sel=00 A0=00FF0302 expected=00018A5C bytes=FF 89 03 24 24 24 21 E9
+cur_hit=39 mode=01 sub=00 last=00 sel=00 dyn0=FF
+hit=35 sel=00 A0=00FF0302 expected=00018A5C bytes=FF 89 03 24 24 24 21 E9
+forced selector 14 at frame 121
+cur_hit=40 mode=01 sub=00 last=00 sel=00 dyn0=FF
+hit=36 sel=00 A0=00FF0302 expected=00018A5C bytes=FF 89 03 24 24 24 21 E9
+cur_hit=41 mode=01 sub=00 last=00 sel=00 dyn0=FF
+hit=37 sel=00 A0=00FF0302 expected=00018A5C bytes=FF 89 03 24 24 24 21 E9
+cur_hit=42 mode=01 sub=00 last=00 sel=00 dyn0=FF
+hit=38 sel=00 A0=00FF0302 expected=00018A5C bytes=FF 89 03 24 24 24 21 E9
+cur_hit=43 mode=01 sub=00 last=00 sel=00 dyn0=FF
+hit=39 sel=00 A0=00FF0302 expected=00018A5C bytes=FF 89 03 24 24 24 21 E9
+cur_hit=44 mode=01 sub=00 last=00 sel=00 dyn0=FF
+hit=40 sel=00 A0=00FF0302 expected=00018A5C bytes=FF 89 03 24 24 24 21 E9
+cur_hit=45 mode=01 sub=00 last=00 sel=00 dyn0=FF
+hit=41 sel=00 A0=00FF0302 expected=00018A5C bytes=FF 89 03 24 24 24 21 E9
+cur_hit=46 mode=01 sub=00 last=00 sel=00 dyn0=FF
+hit=42 sel=00 A0=00FF0302 expected=00018A5C bytes=FF 89 03 24 24 24 21 E9
+cur_hit=47 mode=01 sub=00 last=00 sel=00 dyn0=FF
+hit=43 sel=00 A0=00FF0302 expected=00018A5C bytes=FF 89 03 24 24 24 21 E9
+cur_hit=48 mode=01 sub=00 last=00 sel=00 dyn0=FF
+hit=44 sel=00 A0=00FF0302 expected=00018A5C bytes=FF 89 03 24 24 24 21 E9
+cur_hit=49 mode=01 sub=00 last=00 sel=00 dyn0=FF
+hit=45 sel=00 A0=00FF0302 expected=00018A5C bytes=FF 89 03 24 24 24 21 E9
+cur_hit=50 mode=01 sub=00 last=00 sel=00 dyn0=FF
+hit=46 sel=00 A0=00FF0302 expected=00018A5C bytes=FF 89 03 24 24 24 21 E9
+cur_hit=51 mode=01 sub=00 last=00 sel=00 dyn0=FF
+hit=47 sel=00 A0=00FF0302 expected=00018A5C bytes=FF 89 03 24 24 24 21 E9
+cur_hit=52 mode=01 sub=00 last=00 sel=00 dyn0=FF
+hit=48 sel=00 A0=00FF0302 expected=00018A5C bytes=FF 89 03 24 24 24 21 E9
+cur_hit=53 mode=01 sub=00 last=00 sel=00 dyn0=FF
+hit=49 sel=00 A0=00FF0302 expected=00018A5C bytes=FF 89 03 24 24 24 21 E9
+cur_hit=54 mode=01 sub=00 last=00 sel=00 dyn0=FF
+hit=50 sel=00 A0=00FF0302 expected=00018A5C bytes=FF 89 03 24 24 24 21 E9
+cur_hit=55 mode=01 sub=00 last=00 sel=00 dyn0=FF
+hit=51 sel=00 A0=00FF0302 expected=00018A5C bytes=FF 89 03 24 24 24 21 E9
+cur_hit=56 mode=01 sub=00 last=00 sel=00 dyn0=FF
+hit=52 sel=00 A0=00FF0302 expected=00018A5C bytes=FF 89 03 24 24 24 21 E9
+cur_hit=57 mode=01 sub=00 last=00 sel=00 dyn0=FF
+hit=53 sel=00 A0=00FF0302 expected=00018A5C bytes=FF 89 03 24 24 24 21 E9
+cur_hit=58 mode=01 sub=00 last=00 sel=00 dyn0=FF
+hit=54 sel=00 A0=00FF0302 expected=00018A5C bytes=FF 89 03 24 24 24 21 E9
+cur_hit=59 mode=01 sub=00 last=00 sel=00 dyn0=FF
+hit=55 sel=00 A0=00FF0302 expected=00018A5C bytes=FF 89 03 24 24 24 21 E9
+cur_hit=60 mode=01 sub=00 last=00 sel=00 dyn0=FF
+hit=56 sel=00 A0=00FF0302 expected=00018A5C bytes=FF 89 03 24 24 24 21 E9
+cur_hit=61 mode=01 sub=00 last=00 sel=00 dyn0=FF
+hit=57 sel=00 A0=00FF0302 expected=00018A5C bytes=FF 89 03 24 24 24 21 E9
+cur_hit=62 mode=01 sub=00 last=00 sel=00 dyn0=FF
+hit=58 sel=00 A0=00FF0302 expected=00018A5C bytes=FF 89 03 24 24 24 21 E9
+cur_hit=63 mode=01 sub=00 last=00 sel=00 dyn0=FF
+hit=59 sel=00 A0=00FF0302 expected=00018A5C bytes=FF 89 03 24 24 24 21 E9
+cur_hit=64 mode=01 sub=00 last=00 sel=00 dyn0=FF
+hit=60 sel=00 A0=00FF0302 expected=00018A5C bytes=FF 89 03 24 24 24 21 E9
+cur_hit=65 mode=01 sub=00 last=00 sel=00 dyn0=FF
+hit=61 sel=00 A0=00FF0302 expected=00018A5C bytes=FF 89 03 24 24 24 21 E9
+cur_hit=66 mode=01 sub=00 last=00 sel=00 dyn0=FF
+hit=62 sel=00 A0=00FF0302 expected=00018A5C bytes=FF 89 03 24 24 24 21 E9
+cur_hit=67 mode=01 sub=00 last=00 sel=00 dyn0=FF
+hit=63 sel=00 A0=00FF0302 expected=00018A5C bytes=FF 89 03 24 24 24 21 E9
+cur_hit=68 mode=01 sub=00 last=00 sel=00 dyn0=FF
+hit=64 sel=00 A0=00FF0302 expected=00018A5C bytes=FF 89 03 24 24 24 21 E9
+cur_hit=69 mode=01 sub=00 last=00 sel=00 dyn0=FF
+hit=65 sel=00 A0=00FF0302 expected=00018A5C bytes=FF 89 03 24 24 24 21 E9
+cur_hit=70 mode=01 sub=00 last=00 sel=00 dyn0=FF
+hit=66 sel=00 A0=00FF0302 expected=00018A5C bytes=FF 89 03 24 24 24 21 E9
+cur_hit=71 mode=01 sub=00 last=00 sel=00 dyn0=FF
+hit=67 sel=00 A0=00FF0302 expected=00018A5C bytes=FF 89 03 24 24 24 21 E9
+cur_hit=72 mode=01 sub=00 last=00 sel=00 dyn0=FF
+hit=68 sel=00 A0=00FF0302 expected=00018A5C bytes=FF 89 03 24 24 24 21 E9
+cur_hit=73 mode=01 sub=00 last=00 sel=00 dyn0=FF
+hit=69 sel=00 A0=00FF0302 expected=00018A5C bytes=FF 89 03 24 24 24 21 E9
+cur_hit=74 mode=01 sub=00 last=00 sel=00 dyn0=FF
+hit=70 sel=00 A0=00FF0302 expected=00018A5C bytes=FF 89 03 24 24 24 21 E9
+cur_hit=75 mode=01 sub=00 last=00 sel=00 dyn0=FF
+hit=71 sel=00 A0=00FF0302 expected=00018A5C bytes=FF 89 03 24 24 24 21 E9
+cur_hit=76 mode=01 sub=00 last=00 sel=00 dyn0=FF
+hit=72 sel=00 A0=00FF0302 expected=00018A5C bytes=FF 89 03 24 24 24 21 E9
+cur_hit=77 mode=01 sub=00 last=00 sel=00 dyn0=FF
+hit=73 sel=00 A0=00FF0302 expected=00018A5C bytes=FF 89 03 24 24 24 21 E9
+cur_hit=78 mode=01 sub=00 last=00 sel=00 dyn0=FF
+hit=74 sel=00 A0=00FF0302 expected=00018A5C bytes=FF 89 03 24 24 24 21 E9
+cur_hit=79 mode=01 sub=00 last=00 sel=00 dyn0=FF
+hit=75 sel=00 A0=00FF0302 expected=00018A5C bytes=FF 89 03 24 24 24 21 E9
+cur_hit=80 mode=01 sub=00 last=00 sel=00 dyn0=FF
+hit=76 sel=00 A0=00FF0302 expected=00018A5C bytes=FF 89 03 24 24 24 21 E9
+cur_hit=81 mode=01 sub=00 last=00 sel=00 dyn0=FF
+hit=77 sel=00 A0=00FF0302 expected=00018A5C bytes=FF 89 03 24 24 24 21 E9
+cur_hit=82 mode=01 sub=00 last=00 sel=00 dyn0=FF
+hit=78 sel=00 A0=00FF0302 expected=00018A5C bytes=FF 89 03 24 24 24 21 E9
+cur_hit=83 mode=01 sub=00 last=00 sel=00 dyn0=FF
+hit=79 sel=00 A0=00FF0302 expected=00018A5C bytes=FF 89 03 24 24 24 21 E9
+cur_hit=84 mode=01 sub=00 last=00 sel=00 dyn0=FF
+hit=80 sel=00 A0=00FF0302 expected=00018A5C bytes=FF 89 03 24 24 24 21 E9
+cur_hit=85 mode=01 sub=00 last=00 sel=00 dyn0=FF
+hit=81 sel=00 A0=00FF0302 expected=00018A5C bytes=FF 89 03 24 24 24 21 E9
+cur_hit=86 mode=01 sub=00 last=00 sel=00 dyn0=FF
+hit=82 sel=00 A0=00FF0302 expected=00018A5C bytes=FF 89 03 24 24 24 21 E9
+cur_hit=87 mode=01 sub=00 last=00 sel=00 dyn0=FF
+hit=83 sel=00 A0=00FF0302 expected=00018A5C bytes=FF 89 03 24 24 24 21 E9
+cur_hit=88 mode=01 sub=00 last=00 sel=00 dyn0=FF
+hit=84 sel=00 A0=00FF0302 expected=00018A5C bytes=FF 89 03 24 24 24 21 E9
+cur_hit=89 mode=01 sub=00 last=00 sel=00 dyn0=FF
+hit=85 sel=00 A0=00FF0302 expected=00018A5C bytes=FF 89 03 24 24 24 21 E9
+cur_hit=90 mode=01 sub=00 last=00 sel=00 dyn0=FF
+hit=86 sel=00 A0=00FF0302 expected=00018A5C bytes=FF 89 03 24 24 24 21 E9
+cur_hit=91 mode=01 sub=00 last=00 sel=00 dyn0=FF
+hit=87 sel=00 A0=00FF0302 expected=00018A5C bytes=FF 89 03 24 24 24 21 E9
+cur_hit=92 mode=01 sub=00 last=00 sel=00 dyn0=FF
+hit=88 sel=00 A0=00FF0302 expected=00018A5C bytes=FF 89 03 24 24 24 21 E9
+cur_hit=93 mode=01 sub=00 last=00 sel=00 dyn0=FF
+hit=89 sel=00 A0=00FF0302 expected=00018A5C bytes=FF 89 03 24 24 24 21 E9
+cur_hit=94 mode=01 sub=00 last=00 sel=00 dyn0=FF
+hit=90 sel=00 A0=00FF0302 expected=00018A5C bytes=FF 89 03 24 24 24 21 E9
+cur_hit=95 mode=01 sub=00 last=00 sel=00 dyn0=FF
+hit=91 sel=00 A0=00FF0302 expected=00018A5C bytes=FF 89 03 24 24 24 21 E9
+cur_hit=96 mode=01 sub=00 last=00 sel=00 dyn0=FF
+hit=92 sel=00 A0=00FF0302 expected=00018A5C bytes=FF 89 03 24 24 24 21 E9
+cur_hit=97 mode=01 sub=00 last=00 sel=00 dyn0=FF
+hit=93 sel=00 A0=00FF0302 expected=00018A5C bytes=FF 89 03 24 24 24 21 E9
+cur_hit=98 mode=01 sub=00 last=00 sel=00 dyn0=FF
+hit=94 sel=00 A0=00FF0302 expected=00018A5C bytes=FF 89 03 24 24 24 21 E9
+cur_hit=99 mode=01 sub=00 last=00 sel=00 dyn0=FF
+hit=95 sel=00 A0=00FF0302 expected=00018A5C bytes=FF 89 03 24 24 24 21 E9
+cur_hit=100 mode=01 sub=00 last=00 sel=00 dyn0=FF
+hit=96 sel=00 A0=00FF0302 expected=00018A5C bytes=FF 89 03 24 24 24 21 E9
+cur_hit=101 mode=01 sub=00 last=00 sel=00 dyn0=FF
+hit=97 sel=00 A0=00FF0302 expected=00018A5C bytes=FF 89 03 24 24 24 21 E9
+cur_hit=102 mode=01 sub=00 last=00 sel=00 dyn0=FF
+hit=98 sel=00 A0=00FF0302 expected=00018A5C bytes=FF 89 03 24 24 24 21 E9
+cur_hit=103 mode=01 sub=00 last=00 sel=00 dyn0=FF
+hit=99 sel=00 A0=00FF0302 expected=00018A5C bytes=FF 89 03 24 24 24 21 E9
+cur_hit=104 mode=01 sub=00 last=00 sel=00 dyn0=FF
+hit=100 sel=00 A0=00FF0302 expected=00018A5C bytes=FF 89 03 24 24 24 21 E9
+cur_hit=105 mode=01 sub=00 last=00 sel=00 dyn0=FF
+hit=101 sel=00 A0=00FF0302 expected=00018A5C bytes=FF 89 03 24 24 24 21 E9
+cur_hit=106 mode=01 sub=00 last=00 sel=00 dyn0=FF
+hit=102 sel=00 A0=00FF0302 expected=00018A5C bytes=FF 89 03 24 24 24 21 E9
+cur_hit=107 mode=01 sub=00 last=00 sel=00 dyn0=FF
+hit=103 sel=00 A0=00FF0302 expected=00018A5C bytes=FF 89 03 24 24 24 21 E9
+cur_hit=108 mode=01 sub=00 last=00 sel=00 dyn0=FF
+hit=104 sel=00 A0=00FF0302 expected=00018A5C bytes=FF 89 03 24 24 24 21 E9
+cur_hit=109 mode=01 sub=00 last=00 sel=00 dyn0=FF
+hit=105 sel=00 A0=00FF0302 expected=00018A5C bytes=FF 89 03 24 24 24 21 E9
+cur_hit=110 mode=01 sub=00 last=00 sel=00 dyn0=FF
+hit=106 sel=00 A0=00FF0302 expected=00018A5C bytes=FF 89 03 24 24 24 21 E9
+cur_hit=111 mode=01 sub=00 last=00 sel=00 dyn0=FF
+hit=107 sel=00 A0=00FF0302 expected=00018A5C bytes=FF 89 03 24 24 24 21 E9
+cur_hit=112 mode=01 sub=00 last=00 sel=00 dyn0=FF
+hit=108 sel=00 A0=00FF0302 expected=00018A5C bytes=FF 89 03 24 24 24 21 E9
+cur_hit=113 mode=01 sub=00 last=00 sel=00 dyn0=FF
+hit=109 sel=00 A0=00FF0302 expected=00018A5C bytes=FF 89 03 24 24 24 21 E9
+cur_hit=114 mode=01 sub=00 last=00 sel=00 dyn0=FF
+hit=110 sel=00 A0=00FF0302 expected=00018A5C bytes=FF 89 03 24 24 24 21 E9
+cur_hit=115 mode=01 sub=00 last=00 sel=00 dyn0=FF
+hit=111 sel=00 A0=00FF0302 expected=00018A5C bytes=FF 89 03 24 24 24 21 E9
+cur_hit=116 mode=01 sub=00 last=00 sel=00 dyn0=FF
+hit=112 sel=00 A0=00FF0302 expected=00018A5C bytes=FF 89 03 24 24 24 21 E9
+cur_hit=117 mode=01 sub=00 last=00 sel=00 dyn0=FF
+hit=113 sel=00 A0=00FF0302 expected=00018A5C bytes=FF 89 03 24 24 24 21 E9
+cur_hit=118 mode=01 sub=00 last=00 sel=00 dyn0=FF
+hit=114 sel=00 A0=00FF0302 expected=00018A5C bytes=FF 89 03 24 24 24 21 E9
+cur_hit=119 mode=01 sub=00 last=00 sel=00 dyn0=FF
+hit=115 sel=00 A0=00FF0302 expected=00018A5C bytes=FF 89 03 24 24 24 21 E9
+cur_hit=120 mode=01 sub=00 last=00 sel=00 dyn0=FF
+hit=116 sel=00 A0=00FF0302 expected=00018A5C bytes=FF 89 03 24 24 24 21 E9
+cur_hit=121 mode=01 sub=00 last=00 sel=00 dyn0=FF
+hit=117 sel=00 A0=00FF0302 expected=00018A5C bytes=FF 89 03 24 24 24 21 E9
+cur_hit=122 mode=01 sub=00 last=00 sel=00 dyn0=FF
+hit=118 sel=00 A0=00FF0302 expected=00018A5C bytes=FF 89 03 24 24 24 21 E9
+cur_hit=123 mode=01 sub=00 last=00 sel=00 dyn0=FF
+hit=119 sel=00 A0=00FF0302 expected=00018A5C bytes=FF 89 03 24 24 24 21 E9
+cur_hit=124 mode=01 sub=00 last=00 sel=00 dyn0=FF
+hit=120 sel=00 A0=00FF0302 expected=00018A5C bytes=FF 89 03 24 24 24 21 E9
+cur_hit=125 mode=01 sub=00 last=00 sel=00 dyn0=FF
+hit=121 sel=00 A0=00FF0302 expected=00018A5C bytes=FF 89 03 24 24 24 21 E9
+cur_hit=126 mode=01 sub=00 last=00 sel=00 dyn0=FF
+hit=122 sel=00 A0=00FF0302 expected=00018A5C bytes=FF 89 03 24 24 24 21 E9
+cur_hit=127 mode=01 sub=00 last=00 sel=00 dyn0=FF
+hit=123 sel=00 A0=00FF0302 expected=00018A5C bytes=FF 89 03 24 24 24 21 E9
+cur_hit=128 mode=01 sub=00 last=00 sel=00 dyn0=FF
+hit=124 sel=00 A0=00FF0302 expected=00018A5C bytes=FF 89 03 24 24 24 21 E9
+cur_hit=129 mode=01 sub=00 last=00 sel=00 dyn0=FF
+hit=125 sel=00 A0=00FF0302 expected=00018A5C bytes=FF 89 03 24 24 24 21 E9
+cur_hit=130 mode=01 sub=00 last=00 sel=00 dyn0=FF
+hit=126 sel=00 A0=00FF0302 expected=00018A5C bytes=FF 89 03 24 24 24 21 E9
+cur_hit=131 mode=01 sub=00 last=00 sel=00 dyn0=FF
+hit=127 sel=00 A0=00FF0302 expected=00018A5C bytes=FF 89 03 24 24 24 21 E9
+cur_hit=132 mode=01 sub=00 last=00 sel=00 dyn0=FF
+hit=128 sel=00 A0=00FF0302 expected=00018A5C bytes=FF 89 03 24 24 24 21 E9
+cur_hit=133 mode=01 sub=00 last=00 sel=00 dyn0=FF
+hit=129 sel=00 A0=00FF0302 expected=00018A5C bytes=FF 89 03 24 24 24 21 E9
+cur_hit=134 mode=01 sub=00 last=00 sel=00 dyn0=FF
+hit=130 sel=00 A0=00FF0302 expected=00018A5C bytes=FF 89 03 24 24 24 21 E9
+cur_hit=135 mode=01 sub=00 last=00 sel=00 dyn0=FF
+hit=131 sel=00 A0=00FF0302 expected=00018A5C bytes=FF 89 03 24 24 24 21 E9
+cur_hit=136 mode=01 sub=00 last=00 sel=00 dyn0=FF
+hit=132 sel=00 A0=00FF0302 expected=00018A5C bytes=FF 89 03 24 24 24 21 E9
+cur_hit=137 mode=01 sub=00 last=00 sel=00 dyn0=FF
+hit=133 sel=00 A0=00FF0302 expected=00018A5C bytes=FF 89 03 24 24 24 21 E9
+cur_hit=138 mode=01 sub=00 last=00 sel=00 dyn0=FF
+hit=134 sel=00 A0=00FF0302 expected=00018A5C bytes=FF 89 03 24 24 24 21 E9
