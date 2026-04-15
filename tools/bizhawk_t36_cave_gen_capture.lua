@@ -76,6 +76,10 @@ local A_PERSONSTATE = BUS + 0x00AD   -- cave-person state-machine
 local A_CAVETYPE    = BUS + 0x0350   -- cave-person object type ($0350)
 local A_OBJTIMER0   = BUS + 0x0029   -- Link ObjTimer (text advance gate)
 local A_AUTOWALK    = BUS + 0x0394   -- auto-walk counter set to 48 on cave-enter
+local A_OBJ_TEMPL   = BUS + 0x0002   -- object template type
+local A_LVL_BLOCK   = BUS + 0x00EB   -- level block attribute index
+local A_ROOM_FLAGS  = BUS + 0x04CD   -- level block attr byte F
+local A_CAVE_TMPL   = BUS + 0x034E   -- obj template (cave-person selector)
 local A_SLOT_A0  = BUS + 0x0633
 local A_SLOT_A1  = BUS + 0x0634
 local A_SLOT_A2  = BUS + 0x0635
@@ -339,7 +343,7 @@ local function bp_make(label)
         local m = ram_u8(A_MODE)
         -- objstate: watch across all modes (want to see clear-writers in any mode).
         -- facedir/movedir: keep mode-$0B-only filter from prior stage.
-        if label ~= "objstate" and m ~= 0x0B then return end
+        if label ~= "objstate" and label ~= "cavetype" and m ~= 0x0B then return end
         -- skip Walker_Move's per-frame zero+set (PC $5206A/$5201E) to trim noise
         local ok2, regs2 = pcall(function() return emu.getregisters() end)
         local pc_pre = (ok2 and regs2) and (regs2["M68K PC"] or regs2["PC"] or 0) or 0
@@ -348,8 +352,10 @@ local function bp_make(label)
         local ok, regs = pcall(function() return emu.getregisters() end)
         if ok and regs then pc = regs["M68K PC"] or regs["PC"] or 0 end
         local t = (bp_t0 >= 0) and (bp_current_frame - bp_t0) or -1
-        bp_write(string.format("WR f=%d t=%d %s val=%02X PC=%08X mode=%02X y=%02X",
-            bp_current_frame, t, label, v or -1, pc, m, ram_u8(A_OBJ_Y)))
+        local eb = ram_u8(BUS + 0x00EB)
+        local sram_val = ram_u8(BUS + 0x6000 + 0x08FE + eb)
+        bp_write(string.format("WR f=%d t=%d %s val=%02X PC=%08X mode=%02X y=%02X EB=%02X SRAM[%04X]=%02X",
+            bp_current_frame, t, label, v or -1, pc, m, ram_u8(A_OBJ_Y), eb, 0x08FE+eb, sram_val))
     end
 end
 for _, dn in ipairs({"System Bus", "68K BUS", "M68K BUS"}) do
@@ -358,6 +364,7 @@ for _, dn in ipairs({"System Bus", "68K BUS", "M68K BUS"}) do
             event.on_bus_write(bp_make("facedir "), 0xFF0098, dn)
             event.on_bus_write(bp_make("objstate"), 0xFF00AC, dn)
             event.on_bus_write(bp_make("movedir "), 0xFF000F, dn)
+            event.on_bus_write(bp_make("cavetype"), 0xFF0350, dn)
         end)
         if ok then bp_write("BP installed on "..dn); break end
     end
@@ -536,6 +543,10 @@ for frame = 1, MAX_FRAMES do
                     cavetype = ram_u8(A_CAVETYPE),
                     objtimer0 = ram_u8(A_OBJTIMER0),
                     autowalk = ram_u8(A_AUTOWALK),
+                    obj_templ = ram_u8(A_OBJ_TEMPL),
+                    lvl_block = ram_u8(A_LVL_BLOCK),
+                    room_flags = ram_u8(A_ROOM_FLAGS),
+                    cave_tmpl = ram_u8(A_CAVE_TMPL),
                 }
             end
         else
@@ -632,6 +643,7 @@ local function build_json()
         isupd = {}, secret = {}, whirl = {},
         objstate = {}, movedir = {}, facedir = {},
         personstate = {}, cavetype = {}, objtimer0 = {}, autowalk = {},
+        obj_templ = {}, lvl_block = {}, room_flags = {}, cave_tmpl = {},
     }
     for i = 1, trace_len do
         local e = trace[i]
@@ -670,6 +682,10 @@ local function build_json()
         cols.cavetype[i]       = e.cavetype or 0
         cols.objtimer0[i]      = e.objtimer0 or 0
         cols.autowalk[i]       = e.autowalk or 0
+        cols.obj_templ[i]      = e.obj_templ or 0
+        cols.lvl_block[i]      = e.lvl_block or 0
+        cols.room_flags[i]     = e.room_flags or 0
+        cols.cave_tmpl[i]      = e.cave_tmpl or 0
     end
     local phase_parts = {}
     for i, p in ipairs(SCENARIO.phase_summary()) do
@@ -737,7 +753,11 @@ local function build_json()
         '"personstate":'      .. json_num_array(cols.personstate) .. ",",
         '"cavetype":'         .. json_num_array(cols.cavetype) .. ",",
         '"objtimer0":'        .. json_num_array(cols.objtimer0) .. ",",
-        '"autowalk":'         .. json_num_array(cols.autowalk),
+        '"autowalk":'         .. json_num_array(cols.autowalk) .. ",",
+        '"obj_templ":'        .. json_num_array(cols.obj_templ) .. ",",
+        '"lvl_block":'        .. json_num_array(cols.lvl_block) .. ",",
+        '"room_flags":'       .. json_num_array(cols.room_flags) .. ",",
+        '"cave_tmpl":'        .. json_num_array(cols.cave_tmpl),
         "}",
         "}",
     }, "\n")

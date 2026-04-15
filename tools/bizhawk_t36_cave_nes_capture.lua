@@ -65,6 +65,10 @@ local ADDR_PERSONSTATE = 0x00AD
 local ADDR_CAVETYPE    = 0x0350
 local ADDR_OBJTIMER0   = 0x0029
 local ADDR_AUTOWALK    = 0x0394
+local ADDR_OBJ_TEMPL   = 0x0002
+local ADDR_LVL_BLOCK   = 0x00EB
+local ADDR_ROOM_FLAGS  = 0x04CD
+local ADDR_CAVE_TMPL   = 0x034E
 local ADDR_SLOT_A0  = 0x0633
 local ADDR_SLOT_A1  = 0x0634
 local ADDR_SLOT_A2  = 0x0635
@@ -420,6 +424,10 @@ for frame = 1, MAX_FRAMES do
                     cavetype = ram_u8(ADDR_CAVETYPE),
                     objtimer0 = ram_u8(ADDR_OBJTIMER0),
                     autowalk = ram_u8(ADDR_AUTOWALK),
+                    obj_templ = ram_u8(ADDR_OBJ_TEMPL),
+                    lvl_block = ram_u8(ADDR_LVL_BLOCK),
+                    room_flags = ram_u8(ADDR_ROOM_FLAGS),
+                    cave_tmpl = ram_u8(ADDR_CAVE_TMPL),
                 }
             end
         else
@@ -491,6 +499,7 @@ local function build_json()
         cur_col = {}, cur_row = {}, ppumask = {},
         objstate = {}, movedir = {}, facedir = {},
         personstate = {}, cavetype = {}, objtimer0 = {}, autowalk = {},
+        obj_templ = {}, lvl_block = {}, room_flags = {}, cave_tmpl = {},
     }
     for i = 1, trace_len do
         local e = trace[i]
@@ -517,6 +526,10 @@ local function build_json()
         cols.cavetype[i]    = e.cavetype or 0
         cols.objtimer0[i]   = e.objtimer0 or 0
         cols.autowalk[i]    = e.autowalk or 0
+        cols.obj_templ[i]   = e.obj_templ or 0
+        cols.lvl_block[i]   = e.lvl_block or 0
+        cols.room_flags[i]  = e.room_flags or 0
+        cols.cave_tmpl[i]   = e.cave_tmpl or 0
     end
     local phase_parts = {}
     for i, p in ipairs(SCENARIO.phase_summary()) do
@@ -565,7 +578,11 @@ local function build_json()
         '"personstate":' .. json_num_array(cols.personstate) .. ",",
         '"cavetype":'    .. json_num_array(cols.cavetype) .. ",",
         '"objtimer0":'   .. json_num_array(cols.objtimer0) .. ",",
-        '"autowalk":'    .. json_num_array(cols.autowalk),
+        '"autowalk":'    .. json_num_array(cols.autowalk) .. ",",
+        '"obj_templ":'   .. json_num_array(cols.obj_templ) .. ",",
+        '"lvl_block":'   .. json_num_array(cols.lvl_block) .. ",",
+        '"room_flags":'  .. json_num_array(cols.room_flags) .. ",",
+        '"cave_tmpl":'   .. json_num_array(cols.cave_tmpl),
         "}",
         "}",
     }, "\n")
