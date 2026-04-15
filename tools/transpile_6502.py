@@ -1051,18 +1051,33 @@ def translate_one_instruction(stripped, line_idx, symtab,
         carry_state['inverted'] = False
 
     elif mnem == 'SBC':
+        # 6502 SBC borrow polarity is INVERTED vs M68K SUBX:
+        #   6502: C=1 means "no borrow in" (plain A - M);  C=0 means borrow in.
+        #   M68K: X=1 means "borrow in" (extra -1);        X=0 means no borrow in.
+        # We wrap every SUBX with `eori #$10,CCR` pre/post to flip X so the
+        # SUBX sees correct borrow-in polarity and restore X to carry the
+        # 6502 C bit for subsequent arithmetic. The M68K C flag after SUBX
+        # remains M68K-polarity (inverted vs 6502), tracked via carry_state.
         if mode == 'IMM':
             e(f'    move.b  #${val:02X},D1')
+            e(f'    eori    #$10,CCR  ; flip X: 6502 SBC polarity')
             e(f'    subx.b  D1,D0   ; SBC #${val:02X}')
+            e(f'    eori    #$10,CCR  ; restore X = 6502 C')
         elif mode == 'ABS':
             gen_read('D1', val)
+            e(f'    eori    #$10,CCR  ; flip X: 6502 SBC polarity')
             e(f'    subx.b  D1,D0   ; SBC {val}')
+            e(f'    eori    #$10,CCR  ; restore X = 6502 C')
         elif mode == 'ABS_X':
             gen_read('D1', val, 'X')
+            e(f'    eori    #$10,CCR  ; flip X: 6502 SBC polarity')
             e(f'    subx.b  D1,D0   ; SBC {val},X')
+            e(f'    eori    #$10,CCR  ; restore X = 6502 C')
         elif mode == 'ABS_Y':
             gen_read('D1', val, 'Y')
+            e(f'    eori    #$10,CCR  ; flip X: 6502 SBC polarity')
             e(f'    subx.b  D1,D0   ; SBC {val},Y')
+            e(f'    eori    #$10,CCR  ; restore X = 6502 C')
         else:
             e(f'; [SBC unhandled mode={mode}] {stripped}')
         # M68K SUBX C flag is INVERTED vs 6502 SBC carry (same as CMP issue)
@@ -2365,48 +2380,9 @@ def _patch_z01(path):
     else:
         print("  WARNING: _patch_z01 P5 -- FormatHeartsInTextBuf anchor not found")
 
-    # ---- Patch 6 (P36d): Fix SEC;SBC off-by-one in FormatHeartsInTextBuf ----
-    # The transpiler lowers 6502 SBC as "SEC; SUBX", which subtracts an extra
-    # 1 on 68K. In FormatHeartsInTextBuf this turns HeartValues=$22 into
-    # four full hearts instead of three. Keep the fix narrow to the two
-    # "$0F - nibble" derivations used by the status-bar formatter.
-    old_hearts_sbc_00 = (
-        '    moveq   #15,D0\n'
-        '    ori     #$11,CCR  ; SEC: set C+X\n'
-        '    move.b  ($0000,A4),D1\n'
-        '    subx.b  D1,D0   ; SBC $00\n'
-        '    move.b  D0,($0000,A4)\n'
-    )
-    new_hearts_sbc_00 = (
-        '    moveq   #15,D0                    ; PATCH P36d: exact $0F-$00, no SUBX off-by-one\n'
-        '    move.b  ($0000,A4),D1\n'
-        '    sub.b   D1,D0\n'
-        '    move.b  D0,($0000,A4)\n'
-    )
-    if old_hearts_sbc_00 in text:
-        text = text.replace(old_hearts_sbc_00, new_hearts_sbc_00, 1)
-        print("  _patch_z01 P6a: FormatHeartsInTextBuf exact $0F-$00")
-    else:
-        print("  WARNING: _patch_z01 P6a -- FormatHeartsInTextBuf $00 SBC pattern not found")
-
-    old_hearts_sbc_01 = (
-        '    moveq   #15,D0\n'
-        '    ori     #$11,CCR  ; SEC: set C+X\n'
-        '    move.b  ($0001,A4),D1\n'
-        '    subx.b  D1,D0   ; SBC $01\n'
-        '    move.b  D0,($0001,A4)\n'
-    )
-    new_hearts_sbc_01 = (
-        '    moveq   #15,D0                    ; PATCH P36d: exact $0F-$01, no SUBX off-by-one\n'
-        '    move.b  ($0001,A4),D1\n'
-        '    sub.b   D1,D0\n'
-        '    move.b  D0,($0001,A4)\n'
-    )
-    if old_hearts_sbc_01 in text:
-        text = text.replace(old_hearts_sbc_01, new_hearts_sbc_01, 1)
-        print("  _patch_z01 P6b: FormatHeartsInTextBuf exact $0F-$01")
-    else:
-        print("  WARNING: _patch_z01 P6b -- FormatHeartsInTextBuf $01 SBC pattern not found")
+    # P6a/P6b removed: superseded by transpiler-side SBC X-flag polarity fix
+    # (subx.b now wrapped with `eori #$10,CCR` pair). SUBX off-by-one no longer
+    # occurs, so the FormatHeartsInTextBuf compensation is unnecessary.
 
     with open(path, 'w', encoding='utf-8') as f:
         f.write(text)
@@ -3082,94 +3058,10 @@ def _patch_z02(path):
     else:
         print("  WARNING: _patch_z02 P14 -- wrap gate pattern not found")
 
-    # ---- Patch 15: Zelda16.12 -- SEC;SBC #$08 -1 fix at wrap site ----
-    # Diary Finding #30.  Systemic SEC;SBC #imm transpile bug: the pattern
-    # "ori #$11,CCR; subx.b D1,D0" subtracts imm+1 instead of imm because
-    # the X flag is still set.  At this specific wrap site the 9th letter
-    # ends up in column $CD instead of $CE.  Replace with a plain sub.b.
-    # Anchored on the "$20D6 -> $20CE" comment to uniquely hit this site
-    # without touching ModifyFlashingCursorY or ModeEandF_SetUpCursorSprites
-    # (whose callers are tuned around the off-by-one, per diary scope note).
-    old_sec_sbc_wrap = (
-        '    ; For example, $20D6 -> $20CE.\n'
-        '    ;\n'
-        '    move.b  ($0423,A4),D0\n'
-        '    ori     #$11,CCR  ; SEC: set C+X\n'
-        '    move.b  #$08,D1\n'
-        '    subx.b  D1,D0   ; SBC #$08\n'
-        '    move.b  D0,($0423,A4)\n'
-    )
-    new_sec_sbc_wrap = (
-        '    ; For example, $20D6 -> $20CE.\n'
-        '    ;\n'
-        '    move.b  ($0423,A4),D0  ; PATCH P15: Zelda16.12\n'
-        '    sub.b   #$08,D0\n'
-        '    move.b  D0,($0423,A4)\n'
-    )
-    if old_sec_sbc_wrap in text:
-        text = text.replace(old_sec_sbc_wrap, new_sec_sbc_wrap, 1)
-        print("  _patch_z02 P15: Zelda16.12 SEC;SBC -1 fix at wrap site")
-    else:
-        print("  WARNING: _patch_z02 P15 -- SEC;SBC wrap pattern not found")
-
-    # ---- Patch 19: Phase 9.6 -- SEC;SBC -1 fix in Mode E direction handlers ----
-    # Same systemic SEC;SBC transpile bug as P15, but in
-    # _L_z02_ModeE_HandleDirectionButton_Up (idx -= $0B per Up press) and
-    # the Down-wrap fixup (idx -= $2C when Down rolls past row 3).  Both
-    # sites operate on CharBoardIndex [$041F], and P13's source-of-truth
-    # sync makes the IDX off-by-one VISIBLE because P13 derives ObjX/ObjY
-    # from idx after the move.
-    #
-    # Symptoms in tools/bizhawk_fs2_keyboard.lua before fix:
-    #   - Every Up press shifts col -1 (idx -= 12 instead of -11) → diagonal
-    #   - Down from row 3 col 0 wraps to row 0 col 9 (idx -= 45 instead of
-    #     -44 → 255 → P13 hidden-slot snap to 9)
-    #
-    # Sites kept narrow: this does NOT touch the Left ObjX SEC;SBC at line
-    # 2499-2503 (P13 overwrites ObjX from idx so the user never sees the
-    # buggy x).  Only the two CharBoardIndex SEC;SBC instances are fixed.
-
-    # P19a: Up move (idx -= $0B per Up press)
-    old_up_idx_subx = (
-        '    ; Decrease CharBoardIndex [$041F] by $B (one row up).\n'
-        '    ;\n'
-        '    move.b  ($041F,A4),D0\n'
-        '    ori     #$11,CCR  ; SEC: set C+X\n'
-        '    move.b  #$0B,D1\n'
-        '    subx.b  D1,D0   ; SBC #$0B\n'
-        '    move.b  D0,($041F,A4)\n'
-    )
-    new_up_idx_subx = (
-        '    ; Decrease CharBoardIndex [$041F] by $B (one row up).\n'
-        '    ;\n'
-        '    move.b  ($041F,A4),D0  ; PATCH P19a: Phase 9.6 SEC;SBC -1 fix\n'
-        '    sub.b   #$0B,D0\n'
-        '    move.b  D0,($041F,A4)\n'
-    )
-    if old_up_idx_subx in text:
-        text = text.replace(old_up_idx_subx, new_up_idx_subx, 1)
-        print("  _patch_z02 P19a: SEC;SBC -1 fix in Up move (idx -= $0B)")
-    else:
-        print("  WARNING: _patch_z02 P19a -- Up SEC;SBC pattern not found")
-
-    # P19b: Down wrap fixup (idx -= $2C when row3 -> row0)
-    old_down_wrap_subx = (
-        '    move.b  ($041F,A4),D0\n'
-        '    ori     #$11,CCR  ; SEC: set C+X\n'
-        '    move.b  #$2C,D1\n'
-        '    subx.b  D1,D0   ; SBC #$2C\n'
-        '    move.b  D0,($041F,A4)\n'
-    )
-    new_down_wrap_subx = (
-        '    move.b  ($041F,A4),D0  ; PATCH P19b: Phase 9.6 SEC;SBC -1 fix\n'
-        '    sub.b   #$2C,D0\n'
-        '    move.b  D0,($041F,A4)\n'
-    )
-    if old_down_wrap_subx in text:
-        text = text.replace(old_down_wrap_subx, new_down_wrap_subx, 1)
-        print("  _patch_z02 P19b: SEC;SBC -1 fix in Down wrap (idx -= $2C)")
-    else:
-        print("  WARNING: _patch_z02 P19b -- Down wrap SEC;SBC pattern not found")
+    # P15, P19a, P19b removed: superseded by transpiler-side SBC X-flag
+    # polarity fix (subx.b now wrapped with `eori #$10,CCR` pair). These
+    # were compensating for the M68K SUBX off-by-one vs 6502 SEC;SBC, which
+    # no longer exists. T34 D-pad movement parity (8/8 PASS) confirms.
 
     # ------------------------------------------------------------------
     # P21: Phase 9.8 — wire save-slot writes through cart SRAM.

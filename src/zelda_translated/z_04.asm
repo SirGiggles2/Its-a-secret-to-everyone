@@ -254,7 +254,9 @@ InitWalker:
     move.b  ($0061,A4),D0
     ori     #$11,CCR  ; SEC: set C+X
     move.b  ($70,A4,D2.W),D1
+    eori    #$10,CCR  ; flip X: 6502 SBC polarity
     subx.b  D1,D0   ; SBC ObjX,X
+    eori    #$10,CCR  ; restore X = 6502 C
     bcc  _anon_z04_2
     subq.b  #1,D3
 _anon_z04_2:
@@ -276,7 +278,9 @@ _anon_z04_2:
     ori     #$11,CCR  ; SEC: set C+X
     lea     ($0084,A4),A0
     move.b  (A0,D2.W),D1
+    eori    #$10,CCR  ; flip X: 6502 SBC polarity
     subx.b  D1,D0   ; SBC ObjY,X
+    eori    #$10,CCR  ; restore X = 6502 C
     bcc  _anon_z04_3
     moveq   #8,D3
 _anon_z04_3:
@@ -402,7 +406,9 @@ _anon_z04_7:
     move.b  ($0061,A4),D0
     ori     #$11,CCR  ; SEC: set C+X
     move.b  ($70,A4,D2.W),D1
+    eori    #$10,CCR  ; flip X: 6502 SBC polarity
     subx.b  D1,D0   ; SBC ObjX,X
+    eori    #$10,CCR  ; restore X = 6502 C
     bpl  _anon_z04_8
     eori.b #$FF,D0
     andi    #$EE,CCR  ; CLC: clear C+X
@@ -435,7 +441,9 @@ _L_z04_Exit_CheckVerticalDistance:
     ori     #$11,CCR  ; SEC: set C+X
     lea     ($0084,A4),A0
     move.b  (A0,D2.W),D1
+    eori    #$10,CCR  ; flip X: 6502 SBC polarity
     subx.b  D1,D0   ; SBC ObjY,X
+    eori    #$10,CCR  ; restore X = 6502 C
     bpl  _anon_z04_9
     eori.b #$FF,D0
     andi    #$EE,CCR  ; CLC: clear C+X
@@ -583,7 +591,9 @@ _anon_z04_11:
     move.b  D3,($000E,A4)
     ori     #$11,CCR  ; SEC: set C+X
     move.b  ($000E,A4),D1
+    eori    #$10,CCR  ; flip X: 6502 SBC polarity
     subx.b  D1,D0   ; SBC $0E
+    eori    #$10,CCR  ; restore X = 6502 C
     move.b  D0,($0000,A4)
     ; Store in [01] the absolute horizontal distance between
     ; the chase target and the walker.
@@ -609,7 +619,9 @@ _anon_z04_12:
     move.b  D3,($000E,A4)
     ori     #$11,CCR  ; SEC: set C+X
     move.b  ($000E,A4),D1
+    eori    #$10,CCR  ; flip X: 6502 SBC polarity
     subx.b  D1,D0   ; SBC $0E
+    eori    #$10,CCR  ; restore X = 6502 C
     move.b  D0,($0001,A4)
     ; Whichever distance is longer determines which combination
     ; of distance and direction will be used.
@@ -792,7 +804,9 @@ __far_z_04_0005:
     ori     #$11,CCR  ; SEC: set C+X
     lea     ($0084,A4),A0
     move.b  (A0,D2.W),D1
+    eori    #$10,CCR  ; flip X: 6502 SBC polarity
     subx.b  D1,D0   ; SBC ObjY,X
+    eori    #$10,CCR  ; restore X = 6502 C
     jmp     _L_z04_UpdateBlock0Idle_TestDifference
 
     even
@@ -817,7 +831,9 @@ __far_z_04_0006:
     move.b  ($0070,A4),D0
     ori     #$11,CCR  ; SEC: set C+X
     move.b  ($70,A4,D2.W),D1
+    eori    #$10,CCR  ; flip X: 6502 SBC polarity
     subx.b  D1,D0   ; SBC ObjX,X
+    eori    #$10,CCR  ; restore X = 6502 C
     even
 _L_z04_UpdateBlock0Idle_TestDifference:
     ; If the difference in coordinates is negative, then Link is
@@ -1412,7 +1428,9 @@ UpdateBubble:
     beq  _L_z04_UpdateBubble_Flash
     ori     #$11,CCR  ; SEC: set C+X
     move.b  #$2B,D1
+    eori    #$10,CCR  ; flip X: 6502 SBC polarity
     subx.b  D1,D0   ; SBC #$2B
+    eori    #$10,CCR  ; restore X = 6502 C
     jmp     _L_z04_UpdateBubble_Animate
 
     even
@@ -1455,7 +1473,9 @@ _L_z04_UpdateBubble_BlockOrUnblock:
     ;
     ori     #$11,CCR  ; SEC: set C+X
     move.b  #$2C,D1
+    eori    #$10,CCR  ; flip X: 6502 SBC polarity
     subx.b  D1,D0   ; SBC #$2C
+    eori    #$10,CCR  ; restore X = 6502 C
     move.b  D0,($052E,A4)
     rts
 
@@ -2124,7 +2144,9 @@ _L_z04_UpdateStatues_LoopAxis:
     move.b  ($00,A4,D3.W),D0
     ori     #$11,CCR  ; SEC: set C+X
     move.b  ($02,A4,D3.W),D1
+    eori    #$10,CCR  ; flip X: 6502 SBC polarity
     subx.b  D1,D0   ; SBC $0002,Y
+    eori    #$10,CCR  ; restore X = 6502 C
     cmpi.b  #$18,D0
     bpl  _anon_z04_31
     cmpi.b  #$E8,D0
@@ -2963,7 +2985,9 @@ __far_z_04_0024:
     ori     #$11,CCR  ; SEC: set C+X
     lea     ($0444,A4),A0
     move.b  (A0,D2.W),D1
+    eori    #$10,CCR  ; flip X: 6502 SBC polarity
     subx.b  D1,D0   ; SBC Jumper_ObjTargetY,X
+    eori    #$10,CCR  ; restore X = 6502 C
     jsr     Abs
     cmpi.b  #$03,D0
     bcs.s  __far_z_04_0025
@@ -2993,7 +3017,9 @@ __far_z_04_0025:
     bcc  _anon_z04_39
     ori     #$11,CCR  ; SEC: set C+X
     move.b  #$40,D1
+    eori    #$10,CCR  ; flip X: 6502 SBC polarity
     subx.b  D1,D0   ; SBC #$40
+    eori    #$10,CCR  ; restore X = 6502 C
 _anon_z04_39:
     ; If the object is a blue tektite, then go use this t.
     ;
@@ -3089,7 +3115,9 @@ Jumper_GetKind:
     move.b  (A0,D2.W),D0
     ori     #$11,CCR  ; SEC: set C+X
     move.b  #$0D,D1
+    eori    #$10,CCR  ; flip X: 6502 SBC polarity
     subx.b  D1,D0   ; SBC #$0D
+    eori    #$10,CCR  ; restore X = 6502 C
     moveq   #0,D3
     move.b  D0,D3
     cmpi.b  #$02,D3
@@ -3318,7 +3346,9 @@ _L_z04_Burrower_AnimateDrawAndCheckCollisions_CalcFrameImage:
     ;
     ori     #$11,CCR  ; SEC: set C+X
     move.b  #$01,D1
+    eori    #$10,CCR  ; flip X: 6502 SBC polarity
     subx.b  D1,D0   ; SBC #$01
+    eori    #$10,CCR  ; restore X = 6502 C
     lsl.b  #1,D0   ; ASL A
     andi    #$EE,CCR  ; CLC: clear C+X
     lea     ($03E4,A4),A0
@@ -3511,7 +3541,9 @@ _L_z04_UpdateRedLeever_Subtract:
     move.b  ($0001,A4),D0
     ori     #$11,CCR  ; SEC: set C+X
     move.b  ($0002,A4),D1
+    eori    #$10,CCR  ; flip X: 6502 SBC polarity
     subx.b  D1,D0   ; SBC $02
+    eori    #$10,CCR  ; restore X = 6502 C
     ; If the absolute distance >= $30, then return.
     ; It means that the leever's X coordinate wrapped around
     ; the left or right edge of the screen.
@@ -4276,7 +4308,9 @@ _L_z04_PondFairy_MoveHearts_LoopHeart:
     move.b  D2,D0
     ori     #$11,CCR  ; SEC: set C+X
     move.b  #$03,D1
+    eori    #$10,CCR  ; flip X: 6502 SBC polarity
     subx.b  D1,D0   ; SBC #$03
+    eori    #$10,CCR  ; restore X = 6502 C
     moveq   #0,D3
     move.b  D0,D3
     move.b  ($0396,A4),D0
@@ -4309,7 +4343,9 @@ _L_z04_PondFairy_MoveHearts_SetUpHeart:
     move.b  ($0085,A4),D0
     ori     #$11,CCR  ; SEC: set C+X
     move.b  #$1C,D1
+    eori    #$10,CCR  ; flip X: 6502 SBC polarity
     subx.b  D1,D0   ; SBC #$1C
+    eori    #$10,CCR  ; restore X = 6502 C
     lea     ($0084,A4),A0
     move.b  D0,(A0,D2.W)
     even
@@ -4400,7 +4436,9 @@ _L_z04_UpdateRockOrGravestone_CheckQuest:
     ori     #$11,CCR  ; SEC: set C+X
     lea     ($0084,A4),A0
     move.b  (A0,D2.W),D1
+    eori    #$10,CCR  ; flip X: 6502 SBC polarity
     subx.b  D1,D0   ; SBC ObjY,X
+    eori    #$10,CCR  ; restore X = 6502 C
     bpl  _L_z04_UpdateRockOrGravestone_CheckDistance
     ; Else negate it, and indicate Link is "up" from the object.
     ;
@@ -5626,7 +5664,9 @@ _anon_z04_76:
     move.b  ($0070,A4),D0
     ori     #$11,CCR  ; SEC: set C+X
     move.b  ($70,A4,D2.W),D1
+    eori    #$10,CCR  ; flip X: 6502 SBC polarity
     subx.b  D1,D0   ; SBC ObjX,X
+    eori    #$10,CCR  ; restore X = 6502 C
     jsr     Abs
     cmpi.b  #$08,D0
     bcc  _L_z04_UpdateRope_CheckVertical
@@ -5697,7 +5737,9 @@ _L_z04_UpdateRope_CheckVertical:
     ori     #$11,CCR  ; SEC: set C+X
     lea     ($0084,A4),A0
     move.b  (A0,D2.W),D1
+    eori    #$10,CCR  ; flip X: 6502 SBC polarity
     subx.b  D1,D0   ; SBC ObjY,X
+    eori    #$10,CCR  ; restore X = 6502 C
     jsr     Abs
     cmpi.b  #$08,D0
     bcc  _L_z04_UpdateRope_Animate
@@ -6766,7 +6808,9 @@ _L_z04_Digdogger_Move_Left:
     beq  _L_z04_Digdogger_Move_Down
     move.b  ($70,A4,D2.W),D0
     move.b  ($0003,A4),D1
+    eori    #$10,CCR  ; flip X: 6502 SBC polarity
     subx.b  D1,D0   ; SBC $03
+    eori    #$10,CCR  ; restore X = 6502 C
     move.b  D0,($70,A4,D2.W)
     even
 _L_z04_Digdogger_Move_Down:
@@ -6801,7 +6845,9 @@ _L_z04_Digdogger_Move_Up:
     lea     ($0084,A4),A0
     move.b  (A0,D2.W),D0
     move.b  ($0003,A4),D1
+    eori    #$10,CCR  ; flip X: 6502 SBC polarity
     subx.b  D1,D0   ; SBC $03
+    eori    #$10,CCR  ; restore X = 6502 C
     lea     ($0084,A4),A0
     move.b  D0,(A0,D2.W)
     even
@@ -7705,7 +7751,9 @@ _L_z04_Dodongo_IsBombInRange_LoopAxis:
     move.b  ($00,A4,D3.W),D0
     ori     #$11,CCR  ; SEC: set C+X
     move.b  ($02,A4,D3.W),D1
+    eori    #$10,CCR  ; flip X: 6502 SBC polarity
     subx.b  D1,D0   ; SBC $0002,Y
+    eori    #$10,CCR  ; restore X = 6502 C
     ; If the distance >= positive offset, or < negative offset;
     ; then loop again.
     ;
@@ -8321,7 +8369,9 @@ UpdatePolsVoiceState1_Jumping:
     ;
     ori     #$11,CCR  ; SEC: set C+X
     move.b  #$03,D1
+    eori    #$10,CCR  ; flip X: 6502 SBC polarity
     subx.b  D1,D0   ; SBC #$03
+    eori    #$10,CCR  ; restore X = 6502 C
     lea     ($0084,A4),A0
     move.b  D0,(A0,D2.W)
     even
@@ -9079,7 +9129,9 @@ RedWizzrobe_AlignAndSetY:
     andi.b #$F0,D0
     ori     #$11,CCR  ; SEC: set C+X
     move.b  #$03,D1
+    eori    #$10,CCR  ; flip X: 6502 SBC polarity
     subx.b  D1,D0   ; SBC #$03
+    eori    #$10,CCR  ; restore X = 6502 C
     lea     ($0084,A4),A0
     move.b  D0,(A0,D2.W)
     rts
@@ -10075,7 +10127,9 @@ _L_z04_Manhandla_Move_Left:
     beq  _L_z04_Manhandla_Move_Down
     move.b  ($70,A4,D2.W),D0
     move.b  ($0003,A4),D1
+    eori    #$10,CCR  ; flip X: 6502 SBC polarity
     subx.b  D1,D0   ; SBC $03
+    eori    #$10,CCR  ; restore X = 6502 C
     move.b  D0,($70,A4,D2.W)
     even
 _L_z04_Manhandla_Move_Down:
@@ -10110,7 +10164,9 @@ _L_z04_Manhandla_Move_Up:
     lea     ($0084,A4),A0
     move.b  (A0,D2.W),D0
     move.b  ($0003,A4),D1
+    eori    #$10,CCR  ; flip X: 6502 SBC polarity
     subx.b  D1,D0   ; SBC $03
+    eori    #$10,CCR  ; restore X = 6502 C
     lea     ($0084,A4),A0
     move.b  D0,(A0,D2.W)
     even
@@ -10478,7 +10534,9 @@ Gohma_SetSpriteAttributes:
     move.b  (A0,D2.W),D0
     ori     #$11,CCR  ; SEC: set C+X
     move.b  #$32,D1
+    eori    #$10,CCR  ; flip X: 6502 SBC polarity
     subx.b  D1,D0   ; SBC #$32
+    eori    #$10,CCR  ; restore X = 6502 C
     jmp     Anim_SetSpriteDescriptorAttributes
 
     even
@@ -10492,7 +10550,9 @@ Gohma_CheckCollisions:
     ;
     ori     #$11,CCR  ; SEC: set C+X
     move.b  #$10,D1
+    eori    #$10,CCR  ; flip X: 6502 SBC polarity
     subx.b  D1,D0   ; SBC #$10
+    eori    #$10,CCR  ; restore X = 6502 C
     move.b  D0,($70,A4,D2.W)
     ; Check object collisions in 5 parts, 8 pixels apart,
     ; from left to right, indexed by [0F].
@@ -10664,7 +10724,9 @@ UpdateGleeok:
     move.b  ($0350,A4),D0
     ori     #$11,CCR  ; SEC: set C+X
     move.b  #$42,D1
+    eori    #$10,CCR  ; flip X: 6502 SBC polarity
     subx.b  D1,D0   ; SBC #$42
+    eori    #$10,CCR  ; restore X = 6502 C
     ; For each neck, counting down:
     ;
     move.b  D0,($04D7,A4)
@@ -10850,7 +10912,9 @@ Gleeok_MoveNeck:
     move.b  ($0075,A4),D0
     ori     #$11,CCR  ; SEC: set C+X
     move.b  ($0071,A4),D1
+    eori    #$10,CCR  ; flip X: 6502 SBC polarity
     subx.b  D1,D0   ; SBC ObjX+1
+    eori    #$10,CCR  ; restore X = 6502 C
     ; If the difference is positive, then go divide by 4 unsigned.
     ;
     bmi.s  __far_z_04_0094
@@ -10882,7 +10946,9 @@ L_Gleeok_StoreRefSegDistance:
     move.b  ($0089,A4),D0
     ori     #$11,CCR  ; SEC: set C+X
     move.b  ($0085,A4),D1
+    eori    #$10,CCR  ; flip X: 6502 SBC polarity
     subx.b  D1,D0   ; SBC ObjY+1
+    eori    #$10,CCR  ; restore X = 6502 C
     jsr     Abs
     lsr.b  #1,D0   ; LSR A
     lsr.b  #1,D0   ; LSR A
@@ -10906,7 +10972,9 @@ _L_z04_L_Gleeok_StoreRefSegDistance_KeepSegsNearNeighbors:
     move.b  ($71,A4,D2.W),D0
     ori     #$11,CCR  ; SEC: set C+X
     move.b  ($72,A4,D2.W),D1
+    eori    #$10,CCR  ; flip X: 6502 SBC polarity
     subx.b  D1,D0   ; SBC ObjX+2,X
+    eori    #$10,CCR  ; restore X = 6502 C
     jsr     Abs
     ; If H-distance < third tier H-distance, then this distance is OK.
     ; Go look at the vertical distance.
@@ -10941,7 +11009,9 @@ _L_z04_L_Gleeok_StoreRefSegDistance_CheckDistanceV:
     ori     #$11,CCR  ; SEC: set C+X
     lea     ($0086,A4),A0
     move.b  (A0,D2.W),D1
+    eori    #$10,CCR  ; flip X: 6502 SBC polarity
     subx.b  D1,D0   ; SBC ObjY+2,X
+    eori    #$10,CCR  ; restore X = 6502 C
     jsr     Abs
     ; If V-distance < third tier V-distance, then this distance is OK.
     ; Go loop again.
@@ -11119,7 +11189,9 @@ Gleeok_StretchNeck:
     move.b  ($73,A4,D2.W),D0
     ori     #$11,CCR  ; SEC: set C+X
     move.b  ($73,A4,D2.W),D1
+    eori    #$10,CCR  ; flip X: 6502 SBC polarity
     subx.b  D1,D0   ; SBC ObjX+3,X
+    eori    #$10,CCR  ; restore X = 6502 C
     jsr     Abs
     move.b  ($04D9,A4),D1
     cmp.b   D1,D0
@@ -11144,7 +11216,9 @@ _anon_z04_136:
     ori     #$11,CCR  ; SEC: set C+X
     lea     ($0086,A4),A0
     move.b  (A0,D2.W),D1
+    eori    #$10,CCR  ; flip X: 6502 SBC polarity
     subx.b  D1,D0   ; SBC ObjY+2,X
+    eori    #$10,CCR  ; restore X = 6502 C
     jsr     Abs
     move.b  ($04DA,A4),D1
     cmp.b   D1,D0
@@ -11482,7 +11556,9 @@ _anon_z04_143:
     move.b  ($0350,A4),D0
     ori     #$11,CCR  ; SEC: set C+X
     move.b  #$41,D1
+    eori    #$10,CCR  ; flip X: 6502 SBC polarity
     subx.b  D1,D0   ; SBC #$41
+    eori    #$10,CCR  ; restore X = 6502 C
     move.b  ($0000,A4),D1
     cmp.b   D1,D0
     ; If they're equal, then go handle the whole boss dying.
@@ -11630,7 +11706,9 @@ Gleeok_ChangeCoordinateBySpeedFlag:
 _L_z04_Gleeok_ChangeCoordinateBySpeedFlag_Subtract:
     ori     #$11,CCR  ; SEC: set C+X
     move.b  #$01,D1
+    eori    #$10,CCR  ; flip X: 6502 SBC polarity
     subx.b  D1,D0   ; SBC #$01
+    eori    #$10,CCR  ; restore X = 6502 C
     rts
 
     even
@@ -11867,7 +11945,9 @@ _anon_z04_147:
     move.b  D0,($04E7,A4)
     ori     #$11,CCR  ; SEC: set C+X
     move.b  #$39,D1
+    eori    #$10,CCR  ; flip X: 6502 SBC polarity
     subx.b  D1,D0   ; SBC #$39
+    eori    #$10,CCR  ; restore X = 6502 C
     move.b  D0,($04E6,A4)
     ; TODO:
     ; Do the heads not count?
@@ -12385,7 +12465,9 @@ _L_z04_Lamnola_UpdateHead_TurnTowardLink:
     move.b  ($0070,A4),D0
     ori     #$11,CCR  ; SEC: set C+X
     move.b  ($70,A4,D2.W),D1
+    eori    #$10,CCR  ; flip X: 6502 SBC polarity
     subx.b  D1,D0   ; SBC ObjX,X
+    eori    #$10,CCR  ; restore X = 6502 C
     bcc  _anon_z04_153
     move.b  ($0002,A4),D1
     lsl.b  #1,D1   ; ASL $02
@@ -12399,7 +12481,9 @@ _anon_z04_153:
     ori     #$11,CCR  ; SEC: set C+X
     lea     ($0084,A4),A0
     move.b  (A0,D2.W),D1
+    eori    #$10,CCR  ; flip X: 6502 SBC polarity
     subx.b  D1,D0   ; SBC ObjY,X
+    eori    #$10,CCR  ; restore X = 6502 C
     bcc  _anon_z04_154
     move.b  ($0003,A4),D1
     lsl.b  #1,D1   ; ASL $03
@@ -12467,7 +12551,9 @@ _L_z04_Lamnola_Move_Left:
     beq  _L_z04_Lamnola_Move_Down
     move.b  ($70,A4,D2.W),D0
     move.b  ($04E6,A4),D1
+    eori    #$10,CCR  ; flip X: 6502 SBC polarity
     subx.b  D1,D0   ; SBC Lamnola_Speed
+    eori    #$10,CCR  ; restore X = 6502 C
     move.b  D0,($70,A4,D2.W)
     even
 _L_z04_Lamnola_Move_Down:
@@ -12502,7 +12588,9 @@ _L_z04_Lamnola_Move_Up:
     lea     ($0084,A4),A0
     move.b  (A0,D2.W),D0
     move.b  ($04E6,A4),D1
+    eori    #$10,CCR  ; flip X: 6502 SBC polarity
     subx.b  D1,D0   ; SBC Lamnola_Speed
+    eori    #$10,CCR  ; restore X = 6502 C
     lea     ($0084,A4),A0
     move.b  D0,(A0,D2.W)
     even
@@ -12668,7 +12756,9 @@ __far_z_04_0125:
     ;
     ori     #$11,CCR  ; SEC: set C+X
     move.b  #$03,D1
+    eori    #$10,CCR  ; flip X: 6502 SBC polarity
     subx.b  D1,D0   ; SBC #$03
+    eori    #$10,CCR  ; restore X = 6502 C
     moveq   #0,D3
     move.b  D0,D3
     ; If the patra child in slot 2 has not reached the required angle,
@@ -12725,7 +12815,9 @@ _anon_z04_158:
     move.b  ($0085,A4),D0
     ori     #$11,CCR  ; SEC: set C+X
     move.b  ($0000,A4),D1
+    eori    #$10,CCR  ; flip X: 6502 SBC polarity
     subx.b  D1,D0   ; SBC $00
+    eori    #$10,CCR  ; restore X = 6502 C
     lea     ($0084,A4),A0
     move.b  D0,(A0,D2.W)
     even
@@ -13337,7 +13429,9 @@ Ganon_GetCurCloudLeft:
     ori     #$11,CCR  ; SEC: set C+X
     lea     ($0478,A4),A0
     move.b  (A0,D2.W),D1
+    eori    #$10,CCR  ; flip X: 6502 SBC polarity
     subx.b  D1,D0   ; SBC Ganon_ObjCloudDist,X
+    eori    #$10,CCR  ; restore X = 6502 C
     move.b  D0,($0000,A4)
     rts
 
@@ -13364,7 +13458,9 @@ Ganon_GetCurCloudTop:
     ori     #$11,CCR  ; SEC: set C+X
     lea     ($0478,A4),A0
     move.b  (A0,D2.W),D1
+    eori    #$10,CCR  ; flip X: 6502 SBC polarity
     subx.b  D1,D0   ; SBC Ganon_ObjCloudDist,X
+    eori    #$10,CCR  ; restore X = 6502 C
     move.b  D0,($0001,A4)
     rts
 
@@ -14855,14 +14951,18 @@ RotateObjectLocation:
     move.b  (A0,D2.W),D0
     ori     #$11,CCR  ; SEC: set C+X
     move.b  ($0002,A4),D1
+    eori    #$10,CCR  ; flip X: 6502 SBC polarity
     subx.b  D1,D0   ; SBC $02
+    eori    #$10,CCR  ; restore X = 6502 C
     lea     ($0412,A4),A0
     move.b  D0,(A0,D2.W)
     ; And subtract the product's whole part from the X coordinate with carry.
     ;
     move.b  ($70,A4,D2.W),D0
     move.b  ($0003,A4),D1
+    eori    #$10,CCR  ; flip X: 6502 SBC polarity
     subx.b  D1,D0   ; SBC $03
+    eori    #$10,CCR  ; restore X = 6502 C
     jmp     _L_z04_RotateObjectLocation_SetXRotateY
 
     even
@@ -14916,7 +15016,9 @@ _L_z04_RotateObjectLocation_SetXRotateY:
     move.b  (A0,D2.W),D0
     ori     #$11,CCR  ; SEC: set C+X
     move.b  #$08,D1
+    eori    #$10,CCR  ; flip X: 6502 SBC polarity
     subx.b  D1,D0   ; SBC #$08
+    eori    #$10,CCR  ; restore X = 6502 C
     andi.b #$18,D0
     cmpi.b  #$10,D0
     bcs  _L_z04_RotateObjectLocation_AddToY
@@ -14926,7 +15028,9 @@ _L_z04_RotateObjectLocation_SetXRotateY:
     move.b  (A0,D2.W),D0
     ori     #$11,CCR  ; SEC: set C+X
     move.b  ($0002,A4),D1
+    eori    #$10,CCR  ; flip X: 6502 SBC polarity
     subx.b  D1,D0   ; SBC $02
+    eori    #$10,CCR  ; restore X = 6502 C
     lea     ($041F,A4),A0
     move.b  D0,(A0,D2.W)
     ; And subtract the product's whole part from the Y coordinate.
@@ -14934,7 +15038,9 @@ _L_z04_RotateObjectLocation_SetXRotateY:
     lea     ($0084,A4),A0
     move.b  (A0,D2.W),D0
     move.b  ($0003,A4),D1
+    eori    #$10,CCR  ; flip X: 6502 SBC polarity
     subx.b  D1,D0   ; SBC $03
+    eori    #$10,CCR  ; restore X = 6502 C
     rts
 
     even
@@ -15012,7 +15118,9 @@ DecreaseObjectAngle:
     move.b  (A0,D2.W),D0
     ori     #$11,CCR  ; SEC: set C+X
     move.b  ($000A,A4),D1
+    eori    #$10,CCR  ; flip X: 6502 SBC polarity
     subx.b  D1,D0   ; SBC $0A
+    eori    #$10,CCR  ; restore X = 6502 C
     lea     ($0380,A4),A0
     move.b  D0,(A0,D2.W)
     ; Subtract the high amount byte from high angle byte with borrow.
@@ -15020,7 +15128,9 @@ DecreaseObjectAngle:
     lea     ($0394,A4),A0
     move.b  (A0,D2.W),D0
     move.b  ($000B,A4),D1
+    eori    #$10,CCR  ; flip X: 6502 SBC polarity
     subx.b  D1,D0   ; SBC $0B
+    eori    #$10,CCR  ; restore X = 6502 C
     ; Cap the high byte at $1F.
     ;
     andi.b #$1F,D0

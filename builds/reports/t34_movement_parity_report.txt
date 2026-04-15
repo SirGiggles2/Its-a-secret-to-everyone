@@ -5,30 +5,30 @@ T34_NES_CAPTURE_OK: PASS  file=t34_movement_nes_capture.json len=361
 T34_GEN_CAPTURE_OK: PASS  file=t34_movement_gen_capture.json len=361
 T34_NO_GEN_EXCEPTION: PASS  no exception
 T34_BASELINE_PARITY: PASS  nes=($78,$8D,$00) gen=($78,$8D,$00)
-T34_OBJX_PARITY: FAIL  first diff at t=212 phase=left nes=$C5 gen=$C4
-T34_OBJY_PARITY: FAIL  first diff at t=172 phase=down nes=$BD gen=$BE
+T34_OBJX_PARITY: PASS  all 361 frames match
+T34_OBJY_PARITY: PASS  all 361 frames match
 T34_OBJINPUTDIR_PARITY: PASS  all 361 frames match
-T34_HELD_BUTTONS_PARITY: FAIL  first diff at t=211 phase=left nes=$02 gen=$00
+T34_HELD_BUTTONS_PARITY: PASS  all 361 frames match
 DIAG nes_final=($78,$6E) baseline=($78,$8D) delta=(+0,-31) [informational — walls expected]
 DIAG obj_xf_first_diff=None
 DIAG obj_yf_first_diff=None
 DIAG prev_held_first_diff=None (all 361 match)
-DIAG grid_off_first_diff=t=172 phase=down nes=$00 gen=$01
+DIAG grid_off_first_diff=None (all 361 match)
 DIAG q_speed_f_first_diff=None (all 361 match)
 DIAG pos_limit_first_diff=None (all 361 match)
 DIAG neg_limit_first_diff=None (all 361 match)
 DIAG WINDOW HELD-region:
   t=209 held:N$00/G$00 prev_held:N$00/G$00 obj_dir:N$00/G$00 obj_x:N$C8/G$C8
   t=210 held:N$00/G$00 prev_held:N$00/G$00 obj_dir:N$00/G$00 obj_x:N$C8/G$C8
-  t=211 held:N$02/G$00 prev_held:N$02/G$02 obj_dir:N$02/G$02 obj_x:N$C6/G$C6
-  t=212 held:N$00/G$00 prev_held:N$02/G$02 obj_dir:N$02/G$02 obj_x:N$C5/G$C4
+  t=211 held:N$02/G$02 prev_held:N$02/G$02 obj_dir:N$02/G$02 obj_x:N$C6/G$C6
+  t=212 held:N$00/G$00 prev_held:N$02/G$02 obj_dir:N$02/G$02 obj_x:N$C5/G$C5
   t=213 held:N$00/G$00 prev_held:N$02/G$02 obj_dir:N$02/G$02 obj_x:N$C3/G$C3
-  t=214 held:N$00/G$00 prev_held:N$02/G$02 obj_dir:N$02/G$02 obj_x:N$C2/G$C1
+  t=214 held:N$00/G$00 prev_held:N$02/G$02 obj_dir:N$02/G$02 obj_x:N$C2/G$C2
 DIAG WINDOW OBJY-region:
   t=169 obj_y:N$BB/G$BB obj_yf:N$87/G$87 grid_off:N$06/G$06 q_speed_f:N$60/G$60
   t=170 obj_y:N$BC/G$BC obj_yf:N$87/G$87 grid_off:N$07/G$07 q_speed_f:N$60/G$60
   t=171 obj_y:N$BD/G$BD obj_yf:N$87/G$87 grid_off:N$00/G$00 q_speed_f:N$60/G$60
-  t=172 obj_y:N$BD/G$BE obj_yf:N$87/G$87 grid_off:N$00/G$01 q_speed_f:N$60/G$60
-  t=173 obj_y:N$BD/G$C0 obj_yf:N$87/G$87 grid_off:N$00/G$03 q_speed_f:N$60/G$60
-  t=174 obj_y:N$BD/G$C1 obj_yf:N$87/G$87 grid_off:N$00/G$04 q_speed_f:N$60/G$60
-T34_PARITY: FAIL
+  t=172 obj_y:N$BD/G$BD obj_yf:N$87/G$87 grid_off:N$00/G$00 q_speed_f:N$60/G$60
+  t=173 obj_y:N$BD/G$BD obj_yf:N$87/G$87 grid_off:N$00/G$00 q_speed_f:N$60/G$60
+  t=174 obj_y:N$BD/G$BD obj_yf:N$87/G$87 grid_off:N$00/G$00 q_speed_f:N$60/G$60
+T34_PARITY: ALL PASS

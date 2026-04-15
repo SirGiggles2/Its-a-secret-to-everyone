@@ -341,7 +341,7 @@ After room $77 (opening overworld screen) renders:
 | T31 | Room render | Room $77 BG tiles and palette correct | ✓ PASS — parity green: 0 tile mismatches (stages 1-3), 0 palette mismatches. Screenshot: `builds/reports/bizhawk_t31_room77.png` (Mode5, roomId=$77). Report: `builds/reports/room77_parity_report.txt` |
 | T32 | Room parity | RAM checkpoint: Genesis RAM vs NES trace at room $77 | ✓ PASS — transfer_stream_mismatch_count=0, producer_match=True, 27/27 events. RAM dump: `builds/reports/bizhawk_t32_ram_ff0000_ff07ff.bin`. Report: `builds/reports/room77_parity_report.txt` |
 | T33 | Link spawn | Link sprite appears at starting position | ✓ PASS (7/7 — OAM tile data loaded, SAT tile words present, 8×16 mode active, Link visible at starting position in `builds/reports/bizhawk_t33_link_spawn.png`) |
-| T34 | D-pad movement | Link moves through overworld room | Pending |
+| T34 | D-pad movement | Link moves through overworld room | ✓ PASS (8/8 — NES reference vs Genesis byte-parity all 361 frames across scripted D→L→U→R square walk in room $77: baseline (x=$78,y=$8D,dir=$00), obj_x, obj_y, obj_dir, held-buttons, no-exception. Root cause fixed: transpiler SBC X-flag polarity — `subx.b` now wrapped with `eori #$10,CCR` pair to match 6502 SBC borrow semantics. Report: `builds/reports/t34_movement_parity_report.txt`) |
 | T35 | Screen scroll | Left transition from room $77 into overworld room $76 completes correctly; scroll settles and final room graphics match NES | Pending |
 | T36 | Cave enter | Can enter first cave (room $76) and exit | Pending |
 

@@ -2496,7 +2496,9 @@ _L_z02_ModeE_HandleDirectionButton_Left:
     move.b  ($0071,A4),D0
     ori     #$11,CCR  ; SEC: set C+X
     move.b  #$10,D1
+    eori    #$10,CCR  ; flip X: 6502 SBC polarity
     subx.b  D1,D0   ; SBC #$10
+    eori    #$10,CCR  ; restore X = 6502 C
     move.b  D0,($0071,A4)
     cmpi.b  #$20,D0
     bne  _anon_z02_12
@@ -2528,8 +2530,12 @@ _L_z02_ModeE_HandleDirectionButton_Down:
     jsr     CycleCharBoardCursorY
     move.b  ($042A,A4),D0
     beq  _L_z02_ModeE_HandleDirectionButton_Finish
-    move.b  ($041F,A4),D0  ; PATCH P19b: Phase 9.6 SEC;SBC -1 fix
-    sub.b   #$2C,D0
+    move.b  ($041F,A4),D0
+    ori     #$11,CCR  ; SEC: set C+X
+    move.b  #$2C,D1
+    eori    #$10,CCR  ; flip X: 6502 SBC polarity
+    subx.b  D1,D0   ; SBC #$2C
+    eori    #$10,CCR  ; restore X = 6502 C
     move.b  D0,($041F,A4)
     even
 _L_z02_ModeE_HandleDirectionButton_Finish:
@@ -2543,8 +2549,12 @@ _L_z02_ModeE_HandleDirectionButton_Up:
     ;
     ; Decrease CharBoardIndex [$041F] by $B (one row up).
     ;
-    move.b  ($041F,A4),D0  ; PATCH P19a: Phase 9.6 SEC;SBC -1 fix
-    sub.b   #$0B,D0
+    move.b  ($041F,A4),D0
+    ori     #$11,CCR  ; SEC: set C+X
+    move.b  #$0B,D1
+    eori    #$10,CCR  ; flip X: 6502 SBC polarity
+    subx.b  D1,D0   ; SBC #$0B
+    eori    #$10,CCR  ; restore X = 6502 C
     move.b  D0,($041F,A4)
     moveq   #3,D2
     jsr     CycleCharBoardCursorY
@@ -2743,8 +2753,12 @@ _L_z02_ModeE_HandleAOrB_MoveCursor:
     ;
     ; For example, $20D6 -> $20CE.
     ;
-    move.b  ($0423,A4),D0  ; PATCH P15: Zelda16.12
-    sub.b   #$08,D0
+    move.b  ($0423,A4),D0
+    ori     #$11,CCR  ; SEC: set C+X
+    move.b  #$08,D1
+    eori    #$10,CCR  ; flip X: 6502 SBC polarity
+    subx.b  D1,D0   ; SBC #$08
+    eori    #$10,CCR  ; restore X = 6502 C
     move.b  D0,($0423,A4)
     ; It also means that we went past the end of the save slot
     ; info name. Set the offset to the beginning of the name.
@@ -2825,7 +2839,9 @@ _L_z02_ModeEandF_SetUpCursorSprites_CopySprites:
     move.b  ($0084,A4),D0
     ori     #$11,CCR  ; SEC: set C+X
     move.b  #$08,D1
+    eori    #$10,CCR  ; flip X: 6502 SBC polarity
     subx.b  D1,D0   ; SBC #$08
+    eori    #$10,CCR  ; restore X = 6502 C
     move.b  D0,($0204,A4)
     moveq   #112,D0
     move.b  D0,($0070,A4)
@@ -2890,7 +2906,9 @@ _L_z02_ModeEandF_WriteCharBoardCursorSpritePosition_WriteCursorCoords:
 ModifyFlashingCursorY:
     ori     #$11,CCR  ; SEC: set C+X
     move.b  #$08,D1
+    eori    #$10,CCR  ; flip X: 6502 SBC polarity
     subx.b  D1,D0   ; SBC #$08
+    eori    #$10,CCR  ; restore X = 6502 C
     moveq   #0,D3
     move.b  D0,D3
     move.b  ($0015,A4),D0
@@ -3991,7 +4009,9 @@ _L_z02_Mode1_WriteLinkSprites_LoopSlot:
     move.b  ($0001,A4),D0
     ori     #$11,CCR  ; SEC: set C+X
     move.b  #$03,D1
+    eori    #$10,CCR  ; flip X: 6502 SBC polarity
     subx.b  D1,D0   ; SBC #$03
+    eori    #$10,CCR  ; restore X = 6502 C
     lea     ($0280,A4),A0
     move.b  D0,(A0,D3.W)
     moveq   #32,D0
@@ -4905,7 +4925,9 @@ DrawLinkZeldaTriforces:
     move.b  ($0084,A4),D0
     ori     #$11,CCR  ; SEC: set C+X
     move.b  #$10,D1
+    eori    #$10,CCR  ; flip X: 6502 SBC polarity
     subx.b  D1,D0   ; SBC #$10
+    eori    #$10,CCR  ; restore X = 6502 C
     move.b  D0,($0097,A4)
     ; Draw Link.
     ;
@@ -4938,7 +4960,9 @@ DrawLinkZeldaTriforces:
     move.b  ($0085,A4),D0
     ori     #$11,CCR  ; SEC: set C+X
     move.b  #$10,D1
+    eori    #$10,CCR  ; flip X: 6502 SBC polarity
     subx.b  D1,D0   ; SBC #$10
+    eori    #$10,CCR  ; restore X = 6502 C
     move.b  D0,($0086,A4)
     ; Draw triforce over Zelda.
     ;
@@ -5139,7 +5163,9 @@ UpdateMode13WinGame_Sub3:
     bmi  _anon_z02_37
     move.b  ($050B,A4),D0
     move.b  #$08,D1
+    eori    #$10,CCR  ; flip X: 6502 SBC polarity
     subx.b  D1,D0   ; SBC #$08
+    eori    #$10,CCR  ; restore X = 6502 C
     move.b  D0,($050B,A4)
     jsr     DrawCredits
 _anon_z02_37:

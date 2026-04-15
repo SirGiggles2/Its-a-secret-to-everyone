@@ -1,6 +1,6 @@
 {
-  "verdict": "T34_PARITY: FAIL",
-  "all_pass": false,
+  "verdict": "T34_PARITY: ALL PASS",
+  "all_pass": true,
   "gates": {
     "T34_NES_CAPTURE_OK": {
       "pass": true,
@@ -19,20 +19,20 @@
       "detail": "nes=($78,$8D,$00) gen=($78,$8D,$00)"
     },
     "T34_OBJX_PARITY": {
-      "pass": false,
-      "detail": "first diff at t=212 phase=left nes=$C5 gen=$C4"
+      "pass": true,
+      "detail": "all 361 frames match"
     },
     "T34_OBJY_PARITY": {
-      "pass": false,
-      "detail": "first diff at t=172 phase=down nes=$BD gen=$BE"
+      "pass": true,
+      "detail": "all 361 frames match"
     },
     "T34_OBJINPUTDIR_PARITY": {
       "pass": true,
       "detail": "all 361 frames match"
     },
     "T34_HELD_BUTTONS_PARITY": {
-      "pass": false,
-      "detail": "first diff at t=211 phase=left nes=$02 gen=$00"
+      "pass": true,
+      "detail": "all 361 frames match"
     }
   }
 }

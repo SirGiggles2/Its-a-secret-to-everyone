@@ -2301,7 +2301,9 @@ SetUpAndDrawLinkLiftingItem:
     move.b  ($0084,A4),D0
     ori     #$11,CCR  ; SEC: set C+X
     move.b  #$10,D1
+    eori    #$10,CCR  ; flip X: 6502 SBC polarity
     subx.b  D1,D0   ; SBC #$10
+    eori    #$10,CCR  ; restore X = 6502 C
     move.b  D0,($0097,A4)
 ; Params:
 ; [0505]: item type
@@ -3693,7 +3695,9 @@ _L_z07_GetCollidableTile_FetchTile:
     move.b  (A5)+,D0  ; PLA
     ori     #$11,CCR  ; SEC: set C+X
     move.b  #$40,D1
+    eori    #$10,CCR  ; flip X: 6502 SBC polarity
     subx.b  D1,D0   ; SBC #$40
+    eori    #$10,CCR  ; restore X = 6502 C
     lsr.b  #1,D0   ; LSR A
     lsr.b  #1,D0   ; LSR A
     lsr.b  #1,D0   ; LSR A
@@ -4362,7 +4366,9 @@ _L_z07_MoveObject_ApplyQSpeedToPosition:
     lea     ($0084,A4),A0
     move.b  (A0,D2.W),D0
     move.b  #$00,D1
+    eori    #$10,CCR  ; flip X: 6502 SBC polarity
     subx.b  D1,D0   ; SBC #$00
+    eori    #$10,CCR  ; restore X = 6502 C
     lea     ($0084,A4),A0
     move.b  D0,(A0,D2.W)
     even
@@ -4400,7 +4406,9 @@ _L_z07_MoveObject_Left:
     jsr     SubQSpeedFromPositionFraction
     move.b  ($70,A4,D2.W),D0
     move.b  #$00,D1
+    eori    #$10,CCR  ; flip X: 6502 SBC polarity
     subx.b  D1,D0   ; SBC #$00
+    eori    #$10,CCR  ; restore X = 6502 C
     move.b  D0,($70,A4,D2.W)
     rts
 
@@ -5459,7 +5467,9 @@ _L_z07_SpreadShot_DrawShotCorner:
     bcc  _L_z07_SpreadShot_NextCorner
     ori     #$11,CCR  ; SEC: set C+X
     move.b  ($70,A4,D2.W),D1
+    eori    #$10,CCR  ; flip X: 6502 SBC polarity
     subx.b  D1,D0   ; SBC ObjX,X
+    eori    #$10,CCR  ; restore X = 6502 C
     jmp     _L_z07_SpreadShot_CheckDistance
 
     even
@@ -5467,7 +5477,9 @@ _L_z07_SpreadShot_ReverseSub:
     move.b  ($70,A4,D2.W),D0
     ori     #$11,CCR  ; SEC: set C+X
     move.b  ($0000,A4),D1
+    eori    #$10,CCR  ; flip X: 6502 SBC polarity
     subx.b  D1,D0   ; SBC $00
+    eori    #$10,CCR  ; restore X = 6502 C
     even
 _L_z07_SpreadShot_CheckDistance:
     ; If distance >= $20, skip this corner.
@@ -5847,7 +5859,9 @@ _L_z07_SetAttrAndDrawArrow_PlayerArrow:
     addx.b  D1,D0   ; ADC InvArrow
     ori     #$11,CCR  ; SEC: set C+X
     move.b  #$01,D1
+    eori    #$10,CCR  ; flip X: 6502 SBC polarity
     subx.b  D1,D0   ; SBC #$01
+    eori    #$10,CCR  ; restore X = 6502 C
     even
 _L_z07_SetAttrAndDrawArrow_SetAttr:
     move.b  D0,($0004,A4)
@@ -6496,7 +6510,9 @@ _L_z07_UpdateSwordOrRod_CalcSwordAttrs:
     addx.b  D1,D0   ; ADC Items
     ori     #$11,CCR  ; SEC: set C+X
     move.b  #$01,D1
+    eori    #$10,CCR  ; flip X: 6502 SBC polarity
     subx.b  D1,D0   ; SBC #$01
+    eori    #$10,CCR  ; restore X = 6502 C
     even
 _L_z07_UpdateSwordOrRod_SetAttrs:
     ; Set sprite attributes to the calculated value above.
@@ -6949,7 +6965,9 @@ __far_z_07_0117:
     move.b  (A0,D3.W),D0
     ori     #$11,CCR  ; SEC: set C+X
     move.b  ($70,A4,D2.W),D1
+    eori    #$10,CCR  ; flip X: 6502 SBC polarity
     subx.b  D1,D0   ; SBC ObjX,X
+    eori    #$10,CCR  ; restore X = 6502 C
     jsr     Abs
     cmpi.b  #$18,D0
     bcc  _L_z07_Bomb_CheckState4_LoopHotspot
@@ -6961,7 +6979,9 @@ __far_z_07_0117:
     ori     #$11,CCR  ; SEC: set C+X
     lea     ($0084,A4),A0
     move.b  (A0,D2.W),D1
+    eori    #$10,CCR  ; flip X: 6502 SBC polarity
     subx.b  D1,D0   ; SBC ObjY,X
+    eori    #$10,CCR  ; restore X = 6502 C
     jsr     Abs
     cmpi.b  #$18,D0
     bcc  _L_z07_Bomb_CheckState4_LoopHotspot
@@ -7038,7 +7058,9 @@ DrawBombOrCloudNoFlashing:
     andi.b #$0F,D0
     ori     #$11,CCR  ; SEC: set C+X
     move.b  #$02,D1
+    eori    #$10,CCR  ; flip X: 6502 SBC polarity
     subx.b  D1,D0   ; SBC #$02
+    eori    #$10,CCR  ; restore X = 6502 C
 ; Params:
 ; A: frame image (1 to 3)
 ; X: object index
@@ -7758,7 +7780,9 @@ _L_z07_InitObject_InitMonsterFromEdge:
     andi.b #$F0,D0
     ori     #$11,CCR  ; SEC: set C+X
     move.b  #$03,D1
+    eori    #$10,CCR  ; flip X: 6502 SBC polarity
     subx.b  D1,D0   ; SBC #$03
+    eori    #$10,CCR  ; restore X = 6502 C
     lea     ($0084,A4),A0
     move.b  D0,(A0,D2.W)
     ; Set the monsters-from-edges long timer to a random value

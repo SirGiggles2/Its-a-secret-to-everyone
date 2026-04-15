@@ -1454,7 +1454,9 @@ _L_z00_ApplySq1Effects_PrepNoteOrPassage:
     ;
     ori     #$11,CCR  ; SEC: set C+X
     move.b  #$F0,D1
+    eori    #$10,CCR  ; flip X: 6502 SBC polarity
     subx.b  D1,D0   ; SBC #$F0
+    eori    #$10,CCR  ; restore X = 6502 C
     move.b  D0,($061E,A4)
     move.b  ($060C,A4),D0
     move.b  D0,($061F,A4)

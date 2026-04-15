@@ -274,11 +274,15 @@ _L_z03_TransferPatternBlock_Bank3_LoopCopy:
     move.b  ($0003,A4),D0
     ori     #$11,CCR  ; SEC: set C+X
     move.b  #$01,D1
+    eori    #$10,CCR  ; flip X: 6502 SBC polarity
     subx.b  D1,D0   ; SBC #$01
+    eori    #$10,CCR  ; restore X = 6502 C
     move.b  D0,($0003,A4)
     move.b  ($0002,A4),D0
     move.b  #$00,D1
+    eori    #$10,CCR  ; flip X: 6502 SBC polarity
     subx.b  D1,D0   ; SBC #$00
+    eori    #$10,CCR  ; restore X = 6502 C
     move.b  D0,($0002,A4)
     ; If count is not zero, go copy more.
     ;

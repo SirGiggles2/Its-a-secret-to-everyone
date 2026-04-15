@@ -325,7 +325,9 @@ _anon_z05_2:
     move.b  ($00FC,A4),D0
     ori     #$11,CCR  ; SEC: set C+X
     move.b  #$03,D1
+    eori    #$10,CCR  ; flip X: 6502 SBC polarity
     subx.b  D1,D0   ; SBC #$03
+    eori    #$10,CCR  ; restore X = 6502 C
     move.b  D0,($00FC,A4)
     ; There's nothing else to do until we reach hardware VScroll=$41. Return.
     ;
@@ -364,7 +366,9 @@ _anon_z05_2:
     bcs  _L_z05_UpdateMenuScrollDownUW_ShortRotation
     moveq   #16,D0
     move.b  (NES_SRAM+$0BAB).l,D1
+    eori    #$10,CCR  ; flip X: 6502 SBC polarity
     subx.b  D1,D0   ; SBC LevelInfo_SubmenuMapRotation
+    eori    #$10,CCR  ; restore X = 6502 C
     lsl.b  #1,D0   ; ASL A
     lsl.b  #1,D0   ; ASL A
     lsl.b  #1,D0   ; ASL A
@@ -685,7 +689,9 @@ _anon_z05_9:
     move.b  ($00E2,A4),D0
     ori     #$11,CCR  ; SEC: set C+X
     move.b  #$20,D1
+    eori    #$10,CCR  ; flip X: 6502 SBC polarity
     subx.b  D1,D0   ; SBC #$20
+    eori    #$10,CCR  ; restore X = 6502 C
     move.b  D0,($00E2,A4)
     bcc  _anon_z05_10
     subq.b  #1,($0058,A4)
@@ -737,7 +743,9 @@ __far_z_05_0009:
     cmpi.b  #$3E,D0
     bcs  _anon_z05_11
     move.b  #$08,D1
+    eori    #$10,CCR  ; flip X: 6502 SBC polarity
     subx.b  D1,D0   ; SBC #$08
+    eori    #$10,CCR  ; restore X = 6502 C
     move.b  D0,($0084,A4)
 _anon_z05_11:
     move.b  ($00E2,A4),D0
@@ -794,7 +802,9 @@ _anon_z05_14:
     move.b  ($00FD,A4),D0
     ori     #$11,CCR  ; SEC: set C+X
     move.b  ($0000,A4),D1
+    eori    #$10,CCR  ; flip X: 6502 SBC polarity
     subx.b  D1,D0   ; SBC $00
+    eori    #$10,CCR  ; restore X = 6502 C
     move.b  D0,($00FD,A4)
     bne.s  __far_z_05_0013
     jmp  IncSubmode
@@ -836,7 +846,9 @@ __far_z_05_0015:
     cmpi.b  #$01,D0
     bcs  _anon_z05_15
     move.b  ($0000,A4),D1
+    eori    #$10,CCR  ; flip X: 6502 SBC polarity
     subx.b  D1,D0   ; SBC $00
+    eori    #$10,CCR  ; restore X = 6502 C
     move.b  D0,($0070,A4)
 _anon_z05_15:
     move.b  ($00FD,A4),D0
@@ -1793,7 +1805,9 @@ __far_z_05_0030:
     ; to get room ID offset in that direction.
     ori     #$11,CCR  ; SEC: set C+X
     move.b  ($00EB,A4),D1
+    eori    #$10,CCR  ; flip X: 6502 SBC polarity
     subx.b  D1,D0   ; SBC RoomId
+    eori    #$10,CCR  ; restore X = 6502 C
     jsr     Negate
     andi    #$EE,CCR  ; CLC: clear C+X
     move.b  ($00EB,A4),D1
@@ -2123,7 +2137,9 @@ _L_z05_InitMode_EnterRoom_PlaceList:
     move.b  ($0002,A4),D0
     ori     #$11,CCR  ; SEC: set C+X
     move.b  #$62,D1
+    eori    #$10,CCR  ; flip X: 6502 SBC polarity
     subx.b  D1,D0   ; SBC #$62
+    eori    #$10,CCR  ; restore X = 6502 C
     ; Put the address of the list in [04:05].
     ;
     lsl.b  #1,D0   ; ASL A
@@ -2364,7 +2380,9 @@ _anon_z05_61:
     andi.b #$FC,D0
     ori     #$11,CCR  ; SEC: set C+X
     move.b  #$40,D1
+    eori    #$10,CCR  ; flip X: 6502 SBC polarity
     subx.b  D1,D0   ; SBC #$40
+    eori    #$10,CCR  ; restore X = 6502 C
     lsr.b  #1,D0   ; LSR A
     lsr.b  #1,D0   ; LSR A
     ; cave dweller object type = $6A + (cave index)
@@ -2414,7 +2432,9 @@ IsDistanceSafeToSpawn:
     move.b  ($0070,A4),D0
     ori     #$11,CCR  ; SEC: set C+X
     move.b  ($70,A4,D2.W),D1
+    eori    #$10,CCR  ; flip X: 6502 SBC polarity
     subx.b  D1,D0   ; SBC ObjX,X
+    eori    #$10,CCR  ; restore X = 6502 C
     jsr     Abs
     cmpi.b  #$22,D0
     bcc  _anon_z05_62
@@ -2424,7 +2444,9 @@ IsDistanceSafeToSpawn:
     ori     #$11,CCR  ; SEC: set C+X
     lea     ($0084,A4),A0
     move.b  (A0,D2.W),D1
+    eori    #$10,CCR  ; flip X: 6502 SBC polarity
     subx.b  D1,D0   ; SBC ObjY,X
+    eori    #$10,CCR  ; restore X = 6502 C
     jsr     Abs
     cmpi.b  #$22,D0
     bcc.s  __far_z_05_0034
@@ -3908,7 +3930,9 @@ CheckLadder:
     ori     #$11,CCR  ; SEC: set C+X
     lea     ($0084,A4),A0
     move.b  (A0,D2.W),D1
+    eori    #$10,CCR  ; flip X: 6502 SBC polarity
     subx.b  D1,D0   ; SBC ObjY,X
+    eori    #$10,CCR  ; restore X = 6502 C
     jmp     _L_z05_CheckLadder_CheckDistanceToLadder
 
 _anon_z05_85:
@@ -3927,7 +3951,9 @@ _anon_z05_85:
     move.b  ($0070,A4),D0
     ori     #$11,CCR  ; SEC: set C+X
     move.b  ($70,A4,D2.W),D1
+    eori    #$10,CCR  ; flip X: 6502 SBC polarity
     subx.b  D1,D0   ; SBC ObjX,X
+    eori    #$10,CCR  ; restore X = 6502 C
     even
 _L_z05_CheckLadder_CheckDistanceToLadder:
     ; If absolute distance < $10, go handle movement on the ladder and set state 2.
@@ -4064,7 +4090,9 @@ _anon_z05_86:
     move.b  D0,-(A5)  ; PHA
     ori     #$11,CCR  ; SEC: set C+X
     move.b  #$08,D1
+    eori    #$10,CCR  ; flip X: 6502 SBC polarity
     subx.b  D1,D0   ; SBC #$08
+    eori    #$10,CCR  ; restore X = 6502 C
     move.b  D0,($0084,A4)
     jsr     GetCollidingTileMoving
     move.b  (A5)+,D0  ; PLA
@@ -4193,7 +4221,9 @@ _L_z05_FindNextEdgeSpawnCell_GetRowOffset:
     andi.b #$F0,D0
     ori     #$11,CCR  ; SEC: set C+X
     move.b  #$40,D1
+    eori    #$10,CCR  ; flip X: 6502 SBC polarity
     subx.b  D1,D0   ; SBC #$40
+    eori    #$10,CCR  ; restore X = 6502 C
     lsr.b  #1,D0   ; LSR A
     lsr.b  #1,D0   ; LSR A
     lsr.b  #1,D0   ; LSR A
@@ -4321,7 +4351,9 @@ _anon_z05_91:
     move.b  ($0003,A4),D0
     ori     #$11,CCR  ; SEC: set C+X
     move.b  ($0004,A4),D1
+    eori    #$10,CCR  ; flip X: 6502 SBC polarity
     subx.b  D1,D0   ; SBC $04
+    eori    #$10,CCR  ; restore X = 6502 C
     bpl  _anon_z05_92
     even
 _L_z05_ModifyObjCountByHistoryOW_ResetObjList:
@@ -4919,7 +4951,9 @@ _L_z05_ModifyObjCountByHistoryUW_CalcObjCount:
     ori     #$11,CCR  ; SEC: set C+X
     lea     ($0560,A4),A0
     move.b  (A0,D3.W),D1
+    eori    #$10,CCR  ; flip X: 6502 SBC polarity
     subx.b  D1,D0   ; SBC LevelKillCounts,Y
+    eori    #$10,CCR  ; restore X = 6502 C
     bpl  _anon_z05_102
     even
 _L_z05_ModifyObjCountByHistoryUW_ResetObjCount:
@@ -6124,7 +6158,9 @@ _anon_z05_112:
     ; door face := provisional face - 3
     ori     #$11,CCR  ; SEC: set C+X
     move.b  #$03,D1
+    eori    #$10,CCR  ; flip X: 6502 SBC polarity
     subx.b  D1,D0   ; SBC #$03
+    eori    #$10,CCR  ; restore X = 6502 C
     moveq   #0,D3
     move.b  D0,D3
     ; Furthermore, if the latest provisional door face >= 3, then
@@ -6355,7 +6391,9 @@ _anon_z05_119:
     andi.b #$03,D0
     ori     #$11,CCR  ; SEC: set C+X
     move.b  #$01,D1
+    eori    #$10,CCR  ; flip X: 6502 SBC polarity
     subx.b  D1,D0   ; SBC #$01
+    eori    #$10,CCR  ; restore X = 6502 C
     andi.b #$02,D0
     move.b  D0,($0008,A4)
     ; The command to close a key door or bombable wall does not
@@ -6588,7 +6626,9 @@ _anon_z05_127:
     ;
     ori     #$11,CCR  ; SEC: set C+X
     move.b  #$03,D1
+    eori    #$10,CCR  ; flip X: 6502 SBC polarity
     subx.b  D1,D0   ; SBC #$03
+    eori    #$10,CCR  ; restore X = 6502 C
     moveq   #0,D3
     move.b  D0,D3
     ; Lastly, if the door is closed ([08] = 0) and provisional
@@ -6616,7 +6656,9 @@ _L_z05_PrepareWriteHorizontalDoorTransferRecords_MakeForwardIndex:
     moveq   #3,D0
     ori     #$11,CCR  ; SEC: set C+X
     move.b  ($0003,A4),D1
+    eori    #$10,CCR  ; flip X: 6502 SBC polarity
     subx.b  D1,D0   ; SBC $03
+    eori    #$10,CCR  ; restore X = 6502 C
     ; Call this to put the address of door face tiles in [02:03].
     ;
     jsr     FetchDoorAddrsFaceTilesSrcAndPlayAreaDst
@@ -7764,7 +7806,9 @@ CheckShortcut:
     move.b  D3,D0
     ori     #$11,CCR  ; SEC: set C+X
     move.b  #$40,D1
+    eori    #$10,CCR  ; flip X: 6502 SBC polarity
     subx.b  D1,D0   ; SBC #$40
+    eori    #$10,CCR  ; restore X = 6502 C
     lsr.b  #1,D0   ; LSR A
     lsr.b  #1,D0   ; LSR A
     lsr.b  #1,D0   ; LSR A
@@ -7848,7 +7892,9 @@ ChangePlayMapSquareOW:
     ;
     ori     #$11,CCR  ; SEC: set C+X
     move.b  #$40,D1
+    eori    #$10,CCR  ; flip X: 6502 SBC polarity
     subx.b  D1,D0   ; SBC #$40
+    eori    #$10,CCR  ; restore X = 6502 C
     lsr.b  #1,D0   ; LSR A
     lsr.b  #1,D0   ; LSR A
     lsr.b  #1,D0   ; LSR A
@@ -9083,7 +9129,9 @@ _anon_z05_183:
     move.b  (A5)+,D0  ; PLA
     ori     #$11,CCR  ; SEC: set C+X
     move.b  ($0001,A4),D1
+    eori    #$10,CCR  ; flip X: 6502 SBC polarity
     subx.b  D1,D0   ; SBC $01
+    eori    #$10,CCR  ; restore X = 6502 C
     move.b  D0,($0394,A4)
     even
 _L_z05_SetLinkInputDir_Exit:
@@ -9522,7 +9570,9 @@ _anon_z05_199:
     move.b  (A5)+,D0  ; PLA
     ori     #$11,CCR  ; SEC: set C+X
     move.b  #$10,D1
+    eori    #$10,CCR  ; flip X: 6502 SBC polarity
     subx.b  D1,D0   ; SBC #$10
+    eori    #$10,CCR  ; restore X = 6502 C
     move.b  D0,($005D,A4)
     ; If the level info indicates that the submenu map should be
     ; rotated horizontally, then loop to rotate right the number of
@@ -9559,7 +9609,9 @@ _L_z05_Submenu_WriteSheetMapRowTransferRecord_DoneRotate:
     move.b  ($005E,A4),D0
     ori     #$11,CCR  ; SEC: set C+X
     move.b  #$1A,D1
+    eori    #$10,CCR  ; flip X: 6502 SBC polarity
     subx.b  D1,D0   ; SBC #$1A
+    eori    #$10,CCR  ; restore X = 6502 C
     lsr.b  #1,D0   ; LSR A
     moveq   #0,D2
     move.b  D0,D2
@@ -9606,7 +9658,9 @@ _anon_z05_202:
     beq  _L_z05_HasMap_Exit
     ori     #$11,CCR  ; SEC: set C+X
     move.b  #$01,D1
+    eori    #$10,CCR  ; flip X: 6502 SBC polarity
     subx.b  D1,D0   ; SBC #$01
+    eori    #$10,CCR  ; restore X = 6502 C
     cmpi.b  #$08,D0
     bcs  _anon_z05_203
     addq.b  #1,D2
@@ -10320,7 +10374,9 @@ _L_z05_CreateRoomObjects_StoreLocation:
     move.b  ($0083,A4),D0
     ori     #$11,CCR  ; SEC: set C+X
     move.b  #$08,D1
+    eori    #$10,CCR  ; flip X: 6502 SBC polarity
     subx.b  D1,D0   ; SBC #$08
+    eori    #$10,CCR  ; restore X = 6502 C
     move.b  D0,($0083,A4)
 _anon_z05_224:
     rts

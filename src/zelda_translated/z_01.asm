@@ -235,7 +235,9 @@ InitCaveContinue:
     move.b  ($0350,A4),D0
     ori     #$11,CCR  ; SEC: set C+X
     move.b  #$6A,D1
+    eori    #$10,CCR  ; flip X: 6502 SBC polarity
     subx.b  D1,D0   ; SBC #$6A
+    eori    #$10,CCR  ; restore X = 6502 C
     moveq   #0,D3
     move.b  D0,D3
     ; Get the person text selector by looking up the text selector byte
@@ -345,7 +347,9 @@ _L_z01_InitCaveContinue_ChoosePermutation:
     ;
     ori     #$11,CCR  ; SEC: set C+X
     move.b  #$2B,D1
+    eori    #$10,CCR  ; flip X: 6502 SBC polarity
     subx.b  D1,D0   ; SBC #$2B
+    eori    #$10,CCR  ; restore X = 6502 C
     subq.b  #1,D3
     bne  _L_z01_InitCaveContinue_ChoosePermutation
     even
@@ -967,7 +971,9 @@ _L_z01_UpdateCavePersonState_TalkOrShopOrDoorCharge_LoopWare:
     move.b  ($0084,A4),D0
     ori     #$11,CCR  ; SEC: set C+X
     move.b  #$98,D1
+    eori    #$10,CCR  ; flip X: 6502 SBC polarity
     subx.b  D1,D0   ; SBC #$98
+    eori    #$10,CCR  ; restore X = 6502 C
     jsr     Abs
     cmpi.b  #$06,D0
     bcs  _L_z01_UpdateCavePersonState_TalkOrShopOrDoorCharge_PickedUp
@@ -1333,7 +1339,9 @@ InitUnderworldPersonA:
     move.b  (A0,D2.W),D0
     ori     #$11,CCR  ; SEC: set C+X
     move.b  #$4B,D1
+    eori    #$10,CCR  ; flip X: 6502 SBC polarity
     subx.b  D1,D0   ; SBC #$4B
+    eori    #$10,CCR  ; restore X = 6502 C
     moveq   #0,D3
     move.b  D0,D3
     ; Look up and store the text selector.
@@ -1400,7 +1408,9 @@ InitUnderworldPersonB:
     move.b  (A0,D2.W),D0
     ori     #$11,CCR  ; SEC: set C+X
     move.b  #$4B,D1
+    eori    #$10,CCR  ; flip X: 6502 SBC polarity
     subx.b  D1,D0   ; SBC #$4B
+    eori    #$10,CCR  ; restore X = 6502 C
     moveq   #0,D3
     move.b  D0,D3
     ; Look up and store the text selector.
@@ -1429,7 +1439,9 @@ InitUnderworldPersonC:
     ;
     ori     #$11,CCR  ; SEC: set C+X
     move.b  #$4B,D1
+    eori    #$10,CCR  ; flip X: 6502 SBC polarity
     subx.b  D1,D0   ; SBC #$4B
+    eori    #$10,CCR  ; restore X = 6502 C
     moveq   #0,D3
     move.b  D0,D3
     ; Look up and store the text selector.
@@ -1616,7 +1628,9 @@ UpdateUnderworldPersonComplexState_SenseLink:
     move.b  ($0084,A4),D0
     ori     #$11,CCR  ; SEC: set C+X
     move.b  #$98,D1
+    eori    #$10,CCR  ; flip X: 6502 SBC polarity
     subx.b  D1,D0   ; SBC #$98
+    eori    #$10,CCR  ; restore X = 6502 C
     jsr     Abs
     cmpi.b  #$06,D0
     bcs  _L_z01_UpdateUnderworldPersonComplexState_SenseLink_CheckCanPay
@@ -1765,7 +1779,9 @@ _L_z01_UpdateUnderworldPersonLifeOrMoneyState_2_LoopWare:
     move.b  ($0084,A4),D0
     ori     #$11,CCR  ; SEC: set C+X
     move.b  #$98,D1
+    eori    #$10,CCR  ; flip X: 6502 SBC polarity
     subx.b  D1,D0   ; SBC #$98
+    eori    #$10,CCR  ; restore X = 6502 C
     jsr     Abs
     cmpi.b  #$06,D0
     bcs  _L_z01_UpdateUnderworldPersonLifeOrMoneyState_2_Pay
@@ -1829,7 +1845,9 @@ _L_z01_UpdateUnderworldPersonLifeOrMoneyState_2_Reduce:
     andi.b #$F0,D0
     ori     #$11,CCR  ; SEC: set C+X
     move.b  #$10,D1
+    eori    #$10,CCR  ; flip X: 6502 SBC polarity
     subx.b  D1,D0   ; SBC #$10
+    eori    #$10,CCR  ; restore X = 6502 C
     move.b  D0,($0000,A4)
     ; Get (HeartValues - 1 heart)
     ;
@@ -1837,7 +1855,9 @@ _L_z01_UpdateUnderworldPersonLifeOrMoneyState_2_Reduce:
     andi.b #$0F,D0
     ori     #$11,CCR  ; SEC: set C+X
     move.b  #$01,D1
+    eori    #$10,CCR  ; flip X: 6502 SBC polarity
     subx.b  D1,D0   ; SBC #$01
+    eori    #$10,CCR  ; restore X = 6502 C
     ; If the result is negative, then make the full hearts 0.
     ;
     bpl  _anon_z01_19
@@ -2788,7 +2808,9 @@ _L_z01_CheckTileObjectsBlocking_Found:
     move.b  ($0070,A4),D0
     ori     #$11,CCR  ; SEC: set C+X
     move.b  ($70,A4,D2.W),D1
+    eori    #$10,CCR  ; flip X: 6502 SBC polarity
     subx.b  D1,D0   ; SBC ObjX,X
+    eori    #$10,CCR  ; restore X = 6502 C
     jsr     Abs
     cmpi.b  #$10,D0
     bcc  _L_z01_CheckTileObjectsBlocking_NextTileObj
@@ -2801,7 +2823,9 @@ _L_z01_CheckTileObjectsBlocking_Found:
     ori     #$11,CCR  ; SEC: set C+X
     lea     ($0084,A4),A0
     move.b  (A0,D2.W),D1
+    eori    #$10,CCR  ; flip X: 6502 SBC polarity
     subx.b  D1,D0   ; SBC ObjY,X
+    eori    #$10,CCR  ; restore X = 6502 C
     jsr     Abs
     cmpi.b  #$10,D0
     bcc  _L_z01_CheckTileObjectsBlocking_NextTileObj
@@ -3272,7 +3296,9 @@ UpdateTrap_Full:
     ori     #$11,CCR  ; SEC: set C+X
     lea     ($0084,A4),A0
     move.b  (A0,D2.W),D1
+    eori    #$10,CCR  ; flip X: 6502 SBC polarity
     subx.b  D1,D0   ; SBC ObjY,X
+    eori    #$10,CCR  ; restore X = 6502 C
     jsr     Abs
     cmpi.b  #$0E,D0
     bcc  _L_z01_UpdateTrap_Full_CheckHorizontal
@@ -3327,7 +3353,9 @@ _L_z01_UpdateTrap_Full_CheckHorizontal:
     move.b  ($0070,A4),D0
     ori     #$11,CCR  ; SEC: set C+X
     move.b  ($70,A4,D2.W),D1
+    eori    #$10,CCR  ; flip X: 6502 SBC polarity
     subx.b  D1,D0   ; SBC ObjX,X
+    eori    #$10,CCR  ; restore X = 6502 C
     jsr     Abs
     cmpi.b  #$0E,D0
     bcc  _L_z01_UpdateTrap_Full_DrawAndCheckCollisions
@@ -3406,7 +3434,9 @@ _L_z01_UpdateTrap_Full_Finish:
     move.b  D3,D0
     ori     #$11,CCR  ; SEC: set C+X
     move.b  ($0000,A4),D1
+    eori    #$10,CCR  ; flip X: 6502 SBC polarity
     subx.b  D1,D0   ; SBC $00
+    eori    #$10,CCR  ; restore X = 6502 C
     jsr     Abs
     ; If distance >= 5, go draw.
     ;
@@ -3460,14 +3490,18 @@ UpdateRupeeStash_Full:
     ori     #$11,CCR  ; SEC: set C+X
     lea     ($0084,A4),A0
     move.b  (A0,D2.W),D1
+    eori    #$10,CCR  ; flip X: 6502 SBC polarity
     subx.b  D1,D0   ; SBC ObjY,X
+    eori    #$10,CCR  ; restore X = 6502 C
     jsr     Abs
     cmpi.b  #$09,D0
     bcc  _L_z01_UpdateRupeeStash_Full_DrawRupee
     move.b  ($0070,A4),D0
     ori     #$11,CCR  ; SEC: set C+X
     move.b  ($70,A4,D2.W),D1
+    eori    #$10,CCR  ; flip X: 6502 SBC polarity
     subx.b  D1,D0   ; SBC ObjX,X
+    eori    #$10,CCR  ; restore X = 6502 C
     jsr     Abs
     cmpi.b  #$09,D0
     bcc  _L_z01_UpdateRupeeStash_Full_DrawRupee
@@ -4087,7 +4121,9 @@ _L_z01_DivideBy10_Loop:
     cmpi.b  #$0A,D0
     bcs  _anon_z01_41
     move.b  #$0A,D1
+    eori    #$10,CCR  ; flip X: 6502 SBC polarity
     subx.b  D1,D0   ; SBC #$0A
+    eori    #$10,CCR  ; restore X = 6502 C
     addq.b  #1,D3
     bne  _L_z01_DivideBy10_Loop
     even
@@ -4110,9 +4146,12 @@ FormatHeartsInTextBuf:
     move.b  D0,-(A5)  ; PHA
     andi.b #$0F,D0
     move.b  D0,($0000,A4)
-    moveq   #15,D0                    ; PATCH P36d: exact $0F-$00, no SUBX off-by-one
+    moveq   #15,D0
+    ori     #$11,CCR  ; SEC: set C+X
     move.b  ($0000,A4),D1
-    sub.b   D1,D0
+    eori    #$10,CCR  ; flip X: 6502 SBC polarity
+    subx.b  D1,D0   ; SBC $00
+    eori    #$10,CCR  ; restore X = 6502 C
     move.b  D0,($0000,A4)
     move.b  (A5)+,D0  ; PLA
     lsr.b  #1,D0   ; LSR A
@@ -4120,9 +4159,12 @@ FormatHeartsInTextBuf:
     lsr.b  #1,D0   ; LSR A
     lsr.b  #1,D0   ; LSR A
     move.b  D0,($0001,A4)
-    moveq   #15,D0                    ; PATCH P36d: exact $0F-$01, no SUBX off-by-one
+    moveq   #15,D0
+    ori     #$11,CCR  ; SEC: set C+X
     move.b  ($0001,A4),D1
-    sub.b   D1,D0
+    eori    #$10,CCR  ; flip X: 6502 SBC polarity
+    subx.b  D1,D0   ; SBC $01
+    eori    #$10,CCR  ; restore X = 6502 C
     move.b  D0,($0001,A4)
     ; At this point,
     ; [$00] = $F - hearts
@@ -4316,7 +4358,9 @@ _anon_z01_44:
     move.b  ($0000,A4),D0
     ori     #$11,CCR  ; SEC: set C+X
     move.b  #$17,D1
+    eori    #$10,CCR  ; flip X: 6502 SBC polarity
     subx.b  D1,D0   ; SBC #$17
+    eori    #$10,CCR  ; restore X = 6502 C
     move.b  D0,($0000,A4)
     even
 _L_z01_BoundDirectionHorizontally_Right:
@@ -4404,7 +4448,9 @@ _anon_z01_46:
     move.b  ($0000,A4),D0
     ori     #$11,CCR  ; SEC: set C+X
     move.b  #$21,D1
+    eori    #$10,CCR  ; flip X: 6502 SBC polarity
     subx.b  D1,D0   ; SBC #$21
+    eori    #$10,CCR  ; restore X = 6502 C
     move.b  D0,($0000,A4)
     even
 _L_z01_BoundDirectionVertically_Down:
@@ -4520,7 +4566,9 @@ SubQSpeedFromPositionFraction:
     ori     #$11,CCR  ; SEC: set C+X
     lea     ($03BC,A4),A0
     move.b  (A0,D2.W),D1
+    eori    #$10,CCR  ; flip X: 6502 SBC polarity
     subx.b  D1,D0   ; SBC ObjQSpeedFrac,X
+    eori    #$10,CCR  ; restore X = 6502 C
     lea     ($03A8,A4),A0
     move.b  D0,(A0,D2.W)
     move.w  SR,D1
@@ -4553,7 +4601,9 @@ _anon_z01_48:
     lea     ($0394,A4),A0
     move.b  (A0,D2.W),D0
     move.b  #$00,D1
+    eori    #$10,CCR  ; flip X: 6502 SBC polarity
     subx.b  D1,D0   ; SBC #$00
+    eori    #$10,CCR  ; restore X = 6502 C
     lea     ($0394,A4),A0
     move.b  D0,(A0,D2.W)
     move.b  (A5)+,D1  ; PLP: pop to CCR
@@ -4759,7 +4809,9 @@ _L_z01__CalcDiagonalSpeedIndex_Swap:
     move.b  ($0003,A4),D0
     ori     #$11,CCR  ; SEC: set C+X
     move.b  ($0004,A4),D1
+    eori    #$10,CCR  ; flip X: 6502 SBC polarity
     subx.b  D1,D0   ; SBC $04
+    eori    #$10,CCR  ; restore X = 6502 C
     cmpi.b  #$08,D0
     bcs  _L_z01__CalcDiagonalSpeedIndex_Return
     even
@@ -4785,7 +4837,9 @@ _L_z01__CalcDiagonalSpeedIndex_Turn:
     move.b  ($0003,A4),D0
     ori     #$11,CCR  ; SEC: set C+X
     move.b  ($0004,A4),D1
+    eori    #$10,CCR  ; flip X: 6502 SBC polarity
     subx.b  D1,D0   ; SBC $04
+    eori    #$10,CCR  ; restore X = 6502 C
     move.b  D0,($0003,A4)
     move.b  ($0004,A4),D1
     cmp.b   D1,D0
@@ -4869,7 +4923,9 @@ _L_z01_GetOneDirectionAndDistanceToTarget_Subtract:
     move.b  ($0002,A4),D0
     ori     #$11,CCR  ; SEC: set C+X
     move.b  ($0001,A4),D1
+    eori    #$10,CCR  ; flip X: 6502 SBC polarity
     subx.b  D1,D0   ; SBC $01
+    eori    #$10,CCR  ; restore X = 6502 C
     cmpi.b  #$09,D0
     bcc  _anon_z01_52
     addq.b  #1,($0000,A4)
@@ -5423,7 +5479,9 @@ Sub1FromInt16At4:
     move.b  ($0004,A4),D0
     ori     #$11,CCR  ; SEC: set C+X
     move.b  #$01,D1
+    eori    #$10,CCR  ; flip X: 6502 SBC polarity
     subx.b  D1,D0   ; SBC #$01
+    eori    #$10,CCR  ; restore X = 6502 C
     move.b  D0,($0004,A4)
     bcc  _anon_z01_62
     subq.b  #1,($0005,A4)
@@ -5573,7 +5631,9 @@ __far_z_01_0037:
     ori     #$11,CCR  ; SEC: set C+X
     lea     ($0084,A4),A0
     move.b  (A0,D2.W),D1
+    eori    #$10,CCR  ; flip X: 6502 SBC polarity
     subx.b  D1,D0   ; SBC ObjY,X
+    eori    #$10,CCR  ; restore X = 6502 C
     jsr     Abs
     cmpi.b  #$09,D0
     bcs.s  __far_z_01_0038
@@ -5584,7 +5644,9 @@ __far_z_01_0038:
     move.b  ($0070,A4),D0
     ori     #$11,CCR  ; SEC: set C+X
     move.b  ($70,A4,D2.W),D1
+    eori    #$10,CCR  ; flip X: 6502 SBC polarity
     subx.b  D1,D0   ; SBC ObjX,X
+    eori    #$10,CCR  ; restore X = 6502 C
     jsr     Abs
     cmpi.b  #$09,D0
     bcs.s  __far_z_01_0039
@@ -5828,7 +5890,9 @@ _anon_z01_71:
     ;
     ori     #$11,CCR  ; SEC: set C+X
     move.b  #$01,D1
+    eori    #$10,CCR  ; flip X: 6502 SBC polarity
     subx.b  D1,D0   ; SBC #$01
+    eori    #$10,CCR  ; restore X = 6502 C
     cmpi.b  #$08,D0
     bcs  _anon_z01_72
     addq.b  #1,D3
@@ -7219,7 +7283,9 @@ _L_z01_Link_BeHarmed_ResetHelp:
     bcs  _L_z01_Link_BeHarmed_BorrowHeart
     ori     #$11,CCR  ; SEC: set C+X
     move.b  ($000E,A4),D1
+    eori    #$10,CCR  ; flip X: 6502 SBC polarity
     subx.b  D1,D0   ; SBC $0E
+    eori    #$10,CCR  ; restore X = 6502 C
     move.b  D0,($0670,A4)
     ; If full hearts >= high damage points byte, then simply
     ; subtract the damage byte from full hearts.
@@ -7233,7 +7299,9 @@ _L_z01_Link_BeHarmed_ResetHelp:
     move.b  ($066F,A4),D0
     ori     #$11,CCR  ; SEC: set C+X
     move.b  ($000D,A4),D1
+    eori    #$10,CCR  ; flip X: 6502 SBC polarity
     subx.b  D1,D0   ; SBC $0D
+    eori    #$10,CCR  ; restore X = 6502 C
     move.b  D0,($066F,A4)
     rts
 
@@ -7248,7 +7316,9 @@ _L_z01_Link_BeHarmed_BorrowHeart:
     move.b  ($000E,A4),D0
     ori     #$11,CCR  ; SEC: set C+X
     move.b  ($0670,A4),D1
+    eori    #$10,CCR  ; flip X: 6502 SBC polarity
     subx.b  D1,D0   ; SBC HeartPartial
+    eori    #$10,CCR  ; restore X = 6502 C
     move.b  D0,($000E,A4)
     move.b  ($066F,A4),D0
     andi.b #$0F,D0
@@ -7483,7 +7553,9 @@ DealDamage:
 __far_z_01_0080:
     ori     #$11,CCR  ; SEC: set C+X
     move.b  ($0007,A4),D1
+    eori    #$10,CCR  ; flip X: 6502 SBC polarity
     subx.b  D1,D0   ; SBC $07
+    eori    #$10,CCR  ; restore X = 6502 C
     lea     ($0485,A4),A0
     move.b  D0,(A0,D2.W)
     bne.s  __far_z_01_0081
@@ -8055,7 +8127,9 @@ DoObjectsCollideWithThresholds:
     move.b  ($0002,A4),D0
     ori     #$11,CCR  ; SEC: set C+X
     move.b  ($0004,A4),D1
+    eori    #$10,CCR  ; flip X: 6502 SBC polarity
     subx.b  D1,D0   ; SBC $04
+    eori    #$10,CCR  ; restore X = 6502 C
     jsr     Abs
     move.b  D0,($000A,A4)
     ; If distance >= horizontal threshold in [0D], return 0.
@@ -8068,7 +8142,9 @@ DoObjectsCollideWithThresholds:
     move.b  ($0003,A4),D0
     ori     #$11,CCR  ; SEC: set C+X
     move.b  ($0005,A4),D1
+    eori    #$10,CCR  ; flip X: 6502 SBC polarity
     subx.b  D1,D0   ; SBC $05
+    eori    #$10,CCR  ; restore X = 6502 C
     jsr     Abs
     move.b  D0,($000B,A4)
     ; If distance >= vertical threshold in [0E], return 0.
