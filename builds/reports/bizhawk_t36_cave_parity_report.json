@@ -32,11 +32,11 @@
     },
     "T36_CAVE_EXIT_TRIGGERED": {
       "pass": false,
-      "detail": "nes_t=749 gen_t=None"
+      "detail": "nes_t=749 gen_t=727"
     },
     "T36_ROUND_TRIP_READY": {
       "pass": false,
-      "detail": "nes=(r$77,m$05,x$40,y$61,d$00) gen=(r$77,m$0B,x$70,y$D5,d$00)"
+      "detail": "nes=(r$77,m$05,x$40,y$61,d$00) gen=(r$77,m$05,x$40,y$7E,d$00)"
     }
   }
 }

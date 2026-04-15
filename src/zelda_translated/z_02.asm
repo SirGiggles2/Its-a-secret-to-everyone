@@ -25,8 +25,8 @@
 ; Begin translated Z_02.asm code
 ;==============================================================================
 
-; [skipped] .INCLUDE "Variables.inc"
-; [skipped] .INCLUDE "BeginEndVars.inc"
+; [skipped-equ] .INCLUDE "Variables.inc"
+; [skipped-equ] .INCLUDE "BeginEndVars.inc"
 
 ; === .SEGMENT "BANK_02_00" ===
 
@@ -801,7 +801,12 @@ DemoTextFields:
 
     even
 DemoLineTextAddrs:
-; [skipped] .INCLUDE "dat/DemoLineTextAddrs.inc"
+; [inlined] .INCLUDE "dat/DemoLineTextAddrs.inc"
+    dc.b    $9A, $92, $BC, $92, $D1, $92, $D8, $92, $EC, $92, $7F, $94, $99, $94, $01, $93
+    dc.b    $15, $93, $1C, $93, $32, $93, $47, $93, $5E, $93, $69, $93, $7C, $93, $91, $93
+    dc.b    $98, $93, $AB, $93, $C1, $93, $D4, $93, $E8, $93, $FE, $93, $08, $94, $1F, $94
+    dc.b    $35, $94, $48, $94, $5C, $94, $61, $94, $75, $94
+; [end inline] dat\DemoLineTextAddrs.inc
 
     even
 InitDemoSubphaseClearArtifacts:
@@ -5247,11 +5252,17 @@ CreditsPagesTextMasks:
 
     even
 CreditsTextAddrsLo:
-; [skipped] .INCLUDE "dat/CreditsTextAddrsLo.inc"
+; [inlined] .INCLUDE "dat/CreditsTextAddrsLo.inc"
+    dc.b    $5C, $65, $70, $88, $A0, $B8, $C8, $E0, $F8, $06, $14, $1B, $33, $4D, $59, $72
+    dc.b    $82, $92, $A1, $B6, $C9, $D1, $EA
+; [end inline] dat\CreditsTextAddrsLo.inc
 
     even
 CreditsTextAddrsHi:
-; [skipped] .INCLUDE "dat/CreditsTextAddrsHi.inc"
+; [inlined] .INCLUDE "dat/CreditsTextAddrsHi.inc"
+    dc.b    $AC, $AC, $AC, $AC, $AC, $AC, $AC, $AC, $AC, $AD, $AD, $AD, $AD, $AD, $AD, $AD
+    dc.b    $AD, $AD, $AD, $AD, $AD, $AD, $AD
+; [end inline] dat\CreditsTextAddrsHi.inc
 
     even
 CreditsTextLines:

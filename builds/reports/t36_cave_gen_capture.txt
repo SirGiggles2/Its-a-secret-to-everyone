@@ -13,11 +13,11 @@ f0621 flow T36_STABILIZE -> T36_CAPTURE (T35 capture window open)
 HB f0800 flow=T36_CAPTURE mode=$05 sub=$00 room=$77 hsc=$00 scrmode=$00
 HB f1000 flow=T36_CAPTURE mode=$0B sub=$00 room=$77 hsc=$00 scrmode=$00
 HB f1200 flow=T36_CAPTURE mode=$0B sub=$00 room=$77 hsc=$00 scrmode=$00
-HB f1400 flow=T36_CAPTURE mode=$0B sub=$00 room=$77 hsc=$00 scrmode=$00
+HB f1400 flow=T36_CAPTURE mode=$05 sub=$00 room=$77 hsc=$00 scrmode=$00
 f1461 flow T36_CAPTURE -> DONE (capture complete)
 TRACE_LENGTH=840 (expected 840)
 REACHED_MODE5=true
 T0_FRAME=621
 GEN_EXCEPTION_FRAME=null
-FINAL t=839 x=$70.78 y=$D5.80 dir=$00 room=$77 mode=$0B sub=$00 hsc=$00 scrmode=$00
+FINAL t=839 x=$40.78 y=$7E.80 dir=$00 room=$77 mode=$05 sub=$00 hsc=$00 scrmode=$00
 T36_GEN_CAPTURE: OK

@@ -505,8 +505,8 @@ SaveRamEnd                              equ $7FFF  ; NES SRAM
 ; Begin translated Z_07.asm code
 ;==============================================================================
 
-; [skipped] .INCLUDE "Variables.inc"
-; [skipped] .INCLUDE "CommonVars.inc"
+; [skipped-equ] .INCLUDE "Variables.inc"
+; [skipped-equ] .INCLUDE "CommonVars.inc"
 
 ; === .SEGMENT "BANK_07_00" ===
 

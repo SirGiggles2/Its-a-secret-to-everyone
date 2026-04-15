@@ -256,7 +256,7 @@ local nbp_t0 = -1
 local function nbp_make(label)
     return function(a, v, flags)
         local m = ram_u8(ADDR_MODE)
-        if m ~= 0x0B and m ~= 0x10 then return end
+        if m ~= 0x0B and m ~= 0x10 and m ~= 0x05 then return end
         local pc = 0
         local ok, regs = pcall(function() return emu.getregisters() end)
         if ok and regs then pc = regs["PC"] or regs["6502 PC"] or regs["A"] or 0 end
@@ -278,11 +278,20 @@ for _, dn in ipairs({"System Bus", "RAM", "WRAM", "Main RAM"}) do
             event.on_bus_write(nbp_make("facedir "), 0x0098, dn)
             event.on_bus_write(nbp_make("objstate"), 0x00AC, dn)
             event.on_bus_write(nbp_make("movedir "), 0x000F, dn)
+            event.on_bus_write(nbp_make("cavetype"), 0x0350, dn)
         end)
         if ok then nbp_write("NES BP installed on "..dn); nbp_installed = true end
     end
 end
 if not nbp_installed then nbp_write("NES BP FAILED to install") end
+-- Also install via legacy memory.registerwrite (quickerNES compatibility)
+do
+    local ok2 = pcall(function()
+        memory.registerwrite(0x0350, 1, nbp_make("cavetype-rw"), "System Bus")
+        memory.registerwrite(0x00AC, 1, nbp_make("objstate-rw"), "System Bus")
+    end)
+    nbp_write("NES legacy registerwrite: " .. tostring(ok2))
+end
 
 -- ---------------------------------------------------------------------------
 -- Main loop

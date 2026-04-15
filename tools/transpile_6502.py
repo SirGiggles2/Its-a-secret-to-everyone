@@ -1961,6 +1961,45 @@ def transpile_bank(bank_num, standalone=False, no_stubs=False, no_import_stubs=F
     with open(src_path, encoding="utf-8", errors="replace") as f:
         src_lines = f.read().splitlines()
 
+    # Flatten .INCLUDE directives so included data (e.g. dat/PersonTextAddrs.inc)
+    # is emitted. The PC-walker _walk_file already follows .INCLUDE; without
+    # flattening here, the translator emits "; [skipped]" and the referenced
+    # bytes (pointer tables, text, etc.) vanish from the output, leaving labels
+    # positioned on the WRONG bytes.  Root cause of T36 cave textbox "000000".
+    def _flatten_includes(lines, base_path, depth=0):
+        if depth > 8:
+            raise RuntimeError(f".INCLUDE recursion too deep in {base_path}")
+        out = []
+        for ln in lines:
+            s = ln.strip()
+            U = s.upper()
+            if U.startswith('.INCLUDE'):
+                m = re.search(r'"([^"]+)"', s)
+                if not m:
+                    raise ValueError(f"{base_path}: malformed .INCLUDE: {s}")
+                rel = m.group(1).replace('/', os.sep)
+                # Only inline data includes (dat/*.inc).  Equate-only includes
+                # like Variables.inc, CommonVars.inc are already processed via
+                # build_symtab() and must not be re-emitted here.
+                if not rel.lower().startswith('dat' + os.sep) and \
+                   not rel.lower().startswith('dat/'):
+                    out.append(f'; [skipped-equ] {s}')
+                    continue
+                p = os.path.join(os.path.dirname(base_path), rel)
+                if not os.path.exists(p):
+                    p = os.path.join(REF_DIR, rel)
+                if not os.path.exists(p):
+                    raise FileNotFoundError(f"{base_path}: .INCLUDE missing: {rel}")
+                with open(p, encoding="utf-8", errors="replace") as f:
+                    inc_lines = f.read().splitlines()
+                out.append(f'; [inlined] {s}')
+                out.extend(_flatten_includes(inc_lines, p, depth + 1))
+                out.append(f'; [end inline] {rel}')
+            else:
+                out.append(ln)
+        return out
+    src_lines = _flatten_includes(src_lines, src_path)
+
     # Build var equ block for header.
     # In --all mode (no_import_stubs=True), only z_07 emits equates;
     # all other banks omit them to avoid vasm "symbol already defined" errors.

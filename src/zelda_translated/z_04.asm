@@ -25,9 +25,9 @@
 ; Begin translated Z_04.asm code
 ;==============================================================================
 
-; [skipped] .INCLUDE "Variables.inc"
-; [skipped] .INCLUDE "CommonVars.inc"
-; [skipped] .INCLUDE "ObjVars.inc"
+; [skipped-equ] .INCLUDE "Variables.inc"
+; [skipped-equ] .INCLUDE "CommonVars.inc"
+; [skipped-equ] .INCLUDE "ObjVars.inc"
 
 ; === .SEGMENT "BANK_04_00" ===
 

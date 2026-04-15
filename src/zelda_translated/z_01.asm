@@ -25,9 +25,9 @@
 ; Begin translated Z_01.asm code
 ;==============================================================================
 
-; [skipped] .INCLUDE "Variables.inc"
-; [skipped] .INCLUDE "CommonVars.inc"
-; [skipped] .INCLUDE "CaveVars.inc"
+; [skipped-equ] .INCLUDE "Variables.inc"
+; [skipped-equ] .INCLUDE "CommonVars.inc"
+; [skipped-equ] .INCLUDE "CaveVars.inc"
 
 ; === .SEGMENT "BANK_01_00" ===
 
@@ -73,7 +73,13 @@
 
     even
 PersonTextAddrs:
-; [skipped] .INCLUDE "dat/PersonTextAddrs.inc"
+; [inlined] .INCLUDE "dat/PersonTextAddrs.inc"
+    dc.b    $4C, $80, $77, $80, $A1, $80, $B9, $80, $E3, $80, $05, $81, $2D, $81, $52, $81
+    dc.b    $79, $81, $97, $81, $AE, $81, $D2, $81, $F8, $81, $2C, $82, $41, $82, $58, $82
+    dc.b    $7D, $82, $94, $82, $B8, $82, $CD, $82, $F5, $82, $0D, $83, $4D, $83, $70, $83
+    dc.b    $9C, $83, $C6, $83, $F0, $83, $1C, $84, $3F, $84, $6D, $84, $90, $84, $B8, $84
+    dc.b    $E3, $84, $0E, $85, $26, $85, $53, $85, $68, $85, $7E, $85
+; [end inline] dat\PersonTextAddrs.inc
 
     even
 PersonText:
