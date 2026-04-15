@@ -1,0 +1,202 @@
+[1/3] Running 6502>M68K transpiler (--all --no-stubs: nes_io.asm provides I/O)...
+  WARNING: NES prepass spot-check mismatch for StoryTileAttrTransferBuf vs dat\StoryTileAttrTransferBuf.dat
+  Transpiling Z_00.asm -> z_00.asm  ...  _patch_z00: DriveAudio -> rts (NOP)
+  _patch_common: promote 82 BSR->JSR, 0 BRA->JMP, 34 Bcc->far JMP
+ 1677 lines
+  Transpiling Z_01.asm -> z_01.asm  ...  _patch_z01 P0: DemoPatternBlockAddrs dc.b -> dc.l (structural)
+  _patch_z01 P1a: DemoPatternBlockAddrs -> 32-bit ROM addr
+  _patch_z01 P1b: removed second DemoPatternBlockAddrs read
+  _patch_z01 P2: TransferPatternBlock_Bank1 -> _transfer_chr_block_fast
+  _patch_z01 P3: CopyCommonCodeToRam -> rts (NOP)
+  _patch_z01 P4 (P31): FileBChecksums label removed (relocated to RAM)
+  _patch_z01 P5: FormatHeartsInTextBuf CPX/BCC -> BCS
+  _patch_z01 P7: GetObjectMiddle fallthrough -> explicit rts
+  _patch_common: promote 175 BSR->JSR, 0 BRA->JMP, 95 Bcc->far JMP
+ 8276 lines
+  Transpiling Z_02.asm -> z_02.asm  ...  _patch_z02 P0: CommonPatternBlockAddrs dc.b -> dc.l (structural)
+  _patch_z02 P4: TransferPatternBlock_Bank2 -> _transfer_chr_block_fast
+  _patch_z02 P5: waterfall sprite palette 0->3 (2 loops patched)
+  _patch_z02 P6: fade palette pointer -> direct M68K lea
+  WARNING: _patch_z02 P7 -- DemoTextFields stub not found
+  _patch_z02 P8: story text pointer -> direct M68K addressing
+  _patch_z02 P9: add comment to StoryPaletteTransferRecord (data unchanged)
+  _patch_z02 P10: clear both NTs (V64) at story scroll init
+  _patch_z02 P11a: set VRamForceBlankGate in UpdateMode0Demo_Sub0
+  _patch_z02 P11b: clear VRamForceBlankGate at end of InitMode1_Sub6
+  _patch_z02 P12: FrontendStartReleaseGate in UpdateMode1Menu_Sub0
+  _patch_z02 P13a: jsr ModeE_SyncCharBoardCursorToIndex in FinishInput
+  _patch_z02 P13b: ModeE_SyncCharBoardCursorToIndex body injected
+  _patch_z02 P14: Zelda16.11 9th letter wrap gate -> $0070==$B0
+  _patch_z02 P21: Phase 9.8 SRAM commit hook in UpdateModeDSave_Sub2
+  _patch_z02 P22: REVERTED (Phase 12)
+  _patch_z02 P23a: REVERTED (Phase 12 ? NES seed 88 correct)
+  _patch_z02 P24: REVERTED (Phase 12)
+  _patch_z02 P25b: FS2-E REGISTER backspace handler (+ P29 button swap)
+  _patch_z02 P28: REVERTED (compare data showed wrong direction)
+  _patch_z02 P30: Mode1 Link attr=0 pin (FS1-B green Link)
+  _patch_common: promote 153 BSR->JSR, 0 BRA->JMP, 16 Bcc->far JMP
+ 5644 lines
+  Transpiling Z_03.asm -> z_03.asm  ...  _patch_z03: fixed bank-window guards injected 4/4 hooks
+  _patch_common: promote 14 BSR->JSR, 0 BRA->JMP, 2 Bcc->far JMP
+ 1009 lines
+  Transpiling Z_04.asm -> z_04.asm  ...  _patch_common: promote 480 BSR->JSR, 0 BRA->JMP, 158 Bcc->far JMP
+ 14826 lines
+  Transpiling Z_05.asm -> z_05.asm  ...  _patch_z05 P34a: converted 4/4 z05 pointer tables to dc.l
+  _patch_z05 P34b: LayoutRoomOW base pointer -> A2 (dc.l)
+  _patch_z05 P34b: LayoutRoomOW offset add -> A2 arithmetic
+  _patch_z05 P34c: LayoutCaveAndAvanceSubmode -> A2 from dc.l
+  _patch_z05 P34d: LayoutRoomOrCaveOW room-layout reads -> A2
+  _patch_z05 P34f: call-safe cached ptr + in-memory descriptor reread
+  _patch_z05 P34h: ColumnDirectoryOWPtrs (dc.l) injected
+  _patch_z05 P34h: OW column-directory transport -> direct ptr
+  _patch_z05 P34h: OW column reads -> direct ptr
+  _patch_z05 P34h: column-start pointer advance -> A3
+  _patch_z05 P34h: per-square pointer increment -> A3
+  _patch_z05 P34e: LayoutUWFloor ColumnDirectoryUW -> A3 (dc.l)
+  _patch_z05 P34e: LayoutUWFloor column reads -> A3
+  _patch_z05 P35a: cached OW workbuf ptr init (regex)
+  _patch_z05 P35a/P35b: per-square OW workbuf advance via cached ptr (regex)
+  _patch_z05 P35a: end-column OW workbuf advance via cached ptr (regex)
+  _patch_z05 P35b: WriteSquareOW_P35 helper inserted
+  _patch_z05 P36a: CopyColumnToTileBuf -> direct long source walk
+  _patch_z05 P36b: CopyRowToTileBuf -> direct long source walk
+  _patch_z05 P33c: re-pin bank 5 after FetchTileMapAddr (3 sites)
+  _patch_z05 P34i: ClearRam extended to $00-$FF (ctrl state $F8/$FA)
+  _patch_z05: fixed bank-window guards injected 5/5 hooks
+  _patch_common: promote 292 BSR->JSR, 0 BRA->JMP, 143 Bcc->far JMP
+ 10155 lines
+  Transpiling Z_06.asm -> z_06.asm  ...  _patch_z06: TransferTileBuf -> _transfer_tilebuf_fast
+  _patch_z06 P2a: TransferCurTileBuf -> 32-bit lookup
+  _patch_z06 P2b: TransferBufPtrs 32-bit table added
+  _patch_z06 P3: DynTileBuf contention pre-check generalized
+  _patch_z06 P32a-d: level/common source tables converted to dc.l
+  _patch_z06 P32f: InitMode2_Sub0 -> 32-bit table + CopyBlock_ROM
+  _patch_z06 P32g: InitMode2_Sub1 -> 32-bit table + CopyBlock_ROM
+  _patch_z06 P32h: CopyCommonDataToRam -> CopyBlock_ROM
+  _patch_z06 P32e: CopyBlock -> CopyBlock_ROM
+  _patch_z06 P33: injected fixed bank-window guard in UpdateMode2Load_Full
+  _patch_common: promote 3 BSR->JSR, 0 BRA->JMP, 0 Bcc->far JMP
+ 1620 lines
+  Transpiling Z_07.asm -> z_07.asm  ...  _patch_z07: ClearNameTable -> _clear_nametable_fast
+  _patch_z07 P1: added _apply_genesis_scroll after SetScroll
+  _patch_z07 P2: added _apply_genesis_scroll in EnableNMI
+  _patch_z07 P3: cleared $005C one-shot after IsrNmi consumes it
+  _patch_common: promote 336 BSR->JSR, 0 BRA->JMP, 137 Bcc->far JMP
+ 7600 lines
+Transpiler audits passed (coverage + dead-vector).
+Transpiler done.
+[2/3] Assembling...
+vasm 2.0e (c) in 2002-2026 Volker Barthelmann
+vasm M68k/CPU32/ColdFire cpu backend 2.8 (c) 2002-2025 Frank Wille
+vasm motorola syntax module 3.19d (c) 2002-2025 Frank Wille
+vasm binary output module 2.3e (c) 2002-2025 Volker Barthelmann and Frank Wille
+
+org0001:0(acrwx1):	         256 bytes
+org0002:100(acrwx1):	         256 bytes
+org0003:200(acrwx2):	      337802 bytes
+cmd : 
+At line:1 char:99
++ ... RY\.claude\worktrees\angry-dijkstra'; cmd /c .\build.bat *>&1 | Out-F ...
++                                           ~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+warning 40 in line 4650 of "zelda_translated\z_01.asm": label name conflicts with mnemonic
+	included from line 587 of "genesis_shell.asm"
+>Abs:
+
+warning 2047 in line 427 of "genesis_shell.asm": branch out of range changed to jmp
+>    bsr     _ags_prearm
+
+warning 2047 in line 433 of "genesis_shell.asm": branch out of range changed to jmp
+>    bsr     _mode_transition_check
+
+warning 2047 in line 445 of "genesis_shell.asm": branch out of range changed to jmp
+>    bsr     _ags_flush
+
+warning 2047 in line 2291 of "nes_io.asm": branch out of range changed to jmp
+	included from line 566 of "genesis_shell.asm"
+>    bsr     dmc_trigger
+
+warning 2047 in line 2373 of "nes_io.asm": branch out of range changed to jmp
+	included from line 566 of "genesis_shell.asm"
+>    bsr     _compose_bg_tile_word
+
+warning 2047 in line 2479 of "nes_io.asm": branch out of range changed to jmp
+	included from line 566 of "genesis_shell.asm"
+>    bsr     _chr_upload_sprite_4x
+
+warning 2047 in line 2580 of "nes_io.asm": branch out of range changed to jmp
+	included from line 566 of "genesis_shell.asm"
+>    bsr     _chr_upload_sprite_4x
+
+warning 2047 in line 2770 of "nes_io.asm": branch out of range changed to jmp
+	included from line 566 of "genesis_shell.asm"
+>    bsr     _chr_upload_sprite_4x
+
+warning 2047 in line 2773 of "nes_io.asm": branch out of range changed to jmp
+	included from line 566 of "genesis_shell.asm"
+>    bsr     _chr_convert_upload
+
+warning 2047 in line 2781 of "nes_io.asm": branch out of range changed to jmp
+	included from line 566 of "genesis_shell.asm"
+>    bsr     _chr_upload_sprite_4x
+
+warning 2047 in line 2836 of "nes_io.asm": branch out of range changed to jmp
+	included from line 566 of "genesis_shell.asm"
+>    bsr     _compose_bg_tile_word
+
+warning 2047 in line 2900 of "nes_io.asm": branch out of range changed to jmp
+	included from line 566 of "genesis_shell.asm"
+>    bsr     _attr_write_2x2
+
+warning 2047 in line 2910 of "nes_io.asm": branch out of range changed to jmp
+	included from line 566 of "genesis_shell.asm"
+>    bsr     _attr_write_2x2
+
+warning 2047 in line 2921 of "nes_io.asm": branch out of range changed to jmp
+	included from line 566 of "genesis_shell.asm"
+>    bsr     _attr_write_2x2
+
+warning 2047 in line 2933 of "nes_io.asm": branch out of range changed to jmp
+	included from line 566 of "genesis_shell.asm"
+>    bsr     _attr_write_2x2
+
+warning 2047 in line 3016 of "nes_io.asm": branch out of range changed to jmp
+	included from line 566 of "genesis_shell.asm"
+>    bsr     _compose_bg_tile_word
+
+warning 2047 in line 3094 of "nes_io.asm": branch out of range changed to jmp
+	included from line 566 of "genesis_shell.asm"
+>    bsr     _attr_write_2x2
+
+warning 2047 in line 3104 of "nes_io.asm": branch out of range changed to jmp
+	included from line 566 of "genesis_shell.asm"
+>    bsr     _attr_write_2x2
+
+warning 2047 in line 3115 of "nes_io.asm": branch out of range changed to jmp
+	included from line 566 of "genesis_shell.asm"
+>    bsr     _attr_write_2x2
+
+warning 2047 in line 3127 of "nes_io.asm": branch out of range changed to jmp
+	included from line 566 of "genesis_shell.asm"
+>    bsr     _attr_write_2x2
+
+warning 51 in line 6703 of "zelda_translated\z_04.asm": instruction has been auto-aligned
+	included from line 590 of "genesis_shell.asm"
+>    lea     ($041F,A4),A0
+
+warning 51 in line 11214 of "zelda_translated\z_04.asm": instruction has been auto-aligned
+	included from line 590 of "genesis_shell.asm"
+>    lea     ($0087,A4),A0
+[3/3] Fixing checksum...
+  Checksum:  $7372
+  ROM size:  524288 bytes (512 KB)
+  ROM end:   $0007FFFF
+  Written:   C:\Users\Jake Diggity\Documents\GitHub\FINAL TRY\.claude\worktrees\angry-dijkstra\builds\whatif.md
+[4/4] Archiving build...
+Archived as: Zelda27.156
+
+Build complete: C:\Users\Jake Diggity\Documents\GitHub\FINAL TRY\.claude\worktrees\angry-dijkstra\builds\whatif.md
+Listing:        C:\Users\Jake Diggity\Documents\GitHub\FINAL TRY\.claude\worktrees\angry-dijkstra\builds\whatif.lst
+Committed:   Zelda27.156
