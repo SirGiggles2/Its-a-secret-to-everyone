@@ -43,7 +43,30 @@ Candidates for the clearing path on NES:
 Gen's $0350=$6A persists for 260+ frames → Gen never reaches the
 clearing code.
 
-## Next investigation
+## DEFINITIVE evidence (NES capture rerun)
+
+Rerun NES capture with sram_0975 field populated:
+
+    NES trace: sram_0975 uniq = [0, 66]  (66 = $42)
+    first_nz sram_0975 @ t=0 val=$42
+    NES trace: cavetype   uniq = [0]       (never spawns person)
+    NES trace: objstate   uniq = [0, 64]   ($40 from t=315..549, clears t=550)
+
+**SRAM-divergence hypothesis is fully dead.** NES and Gen both have
+$42 at $6975. Both hit the same InCave code path.
+
+Yet **NES `$0350` never holds $6A** while Gen's `$0350` = $6A from
+t=286 onward. So either:
+  (a) NES doesn't execute `AssignObjSpawnPositions_InCave` at all, or
+  (b) NES executes it but takes a different branch before line 2393
+      `move.b D0,($0350,A4)`.
+
+NES `$00AC` (objstate) does become $40 at t=315 — matches Gen — but
+NES CLEARS it at t=550. Gen never clears. So the cave-person halt
+mechanism runs on NES too; the phantom-person spawn is NOT the sole
+differentiator.
+
+## Next investigation (updated)
 
 Rerun **NES capture** with re-added `sram_0975` plus per-frame
 `$FF0350` sampling inside the correct frame range (not just where the
