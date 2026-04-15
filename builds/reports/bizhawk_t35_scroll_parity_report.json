@@ -1,6 +1,6 @@
 {
-  "verdict": "T35_PARITY: FAIL",
-  "all_pass": false,
+  "verdict": "T35_PARITY: ALL PASS",
+  "all_pass": true,
   "gates": {
     "T35_NES_CAPTURE_OK": {
       "pass": true,
@@ -23,8 +23,8 @@
       "detail": "nes_leave_t=154 gen_leave_t=154 drift=0"
     },
     "T35_SCROLL_RAMP_PARITY": {
-      "pass": false,
-      "detail": "hscroll first diff t=183 phase=walk_left nes=$00 gen=$FC"
+      "pass": true,
+      "detail": "hscroll matches with -1-frame phase shift across t=[149,214) (Gen sprite-0 skip)"
     },
     "T35_FINAL_ROOM_ID": {
       "pass": true,
