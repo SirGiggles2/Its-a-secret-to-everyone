@@ -207,7 +207,13 @@ If bit 7 of any write is set: immediate reset (SHIFT=0, COUNT=0).
 
 ## Audio Bridge Plan
 
-**Target milestones: T42–T44.**
+**Status: complete (T42–T44 ✓ as of 2026-04-10).**
+
+### Final implementation
+
+Shipped as a native M68K YM2612+PSG music player rather than a strict per-register APU shim. Pulse 1/2 → YM2612 FM ch1/ch2, triangle → FM ch3, noise → PSG noise. DMC runs through a non-blocking HBlank-paced DAC streamer (`e7d8cf69` → `85e29dfb`) with proper FM unmute and APU wiring; seven Zelda PCM samples are addressable from the DMC streamer's sample table. An attract-mode-exit hook (`fa0526d8`) silences title music when Start is pressed, which is currently the earliest confirmation that the Start button reaches the audio layer even while T28's title-mode state machine isn't yet advancing. Voice work: Voice $00 pad + Voice $07 bass rebuilt on the Voice $03 skeleton (`56e9dc26`), bell-like FM pad + cleaner FM bass in Zelda27.82 (`aa997b9a`), SSG-EG clear + DMC equates + YM Part II port (`8dc3b2b3`). Music corruption, octave, envelope, and APU stub collisions fixed in `a652393b`.
+
+The channel map and implementation strategy below are retained as reference for how the final wiring works; the "Target milestones" framing no longer applies because the tier is complete.
 
 ### Channel Mapping
 
@@ -330,8 +336,8 @@ After room $77 (opening overworld screen) renders:
 | T25 | Sprite palette | Sprite colors correct (separate 4-palette blocks) | ✓ PASS (7/8 — CRAM 16/64 non-zero, 4 palettes active, palette-2 correctly assigned; SAT_PAL_FIELD test mis-calibrated: NES title sprites use attr=2→Genesis pal2, correct) |
 | T26 | Title sprites | Title screen sprites visible (sword, Link) | ✓ PASS (5/5 — 32 sprites visible Y=129–352, 8 distinct Y-bands, tiles 160–214, no exception; DriveSong stubbed pending NES ROM→Genesis pointer table rewrite) |
 | T27 | Controller 1 | D-pad / A / B / Start / Select → NES button bits | ✓ PASS (5/5 — NMI continuous 211/300 frames, CheckInput 211×, no-press $F8=0, CTL1_IDX=8; two-phase TH Genesis protocol → NES active-high latch at $FF1100) |
-| T28 | Title input | Can navigate title screen, press Start | ⚠ In Progress (story-soak probe now reproduces a deterministic stall instead of a Start-gating failure: no exception, but `NMI` and `CheckInput` stop advancing at frame 2107 while `DemoPhase=$01` / `DemoSubphase=$02` in `builds/reports/bizhawk_t28_title_input_probe.txt`. Legacy title-mode assumptions are stale because natural T30 flow reaches menu/file-select/gameplay modes.) |
-| T29 | File select | File select screen renders; can start Quest 1 | ⚠ In Progress (operational evidence is present via natural T30 flow: Mode `$01` and register mode `$0E` are observed before gameplay. Dedicated T29 refresh is still pending final threshold tuning; latest `builds/reports/bizhawk_t29_file_select_probe.txt` is 6/7 PASS with only `T29_NMI_CONTINUOUS` failing.) |
+| T28 | Title input | Can navigate title screen, press Start | ⚠ In Progress (story-soak probe now reproduces a deterministic stall instead of a Start-gating failure: no exception, but `NMI` and `CheckInput` stop advancing at frame 2107 while `DemoPhase=$01` / `DemoSubphase=$02` in `builds/reports/bizhawk_t28_title_input_probe.txt`. Legacy title-mode assumptions are stale because natural T30 flow reaches menu/file-select/gameplay modes. Start *is* detected enough to drive the `attract-mode-exit hook` silencing title music — commit `fa0526d8`.) |
+| T29 | File select | File select screen renders; can start Quest 1 | ⚠ In Progress (operational evidence is present via natural T30 flow: Mode `$01` and register mode `$0E` are observed before gameplay. Dedicated T29 refresh is still pending final threshold tuning; latest `builds/reports/bizhawk_t29_file_select_probe.txt` is 6/7 PASS with only `T29_NMI_CONTINUOUS` failing. Diary re-integration in merge `1e20d1c1 T27_T29 Phases 1+2+6+7 (Zelda27.48-27.56)`.) |
 
 ### Gameplay (T30–T36)
 
@@ -361,9 +367,9 @@ Note: room $76 is both the left-adjacent overworld room from the opening room $7
 
 | # | Name | Description | Status |
 |---|------|-------------|--------|
-| T42 | Pulse channels | Title music pulse 1/2 → YM2612 FM ch1/2 | Pending |
-| T43 | Triangle + noise | Triangle → FM ch3; noise → PSG noise | Pending |
-| T44 | DMC | DMC samples approximated or silenced | Pending |
+| T42 | Pulse channels | Title music pulse 1/2 → YM2612 FM ch1/2 | ✓ PASS — native M68K YM2612+PSG music player (`98fe5f56`), voice rework `6f7ee010` / `56e9dc26` / `aa997b9a`, corruption/octave/envelope fix `a652393b` |
+| T43 | Triangle + noise | Triangle → FM ch3; noise → PSG noise | ✓ PASS — shipped as part of native music player `98fe5f56`; PSG noise envelope in `6f7ee010` |
+| T44 | DMC | DMC samples approximated or silenced | ✓ PASS — DMC Phase C scaffold `fbd2192d`, Phase E cycle-paced DAC streamer `e7d8cf69`, Phase D+E polish (non-blocking HBlank streamer + FM unmute + APU wiring) `85e29dfb`, DMC equates + YM Part II port `8dc3b2b3`, attract-mode-exit hook `fa0526d8` |
 | T45 | Save RAM | Zelda save ($6000–$7FFF) → Genesis SRAM at $200001 | Pending |
 | T46 | Save persist | Save/load cycle preserves quest state correctly | Pending |
 | T47 | Hardware test | ROM runs on real Genesis hardware without modification | Pending |
@@ -373,7 +379,7 @@ Note: room $76 is both the left-adjacent overworld room from the opening room $7
 
 ## Current Status
 
-**As of 2026-04-13** — room $77 BG parity is fully green. Palette cache (NT_ATTR_CACHE_BASE), bank window, and transfer interpreter fixes landed. T30/T31/T32 all PASS. T33 (Link spawn) is also PASS. Next graphics target: room $76 reached by the left transition from room $77.
+**As of 2026-04-14** — room $77 BG parity is fully green. Palette cache (NT_ATTR_CACHE_BASE), bank window, and transfer interpreter fixes landed. T30/T31/T32/T33/T34 all PASS. Audio tier T42–T44 complete (merged from main). Next graphics target: T35 screen scroll — left transition from room $77 into room $76.
 
 - **Last continuously-verified milestone (green probe chain):** T34 (D-pad movement parity — 8/8 PASS). Verified probes T1–T27 still hold per the table below; T30/T31/T32/T33/T34 green via parity reports.
 - **Out-of-order complete:** T42, T43, T44 (audio tier) — see Audio Bridge Plan for implementation details.
@@ -407,13 +413,18 @@ Note: room $76 is both the left-adjacent overworld room from the opening room $7
 | Room Load T30 | 8 tests | 8/8 PASS (natural path to room `$77`, Mode3/Sub8 progression, bank-window load observed, Mode5 reached) |
 | Room Render T31 | 6 metrics | 6/6 PASS (stage1=0, stage2=0, stage3=0, tile_mismatch=0, palette_mismatch=0, bg_palette=0) |
 | Room Parity T32 | 3 metrics | 3/3 PASS (transfer_stream_mismatch=0, producer_match=True, 27/27 events) |
+| Link Spawn T33 | 7 tests | 7/7 PASS (OAM tile data, SAT tile words, 8×16 mode, Link visible in `bizhawk_t33_link_spawn.png`) |
+| D-pad Movement T34 | 8 gates | 8/8 PASS (byte-parity NES vs Gen, 361 frames; SBC X-flag polarity fix in transpiler) |
+| Pulse Channels T42 | — | ✓ complete (native M68K YM2612+PSG player) |
+| Triangle + Noise T43 | — | ✓ complete (FM ch3 + PSG noise envelope) |
+| DMC T44 | — | ✓ complete (non-blocking HBlank DAC streamer + APU wiring) |
 
-### Next Steps (T33 Link Spawn)
+### Next Steps (T35 Screen Scroll)
 
-- **Primary target:** T33 — Link sprite visible at starting position in room $77.
-- **Sprite infra already proven:** T23–T26 PASS (OAM DMA, sprite decode, sprite palette, title sprites all working).
-- **Likely failure modes (if Link not visible):** sprite CHR bank not loaded for OW, OAM DMA timing in Mode 5, Y-position offset edge case, sprite priority/layer ordering.
-- **Acceptance gates:** T33 probe passes, T30 stays 8/8 PASS, room $77 parity stays green.
+- **Primary target:** T35 — left transition from room $77 into overworld room $76.
+- **Movement infra proven:** T34 PASS (D-pad, collision, position parity). Room load T30 PASS.
+- **Likely surface area:** Mode 4/6/7 transition choreography, dynamic transfer lifetime, scroll-commit handshake between CPU and VDP.
+- **Acceptance gates:** T35 probe passes, T34 stays 8/8, T30 stays 8/8.
 
 ### Deferred
 
@@ -486,9 +497,11 @@ The `TitlePaletteRecord` is correctly queued into DynTileBuf by subphase 1, but 
 | `tools/bizhawk_vdp_reg_trace_probe.lua` | Tracks R02/R15/R16 for unexpected values, 400 frames |
 | `tools/bizhawk_subphase_timing_probe.lua` | Verifies one subphase per NMI, palette timing |
 
-### Verification Pending
+### Verification status
 
-User to run BizHawk with Zelda27.12+ ROM and `bizhawk_vdp_reg_trace_probe.lua` to confirm:
+The original "Verification Pending" list below was written against Zelda27.12. The project has since moved to Zelda27.66 (worktree) / Zelda27.93 (`main`) with T21/T22/T26 still green in the probe table and the audio tier T42–T44 shipped on top of that title screen, so the palette contention / VDP register corruption diagnosed here is no longer blocking. The specific CRAM[0]=$0ACE post-fix check has not been re-recorded against a current build — treat this section as historical context for Bug B / Bug C rather than an open task.
+
+Original checklist (Zelda27.12 era):
 1. CRAM[0] = $0ACE (not $0466) after frame 35
 2. All 4 BG palettes match expected table above
 3. VDP R02/R15/R16 remain stable (or are corrected by defensive restore)

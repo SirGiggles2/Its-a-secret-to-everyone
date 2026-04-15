@@ -324,6 +324,13 @@ EntryPoint:
     movea.l #NES_STACK_INIT,A5
     moveq   #-1,D7                  ; D7 = $FF (NES SP shadow)
 
+    jsr     audio_init              ; Initialize YM2612 + PSG
+
+    ; Request the title/demo song on boot as a smoke test for the native
+    ; M68K music player.  music_tick (called from VBlank) will pick this
+    ; up on the first frame after SR is lowered.
+    move.b  #$80,(m_song_req).l
+
     ; Pre-write tile buffer sentinel so the first NMI's TransferCurTileBuf
     ; doesn't parse zeroed RAM as phantom records.  DynTileBuf = NES $0302.
     move.b  #$FF,($0302,A4)
@@ -425,6 +432,9 @@ VBlankISR:
     ; apply the stale scroll shadows mid-NMI).
     bsr     _mode_transition_check
     jsr     IsrNmi
+    ; Advance the native music player one tick (YM2612 + PSG writes).
+    ; Mirrors the original NES engine which drove music from NMI.
+    bsr     music_tick
     ; Flush PPU scroll shadows → VDP VSRAM / H-scroll / H-int queue.
     ; Deferred to here (post-NMI, still in VBlank) so the two transpiler-
     ; injected `bsr _apply_genesis_scroll` sites inside IsrNmi cannot
@@ -438,14 +448,25 @@ VBlankISR:
     rte
 
 ;==============================================================================
-; HBlankISR — queue-popping H-int dispatcher.
+; HBlankISR — queue-popping H-int dispatcher + DMC DAC streamer.
 ;
-; Reads the next queued event from HINT_Q0_* state, writes VSRAM, then either
-; re-arms Reg 10 with the delta counter to fire the second event, or disables
-; H-int. VSRAM write comes FIRST (critical path — must complete before active
-; display resumes on the next scanline).
+; Two fundamentally different uses of HINT now share this ISR:
 ;
-; State contract:
+;   (a) Scroll splits.  1-2 HINTs per frame fire at specific lines, drain
+;       the HINT_Q* queue, write VSRAM, then self-disable HINT via reg 0.
+;       This is the original behaviour, unchanged.
+;
+;   (b) DMC DAC streaming.  While audio_driver's dmc_trigger is active,
+;       HINT is armed every line (reg 10 = 0) and this ISR streams one PCM
+;       byte per fire to YM2612 reg $2A.  Detected by dmc_active != 0 at
+;       ISR entry.  In DMC mode we bypass the scroll queue entirely —
+;       title screen and intro don't use scroll splits anyway.
+;
+; Detection is at the very top of the ISR so the DMC path has minimal
+; latency.  dmc_hint_tick is defined in audio_driver.asm and handles the
+; full stream-one-byte-or-end-of-sample logic.
+;
+; State contract for scroll-path (unchanged):
 ;   _ags_flush   writes NEXT-frame staged state (STAGED_*)
 ;   _ags_prearm  promotes STAGED_* -> active HINT_Q* before display starts
 ;   HINT_Q_COUNT ≥ 1 when H-int is armed via Reg 0 bit 4 for the CURRENT frame
@@ -454,6 +475,14 @@ VBlankISR:
 ;   HINT_Q1_* remain available for future chained events
 ;==============================================================================
 HBlankISR:
+    tst.b   (dmc_active).l                  ; DMC streaming?
+    beq.s   .scroll_path                    ; no → scroll queue handler
+    movem.l D0/A0,-(SP)
+    bsr     dmc_hint_tick
+    movem.l (SP)+,D0/A0
+    rte
+
+.scroll_path:
     movem.l D0-D1/A0,-(SP)
     lea     (HINT_Q_COUNT).l,A0
     move.b  (A0),D0
@@ -533,6 +562,7 @@ DefaultException:
 ; so all helpers are defined when z_XX.asm code references them.
 ; (With --no-stubs the bank files no longer emit these labels themselves.)
 ;==============================================================================
+    include "audio_driver.asm"
     include "nes_io.asm"
 
 ;==============================================================================

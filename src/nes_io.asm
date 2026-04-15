@@ -2204,8 +2204,13 @@ _mmc1_common:
     rts
 
 ;==============================================================================
-; APU writes ($4000–$4017)  — T5: silent stubs, audio in T10+
+; APU writes ($4000–$4017)
+;
+; Most NES APU register writes are no-ops — the native M68K music player in
+; audio_driver.asm drives YM2612/PSG directly from song scripts and ignores
+; channel state, so every stub here is a plain rts.
 ;==============================================================================
+
 _apu_write_4000:
 _apu_write_4001:
 _apu_write_4002:
@@ -2220,13 +2225,73 @@ _apu_write_400b:
 _apu_write_400c:
 _apu_write_400e:
 _apu_write_400f:
-_apu_write_4010:
 _apu_write_4011:
-_apu_write_4012:
-_apu_write_4013:
-_apu_write_4015:
 _apu_write_4016:
 _apu_write_4017:
+    rts
+
+;==============================================================================
+; DMC APU register stubs (Phase D)
+;
+; Zelda's SelectDMC routine (transpiled at z_00.asm:_L_z00_DriveSample_*)
+; writes the APU DMC registers in a fixed order whenever it wants to play
+; a sample effect:
+;
+;     $4010  <- SampleRates[idx-1]   ; rate nibble (low 4 bits)
+;     $4012  <- SampleAddrs[idx-1]   ; start addr high byte ($C000 + b*64)
+;     $4013  <- SampleLengths[idx-1] ; length byte (length = b*16 + 1)
+;     $4015  <- $0F                  ; enable all non-DMC channels
+;     $4015  <- $1F                  ; OR in bit 4 -> DMC playback
+;
+; We shadow $4010 and $4012 on write so that when $4015 arrives with bit 4
+; set we can recover the intended sample index via DMC_SAMPLE_LOOKUP.
+;==============================================================================
+_apu_write_4010:
+    move.b  D0,(dmc_rate_sel).l
+    rts
+
+_apu_write_4012:
+    move.b  D0,(dmc_addr_sel).l
+    rts
+
+_apu_write_4013:
+    move.b  D0,(dmc_len_sel).l
+    rts
+
+_apu_write_4015:
+    btst    #4,D0                       ; DMC enable bit?
+    beq.s   .no_dmc                     ; clearing → stop playback
+    ; Look up (addr, rate) in DMC_SAMPLE_LOOKUP.  Walk 7 {addr,rate,idx,0}
+    ; quads; on match, load the 1-based index into D1 and call dmc_trigger.
+    movem.l D1-D3/A0,-(SP)
+    move.b  (dmc_addr_sel).l,D2
+    move.b  (dmc_rate_sel).l,D3
+    lea     (DMC_SAMPLE_LOOKUP).l,A0
+    moveq   #DMC_SAMPLE_COUNT-1,D1
+.scan:
+    cmp.b   (A0),D2
+    bne.s   .next
+    cmp.b   1(A0),D3
+    bne.s   .next
+    ; Match: 3rd byte of the quad is the 1-based index
+    moveq   #0,D1
+    move.b  2(A0),D1
+    move.b  D1,D0                       ; dmc_trigger wants index in D0.b
+    bsr     dmc_trigger
+    bra.s   .done
+.next:
+    addq.l  #4,A0
+    dbra    D1,.scan
+    ; No match — silently ignore (unknown rate/addr combo, not fatal)
+.done:
+    movem.l (SP)+,D1-D3/A0
+    rts
+.no_dmc:
+    ; Bit 4 clear — if DMC currently playing, stop it.
+    tst.b   (dmc_active).l
+    beq.s   .no_dmc_done
+    clr.l   (dmc_remain).l
+.no_dmc_done:
     rts
 
 ;==============================================================================
