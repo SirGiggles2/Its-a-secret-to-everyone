@@ -428,6 +428,7 @@ for frame = 1, MAX_FRAMES do
                     lvl_block = ram_u8(ADDR_LVL_BLOCK),
                     room_flags = ram_u8(ADDR_ROOM_FLAGS),
                     cave_tmpl = ram_u8(ADDR_CAVE_TMPL),
+                    sram_0975 = ram_u8(0x6975),
                 }
             end
         else
@@ -500,6 +501,7 @@ local function build_json()
         objstate = {}, movedir = {}, facedir = {},
         personstate = {}, cavetype = {}, objtimer0 = {}, autowalk = {},
         obj_templ = {}, lvl_block = {}, room_flags = {}, cave_tmpl = {},
+        sram_0975 = {},
     }
     for i = 1, trace_len do
         local e = trace[i]
@@ -530,6 +532,7 @@ local function build_json()
         cols.lvl_block[i]   = e.lvl_block or 0
         cols.room_flags[i]  = e.room_flags or 0
         cols.cave_tmpl[i]   = e.cave_tmpl or 0
+        cols.sram_0975[i]   = e.sram_0975 or 0
     end
     local phase_parts = {}
     for i, p in ipairs(SCENARIO.phase_summary()) do
@@ -582,7 +585,8 @@ local function build_json()
         '"obj_templ":'   .. json_num_array(cols.obj_templ) .. ",",
         '"lvl_block":'   .. json_num_array(cols.lvl_block) .. ",",
         '"room_flags":'  .. json_num_array(cols.room_flags) .. ",",
-        '"cave_tmpl":'   .. json_num_array(cols.cave_tmpl),
+        '"cave_tmpl":'   .. json_num_array(cols.cave_tmpl) .. ",",
+        '"sram_0975":'   .. json_num_array(cols.sram_0975),
         "}",
         "}",
     }, "\n")
