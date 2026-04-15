@@ -1,0 +1,22 @@
+=================================================================
+T34 Genesis capture: room $77 Link movement trace
+=================================================================
+SCENARIO_LENGTH=361
+f0091 flow BOOT_TO_FS1 -> FS1_SELECT_REGISTER (entered Mode1)
+f0103 flow FS1_SELECT_REGISTER -> FS1_ENTER_REGISTER (CurSaveSlot = 3)
+f0122 flow FS1_ENTER_REGISTER -> MODEE_TYPE_NAME (entered ModeE)
+f0170 flow MODEE_TYPE_NAME -> MODEE_FINISH (name progress target reached)
+f0666 flow MODEE_FINISH -> WAIT_GAMEPLAY (left ModeE)
+f0674 flow WAIT_GAMEPLAY -> FS1_START_GAME (back to Mode1 after register)
+f0699 flow FS1_START_GAME -> T34_STABILIZE (left Mode1 (gameplay starting))
+f0817 reached Mode5 room $77
+f0877 T=0 baseline x=$78 y=$8D dir=$00
+f0877 flow T34_STABILIZE -> T34_CAPTURE (T34 capture window open)
+f1238 flow T34_CAPTURE -> DONE (capture complete)
+TRACE_LENGTH=361 (expected 361)
+REACHED_MODE5=true
+T0_FRAME=877
+GEN_EXCEPTION_FRAME=null
+FINAL t=360 x=$20.30 y=$75.87 dir=$00 held=$00
+BASELINE x=$78 y=$8D dir=$00
+T34_GEN_CAPTURE: OK

@@ -1,0 +1,15 @@
+=================================================================
+T34 MOVEMENT PARITY REPORT (NES reference vs Genesis)
+=================================================================
+T34_NES_CAPTURE_OK: PASS  file=t34_movement_nes_capture.json len=361
+T34_GEN_CAPTURE_OK: PASS  file=t34_movement_gen_capture.json len=361
+T34_NO_GEN_EXCEPTION: PASS  no exception
+T34_BASELINE_PARITY: PASS  nes=($78,$8D,$00) gen=($78,$8D,$00)
+T34_OBJX_PARITY: FAIL  first diff at t=211 phase=left nes=$C6 gen=$C4
+T34_OBJY_PARITY: FAIL  first diff at t=172 phase=down nes=$BD gen=$BE
+T34_OBJINPUTDIR_PARITY: PASS  all 361 frames match
+T34_HELD_BUTTONS_PARITY: FAIL  first diff at t=211 phase=left nes=$02 gen=$00
+DIAG nes_final=($78,$6E) baseline=($78,$8D) delta=(+0,-31) [informational — walls expected]
+DIAG obj_xf_first_diff=(0, 0, 48)
+DIAG obj_yf_first_diff=(0, 0, 135)
+T34_PARITY: FAIL

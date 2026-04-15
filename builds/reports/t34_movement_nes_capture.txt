@@ -1,0 +1,19 @@
+=================================================================
+T34 NES capture: room $77 Link movement reference trace
+=================================================================
+SCENARIO_LENGTH=361
+f0038 flow BOOT_TO_FS1 -> FS1_SELECT_REGISTER (entered Mode1)
+f0041 flow FS1_SELECT_REGISTER -> FS1_ENTER_REGISTER (CurSaveSlot reached 3)
+f0168 flow FS1_ENTER_REGISTER -> T34_STABILIZE (gameplay auto-reached)
+f0168 reached Mode5 room $77
+HB f0200 flow=T34_STABILIZE mode=$05 sub=$00 room=$77 slot=$00
+f0228 T=0 baseline x=$78 y=$8D dir=$00
+f0228 flow T34_STABILIZE -> T34_CAPTURE (T34 capture window open)
+HB f0400 flow=T34_CAPTURE mode=$05 sub=$00 room=$77 slot=$00
+f0589 flow T34_CAPTURE -> DONE (capture complete)
+TRACE_LENGTH=361 (expected 361)
+REACHED_MODE5=true
+T0_FRAME=228
+FINAL t=360 x=$78.00 y=$6E.00 dir=$00 held=$00
+BASELINE x=$78 y=$8D dir=$00
+T34_NES_CAPTURE: OK
