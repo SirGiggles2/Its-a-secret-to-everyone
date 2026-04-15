@@ -27,16 +27,16 @@
       "detail": "hscroll first diff t=183 phase=walk_left nes=$00 gen=$FC"
     },
     "T35_FINAL_ROOM_ID": {
-      "pass": false,
-      "detail": "nes=$76 gen=$8C expected=$76"
+      "pass": true,
+      "detail": "nes=$76 gen=$76 expected=$76"
     },
     "T35_FINAL_MODE": {
-      "pass": false,
-      "detail": "nes=$05 gen=$60 expected=$05"
+      "pass": true,
+      "detail": "nes=$05 gen=$05 expected=$05"
     },
     "T35_ROUND_TRIP_READY": {
-      "pass": false,
-      "detail": "nes=($B2,$8D,$00) gen=($00,$00,$00)"
+      "pass": true,
+      "detail": "nes=($B2,$8D,$00) gen=($B2,$8D,$00)"
     }
   }
 }

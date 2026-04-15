@@ -2397,6 +2397,25 @@ def _patch_z01(path):
     # (subx.b now wrapped with `eori #$10,CCR` pair). SUBX off-by-one no longer
     # occurs, so the FormatHeartsInTextBuf compensation is unnecessary.
 
+    # ---- Patch P7: Insert RTS after GetObjectMiddle ----
+    # NES GetObjectMiddle falls through into ObjTypeToDamagePoints data
+    # whose first byte $60 is the 6502 RTS opcode — implicit return.
+    # On M68K $60 is BRA.s, so execution runs data as code → crash on
+    # first monster collision (seen at T35 scroll t=333).
+    old_gom = ('    move.b  D0,($0003,A4)\n'
+               '    even\n'
+               'ObjTypeToDamagePoints:\n')
+    new_gom = ('    move.b  D0,($0003,A4)\n'
+               '    rts                  ; PATCH P7: NES implicit RTS via '
+               'ObjTypeToDamagePoints[0]=$60\n'
+               '    even\n'
+               'ObjTypeToDamagePoints:\n')
+    if old_gom in text:
+        text = text.replace(old_gom, new_gom, 1)
+        print("  _patch_z01 P7: GetObjectMiddle fallthrough -> explicit rts")
+    else:
+        print("  WARNING: _patch_z01 P7 -- GetObjectMiddle anchor not found")
+
     with open(path, 'w', encoding='utf-8') as f:
         f.write(text)
 
