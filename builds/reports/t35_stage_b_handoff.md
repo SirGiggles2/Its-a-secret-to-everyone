@@ -95,6 +95,25 @@ window around t=181 (absolute frame ≈ 802 based on T0=621):
 3. If the transpiler emitted a wrong branch polarity somewhere in
    Sub5/Sub6/Sub7 — fix transpile, regenerate, rebuild.
 
+## Static inspection complete — verified byte-exact
+
+Compared transpile vs NES reference for the full call chain at stall:
+- `UpdateMode7ScrollSubmode` dispatch (z_05.asm:1248) ✓
+- `UpdateMode7Scroll_Sub0` dir tests (z_05.asm:1263) ✓
+- `ScrollHorizontal` left path + level branches (z_05.asm:1294) ✓
+- `Inc2Submodes` double-addq (z_05.asm:1288) ✓
+- `UpdateMode7Scroll_Sub4And5_TransferNTAttrs` bottom-half (z_05.asm:1464) ✓
+- `CueTransferPlayAreaAttrsHalfAndAdvanceSubmode` addq (z_05.asm:3111) ✓
+- `UpdateMode7Scroll_Sub6` level + dark-room (z_05.asm:1417) ✓
+- `UpdateMode7Scroll_Sub7` commit (z_05.asm:1439) ✓
+- `_m68k_tablejump` pop/index/jump (nes_io.asm:2325) ✓
+- `Link_EndMoveAndAnimateBetweenRooms` entry (z_07.asm:4889) ✓
+- ISR Mode-7-detection (z_07.asm:1634) ✓
+
+No direct writes to $FF0011/$FF0013 in nes_io.asm / genesis_shell.asm.
+
+Exhausted by /whatnext stop-rule — no further static pass warranted.
+
 ## How to resume
 
 1. Load `builds/whatif.md` in BizHawk. Replay `tools/bootflow_gen.txt`
