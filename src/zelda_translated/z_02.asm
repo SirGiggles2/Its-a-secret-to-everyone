@@ -763,7 +763,7 @@ DemoStoryFinalSpriteAttrs:
 
     even
 DemoTextFields:
-; Extracted from NES ROM bank 2, CPU $929A-$94AC (531 bytes)
+; .INCBIN dat/DemoTextFields.dat (531 bytes)
     dc.b    $00, $E4, $E5, $E4, $E5, $E4, $E5, $E6, $24, $0A, $15, $15, $24, $18, $0F, $24
     dc.b    $1D, $1B, $0E, $0A, $1C, $1E, $1B, $0E, $1C, $24, $E6, $E4, $E5, $E4, $E5, $E4
     dc.b    $E5, $FF, $07, $11, $0E, $0A, $1B, $1D, $24, $24, $24, $24, $24, $0C, $18, $17
@@ -801,11 +801,7 @@ DemoTextFields:
 
     even
 DemoLineTextAddrs:
-; 29 word offsets into DemoTextFields (for M68K direct ROM addressing)
-    dc.w    $0000, $0022, $0037, $003E, $0052, $01E5, $01FF, $0067
-    dc.w    $007B, $0082, $0098, $00AD, $00C4, $00CF, $00E2, $00F7
-    dc.w    $00FE, $0111, $0127, $013A, $014E, $0164, $016E, $0185
-    dc.w    $019B, $01AE, $01C2, $01C7, $01DB
+; [skipped] .INCLUDE "dat/DemoLineTextAddrs.inc"
 
     even
 InitDemoSubphaseClearArtifacts:
@@ -2500,7 +2496,9 @@ _L_z02_ModeE_HandleDirectionButton_Left:
     move.b  ($0071,A4),D0
     ori     #$11,CCR  ; SEC: set C+X
     move.b  #$10,D1
+    eori    #$10,CCR  ; flip X: 6502 SBC polarity
     subx.b  D1,D0   ; SBC #$10
+    eori    #$10,CCR  ; restore X = 6502 C
     move.b  D0,($0071,A4)
     cmpi.b  #$20,D0
     bne  _anon_z02_12
@@ -2532,8 +2530,12 @@ _L_z02_ModeE_HandleDirectionButton_Down:
     jsr     CycleCharBoardCursorY
     move.b  ($042A,A4),D0
     beq  _L_z02_ModeE_HandleDirectionButton_Finish
-    move.b  ($041F,A4),D0  ; PATCH P19b: Phase 9.6 SEC;SBC -1 fix
-    sub.b   #$2C,D0
+    move.b  ($041F,A4),D0
+    ori     #$11,CCR  ; SEC: set C+X
+    move.b  #$2C,D1
+    eori    #$10,CCR  ; flip X: 6502 SBC polarity
+    subx.b  D1,D0   ; SBC #$2C
+    eori    #$10,CCR  ; restore X = 6502 C
     move.b  D0,($041F,A4)
     even
 _L_z02_ModeE_HandleDirectionButton_Finish:
@@ -2547,8 +2549,12 @@ _L_z02_ModeE_HandleDirectionButton_Up:
     ;
     ; Decrease CharBoardIndex [$041F] by $B (one row up).
     ;
-    move.b  ($041F,A4),D0  ; PATCH P19a: Phase 9.6 SEC;SBC -1 fix
-    sub.b   #$0B,D0
+    move.b  ($041F,A4),D0
+    ori     #$11,CCR  ; SEC: set C+X
+    move.b  #$0B,D1
+    eori    #$10,CCR  ; flip X: 6502 SBC polarity
+    subx.b  D1,D0   ; SBC #$0B
+    eori    #$10,CCR  ; restore X = 6502 C
     move.b  D0,($041F,A4)
     moveq   #3,D2
     jsr     CycleCharBoardCursorY
@@ -2747,8 +2753,12 @@ _L_z02_ModeE_HandleAOrB_MoveCursor:
     ;
     ; For example, $20D6 -> $20CE.
     ;
-    move.b  ($0423,A4),D0  ; PATCH P15: Zelda16.12
-    sub.b   #$08,D0
+    move.b  ($0423,A4),D0
+    ori     #$11,CCR  ; SEC: set C+X
+    move.b  #$08,D1
+    eori    #$10,CCR  ; flip X: 6502 SBC polarity
+    subx.b  D1,D0   ; SBC #$08
+    eori    #$10,CCR  ; restore X = 6502 C
     move.b  D0,($0423,A4)
     ; It also means that we went past the end of the save slot
     ; info name. Set the offset to the beginning of the name.
@@ -2829,7 +2839,9 @@ _L_z02_ModeEandF_SetUpCursorSprites_CopySprites:
     move.b  ($0084,A4),D0
     ori     #$11,CCR  ; SEC: set C+X
     move.b  #$08,D1
+    eori    #$10,CCR  ; flip X: 6502 SBC polarity
     subx.b  D1,D0   ; SBC #$08
+    eori    #$10,CCR  ; restore X = 6502 C
     move.b  D0,($0204,A4)
     moveq   #112,D0
     move.b  D0,($0070,A4)
@@ -2894,7 +2906,9 @@ _L_z02_ModeEandF_WriteCharBoardCursorSpritePosition_WriteCursorCoords:
 ModifyFlashingCursorY:
     ori     #$11,CCR  ; SEC: set C+X
     move.b  #$08,D1
+    eori    #$10,CCR  ; flip X: 6502 SBC polarity
     subx.b  D1,D0   ; SBC #$08
+    eori    #$10,CCR  ; restore X = 6502 C
     moveq   #0,D3
     move.b  D0,D3
     move.b  ($0015,A4),D0
@@ -3995,7 +4009,9 @@ _L_z02_Mode1_WriteLinkSprites_LoopSlot:
     move.b  ($0001,A4),D0
     ori     #$11,CCR  ; SEC: set C+X
     move.b  #$03,D1
+    eori    #$10,CCR  ; flip X: 6502 SBC polarity
     subx.b  D1,D0   ; SBC #$03
+    eori    #$10,CCR  ; restore X = 6502 C
     lea     ($0280,A4),A0
     move.b  D0,(A0,D3.W)
     moveq   #32,D0
@@ -4026,27 +4042,27 @@ _L_z02_Mode1_WriteLinkSprites_NextSlot:
 
     even
 SaveSlotHeartsAddrsLo:
-; [unknown directive] .LOBYTES SaveSlotHearts+0
-; [unknown directive] .LOBYTES SaveSlotHearts+2
-; [unknown directive] .LOBYTES SaveSlotHearts+4
+    dc.b    (SaveSlotHearts+0)&$FF
+    dc.b    (SaveSlotHearts+2)&$FF
+    dc.b    (SaveSlotHearts+4)&$FF
 
     even
 SaveSlotHeartsAddrsHi:
-; [unknown directive] .HIBYTES SaveSlotHearts+0
-; [unknown directive] .HIBYTES SaveSlotHearts+2
-; [unknown directive] .HIBYTES SaveSlotHearts+4
+    dc.b    (SaveSlotHearts+0>>8)&$FF
+    dc.b    (SaveSlotHearts+2>>8)&$FF
+    dc.b    (SaveSlotHearts+4>>8)&$FF
 
     even
 ProfileNameAddrsLo:
-; [unknown directive] .LOBYTES Names+0
-; [unknown directive] .LOBYTES Names+8
-; [unknown directive] .LOBYTES Names+16
+    dc.b    (Names+0)&$FF
+    dc.b    (Names+8)&$FF
+    dc.b    (Names+16)&$FF
 
     even
 ProfileNameAddrsHi:
-; [unknown directive] .HIBYTES Names+0
-; [unknown directive] .HIBYTES Names+8
-; [unknown directive] .HIBYTES Names+16
+    dc.b    (Names+0>>8)&$FF
+    dc.b    (Names+8>>8)&$FF
+    dc.b    (Names+16>>8)&$FF
 
     even
 UpdateModeDSave:
@@ -4909,7 +4925,9 @@ DrawLinkZeldaTriforces:
     move.b  ($0084,A4),D0
     ori     #$11,CCR  ; SEC: set C+X
     move.b  #$10,D1
+    eori    #$10,CCR  ; flip X: 6502 SBC polarity
     subx.b  D1,D0   ; SBC #$10
+    eori    #$10,CCR  ; restore X = 6502 C
     move.b  D0,($0097,A4)
     ; Draw Link.
     ;
@@ -4942,7 +4960,9 @@ DrawLinkZeldaTriforces:
     move.b  ($0085,A4),D0
     ori     #$11,CCR  ; SEC: set C+X
     move.b  #$10,D1
+    eori    #$10,CCR  ; flip X: 6502 SBC polarity
     subx.b  D1,D0   ; SBC #$10
+    eori    #$10,CCR  ; restore X = 6502 C
     move.b  D0,($0086,A4)
     ; Draw triforce over Zelda.
     ;
@@ -5143,7 +5163,9 @@ UpdateMode13WinGame_Sub3:
     bmi  _anon_z02_37
     move.b  ($050B,A4),D0
     move.b  #$08,D1
+    eori    #$10,CCR  ; flip X: 6502 SBC polarity
     subx.b  D1,D0   ; SBC #$08
+    eori    #$10,CCR  ; restore X = 6502 C
     move.b  D0,($050B,A4)
     jsr     DrawCredits
 _anon_z02_37:
@@ -5233,10 +5255,33 @@ CreditsTextAddrsHi:
 
     even
 CreditsTextLines:
-; .INCBIN "dat/CreditsTextLines.dat" not found — stub 128 zero bytes
-    rept    128
-        dc.b    0
-    endr
+; .INCBIN dat/CreditsTextLines.dat (414 bytes)
+    dc.b    $07, $0D, $24, $1C, $1D, $0A, $0F, $0F, $24, $09, $05, $0E, $21, $0E, $0C, $1E
+    dc.b    $1D, $12, $1F, $0E, $16, $05, $19, $1B, $18, $0D, $1E, $0C, $0E, $1B, $63, $63
+    dc.b    $63, $24, $11, $63, $22, $0A, $16, $0A, $1E, $0C, $11, $12, $16, $05, $19, $1B
+    dc.b    $18, $0D, $1E, $0C, $0E, $1B, $63, $63, $63, $63, $24, $1C, $63, $16, $12, $22
+    dc.b    $0A, $11, $18, $17, $16, $05, $0D, $12, $1B, $0E, $0C, $1D, $18, $1B, $63, $63
+    dc.b    $63, $63, $24, $1C, $63, $16, $12, $22, $0A, $11, $18, $17, $0E, $0D, $63, $63
+    dc.b    $63, $63, $63, $63, $24, $1D, $0E, $17, $24, $1D, $0E, $17, $16, $05, $0D, $0E
+    dc.b    $1C, $12, $10, $17, $0E, $1B, $63, $63, $63, $63, $63, $63, $24, $1D, $0E, $17
+    dc.b    $24, $1D, $0E, $17, $16, $05, $19, $1B, $18, $10, $1B, $0A, $16, $16, $0E, $1B
+    dc.b    $63, $63, $24, $1D, $63, $17, $0A, $14, $0A, $23, $18, $18, $0C, $0F, $63, $63
+    dc.b    $63, $63, $63, $24, $22, $0A, $0C, $11, $0A, $17, $0C, $0F, $63, $63, $63, $24
+    dc.b    $16, $0A, $1B, $1E, $16, $0A, $1B, $1E, $05, $05, $1C, $18, $1E, $17, $0D, $16
+    dc.b    $05, $0C, $18, $16, $19, $18, $1C, $0E, $1B, $63, $63, $63, $63, $63, $63, $24
+    dc.b    $14, $18, $17, $0C, $11, $0A, $17, $18, $04, $0A, $17, $18, $1D, $11, $0E, $1B
+    dc.b    $24, $1A, $1E, $0E, $1C, $1D, $24, $20, $12, $15, $15, $24, $1C, $1D, $0A, $1B
+    dc.b    $1D, $0A, $0B, $0F, $1B, $18, $16, $24, $11, $0E, $1B, $0E, $2C, $17, $05, $19
+    dc.b    $1B, $0E, $1C, $1C, $24, $1D, $11, $0E, $24, $1C, $1D, $0A, $1B, $1D, $24, $0B
+    dc.b    $1E, $1D, $1D, $18, $17, $2C, $0E, $09, $FC, $01, $09, $08, $06, $24, $17, $12
+    dc.b    $17, $1D, $0E, $17, $0D, $18, $0E, $09, $22, $18, $1E, $24, $0A, $1B, $0E, $24
+    dc.b    $10, $1B, $0E, $0A, $1D, $63, $0D, $09, $24, $24, $24, $24, $24, $24, $24, $24
+    dc.b    $24, $62, $24, $24, $24, $13, $06, $22, $18, $1E, $24, $11, $0A, $1F, $0E, $24
+    dc.b    $0A, $17, $24, $0A, $16, $0A, $23, $12, $17, $10, $11, $08, $20, $12, $1C, $0D
+    dc.b    $18, $16, $24, $0A, $17, $0D, $24, $19, $18, $20, $0E, $1B, $63, $06, $0D, $0E
+    dc.b    $17, $0D, $24, $18, $0F, $17, $04, $2D, $1D, $11, $0E, $24, $15, $0E, $10, $0E
+    dc.b    $17, $0D, $24, $18, $0F, $24, $23, $0E, $15, $0D, $0A, $24, $01, $2D, $0E, $09
+    dc.b    $FC, $01, $09, $08, $06, $24, $17, $12, $17, $1D, $0E, $17, $0D, $18
 
     even
 CreditsAttrs:
@@ -5671,4 +5716,3 @@ SwitchBank_Local2:
 
 ; Unknown block
     dc.b    $84, $E4, $50, $BF, $F0, $BF
-

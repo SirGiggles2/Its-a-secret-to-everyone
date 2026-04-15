@@ -62,6 +62,9 @@ PPU_SCRL_X      equ PPU_STATE_BASE+6    ; byte: horizontal scroll value
 PPU_SCRL_Y      equ PPU_STATE_BASE+7    ; byte: vertical scroll value
 PPU_DBUF        equ PPU_STATE_BASE+8    ; byte: buffered even-addr byte
 PPU_DHALF       equ PPU_STATE_BASE+9    ; byte: 1 if even-addr byte pending
+PPU_S0_TOGGLE   equ PPU_STATE_BASE+10   ; byte: toggles bit 6 across _ppu_read_2 calls
+                                         ; so both wait-for-set and wait-for-clear
+                                         ; sprite-0 loops terminate on Genesis.
 ;------------------------------------------------------------------------------
 ; MMC1 state RAM — placed at $FF0810 (immediately after 16-byte PPU block).
 ; Initialised to zero by genesis_shell before jsr IsrReset.
@@ -111,6 +114,7 @@ CHR_HIT_COUNT   equ CHR_STATE_BASE+20   ; byte: total CHR write calls (debug cou
 ; NT_CACHE[row*32 + col] = tile index.  NT1 entries at offset 960.
 ;------------------------------------------------------------------------------
 NT_CACHE_BASE   equ CHR_STATE_BASE+$20  ; $FF0840  (32×60 = 1920 bytes)
+NT_ATTR_CACHE_BASE equ $00FF1400        ; 32×60 = 1920 bytes, raw palette id per tile
 
 ;------------------------------------------------------------------------------
 ; Staged scroll state written by _ags_flush and consumed by _ags_prearm on the
@@ -154,6 +158,16 @@ LAST_GAMEMODE      equ CHR_STATE_BASE+$1E ; $FF083E byte: shadow of $0012
 ; Cleared the frame the Start button bit ($00F8 & $10) first becomes zero.
 FrontendStartReleaseGate equ $FF042B ; 1 byte in NES scratch-record region
 ;------------------------------------------------------------------------------
+; Demand-driven NES PRG bank window (P33).
+;
+; Non-jump .ADDR tables now hold true NES CPU addresses ($8000-$BFFF).  Table
+; consumers add NES_RAM and dereference, so we mirror the active 16KB PRG bank
+; image at $FF8000. Then NES_RAM + $8xxx resolves into this window.
+;------------------------------------------------------------------------------
+BANK_WINDOW_BASE      equ $00FF8000
+BANK_WINDOW_SIZE      equ $4000
+_current_window_bank  equ $00FF083F ; byte cache: last copied bank ($FF = none)
+;------------------------------------------------------------------------------
 ; Scroll composition modes shared between staged state and INTRO_SCROLL_MODE.
 ;------------------------------------------------------------------------------
 INTRO_SCROLL_NO_SPLIT   equ 0
@@ -192,7 +206,15 @@ _ppu_read_1:
 ;------------------------------------------------------------------------------
 _ppu_read_2:
     clr.b   (PPU_LATCH).l          ; reading $2002 resets the w register
-    move.b  #$80,D0                ; VBlank flag set (warmup loops will exit)
+    ; b7 (VBlank) always set — exits warmup loops.
+    ; b6 (sprite-0-hit) toggles each call — lets BOTH wait-for-set
+    ; (WaitAndScrollToSplitBottom, z_05:1530) AND wait-for-clear
+    ; (IsrNmi_WaitVBlankEnd, z_07:1533) loops terminate in ≤2 iters.
+    ; Gen has no scanline split — skipping is correct.
+    move.b  (PPU_S0_TOGGLE).l,D0
+    eori.b  #$40,D0
+    move.b  D0,(PPU_S0_TOGGLE).l
+    ori.b   #$80,D0                ; always assert VBlank bit
     rts
 
 ;------------------------------------------------------------------------------
@@ -560,20 +582,33 @@ _mode_transition_check:
     clr.w   (PPU_VADDR).l
     clr.b   (PPU_DHALF).l
     clr.b   (PPU_DBUF).l
-    clr.b   ($0014,A4)               ; PPU update request byte
-    clr.b   ($005C,A4)               ; SwitchNameTablesReq one-shot
     clr.b   (PPU_SCRL_X).l
     clr.b   (PPU_SCRL_Y).l
     ; Direct VSRAM[0] + VSRAM[1] = 0 (inside vblank window).
     move.l  #VSRAM_WRITE_0000,(VDP_CTRL).l
     move.w  #0,(VDP_DATA).l          ; Plane A V-scroll
     move.w  #0,(VDP_DATA).l          ; Plane B V-scroll
-    ; DynTileBuf palette-precheck rewind (Phase 1.3): reset the three NES
-    ; zero-page bytes _patch_z06 P3 keys off so it re-enters its rewind
-    ; cycle on the new mode's first CHR transfer.
+    ; Preserve any live transfer work across a mode transition.
+    ;
+    ; Two cases matter:
+    ;  1) DynTileBuf non-empty: pending dynamic record must survive.
+    ;  2) TileBufSelector non-zero: pending static transfer request must survive.
+    ;
+    ; Room scroll transitions rely on selector-driven transfers after the mode
+    ; has already changed, so clearing $0014 here when DynTileBuf is empty is
+    ; too aggressive.
+    tst.b   ($0014,A4)
+    bne.s   .mtc_keep_pending
+    cmpi.b  #$FF,($0302,A4)
+    bne.s   .mtc_keep_pending
+    ; No pending selector and DynTileBuf empty: safe to rewind the
+    ; palette-precheck state and clear stale one-shots from the old mode.
+    clr.b   ($0014,A4)               ; PPU update request byte
+    clr.b   ($005C,A4)               ; SwitchNameTablesReq one-shot
     move.b  #63,($0300,A4)
     move.b  #0,($0301,A4)
     move.b  #$FF,($0302,A4)
+.mtc_keep_pending:
 .mtc_done:
     move.l  (SP)+,D0
     rts
@@ -1555,6 +1590,75 @@ nes_palette_to_genesis:
     dc.w    $0000   ; $3F  black (unused/invalid)
 
 ;==============================================================================
+; NES PRG bank images for demand-driven bank window (P33)
+;==============================================================================
+    even
+_nes_bank_00_data:
+    incbin "../reference/aldonunez/dat/nes_bank_00.bin"
+_nes_bank_01_data:
+    incbin "../reference/aldonunez/dat/nes_bank_01.bin"
+_nes_bank_02_data:
+    incbin "../reference/aldonunez/dat/nes_bank_02.bin"
+_nes_bank_03_data:
+    incbin "../reference/aldonunez/dat/nes_bank_03.bin"
+_nes_bank_04_data:
+    incbin "../reference/aldonunez/dat/nes_bank_04.bin"
+_nes_bank_05_data:
+    incbin "../reference/aldonunez/dat/nes_bank_05.bin"
+_nes_bank_06_data:
+    incbin "../reference/aldonunez/dat/nes_bank_06.bin"
+
+    even
+_bank_rom_bases:
+    dc.l    _nes_bank_00_data, _nes_bank_01_data
+    dc.l    _nes_bank_02_data, _nes_bank_03_data
+    dc.l    _nes_bank_04_data, _nes_bank_05_data
+    dc.l    _nes_bank_06_data, 0
+
+;------------------------------------------------------------------------------
+; _copy_bank_to_window
+;   D0.w = bank number (0-7)
+;   Copies bank 0-6 into $FF8000 when cache misses. Bank 7 is exempt.
+;------------------------------------------------------------------------------
+_copy_bank_to_window:
+    andi.w  #$0007,D0
+    cmpi.w  #7,D0
+    beq.s   .skip
+    cmp.b   (_current_window_bank).l,D0
+    beq.s   .skip
+    movem.l D1/A0-A1,-(SP)
+    move.w  D0,D1
+    lsl.w   #2,D1
+    lea     (_bank_rom_bases).l,A0
+    movea.l (A0,D1.W),A0
+    lea     (BANK_WINDOW_BASE).l,A1
+    move.w  #BANK_WINDOW_SIZE/4-1,D1
+.copy_loop:
+    move.l  (A0)+,(A1)+
+    dbra    D1,.copy_loop
+    move.b  D0,(_current_window_bank).l
+    movem.l (SP)+,D1/A0-A1
+.skip:
+    rts
+
+;------------------------------------------------------------------------------
+; _ensure_bank_window
+;   Reads MMC1_PRG and ensures $FF8000 currently mirrors that PRG bank.
+;   Preserves D0 and all address registers used by callers.
+;------------------------------------------------------------------------------
+_ensure_bank_window:
+    movem.l D0,-(SP)
+    moveq   #0,D0
+    move.b  (MMC1_PRG).l,D0
+    andi.w  #$0007,D0
+    cmp.b   (_current_window_bank).l,D0
+    beq.s   .done
+    bsr     _copy_bank_to_window
+.done:
+    movem.l (SP)+,D0
+    rts
+
+;==============================================================================
 ; Controller I/O
 ;==============================================================================
 
@@ -2318,6 +2422,20 @@ _clear_nametable_fast:
     move.b  D0,(A0)+
     dbf     D3,.cnf_cache
 
+    ; Clear matching transfer-interpreter palette shadow for this NT.
+    cmpi.b  #$28,D4
+    beq.s   .cnf_attr_nt1
+    lea     (NT_ATTR_CACHE_BASE).l,A0
+    bra.s   .cnf_attr_fill
+.cnf_attr_nt1:
+    lea     (NT_ATTR_CACHE_BASE+960).l,A0
+.cnf_attr_fill:
+    move.w  #960-1,D3
+    clr.b   D0
+.cnf_attr_loop:
+    move.b  D0,(A0)+
+    dbf     D3,.cnf_attr_loop
+
 .cnf_done:
     movem.l (SP)+,D0-D4/A0
     rts
@@ -2712,10 +2830,19 @@ _transfer_tilebuf_fast:
     ori.l   #$40000003,D6          ; CD bits + A[15:14]=3 for $C000+
     move.l  D6,(VDP_CTRL).l
 
-    ; Write tile word: tile index + BG pattern table offset
+    ; Write tile word: tile index + BG pattern table offset + cached palette.
     moveq   #0,D0
     move.b  D2,D0
     bsr     _compose_bg_tile_word
+    move.w  D0,-(SP)
+    move.w  D5,D6
+    subi.w  #$2000,D6
+    lea     (NT_ATTR_CACHE_BASE).l,A1
+    moveq   #0,D0
+    move.b  (A1,D6.W),D0
+    lsl.w   #5,D0
+    lsl.w   #8,D0
+    or.w    (SP)+,D0
     move.w  D0,(VDP_DATA).l
 
 .ttf_nt_skip:
@@ -2769,6 +2896,7 @@ _transfer_tilebuf_fast:
     andi.w  #$0003,D5
     lsl.w   #5,D5
     lsl.w   #8,D5                   ; D5.w = palette<<13
+    bsr     .ttf_attr_cache_2x2
     bsr     _attr_write_2x2
 
     ; Quadrant 1: bits [3:2], col_off=+2
@@ -2778,6 +2906,7 @@ _transfer_tilebuf_fast:
     lsl.w   #5,D5
     lsl.w   #8,D5
     addq.w  #2,D2
+    bsr     .ttf_attr_cache_2x2
     bsr     _attr_write_2x2
     subq.w  #2,D2
 
@@ -2788,6 +2917,7 @@ _transfer_tilebuf_fast:
     lsl.w   #5,D5
     lsl.w   #8,D5
     addq.w  #2,D3
+    bsr     .ttf_attr_cache_2x2
     bsr     _attr_write_2x2
     subq.w  #2,D3
 
@@ -2799,6 +2929,7 @@ _transfer_tilebuf_fast:
     lsl.w   #8,D5
     addq.w  #2,D2
     addq.w  #2,D3
+    bsr     .ttf_attr_cache_2x2
     bsr     _attr_write_2x2
     subq.w  #2,D2
     subq.w  #2,D3
@@ -2815,6 +2946,24 @@ _transfer_tilebuf_fast:
     subq.w  #1,D3
     bne     .ttf_attr_loop
     bra     .ttf_post_record
+
+.ttf_attr_cache_2x2:
+    move.w  D5,D0
+    lsr.w   #8,D0
+    lsr.w   #5,D0                   ; D0.w = raw palette id 0..3
+    lea     (NT_ATTR_CACHE_BASE).l,A1
+    moveq   #0,D6
+    move.w  D3,D6
+    lsl.w   #5,D6
+    add.w   D2,D6
+    move.b  D0,(A1,D6.W)
+    addq.w  #1,D6
+    move.b  D0,(A1,D6.W)
+    addi.w  #31,D6
+    move.b  D0,(A1,D6.W)
+    addq.w  #1,D6
+    move.b  D0,(A1,D6.W)
+    rts
 
     ;==========================================================================
     ; NAMETABLE 1 RANGE ($2800-$2BBF): tile index -> Plane A word
@@ -2861,10 +3010,20 @@ _transfer_tilebuf_fast:
     ori.l   #$40000003,D6          ; CD bits + A[15:14]
     move.l  D6,(VDP_CTRL).l
 
-    ; Write tile word: tile index + BG pattern table offset
+    ; Write tile word: tile index + BG pattern table offset + cached palette.
     moveq   #0,D0
     move.b  D2,D0
     bsr     _compose_bg_tile_word
+    move.w  D0,-(SP)
+    move.w  D5,D6
+    subi.w  #$2800,D6
+    addi.w  #960,D6
+    lea     (NT_ATTR_CACHE_BASE).l,A1
+    moveq   #0,D0
+    move.b  (A1,D6.W),D0
+    lsl.w   #5,D0
+    lsl.w   #8,D0
+    or.w    (SP)+,D0
     ; Item-screen title flourish color fix:
     ; the ALL OF TREASURES side ornaments live on NT1 row $2900-$291F and use
     ; tiles $E4-$E6. On NES those blocks inherit palette 3; Genesis leaves them
@@ -2931,6 +3090,7 @@ _transfer_tilebuf_fast:
     andi.w  #$0003,D5
     lsl.w   #5,D5
     lsl.w   #8,D5
+    bsr     .ttf_attr1_cache_2x2
     bsr     _attr_write_2x2
 
     ; Quadrant 1: bits [3:2], col_off=+2
@@ -2940,6 +3100,7 @@ _transfer_tilebuf_fast:
     lsl.w   #5,D5
     lsl.w   #8,D5
     addq.w  #2,D2
+    bsr     .ttf_attr1_cache_2x2
     bsr     _attr_write_2x2
     subq.w  #2,D2
 
@@ -2950,6 +3111,7 @@ _transfer_tilebuf_fast:
     lsl.w   #5,D5
     lsl.w   #8,D5
     addq.w  #2,D3
+    bsr     .ttf_attr1_cache_2x2
     bsr     _attr_write_2x2
     subq.w  #2,D3
 
@@ -2961,6 +3123,7 @@ _transfer_tilebuf_fast:
     lsl.w   #8,D5
     addq.w  #2,D2
     addq.w  #2,D3
+    bsr     .ttf_attr1_cache_2x2
     bsr     _attr_write_2x2
     subq.w  #2,D2
     subq.w  #2,D3
@@ -2976,6 +3139,24 @@ _transfer_tilebuf_fast:
     subq.w  #1,D3
     bne     .ttf_attr1_loop
     bra     .ttf_post_record
+
+.ttf_attr1_cache_2x2:
+    move.w  D5,D0
+    lsr.w   #8,D0
+    lsr.w   #5,D0                   ; D0.w = raw palette id 0..3
+    lea     (NT_ATTR_CACHE_BASE).l,A1
+    moveq   #0,D6
+    move.w  D3,D6
+    lsl.w   #5,D6
+    add.w   D2,D6
+    move.b  D0,(A1,D6.W)
+    addq.w  #1,D6
+    move.b  D0,(A1,D6.W)
+    addi.w  #31,D6
+    move.b  D0,(A1,D6.W)
+    addq.w  #1,D6
+    move.b  D0,(A1,D6.W)
+    rts
 
     ;==========================================================================
     ; PALETTE RANGE ($3F00-$3F1F): NES color -> Genesis CRAM

@@ -453,7 +453,8 @@ BRANCH_MAP = {
 }
 
 def translate_lines(src_lines, symtab, bank_tag, no_stubs=False, no_import_stubs=False,
-                    other_exports=None, dup_exports=None):
+                    other_exports=None, dup_exports=None,
+                    all_nes_addrs=None, bank_nes_addrs=None, bank_num=None):
     """Translate list of ca65 lines to M68K lines."""
     anon_defs, anon_refs = prepass_anon(src_lines)
     local_defs, scope_at = prepass_local_labels(src_lines, bank_tag)
@@ -573,17 +574,66 @@ def translate_lines(src_lines, symtab, bank_tag, no_stubs=False, no_import_stubs
                 emit(f'    dc.w    {data_str}')
                 continue
 
+            if uline.startswith('.LOBYTES'):
+                data_str = stripped[8:].strip()
+                data_str = re.sub(r'\s*;.*$', '', data_str)
+                entries = [x.strip() for x in data_str.split(',') if x.strip()]
+                if not entries:
+                    raise ValueError(f"{bank_tag}: empty .LOBYTES directive on line {i+1}")
+                for entry in entries:
+                    emit(f'    dc.b    ({entry})&$FF')
+                continue
+
+            if uline.startswith('.HIBYTES'):
+                data_str = stripped[8:].strip()
+                data_str = re.sub(r'\s*;.*$', '', data_str)
+                entries = [x.strip() for x in data_str.split(',') if x.strip()]
+                if not entries:
+                    raise ValueError(f"{bank_tag}: empty .HIBYTES directive on line {i+1}")
+                for entry in entries:
+                    emit(f'    dc.b    ({entry}>>8)&$FF')
+                continue
+
             if uline.startswith('.ADDR'):
                 data_str = stripped[5:].strip()
                 data_str = re.sub(r'\s*;.*$', '', data_str)
+                entries = [x.strip() for x in data_str.split(',') if x.strip()]
+                if not entries:
+                    raise ValueError(f"{bank_tag}: empty .ADDR directive on line {i+1}")
                 if in_jump_table[0]:
                     # Jump table entry: _m68k_tablejump reads dc.l (32-bit M68K addresses)
-                    emit(f'    dc.l    {data_str}   ; jump table entry (32-bit for _m68k_tablejump)')
+                    for entry in entries:
+                        emit(f'    dc.l    {entry}   ; jump table entry (32-bit for _m68k_tablejump)')
                 else:
-                    # Data pointer table: NES .ADDR is 16-bit little-endian (lo byte first).
-                    # Emit dc.b to preserve NES byte order; M68K dc.w would
-                    # big-endian-swap and break byte-indexed table reads.
-                    emit(f'    dc.b    ({data_str})&$FF, ({data_str}>>8)&$FF   ; NES .ADDR (little-endian)')
+                    # Data pointer table: keep NES 16-bit little-endian bytes.
+                    # For ROM labels, emit literal NES CPU address bytes.
+                    # For RAM equates / unknown symbols, keep expression form.
+                    for entry in entries:
+                        nes_addr = None
+                        if entry.startswith('$'):
+                            try:
+                                nes_addr = int(entry[1:], 16) & 0xFFFF
+                            except ValueError:
+                                nes_addr = None
+                        elif re.match(r'^\d+$', entry):
+                            nes_addr = int(entry) & 0xFFFF
+                        if nes_addr is None:
+                            if bank_nes_addrs and entry in bank_nes_addrs:
+                                nes_addr = bank_nes_addrs[entry]
+                            elif all_nes_addrs and entry in all_nes_addrs:
+                                nes_addr = all_nes_addrs[entry]
+                        if nes_addr is not None and nes_addr >= 0x8000:
+                            lo = nes_addr & 0xFF
+                            hi = (nes_addr >> 8) & 0xFF
+                            emit(
+                                f'    dc.b    ${lo:02X}, ${hi:02X}'
+                                f'   ; NES .ADDR (bank window, NES=${nes_addr:04X} = {entry})'
+                            )
+                        else:
+                            emit(
+                                f'    dc.b    ({entry})&$FF, ({entry}>>8)&$FF'
+                                f'   ; NES .ADDR (little-endian)'
+                            )
                 continue
 
             # Unknown directive — comment it out
@@ -1001,12 +1051,33 @@ def translate_one_instruction(stripped, line_idx, symtab,
         carry_state['inverted'] = False
 
     elif mnem == 'SBC':
+        # 6502 SBC borrow polarity is INVERTED vs M68K SUBX:
+        #   6502: C=1 means "no borrow in" (plain A - M);  C=0 means borrow in.
+        #   M68K: X=1 means "borrow in" (extra -1);        X=0 means no borrow in.
+        # We wrap every SUBX with `eori #$10,CCR` pre/post to flip X so the
+        # SUBX sees correct borrow-in polarity and restore X to carry the
+        # 6502 C bit for subsequent arithmetic. The M68K C flag after SUBX
+        # remains M68K-polarity (inverted vs 6502), tracked via carry_state.
         if mode == 'IMM':
             e(f'    move.b  #${val:02X},D1')
+            e(f'    eori    #$10,CCR  ; flip X: 6502 SBC polarity')
             e(f'    subx.b  D1,D0   ; SBC #${val:02X}')
+            e(f'    eori    #$10,CCR  ; restore X = 6502 C')
         elif mode == 'ABS':
             gen_read('D1', val)
+            e(f'    eori    #$10,CCR  ; flip X: 6502 SBC polarity')
             e(f'    subx.b  D1,D0   ; SBC {val}')
+            e(f'    eori    #$10,CCR  ; restore X = 6502 C')
+        elif mode == 'ABS_X':
+            gen_read('D1', val, 'X')
+            e(f'    eori    #$10,CCR  ; flip X: 6502 SBC polarity')
+            e(f'    subx.b  D1,D0   ; SBC {val},X')
+            e(f'    eori    #$10,CCR  ; restore X = 6502 C')
+        elif mode == 'ABS_Y':
+            gen_read('D1', val, 'Y')
+            e(f'    eori    #$10,CCR  ; flip X: 6502 SBC polarity')
+            e(f'    subx.b  D1,D0   ; SBC {val},Y')
+            e(f'    eori    #$10,CCR  ; restore X = 6502 C')
         else:
             e(f'; [SBC unhandled mode={mode}] {stripped}')
         # M68K SUBX C flag is INVERTED vs 6502 SBC carry (same as CMP issue)
@@ -1284,6 +1355,536 @@ def collect_exports_from_source(bank_num):
     return exports
 
 
+KNOWN_6502_MNEMS = {
+    'ADC', 'AND', 'ASL', 'BCC', 'BCS', 'BEQ', 'BIT', 'BMI', 'BNE', 'BPL',
+    'BRK', 'BVC', 'BVS',
+    'CLC', 'CLD', 'CLI', 'CLV', 'CMP', 'CPX', 'CPY',
+    'DEC', 'DEX', 'DEY', 'EOR', 'INC', 'INX', 'INY',
+    'JMP', 'JSR', 'LDA', 'LDX', 'LDY', 'LSR', 'NOP', 'ORA',
+    'PHA', 'PHP', 'PLA', 'PLP', 'ROL', 'ROR', 'RTI', 'RTS',
+    'SBC', 'SEC', 'SED', 'SEI', 'STA', 'STX', 'STY',
+    'TAX', 'TAY', 'TSX', 'TXA', 'TXS', 'TYA',
+}
+
+BRANCH_MNEMS = {'BCC', 'BCS', 'BEQ', 'BMI', 'BNE', 'BPL', 'BVC', 'BVS'}
+ZP_MNEMS = {
+    'ADC', 'AND', 'ASL', 'BIT', 'CMP', 'CPX', 'CPY', 'DEC', 'EOR',
+    'INC', 'LDA', 'LDX', 'LDY', 'LSR', 'ORA', 'ROL', 'ROR', 'SBC',
+    'STA', 'STX', 'STY',
+}
+ZPX_MNEMS = {
+    'ADC', 'AND', 'ASL', 'CMP', 'DEC', 'EOR', 'INC', 'LDA', 'LDY',
+    'LSR', 'ORA', 'ROL', 'ROR', 'SBC', 'STA', 'STY',
+}
+ZPY_MNEMS = {'LDX', 'STX'}
+
+
+def _strip_asm_comment(line):
+    return re.sub(r'\s*;.*$', '', line).strip()
+
+
+def _split_csv_items(csv_text):
+    items = []
+    cur = []
+    in_quote = False
+    quote_ch = ''
+    i = 0
+    while i < len(csv_text):
+        ch = csv_text[i]
+        if in_quote:
+            cur.append(ch)
+            if ch == quote_ch:
+                in_quote = False
+            i += 1
+            continue
+        if ch in ('"', "'"):
+            in_quote = True
+            quote_ch = ch
+            cur.append(ch)
+            i += 1
+            continue
+        if ch == ',':
+            item = ''.join(cur).strip()
+            if item:
+                items.append(item)
+            cur = []
+            i += 1
+            continue
+        cur.append(ch)
+        i += 1
+    tail = ''.join(cur).strip()
+    if tail:
+        items.append(tail)
+    return items
+
+
+def _parse_numeric_token(tok):
+    tok = tok.strip()
+    if not tok:
+        return None
+    sign = 1
+    if tok.startswith('+'):
+        tok = tok[1:].strip()
+    elif tok.startswith('-'):
+        sign = -1
+        tok = tok[1:].strip()
+    if not tok:
+        return None
+    if tok.startswith('$'):
+        try:
+            return sign * int(tok[1:], 16)
+        except ValueError:
+            return None
+    if tok.startswith('%'):
+        try:
+            return sign * int(tok[1:], 2)
+        except ValueError:
+            return None
+    if re.fullmatch(r'\d+', tok):
+        return sign * int(tok, 10)
+    return None
+
+
+def _resolve_prepass_value(tok, symtab, label_map, local_map, cur_scope):
+    tok = tok.strip()
+    if not tok:
+        return None
+    tok = re.sub(r'^[aAzZ]:', '', tok)
+    tok = tok.strip()
+    if tok.startswith('<') or tok.startswith('>'):
+        tok = tok[1:].strip()
+
+    n = _parse_numeric_token(tok)
+    if n is not None:
+        return n
+
+    if tok.startswith('@'):
+        name = tok[1:]
+        return local_map.get((cur_scope, name))
+
+    if tok in label_map:
+        return label_map[tok]
+    if tok in symtab:
+        return symtab[tok]
+
+    m = re.match(r'^([@A-Za-z_]\w*)\s*([+\-])\s*(\$[0-9A-Fa-f]+|%[01]+|\d+)$', tok)
+    if m:
+        base_name = m.group(1)
+        op = m.group(2)
+        off = _parse_numeric_token(m.group(3))
+        if off is None:
+            return None
+        if base_name.startswith('@'):
+            base = local_map.get((cur_scope, base_name[1:]))
+        else:
+            base = label_map.get(base_name, symtab.get(base_name))
+        if base is None:
+            return None
+        return base + off if op == '+' else base - off
+    return None
+
+
+def _infer_6502_instr_size(mnem, operand, symtab, label_map, local_map, cur_scope, src_name, line_no):
+    if mnem not in KNOWN_6502_MNEMS:
+        raise ValueError(f"{src_name}:{line_no}: unknown instruction '{mnem}'")
+
+    op = _strip_asm_comment(operand)
+    op = re.sub(r'^[aAzZ]:', '', op).strip()
+    merged = dict(symtab)
+    merged.update(label_map)
+    mode, val = parse_operand(op, merged)
+
+    if mode == 'IMPL':
+        return 1
+    if mnem in BRANCH_MNEMS:
+        return 2
+    if mode == 'ANON':
+        if mnem in BRANCH_MNEMS:
+            return 2
+        if mnem in ('JMP', 'JSR'):
+            return 3
+        raise ValueError(f"{src_name}:{line_no}: anonymous label ref not valid for {mnem}")
+    if mode == 'ACC':
+        return 1
+    if mode == 'IMM':
+        return 2
+    if mode == 'IND_X':
+        return 2
+    if mode == 'IND_Y':
+        return 2
+    if mode == 'IND_ABS':
+        return 3
+
+    if mode in ('ABS', 'ABS_X', 'ABS_Y'):
+        if isinstance(val, str):
+            base_val = _resolve_prepass_value(val, symtab, label_map, local_map, cur_scope)
+        else:
+            base_val = val
+        is_zp = base_val is not None and 0 <= base_val <= 0xFF
+
+        if mode == 'ABS':
+            if is_zp and mnem in ZP_MNEMS:
+                return 2
+            return 3
+        if mode == 'ABS_X':
+            if is_zp and mnem in ZPX_MNEMS:
+                return 2
+            return 3
+        if mode == 'ABS_Y':
+            if is_zp and mnem in ZPY_MNEMS:
+                return 2
+            return 3
+
+    raise ValueError(f"{src_name}:{line_no}: unsupported mode '{mode}' for '{mnem} {operand}'")
+
+
+def _byte_directive_size(data_expr, src_name, line_no):
+    items = _split_csv_items(data_expr)
+    if not items:
+        raise ValueError(f"{src_name}:{line_no}: malformed .BYTE (no items)")
+    size = 0
+    for item in items:
+        it = item.strip()
+        if not it:
+            raise ValueError(f"{src_name}:{line_no}: malformed .BYTE entry")
+        if (it.startswith('"') and it.endswith('"')) or (it.startswith("'") and it.endswith("'")):
+            size += len(it[1:-1])
+        else:
+            size += 1
+    return size
+
+
+def _count_word_entries(data_expr, src_name, line_no, kind):
+    items = _split_csv_items(data_expr)
+    if not items:
+        raise ValueError(f"{src_name}:{line_no}: malformed {kind} (no items)")
+    return len(items)
+
+
+def _bank_start_pc(bank_num):
+    return 0xC000 if bank_num == 7 else 0x8000
+
+
+def build_nes_address_map(bank_num):
+    """Strict NES-address prepass for one bank source file."""
+    src_name = f"Z_{bank_num:02d}.asm"
+    src_path = os.path.join(REF_DIR, src_name)
+    if not os.path.exists(src_path):
+        raise FileNotFoundError(f"source not found for bank {bank_num}: {src_path}")
+
+    symtab = build_symtab()
+    pc = _bank_start_pc(bank_num)
+    bank_end = pc + 0x4000
+    label_map = {}
+    local_map = {}
+    cur_scope = '_TOP_'
+
+    def _resolve_rel_path(base_path, rel_text):
+        rel = rel_text.replace('/', os.sep)
+        p = os.path.join(os.path.dirname(base_path), rel)
+        if os.path.exists(p):
+            return p
+        p2 = os.path.join(REF_DIR, rel)
+        return p2
+
+    def _walk_file(path, pc_in, scope_in):
+        scope = scope_in
+        with open(path, encoding="utf-8", errors="replace") as f:
+            lines = f.read().splitlines()
+
+        src_file = os.path.basename(path)
+        pc_local = pc_in
+        for idx, raw in enumerate(lines, start=1):
+            stripped = raw.strip()
+            if not stripped or stripped.startswith(';'):
+                continue
+            if re.match(r'^:\s*(;.*)?$', stripped):
+                continue
+
+            lm = re.match(r'^\s*(@?\w+):(.*)$', raw)
+            if lm:
+                label = lm.group(1)
+                rest = lm.group(2).strip()
+                if label.startswith('@'):
+                    local_name = label[1:]
+                    local_map[(scope, local_name)] = pc_local
+                    label_map[f'{scope}::{label}'] = pc_local
+                else:
+                    scope = label
+                    label_map[label] = pc_local
+                stripped = rest
+                if not stripped or stripped.startswith(';'):
+                    continue
+
+            asm = _strip_asm_comment(stripped)
+            if not asm:
+                continue
+            if re.match(r'^[A-Za-z_]\w*\s*:?=\s*', asm):
+                # .inc constant/equate assignment (e.g. Var := $10)
+                continue
+
+            if asm.startswith('.'):
+                upper = asm.upper()
+                if upper.startswith('.INCLUDE'):
+                    m = re.search(r'"([^"]+)"', asm)
+                    if not m:
+                        raise ValueError(f"{src_file}:{idx}: malformed .INCLUDE")
+                    inc_path = _resolve_rel_path(path, m.group(1))
+                    if not os.path.exists(inc_path):
+                        raise FileNotFoundError(f"{src_file}:{idx}: .INCLUDE missing file: {inc_path}")
+                    pc_local, scope = _walk_file(inc_path, pc_local, scope)
+                    continue
+                if upper.startswith('.SEGMENT') or upper.startswith('.IMPORT') or upper.startswith('.EXPORT'):
+                    continue
+                if upper.startswith('.INCBIN'):
+                    m = re.search(r'"([^"]+)"', asm)
+                    if not m:
+                        raise ValueError(f"{src_file}:{idx}: malformed .INCBIN")
+                    inc_path = _resolve_rel_path(path, m.group(1))
+                    if not os.path.exists(inc_path):
+                        raise FileNotFoundError(f"{src_file}:{idx}: .INCBIN missing file: {inc_path}")
+                    pc_local += os.path.getsize(inc_path)
+                elif upper.startswith('.BYTE'):
+                    pc_local += _byte_directive_size(asm[5:].strip(), src_file, idx)
+                elif upper.startswith('.WORD'):
+                    pc_local += 2 * _count_word_entries(asm[5:].strip(), src_file, idx, '.WORD')
+                elif upper.startswith('.ADDR'):
+                    pc_local += 2 * _count_word_entries(asm[5:].strip(), src_file, idx, '.ADDR')
+                elif upper.startswith('.DBYT'):
+                    pc_local += 2 * _count_word_entries(asm[5:].strip(), src_file, idx, '.DBYT')
+                elif upper.startswith('.LOBYTES'):
+                    pc_local += _count_word_entries(asm[8:].strip(), src_file, idx, '.LOBYTES')
+                elif upper.startswith('.HIBYTES'):
+                    pc_local += _count_word_entries(asm[8:].strip(), src_file, idx, '.HIBYTES')
+                elif upper.startswith('.RES'):
+                    args = _split_csv_items(asm[4:].strip())
+                    if not args:
+                        raise ValueError(f"{src_file}:{idx}: malformed .RES")
+                    count = _parse_numeric_token(args[0])
+                    if count is None:
+                        raise ValueError(f"{src_file}:{idx}: .RES count must be numeric, got '{args[0]}'")
+                    if count < 0:
+                        raise ValueError(f"{src_file}:{idx}: .RES count must be >= 0, got {count}")
+                    pc_local += count
+                else:
+                    raise ValueError(f"{src_file}:{idx}: unsupported directive '{asm.split()[0]}'")
+            else:
+                mm = re.match(r'^([A-Z]{2,3})\s*(.*)$', asm)
+                if not mm:
+                    raise ValueError(f"{src_file}:{idx}: cannot parse instruction '{asm}'")
+                mnem = mm.group(1).upper()
+                operand = mm.group(2) or ''
+                pc_local += _infer_6502_instr_size(
+                    mnem,
+                    operand,
+                    symtab,
+                    label_map,
+                    local_map,
+                    scope,
+                    src_file,
+                    idx,
+                )
+
+            if pc_local > bank_end:
+                raise ValueError(
+                    f"{src_file}:{idx}: NES address overflow (pc=${pc_local:04X} beyond bank end ${bank_end:04X})"
+                )
+        return pc_local, scope
+
+    pc, cur_scope = _walk_file(src_path, pc, cur_scope)
+
+    return label_map
+
+
+def _validate_nes_address_maps(nes_addr_maps):
+    required = [
+        (5, 'RoomLayoutsOW', 0x9818),
+        (6, 'LevelBlockOW', 0x8400),
+        (3, 'PatternBlockOWBG', 0x893B),
+    ]
+    for bank, label, expected_addr in required:
+        amap = nes_addr_maps.get(bank, {})
+        if label not in amap:
+            raise ValueError(f"NES prepass validation failed: missing label {label} in bank {bank}")
+        addr = amap[label]
+        lo = _bank_start_pc(bank)
+        hi = lo + 0x4000
+        if not (lo <= addr < hi):
+            raise ValueError(
+                f"NES prepass validation failed: {label} resolved to ${addr:04X} outside bank-{bank} range ${lo:04X}-${hi-1:04X}"
+            )
+        if addr != expected_addr:
+            raise ValueError(
+                f"NES prepass validation failed: {label}=${addr:04X}, expected ${expected_addr:04X}"
+            )
+
+    # Optional spot-check against extracted NES banks + known dat blobs (if present).
+    spot_checks = [
+        (1, 'DemoSpritePatterns', os.path.join('dat', 'DemoSpritePatterns.dat')),
+        (2, 'CommonSpritePatterns', os.path.join('dat', 'CommonSpritePatterns.dat')),
+        (6, 'StoryTileAttrTransferBuf', os.path.join('dat', 'StoryTileAttrTransferBuf.dat')),
+    ]
+    for bank, label, rel_dat in spot_checks:
+        bank_blob = os.path.join(REF_DIR, 'dat', f'nes_bank_{bank:02d}.bin')
+        dat_path = os.path.join(REF_DIR, rel_dat)
+        if not os.path.exists(bank_blob) or not os.path.exists(dat_path):
+            continue
+        amap = nes_addr_maps.get(bank, {})
+        if label not in amap:
+            continue
+        addr = amap[label]
+        off = addr - _bank_start_pc(bank)
+        if off < 0:
+            print(f"  WARNING: NES prepass spot-check skipped ({label}: negative offset)")
+            continue
+        with open(bank_blob, 'rb') as f:
+            bank_data = f.read()
+        with open(dat_path, 'rb') as f:
+            dat_data = f.read()
+        if off + min(8, len(dat_data)) > len(bank_data):
+            print(f"  WARNING: NES prepass spot-check skipped ({label}: points beyond bank image)")
+            continue
+        chk_len = min(8, len(dat_data))
+        if chk_len > 0 and bank_data[off:off + chk_len] != dat_data[:chk_len]:
+            print(f"  WARNING: NES prepass spot-check mismatch for {label} vs {rel_dat}")
+
+
+def _audit_bank_window_coverage():
+    """Hard-fail if ROM pointer consumers lack a bank-window guard before first table read."""
+    checks = [
+        (
+            os.path.join(OUT_DIR, 'z_03.asm'),
+            'FetchPatternBlockAddrUW',
+            ['PatternBlockSrcAddrsUW'],
+        ),
+        (
+            os.path.join(OUT_DIR, 'z_03.asm'),
+            'FetchPatternBlockInfoOW',
+            ['PatternBlockSrcAddrsOW'],
+        ),
+        (
+            os.path.join(OUT_DIR, 'z_03.asm'),
+            'FetchPatternBlockAddrUWSpecial',
+            ['LevelPatternBlockSrcAddrs'],
+        ),
+        (
+            os.path.join(OUT_DIR, 'z_03.asm'),
+            'FetchPatternBlockUWBoss',
+            ['BossPatternBlockSrcAddrs'],
+        ),
+        (
+            os.path.join(OUT_DIR, 'z_05.asm'),
+            'LayoutRoomOW',
+            ['RoomLayoutsOWAddr'],
+        ),
+        (
+            os.path.join(OUT_DIR, 'z_05.asm'),
+            'PatchColumnDirectoryForCellar',
+            ['ColumnHeapOWAddr'],
+        ),
+        (
+            os.path.join(OUT_DIR, 'z_05.asm'),
+            'LayoutCaveAndAvanceSubmode',
+            ['SubroomLayoutAddrsUW'],
+        ),
+        (
+            os.path.join(OUT_DIR, 'z_05.asm'),
+            'LayoutUWFloor',
+            ['ColumnDirectoryUW'],
+        ),
+        (
+            os.path.join(OUT_DIR, 'z_06.asm'),
+            'UpdateMode2Load_Full',
+            ['LevelInfoUWQ2ReplacementAddrs'],
+        ),
+    ]
+
+    def get_func_block(lines, func_name):
+        start = None
+        for i, line in enumerate(lines):
+            if line.strip() == f'{func_name}:':
+                start = i
+                break
+        if start is None:
+            raise ValueError(f"coverage audit: function {func_name} not found")
+        end = len(lines)
+        for i in range(start + 1, len(lines)):
+            s = lines[i].strip()
+            if re.match(r'^[A-Za-z_]\w*:$', s):
+                end = i
+                break
+        return lines[start:end]
+
+    for path, func, markers in checks:
+        if not os.path.exists(path):
+            raise FileNotFoundError(f"coverage audit: generated file not found: {path}")
+        with open(path, 'r', encoding='utf-8', errors='replace') as f:
+            lines = f.read().splitlines()
+        block = get_func_block(lines, func)
+        ensure_idx = next(
+            (
+                i
+                for i, l in enumerate(block)
+                if ('_ensure_bank_window' in l) or ('_copy_bank_to_window' in l)
+            ),
+            -1,
+        )
+        if ensure_idx < 0:
+            raise ValueError(f"coverage audit: {func} missing bank-window guard call")
+        first_use = -1
+        for i, l in enumerate(block):
+            if any(m in l for m in markers):
+                first_use = i
+                break
+        if first_use >= 0 and ensure_idx > first_use:
+            raise ValueError(
+                f"coverage audit: {func} calls _ensure_bank_window after first table use ({markers[0]})"
+            )
+
+
+def _audit_isrvector_dead_code():
+    """Hard-fail if IsrVector gains runtime consumers."""
+    bank_files = [os.path.join(OUT_DIR, f'z_{b:02d}.asm') for b in range(8)]
+    refs = []
+    for p in bank_files:
+        if not os.path.exists(p):
+            continue
+        with open(p, 'r', encoding='utf-8', errors='replace') as f:
+            for i, line in enumerate(f, start=1):
+                if re.search(r'\bIsrVector\b', line):
+                    refs.append((p, i, line.rstrip('\n')))
+    if not refs:
+        raise ValueError("dead-vector audit: IsrVector definition missing")
+    if len(refs) != 1:
+        details = '\n'.join([f"{p}:{ln}: {txt}" for p, ln, txt in refs])
+        raise ValueError(f"dead-vector audit: expected definition-only IsrVector, found extra use-sites:\n{details}")
+    p, _, txt = refs[0]
+    if not txt.strip().startswith('IsrVector:'):
+        raise ValueError(f"dead-vector audit: IsrVector reference is not a definition ({p})")
+
+    # Bank-7 exemption guard: IsrVector is the only allowed z_07 ROM .ADDR
+    # table that still emits NES bank-window bytes.
+    z07 = os.path.join(OUT_DIR, 'z_07.asm')
+    if os.path.exists(z07):
+        with open(z07, 'r', encoding='utf-8', errors='replace') as f:
+            lines = f.read().splitlines()
+        last_label = None
+        owners = set()
+        for line in lines:
+            s = line.strip()
+            m = re.match(r'^([A-Za-z_]\w*):$', s)
+            if m:
+                last_label = m.group(1)
+            if 'NES .ADDR (bank window' in line:
+                owners.add(last_label or '<unknown>')
+        extras = sorted([x for x in owners if x != 'IsrVector'])
+        if extras:
+            raise ValueError(
+                "dead-vector audit: unexpected z_07 ROM .ADDR table owner(s): "
+                + ', '.join(extras)
+            )
+
+
 # File header and constants
 # ---------------------------------------------------------------------------
 
@@ -1328,7 +1929,8 @@ NES_STACK_BASE  equ $FF0100
 # ---------------------------------------------------------------------------
 
 def transpile_bank(bank_num, standalone=False, no_stubs=False, no_import_stubs=False,
-                   other_exports=None, dup_exports=None):
+                   other_exports=None, dup_exports=None,
+                   all_nes_addrs=None, bank_nes_addrs=None):
     """Transpile one bank file (0-7). Returns True on success.
 
     standalone=True: emit 'org $C000' for isolated T2/T3 assembly testing.
@@ -1393,7 +1995,10 @@ def transpile_bank(bank_num, standalone=False, no_stubs=False, no_import_stubs=F
     body_lines = translate_lines(src_lines, symtab, bank_tag, no_stubs=no_stubs,
                                  no_import_stubs=no_import_stubs,
                                  other_exports=other_exports,
-                                 dup_exports=dup_exports)
+                                 dup_exports=dup_exports,
+                                 all_nes_addrs=all_nes_addrs,
+                                 bank_nes_addrs=bank_nes_addrs,
+                                 bank_num=bank_num)
 
     # Add indirect jump stub (only when not using --no-stubs;
     # nes_io.asm provides it in the production T5+ build).
@@ -1415,6 +2020,10 @@ def transpile_bank(bank_num, standalone=False, no_stubs=False, no_import_stubs=F
         _patch_z01(out_path)
     if bank_num == 2:
         _patch_z02(out_path)
+    if bank_num == 3:
+        _patch_z03(out_path)
+    if bank_num == 5:
+        _patch_z05(out_path)
     if bank_num == 6:
         _patch_z06(out_path)
     if bank_num == 7:
@@ -1499,6 +2108,105 @@ def _promote_nonlocal_bsr_to_jsr(path):
         )
 
 
+def _replace_addr_table_block(text, label, new_entries, expected_count=None):
+    """Replace consecutive '; NES .ADDR ...' dc.b lines under label with dc.l entries."""
+    lines = text.splitlines()
+    label_idx = None
+    for i, line in enumerate(lines):
+        if line.strip() == f'{label}:':
+            label_idx = i
+            break
+    if label_idx is None:
+        return text, False, f"label {label} not found"
+
+    start = label_idx + 1
+    end = start
+    while end < len(lines) and 'NES .ADDR' in lines[end]:
+        end += 1
+    count = end - start
+    if count <= 0:
+        return text, False, f"label {label} has no NES .ADDR entries"
+    if expected_count is not None and count != expected_count:
+        return text, False, f"label {label} expected {expected_count} entries, found {count}"
+
+    repl = [f'    dc.l    {entry}' for entry in new_entries]
+    lines[start:end] = repl
+    return '\n'.join(lines), True, None
+
+
+def _replace_in_function_block(text, func_name, old, new, count=1):
+    """Replace snippet inside a single function block (label->next global label)."""
+    lines = text.splitlines()
+    start = None
+    end = len(lines)
+    for i, line in enumerate(lines):
+        if line.strip() == f'{func_name}:':
+            start = i
+            break
+    if start is None:
+        return text, False, f"function {func_name} not found"
+    for i in range(start + 1, len(lines)):
+        s = lines[i].strip()
+        if s.endswith(':') and not s.startswith('_') and not s.startswith('.') and not s.startswith(';'):
+            end = i
+            break
+    block = '\n'.join(lines[start:end])
+    new_block, hits = block.replace(old, new, count), block.count(old)
+    if hits <= 0:
+        return text, False, f"{func_name}: snippet not found"
+    lines[start:end] = new_block.splitlines()
+    return '\n'.join(lines), True, None
+
+
+def _replace_global_block(text, start_label, end_label, new_block):
+    """Replace a top-level label block with new text."""
+    lines = text.splitlines()
+    start = None
+    end = None
+    for i, line in enumerate(lines):
+        if line.strip() == f'{start_label}:':
+            start = i
+            break
+    if start is None:
+        return text, False, f"label {start_label} not found"
+
+    for i in range(start + 1, len(lines)):
+        if lines[i].strip() == f'{end_label}:':
+            end = i
+            break
+    if end is None:
+        return text, False, f"end label {end_label} not found"
+
+    lines[start:end] = new_block.rstrip('\n').splitlines()
+    return '\n'.join(lines), True, None
+
+
+def _insert_ensure_bank_window_call(text, func_name):
+    """Insert 'bsr _ensure_bank_window' immediately after a function label if missing."""
+    lines = text.splitlines()
+    for i, line in enumerate(lines):
+        if line.strip() == f'{func_name}:':
+            if i + 1 < len(lines) and '_ensure_bank_window' in lines[i + 1]:
+                return text, True, None
+            lines.insert(i + 1, '    bsr     _ensure_bank_window')
+            return '\n'.join(lines), True, None
+    return text, False, f"function {func_name} not found"
+
+
+def _insert_fixed_bank_window_call(text, func_name, bank_num):
+    """Insert fixed bank-window load at function entry if missing."""
+    lines = text.splitlines()
+    for i, line in enumerate(lines):
+        if line.strip() == f'{func_name}:':
+            lookahead = '\n'.join(lines[i + 1:i + 5])
+            if '_copy_bank_to_window' in lookahead or '_ensure_bank_window' in lookahead:
+                return text, True, None
+            lines.insert(i + 1, f'    moveq   #{bank_num},D0')
+            lines.insert(i + 2, f'    jsr     _copy_bank_to_window   ; PATCH P33b: force window bank {bank_num}')
+            return '\n'.join(lines), True, None
+    return text, False, f"function {func_name} not found"
+
+
 def _patch_z00(path):
     """Post-process patches for z_00.asm.
 
@@ -1557,17 +2265,19 @@ def _patch_z01(path):
     text = ''.join(lines)
 
     # ---- Patch 0: Convert DemoPatternBlockAddrs from dc.b (2-byte NES) to dc.l (32-bit) ----
-    old_tbl = ('DemoPatternBlockAddrs:\n'
-               '    dc.b    (DemoSpritePatterns)&$FF, (DemoSpritePatterns>>8)&$FF   ; NES .ADDR (little-endian)\n'
-               '    dc.b    (DemoBackgroundPatterns)&$FF, (DemoBackgroundPatterns>>8)&$FF   ; NES .ADDR (little-endian)')
-    new_tbl = ('DemoPatternBlockAddrs:\n'
-               '    dc.l    DemoSpritePatterns        ; 32-bit Genesis ROM address\n'
-               '    dc.l    DemoBackgroundPatterns     ; 32-bit Genesis ROM address')
-    if old_tbl in text:
-        text = text.replace(old_tbl, new_tbl, 1)
-        print("  _patch_z01 P0: DemoPatternBlockAddrs dc.b -> dc.l")
+    text, ok, err = _replace_addr_table_block(
+        text,
+        'DemoPatternBlockAddrs',
+        [
+            'DemoSpritePatterns        ; 32-bit Genesis ROM address',
+            'DemoBackgroundPatterns     ; 32-bit Genesis ROM address',
+        ],
+        expected_count=2,
+    )
+    if ok:
+        print("  _patch_z01 P0: DemoPatternBlockAddrs dc.b -> dc.l (structural)")
     else:
-        print("  WARNING: _patch_z01 P0 -- table not found")
+        print(f"  WARNING: _patch_z01 P0 -- {err}")
 
     # ---- Patch 1: Fix TransferDemoPatterns to use 32-bit ROM addresses ----
     # Replace the first DemoPatternBlockAddrs read (before addq.b #1,D2)
@@ -1666,6 +2376,46 @@ def _patch_z01(path):
     else:
         print("  WARNING: _patch_z01 P4 (P31) -- FileBChecksums label not found")
 
+    # ---- Patch 5 (P36c): Fix CPX/BCC borrow sense in FormatHeartsInTextBuf ----
+    # 6502 CPX branches on BCC when X < M. 68K CMP sets carry on borrow, so
+    # the translated branch must be BCS for that case.
+    old_hearts = ('    move.b  ($0000,A4),D1\n'
+                  '    cmp.b   D1,D2\n'
+                  '    beq  _L_z01_FormatHeartsInTextBuf_CheckPartial\n'
+                  '    bcc  _L_z01_FormatHeartsInTextBuf_EmitEmptyHeart\n')
+    new_hearts = ('    move.b  ($0000,A4),D1\n'
+                  '    cmp.b   D1,D2\n'
+                  '    beq  _L_z01_FormatHeartsInTextBuf_CheckPartial\n'
+                  '    bcs  _L_z01_FormatHeartsInTextBuf_EmitEmptyHeart   ; PATCH P36c: 68K borrow sense for CPX/BCC\n')
+    if old_hearts in text:
+        text = text.replace(old_hearts, new_hearts, 1)
+        print("  _patch_z01 P5: FormatHeartsInTextBuf CPX/BCC -> BCS")
+    else:
+        print("  WARNING: _patch_z01 P5 -- FormatHeartsInTextBuf anchor not found")
+
+    # P6a/P6b removed: superseded by transpiler-side SBC X-flag polarity fix
+    # (subx.b now wrapped with `eori #$10,CCR` pair). SUBX off-by-one no longer
+    # occurs, so the FormatHeartsInTextBuf compensation is unnecessary.
+
+    # ---- Patch P7: Insert RTS after GetObjectMiddle ----
+    # NES GetObjectMiddle falls through into ObjTypeToDamagePoints data
+    # whose first byte $60 is the 6502 RTS opcode — implicit return.
+    # On M68K $60 is BRA.s, so execution runs data as code → crash on
+    # first monster collision (seen at T35 scroll t=333).
+    old_gom = ('    move.b  D0,($0003,A4)\n'
+               '    even\n'
+               'ObjTypeToDamagePoints:\n')
+    new_gom = ('    move.b  D0,($0003,A4)\n'
+               '    rts                  ; PATCH P7: NES implicit RTS via '
+               'ObjTypeToDamagePoints[0]=$60\n'
+               '    even\n'
+               'ObjTypeToDamagePoints:\n')
+    if old_gom in text:
+        text = text.replace(old_gom, new_gom, 1)
+        print("  _patch_z01 P7: GetObjectMiddle fallthrough -> explicit rts")
+    else:
+        print("  WARNING: _patch_z01 P7 -- GetObjectMiddle anchor not found")
+
     with open(path, 'w', encoding='utf-8') as f:
         f.write(text)
 
@@ -1692,19 +2442,20 @@ def _patch_z02(path):
         text = f.read()
 
     # ---- Patch 0: Convert CommonPatternBlockAddrs from dc.b (2-byte NES) to dc.l (32-bit) ----
-    old_tbl = ('CommonPatternBlockAddrs:\n'
-               '    dc.b    (CommonSpritePatterns)&$FF, (CommonSpritePatterns>>8)&$FF   ; NES .ADDR (little-endian)\n'
-               '    dc.b    (CommonBackgroundPatterns)&$FF, (CommonBackgroundPatterns>>8)&$FF   ; NES .ADDR (little-endian)\n'
-               '    dc.b    (CommonMiscPatterns)&$FF, (CommonMiscPatterns>>8)&$FF   ; NES .ADDR (little-endian)')
-    new_tbl = ('CommonPatternBlockAddrs:\n'
-               '    dc.l    CommonSpritePatterns       ; 32-bit Genesis ROM address\n'
-               '    dc.l    CommonBackgroundPatterns    ; 32-bit Genesis ROM address\n'
-               '    dc.l    CommonMiscPatterns          ; 32-bit Genesis ROM address')
-    if old_tbl in text:
-        text = text.replace(old_tbl, new_tbl, 1)
-        print("  _patch_z02 P0: CommonPatternBlockAddrs dc.b -> dc.l")
+    text, ok, err = _replace_addr_table_block(
+        text,
+        'CommonPatternBlockAddrs',
+        [
+            'CommonSpritePatterns       ; 32-bit Genesis ROM address',
+            'CommonBackgroundPatterns    ; 32-bit Genesis ROM address',
+            'CommonMiscPatterns          ; 32-bit Genesis ROM address',
+        ],
+        expected_count=3,
+    )
+    if ok:
+        print("  _patch_z02 P0: CommonPatternBlockAddrs dc.b -> dc.l (structural)")
     else:
-        print("  WARNING: _patch_z02 P0 -- table not found")
+        print(f"  WARNING: _patch_z02 P0 -- {err}")
 
     # ---- Patch 1a: first CommonPatternBlockAddrs read (before addq.b #1,D2) ----
     old1a = ('    lea     (CommonPatternBlockAddrs).l,A0\n'
@@ -2339,94 +3090,10 @@ def _patch_z02(path):
     else:
         print("  WARNING: _patch_z02 P14 -- wrap gate pattern not found")
 
-    # ---- Patch 15: Zelda16.12 -- SEC;SBC #$08 -1 fix at wrap site ----
-    # Diary Finding #30.  Systemic SEC;SBC #imm transpile bug: the pattern
-    # "ori #$11,CCR; subx.b D1,D0" subtracts imm+1 instead of imm because
-    # the X flag is still set.  At this specific wrap site the 9th letter
-    # ends up in column $CD instead of $CE.  Replace with a plain sub.b.
-    # Anchored on the "$20D6 -> $20CE" comment to uniquely hit this site
-    # without touching ModifyFlashingCursorY or ModeEandF_SetUpCursorSprites
-    # (whose callers are tuned around the off-by-one, per diary scope note).
-    old_sec_sbc_wrap = (
-        '    ; For example, $20D6 -> $20CE.\n'
-        '    ;\n'
-        '    move.b  ($0423,A4),D0\n'
-        '    ori     #$11,CCR  ; SEC: set C+X\n'
-        '    move.b  #$08,D1\n'
-        '    subx.b  D1,D0   ; SBC #$08\n'
-        '    move.b  D0,($0423,A4)\n'
-    )
-    new_sec_sbc_wrap = (
-        '    ; For example, $20D6 -> $20CE.\n'
-        '    ;\n'
-        '    move.b  ($0423,A4),D0  ; PATCH P15: Zelda16.12\n'
-        '    sub.b   #$08,D0\n'
-        '    move.b  D0,($0423,A4)\n'
-    )
-    if old_sec_sbc_wrap in text:
-        text = text.replace(old_sec_sbc_wrap, new_sec_sbc_wrap, 1)
-        print("  _patch_z02 P15: Zelda16.12 SEC;SBC -1 fix at wrap site")
-    else:
-        print("  WARNING: _patch_z02 P15 -- SEC;SBC wrap pattern not found")
-
-    # ---- Patch 19: Phase 9.6 -- SEC;SBC -1 fix in Mode E direction handlers ----
-    # Same systemic SEC;SBC transpile bug as P15, but in
-    # _L_z02_ModeE_HandleDirectionButton_Up (idx -= $0B per Up press) and
-    # the Down-wrap fixup (idx -= $2C when Down rolls past row 3).  Both
-    # sites operate on CharBoardIndex [$041F], and P13's source-of-truth
-    # sync makes the IDX off-by-one VISIBLE because P13 derives ObjX/ObjY
-    # from idx after the move.
-    #
-    # Symptoms in tools/bizhawk_fs2_keyboard.lua before fix:
-    #   - Every Up press shifts col -1 (idx -= 12 instead of -11) → diagonal
-    #   - Down from row 3 col 0 wraps to row 0 col 9 (idx -= 45 instead of
-    #     -44 → 255 → P13 hidden-slot snap to 9)
-    #
-    # Sites kept narrow: this does NOT touch the Left ObjX SEC;SBC at line
-    # 2499-2503 (P13 overwrites ObjX from idx so the user never sees the
-    # buggy x).  Only the two CharBoardIndex SEC;SBC instances are fixed.
-
-    # P19a: Up move (idx -= $0B per Up press)
-    old_up_idx_subx = (
-        '    ; Decrease CharBoardIndex [$041F] by $B (one row up).\n'
-        '    ;\n'
-        '    move.b  ($041F,A4),D0\n'
-        '    ori     #$11,CCR  ; SEC: set C+X\n'
-        '    move.b  #$0B,D1\n'
-        '    subx.b  D1,D0   ; SBC #$0B\n'
-        '    move.b  D0,($041F,A4)\n'
-    )
-    new_up_idx_subx = (
-        '    ; Decrease CharBoardIndex [$041F] by $B (one row up).\n'
-        '    ;\n'
-        '    move.b  ($041F,A4),D0  ; PATCH P19a: Phase 9.6 SEC;SBC -1 fix\n'
-        '    sub.b   #$0B,D0\n'
-        '    move.b  D0,($041F,A4)\n'
-    )
-    if old_up_idx_subx in text:
-        text = text.replace(old_up_idx_subx, new_up_idx_subx, 1)
-        print("  _patch_z02 P19a: SEC;SBC -1 fix in Up move (idx -= $0B)")
-    else:
-        print("  WARNING: _patch_z02 P19a -- Up SEC;SBC pattern not found")
-
-    # P19b: Down wrap fixup (idx -= $2C when row3 -> row0)
-    old_down_wrap_subx = (
-        '    move.b  ($041F,A4),D0\n'
-        '    ori     #$11,CCR  ; SEC: set C+X\n'
-        '    move.b  #$2C,D1\n'
-        '    subx.b  D1,D0   ; SBC #$2C\n'
-        '    move.b  D0,($041F,A4)\n'
-    )
-    new_down_wrap_subx = (
-        '    move.b  ($041F,A4),D0  ; PATCH P19b: Phase 9.6 SEC;SBC -1 fix\n'
-        '    sub.b   #$2C,D0\n'
-        '    move.b  D0,($041F,A4)\n'
-    )
-    if old_down_wrap_subx in text:
-        text = text.replace(old_down_wrap_subx, new_down_wrap_subx, 1)
-        print("  _patch_z02 P19b: SEC;SBC -1 fix in Down wrap (idx -= $2C)")
-    else:
-        print("  WARNING: _patch_z02 P19b -- Down wrap SEC;SBC pattern not found")
+    # P15, P19a, P19b removed: superseded by transpiler-side SBC X-flag
+    # polarity fix (subx.b now wrapped with `eori #$10,CCR` pair). These
+    # were compensating for the M68K SUBX off-by-one vs 6502 SEC;SBC, which
+    # no longer exists. T34 D-pad movement parity (8/8 PASS) confirms.
 
     # ------------------------------------------------------------------
     # P21: Phase 9.8 — wire save-slot writes through cart SRAM.
@@ -2780,6 +3447,876 @@ def _patch_z02(path):
         f.write(text)
 
 
+def _patch_z03(path):
+    """Inject bank-window guards into ROM-pointer consumers (bank-3 pinned)."""
+    with open(path, 'r', encoding='utf-8') as f:
+        text = f.read()
+
+    hooks = [
+        ('FetchPatternBlockAddrUW', 3),
+        ('FetchPatternBlockInfoOW', 3),
+        ('FetchPatternBlockAddrUWSpecial', 3),
+        ('FetchPatternBlockUWBoss', 3),
+    ]
+    hits = 0
+    for func, bank_num in hooks:
+        text, ok, err = _insert_fixed_bank_window_call(text, func, bank_num)
+        if ok:
+            hits += 1
+        else:
+            print(f"  WARNING: _patch_z03 -- {err}")
+
+    with open(path, 'w', encoding='utf-8') as f:
+        f.write(text)
+
+    print(f"  _patch_z03: fixed bank-window guards injected {hits}/{len(hooks)} hooks")
+
+
+def _patch_z05(path):
+    """Inject bank-window guards into room-layout ROM-pointer consumers (bank-5 pinned)."""
+    with open(path, 'r', encoding='utf-8') as f:
+        text = f.read()
+
+    # ------------------------------------------------------------------
+    # P34a: Convert z05 room-layout pointer tables to direct 32-bit labels.
+    # ------------------------------------------------------------------
+    p34_tables = [
+        ('RoomLayoutsOWAddr', ['RoomLayoutsOW'], 1),
+        ('ColumnHeapOWAddr', ['ColumnHeapOW0'], 1),
+        ('SubroomLayoutAddrs', ['RoomLayoutOWCave0', 'RoomLayoutOWCave1', 'RoomLayoutUWCellar0', 'RoomLayoutUWCellar1'], 4),
+        ('ColumnDirectoryUW', [f'ColumnHeapUW{i}' for i in range(10)], 10),
+    ]
+    p34_table_hits = 0
+    for label, entries, expected in p34_tables:
+        text, ok, err = _replace_addr_table_block(text, label, entries, expected_count=expected)
+        if ok:
+            p34_table_hits += 1
+        else:
+            print(f"  WARNING: _patch_z05 P34a -- {err}")
+    if p34_table_hits:
+        print(f"  _patch_z05 P34a: converted {p34_table_hits}/{len(p34_tables)} z05 pointer tables to dc.l")
+
+    # ------------------------------------------------------------------
+    # P34b: LayoutRoomOW room-layout base pointer transport -> A2 direct ROM ptr.
+    # ------------------------------------------------------------------
+    p34_lrow_header_old = (
+        'LayoutRoomOW:\n'
+        '    ; Load the address of room column directory in [$02:03].\n'
+        '    ;\n'
+        '    move.b  (RoomLayoutsOWAddr).l,D0\n'
+        '    move.b  D0,($0002,A4)\n'
+        '    move.b  (RoomLayoutsOWAddr+1).l,D0\n'
+        '    move.b  D0,($0003,A4)\n'
+        '    moveq   #0,D0\n'
+        '    move.b  D0,($0006,A4)\n'
+    )
+    p34_lrow_header_new = (
+        'LayoutRoomOW:\n'
+        '    ; PATCH P34b: direct ROM base pointer for OW room-layout directory.\n'
+        '    movea.l (RoomLayoutsOWAddr).l,A2\n'
+        '    moveq   #0,D0\n'
+        '    move.b  D0,($0006,A4)\n'
+    )
+    if p34_lrow_header_old in text:
+        text = text.replace(p34_lrow_header_old, p34_lrow_header_new, 1)
+        print("  _patch_z05 P34b: LayoutRoomOW base pointer -> A2 (dc.l)")
+    else:
+        print("  WARNING: _patch_z05 P34b -- LayoutRoomOW header anchor not found")
+
+    p34_lrow_add_old = (
+        '    ; Add ((unique room ID) * $10) to address in [$02:03]. Each unique room has $10 columns.\n'
+        '    ;\n'
+        '    lsl.b  #1,D0   ; ASL A\n'
+        '    lsl.b  #1,D0   ; ASL A\n'
+        '    move.b  ($0006,A4),D1\n'
+        '    roxl.b  #1,D1   ; ROL $06\n'
+        '    move.b  D1,($0006,A4)\n'
+        '    lsl.b  #1,D0   ; ASL A\n'
+        '    move.b  ($0006,A4),D1\n'
+        '    roxl.b  #1,D1   ; ROL $06\n'
+        '    move.b  D1,($0006,A4)\n'
+        '    lsl.b  #1,D0   ; ASL A\n'
+        '    move.b  ($0006,A4),D1\n'
+        '    roxl.b  #1,D1   ; ROL $06\n'
+        '    move.b  D1,($0006,A4)\n'
+        '    move.b  ($0002,A4),D1\n'
+        '    addx.b  D1,D0   ; ADC $02\n'
+        '    move.b  D0,($0002,A4)\n'
+        '    move.b  ($0006,A4),D0\n'
+        '    move.b  ($0003,A4),D1\n'
+        '    addx.b  D1,D0   ; ADC $03\n'
+        '    move.b  D0,($0003,A4)\n'
+    )
+    p34_lrow_add_new = (
+        '    ; PATCH P34b: advance A2 by (unique room ID * $10) bytes.\n'
+        '    moveq   #0,D3\n'
+        '    move.b  D0,D3\n'
+        '    andi.w  #$003F,D3                  ; PATCH P34g: keep low 6-bit unique room ID\n'
+        '    lsl.w   #4,D3\n'
+        '    adda.w  D3,A2\n'
+        '    move.l  A2,($00FF1102).l         ; PATCH P34f: cache OW layout base ptr\n'
+    )
+    if p34_lrow_add_old in text:
+        text = text.replace(p34_lrow_add_old, p34_lrow_add_new, 1)
+        print("  _patch_z05 P34b: LayoutRoomOW offset add -> A2 arithmetic")
+    else:
+        print("  WARNING: _patch_z05 P34b -- LayoutRoomOW offset-add anchor not found")
+
+    # ------------------------------------------------------------------
+    # P34c: SubroomLayoutAddrs transport -> A2 direct ROM ptr (dc.l).
+    # ------------------------------------------------------------------
+    p34_subroom_old = (
+        'LayoutCaveAndAvanceSubmode:\n'
+        '    moveq   #0,D2\n'
+        '_anon_z05_147:\n'
+        '    lea     (SubroomLayoutAddrs).l,A0\n'
+        '    move.b  (A0,D2.W),D0\n'
+        '    move.b  D0,($0002,A4)\n'
+        '    lea     (SubroomLayoutAddrs+1).l,A0\n'
+        '    move.b  (A0,D2.W),D0\n'
+        '    move.b  D0,($0003,A4)\n'
+        '    addq.b  #1,($0013,A4)\n'
+        '    jmp     LayoutRoomOrCaveOW'
+    )
+    p34_subroom_new = (
+        'LayoutCaveAndAvanceSubmode:\n'
+        '    moveq   #0,D2\n'
+        '_anon_z05_147:\n'
+        '    add.w   D2,D2                       ; PATCH P34c: 2-byte -> 4-byte index\n'
+        '    lea     (SubroomLayoutAddrs).l,A0\n'
+        '    movea.l (A0,D2.W),A2                ; PATCH P34c: direct ROM ptr\n'
+        '    move.l  A2,($00FF1102).l            ; PATCH P34f: cache subroom layout ptr\n'
+        '    addq.b  #1,($0013,A4)\n'
+        '    jmp     LayoutRoomOrCaveOW'
+    )
+    if p34_subroom_old in text:
+        text = text.replace(p34_subroom_old, p34_subroom_new, 1)
+        print("  _patch_z05 P34c: LayoutCaveAndAvanceSubmode -> A2 from dc.l")
+    else:
+        print("  WARNING: _patch_z05 P34c -- subroom anchor not found")
+
+    # ------------------------------------------------------------------
+    # P34d: LayoutRoomOrCaveOW reads room descriptors via A2 (direct ROM ptr).
+    # ------------------------------------------------------------------
+    p34_room_read_re = re.compile(
+        r'^\s*move\.b\s+\(\$02,A4\),D1\s+; ptr lo\s*\n'
+        r'^\s*move\.b\s+\(\$03,A4\),D4\s+; ptr hi\s*\n'
+        r'^\s*andi\.w\s+#\$00FF,D1.*\n'
+        r'^\s*lsl\.w\s+#8,D4\s*\n'
+        r'^\s*or\.w\s+D1,D4.*\n'
+        r'^\s*ext\.l\s+D4\s*\n'
+        r'^\s*add\.l\s+#NES_RAM,D4.*\n'
+        r'^\s*movea\.l\s+D4,A0\s*\n'
+        r'^\s*move\.b\s+\(A0,D3\.W\),D0\s+; LDA \(\$nn\),Y\s*\n',
+        re.MULTILINE,
+    )
+    lines = text.splitlines()
+    fn_start = None
+    fn_end = None
+    for i, line in enumerate(lines):
+        if line.strip() == 'LayoutRoomOrCaveOW:':
+            fn_start = i
+            break
+    if fn_start is not None:
+        fn_end = len(lines)
+        for i in range(fn_start + 1, len(lines)):
+            s = lines[i].strip()
+            if s.endswith(':') and not s.startswith('_') and not s.startswith('.') and not s.startswith(';'):
+                fn_end = i
+                break
+    room_read_hits = 0
+    if fn_start is not None and fn_end is not None:
+        block = '\n'.join(lines[fn_start:fn_end]) + '\n'
+        block, room_read_hits = p34_room_read_re.subn(
+            '    move.b  (A2,D3.W),D0     ; PATCH P34d: direct ROM read\n',
+            block,
+            count=2,
+        )
+        lines[fn_start:fn_end] = block.rstrip('\n').splitlines()
+        text = '\n'.join(lines)
+    if room_read_hits == 2:
+        print("  _patch_z05 P34d: LayoutRoomOrCaveOW room-layout reads -> A2")
+    else:
+        print(f"  WARNING: _patch_z05 P34d -- expected 2 room-layout read anchors, got {room_read_hits}")
+
+    # ------------------------------------------------------------------
+    # P34f: OW descriptor read must be call-safe per column.
+    # Cache base ptr in $FF1102, reload per column, keep descriptor reads
+    # in-memory (NES parity) instead of caching in volatile D7.
+    # ------------------------------------------------------------------
+    p34f_desc_old = (
+        '_L_z05_LayoutRoomOrCaveOW_LoopColumnOW:\n'
+        '    moveq   #0,D3\n'
+        '    move.b  ($0006,A4),D3\n'
+        '    move.b  (A2,D3.W),D0     ; PATCH P34d: direct ROM read\n'
+        '    andi.b #$F0,D0\n'
+        '    lsr.b  #1,D0   ; LSR A\n'
+        '    lsr.b  #1,D0   ; LSR A\n'
+        '    lsr.b  #1,D0   ; LSR A\n'
+        '    moveq   #0,D2\n'
+        '    move.b  D0,D2\n'
+        '    ; Load the column table address for this descriptor in [$04:05].\n'
+        '    ;\n'
+        '    lea     (ColumnDirectoryOW).l,A0\n'
+        '    move.b  (A0,D2.W),D0\n'
+        '    move.b  D0,($0004,A4)\n'
+        '    lea     (ColumnDirectoryOW+1).l,A0\n'
+        '    move.b  (A0,D2.W),D0\n'
+        '    move.b  D0,($0005,A4)\n'
+        '    move.b  (A2,D3.W),D0     ; PATCH P34d: direct ROM read\n'
+        '    andi.b #$0F,D0\n'
+    )
+    p34f_desc_new = (
+        '_L_z05_LayoutRoomOrCaveOW_LoopColumnOW:\n'
+        '    moveq   #0,D3\n'
+        '    move.b  ($0006,A4),D3\n'
+        '    movea.l ($00FF1102).l,A2            ; PATCH P34f: reload call-safe layout ptr\n'
+        '    move.b  (A2,D3.W),D0                ; PATCH P34f: descriptor read (NES parity)\n'
+        '    andi.b #$F0,D0\n'
+        '    lsr.b  #1,D0   ; LSR A\n'
+        '    lsr.b  #1,D0   ; LSR A\n'
+        '    lsr.b  #1,D0   ; LSR A\n'
+        '    moveq   #0,D2\n'
+        '    move.b  D0,D2\n'
+        '    ; Load the column table address for this descriptor in [$04:05].\n'
+        '    ;\n'
+        '    lea     (ColumnDirectoryOW).l,A0\n'
+        '    move.b  (A0,D2.W),D0\n'
+        '    move.b  D0,($0004,A4)\n'
+        '    lea     (ColumnDirectoryOW+1).l,A0\n'
+        '    move.b  (A0,D2.W),D0\n'
+        '    move.b  D0,($0005,A4)\n'
+        '    move.b  (A2,D3.W),D0                ; PATCH P34f: descriptor reread for low nibble\n'
+        '    andi.b #$0F,D0\n'
+    )
+    if p34f_desc_old in text:
+        text = text.replace(p34f_desc_old, p34f_desc_new, 1)
+        print("  _patch_z05 P34f: call-safe cached ptr + in-memory descriptor reread")
+    else:
+        print("  WARNING: _patch_z05 P34f -- descriptor rewrite anchor not found")
+
+    # ------------------------------------------------------------------
+    # P34h: OW column-source transport/read path -> direct 32-bit pointer.
+    # Keep pointer call-safe via $FF1106 cache.
+    # ------------------------------------------------------------------
+    p34h_table_old = (
+        'ColumnHeapOWAddr:\n'
+        '    dc.l    ColumnHeapOW0\n'
+        '\n'
+        '    even\n'
+        'WallTileList:\n'
+    )
+    p34h_table_new = (
+        'ColumnHeapOWAddr:\n'
+        '    dc.l    ColumnHeapOW0\n'
+        '\n'
+        '    even\n'
+        'ColumnDirectoryOWPtrs:\n'
+        '    dc.l    ColumnHeapOW0\n'
+        '    dc.l    ColumnHeapOW1\n'
+        '    dc.l    ColumnHeapOW2\n'
+        '    dc.l    ColumnHeapOW3\n'
+        '    dc.l    ColumnHeapOW4\n'
+        '    dc.l    ColumnHeapOW5\n'
+        '    dc.l    ColumnHeapOW6\n'
+        '    dc.l    ColumnHeapOW7\n'
+        '    dc.l    ColumnHeapOW8\n'
+        '    dc.l    ColumnHeapOW9\n'
+        '    dc.l    ColumnHeapOWA\n'
+        '    dc.l    ColumnHeapOWB\n'
+        '    dc.l    ColumnHeapOWC\n'
+        '    dc.l    ColumnHeapOWD\n'
+        '    dc.l    ColumnHeapOWE\n'
+        '    dc.l    ColumnHeapOWF\n'
+        '\n'
+        '    even\n'
+        'WallTileList:\n'
+    )
+    if p34h_table_old in text:
+        text = text.replace(p34h_table_old, p34h_table_new, 1)
+        print("  _patch_z05 P34h: ColumnDirectoryOWPtrs (dc.l) injected")
+    else:
+        print("  WARNING: _patch_z05 P34h -- ColumnDirectoryOWPtrs anchor not found")
+
+    p34h_dir_load_old = (
+        '    lea     (ColumnDirectoryOW).l,A0\n'
+        '    move.b  (A0,D2.W),D0\n'
+        '    move.b  D0,($0004,A4)\n'
+        '    lea     (ColumnDirectoryOW+1).l,A0\n'
+        '    move.b  (A0,D2.W),D0\n'
+        '    move.b  D0,($0005,A4)\n'
+    )
+    p34h_dir_load_new = (
+        '    add.w   D2,D2                       ; PATCH P34h: 2-byte -> 4-byte index\n'
+        '    lea     (ColumnDirectoryOWPtrs).l,A0\n'
+        '    movea.l (A0,D2.W),A3                ; PATCH P34h: direct OW column ptr\n'
+        '    move.l  A3,($00FF1106).l            ; PATCH P34h: cache call-safe OW column ptr\n'
+    )
+    text, ok, err = _replace_in_function_block(
+        text,
+        'LayoutRoomOrCaveOW',
+        p34h_dir_load_old,
+        p34h_dir_load_new,
+        count=1,
+    )
+    if ok:
+        print("  _patch_z05 P34h: OW column-directory transport -> direct ptr")
+    else:
+        print(f"  WARNING: _patch_z05 P34h -- {err}")
+
+    lines = text.splitlines()
+    fn_start = None
+    fn_end = None
+    for i, line in enumerate(lines):
+        if line.strip() == 'LayoutRoomOrCaveOW:':
+            fn_start = i
+            break
+    if fn_start is not None:
+        fn_end = len(lines)
+        for i in range(fn_start + 1, len(lines)):
+            s = lines[i].strip()
+            if s.endswith(':') and not s.startswith('_') and not s.startswith('.') and not s.startswith(';'):
+                fn_end = i
+                break
+    if fn_start is not None and fn_end is not None:
+        block = '\n'.join(lines[fn_start:fn_end]) + '\n'
+
+        p34h_col_read_re = re.compile(
+            r'^\s*move\.b\s+\(\$04,A4\),D1\s+; ptr lo\s*\n'
+            r'^\s*move\.b\s+\(\$05,A4\),D4\s+; ptr hi\s*\n'
+            r'^\s*andi\.w\s+#\$00FF,D1.*\n'
+            r'^\s*lsl\.w\s+#8,D4\s*\n'
+            r'^\s*or\.w\s+D1,D4.*\n'
+            r'^\s*ext\.l\s+D4\s*\n'
+            r'^\s*add\.l\s+#NES_RAM,D4.*\n'
+            r'^\s*movea\.l\s+D4,A0\s*\n'
+            r'^\s*move\.b\s+\(A0,D3\.W\),D0\s+; LDA \(\$nn\),Y\s*\n',
+            re.MULTILINE,
+        )
+        block, p34h_read_hits = p34h_col_read_re.subn(
+            '    movea.l ($00FF1106).l,A3            ; PATCH P34h: reload OW column ptr\n'
+            '    move.b  (A3,D3.W),D0                ; PATCH P34h: direct OW column read\n',
+            block,
+            count=3,
+        )
+        if p34h_read_hits == 3:
+            print("  _patch_z05 P34h: OW column reads -> direct ptr")
+        else:
+            print(f"  WARNING: _patch_z05 P34h -- expected 3 OW read anchors, got {p34h_read_hits}")
+
+        p34h_add_to_col_re = re.compile(
+            r'^\s*move\.b\s+D3,D0(?:\s*;[^\n]*)?\s*\n'
+            r'^\s*(?:bsr|jsr)\s+AddToInt16At4(?:\s*;[^\n]*)?\s*\n',
+            re.MULTILINE,
+        )
+        block, p34h_add_hits = p34h_add_to_col_re.subn(
+            '    movea.l ($00FF1106).l,A3            ; PATCH P34h: reload OW column ptr\n'
+            '    adda.w  D3,A3                       ; PATCH P34h: advance to found column\n'
+            '    move.l  A3,($00FF1106).l            ; PATCH P34h: store updated ptr\n',
+            block,
+            count=1,
+        )
+        if p34h_add_hits == 1:
+            print("  _patch_z05 P34h: column-start pointer advance -> A3")
+        else:
+            print(f"  WARNING: _patch_z05 P34h -- expected AddToInt16At4 anchor, got {p34h_add_hits}")
+
+        p34h_add1_re = re.compile(
+            r'^\s*(?:bsr|jsr)\s+Add1ToInt16At4(?:\s*;[^\n]*)?\s*\n',
+            re.MULTILINE,
+        )
+        block, p34h_add1_hits = p34h_add1_re.subn(
+            '    movea.l ($00FF1106).l,A3            ; PATCH P34h: reload OW column ptr\n'
+            '    addq.l  #1,A3                       ; PATCH P34h: advance to next column byte\n'
+            '    move.l  A3,($00FF1106).l            ; PATCH P34h: store updated ptr\n',
+            block,
+            count=1,
+        )
+        if p34h_add1_hits == 1:
+            print("  _patch_z05 P34h: per-square pointer increment -> A3")
+        else:
+            print(f"  WARNING: _patch_z05 P34h -- expected Add1ToInt16At4 anchor, got {p34h_add1_hits}")
+
+        lines[fn_start:fn_end] = block.rstrip('\n').splitlines()
+        text = '\n'.join(lines)
+    else:
+        print("  WARNING: _patch_z05 P34h -- LayoutRoomOrCaveOW function block not found")
+
+    # ------------------------------------------------------------------
+    # P34e: LayoutUWFloor ColumnDirectoryUW consumer -> A3 direct ROM ptr.
+    # ------------------------------------------------------------------
+    p34_uw_col_dir_old = (
+        '    lea     (ColumnDirectoryUW).l,A0\n'
+        '    move.b  (A0,D2.W),D0\n'
+        '    move.b  D0,($0004,A4)\n'
+        '    lea     (ColumnDirectoryUW+1).l,A0\n'
+        '    move.b  (A0,D2.W),D0\n'
+        '    move.b  D0,($0005,A4)\n'
+    )
+    p34_uw_col_dir_new = (
+        '    add.w   D2,D2                       ; PATCH P34e: 2-byte -> 4-byte index\n'
+        '    lea     (ColumnDirectoryUW).l,A0\n'
+        '    movea.l (A0,D2.W),A3                ; PATCH P34e: direct ROM ptr\n'
+    )
+    if p34_uw_col_dir_old in text:
+        text = text.replace(p34_uw_col_dir_old, p34_uw_col_dir_new, 1)
+        print("  _patch_z05 P34e: LayoutUWFloor ColumnDirectoryUW -> A3 (dc.l)")
+    else:
+        print("  WARNING: _patch_z05 P34e -- ColumnDirectoryUW consumer anchor not found")
+
+    p34_uw_col_read_re = re.compile(
+        r'^\s*move\.b\s+\(\$04,A4\),D1\s+; ptr lo\s*\n'
+        r'^\s*move\.b\s+\(\$05,A4\),D4\s+; ptr hi\s*\n'
+        r'^\s*andi\.w\s+#\$00FF,D1.*\n'
+        r'^\s*lsl\.w\s+#8,D4\s*\n'
+        r'^\s*or\.w\s+D1,D4.*\n'
+        r'^\s*ext\.l\s+D4\s*\n'
+        r'^\s*add\.l\s+#NES_RAM,D4.*\n'
+        r'^\s*movea\.l\s+D4,A0\s*\n'
+        r'^\s*move\.b\s+\(A0,D3\.W\),D0\s+; LDA \(\$nn\),Y\s*\n',
+        re.MULTILINE,
+    )
+    lines = text.splitlines()
+    fn_start = None
+    fn_end = None
+    for i, line in enumerate(lines):
+        if line.strip() == 'LayoutUWFloor:':
+            fn_start = i
+            break
+    if fn_start is not None:
+        fn_end = len(lines)
+        for i in range(fn_start + 1, len(lines)):
+            s = lines[i].strip()
+            if s.endswith(':') and not s.startswith('_') and not s.startswith('.') and not s.startswith(';'):
+                fn_end = i
+                break
+    uw_hits = 0
+    if fn_start is not None and fn_end is not None:
+        block = '\n'.join(lines[fn_start:fn_end]) + '\n'
+        block, uw_hits = p34_uw_col_read_re.subn(
+            '    move.b  (A3,D3.W),D0     ; PATCH P34e: direct ROM read\n',
+            block,
+            count=3,
+        )
+        lines[fn_start:fn_end] = block.rstrip('\n').splitlines()
+        text = '\n'.join(lines)
+    if uw_hits == 3:
+        print("  _patch_z05 P34e: LayoutUWFloor column reads -> A3")
+    else:
+        print(f"  WARNING: _patch_z05 P34e -- expected 3 LayoutUWFloor column-read anchors, got {uw_hits}")
+
+    # ------------------------------------------------------------------
+    # P35a/P35b: OW workbuf pointer closure.
+    # Source bytes are already parity-correct; remaining divergence is in
+    # workbuf decode/write lifetime. For OW room layout only, cache a direct
+    # 32-bit workbuf pointer in $FF110A and route writes through an OW-only
+    # helper that writes tiles at offsets +0,+1,+$16,+$17. This removes
+    # mixed 16-bit AddToInt16At0 / ($00:$01) transport from the OW room-load
+    # path while leaving UW and dynamic square writers on the original code.
+    # ------------------------------------------------------------------
+    p35_init_old = (
+        '    move.b  (NES_SRAM+$0BB0).l,D0\n'
+        '    move.b  D0,($0009,A4)\n'
+        '    jsr     FetchTileMapAddr\n'
+        '    ; For each column in room, indexed by [06]:\n'
+    )
+    p35_init_new = (
+        '    move.b  (NES_SRAM+$0BB0).l,D0\n'
+        '    move.b  D0,($0009,A4)\n'
+        '    jsr     FetchTileMapAddr\n'
+        '    move.b  ($00,A4),D1                    ; PATCH P35a: workbuf ptr lo\n'
+        '    move.b  ($01,A4),D4                    ; PATCH P35a: workbuf ptr hi\n'
+        '    andi.w  #$00FF,D1\n'
+        '    lsl.w   #8,D4\n'
+        '    or.w    D1,D4\n'
+        '    ext.l   D4\n'
+        '    add.l   #NES_RAM,D4\n'
+        '    move.l  D4,($00FF110A).l              ; PATCH P35a: cached OW workbuf ptr\n'
+        '    ; For each column in room, indexed by [06]:\n'
+    )
+    if p35_init_old in text:
+        text = text.replace(p35_init_old, p35_init_new, 1)
+        print("  _patch_z05 P35a: cached OW workbuf ptr init")
+    else:
+        p35_init_re = re.compile(
+            r'(\s*move\.b\s+\(NES_SRAM\+\$0BB0\)\.l,D0\s*\n'
+            r'\s*move\.b\s+D0,\(\$0009,A4\)\s*\n'
+            r'\s*(?:bsr|jsr)\s+FetchTileMapAddr\s*\n)',
+            re.MULTILINE,
+        )
+        text, p35_init_hits = p35_init_re.subn(
+            r'\1'
+            + '    move.b  ($00,A4),D1                    ; PATCH P35a: workbuf ptr lo\n'
+            + '    move.b  ($01,A4),D4                    ; PATCH P35a: workbuf ptr hi\n'
+            + '    andi.w  #$00FF,D1\n'
+            + '    lsl.w   #8,D4\n'
+            + '    or.w    D1,D4\n'
+            + '    ext.l   D4\n'
+            + '    add.l   #NES_RAM,D4\n'
+            + '    move.l  D4,($00FF110A).l              ; PATCH P35a: cached OW workbuf ptr\n',
+            text,
+            count=1,
+        )
+        if p35_init_hits == 1:
+            print("  _patch_z05 P35a: cached OW workbuf ptr init (regex)")
+        else:
+            print("  WARNING: _patch_z05 P35a -- workbuf init anchor not found")
+
+    p35_square_old = (
+        '    jsr     CheckTileObject\n'
+        '    moveq   #0,D3\n'
+        '    jsr     WriteSquareOW\n'
+        '    moveq   #2,D0\n'
+        '    jsr     AddToInt16At0\n'
+    )
+    p35_square_new = (
+        '    jsr     CheckTileObject\n'
+        '    jsr     WriteSquareOW_P35             ; PATCH P35b: OW direct workbuf write\n'
+        '    movea.l ($00FF110A).l,A1              ; PATCH P35a: advance cached OW workbuf ptr\n'
+        '    addq.l  #2,A1\n'
+        '    move.l  A1,($00FF110A).l\n'
+        '    move.l  A1,D4\n'
+        '    sub.l   #NES_RAM,D4\n'
+        '    move.b  D4,($0000,A4)\n'
+        '    lsr.l   #8,D4\n'
+        '    move.b  D4,($0001,A4)\n'
+    )
+    if p35_square_old in text:
+        text = text.replace(p35_square_old, p35_square_new, 1)
+        print("  _patch_z05 P35a/P35b: per-square OW workbuf advance via cached ptr")
+    else:
+        p35_square_re = re.compile(
+            r'(\s*(?:bsr|jsr)\s+CheckTileObject\s*\n'
+            r'\s*moveq\s+#0,D3\s*\n'
+            r'\s*(?:bsr|jsr)\s+WriteSquareOW\s*\n'
+            r'\s*moveq\s+#2,D0\s*\n'
+            r'\s*(?:bsr|jsr)\s+AddToInt16At0\s*\n)',
+            re.MULTILINE,
+        )
+        text, p35_square_hits = p35_square_re.subn(
+            '    jsr     CheckTileObject\n'
+            '    jsr     WriteSquareOW_P35             ; PATCH P35b: OW direct workbuf write\n'
+            '    movea.l ($00FF110A).l,A1              ; PATCH P35a: advance cached OW workbuf ptr\n'
+            '    addq.l  #2,A1\n'
+            '    move.l  A1,($00FF110A).l\n'
+            '    move.l  A1,D4\n'
+            '    sub.l   #NES_RAM,D4\n'
+            '    move.b  D4,($0000,A4)\n'
+            '    lsr.l   #8,D4\n'
+            '    move.b  D4,($0001,A4)\n',
+            text,
+            count=1,
+        )
+        if p35_square_hits == 1:
+            print("  _patch_z05 P35a/P35b: per-square OW workbuf advance via cached ptr (regex)")
+        else:
+            print("  WARNING: _patch_z05 P35a/P35b -- per-square anchor not found")
+
+    p35_col_old = (
+        '    ; At the end of a column, we\'ve reached the top of the next one.\n'
+        '    ; Move one more column over to get to the next square column.\n'
+        '    moveq   #22,D0\n'
+        '    jsr     AddToInt16At0\n'
+    )
+    p35_col_new = (
+        '    ; At the end of a column, we\'ve reached the top of the next one.\n'
+        '    ; Move one more column over to get to the next square column.\n'
+        '    movea.l ($00FF110A).l,A1              ; PATCH P35a: end-column OW workbuf advance\n'
+        '    adda.w  #$0016,A1\n'
+        '    move.l  A1,($00FF110A).l\n'
+        '    move.l  A1,D4\n'
+        '    sub.l   #NES_RAM,D4\n'
+        '    move.b  D4,($0000,A4)\n'
+        '    lsr.l   #8,D4\n'
+        '    move.b  D4,($0001,A4)\n'
+    )
+    if p35_col_old in text:
+        text = text.replace(p35_col_old, p35_col_new, 1)
+        print("  _patch_z05 P35a: end-column OW workbuf advance via cached ptr")
+    else:
+        p35_col_re = re.compile(
+            r'(\s*;\s+At the end of a column, we\'ve reached the top of the next one\.\s*\n'
+            r'\s*;\s+Move one more column over to get to the next square column\.\s*\n'
+            r'\s*moveq\s+#22,D0\s*\n'
+            r'\s*(?:bsr|jsr)\s+AddToInt16At0\s*\n)',
+            re.MULTILINE,
+        )
+        text, p35_col_hits = p35_col_re.subn(
+            '    ; At the end of a column, we\'ve reached the top of the next one.\n'
+            '    ; Move one more column over to get to the next square column.\n'
+            '    movea.l ($00FF110A).l,A1              ; PATCH P35a: end-column OW workbuf advance\n'
+            '    adda.w  #$0016,A1\n'
+            '    move.l  A1,($00FF110A).l\n'
+            '    move.l  A1,D4\n'
+            '    sub.l   #NES_RAM,D4\n'
+            '    move.b  D4,($0000,A4)\n'
+            '    lsr.l   #8,D4\n'
+            '    move.b  D4,($0001,A4)\n',
+            text,
+            count=1,
+        )
+        if p35_col_hits == 1:
+            print("  _patch_z05 P35a: end-column OW workbuf advance via cached ptr (regex)")
+        else:
+            print("  WARNING: _patch_z05 P35a -- end-column anchor not found")
+
+    p35_helper_anchor = (
+        '; Params:\n'
+        '; A: primary square\n'
+        '; Y: offset from [$00:01]\n'
+        '; [$0D]: square index\n'
+        '; [$00:01]: pointer to play area\n'
+        ';\n'
+        ';\n'
+        '; Get square index.\n'
+        '    even\n'
+        'WriteSquareOW:\n'
+    )
+    p35_helper_insert = (
+        '; Params:\n'
+        '; A: primary square\n'
+        '; PATCH P35b: OW-only direct workbuf writer using cached long ptr at\n'
+        '; $FF110A. Callers keep source/decode semantics unchanged and only swap\n'
+        '; write transport.\n'
+        '    even\n'
+        'WriteSquareOW_P35:\n'
+        '    moveq   #0,D2\n'
+        '    move.b  ($000D,A4),D2\n'
+        '    movea.l ($00FF110A).l,A1\n'
+        '    cmpi.b  #$10,D2\n'
+        '    bcs.s   _L_z05_WriteSquareOW_P35_Type3\n'
+        '    moveq   #0,D2\n'
+        '    move.b  D0,D2\n'
+        '    move.b  D2,($0000,A1)\n'
+        '    addq.b  #1,D2\n'
+        '    move.b  D2,($0001,A1)\n'
+        '    addq.b  #1,D2\n'
+        '    move.b  D2,($0016,A1)\n'
+        '    addq.b  #1,D2\n'
+        '    move.b  D2,($0017,A1)\n'
+        '    rts\n'
+        '\n'
+        '    even\n'
+        '_L_z05_WriteSquareOW_P35_Type3:\n'
+        '    move.b  D2,D0\n'
+        '    lsl.b   #1,D0\n'
+        '    lsl.b   #1,D0\n'
+        '    moveq   #0,D2\n'
+        '    move.b  D0,D2\n'
+        '    lea     (SecondarySquaresOW).l,A0\n'
+        '    move.b  (A0,D2.W),D0\n'
+        '    move.b  D0,($0000,A1)\n'
+        '    addq.b  #1,D2\n'
+        '    move.b  (A0,D2.W),D0\n'
+        '    move.b  D0,($0001,A1)\n'
+        '    addq.b  #1,D2\n'
+        '    move.b  (A0,D2.W),D0\n'
+        '    move.b  D0,($0016,A1)\n'
+        '    addq.b  #1,D2\n'
+        '    move.b  (A0,D2.W),D0\n'
+        '    move.b  D0,($0017,A1)\n'
+        '    rts\n'
+        '\n'
+        '    even\n'
+        'WriteSquareOW:\n'
+    )
+    if p35_helper_anchor in text:
+        text = text.replace(p35_helper_anchor, p35_helper_insert, 1)
+        print("  _patch_z05 P35b: WriteSquareOW_P35 helper inserted")
+    else:
+        print("  WARNING: _patch_z05 P35b -- helper anchor not found")
+
+    # ------------------------------------------------------------------
+    # P36: producer-side transfer pointer closure.
+    # Room decode is already stable. Remaining room77 divergence appears in
+    # the dynamic transfer producer path, where CopyColumnToTileBuf /
+    # CopyRowToTileBuf still rebuild and walk 16-bit NES pointers through
+    # AddToInt16At0/Add1ToInt16At0. Replace those inner loops with direct
+    # long-address walks over the playmap in RAM.
+    # ------------------------------------------------------------------
+    p36_copy_column_block = (
+        'CopyColumnToTileBuf:\n'
+        '    moveq   #26,D0\n'
+        '    move.b  D0,($0000,A4)\n'
+        '    moveq   #101,D0\n'
+        '    move.b  D0,($0001,A4)\n'
+        '    moveq   #0,D2\n'
+        '    move.b  ($00E8,A4),D2\n'
+        '    subq.b  #1,D2\n'
+        '    move.b  D2,D0\n'
+        '    moveq   #0,D3\n'
+        '    move.b  ($0301,A4),D3\n'
+        '    lea     ($0303,A4),A0\n'
+        '    move.b  D0,(A0,D3.W)\n'
+        '    moveq   #33,D0\n'
+        '    lea     ($0302,A4),A0\n'
+        '    move.b  D0,(A0,D3.W)\n'
+        '    movea.l #NES_RAM+$651A,A1            ; PATCH P36: direct playmap base\n'
+        '    even\n'
+        '_L_z05_CopyColumnToTileBuf_AdvanceCol:\n'
+        '    adda.w  #$0016,A1                    ; PATCH P36: next source column\n'
+        '    subq.b  #1,D2\n'
+        '    bpl  _L_z05_CopyColumnToTileBuf_AdvanceCol\n'
+        '    move.b  #$96,D0\n'
+        '    lea     ($0304,A4),A0\n'
+        '    move.b  D0,(A0,D3.W)\n'
+        '    move.b  D2,D0\n'
+        '    lea     ($031B,A4),A0\n'
+        '    move.b  D0,(A0,D3.W)\n'
+        '    moveq   #0,D2\n'
+        '    move.b  D3,D2\n'
+        '    moveq   #22,D5\n'
+        '    lea     ($0305,A4),A0\n'
+        '    even\n'
+        '_L_z05_CopyColumnToTileBuf_Copy:\n'
+        '    move.b  (A1)+,D0                     ; PATCH P36: direct source walk\n'
+        '    move.b  D0,(A0,D2.W)\n'
+        '    addq.b  #1,D2\n'
+        '    subq.b  #1,D5\n'
+        '    bne  _L_z05_CopyColumnToTileBuf_Copy\n'
+        '    addq.b  #1,D2\n'
+        '    addq.b  #1,D2\n'
+        '    addq.b  #1,D2\n'
+        '    move.b  D2,($0301,A4)\n'
+        '    move.l  A1,D4                        ; PATCH P36: keep ptr mirror coherent\n'
+        '    sub.l   #NES_RAM,D4\n'
+        '    move.b  D4,($0000,A4)\n'
+        '    lsr.l   #8,D4\n'
+        '    move.b  D4,($0001,A4)\n'
+        '    rts\n'
+        '\n'
+        '    even\n'
+    )
+    text, ok, err = _replace_global_block(text, 'CopyColumnToTileBuf', 'CopyRowToTileBuf', p36_copy_column_block)
+    if ok:
+        print("  _patch_z05 P36a: CopyColumnToTileBuf -> direct long source walk")
+    else:
+        print(f"  WARNING: _patch_z05 P36a -- {err}")
+
+    p36_copy_row_block = (
+        'CopyRowToTileBuf:\n'
+        '    ; Put in 00:01 the address of the\n'
+        '    ; first tile of current row in play area.\n'
+        '    moveq   #101,D0\n'
+        '    move.b  D0,($0001,A4)\n'
+        '    move.b  ($00E9,A4),D0\n'
+        '    moveq   #0,D2\n'
+        '    move.b  D0,D2\n'
+        '    andi    #$EE,CCR  ; CLC: clear C+X\n'
+        '    move.b  #$30,D1\n'
+        '    addx.b  D1,D0   ; ADC #$30 (X flag = 6502 C)\n'
+        '    move.b  D0,($0000,A4)\n'
+        '    bcc  _L_z05_CopyRowToTileBuf_RowAddrReady\n'
+        '    addq.b  #1,($0001,A4)\n'
+        '_L_z05_CopyRowToTileBuf_RowAddrReady:\n'
+        '    ; Indicate the target VRAM address:\n'
+        '    ; $2100 + (CurRow * $20)\n'
+        '    moveq   #32,D0\n'
+        '    move.b  D0,($0302,A4)\n'
+        '    move.b  #$E0,D0\n'
+        '    move.b  D0,($0303,A4)\n'
+        '    even\n'
+        '_L_z05_CopyRowToTileBuf_Add20H_P36:\n'
+        '    move.b  ($0303,A4),D0\n'
+        '    andi    #$EE,CCR  ; CLC: clear C+X\n'
+        '    move.b  #$20,D1\n'
+        '    addx.b  D1,D0   ; ADC #$20 (X flag = 6502 C)\n'
+        '    move.b  D0,($0303,A4)\n'
+        '    bcc  _L_z05_CopyRowToTileBuf_Add20CarryDone_P36\n'
+        '    addq.b  #1,($0302,A4)\n'
+        '_L_z05_CopyRowToTileBuf_Add20CarryDone_P36:\n'
+        '    subq.b  #1,D2\n'
+        '    bpl  _L_z05_CopyRowToTileBuf_Add20H_P36\n'
+        '    moveq   #32,D0\n'
+        '    move.b  D0,($0304,A4)\n'
+        '    move.b  D2,($0325,A4)\n'
+        '    ; Copy a row from column map in RAM to tile buf.\n'
+        '    ;\n'
+        '    movea.l #NES_RAM+$6530,A1            ; PATCH P36: playmap row base\n'
+        '    moveq   #0,D4\n'
+        '    move.b  ($00E9,A4),D4\n'
+        '    adda.w  D4,A1                        ; PATCH P36: row offset\n'
+        '    moveq   #0,D2\n'
+        '    lea     ($0305,A4),A0\n'
+        '    even\n'
+        '_L_z05_CopyRowToTileBuf_Copy_P36:\n'
+        '    move.b  (A1),D0                      ; PATCH P36: direct source walk\n'
+        '    move.b  D0,(A0,D2.W)\n'
+        '    adda.w  #$0016,A1                    ; PATCH P36: next column same row\n'
+        '    addq.b  #1,D2\n'
+        '    cmpi.b  #$20,D2\n'
+        '    bcs  _L_z05_CopyRowToTileBuf_Copy_P36\n'
+        '    moveq   #35,D0\n'
+        '    move.b  D0,($0301,A4)\n'
+        '    move.l  A1,D4                        ; PATCH P36: keep ptr mirror coherent\n'
+        '    sub.l   #NES_RAM,D4\n'
+        '    move.b  D4,($0000,A4)\n'
+        '    lsr.l   #8,D4\n'
+        '    move.b  D4,($0001,A4)\n'
+        '    rts\n'
+        '\n'
+        '    even\n'
+    )
+    text, ok, err = _replace_global_block(text, 'CopyRowToTileBuf', 'TileObjectTypes', p36_copy_row_block)
+    if ok:
+        print("  _patch_z05 P36b: CopyRowToTileBuf -> direct long source walk")
+    else:
+        print(f"  WARNING: _patch_z05 P36b -- {err}")
+
+    hooks = [
+        ('LayoutRoomOW', 5),
+        ('LayoutRoomOrCaveOW', 5),
+        ('PatchColumnDirectoryForCellar', 5),
+        ('LayoutCaveAndAvanceSubmode', 5),
+        ('LayoutUWFloor', 5),
+    ]
+    hits = 0
+    for func, bank_num in hooks:
+        text, ok, err = _insert_fixed_bank_window_call(text, func, bank_num)
+        if ok:
+            hits += 1
+        else:
+            print(f"  WARNING: _patch_z05 -- {err}")
+
+    # P33c: every FetchTileMapAddr call in bank 5 is followed by ROM-pointer
+    # deref work. Re-pin bank 5 after each call.
+    fetch_re = re.compile(r'(^\s*(?:bsr|jsr)\s+FetchTileMapAddr\b[^\n]*\n)', re.MULTILINE)
+
+    def _p33c_repl(match):
+        return (
+            match.group(1)
+            + '    moveq   #5,D0\n'
+            + '    jsr     _copy_bank_to_window   ; PATCH P33c: re-pin bank 5 after FetchTileMapAddr\n'
+        )
+
+    text, p33c_hits = fetch_re.subn(_p33c_repl, text)
+    if p33c_hits > 0:
+        print(f"  _patch_z05 P33c: re-pin bank 5 after FetchTileMapAddr ({p33c_hits} sites)")
+    else:
+        print("  WARNING: _patch_z05 P33c -- no FetchTileMapAddr sites patched")
+
+    # ------------------------------------------------------------------
+    # P34i: Extend ClearRam tail loop from $00-$EF to $00-$FF so controller
+    # state bytes $F8/$F9/$FA/$FB get zero-init at boot. Without this the
+    # newly-pressed mask $F8 = new & ~prev sees stale $FA bits -> Start
+    # never registers as "newly pressed" (ModeE stuck) and T34 Left-bit
+    # miss at t=211. Reference NES has `LDY #$EF` literally; M68K port
+    # has no such constraint since zeropage has no special hardware.
+    # ------------------------------------------------------------------
+    p34i_old = 'move.b  #$EF,D3\n_anon_z05_192:'
+    p34i_new = 'move.b  #$FF,D3   ; PATCH P34i: clear $00-$FF (covers ctrl state $F8/$FA)\n_anon_z05_192:'
+    if p34i_old in text:
+        text = text.replace(p34i_old, p34i_new, 1)
+        print("  _patch_z05 P34i: ClearRam extended to $00-$FF (ctrl state $F8/$FA)")
+    else:
+        print("  WARNING: _patch_z05 P34i -- ClearRam anchor not found")
+
+    with open(path, 'w', encoding='utf-8') as f:
+        f.write(text)
+
+    print(f"  _patch_z05: fixed bank-window guards injected {hits}/{len(hooks)} hooks")
+
+
 def _patch_z06(path):
     """Post-process patches for z_06.asm -- replace TransferTileBuf/ContinueTransferTileBuf.
 
@@ -2960,11 +4497,13 @@ def _patch_z06(path):
     else:
         print("  WARNING: _patch_z06 P2b -- TransferBufAddrs marker not found")
 
-    # ---- Patch 3: DynTileBuf palette pre-check in TransferCurTileBuf ----
-    # Bug C fix: On NES, palette records in DynTileBuf are consumed before
-    # TileBufSelector changes. On Genesis, timing difference can cause the
-    # selector to be overwritten before NMI processes the palette. Fix: always
-    # drain DynTileBuf palette records ($3F prefix) before normal dispatch.
+    # ---- Patch 3: DynTileBuf pending-record pre-check in TransferCurTileBuf ----
+    # Generalized Bug C fix: on NES, DynTileBuf can be consumed on the next NMI
+    # before TileBufSelector changes to a later static buffer. On Genesis, a
+    # timing difference can let the selector overwrite happen first, dropping
+    # the pending dynamic record. If DynTileBuf is non-empty while selector is
+    # non-zero, drain DynTileBuf now and preserve TileBufSelector for the next
+    # NMI so the later static buffer still dispatches in order.
     old_tcb3 = ('TransferCurTileBuf:\n'
                 '    ; PATCHED: use 32-bit pointer table to resolve ROM-resident buffers.\n'
                 '    ; $0014 is a 2-byte index (0, 2, 4, …).  Convert to 4-byte index and\n'
@@ -2978,21 +4517,27 @@ def _patch_z06(path):
                 '    bsr     TransferTileBuf\n'
                 '    moveq   #63,D0\n')
     new_tcb3 = ('TransferCurTileBuf:\n'
-                '    ; PATCHED: DynTileBuf palette pre-check (Bug C fix).\n'
-                '    ; On NES, palette records in DynTileBuf are consumed before TileBufSelector\n'
-                '    ; changes.  On Genesis, a timing difference can cause the selector to be\n'
-                '    ; overwritten before NMI fires, so the palette is never processed.\n'
-                '    ; Fix: always drain DynTileBuf palette records ($3F prefix) first.\n'
+                '    ; PATCHED: DynTileBuf pending-record pre-check (generalized Bug C fix).\n'
+                '    ; If DynTileBuf is non-empty while TileBufSelector already points at a\n'
+                '    ; later static buffer, consume DynTileBuf first and leave selector intact\n'
+                '    ; for the next NMI. This preserves NES ordering for dynamic room/menu\n'
+                '    ; records that would otherwise be dropped by selector timing drift.\n'
                 '    lea     (NES_RAM+DynTileBuf).l,A0\n'
-                '    cmpi.b  #$3F,(A0)                  ; $3F = palette PPU addr high byte?\n'
-                '    bne.s   .no_pending_palette\n'
-                '    movem.l D0-D2/A0,-(SP)             ; save regs around BSR\n'
-                '    bsr     _transfer_tilebuf_fast      ; process palette from DynTileBuf\n'
+                '    cmpi.b  #$FF,(A0)                  ; DynTileBuf empty sentinel?\n'
+                '    beq.s   .no_pending_dyn\n'
+                '    tst.b   ($0014,A4)                  ; TileBufSelector = 0 => normal DynTileBuf path\n'
+                '    beq.s   .no_pending_dyn\n'
+                '    movem.l D0-D2/A0,-(SP)             ; save regs around JSR\n'
+                '    jsr     _transfer_tilebuf_fast      ; process pending DynTileBuf now\n'
                 '    movem.l (SP)+,D0-D2/A0             ; restore regs\n'
                 '    move.b  #$FF,(NES_RAM+DynTileBuf).l ; reset sentinel\n'
-                '    tst.b   ($0014,A4)                  ; TileBufSelector = 0?\n'
-                '    beq.s   .skip_main_dispatch         ; already processed DynTileBuf\n'
-                '.no_pending_palette:\n'
+                '    moveq   #63,D0\n'
+                '    move.b  D0,($0300,A4)\n'
+                '    moveq   #0,D2\n'
+                '    move.b  D2,($005C,A4)\n'
+                '    move.b  D2,($0301,A4)\n'
+                '    rts\n'
+                '.no_pending_dyn:\n'
                 '    ; 32-bit pointer table lookup for main dispatch.\n'
                 '    moveq   #0,D2\n'
                 '    move.b  ($0014,A4),D2\n'
@@ -3001,13 +4546,225 @@ def _patch_z06(path):
                 '    move.l  (A1,D2.W),D0               ; D0 = 32-bit buffer pointer\n'
                 '    movea.l D0,A0                      ; A0 = 32-bit buffer pointer\n'
                 '    bsr     TransferTileBuf\n'
-                '.skip_main_dispatch:\n'
                 '    moveq   #63,D0\n')
     if old_tcb3 in text:
         text = text.replace(old_tcb3, new_tcb3, 1)
-        print("  _patch_z06 P3: DynTileBuf palette pre-check added")
+        print("  _patch_z06 P3: DynTileBuf contention pre-check generalized")
     else:
         print("  WARNING: _patch_z06 P3 -- TransferCurTileBuf body not found")
+
+    # ------------------------------------------------------------------
+    # P32a-d: Keep room-load CopyBlock ROM path reproducible in transpiler.
+    # Convert core level/data source tables to dc.l labels.
+    # ------------------------------------------------------------------
+    p32_tables = [
+        ('LevelBlockAddrsQ1', [
+            'LevelBlockOW',
+            'LevelBlockUW1Q1',
+            'LevelBlockUW1Q1',
+            'LevelBlockUW1Q1',
+            'LevelBlockUW1Q1',
+            'LevelBlockUW1Q1',
+            'LevelBlockUW1Q1',
+            'LevelBlockUW2Q1',
+            'LevelBlockUW2Q1',
+            'LevelBlockUW2Q1',
+        ], 10),
+        ('LevelInfoAddrs', [
+            'LevelInfoOW',
+            'LevelInfoUW1',
+            'LevelInfoUW2',
+            'LevelInfoUW3',
+            'LevelInfoUW4',
+            'LevelInfoUW5',
+            'LevelInfoUW6',
+            'LevelInfoUW7',
+            'LevelInfoUW8',
+            'LevelInfoUW9',
+        ], 10),
+        ('CommonDataBlockAddr_Bank6', [
+            'CommonDataBlock_Bank6',
+        ], 1),
+        ('LevelBlockAddrsQ2', [
+            'LevelBlockOW',
+            'LevelBlockUW1Q2',
+            'LevelBlockUW1Q2',
+            'LevelBlockUW1Q2',
+            'LevelBlockUW1Q2',
+            'LevelBlockUW1Q2',
+            'LevelBlockUW1Q2',
+            'LevelBlockUW2Q2',
+            'LevelBlockUW2Q2',
+            'LevelBlockUW2Q2',
+        ], 10),
+    ]
+    p32_table_hits = 0
+    for label, entries, expect in p32_tables:
+        text, ok_tbl, err_tbl = _replace_addr_table_block(text, label, entries, expected_count=expect)
+        if ok_tbl:
+            p32_table_hits += 1
+        else:
+            print(f"  WARNING: _patch_z06 P32 table {label} -- {err_tbl}")
+    if p32_table_hits == len(p32_tables):
+        print("  _patch_z06 P32a-d: level/common source tables converted to dc.l")
+    else:
+        print(f"  WARNING: _patch_z06 P32a-d -- only {p32_table_hits}/{len(p32_tables)} tables converted")
+
+    # ------------------------------------------------------------------
+    # P32e-h: CopyBlock ROM path + callers (InitMode2_Sub0/Sub1 + common data).
+    # ------------------------------------------------------------------
+    def _replace_global_block(src_text, label, replacement_lines):
+        src_lines = src_text.splitlines()
+        start = None
+        for i, ln in enumerate(src_lines):
+            if ln.strip() == f'{label}:':
+                start = i
+                break
+        if start is None:
+            return src_text, False, f"block {label} not found"
+        end = len(src_lines)
+        for i in range(start + 1, len(src_lines)):
+            s = src_lines[i].strip()
+            if re.match(r'^[A-Za-z]\w*:$', s):
+                end = i
+                break
+        src_lines[start:end] = replacement_lines
+        return '\n'.join(src_lines), True, None
+
+    p32_sub0 = [
+        'InitMode2_Sub0:',
+        '    ; PATCH P32f: load level block source from 32-bit table and copy from ROM.',
+        '    move.b  ($0010,A4),D0',
+        '    lsl.b  #1,D0   ; ASL A',
+        '    moveq   #0,D2',
+        '    move.b  D0,D2',
+        '    add.w   D2,D2                       ; 2-byte index -> 4-byte dc.l index',
+        '    moveq   #0,D3',
+        '    move.b  ($0016,A4),D3',
+        '    lea     ($062D,A4),A0',
+        '    move.b  (A0,D3.W),D0',
+        '    bne.s   _L_z06_InitMode2_Sub0_SecondQuest_P32',
+        '    lea     (LevelBlockAddrsQ1).l,A0',
+        '    bra.s   _L_z06_InitMode2_Sub0_LoadSrc_P32',
+        '',
+        '    even',
+        '_L_z06_InitMode2_Sub0_SecondQuest_P32:',
+        '    lea     (LevelBlockAddrsQ2).l,A0',
+        '',
+        '    even',
+        '_L_z06_InitMode2_Sub0_LoadSrc_P32:',
+        '    movea.l (A0,D2.W),A2',
+        '    jsr     FetchLevelBlockDestInfo',
+        '    jsr     CopyBlock_ROM',
+        '    rts',
+        '',
+    ]
+    text, ok_sub0, err_sub0 = _replace_global_block(text, 'InitMode2_Sub0', p32_sub0)
+    if ok_sub0:
+        print("  _patch_z06 P32f: InitMode2_Sub0 -> 32-bit table + CopyBlock_ROM")
+    else:
+        print(f"  WARNING: _patch_z06 P32f -- {err_sub0}")
+
+    p32_sub1 = [
+        'InitMode2_Sub1:',
+        '    ; PATCH P32g: load level info source from 32-bit table and copy from ROM.',
+        '    move.b  ($0010,A4),D0',
+        '    lsl.b  #1,D0   ; ASL A',
+        '    moveq   #0,D2',
+        '    move.b  D0,D2',
+        '    add.w   D2,D2                       ; 2-byte index -> 4-byte dc.l index',
+        '    lea     (LevelInfoAddrs).l,A0',
+        '    movea.l (A0,D2.W),A2',
+        '    jsr     FetchLevelInfoDestInfo',
+        '    jsr     CopyBlock_ROM',
+        '    moveq   #0,D0',
+        '    move.b  D0,($0013,A4)',
+        '    addq.b  #1,($0011,A4)',
+        '    rts',
+        '',
+    ]
+    text, ok_sub1, err_sub1 = _replace_global_block(text, 'InitMode2_Sub1', p32_sub1)
+    if ok_sub1:
+        print("  _patch_z06 P32g: InitMode2_Sub1 -> 32-bit table + CopyBlock_ROM")
+    else:
+        print(f"  WARNING: _patch_z06 P32g -- {err_sub1}")
+
+    p32_common = [
+        'CopyCommonDataToRam:',
+        '    ; PATCH P32h: copy common data directly from ROM source pointer.',
+        '    lea     (CommonDataBlockAddr_Bank6).l,A0',
+        '    movea.l (A0),A2',
+        '    jsr     FetchDestAddrForCommonDataBlock',
+        '    jsr     CopyBlock_ROM',
+        '    moveq   #0,D0',
+        '    move.b  D0,($0013,A4)',
+        '    rts',
+        '',
+    ]
+    text, ok_common, err_common = _replace_global_block(text, 'CopyCommonDataToRam', p32_common)
+    if ok_common:
+        print("  _patch_z06 P32h: CopyCommonDataToRam -> CopyBlock_ROM")
+    else:
+        print(f"  WARNING: _patch_z06 P32h -- {err_common}")
+
+    p32_copyblock = [
+        'CopyBlock:',
+        '    ; PATCH P32e: compatibility wrapper now routes through ROM source path.',
+        '    jmp     CopyBlock_ROM',
+        '',
+        '    even',
+        'CopyBlock_ROM:',
+        '    moveq   #0,D3',
+        '    even',
+        '_L_z06_CopyBlock_ROM_Loop:',
+        '    move.b  (A2,D3.W),D0               ; source byte from ROM',
+        '    move.b  ($02,A4),D1   ; ptr lo',
+        '    move.b  ($03,A4),D4  ; ptr hi',
+        '    andi.w  #$00FF,D1         ; zero-extend lo byte',
+        '    lsl.w   #8,D4',
+        '    or.w    D1,D4',
+        '    ext.l   D4',
+        '    add.l   #NES_RAM,D4',
+        '    movea.l D4,A0',
+        '    move.b  D0,(A0,D3.W)     ; STA ($nn),Y',
+        '    move.b  ($0002,A4),D0',
+        '    move.b  ($0004,A4),D1',
+        '    cmp.b   D1,D0',
+        '    bne.s   _L_z06_CopyBlock_ROM_Next',
+        '    move.b  ($0003,A4),D0',
+        '    move.b  ($0005,A4),D1',
+        '    cmp.b   D1,D0',
+        '    bne.s   _L_z06_CopyBlock_ROM_Next',
+        '    addq.b  #1,($0013,A4)',
+        '    rts',
+        '',
+        '    even',
+        '_L_z06_CopyBlock_ROM_Next:',
+        '    move.b  ($0002,A4),D0',
+        '    andi    #$EE,CCR  ; CLC: clear C+X',
+        '    move.b  #$01,D1',
+        '    addx.b  D1,D0   ; ADC #$01 (X flag = 6502 C)',
+        '    move.b  D0,($0002,A4)',
+        '    move.b  ($0003,A4),D0',
+        '    move.b  #$00,D1',
+        '    addx.b  D1,D0   ; ADC #$00 (X flag = 6502 C)',
+        '    move.b  D0,($0003,A4)',
+        '    addq.l  #1,A2',
+        '    jmp     _L_z06_CopyBlock_ROM_Loop',
+        '',
+    ]
+    text, ok_copy, err_copy = _replace_global_block(text, 'CopyBlock', p32_copyblock)
+    if ok_copy:
+        print("  _patch_z06 P32e: CopyBlock -> CopyBlock_ROM")
+    else:
+        print(f"  WARNING: _patch_z06 P32e -- {err_copy}")
+
+    # Demand-driven bank window: pin to bank 6 for z_06 ROM-pointer deref path.
+    text, ok_bw, err_bw = _insert_fixed_bank_window_call(text, 'UpdateMode2Load_Full', 6)
+    if ok_bw:
+        print("  _patch_z06 P33: injected fixed bank-window guard in UpdateMode2Load_Full")
+    else:
+        print(f"  WARNING: _patch_z06 P33 -- {err_bw}")
 
     with open(path, 'w', encoding='utf-8') as f:
         f.write(text)
@@ -3156,6 +4913,17 @@ def main():
     else:
         banks = [args.bank]
 
+    try:
+        nes_addr_maps = {b: build_nes_address_map(b) for b in banks}
+        if args.all:
+            _validate_nes_address_maps(nes_addr_maps)
+        all_nes_addrs = {}
+        for b in sorted(nes_addr_maps.keys()):
+            all_nes_addrs.update(nes_addr_maps[b])
+    except Exception as exc:
+        print(f"ERROR: strict NES address prepass failed: {exc}")
+        sys.exit(1)
+
     # In --all mode: pre-collect exports from all banks so stubs for cross-bank
     # symbols can be suppressed (the other banks will define them) and duplicate
     # label definitions can be IFND-guarded (only first-included bank keeps label).
@@ -3181,7 +4949,18 @@ def main():
                             no_stubs=args.no_stubs,
                             no_import_stubs=args.all,
                             other_exports=other_exports,
-                            dup_exports=dup_exports) and ok
+                            dup_exports=dup_exports,
+                            all_nes_addrs=all_nes_addrs,
+                            bank_nes_addrs=nes_addr_maps.get(b, {})) and ok
+
+    if ok and args.all:
+        try:
+            _audit_bank_window_coverage()
+            _audit_isrvector_dead_code()
+            print("Transpiler audits passed (coverage + dead-vector).")
+        except Exception as exc:
+            print(f"ERROR: transpiler audit failed: {exc}")
+            ok = False
 
     if ok:
         print("Transpiler done.")

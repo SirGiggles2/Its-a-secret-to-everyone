@@ -1,0 +1,88 @@
+start room=76 walk=L
+trace rt armed post frame=275
+edge trace armed post frame=275
+captured sub8 frame=285 room=77
+captured layout exit frame=288 room=77
+reset capture frame=375 path=L
+walk arrived frame=409 step=1 room=76
+after main loop reached=no frame=-1
+after summaries
+after txt write
+after json write
+start room=76 walk=L
+trace rt armed post frame=275
+edge trace armed post frame=275
+captured sub8 frame=285 room=77
+captured layout exit frame=288 room=77
+reset capture frame=375 path=L
+walk entered frame=409 step=1 room=76
+after main loop reached=no frame=-1
+after summaries
+after txt write
+after json write
+start room=76 walk=L
+trace rt armed post frame=275
+edge trace armed post frame=275
+captured sub8 frame=285 room=77
+captured layout exit frame=288 room=77
+reset capture frame=375 path=L
+walk entered frame=409 step=1 room=76
+after main loop reached=no frame=-1
+after summaries
+after txt write
+after json write
+start room=76 walk=L
+trace rt armed post frame=275
+edge trace armed post frame=275
+captured sub8 frame=285 room=77
+captured layout exit frame=288 room=77
+reset capture frame=375 path=L
+walk entered frame=409 step=1 room=76
+after main loop reached=no frame=-1
+after summaries
+after txt write
+after json write
+start room=76 walk=L
+trace rt armed post frame=275
+edge trace armed post frame=275
+captured sub8 frame=285 room=77
+captured layout exit frame=288 room=77
+reset capture frame=375 path=L
+walk entered frame=409 step=1 room=76
+after main loop reached=no frame=-1
+after summaries
+after txt write
+after json write
+start room=76 walk=L
+trace rt armed post frame=275
+edge trace armed post frame=275
+captured sub8 frame=285 room=77
+captured layout exit frame=288 room=77
+reset capture frame=375 path=L
+walk entered frame=409 step=1 room=76
+after main loop reached=no frame=-1
+after summaries
+after txt write
+after json write
+start room=76 walk=L
+trace rt armed post frame=275
+edge trace armed post frame=275
+captured sub8 frame=285 room=77
+captured layout exit frame=288 room=77
+reset capture frame=375 path=L
+walk entered frame=409 step=1 room=76
+after main loop reached=no frame=-1
+after summaries
+after txt write
+after json write
+start room=76 walk=L
+trace rt armed post frame=275
+edge trace armed post frame=275
+captured sub8 frame=285 room=77
+captured layout exit frame=288 room=77
+reset capture frame=375 path=L
+walk entered frame=409 step=1 room=76
+after main loop reached=no frame=-1
+after summaries
+after txt write
+after json write

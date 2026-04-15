@@ -1,0 +1,18 @@
+T35 GEN DIAG — IsUpdatingMode + SecretColorCycle trace
+bootflow frames=618
+HB f=200 mode=$00 sub=$00 room=$00 isupd=$00
+HB f=400 mode=$00 sub=$00 room=$00 isupd=$00
+HB f=600 mode=$00 sub=$00 room=$00 isupd=$00
+HB f=800 mode=$00 sub=$00 room=$00 isupd=$00
+HB f=1000 mode=$00 sub=$00 room=$00 isupd=$00
+HB f=1200 mode=$00 sub=$00 room=$00 isupd=$00
+HB f=1400 mode=$00 sub=$00 room=$00 isupd=$00
+HB f=1600 mode=$00 sub=$00 room=$00 isupd=$00
+HB f=1800 mode=$00 sub=$00 room=$00 isupd=$00
+HB f=2000 mode=$00 sub=$00 room=$00 isupd=$00
+HB f=2200 mode=$00 sub=$00 room=$00 isupd=$00
+HB f=2400 mode=$00 sub=$00 room=$00 isupd=$00
+HB f=2600 mode=$00 sub=$00 room=$00 isupd=$00
+HB f=2800 mode=$00 sub=$00 room=$00 isupd=$00
+HB f=3000 mode=$00 sub=$00 room=$00 isupd=$00
+DIAG_DONE

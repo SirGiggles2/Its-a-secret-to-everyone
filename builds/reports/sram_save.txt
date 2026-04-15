@@ -1,0 +1,46 @@
+=== sram_save probe start ===
+after boot: GameMode=$00 Sub=$00 SRAM file[1..F]=
+  FF FF 5A FF 24 FF 24 FF 24 FF 24 FF 24 FF 24
+  mirror $FF6001..$FF6010:
+  5A 24 24 24 24 24 24 24 24 24 24 24 24 24 24 24
+--- (1) seeding mirror $FF6020..$FF6027 ---
+  mirror after seed:
+    5A 24 24 24 24 24 24 24
+--- (2) forcing GameMode=$0D Sub=$02 ---
+  after 1 frame: GameMode=$00 Sub=$01
+  after 6 frames: GameMode=$00 Sub=$02
+--- (3) verifying pattern landed in SRAM file ---
+  mirror[$23] -> file[$47] = $54 (want $54) MATCH
+  mirror[$24] -> file[$49] = $9C (want $9C) MATCH
+  mirror[$25] -> file[$4B] = $77 (want $77) MATCH
+  mirror[$26] -> file[$4D] = $33 (want $33) MATCH
+  mirror[$20] -> file[$41] = $54 (want $54) MATCH
+  mirror[$21] -> file[$43] = $45 (want $45) MATCH
+  mirror[$22] -> file[$45] = $53 (want $53) MATCH
+  mirror[$27] -> file[$4F] = $CC (want $CC) MATCH
+  pre-reboot pass=8 fail=0
+--- (4) client.reboot_core() ---
+  post-reboot SRAM file:
+    FF FF 5A FF 24 FF 24 FF 24 FF 24 FF 24 FF 24 FF 24
+  post-reboot mirror $FF6001..$FF6008:
+    5A 24 24 24 24 24 24 24
+  post file[$47] = $54 (want $54) MATCH
+  post file[$49] = $9C (want $9C) MATCH
+  post file[$4B] = $77 (want $77) MATCH
+  post file[$4D] = $33 (want $33) MATCH
+  post file[$41] = $54 (want $54) MATCH
+  post file[$43] = $45 (want $45) MATCH
+  post file[$45] = $53 (want $53) MATCH
+  post file[$4F] = $CC (want $CC) MATCH
+  post-reboot SRAM pass=8 fail=0
+  mirror[$23] = $54 (want $54) MATCH
+  mirror[$24] = $9C (want $9C) MATCH
+  mirror[$25] = $77 (want $77) MATCH
+  mirror[$26] = $33 (want $33) MATCH
+  mirror[$20] = $54 (want $54) MATCH
+  mirror[$21] = $45 (want $45) MATCH
+  mirror[$22] = $53 (want $53) MATCH
+  mirror[$27] = $CC (want $CC) MATCH
+  mirror restore pass=8 fail=0
+=== sram_save end pre=8/8 post=8/8 mirror=8/8 ===
+RESULT: PASS

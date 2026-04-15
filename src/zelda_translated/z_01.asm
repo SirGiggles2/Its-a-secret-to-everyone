@@ -77,10 +77,93 @@ PersonTextAddrs:
 
     even
 PersonText:
-; .INCBIN "dat/PersonText.dat" not found — stub 128 zero bytes
-    rept    128
-        dc.b    0
-    endr
+; .INCBIN dat/PersonText.dat (1366 bytes)
+    dc.b    $25, $25, $12, $1D, $2A, $1C, $24, $0D, $0A, $17, $10, $0E, $1B, $18, $1E, $1C
+    dc.b    $24, $1D, $18, $24, $10, $98, $25, $25, $25, $25, $0A, $15, $18, $17, $0E, $29
+    dc.b    $24, $1D, $0A, $14, $0E, $24, $1D, $11, $12, $1C, $EC, $25, $25, $16, $0A, $1C
+    dc.b    $1D, $0E, $1B, $24, $1E, $1C, $12, $17, $10, $24, $12, $1D, $24, $0A, $17, $8D
+    dc.b    $25, $25, $25, $22, $18, $1E, $24, $0C, $0A, $17, $24, $11, $0A, $1F, $0E, $24
+    dc.b    $1D, $11, $12, $1C, $EC, $25, $1D, $0A, $14, $0E, $24, $0A, $17, $22, $24, $1B
+    dc.b    $18, $0A, $0D, $24, $22, $18, $1E, $24, $20, $0A, $17, $1D, $EC, $25, $1C, $0E
+    dc.b    $0C, $1B, $0E, $1D, $24, $12, $1C, $24, $12, $17, $24, $1D, $11, $0E, $24, $1D
+    dc.b    $1B, $0E, $8E, $25, $25, $25, $25, $0A, $1D, $24, $1D, $11, $0E, $24, $0D, $0E
+    dc.b    $0A, $0D, $2F, $0E, $17, $0D, $EC, $25, $25, $25, $15, $0E, $1D, $2A, $1C, $24
+    dc.b    $19, $15, $0A, $22, $24, $16, $18, $17, $0E, $A2, $25, $25, $25, $16, $0A, $14
+    dc.b    $12, $17, $10, $24, $10, $0A, $16, $0E, $EC, $25, $25, $19, $0A, $22, $24, $16
+    dc.b    $0E, $24, $0F, $18, $1B, $24, $1D, $11, $0E, $24, $0D, $18, $18, $9B, $25, $25
+    dc.b    $25, $25, $25, $1B, $0E, $19, $0A, $12, $1B, $24, $0C, $11, $0A, $1B, $10, $0E
+    dc.b    $EC, $25, $25, $25, $25, $1C, $11, $18, $20, $24, $1D, $11, $12, $1C, $24, $1D
+    dc.b    $18, $24, $1D, $11, $8E, $25, $25, $25, $25, $25, $25, $25, $18, $15, $0D, $24
+    dc.b    $20, $18, $16, $0A, $17, $EC, $25, $25, $25, $25, $16, $0E, $0E, $1D, $24, $1D
+    dc.b    $11, $0E, $24, $18, $15, $0D, $24, $16, $0A, $97, $25, $25, $25, $25, $25, $25
+    dc.b    $0A, $1D, $24, $1D, $11, $0E, $24, $10, $1B, $0A, $1F, $0E, $EC, $25, $25, $0B
+    dc.b    $1E, $22, $24, $16, $0E, $0D, $12, $0C, $12, $17, $0E, $24, $0B, $0E, $0F, $18
+    dc.b    $1B, $8E, $25, $25, $22, $18, $1E, $24, $10, $18, $EC, $25, $25, $19, $0A, $22
+    dc.b    $24, $16, $0E, $24, $0A, $17, $0D, $24, $12, $2A, $15, $15, $24, $1D, $0A, $15
+    dc.b    $14, $EC, $25, $25, $25, $1D, $11, $12, $1C, $24, $0A, $12, $17, $2A, $1D, $24
+    dc.b    $0E, $17, $18, $1E, $10, $91, $25, $25, $25, $25, $25, $25, $25, $25, $1D, $18
+    dc.b    $24, $1D, $0A, $15, $14, $EC, $25, $25, $25, $25, $25, $25, $25, $10, $18, $24
+    dc.b    $1E, $19, $28, $1E, $19, $A8, $25, $25, $25, $1D, $11, $0E, $24, $16, $18, $1E
+    dc.b    $17, $1D, $0A, $12, $17, $24, $0A, $11, $0E, $0A, $0D, $EC, $25, $25, $10, $18
+    dc.b    $24, $17, $18, $1B, $1D, $11, $28, $20, $0E, $1C, $1D, $28, $1C, $18, $1E, $1D
+    dc.b    $11, $A8, $25, $25, $20, $0E, $1C, $1D, $24, $1D, $18, $24, $1D, $11, $0E, $24
+    dc.b    $0F, $18, $1B, $0E, $1C, $5D, $24, $24, $18, $0F, $24, $16, $0A, $23, $0E, $EC
+    dc.b    $25, $25, $25, $25, $0B, $18, $22, $28, $24, $22, $18, $1E, $2A, $1B, $0E, $24
+    dc.b    $1B, $12, $0C, $11, $E9, $25, $0B, $1E, $22, $24, $1C, $18, $16, $0E, $1D, $11
+    dc.b    $12, $17, $2A, $24, $20, $12, $15, $15, $24, $22, $0A, $E9, $25, $25, $25, $25
+    dc.b    $25, $0B, $18, $22, $28, $24, $1D, $11, $12, $1C, $24, $12, $9C, $25, $25, $25
+    dc.b    $1B, $0E, $0A, $15, $15, $22, $24, $0E, $21, $19, $0E, $17, $1C, $12, $1F, $0E
+    dc.b    $E9, $25, $1D, $0A, $14, $0E, $24, $0A, $17, $22, $24, $18, $17, $0E, $24, $22
+    dc.b    $18, $1E, $24, $20, $0A, $17, $1D, $EC, $25, $25, $25, $25, $25, $12, $1D, $2A
+    dc.b    $1C, $24, $0A, $24, $1C, $0E, $0C, $1B, $0E, $9D, $25, $25, $25, $25, $25, $1D
+    dc.b    $18, $24, $0E, $1F, $0E, $1B, $22, $0B, $18, $0D, $22, $EC, $25, $25, $25, $10
+    dc.b    $1B, $1E, $16, $0B, $15, $0E, $28, $10, $1B, $1E, $16, $0B, $15, $0E, $2C, $2C
+    dc.b    $EC, $25, $25, $0E, $0A, $1C, $1D, $16, $18, $1C, $1D, $24, $19, $0E, $17, $17
+    dc.b    $12, $17, $1C, $1E, $15, $8A, $25, $25, $25, $25, $25, $12, $1C, $24, $1D, $11
+    dc.b    $0E, $24, $1C, $0E, $0C, $1B, $0E, $1D, $EC, $25, $0D, $18, $0D, $18, $17, $10
+    dc.b    $18, $24, $0D, $12, $1C, $15, $12, $14, $0E, $1C, $24, $1C, $16, $18, $14, $0E
+    dc.b    $EC, $25, $0D, $12, $0D, $24, $22, $18, $1E, $24, $10, $0E, $1D, $24, $1D, $11
+    dc.b    $0E, $24, $1C, $20, $18, $1B, $8D, $25, $0F, $1B, $18, $16, $24, $1D, $11, $0E
+    dc.b    $24, $18, $15, $0D, $24, $16, $0A, $17, $24, $18, $57, $25, $1D, $18, $19, $24
+    dc.b    $18, $0F, $24, $1D, $11, $0E, $24, $20, $0A, $1D, $0E, $1B, $0F, $0A, $15, $15
+    dc.b    $EE, $25, $25, $25, $25, $25, $20, $0A, $15, $14, $24, $12, $17, $1D, $18, $24
+    dc.b    $1D, $11, $8E, $25, $25, $25, $25, $25, $25, $25, $20, $0A, $1D, $0E, $1B, $0F
+    dc.b    $0A, $15, $15, $EC, $25, $25, $1C, $0E, $0C, $1B, $0E, $1D, $24, $19, $18, $20
+    dc.b    $0E, $1B, $24, $12, $1C, $24, $1C, $0A, $12, $8D, $25, $25, $25, $1D, $18, $24
+    dc.b    $0B, $0E, $24, $12, $17, $24, $1D, $11, $0E, $24, $0A, $1B, $1B, $18, $20, $EC
+    dc.b    $25, $25, $25, $25, $0D, $12, $10, $0D, $18, $10, $10, $0E, $1B, $24, $11, $0A
+    dc.b    $1D, $0E, $9C, $25, $0C, $0E, $1B, $1D, $0A, $12, $17, $24, $14, $12, $17, $0D
+    dc.b    $24, $18, $0F, $24, $1C, $18, $1E, $17, $0D, $EC, $25, $25, $25, $25, $12, $24
+    dc.b    $0B, $0E, $1D, $24, $22, $18, $1E, $2A, $0D, $24, $15, $12, $14, $8E, $25, $25
+    dc.b    $25, $1D, $18, $24, $11, $0A, $1F, $0E, $24, $16, $18, $1B, $0E, $24, $0B, $18
+    dc.b    $16, $0B, $1C, $EC, $25, $25, $25, $25, $12, $0F, $24, $22, $18, $1E, $24, $10
+    dc.b    $18, $24, $12, $17, $24, $1D, $11, $8E, $25, $0D, $12, $1B, $0E, $0C, $1D, $12
+    dc.b    $18, $17, $24, $18, $0F, $24, $1D, $11, $0E, $24, $0A, $1B, $1B, $18, $20, $EC
+    dc.b    $25, $25, $25, $25, $15, $0E, $0A, $1F, $0E, $24, $22, $18, $1E, $1B, $24, $15
+    dc.b    $12, $0F, $8E, $25, $25, $25, $25, $25, $25, $25, $18, $1B, $24, $16, $18, $17
+    dc.b    $0E, $22, $EC, $25, $1D, $11, $0E, $1B, $0E, $24, $0A, $1B, $0E, $24, $1C, $0E
+    dc.b    $0C, $1B, $0E, $1D, $1C, $24, $20, $11, $0E, $1B, $8E, $25, $25, $25, $0F, $0A
+    dc.b    $12, $1B, $12, $0E, $1C, $24, $0D, $18, $17, $2A, $1D, $24, $15, $12, $1F, $0E
+    dc.b    $EC, $25, $25, $25, $25, $0A, $12, $16, $24, $0A, $1D, $24, $1D, $11, $0E, $24
+    dc.b    $0E, $22, $0E, $9C, $25, $25, $25, $25, $25, $25, $25, $18, $0F, $24, $10, $18
+    dc.b    $11, $16, $0A, $EC, $25, $25, $1C, $18, $1E, $1D, $11, $24, $18, $0F, $24, $0A
+    dc.b    $1B, $1B, $18, $20, $24, $16, $0A, $1B, $94, $25, $25, $25, $25, $11, $12, $0D
+    dc.b    $0E, $1C, $24, $0A, $24, $1C, $0E, $0C, $1B, $0E, $1D, $EC, $25, $25, $1D, $11
+    dc.b    $0E, $1B, $0E, $2A, $1C, $24, $0A, $24, $1C, $0E, $0C, $1B, $0E, $1D, $24, $12
+    dc.b    $97, $25, $25, $1D, $11, $0E, $24, $1D, $12, $19, $24, $18, $0F, $24, $1D, $11
+    dc.b    $0E, $24, $17, $18, $1C, $0E, $EC, $25, $25, $25, $1C, $19, $0E, $0C, $1D, $0A
+    dc.b    $0C, $15, $0E, $24, $1B, $18, $0C, $14, $24, $12, $9C, $25, $25, $0A, $17, $24
+    dc.b    $0E, $17, $1D, $1B, $0A, $17, $0C, $0E, $24, $1D, $18, $24, $0D, $0E, $0A, $1D
+    dc.b    $11, $EC, $01, $00, $1D, $11, $24, $0E, $17, $0E, $16, $22, $24, $11, $0A, $1C
+    dc.b    $24, $1D, $11, $0E, $24, $0B, $18, $16, $0B, $EC, $25, $18, $17, $0E, $1C, $24
+    dc.b    $20, $11, $18, $24, $0D, $18, $0E, $1C, $24, $17, $18, $1D, $24, $11, $0A, $1F
+    dc.b    $8E, $25, $1D, $1B, $12, $0F, $18, $1B, $0C, $0E, $24, $0C, $0A, $17, $2A, $1D
+    dc.b    $24, $10, $18, $24, $12, $17, $EC, $25, $25, $25, $19, $0A, $1D, $1B, $0A, $24
+    dc.b    $11, $0A, $1C, $24, $1D, $11, $0E, $24, $16, $0A, $19, $EC, $25, $25, $10, $18
+    dc.b    $24, $1D, $18, $24, $1D, $11, $0E, $24, $17, $0E, $21, $1D, $24, $1B, $18, $18
+    dc.b    $16, $EC, $25, $25, $25, $25, $25, $0E, $22, $0E, $1C, $24, $18, $0F, $24, $1C
+    dc.b    $14, $1E, $15, $95, $25, $25, $25, $25, $25, $11, $0A, $1C, $24, $0A, $24, $1C
+    dc.b    $0E, $0C, $1B, $0E, $1D, $EC
 
     even
 OverworldPersonTextSelectors:
@@ -152,7 +235,9 @@ InitCaveContinue:
     move.b  ($0350,A4),D0
     ori     #$11,CCR  ; SEC: set C+X
     move.b  #$6A,D1
+    eori    #$10,CCR  ; flip X: 6502 SBC polarity
     subx.b  D1,D0   ; SBC #$6A
+    eori    #$10,CCR  ; restore X = 6502 C
     moveq   #0,D3
     move.b  D0,D3
     ; Get the person text selector by looking up the text selector byte
@@ -262,7 +347,9 @@ _L_z01_InitCaveContinue_ChoosePermutation:
     ;
     ori     #$11,CCR  ; SEC: set C+X
     move.b  #$2B,D1
+    eori    #$10,CCR  ; flip X: 6502 SBC polarity
     subx.b  D1,D0   ; SBC #$2B
+    eori    #$10,CCR  ; restore X = 6502 C
     subq.b  #1,D3
     bne  _L_z01_InitCaveContinue_ChoosePermutation
     even
@@ -884,7 +971,9 @@ _L_z01_UpdateCavePersonState_TalkOrShopOrDoorCharge_LoopWare:
     move.b  ($0084,A4),D0
     ori     #$11,CCR  ; SEC: set C+X
     move.b  #$98,D1
+    eori    #$10,CCR  ; flip X: 6502 SBC polarity
     subx.b  D1,D0   ; SBC #$98
+    eori    #$10,CCR  ; restore X = 6502 C
     jsr     Abs
     cmpi.b  #$06,D0
     bcs  _L_z01_UpdateCavePersonState_TalkOrShopOrDoorCharge_PickedUp
@@ -1250,7 +1339,9 @@ InitUnderworldPersonA:
     move.b  (A0,D2.W),D0
     ori     #$11,CCR  ; SEC: set C+X
     move.b  #$4B,D1
+    eori    #$10,CCR  ; flip X: 6502 SBC polarity
     subx.b  D1,D0   ; SBC #$4B
+    eori    #$10,CCR  ; restore X = 6502 C
     moveq   #0,D3
     move.b  D0,D3
     ; Look up and store the text selector.
@@ -1317,7 +1408,9 @@ InitUnderworldPersonB:
     move.b  (A0,D2.W),D0
     ori     #$11,CCR  ; SEC: set C+X
     move.b  #$4B,D1
+    eori    #$10,CCR  ; flip X: 6502 SBC polarity
     subx.b  D1,D0   ; SBC #$4B
+    eori    #$10,CCR  ; restore X = 6502 C
     moveq   #0,D3
     move.b  D0,D3
     ; Look up and store the text selector.
@@ -1346,7 +1439,9 @@ InitUnderworldPersonC:
     ;
     ori     #$11,CCR  ; SEC: set C+X
     move.b  #$4B,D1
+    eori    #$10,CCR  ; flip X: 6502 SBC polarity
     subx.b  D1,D0   ; SBC #$4B
+    eori    #$10,CCR  ; restore X = 6502 C
     moveq   #0,D3
     move.b  D0,D3
     ; Look up and store the text selector.
@@ -1533,7 +1628,9 @@ UpdateUnderworldPersonComplexState_SenseLink:
     move.b  ($0084,A4),D0
     ori     #$11,CCR  ; SEC: set C+X
     move.b  #$98,D1
+    eori    #$10,CCR  ; flip X: 6502 SBC polarity
     subx.b  D1,D0   ; SBC #$98
+    eori    #$10,CCR  ; restore X = 6502 C
     jsr     Abs
     cmpi.b  #$06,D0
     bcs  _L_z01_UpdateUnderworldPersonComplexState_SenseLink_CheckCanPay
@@ -1682,7 +1779,9 @@ _L_z01_UpdateUnderworldPersonLifeOrMoneyState_2_LoopWare:
     move.b  ($0084,A4),D0
     ori     #$11,CCR  ; SEC: set C+X
     move.b  #$98,D1
+    eori    #$10,CCR  ; flip X: 6502 SBC polarity
     subx.b  D1,D0   ; SBC #$98
+    eori    #$10,CCR  ; restore X = 6502 C
     jsr     Abs
     cmpi.b  #$06,D0
     bcs  _L_z01_UpdateUnderworldPersonLifeOrMoneyState_2_Pay
@@ -1746,7 +1845,9 @@ _L_z01_UpdateUnderworldPersonLifeOrMoneyState_2_Reduce:
     andi.b #$F0,D0
     ori     #$11,CCR  ; SEC: set C+X
     move.b  #$10,D1
+    eori    #$10,CCR  ; flip X: 6502 SBC polarity
     subx.b  D1,D0   ; SBC #$10
+    eori    #$10,CCR  ; restore X = 6502 C
     move.b  D0,($0000,A4)
     ; Get (HeartValues - 1 heart)
     ;
@@ -1754,7 +1855,9 @@ _L_z01_UpdateUnderworldPersonLifeOrMoneyState_2_Reduce:
     andi.b #$0F,D0
     ori     #$11,CCR  ; SEC: set C+X
     move.b  #$01,D1
+    eori    #$10,CCR  ; flip X: 6502 SBC polarity
     subx.b  D1,D0   ; SBC #$01
+    eori    #$10,CCR  ; restore X = 6502 C
     ; If the result is negative, then make the full hearts 0.
     ;
     bpl  _anon_z01_19
@@ -2704,7 +2807,10 @@ _L_z01_CheckTileObjectsBlocking_Found:
     ;
     move.b  ($0070,A4),D0
     ori     #$11,CCR  ; SEC: set C+X
-; [SBC unhandled mode=ABS_X] SBC ObjX, X
+    move.b  ($70,A4,D2.W),D1
+    eori    #$10,CCR  ; flip X: 6502 SBC polarity
+    subx.b  D1,D0   ; SBC ObjX,X
+    eori    #$10,CCR  ; restore X = 6502 C
     jsr     Abs
     cmpi.b  #$10,D0
     bcc  _L_z01_CheckTileObjectsBlocking_NextTileObj
@@ -2715,7 +2821,11 @@ _L_z01_CheckTileObjectsBlocking_Found:
     move.b  #$03,D1
     addx.b  D1,D0   ; ADC #$03 (X flag = 6502 C)
     ori     #$11,CCR  ; SEC: set C+X
-; [SBC unhandled mode=ABS_X] SBC ObjY, X
+    lea     ($0084,A4),A0
+    move.b  (A0,D2.W),D1
+    eori    #$10,CCR  ; flip X: 6502 SBC polarity
+    subx.b  D1,D0   ; SBC ObjY,X
+    eori    #$10,CCR  ; restore X = 6502 C
     jsr     Abs
     cmpi.b  #$10,D0
     bcc  _L_z01_CheckTileObjectsBlocking_NextTileObj
@@ -3184,7 +3294,11 @@ UpdateTrap_Full:
     ;
     move.b  ($0084,A4),D0
     ori     #$11,CCR  ; SEC: set C+X
-; [SBC unhandled mode=ABS_X] SBC ObjY, X
+    lea     ($0084,A4),A0
+    move.b  (A0,D2.W),D1
+    eori    #$10,CCR  ; flip X: 6502 SBC polarity
+    subx.b  D1,D0   ; SBC ObjY,X
+    eori    #$10,CCR  ; restore X = 6502 C
     jsr     Abs
     cmpi.b  #$0E,D0
     bcc  _L_z01_UpdateTrap_Full_CheckHorizontal
@@ -3238,7 +3352,10 @@ _L_z01_UpdateTrap_Full_CheckHorizontal:
     ;
     move.b  ($0070,A4),D0
     ori     #$11,CCR  ; SEC: set C+X
-; [SBC unhandled mode=ABS_X] SBC ObjX, X
+    move.b  ($70,A4,D2.W),D1
+    eori    #$10,CCR  ; flip X: 6502 SBC polarity
+    subx.b  D1,D0   ; SBC ObjX,X
+    eori    #$10,CCR  ; restore X = 6502 C
     jsr     Abs
     cmpi.b  #$0E,D0
     bcc  _L_z01_UpdateTrap_Full_DrawAndCheckCollisions
@@ -3317,7 +3434,9 @@ _L_z01_UpdateTrap_Full_Finish:
     move.b  D3,D0
     ori     #$11,CCR  ; SEC: set C+X
     move.b  ($0000,A4),D1
+    eori    #$10,CCR  ; flip X: 6502 SBC polarity
     subx.b  D1,D0   ; SBC $00
+    eori    #$10,CCR  ; restore X = 6502 C
     jsr     Abs
     ; If distance >= 5, go draw.
     ;
@@ -3369,13 +3488,20 @@ UpdateRupeeStash_Full:
     ;
     move.b  ($0084,A4),D0
     ori     #$11,CCR  ; SEC: set C+X
-; [SBC unhandled mode=ABS_X] SBC ObjY, X
+    lea     ($0084,A4),A0
+    move.b  (A0,D2.W),D1
+    eori    #$10,CCR  ; flip X: 6502 SBC polarity
+    subx.b  D1,D0   ; SBC ObjY,X
+    eori    #$10,CCR  ; restore X = 6502 C
     jsr     Abs
     cmpi.b  #$09,D0
     bcc  _L_z01_UpdateRupeeStash_Full_DrawRupee
     move.b  ($0070,A4),D0
     ori     #$11,CCR  ; SEC: set C+X
-; [SBC unhandled mode=ABS_X] SBC ObjX, X
+    move.b  ($70,A4,D2.W),D1
+    eori    #$10,CCR  ; flip X: 6502 SBC polarity
+    subx.b  D1,D0   ; SBC ObjX,X
+    eori    #$10,CCR  ; restore X = 6502 C
     jsr     Abs
     cmpi.b  #$09,D0
     bcc  _L_z01_UpdateRupeeStash_Full_DrawRupee
@@ -3995,7 +4121,9 @@ _L_z01_DivideBy10_Loop:
     cmpi.b  #$0A,D0
     bcs  _anon_z01_41
     move.b  #$0A,D1
+    eori    #$10,CCR  ; flip X: 6502 SBC polarity
     subx.b  D1,D0   ; SBC #$0A
+    eori    #$10,CCR  ; restore X = 6502 C
     addq.b  #1,D3
     bne  _L_z01_DivideBy10_Loop
     even
@@ -4021,7 +4149,9 @@ FormatHeartsInTextBuf:
     moveq   #15,D0
     ori     #$11,CCR  ; SEC: set C+X
     move.b  ($0000,A4),D1
+    eori    #$10,CCR  ; flip X: 6502 SBC polarity
     subx.b  D1,D0   ; SBC $00
+    eori    #$10,CCR  ; restore X = 6502 C
     move.b  D0,($0000,A4)
     move.b  (A5)+,D0  ; PLA
     lsr.b  #1,D0   ; LSR A
@@ -4032,7 +4162,9 @@ FormatHeartsInTextBuf:
     moveq   #15,D0
     ori     #$11,CCR  ; SEC: set C+X
     move.b  ($0001,A4),D1
+    eori    #$10,CCR  ; flip X: 6502 SBC polarity
     subx.b  D1,D0   ; SBC $01
+    eori    #$10,CCR  ; restore X = 6502 C
     move.b  D0,($0001,A4)
     ; At this point,
     ; [$00] = $F - hearts
@@ -4080,7 +4212,7 @@ _L_z01_FormatHeartsInTextBuf_CheckOccupiedSlot:
     move.b  ($0000,A4),D1
     cmp.b   D1,D2
     beq  _L_z01_FormatHeartsInTextBuf_CheckPartial
-    bcc  _L_z01_FormatHeartsInTextBuf_EmitEmptyHeart
+    bcs  _L_z01_FormatHeartsInTextBuf_EmitEmptyHeart   ; PATCH P36c: 68K borrow sense for CPX/BCC
     even
 _L_z01_FormatHeartsInTextBuf_EmitFullHeart:
     move.b  #$F2,D0
@@ -4226,7 +4358,9 @@ _anon_z01_44:
     move.b  ($0000,A4),D0
     ori     #$11,CCR  ; SEC: set C+X
     move.b  #$17,D1
+    eori    #$10,CCR  ; flip X: 6502 SBC polarity
     subx.b  D1,D0   ; SBC #$17
+    eori    #$10,CCR  ; restore X = 6502 C
     move.b  D0,($0000,A4)
     even
 _L_z01_BoundDirectionHorizontally_Right:
@@ -4314,7 +4448,9 @@ _anon_z01_46:
     move.b  ($0000,A4),D0
     ori     #$11,CCR  ; SEC: set C+X
     move.b  #$21,D1
+    eori    #$10,CCR  ; flip X: 6502 SBC polarity
     subx.b  D1,D0   ; SBC #$21
+    eori    #$10,CCR  ; restore X = 6502 C
     move.b  D0,($0000,A4)
     even
 _L_z01_BoundDirectionVertically_Down:
@@ -4428,7 +4564,11 @@ SubQSpeedFromPositionFraction:
     lea     ($03A8,A4),A0
     move.b  (A0,D2.W),D0
     ori     #$11,CCR  ; SEC: set C+X
-; [SBC unhandled mode=ABS_X] SBC ObjQSpeedFrac, X
+    lea     ($03BC,A4),A0
+    move.b  (A0,D2.W),D1
+    eori    #$10,CCR  ; flip X: 6502 SBC polarity
+    subx.b  D1,D0   ; SBC ObjQSpeedFrac,X
+    eori    #$10,CCR  ; restore X = 6502 C
     lea     ($03A8,A4),A0
     move.b  D0,(A0,D2.W)
     move.w  SR,D1
@@ -4461,7 +4601,9 @@ _anon_z01_48:
     lea     ($0394,A4),A0
     move.b  (A0,D2.W),D0
     move.b  #$00,D1
+    eori    #$10,CCR  ; flip X: 6502 SBC polarity
     subx.b  D1,D0   ; SBC #$00
+    eori    #$10,CCR  ; restore X = 6502 C
     lea     ($0394,A4),A0
     move.b  D0,(A0,D2.W)
     move.b  (A5)+,D1  ; PLP: pop to CCR
@@ -4667,7 +4809,9 @@ _L_z01__CalcDiagonalSpeedIndex_Swap:
     move.b  ($0003,A4),D0
     ori     #$11,CCR  ; SEC: set C+X
     move.b  ($0004,A4),D1
+    eori    #$10,CCR  ; flip X: 6502 SBC polarity
     subx.b  D1,D0   ; SBC $04
+    eori    #$10,CCR  ; restore X = 6502 C
     cmpi.b  #$08,D0
     bcs  _L_z01__CalcDiagonalSpeedIndex_Return
     even
@@ -4693,7 +4837,9 @@ _L_z01__CalcDiagonalSpeedIndex_Turn:
     move.b  ($0003,A4),D0
     ori     #$11,CCR  ; SEC: set C+X
     move.b  ($0004,A4),D1
+    eori    #$10,CCR  ; flip X: 6502 SBC polarity
     subx.b  D1,D0   ; SBC $04
+    eori    #$10,CCR  ; restore X = 6502 C
     move.b  D0,($0003,A4)
     move.b  ($0004,A4),D1
     cmp.b   D1,D0
@@ -4777,7 +4923,9 @@ _L_z01_GetOneDirectionAndDistanceToTarget_Subtract:
     move.b  ($0002,A4),D0
     ori     #$11,CCR  ; SEC: set C+X
     move.b  ($0001,A4),D1
+    eori    #$10,CCR  ; flip X: 6502 SBC polarity
     subx.b  D1,D0   ; SBC $01
+    eori    #$10,CCR  ; restore X = 6502 C
     cmpi.b  #$09,D0
     bcc  _anon_z01_52
     addq.b  #1,($0000,A4)
@@ -5331,7 +5479,9 @@ Sub1FromInt16At4:
     move.b  ($0004,A4),D0
     ori     #$11,CCR  ; SEC: set C+X
     move.b  #$01,D1
+    eori    #$10,CCR  ; flip X: 6502 SBC polarity
     subx.b  D1,D0   ; SBC #$01
+    eori    #$10,CCR  ; restore X = 6502 C
     move.b  D0,($0004,A4)
     bcc  _anon_z01_62
     subq.b  #1,($0005,A4)
@@ -5479,7 +5629,11 @@ __far_z_01_0037:
     move.b  #$03,D1
     addx.b  D1,D0   ; ADC #$03 (X flag = 6502 C)
     ori     #$11,CCR  ; SEC: set C+X
-; [SBC unhandled mode=ABS_X] SBC ObjY, X
+    lea     ($0084,A4),A0
+    move.b  (A0,D2.W),D1
+    eori    #$10,CCR  ; flip X: 6502 SBC polarity
+    subx.b  D1,D0   ; SBC ObjY,X
+    eori    #$10,CCR  ; restore X = 6502 C
     jsr     Abs
     cmpi.b  #$09,D0
     bcs.s  __far_z_01_0038
@@ -5489,7 +5643,10 @@ __far_z_01_0038:
     ;
     move.b  ($0070,A4),D0
     ori     #$11,CCR  ; SEC: set C+X
-; [SBC unhandled mode=ABS_X] SBC ObjX, X
+    move.b  ($70,A4,D2.W),D1
+    eori    #$10,CCR  ; flip X: 6502 SBC polarity
+    subx.b  D1,D0   ; SBC ObjX,X
+    eori    #$10,CCR  ; restore X = 6502 C
     jsr     Abs
     cmpi.b  #$09,D0
     bcs.s  __far_z_01_0039
@@ -5733,7 +5890,9 @@ _anon_z01_71:
     ;
     ori     #$11,CCR  ; SEC: set C+X
     move.b  #$01,D1
+    eori    #$10,CCR  ; flip X: 6502 SBC polarity
     subx.b  D1,D0   ; SBC #$01
+    eori    #$10,CCR  ; restore X = 6502 C
     cmpi.b  #$08,D0
     bcs  _anon_z01_72
     addq.b  #1,D3
@@ -6867,6 +7026,7 @@ _anon_z01_83:
     move.b  ($0003,A4),D1
     addx.b  D1,D0   ; ADC $03
     move.b  D0,($0003,A4)
+    rts                  ; PATCH P7: NES implicit RTS via ObjTypeToDamagePoints[0]=$60
     even
 ObjTypeToDamagePoints:
     dc.b    $60, $02, $01, $80, $80, $01, $80, $80
@@ -7124,7 +7284,9 @@ _L_z01_Link_BeHarmed_ResetHelp:
     bcs  _L_z01_Link_BeHarmed_BorrowHeart
     ori     #$11,CCR  ; SEC: set C+X
     move.b  ($000E,A4),D1
+    eori    #$10,CCR  ; flip X: 6502 SBC polarity
     subx.b  D1,D0   ; SBC $0E
+    eori    #$10,CCR  ; restore X = 6502 C
     move.b  D0,($0670,A4)
     ; If full hearts >= high damage points byte, then simply
     ; subtract the damage byte from full hearts.
@@ -7138,7 +7300,9 @@ _L_z01_Link_BeHarmed_ResetHelp:
     move.b  ($066F,A4),D0
     ori     #$11,CCR  ; SEC: set C+X
     move.b  ($000D,A4),D1
+    eori    #$10,CCR  ; flip X: 6502 SBC polarity
     subx.b  D1,D0   ; SBC $0D
+    eori    #$10,CCR  ; restore X = 6502 C
     move.b  D0,($066F,A4)
     rts
 
@@ -7153,7 +7317,9 @@ _L_z01_Link_BeHarmed_BorrowHeart:
     move.b  ($000E,A4),D0
     ori     #$11,CCR  ; SEC: set C+X
     move.b  ($0670,A4),D1
+    eori    #$10,CCR  ; flip X: 6502 SBC polarity
     subx.b  D1,D0   ; SBC HeartPartial
+    eori    #$10,CCR  ; restore X = 6502 C
     move.b  D0,($000E,A4)
     move.b  ($066F,A4),D0
     andi.b #$0F,D0
@@ -7388,7 +7554,9 @@ DealDamage:
 __far_z_01_0080:
     ori     #$11,CCR  ; SEC: set C+X
     move.b  ($0007,A4),D1
+    eori    #$10,CCR  ; flip X: 6502 SBC polarity
     subx.b  D1,D0   ; SBC $07
+    eori    #$10,CCR  ; restore X = 6502 C
     lea     ($0485,A4),A0
     move.b  D0,(A0,D2.W)
     bne.s  __far_z_01_0081
@@ -7960,7 +8128,9 @@ DoObjectsCollideWithThresholds:
     move.b  ($0002,A4),D0
     ori     #$11,CCR  ; SEC: set C+X
     move.b  ($0004,A4),D1
+    eori    #$10,CCR  ; flip X: 6502 SBC polarity
     subx.b  D1,D0   ; SBC $04
+    eori    #$10,CCR  ; restore X = 6502 C
     jsr     Abs
     move.b  D0,($000A,A4)
     ; If distance >= horizontal threshold in [0D], return 0.
@@ -7973,7 +8143,9 @@ DoObjectsCollideWithThresholds:
     move.b  ($0003,A4),D0
     ori     #$11,CCR  ; SEC: set C+X
     move.b  ($0005,A4),D1
+    eori    #$10,CCR  ; flip X: 6502 SBC polarity
     subx.b  D1,D0   ; SBC $05
+    eori    #$10,CCR  ; restore X = 6502 C
     jsr     Abs
     move.b  D0,($000B,A4)
     ; If distance >= vertical threshold in [0E], return 0.
@@ -8281,4 +8453,3 @@ SwitchBank_Local1:
 
 ; Unknown block
     dc.b    $84, $E4, $50, $BF, $F0, $BF
-

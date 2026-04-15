@@ -1,0 +1,168 @@
+=================================================================
+T30/T31/T32 probe: room-load progression (natural path)
+=================================================================
+LoopForever=$03C774  IsrNmi=$03C7A6
+
+f0001 CurSaveSlot=$00 active=00/00/00
+f0001 input Start     hold=2 release=3 (fast title->file-select)
+f0001 mode=$00 sub=$00 roomId=$00 room03C=$00 mmc1PRG=$00 curBank=$00 win=00 00 00 00 00 00 00 00
+f0006 input Start     hold=2 release=3 (fast title->file-select)
+f0011 input Start     hold=2 release=3 (fast title->file-select)
+f0016 input Start     hold=2 release=3 (fast title->file-select)
+f0021 input Start     hold=2 release=3 (fast title->file-select)
+f0026 input Start     hold=2 release=3 (fast title->file-select)
+f0031 input Start     hold=2 release=3 (fast title->file-select)
+f0036 input Start     hold=2 release=3 (fast title->file-select)
+f0041 input Start     hold=2 release=3 (fast title->file-select)
+f0046 input Start     hold=2 release=3 (fast title->file-select)
+f0051 input Start     hold=2 release=3 (fast title->file-select)
+f0056 input Start     hold=2 release=3 (fast title->file-select)
+f0061 input Start     hold=2 release=3 (fast title->file-select)
+f0066 input Start     hold=2 release=3 (fast title->file-select)
+f0071 input Start     hold=2 release=3 (fast title->file-select)
+f0076 input Start     hold=2 release=3 (fast title->file-select)
+f0081 input Start     hold=2 release=3 (fast title->file-select)
+f0081 mode=$00 sub=$01 roomId=$00 room03C=$00 mmc1PRG=$02 curBank=$FF win=00 00 00 00 00 00 00 00
+f0084 CurSaveSlot=$01 active=00/00/00
+f0085 CurSaveSlot=$02 active=00/00/00
+f0085 mode=$00 sub=$02 roomId=$00 room03C=$00 mmc1PRG=$02 curBank=$FF win=00 00 00 00 00 00 00 00
+f0086 input Start     hold=2 release=3 (fast title->file-select)
+f0088 CurSaveSlot=$01 active=00/00/00
+f0089 CurSaveSlot=$00 active=00/00/00
+f0090 mode=$01 sub=$00 roomId=$00 room03C=$00 mmc1PRG=$02 curBank=$FF win=00 00 00 00 00 00 00 00
+f0091 flow BOOT_TO_FS1 -> FS1_SELECT_REGISTER (entered Mode1)
+f0091 input Down      hold=1 release=10 (move to REGISTER (slot 3))
+f0092 CurSaveSlot=$01 active=00/00/00
+f0093 CurSaveSlot=$02 active=00/00/00
+f0093 mode=$01 sub=$02 roomId=$00 room03C=$00 mmc1PRG=$02 curBank=$FF win=00 00 00 00 00 00 00 00
+f0094 CurSaveSlot=$00 active=00/00/00
+f0095 mode=$01 sub=$03 roomId=$00 room03C=$00 mmc1PRG=$02 curBank=$FF win=00 00 00 00 00 00 00 00
+f0101 mode=$01 sub=$05 roomId=$00 room03C=$00 mmc1PRG=$02 curBank=$FF win=00 00 00 00 00 00 00 00
+f0102 CurSaveSlot=$02 active=00/00/00
+f0102 input Down      hold=1 release=10 (move to REGISTER (slot 3))
+f0102 mode=$01 sub=$06 roomId=$00 room03C=$00 mmc1PRG=$02 curBank=$FF win=00 00 00 00 00 00 00 00
+f0103 CurSaveSlot=$03 active=00/00/00
+f0103 flow FS1_SELECT_REGISTER -> FS1_ENTER_REGISTER (CurSaveSlot reached 3)
+f0103 mode=$01 sub=$00 roomId=$00 room03C=$00 mmc1PRG=$02 curBank=$FF win=00 00 00 00 00 00 00 00
+f0113 input Start     hold=2 release=14 (enter register mode)
+f0113 mode=$01 sub=$01 roomId=$00 room03C=$00 mmc1PRG=$02 curBank=$FF win=00 00 00 00 00 00 00 00
+f0114 mode=$0E sub=$00 roomId=$00 room03C=$00 mmc1PRG=$02 curBank=$FF win=00 00 00 00 00 00 00 00
+f0115 flow FS1_ENTER_REGISTER -> MODEE_TYPE_NAME (entered ModeE register)
+f0116 CurSaveSlot=$00 active=00/00/00
+f0116 name progress $0421: D0 -> 00
+f0119 CurSaveSlot=$01 active=00/00/00
+f0120 CurSaveSlot=$02 active=00/00/00
+f0121 mode=$0E sub=$02 roomId=$00 room03C=$00 mmc1PRG=$02 curBank=$FF win=00 00 00 00 00 00 00 00
+f0122 CurSaveSlot=$00 active=00/00/00
+f0122 mode=$0E sub=$03 roomId=$00 room03C=$00 mmc1PRG=$02 curBank=$FF win=00 00 00 00 00 00 00 00
+f0123 mode=$0E sub=$04 roomId=$00 room03C=$00 mmc1PRG=$02 curBank=$FF win=00 00 00 00 00 00 00 00
+f0129 input A         hold=1 release=10 (ModeE char pulse (A))
+f0130 name progress $0421: 00 -> 01
+f0140 input A         hold=1 release=10 (ModeE char pulse (A))
+f0141 name progress $0421: 01 -> 02
+f0151 input A         hold=1 release=10 (ModeE char pulse (A))
+f0152 name progress $0421: 02 -> 03
+f0162 input A         hold=1 release=10 (ModeE char pulse (A))
+f0163 name progress $0421: 03 -> 04
+f0163 flow MODEE_TYPE_NAME -> MODEE_FINISH (name progress target met)
+f0173 input C         hold=1 release=10 (cycle to END slot)
+f0174 CurSaveSlot=$01 active=00/00/00
+f0184 input C         hold=1 release=10 (cycle to END slot)
+f0185 CurSaveSlot=$02 active=00/00/00
+f0195 input C         hold=1 release=10 (cycle to END slot)
+f0196 CurSaveSlot=$03 active=00/00/00
+f0206 input Start     hold=2 release=14 (confirm END)
+f0207 CurSaveSlot=$00 active=00/00/00
+f0207 mode=$00 sub=$01 roomId=$00 room03C=$00 mmc1PRG=$02 curBank=$FF win=00 00 00 00 00 00 00 00
+f0208 flow MODEE_FINISH -> WAIT_GAMEPLAY (left ModeE)
+f0211 CurSaveSlot=$01 active=01/00/00
+f0212 CurSaveSlot=$02 active=01/00/00
+f0212 mode=$00 sub=$02 roomId=$00 room03C=$00 mmc1PRG=$02 curBank=$FF win=00 00 00 00 00 00 00 00
+f0215 CurSaveSlot=$01 active=01/00/00
+f0215 mode=$01 sub=$00 roomId=$00 room03C=$00 mmc1PRG=$02 curBank=$FF win=00 00 00 00 00 00 00 00
+f0216 CurSaveSlot=$00 active=01/00/00
+f0216 flow WAIT_GAMEPLAY -> FS1_START_GAME (back at FS1 after register)
+f0217 CurSaveSlot=$01 active=01/00/00
+f0218 CurSaveSlot=$02 active=01/00/00
+f0218 mode=$01 sub=$01 roomId=$00 room03C=$00 mmc1PRG=$06 curBank=$FF win=00 00 00 00 00 00 00 00
+f0219 CurSaveSlot=$03 active=01/00/00
+f0219 mode=$01 sub=$02 roomId=$00 room03C=$00 mmc1PRG=$02 curBank=$FF win=00 00 00 00 00 00 00 00
+f0220 CurSaveSlot=$00 active=01/00/00
+f0221 mode=$01 sub=$03 roomId=$00 room03C=$00 mmc1PRG=$06 curBank=$FF win=00 00 00 00 00 00 00 00
+f0222 input Start     hold=2 release=14 (start game from slot 0)
+f0226 mode=$01 sub=$05 roomId=$00 room03C=$00 mmc1PRG=$02 curBank=$FF win=00 00 00 00 00 00 00 00
+f0227 CurSaveSlot=$02 active=01/00/00
+f0227 mode=$01 sub=$06 roomId=$00 room03C=$00 mmc1PRG=$02 curBank=$FF win=00 00 00 00 00 00 00 00
+f0228 CurSaveSlot=$03 active=01/00/00
+f0228 mode=$01 sub=$00 roomId=$00 room03C=$00 mmc1PRG=$02 curBank=$FF win=00 00 00 00 00 00 00 00
+f0229 CurSaveSlot=$00 active=01/00/00
+f0238 input Start     hold=2 release=14 (start game from slot 0)
+f0238 mode=$01 sub=$01 roomId=$00 room03C=$00 mmc1PRG=$02 curBank=$FF win=00 00 00 00 00 00 00 00
+f0240 mode=$02 sub=$00 roomId=$00 room03C=$00 mmc1PRG=$03 curBank=$FF win=BB 9D BB 9D BB 9D 7B 98
+f0241 flow FS1_START_GAME -> WAIT_GAMEPLAY (left FS1 for gameplay path)
+f0241 bank-window first load in mode $02: mmc1PRG=$03 curBank=$03 win=BB 9D BB 9D BB 9D 7B 98
+f0266 mode=$02 sub=$01 roomId=$00 room03C=$00 mmc1PRG=$06 curBank=$03 win=BB 9D BB 9D BB 9D 7B 98
+f0267 mode=$02 sub=$00 roomId=$00 room03C=$00 mmc1PRG=$02 curBank=$03 win=BB 9D BB 9D BB 9D 7B 98
+f0268 mode=$03 sub=$00 roomId=$00 room03C=$00 mmc1PRG=$06 curBank=$06 win=00 84 00 87 00 87 00 87
+f0269 mode=$03 sub=$01 roomId=$00 room03C=$00 mmc1PRG=$05 curBank=$06 win=00 84 00 87 00 87 00 87
+f0270 mode23 telemetry mode=$03 sub=$01 mmc1PRG=$05 curBank=$06 win=00 84 00 87 00 87 00 87
+f0271 mode=$03 sub=$03 roomId=$77 room03C=$00 mmc1PRG=$05 curBank=$06 win=00 84 00 87 00 87 00 87
+f0272 mode=$03 sub=$04 roomId=$77 room03C=$00 mmc1PRG=$05 curBank=$06 win=00 84 00 87 00 87 00 87
+f0274 mode=$03 sub=$05 roomId=$77 room03C=$00 mmc1PRG=$05 curBank=$06 win=00 84 00 87 00 87 00 87
+f0276 mode=$03 sub=$06 roomId=$77 room03C=$00 mmc1PRG=$06 curBank=$06 win=00 84 00 87 00 87 00 87
+f0277 mode=$03 sub=$07 roomId=$77 room03C=$00 mmc1PRG=$05 curBank=$06 win=00 84 00 87 00 87 00 87
+f0278 mode=$03 sub=$08 roomId=$77 room03C=$00 mmc1PRG=$05 curBank=$06 win=20 06 80 4C 89 ED A5 E1
+f0278 hit Mode3/Sub8 (LayoutRoomOW window)
+f0281 mode=$03 sub=$00 roomId=$77 room03C=$00 mmc1PRG=$05 curBank=$05 win=20 06 80 4C 89 ED A5 E1
+f0300 mode23 telemetry mode=$03 sub=$00 mmc1PRG=$02 curBank=$05 win=20 06 80 4C 89 ED A5 E1
+f0330 mode23 telemetry mode=$03 sub=$00 mmc1PRG=$02 curBank=$05 win=20 06 80 4C 89 ED A5 E1
+f0356 mode=$04 sub=$00 roomId=$77 room03C=$00 mmc1PRG=$05 curBank=$05 win=20 06 80 4C 89 ED A5 E1
+f0358 mode=$05 sub=$00 roomId=$77 room03C=$00 mmc1PRG=$02 curBank=$05 win=20 06 80 4C 89 ED A5 E1
+f0358 captured screenshot (roomId=$77 room03C=$00): C:\Users\Jake Diggity\Documents\GitHub\FINAL TRY\.claude\worktrees\nifty-chandrasekhar\builds\reports\bizhawk_t31_room77.png
+
+Mode transitions (first 24):
+  f0001 mode=$00 sub=$00
+  f0081 mode=$00 sub=$01
+  f0085 mode=$00 sub=$02
+  f0090 mode=$01 sub=$00
+  f0093 mode=$01 sub=$02
+  f0095 mode=$01 sub=$03
+  f0101 mode=$01 sub=$05
+  f0102 mode=$01 sub=$06
+  f0103 mode=$01 sub=$00
+  f0113 mode=$01 sub=$01
+  f0114 mode=$0E sub=$00
+  f0121 mode=$0E sub=$02
+  f0122 mode=$0E sub=$03
+  f0123 mode=$0E sub=$04
+  f0207 mode=$00 sub=$01
+  f0212 mode=$00 sub=$02
+  f0215 mode=$01 sub=$00
+  f0218 mode=$01 sub=$01
+  f0219 mode=$01 sub=$02
+  f0221 mode=$01 sub=$03
+  f0226 mode=$01 sub=$05
+  f0227 mode=$01 sub=$06
+  f0228 mode=$01 sub=$00
+  f0238 mode=$01 sub=$01
+
+NMI delta: 46
+flow_state_end: WAIT_GAMEPLAY (since frame 241)
+register_mode_seen: yes
+name_progress_events: 5 (target=5)
+pulse_counts: titleStart=18 fs1C=0 fs1Dpad=2 fs1Start=1 fs1PostRegMove=0 fs1PostRegStart=2 modeeC=7 modeeStart=1
+final CurSaveSlot=$00 active=01/00/00
+mode3_sub8_max_streak: 3
+final bank window: mmc1PRG=$05 curBank=$05 win=20 06 80 4C 89 ED A5 E1
+
+[PASS] T30_NO_EXCEPTION               no exception
+[PASS] T30_BANK_WINDOW_LOADED         first loaded in Mode2/3 at frame 241
+[PASS] T30_REACHED_MODE3_SUB8         first at frame 278
+[PASS] T30_LEFT_MODE3_SUB8            progressed past submode 8
+[PASS] T30_REACHED_MODE5              Mode 5 observed
+[PASS] T30_ROOM77_OBSERVED            room $77 observed
+[PASS] T31_SCREENSHOT_CAPTURED        mode5 screenshot captured (room=$77)
+[PASS] T32_RAM_DUMP_WRITTEN           RAM dump written
+
+T30/T31/T32 SUMMARY: 8 PASS / 0 FAIL
+T30/T31/T32: ALL PASS

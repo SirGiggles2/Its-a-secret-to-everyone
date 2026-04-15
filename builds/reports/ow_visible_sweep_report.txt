@@ -1,0 +1,9 @@
+OW VISIBLE SWEEP REPORT
+========================================================================
+gen_room_count: 0
+nes_room_count: 0
+common_room_count: 0
+pass_count: 0
+fail_count: 0
+
+Per-room verdicts:

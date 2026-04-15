@@ -1,0 +1,12 @@
+FRONTEND TRANSITION REPORT
+========================================================================
+gen_target_reached: True
+nes_target_reached: True
+gen_transfer_events: 12
+nes_transfer_events: 18
+transfer_stream_mismatch_count: 7
+gen_mode1_dyn_present: True
+nes_mode1_dyn_present: True
+first_divergence: {"event_index": 4, "field": "submode", "gen_value": 1, "nes_value": 0}
+
+FRONTEND_TRANSITION: FAIL

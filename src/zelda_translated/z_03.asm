@@ -38,39 +38,39 @@
 
     even
 LevelPatternBlockSrcAddrs:
-    dc.b    (PatternBlockUWSP127)&$FF, (PatternBlockUWSP127>>8)&$FF   ; NES .ADDR (little-endian)
-    dc.b    (PatternBlockUWSP127)&$FF, (PatternBlockUWSP127>>8)&$FF   ; NES .ADDR (little-endian)
-    dc.b    (PatternBlockUWSP127)&$FF, (PatternBlockUWSP127>>8)&$FF   ; NES .ADDR (little-endian)
-    dc.b    (PatternBlockUWSP358)&$FF, (PatternBlockUWSP358>>8)&$FF   ; NES .ADDR (little-endian)
-    dc.b    (PatternBlockUWSP469)&$FF, (PatternBlockUWSP469>>8)&$FF   ; NES .ADDR (little-endian)
-    dc.b    (PatternBlockUWSP358)&$FF, (PatternBlockUWSP358>>8)&$FF   ; NES .ADDR (little-endian)
-    dc.b    (PatternBlockUWSP469)&$FF, (PatternBlockUWSP469>>8)&$FF   ; NES .ADDR (little-endian)
-    dc.b    (PatternBlockUWSP127)&$FF, (PatternBlockUWSP127>>8)&$FF   ; NES .ADDR (little-endian)
-    dc.b    (PatternBlockUWSP358)&$FF, (PatternBlockUWSP358>>8)&$FF   ; NES .ADDR (little-endian)
-    dc.b    (PatternBlockUWSP469)&$FF, (PatternBlockUWSP469>>8)&$FF   ; NES .ADDR (little-endian)
+    dc.b    $BB, $9D   ; NES .ADDR (bank window, NES=$9DBB = PatternBlockUWSP127)
+    dc.b    $BB, $9D   ; NES .ADDR (bank window, NES=$9DBB = PatternBlockUWSP127)
+    dc.b    $BB, $9D   ; NES .ADDR (bank window, NES=$9DBB = PatternBlockUWSP127)
+    dc.b    $7B, $98   ; NES .ADDR (bank window, NES=$987B = PatternBlockUWSP358)
+    dc.b    $9B, $9A   ; NES .ADDR (bank window, NES=$9A9B = PatternBlockUWSP469)
+    dc.b    $7B, $98   ; NES .ADDR (bank window, NES=$987B = PatternBlockUWSP358)
+    dc.b    $9B, $9A   ; NES .ADDR (bank window, NES=$9A9B = PatternBlockUWSP469)
+    dc.b    $BB, $9D   ; NES .ADDR (bank window, NES=$9DBB = PatternBlockUWSP127)
+    dc.b    $7B, $98   ; NES .ADDR (bank window, NES=$987B = PatternBlockUWSP358)
+    dc.b    $9B, $9A   ; NES .ADDR (bank window, NES=$9A9B = PatternBlockUWSP469)
 
     even
 BossPatternBlockSrcAddrs:
-    dc.b    (PatternBlockUWSPBoss1257)&$FF, (PatternBlockUWSPBoss1257>>8)&$FF   ; NES .ADDR (little-endian)
-    dc.b    (PatternBlockUWSPBoss1257)&$FF, (PatternBlockUWSPBoss1257>>8)&$FF   ; NES .ADDR (little-endian)
-    dc.b    (PatternBlockUWSPBoss1257)&$FF, (PatternBlockUWSPBoss1257>>8)&$FF   ; NES .ADDR (little-endian)
-    dc.b    (PatternBlockUWSPBoss3468)&$FF, (PatternBlockUWSPBoss3468>>8)&$FF   ; NES .ADDR (little-endian)
-    dc.b    (PatternBlockUWSPBoss3468)&$FF, (PatternBlockUWSPBoss3468>>8)&$FF   ; NES .ADDR (little-endian)
-    dc.b    (PatternBlockUWSPBoss1257)&$FF, (PatternBlockUWSPBoss1257>>8)&$FF   ; NES .ADDR (little-endian)
-    dc.b    (PatternBlockUWSPBoss3468)&$FF, (PatternBlockUWSPBoss3468>>8)&$FF   ; NES .ADDR (little-endian)
-    dc.b    (PatternBlockUWSPBoss1257)&$FF, (PatternBlockUWSPBoss1257>>8)&$FF   ; NES .ADDR (little-endian)
-    dc.b    (PatternBlockUWSPBoss3468)&$FF, (PatternBlockUWSPBoss3468>>8)&$FF   ; NES .ADDR (little-endian)
-    dc.b    (PatternBlockUWSPBoss9)&$FF, (PatternBlockUWSPBoss9>>8)&$FF   ; NES .ADDR (little-endian)
+    dc.b    $DB, $9F   ; NES .ADDR (bank window, NES=$9FDB = PatternBlockUWSPBoss1257)
+    dc.b    $DB, $9F   ; NES .ADDR (bank window, NES=$9FDB = PatternBlockUWSPBoss1257)
+    dc.b    $DB, $9F   ; NES .ADDR (bank window, NES=$9FDB = PatternBlockUWSPBoss1257)
+    dc.b    $DB, $A3   ; NES .ADDR (bank window, NES=$A3DB = PatternBlockUWSPBoss3468)
+    dc.b    $DB, $A3   ; NES .ADDR (bank window, NES=$A3DB = PatternBlockUWSPBoss3468)
+    dc.b    $DB, $9F   ; NES .ADDR (bank window, NES=$9FDB = PatternBlockUWSPBoss1257)
+    dc.b    $DB, $A3   ; NES .ADDR (bank window, NES=$A3DB = PatternBlockUWSPBoss3468)
+    dc.b    $DB, $9F   ; NES .ADDR (bank window, NES=$9FDB = PatternBlockUWSPBoss1257)
+    dc.b    $DB, $A3   ; NES .ADDR (bank window, NES=$A3DB = PatternBlockUWSPBoss3468)
+    dc.b    $DB, $A7   ; NES .ADDR (bank window, NES=$A7DB = PatternBlockUWSPBoss9)
 
     even
 PatternBlockSrcAddrsUW:
-    dc.b    (PatternBlockUWBG)&$FF, (PatternBlockUWBG>>8)&$FF   ; NES .ADDR (little-endian)
-    dc.b    (PatternBlockUWSP)&$FF, (PatternBlockUWSP>>8)&$FF   ; NES .ADDR (little-endian)
+    dc.b    $1B, $81   ; NES .ADDR (bank window, NES=$811B = PatternBlockUWBG)
+    dc.b    $BB, $9C   ; NES .ADDR (bank window, NES=$9CBB = PatternBlockUWSP)
 
     even
 PatternBlockSrcAddrsOW:
-    dc.b    (PatternBlockOWBG)&$FF, (PatternBlockOWBG>>8)&$FF   ; NES .ADDR (little-endian)
-    dc.b    (PatternBlockOWSP)&$FF, (PatternBlockOWSP>>8)&$FF   ; NES .ADDR (little-endian)
+    dc.b    $3B, $89   ; NES .ADDR (bank window, NES=$893B = PatternBlockOWBG)
+    dc.b    $5B, $91   ; NES .ADDR (bank window, NES=$915B = PatternBlockOWSP)
 
     even
 PatternBlockPpuAddrs:
@@ -137,6 +137,8 @@ __far_z_03_0001:
 
     even
 FetchPatternBlockAddrUW:
+    moveq   #3,D0
+    jsr     _copy_bank_to_window   ; PATCH P33b: force window bank 3
     move.b  ($051D,A4),D0
     lsl.b  #1,D0   ; ASL A
     moveq   #0,D2
@@ -156,6 +158,8 @@ FetchPatternBlockAddrUW:
 ;
     even
 FetchPatternBlockInfoOW:
+    moveq   #3,D0
+    jsr     _copy_bank_to_window   ; PATCH P33b: force window bank 3
     move.b  ($051D,A4),D0
     lsl.b  #1,D0   ; ASL A
     moveq   #0,D2
@@ -177,6 +181,8 @@ FetchPatternBlockInfoOW:
 
     even
 FetchPatternBlockAddrUWSpecial:
+    moveq   #3,D0
+    jsr     _copy_bank_to_window   ; PATCH P33b: force window bank 3
     move.b  ($0010,A4),D0
     lsl.b  #1,D0   ; ASL A
     moveq   #0,D2
@@ -192,6 +198,8 @@ FetchPatternBlockAddrUWSpecial:
 
     even
 FetchPatternBlockUWBoss:
+    moveq   #3,D0
+    jsr     _copy_bank_to_window   ; PATCH P33b: force window bank 3
     move.b  ($0010,A4),D0
     lsl.b  #1,D0   ; ASL A
     moveq   #0,D2
@@ -266,11 +274,15 @@ _L_z03_TransferPatternBlock_Bank3_LoopCopy:
     move.b  ($0003,A4),D0
     ori     #$11,CCR  ; SEC: set C+X
     move.b  #$01,D1
+    eori    #$10,CCR  ; flip X: 6502 SBC polarity
     subx.b  D1,D0   ; SBC #$01
+    eori    #$10,CCR  ; restore X = 6502 C
     move.b  D0,($0003,A4)
     move.b  ($0002,A4),D0
     move.b  #$00,D1
+    eori    #$10,CCR  ; flip X: 6502 SBC polarity
     subx.b  D1,D0   ; SBC #$00
+    eori    #$10,CCR  ; restore X = 6502 C
     move.b  D0,($0002,A4)
     ; If count is not zero, go copy more.
     ;
@@ -283,73 +295,727 @@ _L_z03_TransferPatternBlock_Bank3_LoopCopy:
 
     even
 PatternBlockUWBG:
-; .INCBIN "dat/PatternBlockUWBG.dat" not found — stub 128 zero bytes
-    rept    128
-        dc.b    0
-    endr
+; .INCBIN dat/PatternBlockUWBG.dat (2080 bytes)
+    dc.b    $FF, $80, $80, $90, $90, $91, $91, $91, $FF, $80, $E0, $E0, $EE, $EE, $EE, $EE
+    dc.b    $91, $91, $91, $91, $91, $91, $91, $FF, $EE, $EE, $EE, $EE, $EE, $EE, $EE, $FF
+    dc.b    $FF, $01, $01, $01, $01, $01, $01, $11, $FF, $01, $01, $01, $01, $01, $E1, $E1
+    dc.b    $11, $11, $11, $11, $11, $11, $11, $FF, $EF, $EF, $EF, $EF, $EF, $EF, $EF, $FF
+    dc.b    $7F, $80, $80, $80, $80, $80, $80, $80, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF
+    dc.b    $80, $80, $80, $80, $80, $80, $80, $00, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $80
+    dc.b    $FE, $00, $00, $00, $00, $00, $00, $00, $FF, $FE, $FE, $FE, $FE, $FE, $FE, $FE
+    dc.b    $00, $00, $00, $00, $00, $00, $00, $00, $FE, $FE, $FE, $FE, $FE, $FE, $FE, $01
+    dc.b    $00, $00, $00, $00, $FF, $FF, $00, $00, $FF, $FF, $FF, $FF, $00, $FF, $FF, $FF
+    dc.b    $80, $9F, $9F, $8F, $CF, $4F, $47, $27, $E0, $E0, $E0, $F0, $70, $F0, $F8, $F8
+    dc.b    $27, $23, $13, $F3, $F1, $09, $09, $08, $F8, $FC, $FC, $1C, $DE, $FE, $FE, $EE
+    dc.b    $01, $F9, $F9, $F1, $F3, $F2, $E2, $E4, $06, $06, $06, $0E, $0D, $0D, $1D, $1B
+    dc.b    $E4, $C4, $C8, $CF, $8F, $90, $90, $10, $1B, $3B, $37, $30, $77, $6F, $6F, $67
+    dc.b    $00, $00, $FF, $FF, $00, $00, $00, $00, $FF, $FF, $FF, $00, $FF, $FF, $FF, $FF
+    dc.b    $08, $09, $09, $F1, $F3, $13, $23, $27, $EE, $FE, $FE, $DE, $1C, $FC, $FC, $F8
+    dc.b    $27, $47, $4F, $CF, $8F, $9F, $9F, $80, $F8, $F8, $F0, $70, $F0, $E0, $E0, $E0
+    dc.b    $10, $90, $90, $8F, $CF, $C8, $C4, $E4, $67, $6F, $6F, $77, $30, $37, $3B, $1B
+    dc.b    $E4, $E2, $F2, $F3, $F1, $F9, $F9, $01, $1B, $1D, $0D, $0D, $0E, $06, $06, $06
+    dc.b    $0C, $0C, $0C, $0C, $0C, $0C, $0C, $0C, $F7, $F7, $F7, $F7, $F7, $F7, $F7, $F7
+    dc.b    $F8, $0E, $01, $60, $7C, $7F, $7F, $7F, $F7, $FF, $FF, $1F, $03, $00, $00, $00
+    dc.b    $7F, $7F, $7F, $7C, $60, $01, $0E, $F8, $00, $00, $00, $03, $1F, $FE, $F1, $0F
+    dc.b    $18, $18, $D8, $38, $07, $80, $F0, $FE, $EF, $EF, $E7, $FE, $FF, $7F, $0F, $00
+    dc.b    $FE, $F0, $80, $07, $38, $D8, $18, $18, $00, $0F, $7F, $F8, $C6, $2F, $EF, $EF
+    dc.b    $30, $30, $30, $30, $30, $30, $30, $30, $EF, $EF, $EF, $EF, $EF, $EF, $EF, $EF
+    dc.b    $18, $18, $1B, $1C, $E0, $01, $0F, $7F, $F7, $F7, $E7, $7F, $FF, $FE, $F0, $00
+    dc.b    $7F, $0F, $01, $E0, $1C, $1B, $18, $18, $00, $F0, $FE, $1F, $63, $F4, $F7, $F7
+    dc.b    $1F, $70, $80, $06, $3E, $FE, $FE, $FE, $EF, $FF, $FF, $F8, $C0, $00, $00, $00
+    dc.b    $FE, $FE, $FE, $3E, $06, $80, $70, $1F, $00, $00, $00, $C0, $F8, $7F, $8F, $F0
+    dc.b    $00, $00, $00, $00, $00, $00, $00, $00, $AF, $DD, $6E, $68, $A0, $C0, $80, $80
+    dc.b    $00, $00, $00, $00, $00, $00, $00, $00, $BF, $76, $6E, $1E, $05, $03, $01, $01
+    dc.b    $00, $00, $00, $00, $00, $00, $00, $00, $80, $80, $C0, $A0, $78, $76, $6E, $FD
+    dc.b    $00, $00, $00, $00, $00, $00, $00, $00, $01, $01, $03, $05, $16, $76, $BB, $F5
+    dc.b    $00, $00, $00, $00, $00, $00, $00, $00, $DB, $EC, $E8, $F0, $F0, $60, $A0, $80
+    dc.b    $00, $00, $00, $00, $00, $00, $00, $00, $C0, $A0, $E0, $F0, $F0, $E8, $DC, $BF
+    dc.b    $00, $00, $00, $00, $00, $00, $00, $00, $DB, $37, $17, $0F, $0F, $06, $05, $01
+    dc.b    $00, $00, $00, $00, $00, $00, $00, $00, $03, $05, $07, $0F, $0F, $17, $3B, $FD
+    dc.b    $01, $67, $77, $69, $65, $22, $32, $12, $9F, $0D, $06, $00, $10, $90, $88, $8C
+    dc.b    $1F, $4F, $5E, $5E, $5E, $2E, $1F, $1F, $00, $0A, $0E, $06, $0E, $86, $C1, $C0
+    dc.b    $FE, $FC, $F8, $98, $6E, $DE, $CC, $FC, $B6, $AD, $AB, $01, $60, $D0, $C1, $C5
+    dc.b    $24, $40, $C0, $80, $8C, $9E, $60, $9C, $07, $03, $07, $03, $01, $00, $1E, $61
+    dc.b    $00, $FF, $FF, $FF, $FF, $FF, $FE, $FC, $00, $00, $00, $FF, $80, $80, $80, $40
+    dc.b    $FC, $FE, $FE, $FE, $FE, $FF, $FF, $00, $40, $40, $40, $20, $20, $20, $20, $00
+    dc.b    $00, $FF, $FF, $FF, $FF, $FF, $7F, $3F, $00, $00, $00, $FF, $01, $01, $01, $02
+    dc.b    $3F, $7F, $7F, $7F, $7F, $FF, $FF, $00, $02, $02, $02, $04, $04, $04, $04, $00
+    dc.b    $00, $FF, $FF, $FE, $FE, $FE, $FE, $FC, $00, $20, $20, $20, $20, $40, $40, $40
+    dc.b    $FC, $FE, $FF, $FF, $FF, $FF, $FF, $00, $40, $80, $80, $80, $FF, $00, $00, $00
+    dc.b    $00, $FF, $FF, $7F, $7F, $7F, $7F, $3F, $00, $04, $04, $04, $04, $02, $02, $02
+    dc.b    $3F, $7F, $FF, $FF, $FF, $FF, $FF, $00, $02, $01, $01, $01, $FF, $00, $00, $00
+    dc.b    $7F, $7F, $7F, $7F, $7F, $7F, $7E, $7C, $1E, $11, $10, $10, $10, $10, $10, $10
+    dc.b    $7C, $7E, $7F, $7F, $7F, $7F, $7F, $7F, $10, $10, $10, $10, $10, $10, $11, $1E
+    dc.b    $FE, $FE, $FE, $FE, $FE, $FE, $7E, $06, $00, $E0, $1E, $00, $00, $00, $00, $00
+    dc.b    $06, $7E, $FE, $FE, $FE, $FE, $FE, $FE, $00, $00, $00, $00, $00, $1E, $E0, $00
+    dc.b    $7F, $7F, $7F, $7F, $7F, $7F, $7E, $60, $00, $07, $78, $00, $00, $00, $00, $00
+    dc.b    $60, $7E, $7F, $7F, $7F, $7F, $7F, $7F, $00, $00, $00, $00, $00, $78, $07, $00
+    dc.b    $FE, $FE, $FE, $FE, $FE, $FE, $7E, $3E, $78, $88, $08, $08, $08, $08, $08, $08
+    dc.b    $3E, $7E, $FE, $FE, $FE, $FE, $FE, $FE, $08, $08, $08, $08, $08, $08, $88, $78
+    dc.b    $00, $FF, $FE, $FE, $FF, $FF, $FE, $FE, $00, $00, $00, $02, $04, $08, $10, $20
+    dc.b    $FF, $FF, $FE, $FE, $FF, $FF, $FE, $00, $20, $10, $08, $04, $03, $00, $00, $00
+    dc.b    $00, $7F, $FF, $FF, $7F, $7F, $FF, $FF, $00, $00, $00, $C0, $20, $10, $08, $04
+    dc.b    $7F, $7F, $FF, $FF, $7F, $7F, $FF, $00, $04, $08, $10, $20, $40, $00, $00, $00
+    dc.b    $7F, $7F, $7F, $7F, $7F, $7F, $7F, $33, $00, $00, $01, $02, $04, $08, $10, $10
+    dc.b    $4C, $7F, $7F, $7F, $7F, $7F, $7F, $7F, $00, $10, $08, $04, $02, $01, $00, $00
+    dc.b    $FE, $FE, $FE, $FE, $FE, $FE, $FE, $32, $00, $00, $80, $40, $20, $10, $08, $00
+    dc.b    $CC, $FE, $FE, $FE, $FE, $FE, $FE, $FE, $08, $08, $10, $20, $40, $80, $00, $00
+    dc.b    $7F, $BF, $DF, $EF, $F7, $F8, $F8, $F8, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF
+    dc.b    $F8, $F8, $F8, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $F8, $F0, $E0, $C0, $80
+    dc.b    $FF, $FF, $FF, $FF, $FF, $1F, $1F, $1F, $FE, $FC, $F8, $F0, $E0, $E0, $E0, $E0
+    dc.b    $1F, $1F, $1F, $EF, $F7, $FB, $FD, $FE, $E0, $E0, $E0, $10, $08, $04, $02, $01
+    dc.b    $00, $13, $0F, $45, $47, $02, $00, $00, $8C, $60, $73, $79, $59, $8C, $C2, $CF
+    dc.b    $07, $1E, $01, $1F, $07, $7F, $0F, $7E, $B8, $60, $00, $DC, $80, $70, $00, $70
+    dc.b    $00, $8E, $5E, $BC, $BF, $3E, $D8, $DE, $70, $20, $00, $81, $8F, $1E, $19, $1C
+    dc.b    $9E, $FE, $BE, $72, $AC, $AC, $D6, $0E, $00, $00, $00, $00, $01, $01, $00, $00
+    dc.b    $E0, $F8, $1E, $07, $01, $00, $00, $00, $1F, $E7, $F9, $FE, $FF, $FF, $FF, $FF
+    dc.b    $00, $00, $00, $01, $07, $1E, $F8, $E0, $FF, $FF, $FF, $FE, $F9, $E7, $1F, $FF
+    dc.b    $00, $00, $00, $80, $E0, $78, $1F, $07, $FF, $FF, $FF, $7F, $9F, $E7, $F8, $FF
+    dc.b    $07, $1F, $78, $E0, $80, $00, $00, $00, $F8, $E7, $9F, $7F, $FF, $FF, $FF, $FF
+    dc.b    $18, $18, $1E, $1F, $19, $18, $18, $18, $EF, $EF, $E1, $EE, $EF, $EF, $EF, $EF
+    dc.b    $18, $18, $18, $19, $1F, $1E, $18, $18, $EF, $EF, $EF, $EE, $E1, $EF, $EF, $EF
+    dc.b    $18, $18, $18, $98, $F8, $78, $18, $18, $F7, $F7, $F7, $77, $87, $F7, $F7, $F7
+    dc.b    $18, $18, $78, $F8, $98, $18, $18, $18, $F7, $F7, $87, $77, $F7, $F7, $F7, $F7
+    dc.b    $C0, $C0, $C0, $60, $60, $30, $30, $18, $7F, $7F, $7F, $BF, $BF, $DF, $DF, $EF
+    dc.b    $18, $30, $30, $60, $60, $C0, $C0, $C0, $EF, $DF, $DF, $BF, $BF, $7F, $7F, $7F
+    dc.b    $18, $0C, $0C, $06, $06, $03, $03, $03, $EF, $F7, $F7, $FB, $FB, $FD, $FD, $FD
+    dc.b    $03, $03, $03, $06, $06, $0C, $0C, $18, $FD, $FD, $FD, $FB, $FB, $F7, $F7, $EF
+    dc.b    $80, $40, $20, $1F, $1F, $1C, $1A, $19, $7F, $BF, $DF, $E0, $E7, $EB, $ED, $EE
+    dc.b    $19, $1A, $1C, $1F, $1F, $20, $40, $80, $EE, $ED, $EB, $E7, $E0, $DF, $BF, $7F
+    dc.b    $98, $58, $38, $F8, $F8, $04, $02, $01, $77, $B7, $D7, $E7, $07, $FB, $FD, $FE
+    dc.b    $01, $02, $04, $F8, $F8, $38, $58, $98, $FE, $FD, $FB, $07, $E7, $D7, $B7, $77
+    dc.b    $18, $18, $18, $98, $F8, $78, $18, $18, $EF, $EF, $EF, $6F, $8F, $EF, $EF, $EF
+    dc.b    $18, $18, $78, $F8, $98, $18, $18, $18, $EF, $EF, $8F, $6F, $EF, $EF, $EF, $EF
+    dc.b    $18, $18, $1E, $1F, $19, $18, $18, $18, $F7, $F7, $F1, $F6, $F7, $F7, $F7, $F7
+    dc.b    $18, $18, $18, $19, $1F, $1E, $18, $18, $F7, $F7, $F7, $F6, $F1, $F7, $F7, $F7
+    dc.b    $00, $00, $00, $FF, $FF, $30, $30, $18, $FF, $FF, $FF, $00, $DF, $DF, $DF, $EF
+    dc.b    $18, $30, $30, $FF, $FF, $00, $00, $00, $EF, $DF, $DF, $DF, $00, $FF, $FF, $FF
+    dc.b    $18, $0C, $0C, $FF, $FF, $00, $00, $00, $EF, $F7, $F7, $F7, $00, $FF, $FF, $FF
+    dc.b    $00, $00, $00, $FF, $FF, $0C, $0C, $18, $FF, $FF, $FF, $00, $F7, $F7, $F7, $EF
+    dc.b    $18, $0C, $0C, $FF, $FF, $00, $00, $00, $EF, $F7, $F7, $00, $FF, $FF, $FF, $FF
+    dc.b    $00, $00, $00, $FF, $FF, $0C, $0C, $18, $FF, $FF, $FF, $FF, $00, $F7, $F7, $EF
+    dc.b    $00, $00, $00, $FF, $FF, $30, $30, $18, $FF, $FF, $FF, $FF, $00, $DF, $DF, $EF
+    dc.b    $18, $30, $30, $FF, $FF, $00, $00, $00, $EF, $DF, $DF, $00, $FF, $FF, $FF, $FF
+    dc.b    $0C, $1C, $3C, $3C, $3C, $3E, $1E, $0F, $FD, $FD, $FD, $FC, $F0, $C0, $E0, $F0
+    dc.b    $0F, $0E, $3E, $3C, $3C, $3C, $1C, $0C, $F0, $FE, $FE, $CC, $F0, $FD, $FD, $FD
+    dc.b    $F0, $78, $7C, $3C, $3C, $3C, $38, $30, $0F, $7F, $7F, $33, $0F, $BF, $BF, $BF
+    dc.b    $30, $38, $3C, $3C, $3C, $7C, $78, $F0, $BF, $BF, $BF, $3F, $0F, $03, $07, $0F
+    dc.b    $00, $00, $3C, $7E, $FF, $FF, $07, $01, $FF, $FF, $FB, $F9, $F0, $F0, $00, $E0
+    dc.b    $01, $07, $FF, $FF, $7E, $3C, $00, $00, $E0, $00, $F0, $F0, $F9, $FB, $FF, $FF
+    dc.b    $C0, $E0, $FF, $FF, $3E, $3C, $00, $00, $47, $60, $77, $77, $EF, $EF, $FF, $FF
+    dc.b    $00, $00, $3C, $3E, $FF, $FF, $E0, $C0, $FF, $FF, $EF, $EF, $77, $77, $60, $47
+    dc.b    $00, $00, $00, $FF, $FF, $00, $00, $00, $FF, $FF, $FF, $00, $FF, $FF, $FF, $FF
+    dc.b    $00, $00, $00, $FF, $FF, $00, $00, $00, $FF, $FF, $FF, $FF, $00, $FF, $FF, $FF
+    dc.b    $18, $18, $18, $18, $18, $18, $18, $18, $EF, $EF, $EF, $EF, $EF, $EF, $EF, $EF
+    dc.b    $18, $18, $18, $18, $18, $18, $18, $18, $F7, $F7, $F7, $F7, $F7, $F7, $F7, $F7
+    dc.b    $80, $40, $20, $10, $08, $04, $02, $01, $7F, $BF, $DF, $EF, $F7, $FB, $FD, $FE
+    dc.b    $01, $02, $04, $08, $10, $20, $40, $80, $FE, $FD, $FB, $F7, $EF, $DF, $BF, $7F
+    dc.b    $00, $00, $00, $00, $00, $00, $00, $00, $FF, $81, $81, $81, $81, $81, $81, $FF
+    dc.b    $00, $00, $00, $00, $00, $00, $00, $00, $FF, $81, $81, $80, $80, $81, $81, $FF
+    dc.b    $00, $00, $00, $00, $00, $00, $00, $00, $FF, $81, $81, $01, $01, $81, $81, $FF
+    dc.b    $00, $00, $00, $00, $00, $00, $00, $00, $FF, $81, $81, $00, $00, $81, $81, $FF
+    dc.b    $00, $00, $00, $00, $00, $00, $00, $00, $FF, $81, $81, $81, $81, $81, $81, $E7
+    dc.b    $00, $00, $00, $00, $00, $00, $00, $00, $FF, $81, $81, $80, $80, $81, $81, $E7
+    dc.b    $00, $00, $00, $00, $00, $00, $00, $00, $FF, $81, $81, $01, $01, $81, $81, $E7
+    dc.b    $00, $00, $00, $00, $00, $00, $00, $00, $FF, $81, $81, $00, $00, $81, $81, $E7
+    dc.b    $00, $00, $00, $00, $00, $00, $00, $00, $E7, $81, $81, $81, $81, $81, $81, $FF
+    dc.b    $00, $00, $00, $00, $00, $00, $00, $00, $E7, $81, $81, $80, $80, $81, $81, $FF
+    dc.b    $00, $00, $00, $00, $00, $00, $00, $00, $E7, $81, $81, $01, $01, $81, $81, $FF
+    dc.b    $00, $00, $00, $00, $00, $00, $00, $00, $E7, $81, $81, $00, $00, $81, $81, $FF
+    dc.b    $00, $00, $00, $00, $00, $00, $00, $00, $E7, $81, $81, $81, $81, $81, $81, $E7
+    dc.b    $00, $00, $00, $00, $00, $00, $00, $00, $E7, $81, $81, $80, $80, $81, $81, $E7
+    dc.b    $00, $00, $00, $00, $00, $00, $00, $00, $E7, $81, $81, $01, $01, $81, $81, $E7
+    dc.b    $00, $00, $00, $00, $00, $00, $00, $00, $E7, $81, $81, $00, $00, $81, $81, $E7
 
     even
 PatternBlockOWBG:
-; .INCBIN "dat/PatternBlockOWBG.dat" not found — stub 128 zero bytes
-    rept    128
-        dc.b    0
-    endr
+; .INCBIN dat/PatternBlockOWBG.dat (2080 bytes)
+    dc.b    $FF, $80, $80, $90, $90, $91, $91, $91, $00, $00, $60, $60, $6E, $6E, $6E, $6E
+    dc.b    $91, $91, $91, $91, $91, $91, $91, $FF, $6E, $6E, $6E, $6E, $6E, $6E, $6E, $00
+    dc.b    $FF, $01, $01, $01, $01, $01, $01, $11, $00, $00, $00, $00, $00, $00, $E0, $E0
+    dc.b    $11, $11, $11, $11, $11, $11, $11, $FF, $EE, $EE, $EE, $EE, $EE, $EE, $EE, $00
+    dc.b    $1F, $3F, $3F, $3F, $1F, $3F, $3F, $3F, $80, $BF, $BF, $BF, $80, $BF, $BF, $BF
+    dc.b    $FC, $FC, $FC, $FC, $FC, $FC, $FC, $FC, $02, $FE, $FE, $FE, $02, $FE, $FE, $FE
+    dc.b    $FF, $BA, $FE, $FE, $FE, $FE, $FE, $FE, $01, $00, $00, $00, $00, $00, $00, $00
+    dc.b    $FE, $FE, $FE, $FE, $FE, $BA, $FE, $80, $00, $00, $00, $00, $00, $00, $00, $80
+    dc.b    $FF, $FC, $F8, $E0, $E0, $E0, $E0, $E0, $EF, $FF, $FF, $BF, $EF, $E7, $EF, $7F
+    dc.b    $80, $80, $80, $00, $00, $00, $00, $00, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF
+    dc.b    $00, $00, $00, $00, $00, $00, $00, $00, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF
+    dc.b    $00, $00, $00, $00, $00, $00, $00, $00, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF
+    dc.b    $FF, $4F, $0F, $03, $03, $03, $03, $01, $FB, $FF, $FF, $FF, $FE, $FF, $FF, $FF
+    dc.b    $01, $01, $00, $00, $00, $00, $00, $00, $FD, $F9, $FF, $FF, $FF, $FF, $FF, $FF
+    dc.b    $00, $00, $00, $00, $00, $00, $00, $80, $FF, $FF, $FF, $FF, $7F, $7F, $7F, $BF
+    dc.b    $80, $80, $80, $C0, $E0, $E0, $E0, $FC, $BF, $BF, $BF, $4F, $EF, $E3, $A1, $FC
+    dc.b    $00, $00, $00, $00, $00, $00, $00, $00, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF
+    dc.b    $00, $00, $00, $00, $00, $00, $00, $00, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF
+    dc.b    $00, $00, $00, $00, $00, $00, $00, $01, $FF, $FF, $FF, $FF, $FF, $FF, $FE, $FD
+    dc.b    $01, $01, $03, $03, $03, $07, $07, $1F, $FF, $FD, $FB, $FA, $FB, $C7, $E7, $1E
+    dc.b    $00, $00, $20, $02, $00, $40, $00, $08, $FF, $FF, $DF, $FD, $FF, $BF, $FF, $F7
+    dc.b    $00, $01, $20, $00, $00, $82, $00, $10, $FF, $FE, $DF, $FF, $FF, $7D, $FF, $EF
+    dc.b    $01, $08, $00, $00, $40, $04, $00, $00, $FE, $F7, $FF, $FF, $BF, $FB, $FF, $FF
+    dc.b    $10, $00, $00, $02, $10, $00, $00, $40, $EF, $FF, $FF, $FD, $EF, $FF, $FF, $BF
+    dc.b    $FF, $FF, $FF, $FF, $FF, $FF, $FB, $D0, $FE, $FF, $7F, $FF, $FF, $FF, $6F, $FF
+    dc.b    $BF, $BB, $33, $F5, $59, $42, $10, $52, $FF, $FB, $FB, $3F, $B7, $BD, $FF, $FF
+    dc.b    $DA, $FE, $EB, $EB, $DB, $FF, $FF, $FF, $FF, $FF, $EF, $EF, $FF, $FF, $FF, $FF
+    dc.b    $EF, $EF, $FE, $B8, $6D, $49, $4E, $DA, $6F, $6B, $3B, $6F, $BE, $BE, $FF, $FF
+    dc.b    $AA, $BB, $BF, $FF, $FF, $7E, $FF, $FF, $AF, $BF, $BF, $FF, $FF, $FF, $FF, $FF
+    dc.b    $00, $00, $00, $01, $07, $07, $0F, $1F, $FF, $FE, $F8, $E1, $F6, $E7, $CF, $DF
+    dc.b    $1F, $1F, $3F, $7F, $7F, $7F, $7F, $7F, $DB, $9F, $BF, $EF, $FF, $FD, $DF, $FF
+    dc.b    $00, $00, $63, $FF, $FF, $FF, $FF, $FF, $98, $00, $63, $FE, $FF, $F7, $FF, $FF
+    dc.b    $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $DF, $FF, $FF, $FF, $7F, $FF
+    dc.b    $00, $00, $80, $F0, $F0, $F0, $F0, $FC, $7F, $1F, $83, $F7, $FF, $DF, $F3, $FD
+    dc.b    $FE, $FE, $FE, $FE, $FE, $FC, $FC, $FC, $7E, $F6, $FE, $FF, $EF, $FF, $FF, $FF
+    dc.b    $FF, $FF, $FF, $FF, $7F, $7F, $7F, $7F, $FE, $BF, $FF, $FF, $EF, $FF, $FF, $FF
+    dc.b    $7F, $3F, $0F, $07, $07, $07, $03, $00, $EF, $FF, $FF, $FF, $F7, $E7, $FF, $FF
+    dc.b    $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $F7, $FF, $FF, $FF, $EF, $FF, $FF
+    dc.b    $FF, $FF, $FF, $FF, $FF, $FF, $FB, $D0, $FE, $FF, $7F, $FF, $FF, $FF, $6F, $FF
+    dc.b    $FC, $FC, $FC, $FC, $FC, $FC, $FC, $FE, $F5, $FD, $FD, $FD, $FD, $ED, $FC, $FE
+    dc.b    $FE, $FE, $FC, $F0, $F0, $F0, $E0, $00, $FF, $BB, $FF, $FF, $F7, $73, $FF, $FF
+    dc.b    $00, $00, $E0, $FF, $FF, $FF, $FF, $FF, $1F, $00, $E0, $FF, $DD, $FF, $FF, $FE
+    dc.b    $00, $C0, $80, $C0, $C0, $F0, $68, $68, $FF, $FF, $1F, $1F, $07, $03, $0B, $0B
+    dc.b    $68, $68, $E8, $E8, $F8, $F0, $F8, $78, $0B, $0B, $0B, $0B, $03, $33, $41, $C0
+    dc.b    $00, $00, $00, $00, $00, $00, $00, $00, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF
+    dc.b    $3C, $7E, $FC, $FC, $FC, $F8, $40, $00, $C3, $81, $02, $02, $02, $04, $B9, $C3
+    dc.b    $00, $03, $07, $07, $1F, $3F, $2F, $2F, $FF, $FF, $FC, $FC, $F8, $E0, $E9, $E9
+    dc.b    $2F, $2F, $2F, $2F, $3F, $3F, $7F, $FE, $E9, $E9, $E8, $E8, $E0, $E0, $C0, $81
+    dc.b    $F6, $F6, $F2, $06, $FE, $FA, $FA, $06, $A0, $A0, $A0, $04, $F8, $80, $80, $04
+    dc.b    $FE, $FA, $FA, $06, $FE, $FE, $FE, $00, $F8, $80, $80, $04, $F8, $80, $80, $00
+    dc.b    $FF, $00, $7C, $7C, $38, $10, $10, $78, $00, $00, $81, $81, $C3, $E7, $E7, $81
+    dc.b    $7E, $FE, $FE, $FE, $FE, $FE, $FE, $00, $FF, $80, $80, $80, $80, $80, $80, $00
+    dc.b    $FE, $FE, $BE, $C0, $FE, $BE, $BE, $C0, $81, $81, $81, $C1, $BF, $81, $81, $C1
+    dc.b    $BE, $BE, $BE, $C0, $FE, $FE, $7E, $00, $BF, $81, $81, $C1, $BF, $81, $01, $00
+    dc.b    $07, $FF, $FB, $FC, $FF, $FD, $FD, $01, $FF, $FC, $00, $00, $7C, $80, $00, $00
+    dc.b    $C6, $FE, $01, $C0, $B0, $30, $10, $10, $00, $00, $00, $3F, $40, $80, $80, $00
+    dc.b    $E0, $FF, $EF, $0F, $FF, $FE, $FF, $C0, $FF, $1F, $00, $00, $3E, $40, $40, $40
+    dc.b    $E3, $FF, $C0, $03, $0D, $0C, $08, $08, $40, $40, $00, $FC, $02, $01, $01, $00
+    dc.b    $00, $00, $00, $00, $00, $04, $C8, $D8, $FD, $F9, $31, $00, $00, $00, $00, $00
+    dc.b    $78, $70, $F0, $F1, $B9, $A9, $A9, $B1, $00, $00, $00, $00, $00, $00, $00, $00
+    dc.b    $00, $00, $00, $00, $00, $00, $00, $00, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF
+    dc.b    $00, $00, $00, $00, $00, $00, $00, $00, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF
+    dc.b    $0D, $0D, $0D, $2D, $2D, $2D, $2D, $2D, $C0, $C0, $C0, $C0, $C0, $C0, $C0, $C0
+    dc.b    $69, $4B, $5B, $5B, $5F, $D7, $F7, $CD, $80, $80, $80, $80, $80, $00, $00, $32
+    dc.b    $46, $7F, $78, $38, $7E, $FF, $37, $03, $BF, $8F, $87, $87, $F1, $F8, $F0, $F0
+    dc.b    $01, $01, $00, $00, $00, $07, $0F, $03, $F8, $FC, $FC, $FE, $FE, $FF, $FF, $FF
+    dc.b    $10, $18, $1E, $17, $07, $0F, $CB, $EB, $EF, $E0, $E0, $E0, $E0, $E0, $20, $00
+    dc.b    $FB, $B7, $BB, $1B, $0B, $C3, $C7, $87, $00, $00, $00, $00, $00, $C0, $C0, $80
+    dc.b    $00, $00, $08, $88, $FC, $FE, $F7, $F7, $87, $03, $00, $00, $00, $00, $00, $00
+    dc.b    $E3, $E3, $E3, $F7, $FF, $E4, $84, $80, $00, $08, $08, $00, $00, $00, $00, $00
+    dc.b    $00, $00, $00, $00, $07, $1F, $2F, $EE, $81, $00, $00, $00, $00, $00, $00, $00
+    dc.b    $C6, $C6, $C6, $EE, $FE, $3E, $0B, $02, $00, $10, $10, $00, $00, $00, $00, $00
+    dc.b    $B2, $B2, $92, $92, $98, $9C, $95, $95, $00, $00, $00, $00, $00, $00, $00, $00
+    dc.b    $B5, $A4, $AC, $E8, $FC, $B9, $C1, $F9, $00, $00, $00, $00, $00, $00, $00, $00
+    dc.b    $02, $04, $1C, $2B, $56, $C0, $A0, $20, $FC, $F8, $E1, $C3, $87, $07, $0F, $0F
+    dc.b    $40, $00, $80, $80, $00, $00, $00, $40, $1F, $1F, $3F, $3F, $3F, $1F, $1F, $0F
+    dc.b    $03, $07, $0F, $1F, $3F, $3F, $3F, $33, $FC, $F8, $F0, $E3, $C3, $CF, $CF, $C3
+    dc.b    $FF, $BF, $BE, $BF, $FF, $FF, $FF, $00, $C3, $83, $80, $80, $FF, $00, $00, $00
+    dc.b    $80, $C0, $E0, $70, $78, $D8, $D8, $18, $7F, $7F, $3F, $1F, $0F, $CF, $CF, $0F
+    dc.b    $7E, $7A, $7A, $FA, $FE, $FE, $FE, $00, $0F, $0A, $0A, $0A, $FE, $00, $00, $00
+    dc.b    $27, $0C, $1C, $1F, $FD, $B4, $FD, $FD, $C8, $C0, $E4, $E7, $00, $00, $00, $00
+    dc.b    $FD, $FD, $FD, $FD, $B5, $FC, $00, $00, $00, $01, $00, $01, $00, $01, $80, $00
+    dc.b    $A4, $C4, $E4, $E4, $E4, $14, $FC, $EC, $4F, $0F, $9F, $9F, $0F, $07, $05, $01
+    dc.b    $EC, $EC, $F4, $F4, $C4, $3C, $7C, $00, $01, $81, $F5, $85, $05, $87, $05, $00
+    dc.b    $00, $0A, $2F, $37, $7F, $7D, $FF, $DF, $FF, $F4, $D0, $C0, $80, $80, $00, $00
+    dc.b    $7F, $F7, $FF, $DF, $7E, $1F, $07, $00, $80, $00, $00, $00, $80, $E5, $F7, $E0
+    dc.b    $00, $00, $80, $C8, $E0, $D0, $C0, $E0, $FF, $3F, $07, $03, $03, $01, $03, $01
+    dc.b    $64, $E0, $80, $D0, $00, $20, $C0, $00, $01, $01, $03, $03, $07, $1F, $C0, $03
+    dc.b    $30, $78, $59, $B9, $B9, $B3, $F3, $F3, $C7, $83, $A0, $42, $42, $44, $04, $04
+    dc.b    $73, $73, $73, $F7, $F7, $FF, $7D, $00, $84, $84, $84, $00, $00, $00, $80, $00
+    dc.b    $00, $00, $C0, $F0, $F0, $F8, $78, $60, $FF, $FF, $0F, $07, $03, $03, $01, $01
+    dc.b    $68, $28, $28, $A0, $E4, $8C, $C0, $00, $01, $01, $01, $01, $01, $03, $00, $03
+    dc.b    $00, $00, $00, $00, $00, $02, $06, $06, $FF, $FF, $FF, $FF, $FC, $FC, $F8, $F8
+    dc.b    $06, $36, $7E, $76, $74, $74, $FC, $FC, $E0, $C0, $80, $80, $80, $80, $00, $00
+    dc.b    $30, $78, $FC, $7C, $7C, $78, $7C, $7C, $C3, $81, $01, $80, $80, $80, $80, $01
+    dc.b    $FE, $FE, $FC, $7C, $7C, $FC, $78, $4C, $01, $01, $01, $80, $00, $00, $01, $01
+    dc.b    $00, $10, $38, $7C, $7C, $7E, $7E, $7C, $FF, $E7, $C3, $81, $01, $80, $80, $80
+    dc.b    $FC, $F8, $F8, $7C, $7E, $0E, $F4, $E6, $01, $01, $01, $80, $00, $C0, $00, $00
+    dc.b    $00, $00, $00, $00, $00, $00, $80, $C0, $FF, $FF, $FF, $FF, $FF, $FF, $7F, $07
+    dc.b    $B8, $F8, $FC, $7C, $7C, $78, $18, $08, $03, $03, $01, $81, $81, $81, $81, $83
+    dc.b    $F7, $F7, $E7, $E7, $E7, $E7, $47, $07, $08, $08, $08, $08, $08, $08, $08, $88
+    dc.b    $07, $05, $00, $00, $00, $00, $00, $00, $E0, $F0, $F8, $FF, $FF, $FF, $FF, $FF
+    dc.b    $0C, $CE, $CE, $CF, $CF, $CF, $C7, $C3, $10, $10, $10, $10, $10, $10, $08, $04
+    dc.b    $C3, $83, $03, $03, $03, $03, $03, $00, $04, $04, $04, $04, $F4, $F8, $F8, $FC
+    dc.b    $E0, $F1, $F1, $71, $73, $F3, $F3, $F3, $09, $02, $02, $82, $84, $04, $04, $04
+    dc.b    $E3, $E3, $41, $40, $9F, $9E, $BF, $2C, $04, $04, $84, $9C, $20, $20, $40, $52
+    dc.b    $C3, $F0, $F2, $FA, $FA, $FE, $E0, $DC, $08, $01, $00, $00, $00, $00, $19, $21
+    dc.b    $DE, $DE, $9C, $9C, $1C, $1C, $18, $00, $20, $20, $20, $21, $21, $21, $00, $99
+    dc.b    $7E, $7F, $4F, $37, $77, $77, $77, $77, $80, $80, $80, $C0, $80, $80, $80, $80
+    dc.b    $76, $76, $36, $36, $34, $20, $00, $00, $80, $80, $40, $40, $40, $41, $3F, $FF
+    dc.b    $18, $1C, $1C, $1C, $1C, $10, $00, $00, $20, $20, $20, $21, $21, $23, $0F, $3F
+    dc.b    $00, $00, $00, $00, $00, $00, $00, $00, $7F, $7F, $7F, $7F, $FF, $FF, $FF, $FF
+    dc.b    $00, $07, $1F, $3F, $3F, $FC, $FC, $FF, $FF, $FF, $78, $60, $67, $48, $10, $10
+    dc.b    $FF, $F5, $FD, $C1, $B6, $32, $10, $10, $13, $04, $08, $3E, $41, $80, $80, $00
+    dc.b    $00, $E1, $E1, $F9, $F9, $2D, $37, $F7, $FF, $FF, $07, $03, $E3, $00, $00, $00
+    dc.b    $F7, $AF, $BF, $83, $6D, $4C, $08, $08, $C0, $20, $10, $7C, $82, $01, $01, $00
+    dc.b    $FF, $FF, $FF, $FF, $FF, $FF, $CF, $00, $EF, $FF, $FF, $FF, $7F, $FB, $FF, $FF
+    dc.b    $00, $00, $00, $00, $00, $00, $00, $00, $7F, $3F, $1F, $0F, $07, $03, $01, $00
+    dc.b    $00, $00, $00, $00, $00, $00, $00, $00, $FE, $FC, $F8, $F0, $E0, $C0, $80, $00
+    dc.b    $02, $04, $08, $10, $20, $40, $80, $00, $03, $07, $0F, $1F, $3F, $7F, $FF, $FF
+    dc.b    $40, $20, $10, $08, $04, $02, $01, $00, $C0, $E0, $F0, $F8, $FC, $FE, $FF, $FF
+    dc.b    $02, $04, $08, $10, $20, $40, $80, $00, $02, $04, $08, $10, $20, $40, $80, $00
+    dc.b    $40, $20, $10, $08, $04, $02, $01, $00, $40, $20, $10, $08, $04, $02, $01, $00
+    dc.b    $01, $02, $04, $08, $10, $20, $40, $FF, $01, $02, $04, $08, $10, $20, $40, $FF
+    dc.b    $80, $40, $20, $10, $08, $04, $02, $FF, $80, $40, $20, $10, $08, $04, $02, $FF
+    dc.b    $01, $02, $04, $08, $10, $20, $40, $81, $01, $02, $04, $08, $10, $20, $40, $81
+    dc.b    $80, $40, $20, $10, $08, $04, $02, $81, $80, $40, $20, $10, $08, $04, $02, $81
+    dc.b    $01, $00, $00, $00, $00, $00, $00, $FF, $01, $00, $00, $00, $00, $00, $00, $FF
+    dc.b    $80, $00, $00, $00, $00, $00, $00, $FF, $80, $00, $00, $00, $00, $00, $00, $FF
+    dc.b    $FF, $00, $00, $00, $00, $00, $00, $FF, $FF, $00, $00, $00, $00, $00, $00, $FF
 
     even
 PatternBlockOWSP:
-; .INCBIN "dat/PatternBlockOWSP.dat" not found — stub 128 zero bytes
-    rept    128
-        dc.b    0
-    endr
+; .INCBIN dat/PatternBlockOWSP.dat (1824 bytes)
+    dc.b    $3F, $77, $77, $7E, $FC, $FC, $DD, $CD, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF
+    dc.b    $CF, $C7, $C7, $EF, $6F, $6D, $7D, $7D, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF
+    dc.b    $01, $03, $0E, $14, $0E, $3E, $09, $11, $00, $03, $0B, $1B, $11, $25, $3E, $7E
+    dc.b    $31, $31, $71, $61, $13, $06, $00, $03, $5E, $5E, $5E, $5E, $2C, $19, $0F, $00
+    dc.b    $E0, $20, $38, $38, $1C, $1C, $1E, $1E, $00, $C0, $C0, $C0, $E0, $E0, $E0, $E0
+    dc.b    $9E, $B6, $A2, $A4, $08, $08, $90, $E0, $60, $58, $7C, $78, $F0, $F0, $60, $00
+    dc.b    $00, $00, $00, $00, $70, $0F, $00, $43, $00, $00, $07, $80, $F0, $0F, $03, $53
+    dc.b    $30, $08, $10, $03, $00, $02, $00, $03, $3E, $18, $1C, $03, $36, $0A, $00, $03
+    dc.b    $F8, $06, $01, $01, $00, $02, $0C, $30, $F8, $06, $11, $0D, $00, $0E, $3E, $34
+    dc.b    $00, $E0, $04, $30, $00, $88, $30, $00, $82, $E4, $C4, $3C, $90, $A8, $F0, $20
+    dc.b    $00, $0A, $00, $00, $0C, $1F, $3C, $7F, $07, $0F, $0D, $0D, $07, $0F, $0C, $1B
+    dc.b    $7F, $7F, $77, $77, $77, $2F, $0F, $19, $93, $83, $81, $00, $00, $00, $00, $06
+    dc.b    $07, $0F, $1F, $1C, $18, $18, $38, $3C, $00, $03, $07, $0F, $0D, $0F, $0D, $0A
+    dc.b    $7E, $5E, $5F, $5F, $57, $6F, $2F, $21, $09, $29, $20, $01, $01, $00, $00, $0E
+    dc.b    $0F, $1F, $18, $08, $0C, $24, $3F, $7F, $0F, $1F, $1D, $1D, $1F, $3F, $2F, $67
+    dc.b    $7F, $4F, $47, $0F, $1F, $1F, $1E, $0C, $70, $70, $79, $7F, $61, $18, $1E, $0C
+    dc.b    $00, $00, $08, $64, $A6, $8E, $A5, $15, $00, $00, $38, $7C, $FE, $FE, $FF, $FF
+    dc.b    $0F, $4E, $7E, $18, $00, $00, $00, $00, $FF, $FE, $7E, $18, $00, $00, $00, $00
+    dc.b    $08, $09, $03, $03, $FE, $FF, $FE, $FE, $13, $16, $0E, $0F, $FD, $B4, $FD, $FD
+    dc.b    $FE, $FF, $FE, $FF, $FE, $FE, $FE, $00, $FD, $FC, $FD, $FC, $B5, $FD, $00, $1E
+    dc.b    $08, $8D, $C5, $C7, $0A, $F6, $02, $06, $D0, $75, $75, $F7, $F2, $0A, $FE, $F8
+    dc.b    $0F, $C7, $7E, $C3, $1B, $26, $02, $02, $F0, $38, $83, $3E, $E6, $DA, $3E, $02
+    dc.b    $08, $09, $03, $03, $FE, $FF, $FE, $FE, $13, $16, $0E, $0F, $FD, $B4, $FD, $FD
+    dc.b    $FE, $FF, $FE, $FF, $FE, $FE, $FE, $00, $FD, $FC, $FD, $FC, $B5, $FD, $00, $00
+    dc.b    $0D, $8D, $C7, $C2, $0A, $F6, $06, $0F, $D5, $75, $77, $F2, $F2, $0A, $F8, $F0
+    dc.b    $07, $C6, $7B, $C3, $02, $1A, $26, $00, $F8, $3B, $86, $3E, $FE, $E6, $1A, $3C
+    dc.b    $08, $AA, $A4, $E4, $40, $4F, $60, $28, $13, $B7, $AF, $EF, $4F, $40, $5F, $5F
+    dc.b    $28, $20, $3F, $40, $40, $60, $44, $40, $5F, $DF, $C0, $BF, $3F, $5F, $78, $40
+    dc.b    $48, $28, $30, $30, $3F, $F3, $7B, $39, $90, $D0, $C0, $C0, $CE, $1E, $86, $C6
+    dc.b    $3D, $3F, $FF, $3F, $3F, $3F, $7F, $08, $C2, $C2, $02, $C2, $C6, $C6, $00, $70
+    dc.b    $A8, $AA, $E4, $44, $40, $4F, $20, $28, $B3, $B7, $EF, $4F, $4F, $40, $5F, $5F
+    dc.b    $28, $20, $7F, $40, $40, $40, $7C, $04, $DF, $DF, $80, $7F, $7F, $5F, $40, $38
+    dc.b    $48, $28, $30, $30, $3F, $F3, $7B, $39, $90, $D0, $C0, $C0, $CE, $1E, $86, $C6
+    dc.b    $3D, $3F, $FF, $3F, $3F, $7F, $0F, $00, $C2, $C2, $02, $C2, $C6, $86, $70, $00
+    dc.b    $06, $1B, $FF, $7D, $37, $FF, $7F, $3F, $01, $04, $00, $02, $08, $0C, $1B, $19
+    dc.b    $7F, $5F, $1F, $1B, $03, $03, $03, $0F, $09, $0D, $03, $00, $00, $00, $00, $00
+    dc.b    $06, $DB, $6F, $3D, $F7, $7F, $3F, $7F, $01, $04, $10, $02, $08, $0C, $1B, $19
+    dc.b    $FF, $1F, $1F, $33, $07, $0F, $00, $00, $09, $0D, $03, $00, $00, $00, $00, $00
+    dc.b    $00, $03, $01, $0F, $8F, $87, $FF, $FF, $00, $00, $00, $00, $03, $02, $04, $07
+    dc.b    $FF, $FF, $87, $8F, $0F, $01, $03, $00, $07, $04, $02, $03, $00, $00, $00, $00
+    dc.b    $24, $6C, $FC, $FE, $EE, $FD, $F7, $FE, $00, $00, $00, $C0, $F0, $22, $48, $C1
+    dc.b    $FE, $F7, $FD, $EE, $FE, $FC, $6C, $24, $C1, $48, $22, $F0, $C0, $00, $00, $00
+    dc.b    $01, $01, $09, $0F, $27, $37, $3F, $3F, $00, $00, $00, $00, $03, $02, $04, $07
+    dc.b    $3F, $3F, $37, $27, $0F, $09, $01, $01, $07, $04, $02, $03, $00, $00, $00, $00
+    dc.b    $12, $B6, $FC, $FE, $EE, $FD, $F7, $FE, $00, $00, $00, $C0, $F0, $22, $48, $C1
+    dc.b    $FE, $F7, $FD, $EE, $FE, $FC, $B6, $12, $C1, $48, $22, $F0, $C0, $00, $00, $00
+    dc.b    $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
+    dc.b    $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $03, $0D, $37, $0E, $00
+    dc.b    $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
+    dc.b    $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $03, $05, $0F, $1A, $07, $00
+    dc.b    $00, $00, $00, $00, $00, $04, $06, $0B, $00, $00, $00, $00, $00, $04, $06, $0C
+    dc.b    $0F, $0F, $0F, $0F, $07, $05, $00, $00, $08, $0C, $0C, $1C, $14, $DE, $3D, $07
+    dc.b    $04, $06, $0B, $0F, $0F, $0F, $0F, $0F, $04, $06, $0C, $08, $0C, $0C, $0C, $04
+    dc.b    $0F, $1B, $1E, $2F, $3B, $5E, $77, $12, $04, $04, $01, $50, $04, $21, $08, $04
+    dc.b    $01, $21, $23, $37, $3F, $1F, $1F, $0F, $01, $21, $20, $31, $39, $19, $19, $09
+    dc.b    $0F, $37, $3D, $6F, $BE, $F7, $1D, $09, $01, $09, $02, $10, $41, $08, $22, $00
+    dc.b    $01, $03, $03, $7D, $FF, $7D, $01, $23, $01, $03, $02, $7E, $FE, $7F, $0F, $1F
+    dc.b    $63, $03, $21, $30, $00, $18, $03, $02, $1F, $1F, $1F, $0F, $0F, $07, $00, $00
+    dc.b    $00, $38, $7D, $3F, $03, $06, $1E, $3C, $00, $38, $7C, $3E, $06, $0F, $1F, $3F
+    dc.b    $3C, $78, $00, $10, $30, $08, $0D, $01, $3F, $7F, $1F, $0F, $0F, $07, $00, $00
+    dc.b    $00, $00, $00, $00, $E0, $B2, $80, $80, $00, $00, $00, $00, $83, $0D, $1F, $3F
+    dc.b    $88, $00, $F7, $B7, $83, $80, $82, $80, $37, $3F, $8E, $0E, $0F, $07, $02, $00
+    dc.b    $00, $00, $02, $10, $20, $68, $40, $47, $00, $03, $0D, $0F, $1F, $57, $3F, $3E
+    dc.b    $97, $33, $70, $42, $40, $40, $40, $80, $0E, $0F, $07, $42, $00, $00, $00, $00
+    dc.b    $1D, $04, $0C, $02, $06, $80, $C4, $FE, $02, $03, $03, $01, $01, $03, $03, $01
+    dc.b    $7F, $7F, $3F, $7F, $FF, $7F, $20, $00, $00, $00, $00, $00, $00, $0F, $00, $00
+    dc.b    $E0, $F0, $A0, $80, $10, $3E, $3F, $3E, $00, $20, $78, $70, $E0, $DE, $DF, $DE
+    dc.b    $F0, $F0, $F8, $FC, $FC, $F8, $10, $00, $00, $00, $00, $00, $00, $C0, $00, $00
+    dc.b    $00, $0E, $02, $06, $01, $03, $00, $84, $00, $01, $01, $01, $00, $00, $03, $03
+    dc.b    $FE, $FF, $7F, $3F, $3F, $1F, $1F, $1D, $01, $00, $00, $00, $00, $00, $02, $00
+    dc.b    $00, $F0, $78, $50, $40, $08, $3E, $3F, $00, $00, $90, $BC, $B8, $F0, $DE, $DF
+    dc.b    $3E, $F0, $F0, $F0, $F0, $E0, $E0, $C0, $DE, $00, $00, $00, $00, $00, $00, $00
+    dc.b    $07, $0F, $0F, $0A, $08, $0B, $04, $0B, $10, $10, $12, $07, $07, $34, $7B, $F4
+    dc.b    $08, $F6, $FF, $7F, $7F, $7F, $7C, $40, $F7, $09, $60, $60, $60, $60, $60, $40
+    dc.b    $C0, $E0, $E0, $A0, $20, $A0, $40, $9E, $10, $10, $90, $C0, $D8, $5C, $BC, $60
+    dc.b    $1E, $DC, $FC, $FC, $FC, $FC, $78, $70, $EC, $2C, $0C, $0C, $0C, $04, $00, $00
+    dc.b    $07, $0F, $0F, $0F, $0F, $04, $00, $09, $10, $10, $10, $00, $00, $7B, $FF, $F6
+    dc.b    $0B, $13, $3D, $3F, $3F, $3F, $1C, $00, $F4, $6C, $02, $00, $00, $00, $00, $00
+    dc.b    $C0, $E0, $E0, $E0, $E0, $40, $00, $00, $10, $10, $10, $00, $18, $BC, $FC, $FC
+    dc.b    $A0, $B0, $78, $F8, $F8, $F8, $78, $70, $58, $40, $80, $00, $00, $00, $00, $00
+    dc.b    $00, $00, $00, $00, $0C, $1E, $3F, $37, $00, $00, $00, $00, $3C, $7E, $FF, $FF
+    dc.b    $37, $3F, $1E, $0C, $00, $00, $00, $00, $FF, $FF, $7E, $1C, $00, $00, $00, $00
+    dc.b    $07, $80, $8C, $DE, $FF, $63, $7F, $7F, $07, $9F, $B3, $E1, $FF, $5C, $00, $00
+    dc.b    $7F, $3F, $1F, $0F, $03, $1F, $3F, $0F, $1C, $3F, $1F, $0F, $03, $00, $00, $00
+    dc.b    $E0, $F0, $62, $CC, $F8, $F0, $E0, $E0, $E0, $78, $B3, $7E, $FC, $F8, $78, $30
+    dc.b    $E0, $E0, $F0, $F0, $F8, $FC, $FF, $FE, $30, $F0, $F8, $F8, $FC, $3E, $00, $00
+    dc.b    $03, $0F, $DF, $6F, $6F, $3F, $1F, $1F, $03, $0F, $DF, $7F, $7F, $3F, $3F, $1F
+    dc.b    $1F, $3F, $3F, $7F, $7E, $E1, $FF, $7F, $1F, $3F, $3F, $7F, $7F, $FE, $00, $00
+    dc.b    $80, $F0, $FB, $F6, $EC, $F8, $F8, $F0, $F0, $F8, $FF, $FF, $FE, $FC, $FC, $F8
+    dc.b    $F0, $E0, $E0, $C0, $00, $F0, $F8, $F0, $F8, $F0, $F0, $E0, $C0, $00, $00, $00
+    dc.b    $00, $09, $16, $19, $33, $23, $03, $47, $03, $0F, $19, $2E, $5C, $5D, $FD, $F8
+    dc.b    $8F, $98, $10, $40, $20, $18, $00, $01, $F0, $EF, $6F, $7F, $3F, $1F, $07, $00
+    dc.b    $C0, $30, $08, $08, $94, $06, $06, $06, $C0, $E0, $F0, $F0, $E8, $F8, $F8, $F8
+    dc.b    $86, $C6, $46, $4C, $4C, $78, $E0, $C0, $78, $38, $B8, $B0, $B0, $80, $00, $00
+    dc.b    $C3, $E7, $FB, $F5, $F6, $F7, $F7, $F0, $81, $41, $65, $6A, $E9, $6A, $6A, $6F
+    dc.b    $E7, $EF, $EF, $EF, $D0, $4C, $23, $18, $DF, $5C, $58, $DF, $2F, $23, $18, $07
+    dc.b    $C3, $E7, $FB, $F3, $FB, $FB, $FB, $FB, $81, $41, $65, $6D, $F5, $75, $75, $75
+    dc.b    $FD, $FD, $F3, $E3, $D3, $4F, $23, $18, $F5, $75, $6D, $DD, $2D, $21, $18, $07
+    dc.b    $00, $00, $0F, $1E, $3E, $3F, $78, $78, $03, $01, $00, $01, $01, $00, $07, $47
+    dc.b    $71, $70, $78, $79, $3F, $23, $00, $01, $3E, $0F, $7F, $06, $C0, $1C, $3F, $3F
+    dc.b    $00, $10, $18, $1E, $00, $0B, $8C, $90, $E0, $E8, $F4, $F8, $FE, $FC, $7B, $6F
+    dc.b    $C0, $C0, $F8, $F0, $F0, $F0, $E0, $04, $3E, $3E, $FC, $0C, $00, $00, $1C, $7C
+    dc.b    $00, $00, $00, $0F, $1E, $3E, $3F, $79, $00, $03, $01, $00, $01, $01, $00, $06
+    dc.b    $78, $78, $7C, $7E, $7F, $3C, $38, $00, $47, $37, $03, $1F, $00, $C3, $07, $07
+    dc.b    $00, $00, $10, $18, $1E, $00, $0B, $8C, $00, $E0, $E8, $F4, $F8, $FE, $FC, $7B
+    dc.b    $90, $40, $00, $1F, $10, $70, $10, $20, $6F, $BE, $FE, $FF, $EC, $80, $E0, $E0
+    dc.b    $00, $14, $06, $57, $61, $24, $27, $24, $3C, $0B, $05, $4E, $5E, $5F, $5C, $DB
+    dc.b    $11, $50, $78, $7F, $3F, $07, $03, $54, $EE, $EF, $47, $50, $0C, $3B, $7C, $7C
+    dc.b    $00, $28, $60, $E0, $80, $26, $E4, $24, $3C, $D8, $A0, $70, $78, $FA, $3A, $DA
+    dc.b    $88, $08, $10, $F0, $F4, $FC, $E4, $00, $76, $F7, $EF, $0F, $1E, $E4, $1E, $00
+    dc.b    $00, $00, $00, $27, $0F, $1F, $1F, $3F, $3C, $1F, $07, $28, $20, $60, $60, $40
+    dc.b    $3F, $7F, $7F, $7F, $1F, $06, $03, $00, $40, $40, $58, $47, $00, $19, $3C, $3C
+    dc.b    $00, $00, $00, $E0, $F4, $F0, $F0, $F0, $3C, $F8, $E0, $10, $04, $0C, $0E, $0E
+    dc.b    $F0, $F8, $FA, $FE, $FE, $FA, $F0, $00, $0E, $06, $36, $C2, $02, $06, $0E, $00
 
     even
 PatternBlockUWSP358:
-; .INCBIN "dat/PatternBlockUWSP358.dat" not found — stub 128 zero bytes
-    rept    128
-        dc.b    0
-    endr
+; .INCBIN dat/PatternBlockUWSP358.dat (544 bytes)
+    dc.b    $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
+    dc.b    $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
+    dc.b    $00, $00, $00, $00, $10, $10, $0A, $08, $00, $60, $70, $78, $78, $7C, $7F, $7F
+    dc.b    $08, $10, $12, $FA, $02, $F8, $40, $00, $3F, $3F, $1F, $07, $1F, $07, $7F, $FF
+    dc.b    $00, $00, $00, $10, $10, $0A, $08, $08, $C0, $F0, $F8, $F8, $FC, $FF, $7F, $7F
+    dc.b    $00, $22, $FA, $02, $F8, $20, $40, $00, $7F, $3F, $07, $1F, $07, $3F, $7F, $73
+    dc.b    $01, $03, $E7, $07, $78, $07, $18, $07, $03, $C4, $EA, $E8, $7F, $3F, $1F, $1F
+    dc.b    $18, $03, $1C, $01, $1E, $00, $7C, $00, $1F, $1F, $1F, $1F, $1E, $1C, $7C, $7C
+    dc.b    $43, $80, $EF, $D0, $3C, $C0, $30, $C0, $C3, $67, $AF, $3E, $FC, $F8, $F0, $F0
+    dc.b    $30, $C0, $18, $F0, $0E, $10, $00, $00, $F0, $F0, $F8, $F8, $7E, $1E, $00, $00
+    dc.b    $03, $07, $07, $07, $0F, $0F, $0F, $1F, $00, $00, $02, $02, $02, $00, $00, $00
+    dc.b    $1F, $3F, $3F, $3F, $3F, $3F, $1F, $0F, $00, $00, $00, $00, $00, $00, $00, $00
+    dc.b    $00, $00, $03, $07, $07, $0F, $0F, $0F, $00, $00, $00, $00, $02, $02, $02, $00
+    dc.b    $1F, $3F, $7F, $7F, $7F, $7F, $3F, $1F, $00, $00, $00, $00, $00, $00, $00, $00
+    dc.b    $09, $09, $08, $03, $01, $01, $07, $24, $08, $0E, $0F, $04, $06, $06, $F8, $DB
+    dc.b    $74, $27, $26, $27, $04, $FC, $0E, $0E, $8B, $D8, $D9, $D8, $FB, $03, $00, $00
+    dc.b    $90, $30, $30, $C0, $00, $20, $D8, $0C, $10, $F0, $F0, $30, $F0, $D0, $38, $FC
+    dc.b    $20, $9E, $FE, $9C, $1C, $7C, $7C, $08, $DC, $60, $1C, $7C, $FC, $9C, $1C, $08
+    dc.b    $08, $0C, $0C, $03, $00, $04, $03, $12, $08, $0F, $0F, $04, $07, $03, $7C, $6D
+    dc.b    $3A, $13, $13, $13, $02, $7F, $0E, $00, $45, $6C, $6C, $6C, $7D, $00, $00, $00
+    dc.b    $88, $88, $08, $E0, $80, $98, $EC, $10, $08, $78, $F8, $10, $70, $78, $1C, $EE
+    dc.b    $0F, $CF, $7E, $CE, $0E, $0E, $74, $70, $F0, $3E, $8E, $3E, $FE, $FE, $04, $00
+    dc.b    $08, $0C, $08, $00, $00, $00, $3F, $1F, $08, $0F, $0F, $07, $07, $03, $30, $00
+    dc.b    $3F, $3F, $7F, $7F, $7F, $1F, $00, $00, $00, $00, $00, $00, $00, $00, $0E, $00
+    dc.b    $88, $98, $08, $00, $00, $00, $FC, $F8, $08, $78, $F8, $F0, $F0, $E0, $0C, $00
+    dc.b    $F8, $FC, $FC, $FE, $FE, $FF, $00, $00, $00, $00, $00, $00, $00, $00, $38, $38
+    dc.b    $03, $07, $03, $00, $00, $03, $0F, $16, $02, $03, $07, $07, $0F, $0F, $07, $09
+    dc.b    $14, $3C, $33, $70, $78, $FF, $03, $03, $0B, $03, $0C, $0F, $07, $00, $00, $00
+    dc.b    $F0, $10, $00, $70, $10, $14, $B4, $F4, $00, $E0, $F0, $80, $E0, $E8, $C8, $08
+    dc.b    $FE, $FF, $FE, $44, $04, $C4, $C0, $E0, $3E, $3F, $3E, $A8, $C8, $08, $00, $00
+    dc.b    $00, $03, $07, $03, $00, $00, $03, $0F, $00, $02, $03, $07, $07, $0F, $0F, $07
+    dc.b    $16, $34, $3C, $73, $F0, $38, $1C, $1E, $09, $0B, $03, $0C, $0F, $07, $00, $00
+    dc.b    $00, $F0, $10, $00, $70, $14, $14, $B4, $00, $00, $E0, $F0, $80, $E8, $E8, $C8
+    dc.b    $F4, $FE, $FF, $FE, $44, $3C, $F0, $60, $08, $3E, $3F, $3E, $A8, $C0, $00, $00
 
     even
 PatternBlockUWSP469:
-; .INCBIN "dat/PatternBlockUWSP469.dat" not found — stub 128 zero bytes
-    rept    128
-        dc.b    0
-    endr
+; .INCBIN dat/PatternBlockUWSP469.dat (544 bytes)
+    dc.b    $00, $C3, $42, $00, $18, $3C, $3C, $3C, $00, $C3, $7E, $7E, $7E, $FF, $E7, $E7
+    dc.b    $3C, $3C, $3C, $18, $00, $42, $C3, $00, $E7, $E7, $FF, $7E, $7E, $7E, $C3, $00
+    dc.b    $00, $00, $2C, $7E, $56, $E3, $42, $E7, $00, $00, $00, $00, $28, $1C, $3C, $18
+    dc.b    $C3, $62, $C7, $6A, $7E, $34, $00, $00, $3C, $1C, $38, $14, $00, $00, $00, $00
+    dc.b    $00, $0F, $3F, $3F, $1F, $22, $20, $0C, $0F, $30, $40, $C0, $E0, $FF, $FF, $73
+    dc.b    $73, $22, $20, $07, $78, $22, $22, $00, $8C, $FF, $FF, $78, $87, $FF, $FF, $73
+    dc.b    $00, $00, $0F, $3F, $3F, $1F, $22, $20, $00, $0F, $30, $40, $C0, $E0, $FF, $FF
+    dc.b    $0C, $73, $22, $A7, $7A, $20, $00, $00, $73, $8C, $FF, $78, $87, $73, $00, $00
+    dc.b    $00, $00, $00, $0F, $3F, $3F, $1F, $22, $00, $00, $0F, $30, $40, $C0, $E0, $FF
+    dc.b    $20, $8C, $73, $20, $00, $00, $00, $00, $FF, $73, $8C, $78, $00, $00, $00, $00
+    dc.b    $03, $07, $07, $07, $0F, $0F, $0F, $1F, $00, $00, $02, $02, $02, $00, $00, $00
+    dc.b    $1F, $3F, $3F, $3F, $3F, $3F, $1F, $0F, $00, $00, $00, $00, $00, $00, $00, $00
+    dc.b    $00, $00, $03, $07, $07, $0F, $0F, $0F, $00, $00, $00, $00, $02, $02, $02, $00
+    dc.b    $1F, $3F, $7F, $7F, $7F, $7F, $3F, $1F, $00, $00, $00, $00, $00, $00, $00, $00
+    dc.b    $20, $30, $72, $78, $72, $C4, $83, $00, $0C, $07, $07, $07, $0F, $1B, $1C, $3F
+    dc.b    $08, $04, $22, $12, $0C, $00, $00, $00, $37, $BB, $DD, $ED, $F3, $FF, $00, $00
+    dc.b    $00, $10, $18, $1A, $18, $32, $24, $23, $00, $0C, $07, $07, $07, $0F, $1B, $1C
+    dc.b    $00, $08, $04, $02, $12, $0C, $00, $00, $3F, $37, $3B, $1D, $0D, $13, $1E, $3E
+    dc.b    $20, $30, $70, $78, $7C, $E4, $80, $00, $0C, $07, $07, $07, $03, $1B, $1F, $3F
+    dc.b    $00, $30, $00, $00, $00, $00, $00, $00, $3F, $8F, $FF, $FF, $FF, $FF, $00, $00
+    dc.b    $00, $10, $18, $38, $3C, $3C, $70, $40, $00, $0C, $07, $07, $03, $03, $0F, $3F
+    dc.b    $00, $00, $10, $10, $00, $00, $00, $00, $3F, $3F, $2F, $0F, $0F, $0F, $0E, $1E
+    dc.b    $00, $00, $00, $61, $73, $3B, $10, $10, $07, $1F, $3F, $7E, $6C, $64, $2F, $2F
+    dc.b    $10, $00, $04, $04, $04, $08, $10, $00, $2F, $1F, $1B, $1B, $0B, $07, $0F, $1F
+    dc.b    $00, $00, $02, $E2, $F2, $F2, $00, $00, $C0, $E0, $F2, $16, $AC, $AC, $FC, $FC
+    dc.b    $40, $E0, $40, $00, $00, $00, $00, $00, $FC, $B8, $F8, $F8, $FC, $FC, $FE, $FE
+    dc.b    $00, $00, $00, $00, $61, $73, $3B, $10, $00, $07, $1F, $3F, $7E, $6C, $64, $2F
+    dc.b    $10, $10, $00, $04, $04, $04, $08, $00, $2F, $2F, $1F, $1B, $1B, $0B, $07, $3F
+    dc.b    $00, $00, $00, $02, $E2, $F2, $F2, $00, $00, $C0, $E0, $F2, $16, $AC, $AC, $FC
+    dc.b    $00, $40, $E0, $40, $00, $00, $00, $00, $FC, $FC, $B8, $F8, $F8, $FC, $FC, $FF
+    dc.b    $00, $C0, $80, $90, $10, $10, $08, $08, $03, $C7, $EF, $EF, $6F, $6F, $77, $37
+    dc.b    $04, $02, $01, $10, $10, $00, $00, $00, $3B, $3D, $3E, $2F, $2F, $1F, $3F, $3F
+    dc.b    $00, $00, $C0, $80, $90, $10, $10, $08, $00, $03, $C7, $EF, $EF, $6F, $6F, $77
+    dc.b    $08, $04, $02, $01, $10, $10, $00, $00, $37, $3B, $3D, $3E, $2F, $2F, $1F, $7F
 
     even
 PatternBlockUWSP:
-; .INCBIN "dat/PatternBlockUWSP.dat" not found — stub 128 zero bytes
-    rept    128
-        dc.b    0
-    endr
+; .INCBIN dat/PatternBlockUWSP.dat (256 bytes)
+    dc.b    $02, $0C, $1F, $37, $3F, $37, $7F, $4F, $01, $0B, $07, $29, $33, $4D, $69, $3F
+    dc.b    $7F, $77, $6F, $3A, $36, $1E, $0B, $01, $1E, $7B, $5B, $1D, $0F, $15, $04, $03
+    dc.b    $C0, $F0, $C0, $3C, $C4, $FA, $F4, $FC, $40, $E0, $38, $E8, $F8, $AE, $9A, $F2
+    dc.b    $F6, $D4, $DA, $E0, $BC, $80, $B0, $40, $7E, $EA, $EC, $7C, $CC, $78, $F0, $80
+    dc.b    $00, $00, $00, $00, $00, $10, $38, $38, $00, $00, $00, $00, $00, $08, $0C, $0C
+    dc.b    $7E, $FF, $FF, $FF, $7E, $00, $00, $00, $04, $00, $00, $00, $00, $00, $00, $00
+    dc.b    $00, $00, $00, $00, $10, $38, $38, $7E, $00, $00, $00, $00, $08, $0C, $0C, $04
+    dc.b    $7E, $7E, $7E, $7E, $3C, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
+    dc.b    $02, $02, $02, $02, $07, $0B, $FC, $0C, $02, $02, $02, $02, $08, $04, $F3, $03
+    dc.b    $0C, $FC, $0B, $07, $02, $02, $02, $02, $03, $F3, $04, $08, $02, $02, $02, $02
+    dc.b    $00, $0A, $08, $00, $0C, $1F, $3C, $7F, $07, $1F, $1D, $0D, $07, $0F, $0C, $1F
+    dc.b    $3F, $3F, $77, $77, $67, $2F, $0F, $19, $D3, $C3, $81, $00, $00, $00, $00, $06
+    dc.b    $00, $00, $00, $00, $0A, $19, $3D, $3F, $00, $00, $00, $00, $00, $02, $02, $00
+    dc.b    $7F, $7F, $D7, $82, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
+    dc.b    $00, $00, $00, $00, $06, $05, $0D, $0F, $00, $00, $00, $00, $00, $02, $02, $00
+    dc.b    $1F, $1F, $1F, $0E, $0C, $04, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
 
     even
 PatternBlockUWSP127:
-; .INCBIN "dat/PatternBlockUWSP127.dat" not found — stub 128 zero bytes
-    rept    128
-        dc.b    0
-    endr
+; .INCBIN dat/PatternBlockUWSP127.dat (544 bytes)
+    dc.b    $00, $00, $40, $80, $00, $18, $34, $24, $00, $80, $B0, $78, $FC, $E4, $C8, $D8
+    dc.b    $64, $44, $8C, $08, $18, $30, $E0, $C0, $98, $B8, $70, $F0, $E0, $C0, $00, $00
+    dc.b    $00, $00, $00, $00, $00, $00, $00, $00, $01, $03, $03, $07, $0F, $0F, $0F, $07
+    dc.b    $00, $00, $00, $00, $04, $08, $08, $00, $01, $04, $0E, $4E, $2F, $3B, $19, $00
+    dc.b    $00, $60, $70, $38, $00, $08, $1E, $00, $E0, $90, $80, $C0, $FC, $C8, $80, $F8
+    dc.b    $00, $60, $60, $60, $60, $60, $C0, $00, $E0, $80, $F0, $90, $F0, $90, $E0, $00
+    dc.b    $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $01, $03, $03, $03
+    dc.b    $00, $00, $00, $00, $00, $00, $00, $00, $01, $00, $00, $07, $0F, $59, $30, $00
+    dc.b    $00, $00, $18, $1C, $0E, $00, $02, $00, $00, $78, $E4, $E0, $F0, $FF, $F2, $E0
+    dc.b    $00, $00, $18, $0C, $0E, $06, $0C, $00, $FE, $78, $20, $3C, $F0, $FE, $70, $00
+    dc.b    $07, $0F, $0F, $0F, $07, $04, $39, $73, $07, $09, $0B, $0E, $07, $07, $3F, $4F
+    dc.b    $61, $6F, $3D, $0F, $18, $78, $00, $00, $59, $57, $25, $0F, $18, $78, $00, $00
+    dc.b    $C0, $E0, $E0, $E0, $C0, $C0, $7F, $DE, $C4, $26, $A6, $E6, $C6, $C6, $70, $DE
+    dc.b    $06, $C6, $40, $80, $60, $30, $30, $3C, $06, $C0, $40, $80, $60, $30, $30, $3C
+    dc.b    $00, $00, $08, $11, $11, $62, $02, $90, $00, $1B, $37, $2E, $6E, $5D, $7F, $FF
+    dc.b    $00, $48, $01, $94, $00, $21, $04, $07, $FF, $FF, $FE, $FF, $FF, $7F, $3F, $08
+    dc.b    $02, $41, $81, $01, $09, $12, $20, $60, $DC, $BE, $7E, $FE, $F6, $E4, $C0, $86
+    dc.b    $C1, $81, $83, $82, $06, $18, $F0, $C0, $0E, $0E, $1C, $7C, $F8, $E0, $00, $00
+    dc.b    $00, $03, $03, $07, $0E, $0F, $1F, $1B, $3C, $0C, $00, $03, $01, $07, $0F, $0C
+    dc.b    $38, $3C, $3D, $3F, $19, $00, $0E, $00, $07, $0F, $1E, $1C, $1E, $1F, $00, $00
+    dc.b    $00, $E0, $E0, $F0, $38, $FC, $FE, $EE, $1E, $18, $00, $60, $C0, $F0, $F8, $18
+    dc.b    $02, $02, $C4, $F8, $C0, $00, $38, $38, $FC, $FC, $38, $84, $3C, $F8, $00, $00
+    dc.b    $00, $03, $03, $07, $0F, $0C, $00, $08, $3C, $0C, $00, $00, $00, $03, $07, $07
+    dc.b    $18, $18, $18, $17, $00, $00, $0E, $00, $07, $07, $07, $08, $1F, $0F, $00, $00
+    dc.b    $00, $E0, $E0, $F0, $F8, $1C, $06, $06, $1E, $18, $00, $00, $00, $E4, $FA, $F8
+    dc.b    $02, $02, $04, $F8, $00, $00, $38, $38, $FC, $FC, $F8, $04, $FC, $F8, $00, $00
+    dc.b    $01, $00, $03, $07, $0F, $0F, $03, $00, $0E, $07, $00, $00, $00, $10, $1C, $3F
+    dc.b    $0F, $1F, $1F, $07, $00, $00, $07, $07, $70, $67, $67, $3F, $3F, $0F, $00, $00
+    dc.b    $C0, $F0, $F8, $F0, $FC, $FC, $F8, $E0, $00, $00, $30, $0C, $7C, $FC, $80, $10
+    dc.b    $00, $08, $F8, $88, $00, $00, $80, $C0, $F0, $F0, $80, $F0, $F8, $F0, $00, $00
+    dc.b    $00, $00, $00, $01, $03, $07, $07, $01, $00, $07, $03, $00, $00, $00, $08, $0E
+    dc.b    $00, $01, $01, $01, $00, $18, $38, $1E, $1F, $1E, $1E, $1E, $0F, $03, $07, $00
+    dc.b    $00, $E0, $78, $FC, $F8, $FE, $FE, $FC, $00, $00, $80, $18, $06, $3E, $7E, $40
+    dc.b    $70, $FF, $FF, $FE, $E0, $00, $06, $1F, $88, $07, $07, $06, $1C, $FC, $F8, $00
 
     even
 PatternBlockUWSPBoss1257:
-; .INCBIN "dat/PatternBlockUWSPBoss1257.dat" not found — stub 128 zero bytes
-    rept    128
-        dc.b    0
-    endr
+; .INCBIN dat/PatternBlockUWSPBoss1257.dat (1024 bytes)
+    dc.b    $80, $40, $30, $3B, $16, $00, $00, $40, $80, $40, $37, $3F, $1B, $1F, $7F, $B9
+    dc.b    $08, $00, $48, $40, $00, $00, $01, $03, $FB, $E7, $4C, $48, $00, $00, $00, $03
+    dc.b    $02, $06, $0C, $1C, $18, $38, $38, $38, $01, $07, $03, $1F, $1F, $07, $3F, $3F
+    dc.b    $18, $1C, $3C, $3C, $00, $00, $00, $00, $07, $1F, $0F, $07, $03, $03, $07, $07
+    dc.b    $00, $00, $00, $2C, $04, $00, $02, $03, $3C, $78, $E0, $DC, $FC, $FC, $FE, $FF
+    dc.b    $82, $80, $C4, $C6, $C4, $80, $88, $0C, $7E, $FC, $3C, $FE, $3C, $F0, $78, $FC
+    dc.b    $07, $01, $00, $00, $00, $00, $00, $00, $FC, $FE, $FF, $FF, $FF, $FF, $FF, $FF
+    dc.b    $00, $20, $1F, $1F, $00, $00, $00, $00, $FF, $FF, $FF, $FF, $E0, $E0, $E0, $C0
+    dc.b    $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
+    dc.b    $00, $00, $00, $00, $08, $04, $00, $88, $00, $00, $00, $04, $0E, $06, $03, $8B
+    dc.b    $FF, $E0, $00, $00, $00, $00, $00, $80, $00, $1F, $FF, $FF, $FF, $FF, $FE, $7E
+    dc.b    $80, $41, $81, $81, $03, $02, $1E, $3C, $7E, $BE, $FE, $FE, $FC, $FC, $00, $00
+    dc.b    $80, $40, $30, $3B, $16, $00, $06, $48, $80, $40, $37, $3F, $1B, $1F, $79, $B7
+    dc.b    $10, $20, $40, $40, $00, $00, $01, $03, $EF, $D1, $60, $40, $00, $00, $00, $03
+    dc.b    $02, $04, $0C, $18, $18, $38, $38, $38, $01, $07, $03, $1F, $07, $3F, $3F, $07
+    dc.b    $1C, $10, $00, $00, $00, $00, $0F, $0F, $1F, $1F, $0F, $0F, $1F, $1F, $00, $00
+    dc.b    $05, $01, $01, $03, $01, $00, $00, $00, $FD, $FE, $FE, $FC, $FE, $FF, $FF, $FF
+    dc.b    $00, $20, $1F, $7F, $40, $C0, $C0, $80, $FF, $FF, $FF, $FF, $80, $00, $01, $01
+    dc.b    $D8, $E0, $F0, $FC, $FF, $00, $00, $00, $DF, $1F, $0F, $03, $00, $FF, $FF, $FF
+    dc.b    $00, $80, $00, $00, $00, $00, $00, $00, $FE, $7E, $FE, $FE, $FC, $FC, $FC, $F8
+    dc.b    $00, $00, $00, $00, $06, $07, $06, $00, $00, $00, $00, $00, $00, $00, $01, $03
+    dc.b    $1C, $18, $18, $08, $10, $30, $10, $00, $03, $07, $07, $07, $0F, $0F, $0F, $0F
+    dc.b    $04, $4E, $C8, $E0, $80, $00, $00, $00, $00, $00, $07, $1F, $7F, $FF, $FF, $FF
+    dc.b    $00, $00, $00, $03, $07, $0F, $0F, $1F, $FF, $FF, $FF, $FC, $FB, $F7, $F6, $EC
+    dc.b    $06, $04, $30, $23, $07, $4F, $CF, $1F, $00, $03, $0F, $1C, $1B, $37, $36, $2C
+    dc.b    $5F, $CF, $0F, $67, $63, $00, $0C, $0C, $2C, $36, $37, $1B, $1C, $0F, $03, $00
+    dc.b    $01, $18, $10, $03, $67, $4F, $0F, $5F, $00, $03, $0F, $1C, $1B, $37, $36, $2C
+    dc.b    $DF, $0F, $4F, $C7, $23, $30, $04, $06, $2C, $36, $37, $1B, $1C, $0F, $03, $00
+    dc.b    $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $03, $07, $0F
+    dc.b    $00, $01, $00, $00, $08, $08, $18, $70, $1F, $1E, $3F, $3F, $77, $77, $E7, $87
+    dc.b    $00, $00, $00, $06, $03, $03, $02, $02, $00, $00, $01, $39, $FC, $FC, $FD, $FD
+    dc.b    $06, $09, $88, $88, $88, $9C, $F8, $80, $F9, $F6, $77, $77, $77, $63, $03, $00
+    dc.b    $00, $00, $00, $03, $0D, $00, $0E, $0E, $00, $E0, $F8, $FF, $F3, $FF, $F9, $FD
+    dc.b    $07, $10, $88, $49, $40, $20, $38, $F8, $FE, $EF, $77, $B6, $BF, $DF, $C3, $00
+    dc.b    $00, $00, $00, $00, $10, $30, $60, $20, $00, $00, $00, $00, $10, $30, $60, $E0
+    dc.b    $00, $00, $20, $C0, $40, $00, $00, $00, $E0, $F0, $C0, $00, $80, $E0, $80, $00
+    dc.b    $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $03, $07, $0F, $0F
+    dc.b    $00, $08, $08, $04, $04, $1C, $70, $00, $1F, $37, $37, $7B, $7B, $E3, $81, $00
+    dc.b    $00, $00, $06, $03, $03, $02, $02, $02, $00, $01, $39, $FC, $FC, $FD, $FD, $FD
+    dc.b    $81, $41, $42, $24, $3C, $3C, $38, $F8, $7E, $BE, $BD, $DB, $C3, $DF, $C1, $00
+    dc.b    $00, $00, $03, $0D, $00, $0E, $0E, $07, $E0, $F8, $FF, $F3, $FF, $F9, $FD, $FE
+    dc.b    $10, $88, $48, $40, $24, $1E, $0E, $00, $EF, $77, $B7, $BF, $D9, $E0, $F0, $F0
+    dc.b    $00, $00, $00, $10, $30, $60, $20, $00, $00, $00, $00, $10, $30, $60, $E0, $E0
+    dc.b    $20, $40, $F0, $00, $00, $00, $00, $00, $D0, $F0, $40, $E0, $C0, $00, $00, $00
+    dc.b    $00, $00, $00, $00, $00, $00, $00, $00, $00, $01, $07, $0F, $1F, $1F, $3F, $3F
+    dc.b    $00, $04, $08, $08, $10, $30, $61, $40, $7F, $7B, $77, $F7, $EF, $CF, $86, $00
+    dc.b    $04, $02, $02, $01, $01, $02, $02, $01, $78, $FD, $FD, $FE, $FE, $FD, $FD, $FE
+    dc.b    $81, $41, $43, $43, $87, $FF, $7F, $3E, $7E, $BE, $BC, $BC, $78, $01, $7F, $3E
+    dc.b    $00, $01, $0C, $00, $1E, $1F, $1F, $0F, $F0, $FD, $F0, $FF, $EF, $ED, $EF, $F6
+    dc.b    $06, $C1, $30, $08, $04, $80, $00, $00, $79, $3E, $CF, $F7, $FA, $F8, $30, $00
+    dc.b    $00, $88, $98, $30, $10, $00, $20, $00, $00, $88, $98, $30, $10, $80, $C0, $F0
+    dc.b    $E3, $C7, $03, $00, $00, $00, $00, $00, $03, $07, $E3, $C0, $00, $00, $00, $00
+    dc.b    $02, $00, $0C, $13, $20, $20, $21, $49, $05, $1F, $33, $2C, $5F, $5F, $5F, $37
+    dc.b    $4C, $4D, $45, $21, $10, $12, $08, $28, $BB, $BB, $BB, $DF, $EF, $ED, $F7, $7B
+    dc.b    $80, $00, $60, $90, $08, $08, $08, $24, $40, $F0, $98, $68, $F4, $F4, $F4, $DA
+    dc.b    $64, $64, $44, $08, $10, $94, $00, $00, $BA, $BA, $BA, $F6, $EE, $7E, $C0, $80
+    dc.b    $02, $00, $0C, $12, $21, $21, $21, $4C, $05, $1F, $73, $6D, $5E, $DF, $DF, $B7
+    dc.b    $5E, $5E, $4C, $23, $13, $13, $0B, $14, $AF, $AB, $B7, $DD, $EC, $6C, $74, $3F
+    dc.b    $0C, $3F, $3F, $78, $60, $C0, $C0, $80, $00, $00, $00, $07, $1F, $3F, $3F, $7F
+    dc.b    $00, $00, $40, $40, $20, $10, $08, $00, $7F, $7F, $BF, $BF, $DF, $EF, $F7, $7B
+    dc.b    $60, $F8, $F8, $3C, $0C, $06, $06, $02, $00, $00, $00, $C0, $F0, $F8, $F8, $FC
+    dc.b    $00, $02, $02, $04, $08, $10, $00, $00, $FC, $FC, $FC, $FA, $F6, $EC, $C0, $80
+    dc.b    $00, $00, $00, $00, $00, $00, $00, $00, $07, $1F, $7F, $7F, $7F, $FF, $FF, $FF
+    dc.b    $00, $80, $80, $40, $20, $10, $08, $04, $FF, $7F, $7F, $BF, $DF, $EF, $F7, $73
 
     even
 PatternBlockUWSPBoss3468:
-; .INCBIN "dat/PatternBlockUWSPBoss3468.dat" not found — stub 128 zero bytes
-    rept    128
-        dc.b    0
-    endr
+; .INCBIN dat/PatternBlockUWSPBoss3468.dat (1024 bytes)
+    dc.b    $00, $00, $00, $00, $00, $00, $00, $80, $00, $00, $00, $00, $00, $00, $00, $80
+    dc.b    $C0, $70, $7F, $3F, $1F, $0F, $0F, $1F, $C0, $70, $7F, $3F, $1F, $0F, $07, $02
+    dc.b    $1F, $1F, $3F, $3F, $3F, $BF, $DF, $DF, $00, $00, $00, $40, $40, $40, $20, $20
+    dc.b    $DF, $CF, $EF, $F7, $C3, $71, $F8, $FA, $20, $30, $10, $08, $3C, $0C, $06, $2E
+    dc.b    $00, $00, $00, $00, $07, $07, $0F, $3F, $00, $00, $00, $00, $07, $06, $00, $08
+    dc.b    $7C, $FF, $FF, $FF, $FF, $FF, $FE, $FF, $1B, $18, $10, $C3, $C3, $D3, $19, $08
+    dc.b    $FF, $FF, $FF, $FF, $FF, $FF, $FE, $FE, $00, $00, $10, $18, $18, $00, $01, $19
+    dc.b    $FE, $FE, $C0, $80, $00, $00, $00, $00, $19, $19, $3F, $7F, $FF, $FF, $FF, $7E
+    dc.b    $00, $C0, $C0, $C0, $C0, $80, $80, $01, $40, $A0, $B0, $30, $30, $70, $60, $E1
+    dc.b    $03, $0E, $FE, $FC, $F8, $F0, $E0, $40, $E3, $CE, $FE, $FC, $F8, $F0, $F8, $F8
+    dc.b    $08, $0C, $1C, $1C, $1C, $3C, $3C, $38, $F4, $F2, $E2, $E3, $E3, $C3, $C3, $C7
+    dc.b    $20, $3E, $2B, $20, $20, $10, $00, $00, $DF, $C0, $FE, $DF, $DF, $8E, $00, $00
+    dc.b    $00, $00, $00, $00, $40, $60, $70, $38, $00, $00, $00, $00, $40, $60, $70, $38
+    dc.b    $3C, $1C, $1F, $0F, $0F, $07, $0F, $1F, $3C, $1C, $1F, $0F, $0F, $07, $00, $00
+    dc.b    $00, $00, $30, $78, $F2, $C6, $8E, $1C, $00, $00, $30, $3E, $0E, $3E, $7E, $FC
+    dc.b    $3C, $38, $F8, $F0, $F0, $E0, $00, $00, $FC, $F8, $F8, $F0, $F0, $F0, $F8, $F8
+    dc.b    $00, $00, $00, $02, $02, $02, $06, $06, $F8, $F8, $FC, $FC, $FC, $FD, $F9, $F9
+    dc.b    $04, $0C, $0C, $18, $20, $3C, $7E, $7E, $FB, $F3, $F3, $E7, $DF, $82, $01, $55
+    dc.b    $00, $08, $08, $08, $08, $0C, $0E, $0E, $00, $08, $08, $08, $08, $0C, $0E, $0E
+    dc.b    $0E, $0F, $07, $07, $07, $0F, $0F, $1F, $0E, $0F, $07, $07, $03, $00, $00, $00
+    dc.b    $0F, $6F, $67, $F7, $F7, $F3, $F3, $E3, $30, $10, $18, $08, $08, $0C, $0C, $1C
+    dc.b    $C3, $7B, $D7, $83, $03, $01, $00, $00, $3C, $04, $7C, $7C, $FC, $78, $00, $00
+    dc.b    $00, $00, $00, $00, $03, $07, $0F, $1F, $00, $00, $00, $00, $03, $07, $00, $00
+    dc.b    $78, $FF, $FF, $FF, $FF, $FE, $FE, $FF, $0F, $18, $99, $D3, $C3, $53, $19, $08
+    dc.b    $00, $10, $10, $1C, $7F, $FC, $F0, $70, $00, $10, $10, $1C, $1E, $33, $7C, $F0
+    dc.b    $70, $F0, $E0, $E0, $C0, $00, $00, $00, $F0, $F0, $E0, $E0, $F0, $F0, $F8, $F8
+    dc.b    $00, $00, $24, $BD, $FF, $F3, $F9, $FD, $00, $00, $24, $BD, $FF, $CF, $87, $83
+    dc.b    $FC, $FC, $FC, $FC, $78, $30, $00, $00, $1B, $1B, $1B, $03, $06, $0C, $00, $00
+    dc.b    $E4, $F4, $78, $78, $FA, $FE, $F8, $78, $27, $2F, $06, $06, $47, $67, $07, $06
+    dc.b    $30, $30, $30, $30, $30, $7C, $7C, $38, $0C, $0C, $0C, $0C, $0C, $02, $26, $04
+    dc.b    $0E, $0F, $07, $07, $0F, $0F, $0F, $07, $23, $12, $B8, $58, $34, $16, $30, $18
+    dc.b    $03, $03, $03, $03, $03, $07, $07, $03, $1C, $2C, $0C, $14, $0C, $08, $02, $00
+    dc.b    $00, $00, $00, $3F, $3F, $1F, $0F, $04, $07, $1F, $3F, $40, $00, $00, $00, $03
+    dc.b    $00, $00, $00, $00, $00, $00, $00, $00, $0F, $1F, $3F, $7F, $7F, $3F, $1F, $07
+    dc.b    $00, $00, $00, $80, $E0, $F8, $00, $00, $F0, $F8, $FC, $7E, $1F, $07, $FF, $FF
+    dc.b    $00, $00, $00, $00, $00, $00, $00, $00, $FF, $FF, $FF, $FE, $FE, $FC, $F8, $E0
+    dc.b    $00, $00, $00, $07, $18, $20, $40, $80, $00, $00, $07, $18, $27, $5F, $BF, $7F
+    dc.b    $00, $00, $00, $00, $00, $00, $00, $00, $FF, $FF, $7F, $3F, $1F, $07, $00, $00
+    dc.b    $00, $00, $00, $C0, $30, $0C, $00, $00, $00, $00, $F0, $38, $CE, $F3, $FF, $FF
+    dc.b    $00, $00, $00, $00, $00, $00, $00, $00, $FF, $FF, $FE, $FC, $F0, $C0, $00, $00
+    dc.b    $00, $00, $20, $30, $18, $1C, $0C, $0E, $00, $00, $40, $C0, $E0, $E0, $F0, $F0
+    dc.b    $06, $06, $03, $03, $01, $01, $00, $00, $F8, $F8, $7C, $7C, $7E, $3E, $1F, $1F
+    dc.b    $01, $01, $01, $01, $01, $01, $01, $01, $00, $02, $06, $0E, $1E, $1E, $1E, $3E
+    dc.b    $01, $01, $01, $01, $01, $01, $01, $01, $3E, $3E, $3E, $3E, $3E, $1E, $1E, $1E
+    dc.b    $0F, $1F, $3F, $3F, $7F, $7F, $7F, $7F, $00, $01, $19, $10, $00, $01, $B1, $A0
+    dc.b    $7E, $7C, $7C, $78, $FB, $FC, $F8, $70, $81, $83, $63, $47, $04, $03, $07, $0F
+    dc.b    $1F, $2F, $5F, $2F, $1F, $1F, $0F, $0F, $93, $22, $58, $28, $14, $56, $00, $08
+    dc.b    $0F, $1F, $17, $0F, $07, $07, $0F, $07, $2C, $1C, $14, $0C, $14, $10, $0A, $04
+    dc.b    $00, $01, $01, $02, $7F, $00, $01, $02, $00, $01, $07, $1D, $01, $03, $06, $0D
+    dc.b    $0C, $10, $21, $03, $06, $04, $08, $10, $11, $23, $06, $04, $08, $08, $10, $00
+    dc.b    $00, $80, $40, $F0, $E8, $D4, $EA, $F5, $00, $80, $F0, $C8, $F4, $EA, $F5, $FA
+    dc.b    $F3, $F1, $F9, $0F, $07, $01, $00, $00, $7C, $7E, $66, $00, $00, $00, $00, $00
+    dc.b    $00, $20, $30, $80, $C0, $90, $98, $00, $00, $00, $0C, $7F, $3F, $6F, $67, $FF
+    dc.b    $00, $60, $7C, $BF, $8F, $57, $38, $0C, $FF, $FF, $FB, $7C, $7F, $3F, $1F, $0C
+    dc.b    $00, $20, $30, $80, $C0, $90, $98, $00, $00, $00, $0C, $7F, $3F, $6F, $67, $FF
+    dc.b    $00, $60, $7C, $BF, $8F, $57, $38, $20, $FF, $FF, $FB, $7C, $7F, $3F, $3F, $20
+    dc.b    $06, $0F, $0E, $0E, $1F, $2F, $4E, $9F, $06, $0F, $1F, $35, $66, $5F, $BF, $66
+    dc.b    $E1, $83, $87, $FF, $F1, $C0, $00, $00, $1F, $7F, $7B, $03, $01, $00, $00, $00
+    dc.b    $00, $00, $00, $00, $00, $80, $00, $C0, $00, $00, $00, $80, $80, $00, $F0, $38
+    dc.b    $FE, $C0, $80, $C0, $F0, $0C, $02, $01, $C0, $E0, $F0, $B8, $8C, $02, $01, $00
+    dc.b    $00, $20, $30, $80, $C0, $90, $98, $00, $00, $00, $0C, $7F, $3F, $6F, $67, $FF
+    dc.b    $3F, $7F, $7F, $3F, $0F, $17, $38, $20, $F9, $F9, $F8, $FC, $FF, $7F, $3F, $20
+    dc.b    $00, $20, $30, $80, $C0, $90, $98, $00, $00, $00, $0C, $7F, $3F, $6F, $67, $FF
+    dc.b    $00, $70, $7F, $3F, $0F, $17, $38, $20, $FF, $FF, $F8, $FC, $FF, $7F, $3F, $20
 
     even
 PatternBlockUWSPBoss9:
-; .INCBIN "dat/PatternBlockUWSPBoss9.dat" not found — stub 128 zero bytes
-    rept    128
-        dc.b    0
-    endr
+; .INCBIN dat/PatternBlockUWSPBoss9.dat (1024 bytes)
+    dc.b    $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $03, $01, $01, $00, $00, $00
+    dc.b    $00, $01, $03, $07, $0F, $1F, $3F, $23, $00, $00, $00, $00, $00, $00, $00, $1C
+    dc.b    $00, $00, $00, $03, $04, $03, $0B, $2C, $00, $00, $E0, $F0, $FB, $FF, $77, $13
+    dc.b    $F7, $F3, $F7, $EF, $EF, $CF, $C7, $C3, $0C, $0F, $0F, $1A, $1A, $3D, $38, $3C
+    dc.b    $01, $00, $00, $00, $00, $03, $07, $0F, $01, $00, $00, $00, $00, $00, $00, $00
+    dc.b    $1F, $3C, $30, $00, $00, $00, $00, $00, $00, $03, $0F, $1F, $3F, $7F, $FF, $FF
+    dc.b    $00, $00, $00, $0F, $08, $01, $8D, $CE, $80, $C0, $E0, $F0, $F7, $FF, $73, $31
+    dc.b    $C7, $30, $09, $07, $01, $00, $20, $40, $3E, $CF, $F7, $FB, $FF, $FF, $DF, $BF
+    dc.b    $01, $00, $00, $00, $00, $00, $00, $00, $1E, $3F, $3F, $3F, $3F, $3F, $3F, $3F
+    dc.b    $00, $00, $00, $00, $18, $00, $00, $00, $3F, $1F, $1F, $1F, $27, $FF, $FF, $F3
+    dc.b    $E3, $F8, $7F, $7F, $7F, $7F, $3F, $33, $1C, $07, $80, $87, $89, $8B, $CE, $CF
+    dc.b    $00, $40, $80, $80, $80, $80, $40, $00, $FF, $BF, $7F, $7F, $7F, $7F, $BF, $BE
+    dc.b    $01, $07, $03, $03, $01, $01, $00, $00, $7E, $18, $00, $00, $00, $00, $03, $07
+    dc.b    $00, $00, $20, $30, $3C, $7F, $FF, $FF, $0F, $0F, $1F, $0F, $03, $30, $00, $00
+    dc.b    $E0, $F0, $FF, $FF, $E7, $C7, $07, $01, $1F, $0F, $00, $03, $1C, $3D, $FF, $FF
+    dc.b    $00, $00, $00, $00, $06, $07, $C7, $C3, $FF, $FF, $FF, $FF, $E1, $C0, $00, $00
+    dc.b    $00, $00, $00, $00, $00, $01, $03, $07, $00, $00, $00, $00, $00, $00, $00, $00
+    dc.b    $0F, $1F, $3F, $11, $00, $00, $00, $00, $00, $00, $38, $1E, $0F, $1F, $1F, $1F
+    dc.b    $00, $00, $07, $0F, $04, $81, $CD, $EE, $40, $40, $60, $70, $7B, $7F, $33, $19
+    dc.b    $EF, $C1, $C3, $87, $87, $87, $83, $4B, $1E, $3F, $3F, $7D, $7D, $7E, $7C, $B4
+    dc.b    $00, $00, $00, $20, $20, $10, $10, $08, $1F, $1F, $1F, $5F, $DF, $EF, $EF, $F7
+    dc.b    $07, $C0, $70, $7C, $3F, $7F, $FF, $FF, $78, $3F, $0F, $03, $00, $30, $00, $00
+    dc.b    $3D, $3C, $3F, $3F, $07, $0F, $03, $03, $C2, $C3, $C0, $C7, $F9, $F1, $FE, $FF
+    dc.b    $03, $84, $48, $30, $80, $80, $C0, $C0, $FD, $7B, $B7, $CF, $7F, $3F, $1F, $00
+    dc.b    $00, $00, $00, $00, $00, $03, $0F, $1F, $01, $00, $00, $00, $00, $00, $00, $00
+    dc.b    $3F, $0F, $03, $00, $00, $00, $00, $00, $00, $10, $3C, $3F, $7F, $7F, $7F, $7F
+    dc.b    $00, $01, $0D, $0E, $EF, $C1, $C3, $87, $FB, $FF, $33, $1D, $1E, $3F, $3F, $7D
+    dc.b    $87, $C7, $C7, $CB, $FC, $FF, $FF, $FF, $7D, $3E, $38, $34, $03, $00, $00, $07
+    dc.b    $08, $05, $00, $00, $00, $00, $00, $00, $77, $FA, $FD, $FD, $FD, $FB, $7B, $FF
+    dc.b    $00, $03, $03, $01, $01, $00, $07, $07, $FD, $FC, $78, $38, $00, $00, $00, $00
+    dc.b    $FF, $FF, $7F, $03, $03, $00, $00, $00, $09, $09, $8E, $FF, $FF, $FF, $FF, $FF
+    dc.b    $00, $00, $80, $F8, $FE, $FE, $FE, $FE, $FF, $FF, $7E, $06, $00, $00, $00, $00
+    dc.b    $00, $00, $00, $00, $A8, $00, $00, $00, $7C, $FE, $FF, $FF, $FF, $3F, $3F, $1F
+    dc.b    $00, $01, $01, $01, $01, $03, $03, $03, $1F, $1E, $1E, $1E, $1E, $0C, $0C, $04
+    dc.b    $00, $00, $07, $8F, $84, $81, $CD, $EE, $40, $40, $60, $70, $7B, $7F, $33, $11
+    dc.b    $E7, $C1, $C3, $87, $87, $87, $83, $CB, $1C, $3F, $3F, $7D, $7D, $7E, $7C, $34
+    dc.b    $03, $03, $03, $01, $00, $00, $00, $00, $00, $00, $3C, $7E, $FF, $FF, $FF, $FF
+    dc.b    $00, $C0, $70, $7C, $3F, $7F, $FF, $FF, $7F, $3F, $0F, $03, $00, $30, $00, $00
+    dc.b    $FD, $FC, $FF, $FF, $FF, $6F, $2F, $03, $02, $03, $00, $07, $09, $99, $DE, $FF
+    dc.b    $03, $00, $00, $00, $80, $C0, $C0, $C0, $FF, $FF, $FF, $FF, $7F, $3F, $1F, $00
+    dc.b    $00, $00, $00, $3C, $7E, $7E, $E7, $C3, $00, $00, $00, $3C, $7E, $7E, $FF, $FF
+    dc.b    $DB, $DB, $C3, $81, $81, $00, $00, $00, $E7, $E7, $C3, $81, $81, $00, $00, $00
+    dc.b    $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
+    dc.b    $02, $07, $0B, $0F, $3F, $2D, $7F, $FF, $01, $07, $0F, $0E, $3F, $3F, $3F, $F7
+    dc.b    $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
+    dc.b    $00, $00, $00, $80, $E8, $C0, $68, $F2, $00, $80, $E0, $F0, $B8, $FC, $FF, $EF
+    dc.b    $00, $00, $00, $00, $1F, $7E, $E0, $CC, $00, $00, $00, $00, $1F, $7E, $FC, $F0
+    dc.b    $CC, $E0, $7E, $1F, $00, $00, $00, $00, $F0, $FC, $7E, $1F, $00, $00, $00, $00
+    dc.b    $07, $06, $07, $1C, $08, $09, $2D, $26, $67, $6F, $2F, $3D, $3D, $3F, $3F, $39
+    dc.b    $37, $3B, $3E, $3F, $3F, $3F, $3F, $3F, $38, $38, $3B, $30, $30, $20, $20, $00
+    dc.b    $FF, $80, $40, $40, $20, $20, $10, $10, $FF, $FF, $7F, $7F, $3F, $3F, $1F, $1F
+    dc.b    $08, $08, $04, $04, $02, $02, $00, $00, $0F, $0F, $07, $07, $03, $03, $00, $00
+    dc.b    $FF, $01, $02, $02, $04, $04, $08, $08, $FF, $FF, $FE, $FE, $FC, $FC, $F8, $F8
+    dc.b    $10, $10, $20, $20, $40, $40, $00, $00, $F0, $F0, $E0, $E0, $C0, $C0, $00, $00
+    dc.b    $07, $06, $07, $1C, $18, $18, $1D, $1E, $07, $0F, $0F, $1D, $1D, $1F, $1F, $19
+    dc.b    $37, $33, $36, $0F, $3F, $3F, $3F, $7F, $38, $3C, $3B, $30, $30, $20, $20, $00
+    dc.b    $00, $00, $00, $60, $F0, $72, $30, $12, $00, $00, $00, $63, $F7, $7D, $3F, $1D
+    dc.b    $00, $00, $07, $03, $03, $00, $00, $00, $0F, $0F, $0E, $06, $07, $03, $00, $00
+    dc.b    $00, $00, $00, $00, $00, $40, $06, $4F, $00, $00, $00, $C0, $E0, $B0, $F6, $BF
+    dc.b    $0F, $00, $E0, $C0, $C0, $00, $00, $00, $FF, $F0, $70, $60, $E0, $C0, $00, $00
+    dc.b    $00, $00, $00, $00, $4A, $C7, $46, $06, $00, $00, $00, $00, $52, $FB, $7A, $78
+    dc.b    $02, $3E, $3E, $04, $00, $00, $00, $00, $7C, $64, $7C, $38, $00, $00, $00, $00
+    dc.b    $00, $00, $00, $00, $08, $04, $C7, $C7, $00, $00, $00, $00, $10, $38, $FB, $FB
+    dc.b    $02, $3E, $3E, $04, $00, $00, $00, $00, $7C, $64, $7C, $38, $00, $00, $00, $00
 
 
 ; === .SEGMENT "BANK_03_ISR" ===
@@ -379,4 +1045,3 @@ PatternBlockUWSPBoss9:
 
 ; Unknown block
     dc.b    $84, $E4, $50, $BF, $F0, $BF
-

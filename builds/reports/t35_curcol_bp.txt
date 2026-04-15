@@ -1,0 +1,216 @@
+T35 GEN CurCol/sub/isupd watcher — mode=7 only
+installed bp on M68K BUS
+WR f=2 mode   val=00 PC=0000036E mode=00 sub=00 curcol=00
+WR f=2 CurCol val=00 PC=0000036E mode=00 sub=00 curcol=00
+WR f=15 hscrll val=00 PC=00049DA4 mode=00 sub=00 curcol=00
+WR f=15 CurCol val=00 PC=00049DA4 mode=00 sub=00 curcol=00
+WR f=15 sub    val=00 PC=00049DA4 mode=00 sub=00 curcol=00
+WR f=15 mode   val=00 PC=00049DA4 mode=00 sub=00 curcol=00
+WR f=15 isupd  val=00 PC=00049DA4 mode=00 sub=00 curcol=00
+WR f=16 hscrll val=00 PC=0004F886 mode=00 sub=00 curcol=00
+WR f=19 sub    val=01 PC=0004A69E mode=00 sub=00 curcol=00
+WR f=19 sub    val=00 PC=0004A60C mode=00 sub=00 curcol=00
+HB f=60 mode=00 sub=00 isupd=00 curcol=00 room=00 fc=03 exc=2424 pc=00013514
+WR f=69 hscrll val=00 PC=0004F886 mode=00 sub=00 curcol=00
+WR f=71 isupd  val=01 PC=000380F2 mode=00 sub=00 curcol=00
+HB f=120 mode=00 sub=00 isupd=01 curcol=00 room=00 fc=30 exc=DCD7 pc=0004F684
+HB f=180 mode=00 sub=00 isupd=01 curcol=00 room=00 fc=6C exc=DCD7 pc=0004F684
+WR f=200 sub    val=01 PC=00037A52 mode=00 sub=00 curcol=00
+WR f=208 sub    val=02 PC=0003967A mode=00 sub=00 curcol=00
+WR f=213 mode   val=01 PC=00037BAC mode=00 sub=00 curcol=00
+WR f=213 isupd  val=00 PC=00037BB2 mode=00 sub=00 curcol=00
+WR f=213 sub    val=00 PC=00037BB6 mode=00 sub=00 curcol=00
+WR f=216 sub    val=01 PC=0003967A mode=00 sub=00 curcol=00
+WR f=216 sub    val=02 PC=00039C5C mode=00 sub=00 curcol=00
+WR f=216 hscrll val=00 PC=0004F886 mode=00 sub=00 curcol=00
+WR f=218 sub    val=03 PC=00039C82 mode=00 sub=00 curcol=00
+WR f=224 sub    val=04 PC=00039D38 mode=00 sub=00 curcol=00
+WR f=224 sub    val=05 PC=00039D38 mode=00 sub=00 curcol=00
+WR f=225 sub    val=06 PC=00039D38 mode=00 sub=00 curcol=00
+WR f=226 sub    val=00 PC=00039E08 mode=00 sub=00 curcol=00
+WR f=226 isupd  val=01 PC=00039E0C mode=00 sub=00 curcol=00
+HB f=240 mode=01 sub=00 isupd=01 curcol=00 room=00 fc=97 exc=2424 pc=0004F684
+WR f=263 sub    val=01 PC=00039EC6 mode=00 sub=00 curcol=00
+WR f=264 mode   val=0E PC=00039EFA mode=00 sub=00 curcol=00
+WR f=264 isupd  val=00 PC=0005037A mode=00 sub=00 curcol=00
+WR f=264 sub    val=00 PC=0005037E mode=00 sub=00 curcol=00
+WR f=265 hscrll val=00 PC=0004F886 mode=00 sub=00 curcol=00
+WR f=271 sub    val=01 PC=00038CD8 mode=00 sub=00 curcol=00
+WR f=271 sub    val=02 PC=00038CD8 mode=00 sub=00 curcol=00
+WR f=272 sub    val=03 PC=00038D60 mode=00 sub=00 curcol=00
+WR f=273 sub    val=04 PC=00038D60 mode=00 sub=00 curcol=00
+WR f=274 isupd  val=01 PC=00038DCE mode=00 sub=00 curcol=00
+HB f=300 mode=0E sub=04 isupd=01 curcol=00 room=00 fc=CE exc=2424 pc=0004F684
+WR f=359 isupd  val=01 PC=00038FCA mode=00 sub=00 curcol=00
+WR f=359 mode   val=00 PC=0003A5F2 mode=00 sub=00 curcol=00
+WR f=359 sub    val=01 PC=0003A5F8 mode=00 sub=00 curcol=00
+HB f=360 mode=00 sub=01 isupd=01 curcol=00 room=00 fc=09 exc=2424 pc=0002F934
+WR f=364 sub    val=02 PC=0003967A mode=00 sub=00 curcol=00
+WR f=367 mode   val=01 PC=00037BAC mode=00 sub=00 curcol=00
+WR f=367 isupd  val=00 PC=00037BB2 mode=00 sub=00 curcol=00
+WR f=367 sub    val=00 PC=00037BB6 mode=00 sub=00 curcol=00
+WR f=370 sub    val=01 PC=0003967A mode=00 sub=00 curcol=00
+WR f=371 sub    val=02 PC=00039C5C mode=00 sub=00 curcol=00
+WR f=371 hscrll val=00 PC=0004F886 mode=00 sub=00 curcol=00
+WR f=373 sub    val=03 PC=00039C82 mode=00 sub=00 curcol=00
+WR f=378 sub    val=04 PC=00039D38 mode=00 sub=00 curcol=00
+WR f=378 sub    val=05 PC=00039D38 mode=00 sub=00 curcol=00
+WR f=379 sub    val=06 PC=00039D38 mode=00 sub=00 curcol=00
+WR f=380 sub    val=00 PC=00039E08 mode=00 sub=00 curcol=00
+WR f=380 isupd  val=01 PC=00039E0C mode=00 sub=00 curcol=00
+WR f=413 sub    val=01 PC=00039EC6 mode=00 sub=00 curcol=00
+WR f=415 mode   val=02 PC=00050374 mode=00 sub=00 curcol=00
+WR f=415 isupd  val=00 PC=0005037A mode=00 sub=00 curcol=00
+WR f=415 sub    val=00 PC=0005037E mode=00 sub=00 curcol=00
+HB f=420 mode=02 sub=00 isupd=00 curcol=00 room=00 fc=35 exc=2424 pc=0003B3EA
+WR f=467 sub    val=01 PC=0004A69E mode=00 sub=00 curcol=00
+WR f=468 sub    val=02 PC=0004A69E mode=00 sub=00 curcol=00
+WR f=468 sub    val=00 PC=0004A5F4 mode=00 sub=00 curcol=00
+WR f=468 isupd  val=01 PC=0004A5F8 mode=00 sub=00 curcol=00
+WR f=469 mode   val=03 PC=00050374 mode=00 sub=00 curcol=00
+WR f=469 isupd  val=00 PC=0005037A mode=00 sub=00 curcol=00
+WR f=469 sub    val=00 PC=0005037E mode=00 sub=00 curcol=00
+WR f=470 sub    val=01 PC=000500C4 mode=00 sub=00 curcol=00
+WR f=470 hscrll val=00 PC=0004F886 mode=00 sub=00 curcol=00
+WR f=472 sub    val=02 PC=0005013A mode=00 sub=00 curcol=00
+WR f=472 sub    val=03 PC=00049524 mode=00 sub=00 curcol=00
+WR f=473 sub    val=04 PC=0004620E mode=00 sub=00 curcol=00
+WR f=475 sub    val=05 PC=0004620E mode=00 sub=00 curcol=00
+WR f=477 sub    val=06 PC=00049524 mode=00 sub=00 curcol=00
+WR f=478 sub    val=07 PC=00049524 mode=00 sub=00 curcol=00
+WR f=479 sub    val=08 PC=00049524 mode=00 sub=00 curcol=00
+HB f=480 mode=03 sub=08 isupd=00 curcol=00 room=77 fc=40 exc=2424 pc=0002F724
+WR f=482 sub    val=00 PC=00034888 mode=00 sub=00 curcol=00
+WR f=482 isupd  val=01 PC=0003488C mode=00 sub=00 curcol=00
+WR f=482 CurCol val=11 PC=0003533A mode=00 sub=00 curcol=00
+WR f=482 CurCol val=10 PC=0003533A mode=00 sub=00 curcol=00
+WR f=482 CurCol val=FF PC=0003535E mode=00 sub=00 curcol=00
+WR f=487 CurCol val=12 PC=0003533A mode=00 sub=00 curcol=00
+WR f=487 CurCol val=0F PC=0003533A mode=00 sub=00 curcol=00
+WR f=487 CurCol val=FF PC=0003535E mode=00 sub=00 curcol=00
+WR f=492 CurCol val=13 PC=0003533A mode=00 sub=00 curcol=00
+WR f=492 CurCol val=0E PC=0003533A mode=00 sub=00 curcol=00
+WR f=492 CurCol val=FF PC=0003535E mode=00 sub=00 curcol=00
+WR f=497 CurCol val=14 PC=0003533A mode=00 sub=00 curcol=00
+WR f=497 CurCol val=0D PC=0003533A mode=00 sub=00 curcol=00
+WR f=497 CurCol val=FF PC=0003535E mode=00 sub=00 curcol=00
+WR f=502 CurCol val=15 PC=0003533A mode=00 sub=00 curcol=00
+WR f=502 CurCol val=0C PC=0003533A mode=00 sub=00 curcol=00
+WR f=502 CurCol val=FF PC=0003535E mode=00 sub=00 curcol=00
+WR f=507 CurCol val=16 PC=0003533A mode=00 sub=00 curcol=00
+WR f=507 CurCol val=0B PC=0003533A mode=00 sub=00 curcol=00
+WR f=507 CurCol val=FF PC=0003535E mode=00 sub=00 curcol=00
+WR f=512 CurCol val=17 PC=0003533A mode=00 sub=00 curcol=00
+WR f=512 CurCol val=0A PC=0003533A mode=00 sub=00 curcol=00
+WR f=512 CurCol val=FF PC=0003535E mode=00 sub=00 curcol=00
+WR f=517 CurCol val=18 PC=0003533A mode=00 sub=00 curcol=00
+WR f=517 CurCol val=09 PC=0003533A mode=00 sub=00 curcol=00
+WR f=517 CurCol val=FF PC=0003535E mode=00 sub=00 curcol=00
+WR f=522 CurCol val=19 PC=0003533A mode=00 sub=00 curcol=00
+WR f=522 CurCol val=08 PC=0003533A mode=00 sub=00 curcol=00
+WR f=522 CurCol val=FF PC=0003535E mode=00 sub=00 curcol=00
+WR f=527 CurCol val=1A PC=0003533A mode=00 sub=00 curcol=00
+WR f=527 CurCol val=07 PC=0003533A mode=00 sub=00 curcol=00
+WR f=527 CurCol val=FF PC=0003535E mode=00 sub=00 curcol=00
+WR f=532 CurCol val=1B PC=0003533A mode=00 sub=00 curcol=00
+WR f=532 CurCol val=06 PC=0003533A mode=00 sub=00 curcol=00
+WR f=532 CurCol val=FF PC=0003535E mode=00 sub=00 curcol=00
+WR f=537 CurCol val=1C PC=0003533A mode=00 sub=00 curcol=00
+WR f=537 CurCol val=05 PC=0003533A mode=00 sub=00 curcol=00
+WR f=537 CurCol val=FF PC=0003535E mode=00 sub=00 curcol=00
+HB f=540 mode=03 sub=00 isupd=01 curcol=FF room=77 fc=7A exc=2424 pc=0004F684
+WR f=542 CurCol val=1D PC=0003533A mode=00 sub=00 curcol=00
+WR f=542 CurCol val=04 PC=0003533A mode=00 sub=00 curcol=00
+WR f=542 CurCol val=FF PC=0003535E mode=00 sub=00 curcol=00
+WR f=547 CurCol val=1E PC=0003533A mode=00 sub=00 curcol=00
+WR f=547 CurCol val=03 PC=0003533A mode=00 sub=00 curcol=00
+WR f=547 CurCol val=FF PC=0003535E mode=00 sub=00 curcol=00
+WR f=552 CurCol val=1F PC=0003533A mode=00 sub=00 curcol=00
+WR f=552 CurCol val=02 PC=0003533A mode=00 sub=00 curcol=00
+WR f=552 CurCol val=FF PC=0003535E mode=00 sub=00 curcol=00
+WR f=557 CurCol val=20 PC=0003533A mode=00 sub=00 curcol=00
+WR f=557 CurCol val=01 PC=0003533A mode=00 sub=00 curcol=00
+WR f=557 CurCol val=FF PC=0003535E mode=00 sub=00 curcol=00
+WR f=557 mode   val=04 PC=00050374 mode=00 sub=00 curcol=00
+WR f=557 isupd  val=00 PC=0005037A mode=00 sub=00 curcol=00
+WR f=557 sub    val=00 PC=0005037E mode=00 sub=00 curcol=00
+WR f=559 sub    val=00 PC=00034888 mode=00 sub=00 curcol=00
+WR f=559 isupd  val=01 PC=0003488C mode=00 sub=00 curcol=00
+WR f=559 mode   val=05 PC=00050374 mode=00 sub=00 curcol=00
+WR f=559 isupd  val=00 PC=0005037A mode=00 sub=00 curcol=00
+WR f=559 sub    val=00 PC=0005037E mode=00 sub=00 curcol=00
+WR f=560 sub    val=00 PC=00034888 mode=00 sub=00 curcol=00
+WR f=560 isupd  val=01 PC=0003488C mode=00 sub=00 curcol=00
+HB f=600 mode=05 sub=00 isupd=01 curcol=FF room=77 fc=B6 exc=2424 pc=0004F684
+HB f=660 mode=05 sub=00 isupd=01 curcol=FF room=77 fc=F2 exc=2424 pc=0004F684
+WR f=708 mode   val=06 PC=00050E2E mode=00 sub=00 curcol=00
+WR f=708 sub    val=00 PC=00050E34 mode=00 sub=00 curcol=00
+WR f=708 isupd  val=00 PC=00050E38 mode=00 sub=00 curcol=00
+WR f=709 sub    val=00 PC=00034888 mode=00 sub=00 curcol=00
+WR f=709 isupd  val=01 PC=0003488C mode=00 sub=00 curcol=00
+WR f=710 mode   val=07 PC=00050374 mode=00 sub=00 curcol=00
+WR f=710 isupd  val=00 PC=0005037A mode=00 sub=00 curcol=00
+WR f=710 sub    val=00 PC=0005037E mode=00 sub=00 curcol=00
+WR f=711 sub    val=01 PC=00045194 mode=00 sub=00 curcol=00
+WR f=712 sub    val=02 PC=000450DA mode=00 sub=00 curcol=00
+HB f=720 mode=07 sub=02 isupd=00 curcol=FF room=77 fc=2E exc=2424 pc=0004F684
+WR f=734 sub    val=03 PC=00045194 mode=00 sub=00 curcol=00
+WR f=735 sub    val=04 PC=0004620E mode=00 sub=00 curcol=00
+WR f=737 sub    val=05 PC=0004620E mode=00 sub=00 curcol=00
+WR f=739 sub    val=00 PC=00034888 mode=00 sub=00 curcol=00
+WR f=739 isupd  val=01 PC=0003488C mode=00 sub=00 curcol=00
+HB f=780 mode=07 sub=00 isupd=01 curcol=FF room=76 fc=40 exc=2424 pc=00012DA2
+HB f=840 mode=07 sub=00 isupd=01 curcol=FF room=76 fc=40 exc=2424 pc=00045508
+HB f=900 mode=07 sub=00 isupd=01 curcol=FF room=76 fc=40 exc=2424 pc=00045502
+HB f=960 mode=07 sub=00 isupd=01 curcol=FF room=76 fc=40 exc=2424 pc=00012DA2
+HB f=1020 mode=07 sub=00 isupd=01 curcol=FF room=76 fc=40 exc=2424 pc=00045508
+HB f=1080 mode=07 sub=00 isupd=01 curcol=FF room=76 fc=40 exc=2424 pc=00045502
+HB f=1140 mode=07 sub=00 isupd=01 curcol=FF room=76 fc=40 exc=2424 pc=00012DA2
+HB f=1200 mode=07 sub=00 isupd=01 curcol=FF room=76 fc=40 exc=2424 pc=00045508
+HB f=1260 mode=07 sub=00 isupd=01 curcol=FF room=76 fc=40 exc=2424 pc=00012D9C
+HB f=1320 mode=07 sub=00 isupd=01 curcol=FF room=76 fc=40 exc=2424 pc=00012DA2
+HB f=1380 mode=07 sub=00 isupd=01 curcol=FF room=76 fc=40 exc=2424 pc=0004550C
+HB f=1440 mode=07 sub=00 isupd=01 curcol=FF room=76 fc=40 exc=2424 pc=00012D9C
+HB f=1500 mode=07 sub=00 isupd=01 curcol=FF room=76 fc=40 exc=2424 pc=00012DA2
+HB f=1560 mode=07 sub=00 isupd=01 curcol=FF room=76 fc=40 exc=2424 pc=0004550C
+HB f=1620 mode=07 sub=00 isupd=01 curcol=FF room=76 fc=40 exc=2424 pc=00012D9C
+HB f=1680 mode=07 sub=00 isupd=01 curcol=FF room=76 fc=40 exc=2424 pc=00012DA2
+HB f=1740 mode=07 sub=00 isupd=01 curcol=FF room=76 fc=40 exc=2424 pc=0004550C
+HB f=1800 mode=07 sub=00 isupd=01 curcol=FF room=76 fc=40 exc=2424 pc=00012D9C
+HB f=1860 mode=07 sub=00 isupd=01 curcol=FF room=76 fc=40 exc=2424 pc=00012DA6
+HB f=1920 mode=07 sub=00 isupd=01 curcol=FF room=76 fc=40 exc=2424 pc=0004550E
+HB f=1980 mode=07 sub=00 isupd=01 curcol=FF room=76 fc=40 exc=2424 pc=00012D9C
+HB f=2040 mode=07 sub=00 isupd=01 curcol=FF room=76 fc=40 exc=2424 pc=00012DA6
+HB f=2100 mode=07 sub=00 isupd=01 curcol=FF room=76 fc=40 exc=2424 pc=0004550E
+HB f=2160 mode=07 sub=00 isupd=01 curcol=FF room=76 fc=40 exc=2424 pc=00012D9C
+HB f=2220 mode=07 sub=00 isupd=01 curcol=FF room=76 fc=40 exc=2424 pc=00045508
+HB f=2280 mode=07 sub=00 isupd=01 curcol=FF room=76 fc=40 exc=2424 pc=0004550E
+HB f=2340 mode=07 sub=00 isupd=01 curcol=FF room=76 fc=40 exc=2424 pc=00012DA2
+HB f=2400 mode=07 sub=00 isupd=01 curcol=FF room=76 fc=40 exc=2424 pc=00045508
+HB f=2460 mode=07 sub=00 isupd=01 curcol=FF room=76 fc=40 exc=2424 pc=00045502
+HB f=2520 mode=07 sub=00 isupd=01 curcol=FF room=76 fc=40 exc=2424 pc=00012DA2
+HB f=2580 mode=07 sub=00 isupd=01 curcol=FF room=76 fc=40 exc=2424 pc=00045508
+HB f=2640 mode=07 sub=00 isupd=01 curcol=FF room=76 fc=40 exc=2424 pc=00045502
+HB f=2700 mode=07 sub=00 isupd=01 curcol=FF room=76 fc=40 exc=2424 pc=00012DA2
+HB f=2760 mode=07 sub=00 isupd=01 curcol=FF room=76 fc=40 exc=2424 pc=00045508
+HB f=2820 mode=07 sub=00 isupd=01 curcol=FF room=76 fc=40 exc=2424 pc=00045502
+HB f=2880 mode=07 sub=00 isupd=01 curcol=FF room=76 fc=40 exc=2424 pc=00012DA2
+HB f=2940 mode=07 sub=00 isupd=01 curcol=FF room=76 fc=40 exc=2424 pc=00045508
+HB f=3000 mode=07 sub=00 isupd=01 curcol=FF room=76 fc=40 exc=2424 pc=00012D9C
+HB f=3060 mode=07 sub=00 isupd=01 curcol=FF room=76 fc=40 exc=2424 pc=00012DA2
+HB f=3120 mode=07 sub=00 isupd=01 curcol=FF room=76 fc=40 exc=2424 pc=0004550C
+HB f=3180 mode=07 sub=00 isupd=01 curcol=FF room=76 fc=40 exc=2424 pc=00012D9C
+HB f=3240 mode=07 sub=00 isupd=01 curcol=FF room=76 fc=40 exc=2424 pc=00012DA2
+HB f=3300 mode=07 sub=00 isupd=01 curcol=FF room=76 fc=40 exc=2424 pc=0004550C
+HB f=3360 mode=07 sub=00 isupd=01 curcol=FF room=76 fc=40 exc=2424 pc=00012D9C
+HB f=3420 mode=07 sub=00 isupd=01 curcol=FF room=76 fc=40 exc=2424 pc=00012DA2
+HB f=3480 mode=07 sub=00 isupd=01 curcol=FF room=76 fc=40 exc=2424 pc=0004550C
+HB f=3540 mode=07 sub=00 isupd=01 curcol=FF room=76 fc=40 exc=2424 pc=00012D9C
+HB f=3600 mode=07 sub=00 isupd=01 curcol=FF room=76 fc=40 exc=2424 pc=00012DA6
+HB f=3660 mode=07 sub=00 isupd=01 curcol=FF room=76 fc=40 exc=2424 pc=0004550E
+HB f=3720 mode=07 sub=00 isupd=01 curcol=FF room=76 fc=40 exc=2424 pc=00012D9C
+HB f=3780 mode=07 sub=00 isupd=01 curcol=FF room=76 fc=40 exc=2424 pc=00012DA6
+HB f=3840 mode=07 sub=00 isupd=01 curcol=FF room=76 fc=40 exc=2424 pc=0004550E
+HB f=3900 mode=07 sub=00 isupd=01 curcol=FF room=76 fc=40 exc=2424 pc=00012D9C
+HB f=3960 mode=07 sub=00 isupd=01 curcol=FF room=76 fc=40 exc=2424 pc=00045508
+DONE

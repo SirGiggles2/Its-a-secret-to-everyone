@@ -1,0 +1,24 @@
+=================================================================
+T35 NES capture: room $77 -> $76 left-scroll reference trace
+=================================================================
+SCENARIO_LENGTH=540
+f0052 flow BOOT_TO_FS1 -> FS1_SELECT_REGISTER (entered Mode1)
+f0055 flow FS1_SELECT_REGISTER -> FS1_ENTER_REGISTER (CurSaveSlot reached 3)
+f0074 flow FS1_ENTER_REGISTER -> MODEE_TYPE_NAME (entered ModeE)
+f0122 flow MODEE_TYPE_NAME -> MODEE_FINISH (name progress target reached)
+f0166 flow MODEE_FINISH -> WAIT_GAMEPLAY (left ModeE)
+f0172 flow WAIT_GAMEPLAY -> FS1_START_GAME (back to Mode1 after register)
+f0183 flow FS1_START_GAME -> T35_STABILIZE (left Mode1 (gameplay starting))
+HB f0200 flow=T35_STABILIZE mode=$02 sub=$01 room=$00 hsc=$00
+f0291 reached Mode5 room $77
+f0351 T=0 baseline x=$78 y=$8D dir=$00 hsc=$00 vsc=$00 room=$77
+f0351 flow T35_STABILIZE -> T35_CAPTURE (T35 capture window open)
+HB f0400 flow=T35_CAPTURE mode=$05 sub=$00 room=$77 hsc=$00
+HB f0600 flow=T35_CAPTURE mode=$07 sub=$06 room=$76 hsc=$00
+HB f0800 flow=T35_CAPTURE mode=$05 sub=$00 room=$76 hsc=$00
+f0891 flow T35_CAPTURE -> DONE (capture complete)
+TRACE_LENGTH=540 (expected 540)
+REACHED_MODE5=true
+T0_FRAME=351
+FINAL t=539 x=$B2.40 y=$8D.C5 dir=$00 room=$76 mode=$05 sub=$00 hsc=$00 vsc=$00
+T35_NES_CAPTURE: OK

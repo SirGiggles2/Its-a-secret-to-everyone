@@ -1,32 +1,100 @@
 =================================================================
-T28: Title Input Probe  —  up to 400 frames
+T28 story-soak probe (no Start press)
 =================================================================
-  LoopForever=$01660C  ExcBus=$000366  ExcAddr=$000388  ExcDef=$0003AA
-  Start button injected frames 90–130
+LoopForever=$03C680  IsrNmi=$03C6B2
+frames=3200  log_period=60  stall_limit=180
 
-  Mode byte ($FF0012): frame-80=00  frame-100=00  final=00
-  NMI count:     start=3  end=55  delta=52
-  CheckInput:    start=3  end=55  delta=52
-  Button regs:   $F8=00 (held)  $FA=CF (new-press)
-  CTL1_LATCH=$F3  CTL1_IDX=8
+f0001 mode=$00 sub=$00 tileSel=$00 vscroll=  0 hscroll=  0 vStart=  0 lines=  0
+f0001 demoPhase=$00 demoSub=$00 demoTimer=$00 tileSel=$00
+f0060 telemetry mode=$00/$00 demo=$00/$00 timer=$00 tileSel=$00 v=  0 h=  0 lines=  0 nmi=  3 ci= 15
+f0070 demoPhase=$00 demoSub=$02 demoTimer=$00 tileSel=$00
+f0071 demoPhase=$00 demoSub=$00 demoTimer=$00 tileSel=$10
+f0120 telemetry mode=$00/$00 demo=$00/$00 timer=$16 tileSel=$00 v=  0 h=  0 lines=  0 nmi= 50 ci=250
+f0180 telemetry mode=$00/$00 demo=$00/$00 timer=$34 tileSel=$00 v=  0 h=  0 lines=  0 nmi=110 ci= 38
+f0240 telemetry mode=$00/$00 demo=$00/$00 timer=$52 tileSel=$00 v=  0 h=  0 lines=  0 nmi=170 ci= 82
+f0300 telemetry mode=$00/$00 demo=$00/$00 timer=$70 tileSel=$00 v=  0 h=  0 lines=  0 nmi=230 ci=126
+f0360 telemetry mode=$00/$00 demo=$00/$00 timer=$8E tileSel=$00 v=  0 h=  0 lines=  0 nmi= 34 ci=170
+f0420 telemetry mode=$00/$00 demo=$00/$00 timer=$AC tileSel=$00 v=  0 h=  0 lines=  0 nmi= 94 ci=214
+f0480 telemetry mode=$00/$00 demo=$00/$00 timer=$CA tileSel=$00 v=  0 h=  0 lines=  0 nmi=154 ci=  2
+f0540 telemetry mode=$00/$00 demo=$00/$00 timer=$E8 tileSel=$00 v=  0 h=  0 lines=  0 nmi=214 ci= 46
+f0587 demoPhase=$00 demoSub=$01 demoTimer=$00 tileSel=$00
+f0600 telemetry mode=$00/$00 demo=$00/$01 timer=$00 tileSel=$00 v=  0 h=  0 lines=  0 nmi= 18 ci= 90
+f0660 telemetry mode=$00/$00 demo=$00/$01 timer=$00 tileSel=$00 v=  0 h=  0 lines=  0 nmi= 78 ci=134
+f0720 telemetry mode=$00/$00 demo=$00/$01 timer=$00 tileSel=$00 v=  0 h=  0 lines=  0 nmi=138 ci=178
+f0780 telemetry mode=$00/$00 demo=$00/$01 timer=$00 tileSel=$00 v=  0 h=  0 lines=  0 nmi=198 ci=222
+f0840 telemetry mode=$00/$00 demo=$00/$01 timer=$00 tileSel=$00 v=  0 h=  0 lines=  0 nmi=  2 ci= 10
+f0900 telemetry mode=$00/$00 demo=$00/$01 timer=$00 tileSel=$00 v=  0 h=  0 lines=  0 nmi= 62 ci= 54
+f0960 telemetry mode=$00/$00 demo=$00/$01 timer=$00 tileSel=$00 v=  0 h=  0 lines=  0 nmi=122 ci= 98
+f1020 telemetry mode=$00/$00 demo=$00/$01 timer=$00 tileSel=$00 v=  0 h=  0 lines=  0 nmi=182 ci=142
+f1022 demoPhase=$01 demoSub=$00 demoTimer=$00 tileSel=$00
+f1024 demoPhase=$01 demoSub=$01 demoTimer=$00 tileSel=$00
+f1025 demoPhase=$01 demoSub=$02 demoTimer=$00 tileSel=$00
+f1026 demoPhase=$01 demoSub=$00 demoTimer=$00 tileSel=$02
+f1080 telemetry mode=$00/$00 demo=$01/$00 timer=$00 tileSel=$00 v= 40 h=  0 lines=  0 nmi=236 ci=156
+f1140 telemetry mode=$00/$00 demo=$01/$00 timer=$00 tileSel=$00 v= 70 h=  0 lines=  0 nmi= 40 ci=200
+f1200 telemetry mode=$00/$00 demo=$01/$00 timer=$00 tileSel=$00 v=100 h=  0 lines=  0 nmi=100 ci=244
+f1260 telemetry mode=$00/$00 demo=$01/$00 timer=$00 tileSel=$00 v=130 h=  0 lines=  0 nmi=160 ci= 32
+f1320 telemetry mode=$00/$00 demo=$01/$00 timer=$00 tileSel=$00 v=160 h=  0 lines=  0 nmi=220 ci= 76
+f1380 telemetry mode=$00/$00 demo=$01/$00 timer=$00 tileSel=$00 v=190 h=  0 lines=  0 nmi= 24 ci=120
+f1440 telemetry mode=$00/$00 demo=$01/$00 timer=$00 tileSel=$00 v=220 h=  0 lines=  0 nmi= 84 ci=164
+f1495 demoPhase=$01 demoSub=$01 demoTimer=$00 tileSel=$00
+f1500 telemetry mode=$00/$00 demo=$01/$01 timer=$05 tileSel=$00 v=  8 h=  0 lines=  0 nmi=144 ci=208
+f1560 telemetry mode=$00/$00 demo=$01/$01 timer=$41 tileSel=$00 v=  8 h=  0 lines=  0 nmi=204 ci=252
+f1620 telemetry mode=$00/$00 demo=$01/$01 timer=$7D tileSel=$00 v=  8 h=  0 lines=  0 nmi=  8 ci= 40
+f1680 telemetry mode=$00/$00 demo=$01/$01 timer=$B9 tileSel=$00 v=  8 h=  0 lines=  0 nmi= 68 ci= 84
+f1740 telemetry mode=$00/$00 demo=$01/$01 timer=$F5 tileSel=$00 v=  8 h=  0 lines=  0 nmi=128 ci=128
+f1751 demoPhase=$01 demoSub=$02 demoTimer=$00 tileSel=$00
+f1800 telemetry mode=$00/$00 demo=$01/$02 timer=$00 tileSel=$00 v= 32 h=  0 lines= 24 nmi=188 ci=172
+f1860 telemetry mode=$00/$00 demo=$01/$02 timer=$00 tileSel=$00 v= 62 h=  0 lines= 54 nmi=248 ci=216
+f1920 telemetry mode=$00/$00 demo=$01/$02 timer=$00 tileSel=$00 v= 92 h=  0 lines= 84 nmi= 52 ci=  4
+f1980 telemetry mode=$00/$00 demo=$01/$02 timer=$00 tileSel=$00 v= 96 h=  0 lines= 88 nmi= 59 ci= 39
+f2040 telemetry mode=$00/$00 demo=$01/$02 timer=$00 tileSel=$00 v= 96 h=  0 lines= 88 nmi= 59 ci= 39
+f2100 telemetry mode=$00/$00 demo=$01/$02 timer=$00 tileSel=$00 v= 96 h=  0 lines= 88 nmi= 59 ci= 39
+f2107 NMI stall detected (180 frames unchanged)
+f2107 CheckInput stall detected (180 frames unchanged)
+f2160 telemetry mode=$00/$00 demo=$01/$02 timer=$00 tileSel=$00 v= 96 h=  0 lines= 88 nmi= 59 ci= 39
+f2220 telemetry mode=$00/$00 demo=$01/$02 timer=$00 tileSel=$00 v= 96 h=  0 lines= 88 nmi= 59 ci= 39
+f2280 telemetry mode=$00/$00 demo=$01/$02 timer=$00 tileSel=$00 v= 96 h=  0 lines= 88 nmi= 59 ci= 39
+f2340 telemetry mode=$00/$00 demo=$01/$02 timer=$00 tileSel=$00 v= 96 h=  0 lines= 88 nmi= 59 ci= 39
+f2400 telemetry mode=$00/$00 demo=$01/$02 timer=$00 tileSel=$00 v= 96 h=  0 lines= 88 nmi= 59 ci= 39
+f2460 telemetry mode=$00/$00 demo=$01/$02 timer=$00 tileSel=$00 v= 96 h=  0 lines= 88 nmi= 59 ci= 39
+f2520 telemetry mode=$00/$00 demo=$01/$02 timer=$00 tileSel=$00 v= 96 h=  0 lines= 88 nmi= 59 ci= 39
+f2580 telemetry mode=$00/$00 demo=$01/$02 timer=$00 tileSel=$00 v= 96 h=  0 lines= 88 nmi= 59 ci= 39
+f2640 telemetry mode=$00/$00 demo=$01/$02 timer=$00 tileSel=$00 v= 96 h=  0 lines= 88 nmi= 59 ci= 39
+f2700 telemetry mode=$00/$00 demo=$01/$02 timer=$00 tileSel=$00 v= 96 h=  0 lines= 88 nmi= 59 ci= 39
+f2760 telemetry mode=$00/$00 demo=$01/$02 timer=$00 tileSel=$00 v= 96 h=  0 lines= 88 nmi= 59 ci= 39
+f2820 telemetry mode=$00/$00 demo=$01/$02 timer=$00 tileSel=$00 v= 96 h=  0 lines= 88 nmi= 59 ci= 39
+f2880 telemetry mode=$00/$00 demo=$01/$02 timer=$00 tileSel=$00 v= 96 h=  0 lines= 88 nmi= 59 ci= 39
+f2940 telemetry mode=$00/$00 demo=$01/$02 timer=$00 tileSel=$00 v= 96 h=  0 lines= 88 nmi= 59 ci= 39
+f3000 telemetry mode=$00/$00 demo=$01/$02 timer=$00 tileSel=$00 v= 96 h=  0 lines= 88 nmi= 59 ci= 39
+f3060 telemetry mode=$00/$00 demo=$01/$02 timer=$00 tileSel=$00 v= 96 h=  0 lines= 88 nmi= 59 ci= 39
+f3120 telemetry mode=$00/$00 demo=$01/$02 timer=$00 tileSel=$00 v= 96 h=  0 lines= 88 nmi= 59 ci= 39
+f3180 telemetry mode=$00/$00 demo=$01/$02 timer=$00 tileSel=$00 v= 96 h=  0 lines= 88 nmi= 59 ci= 39
 
-─── T28: Title Input Tests ──────────────────────────────────────
-[PASS] T28_NO_EXCEPTION                no exception handler hit
-[PASS] T28_NMI_CONTINUOUS              NMI advanced 52 over frames 80–400 — no hang
-[FAIL] T28_TITLE_MODE                  mode=$00 at frame 80 — expected $01 (title)
-[FAIL] T28_MODE_ADVANCE                mode stayed $00 — Start press may not have registered
-[PASS] T28_CI_POST_TRANSITION          CheckInput advanced 52 past transition — input loop intact
+Mode changes (first 24):
+  f0001 mode=$00 sub=$00
 
-=================================================================
-T28 TITLE INPUT SUMMARY
-=================================================================
-  [PASS] T28_NO_EXCEPTION
-  [PASS] T28_NMI_CONTINUOUS
-  [FAIL] T28_TITLE_MODE
-  [FAIL] T28_MODE_ADVANCE
-  [PASS] T28_CI_POST_TRANSITION
+Demo phase changes (first 24):
+  f0001 phase=$00 sub=$00 timer=$00 tileSel=$00
+  f0070 phase=$00 sub=$02 timer=$00 tileSel=$00
+  f0071 phase=$00 sub=$00 timer=$00 tileSel=$10
+  f0587 phase=$00 sub=$01 timer=$00 tileSel=$00
+  f1022 phase=$01 sub=$00 timer=$00 tileSel=$00
+  f1024 phase=$01 sub=$01 timer=$00 tileSel=$00
+  f1025 phase=$01 sub=$02 timer=$00 tileSel=$00
+  f1026 phase=$01 sub=$00 timer=$00 tileSel=$02
+  f1495 phase=$01 sub=$01 timer=$00 tileSel=$00
+  f1751 phase=$01 sub=$02 timer=$00 tileSel=$00
 
-  3 PASS  /  2 FAIL  /  5 total
+NMI delta: 59
+CheckInput delta: 39
+max_vscroll: 239  max_scrolled_lines: 88
 
-T28 TITLE INPUT: 2 FAILURE(S)
+[PASS] T28_NO_EXCEPTION               no exception
+[FAIL] T28_NMI_CONTINUOUS             stalled at frame 2107
+[FAIL] T28_CHECKINPUT_CONTINUOUS      stalled at frame 2107
+[PASS] T28_DEMOPHASE_ADVANCE          reached demo phase >= 1
+[PASS] T28_STORY_SCROLL_ACTIVITY      vscroll/scrolled-line activity observed
 
+T28 STORY-SOAK SUMMARY: 3 PASS / 2 FAIL
+T28 STORY-SOAK: FAIL

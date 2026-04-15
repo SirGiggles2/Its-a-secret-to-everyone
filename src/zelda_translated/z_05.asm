@@ -325,7 +325,9 @@ _anon_z05_2:
     move.b  ($00FC,A4),D0
     ori     #$11,CCR  ; SEC: set C+X
     move.b  #$03,D1
+    eori    #$10,CCR  ; flip X: 6502 SBC polarity
     subx.b  D1,D0   ; SBC #$03
+    eori    #$10,CCR  ; restore X = 6502 C
     move.b  D0,($00FC,A4)
     ; There's nothing else to do until we reach hardware VScroll=$41. Return.
     ;
@@ -364,7 +366,9 @@ _anon_z05_2:
     bcs  _L_z05_UpdateMenuScrollDownUW_ShortRotation
     moveq   #16,D0
     move.b  (NES_SRAM+$0BAB).l,D1
+    eori    #$10,CCR  ; flip X: 6502 SBC polarity
     subx.b  D1,D0   ; SBC LevelInfo_SubmenuMapRotation
+    eori    #$10,CCR  ; restore X = 6502 C
     lsl.b  #1,D0   ; ASL A
     lsl.b  #1,D0   ; ASL A
     lsl.b  #1,D0   ; ASL A
@@ -685,7 +689,9 @@ _anon_z05_9:
     move.b  ($00E2,A4),D0
     ori     #$11,CCR  ; SEC: set C+X
     move.b  #$20,D1
+    eori    #$10,CCR  ; flip X: 6502 SBC polarity
     subx.b  D1,D0   ; SBC #$20
+    eori    #$10,CCR  ; restore X = 6502 C
     move.b  D0,($00E2,A4)
     bcc  _anon_z05_10
     subq.b  #1,($0058,A4)
@@ -737,7 +743,9 @@ __far_z_05_0009:
     cmpi.b  #$3E,D0
     bcs  _anon_z05_11
     move.b  #$08,D1
+    eori    #$10,CCR  ; flip X: 6502 SBC polarity
     subx.b  D1,D0   ; SBC #$08
+    eori    #$10,CCR  ; restore X = 6502 C
     move.b  D0,($0084,A4)
 _anon_z05_11:
     move.b  ($00E2,A4),D0
@@ -794,7 +802,9 @@ _anon_z05_14:
     move.b  ($00FD,A4),D0
     ori     #$11,CCR  ; SEC: set C+X
     move.b  ($0000,A4),D1
+    eori    #$10,CCR  ; flip X: 6502 SBC polarity
     subx.b  D1,D0   ; SBC $00
+    eori    #$10,CCR  ; restore X = 6502 C
     move.b  D0,($00FD,A4)
     bne.s  __far_z_05_0013
     jmp  IncSubmode
@@ -836,7 +846,9 @@ __far_z_05_0015:
     cmpi.b  #$01,D0
     bcs  _anon_z05_15
     move.b  ($0000,A4),D1
+    eori    #$10,CCR  ; flip X: 6502 SBC polarity
     subx.b  D1,D0   ; SBC $00
+    eori    #$10,CCR  ; restore X = 6502 C
     move.b  D0,($0070,A4)
 _anon_z05_15:
     move.b  ($00FD,A4),D0
@@ -1677,17 +1689,17 @@ _anon_z05_39:
 
     even
 SpawnPosListAddrsLo:
-; [unknown directive] .LOBYTES SpawnPosList0
-; [unknown directive] .LOBYTES SpawnPosList1
-; [unknown directive] .LOBYTES SpawnPosList2
-; [unknown directive] .LOBYTES SpawnPosList3
+    dc.b    (SpawnPosList0)&$FF
+    dc.b    (SpawnPosList1)&$FF
+    dc.b    (SpawnPosList2)&$FF
+    dc.b    (SpawnPosList3)&$FF
 
     even
 SpawnPosListAddrsHi:
-; [unknown directive] .HIBYTES SpawnPosList0
-; [unknown directive] .HIBYTES SpawnPosList1
-; [unknown directive] .HIBYTES SpawnPosList2
-; [unknown directive] .HIBYTES SpawnPosList3
+    dc.b    (SpawnPosList0>>8)&$FF
+    dc.b    (SpawnPosList1>>8)&$FF
+    dc.b    (SpawnPosList2>>8)&$FF
+    dc.b    (SpawnPosList3>>8)&$FF
 
     even
 SpawnPosList0:
@@ -1715,10 +1727,20 @@ EnteringRoomRelativePositions:
 
     even
 ObjLists:
-; .INCBIN "dat/ObjLists.dat" not found — stub 128 zero bytes
-    rept    128
-        dc.b    0
-    endr
+; .INCBIN dat/ObjLists.dat (201 bytes)
+    dc.b    $03, $03, $04, $03, $04, $03, $04, $03, $04, $1A, $1A, $02, $01, $02, $01, $01
+    dc.b    $02, $01, $02, $01, $0F, $02, $01, $10, $02, $0F, $1A, $10, $1A, $0F, $1A, $09
+    dc.b    $08, $08, $08, $08, $08, $07, $08, $07, $08, $09, $08, $09, $08, $0A, $07, $0A
+    dc.b    $07, $07, $03, $0A, $04, $0A, $04, $04, $4A, $00, $00, $00, $13, $13, $00, $13
+    dc.b    $4A, $00, $00, $00, $1B, $1B, $1B, $1B, $2B, $2B, $2B, $13, $13, $1B, $1B, $1B
+    dc.b    $16, $30, $30, $1B, $1B, $16, $00, $00, $2B, $2B, $2B, $23, $23, $24, $23, $24
+    dc.b    $2B, $2B, $12, $12, $12, $00, $00, $00, $2B, $2B, $13, $13, $17, $17, $2B, $2B
+    dc.b    $0C, $0B, $0B, $30, $30, $30, $2B, $2B, $05, $05, $05, $1B, $1B, $1B, $4A, $00
+    dc.b    $00, $00, $17, $17, $17, $17, $4A, $00, $00, $00, $23, $24, $23, $24, $16, $0C
+    dc.b    $0B, $0C, $0B, $16, $2B, $2B, $2B, $27, $27, $27, $27, $27, $05, $06, $06, $05
+    dc.b    $06, $05, $00, $00, $23, $23, $24, $23, $24, $2B, $17, $23, $23, $17, $24, $17
+    dc.b    $24, $2D, $2D, $2D, $2C, $23, $24, $23, $24, $2D, $2D, $2D, $2C, $0C, $0B, $0C
+    dc.b    $0B, $2D, $2D, $2D, $2C, $27, $27, $27, $27
 
     even
 ObjListAddrs:
@@ -1783,7 +1805,9 @@ __far_z_05_0030:
     ; to get room ID offset in that direction.
     ori     #$11,CCR  ; SEC: set C+X
     move.b  ($00EB,A4),D1
+    eori    #$10,CCR  ; flip X: 6502 SBC polarity
     subx.b  D1,D0   ; SBC RoomId
+    eori    #$10,CCR  ; restore X = 6502 C
     jsr     Negate
     andi    #$EE,CCR  ; CLC: clear C+X
     move.b  ($00EB,A4),D1
@@ -2113,7 +2137,9 @@ _L_z05_InitMode_EnterRoom_PlaceList:
     move.b  ($0002,A4),D0
     ori     #$11,CCR  ; SEC: set C+X
     move.b  #$62,D1
+    eori    #$10,CCR  ; flip X: 6502 SBC polarity
     subx.b  D1,D0   ; SBC #$62
+    eori    #$10,CCR  ; restore X = 6502 C
     ; Put the address of the list in [04:05].
     ;
     lsl.b  #1,D0   ; ASL A
@@ -2354,7 +2380,9 @@ _anon_z05_61:
     andi.b #$FC,D0
     ori     #$11,CCR  ; SEC: set C+X
     move.b  #$40,D1
+    eori    #$10,CCR  ; flip X: 6502 SBC polarity
     subx.b  D1,D0   ; SBC #$40
+    eori    #$10,CCR  ; restore X = 6502 C
     lsr.b  #1,D0   ; LSR A
     lsr.b  #1,D0   ; LSR A
     ; cave dweller object type = $6A + (cave index)
@@ -2403,7 +2431,10 @@ __far_z_05_0033:
 IsDistanceSafeToSpawn:
     move.b  ($0070,A4),D0
     ori     #$11,CCR  ; SEC: set C+X
-; [SBC unhandled mode=ABS_X] SBC ObjX, X
+    move.b  ($70,A4,D2.W),D1
+    eori    #$10,CCR  ; flip X: 6502 SBC polarity
+    subx.b  D1,D0   ; SBC ObjX,X
+    eori    #$10,CCR  ; restore X = 6502 C
     jsr     Abs
     cmpi.b  #$22,D0
     bcc  _anon_z05_62
@@ -2411,7 +2442,11 @@ IsDistanceSafeToSpawn:
     ;
     move.b  ($0084,A4),D0
     ori     #$11,CCR  ; SEC: set C+X
-; [SBC unhandled mode=ABS_X] SBC ObjY, X
+    lea     ($0084,A4),A0
+    move.b  (A0,D2.W),D1
+    eori    #$10,CCR  ; flip X: 6502 SBC polarity
+    subx.b  D1,D0   ; SBC ObjY,X
+    eori    #$10,CCR  ; restore X = 6502 C
     jsr     Abs
     cmpi.b  #$22,D0
     bcc.s  __far_z_05_0034
@@ -3893,7 +3928,11 @@ CheckLadder:
     move.b  #$03,D1
     addx.b  D1,D0   ; ADC #$03 (X flag = 6502 C)
     ori     #$11,CCR  ; SEC: set C+X
-; [SBC unhandled mode=ABS_X] SBC ObjY, X
+    lea     ($0084,A4),A0
+    move.b  (A0,D2.W),D1
+    eori    #$10,CCR  ; flip X: 6502 SBC polarity
+    subx.b  D1,D0   ; SBC ObjY,X
+    eori    #$10,CCR  ; restore X = 6502 C
     jmp     _L_z05_CheckLadder_CheckDistanceToLadder
 
 _anon_z05_85:
@@ -3911,7 +3950,10 @@ _anon_z05_85:
     bne  _L_z05_CheckLadder_StashLadder
     move.b  ($0070,A4),D0
     ori     #$11,CCR  ; SEC: set C+X
-; [SBC unhandled mode=ABS_X] SBC ObjX, X
+    move.b  ($70,A4,D2.W),D1
+    eori    #$10,CCR  ; flip X: 6502 SBC polarity
+    subx.b  D1,D0   ; SBC ObjX,X
+    eori    #$10,CCR  ; restore X = 6502 C
     even
 _L_z05_CheckLadder_CheckDistanceToLadder:
     ; If absolute distance < $10, go handle movement on the ladder and set state 2.
@@ -4048,7 +4090,9 @@ _anon_z05_86:
     move.b  D0,-(A5)  ; PHA
     ori     #$11,CCR  ; SEC: set C+X
     move.b  #$08,D1
+    eori    #$10,CCR  ; flip X: 6502 SBC polarity
     subx.b  D1,D0   ; SBC #$08
+    eori    #$10,CCR  ; restore X = 6502 C
     move.b  D0,($0084,A4)
     jsr     GetCollidingTileMoving
     move.b  (A5)+,D0  ; PLA
@@ -4153,6 +4197,8 @@ _L_z05_FindNextEdgeSpawnCell_PointToColumn:
     ; Starting at the top of the leftmost column.
     ;
     jsr     FetchTileMapAddr
+    moveq   #5,D0
+    jsr     _copy_bank_to_window   ; PATCH P33c: re-pin bank 5 after FetchTileMapAddr
     ; Add $2C to the address as many times as the low nibble of [0A],
     ; in order to point to the column we want.
     ;
@@ -4175,7 +4221,9 @@ _L_z05_FindNextEdgeSpawnCell_GetRowOffset:
     andi.b #$F0,D0
     ori     #$11,CCR  ; SEC: set C+X
     move.b  #$40,D1
+    eori    #$10,CCR  ; flip X: 6502 SBC polarity
     subx.b  D1,D0   ; SBC #$40
+    eori    #$10,CCR  ; restore X = 6502 C
     lsr.b  #1,D0   ; LSR A
     lsr.b  #1,D0   ; LSR A
     lsr.b  #1,D0   ; LSR A
@@ -4303,7 +4351,9 @@ _anon_z05_91:
     move.b  ($0003,A4),D0
     ori     #$11,CCR  ; SEC: set C+X
     move.b  ($0004,A4),D1
+    eori    #$10,CCR  ; flip X: 6502 SBC polarity
     subx.b  D1,D0   ; SBC $04
+    eori    #$10,CCR  ; restore X = 6502 C
     bpl  _anon_z05_92
     even
 _L_z05_ModifyObjCountByHistoryOW_ResetObjList:
@@ -4899,7 +4949,11 @@ _L_z05_ModifyObjCountByHistoryUW_CalcObjCount:
     move.b  ($00EB,A4),D3
     move.b  ($0003,A4),D0
     ori     #$11,CCR  ; SEC: set C+X
-; [SBC unhandled mode=ABS_Y] SBC LevelKillCounts, Y
+    lea     ($0560,A4),A0
+    move.b  (A0,D3.W),D1
+    eori    #$10,CCR  ; flip X: 6502 SBC polarity
+    subx.b  D1,D0   ; SBC LevelKillCounts,Y
+    eori    #$10,CCR  ; restore X = 6502 C
     bpl  _anon_z05_102
     even
 _L_z05_ModifyObjCountByHistoryUW_ResetObjCount:
@@ -5137,10 +5191,64 @@ WriteDoorFaceTileHorizontally:
 
     even
 RoomLayoutsOW:
-; .INCBIN "dat/RoomLayoutsOW.dat" not found — stub 128 zero bytes
-    rept    128
-        dc.b    0
-    endr
+; .INCBIN dat/RoomLayoutsOW.dat (912 bytes)
+    dc.b    $00, $A9, $02, $77, $10, $77, $02, $07, $18, $45, $13, $13, $13, $13, $13, $13
+    dc.b    $13, $00, $02, $02, $67, $70, $02, $67, $D7, $70, $02, $67, $70, $02, $00, $13
+    dc.b    $13, $13, $13, $13, $13, $13, $43, $92, $52, $F7, $62, $62, $62, $62, $62, $62
+    dc.b    $62, $62, $62, $62, $62, $62, $62, $62, $62, $62, $62, $F7, $62, $62, $62, $62
+    dc.b    $62, $62, $62, $48, $48, $48, $41, $18, $18, $17, $17, $17, $17, $14, $15, $15
+    dc.b    $15, $15, $17, $75, $17, $16, $16, $18, $18, $16, $16, $16, $16, $16, $16, $16
+    dc.b    $F0, $F1, $A9, $A2, $A3, $77, $02, $08, $08, $02, $77, $10, $02, $A8, $F0, $F1
+    dc.b    $16, $76, $27, $76, $76, $76, $26, $76, $25, $76, $15, $14, $18, $18, $15, $15
+    dc.b    $00, $F1, $A2, $A3, $A2, $A3, $A0, $83, $06, $06, $A1, $A2, $A3, $A6, $01, $A7
+    dc.b    $16, $23, $25, $18, $25, $23, $26, $23, $23, $25, $23, $26, $18, $31, $23, $16
+    dc.b    $16, $28, $17, $17, $17, $49, $17, $17, $17, $17, $49, $17, $17, $17, $28, $15
+    dc.b    $00, $00, $E6, $A1, $A2, $18, $18, $18, $18, $45, $12, $13, $12, $13, $13, $13
+    dc.b    $00, $00, $04, $04, $04, $04, $04, $04, $04, $04, $04, $04, $04, $04, $83, $00
+    dc.b    $15, $28, $17, $25, $17, $25, $17, $25, $17, $31, $76, $76, $16, $16, $16, $16
+    dc.b    $16, $16, $17, $17, $30, $57, $57, $74, $74, $57, $57, $57, $57, $57, $30, $30
+    dc.b    $30, $30, $17, $17, $76, $76, $31, $18, $18, $76, $27, $76, $17, $76, $28, $16
+    dc.b    $16, $16, $17, $76, $76, $26, $17, $23, $23, $46, $52, $48, $48, $52, $37, $37
+    dc.b    $37, $37, $52, $52, $86, $13, $13, $92, $D0, $52, $36, $52, $36, $52, $37, $37
+    dc.b    $37, $37, $37, $48, $48, $48, $41, $23, $23, $17, $31, $17, $25, $25, $17, $17
+    dc.b    $17, $17, $17, $27, $17, $27, $17, $26, $17, $26, $17, $27, $17, $26, $17, $26
+    dc.b    $26, $17, $26, $76, $27, $76, $26, $18, $18, $26, $76, $26, $76, $27, $76, $16
+    dc.b    $16, $16, $16, $16, $16, $16, $16, $18, $18, $63, $42, $42, $42, $42, $42, $42
+    dc.b    $42, $42, $42, $61, $61, $61, $60, $76, $76, $76, $76, $17, $17, $25, $76, $17
+    dc.b    $17, $18, $31, $18, $18, $18, $25, $18, $25, $18, $26, $17, $18, $23, $17, $30
+    dc.b    $30, $30, $30, $30, $57, $29, $29, $29, $29, $29, $29, $29, $76, $16, $16, $16
+    dc.b    $16, $16, $16, $18, $16, $16, $16, $16, $16, $16, $16, $16, $18, $16, $16, $16
+    dc.b    $F1, $A9, $02, $02, $77, $A2, $A3, $10, $A8, $F0, $F1, $A9, $77, $02, $A8, $00
+    dc.b    $15, $15, $23, $23, $23, $23, $23, $23, $23, $23, $23, $23, $23, $23, $28, $16
+    dc.b    $16, $16, $16, $16, $16, $16, $16, $16, $16, $16, $18, $18, $16, $16, $16, $16
+    dc.b    $16, $16, $16, $16, $16, $19, $18, $76, $14, $19, $19, $19, $19, $19, $28, $28
+    dc.b    $28, $28, $17, $26, $23, $23, $31, $18, $18, $18, $26, $18, $27, $18, $28, $16
+    dc.b    $F0, $F1, $A9, $08, $08, $A4, $77, $10, $A5, $08, $08, $A4, $A5, $08, $A4, $02
+    dc.b    $02, $A5, $08, $E3, $18, $12, $12, $08, $08, $08, $33, $08, $32, $08, $A4, $02
+    dc.b    $02, $02, $02, $33, $33, $33, $33, $10, $32, $32, $32, $E8, $07, $07, $A8, $F0
+    dc.b    $F1, $A9, $02, $33, $02, $33, $02, $D3, $07, $A8, $A9, $02, $33, $02, $A8, $F0
+    dc.b    $F1, $A9, $31, $18, $26, $18, $27, $18, $18, $26, $18, $27, $18, $26, $18, $16
+    dc.b    $16, $28, $25, $17, $17, $26, $17, $23, $23, $40, $48, $48, $48, $48, $48, $48
+    dc.b    $48, $48, $48, $48, $48, $48, $41, $23, $23, $23, $23, $17, $31, $17, $23, $17
+    dc.b    $17, $23, $25, $23, $23, $23, $25, $23, $31, $23, $26, $76, $18, $76, $28, $16
+    dc.b    $16, $16, $16, $16, $19, $14, $28, $17, $17, $17, $17, $17, $23, $30, $30, $30
+    dc.b    $30, $30, $17, $23, $29, $29, $29, $29, $29, $29, $14, $29, $19, $16, $16, $16
+    dc.b    $16, $28, $17, $26, $26, $26, $17, $27, $27, $17, $25, $25, $25, $25, $17, $17
+    dc.b    $A3, $02, $02, $10, $A2, $18, $18, $18, $18, $45, $13, $13, $13, $13, $13, $13
+    dc.b    $00, $A7, $F1, $A9, $02, $64, $F2, $F3, $64, $F2, $F3, $10, $02, $02, $02, $02
+    dc.b    $02, $02, $02, $A5, $A4, $D2, $02, $02, $02, $A5, $08, $08, $A4, $A8, $F0, $F1
+    dc.b    $16, $16, $F4, $F4, $F4, $F4, $74, $74, $30, $30, $30, $30, $30, $30, $30, $30
+    dc.b    $30, $30, $30, $30, $30, $30, $30, $23, $23, $23, $27, $23, $17, $23, $28, $16
+    dc.b    $F1, $A9, $02, $02, $B7, $02, $B7, $67, $F5, $70, $B7, $02, $B7, $02, $A8, $00
+    dc.b    $00, $A9, $10, $C0, $E3, $13, $13, $A3, $33, $02, $32, $02, $33, $02, $02, $02
+    dc.b    $02, $02, $34, $02, $02, $34, $D2, $02, $33, $02, $32, $A5, $08, $08, $F0, $A6
+    dc.b    $01, $A7, $84, $90, $10, $02, $A5, $08, $08, $A0, $06, $06, $06, $06, $01, $01
+    dc.b    $A7, $F1, $25, $23, $31, $23, $26, $23, $23, $26, $23, $26, $23, $26, $23, $17
+    dc.b    $A3, $C8, $C7, $A0, $E7, $E6, $A2, $A3, $71, $32, $34, $02, $A8, $A6, $01, $01
+    dc.b    $01, $A7, $A6, $01, $A7, $F1, $A9, $39, $47, $85, $47, $58, $58, $58, $47, $47
+    dc.b    $47, $47, $47, $47, $47, $47, $85, $47, $47, $47, $47, $47, $47, $47, $47, $47
+    dc.b    $47, $47, $91, $51, $97, $91, $51, $51, $51, $97, $91, $51, $97, $91, $97, $91
+    dc.b    $97, $91, $51, $51, $97, $58, $58, $58, $F6, $E0, $13, $13, $13, $13, $13, $13
 
     even
 RoomLayoutOWCave0:
@@ -5336,11 +5444,30 @@ ColumnHeapOWF:
 
     even
 RoomLayoutsOWAddr:
-    dc.b    (RoomLayoutsOW)&$FF, (RoomLayoutsOW>>8)&$FF   ; NES .ADDR (little-endian)
+    dc.l    RoomLayoutsOW
 
     even
 ColumnHeapOWAddr:
-    dc.b    (ColumnHeapOW0)&$FF, (ColumnHeapOW0>>8)&$FF   ; NES .ADDR (little-endian)
+    dc.l    ColumnHeapOW0
+
+    even
+ColumnDirectoryOWPtrs:
+    dc.l    ColumnHeapOW0
+    dc.l    ColumnHeapOW1
+    dc.l    ColumnHeapOW2
+    dc.l    ColumnHeapOW3
+    dc.l    ColumnHeapOW4
+    dc.l    ColumnHeapOW5
+    dc.l    ColumnHeapOW6
+    dc.l    ColumnHeapOW7
+    dc.l    ColumnHeapOW8
+    dc.l    ColumnHeapOW9
+    dc.l    ColumnHeapOWA
+    dc.l    ColumnHeapOWB
+    dc.l    ColumnHeapOWC
+    dc.l    ColumnHeapOWD
+    dc.l    ColumnHeapOWE
+    dc.l    ColumnHeapOWF
 
     even
 WallTileList:
@@ -5405,10 +5532,55 @@ DoorFaceTilesN:
 
     even
 RoomLayoutsUW:
-; .INCBIN "dat/RoomLayoutsUW.dat" not found — stub 128 zero bytes
-    rept    128
-        dc.b    0
-    endr
+; .INCBIN dat/RoomLayoutsUW.dat (768 bytes)
+    dc.b    $C0, $D0, $DC, $00, $F5, $DC, $CC, $00, $F5, $DC, $DC, $00, $D8, $CC, $D0, $00
+    dc.b    $F5, $DC, $DC, $00, $F5, $DC, $DC, $00, $88, $74, $8A, $24, $87, $87, $75, $89
+    dc.b    $24, $8B, $87, $87, $88, $A4, $8A, $A6, $87, $87, $A5, $89, $A7, $8B, $87, $87
+    dc.b    $88, $AC, $8A, $AE, $87, $87, $AD, $89, $AF, $8B, $87, $87, $DF, $DF, $DF, $DF
+    dc.b    $F5, $F5, $DF, $DF, $DF, $DF, $F5, $F5, $DF, $24, $DF, $92, $F5, $F5, $24, $DF
+    dc.b    $93, $DF, $F5, $F5, $82, $82, $83, $24, $85, $76, $82, $82, $24, $84, $77, $86
+    dc.b    $82, $82, $83, $A0, $85, $A2, $82, $82, $A1, $84, $A3, $86, $82, $82, $83, $AC
+    dc.b    $85, $AE, $82, $82, $AD, $84, $AF, $86, $F5, $F5, $DE, $DE, $DE, $DE, $F5, $F5
+    dc.b    $DE, $DE, $DE, $DE, $F5, $F5, $DE, $90, $DE, $24, $F5, $F5, $91, $DE, $24, $DE
+    dc.b    $7E, $7F, $7D, $76, $24, $7D, $74, $24, $7D, $80, $81, $7D, $7E, $7F, $7D, $9C
+    dc.b    $9D, $7D, $9E, $9F, $7D, $80, $81, $7D, $7E, $7F, $7D, $A8, $A9, $7D, $AA, $AB
+    dc.b    $7D, $80, $81, $7D, $DD, $DD, $F5, $DD, $DD, $F5, $DD, $DD, $F5, $DD, $DD, $F5
+    dc.b    $DD, $DD, $F5, $24, $8E, $F5, $24, $8F, $F5, $DD, $DD, $F5, $78, $79, $7A, $78
+    dc.b    $24, $77, $78, $24, $75, $78, $7B, $7C, $78, $79, $7A, $78, $98, $99, $78, $9A
+    dc.b    $9B, $78, $7B, $7C, $78, $79, $7A, $78, $A8, $A9, $78, $AA, $AB, $78, $7B, $7C
+    dc.b    $F5, $DC, $DC, $F5, $DC, $DC, $F5, $DC, $DC, $F5, $DC, $DC, $F5, $DC, $DC, $F5
+    dc.b    $8C, $24, $F5, $8D, $24, $F5, $DC, $DC, $00, $00, $00, $00, $00, $00, $00, $00
+    dc.b    $00, $00, $00, $00, $00, $31, $23, $00, $00, $00, $00, $00, $00, $23, $31, $00
+    dc.b    $00, $00, $23, $00, $00, $00, $00, $00, $00, $23, $00, $00, $00, $00, $12, $00
+    dc.b    $00, $00, $00, $00, $00, $12, $00, $00, $00, $00, $00, $00, $00, $00, $00, $01
+    dc.b    $01, $06, $04, $04, $05, $05, $07, $16, $17, $00, $00, $17, $16, $07, $05, $05
+    dc.b    $72, $31, $00, $02, $00, $00, $00, $00, $02, $00, $31, $53, $00, $11, $11, $11
+    dc.b    $11, $11, $11, $11, $11, $11, $11, $00, $00, $12, $12, $12, $12, $12, $12, $12
+    dc.b    $12, $12, $13, $00, $00, $00, $13, $12, $12, $12, $12, $12, $12, $13, $00, $00
+    dc.b    $00, $00, $00, $00, $31, $00, $00, $31, $00, $00, $00, $00, $00, $61, $73, $41
+    dc.b    $41, $41, $41, $41, $41, $74, $74, $00, $00, $57, $34, $54, $25, $13, $00, $35
+    dc.b    $25, $13, $33, $55, $00, $11, $00, $11, $00, $11, $11, $00, $11, $00, $11, $00
+    dc.b    $00, $00, $00, $00, $60, $00, $00, $60, $00, $00, $00, $00, $23, $23, $23, $23
+    dc.b    $23, $23, $23, $23, $23, $23, $23, $23, $00, $13, $00, $13, $00, $13, $13, $00
+    dc.b    $13, $00, $13, $00, $20, $12, $21, $31, $33, $25, $02, $26, $31, $30, $12, $17
+    dc.b    $00, $74, $74, $75, $75, $41, $41, $75, $75, $74, $74, $00, $00, $00, $00, $00
+    dc.b    $00, $00, $00, $00, $61, $00, $00, $00, $00, $62, $66, $66, $66, $66, $66, $66
+    dc.b    $66, $66, $62, $00, $00, $62, $66, $64, $82, $82, $82, $82, $64, $66, $62, $00
+    dc.b    $73, $70, $67, $65, $73, $66, $66, $73, $65, $67, $70, $73, $73, $70, $71, $70
+    dc.b    $63, $32, $43, $71, $70, $63, $70, $73, $43, $43, $43, $43, $43, $43, $43, $43
+    dc.b    $43, $43, $43, $43, $66, $66, $66, $66, $66, $66, $66, $66, $66, $66, $66, $66
+    dc.b    $00, $00, $00, $00, $31, $23, $10, $23, $31, $00, $00, $00, $00, $00, $00, $00
+    dc.b    $00, $00, $00, $00, $06, $04, $04, $03, $00, $13, $12, $12, $12, $11, $11, $15
+    dc.b    $14, $02, $24, $00, $00, $00, $22, $22, $00, $00, $00, $00, $22, $22, $00, $00
+    dc.b    $00, $00, $00, $00, $00, $22, $22, $00, $00, $00, $00, $00, $00, $12, $12, $00
+    dc.b    $00, $31, $31, $00, $00, $12, $12, $00, $04, $04, $04, $04, $04, $80, $31, $04
+    dc.b    $04, $04, $04, $04, $00, $93, $00, $95, $94, $96, $96, $98, $95, $00, $97, $00
+    dc.b    $00, $00, $00, $00, $00, $31, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
+    dc.b    $87, $00, $00, $88, $00, $00, $00, $00, $85, $00, $00, $00, $00, $00, $00, $00
+    dc.b    $00, $00, $00, $52, $77, $77, $77, $77, $77, $77, $77, $77, $77, $77, $77, $77
+    dc.b    $76, $76, $76, $76, $76, $76, $76, $76, $76, $76, $76, $76, $60, $17, $83, $86
+    dc.b    $36, $90, $90, $56, $86, $50, $17, $60, $84, $76, $44, $40, $81, $42, $42, $81
+    dc.b    $40, $44, $76, $51, $00, $13, $12, $46, $91, $25, $25, $92, $45, $12, $13, $00
 
     even
 ColumnHeapUW0:
@@ -5779,31 +5951,31 @@ DoorBits:
 
     even
 DoorFaceTilesAddrsLo:
-; [unknown directive] .LOBYTES DoorFaceTilesE
-; [unknown directive] .LOBYTES DoorFaceTilesW
-; [unknown directive] .LOBYTES DoorFaceTilesS
-; [unknown directive] .LOBYTES DoorFaceTilesN
+    dc.b    (DoorFaceTilesE)&$FF
+    dc.b    (DoorFaceTilesW)&$FF
+    dc.b    (DoorFaceTilesS)&$FF
+    dc.b    (DoorFaceTilesN)&$FF
 
     even
 DoorFaceTilesAddrsHi:
-; [unknown directive] .HIBYTES DoorFaceTilesE
-; [unknown directive] .HIBYTES DoorFaceTilesW
-; [unknown directive] .HIBYTES DoorFaceTilesS
-; [unknown directive] .HIBYTES DoorFaceTilesN
+    dc.b    (DoorFaceTilesE>>8)&$FF
+    dc.b    (DoorFaceTilesW>>8)&$FF
+    dc.b    (DoorFaceTilesS>>8)&$FF
+    dc.b    (DoorFaceTilesN>>8)&$FF
 
     even
 PlayAreaDoorFaceAddrsLo:
-; [unknown directive] .LOBYTES $67A1
-; [unknown directive] .LOBYTES $654F
-; [unknown directive] .LOBYTES $6676
-; [unknown directive] .LOBYTES $6665
+    dc.b    ($67A1)&$FF
+    dc.b    ($654F)&$FF
+    dc.b    ($6676)&$FF
+    dc.b    ($6665)&$FF
 
     even
 PlayAreaDoorFaceAddrsHi:
-; [unknown directive] .HIBYTES $67A1
-; [unknown directive] .HIBYTES $654F
-; [unknown directive] .HIBYTES $6676
-; [unknown directive] .HIBYTES $6665
+    dc.b    ($67A1>>8)&$FF
+    dc.b    ($654F>>8)&$FF
+    dc.b    ($6676>>8)&$FF
+    dc.b    ($6665>>8)&$FF
 
     even
 NextDoorTileOffsets:
@@ -5986,7 +6158,9 @@ _anon_z05_112:
     ; door face := provisional face - 3
     ori     #$11,CCR  ; SEC: set C+X
     move.b  #$03,D1
+    eori    #$10,CCR  ; flip X: 6502 SBC polarity
     subx.b  D1,D0   ; SBC #$03
+    eori    #$10,CCR  ; restore X = 6502 C
     moveq   #0,D3
     move.b  D0,D3
     ; Furthermore, if the latest provisional door face >= 3, then
@@ -6217,7 +6391,9 @@ _anon_z05_119:
     andi.b #$03,D0
     ori     #$11,CCR  ; SEC: set C+X
     move.b  #$01,D1
+    eori    #$10,CCR  ; flip X: 6502 SBC polarity
     subx.b  D1,D0   ; SBC #$01
+    eori    #$10,CCR  ; restore X = 6502 C
     andi.b #$02,D0
     move.b  D0,($0008,A4)
     ; The command to close a key door or bombable wall does not
@@ -6450,7 +6626,9 @@ _anon_z05_127:
     ;
     ori     #$11,CCR  ; SEC: set C+X
     move.b  #$03,D1
+    eori    #$10,CCR  ; flip X: 6502 SBC polarity
     subx.b  D1,D0   ; SBC #$03
+    eori    #$10,CCR  ; restore X = 6502 C
     moveq   #0,D3
     move.b  D0,D3
     ; Lastly, if the door is closed ([08] = 0) and provisional
@@ -6478,7 +6656,9 @@ _L_z05_PrepareWriteHorizontalDoorTransferRecords_MakeForwardIndex:
     moveq   #3,D0
     ori     #$11,CCR  ; SEC: set C+X
     move.b  ($0003,A4),D1
+    eori    #$10,CCR  ; flip X: 6502 SBC polarity
     subx.b  D1,D0   ; SBC $03
+    eori    #$10,CCR  ; restore X = 6502 C
     ; Call this to put the address of door face tiles in [02:03].
     ;
     jsr     FetchDoorAddrsFaceTilesSrcAndPlayAreaDst
@@ -6508,16 +6688,16 @@ _L_z05_PrepareWriteHorizontalDoorTransferRecords_MakeForwardIndex:
 
     even
 ColumnDirectoryUW:
-    dc.b    (ColumnHeapUW0)&$FF, (ColumnHeapUW0>>8)&$FF   ; NES .ADDR (little-endian)
-    dc.b    (ColumnHeapUW1)&$FF, (ColumnHeapUW1>>8)&$FF   ; NES .ADDR (little-endian)
-    dc.b    (ColumnHeapUW2)&$FF, (ColumnHeapUW2>>8)&$FF   ; NES .ADDR (little-endian)
-    dc.b    (ColumnHeapUW3)&$FF, (ColumnHeapUW3>>8)&$FF   ; NES .ADDR (little-endian)
-    dc.b    (ColumnHeapUW4)&$FF, (ColumnHeapUW4>>8)&$FF   ; NES .ADDR (little-endian)
-    dc.b    (ColumnHeapUW5)&$FF, (ColumnHeapUW5>>8)&$FF   ; NES .ADDR (little-endian)
-    dc.b    (ColumnHeapUW6)&$FF, (ColumnHeapUW6>>8)&$FF   ; NES .ADDR (little-endian)
-    dc.b    (ColumnHeapUW7)&$FF, (ColumnHeapUW7>>8)&$FF   ; NES .ADDR (little-endian)
-    dc.b    (ColumnHeapUW8)&$FF, (ColumnHeapUW8>>8)&$FF   ; NES .ADDR (little-endian)
-    dc.b    (ColumnHeapUW9)&$FF, (ColumnHeapUW9>>8)&$FF   ; NES .ADDR (little-endian)
+    dc.l    ColumnHeapUW0
+    dc.l    ColumnHeapUW1
+    dc.l    ColumnHeapUW2
+    dc.l    ColumnHeapUW3
+    dc.l    ColumnHeapUW4
+    dc.l    ColumnHeapUW5
+    dc.l    ColumnHeapUW6
+    dc.l    ColumnHeapUW7
+    dc.l    ColumnHeapUW8
+    dc.l    ColumnHeapUW9
 
     even
 PrimarySquaresUW:
@@ -6525,6 +6705,8 @@ PrimarySquaresUW:
 
     even
 LayoutUWFloor:
+    moveq   #5,D0
+    jsr     _copy_bank_to_window   ; PATCH P33b: force window bank 5
     jsr     GetUniqueRoomId
     move.b  D0,-(A5)  ; PHA
     moveq   #0,D0
@@ -6567,12 +6749,9 @@ _L_z05_LayoutUWFloor_LoopColumnUW:
     lsr.b  #1,D0   ; LSR A
     moveq   #0,D2
     move.b  D0,D2
+    add.w   D2,D2                       ; PATCH P34e: 2-byte -> 4-byte index
     lea     (ColumnDirectoryUW).l,A0
-    move.b  (A0,D2.W),D0
-    move.b  D0,($0004,A4)
-    lea     (ColumnDirectoryUW+1).l,A0
-    move.b  (A0,D2.W),D0
-    move.b  D0,($0005,A4)
+    movea.l (A0,D2.W),A3                ; PATCH P34e: direct ROM ptr
     move.b  ($02,A4),D1   ; ptr lo
     move.b  ($03,A4),D4  ; ptr hi
     andi.w  #$00FF,D1         ; zero-extend lo byte
@@ -6588,15 +6767,7 @@ _L_z05_LayoutUWFloor_LoopColumnUW:
     moveq   #0,D3
     even
 _L_z05_LayoutUWFloor_FindSquare:
-    move.b  ($04,A4),D1   ; ptr lo
-    move.b  ($05,A4),D4  ; ptr hi
-    andi.w  #$00FF,D1         ; zero-extend lo byte
-    lsl.w   #8,D4
-    or.w    D1,D4             ; D4 = NES ptr addr
-    ext.l   D4
-    add.l   #NES_RAM,D4       ; → Genesis addr
-    movea.l D4,A0
-    move.b  (A0,D3.W),D0     ; LDA ($nn),Y
+    move.b  (A3,D3.W),D0     ; PATCH P34e: direct ROM read
     bpl  _anon_z05_129
     subq.b  #1,D2
     bmi  _L_z05_LayoutUWFloor_FoundColumn
@@ -6618,15 +6789,7 @@ _L_z05_LayoutUWFloor_LoopSquareRow:
     ; Write and repeat squares from the column.
     ;
     moveq   #0,D3
-    move.b  ($04,A4),D1   ; ptr lo
-    move.b  ($05,A4),D4  ; ptr hi
-    andi.w  #$00FF,D1         ; zero-extend lo byte
-    lsl.w   #8,D4
-    or.w    D1,D4             ; D4 = NES ptr addr
-    ext.l   D4
-    add.l   #NES_RAM,D4       ; → Genesis addr
-    movea.l D4,A0
-    move.b  (A0,D3.W),D0     ; LDA ($nn),Y
+    move.b  (A3,D3.W),D0     ; PATCH P34e: direct ROM read
     andi.b #$07,D0
     moveq   #0,D2
     move.b  D0,D2
@@ -6637,15 +6800,7 @@ _L_z05_LayoutUWFloor_LoopSquareRow:
     moveq   #2,D0
     jsr     AddToInt16At0
     moveq   #0,D3
-    move.b  ($04,A4),D1   ; ptr lo
-    move.b  ($05,A4),D4  ; ptr hi
-    andi.w  #$00FF,D1         ; zero-extend lo byte
-    lsl.w   #8,D4
-    or.w    D1,D4             ; D4 = NES ptr addr
-    ext.l   D4
-    add.l   #NES_RAM,D4       ; → Genesis addr
-    movea.l D4,A0
-    move.b  (A0,D3.W),D0     ; LDA ($nn),Y
+    move.b  (A3,D3.W),D0     ; PATCH P34e: direct ROM read
     andi.b #$70,D0
     lsr.b  #1,D0   ; LSR A
     lsr.b  #1,D0   ; LSR A
@@ -7018,46 +7173,38 @@ CopyColumnToTileBuf:
     moveq   #33,D0
     lea     ($0302,A4),A0
     move.b  D0,(A0,D3.W)
-_anon_z05_137:
-    ; Keep adding $16 until you point to the target column.
-    ;
-    moveq   #22,D0
-    jsr     AddToInt16At0
+    movea.l #NES_RAM+$651A,A1            ; PATCH P36: direct playmap base
+    even
+_L_z05_CopyColumnToTileBuf_AdvanceCol:
+    adda.w  #$0016,A1                    ; PATCH P36: next source column
     subq.b  #1,D2
-    bpl  _anon_z05_137
+    bpl  _L_z05_CopyColumnToTileBuf_AdvanceCol
     move.b  #$96,D0
     lea     ($0304,A4),A0
     move.b  D0,(A0,D3.W)
     move.b  D2,D0
     lea     ($031B,A4),A0
     move.b  D0,(A0,D3.W)
-    move.b  D3,D0
     moveq   #0,D2
-    move.b  D0,D2
-    moveq   #0,D3
-    move.b  D3,($0006,A4)
-_anon_z05_138:
-    move.b  ($00,A4),D1   ; ptr lo
-    move.b  ($01,A4),D4  ; ptr hi
-    andi.w  #$00FF,D1         ; zero-extend lo byte
-    lsl.w   #8,D4
-    or.w    D1,D4             ; D4 = NES ptr addr
-    ext.l   D4
-    add.l   #NES_RAM,D4       ; → Genesis addr
-    movea.l D4,A0
-    move.b  (A0,D3.W),D0     ; LDA ($nn),Y
+    move.b  D3,D2
+    moveq   #22,D5
     lea     ($0305,A4),A0
+    even
+_L_z05_CopyColumnToTileBuf_Copy:
+    move.b  (A1)+,D0                     ; PATCH P36: direct source walk
     move.b  D0,(A0,D2.W)
-    jsr     Add1ToInt16At0
     addq.b  #1,D2
-    addq.b  #1,($0006,A4)
-    move.b  ($0006,A4),D0
-    cmpi.b  #$16,D0
-    bcs  _anon_z05_138
+    subq.b  #1,D5
+    bne  _L_z05_CopyColumnToTileBuf_Copy
     addq.b  #1,D2
     addq.b  #1,D2
     addq.b  #1,D2
     move.b  D2,($0301,A4)
+    move.l  A1,D4                        ; PATCH P36: keep ptr mirror coherent
+    sub.l   #NES_RAM,D4
+    move.b  D4,($0000,A4)
+    lsr.l   #8,D4
+    move.b  D4,($0001,A4)
     rts
 
     even
@@ -7073,9 +7220,9 @@ CopyRowToTileBuf:
     move.b  #$30,D1
     addx.b  D1,D0   ; ADC #$30 (X flag = 6502 C)
     move.b  D0,($0000,A4)
-    bcc  _anon_z05_139
+    bcc  _L_z05_CopyRowToTileBuf_RowAddrReady
     addq.b  #1,($0001,A4)
-_anon_z05_139:
+_L_z05_CopyRowToTileBuf_RowAddrReady:
     ; Indicate the target VRAM address:
     ; $2100 + (CurRow * $20)
     moveq   #32,D0
@@ -7083,43 +7230,43 @@ _anon_z05_139:
     move.b  #$E0,D0
     move.b  D0,($0303,A4)
     even
-_L_z05_CopyRowToTileBuf_Add20H:
+_L_z05_CopyRowToTileBuf_Add20H_P36:
     move.b  ($0303,A4),D0
     andi    #$EE,CCR  ; CLC: clear C+X
     move.b  #$20,D1
     addx.b  D1,D0   ; ADC #$20 (X flag = 6502 C)
     move.b  D0,($0303,A4)
-    bcc  _anon_z05_140
+    bcc  _L_z05_CopyRowToTileBuf_Add20CarryDone_P36
     addq.b  #1,($0302,A4)
-_anon_z05_140:
+_L_z05_CopyRowToTileBuf_Add20CarryDone_P36:
     subq.b  #1,D2
-    bpl  _L_z05_CopyRowToTileBuf_Add20H
+    bpl  _L_z05_CopyRowToTileBuf_Add20H_P36
     moveq   #32,D0
     move.b  D0,($0304,A4)
     move.b  D2,($0325,A4)
     ; Copy a row from column map in RAM to tile buf.
     ;
+    movea.l #NES_RAM+$6530,A1            ; PATCH P36: playmap row base
+    moveq   #0,D4
+    move.b  ($00E9,A4),D4
+    adda.w  D4,A1                        ; PATCH P36: row offset
     moveq   #0,D2
-    moveq   #0,D3
-_anon_z05_141:
-    move.b  ($00,A4),D1   ; ptr lo
-    move.b  ($01,A4),D4  ; ptr hi
-    andi.w  #$00FF,D1         ; zero-extend lo byte
-    lsl.w   #8,D4
-    or.w    D1,D4             ; D4 = NES ptr addr
-    ext.l   D4
-    add.l   #NES_RAM,D4       ; → Genesis addr
-    movea.l D4,A0
-    move.b  (A0,D3.W),D0     ; LDA ($nn),Y
     lea     ($0305,A4),A0
+    even
+_L_z05_CopyRowToTileBuf_Copy_P36:
+    move.b  (A1),D0                      ; PATCH P36: direct source walk
     move.b  D0,(A0,D2.W)
-    moveq   #22,D0
-    jsr     AddToInt16At0
+    adda.w  #$0016,A1                    ; PATCH P36: next column same row
     addq.b  #1,D2
     cmpi.b  #$20,D2
-    bcs  _anon_z05_141
+    bcs  _L_z05_CopyRowToTileBuf_Copy_P36
     moveq   #35,D0
     move.b  D0,($0301,A4)
+    move.l  A1,D4                        ; PATCH P36: keep ptr mirror coherent
+    sub.l   #NES_RAM,D4
+    move.b  D4,($0000,A4)
+    lsr.l   #8,D4
+    move.b  D4,($0001,A4)
     rts
 
     even
@@ -7153,40 +7300,23 @@ SecondarySquaresOW:
 
     even
 LayoutRoomOW:
-    ; Load the address of room column directory in [$02:03].
-    ;
-    move.b  (RoomLayoutsOWAddr).l,D0
-    move.b  D0,($0002,A4)
-    move.b  (RoomLayoutsOWAddr+1).l,D0
-    move.b  D0,($0003,A4)
+    moveq   #5,D0
+    jsr     _copy_bank_to_window   ; PATCH P33b: force window bank 5
+    ; PATCH P34b: direct ROM base pointer for OW room-layout directory.
+    movea.l (RoomLayoutsOWAddr).l,A2
     moveq   #0,D0
     move.b  D0,($0006,A4)
     moveq   #0,D2
     move.b  ($00EB,A4),D2
     lea     (NES_SRAM+$09FE).l,A0
     move.b  (A0,D2.W),D0
-    ; Add ((unique room ID) * $10) to address in [$02:03]. Each unique room has $10 columns.
-    ;
-    lsl.b  #1,D0   ; ASL A
-    lsl.b  #1,D0   ; ASL A
-    move.b  ($0006,A4),D1
-    roxl.b  #1,D1   ; ROL $06
-    move.b  D1,($0006,A4)
-    lsl.b  #1,D0   ; ASL A
-    move.b  ($0006,A4),D1
-    roxl.b  #1,D1   ; ROL $06
-    move.b  D1,($0006,A4)
-    lsl.b  #1,D0   ; ASL A
-    move.b  ($0006,A4),D1
-    roxl.b  #1,D1   ; ROL $06
-    move.b  D1,($0006,A4)
-    move.b  ($0002,A4),D1
-    addx.b  D1,D0   ; ADC $02
-    move.b  D0,($0002,A4)
-    move.b  ($0006,A4),D0
-    move.b  ($0003,A4),D1
-    addx.b  D1,D0   ; ADC $03
-    move.b  D0,($0003,A4)
+    ; PATCH P34b: advance A2 by (unique room ID * $10) bytes.
+    moveq   #0,D3
+    move.b  D0,D3
+    andi.w  #$003F,D3                  ; PATCH P34g: keep low 6-bit unique room ID
+    lsl.w   #4,D3
+    adda.w  D3,A2
+    move.l  A2,($00FF1102).l         ; PATCH P34f: cache OW layout base ptr
 ; Params:
 ; [02:03]: address of room column directory
 ;
@@ -7194,11 +7324,23 @@ LayoutRoomOW:
 ;
     even
 LayoutRoomOrCaveOW:
+    moveq   #5,D0
+    jsr     _copy_bank_to_window   ; PATCH P33b: force window bank 5
     move.b  (NES_SRAM+$0BAF).l,D0
     move.b  D0,($0008,A4)
     move.b  (NES_SRAM+$0BB0).l,D0
     move.b  D0,($0009,A4)
     jsr     FetchTileMapAddr
+    moveq   #5,D0
+    jsr     _copy_bank_to_window   ; PATCH P33c: re-pin bank 5 after FetchTileMapAddr
+    move.b  ($00,A4),D1                    ; PATCH P35a: workbuf ptr lo
+    move.b  ($01,A4),D4                    ; PATCH P35a: workbuf ptr hi
+    andi.w  #$00FF,D1
+    lsl.w   #8,D4
+    or.w    D1,D4
+    ext.l   D4
+    add.l   #NES_RAM,D4
+    move.l  D4,($00FF110A).l              ; PATCH P35a: cached OW workbuf ptr
     ; For each column in room, indexed by [06]:
     ;
     moveq   #0,D0
@@ -7208,15 +7350,8 @@ LayoutRoomOrCaveOW:
 _L_z05_LayoutRoomOrCaveOW_LoopColumnOW:
     moveq   #0,D3
     move.b  ($0006,A4),D3
-    move.b  ($02,A4),D1   ; ptr lo
-    move.b  ($03,A4),D4  ; ptr hi
-    andi.w  #$00FF,D1         ; zero-extend lo byte
-    lsl.w   #8,D4
-    or.w    D1,D4             ; D4 = NES ptr addr
-    ext.l   D4
-    add.l   #NES_RAM,D4       ; → Genesis addr
-    movea.l D4,A0
-    move.b  (A0,D3.W),D0     ; LDA ($nn),Y
+    movea.l ($00FF1102).l,A2            ; PATCH P34f: reload call-safe layout ptr
+    move.b  (A2,D3.W),D0                ; PATCH P34f: descriptor read (NES parity)
     andi.b #$F0,D0
     lsr.b  #1,D0   ; LSR A
     lsr.b  #1,D0   ; LSR A
@@ -7225,21 +7360,11 @@ _L_z05_LayoutRoomOrCaveOW_LoopColumnOW:
     move.b  D0,D2
     ; Load the column table address for this descriptor in [$04:05].
     ;
-    lea     (ColumnDirectoryOW).l,A0
-    move.b  (A0,D2.W),D0
-    move.b  D0,($0004,A4)
-    lea     (ColumnDirectoryOW+1).l,A0
-    move.b  (A0,D2.W),D0
-    move.b  D0,($0005,A4)
-    move.b  ($02,A4),D1   ; ptr lo
-    move.b  ($03,A4),D4  ; ptr hi
-    andi.w  #$00FF,D1         ; zero-extend lo byte
-    lsl.w   #8,D4
-    or.w    D1,D4             ; D4 = NES ptr addr
-    ext.l   D4
-    add.l   #NES_RAM,D4       ; → Genesis addr
-    movea.l D4,A0
-    move.b  (A0,D3.W),D0     ; LDA ($nn),Y
+    add.w   D2,D2                       ; PATCH P34h: 2-byte -> 4-byte index
+    lea     (ColumnDirectoryOWPtrs).l,A0
+    movea.l (A0,D2.W),A3                ; PATCH P34h: direct OW column ptr
+    move.l  A3,($00FF1106).l            ; PATCH P34h: cache call-safe OW column ptr
+    move.b  (A2,D3.W),D0                ; PATCH P34f: descriptor reread for low nibble
     andi.b #$0F,D0
     moveq   #0,D2
     move.b  D0,D2
@@ -7248,36 +7373,23 @@ _anon_z05_142:
     ; Look for the beginning of a column.
     ;
     addq.b  #1,D3
-    move.b  ($04,A4),D1   ; ptr lo
-    move.b  ($05,A4),D4  ; ptr hi
-    andi.w  #$00FF,D1         ; zero-extend lo byte
-    lsl.w   #8,D4
-    or.w    D1,D4             ; D4 = NES ptr addr
-    ext.l   D4
-    add.l   #NES_RAM,D4       ; → Genesis addr
-    movea.l D4,A0
-    move.b  (A0,D3.W),D0     ; LDA ($nn),Y
+    movea.l ($00FF1106).l,A3            ; PATCH P34h: reload OW column ptr
+    move.b  (A3,D3.W),D0                ; PATCH P34h: direct OW column read
     bpl  _anon_z05_142
     subq.b  #1,D2
     bpl  _anon_z05_142
     ; We found the column.
     ;
-    move.b  D3,D0
-    jsr     AddToInt16At4
+    movea.l ($00FF1106).l,A3            ; PATCH P34h: reload OW column ptr
+    adda.w  D3,A3                       ; PATCH P34h: advance to found column
+    move.l  A3,($00FF1106).l            ; PATCH P34h: store updated ptr
     moveq   #0,D0
     move.b  D0,($0007,A4)
     even
 _L_z05_LayoutRoomOrCaveOW_LoopSquareOW:
     moveq   #0,D3
-    move.b  ($04,A4),D1   ; ptr lo
-    move.b  ($05,A4),D4  ; ptr hi
-    andi.w  #$00FF,D1         ; zero-extend lo byte
-    lsl.w   #8,D4
-    or.w    D1,D4             ; D4 = NES ptr addr
-    ext.l   D4
-    add.l   #NES_RAM,D4       ; → Genesis addr
-    movea.l D4,A0
-    move.b  (A0,D3.W),D0     ; LDA ($nn),Y
+    movea.l ($00FF1106).l,A3            ; PATCH P34h: reload OW column ptr
+    move.b  (A3,D3.W),D0                ; PATCH P34h: direct OW column read
     andi.b #$3F,D0
     move.b  D0,($000D,A4)
     moveq   #0,D2
@@ -7328,22 +7440,19 @@ _L_z05_LayoutRoomOrCaveOW_RestoreSquare:
     move.b  D0,-(A5)  ; PHA
     even
 _L_z05_LayoutRoomOrCaveOW_SkipSecret:
-    move.b  (A5)+,D0  ; PLA
-    jsr     CheckTileObject
+    move.b  (A5)+,D0  ; PLA    jsr     CheckTileObject
+    jsr     WriteSquareOW_P35             ; PATCH P35b: OW direct workbuf write
+    movea.l ($00FF110A).l,A1              ; PATCH P35a: advance cached OW workbuf ptr
+    addq.l  #2,A1
+    move.l  A1,($00FF110A).l
+    move.l  A1,D4
+    sub.l   #NES_RAM,D4
+    move.b  D4,($0000,A4)
+    lsr.l   #8,D4
+    move.b  D4,($0001,A4)
     moveq   #0,D3
-    jsr     WriteSquareOW
-    moveq   #2,D0
-    jsr     AddToInt16At0
-    moveq   #0,D3
-    move.b  ($04,A4),D1   ; ptr lo
-    move.b  ($05,A4),D4  ; ptr hi
-    andi.w  #$00FF,D1         ; zero-extend lo byte
-    lsl.w   #8,D4
-    or.w    D1,D4             ; D4 = NES ptr addr
-    ext.l   D4
-    add.l   #NES_RAM,D4       ; → Genesis addr
-    movea.l D4,A0
-    move.b  (A0,D3.W),D0     ; LDA ($nn),Y
+    movea.l ($00FF1106).l,A3            ; PATCH P34h: reload OW column ptr
+    move.b  (A3,D3.W),D0                ; PATCH P34h: direct OW column read
     andi.b #$40,D0
     beq  _L_z05_LayoutRoomOrCaveOW_NextSquare
     move.b  ($000C,A4),D1
@@ -7352,16 +7461,23 @@ _L_z05_LayoutRoomOrCaveOW_SkipSecret:
     bne  _anon_z05_143
     even
 _L_z05_LayoutRoomOrCaveOW_NextSquare:
-    jsr     Add1ToInt16At4
+    movea.l ($00FF1106).l,A3            ; PATCH P34h: reload OW column ptr
+    addq.l  #1,A3                       ; PATCH P34h: advance to next column byte
+    move.l  A3,($00FF1106).l            ; PATCH P34h: store updated ptr
 _anon_z05_143:
     addq.b  #1,($0007,A4)
     move.b  ($0007,A4),D0
     cmpi.b  #$0B,D0
-    bne  _L_z05_LayoutRoomOrCaveOW_LoopSquareOW
-    ; At the end of a column, we've reached the top of the next one.
+    bne  _L_z05_LayoutRoomOrCaveOW_LoopSquareOW    ; At the end of a column, we've reached the top of the next one.
     ; Move one more column over to get to the next square column.
-    moveq   #22,D0
-    jsr     AddToInt16At0
+    movea.l ($00FF110A).l,A1              ; PATCH P35a: end-column OW workbuf advance
+    adda.w  #$0016,A1
+    move.l  A1,($00FF110A).l
+    move.l  A1,D4
+    sub.l   #NES_RAM,D4
+    move.b  D4,($0000,A4)
+    lsr.l   #8,D4
+    move.b  D4,($0001,A4)
     addq.b  #1,($0006,A4)
     move.b  ($0006,A4),D0
     cmpi.b  #$10,D0
@@ -7423,12 +7539,48 @@ L16AF0_Exit:
 
 ; Params:
 ; A: primary square
-; Y: offset from [$00:01]
-; [$0D]: square index
-; [$00:01]: pointer to play area
-;
-;
-; Get square index.
+; PATCH P35b: OW-only direct workbuf writer using cached long ptr at
+; $FF110A. Callers keep source/decode semantics unchanged and only swap
+; write transport.
+    even
+WriteSquareOW_P35:
+    moveq   #0,D2
+    move.b  ($000D,A4),D2
+    movea.l ($00FF110A).l,A1
+    cmpi.b  #$10,D2
+    bcs.s   _L_z05_WriteSquareOW_P35_Type3
+    moveq   #0,D2
+    move.b  D0,D2
+    move.b  D2,($0000,A1)
+    addq.b  #1,D2
+    move.b  D2,($0001,A1)
+    addq.b  #1,D2
+    move.b  D2,($0016,A1)
+    addq.b  #1,D2
+    move.b  D2,($0017,A1)
+    rts
+
+    even
+_L_z05_WriteSquareOW_P35_Type3:
+    move.b  D2,D0
+    lsl.b   #1,D0
+    lsl.b   #1,D0
+    moveq   #0,D2
+    move.b  D0,D2
+    lea     (SecondarySquaresOW).l,A0
+    move.b  (A0,D2.W),D0
+    move.b  D0,($0000,A1)
+    addq.b  #1,D2
+    move.b  (A0,D2.W),D0
+    move.b  D0,($0001,A1)
+    addq.b  #1,D2
+    move.b  (A0,D2.W),D0
+    move.b  D0,($0016,A1)
+    addq.b  #1,D2
+    move.b  (A0,D2.W),D0
+    move.b  D0,($0017,A1)
+    rts
+
     even
 WriteSquareOW:
     moveq   #0,D2
@@ -7557,6 +7709,8 @@ _L_z05_WriteSquareOW_WriteType3:
 
     even
 PatchColumnDirectoryForCellar:
+    moveq   #5,D0
+    jsr     _copy_bank_to_window   ; PATCH P33b: force window bank 5
     ; In OW, set first address of directory to start of OW column heap, as expected.
     ;
     move.b  (ColumnHeapOWAddr).l,D0
@@ -7576,21 +7730,21 @@ _anon_z05_146:
 
     even
 SubroomLayoutAddrs:
-    dc.b    (RoomLayoutOWCave0)&$FF, (RoomLayoutOWCave0>>8)&$FF   ; NES .ADDR (little-endian)
-    dc.b    (RoomLayoutOWCave1)&$FF, (RoomLayoutOWCave1>>8)&$FF   ; NES .ADDR (little-endian)
-    dc.b    (RoomLayoutUWCellar0)&$FF, (RoomLayoutUWCellar0>>8)&$FF   ; NES .ADDR (little-endian)
-    dc.b    (RoomLayoutUWCellar1)&$FF, (RoomLayoutUWCellar1>>8)&$FF   ; NES .ADDR (little-endian)
+    dc.l    RoomLayoutOWCave0
+    dc.l    RoomLayoutOWCave1
+    dc.l    RoomLayoutUWCellar0
+    dc.l    RoomLayoutUWCellar1
 
     even
 LayoutCaveAndAvanceSubmode:
+    moveq   #5,D0
+    jsr     _copy_bank_to_window   ; PATCH P33b: force window bank 5
     moveq   #0,D2
 _anon_z05_147:
+    add.w   D2,D2                       ; PATCH P34c: 2-byte -> 4-byte index
     lea     (SubroomLayoutAddrs).l,A0
-    move.b  (A0,D2.W),D0
-    move.b  D0,($0002,A4)
-    lea     (SubroomLayoutAddrs+1).l,A0
-    move.b  (A0,D2.W),D0
-    move.b  D0,($0003,A4)
+    movea.l (A0,D2.W),A2                ; PATCH P34c: direct ROM ptr
+    move.l  A2,($00FF1102).l            ; PATCH P34f: cache subroom layout ptr
     addq.b  #1,($0013,A4)
     jmp     LayoutRoomOrCaveOW
 
@@ -7632,6 +7786,8 @@ CheckShortcut:
     andi.b #$20,D0
     beq  _L_z05_CheckShortcut_Exit
     jsr     FetchTileMapAddr
+    moveq   #5,D0
+    jsr     _copy_bank_to_window   ; PATCH P33c: re-pin bank 5 after FetchTileMapAddr
     jsr     GetShortcutOrItemXY
     ; Divide X coordinate by 4 to get offset into column address table.
     ; Think of it this way. Divide X by 8 to get tile column number.
@@ -7650,7 +7806,9 @@ CheckShortcut:
     move.b  D3,D0
     ori     #$11,CCR  ; SEC: set C+X
     move.b  #$40,D1
+    eori    #$10,CCR  ; flip X: 6502 SBC polarity
     subx.b  D1,D0   ; SBC #$40
+    eori    #$10,CCR  ; restore X = 6502 C
     lsr.b  #1,D0   ; LSR A
     lsr.b  #1,D0   ; LSR A
     lsr.b  #1,D0   ; LSR A
@@ -7734,7 +7892,9 @@ ChangePlayMapSquareOW:
     ;
     ori     #$11,CCR  ; SEC: set C+X
     move.b  #$40,D1
+    eori    #$10,CCR  ; flip X: 6502 SBC polarity
     subx.b  D1,D0   ; SBC #$40
+    eori    #$10,CCR  ; restore X = 6502 C
     lsr.b  #1,D0   ; LSR A
     lsr.b  #1,D0   ; LSR A
     lsr.b  #1,D0   ; LSR A
@@ -8969,7 +9129,9 @@ _anon_z05_183:
     move.b  (A5)+,D0  ; PLA
     ori     #$11,CCR  ; SEC: set C+X
     move.b  ($0001,A4),D1
+    eori    #$10,CCR  ; flip X: 6502 SBC polarity
     subx.b  D1,D0   ; SBC $01
+    eori    #$10,CCR  ; restore X = 6502 C
     move.b  D0,($0394,A4)
     even
 _L_z05_SetLinkInputDir_Exit:
@@ -9233,7 +9395,7 @@ ClearRam:
     move.b  D0,($00F5,A4)
     move.b  D0,($00F6,A4)
     move.b  D0,($00F3,A4)
-    move.b  #$EF,D3
+    move.b  #$FF,D3   ; PATCH P34i: clear $00-$FF (covers ctrl state $F8/$FA)
 _anon_z05_192:
     move.b  D0,($00,A4,D3.W)
     subq.b  #1,D3
@@ -9408,7 +9570,9 @@ _anon_z05_199:
     move.b  (A5)+,D0  ; PLA
     ori     #$11,CCR  ; SEC: set C+X
     move.b  #$10,D1
+    eori    #$10,CCR  ; flip X: 6502 SBC polarity
     subx.b  D1,D0   ; SBC #$10
+    eori    #$10,CCR  ; restore X = 6502 C
     move.b  D0,($005D,A4)
     ; If the level info indicates that the submenu map should be
     ; rotated horizontally, then loop to rotate right the number of
@@ -9445,7 +9609,9 @@ _L_z05_Submenu_WriteSheetMapRowTransferRecord_DoneRotate:
     move.b  ($005E,A4),D0
     ori     #$11,CCR  ; SEC: set C+X
     move.b  #$1A,D1
+    eori    #$10,CCR  ; flip X: 6502 SBC polarity
     subx.b  D1,D0   ; SBC #$1A
+    eori    #$10,CCR  ; restore X = 6502 C
     lsr.b  #1,D0   ; LSR A
     moveq   #0,D2
     move.b  D0,D2
@@ -9492,7 +9658,9 @@ _anon_z05_202:
     beq  _L_z05_HasMap_Exit
     ori     #$11,CCR  ; SEC: set C+X
     move.b  #$01,D1
+    eori    #$10,CCR  ; flip X: 6502 SBC polarity
     subx.b  D1,D0   ; SBC #$01
+    eori    #$10,CCR  ; restore X = 6502 C
     cmpi.b  #$08,D0
     bcs  _anon_z05_203
     addq.b  #1,D2
@@ -10206,7 +10374,9 @@ _L_z05_CreateRoomObjects_StoreLocation:
     move.b  ($0083,A4),D0
     ori     #$11,CCR  ; SEC: set C+X
     move.b  #$08,D1
+    eori    #$10,CCR  ; flip X: 6502 SBC polarity
     subx.b  D1,D0   ; SBC #$08
+    eori    #$10,CCR  ; restore X = 6502 C
     move.b  D0,($0083,A4)
 _anon_z05_224:
     rts
@@ -10292,4 +10462,3 @@ SwitchBank_Local5:
 
 ; Unknown block
     dc.b    $84, $E4, $50, $BF, $F0, $BF
-

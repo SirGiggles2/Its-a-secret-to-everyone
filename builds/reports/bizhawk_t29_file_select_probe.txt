@@ -1,0 +1,80 @@
+=================================================================
+T29 file-select probe (natural title->frontend flow)
+=================================================================
+LoopForever=$03C680  IsrNmi=$03C6B2
+Start pulse window: f0090..f0260  hold=2 release=4
+
+f0001 mode=$00 sub=$00
+f0090 input Start pulse #1
+f0091 mode=$00 sub=$01
+f0095 mode=$00 sub=$02
+f0096 input Start pulse #2
+f0100 mode=$01 sub=$00
+f0102 input Start pulse #3
+f0103 mode=$01 sub=$02
+f0105 mode=$01 sub=$03
+f0108 input Start pulse #4
+f0109 mode=$01 sub=$04
+f0110 mode=$01 sub=$05
+f0111 mode=$01 sub=$00
+f0114 input Start pulse #5
+f0115 mode=$01 sub=$01
+f0116 mode=$0E sub=$00
+f0120 input Start pulse #6
+f0122 mode=$0E sub=$01
+f0123 mode=$0E sub=$02
+f0124 mode=$0E sub=$04
+f0126 input Start pulse #7
+f0132 input Start pulse #8
+f0138 input Start pulse #9
+f0144 input Start pulse #10
+f0150 input Start pulse #11
+f0156 input Start pulse #12
+f0162 input Start pulse #13
+f0168 input Start pulse #14
+f0174 input Start pulse #15
+f0180 input Start pulse #16
+f0186 input Start pulse #17
+f0192 input Start pulse #18
+f0198 input Start pulse #19
+f0204 input Start pulse #20
+f0210 input Start pulse #21
+f0216 input Start pulse #22
+f0222 input Start pulse #23
+f0228 input Start pulse #24
+f0234 input Start pulse #25
+f0240 input Start pulse #26
+f0246 input Start pulse #27
+f0252 input Start pulse #28
+f0258 input Start pulse #29
+
+Mode transitions (first 24):
+  f0001 mode=$00 sub=$00
+  f0091 mode=$00 sub=$01
+  f0095 mode=$00 sub=$02
+  f0100 mode=$01 sub=$00
+  f0103 mode=$01 sub=$02
+  f0105 mode=$01 sub=$03
+  f0109 mode=$01 sub=$04
+  f0110 mode=$01 sub=$05
+  f0111 mode=$01 sub=$00
+  f0115 mode=$01 sub=$01
+  f0116 mode=$0E sub=$00
+  f0122 mode=$0E sub=$01
+  f0123 mode=$0E sub=$02
+  f0124 mode=$0E sub=$04
+
+final_mode=$0E first_nonzero_mode=$01
+start_pulses=29  nmi_delta=91  checkinput_delta=253
+nt_nonzero(first64)=64  cram_nonzero(64)=24
+
+[PASS] T29_NO_EXCEPTION               no exception
+[FAIL] T29_NMI_CONTINUOUS             delta=91
+[PASS] T29_CHECKINPUT_CONTINUOUS      delta=253
+[PASS] T29_MODE_TRANSITION            left title mode, first non-zero mode $01
+[PASS] T29_FILESELECT_MODE_OBSERVED   Mode $01 observed
+[PASS] T29_NT_POPULATED               64/64 non-zero tile words
+[PASS] T29_CRAM_POPULATED             24/64 non-zero CRAM words
+
+T29 FILE-SELECT SUMMARY: 6 PASS / 1 FAIL
+T29 FILE-SELECT: FAIL

@@ -1,0 +1,225 @@
+=== FS Screenshot Compare Report ===
+threshold=24  cell=8  cell_min=2
+
+NES source: C:\Users\Jake Diggity\Documents\GitHub\FINAL TRY\.claude\worktrees\nifty-chandrasekhar\builds\reports\fs1_nes.png
+GEN source: C:\Users\Jake Diggity\Documents\GitHub\FINAL TRY\.claude\worktrees\nifty-chandrasekhar\builds\reports\fs1_gen.png
+
+===== FS1 =====
+  resolution:       256x224 core
+  diff pixels:      1669/57344 (2.91%)
+  threshold:        per-channel > 24
+  interesting cells (>= 2 pixels diff):
+  total interesting cells: 88
+    row 07 (screen_y= 56): col03(x= 24,n=15) col04(x= 32,n=16) col05(x= 40,n=16) col06(x= 48,n=16) col07(x= 56,n=16) col08(x= 64,n=16) col09(x= 72,n=16) col16(x=128,n=16)  +6 more
+    row 08 (screen_y= 64): col03(x= 24,n=16) col28(x=224,n=16)
+    row 09 (screen_y= 72): col03(x= 24,n=16) col28(x=224,n=16)
+    row 10 (screen_y= 80): col03(x= 24,n=16) col06(x= 48,n=35) col07(x= 56,n=35) col28(x=224,n=16)
+    row 11 (screen_y= 88): col03(x= 24,n=16) col06(x= 48,n=40) col07(x= 56,n=47) col28(x=224,n=16)
+    row 12 (screen_y= 96): col03(x= 24,n=16) col06(x= 48,n=3) col28(x=224,n=16)
+    row 13 (screen_y=104): col03(x= 24,n=16) col06(x= 48,n=35) col07(x= 56,n=35) col28(x=224,n=16)
+    row 14 (screen_y=112): col03(x= 24,n=16) col06(x= 48,n=40) col07(x= 56,n=47) col28(x=224,n=16)
+    row 15 (screen_y=120): col03(x= 24,n=16) col06(x= 48,n=3) col28(x=224,n=16)
+    row 16 (screen_y=128): col03(x= 24,n=16) col06(x= 48,n=35) col07(x= 56,n=35) col28(x=224,n=16)
+    row 17 (screen_y=136): col03(x= 24,n=16) col06(x= 48,n=40) col07(x= 56,n=47) col28(x=224,n=16)
+    row 18 (screen_y=144): col03(x= 24,n=16) col06(x= 48,n=3) col28(x=224,n=16)
+    row 19 (screen_y=152): col03(x= 24,n=16) col28(x=224,n=16)
+    row 20 (screen_y=160): col03(x= 24,n=16) col05(x= 40,n=40) col28(x=224,n=16)
+    row 21 (screen_y=168): col03(x= 24,n=16) col28(x=224,n=16)
+    row 22 (screen_y=176): col03(x= 24,n=16) col28(x=224,n=16)
+    row 23 (screen_y=184): col03(x= 24,n=16) col28(x=224,n=16)
+    row 24 (screen_y=192): col03(x= 24,n=15) col04(x= 32,n=16) col05(x= 40,n=16) col06(x= 48,n=16) col07(x= 56,n=16) col08(x= 64,n=16) col09(x= 72,n=16) col10(x= 80,n=16)  +18 more
+
+  top-20 cells with sample diffs (x,y  NES_rgb  GEN_rgb):
+    cell ( 7,11) @ screen ( 56, 88) diff=47:
+        ( 56, 88) NES=#571D00 GEN=#882200
+        ( 57, 88) NES=#EB9F23 GEN=#EE8844
+        ( 58, 88) NES=#EB9F23 GEN=#EE8844
+    cell ( 7,14) @ screen ( 56,112) diff=47:
+        ( 56,112) NES=#571D00 GEN=#882200
+        ( 57,112) NES=#EB9F23 GEN=#EE8844
+        ( 58,112) NES=#EB9F23 GEN=#EE8844
+    cell ( 7,17) @ screen ( 56,136) diff=47:
+        ( 56,136) NES=#571D00 GEN=#882200
+        ( 57,136) NES=#EB9F23 GEN=#EE8844
+        ( 58,136) NES=#EB9F23 GEN=#EE8844
+    cell ( 6,11) @ screen ( 48, 88) diff=40:
+        ( 50, 88) NES=#571D00 GEN=#882200
+        ( 51, 88) NES=#571D00 GEN=#882200
+        ( 52, 88) NES=#89D900 GEN=#AAEE22
+    cell ( 6,14) @ screen ( 48,112) diff=40:
+        ( 50,112) NES=#571D00 GEN=#882200
+        ( 51,112) NES=#571D00 GEN=#882200
+        ( 52,112) NES=#89D900 GEN=#AAEE22
+    cell ( 6,17) @ screen ( 48,136) diff=40:
+        ( 50,136) NES=#571D00 GEN=#882200
+        ( 51,136) NES=#571D00 GEN=#882200
+        ( 52,136) NES=#89D900 GEN=#AAEE22
+    cell ( 5,20) @ screen ( 40,160) diff=40:
+        ( 41,161) NES=#B81E7C GEN=#AA4400
+        ( 42,161) NES=#B81E7C GEN=#AA4400
+        ( 44,161) NES=#B81E7C GEN=#AA4400
+    cell ( 6,10) @ screen ( 48, 80) diff=35:
+        ( 53, 81) NES=#89D900 GEN=#AAEE22
+        ( 54, 81) NES=#89D900 GEN=#AAEE22
+        ( 55, 81) NES=#89D900 GEN=#AAEE22
+    cell ( 7,10) @ screen ( 56, 80) diff=35:
+        ( 56, 81) NES=#89D900 GEN=#AAEE22
+        ( 57, 81) NES=#89D900 GEN=#AAEE22
+        ( 58, 81) NES=#89D900 GEN=#AAEE22
+    cell ( 6,13) @ screen ( 48,104) diff=35:
+        ( 53,105) NES=#89D900 GEN=#AAEE22
+        ( 54,105) NES=#89D900 GEN=#AAEE22
+        ( 55,105) NES=#89D900 GEN=#AAEE22
+    cell ( 7,13) @ screen ( 56,104) diff=35:
+        ( 56,105) NES=#89D900 GEN=#AAEE22
+        ( 57,105) NES=#89D900 GEN=#AAEE22
+        ( 58,105) NES=#89D900 GEN=#AAEE22
+    cell ( 6,16) @ screen ( 48,128) diff=35:
+        ( 53,129) NES=#89D900 GEN=#AAEE22
+        ( 54,129) NES=#89D900 GEN=#AAEE22
+        ( 55,129) NES=#89D900 GEN=#AAEE22
+    cell ( 7,16) @ screen ( 56,128) diff=35:
+        ( 56,129) NES=#89D900 GEN=#AAEE22
+        ( 57,129) NES=#89D900 GEN=#AAEE22
+        ( 58,129) NES=#89D900 GEN=#AAEE22
+    cell ( 4, 7) @ screen ( 32, 56) diff=16:
+        ( 32, 59) NES=#4240FE GEN=#0044EE
+        ( 33, 59) NES=#4240FE GEN=#0044EE
+        ( 34, 59) NES=#4240FE GEN=#0044EE
+    cell ( 5, 7) @ screen ( 40, 56) diff=16:
+        ( 40, 59) NES=#4240FE GEN=#0044EE
+        ( 41, 59) NES=#4240FE GEN=#0044EE
+        ( 42, 59) NES=#4240FE GEN=#0044EE
+    cell ( 6, 7) @ screen ( 48, 56) diff=16:
+        ( 48, 59) NES=#4240FE GEN=#0044EE
+        ( 49, 59) NES=#4240FE GEN=#0044EE
+        ( 50, 59) NES=#4240FE GEN=#0044EE
+    cell ( 7, 7) @ screen ( 56, 56) diff=16:
+        ( 56, 59) NES=#4240FE GEN=#0044EE
+        ( 57, 59) NES=#4240FE GEN=#0044EE
+        ( 58, 59) NES=#4240FE GEN=#0044EE
+    cell ( 8, 7) @ screen ( 64, 56) diff=16:
+        ( 64, 59) NES=#4240FE GEN=#0044EE
+        ( 65, 59) NES=#4240FE GEN=#0044EE
+        ( 66, 59) NES=#4240FE GEN=#0044EE
+    cell ( 9, 7) @ screen ( 72, 56) diff=16:
+        ( 72, 59) NES=#4240FE GEN=#0044EE
+        ( 73, 59) NES=#4240FE GEN=#0044EE
+        ( 74, 59) NES=#4240FE GEN=#0044EE
+    cell (16, 7) @ screen (128, 56) diff=16:
+        (128, 59) NES=#4240FE GEN=#0044EE
+        (129, 59) NES=#4240FE GEN=#0044EE
+        (130, 59) NES=#4240FE GEN=#0044EE
+  saved compare image: C:\Users\Jake Diggity\Documents\GitHub\FINAL TRY\.claude\worktrees\nifty-chandrasekhar\builds\reports\fs1_compare.png
+
+NES source: C:\Users\Jake Diggity\Documents\GitHub\FINAL TRY\.claude\worktrees\nifty-chandrasekhar\builds\reports\fs2_nes.png
+GEN source: C:\Users\Jake Diggity\Documents\GitHub\FINAL TRY\.claude\worktrees\nifty-chandrasekhar\builds\reports\fs2_gen.png
+
+===== FS2 =====
+  resolution:       256x224 core
+  diff pixels:      1687/57344 (2.94%)
+  threshold:        per-channel > 24
+  interesting cells (>= 2 pixels diff):
+  total interesting cells: 86
+    row 02 (screen_y= 16): col04(x= 32,n=16) col05(x= 40,n=16) col06(x= 48,n=16) col07(x= 56,n=16) col26(x=208,n=16) col27(x=216,n=16) col28(x=224,n=16)
+    row 05 (screen_y= 40): col08(x= 64,n=31) col09(x= 72,n=10) col10(x= 80,n=35) col11(x= 88,n=35) col14(x=112,n=64)
+    row 06 (screen_y= 48): col10(x= 80,n=40) col11(x= 88,n=47)
+    row 07 (screen_y= 56): col10(x= 80,n=3)
+    row 08 (screen_y= 64): col10(x= 80,n=35) col11(x= 88,n=35)
+    row 09 (screen_y= 72): col10(x= 80,n=40) col11(x= 88,n=47)
+    row 10 (screen_y= 80): col10(x= 80,n=3)
+    row 11 (screen_y= 88): col10(x= 80,n=35) col11(x= 88,n=35)
+    row 12 (screen_y= 96): col10(x= 80,n=40) col11(x= 88,n=47)
+    row 13 (screen_y=104): col10(x= 80,n=3)
+    row 15 (screen_y=120): col05(x= 40,n=15) col06(x= 48,n=16) col07(x= 56,n=16) col08(x= 64,n=16) col09(x= 72,n=16) col10(x= 80,n=16) col11(x= 88,n=16) col12(x= 96,n=16)  +15 more
+    row 16 (screen_y=128): col05(x= 40,n=16) col06(x= 48,n=34) col27(x=216,n=16)
+    row 17 (screen_y=136): col05(x= 40,n=16) col27(x=216,n=16)
+    row 18 (screen_y=144): col05(x= 40,n=16) col27(x=216,n=16)
+    row 19 (screen_y=152): col05(x= 40,n=16) col27(x=216,n=16)
+    row 20 (screen_y=160): col05(x= 40,n=16) col27(x=216,n=16)
+    row 21 (screen_y=168): col05(x= 40,n=16) col27(x=216,n=16)
+    row 22 (screen_y=176): col05(x= 40,n=16) col27(x=216,n=16)
+    row 23 (screen_y=184): col05(x= 40,n=15) col06(x= 48,n=16) col07(x= 56,n=16) col08(x= 64,n=16) col09(x= 72,n=16) col10(x= 80,n=16) col11(x= 88,n=16) col12(x= 96,n=16)  +15 more
+
+  top-20 cells with sample diffs (x,y  NES_rgb  GEN_rgb):
+    cell (14, 5) @ screen (112, 40) diff=64:
+        (112, 40) NES=#B81E7C GEN=#000000
+        (113, 40) NES=#B81E7C GEN=#000000
+        (114, 40) NES=#B81E7C GEN=#000000
+    cell (11, 6) @ screen ( 88, 48) diff=47:
+        ( 88, 48) NES=#571D00 GEN=#882200
+        ( 89, 48) NES=#EB9F23 GEN=#EE8844
+        ( 90, 48) NES=#EB9F23 GEN=#EE8844
+    cell (11, 9) @ screen ( 88, 72) diff=47:
+        ( 88, 72) NES=#571D00 GEN=#882200
+        ( 89, 72) NES=#EB9F23 GEN=#EE8844
+        ( 90, 72) NES=#EB9F23 GEN=#EE8844
+    cell (11,12) @ screen ( 88, 96) diff=47:
+        ( 88, 96) NES=#571D00 GEN=#882200
+        ( 89, 96) NES=#EB9F23 GEN=#EE8844
+        ( 90, 96) NES=#EB9F23 GEN=#EE8844
+    cell (10, 6) @ screen ( 80, 48) diff=40:
+        ( 82, 48) NES=#571D00 GEN=#882200
+        ( 83, 48) NES=#571D00 GEN=#882200
+        ( 84, 48) NES=#89D900 GEN=#AAEE22
+    cell (10, 9) @ screen ( 80, 72) diff=40:
+        ( 82, 72) NES=#571D00 GEN=#882200
+        ( 83, 72) NES=#571D00 GEN=#882200
+        ( 84, 72) NES=#89D900 GEN=#AAEE22
+    cell (10,12) @ screen ( 80, 96) diff=40:
+        ( 82, 96) NES=#571D00 GEN=#882200
+        ( 83, 96) NES=#571D00 GEN=#882200
+        ( 84, 96) NES=#89D900 GEN=#AAEE22
+    cell (10, 5) @ screen ( 80, 40) diff=35:
+        ( 85, 41) NES=#89D900 GEN=#AAEE22
+        ( 86, 41) NES=#89D900 GEN=#AAEE22
+        ( 87, 41) NES=#89D900 GEN=#AAEE22
+    cell (11, 5) @ screen ( 88, 40) diff=35:
+        ( 88, 41) NES=#89D900 GEN=#AAEE22
+        ( 89, 41) NES=#89D900 GEN=#AAEE22
+        ( 90, 41) NES=#89D900 GEN=#AAEE22
+    cell (10, 8) @ screen ( 80, 64) diff=35:
+        ( 85, 65) NES=#89D900 GEN=#AAEE22
+        ( 86, 65) NES=#89D900 GEN=#AAEE22
+        ( 87, 65) NES=#89D900 GEN=#AAEE22
+    cell (11, 8) @ screen ( 88, 64) diff=35:
+        ( 88, 65) NES=#89D900 GEN=#AAEE22
+        ( 89, 65) NES=#89D900 GEN=#AAEE22
+        ( 90, 65) NES=#89D900 GEN=#AAEE22
+    cell (10,11) @ screen ( 80, 88) diff=35:
+        ( 85, 89) NES=#89D900 GEN=#AAEE22
+        ( 86, 89) NES=#89D900 GEN=#AAEE22
+        ( 87, 89) NES=#89D900 GEN=#AAEE22
+    cell (11,11) @ screen ( 88, 88) diff=35:
+        ( 88, 89) NES=#89D900 GEN=#AAEE22
+        ( 89, 89) NES=#89D900 GEN=#AAEE22
+        ( 90, 89) NES=#89D900 GEN=#AAEE22
+    cell ( 6,16) @ screen ( 48,128) diff=34:
+        ( 48,128) NES=#B81E7C GEN=#000000
+        ( 49,128) NES=#B81E7C GEN=#000000
+        ( 53,128) NES=#B81E7C GEN=#000000
+    cell ( 8, 5) @ screen ( 64, 40) diff=31:
+        ( 68, 40) NES=#B81E7C GEN=#AA4400
+        ( 69, 40) NES=#B81E7C GEN=#AA4400
+        ( 71, 40) NES=#B81E7C GEN=#AA4400
+    cell ( 4, 2) @ screen ( 32, 16) diff=16:
+        ( 32, 19) NES=#4240FE GEN=#0044EE
+        ( 33, 19) NES=#4240FE GEN=#0044EE
+        ( 34, 19) NES=#4240FE GEN=#0044EE
+    cell ( 5, 2) @ screen ( 40, 16) diff=16:
+        ( 40, 19) NES=#4240FE GEN=#0044EE
+        ( 41, 19) NES=#4240FE GEN=#0044EE
+        ( 42, 19) NES=#4240FE GEN=#0044EE
+    cell ( 6, 2) @ screen ( 48, 16) diff=16:
+        ( 48, 19) NES=#4240FE GEN=#0044EE
+        ( 49, 19) NES=#4240FE GEN=#0044EE
+        ( 50, 19) NES=#4240FE GEN=#0044EE
+    cell ( 7, 2) @ screen ( 56, 16) diff=16:
+        ( 56, 19) NES=#4240FE GEN=#0044EE
+        ( 57, 19) NES=#4240FE GEN=#0044EE
+        ( 58, 19) NES=#4240FE GEN=#0044EE
+    cell (26, 2) @ screen (208, 16) diff=16:
+        (208, 19) NES=#4240FE GEN=#0044EE
+        (209, 19) NES=#4240FE GEN=#0044EE
+        (210, 19) NES=#4240FE GEN=#0044EE
+  saved compare image: C:\Users\Jake Diggity\Documents\GitHub\FINAL TRY\.claude\worktrees\nifty-chandrasekhar\builds\reports\fs2_compare.png

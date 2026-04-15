@@ -1,0 +1,105 @@
+ROOM $77 PARITY REPORT
+========================================================================
+gen target_reached: True room_id: $77
+nes target_reached: True room_id: $77
+
+nes_to_gen_plane_tile_mismatches: 0
+nes_to_gen_plane_palette_mismatches: 0
+stage1_nes_workbuf_to_gen_workbuf_tile_mismatches: 0
+stage2_nes_visible_to_gen_ntcache_tile_mismatches: 0
+stage2_interior_tile_mismatches: 0
+stage2_edge_tile_mismatches: 0
+stage3_gen_ntcache_to_plane_tile_mismatches: 0
+nes_visible_to_gen_workbuf_tile_mismatches: 272
+nes_workbuf_to_gen_workbuf_tile_mismatches: 0
+nes_to_gen_ntcache_tile_mismatches: 0
+nes_to_gen_playmap_tile_mismatches: 0
+nes_tile_to_nes_playmap_mismatches: 272
+gen_playmap_to_ntcache_tile_mismatches: 272
+bg_palette_mismatches: 0
+
+trace_ptr_mismatches: 6
+trace_source_byte_mismatches: 0
+stage1_decode_trace_gen_len: 64
+stage1_decode_trace_nes_len: 64
+stage1_trace_mismatch_count: 0
+stage1_rt_trace_gen_len: 704
+stage1_rt_trace_nes_len: 0
+stage1_rt_trace_mismatch_count: 704
+stage1_rt_trace_gen_valid: True
+stage1_rt_trace_nes_valid: False
+stage1_rt_divergence_class: UNKNOWN
+transfer_event_gen_len: 27
+transfer_event_nes_len: 27
+transfer_capture_gen_valid: True
+transfer_capture_nes_valid: True
+transfer_stream_mismatch_count: 0
+transfer_producer_match: True
+transfer_touches_edge_columns: True
+edge_columns_touched: [0, 31]
+first_bad_tile: {"stage": "NONE", "row": -1, "col": -1, "nes_value": -1, "gen_value": -1}
+edge_owner_gen_count: 44
+edge_owner_nes_count: 44
+edge_owner_mismatch_count: 44
+edge_owner_writer_classes_gen: ['transfer_cur_tilebuf']
+edge_owner_writer_classes_nes: ['isr_nmi']
+stage1_matrix_gen: gen.layoutroomow_exit_workbuf_rows
+stage1_matrix_nes: nes.layoutroomow_exit_workbuf_rows
+trace_common_snapshots: layoutroomow_exit_snapshot, mode3_sub8_first, mode5_room_stable
+trace_compared_snapshots: layoutroomow_exit_snapshot
+trace_authoritative_snapshot: layoutroomow_exit_snapshot
+trace_authoritative_diag: gen(raw=$72, mask=$32, layout_ptr=$00034578) nes(raw=$32, mask=$32, layout_ptr=$00009B38)
+stage1_rt_first_trace_divergence: {"seq": 1, "field": "trace_length", "gen_value": 704, "nes_value": 0}
+edge_owner_first_divergence: {"entry_index": 0, "field": "writer_class", "gen_value": "transfer_cur_tilebuf", "nes_value": "isr_nmi"}
+
+First NES visible->GEN workbuf tile mismatches:
+  row00 col00 nes_tile=$24 gen_workbuf_tile=$D8
+  row00 col01 nes_tile=$24 gen_workbuf_tile=$DA
+  row00 col02 nes_tile=$F5 gen_workbuf_tile=$D8
+  row00 col03 nes_tile=$F5 gen_workbuf_tile=$DA
+  row00 col04 nes_tile=$F5 gen_workbuf_tile=$D8
+  row00 col05 nes_tile=$F5 gen_workbuf_tile=$DA
+  row00 col06 nes_tile=$F5 gen_workbuf_tile=$D8
+  row00 col07 nes_tile=$F5 gen_workbuf_tile=$DA
+  row00 col08 nes_tile=$F5 gen_workbuf_tile=$D8
+  row00 col09 nes_tile=$F5 gen_workbuf_tile=$DA
+  row00 col10 nes_tile=$24 gen_workbuf_tile=$D8
+  row00 col11 nes_tile=$61 gen_workbuf_tile=$DA
+  row00 col12 nes_tile=$21 gen_workbuf_tile=$D8
+  row00 col13 nes_tile=$00 gen_workbuf_tile=$DA
+  row00 col14 nes_tile=$24 gen_workbuf_tile=$26
+  row00 col15 nes_tile=$6E gen_workbuf_tile=$26
+  row00 col16 nes_tile=$6A gen_workbuf_tile=$26
+  row00 col17 nes_tile=$6D gen_workbuf_tile=$26
+  row00 col18 nes_tile=$6E gen_workbuf_tile=$D8
+  row00 col19 nes_tile=$6A gen_workbuf_tile=$DA
+
+First workbuf->NT cache tile mismatches:
+  row00 col00 workbuf_tile=$D8 nt_cache_tile=$24
+  row00 col01 workbuf_tile=$DA nt_cache_tile=$24
+  row00 col02 workbuf_tile=$D8 nt_cache_tile=$F5
+  row00 col03 workbuf_tile=$DA nt_cache_tile=$F5
+  row00 col04 workbuf_tile=$D8 nt_cache_tile=$F5
+  row00 col05 workbuf_tile=$DA nt_cache_tile=$F5
+  row00 col06 workbuf_tile=$D8 nt_cache_tile=$F5
+  row00 col07 workbuf_tile=$DA nt_cache_tile=$F5
+  row00 col08 workbuf_tile=$D8 nt_cache_tile=$F5
+  row00 col09 workbuf_tile=$DA nt_cache_tile=$F5
+  row00 col10 workbuf_tile=$D8 nt_cache_tile=$24
+  row00 col11 workbuf_tile=$DA nt_cache_tile=$61
+  row00 col12 workbuf_tile=$D8 nt_cache_tile=$21
+  row00 col13 workbuf_tile=$DA nt_cache_tile=$00
+  row00 col14 workbuf_tile=$26 nt_cache_tile=$24
+  row00 col15 workbuf_tile=$26 nt_cache_tile=$6E
+  row00 col16 workbuf_tile=$26 nt_cache_tile=$6A
+  row00 col17 workbuf_tile=$26 nt_cache_tile=$6D
+  row00 col18 workbuf_tile=$D8 nt_cache_tile=$6E
+  row00 col19 workbuf_tile=$DA nt_cache_tile=$6A
+
+alignment_best_offset: row_delta=0 col_delta=0 tile_mismatches=0 pal_mismatches=0
+screenshot_diff_diag: 42414/45056 (94.14%) non-zero BG-crop pixels
+
+route_code: ROUTE_NONE
+route_detail: PARITY_GREEN: Room-$77 BG tile/palette byte parity is green.
+
+ROOM77_PARITY: ALL PASS

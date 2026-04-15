@@ -1,0 +1,92 @@
+=== fs2_keyboard probe start ===
+f=  80 after boot mode=00 sub=00 idx=01 off=D2 x=00 y=00
+f= 118 post-start mode=01 sub=00 idx=01 off=D4 x=00 y=00
+f= 118 before-nav mode=01 sub=00 idx=01 off=D4 x=00 y=00 slot=03
+f= 118 pre-start slot=03 mode=01 sub=00 idx=01 off=D4 x=00 y=00
+f= 130 post-Start1 mode=0E sub=04 idx=00 off=00 x=30 y=87
+--- ModeE_CharMap[0..43] from ROM ---
+  0A 0B 0C 0D 0E 0F 10 11 12 13 14 15 16 17 18 19 1A 1B 1C 1D 1E 1F 20 21 22 23 62 63 28 29 2A 2B 2C 00 01 02 03 04 05 06 07 08 09 24
+--- TEST idx=00 expected=charmap[00]=0A ---
+  before 24 24 24 24 24 24 24 24
+  before mode=0E sub=04 idx=00 off=00 x=30 y=87
+  after  0A 24 24 24 24 24 24 24
+  after  mode=0E sub=04 idx=00 off=01 x=30 y=87
+  expected $0A at $0638+00 actual=$0A MATCH
+--- TEST idx=05 expected=charmap[05]=0F ---
+  before 0A 24 24 24 24 24 24 24
+  before mode=0E sub=04 idx=00 off=01 x=30 y=87
+  after  0A 0F 24 24 24 24 24 24
+  after  mode=0E sub=04 idx=05 off=02 x=30 y=87
+  expected $0F at $0638+01 actual=$0F MATCH
+--- TEST idx=10 expected=charmap[0A]=14 ---
+  before 0A 0F 24 24 24 24 24 24
+  before mode=0E sub=04 idx=05 off=02 x=30 y=87
+  after  0A 0F 14 24 24 24 24 24
+  after  mode=0E sub=04 idx=0A off=03 x=30 y=87
+  expected $14 at $0638+02 actual=$14 MATCH
+--- TEST idx=15 expected=charmap[0F]=19 ---
+  before 0A 0F 14 24 24 24 24 24
+  before mode=0E sub=04 idx=0A off=03 x=30 y=87
+  after  0A 0F 14 19 24 24 24 24
+  after  mode=0E sub=04 idx=0F off=04 x=30 y=87
+  expected $19 at $0638+03 actual=$19 MATCH
+--- TEST idx=22 expected=charmap[16]=20 ---
+  before 0A 0F 14 19 24 24 24 24
+  before mode=0E sub=04 idx=0F off=04 x=30 y=87
+  after  0A 0F 14 19 20 24 24 24
+  after  mode=0E sub=04 idx=16 off=05 x=30 y=87
+  expected $20 at $0638+04 actual=$20 MATCH
+--- TEST idx=30 expected=charmap[1E]=2A ---
+  before 0A 0F 14 19 20 24 24 24
+  before mode=0E sub=04 idx=16 off=05 x=30 y=87
+  after  0A 0F 14 19 20 2A 24 24
+  after  mode=0E sub=04 idx=1E off=06 x=30 y=87
+  expected $2A at $0638+05 actual=$2A MATCH
+--- TEST idx=42 expected=charmap[2A]=09 ---
+  before 0A 0F 14 19 20 2A 24 24
+  before mode=0E sub=04 idx=1E off=06 x=30 y=87
+  after  0A 0F 14 19 20 2A 09 24
+  after  mode=0E sub=04 idx=2A off=07 x=30 y=87
+  expected $09 at $0638+06 actual=$09 MATCH
+--- CURSOR NAV TEST ---
+  start mode=0E sub=04 idx=00 off=07 x=30 y=87
+  P1 Right#1 mode=0E sub=04 idx=01 off=07 x=40 y=87
+  P1 Right#2 mode=0E sub=04 idx=02 off=07 x=50 y=87
+  P1 Right#3 mode=0E sub=04 idx=03 off=07 x=60 y=87
+  P1 Right#4 mode=0E sub=04 idx=04 off=07 x=70 y=87
+  P1 Right#5 mode=0E sub=04 idx=05 off=07 x=80 y=87
+  P1 Right#6 mode=0E sub=04 idx=06 off=07 x=90 y=87
+  P1 Right#7 mode=0E sub=04 idx=07 off=07 x=A0 y=87
+  P1 Right#8 mode=0E sub=04 idx=08 off=07 x=B0 y=87
+  P1 Right#9 mode=0E sub=04 idx=09 off=07 x=C0 y=87
+  P1 Right#10 mode=0E sub=04 idx=0A off=07 x=D0 y=87
+  P1 Right#11 mode=0E sub=04 idx=0B off=07 x=30 y=97
+  P1 Down#1 mode=0E sub=04 idx=16 off=07 x=30 y=A7
+  P1 Right#1 mode=0E sub=04 idx=17 off=07 x=40 y=A7
+  P1 Right#2 mode=0E sub=04 idx=18 off=07 x=50 y=A7
+  P1 Right#3 mode=0E sub=04 idx=19 off=07 x=60 y=A7
+  P1 Right#4 mode=0E sub=04 idx=1A off=07 x=70 y=A7
+  P1 Right#5 mode=0E sub=04 idx=1B off=07 x=80 y=A7
+  P1 Right#6 mode=0E sub=04 idx=1C off=07 x=90 y=A7
+  P1 Right#7 mode=0E sub=04 idx=1D off=07 x=A0 y=A7
+  P1 Right#8 mode=0E sub=04 idx=1E off=07 x=B0 y=A7
+  P1 Right#9 mode=0E sub=04 idx=1F off=07 x=C0 y=A7
+  P1 Right#10 mode=0E sub=04 idx=20 off=07 x=D0 y=A7
+  P1 Right#11 mode=0E sub=04 idx=21 off=07 x=30 y=B7
+  P1 Down#1 mode=0E sub=04 idx=00 off=07 x=30 y=87
+  P1 Down#1 mode=0E sub=04 idx=0B off=07 x=30 y=97
+  P1 Left#1 mode=0E sub=04 idx=0A off=07 x=D0 y=87
+  P1 Left#2 mode=0E sub=04 idx=09 off=07 x=C0 y=87
+  P1 Left#3 mode=0E sub=04 idx=08 off=07 x=B0 y=87
+  P1 Left#4 mode=0E sub=04 idx=07 off=07 x=A0 y=87
+  P1 Left#5 mode=0E sub=04 idx=06 off=07 x=90 y=87
+  P1 Left#6 mode=0E sub=04 idx=05 off=07 x=80 y=87
+  P1 Left#7 mode=0E sub=04 idx=04 off=07 x=70 y=87
+  P1 Left#8 mode=0E sub=04 idx=03 off=07 x=60 y=87
+  P1 Left#9 mode=0E sub=04 idx=02 off=07 x=50 y=87
+  P1 Left#10 mode=0E sub=04 idx=01 off=07 x=40 y=87
+  P1 Left#11 mode=0E sub=04 idx=00 off=07 x=30 y=87
+  P1 Up#1 mode=0E sub=04 idx=21 off=07 x=30 y=B7
+  P1 Up#2 mode=0E sub=04 idx=16 off=07 x=30 y=A7
+  P1 Up#3 mode=0E sub=04 idx=0B off=07 x=30 y=97
+=== fs2_keyboard end frame=489 totals ab=0 read=0 write=0 ===

@@ -1,0 +1,38 @@
+{
+  "verdict": "T34_PARITY: ALL PASS",
+  "all_pass": true,
+  "gates": {
+    "T34_NES_CAPTURE_OK": {
+      "pass": true,
+      "detail": "file=t34_movement_nes_capture.json len=361"
+    },
+    "T34_GEN_CAPTURE_OK": {
+      "pass": true,
+      "detail": "file=t34_movement_gen_capture.json len=361"
+    },
+    "T34_NO_GEN_EXCEPTION": {
+      "pass": true,
+      "detail": "no exception"
+    },
+    "T34_BASELINE_PARITY": {
+      "pass": true,
+      "detail": "nes=($78,$8D,$00) gen=($78,$8D,$00)"
+    },
+    "T34_OBJX_PARITY": {
+      "pass": true,
+      "detail": "all 361 frames match"
+    },
+    "T34_OBJY_PARITY": {
+      "pass": true,
+      "detail": "all 361 frames match"
+    },
+    "T34_OBJINPUTDIR_PARITY": {
+      "pass": true,
+      "detail": "all 361 frames match"
+    },
+    "T34_HELD_BUTTONS_PARITY": {
+      "pass": true,
+      "detail": "all 361 frames match"
+    }
+  }
+}
