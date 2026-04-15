@@ -1886,6 +1886,20 @@ _sram_load_save_slots:
     move.b  D0,(A0)+
     addq.l  #2,A1                       ; advance odd-byte stride
     dbra    D1,.lsl_loop
+    ; T36: Zero-fill the remainder of the NES SRAM window ($FF6800..$FF7FFF).
+    ; NES has 8 KB of SRAM at $6000-$7FFF but Zelda's save-slots only occupy
+    ; the first 2 KB ($6000-$67FF).  z_05 AssignObjSpawnPositions reads
+    ; SRAM[$08FE+$00EB] which can land past offset $7FF (e.g. $FF6975 for
+    ; OW room $77).  On NES those bytes read 0 (unmapped or cleared by
+    ; ROM init).  Without this zero-fill, the read hits work-RAM residue
+    ; and corrupts the cave-dweller type calculation ($0350 := $6A+idx),
+    ; spawning a phantom cave-person that halts Link via $00AC=$40.
+    ; A0 already points at $FF6800 after the slot copy.
+    move.w  #$17FF,D1                   ; 6144 bytes - 1 ($6800..$7FFF)
+    moveq   #0,D0
+.lsl_zero:
+    move.b  D0,(A0)+
+    dbra    D1,.lsl_zero
     movem.l (SP)+,D0/D1/A0/A1
     rts
 

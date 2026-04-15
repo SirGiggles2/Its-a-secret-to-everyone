@@ -365,6 +365,18 @@ for _, dn in ipairs({"System Bus", "68K BUS", "M68K BUS"}) do
             event.on_bus_write(bp_make("objstate"), 0xFF00AC, dn)
             event.on_bus_write(bp_make("movedir "), 0xFF000F, dn)
             event.on_bus_write(bp_make("cavetype"), 0xFF0350, dn)
+            -- T36 Stage F: who writes to $FF6975 (the SRAM byte InCave reads)?
+            local sram_writes = 0
+            event.on_bus_write(function(a, v)
+                if sram_writes >= 200 then return end
+                sram_writes = sram_writes + 1
+                local pc = 0
+                local ok, regs = pcall(function() return emu.getregisters() end)
+                if ok and regs then pc = regs["M68K PC"] or regs["PC"] or 0 end
+                local t = (bp_t0 >= 0) and (bp_current_frame - bp_t0) or -1
+                bp_write(string.format("SRAM6975 f=%d t=%d val=%02X PC=%08X",
+                    bp_current_frame, t, v or -1, pc))
+            end, 0xFF6975, dn)
         end)
         if ok then bp_write("BP installed on "..dn); break end
     end
