@@ -20,7 +20,7 @@
     },
     "T34_OBJX_PARITY": {
       "pass": false,
-      "detail": "first diff at t=211 phase=left nes=$C6 gen=$C4"
+      "detail": "first diff at t=212 phase=left nes=$C5 gen=$C4"
     },
     "T34_OBJY_PARITY": {
       "pass": false,

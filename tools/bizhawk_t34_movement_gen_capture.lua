@@ -35,7 +35,7 @@ local OUT_PNG  = repo_path("builds\\reports\\t34_movement_gen_capture.png")
 
 local MAX_FRAMES = 7000
 local MODE0_BOOT_TIMEOUT = 1200
-local TARGET_NAME_PROGRESS = 5
+local TARGET_NAME_PROGRESS = 3
 local LINK_STABLE_FRAMES = 60
 local TARGET_ROOM_ID = 0x77
 
@@ -320,18 +320,14 @@ for frame = 1, MAX_FRAMES do
         if CAPTURE.name_progress_events >= TARGET_NAME_PROGRESS then
             set_flow(FLOW_MODEE_FINISH, frame, "name progress target reached")
         else
-            schedule_input("A", 1, 10)
+            schedule_input("C", 1, 10)   -- Gen: C = NES A (pick letter)
         end
 
     elseif flow_state == FLOW_MODEE_FINISH then
         if mode ~= 0x0E then
             set_flow(FLOW_WAIT_GAMEPLAY, frame, "left ModeE")
         else
-            if cur_slot ~= 0x03 then
-                schedule_input("Select", 1, 10)
-            else
-                schedule_input("Start", 2, 14)
-            end
+            schedule_input("Start", 2, 14)  -- Start ends name registration
         end
 
     elseif flow_state == FLOW_WAIT_GAMEPLAY then

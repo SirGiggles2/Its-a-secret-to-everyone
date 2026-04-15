@@ -9347,7 +9347,7 @@ ClearRam:
     move.b  D0,($00F5,A4)
     move.b  D0,($00F6,A4)
     move.b  D0,($00F3,A4)
-    move.b  #$EF,D3
+    move.b  #$FF,D3   ; PATCH P34i: clear $00-$FF (covers ctrl state $F8/$FA)
 _anon_z05_192:
     move.b  D0,($00,A4,D3.W)
     subq.b  #1,D3

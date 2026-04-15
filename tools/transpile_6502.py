@@ -4371,6 +4371,22 @@ def _patch_z05(path):
     else:
         print("  WARNING: _patch_z05 P33c -- no FetchTileMapAddr sites patched")
 
+    # ------------------------------------------------------------------
+    # P34i: Extend ClearRam tail loop from $00-$EF to $00-$FF so controller
+    # state bytes $F8/$F9/$FA/$FB get zero-init at boot. Without this the
+    # newly-pressed mask $F8 = new & ~prev sees stale $FA bits -> Start
+    # never registers as "newly pressed" (ModeE stuck) and T34 Left-bit
+    # miss at t=211. Reference NES has `LDY #$EF` literally; M68K port
+    # has no such constraint since zeropage has no special hardware.
+    # ------------------------------------------------------------------
+    p34i_old = 'move.b  #$EF,D3\n_anon_z05_192:'
+    p34i_new = 'move.b  #$FF,D3   ; PATCH P34i: clear $00-$FF (covers ctrl state $F8/$FA)\n_anon_z05_192:'
+    if p34i_old in text:
+        text = text.replace(p34i_old, p34i_new, 1)
+        print("  _patch_z05 P34i: ClearRam extended to $00-$FF (ctrl state $F8/$FA)")
+    else:
+        print("  WARNING: _patch_z05 P34i -- ClearRam anchor not found")
+
     with open(path, 'w', encoding='utf-8') as f:
         f.write(text)
 
