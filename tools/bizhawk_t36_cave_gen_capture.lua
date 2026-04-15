@@ -72,6 +72,10 @@ local A_OBJ_DIR  = BUS + 0x03F8
 local A_OBJSTATE = BUS + 0x00AC
 local A_MOVEDIR  = BUS + 0x000F
 local A_FACEDIR  = BUS + 0x0098
+local A_PERSONSTATE = BUS + 0x00AD   -- cave-person state-machine
+local A_CAVETYPE    = BUS + 0x0350   -- cave-person object type ($0350)
+local A_OBJTIMER0   = BUS + 0x0029   -- Link ObjTimer (text advance gate)
+local A_AUTOWALK    = BUS + 0x0394   -- auto-walk counter set to 48 on cave-enter
 local A_SLOT_A0  = BUS + 0x0633
 local A_SLOT_A1  = BUS + 0x0634
 local A_SLOT_A2  = BUS + 0x0635
@@ -528,6 +532,10 @@ for frame = 1, MAX_FRAMES do
                     objstate = ram_u8(A_OBJSTATE),
                     movedir = ram_u8(A_MOVEDIR),
                     facedir = ram_u8(A_FACEDIR),
+                    personstate = ram_u8(A_PERSONSTATE),
+                    cavetype = ram_u8(A_CAVETYPE),
+                    objtimer0 = ram_u8(A_OBJTIMER0),
+                    autowalk = ram_u8(A_AUTOWALK),
                 }
             end
         else
@@ -568,6 +576,10 @@ for frame = 1, MAX_FRAMES do
             objstate = ram_u8(A_OBJSTATE),
             movedir = ram_u8(A_MOVEDIR),
             facedir = ram_u8(A_FACEDIR),
+            personstate = ram_u8(A_PERSONSTATE),
+            cavetype = ram_u8(A_CAVETYPE),
+            objtimer0 = ram_u8(A_OBJTIMER0),
+            autowalk = ram_u8(A_AUTOWALK),
         }
     end
 
@@ -619,6 +631,7 @@ local function build_json()
         gen_active_base = {}, gen_active_event = {}, gen_active_hint = {},
         isupd = {}, secret = {}, whirl = {},
         objstate = {}, movedir = {}, facedir = {},
+        personstate = {}, cavetype = {}, objtimer0 = {}, autowalk = {},
     }
     for i = 1, trace_len do
         local e = trace[i]
@@ -653,6 +666,10 @@ local function build_json()
         cols.objstate[i]       = e.objstate or 0
         cols.movedir[i]        = e.movedir or 0
         cols.facedir[i]        = e.facedir or 0
+        cols.personstate[i]    = e.personstate or 0
+        cols.cavetype[i]       = e.cavetype or 0
+        cols.objtimer0[i]      = e.objtimer0 or 0
+        cols.autowalk[i]       = e.autowalk or 0
     end
     local phase_parts = {}
     for i, p in ipairs(SCENARIO.phase_summary()) do
@@ -716,7 +733,11 @@ local function build_json()
         '"whirl":'            .. json_num_array(cols.whirl) .. ",",
         '"objstate":'         .. json_num_array(cols.objstate) .. ",",
         '"movedir":'          .. json_num_array(cols.movedir) .. ",",
-        '"facedir":'          .. json_num_array(cols.facedir),
+        '"facedir":'          .. json_num_array(cols.facedir) .. ",",
+        '"personstate":'      .. json_num_array(cols.personstate) .. ",",
+        '"cavetype":'         .. json_num_array(cols.cavetype) .. ",",
+        '"objtimer0":'        .. json_num_array(cols.objtimer0) .. ",",
+        '"autowalk":'         .. json_num_array(cols.autowalk),
         "}",
         "}",
     }, "\n")

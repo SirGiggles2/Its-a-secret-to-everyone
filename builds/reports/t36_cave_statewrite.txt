@@ -1,4 +1,9 @@
 BP installed on M68K BUS
+WR f=3 t=-1 objstate val=00 PC=0000036E mode=00 y=00
+WR f=16 t=-1 objstate val=00 PC=00049DB6 mode=00 y=00
+WR f=414 t=-1 objstate val=00 PC=00039F50 mode=01 y=77
+WR f=558 t=-1 objstate val=00 PC=00050172 mode=04 y=8D
+WR f=833 t=212 objstate val=00 PC=0004673A mode=10 y=4D
 WR f=908 t=287 objstate val=00 PC=00050172 mode=0B y=5D
 WR f=909 t=288 facedir  val=08 PC=00034A0C mode=0B y=DD
 WR f=909 t=288 movedir  val=08 PC=00049796 mode=0B y=DD

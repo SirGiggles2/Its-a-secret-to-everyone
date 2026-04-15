@@ -61,6 +61,10 @@ local ADDR_OBJ_DIR  = 0x03F8
 local ADDR_OBJSTATE = 0x00AC  -- ObjState[0] (Link state high-nibble gates movement)
 local ADDR_MOVEDIR  = 0x000F  -- moving direction (zeroed by Walker_Move item-state branch)
 local ADDR_FACEDIR  = 0x0098  -- facing direction
+local ADDR_PERSONSTATE = 0x00AD
+local ADDR_CAVETYPE    = 0x0350
+local ADDR_OBJTIMER0   = 0x0029
+local ADDR_AUTOWALK    = 0x0394
 local ADDR_SLOT_A0  = 0x0633
 local ADDR_SLOT_A1  = 0x0634
 local ADDR_SLOT_A2  = 0x0635
@@ -412,6 +416,10 @@ for frame = 1, MAX_FRAMES do
                     objstate = ram_u8(ADDR_OBJSTATE),
                     movedir = ram_u8(ADDR_MOVEDIR),
                     facedir = ram_u8(ADDR_FACEDIR),
+                    personstate = ram_u8(ADDR_PERSONSTATE),
+                    cavetype = ram_u8(ADDR_CAVETYPE),
+                    objtimer0 = ram_u8(ADDR_OBJTIMER0),
+                    autowalk = ram_u8(ADDR_AUTOWALK),
                 }
             end
         else
@@ -482,6 +490,7 @@ local function build_json()
         hscroll = {}, vscroll = {},
         cur_col = {}, cur_row = {}, ppumask = {},
         objstate = {}, movedir = {}, facedir = {},
+        personstate = {}, cavetype = {}, objtimer0 = {}, autowalk = {},
     }
     for i = 1, trace_len do
         local e = trace[i]
@@ -504,6 +513,10 @@ local function build_json()
         cols.objstate[i]  = e.objstate or 0
         cols.movedir[i]   = e.movedir or 0
         cols.facedir[i]   = e.facedir or 0
+        cols.personstate[i] = e.personstate or 0
+        cols.cavetype[i]    = e.cavetype or 0
+        cols.objtimer0[i]   = e.objtimer0 or 0
+        cols.autowalk[i]    = e.autowalk or 0
     end
     local phase_parts = {}
     for i, p in ipairs(SCENARIO.phase_summary()) do
@@ -548,7 +561,11 @@ local function build_json()
         '"ppumask":'   .. json_num_array(cols.ppumask) .. ",",
         '"objstate":'  .. json_num_array(cols.objstate) .. ",",
         '"movedir":'   .. json_num_array(cols.movedir) .. ",",
-        '"facedir":'   .. json_num_array(cols.facedir),
+        '"facedir":'   .. json_num_array(cols.facedir) .. ",",
+        '"personstate":' .. json_num_array(cols.personstate) .. ",",
+        '"cavetype":'    .. json_num_array(cols.cavetype) .. ",",
+        '"objtimer0":'   .. json_num_array(cols.objtimer0) .. ",",
+        '"autowalk":'    .. json_num_array(cols.autowalk),
         "}",
         "}",
     }, "\n")
