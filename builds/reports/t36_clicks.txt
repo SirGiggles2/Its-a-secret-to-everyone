@@ -1,0 +1,3 @@
+T36 click probe. LEFT-CLICK on screen to log coords. Close BizHawk to save.
+CLICK 1  px=(197,143)  tile=(col=12,row=8) = ($0C,$08)  link=($00,$00) mode=$00 room=$00
+CLICK 2  px=(115,216)  tile=(col=7,row=13) = ($07,$0D)  link=($70,$D5) mode=$0B room=$77

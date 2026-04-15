@@ -1,46 +1,42 @@
 -- t36_input_scenario.lua
--- Shared scripted input driver for T36 cave-enter parity.
+-- T36 cave-enter parity: enter the cave at (x=$40, y=$4D) in room $77
+-- (north-west stair of the starting overworld room). Coordinates + mode
+-- chain confirmed by tools/bizhawk_t36_state_log.lua user playthrough:
 --
--- Builds on T35 scenario: starts from the baseline gate (Mode 5, room $77,
--- Link stable 60f), walks left into room $76, then navigates to the cave
--- stair in room $76, descends into the cave interior, stays briefly, and
--- walks back out.
+--   f01530 gameplay Mode5 room $77 Link=($78,$8D)
+--   f01548 Left hold: Link walks west ($78 -> $42, ~40 frames)
+--   f01589 Up hold: Link walks north ($8D -> $4D, ~50 frames)
+--   f01639 mode $05 -> $10 (cave-stair descent triggers at Link=$40,$4D)
+--   f01704 mode $10 -> $0B (scroll into cave interior)
+--   f01990 inside cave, Link at ($70,$D7), Down starts
+--   f01995 mode $0B -> $0A (exit stair triggers)
+--   f02029 mode $04 (fade/init)
+--   f02092 back to Mode5 room $77 Link=($40,$4D) (outside stair)
 --
--- Cave stair in room $76 (Level 0 overworld Q1) is at screen coords
--- (Link_x ~ $70, Link_y ~ $8D). After the T35 scroll settles, Link is at
--- ($B2, $8D), same row as the stair. Plan:
---   T 000-059   baseline idle          (60f)        gate verification
---   T 060-299   hold Left              (240f)       walk across + scroll
---   T 300-479   idle during scroll     (180f)       mode-7 submodes settle
---   T 480-539   final idle room $76    (60f)        post-scroll verify
---   T 540-659   hold Left              (120f)       walk west to stair x~$70
---   T 660-719   idle                   (60f)        align / pause
---   T 720-839   hold Down              (120f)       descend stair → cave
---   T 840-1079  idle in cave           (240f)       cave-mode settle + parity
---   T 1080-1199 hold Up                (120f)       exit cave via stair
---   T 1200-1319 idle back in room $76  (120f)       post-exit parity
--- Total 1320 frames (~22s @ 60Hz).
---
--- Stair coord tuning: run NES capture first; if Link walks past the stair
--- or stops short, adjust the T=540-659 walk_west phase length. Cave mode
--- id on NES = $06 (dungeon/cave) per Zelda convention; confirm from the
--- capture trace.
+-- Scenario (840 frames @ 60Hz = 14s):
+--   T 000-059   baseline idle          (60f)
+--   T 060-179   hold Left              (120f) walk west to x=$40
+--   T 180-239   idle                   (60f)  align y
+--   T 240-359   hold Up                (120f) walk north to stair + trigger
+--   T 360-599   idle inside cave       (240f) cave-interior parity window
+--   T 600-719   hold Down              (120f) exit stair (auto via Down)
+--   T 720-839   post_exit idle in $77  (120f) final parity
 
 local M = {}
 
-M.SCENARIO_LENGTH = 1320
+M.SCENARIO_LENGTH = 840
 
+-- Tuned 2026-04-15 after first NES pass: 120f Left overshot west edge
+-- into room $76 scroll at t=150. Link walks ~1.25 px/frame; reducing
+-- Left to 45 frames targets x=$40 (stair col) without triggering scroll.
 M.PHASES = {
-    { name = "baseline",        button = nil,    start_t = 0,    end_t = 60   },
-    { name = "walk_left_a",     button = "Left", start_t = 60,   end_t = 300  },
-    { name = "scroll_wait",     button = nil,    start_t = 300,  end_t = 480  },
-    { name = "settle_76",       button = nil,    start_t = 480,  end_t = 540  },
-    { name = "walk_left_b",     button = "Left", start_t = 540,  end_t = 660  },
-    { name = "align_stair",     button = nil,    start_t = 660,  end_t = 720  },
-    { name = "descend",         button = "Down", start_t = 720,  end_t = 840  },
-    { name = "cave_settle",     button = nil,    start_t = 840,  end_t = 1080 },
-    { name = "exit_stair",      button = "Up",   start_t = 1080, end_t = 1200 },
-    { name = "post_exit",       button = nil,    start_t = 1200, end_t = 1320 },
+    { name = "baseline",    button = nil,    start_t = 0,   end_t = 60  },
+    { name = "walk_left",   button = "Left", start_t = 60,  end_t = 101 },
+    { name = "align_y",     button = nil,    start_t = 101, end_t = 165 },
+    { name = "walk_up",     button = "Up",   start_t = 165, end_t = 285 },
+    { name = "cave_settle", button = nil,    start_t = 285, end_t = 645 },
+    { name = "walk_down",   button = "Down", start_t = 645, end_t = 765 },
+    { name = "post_exit",   button = nil,    start_t = 765, end_t = 840 },
 }
 
 function M.phase_for_relative_frame(t)
@@ -67,10 +63,8 @@ function M.phase_summary()
     for i = 1, #M.PHASES do
         local p = M.PHASES[i]
         out[#out + 1] = {
-            name = p.name,
-            button = p.button,
-            start_t = p.start_t,
-            end_t = p.end_t,
+            name = p.name, button = p.button,
+            start_t = p.start_t, end_t = p.end_t,
         }
     end
     return out
