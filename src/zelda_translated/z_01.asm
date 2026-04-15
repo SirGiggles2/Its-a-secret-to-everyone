@@ -7026,6 +7026,7 @@ _anon_z01_83:
     move.b  ($0003,A4),D1
     addx.b  D1,D0   ; ADC $03
     move.b  D0,($0003,A4)
+    rts                  ; PATCH P7: NES implicit RTS via ObjTypeToDamagePoints[0]=$60
     even
 ObjTypeToDamagePoints:
     dc.b    $60, $02, $01, $80, $80, $01, $80, $80
