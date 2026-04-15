@@ -2416,6 +2416,18 @@ def _patch_z01(path):
     else:
         print("  WARNING: _patch_z01 P7 -- GetObjectMiddle anchor not found")
 
+    # P33d: UpdatePersonState_Textbox reads PersonTextAddrs (bank 1) and then
+    # dereferences the returned NES ptr ($8xxx) through the bank window to
+    # fetch text characters.  If a cave/room routine previously pinned bank 5
+    # into the window, the char read returns garbage/zeros, producing the
+    # "000000..." cave textbox symptom.  Pin bank 1 on every entry.
+    text, ok_tbx, err_tbx = _insert_fixed_bank_window_call(
+        text, 'UpdatePersonState_Textbox', 1)
+    if ok_tbx:
+        print("  _patch_z01 P33d: UpdatePersonState_Textbox -> pin bank 1")
+    else:
+        print(f"  WARNING: _patch_z01 P33d -- {err_tbx}")
+
     with open(path, 'w', encoding='utf-8') as f:
         f.write(text)
 

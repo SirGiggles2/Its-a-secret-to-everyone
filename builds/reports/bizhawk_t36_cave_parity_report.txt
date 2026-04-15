@@ -7,7 +7,7 @@ T36_NO_GEN_EXCEPTION: PASS  no exception
 T36_BASELINE_PARITY: PASS  obj_x:OK; obj_y:OK; mode:OK; room:OK
 T36_WALK_TO_STAIR: PASS  nes_t=213 gen_t=213
 T36_CAVE_ENTER_TRIGGERED: PASS  nes_t=213 (mode=$10) gen_t=213 (mode=$10)
-T36_CAVE_INTERIOR_MATCH: FAIL  first diff t=265 nes=(m$10,x$40,y$5A) gen=(m$10,x$40,y$59)
+T36_CAVE_INTERIOR_MATCH: FAIL  first diff t=263 nes=(m$10,x$40,y$59) gen=(m$10,x$40,y$5A)
 T36_CAVE_EXIT_TRIGGERED: FAIL  nes_t=749 gen_t=None
 T36_ROUND_TRIP_READY: FAIL  nes=(r$77,m$05,x$40,y$61,d$00) gen=(r$77,m$0B,x$70,y$D5,d$00)
 T36_PARITY: FAIL

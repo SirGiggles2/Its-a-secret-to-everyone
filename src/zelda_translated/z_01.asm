@@ -776,6 +776,8 @@ TextboxLineAddrsLo:
 
     even
 UpdatePersonState_Textbox:
+    moveq   #1,D0
+    jsr     _copy_bank_to_window   ; PATCH P33b: force window bank 1
     jsr     Link_EndMoveAndDraw_Bank1
     ; If the person's timer has not expired, then return.
     ;
