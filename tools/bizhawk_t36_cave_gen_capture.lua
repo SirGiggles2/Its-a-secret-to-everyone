@@ -69,6 +69,9 @@ local A_CUR_PPUMASK = BUS + 0x00FE
 local A_HELD     = BUS + 0x00F8
 local A_PREV_HELD = BUS + 0x00FA
 local A_OBJ_DIR  = BUS + 0x03F8
+local A_OBJSTATE = BUS + 0x00AC
+local A_MOVEDIR  = BUS + 0x000F
+local A_FACEDIR  = BUS + 0x0098
 local A_SLOT_A0  = BUS + 0x0633
 local A_SLOT_A1  = BUS + 0x0634
 local A_SLOT_A2  = BUS + 0x0635
@@ -474,6 +477,9 @@ for frame = 1, MAX_FRAMES do
                     isupd = ram_u8(A_ISUPDATING_MODE),
                     secret = ram_u8(A_SECRET_COLOR_CYCLE),
                     whirl = ram_u8(A_WHIRL_STATE),
+                    objstate = ram_u8(A_OBJSTATE),
+                    movedir = ram_u8(A_MOVEDIR),
+                    facedir = ram_u8(A_FACEDIR),
                 }
             end
         else
@@ -511,6 +517,9 @@ for frame = 1, MAX_FRAMES do
             isupd = ram_u8(A_ISUPDATING_MODE),
             secret = ram_u8(A_SECRET_COLOR_CYCLE),
             whirl = ram_u8(A_WHIRL_STATE),
+            objstate = ram_u8(A_OBJSTATE),
+            movedir = ram_u8(A_MOVEDIR),
+            facedir = ram_u8(A_FACEDIR),
         }
     end
 
@@ -561,6 +570,7 @@ local function build_json()
         gen_staged_base = {}, gen_staged_event = {},
         gen_active_base = {}, gen_active_event = {}, gen_active_hint = {},
         isupd = {}, secret = {}, whirl = {},
+        objstate = {}, movedir = {}, facedir = {},
     }
     for i = 1, trace_len do
         local e = trace[i]
@@ -592,6 +602,9 @@ local function build_json()
         cols.isupd[i]          = e.isupd or 0
         cols.secret[i]         = e.secret or 0
         cols.whirl[i]          = e.whirl or 0
+        cols.objstate[i]       = e.objstate or 0
+        cols.movedir[i]        = e.movedir or 0
+        cols.facedir[i]        = e.facedir or 0
     end
     local phase_parts = {}
     for i, p in ipairs(SCENARIO.phase_summary()) do
@@ -652,7 +665,10 @@ local function build_json()
         '"gen_active_hint":'  .. json_num_array(cols.gen_active_hint) .. ",",
         '"isupd":'            .. json_num_array(cols.isupd)            .. ",",
         '"secret":'           .. json_num_array(cols.secret)           .. ",",
-        '"whirl":'            .. json_num_array(cols.whirl),
+        '"whirl":'            .. json_num_array(cols.whirl) .. ",",
+        '"objstate":'         .. json_num_array(cols.objstate) .. ",",
+        '"movedir":'          .. json_num_array(cols.movedir) .. ",",
+        '"facedir":'          .. json_num_array(cols.facedir),
         "}",
         "}",
     }, "\n")

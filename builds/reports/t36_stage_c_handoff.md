@@ -22,6 +22,42 @@ advances y or yf. Pure mode-$0B handler bug.
 - Stair descent (mode $10), cave-interior-scroll arrival all match.
 - Only mode $0B's Link-update path fails to translate prev_held → velocity.
 
+## Update 2026-04-15: ObjState + MoveDir captured
+
+Extended NES + Gen captures with `objstate=$00AC`, `movedir=$000F`,
+`facedir=$0098` (commit after this handoff edit). Walk_down window
+(t=600..720):
+
+```
+   t | NES objstate movedir facedir obj_y | GEN objstate movedir facedir obj_y
+ 600 | $00          $00      $08      $D5 | $40          $FF      $08      $D5
+ 646 | $00          $00      $04      $D7 | $40          $FF      $08      $D5
+ 647 | $00          $FF      $04      $D8 | $40          $01      $08      $D5
+ 650 | $00          $00      $04      $DD | $40          $01      $08      $D5
+```
+
+Key divergences, both persistent from cave-entry onward:
+- **Gen objstate stuck at $40** while NES cycles $00/$01. High nibble $4
+  ≠ $1/$2 so the Walker_Move item-state branch at z_07.asm:4231-4233
+  does NOT fire; that's a different path than first hypothesized.
+- **Gen movedir stuck at $FF** while NES varies $00/$01/$FF. $FF is an
+  invalid direction sentinel — likely causing MoveObject to hit a
+  default/no-op branch instead of the N/S/E/W step tables.
+- **Gen facedir stays $08 (North)** while NES updates to $04 (South)
+  when Down arrives at t=646. But obj_dir capture (at $03F8) showed
+  $04 on both. So **$0098 (facedir) and $03F8 (ObjDir[slot]) have
+  diverged on Gen** — these should track together.
+
+Two distinct state-writer bugs converging on frozen Link. Next session
+should:
+1. Grep for `move.b .*,($0098,A4)` and `move.b .*,($00AC,A4)` in
+   translated src — many matches (40+ for $00AC). Filter to those
+   reached in mode-$0B flow: CheckSubroom + mode-$0B init + Walker_Move.
+2. Set a BizHawk bus-write breakpoint on `$FF0098` value=$08 during
+   cave interior to catch the PC writing stale North facing.
+3. Likewise breakpoint `$FF00AC` value=$40 at cave-enter frame to find
+   the bogus ObjState writer.
+
 ## Next step
 
 Trace mode $0B's Link-movement dispatch in `src/zelda_translated/z_0?.asm`.

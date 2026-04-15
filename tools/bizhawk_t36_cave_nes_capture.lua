@@ -58,6 +58,9 @@ local ADDR_CUR_PPUMASK = 0x00FE
 local ADDR_HELD     = 0x00F8
 local ADDR_PREV_HELD = 0x00FA
 local ADDR_OBJ_DIR  = 0x03F8
+local ADDR_OBJSTATE = 0x00AC  -- ObjState[0] (Link state high-nibble gates movement)
+local ADDR_MOVEDIR  = 0x000F  -- moving direction (zeroed by Walker_Move item-state branch)
+local ADDR_FACEDIR  = 0x0098  -- facing direction
 local ADDR_SLOT_A0  = 0x0633
 local ADDR_SLOT_A1  = 0x0634
 local ADDR_SLOT_A2  = 0x0635
@@ -356,6 +359,9 @@ for frame = 1, MAX_FRAMES do
                     cur_col = ram_u8(ADDR_CUR_COL),
                     cur_row = ram_u8(ADDR_CUR_ROW),
                     ppumask = ram_u8(ADDR_CUR_PPUMASK),
+                    objstate = ram_u8(ADDR_OBJSTATE),
+                    movedir = ram_u8(ADDR_MOVEDIR),
+                    facedir = ram_u8(ADDR_FACEDIR),
                 }
             end
         else
@@ -381,6 +387,9 @@ for frame = 1, MAX_FRAMES do
             cur_col = ram_u8(ADDR_CUR_COL),
             cur_row = ram_u8(ADDR_CUR_ROW),
             ppumask = ram_u8(ADDR_CUR_PPUMASK),
+            objstate = ram_u8(ADDR_OBJSTATE),
+            movedir = ram_u8(ADDR_MOVEDIR),
+            facedir = ram_u8(ADDR_FACEDIR),
         }
     end
 
@@ -422,6 +431,7 @@ local function build_json()
         mode = {}, sub = {}, room = {},
         hscroll = {}, vscroll = {},
         cur_col = {}, cur_row = {}, ppumask = {},
+        objstate = {}, movedir = {}, facedir = {},
     }
     for i = 1, trace_len do
         local e = trace[i]
@@ -441,6 +451,9 @@ local function build_json()
         cols.cur_col[i]   = e.cur_col
         cols.cur_row[i]   = e.cur_row
         cols.ppumask[i]   = e.ppumask
+        cols.objstate[i]  = e.objstate or 0
+        cols.movedir[i]   = e.movedir or 0
+        cols.facedir[i]   = e.facedir or 0
     end
     local phase_parts = {}
     for i, p in ipairs(SCENARIO.phase_summary()) do
@@ -482,7 +495,10 @@ local function build_json()
         '"vscroll":'   .. json_num_array(cols.vscroll)   .. ",",
         '"cur_col":'   .. json_num_array(cols.cur_col)   .. ",",
         '"cur_row":'   .. json_num_array(cols.cur_row)   .. ",",
-        '"ppumask":'   .. json_num_array(cols.ppumask),
+        '"ppumask":'   .. json_num_array(cols.ppumask) .. ",",
+        '"objstate":'  .. json_num_array(cols.objstate) .. ",",
+        '"movedir":'   .. json_num_array(cols.movedir) .. ",",
+        '"facedir":'   .. json_num_array(cols.facedir),
         "}",
         "}",
     }, "\n")
