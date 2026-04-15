@@ -80,6 +80,27 @@ end
 
 local function domain_ok(name) return AVAILABLE_DOMAINS[name] == true end
 
+-- Wipe SRAM so no saved game auto-boots; reboot so game re-reads empty SRAM.
+-- Guard: only reboot if SRAM had non-zero bytes (prevents loop after reboot).
+do
+    local needs_reboot = false
+    for _, dn in ipairs({"SRAM", "Cart (Save) RAM", "Save RAM", "Battery RAM", "CartRAM"}) do
+        if domain_ok(dn) then
+            pcall(function()
+                memory.usememorydomain(dn)
+                local sz = memory.getmemorydomainsize(dn)
+                local any_nonzero = false
+                for a = 0, sz - 1 do
+                    if memory.readbyte(a) ~= 0 then any_nonzero = true end
+                    memory.writebyte(a, 0)
+                end
+                if any_nonzero then needs_reboot = true end
+            end)
+        end
+    end
+    if needs_reboot then pcall(function() client.reboot_core() end) end
+end
+
 local function try_read(domain, addr)
     if not domain_ok(domain) then return nil end
     local ok, v = pcall(function()
@@ -216,12 +237,10 @@ for frame = 1, MAX_FRAMES do
     local slot_a1  = ram_u8(ADDR_SLOT_A1)
     local slot_a2  = ram_u8(ADDR_SLOT_A2)
 
-    -- Shortcut: if gameplay already reached (existing save auto-boots), skip FS flow
-    if mode == 0x05 and room_id == TARGET_ROOM_ID
-       and flow_state ~= FLOW_T34_STABILIZE and flow_state ~= FLOW_T34_CAPTURE
-       and flow_state ~= FLOW_DONE then
-        set_flow(FLOW_T34_STABILIZE, frame, "gameplay auto-reached")
-    end
+    -- T34 fresh-register flow: shortcut removed. Every run wipes SRAM at init
+    -- and drives full title->FS1->register-name->FS2->start-game path so Link
+    -- spawn state ($71/$85 frac bytes, $F8/$FA controller prev-held) matches
+    -- between NES and Gen via identical code path (no stale save residue).
 
     if flow_state == FLOW_BOOT_TO_FS1 then
         if mode == 0x01 then

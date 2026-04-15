@@ -2787,7 +2787,8 @@ _L_z01_CheckTileObjectsBlocking_Found:
     ;
     move.b  ($0070,A4),D0
     ori     #$11,CCR  ; SEC: set C+X
-; [SBC unhandled mode=ABS_X] SBC ObjX, X
+    move.b  ($70,A4,D2.W),D1
+    subx.b  D1,D0   ; SBC ObjX,X
     jsr     Abs
     cmpi.b  #$10,D0
     bcc  _L_z01_CheckTileObjectsBlocking_NextTileObj
@@ -2798,7 +2799,9 @@ _L_z01_CheckTileObjectsBlocking_Found:
     move.b  #$03,D1
     addx.b  D1,D0   ; ADC #$03 (X flag = 6502 C)
     ori     #$11,CCR  ; SEC: set C+X
-; [SBC unhandled mode=ABS_X] SBC ObjY, X
+    lea     ($0084,A4),A0
+    move.b  (A0,D2.W),D1
+    subx.b  D1,D0   ; SBC ObjY,X
     jsr     Abs
     cmpi.b  #$10,D0
     bcc  _L_z01_CheckTileObjectsBlocking_NextTileObj
@@ -3267,7 +3270,9 @@ UpdateTrap_Full:
     ;
     move.b  ($0084,A4),D0
     ori     #$11,CCR  ; SEC: set C+X
-; [SBC unhandled mode=ABS_X] SBC ObjY, X
+    lea     ($0084,A4),A0
+    move.b  (A0,D2.W),D1
+    subx.b  D1,D0   ; SBC ObjY,X
     jsr     Abs
     cmpi.b  #$0E,D0
     bcc  _L_z01_UpdateTrap_Full_CheckHorizontal
@@ -3321,7 +3326,8 @@ _L_z01_UpdateTrap_Full_CheckHorizontal:
     ;
     move.b  ($0070,A4),D0
     ori     #$11,CCR  ; SEC: set C+X
-; [SBC unhandled mode=ABS_X] SBC ObjX, X
+    move.b  ($70,A4,D2.W),D1
+    subx.b  D1,D0   ; SBC ObjX,X
     jsr     Abs
     cmpi.b  #$0E,D0
     bcc  _L_z01_UpdateTrap_Full_DrawAndCheckCollisions
@@ -3452,13 +3458,16 @@ UpdateRupeeStash_Full:
     ;
     move.b  ($0084,A4),D0
     ori     #$11,CCR  ; SEC: set C+X
-; [SBC unhandled mode=ABS_X] SBC ObjY, X
+    lea     ($0084,A4),A0
+    move.b  (A0,D2.W),D1
+    subx.b  D1,D0   ; SBC ObjY,X
     jsr     Abs
     cmpi.b  #$09,D0
     bcc  _L_z01_UpdateRupeeStash_Full_DrawRupee
     move.b  ($0070,A4),D0
     ori     #$11,CCR  ; SEC: set C+X
-; [SBC unhandled mode=ABS_X] SBC ObjX, X
+    move.b  ($70,A4,D2.W),D1
+    subx.b  D1,D0   ; SBC ObjX,X
     jsr     Abs
     cmpi.b  #$09,D0
     bcc  _L_z01_UpdateRupeeStash_Full_DrawRupee
@@ -4509,7 +4518,9 @@ SubQSpeedFromPositionFraction:
     lea     ($03A8,A4),A0
     move.b  (A0,D2.W),D0
     ori     #$11,CCR  ; SEC: set C+X
-; [SBC unhandled mode=ABS_X] SBC ObjQSpeedFrac, X
+    lea     ($03BC,A4),A0
+    move.b  (A0,D2.W),D1
+    subx.b  D1,D0   ; SBC ObjQSpeedFrac,X
     lea     ($03A8,A4),A0
     move.b  D0,(A0,D2.W)
     move.w  SR,D1
@@ -5560,7 +5571,9 @@ __far_z_01_0037:
     move.b  #$03,D1
     addx.b  D1,D0   ; ADC #$03 (X flag = 6502 C)
     ori     #$11,CCR  ; SEC: set C+X
-; [SBC unhandled mode=ABS_X] SBC ObjY, X
+    lea     ($0084,A4),A0
+    move.b  (A0,D2.W),D1
+    subx.b  D1,D0   ; SBC ObjY,X
     jsr     Abs
     cmpi.b  #$09,D0
     bcs.s  __far_z_01_0038
@@ -5570,7 +5583,8 @@ __far_z_01_0038:
     ;
     move.b  ($0070,A4),D0
     ori     #$11,CCR  ; SEC: set C+X
-; [SBC unhandled mode=ABS_X] SBC ObjX, X
+    move.b  ($70,A4,D2.W),D1
+    subx.b  D1,D0   ; SBC ObjX,X
     jsr     Abs
     cmpi.b  #$09,D0
     bcs.s  __far_z_01_0039

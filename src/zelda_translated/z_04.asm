@@ -253,7 +253,8 @@ InitWalker:
     moveq   #2,D3
     move.b  ($0061,A4),D0
     ori     #$11,CCR  ; SEC: set C+X
-; [SBC unhandled mode=ABS_X] SBC ObjX, X
+    move.b  ($70,A4,D2.W),D1
+    subx.b  D1,D0   ; SBC ObjX,X
     bcc  _anon_z04_2
     subq.b  #1,D3
 _anon_z04_2:
@@ -273,7 +274,9 @@ _anon_z04_2:
     moveq   #4,D3
     move.b  ($0062,A4),D0
     ori     #$11,CCR  ; SEC: set C+X
-; [SBC unhandled mode=ABS_X] SBC ObjY, X
+    lea     ($0084,A4),A0
+    move.b  (A0,D2.W),D1
+    subx.b  D1,D0   ; SBC ObjY,X
     bcc  _anon_z04_3
     moveq   #8,D3
 _anon_z04_3:
@@ -398,7 +401,8 @@ _anon_z04_7:
     ;
     move.b  ($0061,A4),D0
     ori     #$11,CCR  ; SEC: set C+X
-; [SBC unhandled mode=ABS_X] SBC ObjX, X
+    move.b  ($70,A4,D2.W),D1
+    subx.b  D1,D0   ; SBC ObjX,X
     bpl  _anon_z04_8
     eori.b #$FF,D0
     andi    #$EE,CCR  ; CLC: clear C+X
@@ -429,7 +433,9 @@ _L_z04_Exit_CheckVerticalDistance:
     ;
     move.b  ($0062,A4),D0
     ori     #$11,CCR  ; SEC: set C+X
-; [SBC unhandled mode=ABS_X] SBC ObjY, X
+    lea     ($0084,A4),A0
+    move.b  (A0,D2.W),D1
+    subx.b  D1,D0   ; SBC ObjY,X
     bpl  _anon_z04_9
     eori.b #$FF,D0
     andi    #$EE,CCR  ; CLC: clear C+X
@@ -784,7 +790,9 @@ __far_z_04_0005:
     move.b  #$03,D1
     addx.b  D1,D0   ; ADC #$03 (X flag = 6502 C)
     ori     #$11,CCR  ; SEC: set C+X
-; [SBC unhandled mode=ABS_X] SBC ObjY, X
+    lea     ($0084,A4),A0
+    move.b  (A0,D2.W),D1
+    subx.b  D1,D0   ; SBC ObjY,X
     jmp     _L_z04_UpdateBlock0Idle_TestDifference
 
     even
@@ -808,7 +816,8 @@ __far_z_04_0006:
     moveq   #2,D3
     move.b  ($0070,A4),D0
     ori     #$11,CCR  ; SEC: set C+X
-; [SBC unhandled mode=ABS_X] SBC ObjX, X
+    move.b  ($70,A4,D2.W),D1
+    subx.b  D1,D0   ; SBC ObjX,X
     even
 _L_z04_UpdateBlock0Idle_TestDifference:
     ; If the difference in coordinates is negative, then Link is
@@ -2114,7 +2123,8 @@ _L_z04_UpdateStatues_LoopFireball:
 _L_z04_UpdateStatues_LoopAxis:
     move.b  ($00,A4,D3.W),D0
     ori     #$11,CCR  ; SEC: set C+X
-; [SBC unhandled mode=ABS_Y] SBC $0002, Y
+    move.b  ($02,A4,D3.W),D1
+    subx.b  D1,D0   ; SBC $0002,Y
     cmpi.b  #$18,D0
     bpl  _anon_z04_31
     cmpi.b  #$E8,D0
@@ -2951,7 +2961,9 @@ __far_z_04_0024:
     lea     ($0084,A4),A0
     move.b  (A0,D2.W),D0
     ori     #$11,CCR  ; SEC: set C+X
-; [SBC unhandled mode=ABS_X] SBC Jumper_ObjTargetY, X
+    lea     ($0444,A4),A0
+    move.b  (A0,D2.W),D1
+    subx.b  D1,D0   ; SBC Jumper_ObjTargetY,X
     jsr     Abs
     cmpi.b  #$03,D0
     bcs.s  __far_z_04_0025
@@ -4386,7 +4398,9 @@ _L_z04_UpdateRockOrGravestone_CheckQuest:
     move.b  #$03,D1
     addx.b  D1,D0   ; ADC #$03 (X flag = 6502 C)
     ori     #$11,CCR  ; SEC: set C+X
-; [SBC unhandled mode=ABS_X] SBC ObjY, X
+    lea     ($0084,A4),A0
+    move.b  (A0,D2.W),D1
+    subx.b  D1,D0   ; SBC ObjY,X
     bpl  _L_z04_UpdateRockOrGravestone_CheckDistance
     ; Else negate it, and indicate Link is "up" from the object.
     ;
@@ -5611,7 +5625,8 @@ _anon_z04_76:
     ;
     move.b  ($0070,A4),D0
     ori     #$11,CCR  ; SEC: set C+X
-; [SBC unhandled mode=ABS_X] SBC ObjX, X
+    move.b  ($70,A4,D2.W),D1
+    subx.b  D1,D0   ; SBC ObjX,X
     jsr     Abs
     cmpi.b  #$08,D0
     bcc  _L_z04_UpdateRope_CheckVertical
@@ -5680,7 +5695,9 @@ _L_z04_UpdateRope_CheckVertical:
     ;
     move.b  ($0084,A4),D0
     ori     #$11,CCR  ; SEC: set C+X
-; [SBC unhandled mode=ABS_X] SBC ObjY, X
+    lea     ($0084,A4),A0
+    move.b  (A0,D2.W),D1
+    subx.b  D1,D0   ; SBC ObjY,X
     jsr     Abs
     cmpi.b  #$08,D0
     bcc  _L_z04_UpdateRope_Animate
@@ -7687,7 +7704,8 @@ _L_z04_Dodongo_IsBombInRange_LoopAxis:
     ;
     move.b  ($00,A4,D3.W),D0
     ori     #$11,CCR  ; SEC: set C+X
-; [SBC unhandled mode=ABS_Y] SBC $0002, Y
+    move.b  ($02,A4,D3.W),D1
+    subx.b  D1,D0   ; SBC $0002,Y
     ; If the distance >= positive offset, or < negative offset;
     ; then loop again.
     ;
@@ -10887,7 +10905,8 @@ _L_z04_L_Gleeok_StoreRefSegDistance_KeepSegsNearNeighbors:
     ;
     move.b  ($71,A4,D2.W),D0
     ori     #$11,CCR  ; SEC: set C+X
-; [SBC unhandled mode=ABS_X] SBC ObjX+2, X
+    move.b  ($72,A4,D2.W),D1
+    subx.b  D1,D0   ; SBC ObjX+2,X
     jsr     Abs
     ; If H-distance < third tier H-distance, then this distance is OK.
     ; Go look at the vertical distance.
@@ -10920,7 +10939,9 @@ _L_z04_L_Gleeok_StoreRefSegDistance_CheckDistanceV:
     lea     ($0085,A4),A0
     move.b  (A0,D2.W),D0
     ori     #$11,CCR  ; SEC: set C+X
-; [SBC unhandled mode=ABS_X] SBC ObjY+2, X
+    lea     ($0086,A4),A0
+    move.b  (A0,D2.W),D1
+    subx.b  D1,D0   ; SBC ObjY+2,X
     jsr     Abs
     ; If V-distance < third tier V-distance, then this distance is OK.
     ; Go loop again.
@@ -11097,7 +11118,8 @@ Gleeok_StretchNeck:
     ;
     move.b  ($73,A4,D2.W),D0
     ori     #$11,CCR  ; SEC: set C+X
-; [SBC unhandled mode=ABS_X] SBC ObjX+3, X               ; UNKNOWN: This should probably be ObjX+2, as with ObjY below.
+    move.b  ($73,A4,D2.W),D1
+    subx.b  D1,D0   ; SBC ObjX+3,X
     jsr     Abs
     move.b  ($04D9,A4),D1
     cmp.b   D1,D0
@@ -11120,7 +11142,9 @@ _anon_z04_136:
     lea     ($0087,A4),A0
     move.b  (A0,D2.W),D0
     ori     #$11,CCR  ; SEC: set C+X
-; [SBC unhandled mode=ABS_X] SBC ObjY+2, X
+    lea     ($0086,A4),A0
+    move.b  (A0,D2.W),D1
+    subx.b  D1,D0   ; SBC ObjY+2,X
     jsr     Abs
     move.b  ($04DA,A4),D1
     cmp.b   D1,D0
@@ -12360,7 +12384,8 @@ _L_z04_Lamnola_UpdateHead_TurnTowardLink:
     move.b  D0,($0002,A4)
     move.b  ($0070,A4),D0
     ori     #$11,CCR  ; SEC: set C+X
-; [SBC unhandled mode=ABS_X] SBC ObjX, X
+    move.b  ($70,A4,D2.W),D1
+    subx.b  D1,D0   ; SBC ObjX,X
     bcc  _anon_z04_153
     move.b  ($0002,A4),D1
     lsl.b  #1,D1   ; ASL $02
@@ -12372,7 +12397,9 @@ _anon_z04_153:
     move.b  D0,($0003,A4)
     move.b  ($0084,A4),D0
     ori     #$11,CCR  ; SEC: set C+X
-; [SBC unhandled mode=ABS_X] SBC ObjY, X
+    lea     ($0084,A4),A0
+    move.b  (A0,D2.W),D1
+    subx.b  D1,D0   ; SBC ObjY,X
     bcc  _anon_z04_154
     move.b  ($0003,A4),D1
     lsl.b  #1,D1   ; ASL $03
@@ -13308,7 +13335,9 @@ _anon_z04_164:
 Ganon_GetCurCloudLeft:
     move.b  ($70,A4,D2.W),D0
     ori     #$11,CCR  ; SEC: set C+X
-; [SBC unhandled mode=ABS_X] SBC Ganon_ObjCloudDist, X
+    lea     ($0478,A4),A0
+    move.b  (A0,D2.W),D1
+    subx.b  D1,D0   ; SBC Ganon_ObjCloudDist,X
     move.b  D0,($0000,A4)
     rts
 
@@ -13333,7 +13362,9 @@ Ganon_GetCurCloudTop:
     lea     ($0084,A4),A0
     move.b  (A0,D2.W),D0
     ori     #$11,CCR  ; SEC: set C+X
-; [SBC unhandled mode=ABS_X] SBC Ganon_ObjCloudDist, X
+    lea     ($0478,A4),A0
+    move.b  (A0,D2.W),D1
+    subx.b  D1,D0   ; SBC Ganon_ObjCloudDist,X
     move.b  D0,($0001,A4)
     rts
 

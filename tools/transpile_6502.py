@@ -1057,6 +1057,12 @@ def translate_one_instruction(stripped, line_idx, symtab,
         elif mode == 'ABS':
             gen_read('D1', val)
             e(f'    subx.b  D1,D0   ; SBC {val}')
+        elif mode == 'ABS_X':
+            gen_read('D1', val, 'X')
+            e(f'    subx.b  D1,D0   ; SBC {val},X')
+        elif mode == 'ABS_Y':
+            gen_read('D1', val, 'Y')
+            e(f'    subx.b  D1,D0   ; SBC {val},Y')
         else:
             e(f'; [SBC unhandled mode={mode}] {stripped}')
         # M68K SUBX C flag is INVERTED vs 6502 SBC carry (same as CMP issue)

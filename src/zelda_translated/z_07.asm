@@ -5458,7 +5458,8 @@ _L_z07_SpreadShot_DrawShotCorner:
     cmpi.b  #$FC,D0
     bcc  _L_z07_SpreadShot_NextCorner
     ori     #$11,CCR  ; SEC: set C+X
-; [SBC unhandled mode=ABS_X] SBC ObjX, X
+    move.b  ($70,A4,D2.W),D1
+    subx.b  D1,D0   ; SBC ObjX,X
     jmp     _L_z07_SpreadShot_CheckDistance
 
     even
@@ -6947,7 +6948,8 @@ __far_z_07_0117:
     lea     (BombableWallHotspotsX).l,A0
     move.b  (A0,D3.W),D0
     ori     #$11,CCR  ; SEC: set C+X
-; [SBC unhandled mode=ABS_X] SBC ObjX, X
+    move.b  ($70,A4,D2.W),D1
+    subx.b  D1,D0   ; SBC ObjX,X
     jsr     Abs
     cmpi.b  #$18,D0
     bcc  _L_z07_Bomb_CheckState4_LoopHotspot
@@ -6957,7 +6959,9 @@ __far_z_07_0117:
     lea     (BombableWallHotspotsY).l,A0
     move.b  (A0,D3.W),D0
     ori     #$11,CCR  ; SEC: set C+X
-; [SBC unhandled mode=ABS_X] SBC ObjY, X
+    lea     ($0084,A4),A0
+    move.b  (A0,D2.W),D1
+    subx.b  D1,D0   ; SBC ObjY,X
     jsr     Abs
     cmpi.b  #$18,D0
     bcc  _L_z07_Bomb_CheckState4_LoopHotspot

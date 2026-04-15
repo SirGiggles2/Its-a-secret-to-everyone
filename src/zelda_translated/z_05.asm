@@ -2413,7 +2413,8 @@ __far_z_05_0033:
 IsDistanceSafeToSpawn:
     move.b  ($0070,A4),D0
     ori     #$11,CCR  ; SEC: set C+X
-; [SBC unhandled mode=ABS_X] SBC ObjX, X
+    move.b  ($70,A4,D2.W),D1
+    subx.b  D1,D0   ; SBC ObjX,X
     jsr     Abs
     cmpi.b  #$22,D0
     bcc  _anon_z05_62
@@ -2421,7 +2422,9 @@ IsDistanceSafeToSpawn:
     ;
     move.b  ($0084,A4),D0
     ori     #$11,CCR  ; SEC: set C+X
-; [SBC unhandled mode=ABS_X] SBC ObjY, X
+    lea     ($0084,A4),A0
+    move.b  (A0,D2.W),D1
+    subx.b  D1,D0   ; SBC ObjY,X
     jsr     Abs
     cmpi.b  #$22,D0
     bcc.s  __far_z_05_0034
@@ -3903,7 +3906,9 @@ CheckLadder:
     move.b  #$03,D1
     addx.b  D1,D0   ; ADC #$03 (X flag = 6502 C)
     ori     #$11,CCR  ; SEC: set C+X
-; [SBC unhandled mode=ABS_X] SBC ObjY, X
+    lea     ($0084,A4),A0
+    move.b  (A0,D2.W),D1
+    subx.b  D1,D0   ; SBC ObjY,X
     jmp     _L_z05_CheckLadder_CheckDistanceToLadder
 
 _anon_z05_85:
@@ -3921,7 +3926,8 @@ _anon_z05_85:
     bne  _L_z05_CheckLadder_StashLadder
     move.b  ($0070,A4),D0
     ori     #$11,CCR  ; SEC: set C+X
-; [SBC unhandled mode=ABS_X] SBC ObjX, X
+    move.b  ($70,A4,D2.W),D1
+    subx.b  D1,D0   ; SBC ObjX,X
     even
 _L_z05_CheckLadder_CheckDistanceToLadder:
     ; If absolute distance < $10, go handle movement on the ladder and set state 2.
@@ -4911,7 +4917,9 @@ _L_z05_ModifyObjCountByHistoryUW_CalcObjCount:
     move.b  ($00EB,A4),D3
     move.b  ($0003,A4),D0
     ori     #$11,CCR  ; SEC: set C+X
-; [SBC unhandled mode=ABS_Y] SBC LevelKillCounts, Y
+    lea     ($0560,A4),A0
+    move.b  (A0,D3.W),D1
+    subx.b  D1,D0   ; SBC LevelKillCounts,Y
     bpl  _anon_z05_102
     even
 _L_z05_ModifyObjCountByHistoryUW_ResetObjCount:
