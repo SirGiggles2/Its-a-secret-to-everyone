@@ -354,8 +354,11 @@ local function bp_make(label)
         local t = (bp_t0 >= 0) and (bp_current_frame - bp_t0) or -1
         local eb = ram_u8(BUS + 0x00EB)
         local sram_val = ram_u8(BUS + 0x6000 + 0x08FE + eb)
-        bp_write(string.format("WR f=%d t=%d %s val=%02X PC=%08X mode=%02X y=%02X EB=%02X SRAM[%04X]=%02X",
-            bp_current_frame, t, label, v or -1, pc, m, ram_u8(A_OBJ_Y), eb, 0x08FE+eb, sram_val))
+        local zp02 = ram_u8(BUS + 0x0002)
+        local zp03 = ram_u8(BUS + 0x0003)
+        local zp0350 = ram_u8(BUS + 0x0350)
+        bp_write(string.format("WR f=%d t=%d %s val=%02X PC=%08X mode=%02X y=%02X EB=%02X SRAM[%04X]=%02X zp02=%02X zp03=%02X cur0350=%02X",
+            bp_current_frame, t, label, v or -1, pc, m, ram_u8(A_OBJ_Y), eb, 0x08FE+eb, sram_val, zp02, zp03, zp0350))
     end
 end
 for _, dn in ipairs({"System Bus", "68K BUS", "M68K BUS"}) do
