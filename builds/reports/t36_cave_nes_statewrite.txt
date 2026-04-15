@@ -1,0 +1,2 @@
+NES domains: WRAM,CHR,CIRAM (nametables),PRG ROM,PALRAM,OAM,System Bus
+NES BP installed on System Bus

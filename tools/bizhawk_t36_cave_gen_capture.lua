@@ -333,7 +333,9 @@ local bp_t0 = -1
 local function bp_make(label)
     return function(a, v, flags)
         local m = ram_u8(A_MODE)
-        if m ~= 0x0B then return end  -- only cave interior
+        -- objstate: watch across all modes (want to see clear-writers in any mode).
+        -- facedir/movedir: keep mode-$0B-only filter from prior stage.
+        if label ~= "objstate" and m ~= 0x0B then return end
         -- skip Walker_Move's per-frame zero+set (PC $5206A/$5201E) to trim noise
         local ok2, regs2 = pcall(function() return emu.getregisters() end)
         local pc_pre = (ok2 and regs2) and (regs2["M68K PC"] or regs2["PC"] or 0) or 0

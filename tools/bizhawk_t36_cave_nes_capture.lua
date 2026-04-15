@@ -229,10 +229,60 @@ record("=================================================================")
 record(string.format("SCENARIO_LENGTH=%d", SCENARIO.SCENARIO_LENGTH))
 
 -- ---------------------------------------------------------------------------
+-- NES bus-write watcher: log $0098 (facedir), $00AC (objstate), $000F (movedir)
+-- during mode $0B. Captures 6502 PC for each hit.
+-- ---------------------------------------------------------------------------
+local NES_BP_LOG = repo_path("builds\\reports\\t36_cave_nes_statewrite.txt")
+local nbp_lines = {}
+local nbp_count = 0
+local NBP_MAX = 4000
+local function nbp_write(s)
+    if nbp_count >= NBP_MAX then return end
+    nbp_count = nbp_count + 1
+    nbp_lines[#nbp_lines + 1] = s
+    local f = io.open(NES_BP_LOG, "w")
+    if f then f:write(table.concat(nbp_lines, "\n") .. "\n"); f:close() end
+end
+local nbp_current_frame = 0
+local nbp_t0 = -1
+local function nbp_make(label)
+    return function(a, v, flags)
+        local m = ram_u8(ADDR_MODE)
+        if m ~= 0x0B and m ~= 0x10 then return end
+        local pc = 0
+        local ok, regs = pcall(function() return emu.getregisters() end)
+        if ok and regs then pc = regs["PC"] or regs["6502 PC"] or regs["A"] or 0 end
+        local t = (nbp_t0 >= 0) and (nbp_current_frame - nbp_t0) or -1
+        nbp_write(string.format("WR f=%d t=%d %s val=%02X PC=%04X mode=%02X y=%02X",
+            nbp_current_frame, t, label, v or -1, pc, m, ram_u8(ADDR_OBJ_Y)))
+    end
+end
+do
+    local dlist = {}
+    local okl, lst = pcall(memory.getmemorydomainlist)
+    if okl and type(lst) == "table" then for _, n in ipairs(lst) do dlist[#dlist+1] = n end end
+    nbp_write("NES domains: " .. table.concat(dlist, ","))
+end
+local nbp_installed = false
+for _, dn in ipairs({"System Bus", "RAM", "WRAM", "Main RAM"}) do
+    if AVAILABLE_DOMAINS[dn] and not nbp_installed then
+        local ok = pcall(function()
+            event.on_bus_write(nbp_make("facedir "), 0x0098, dn)
+            event.on_bus_write(nbp_make("objstate"), 0x00AC, dn)
+            event.on_bus_write(nbp_make("movedir "), 0x000F, dn)
+        end)
+        if ok then nbp_write("NES BP installed on "..dn); nbp_installed = true end
+    end
+end
+if not nbp_installed then nbp_write("NES BP FAILED to install") end
+
+-- ---------------------------------------------------------------------------
 -- Main loop
 -- ---------------------------------------------------------------------------
 local last_heartbeat = 0
 for frame = 1, MAX_FRAMES do
+    nbp_current_frame = frame
+    nbp_t0 = CAPTURE.t0_frame
     local mode     = ram_u8(ADDR_MODE)
     if frame - last_heartbeat >= 200 then
         last_heartbeat = frame
