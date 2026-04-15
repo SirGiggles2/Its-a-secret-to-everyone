@@ -30,13 +30,23 @@ end)())
 
 local SCENARIO = dofile(repo_path("tools\\t35_input_scenario.lua"))
 
+-- Optional recorded boot flow. If tools\bootflow_gen.txt exists, replay it
+-- verbatim instead of the boot-flow state machine below. Recording is produced
+-- by tools\bizhawk_record_bootflow.lua.
+local REPLAY = nil
+do
+    local replay_mod = dofile(repo_path("tools\\bootflow_replay.lua"))
+    local ok, r = pcall(replay_mod.load, repo_path("tools\\bootflow_gen.txt"), "GEN")
+    if ok and r then REPLAY = r end
+end
+
 local OUT_TXT  = repo_path("builds\\reports\\t35_scroll_gen_capture.txt")
 local OUT_JSON = repo_path("builds\\reports\\t35_scroll_gen_capture.json")
 local OUT_PNG  = repo_path("builds\\reports\\t35_scroll_gen_capture.png")
 
 local MAX_FRAMES = 8000
 local MODE0_BOOT_TIMEOUT = 1200
-local TARGET_NAME_PROGRESS = 3
+local TARGET_NAME_PROGRESS = 5
 local LINK_STABLE_FRAMES = 60
 local TARGET_ROOM_ID = 0x77
 
@@ -77,6 +87,7 @@ local A_ACTIVE_BASE_VSRAM  = BUS + 0x0836  -- word
 local A_ACTIVE_EVENT_VSRAM = BUS + 0x0838  -- word
 local A_ACTIVE_HINT_CTR    = BUS + 0x083A  -- byte
 
+local FLOW_REPLAY          = "REPLAY_BOOTFLOW"
 local FLOW_BOOT_TO_FS1     = "BOOT_TO_FS1"
 local FLOW_FS1_SELECT_REG  = "FS1_SELECT_REGISTER"
 local FLOW_FS1_ENTER_REG   = "FS1_ENTER_REGISTER"
@@ -265,7 +276,10 @@ end
 -- ---------------------------------------------------------------------------
 -- Capture state
 -- ---------------------------------------------------------------------------
-local flow_state = FLOW_BOOT_TO_FS1
+local flow_state = REPLAY and FLOW_REPLAY or FLOW_BOOT_TO_FS1
+if REPLAY then
+    record(string.format("REPLAY: loaded bootflow_gen.txt (%d frames)", REPLAY:length()))
+end
 local function set_flow(next_state, frame, reason)
     if flow_state == next_state then return end
     record(string.format("f%04d flow %s -> %s (%s)", frame, flow_state, next_state, reason or ""))
@@ -320,7 +334,20 @@ for frame = 1, MAX_FRAMES do
         break
     end
 
-    if flow_state == FLOW_BOOT_TO_FS1 then
+    if flow_state == FLOW_REPLAY then
+        -- Watch for stability gate; replay keeps feeding recorded pad until we
+        -- see Mode5/room77 + Link stable. At that point switch to T35_STABILIZE
+        -- and let normal stability/capture logic take over.
+        if mode == 0x05 and room_id == TARGET_ROOM_ID then
+            if not CAPTURE.reached_mode5 then
+                CAPTURE.reached_mode5 = true
+                CAPTURE.reached_mode5_frame = frame
+                record(string.format("f%04d REPLAY reached Mode5 room $%02X", frame, room_id))
+            end
+            set_flow(FLOW_T35_STABILIZE, frame, "replay hit gameplay")
+        end
+
+    elseif flow_state == FLOW_BOOT_TO_FS1 then
         if mode == 0x01 then
             set_flow(FLOW_FS1_SELECT_REG, frame, "entered Mode1")
         elseif frame > MODE0_BOOT_TIMEOUT then
@@ -355,14 +382,20 @@ for frame = 1, MAX_FRAMES do
         if CAPTURE.name_progress_events >= TARGET_NAME_PROGRESS then
             set_flow(FLOW_MODEE_FINISH, frame, "name progress target reached")
         else
-            schedule_input("C", 1, 10)  -- Gen C = NES A
+            schedule_input("B", 1, 10)  -- Gen B → NES A (pick letter; nes_io.asm:1698)
         end
 
     elseif flow_state == FLOW_MODEE_FINISH then
         if mode ~= 0x0E then
             set_flow(FLOW_WAIT_GAMEPLAY, frame, "left ModeE")
         else
-            schedule_input("Start", 2, 14)
+            -- Mirror NES probe: Select moves cursor to End slot ($03), then Start commits.
+            -- Genesis C button maps to NES Select (see nes_io.asm:1711-1717).
+            if cur_slot ~= 0x03 then
+                schedule_input("C", 1, 10)
+            else
+                schedule_input("Start", 2, 14)
+            end
         end
 
     elseif flow_state == FLOW_WAIT_GAMEPLAY then
@@ -473,6 +506,8 @@ for frame = 1, MAX_FRAMES do
     local pad
     if flow_state == FLOW_T35_CAPTURE then
         pad = SCENARIO.get_input_for_relative_frame(frame - CAPTURE.t0_frame)
+    elseif flow_state == FLOW_REPLAY and REPLAY then
+        pad = REPLAY:pad_for_frame(frame) or {}
     else
         pad = build_boot_pad()
     end
