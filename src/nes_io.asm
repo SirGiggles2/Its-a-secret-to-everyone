@@ -62,6 +62,9 @@ PPU_SCRL_X      equ PPU_STATE_BASE+6    ; byte: horizontal scroll value
 PPU_SCRL_Y      equ PPU_STATE_BASE+7    ; byte: vertical scroll value
 PPU_DBUF        equ PPU_STATE_BASE+8    ; byte: buffered even-addr byte
 PPU_DHALF       equ PPU_STATE_BASE+9    ; byte: 1 if even-addr byte pending
+PPU_S0_TOGGLE   equ PPU_STATE_BASE+10   ; byte: toggles bit 6 across _ppu_read_2 calls
+                                         ; so both wait-for-set and wait-for-clear
+                                         ; sprite-0 loops terminate on Genesis.
 ;------------------------------------------------------------------------------
 ; MMC1 state RAM — placed at $FF0810 (immediately after 16-byte PPU block).
 ; Initialised to zero by genesis_shell before jsr IsrReset.
@@ -203,7 +206,15 @@ _ppu_read_1:
 ;------------------------------------------------------------------------------
 _ppu_read_2:
     clr.b   (PPU_LATCH).l          ; reading $2002 resets the w register
-    move.b  #$80,D0                ; VBlank flag set (warmup loops will exit)
+    ; b7 (VBlank) always set — exits warmup loops.
+    ; b6 (sprite-0-hit) toggles each call — lets BOTH wait-for-set
+    ; (WaitAndScrollToSplitBottom, z_05:1530) AND wait-for-clear
+    ; (IsrNmi_WaitVBlankEnd, z_07:1533) loops terminate in ≤2 iters.
+    ; Gen has no scanline split — skipping is correct.
+    move.b  (PPU_S0_TOGGLE).l,D0
+    eori.b  #$40,D0
+    move.b  D0,(PPU_S0_TOGGLE).l
+    ori.b   #$80,D0                ; always assert VBlank bit
     rts
 
 ;------------------------------------------------------------------------------

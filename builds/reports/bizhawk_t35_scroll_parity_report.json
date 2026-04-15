@@ -24,19 +24,19 @@
     },
     "T35_SCROLL_RAMP_PARITY": {
       "pass": false,
-      "detail": "hscroll first diff t=184 phase=walk_left nes=$FC gen=$00"
+      "detail": "hscroll first diff t=183 phase=walk_left nes=$00 gen=$FC"
     },
     "T35_FINAL_ROOM_ID": {
-      "pass": true,
-      "detail": "nes=$76 gen=$76 expected=$76"
+      "pass": false,
+      "detail": "nes=$76 gen=$8C expected=$76"
     },
     "T35_FINAL_MODE": {
       "pass": false,
-      "detail": "nes=$05 gen=$07 expected=$05"
+      "detail": "nes=$05 gen=$60 expected=$05"
     },
     "T35_ROUND_TRIP_READY": {
       "pass": false,
-      "detail": "nes=($B2,$8D,$00) gen=($00,$8D,$02)"
+      "detail": "nes=($B2,$8D,$00) gen=($00,$00,$00)"
     }
   }
 }
