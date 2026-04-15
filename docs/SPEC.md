@@ -375,13 +375,13 @@ Note: room $76 is both the left-adjacent overworld room from the opening room $7
 
 **As of 2026-04-13** — room $77 BG parity is fully green. Palette cache (NT_ATTR_CACHE_BASE), bank window, and transfer interpreter fixes landed. T30/T31/T32 all PASS. T33 (Link spawn) is also PASS. Next graphics target: room $76 reached by the left transition from room $77.
 
-- **Last continuously-verified milestone (green probe chain):** T32 (Room Parity). Verified probes T1–T27 still hold per the table below; T30/T31/T32 green via parity report.
+- **Last continuously-verified milestone (green probe chain):** T34 (D-pad movement parity — 8/8 PASS). Verified probes T1–T27 still hold per the table below; T30/T31/T32/T33/T34 green via parity reports.
 - **Out-of-order complete:** T42, T43, T44 (audio tier) — see Audio Bridge Plan for implementation details.
 - **In progress:** T28 (story-scroll stall reproduced at frame 2107 with no exception), T29 (natural file-select flow works but probe threshold still flags `T29_NMI_CONTINUOUS`).
-- **Probe pass:** T30 (8/8 PASS), T31 (parity green: 0 tile/palette mismatches across stages 1-3), T32 (transfer stream 27/27 matched, producer_match=True).
+- **Probe pass:** T30 (8/8 PASS), T31 (parity green: 0 tile/palette mismatches across stages 1-3), T32 (transfer stream 27/27 matched, producer_match=True), T33 (7/7 Link spawn), T34 (8/8 D-pad movement parity — byte-exact NES vs Gen across 361 frames).
 - **Transition note:** room $77 steady-state parity is green, but room-to-room transition ownership remains separate work. Mode 4/6/7 transition choreography and dynamic transfer lifetime are in scope for room $76.
 - **Transition fixture:** room $76 is the canonical first non-$77 graphics target because it exercises room transition ownership, not just steady-state room decode.
-- **Not yet started:** T34–T41 (remaining gameplay/fidelity), T45–T48 (save RAM, hardware test, Quest 1 completion).
+- **Not yet started:** T35–T41 (remaining gameplay/fidelity), T45–T48 (save RAM, hardware test, Quest 1 completion).
 
 | Probe | Tests | Score |
 |-------|-------|-------|
