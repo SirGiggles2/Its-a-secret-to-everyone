@@ -87,6 +87,11 @@ local A_ACTIVE_BASE_VSRAM  = BUS + 0x0836  -- word
 local A_ACTIVE_EVENT_VSRAM = BUS + 0x0838  -- word
 local A_ACTIVE_HINT_CTR    = BUS + 0x083A  -- byte
 
+-- T35 Stage B diag: Mode7 dispatch-gating bytes
+local A_ISUPDATING_MODE    = BUS + 0x0011  -- byte (0=Update table, !=0=Init table)
+local A_SECRET_COLOR_CYCLE = BUS + 0x051A  -- byte (InitMode7_Sub0 stall gate)
+local A_WHIRL_STATE        = BUS + 0x0522  -- byte (InitMode7_Sub0 teleport gate)
+
 local FLOW_REPLAY          = "REPLAY_BOOTFLOW"
 local FLOW_BOOT_TO_FS1     = "BOOT_TO_FS1"
 local FLOW_FS1_SELECT_REG  = "FS1_SELECT_REGISTER"
@@ -466,6 +471,9 @@ for frame = 1, MAX_FRAMES do
                     gen_active_base = ram_u16(A_ACTIVE_BASE_VSRAM),
                     gen_active_event = ram_u16(A_ACTIVE_EVENT_VSRAM),
                     gen_active_hint = ram_u8(A_ACTIVE_HINT_CTR),
+                    isupd = ram_u8(A_ISUPDATING_MODE),
+                    secret = ram_u8(A_SECRET_COLOR_CYCLE),
+                    whirl = ram_u8(A_WHIRL_STATE),
                 }
             end
         else
@@ -500,6 +508,9 @@ for frame = 1, MAX_FRAMES do
             gen_active_base = ram_u16(A_ACTIVE_BASE_VSRAM),
             gen_active_event = ram_u16(A_ACTIVE_EVENT_VSRAM),
             gen_active_hint = ram_u8(A_ACTIVE_HINT_CTR),
+            isupd = ram_u8(A_ISUPDATING_MODE),
+            secret = ram_u8(A_SECRET_COLOR_CYCLE),
+            whirl = ram_u8(A_WHIRL_STATE),
         }
     end
 
@@ -549,6 +560,7 @@ local function build_json()
         gen_staged_mode = {}, gen_staged_hint = {},
         gen_staged_base = {}, gen_staged_event = {},
         gen_active_base = {}, gen_active_event = {}, gen_active_hint = {},
+        isupd = {}, secret = {}, whirl = {},
     }
     for i = 1, trace_len do
         local e = trace[i]
@@ -577,6 +589,9 @@ local function build_json()
         cols.gen_active_base[i]  = e.gen_active_base
         cols.gen_active_event[i] = e.gen_active_event
         cols.gen_active_hint[i]  = e.gen_active_hint
+        cols.isupd[i]          = e.isupd or 0
+        cols.secret[i]         = e.secret or 0
+        cols.whirl[i]          = e.whirl or 0
     end
     local phase_parts = {}
     for i, p in ipairs(SCENARIO.phase_summary()) do
@@ -634,7 +649,10 @@ local function build_json()
         '"gen_staged_event":' .. json_num_array(cols.gen_staged_event) .. ",",
         '"gen_active_base":'  .. json_num_array(cols.gen_active_base)  .. ",",
         '"gen_active_event":' .. json_num_array(cols.gen_active_event) .. ",",
-        '"gen_active_hint":'  .. json_num_array(cols.gen_active_hint),
+        '"gen_active_hint":'  .. json_num_array(cols.gen_active_hint) .. ",",
+        '"isupd":'            .. json_num_array(cols.isupd)            .. ",",
+        '"secret":'           .. json_num_array(cols.secret)           .. ",",
+        '"whirl":'            .. json_num_array(cols.whirl),
         "}",
         "}",
     }, "\n")
