@@ -114,6 +114,51 @@ No direct writes to $FF0011/$FF0013 in nes_io.asm / genesis_shell.asm.
 
 Exhausted by /whatnext stop-rule — no further static pass warranted.
 
+## Live write-bp evidence (commit WIP) — `builds/reports/t35_writebp_gen.txt`
+
+Ran `tools/run_t35_writebp_gen.bat`. Output captured writes to $FF0011 / $FF0013
+across full boot + transition. T0 gate never fired (mode=5 room=$77 60-frame
+stable check didn't trigger), so WINDOW heartbeat lines absent, but raw PC log
+is complete. Key PCs correlated via `builds/whatif.lst`:
+
+- `PC=0x00034888/0x0003488C` → `BeginUpdateMode` (z_01.asm:3708)
+  writes `sub=0; addq.b #1,isupd` — byte-exact vs NES `INC IsUpdatingMode`.
+- `PC=0x0005037A/0x0005037E` → `EndGameMode` — `isupd=0; sub=0`.
+- `PC=0x00045194` → `_anon_z05_21` (InitMode7_Sub0 tail / `L1433A_IncSubmode`)
+- `PC=0x000450DA` → InitMode7 sub-2 area
+- `PC=0x0004620E` → `CueTransferPlayAreaAttrsHalfAndAdvanceSubmode` area
+
+**None of BeginUpdateMode / EndGameMode is buggy — both byte-exact.**
+
+## Real smoking gun — parity report diagnostics
+
+`builds/reports/bizhawk_t35_scroll_parity_report.txt`:
+
+```
+DIAG sub_first_diff      t=176  nes=$02 gen=$03   ← Gen ahead by 1 submode
+DIAG cur_col_first_diff  t=182  nes=$41 gen=$FF   ← column arg corrupted
+DIAG hscroll_first_diff  t=184  nes=$FC gen=$00   ← scroll never ticks
+DIAG mode_first_diff     t=250  nes=$04 gen=$07   ← Gen stuck in Mode 7
+```
+
+Gen submode **advances one extra time** around t=176. Prior hypotheses H1/H2
+focused on Sub0/Sub7 transitions — this shifts suspect to the Sub2→Sub3 area.
+`CurCol=$FF` at t=182 means scroll row/column init loaded a bad column index,
+which makes subsequent hscroll writes target nowhere and scroll stalls.
+
+## Resume plan (next session)
+
+1. Narrow write-bp watch to window t=170..190 only (skip earlier boot
+   chatter) by setting T0 manually in the probe based on known 618-frame
+   bootflow length rather than the broken mode=5 gate.
+2. Log writes to `$FF0013` (sub) AND `$FF003E` (CurCol) and `$FF0026`
+   (scroll-related) simultaneously.
+3. Identify which routine writes sub=$03 at or before t=176 that NES
+   doesn't — that's the extra submode advance path.
+4. Check `InitMode7_Sub2_TransferPlayAreaAttrsToNT1/NT2` and
+   `CueTransferPlayAreaAttrsHalfAndAdvanceSubmode` at z_05.asm:3111 — the
+   submode-+1 path that runs after transfer buffer flush.
+
 ## How to resume
 
 1. Load `builds/whatif.md` in BizHawk. Replay `tools/bootflow_gen.txt`
