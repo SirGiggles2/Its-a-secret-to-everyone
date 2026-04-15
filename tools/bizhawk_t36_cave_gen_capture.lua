@@ -314,10 +314,56 @@ record("=================================================================")
 record(string.format("SCENARIO_LENGTH=%d", SCENARIO.SCENARIO_LENGTH))
 
 -- ---------------------------------------------------------------------------
+-- State-write watcher (T36 Stage C debug): log writes to $FF0098 (facedir),
+-- $FF00AC (objstate), $FF000F (movedir) during cave-related modes.
+-- ---------------------------------------------------------------------------
+local BP_LOG = repo_path("builds\\reports\\t36_cave_statewrite.txt")
+local bp_lines = {}
+local bp_count = 0
+local BP_MAX = 4000
+local function bp_write(s)
+    if bp_count >= BP_MAX then return end
+    bp_count = bp_count + 1
+    bp_lines[#bp_lines + 1] = s
+    local f = io.open(BP_LOG, "w")
+    if f then f:write(table.concat(bp_lines, "\n") .. "\n"); f:close() end
+end
+local bp_current_frame = 0
+local bp_t0 = -1
+local function bp_make(label)
+    return function(a, v, flags)
+        local m = ram_u8(A_MODE)
+        if m ~= 0x0B then return end  -- only cave interior
+        -- skip Walker_Move's per-frame zero+set (PC $5206A/$5201E) to trim noise
+        local ok2, regs2 = pcall(function() return emu.getregisters() end)
+        local pc_pre = (ok2 and regs2) and (regs2["M68K PC"] or regs2["PC"] or 0) or 0
+        if label == "movedir " and (pc_pre == 0x5206A or pc_pre == 0x5201E) then return end
+        local pc = 0
+        local ok, regs = pcall(function() return emu.getregisters() end)
+        if ok and regs then pc = regs["M68K PC"] or regs["PC"] or 0 end
+        local t = (bp_t0 >= 0) and (bp_current_frame - bp_t0) or -1
+        bp_write(string.format("WR f=%d t=%d %s val=%02X PC=%08X mode=%02X y=%02X",
+            bp_current_frame, t, label, v or -1, pc, m, ram_u8(A_OBJ_Y)))
+    end
+end
+for _, dn in ipairs({"System Bus", "68K BUS", "M68K BUS"}) do
+    if domain_ok(dn) then
+        local ok = pcall(function()
+            event.on_bus_write(bp_make("facedir "), 0xFF0098, dn)
+            event.on_bus_write(bp_make("objstate"), 0xFF00AC, dn)
+            event.on_bus_write(bp_make("movedir "), 0xFF000F, dn)
+        end)
+        if ok then bp_write("BP installed on "..dn); break end
+    end
+end
+
+-- ---------------------------------------------------------------------------
 -- Main loop
 -- ---------------------------------------------------------------------------
 local last_heartbeat = 0
 for frame = 1, MAX_FRAMES do
+    bp_current_frame = frame
+    bp_t0 = CAPTURE.t0_frame
     local mode     = ram_u8(A_MODE)
     if frame - last_heartbeat >= 200 then
         last_heartbeat = frame
