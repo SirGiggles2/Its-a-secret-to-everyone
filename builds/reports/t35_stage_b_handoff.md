@@ -1,6 +1,22 @@
 # T35 Stage B — Handoff Note
 
-Status: **stuck in plan phase after 2 failed hypotheses.** Per /whatnext
+**UPDATE 2026-04-15 (commit b016fdc6): Root cause fixed.**
+Live PC tracing via `tools/bizhawk_t35_curcol_bp.lua` proved CPU was
+trapped in `WaitAndScrollToSplitBottom` (z_05:1528) polling `_ppu_read_2`
+for sprite-0-hit bit $40 that the Genesis stub never set. Fixed by
+toggling bit 6 in `_ppu_read_2` (see `src/nes_io.asm:204`). Scroll now
+runs (gen_scrl_x=$BC at t=200, room $77→$76 commits on cue).
+
+**New downstream failure at t≈400**: mode=$60, room=$8C, Link=($00,$00),
+active_base=$608C. Looks like execution walks into garbage memory or
+mode dispatch table reads wrong slot after scroll completes. Need a
+fresh probe pass — likely PC sampling around t=300..400 when the second
+divergence begins. Parity gates still 5/9 but failing symptoms are
+completely different from pre-fix (progress, not regression).
+
+---
+
+Status (original): **stuck in plan phase after 2 failed hypotheses.** Per /whatnext
 stop-rule, not attempting a third code-inspection pass; need live CPU
 tracing to distinguish remaining branches.
 
