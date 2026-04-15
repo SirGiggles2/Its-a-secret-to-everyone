@@ -541,6 +541,7 @@ All probes in `tools/`, run via `tools/run_all_probes.bat`.
 | `bizhawk_subphase_timing_probe.lua` | Bug C diag | `builds/reports/bizhawk_subphase_timing_probe.txt` |
 | `bizhawk_t29_file_select_probe.lua` | T29 | `builds/reports/bizhawk_t29_file_select_probe.txt` |
 | `bizhawk_t30_room_load_probe.lua` | T30/T31/T32 | `builds/reports/bizhawk_t30_room_load_probe.txt` |
+| `bizhawk_t35_scroll_{nes,gen}_capture.lua` + `compare_t35_scroll_parity.py` | T35 | `builds/reports/bizhawk_t35_scroll_parity_report.txt` |
 
 - `bizhawk_t30_room_load_probe.lua` room gate uses `RoomId` at NES RAM `$00EB`.
 - NES RAM `$003C` is logged as diagnostic-only telemetry in this flow and is not used for pass/fail room gating.
