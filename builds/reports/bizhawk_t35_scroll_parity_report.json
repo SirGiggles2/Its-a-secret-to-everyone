@@ -1,0 +1,42 @@
+{
+  "verdict": "T35_PARITY: FAIL",
+  "all_pass": false,
+  "gates": {
+    "T35_NES_CAPTURE_OK": {
+      "pass": true,
+      "detail": "file=t35_scroll_nes_capture.json len=540"
+    },
+    "T35_GEN_CAPTURE_OK": {
+      "pass": true,
+      "detail": "file=t35_scroll_gen_capture.json len=540"
+    },
+    "T35_NO_GEN_EXCEPTION": {
+      "pass": true,
+      "detail": "no exception"
+    },
+    "T35_PRE_TRANSITION_PARITY": {
+      "pass": true,
+      "detail": "obj_x: all 60 frames match; obj_y: all 60 frames match; hscroll: all 60 frames match; room: all 60 frames match"
+    },
+    "T35_TRANSITION_TRIGGERED": {
+      "pass": true,
+      "detail": "nes_leave_t=154 gen_leave_t=154 drift=0"
+    },
+    "T35_SCROLL_RAMP_PARITY": {
+      "pass": false,
+      "detail": "hscroll first diff t=184 phase=walk_left nes=$FC gen=$00"
+    },
+    "T35_FINAL_ROOM_ID": {
+      "pass": true,
+      "detail": "nes=$76 gen=$76 expected=$76"
+    },
+    "T35_FINAL_MODE": {
+      "pass": false,
+      "detail": "nes=$05 gen=$07 expected=$05"
+    },
+    "T35_ROUND_TRIP_READY": {
+      "pass": false,
+      "detail": "nes=($B2,$8D,$00) gen=($00,$8D,$02)"
+    }
+  }
+}

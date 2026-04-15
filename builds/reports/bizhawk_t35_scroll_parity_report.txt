@@ -1,0 +1,39 @@
+=================================================================
+T35 SCREEN-SCROLL PARITY REPORT (NES reference vs Genesis)
+=================================================================
+T35_NES_CAPTURE_OK: PASS  file=t35_scroll_nes_capture.json len=540
+T35_GEN_CAPTURE_OK: PASS  file=t35_scroll_gen_capture.json len=540
+T35_NO_GEN_EXCEPTION: PASS  no exception
+T35_PRE_TRANSITION_PARITY: PASS  obj_x: all 60 frames match; obj_y: all 60 frames match; hscroll: all 60 frames match; room: all 60 frames match
+T35_TRANSITION_TRIGGERED: PASS  nes_leave_t=154 gen_leave_t=154 drift=0
+T35_SCROLL_RAMP_PARITY: FAIL  hscroll first diff t=184 phase=walk_left nes=$FC gen=$00
+T35_FINAL_ROOM_ID: PASS  nes=$76 gen=$76 expected=$76
+T35_FINAL_MODE: FAIL  nes=$05 gen=$07 expected=$05
+T35_ROUND_TRIP_READY: FAIL  nes=($B2,$8D,$00) gen=($00,$8D,$02)
+
+--- diagnostics (non-gating) ---
+DIAG obj_x_first_diff=t=184 phase=walk_left nes=$04 gen=$00
+DIAG obj_y_first_diff=None (all 540 match)
+DIAG obj_xf_first_diff=t=295 phase=walk_left nes=$31 gen=$30
+DIAG obj_yf_first_diff=t=253 phase=walk_left nes=$6D gen=$87
+DIAG obj_dir_first_diff=t=253 phase=walk_left nes=$00 gen=$02
+DIAG held_first_diff=None (all 540 match)
+DIAG mode_first_diff=t=250 phase=walk_left nes=$04 gen=$07
+DIAG sub_first_diff=t=176 phase=walk_left nes=$02 gen=$03
+DIAG room_first_diff=t=155 phase=walk_left nes=$76 gen=$77
+DIAG hscroll_first_diff=t=184 phase=walk_left nes=$FC gen=$00
+DIAG vscroll_first_diff=None (all 540 match)
+DIAG cur_col_first_diff=t=182 phase=walk_left nes=$41 gen=$FF
+DIAG cur_row_first_diff=t=156 phase=walk_left nes=$15 gen=$13
+DIAG ppumask_first_diff=None (all 540 match)
+
+--- Genesis-only scroll glue timeline (sampled) ---
+  t=  0 gen_scrl_x=$00 gen_scrl_y=$00 staged_mode=$00 active_base=$0008 active_event=$0008 room=$77
+  t= 59 gen_scrl_x=$00 gen_scrl_y=$00 staged_mode=$00 active_base=$0008 active_event=$0008 room=$77
+  t= 60 gen_scrl_x=$00 gen_scrl_y=$00 staged_mode=$00 active_base=$0008 active_event=$0008 room=$77
+  t=120 gen_scrl_x=$00 gen_scrl_y=$00 staged_mode=$00 active_base=$0008 active_event=$0008 room=$77
+  t=200 gen_scrl_x=$00 gen_scrl_y=$00 staged_mode=$01 active_base=$0000 active_event=$0008 room=$76
+  t=300 gen_scrl_x=$00 gen_scrl_y=$00 staged_mode=$01 active_base=$0000 active_event=$0008 room=$76
+  t=400 gen_scrl_x=$00 gen_scrl_y=$00 staged_mode=$01 active_base=$0000 active_event=$0008 room=$76
+  t=539 gen_scrl_x=$00 gen_scrl_y=$00 staged_mode=$01 active_base=$0000 active_event=$0008 room=$76
+T35_PARITY: FAIL
