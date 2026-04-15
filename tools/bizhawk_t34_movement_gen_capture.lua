@@ -48,8 +48,14 @@ local A_OBJ_XF   = BUS + 0x0071
 local A_OBJ_Y    = BUS + 0x0084
 local A_OBJ_YF   = BUS + 0x0085
 local A_HELD     = BUS + 0x00F8
+local A_PREV_HELD = BUS + 0x00FA
 local A_ROOM_ID  = BUS + 0x00EB
 local A_OBJ_DIR  = BUS + 0x03F8
+-- T34 diag: ObjGridOffset/ObjQSpeedFrac slot 0, grid cell limits
+local A_GRID_OFF  = BUS + 0x0394
+local A_Q_SPEED_F = BUS + 0x03BC
+local A_POS_LIMIT = BUS + 0x010E
+local A_NEG_LIMIT = BUS + 0x010F
 local A_CUR_SLOT = BUS + 0x0016
 local A_SLOT_A0  = BUS + 0x0633
 local A_SLOT_A1  = BUS + 0x0634
@@ -377,6 +383,9 @@ for frame = 1, MAX_FRAMES do
                     t = 0, obj_x = obj_x, obj_xf = ram_u8(A_OBJ_XF),
                     obj_y = obj_y, obj_yf = ram_u8(A_OBJ_YF),
                     obj_dir = CAPTURE.baseline_dir, held = ram_u8(A_HELD),
+                    prev_held = ram_u8(A_PREV_HELD),
+                    grid_off = ram_u8(A_GRID_OFF), q_speed_f = ram_u8(A_Q_SPEED_F),
+                    pos_limit = ram_u8(A_POS_LIMIT), neg_limit = ram_u8(A_NEG_LIMIT),
                     mode = mode, sub = sub, room = room_id,
                 }
             end
@@ -402,6 +411,9 @@ for frame = 1, MAX_FRAMES do
             obj_x = obj_x, obj_xf = obj_xf,
             obj_y = obj_y, obj_yf = obj_yf,
             obj_dir = obj_dir, held = held,
+            prev_held = ram_u8(A_PREV_HELD),
+            grid_off = ram_u8(A_GRID_OFF), q_speed_f = ram_u8(A_Q_SPEED_F),
+            pos_limit = ram_u8(A_POS_LIMIT), neg_limit = ram_u8(A_NEG_LIMIT),
             mode = mode, sub = sub, room = room_id,
         }
         if SAT_CP_SET[t] then
@@ -453,11 +465,15 @@ end
 -- ---------------------------------------------------------------------------
 local function build_json()
     local t_a, x_a, xf_a, y_a, yf_a, d_a, h_a = {}, {}, {}, {}, {}, {}, {}
+    local ph_a, go_a, qs_a, pl_a, nl_a = {}, {}, {}, {}, {}
     for i = 1, trace_len do
         local e = trace[i]
         t_a[i]=e.t; x_a[i]=e.obj_x; xf_a[i]=e.obj_xf
         y_a[i]=e.obj_y; yf_a[i]=e.obj_yf
         d_a[i]=e.obj_dir; h_a[i]=e.held
+        ph_a[i]=e.prev_held or 0; go_a[i]=e.grid_off or 0
+        qs_a[i]=e.q_speed_f or 0; pl_a[i]=e.pos_limit or 0
+        nl_a[i]=e.neg_limit or 0
     end
 
     local phase_parts = {}
@@ -505,7 +521,12 @@ local function build_json()
         '"obj_y":'  .. json_num_array(y_a)  .. ",",
         '"obj_yf":' .. json_num_array(yf_a) .. ",",
         '"obj_dir":'.. json_num_array(d_a)  .. ",",
-        '"held":'   .. json_num_array(h_a),
+        '"held":'   .. json_num_array(h_a)  .. ",",
+        '"prev_held":' .. json_num_array(ph_a) .. ",",
+        '"grid_off":'  .. json_num_array(go_a) .. ",",
+        '"q_speed_f":' .. json_num_array(qs_a) .. ",",
+        '"pos_limit":' .. json_num_array(pl_a) .. ",",
+        '"neg_limit":' .. json_num_array(nl_a),
         "}",
         "}",
     }, "\n")

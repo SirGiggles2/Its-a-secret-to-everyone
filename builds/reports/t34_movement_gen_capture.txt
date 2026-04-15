@@ -6,16 +6,16 @@ f0094 flow BOOT_TO_FS1 -> FS1_SELECT_REGISTER (entered Mode1)
 f0097 flow FS1_SELECT_REGISTER -> FS1_ENTER_REGISTER (CurSaveSlot = 3)
 f0125 flow FS1_ENTER_REGISTER -> MODEE_TYPE_NAME (entered ModeE)
 f0151 flow MODEE_TYPE_NAME -> MODEE_FINISH (name progress target reached)
-f0211 flow MODEE_FINISH -> WAIT_GAMEPLAY (left ModeE)
-f0219 flow WAIT_GAMEPLAY -> FS1_START_GAME (back to Mode1 after register)
-f0270 flow FS1_START_GAME -> T34_STABILIZE (left Mode1 (gameplay starting))
-f0556 reached Mode5 room $77
-f0616 T=0 baseline x=$78 y=$8D dir=$00
-f0616 flow T34_STABILIZE -> T34_CAPTURE (T34 capture window open)
-f0977 flow T34_CAPTURE -> DONE (capture complete)
+f0931 flow MODEE_FINISH -> WAIT_GAMEPLAY (left ModeE)
+f0939 flow WAIT_GAMEPLAY -> FS1_START_GAME (back to Mode1 after register)
+f0959 flow FS1_START_GAME -> T34_STABILIZE (left Mode1 (gameplay starting))
+f1077 reached Mode5 room $77
+f1137 T=0 baseline x=$78 y=$8D dir=$00
+f1137 flow T34_STABILIZE -> T34_CAPTURE (T34 capture window open)
+f1498 flow T34_CAPTURE -> DONE (capture complete)
 TRACE_LENGTH=361 (expected 361)
 REACHED_MODE5=true
-T0_FRAME=616
+T0_FRAME=1137
 GEN_EXCEPTION_FRAME=null
 FINAL t=360 x=$60.30 y=$6E.87 dir=$00 held=$00
 BASELINE x=$78 y=$8D dir=$00

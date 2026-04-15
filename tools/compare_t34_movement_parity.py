@@ -159,6 +159,35 @@ def main() -> int:
     emit(f"DIAG obj_xf_first_diff={xf_diff}")
     emit(f"DIAG obj_yf_first_diff={yf_diff}")
 
+    # --- T34 Phase-1 instrumentation: extra-field diffs (non-gating) ---
+    def diag_diff(key: str) -> None:
+        if key not in nt or key not in gt:
+            emit(f"DIAG {key}_first_diff=MISSING")
+            return
+        d = first_diff(nt[key], gt[key])
+        if d is None:
+            emit(f"DIAG {key}_first_diff=None (all {len(nt[key])} match)")
+        else:
+            t, nv, gv = d
+            emit(f"DIAG {key}_first_diff=t={t} phase={phase_for_t(phases, t)} "
+                 f"nes=${nv:02X} gen=${gv:02X}")
+
+    for k in ("prev_held", "grid_off", "q_speed_f", "pos_limit", "neg_limit"):
+        diag_diff(k)
+
+    # Around-the-bug window dump (HELD t=210-213 and OBJY t=170-173)
+    def window_dump(label: str, keys: list[str], t_lo: int, t_hi: int) -> None:
+        emit(f"DIAG WINDOW {label}:")
+        for t in range(t_lo, t_hi + 1):
+            cols = []
+            for k in keys:
+                if k in nt and k in gt and t < len(nt[k]) and t < len(gt[k]):
+                    cols.append(f"{k}:N${nt[k][t]:02X}/G${gt[k][t]:02X}")
+            emit(f"  t={t} " + " ".join(cols))
+
+    window_dump("HELD-region", ["held", "prev_held", "obj_dir", "obj_x"], 209, 214)
+    window_dump("OBJY-region", ["obj_y", "obj_yf", "grid_off", "q_speed_f"], 169, 174)
+
     all_pass = all(r["pass"] for r in results.values())
     return write(results, lines, all_pass)
 
