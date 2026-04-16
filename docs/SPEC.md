@@ -349,9 +349,24 @@ After room $77 (opening overworld screen) renders:
 | T33 | Link spawn | Link sprite appears at starting position | ✓ PASS (7/7 — OAM tile data loaded, SAT tile words present, 8×16 mode active, Link visible at starting position in `builds/reports/bizhawk_t33_link_spawn.png`) |
 | T34 | D-pad movement | Link moves through overworld room | ✓ PASS (8/8 — NES reference vs Genesis byte-parity all 361 frames across scripted D→L→U→R square walk in room $77: baseline (x=$78,y=$8D,dir=$00), obj_x, obj_y, obj_dir, held-buttons, no-exception. Root cause fixed: transpiler SBC X-flag polarity — `subx.b` now wrapped with `eori #$10,CCR` pair to match 6502 SBC borrow semantics. Report: `builds/reports/t34_movement_parity_report.txt`) |
 | T35 | Screen scroll | Left transition from room $77 into overworld room $76 completes correctly; scroll settles and final room graphics match NES | ✓ PASS (9/9 — T35 parity report, NES vs Gen across 540 frames. Final room $76, mode $05, Link (x=$B2,y=$8D,dir=$00) byte-exact. Ramp allows ±2 frame phase tolerance (Gen skips sprite-0-hit raster split). Two root causes fixed: (1) `_ppu_read_2` stub — added bit-6 toggle so sprite-0-hit wait loops (`WaitAndScrollToSplitBottom`) + wait-for-clear (`IsrNmi_WaitVBlankEnd`) both terminate; (2) transpiler patch P7 — insert explicit `rts` between `GetObjectMiddle` tail and `ObjTypeToDamagePoints` data, because NES relied on first data byte `$60` being an implicit RTS opcode while M68K reads it as `BRA.s` and runs data as code. Report: `builds/reports/bizhawk_t35_scroll_parity_report.txt`) |
-| T36 | Cave enter | Can enter first cave (room $76) and exit | Pending |
+| T36 | Cave enter | Can enter first cave (room $76) and exit | Pending — **no dedicated T36 gate infra**. Room $76 parity (overworld form) currently fails `ROUTE_TRANSITION_SETTLE` per `builds/reports/room76_parity_report.txt:140` (Genesis settles to mode/sub $07/$00, NES to $05/$00). T36 cave-mode capture/compare scripts are not yet in tree; cave entry verified only via manual inspection of `builds/reports/t36_gen_in.png` vs `t36_nes_in.png`. Genesis-native optimization plan Phase 2 (Window plane HUD) targets this gap. |
 
 Note: room $76 is both the left-adjacent overworld room from the opening room $77 and the room containing the first cave. Adjacency is proven by room-id offset logic and the left-navigation probe, not by the cave milestone alone.
+
+### Phase 0 Honest Baseline (pre Genesis-native optimization work)
+
+Snapshot from static reports as of this commit. Re-run `tools/run_all_gates.bat` to refresh.
+
+| Gate | Status | Source |
+|---|---|---|
+| T34 movement parity (9/9) | PASS | `builds/reports/t34_movement_parity_report.txt` |
+| T35 scroll parity (9/9) | PASS | `builds/reports/bizhawk_t35_scroll_parity_report.txt` |
+| Room $77 parity | PASS | `builds/reports/room77_parity_report.txt` |
+| Room $76 parity | **FAIL** (ROUTE_TRANSITION_SETTLE, pre-existing) | `builds/reports/room76_parity_report.txt:140` |
+| T36 cave entry | **no infra** — manual only | N/A |
+| Perf baseline | **not yet captured** — run `tools/bizhawk_perf_sample.lua` | N/A |
+
+Later phases of the optimization plan must not degrade any PASS gate and must not make Room $76 failure worse. Any new PASS → FAIL transition is a regression; Room $76 staying at ROUTE_TRANSITION_SETTLE is tolerated (pre-existing, tracked separately).
 
 ### Fidelity (T37–T41)
 
