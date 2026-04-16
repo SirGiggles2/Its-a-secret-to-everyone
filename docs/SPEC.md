@@ -372,7 +372,7 @@ Later phases of the optimization plan must not degrade any PASS gate and must no
 
 | # | Name | Description | Status |
 |---|------|-------------|--------|
-| T37 | Sword pickup | Sword pickup sequence triggers correctly | Pending |
+| T37 | Sword pickup | Sword pickup sequence triggers correctly | ✓ PASS (9/9 — byte-exact NES vs Gen across 1400 frames; inv_sword 0→$01 at t=606 on both platforms, delta=+0f; round-trip end (r$77,m$05,x$40,y$4D) matches. Scenario fix: align_x_sword cut 25→5 frames to respect NES 8px tile-snap (Link was overshooting $78→$80). Report: `builds/reports/bizhawk_t37_sword_parity_report.txt`) |
 | T38 | Enemy AI | Enemies spawn, move, and respond to hits | Pending |
 | T39 | HUD | Hearts, rupee count, map render correctly | PASS — Stage B (`97f6fb7b`) + Stage C (`85a18e5e`) HUD-row guard covers rows 0-3 unconditionally and rows 4-6 when `GameMode=$0B`, `GameMode=$10` (stair transition), or `TargetMode=$0B` (cave-entry in flight). All three T39 waypoints captured on Zelda27.176 show HUD intact + cave/overworld content correct: pre (t=40, mode$05): hearts/letters/map indicator/triangle preserved; in (t=500, mode$0B): HUD + cave interior + full "IT'S DANGEROUS TO GO ALONE" textbox; post (t=820, mode$05/target$0B): HUD + cave residue mid-transition (expected). T36 parity steady 8/9. Regression baseline: 4 PASS / 3 FAIL pre-existing (T8 NMI cadence, T12/T13 VRAM mapping drift — all predate Stage B, confirmed on pre-fix Zelda27.178). See `builds/reports/t39_stage_b_fix.md` and `builds/reports/t39_stage_c_fix.md`. |
 | T40 | Dungeon 1 | Level 1 dungeon loads and is navigable | Pending |
