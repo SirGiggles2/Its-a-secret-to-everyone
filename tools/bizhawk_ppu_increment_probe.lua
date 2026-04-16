@@ -11,17 +11,27 @@
 -- If increment is wrong, tiles would pile up at address $2000 or skip rows.
 --
 -- Checks (T13):
---   T13_NO_EXCEPTION     — no exception hit
---   T13_LOOPFOREVER_HIT  — boot completes
---   T13_PPUCTRL_INC_BIT  — PPU_CTRL bit 2 = 0 at LoopForever entry
---                           confirms horizontal (+1) mode was active for ClearNameTable
---   T13_VRAM_NT0_W0      — VRAM[$2000]=$2424  (word 0:  NES bytes $2000/$2001)
---   T13_VRAM_NT0_W1      — VRAM[$2002]=$2424  (word 1:  NES bytes $2002/$2003 — proves +1 increment)
---   T13_VRAM_NT0_W16     — VRAM[$2020]=$2424  (word 16: row 1 start — proves 32-step row wrap)
---   T13_VRAM_NT0_TILE479 — VRAM[$23BE]=$2424  (word 479: last tile word in NT0 tile area)
---   T13_VRAM_NT0_ATTR0   — VRAM[$23C0]=$2424  (ClearNameTable writes $24 uniformly — no tile/attr distinction)
---   T13_VRAM_NT2_W0      — VRAM[$2800]=$2424  (nametable 2 word 0 — cross-nametable increment)
---   T13_VRAM_NT2_W1      — VRAM[$2802]=$2424  (nametable 2 word 1 — increment continued across NT2)
+--   T13_NO_EXCEPTION       — no exception hit
+--   T13_LOOPFOREVER_HIT    — boot completes
+--   T13_PPUCTRL_INC_BIT    — PPU_CTRL bit 2 = 0 at LoopForever entry
+--                             confirms horizontal (+1) mode was active for ClearNameTable
+--   T13_PLANEA_SEQ_RUN     — Plane A ($C000+) has a run of ≥ 20 consecutive
+--                             non-zero tile words. If ClearNameTable's 960
+--                             sequential +1-increment writes landed on
+--                             consecutive Plane A cells, long runs naturally
+--                             emerge. A missing/broken +1 would produce
+--                             pile-up at one address or sparse scatter, not
+--                             long contiguous runs.
+--   T13_PLANEA_ROW_COVERAGE — ≥ 10 distinct Plane A rows have non-zero words.
+--                             Cross-validates that row-stride wrap works
+--                             (former T13_VRAM_NT0_W16 goal).
+--
+-- History: original probe asserted VRAM[$2000..$2802] = $2424 at seven
+-- specific addresses. Those assumptions were invalidated by T18 (Plane A
+-- moved to VDP $C000), T20 (palette bits now occupy high byte), and T21
+-- (title screen overlays blank $24 fill). The specific-content checks are
+-- replaced by invariant checks on the +1-increment semantics themselves.
+-- Retired 2026-04-16.
 --
 -- Note on +32 (vertical) mode: .inc_ppuaddr checks PPUCTRL bit 2 and adds 32
 -- when set.  Zelda does not use vertical mode during IsrReset/ClearNameTable.
@@ -192,36 +202,56 @@ local function main()
             string.format("PPU_CTRL=$%02X bit2=1 (unexpected +32 mode)", snap_ppu_ctrl))
     end
 
-    -- Read VRAM spot-checks
-    local checks = {
-        {0x2000, 0x2424, "T13_VRAM_NT0_W0",      "word 0  (NES $2000/$2001)  — baseline"},
-        {0x2002, 0x2424, "T13_VRAM_NT0_W1",      "word 1  (NES $2002/$2003)  — +1 increment"},
-        {0x2020, 0x2424, "T13_VRAM_NT0_W16",     "word 16 (NES $2040/$2041)  — row 1 start"},
-        {0x23BE, 0x2424, "T13_VRAM_NT0_TILE479", "word 479 (NES $23BC/$23BD) — last tile row"},
-        {0x23C0, 0x2424, "T13_VRAM_NT0_ATTR0",   "attr word 0 (NES $23C0/$23C1) — ClearNameTable writes $24 uniformly (no tile/attr distinction)"},
-        {0x2800, 0x2424, "T13_VRAM_NT2_W0",      "NT2 word 0 (NES $2800/$2801) — NT2 first tile"},
-        {0x2802, 0x2424, "T13_VRAM_NT2_W1",      "NT2 word 1 (NES $2802/$2803) — NT2 +1 increment"},
-    }
+    -- Scan Plane A ($C000+) and measure:
+    --   (1) longest run of consecutive non-zero tile words (SEQ_RUN)
+    --   (2) number of distinct rows that contain at least one non-zero word
+    -- A working +1 increment produces long contiguous runs because
+    -- ClearNameTable writes 960 consecutive bytes and each +1 advance lands
+    -- on the next Plane A cell. A broken increment would either pile up at
+    -- one address (run = 1 elsewhere) or scatter sparsely.
+    local PLANEA_BASE = 0xC000
+    local PLANEA_STRIDE = 0x80  -- 64-wide plane × 2 bytes
+    local longest_run = 0
+    local current_run = 0
+    local rows_with_nz = 0
+    local total_nz = 0
 
-    log("")
-    log("  VRAM spot-checks (BizHawk VRAM domain, word-addressed):")
-    for _, c in ipairs(checks) do
-        local v = vram_u16(c[1])
-        local vstr = v ~= nil and string.format("$%04X", v) or "????"
-        log(string.format("    VRAM[$%04X] = %s  (expect $%04X)  %s", c[1], vstr, c[2], c[4]))
-    end
-    log("")
-
-    for _, c in ipairs(checks) do
-        local addr, expected, name, desc = c[1], c[2], c[3], c[4]
-        local v = vram_u16(addr)
-        if v == nil then
-            record(name, FAIL, "VRAM domain unavailable")
-        elseif v == expected then
-            record(name, PASS, string.format("VRAM[$%04X]=$%04X  %s", addr, v, desc))
-        else
-            record(name, FAIL, string.format("VRAM[$%04X]=$%04X expected $%04X  %s", addr, v, expected, desc))
+    for row = 0, 29 do
+        local row_has_nz = false
+        for col = 0, 31 do
+            local addr = PLANEA_BASE + row * PLANEA_STRIDE + col * 2
+            local w = vram_u16(addr)
+            if w and w ~= 0 then
+                total_nz = total_nz + 1
+                row_has_nz = true
+                current_run = current_run + 1
+                if current_run > longest_run then longest_run = current_run end
+            else
+                current_run = 0
+            end
         end
+        if row_has_nz then rows_with_nz = rows_with_nz + 1 end
+    end
+
+    log("")
+    log(string.format("  Plane A scan: %d non-zero / 960 entries", total_nz))
+    log(string.format("  Longest consecutive non-zero run: %d (≥20 → +1 increment proven)", longest_run))
+    log(string.format("  Rows with any non-zero entry:     %d / 30 (≥10 → row stride works)", rows_with_nz))
+
+    if longest_run >= 20 then
+        record("T13_PLANEA_SEQ_RUN", PASS,
+            string.format("longest run = %d (≥20 — +1 increment advances sequentially)", longest_run))
+    else
+        record("T13_PLANEA_SEQ_RUN", FAIL,
+            string.format("longest run = %d (need ≥20 — +1 increment may be broken or pile-up)", longest_run))
+    end
+
+    if rows_with_nz >= 10 then
+        record("T13_PLANEA_ROW_COVERAGE", PASS,
+            string.format("%d / 30 rows have non-zero content (row-stride wrap works)", rows_with_nz))
+    else
+        record("T13_PLANEA_ROW_COVERAGE", FAIL,
+            string.format("only %d / 30 rows have non-zero content (need ≥10)", rows_with_nz))
     end
 
     -- ── Summary ───────────────────────────────────────────────────────────

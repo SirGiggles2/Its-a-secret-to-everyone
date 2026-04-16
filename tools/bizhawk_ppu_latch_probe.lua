@@ -12,11 +12,16 @@
 --   T12_PPU_DHALF_CLEAR  — PPU_DHALF ($FF0809) = 0 at LoopForever entry
 --                           not mid-word-write; both bytes of a pair were committed
 --   T12_PPU_VADDR_VALID  — PPU_VADDR ($FF0802) readable (latch tracks address state)
---   T12_VRAM_NT0         — VRAM[$2000] = $2424 at steady state
---                           ClearNameTable writes tile $24 as paired bytes; _ppu_write_7
---                           buffers even byte, flushes word on odd byte at NES-native addr
---   T12_VRAM_NT2         — VRAM[$2800] = $2424 at steady state
---                           second ClearNameTable call targets nametable 2 ($2800)
+--   T12_VRAM_PLANEA_NT   — Plane A ($C000+) contains ≥ 64 non-zero tile words.
+--                           Cross-validates that PPUADDR → _ppu_write_7 →
+--                           VDP VRAM write reached the nametable, without
+--                           asserting specific content (title screen layout
+--                           varies by build, palette bits are valid post-T20).
+--                           History: previously checked VRAM[$2000]=$2424 and
+--                           VRAM[$2800]=$2424. Both assumptions invalidated by
+--                           T18 (Plane A moved to VDP $C000), T20 (palette bits
+--                           now occupy high byte), and T21 (title screen
+--                           overlays blank $24 fill). Retired 2026-04-16.
 --
 -- Addresses from builds/whatif.lst (regenerate after code changes):
 --   LoopForever    $0005F2
@@ -265,35 +270,42 @@ local function main()
         record("T12_PPU_VADDR_VALID", FAIL, "PPU_VADDR not readable")
     end
 
-    -- Read VRAM at steady state (after IsrNmi has run ~60 times)
-    local vram_2000 = vram_u16(0x2000)
-    local vram_2800 = vram_u16(0x2800)
-    log(string.format("  VRAM[$2000] = %s  (nametable 0, NES-native addr)",
-        vram_2000 ~= nil and string.format("$%04X", vram_2000) or "??"))
-    log(string.format("  VRAM[$2800] = %s  (nametable 2, NES-native addr)",
-        vram_2800 ~= nil and string.format("$%04X", vram_2800) or "??"))
-
-    -- T12_VRAM_NT0
-    -- ClearNameTable writes tile $24 as byte-pairs to NES VRAM $2000.
-    -- _ppu_write_7: even ($2000) buffers $24; odd ($2001) flushes word $2424 to
-    -- VDP VRAM at NES-native word address $2000.
-    if vram_2000 == nil then
-        record("T12_VRAM_NT0", FAIL, "VRAM domain unavailable")
-    elseif vram_2000 == 0x2424 then
-        record("T12_VRAM_NT0", PASS, "VRAM[$2000]=$2424 (tile $24 pair written correctly)")
-    else
-        record("T12_VRAM_NT0", FAIL,
-            string.format("VRAM[$2000]=$%04X expected $2424", vram_2000))
+    -- Scan Plane A at VDP VRAM $C000 for non-zero tile words. 32x30 NES
+    -- nametable cells map to Plane A rows 0-29 cols 0-31 (plane stride $80).
+    -- Any nonzero word proves that PPU $2000+ writes reached the VDP through
+    -- the full latch → _ppu_write_7 → VDP VRAM path.
+    local PLANEA_BASE = 0xC000
+    local PLANEA_STRIDE = 0x80  -- 64-wide plane × 2 bytes
+    local planea_nonzero = 0
+    local first_nz_addr, first_nz_val = nil, nil
+    for row = 0, 29 do
+        for col = 0, 31 do
+            local addr = PLANEA_BASE + row * PLANEA_STRIDE + col * 2
+            local w = vram_u16(addr)
+            if w and w ~= 0 then
+                planea_nonzero = planea_nonzero + 1
+                if not first_nz_addr then
+                    first_nz_addr = addr
+                    first_nz_val  = w
+                end
+            end
+        end
+    end
+    log(string.format("  Plane A non-zero entries: %d / 960", planea_nonzero))
+    if first_nz_addr then
+        log(string.format("  first non-zero: VRAM[$%04X] = $%04X", first_nz_addr, first_nz_val))
     end
 
-    -- T12_VRAM_NT2
-    if vram_2800 == nil then
-        record("T12_VRAM_NT2", FAIL, "VRAM domain unavailable")
-    elseif vram_2800 == 0x2424 then
-        record("T12_VRAM_NT2", PASS, "VRAM[$2800]=$2424 (nametable 2 written correctly)")
+    -- T12_VRAM_PLANEA_NT
+    -- ≥64 non-zero entries proves the latch + write path produced substantial
+    -- nametable coverage — enough to rule out stray-byte artifacts but
+    -- independent of specific title-screen content.
+    if planea_nonzero >= 64 then
+        record("T12_VRAM_PLANEA_NT", PASS,
+            string.format("Plane A has %d non-zero tile words (≥64 threshold)", planea_nonzero))
     else
-        record("T12_VRAM_NT2", FAIL,
-            string.format("VRAM[$2800]=$%04X expected $2424", vram_2800))
+        record("T12_VRAM_PLANEA_NT", FAIL,
+            string.format("Plane A only has %d non-zero tile words (need ≥64)", planea_nonzero))
     end
 
     -- ── Summary ───────────────────────────────────────────────────────────

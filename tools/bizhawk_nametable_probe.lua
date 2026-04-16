@@ -11,16 +11,22 @@
 -- (64H × 32V plane; row stride = 64 tiles × 2 bytes = $80)
 --
 -- Probe checks (T18):
---   T18_NO_EXCEPTION       — no exception handler hit during boot
---   T18_LOOPFOREVER_HIT    — boot completed (LoopForever reached)
---   T18_NT_DATA_PRESENT    — VRAM $2000-$23BF has at least one non-zero word
---                            (nametable write path fired)
---   T18_NT_COVERAGE        — ≥ 64 distinct non-zero entries in nametable area
---                            (substantial nametable coverage, not a stray byte)
---   T18_TILE_WORD_FORMAT   — all non-zero entries have high byte = $00
---                            (palette 0, no flip, no priority — tile index only)
---   T18_NT_NOT_CHR         — first non-zero entry is NOT at exact address $2000
---                            OR high byte is 0 (data is tile words, not raw CHR bytes)
+--   T18_NO_EXCEPTION         — no exception handler hit during boot
+--   T18_LOOPFOREVER_HIT      — boot completed (LoopForever reached)
+--   T18_NT_DATA_PRESENT      — Plane A ($C000+) has at least one non-zero word
+--                              (nametable write path fired)
+--   T18_NT_COVERAGE          — ≥ 64 distinct non-zero entries in Plane A
+--                              (substantial nametable coverage, not a stray byte)
+--   T18_PALETTE_BITS_PRESENT — ≥ 1 non-zero entry has palette bits (bits 14-13)
+--                              set. Proves the T20 attribute-mapping path
+--                              writes palette bits into the tile word. A pure
+--                              T18 nametable-only build would leave palette=0.
+--
+-- History: the original T18_TILE_WORD_FORMAT check required high-byte=$00
+-- on every entry. That was valid only before T20 landed; post-T20 the high
+-- byte legitimately carries palette bits 14-13 (and 10-8 of the 11-bit tile
+-- index). Retired 2026-04-16 after scanner fix revealed the probe was
+-- flagging T20's CORRECT output as a regression.
 
 local ROOT     = "C:\\Users\\Jake Diggity\\Documents\\GitHub\\FINAL TRY\\"
 local OUT_DIR  = ROOT .. "builds\\reports\\"
@@ -153,7 +159,7 @@ local function main()
     local NT_COLS = 32
     local NT_ROW_STRIDE = 0x80     -- 64-tile-wide plane, 2 bytes/tile
     local nonzero_count = 0
-    local bad_hi_count  = 0        -- entries where high byte ≠ $00
+    local palette_bits_count = 0   -- entries where palette bits 14-13 are set
     local first_nz_addr = nil
     local first_nz_val  = nil
 
@@ -172,9 +178,9 @@ local function main()
                     first_nz_addr = vdp_addr
                     first_nz_val  = word
                 end
-                local hi = (word >> 8) & 0xFF
-                if hi ~= 0 then
-                    bad_hi_count = bad_hi_count + 1
+                -- Palette bits are 14-13 of the tile word (mask $6000).
+                if (word & 0x6000) ~= 0 then
+                    palette_bits_count = palette_bits_count + 1
                 end
                 if dump_count < 12 then
                     log(string.format("    VRAM[$%04X] = $%04X  (row=%d col=%d tile=$%02X)",
@@ -186,8 +192,8 @@ local function main()
     end
     if dump_count >= 12 then log("    ... (truncated)") end
     log("")
-    log(string.format("  nonzero_count = %d  (of 960 nametable entries)", nonzero_count))
-    log(string.format("  bad_hi_count  = %d  (entries with high byte ≠ $00)", bad_hi_count))
+    log(string.format("  nonzero_count      = %d  (of 960 nametable entries)", nonzero_count))
+    log(string.format("  palette_bits_count = %d  (entries with palette bits 14-13 set)", palette_bits_count))
     log("")
 
     -- Also dump raw VRAM $2000-$200F for spot check
@@ -232,15 +238,18 @@ local function main()
             string.format("only %d non-zero entries (need ≥64 for coverage confidence)", nonzero_count))
     end
 
-    -- T18_TILE_WORD_FORMAT
-    if bad_hi_count == 0 and nonzero_count > 0 then
-        record("T18_TILE_WORD_FORMAT", PASS,
-            string.format("all %d non-zero entries have high byte=$00 (valid tile word)", nonzero_count))
+    -- T18_PALETTE_BITS_PRESENT
+    -- Post-T20, the attribute-mapping path writes palette index into bits
+    -- 14-13 of each tile word. A build with T20 live should have at least
+    -- one entry with palette bits set.
+    if palette_bits_count >= 1 then
+        record("T18_PALETTE_BITS_PRESENT", PASS,
+            string.format("%d entries carry palette bits (T20 attribute path is live)", palette_bits_count))
     elseif nonzero_count == 0 then
-        record("T18_TILE_WORD_FORMAT", FAIL, "no nametable data to validate format")
+        record("T18_PALETTE_BITS_PRESENT", FAIL, "no nametable data to validate palette mapping")
     else
-        record("T18_TILE_WORD_FORMAT", FAIL,
-            string.format("%d entries have high byte ≠ $00 (palette/flip bits unexpectedly set)", bad_hi_count))
+        record("T18_PALETTE_BITS_PRESENT", FAIL,
+            string.format("all %d entries have palette=0 (T20 attribute path not reaching Plane A)", nonzero_count))
     end
 
     -- ── Summary ───────────────────────────────────────────────────────────
