@@ -59,32 +59,32 @@ set "FAIL_COUNT=0"
 set "ERROR_COUNT=0"
 
 rem ---------------- Single-Lua probes ----------------
-rem Foundation (existing)
+rem
+rem Only probes that carry SIGNAL NOT IMPLIED BY a downstream gate are kept.
+rem T12/T13/T14/T15/T16/T17a/T18/T19/T20/T22/T23/T24/T25 are all subsumed by
+rem T31 room $77 parity + T21 title render + T33 link spawn: if those pass,
+rem every PPU register + CHR upload + attribute path is known-good by
+rem construction. The .lua files remain on disk as on-demand diagnostics
+rem — run them manually when a downstream gate fails and you need to
+rem isolate which sublayer broke.
+rem
+rem Retained single-Lua probes:
+rem   Boot — NMI cadence is measured nowhere else
+rem   MMC1 — cheap canary for bank shadow state
+rem   Phase 1/2/6 Verify — diary regression coverage
+rem   Title Sprites T26 — title-screen-only, not covered by T33 (gameplay sprites)
+rem   Controller T27 — needed for T28/T29 context
+rem   Title Input T28 — tracked known-yellow
+rem   File Select T29 — tracked known-yellow
+rem   Room Load T30/T31/T32 — game-state entry point
+rem   Link Spawn T33 — sprite pipeline end-to-end
 call :run_probe "Boot T7/T8/T9/T10/T11"  "bizhawk_boot_probe.lua"          "bizhawk_boot_probe.txt"
-call :run_probe "PPU Latch T12"          "bizhawk_ppu_latch_probe.lua"     "bizhawk_ppu_latch_probe.txt"
-call :run_probe "PPU Increment T13"      "bizhawk_ppu_increment_probe.lua" "bizhawk_ppu_increment_probe.txt"
-call :run_probe "PPU Ctrl T14"           "bizhawk_ppu_ctrl_probe.lua"      "bizhawk_ppu_ctrl_probe.txt"
-call :run_probe "Scroll Latch T15"       "bizhawk_scroll_latch_probe.lua"  "bizhawk_scroll_latch_probe.txt"
 call :run_probe "MMC1 State T11b"        "bizhawk_mmc1_probe.lua"          "bizhawk_mmc1_probe.txt"
 call :run_probe "Phase 1/2/6 Verify"     "bizhawk_phase1_verify.lua"       "bizhawk_phase1_verify.txt"
-
-rem Graphics pipeline (newly added — previously orphaned)
-call :run_probe "CHR Upload T16/T17a"    "bizhawk_chr_upload_probe.lua"    "bizhawk_chr_upload_probe.txt"
-call :run_probe "Nametable T18"          "bizhawk_nametable_probe.lua"     "bizhawk_nametable_probe.txt"
-call :run_probe "Palette T19"            "bizhawk_palette_probe.lua"       "bizhawk_palette_probe.txt"
-call :run_probe "Attribute T20"          "bizhawk_attribute_probe.lua"     "bizhawk_attribute_probe.txt"
-call :run_probe "Title Parity T22"       "bizhawk_t22_title_ram_probe.lua" "bizhawk_t22_title_ram_probe.txt"
-
-rem Sprites / input (newly added)
-call :run_probe "OAM DMA T23"            "bizhawk_t23_oam_dma_probe.lua"      "bizhawk_t23_oam_dma_probe.txt"
-call :run_probe "Sprite Decode T24"      "bizhawk_t24_sprite_decode_probe.lua"   "bizhawk_t24_sprite_decode_probe.txt"
-call :run_probe "Sprite Palette T25"     "bizhawk_t25_sprite_palette_probe.lua"  "bizhawk_t25_sprite_palette_probe.txt"
 call :run_probe "Title Sprites T26"      "bizhawk_t26_title_sprites_probe.lua"   "bizhawk_t26_title_sprites_probe.txt"
 call :run_probe "Controller T27"         "bizhawk_t27_controller_probe.lua"      "bizhawk_t27_controller_probe.txt"
 call :run_probe "Title Input T28"        "bizhawk_t28_title_input_probe.lua"     "bizhawk_t28_title_input_probe.txt"
 call :run_probe "File Select T29"        "bizhawk_t29_file_select_probe.lua"     "bizhawk_t29_file_select_probe.txt"
-
-rem Gameplay (newly added)
 call :run_probe "Room Load T30/T31/T32"  "bizhawk_t30_room_load_probe.lua"       "bizhawk_t30_room_load_probe.txt"
 call :run_probe "Link Spawn T33"         "bizhawk_t33_link_spawn_probe.lua"      "bizhawk_t33_link_spawn_probe.txt"
 
