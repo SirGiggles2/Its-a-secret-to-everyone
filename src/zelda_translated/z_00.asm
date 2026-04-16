@@ -25,7 +25,7 @@
 ; Begin translated Z_00.asm code
 ;==============================================================================
 
-; [skipped] .INCLUDE "Variables.inc"
+; [skipped-equ] .INCLUDE "Variables.inc"
 
 ; === .SEGMENT "BANK_00_00" ===
 

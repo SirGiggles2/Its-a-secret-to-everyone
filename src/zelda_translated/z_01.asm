@@ -25,9 +25,9 @@
 ; Begin translated Z_01.asm code
 ;==============================================================================
 
-; [skipped] .INCLUDE "Variables.inc"
-; [skipped] .INCLUDE "CommonVars.inc"
-; [skipped] .INCLUDE "CaveVars.inc"
+; [skipped-equ] .INCLUDE "Variables.inc"
+; [skipped-equ] .INCLUDE "CommonVars.inc"
+; [skipped-equ] .INCLUDE "CaveVars.inc"
 
 ; === .SEGMENT "BANK_01_00" ===
 
@@ -73,7 +73,13 @@
 
     even
 PersonTextAddrs:
-; [skipped] .INCLUDE "dat/PersonTextAddrs.inc"
+; [inlined] .INCLUDE "dat/PersonTextAddrs.inc"
+    dc.b    $4C, $80, $77, $80, $A1, $80, $B9, $80, $E3, $80, $05, $81, $2D, $81, $52, $81
+    dc.b    $79, $81, $97, $81, $AE, $81, $D2, $81, $F8, $81, $2C, $82, $41, $82, $58, $82
+    dc.b    $7D, $82, $94, $82, $B8, $82, $CD, $82, $F5, $82, $0D, $83, $4D, $83, $70, $83
+    dc.b    $9C, $83, $C6, $83, $F0, $83, $1C, $84, $3F, $84, $6D, $84, $90, $84, $B8, $84
+    dc.b    $E3, $84, $0E, $85, $26, $85, $53, $85, $68, $85, $7E, $85
+; [end inline] dat\PersonTextAddrs.inc
 
     even
 PersonText:
@@ -776,6 +782,8 @@ TextboxLineAddrsLo:
 
     even
 UpdatePersonState_Textbox:
+    moveq   #1,D0
+    jsr     _copy_bank_to_window   ; PATCH P33b: force window bank 1
     jsr     Link_EndMoveAndDraw_Bank1
     ; If the person's timer has not expired, then return.
     ;
@@ -4608,6 +4616,7 @@ _anon_z01_48:
     move.b  D0,(A0,D2.W)
     move.b  (A5)+,D1  ; PLP: pop to CCR
     move.w  D1,CCR
+    eori    #$01,CCR  ; normalize C to 6502 polarity before RTS
     rts
 
     even
@@ -5976,6 +5985,7 @@ CompareHeartsToContainers:
     lsr.b  #1,D0   ; LSR A
     move.b  ($0000,A4),D1
     cmp.b   D1,D0
+    eori    #$01,CCR  ; normalize C to 6502 polarity before RTS
     rts
 
     even
@@ -7304,6 +7314,7 @@ _L_z01_Link_BeHarmed_ResetHelp:
     subx.b  D1,D0   ; SBC $0D
     eori    #$10,CCR  ; restore X = 6502 C
     move.b  D0,($066F,A4)
+    eori    #$01,CCR  ; normalize C to 6502 polarity before RTS
     rts
 
     even

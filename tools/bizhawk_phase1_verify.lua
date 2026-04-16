@@ -16,7 +16,11 @@
 -- Output: writes a report to builds\reports\bizhawk_phase1_verify.txt
 -- and exits BizHawk automatically.
 
-local ROOT     = "C:\\Users\\Jake Diggity\\Documents\\GitHub\\FINAL TRY\\"
+local ROOT = os.getenv("CODEX_BIZHAWK_ROOT")
+if not ROOT or ROOT == "" then
+    ROOT = "C:\\Users\\Jake Diggity\\Documents\\GitHub\\FINAL TRY"
+end
+ROOT = ROOT:gsub("/", "\\"):gsub("\\+$", "") .. "\\"
 local OUT_DIR  = ROOT .. "builds\\reports\\"
 local OUT_PATH = OUT_DIR .. "bizhawk_phase1_verify.txt"
 

@@ -1231,12 +1231,23 @@ def translate_one_instruction(stripped, line_idx, symtab,
             e(f'    bsr     {target}')
 
     elif mnem == 'RTS':
+        # If C is in M68K-inverted state (from CMP/CPX/CPY/SBC earlier in the
+        # function without a normalizing op since), flip it back to 6502-style
+        # before returning.  Callers assume 6502-polarity C after a JSR that
+        # ends in CMP; without this fix, e.g., 6502 "CMP #$16 / RTS ; BCS"
+        # becomes M68K "cmpi.b #$16,D0 / rts / bcs" which reads the M68K flag
+        # with opposite meaning.  Root cause of T36 cave 21-frame row-copy
+        # compression (CopyNextRowToTransferBuf).
+        if carry_state.get('inverted'):
+            e('    eori    #$01,CCR  ; normalize C to 6502 polarity before RTS')
         e('    rts')
 
     elif mnem == 'RTI':
         # On NES, RTI returns from NMI/IRQ (pops P,PCL,PCH).
         # On Genesis, IsrNmi is called via BSR/JSR from VBlankISR (not via exception).
         # VBlankISR owns the RTE. IsrNmi must end with RTS.
+        if carry_state.get('inverted'):
+            e('    eori    #$01,CCR  ; normalize C to 6502 polarity before RTS')
         e('    rts   ; RTI → RTS (IsrNmi is a subroutine; VBlankISR handles the RTE)')
 
     elif mnem == 'PHA':
@@ -1961,6 +1972,45 @@ def transpile_bank(bank_num, standalone=False, no_stubs=False, no_import_stubs=F
     with open(src_path, encoding="utf-8", errors="replace") as f:
         src_lines = f.read().splitlines()
 
+    # Flatten .INCLUDE directives so included data (e.g. dat/PersonTextAddrs.inc)
+    # is emitted. The PC-walker _walk_file already follows .INCLUDE; without
+    # flattening here, the translator emits "; [skipped]" and the referenced
+    # bytes (pointer tables, text, etc.) vanish from the output, leaving labels
+    # positioned on the WRONG bytes.  Root cause of T36 cave textbox "000000".
+    def _flatten_includes(lines, base_path, depth=0):
+        if depth > 8:
+            raise RuntimeError(f".INCLUDE recursion too deep in {base_path}")
+        out = []
+        for ln in lines:
+            s = ln.strip()
+            U = s.upper()
+            if U.startswith('.INCLUDE'):
+                m = re.search(r'"([^"]+)"', s)
+                if not m:
+                    raise ValueError(f"{base_path}: malformed .INCLUDE: {s}")
+                rel = m.group(1).replace('/', os.sep)
+                # Only inline data includes (dat/*.inc).  Equate-only includes
+                # like Variables.inc, CommonVars.inc are already processed via
+                # build_symtab() and must not be re-emitted here.
+                if not rel.lower().startswith('dat' + os.sep) and \
+                   not rel.lower().startswith('dat/'):
+                    out.append(f'; [skipped-equ] {s}')
+                    continue
+                p = os.path.join(os.path.dirname(base_path), rel)
+                if not os.path.exists(p):
+                    p = os.path.join(REF_DIR, rel)
+                if not os.path.exists(p):
+                    raise FileNotFoundError(f"{base_path}: .INCLUDE missing: {rel}")
+                with open(p, encoding="utf-8", errors="replace") as f:
+                    inc_lines = f.read().splitlines()
+                out.append(f'; [inlined] {s}')
+                out.extend(_flatten_includes(inc_lines, p, depth + 1))
+                out.append(f'; [end inline] {rel}')
+            else:
+                out.append(ln)
+        return out
+    src_lines = _flatten_includes(src_lines, src_path)
+
     # Build var equ block for header.
     # In --all mode (no_import_stubs=True), only z_07 emits equates;
     # all other banks omit them to avoid vasm "symbol already defined" errors.
@@ -2415,6 +2465,18 @@ def _patch_z01(path):
         print("  _patch_z01 P7: GetObjectMiddle fallthrough -> explicit rts")
     else:
         print("  WARNING: _patch_z01 P7 -- GetObjectMiddle anchor not found")
+
+    # P33d: UpdatePersonState_Textbox reads PersonTextAddrs (bank 1) and then
+    # dereferences the returned NES ptr ($8xxx) through the bank window to
+    # fetch text characters.  If a cave/room routine previously pinned bank 5
+    # into the window, the char read returns garbage/zeros, producing the
+    # "000000..." cave textbox symptom.  Pin bank 1 on every entry.
+    text, ok_tbx, err_tbx = _insert_fixed_bank_window_call(
+        text, 'UpdatePersonState_Textbox', 1)
+    if ok_tbx:
+        print("  _patch_z01 P33d: UpdatePersonState_Textbox -> pin bank 1")
+    else:
+        print(f"  WARNING: _patch_z01 P33d -- {err_tbx}")
 
     with open(path, 'w', encoding='utf-8') as f:
         f.write(text)

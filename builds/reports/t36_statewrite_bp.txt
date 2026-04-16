@@ -1,0 +1,36 @@
+T36 state-write watcher — $FF0098 facedir, $FF00AC objstate, $FF000F movedir
+installed bp on M68K BUS
+HB f=120 mode=00 room=00 t=-1
+HB f=240 mode=00 room=00 t=-1
+HB f=360 mode=00 room=00 t=-1
+HB f=480 mode=00 room=00 t=-1
+HB f=600 mode=00 room=00 t=-1
+HB f=720 mode=00 room=00 t=-1
+HB f=840 mode=00 room=00 t=-1
+HB f=960 mode=00 room=00 t=-1
+HB f=1080 mode=00 room=00 t=-1
+HB f=1200 mode=00 room=00 t=-1
+HB f=1320 mode=00 room=00 t=-1
+HB f=1440 mode=00 room=00 t=-1
+HB f=1560 mode=00 room=00 t=-1
+HB f=1680 mode=00 room=00 t=-1
+HB f=1800 mode=00 room=00 t=-1
+HB f=1920 mode=00 room=00 t=-1
+HB f=2040 mode=00 room=00 t=-1
+HB f=2160 mode=00 room=00 t=-1
+HB f=2280 mode=00 room=00 t=-1
+HB f=2400 mode=00 room=00 t=-1
+HB f=2520 mode=00 room=00 t=-1
+HB f=2640 mode=00 room=00 t=-1
+HB f=2760 mode=00 room=00 t=-1
+HB f=2880 mode=00 room=00 t=-1
+HB f=3000 mode=00 room=00 t=-1
+HB f=3120 mode=00 room=00 t=-1
+HB f=3240 mode=00 room=00 t=-1
+HB f=3360 mode=00 room=00 t=-1
+HB f=3480 mode=00 room=00 t=-1
+HB f=3600 mode=00 room=00 t=-1
+HB f=3720 mode=00 room=00 t=-1
+HB f=3840 mode=00 room=00 t=-1
+HB f=3960 mode=00 room=00 t=-1
+DONE

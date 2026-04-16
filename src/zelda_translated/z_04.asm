@@ -25,9 +25,9 @@
 ; Begin translated Z_04.asm code
 ;==============================================================================
 
-; [skipped] .INCLUDE "Variables.inc"
-; [skipped] .INCLUDE "CommonVars.inc"
-; [skipped] .INCLUDE "ObjVars.inc"
+; [skipped-equ] .INCLUDE "Variables.inc"
+; [skipped-equ] .INCLUDE "CommonVars.inc"
+; [skipped-equ] .INCLUDE "ObjVars.inc"
 
 ; === .SEGMENT "BANK_04_00" ===
 
@@ -1477,6 +1477,7 @@ _L_z04_UpdateBubble_BlockOrUnblock:
     subx.b  D1,D0   ; SBC #$2C
     eori    #$10,CCR  ; restore X = 6502 C
     move.b  D0,($052E,A4)
+    eori    #$01,CCR  ; normalize C to 6502 polarity before RTS
     rts
 
 ; Params:
@@ -8442,6 +8443,7 @@ PolsVoice_GetCollidingTile:
     ;
     lea     ($041F,A4),A0
     move.b  D0,(A0,D2.W)
+    eori    #$01,CCR  ; normalize C to 6502 polarity before RTS
     rts
 
 ; Returns:
@@ -9134,6 +9136,7 @@ RedWizzrobe_AlignAndSetY:
     eori    #$10,CCR  ; restore X = 6502 C
     lea     ($0084,A4),A0
     move.b  D0,(A0,D2.W)
+    eori    #$01,CCR  ; normalize C to 6502 polarity before RTS
     rts
 
     even
@@ -9216,6 +9219,7 @@ Wizzrobe_GetBaseCollidableTile:
     ;
     lea     ($041F,A4),A0
     move.b  D0,(A0,D2.W)
+    eori    #$01,CCR  ; normalize C to 6502 polarity before RTS
     rts
 
     even
@@ -11709,6 +11713,7 @@ _L_z04_Gleeok_ChangeCoordinateBySpeedFlag_Subtract:
     eori    #$10,CCR  ; flip X: 6502 SBC polarity
     subx.b  D1,D0   ; SBC #$01
     eori    #$10,CCR  ; restore X = 6502 C
+    eori    #$01,CCR  ; normalize C to 6502 polarity before RTS
     rts
 
     even
@@ -11954,6 +11959,7 @@ _anon_z04_147:
     ;
     moveq   #8,D0
     move.b  D0,($034E,A4)
+    eori    #$01,CCR  ; normalize C to 6502 polarity before RTS
     rts
 
     even
@@ -13433,6 +13439,7 @@ Ganon_GetCurCloudLeft:
     subx.b  D1,D0   ; SBC Ganon_ObjCloudDist,X
     eori    #$10,CCR  ; restore X = 6502 C
     move.b  D0,($0000,A4)
+    eori    #$01,CCR  ; normalize C to 6502 polarity before RTS
     rts
 
 ; Returns:
@@ -13462,6 +13469,7 @@ Ganon_GetCurCloudTop:
     subx.b  D1,D0   ; SBC Ganon_ObjCloudDist,X
     eori    #$10,CCR  ; restore X = 6502 C
     move.b  D0,($0001,A4)
+    eori    #$01,CCR  ; normalize C to 6502 polarity before RTS
     rts
 
 ; Returns:
@@ -15041,6 +15049,7 @@ _L_z04_RotateObjectLocation_SetXRotateY:
     eori    #$10,CCR  ; flip X: 6502 SBC polarity
     subx.b  D1,D0   ; SBC $03
     eori    #$10,CCR  ; restore X = 6502 C
+    eori    #$01,CCR  ; normalize C to 6502 polarity before RTS
     rts
 
     even
@@ -15136,6 +15145,7 @@ DecreaseObjectAngle:
     andi.b #$1F,D0
     lea     ($0394,A4),A0
     move.b  D0,(A0,D2.W)
+    eori    #$01,CCR  ; normalize C to 6502 polarity before RTS
     rts
 
 

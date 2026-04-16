@@ -783,6 +783,23 @@ _ppu_write_7:
     bhs.s   .nt_no_b_mirror
     subi.w  #$0400,D1
 .nt_no_b_mirror:
+    ; T39 HUD/playfield split (Zelda 4-screen semantics).
+    ; Track original source range before folding $2400 → $2000:
+    ;   D7 = 0 → source was $2000 (HUD region; rows 0-3 only)
+    ;   D7 = 1 → source was $2400 (playfield region; rows 4-29 only)
+    ; NES renders HUD from $2000 for scanlines 0-31 and playfield from
+    ; $2400 for scanlines 32-239 via a mid-frame scroll split. On Gen we
+    ; collapse both into Plane A, so we gate writes to avoid one source
+    ; clobbering the other's rows. Overworld only writes $2400 rows 4-29
+    ; (so the bug was latent), but cave rooms write $2400 rows 0-29 which
+    ; stomped the HUD — see builds/reports/t39_stage_a_render_classification.md.
+    moveq   #0,D7
+    cmpi.w  #$2400,D1
+    blo.s   .nt_src_detected
+    cmpi.w  #$2800,D1
+    bhs.s   .nt_src_detected
+    moveq   #1,D7
+.nt_src_detected:
     ; Fold $2400 mirror → $2000 (vertical mirroring alias for NT_A).
     cmpi.w  #$2400,D1
     blo.s   .nt_no_a_mirror
@@ -909,6 +926,22 @@ _ppu_write_7:
     move.w  D3,D5                   ; D5.w = cached col * 2 for tail-row mirror
 
     lsr.w   #5,D2                   ; D2.w = row (0…29)
+    ; T39 HUD/playfield split: gate row against source (D7) set in .nt_write.
+    ; $2000-source writes must target HUD rows 0-3 only; $2400-source writes
+    ; must target playfield rows 4-29 only. Out-of-range writes are dropped
+    ; (both NT_CACHE and VDP VRAM) so HUD stays intact when cave rooms write
+    ; their full 30 rows to $2400.
+    tst.w   D7
+    bne.s   .nt_a_src_2400
+    ; D7=0 → source $2000 (HUD). Skip rows ≥ 4.
+    cmpi.w  #4,D2
+    bhs     .nt_skip_write
+    bra.s   .nt_a_row_ok
+.nt_a_src_2400:
+    ; D7=1 → source $2400 (playfield). Skip rows 0-3.
+    cmpi.w  #4,D2
+    blo     .nt_skip_write
+.nt_a_row_ok:
     move.w  D2,D4                   ; D4.w = cached row for tail-row mirror
 
     ; Phase 2 v2: rows 0-7 route to Window plane at $B000 (HUD isolation).
@@ -984,7 +1017,7 @@ _ppu_write_7:
     ; with bits [12:11] set to the palette.  No VDP VRAM read required.
     ;======================================================================
     cmpi.w  #$3F00,D1
-    bhs.s   .t19_palette            ; ≥$3F00: check palette range
+    bhs     .t19_palette            ; ≥$3F00: check palette range (widened for T39)
     cmpi.w  #$23C0,D1
     blo     .nt_skip_write          ; $23C0 not reached yet — skip (shouldn't happen)
     cmpi.w  #$2400,D1
@@ -999,6 +1032,21 @@ _ppu_write_7:
     move.w  D2,D3
     lsr.w   #3,D3
     lsl.w   #2,D3                   ; D3.w = tile_base_row (0..28)
+    ; T39 HUD/playfield split: same gate as the tile path. tile_base_row
+    ; is always a multiple of 4 (0, 4, 8, …, 28); an attr byte at row 0
+    ; covers tile rows 0-3 (HUD), at row 4+ covers playfield. Route
+    ; $2000-source attrs to HUD only, $2400-source attrs to playfield only.
+    tst.w   D7
+    bne.s   .nt_attr_src_2400
+    ; $2000-source: allow only tile_base_row == 0 (HUD rows 0-3).
+    tst.w   D3
+    bne     .nt_skip_write
+    bra.s   .nt_attr_row_ok
+.nt_attr_src_2400:
+    ; $2400-source: allow only tile_base_row >= 4 (playfield rows 4+).
+    cmpi.w  #4,D3
+    blo     .nt_skip_write
+.nt_attr_row_ok:
     andi.w  #$0007,D2
     lsl.w   #2,D2                   ; D2.w = tile_base_col (0..28)
 
@@ -1931,6 +1979,20 @@ _sram_load_save_slots:
     move.b  D0,(A0)+
     addq.l  #2,A1                       ; advance odd-byte stride
     dbra    D1,.lsl_loop
+    ; T36: Zero-fill the remainder of the NES SRAM window ($FF6800..$FF7FFF).
+    ; NES has 8 KB of SRAM at $6000-$7FFF but Zelda's save-slots only occupy
+    ; the first 2 KB ($6000-$67FF).  z_05 AssignObjSpawnPositions reads
+    ; SRAM[$08FE+$00EB] which can land past offset $7FF (e.g. $FF6975 for
+    ; OW room $77).  On NES those bytes read 0 (unmapped or cleared by
+    ; ROM init).  Without this zero-fill, the read hits work-RAM residue
+    ; and corrupts the cave-dweller type calculation ($0350 := $6A+idx),
+    ; spawning a phantom cave-person that halts Link via $00AC=$40.
+    ; A0 already points at $FF6800 after the slot copy.
+    move.w  #$17FF,D1                   ; 6144 bytes - 1 ($6800..$7FFF)
+    moveq   #0,D0
+.lsl_zero:
+    move.b  D0,(A0)+
+    dbra    D1,.lsl_zero
     movem.l (SP)+,D0/D1/A0/A1
     rts
 
@@ -2315,6 +2377,17 @@ _mmc1_common:
     andi.b  #$1F,D2                 ; mask to 5 bits
     lea     (MMC1_CTRL).l,A0        ; A0 = base of MMC1_CTRL ($FF0812)
     move.b  D2,(A0,D3.w)            ; store at MMC1_CTRL + D3 offset
+
+    ; T36 Stage H experiment: universal auto-refresh of the PRG bank
+    ; window on $E000 writes. REVERTED — incompatible with the existing
+    ; manual P33b/P33c pins (z_01/z_03/z_05/z_06) which deliberately
+    ; set _current_window_bank to a bank that differs from MMC1_PRG.
+    ; Auto-refresh undid every pin on the next MMC1 write, breaking
+    ; Link movement in mode $05 (walk_left never reached x=$40, cave
+    ; entry never triggered). Full evidence in
+    ; builds/reports/t36_mmc1_autorefresh_finding.md. Next attempt
+    ; should target specific cave-interior pointer sites with P33b-
+    ; style pins instead of a universal write-side refresh.
 
     ; Reset accumulator
     clr.b   (MMC1_SHIFT).l
@@ -2924,11 +2997,39 @@ _transfer_tilebuf_fast:
 
     ; Bounds check
     cmpi.w  #$23C0,D5
-    bhs.s   .ttf_nt_skip
+    bhs     .ttf_nt_skip            ; long branch (added HUD guard ops)
 
     ; Compute index = PPU_VADDR - $2000
     move.w  D5,D0
     subi.w  #$2000,D0               ; D0.w = index (0..$3BF)
+
+    ; T39 HUD row guard (Stage B + Stage C + Stage D):
+    ; - NT_CACHE rows 0-3 (offsets $000-$07F) are always HUD domain.
+    ;   Scroll-split on NES masks them; on Gen they must be protected
+    ;   unconditionally from bulk-tilebuf stomps (cave and overworld
+    ;   both write playfield data aimed at these rows that the NES
+    ;   scroll split hides but Gen would display).
+    ; - NT_CACHE rows 4-6 (offsets $080-$0DF) hold the HUD icon band
+    ;   (hearts/rupees/keys/bombs/compass/map). Cave renders stomp
+    ;   these via bulk path; overworld renders use the same path at
+    ;   boot + HUD updates. Gate rows 4-6 whenever the game is in a
+    ;   cave-related mode:
+    ;     GameMode == $0B (in cave)
+    ;     GameMode == $10 (stair / load-screen transition)
+    ;     TargetMode == $0B (entering cave, before GameMode catches up)
+    ;   Any one triggers the block. Mode bytes: $0012=GameMode,
+    ;   $005B=TargetMode.
+    cmpi.w  #$0080,D0
+    blo     .ttf_nt_skip
+    cmpi.w  #$00E0,D0
+    bhs.s   .ttf_nt_cache_ok        ; offset >= $E0: rows 7+, no guard
+    cmpi.b  #$0B,($0012,A4)         ; mode == cave?
+    beq     .ttf_nt_skip
+    cmpi.b  #$10,($0012,A4)         ; mode == stair transition?
+    beq     .ttf_nt_skip
+    cmpi.b  #$0B,($005B,A4)         ; target mode == cave?
+    beq     .ttf_nt_skip
+.ttf_nt_cache_ok:
 
     ; Cache tile index in NT_CACHE
     move.b  D2,(A2,D0.W)
@@ -2989,7 +3090,7 @@ _transfer_tilebuf_fast:
     add.w   D1,D5                   ; advance PPU_VADDR
     andi.w  #$3FFF,D5
     subq.w  #1,D3
-    bne.s   .ttf_nt_loop
+    bne     .ttf_nt_loop            ; long branch (Stage C extra ops pushed out of .s range)
     bra     .ttf_post_record
 
     ;==========================================================================

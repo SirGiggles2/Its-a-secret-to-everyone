@@ -505,8 +505,8 @@ SaveRamEnd                              equ $7FFF  ; NES SRAM
 ; Begin translated Z_07.asm code
 ;==============================================================================
 
-; [skipped] .INCLUDE "Variables.inc"
-; [skipped] .INCLUDE "CommonVars.inc"
+; [skipped-equ] .INCLUDE "Variables.inc"
+; [skipped-equ] .INCLUDE "CommonVars.inc"
 
 ; === .SEGMENT "BANK_07_00" ===
 
@@ -4410,6 +4410,7 @@ _L_z07_MoveObject_Left:
     subx.b  D1,D0   ; SBC #$00
     eori    #$10,CCR  ; restore X = 6502 C
     move.b  D0,($70,A4,D2.W)
+    eori    #$01,CCR  ; normalize C to 6502 polarity before RTS
     rts
 
 ; Up, down, left, right.
@@ -8103,6 +8104,7 @@ _L_z07_FindEmptyMonsterSlot_Loop:
     even
 _L_z07_FindEmptyMonsterSlot_End:
     cmpi.b  #$00,D3
+    eori    #$01,CCR  ; normalize C to 6502 polarity before RTS
     rts
 
     even

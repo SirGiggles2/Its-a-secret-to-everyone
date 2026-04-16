@@ -16,11 +16,20 @@
 --   ExcAddrError   $000384
 --   DefaultException $0003A6
 
-local ROOT     = "C:\\Users\\Jake Diggity\\Documents\\GitHub\\FINAL TRY\\"
-local OUT_DIR  = ROOT .. "builds\\reports\\"
+-- Resolve ROOT via CODEX_BIZHAWK_ROOT env var (set by run batch files).
+-- Prior hard-coded ROOT pointed at the main tree and silently read that
+-- tree's whatif.lst, producing wrong landmark addresses when run from a
+-- worktree.  Fall back to main tree only if env var is unset.
+local ROOT = os.getenv("CODEX_BIZHAWK_ROOT")
+if not ROOT or ROOT == "" then
+    ROOT = "C:\\Users\\Jake Diggity\\Documents\\GitHub\\FINAL TRY"
+end
+ROOT = ROOT:gsub("/", "\\"):gsub("\\+$", "")
+
+local OUT_DIR  = ROOT .. "\\builds\\reports\\"
 local OUT_PATH = OUT_DIR .. "bizhawk_boot_probe.txt"
 
-dofile(ROOT .. "tools/probe_addresses.lua")  -- sets LOOPFOREVER, EXC_BUS, EXC_ADDR, EXC_DEF, ISRRESET, RUNGAME, ISRNMI
+dofile(ROOT .. "\\tools\\probe_addresses.lua")  -- sets LOOPFOREVER, EXC_BUS, EXC_ADDR, EXC_DEF, ISRRESET, RUNGAME, ISRNMI
 
 local FORENSICS_TYPE = 0xFF0900
 local FORENSICS_SR   = 0xFF0902
@@ -154,6 +163,10 @@ local function main()
     local pc_last = 0
     local pc_prev = -1
     local stuck   = 0
+    -- T8 diagnostic: log every frame whose PPUCTRL shadow has bit 7 clear
+    -- (VBlankISR's .nmi_off gate).  Correlates directly with missed-NMI
+    -- frames so we can see WHEN NMI was suppressed during boot.
+    local nmi_off_frames = {}
 
     for frame = 1, FRAMES do
         cur_frame = frame
@@ -161,6 +174,12 @@ local function main()
 
         local pc = emu.getregister("M68K PC") or 0
         pc_last = pc
+
+        -- Sample PPUCTRL shadow bit 7 every frame
+        local pc2000 = ram_u8(PPU_CTRL_SHADOW) or 0
+        if (pc2000 & 0x80) == 0 then
+            nmi_off_frames[#nmi_off_frames+1] = frame
+        end
 
         -- PC-polling fallbacks (covers hook-unavailable case)
         if pc >= LOOPFOREVER and pc <= LOOPFOREVER+3 then
@@ -277,6 +296,25 @@ local function main()
         else
             record("T8_NMI_CADENCE", FAIL,
                 string.format("%.1f%% < 95%% (%d/%d)", rate*100, with_nmi, eligible))
+        end
+        -- Emit the PPUCTRL=0 frame list to help pinpoint which game phase
+        -- is suppressing NMI.  Compress runs of consecutive frames.
+        if #nmi_off_frames > 0 then
+            local runs = {}
+            local run_start, run_end = nmi_off_frames[1], nmi_off_frames[1]
+            for i = 2, #nmi_off_frames do
+                local f = nmi_off_frames[i]
+                if f == run_end + 1 then
+                    run_end = f
+                else
+                    runs[#runs+1] = run_start == run_end and tostring(run_start) or
+                                    string.format("%d-%d", run_start, run_end)
+                    run_start, run_end = f, f
+                end
+            end
+            runs[#runs+1] = run_start == run_end and tostring(run_start) or
+                            string.format("%d-%d", run_start, run_end)
+            log("  PPUCTRL.7=0 at frames: " .. table.concat(runs, ","))
         end
 
         if multi_nmi == 0 then

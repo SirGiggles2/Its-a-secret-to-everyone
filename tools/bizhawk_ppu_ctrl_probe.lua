@@ -26,7 +26,11 @@
 --   T14_PPUSTATUS_RETURNS   — _ppu_read_2 always returns bit 7 set ($80 or $C0)
 --                             (verified indirectly: warmup loops exit → boot completes)
 
-local ROOT     = "C:\\Users\\Jake Diggity\\Documents\\GitHub\\FINAL TRY\\"
+local ROOT = os.getenv("CODEX_BIZHAWK_ROOT")
+if not ROOT or ROOT == "" then
+    ROOT = "C:\\Users\\Jake Diggity\\Documents\\GitHub\\FINAL TRY"
+end
+ROOT = ROOT:gsub("/", "\\"):gsub("\\+$", "") .. "\\"
 local OUT_DIR  = ROOT .. "builds\\reports\\"
 local OUT_PATH = OUT_DIR .. "bizhawk_ppu_ctrl_probe.txt"
 
