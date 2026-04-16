@@ -241,7 +241,12 @@ function t39_dump_nt(path, tval)
     local parts = {string.format("; T39 NT_CACHE dump at scenario t=%d\n", tval)}
     local pc = ram_u8(T39_PPUCTRL) or 0
     local pm = ram_u8(T39_PPUMASK) or 0
-    parts[#parts+1] = string.format("; PPUCTRL=$%02X PPUMASK=$%02X\n", pc, pm)
+    local gmode  = ram_u8(0xFF0012) or 0
+    local gtmode = ram_u8(0xFF005B) or 0
+    local gscrolly = ram_u8(0xFF00FD) or 0
+    parts[#parts+1] = string.format(
+        "; PPUCTRL=$%02X PPUMASK=$%02X GameMode=$%02X TargetMode=$%02X ScrollY=$%02X\n",
+        pc, pm, gmode, gtmode, gscrolly)
     local row = {}
     for i = 0, T39_NT_LEN - 1 do
         row[#row+1] = string.format("%02X", ram_u8(T39_NT_BASE + i) or 0)

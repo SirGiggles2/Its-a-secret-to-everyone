@@ -2866,20 +2866,39 @@ _transfer_tilebuf_fast:
 
     ; Bounds check
     cmpi.w  #$23C0,D5
-    bhs.s   .ttf_nt_skip
+    bhs     .ttf_nt_skip            ; long branch (added HUD guard ops)
 
     ; Compute index = PPU_VADDR - $2000
     move.w  D5,D0
     subi.w  #$2000,D0               ; D0.w = index (0..$3BF)
 
-    ; T39 HUD row guard: NT_CACHE rows 0-3 (offsets $000-$07F) are the
-    ; HUD region. The bulk-transfer path receives cave/overworld
-    ; playfield writes addressed to $2000+; on NES those rows 0-3 get
-    ; masked by the scroll split, but on Gen they would stomp HUD.
-    ; HUD tiles reach Plane A via _ppu_write_7 (HUD prep writes), so
-    ; drop row 0-3 traffic from this bulk path to preserve HUD.
+    ; T39 HUD row guard (Stage B + Stage C + Stage D):
+    ; - NT_CACHE rows 0-3 (offsets $000-$07F) are always HUD domain.
+    ;   Scroll-split on NES masks them; on Gen they must be protected
+    ;   unconditionally from bulk-tilebuf stomps (cave and overworld
+    ;   both write playfield data aimed at these rows that the NES
+    ;   scroll split hides but Gen would display).
+    ; - NT_CACHE rows 4-6 (offsets $080-$0DF) hold the HUD icon band
+    ;   (hearts/rupees/keys/bombs/compass/map). Cave renders stomp
+    ;   these via bulk path; overworld renders use the same path at
+    ;   boot + HUD updates. Gate rows 4-6 whenever the game is in a
+    ;   cave-related mode:
+    ;     GameMode == $0B (in cave)
+    ;     GameMode == $10 (stair / load-screen transition)
+    ;     TargetMode == $0B (entering cave, before GameMode catches up)
+    ;   Any one triggers the block. Mode bytes: $0012=GameMode,
+    ;   $005B=TargetMode.
     cmpi.w  #$0080,D0
-    blo.s   .ttf_nt_skip
+    blo     .ttf_nt_skip
+    cmpi.w  #$00E0,D0
+    bhs.s   .ttf_nt_cache_ok        ; offset >= $E0: rows 7+, no guard
+    cmpi.b  #$0B,($0012,A4)         ; mode == cave?
+    beq     .ttf_nt_skip
+    cmpi.b  #$10,($0012,A4)         ; mode == stair transition?
+    beq     .ttf_nt_skip
+    cmpi.b  #$0B,($005B,A4)         ; target mode == cave?
+    beq     .ttf_nt_skip
+.ttf_nt_cache_ok:
 
     ; Cache tile index in NT_CACHE
     move.b  D2,(A2,D0.W)
@@ -2920,7 +2939,7 @@ _transfer_tilebuf_fast:
     add.w   D1,D5                   ; advance PPU_VADDR
     andi.w  #$3FFF,D5
     subq.w  #1,D3
-    bne.s   .ttf_nt_loop
+    bne     .ttf_nt_loop            ; long branch (Stage C extra ops pushed out of .s range)
     bra     .ttf_post_record
 
     ;==========================================================================
