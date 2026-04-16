@@ -359,7 +359,7 @@ Note: room $76 is both the left-adjacent overworld room from the opening room $7
 |---|------|-------------|--------|
 | T37 | Sword pickup | Sword pickup sequence triggers correctly | Pending |
 | T38 | Enemy AI | Enemies spawn, move, and respond to hits | Pending |
-| T39 | HUD | Hearts, rupee count, map render correctly | Pending |
+| T39 | HUD | Hearts, rupee count, map render correctly | Partial — Stage B HUD-row guard landed (`97f6fb7b`): NT_CACHE rows 0-3 protected from bulk tilebuf writes so cave playfield no longer stomps HUD region (pre-fix: `D8 DA` cave ceiling, post-fix: `$24` blank at t=40/500/820). Post-exit residue cleared. T36 parity steady 8/9. Follow-up: cave HUD icons at NT_CACHE rows 4-7 still stomped by cave playfield render; needs HUD shadow or Plane B overlay. See `builds/reports/t39_stage_b_fix.md`. |
 | T40 | Dungeon 1 | Level 1 dungeon loads and is navigable | Pending |
 | T41 | Full overworld | All accessible overworld rooms render correctly | Pending |
 
