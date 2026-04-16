@@ -90,7 +90,17 @@ if errorlevel 1 exit /b 1
 if exist "%RAW_ROM%" del "%RAW_ROM%" >nul 2>nul
 
 rem ---------------------------------------------------------------------------
-rem [4] Archive — incremental ZeldaX.Y build (X=phase, Y=global build number)
+rem [4] Archive — incremental ZeldaPHASE.VERSION build
+rem
+rem   PHASE   reflects the current development phase (edit build_phase.txt to
+rem           bump — e.g. 3 for gameplay, 4 for enemy AI, 10+ for later work).
+rem           When phase bumps, reset build_counter.txt to 0 so VERSION starts
+rem           from 1 within each phase.
+rem   VERSION is a monotonic counter within the current phase, incremented by
+rem           every successful build.
+rem
+rem Archive files keep their historical phase.version — only the next build
+rem takes the new numbering.
 rem ---------------------------------------------------------------------------
 echo [4/4] Archiving build...
 set "ARCHIVE_DIR=%ROOT%\builds\archive"
@@ -103,8 +113,8 @@ rem Read current build counter (default 0)
 set "BUILD_NUM=0"
 if exist "%COUNTER_FILE%" set /p BUILD_NUM=<"%COUNTER_FILE%"
 
-rem Read current phase (default 16)
-set "PHASE=16"
+rem Read current phase (default 3 — gameplay phase; bump via build_phase.txt)
+set "PHASE=3"
 if exist "%PHASE_FILE%" set /p PHASE=<"%PHASE_FILE%"
 
 rem Increment build number
