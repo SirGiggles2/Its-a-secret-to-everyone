@@ -573,6 +573,7 @@ for frame = 1, MAX_FRAMES do
                     room_flags = ram_u8(A_ROOM_FLAGS),
                     cave_tmpl = ram_u8(A_CAVE_TMPL),
                     sram_68fe = ram_u8(A_SRAM_68FE),
+                    sram_lvl = ram_u8(A_SRAM_68FE + ram_u8(A_LVL_BLOCK)),
                 }
             end
         else
@@ -617,6 +618,12 @@ for frame = 1, MAX_FRAMES do
             cavetype = ram_u8(A_CAVETYPE),
             objtimer0 = ram_u8(A_OBJTIMER0),
             autowalk = ram_u8(A_AUTOWALK),
+            obj_templ = ram_u8(A_OBJ_TEMPL),
+            lvl_block = ram_u8(A_LVL_BLOCK),
+            room_flags = ram_u8(A_ROOM_FLAGS),
+            cave_tmpl = ram_u8(A_CAVE_TMPL),
+            sram_68fe = ram_u8(A_SRAM_68FE),
+            sram_lvl = ram_u8(A_SRAM_68FE + ram_u8(A_LVL_BLOCK)),
         }
     end
 
@@ -670,7 +677,7 @@ local function build_json()
         objstate = {}, movedir = {}, facedir = {},
         personstate = {}, cavetype = {}, objtimer0 = {}, autowalk = {},
         obj_templ = {}, lvl_block = {}, room_flags = {}, cave_tmpl = {},
-        sram_68fe = {},
+        sram_68fe = {}, sram_lvl = {},
     }
     for i = 1, trace_len do
         local e = trace[i]
@@ -714,6 +721,7 @@ local function build_json()
         cols.room_flags[i]     = e.room_flags or 0
         cols.cave_tmpl[i]      = e.cave_tmpl or 0
         cols.sram_68fe[i]      = e.sram_68fe or 0
+        cols.sram_lvl[i]       = e.sram_lvl or 0
     end
     local phase_parts = {}
     for i, p in ipairs(SCENARIO.phase_summary()) do
@@ -786,7 +794,8 @@ local function build_json()
         '"lvl_block":'        .. json_num_array(cols.lvl_block) .. ",",
         '"room_flags":'       .. json_num_array(cols.room_flags) .. ",",
         '"cave_tmpl":'        .. json_num_array(cols.cave_tmpl) .. ",",
-        '"sram_68fe":'        .. json_num_array(cols.sram_68fe),
+        '"sram_68fe":'        .. json_num_array(cols.sram_68fe) .. ",",
+        '"sram_lvl":'         .. json_num_array(cols.sram_lvl),
         "}",
         "}",
     }, "\n")
