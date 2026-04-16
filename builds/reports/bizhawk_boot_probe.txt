@@ -26,6 +26,7 @@ Boot probe  T7/T8/T9/T10/T11  —  300 frames
 ─── T8: Frame / NMI Cadence ────────────────────────────────────
   first_nmi=f20  eligible=280  with_nmi=228  multi_nmi=0  rate=81.4%
 [FAIL] T8_NMI_CADENCE                  81.4% < 95% (228/280)
+  PPUCTRL.7=0 at frames: 1-18,21-70,73-80
 [PASS] T8_NMI_NO_DOUBLE                no frame had >1 IsrNmi call
 
 ─── T9: No Hidden Exceptions (300-frame soak) ──────────────────
