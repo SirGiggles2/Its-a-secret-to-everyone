@@ -10,10 +10,13 @@ f0560 flow REPLAY_BOOTFLOW -> T36_STABILIZE (replay hit gameplay)
 HB f0600 flow=T36_STABILIZE mode=$05 sub=$00 room=$77 hsc=$00 scrmode=$00
 f0624 T=0 baseline x=$78 y=$8D dir=$00 hsc=$00 vsc=$00 room=$77 frame_ctr=$CC
 f0624 flow T36_STABILIZE -> T36_CAPTURE (T35 capture window open)
+f0664 T39_SHOT t=40 png=C:\Users\Jake Diggity\Documents\GitHub\FINAL TRY\.claude\worktrees\angry-dijkstra\builds\reports\t39_gen_pre.png
 HB f0800 flow=T36_CAPTURE mode=$05 sub=$00 room=$77 hsc=$00 scrmode=$00
 HB f1000 flow=T36_CAPTURE mode=$0B sub=$00 room=$77 hsc=$00 scrmode=$00
+f1124 T39_SHOT t=500 png=C:\Users\Jake Diggity\Documents\GitHub\FINAL TRY\.claude\worktrees\angry-dijkstra\builds\reports\t39_gen_in.png
 HB f1200 flow=T36_CAPTURE mode=$0B sub=$00 room=$77 hsc=$00 scrmode=$00
 HB f1400 flow=T36_CAPTURE mode=$05 sub=$00 room=$77 hsc=$00 scrmode=$00
+f1444 T39_SHOT t=820 png=C:\Users\Jake Diggity\Documents\GitHub\FINAL TRY\.claude\worktrees\angry-dijkstra\builds\reports\t39_gen_post.png
 f1464 flow T36_CAPTURE -> DONE (capture complete)
 TRACE_LENGTH=840 (expected 840)
 REACHED_MODE5=true

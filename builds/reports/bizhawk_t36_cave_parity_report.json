@@ -7,36 +7,36 @@
       "detail": "len=840"
     },
     "T36_GEN_CAPTURE_OK": {
-      "pass": false,
-      "detail": "len=0"
+      "pass": true,
+      "detail": "len=840"
     },
     "T36_NO_GEN_EXCEPTION": {
       "pass": true,
       "detail": "no exception"
     },
     "T36_BASELINE_PARITY": {
-      "pass": false,
-      "detail": "skipped \u2014 capture(s) invalid"
+      "pass": true,
+      "detail": "obj_x:OK; obj_y:OK; mode:OK; room:OK"
     },
     "T36_WALK_TO_STAIR": {
-      "pass": false,
-      "detail": "skipped \u2014 capture(s) invalid"
+      "pass": true,
+      "detail": "nes_t=213 gen_t=213"
     },
     "T36_CAVE_ENTER_TRIGGERED": {
-      "pass": false,
-      "detail": "skipped \u2014 capture(s) invalid"
+      "pass": true,
+      "detail": "nes_t=213 (mode=$10) gen_t=213 (mode=$10)"
     },
     "T36_CAVE_INTERIOR_MATCH": {
       "pass": false,
-      "detail": "skipped \u2014 capture(s) invalid"
+      "detail": "first diff t=307 nes=(m$0B,x$70,y$DD) gen=(m$0B,x$40,y$5D)"
     },
     "T36_CAVE_EXIT_TRIGGERED": {
-      "pass": false,
-      "detail": "skipped \u2014 capture(s) invalid"
+      "pass": true,
+      "detail": "nes_t=748 gen_t=748"
     },
     "T36_ROUND_TRIP_READY": {
-      "pass": false,
-      "detail": "skipped \u2014 capture(s) invalid"
+      "pass": true,
+      "detail": "nes=(r$77,m$05,x$40,y$63,d$00) gen=(r$77,m$05,x$40,y$63,d$00)"
     }
   }
 }

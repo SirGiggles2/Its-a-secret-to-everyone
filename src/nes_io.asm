@@ -767,6 +767,23 @@ _ppu_write_7:
     bhs.s   .nt_no_b_mirror
     subi.w  #$0400,D1
 .nt_no_b_mirror:
+    ; T39 HUD/playfield split (Zelda 4-screen semantics).
+    ; Track original source range before folding $2400 → $2000:
+    ;   D7 = 0 → source was $2000 (HUD region; rows 0-3 only)
+    ;   D7 = 1 → source was $2400 (playfield region; rows 4-29 only)
+    ; NES renders HUD from $2000 for scanlines 0-31 and playfield from
+    ; $2400 for scanlines 32-239 via a mid-frame scroll split. On Gen we
+    ; collapse both into Plane A, so we gate writes to avoid one source
+    ; clobbering the other's rows. Overworld only writes $2400 rows 4-29
+    ; (so the bug was latent), but cave rooms write $2400 rows 0-29 which
+    ; stomped the HUD — see builds/reports/t39_stage_a_render_classification.md.
+    moveq   #0,D7
+    cmpi.w  #$2400,D1
+    blo.s   .nt_src_detected
+    cmpi.w  #$2800,D1
+    bhs.s   .nt_src_detected
+    moveq   #1,D7
+.nt_src_detected:
     ; Fold $2400 mirror → $2000 (vertical mirroring alias for NT_A).
     cmpi.w  #$2400,D1
     blo.s   .nt_no_a_mirror
@@ -893,6 +910,22 @@ _ppu_write_7:
     move.w  D3,D5                   ; D5.w = cached col * 2 for tail-row mirror
 
     lsr.w   #5,D2                   ; D2.w = row (0…29)
+    ; T39 HUD/playfield split: gate row against source (D7) set in .nt_write.
+    ; $2000-source writes must target HUD rows 0-3 only; $2400-source writes
+    ; must target playfield rows 4-29 only. Out-of-range writes are dropped
+    ; (both NT_CACHE and VDP VRAM) so HUD stays intact when cave rooms write
+    ; their full 30 rows to $2400.
+    tst.w   D7
+    bne.s   .nt_a_src_2400
+    ; D7=0 → source $2000 (HUD). Skip rows ≥ 4.
+    cmpi.w  #4,D2
+    bhs     .nt_skip_write
+    bra.s   .nt_a_row_ok
+.nt_a_src_2400:
+    ; D7=1 → source $2400 (playfield). Skip rows 0-3.
+    cmpi.w  #4,D2
+    blo     .nt_skip_write
+.nt_a_row_ok:
     move.w  D2,D4                   ; D4.w = cached row for tail-row mirror
     mulu.w  #$0080,D2               ; D2.l = row * $80  (fits in 16 bits; row ≤ 29)
     add.w   D3,D2                   ; D2.w = row*$80 + col*2
@@ -939,7 +972,7 @@ _ppu_write_7:
     ; with bits [12:11] set to the palette.  No VDP VRAM read required.
     ;======================================================================
     cmpi.w  #$3F00,D1
-    bhs.s   .t19_palette            ; ≥$3F00: check palette range
+    bhs     .t19_palette            ; ≥$3F00: check palette range (widened for T39)
     cmpi.w  #$23C0,D1
     blo     .nt_skip_write          ; $23C0 not reached yet — skip (shouldn't happen)
     cmpi.w  #$2400,D1
@@ -954,6 +987,21 @@ _ppu_write_7:
     move.w  D2,D3
     lsr.w   #3,D3
     lsl.w   #2,D3                   ; D3.w = tile_base_row (0..28)
+    ; T39 HUD/playfield split: same gate as the tile path. tile_base_row
+    ; is always a multiple of 4 (0, 4, 8, …, 28); an attr byte at row 0
+    ; covers tile rows 0-3 (HUD), at row 4+ covers playfield. Route
+    ; $2000-source attrs to HUD only, $2400-source attrs to playfield only.
+    tst.w   D7
+    bne.s   .nt_attr_src_2400
+    ; $2000-source: allow only tile_base_row == 0 (HUD rows 0-3).
+    tst.w   D3
+    bne     .nt_skip_write
+    bra.s   .nt_attr_row_ok
+.nt_attr_src_2400:
+    ; $2400-source: allow only tile_base_row >= 4 (playfield rows 4+).
+    cmpi.w  #4,D3
+    blo     .nt_skip_write
+.nt_attr_row_ok:
     andi.w  #$0007,D2
     lsl.w   #2,D2                   ; D2.w = tile_base_col (0..28)
 
@@ -2823,6 +2871,15 @@ _transfer_tilebuf_fast:
     ; Compute index = PPU_VADDR - $2000
     move.w  D5,D0
     subi.w  #$2000,D0               ; D0.w = index (0..$3BF)
+
+    ; T39 HUD row guard: NT_CACHE rows 0-3 (offsets $000-$07F) are the
+    ; HUD region. The bulk-transfer path receives cave/overworld
+    ; playfield writes addressed to $2000+; on NES those rows 0-3 get
+    ; masked by the scroll split, but on Gen they would stomp HUD.
+    ; HUD tiles reach Plane A via _ppu_write_7 (HUD prep writes), so
+    ; drop row 0-3 traffic from this bulk path to preserve HUD.
+    cmpi.w  #$0080,D0
+    blo.s   .ttf_nt_skip
 
     ; Cache tile index in NT_CACHE
     move.b  D2,(A2,D0.W)
