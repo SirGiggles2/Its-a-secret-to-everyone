@@ -34,6 +34,14 @@ local OUT_TXT  = repo_path("builds\\reports\\t36_cave_nes_capture.txt")
 local OUT_JSON = repo_path("builds\\reports\\t36_cave_nes_capture.json")
 local OUT_PNG  = repo_path("builds\\reports\\t36_cave_nes_capture.png")
 
+-- T39 render-classification: NES reference screenshots matching Gen shots.
+local T39_SHOTS = {
+    { t = 40,  png = repo_path("builds\\reports\\t39_nes_pre.png") },
+    { t = 500, png = repo_path("builds\\reports\\t39_nes_in.png") },
+    { t = 820, png = repo_path("builds\\reports\\t39_nes_post.png") },
+}
+local t39_done = {}
+
 local MAX_FRAMES = 8000
 local MODE0_BOOT_TIMEOUT = 1200
 local TARGET_NAME_PROGRESS = 5
@@ -459,6 +467,13 @@ for frame = 1, MAX_FRAMES do
             set_flow(FLOW_DONE, frame, "capture complete")
             CAPTURE.ended_naturally = true
             break
+        end
+        for _, shot in ipairs(T39_SHOTS) do
+            if t == shot.t and not t39_done[shot.t] then
+                t39_done[shot.t] = true
+                pcall(function() client.screenshot(shot.png) end)
+                record(string.format("f%04d T39_SHOT t=%d png=%s", frame, t, shot.png))
+            end
         end
         CAPTURE.trace[#CAPTURE.trace + 1] = {
             t = t,

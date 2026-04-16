@@ -44,6 +44,26 @@ local OUT_TXT  = repo_path("builds\\reports\\t36_cave_gen_capture.txt")
 local OUT_JSON = repo_path("builds\\reports\\t36_cave_gen_capture.json")
 local OUT_PNG  = repo_path("builds\\reports\\t36_cave_gen_capture.png")
 
+-- T39 render-classification shot manifest. Helpers (t39_dump_nt /
+-- t39_dump_vdp) live further down, after ram_u8 is declared.
+local T39_SHOTS = {
+    { t = 40,  png = repo_path("builds\\reports\\t39_gen_pre.png"),
+               nt  = repo_path("builds\\reports\\t39_nt_gen_pre.hex"),
+               vdp = repo_path("builds\\reports\\t39_vdp_gen_pre.hex") },
+    { t = 500, png = repo_path("builds\\reports\\t39_gen_in.png"),
+               nt  = repo_path("builds\\reports\\t39_nt_gen_in.hex"),
+               vdp = repo_path("builds\\reports\\t39_vdp_gen_in.hex") },
+    { t = 820, png = repo_path("builds\\reports\\t39_gen_post.png"),
+               nt  = repo_path("builds\\reports\\t39_nt_gen_post.hex"),
+               vdp = repo_path("builds\\reports\\t39_vdp_gen_post.hex") },
+}
+local T39_NT_BASE = 0xFF0840   -- NT_CACHE_BASE (960 bytes Plane A)
+local T39_NT_LEN  = 960
+local T39_PPUCTRL = 0xFF0804
+local T39_PPUMASK = 0xFF0805
+local t39_done = {}
+local t39_dump_nt, t39_dump_vdp
+
 local MAX_FRAMES = 8000
 local MODE0_BOOT_TIMEOUT = 1200
 local TARGET_NAME_PROGRESS = 5
@@ -214,6 +234,55 @@ local function ram_u16(bus_addr)
     local v = m68k_bus_u16(bus_addr)
     if v ~= nil then return v end
     return 0
+end
+
+-- T39 dump helpers (declared up top; bodies here, once ram_u8 is visible).
+function t39_dump_nt(path, tval)
+    local parts = {string.format("; T39 NT_CACHE dump at scenario t=%d\n", tval)}
+    local pc = ram_u8(T39_PPUCTRL) or 0
+    local pm = ram_u8(T39_PPUMASK) or 0
+    parts[#parts+1] = string.format("; PPUCTRL=$%02X PPUMASK=$%02X\n", pc, pm)
+    local row = {}
+    for i = 0, T39_NT_LEN - 1 do
+        row[#row+1] = string.format("%02X", ram_u8(T39_NT_BASE + i) or 0)
+        if (i % 32) == 31 then
+            parts[#parts+1] = string.format("r%02d: %s\n",
+                math.floor(i / 32), table.concat(row, " "))
+            row = {}
+        end
+    end
+    local f = io.open(path, "w")
+    if f then f:write(table.concat(parts)); f:close() end
+end
+
+function t39_dump_vdp(path, tval)
+    local parts = {string.format("; T39 VDP VRAM pattern dump at scenario t=%d\n", tval)}
+    local ok_vdp = false
+    pcall(function()
+        if memory.getmemorydomainlist then
+            for _, dn in ipairs(memory.getmemorydomainlist()) do
+                if dn == "VRAM" then ok_vdp = true end
+            end
+        end
+    end)
+    if not ok_vdp then
+        parts[#parts+1] = "; VRAM domain unavailable\n"
+    else
+        pcall(function()
+            memory.usememorydomain("VRAM")
+            local row = {}
+            for i = 0, 0x3FFF do
+                row[#row+1] = string.format("%02X", memory.read_u8(i))
+                if (i % 32) == 31 then
+                    parts[#parts+1] = string.format("v%04X: %s\n",
+                        (i - 31), table.concat(row, " "))
+                    row = {}
+                end
+            end
+        end)
+    end
+    local f = io.open(path, "w")
+    if f then f:write(table.concat(parts)); f:close() end
 end
 
 -- ---------------------------------------------------------------------------
@@ -586,6 +655,16 @@ for frame = 1, MAX_FRAMES do
             set_flow(FLOW_DONE, frame, "capture complete")
             CAPTURE.ended_naturally = true
             break
+        end
+        -- T39 render-classification: dump PNG + NT_CACHE + VRAM at 3 waypoints
+        for _, shot in ipairs(T39_SHOTS) do
+            if t == shot.t and not t39_done[shot.t] then
+                t39_done[shot.t] = true
+                pcall(function() client.screenshot(shot.png) end)
+                t39_dump_nt(shot.nt, t)
+                t39_dump_vdp(shot.vdp, t)
+                record(string.format("f%04d T39_SHOT t=%d png=%s", frame, t, shot.png))
+            end
         end
         CAPTURE.trace[#CAPTURE.trace + 1] = {
             t = t,
