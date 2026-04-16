@@ -245,6 +245,12 @@ exit /b 0
 
 :scan_report
   rem %~1 = gate name, %~2 = report file
+  rem
+  rem Scan semantics: iterate every line; last verdict line wins.
+  rem Three literal phrase patterns (findstr /C: — the old "ALL PASS" without
+  rem /C: treated spaces as OR delimiters and misclassified passing reports).
+  rem   PASS pattern: "ALL PASS"
+  rem   FAIL patterns: ": FAIL" (convention) and "FAILURE(S)" (T18/T20 format)
   if not exist "%~2" (
       echo [ERROR] %~1 -- report not generated
       echo [ERROR] %~1 -- report not generated >> "%SUMMARY%"
@@ -253,9 +259,9 @@ exit /b 0
   )
   set "RESULT=UNKNOWN"
   for /f "delims=" %%L in (%~2) do (
-      set "LINE=%%L"
-      echo !LINE! | findstr /i "ALL PASS" >nul && set "RESULT=PASS"
-      echo !LINE! | findstr /i ": FAIL" >nul && set "RESULT=FAIL"
+      echo %%L | findstr /C:"ALL PASS" >nul && set "RESULT=PASS"
+      echo %%L | findstr /C:": FAIL" >nul && set "RESULT=FAIL"
+      echo %%L | findstr /C:"FAILURE(S)" >nul && set "RESULT=FAIL"
   )
   if "!RESULT!"=="PASS" (
       echo [PASS] %~1
