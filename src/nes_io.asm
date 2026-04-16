@@ -2488,6 +2488,15 @@ _clear_nametable_fast:
     beq.s   .cnf_nt1
 
     ; ---- NT0: Fill Plane A rows 0-29 starting at $C000 ----
+    ; Phase 2c: also fill Window nametable rows 0-7 (256 tiles = 512 bytes).
+    ; Without this, NT0-clear requests leave stale HUD tiles in Window
+    ; after a mode transition that clears NT0.
+    move.l  #$70000002,(VDP_CTRL).l ; VRAM write at $B000 (Window)
+    move.w  #255,D3                 ; 32 cols * 8 rows - 1
+.cnf_window_fill:
+    move.w  D1,(VDP_DATA).l
+    dbf     D3,.cnf_window_fill
+
     move.l  #$40000003,(VDP_CTRL).l ; VRAM write at $C000
     ; Clear NT_CACHE offsets 0-959 (NT0)
     lea     (NT_CACHE_BASE).l,A0
@@ -2497,6 +2506,7 @@ _clear_nametable_fast:
     ; ---- NT1: Fill Plane A rows 30-63 starting at $CF00 ----
     ; 34 rows = 30 NT1 rows + 4 gap rows (prevents garbage when scroll wraps).
     ; $CF00 = $C000 + 30*$80.  VDP command: ($CF00 & $3FFF)<<16 | $40000003
+    ; NT1 doesn't touch HUD range — skip Window fill.
     move.l  #$4F000003,(VDP_CTRL).l ; VRAM write at $CF00
     ; Clear NT_CACHE offsets 960-1919 (NT1)
     lea     (NT_CACHE_BASE+960).l,A0
