@@ -386,20 +386,13 @@ _ppu_write_4:
 ; For T5 we just store the values so they're available when needed.
 ;------------------------------------------------------------------------------
 _ppu_write_5:
-    movem.l D1,-(SP)
-    move.b  (PPU_LATCH).l,D1
-    tst.b   D1
-    bne.s   .second_write_5
-    ; First write — horizontal scroll
-    move.b  D0,(PPU_SCRL_X).l
-    move.b  #1,(PPU_LATCH).l
-    movem.l (SP)+,D1
-    rts
-.second_write_5:
-    ; Second write — vertical scroll
-    move.b  D0,(PPU_SCRL_Y).l
-    clr.b   (PPU_LATCH).l
-    movem.l (SP)+,D1
+    ; Phase 9: PPU_SCRL_X / PPU_SCRL_Y stores removed (dead — never read).
+    ; Genesis scroll is driven by _ags_* machinery from NES RAM gameplay
+    ; state, not these $2005 shadow bytes.  Latch toggle retained for
+    ; $2006 PPUADDR correctness (shares write-toggle with $2005 on NES).
+    move.b  (PPU_LATCH).l,D0          ; reuse D0 (scroll byte discarded)
+    eori.b  #1,D0
+    move.b  D0,(PPU_LATCH).l
     rts
 
 ;------------------------------------------------------------------------------
@@ -606,8 +599,7 @@ _mode_transition_check:
     clr.w   (PPU_VADDR).l
     clr.b   (PPU_DHALF).l
     clr.b   (PPU_DBUF).l
-    clr.b   (PPU_SCRL_X).l
-    clr.b   (PPU_SCRL_Y).l
+    ; Phase 9: PPU_SCRL_X/Y clears removed (dead — never read)
     ; Direct VSRAM[0] + VSRAM[1] = 0 (inside vblank window).
     move.l  #VSRAM_WRITE_0000,(VDP_CTRL).l
     move.w  #0,(VDP_DATA).l          ; Plane A V-scroll
