@@ -106,6 +106,12 @@ rem is selected via CODEX_TARGET_ROOM_ID and a --room-id argument.
 call :run_parity_room "Room $77" "0x77" "room77_parity_report.txt"
 call :run_parity_room "Room $76" "0x76" "room76_parity_report.txt"
 
+call :run_parity "T37 Sword" ^
+    "bizhawk_t37_sword_nes_capture.lua" ^
+    "bizhawk_t37_sword_gen_capture.lua" ^
+    "compare_t37_sword_parity.py" ^
+    "bizhawk_t37_sword_parity_report.txt"
+
 :summary
 echo. >> "%SUMMARY%"
 echo ================================================================= >> "%SUMMARY%"
