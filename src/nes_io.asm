@@ -910,7 +910,12 @@ _ppu_write_7:
 
     lsr.w   #5,D2                   ; D2.w = row (0…29)
     move.w  D2,D4                   ; D4.w = cached row for tail-row mirror
-    mulu.w  #$0080,D2               ; D2.l = row * $80  (fits in 16 bits; row ≤ 29)
+
+    ; Phase 2 v2: rows 0-7 route to Window plane at $B000 (HUD isolation).
+    cmpi.w  #8,D2
+    blo     .nt_write_a_window
+
+    mulu.w  #$0080,D2               ; D2.l = row * $80  (64-wide Plane A stride)
     add.w   D3,D2                   ; D2.w = row*$80 + col*2
     addi.w  #$C000,D2               ; D2.w = VDP VRAM address (Plane A base $C000)
 
@@ -939,6 +944,30 @@ _ppu_write_7:
     ; V64 gap rows 60-63 are left blank (_clear_nametable_fast fills them).
     ; Mirroring rows 0-3 here caused visible text duplication when the
     ; display window straddled the 512→0 plane boundary.
+    bra     .nt_noop                ; skip Window path
+
+.nt_write_a_window:
+    ; Phase 2 v2: Window plane path (rows 0-7, HUD isolation).
+    ; Window nametable is 32 tiles wide → stride = $40 per row.
+    mulu.w  #$0040,D2               ; D2.l = row * $40
+    add.w   D3,D2                   ; D2.w = row*$40 + col*2
+    addi.w  #$B000,D2               ; D2.w = Window VRAM addr
+
+    ; VDP cmd: $B000 A[15:14]=10 → lower word = 2.
+    move.l  D2,D3
+    andi.l  #$00003FFF,D3
+    swap    D3
+    ori.l   #$40000002,D3
+    move.l  D3,(VDP_CTRL).l
+
+    andi.w  #$00FF,D0               ; D0.w = tile index
+    move.w  D1,D3
+    subi.w  #$2000,D3
+    lea     (NT_CACHE_BASE).l,A0
+    move.b  D0,(A0,D3.W)
+
+    bsr     _compose_bg_tile_word
+    move.w  D0,(VDP_DATA).l         ; write to Window plane
 
 .nt_noop:
     ;======================================================================
@@ -2894,11 +2923,16 @@ _transfer_tilebuf_fast:
     ; Cache tile index in NT_CACHE
     move.b  D2,(A2,D0.W)
 
-    ; Compute VDP address: $C000 + row*$80 + col*2
+    ; Compute VDP address.
+    ; Phase 2 v2: rows 0-7 route to Window plane ($B000, 32-wide stride $40).
+    ; Rows 8-29 → Plane A ($C000, 64-wide stride $80).
     move.w  D0,D6                   ; save index
     andi.w  #$001F,D6               ; col = index & 31
     lsl.w   #1,D6                   ; col * 2
     lsr.w   #5,D0                   ; row = index >> 5
+    cmpi.w  #8,D0
+    blo.s   .ttf_nt_window          ; Window plane path
+
     mulu.w  #$0080,D0              ; row * $80
     add.w   D6,D0                   ; row*$80 + col*2
     addi.w  #$C000,D0              ; + Plane A base
@@ -2910,7 +2944,22 @@ _transfer_tilebuf_fast:
     swap    D6
     ori.l   #$40000003,D6          ; CD bits + A[15:14]=3 for $C000+
     move.l  D6,(VDP_CTRL).l
+    bra.s   .ttf_nt_emit_tile
 
+.ttf_nt_window:
+    ; Window plane: row*$40 + col*2 + $B000
+    mulu.w  #$0040,D0              ; row * $40
+    add.w   D6,D0                  ; + col*2
+    addi.w  #$B000,D0              ; + Window base
+
+    moveq   #0,D6
+    move.w  D0,D6
+    andi.l  #$00003FFF,D6
+    swap    D6
+    ori.l   #$40000002,D6          ; CD bits + A[15:14]=2 for $B000
+    move.l  D6,(VDP_CTRL).l
+
+.ttf_nt_emit_tile:
     ; Write tile word: tile index + BG pattern table offset + cached palette.
     moveq   #0,D0
     move.b  D2,D0
