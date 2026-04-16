@@ -2220,19 +2220,6 @@ _mmc1_common:
     lea     (MMC1_CTRL).l,A0        ; A0 = base of MMC1_CTRL ($FF0812)
     move.b  D2,(A0,D3.w)            ; store at MMC1_CTRL + D3 offset
 
-    ; Auto-refresh $FF8000 bank window on PRG register writes (D3 == 3).
-    ; Without this, NES code that reads $8xxx-$BFFF pointers (text strings,
-    ; level blocks, spawn tables) hits stale bank data — cave-interior
-    ; symptoms: zero textbox, wrong BG tiles, phantom spawns, lag.
-    cmpi.b  #3,D3
-    bne.s   .no_refresh
-    movem.l D0/A0-A1,-(SP)          ; preserve caller accumulator + addr regs
-    moveq   #0,D0
-    move.b  D2,D0                   ; D0 = new PRG bank value (5 bits)
-    bsr     _copy_bank_to_window
-    movem.l (SP)+,D0/A0-A1
-.no_refresh:
-
     ; Reset accumulator
     clr.b   (MMC1_SHIFT).l
     clr.b   (MMC1_COUNT).l
