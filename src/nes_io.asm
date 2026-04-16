@@ -173,6 +173,30 @@ _current_window_bank  equ $00FF083F ; byte cache: last copied bank ($FF = none)
 INTRO_SCROLL_NO_SPLIT   equ 0
 INTRO_SCROLL_GAME_SPLIT equ 1
 
+;------------------------------------------------------------------------------
+; SAT shadow (Phase 1: VDP DMA for OAM).
+;
+; Double-buffered Genesis sprite attribute table mirror in 68k RAM.
+;   SAT_SHADOW_A at $FF2000 (512 bytes) — bank A
+;   SAT_SHADOW_B at $FF2200 (512 bytes) — bank B
+;   SAT_ACTIVE_BANK at $FF2400 (byte) — 0=A, 1=B; bank currently FILLED by _oam_dma
+;
+; Flow:
+;   Frame N: _oam_dma writes SAT_SHADOW_[A|B] at bank = SAT_ACTIVE_BANK.
+;   Frame N+1 VBlankISR (top): _oam_dma_flush DMAs that same bank into
+;     VRAM $F800, then flips SAT_ACTIVE_BANK. Frame N+1's _oam_dma then
+;     writes the other bank.
+; One-frame OAM display latency — standard Genesis pattern.
+;
+; Address range $FF2000-$FF2400 confirmed clear of APU shadow ($FF0A00),
+; NT_CACHE ($FF0840-$FF0FBF), probe counters ($FF1000-), FileBChecksums
+; ($FF1200), NT_ATTR_CACHE ($FF1400-$FF1B7F), and NES_SRAM ($FF6000).
+;------------------------------------------------------------------------------
+SAT_SHADOW_A        equ $00FF2000
+SAT_SHADOW_B        equ $00FF2200
+SAT_SHADOW_SIZE     equ 512
+SAT_ACTIVE_BANK     equ $00FF2400
+
 ;==============================================================================
 ; PPU register reads ($2000–$2007 → _ppu_read_0 … _ppu_read_7)
 ;==============================================================================
@@ -1935,17 +1959,22 @@ _sram_commit_save_slots:
 ;------------------------------------------------------------------------------
 _oam_dma:
     ifne CHR_EXPANSION_ENABLED
-    movem.l D0-D7/A0-A1,-(SP)
+    movem.l D0-D7/A0-A2,-(SP)
     else
-    movem.l D0-D7/A0,-(SP)
+    movem.l D0-D7/A0/A2,-(SP)
     endc
 
     ; VSRAM scroll is now driven by _apply_genesis_scroll in IsrNmi.
     ; The old static 8px bias has been removed.
 
-    ; Set VDP write address: VRAM $F800 (sprite attribute table)
-    ; $F800 & $3FFF = $3800 → swap → $38000000 → | $40000003 = $78000003
-    move.l  #$78000003,(VDP_CTRL).l
+    ; Phase 1 (HW adoption): write into SAT_SHADOW bank instead of VDP data
+    ; port.  DMA from the same bank happens at the top of the NEXT frame's
+    ; VBlankISR via _oam_dma_flush.  One-frame OAM display latency.
+    lea     (SAT_SHADOW_A).l,A2
+    tst.b   (SAT_ACTIVE_BANK).l
+    beq.s   .sat_bank_picked
+    lea     (SAT_SHADOW_B).l,A2
+.sat_bank_picked:
 
     lea     (NES_RAM_BASE+$0200).l,A0  ; A0 → NES OAM buffer ($FF0200)
     moveq   #63,D7                     ; loop: 64 sprites (dbra counts 63→0)
@@ -2014,7 +2043,7 @@ _oam_dma:
 .oam_gap_done:
     swap    D6                      ; restore sprite index in low word
 .oam_write_y:
-    move.w  D4,(VDP_DATA).l
+    move.w  D4,(A2)+                ; Phase 1: SAT_SHADOW write (was VDP_DATA)
 
     ; ── Word 1: size | link ─────────────────────────────────────────────
     ; Link field: chain sprites 0→1→2→...→63→0
@@ -2030,7 +2059,7 @@ _oam_dma:
     beq.s   .oam_size_done
     ori.w   #$0100,D4           ; V-size = 2 (8×16: two 8×8 cells stacked)
 .oam_size_done:
-    move.w  D4,(VDP_DATA).l     ; write size | link
+    move.w  D4,(A2)+            ; Phase 1: SAT_SHADOW write size | link
 
     ; ── Word 2: tile word (priority | palette | Vflip | Hflip | tile) ────
     ; Compute Genesis tile index based on sprite size mode
@@ -2098,20 +2127,20 @@ _oam_dma:
     beq     .no_hflip
     ori.w   #$0800,D5           ; set bit 11
 .no_hflip:
-    move.w  D5,(VDP_DATA).l     ; write tile word
+    move.w  D5,(A2)+            ; Phase 1: SAT_SHADOW write tile word
 
     ; ── Word 3: Genesis X ─────────────────────────────────────────────────
     ; Genesis 40-cell: screen column 0 is at X=128 → Genesis X = NES_X + 128
     move.w  D3,D4
     addi.w  #128,D4
-    move.w  D4,(VDP_DATA).l
+    move.w  D4,(A2)+            ; Phase 1: SAT_SHADOW write X
 
     addq.w  #1,D6               ; advance sprite index
     dbra    D7,.oam_loop
     ifne CHR_EXPANSION_ENABLED
-    movem.l (SP)+,D0-D7/A0-A1
+    movem.l (SP)+,D0-D7/A0-A2
     else
-    movem.l (SP)+,D0-D7/A0
+    movem.l (SP)+,D0-D7/A0/A2
     endc
     rts
 
@@ -2127,6 +2156,66 @@ _oam_dma:
     dc.w    $0000               ; sub-pal 2 → PAL0
     dc.w    $2000               ; sub-pal 3 → PAL1 (bits 14:13 = 01)
     endc
+
+;==============================================================================
+; _oam_dma_flush — Phase 1: transfer previous-frame SAT_SHADOW bank via VDP
+;   68k→VRAM DMA to sprite attribute table at $F800.
+;
+; Must be called at the TOP of VBlankISR (before IsrNmi).  IsrNmi can extend
+; into active display past scanline 40, so scheduling the DMA at the tail of
+; VBlankISR would miss vblank.  The DMA source is the bank CURRENTLY flagged
+; by SAT_ACTIVE_BANK — that is, the bank the previous frame's _oam_dma just
+; finished filling.  After DMA setup the flag flips so the new frame's
+; _oam_dma writes the OTHER bank.
+;
+; DMA params:
+;   Reg 19/20: length = 256 words ($0100)
+;   Reg 21/22/23: source = SAT_SHADOW_A or SAT_SHADOW_B (word address / 2)
+;   VDP cmd: $78000083 (VRAM write $F800 + CD5 DMA bit)
+;
+; No busy-poll needed: DMA is fire-and-forget from 68k RAM.  Next VDP access
+; (later in VBlankISR) will stall briefly if transfer still in flight.
+;==============================================================================
+    even
+_oam_dma_flush:
+    movem.l D0/D1,-(SP)
+    moveq   #0,D0
+    move.b  (SAT_ACTIVE_BANK).l,D0
+    ; D0 = 0 → source = SAT_SHADOW_A; D0 = 1 → source = SAT_SHADOW_B
+    move.l  #SAT_SHADOW_A,D1
+    tst.b   D0
+    beq.s   .oflush_src_ready
+    move.l  #SAT_SHADOW_B,D1
+.oflush_src_ready:
+    ; Length: 256 words. Reg 19 = lo byte = $00, Reg 20 = hi byte = $01
+    move.w  #$9300,(VDP_CTRL).l   ; Reg 19: length lo = $00
+    move.w  #$9401,(VDP_CTRL).l   ; Reg 20: length hi = $01
+    ; Source addr in words: D1 >> 1
+    lsr.l   #1,D1
+    ; Reg 21 = source[7:0]
+    move.w  D1,D0
+    andi.w  #$00FF,D0
+    ori.w   #$9500,D0
+    move.w  D0,(VDP_CTRL).l
+    ; Reg 22 = source[15:8]
+    move.l  D1,D0
+    lsr.l   #8,D0
+    andi.w  #$00FF,D0
+    ori.w   #$9600,D0
+    move.w  D0,(VDP_CTRL).l
+    ; Reg 23 = source[22:16] with bit 7 clear (68k→VRAM mode)
+    move.l  D1,D0
+    lsr.l   #8,D0
+    lsr.l   #8,D0
+    andi.w  #$007F,D0
+    ori.w   #$9700,D0
+    move.w  D0,(VDP_CTRL).l
+    ; VDP command: VRAM write $F800 + DMA trigger bit
+    move.l  #$78000083,(VDP_CTRL).l
+    ; Flip active bank: bank just DMA'd becomes "previous"; other bank becomes active
+    eori.b  #1,(SAT_ACTIVE_BANK).l
+    movem.l (SP)+,D0/D1
+    rts
 
 ;==============================================================================
 ; MMC1 mapper writes ($8000 / $A000 / $C000 / $E000)

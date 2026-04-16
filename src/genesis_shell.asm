@@ -312,6 +312,16 @@ EntryPoint:
     move.w  #0,(A0)+
     dbra    D0,.nesramclear
 
+    ; Phase 1: clear SAT_SHADOW double-buffer + SAT_ACTIVE_BANK flag.
+    ; Genesis sprite Y=0 lies 128px above screen → all shadow sprites start
+    ; off-screen.  First _oam_dma fill overrides with real game state.
+    movea.l #SAT_SHADOW_A,A0
+    move.w  #(SAT_SHADOW_SIZE*2)/2-1,D0   ; 2 banks × 512 bytes → 512 words
+.sat_shadow_clear:
+    move.w  #0,(A0)+
+    dbra    D0,.sat_shadow_clear
+    clr.b   (SAT_ACTIVE_BANK).l            ; start with bank A active
+
     ;--------------------------------------------------------------------------
     ; T4: Initialize NES register equivalents before handing off to Zelda code.
     ;
@@ -419,6 +429,12 @@ VBlankISR:
     btst    #7,($00FF0804).l        ; PPU_CTRL = $FF0804, bit 7 = NMI enable
     beq.s   .nmi_off
     addq.b  #1,($00FF1003).l        ; Phase 2.4: NMI probe counter
+    ; Phase 1 (HW adoption): flush previous frame's SAT_SHADOW to VRAM $F800
+    ; via 68k→VRAM DMA.  Must run before _ags_prearm/IsrNmi so the DMA
+    ; trigger fires early in vblank (IsrNmi can extend into active display).
+    ; _oam_dma_flush also flips SAT_ACTIVE_BANK so the NEXT IsrNmi fill
+    ; populates the other bank.
+    bsr     _oam_dma_flush
     ; Pre-arm pending VSRAM + H-int state from previous frame's _ags_flush.
     ; Must run BEFORE IsrNmi: IsrNmi can extend into active display past
     ; scanline 40, so doing the VDP writes after-the-fact (inside _ags_flush)
