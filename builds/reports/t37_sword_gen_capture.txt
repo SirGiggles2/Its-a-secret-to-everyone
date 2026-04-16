@@ -1,0 +1,30 @@
+REPLAY: loaded bootflow_gen.txt (618 frames)
+=================================================================
+T35 Genesis capture: room $77 -> $76 left-scroll trace
+=================================================================
+SCENARIO_LENGTH=1400
+HB f0200 flow=REPLAY_BOOTFLOW mode=$00 sub=$00 room=$00 hsc=$00 scrmode=$00
+HB f0400 flow=REPLAY_BOOTFLOW mode=$01 sub=$00 room=$00 hsc=$00 scrmode=$00
+f0560 REPLAY reached Mode5 room $77
+f0560 flow REPLAY_BOOTFLOW -> T37_STABILIZE (replay hit gameplay)
+HB f0600 flow=T37_STABILIZE mode=$05 sub=$00 room=$77 hsc=$00 scrmode=$00
+f0624 T=0 baseline x=$78 y=$8D dir=$00 hsc=$00 vsc=$00 room=$77 frame_ctr=$CC
+f0624 flow T37_STABILIZE -> T37_CAPTURE (T35 capture window open)
+f0664 T39_SHOT t=40 png=C:\Users\Jake Diggity\Documents\GitHub\FINAL TRY\builds\reports\t37_gen_pre.png
+HB f0800 flow=T37_CAPTURE mode=$05 sub=$00 room=$77 hsc=$00 scrmode=$00
+HB f1000 flow=T37_CAPTURE mode=$0B sub=$00 room=$77 hsc=$00 scrmode=$00
+f1024 T39_SHOT t=400 png=C:\Users\Jake Diggity\Documents\GitHub\FINAL TRY\builds\reports\t37_gen_incave.png
+HB f1200 flow=T37_CAPTURE mode=$0B sub=$00 room=$77 hsc=$00 scrmode=$00
+f1224 T39_SHOT t=600 png=C:\Users\Jake Diggity\Documents\GitHub\FINAL TRY\builds\reports\t37_gen_pickup.png
+HB f1400 flow=T37_CAPTURE mode=$0B sub=$00 room=$77 hsc=$00 scrmode=$00
+f1524 T39_SHOT t=900 png=C:\Users\Jake Diggity\Documents\GitHub\FINAL TRY\builds\reports\t37_gen_post.png
+HB f1600 flow=T37_CAPTURE mode=$0B sub=$00 room=$77 hsc=$00 scrmode=$00
+HB f1800 flow=T37_CAPTURE mode=$05 sub=$00 room=$77 hsc=$00 scrmode=$00
+HB f2000 flow=T37_CAPTURE mode=$05 sub=$00 room=$77 hsc=$00 scrmode=$00
+f2024 flow T37_CAPTURE -> DONE (capture complete)
+TRACE_LENGTH=1400 (expected 1400)
+REACHED_MODE5=true
+T0_FRAME=624
+GEN_EXCEPTION_FRAME=null
+FINAL t=1399 x=$40.78 y=$4D.80 dir=$00 room=$77 mode=$05 sub=$00 hsc=$00 scrmode=$00
+T37_GEN_CAPTURE: OK

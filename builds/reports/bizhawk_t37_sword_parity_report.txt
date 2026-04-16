@@ -1,0 +1,13 @@
+=================================================================
+T37 SWORD-PICKUP PARITY REPORT (NES vs Genesis, cave $77)
+=================================================================
+T37_NES_CAPTURE_OK: PASS  len=1400
+T37_GEN_CAPTURE_OK: PASS  len=1400
+T37_NO_GEN_EXCEPTION: PASS  no exception
+T37_BASELINE_PARITY: PASS  obj_x:OK; obj_y:OK; mode:OK; room:OK
+T37_CAVE_ENTER_TRIGGERED: PASS  nes_t=213 gen_t=213
+T37_SWORD_PICKUP_NES: PASS  NES inv_sword 0->$01 at t=606
+T37_SWORD_PICKUP_GEN: PASS  Gen inv_sword 0->$01 at t=606
+T37_PICKUP_PHASE_MATCH: PASS  delta=+0f (NES t=606, Gen t=606)
+T37_ROUND_TRIP_READY: PASS  nes=(r$77,m$05,x$40,y$4D) gen=(r$77,m$05,x$40,y$4D)
+T37_PARITY: ALL PASS
