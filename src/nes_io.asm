@@ -2268,6 +2268,17 @@ _mmc1_common:
     lea     (MMC1_CTRL).l,A0        ; A0 = base of MMC1_CTRL ($FF0812)
     move.b  D2,(A0,D3.w)            ; store at MMC1_CTRL + D3 offset
 
+    ; T36 Stage H experiment: universal auto-refresh of the PRG bank
+    ; window on $E000 writes. REVERTED — incompatible with the existing
+    ; manual P33b/P33c pins (z_01/z_03/z_05/z_06) which deliberately
+    ; set _current_window_bank to a bank that differs from MMC1_PRG.
+    ; Auto-refresh undid every pin on the next MMC1 write, breaking
+    ; Link movement in mode $05 (walk_left never reached x=$40, cave
+    ; entry never triggered). Full evidence in
+    ; builds/reports/t36_mmc1_autorefresh_finding.md. Next attempt
+    ; should target specific cave-interior pointer sites with P33b-
+    ; style pins instead of a universal write-side refresh.
+
     ; Reset accumulator
     clr.b   (MMC1_SHIFT).l
     clr.b   (MMC1_COUNT).l
