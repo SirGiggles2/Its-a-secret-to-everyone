@@ -16,11 +16,20 @@
 --   ExcAddrError   $000384
 --   DefaultException $0003A6
 
-local ROOT     = "C:\\Users\\Jake Diggity\\Documents\\GitHub\\FINAL TRY\\"
-local OUT_DIR  = ROOT .. "builds\\reports\\"
+-- Resolve ROOT via CODEX_BIZHAWK_ROOT env var (set by run batch files).
+-- Prior hard-coded ROOT pointed at the main tree and silently read that
+-- tree's whatif.lst, producing wrong landmark addresses when run from a
+-- worktree.  Fall back to main tree only if env var is unset.
+local ROOT = os.getenv("CODEX_BIZHAWK_ROOT")
+if not ROOT or ROOT == "" then
+    ROOT = "C:\\Users\\Jake Diggity\\Documents\\GitHub\\FINAL TRY"
+end
+ROOT = ROOT:gsub("/", "\\"):gsub("\\+$", "")
+
+local OUT_DIR  = ROOT .. "\\builds\\reports\\"
 local OUT_PATH = OUT_DIR .. "bizhawk_boot_probe.txt"
 
-dofile(ROOT .. "tools/probe_addresses.lua")  -- sets LOOPFOREVER, EXC_BUS, EXC_ADDR, EXC_DEF, ISRRESET, RUNGAME, ISRNMI
+dofile(ROOT .. "\\tools\\probe_addresses.lua")  -- sets LOOPFOREVER, EXC_BUS, EXC_ADDR, EXC_DEF, ISRRESET, RUNGAME, ISRNMI
 
 local FORENSICS_TYPE = 0xFF0900
 local FORENSICS_SR   = 0xFF0902

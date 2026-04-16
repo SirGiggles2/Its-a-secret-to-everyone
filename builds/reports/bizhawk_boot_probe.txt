@@ -1,0 +1,70 @@
+=================================================================
+Boot probe  T7/T8/T9/T10/T11  —  300 frames
+=================================================================
+  IsrReset=$052E02  RunGame=$04FBBA  LoopForever=$04FBE2  IsrNmi=$04FC16
+  ExcBus=$000490  ExcAddr=$0004B2  ExcDef=$0004D4
+
+  f001 pc=$000300  reset=- game=- forever=- nmi=- exc=false
+  f002 pc=$00036A  reset=- game=- forever=- nmi=- exc=false
+  f003 pc=$02F89E  reset=- game=- forever=- nmi=- exc=false
+  f004 pc=$04A28E  reset=4 game=4 forever=- nmi=- exc=false
+  f005 pc=$04A290  reset=4 game=4 forever=- nmi=- exc=false
+  f060 pc=$013556  reset=4 game=4 forever=19 nmi=20 exc=false
+  f120 pc=$04FBE2  reset=4 game=4 forever=19 nmi=20 exc=false
+  f180 pc=$04FBE2  reset=4 game=4 forever=19 nmi=20 exc=false
+  f240 pc=$04FBE2  reset=4 game=4 forever=19 nmi=20 exc=false
+  f300 pc=$04FBE2  reset=4 game=4 forever=19 nmi=20 exc=false
+
+─── T7: Reset Trace Sanity ─────────────────────────────────────
+[PASS] T7_ISRRESET_HIT                 frame 4
+[PASS] T7_RUNGAME_HIT                  frame 4
+[PASS] T7_LOOPFOREVER_HIT              frame 19
+[PASS] T7_ISRNMI_HIT                   frame 20
+[PASS] T7_ORDER                        Reset(f4)≤Game(f4)≤Forever(f19)≤Nmi(f20)
+[PASS] T7_NO_EXCEPTION                 no exception handler executed
+
+─── T8: Frame / NMI Cadence ────────────────────────────────────
+  first_nmi=f20  eligible=280  with_nmi=228  multi_nmi=0  rate=81.4%
+[FAIL] T8_NMI_CADENCE                  81.4% < 95% (228/280)
+[PASS] T8_NMI_NO_DOUBLE                no frame had >1 IsrNmi call
+
+─── T9: No Hidden Exceptions (300-frame soak) ──────────────────
+[PASS] T9_NO_EXCEPTION                 300 frames clean
+
+─── T10: NES RAM Map Soundness ─────────────────────────────────
+  $FF00F4 InitializedGame  = $01  (domain=M68K BUS)
+  $FF00FF CurPpuControl    = $B0  (domain=M68K BUS)
+  $FF0804 PPU_CTRL shadow  = $B0  (domain=M68K BUS)
+[PASS] T10_RAM_READABLE                NES RAM accessible ($FF00F4=$01)
+[PASS] T10_PPUCTRL_SET                 $FF00FF=$B0 (PPU_CTRL active, non-zero)
+[PASS] T10_PPU_STATE                   $FF0804=$B0 (PPU_CTRL shadow non-zero)
+
+─── T11: RAM Snapshot Parity (pre-PPU scope) ───────────────────
+  Snapshot taken at LoopForever-entry (RunGame done, IsrNmi not yet run).
+  snap_initgame=$00  snap_ppuctrl_ne=$B0  snap_ppuctrl_sh=$B0
+[PASS] T11_INIT_GAME                   snap $FF00F4=0 matches NES (RunGame clears InitializedGame)
+[PASS] T11_PPUCTRL_PARITY              snap $FF00FF=$B0 matches NES boot value (ClearAllAudioAndVideo+RunGame)
+[PASS] T11_SP_SHADOW                   D7 low byte=$FF (NES SP=$FF, TXS in IsrReset)
+
+=================================================================
+BOOT PROBE SUMMARY  (T7 / T8 / T9 / T10 / T11)
+=================================================================
+  [PASS] T7_ISRRESET_HIT
+  [PASS] T7_RUNGAME_HIT
+  [PASS] T7_LOOPFOREVER_HIT
+  [PASS] T7_ISRNMI_HIT
+  [PASS] T7_ORDER
+  [PASS] T7_NO_EXCEPTION
+  [FAIL] T8_NMI_CADENCE
+  [PASS] T8_NMI_NO_DOUBLE
+  [PASS] T9_NO_EXCEPTION
+  [PASS] T10_RAM_READABLE
+  [PASS] T10_PPUCTRL_SET
+  [PASS] T10_PPU_STATE
+  [PASS] T11_INIT_GAME
+  [PASS] T11_PPUCTRL_PARITY
+  [PASS] T11_SP_SHADOW
+
+  14 PASS  /  1 FAIL  /  15 total
+
+BOOT PROBE: FAIL
