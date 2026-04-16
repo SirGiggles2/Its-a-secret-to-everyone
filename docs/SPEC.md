@@ -541,22 +541,28 @@ All probes in `tools/`, run via `tools/run_all_probes.bat`.
 | `bizhawk_scroll_latch_probe.lua` | T15 | `builds/reports/bizhawk_scroll_latch_probe.txt` |
 | `bizhawk_mmc1_probe.lua` | T11b | `builds/reports/bizhawk_mmc1_probe.txt` |
 | `bizhawk_chr_upload_probe.lua` | T16/T17a | `builds/reports/bizhawk_chr_upload_probe.txt` |
-| `bizhawk_t18_nametable_probe.lua` | T18 | `builds/reports/bizhawk_t18_nametable_probe.txt` |
-| `bizhawk_t19_palette_probe.lua` | T19 | `builds/reports/bizhawk_t19_palette_probe.txt` |
-| `bizhawk_t20_attribute_probe.lua` | T20 | `builds/reports/bizhawk_t20_attribute_probe.txt` |
-| `bizhawk_t21_title_probe.lua` | T21 | `builds/reports/bizhawk_t21_title_probe.txt` |
-| `bizhawk_t22_parity_probe.lua` | T22 | `builds/reports/bizhawk_t22_parity_probe.txt` |
+| `bizhawk_nametable_probe.lua` | T18 | `builds/reports/bizhawk_nametable_probe.txt` |
+| `bizhawk_palette_probe.lua` | T19 | `builds/reports/bizhawk_palette_probe.txt` |
+| `bizhawk_attribute_probe.lua` | T20 | `builds/reports/bizhawk_attribute_probe.txt` |
+| `bizhawk_t22_title_ram_probe.lua` | T22 | `builds/reports/bizhawk_t22_title_ram_probe.txt` |
 | `bizhawk_t23_oam_dma_probe.lua` | T23 | `builds/reports/bizhawk_t23_oam_dma_probe.txt` |
 | `bizhawk_t24_sprite_decode_probe.lua` | T24 | `builds/reports/bizhawk_t24_sprite_decode_probe.txt` |
 | `bizhawk_t25_sprite_palette_probe.lua` | T25 | `builds/reports/bizhawk_t25_sprite_palette_probe.txt` |
 | `bizhawk_t26_title_sprites_probe.lua` | T26 | `builds/reports/bizhawk_t26_title_sprites_probe.txt` |
 | `bizhawk_t27_controller_probe.lua` | T27 | `builds/reports/bizhawk_t27_controller_probe.txt` |
 | `bizhawk_t28_title_input_probe.lua` | T28 | `builds/reports/bizhawk_t28_title_input_probe.txt` |
-| `bizhawk_vdp_reg_trace_probe.lua` | Bug B diag | `builds/reports/bizhawk_vdp_reg_trace_probe.txt` |
-| `bizhawk_subphase_timing_probe.lua` | Bug C diag | `builds/reports/bizhawk_subphase_timing_probe.txt` |
 | `bizhawk_t29_file_select_probe.lua` | T29 | `builds/reports/bizhawk_t29_file_select_probe.txt` |
 | `bizhawk_t30_room_load_probe.lua` | T30/T31/T32 | `builds/reports/bizhawk_t30_room_load_probe.txt` |
+| `bizhawk_t33_link_spawn_probe.lua` | T33 | `builds/reports/bizhawk_t33_link_spawn_probe.txt` |
+| `bizhawk_t34_movement_{nes,gen}_capture.lua` + `compare_t34_movement_parity.py` | T34 | `builds/reports/t34_movement_parity_report.txt` |
 | `bizhawk_t35_scroll_{nes,gen}_capture.lua` + `compare_t35_scroll_parity.py` | T35 | `builds/reports/bizhawk_t35_scroll_parity_report.txt` |
+| `bizhawk_room77_{nes,gen}_capture.lua` + `compare_room77_parity.py` | Room $77 / $76 (T31/T32/T36 proxy) | `builds/reports/room77_parity_report.txt`, `room76_parity_report.txt` |
+| `bizhawk_vdp_reg_trace_probe.lua` | Bug B diag (not in runner) | `builds/reports/bizhawk_vdp_reg_trace_probe.txt` |
+| `bizhawk_subphase_timing_probe.lua` | Bug C diag (not in runner) | `builds/reports/bizhawk_subphase_timing_probe.txt` |
+
+`run_all_probes.bat` executes every probe in this table as a single unified gate. Single-Lua probes scan their own report for `: ALL PASS` / `: FAIL`; parity gates run an NES-side capture, a Gen-side capture, then a Python comparator that writes the same convention. `run_all_gates.bat` is a thin wrapper that builds first, calls `run_all_probes.bat`, then runs the perf sample.
+
+Known-red gates intentionally kept in the suite so regressions are detected, not hidden: T28 (title input story-soak stall at frame 2107), T29 (NMI_CONTINUOUS threshold), T36 Room $76 (ROUTE_TRANSITION_SETTLE — tracked separately and allowed to stay red per Phase 0 baseline).
 
 - `bizhawk_t30_room_load_probe.lua` room gate uses `RoomId` at NES RAM `$00EB`.
 - NES RAM `$003C` is logged as diagnostic-only telemetry in this flow and is not used for pass/fail room gating.

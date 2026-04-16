@@ -89,24 +89,31 @@ Runs every milestone probe in sequence and writes a combined pass/fail summary t
 
 ## Current Status
 
-**Completed through T15 + T11b** (2026-04-01). T16/T17a (CHR tile upload) in progress — 5/7 passing.
+**Completed through T35 + T11b + T42–T44 audio tier** (2026-04-16, Zelda27.184). T36 cave entry at 8/9 (1-frame phase residual parked). T39 HUD PASS after Stage C row guard. T37 sword pickup infra built, pickup trigger unresolved. T28 (title story-soak) and T29 (NMI threshold) tracked as known-yellow.
 
 | Milestone | Status |
 |---|---|
 | T1–T5 | ✓ Foundation complete (shell, forensics, transpiler, ROM assembly) |
-| T6–T11 | ✓ Boot/timing/memory complete (reset trace, NMI cadence, RAM parity) |
-| T11b | ✓ MMC1 state tracking — CTRL=$0F, PRG=$05 verified (8/8) |
+| T6–T11b | ✓ Boot/timing/memory + MMC1 state tracking |
 | T12–T15 | ✓ PPU register semantics complete (latch, increment, ctrl, scroll) |
-| T16/T17a | ⚠ In progress — CHR upload path implemented, 5/7 passing; sprite tile VRAM zero under investigation |
-| T17b–T48 | Pending |
+| T16–T22 | ✓ Graphics pipeline (CHR upload, nametable, palette, attribute, title, parity) |
+| T23–T27 | ✓ Sprites + controller (OAM DMA, decode, palette, title sprites, input) |
+| T28–T29 | ⚠ Title/file-select tracked as known-yellow (story-soak stall f2107; NMI threshold) |
+| T30–T35 | ✓ Room load/render/parity/link spawn/D-pad movement/left scroll parity |
+| T36 | ⚠ Cave entry 8/9 (1-frame phase residual parked, user-accepted) |
+| T37 | ⚠ Sword pickup infra built; pickup trigger unresolved |
+| T38–T41 | Pending (enemy AI, HUD polish, Dungeon 1, full overworld) |
+| T42–T44 | ✓ Audio tier complete (native YM2612+PSG player, DMC streamer) |
+| T45–T48 | Pending (SRAM save, hardware test, Quest 1 completion) |
 
 Full milestone matrix with pass/fail evidence: [`docs/SPEC.md`](docs/SPEC.md) § Current Status.
 
 ### Immediate Next Steps
 
-1. Resolve T16 TILE0_NONEMPTY FAIL — run probe with `CHR_HIT_COUNT` debug counter to confirm whether CHR path is entered
-2. T18 (nametable → Plane A) after T16 resolves
-3. T17b (banked CHR decode) — unblocked now that T11b passes
+1. **T37 sword pickup trigger** — Link stalls at y=$8D. Likely merchant collision rect fires but pickup state transition doesn't consume. Parity infra already built in `compare_t37_sword_parity.py`.
+2. **T12/T13 probe rewrite** — stale VRAM assumption invalidates boot signal.
+3. **T16 HUD "UU" glyphs** — CHR upload cosmetic defect.
+4. **Post-T37**: T38 enemy AI, T45 SRAM save, then Genesis-native enhancements (6-button pad, Window-plane HUD, flicker-free sprites).
 
 ---
 
