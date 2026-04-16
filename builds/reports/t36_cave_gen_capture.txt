@@ -8,16 +8,16 @@ HB f0400 flow=REPLAY_BOOTFLOW mode=$01 sub=$00 room=$00 hsc=$00 scrmode=$00
 f0560 REPLAY reached Mode5 room $77
 f0560 flow REPLAY_BOOTFLOW -> T36_STABILIZE (replay hit gameplay)
 HB f0600 flow=T36_STABILIZE mode=$05 sub=$00 room=$77 hsc=$00 scrmode=$00
-f0621 T=0 baseline x=$78 y=$8D dir=$00 hsc=$00 vsc=$00 room=$77
-f0621 flow T36_STABILIZE -> T36_CAPTURE (T35 capture window open)
+f0624 T=0 baseline x=$78 y=$8D dir=$00 hsc=$00 vsc=$00 room=$77 frame_ctr=$CC
+f0624 flow T36_STABILIZE -> T36_CAPTURE (T35 capture window open)
 HB f0800 flow=T36_CAPTURE mode=$05 sub=$00 room=$77 hsc=$00 scrmode=$00
 HB f1000 flow=T36_CAPTURE mode=$0B sub=$00 room=$77 hsc=$00 scrmode=$00
 HB f1200 flow=T36_CAPTURE mode=$0B sub=$00 room=$77 hsc=$00 scrmode=$00
 HB f1400 flow=T36_CAPTURE mode=$05 sub=$00 room=$77 hsc=$00 scrmode=$00
-f1461 flow T36_CAPTURE -> DONE (capture complete)
+f1464 flow T36_CAPTURE -> DONE (capture complete)
 TRACE_LENGTH=840 (expected 840)
 REACHED_MODE5=true
-T0_FRAME=621
+T0_FRAME=624
 GEN_EXCEPTION_FRAME=null
-FINAL t=839 x=$40.78 y=$64.80 dir=$00 room=$77 mode=$05 sub=$00 hsc=$00 scrmode=$00
+FINAL t=839 x=$40.78 y=$63.80 dir=$00 room=$77 mode=$05 sub=$00 hsc=$00 scrmode=$00
 T36_GEN_CAPTURE: OK

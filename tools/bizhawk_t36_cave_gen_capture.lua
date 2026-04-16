@@ -515,7 +515,16 @@ for frame = 1, MAX_FRAMES do
                 CAPTURE.stable_prev_x = obj_x
                 CAPTURE.stable_prev_y = obj_y
             end
-            if CAPTURE.stable_count >= LINK_STABLE_FRAMES then
+            -- Gate T=0 on both Link stability AND $0015 & 3 == 0.
+            -- Stair-descent cadence (mode $10) fires every 4 frames gated by
+            -- (FrameCounter & 3 == 0).  NES and Gen boot times differ
+            -- by 270 NMIs → $0015 & 3 phase differs by 2 at Link-stable.
+            -- Pinning T=0 to phase 0 on both sides aligns stair-step frames
+            -- exactly and removes the 1px-y drift that was the residual
+            -- failure of T36_CAVE_INTERIOR_MATCH / T36_ROUND_TRIP_READY.
+            local frame_ctr = ram_u8(A_FRAME_CTR)
+            if CAPTURE.stable_count >= LINK_STABLE_FRAMES
+               and (frame_ctr % 4) == 0 then
                 CAPTURE.t0_frame = frame
                 CAPTURE.baseline_x = obj_x
                 CAPTURE.baseline_y = obj_y
@@ -523,9 +532,9 @@ for frame = 1, MAX_FRAMES do
                 CAPTURE.baseline_hscroll = ram_u8(A_CUR_HSCROLL)
                 CAPTURE.baseline_vscroll = ram_u8(A_CUR_VSCROLL)
                 CAPTURE.baseline_room = room_id
-                record(string.format("f%04d T=0 baseline x=$%02X y=$%02X dir=$%02X hsc=$%02X vsc=$%02X room=$%02X",
+                record(string.format("f%04d T=0 baseline x=$%02X y=$%02X dir=$%02X hsc=$%02X vsc=$%02X room=$%02X frame_ctr=$%02X",
                     frame, obj_x, obj_y, CAPTURE.baseline_dir,
-                    CAPTURE.baseline_hscroll, CAPTURE.baseline_vscroll, room_id))
+                    CAPTURE.baseline_hscroll, CAPTURE.baseline_vscroll, room_id, frame_ctr))
                 set_flow(FLOW_T36_CAPTURE, frame, "T35 capture window open")
                 CAPTURE.trace[#CAPTURE.trace + 1] = {
                     t = 0,
