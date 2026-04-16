@@ -28,7 +28,11 @@
 --   T15_SCRL_BOOT_Y       — PPU_SCRL_Y=0 at LoopForever entry (IsrReset sets scroll to 0)
 --   T15_SCRL_STABLE       — scroll values at frame 300 are readable and consistent
 
-local ROOT     = "C:\\Users\\Jake Diggity\\Documents\\GitHub\\FINAL TRY\\"
+local ROOT = os.getenv("CODEX_BIZHAWK_ROOT")
+if not ROOT or ROOT == "" then
+    ROOT = "C:\\Users\\Jake Diggity\\Documents\\GitHub\\FINAL TRY"
+end
+ROOT = ROOT:gsub("/", "\\"):gsub("\\+$", "") .. "\\"
 local OUT_DIR  = ROOT .. "builds\\reports\\"
 local OUT_PATH = OUT_DIR .. "bizhawk_scroll_latch_probe.txt"
 

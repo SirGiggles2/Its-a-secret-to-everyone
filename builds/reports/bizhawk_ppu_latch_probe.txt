@@ -1,29 +1,29 @@
 =================================================================
 PPU Latch probe  T12  —  120 frames
 =================================================================
-  LoopForever=$019012  IsrNmi=$019040
-  ExcBus=$0003E0  ExcAddr=$000402  ExcDef=$000424
+  LoopForever=$04FBE2  IsrNmi=$04FC16
+  ExcBus=$000490  ExcAddr=$0004B2  ExcDef=$0004D4
 
-  f001 pc=$000338  forever=-  exc=false
-  f002 pc=$0005DC  forever=-  exc=false
-  f003 pc=$019A8A  forever=-  exc=false
-  f004 pc=$017464  forever=-  exc=false
-  f005 pc=$0009A0  forever=-  exc=false
-  f030 pc=$019800  forever=-  exc=false
-  f060 pc=$019800  forever=-  exc=false
-  f090 pc=$019800  forever=-  exc=false
-  f120 pc=$019800  forever=-  exc=false
+  f001 pc=$000300  forever=-  exc=false
+  f002 pc=$00036A  forever=-  exc=false
+  f003 pc=$02F89E  forever=-  exc=false
+  f004 pc=$04A28E  forever=-  exc=false
+  f005 pc=$04A290  forever=-  exc=false
+  f030 pc=$01357C  forever=19  exc=false
+  f060 pc=$013556  forever=19  exc=false
+  f090 pc=$04FBE2  forever=19  exc=false
+  f120 pc=$04FBE2  forever=19  exc=false
 
 ─── T12: PPUADDR Latch Correctness ─────────────────────────────
 [PASS] T12_NO_EXCEPTION              no exception handler hit during boot
-[FAIL] T12_LOOPFOREVER_HIT           never reached LoopForever
-  Snapshot at LoopForever entry (frame ???):
-    PPU_LATCH ($FF0800) = ??
-    PPU_VADDR ($FF0802) = ??
-    PPU_DHALF ($FF0809) = ??
-[FAIL] T12_PPU_LATCH_CLEAR           snapshot not captured
-[FAIL] T12_PPU_DHALF_CLEAR           snapshot not captured
-[FAIL] T12_PPU_VADDR_VALID           PPU_VADDR not readable
+[PASS] T12_LOOPFOREVER_HIT           reached LoopForever at frame 19
+  Snapshot at LoopForever entry (frame 19):
+    PPU_LATCH ($FF0800) = $00
+    PPU_VADDR ($FF0802) = $2C40
+    PPU_DHALF ($FF0809) = $00
+[PASS] T12_PPU_LATCH_CLEAR           PPU_LATCH=0 (w-register cleared by PPUSTATUS reads)
+[PASS] T12_PPU_DHALF_CLEAR           PPU_DHALF=0 (no pending high-byte; all pairs committed)
+[PASS] T12_PPU_VADDR_VALID           PPU_VADDR=$2C40 readable (latch tracking active)
   VRAM[$2000] = $0011  (nametable 0, NES-native addr)
   VRAM[$2800] = $0000  (nametable 2, NES-native addr)
 [FAIL] T12_VRAM_NT0                  VRAM[$2000]=$0011 expected $2424
@@ -33,13 +33,13 @@ PPU Latch probe  T12  —  120 frames
 PPU LATCH PROBE SUMMARY  (T12)
 =================================================================
   [PASS] T12_NO_EXCEPTION
-  [FAIL] T12_LOOPFOREVER_HIT
-  [FAIL] T12_PPU_LATCH_CLEAR
-  [FAIL] T12_PPU_DHALF_CLEAR
-  [FAIL] T12_PPU_VADDR_VALID
+  [PASS] T12_LOOPFOREVER_HIT
+  [PASS] T12_PPU_LATCH_CLEAR
+  [PASS] T12_PPU_DHALF_CLEAR
+  [PASS] T12_PPU_VADDR_VALID
   [FAIL] T12_VRAM_NT0
   [FAIL] T12_VRAM_NT2
 
-  1 PASS  /  6 FAIL  /  7 total
+  5 PASS  /  2 FAIL  /  7 total
 
 T12 PPU LATCH PROBE: FAIL

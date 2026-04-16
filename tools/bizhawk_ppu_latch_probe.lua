@@ -36,7 +36,11 @@
 --   +8  PPU_DBUF   (byte)  — pending high byte for next word write
 --   +9  PPU_DHALF  (byte)  — 0=even (start), 1=odd (high buffered, awaiting low)
 
-local ROOT     = "C:\\Users\\Jake Diggity\\Documents\\GitHub\\FINAL TRY\\"
+local ROOT = os.getenv("CODEX_BIZHAWK_ROOT")
+if not ROOT or ROOT == "" then
+    ROOT = "C:\\Users\\Jake Diggity\\Documents\\GitHub\\FINAL TRY"
+end
+ROOT = ROOT:gsub("/", "\\"):gsub("\\+$", "") .. "\\"
 local OUT_DIR  = ROOT .. "builds\\reports\\"
 local OUT_PATH = OUT_DIR .. "bizhawk_ppu_latch_probe.txt"
 

@@ -27,7 +27,11 @@
 --   T11b_CHR1_ZERO       — MMC1_CHR1  = $00 (no CHR bank write before LoopForever)
 --   T11b_PRG_VALUE       — MMC1_PRG   = $05 (SwitchBank(5) applied)
 
-local ROOT     = "C:\\Users\\Jake Diggity\\Documents\\GitHub\\FINAL TRY\\"
+local ROOT = os.getenv("CODEX_BIZHAWK_ROOT")
+if not ROOT or ROOT == "" then
+    ROOT = "C:\\Users\\Jake Diggity\\Documents\\GitHub\\FINAL TRY"
+end
+ROOT = ROOT:gsub("/", "\\"):gsub("\\+$", "") .. "\\"
 local OUT_DIR  = ROOT .. "builds\\reports\\"
 local OUT_PATH = OUT_DIR .. "bizhawk_mmc1_probe.txt"
 

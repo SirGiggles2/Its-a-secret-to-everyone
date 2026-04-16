@@ -1,23 +1,23 @@
 =================================================================
 PPU Increment probe  T13  —  120 frames
 =================================================================
-  LoopForever=$019012  ExcBus=$0003E0  ExcAddr=$000402  ExcDef=$000424
+  LoopForever=$04FBE2  ExcBus=$000490  ExcAddr=$0004B2  ExcDef=$0004D4
 
-  f001 pc=$000338  forever=-  exc=false
-  f002 pc=$0005DC  forever=-  exc=false
-  f003 pc=$019A8A  forever=-  exc=false
-  f004 pc=$017464  forever=-  exc=false
-  f005 pc=$0009A0  forever=-  exc=false
-  f030 pc=$019800  forever=-  exc=false
-  f060 pc=$019800  forever=-  exc=false
-  f090 pc=$019800  forever=-  exc=false
-  f120 pc=$019800  forever=-  exc=false
+  f001 pc=$000300  forever=-  exc=false
+  f002 pc=$00036A  forever=-  exc=false
+  f003 pc=$02F89E  forever=-  exc=false
+  f004 pc=$04A28E  forever=-  exc=false
+  f005 pc=$04A290  forever=-  exc=false
+  f030 pc=$01357C  forever=19  exc=false
+  f060 pc=$013556  forever=19  exc=false
+  f090 pc=$04FBE2  forever=19  exc=false
+  f120 pc=$04FBE2  forever=19  exc=false
 
 ─── T13: PPU Increment Mode ─────────────────────────────────────
 [PASS] T13_NO_EXCEPTION            no exception handler hit
-[FAIL] T13_LOOPFOREVER_HIT         never reached LoopForever
-  PPU_CTRL ($FF0804) at LoopForever = ??
-[FAIL] T13_PPUCTRL_INC_BIT         snapshot not captured
+[PASS] T13_LOOPFOREVER_HIT         frame 19
+  PPU_CTRL ($FF0804) at LoopForever = $B0
+[PASS] T13_PPUCTRL_INC_BIT         PPU_CTRL=$B0 bit2=0 (+1 horizontal increment was active)
 
   VRAM spot-checks (BizHawk VRAM domain, word-addressed):
     VRAM[$2000] = $0011  (expect $2424)  word 0  (NES $2000/$2001)  — baseline
@@ -40,8 +40,8 @@ PPU Increment probe  T13  —  120 frames
 PPU INCREMENT PROBE SUMMARY  (T13)
 =================================================================
   [PASS] T13_NO_EXCEPTION
-  [FAIL] T13_LOOPFOREVER_HIT
-  [FAIL] T13_PPUCTRL_INC_BIT
+  [PASS] T13_LOOPFOREVER_HIT
+  [PASS] T13_PPUCTRL_INC_BIT
   [FAIL] T13_VRAM_NT0_W0
   [FAIL] T13_VRAM_NT0_W1
   [FAIL] T13_VRAM_NT0_W16
@@ -50,6 +50,6 @@ PPU INCREMENT PROBE SUMMARY  (T13)
   [FAIL] T13_VRAM_NT2_W0
   [FAIL] T13_VRAM_NT2_W1
 
-  1 PASS  /  9 FAIL  /  10 total
+  3 PASS  /  7 FAIL  /  10 total
 
 T13 PPU INCREMENT PROBE: FAIL
