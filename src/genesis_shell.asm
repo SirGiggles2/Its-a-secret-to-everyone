@@ -222,13 +222,8 @@ EntryPoint:
     move.w  #$8E00,(VDP_CTRL).l  ; Reg 14: pattern gen base = 0 (SMS compat, unused M5)
     move.w  #$8F02,(VDP_CTRL).l  ; Reg 15: auto-increment = 2 (word per VRAM access)
     move.w  #$9011,(VDP_CTRL).l  ; Reg 16: scroll size 64H × 64V → $11
-    move.w  #$9100,(VDP_CTRL).l  ; Reg 17: window H position = 0 (H window off)
-    ; Phase 2: enable Window plane for top 8 rows (HUD isolation).
-    ; Reg 18 = $08 → bit 7 = 0 (window above V pos), value 8 = 8*8 = 64px = 8 rows.
-    ; NES nametable writes $2000-$20FF (rows 0-7, HUD range) route to Window
-    ; nametable at $B000 instead of Plane A at $C000.  Cave/menu bulk writes to
-    ; Plane A then cannot stomp HUD VRAM — Window overlays Plane A structurally.
-    move.w  #$9208,(VDP_CTRL).l  ; Reg 18: window V position = 8 (covers rows 0-7)
+    move.w  #$9100,(VDP_CTRL).l  ; Reg 17: window H position = 0
+    move.w  #$9200,(VDP_CTRL).l  ; Reg 18: window V position = 0
     ; Regs 19-23 (DMA) intentionally SKIPPED — writing reg 23 arms the
     ; VDP DMA pending state on real hardware, causing subsequent CRAM/VRAM
     ; commands to be intercepted as DMA triggers.  DMA regs default to 0

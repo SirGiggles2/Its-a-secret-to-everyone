@@ -918,16 +918,7 @@ _ppu_write_7:
 
     lsr.w   #5,D2                   ; D2.w = row (0…29)
     move.w  D2,D4                   ; D4.w = cached row for tail-row mirror
-
-    ; Phase 2: HUD isolation.  Rows 0-7 → Window plane at $B000 (32-wide).
-    ; Rows 8-29 → Plane A at $C000 (64-wide, existing path).
-    ; Playfield bulk writes to Plane A rows 0-7 then cannot stomp HUD
-    ; because Window nametable is a separate VRAM region that overlays.
-    cmpi.w  #8,D2
-    blo     .nt_write_a_window
-
-    ; Plane A path (rows 8-29)
-    mulu.w  #$0080,D2               ; D2.l = row * $80 (64-wide Plane A stride)
+    mulu.w  #$0080,D2               ; D2.l = row * $80  (fits in 16 bits; row ≤ 29)
     add.w   D3,D2                   ; D2.w = row*$80 + col*2
     addi.w  #$C000,D2               ; D2.w = VDP VRAM address (Plane A base $C000)
 
@@ -956,37 +947,6 @@ _ppu_write_7:
     ; V64 gap rows 60-63 are left blank (_clear_nametable_fast fills them).
     ; Mirroring rows 0-3 here caused visible text duplication when the
     ; display window straddled the 512→0 plane boundary.
-    bra     .nt_noop                ; skip Window path
-
-.nt_write_a_window:
-    ; Window plane path (rows 0-7, HUD isolation).
-    ; Window nametable is 32 tiles wide → stride = 32 * 2 = $40 per row.
-    ; VDP addr = $B000 + row*$40 + col*2
-    mulu.w  #$0040,D2               ; D2.l = row * $40
-    add.w   D3,D2                   ; D2.w = row*$40 + col*2
-    addi.w  #$B000,D2               ; D2.w = VDP VRAM address (Window base $B000)
-
-    ; Issue VDP VRAM write command.
-    ; Window ($B000) A[15:14]=10 → lower word of command = 2.
-    ; Full command: $40000000 | ((addr & $3FFF) << 16) | 2
-    move.l  D2,D3
-    andi.l  #$00003FFF,D3           ; D3.l = addr & $3FFF
-    swap    D3                      ; D3.l = (addr & $3FFF) << 16
-    ori.l   #$40000002,D3           ; add CD bits + A[15:14]=2
-    move.l  D3,(VDP_CTRL).l
-
-    ; Cache raw tile index (attribute path still reads NT_CACHE — harmless;
-    ; attribute writes on HUD rows will land in Plane A rows 0-7 which are
-    ; invisible under Window, so palette changes on HUD tiles are a no-op
-    ; visually.  Accepted tradeoff for minimal Phase 2 scope.)
-    andi.w  #$00FF,D0               ; D0.w = tile index
-    move.w  D1,D3
-    subi.w  #$2000,D3
-    lea     (NT_CACHE_BASE).l,A0
-    move.b  D0,(A0,D3.W)
-
-    bsr     _compose_bg_tile_word
-    move.w  D0,(VDP_DATA).l         ; write tile word to Window plane
 
 .nt_noop:
     ;======================================================================
