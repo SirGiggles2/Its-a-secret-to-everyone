@@ -4974,6 +4974,7 @@ DrawLinkZeldaTriforces:
     moveq   #2,D2
     moveq   #27,D0
     jsr     AnimateItemObject
+    eori    #$01,CCR  ; normalize C to 6502 polarity before RTS
     rts
 
     even

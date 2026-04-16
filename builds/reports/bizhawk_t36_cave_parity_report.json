@@ -31,12 +31,12 @@
       "detail": "first diff t=263 nes=(m$10,x$40,y$59) gen=(m$10,x$40,y$5A)"
     },
     "T36_CAVE_EXIT_TRIGGERED": {
-      "pass": false,
-      "detail": "nes_t=749 gen_t=727"
+      "pass": true,
+      "detail": "nes_t=749 gen_t=747"
     },
     "T36_ROUND_TRIP_READY": {
       "pass": false,
-      "detail": "nes=(r$77,m$05,x$40,y$61,d$00) gen=(r$77,m$05,x$40,y$7E,d$00)"
+      "detail": "nes=(r$77,m$05,x$40,y$61,d$00) gen=(r$77,m$05,x$40,y$64,d$00)"
     }
   }
 }

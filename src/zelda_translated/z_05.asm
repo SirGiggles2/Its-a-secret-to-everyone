@@ -6753,6 +6753,7 @@ _L_z05_PrepareWriteHorizontalDoorTransferRecords_MakeForwardIndex:
     moveq   #2,D0
     move.b  D0,($0006,A4)
     move.b  D0,($0005,A4)
+    eori    #$01,CCR  ; normalize C to 6502 polarity before RTS
     rts
 
     even
@@ -8036,6 +8037,7 @@ CopyNextRowToTransferBuf:
     addq.b  #1,($00E9,A4)
     move.b  ($00E9,A4),D0
     cmpi.b  #$16,D0
+    eori    #$01,CCR  ; normalize C to 6502 polarity before RTS
     rts
 
     even
@@ -10448,6 +10450,7 @@ _L_z05_CreateRoomObjects_StoreLocation:
     eori    #$10,CCR  ; restore X = 6502 C
     move.b  D0,($0083,A4)
 _anon_z05_224:
+    eori    #$01,CCR  ; normalize C to 6502 polarity before RTS
     rts
 
     even

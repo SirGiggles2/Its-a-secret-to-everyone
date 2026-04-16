@@ -1231,12 +1231,23 @@ def translate_one_instruction(stripped, line_idx, symtab,
             e(f'    bsr     {target}')
 
     elif mnem == 'RTS':
+        # If C is in M68K-inverted state (from CMP/CPX/CPY/SBC earlier in the
+        # function without a normalizing op since), flip it back to 6502-style
+        # before returning.  Callers assume 6502-polarity C after a JSR that
+        # ends in CMP; without this fix, e.g., 6502 "CMP #$16 / RTS ; BCS"
+        # becomes M68K "cmpi.b #$16,D0 / rts / bcs" which reads the M68K flag
+        # with opposite meaning.  Root cause of T36 cave 21-frame row-copy
+        # compression (CopyNextRowToTransferBuf).
+        if carry_state.get('inverted'):
+            e('    eori    #$01,CCR  ; normalize C to 6502 polarity before RTS')
         e('    rts')
 
     elif mnem == 'RTI':
         # On NES, RTI returns from NMI/IRQ (pops P,PCL,PCH).
         # On Genesis, IsrNmi is called via BSR/JSR from VBlankISR (not via exception).
         # VBlankISR owns the RTE. IsrNmi must end with RTS.
+        if carry_state.get('inverted'):
+            e('    eori    #$01,CCR  ; normalize C to 6502 polarity before RTS')
         e('    rts   ; RTI → RTS (IsrNmi is a subroutine; VBlankISR handles the RTE)')
 
     elif mnem == 'PHA':

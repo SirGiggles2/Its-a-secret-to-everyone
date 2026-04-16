@@ -19,5 +19,5 @@ TRACE_LENGTH=840 (expected 840)
 REACHED_MODE5=true
 T0_FRAME=621
 GEN_EXCEPTION_FRAME=null
-FINAL t=839 x=$40.78 y=$7E.80 dir=$00 room=$77 mode=$05 sub=$00 hsc=$00 scrmode=$00
+FINAL t=839 x=$40.78 y=$64.80 dir=$00 room=$77 mode=$05 sub=$00 hsc=$00 scrmode=$00
 T36_GEN_CAPTURE: OK

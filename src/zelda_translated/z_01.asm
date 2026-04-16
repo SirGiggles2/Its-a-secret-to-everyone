@@ -4616,6 +4616,7 @@ _anon_z01_48:
     move.b  D0,(A0,D2.W)
     move.b  (A5)+,D1  ; PLP: pop to CCR
     move.w  D1,CCR
+    eori    #$01,CCR  ; normalize C to 6502 polarity before RTS
     rts
 
     even
@@ -5984,6 +5985,7 @@ CompareHeartsToContainers:
     lsr.b  #1,D0   ; LSR A
     move.b  ($0000,A4),D1
     cmp.b   D1,D0
+    eori    #$01,CCR  ; normalize C to 6502 polarity before RTS
     rts
 
     even
@@ -7312,6 +7314,7 @@ _L_z01_Link_BeHarmed_ResetHelp:
     subx.b  D1,D0   ; SBC $0D
     eori    #$10,CCR  ; restore X = 6502 C
     move.b  D0,($066F,A4)
+    eori    #$01,CCR  ; normalize C to 6502 polarity before RTS
     rts
 
     even
