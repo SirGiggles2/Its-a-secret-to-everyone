@@ -80,6 +80,7 @@ local A_OBJ_TEMPL   = BUS + 0x0002   -- object template type
 local A_LVL_BLOCK   = BUS + 0x00EB   -- level block attribute index
 local A_ROOM_FLAGS  = BUS + 0x04CD   -- level block attr byte F
 local A_CAVE_TMPL   = BUS + 0x034E   -- obj template (cave-person selector)
+local A_SRAM_68FE   = BUS + 0x68FE   -- PROBE: byte read by AssignObjSpawnPositions InCave
 local A_SLOT_A0  = BUS + 0x0633
 local A_SLOT_A1  = BUS + 0x0634
 local A_SLOT_A2  = BUS + 0x0635
@@ -571,6 +572,7 @@ for frame = 1, MAX_FRAMES do
                     lvl_block = ram_u8(A_LVL_BLOCK),
                     room_flags = ram_u8(A_ROOM_FLAGS),
                     cave_tmpl = ram_u8(A_CAVE_TMPL),
+                    sram_68fe = ram_u8(A_SRAM_68FE),
                 }
             end
         else
@@ -668,6 +670,7 @@ local function build_json()
         objstate = {}, movedir = {}, facedir = {},
         personstate = {}, cavetype = {}, objtimer0 = {}, autowalk = {},
         obj_templ = {}, lvl_block = {}, room_flags = {}, cave_tmpl = {},
+        sram_68fe = {},
     }
     for i = 1, trace_len do
         local e = trace[i]
@@ -710,6 +713,7 @@ local function build_json()
         cols.lvl_block[i]      = e.lvl_block or 0
         cols.room_flags[i]     = e.room_flags or 0
         cols.cave_tmpl[i]      = e.cave_tmpl or 0
+        cols.sram_68fe[i]      = e.sram_68fe or 0
     end
     local phase_parts = {}
     for i, p in ipairs(SCENARIO.phase_summary()) do
@@ -781,7 +785,8 @@ local function build_json()
         '"obj_templ":'        .. json_num_array(cols.obj_templ) .. ",",
         '"lvl_block":'        .. json_num_array(cols.lvl_block) .. ",",
         '"room_flags":'       .. json_num_array(cols.room_flags) .. ",",
-        '"cave_tmpl":'        .. json_num_array(cols.cave_tmpl),
+        '"cave_tmpl":'        .. json_num_array(cols.cave_tmpl) .. ",",
+        '"sram_68fe":'        .. json_num_array(cols.sram_68fe),
         "}",
         "}",
     }, "\n")
