@@ -222,8 +222,12 @@ EntryPoint:
     move.w  #$8E00,(VDP_CTRL).l  ; Reg 14: pattern gen base = 0 (SMS compat, unused M5)
     move.w  #$8F02,(VDP_CTRL).l  ; Reg 15: auto-increment = 2 (word per VRAM access)
     move.w  #$9011,(VDP_CTRL).l  ; Reg 16: scroll size 64H × 64V → $11
-    move.w  #$9100,(VDP_CTRL).l  ; Reg 17: window H position = 0
-    move.w  #$9200,(VDP_CTRL).l  ; Reg 18: window V position = 0
+    move.w  #$9100,(VDP_CTRL).l  ; Reg 17: window H position = 0 (H window off)
+    ; Phase 2 v2: enable Window for top 8 rows (HUD isolation).
+    ; $2000-$20FF NES nametable writes (rows 0-7) route to Window at $B000
+    ; via _ppu_write_7 AND _transfer_tilebuf_fast HUD branches.  Plane A
+    ; bulk writes to rows 0-7 stay at $C000 — invisible under Window overlay.
+    move.w  #$9208,(VDP_CTRL).l  ; Reg 18: window V position = 8 (covers rows 0-7)
     ; Regs 19-23 (DMA) intentionally SKIPPED — writing reg 23 arms the
     ; VDP DMA pending state on real hardware, causing subsequent CRAM/VRAM
     ; commands to be intercepted as DMA triggers.  DMA regs default to 0
@@ -287,6 +291,19 @@ EntryPoint:
     dbra    D0,.planeb_fill
 
     ;--------------------------------------------------------------------------
+    ; Phase 2 v2: fill Window nametable at $B000 with blank tile $05FF.
+    ; Without this, Window (now active top 8 rows) renders tile index $0000
+    ; (CHR tile 0) = garbage art before game writes HUD content.
+    ; Window map is 32x32 = 1024 bytes = 512 words.
+    ; VDP cmd $70000002: $B000 A[15:14]=10, addr13-0=$3000, lower word=2.
+    ;--------------------------------------------------------------------------
+    move.l  #$70000002,(VDP_CTRL).l  ; VRAM write to $B000 (Window map)
+    move.w  #511,D0
+.window_fill:
+    move.w  #$05FF,(VDP_DATA).l
+    dbra    D0,.window_fill
+
+    ;--------------------------------------------------------------------------
     ; Write test palette — pure green to CRAM[0] (background color slot).
     ; Reg 7 above set background = palette 0, color 0 → CRAM entry 0.
     ;
@@ -311,6 +328,16 @@ EntryPoint:
 .nesramclear:
     move.w  #0,(A0)+
     dbra    D0,.nesramclear
+
+    ; Phase 1: clear SAT_SHADOW double-buffer + SAT_ACTIVE_BANK flag.
+    ; Genesis sprite Y=0 lies 128px above screen → all shadow sprites start
+    ; off-screen.  First _oam_dma fill overrides with real game state.
+    movea.l #SAT_SHADOW_A,A0
+    move.w  #(SAT_SHADOW_SIZE*2)/2-1,D0   ; 2 banks × 512 bytes → 512 words
+.sat_shadow_clear:
+    move.w  #0,(A0)+
+    dbra    D0,.sat_shadow_clear
+    clr.b   (SAT_ACTIVE_BANK).l            ; start with bank A active
 
     ;--------------------------------------------------------------------------
     ; T4: Initialize NES register equivalents before handing off to Zelda code.
@@ -419,6 +446,12 @@ VBlankISR:
     btst    #7,($00FF0804).l        ; PPU_CTRL = $FF0804, bit 7 = NMI enable
     beq.s   .nmi_off
     addq.b  #1,($00FF1003).l        ; Phase 2.4: NMI probe counter
+    ; Phase 1 (HW adoption): flush previous frame's SAT_SHADOW to VRAM $F800
+    ; via 68k→VRAM DMA.  Must run before _ags_prearm/IsrNmi so the DMA
+    ; trigger fires early in vblank (IsrNmi can extend into active display).
+    ; _oam_dma_flush also flips SAT_ACTIVE_BANK so the NEXT IsrNmi fill
+    ; populates the other bank.
+    bsr     _oam_dma_flush
     ; Pre-arm pending VSRAM + H-int state from previous frame's _ags_flush.
     ; Must run BEFORE IsrNmi: IsrNmi can extend into active display past
     ; scanline 40, so doing the VDP writes after-the-fact (inside _ags_flush)

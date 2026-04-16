@@ -173,6 +173,30 @@ _current_window_bank  equ $00FF083F ; byte cache: last copied bank ($FF = none)
 INTRO_SCROLL_NO_SPLIT   equ 0
 INTRO_SCROLL_GAME_SPLIT equ 1
 
+;------------------------------------------------------------------------------
+; SAT shadow (Phase 1: VDP DMA for OAM).
+;
+; Double-buffered Genesis sprite attribute table mirror in 68k RAM.
+;   SAT_SHADOW_A at $FF2000 (512 bytes) — bank A
+;   SAT_SHADOW_B at $FF2200 (512 bytes) — bank B
+;   SAT_ACTIVE_BANK at $FF2400 (byte) — 0=A, 1=B; bank currently FILLED by _oam_dma
+;
+; Flow:
+;   Frame N: _oam_dma writes SAT_SHADOW_[A|B] at bank = SAT_ACTIVE_BANK.
+;   Frame N+1 VBlankISR (top): _oam_dma_flush DMAs that same bank into
+;     VRAM $F800, then flips SAT_ACTIVE_BANK. Frame N+1's _oam_dma then
+;     writes the other bank.
+; One-frame OAM display latency — standard Genesis pattern.
+;
+; Address range $FF2000-$FF2400 confirmed clear of APU shadow ($FF0A00),
+; NT_CACHE ($FF0840-$FF0FBF), probe counters ($FF1000-), FileBChecksums
+; ($FF1200), NT_ATTR_CACHE ($FF1400-$FF1B7F), and NES_SRAM ($FF6000).
+;------------------------------------------------------------------------------
+SAT_SHADOW_A        equ $00FF2000
+SAT_SHADOW_B        equ $00FF2200
+SAT_SHADOW_SIZE     equ 512
+SAT_ACTIVE_BANK     equ $00FF2400
+
 ;==============================================================================
 ; PPU register reads ($2000–$2007 → _ppu_read_0 … _ppu_read_7)
 ;==============================================================================
@@ -362,20 +386,13 @@ _ppu_write_4:
 ; For T5 we just store the values so they're available when needed.
 ;------------------------------------------------------------------------------
 _ppu_write_5:
-    movem.l D1,-(SP)
-    move.b  (PPU_LATCH).l,D1
-    tst.b   D1
-    bne.s   .second_write_5
-    ; First write — horizontal scroll
-    move.b  D0,(PPU_SCRL_X).l
-    move.b  #1,(PPU_LATCH).l
-    movem.l (SP)+,D1
-    rts
-.second_write_5:
-    ; Second write — vertical scroll
-    move.b  D0,(PPU_SCRL_Y).l
-    clr.b   (PPU_LATCH).l
-    movem.l (SP)+,D1
+    ; Phase 9: PPU_SCRL_X / PPU_SCRL_Y stores removed (dead — never read).
+    ; Genesis scroll is driven by _ags_* machinery from NES RAM gameplay
+    ; state, not these $2005 shadow bytes.  Latch toggle retained for
+    ; $2006 PPUADDR correctness (shares write-toggle with $2005 on NES).
+    move.b  (PPU_LATCH).l,D0          ; reuse D0 (scroll byte discarded)
+    eori.b  #1,D0
+    move.b  D0,(PPU_LATCH).l
     rts
 
 ;------------------------------------------------------------------------------
@@ -582,8 +599,7 @@ _mode_transition_check:
     clr.w   (PPU_VADDR).l
     clr.b   (PPU_DHALF).l
     clr.b   (PPU_DBUF).l
-    clr.b   (PPU_SCRL_X).l
-    clr.b   (PPU_SCRL_Y).l
+    ; Phase 9: PPU_SCRL_X/Y clears removed (dead — never read)
     ; Direct VSRAM[0] + VSRAM[1] = 0 (inside vblank window).
     move.l  #VSRAM_WRITE_0000,(VDP_CTRL).l
     move.w  #0,(VDP_DATA).l          ; Plane A V-scroll
@@ -894,7 +910,12 @@ _ppu_write_7:
 
     lsr.w   #5,D2                   ; D2.w = row (0…29)
     move.w  D2,D4                   ; D4.w = cached row for tail-row mirror
-    mulu.w  #$0080,D2               ; D2.l = row * $80  (fits in 16 bits; row ≤ 29)
+
+    ; Phase 2 v2: rows 0-7 route to Window plane at $B000 (HUD isolation).
+    cmpi.w  #8,D2
+    blo     .nt_write_a_window
+
+    mulu.w  #$0080,D2               ; D2.l = row * $80  (64-wide Plane A stride)
     add.w   D3,D2                   ; D2.w = row*$80 + col*2
     addi.w  #$C000,D2               ; D2.w = VDP VRAM address (Plane A base $C000)
 
@@ -923,6 +944,30 @@ _ppu_write_7:
     ; V64 gap rows 60-63 are left blank (_clear_nametable_fast fills them).
     ; Mirroring rows 0-3 here caused visible text duplication when the
     ; display window straddled the 512→0 plane boundary.
+    bra     .nt_noop                ; skip Window path
+
+.nt_write_a_window:
+    ; Phase 2 v2: Window plane path (rows 0-7, HUD isolation).
+    ; Window nametable is 32 tiles wide → stride = $40 per row.
+    mulu.w  #$0040,D2               ; D2.l = row * $40
+    add.w   D3,D2                   ; D2.w = row*$40 + col*2
+    addi.w  #$B000,D2               ; D2.w = Window VRAM addr
+
+    ; VDP cmd: $B000 A[15:14]=10 → lower word = 2.
+    move.l  D2,D3
+    andi.l  #$00003FFF,D3
+    swap    D3
+    ori.l   #$40000002,D3
+    move.l  D3,(VDP_CTRL).l
+
+    andi.w  #$00FF,D0               ; D0.w = tile index
+    move.w  D1,D3
+    subi.w  #$2000,D3
+    lea     (NT_CACHE_BASE).l,A0
+    move.b  D0,(A0,D3.W)
+
+    bsr     _compose_bg_tile_word
+    move.w  D0,(VDP_DATA).l         ; write to Window plane
 
 .nt_noop:
     ;======================================================================
@@ -1935,17 +1980,22 @@ _sram_commit_save_slots:
 ;------------------------------------------------------------------------------
 _oam_dma:
     ifne CHR_EXPANSION_ENABLED
-    movem.l D0-D7/A0-A1,-(SP)
+    movem.l D0-D7/A0-A2,-(SP)
     else
-    movem.l D0-D7/A0,-(SP)
+    movem.l D0-D7/A0/A2,-(SP)
     endc
 
     ; VSRAM scroll is now driven by _apply_genesis_scroll in IsrNmi.
     ; The old static 8px bias has been removed.
 
-    ; Set VDP write address: VRAM $F800 (sprite attribute table)
-    ; $F800 & $3FFF = $3800 → swap → $38000000 → | $40000003 = $78000003
-    move.l  #$78000003,(VDP_CTRL).l
+    ; Phase 1 (HW adoption): write into SAT_SHADOW bank instead of VDP data
+    ; port.  DMA from the same bank happens at the top of the NEXT frame's
+    ; VBlankISR via _oam_dma_flush.  One-frame OAM display latency.
+    lea     (SAT_SHADOW_A).l,A2
+    tst.b   (SAT_ACTIVE_BANK).l
+    beq.s   .sat_bank_picked
+    lea     (SAT_SHADOW_B).l,A2
+.sat_bank_picked:
 
     lea     (NES_RAM_BASE+$0200).l,A0  ; A0 → NES OAM buffer ($FF0200)
     moveq   #63,D7                     ; loop: 64 sprites (dbra counts 63→0)
@@ -2014,7 +2064,7 @@ _oam_dma:
 .oam_gap_done:
     swap    D6                      ; restore sprite index in low word
 .oam_write_y:
-    move.w  D4,(VDP_DATA).l
+    move.w  D4,(A2)+                ; Phase 1: SAT_SHADOW write (was VDP_DATA)
 
     ; ── Word 1: size | link ─────────────────────────────────────────────
     ; Link field: chain sprites 0→1→2→...→63→0
@@ -2030,7 +2080,7 @@ _oam_dma:
     beq.s   .oam_size_done
     ori.w   #$0100,D4           ; V-size = 2 (8×16: two 8×8 cells stacked)
 .oam_size_done:
-    move.w  D4,(VDP_DATA).l     ; write size | link
+    move.w  D4,(A2)+            ; Phase 1: SAT_SHADOW write size | link
 
     ; ── Word 2: tile word (priority | palette | Vflip | Hflip | tile) ────
     ; Compute Genesis tile index based on sprite size mode
@@ -2098,20 +2148,20 @@ _oam_dma:
     beq     .no_hflip
     ori.w   #$0800,D5           ; set bit 11
 .no_hflip:
-    move.w  D5,(VDP_DATA).l     ; write tile word
+    move.w  D5,(A2)+            ; Phase 1: SAT_SHADOW write tile word
 
     ; ── Word 3: Genesis X ─────────────────────────────────────────────────
     ; Genesis 40-cell: screen column 0 is at X=128 → Genesis X = NES_X + 128
     move.w  D3,D4
     addi.w  #128,D4
-    move.w  D4,(VDP_DATA).l
+    move.w  D4,(A2)+            ; Phase 1: SAT_SHADOW write X
 
     addq.w  #1,D6               ; advance sprite index
     dbra    D7,.oam_loop
     ifne CHR_EXPANSION_ENABLED
-    movem.l (SP)+,D0-D7/A0-A1
+    movem.l (SP)+,D0-D7/A0-A2
     else
-    movem.l (SP)+,D0-D7/A0
+    movem.l (SP)+,D0-D7/A0/A2
     endc
     rts
 
@@ -2127,6 +2177,66 @@ _oam_dma:
     dc.w    $0000               ; sub-pal 2 → PAL0
     dc.w    $2000               ; sub-pal 3 → PAL1 (bits 14:13 = 01)
     endc
+
+;==============================================================================
+; _oam_dma_flush — Phase 1: transfer previous-frame SAT_SHADOW bank via VDP
+;   68k→VRAM DMA to sprite attribute table at $F800.
+;
+; Must be called at the TOP of VBlankISR (before IsrNmi).  IsrNmi can extend
+; into active display past scanline 40, so scheduling the DMA at the tail of
+; VBlankISR would miss vblank.  The DMA source is the bank CURRENTLY flagged
+; by SAT_ACTIVE_BANK — that is, the bank the previous frame's _oam_dma just
+; finished filling.  After DMA setup the flag flips so the new frame's
+; _oam_dma writes the OTHER bank.
+;
+; DMA params:
+;   Reg 19/20: length = 256 words ($0100)
+;   Reg 21/22/23: source = SAT_SHADOW_A or SAT_SHADOW_B (word address / 2)
+;   VDP cmd: $78000083 (VRAM write $F800 + CD5 DMA bit)
+;
+; No busy-poll needed: DMA is fire-and-forget from 68k RAM.  Next VDP access
+; (later in VBlankISR) will stall briefly if transfer still in flight.
+;==============================================================================
+    even
+_oam_dma_flush:
+    movem.l D0/D1,-(SP)
+    moveq   #0,D0
+    move.b  (SAT_ACTIVE_BANK).l,D0
+    ; D0 = 0 → source = SAT_SHADOW_A; D0 = 1 → source = SAT_SHADOW_B
+    move.l  #SAT_SHADOW_A,D1
+    tst.b   D0
+    beq.s   .oflush_src_ready
+    move.l  #SAT_SHADOW_B,D1
+.oflush_src_ready:
+    ; Length: 256 words. Reg 19 = lo byte = $00, Reg 20 = hi byte = $01
+    move.w  #$9300,(VDP_CTRL).l   ; Reg 19: length lo = $00
+    move.w  #$9401,(VDP_CTRL).l   ; Reg 20: length hi = $01
+    ; Source addr in words: D1 >> 1
+    lsr.l   #1,D1
+    ; Reg 21 = source[7:0]
+    move.w  D1,D0
+    andi.w  #$00FF,D0
+    ori.w   #$9500,D0
+    move.w  D0,(VDP_CTRL).l
+    ; Reg 22 = source[15:8]
+    move.l  D1,D0
+    lsr.l   #8,D0
+    andi.w  #$00FF,D0
+    ori.w   #$9600,D0
+    move.w  D0,(VDP_CTRL).l
+    ; Reg 23 = source[22:16] with bit 7 clear (68k→VRAM mode)
+    move.l  D1,D0
+    lsr.l   #8,D0
+    lsr.l   #8,D0
+    andi.w  #$007F,D0
+    ori.w   #$9700,D0
+    move.w  D0,(VDP_CTRL).l
+    ; VDP command: VRAM write $F800 + DMA trigger bit
+    move.l  #$78000083,(VDP_CTRL).l
+    ; Flip active bank: bank just DMA'd becomes "previous"; other bank becomes active
+    eori.b  #1,(SAT_ACTIVE_BANK).l
+    movem.l (SP)+,D0/D1
+    rts
 
 ;==============================================================================
 ; MMC1 mapper writes ($8000 / $A000 / $C000 / $E000)
@@ -2378,6 +2488,15 @@ _clear_nametable_fast:
     beq.s   .cnf_nt1
 
     ; ---- NT0: Fill Plane A rows 0-29 starting at $C000 ----
+    ; Phase 2c: also fill Window nametable rows 0-7 (256 tiles = 512 bytes).
+    ; Without this, NT0-clear requests leave stale HUD tiles in Window
+    ; after a mode transition that clears NT0.
+    move.l  #$70000002,(VDP_CTRL).l ; VRAM write at $B000 (Window)
+    move.w  #255,D3                 ; 32 cols * 8 rows - 1
+.cnf_window_fill:
+    move.w  D1,(VDP_DATA).l
+    dbf     D3,.cnf_window_fill
+
     move.l  #$40000003,(VDP_CTRL).l ; VRAM write at $C000
     ; Clear NT_CACHE offsets 0-959 (NT0)
     lea     (NT_CACHE_BASE).l,A0
@@ -2387,6 +2506,7 @@ _clear_nametable_fast:
     ; ---- NT1: Fill Plane A rows 30-63 starting at $CF00 ----
     ; 34 rows = 30 NT1 rows + 4 gap rows (prevents garbage when scroll wraps).
     ; $CF00 = $C000 + 30*$80.  VDP command: ($CF00 & $3FFF)<<16 | $40000003
+    ; NT1 doesn't touch HUD range — skip Window fill.
     move.l  #$4F000003,(VDP_CTRL).l ; VRAM write at $CF00
     ; Clear NT_CACHE offsets 960-1919 (NT1)
     lea     (NT_CACHE_BASE+960).l,A0
@@ -2813,11 +2933,16 @@ _transfer_tilebuf_fast:
     ; Cache tile index in NT_CACHE
     move.b  D2,(A2,D0.W)
 
-    ; Compute VDP address: $C000 + row*$80 + col*2
+    ; Compute VDP address.
+    ; Phase 2 v2: rows 0-7 route to Window plane ($B000, 32-wide stride $40).
+    ; Rows 8-29 → Plane A ($C000, 64-wide stride $80).
     move.w  D0,D6                   ; save index
     andi.w  #$001F,D6               ; col = index & 31
     lsl.w   #1,D6                   ; col * 2
     lsr.w   #5,D0                   ; row = index >> 5
+    cmpi.w  #8,D0
+    blo.s   .ttf_nt_window          ; Window plane path
+
     mulu.w  #$0080,D0              ; row * $80
     add.w   D6,D0                   ; row*$80 + col*2
     addi.w  #$C000,D0              ; + Plane A base
@@ -2829,7 +2954,22 @@ _transfer_tilebuf_fast:
     swap    D6
     ori.l   #$40000003,D6          ; CD bits + A[15:14]=3 for $C000+
     move.l  D6,(VDP_CTRL).l
+    bra.s   .ttf_nt_emit_tile
 
+.ttf_nt_window:
+    ; Window plane: row*$40 + col*2 + $B000
+    mulu.w  #$0040,D0              ; row * $40
+    add.w   D6,D0                  ; + col*2
+    addi.w  #$B000,D0              ; + Window base
+
+    moveq   #0,D6
+    move.w  D0,D6
+    andi.l  #$00003FFF,D6
+    swap    D6
+    ori.l   #$40000002,D6          ; CD bits + A[15:14]=2 for $B000
+    move.l  D6,(VDP_CTRL).l
+
+.ttf_nt_emit_tile:
     ; Write tile word: tile index + BG pattern table offset + cached palette.
     moveq   #0,D0
     move.b  D2,D0
