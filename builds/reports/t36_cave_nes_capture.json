@@ -2,8 +2,8 @@
 "system":"NES",
 "scenario_length":840,
 "reached_mode5":true,
-"reached_mode5_frame":281,
-"t0_frame":341,
+"reached_mode5_frame":291,
+"t0_frame":352,
 "target_room_id":119,
 "baseline":{
 "obj_x":120,

@@ -4,20 +4,47 @@ T35 Genesis capture: room $77 -> $76 left-scroll trace
 =================================================================
 SCENARIO_LENGTH=840
 HB f0200 flow=REPLAY_BOOTFLOW mode=$00 sub=$00 room=$00 hsc=$00 scrmode=$00
-HB f0400 flow=REPLAY_BOOTFLOW mode=$01 sub=$00 room=$00 hsc=$00 scrmode=$00
-f0560 REPLAY reached Mode5 room $77
-f0560 flow REPLAY_BOOTFLOW -> T36_STABILIZE (replay hit gameplay)
-HB f0600 flow=T36_STABILIZE mode=$05 sub=$00 room=$77 hsc=$00 scrmode=$00
-f0624 T=0 baseline x=$78 y=$8D dir=$00 hsc=$00 vsc=$00 room=$77 frame_ctr=$CC
-f0624 flow T36_STABILIZE -> T36_CAPTURE (T35 capture window open)
-HB f0800 flow=T36_CAPTURE mode=$05 sub=$00 room=$77 hsc=$00 scrmode=$00
-HB f1000 flow=T36_CAPTURE mode=$0B sub=$00 room=$77 hsc=$00 scrmode=$00
-HB f1200 flow=T36_CAPTURE mode=$0B sub=$00 room=$77 hsc=$00 scrmode=$00
-HB f1400 flow=T36_CAPTURE mode=$05 sub=$00 room=$77 hsc=$00 scrmode=$00
-f1464 flow T36_CAPTURE -> DONE (capture complete)
-TRACE_LENGTH=840 (expected 840)
-REACHED_MODE5=true
-T0_FRAME=624
+HB f0400 flow=REPLAY_BOOTFLOW mode=$0F sub=$04 room=$00 hsc=$00 scrmode=$40
+HB f0600 flow=REPLAY_BOOTFLOW mode=$0F sub=$04 room=$00 hsc=$00 scrmode=$40
+HB f0800 flow=REPLAY_BOOTFLOW mode=$0F sub=$04 room=$00 hsc=$00 scrmode=$40
+HB f1000 flow=REPLAY_BOOTFLOW mode=$0F sub=$04 room=$00 hsc=$00 scrmode=$00
+HB f1200 flow=REPLAY_BOOTFLOW mode=$0F sub=$04 room=$00 hsc=$00 scrmode=$00
+HB f1400 flow=REPLAY_BOOTFLOW mode=$0F sub=$04 room=$00 hsc=$00 scrmode=$40
+HB f1600 flow=REPLAY_BOOTFLOW mode=$0F sub=$04 room=$00 hsc=$00 scrmode=$40
+HB f1800 flow=REPLAY_BOOTFLOW mode=$0F sub=$04 room=$00 hsc=$00 scrmode=$00
+HB f2000 flow=REPLAY_BOOTFLOW mode=$0F sub=$04 room=$00 hsc=$00 scrmode=$00
+HB f2200 flow=REPLAY_BOOTFLOW mode=$0F sub=$04 room=$00 hsc=$00 scrmode=$40
+HB f2400 flow=REPLAY_BOOTFLOW mode=$0F sub=$04 room=$00 hsc=$00 scrmode=$40
+HB f2600 flow=REPLAY_BOOTFLOW mode=$0F sub=$04 room=$00 hsc=$00 scrmode=$00
+HB f2800 flow=REPLAY_BOOTFLOW mode=$0F sub=$04 room=$00 hsc=$00 scrmode=$00
+HB f3000 flow=REPLAY_BOOTFLOW mode=$0F sub=$04 room=$00 hsc=$00 scrmode=$40
+HB f3200 flow=REPLAY_BOOTFLOW mode=$0F sub=$04 room=$00 hsc=$00 scrmode=$40
+HB f3400 flow=REPLAY_BOOTFLOW mode=$0F sub=$04 room=$00 hsc=$00 scrmode=$00
+HB f3600 flow=REPLAY_BOOTFLOW mode=$0F sub=$04 room=$00 hsc=$00 scrmode=$00
+HB f3800 flow=REPLAY_BOOTFLOW mode=$0F sub=$04 room=$00 hsc=$00 scrmode=$40
+HB f4000 flow=REPLAY_BOOTFLOW mode=$0F sub=$04 room=$00 hsc=$00 scrmode=$40
+HB f4200 flow=REPLAY_BOOTFLOW mode=$0F sub=$04 room=$00 hsc=$00 scrmode=$40
+HB f4400 flow=REPLAY_BOOTFLOW mode=$0F sub=$04 room=$00 hsc=$00 scrmode=$00
+HB f4600 flow=REPLAY_BOOTFLOW mode=$0F sub=$04 room=$00 hsc=$00 scrmode=$40
+HB f4800 flow=REPLAY_BOOTFLOW mode=$0F sub=$04 room=$00 hsc=$00 scrmode=$40
+HB f5000 flow=REPLAY_BOOTFLOW mode=$0F sub=$04 room=$00 hsc=$00 scrmode=$40
+HB f5200 flow=REPLAY_BOOTFLOW mode=$0F sub=$04 room=$00 hsc=$00 scrmode=$00
+HB f5400 flow=REPLAY_BOOTFLOW mode=$0F sub=$04 room=$00 hsc=$00 scrmode=$40
+HB f5600 flow=REPLAY_BOOTFLOW mode=$0F sub=$04 room=$00 hsc=$00 scrmode=$40
+HB f5800 flow=REPLAY_BOOTFLOW mode=$0F sub=$04 room=$00 hsc=$00 scrmode=$40
+HB f6000 flow=REPLAY_BOOTFLOW mode=$0F sub=$04 room=$00 hsc=$00 scrmode=$00
+HB f6200 flow=REPLAY_BOOTFLOW mode=$0F sub=$04 room=$00 hsc=$00 scrmode=$00
+HB f6400 flow=REPLAY_BOOTFLOW mode=$0F sub=$04 room=$00 hsc=$00 scrmode=$40
+HB f6600 flow=REPLAY_BOOTFLOW mode=$0F sub=$04 room=$00 hsc=$00 scrmode=$40
+HB f6800 flow=REPLAY_BOOTFLOW mode=$0F sub=$04 room=$00 hsc=$00 scrmode=$00
+HB f7000 flow=REPLAY_BOOTFLOW mode=$0F sub=$04 room=$00 hsc=$00 scrmode=$00
+HB f7200 flow=REPLAY_BOOTFLOW mode=$0F sub=$04 room=$00 hsc=$00 scrmode=$40
+HB f7400 flow=REPLAY_BOOTFLOW mode=$0F sub=$04 room=$00 hsc=$00 scrmode=$40
+HB f7600 flow=REPLAY_BOOTFLOW mode=$0F sub=$04 room=$00 hsc=$00 scrmode=$00
+HB f7800 flow=REPLAY_BOOTFLOW mode=$0F sub=$04 room=$00 hsc=$00 scrmode=$00
+HB f8000 flow=REPLAY_BOOTFLOW mode=$0F sub=$04 room=$00 hsc=$00 scrmode=$40
+TRACE_LENGTH=0 (expected 840)
+REACHED_MODE5=false
+T0_FRAME=-1
 GEN_EXCEPTION_FRAME=null
-FINAL t=839 x=$40.78 y=$63.80 dir=$00 room=$77 mode=$05 sub=$00 hsc=$00 scrmode=$00
-T36_GEN_CAPTURE: OK
+T36_GEN_CAPTURE: FAIL
