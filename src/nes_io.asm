@@ -484,6 +484,14 @@ _ags_flush:
 
 .ags_hscroll:
     ; --- H-scroll (Plane A H-scroll table entry 0) ---
+    ; Vblank-gate: writing the H-scroll table DMA while the beam is
+    ; active produces a mid-frame horizontal seam ("wobble"). Skip the
+    ; write if vblank has already ended — the previous frame's H-scroll
+    ; latch is still live, one-frame staleness is invisible compared to
+    ; a visible tear.
+    move.w  (VDP_CTRL).l,D0
+    btst    #3,D0                      ; VBlank still active?
+    beq.s   .ags_hscroll_skip
     moveq   #0,D0
     move.b  ($00FD,A4),D0              ; CurHScroll
     neg.w   D0
@@ -492,6 +500,7 @@ _ags_flush:
     move.w  D0,(VDP_DATA).l            ; Plane A H-scroll
     moveq   #0,D0
     move.w  D0,(VDP_DATA).l            ; Plane B H-scroll = 0
+.ags_hscroll_skip:
     movem.l (SP)+,D0-D4
     rts
 
