@@ -730,13 +730,9 @@ music_tick:
 .dmc_poll:
     bsr     dmc_dbg_poll            ; scaffold: Start cycles DMC samples
     bsr     dmc_feed                ; no-op stub (backward-compat call)
-    ; DriveEffect -> noise-SFX stubs (gated on Effect $0606 for music arb).
-    ; DriveSample -> $4015 bit4 -> dmc_trigger (synchronous cycle-paced
-    ; streamer; blocks CPU for ~50-1000 ms per sample at native NES rate).
-    jsr     DriveEffect
-    jsr     DriveSample
-    clr.b   ($FF0601).l                 ; consume SampleRequest
-    clr.b   ($FF0603).l                 ; consume EffectRequest
+    ; DMC and noise-SFX dispatch paused -- neither produced acceptable
+    ; audio yet. Revisit in a future pass. Music + SongRequest bridge
+    ; stay wired.
     movem.l (SP)+,D0-D7/A0-A2
     rts
 
