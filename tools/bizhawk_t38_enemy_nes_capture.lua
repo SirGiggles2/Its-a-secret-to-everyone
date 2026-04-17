@@ -472,6 +472,17 @@ for frame = 1, MAX_FRAMES do
                 record(string.format("f%04d T=0 baseline x=$%02X y=$%02X dir=$%02X hsc=$%02X vsc=$%02X room=$%02X frame_ctr=$%02X",
                     frame, obj_x, obj_y, CAPTURE.baseline_dir,
                     CAPTURE.baseline_hscroll, CAPTURE.baseline_vscroll, room_id, frame_ctr))
+                -- T38: sync RNG to a known seed so NES and Gen scrambles
+                -- evolve identically from T0. Without this, the two emulators'
+                -- Random arrays drift apart because boot takes a different
+                -- number of NMI ticks each side.
+                for i = 0, 7 do
+                    pcall(function()
+                        memory.usememorydomain("System Bus")
+                        memory.writebyte(0x0018 + i, 0x40 + i)
+                    end)
+                end
+                record("RNG_SEED: wrote 40 41 42 43 44 45 46 47 to $18..$1F")
                 set_flow(FLOW_T38_CAPTURE, frame, "T35 capture window open")
                 CAPTURE.trace[#CAPTURE.trace + 1] = {
                     t = 0,
