@@ -1,0 +1,40 @@
+REPLAY: loaded bootflow_gen.txt (618 frames)
+=================================================================
+T35 Genesis capture: room $77 -> $76 left-scroll trace
+=================================================================
+SCENARIO_LENGTH=720
+HB f0200 flow=REPLAY_BOOTFLOW mode=$00 sub=$00 room=$00 hsc=$00 scrmode=$00
+HB f0400 flow=REPLAY_BOOTFLOW mode=$01 sub=$00 room=$00 hsc=$00 scrmode=$00
+f0560 REPLAY reached Mode5 room $77
+f0560 flow REPLAY_BOOTFLOW -> T38_STABILIZE (replay hit gameplay)
+HB f0600 flow=T38_STABILIZE mode=$05 sub=$00 room=$77 hsc=$00 scrmode=$00
+f0624 T=0 baseline x=$78 y=$8D dir=$00 hsc=$00 vsc=$00 room=$77 frame_ctr=$CC
+f0624 flow T38_STABILIZE -> T38_CAPTURE (T35 capture window open)
+f0664 T39_SHOT t=40 png=C:\Users\Jake Diggity\Documents\GitHub\FINAL TRY\builds\reports\t38_gen_pre.png
+LINK t=60 x=$78 y=$8D dir=$00 room=$77 mode=$05 sub=$00
+ENEMY_SNAP t=60 t=60 | (no enemies)
+HB f0800 flow=T38_CAPTURE mode=$07 sub=$03 room=$77 hsc=$00 scrmode=$00
+LINK t=240 x=$E8 y=$8D dir=$02 room=$76 mode=$07 sub=$03
+ENEMY_SNAP t=240 t=240 | (no enemies)
+f0924 T39_SHOT t=300 png=C:\Users\Jake Diggity\Documents\GitHub\FINAL TRY\builds\reports\t38_gen_in76.png
+LINK t=300 x=$F0 y=$8D dir=$00 room=$76 mode=$05 sub=$00
+ENEMY_SNAP t=300 t=300 | slot1 id=$0E x=$11 y=$DD dir=$09 hp=$10 state=$00 | slot2 id=$0E x=$11 y=$DD dir=$09 hp=$10 state=$00 | slot3 id=$0E x=$11 y=$DD dir=$09 hp=$10 state=$00 | slot4 id=$0E x=$11 y=$DD dir=$09 hp=$10 state=$00
+HB f1000 flow=T38_CAPTURE mode=$05 sub=$00 room=$76 hsc=$00 scrmode=$00
+LINK t=420 x=$F0 y=$8D dir=$00 room=$76 mode=$05 sub=$00
+ENEMY_SNAP t=420 t=420 | slot1 id=$0E x=$1D y=$B7 dir=$09 hp=$10 state=$00 | slot2 id=$0E x=$1D y=$B7 dir=$09 hp=$10 state=$00 | slot3 id=$0E x=$1D y=$B7 dir=$09 hp=$10 state=$00 | slot4 id=$0E x=$1D y=$B7 dir=$09 hp=$10 state=$00
+f1124 T39_SHOT t=500 png=C:\Users\Jake Diggity\Documents\GitHub\FINAL TRY\builds\reports\t38_gen_spawn.png
+LINK t=500 x=$F0 y=$8D dir=$00 room=$76 mode=$05 sub=$00
+ENEMY_SNAP t=500 t=500 | slot1 id=$0E x=$10 y=$95 dir=$0A hp=$10 state=$00 | slot2 id=$0E x=$10 y=$95 dir=$0A hp=$10 state=$00 | slot3 id=$0E x=$10 y=$95 dir=$0A hp=$10 state=$00 | slot4 id=$0E x=$10 y=$95 dir=$0A hp=$10 state=$00
+HB f1200 flow=T38_CAPTURE mode=$05 sub=$00 room=$76 hsc=$00 scrmode=$00
+LINK t=600 x=$F0 y=$8D dir=$00 room=$76 mode=$05 sub=$00
+ENEMY_SNAP t=600 t=600 | slot1 id=$0E x=$30 y=$AB dir=$05 hp=$10 state=$01 | slot2 id=$0E x=$30 y=$AB dir=$05 hp=$10 state=$01 | slot3 id=$0E x=$30 y=$AB dir=$05 hp=$10 state=$01 | slot4 id=$0E x=$30 y=$AB dir=$05 hp=$10 state=$01
+f1324 T39_SHOT t=700 png=C:\Users\Jake Diggity\Documents\GitHub\FINAL TRY\builds\reports\t38_gen_observe.png
+LINK t=700 x=$F0 y=$8D dir=$00 room=$76 mode=$05 sub=$00
+ENEMY_SNAP t=700 t=700 | slot1 id=$0E x=$44 y=$A9 dir=$05 hp=$10 state=$01 | slot2 id=$0E x=$44 y=$A9 dir=$05 hp=$10 state=$01 | slot3 id=$0E x=$44 y=$A9 dir=$05 hp=$10 state=$01 | slot4 id=$0E x=$44 y=$A9 dir=$05 hp=$10 state=$01
+f1344 flow T38_CAPTURE -> DONE (capture complete)
+TRACE_LENGTH=720 (expected 720)
+REACHED_MODE5=true
+T0_FRAME=624
+GEN_EXCEPTION_FRAME=null
+FINAL t=719 x=$F0.56 y=$8D.CD dir=$00 room=$76 mode=$05 sub=$00 hsc=$00 scrmode=$00
+T38_GEN_CAPTURE: OK

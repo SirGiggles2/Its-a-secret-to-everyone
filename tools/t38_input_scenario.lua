@@ -1,46 +1,26 @@
 -- t38_input_scenario.lua
--- T38 enemy-AI parity: extends T37 sword pickup, then walks Link EAST out
--- of room $77 into room $78 to observe enemy spawn + AI + damage response.
+-- T38 enemy-AI parity (phase 1: spawn-position only).
 --
--- Rationale: T37 proves Link can acquire the sword; T38 proves enemies
--- spawn and behave identically NES vs Gen. Room $78 is the first
--- east-adjacent overworld screen. Unlike room $76 (left-adjacent, which
--- still has ROUTE_TRANSITION_SETTLE), the right transition has never been
--- exercised and should be independent of the left-transition regression.
+-- From baseline in room $77, hold Left long enough to cross the west
+-- transition into room $76 and settle. Room $76 has Octoroks — we want to
+-- capture byte-parity of enemy object slots (id, x, y) at spawn time on
+-- both NES and Genesis. Hitting with sword is deferred to phase 2.
 --
--- Scenario frame budget (2400 frames @ 60Hz = 40s):
---   T 000-1400   identical to T37 (sword pickup + cave exit)
---   T 1400-1500  idle, let Mode5 re-settle in $77
---   T 1500-1620  hold Right, walk east across $77 (x=$40 -> ~x=$F0)
---   T 1620-1700  transition_settle ($77 -> $78)
---   T 1700-1820  idle in $78, sample enemy object slots
---   T 1820-1940  hold B (sword swing) to trigger enemy-damage logic
---   T 1940-2100  pickup_settle (kill reward / rupee collection)
---   T 2100-2400  final parity window
+-- Scenario frame budget (720 frames @ 60Hz = 12s):
+--   T 000-059   baseline idle (no buttons)
+--   T 060-239   hold Left  (180 frames — cross $77 -> $76 transition)
+--   T 240-419   transition_settle (180 frames — let $76 finish loading)
+--   T 420-719   observe_enemy (idle 300 frames — sample enemy slots)
 
 local M = {}
 
-M.SCENARIO_LENGTH = 2400
+M.SCENARIO_LENGTH = 720
 
 M.PHASES = {
-    { name = "baseline",       button = nil,     start_t = 0,    end_t = 60   },
-    { name = "walk_left",      button = "Left",  start_t = 60,   end_t = 101  },
-    { name = "align_y",        button = nil,     start_t = 101,  end_t = 165  },
-    { name = "walk_up_cave",   button = "Up",    start_t = 165,  end_t = 285  },
-    { name = "cave_settle",    button = nil,     start_t = 285,  end_t = 560  },
-    { name = "align_x_sword",  button = "Right", start_t = 560,  end_t = 565  },
-    { name = "walk_to_sword",  button = "Up",    start_t = 565,  end_t = 700  },
-    { name = "pickup_settle",  button = nil,     start_t = 700,  end_t = 970  },
-    { name = "walk_down",      button = "Down",  start_t = 970,  end_t = 1090 },
-    { name = "post_exit",      button = nil,     start_t = 1090, end_t = 1400 },
-    { name = "resettle_77",    button = nil,     start_t = 1400, end_t = 1460 },
-    { name = "walk_down_out",  button = "Down",  start_t = 1460, end_t = 1520 },
-    { name = "walk_east",      button = "Right", start_t = 1520, end_t = 1790 },
-    { name = "transition_78",  button = nil,     start_t = 1790, end_t = 1870 },
-    { name = "observe_enemy",  button = nil,     start_t = 1870, end_t = 1990 },
-    { name = "sword_swing",    button = "B",     start_t = 1990, end_t = 2110 },
-    { name = "kill_settle",    button = nil,     start_t = 2110, end_t = 2270 },
-    { name = "final",          button = nil,     start_t = 2270, end_t = 2400 },
+    { name = "baseline",           button = nil,    start_t = 0,   end_t = 60  },
+    { name = "walk_left",          button = "Left", start_t = 60,  end_t = 240 },
+    { name = "transition_settle",  button = nil,    start_t = 240, end_t = 420 },
+    { name = "observe_enemy",      button = nil,    start_t = 420, end_t = 720 },
 }
 
 function M.phase_for_relative_frame(t)

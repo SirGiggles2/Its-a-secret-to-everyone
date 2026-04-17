@@ -50,18 +50,18 @@ local OUT_PNG  = repo_path("builds\\reports\\t38_enemy_gen_capture.png")
 --   t=40   overworld pre-cave   t=400  cave interior pre-sword
 --   t=600  cave w/ sword held   t=900  post-exit back on overworld
 local T39_SHOTS = {
-    { t = 40,   png = repo_path("builds\\reports\\t38_gen_pre.png"),
-                nt  = repo_path("builds\\reports\\t38_nt_gen_pre.hex"),
-                vdp = repo_path("builds\\reports\\t38_vdp_gen_pre.hex") },
-    { t = 1450, png = repo_path("builds\\reports\\t38_gen_resettle.png"),
-                nt  = repo_path("builds\\reports\\t38_nt_gen_resettle.hex"),
-                vdp = repo_path("builds\\reports\\t38_vdp_gen_resettle.hex") },
-    { t = 1800, png = repo_path("builds\\reports\\t38_gen_in78.png"),
-                nt  = repo_path("builds\\reports\\t38_nt_gen_in78.hex"),
-                vdp = repo_path("builds\\reports\\t38_vdp_gen_in78.hex") },
-    { t = 2200, png = repo_path("builds\\reports\\t38_gen_killed.png"),
-                nt  = repo_path("builds\\reports\\t38_nt_gen_killed.hex"),
-                vdp = repo_path("builds\\reports\\t38_vdp_gen_killed.hex") },
+    { t = 40,  png = repo_path("builds\\reports\\t38_gen_pre.png"),
+               nt  = repo_path("builds\\reports\\t38_nt_gen_pre.hex"),
+               vdp = repo_path("builds\\reports\\t38_vdp_gen_pre.hex") },
+    { t = 300, png = repo_path("builds\\reports\\t38_gen_in76.png"),
+               nt  = repo_path("builds\\reports\\t38_nt_gen_in76.hex"),
+               vdp = repo_path("builds\\reports\\t38_vdp_gen_in76.hex") },
+    { t = 500, png = repo_path("builds\\reports\\t38_gen_spawn.png"),
+               nt  = repo_path("builds\\reports\\t38_nt_gen_spawn.hex"),
+               vdp = repo_path("builds\\reports\\t38_vdp_gen_spawn.hex") },
+    { t = 700, png = repo_path("builds\\reports\\t38_gen_observe.png"),
+               nt  = repo_path("builds\\reports\\t38_nt_gen_observe.hex"),
+               vdp = repo_path("builds\\reports\\t38_vdp_gen_observe.hex") },
 }
 local T39_NT_BASE = 0xFF0840   -- NT_CACHE_BASE (960 bytes Plane A)
 local T39_NT_LEN  = 960
@@ -357,6 +357,37 @@ local function json_num_array(v)
     local p = {}
     for i = 1, #v do p[i] = tostring(v[i]) end
     return "[" .. table.concat(p, ",") .. "]"
+end
+
+-- T38 enemy-slot helpers. Per aldonunez Variables.inc: flat arrays.
+--   ObjType=$34F+N, ObjX=$70+N, ObjY=$84+N, ObjDir=$98+N,
+--   ObjState=$AC+N, ObjHP=$485+N.  NES-mirrored at A4=$FF0000.
+local ENEMY_SLOTS = { 1, 2, 3, 4, 5, 6, 7, 8 }
+local function read_enemy_slot(n)
+    return {
+        id    = ram_u8(BUS + 0x034F + n),
+        x     = ram_u8(BUS + 0x0070 + n),
+        y     = ram_u8(BUS + 0x0084 + n),
+        dir   = ram_u8(BUS + 0x0098 + n),
+        state = ram_u8(BUS + 0x00AC + n),
+        hp    = ram_u8(BUS + 0x0485 + n),
+    }
+end
+
+local function snapshot_enemies(label, t)
+    local parts = { string.format("ENEMY_SNAP t=%d %s", t, label) }
+    local any = false
+    for _, n in ipairs(ENEMY_SLOTS) do
+        local s = read_enemy_slot(n)
+        if s.id ~= 0 then
+            any = true
+            parts[#parts + 1] = string.format(
+                "slot%d id=$%02X x=$%02X y=$%02X dir=$%02X hp=$%02X state=$%02X",
+                n, s.id, s.x, s.y, s.dir, s.hp, s.state)
+        end
+    end
+    if not any then parts[#parts + 1] = "(no enemies)" end
+    record(table.concat(parts, " | "))
 end
 
 -- ---------------------------------------------------------------------------
@@ -678,6 +709,14 @@ for frame = 1, MAX_FRAMES do
                 t39_dump_vdp(shot.vdp, t)
                 record(string.format("f%04d T39_SHOT t=%d png=%s", frame, t, shot.png))
             end
+        end
+        -- T38: Link pose + enemy-slot snapshot at the same keyframes as NES.
+        if t == 60 or t == 240 or t == 300 or t == 420 or t == 500
+           or t == 600 or t == 700 then
+            record(string.format("LINK t=%d x=$%02X y=$%02X dir=$%02X room=$%02X mode=$%02X sub=$%02X",
+                t, ram_u8(A_OBJ_X), ram_u8(A_OBJ_Y),
+                ram_u8(A_OBJ_DIR), room_id, mode, sub))
+            snapshot_enemies("t="..t, t)
         end
         CAPTURE.trace[#CAPTURE.trace + 1] = {
             t = t,

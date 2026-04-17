@@ -35,11 +35,12 @@ local OUT_JSON = repo_path("builds\\reports\\t38_enemy_nes_capture.json")
 local OUT_PNG  = repo_path("builds\\reports\\t38_enemy_nes_capture.png")
 
 -- T39 render-classification: NES reference screenshots matching Gen shots.
+-- T38 phase 1: spawn-in-$76 capture (720-frame budget).
 local T39_SHOTS = {
-    { t = 40,   png = repo_path("builds\\reports\\t38_nes_pre.png") },
-    { t = 1450, png = repo_path("builds\\reports\\t38_nes_resettle.png") },
-    { t = 1800, png = repo_path("builds\\reports\\t38_nes_in78.png") },
-    { t = 2200, png = repo_path("builds\\reports\\t38_nes_killed.png") },
+    { t = 40,  png = repo_path("builds\\reports\\t38_nes_pre.png") },
+    { t = 300, png = repo_path("builds\\reports\\t38_nes_in76.png") },
+    { t = 500, png = repo_path("builds\\reports\\t38_nes_spawn.png") },
+    { t = 700, png = repo_path("builds\\reports\\t38_nes_observe.png") },
 }
 local t39_done = {}
 
@@ -84,6 +85,10 @@ local ADDR_SLOT_A2  = 0x0635
 local ADDR_NAME_OFS = 0x0421
 -- T38: inventory array at $0657. Slot 0 = sword level (0=none, 1=wood, 2=white, 3=magic).
 local ADDR_INV_SWORD = 0x0657
+
+-- T38 enemy slots. Zelda uses 9 object slots (0=Link, 1..8=enemies/other).
+-- ObjType[N] = $34F+N, ObjX[N] = $70+N, ObjY[N] = $84+N, ObjDir[N] = $98+N.
+local ENEMY_SLOTS = { 1, 2, 3, 4, 5, 6, 7, 8 }
 
 local FLOW_BOOT_TO_FS1       = "BOOT_TO_FS1"
 local FLOW_FS1_SELECT_REG    = "FS1_SELECT_REGISTER"
@@ -305,6 +310,40 @@ do
 end
 
 -- ---------------------------------------------------------------------------
+-- T38 enemy-slot helpers (defined after record/ram_u8 so both resolve)
+-- ---------------------------------------------------------------------------
+-- Per aldonunez Variables.inc: flat arrays (not interleaved).
+--   ObjType = $34F+N, ObjX = $70+N, ObjY = $84+N, ObjDir = $98+N,
+--   ObjState = $AC+N, ObjPosFrac = $3A8+N, ObjHP = $485+N.
+local function read_enemy_slot(n)
+    return {
+        id    = ram_u8(0x034F + n),
+        x     = ram_u8(0x0070 + n),
+        y     = ram_u8(0x0084 + n),
+        dir   = ram_u8(0x0098 + n),
+        state = ram_u8(0x00AC + n),
+        xf    = ram_u8(0x03A8 + n),
+        hp    = ram_u8(0x0485 + n),
+    }
+end
+
+local function snapshot_enemies(label, t)
+    local parts = { string.format("ENEMY_SNAP t=%d %s", t, label) }
+    local any = false
+    for _, n in ipairs(ENEMY_SLOTS) do
+        local s = read_enemy_slot(n)
+        if s.id ~= 0 then
+            any = true
+            parts[#parts + 1] = string.format(
+                "slot%d id=$%02X x=$%02X y=$%02X dir=$%02X hp=$%02X state=$%02X",
+                n, s.id, s.x, s.y, s.dir, s.hp, s.state)
+        end
+    end
+    if not any then parts[#parts + 1] = "(no enemies)" end
+    record(table.concat(parts, " | "))
+end
+
+-- ---------------------------------------------------------------------------
 -- Main loop
 -- ---------------------------------------------------------------------------
 local last_heartbeat = 0
@@ -477,6 +516,16 @@ for frame = 1, MAX_FRAMES do
                 pcall(function() client.screenshot(shot.png) end)
                 record(string.format("f%04d T39_SHOT t=%d png=%s", frame, t, shot.png))
             end
+        end
+        -- T38: log Link pose + enemy-slot snapshot at key points through the
+        -- walk_left -> $76 -> observe sequence.
+        if t == 60 or t == 240 or t == 300 or t == 420 or t == 500
+           or t == 600 or t == 700 then
+            record(string.format("LINK t=%d x=$%02X.%02X y=$%02X.%02X dir=$%02X room=$%02X mode=$%02X sub=$%02X",
+                t, ram_u8(ADDR_OBJ_X), ram_u8(ADDR_OBJ_XF),
+                ram_u8(ADDR_OBJ_Y), ram_u8(ADDR_OBJ_YF),
+                ram_u8(ADDR_OBJ_DIR), room_id, mode, sub))
+            snapshot_enemies("t="..t, t)
         end
         CAPTURE.trace[#CAPTURE.trace + 1] = {
             t = t,

@@ -1,7 +1,7 @@
 =================================================================
 T36 NES capture: cave-enter from room $76
 =================================================================
-SCENARIO_LENGTH=2400
+SCENARIO_LENGTH=720
 f0052 flow BOOT_TO_FS1 -> FS1_SELECT_REGISTER (entered Mode1)
 f0055 flow FS1_SELECT_REGISTER -> FS1_ENTER_REGISTER (CurSaveSlot reached 3)
 f0074 flow FS1_ENTER_REGISTER -> MODEE_TYPE_NAME (entered ModeE)
@@ -15,23 +15,29 @@ f0352 T=0 baseline x=$78 y=$8D dir=$00 hsc=$00 vsc=$00 room=$77 frame_ctr=$1C
 f0352 flow T38_STABILIZE -> T38_CAPTURE (T35 capture window open)
 f0392 T39_SHOT t=40 png=C:\Users\Jake Diggity\Documents\GitHub\FINAL TRY\builds\reports\t38_nes_pre.png
 HB f0400 flow=T38_CAPTURE mode=$05 sub=$00 room=$77 hsc=$00
-HB f0600 flow=T38_CAPTURE mode=$10 sub=$00 room=$77 hsc=$00
-HB f0800 flow=T38_CAPTURE mode=$0B sub=$00 room=$77 hsc=$00
-HB f1000 flow=T38_CAPTURE mode=$0B sub=$00 room=$77 hsc=$00
-HB f1200 flow=T38_CAPTURE mode=$0B sub=$00 room=$77 hsc=$00
-HB f1400 flow=T38_CAPTURE mode=$0A sub=$07 room=$77 hsc=$00
-HB f1600 flow=T38_CAPTURE mode=$05 sub=$00 room=$77 hsc=$00
-HB f1800 flow=T38_CAPTURE mode=$05 sub=$00 room=$77 hsc=$00
-f1802 T39_SHOT t=1450 png=C:\Users\Jake Diggity\Documents\GitHub\FINAL TRY\builds\reports\t38_nes_resettle.png
-HB f2000 flow=T38_CAPTURE mode=$05 sub=$00 room=$77 hsc=$00
-f2152 T39_SHOT t=1800 png=C:\Users\Jake Diggity\Documents\GitHub\FINAL TRY\builds\reports\t38_nes_in78.png
-HB f2200 flow=T38_CAPTURE mode=$05 sub=$00 room=$77 hsc=$00
-HB f2400 flow=T38_CAPTURE mode=$05 sub=$00 room=$77 hsc=$00
-f2552 T39_SHOT t=2200 png=C:\Users\Jake Diggity\Documents\GitHub\FINAL TRY\builds\reports\t38_nes_killed.png
-HB f2600 flow=T38_CAPTURE mode=$05 sub=$00 room=$77 hsc=$00
-f2752 flow T38_CAPTURE -> DONE (capture complete)
-TRACE_LENGTH=2400 (expected 2400)
+LINK t=60 x=$78.30 y=$8D.87 dir=$00 room=$77 mode=$05 sub=$00
+ENEMY_SNAP t=60 t=60 | (no enemies)
+LINK t=240 x=$E4.30 y=$8D.87 dir=$02 room=$76 mode=$07 sub=$03
+ENEMY_SNAP t=240 t=240 | (no enemies)
+HB f0600 flow=T38_CAPTURE mode=$07 sub=$05 room=$76 hsc=$00
+f0652 T39_SHOT t=300 png=C:\Users\Jake Diggity\Documents\GitHub\FINAL TRY\builds\reports\t38_nes_in76.png
+LINK t=300 x=$F0.30 y=$8D.6D dir=$00 room=$76 mode=$05 sub=$00
+ENEMY_SNAP t=300 t=300 | slot1 id=$0E x=$30 y=$6D dir=$0A hp=$10 state=$00 | slot2 id=$0E x=$44 y=$AB dir=$01 hp=$10 state=$00 | slot3 id=$0E x=$56 y=$6B dir=$05 hp=$10 state=$01 | slot4 id=$0E x=$50 y=$9D dir=$0A hp=$10 state=$00
+LINK t=420 x=$F0.3B y=$8D.89 dir=$00 room=$76 mode=$05 sub=$00
+ENEMY_SNAP t=420 t=420 | slot1 id=$0E x=$3B y=$89 dir=$05 hp=$10 state=$00 | slot2 id=$0E x=$58 y=$A9 dir=$01 hp=$10 state=$00 | slot3 id=$0E x=$74 y=$9B dir=$05 hp=$10 state=$00 | slot4 id=$0E x=$71 y=$79 dir=$01 hp=$10 state=$00
+HB f0800 flow=T38_CAPTURE mode=$05 sub=$00 room=$76 hsc=$00
+f0852 T39_SHOT t=500 png=C:\Users\Jake Diggity\Documents\GitHub\FINAL TRY\builds\reports\t38_nes_spawn.png
+LINK t=500 x=$F0.10 y=$8D.94 dir=$00 room=$76 mode=$05 sub=$00
+ENEMY_SNAP t=500 t=500 | slot1 id=$0E x=$10 y=$94 dir=$02 hp=$10 state=$01 | slot2 id=$0E x=$58 y=$A9 dir=$01 hp=$10 state=$00 | slot3 id=$0E x=$8A y=$AB dir=$06 hp=$10 state=$01 | slot4 id=$0E x=$9B y=$85 dir=$05 hp=$10 state=$01
+LINK t=600 x=$F0.5C y=$8D.AE dir=$00 room=$76 mode=$05 sub=$00
+ENEMY_SNAP t=600 t=600 | slot1 id=$0E x=$5C y=$AE dir=$05 hp=$10 state=$00 | slot2 id=$0E x=$6C y=$A7 dir=$01 hp=$10 state=$00 | slot3 id=$0E x=$86 y=$AB dir=$09 hp=$10 state=$00 | slot4 id=$0E x=$B9 y=$B5 dir=$05 hp=$10 state=$00
+HB f1000 flow=T38_CAPTURE mode=$05 sub=$00 room=$76 hsc=$00
+f1052 T39_SHOT t=700 png=C:\Users\Jake Diggity\Documents\GitHub\FINAL TRY\builds\reports\t38_nes_observe.png
+LINK t=700 x=$F0.89 y=$8D.B8 dir=$00 room=$76 mode=$05 sub=$00
+ENEMY_SNAP t=700 t=700 | slot1 id=$0E x=$89 y=$B8 dir=$05 hp=$10 state=$01 | slot2 id=$0E x=$81 y=$A1 dir=$01 hp=$10 state=$01 | slot3 id=$0E x=$93 y=$89 dir=$09 hp=$10 state=$00 | slot4 id=$0E x=$B2 y=$89 dir=$09 hp=$10 state=$00
+f1072 flow T38_CAPTURE -> DONE (capture complete)
+TRACE_LENGTH=720 (expected 720)
 REACHED_MODE5=true
 T0_FRAME=352
-FINAL t=2399 x=$D0.78 y=$9D.80 dir=$00 room=$77 mode=$05 sub=$00 hsc=$00 vsc=$00
+FINAL t=719 x=$F0.91 y=$8D.BB dir=$00 room=$76 mode=$05 sub=$00 hsc=$00 vsc=$00
 T38_NES_CAPTURE: OK
