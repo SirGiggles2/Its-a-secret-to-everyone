@@ -2426,65 +2426,12 @@ _apu_write_4016:
 _apu_write_4017:
     rts
 
-;------------------------------------------------------------------------------
-; Noise channel APU writes — drive the PSG noise output for Zelda SFX.
-;
-; Zelda's in-game SFX engine (PlaySfxNote in z_00.asm) writes this sequence
-; every frame of a bomb/stairs/sword/arrow/flame effect:
-;
-;   $400E <- SfxNote & $0F               ; period nibble
-;   $400C <- (SfxNote >> 4) | $10        ; volume nibble + const-volume bit
-;   $400F <- $08                         ; length-counter trigger
-;
-; Native music uses PsgDrumTable / set_psg_noise for its noise channel, which
-; writes $Ex control bytes directly — these SFX stubs share the PSG noise
-; port, so the last writer wins each frame.  That's exactly the NES behavior.
-;------------------------------------------------------------------------------
-; Noise-channel APU writes. Shared by Zelda's in-game SFX engine
-; (PlaySfxNote: bomb/sword/arrow/stairs/flame) AND ApplySq1Effects
-; (music drums). Arbitration: only emit PSG when Effect ($0606) is
-; non-zero -- that's set exclusively by Play*Sfx when an SFX starts and
-; cleared when it ends, so music-drum noise writes pass through as
-; no-ops and don't collide with the music driver's set_psg_noise ADSR.
-;
-; $400C shadow at (m_sfx_vol). $400E cache at (m_sfx_ctrl_raw).
-; $400F is the per-tick trigger; emits both PSG control + attenuation.
+; Noise-channel APU stubs kept as no-ops. Zelda's SFX engine routes
+; through these, but its output collides with the native music driver's
+; PSG-noise channel, and there's no clean arbitration yet. Revisit.
 _apu_write_400c:
-    move.b  D0,(m_sfx_vol).l
-    rts
-
 _apu_write_400e:
-    move.b  D0,(m_sfx_ctrl_raw).l
-    rts
-
 _apu_write_400f:
-    tst.b   ($FF0606).l                ; any SFX active on game side?
-    beq.s   .f_skip                    ; no -> music drum, leave PSG to music driver
-    movem.l D0-D1,-(SP)
-    ; PSG noise control byte from cached $400E (low 4 bits = period idx).
-    move.b  (m_sfx_ctrl_raw).l,D0
-    andi.b  #$0F,D0
-    cmp.b   #$04,D0
-    bcs.s   .pg_short
-    cmp.b   #$08,D0
-    bcs.s   .pg_mid
-    cmp.b   #$0C,D0
-    bcs.s   .pg_long
-    move.b  #$E7,D0
-    bra.s   .pg_ready
-.pg_short: move.b #$E4,D0 : bra.s .pg_ready
-.pg_mid:   move.b #$E5,D0 : bra.s .pg_ready
-.pg_long:  move.b #$E6,D0
-.pg_ready:
-    move.b  D0,(PSG_PORT).l            ; noise control ($Ex)
-    ; PSG attenuation from cached $400C (low 4 bits = volume).
-    move.b  (m_sfx_vol).l,D0
-    andi.b  #$0F,D0
-    eori.b  #$0F,D0                    ; NES 15=loud -> PSG 0=loud
-    ori.b   #$F0,D0                    ; ch3 attenuation latch
-    move.b  D0,(PSG_PORT).l
-    movem.l (SP)+,D0-D1
-.f_skip:
     rts
 
 ;==============================================================================
