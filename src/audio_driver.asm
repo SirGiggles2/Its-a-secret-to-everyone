@@ -536,6 +536,11 @@ m_noise_level       equ MUSIC_BASE+$26  ; byte: current envelope level ($00-$FF)
 m_noise_decay       equ MUSIC_BASE+$27  ; byte: current linear decay rate (per tick)
 m_last_psg_nc       equ MUSIC_BASE+$28  ; byte: last noise-control byte written
 
+; Noise-SFX shadow state. Zelda's PlaySfxNote writes $400E/$400C/$400F
+; per sfx-tick. The first two cache here; $400F is the per-hit trigger.
+m_sfx_vol           equ MUSIC_BASE+$29  ; byte: last $400C byte
+m_sfx_ctrl_raw      equ MUSIC_BASE+$2A  ; byte: last $400E byte
+
 ;----------------------------------------------------------------------
 ; DMC → YM2612 DAC state (Phase A of DMC port — see
 ; C:\Users\Jake Diggity\.claude\plans\quirky-baking-goose.md).
@@ -586,6 +591,15 @@ dmc_trigger:
     beq.s   .bad
     cmp.b   #DMC_SAMPLE_COUNT,D0
     bhi.s   .bad
+    ; Mode gate: DMC streaming uses VDP HINT every line. When the scroll
+    ; system has an active split (dungeons), HINT is owned by the split at
+    ; a specific scanline. Running both at once (HINT every line + V-counter
+    ; dispatch) was too expensive and sounded crunchy. Instead, skip DMC
+    ; entirely when a split is active — samples will play silently in those
+    ; modes. Attract/file-select/overworld all use NO_SPLIT, so samples
+    ; (old-man reveal, death moan, fanfare, rupee) still play there.
+    cmpi.b  #INTRO_SCROLL_NO_SPLIT,($00FF081F).l
+    bne.s   .bad
     movem.l D0-D2/A0-A1,-(SP)
     move.b  D0,(dmc_last_idx).l     ; remember for HUD
     moveq   #0,D1
@@ -770,12 +784,18 @@ music_tick:
 .dmc_poll:
     bsr     dmc_dbg_poll            ; scaffold: Start cycles DMC samples
     bsr     dmc_feed                ; no-op stub (backward-compat call)
-    ; DriveSample dispatches DMC samples (SampleRequest at $0601 -> $4010/12/
-    ; 13/15 -> dmc_trigger -> HBlank DAC streamer). DriveEffect (noise-SFX
-    ; dispatcher) is deliberately NOT called -- it collides with the music
-    ; driver's PSG-noise channel and there's no clean arbitration yet.
+    ; DriveEffect: SFX dispatcher (bomb/sword/arrow/stairs/flame). Reads
+    ; EffectRequest $0603 and Effect $0606; calls Play*Sfx which writes
+    ; $400E/$400C/$400F through the nes_io stubs. Music driver's
+    ; set_psg_noise / write_psg_noise_vol / noise_decay_tick skip writes
+    ; when $0606 != 0 so SFX owns PSG ch 3 during a hit.
+    jsr     DriveEffect
+    ; DriveSample: DMC dispatcher. Reads SampleRequest $0601, writes $4010/
+    ; $4012/$4013/$4015 -> dmc_trigger -> HBlank DAC streamer. Gated by
+    ; INTRO_SCROLL_NO_SPLIT in dmc_trigger itself.
     jsr     DriveSample
-    clr.b   ($FF0601).l                 ; consume SampleRequest so it doesn't retrigger
+    clr.b   ($FF0601).l                 ; consume SampleRequest
+    clr.b   ($FF0603).l                 ; consume EffectRequest
     movem.l (SP)+,D0-D7/A0-A2
     rts
 
@@ -1288,12 +1308,19 @@ key_off_trg:
 ;     latch is untouched so pending decays on adjacent channels are preserved.
 ;==============================================================================
 set_psg_noise:
+    ; SFX arbitration: if Zelda's SFX engine has an active hit ($0606 != 0),
+    ; skip music drum writes so the SFX owns PSG ch 3. When the SFX ends,
+    ; music drums resume on the next beat.
+    tst.b   ($00FF0606).l
+    bne.s   .sfx_owns_psg
     tst.b   D1
     bne.s   .not_rest
     ; Rest: silence the PSG noise channel immediately.
     clr.b   (m_noise_level).l
     clr.b   (m_noise_decay).l
     move.b  #$FF,(PSG_PORT).l              ; ch3 attenuation = max (mute)
+    rts
+.sfx_owns_psg:
     rts
 .not_rest:
     moveq   #0,D0
@@ -1320,12 +1347,15 @@ set_psg_noise:
 ; Preserves D1.
 ;==============================================================================
 write_psg_noise_vol:
+    tst.b   ($00FF0606).l                  ; SFX owns PSG?
+    bne.s   .wpnv_skip
     moveq   #0,D0
     move.b  (m_noise_level).l,D0
     lsr.b   #4,D0                          ; level $00-$FF → 0-15
     eori.b  #$0F,D0                        ; invert: SN76489 0=loud, 15=silent
     ori.b   #$F0,D0                        ; ch3 attenuation latch
     move.b  D0,(PSG_PORT).l
+.wpnv_skip:
     rts
 
 ;==============================================================================
@@ -1335,6 +1365,8 @@ write_psg_noise_vol:
 ; Preserves D1.
 ;==============================================================================
 noise_decay_tick:
+    tst.b   ($00FF0606).l                   ; SFX owns PSG?
+    bne.s   .nd_done
     move.b  (m_noise_level).l,D0
     beq.s   .nd_done                        ; already silent
     sub.b   (m_noise_decay).l,D0

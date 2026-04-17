@@ -549,13 +549,15 @@ _ags_activate_staged:
 _ags_apply_active:
     cmpi.b  #INTRO_SCROLL_NO_SPLIT,(INTRO_SCROLL_MODE).l
     bne.s   .aaa_split
-    ; DMC streamer owns HINT while a sample is playing — don't trample its
-    ; Reg 10/Reg 0 arming with the no-split scroll path.
+    ; No-split path. When DMC is NOT active, do the full H-int off sequence.
+    ; When DMC IS active, skip the Reg 10 / Reg 0 writes so dmc_trigger's
+    ; HINT arm survives -- DMC only fires in no-split contexts (see
+    ; dmc_trigger gate), so there's no scroll-split to service this frame.
     tst.b   (dmc_active).l
-    bne.s   .aaa_dmc_skip_hint_off
+    bne.s   .aaa_dmc_vsram_only
     move.w  #$8AFF,(VDP_CTRL).l             ; Reg 10 = $FF (inactive)
     move.w  #$8004,(VDP_CTRL).l             ; Reg 0: H-int off
-.aaa_dmc_skip_hint_off:
+.aaa_dmc_vsram_only:
     move.l  #VSRAM_WRITE_0000,(VDP_CTRL).l
     move.w  (ACTIVE_BASE_VSRAM).l,(VDP_DATA).l
     moveq   #0,D0
@@ -2426,12 +2428,53 @@ _apu_write_4016:
 _apu_write_4017:
     rts
 
-; Noise-channel APU stubs kept as no-ops. Zelda's SFX engine routes
-; through these, but its output collides with the native music driver's
-; PSG-noise channel, and there's no clean arbitration yet. Revisit.
+; Noise-channel APU writes. Zelda's SFX engine (PlaySfxNote) writes
+; $400E (period), $400C (volume + const-vol bit), $400F (length trigger)
+; per sfx-tick. We cache E+C and emit PSG on the F trigger. Arbitration
+; is via $FF0606 (Effect) -- the music driver skips PSG noise writes
+; when $0606 != 0, so SFX owns the channel for the duration of the hit.
 _apu_write_400c:
+    move.b  D0,(m_sfx_vol).l
+    rts
+
 _apu_write_400e:
+    move.b  D0,(m_sfx_ctrl_raw).l
+    rts
+
 _apu_write_400f:
+    tst.b   ($00FF0606).l                  ; SFX active on game side?
+    beq.s   .f_skip
+    movem.l D0-D1,-(SP)
+    ; PSG noise control byte from cached $400E (low 4 bits = period idx).
+    ; Map NES 16-period index to 4-bucket PSG noise control ($E4..$E7).
+    move.b  (m_sfx_ctrl_raw).l,D0
+    andi.b  #$0F,D0
+    cmpi.b  #$04,D0
+    bcs.s   .pg_short
+    cmpi.b  #$08,D0
+    bcs.s   .pg_mid
+    cmpi.b  #$0C,D0
+    bcs.s   .pg_long
+    move.b  #$E7,D0
+    bra.s   .pg_ready
+.pg_short:
+    move.b  #$E4,D0
+    bra.s   .pg_ready
+.pg_mid:
+    move.b  #$E5,D0
+    bra.s   .pg_ready
+.pg_long:
+    move.b  #$E6,D0
+.pg_ready:
+    move.b  D0,(PSG_PORT).l                ; noise control ($Ex)
+    ; PSG attenuation from cached $400C (low 4 bits = volume nibble).
+    move.b  (m_sfx_vol).l,D0
+    andi.b  #$0F,D0
+    eori.b  #$0F,D0                        ; NES 15=loud -> PSG 0=loud
+    ori.b   #$F0,D0                        ; ch3 attenuation latch
+    move.b  D0,(PSG_PORT).l
+    movem.l (SP)+,D0-D1
+.f_skip:
     rts
 
 ;==============================================================================
