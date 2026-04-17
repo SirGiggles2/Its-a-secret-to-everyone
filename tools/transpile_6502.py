@@ -4408,32 +4408,6 @@ def _patch_z05(path):
     else:
         print("  WARNING: _patch_z05 P34i -- ClearRam anchor not found")
 
-    # ------------------------------------------------------------------
-    # P38: Restore missing JSR CheckTileObject in LayoutRoomOrCaveOW.
-    # The transpiler absorbs the "JSR CheckTileObject" line following a
-    # PLA with a long comment into the PLA's emitted comment string,
-    # producing:
-    #     move.b  (A5)+,D0  ; PLA    jsr     CheckTileObject
-    # instead of the intended two-instruction sequence:
-    #     move.b  (A5)+,D0  ; PLA
-    #     jsr     CheckTileObject
-    #
-    # CheckTileObject swaps the primary square from the $E5-$EA range
-    # (tree/rockwall/armos) to the corresponding cave-entrance tile
-    # (primary $C8..$D8) when a room's secret has been found. Without
-    # the call, rock-wall ($E6) primaries never get rewritten to the
-    # cave-stair ($D8) primary, and room76/77 parity reports see
-    # row-of-$E6-tiles where NES emits row-of-$D8-tiles.
-    # See patches/z_05_patch_P38_check_tile_object.md.
-    # ------------------------------------------------------------------
-    p38_old = '    move.b  (A5)+,D0  ; PLA    jsr     CheckTileObject'
-    p38_new = '    move.b  (A5)+,D0  ; PLA\n    jsr     CheckTileObject   ; PATCH P38: restore dropped JSR'
-    if p38_old in text:
-        text = text.replace(p38_old, p38_new, 1)
-        print("  _patch_z05 P38: restored JSR CheckTileObject in LayoutRoomOrCaveOW")
-    else:
-        print("  WARNING: _patch_z05 P38 -- CheckTileObject PLA-comment anchor not found")
-
     with open(path, 'w', encoding='utf-8') as f:
         f.write(text)
 
