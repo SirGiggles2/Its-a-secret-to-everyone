@@ -2416,12 +2416,51 @@ _apu_write_4007:
 _apu_write_4008:
 _apu_write_400a:
 _apu_write_400b:
-_apu_write_400c:
-_apu_write_400e:
-_apu_write_400f:
 _apu_write_4011:
 _apu_write_4016:
 _apu_write_4017:
+    rts
+
+;------------------------------------------------------------------------------
+; Noise channel APU writes — drive the PSG noise output for Zelda SFX.
+;
+; Zelda's in-game SFX engine (PlaySfxNote in z_00.asm) writes this sequence
+; every frame of a bomb/stairs/sword/arrow/flame effect:
+;
+;   $400E <- SfxNote & $0F               ; period nibble
+;   $400C <- (SfxNote >> 4) | $10        ; volume nibble + const-volume bit
+;   $400F <- $08                         ; length-counter trigger
+;
+; Native music uses PsgDrumTable / set_psg_noise for its noise channel, which
+; writes $Ex control bytes directly — these SFX stubs share the PSG noise
+; port, so the last writer wins each frame.  That's exactly the NES behavior.
+;------------------------------------------------------------------------------
+_apu_write_400c:
+    ; D0.b = volume/envelope byte.  Low 4 bits = volume (we force const-volume
+    ; mode via the Zelda engine's `ori #$10`).  Cache + emit PSG attenuation.
+    move.b  D0,(m_sfx_vol).l
+    bsr     sfx_write_vol
+    rts
+
+_apu_write_400e:
+    ; D0.b = mode+period byte.  Convert to PSG noise control ($E0..$E7).
+    movem.l D1,-(SP)
+    move.b  D0,D1                           ; preserve A (6502 semantics)
+    bsr     sfx_noise_period                ; D0 -> PSG control byte
+    cmp.b   (m_sfx_ctrl).l,D0
+    beq.s   .e_skip                         ; avoid LFSR reseed if unchanged
+    move.b  D0,(m_sfx_ctrl).l
+    move.b  D0,(PSG_PORT).l
+.e_skip:
+    move.b  D1,D0
+    movem.l (SP)+,D1
+    rts
+
+_apu_write_400f:
+    ; Length-counter trigger.  NES uses this to start/retrigger a note.  On
+    ; PSG we just re-emit the cached volume so the channel comes back in if
+    ; it had decayed to silence.
+    bsr     sfx_write_vol
     rts
 
 ;==============================================================================
