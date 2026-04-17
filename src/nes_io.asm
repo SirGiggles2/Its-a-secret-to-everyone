@@ -571,23 +571,12 @@ _ags_apply_active:
     move.w  D0,(VDP_DATA).l
     moveq   #0,D0
     move.w  D0,(VDP_DATA).l
-    ; DMC sample streaming needs HINT every line (Reg 10 = 0, Reg 0 = $14)
-    ; and runs for ~7000-20000 lines per sample. If we overwrite Reg 10 here
-    ; for a scroll split, HINT fires once per frame instead of every line,
-    ; which reduces playback rate from 13.4 kHz to 60 Hz -- the sample is
-    ; audible but badly chopped/distorted. Skip the Reg 10/0 rearm while
-    ; a DMC sample is playing; the scroll split will briefly miss but resume
-    ; as soon as the sample finishes (dmc_hint_tick's .end path restores
-    ; Reg 0 = $04 at sample end, and the next VBlank re-arms the split).
-    tst.b   (dmc_active).l
-    bne.s   .aaa_split_skip_hint
     moveq   #0,D0
     move.b  (HINT_Q0_CTR).l,D0
     andi.w  #$00FF,D0
     or.w    #$8A00,D0
     move.w  D0,(VDP_CTRL).l                 ; Reg 10 = active H-int scanline
     move.w  #$8014,(VDP_CTRL).l             ; Reg 0: enable H-int (+colorfix bit)
-.aaa_split_skip_hint:
     rts
 
 ;------------------------------------------------------------------------------
@@ -2483,14 +2472,9 @@ _apu_write_400f:
     bcs.s   .pg_long
     move.b  #$E7,D0
     bra.s   .pg_ready
-.pg_short:
-    move.b  #$E4,D0
-    bra.s   .pg_ready
-.pg_mid:
-    move.b  #$E5,D0
-    bra.s   .pg_ready
-.pg_long:
-    move.b  #$E6,D0
+.pg_short: move.b #$E4,D0 : bra.s .pg_ready
+.pg_mid:   move.b #$E5,D0 : bra.s .pg_ready
+.pg_long:  move.b #$E6,D0
 .pg_ready:
     move.b  D0,(PSG_PORT).l            ; noise control ($Ex)
     ; PSG attenuation from cached $400C (low 4 bits = volume).
