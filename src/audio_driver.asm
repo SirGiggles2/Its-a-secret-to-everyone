@@ -777,6 +777,15 @@ music_tick:
 .dmc_poll:
     bsr     dmc_dbg_poll            ; scaffold: Start cycles DMC samples
     bsr     dmc_feed                ; no-op stub (backward-compat call)
+    ; DriveAudio is NOP'd (needs bank mapping for DriveSong/DriveTune), so the
+    ; game's SFX engine (DriveEffect -> PlaySfxNote -> $400C/E/F) and DMC
+    ; dispatcher (DriveSample -> $4010/12/13/15) never run. Call just those
+    ; two here — they only touch small byte-tables emitted inline by the
+    ; transpiler (SampleAddrs/Rates/Lengths, *SfxNotes) so no bank work is
+    ; needed.  Fixes missing bomb/stairs/sword/arrow/flame SFX and the
+    ; old-man / fanfare / boss-kill DMC samples.
+    jsr     DriveEffect
+    jsr     DriveSample
     movem.l (SP)+,D0-D7/A0-A2
     rts
 
