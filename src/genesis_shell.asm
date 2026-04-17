@@ -655,26 +655,28 @@ _debug_teleport_check:
     bne     .dtc_no
     tst.b   ($0013,A4)
     bne     .dtc_no
-    ; DPAD gate: ButtonsPressed ($00F8) bits 4..7 (U/D/L/R).
+    ; DPAD gate: ButtonsPressed ($00F8) bits 0..3 (R/L/D/U).
+    ;
+    ; NES Zelda stores buttons in reverse wire order because ReadInputs
+    ; builds the byte via `ROL ButtonsPressed, X` across 8 serial reads.
+    ; First read (A) lands in bit 7, last read (Right) lands in bit 0.
+    ; So the bit map is:
+    ;   bit 7 = A     bit 6 = B      bit 5 = Select bit 4 = Start
+    ;   bit 3 = Up    bit 2 = Down   bit 1 = Left   bit 0 = Right
     move.b  ($00F8,A4),D1
-    andi.b  #$F0,D1
+    andi.b  #$0F,D1
     beq     .dtc_no
-    ; Direction index 0..3 from first-set DPAD bit. Mirrors the
-    ; NextRoomIdOffsets table convention in z_05.asm.
-    ;   bit 4 = Up (idx 0)
-    ;   bit 5 = Down (idx 1)
-    ;   bit 6 = Left (idx 2)
-    ;   bit 7 = Right (idx 3)
+    ; Direction index 0..3, matching NextRoomIdOffsets (U/D/L/R).
     moveq   #0,D0
-    btst    #4,D1
+    btst    #3,D1                   ; Up
     bne.s   .dtc_dir_set
     moveq   #1,D0
-    btst    #5,D1
+    btst    #2,D1                   ; Down
     bne.s   .dtc_dir_set
     moveq   #2,D0
-    btst    #6,D1
+    btst    #1,D1                   ; Left
     bne.s   .dtc_dir_set
-    moveq   #3,D0
+    moveq   #3,D0                   ; Right (bit 0)
 .dtc_dir_set:
     ; Edge gate. RoomId ($00EB): row = bits 4..7, col = bits 0..3.
     ; NextRoomIdOffsets is pure arithmetic (-16/+16/-1/+1); without this
@@ -725,14 +727,23 @@ _debug_teleport_check:
     ; LayoutRoomOrCaveOW reads. Calling LayoutRoomOrCaveOW directly would
     ; skip that setup.
     jsr     LayOutRoom
-    ; Drop ButtonsPressed so held DPAD doesn't retrigger next frame.
+    ; NOTE: Plane A won't visibly refresh until the normal transfer
+    ; pipeline (DynTileBuf / InitMode7_Sub2..Sub6) runs. Attempting to
+    ; kick that from here with arbitrary state causes crashes when the
+    ; source Link-walk direction / door flags aren't coherent. Caller
+    ; (sweep script) should use the playmap in NES RAM ($FF6530) as
+    ; authoritative for parity comparison — it IS updated by LayOutRoom
+    ; per target room.
     clr.b   ($00F8,A4)
+    clr.b   ($00FA,A4)                 ; also clear ButtonsDown so Link
+                                         ; doesn't walk during sweep settle
     moveq   #1,D0
     rts
 .dtc_edge:
     ; Pressed into an edge. Consume the frame so normal play doesn't
     ; interpret it as "walk into wall" animation.
     clr.b   ($00F8,A4)
+    clr.b   ($00FA,A4)
     moveq   #1,D0
     rts
 .dtc_no:

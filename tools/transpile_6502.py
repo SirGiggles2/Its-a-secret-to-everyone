@@ -5051,39 +5051,59 @@ def _patch_z07(path):
 
     # ------------------------------------------------------------------
     # P37 (DEBUG_TELEPORT): insert DPAD instant-teleport hook at the top
-    # of _L_z07_UpdateMode5Play_NotInMenu. The routine _debug_teleport_check
-    # lives in genesis_shell.asm and is gated by DEBUG_TELEPORT equ 1.
-    # When it returns D0=1 the frame is consumed (rts). When D0=0 we fall
-    # through to the original Start-button/play-update flow.
+    # of `UpdateMode` (the mode-dispatch trampoline called every frame).
+    # The routine `_debug_teleport_check` in genesis_shell.asm gates on
+    # CurLevel==0, GameMode==$05, SubMode==$00 internally so placing
+    # this hook one layer up (before table-jump) is safe: if it isn't
+    # overworld-idle, the routine returns D0=0 and we fall through to
+    # the normal dispatch.
+    #
+    # Previous placement inside `_L_z07_UpdateMode5Play_NotInMenu` never
+    # fired because `UpdateMode` in this port sets IsUpdatingMode=1
+    # mid-frame for mode transitions, so the "Update" table's
+    # UpdateMode5Play entry rarely executes even at idle. Hooking before
+    # the table-jump guarantees every frame is checked.
     # See src/zelda_translated/patches/z_07_patch_P37_debug_teleport.md.
     # ------------------------------------------------------------------
-    # Anchor only on the first stable lines; the bne/jmp below this block
-    # get rewritten by _promote_nonlocal_bsr_to_jsr (which runs AFTER this
-    # patch), so matching them here is fragile.
-    old_not_in_menu = (
-        '_L_z07_UpdateMode5Play_NotInMenu:\n'
-        '    ; Not in submenu.\n'
-        '    ;\n'
-        '    move.b  ($00F8,A4),D0\n'
-    )
-    new_not_in_menu = (
-        '_L_z07_UpdateMode5Play_NotInMenu:\n'
-        '    ; Not in submenu.\n'
-        '    ;\n'
-        '    ifne DEBUG_TELEPORT\n'
-        '    jsr     _debug_teleport_check      ; PATCH P37: DPAD teleport\n'
-        '    tst.b   D0\n'
-        '    beq.s   _L_z07_UpdateMode5Play_NotInMenu_noTp\n'
-        '    rts\n'
-        '_L_z07_UpdateMode5Play_NotInMenu_noTp:\n'
-        '    endc\n'
-        '    move.b  ($00F8,A4),D0\n'
-    )
-    if old_not_in_menu in text:
-        text = text.replace(old_not_in_menu, new_not_in_menu, 1)
-        print("  _patch_z07 P37: DEBUG_TELEPORT hook in UpdateMode5Play_NotInMenu")
-    else:
-        print("  WARNING: _patch_z07 P37 -- UpdateMode5Play_NotInMenu pattern not found")
+    # Anchor on the preceding `even` directive so the match can't drift
+    # to `RunCrossRoomTasksAndBeginUpdateMode:` (which contains the
+    # substring `UpdateMode:` but different body).
+    # Hook in both InitMode and UpdateMode dispatchers so the teleport
+    # check fires every frame regardless of IsUpdatingMode. When a DPAD
+    # transition flips isupd mid-frame, only one of the two runs per
+    # frame — covering both guarantees one fires in overworld idle.
+    # Fresh transpile emits `bsr SwitchBank`; _promote_nonlocal_bsr_to_jsr
+    # runs AFTER this patch and converts to `jsr`. Anchor on `bsr`.
+    def _p37_hook(label, anchor_bank):
+        """Build old/new text pair for a mode dispatcher label."""
+        old = (
+            '    even\n'
+            f'{label}:\n'
+            f'    moveq   #{anchor_bank},D0\n'
+            '    bsr     SwitchBank\n'
+        )
+        new = (
+            '    even\n'
+            f'{label}:\n'
+            '    ifne DEBUG_TELEPORT\n'
+            f'    jsr     _debug_teleport_check      ; PATCH P37: DPAD teleport ({label})\n'
+            '    tst.b   D0\n'
+            f'    beq.s   _L_z07_{label}_noTp\n'
+            '    rts\n'
+            f'_L_z07_{label}_noTp:\n'
+            '    endc\n'
+            f'    moveq   #{anchor_bank},D0\n'
+            '    bsr     SwitchBank\n'
+        )
+        return old, new
+
+    for label, bank in (("UpdateMode", 2), ("InitMode", 5)):
+        old, new = _p37_hook(label, bank)
+        if old in text:
+            text = text.replace(old, new, 1)
+            print(f"  _patch_z07 P37: DEBUG_TELEPORT hook in {label}")
+        else:
+            print(f"  WARNING: _patch_z07 P37 -- {label} anchor not found")
 
     with open(path, 'w', encoding='utf-8') as f:
         f.write(text)
