@@ -536,13 +536,6 @@ m_noise_level       equ MUSIC_BASE+$26  ; byte: current envelope level ($00-$FF)
 m_noise_decay       equ MUSIC_BASE+$27  ; byte: current linear decay rate (per tick)
 m_last_psg_nc       equ MUSIC_BASE+$28  ; byte: last noise-control byte written
 
-; SFX → PSG noise shadow state (Zelda's PlaySfxNote writes $400C/$400E/$400F
-; each frame of a sword/bomb/stairs/arrow/flame effect).  We cache the last
-; volume and noise-control byte so $400F (length-counter trigger) can retrigger
-; the hit without clobbering in-flight music noise more than once per sample.
-m_sfx_vol           equ MUSIC_BASE+$29  ; byte: last $400C volume nibble
-m_sfx_ctrl          equ MUSIC_BASE+$2A  ; byte: last PSG control byte for SFX
-
 ;----------------------------------------------------------------------
 ; DMC → YM2612 DAC state (Phase A of DMC port — see
 ; C:\Users\Jake Diggity\.claude\plans\quirky-baking-goose.md).
@@ -777,14 +770,13 @@ music_tick:
 .dmc_poll:
     bsr     dmc_dbg_poll            ; scaffold: Start cycles DMC samples
     bsr     dmc_feed                ; no-op stub (backward-compat call)
-    ; DriveAudio is NOP'd (needs bank mapping for DriveSong/DriveTune), so the
-    ; game's SFX engine (DriveEffect -> PlaySfxNote -> $400C/E/F) and DMC
-    ; dispatcher (DriveSample -> $4010/12/13/15) never run. Call just those
-    ; two here — they only touch small byte-tables emitted inline by the
-    ; transpiler (SampleAddrs/Rates/Lengths, *SfxNotes) so no bank work is
-    ; needed.  Fixes missing bomb/stairs/sword/arrow/flame SFX and the
-    ; old-man / fanfare / boss-kill DMC samples.
-    jsr     DriveEffect
+    ; DriveAudio is NOP'd (needs bank mapping for DriveSong/DriveTune).
+    ; Call DriveSample here so SampleRequest ($0601) writes make it to the
+    ; DMC trigger path: DriveSample -> _apu_write_4010/12/13/15 ->
+    ; dmc_trigger -> HBlank DAC streamer. Needed for old-man reveal,
+    ; death-moan, fanfare, boss-kill samples.
+    ; DriveEffect is NOT called — its PlaySfxNote path writes noise-APU
+    ; stubs that currently collide with music's own PSG-noise channel.
     jsr     DriveSample
     movem.l (SP)+,D0-D7/A0-A2
     rts
@@ -1354,50 +1346,6 @@ noise_decay_tick:
     move.b  D0,(m_noise_level).l
     bra     write_psg_noise_vol
 .nd_done:
-    rts
-
-;==============================================================================
-; sfx_noise_period — map NES $400E period index (0-15) to PSG noise control.
-;
-; Input:  D0.b = raw $400E byte (bit7 = NES "mode" — ignored; bits 0-3 = idx).
-; Output: D0.b = PSG noise control byte ($E0..$E7).
-;
-; SN76489 noise only has 3 fixed divider rates + "use channel 2 freq" mode.
-; Map NES's 16 periods to 3 PSG buckets by quartile — keeps sword/bomb/stairs
-; audibly distinct without a full period-table LUT.  PSG mode bit: white (2)
-; for low NES indices (short/sharp), periodic (0) for high (lower-pitch hiss).
-;==============================================================================
-sfx_noise_period:
-    andi.b  #$0F,D0                         ; keep period nibble
-    cmp.b   #$04,D0
-    bcs.s   .pg_short
-    cmp.b   #$08,D0
-    bcs.s   .pg_mid
-    cmp.b   #$0C,D0
-    bcs.s   .pg_long
-    move.b  #$E7,D0                         ; white noise, longest period
-    rts
-.pg_short:
-    move.b  #$E4,D0                         ; white, short
-    rts
-.pg_mid:
-    move.b  #$E5,D0                         ; white, medium
-    rts
-.pg_long:
-    move.b  #$E6,D0                         ; white, long
-    rts
-
-;==============================================================================
-; sfx_write_vol — emit PSG ch3 attenuation latch from the SFX volume nibble.
-; Input: m_sfx_vol (low 4 bits = NES volume 0-15, 0=silent, 15=max).
-;==============================================================================
-sfx_write_vol:
-    moveq   #0,D0
-    move.b  (m_sfx_vol).l,D0
-    andi.b  #$0F,D0
-    eori.b  #$0F,D0                         ; NES 15=loud -> PSG 0=loud
-    ori.b   #$F0,D0                         ; ch3 attenuation latch
-    move.b  D0,(PSG_PORT).l
     rts
 
 ;==============================================================================
