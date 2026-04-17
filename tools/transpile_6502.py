@@ -574,6 +574,35 @@ def translate_lines(src_lines, symtab, bank_tag, no_stubs=False, no_import_stubs
                 emit(f'    dc.w    {data_str}')
                 continue
 
+            # .LOBYTES / .HIBYTES: store low/high bytes of 16-bit NES pointers.
+            # For ROM labels (>= $8000), emit the literal NES CPU-address byte so
+            # indirect-Y reads at runtime reconstruct a usable 6502 address that
+            # maps into the bank window via `add.l #NES_RAM,...`. Falling back to
+            # (Symbol)&$FF / (Symbol>>8)&$FF would store the low/high byte of the
+            # Genesis ROM offset, which yields garbage when treated as a 6502
+            # pointer (root cause of T38 AssignObjSpawnPositions failure).
+            def _resolve_nes_byte(entry, hi_byte):
+                nes_addr = None
+                if entry.startswith('$'):
+                    try:
+                        nes_addr = int(entry[1:], 16) & 0xFFFF
+                    except ValueError:
+                        nes_addr = None
+                elif re.match(r'^\d+$', entry):
+                    nes_addr = int(entry) & 0xFFFF
+                if nes_addr is None:
+                    if bank_nes_addrs and entry in bank_nes_addrs:
+                        nes_addr = bank_nes_addrs[entry]
+                    elif all_nes_addrs and entry in all_nes_addrs:
+                        nes_addr = all_nes_addrs[entry]
+                if nes_addr is not None and nes_addr >= 0x8000:
+                    b = (nes_addr >> 8) & 0xFF if hi_byte else nes_addr & 0xFF
+                    tag = '>' if hi_byte else '<'
+                    return f'    dc.b    ${b:02X}   ; {tag}{entry} (NES=${nes_addr:04X})'
+                # Fallback: RAM equate / unresolved — keep expression form.
+                expr = f'({entry}>>8)&$FF' if hi_byte else f'({entry})&$FF'
+                return f'    dc.b    {expr}'
+
             if uline.startswith('.LOBYTES'):
                 data_str = stripped[8:].strip()
                 data_str = re.sub(r'\s*;.*$', '', data_str)
@@ -581,7 +610,7 @@ def translate_lines(src_lines, symtab, bank_tag, no_stubs=False, no_import_stubs
                 if not entries:
                     raise ValueError(f"{bank_tag}: empty .LOBYTES directive on line {i+1}")
                 for entry in entries:
-                    emit(f'    dc.b    ({entry})&$FF')
+                    emit(_resolve_nes_byte(entry, hi_byte=False))
                 continue
 
             if uline.startswith('.HIBYTES'):
@@ -591,7 +620,7 @@ def translate_lines(src_lines, symtab, bank_tag, no_stubs=False, no_import_stubs
                 if not entries:
                     raise ValueError(f"{bank_tag}: empty .HIBYTES directive on line {i+1}")
                 for entry in entries:
-                    emit(f'    dc.b    ({entry}>>8)&$FF')
+                    emit(_resolve_nes_byte(entry, hi_byte=True))
                 continue
 
             if uline.startswith('.ADDR'):

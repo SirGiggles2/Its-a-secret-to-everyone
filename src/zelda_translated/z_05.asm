@@ -1689,17 +1689,17 @@ _anon_z05_39:
 
     even
 SpawnPosListAddrsLo:
-    dc.b    (SpawnPosList0)&$FF
-    dc.b    (SpawnPosList1)&$FF
-    dc.b    (SpawnPosList2)&$FF
-    dc.b    (SpawnPosList3)&$FF
+    dc.b    $4D   ; <SpawnPosList0 (NES=$864D)
+    dc.b    $56   ; <SpawnPosList1 (NES=$8656)
+    dc.b    $5F   ; <SpawnPosList2 (NES=$865F)
+    dc.b    $68   ; <SpawnPosList3 (NES=$8668)
 
     even
 SpawnPosListAddrsHi:
-    dc.b    (SpawnPosList0>>8)&$FF
-    dc.b    (SpawnPosList1>>8)&$FF
-    dc.b    (SpawnPosList2>>8)&$FF
-    dc.b    (SpawnPosList3>>8)&$FF
+    dc.b    $86   ; >SpawnPosList0 (NES=$864D)
+    dc.b    $86   ; >SpawnPosList1 (NES=$8656)
+    dc.b    $86   ; >SpawnPosList2 (NES=$865F)
+    dc.b    $86   ; >SpawnPosList3 (NES=$8668)
 
     even
 SpawnPosList0:
@@ -6020,17 +6020,17 @@ DoorBits:
 
     even
 DoorFaceTilesAddrsLo:
-    dc.b    (DoorFaceTilesE)&$FF
-    dc.b    (DoorFaceTilesW)&$FF
-    dc.b    (DoorFaceTilesS)&$FF
-    dc.b    (DoorFaceTilesN)&$FF
+    dc.b    $EE   ; <DoorFaceTilesE (NES=$9FEE)
+    dc.b    $2A   ; <DoorFaceTilesW (NES=$A02A)
+    dc.b    $66   ; <DoorFaceTilesS (NES=$A066)
+    dc.b    $A2   ; <DoorFaceTilesN (NES=$A0A2)
 
     even
 DoorFaceTilesAddrsHi:
-    dc.b    (DoorFaceTilesE>>8)&$FF
-    dc.b    (DoorFaceTilesW>>8)&$FF
-    dc.b    (DoorFaceTilesS>>8)&$FF
-    dc.b    (DoorFaceTilesN>>8)&$FF
+    dc.b    $9F   ; >DoorFaceTilesE (NES=$9FEE)
+    dc.b    $A0   ; >DoorFaceTilesW (NES=$A02A)
+    dc.b    $A0   ; >DoorFaceTilesS (NES=$A066)
+    dc.b    $A0   ; >DoorFaceTilesN (NES=$A0A2)
 
     even
 PlayAreaDoorFaceAddrsLo:

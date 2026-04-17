@@ -710,12 +710,19 @@ for frame = 1, MAX_FRAMES do
                 record(string.format("f%04d T39_SHOT t=%d png=%s", frame, t, shot.png))
             end
         end
-        -- T38: Link pose + enemy-slot snapshot at the same keyframes as NES.
-        if t == 60 or t == 240 or t == 300 or t == 420 or t == 500
-           or t == 600 or t == 700 then
-            record(string.format("LINK t=%d x=$%02X y=$%02X dir=$%02X room=$%02X mode=$%02X sub=$%02X",
+        -- T38: Link pose + enemy-slot snapshot. Dense sampling around the
+        -- spawn moment (t=240..310) so we can see how/when all four slots
+        -- become identical — spawn-time convergence vs post-spawn corruption.
+        local snap = (t == 60 or t == 240 or t == 300 or t == 420
+                      or t == 500 or t == 600 or t == 700)
+        if t >= 240 and t <= 310 then snap = true end
+        if snap then
+            local mmc1_prg = ram_u8(0xFF0815)
+            local bank0 = ram_u8(0xFF8000)
+            local bank1 = ram_u8(0xFF8001)
+            record(string.format("LINK t=%d x=$%02X y=$%02X dir=$%02X room=$%02X mode=$%02X sub=$%02X mmc1_prg=$%02X win[0..1]=$%02X$%02X",
                 t, ram_u8(A_OBJ_X), ram_u8(A_OBJ_Y),
-                ram_u8(A_OBJ_DIR), room_id, mode, sub))
+                ram_u8(A_OBJ_DIR), room_id, mode, sub, mmc1_prg, bank0, bank1))
             snapshot_enemies("t="..t, t)
         end
         CAPTURE.trace[#CAPTURE.trace + 1] = {

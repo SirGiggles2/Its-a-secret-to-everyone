@@ -3,38 +3,176 @@ REPLAY: loaded bootflow_gen.txt (618 frames)
 T35 Genesis capture: room $77 -> $76 left-scroll trace
 =================================================================
 SCENARIO_LENGTH=720
-HB f0200 flow=REPLAY_BOOTFLOW mode=$00 sub=$00 room=$00 hsc=$00 scrmode=$00
-HB f0400 flow=REPLAY_BOOTFLOW mode=$01 sub=$00 room=$00 hsc=$00 scrmode=$00
+HB f0200 flow=REPLAY_BOOTFLOW mode=$00 sub=$00 room=$00 hsc=$01 scrmode=$00
+HB f0400 flow=REPLAY_BOOTFLOW mode=$01 sub=$00 room=$00 hsc=$01 scrmode=$00
 f0560 REPLAY reached Mode5 room $77
 f0560 flow REPLAY_BOOTFLOW -> T38_STABILIZE (replay hit gameplay)
-HB f0600 flow=T38_STABILIZE mode=$05 sub=$00 room=$77 hsc=$00 scrmode=$00
-f0624 T=0 baseline x=$78 y=$8D dir=$00 hsc=$00 vsc=$00 room=$77 frame_ctr=$CC
-f0624 flow T38_STABILIZE -> T38_CAPTURE (T35 capture window open)
-f0664 T39_SHOT t=40 png=C:\Users\Jake Diggity\Documents\GitHub\FINAL TRY\builds\reports\t38_gen_pre.png
-LINK t=60 x=$78 y=$8D dir=$00 room=$77 mode=$05 sub=$00
+HB f0600 flow=T38_STABILIZE mode=$05 sub=$00 room=$77 hsc=$01 scrmode=$00
+f0621 T=0 baseline x=$78 y=$8D dir=$00 hsc=$01 vsc=$00 room=$77 frame_ctr=$C8
+f0621 flow T38_STABILIZE -> T38_CAPTURE (T35 capture window open)
+f0661 T39_SHOT t=40 png=C:\Users\Jake Diggity\Documents\GitHub\FINAL TRY\builds\reports\t38_gen_pre.png
+LINK t=60 x=$78 y=$8D dir=$00 room=$77 mode=$05 sub=$00 mmc1_prg=$05 win[0..1]=$20$06
 ENEMY_SNAP t=60 t=60 | (no enemies)
-HB f0800 flow=T38_CAPTURE mode=$07 sub=$03 room=$77 hsc=$00 scrmode=$00
-LINK t=240 x=$E8 y=$8D dir=$02 room=$76 mode=$07 sub=$03
+HB f0800 flow=T38_CAPTURE mode=$07 sub=$05 room=$77 hsc=$01 scrmode=$00
+LINK t=240 x=$E8 y=$8D dir=$02 room=$76 mode=$07 sub=$03 mmc1_prg=$05 win[0..1]=$20$06
 ENEMY_SNAP t=240 t=240 | (no enemies)
-f0924 T39_SHOT t=300 png=C:\Users\Jake Diggity\Documents\GitHub\FINAL TRY\builds\reports\t38_gen_in76.png
-LINK t=300 x=$F0 y=$8D dir=$00 room=$76 mode=$05 sub=$00
-ENEMY_SNAP t=300 t=300 | slot1 id=$0E x=$11 y=$DD dir=$09 hp=$10 state=$00 | slot2 id=$0E x=$11 y=$DD dir=$09 hp=$10 state=$00 | slot3 id=$0E x=$11 y=$DD dir=$09 hp=$10 state=$00 | slot4 id=$0E x=$11 y=$DD dir=$09 hp=$10 state=$00
+LINK t=241 x=$EC y=$8D dir=$02 room=$76 mode=$07 sub=$03 mmc1_prg=$05 win[0..1]=$20$06
+ENEMY_SNAP t=241 t=241 | (no enemies)
+LINK t=242 x=$F0 y=$8D dir=$02 room=$76 mode=$07 sub=$03 mmc1_prg=$05 win[0..1]=$20$06
+ENEMY_SNAP t=242 t=242 | (no enemies)
+LINK t=243 x=$F0 y=$8D dir=$02 room=$76 mode=$07 sub=$03 mmc1_prg=$05 win[0..1]=$20$06
+ENEMY_SNAP t=243 t=243 | (no enemies)
+LINK t=244 x=$F0 y=$8D dir=$02 room=$76 mode=$07 sub=$03 mmc1_prg=$05 win[0..1]=$20$06
+ENEMY_SNAP t=244 t=244 | (no enemies)
+LINK t=245 x=$F0 y=$8D dir=$02 room=$76 mode=$07 sub=$03 mmc1_prg=$05 win[0..1]=$20$06
+ENEMY_SNAP t=245 t=245 | (no enemies)
+LINK t=246 x=$F0 y=$8D dir=$02 room=$76 mode=$07 sub=$04 mmc1_prg=$05 win[0..1]=$20$06
+ENEMY_SNAP t=246 t=246 | (no enemies)
+LINK t=247 x=$F0 y=$8D dir=$02 room=$76 mode=$07 sub=$05 mmc1_prg=$05 win[0..1]=$20$06
+ENEMY_SNAP t=247 t=247 | (no enemies)
+LINK t=248 x=$F0 y=$8D dir=$02 room=$76 mode=$07 sub=$05 mmc1_prg=$06 win[0..1]=$20$06
+ENEMY_SNAP t=248 t=248 | (no enemies)
+LINK t=249 x=$F0 y=$8D dir=$02 room=$76 mode=$07 sub=$06 mmc1_prg=$05 win[0..1]=$20$06
+ENEMY_SNAP t=249 t=249 | (no enemies)
+LINK t=250 x=$F0 y=$8D dir=$02 room=$76 mode=$07 sub=$06 mmc1_prg=$06 win[0..1]=$20$06
+ENEMY_SNAP t=250 t=250 | (no enemies)
+LINK t=251 x=$F0 y=$8D dir=$02 room=$76 mode=$04 sub=$01 mmc1_prg=$05 win[0..1]=$20$06
+ENEMY_SNAP t=251 t=251 | (no enemies)
+LINK t=252 x=$F0 y=$8D dir=$02 room=$76 mode=$04 sub=$00 mmc1_prg=$05 win[0..1]=$20$06
+ENEMY_SNAP t=252 t=252 | (no enemies)
+LINK t=253 x=$F0 y=$8D dir=$00 room=$76 mode=$04 sub=$00 mmc1_prg=$05 win[0..1]=$20$06
+ENEMY_SNAP t=253 t=253 | (no enemies)
+LINK t=254 x=$F0 y=$8D dir=$00 room=$76 mode=$05 sub=$00 mmc1_prg=$02 win[0..1]=$20$06
+ENEMY_SNAP t=254 t=254 | slot1 id=$0E x=$30 y=$6D dir=$00 hp=$00 state=$00 | slot2 id=$0E x=$30 y=$AD dir=$00 hp=$00 state=$00 | slot3 id=$0E x=$50 y=$7D dir=$00 hp=$00 state=$00 | slot4 id=$0E x=$50 y=$9D dir=$00 hp=$00 state=$00
+LINK t=255 x=$F0 y=$8D dir=$00 room=$76 mode=$05 sub=$00 mmc1_prg=$01 win[0..1]=$20$06
+ENEMY_SNAP t=255 t=255 | slot1 id=$0E x=$30 y=$6D dir=$00 hp=$00 state=$00 | slot2 id=$0E x=$30 y=$AD dir=$00 hp=$00 state=$00 | slot3 id=$0E x=$50 y=$7D dir=$00 hp=$00 state=$00 | slot4 id=$0E x=$50 y=$9D dir=$00 hp=$00 state=$00
+LINK t=256 x=$F0 y=$8D dir=$00 room=$76 mode=$05 sub=$00 mmc1_prg=$05 win[0..1]=$20$06
+ENEMY_SNAP t=256 t=256 | slot1 id=$0E x=$30 y=$6D dir=$01 hp=$10 state=$00 | slot2 id=$0E x=$30 y=$AD dir=$01 hp=$10 state=$00 | slot3 id=$0E x=$50 y=$7D dir=$01 hp=$10 state=$00 | slot4 id=$0E x=$50 y=$9D dir=$01 hp=$10 state=$00
+LINK t=257 x=$F0 y=$8D dir=$00 room=$76 mode=$05 sub=$00 mmc1_prg=$05 win[0..1]=$20$06
+ENEMY_SNAP t=257 t=257 | slot1 id=$0E x=$30 y=$6D dir=$01 hp=$10 state=$00 | slot2 id=$0E x=$30 y=$AD dir=$01 hp=$10 state=$00 | slot3 id=$0E x=$50 y=$7D dir=$01 hp=$10 state=$00 | slot4 id=$0E x=$50 y=$9D dir=$01 hp=$10 state=$00
+LINK t=258 x=$F0 y=$8D dir=$00 room=$76 mode=$05 sub=$00 mmc1_prg=$05 win[0..1]=$20$06
+ENEMY_SNAP t=258 t=258 | slot1 id=$0E x=$30 y=$6D dir=$01 hp=$10 state=$00 | slot2 id=$0E x=$30 y=$AD dir=$01 hp=$10 state=$00 | slot3 id=$0E x=$50 y=$7D dir=$01 hp=$10 state=$00 | slot4 id=$0E x=$50 y=$9D dir=$01 hp=$10 state=$00
+LINK t=259 x=$F0 y=$8D dir=$00 room=$76 mode=$05 sub=$00 mmc1_prg=$05 win[0..1]=$20$06
+ENEMY_SNAP t=259 t=259 | slot1 id=$0E x=$30 y=$6D dir=$01 hp=$10 state=$00 | slot2 id=$0E x=$30 y=$AD dir=$01 hp=$10 state=$00 | slot3 id=$0E x=$50 y=$7D dir=$01 hp=$10 state=$00 | slot4 id=$0E x=$50 y=$9D dir=$01 hp=$10 state=$00
+LINK t=260 x=$F0 y=$8D dir=$00 room=$76 mode=$05 sub=$00 mmc1_prg=$05 win[0..1]=$20$06
+ENEMY_SNAP t=260 t=260 | slot1 id=$0E x=$30 y=$6D dir=$01 hp=$10 state=$00 | slot2 id=$0E x=$30 y=$AD dir=$01 hp=$10 state=$00 | slot3 id=$0E x=$50 y=$7D dir=$01 hp=$10 state=$00 | slot4 id=$0E x=$50 y=$9D dir=$01 hp=$10 state=$00
+LINK t=261 x=$F0 y=$8D dir=$00 room=$76 mode=$05 sub=$00 mmc1_prg=$05 win[0..1]=$20$06
+ENEMY_SNAP t=261 t=261 | slot1 id=$0E x=$30 y=$6D dir=$01 hp=$10 state=$00 | slot2 id=$0E x=$30 y=$AD dir=$01 hp=$10 state=$00 | slot3 id=$0E x=$50 y=$7D dir=$01 hp=$10 state=$00 | slot4 id=$0E x=$50 y=$9D dir=$01 hp=$10 state=$00
+LINK t=262 x=$F0 y=$8D dir=$00 room=$76 mode=$05 sub=$00 mmc1_prg=$05 win[0..1]=$20$06
+ENEMY_SNAP t=262 t=262 | slot1 id=$0E x=$30 y=$6D dir=$01 hp=$10 state=$00 | slot2 id=$0E x=$30 y=$AD dir=$01 hp=$10 state=$00 | slot3 id=$0E x=$50 y=$7D dir=$01 hp=$10 state=$00 | slot4 id=$0E x=$50 y=$9D dir=$01 hp=$10 state=$00
+LINK t=263 x=$F0 y=$8D dir=$00 room=$76 mode=$05 sub=$00 mmc1_prg=$05 win[0..1]=$20$06
+ENEMY_SNAP t=263 t=263 | slot1 id=$0E x=$30 y=$6D dir=$01 hp=$10 state=$00 | slot2 id=$0E x=$30 y=$AD dir=$01 hp=$10 state=$00 | slot3 id=$0E x=$50 y=$7D dir=$01 hp=$10 state=$00 | slot4 id=$0E x=$50 y=$9D dir=$01 hp=$10 state=$00
+LINK t=264 x=$F0 y=$8D dir=$00 room=$76 mode=$05 sub=$00 mmc1_prg=$05 win[0..1]=$20$06
+ENEMY_SNAP t=264 t=264 | slot1 id=$0E x=$30 y=$6D dir=$01 hp=$10 state=$00 | slot2 id=$0E x=$30 y=$AD dir=$01 hp=$10 state=$00 | slot3 id=$0E x=$50 y=$7D dir=$01 hp=$10 state=$00 | slot4 id=$0E x=$50 y=$9D dir=$01 hp=$10 state=$00
+LINK t=265 x=$F0 y=$8D dir=$00 room=$76 mode=$05 sub=$00 mmc1_prg=$05 win[0..1]=$20$06
+ENEMY_SNAP t=265 t=265 | slot1 id=$0E x=$30 y=$6D dir=$01 hp=$10 state=$00 | slot2 id=$0E x=$30 y=$AD dir=$01 hp=$10 state=$00 | slot3 id=$0E x=$50 y=$7D dir=$01 hp=$10 state=$00 | slot4 id=$0E x=$50 y=$9D dir=$01 hp=$10 state=$00
+LINK t=266 x=$F0 y=$8D dir=$00 room=$76 mode=$05 sub=$00 mmc1_prg=$05 win[0..1]=$20$06
+ENEMY_SNAP t=266 t=266 | slot1 id=$0E x=$30 y=$6D dir=$01 hp=$10 state=$00 | slot2 id=$0E x=$30 y=$AD dir=$01 hp=$10 state=$00 | slot3 id=$0E x=$50 y=$7D dir=$01 hp=$10 state=$00 | slot4 id=$0E x=$50 y=$9D dir=$01 hp=$10 state=$00
+LINK t=267 x=$F0 y=$8D dir=$00 room=$76 mode=$05 sub=$00 mmc1_prg=$05 win[0..1]=$20$06
+ENEMY_SNAP t=267 t=267 | slot1 id=$0E x=$30 y=$6D dir=$01 hp=$10 state=$00 | slot2 id=$0E x=$30 y=$AD dir=$01 hp=$10 state=$00 | slot3 id=$0E x=$50 y=$7D dir=$01 hp=$10 state=$00 | slot4 id=$0E x=$50 y=$9D dir=$01 hp=$10 state=$00
+LINK t=268 x=$F0 y=$8D dir=$00 room=$76 mode=$05 sub=$00 mmc1_prg=$05 win[0..1]=$20$06
+ENEMY_SNAP t=268 t=268 | slot1 id=$0E x=$30 y=$6D dir=$01 hp=$10 state=$00 | slot2 id=$0E x=$30 y=$AD dir=$01 hp=$10 state=$00 | slot3 id=$0E x=$50 y=$7D dir=$01 hp=$10 state=$00 | slot4 id=$0E x=$50 y=$9D dir=$01 hp=$10 state=$00
+LINK t=269 x=$F0 y=$8D dir=$00 room=$76 mode=$05 sub=$00 mmc1_prg=$05 win[0..1]=$20$06
+ENEMY_SNAP t=269 t=269 | slot1 id=$0E x=$30 y=$6D dir=$01 hp=$10 state=$00 | slot2 id=$0E x=$30 y=$AD dir=$01 hp=$10 state=$00 | slot3 id=$0E x=$50 y=$7D dir=$01 hp=$10 state=$00 | slot4 id=$0E x=$50 y=$9D dir=$01 hp=$10 state=$00
+LINK t=270 x=$F0 y=$8D dir=$00 room=$76 mode=$05 sub=$00 mmc1_prg=$05 win[0..1]=$20$06
+ENEMY_SNAP t=270 t=270 | slot1 id=$0E x=$30 y=$6D dir=$01 hp=$10 state=$00 | slot2 id=$0E x=$30 y=$AD dir=$01 hp=$10 state=$00 | slot3 id=$0E x=$50 y=$7D dir=$01 hp=$10 state=$00 | slot4 id=$0E x=$50 y=$9D dir=$01 hp=$10 state=$00
+LINK t=271 x=$F0 y=$8D dir=$00 room=$76 mode=$05 sub=$00 mmc1_prg=$05 win[0..1]=$20$06
+ENEMY_SNAP t=271 t=271 | slot1 id=$0E x=$30 y=$6D dir=$01 hp=$10 state=$00 | slot2 id=$0E x=$30 y=$AD dir=$01 hp=$10 state=$00 | slot3 id=$0E x=$50 y=$7D dir=$01 hp=$10 state=$00 | slot4 id=$0E x=$50 y=$9D dir=$01 hp=$10 state=$00
+LINK t=272 x=$F0 y=$8D dir=$00 room=$76 mode=$05 sub=$00 mmc1_prg=$05 win[0..1]=$20$06
+ENEMY_SNAP t=272 t=272 | slot1 id=$0E x=$30 y=$6D dir=$01 hp=$10 state=$00 | slot2 id=$0E x=$30 y=$AD dir=$01 hp=$10 state=$00 | slot3 id=$0E x=$50 y=$7D dir=$01 hp=$10 state=$00 | slot4 id=$0E x=$50 y=$9D dir=$01 hp=$10 state=$00
+LINK t=273 x=$F0 y=$8D dir=$00 room=$76 mode=$05 sub=$00 mmc1_prg=$05 win[0..1]=$20$06
+ENEMY_SNAP t=273 t=273 | slot1 id=$0E x=$30 y=$6D dir=$01 hp=$10 state=$00 | slot2 id=$0E x=$30 y=$AD dir=$01 hp=$10 state=$00 | slot3 id=$0E x=$50 y=$7D dir=$01 hp=$10 state=$00 | slot4 id=$0E x=$50 y=$9D dir=$01 hp=$10 state=$00
+LINK t=274 x=$F0 y=$8D dir=$00 room=$76 mode=$05 sub=$00 mmc1_prg=$05 win[0..1]=$20$06
+ENEMY_SNAP t=274 t=274 | slot1 id=$0E x=$30 y=$6D dir=$01 hp=$10 state=$00 | slot2 id=$0E x=$30 y=$AD dir=$01 hp=$10 state=$00 | slot3 id=$0E x=$50 y=$7D dir=$01 hp=$10 state=$00 | slot4 id=$0E x=$50 y=$9D dir=$01 hp=$10 state=$00
+LINK t=275 x=$F0 y=$8D dir=$00 room=$76 mode=$05 sub=$00 mmc1_prg=$05 win[0..1]=$20$06
+ENEMY_SNAP t=275 t=275 | slot1 id=$0E x=$30 y=$6D dir=$01 hp=$10 state=$00 | slot2 id=$0E x=$30 y=$AD dir=$01 hp=$10 state=$00 | slot3 id=$0E x=$50 y=$7D dir=$01 hp=$10 state=$00 | slot4 id=$0E x=$50 y=$9D dir=$01 hp=$10 state=$00
+LINK t=276 x=$F0 y=$8D dir=$00 room=$76 mode=$05 sub=$00 mmc1_prg=$05 win[0..1]=$20$06
+ENEMY_SNAP t=276 t=276 | slot1 id=$0E x=$30 y=$6D dir=$01 hp=$10 state=$00 | slot2 id=$0E x=$30 y=$AD dir=$01 hp=$10 state=$00 | slot3 id=$0E x=$50 y=$7D dir=$01 hp=$10 state=$00 | slot4 id=$0E x=$50 y=$9D dir=$01 hp=$10 state=$00
+LINK t=277 x=$F0 y=$8D dir=$00 room=$76 mode=$05 sub=$00 mmc1_prg=$05 win[0..1]=$20$06
+ENEMY_SNAP t=277 t=277 | slot1 id=$0E x=$30 y=$6D dir=$01 hp=$10 state=$00 | slot2 id=$0E x=$30 y=$AD dir=$01 hp=$10 state=$00 | slot3 id=$0E x=$50 y=$7D dir=$01 hp=$10 state=$00 | slot4 id=$0E x=$50 y=$9D dir=$01 hp=$10 state=$00
+LINK t=278 x=$F0 y=$8D dir=$00 room=$76 mode=$05 sub=$00 mmc1_prg=$05 win[0..1]=$20$06
+ENEMY_SNAP t=278 t=278 | slot1 id=$0E x=$30 y=$6D dir=$01 hp=$10 state=$01 | slot2 id=$0E x=$30 y=$AD dir=$01 hp=$10 state=$01 | slot3 id=$0E x=$50 y=$7D dir=$01 hp=$10 state=$01 | slot4 id=$0E x=$50 y=$9D dir=$01 hp=$10 state=$01
+LINK t=279 x=$F0 y=$8D dir=$00 room=$76 mode=$05 sub=$00 mmc1_prg=$05 win[0..1]=$20$06
+ENEMY_SNAP t=279 t=279 | slot1 id=$0E x=$31 y=$69 dir=$01 hp=$10 state=$01 | slot2 id=$0E x=$31 y=$A9 dir=$01 hp=$10 state=$01 | slot3 id=$0E x=$51 y=$79 dir=$01 hp=$10 state=$01 | slot4 id=$0E x=$51 y=$99 dir=$01 hp=$10 state=$01
+LINK t=280 x=$F0 y=$8D dir=$00 room=$76 mode=$05 sub=$00 mmc1_prg=$05 win[0..1]=$20$06
+ENEMY_SNAP t=280 t=280 | slot1 id=$0E x=$32 y=$65 dir=$01 hp=$10 state=$01 | slot2 id=$0E x=$32 y=$A5 dir=$01 hp=$10 state=$01 | slot3 id=$0E x=$52 y=$75 dir=$01 hp=$10 state=$01 | slot4 id=$0E x=$52 y=$95 dir=$01 hp=$10 state=$01
+LINK t=281 x=$F0 y=$8D dir=$00 room=$76 mode=$05 sub=$00 mmc1_prg=$05 win[0..1]=$20$06
+ENEMY_SNAP t=281 t=281 | slot1 id=$0E x=$33 y=$62 dir=$01 hp=$10 state=$01 | slot2 id=$0E x=$33 y=$A2 dir=$01 hp=$10 state=$01 | slot3 id=$0E x=$53 y=$72 dir=$01 hp=$10 state=$01 | slot4 id=$0E x=$53 y=$92 dir=$01 hp=$10 state=$01
+LINK t=282 x=$F0 y=$8D dir=$00 room=$76 mode=$05 sub=$00 mmc1_prg=$05 win[0..1]=$20$06
+ENEMY_SNAP t=282 t=282 | slot1 id=$0E x=$34 y=$5F dir=$01 hp=$10 state=$01 | slot2 id=$0E x=$34 y=$9F dir=$01 hp=$10 state=$01 | slot3 id=$0E x=$54 y=$6F dir=$01 hp=$10 state=$01 | slot4 id=$0E x=$54 y=$8F dir=$01 hp=$10 state=$01
+LINK t=283 x=$F0 y=$8D dir=$00 room=$76 mode=$05 sub=$00 mmc1_prg=$05 win[0..1]=$20$06
+ENEMY_SNAP t=283 t=283 | slot1 id=$0E x=$35 y=$5D dir=$01 hp=$10 state=$01 | slot2 id=$0E x=$35 y=$9D dir=$01 hp=$10 state=$01 | slot3 id=$0E x=$55 y=$6D dir=$01 hp=$10 state=$01 | slot4 id=$0E x=$55 y=$8D dir=$01 hp=$10 state=$01
+LINK t=284 x=$F0 y=$8D dir=$00 room=$76 mode=$05 sub=$00 mmc1_prg=$05 win[0..1]=$20$06
+ENEMY_SNAP t=284 t=284 | slot1 id=$0E x=$36 y=$5B dir=$01 hp=$10 state=$01 | slot2 id=$0E x=$36 y=$9B dir=$01 hp=$10 state=$01 | slot3 id=$0E x=$56 y=$6B dir=$01 hp=$10 state=$01 | slot4 id=$0E x=$56 y=$8B dir=$01 hp=$10 state=$01
+LINK t=285 x=$F0 y=$8D dir=$00 room=$76 mode=$05 sub=$00 mmc1_prg=$05 win[0..1]=$20$06
+ENEMY_SNAP t=285 t=285 | slot1 id=$0E x=$37 y=$5A dir=$01 hp=$10 state=$01 | slot2 id=$0E x=$37 y=$9A dir=$01 hp=$10 state=$01 | slot3 id=$0E x=$57 y=$6A dir=$01 hp=$10 state=$01 | slot4 id=$0E x=$57 y=$8A dir=$01 hp=$10 state=$01
+LINK t=286 x=$F0 y=$8D dir=$00 room=$76 mode=$05 sub=$00 mmc1_prg=$05 win[0..1]=$20$06
+ENEMY_SNAP t=286 t=286 | slot1 id=$0E x=$38 y=$59 dir=$01 hp=$10 state=$01 | slot2 id=$0E x=$38 y=$99 dir=$01 hp=$10 state=$01 | slot3 id=$0E x=$58 y=$69 dir=$01 hp=$10 state=$01 | slot4 id=$0E x=$58 y=$89 dir=$01 hp=$10 state=$01
+LINK t=287 x=$F0 y=$8D dir=$00 room=$76 mode=$05 sub=$00 mmc1_prg=$05 win[0..1]=$20$06
+ENEMY_SNAP t=287 t=287 | slot1 id=$0E x=$39 y=$59 dir=$01 hp=$10 state=$01 | slot2 id=$0E x=$39 y=$99 dir=$01 hp=$10 state=$01 | slot3 id=$0E x=$59 y=$69 dir=$01 hp=$10 state=$01 | slot4 id=$0E x=$59 y=$89 dir=$01 hp=$10 state=$01
+LINK t=288 x=$F0 y=$8D dir=$00 room=$76 mode=$05 sub=$00 mmc1_prg=$05 win[0..1]=$20$06
+ENEMY_SNAP t=288 t=288 | slot1 id=$0E x=$3A y=$59 dir=$01 hp=$10 state=$01 | slot2 id=$0E x=$3A y=$99 dir=$01 hp=$10 state=$01 | slot3 id=$0E x=$5A y=$69 dir=$01 hp=$10 state=$01 | slot4 id=$0E x=$5A y=$89 dir=$01 hp=$10 state=$01
+LINK t=289 x=$F0 y=$8D dir=$00 room=$76 mode=$05 sub=$00 mmc1_prg=$05 win[0..1]=$20$06
+ENEMY_SNAP t=289 t=289 | slot1 id=$0E x=$3B y=$5A dir=$01 hp=$10 state=$01 | slot2 id=$0E x=$3B y=$9A dir=$01 hp=$10 state=$01 | slot3 id=$0E x=$5B y=$6A dir=$01 hp=$10 state=$01 | slot4 id=$0E x=$5B y=$8A dir=$01 hp=$10 state=$01
+LINK t=290 x=$F0 y=$8D dir=$00 room=$76 mode=$05 sub=$00 mmc1_prg=$05 win[0..1]=$20$06
+ENEMY_SNAP t=290 t=290 | slot1 id=$0E x=$3C y=$5B dir=$01 hp=$10 state=$01 | slot2 id=$0E x=$3C y=$9B dir=$01 hp=$10 state=$01 | slot3 id=$0E x=$5C y=$6B dir=$01 hp=$10 state=$01 | slot4 id=$0E x=$5C y=$8B dir=$01 hp=$10 state=$01
+LINK t=291 x=$F0 y=$8D dir=$00 room=$76 mode=$05 sub=$00 mmc1_prg=$05 win[0..1]=$20$06
+ENEMY_SNAP t=291 t=291 | slot1 id=$0E x=$3D y=$5D dir=$01 hp=$10 state=$01 | slot2 id=$0E x=$3D y=$9D dir=$01 hp=$10 state=$01 | slot3 id=$0E x=$5D y=$6D dir=$01 hp=$10 state=$01 | slot4 id=$0E x=$5D y=$8D dir=$01 hp=$10 state=$01
+LINK t=292 x=$F0 y=$8D dir=$00 room=$76 mode=$05 sub=$00 mmc1_prg=$05 win[0..1]=$20$06
+ENEMY_SNAP t=292 t=292 | slot1 id=$0E x=$3E y=$5F dir=$01 hp=$10 state=$01 | slot2 id=$0E x=$3E y=$9F dir=$01 hp=$10 state=$01 | slot3 id=$0E x=$5E y=$6F dir=$01 hp=$10 state=$01 | slot4 id=$0E x=$5E y=$8F dir=$01 hp=$10 state=$01
+LINK t=293 x=$F0 y=$8D dir=$00 room=$76 mode=$05 sub=$00 mmc1_prg=$05 win[0..1]=$20$06
+ENEMY_SNAP t=293 t=293 | slot1 id=$0E x=$3F y=$61 dir=$01 hp=$10 state=$01 | slot2 id=$0E x=$3F y=$A1 dir=$01 hp=$10 state=$01 | slot3 id=$0E x=$5F y=$71 dir=$01 hp=$10 state=$01 | slot4 id=$0E x=$5F y=$91 dir=$01 hp=$10 state=$01
+LINK t=294 x=$F0 y=$8D dir=$00 room=$76 mode=$05 sub=$00 mmc1_prg=$05 win[0..1]=$20$06
+ENEMY_SNAP t=294 t=294 | slot1 id=$0E x=$40 y=$63 dir=$01 hp=$10 state=$01 | slot2 id=$0E x=$40 y=$A3 dir=$01 hp=$10 state=$01 | slot3 id=$0E x=$60 y=$73 dir=$01 hp=$10 state=$01 | slot4 id=$0E x=$60 y=$93 dir=$01 hp=$10 state=$01
+LINK t=295 x=$F0 y=$8D dir=$00 room=$76 mode=$05 sub=$00 mmc1_prg=$05 win[0..1]=$20$06
+ENEMY_SNAP t=295 t=295 | slot1 id=$0E x=$41 y=$65 dir=$01 hp=$10 state=$01 | slot2 id=$0E x=$41 y=$A5 dir=$01 hp=$10 state=$01 | slot3 id=$0E x=$61 y=$75 dir=$01 hp=$10 state=$01 | slot4 id=$0E x=$61 y=$95 dir=$01 hp=$10 state=$01
+LINK t=296 x=$F0 y=$8D dir=$00 room=$76 mode=$05 sub=$00 mmc1_prg=$05 win[0..1]=$20$06
+ENEMY_SNAP t=296 t=296 | slot1 id=$0E x=$42 y=$67 dir=$01 hp=$10 state=$01 | slot2 id=$0E x=$42 y=$A7 dir=$01 hp=$10 state=$01 | slot3 id=$0E x=$62 y=$77 dir=$01 hp=$10 state=$01 | slot4 id=$0E x=$62 y=$97 dir=$01 hp=$10 state=$01
+LINK t=297 x=$F0 y=$8D dir=$00 room=$76 mode=$05 sub=$00 mmc1_prg=$05 win[0..1]=$20$06
+ENEMY_SNAP t=297 t=297 | slot1 id=$0E x=$43 y=$69 dir=$01 hp=$10 state=$01 | slot2 id=$0E x=$43 y=$A9 dir=$01 hp=$10 state=$01 | slot3 id=$0E x=$63 y=$79 dir=$01 hp=$10 state=$01 | slot4 id=$0E x=$63 y=$99 dir=$01 hp=$10 state=$01
+LINK t=298 x=$F0 y=$8D dir=$00 room=$76 mode=$05 sub=$00 mmc1_prg=$05 win[0..1]=$20$06
+ENEMY_SNAP t=298 t=298 | slot1 id=$0E x=$44 y=$6B dir=$01 hp=$10 state=$00 | slot2 id=$0E x=$44 y=$AB dir=$01 hp=$10 state=$00 | slot3 id=$0E x=$64 y=$7B dir=$01 hp=$10 state=$00 | slot4 id=$0E x=$64 y=$9B dir=$01 hp=$10 state=$00
+LINK t=299 x=$F0 y=$8D dir=$00 room=$76 mode=$05 sub=$00 mmc1_prg=$05 win[0..1]=$20$06
+ENEMY_SNAP t=299 t=299 | slot1 id=$0E x=$44 y=$6B dir=$01 hp=$10 state=$00 | slot2 id=$0E x=$44 y=$AB dir=$01 hp=$10 state=$00 | slot3 id=$0E x=$64 y=$7B dir=$01 hp=$10 state=$00 | slot4 id=$0E x=$64 y=$9B dir=$01 hp=$10 state=$00
+f0921 T39_SHOT t=300 png=C:\Users\Jake Diggity\Documents\GitHub\FINAL TRY\builds\reports\t38_gen_in76.png
+LINK t=300 x=$F0 y=$8D dir=$00 room=$76 mode=$05 sub=$00 mmc1_prg=$05 win[0..1]=$20$06
+ENEMY_SNAP t=300 t=300 | slot1 id=$0E x=$44 y=$6B dir=$01 hp=$10 state=$00 | slot2 id=$0E x=$44 y=$AB dir=$01 hp=$10 state=$00 | slot3 id=$0E x=$64 y=$7B dir=$01 hp=$10 state=$00 | slot4 id=$0E x=$64 y=$9B dir=$01 hp=$10 state=$00
+LINK t=301 x=$F0 y=$8D dir=$00 room=$76 mode=$05 sub=$00 mmc1_prg=$05 win[0..1]=$20$06
+ENEMY_SNAP t=301 t=301 | slot1 id=$0E x=$44 y=$6B dir=$01 hp=$10 state=$00 | slot2 id=$0E x=$44 y=$AB dir=$01 hp=$10 state=$00 | slot3 id=$0E x=$64 y=$7B dir=$01 hp=$10 state=$00 | slot4 id=$0E x=$64 y=$9B dir=$01 hp=$10 state=$00
+LINK t=302 x=$F0 y=$8D dir=$00 room=$76 mode=$05 sub=$00 mmc1_prg=$05 win[0..1]=$20$06
+ENEMY_SNAP t=302 t=302 | slot1 id=$0E x=$44 y=$6B dir=$01 hp=$10 state=$00 | slot2 id=$0E x=$44 y=$AB dir=$01 hp=$10 state=$00 | slot3 id=$0E x=$64 y=$7B dir=$01 hp=$10 state=$00 | slot4 id=$0E x=$64 y=$9B dir=$01 hp=$10 state=$00
+LINK t=303 x=$F0 y=$8D dir=$00 room=$76 mode=$05 sub=$00 mmc1_prg=$05 win[0..1]=$20$06
+ENEMY_SNAP t=303 t=303 | slot1 id=$0E x=$44 y=$6B dir=$01 hp=$10 state=$00 | slot2 id=$0E x=$44 y=$AB dir=$01 hp=$10 state=$00 | slot3 id=$0E x=$64 y=$7B dir=$01 hp=$10 state=$00 | slot4 id=$0E x=$64 y=$9B dir=$01 hp=$10 state=$00
+LINK t=304 x=$F0 y=$8D dir=$00 room=$76 mode=$05 sub=$00 mmc1_prg=$05 win[0..1]=$20$06
+ENEMY_SNAP t=304 t=304 | slot1 id=$0E x=$44 y=$6B dir=$01 hp=$10 state=$00 | slot2 id=$0E x=$44 y=$AB dir=$01 hp=$10 state=$00 | slot3 id=$0E x=$64 y=$7B dir=$01 hp=$10 state=$00 | slot4 id=$0E x=$64 y=$9B dir=$01 hp=$10 state=$00
+LINK t=305 x=$F0 y=$8D dir=$00 room=$76 mode=$05 sub=$00 mmc1_prg=$05 win[0..1]=$20$06
+ENEMY_SNAP t=305 t=305 | slot1 id=$0E x=$44 y=$6B dir=$01 hp=$10 state=$00 | slot2 id=$0E x=$44 y=$AB dir=$01 hp=$10 state=$00 | slot3 id=$0E x=$64 y=$7B dir=$01 hp=$10 state=$00 | slot4 id=$0E x=$64 y=$9B dir=$01 hp=$10 state=$00
+LINK t=306 x=$F0 y=$8D dir=$00 room=$76 mode=$05 sub=$00 mmc1_prg=$05 win[0..1]=$20$06
+ENEMY_SNAP t=306 t=306 | slot1 id=$0E x=$44 y=$6B dir=$01 hp=$10 state=$00 | slot2 id=$0E x=$44 y=$AB dir=$01 hp=$10 state=$00 | slot3 id=$0E x=$64 y=$7B dir=$01 hp=$10 state=$00 | slot4 id=$0E x=$64 y=$9B dir=$01 hp=$10 state=$00
+LINK t=307 x=$F0 y=$8D dir=$00 room=$76 mode=$05 sub=$00 mmc1_prg=$05 win[0..1]=$20$06
+ENEMY_SNAP t=307 t=307 | slot1 id=$0E x=$44 y=$6B dir=$01 hp=$10 state=$00 | slot2 id=$0E x=$44 y=$AB dir=$01 hp=$10 state=$00 | slot3 id=$0E x=$64 y=$7B dir=$01 hp=$10 state=$00 | slot4 id=$0E x=$64 y=$9B dir=$01 hp=$10 state=$00
+LINK t=308 x=$F0 y=$8D dir=$00 room=$76 mode=$05 sub=$00 mmc1_prg=$05 win[0..1]=$20$06
+ENEMY_SNAP t=308 t=308 | slot1 id=$0E x=$44 y=$6B dir=$01 hp=$10 state=$00 | slot2 id=$0E x=$44 y=$AB dir=$01 hp=$10 state=$00 | slot3 id=$0E x=$64 y=$7B dir=$01 hp=$10 state=$00 | slot4 id=$0E x=$64 y=$9B dir=$01 hp=$10 state=$00
+LINK t=309 x=$F0 y=$8D dir=$00 room=$76 mode=$05 sub=$00 mmc1_prg=$05 win[0..1]=$20$06
+ENEMY_SNAP t=309 t=309 | slot1 id=$0E x=$44 y=$6B dir=$01 hp=$10 state=$00 | slot2 id=$0E x=$44 y=$AB dir=$01 hp=$10 state=$00 | slot3 id=$0E x=$64 y=$7B dir=$01 hp=$10 state=$00 | slot4 id=$0E x=$64 y=$9B dir=$01 hp=$10 state=$00
+LINK t=310 x=$F0 y=$8D dir=$00 room=$76 mode=$05 sub=$00 mmc1_prg=$05 win[0..1]=$20$06
+ENEMY_SNAP t=310 t=310 | slot1 id=$0E x=$44 y=$6B dir=$01 hp=$10 state=$00 | slot2 id=$0E x=$44 y=$AB dir=$01 hp=$10 state=$00 | slot3 id=$0E x=$64 y=$7B dir=$01 hp=$10 state=$00 | slot4 id=$0E x=$64 y=$9B dir=$01 hp=$10 state=$00
 HB f1000 flow=T38_CAPTURE mode=$05 sub=$00 room=$76 hsc=$00 scrmode=$00
-LINK t=420 x=$F0 y=$8D dir=$00 room=$76 mode=$05 sub=$00
-ENEMY_SNAP t=420 t=420 | slot1 id=$0E x=$1D y=$B7 dir=$09 hp=$10 state=$00 | slot2 id=$0E x=$1D y=$B7 dir=$09 hp=$10 state=$00 | slot3 id=$0E x=$1D y=$B7 dir=$09 hp=$10 state=$00 | slot4 id=$0E x=$1D y=$B7 dir=$09 hp=$10 state=$00
-f1124 T39_SHOT t=500 png=C:\Users\Jake Diggity\Documents\GitHub\FINAL TRY\builds\reports\t38_gen_spawn.png
-LINK t=500 x=$F0 y=$8D dir=$00 room=$76 mode=$05 sub=$00
-ENEMY_SNAP t=500 t=500 | slot1 id=$0E x=$10 y=$95 dir=$0A hp=$10 state=$00 | slot2 id=$0E x=$10 y=$95 dir=$0A hp=$10 state=$00 | slot3 id=$0E x=$10 y=$95 dir=$0A hp=$10 state=$00 | slot4 id=$0E x=$10 y=$95 dir=$0A hp=$10 state=$00
+LINK t=420 x=$F0 y=$8D dir=$00 room=$76 mode=$05 sub=$00 mmc1_prg=$05 win[0..1]=$20$06
+ENEMY_SNAP t=420 t=420 | slot1 id=$0E x=$58 y=$69 dir=$01 hp=$10 state=$00 | slot2 id=$0E x=$58 y=$A9 dir=$01 hp=$10 state=$00 | slot3 id=$0E x=$78 y=$79 dir=$01 hp=$10 state=$00 | slot4 id=$0E x=$78 y=$99 dir=$01 hp=$10 state=$00
+f1121 T39_SHOT t=500 png=C:\Users\Jake Diggity\Documents\GitHub\FINAL TRY\builds\reports\t38_gen_spawn.png
+LINK t=500 x=$F0 y=$8D dir=$00 room=$76 mode=$05 sub=$00 mmc1_prg=$05 win[0..1]=$20$06
+ENEMY_SNAP t=500 t=500 | slot1 id=$0E x=$6C y=$67 dir=$01 hp=$10 state=$00 | slot2 id=$0E x=$6C y=$A7 dir=$01 hp=$10 state=$00 | slot3 id=$0E x=$8C y=$77 dir=$01 hp=$10 state=$00 | slot4 id=$0E x=$8C y=$97 dir=$01 hp=$10 state=$00
 HB f1200 flow=T38_CAPTURE mode=$05 sub=$00 room=$76 hsc=$00 scrmode=$00
-LINK t=600 x=$F0 y=$8D dir=$00 room=$76 mode=$05 sub=$00
-ENEMY_SNAP t=600 t=600 | slot1 id=$0E x=$30 y=$AB dir=$05 hp=$10 state=$01 | slot2 id=$0E x=$30 y=$AB dir=$05 hp=$10 state=$01 | slot3 id=$0E x=$30 y=$AB dir=$05 hp=$10 state=$01 | slot4 id=$0E x=$30 y=$AB dir=$05 hp=$10 state=$01
-f1324 T39_SHOT t=700 png=C:\Users\Jake Diggity\Documents\GitHub\FINAL TRY\builds\reports\t38_gen_observe.png
-LINK t=700 x=$F0 y=$8D dir=$00 room=$76 mode=$05 sub=$00
-ENEMY_SNAP t=700 t=700 | slot1 id=$0E x=$44 y=$A9 dir=$05 hp=$10 state=$01 | slot2 id=$0E x=$44 y=$A9 dir=$05 hp=$10 state=$01 | slot3 id=$0E x=$44 y=$A9 dir=$05 hp=$10 state=$01 | slot4 id=$0E x=$44 y=$A9 dir=$05 hp=$10 state=$01
-f1344 flow T38_CAPTURE -> DONE (capture complete)
+LINK t=600 x=$EE y=$8D dir=$02 room=$76 mode=$05 sub=$00 mmc1_prg=$05 win[0..1]=$20$06
+ENEMY_SNAP t=600 t=600 | slot1 id=$0E x=$80 y=$65 dir=$01 hp=$10 state=$00 | slot2 id=$0E x=$80 y=$A5 dir=$01 hp=$10 state=$00 | slot3 id=$0E x=$A0 y=$75 dir=$01 hp=$10 state=$00 | slot4 id=$0E x=$A0 y=$95 dir=$01 hp=$10 state=$00
+f1321 T39_SHOT t=700 png=C:\Users\Jake Diggity\Documents\GitHub\FINAL TRY\builds\reports\t38_gen_observe.png
+LINK t=700 x=$CA y=$6D dir=$00 room=$76 mode=$05 sub=$00 mmc1_prg=$05 win[0..1]=$20$06
+ENEMY_SNAP t=700 t=700 | slot1 id=$0E x=$94 y=$63 dir=$01 hp=$10 state=$00 | slot2 id=$0E x=$94 y=$A3 dir=$01 hp=$10 state=$00 | slot3 id=$0E x=$B4 y=$73 dir=$01 hp=$10 state=$00 | slot4 id=$0E x=$B4 y=$93 dir=$01 hp=$10 state=$00
+f1341 flow T38_CAPTURE -> DONE (capture complete)
 TRACE_LENGTH=720 (expected 720)
 REACHED_MODE5=true
-T0_FRAME=624
+T0_FRAME=621
 GEN_EXCEPTION_FRAME=null
-FINAL t=719 x=$F0.56 y=$8D.CD dir=$00 room=$76 mode=$05 sub=$00 hsc=$00 scrmode=$00
+FINAL t=719 x=$BC.94 y=$6D.63 dir=$02 room=$76 mode=$05 sub=$00 hsc=$00 scrmode=$00
 T38_GEN_CAPTURE: OK
