@@ -403,6 +403,7 @@ local function main()
                 palette_rows = dump_palette_rows(),
                 cram_bg = dump_cram_bg(),
             }
+            sweep_visited_rooms[target] = visited[target]
         end
     end
 
@@ -435,11 +436,37 @@ local function main()
     fh:close()
 end
 
+-- Expose `visited` table for partial capture on failure. Must be
+-- declared BEFORE pcall(main) so main's assignments land in the same
+-- table the error handler reads.
+sweep_visited_rooms = sweep_visited_rooms or {}
 local ok, err = pcall(main)
 if not ok then
+    -- On failure, emit rooms collected so far plus the error blob, so
+    -- B3 analysis gets partial data instead of an empty file.
+    local keys = {}
+    for k, _ in pairs(sweep_visited_rooms) do keys[#keys + 1] = k end
+    table.sort(keys)
     local fh = io.open(OUT_PATH, "w")
     if fh then
-        fh:write('{"error":"', json_escape(err), '"}\n')
+        fh:write("{\n")
+        fh:write('  "error": "', json_escape(err), '",\n')
+        fh:write('  "room_count": ', tostring(#keys), ',\n')
+        fh:write('  "rooms": [\n')
+        for i = 1, #keys do
+            local room = sweep_visited_rooms[keys[i]]
+            fh:write("    {\n")
+            fh:write('      "room_id": ', tostring(room.room_id), ',\n')
+            fh:write('      "playmap_rows": ', json_array_2d(room.playmap_rows), ',\n')
+            fh:write('      "nt_cache_rows": ', json_array_2d(room.nt_cache_rows), ',\n')
+            fh:write('      "palette_rows": ', json_array_2d(room.palette_rows), ',\n')
+            fh:write('      "cram_bg": ', json_array_1d(room.cram_bg), '\n')
+            fh:write("    }")
+            if i < #keys then fh:write(",") end
+            fh:write("\n")
+        end
+        fh:write("  ]\n")
+        fh:write("}\n")
         fh:close()
     end
 end

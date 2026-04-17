@@ -401,6 +401,7 @@ local function main()
                 palette_rows = dump_palette_rows(),
                 palette_ram = dump_palette_ram(),
             }
+            sweep_visited_rooms[target] = visited[target]
         end
     end
 
@@ -432,11 +433,33 @@ local function main()
     fh:close()
 end
 
+sweep_visited_rooms = sweep_visited_rooms or {}
 local ok, err = pcall(main)
 if not ok then
+    -- Emit partial capture so B3 gets data from rooms visited before the
+    -- navigation failure.
+    local keys = {}
+    for k, _ in pairs(sweep_visited_rooms) do keys[#keys + 1] = k end
+    table.sort(keys)
     local fh = io.open(OUT_PATH, "w")
     if fh then
-        fh:write('{"error":"', json_escape(err), '"}\n')
+        fh:write("{\n")
+        fh:write('  "error": "', json_escape(err), '",\n')
+        fh:write('  "room_count": ', tostring(#keys), ',\n')
+        fh:write('  "rooms": [\n')
+        for i = 1, #keys do
+            local room = sweep_visited_rooms[keys[i]]
+            fh:write("    {\n")
+            fh:write('      "room_id": ', tostring(room.room_id), ',\n')
+            fh:write('      "visible_rows": ', json_array_2d(room.visible_rows), ',\n')
+            fh:write('      "palette_rows": ', json_array_2d(room.palette_rows), ',\n')
+            fh:write('      "palette_ram": ', json_array_1d(room.palette_ram), '\n')
+            fh:write("    }")
+            if i < #keys then fh:write(",") end
+            fh:write("\n")
+        end
+        fh:write("  ]\n")
+        fh:write("}\n")
         fh:close()
     end
 end
