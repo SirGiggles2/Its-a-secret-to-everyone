@@ -371,6 +371,9 @@ local function read_enemy_slot(n)
         dir   = ram_u8(BUS + 0x0098 + n),
         state = ram_u8(BUS + 0x00AC + n),
         hp    = ram_u8(BUS + 0x0485 + n),
+        timer = ram_u8(BUS + 0x0029 + n),
+        gridx = ram_u8(BUS + 0x035D + n),
+        dist  = ram_u8(BUS + 0x0394 + n),
     }
 end
 
@@ -382,8 +385,8 @@ local function snapshot_enemies(label, t)
         if s.id ~= 0 then
             any = true
             parts[#parts + 1] = string.format(
-                "slot%d id=$%02X x=$%02X y=$%02X dir=$%02X hp=$%02X state=$%02X",
-                n, s.id, s.x, s.y, s.dir, s.hp, s.state)
+                "slot%d id=$%02X x=$%02X y=$%02X dir=$%02X hp=$%02X state=$%02X tmr=$%02X gx=$%02X dst=$%02X",
+                n, s.id, s.x, s.y, s.dir, s.hp, s.state, s.timer, s.gridx, s.dist)
         end
     end
     if not any then parts[#parts + 1] = "(no enemies)" end
@@ -727,6 +730,7 @@ for frame = 1, MAX_FRAMES do
         local snap = (t == 60 or t == 240 or t == 300 or t == 420
                       or t == 500 or t == 600 or t == 700)
         if t >= 240 and t <= 310 then snap = true end
+        if t >= 300 and t <= 430 then snap = true end
         if snap then
             local rand = {}
             for i = 0, 7 do rand[i+1] = string.format("%02X", ram_u8(0xFF0018 + i)) end
