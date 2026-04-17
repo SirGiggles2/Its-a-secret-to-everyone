@@ -194,13 +194,17 @@ local function boot_to_overworld()
     local last_name_offset = read_u8(NAME_PROGRESS)
     local name_progress_events = 0
 
-    for _ = 1, 6500 do
+    for frame_n = 1, 20000 do
         local mode = read_u8(MODE)
         local cur_slot = read_u8(CUR_SAVE_SLOT)
         local name_ofs = read_u8(NAME_PROGRESS)
         local slot_active0 = read_u8(SAVE_ACTIVE0)
         local slot_active1 = read_u8(SAVE_ACTIVE1)
         local slot_active2 = read_u8(SAVE_ACTIVE2)
+        if frame_n % 500 == 0 then
+            console.log(string.format("boot_nes: f=%d flow=%d mode=%02X slot=%02X sa=%02X%02X%02X name=%02X",
+                frame_n, flow, mode, cur_slot, slot_active0, slot_active1, slot_active2, name_ofs))
+        end
 
         if flow == FLOW_BOOT_TO_FS1 then
             if mode == 0x01 then
