@@ -286,6 +286,70 @@ local function dump_visible_rows()
     return rows
 end
 
+-- NES nametable attribute table lives at PPU $23C0-$23FF for NT0 =
+-- CIRAM $03C0-$03FF. Each byte covers a 4x4 tile area (= 2x2 16x16
+-- metatiles). Bit layout: BR(7:6) BL(5:4) TR(3:2) TL(1:0). Pick the
+-- 2-bit palette index that matches the (tile_col, tile_row) coordinate
+-- within the 32x32-tile NT0.
+local ATTR_BASE = 0x03C0
+local function attr_palette_for(nt_tile_col, nt_tile_row)
+    local attr_col = nt_tile_col >> 2   -- 0..7
+    local attr_row = nt_tile_row >> 2   -- 0..7
+    local byte = ciram_u8(ATTR_BASE + attr_row * 8 + attr_col)
+    local qx = (nt_tile_col >> 1) & 1
+    local qy = (nt_tile_row >> 1) & 1
+    local shift = (qy * 2 + qx) * 2
+    return (byte >> shift) & 3
+end
+
+-- Play area starts at NT row 4 (rows 0..3 are HUD). But the sweep reads
+-- tiles at CIRAM_BASE + row*32 which already maps to NT row 4+ because
+-- CIRAM_BASE = $0100 = NT0 offset $100 = row 8 * 32. Wait — actually
+-- CIRAM $0100 corresponds to PPU $2100 which is tile row 8 (row 8 * 32
+-- bytes = $100). The play area starts at row 8. So for row r in the
+-- 22-row play area, NT tile row = 8 + r. That's what we need for attr
+-- lookup.
+local PLAY_AREA_NT_TOP = 8
+
+local function dump_palette_rows()
+    local rows = {}
+    for row = 0, ROOM_ROWS - 1 do
+        local vals = {}
+        for col = 0, ROOM_COLS - 1 do
+            vals[#vals + 1] = attr_palette_for(col, PLAY_AREA_NT_TOP + row)
+        end
+        rows[#rows + 1] = vals
+    end
+    return rows
+end
+
+-- PPU palette RAM at $3F00-$3F0F (BG palettes 0..3, 4 colors each).
+-- In BizHawk NES, PPU memory is in the "PPU Bus" or "PPU Memory" domain.
+-- Fall back across common names.
+local function ppu_bus_u8(addr)
+    local domains = {"PPU Bus", "PPU Memory", "PPU", "System Bus"}
+    for i = 1, #domains do
+        local ok, v = pcall(function()
+            memory.usememorydomain(domains[i])
+            return memory.read_u8(addr)
+        end)
+        if ok then
+            memory.usememorydomain("System Bus")
+            return v
+        end
+    end
+    memory.usememorydomain("System Bus")
+    return 0
+end
+
+local function dump_palette_ram()
+    local vals = {}
+    for i = 0, 15 do
+        vals[#vals + 1] = ppu_bus_u8(0x3F00 + i)
+    end
+    return vals
+end
+
 local function json_escape(s)
     return tostring(s):gsub("\\", "\\\\"):gsub('"', '\\"')
 end
@@ -334,6 +398,8 @@ local function main()
             visited[target] = {
                 room_id = target,
                 visible_rows = dump_visible_rows(),
+                palette_rows = dump_palette_rows(),
+                palette_ram = dump_palette_ram(),
             }
         end
     end
@@ -352,7 +418,9 @@ local function main()
         local room = visited[keys[i]]
         fh:write("    {\n")
         fh:write('      "room_id": ', tostring(room.room_id), ',\n')
-        fh:write('      "visible_rows": ', json_array_2d(room.visible_rows), '\n')
+        fh:write('      "visible_rows": ', json_array_2d(room.visible_rows), ',\n')
+        fh:write('      "palette_rows": ', json_array_2d(room.palette_rows), ',\n')
+        fh:write('      "palette_ram": ', json_array_1d(room.palette_ram), '\n')
         fh:write("    }")
         if i < #keys then
             fh:write(",")

@@ -298,6 +298,59 @@ local function dump_nt_cache_rows()
     return rows
 end
 
+-- Plane A VRAM read helpers. Plane A base = $C000, 64-cols x 32-rows plane
+-- layout, 2 bytes per tile entry (big-endian): bit15 priority, bits14:13
+-- palette line, bit12 vflip, bit11 hflip, bits10:0 tile index.
+local PLANE_A_VRAM = 0xC000
+local PLANE_A_ROW_PITCH = 128   -- 64 cols * 2 bytes
+
+local function vram_u16_be(addr)
+    local ok, v = pcall(function()
+        memory.usememorydomain("VRAM")
+        return memory.read_u16_be(addr)
+    end)
+    if not ok then return 0 end
+    return v
+end
+
+-- Per-tile palette-line bits (0..3) for the 22-row x 32-col play area.
+local function dump_palette_rows()
+    local rows = {}
+    for row = 0, ROOM_ROWS - 1 do
+        local vals = {}
+        local nt_row = PLANE_A_TOP_ROW + row
+        local base = PLANE_A_VRAM + nt_row * PLANE_A_ROW_PITCH
+        for col = 0, ROOM_COLS - 1 do
+            local word = vram_u16_be(base + col * 2)
+            vals[#vals + 1] = (word >> 13) & 3
+        end
+        rows[#rows + 1] = vals
+    end
+    -- restore main-bus domain for subsequent u8 reads
+    memory.usememorydomain("M68K BUS")
+    return rows
+end
+
+-- All 64 CRAM words (4 palettes x 16 entries, background BG palettes are
+-- indices 0..3, sprite palettes are 4..7 — we dump the BG portion only:
+-- 4 palettes * 4 words each = 16 words. NES Zelda BG uses 4 sub-palettes
+-- mirrored across the grid via attribute bits; the sprite portion is
+-- irrelevant to OW tile rendering.
+local function dump_cram_bg()
+    local vals = {}
+    local ok = pcall(function()
+        memory.usememorydomain("CRAM")
+        for i = 0, 15 do
+            vals[#vals + 1] = memory.read_u16_be(i * 2)
+        end
+    end)
+    memory.usememorydomain("M68K BUS")
+    if not ok or #vals == 0 then
+        for i = 1, 16 do vals[i] = 0 end
+    end
+    return vals
+end
+
 local function json_escape(s)
     return tostring(s):gsub("\\", "\\\\"):gsub('"', '\\"')
 end
@@ -347,6 +400,8 @@ local function main()
                 room_id = target,
                 playmap_rows = dump_playmap_rows(),
                 nt_cache_rows = dump_nt_cache_rows(),
+                palette_rows = dump_palette_rows(),
+                cram_bg = dump_cram_bg(),
             }
         end
     end
@@ -366,7 +421,9 @@ local function main()
         fh:write("    {\n")
         fh:write('      "room_id": ', tostring(room.room_id), ',\n')
         fh:write('      "playmap_rows": ', json_array_2d(room.playmap_rows), ',\n')
-        fh:write('      "nt_cache_rows": ', json_array_2d(room.nt_cache_rows), '\n')
+        fh:write('      "nt_cache_rows": ', json_array_2d(room.nt_cache_rows), ',\n')
+        fh:write('      "palette_rows": ', json_array_2d(room.palette_rows), ',\n')
+        fh:write('      "cram_bg": ', json_array_1d(room.cram_bg), '\n')
         fh:write("    }")
         if i < #keys then
             fh:write(",")
