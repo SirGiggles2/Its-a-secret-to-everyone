@@ -33,13 +33,14 @@ M.PHASES = {
     { name = "pickup_settle",  button = nil,     start_t = 700,  end_t = 970  },
     { name = "walk_down",      button = "Down",  start_t = 970,  end_t = 1090 },
     { name = "post_exit",      button = nil,     start_t = 1090, end_t = 1400 },
-    { name = "resettle_77",    button = nil,     start_t = 1400, end_t = 1500 },
-    { name = "walk_east",      button = "Right", start_t = 1500, end_t = 1620 },
-    { name = "transition_78",  button = nil,     start_t = 1620, end_t = 1700 },
-    { name = "observe_enemy",  button = nil,     start_t = 1700, end_t = 1820 },
-    { name = "sword_swing",    button = "B",     start_t = 1820, end_t = 1940 },
-    { name = "kill_settle",    button = nil,     start_t = 1940, end_t = 2100 },
-    { name = "final",          button = nil,     start_t = 2100, end_t = 2400 },
+    { name = "resettle_77",    button = nil,     start_t = 1400, end_t = 1460 },
+    { name = "walk_down_out",  button = "Down",  start_t = 1460, end_t = 1520 },
+    { name = "walk_east",      button = "Right", start_t = 1520, end_t = 1790 },
+    { name = "transition_78",  button = nil,     start_t = 1790, end_t = 1870 },
+    { name = "observe_enemy",  button = nil,     start_t = 1870, end_t = 1990 },
+    { name = "sword_swing",    button = "B",     start_t = 1990, end_t = 2110 },
+    { name = "kill_settle",    button = nil,     start_t = 2110, end_t = 2270 },
+    { name = "final",          button = nil,     start_t = 2270, end_t = 2400 },
 }
 
 function M.phase_for_relative_frame(t)

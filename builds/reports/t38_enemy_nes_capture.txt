@@ -1,0 +1,37 @@
+=================================================================
+T36 NES capture: cave-enter from room $76
+=================================================================
+SCENARIO_LENGTH=2400
+f0052 flow BOOT_TO_FS1 -> FS1_SELECT_REGISTER (entered Mode1)
+f0055 flow FS1_SELECT_REGISTER -> FS1_ENTER_REGISTER (CurSaveSlot reached 3)
+f0074 flow FS1_ENTER_REGISTER -> MODEE_TYPE_NAME (entered ModeE)
+f0122 flow MODEE_TYPE_NAME -> MODEE_FINISH (name progress target reached)
+f0166 flow MODEE_FINISH -> WAIT_GAMEPLAY (left ModeE)
+f0172 flow WAIT_GAMEPLAY -> FS1_START_GAME (back to Mode1 after register)
+f0183 flow FS1_START_GAME -> T38_STABILIZE (left Mode1 (gameplay starting))
+HB f0200 flow=T38_STABILIZE mode=$02 sub=$01 room=$00 hsc=$00
+f0291 reached Mode5 room $77
+f0352 T=0 baseline x=$78 y=$8D dir=$00 hsc=$00 vsc=$00 room=$77 frame_ctr=$1C
+f0352 flow T38_STABILIZE -> T38_CAPTURE (T35 capture window open)
+f0392 T39_SHOT t=40 png=C:\Users\Jake Diggity\Documents\GitHub\FINAL TRY\builds\reports\t38_nes_pre.png
+HB f0400 flow=T38_CAPTURE mode=$05 sub=$00 room=$77 hsc=$00
+HB f0600 flow=T38_CAPTURE mode=$10 sub=$00 room=$77 hsc=$00
+HB f0800 flow=T38_CAPTURE mode=$0B sub=$00 room=$77 hsc=$00
+HB f1000 flow=T38_CAPTURE mode=$0B sub=$00 room=$77 hsc=$00
+HB f1200 flow=T38_CAPTURE mode=$0B sub=$00 room=$77 hsc=$00
+HB f1400 flow=T38_CAPTURE mode=$0A sub=$07 room=$77 hsc=$00
+HB f1600 flow=T38_CAPTURE mode=$05 sub=$00 room=$77 hsc=$00
+HB f1800 flow=T38_CAPTURE mode=$05 sub=$00 room=$77 hsc=$00
+f1802 T39_SHOT t=1450 png=C:\Users\Jake Diggity\Documents\GitHub\FINAL TRY\builds\reports\t38_nes_resettle.png
+HB f2000 flow=T38_CAPTURE mode=$05 sub=$00 room=$77 hsc=$00
+f2152 T39_SHOT t=1800 png=C:\Users\Jake Diggity\Documents\GitHub\FINAL TRY\builds\reports\t38_nes_in78.png
+HB f2200 flow=T38_CAPTURE mode=$05 sub=$00 room=$77 hsc=$00
+HB f2400 flow=T38_CAPTURE mode=$05 sub=$00 room=$77 hsc=$00
+f2552 T39_SHOT t=2200 png=C:\Users\Jake Diggity\Documents\GitHub\FINAL TRY\builds\reports\t38_nes_killed.png
+HB f2600 flow=T38_CAPTURE mode=$05 sub=$00 room=$77 hsc=$00
+f2752 flow T38_CAPTURE -> DONE (capture complete)
+TRACE_LENGTH=2400 (expected 2400)
+REACHED_MODE5=true
+T0_FRAME=352
+FINAL t=2399 x=$D0.78 y=$9D.80 dir=$00 room=$77 mode=$05 sub=$00 hsc=$00 vsc=$00
+T38_NES_CAPTURE: OK
