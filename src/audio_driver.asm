@@ -536,6 +536,12 @@ m_noise_level       equ MUSIC_BASE+$26  ; byte: current envelope level ($00-$FF)
 m_noise_decay       equ MUSIC_BASE+$27  ; byte: current linear decay rate (per tick)
 m_last_psg_nc       equ MUSIC_BASE+$28  ; byte: last noise-control byte written
 
+; Noise-SFX shadow state. Zelda's PlaySfxNote writes $400E/$400C/$400F
+; each sfx-tick. $400C and $400E just cache here; $400F emits to PSG
+; (gated on Effect $0606 != 0 so music-drum writes are ignored).
+m_sfx_vol           equ MUSIC_BASE+$29  ; byte: last $400C byte
+m_sfx_ctrl_raw      equ MUSIC_BASE+$2A  ; byte: last $400E byte
+
 ;----------------------------------------------------------------------
 ; DMC → YM2612 DAC state (Phase A of DMC port — see
 ; C:\Users\Jake Diggity\.claude\plans\quirky-baking-goose.md).
@@ -771,13 +777,25 @@ music_tick:
     bsr     dmc_dbg_poll            ; scaffold: Start cycles DMC samples
     bsr     dmc_feed                ; no-op stub (backward-compat call)
     ; DriveAudio is NOP'd (needs bank mapping for DriveSong/DriveTune).
-    ; Call DriveSample here so SampleRequest ($0601) writes make it to the
-    ; DMC trigger path: DriveSample -> _apu_write_4010/12/13/15 ->
-    ; dmc_trigger -> HBlank DAC streamer. Needed for old-man reveal,
-    ; death-moan, fanfare, boss-kill samples.
-    ; DriveEffect is NOT called — its PlaySfxNote path writes noise-APU
-    ; stubs that currently collide with music's own PSG-noise channel.
+    ; Call DriveEffect (SFX dispatcher) and DriveSample (DMC dispatcher)
+    ; here so EffectRequest / SampleRequest writes make it to hardware.
+    ;
+    ; DriveEffect -> Play*Sfx sets Effect ($0606) non-zero while the SFX
+    ; is ticking; our _apu_write_400f stub keys on that to route noise
+    ; writes to PSG and leave music drums alone.
+    ;
+    ; DriveSample -> _apu_write_4010/12/13/15 -> dmc_trigger -> HBlank
+    ; DAC streamer. Needed for boss-kill / death-cry / fanfare samples.
+    jsr     DriveEffect
     jsr     DriveSample
+
+    ; DriveAudio normally zeroes the request bytes after dispatch -- we
+    ; do the same or events retrigger every frame.
+    clr.b   ($FF0601).l                 ; SampleRequest
+    clr.b   ($FF0603).l                 ; EffectRequest
+    ; Note: $0602/$0604 are already consumed by the silence-poll block
+    ; at the top of music_tick; $0600 is consumed by the SongRequest
+    ; bridge; nothing else to clear here.
     movem.l (SP)+,D0-D7/A0-A2
     rts
 
