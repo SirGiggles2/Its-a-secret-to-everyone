@@ -561,95 +561,76 @@ dmc_dbg_prev_btn    equ DMC_BASE+$0F    ; byte: pad state from last frame (edge 
 dmc_dbg_next        equ DMC_BASE+$10    ; byte: next sample index (1..7) to trigger
 
 ;==============================================================================
-; dmc_trigger — synchronous cycle-paced DAC streamer (EUREKA build e7d8cf69).
+; dmc_trigger — non-blocking HBlank DAC streamer.
 ;
-; Input:  D0.b = 1-based sample index (1..DMC_SAMPLE_COUNT)
-;
-; Blocks the M68K for the sample's full duration (~55 ms - 1 sec) and writes
-; every decoded PCM byte to YM2612 reg $2A at each sample's native NES rate
-; (21/25/33 kHz) using a dbra spin loop calibrated by DMC_SAMPLE_SPIN.
-;
-; This gives NES-accurate pitch and zero jitter at the cost of a short hitch
-; on any frame that triggers a sample (death moan / boss cry / fanfare etc.).
-; HBlank-based streaming was tried (Phase D/E polish) and sounded crunchy
-; because music ym_write1/2 SR=6 lockouts masked ~40% of HINT fires.
+; Samples are pre-processed by tools/extract_dmc_samples.py: proper bandlimited
+; resampling (scipy.signal.resample_poly with Kaiser-window FIR) from native
+; NES rate (21/25/33 kHz) down to the empirically-measured Genesis HINT rate
+; (~8751 Hz with music active). That's where the "crunchy" sound came from
+; before — linear interpolation without anti-alias filter caused aliasing.
+; With proper prefiltered resampling, playback sounds clean even at the lower
+; effective rate, and the game does NOT hitch.
 ;==============================================================================
 dmc_trigger:
     tst.b   D0
-    beq     .done
+    beq.s   .bad
     cmp.b   #DMC_SAMPLE_COUNT,D0
-    bhi     .done
-    movem.l D2-D4/A0-A1,-(SP)
+    bhi.s   .bad
+    movem.l D0-D2/A0-A1,-(SP)
     move.b  D0,(dmc_last_idx).l
     moveq   #0,D1
     move.b  D0,D1                   ; D1.l = 1-based index
-    subq.l  #1,D1                   ; D1.l = 0-based index
+    subq.l  #1,D1                   ; 0-based
+    add.l   D1,D1                   ; idx * 2
+    add.l   D1,D1                   ; idx * 4
 
-    ; D3 = spin dbra count for this sample (word table, idx*2)
-    move.l  D1,D4
-    add.l   D4,D4                   ; D4 = idx * 2
-    lea     (DMC_SAMPLE_SPIN).l,A0
-    move.w  (A0,D4.l),D3
-
-    ; long-index for PCM offset / length tables
-    add.l   D1,D1                   ; D1.l = idx * 2
-    add.l   D1,D1                   ; D1.l = idx * 4
-
-    ; A1 = PCM start = DMC_SAMPLE_PCM_BLOB + OFFS[idx]
     lea     (DMC_SAMPLE_PCM_OFFS).l,A0
     move.l  (A0,D1.l),D2
     lea     (DMC_SAMPLE_PCM_BLOB).l,A1
     add.l   D2,A1
 
-    ; D2 = remaining PCM bytes (longest sample ~26 KB, fits comfortably in long)
     lea     (DMC_SAMPLE_PCM_LENS).l,A0
     move.l  (A0,D1.l),D2
     tst.l   D2
-    beq.s   .end
+    beq.s   .bad_restore
 
-    move.b  #1,(dmc_active).l       ; HUD marker; cleared after last byte
+    move.l  A1,(dmc_ptr).l
+    move.l  D2,(dmc_remain).l
+    move.b  #1,(dmc_active).l
 
-    ; Select YM2612 Part I register $2A once; ym_write SR lockout keeps
-    ; music from stepping on the latch while we stream.
+    ; Arm HBlank every line, enable HINT (preserve colorfix bit).
+    move.w  #$8A00,(VDP_CTRL).l     ; Reg 10 = 0 -> fire every line
+    move.w  #$8014,(VDP_CTRL).l     ; Reg  0 = $14 -> HINT on + colorfix
+.bad_restore:
+    movem.l (SP)+,D0-D2/A0-A1
+.bad:
+    rts
+
+;==============================================================================
+; dmc_hint_tick — per-HBlank PCM byte -> YM2612 reg $2A DAC write.
+;==============================================================================
+dmc_hint_tick:
+    move.l  (dmc_ptr).l,A0
+    move.b  (A0)+,D0
+    move.l  A0,(dmc_ptr).l
     lea     (YM_ADDR1).l,A0
 .wait:
     tst.b   (A0)
     bmi.s   .wait
     move.b  #$2A,(A0)
-
-    ; Streaming loop:
-    ;   move.b (A1)+,(YM_DATA1).l  ~20 cyc (bus wait-stated write)
-    ;   move.w D3,D4                4 cyc
-    ;   dbra D4,.spin              10N+4 cyc (N = DMC_SAMPLE_SPIN[idx])
-    ;   subq.l #1,D2                8 cyc
-    ;   bne.s .stream              10 cyc
-    ; total = 50 + 10N cycles, calibrated per sample in the extractor.
-.stream:
-    move.b  (A1)+,(YM_DATA1).l
-    move.w  D3,D4
-.spin:
-    dbra    D4,.spin
-    subq.l  #1,D2
-    bne.s   .stream
-
-.end:
-    clr.b   (dmc_active).l
-    ; Park DAC at mid-rail so last sample value doesn't hold forever.
-.wait2:
-    tst.b   (YM_ADDR1).l
-    bmi.s   .wait2
-    move.b  #$2A,(YM_ADDR1).l
-    move.b  #$80,(YM_DATA1).l
-
-    movem.l (SP)+,D2-D4/A0-A1
-.done:
+    move.b  D0,(YM_DATA1).l
+    subq.l  #1,(dmc_remain).l
+    beq.s   .end
     rts
-
-;==============================================================================
-; dmc_hint_tick — legacy, kept as rts for HBlankISR backward-compat.
-; All streaming now happens synchronously inside dmc_trigger.
-;==============================================================================
-dmc_hint_tick:
+.end:
+    lea     (YM_ADDR1).l,A0
+.wait2:
+    tst.b   (A0)
+    bmi.s   .wait2
+    move.b  #$2A,(A0)
+    move.b  #$80,(YM_DATA1).l       ; park DAC at mid-rail
+    clr.b   (dmc_active).l
+    move.w  #$8004,(VDP_CTRL).l     ; Reg 0 = $04 -> HINT off, colorfix on
     rts
 
 ;==============================================================================

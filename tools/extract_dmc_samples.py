@@ -38,11 +38,23 @@ If no path given, looks for "Legend of Zelda, The (USA).nes" in worktree root.
 
 from __future__ import annotations
 
+import math
 import os
 import struct
 import sys
 import wave
+from fractions import Fraction
 from pathlib import Path
+
+import numpy as np
+from scipy.signal import resample_poly
+
+# Measured empirically via bizhawk_audio_probe.lua with music active:
+# ~8751 HBlank interrupts per second reach the DMC streamer (YM ym_write
+# SR=6 lockouts mask ~40% of the theoretical 15700 Hz per-line rate).
+# Samples are bandlimited to this rate so playback sounds clean without
+# aliasing / jitter artifacts.
+GENESIS_HINT_HZ = 8751
 
 # --- sample table -----------------------------------------------------------
 
@@ -175,20 +187,35 @@ def main(argv: list[str]) -> int:
         nes_addrs.append(nes_addr)
         blob.extend(sample)
 
-        # Decode delta -> 7-bit DAC levels (0..127), then shift <<1 to 8-bit
-        # unsigned (0..254) centered at 128 to match YM2612 reg $2A encoding.
+        # Decode delta -> 7-bit DAC levels (0..127) at native NES rate.
         decoded = decode_dmc(sample)
+
+        # Bandlimited resample from native NES rate to Genesis HINT rate.
+        # Use scipy.signal.resample_poly with a rational up/down ratio so
+        # the built-in Kaiser-window FIR prefilter eliminates aliasing
+        # (the cause of the "crunchy" sound in earlier linear-interp
+        # builds). Convert 0..127 -> -64..+63 so filtering is centered
+        # at zero, then re-bias back to 8-bit unsigned $80-centered.
+        frac = Fraction(GENESIS_HINT_HZ, int(round(rate_hz))).limit_denominator(1000)
+        up, down = frac.numerator, frac.denominator
+        centered = np.asarray(decoded, dtype=np.float64) - 64.0
+        resampled_f = resample_poly(centered, up, down)
+        # 7-bit DAC levels scale to 0..127; shift <<1 to 8-bit unsigned.
+        resampled_u7 = np.clip(np.round(resampled_f + 64.0), 0, 127).astype(np.uint8)
+        resampled_u8 = ((resampled_u7.astype(np.uint16) << 1) & 0xFF).astype(np.uint8)
+
         pcm_offsets.append(len(pcm_blob))
-        pcm_lengths.append(len(decoded))
-        pcm_blob.extend(bytes((v << 1) & 0xFF for v in decoded))
+        pcm_lengths.append(len(resampled_u8))
+        pcm_blob.extend(resampled_u8.tobytes())
 
         wav_path = wav_dir / f"{i+1:02d}_{name}.wav"
         write_wav(wav_path, decoded, rate_hz)
 
         print(f"  [{i+1}] {name}: NES ${nes_addr:04X} "
               f"(PRG ${prg_off:05X})  {length} B delta / "
-              f"{len(decoded)} B pcm  "
-              f"rate_idx=${rate_idx:X} ({rate_hz:7.1f} Hz)")
+              f"{len(decoded)} B pcm @ {rate_hz:.0f} Hz -> "
+              f"{len(resampled_u8)} B @ {GENESIS_HINT_HZ} Hz "
+              f"(ratio {up}/{down})")
 
     # align blobs to even byte for M68K rept loads
     if len(blob) & 1:

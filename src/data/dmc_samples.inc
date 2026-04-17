@@ -35,19 +35,19 @@ DMC_SFX_07_DELTA_LEN equ     $0D01
 
 ; --- PCM form (decoded, ready for YM reg $2A) --------------------------
 DMC_SFX_01_PCM_OFF   equ     $000000
-DMC_SFX_01_PCM_LEN   equ     $003A88
-DMC_SFX_02_PCM_OFF   equ     $003A88
-DMC_SFX_02_PCM_LEN   equ     $006008
-DMC_SFX_03_PCM_OFF   equ     $009A90
-DMC_SFX_03_PCM_LEN   equ     $002008
-DMC_SFX_04_PCM_OFF   equ     $00BA98
-DMC_SFX_04_PCM_LEN   equ     $000508
-DMC_SFX_05_PCM_OFF   equ     $00BFA0
-DMC_SFX_05_PCM_LEN   equ     $005808
-DMC_SFX_06_PCM_OFF   equ     $0117A8
-DMC_SFX_06_PCM_LEN   equ     $004808
-DMC_SFX_07_PCM_OFF   equ     $015FB0
-DMC_SFX_07_PCM_LEN   equ     $006808
+DMC_SFX_01_PCM_LEN   equ     $000F75
+DMC_SFX_02_PCM_OFF   equ     $000F75
+DMC_SFX_02_PCM_LEN   equ     $00195B
+DMC_SFX_03_PCM_OFF   equ     $0028D0
+DMC_SFX_03_PCM_LEN   equ     $000D28
+DMC_SFX_04_PCM_OFF   equ     $0035F8
+DMC_SFX_04_PCM_LEN   equ     $000155
+DMC_SFX_05_PCM_OFF   equ     $00374D
+DMC_SFX_05_PCM_LEN   equ     $001EFE
+DMC_SFX_06_PCM_OFF   equ     $00564B
+DMC_SFX_06_PCM_LEN   equ     $001305
+DMC_SFX_07_PCM_OFF   equ     $006950
+DMC_SFX_07_PCM_LEN   equ     $0024A0
 
 ; --- Shared metadata ---------------------------------------------------
 DMC_SFX_01_RATE      equ     $0F   ; $4010 raw
