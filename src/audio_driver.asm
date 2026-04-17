@@ -561,130 +561,95 @@ dmc_dbg_prev_btn    equ DMC_BASE+$0F    ; byte: pad state from last frame (edge 
 dmc_dbg_next        equ DMC_BASE+$10    ; byte: next sample index (1..7) to trigger
 
 ;==============================================================================
-; dmc_trigger — non-blocking DMC sample launch (Phase E polish).
+; dmc_trigger — synchronous cycle-paced DAC streamer (EUREKA build e7d8cf69).
 ;
 ; Input:  D0.b = 1-based sample index (1..DMC_SAMPLE_COUNT)
-; Output: none
-; Trashes: D0, D1, A0
 ;
-; Sets up dmc_ptr / dmc_remain / dmc_active and arms the VDP HBlank
-; interrupt to fire on every scanline.  Control returns immediately; the
-; HBlank handler dmc_hint_tick (called from HBlankISR in genesis_shell.asm)
-; then streams one PCM byte per line to YM2612 reg $2A.  When dmc_remain
-; underflows, the handler clears dmc_active, parks the DAC at $80, and
-; disables HINT in VDP reg 0.
+; Blocks the M68K for the sample's full duration (~55 ms - 1 sec) and writes
+; every decoded PCM byte to YM2612 reg $2A at each sample's native NES rate
+; (21/25/33 kHz) using a dbra spin loop calibrated by DMC_SAMPLE_SPIN.
 ;
-; Rate: samples are pre-resampled to DMC_DAC_HZ (13 440 Hz) by
-; tools/extract_dmc_samples.py.  That matches 224 display lines * 60 fps
-; exactly, so the HBlank handler needs no fractional-step accumulator —
-; just advance one byte per fire.
-;
-; VDP register state:
-;   Reg 10 ($0A) = 0   → HINT fires every line
-;   Reg 0  ($00) = $14 → preserve bit2 (colorfix) + enable HINT (bit4)
-; Idle state after sample finish: reg 0 reverts to $04 (HINT off).
-;
-; Invalid indices are silently ignored.
+; This gives NES-accurate pitch and zero jitter at the cost of a short hitch
+; on any frame that triggers a sample (death moan / boss cry / fanfare etc.).
+; HBlank-based streaming was tried (Phase D/E polish) and sounded crunchy
+; because music ym_write1/2 SR=6 lockouts masked ~40% of HINT fires.
 ;==============================================================================
 dmc_trigger:
     tst.b   D0
-    beq.s   .bad
+    beq     .done
     cmp.b   #DMC_SAMPLE_COUNT,D0
-    bhi.s   .bad
-    ; Mode gate: DMC streaming uses VDP HINT every line. When the scroll
-    ; system has an active split (dungeons), HINT is owned by the split at
-    ; a specific scanline. Running both at once (HINT every line + V-counter
-    ; dispatch) was too expensive and sounded crunchy. Instead, skip DMC
-    ; entirely when a split is active — samples will play silently in those
-    ; modes. Attract/file-select/overworld all use NO_SPLIT, so samples
-    ; (old-man reveal, death moan, fanfare, rupee) still play there.
-    cmpi.b  #INTRO_SCROLL_NO_SPLIT,($00FF081F).l
-    bne.s   .bad
-    movem.l D0-D2/A0-A1,-(SP)
-    move.b  D0,(dmc_last_idx).l     ; remember for HUD
+    bhi     .done
+    movem.l D2-D4/A0-A1,-(SP)
+    move.b  D0,(dmc_last_idx).l
     moveq   #0,D1
     move.b  D0,D1                   ; D1.l = 1-based index
     subq.l  #1,D1                   ; D1.l = 0-based index
 
+    ; D3 = spin dbra count for this sample (word table, idx*2)
+    move.l  D1,D4
+    add.l   D4,D4                   ; D4 = idx * 2
+    lea     (DMC_SAMPLE_SPIN).l,A0
+    move.w  (A0,D4.l),D3
+
+    ; long-index for PCM offset / length tables
     add.l   D1,D1                   ; D1.l = idx * 2
     add.l   D1,D1                   ; D1.l = idx * 4
 
-    ; A1 = PCM start ptr = DMC_SAMPLE_PCM_BLOB + OFFS[idx]
+    ; A1 = PCM start = DMC_SAMPLE_PCM_BLOB + OFFS[idx]
     lea     (DMC_SAMPLE_PCM_OFFS).l,A0
     move.l  (A0,D1.l),D2
     lea     (DMC_SAMPLE_PCM_BLOB).l,A1
     add.l   D2,A1
 
-    ; D2 = remaining PCM bytes
+    ; D2 = remaining PCM bytes (longest sample ~26 KB, fits comfortably in long)
     lea     (DMC_SAMPLE_PCM_LENS).l,A0
     move.l  (A0,D1.l),D2
     tst.l   D2
-    beq.s   .bad_restore            ; zero-length guard
+    beq.s   .end
 
-    ; Publish state in one atomic-ish block, then arm HINT.
-    move.l  A1,(dmc_ptr).l
-    move.l  D2,(dmc_remain).l
-    move.b  #1,(dmc_active).l
+    move.b  #1,(dmc_active).l       ; HUD marker; cleared after last byte
 
-    ; Arm VDP HBlank every line, then enable HINT in reg 0 (preserve bit2
-    ; colorfix).  Both writes must go in order: counter first, then enable.
-    move.w  #$8A00,(VDP_CTRL).l     ; Reg 10 = 0 → fire every line
-    move.w  #$8014,(VDP_CTRL).l     ; Reg  0 = $14 → HINT on + colorfix
-
-.bad_restore:
-    movem.l (SP)+,D0-D2/A0-A1
-.bad:
-    rts
-
-;==============================================================================
-; dmc_hint_tick — HBlank DMC-streaming inner body.
-;
-; Called from HBlankISR (genesis_shell.asm) when dmc_active is set.  Reads
-; one byte from (dmc_ptr), writes it to YM2612 reg $2A, advances the ptr,
-; decrements dmc_remain, and on underflow tears down the HINT arming.
-;
-; Preserves: all registers except the ones HBlankISR pushed for us
-; (HBlankISR wraps this in movem.l D0/A0 save/restore).
-;
-; Contract with caller: D0 and A0 are already free to clobber.  SR is
-; already at level 4+ (we're in the ISR), so no further lockout needed.
-; The YM2612 busy flag is polled here defensively — the 63.5 μs between
-; HINTs is vastly larger than the ~17 μs YM drain, so in practice the wait
-; is zero iterations, but we keep the poll for robustness against main-
-; thread writes that might have just fired.
-;==============================================================================
-dmc_hint_tick:
-    ; Fetch next PCM byte
-    move.l  (dmc_ptr).l,A0
-    move.b  (A0)+,D0
-    move.l  A0,(dmc_ptr).l
-
-    ; Busy-poll + YM2612 DAC write.  Re-select reg $2A every time because
-    ; main-thread music code writes other YM addresses between HINTs, and
-    ; we don't know what address is currently latched.
+    ; Select YM2612 Part I register $2A once; ym_write SR lockout keeps
+    ; music from stepping on the latch while we stream.
     lea     (YM_ADDR1).l,A0
 .wait:
     tst.b   (A0)
     bmi.s   .wait
     move.b  #$2A,(A0)
-    move.b  D0,(YM_DATA1).l
 
-    ; Decrement remain; on underflow, end of sample.
-    subq.l  #1,(dmc_remain).l
-    beq.s   .end
-    rts
+    ; Streaming loop:
+    ;   move.b (A1)+,(YM_DATA1).l  ~20 cyc (bus wait-stated write)
+    ;   move.w D3,D4                4 cyc
+    ;   dbra D4,.spin              10N+4 cyc (N = DMC_SAMPLE_SPIN[idx])
+    ;   subq.l #1,D2                8 cyc
+    ;   bne.s .stream              10 cyc
+    ; total = 50 + 10N cycles, calibrated per sample in the extractor.
+.stream:
+    move.b  (A1)+,(YM_DATA1).l
+    move.w  D3,D4
+.spin:
+    dbra    D4,.spin
+    subq.l  #1,D2
+    bne.s   .stream
 
 .end:
-    ; Park DAC at mid-rail ($80) and mark idle.  Disable HINT in VDP reg 0
-    ; so subsequent frames don't keep firing this handler for no reason.
-    lea     (YM_ADDR1).l,A0
-.wait2:
-    tst.b   (A0)
-    bmi.s   .wait2
-    move.b  #$2A,(A0)
-    move.b  #$80,(YM_DATA1).l
     clr.b   (dmc_active).l
-    move.w  #$8004,(VDP_CTRL).l     ; Reg 0 = $04 → HINT off, colorfix on
+    ; Park DAC at mid-rail so last sample value doesn't hold forever.
+.wait2:
+    tst.b   (YM_ADDR1).l
+    bmi.s   .wait2
+    move.b  #$2A,(YM_ADDR1).l
+    move.b  #$80,(YM_DATA1).l
+
+    movem.l (SP)+,D2-D4/A0-A1
+.done:
+    rts
+
+;==============================================================================
+; dmc_hint_tick — legacy, kept as rts for HBlankISR backward-compat.
+; All streaming now happens synchronously inside dmc_trigger.
+;==============================================================================
+dmc_hint_tick:
     rts
 
 ;==============================================================================
@@ -784,15 +749,10 @@ music_tick:
 .dmc_poll:
     bsr     dmc_dbg_poll            ; scaffold: Start cycles DMC samples
     bsr     dmc_feed                ; no-op stub (backward-compat call)
-    ; DriveEffect: SFX dispatcher (bomb/sword/arrow/stairs/flame). Reads
-    ; EffectRequest $0603 and Effect $0606; calls Play*Sfx which writes
-    ; $400E/$400C/$400F through the nes_io stubs. Music driver's
-    ; set_psg_noise / write_psg_noise_vol / noise_decay_tick skip writes
-    ; when $0606 != 0 so SFX owns PSG ch 3 during a hit.
+    ; DriveEffect -> noise-SFX stubs (gated on Effect $0606 for music arb).
+    ; DriveSample -> $4015 bit4 -> dmc_trigger (synchronous cycle-paced
+    ; streamer; blocks CPU for ~50-1000 ms per sample at native NES rate).
     jsr     DriveEffect
-    ; DriveSample: DMC dispatcher. Reads SampleRequest $0601, writes $4010/
-    ; $4012/$4013/$4015 -> dmc_trigger -> HBlank DAC streamer. Gated by
-    ; INTRO_SCROLL_NO_SPLIT in dmc_trigger itself.
     jsr     DriveSample
     clr.b   ($FF0601).l                 ; consume SampleRequest
     clr.b   ($FF0603).l                 ; consume EffectRequest

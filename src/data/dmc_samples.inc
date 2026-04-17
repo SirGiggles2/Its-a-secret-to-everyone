@@ -35,19 +35,19 @@ DMC_SFX_07_DELTA_LEN equ     $0D01
 
 ; --- PCM form (decoded, ready for YM reg $2A) --------------------------
 DMC_SFX_01_PCM_OFF   equ     $000000
-DMC_SFX_01_PCM_LEN   equ     $000F74
-DMC_SFX_02_PCM_OFF   equ     $000F74
-DMC_SFX_02_PCM_LEN   equ     $00195A
-DMC_SFX_03_PCM_OFF   equ     $0028CE
-DMC_SFX_03_PCM_LEN   equ     $000D27
-DMC_SFX_04_PCM_OFF   equ     $0035F5
-DMC_SFX_04_PCM_LEN   equ     $000154
-DMC_SFX_05_PCM_OFF   equ     $003749
-DMC_SFX_05_PCM_LEN   equ     $001EFD
-DMC_SFX_06_PCM_OFF   equ     $005646
-DMC_SFX_06_PCM_LEN   equ     $001304
-DMC_SFX_07_PCM_OFF   equ     $00694A
-DMC_SFX_07_PCM_LEN   equ     $00249F
+DMC_SFX_01_PCM_LEN   equ     $003A88
+DMC_SFX_02_PCM_OFF   equ     $003A88
+DMC_SFX_02_PCM_LEN   equ     $006008
+DMC_SFX_03_PCM_OFF   equ     $009A90
+DMC_SFX_03_PCM_LEN   equ     $002008
+DMC_SFX_04_PCM_OFF   equ     $00BA98
+DMC_SFX_04_PCM_LEN   equ     $000508
+DMC_SFX_05_PCM_OFF   equ     $00BFA0
+DMC_SFX_05_PCM_LEN   equ     $005808
+DMC_SFX_06_PCM_OFF   equ     $0117A8
+DMC_SFX_06_PCM_LEN   equ     $004808
+DMC_SFX_07_PCM_OFF   equ     $015FB0
+DMC_SFX_07_PCM_LEN   equ     $006808
 
 ; --- Shared metadata ---------------------------------------------------
 DMC_SFX_01_RATE      equ     $0F   ; $4010 raw
@@ -98,26 +98,49 @@ DMC_SAMPLE_RATES:
     dc.b    DMC_SFX_07_RATE          ; 7
     even
 
-DMC_DAC_HZ          equ     8751
+; Per-frame burst size at ~60 Hz VBlank.  Computed as
+; round(dmc_rate_hz / 60) so playback speed matches the NES
+; original.  Used by dmc_feed to drain exactly one frame's
+; worth of PCM bytes per music_tick.
+    even
+DMC_SAMPLE_BURST60:
+    dc.w    552                     ; 1 (33144 Hz)
+    dc.w    552                     ; 2 (33144 Hz)
+    dc.w    355                     ; 3 (21307 Hz)
+    dc.w    552                     ; 4 (33144 Hz)
+    dc.w    414                     ; 5 (24858 Hz)
+    dc.w    552                     ; 6 (33144 Hz)
+    dc.w    414                     ; 7 (24858 Hz)
 
-; (addr, rate, index) lookup: the NES SelectDMC routine writes
-; $4010 (rate) and $4012 (addr high) before $4013/$4015 to trigger
-; DMC playback.  The (addr, rate) tuple is unique across all 7
-; samples — $4C appears twice (samples 2 and 7) but with different
-; rates ($0F vs $0E), so shadowing both bytes lets the APU stub
-; recover the 1-based sample index when $4015 fires.
-;
-; Record layout: {addr_byte, rate_byte, index, 0-pad}.  4 bytes per
-; entry so the search loop can step with addq.l #4,A0.
+; dbra-count per sample for dmc_trigger's synchronous cycle-paced
+; streamer.  M68K runs at 7.67 MHz NTSC; a sample at rate_hz needs
+; one DAC write every (7670000 / rate_hz) cycles.  Fixed overhead
+; per byte in the streamer inner loop is ~50 cycles; the dbra spin
+; loop contributes 10*N + 4 cycles for dbra count N.  So:
+;     N = round((cycles_per_byte - 54) / 10)
+; Clamp to zero so a too-slow-CPU assumption never goes negative.
+    even
+DMC_SAMPLE_SPIN:
+    dc.w    18                     ; 1 (33144 Hz, 231 cyc/byte)
+    dc.w    18                     ; 2 (33144 Hz, 231 cyc/byte)
+    dc.w    31                     ; 3 (21307 Hz, 360 cyc/byte)
+    dc.w    18                     ; 4 (33144 Hz, 231 cyc/byte)
+    dc.w    25                     ; 5 (24858 Hz, 309 cyc/byte)
+    dc.w    18                     ; 6 (33144 Hz, 231 cyc/byte)
+    dc.w    25                     ; 7 (24858 Hz, 309 cyc/byte)
+
+; $4015-stub lookup by (addr, rate) tuple. Used to recover the 1-based
+; sample index when Zelda's SelectDMC writes $4010 (rate) + $4012 (addr)
+; + $4015 ($1F). 4 bytes per entry so scan step = addq.l #4,A0.
     even
 DMC_SAMPLE_LOOKUP:
-    dc.b    $00,$0F, 1,0  ; 1 SFX_01
-    dc.b    $4C,$0F, 2,0  ; 2 SFX_02
-    dc.b    $80,$0D, 3,0  ; 3 SFX_03
-    dc.b    $1D,$0F, 4,0  ; 4 SFX_04
-    dc.b    $20,$0E, 5,0  ; 5 SFX_05
-    dc.b    $28,$0F, 6,0  ; 6 SFX_06
-    dc.b    $4C,$0E, 7,0  ; 7 SFX_07
+    dc.b    $00,$0F, 1,0   ; 1 SFX_01
+    dc.b    $4C,$0F, 2,0   ; 2 SFX_02
+    dc.b    $80,$0D, 3,0   ; 3 SFX_03
+    dc.b    $1D,$0F, 4,0   ; 4 SFX_04
+    dc.b    $20,$0E, 5,0   ; 5 SFX_05
+    dc.b    $28,$0F, 6,0   ; 6 SFX_06
+    dc.b    $4C,$0E, 7,0   ; 7 SFX_07
 DMC_SAMPLE_LOOKUP_END:
 
 ; --- Blobs ------------------------------------------------------------
