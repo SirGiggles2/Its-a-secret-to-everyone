@@ -4409,6 +4409,23 @@ def _patch_z05(path):
         print("  WARNING: _patch_z05 P34i -- ClearRam anchor not found")
 
     # ------------------------------------------------------------------
+    # P41: Remove `even` directives between consecutive ColumnHeapOWn
+    # labels. The column decoder reads heap bytes sequentially; when a
+    # column's descriptors cross the boundary into the next heap
+    # segment the decoder consumes whatever byte is there. A single
+    # $00 alignment byte injected by `even` is interpreted as a bogus
+    # descriptor, producing a 1-metatile shift in any affected room.
+    # Verified on room $75 ($00 at ROM offset $4317D between
+    # ColumnHeapOW0 and ColumnHeapOW1).
+    # ------------------------------------------------------------------
+    _p41_pattern = re.compile(r'    even\n(ColumnHeapOW[0-9A-F]:\n)')
+    text, _p41_n = _p41_pattern.subn(r'\1', text)
+    if _p41_n:
+        print(f"  _patch_z05 P41: stripped {_p41_n} `even` directives between ColumnHeapOWn blocks")
+    else:
+        print("  WARNING: _patch_z05 P41 -- no ColumnHeapOWn `even` directives found")
+
+    # ------------------------------------------------------------------
     # P38: Restore missing JSR CheckTileObject in LayoutRoomOrCaveOW.
     # The transpiler absorbs the "JSR CheckTileObject" line following a
     # PLA with a long comment into the PLA's emitted comment string,
@@ -4433,6 +4450,46 @@ def _patch_z05(path):
         print("  _patch_z05 P38: restored JSR CheckTileObject in LayoutRoomOrCaveOW")
     else:
         print("  WARNING: _patch_z05 P38 -- CheckTileObject PLA-comment anchor not found")
+
+    # ------------------------------------------------------------------
+    # P39: Fix ObjListAddrs inline table byte shift.
+    #
+    # reference/aldonunez/dat/ObjListAddrs.inc was extracted from NES bank
+    # 5 including a stray $27 byte at the start (from the preceding data
+    # table) AND ~1000 trailing code bytes. The stray $27 shifts every
+    # 16-bit address entry by 1 byte, causing the 6502 indirect pointer
+    # reader to read bytes as (HI, LO) instead of (LO, HI). On room $75
+    # the monster list lookup resolves to $8F86 (which is 6502 code) instead
+    # of $868F (ObjList05). The "code" bytes ($0C $F0 $11 $A5 $70 $D5)
+    # include types >= $6A which trigger InitCave, writing the cave
+    # dialog "IT'S DANGEROUS TO GO ALONE, TAKE THIS" into the nametable
+    # on top of the overworld.
+    #
+    # Fix: rewrite the first 60 bytes of the inline table (4 dc.b lines,
+    # 16+16+16+12 of which are table bytes, remaining 4 bytes of line 4
+    # preserved). Total block size unchanged, so subsequent label
+    # addresses (InitMode4 etc.) don't shift.
+    # ------------------------------------------------------------------
+    p39_old = (
+        '    dc.b    $27, $76, $86, $7B, $86, $7F, $86, $85, $86, $89, $86, $8F, $86, $95, $86, $9A\n'
+        '    dc.b    $86, $9E, $86, $A3, $86, $A8, $86, $AE, $86, $B6, $86, $BE, $86, $C6, $86, $CE\n'
+        '    dc.b    $86, $D6, $86, $DE, $86, $E4, $86, $EC, $86, $F4, $86, $FC, $86, $04, $87, $0A\n'
+        '    dc.b    $87, $12, $87, $1A, $87, $1F, $87, $27, $87, $2F, $87, $37, $87, $A6, $13, $F0\n'
+    )
+    p39_new = (
+        '    ; PATCH P39: stray $27 byte dropped (was upstream extraction bleed);\n'
+        '    ; table now contains 30 valid (lo,hi) entries pointing to ObjList00..29 in bank 5.\n'
+        '    ; Total block size preserved (last 4 bytes of 4th line kept as before).\n'
+        '    dc.b    $76, $86, $7B, $86, $7F, $86, $85, $86, $89, $86, $8F, $86, $95, $86, $9A, $86\n'
+        '    dc.b    $9E, $86, $A3, $86, $A8, $86, $AE, $86, $B6, $86, $BE, $86, $C6, $86, $CE, $86\n'
+        '    dc.b    $D6, $86, $DE, $86, $E4, $86, $EC, $86, $F4, $86, $FC, $86, $04, $87, $0A, $87\n'
+        '    dc.b    $12, $87, $1A, $87, $1F, $87, $27, $87, $2F, $87, $37, $87, $87, $A6, $13, $F0\n'
+    )
+    if p39_old in text:
+        text = text.replace(p39_old, p39_new, 1)
+        print("  _patch_z05 P39: fixed ObjListAddrs byte shift (old-man-on-$75 bug)")
+    else:
+        print("  WARNING: _patch_z05 P39 -- ObjListAddrs anchor not found")
 
     with open(path, 'w', encoding='utf-8') as f:
         f.write(text)
@@ -5104,6 +5161,62 @@ def _patch_z07(path):
             print(f"  _patch_z07 P37: DEBUG_TELEPORT hook in {label}")
         else:
             print(f"  WARNING: _patch_z07 P37 -- {label} anchor not found")
+
+    # ------------------------------------------------------------------
+    # P39 (TURBO_LINK): insert jsr _turbo_link_boost after Walker_Move
+    # in UpdatePlayer so Link gets +7 px/frame per held DPAD direction
+    # on top of the normal 1 px collision-aware step. The boost lives in
+    # genesis_shell.asm gated by TURBO_LINK; flag=0 strips the routine.
+    # ------------------------------------------------------------------
+    # Walker_Move and Link_HandleInput — try all jsr/bsr combos.
+    p39_applied = False
+    for lhi in ('jsr', 'bsr'):
+        for wm in ('jsr', 'bsr'):
+            old = f'    {lhi}     Link_HandleInput\n    {wm}     Walker_Move\n'
+            if old in text:
+                new = (
+                    old +
+                    '    ifne TURBO_LINK\n'
+                    '    jsr     _turbo_link_boost   ; PATCH P39: turbo Link speed boost\n'
+                    '    endc\n'
+                )
+                text = text.replace(old, new, 1)
+                print(f"  _patch_z07 P39: TURBO_LINK boost ({lhi}/{wm})")
+                p39_applied = True
+                break
+        if p39_applied:
+            break
+    if not p39_applied:
+        print("  WARNING: _patch_z07 P39 -- Link_HandleInput/Walker_Move anchor not found")
+
+    # ------------------------------------------------------------------
+    # P40 (TURBO_LINK no-clip): make Walker_CheckTileCollision a no-op
+    # for Link (slot 0, D2 == 0) so tile collision never stops him.
+    # Enemy collision behaviour is preserved (D2 != 0 paths untouched).
+    # Only fires while TURBO_LINK is enabled.
+    # ------------------------------------------------------------------
+    p40_old = (
+        'Walker_CheckTileCollision:\n'
+        '    cmpi.b  #$00,D2\n'
+    )
+    p40_new = (
+        'Walker_CheckTileCollision:\n'
+        '    ifne TURBO_LINK\n'
+        '    tst.b   D2\n'
+        '    bne.s   _L_z07_Walker_CheckTileCollision_notLink\n'
+        '    ; Link no-clip: skip tile collision but still call\n'
+        '    ; CheckScreenEdge so screen transitions still latch.\n'
+        '    jsr     CheckScreenEdge    ; PATCH P40: edge-trigger preserved\n'
+        '    rts\n'
+        '_L_z07_Walker_CheckTileCollision_notLink:\n'
+        '    endc\n'
+        '    cmpi.b  #$00,D2\n'
+    )
+    if p40_old in text:
+        text = text.replace(p40_old, p40_new, 1)
+        print("  _patch_z07 P40: TURBO_LINK no-clip in Walker_CheckTileCollision")
+    else:
+        print("  WARNING: _patch_z07 P40 -- Walker_CheckTileCollision anchor not found")
 
     with open(path, 'w', encoding='utf-8') as f:
         f.write(text)

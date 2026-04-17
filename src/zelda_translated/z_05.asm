@@ -1750,10 +1750,13 @@ ObjLists:
     even
 ObjListAddrs:
 ; [inlined] .INCLUDE "dat/ObjListAddrs.inc"
-    dc.b    $27, $76, $86, $7B, $86, $7F, $86, $85, $86, $89, $86, $8F, $86, $95, $86, $9A
-    dc.b    $86, $9E, $86, $A3, $86, $A8, $86, $AE, $86, $B6, $86, $BE, $86, $C6, $86, $CE
-    dc.b    $86, $D6, $86, $DE, $86, $E4, $86, $EC, $86, $F4, $86, $FC, $86, $04, $87, $0A
-    dc.b    $87, $12, $87, $1A, $87, $1F, $87, $27, $87, $2F, $87, $37, $87, $A6, $13, $F0
+    ; PATCH P39: stray $27 byte dropped (was upstream extraction bleed);
+    ; table now contains 30 valid (lo,hi) entries pointing to ObjList00..29 in bank 5.
+    ; Total block size preserved (last 4 bytes of 4th line kept as before).
+    dc.b    $76, $86, $7B, $86, $7F, $86, $85, $86, $89, $86, $8F, $86, $95, $86, $9A, $86
+    dc.b    $9E, $86, $A3, $86, $A8, $86, $AE, $86, $B6, $86, $BE, $86, $C6, $86, $CE, $86
+    dc.b    $D6, $86, $DE, $86, $E4, $86, $EC, $86, $F4, $86, $FC, $86, $04, $87, $0A, $87
+    dc.b    $12, $87, $1A, $87, $1F, $87, $27, $87, $2F, $87, $37, $87, $87, $A6, $13, $F0
     dc.b    $47, $CA, $D0, $0C, $A5, $E9, $30, $05, $20, $16, $AC, $90, $02, $E6, $13, $60
     dc.b    $CA, $D0, $28, $A4, $EB, $20, $8D, $B6, $D0, $26, $A5, $98, $20, $60, $B5, $38
     dc.b    $E5, $EB, $20, $21, $70, $18, $65, $EB, $A8, $20, $8D, $B6, $F0, $12, $AD, $1F
@@ -5344,7 +5347,6 @@ RoomLayoutOWCave2:
     dc.b    $00, $A9, $64, $66, $02, $53, $54, $D1
     dc.b    $54, $54, $56, $02, $64, $66, $A8, $00
 
-    even
 ColumnHeapOW0:
     dc.b    $DB, $5B, $5B, $DB, $5B, $1B, $0E, $1A
     dc.b    $5B, $DB, $4E, $4E, $4E, $0E, $1A, $1B
@@ -5354,7 +5356,6 @@ ColumnHeapOW0:
     dc.b    $1B, $4E, $4E, $1A, $1B, $DB, $CE, $4E
     dc.b    $4E, $4E, $0E, $1A, $1B
 
-    even
 ColumnHeapOW1:
     dc.b    $9B, $0C, $4E, $4E, $4E, $0E, $1A, $1B
     dc.b    $CA, $4E, $0E, $4E, $4E, $4A, $C5, $45
@@ -5364,7 +5365,6 @@ ColumnHeapOW1:
     dc.b    $0E, $59, $8E, $4E, $4E, $CE, $4E, $4E
     dc.b    $0E
 
-    even
 ColumnHeapOW2:
     dc.b    $D9, $59, $0E, $4E, $4E, $4E, $DB, $0E
     dc.b    $5B, $5B, $4E, $1A, $1B, $DB, $0E, $33
@@ -5376,7 +5376,6 @@ ColumnHeapOW2:
     dc.b    $19, $4E, $4E, $0E, $19, $D9, $0E, $59
     dc.b    $59, $59
 
-    even
 ColumnHeapOW3:
     dc.b    $D9, $0E, $59, $59, $19, $0E, $D9, $4E
     dc.b    $19, $0E, $28, $4E, $59, $DB, $4E, $13
@@ -5388,7 +5387,6 @@ ColumnHeapOW3:
     dc.b    $0E, $1A, $DB, $5B, $1B, $4E, $4E, $4A
     dc.b    $DB, $4E, $4E, $15
 
-    even
 ColumnHeapOW4:
     dc.b    $C8, $48, $17, $4E, $4E, $59, $C9, $49
     dc.b    $18, $4E, $4E, $D9, $59, $4E, $06, $C5
@@ -5398,7 +5396,6 @@ ColumnHeapOW4:
     dc.b    $45, $07, $4E, $4E, $D9, $4E, $2C, $4E
     dc.b    $4E, $59
 
-    even
 ColumnHeapOW5:
     dc.b    $DB, $5B, $1B, $0E, $4A, $4A, $0A, $DB
     dc.b    $5B, $4E, $06, $C5, $45, $07, $4E, $4E
@@ -5409,7 +5406,6 @@ ColumnHeapOW5:
     dc.b    $D9, $0E, $59, $59, $19, $0E, $CE, $4E
     dc.b    $4E, $06, $45, $45
 
-    even
 ColumnHeapOW6:
     dc.b    $D9, $4E, $4E, $16, $49, $49, $D9, $4E
     dc.b    $4E, $06, $C5, $45, $07, $4E, $D9, $59
@@ -5420,7 +5416,6 @@ ColumnHeapOW6:
     dc.b    $4E, $4E, $1A, $1B, $DB, $0E, $22, $0C
     dc.b    $4E, $4E, $4A
 
-    even
 ColumnHeapOW7:
     dc.b    $DB, $0E, $23, $25, $4E, $4E, $1A, $1B
     dc.b    $DB, $4E, $0E, $26, $4E, $0E, $1A, $1B
@@ -5431,7 +5426,6 @@ ColumnHeapOW7:
     dc.b    $4E, $19, $0E, $19, $4E, $1A, $1B, $DB
     dc.b    $5B, $5B, $45
 
-    even
 ColumnHeapOW8:
     dc.b    $C5, $05, $5B, $5B, $DB, $5B, $27, $0E
     dc.b    $1A, $5B, $DB, $0E, $14, $0E, $14, $0E
@@ -5442,7 +5436,6 @@ ColumnHeapOW8:
     dc.b    $22, $0C, $4E, $4E, $4A, $DB, $0E, $14
     dc.b    $0E, $29, $0E, $14, $4E, $0E
 
-    even
 ColumnHeapOW9:
     dc.b    $DB, $35, $4E, $4E, $4E, $1A, $1B, $DB
     dc.b    $1B, $34, $4E, $06, $C5, $45, $05, $2E
@@ -5454,7 +5447,6 @@ ColumnHeapOW9:
     dc.b    $4E, $06, $45, $C5, $4E, $4E, $4E, $0E
     dc.b    $45
 
-    even
 ColumnHeapOWA:
     dc.b    $DB, $5B, $34, $4E, $4E, $1A, $1B, $DB
     dc.b    $5B, $35, $4E, $4E, $1A, $1B, $9B, $35
@@ -5466,7 +5458,6 @@ ColumnHeapOWA:
     dc.b    $5B, $DB, $34, $4E, $4E, $0E, $32, $DB
     dc.b    $35, $4E, $4E, $0E, $33
 
-    even
 ColumnHeapOWB:
     dc.b    $DB, $5B, $07, $4E, $4E, $4E, $DB, $0E
     dc.b    $06, $05, $45, $2F, $0E, $1A, $1B, $DB
@@ -5477,7 +5468,6 @@ ColumnHeapOWB:
     dc.b    $4E, $2C, $0E, $2C, $4E, $1A, $1B, $CA
     dc.b    $4A, $4E, $06, $45, $45
 
-    even
 ColumnHeapOWC:
     dc.b    $9B, $35, $4E, $0E, $13, $4E, $0E, $1A
     dc.b    $1B, $F6, $76, $0F, $4E, $1A, $1B, $5B
@@ -5487,7 +5477,6 @@ ColumnHeapOWC:
     dc.b    $34, $4E, $4E, $0E, $1A, $1B, $DB, $34
     dc.b    $0E, $4E, $4E, $0E, $1A, $1B
 
-    even
 ColumnHeapOWD:
     dc.b    $C5, $45, $0B, $4E, $4E, $4E, $DB, $0E
     dc.b    $06, $45, $07, $4E, $4E, $9B, $27, $4E
@@ -5499,7 +5488,6 @@ ColumnHeapOWD:
     dc.b    $DB, $0E, $1C, $1F, $0E, $1E, $20, $0E
     dc.b    $1A, $1B
 
-    even
 ColumnHeapOWE:
     dc.b    $C8, $48, $08, $C5, $45, $45, $08, $48
     dc.b    $48, $DB, $35, $CE, $4E, $4E, $4E, $0E
@@ -5509,7 +5497,6 @@ ColumnHeapOWE:
     dc.b    $DB, $5B, $1B, $34, $4E, $32, $DB, $4E
     dc.b    $4E, $4E, $0E, $33
 
-    even
 ColumnHeapOWF:
     dc.b    $9B, $5B, $34, $4E, $0E, $32, $DB, $1B
     dc.b    $35, $4E, $0E, $33, $1B, $DB, $0E, $1E
@@ -7523,7 +7510,8 @@ _L_z05_LayoutRoomOrCaveOW_RestoreSquare:
     move.b  D0,-(A5)  ; PHA
     even
 _L_z05_LayoutRoomOrCaveOW_SkipSecret:
-    move.b  (A5)+,D0  ; PLA    jsr     CheckTileObject
+    move.b  (A5)+,D0  ; PLA
+    jsr     CheckTileObject   ; PATCH P38: restore dropped JSR
     jsr     WriteSquareOW_P35             ; PATCH P35b: OW direct workbuf write
     movea.l ($00FF110A).l,A1              ; PATCH P35a: advance cached OW workbuf ptr
     addq.l  #2,A1
