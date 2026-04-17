@@ -12,14 +12,7 @@ local OUT_DIR = "C:\\Users\\Jake Diggity\\Documents\\GitHub\\FINAL TRY\\builds\\
 local STATE_FILE = OUT_DIR .. "\\_nes_state.State"
 
 os.execute('if not exist "' .. OUT_DIR .. '" mkdir "' .. OUT_DIR .. '"')
-do
-    local f = io.open(STATE_FILE, "rb")
-    if f then
-        f:close()
-        local ok = pcall(function() savestate.load(STATE_FILE) end)
-        if ok then gui.text(10, 50, "Loaded NES state") end
-    end
-end
+-- Do not auto-load state: user requested fresh boot each run.
 
 local ROOM_ID       = 0x00EB
 local OBJ_X         = 0x0070
@@ -100,6 +93,20 @@ local function dump_palette_rows()
     return rows
 end
 
+-- NES playmap at $651A base, column-major (22 rows per column, 16 cols).
+-- Matches Gen's layout so comparison is byte-aligned.
+local function dump_playmap()
+    local rows = {}
+    for row = 0, ROOM_ROWS - 1 do
+        local v = {}
+        for col = 0, ROOM_COLS - 1 do
+            v[#v+1] = u8(0x6530 + row + col * ROOM_ROWS)
+        end
+        rows[#rows+1] = v
+    end
+    return rows
+end
+
 local function dump_palette_ram()
     local vals = {}
     if not PAL_DOMAIN then for i=1,16 do vals[i]=0 end; return vals end
@@ -128,6 +135,7 @@ local function capture()
     fh:write('  "system": "nes",\n')
     fh:write('  "room_id": ', tostring(rid), ',\n')
     fh:write('  "visible_rows": ', json_array_2d(dump_visible_rows()), ',\n')
+    fh:write('  "playmap_rows": ', json_array_2d(dump_playmap()), ',\n')
     fh:write('  "palette_rows": ', json_array_2d(dump_palette_rows()), ',\n')
     fh:write('  "palette_ram": ', json_array_1d(dump_palette_ram()), '\n')
     fh:write("}\n")
@@ -158,14 +166,24 @@ while true do
             if (held & 0x01) ~= 0 then local x=u8(OBJ_X); if x<X_MAX then w8(OBJ_X, x+BOOST) end end
         end
 
-        -- Capture hotkey: keyboard F12 (doesn't touch the game pad).
+        -- Capture: EITHER Shift+F9 on keyboard OR NES Select press.
+        -- On Select we auto-unpause by clearing $00E0 (PauseFlag) after
+        -- the capture so Zelda doesn't get stuck on the inventory.
         local keys = input.get() or {}
-        local key_now = keys.F9 == true and (keys.Shift == true or keys.LeftShift == true or keys.RightShift == true)
+        local kb_now = keys.F9 == true and (keys.Shift == true or keys.LeftShift == true or keys.RightShift == true)
+        local pad_now = (u8(BUTTONS_PRESS) & 0x20) ~= 0
+        local key_now = kb_now or pad_now
         if key_now and not last_select_held and (frame_n - last_captured_frame) > 30 then
             local rid, path = capture()
             pcall(function() savestate.save(STATE_FILE) end)
             last_captured_frame = frame_n
             gui.text(10, 30, string.format("Captured room $%02X + state", rid or 0))
+            if pad_now and not kb_now then
+                -- Clear pause state flags so Zelda resumes.
+                w8(0x00E0, 0)       -- PauseFlag
+                w8(0x00E1, 0)       -- InSubMenu
+                w8(0x00F8, 0)       -- ButtonsPressed
+            end
         end
         last_select_held = key_now
     end
