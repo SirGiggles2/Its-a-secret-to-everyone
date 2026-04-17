@@ -35,19 +35,19 @@ DMC_SFX_07_DELTA_LEN equ     $0D01
 
 ; --- PCM form (decoded, ready for YM reg $2A) --------------------------
 DMC_SFX_01_PCM_OFF   equ     $000000
-DMC_SFX_01_PCM_LEN   equ     $0017BC
-DMC_SFX_02_PCM_OFF   equ     $0017BC
-DMC_SFX_02_PCM_LEN   equ     $0026F0
-DMC_SFX_03_PCM_OFF   equ     $003EAC
-DMC_SFX_03_PCM_LEN   equ     $001434
-DMC_SFX_04_PCM_OFF   equ     $0052E0
-DMC_SFX_04_PCM_LEN   equ     $00020A
-DMC_SFX_05_PCM_OFF   equ     $0054EA
-DMC_SFX_05_PCM_LEN   equ     $002F98
-DMC_SFX_06_PCM_OFF   equ     $008482
-DMC_SFX_06_PCM_LEN   equ     $001D35
-DMC_SFX_07_PCM_OFF   equ     $00A1B7
-DMC_SFX_07_PCM_LEN   equ     $00383F
+DMC_SFX_01_PCM_LEN   equ     $000F74
+DMC_SFX_02_PCM_OFF   equ     $000F74
+DMC_SFX_02_PCM_LEN   equ     $00195A
+DMC_SFX_03_PCM_OFF   equ     $0028CE
+DMC_SFX_03_PCM_LEN   equ     $000D27
+DMC_SFX_04_PCM_OFF   equ     $0035F5
+DMC_SFX_04_PCM_LEN   equ     $000154
+DMC_SFX_05_PCM_OFF   equ     $003749
+DMC_SFX_05_PCM_LEN   equ     $001EFD
+DMC_SFX_06_PCM_OFF   equ     $005646
+DMC_SFX_06_PCM_LEN   equ     $001304
+DMC_SFX_07_PCM_OFF   equ     $00694A
+DMC_SFX_07_PCM_LEN   equ     $00249F
 
 ; --- Shared metadata ---------------------------------------------------
 DMC_SFX_01_RATE      equ     $0F   ; $4010 raw
@@ -98,7 +98,7 @@ DMC_SAMPLE_RATES:
     dc.b    DMC_SFX_07_RATE          ; 7
     even
 
-DMC_DAC_HZ          equ     13440
+DMC_DAC_HZ          equ     8751
 
 ; (addr, rate, index) lookup: the NES SelectDMC routine writes
 ; $4010 (rate) and $4012 (addr high) before $4013/$4015 to trigger

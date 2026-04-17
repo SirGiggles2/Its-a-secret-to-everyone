@@ -76,7 +76,11 @@ def dmc_rate_hz(rate_idx: int) -> float:
 # we resample every sample to exactly 13440 Hz ahead of time.  That lets
 # the HBlank handler be trivial: read one byte per HINT, advance, write.
 # No fractional-step accumulator needed at runtime.
-DAC_HZ = 13440
+# Measured empirically via bizhawk_audio_probe.lua on Zelda37.25: with
+# music active, HINT fires ~8751 times per second (music's YM ym_write1/2
+# SR=6 lockout masks ~40% of the theoretical 15700 Hz per-line rate).
+# Resampling to match so samples play at correct native pitch.
+DAC_HZ = 8751
 
 
 def resample_linear(src: list[int], src_hz: float, dst_hz: float) -> list[int]:
