@@ -1623,9 +1623,12 @@ _L_z07_IsrNmi_ScrambleRandom:
 _L_z07_IsrNmi_LoopRandom:
     move.b  ($00,A4,D2.W),D1
     roxr.b  #1,D1   ; ROR $00,X
+    scs     D6             ; P4: save C (= rotated-out bit) *before* move clears it
     move.b  D1,($00,A4,D2.W)
     addq.b  #1,D2
     subq.b  #1,D3
+    add.b   D6,D6          ; P4: restore X from D6 ($FF -> X=1, $00 -> X=0)
+    tst.b   D3             ; P4: re-set Z for loop branch
     bne  _L_z07_IsrNmi_LoopRandom
     moveq   #0,D0
     jsr     SwitchBank

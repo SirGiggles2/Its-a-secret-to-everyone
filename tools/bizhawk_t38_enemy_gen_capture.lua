@@ -717,12 +717,11 @@ for frame = 1, MAX_FRAMES do
                       or t == 500 or t == 600 or t == 700)
         if t >= 240 and t <= 310 then snap = true end
         if snap then
-            local mmc1_prg = ram_u8(0xFF0815)
-            local bank0 = ram_u8(0xFF8000)
-            local bank1 = ram_u8(0xFF8001)
-            record(string.format("LINK t=%d x=$%02X y=$%02X dir=$%02X room=$%02X mode=$%02X sub=$%02X mmc1_prg=$%02X win[0..1]=$%02X$%02X",
+            local rand = {}
+            for i = 0, 7 do rand[i+1] = string.format("%02X", ram_u8(0xFF0018 + i)) end
+            record(string.format("LINK t=%d x=$%02X y=$%02X dir=$%02X room=$%02X mode=$%02X sub=$%02X rand[0..7]=%s",
                 t, ram_u8(A_OBJ_X), ram_u8(A_OBJ_Y),
-                ram_u8(A_OBJ_DIR), room_id, mode, sub, mmc1_prg, bank0, bank1))
+                ram_u8(A_OBJ_DIR), room_id, mode, sub, table.concat(rand, " ")))
             snapshot_enemies("t="..t, t)
         end
         CAPTURE.trace[#CAPTURE.trace + 1] = {

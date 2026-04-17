@@ -4981,6 +4981,42 @@ def _patch_z07(path):
     else:
         print("  WARNING: _patch_z07 P3 -- IsrNmi $005C read block not found")
 
+    # ------------------------------------------------------------------
+    # P4 (T38): preserve X flag across the RNG scramble loop's index ops.
+    # The 6502 @LoopRandom uses ROR $00,X to chain a carry bit through 13
+    # consecutive bytes ($18..$24). ROR maps to `roxr.b` on M68K, which uses
+    # the X flag as the carry. The subsequent `addq.b #1,D2` / `subq.b #1,D3`
+    # both clobber X, so bytes 1..7 of Random get 0 rotated in from the top
+    # every NMI — all enemy slots end up reading Random[X>=1] = $00 and every
+    # Octorok makes the same turn each frame. See patches/z_07_patch_rng.md.
+    # ------------------------------------------------------------------
+    old_rng = (
+        '_L_z07_IsrNmi_LoopRandom:\n'
+        '    move.b  ($00,A4,D2.W),D1\n'
+        '    roxr.b  #1,D1   ; ROR $00,X\n'
+        '    move.b  D1,($00,A4,D2.W)\n'
+        '    addq.b  #1,D2\n'
+        '    subq.b  #1,D3\n'
+        '    bne  _L_z07_IsrNmi_LoopRandom'
+    )
+    new_rng = (
+        '_L_z07_IsrNmi_LoopRandom:\n'
+        '    move.b  ($00,A4,D2.W),D1\n'
+        '    roxr.b  #1,D1   ; ROR $00,X\n'
+        '    scs     D6             ; P4: save C (= rotated-out bit) *before* move clears it\n'
+        '    move.b  D1,($00,A4,D2.W)\n'
+        '    addq.b  #1,D2\n'
+        '    subq.b  #1,D3\n'
+        '    add.b   D6,D6          ; P4: restore X from D6 ($FF -> X=1, $00 -> X=0)\n'
+        '    tst.b   D3             ; P4: re-set Z for loop branch\n'
+        '    bne  _L_z07_IsrNmi_LoopRandom'
+    )
+    if old_rng in text:
+        text = text.replace(old_rng, new_rng, 1)
+        print("  _patch_z07 P4: RNG scramble loop X-flag preservation")
+    else:
+        print("  WARNING: _patch_z07 P4 -- RNG scramble loop pattern not found")
+
     with open(path, 'w', encoding='utf-8') as f:
         f.write(text)
 
