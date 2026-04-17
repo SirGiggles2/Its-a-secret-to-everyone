@@ -34,6 +34,12 @@ NES_RAM_SIZE    equ $0800       ; 2KB NES work RAM
 NES_STACK_INIT  equ $00FF0200   ; NES SP=$FF -> A5 = NES_RAM+$0100+$FF+1 = $FF0200
 PPU_STATE_SIZE  equ $40         ; 64 bytes: PPU ($FF0800-$FF080F) + MMC1 ($FF0810-$FF081F) + CHR buf ($FF0820-$FF083F)
 
+; DEBUG_TELEPORT — feature flag for DPAD instant-teleport in overworld QA.
+; When 1, the DPAD shortcut routine in _debug_teleport_check (end of file)
+; is live and the P37 hook in z_07 routes UpdateMode5Play_NotInMenu through
+; it. Set to 0 to strip both the hook and the routine for release builds.
+DEBUG_TELEPORT  equ 1
+
 ; Active H-int event queue for the frame currently being rendered.
 ; _ags_prearm promotes staged state into this queue and HBlankISR consumes it.
 ; Q1 remains available for future chained events but is currently unused.
@@ -624,6 +630,115 @@ DefaultException:
     include "zelda_translated/z_05.asm"
     include "zelda_translated/z_06.asm"
     include "zelda_translated/z_07.asm"
+
+;==============================================================================
+; DEBUG_TELEPORT — DPAD instant-teleport for overworld QA.
+;
+; Hooked from _L_z07_UpdateMode5Play_NotInMenu by transpile_6502.py patch
+; P37. When the player presses a DPAD direction while idle in an overworld
+; room, this routine snaps RoomId to the adjacent overworld room, clears
+; scroll/NT state, relays out the room, and returns D0=1 so the hook
+; skips the frame's normal play update. Otherwise returns D0=0.
+;
+; Gated by DEBUG_TELEPORT equ. DEBUG_TELEPORT=0 strips the entire routine.
+;
+; On entry: A4 = $00FF0000 (NES RAM base, maintained by the translated code).
+; Clobbers: D0-D3, A0. Preserves A4.
+;==============================================================================
+    ifne DEBUG_TELEPORT
+_debug_teleport_check:
+    ; Overworld gate: CurLevel ($0010) must be 0 (OW, not UW/dungeon).
+    tst.b   ($0010,A4)
+    bne     .dtc_no
+    ; Mode gate: GameMode ($0012) == $05 (play), GameSubmode ($0013) == $00.
+    cmpi.b  #$05,($0012,A4)
+    bne     .dtc_no
+    tst.b   ($0013,A4)
+    bne     .dtc_no
+    ; DPAD gate: ButtonsPressed ($00F8) bits 4..7 (U/D/L/R).
+    move.b  ($00F8,A4),D1
+    andi.b  #$F0,D1
+    beq     .dtc_no
+    ; Direction index 0..3 from first-set DPAD bit. Mirrors the
+    ; NextRoomIdOffsets table convention in z_05.asm.
+    ;   bit 4 = Up (idx 0)
+    ;   bit 5 = Down (idx 1)
+    ;   bit 6 = Left (idx 2)
+    ;   bit 7 = Right (idx 3)
+    moveq   #0,D0
+    btst    #4,D1
+    bne.s   .dtc_dir_set
+    moveq   #1,D0
+    btst    #5,D1
+    bne.s   .dtc_dir_set
+    moveq   #2,D0
+    btst    #6,D1
+    bne.s   .dtc_dir_set
+    moveq   #3,D0
+.dtc_dir_set:
+    ; Edge gate. RoomId ($00EB): row = bits 4..7, col = bits 0..3.
+    ; NextRoomIdOffsets is pure arithmetic (-16/+16/-1/+1); without this
+    ; gate, pressing Left from row 1 col 0 would wrap to row 0 col 15,
+    ; which is not an adjacent neighbour on the 8x16 OW grid.
+    move.b  ($00EB,A4),D2
+    move.b  D2,D3
+    lsr.b   #4,D2                      ; row = RoomId >> 4
+    andi.b  #$0F,D3                    ; col = RoomId & $0F
+    tst.b   D0
+    bne.s   .dtc_not_up
+    tst.b   D2
+    beq     .dtc_edge                   ; Up and row=0 -> reject
+    bra.s   .dtc_apply
+.dtc_not_up:
+    cmpi.b  #1,D0
+    bne.s   .dtc_not_down
+    cmpi.b  #7,D2
+    bcc     .dtc_edge                   ; Down and row>=7 -> reject
+    bra.s   .dtc_apply
+.dtc_not_down:
+    cmpi.b  #2,D0
+    bne.s   .dtc_not_left
+    tst.b   D3
+    beq     .dtc_edge                   ; Left and col=0 -> reject
+    bra.s   .dtc_apply
+.dtc_not_left:
+    cmpi.b  #$0F,D3
+    bcc     .dtc_edge                   ; Right and col>=15 -> reject
+.dtc_apply:
+    ; Apply NextRoomIdOffsets[D0] to RoomId.
+    lea     (NextRoomIdOffsets).l,A0
+    move.b  (A0,D0.W),D1               ; signed byte offset
+    move.b  ($00EB,A4),D0
+    add.b   D1,D0
+    move.b  D0,($00EB,A4)
+    ; Reset scroll / NT base state so the new room renders at origin.
+    clr.b   ($00FC,A4)                 ; CurVScroll
+    clr.b   ($00FD,A4)                 ; CurHScroll
+    clr.b   ($005F,A4)                 ; OddBaseNameTableOverride
+    ; Nudge Link toward the center of the new screen so the next frame's
+    ; movement update doesn't immediately retrigger the edge.
+    move.b  #$78,($0070,A4)            ; ObjX (Link slot 0) ~= 120
+    move.b  #$8D,($0084,A4)            ; ObjY ~= 141
+    ; Relay out the current room via the top-level LayOutRoom entry.
+    ; LayOutRoom runs PatchColumnDirectoryForCellar then LayoutRoomOW +
+    ; CheckShortcut, preserving the cache seed at $FF1102 that
+    ; LayoutRoomOrCaveOW reads. Calling LayoutRoomOrCaveOW directly would
+    ; skip that setup.
+    jsr     LayOutRoom
+    ; Drop ButtonsPressed so held DPAD doesn't retrigger next frame.
+    clr.b   ($00F8,A4)
+    moveq   #1,D0
+    rts
+.dtc_edge:
+    ; Pressed into an edge. Consume the frame so normal play doesn't
+    ; interpret it as "walk into wall" animation.
+    clr.b   ($00F8,A4)
+    moveq   #1,D0
+    rts
+.dtc_no:
+    moveq   #0,D0
+    rts
+    endc
 
 ;==============================================================================
 ; End-of-ROM marker — used by ROM header dc.l RomEnd-1
