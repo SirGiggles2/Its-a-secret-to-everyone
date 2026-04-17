@@ -1765,6 +1765,7 @@ _L_z07_ClearRam0300UpTo_Loop:
     ; the beginning. Write the end marker.
     move.b  #$FF,D0
     move.b  D0,($0302,A4)
+    eori    #$01,CCR  ; normalize C to 6502 polarity before RTS
     rts
 
     even
@@ -1846,6 +1847,7 @@ __far_z_07_0001:
     move.b  (A5)+,D0  ; PLA
     lea     ($00FA,A4),A0
     move.b  D0,(A0,D2.W)
+    eori    #$01,CCR  ; normalize C to 6502 polarity before RTS
     rts
 
     even
@@ -2522,6 +2524,7 @@ _L_z07_FillTileMap_Loop:
     move.b  ($0001,A4),D0
     cmpi.b  #$67,D0
     bne  _L_z07_FillTileMap_Loop
+    eori    #$01,CCR  ; normalize C to 6502 polarity before RTS
     rts
 
 ; Unknown block
@@ -3666,7 +3669,7 @@ _L_z07_GetCollidableTile_AdjustX:
     beq  _L_z07_GetCollidableTile_CheckLeftBoundary
     cmpi.b  #$F0,D3
     bcc  _L_z07_GetCollidableTile_FetchTile
-    bcc  _L_z07_GetCollidableTile_AddHotspotOffset
+    bcs  _L_z07_GetCollidableTile_AddHotspotOffset
     even
 _L_z07_GetCollidableTile_CheckLeftBoundary:
     cmpi.b  #$10,D3
@@ -5937,6 +5940,7 @@ _L_z07_CheckState20_Deactivate:
     bcc  _anon_z07_29
     jsr     DestroyCountedMonsterShot
 _anon_z07_29:
+    eori    #$01,CCR  ; normalize C to 6502 polarity before RTS
     rts
 
     even
@@ -6108,6 +6112,7 @@ _anon_z07_30:
     moveq   #0,D0
     lea     ($00AC,A4),A0
     move.b  D0,(A0,D3.W)
+    eori    #$01,CCR  ; normalize C to 6502 polarity before RTS
     rts
 
     even
@@ -7431,6 +7436,7 @@ _L_z07_AnimateLinkObjState_CheckState30:
     andi.b #$C0,D0
     move.b  D0,($00AC,A4)
 _anon_z07_39:
+    eori    #$01,CCR  ; normalize C to 6502 polarity before RTS
     rts
 
 ; Unknown block

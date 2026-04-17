@@ -456,6 +456,7 @@ __far_z_05_0003:
     move.b  (A5)+,D0  ; PLA
     move.b  D0,($0254,A4)
     addq.b  #1,($00E1,A4)
+    eori    #$01,CCR  ; normalize C to 6502 polarity before RTS
     rts
 
     even
@@ -1219,6 +1220,7 @@ _L_z05_FillPlayAreaAttrs_NextLoopRow:
     addq.b  #1,D3
     cmpi.b  #$27,D3
     bcs  _L_z05_FillPlayAreaAttrs_LoopRow
+    eori    #$01,CCR  ; normalize C to 6502 polarity before RTS
     rts
 
     even
@@ -1411,6 +1413,7 @@ UpdateMode7Scroll_Sub3:
     addq.b  #1,D3
     move.b  D3,($00E8,A4)
 _anon_z05_28:
+    eori    #$01,CCR  ; normalize C to 6502 polarity before RTS
     rts
 
     even
@@ -1586,6 +1589,7 @@ _anon_z05_32:
     move.l  (SP)+,D0       ; restore A
     jsr     _ppu_read_7  ; PPU $2007 read → D0
     jsr     _ppu_read_7  ; PPU $2007 read → D0
+    eori    #$01,CCR  ; normalize C to 6502 polarity before RTS
     rts
 
 _anon_z05_33:
@@ -1621,6 +1625,7 @@ _anon_z05_36:
     ori.b #$01,D0
     move.b  D0,($00FF,A4)
     jsr     _ppu_write_0  ; PPU $2000 write, D0=val
+    eori    #$01,CCR  ; normalize C to 6502 polarity before RTS
     rts
 
 ; Unknown block
@@ -2276,6 +2281,7 @@ _anon_z05_53:
     beq  _anon_z05_54
     jsr     PutLinkBehindBackground
 _anon_z05_54:
+    eori    #$01,CCR  ; normalize C to 6502 polarity before RTS
     rts
 
     even
@@ -2418,6 +2424,7 @@ _anon_z05_60:
     move.b  D0,(A0,D2.W)
     subq.b  #1,D2
     bpl  _anon_z05_60
+    eori    #$01,CCR  ; normalize C to 6502 polarity before RTS
     rts
 
     even
@@ -3354,6 +3361,7 @@ UpdateMode11Death_SubC:
     lea     ($0630,A4),A0
     addq.b  #1,(A0,D2.W)
 _anon_z05_73:
+    eori    #$01,CCR  ; normalize C to 6502 polarity before RTS
     rts
 
 ; Three sets of border coordinates:
@@ -4845,6 +4853,7 @@ TouchDoorFalse:
     beq  _L_z05_TouchDoorFalse_SetTimer
     cmpi.b  #$01,D0
     bne  _L_z05_TouchDoorFalse_BlockMovement
+    eori    #$01,CCR  ; normalize C to 6502 polarity before RTS
     rts
 
     even
@@ -5008,6 +5017,7 @@ _anon_z05_101:
     moveq   #0,D0
     lea     ($0560,A4),A0
     move.b  D0,(A0,D3.W)
+    eori    #$01,CCR  ; normalize C to 6502 polarity before RTS
     rts
 
     even
@@ -6008,6 +6018,7 @@ _L_z05_NextLoopWallTile_NextLoopRotate:
     move.b  ($0003,A4),D0
     cmpi.b  #$66,D0
     bne  _L_z05_NextLoopWallTile_LoopRotate
+    eori    #$01,CCR  ; normalize C to 6502 polarity before RTS
     rts
 
     even
@@ -6901,6 +6912,7 @@ _L_z05_LayoutUWFloor_NextLoopSquareRow:
     jmp     _L_z05_LayoutUWFloor_LoopColumnUW
 
 _anon_z05_131:
+    eori    #$01,CCR  ; normalize C to 6502 polarity before RTS
     rts
 
 ; Params:
@@ -7185,6 +7197,7 @@ _anon_z05_134:
     move.b  D0,($0028,A4)
     addq.b  #1,($0013,A4)
 _anon_z05_135:
+    eori    #$01,CCR  ; normalize C to 6502 polarity before RTS
     rts
 
     even
@@ -8289,6 +8302,7 @@ _anon_z05_154:
     addq.b  #1,D2
     cmpi.b  #$05,D2
     bne  _anon_z05_154
+    eori    #$01,CCR  ; normalize C to 6502 polarity before RTS
     rts
 
     even
@@ -8393,6 +8407,7 @@ _anon_z05_160:
     jsr     FindDoorAttrByDoorBit
     moveq   #0,D3
     move.b  ($000F,A4),D3
+    eori    #$01,CCR  ; normalize C to 6502 polarity before RTS
     rts
 
 ; Params:
@@ -8613,6 +8628,7 @@ _anon_z05_165:
     move.b  D0,($0011,A4)
     move.b  D0,($0053,A4)
     addq.b  #1,($0013,A4)
+    eori    #$01,CCR  ; normalize C to 6502 polarity before RTS
     rts
 
     even
@@ -8633,6 +8649,7 @@ InitMode9_WalkCellar:
     move.b  D0,($005A,A4)
     move.b  D0,($0011,A4)
 _anon_z05_166:
+    eori    #$01,CCR  ; normalize C to 6502 polarity before RTS
     rts
 
     even
@@ -9488,6 +9505,7 @@ _anon_z05_192:
     moveq   #1,D0
     move.b  D0,($0636,A4)
     move.b  D0,($0637,A4)
+    eori    #$01,CCR  ; normalize C to 6502 polarity before RTS
     rts
 
     even
@@ -10059,6 +10077,7 @@ _L_z05_DrawSubmenuItems_NextLoopDrawItem:
     addq.b  #1,D2
     cmpi.b  #$12,D2
     bcs  _L_z05_DrawSubmenuItems_LoopDrawItem
+    eori    #$01,CCR  ; normalize C to 6502 polarity before RTS
     rts
 
     even
@@ -10481,6 +10500,7 @@ _anon_z05_225:
     ; Else deactivate the object.
     ;
     subq.b  #1,($00BF,A4)
+    eori    #$01,CCR  ; normalize C to 6502 polarity before RTS
     rts
 
 

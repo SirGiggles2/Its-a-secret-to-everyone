@@ -291,6 +291,7 @@ _L_z03_TransferPatternBlock_Bank3_LoopCopy:
     move.b  ($0003,A4),D0
     bne  _L_z03_TransferPatternBlock_Bank3_LoopCopy
     addq.b  #1,($051D,A4)
+    eori    #$01,CCR  ; normalize C to 6502 polarity before RTS
     rts
 
     even

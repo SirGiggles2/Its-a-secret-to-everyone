@@ -778,6 +778,7 @@ _L_z00_DriveTune1_KeepPlaying:
     move.b  D2,D0  ; D2 → D0 for I/O write
     jsr     _apu_write_4006  ; APU/IO write
     move.l  (SP)+,D0       ; restore A
+    eori    #$01,CCR  ; normalize C to 6502 polarity before RTS
     rts
 
     even
@@ -1448,7 +1449,7 @@ _L_z00_ApplySq1Effects_PrepNoteOrPassage:
     bpl  _L_z00_ApplySq1Effects_PlayNoteTrg
     cmpi.b  #$F0,D0
     beq  _L_z00_ApplySq1Effects_EndOfPassage
-    bcc  _L_z00_ApplySq1Effects_PrepNoteTrg
+    bcs  _L_z00_ApplySq1Effects_PrepNoteTrg
     ; Control note >= $F1. The low nibble defines the number of
     ; repetititions of the passage starting at the next offset.
     ;

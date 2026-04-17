@@ -1218,8 +1218,14 @@ def translate_one_instruction(stripped, line_idx, symtab,
             e(f'    {m68k_branch}  {lbl}')
         else:
             e(f'; [branch unhandled mode={mode}] {stripped}')
-        # After any branch, reset carry state (branch target may come from any path)
-        carry_state['inverted'] = False
+        # T38 FIX: 6502 branches don't modify the carry flag. The previous
+        # `carry_state['inverted'] = False` was incorrect — a sequence like
+        # `CMP ObjX,X / BEQ x / BCS y` was emitting a literal `bcs` for the
+        # second branch because BEQ reset the inversion state. Since 6502
+        # BEQ/BNE/BPL/BMI/BVC/BVS don't touch carry, the inversion must
+        # persist. BCC/BCS themselves also don't write carry — they consume
+        # Z/N/V/C but leave them intact on fall-through. Leave carry_state
+        # alone here; only CMP/CPX/CPY/SBC/ADC and arithmetic reset it.
 
     elif mnem == 'JMP':
         if mode == 'ABS':

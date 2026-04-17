@@ -216,6 +216,7 @@ PlayBossHitCryIfNeeded:
     moveq   #2,D0
     move.b  D0,($0601,A4)
 _anon_z04_0:
+    eori    #$01,CCR  ; normalize C to 6502 polarity before RTS
     rts
 
     even
@@ -1192,7 +1193,7 @@ BounceShot:
     bcs.s  __far_z_04_0015
     jmp  DestroyMonsterShot
 __far_z_04_0015:
-    bcs.s  __far_z_04_0016
+    bcc.s  __far_z_04_0016
     jmp  L_DrawShot
 __far_z_04_0016:
 ; Params:
@@ -2011,6 +2012,7 @@ _anon_z04_30:
     beq  _L_z04_UpdateStatues_Shoot
     subq.b  #1,D3
     bpl  _anon_z04_30
+    eori    #$01,CCR  ; normalize C to 6502 polarity before RTS
     rts
 
     even
@@ -2541,7 +2543,7 @@ _L_z04__TryShooting_SetShootTimer:
     jsr     _ShootIfWanted2
     ; If it failed, go set a non-zero speed.
     ;
-    bcc  _L_z04__TryShooting_SetSpeed
+    bcs  _L_z04__TryShooting_SetSpeed
     ; It succeeded, so reset "wants to shoot" flag and the speed.
     ;
     moveq   #0,D0
@@ -4071,6 +4073,7 @@ _L_z04_InitArmosOrFlyingGhini_FinishInit:
 __far_z_04_0034:
     jsr     DrawArmosAndCheckCollisions
 _anon_z04_53:
+    eori    #$01,CCR  ; normalize C to 6502 polarity before RTS
     rts
 
     even
@@ -4388,6 +4391,7 @@ _L_z04_PondFairy_MoveHearts_NextLoopHeart:
     addq.b  #1,D2
     cmpi.b  #$0A,D2
     bne  _L_z04_PondFairy_MoveHearts_LoopHeart
+    eori    #$01,CCR  ; normalize C to 6502 polarity before RTS
     rts
 
     even
@@ -5756,7 +5760,7 @@ _L_z04_UpdateRope_CheckVertical:
     move.b  ($70,A4,D2.W),D1
     cmp.b   D1,D0
     bcc  _L_z04_UpdateRope_FlipDir
-    bcc  _L_z04_UpdateRope_Rush
+    bcs  _L_z04_UpdateRope_Rush
     even
 UpdateStalfos:
     move.b  #$80,D0
@@ -5836,7 +5840,7 @@ _L_z04_UpdateStalfos_SetShootTimer:
     jsr     _ShootIfWanted
     ; If failed, then go set the qspeed.
     ;
-    bcc  _L_z04_UpdateStalfos_CheckResult
+    bcs  _L_z04_UpdateStalfos_CheckResult
     ; TODO:
     ; Else set timer to $80, and decrement [0437][X].
     ;
@@ -6039,6 +6043,7 @@ InitDodongo:
 _anon_z04_78:
     lea     ($0098,A4),A0
     move.b  D3,(A0,D2.W)
+    eori    #$01,CCR  ; normalize C to 6502 polarity before RTS
     rts
 
     even
@@ -6332,6 +6337,7 @@ _anon_z04_83:
     moveq   #8,D0
     lea     ($042C,A4),A0
     move.b  D0,(A0,D2.W)
+    eori    #$01,CCR  ; normalize C to 6502 polarity before RTS
     rts
 
     even
@@ -6922,6 +6928,7 @@ _L_z04_Digdogger_Draw_LoopPart:
     addq.b  #1,D3
     cmpi.b  #$04,D3
     bne  _L_z04_Digdogger_Draw_LoopPart
+    eori    #$01,CCR  ; normalize C to 6502 polarity before RTS
     rts
 
     even
@@ -7325,6 +7332,7 @@ _L_z04_UpdateDodongoState0_Move_Move:
     lea     ($0098,A4),A0
     move.b  D0,(A0,D2.W)
 _anon_z04_89:
+    eori    #$01,CCR  ; normalize C to 6502 polarity before RTS
     rts
 
     even
@@ -8071,6 +8079,7 @@ _anon_z04_94:
     addq.b  #1,($000F,A4)
 _anon_z04_95:
     jsr     DrawObjectNotMirrored
+    eori    #$01,CCR  ; normalize C to 6502 polarity before RTS
     rts
 
     even
@@ -9462,7 +9471,7 @@ __far_z_04_0091:
     ; If walkable, then return.
     ; Else increase state to 0, in order to check again next frame.
     ;
-    bcs.s  __far_z_04_0092
+    bcc.s  __far_z_04_0092
     jmp  UpdateRedWizzrobe_0
 __far_z_04_0092:
 _anon_z04_105:
@@ -10665,6 +10674,7 @@ _anon_z04_124:
     jsr     SetShoveInfoWith0
     lea     ($04F0,A4),A0
     move.b  D0,(A0,D2.W)
+    eori    #$01,CCR  ; normalize C to 6502 polarity before RTS
     rts
 
     even
@@ -11173,6 +11183,7 @@ _anon_z04_133:
 _anon_z04_134:
     lea     ($04DD,A4),A0
     move.b  D0,(A0,D2.W)
+    eori    #$01,CCR  ; normalize C to 6502 polarity before RTS
     rts
 
 ; Params:
@@ -11277,7 +11288,7 @@ __far_z_04_0095:
     bne.s  __far_z_04_0096
     jmp  L_Gleeok_DecSegmentY
 __far_z_04_0096:
-    bcc.s  __far_z_04_0097
+    bcs.s  __far_z_04_0097
     jmp  L_Gleeok_SetSegmentY
 __far_z_04_0097:
     even
@@ -11310,10 +11321,10 @@ Gleeok_ContractSegmentY:
     bne.s  __far_z_04_0098
     jmp  L_Gleeok_SetSegmentY
 __far_z_04_0098:
-    bcs.s  __far_z_04_0099
+    bcc.s  __far_z_04_0099
     jmp  L_Gleeok_SetSegmentY
 __far_z_04_0099:
-    bcc.s  __far_z_04_0100
+    bcs.s  __far_z_04_0100
     jmp  L_Gleeok_DecSegmentY
 __far_z_04_0100:
     even
@@ -11330,7 +11341,7 @@ L_Gleeok_ExpandHorizontally:
     bcs.s  __far_z_04_0101
     jmp  L_Gleeok_SetSegmentX
 __far_z_04_0101:
-    bcs.s  __far_z_04_0102
+    bcc.s  __far_z_04_0102
     jmp  L_Gleeok_DecSegmentX
 __far_z_04_0102:
     even
@@ -11616,6 +11627,7 @@ _L_z04_Gleeok_CheckCollisions_DestroyFireballs:
     addq.b  #1,D3
     cmpi.b  #$0A,D3
     bcs  _L_z04_Gleeok_CheckCollisions_DestroyFireballs
+    eori    #$01,CCR  ; normalize C to 6502 polarity before RTS
     rts
 
     even
@@ -11856,6 +11868,7 @@ _anon_z04_145:
     move.b  ($0006,A4),D0
     cmpi.b  #$02,D0
     bcs  _L_z04_L_Gleeok_WriteSprites_LoopDrawRow
+    eori    #$01,CCR  ; normalize C to 6502 polarity before RTS
     rts
 
 ; Unknown block
@@ -12015,6 +12028,7 @@ _anon_z04_149:
     addq.b  #1,D3
     cmpi.b  #$0A,D3
     bne  _anon_z04_149
+    eori    #$01,CCR  ; normalize C to 6502 polarity before RTS
     rts
 
     even
@@ -12400,7 +12414,7 @@ _anon_z04_151:
     ; So, 25% of the time, if horizontal, then turn down, else right.
     ;
     moveq   #64,D3
-    bcc  _L_z04_Lamnola_UpdateHead_LoopFindPerpendicular
+    bcs  _L_z04_Lamnola_UpdateHead_LoopFindPerpendicular
     even
 _L_z04_Lamnola_UpdateHead_SetDirAndCheckTiles:
     ; Change the facing direction to the direction found.
@@ -12711,6 +12725,7 @@ _anon_z04_156:
     moveq   #8,D0
     lea     ($042C,A4),A0
     move.b  D0,(A0,D2.W)
+    eori    #$01,CCR  ; normalize C to 6502 polarity before RTS
     rts
 
     even
@@ -13003,6 +13018,7 @@ _L_z04_Ganon_ScenePhase0_CheckTimeToShout:
     moveq   #2,D0
     move.b  D0,($0601,A4)
 _anon_z04_160:
+    eori    #$01,CCR  ; normalize C to 6502 polarity before RTS
     rts
 
 ; Description:
@@ -13327,6 +13343,7 @@ _anon_z04_163:
     move.b  D0,($0001,A4)
     move.b  (A5)+,D0  ; PLA
     move.b  D0,($0000,A4)
+    eori    #$01,CCR  ; normalize C to 6502 polarity before RTS
     rts
 
     even
@@ -13424,6 +13441,7 @@ _anon_z04_164:
     ;
     move.b  (A5)+,D0  ; PLA
     move.b  D0,($0340,A4)
+    eori    #$01,CCR  ; normalize C to 6502 polarity before RTS
     rts
 
 ; Returns:
@@ -13692,6 +13710,7 @@ _L_z04_Ganon_CheckCollisions_CheckArrowCollision:
     moveq   #8,D0
     lea     ($0478,A4),A0
     move.b  D0,(A0,D2.W)
+    eori    #$01,CCR  ; normalize C to 6502 polarity before RTS
     rts
 
     even
@@ -14033,6 +14052,7 @@ _L_z04_SetUpDroppedItem_Commit:
     jmp     SetUpFairyObject
 
 _anon_z04_166:
+    eori    #$01,CCR  ; normalize C to 6502 polarity before RTS
     rts
 
     even
@@ -14702,7 +14722,7 @@ TurnTowardsPlayer8:
     move.b  ($70,A4,D2.W),D1
     cmp.b   D1,D0
     beq  _L_z04_TurnTowardsPlayer8_CalcVertical
-    bcs  _anon_z04_175
+    bcc  _anon_z04_175
     addq.b  #1,D3
 _anon_z04_175:
     move.b  D3,($0000,A4)
@@ -14723,7 +14743,7 @@ _L_z04_TurnTowardsPlayer8_CalcVertical:
     move.b  (A0,D2.W),D1
     cmp.b   D1,D0
     beq  _L_z04_TurnTowardsPlayer8_SkipVertical
-    bcs  _anon_z04_176
+    bcc  _anon_z04_176
     addq.b  #1,D3
 _anon_z04_176:
     move.b  D3,D0
@@ -14827,7 +14847,7 @@ TestDir:
     bcs.s  __far_z_04_0154
     jmp  NextLoopRight
 __far_z_04_0154:
-    bcs.s  __far_z_04_0155
+    bcc.s  __far_z_04_0155
     jmp  SetDir8ForIndex
 __far_z_04_0155:
 ; Description:

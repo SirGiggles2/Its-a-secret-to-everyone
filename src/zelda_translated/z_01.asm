@@ -512,6 +512,7 @@ _L_z01_UpdateCavePerson_Unhalt:
     bne  _anon_z01_3
     jsr     UnhaltLink
 _anon_z01_3:
+    eori    #$01,CCR  ; normalize C to 6502 polarity before RTS
     rts
 
     even
@@ -756,6 +757,7 @@ SwapSpaceAndSign:
     move.b  ($0004,A4),D0
     move.b  D2,($0004,A4)
 _anon_z01_5:
+    eori    #$01,CCR  ; normalize C to 6502 polarity before RTS
     rts
 
     even
@@ -1080,7 +1082,8 @@ _anon_z01_8:
     ; go take the item without further ado.
     ;
     beq  _L_z01_UpdateCavePersonState_TalkOrShopOrDoorCharge_Take
-    bcc  _L_z01_UpdateCavePersonState_TalkOrShopOrDoorCharge_Take
+    bcs  _L_z01_UpdateCavePersonState_TalkOrShopOrDoorCharge_Take
+    eori    #$01,CCR  ; normalize C to 6502 polarity before RTS
     rts
 
     even
@@ -1615,6 +1618,7 @@ _anon_z01_15:
     moveq   #10,D0
     move.b  D0,($0029,A4)
     addq.b  #1,($00AD,A4)
+    eori    #$01,CCR  ; normalize C to 6502 polarity before RTS
     rts
 
     even
@@ -1654,7 +1658,7 @@ _L_z01_UpdateUnderworldPersonComplexState_SenseLink_CheckCanPay:
     move.b  ($066D,A4),D1
     cmp.b   D1,D0
     beq  _anon_z01_16
-    bcs  _L_z01_UpdateUnderworldPersonComplexState_SenseLink_Exit
+    bcc  _L_z01_UpdateUnderworldPersonComplexState_SenseLink_Exit
 _anon_z01_16:
     ; Post 100 rupees more to subtract.
     ;
@@ -1814,7 +1818,7 @@ _L_z01_UpdateUnderworldPersonLifeOrMoneyState_2_Pay:
     move.b  ($066D,A4),D1
     cmp.b   D1,D0
     beq  _L_z01_UpdateUnderworldPersonLifeOrMoneyState_2_PayWithMoney
-    bcs  _L_z01_UpdateUnderworldPersonLifeOrMoneyState_2_Exit
+    bcc  _L_z01_UpdateUnderworldPersonLifeOrMoneyState_2_Exit
     even
 _L_z01_UpdateUnderworldPersonLifeOrMoneyState_2_PayWithMoney:
     ; Post 50 rupees more to subtract, and go flag this offer taken.
@@ -2043,6 +2047,7 @@ _L_z01_CopyCommonCodeToRam_Loop:
     move.b  ($0002,A4),D0
     cmpi.b  #$00,D0
     bne  _L_z01_CopyCommonCodeToRam_Loop
+    eori    #$01,CCR  ; normalize C to 6502 polarity before RTS
     rts
 
     even
@@ -2104,6 +2109,7 @@ _L_z01_TransferDemoPatterns_LoopBlock:
     move.b  D0,($00F6,A4)
     moveq   #0,D0
     move.b  D0,($051D,A4)
+    eori    #$01,CCR  ; normalize C to 6502 polarity before RTS
     rts
 
 ; Params:
@@ -2871,6 +2877,7 @@ CheckPowerTriforceFanfare:
     moveq   #120,D3
 _anon_z01_22:
     move.b  D3,($0014,A4)
+    eori    #$01,CCR  ; normalize C to 6502 polarity before RTS
     rts
 
     even
@@ -3319,7 +3326,7 @@ UpdateTrap_Full:
     move.b  ($70,A4,D2.W),D1
     cmp.b   D1,D0
     beq  _L_z01_UpdateTrap_Full_CheckHorizontal
-    bcs  _anon_z01_26
+    bcc  _anon_z01_26
     moveq   #2,D3
 _anon_z01_26:
     ; Remember the original X coordinate.
@@ -3377,7 +3384,7 @@ _L_z01_UpdateTrap_Full_CheckHorizontal:
     move.b  (A0,D2.W),D1
     cmp.b   D1,D0
     beq  _L_z01_UpdateTrap_Full_DrawAndCheckCollisions
-    bcs  _anon_z01_27
+    bcc  _anon_z01_27
     moveq   #8,D3
 _anon_z01_27:
     ; We'll advance to state 1. Go remember the original Y coordinate,
@@ -4047,6 +4054,7 @@ _anon_z01_38:
     move.b  ($0342,A4),D0
     jsr     CycleSpriteIndexInA
     move.b  D0,($0342,A4)
+    eori    #$01,CCR  ; normalize C to 6502 polarity before RTS
     rts
 
     even
@@ -4220,7 +4228,7 @@ _L_z01_FormatHeartsInTextBuf_CheckOccupiedSlot:
     move.b  ($0000,A4),D1
     cmp.b   D1,D2
     beq  _L_z01_FormatHeartsInTextBuf_CheckPartial
-    bcs  _L_z01_FormatHeartsInTextBuf_EmitEmptyHeart   ; PATCH P36c: 68K borrow sense for CPX/BCC
+    bcs  _L_z01_FormatHeartsInTextBuf_EmitEmptyHeart
     even
 _L_z01_FormatHeartsInTextBuf_EmitFullHeart:
     move.b  #$F2,D0
@@ -4252,6 +4260,7 @@ _L_z01_FormatHeartsInTextBuf_EmitChar:
     addq.b  #1,D2
     cmpi.b  #$10,D2
     bne  _L_z01_FormatHeartsInTextBuf_LoopHeartSlot
+    eori    #$01,CCR  ; normalize C to 6502 polarity before RTS
     rts
 
     even
@@ -4305,6 +4314,7 @@ _L_z01_ShowLinkSpritesBehindHorizontalDoors_NextSprite:
 _anon_z01_42:
     subq.b  #1,D2
     bpl  _L_z01_ShowLinkSpritesBehindHorizontalDoors_LoopSprite
+    eori    #$01,CCR  ; normalize C to 6502 polarity before RTS
     rts
 
 ; Params:
@@ -4939,6 +4949,7 @@ _L_z01_GetOneDirectionAndDistanceToTarget_Subtract:
     bcc  _anon_z01_52
     addq.b  #1,($0000,A4)
 _anon_z01_52:
+    eori    #$01,CCR  ; normalize C to 6502 polarity before RTS
     rts
 
     even
@@ -5161,6 +5172,7 @@ _anon_z01_53:
     lea     ($03D0,A4),A0
     move.b  D0,(A0,D2.W)
     jsr     PlaceWeaponForPlayerState
+    eori    #$01,CCR  ; normalize C to 6502 polarity before RTS
     rts
 
 ; Returns:
@@ -5495,6 +5507,7 @@ Sub1FromInt16At4:
     bcc  _anon_z01_62
     subq.b  #1,($0005,A4)
 _anon_z01_62:
+    eori    #$01,CCR  ; normalize C to 6502 polarity before RTS
     rts
 
     even
@@ -6155,6 +6168,7 @@ _anon_z01_74:
     addq.b  #1,D3
     cmpi.b  #$40,D3
     bne  _anon_z01_74
+    eori    #$01,CCR  ; normalize C to 6502 polarity before RTS
     rts
 
     even
@@ -6221,6 +6235,7 @@ _L_z01_CheckMazes_CheckMountainMaze:
     beq  _L_z01_CheckMazes_Match
     cmpi.b  #$02,D0
     bne  _L_z01_CheckMazes_Reset
+    eori    #$01,CCR  ; normalize C to 6502 polarity before RTS
     rts
 
     even

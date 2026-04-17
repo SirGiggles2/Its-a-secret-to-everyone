@@ -138,6 +138,7 @@ _L_z02_TransferCommonPatterns_LoopBlock:
     move.b  D0,($00F5,A4)
     moveq   #0,D0
     move.b  D0,($051D,A4)
+    eori    #$01,CCR  ; normalize C to 6502 polarity before RTS
     rts
 
 ; Params:
@@ -1450,6 +1451,7 @@ __far_z_02_0005:
     move.b  D0,($041A,A4)
     move.b  D0,($042C,A4)
     move.b  D0,($042D,A4)
+    eori    #$01,CCR  ; normalize C to 6502 polarity before RTS
     rts
 
     even
@@ -2865,6 +2867,7 @@ ModeEandF_WriteNameCursorSpritePosition:
     bne  _L_z02_ModeEandF_WriteNameCursorSpritePosition_WriteCursorY
     move.b  #$F8,D0
     move.b  D0,($0204,A4)
+    eori    #$01,CCR  ; normalize C to 6502 polarity before RTS
     rts
 
     even
@@ -2885,6 +2888,7 @@ ModeEandF_WriteCharBoardCursorSpritePosition:
     bne  _L_z02_ModeEandF_WriteCharBoardCursorSpritePosition_WriteCursorCoords
     move.b  #$F8,D0
     move.b  D0,($0208,A4)
+    eori    #$01,CCR  ; normalize C to 6502 polarity before RTS
     rts
 
     even
@@ -2921,6 +2925,7 @@ ModifyFlashingCursorY:
     bne  _anon_z02_13
     move.b  #$F8,D3
 _anon_z02_13:
+    eori    #$01,CCR  ; normalize C to 6502 polarity before RTS
     rts
 
     even
@@ -3088,6 +3093,7 @@ _L_z02_UpdateMode0Demo_Sub1_NextSlot:
     cmpi.b  #$03,D0
     bne  _L_z02_UpdateMode0Demo_Sub1_LoopSlot
     addq.b  #1,($0013,A4)
+    eori    #$01,CCR  ; normalize C to 6502 polarity before RTS
     rts
 
 ; Returns:
@@ -3635,6 +3641,7 @@ _anon_z02_20:
     move.b  D0,(A0,D3.W)
     subq.b  #1,D3
     bpl  _anon_z02_20
+    eori    #$01,CCR  ; normalize C to 6502 polarity before RTS
     rts
 
     even
@@ -4043,6 +4050,7 @@ _L_z02_Mode1_WriteLinkSprites_NextSlot:
     move.b  ($0004,A4),D0
     cmpi.b  #$03,D0
     bne  _L_z02_Mode1_WriteLinkSprites_LoopSlot
+    eori    #$01,CCR  ; normalize C to 6502 polarity before RTS
     rts
 
     even
@@ -4222,6 +4230,7 @@ _anon_z02_25:
     jsr     FetchFileBAddressSet
     jsr     CalculateAndStoreFileBChecksumUncommitted
     addq.b  #1,($0013,A4)
+    eori    #$01,CCR  ; normalize C to 6502 polarity before RTS
     rts
 
     even
@@ -5630,6 +5639,7 @@ _L_z02_DrawCredits_IncRow:
     addq.b  #1,D3
 _anon_z02_53:
     move.b  D3,($050A,A4)
+    eori    #$01,CCR  ; normalize C to 6502 polarity before RTS
     rts
 
     even

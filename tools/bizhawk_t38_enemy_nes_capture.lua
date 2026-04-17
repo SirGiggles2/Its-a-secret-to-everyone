@@ -295,6 +295,19 @@ for _, dn in ipairs({"System Bus", "RAM", "WRAM", "Main RAM"}) do
             event.on_bus_write(nbp_make("objstate"), 0x00AC, dn)
             event.on_bus_write(nbp_make("movedir "), 0x000F, dn)
             event.on_bus_write(nbp_make("cavetype"), 0x0350, dn)
+            -- T38 drift: trace slot-1 ObjDir writes t=330..360
+            local dir99_count = 0
+            event.on_bus_write(function(a, v, flags)
+                if dir99_count >= 500 then return end
+                local t = (nbp_t0 >= 0) and (nbp_current_frame - nbp_t0) or -1
+                if t < 330 or t > 360 then return end
+                dir99_count = dir99_count + 1
+                local pc = 0
+                local ok, regs = pcall(function() return emu.getregisters() end)
+                if ok and regs then pc = regs["PC"] or regs["6502 PC"] or 0 end
+                nbp_write(string.format("DIR99 f=%d t=%d val=%02X PC=%04X",
+                    nbp_current_frame, t, v or -1, pc))
+            end, 0x0099, dn)
         end)
         if ok then nbp_write("NES BP installed on "..dn); nbp_installed = true end
     end
