@@ -5,6 +5,14 @@ See `README.md` for the condensed overview.
 
 ---
 
+## Overworld Room Map
+
+![Zelda overworld with room IDs](assets/overworld_numbered.png)
+
+Room ID = `(row << 4) | col`, 16 cols × 8 rows, IDs `$00`..`$7F`. Green = spawn room (`$77`); yellow = edge-spawn rooms (bit 3 of `RoomAttrsOW_F`) covered by the P42–P47 fix chain. Regenerate with `tools/render_overworld_numbered.py` if the source map changes.
+
+---
+
 ## Table of Contents
 
 1. [Strategy and Goals](#strategy-and-goals)
