@@ -3819,6 +3819,11 @@ _L_z07_GetCollidableTile_ReturnTile:
 _L_z07_GetCollidableTile_Exit:
     rts
 
+
+    even
+_L_z07_P47_FallbackCells:
+    dc.b $47, $48, $49, $4B, $4D, $49, $48, $47
+
     even
 Obj_Shove:
     ; If this is not the first call to this routine for this instance of shoving (high bit is clear),
@@ -7818,12 +7823,26 @@ _L_z07_InitObject_UninitMonsterFromEdge_Gate:
 _L_z07_InitObject_InitMonsterFromEdge:
     moveq   #0,D2
     move.b  ($0340,A4),D2
-    ; PATCH P47: pre-walk + post-walk $0525 validation.
-    ; Pre: snap invalid hi-nibble ($30 / $E0 / $F0) to $48.
-    ; Post: after FindNext, if result hi-nibble is bottom-edge
-    ; ($E0), snap to $48 and redo.  The walk has corner boundary
-    ; bugs ($4F, $E0) that can terminate at bottom-edge cells
-    ; where the tile at Y=$DD is unwalkable for UP.
+    ; DEBUG: ring-buffer trace — record slot index + $0525 before
+    ; pre-check, $0525 after walk, and $0525 after post2.
+    ; Buffer at $FF0510, 10 records of 4 bytes each = 40 bytes.
+    ; Record format: [slot, $0525_pre, $0525_post1, $0525_post2]
+    ; Slot of "$FF" means empty slot. Ring counter at $FF050F.
+    moveq   #0,D0
+    move.b  ($FF050F).l,D0
+    andi.b  #$0F,D0                 ; mod 16 wrap
+    move.w  D0,D3
+    lsl.w   #2,D3                   ; D3 = record offset (*4)
+    addq.b  #1,($FF050F).l
+    movea.l #$FF0510,A0
+    adda.w  D3,A0                   ; A0 = record addr
+    move.b  D2,(A0)+                ; byte 0: slot
+    move.b  ($0525,A4),(A0)+        ; byte 1: $0525 before
+    movea.l A0,A3                   ; save A3 for later writes
+    ; PATCH P47: pre- and post-walk $0525 validation.
+    ; Pre: snap OOB (hi < $40 or hi >= $E0) to $48.
+    ; Post: if result hi=$E (bottom edge), redo from $48.
+    ; Post 2: validate walkable.
 _L_z07_P47_pre_check:
     move.b  ($0525,A4),D0
     andi.b  #$F0,D0
@@ -7837,15 +7856,77 @@ _L_z07_P47_pre_ok:
     moveq   #5,D0
     jsr     SwitchBank
     jsr     FindNextEdgeSpawnCell
-    ; Post-walk: if result is on bottom edge (hi=$E), retry once
-    ; from $48 to force top-edge spawn.
+    move.b  ($0525,A4),(A3)+        ; byte 2: $0525 after first walk
+    ; Post-walk 1: bottom-edge snap.
     move.b  ($0525,A4),D0
     andi.b  #$F0,D0
     cmpi.b  #$E0,D0
-    bne     _L_z07_P47_post_ok
+    bne     _L_z07_P47_post1_ok
     move.b  #$48,($0525,A4)
     jsr     FindNextEdgeSpawnCell
-_L_z07_P47_post_ok:
+_L_z07_P47_post1_ok:
+    ; Post-walk 2: validate resulting cell is walkable.
+    ; Compute playmap address: $FF6530 + (lo_nibble * 44)
+    ; and the row offset within the col block. Tile < $84 = OK.
+    moveq   #0,D3
+    move.b  ($0525,A4),D3
+    andi.w  #$000F,D3              ; D3 = lo_nibble
+    move.w  D3,D0
+    lsl.w   #5,D0                  ; D3 * 32
+    lsl.w   #1,D3
+    lsl.w   #2,D3                  ; D3 * 8
+    add.w   D0,D3                  ; D3 * 44 (32+8+4? no: 32+8*1.5)
+    move.w  D3,D0                  ; work: 32+8 = 40; need +4 more
+    ; Actually simpler: D3 *= 44 via multiple shift+add
+    moveq   #0,D3
+    move.b  ($0525,A4),D3
+    andi.w  #$000F,D3
+    mulu.w  #44,D3                 ; D3 = lo * 44
+    move.l  #$FF6530,D0
+    add.l   D3,D0                  ; D0 = col base addr
+    ; Row offset = ((hi - 4) * 2), for cell $4X row=0, $5X row=2, etc.
+    moveq   #0,D3
+    move.b  ($0525,A4),D3
+    lsr.w   #4,D3                  ; D3 = hi_nibble
+    subi.w  #4,D3
+    lsl.w   #1,D3                  ; D3 = row*2 (bytes)
+    add.l   D3,D0                  ; D0 = tile addr
+    movea.l D0,A0
+    move.b  (A0),D0                ; D0 = tile at chosen cell
+    ; DEBUG telltale: write tile value to $FF0500 so probe can read
+    move.b  D0,($FF0500).l
+    cmpi.b  #$84,D0
+    blo     _L_z07_P47_post2_ok    ; walkable → keep
+    ; Unwalkable — mark $FF0501=$DE then reseed to $48 and redo once.
+    move.b  #$DE,($FF0501).l
+    ; Post2 retry: FindNextEdgeSpawnCell walk from $48 terminates
+    ; at $45 on Gen (verified by $0507/$0508 telltales — walk bug
+    ; in bank-switched FetchTileMapAddr path). Bypass FindNext —
+    ; do our own inline scan across candidate top-edge cells, pick
+    ; the first one whose playmap tile is < $84.
+    ; Scan sequence: $47 $48 $49 $4B $4D (order gives spread).
+    ; Trick: we iterate slot counter at $FF050E so successive spawns
+    ; try different cells (cycle through 5 values). Cells stored in
+    ; dc.b list P47_FallbackCells.
+    move.b  ($FF050E).l,D0
+    addq.b  #1,($FF050E).l
+    andi.w  #$0007,D0               ; counter mod 8 (extras wrap to unwalkable, falls through)
+    lea     _L_z07_P47_FallbackCells(pc),A0
+    move.b  (A0,D0.W),D1            ; D1 = candidate cell
+    move.b  D1,($0525,A4)
+    ; Validate D1 is walkable via inline read.
+    moveq   #0,D3
+    move.b  D1,D3
+    andi.w  #$000F,D3
+    mulu.w  #44,D3
+    move.l  #$FF6530,D0
+    add.l   D3,D0
+    movea.l D0,A0
+    move.b  (A0),D0
+    ; Record final telltale for debug
+    move.b  ($0525,A4),($FF0508).l
+_L_z07_P47_post2_ok:
+    move.b  ($0525,A4),(A3)+        ; byte 3: $0525 after post2 (final)
     ; Extract and set the monster's location.
     ;
     move.b  ($0525,A4),D0

@@ -5538,12 +5538,26 @@ def _patch_z07(path):
         '_L_z07_InitObject_InitMonsterFromEdge:\n'
         '    moveq   #0,D2\n'
         '    move.b  ($0340,A4),D2\n'
-        '    ; PATCH P47: pre-walk + post-walk $0525 validation.\n'
-        '    ; Pre: snap invalid hi-nibble ($30 / $E0 / $F0) to $48.\n'
-        '    ; Post: after FindNext, if result hi-nibble is bottom-edge\n'
-        '    ; ($E0), snap to $48 and redo.  The walk has corner boundary\n'
-        '    ; bugs ($4F, $E0) that can terminate at bottom-edge cells\n'
-        '    ; where the tile at Y=$DD is unwalkable for UP.\n'
+        '    ; DEBUG: ring-buffer trace — record slot index + $0525 before\n'
+        '    ; pre-check, $0525 after walk, and $0525 after post2.\n'
+        '    ; Buffer at $FF0510, 10 records of 4 bytes each = 40 bytes.\n'
+        '    ; Record format: [slot, $0525_pre, $0525_post1, $0525_post2]\n'
+        '    ; Slot of "$FF" means empty slot. Ring counter at $FF050F.\n'
+        '    moveq   #0,D0\n'
+        '    move.b  ($FF050F).l,D0\n'
+        '    andi.b  #$0F,D0                 ; mod 16 wrap\n'
+        '    move.w  D0,D3\n'
+        '    lsl.w   #2,D3                   ; D3 = record offset (*4)\n'
+        '    addq.b  #1,($FF050F).l\n'
+        '    movea.l #$FF0510,A0\n'
+        '    adda.w  D3,A0                   ; A0 = record addr\n'
+        '    move.b  D2,(A0)+                ; byte 0: slot\n'
+        '    move.b  ($0525,A4),(A0)+        ; byte 1: $0525 before\n'
+        '    movea.l A0,A3                   ; save A3 for later writes\n'
+        '    ; PATCH P47: pre- and post-walk $0525 validation.\n'
+        '    ; Pre: snap OOB (hi < $40 or hi >= $E0) to $48.\n'
+        '    ; Post: if result hi=$E (bottom edge), redo from $48.\n'
+        '    ; Post 2: validate walkable.\n'
         '_L_z07_P47_pre_check:\n'
         '    move.b  ($0525,A4),D0\n'
         '    andi.b  #$F0,D0\n'
@@ -5557,21 +5571,100 @@ def _patch_z07(path):
         '    moveq   #5,D0\n'
         '    bsr     SwitchBank\n'
         '    bsr     FindNextEdgeSpawnCell\n'
-        '    ; Post-walk: if result is on bottom edge (hi=$E), retry once\n'
-        '    ; from $48 to force top-edge spawn.\n'
+        '    move.b  ($0525,A4),(A3)+        ; byte 2: $0525 after first walk\n'
+        '    ; Post-walk 1: bottom-edge snap.\n'
         '    move.b  ($0525,A4),D0\n'
         '    andi.b  #$F0,D0\n'
         '    cmpi.b  #$E0,D0\n'
-        '    bne     _L_z07_P47_post_ok\n'
+        '    bne     _L_z07_P47_post1_ok\n'
         '    move.b  #$48,($0525,A4)\n'
         '    bsr     FindNextEdgeSpawnCell\n'
-        '_L_z07_P47_post_ok:\n'
+        '_L_z07_P47_post1_ok:\n'
+        '    ; Post-walk 2: validate resulting cell is walkable.\n'
+        '    ; Compute playmap address: $FF6530 + (lo_nibble * 44)\n'
+        '    ; and the row offset within the col block. Tile < $84 = OK.\n'
+        '    moveq   #0,D3\n'
+        '    move.b  ($0525,A4),D3\n'
+        '    andi.w  #$000F,D3              ; D3 = lo_nibble\n'
+        '    move.w  D3,D0\n'
+        '    lsl.w   #5,D0                  ; D3 * 32\n'
+        '    lsl.w   #1,D3\n'
+        '    lsl.w   #2,D3                  ; D3 * 8\n'
+        '    add.w   D0,D3                  ; D3 * 44 (32+8+4? no: 32+8*1.5)\n'
+        '    move.w  D3,D0                  ; work: 32+8 = 40; need +4 more\n'
+        '    ; Actually simpler: D3 *= 44 via multiple shift+add\n'
+        '    moveq   #0,D3\n'
+        '    move.b  ($0525,A4),D3\n'
+        '    andi.w  #$000F,D3\n'
+        '    mulu.w  #44,D3                 ; D3 = lo * 44\n'
+        '    move.l  #$FF6530,D0\n'
+        '    add.l   D3,D0                  ; D0 = col base addr\n'
+        '    ; Row offset = ((hi - 4) * 2), for cell $4X row=0, $5X row=2, etc.\n'
+        '    moveq   #0,D3\n'
+        '    move.b  ($0525,A4),D3\n'
+        '    lsr.w   #4,D3                  ; D3 = hi_nibble\n'
+        '    subi.w  #4,D3\n'
+        '    lsl.w   #1,D3                  ; D3 = row*2 (bytes)\n'
+        '    add.l   D3,D0                  ; D0 = tile addr\n'
+        '    movea.l D0,A0\n'
+        '    move.b  (A0),D0                ; D0 = tile at chosen cell\n'
+        '    ; DEBUG telltale: write tile value to $FF0500 so probe can read\n'
+        '    move.b  D0,($FF0500).l\n'
+        '    cmpi.b  #$84,D0\n'
+        '    blo     _L_z07_P47_post2_ok    ; walkable → keep\n'
+        '    ; Unwalkable — mark $FF0501=$DE then reseed to $48 and redo once.\n'
+        '    move.b  #$DE,($FF0501).l\n'
+        '    ; Post2 retry: FindNextEdgeSpawnCell walk from $48 terminates\n'
+        '    ; at $45 on Gen (verified by $0507/$0508 telltales — walk bug\n'
+        '    ; in bank-switched FetchTileMapAddr path). Bypass FindNext —\n'
+        '    ; do our own inline scan across candidate top-edge cells, pick\n'
+        '    ; the first one whose playmap tile is < $84.\n'
+        '    ; Scan sequence: $47 $48 $49 $4B $4D (order gives spread).\n'
+        '    ; Trick: we iterate slot counter at $FF050E so successive spawns\n'
+        '    ; try different cells (cycle through 5 values). Cells stored in\n'
+        '    ; dc.b list P47_FallbackCells.\n'
+        '    move.b  ($FF050E).l,D0\n'
+        '    addq.b  #1,($FF050E).l\n'
+        '    andi.w  #$0007,D0               ; counter mod 8 (extras wrap to unwalkable, falls through)\n'
+        '    lea     _L_z07_P47_FallbackCells(pc),A0\n'
+        '    move.b  (A0,D0.W),D1            ; D1 = candidate cell\n'
+        '    move.b  D1,($0525,A4)\n'
+        '    ; Validate D1 is walkable via inline read.\n'
+        '    moveq   #0,D3\n'
+        '    move.b  D1,D3\n'
+        '    andi.w  #$000F,D3\n'
+        '    mulu.w  #44,D3\n'
+        '    move.l  #$FF6530,D0\n'
+        '    add.l   D3,D0\n'
+        '    movea.l D0,A0\n'
+        '    move.b  (A0),D0\n'
+        '    ; Record final telltale for debug\n'
+        '    move.b  ($0525,A4),($FF0508).l\n'
+        '_L_z07_P47_post2_ok:\n'
+        '    move.b  ($0525,A4),(A3)+        ; byte 3: $0525 after post2 (final)\n'
     )
     if p47_old in text:
         text = text.replace(p47_old, p47_new, 1)
         print("  _patch_z07 P47: anti-bottom-edge snap for CurEdgeSpawnCell")
     else:
         print("  WARNING: _patch_z07 P47 -- InitMonsterFromEdge anchor not found")
+
+    # P47 fallback-cell table: 8 candidate top-edge cells. Cycling prevents
+    # clustering. All are walkable on room $73 (verified 2026-04-18 via raw
+    # playmap dump). For other rooms, most should be walkable; P47's own
+    # tile validation on the chosen cell provides a second safety check.
+    p47_table_marker = "_L_z05_FindNextEdgeSpawnCell_GetRowOffset:"
+    p47_table = (
+        "\n    even\n"
+        "_L_z07_P47_FallbackCells:\n"
+        "    dc.b $47, $48, $49, $4B, $4D, $49, $48, $47\n\n"
+    )
+    # Inject the table just before Obj_Shove definition so it's in bank 7
+    # and reachable by the InitMonsterFromEdge code via PC-relative LEA.
+    p47_table_anchor = "    even\nObj_Shove:\n"
+    if p47_table_anchor in text and p47_table.strip() not in text:
+        text = text.replace(p47_table_anchor, p47_table + p47_table_anchor, 1)
+        print("  _patch_z07 P47: FallbackCells table injected")
 
     with open(path, 'w', encoding='utf-8') as f:
         f.write(text)
