@@ -1965,14 +1965,6 @@ InitMode_EnterRoom:
     lea     (NES_SRAM+$0AFE).l,A0
     move.b  (A0,D3.W),D0
     move.b  D0,($04CD,A4)
-    ; PATCH P46: reseed CurEdgeSpawnCell to top-edge for
-    ; edge-spawn rooms, so enemies always enter from top where
-    ; tiles are walkable downward (Gen-specific workaround for
-    ; FindNextEdgeSpawnCell boundary bug at corners).
-    btst    #3,D0
-    beq.s   _L_z05_skip_p46_reseed
-    move.b  #$48,($0525,A4)
-_L_z05_skip_p46_reseed:
     jsr     ResetInvObjState
     ; There's more than one way to enter a room.
     ;

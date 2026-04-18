@@ -4696,16 +4696,16 @@ def _patch_z05(path):
         '_L_z05_skip_p46_reseed:\n'
         '    bsr     ResetInvObjState\n'
     )
-    if p46_old in text:
+    # P46 DISABLED 2026-04-18: always-reseed was too aggressive, clustering
+    # all edge-spawns near top-edge mid ($48). NES $0525 advances naturally
+    # through rooms, spreading spawns across top/left/right edges. Rely on
+    # P47's pre/post-walk bottom-edge snap to avoid stuck cases without
+    # collapsing every room's spawns to one spot.
+    if False and p46_old in text:
         text = text.replace(p46_old, p46_new, 1)
         print("  _patch_z05 P46: reseed CurEdgeSpawnCell to $48 on edge-spawn room entry")
     else:
-        # DEBUG: show what's in text near ($04CD,A4)
-        idx = text.find('($04CD,A4)')
-        if idx >= 0:
-            print(f"  WARNING: P46 anchor not found. Context around $04CD: {repr(text[idx:idx+150])}")
-        else:
-            print("  WARNING: P46 -- $04CD not present in text at all!")
+        print("  _patch_z05 P46: DISABLED (clustering)")
 
     with open(path, 'w', encoding='utf-8') as f:
         f.write(text)
