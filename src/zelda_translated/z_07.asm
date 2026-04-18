@@ -7818,22 +7818,34 @@ _L_z07_InitObject_UninitMonsterFromEdge_Gate:
 _L_z07_InitObject_InitMonsterFromEdge:
     moveq   #0,D2
     move.b  ($0340,A4),D2
-    ; PATCH P47: if CurEdgeSpawnCell hi-nibble is not in the
-    ; valid edge-walk range [$40..$D0], snap to $48 (top-edge
-    ; mid-screen). Catches bottom-edge ($E0) and OOB drift
-    ; ($30/$20/$F0/etc. from corner boundary bugs).
+    ; PATCH P47: pre-walk + post-walk $0525 validation.
+    ; Pre: snap invalid hi-nibble ($30 / $E0 / $F0) to $48.
+    ; Post: after FindNext, if result hi-nibble is bottom-edge
+    ; ($E0), snap to $48 and redo.  The walk has corner boundary
+    ; bugs ($4F, $E0) that can terminate at bottom-edge cells
+    ; where the tile at Y=$DD is unwalkable for UP.
+_L_z07_P47_pre_check:
     move.b  ($0525,A4),D0
     andi.b  #$F0,D0
     cmpi.b  #$40,D0
-    blo     _L_z07_P47_snap
+    blo     _L_z07_P47_pre_snap
     cmpi.b  #$E0,D0
-    blo     _L_z07_P47_cell_ok
-_L_z07_P47_snap:
+    blo     _L_z07_P47_pre_ok
+_L_z07_P47_pre_snap:
     move.b  #$48,($0525,A4)
-_L_z07_P47_cell_ok:
+_L_z07_P47_pre_ok:
     moveq   #5,D0
     jsr     SwitchBank
     jsr     FindNextEdgeSpawnCell
+    ; Post-walk: if result is on bottom edge (hi=$E), retry once
+    ; from $48 to force top-edge spawn.
+    move.b  ($0525,A4),D0
+    andi.b  #$F0,D0
+    cmpi.b  #$E0,D0
+    bne     _L_z07_P47_post_ok
+    move.b  #$48,($0525,A4)
+    jsr     FindNextEdgeSpawnCell
+_L_z07_P47_post_ok:
     ; Extract and set the monster's location.
     ;
     move.b  ($0525,A4),D0
