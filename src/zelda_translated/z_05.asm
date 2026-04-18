@@ -1694,10 +1694,12 @@ _anon_z05_39:
 
     even
 SpawnPosListAddrsLo:
-    dc.b    $4D   ; <SpawnPosList0 (NES=$864D)
-    dc.b    $56   ; <SpawnPosList1 (NES=$8656)
-    dc.b    $5F   ; <SpawnPosList2 (NES=$865F)
-    dc.b    $68   ; <SpawnPosList3 (NES=$8668)
+    ; PATCH P40: +1 byte to each LO — upstream table was shifted 1 byte
+    ; into the preceding HI column, producing a stray $86 first read.
+    dc.b    $4E   ; <SpawnPosList0 (NES=$864E)
+    dc.b    $57   ; <SpawnPosList1 (NES=$8657)
+    dc.b    $60   ; <SpawnPosList2 (NES=$8660)
+    dc.b    $69   ; <SpawnPosList3 (NES=$8669)
 
     even
 SpawnPosListAddrsHi:

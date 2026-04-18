@@ -2551,6 +2551,13 @@ __far_z_07_0025:
 
     even
 InitMode:
+    ifne DEBUG_TELEPORT
+    jsr     _debug_teleport_check      ; PATCH P37: DPAD teleport (InitMode)
+    tst.b   D0
+    beq.s   _L_z07_InitMode_noTp
+    rts
+_L_z07_InitMode_noTp:
+    endc
     moveq   #5,D0
     jsr     SwitchBank
     move.b  ($0012,A4),D0
@@ -2987,6 +2994,13 @@ _L_z07_RunCrossRoomTasksAndBeginUpdateMode_CheckWhirlwind:
 
     even
 UpdateMode:
+    ifne DEBUG_TELEPORT
+    jsr     _debug_teleport_check      ; PATCH P37: DPAD teleport (UpdateMode)
+    tst.b   D0
+    beq.s   _L_z07_UpdateMode_noTp
+    rts
+_L_z07_UpdateMode_noTp:
+    endc
     moveq   #2,D0
     jsr     SwitchBank
     move.b  ($0012,A4),D0
@@ -3521,6 +3535,9 @@ _anon_z07_11:
     jsr     SwitchBank
     jsr     Link_HandleInput
     jsr     Walker_Move
+    ifne TURBO_LINK
+    jsr     _turbo_link_boost   ; PATCH P39: turbo Link speed boost
+    endc
     even
 Link_EndMoveAndAnimateInRoom:
     move.b  ($0012,A4),D0
@@ -4457,6 +4474,15 @@ PlayerScreenEdgeBounds:
 ;
     even
 Walker_CheckTileCollision:
+    ifne TURBO_LINK
+    tst.b   D2
+    bne.s   _L_z07_Walker_CheckTileCollision_notLink
+    ; Link no-clip: skip tile collision but still call
+    ; CheckScreenEdge so screen transitions still latch.
+    jsr     CheckScreenEdge    ; PATCH P40: edge-trigger preserved
+    rts
+_L_z07_Walker_CheckTileCollision_notLink:
+    endc
     cmpi.b  #$00,D2
     bne  _L_z07_Walker_CheckTileCollision_CheckGridOffset
     move.b  ($0053,A4),D0
