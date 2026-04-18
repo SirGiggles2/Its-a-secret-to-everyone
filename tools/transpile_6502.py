@@ -4491,6 +4491,39 @@ def _patch_z05(path):
     else:
         print("  WARNING: _patch_z05 P39 -- ObjListAddrs anchor not found")
 
+    # ------------------------------------------------------------------
+    # P40: Fix SpawnPosListAddrs off-by-one.
+    #
+    # Upstream extraction placed the 4 SpawnPosListAddrsLo entries at
+    # $4D,$56,$5F,$68 but the actual NES addresses are $864E,$8657,$8660,
+    # $8669 (verified by pattern-matching the 9-byte SpawnPosList data in
+    # bank 5 of the NES ROM). Result: each list's first read returns a
+    # stray $86 byte (from the preceding pointer table's HI column),
+    # decoding to X=$60 Y=$8D — and every subsequent spawn position
+    # shifts by one slot. Symptom: enemies spawn at wrong coordinates
+    # (often from the bottom/top edge of the room) on any overworld
+    # screen that goes through AssignObjSpawnPositions.
+    # ------------------------------------------------------------------
+    p40_old = (
+        '    dc.b    $4D   ; <SpawnPosList0 (NES=$864D)\n'
+        '    dc.b    $56   ; <SpawnPosList1 (NES=$8656)\n'
+        '    dc.b    $5F   ; <SpawnPosList2 (NES=$865F)\n'
+        '    dc.b    $68   ; <SpawnPosList3 (NES=$8668)\n'
+    )
+    p40_new = (
+        '    ; PATCH P40: +1 byte to each LO — upstream table was shifted 1 byte\n'
+        '    ; into the preceding HI column, producing a stray $86 first read.\n'
+        '    dc.b    $4E   ; <SpawnPosList0 (NES=$864E)\n'
+        '    dc.b    $57   ; <SpawnPosList1 (NES=$8657)\n'
+        '    dc.b    $60   ; <SpawnPosList2 (NES=$8660)\n'
+        '    dc.b    $69   ; <SpawnPosList3 (NES=$8669)\n'
+    )
+    if p40_old in text:
+        text = text.replace(p40_old, p40_new, 1)
+        print("  _patch_z05 P40: fixed SpawnPosListAddrsLo off-by-one (enemy-bottom-spawn bug)")
+    else:
+        print("  WARNING: _patch_z05 P40 -- SpawnPosListAddrsLo anchor not found")
+
     with open(path, 'w', encoding='utf-8') as f:
         f.write(text)
 
