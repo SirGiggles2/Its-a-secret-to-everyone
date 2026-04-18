@@ -1708,6 +1708,15 @@ SpawnPosListAddrsHi:
     dc.b    $86   ; >SpawnPosList2 (NES=$865F)
     dc.b    $86   ; >SpawnPosList3 (NES=$8668)
 
+    ; PATCH P44: Gen-native 32-bit pointer table. Indexed by
+    ; direction index (0..3) * 4.
+    even
+SpawnPosListPtrsGen:
+    dc.l    SpawnPosList0
+    dc.l    SpawnPosList1
+    dc.l    SpawnPosList2
+    dc.l    SpawnPosList3
+
     even
 SpawnPosList0:
     dc.b    $55, $B5, $78, $98, $7A, $9A, $6C, $AC
@@ -1956,6 +1965,14 @@ InitMode_EnterRoom:
     lea     (NES_SRAM+$0AFE).l,A0
     move.b  (A0,D3.W),D0
     move.b  D0,($04CD,A4)
+    ; PATCH P46: reseed CurEdgeSpawnCell to top-edge for
+    ; edge-spawn rooms, so enemies always enter from top where
+    ; tiles are walkable downward (Gen-specific workaround for
+    ; FindNextEdgeSpawnCell boundary bug at corners).
+    btst    #3,D0
+    beq.s   _L_z05_skip_p46_reseed
+    move.b  #$48,($0525,A4)
+_L_z05_skip_p46_reseed:
     jsr     ResetInvObjState
     ; There's more than one way to enter a room.
     ;
@@ -2345,11 +2362,10 @@ AssignObjSpawnPositions:
     beq  _L_z05_AssignObjSpawnPositions_AssignSpecialPositions
     ; If in OW, then see if monsters come in from the edges of the screen.
     ;
+    ; PATCH P42: skip OW edge-spawn short-circuit so initial positions
+    ; always come from SpawnPosListN (NES-accurate t=0 state).
     move.b  ($0010,A4),D0
-    bne  _anon_z05_56
-    move.b  ($04CD,A4),D0
-    andi.b #$08,D0
-    bne  _L_z05_AssignObjSpawnPositions_AssignSpecialPositions
+    ; bne -> anon56 and bit-3 check removed (P42).
 _anon_z05_56:
     move.b  ($034E,A4),D0
     beq  _L_z05_AssignObjSpawnPositions_AssignSpecialPositions
@@ -2361,14 +2377,9 @@ _anon_z05_57:
     addq.b  #1,D3
     lsr.b  #1,D0   ; LSR A
     bcc  _anon_z05_57
-    ; Put the address of the spawn list for Link's direction in [06:07].
-    ;
-    lea     (SpawnPosListAddrsLo).l,A0
-    move.b  (A0,D3.W),D0
-    move.b  D0,($0006,A4)
-    lea     (SpawnPosListAddrsHi).l,A0
-    move.b  (A0,D3.W),D0
-    move.b  D0,($0007,A4)
+    ; PATCH P44: Gen-native SpawnPosListN pointer resolution.
+    ; Save direction index (D3=0..3) to $06 for loop to use.
+    move.b  D3,($0006,A4)
     ; Assign spawn coordinates to 9 object slots.
     ;
     moveq   #0,D3
@@ -2376,15 +2387,13 @@ _anon_z05_57:
     moveq   #1,D2
     even
 _L_z05_AssignObjSpawnPositions_LoopSpawnSpot:
-    move.b  ($06,A4),D1   ; ptr lo
-    move.b  ($07,A4),D4  ; ptr hi
-    andi.w  #$00FF,D1         ; zero-extend lo byte
-    lsl.w   #8,D4
-    or.w    D1,D4             ; D4 = NES ptr addr
-    ext.l   D4
-    add.l   #NES_RAM,D4       ; → Genesis addr
-    movea.l D4,A0
-    move.b  (A0,D3.W),D0     ; LDA ($nn),Y
+    ; PATCH P44: Gen-native direct lookup.
+    moveq   #0,D4
+    move.b  ($06,A4),D4              ; direction index (0..3)
+    lsl.w   #2,D4                    ; *4 for dc.l entries
+    lea     (SpawnPosListPtrsGen).l,A0
+    movea.l (A0,D4.W),A0             ; A0 = Gen addr of SpawnPosList{D4/4}
+    move.b  (A0,D3.W),D0             ; fetch spawn cell at SpawnCycle index
     move.b  D0,-(A5)  ; PHA
     lsl.b  #1,D0   ; ASL A
     lsl.b  #1,D0   ; ASL A

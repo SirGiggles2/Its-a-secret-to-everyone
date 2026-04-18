@@ -4524,6 +4524,189 @@ def _patch_z05(path):
     else:
         print("  WARNING: _patch_z05 P40 -- SpawnPosListAddrsLo anchor not found")
 
+    # ------------------------------------------------------------------
+    # P42: Bypass the "monsters from edges" short-circuit in
+    # AssignObjSpawnPositions so initial spawn positions are always taken
+    # from SpawnPosListN (matching the NES t=0 state on cold boot in
+    # edge-spawn rooms like $73).
+    #
+    # Evidence (2026-04-17):
+    #   NES room $73 at t=0:  slot1 at (X=$70, Y=$9D)  — SpawnPosList1[$97]
+    #   Gen room $73 at t=0:  slot1 at (X=$B0, Y=$DD)  — edge cell, stuck
+    #
+    # Both have $04CD=$08 (bit 3 "edge-spawn" set) and byte-identical
+    # playmap, yet NES uses SpawnPosList1 coords at t=0 while Gen jumps
+    # straight to the edge-cell placement. The observable effect on Gen
+    # is that two Moblins are permanently stranded at Y=$DD because the
+    # edge-cell tiles underneath them are unwalkable and the per-frame
+    # Walker_Move loop never finds an escape direction.
+    #
+    # Forcing AssignObjSpawnPositions to fall through to the normal
+    # spawn loop in OW (regardless of the bit-3 edge-spawn flag) gives
+    # Gen the same initial positions as NES. The edge-spawn mechanism
+    # itself (in InitObject's UninitMonsterFromEdge path) is untouched
+    # and still drives kill/respawn from the room edges.
+    # ------------------------------------------------------------------
+    p42_old = (
+        '    move.b  ($0010,A4),D0\n'
+        '    bne  _anon_z05_56\n'
+        '    move.b  ($04CD,A4),D0\n'
+        '    andi.b #$08,D0\n'
+        '    bne  _L_z05_AssignObjSpawnPositions_AssignSpecialPositions\n'
+        '_anon_z05_56:\n'
+    )
+    p42_new = (
+        '    ; PATCH P42: skip OW edge-spawn short-circuit so initial positions\n'
+        '    ; always come from SpawnPosListN (NES-accurate t=0 state).\n'
+        '    move.b  ($0010,A4),D0\n'
+        '    ; bne -> anon56 and bit-3 check removed (P42).\n'
+        '_anon_z05_56:\n'
+    )
+    if p42_old in text:
+        text = text.replace(p42_old, p42_new, 1)
+        print("  _patch_z05 P42: AssignObjSpawnPositions now always runs normal spawn in OW")
+    else:
+        print("  WARNING: _patch_z05 P42 -- AssignObjSpawnPositions anchor not found")
+
+    # ------------------------------------------------------------------
+    # P44: Replace the NES-style ($06),Y indirect SpawnPosListN fetch
+    # with a Gen-native direct lookup.
+    #
+    # On NES, SpawnPosListAddrsLo/Hi hold 16-bit pointers into ROM bank 5
+    # ($8657 etc.). The transpiled code saves those bytes to $06/$07 and
+    # dereferences via `add.l #NES_RAM,D4; movea.l D4,A0`. That produces
+    # Gen address $FF8657 — which is not where Gen stores its
+    # SpawnPosList0..3 tables (those live at ROM $00040EF4 onward per the
+    # listing). Result: every spawn read returns open-bus / garbage bytes,
+    # so AssignObjSpawnPositions writes junk coordinates for slots 1..9.
+    # That's why P42 alone failed to place enemies at SpawnPosList
+    # positions — the normal-spawn loop was running, but reading garbage.
+    #
+    # Fix: add a 4-entry 32-bit Gen pointer table `SpawnPosListPtrsGen`
+    # and have the loop resolve A0 directly from D3_dir * 4 instead of
+    # going through the NES pointer translation.
+    # ------------------------------------------------------------------
+    p44_setup_old = (
+        '    ; Put the address of the spawn list for Link\'s direction in [06:07].\n'
+        '    ;\n'
+        '    lea     (SpawnPosListAddrsLo).l,A0\n'
+        '    move.b  (A0,D3.W),D0\n'
+        '    move.b  D0,($0006,A4)\n'
+        '    lea     (SpawnPosListAddrsHi).l,A0\n'
+        '    move.b  (A0,D3.W),D0\n'
+        '    move.b  D0,($0007,A4)\n'
+    )
+    p44_setup_new = (
+        '    ; PATCH P44: Gen-native SpawnPosListN pointer resolution.\n'
+        '    ; Save direction index (D3=0..3) to $06 for loop to use.\n'
+        '    move.b  D3,($0006,A4)\n'
+    )
+    p44_loop_old = (
+        '_L_z05_AssignObjSpawnPositions_LoopSpawnSpot:\n'
+        '    move.b  ($06,A4),D1   ; ptr lo\n'
+        '    move.b  ($07,A4),D4  ; ptr hi\n'
+        '    andi.w  #$00FF,D1         ; zero-extend lo byte\n'
+        '    lsl.w   #8,D4\n'
+        '    or.w    D1,D4             ; D4 = NES ptr addr\n'
+        '    ext.l   D4\n'
+        '    add.l   #NES_RAM,D4       ; → Genesis addr\n'
+        '    movea.l D4,A0\n'
+        '    move.b  (A0,D3.W),D0     ; LDA ($nn),Y\n'
+    )
+    p44_loop_new = (
+        '_L_z05_AssignObjSpawnPositions_LoopSpawnSpot:\n'
+        '    ; PATCH P44: Gen-native direct lookup.\n'
+        '    moveq   #0,D4\n'
+        '    move.b  ($06,A4),D4              ; direction index (0..3)\n'
+        '    lsl.w   #2,D4                    ; *4 for dc.l entries\n'
+        '    lea     (SpawnPosListPtrsGen).l,A0\n'
+        '    movea.l (A0,D4.W),A0             ; A0 = Gen addr of SpawnPosList{D4/4}\n'
+        '    move.b  (A0,D3.W),D0             ; fetch spawn cell at SpawnCycle index\n'
+    )
+    # Also append the Gen-native pointer table after SpawnPosListAddrsHi.
+    p44_table_old = (
+        '    dc.b    $86   ; >SpawnPosList3 (NES=$8668)\n'
+        '\n'
+        '    even\n'
+        'SpawnPosList0:\n'
+    )
+    p44_table_new = (
+        '    dc.b    $86   ; >SpawnPosList3 (NES=$8668)\n'
+        '\n'
+        '    ; PATCH P44: Gen-native 32-bit pointer table. Indexed by\n'
+        '    ; direction index (0..3) * 4.\n'
+        '    even\n'
+        'SpawnPosListPtrsGen:\n'
+        '    dc.l    SpawnPosList0\n'
+        '    dc.l    SpawnPosList1\n'
+        '    dc.l    SpawnPosList2\n'
+        '    dc.l    SpawnPosList3\n'
+        '\n'
+        '    even\n'
+        'SpawnPosList0:\n'
+    )
+    p44_ok = True
+    if p44_setup_old in text:
+        text = text.replace(p44_setup_old, p44_setup_new, 1)
+    else:
+        p44_ok = False
+        print("  WARNING: _patch_z05 P44 -- setup anchor not found")
+    if p44_loop_old in text:
+        text = text.replace(p44_loop_old, p44_loop_new, 1)
+    else:
+        p44_ok = False
+        print("  WARNING: _patch_z05 P44 -- loop anchor not found")
+    if p44_table_old in text:
+        text = text.replace(p44_table_old, p44_table_new, 1)
+    else:
+        p44_ok = False
+        print("  WARNING: _patch_z05 P44 -- table anchor not found")
+    if p44_ok:
+        print("  _patch_z05 P44: Gen-native SpawnPosListN direct lookup")
+
+    # ------------------------------------------------------------------
+    # P46: Reseed CurEdgeSpawnCell ($0525) on entry to edge-spawn rooms.
+    #
+    # FindNextEdgeSpawnCell walks CCW from $0525 looking for a walkable
+    # cell (tile < $84). The walk has boundary bugs at corners ($4F, $E0)
+    # where it temporarily escapes into out-of-bounds playmap addresses
+    # and reads garbage bytes. On NES, those garbage bytes happen to land
+    # in SRAM locations with specific values, so the walk terminates
+    # pseudo-deterministically at top-edge cells like $4X (Y=$3D,
+    # enemies walk down into the room). On Gen, the garbage bytes come
+    # from different RAM and the walk terminates at bottom-edge cells
+    # ($EX), where the tiles are unwalkable for the UP direction — so
+    # enemies can never move into the play area.
+    #
+    # Force $0525 to $48 (top-edge cell, mid-screen) whenever the room
+    # has RoomAttrsOW_F bit 3 set on entry. Enemies spawn from the top,
+    # which is the NES-visible behavior players expect for edge-spawn
+    # rooms like $73, $5B, $68, etc.
+    # ------------------------------------------------------------------
+    p46_old = '    move.b  D0,($04CD,A4)\n    bsr     ResetInvObjState\n'
+    p46_new = (
+        '    move.b  D0,($04CD,A4)\n'
+        '    ; PATCH P46: reseed CurEdgeSpawnCell to top-edge for\n'
+        '    ; edge-spawn rooms, so enemies always enter from top where\n'
+        '    ; tiles are walkable downward (Gen-specific workaround for\n'
+        '    ; FindNextEdgeSpawnCell boundary bug at corners).\n'
+        '    btst    #3,D0\n'
+        '    beq.s   _L_z05_skip_p46_reseed\n'
+        '    move.b  #$48,($0525,A4)\n'
+        '_L_z05_skip_p46_reseed:\n'
+        '    bsr     ResetInvObjState\n'
+    )
+    if p46_old in text:
+        text = text.replace(p46_old, p46_new, 1)
+        print("  _patch_z05 P46: reseed CurEdgeSpawnCell to $48 on edge-spawn room entry")
+    else:
+        # DEBUG: show what's in text near ($04CD,A4)
+        idx = text.find('($04CD,A4)')
+        if idx >= 0:
+            print(f"  WARNING: P46 anchor not found. Context around $04CD: {repr(text[idx:idx+150])}")
+        else:
+            print("  WARNING: P46 -- $04CD not present in text at all!")
+
     with open(path, 'w', encoding='utf-8') as f:
         f.write(text)
 
@@ -5250,6 +5433,133 @@ def _patch_z07(path):
         print("  _patch_z07 P40: TURBO_LINK no-clip in Walker_CheckTileCollision")
     else:
         print("  WARNING: _patch_z07 P40 -- Walker_CheckTileCollision anchor not found")
+
+    # ------------------------------------------------------------------
+    # P43 (Codex): Gate InitObject's edge-spawn overwrite on first frame
+    # of a fresh room entry when the slot already has a residual position
+    # from a previous room. Matches NES t=0 behavior in rooms like $73.
+    #
+    # NES enters edge-spawn rooms with $004B (MonstersFromEdgesLongTimer)
+    # non-zero (leftover from earlier edge-spawn rooms) or one prescaler
+    # tick from decrement, so UninitMonsterFromEdge hits the "gate" path
+    # and leaves the enemy's previous-room position intact. The timer
+    # itself does decrement — via the NMI sweep at z_07 _L_z07_IsrNmi_Update-
+    # Timers ($26 prescaler; when $26 underflows, resets to 9 and
+    # decrements $27..$4E, which includes $004B).
+    #
+    # Gen enters room $73 with $004B == 0 because its NMI/mode timing
+    # differs slightly. Every slot's InitObject call then falls through
+    # to InitMonsterFromEdge and overwrites the SpawnPosList placement
+    # with an edge cell (Y=$DD, stuck because the tile there is
+    # unwalkable).
+    #
+    # This patch, when $004B == 0, checks whether:
+    #   [000F] == $FF  (fresh room entry: UpdateObject saves the original
+    #                   Uninit flag there at z_07:5244)
+    #   ObjX[slot] != 0 OR ObjY[slot] != 0  (has residual position)
+    # If both hold, seed $004B = 1 and Uninit[slot] = 1, then RTS —
+    # preserving the residual position for this frame. Otherwise the
+    # original edge-spawn path runs (first-time rooms without residuals
+    # still get a legitimate edge placement).
+    # ------------------------------------------------------------------
+    p43_old = (
+        '_L_z07_InitObject_UninitMonsterFromEdge:\n'
+        '    ; If the "monsters from edges" long timer expired, then\n'
+        '    ; go bring the monster in.\n'
+        '    ; Else revert the flag, so this monster becomes uninitialized.\n'
+        '    ;\n'
+        '    move.b  ($004B,A4),D0\n'
+        '    beq  _L_z07_InitObject_InitMonsterFromEdge\n'
+        '    lea     ($0492,A4),A0\n'
+        '    move.b  D0,(A0,D2.W)\n'
+        '    rts\n'
+    )
+    p43_new = (
+        '_L_z07_InitObject_UninitMonsterFromEdge:\n'
+        '    ; If the "monsters from edges" long timer expired, then\n'
+        '    ; go bring the monster in.\n'
+        '    ; Else revert the flag, so this monster becomes uninitialized.\n'
+        '    ;\n'
+        '    ; PATCH P43 (Codex): extra gate on fresh room-entry with\n'
+        '    ; residual position so enemies keep their previous-room\n'
+        '    ; positions instead of being re-edge-spawned (matches NES).\n'
+        '    move.b  ($004B,A4),D0\n'
+        '    bne     _L_z07_InitObject_UninitMonsterFromEdge_Gate\n'
+        '    ; timer == 0. Check for fresh room-entry + residual position.\n'
+        '    move.b  ($000F,A4),D0\n'
+        '    cmpi.b  #$FF,D0\n'
+        '    bne     _L_z07_InitObject_InitMonsterFromEdge\n'
+        '    lea     ($0070,A4),A0\n'
+        '    move.b  (A0,D2.W),D0\n'
+        '    bne     _L_z07_InitObject_UninitMonsterFromEdge_Seed\n'
+        '    lea     ($0084,A4),A0\n'
+        '    move.b  (A0,D2.W),D0\n'
+        '    beq     _L_z07_InitObject_InitMonsterFromEdge\n'
+        '    even\n'
+        '_L_z07_InitObject_UninitMonsterFromEdge_Seed:\n'
+        '    moveq   #1,D0\n'
+        '    move.b  D0,($004B,A4)\n'
+        '    lea     ($0492,A4),A0\n'
+        '    move.b  D0,(A0,D2.W)\n'
+        '    rts\n'
+        '    even\n'
+        '_L_z07_InitObject_UninitMonsterFromEdge_Gate:\n'
+        '    lea     ($0492,A4),A0\n'
+        '    move.b  D0,(A0,D2.W)\n'
+        '    rts\n'
+    )
+    if p43_old in text:
+        text = text.replace(p43_old, p43_new, 1)
+        print("  _patch_z07 P43: Codex UninitMonsterFromEdge residual-position gate")
+    else:
+        print("  WARNING: _patch_z07 P43 -- UninitMonsterFromEdge anchor not found")
+
+    # ------------------------------------------------------------------
+    # P47: Anti-bottom-edge snap. Before each edge-spawn walk, if
+    # $0525 (CurEdgeSpawnCell) is on the bottom edge (hi-nibble == $E),
+    # reset it to $48 (top-edge cell, mid-screen).
+    #
+    # FindNextEdgeSpawnCell walks CCW from $0525 and can land at bottom-
+    # edge cells like $E5/$EB. Enemies placed there at Y=$DD are outside
+    # RoomBoundDown ($CD) and their UP tile check fails ($C5 unwalkable)
+    # so they can never enter the playfield. Forcing a snap-to-top when
+    # the cursor is on the bottom edge guarantees subsequent spawns come
+    # in from the top where Y=$3D is walkable downward.
+    # ------------------------------------------------------------------
+    p47_old = (
+        '_L_z07_InitObject_InitMonsterFromEdge:\n'
+        '    moveq   #0,D2\n'
+        '    move.b  ($0340,A4),D2\n'
+        '    moveq   #5,D0\n'
+        '    bsr     SwitchBank\n'
+        '    bsr     FindNextEdgeSpawnCell\n'
+    )
+    p47_new = (
+        '_L_z07_InitObject_InitMonsterFromEdge:\n'
+        '    moveq   #0,D2\n'
+        '    move.b  ($0340,A4),D2\n'
+        '    ; PATCH P47: if CurEdgeSpawnCell hi-nibble is not in the\n'
+        '    ; valid edge-walk range [$40..$D0], snap to $48 (top-edge\n'
+        '    ; mid-screen). Catches bottom-edge ($E0) and OOB drift\n'
+        '    ; ($30/$20/$F0/etc. from corner boundary bugs).\n'
+        '    move.b  ($0525,A4),D0\n'
+        '    andi.b  #$F0,D0\n'
+        '    cmpi.b  #$40,D0\n'
+        '    blo     _L_z07_P47_snap\n'
+        '    cmpi.b  #$E0,D0\n'
+        '    blo     _L_z07_P47_cell_ok\n'
+        '_L_z07_P47_snap:\n'
+        '    move.b  #$48,($0525,A4)\n'
+        '_L_z07_P47_cell_ok:\n'
+        '    moveq   #5,D0\n'
+        '    bsr     SwitchBank\n'
+        '    bsr     FindNextEdgeSpawnCell\n'
+    )
+    if p47_old in text:
+        text = text.replace(p47_old, p47_new, 1)
+        print("  _patch_z07 P47: anti-bottom-edge snap for CurEdgeSpawnCell")
+    else:
+        print("  WARNING: _patch_z07 P47 -- InitMonsterFromEdge anchor not found")
 
     with open(path, 'w', encoding='utf-8') as f:
         f.write(text)

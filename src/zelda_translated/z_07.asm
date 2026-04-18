@@ -7786,8 +7786,30 @@ _L_z07_InitObject_UninitMonsterFromEdge:
     ; go bring the monster in.
     ; Else revert the flag, so this monster becomes uninitialized.
     ;
+    ; PATCH P43 (Codex): extra gate on fresh room-entry with
+    ; residual position so enemies keep their previous-room
+    ; positions instead of being re-edge-spawned (matches NES).
     move.b  ($004B,A4),D0
-    beq  _L_z07_InitObject_InitMonsterFromEdge
+    bne     _L_z07_InitObject_UninitMonsterFromEdge_Gate
+    ; timer == 0. Check for fresh room-entry + residual position.
+    move.b  ($000F,A4),D0
+    cmpi.b  #$FF,D0
+    bne     _L_z07_InitObject_InitMonsterFromEdge
+    lea     ($0070,A4),A0
+    move.b  (A0,D2.W),D0
+    bne     _L_z07_InitObject_UninitMonsterFromEdge_Seed
+    lea     ($0084,A4),A0
+    move.b  (A0,D2.W),D0
+    beq     _L_z07_InitObject_InitMonsterFromEdge
+    even
+_L_z07_InitObject_UninitMonsterFromEdge_Seed:
+    moveq   #1,D0
+    move.b  D0,($004B,A4)
+    lea     ($0492,A4),A0
+    move.b  D0,(A0,D2.W)
+    rts
+    even
+_L_z07_InitObject_UninitMonsterFromEdge_Gate:
     lea     ($0492,A4),A0
     move.b  D0,(A0,D2.W)
     rts
@@ -7796,6 +7818,19 @@ _L_z07_InitObject_UninitMonsterFromEdge:
 _L_z07_InitObject_InitMonsterFromEdge:
     moveq   #0,D2
     move.b  ($0340,A4),D2
+    ; PATCH P47: if CurEdgeSpawnCell hi-nibble is not in the
+    ; valid edge-walk range [$40..$D0], snap to $48 (top-edge
+    ; mid-screen). Catches bottom-edge ($E0) and OOB drift
+    ; ($30/$20/$F0/etc. from corner boundary bugs).
+    move.b  ($0525,A4),D0
+    andi.b  #$F0,D0
+    cmpi.b  #$40,D0
+    blo     _L_z07_P47_snap
+    cmpi.b  #$E0,D0
+    blo     _L_z07_P47_cell_ok
+_L_z07_P47_snap:
+    move.b  #$48,($0525,A4)
+_L_z07_P47_cell_ok:
     moveq   #5,D0
     jsr     SwitchBank
     jsr     FindNextEdgeSpawnCell

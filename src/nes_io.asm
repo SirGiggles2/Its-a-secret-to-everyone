@@ -3056,24 +3056,22 @@ _transfer_tilebuf_fast:
     move.w  D5,D0
     subi.w  #$2000,D0               ; D0.w = index (0..$3BF)
 
-    ; T39 HUD row guard (Stage B + Stage C + Stage D):
-    ; - NT_CACHE rows 0-3 (offsets $000-$07F) are always HUD domain.
-    ;   Scroll-split on NES masks them; on Gen they must be protected
-    ;   unconditionally from bulk-tilebuf stomps (cave and overworld
-    ;   both write playfield data aimed at these rows that the NES
-    ;   scroll split hides but Gen would display).
-    ; - NT_CACHE rows 4-6 (offsets $080-$0DF) hold the HUD icon band
-    ;   (hearts/rupees/keys/bombs/compass/map). Cave renders stomp
-    ;   these via bulk path; overworld renders use the same path at
-    ;   boot + HUD updates. Gate rows 4-6 whenever the game is in a
-    ;   cave-related mode:
+    ; T39 HUD row guard (Stage B + Stage C + Stage D + P45):
+    ; - NT_CACHE rows 0-6 (offsets $000-$0DF) can contain either HUD
+    ;   text (legit $2000-source records) or playfield data (from
+    ;   $2400-fold or full-NT cave stomps).
+    ;
+    ; P45: Unconditional row-0-3 block made the HUD text rows 2-3
+    ;   ("TRIFORCE", "LIFE") invisible in overworld mode, shifting the
+    ;   visible HUD remnant down by 16 px. Gate all rows 0-6 the same
+    ;   way — only block when the game is in a cave-related mode where
+    ;   the playfield bulk transfer actually stomps the HUD area.
+    ; - Gate rows 0-6 whenever the game is in a cave-related mode:
     ;     GameMode == $0B (in cave)
     ;     GameMode == $10 (stair / load-screen transition)
     ;     TargetMode == $0B (entering cave, before GameMode catches up)
     ;   Any one triggers the block. Mode bytes: $0012=GameMode,
     ;   $005B=TargetMode.
-    cmpi.w  #$0080,D0
-    blo     .ttf_nt_skip
     cmpi.w  #$00E0,D0
     bhs.s   .ttf_nt_cache_ok        ; offset >= $E0: rows 7+, no guard
     cmpi.b  #$0B,($0012,A4)         ; mode == cave?
