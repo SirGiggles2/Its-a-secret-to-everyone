@@ -98,6 +98,28 @@ reads + 3 compares per NT tile. Hoisted out of the loop into a single
 canonical template for the fix: **cache the invariant outside the
 loop**.
 
+## Phase 0 status (2026-04-19)
+
+Shipped as commit `1504ecff` — P48. Native `MoveObject` replaces the
+transpiled block in z_07.asm via `_patch_z07`'s `P48_WALKER` flag
+(default on). Inlines q-speed fraction semantics so carry from each
+`add.b`/`sub.b` is captured by `scc` immediately, then plain byte
+arithmetic updates `ObjGridOffset` and `ObjX`/`ObjY`.
+
+Parity: 180 logical ticks captured fresh-boot walk through
+$77→$76→$75→$74 with P48=False vs P48=True. Byte-identical across
+all 12 object slots × (type, x, y, dir, state, pos_frac, grid_ofs,
+qspd_frac).
+
+Global `AddQSpeedToPositionFraction` and `SubQSpeedFromPositionFraction`
+labels in z_01.asm are untouched — other callers still use the
+transpiled version.
+
+Remaining: measure FPS improvement at $73 (blocked by a separate
+TURBO_LINK-only freeze; see genesis_shell.asm TURBO_LINK equ line for
+workaround). Once that's fixed, run walker_perf.lua at $73 with
+P48=on vs P48=off and confirm the budgeted 44 → ≥48 fps gain.
+
 ## Priority for fixes
 
 | # | Pattern              | Sites | Cyc/site | Hot-loop impact |
