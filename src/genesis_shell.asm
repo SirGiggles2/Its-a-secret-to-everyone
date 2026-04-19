@@ -40,11 +40,15 @@ PPU_STATE_SIZE  equ $40         ; 64 bytes: PPU ($FF0800-$FF080F) + MMC1 ($FF081
 ; it. Set to 0 to strip both the hook and the routine for release builds.
 DEBUG_TELEPORT  equ 0
 
-; TURBO_LINK — OW-only speed/no-clip boost (P39/P40).
-; KNOWN ISSUE (2026-04-19): enabling causes $73 to freeze ~240 game
-; frames after entry. Avoid $73 during TURBO testing; use probes that
-; stop at $74 or earlier. Commit-default should be 0.
-TURBO_LINK      equ 1
+; TURBO_LINK — OW-only no-clip + speed boost. KNOWN BUG (2026-04-19):
+; enabling triggers an ADDRESS ERROR exception at $73 ~240 frames after
+; entry. Exception log at $FF0900-$FF094B after trap; confirmed the
+; trap is a `jmp (A0)` with A0=$41EC041F (odd, hence address error).
+; Source is one of 30+ `_m68k_tablejump` call sites; out-of-range D0
+; index reads past end of jump table and loads garbage pointer.
+; WHY TURBO triggers this specifically is still under investigation.
+; Default 0 for main builds. Flip to 1 for QA walking only.
+TURBO_LINK      equ 0
 
 ; Active H-int event queue for the frame currently being rendered.
 ; _ags_prearm promotes staged state into this queue and HBlankISR consumes it.
@@ -587,8 +591,11 @@ ExcBusError:
 
 ExcAddrError:
     move.b  #3,($FF0900).l
-    move.w  8(SP),($FF0902).l
-    move.l  10(SP),($FF0904).l
+    move.w  8(SP),($FF0902).l           ; SR
+    move.l  10(SP),($FF0904).l          ; PC
+    move.w  0(SP),($FF0944).l           ; status word
+    move.l  2(SP),($FF0946).l           ; access address (faulting addr)
+    move.w  6(SP),($FF094A).l           ; instruction register (opcode)
     movem.l D0-D7/A0-A6,($FF0908).l
 .spin:
     bra.s   .spin
@@ -765,27 +772,10 @@ _debug_teleport_check:
 ;==============================================================================
     ifne TURBO_LINK
 _turbo_link_boost:
-    ; SAFE TURBO: instead of bypassing Walker_Move and writing ObjX
-    ; directly (which desyncs ObjX/ObjGridOffset/ObjPosFrac and caused
-    ; a reproducible $73 freeze ~250 frames after room entry), this
-    ; version just max-clamps Link's quarter-speed fraction when any
-    ; DPAD direction is held. Walker_Move's normal pipeline then
-    ; advances ObjX/Y + ObjGridOffset + ObjPosFrac consistently.
-    ; No state desync, no freeze.
-    tst.b   ($0010,A4)              ; OW gate
-    bne.s   .tlb_exit
-    cmpi.b  #$05,($0012,A4)         ; mode 5 only
-    bne.s   .tlb_exit
-    tst.b   ($0013,A4)              ; sub 0 only
-    bne.s   .tlb_exit
-    move.b  ($00FA,A4),D1           ; ButtonsDown
-    andi.b  #$0F,D1
-    beq.s   .tlb_exit
-    ; Bump Link's qSpeedFrac to max so the next frame's four
-    ; AddQSpeedToPositionFraction calls each overflow, producing
-    ; 4 pixel steps per frame vs the baseline 1 pixel step.
-    move.b  #$FF,($03BC,A4)         ; ObjQSpeedFrac[0] = $FF
-.tlb_exit:
+    ; Disabled body: $73 freezes ~240 frames after entry whenever
+    ; this routine writes any Link state (ObjX, ObjGridOffset,
+    ; ObjQSpeedFrac, or triggers Walker_Move). Leaving as no-op rts
+    ; so TURBO_LINK=1 still assembles but doesn't mis-behave.
     rts
 _turbo_link_boost_disabled:
     ; OW gate
