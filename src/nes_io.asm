@@ -2866,10 +2866,27 @@ _transfer_chr_block_fast:
     even
 _transfer_tilebuf_fast:
     ; Caller passes buffer pointer in A0 (32-bit absolute address).
-    movem.l D0-D6/A0-A3,-(SP)
+    movem.l D0-D7/A0-A3,-(SP)
 
     ; Reset PPU latch (matches _ppu_read_2 in original TransferTileBuf)
     clr.b   (PPU_LATCH).l
+
+    ; HUD guard hoisted out of inner loop: compute once here, reused per
+    ; tile in the .ttf_nt_range loop. D7.b = 1 if any cave-mode predicate
+    ; is active and NT rows 0-6 writes must be suppressed; 0 otherwise.
+    ; Was previously 3 memory reads + 3 compares per NT tile; now 1
+    ; tst.b D7 per tile. Matters because HUD updates touch hundreds of
+    ; tiles per frame and the guard runs on every one.
+    moveq   #0,D7
+    cmpi.b  #$0B,($0012,A4)         ; mode == cave?
+    beq.s   .ttf_hud_guard_on
+    cmpi.b  #$10,($0012,A4)         ; mode == stair transition?
+    beq.s   .ttf_hud_guard_on
+    cmpi.b  #$0B,($005B,A4)         ; target mode == cave?
+    bne.s   .ttf_hud_guard_off
+.ttf_hud_guard_on:
+    moveq   #1,D7
+.ttf_hud_guard_off:
 
     ; A0 = buffer pointer (set by caller via TransferBufPtrs)
     ; A3 = safety limit: bail if buffer exceeds 2048 bytes (prevents runaway parsing)
@@ -3056,30 +3073,16 @@ _transfer_tilebuf_fast:
     move.w  D5,D0
     subi.w  #$2000,D0               ; D0.w = index (0..$3BF)
 
-    ; T39 HUD row guard (Stage B + Stage C + Stage D + P45):
-    ; - NT_CACHE rows 0-6 (offsets $000-$0DF) can contain either HUD
-    ;   text (legit $2000-source records) or playfield data (from
-    ;   $2400-fold or full-NT cave stomps).
-    ;
-    ; P45: Unconditional row-0-3 block made the HUD text rows 2-3
-    ;   ("TRIFORCE", "LIFE") invisible in overworld mode, shifting the
-    ;   visible HUD remnant down by 16 px. Gate all rows 0-6 the same
-    ;   way — only block when the game is in a cave-related mode where
-    ;   the playfield bulk transfer actually stomps the HUD area.
-    ; - Gate rows 0-6 whenever the game is in a cave-related mode:
-    ;     GameMode == $0B (in cave)
-    ;     GameMode == $10 (stair / load-screen transition)
-    ;     TargetMode == $0B (entering cave, before GameMode catches up)
-    ;   Any one triggers the block. Mode bytes: $0012=GameMode,
-    ;   $005B=TargetMode.
+    ; T39 HUD row guard (Stage B + Stage C + Stage D + P45 + perf-hoist):
+    ; NT_CACHE rows 0-6 (offsets $000-$0DF) may contain either legitimate
+    ; HUD text (OW mode) or stomped playfield data (cave modes). Skip the
+    ; tile only when the hoisted cave-mode flag D7 is set. Computation of
+    ; D7 happens once at the top of _transfer_tilebuf_fast; the inner
+    ; loop pays only one tst+beq per tile.
     cmpi.w  #$00E0,D0
     bhs.s   .ttf_nt_cache_ok        ; offset >= $E0: rows 7+, no guard
-    cmpi.b  #$0B,($0012,A4)         ; mode == cave?
-    beq     .ttf_nt_skip
-    cmpi.b  #$10,($0012,A4)         ; mode == stair transition?
-    beq     .ttf_nt_skip
-    cmpi.b  #$0B,($005B,A4)         ; target mode == cave?
-    beq     .ttf_nt_skip
+    tst.b   D7
+    bne     .ttf_nt_skip
 .ttf_nt_cache_ok:
 
     ; Cache tile index in NT_CACHE
@@ -3580,5 +3583,5 @@ _transfer_tilebuf_fast:
     ; corrupt palette on subsequent VDP_DATA writes.
     ; Target $FFFC (unused VRAM) to avoid corrupting tile 0 on stray writes.
     move.l  #$7FFC0003,(VDP_CTRL).l
-    movem.l (SP)+,D0-D6/A0-A3
+    movem.l (SP)+,D0-D7/A0-A3
     rts

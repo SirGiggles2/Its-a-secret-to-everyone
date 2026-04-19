@@ -5203,6 +5203,181 @@ def _patch_z07(path):
             lines[start_idx:end_idx+1] = replacement
             print("  _patch_z07: ClearNameTable -> _clear_nametable_fast")
 
+    # ------------------------------------------------------------------
+    # P48 (/mathproblem Phase 0): hand-write MoveObject + inlined q-speed
+    # fraction semantics in native M68K. The transpiled version wraps
+    # every plain add/sub in eori/addx/eori CCR sandwiches and the
+    # AddQSpeedToPositionFraction / SubQSpeedFromPositionFraction helpers
+    # in z_01.asm use PHP/PLP (software stack `-(A5)`/`(A5)+`) to serialize
+    # carry through bounds checks. Net cost: ~4700 68K cycles per object
+    # per frame, which drops room $73 (3-Moblin arrow ambush) to ~44 fps
+    # with audibly slow music.
+    #
+    # This patch replaces the MoveObject block (labels MoveObject,
+    # _L_z07_MoveObject_ApplyQSpeedToPosition, _L_z07_MoveObject_Exit,
+    # _L_z07_MoveObject_Down, _L_z07_MoveObject_Right, _L_z07_MoveObject_Left)
+    # up to but not including PlayerScreenEdgeBounds. The global
+    # AddQSpeedToPositionFraction / SubQSpeedFromPositionFraction labels
+    # in z_01.asm stay intact — other callers still use the transpiled
+    # version. (Plan-file constraint: don't widen risk to all callers of
+    # the helpers just to fix the $73 walker hot path.)
+    #
+    # Uses scc to extract the M68K carry into a 0/1 step amount, then
+    # plain add.b / sub.b on ObjGridOffset and ObjX/Y. Limit checks
+    # against PositiveGridCellSize ($010E) and NegativeGridCellSize
+    # ($010F) use cmp + conditional branch, no PHP/PLP.
+    #
+    # Sentinel comments `PATCH P48 BEGIN/END` tag the region so later
+    # CFG / peephole passes skip the hand-written body.
+    # ------------------------------------------------------------------
+    P48_WALKER = True
+
+    if P48_WALKER:
+        mo_start = None
+        mo_end = None
+        for i, line in enumerate(lines):
+            if line.strip() == 'MoveObject:':
+                mo_start = i
+                break
+        if mo_start is not None:
+            for i in range(mo_start + 1, len(lines)):
+                if lines[i].strip() == 'PlayerScreenEdgeBounds:':
+                    # Back up past trailing `    even` / blank lines so
+                    # the NES alignment directive for the next label
+                    # stays intact on its own.
+                    mo_end = i
+                    while mo_end > mo_start + 1 and lines[mo_end - 1].strip() in ('', 'even'):
+                        mo_end -= 1
+                    break
+        assert mo_start is not None, "P48: MoveObject label not found in z_07.asm"
+        assert mo_end is not None and mo_end > mo_start, \
+            f"P48: PlayerScreenEdgeBounds end boundary not found after MoveObject"
+
+        p48_body_text = (
+            '    even\n'
+            'MoveObject:\n'
+            '; PATCH P48 BEGIN native walker chain (/mathproblem Phase 0)\n'
+            '; D2 = object slot (0..11). Reads ($000F,A4) = direction bits.\n'
+            '; Updates ObjX($70), ObjY($84), ObjGridOffset($0394),\n'
+            '; ObjPosFrac($03A8); writes PositiveGridCellSize ($010E) and\n'
+            '; NegativeGridCellSize ($010F). Clobbers D0/D1/D3/A0; preserves\n'
+            '; D2/A4/A5. Returns with unspecified CCR (callers do not BCC).\n'
+            ';\n'
+            '; Addressing note: M68K (d,An,Dn.W) displacement is 8-bit\n'
+            '; signed (-128..+127). ObjX at $70 fits directly; everything\n'
+            '; beyond (ObjY $84, ObjGridOffset $394, ObjPosFrac $3A8,\n'
+            '; ObjQSpeedFrac $3BC) must be reached via lea + (An,Dn.W).\n'
+            '    ; Set grid-cell-size limits: slot 0 (Link) gets +8/-8, other\n'
+            '    ; objects +16/-16.\n'
+            '    tst.b   D2\n'
+            '    bne.s   _L_z07_P48_nonlink\n'
+            '    move.b  #$08,($010E,A4)\n'
+            '    move.b  #$F8,($010F,A4)\n'
+            '    bra.s   _L_z07_P48_chk_dir\n'
+            '_L_z07_P48_nonlink:\n'
+            '    move.b  #$10,($010E,A4)\n'
+            '    move.b  #$F0,($010F,A4)\n'
+            '_L_z07_P48_chk_dir:\n'
+            '    ; Direction == 0: bail.\n'
+            '    move.b  ($000F,A4),D0\n'
+            '    beq     _L_z07_P48_exit\n'
+            '    ; Apply quarter-speed 4 times. The first three bsrs return\n'
+            '    ; back here; the fourth call is the fall-through into the\n'
+            '    ; shared body, whose rts returns to MoveObject\'s caller.\n'
+            '    bsr     _L_z07_P48_apply\n'
+            '    bsr     _L_z07_P48_apply\n'
+            '    bsr     _L_z07_P48_apply\n'
+            '    ; fall through\n'
+            '_L_z07_P48_apply:\n'
+            '    ; Dispatch on direction bit. NES layout: bit0=R, bit1=L,\n'
+            '    ; bit2=D, bit3=U. LSR chain matches NES @ApplyQSpeedToPosition.\n'
+            '    move.b  ($000F,A4),D0\n'
+            '    lsr.b   #1,D0\n'
+            '    bcs.s   _L_z07_P48_right\n'
+            '    lsr.b   #1,D0\n'
+            '    bcs.s   _L_z07_P48_left\n'
+            '    lsr.b   #1,D0\n'
+            '    bcs.s   _L_z07_P48_down\n'
+            '    ; Up: inline SubQSpeed, apply to ObjY.\n'
+            '    bsr     _L_z07_P48_sub_qspeed\n'
+            '    lea     ($0084,A4),A0\n'
+            '    sub.b   D1,(A0,D2.W)\n'
+            '    rts\n'
+            '_L_z07_P48_down:\n'
+            '    bsr     _L_z07_P48_add_qspeed\n'
+            '    lea     ($0084,A4),A0\n'
+            '    add.b   D1,(A0,D2.W)\n'
+            '    rts\n'
+            '_L_z07_P48_right:\n'
+            '    bsr     _L_z07_P48_add_qspeed\n'
+            '    add.b   D1,($0070,A4,D2.W)       ; $70 fits in 8-bit disp\n'
+            '    rts\n'
+            '_L_z07_P48_left:\n'
+            '    bsr     _L_z07_P48_sub_qspeed\n'
+            '    sub.b   D1,($0070,A4,D2.W)\n'
+            '    rts\n'
+            '_L_z07_P48_exit:\n'
+            '    rts\n'
+            '    ; --- Inlined AddQSpeedToPositionFraction ---\n'
+            '    ; ObjPosFrac[D2] += ObjQSpeedFrac[D2] (plain add — no CLC).\n'
+            '    ; D1 = 1 if fractional add overflowed, else 0. Limit check\n'
+            '    ; against Positive/NegativeGridCellSize forces D1 = 0 (no\n'
+            '    ; step) when ObjGridOffset is already at a limit. Applies\n'
+            '    ; D1 to ObjGridOffset[D2]. Caller applies D1 to ObjX or ObjY.\n'
+            '_L_z07_P48_add_qspeed:\n'
+            '    lea     ($03A8,A4),A0             ; ObjPosFrac base\n'
+            '    move.b  (A0,D2.W),D0              ; D0 = ObjPosFrac[D2]\n'
+            '    lea     ($03BC,A4),A0             ; ObjQSpeedFrac base\n'
+            '    add.b   (A0,D2.W),D0              ; D0 += ObjQSpeedFrac[D2]  <-- C set here\n'
+            '    scs     D1                        ; capture C IMMEDIATELY before it gets clobbered\n'
+            '    andi.b  #$01,D1                   ; D1 = 1 or 0\n'
+            '    lea     ($03A8,A4),A0\n'
+            '    move.b  D0,(A0,D2.W)              ; store ObjPosFrac[D2] (clobbers C, safe now)\n'
+            '    lea     ($0394,A4),A0             ; ObjGridOffset base\n'
+            '    move.b  (A0,D2.W),D3              ; D3 = ObjGridOffset[D2]\n'
+            '    cmp.b   ($010E,A4),D3             ; D3 == PositiveGridCellSize?\n'
+            '    beq.s   _L_z07_P48_add_clear\n'
+            '    cmp.b   ($010F,A4),D3             ; D3 == NegativeGridCellSize?\n'
+            '    bne.s   _L_z07_P48_add_apply\n'
+            '_L_z07_P48_add_clear:\n'
+            '    moveq   #0,D1                     ; at limit → no step\n'
+            '_L_z07_P48_add_apply:\n'
+            '    add.b   D1,(A0,D2.W)              ; ObjGridOffset[D2] += D1\n'
+            '    rts\n'
+            '    ; --- Inlined SubQSpeedFromPositionFraction ---\n'
+            '    ; ObjPosFrac[D2] -= ObjQSpeedFrac[D2] (plain sub — no SEC).\n'
+            '    ; D1 = 1 if underflow (step taken), else 0. Limit check\n'
+            '    ; force-zeroes D1 when at a boundary.\n'
+            '    ; CRITICAL: scs must run IMMEDIATELY after sub.b; any\n'
+            '    ; intervening move.b/moveq clobbers the C flag.\n'
+            '_L_z07_P48_sub_qspeed:\n'
+            '    lea     ($03A8,A4),A0\n'
+            '    move.b  (A0,D2.W),D0\n'
+            '    lea     ($03BC,A4),A0\n'
+            '    sub.b   (A0,D2.W),D0              ; C = 1 if borrow (step taken)\n'
+            '    scs     D1                        ; capture borrow IMMEDIATELY\n'
+            '    andi.b  #$01,D1                   ; D1 = 1 (step) or 0 (no step)\n'
+            '    lea     ($03A8,A4),A0\n'
+            '    move.b  D0,(A0,D2.W)              ; store (safe to clobber C now)\n'
+            '    lea     ($0394,A4),A0\n'
+            '    move.b  (A0,D2.W),D3\n'
+            '    cmp.b   ($010E,A4),D3\n'
+            '    beq.s   _L_z07_P48_sub_clear\n'
+            '    cmp.b   ($010F,A4),D3\n'
+            '    bne.s   _L_z07_P48_sub_apply\n'
+            '_L_z07_P48_sub_clear:\n'
+            '    moveq   #0,D1\n'
+            '_L_z07_P48_sub_apply:\n'
+            '    sub.b   D1,(A0,D2.W)\n'
+            '    rts\n'
+            '; PATCH P48 END native walker chain\n'
+            '\n'
+        )
+        p48_body = p48_body_text.splitlines(keepends=True)
+        lines[mo_start:mo_end] = p48_body
+        print(f"  _patch_z07 P48: native MoveObject + inlined q-speed "
+              f"(replaced old block -> {len(p48_body)} lines)")
+
     # ---- Patch 1: Wire PPU scroll to VDP VSRAM ----
     # After the NMI handler's SetScroll block writes CurHScroll/CurVScroll
     # to PPU shadows, call _apply_genesis_scroll to push them to VDP VSRAM.
@@ -5384,7 +5559,11 @@ def _patch_z07(path):
     # on top of the normal 1 px collision-aware step. The boost lives in
     # genesis_shell.asm gated by TURBO_LINK; flag=0 strips the routine.
     # ------------------------------------------------------------------
-    # Walker_Move and Link_HandleInput — try all jsr/bsr combos.
+    # P39 (TURBO_LINK): after UpdatePlayer's Walker_Move for Link runs,
+    # call _turbo_link_boost which (when enabled) runs Walker_Move a few
+    # more times for slot 0. This avoids state desync (ObjX/ObjGridOffset/
+    # ObjPosFrac are all advanced by Walker_Move's normal pipeline) and
+    # reliably gives Link extra movement per frame.
     p39_applied = False
     for lhi in ('jsr', 'bsr'):
         for wm in ('jsr', 'bsr'):
@@ -5421,8 +5600,15 @@ def _patch_z07(path):
         '    tst.b   D2\n'
         '    bne.s   _L_z07_Walker_CheckTileCollision_notLink\n'
         '    ; Link no-clip: skip tile collision but still call\n'
-        '    ; CheckScreenEdge so screen transitions still latch.\n'
+        '    ; CheckScreenEdge so scroll transitions still latch.\n'
+        '    ; CheckScreenEdge clobbers D2 internally (uses it as a\n'
+        '    ; temp for Link\'s X/Y), so we save/restore it around the\n'
+        '    ; call — otherwise the caller Walker_Move sees garbage in\n'
+        '    ; D2 and takes the non-Link dispatch path, eventually\n'
+        '    ; corrupting random RAM and freezing at $73.\n'
+        '    move.w  D2,-(SP)\n'
         '    jsr     CheckScreenEdge    ; PATCH P40: edge-trigger preserved\n'
+        '    move.w  (SP)+,D2\n'
         '    rts\n'
         '_L_z07_Walker_CheckTileCollision_notLink:\n'
         '    endc\n'

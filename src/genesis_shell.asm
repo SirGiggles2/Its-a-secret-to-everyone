@@ -38,7 +38,13 @@ PPU_STATE_SIZE  equ $40         ; 64 bytes: PPU ($FF0800-$FF080F) + MMC1 ($FF081
 ; When 1, the DPAD shortcut routine in _debug_teleport_check (end of file)
 ; is live and the P37 hook in z_07 routes UpdateMode5Play_NotInMenu through
 ; it. Set to 0 to strip both the hook and the routine for release builds.
-DEBUG_TELEPORT  equ 1
+DEBUG_TELEPORT  equ 0
+
+; TURBO_LINK — OW-only speed/no-clip boost (P39/P40).
+; KNOWN ISSUE (2026-04-19): enabling causes $73 to freeze ~240 game
+; frames after entry. Avoid $73 during TURBO testing; use probes that
+; stop at $74 or earlier. Commit-default should be 0.
+TURBO_LINK      equ 1
 
 ; Active H-int event queue for the frame currently being rendered.
 ; _ags_prearm promotes staged state into this queue and HBlankISR consumes it.
@@ -748,6 +754,86 @@ _debug_teleport_check:
     rts
 .dtc_no:
     moveq   #0,D0
+    rts
+    endc
+
+;==============================================================================
+; TURBO_LINK — OW-only speed + no-clip boost. Called from the end of
+; UpdatePlayer (via transpile_6502.py patch P39). Runs AFTER the normal
+; Walker_Move collision pass, so any extra movement this routine writes
+; to ObjX/ObjY is not re-checked against tile collision this frame.
+;==============================================================================
+    ifne TURBO_LINK
+_turbo_link_boost:
+    ; SAFE TURBO: instead of bypassing Walker_Move and writing ObjX
+    ; directly (which desyncs ObjX/ObjGridOffset/ObjPosFrac and caused
+    ; a reproducible $73 freeze ~250 frames after room entry), this
+    ; version just max-clamps Link's quarter-speed fraction when any
+    ; DPAD direction is held. Walker_Move's normal pipeline then
+    ; advances ObjX/Y + ObjGridOffset + ObjPosFrac consistently.
+    ; No state desync, no freeze.
+    tst.b   ($0010,A4)              ; OW gate
+    bne.s   .tlb_exit
+    cmpi.b  #$05,($0012,A4)         ; mode 5 only
+    bne.s   .tlb_exit
+    tst.b   ($0013,A4)              ; sub 0 only
+    bne.s   .tlb_exit
+    move.b  ($00FA,A4),D1           ; ButtonsDown
+    andi.b  #$0F,D1
+    beq.s   .tlb_exit
+    ; Bump Link's qSpeedFrac to max so the next frame's four
+    ; AddQSpeedToPositionFraction calls each overflow, producing
+    ; 4 pixel steps per frame vs the baseline 1 pixel step.
+    move.b  #$FF,($03BC,A4)         ; ObjQSpeedFrac[0] = $FF
+.tlb_exit:
+    rts
+_turbo_link_boost_disabled:
+    ; OW gate
+    tst.b   ($0010,A4)
+    bne     .tlb_exit
+    ; Mode 5 / Submode 0 only
+    cmpi.b  #$05,($0012,A4)
+    bne     .tlb_exit
+    tst.b   ($0013,A4)
+    bne     .tlb_exit
+    ; DPAD held (ButtonsDown bits 0..3 = R/L/D/U in reversed order)
+    move.b  ($00FA,A4),D1
+    andi.b  #$0F,D1
+    beq     .tlb_exit
+    ; Edge-safe clamps.
+    btst    #3,D1                   ; Up (bit 3)
+    beq.s   .tlb_no_up
+    move.b  ($0084,A4),D0
+    cmpi.b  #$40,D0
+    bls.s   .tlb_no_up
+    subi.b  #4,D0
+    move.b  D0,($0084,A4)
+.tlb_no_up:
+    btst    #2,D1                   ; Down (bit 2)
+    beq.s   .tlb_no_down
+    move.b  ($0084,A4),D0
+    cmpi.b  #$D0,D0
+    bcc.s   .tlb_no_down
+    addi.b  #4,D0
+    move.b  D0,($0084,A4)
+.tlb_no_down:
+    btst    #1,D1                   ; Left (bit 1)
+    beq.s   .tlb_no_left
+    move.b  ($0070,A4),D0
+    cmpi.b  #$0A,D0
+    bls.s   .tlb_no_left
+    subi.b  #4,D0
+    move.b  D0,($0070,A4)
+.tlb_no_left:
+    btst    #0,D1                   ; Right (bit 0)
+    beq.s   .tlb_no_right
+    move.b  ($0070,A4),D0
+    cmpi.b  #$E6,D0
+    bcc.s   .tlb_no_right
+    addi.b  #4,D0
+    move.b  D0,($0070,A4)
+.tlb_no_right:
+.tlb_exit:
     rts
     endc
 
