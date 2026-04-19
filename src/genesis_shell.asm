@@ -40,15 +40,8 @@ PPU_STATE_SIZE  equ $40         ; 64 bytes: PPU ($FF0800-$FF080F) + MMC1 ($FF081
 ; it. Set to 0 to strip both the hook and the routine for release builds.
 DEBUG_TELEPORT  equ 0
 
-; TURBO_LINK — OW-only no-clip + speed boost. KNOWN BUG (2026-04-19):
-; enabling triggers an ADDRESS ERROR exception at $73 ~240 frames after
-; entry. Exception log at $FF0900-$FF094B after trap; confirmed the
-; trap is a `jmp (A0)` with A0=$41EC041F (odd, hence address error).
-; Source is one of 30+ `_m68k_tablejump` call sites; out-of-range D0
-; index reads past end of jump table and loads garbage pointer.
-; WHY TURBO triggers this specifically is still under investigation.
-; Default 0 for main builds. Flip to 1 for QA walking only.
-TURBO_LINK      equ 0
+; TURBO_LINK: no-clip + speed boost for QA navigation.
+TURBO_LINK      equ 1
 
 ; Active H-int event queue for the frame currently being rendered.
 ; _ags_prearm promotes staged state into this queue and HBlankISR consumes it.

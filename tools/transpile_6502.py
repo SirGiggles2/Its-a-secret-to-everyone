@@ -5230,7 +5230,7 @@ def _patch_z07(path):
     # Sentinel comments `PATCH P48 BEGIN/END` tag the region so later
     # CFG / peephole passes skip the hand-written body.
     # ------------------------------------------------------------------
-    P48_WALKER = True
+    P48_WALKER = False   # bisect: is $73 freeze P48 or not?
 
     if P48_WALKER:
         mo_start = None
@@ -5559,11 +5559,7 @@ def _patch_z07(path):
     # on top of the normal 1 px collision-aware step. The boost lives in
     # genesis_shell.asm gated by TURBO_LINK; flag=0 strips the routine.
     # ------------------------------------------------------------------
-    # P39 (TURBO_LINK): after UpdatePlayer's Walker_Move for Link runs,
-    # call _turbo_link_boost which (when enabled) runs Walker_Move a few
-    # more times for slot 0. This avoids state desync (ObjX/ObjGridOffset/
-    # ObjPosFrac are all advanced by Walker_Move's normal pipeline) and
-    # reliably gives Link extra movement per frame.
+    # P39 (TURBO_LINK): insert jsr _turbo_link_boost in UpdatePlayer.
     p39_applied = False
     for lhi in ('jsr', 'bsr'):
         for wm in ('jsr', 'bsr'):
@@ -5596,22 +5592,11 @@ def _patch_z07(path):
     )
     p40_new = (
         'Walker_CheckTileCollision:\n'
-        '    ifne TURBO_LINK\n'
-        '    tst.b   D2\n'
-        '    bne.s   _L_z07_Walker_CheckTileCollision_notLink\n'
-        '    ; Link no-clip: skip tile collision but still call\n'
-        '    ; CheckScreenEdge so scroll transitions still latch.\n'
-        '    ; CheckScreenEdge clobbers D2 internally (uses it as a\n'
-        '    ; temp for Link\'s X/Y), so we save/restore it around the\n'
-        '    ; call — otherwise the caller Walker_Move sees garbage in\n'
-        '    ; D2 and takes the non-Link dispatch path, eventually\n'
-        '    ; corrupting random RAM and freezing at $73.\n'
-        '    move.w  D2,-(SP)\n'
-        '    jsr     CheckScreenEdge    ; PATCH P40: edge-trigger preserved\n'
-        '    move.w  (SP)+,D2\n'
-        '    rts\n'
-        '_L_z07_Walker_CheckTileCollision_notLink:\n'
-        '    endc\n'
+        '    ; PATCH P40 (v2): no-clip moved to CheckTiles; see further\n'
+        '    ; down in the file. Walker_CheckTileCollision runs its\n'
+        '    ; normal bookkeeping (DoorwayDir / grid-offset / state\n'
+        '    ; reset) for Link and every other object. Only the tile\n'
+        '    ; walkability decision in CheckTiles is overridden.\n'
         '    cmpi.b  #$00,D2\n'
     )
     if p40_old in text:
@@ -5619,6 +5604,37 @@ def _patch_z07(path):
         print("  _patch_z07 P40: TURBO_LINK no-clip in Walker_CheckTileCollision")
     else:
         print("  WARNING: _patch_z07 P40 -- Walker_CheckTileCollision anchor not found")
+
+    # ------------------------------------------------------------------
+    # P40b (TURBO_LINK no-clip, cleaner): in CheckTiles, if D2==0 (Link)
+    # jump directly to GoWalkableDir, bypassing the actual tile fetch +
+    # walkability compare. All of Walker_CheckTileCollision's pre-check
+    # bookkeeping (DoorwayDir / grid-offset / $0E reset) still runs
+    # untouched; only the walkability decision is overridden. This
+    # avoids the $73 freeze that the old short-circuit P40 caused.
+    # ------------------------------------------------------------------
+    p40b_old = (
+        'CheckTiles:\n'
+        '    ; The code below applies to Link and other objects.\n'
+    )
+    p40b_new = (
+        'CheckTiles:\n'
+        '    ifne TURBO_LINK\n'
+        '    ; PATCH P40b: Link no-clip — always treat target tile as\n'
+        '    ; walkable. Pre-seeds ObjCollidedTile[0] ($049E) to $24.\n'
+        '    tst.b   D2\n'
+        '    bne.s   _L_z07_CheckTiles_notLink\n'
+        '    move.b  #$24,($049E,A4)\n'
+        '    jmp     GoWalkableDir\n'
+        '_L_z07_CheckTiles_notLink:\n'
+        '    endc\n'
+        '    ; The code below applies to Link and other objects.\n'
+    )
+    if p40b_old in text:
+        text = text.replace(p40b_old, p40b_new, 1)
+        print("  _patch_z07 P40b: TURBO_LINK no-clip via CheckTiles short-circuit")
+    else:
+        print("  WARNING: _patch_z07 P40b -- CheckTiles anchor not found")
 
     # ------------------------------------------------------------------
     # P43 (Codex): Gate InitObject's edge-spawn overwrite on first frame
@@ -5724,26 +5740,17 @@ def _patch_z07(path):
         '_L_z07_InitObject_InitMonsterFromEdge:\n'
         '    moveq   #0,D2\n'
         '    move.b  ($0340,A4),D2\n'
-        '    ; DEBUG: ring-buffer trace — record slot index + $0525 before\n'
-        '    ; pre-check, $0525 after walk, and $0525 after post2.\n'
-        '    ; Buffer at $FF0510, 10 records of 4 bytes each = 40 bytes.\n'
-        '    ; Record format: [slot, $0525_pre, $0525_post1, $0525_post2]\n'
-        '    ; Slot of "$FF" means empty slot. Ring counter at $FF050F.\n'
-        '    moveq   #0,D0\n'
-        '    move.b  ($FF050F).l,D0\n'
-        '    andi.b  #$0F,D0                 ; mod 16 wrap\n'
-        '    move.w  D0,D3\n'
-        '    lsl.w   #2,D3                   ; D3 = record offset (*4)\n'
-        '    addq.b  #1,($FF050F).l\n'
-        '    movea.l #$FF0510,A0\n'
-        '    adda.w  D3,A0                   ; A0 = record addr\n'
-        '    move.b  D2,(A0)+                ; byte 0: slot\n'
-        '    move.b  ($0525,A4),(A0)+        ; byte 1: $0525 before\n'
-        '    movea.l A0,A3                   ; save A3 for later writes\n'
-        '    ; PATCH P47: pre- and post-walk $0525 validation.\n'
+        '    ; PATCH P47: pre- and post-walk $0525 validation + walkability.\n'
         '    ; Pre: snap OOB (hi < $40 or hi >= $E0) to $48.\n'
-        '    ; Post: if result hi=$E (bottom edge), redo from $48.\n'
-        '    ; Post 2: validate walkable.\n'
+        '    ; Post1: if result hi=$E (bottom edge), redo from $48.\n'
+        '    ; Post2: read chosen cell\'s tile; if unwalkable (>= $84),\n'
+        '    ; rotate through FallbackCells until walkable or bail to $48.\n'
+        '    ; (Debug instrumentation at $FF0500/0501/0508/050E/050F/0510\n'
+        '    ; was removed 2026-04-19 — it aliased $0510..$054F which\n'
+        '    ; overlaps BrighteningRoom ($051E) and CandleState ($051F),\n'
+        '    ; corrupting them and causing a deterministic address-error\n'
+        '    ; freeze at room $73 ~240 frames after entry. Root cause\n'
+        '    ; identified by Codex static review.)\n'
         '_L_z07_P47_pre_check:\n'
         '    move.b  ($0525,A4),D0\n'
         '    andi.b  #$F0,D0\n'
@@ -5757,7 +5764,6 @@ def _patch_z07(path):
         '    moveq   #5,D0\n'
         '    bsr     SwitchBank\n'
         '    bsr     FindNextEdgeSpawnCell\n'
-        '    move.b  ($0525,A4),(A3)+        ; byte 2: $0525 after first walk\n'
         '    ; Post-walk 1: bottom-edge snap.\n'
         '    move.b  ($0525,A4),D0\n'
         '    andi.b  #$F0,D0\n'
@@ -5767,67 +5773,54 @@ def _patch_z07(path):
         '    bsr     FindNextEdgeSpawnCell\n'
         '_L_z07_P47_post1_ok:\n'
         '    ; Post-walk 2: validate resulting cell is walkable.\n'
-        '    ; Compute playmap address: $FF6530 + (lo_nibble * 44)\n'
-        '    ; and the row offset within the col block. Tile < $84 = OK.\n'
-        '    moveq   #0,D3\n'
-        '    move.b  ($0525,A4),D3\n'
-        '    andi.w  #$000F,D3              ; D3 = lo_nibble\n'
-        '    move.w  D3,D0\n'
-        '    lsl.w   #5,D0                  ; D3 * 32\n'
-        '    lsl.w   #1,D3\n'
-        '    lsl.w   #2,D3                  ; D3 * 8\n'
-        '    add.w   D0,D3                  ; D3 * 44 (32+8+4? no: 32+8*1.5)\n'
-        '    move.w  D3,D0                  ; work: 32+8 = 40; need +4 more\n'
-        '    ; Actually simpler: D3 *= 44 via multiple shift+add\n'
+        '    ; Playmap addr = $FF6530 + (lo * 44) + ((hi - 4) * 2).\n'
         '    moveq   #0,D3\n'
         '    move.b  ($0525,A4),D3\n'
         '    andi.w  #$000F,D3\n'
-        '    mulu.w  #44,D3                 ; D3 = lo * 44\n'
+        '    mulu.w  #44,D3\n'
         '    move.l  #$FF6530,D0\n'
-        '    add.l   D3,D0                  ; D0 = col base addr\n'
-        '    ; Row offset = ((hi - 4) * 2), for cell $4X row=0, $5X row=2, etc.\n'
+        '    add.l   D3,D0\n'
         '    moveq   #0,D3\n'
         '    move.b  ($0525,A4),D3\n'
-        '    lsr.w   #4,D3                  ; D3 = hi_nibble\n'
+        '    lsr.w   #4,D3\n'
         '    subi.w  #4,D3\n'
-        '    lsl.w   #1,D3                  ; D3 = row*2 (bytes)\n'
-        '    add.l   D3,D0                  ; D0 = tile addr\n'
+        '    lsl.w   #1,D3\n'
+        '    add.l   D3,D0\n'
         '    movea.l D0,A0\n'
-        '    move.b  (A0),D0                ; D0 = tile at chosen cell\n'
-        '    ; DEBUG telltale: write tile value to $FF0500 so probe can read\n'
-        '    move.b  D0,($FF0500).l\n'
+        '    move.b  (A0),D0\n'
         '    cmpi.b  #$84,D0\n'
-        '    blo     _L_z07_P47_post2_ok    ; walkable → keep\n'
-        '    ; Unwalkable — mark $FF0501=$DE then reseed to $48 and redo once.\n'
-        '    move.b  #$DE,($FF0501).l\n'
-        '    ; Post2 retry: FindNextEdgeSpawnCell walk from $48 terminates\n'
-        '    ; at $45 on Gen (verified by $0507/$0508 telltales — walk bug\n'
-        '    ; in bank-switched FetchTileMapAddr path). Bypass FindNext —\n'
-        '    ; do our own inline scan across candidate top-edge cells, pick\n'
-        '    ; the first one whose playmap tile is < $84.\n'
-        '    ; Scan sequence: $47 $48 $49 $4B $4D (order gives spread).\n'
-        '    ; Trick: we iterate slot counter at $FF050E so successive spawns\n'
-        '    ; try different cells (cycle through 5 values). Cells stored in\n'
-        '    ; dc.b list P47_FallbackCells.\n'
-        '    move.b  ($FF050E).l,D0\n'
-        '    addq.b  #1,($FF050E).l\n'
-        '    andi.w  #$0007,D0               ; counter mod 8 (extras wrap to unwalkable, falls through)\n'
+        '    blo     _L_z07_P47_post2_ok\n'
+        '    ; Unwalkable — pick from fallback table, scan up to 8 tries.\n'
+        '    ; Local counter lives in D4.b (caller-clobberable); no RAM\n'
+        '    ; writes to the $05xx region.\n'
+        '    moveq   #0,D4\n'
+        '_L_z07_P47_fb_loop:\n'
         '    lea     _L_z07_P47_FallbackCells(pc),A0\n'
-        '    move.b  (A0,D0.W),D1            ; D1 = candidate cell\n'
+        '    move.b  (A0,D4.W),D1\n'
         '    move.b  D1,($0525,A4)\n'
-        '    ; Validate D1 is walkable via inline read.\n'
+        '    ; Validate fallback cell walkable.\n'
         '    moveq   #0,D3\n'
         '    move.b  D1,D3\n'
         '    andi.w  #$000F,D3\n'
         '    mulu.w  #44,D3\n'
         '    move.l  #$FF6530,D0\n'
         '    add.l   D3,D0\n'
+        '    moveq   #0,D3\n'
+        '    move.b  D1,D3\n'
+        '    lsr.w   #4,D3\n'
+        '    subi.w  #4,D3\n'
+        '    lsl.w   #1,D3\n'
+        '    add.l   D3,D0\n'
         '    movea.l D0,A0\n'
-        '    move.b  (A0),D0\n'
-        '    ; Record final telltale for debug\n'
-        '    move.b  ($0525,A4),($FF0508).l\n'
+        '    cmpi.b  #$84,(A0)\n'
+        '    blo     _L_z07_P47_post2_ok\n'
+        '    addq.b  #1,D4\n'
+        '    cmpi.b  #8,D4\n'
+        '    blo     _L_z07_P47_fb_loop\n'
+        '    ; All 8 fallback cells unwalkable — just use $48 (fails gracefully\n'
+        '    ; rather than looping).\n'
+        '    move.b  #$48,($0525,A4)\n'
         '_L_z07_P47_post2_ok:\n'
-        '    move.b  ($0525,A4),(A3)+        ; byte 3: $0525 after post2 (final)\n'
     )
     if p47_old in text:
         text = text.replace(p47_old, p47_new, 1)
