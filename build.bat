@@ -68,23 +68,41 @@ if exist "%ROOT%\tools\transpile_6502.py" (
 )
 
 rem ---------------------------------------------------------------------------
-rem [2] Assemble — genesis_shell.asm is the root; it includes nes_io.asm,
-rem     bankswitch.asm, and zelda_translated/*.asm via include directives
-rem     once those files exist.
+rem [2] Assemble to ELF object, link via m68k-elf-ld + genesis.ld, strip
+rem     to flat binary via objcopy. Stage-2a pivot: vasm -Fbin is gone;
+rem     we now have a real linker stage that C object files can be linked
+rem     into (Stage 2b+). genesis_shell.asm is still the sole asm root.
 rem ---------------------------------------------------------------------------
-echo [2/3] Assembling...
+set "ELF_OBJ=%ROOT%\builds\whatif.o"
+set "ELF_OUT=%ROOT%\builds\whatif.elf"
+set "LD_SCRIPT=%ROOT%\build\genesis.ld"
+set "M68K_BIN=%ROOT%\build\toolchain\sgdk_bin\bin"
+set "M68K_LD=%M68K_BIN%\ld.exe"
+set "M68K_OBJCOPY=%M68K_BIN%\objcopy.exe"
+
+if not exist "%M68K_LD%" (
+    echo ERROR: m68k-elf toolchain not found at %M68K_BIN%
+    echo        Expected m68k-elf-ld + objcopy at build\toolchain\sgdk_bin\bin\
+    exit /b 1
+)
+
+echo [2/4] Assembling genesis_shell.asm -^> ELF object...
 pushd "%ROOT%\src" >nul
-"%VASM%" -Fbin -m68000 -maxerrors=5000 -L "%OUT_LST%" -o "%RAW_ROM%" genesis_shell.asm
+"%VASM%" -Felf -m68000 -maxerrors=5000 -L "%OUT_LST%" -o "%ELF_OBJ%" genesis_shell.asm
 if errorlevel 1 (
     popd >nul
     exit /b 1
 )
 popd >nul
 
-rem ---------------------------------------------------------------------------
-rem [3] Fix checksum
-rem ---------------------------------------------------------------------------
-echo [3/3] Fixing checksum...
+echo [3/4] Linking ELF -^> whatif.elf...
+"%M68K_LD%" -T "%LD_SCRIPT%" -o "%ELF_OUT%" "%ELF_OBJ%"
+if errorlevel 1 exit /b 1
+
+echo [4/4] objcopy -^> raw binary, fix checksum...
+"%M68K_OBJCOPY%" -O binary "%ELF_OUT%" "%RAW_ROM%"
+if errorlevel 1 exit /b 1
+
 "%PYTHON%" "%ROOT%\tools\fix_checksum.py" "%RAW_ROM%" "%OUT_ROM%"
 if errorlevel 1 exit /b 1
 if exist "%RAW_ROM%" del "%RAW_ROM%" >nul 2>nul

@@ -117,7 +117,8 @@ COLOR_BLACK     equ $0000
 ;   32–63: TRAP + user-defined
 ;==============================================================================
 
-    org     $000000
+    ; Stage-2a: named section; build/genesis.ld pins to $0.
+    section "vectors",code
 
     dc.l    STACK_TOP           ; vec  0: initial SSP
     dc.l    EntryPoint          ; vec  1: initial PC → boot code
@@ -142,7 +143,8 @@ COLOR_BLACK     equ $0000
 ; $000100 — Genesis ROM Header
 ;==============================================================================
 
-    org     $000100
+    ; Stage-2a: named section; build/genesis.ld pins to $100.
+    section "header",data
 
     dc.b    "SEGA MEGA DRIVE "                  ; $100 system type     (16)
     dc.b    "(C)JAKEDIGZ 2026"                  ; $110 copyright        (16)
@@ -175,7 +177,8 @@ COLOR_BLACK     equ $0000
 ; $000200 — Boot code
 ;==============================================================================
 
-    org     $000200
+    ; Stage-2a: named section; build/genesis.ld pins to $200.
+    section "text",code
 
 ;------------------------------------------------------------------------------
 ; EntryPoint — 68000 reset vector lands here.
