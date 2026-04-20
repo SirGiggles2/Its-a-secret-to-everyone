@@ -101,7 +101,7 @@ rem a separator so it concatenates e.g. "bin\" + "cc1.exe" to find cc1.
 rem cmd parses a trailing backslash+space as a line-continuation in some
 rem contexts, so pass the -B arg SEPARATELY (not from a joined variable).
 rem ---------------------------------------------------------------------------
-set "C_SOURCES=c_runtime"
+set "C_SOURCES=c_runtime c_move_object"
 set "C_OBJS="
 for %%F in (%C_SOURCES%) do (
     echo [2a/4] Compiling %%F.c...

@@ -5230,7 +5230,13 @@ def _patch_z07(path):
     # Sentinel comments `PATCH P48 BEGIN/END` tag the region so later
     # CFG / peephole passes skip the hand-written body.
     # ------------------------------------------------------------------
-    P48_WALKER = True    # re-enabled 2026-04-19 after P47 FIX cleared freeze
+    # P48_MODE:
+    #   "asm" — hand-written M68K body below (original Phase 0 P48)
+    #   "c"   — tail-jmp to _c_move_object_shim (Stage 2c C port).
+    #           Shim + C function are in src/c_shims.asm +
+    #           src/c_move_object.c; built by build.bat.
+    P48_MODE = "c"
+    P48_WALKER = (P48_MODE in ("asm", "c"))
 
     if P48_WALKER:
         mo_start = None
@@ -5253,10 +5259,35 @@ def _patch_z07(path):
         assert mo_end is not None and mo_end > mo_start, \
             f"P48: PlayerScreenEdgeBounds end boundary not found after MoveObject"
 
-        p48_body_text = (
-            '    even\n'
-            'MoveObject:\n'
-            '; PATCH P48 BEGIN native walker chain (/mathproblem Phase 0)\n'
+        if P48_MODE == "c":
+            # Stage 2c: replace MoveObject with a single tail-jmp to the
+            # C shim. Keeps the global label so every existing caller
+            # (jsr MoveObject at z_07.asm:3137-3138 and elsewhere) still
+            # resolves to a valid target. The shim marshals D2 → stack
+            # and calls the C function; the C function's rts returns to
+            # MoveObject's original caller via the shim.
+            p48_body_text = (
+                '    even\n'
+                'MoveObject:\n'
+                '; PATCH P48 BEGIN C-shim tail-jump (Stage 2c)\n'
+                '    jmp     _c_move_object_shim\n'
+                '; PATCH P48 END\n'
+                '\n'
+            )
+            p48_body = p48_body_text.splitlines(keepends=True)
+            lines[mo_start:mo_end] = p48_body
+            print(f"  _patch_z07 P48: C-shim tail-jmp "
+                  f"(replaced old block -> {len(p48_body)} lines)")
+            # Skip the asm body emission below.
+            P48_MODE_APPLIED = True
+        else:
+            P48_MODE_APPLIED = False
+
+        if not P48_MODE_APPLIED:
+            p48_body_text = (
+                '    even\n'
+                'MoveObject:\n'
+                '; PATCH P48 BEGIN native walker chain (/mathproblem Phase 0)\n'
             '; D2 = object slot (0..11). Reads ($000F,A4) = direction bits.\n'
             '; Updates ObjX($70), ObjY($84), ObjGridOffset($0394),\n'
             '; ObjPosFrac($03A8); writes PositiveGridCellSize ($010E) and\n'
@@ -5372,11 +5403,11 @@ def _patch_z07(path):
             '    rts\n'
             '; PATCH P48 END native walker chain\n'
             '\n'
-        )
-        p48_body = p48_body_text.splitlines(keepends=True)
-        lines[mo_start:mo_end] = p48_body
-        print(f"  _patch_z07 P48: native MoveObject + inlined q-speed "
-              f"(replaced old block -> {len(p48_body)} lines)")
+            )
+            p48_body = p48_body_text.splitlines(keepends=True)
+            lines[mo_start:mo_end] = p48_body
+            print(f"  _patch_z07 P48: native MoveObject + inlined q-speed "
+                  f"(replaced old block -> {len(p48_body)} lines)")
 
     # ---- Patch 1: Wire PPU scroll to VDP VSRAM ----
     # After the NMI handler's SetScroll block writes CurHScroll/CurVScroll
