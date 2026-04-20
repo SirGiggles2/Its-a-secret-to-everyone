@@ -75,8 +75,10 @@ rem     into (Stage 2b+). genesis_shell.asm is still the sole asm root.
 rem ---------------------------------------------------------------------------
 set "ELF_OBJ=%ROOT%\builds\whatif.o"
 set "ELF_OUT=%ROOT%\builds\whatif.elf"
+set "C_OBJ_DIR=%ROOT%\builds\obj"
 set "LD_SCRIPT=%ROOT%\build\genesis.ld"
 set "M68K_BIN=%ROOT%\build\toolchain\sgdk_bin\bin"
+set "M68K_GCC=%M68K_BIN%\gcc.exe"
 set "M68K_LD=%M68K_BIN%\ld.exe"
 set "M68K_OBJCOPY=%M68K_BIN%\objcopy.exe"
 
@@ -84,6 +86,28 @@ if not exist "%M68K_LD%" (
     echo ERROR: m68k-elf toolchain not found at %M68K_BIN%
     echo        Expected m68k-elf-ld + objcopy at build\toolchain\sgdk_bin\bin\
     exit /b 1
+)
+
+if not exist "%C_OBJ_DIR%" mkdir "%C_OBJ_DIR%"
+
+rem ---------------------------------------------------------------------------
+rem C objects (Stage 2b+).  -B tells gcc where to find cc1 / cpp since the
+rem SGDK extraction flattens bin\ instead of using libexec\gcc\... .
+rem   -ffixed-a4 pins A4=NES_RAM across every C function (matches the asm
+rem   contract); without it gcc will clobber A4 on calls and break interop.
+rem
+rem NOTE on -B trailing backslash: gcc expects the prefix path to end with
+rem a separator so it concatenates e.g. "bin\" + "cc1.exe" to find cc1.
+rem cmd parses a trailing backslash+space as a line-continuation in some
+rem contexts, so pass the -B arg SEPARATELY (not from a joined variable).
+rem ---------------------------------------------------------------------------
+set "C_SOURCES=c_runtime"
+set "C_OBJS="
+for %%F in (%C_SOURCES%) do (
+    echo [2a/4] Compiling %%F.c...
+    "%M68K_GCC%" -B "%M68K_BIN%\\" -m68000 -ffreestanding -nostdlib -nostartfiles -ffixed-a4 -fno-builtin -fomit-frame-pointer -fno-PIC -fno-common -O2 -I "%ROOT%\src" -c "%ROOT%\src\%%F.c" -o "%C_OBJ_DIR%\%%F.o"
+    if errorlevel 1 exit /b 1
+    call set "C_OBJS=%%C_OBJS%% "%C_OBJ_DIR%\%%F.o""
 )
 
 echo [2/4] Assembling genesis_shell.asm -^> ELF object...
@@ -96,7 +120,7 @@ if errorlevel 1 (
 popd >nul
 
 echo [3/4] Linking ELF -^> whatif.elf...
-"%M68K_LD%" -T "%LD_SCRIPT%" -o "%ELF_OUT%" "%ELF_OBJ%"
+"%M68K_LD%" -T "%LD_SCRIPT%" -o "%ELF_OUT%" "%ELF_OBJ%" %C_OBJS%
 if errorlevel 1 exit /b 1
 
 echo [4/4] objcopy -^> raw binary, fix checksum...
