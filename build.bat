@@ -102,10 +102,17 @@ rem cmd parses a trailing backslash+space as a line-continuation in some
 rem contexts, so pass the -B arg SEPARATELY (not from a joined variable).
 rem ---------------------------------------------------------------------------
 set "C_SOURCES=c_runtime c_move_object"
+set "C_GEN_SOURCES=z_03"
 set "C_OBJS="
 for %%F in (%C_SOURCES%) do (
     echo [2a/4] Compiling %%F.c...
     "%M68K_GCC%" -B "%M68K_BIN%\\" -m68000 -ffreestanding -nostdlib -nostartfiles -ffixed-a4 -fno-builtin -fomit-frame-pointer -fno-PIC -fno-common -O2 -I "%ROOT%\src" -c "%ROOT%\src\%%F.c" -o "%C_OBJ_DIR%\%%F.o"
+    if errorlevel 1 exit /b 1
+    call set "C_OBJS=%%C_OBJS%% "%C_OBJ_DIR%\%%F.o""
+)
+for %%F in (%C_GEN_SOURCES%) do (
+    echo [2a/4] Compiling gen/%%F.c...
+    "%M68K_GCC%" -B "%M68K_BIN%\\" -m68000 -ffreestanding -nostdlib -nostartfiles -ffixed-a4 -fno-builtin -fomit-frame-pointer -fno-PIC -fno-common -O2 -I "%ROOT%\src" -c "%ROOT%\src\gen\%%F.c" -o "%C_OBJ_DIR%\%%F.o"
     if errorlevel 1 exit /b 1
     call set "C_OBJS=%%C_OBJS%% "%C_OBJ_DIR%\%%F.o""
 )

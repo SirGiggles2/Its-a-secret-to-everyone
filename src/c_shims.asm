@@ -19,7 +19,15 @@
     section "text",code
 
     xdef    _c_move_object_shim
+    xdef    c_copy_bank_to_window
+    xdef    c_ppu_read_2
+    xdef    c_ppu_write_6
+    xdef    c_ppu_write_7
+    xdef    c_turn_off_all_video
+    xdef    c_transfer_level_pattern_blocks
+
     xref    c_move_object
+    xref    z03_transfer_level_pattern_blocks
 
 ;------------------------------------------------------------------------------
 ; _c_move_object_shim — MoveObject trampoline.
@@ -51,3 +59,65 @@ _c_move_object_shim:
     jsr     c_move_object
     addq.l  #4,SP           ; pop the 32-bit slot
     rts
+
+;==============================================================================
+; IMPORT side — C callers invoke these; we marshal stack args into registers
+; and tail-call the native asm function.
+;
+; GCC 13 m68k passes the first int/ptr arg as a 32-bit value at SP+4.
+; For byte/word args the caller still pushes a full longword (zero- or
+; sign-extended).
+;==============================================================================
+
+;------------------------------------------------------------------------------
+; void c_copy_bank_to_window(unsigned int bank);
+; Native: D0.w = bank, then jsr _copy_bank_to_window.
+;------------------------------------------------------------------------------
+c_copy_bank_to_window:
+    move.l  4(SP),D0        ; D0.L = bank (only low word matters)
+    jmp     _copy_bank_to_window
+
+;------------------------------------------------------------------------------
+; unsigned char c_ppu_read_2(void);
+; Native: jsr _ppu_read_2 → result in D0.b.
+; C return: gcc expects result in D0.
+;------------------------------------------------------------------------------
+c_ppu_read_2:
+    jmp     _ppu_read_2
+
+;------------------------------------------------------------------------------
+; void c_ppu_write_6(unsigned int val);
+; Native: D0.b = val, then jsr _ppu_write_6.
+;------------------------------------------------------------------------------
+c_ppu_write_6:
+    move.l  4(SP),D0
+    jmp     _ppu_write_6
+
+;------------------------------------------------------------------------------
+; void c_ppu_write_7(unsigned int val);
+; Native: D0.b = val, then jsr _ppu_write_7.
+;------------------------------------------------------------------------------
+c_ppu_write_7:
+    move.l  4(SP),D0
+    jmp     _ppu_write_7
+
+;------------------------------------------------------------------------------
+; void c_turn_off_all_video(void);
+; Native: jsr TurnOffAllVideo (no register args, no return value).
+;------------------------------------------------------------------------------
+c_turn_off_all_video:
+    jmp     TurnOffAllVideo
+
+;==============================================================================
+; EXPORT side — z_03 entry point.
+; z_07.asm calls `jsr TransferLevelPatternBlocks`. When BANK_MODE_03="c",
+; the transpiler emits that label pointing to this shim instead of the
+; z_03 asm body. The C function takes no args and returns void.
+;==============================================================================
+
+;------------------------------------------------------------------------------
+; TransferLevelPatternBlocks → c_transfer_level_pattern_blocks
+; (No register args. Preserves D2-D7/A2-A6 via gcc callee-save.)
+;------------------------------------------------------------------------------
+c_transfer_level_pattern_blocks:
+    jmp     z03_transfer_level_pattern_blocks

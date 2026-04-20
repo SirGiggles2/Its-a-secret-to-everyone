@@ -1852,7 +1852,7 @@ def _audit_bank_window_coverage():
                 start = i
                 break
         if start is None:
-            raise ValueError(f"coverage audit: function {func_name} not found")
+            return None  # function migrated to C — skip audit
         end = len(lines)
         for i in range(start + 1, len(lines)):
             s = lines[i].strip()
@@ -1867,6 +1867,8 @@ def _audit_bank_window_coverage():
         with open(path, 'r', encoding='utf-8', errors='replace') as f:
             lines = f.read().splitlines()
         block = get_func_block(lines, func)
+        if block is None:
+            continue  # function migrated to C — skip
         ensure_idx = next(
             (
                 i
@@ -3545,7 +3547,17 @@ def _patch_z02(path):
 
 
 def _patch_z03(path):
-    """Inject bank-window guards into ROM-pointer consumers (bank-3 pinned)."""
+    """Inject bank-window guards into ROM-pointer consumers (bank-3 pinned).
+    When ZELDA_BANK_MODE_03 == "c", strip all code and emit only data labels
+    plus a TransferLevelPatternBlocks stub that jumps to the C shim."""
+
+    # Stage 2d: "c" mode emits data-only asm + C-shim jump for the entry point.
+    ZELDA_BANK_MODE_03 = "c"
+
+    if ZELDA_BANK_MODE_03 == "c":
+        _patch_z03_c_mode(path)
+        return
+
     with open(path, 'r', encoding='utf-8') as f:
         text = f.read()
 
@@ -3567,6 +3579,110 @@ def _patch_z03(path):
         f.write(text)
 
     print(f"  _patch_z03: fixed bank-window guards injected {hits}/{len(hooks)} hooks")
+
+
+def _patch_z03_c_mode(path):
+    """Stage 2d: strip code functions from z_03.asm, keep only data labels.
+    Emit a TransferLevelPatternBlocks entry that jumps to the C shim."""
+    import re
+
+    with open(path, 'r', encoding='utf-8') as f:
+        lines = f.readlines()
+
+    # Find the first data label (LevelPatternBlockSrcAddrs) — everything before
+    # the first `even` + data label is header/comments, keep it.
+    # Find the last code instruction (rts at end of TransferPatternBlock_Bank3)
+    # — everything between header and first data label AND between
+    # TransferLevelPatternBlocks and the end of TransferPatternBlock_Bank3 is code.
+
+    # Strategy: keep only lines that are:
+    # 1. Header comments (before first label)
+    # 2. Data labels + dc.b/dc.w/dc.l lines
+    # 3. `even` directives before data labels
+    # Replace all code with a single entry-point stub.
+
+    # Identify code labels (functions we're replacing with C)
+    code_labels = {
+        'TransferLevelPatternBlocks', 'ResetPatternBlockIndex',
+        'TransferLevelPatternBlocksUW', 'FetchPatternBlockAddrUW',
+        'FetchPatternBlockInfoOW', 'FetchPatternBlockAddrUWSpecial',
+        'FetchPatternBlockUWBoss', 'FetchPatternBlockSizeUW',
+        'TransferPatternBlock_Bank3',
+    }
+
+    # Data labels (keep these + their dc.b/dc.w blocks)
+    data_labels = {
+        'LevelPatternBlockSrcAddrs', 'BossPatternBlockSrcAddrs',
+        'PatternBlockSrcAddrsUW', 'PatternBlockSrcAddrsOW',
+        'PatternBlockPpuAddrs', 'PatternBlockPpuAddrsExtra',
+        'PatternBlockSizesOW', 'PatternBlockSizesUW',
+        'PatternBlockUWBG', 'PatternBlockOWBG', 'PatternBlockOWSP',
+        'PatternBlockUWSP358', 'PatternBlockUWSP469', 'PatternBlockUWSP',
+        'PatternBlockUWSP127', 'PatternBlockUWSPBoss1257',
+        'PatternBlockUWSPBoss3468', 'PatternBlockUWSPBoss9',
+    }
+
+    # Build output: header, then xdefs for data, then entry stub, then data blocks.
+    out = []
+
+    # Copy header (lines before first non-comment, non-blank label)
+    header_end = 0
+    for i, line in enumerate(lines):
+        stripped = line.strip()
+        if stripped and not stripped.startswith(';') and not stripped.startswith(
+                '; ') and ':' in stripped and not stripped.startswith('dc.'):
+            header_end = i
+            break
+    out.extend(lines[:header_end])
+
+    # Add xdefs for all data labels so C can reference them
+    out.append('\n; Stage 2d: data-only mode (code ported to src/gen/z_03.c)\n')
+    for lbl in sorted(data_labels):
+        out.append(f'    xdef    {lbl}\n')
+    out.append('\n')
+
+    # Entry point stub
+    out.append('    even\n')
+    out.append('TransferLevelPatternBlocks:\n')
+    out.append('    jmp     c_transfer_level_pattern_blocks\n')
+    out.append('\n')
+
+    # Now emit all data blocks. Walk through lines, identify data regions.
+    in_data = False
+    for i, line in enumerate(lines):
+        stripped = line.strip()
+        # Check if this line is a data label
+        if ':' in stripped:
+            label_match = re.match(r'^(\w+):', stripped)
+            if label_match:
+                lbl = label_match.group(1)
+                if lbl in data_labels:
+                    in_data = True
+                    out.append(f'    even\n{lbl}:\n')
+                    continue
+                elif lbl in code_labels or lbl.startswith('_L_z03_') or lbl.startswith('__far_z_03'):
+                    in_data = False
+                    continue
+                else:
+                    # Unknown label inside data region — keep if in_data
+                    if in_data:
+                        out.append(line)
+                    continue
+        if in_data:
+            if stripped.startswith('dc.') or stripped.startswith('; .INCBIN') or stripped == '':
+                out.append(line)
+            elif stripped == 'even':
+                pass  # we add our own even before each label
+            elif stripped.startswith(';'):
+                out.append(line)
+            else:
+                # End of data region (hit code)
+                in_data = False
+
+    with open(path, 'w', encoding='utf-8') as f:
+        f.writelines(out)
+
+    print(f"  _patch_z03: C-mode data-only emit (code -> src/gen/z_03.c)")
 
 
 def _patch_z05(path):
