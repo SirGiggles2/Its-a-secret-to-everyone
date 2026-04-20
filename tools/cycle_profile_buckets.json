@@ -1,0 +1,677 @@
+{
+  "lst_file": "builds\\whatif.lst",
+  "buckets": [
+    {
+      "name": "VBlankISR",
+      "tier": "T1",
+      "entry_addr": 1058,
+      "entry_section": "02",
+      "call_sites": [],
+      "exit_addr": 1116,
+      "exit_kind": "rte",
+      "static_insts": 12
+    },
+    {
+      "name": "IsrNmi",
+      "tier": "T1",
+      "entry_addr": 308044,
+      "entry_section": "02",
+      "call_sites": [
+        {
+          "caller_src": "genesis_shell.asm",
+          "caller_line": 476,
+          "call_addr": 1096,
+          "return_addr": 1102,
+          "mnemonic": "jsr"
+        }
+      ],
+      "exit_addr": null,
+      "exit_kind": null,
+      "static_insts": 132
+    },
+    {
+      "name": "UpdateMode",
+      "tier": "T1",
+      "entry_addr": 311132,
+      "entry_section": "02",
+      "call_sites": [
+        {
+          "caller_src": "zelda_translated\\z_07.asm",
+          "caller_line": 1644,
+          "call_addr": 308464,
+          "return_addr": 308468,
+          "mnemonic": "jsr"
+        }
+      ],
+      "exit_addr": null,
+      "exit_kind": null,
+      "static_insts": 33
+    },
+    {
+      "name": "TransferCurTileBuf",
+      "tier": "T2",
+      "entry_addr": 295402,
+      "entry_section": "02",
+      "call_sites": [
+        {
+          "caller_src": "zelda_translated\\z_07.asm",
+          "caller_line": 1517,
+          "call_addr": 308160,
+          "return_addr": 308164,
+          "mnemonic": "jsr"
+        }
+      ],
+      "exit_addr": null,
+      "exit_kind": null,
+      "static_insts": 15
+    },
+    {
+      "name": "music_tick",
+      "tier": "T2",
+      "entry_addr": 2160,
+      "entry_section": "02",
+      "call_sites": [
+        {
+          "caller_src": "genesis_shell.asm",
+          "caller_line": 479,
+          "call_addr": 1102,
+          "return_addr": 1106,
+          "mnemonic": "bsr"
+        }
+      ],
+      "exit_addr": null,
+      "exit_kind": null,
+      "static_insts": 29
+    },
+    {
+      "name": "UpdatePlayer",
+      "tier": "T3",
+      "entry_addr": 312140,
+      "entry_section": "02",
+      "call_sites": [
+        {
+          "caller_src": "zelda_translated\\z_05.asm",
+          "caller_line": 8633,
+          "call_addr": 283774,
+          "return_addr": 283778,
+          "mnemonic": "jsr"
+        },
+        {
+          "caller_src": "zelda_translated\\z_07.asm",
+          "caller_line": 3294,
+          "call_addr": 311696,
+          "return_addr": 311700,
+          "mnemonic": "jsr"
+        }
+      ],
+      "exit_addr": null,
+      "exit_kind": null,
+      "static_insts": 40
+    },
+    {
+      "name": "UpdateObject",
+      "tier": "T3",
+      "entry_addr": 319068,
+      "entry_section": "02",
+      "call_sites": [
+        {
+          "caller_src": "zelda_translated\\z_07.asm",
+          "caller_line": 3374,
+          "call_addr": 311856,
+          "return_addr": 311860,
+          "mnemonic": "jsr"
+        }
+      ],
+      "exit_addr": null,
+      "exit_kind": null,
+      "static_insts": 148
+    },
+    {
+      "name": "CheckMonsterCollisions",
+      "tier": "T3",
+      "entry_addr": 202284,
+      "entry_section": "02",
+      "call_sites": [
+        {
+          "caller_src": "zelda_translated\\z_01.asm",
+          "caller_line": 1556,
+          "call_addr": 188352,
+          "return_addr": 188356,
+          "mnemonic": "jsr"
+        },
+        {
+          "caller_src": "zelda_translated\\z_01.asm",
+          "caller_line": 6908,
+          "call_addr": 202254,
+          "return_addr": 202256,
+          "mnemonic": "jsr"
+        },
+        {
+          "caller_src": "zelda_translated\\z_04.asm",
+          "caller_line": 1516,
+          "call_addr": 237792,
+          "return_addr": 237798,
+          "mnemonic": "jsr"
+        },
+        {
+          "caller_src": "zelda_translated\\z_04.asm",
+          "caller_line": 3385,
+          "call_addr": 241086,
+          "return_addr": 241092,
+          "mnemonic": "jsr"
+        },
+        {
+          "caller_src": "zelda_translated\\z_04.asm",
+          "caller_line": 3821,
+          "call_addr": 241902,
+          "return_addr": 241908,
+          "mnemonic": "jsr"
+        },
+        {
+          "caller_src": "zelda_translated\\z_04.asm",
+          "caller_line": 4156,
+          "call_addr": 242422,
+          "return_addr": 242428,
+          "mnemonic": "jsr"
+        },
+        {
+          "caller_src": "zelda_translated\\z_04.asm",
+          "caller_line": 5337,
+          "call_addr": 244570,
+          "return_addr": 244576,
+          "mnemonic": "jsr"
+        },
+        {
+          "caller_src": "zelda_translated\\z_04.asm",
+          "caller_line": 5768,
+          "call_addr": 245482,
+          "return_addr": 245488,
+          "mnemonic": "jsr"
+        },
+        {
+          "caller_src": "zelda_translated\\z_04.asm",
+          "caller_line": 6076,
+          "call_addr": 246086,
+          "return_addr": 246092,
+          "mnemonic": "jsr"
+        },
+        {
+          "caller_src": "zelda_translated\\z_04.asm",
+          "caller_line": 6526,
+          "call_addr": 246764,
+          "return_addr": 246770,
+          "mnemonic": "jsr"
+        },
+        {
+          "caller_src": "zelda_translated\\z_04.asm",
+          "caller_line": 6574,
+          "call_addr": 246870,
+          "return_addr": 246876,
+          "mnemonic": "jsr"
+        },
+        {
+          "caller_src": "zelda_translated\\z_04.asm",
+          "caller_line": 6951,
+          "call_addr": 247698,
+          "return_addr": 247704,
+          "mnemonic": "jsr"
+        },
+        {
+          "caller_src": "zelda_translated\\z_04.asm",
+          "caller_line": 7526,
+          "call_addr": 248736,
+          "return_addr": 248742,
+          "mnemonic": "jsr"
+        },
+        {
+          "caller_src": "zelda_translated\\z_04.asm",
+          "caller_line": 8028,
+          "call_addr": 249546,
+          "return_addr": 249552,
+          "mnemonic": "jsr"
+        },
+        {
+          "caller_src": "zelda_translated\\z_04.asm",
+          "caller_line": 8039,
+          "call_addr": 249582,
+          "return_addr": 249588,
+          "mnemonic": "jsr"
+        },
+        {
+          "caller_src": "zelda_translated\\z_04.asm",
+          "caller_line": 8284,
+          "call_addr": 250060,
+          "return_addr": 250066,
+          "mnemonic": "jsr"
+        },
+        {
+          "caller_src": "zelda_translated\\z_04.asm",
+          "caller_line": 8513,
+          "call_addr": 250554,
+          "return_addr": 250560,
+          "mnemonic": "jsr"
+        },
+        {
+          "caller_src": "zelda_translated\\z_04.asm",
+          "caller_line": 8594,
+          "call_addr": 250732,
+          "return_addr": 250738,
+          "mnemonic": "jsr"
+        },
+        {
+          "caller_src": "zelda_translated\\z_04.asm",
+          "caller_line": 8707,
+          "call_addr": 250960,
+          "return_addr": 250966,
+          "mnemonic": "jsr"
+        },
+        {
+          "caller_src": "zelda_translated\\z_04.asm",
+          "caller_line": 9967,
+          "call_addr": 253346,
+          "return_addr": 253352,
+          "mnemonic": "jsr"
+        },
+        {
+          "caller_src": "zelda_translated\\z_04.asm",
+          "caller_line": 10577,
+          "call_addr": 254490,
+          "return_addr": 254496,
+          "mnemonic": "jsr"
+        },
+        {
+          "caller_src": "zelda_translated\\z_04.asm",
+          "caller_line": 10669,
+          "call_addr": 254686,
+          "return_addr": 254692,
+          "mnemonic": "jsr"
+        },
+        {
+          "caller_src": "zelda_translated\\z_04.asm",
+          "caller_line": 11461,
+          "call_addr": 256158,
+          "return_addr": 256164,
+          "mnemonic": "jsr"
+        },
+        {
+          "caller_src": "zelda_translated\\z_04.asm",
+          "caller_line": 12140,
+          "call_addr": 257498,
+          "return_addr": 257504,
+          "mnemonic": "jsr"
+        },
+        {
+          "caller_src": "zelda_translated\\z_04.asm",
+          "caller_line": 12214,
+          "call_addr": 257640,
+          "return_addr": 257646,
+          "mnemonic": "jsr"
+        },
+        {
+          "caller_src": "zelda_translated\\z_04.asm",
+          "caller_line": 12660,
+          "call_addr": 258440,
+          "return_addr": 258446,
+          "mnemonic": "jsr"
+        },
+        {
+          "caller_src": "zelda_translated\\z_04.asm",
+          "caller_line": 12924,
+          "call_addr": 258924,
+          "return_addr": 258930,
+          "mnemonic": "jsr"
+        },
+        {
+          "caller_src": "zelda_translated\\z_07.asm",
+          "caller_line": 3401,
+          "call_addr": 311916,
+          "return_addr": 311922,
+          "mnemonic": "jsr"
+        }
+      ],
+      "exit_addr": null,
+      "exit_kind": null,
+      "static_insts": 41
+    },
+    {
+      "name": "MoveObject",
+      "tier": "T3",
+      "entry_addr": 313594,
+      "entry_section": "02",
+      "call_sites": [
+        {
+          "caller_src": "zelda_translated\\z_01.asm",
+          "caller_line": 3405,
+          "call_addr": 195918,
+          "return_addr": 195924,
+          "mnemonic": "jsr"
+        },
+        {
+          "caller_src": "zelda_translated\\z_01.asm",
+          "caller_line": 4710,
+          "call_addr": 198074,
+          "return_addr": 198080,
+          "mnemonic": "jsr"
+        },
+        {
+          "caller_src": "zelda_translated\\z_04.asm",
+          "caller_line": 920,
+          "call_addr": 236628,
+          "return_addr": 236634,
+          "mnemonic": "jsr"
+        },
+        {
+          "caller_src": "zelda_translated\\z_04.asm",
+          "caller_line": 1081,
+          "call_addr": 236918,
+          "return_addr": 236924,
+          "mnemonic": "jsr"
+        },
+        {
+          "caller_src": "zelda_translated\\z_04.asm",
+          "caller_line": 1374,
+          "call_addr": 237510,
+          "return_addr": 237516,
+          "mnemonic": "jsr"
+        },
+        {
+          "caller_src": "zelda_translated\\z_04.asm",
+          "caller_line": 1937,
+          "call_addr": 238546,
+          "return_addr": 238552,
+          "mnemonic": "jsr"
+        },
+        {
+          "caller_src": "zelda_translated\\z_04.asm",
+          "caller_line": 3627,
+          "call_addr": 241532,
+          "return_addr": 241538,
+          "mnemonic": "jsr"
+        },
+        {
+          "caller_src": "zelda_translated\\z_04.asm",
+          "caller_line": 4503,
+          "call_addr": 243010,
+          "return_addr": 243016,
+          "mnemonic": "jsr"
+        },
+        {
+          "caller_src": "zelda_translated\\z_04.asm",
+          "caller_line": 5264,
+          "call_addr": 244416,
+          "return_addr": 244422,
+          "mnemonic": "jsr"
+        },
+        {
+          "caller_src": "zelda_translated\\z_05.asm",
+          "caller_line": 8569,
+          "call_addr": 283650,
+          "return_addr": 283654,
+          "mnemonic": "jsr"
+        },
+        {
+          "caller_src": "zelda_translated\\z_07.asm",
+          "caller_line": 3138,
+          "call_addr": 311410,
+          "return_addr": 311414,
+          "mnemonic": "jsr"
+        },
+        {
+          "caller_src": "zelda_translated\\z_07.asm",
+          "caller_line": 6106,
+          "call_addr": 316464,
+          "return_addr": 316468,
+          "mnemonic": "jsr"
+        },
+        {
+          "caller_src": "zelda_translated\\z_07.asm",
+          "caller_line": 6242,
+          "call_addr": 316690,
+          "return_addr": 316694,
+          "mnemonic": "jsr"
+        },
+        {
+          "caller_src": "zelda_translated\\z_07.asm",
+          "caller_line": 6255,
+          "call_addr": 316732,
+          "return_addr": 316736,
+          "mnemonic": "jsr"
+        },
+        {
+          "caller_src": "zelda_translated\\z_07.asm",
+          "caller_line": 6799,
+          "call_addr": 317760,
+          "return_addr": 317764,
+          "mnemonic": "jsr"
+        }
+      ],
+      "exit_addr": null,
+      "exit_kind": null,
+      "static_insts": 23
+    },
+    {
+      "name": "Walker_Move",
+      "tier": "T4",
+      "entry_addr": 313296,
+      "entry_section": "02",
+      "call_sites": [
+        {
+          "caller_src": "zelda_translated\\z_04.asm",
+          "caller_line": 368,
+          "call_addr": 235554,
+          "return_addr": 235560,
+          "mnemonic": "jsr"
+        },
+        {
+          "caller_src": "zelda_translated\\z_04.asm",
+          "caller_line": 531,
+          "call_addr": 235864,
+          "return_addr": 235870,
+          "mnemonic": "jsr"
+        },
+        {
+          "caller_src": "zelda_translated\\z_04.asm",
+          "caller_line": 5620,
+          "call_addr": 245124,
+          "return_addr": 245130,
+          "mnemonic": "jsr"
+        },
+        {
+          "caller_src": "zelda_translated\\z_07.asm",
+          "caller_line": 3537,
+          "call_addr": 312190,
+          "return_addr": 312194,
+          "mnemonic": "jsr"
+        }
+      ],
+      "exit_addr": null,
+      "exit_kind": null,
+      "static_insts": 115
+    },
+    {
+      "name": "Walker_CheckTileCollision",
+      "tier": "T4",
+      "entry_addr": 313816,
+      "entry_section": "02",
+      "call_sites": [
+        {
+          "caller_src": "zelda_translated\\z_07.asm",
+          "caller_line": 4348,
+          "call_addr": 313572,
+          "return_addr": 313576,
+          "mnemonic": "jsr"
+        }
+      ],
+      "exit_addr": null,
+      "exit_kind": null,
+      "static_insts": 53
+    },
+    {
+      "name": "UpdateMoblin",
+      "tier": "T4",
+      "entry_addr": 239376,
+      "entry_section": "02",
+      "call_sites": [],
+      "exit_addr": null,
+      "exit_kind": null,
+      "static_insts": 65
+    },
+    {
+      "name": "UpdateArrowOrBoomerang",
+      "tier": "T4",
+      "entry_addr": 315884,
+      "entry_section": "02",
+      "call_sites": [
+        {
+          "caller_src": "zelda_translated\\z_04.asm",
+          "caller_line": 2646,
+          "call_addr": 239682,
+          "return_addr": 239688,
+          "mnemonic": "jsr"
+        }
+      ],
+      "exit_addr": null,
+      "exit_kind": null,
+      "static_insts": 125
+    },
+    {
+      "name": "AnimateAndDrawObjectWalking",
+      "tier": "T4",
+      "entry_addr": 201372,
+      "entry_section": "02",
+      "call_sites": [
+        {
+          "caller_src": "zelda_translated\\z_07.asm",
+          "caller_line": 3395,
+          "call_addr": 311904,
+          "return_addr": 311910,
+          "mnemonic": "jsr"
+        }
+      ],
+      "exit_addr": null,
+      "exit_kind": null,
+      "static_insts": 135
+    },
+    {
+      "name": "AddQSpeedToPositionFraction",
+      "tier": "T4",
+      "entry_addr": 197774,
+      "entry_section": "02",
+      "call_sites": [],
+      "exit_addr": null,
+      "exit_kind": null,
+      "static_insts": 36
+    },
+    {
+      "name": "SubQSpeedFromPositionFraction",
+      "tier": "T4",
+      "entry_addr": 197880,
+      "entry_section": "02",
+      "call_sites": [],
+      "exit_addr": null,
+      "exit_kind": null,
+      "static_insts": 41
+    },
+    {
+      "name": "TryNextDir",
+      "tier": "T4",
+      "entry_addr": 313960,
+      "entry_section": "02",
+      "call_sites": [],
+      "exit_addr": null,
+      "exit_kind": null,
+      "static_insts": 6
+    },
+    {
+      "name": "GetCollidableTile",
+      "tier": "T4",
+      "entry_addr": 312334,
+      "entry_section": "02",
+      "call_sites": [
+        {
+          "caller_src": "zelda_translated\\z_04.asm",
+          "caller_line": 8444,
+          "call_addr": 250396,
+          "return_addr": 250402,
+          "mnemonic": "jsr"
+        }
+      ],
+      "exit_addr": null,
+      "exit_kind": null,
+      "static_insts": 135
+    },
+    {
+      "name": "_oam_dma_flush",
+      "tier": "derived",
+      "entry_addr": 175846,
+      "entry_section": "02",
+      "call_sites": [
+        {
+          "caller_src": "genesis_shell.asm",
+          "caller_line": 463,
+          "call_addr": 1078,
+          "return_addr": 1084,
+          "mnemonic": "bsr"
+        }
+      ],
+      "exit_addr": null,
+      "exit_kind": null,
+      "static_insts": 29
+    },
+    {
+      "name": "_ags_flush",
+      "tier": "derived",
+      "entry_addr": 58248,
+      "entry_section": "02",
+      "call_sites": [
+        {
+          "caller_src": "genesis_shell.asm",
+          "caller_line": 487,
+          "call_addr": 1106,
+          "return_addr": 1112,
+          "mnemonic": "bsr"
+        }
+      ],
+      "exit_addr": null,
+      "exit_kind": null,
+      "static_insts": 12
+    },
+    {
+      "name": "_ags_prearm",
+      "tier": "derived",
+      "entry_addr": 58296,
+      "entry_section": "02",
+      "call_sites": [
+        {
+          "caller_src": "genesis_shell.asm",
+          "caller_line": 469,
+          "call_addr": 1084,
+          "return_addr": 1090,
+          "mnemonic": "bsr"
+        }
+      ],
+      "exit_addr": null,
+      "exit_kind": null,
+      "static_insts": 5
+    },
+    {
+      "name": "DriveAudio",
+      "tier": "derived",
+      "entry_addr": 181016,
+      "entry_section": "02",
+      "call_sites": [
+        {
+          "caller_src": "zelda_translated\\z_07.asm",
+          "caller_line": 1635,
+          "call_addr": 308442,
+          "return_addr": 308448,
+          "mnemonic": "jsr"
+        }
+      ],
+      "exit_addr": null,
+      "exit_kind": null,
+      "static_insts": 1
+    }
+  ],
+  "missing_symbols": []
+}

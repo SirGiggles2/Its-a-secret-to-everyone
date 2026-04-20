@@ -120,6 +120,61 @@ TURBO_LINK-only freeze; see genesis_shell.asm TURBO_LINK equ line for
 workaround). Once that's fixed, run walker_perf.lua at $73 with
 P48=on vs P48=off and confirm the budgeted 44 → ≥48 fps gain.
 
+## Stage 0 measurement (2026-04-19, P47 FIX cleared freeze)
+
+Curated cycle profiler at `tools/cycle_probe.lua` measured 300 logical
+ticks at $73 with 5 active objects (mode=$05 lvl=$00 room=$73). Savestate
+at `C:\tmp\_gen_73_profile.State` (user-recorded). Artifacts:
+`builds/reports/cycle_profile_73_p48off.csv`,
+`builds/reports/cycle_profile_73_p48on.csv`.
+
+| metric | P48 off | P48 on | Δ |
+|---|---|---|---|
+| logical FPS | 45.34 | **47.37** | +2.03 (+4.5%) |
+| mean cyc/tick (proxy) | 169,176 | 161,931 | −7,245 |
+| budget overrun vs 127,841 | 32.3% | 26.7% | −5.6pp |
+| emu frames per logical tick | 1.323 | 1.267 | −0.056 |
+
+Phase 0 budget was 44 → ≥48 fps. Measured 45.34 → 47.37 — missed ≥48 by
+0.63 fps. Plan gate says "stop and revisit hotspot ranking" if Δ < 4 fps,
+so Phase 1 (transpiler-wide shadow pointer + CFG carry elision) is NOT
+justified on this evidence.
+
+Top exclusive buckets (ESTIMATE: static_insts × 8 × calls/tick):
+
+| bucket | calls/tick | est mean/tick | % of 169k tick |
+|---|---|---|---|
+| UpdateObject body | 6.83 | 8,090 | 4.8% |
+| AddQSpeedToPositionFraction | 22.13 | 6,374 | 3.8% |
+| Walker_Move body | 4.79 | 4,671 | 2.8% |
+| AnimateAndDrawObjectWalking | 3.79 | 4,096 | 2.4% |
+| UpdateArrowOrBoomerang body | 3.81 | 3,810 | 2.3% |
+| GetCollidableTile | 2.65 | 2,865 | 1.7% |
+| Walker_CheckTileCollision | 4.79 | 2,029 | 1.2% |
+| UpdateMoblin body | 3.79 | 1,969 | 1.2% |
+| MoveObject (transpiled) | 7.49 | 1,797 | 1.1% |
+
+Sum of all instrumented buckets = 40,657 cyc/tick (24%). **76% of the
+tick is in un-instrumented callees** — OAM fill, sprite draw, bank
+window helpers, transpiled sub-functions invoked by the bucket bodies.
+The /mathproblem patterns are most costly inside those callees, not
+inside the hooked function bodies.
+
+**Strategic implication.** Zeroing all top-5 hooked buckets saves
+~27,000 cyc/tick = reaches ~53 fps, not 60. Hand-rewrite-only (Stage 1
+in the plan at `C:\Users\Jake Diggity\.claude\plans\plan-it-with-this-peppy-peacock.md`)
+has a ceiling below the target. The 60fps target requires the Stage 2
+C-emission + freestanding m68k-elf-gcc backend to compound across all
+un-instrumented callees.
+
+**Measurement caveats.** BizHawk's Genesis Plus GX core does not
+implement `TotalExecutedCycles()`. Per-bucket "cyc" values are
+ESTIMATES = static_insts × 8 cyc/inst × calls. Static instr count is
+EXCLUSIVE (body only, not callees). `tick_cyc` is DERIVED from
+emu_frame-count × 127,841 (60Hz NTSC budget) — accurate to ±1 emu
+frame per tick. Logical FPS is real (measured from FrameCounter
+advance vs emu frames).
+
 ## Priority for fixes
 
 | # | Pattern              | Sites | Cyc/site | Hot-loop impact |

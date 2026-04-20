@@ -5230,7 +5230,7 @@ def _patch_z07(path):
     # Sentinel comments `PATCH P48 BEGIN/END` tag the region so later
     # CFG / peephole passes skip the hand-written body.
     # ------------------------------------------------------------------
-    P48_WALKER = False   # bisect: is $73 freeze P48 or not?
+    P48_WALKER = True    # re-enabled 2026-04-19 after P47 FIX cleared freeze
 
     if P48_WALKER:
         mo_start = None
