@@ -2553,6 +2553,10 @@ def _patch_z01(path):
     # --- Stage 4b batch 22: C→C chain + D0-clobber bugfix ---
     text = _stub_func(text, 'ResetShoveInfoAndInvincibilityTimer', 'c_reset_shove_info_and_inv_timer')
 
+    # --- Stage 4b batch 23: simple leaf stubs ---
+    text = _stub_func(text, 'UpdatePersonState_ResetCharOffset', 'c_update_person_reset_char_offset')
+    text = _stub_func(text, 'BeginUpdateMode', 'c_begin_update_mode')
+
     with open(path, 'w', encoding='utf-8') as f:
         f.write(text)
 
@@ -3829,6 +3833,11 @@ def _patch_z04(path):
     text = _stub_func(text, 'UpdateDodongoState1_Bloated_Sub_End', 'c_update_dodongo_bloated_sub_end')
     text = _stub_func(text, 'SetUpFairyObject', 'c_set_up_fairy_object')
 
+    # --- Stage 4b batch 23: simple leaf stubs ---
+    text = _stub_func(text, 'ResetPushTimer', 'c_reset_push_timer')
+    text = _stub_func(text, 'SetDeadDummyObjType', 'c_set_dead_dummy_obj_type')
+    text = _stub_func(text, 'Jumper_ResetVSpeedFrac', 'c_jumper_reset_vspeed_frac')
+
     with open(path, 'w', encoding='utf-8') as f:
         f.write(text)
 
@@ -5019,6 +5028,9 @@ def _patch_z05(path):
 
     # --- Stage 4b batch 20: z_05 C function stubs ---
     text = _stub_func(text, 'Cycle9InDirection', 'c_cycle9_in_direction')
+
+    # --- Stage 4b batch 23: simple leaf stubs ---
+    text = _stub_func(text, 'UpdateMode11Death_Sub6', 'c_update_mode11_death_sub6')
 
     with open(path, 'w', encoding='utf-8') as f:
         f.write(text)
@@ -6359,6 +6371,10 @@ def _patch_z07(path):
 
     # --- Stage 4b batch 19: z_07 C function stubs ---
     text = _stub_func(text, 'Walker_AltDir_GetMovingOppositeDir', 'c_walker_alt_dir_get_opposite')
+
+    # --- Stage 4b batch 23: simple leaf + C→C chain stubs ---
+    text = _stub_func(text, 'InitFluteSecret', 'c_init_flute_secret')
+    text = _stub_func(text, 'ResetObjMetastateAndTimer', 'c_reset_obj_metastate_and_timer')
 
     with open(path, 'w', encoding='utf-8') as f:
         f.write(text)

@@ -362,3 +362,13 @@ void z05_init_mode4_go_to_sub0(void) {
     RAM(0x051F) = 0;
 }
 
+void z05_trigger_open_door(unsigned int val) {
+    RAM(0x0055) = (unsigned char)val;
+    RAM(0x0054) = 6;
+}
+
+void z05_update_mode11_death_sub6(void) {
+    RAM(0x00FF) = RAM(0x00FF) & 0xFE;
+    z05_inc_submode();
+}
+

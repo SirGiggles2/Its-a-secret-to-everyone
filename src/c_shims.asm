@@ -137,6 +137,15 @@
     xdef    c_update_dodongo_bloated_sub_end
     xdef    c_set_up_fairy_object
     xdef    c_reset_shove_info_and_inv_timer
+    xdef    c_reset_push_timer
+    xdef    c_set_dead_dummy_obj_type
+    xdef    c_jumper_reset_vspeed_frac
+    xdef    c_update_person_reset_char_offset
+    xdef    c_begin_update_mode
+    xdef    c_trigger_open_door
+    xdef    c_update_mode11_death_sub6
+    xdef    c_init_flute_secret
+    xdef    c_reset_obj_metastate_and_timer
 
     xref    c_move_object
     xref    z03_transfer_level_pattern_blocks
@@ -250,6 +259,15 @@
     xref    z04_update_dodongo_bloated_sub_end
     xref    z04_set_up_fairy_object
     xref    z01_reset_shove_info_and_inv_timer
+    xref    z04_reset_push_timer
+    xref    z04_set_dead_dummy_obj_type
+    xref    z04_jumper_reset_vspeed_frac
+    xref    z01_update_person_state_reset_char_offset
+    xref    z01_begin_update_mode
+    xref    z05_trigger_open_door
+    xref    z05_update_mode11_death_sub6
+    xref    z07_init_flute_secret
+    xref    z07_reset_obj_metastate_and_timer
 
 ;------------------------------------------------------------------------------
 ; _c_move_object_shim — MoveObject trampoline.
@@ -1191,6 +1209,79 @@ c_reset_shove_info_and_inv_timer:
     move.w  D2,D0
     move.l  D0,-(SP)
     jsr     z01_reset_shove_info_and_inv_timer
+    addq.l  #4,SP
+    rts
+
+;==============================================================================
+; EXPORT side — batch 23: simple leaf functions.
+;==============================================================================
+
+; ResetPushTimer — D2=slot.
+c_reset_push_timer:
+    moveq   #0,D0
+    move.w  D2,D0
+    move.l  D0,-(SP)
+    jsr     z04_reset_push_timer
+    addq.l  #4,SP
+    rts
+
+; SetDeadDummyObjType — D2=slot.
+c_set_dead_dummy_obj_type:
+    moveq   #0,D0
+    move.w  D2,D0
+    move.l  D0,-(SP)
+    jsr     z04_set_dead_dummy_obj_type
+    addq.l  #4,SP
+    rts
+
+; Jumper_ResetVSpeedFrac — D2=slot.
+c_jumper_reset_vspeed_frac:
+    moveq   #0,D0
+    move.w  D2,D0
+    move.l  D0,-(SP)
+    jsr     z04_jumper_reset_vspeed_frac
+    addq.l  #4,SP
+    rts
+
+; UpdatePersonState_ResetCharOffset — no-arg.
+c_update_person_reset_char_offset:
+    jsr     z01_update_person_state_reset_char_offset
+    rts
+
+; BeginUpdateMode — no-arg.
+c_begin_update_mode:
+    jsr     z01_begin_update_mode
+    rts
+
+; TriggerOpenDoor — D0=val.
+c_trigger_open_door:
+    moveq   #0,D1
+    move.b  D0,D1
+    move.l  D1,-(SP)
+    jsr     z05_trigger_open_door
+    addq.l  #4,SP
+    rts
+
+; UpdateMode11Death_Sub6 — no-arg, C→C chain to inc_submode.
+c_update_mode11_death_sub6:
+    jsr     z05_update_mode11_death_sub6
+    rts
+
+; InitFluteSecret — D2=slot, C→C chain.
+c_init_flute_secret:
+    moveq   #0,D0
+    move.w  D2,D0
+    move.l  D0,-(SP)
+    jsr     z07_init_flute_secret
+    addq.l  #4,SP
+    rts
+
+; ResetObjMetastateAndTimer — D2=slot, C→C chain.
+c_reset_obj_metastate_and_timer:
+    moveq   #0,D0
+    move.w  D2,D0
+    move.l  D0,-(SP)
+    jsr     z07_reset_obj_metastate_and_timer
     addq.l  #4,SP
     rts
 

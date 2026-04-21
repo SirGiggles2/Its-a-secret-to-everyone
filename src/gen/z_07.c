@@ -111,3 +111,14 @@ unsigned int z07_walker_alt_dir_get_opposite(void) {
     return (dir << 1) & 0xFF;
 }
 
+void z07_reset_obj_metastate_and_timer(unsigned int slot) {
+    RAM(0x0028 + slot) = 0;
+    z07_reset_obj_metastate(slot);
+}
+
+void z07_init_flute_secret(unsigned int slot) {
+    RAM(0x051A) = 1;
+    RAM(0x0028 + slot) = 0;
+    z07_reset_obj_metastate(slot);
+}
+

@@ -134,3 +134,15 @@ void z04_reset_flyer_state(unsigned int slot) {
     RAM(0x0444 + slot) = 0;
     RAM(0x04F0 + slot) = 0;
 }
+
+void z04_reset_push_timer(unsigned int slot) {
+    RAM(0x0412 + slot) = 0;
+}
+
+void z04_set_dead_dummy_obj_type(unsigned int slot) {
+    RAM(0x034F + slot) = 93;
+}
+
+void z04_jumper_reset_vspeed_frac(unsigned int slot) {
+    RAM(0x041F + slot) = 0;
+}

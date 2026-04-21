@@ -152,3 +152,13 @@ void z01_reset_shove_info_and_inv_timer(unsigned int slot) {
     z07_set_shove_info_with0(0, slot);
     RAM(0x04F0 + slot) = 0;
 }
+
+void z01_update_person_state_reset_char_offset(void) {
+    RAM(0x0416) = 0;
+    RAM(0x00AD)++;
+}
+
+void z01_begin_update_mode(void) {
+    RAM(0x0013) = 0;
+    RAM(0x0011)++;
+}
