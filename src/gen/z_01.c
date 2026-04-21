@@ -108,3 +108,8 @@ void z01_set_up_common_cave_objects(unsigned int x, unsigned int slot, unsigned 
     RAM(0x0085 + slot) = y;
     RAM(0x0086 + slot) = y;
 }
+
+void z01_anim_set_sprite_desc_attrs(unsigned int val) {
+    RAM(0x0004) = (unsigned char)val;
+    RAM(0x0005) = (unsigned char)val;
+}

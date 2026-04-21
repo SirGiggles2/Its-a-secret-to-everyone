@@ -100,3 +100,7 @@ void z07_anim_fetch_obj_pos(unsigned int slot) {
     RAM(0x000F) = 0;
 }
 
+void z07_anim_set_obj_hflip(unsigned int slot) {
+    RAM(0x000F) = RAM(0x03E4 + slot);
+}
+

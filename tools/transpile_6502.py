@@ -2539,6 +2539,7 @@ def _patch_z01(path):
     text = _stub_func(text, 'UnhaltLink', 'c_unhalt_link')
     text = _stub_func(text, 'IncCaveState', 'c_inc_cave_state')
     text = _stub_func(text, 'SetUpWhirlwind', 'c_set_up_whirlwind')
+    text = _stub_func(text, 'Anim_SetSpriteDescriptorAttributes', 'c_anim_set_sprite_desc_attrs')
 
     with open(path, 'w', encoding='utf-8') as f:
         f.write(text)
@@ -6281,6 +6282,7 @@ def _patch_z07(path):
     # --- Stage 4b batch 13: more z_07 C function stubs ---
     text = _stub_func(text, 'ResetObjMetastate', 'c_reset_obj_metastate')
     text = _stub_func(text, 'Anim_FetchObjPosForSpriteDescriptor', 'c_anim_fetch_obj_pos')
+    text = _stub_func(text, 'Anim_SetObjHFlipForSpriteDescriptor', 'c_anim_set_obj_hflip')
 
     with open(path, 'w', encoding='utf-8') as f:
         f.write(text)

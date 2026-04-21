@@ -105,6 +105,8 @@
     xdef    c_inc_cave_state
     xdef    c_set_up_whirlwind
     xdef    c_inc_subphase
+    xdef    c_anim_set_obj_hflip
+    xdef    c_anim_set_sprite_desc_attrs
 
     xref    c_move_object
     xref    z03_transfer_level_pattern_blocks
@@ -188,6 +190,8 @@
     xref    z01_inc_cave_state
     xref    z01_set_up_whirlwind
     xref    z02_inc_subphase
+    xref    z07_anim_set_obj_hflip
+    xref    z01_anim_set_sprite_desc_attrs
 
 ;------------------------------------------------------------------------------
 ; _c_move_object_shim — MoveObject trampoline.
@@ -868,4 +872,22 @@ c_set_up_whirlwind:
 ; IncSubphase — void→void.
 c_inc_subphase:
     jmp     z02_inc_subphase
+
+; Anim_SetObjHFlipForSpriteDescriptor — D2=slot.
+c_anim_set_obj_hflip:
+    moveq   #0,D0
+    move.w  D2,D0
+    move.l  D0,-(SP)
+    jsr     z07_anim_set_obj_hflip
+    addq.l  #4,SP
+    rts
+
+; Anim_SetSpriteDescriptorAttributes — D0=val.
+c_anim_set_sprite_desc_attrs:
+    moveq   #0,D1
+    move.b  D0,D1
+    move.l  D1,-(SP)
+    jsr     z01_anim_set_sprite_desc_attrs
+    addq.l  #4,SP
+    rts
 
