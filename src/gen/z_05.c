@@ -217,6 +217,21 @@ void z05_mask_cur_ppu_mask_grayscale(void) {
     RAM(0x00FE) &= 0xFE;
 }
 
+static const unsigned char obj_room_bounds[] = {
+    0x11, 0xE0, 0x4E, 0xCD, 0x89,
+    0x21, 0xD0, 0x5E, 0xBD, 0x78
+};
+
+void z05_setup_obj_room_bounds(void) {
+    unsigned char base = 5;
+    if (RAM(0x0010) == 0) {
+        base = 0;
+        RAM(0x0053) = 0;
+    }
+    for (unsigned char i = 0; i < 5; i++)
+        RAM(0x0346 + i) = obj_room_bounds[base + i];
+}
+
 void z05_init_link_speed(void) {
     RAM(0x0000) = 96;
     unsigned char level = RAM(0x0010);

@@ -45,6 +45,9 @@
     xdef    c_put_link_behind_background
     xdef    c_reset_inv_obj_state
     xdef    c_mask_cur_ppu_mask_grayscale
+    xdef    c_setup_obj_room_bounds
+    xdef    c_hide_all_sprites
+    xdef    c_get_unique_room_id
 
     xref    c_move_object
     xref    z03_transfer_level_pattern_blocks
@@ -68,6 +71,9 @@
     xref    z05_put_link_behind_background
     xref    z05_reset_inv_obj_state
     xref    z05_mask_cur_ppu_mask_grayscale
+    xref    z05_setup_obj_room_bounds
+    xref    z07_hide_all_sprites
+    xref    z07_get_unique_room_id
 
 ;------------------------------------------------------------------------------
 ; _c_move_object_shim — MoveObject trampoline.
@@ -297,4 +303,23 @@ c_reset_inv_obj_state:
 ; MaskCurPpuMaskGrayscale — no args, void return.
 c_mask_cur_ppu_mask_grayscale:
     jmp     z05_mask_cur_ppu_mask_grayscale
+
+; SetupObjRoomBounds — no args, void return.
+c_setup_obj_room_bounds:
+    jmp     z05_setup_obj_room_bounds
+
+;==============================================================================
+; EXPORT side — z_07 entry points (Stage 4b batch 4).
+;==============================================================================
+
+; HideAllSprites — no args, void return.
+c_hide_all_sprites:
+    jmp     z07_hide_all_sprites
+
+; GetUniqueRoomId — no args, returns D0=unique room ID, D3=room ID.
+c_get_unique_room_id:
+    jsr     z07_get_unique_room_id
+    moveq   #0,D3
+    move.b  ($00EB,A4),D3
+    rts
 

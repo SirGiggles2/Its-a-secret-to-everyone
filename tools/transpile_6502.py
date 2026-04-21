@@ -3689,6 +3689,25 @@ def _patch_z03_c_mode(path):
     print(f"  _patch_z03: C-mode data-only emit (code -> src/gen/z_03.c)")
 
 
+import re as _re_stub
+
+def _stub_func(text, label, c_shim):
+    """Replace a function body (from label: to next top-level label) with a jmp stub."""
+    pat = _re_stub.compile(
+        r'^(' + _re_stub.escape(label) + r':)\s*\n'
+        r'(.*?)(?=^[A-Za-z]\w*:|\Z)',
+        _re_stub.MULTILINE | _re_stub.DOTALL
+    )
+    m = pat.search(text)
+    if m:
+        stub = f"{label}:\n    jmp     {c_shim}\n\n"
+        text = text[:m.start()] + stub + text[m.end():]
+        print(f"  _stub_func: {label} -> {c_shim}")
+    else:
+        print(f"  WARNING: _stub_func -- {label} anchor not found")
+    return text
+
+
 def _patch_z05(path):
     """Inject bank-window guards into room-layout ROM-pointer consumers (bank-5 pinned)."""
     with open(path, 'r', encoding='utf-8') as f:
@@ -4827,25 +4846,6 @@ def _patch_z05(path):
     else:
         print("  _patch_z05 P46: DISABLED (clustering)")
 
-    # --- Stage 3b: replace CopyColumnToTileBuf / CopyRowToTileBuf with C stubs ---
-    import re as _re05
-
-    def _stub_func(text, label, c_shim):
-        """Replace a function body (from label: to next top-level label) with a jmp stub."""
-        pat = _re05.compile(
-            r'^(' + _re05.escape(label) + r':)\s*\n'
-            r'(.*?)(?=^[A-Za-z]\w*:|\Z)',
-            _re05.MULTILINE | _re05.DOTALL
-        )
-        m = pat.search(text)
-        if m:
-            stub = f"{label}:\n    jmp     {c_shim}\n\n"
-            text = text[:m.start()] + stub + text[m.end():]
-            print(f"  _patch_z05 S3b: {label} -> {c_shim}")
-        else:
-            print(f"  WARNING: _patch_z05 S3b -- {label} anchor not found")
-        return text
-
     # --- Stage 4a: C function stubs ---
     text = _stub_func(text, 'CopyColumnToTileBuf', 'c_copy_column_to_tilebuf')
     text = _stub_func(text, 'CopyRowToTileBuf', 'c_copy_row_to_tilebuf')
@@ -4868,6 +4868,7 @@ def _patch_z05(path):
     text = _stub_func(text, 'PutLinkBehindBackground', 'c_put_link_behind_background')
     text = _stub_func(text, 'ResetInvObjState', 'c_reset_inv_obj_state')
     text = _stub_func(text, 'MaskCurPpuMaskGrayscale', 'c_mask_cur_ppu_mask_grayscale')
+    text = _stub_func(text, 'SetupObjRoomBounds', 'c_setup_obj_room_bounds')
 
     with open(path, 'w', encoding='utf-8') as f:
         f.write(text)
@@ -6176,6 +6177,10 @@ def _patch_z07(path):
     if p47_table_anchor in text and p47_table.strip() not in text:
         text = text.replace(p47_table_anchor, p47_table + p47_table_anchor, 1)
         print("  _patch_z07 P47: FallbackCells table injected")
+
+    # --- Stage 4b batch 4: z_07 C function stubs ---
+    text = _stub_func(text, 'HideAllSprites', 'c_hide_all_sprites')
+    text = _stub_func(text, 'GetUniqueRoomId', 'c_get_unique_room_id')
 
     with open(path, 'w', encoding='utf-8') as f:
         f.write(text)
