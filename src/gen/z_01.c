@@ -252,3 +252,7 @@ void z01_play_effect(unsigned int val) {
 void z01_play_sample(unsigned int val) {
     RAM(0x0601) |= (unsigned char)val;
 }
+
+void z01_play_parry_tune(void) {
+    RAM(0x0604) = 1;
+}

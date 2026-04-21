@@ -2582,6 +2582,9 @@ def _patch_z01(path):
     text = _stub_func(text, 'PlaySample', 'c_play_sample')
     text = _stub_func(text, 'PlayEffect', 'c_play_effect')
 
+    # --- Stage 4b batch 29 ---
+    text = _stub_func(text, 'PlayParryTune', 'c_play_parry_tune')
+
     with open(path, 'w', encoding='utf-8') as f:
         f.write(text)
 
@@ -3915,6 +3918,10 @@ def _patch_z04(path):
     # --- Stage 4b batch 28 ---
     text = _stub_func(text, 'Flyer_SetFlyingState', 'c_flyer_set_flying_state')
     text = _stub_func(text, 'PlayBossDeathCryIfNeeded', 'c_play_boss_death_cry_if_needed')
+
+    # --- Stage 4b batch 29 ---
+    text = _stub_func(text, 'DestroyMonsterShot', 'c_destroy_monster_shot')
+    text = _stub_func(text, 'DestroyCountedMonsterShot', 'c_destroy_counted_monster_shot')
 
     with open(path, 'w', encoding='utf-8') as f:
         f.write(text)
@@ -6425,6 +6432,11 @@ def _patch_z07(path):
         text = text.replace(p47_table_anchor, p47_table + p47_table_anchor, 1)
         print("  _patch_z07 P47: FallbackCells table injected")
 
+    # Export ROM data tables referenced by C code
+    if 'xdef    LevelSongIds' not in text and 'LevelSongIds:' in text:
+        text = "\n    xdef    LevelSongIds\n" + text
+        print("  _patch_z07: exported LevelSongIds")
+
     # --- Stage 4b batch 4: z_07 C function stubs ---
     text = _stub_func(text, 'HideAllSprites', 'c_hide_all_sprites')
     text = _stub_func(text, 'GetUniqueRoomId', 'c_get_unique_room_id')
@@ -6476,6 +6488,10 @@ def _patch_z07(path):
     text = _stub_func(text, 'SetTypeAndClearObject', 'c_set_type_and_clear_object')
     text = _stub_func(text, 'InitTileObjOrItem', 'c_init_tile_obj_or_item')
     text = _stub_func(text, 'Anim_AdvanceAnimCounterAndSetObjPosForSpriteDescriptor', 'c_anim_advance_and_fetch')
+
+    # --- Stage 4b batch 29 ---
+    text = _stub_func(text, 'GoToNextModePlayLevelSong', 'c_go_to_next_mode_play_level_song')
+    text = _stub_func(text, 'GoToNextModeResetGridOffset', 'c_go_to_next_mode_reset_grid_offset')
 
     with open(path, 'w', encoding='utf-8') as f:
         f.write(text)

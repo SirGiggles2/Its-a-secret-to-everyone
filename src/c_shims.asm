@@ -181,6 +181,11 @@
     xdef    c_play_boss_death_cry_if_needed
     xdef    c_select_transfer_buf
     xdef    c_touch_door_wall
+    xdef    c_go_to_next_mode_play_level_song
+    xdef    c_go_to_next_mode_reset_grid_offset
+    xdef    c_destroy_monster_shot
+    xdef    c_destroy_counted_monster_shot
+    xdef    c_play_parry_tune
 
     xref    c_move_object
     xref    z03_transfer_level_pattern_blocks
@@ -338,6 +343,11 @@
     xref    z04_play_boss_death_cry_if_needed
     xref    z05_select_transfer_buf
     xref    z05_touch_door_wall
+    xref    z07_go_to_next_mode_play_level_song
+    xref    z07_go_to_next_mode_reset_grid_offset
+    xref    z04_destroy_monster_shot
+    xref    z04_destroy_counted_monster_shot
+    xref    z01_play_parry_tune
 
 ;------------------------------------------------------------------------------
 ; _c_move_object_shim — MoveObject trampoline.
@@ -1659,5 +1669,42 @@ c_select_transfer_buf:
 ; TouchDoorWall — no args. Sets RAM($0E) = $FF.
 c_touch_door_wall:
     jsr     z05_touch_door_wall
+    rts
+
+;==============================================================================
+; EXPORT side — batch 29.
+;==============================================================================
+
+; GoToNextModePlayLevelSong — no args, C→C chain.
+c_go_to_next_mode_play_level_song:
+    jsr     z07_go_to_next_mode_play_level_song
+    rts
+
+; GoToNextModeResetGridOffset — no args, C→C chain.
+c_go_to_next_mode_reset_grid_offset:
+    jsr     z07_go_to_next_mode_reset_grid_offset
+    rts
+
+; DestroyMonsterShot — D2=slot.
+c_destroy_monster_shot:
+    moveq   #0,D0
+    move.w  D2,D0
+    move.l  D0,-(SP)
+    jsr     z04_destroy_monster_shot
+    addq.l  #4,SP
+    rts
+
+; DestroyCountedMonsterShot — D2=slot.
+c_destroy_counted_monster_shot:
+    moveq   #0,D0
+    move.w  D2,D0
+    move.l  D0,-(SP)
+    jsr     z04_destroy_counted_monster_shot
+    addq.l  #4,SP
+    rts
+
+; PlayParryTune — no args, leaf.
+c_play_parry_tune:
+    jsr     z01_play_parry_tune
     rts
 

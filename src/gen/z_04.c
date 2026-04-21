@@ -183,3 +183,17 @@ void z04_play_boss_death_cry_if_needed(unsigned int slot) {
     if (RAM(0x0405 + slot) == 0) return;
     z04_play_boss_death_cry();
 }
+
+extern void z07_destroy_monster(unsigned int slot);
+
+void z04_destroy_monster_shot(unsigned int slot) {
+    unsigned char type = RAM(0x034F + slot);
+    if (type != 0x55 && type != 0x56)
+        RAM(0x034C)--;
+    z07_destroy_monster(slot);
+}
+
+void z04_destroy_counted_monster_shot(unsigned int slot) {
+    RAM(0x034C)--;
+    z07_destroy_monster(slot);
+}

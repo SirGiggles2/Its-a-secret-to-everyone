@@ -179,3 +179,17 @@ void z07_anim_advance_and_fetch(unsigned int val, unsigned int slot) {
     z07_anim_fetch_obj_pos(slot);
 }
 
+extern const unsigned char LevelSongIds[];
+
+void z07_go_to_next_mode_play_level_song(void) {
+    unsigned char level = RAM(0x0010);
+    RAM(0x0600) = LevelSongIds[level];
+    z07_go_to_next_mode();
+    RAM(0x0394) = 0;
+}
+
+void z07_go_to_next_mode_reset_grid_offset(void) {
+    z07_go_to_next_mode();
+    RAM(0x0394) = 0;
+}
+
