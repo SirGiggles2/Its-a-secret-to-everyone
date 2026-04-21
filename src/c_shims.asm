@@ -122,6 +122,10 @@
     xdef    c_extract_hit_point_value
     xdef    c_copy_column_or_row_to_tilebuf
     xdef    c_walker_alt_dir_get_opposite
+    xdef    c_jumper_point_boulder_downward
+    xdef    c_flyer_delay
+    xdef    c_mode_e_sync_char_board_cursor
+    xdef    c_cycle9_in_direction
 
     xref    c_move_object
     xref    z03_transfer_level_pattern_blocks
@@ -220,6 +224,10 @@
     xref    z04_extract_hit_point_value
     xref    z05_copy_column_or_row_to_tilebuf
     xref    z07_walker_alt_dir_get_opposite
+    xref    z04_jumper_point_boulder_downward
+    xref    z04_flyer_delay
+    xref    z02_mode_e_sync_char_board_cursor
+    xref    z05_cycle9_in_direction
 
 ;------------------------------------------------------------------------------
 ; _c_move_object_shim — MoveObject trampoline.
@@ -1019,5 +1027,41 @@ c_copy_column_or_row_to_tilebuf:
 ; Walker_AltDir_GetMovingOppositeDir — void→D0 return.
 c_walker_alt_dir_get_opposite:
     jsr     z07_walker_alt_dir_get_opposite
+    rts
+
+;==============================================================================
+; EXPORT side — batch 20.
+;==============================================================================
+
+; Jumper_PointBoulderDownward — D2=slot.
+c_jumper_point_boulder_downward:
+    moveq   #0,D0
+    move.w  D2,D0
+    move.l  D0,-(SP)
+    jsr     z04_jumper_point_boulder_downward
+    addq.l  #4,SP
+    rts
+
+; Flyer_Delay — D2=slot.
+c_flyer_delay:
+    moveq   #0,D0
+    move.w  D2,D0
+    move.l  D0,-(SP)
+    jsr     z04_flyer_delay
+    addq.l  #4,SP
+    rts
+
+; ModeE_SyncCharBoardCursorToIndex — void→void.
+c_mode_e_sync_char_board_cursor:
+    jmp     z02_mode_e_sync_char_board_cursor
+
+; Cycle9InDirection — D3 in, D3 out.
+c_cycle9_in_direction:
+    moveq   #0,D0
+    move.b  D3,D0
+    move.l  D0,-(SP)
+    jsr     z05_cycle9_in_direction
+    addq.l  #4,SP
+    move.b  D0,D3
     rts
 

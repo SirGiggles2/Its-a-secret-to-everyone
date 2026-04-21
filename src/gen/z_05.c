@@ -211,6 +211,22 @@ extern void z05_reset_inv_obj_state(void);
 extern void z05_copy_row_to_tilebuf(void);
 extern void z05_copy_column_to_tilebuf(void);
 
+unsigned int z05_cycle9_in_direction(unsigned int d3_in) {
+    unsigned char d3 = (unsigned char)d3_in;
+    unsigned char dir = RAM(0x00EF) & 0x03;
+    if (dir == 0)
+        return d3;
+    if (dir & 1)
+        d3++;
+    else
+        d3--;
+    if (d3 == 0xFF)
+        d3 = 8;
+    else if (d3 == 9)
+        d3 = 0;
+    return d3;
+}
+
 void z05_copy_column_or_row_to_tilebuf(void) {
     unsigned char row = RAM(0x00E9);
     if (row < 0x16) {

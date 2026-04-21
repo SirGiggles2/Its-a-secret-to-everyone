@@ -74,6 +74,18 @@ void z04_init_digdogger1(unsigned int slot) {
     RAM(0x0507) = 3;
 }
 
+void z04_jumper_point_boulder_downward(unsigned int slot) {
+    if (RAM(0x034F + slot) != 0x20)
+        return;
+    unsigned char dir = RAM(0x0098 + slot) & 0x03;
+    RAM(0x0098 + slot) = dir | 0x04;
+}
+
+void z04_flyer_delay(unsigned int slot) {
+    if (RAM(0x0028 + slot) == 0)
+        RAM(0x0444 + slot) = 0;
+}
+
 void z04_manhandla_set_all_segments_direction(unsigned int val) {
     for (signed char i = 4; i >= 0; i--)
         RAM(0x0099 + (unsigned char)i) = (unsigned char)val;

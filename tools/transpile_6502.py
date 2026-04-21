@@ -3601,6 +3601,9 @@ def _patch_z02(path):
     # --- Stage 4b batch 19: z_02 C function stubs ---
     text = _stub_func(text, 'AnimateDemoPhase1Subphase3', 'c_animate_demo_p1_sub3')
 
+    # --- Stage 4b batch 20: z_02 C function stubs ---
+    text = _stub_func(text, 'ModeE_SyncCharBoardCursorToIndex', 'c_mode_e_sync_char_board_cursor')
+
     with open(path, 'w', encoding='utf-8') as f:
         f.write(text)
 
@@ -3802,6 +3805,10 @@ def _patch_z04(path):
     # --- Stage 4b batch 19: z_04 C function stubs ---
     text = _stub_func(text, 'Manhandla_SetAllSegmentsDirection', 'c_manhandla_set_all_segments_direction')
     text = _stub_func(text, 'ExtractHitPointValue', 'c_extract_hit_point_value')
+
+    # --- Stage 4b batch 20: z_04 C function stubs ---
+    text = _stub_func(text, 'Jumper_PointBoulderDownward', 'c_jumper_point_boulder_downward')
+    text = _stub_func(text, 'Flyer_Delay', 'c_flyer_delay')
 
     with open(path, 'w', encoding='utf-8') as f:
         f.write(text)
@@ -4990,6 +4997,9 @@ def _patch_z05(path):
 
     # --- Stage 4b batch 19: z_05 C function stubs ---
     text = _stub_func(text, 'CopyColumnOrRowToTileBuf', 'c_copy_column_or_row_to_tilebuf')
+
+    # --- Stage 4b batch 20: z_05 C function stubs ---
+    text = _stub_func(text, 'Cycle9InDirection', 'c_cycle9_in_direction')
 
     with open(path, 'w', encoding='utf-8') as f:
         f.write(text)

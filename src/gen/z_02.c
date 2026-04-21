@@ -75,6 +75,24 @@ void z02_inc_subphase(void) {
     RAM(0x042D)++;
 }
 
+void z02_mode_e_sync_char_board_cursor(void) {
+    unsigned char idx = RAM(0x041F);
+    if (idx & 0x80)
+        idx += 44;
+    if (idx >= 44)
+        idx -= 44;
+    if (idx == 43)
+        idx = 9;
+    RAM(0x041F) = idx;
+    unsigned char row = 0;
+    while (idx >= 11) {
+        idx -= 11;
+        row++;
+    }
+    RAM(0x0071) = (idx << 4) + 0x30;
+    RAM(0x0085) = (row << 4) + 0x88;
+}
+
 void z02_update_mode_d_save_sub2(void) {
     c_import_sram_commit();
     RAM(0x0012) = 0;
