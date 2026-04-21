@@ -3748,6 +3748,15 @@ def _patch_z04(path):
     with open(path, 'r', encoding='utf-8') as f:
         text = f.read()
 
+    # Export ROM data tables referenced by C code
+    xdef_block = "\n    xdef    TektiteStartingDirs\n    xdef    GanonStartXs\n"
+    if 'xdef    TektiteStartingDirs' not in text:
+        # Insert after the header comment block
+        marker = 'TektiteStartingDirs:'
+        if marker in text:
+            text = xdef_block + text
+            print("  _patch_z04: exported TektiteStartingDirs, GanonStartXs")
+
     # --- Stage 4b batch 6: z_04 C function stubs ---
     text = _stub_func(text, 'HideSpritesOverLink', 'c_hide_sprites_over_link')
 
@@ -3764,6 +3773,8 @@ def _patch_z04(path):
     text = _stub_func(text, 'InitAquamentus', 'c_init_aquamentus')
     text = _stub_func(text, 'ResetFlyerState', 'c_reset_flyer_state')
     text = _stub_func(text, 'Flyer_SetFlyingStateAnd6Turns', 'c_flyer_set_state_and_turns')
+    text = _stub_func(text, 'InitTektite', 'c_init_tektite')
+    text = _stub_func(text, 'Ganon_RandomizeLocation', 'c_ganon_randomize_location')
 
     with open(path, 'w', encoding='utf-8') as f:
         f.write(text)

@@ -4,6 +4,9 @@
 
 #include "../nes_abi.h"
 
+extern const unsigned char TektiteStartingDirs[];
+extern const unsigned char GanonStartXs[];
+
 void z04_hide_sprites_over_link(void) {
     RAM(0x0240) = 0xF8;
     RAM(0x0244) = 0xF8;
@@ -44,6 +47,20 @@ void z04_init_aquamentus(unsigned int slot) {
     RAM(0x0601) = 16;
     RAM(0x0070 + slot) = 0xB0;
     RAM(0x0084 + slot) = 0x80;
+}
+
+void z04_init_tektite(unsigned int slot) {
+    unsigned char rnd = RAM(0x0019 + slot) & 0x03;
+    unsigned char dir = TektiteStartingDirs[rnd];
+    RAM(0x0098 + slot) = dir;
+    unsigned char timer = dir << 2;
+    RAM(0x0028 + slot) = timer;
+}
+
+void z04_ganon_randomize_location(unsigned int slot) {
+    RAM(0x0084 + slot) = 0xA0;
+    unsigned char idx = RAM(0x0015) & 0x01;
+    RAM(0x0070 + slot) = GanonStartXs[idx];
 }
 
 void z04_reset_flyer_state(unsigned int slot) {

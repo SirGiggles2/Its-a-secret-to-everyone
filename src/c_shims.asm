@@ -107,6 +107,8 @@
     xdef    c_inc_subphase
     xdef    c_anim_set_obj_hflip
     xdef    c_anim_set_sprite_desc_attrs
+    xdef    c_init_tektite
+    xdef    c_ganon_randomize_location
 
     xref    c_move_object
     xref    z03_transfer_level_pattern_blocks
@@ -192,6 +194,8 @@
     xref    z02_inc_subphase
     xref    z07_anim_set_obj_hflip
     xref    z01_anim_set_sprite_desc_attrs
+    xref    z04_init_tektite
+    xref    z04_ganon_randomize_location
 
 ;------------------------------------------------------------------------------
 ; _c_move_object_shim — MoveObject trampoline.
@@ -879,6 +883,24 @@ c_anim_set_obj_hflip:
     move.w  D2,D0
     move.l  D0,-(SP)
     jsr     z07_anim_set_obj_hflip
+    addq.l  #4,SP
+    rts
+
+; InitTektite — D2=slot.
+c_init_tektite:
+    moveq   #0,D0
+    move.w  D2,D0
+    move.l  D0,-(SP)
+    jsr     z04_init_tektite
+    addq.l  #4,SP
+    rts
+
+; Ganon_RandomizeLocation — D2=slot.
+c_ganon_randomize_location:
+    moveq   #0,D0
+    move.w  D2,D0
+    move.l  D0,-(SP)
+    jsr     z04_ganon_randomize_location
     addq.l  #4,SP
     rts
 
