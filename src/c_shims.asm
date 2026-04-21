@@ -56,6 +56,15 @@
     xdef    c_hide_sprites_over_link
     xdef    c_get_room_flags
     xdef    c_mark_room_visited
+    xdef    c_play_character_sfx
+    xdef    c_reset_room_tile_obj_info
+    xdef    c_play_key_taken_tune
+    xdef    c_take_power_triforce
+    xdef    c_silence_all_sound
+    xdef    c_post_debit
+    xdef    c_init_one_simple_object
+    xdef    c_destroy_object_wram
+    xdef    c_destroy_whirlwind
 
     xref    c_move_object
     xref    z03_transfer_level_pattern_blocks
@@ -90,6 +99,15 @@
     xref    z04_hide_sprites_over_link
     xref    z07_get_room_flags
     xref    z07_mark_room_visited
+    xref    z01_play_character_sfx
+    xref    z01_reset_room_tile_obj_info
+    xref    z01_play_key_taken_tune
+    xref    z01_take_power_triforce
+    xref    z01_silence_all_sound
+    xref    z01_post_debit
+    xref    z01_init_one_simple_object
+    xref    z01_destroy_object_wram
+    xref    z01_destroy_whirlwind
 
 ;------------------------------------------------------------------------------
 ; _c_move_object_shim — MoveObject trampoline.
@@ -395,4 +413,67 @@ c_get_room_flags:
 ; MarkRoomVisited — no args, void return.
 c_mark_room_visited:
     jmp     z07_mark_room_visited
+
+;==============================================================================
+; EXPORT side — z_01 entry points (Stage 4b batch 8).
+;==============================================================================
+
+; PlayCharacterSfx — no args, void return.
+c_play_character_sfx:
+    jmp     z01_play_character_sfx
+
+; ResetRoomTileObjInfo — no args, void return.
+c_reset_room_tile_obj_info:
+    jmp     z01_reset_room_tile_obj_info
+
+; PlayKeyTakenTune — no args, void return.
+c_play_key_taken_tune:
+    jmp     z01_play_key_taken_tune
+
+; TakePowerTriforce — no args, void return.
+c_take_power_triforce:
+    jmp     z01_take_power_triforce
+
+; SilenceAllSound — no args, void return.
+c_silence_all_sound:
+    jmp     z01_silence_all_sound
+
+; PostDebit — D0=amount. Adds to RAM($067E).
+c_post_debit:
+    moveq   #0,D1
+    move.b  D0,D1
+    move.l  D1,-(SP)
+    jsr     z01_post_debit
+    addq.l  #4,SP
+    rts
+
+; InitOneSimpleObject — D2=slot. Reads RAM($00/$01).
+c_init_one_simple_object:
+    moveq   #0,D0
+    move.w  D2,D0
+    move.l  D0,-(SP)
+    jsr     z01_init_one_simple_object
+    addq.l  #4,SP
+    rts
+
+; DestroyObject_WRAM — D0=val, D2=slot.
+c_destroy_object_wram:
+    moveq   #0,D1
+    move.w  D2,D1
+    move.l  D1,-(SP)
+    moveq   #0,D1
+    move.b  D0,D1
+    move.l  D1,-(SP)
+    jsr     z01_destroy_object_wram
+    addq.l  #8,SP
+    rts
+
+; DestroyWhirlwind — D2=slot, void return.
+c_destroy_whirlwind:
+    moveq   #0,D0
+    move.w  D2,D0
+    move.l  D0,-(SP)
+    jsr     z01_destroy_whirlwind
+    addq.l  #4,SP
+    rts
 

@@ -2521,6 +2521,17 @@ def _patch_z01(path):
     else:
         print(f"  WARNING: _patch_z01 P33d -- {err_tbx}")
 
+    # --- Stage 4b batch 8: z_01 C function stubs ---
+    text = _stub_func(text, 'PlayCharacterSfx', 'c_play_character_sfx')
+    text = _stub_func(text, 'ResetRoomTileObjInfo', 'c_reset_room_tile_obj_info')
+    text = _stub_func(text, 'PlayKeyTakenTune', 'c_play_key_taken_tune')
+    text = _stub_func(text, 'TakePowerTriforce', 'c_take_power_triforce')
+    text = _stub_func(text, 'SilenceAllSound', 'c_silence_all_sound')
+    text = _stub_func(text, 'PostDebit', 'c_post_debit')
+    text = _stub_func(text, 'InitOneSimpleObject', 'c_init_one_simple_object')
+    text = _stub_func(text, 'DestroyObject_WRAM', 'c_destroy_object_wram')
+    text = _stub_func(text, 'DestroyWhirlwind', 'c_destroy_whirlwind')
+
     with open(path, 'w', encoding='utf-8') as f:
         f.write(text)
 

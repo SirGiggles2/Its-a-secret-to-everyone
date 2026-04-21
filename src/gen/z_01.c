@@ -1,0 +1,64 @@
+/* z_01.c — C port of z_01 leaf functions.
+ * Data tables and remaining code stay in z_01.asm.
+ */
+
+#include "../nes_abi.h"
+
+void z01_play_character_sfx(void) {
+    RAM(0x0602) = 8;
+}
+
+void z01_reset_room_tile_obj_info(void) {
+    RAM(0x052B) = 0;
+    RAM(0x052C) = 0;
+    RAM(0x052D) = 0;
+}
+
+void z01_play_key_taken_tune(void) {
+    RAM(0x0602) = 0;
+    RAM(0x0604) = 8;
+}
+
+void z01_take_power_triforce(void) {
+    RAM(0x0509)++;
+    RAM(0x0028) = 0xC0;
+    RAM(0x00AC) = 64;
+}
+
+void z01_silence_all_sound(void) {
+    RAM(0x0604) = 0x80;
+    RAM(0x0603) = 0x80;
+    RAM(0x0605) = 0;
+    RAM(0x0607) = 0;
+}
+
+void z01_post_debit(unsigned int amount) {
+    RAM(0x067E) = (unsigned char)(RAM(0x067E) + amount);
+}
+
+void z01_init_one_simple_object(unsigned int slot) {
+    RAM(0x034F + slot) = RAM(0x00);
+    RAM(0x0492 + slot) = 0;
+    RAM(0x04BF + slot) = RAM(0x01);
+}
+
+void z01_destroy_object_wram(unsigned int val, unsigned int slot) {
+    RAM(0x00C0 + slot) = val;
+    RAM(0x00D3 + slot) = val;
+    RAM(0x0028 + slot) = val;
+    RAM(0x00AC + slot) = val;
+    RAM(0x04F0 + slot) = val;
+    RAM(0x0492 + slot) = 0xFF;
+    RAM(0x0405 + slot) = 1;
+}
+
+void z01_destroy_whirlwind(unsigned int slot) {
+    RAM(0x034F + slot) = 0;
+    RAM(0x00C0 + slot) = 0;
+    RAM(0x00D3 + slot) = 0;
+    RAM(0x0028 + slot) = 0;
+    RAM(0x00AC + slot) = 0;
+    RAM(0x04F0 + slot) = 0;
+    RAM(0x0492 + slot) = 0xFF;
+    RAM(0x0405 + slot) = 1;
+}
