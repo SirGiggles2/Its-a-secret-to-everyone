@@ -4,6 +4,10 @@
 
 #include "../nes_abi.h"
 
+extern void z04_reset_flyer_state(unsigned int slot);
+extern void z04_init_digdogger1(unsigned int slot);
+extern void z07_reset_obj_state(unsigned int slot);
+
 extern const unsigned char TektiteStartingDirs[];
 extern const unsigned char GanonStartXs[];
 extern const unsigned char Directions8[];
@@ -72,6 +76,31 @@ void z04_init_digdogger1(unsigned int slot) {
     RAM(0x041F + slot) = 63;
     RAM(0x0437 + slot) = 0x80;
     RAM(0x0507) = 3;
+}
+
+void z04_end_init_flyer(unsigned int slot) {
+    z04_reset_flyer_state(slot);
+    RAM(0x04D1) = 0xA0;
+    RAM(0x041F + slot) = 31;
+}
+
+void z04_init_digdogger2(unsigned int slot) {
+    z04_init_digdogger1(slot);
+    RAM(0x034F + slot) = 56;
+    RAM(0x0507) = 1;
+}
+
+void z04_update_dodongo_bloated_sub_end(unsigned int slot) {
+    z07_reset_obj_state(slot);
+    RAM(0x042C + slot) = 0;
+}
+
+void z04_set_up_fairy_object(unsigned int slot) {
+    RAM(0x0602) = 8;
+    z04_reset_flyer_state(slot);
+    RAM(0x0098 + slot) = 8;
+    RAM(0x041F + slot) = 127;
+    RAM(0x04D1) = 0xA0;
 }
 
 void z04_jumper_point_boulder_downward(unsigned int slot) {

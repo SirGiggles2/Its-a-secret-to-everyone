@@ -2550,6 +2550,9 @@ def _patch_z01(path):
     text = _stub_func(text, 'AddToInt16At2', 'c_add_to_int16_at_2')
     text = _stub_func(text, 'AddToInt16At4', 'c_add_to_int16_at_4')
 
+    # --- Stage 4b batch 22: C→C chain + D0-clobber bugfix ---
+    text = _stub_func(text, 'ResetShoveInfoAndInvincibilityTimer', 'c_reset_shove_info_and_inv_timer')
+
     with open(path, 'w', encoding='utf-8') as f:
         f.write(text)
 
@@ -3819,6 +3822,12 @@ def _patch_z04(path):
     # --- Stage 4b batch 20: z_04 C function stubs ---
     text = _stub_func(text, 'Jumper_PointBoulderDownward', 'c_jumper_point_boulder_downward')
     text = _stub_func(text, 'Flyer_Delay', 'c_flyer_delay')
+
+    # --- Stage 4b batch 22: C→C chain stubs ---
+    text = _stub_func(text, 'EndInitFlyer', 'c_end_init_flyer')
+    text = _stub_func(text, 'InitDigdogger2', 'c_init_digdogger2')
+    text = _stub_func(text, 'UpdateDodongoState1_Bloated_Sub_End', 'c_update_dodongo_bloated_sub_end')
+    text = _stub_func(text, 'SetUpFairyObject', 'c_set_up_fairy_object')
 
     with open(path, 'w', encoding='utf-8') as f:
         f.write(text)

@@ -132,6 +132,11 @@
     xdef    c_add_to_int16_at_4
     xdef    c_add_a_to_0f0e
     xdef    c_add_a_to_cfce
+    xdef    c_end_init_flyer
+    xdef    c_init_digdogger2
+    xdef    c_update_dodongo_bloated_sub_end
+    xdef    c_set_up_fairy_object
+    xdef    c_reset_shove_info_and_inv_timer
 
     xref    c_move_object
     xref    z03_transfer_level_pattern_blocks
@@ -240,6 +245,11 @@
     xref    z01_add_to_int16_at_4
     xref    z02_add_a_to_0f0e
     xref    z02_add_a_to_cfce
+    xref    z04_end_init_flyer
+    xref    z04_init_digdogger2
+    xref    z04_update_dodongo_bloated_sub_end
+    xref    z04_set_up_fairy_object
+    xref    z01_reset_shove_info_and_inv_timer
 
 ;------------------------------------------------------------------------------
 ; _c_move_object_shim — MoveObject trampoline.
@@ -1133,5 +1143,54 @@ c_cycle9_in_direction:
     jsr     z05_cycle9_in_direction
     addq.l  #4,SP
     move.b  D0,D3
+    rts
+
+;==============================================================================
+; EXPORT side — batch 22: C→C chain functions.
+;==============================================================================
+
+; EndInitFlyer — D2=slot.
+c_end_init_flyer:
+    moveq   #0,D0
+    move.w  D2,D0
+    move.l  D0,-(SP)
+    jsr     z04_end_init_flyer
+    addq.l  #4,SP
+    rts
+
+; InitDigdogger2 — D2=slot.
+c_init_digdogger2:
+    moveq   #0,D0
+    move.w  D2,D0
+    move.l  D0,-(SP)
+    jsr     z04_init_digdogger2
+    addq.l  #4,SP
+    rts
+
+; UpdateDodongoState1_Bloated_Sub_End — D2=slot.
+c_update_dodongo_bloated_sub_end:
+    moveq   #0,D0
+    move.w  D2,D0
+    move.l  D0,-(SP)
+    jsr     z04_update_dodongo_bloated_sub_end
+    addq.l  #4,SP
+    rts
+
+; SetUpFairyObject — D2=slot.
+c_set_up_fairy_object:
+    moveq   #0,D0
+    move.w  D2,D0
+    move.l  D0,-(SP)
+    jsr     z04_set_up_fairy_object
+    addq.l  #4,SP
+    rts
+
+; ResetShoveInfoAndInvincibilityTimer — D2=slot. Fixes D0 clobber bug.
+c_reset_shove_info_and_inv_timer:
+    moveq   #0,D0
+    move.w  D2,D0
+    move.l  D0,-(SP)
+    jsr     z01_reset_shove_info_and_inv_timer
+    addq.l  #4,SP
     rts
 
