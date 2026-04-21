@@ -6182,6 +6182,12 @@ def _patch_z07(path):
     text = _stub_func(text, 'HideAllSprites', 'c_hide_all_sprites')
     text = _stub_func(text, 'GetUniqueRoomId', 'c_get_unique_room_id')
 
+    # --- Stage 4b batch 5: more z_07 C function stubs ---
+    text = _stub_func(text, 'ClearRoomHistory', 'c_clear_room_history')
+    text = _stub_func(text, 'ResetPlayerState', 'c_reset_player_state')
+    text = _stub_func(text, 'ResetMovingDir', 'c_reset_moving_dir')
+    text = _stub_func(text, 'EnsureObjectAligned', 'c_ensure_object_aligned')
+
     with open(path, 'w', encoding='utf-8') as f:
         f.write(text)
 

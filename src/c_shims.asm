@@ -48,6 +48,10 @@
     xdef    c_setup_obj_room_bounds
     xdef    c_hide_all_sprites
     xdef    c_get_unique_room_id
+    xdef    c_clear_room_history
+    xdef    c_reset_player_state
+    xdef    c_reset_moving_dir
+    xdef    c_ensure_object_aligned
 
     xref    c_move_object
     xref    z03_transfer_level_pattern_blocks
@@ -74,6 +78,10 @@
     xref    z05_setup_obj_room_bounds
     xref    z07_hide_all_sprites
     xref    z07_get_unique_room_id
+    xref    z07_clear_room_history
+    xref    z07_reset_player_state
+    xref    z07_reset_moving_dir
+    xref    z07_ensure_object_aligned
 
 ;------------------------------------------------------------------------------
 ; _c_move_object_shim — MoveObject trampoline.
@@ -321,5 +329,30 @@ c_get_unique_room_id:
     jsr     z07_get_unique_room_id
     moveq   #0,D3
     move.b  ($00EB,A4),D3
+    rts
+
+;==============================================================================
+; EXPORT side — z_07 entry points (Stage 4b batch 5).
+;==============================================================================
+
+; ClearRoomHistory — no args, void return.
+c_clear_room_history:
+    jmp     z07_clear_room_history
+
+; ResetPlayerState — no args, void return.
+c_reset_player_state:
+    jmp     z07_reset_player_state
+
+; ResetMovingDir — no args, void return.
+c_reset_moving_dir:
+    jmp     z07_reset_moving_dir
+
+; EnsureObjectAligned — D2=slot, void return.
+c_ensure_object_aligned:
+    moveq   #0,D0
+    move.w  D2,D0
+    move.l  D0,-(SP)
+    jsr     z07_ensure_object_aligned
+    addq.l  #4,SP
     rts
 
