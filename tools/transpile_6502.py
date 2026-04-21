@@ -2563,6 +2563,12 @@ def _patch_z01(path):
     text = _stub_func(text, 'SetItemValue', 'c_set_item_value')
     text = _stub_func(text, 'InitWhirlwind', 'c_init_whirlwind')
 
+    # --- Stage 4b batch 25 ---
+    text = _stub_func(text, 'Add1ToInt16At2', 'c_add1_to_int16_at_2')
+    text = _stub_func(text, 'Add1ToInt16At4', 'c_add1_to_int16_at_4')
+    text = _stub_func(text, 'UpdatePersonState_CueTransferBlankPersonWares', 'c_cue_transfer_blank_person_wares')
+    text = _stub_func(text, 'Take5Rupees', 'c_take_5_rupees')
+
     with open(path, 'w', encoding='utf-8') as f:
         f.write(text)
 
@@ -3846,6 +3852,10 @@ def _patch_z04(path):
 
     # --- Stage 4b batch 24 ---
     text = _stub_func(text, 'L_Gleeok_SetSegmentY', 'c_gleeok_set_segment_y')
+
+    # --- Stage 4b batch 25 ---
+    text = _stub_func(text, 'InitBoulder', 'c_init_boulder')
+    text = _stub_func(text, 'InitBoulderSet', 'c_init_boulder_set')
 
     with open(path, 'w', encoding='utf-8') as f:
         f.write(text)
@@ -6391,6 +6401,10 @@ def _patch_z07(path):
     # --- Stage 4b batch 24 ---
     text = _stub_func(text, 'DeactivateShot', 'c_deactivate_shot')
     text = _stub_func(text, 'DeactivateLinkShot', 'c_deactivate_link_shot')
+
+    # --- Stage 4b batch 25 ---
+    text = _stub_func(text, 'ResetShoveInfo', 'c_reset_shove_info')
+    text = _stub_func(text, 'GoToNextMode', 'c_go_to_next_mode')
 
     with open(path, 'w', encoding='utf-8') as f:
         f.write(text)

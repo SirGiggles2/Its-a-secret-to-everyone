@@ -130,3 +130,16 @@ void z07_deactivate_link_shot(void) {
     z07_reset_obj_state(14);
 }
 
+void z07_walker_alt_dir_end_loop(void) {
+    RAM(0x000E) = 0;
+}
+
+void z07_reset_shove_info(unsigned int slot) {
+    z07_set_shove_info_with0(0, slot);
+}
+
+void z07_go_to_next_mode(void) {
+    RAM(0x0012)++;
+    z07_end_game_mode();
+}
+

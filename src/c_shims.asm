@@ -154,6 +154,16 @@
     xdef    c_reset_vscroll_lo
     xdef    c_deactivate_shot
     xdef    c_deactivate_link_shot
+    xdef    c_walker_alt_dir_end_loop
+    xdef    c_reset_shove_info
+    xdef    c_go_to_next_mode
+    xdef    c_add1_to_int16_at_2
+    xdef    c_add1_to_int16_at_4
+    xdef    c_cue_transfer_blank_person_wares
+    xdef    c_take_5_rupees
+    xdef    c_init_monster_shot
+    xdef    c_init_boulder
+    xdef    c_init_boulder_set
 
     xref    c_move_object
     xref    z03_transfer_level_pattern_blocks
@@ -284,6 +294,16 @@
     xref    z05_reset_vscroll_lo
     xref    z07_deactivate_shot
     xref    z07_deactivate_link_shot
+    xref    z07_walker_alt_dir_end_loop
+    xref    z07_reset_shove_info
+    xref    z07_go_to_next_mode
+    xref    z01_add1_to_int16_at_2
+    xref    z01_add1_to_int16_at_4
+    xref    z01_cue_transfer_blank_person_wares
+    xref    z01_take_5_rupees
+    xref    z04_init_monster_shot
+    xref    z04_init_boulder
+    xref    z04_init_boulder_set
 
 ;------------------------------------------------------------------------------
 ; _c_move_object_shim — MoveObject trampoline.
@@ -1372,5 +1392,75 @@ c_deactivate_shot:
 ; DeactivateLinkShot — no-arg (hardcodes slot 14).
 c_deactivate_link_shot:
     jsr     z07_deactivate_link_shot
+    rts
+
+;==============================================================================
+; EXPORT side — batch 25.
+;==============================================================================
+
+; Walker_AltDir_EndLoop — no-arg.
+c_walker_alt_dir_end_loop:
+    jsr     z07_walker_alt_dir_end_loop
+    rts
+
+; ResetShoveInfo — D2=slot, C→C.
+c_reset_shove_info:
+    moveq   #0,D0
+    move.w  D2,D0
+    move.l  D0,-(SP)
+    jsr     z07_reset_shove_info
+    addq.l  #4,SP
+    rts
+
+; GoToNextMode — no-arg, C→C.
+c_go_to_next_mode:
+    jsr     z07_go_to_next_mode
+    rts
+
+; Add1ToInt16At2 — no-arg, C→C.
+c_add1_to_int16_at_2:
+    jsr     z01_add1_to_int16_at_2
+    rts
+
+; Add1ToInt16At4 — no-arg, C→C.
+c_add1_to_int16_at_4:
+    jsr     z01_add1_to_int16_at_4
+    rts
+
+; UpdatePersonState_CueTransferBlankPersonWares — no-arg, C→C.
+c_cue_transfer_blank_person_wares:
+    jsr     z01_cue_transfer_blank_person_wares
+    rts
+
+; Take5Rupees — no-arg, loop.
+c_take_5_rupees:
+    jsr     z01_take_5_rupees
+    rts
+
+; InitMonsterShot — D2=slot.
+c_init_monster_shot:
+    moveq   #0,D0
+    move.w  D2,D0
+    move.l  D0,-(SP)
+    jsr     z04_init_monster_shot
+    addq.l  #4,SP
+    rts
+
+; InitBoulder — D2=slot, C→C chain.
+c_init_boulder:
+    moveq   #0,D0
+    move.w  D2,D0
+    move.l  D0,-(SP)
+    jsr     z04_init_boulder
+    addq.l  #4,SP
+    rts
+
+; InitBoulderSet — D2=slot, C→C chain.
+c_init_boulder_set:
+    moveq   #0,D0
+    move.w  D2,D0
+    move.l  D0,-(SP)
+    jsr     z04_init_boulder_set
+    addq.l  #4,SP
     rts
 
