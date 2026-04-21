@@ -201,6 +201,7 @@
     xdef    c_wallmaster_prepare_to_draw
     xdef    c_get_player_coords_for_direction
     xdef    c_copy_price_list_template
+    xdef    c_shoot_fireball
 
     xref    c_move_object
     xref    z03_transfer_level_pattern_blocks
@@ -378,6 +379,7 @@
     xref    z04_wallmaster_prepare_to_draw
     xref    z05_get_player_coords_for_direction
     xref    z01_copy_price_list_template
+    xref    z04_shoot_fireball
 
 ;------------------------------------------------------------------------------
 ; _c_move_object_shim — MoveObject trampoline.
@@ -1863,5 +1865,18 @@ c_get_player_coords_for_direction:
 ; CopyPriceListTemplate — no args.
 c_copy_price_list_template:
     jsr     z01_copy_price_list_template
+    rts
+
+; --- batch 33 ---
+
+; ShootFireball — D0=type, D2=source_slot.
+c_shoot_fireball:
+    moveq   #0,D1
+    move.w  D2,D1
+    move.l  D1,-(SP)
+    andi.l  #$FF,D0
+    move.l  D0,-(SP)
+    jsr     z04_shoot_fireball
+    addq.l  #8,SP
     rts
 

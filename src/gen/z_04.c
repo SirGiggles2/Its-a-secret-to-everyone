@@ -260,6 +260,18 @@ void z04_ganon_get_cur_cloud_top(unsigned int slot) {
 extern void z07_anim_advance_and_fetch(unsigned int val, unsigned int slot);
 extern unsigned char z01_anim_set_sprite_desc_attrs(unsigned int val);
 
+extern unsigned int z07_find_empty_monster_slot(void);
+extern void z07_set_type_and_clear_object(unsigned int type, unsigned int slot);
+
+void z04_shoot_fireball(unsigned int type, unsigned int source_slot) {
+    RAM(0x0000) = (unsigned char)type;
+    unsigned int new_slot = z07_find_empty_monster_slot();
+    if (new_slot == 0) return;
+    z07_set_type_and_clear_object(RAM(0x0000), new_slot);
+    RAM(0x0070 + new_slot) = (unsigned char)(RAM(0x0070 + source_slot) + 4);
+    RAM(0x0084 + new_slot) = RAM(0x0084 + source_slot);
+}
+
 void z04_wallmaster_prepare_to_draw(unsigned int slot) {
     static const unsigned char wallmaster_attrs[] = {
         0x01, 0x01, 0x08, 0x08, 0x08, 0x02, 0x02, 0x02,

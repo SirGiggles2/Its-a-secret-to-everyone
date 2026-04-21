@@ -3944,6 +3944,9 @@ def _patch_z04(path):
     # --- Stage 4b batch 32 ---
     text = _stub_func(text, 'Wallmaster_PrepareToDraw', 'c_wallmaster_prepare_to_draw')
 
+    # --- Stage 4b batch 33 ---
+    text = _stub_func(text, 'ShootFireball', 'c_shoot_fireball')
+
     # Export ROM data tables referenced by C code
     if 'xdef    PolsVoiceWalkSpeedsX' not in text and 'PolsVoiceWalkSpeedsX:' in text:
         text = "\n    xdef    PolsVoiceWalkSpeedsX\n" + text
