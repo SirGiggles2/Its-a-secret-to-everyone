@@ -4846,8 +4846,13 @@ def _patch_z05(path):
             print(f"  WARNING: _patch_z05 S3b -- {label} anchor not found")
         return text
 
+    # --- Stage 4a: C function stubs ---
     text = _stub_func(text, 'CopyColumnToTileBuf', 'c_copy_column_to_tilebuf')
     text = _stub_func(text, 'CopyRowToTileBuf', 'c_copy_row_to_tilebuf')
+    text = _stub_func(text, 'AddDoorFlagsToCurOpenedDoors', 'c_add_door_flags')
+    text = _stub_func(text, 'CalcOpenDoorwayMask', 'c_calc_open_doorway_mask')
+    text = _stub_func(text, 'HasCompass', 'c_has_compass')
+    text = _stub_func(text, 'HasMap', 'c_has_map')
 
     with open(path, 'w', encoding='utf-8') as f:
         f.write(text)

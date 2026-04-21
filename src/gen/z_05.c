@@ -1,8 +1,14 @@
-/* z_05.c — Stage 3b: C port of z_05 tile buffer copy functions.
+/* z_05.c — Stage 3b/4a: C port of z_05 functions.
  * Data tables and remaining code stay in z_05.asm.
  */
 
 #include "../nes_abi.h"
+
+#define NES_SRAM_BASE  0x6000u
+
+static const unsigned char level_masks[] = {
+    0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80
+};
 
 #define PLAY_AREA_BASE  0x6530u
 #define COL_STRIDE      0x16u
@@ -72,4 +78,64 @@ void z05_copy_row_to_tilebuf(void) {
 
     RAM(0x0000) = s & 0xFF;
     RAM(0x0001) = (s >> 8) & 0xFF;
+}
+
+/* --- Stage 4a functions -------------------------------------------------- */
+
+static unsigned char get_room_flags(void) {
+    unsigned char ptr_lo = nes_ram[NES_SRAM_BASE + 0x0BAF];
+    unsigned char ptr_hi = nes_ram[NES_SRAM_BASE + 0x0BB0];
+    RAM(0x00) = ptr_lo;
+    RAM(0x01) = ptr_hi;
+    unsigned short ptr = ((unsigned short)ptr_hi << 8) | ptr_lo;
+    unsigned char room_id = RAM(0x00EB);
+    return nes_ram[ptr + room_id];
+}
+
+static unsigned char has_item_by_level(unsigned char base_offset) {
+    unsigned char level = RAM(0x0010);
+    if (level == 0) return 0;
+
+    unsigned char idx = level - 1;
+    unsigned char offset = base_offset;
+    if (idx >= 8) offset += 2;
+    unsigned char bit_idx = idx & 7;
+
+    return RAM(0x0657 + offset) & level_masks[bit_idx];
+}
+
+unsigned char z05_has_compass(void) {
+    return has_item_by_level(16);
+}
+
+unsigned char z05_has_map(void) {
+    return has_item_by_level(17);
+}
+
+void z05_calc_open_doorway_mask(unsigned int attr, unsigned int dir_idx) {
+    unsigned char is_open;
+
+    if (attr < 4) {
+        is_open = 1;
+    } else {
+        unsigned char flags = get_room_flags();
+        is_open = (flags & level_masks[dir_idx]) ? 1 : 0;
+    }
+
+    unsigned char mask = RAM(0x033F);
+    mask = ((mask << 1) | is_open) & 0x0F;
+    RAM(0x033F) = mask;
+}
+
+void z05_add_door_flags(void) {
+    get_room_flags();
+    unsigned char room_id = RAM(0x00EB);
+    unsigned short ptr = ((unsigned short)RAM(0x01) << 8) | RAM(0x00);
+    unsigned char flags = nes_ram[ptr + room_id];
+
+    for (signed char d = 3; d >= 0; d--) {
+        unsigned char masked = flags & level_masks[(unsigned char)d];
+        if (masked)
+            RAM(0x00EE) |= masked;
+    }
 }
