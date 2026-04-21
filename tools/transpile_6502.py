@@ -4827,6 +4827,28 @@ def _patch_z05(path):
     else:
         print("  _patch_z05 P46: DISABLED (clustering)")
 
+    # --- Stage 3b: replace CopyColumnToTileBuf / CopyRowToTileBuf with C stubs ---
+    import re as _re05
+
+    def _stub_func(text, label, c_shim):
+        """Replace a function body (from label: to next top-level label) with a jmp stub."""
+        pat = _re05.compile(
+            r'^(' + _re05.escape(label) + r':)\s*\n'
+            r'(.*?)(?=^[A-Za-z]\w*:|\Z)',
+            _re05.MULTILINE | _re05.DOTALL
+        )
+        m = pat.search(text)
+        if m:
+            stub = f"{label}:\n    jmp     {c_shim}\n\n"
+            text = text[:m.start()] + stub + text[m.end():]
+            print(f"  _patch_z05 S3b: {label} -> {c_shim}")
+        else:
+            print(f"  WARNING: _patch_z05 S3b -- {label} anchor not found")
+        return text
+
+    text = _stub_func(text, 'CopyColumnToTileBuf', 'c_copy_column_to_tilebuf')
+    text = _stub_func(text, 'CopyRowToTileBuf', 'c_copy_row_to_tilebuf')
+
     with open(path, 'w', encoding='utf-8') as f:
         f.write(text)
 

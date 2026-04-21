@@ -28,12 +28,16 @@
     xdef    c_init_mode2_submodes
     xdef    c_copy_common_data_to_ram
     xdef    c_update_mode2_load_full
+    xdef    c_copy_column_to_tilebuf
+    xdef    c_copy_row_to_tilebuf
 
     xref    c_move_object
     xref    z03_transfer_level_pattern_blocks
     xref    z06_init_mode2_submodes
     xref    z06_copy_common_data_to_ram
     xref    z06_update_mode2_load_full
+    xref    z05_copy_column_to_tilebuf
+    xref    z05_copy_row_to_tilebuf
 
 ;------------------------------------------------------------------------------
 ; _c_move_object_shim — MoveObject trampoline.
@@ -143,3 +147,14 @@ c_copy_common_data_to_ram:
 
 c_update_mode2_load_full:
     jmp     z06_update_mode2_load_full
+
+;==============================================================================
+; EXPORT side — z_05 entry points (Stage 3b).
+; No register args. Preserves D2-D7/A2-A6 via gcc callee-save.
+;==============================================================================
+
+c_copy_column_to_tilebuf:
+    jmp     z05_copy_column_to_tilebuf
+
+c_copy_row_to_tilebuf:
+    jmp     z05_copy_row_to_tilebuf
