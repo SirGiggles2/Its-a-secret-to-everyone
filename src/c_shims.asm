@@ -25,6 +25,9 @@
     xdef    c_ppu_write_7
     xdef    c_turn_off_all_video
     xdef    c_transfer_level_pattern_blocks
+    xdef    c_init_mode2_submodes
+    xdef    c_copy_common_data_to_ram
+    xdef    c_update_mode2_load_full
 
     xref    c_move_object
     xref    z03_transfer_level_pattern_blocks
@@ -48,6 +51,8 @@
 ;   semantics can exist in a pure C port).
 ;------------------------------------------------------------------------------
 _c_move_object_shim:
+    ; DEBUG canary: write $AA to NES RAM $0900 each time we're called
+    move.b  #$AA,($0900,A4)
     ; GCC 13 m68k reads the first arg via `move.l 4(%sp),%d0` — a full
     ; 32-bit load at SP+4 (after the return address). Big-endian means
     ; the slot value must sit in the LOW byte of that longword, i.e.
@@ -121,3 +126,13 @@ c_turn_off_all_video:
 ;------------------------------------------------------------------------------
 c_transfer_level_pattern_blocks:
     jmp     z03_transfer_level_pattern_blocks
+
+;==============================================================================
+; EXPORT side — z_06 entry points (Stage 3a).
+; No register args. Preserves D2-D7/A2-A6 via gcc callee-save.
+;==============================================================================
+
+c_init_mode2_submodes:
+c_copy_common_data_to_ram:
+c_update_mode2_load_full:
+    rts

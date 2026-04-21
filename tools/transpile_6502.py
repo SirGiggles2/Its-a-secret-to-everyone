@@ -1869,6 +1869,10 @@ def _audit_bank_window_coverage():
         block = get_func_block(lines, func)
         if block is None:
             continue  # function migrated to C — skip
+        # If block is a C-shim stub (jmp c_*), skip audit
+        block_code = [l.strip() for l in block if l.strip() and not l.strip().startswith(';') and not l.strip().endswith(':') and l.strip() != 'even']
+        if len(block_code) <= 1 and any('jmp' in l and 'c_' in l for l in block_code):
+            continue  # C-shim stub — skip audit
         ensure_idx = next(
             (
                 i
@@ -4835,7 +4839,17 @@ def _patch_z06(path):
     Replace the slow byte-by-byte tile buffer executor (ContinueTransferTileBuf
     calling _ppu_write_7 per byte) with a single call to _transfer_tilebuf_fast
     in nes_io.asm.  This is the main NMI cadence fix.
-    """
+
+    When ZELDA_BANK_MODE_06 == "c", strip all code and emit only data labels
+    plus entry stubs that jump to C shims."""
+
+    ZELDA_BANK_MODE_06 = "asm"
+
+    # In C mode: first run all normal patches (TransferBufPtrs table, 32-bit
+    # lookup, P32e, P33, DynTileBuf pre-check, etc.), THEN strip only the
+    # level-load code functions and replace them with C-shim stubs.
+    # This preserves TransferCurTileBuf/TransferTileBuf in asm.
+
     with open(path, 'r', encoding='utf-8') as f:
         lines = f.readlines()
 
@@ -5281,6 +5295,135 @@ def _patch_z06(path):
     with open(path, 'w', encoding='utf-8') as f:
         f.write(text)
 
+    if ZELDA_BANK_MODE_06 == "c":
+        _patch_z06_c_mode(path)
+
+
+def _patch_z06_c_mode(path):
+    """Stage 3a post-processor: emit data-only asm + TransferCurTileBuf asm.
+    Reads the already-patched z_06.asm (with 32-bit table, DynTileBuf pre-check)
+    and rebuilds: header + xdefs + level-load stubs + TransferCurTileBuf asm +
+    TransferBufPtrs table + all data blocks."""
+    import re
+
+    with open(path, 'r', encoding='utf-8') as f:
+        lines = f.readlines()
+
+    # --- Parse top-level label ranges ---
+    label_starts = []  # (line_idx, label_name)
+    for i, line in enumerate(lines):
+        m = re.match(r'^([A-Za-z]\w*):', line)
+        if m:
+            label_starts.append((i, m.group(1)))
+
+    def _get_block(label):
+        """Return lines from label start to next top-level label."""
+        for idx, (start, name) in enumerate(label_starts):
+            if name == label:
+                end = label_starts[idx+1][0] if idx+1 < len(label_starts) else len(lines)
+                return lines[start:end]
+        return []
+
+    # --- Header (everything before first top-level label) ---
+    header_end = label_starts[0][0] if label_starts else len(lines)
+    out = list(lines[:header_end])
+
+    # --- Data labels to preserve ---
+    data_labels = {
+        'LevelBlockAddrsQ1', 'LevelBlockAddrsQ2', 'LevelInfoAddrs',
+        'CommonDataBlockAddr_Bank6',
+        'LevelBlockAttrsBQ2ReplacementOffsets', 'LevelBlockAttrsBQ2ReplacementValues',
+        'LevelInfoUWQ2Replacements1', 'LevelInfoUWQ2Replacements2',
+        'LevelInfoUWQ2Replacements3', 'LevelInfoUWQ2Replacements4',
+        'LevelInfoUWQ2Replacements5', 'LevelInfoUWQ2Replacements6',
+        'LevelInfoUWQ2Replacements7', 'LevelInfoUWQ2Replacements8',
+        'LevelInfoUWQ2Replacements9',
+        'LevelInfoUWQ2ReplacementAddrs', 'LevelInfoUWQ2ReplacementSizes',
+        'LevelBlockOW', 'LevelBlockUW1Q1', 'LevelBlockUW2Q1',
+        'LevelBlockUW1Q2', 'LevelBlockUW2Q2',
+        'LevelInfoOW', 'LevelInfoUW1', 'LevelInfoUW2', 'LevelInfoUW3',
+        'LevelInfoUW4', 'LevelInfoUW5', 'LevelInfoUW6', 'LevelInfoUW7',
+        'LevelInfoUW8', 'LevelInfoUW9',
+        'CommonDataBlock_Bank6',
+        'ColumnDirectoryOW', 'ColumnDirectoryUW',
+        'TransferBufAddrs', 'TransferBufPtrs',
+        'LevelNumberTransferBuf', 'LevelPaletteRow7TransferBuf',
+        'MenuPalettesTransferBuf',
+        'SubmenuTriforceBottomTransferBuf', 'TriforceTextTransferBuf',
+        'Mode1TileTransferBuf', 'ModeFCharsTransferBuf',
+        'GanonPaletteRow7TransferBuf', 'EndingPaletteTransferBuf',
+        'BlankTextBoxLines', 'BlankPersonWares',
+        'SubmenuTriforceApexTransferBuf',
+        'StoryTileAttrTransferBuf', 'Mode8TextTileBuffer',
+        'StatusBarStaticsTransferBuf', 'GameTitleTransferBuf',
+        'GhostPaletteRow7TransferBuf', 'GreenBgPaletteRow7TransferBuf',
+        'BrownBgPaletteRow7TransferBuf', 'CaveBgPaletteRowsTransferBuf',
+        'CellarAttrsTransferBuf',
+        'WhitePaletteBottomHalfTransferBuf',
+        'RedArmosPaletteRow7TransferBuf', 'GleeokPaletteRow7TransferBuf',
+        'AquamentusPaletteRow7TransferBuf', 'OrangeBossPaletteRow7TransferBuf',
+        'BombCapacityPriceTextTransferBuf', 'LifeOrMoneyCostTextTransferBuf',
+        'InventoryTextTransferBuf',
+        'SubmenuBoxesTopsTransferBuf', 'SubmenuBoxesSidesTransferBuf',
+        'SelectedItemBoxBottomTransferBuf', 'UseBButtonTextTransferBuf',
+        'InventoryBoxBottomTransferBuf',
+        'SubmenuMapRemainderTransferBuf', 'SheetMapBottomEdgeTransferBuf',
+        'SubmenuAttrs1TransferBuf', 'SubmenuAttrs2TransferBuf',
+        'BlankBottomRowNT2TransferBuf', 'BlankRowTransferBuf',
+        'Mode11DeadLinkPalette', 'GameOverTransferBuf',
+        'Mode11BackgroundPaletteBottomHalfTransferBuf',
+        'Mode11PlayAreaAttrsTopHalfTransferBuf',
+        'Mode11PlayAreaAttrsBottomHalfTransferBuf',
+        'TriforceRow0TransferBuf', 'TriforceRow1TransferBuf',
+        'TriforceRow2TransferBuf', 'TriforceRow3TransferBuf',
+    }
+
+    # ASM functions to preserve verbatim from the patched output
+    keep_asm = ['TransferCurTileBuf', 'ContinueTransferTileBuf', 'TransferTileBuf']
+
+    # All exported labels
+    all_exports = sorted(data_labels | set(keep_asm) |
+                         {'InitMode2_Submodes', 'CopyCommonDataToRam',
+                          'UpdateMode2Load_Full'})
+
+    out.append('\n; Stage 3a: data-only mode (code ported to src/gen/z_06.c)\n')
+    for lbl in all_exports:
+        out.append(f'    xdef    {lbl}\n')
+    out.append('\n')
+
+    # --- Level-load C stubs ---
+    out.append('    even\n')
+    out.append('InitMode2_Submodes:\n')
+    out.append('    jmp     c_init_mode2_submodes\n\n')
+    out.append('    even\n')
+    out.append('CopyCommonDataToRam:\n')
+    out.append('    jmp     c_copy_common_data_to_ram\n\n')
+    out.append('    even\n')
+    out.append('UpdateMode2Load_Full:\n')
+    out.append('    jmp     c_update_mode2_load_full\n\n')
+
+    # --- TransferCurTileBuf asm (extracted from patched output) ---
+    for func in keep_asm:
+        block = _get_block(func)
+        if block:
+            out.append('    even\n')
+            out.extend(block)
+
+    # --- All data blocks ---
+    for _, lbl in label_starts:
+        if lbl in data_labels:
+            block = _get_block(lbl)
+            if block:
+                out.append('    even\n')
+                out.extend(block)
+
+    with open(path, 'w', encoding='utf-8') as f:
+        f.writelines(out)
+
+    print(f"  _patch_z06: C-mode data-only emit (code -> src/gen/z_06.c)")
+
+
+
 
 def _patch_z07(path):
     """Post-process patches for z_07.asm — ClearNameTable fast path.
@@ -5351,7 +5494,7 @@ def _patch_z07(path):
     #   "c"   — tail-jmp to _c_move_object_shim (Stage 2c C port).
     #           Shim + C function are in src/c_shims.asm +
     #           src/c_move_object.c; built by build.bat.
-    P48_MODE = "c"
+    P48_MODE = "off"
     P48_WALKER = (P48_MODE in ("asm", "c"))
 
     if P48_WALKER:

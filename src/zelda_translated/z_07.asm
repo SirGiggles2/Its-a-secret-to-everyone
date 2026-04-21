@@ -4479,15 +4479,11 @@ PlayerScreenEdgeBounds:
 ;
     even
 Walker_CheckTileCollision:
-    ifne TURBO_LINK
-    tst.b   D2
-    bne.s   _L_z07_Walker_CheckTileCollision_notLink
-    ; Link no-clip: skip tile collision but still call
-    ; CheckScreenEdge so screen transitions still latch.
-    jsr     CheckScreenEdge    ; PATCH P40: edge-trigger preserved
-    rts
-_L_z07_Walker_CheckTileCollision_notLink:
-    endc
+    ; PATCH P40 (v2): no-clip moved to CheckTiles; see further
+    ; down in the file. Walker_CheckTileCollision runs its
+    ; normal bookkeeping (DoorwayDir / grid-offset / state
+    ; reset) for Link and every other object. Only the tile
+    ; walkability decision in CheckTiles is overridden.
     cmpi.b  #$00,D2
     bne  _L_z07_Walker_CheckTileCollision_CheckGridOffset
     move.b  ($0053,A4),D0
@@ -4557,6 +4553,15 @@ Reverse:
 
     even
 CheckTiles:
+    ifne TURBO_LINK
+    ; PATCH P40b: Link no-clip — always treat target tile as
+    ; walkable. Pre-seeds ObjCollidedTile[0] ($049E) to $24.
+    tst.b   D2
+    bne.s   _L_z07_CheckTiles_notLink
+    move.b  #$24,($049E,A4)
+    jmp     GoWalkableDir
+_L_z07_CheckTiles_notLink:
+    endc
     ; The code below applies to Link and other objects.
     ;
     ; Test the moving direction's walkability.
@@ -7823,26 +7828,17 @@ _L_z07_InitObject_UninitMonsterFromEdge_Gate:
 _L_z07_InitObject_InitMonsterFromEdge:
     moveq   #0,D2
     move.b  ($0340,A4),D2
-    ; DEBUG: ring-buffer trace — record slot index + $0525 before
-    ; pre-check, $0525 after walk, and $0525 after post2.
-    ; Buffer at $FF0510, 10 records of 4 bytes each = 40 bytes.
-    ; Record format: [slot, $0525_pre, $0525_post1, $0525_post2]
-    ; Slot of "$FF" means empty slot. Ring counter at $FF050F.
-    moveq   #0,D0
-    move.b  ($FF050F).l,D0
-    andi.b  #$0F,D0                 ; mod 16 wrap
-    move.w  D0,D3
-    lsl.w   #2,D3                   ; D3 = record offset (*4)
-    addq.b  #1,($FF050F).l
-    movea.l #$FF0510,A0
-    adda.w  D3,A0                   ; A0 = record addr
-    move.b  D2,(A0)+                ; byte 0: slot
-    move.b  ($0525,A4),(A0)+        ; byte 1: $0525 before
-    movea.l A0,A3                   ; save A3 for later writes
-    ; PATCH P47: pre- and post-walk $0525 validation.
+    ; PATCH P47: pre- and post-walk $0525 validation + walkability.
     ; Pre: snap OOB (hi < $40 or hi >= $E0) to $48.
-    ; Post: if result hi=$E (bottom edge), redo from $48.
-    ; Post 2: validate walkable.
+    ; Post1: if result hi=$E (bottom edge), redo from $48.
+    ; Post2: read chosen cell's tile; if unwalkable (>= $84),
+    ; rotate through FallbackCells until walkable or bail to $48.
+    ; (Debug instrumentation at $FF0500/0501/0508/050E/050F/0510
+    ; was removed 2026-04-19 — it aliased $0510..$054F which
+    ; overlaps BrighteningRoom ($051E) and CandleState ($051F),
+    ; corrupting them and causing a deterministic address-error
+    ; freeze at room $73 ~240 frames after entry. Root cause
+    ; identified by Codex static review.)
 _L_z07_P47_pre_check:
     move.b  ($0525,A4),D0
     andi.b  #$F0,D0
@@ -7856,7 +7852,6 @@ _L_z07_P47_pre_ok:
     moveq   #5,D0
     jsr     SwitchBank
     jsr     FindNextEdgeSpawnCell
-    move.b  ($0525,A4),(A3)+        ; byte 2: $0525 after first walk
     ; Post-walk 1: bottom-edge snap.
     move.b  ($0525,A4),D0
     andi.b  #$F0,D0
@@ -7866,67 +7861,54 @@ _L_z07_P47_pre_ok:
     jsr     FindNextEdgeSpawnCell
 _L_z07_P47_post1_ok:
     ; Post-walk 2: validate resulting cell is walkable.
-    ; Compute playmap address: $FF6530 + (lo_nibble * 44)
-    ; and the row offset within the col block. Tile < $84 = OK.
-    moveq   #0,D3
-    move.b  ($0525,A4),D3
-    andi.w  #$000F,D3              ; D3 = lo_nibble
-    move.w  D3,D0
-    lsl.w   #5,D0                  ; D3 * 32
-    lsl.w   #1,D3
-    lsl.w   #2,D3                  ; D3 * 8
-    add.w   D0,D3                  ; D3 * 44 (32+8+4? no: 32+8*1.5)
-    move.w  D3,D0                  ; work: 32+8 = 40; need +4 more
-    ; Actually simpler: D3 *= 44 via multiple shift+add
+    ; Playmap addr = $FF6530 + (lo * 44) + ((hi - 4) * 2).
     moveq   #0,D3
     move.b  ($0525,A4),D3
     andi.w  #$000F,D3
-    mulu.w  #44,D3                 ; D3 = lo * 44
+    mulu.w  #44,D3
     move.l  #$FF6530,D0
-    add.l   D3,D0                  ; D0 = col base addr
-    ; Row offset = ((hi - 4) * 2), for cell $4X row=0, $5X row=2, etc.
+    add.l   D3,D0
     moveq   #0,D3
     move.b  ($0525,A4),D3
-    lsr.w   #4,D3                  ; D3 = hi_nibble
+    lsr.w   #4,D3
     subi.w  #4,D3
-    lsl.w   #1,D3                  ; D3 = row*2 (bytes)
-    add.l   D3,D0                  ; D0 = tile addr
+    lsl.w   #1,D3
+    add.l   D3,D0
     movea.l D0,A0
-    move.b  (A0),D0                ; D0 = tile at chosen cell
-    ; DEBUG telltale: write tile value to $FF0500 so probe can read
-    move.b  D0,($FF0500).l
+    move.b  (A0),D0
     cmpi.b  #$84,D0
-    blo     _L_z07_P47_post2_ok    ; walkable → keep
-    ; Unwalkable — mark $FF0501=$DE then reseed to $48 and redo once.
-    move.b  #$DE,($FF0501).l
-    ; Post2 retry: FindNextEdgeSpawnCell walk from $48 terminates
-    ; at $45 on Gen (verified by $0507/$0508 telltales — walk bug
-    ; in bank-switched FetchTileMapAddr path). Bypass FindNext —
-    ; do our own inline scan across candidate top-edge cells, pick
-    ; the first one whose playmap tile is < $84.
-    ; Scan sequence: $47 $48 $49 $4B $4D (order gives spread).
-    ; Trick: we iterate slot counter at $FF050E so successive spawns
-    ; try different cells (cycle through 5 values). Cells stored in
-    ; dc.b list P47_FallbackCells.
-    move.b  ($FF050E).l,D0
-    addq.b  #1,($FF050E).l
-    andi.w  #$0007,D0               ; counter mod 8 (extras wrap to unwalkable, falls through)
+    blo     _L_z07_P47_post2_ok
+    ; Unwalkable — pick from fallback table, scan up to 8 tries.
+    ; Local counter lives in D4.b (caller-clobberable); no RAM
+    ; writes to the $05xx region.
+    moveq   #0,D4
+_L_z07_P47_fb_loop:
     lea     _L_z07_P47_FallbackCells(pc),A0
-    move.b  (A0,D0.W),D1            ; D1 = candidate cell
+    move.b  (A0,D4.W),D1
     move.b  D1,($0525,A4)
-    ; Validate D1 is walkable via inline read.
+    ; Validate fallback cell walkable.
     moveq   #0,D3
     move.b  D1,D3
     andi.w  #$000F,D3
     mulu.w  #44,D3
     move.l  #$FF6530,D0
     add.l   D3,D0
+    moveq   #0,D3
+    move.b  D1,D3
+    lsr.w   #4,D3
+    subi.w  #4,D3
+    lsl.w   #1,D3
+    add.l   D3,D0
     movea.l D0,A0
-    move.b  (A0),D0
-    ; Record final telltale for debug
-    move.b  ($0525,A4),($FF0508).l
+    cmpi.b  #$84,(A0)
+    blo     _L_z07_P47_post2_ok
+    addq.b  #1,D4
+    cmpi.b  #8,D4
+    blo     _L_z07_P47_fb_loop
+    ; All 8 fallback cells unwalkable — just use $48 (fails gracefully
+    ; rather than looping).
+    move.b  #$48,($0525,A4)
 _L_z07_P47_post2_ok:
-    move.b  ($0525,A4),(A3)+        ; byte 3: $0525 after post2 (final)
     ; Extract and set the monster's location.
     ;
     move.b  ($0525,A4),D0

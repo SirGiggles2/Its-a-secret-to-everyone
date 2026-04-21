@@ -37,6 +37,32 @@
 ; .EXPORT TransferLevelPatternBlocks
 
     even
+
+; Stage 2d: data-only mode (code ported to src/gen/z_03.c)
+    xdef    BossPatternBlockSrcAddrs
+    xdef    LevelPatternBlockSrcAddrs
+    xdef    PatternBlockOWBG
+    xdef    PatternBlockOWSP
+    xdef    PatternBlockPpuAddrs
+    xdef    PatternBlockPpuAddrsExtra
+    xdef    PatternBlockSizesOW
+    xdef    PatternBlockSizesUW
+    xdef    PatternBlockSrcAddrsOW
+    xdef    PatternBlockSrcAddrsUW
+    xdef    PatternBlockUWBG
+    xdef    PatternBlockUWSP
+    xdef    PatternBlockUWSP127
+    xdef    PatternBlockUWSP358
+    xdef    PatternBlockUWSP469
+    xdef    PatternBlockUWSPBoss1257
+    xdef    PatternBlockUWSPBoss3468
+    xdef    PatternBlockUWSPBoss9
+
+    even
+TransferLevelPatternBlocks:
+    jmp     c_transfer_level_pattern_blocks
+
+    even
 LevelPatternBlockSrcAddrs:
     dc.b    $BB, $9D   ; NES .ADDR (bank window, NES=$9DBB = PatternBlockUWSP127)
     dc.b    $BB, $9D   ; NES .ADDR (bank window, NES=$9DBB = PatternBlockUWSP127)
@@ -93,206 +119,6 @@ PatternBlockSizesUW:
     dc.w    $0100
     dc.w    $0220
     dc.w    $0400
-
-    even
-TransferLevelPatternBlocks:
-    jsr     TurnOffAllVideo
-    jsr     _ppu_read_2  ; PPU $2002 read → D0
-    jsr     ResetPatternBlockIndex
-    move.b  ($0010,A4),D0
-    beq.s  __far_z_03_0000
-    jmp  TransferLevelPatternBlocksUW
-__far_z_03_0000:
-    even
-_L_z03_TransferLevelPatternBlocks_LoopBlockOW:
-    jsr     FetchPatternBlockInfoOW
-    jsr     TransferPatternBlock_Bank3
-    move.b  ($051D,A4),D0
-    cmpi.b  #$02,D0
-    bne  _L_z03_TransferLevelPatternBlocks_LoopBlockOW
-    even
-ResetPatternBlockIndex:
-    moveq   #0,D0
-    move.b  D0,($051D,A4)
-    rts
-
-    even
-TransferLevelPatternBlocksUW:
-    jsr     FetchPatternBlockAddrUW
-    jsr     FetchPatternBlockSizeUW
-    move.b  ($051D,A4),D0
-    cmpi.b  #$02,D0
-    beq.s  __far_z_03_0001
-    jmp  TransferLevelPatternBlocksUW
-__far_z_03_0001:
-    ; At this point, we've transferred two common blocks
-    ; (BG and sprites). Now UW, transfer bosses and other
-    ; specialized sprite patterns.
-    ;
-    jsr     FetchPatternBlockAddrUWSpecial
-    jsr     FetchPatternBlockSizeUW
-    jsr     FetchPatternBlockUWBoss
-    jsr     FetchPatternBlockSizeUW
-    jmp     ResetPatternBlockIndex
-
-    even
-FetchPatternBlockAddrUW:
-    moveq   #3,D0
-    jsr     _copy_bank_to_window   ; PATCH P33b: force window bank 3
-    move.b  ($051D,A4),D0
-    lsl.b  #1,D0   ; ASL A
-    moveq   #0,D2
-    move.b  D0,D2
-    lea     (PatternBlockSrcAddrsUW).l,A0
-    move.b  (A0,D2.W),D0
-    move.b  D0,($0000,A4)
-    addq.b  #1,D2
-    lea     (PatternBlockSrcAddrsUW).l,A0
-    move.b  (A0,D2.W),D0
-    move.b  D0,($0001,A4)
-    rts
-
-; Returns:
-; [$00:01]: source address
-; [$03:02]: size
-;
-    even
-FetchPatternBlockInfoOW:
-    moveq   #3,D0
-    jsr     _copy_bank_to_window   ; PATCH P33b: force window bank 3
-    move.b  ($051D,A4),D0
-    lsl.b  #1,D0   ; ASL A
-    moveq   #0,D2
-    move.b  D0,D2
-    lea     (PatternBlockSrcAddrsOW).l,A0
-    move.b  (A0,D2.W),D0
-    move.b  D0,($0000,A4)
-    lea     (PatternBlockSizesOW).l,A0
-    move.b  (A0,D2.W),D0
-    move.b  D0,($0002,A4)
-    addq.b  #1,D2
-    lea     (PatternBlockSrcAddrsOW).l,A0
-    move.b  (A0,D2.W),D0
-    move.b  D0,($0001,A4)
-    lea     (PatternBlockSizesOW).l,A0
-    move.b  (A0,D2.W),D0
-    move.b  D0,($0003,A4)
-    rts
-
-    even
-FetchPatternBlockAddrUWSpecial:
-    moveq   #3,D0
-    jsr     _copy_bank_to_window   ; PATCH P33b: force window bank 3
-    move.b  ($0010,A4),D0
-    lsl.b  #1,D0   ; ASL A
-    moveq   #0,D2
-    move.b  D0,D2
-    lea     (LevelPatternBlockSrcAddrs).l,A0
-    move.b  (A0,D2.W),D0
-    move.b  D0,($0000,A4)
-    addq.b  #1,D2
-    lea     (LevelPatternBlockSrcAddrs).l,A0
-    move.b  (A0,D2.W),D0
-    move.b  D0,($0001,A4)
-    rts
-
-    even
-FetchPatternBlockUWBoss:
-    moveq   #3,D0
-    jsr     _copy_bank_to_window   ; PATCH P33b: force window bank 3
-    move.b  ($0010,A4),D0
-    lsl.b  #1,D0   ; ASL A
-    moveq   #0,D2
-    move.b  D0,D2
-    lea     (BossPatternBlockSrcAddrs).l,A0
-    move.b  (A0,D2.W),D0
-    move.b  D0,($0000,A4)
-    addq.b  #1,D2
-    lea     (BossPatternBlockSrcAddrs).l,A0
-    move.b  (A0,D2.W),D0
-    move.b  D0,($0001,A4)
-    rts
-
-    even
-FetchPatternBlockSizeUW:
-    move.b  ($051D,A4),D0
-    lsl.b  #1,D0   ; ASL A
-    moveq   #0,D2
-    move.b  D0,D2
-    lea     (PatternBlockSizesUW).l,A0
-    move.b  (A0,D2.W),D0
-    move.b  D0,($0002,A4)
-    addq.b  #1,D2
-    lea     (PatternBlockSizesUW).l,A0
-    move.b  (A0,D2.W),D0
-    move.b  D0,($0003,A4)
-; Params:
-; [$00:01]: source address
-; [$03:02]: size
-;
-; Look up and transfer destination PPU address by PatternBlockIndex.
-;
-    even
-TransferPatternBlock_Bank3:
-    move.b  ($051D,A4),D0
-    lsl.b  #1,D0   ; ASL A
-    moveq   #0,D2
-    move.b  D0,D2
-    lea     (PatternBlockPpuAddrs).l,A0
-    move.b  (A0,D2.W),D0
-    jsr     _ppu_write_6  ; PPU $2006 write, D0=val
-    addq.b  #1,D2
-    lea     (PatternBlockPpuAddrs).l,A0
-    move.b  (A0,D2.W),D0
-    jsr     _ppu_write_6  ; PPU $2006 write, D0=val
-    moveq   #0,D3
-    even
-_L_z03_TransferPatternBlock_Bank3_LoopCopy:
-    move.b  ($00,A4),D1   ; ptr lo
-    move.b  ($01,A4),D4  ; ptr hi
-    andi.w  #$00FF,D1         ; zero-extend lo byte
-    lsl.w   #8,D4
-    or.w    D1,D4             ; D4 = NES ptr addr
-    ext.l   D4
-    add.l   #NES_RAM,D4       ; → Genesis addr
-    movea.l D4,A0
-    move.b  (A0,D3.W),D0     ; LDA ($nn),Y
-    jsr     _ppu_write_7  ; PPU $2007 write, D0=val
-    ; Increment source address.
-    ;
-    move.b  ($0000,A4),D0
-    andi    #$EE,CCR  ; CLC: clear C+X
-    move.b  #$01,D1
-    addx.b  D1,D0   ; ADC #$01 (X flag = 6502 C)
-    move.b  D0,($0000,A4)
-    move.b  ($0001,A4),D0
-    move.b  #$00,D1
-    addx.b  D1,D0   ; ADC #$00 (X flag = 6502 C)
-    move.b  D0,($0001,A4)
-    ; Decrement count.
-    ;
-    move.b  ($0003,A4),D0
-    ori     #$11,CCR  ; SEC: set C+X
-    move.b  #$01,D1
-    eori    #$10,CCR  ; flip X: 6502 SBC polarity
-    subx.b  D1,D0   ; SBC #$01
-    eori    #$10,CCR  ; restore X = 6502 C
-    move.b  D0,($0003,A4)
-    move.b  ($0002,A4),D0
-    move.b  #$00,D1
-    eori    #$10,CCR  ; flip X: 6502 SBC polarity
-    subx.b  D1,D0   ; SBC #$00
-    eori    #$10,CCR  ; restore X = 6502 C
-    move.b  D0,($0002,A4)
-    ; If count is not zero, go copy more.
-    ;
-    move.b  ($0002,A4),D0
-    bne  _L_z03_TransferPatternBlock_Bank3_LoopCopy
-    move.b  ($0003,A4),D0
-    bne  _L_z03_TransferPatternBlock_Bank3_LoopCopy
-    addq.b  #1,($051D,A4)
-    eori    #$01,CCR  ; normalize C to 6502 polarity before RTS
-    rts
 
     even
 PatternBlockUWBG:
@@ -1046,3 +872,4 @@ PatternBlockUWSPBoss9:
 
 ; Unknown block
     dc.b    $84, $E4, $50, $BF, $F0, $BF
+
