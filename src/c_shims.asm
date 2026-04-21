@@ -71,6 +71,11 @@
     xdef    c_animate_demo_p1s1
     xdef    c_disable_fallen_objects
     xdef    c_init_mode1_sub2
+    xdef    c_set_up_common_cave_objects
+    xdef    c_update_mode7_scroll_sub2
+    xdef    c_update_mode7_scroll_sub7
+    xdef    c_fetch_tile_map_addr
+    xdef    c_copy_play_area_attrs_half
 
     xref    c_move_object
     xref    z03_transfer_level_pattern_blocks
@@ -120,6 +125,11 @@
     xref    z02_animate_demo_phase1_sub1
     xref    z02_disable_fallen_objects
     xref    z02_init_mode1_sub2
+    xref    z01_set_up_common_cave_objects
+    xref    z05_update_mode7_scroll_sub2
+    xref    z05_update_mode7_scroll_sub7
+    xref    z05_fetch_tile_map_addr
+    xref    z05_copy_play_area_attrs_half
 
 ;------------------------------------------------------------------------------
 ; _c_move_object_shim — MoveObject trampoline.
@@ -528,4 +538,50 @@ c_disable_fallen_objects:
 ; InitMode1_Sub2 — no args, void return.
 c_init_mode1_sub2:
     jmp     z02_init_mode1_sub2
+
+;==============================================================================
+; EXPORT side — batch 10.
+;==============================================================================
+
+; SetUpCommonCaveObjects — D0=x, D2=slot, D3=y.
+c_set_up_common_cave_objects:
+    moveq   #0,D1
+    move.b  D3,D1
+    move.l  D1,-(SP)
+    moveq   #0,D1
+    move.w  D2,D1
+    move.l  D1,-(SP)
+    moveq   #0,D1
+    move.b  D0,D1
+    move.l  D1,-(SP)
+    jsr     z01_set_up_common_cave_objects
+    lea     12(SP),SP
+    rts
+
+; UpdateMode7Scroll_Sub2 — no args, void return.
+c_update_mode7_scroll_sub2:
+    jmp     z05_update_mode7_scroll_sub2
+
+; UpdateMode7Scroll_Sub7 — no args, void return.
+c_update_mode7_scroll_sub7:
+    jmp     z05_update_mode7_scroll_sub7
+
+; FetchTileMapAddr — no args, void return.
+c_fetch_tile_map_addr:
+    jmp     z05_fetch_tile_map_addr
+
+; CopyPlayAreaAttrsHalfToDynTransferBuf — D2=ppu_hi, D0=ppu_lo, D3=end_off.
+c_copy_play_area_attrs_half:
+    moveq   #0,D1
+    move.b  D3,D1
+    move.l  D1,-(SP)
+    moveq   #0,D1
+    move.b  D0,D1
+    move.l  D1,-(SP)
+    moveq   #0,D1
+    move.b  D2,D1
+    move.l  D1,-(SP)
+    jsr     z05_copy_play_area_attrs_half
+    lea     12(SP),SP
+    rts
 

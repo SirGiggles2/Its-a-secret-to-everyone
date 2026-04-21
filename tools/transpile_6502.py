@@ -2533,6 +2533,7 @@ def _patch_z01(path):
     text = _stub_func(text, 'DestroyWhirlwind', 'c_destroy_whirlwind')
     text = _stub_func(text, 'UpdateUnderworldPersonComplexState_DelayAndQuit', 'c_uw_person_delay_quit')
     text = _stub_func(text, 'SetBoomerangSpeed', 'c_set_boomerang_speed')
+    text = _stub_func(text, 'SetUpCommonCaveObjects', 'c_set_up_common_cave_objects')
 
     with open(path, 'w', encoding='utf-8') as f:
         f.write(text)
@@ -4903,6 +4904,10 @@ def _patch_z05(path):
     text = _stub_func(text, 'MaskCurPpuMaskGrayscale', 'c_mask_cur_ppu_mask_grayscale')
     text = _stub_func(text, 'SetupObjRoomBounds', 'c_setup_obj_room_bounds')
     text = _stub_func(text, 'FillPlayAreaAttrs', 'c_fill_play_area_attrs')
+    text = _stub_func(text, 'UpdateMode7Scroll_Sub2', 'c_update_mode7_scroll_sub2')
+    text = _stub_func(text, 'UpdateMode7Scroll_Sub7', 'c_update_mode7_scroll_sub7')
+    text = _stub_func(text, 'FetchTileMapAddr', 'c_fetch_tile_map_addr')
+    text = _stub_func(text, 'CopyPlayAreaAttrsHalfToDynTransferBuf', 'c_copy_play_area_attrs_half')
 
     with open(path, 'w', encoding='utf-8') as f:
         f.write(text)

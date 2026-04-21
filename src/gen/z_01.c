@@ -80,3 +80,17 @@ void z01_set_boomerang_speed(unsigned int val, unsigned int slot) {
             RAM(0x00AC + slot) = 80;
     }
 }
+
+void z01_set_up_common_cave_objects(unsigned int x, unsigned int slot, unsigned int y) {
+    RAM(0x0070 + slot) = x;
+    RAM(0x0084 + slot) = y;
+    RAM(0x0485 + slot) = 0;
+    RAM(0x04BF + slot) = 0x81;
+    RAM(0x00AC) = 64;
+    RAM(0x0351) = 64;
+    RAM(0x0352) = 64;
+    RAM(0x0071 + slot) = 72;
+    RAM(0x0072 + slot) = 0xA8;
+    RAM(0x0085 + slot) = y;
+    RAM(0x0086 + slot) = y;
+}

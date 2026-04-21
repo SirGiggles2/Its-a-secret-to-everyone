@@ -271,3 +271,38 @@ void z05_init_link_speed(void) {
     }
     RAM(0x03BC) = RAM(0x0000);
 }
+
+void z05_update_mode7_scroll_sub2(void) {
+    RAM(0x0013)++;
+    unsigned char frame = (unsigned char)(RAM(0x0015) + 1);
+    frame &= 0x03;
+    if (RAM(0x0010) == 0)
+        frame &= 0x01;
+    RAM(0x00E6) = frame;
+}
+
+void z05_update_mode7_scroll_sub7(void) {
+    RAM(0x0013) = 1;
+    RAM(0x0011) = 0;
+    RAM(0x010C) = 0;
+    RAM(0x00E7) = 0;
+    RAM(0x00E3) = 0;
+    RAM(0x0012) = 4;
+}
+
+void z05_fetch_tile_map_addr(void) {
+    RAM(0x00) = 48;
+    RAM(0x01) = 101;
+}
+
+void z05_copy_play_area_attrs_half(unsigned int ppu_hi, unsigned int ppu_lo, unsigned int end_off) {
+    RAM(0x0302) = ppu_hi;
+    RAM(0x0303) = ppu_lo;
+    RAM(0x0304) = 24;
+    RAM(0x0305 + 24) = 0xFF;
+    unsigned char src = end_off;
+    for (unsigned char dst = 24; dst > 0; dst--) {
+        RAM(0x0304 + dst) = RAM(0x0530 + src);
+        src--;
+    }
+}
