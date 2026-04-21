@@ -6,6 +6,7 @@
 
 extern const unsigned char TektiteStartingDirs[];
 extern const unsigned char GanonStartXs[];
+extern const unsigned char Directions8[];
 
 void z04_hide_sprites_over_link(void) {
     RAM(0x0240) = 0xF8;
@@ -61,6 +62,16 @@ void z04_ganon_randomize_location(unsigned int slot) {
     RAM(0x0084 + slot) = 0xA0;
     unsigned char idx = RAM(0x0015) & 0x01;
     RAM(0x0070 + slot) = GanonStartXs[idx];
+}
+
+void z04_init_digdogger1(unsigned int slot) {
+    RAM(0x0601) = 64;
+    unsigned char rnd = RAM(0x0018 + slot) & 0x07;
+    unsigned char dir = Directions8[rnd];
+    RAM(0x0098 + slot) = dir;
+    RAM(0x041F + slot) = 63;
+    RAM(0x0437 + slot) = 0x80;
+    RAM(0x0507) = 3;
 }
 
 void z04_reset_flyer_state(unsigned int slot) {

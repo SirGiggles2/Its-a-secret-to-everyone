@@ -904,6 +904,23 @@ c_ganon_randomize_location:
     addq.l  #4,SP
     rts
 
+;==============================================================================
+; EXPORT side — batch 17.
+;==============================================================================
+
+; InitDigdogger1 — D2=slot.
+c_init_digdogger1:
+    moveq   #0,D0
+    move.w  D2,D0
+    move.l  D0,-(SP)
+    jsr     z04_init_digdogger1
+    addq.l  #4,SP
+    rts
+
+; FetchProfileNameAddress — void→void.
+c_fetch_profile_name_address:
+    jmp     z02_fetch_profile_name_address
+
 ; Anim_SetSpriteDescriptorAttributes — D0=val.
 c_anim_set_sprite_desc_attrs:
     moveq   #0,D1

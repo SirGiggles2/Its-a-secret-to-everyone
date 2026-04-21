@@ -3581,6 +3581,16 @@ def _patch_z02(path):
     text = _stub_func(text, 'ModeE_SetNameCursorSpriteX', 'c_mode_e_set_name_cursor_sprite_x')
     text = _stub_func(text, 'IncSubphase', 'c_inc_subphase')
 
+    # --- Stage 4b batch 17: ROM table tier ---
+    # Export ProfileNameAddrs tables
+    xdef_block_z02 = "\n    xdef    ProfileNameAddrsLo\n    xdef    ProfileNameAddrsHi\n"
+    if 'xdef    ProfileNameAddrsLo' not in text:
+        marker = 'ProfileNameAddrsLo:'
+        if marker in text:
+            text = xdef_block_z02 + text
+            print("  _patch_z02: exported ProfileNameAddrsLo, ProfileNameAddrsHi")
+    text = _stub_func(text, 'FetchProfileNameAddress', 'c_fetch_profile_name_address')
+
     with open(path, 'w', encoding='utf-8') as f:
         f.write(text)
 
@@ -3749,7 +3759,7 @@ def _patch_z04(path):
         text = f.read()
 
     # Export ROM data tables referenced by C code
-    xdef_block = "\n    xdef    TektiteStartingDirs\n    xdef    GanonStartXs\n"
+    xdef_block = "\n    xdef    TektiteStartingDirs\n    xdef    GanonStartXs\n    xdef    Directions8\n"
     if 'xdef    TektiteStartingDirs' not in text:
         # Insert after the header comment block
         marker = 'TektiteStartingDirs:'
@@ -3775,6 +3785,9 @@ def _patch_z04(path):
     text = _stub_func(text, 'Flyer_SetFlyingStateAnd6Turns', 'c_flyer_set_state_and_turns')
     text = _stub_func(text, 'InitTektite', 'c_init_tektite')
     text = _stub_func(text, 'Ganon_RandomizeLocation', 'c_ganon_randomize_location')
+
+    # --- Stage 4b batch 17: ROM table tier ---
+    text = _stub_func(text, 'InitDigdogger1', 'c_init_digdogger1')
 
     with open(path, 'w', encoding='utf-8') as f:
         f.write(text)

@@ -4,6 +4,9 @@
 
 #include "../nes_abi.h"
 
+extern const unsigned char ProfileNameAddrsLo[];
+extern const unsigned char ProfileNameAddrsHi[];
+
 void z02_animate_demo_phase1_sub0(void) {
     if (RAM(0x0015) & 0x01) {
         RAM(0x00FC)++;
@@ -66,4 +69,10 @@ void z02_mode_e_set_name_cursor_sprite_x(void) {
 
 void z02_inc_subphase(void) {
     RAM(0x042D)++;
+}
+
+void z02_fetch_profile_name_address(void) {
+    unsigned char idx = RAM(0x0016);
+    RAM(0x000C) = ProfileNameAddrsLo[idx];
+    RAM(0x000D) = ProfileNameAddrsHi[idx];
 }
