@@ -101,6 +101,10 @@
     xdef    c_inc_submode
     xdef    c_inc_2_submodes
     xdef    c_init_mode4_go_to_sub0
+    xdef    c_unhalt_link
+    xdef    c_inc_cave_state
+    xdef    c_set_up_whirlwind
+    xdef    c_inc_subphase
 
     xref    c_move_object
     xref    z03_transfer_level_pattern_blocks
@@ -180,6 +184,10 @@
     xref    z05_inc_submode
     xref    z05_inc_2_submodes
     xref    z05_init_mode4_go_to_sub0
+    xref    z01_unhalt_link
+    xref    z01_inc_cave_state
+    xref    z01_set_up_whirlwind
+    xref    z02_inc_subphase
 
 ;------------------------------------------------------------------------------
 ; _c_move_object_shim — MoveObject trampoline.
@@ -835,4 +843,29 @@ c_inc_2_submodes:
 ; InitMode4_GoToSub0 — void→void.
 c_init_mode4_go_to_sub0:
     jmp     z05_init_mode4_go_to_sub0
+
+;==============================================================================
+; EXPORT side — batch 14.
+;==============================================================================
+
+; UnhaltLink — void→void.
+c_unhalt_link:
+    jmp     z01_unhalt_link
+
+; IncCaveState — void→void.
+c_inc_cave_state:
+    jmp     z01_inc_cave_state
+
+; SetUpWhirlwind — D2=slot.
+c_set_up_whirlwind:
+    moveq   #0,D0
+    move.w  D2,D0
+    move.l  D0,-(SP)
+    jsr     z01_set_up_whirlwind
+    addq.l  #4,SP
+    rts
+
+; IncSubphase — void→void.
+c_inc_subphase:
+    jmp     z02_inc_subphase
 

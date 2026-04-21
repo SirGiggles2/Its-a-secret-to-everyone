@@ -63,6 +63,20 @@ void z01_destroy_whirlwind(unsigned int slot) {
     RAM(0x0405 + slot) = 1;
 }
 
+void z01_unhalt_link(void) {
+    RAM(0x00AC) = 0;
+}
+
+void z01_inc_cave_state(void) {
+    RAM(0x00AD)++;
+}
+
+void z01_set_up_whirlwind(unsigned int slot) {
+    RAM(0x0084 + slot) = RAM(0x0084);
+    RAM(0x0070 + slot) = 0;
+    RAM(0x034F + slot) = 46;
+}
+
 void z01_uw_person_complex_state_delay_and_quit(void) {
     unsigned char timer = RAM(0x0029);
     if (timer == 0)

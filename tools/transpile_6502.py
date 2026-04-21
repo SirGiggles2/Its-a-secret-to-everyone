@@ -2535,6 +2535,11 @@ def _patch_z01(path):
     text = _stub_func(text, 'SetBoomerangSpeed', 'c_set_boomerang_speed')
     text = _stub_func(text, 'SetUpCommonCaveObjects', 'c_set_up_common_cave_objects')
 
+    # --- Stage 4b batch 14: more z_01 C function stubs ---
+    text = _stub_func(text, 'UnhaltLink', 'c_unhalt_link')
+    text = _stub_func(text, 'IncCaveState', 'c_inc_cave_state')
+    text = _stub_func(text, 'SetUpWhirlwind', 'c_set_up_whirlwind')
+
     with open(path, 'w', encoding='utf-8') as f:
         f.write(text)
 
@@ -3573,6 +3578,7 @@ def _patch_z02(path):
     text = _stub_func(text, 'ModeE_ResetVariables', 'c_mode_e_reset_variables')
     text = _stub_func(text, 'ResetButtonRepeatState', 'c_reset_button_repeat_state')
     text = _stub_func(text, 'ModeE_SetNameCursorSpriteX', 'c_mode_e_set_name_cursor_sprite_x')
+    text = _stub_func(text, 'IncSubphase', 'c_inc_subphase')
 
     with open(path, 'w', encoding='utf-8') as f:
         f.write(text)
@@ -3756,6 +3762,7 @@ def _patch_z04(path):
     text = _stub_func(text, 'Flyer_SetStateAndTurns', 'c_flyer_set_state_and_turns')
     text = _stub_func(text, 'InitAquamentus', 'c_init_aquamentus')
     text = _stub_func(text, 'ResetFlyerState', 'c_reset_flyer_state')
+    text = _stub_func(text, 'Flyer_SetFlyingStateAnd6Turns', 'c_flyer_set_state_and_turns')
 
     with open(path, 'w', encoding='utf-8') as f:
         f.write(text)
@@ -4932,6 +4939,12 @@ def _patch_z05(path):
     text = _stub_func(text, 'IncSubmode', 'c_inc_submode')
     text = _stub_func(text, 'Inc2Submodes', 'c_inc_2_submodes')
     text = _stub_func(text, 'InitMode4_GoToSub0', 'c_init_mode4_go_to_sub0')
+
+    # --- Stage 4b batch 14: z_05 IncSubmode aliases ---
+    text = _stub_func(text, 'L14CD7_IncSubmode', 'c_inc_submode')
+    text = _stub_func(text, 'L1688C_IncSubmode', 'c_inc_submode')
+    text = _stub_func(text, 'L1701A_Exit', 'c_inc_submode')
+    text = _stub_func(text, 'InitModeSubroom_AdvanceSubmode', 'c_inc_submode')
 
     with open(path, 'w', encoding='utf-8') as f:
         f.write(text)

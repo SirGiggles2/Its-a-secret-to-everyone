@@ -63,3 +63,7 @@ void z02_reset_button_repeat_state(unsigned int val) {
 void z02_mode_e_set_name_cursor_sprite_x(void) {
     RAM(0x0207) = RAM(0x0070);
 }
+
+void z02_inc_subphase(void) {
+    RAM(0x042D)++;
+}
