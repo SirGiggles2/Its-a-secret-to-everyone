@@ -114,6 +114,31 @@ void z01_anim_set_sprite_desc_attrs(unsigned int val) {
     RAM(0x0005) = (unsigned char)val;
 }
 
+void z01_post_credit(unsigned int val) {
+    RAM(0x067D) = (unsigned char)(RAM(0x067D) + val);
+}
+
+void z01_add_to_int16_at_0(unsigned int val) {
+    unsigned int sum = (unsigned char)val + RAM(0x0000);
+    RAM(0x0000) = (unsigned char)sum;
+    if (sum > 0xFF)
+        RAM(0x0001)++;
+}
+
+void z01_add_to_int16_at_2(unsigned int val) {
+    unsigned int sum = (unsigned char)val + RAM(0x0002);
+    RAM(0x0002) = (unsigned char)sum;
+    if (sum > 0xFF)
+        RAM(0x0003)++;
+}
+
+void z01_add_to_int16_at_4(unsigned int val) {
+    unsigned int sum = (unsigned char)val + RAM(0x0004);
+    RAM(0x0004) = (unsigned char)sum;
+    if (sum > 0xFF)
+        RAM(0x0005)++;
+}
+
 void z01_map_screen_pos_to_ppu_addr(void) {
     unsigned char y = RAM(0x0002);
     unsigned char x = RAM(0x0003);

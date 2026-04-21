@@ -75,6 +75,18 @@ void z02_inc_subphase(void) {
     RAM(0x042D)++;
 }
 
+void z02_add_a_to_0f0e(unsigned int val) {
+    unsigned int sum = (unsigned char)val + RAM(0x000F);
+    RAM(0x000F) = (unsigned char)sum;
+    RAM(0x000E) = (unsigned char)(RAM(0x000E) + (sum >> 8));
+}
+
+void z02_add_a_to_cfce(unsigned int val) {
+    unsigned int sum = (unsigned char)val + RAM(0x00CF);
+    RAM(0x00CF) = (unsigned char)sum;
+    RAM(0x00CE) = (unsigned char)(RAM(0x00CE) + (sum >> 8));
+}
+
 void z02_mode_e_sync_char_board_cursor(void) {
     unsigned char idx = RAM(0x041F);
     if (idx & 0x80)

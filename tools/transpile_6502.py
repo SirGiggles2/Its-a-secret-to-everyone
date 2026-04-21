@@ -2544,6 +2544,12 @@ def _patch_z01(path):
     # --- Stage 4b batch 18: z_01 C function stubs ---
     text = _stub_func(text, 'MapScreenPosToPpuAddr', 'c_map_screen_pos_to_ppu_addr')
 
+    # --- Stage 4b batch 21: z_01 CCR-arithmetic stubs ---
+    text = _stub_func(text, 'PostCredit', 'c_post_credit')
+    text = _stub_func(text, 'AddToInt16At0', 'c_add_to_int16_at_0')
+    text = _stub_func(text, 'AddToInt16At2', 'c_add_to_int16_at_2')
+    text = _stub_func(text, 'AddToInt16At4', 'c_add_to_int16_at_4')
+
     with open(path, 'w', encoding='utf-8') as f:
         f.write(text)
 
@@ -3603,6 +3609,10 @@ def _patch_z02(path):
 
     # --- Stage 4b batch 20: z_02 C function stubs ---
     text = _stub_func(text, 'ModeE_SyncCharBoardCursorToIndex', 'c_mode_e_sync_char_board_cursor')
+
+    # --- Stage 4b batch 21: z_02 CCR-arithmetic stubs ---
+    text = _stub_func(text, 'AddATo0F0E', 'c_add_a_to_0f0e')
+    text = _stub_func(text, 'AddAToCFCE', 'c_add_a_to_cfce')
 
     with open(path, 'w', encoding='utf-8') as f:
         f.write(text)

@@ -126,6 +126,12 @@
     xdef    c_flyer_delay
     xdef    c_mode_e_sync_char_board_cursor
     xdef    c_cycle9_in_direction
+    xdef    c_post_credit
+    xdef    c_add_to_int16_at_0
+    xdef    c_add_to_int16_at_2
+    xdef    c_add_to_int16_at_4
+    xdef    c_add_a_to_0f0e
+    xdef    c_add_a_to_cfce
 
     xref    c_move_object
     xref    z03_transfer_level_pattern_blocks
@@ -228,6 +234,12 @@
     xref    z04_flyer_delay
     xref    z02_mode_e_sync_char_board_cursor
     xref    z05_cycle9_in_direction
+    xref    z01_post_credit
+    xref    z01_add_to_int16_at_0
+    xref    z01_add_to_int16_at_2
+    xref    z01_add_to_int16_at_4
+    xref    z02_add_a_to_0f0e
+    xref    z02_add_a_to_cfce
 
 ;------------------------------------------------------------------------------
 ; _c_move_object_shim — MoveObject trampoline.
@@ -1054,6 +1066,64 @@ c_flyer_delay:
 ; ModeE_SyncCharBoardCursorToIndex — void→void.
 c_mode_e_sync_char_board_cursor:
     jmp     z02_mode_e_sync_char_board_cursor
+
+;==============================================================================
+; EXPORT side — batch 21.
+;==============================================================================
+
+; PostCredit — D0=val.
+c_post_credit:
+    moveq   #0,D1
+    move.b  D0,D1
+    move.l  D1,-(SP)
+    jsr     z01_post_credit
+    addq.l  #4,SP
+    rts
+
+; AddToInt16At0 — D0=val.
+c_add_to_int16_at_0:
+    moveq   #0,D1
+    move.b  D0,D1
+    move.l  D1,-(SP)
+    jsr     z01_add_to_int16_at_0
+    addq.l  #4,SP
+    rts
+
+; AddToInt16At2 — D0=val.
+c_add_to_int16_at_2:
+    moveq   #0,D1
+    move.b  D0,D1
+    move.l  D1,-(SP)
+    jsr     z01_add_to_int16_at_2
+    addq.l  #4,SP
+    rts
+
+; AddToInt16At4 — D0=val.
+c_add_to_int16_at_4:
+    moveq   #0,D1
+    move.b  D0,D1
+    move.l  D1,-(SP)
+    jsr     z01_add_to_int16_at_4
+    addq.l  #4,SP
+    rts
+
+; AddATo0F0E — D0=val.
+c_add_a_to_0f0e:
+    moveq   #0,D1
+    move.b  D0,D1
+    move.l  D1,-(SP)
+    jsr     z02_add_a_to_0f0e
+    addq.l  #4,SP
+    rts
+
+; AddAToCFCE — D0=val.
+c_add_a_to_cfce:
+    moveq   #0,D1
+    move.b  D0,D1
+    move.l  D1,-(SP)
+    jsr     z02_add_a_to_cfce
+    addq.l  #4,SP
+    rts
 
 ; Cycle9InDirection — D3 in, D3 out.
 c_cycle9_in_direction:
