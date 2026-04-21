@@ -722,14 +722,11 @@ _L_z05_ScrollWorld_LimitLow:
     addq.b  #1,($0058,A4)
     even
 ResetVScrollLo:
-    moveq   #0,D0
-    move.b  D0,($00E2,A4)
-    even
-IncSubmode:
-    addq.b  #1,($0013,A4)
-    rts
+    jmp     c_reset_vscroll_lo
 
-    even
+IncSubmode:
+    jmp     c_inc_submode
+
 ScrollWorldDownOrH:
     lsr.b  #1,D0   ; LSR A
     move.b  ($0098,A4),D1
@@ -1143,33 +1140,11 @@ Sprite0Descriptor:
 
     even
 WriteAndEnableSprite0:
-    moveq   #1,D0
-    move.b  D0,($00E3,A4)
-    moveq   #3,D3
-_anon_z05_23:
-    lea     (Sprite0Descriptor).l,A0
-    move.b  (A0,D3.W),D0
-    lea     ($0200,A4),A0
-    move.b  D0,(A0,D3.W)
-    subq.b  #1,D3
-    bpl  _anon_z05_23
-    rts
+    jmp     c_write_and_enable_sprite0
 
-    even
 SetEnteringDoorwayAsCurOpenedDoors:
-    move.b  ($0098,A4),D0
-    lsr.b  #1,D0   ; LSR A
-    andi.b #$05,D0
-    move.b  D0,($0000,A4)
-    move.b  ($0098,A4),D0
-    lsl.b  #1,D0   ; ASL A
-    andi.b #$0A,D0
-    move.b  ($0000,A4),D1
-    or.b  D1,D0
-    move.b  D0,($00EE,A4)
-    rts
+    jmp     c_set_entering_doorway
 
-    even
 RoomPaletteSelectorToNTAttr:
     dc.b    $00, $55, $AA, $FF
 
@@ -1179,69 +1154,8 @@ RoomPaletteSelectorToNTAttr:
 ; Look up room attributes A for the room.
     even
 FillPlayAreaAttrs:
-    moveq   #0,D3
-    move.b  D0,D3
-    lea     (NES_SRAM+$087E).l,A0
-    move.b  (A0,D3.W),D0
-    andi.b #$03,D0
-    moveq   #0,D2
-    move.b  D0,D2
-    lea     (RoomPaletteSelectorToNTAttr).l,A0
-    move.b  (A0,D2.W),D0
-    moveq   #47,D2
-_anon_z05_24:
-    lea     ($0530,A4),A0
-    move.b  D0,(A0,D2.W)
-    subq.b  #1,D2
-    bpl  _anon_z05_24
-    lea     (NES_SRAM+$08FE).l,A0
-    move.b  (A0,D3.W),D0
-    andi.b #$03,D0
-    moveq   #0,D2
-    move.b  D0,D2
-    ; Fill the inner play area NT attributes (offset 9 to $26).
-    ;
-    moveq   #9,D3
-    even
-_L_z05_FillPlayAreaAttrs_LoopRow:
-    move.b  D3,D0
-    andi.b #$07,D0
-    beq  _L_z05_FillPlayAreaAttrs_NextLoopRow
-    cmpi.b  #$07,D0
-    beq  _L_z05_FillPlayAreaAttrs_NextLoopRow
-    cmpi.b  #$21,D3
-    bcc  _L_z05_FillPlayAreaAttrs_CombineInnerOuter
-    lea     (RoomPaletteSelectorToNTAttr).l,A0
-    move.b  (A0,D2.W),D0
-    lea     ($0530,A4),A0
-    move.b  D0,(A0,D3.W)
-    even
-_L_z05_FillPlayAreaAttrs_NextLoopRow:
-    addq.b  #1,D3
-    cmpi.b  #$27,D3
-    bcs  _L_z05_FillPlayAreaAttrs_LoopRow
-    eori    #$01,CCR  ; normalize C to 6502 polarity before RTS
-    rts
+    jmp     c_fill_play_area_attrs
 
-    even
-_L_z05_FillPlayAreaAttrs_CombineInnerOuter:
-    ; Combine the NT attributes at current offset with the
-    ; new ones we're filling; so that new (inner) attributes
-    ; affect the top half of the row.
-    lea     (RoomPaletteSelectorToNTAttr).l,A0
-    move.b  (A0,D2.W),D0
-    andi.b #$0F,D0
-    move.b  D0,($0000,A4)
-    lea     ($0530,A4),A0
-    move.b  (A0,D3.W),D0
-    andi.b #$F0,D0
-    move.b  ($0000,A4),D1
-    or.b  D1,D0
-    lea     ($0530,A4),A0
-    move.b  D0,(A0,D3.W)
-    jmp     _L_z05_FillPlayAreaAttrs_NextLoopRow
-
-    even
 UpdateMode7SubmodeAndDrawLink:
     jsr     UpdateMode7ScrollSubmode
     jmp     Link_EndMoveAndAnimateBetweenRooms
@@ -1288,11 +1202,8 @@ __far_z_05_0022:
     move.b  D0,($00E9,A4)
     even
 Inc2Submodes:
-    addq.b  #1,($0013,A4)
-    addq.b  #1,($0013,A4)
-    rts
+    jmp     c_inc_2_submodes
 
-    even
 ScrollHorizontal:
     ; Scrolling left or right.
     ;
@@ -1379,28 +1290,8 @@ _anon_z05_26:
 
     even
 UpdateMode7Scroll_Sub2:
-    ; Calculates a VScrollingStartFrame value that enables
-    ; immediate vertical scrolling in the next frame and submode.
-    ;
-    addq.b  #1,($0013,A4)
-    move.b  ($0015,A4),D0
-    ; Add 1, so that the frame value calculated in the next frame
-    ; will match the VScrollingStartFrame value we calculate here.
-    andi    #$EE,CCR  ; CLC: clear C+X
-    move.b  #$01,D1
-    addx.b  D1,D0   ; ADC #$01 (X flag = 6502 C)
-    ; Calculate VScrollingStartFrame the same way as the frame
-    ; value in the next submode.
-    andi.b #$03,D0
-    moveq   #0,D3
-    move.b  ($0010,A4),D3
-    bne  _anon_z05_27
-    andi.b #$01,D0
-_anon_z05_27:
-    move.b  D0,($00E6,A4)
-    rts
+    jmp     c_update_mode7_scroll_sub2
 
-    even
 UpdateMode7Scroll_Sub3:
     jsr     ScrollWorld
     jsr     CopyColumnOrRowToTileBuf
@@ -1440,18 +1331,8 @@ __far_z_05_0024:
 
     even
 UpdateMode7Scroll_Sub7:
-    moveq   #1,D0
-    move.b  D0,($0013,A4)
-    lsr.b  #1,D0   ; LSR A
-    move.b  D0,($0011,A4)
-    move.b  D0,($010C,A4)
-    move.b  D0,($00E7,A4)
-    move.b  D0,($00E3,A4)
-    moveq   #4,D0
-    move.b  D0,($0012,A4)
-    rts
+    jmp     c_update_mode7_scroll_sub7
 
-    even
 UpdateMode7Scroll_Sub4:
     ; Transfer new room's attributes to NT 0.
     ;
@@ -1499,35 +1380,8 @@ CueTransferPlayAreaAttrsHalfAndAdvanceSubmodeNT0:
 
     even
 CopyColumnOrRowToTileBuf:
-    ; Copies a row if CurRow is valid. Otherwise, tries to copy a column.
-    ;
-    ; If CurRow = PrevRow, does nothing. After a row is copied,
-    ; PrevRow is assigned CurRow.
-    ;
-    ;
-    ; If CurRow is valid, then copy row.
-    move.b  ($00E9,A4),D0
-    cmpi.b  #$16,D0
-    bcc  _L_z05_CopyColumnOrRowToTileBuf_CheckColumn
-    move.b  ($00ED,A4),D1
-    cmp.b   D1,D0
-    beq  _L_z05_CopyColumnOrRowToTileBuf_Exit
-    move.b  D0,($00ED,A4)
-    jmp     CopyRowToTileBuf
+    jmp     c_copy_column_or_row_to_tilebuf
 
-    even
-_L_z05_CopyColumnOrRowToTileBuf_CheckColumn:
-    move.b  ($00E8,A4),D0
-    beq  _L_z05_CopyColumnOrRowToTileBuf_Exit
-    cmpi.b  #$21,D0
-    bcc  _L_z05_CopyColumnOrRowToTileBuf_Exit
-    jmp     CopyColumnToTileBuf
-
-    even
-_L_z05_CopyColumnOrRowToTileBuf_Exit:
-    rts
-
-    even
 WaitAndScrollToSplitBottom:
     jsr     _ppu_read_2  ; PPU $2002 read → D0
     andi.b #$40,D0
@@ -1931,20 +1785,8 @@ InitMode4_Sub3:
     bne  _anon_z05_41
     even
 InitMode4_GoToSub0:
-    moveq   #0,D0
-    move.b  D0,($0013,A4)
-    move.b  D0,($051F,A4)
-    rts
+    jmp     c_init_mode4_go_to_sub0
 
-; Description:
-; Clears intraroom data.
-; Set up Link to walk into a room.
-; Decodes and lays out objects.
-; Switches from initializing the game mode to updating it.
-;
-; This is called for modes 4, 9, $B, $C.
-;
-    even
 InitMode_EnterRoom:
     jsr     DrawSpritesBetweenRooms
     jsr     ResetPlayerState
@@ -2602,10 +2444,8 @@ _anon_z05_63:
     addq.b  #1,($0011,A4)
     even
 SilenceSound:
-    move.b  #$80,D0
-    move.b  D0,($0604,A4)
-    move.b  D0,($0603,A4)
-    even
+    jmp     c_silence_sound
+
 L14A96_Exit:
     rts
 
@@ -2618,56 +2458,11 @@ L14A96_Exit:
 ;
     even
 SetDoorFlag:
-    jsr     GetRoomFlags
-    lea     (LevelMasks).l,A0
-    move.b  (A0,D2.W),D1
-    or.b  D1,D0
-    move.b  ($00,A4),D1   ; ptr lo
-    move.b  ($01,A4),D4  ; ptr hi
-    andi.w  #$00FF,D1         ; zero-extend lo byte
-    lsl.w   #8,D4
-    or.w    D1,D4
-    ext.l   D4
-    add.l   #NES_RAM,D4
-    movea.l D4,A0
-    move.b  D0,(A0,D3.W)     ; STA ($nn),Y
-    rts
+    jmp     c_set_door_flag
 
-; Params:
-; X: door direction index
-;
-; Returns:
-; Y: room ID
-; [00:01]: address of level block world flags
-;
-    even
 ResetDoorFlag:
-    jsr     GetRoomFlags
-    lea     (LevelMasks).l,A0
-    move.b  (A0,D2.W),D0
-    eori.b #$FF,D0
-    move.b  ($00,A4),D1
-    move.b  ($01,A4),D4
-    andi.w  #$00FF,D1         ; zero-extend lo byte
-    lsl.w   #8,D4
-    or.w    D1,D4
-    ext.l   D4
-    add.l   #NES_RAM,D4
-    movea.l D4,A0
-    move.b  (A0,D3.W),D1
-    and.b  D1,D0
-    move.b  ($00,A4),D1   ; ptr lo
-    move.b  ($01,A4),D4  ; ptr hi
-    andi.w  #$00FF,D1         ; zero-extend lo byte
-    lsl.w   #8,D4
-    or.w    D1,D4
-    ext.l   D4
-    add.l   #NES_RAM,D4
-    movea.l D4,A0
-    move.b  D0,(A0,D3.W)     ; STA ($nn),Y
-    rts
+    jmp     c_reset_door_flag
 
-    even
 CheckShutters:
     ;
     ;
@@ -2898,15 +2693,8 @@ AnimateAndDrawLinkBehindBackground:
     jsr     Link_EndMoveAndAnimate
     even
 PutLinkBehindBackground:
-    move.b  ($024A,A4),D0
-    ori.b #$20,D0
-    move.b  D0,($024A,A4)
-    move.b  ($024E,A4),D0
-    ori.b #$20,D0
-    move.b  D0,($024E,A4)
-    rts
+    jmp     c_put_link_behind_background
 
-    even
 CheckUnderworldSecrets:
     jsr     CheckHasLivingMonsters
     ; If there's no secret in this room, return.
@@ -2970,37 +2758,8 @@ CheckSecretTrigger_JumpTable:
 
     even
 CheckHasLivingMonsters:
-    ; Look for monsters in slots $C to 1 that are not bubbles.
-    ; If one is found, return.
-    ;
-    ; Else flag Link not paralyzed (to cancel the effects of a like-like),
-    ; and set the all-dead-in-room flag.
-    ;
-    moveq   #0,D3
-    move.b  ($0340,A4),D3
-    even
-_L_z05_CheckHasLivingMonsters_Loop:
-    lea     ($0350,A4),A0
-    move.b  (A0,D3.W),D0
-    beq  _L_z05_CheckHasLivingMonsters_Next
-    cmpi.b  #$2B,D0
-    bcs  _L_z05_CheckHasLivingMonsters_Exit
-    cmpi.b  #$2E,D0
-    bcs  _L_z05_CheckHasLivingMonsters_Next
-    cmpi.b  #$49,D0
-    bcs  _L_z05_CheckHasLivingMonsters_Exit
-    even
-_L_z05_CheckHasLivingMonsters_Next:
-    subq.b  #1,D3
-    bpl  _L_z05_CheckHasLivingMonsters_Loop
-    moveq   #0,D0
-    move.b  D0,($0512,A4)
-    addq.b  #1,($034D,A4)
-    even
-_L_z05_CheckHasLivingMonsters_Exit:
-    rts
+    jmp     c_check_has_living_monsters
 
-    even
 CheckSecretTriggerAllDead:
     ; If there are still monsters, not counting bubbles, then return C=0.
     ;
@@ -3231,15 +2990,11 @@ UpdateMode11Death_Sub5:
 
     even
 UpdateMode11Death_Sub6:
-    move.b  ($00FF,A4),D0
-    andi.b #$FE,D0
-    move.b  D0,($00FF,A4)
-    even
-L14CD7_IncSubmode:
-    addq.b  #1,($0013,A4)
-    rts
+    jmp     c_update_mode11_death_sub6
 
-    even
+L14CD7_IncSubmode:
+    jmp     c_inc_submode
+
 UpdateMode11Death_Sub7:
     move.b  ($00E5,A4),D0
     bne.s  __far_z_05_0052
@@ -7164,10 +6919,8 @@ StartFillingHearts:
     move.b  D0,($0063,A4)
     even
 L1688C_IncSubmode:
-    addq.b  #1,($0013,A4)
-    rts
+    jmp     c_inc_submode
 
-    even
 UpdateMode12EndLevel_Sub2:
     jsr     UpdateHeartsAndRupees
     move.b  ($0063,A4),D0
@@ -7231,118 +6984,11 @@ LayOutRoom:
 ; The first iteration of the loop below will add $16 to it before using it.
     even
 CopyColumnToTileBuf:
-    moveq   #26,D0
-    move.b  D0,($0000,A4)
-    moveq   #101,D0
-    move.b  D0,($0001,A4)
-    moveq   #0,D2
-    move.b  ($00E8,A4),D2
-    subq.b  #1,D2
-    move.b  D2,D0
-    moveq   #0,D3
-    move.b  ($0301,A4),D3
-    lea     ($0303,A4),A0
-    move.b  D0,(A0,D3.W)
-    moveq   #33,D0
-    lea     ($0302,A4),A0
-    move.b  D0,(A0,D3.W)
-    movea.l #NES_RAM+$651A,A1            ; PATCH P36: direct playmap base
-    even
-_L_z05_CopyColumnToTileBuf_AdvanceCol:
-    adda.w  #$0016,A1                    ; PATCH P36: next source column
-    subq.b  #1,D2
-    bpl  _L_z05_CopyColumnToTileBuf_AdvanceCol
-    move.b  #$96,D0
-    lea     ($0304,A4),A0
-    move.b  D0,(A0,D3.W)
-    move.b  D2,D0
-    lea     ($031B,A4),A0
-    move.b  D0,(A0,D3.W)
-    moveq   #0,D2
-    move.b  D3,D2
-    moveq   #22,D5
-    lea     ($0305,A4),A0
-    even
-_L_z05_CopyColumnToTileBuf_Copy:
-    move.b  (A1)+,D0                     ; PATCH P36: direct source walk
-    move.b  D0,(A0,D2.W)
-    addq.b  #1,D2
-    subq.b  #1,D5
-    bne  _L_z05_CopyColumnToTileBuf_Copy
-    addq.b  #1,D2
-    addq.b  #1,D2
-    addq.b  #1,D2
-    move.b  D2,($0301,A4)
-    move.l  A1,D4                        ; PATCH P36: keep ptr mirror coherent
-    sub.l   #NES_RAM,D4
-    move.b  D4,($0000,A4)
-    lsr.l   #8,D4
-    move.b  D4,($0001,A4)
-    rts
+    jmp     c_copy_column_to_tilebuf
 
-    even
 CopyRowToTileBuf:
-    ; Put in 00:01 the address of the
-    ; first tile of current row in play area.
-    moveq   #101,D0
-    move.b  D0,($0001,A4)
-    move.b  ($00E9,A4),D0
-    moveq   #0,D2
-    move.b  D0,D2
-    andi    #$EE,CCR  ; CLC: clear C+X
-    move.b  #$30,D1
-    addx.b  D1,D0   ; ADC #$30 (X flag = 6502 C)
-    move.b  D0,($0000,A4)
-    bcc  _L_z05_CopyRowToTileBuf_RowAddrReady
-    addq.b  #1,($0001,A4)
-_L_z05_CopyRowToTileBuf_RowAddrReady:
-    ; Indicate the target VRAM address:
-    ; $2100 + (CurRow * $20)
-    moveq   #32,D0
-    move.b  D0,($0302,A4)
-    move.b  #$E0,D0
-    move.b  D0,($0303,A4)
-    even
-_L_z05_CopyRowToTileBuf_Add20H_P36:
-    move.b  ($0303,A4),D0
-    andi    #$EE,CCR  ; CLC: clear C+X
-    move.b  #$20,D1
-    addx.b  D1,D0   ; ADC #$20 (X flag = 6502 C)
-    move.b  D0,($0303,A4)
-    bcc  _L_z05_CopyRowToTileBuf_Add20CarryDone_P36
-    addq.b  #1,($0302,A4)
-_L_z05_CopyRowToTileBuf_Add20CarryDone_P36:
-    subq.b  #1,D2
-    bpl  _L_z05_CopyRowToTileBuf_Add20H_P36
-    moveq   #32,D0
-    move.b  D0,($0304,A4)
-    move.b  D2,($0325,A4)
-    ; Copy a row from column map in RAM to tile buf.
-    ;
-    movea.l #NES_RAM+$6530,A1            ; PATCH P36: playmap row base
-    moveq   #0,D4
-    move.b  ($00E9,A4),D4
-    adda.w  D4,A1                        ; PATCH P36: row offset
-    moveq   #0,D2
-    lea     ($0305,A4),A0
-    even
-_L_z05_CopyRowToTileBuf_Copy_P36:
-    move.b  (A1),D0                      ; PATCH P36: direct source walk
-    move.b  D0,(A0,D2.W)
-    adda.w  #$0016,A1                    ; PATCH P36: next column same row
-    addq.b  #1,D2
-    cmpi.b  #$20,D2
-    bcs  _L_z05_CopyRowToTileBuf_Copy_P36
-    moveq   #35,D0
-    move.b  D0,($0301,A4)
-    move.l  A1,D4                        ; PATCH P36: keep ptr mirror coherent
-    sub.l   #NES_RAM,D4
-    move.b  D4,($0000,A4)
-    lsr.l   #8,D4
-    move.b  D4,($0001,A4)
-    rts
+    jmp     c_copy_row_to_tilebuf
 
-    even
 TileObjectTypes:
     dc.b    $62, $63, $64, $65, $66, $67
 
@@ -8017,16 +7663,8 @@ _L_z05_ChangePlayMapSquareOW_Write:
 ; [$00:01]: address of room tile map
     even
 FetchTileMapAddr:
-    moveq   #48,D0
-    move.b  D0,($0000,A4)
-    moveq   #101,D0
-    move.b  D0,($0001,A4)
-    rts
+    jmp     c_fetch_tile_map_addr
 
-; Returns:
-; C: 1 if copied the last row
-;
-    even
 CopyNextRowToTransferBufAndAdvanceSubmodeWhenDone:
     jsr     CopyNextRowToTransferBuf
     bcs  _anon_z05_150
@@ -8206,10 +7844,8 @@ SelectTransferBuf:
     move.b  D0,($0014,A4)
     even
 L1701A_Exit:
-    addq.b  #1,($0013,A4)
-    rts
+    jmp     c_inc_submode
 
-    even
 InitMode3_Sub6:
     move.b  ($0010,A4),D0
     beq  _anon_z05_152
@@ -8273,30 +7909,8 @@ ObjectRoomBoundsUW:
 
     even
 SetupObjRoomBounds:
-    moveq   #5,D3
-    move.b  ($0010,A4),D0
-    bne  _anon_z05_153
-    ; Reset DoorwayDir and use first set of bounds.
-    ;
-    ;
-    ; Offset of first set of bounds.
-    moveq   #0,D3
-    move.b  D3,($0053,A4)
-_anon_z05_153:
-    moveq   #0,D2
-_anon_z05_154:
-    lea     (ObjectRoomBoundsOW).l,A0
-    move.b  (A0,D3.W),D0
-    lea     ($0346,A4),A0
-    move.b  D0,(A0,D2.W)
-    addq.b  #1,D3
-    addq.b  #1,D2
-    cmpi.b  #$05,D2
-    bne  _anon_z05_154
-    eori    #$01,CCR  ; normalize C to 6502 polarity before RTS
-    rts
+    jmp     c_setup_obj_room_bounds
 
-    even
 LeavingRoomRelativePositions:
     dc.b    $28, $D8, $00
 
@@ -8352,31 +7966,8 @@ _anon_z05_157:
     jsr     RunCrossRoomTasksAndBeginUpdateMode
     even
 ResetInvObjState:
-    ; Reset LadderSlot. No ladder is active.
-    ;
-    moveq   #0,D0
-    move.b  D0,($0064,A4)
-    ; Reset ObjState of all weapons.
-    ;
-    moveq   #5,D3
-_anon_z05_158:
-    lea     ($00B9,A4),A0
-    move.b  D0,(A0,D3.W)
-    subq.b  #1,D3
-    bpl  _anon_z05_158
-    rts
+    jmp     c_reset_inv_obj_state
 
-; Returns door attr in direction Link's facing (mode 6),
-; or opposite direction (other modes).
-;
-; Returns:
-; A: door attribute
-; Y: whether Link is facing an increasing direction (right or down)
-;
-;
-; If Link's direction is right or down, then 1 will be returned.
-; Else 0.
-    even
 GetPassedDoorType:
     moveq   #0,D3
     move.b  ($0098,A4),D0
@@ -8408,24 +7999,8 @@ _anon_z05_160:
 ;
     even
 CopyPlayAreaAttrsHalfToDynTransferBuf:
-    move.b  D2,($0302,A4)
-    move.b  D0,($0303,A4)
-    moveq   #24,D2
-    move.b  D2,($0304,A4)
-    move.b  #$FF,D0
-    lea     ($0305,A4),A0
-    move.b  D0,(A0,D2.W)
-_anon_z05_161:
-    lea     ($0530,A4),A0
-    move.b  (A0,D3.W),D0
-    lea     ($0304,A4),A0
-    move.b  D0,(A0,D2.W)
-    subq.b  #1,D3
-    subq.b  #1,D2
-    bne  _anon_z05_161
-    rts
+    jmp     c_copy_play_area_attrs_half
 
-    even
 InitModeA:
     move.b  ($0013,A4),D0
     jsr     _m68k_tablejump  ; M68K-native table dispatch (replaces JSR TableJump)
@@ -8468,10 +8043,8 @@ L1712E_SelectTransferBufAndAdvanceSubmode:
     move.b  D0,($0014,A4)
     even
 InitModeSubroom_AdvanceSubmode:
-    addq.b  #1,($0013,A4)
-    rts
+    jmp     c_inc_submode
 
-    even
 InitMode9_FadeToDark:
     moveq   #0,D0
 _anon_z05_162:
@@ -8523,14 +8096,8 @@ __far_z_05_0109:
 
     even
 InitModeA_SubA_GoToMode4:
-    jsr     ResetInvObjState
-    moveq   #0,D0
-    move.b  D0,($0013,A4)
-    moveq   #4,D0
-    move.b  D0,($0012,A4)
-    rts
+    jmp     c_init_mode_a_sub_a_go_to_mode4
 
-    even
 InitModeA_Sub6_FillTileAttrsAndTransferTopHalf:
     move.b  ($00EB,A4),D0
     jmp     _anon_z05_163
@@ -9563,18 +9130,8 @@ EndGameMode12:
     move.b  D0,($0604,A4)
     even
 MaskCurPpuMaskGrayscale:
-    move.b  ($00FE,A4),D0
-    andi.b #$FE,D0
-    move.b  D0,($00FE,A4)
-    rts
+    jmp     c_mask_cur_ppu_mask_grayscale
 
-; Params:
-; A: direction
-;
-; Returns:
-; A: next room ID
-;
-    even
 CalcNextRoomByDir:
     moveq   #1,D2
     move.b  D2,($0000,A4)
@@ -9723,48 +9280,11 @@ _anon_z05_201:
 ; Check compasses.
     even
 HasCompass:
-    moveq   #16,D2
-    bne  _anon_z05_202
-; Returns:
-; A: 0 if map of current level is missing.
-;
-;
-; Check maps.
-    even
-HasMap:
-    moveq   #17,D2
-_anon_z05_202:
-    move.b  ($0010,A4),D0
-    beq  _L_z05_HasMap_Exit
-    ori     #$11,CCR  ; SEC: set C+X
-    move.b  #$01,D1
-    eori    #$10,CCR  ; flip X: 6502 SBC polarity
-    subx.b  D1,D0   ; SBC #$01
-    eori    #$10,CCR  ; restore X = 6502 C
-    cmpi.b  #$08,D0
-    bcs  _anon_z05_203
-    addq.b  #1,D2
-    addq.b  #1,D2
-_anon_z05_203:
-    andi.b #$07,D0
-    moveq   #0,D3
-    move.b  D0,D3
-    lea     ($0657,A4),A0
-    move.b  (A0,D2.W),D0
-    lea     (LevelMasks).l,A0
-    move.b  (A0,D3.W),D1
-    and.b  D1,D0
-    even
-_L_z05_HasMap_Exit:
-    rts
+    jmp     c_has_compass
 
-; Params:
-; Y: offset from the third element in dynamic transfer buf
-;    to write at (between 1 and $10)
-;
-;
-; Save dynamic transfer buf offset.
-    even
+HasMap:
+    jmp     c_has_map
+
 Submenu_WriteScanningMapRoomMark:
     move.b  D3,D0
     move.b  D0,-(A5)  ; PHA
@@ -9849,109 +9369,17 @@ _L_z05_Submenu_WriteScanningMapRoomMark_WriteMapTile:
 ;
     even
 CalcOpenDoorwayMask:
-    moveq   #0,D3
-    move.b  D0,-(A5)  ; PHA
-    cmpi.b  #$04,D0
-    bcs  _L_z05_CalcOpenDoorwayMask_ByDoorType
-    ; Else we have to find out the walkability from the room flags.
-    ;
-    move.b  D2,D0
-    move.b  D0,-(A5)  ; PHA
-    move.b  D3,D0
-    move.b  D0,-(A5)  ; PHA
-    jsr     GetRoomFlags
-    andi    #$EE,CCR  ; CLC: clear C+X
-    lea     (LevelMasks).l,A0
-    move.b  (A0,D2.W),D1
-    and.b  D1,D0
-    beq  _anon_z05_205
-    ori     #$11,CCR  ; SEC: set C+X
-_anon_z05_205:
-    move.b  (A5)+,D0  ; PLA
-    moveq   #0,D3
-    move.b  D0,D3
-    move.b  (A5)+,D0  ; PLA
-    moveq   #0,D2
-    move.b  D0,D2
-    even
-_L_z05_CalcOpenDoorwayMask_ShiftIntoMask:
-    lea     ($033F,A4),A0
-    move.b  (A0,D3.W),D0
-    roxl.b  #1,D0   ; ROL A
-    andi.b #$0F,D0
-    lea     ($033F,A4),A0
-    move.b  D0,(A0,D3.W)
-    move.b  (A5)+,D0  ; PLA
-    rts
+    jmp     c_calc_open_doorway_mask
 
-    even
-_L_z05_CalcOpenDoorwayMask_ByDoorType:
-    ; The door attribute indicates the walkability.
-    ;
-    cmpi.b  #$00,D0
-    beq  _L_z05_CalcOpenDoorwayMask_ShiftIntoMask
-    andi    #$EE,CCR  ; CLC: clear C+X
-    bcc  _L_z05_CalcOpenDoorwayMask_ShiftIntoMask
-    even
 AddDoorFlagsToCurOpenedDoors:
-    jsr     GetRoomFlags
-    moveq   #3,D2
-    even
-_L_z05_AddDoorFlagsToCurOpenedDoors_LoopDoorBit:
-    move.b  ($00,A4),D1   ; ptr lo
-    move.b  ($01,A4),D4  ; ptr hi
-    andi.w  #$00FF,D1         ; zero-extend lo byte
-    lsl.w   #8,D4
-    or.w    D1,D4             ; D4 = NES ptr addr
-    ext.l   D4
-    add.l   #NES_RAM,D4       ; → Genesis addr
-    movea.l D4,A0
-    move.b  (A0,D3.W),D0     ; LDA ($nn),Y
-    lea     (LevelMasks).l,A0
-    move.b  (A0,D2.W),D1
-    and.b  D1,D0
-    beq  _anon_z05_206
-    move.b  ($00EE,A4),D1
-    or.b  D1,D0
-    move.b  D0,($00EE,A4)
-_anon_z05_206:
-    subq.b  #1,D2
-    bpl  _L_z05_AddDoorFlagsToCurOpenedDoors_LoopDoorBit
-    rts
+    jmp     c_add_door_flags
 
-    even
 SplitRoomId:
-    move.b  ($00EB,A4),D0
-    move.b  D0,-(A5)  ; PHA
-    andi.b #$0F,D0
-    moveq   #0,D3
-    move.b  D0,D3
-    move.b  (A5)+,D0  ; PLA
-    lsr.b  #1,D0   ; LSR A
-    lsr.b  #1,D0   ; LSR A
-    lsr.b  #1,D0   ; LSR A
-    lsr.b  #1,D0   ; LSR A
-    moveq   #0,D2
-    move.b  D0,D2
-    rts
+    jmp     c_split_room_id
 
-; Params:
-; Y: room ID
-;
-; Returns:
-; A: $80 if dark, else 0
-;
-    even
 IsDarkRoom_Bank5:
-    move.b  ($0010,A4),D0
-    beq  _anon_z05_207
-    lea     (NES_SRAM+$0A7E).l,A0
-    move.b  (A0,D3.W),D0
-    andi.b #$80,D0
-_anon_z05_207:
-    rts
+    jmp     c_is_dark_room
 
-    even
 SubmenuItemXs:
     dc.b    $80, $98, $AC, $B4, $C8, $80, $98, $B0
     dc.b    $C8, $80, $94, $A0, $B0, $C0, $CC, $B0
@@ -10359,27 +9787,8 @@ DrawItemInInventoryWithX:
 ;
     even
 Cycle9InDirection:
-    move.b  ($00EF,A4),D0
-    andi.b #$03,D0
-    beq  _L_z05_Cycle9InDirection_Exit
-    addq.b  #1,D3
-    lsr.b  #1,D0   ; LSR A
-    bcs  _anon_z05_219
-    subq.b  #1,D3
-    subq.b  #1,D3
-_anon_z05_219:
-    cmpi.b  #$FF,D3
-    bne  _anon_z05_220
-    moveq   #8,D3
-_anon_z05_220:
-    cmpi.b  #$09,D3
-    bne  _L_z05_Cycle9InDirection_Exit
-    moveq   #0,D3
-    even
-_L_z05_Cycle9InDirection_Exit:
-    rts
+    jmp     c_cycle9_in_direction
 
-    even
 CreateRoomObjects:
     ; Reset ObjState[$13] to activate room item object.
     ;

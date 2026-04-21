@@ -181,3 +181,20 @@ void z01_init_whirlwind(unsigned int val, unsigned int slot) {
     RAM(0x0084) = (unsigned char)val;
     z01_set_up_whirlwind(slot);
 }
+
+void z01_add1_to_int16_at_2(void) {
+    z01_add_to_int16_at_2(1);
+}
+
+void z01_add1_to_int16_at_4(void) {
+    z01_add_to_int16_at_4(1);
+}
+
+void z01_cue_transfer_blank_person_wares(void) {
+    z01_cue_transfer_buf_and_advance_state(42);
+}
+
+void z01_take_5_rupees(void) {
+    for (signed char i = 4; i >= 0; i--)
+        z01_take_one_rupee();
+}

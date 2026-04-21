@@ -1,0 +1,40 @@
+=== FS2 Sprite Position Probe (gen) ===
+system: GEN
+FS1 reached at frame offset: 1
+FS2 reached at frame offset: 1
+
+--- NES OAM buffer ($0200-$02FF) ---
+  spr#  Y     tile  attr  X
+   0   $2F= 47  $F3  $03  $43= 67
+   4   $30= 48  $08  $00  $50= 80
+   5   $30= 48  $0A  $00  $58= 88
+   6   $48= 72  $08  $00  $50= 80
+   7   $48= 72  $0A  $00  $58= 88
+   8   $60= 96  $08  $00  $50= 80
+   9   $60= 96  $0A  $00  $58= 88
+
+--- Key RAM values ---
+  GameMode ($0012): $0E
+  CurSaveSlot ($0016): $00
+  $0000 (X seed): $00 = 0
+  $0001 (Y seed): $78 = 120
+  $0084 (cursor Y): $2F = 47
+  $0085 (cursor Y2): $87 = 135
+  $0070 (cursor X): $70 = 112
+  $0071 (cursor X2): $30 = 48
+
+--- Genesis VSRAM ---
+  ACTIVE_EVENT_VSRAM ($FF0838): $0008 = 8
+
+--- Genesis SAT (first 16 sprites from VRAM $F800) ---
+  spr#   Y      size|link   tile_word    X
+   0   $00B0(scr= 48)  $0101  $A1F2  $00C3(scr= 67)
+   4   $00B1(scr= 49)  $0105  $8008  $00D0(scr= 80)
+   5   $00B1(scr= 49)  $0106  $800A  $00D8(scr= 88)
+   6   $00C9(scr= 73)  $0107  $8008  $00D0(scr= 80)
+   7   $00C9(scr= 73)  $0108  $800A  $00D8(scr= 88)
+   8   $00E1(scr= 97)  $0109  $8008  $00D0(scr= 80)
+   9   $00E1(scr= 97)  $010A  $800A  $00D8(scr= 88)
+
+screenshot: fs2_probe_gen.png
+done.

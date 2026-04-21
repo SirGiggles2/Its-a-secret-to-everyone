@@ -1,0 +1,17 @@
+BP installed on M68K BUS
+WR f=4 t=-1 objstate val=00 PC=00000388 mode=00 y=00 EB=00 SRAM[08FE]=00 zp02=00 zp03=00 cur0350=00
+WR f=4 t=-1 cavetype val=00 PC=00000388 mode=00 y=00 EB=00 SRAM[08FE]=00 zp02=00 zp03=00 cur0350=00
+SRAM6975 f=5 t=-1 val=00 PC=0002F92E
+SRAM6975 f=7 t=-1 val=00 PC=0004A52E
+WR f=17 t=-1 cavetype val=00 PC=00050140 mode=00 y=00 EB=00 SRAM[08FE]=00 zp02=00 zp03=00 cur0350=00
+WR f=18 t=-1 objstate val=00 PC=0004A580 mode=00 y=00 EB=00 SRAM[08FE]=00 zp02=00 zp03=00 cur0350=00
+SRAM6975 f=267 t=-1 val=00 PC=00039DBA
+WR f=414 t=-1 objstate val=00 PC=0003A1CC mode=01 y=77 EB=00 SRAM[08FE]=00 zp02=92 zp03=60 cur0350=00
+SRAM6975 f=466 t=-1 val=42 PC=0004AE6E
+WR f=558 t=-1 objstate val=00 PC=0005095E mode=04 y=8D EB=77 SRAM[0975]=42 zp02=0C zp03=0E cur0350=00
+WR f=559 t=-1 cavetype val=00 PC=00050140 mode=04 y=8D EB=77 SRAM[0975]=42 zp02=0C zp03=0E cur0350=00
+WR f=770 t=149 objstate val=00 PC=00051642 mode=06 y=8D EB=77 SRAM[0975]=42 zp02=00 zp03=02 cur0350=00
+WR f=771 t=150 objstate val=00 PC=0005095E mode=06 y=8D EB=77 SRAM[0975]=42 zp02=02 zp03=02 cur0350=00
+WR f=873 t=252 objstate val=00 PC=0005095E mode=04 y=8D EB=76 SRAM[0974]=5A zp02=06 zp03=04 cur0350=00
+WR f=873 t=252 cavetype val=00 PC=00050140 mode=04 y=8D EB=76 SRAM[0974]=5A zp02=06 zp03=04 cur0350=00
+WR f=874 t=253 cavetype val=0E PC=0004621E mode=04 y=8D EB=76 SRAM[0974]=5A zp02=0E zp03=04 cur0350=00

@@ -1,0 +1,5 @@
+=== HINT rate probe ===
+60 frames -> hint_tick=8751 ticks
+Effective HINT rate = 8751.0 Hz (ticks * 60fps)
+Effective per-frame line count = 145.85
+=== done ===

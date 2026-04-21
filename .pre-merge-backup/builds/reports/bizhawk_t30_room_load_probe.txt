@@ -1,0 +1,80 @@
+=================================================================
+T30: Room Load Probe  —  Boot → File Select → Quest 1 → Room $77
+=================================================================
+  LoopForever=$0309D2  ExcBus=$000488  ExcAddr=$0004AA  ExcDef=$0004CC
+
+--- Phase 1: Boot + title screen ---
+  NMI counter at f90: 20
+  GameMode: $00
+
+--- Phase 2: Press Start → File Select ---
+  FS1: Mode $01 reached at frame 151
+
+--- Phase 3: Navigate to REGISTER ---
+  CurSaveSlot ($0016): $03
+  REGISTER: Mode $0E reached at frame 287
+
+--- Phase 4: Type name ---
+  Name buffer ($0638): 0A 0A 0A 0A 0A 24 24 24 
+
+--- Phase 5: Select END → finish registration ---
+  CurSaveSlot before Select: $00
+  After Select 1: CurSaveSlot=$01
+  After Select 2: CurSaveSlot=$02
+  After Select 3: CurSaveSlot=$03
+  back to FS1: Mode $01 reached at frame 628
+
+--- Phase 6: Select slot 0 → start game ---
+  CurSaveSlot ($0016): $00
+  Slot active flags ($0633): 01 00 00
+
+--- Phase 7: Quest loading chain ---
+  f0784: Mode $02
+  f0797: Mode $03
+  f0856: Mode3 diag — $007C=00 $007D=00 $0028=00 $0013=08 $00EB=77
+  f0916: Mode3 diag — $007C=00 $007D=00 $0028=00 $0013=08 $00EB=77
+  f0976: Mode3 diag — $007C=00 $007D=00 $0028=00 $0013=08 $00EB=77
+  f1036: Mode3 diag — $007C=00 $007D=00 $0028=00 $0013=08 $00EB=77
+  f1096: Mode3 diag — $007C=00 $007D=00 $0028=00 $0013=08 $00EB=77
+  f1156: Mode3 diag — $007C=00 $007D=00 $0028=00 $0013=08 $00EB=77
+  f1216: Mode3 diag — $007C=00 $007D=00 $0028=00 $0013=08 $00EB=77
+  f1276: Mode3 diag — $007C=00 $007D=00 $0028=00 $0013=08 $00EB=77
+  f1336: Mode3 diag — $007C=00 $007D=00 $0028=00 $0013=08 $00EB=77
+  f1396: Mode3 diag — $007C=00 $007D=00 $0028=00 $0013=08 $00EB=77
+  f1456: Mode3 diag — $007C=00 $007D=00 $0028=00 $0013=08 $00EB=77
+  f1516: Mode3 diag — $007C=00 $007D=00 $0028=00 $0013=08 $00EB=77
+  f1576: Mode3 diag — $007C=00 $007D=00 $0028=00 $0013=08 $00EB=77
+  f1636: Mode3 diag — $007C=00 $007D=00 $0028=00 $0013=08 $00EB=77
+  f1696: Mode3 diag — $007C=00 $007D=00 $0028=00 $0013=08 $00EB=77
+  f1756: Mode3 diag — $007C=00 $007D=00 $0028=00 $0013=08 $00EB=77
+  f1816: Mode3 diag — $007C=00 $007D=00 $0028=00 $0013=08 $00EB=77
+  f1876: Mode3 diag — $007C=00 $007D=00 $0028=00 $0013=08 $00EB=77
+  f1936: Mode3 diag — $007C=00 $007D=00 $0028=00 $0013=08 $00EB=77
+
+--- Phase 8: Final state ---
+  GameMode:    $03
+  CurrentRoom: $77  (want $77)
+  NMI delta:   152
+  Plane A non-zero tiles (first 128): 128/128
+  CRAM non-zero entries: 24/64
+
+─── T30: Room Load Tests ───────────────────────────────────────
+[PASS] T30_NO_EXCEPTION                     no exception handler hit
+[PASS] T30_NMI_CONTINUOUS                   NMI advanced 152 — no hang
+[PASS] T30_MODE2_REACHED                    Mode 2 (load quest) was entered
+[FAIL] T30_MODE5_REACHED                    Mode 5 not reached — final mode $03
+[PASS] T30_ROOM_77                          current room = $77 (opening overworld)
+
+=================================================================
+T30 ROOM LOAD SUMMARY
+=================================================================
+  [PASS] T30_NO_EXCEPTION
+  [PASS] T30_NMI_CONTINUOUS
+  [PASS] T30_MODE2_REACHED
+  [FAIL] T30_MODE5_REACHED
+  [PASS] T30_ROOM_77
+
+  4 PASS  /  1 FAIL  /  5 total
+
+T30 ROOM LOAD: 1 FAILURE(S)
+

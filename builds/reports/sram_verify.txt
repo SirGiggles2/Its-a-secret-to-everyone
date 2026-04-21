@@ -1,0 +1,65 @@
+=== SRAM Verify (P31: FileBChecksums in RAM) ===
+system: GEN
+
+--- Phase 1: Boot to FS1 ---
+FS1 reached: true (frame 1)
+  GameMode: $01  CurSaveSlot: $03
+  IsSaveSlotActive: $0633[0..2] = 00 00 00
+  IsSaveSlotActive: $0633[3..4] = 01 01 (register/eliminate)
+
+--- Phase 2: Navigate to REGISTER ---
+  After C press 1: CurSaveSlot=$04
+  After C press 2: CurSaveSlot=$03
+  Final CurSaveSlot: $03
+Mode E reached: true (frame 1)
+  GameMode: $0E  CurSaveSlot: $00
+  After init settle: GameMode=$0E CurSaveSlot=$00
+  CharBoardIndex ($041F): $00
+  InitializedNameField ($0420): $01
+  NameCharOffset ($0421): $00
+
+--- Phase 3: Type 5 letters ---
+  Letter 1: $0638+0 = $0A  CharBoardIdx=$00  NameCharOfs=$01
+  Letter 2: $0638+1 = $0A  CharBoardIdx=$00  NameCharOfs=$02
+  Letter 3: $0638+2 = $0A  CharBoardIdx=$00  NameCharOfs=$03
+  Letter 4: $0638+3 = $0A  CharBoardIdx=$00  NameCharOfs=$04
+  Letter 5: $0638+4 = $0A  CharBoardIdx=$00  NameCharOfs=$05
+  Name buffer $0638: 0A 0A 0A 0A 0A 24 24 24 
+
+--- Phase 4: Cycle SELECT to reach $0016=3 ---
+  After C press 1: CurSaveSlot=$01
+  After C press 2: CurSaveSlot=$02
+  After C press 3: CurSaveSlot=$03
+  Final CurSaveSlot: $03 (need 3)
+
+--- Phase 5: Press Start → ChoseEnd ---
+  GameMode after Start: $01
+  Mode 0 reached: false (frame 600)
+  GameMode=$01 SubMode=$00
+
+--- Phase 6: FileBChecksums RAM check ---
+  FileBChecksums $FF1200: 01 C8 00 00 00 00
+  $652A uncommitted flags: FF FF FF
+
+--- Phase 7: Wait for File B → File A validation ---
+  GameMode=$01 SubMode=$00
+  IsSaveSlotActive $0633[0..2]: 01 00 00
+  File A marker $651E[0..2]: 5A 5A 5A
+  File A marker $6521[0..2]: A5 A5 A5
+
+--- Phase 8: Return to FS1 ---
+  FS1 reached: false (frame 600)
+  GameMode=$03 SubMode=$02 CurSaveSlot=$00
+  IsSaveSlotActive $0633[0..4]: 01 00 00 01 01
+  File A slot 0 name ($6007): 24 24 24 24 24 24 24 24 
+  MISMATCH ofs=$0001 mirror=$5A cart=$FF
+  MISMATCH ofs=$0002 mirror=$0A cart=$FF
+  MISMATCH ofs=$0003 mirror=$0A cart=$FF
+  MISMATCH ofs=$0004 mirror=$0A cart=$FF
+  MISMATCH ofs=$0005 mirror=$0A cart=$FF
+  Mirror/cart SRAM mismatches: 2040 / 2048
+
+=== SUMMARY ===
+  [PASS] Slot 0 is active ($0633 = $01)
+  [FAIL] Many SRAM mismatches (2040)
+=== DONE ===

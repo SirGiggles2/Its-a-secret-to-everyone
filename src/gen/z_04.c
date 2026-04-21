@@ -7,6 +7,8 @@
 extern void z04_reset_flyer_state(unsigned int slot);
 extern void z04_init_digdogger1(unsigned int slot);
 extern void z07_reset_obj_state(unsigned int slot);
+extern void z07_reset_obj_metastate(unsigned int slot);
+extern void z07_reset_obj_metastate_and_timer(unsigned int slot);
 
 extern const unsigned char TektiteStartingDirs[];
 extern const unsigned char GanonStartXs[];
@@ -149,4 +151,19 @@ void z04_jumper_reset_vspeed_frac(unsigned int slot) {
 
 void z04_gleeok_set_segment_y(unsigned int val3, unsigned int slot) {
     RAM(0x0086 + slot) = (unsigned char)val3;
+}
+
+void z04_init_monster_shot(unsigned int slot) {
+    RAM(0x03BC + slot) = 0xC0;
+    z07_reset_obj_metastate(slot);
+}
+
+void z04_init_boulder(unsigned int slot) {
+    z07_reset_obj_metastate_and_timer(slot);
+    z04_init_tektite(slot);
+}
+
+void z04_init_boulder_set(unsigned int slot) {
+    RAM(0x0515) = 0;
+    z04_init_boulder(slot);
 }

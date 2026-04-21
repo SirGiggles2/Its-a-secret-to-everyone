@@ -230,11 +230,8 @@ __far_z_01_0001:
     move.b  D0,($0350,A4)
     even
 UnhaltLink:
-    moveq   #0,D0
-    move.b  D0,($00AC,A4)
-    rts
+    jmp     c_unhalt_link
 
-    even
 InitCaveContinue:
     ; Get this cave's index (object type - $6A).
     ;
@@ -437,35 +434,8 @@ _L_z01_InitCaveContinue_ResetTextbox:
 ;
     even
 SetUpCommonCaveObjects:
-    move.b  D0,($70,A4,D2.W)
-    lea     ($0084,A4),A0
-    move.b  D3,(A0,D2.W)
-    moveq   #0,D0
-    lea     ($0485,A4),A0
-    move.b  D0,(A0,D2.W)
-    move.b  #$81,D0
-    lea     ($04BF,A4),A0
-    move.b  D0,(A0,D2.W)
-    ; Halt Link.
-    ;
-    moveq   #64,D0
-    move.b  D0,($00AC,A4)
-    ; Set up the two bonfires.
-    ;
-    moveq   #64,D0
-    move.b  D0,($0351,A4)
-    move.b  D0,($0352,A4)
-    moveq   #72,D0
-    move.b  D0,($71,A4,D2.W)
-    move.b  #$A8,D0
-    move.b  D0,($72,A4,D2.W)
-    lea     ($0085,A4),A0
-    move.b  D3,(A0,D2.W)
-    lea     ($0086,A4),A0
-    move.b  D3,(A0,D2.W)
-    rts
+    jmp     c_set_up_common_cave_objects
 
-    even
 PriceListTemplateTransferBuf:
     dc.b    $22, $C8, $0D, $21, $24, $24, $24, $24
     dc.b    $24, $24, $24, $24, $24, $24, $24, $24
@@ -730,25 +700,11 @@ __far_z_01_0003:
 ;
     even
 CueTransferBufAndAdvanceState:
-    move.b  D0,($0014,A4)
-    even
-IncCaveState:
-    addq.b  #1,($00AD,A4)
-    rts
+    jmp     c_cue_transfer_buf_advance_state
 
-; Params:
-; A: a character of the price string
-; [04]: prefix character
-;
-; Returns:
-;   If original A is not a space:
-;     A:    original character
-;     [04]: original prefix character
-;   Else:
-;     A:    original prefix character
-;     [04]: original character
-;
-    even
+IncCaveState:
+    jmp     c_inc_cave_state
+
 SwapSpaceAndSign:
     cmpi.b  #$24,D0
     bne  _anon_z01_5
@@ -1263,32 +1219,11 @@ __far_z_01_0008:
 __far_z_01_0009:
     even
 PostCredit:
-    andi    #$EE,CCR  ; CLC: clear C+X
-    move.b  ($067D,A4),D1
-    addx.b  D1,D0   ; ADC RupeesToAdd
-    move.b  D0,($067D,A4)
-    rts
+    jmp     c_post_credit
 
-; Params:
-; A: amount
-;
-; Add the amount paid to the rupees to subtract.
-;
-    even
 PostDebit:
-    andi    #$EE,CCR  ; CLC: clear C+X
-    move.b  ($067E,A4),D1
-    addx.b  D1,D0   ; ADC RupeesToSubtract
-    move.b  D0,($067E,A4)
-    rts
+    jmp     c_post_debit
 
-; Params:
-; A: price
-; Y: offset from first character after "X"
-;
-; If the amount is $14 or $32, then use "+", else "-".
-;
-    even
 PrependSignToPrice:
     moveq   #100,D2
     cmpi.b  #$14,D0
@@ -1510,11 +1445,8 @@ __far_z_01_0013:
 
     even
 PlayCharacterSfx:
-    moveq   #8,D0
-    move.b  D0,($0602,A4)
-    rts
+    jmp     c_play_character_sfx
 
-    even
 UpdateUnderworldPerson_Full:
     ; If level is not one of {3, 4, 6, 8, 9}, then
     ; go handle people that do more than talk.
@@ -1544,10 +1476,8 @@ UpdateUnderworldPerson_Full_JumpTable:
 
     even
 UpdatePersonState_ResetCharOffset:
-    moveq   #0,D0
-    move.b  D0,($0416,A4)
-    addq.b  #1,($00AD,A4)
-    even
+    jmp     c_update_person_reset_char_offset
+
 UpdatePersonState_DoNothing:
     rts
 
@@ -1684,15 +1614,8 @@ _anon_z01_16:
 
     even
 UpdateUnderworldPersonComplexState_DelayAndQuit:
-    ; If the object timer has expired, then destroy this object.
-    ;
-    move.b  ($0029,A4),D0
-    bne  _anon_z01_17
-    move.b  D0,($0350,A4)
-_anon_z01_17:
-    rts
+    jmp     c_uw_person_delay_quit
 
-    even
 Person_DrawAndCheckCollisions:
     jsr     Person_CheckCollisions
     jsr     Anim_FetchObjPosForSpriteDescriptor
@@ -2460,26 +2383,11 @@ DemoBackgroundPatterns:
 ;
     even
 InitWhirlwind:
-    move.b  D0,($0084,A4)
-; Params:
-; X: object index
-;
-;
-; Set the whirlwind's Y to Link's, X to 0, and type $2E.
-;
-    even
-SetUpWhirlwind:
-    move.b  ($0084,A4),D0
-    lea     ($0084,A4),A0
-    move.b  D0,(A0,D2.W)
-    moveq   #0,D0
-    move.b  D0,($70,A4,D2.W)
-    moveq   #46,D0
-    lea     ($034F,A4),A0
-    move.b  D0,(A0,D2.W)
-    rts
+    jmp     c_init_whirlwind
 
-    even
+SetUpWhirlwind:
+    jmp     c_set_up_whirlwind
+
 WhirlwindPrevRoomIdList:
     dc.b    $36, $3B, $73, $44, $0A, $21, $41, $6C
 
@@ -2609,27 +2517,8 @@ _L_z01_UpdateWhirlwind_Full_Draw:
 
     even
 DestroyWhirlwind:
-    moveq   #0,D0
-    lea     ($034F,A4),A0
-    move.b  D0,(A0,D2.W)
-    lea     ($00C0,A4),A0
-    move.b  D0,(A0,D2.W)
-    lea     ($00D3,A4),A0
-    move.b  D0,(A0,D2.W)
-    move.b  D0,($28,A4,D2.W)
-    lea     ($00AC,A4),A0
-    move.b  D0,(A0,D2.W)
-    lea     ($04F0,A4),A0
-    move.b  D0,(A0,D2.W)
-    move.b  #$FF,D0
-    lea     ($0492,A4),A0
-    move.b  D0,(A0,D2.W)
-    moveq   #1,D0
-    lea     ($0405,A4),A0
-    move.b  D0,(A0,D2.W)
-    rts
+    jmp     c_destroy_whirlwind
 
-    even
 SummonWhirlwind:
     ; If not in mode 5, return.
     ;
@@ -2905,16 +2794,8 @@ _L_z01_CheckPowerTriforceFanfare_Exit:
 
     even
 TakePowerTriforce:
-    addq.b  #1,($0509,A4)
-    ; Halt Link for $C0 frames.
-    ;
-    move.b  #$C0,D0
-    move.b  D0,($0028,A4)
-    moveq   #64,D0
-    move.b  D0,($00AC,A4)
-    rts
+    jmp     c_take_power_triforce
 
-    even
 PaletteRow7TransferRecord:
     dc.b    $3F, $1C, $04, $0F, $07, $17, $27, $FF
 
@@ -3224,18 +3105,8 @@ _L_z01_InitRupeeStash_Full_LoopRupee:
 ;
     even
 InitOneSimpleObject:
-    move.b  ($0000,A4),D0
-    lea     ($034F,A4),A0
-    move.b  D0,(A0,D2.W)
-    moveq   #0,D0
-    lea     ($0492,A4),A0
-    move.b  D0,(A0,D2.W)
-    move.b  ($0001,A4),D0
-    lea     ($04BF,A4),A0
-    move.b  D0,(A0,D2.W)
-    rts
+    jmp     c_init_one_simple_object
 
-    even
 TrapXs:
     dc.b    $20, $20, $D0, $D0, $40, $B0
 
@@ -3721,10 +3592,8 @@ CommonCodeBlock_Bank1:
 ;
     even
 BeginUpdateMode:
-    moveq   #0,D0
-    move.b  D0,($0013,A4)
-    addq.b  #1,($0011,A4)
-    even
+    jmp     c_begin_update_mode
+
 L6506_Exit:
     rts
 
@@ -3953,13 +3822,8 @@ InitModeB_EnterCave_Bank5:
 ;
     even
 ResetRoomTileObjInfo:
-    moveq   #0,D0
-    move.b  D0,($052B,A4)
-    move.b  D0,($052C,A4)
-    move.b  D0,($052D,A4)
-    rts
+    jmp     c_reset_room_tile_obj_info
 
-    even
 ReverseDirections:
     dc.b    $08, $04, $02, $01
 
@@ -4265,15 +4129,8 @@ _L_z01_FormatHeartsInTextBuf_EmitChar:
 
     even
 SilenceAllSound:
-    move.b  #$80,D0
-    move.b  D0,($0604,A4)
-    move.b  D0,($0603,A4)
-    lsl.b  #1,D0   ; ASL A
-    move.b  D0,($0605,A4)
-    move.b  D0,($0607,A4)
-    rts
+    jmp     c_silence_all_sound
 
-    even
 SpriteRelativeExtents:
     dc.b    $08, $00
 
@@ -4877,53 +4734,8 @@ _L_z01__CalcDiagonalSpeedIndex_Return:
 ;
     even
 SetBoomerangSpeed:
-    lea     ($03BC,A4),A0
-    move.b  D0,(A0,D2.W)
-    ; If in major state $50, use this speed as is.
-    ;
-    lea     ($00AC,A4),A0
-    move.b  (A0,D2.W),D0
-    andi.b #$F0,D0
-    cmpi.b  #$40,D0
-    bne  _L_z01_SetBoomerangSpeed_Exit
-    ; Else, in major state $40, go at half the speed.
-    ;
-    lea     ($03BC,A4),A0
-    move.b  (A0,D2.W),D1
-    lsr.b  #1,D1   ; LSR ObjQSpeedFrac,X
-    move.b  D1,(A0,D2.W)
-    ; Once we've traveled the target amount of time, set state $50 to go faster.
-    ; In major state $40, ObjMovingLimit is a timer to change the state to $50.
-    ;
-    lea     ($0380,A4),A0
-    subq.b  #1,(A0,D2.W)
-    bne  _L_z01_SetBoomerangSpeed_Exit
-    moveq   #80,D0
-    lea     ($00AC,A4),A0
-    move.b  D0,(A0,D2.W)
-    even
-_L_z01_SetBoomerangSpeed_Exit:
-    rts
+    jmp     c_set_boomerang_speed
 
-; Params:
-; A: target coordinate
-; Y: origin coordinate
-; [00]: a value
-; [0A]: the decreasing direction on the coordinates' axis (2 or 8)
-;
-; Returns:
-; A: the distance from origin to target
-; [00]: the original value + 1, if < 8 pixels between origin and target
-; [0A]: the direction from origin to target
-;
-;
-; If the origin coordinate already >= target coordinate, then
-; the direction in [0A] is already correct. Otherwise, shift it right
-; to flip it.
-;
-; After this, [02] will >= [01].
-;
-    even
 GetOneDirectionAndDistanceToTarget:
     move.b  D0,($0001,A4)
     move.b  D3,($0002,A4)
@@ -5221,24 +5033,8 @@ GetShortcutOrItemXYForRoom:
 ;
     even
 DestroyObject_WRAM:
-    lea     ($00C0,A4),A0
-    move.b  D0,(A0,D2.W)
-    lea     ($00D3,A4),A0
-    move.b  D0,(A0,D2.W)
-    move.b  D0,($28,A4,D2.W)
-    lea     ($00AC,A4),A0
-    move.b  D0,(A0,D2.W)
-    lea     ($04F0,A4),A0
-    move.b  D0,(A0,D2.W)
-    move.b  #$FF,D0
-    lea     ($0492,A4),A0
-    move.b  D0,(A0,D2.W)
-    moveq   #1,D0
-    lea     ($0405,A4),A0
-    move.b  D0,(A0,D2.W)
-    rts
+    jmp     c_destroy_object_wram
 
-    even
 UpdateBombFlashEffect:
     ; If state <> $13, return.
     ;
@@ -5436,19 +5232,8 @@ Add1ToInt16At0:
 ;
     even
 AddToInt16At0:
-    andi    #$EE,CCR  ; CLC: clear C+X
-    move.b  ($0000,A4),D1
-    addx.b  D1,D0   ; ADC $00
-    move.b  D0,($0000,A4)
-    bcc  _anon_z01_59
-    addq.b  #1,($0001,A4)
-_anon_z01_59:
-    rts
+    jmp     c_add_to_int16_at_0
 
-; Params:
-; [$02:03]: a 16-bit value to increment
-;
-    even
 Add1ToInt16At2:
     moveq   #1,D0
 ; Params:
@@ -5460,18 +5245,8 @@ Add1ToInt16At2:
 ;
     even
 AddToInt16At2:
-    andi    #$EE,CCR  ; CLC: clear C+X
-    move.b  ($0002,A4),D1
-    addx.b  D1,D0   ; ADC $02
-    move.b  D0,($0002,A4)
-    bcc  _anon_z01_60
-    addq.b  #1,($0003,A4)
-_anon_z01_60:
-    rts
+    jmp     c_add_to_int16_at_2
 
-; Params:
-; [$04:05]: a 16-bit value to increment
-    even
 Add1ToInt16At4:
     moveq   #1,D0
 ; Params:
@@ -5483,19 +5258,8 @@ Add1ToInt16At4:
 ;
     even
 AddToInt16At4:
-    andi    #$EE,CCR  ; CLC: clear C+X
-    move.b  ($0004,A4),D1
-    addx.b  D1,D0   ; ADC $04
-    move.b  D0,($0004,A4)
-    bcc  _anon_z01_61
-    addq.b  #1,($0005,A4)
-_anon_z01_61:
-    rts
+    jmp     c_add_to_int16_at_4
 
-; Params:
-; [$04:05]: a 16-bit value to decrease
-;
-    even
 Sub1FromInt16At4:
     move.b  ($0004,A4),D0
     ori     #$11,CCR  ; SEC: set C+X
@@ -5773,9 +5537,8 @@ __far_z_01_0044:
     move.b  ($000A,A4),D0
     even
 SetItemValue:
-    lea     ($0657,A4),A0
-    move.b  D0,(A0,D3.W)
-    even
+    jmp     c_set_item_value
+
 L6C28_Exit:
     rts
 
@@ -6047,31 +5810,15 @@ __far_z_01_0052:
 
     even
 TakeOneRupee:
-    moveq   #1,D0
-    move.b  D0,($0602,A4)
-    addq.b  #1,($067D,A4)
-    even
+    jmp     c_take_one_rupee
+
 L6D1B_Exit:
     rts
 
     even
 PlayKeyTakenTune:
-    moveq   #0,D0
-    move.b  D0,($0602,A4)
-    moveq   #8,D0
-    move.b  D0,($0604,A4)
-    rts
+    jmp     c_play_key_taken_tune
 
-; Params:
-; [$051C]: cycle number
-;
-; Returns:
-; Z: 1 if done updating
-;
-; ObjTimer[12] is the world fade timer. Every 10 frames,
-; we step to the next half palette. There are 4 steps to fading.
-;
-    even
 AnimateWorldFading:
     move.b  ($0034,A4),D0
     bne  _L_z01_AnimateWorldFading_Exit
@@ -6267,34 +6014,8 @@ _L_z01_CheckMazes_PlaySecretTune:
 ;
     even
 MapScreenPosToPpuAddr:
-    moveq   #8,D0
-    move.b  D0,($0000,A4)
-    move.b  ($0002,A4),D0
-    lsl.b  #1,D0   ; ASL A
-    move.b  ($0000,A4),D1
-    roxl.b  #1,D1   ; ROL $00
-    move.b  D1,($0000,A4)
-    lsl.b  #1,D0   ; ASL A
-    move.b  ($0000,A4),D1
-    roxl.b  #1,D1   ; ROL $00
-    move.b  D1,($0000,A4)
-    andi.b #$E0,D0
-    move.b  D0,($0001,A4)
-    ; Now divide X coordinate by 8, because each tile is 8 pixels wide.
-    ;
-    move.b  ($0003,A4),D0
-    lsr.b  #1,D0   ; LSR A
-    lsr.b  #1,D0   ; LSR A
-    lsr.b  #1,D0   ; LSR A
-    ; Combine the low address of the row with the column to get
-    ; the final low byte of PPU address.
-    ;
-    move.b  ($0001,A4),D1
-    or.b  D1,D0
-    move.b  D0,($0001,A4)
-    rts
+    jmp     c_map_screen_pos_to_ppu_addr
 
-    even
 Filler_6DFA:
     dc.b    $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF
     dc.b    $FF, $FF
@@ -6840,15 +6561,8 @@ Anim_SetSpriteDescriptorRedPaletteRow:
 ;
     even
 Anim_SetSpriteDescriptorAttributes:
-    move.b  D0,($0004,A4)
-    move.b  D0,($0005,A4)
-    rts
+    jmp     c_anim_set_sprite_desc_attrs
 
-; Params:
-; A: tile number
-; X: object index
-;
-    even
 Anim_WriteLevelPaletteSprite:
     moveq   #3,D3
     move.b  D3,($0003,A4)
@@ -7640,22 +7354,8 @@ _L_z01_HandleMonsterDied_SetDyingMetastate:
 ;
     even
 ResetShoveInfoAndInvincibilityTimer:
-    jsr     SetShoveInfoWith0
-    lea     ($04F0,A4),A0
-    move.b  D0,(A0,D2.W)
-    rts
+    jmp     c_reset_shove_info_and_inv_timer
 
-; Params:
-; X: monster slot
-; Y: weapon slot
-; [02]: monster mid X
-; [03]: monster mid Y
-;
-; Returns:
-; [00]: weapon slot
-;
-; [00] holds the weapon slot
-    even
 CheckMonsterSwordShotOrMagicShotCollision:
     move.b  D3,($0000,A4)
     ; Set magic shot damage type ($10) in [09].
