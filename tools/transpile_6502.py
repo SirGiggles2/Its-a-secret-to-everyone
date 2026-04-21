@@ -4843,7 +4843,7 @@ def _patch_z06(path):
     When ZELDA_BANK_MODE_06 == "c", strip all code and emit only data labels
     plus entry stubs that jump to C shims."""
 
-    ZELDA_BANK_MODE_06 = "asm"
+    ZELDA_BANK_MODE_06 = "c"
 
     # In C mode: first run all normal patches (TransferBufPtrs table, 32-bit
     # lookup, P32e, P33, DynTileBuf pre-check, etc.), THEN strip only the

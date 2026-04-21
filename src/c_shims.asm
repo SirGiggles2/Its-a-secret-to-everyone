@@ -31,6 +31,9 @@
 
     xref    c_move_object
     xref    z03_transfer_level_pattern_blocks
+    xref    z06_init_mode2_submodes
+    xref    z06_copy_common_data_to_ram
+    xref    z06_update_mode2_load_full
 
 ;------------------------------------------------------------------------------
 ; _c_move_object_shim — MoveObject trampoline.
@@ -133,6 +136,10 @@ c_transfer_level_pattern_blocks:
 ;==============================================================================
 
 c_init_mode2_submodes:
+    jmp     z06_init_mode2_submodes
+
 c_copy_common_data_to_ram:
+    jmp     z06_copy_common_data_to_ram
+
 c_update_mode2_load_full:
-    rts
+    jmp     z06_update_mode2_load_full
