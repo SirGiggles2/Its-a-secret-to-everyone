@@ -52,6 +52,8 @@
     xdef    c_reset_player_state
     xdef    c_reset_moving_dir
     xdef    c_ensure_object_aligned
+    xdef    c_fill_play_area_attrs
+    xdef    c_hide_sprites_over_link
 
     xref    c_move_object
     xref    z03_transfer_level_pattern_blocks
@@ -82,6 +84,8 @@
     xref    z07_reset_player_state
     xref    z07_reset_moving_dir
     xref    z07_ensure_object_aligned
+    xref    z05_fill_play_area_attrs
+    xref    z04_hide_sprites_over_link
 
 ;------------------------------------------------------------------------------
 ; _c_move_object_shim — MoveObject trampoline.
@@ -355,4 +359,21 @@ c_ensure_object_aligned:
     jsr     z07_ensure_object_aligned
     addq.l  #4,SP
     rts
+
+;==============================================================================
+; EXPORT side — z_05/z_04 entry points (Stage 4b batch 6).
+;==============================================================================
+
+; FillPlayAreaAttrs — D0=room ID (byte), void return.
+c_fill_play_area_attrs:
+    moveq   #0,D1
+    move.b  D0,D1
+    move.l  D1,-(SP)
+    jsr     z05_fill_play_area_attrs
+    addq.l  #4,SP
+    rts
+
+; HideSpritesOverLink — no args, void return.
+c_hide_sprites_over_link:
+    jmp     z04_hide_sprites_over_link
 

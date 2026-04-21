@@ -2113,6 +2113,8 @@ def transpile_bank(bank_num, standalone=False, no_stubs=False, no_import_stubs=F
         _patch_z02(out_path)
     if bank_num == 3:
         _patch_z03(out_path)
+    if bank_num == 4:
+        _patch_z04(out_path)
     if bank_num == 5:
         _patch_z05(out_path)
     if bank_num == 6:
@@ -3708,6 +3710,18 @@ def _stub_func(text, label, c_shim):
     return text
 
 
+def _patch_z04(path):
+    """Post-process patches for z_04.asm — C function stubs."""
+    with open(path, 'r', encoding='utf-8') as f:
+        text = f.read()
+
+    # --- Stage 4b batch 6: z_04 C function stubs ---
+    text = _stub_func(text, 'HideSpritesOverLink', 'c_hide_sprites_over_link')
+
+    with open(path, 'w', encoding='utf-8') as f:
+        f.write(text)
+
+
 def _patch_z05(path):
     """Inject bank-window guards into room-layout ROM-pointer consumers (bank-5 pinned)."""
     with open(path, 'r', encoding='utf-8') as f:
@@ -4869,6 +4883,7 @@ def _patch_z05(path):
     text = _stub_func(text, 'ResetInvObjState', 'c_reset_inv_obj_state')
     text = _stub_func(text, 'MaskCurPpuMaskGrayscale', 'c_mask_cur_ppu_mask_grayscale')
     text = _stub_func(text, 'SetupObjRoomBounds', 'c_setup_obj_room_bounds')
+    text = _stub_func(text, 'FillPlayAreaAttrs', 'c_fill_play_area_attrs')
 
     with open(path, 'w', encoding='utf-8') as f:
         f.write(text)

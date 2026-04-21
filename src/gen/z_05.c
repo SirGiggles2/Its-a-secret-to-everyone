@@ -217,6 +217,30 @@ void z05_mask_cur_ppu_mask_grayscale(void) {
     RAM(0x00FE) &= 0xFE;
 }
 
+static const unsigned char room_palette_to_nt_attr[] = { 0x00, 0x55, 0xAA, 0xFF };
+
+void z05_fill_play_area_attrs(unsigned int room_id) {
+    unsigned char outer_sel = nes_ram[NES_SRAM_BASE + 0x087E + room_id] & 0x03;
+    unsigned char outer_attr = room_palette_to_nt_attr[outer_sel];
+
+    for (unsigned char i = 0; i < 48; i++)
+        RAM(0x0530 + i) = outer_attr;
+
+    unsigned char inner_sel = nes_ram[NES_SRAM_BASE + 0x08FE + room_id] & 0x03;
+    unsigned char inner_attr = room_palette_to_nt_attr[inner_sel];
+
+    for (unsigned char d3 = 9; d3 < 0x27; d3++) {
+        unsigned char mod = d3 & 0x07;
+        if (mod == 0 || mod == 7) continue;
+        if (d3 >= 0x21) {
+            unsigned char combined = (inner_attr & 0x0F) | (RAM(0x0530 + d3) & 0xF0);
+            RAM(0x0530 + d3) = combined;
+        } else {
+            RAM(0x0530 + d3) = inner_attr;
+        }
+    }
+}
+
 static const unsigned char obj_room_bounds[] = {
     0x11, 0xE0, 0x4E, 0xCD, 0x89,
     0x21, 0xD0, 0x5E, 0xBD, 0x78
