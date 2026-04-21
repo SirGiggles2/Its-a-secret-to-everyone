@@ -2588,6 +2588,9 @@ def _patch_z01(path):
     # --- Stage 4b batch 31 ---
     text = _stub_func(text, 'WriteBlankPrioritySprites', 'c_write_blank_priority_sprites')
 
+    # --- Stage 4b batch 32 ---
+    text = _stub_func(text, 'CopyPriceListTemplate', 'c_copy_price_list_template')
+
     with open(path, 'w', encoding='utf-8') as f:
         f.write(text)
 
@@ -3938,6 +3941,9 @@ def _patch_z04(path):
     text = _stub_func(text, 'Ganon_GetCurCloudLeft', 'c_ganon_get_cur_cloud_left')
     text = _stub_func(text, 'Ganon_GetCurCloudTop', 'c_ganon_get_cur_cloud_top')
 
+    # --- Stage 4b batch 32 ---
+    text = _stub_func(text, 'Wallmaster_PrepareToDraw', 'c_wallmaster_prepare_to_draw')
+
     # Export ROM data tables referenced by C code
     if 'xdef    PolsVoiceWalkSpeedsX' not in text and 'PolsVoiceWalkSpeedsX:' in text:
         text = "\n    xdef    PolsVoiceWalkSpeedsX\n" + text
@@ -5146,6 +5152,9 @@ def _patch_z05(path):
 
     # --- Stage 4b batch 30 ---
     text = _stub_func(text, 'SelectTransferBufAndIncState', 'c_select_transfer_buf_and_inc_state')
+
+    # --- Stage 4b batch 32 ---
+    text = _stub_func(text, 'GetPlayerCoordsForDirection', 'c_get_player_coords_for_direction')
 
     with open(path, 'w', encoding='utf-8') as f:
         f.write(text)

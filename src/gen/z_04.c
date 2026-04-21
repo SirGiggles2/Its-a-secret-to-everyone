@@ -256,3 +256,23 @@ void z04_ganon_get_cur_cloud_top(unsigned int slot) {
     unsigned char dist = RAM(0x0478 + slot);
     RAM(0x0001) = (unsigned char)(y - dist);
 }
+
+extern void z07_anim_advance_and_fetch(unsigned int val, unsigned int slot);
+extern void z01_anim_set_sprite_desc_attrs(unsigned int val);
+
+void z04_wallmaster_prepare_to_draw(unsigned int slot) {
+    static const unsigned char wallmaster_attrs[] = {
+        0x01, 0x01, 0x08, 0x08, 0x08, 0x02, 0x02, 0x02,
+        0xC1, 0xC1, 0xC4, 0xC4, 0xC4, 0xC2, 0xC2, 0xC2
+    };
+    z07_anim_advance_and_fetch(8, slot);
+    unsigned char step = RAM(0x0412 + slot);
+    unsigned char raw = wallmaster_attrs[step];
+    unsigned char attrs = (raw & 0xF0) | 0x01;
+    z01_anim_set_sprite_desc_attrs(attrs);
+    if (raw & 0x40) {
+        unsigned char cur = RAM(0x0004);
+        z01_anim_set_sprite_desc_attrs(cur & 0x8F);
+        RAM(0x000F)++;
+    }
+}

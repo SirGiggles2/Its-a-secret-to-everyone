@@ -198,6 +198,9 @@
     xdef    c_ganon_get_cur_cloud_left
     xdef    c_ganon_get_cur_cloud_top
     xdef    c_write_blank_priority_sprites
+    xdef    c_wallmaster_prepare_to_draw
+    xdef    c_get_player_coords_for_direction
+    xdef    c_copy_price_list_template
 
     xref    c_move_object
     xref    z03_transfer_level_pattern_blocks
@@ -372,6 +375,9 @@
     xref    z04_ganon_get_cur_cloud_left
     xref    z04_ganon_get_cur_cloud_top
     xref    z01_write_blank_priority_sprites
+    xref    z04_wallmaster_prepare_to_draw
+    xref    z05_get_player_coords_for_direction
+    xref    z01_copy_price_list_template
 
 ;------------------------------------------------------------------------------
 ; _c_move_object_shim — MoveObject trampoline.
@@ -1833,5 +1839,29 @@ c_ganon_get_cur_cloud_top:
 ; WriteBlankPrioritySprites — no args.
 c_write_blank_priority_sprites:
     jsr     z01_write_blank_priority_sprites
+    rts
+
+; --- batch 32 ---
+
+; Wallmaster_PrepareToDraw — D2=slot.
+c_wallmaster_prepare_to_draw:
+    moveq   #0,D0
+    move.w  D2,D0
+    move.l  D0,-(SP)
+    jsr     z04_wallmaster_prepare_to_draw
+    addq.l  #4,SP
+    rts
+
+; GetPlayerCoordsForDirection — D0=dir.
+c_get_player_coords_for_direction:
+    andi.l  #$FF,D0
+    move.l  D0,-(SP)
+    jsr     z05_get_player_coords_for_direction
+    addq.l  #4,SP
+    rts
+
+; CopyPriceListTemplate — no args.
+c_copy_price_list_template:
+    jsr     z01_copy_price_list_template
     rts
 

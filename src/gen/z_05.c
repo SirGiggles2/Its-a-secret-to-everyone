@@ -391,3 +391,15 @@ void z05_select_transfer_buf_and_inc_state(unsigned int val) {
     RAM(0x00E1)++;
 }
 
+void z05_get_player_coords_for_direction(unsigned int dir) {
+    unsigned char x = RAM(0x0070);
+    unsigned char y = RAM(0x0084);
+    if ((unsigned char)dir & 0x03) {
+        RAM(0x0000) = y;
+        RAM(0x0001) = x;
+    } else {
+        RAM(0x0000) = x;
+        RAM(0x0001) = y;
+    }
+}
+

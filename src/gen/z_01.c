@@ -262,3 +262,12 @@ void z01_write_blank_priority_sprites(void) {
     for (unsigned char i = 0; i < 0x40; i++)
         RAM(0x0200 + i) = tmpl[i & 7];
 }
+
+void z01_copy_price_list_template(void) {
+    static const unsigned char tmpl[] = {
+        0x22, 0xC8, 0x0D, 0x21, 0x24, 0x24, 0x24, 0x24,
+        0x24, 0x24, 0x24, 0x24, 0x24, 0x24, 0x24, 0x24, 0xFF
+    };
+    for (signed char i = 16; i >= 0; i--)
+        RAM(0x0302 + (unsigned char)i) = tmpl[(unsigned char)i];
+}
