@@ -33,3 +33,23 @@ void z04_gleeok_set_segment_x(unsigned int val, unsigned int slot) {
 void z04_gohma_play_parry_tune(void) {
     RAM(0x0604) = 1;
 }
+
+void z04_flyer_set_state_and_turns(unsigned int state, unsigned int slot) {
+    RAM(0x0444 + slot) = (unsigned char)state;
+    RAM(0x042C + slot) = 6;
+}
+
+void z04_init_aquamentus(unsigned int slot) {
+    RAM(0x04B2 + slot) = 0xE2;
+    RAM(0x0601) = 16;
+    RAM(0x0070 + slot) = 0xB0;
+    RAM(0x0084 + slot) = 0x80;
+}
+
+void z04_reset_flyer_state(unsigned int slot) {
+    RAM(0x0412 + slot) = 0;
+    RAM(0x042C + slot) = 0;
+    RAM(0x0437 + slot) = 0;
+    RAM(0x0444 + slot) = 0;
+    RAM(0x04F0 + slot) = 0;
+}

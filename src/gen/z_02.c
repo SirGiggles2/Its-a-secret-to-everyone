@@ -41,3 +41,25 @@ void z02_init_mode1_sub2(void) {
     RAM(0x0014) = 20;
     RAM(0x0013)++;
 }
+
+void z02_end_init_demo(unsigned int val) {
+    RAM(0x0014) = (unsigned char)val;
+    RAM(0x042D) = 0;
+    RAM(0x0011)++;
+}
+
+void z02_mode_e_reset_variables(unsigned int val) {
+    RAM(0x041F) = (unsigned char)val;
+    RAM(0x0420) = (unsigned char)val;
+    RAM(0x0421) = (unsigned char)val;
+}
+
+void z02_reset_button_repeat_state(unsigned int val) {
+    RAM(0x0426) = (unsigned char)val;
+    RAM(0x0428) = (unsigned char)val;
+    RAM(0x0429) = (unsigned char)val;
+}
+
+void z02_mode_e_set_name_cursor_sprite_x(void) {
+    RAM(0x0207) = RAM(0x0070);
+}

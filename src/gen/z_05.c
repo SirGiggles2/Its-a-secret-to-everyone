@@ -306,3 +306,18 @@ void z05_copy_play_area_attrs_half(unsigned int ppu_hi, unsigned int ppu_lo, uns
         src--;
     }
 }
+
+void z05_inc_submode(void) {
+    RAM(0x0013)++;
+}
+
+void z05_inc_2_submodes(void) {
+    RAM(0x0013)++;
+    RAM(0x0013)++;
+}
+
+void z05_init_mode4_go_to_sub0(void) {
+    RAM(0x0013) = 0;
+    RAM(0x051F) = 0;
+}
+

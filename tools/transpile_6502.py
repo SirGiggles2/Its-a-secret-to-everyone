@@ -3568,6 +3568,12 @@ def _patch_z02(path):
     text = _stub_func(text, 'DisableFallenObjects', 'c_disable_fallen_objects')
     text = _stub_func(text, 'InitMode1_Sub2', 'c_init_mode1_sub2')
 
+    # --- Stage 4b batch 13: more z_02 C function stubs ---
+    text = _stub_func(text, 'EndInitDemo', 'c_end_init_demo')
+    text = _stub_func(text, 'ModeE_ResetVariables', 'c_mode_e_reset_variables')
+    text = _stub_func(text, 'ResetButtonRepeatState', 'c_reset_button_repeat_state')
+    text = _stub_func(text, 'ModeE_SetNameCursorSpriteX', 'c_mode_e_set_name_cursor_sprite_x')
+
     with open(path, 'w', encoding='utf-8') as f:
         f.write(text)
 
@@ -3738,13 +3744,18 @@ def _patch_z04(path):
     # --- Stage 4b batch 6: z_04 C function stubs ---
     text = _stub_func(text, 'HideSpritesOverLink', 'c_hide_sprites_over_link')
 
-    # --- Stage 4b batch 12: more z_04 C function stubs ---
+    # --- Stage 4b batch 12: z_04 C function stubs ---
     text = _stub_func(text, 'PlaySecretFoundTune', 'c_play_secret_found_tune')
     text = _stub_func(text, 'PlayBossDeathCry', 'c_play_boss_death_cry')
     text = _stub_func(text, 'L_Dodongo_DecrementBloatedTimer', 'c_dodongo_dec_bloated_timer')
     text = _stub_func(text, 'Gleeok_DecHeadTimer', 'c_gleeok_dec_head_timer')
     text = _stub_func(text, 'L_Gleeok_SetSegmentX', 'c_gleeok_set_segment_x')
     text = _stub_func(text, '_L_z04_Gohma_HandleWeaponCollision_PlayParryTune', 'c_gohma_play_parry_tune')
+
+    # --- Stage 4b batch 13: more z_04 C function stubs ---
+    text = _stub_func(text, 'Flyer_SetStateAndTurns', 'c_flyer_set_state_and_turns')
+    text = _stub_func(text, 'InitAquamentus', 'c_init_aquamentus')
+    text = _stub_func(text, 'ResetFlyerState', 'c_reset_flyer_state')
 
     with open(path, 'w', encoding='utf-8') as f:
         f.write(text)
@@ -4916,6 +4927,11 @@ def _patch_z05(path):
     text = _stub_func(text, 'UpdateMode7Scroll_Sub7', 'c_update_mode7_scroll_sub7')
     text = _stub_func(text, 'FetchTileMapAddr', 'c_fetch_tile_map_addr')
     text = _stub_func(text, 'CopyPlayAreaAttrsHalfToDynTransferBuf', 'c_copy_play_area_attrs_half')
+
+    # --- Stage 4b batch 13: more z_05 C function stubs ---
+    text = _stub_func(text, 'IncSubmode', 'c_inc_submode')
+    text = _stub_func(text, 'Inc2Submodes', 'c_inc_2_submodes')
+    text = _stub_func(text, 'InitMode4_GoToSub0', 'c_init_mode4_go_to_sub0')
 
     with open(path, 'w', encoding='utf-8') as f:
         f.write(text)
@@ -6248,6 +6264,10 @@ def _patch_z07(path):
     # --- Stage 4b batch 12: more z_07 C function stubs ---
     text = _stub_func(text, 'EndGameMode', 'c_end_game_mode')
     text = _stub_func(text, 'SetShoveInfoWith0', 'c_set_shove_info_with0')
+
+    # --- Stage 4b batch 13: more z_07 C function stubs ---
+    text = _stub_func(text, 'ResetObjMetastate', 'c_reset_obj_metastate')
+    text = _stub_func(text, 'Anim_FetchObjPosForSpriteDescriptor', 'c_anim_fetch_obj_pos')
 
     with open(path, 'w', encoding='utf-8') as f:
         f.write(text)

@@ -89,6 +89,18 @@
     xdef    c_gohma_play_parry_tune
     xdef    c_end_game_mode
     xdef    c_set_shove_info_with0
+    xdef    c_flyer_set_state_and_turns
+    xdef    c_init_aquamentus
+    xdef    c_reset_flyer_state
+    xdef    c_reset_obj_metastate
+    xdef    c_anim_fetch_obj_pos
+    xdef    c_end_init_demo
+    xdef    c_mode_e_reset_variables
+    xdef    c_reset_button_repeat_state
+    xdef    c_mode_e_set_name_cursor_sprite_x
+    xdef    c_inc_submode
+    xdef    c_inc_2_submodes
+    xdef    c_init_mode4_go_to_sub0
 
     xref    c_move_object
     xref    z03_transfer_level_pattern_blocks
@@ -156,6 +168,18 @@
     xref    z04_gohma_play_parry_tune
     xref    z07_end_game_mode
     xref    z07_set_shove_info_with0
+    xref    z04_flyer_set_state_and_turns
+    xref    z04_init_aquamentus
+    xref    z04_reset_flyer_state
+    xref    z07_reset_obj_metastate
+    xref    z07_anim_fetch_obj_pos
+    xref    z02_end_init_demo
+    xref    z02_mode_e_reset_variables
+    xref    z02_reset_button_repeat_state
+    xref    z02_mode_e_set_name_cursor_sprite_x
+    xref    z05_inc_submode
+    xref    z05_inc_2_submodes
+    xref    z05_init_mode4_go_to_sub0
 
 ;------------------------------------------------------------------------------
 ; _c_move_object_shim — MoveObject trampoline.
@@ -717,4 +741,98 @@ c_set_shove_info_with0:
     addq.l  #8,SP
     rts
 
+;==============================================================================
+; EXPORT side — batch 13.
+;==============================================================================
+
+; Flyer_SetStateAndTurns — D3=state, D2=slot.
+c_flyer_set_state_and_turns:
+    moveq   #0,D0
+    move.w  D2,D0
+    move.l  D0,-(SP)
+    moveq   #0,D0
+    move.b  D3,D0
+    move.l  D0,-(SP)
+    jsr     z04_flyer_set_state_and_turns
+    addq.l  #8,SP
+    rts
+
+; InitAquamentus — D2=slot.
+c_init_aquamentus:
+    moveq   #0,D0
+    move.w  D2,D0
+    move.l  D0,-(SP)
+    jsr     z04_init_aquamentus
+    addq.l  #4,SP
+    rts
+
+; ResetFlyerState — D2=slot.
+c_reset_flyer_state:
+    moveq   #0,D0
+    move.w  D2,D0
+    move.l  D0,-(SP)
+    jsr     z04_reset_flyer_state
+    addq.l  #4,SP
+    rts
+
+; ResetObjMetastate — D2=slot.
+c_reset_obj_metastate:
+    moveq   #0,D0
+    move.w  D2,D0
+    move.l  D0,-(SP)
+    jsr     z07_reset_obj_metastate
+    addq.l  #4,SP
+    rts
+
+; Anim_FetchObjPosForSpriteDescriptor — D2=slot.
+c_anim_fetch_obj_pos:
+    moveq   #0,D0
+    move.w  D2,D0
+    move.l  D0,-(SP)
+    jsr     z07_anim_fetch_obj_pos
+    addq.l  #4,SP
+    rts
+
+; EndInitDemo — D0=val.
+c_end_init_demo:
+    moveq   #0,D1
+    move.b  D0,D1
+    move.l  D1,-(SP)
+    jsr     z02_end_init_demo
+    addq.l  #4,SP
+    rts
+
+; ModeE_ResetVariables — D0=val.
+c_mode_e_reset_variables:
+    moveq   #0,D1
+    move.b  D0,D1
+    move.l  D1,-(SP)
+    jsr     z02_mode_e_reset_variables
+    addq.l  #4,SP
+    rts
+
+; ResetButtonRepeatState — D0=val.
+c_reset_button_repeat_state:
+    moveq   #0,D1
+    move.b  D0,D1
+    move.l  D1,-(SP)
+    jsr     z02_reset_button_repeat_state
+    addq.l  #4,SP
+    rts
+
+; ModeE_SetNameCursorSpriteX — void→void.
+c_mode_e_set_name_cursor_sprite_x:
+    jmp     z02_mode_e_set_name_cursor_sprite_x
+
+; IncSubmode — void→void.
+c_inc_submode:
+    jmp     z05_inc_submode
+
+; Inc2Submodes — void→void.
+c_inc_2_submodes:
+    jmp     z05_inc_2_submodes
+
+; InitMode4_GoToSub0 — void→void.
+c_init_mode4_go_to_sub0:
+    jmp     z05_init_mode4_go_to_sub0
 

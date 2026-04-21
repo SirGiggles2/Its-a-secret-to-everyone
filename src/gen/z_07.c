@@ -90,3 +90,13 @@ void z07_set_shove_info_with0(unsigned int val, unsigned int slot) {
     RAM(0x00D3 + slot) = (unsigned char)val;
 }
 
+void z07_reset_obj_metastate(unsigned int slot) {
+    RAM(0x0405 + slot) = 0;
+}
+
+void z07_anim_fetch_obj_pos(unsigned int slot) {
+    RAM(0x0000) = RAM(0x0070 + slot);
+    RAM(0x0001) = RAM(0x0084 + slot);
+    RAM(0x000F) = 0;
+}
+
