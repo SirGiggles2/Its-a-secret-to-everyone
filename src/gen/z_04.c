@@ -377,3 +377,53 @@ unsigned int z04_shoot(void) {
     RAM(0x0084 + shot_slot) = RAM(0x0084 + thrower);
     return CARRY_SET;
 }
+
+extern void z04_update_dodongo_bloated_sub_end(unsigned int slot);
+
+void z04_flyer_keese_decide_state(unsigned int slot) {
+    unsigned char rnd = RAM(0x0019 + slot);
+    unsigned char state;
+    if (rnd >= 0xA0)
+        state = 2;
+    else if (rnd >= 0x20)
+        state = 3;
+    else
+        state = 4;
+    z04_flyer_set_state_and_turns(state, slot);
+}
+
+void z04_flyer_peahat_decide_state(unsigned int slot) {
+    unsigned char rnd = RAM(0x0018 + slot);
+    unsigned char state;
+    if (rnd >= 0xB0)
+        state = 2;
+    else if (rnd >= 0x20)
+        state = 3;
+    else
+        state = 4;
+    z04_flyer_set_state_and_turns(state, slot);
+}
+
+void z04_update_dodongo_state2_stunned(unsigned int slot) {
+    unsigned char timer = RAM(0x003D + slot);
+    if (timer == 1) {
+        z04_update_dodongo_bloated_sub_end(slot);
+        return;
+    }
+    if (timer == 0)
+        RAM(0x003D + slot) = 32;
+}
+
+unsigned int z04_pols_voice_is_square_walkable(unsigned int slot) {
+    unsigned int result = z04_pols_voice_get_colliding_tile(slot);
+    if (result & CARRY_SET)
+        return CARRY_SET;
+    unsigned char saved_x = RAM(0x0070 + slot);
+    RAM(0x0070 + slot) = (unsigned char)(saved_x + 0x0E);
+    unsigned char saved_y = RAM(0x0084 + slot);
+    RAM(0x0084 + slot) = (unsigned char)(saved_y + 0x06);
+    result = z04_pols_voice_get_colliding_tile(slot);
+    RAM(0x0084 + slot) = saved_y;
+    RAM(0x0070 + slot) = saved_x;
+    return result;
+}

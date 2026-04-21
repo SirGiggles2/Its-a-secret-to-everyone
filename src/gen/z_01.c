@@ -401,3 +401,41 @@ void z01_init_rupee_stash_full(unsigned int slot) {
         RAM(0x0084 + i) = RupeeStashYs[i - 1];
     }
 }
+
+extern void z07_reset_moving_dir(void);
+
+void z01_update_uw_person_life_or_money_state_0(void) {
+    RAM(0x0029) = 10;
+    z01_cue_transfer_buf_and_advance_state(118);
+}
+
+void z01_underworld_person_destroy_if_taken(unsigned int slot) {
+    unsigned char item_state = z01_get_room_flag_uw_item_state();
+    if (item_state == 0) {
+        z01_play_character_sfx();
+        return;
+    }
+    RAM(0x00AC) = 0;
+    z07_destroy_monster(slot);
+}
+
+void z01_init_uw_person_life_or_money_full(unsigned int slot) {
+    z01_set_up_common_cave_objects(120, slot, 0x80);
+    RAM(0x0415) = 54;
+    RAM(0x045F) = TextboxLineAddrsLo[2];
+    z01_underworld_person_destroy_if_taken(slot);
+}
+
+void z01_person_flag_item_taken_and_advance_state(void) {
+    z01_set_room_flag_uw_item_state();
+    RAM(0x0029) = 64;
+    z01_cue_transfer_buf_and_advance_state(30);
+}
+
+void z01_check_person_blocking(void) {
+    if (RAM(0x0084) >= 0x8E)
+        return;
+    if ((RAM(0x000F) & 0x08) == 0)
+        return;
+    z07_reset_moving_dir();
+}

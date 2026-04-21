@@ -141,3 +141,18 @@ void z02_init_mode13_sub3(void) {
     z01_silence_all_sound();
     RAM(0x0013)++;
 }
+
+extern void z01_begin_update_mode(void);
+
+void z02_init_demo_subphase_play_title_song(void) {
+    RAM(0x0600) = 0x80;
+    z02_end_init_demo(16);
+}
+
+void z02_init_mode13_sub4(void) {
+    RAM(0x050B) = 8;
+    z01_begin_update_mode();
+    RAM(0x0412) = 0;
+    RAM(0x0413) = 0;
+    z07_hide_all_sprites();
+}

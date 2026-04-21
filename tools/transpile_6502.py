@@ -2608,6 +2608,13 @@ def _patch_z01(path):
     text = _stub_func(text, 'InitGrumble_Full', 'c_init_grumble_full')
     text = _stub_func(text, 'InitRupeeStash_Full', 'c_init_rupee_stash_full')
 
+    # --- Batch 38 ---
+    text = _stub_func(text, 'UpdateUnderworldPersonLifeOrMoneyState_0', 'c_update_uw_person_life_or_money_state_0')
+    text = _stub_func(text, 'UnderworldPerson_DestroyIfTaken', 'c_underworld_person_destroy_if_taken')
+    text = _stub_func(text, 'InitUnderworldPersonLifeOrMoney_Full', 'c_init_uw_person_life_or_money_full')
+    text = _stub_func(text, 'L_Person_FlagItemTakenAndAdvanceState', 'c_person_flag_item_taken_and_advance_state')
+    text = _stub_func(text, 'CheckPersonBlocking', 'c_check_person_blocking')
+
     # Data table exports — batch 37
     for tbl in ['UnderworldPersonTextSelectorsC', 'TextboxLineAddrsLo', 'RupeeStashXs', 'RupeeStashYs']:
         if f'xdef    {tbl}' not in text and f'{tbl}:' in text:
@@ -3681,6 +3688,10 @@ def _patch_z02(path):
     # --- Batch 37 ---
     text = _stub_func(text, 'InitMode13_Sub3', 'c_init_mode13_sub3')
 
+    # --- Batch 38 ---
+    text = _stub_func(text, 'InitDemoSubphasePlayTitleSong', 'c_init_demo_subphase_play_title_song')
+    text = _stub_func(text, 'InitMode13_Sub4', 'c_init_mode13_sub4')
+
     with open(path, 'w', encoding='utf-8') as f:
         f.write(text)
 
@@ -3987,6 +3998,12 @@ def _patch_z04(path):
     text = _stub_func(text, 'InitGleeokHead', 'c_init_gleeok_head')
     text = _stub_func(text, 'Ganon_ActivateRoomItem', 'c_ganon_activate_room_item')
     text = _stub_func(text, 'Shoot', 'c_shoot')
+
+    # --- Batch 38 ---
+    text = _stub_func(text, 'Flyer_KeeseDecideState', 'c_flyer_keese_decide_state')
+    text = _stub_func(text, 'Flyer_PeahatDecideState', 'c_flyer_peahat_decide_state')
+    text = _stub_func(text, 'UpdateDodongoState2_Stunned', 'c_update_dodongo_state2_stunned')
+    text = _stub_func(text, 'PolsVoice_IsSquareWalkable', 'c_pols_voice_is_square_walkable')
 
     # Export ROM data tables referenced by C code
     if 'xdef    PolsVoiceWalkSpeedsX' not in text and 'PolsVoiceWalkSpeedsX:' in text:

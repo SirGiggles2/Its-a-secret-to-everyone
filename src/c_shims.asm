@@ -240,6 +240,17 @@
     xdef    c_init_mode10
     xdef    c_setup_tile_object_ow
     xdef    c_world_fill_hearts
+    xdef    c_update_uw_person_life_or_money_state_0
+    xdef    c_underworld_person_destroy_if_taken
+    xdef    c_init_uw_person_life_or_money_full
+    xdef    c_person_flag_item_taken_and_advance_state
+    xdef    c_check_person_blocking
+    xdef    c_init_demo_subphase_play_title_song
+    xdef    c_init_mode13_sub4
+    xdef    c_flyer_keese_decide_state
+    xdef    c_flyer_peahat_decide_state
+    xdef    c_update_dodongo_state2_stunned
+    xdef    c_pols_voice_is_square_walkable
 
     xref    c_move_object
     xref    z03_transfer_level_pattern_blocks
@@ -456,6 +467,17 @@
     xref    z05_init_mode10
     xref    z05_setup_tile_object_ow
     xref    z05_world_fill_hearts
+    xref    z01_update_uw_person_life_or_money_state_0
+    xref    z01_underworld_person_destroy_if_taken
+    xref    z01_init_uw_person_life_or_money_full
+    xref    z01_person_flag_item_taken_and_advance_state
+    xref    z01_check_person_blocking
+    xref    z02_init_demo_subphase_play_title_song
+    xref    z02_init_mode13_sub4
+    xref    z04_flyer_keese_decide_state
+    xref    z04_flyer_peahat_decide_state
+    xref    z04_update_dodongo_state2_stunned
+    xref    z04_pols_voice_is_square_walkable
 
 ;------------------------------------------------------------------------------
 ; _c_move_object_shim — MoveObject trampoline.
@@ -2294,4 +2316,86 @@ c_setup_tile_object_ow:
 ; World_FillHearts — no args, void return.
 c_world_fill_hearts:
     jmp     z05_world_fill_hearts
+
+; UpdateUnderworldPersonLifeOrMoneyState_0 — no args, void return.
+c_update_uw_person_life_or_money_state_0:
+    jmp     z01_update_uw_person_life_or_money_state_0
+
+; UnderworldPerson_DestroyIfTaken — D2=slot.
+c_underworld_person_destroy_if_taken:
+    moveq   #0,D0
+    move.w  D2,D0
+    move.l  D0,-(SP)
+    jsr     z01_underworld_person_destroy_if_taken
+    addq.l  #4,SP
+    rts
+
+; InitUnderworldPersonLifeOrMoney_Full — D2=slot.
+c_init_uw_person_life_or_money_full:
+    moveq   #0,D0
+    move.w  D2,D0
+    move.l  D0,-(SP)
+    jsr     z01_init_uw_person_life_or_money_full
+    addq.l  #4,SP
+    rts
+
+; L_Person_FlagItemTakenAndAdvanceState — no args, void return.
+c_person_flag_item_taken_and_advance_state:
+    jmp     z01_person_flag_item_taken_and_advance_state
+
+; CheckPersonBlocking — no args, void return.
+c_check_person_blocking:
+    jmp     z01_check_person_blocking
+
+; InitDemoSubphasePlayTitleSong — no args, void return.
+c_init_demo_subphase_play_title_song:
+    jmp     z02_init_demo_subphase_play_title_song
+
+; InitMode13_Sub4 — no args, void return.
+c_init_mode13_sub4:
+    jmp     z02_init_mode13_sub4
+
+; Flyer_KeeseDecideState — D2=slot.
+c_flyer_keese_decide_state:
+    moveq   #0,D0
+    move.w  D2,D0
+    move.l  D0,-(SP)
+    jsr     z04_flyer_keese_decide_state
+    addq.l  #4,SP
+    rts
+
+; Flyer_PeahatDecideState — D2=slot.
+c_flyer_peahat_decide_state:
+    moveq   #0,D0
+    move.w  D2,D0
+    move.l  D0,-(SP)
+    jsr     z04_flyer_peahat_decide_state
+    addq.l  #4,SP
+    rts
+
+; UpdateDodongoState2_Stunned — D2=slot.
+c_update_dodongo_state2_stunned:
+    moveq   #0,D0
+    move.w  D2,D0
+    move.l  D0,-(SP)
+    jsr     z04_update_dodongo_state2_stunned
+    addq.l  #4,SP
+    rts
+
+; PolsVoice_IsSquareWalkable — D2=slot, carry-returning.
+c_pols_voice_is_square_walkable:
+    moveq   #0,D0
+    move.w  D2,D0
+    move.l  D0,-(SP)
+    jsr     z04_pols_voice_is_square_walkable
+    addq.l  #4,SP
+    btst    #8,D0
+    bne.s   _c_pols_voice_is_square_walkable_set
+    andi    #$FE,CCR
+    eori    #$01,CCR
+    rts
+_c_pols_voice_is_square_walkable_set:
+    ori     #$01,CCR
+    eori    #$01,CCR
+    rts
 
