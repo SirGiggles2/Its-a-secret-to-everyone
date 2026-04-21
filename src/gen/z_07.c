@@ -54,3 +54,28 @@ void z07_mark_room_visited(void) {
     unsigned char room_id = RAM(0x00EB);
     nes_ram[ptr + room_id] = flags;
 }
+
+void z07_reset_obj_state(unsigned int slot) {
+    RAM(0x00AC + slot) = 0;
+}
+
+void z07_set_shot_spreading_state(unsigned int slot) {
+    RAM(0x00AC + slot)++;
+    RAM(0x0098 + slot) = 0xFE;
+}
+
+void z07_roll_over_anim_counter(unsigned int slot) {
+    RAM(0x03D0 + slot) = RAM(0x00);
+    RAM(0x03E4 + slot) ^= 0x01;
+}
+
+void z07_decrement_invincibility_timer(unsigned int slot) {
+    if (RAM(0x04F0 + slot) == 0) return;
+    if (RAM(0x0015) & 1) return;
+    RAM(0x04F0 + slot)--;
+}
+
+void z07_update_dead_dummy(unsigned int slot) {
+    RAM(0x0602) = 32;
+    RAM(0x0405 + slot) = 16;
+}

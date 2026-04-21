@@ -76,6 +76,11 @@
     xdef    c_update_mode7_scroll_sub7
     xdef    c_fetch_tile_map_addr
     xdef    c_copy_play_area_attrs_half
+    xdef    c_reset_obj_state
+    xdef    c_set_shot_spreading_state
+    xdef    c_roll_over_anim_counter
+    xdef    c_decrement_invincibility_timer
+    xdef    c_update_dead_dummy
 
     xref    c_move_object
     xref    z03_transfer_level_pattern_blocks
@@ -130,6 +135,11 @@
     xref    z05_update_mode7_scroll_sub7
     xref    z05_fetch_tile_map_addr
     xref    z05_copy_play_area_attrs_half
+    xref    z07_reset_obj_state
+    xref    z07_set_shot_spreading_state
+    xref    z07_roll_over_anim_counter
+    xref    z07_decrement_invincibility_timer
+    xref    z07_update_dead_dummy
 
 ;------------------------------------------------------------------------------
 ; _c_move_object_shim — MoveObject trampoline.
@@ -583,5 +593,54 @@ c_copy_play_area_attrs_half:
     move.l  D1,-(SP)
     jsr     z05_copy_play_area_attrs_half
     lea     12(SP),SP
+    rts
+
+;==============================================================================
+; EXPORT side — z_07 batch 11.
+;==============================================================================
+
+; ResetObjState — D2=slot, void return.
+c_reset_obj_state:
+    moveq   #0,D0
+    move.w  D2,D0
+    move.l  D0,-(SP)
+    jsr     z07_reset_obj_state
+    addq.l  #4,SP
+    rts
+
+; SetShotSpreadingState — D2=slot, void return.
+c_set_shot_spreading_state:
+    moveq   #0,D0
+    move.w  D2,D0
+    move.l  D0,-(SP)
+    jsr     z07_set_shot_spreading_state
+    addq.l  #4,SP
+    rts
+
+; RollOverAnimCounter — D2=slot, void return.
+c_roll_over_anim_counter:
+    moveq   #0,D0
+    move.w  D2,D0
+    move.l  D0,-(SP)
+    jsr     z07_roll_over_anim_counter
+    addq.l  #4,SP
+    rts
+
+; DecrementInvincibilityTimer — D2=slot, void return.
+c_decrement_invincibility_timer:
+    moveq   #0,D0
+    move.w  D2,D0
+    move.l  D0,-(SP)
+    jsr     z07_decrement_invincibility_timer
+    addq.l  #4,SP
+    rts
+
+; UpdateDeadDummy — D2=slot, void return.
+c_update_dead_dummy:
+    moveq   #0,D0
+    move.w  D2,D0
+    move.l  D0,-(SP)
+    jsr     z07_update_dead_dummy
+    addq.l  #4,SP
     rts
 

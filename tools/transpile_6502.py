@@ -6230,6 +6230,13 @@ def _patch_z07(path):
     # --- Stage 4b batch 7: GetRoomFlags ---
     text = _stub_func(text, 'GetRoomFlags', 'c_get_room_flags')
 
+    # --- Stage 4b batch 11: more z_07 functions ---
+    text = _stub_func(text, 'ResetObjState', 'c_reset_obj_state')
+    text = _stub_func(text, 'SetShotSpreadingState', 'c_set_shot_spreading_state')
+    text = _stub_func(text, 'RollOverAnimCounter', 'c_roll_over_anim_counter')
+    text = _stub_func(text, 'DecrementInvincibilityTimer', 'c_decrement_invincibility_timer')
+    text = _stub_func(text, 'UpdateDeadDummy', 'c_update_dead_dummy')
+
     with open(path, 'w', encoding='utf-8') as f:
         f.write(text)
 
