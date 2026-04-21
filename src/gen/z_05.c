@@ -571,3 +571,32 @@ void z05_world_fill_hearts(void) {
     RAM(0x0670) = (unsigned char)(partial + 0x06);
 }
 
+extern void z01_begin_update_mode(void);
+extern void z05_select_transfer_buf_and_inc_state(unsigned int val);
+
+void z05_update_menu_common2(void) {
+    z05_select_transfer_buf_and_inc_state(72);
+}
+
+void z05_update_menu_common3(void) {
+    z05_select_transfer_buf_and_inc_state(74);
+}
+
+void z05_update_menu_common4(void) {
+    z05_select_transfer_buf_and_inc_state(76);
+}
+
+void z05_update_menu5_ow(void) {
+    z05_select_transfer_buf_and_inc_state(92);
+}
+
+void z05_l1433a_inc_submode(void) {
+    RAM(0x0013)++;
+}
+
+void z05_init_mode7_finish(void) {
+    RAM(0x00EB) = RAM(0x00EC);
+    z05_write_and_enable_sprite0();
+    z01_begin_update_mode();
+}
+

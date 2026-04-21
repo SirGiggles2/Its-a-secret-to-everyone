@@ -439,3 +439,12 @@ void z01_check_person_blocking(void) {
         return;
     z07_reset_moving_dir();
 }
+
+void z01_clear_prices_cave_flag(void) {
+    RAM(0x0413) = RAM(0x0413) & 0xF7;
+}
+
+void z01_update_person_state_delay_then_hide(void) {
+    if (RAM(0x0029) == 0)
+        RAM(0x0350) = 0;
+}

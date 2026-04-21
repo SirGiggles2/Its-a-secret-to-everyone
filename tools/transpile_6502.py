@@ -2615,6 +2615,10 @@ def _patch_z01(path):
     text = _stub_func(text, 'L_Person_FlagItemTakenAndAdvanceState', 'c_person_flag_item_taken_and_advance_state')
     text = _stub_func(text, 'CheckPersonBlocking', 'c_check_person_blocking')
 
+    # --- Batch 39 ---
+    # ClearPricesCaveFlag skipped: body contains IFND Exit/ENDC that _stub_func can't handle cleanly
+    text = _stub_func(text, 'UpdatePersonState_DelayThenHide', 'c_update_person_state_delay_then_hide')
+
     # Data table exports — batch 37
     for tbl in ['UnderworldPersonTextSelectorsC', 'TextboxLineAddrsLo', 'RupeeStashXs', 'RupeeStashYs']:
         if f'xdef    {tbl}' not in text and f'{tbl}:' in text:
@@ -4005,6 +4009,9 @@ def _patch_z04(path):
     text = _stub_func(text, 'UpdateDodongoState2_Stunned', 'c_update_dodongo_state2_stunned')
     text = _stub_func(text, 'PolsVoice_IsSquareWalkable', 'c_pols_voice_is_square_walkable')
 
+    # --- Batch 39 ---
+    text = _stub_func(text, 'InitPeahat', 'c_init_peahat')
+
     # Export ROM data tables referenced by C code
     if 'xdef    PolsVoiceWalkSpeedsX' not in text and 'PolsVoiceWalkSpeedsX:' in text:
         text = "\n    xdef    PolsVoiceWalkSpeedsX\n" + text
@@ -5238,6 +5245,14 @@ def _patch_z05(path):
     text = _stub_func(text, 'InitMode10', 'c_init_mode10')
     text = _stub_func(text, 'SetupTileObjectOW', 'c_setup_tile_object_ow')
     text = _stub_func(text, 'World_FillHearts', 'c_world_fill_hearts')
+
+    # --- Batch 39 ---
+    text = _stub_func(text, 'UpdateMenuCommon2', 'c_update_menu_common2')
+    text = _stub_func(text, 'UpdateMenuCommon3', 'c_update_menu_common3')
+    text = _stub_func(text, 'UpdateMenuCommon4', 'c_update_menu_common4')
+    text = _stub_func(text, 'UpdateMenu5OW', 'c_update_menu5_ow')
+    text = _stub_func(text, 'L1433A_IncSubmode', 'c_l1433a_inc_submode')
+    text = _stub_func(text, 'InitMode7_Finish', 'c_init_mode7_finish')
 
     with open(path, 'w', encoding='utf-8') as f:
         f.write(text)

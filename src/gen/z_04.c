@@ -414,6 +414,14 @@ void z04_update_dodongo_state2_stunned(unsigned int slot) {
         RAM(0x003D + slot) = 32;
 }
 
+extern void z04_end_init_flyer(unsigned int slot);
+
+void z04_init_peahat(unsigned int slot) {
+    z07_reset_obj_metastate_and_timer(slot);
+    RAM(0x0098 + slot) = 8;
+    z04_end_init_flyer(slot);
+}
+
 unsigned int z04_pols_voice_is_square_walkable(unsigned int slot) {
     unsigned int result = z04_pols_voice_get_colliding_tile(slot);
     if (result & CARRY_SET)

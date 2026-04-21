@@ -251,6 +251,15 @@
     xdef    c_flyer_peahat_decide_state
     xdef    c_update_dodongo_state2_stunned
     xdef    c_pols_voice_is_square_walkable
+    xdef    c_clear_prices_cave_flag
+    xdef    c_update_person_state_delay_then_hide
+    xdef    c_init_peahat
+    xdef    c_update_menu_common2
+    xdef    c_update_menu_common3
+    xdef    c_update_menu_common4
+    xdef    c_update_menu5_ow
+    xdef    c_l1433a_inc_submode
+    xdef    c_init_mode7_finish
 
     xref    c_move_object
     xref    z03_transfer_level_pattern_blocks
@@ -478,6 +487,15 @@
     xref    z04_flyer_peahat_decide_state
     xref    z04_update_dodongo_state2_stunned
     xref    z04_pols_voice_is_square_walkable
+    xref    z01_clear_prices_cave_flag
+    xref    z01_update_person_state_delay_then_hide
+    xref    z04_init_peahat
+    xref    z05_update_menu_common2
+    xref    z05_update_menu_common3
+    xref    z05_update_menu_common4
+    xref    z05_update_menu5_ow
+    xref    z05_l1433a_inc_submode
+    xref    z05_init_mode7_finish
 
 ;------------------------------------------------------------------------------
 ; _c_move_object_shim — MoveObject trampoline.
@@ -2398,4 +2416,45 @@ _c_pols_voice_is_square_walkable_set:
     ori     #$01,CCR
     eori    #$01,CCR
     rts
+
+; ClearPricesCaveFlag — no args, void return.
+c_clear_prices_cave_flag:
+    jmp     z01_clear_prices_cave_flag
+
+; UpdatePersonState_DelayThenHide — no args, void return.
+c_update_person_state_delay_then_hide:
+    jmp     z01_update_person_state_delay_then_hide
+
+; InitPeahat — D2=slot.
+c_init_peahat:
+    moveq   #0,D0
+    move.w  D2,D0
+    move.l  D0,-(SP)
+    jsr     z04_init_peahat
+    addq.l  #4,SP
+    rts
+
+; UpdateMenuCommon2 — no args, void return.
+c_update_menu_common2:
+    jmp     z05_update_menu_common2
+
+; UpdateMenuCommon3 — no args, void return.
+c_update_menu_common3:
+    jmp     z05_update_menu_common3
+
+; UpdateMenuCommon4 — no args, void return.
+c_update_menu_common4:
+    jmp     z05_update_menu_common4
+
+; UpdateMenu5OW — no args, void return.
+c_update_menu5_ow:
+    jmp     z05_update_menu5_ow
+
+; L1433A_IncSubmode — no args, void return.
+c_l1433a_inc_submode:
+    jmp     z05_l1433a_inc_submode
+
+; InitMode7_Finish — no args, void return.
+c_init_mode7_finish:
+    jmp     z05_init_mode7_finish
 
