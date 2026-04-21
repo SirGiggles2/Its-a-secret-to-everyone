@@ -6203,6 +6203,9 @@ def _patch_z07(path):
     text = _stub_func(text, 'ResetMovingDir', 'c_reset_moving_dir')
     text = _stub_func(text, 'EnsureObjectAligned', 'c_ensure_object_aligned')
 
+    # --- Stage 4b batch 7: GetRoomFlags ---
+    text = _stub_func(text, 'GetRoomFlags', 'c_get_room_flags')
+
     with open(path, 'w', encoding='utf-8') as f:
         f.write(text)
 

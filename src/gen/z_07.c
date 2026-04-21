@@ -36,3 +36,21 @@ void z07_ensure_object_aligned(unsigned int slot) {
     RAM(0x0070 + slot) &= 0xF8;
     RAM(0x0084 + slot) = (RAM(0x0084 + slot) & 0xF8) | 0x05;
 }
+
+unsigned char z07_get_room_flags(void) {
+    unsigned char ptr_lo = nes_ram[NES_SRAM_BASE + 0x0BAF];
+    unsigned char ptr_hi = nes_ram[NES_SRAM_BASE + 0x0BB0];
+    RAM(0x00) = ptr_lo;
+    RAM(0x01) = ptr_hi;
+    unsigned short ptr = ((unsigned short)ptr_hi << 8) | ptr_lo;
+    unsigned char room_id = RAM(0x00EB);
+    return nes_ram[ptr + room_id];
+}
+
+void z07_mark_room_visited(void) {
+    unsigned char flags = z07_get_room_flags();
+    flags |= 0x20;
+    unsigned short ptr = ((unsigned short)RAM(0x01) << 8) | RAM(0x00);
+    unsigned char room_id = RAM(0x00EB);
+    nes_ram[ptr + room_id] = flags;
+}

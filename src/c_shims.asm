@@ -54,6 +54,8 @@
     xdef    c_ensure_object_aligned
     xdef    c_fill_play_area_attrs
     xdef    c_hide_sprites_over_link
+    xdef    c_get_room_flags
+    xdef    c_mark_room_visited
 
     xref    c_move_object
     xref    z03_transfer_level_pattern_blocks
@@ -86,6 +88,8 @@
     xref    z07_ensure_object_aligned
     xref    z05_fill_play_area_attrs
     xref    z04_hide_sprites_over_link
+    xref    z07_get_room_flags
+    xref    z07_mark_room_visited
 
 ;------------------------------------------------------------------------------
 ; _c_move_object_shim — MoveObject trampoline.
@@ -376,4 +380,19 @@ c_fill_play_area_attrs:
 ; HideSpritesOverLink — no args, void return.
 c_hide_sprites_over_link:
     jmp     z04_hide_sprites_over_link
+
+;==============================================================================
+; EXPORT side — z_07 entry points (Stage 4b batch 7).
+;==============================================================================
+
+; GetRoomFlags — no args, returns D0=flags, D3=room ID. Sets RAM $00/$01.
+c_get_room_flags:
+    jsr     z07_get_room_flags
+    moveq   #0,D3
+    move.b  ($00EB,A4),D3
+    rts
+
+; MarkRoomVisited — no args, void return.
+c_mark_room_visited:
+    jmp     z07_mark_room_visited
 
