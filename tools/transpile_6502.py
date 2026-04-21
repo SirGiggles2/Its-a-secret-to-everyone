@@ -2600,6 +2600,20 @@ def _patch_z01(path):
     text = _stub_func(text, 'FormatCharDoublet', 'c_format_char_doublet')
     text = _stub_func(text, 'ResetCurSpriteIndex', 'c_reset_cur_sprite_index')
 
+    # --- Batch 37 ---
+    text = _stub_func(text, 'PlayBoomerangSfx', 'c_play_boomerang_sfx')
+    text = _stub_func(text, 'TakeHeartsNoSound', 'c_take_hearts_no_sound')
+    text = _stub_func(text, 'DoObjectsCollideWithThresholds', 'c_do_objects_collide_with_thresholds')
+    text = _stub_func(text, 'InitUnderworldPersonC', 'c_init_underworld_person_c')
+    text = _stub_func(text, 'InitGrumble_Full', 'c_init_grumble_full')
+    text = _stub_func(text, 'InitRupeeStash_Full', 'c_init_rupee_stash_full')
+
+    # Data table exports — batch 37
+    for tbl in ['UnderworldPersonTextSelectorsC', 'TextboxLineAddrsLo', 'RupeeStashXs', 'RupeeStashYs']:
+        if f'xdef    {tbl}' not in text and f'{tbl}:' in text:
+            text = f"\n    xdef    {tbl}\n" + text
+            print(f"  _patch_z01: exported {tbl}")
+
     with open(path, 'w', encoding='utf-8') as f:
         f.write(text)
 
@@ -3664,6 +3678,9 @@ def _patch_z02(path):
     text = _stub_func(text, 'AddATo0F0E', 'c_add_a_to_0f0e')
     text = _stub_func(text, 'AddAToCFCE', 'c_add_a_to_cfce')
 
+    # --- Batch 37 ---
+    text = _stub_func(text, 'InitMode13_Sub3', 'c_init_mode13_sub3')
+
     with open(path, 'w', encoding='utf-8') as f:
         f.write(text)
 
@@ -3963,6 +3980,13 @@ def _patch_z04(path):
 
     # --- Carry-flag batch ---
     text = _stub_func(text, 'IsQuestSecretMismatch', 'c_is_quest_secret_mismatch')
+
+    # --- Batch 37 ---
+    text = _stub_func(text, 'PolsVoice_GetCollidingTile', 'c_pols_voice_get_colliding_tile')
+    text = _stub_func(text, 'Wizzrobe_GetBaseCollidableTile', 'c_wizzrobe_get_base_collidable_tile')
+    text = _stub_func(text, 'InitGleeokHead', 'c_init_gleeok_head')
+    text = _stub_func(text, 'Ganon_ActivateRoomItem', 'c_ganon_activate_room_item')
+    text = _stub_func(text, 'Shoot', 'c_shoot')
 
     # Export ROM data tables referenced by C code
     if 'xdef    PolsVoiceWalkSpeedsX' not in text and 'PolsVoiceWalkSpeedsX:' in text:
@@ -5190,6 +5214,13 @@ def _patch_z05(path):
     text = _stub_func(text, 'Link_ModifyDirInDoorway', 'c_link_modify_dir_in_doorway')
     text = _stub_func(text, 'UpdateMode11Death_SubC', 'c_update_mode11_death_sub_c')
     text = _stub_func(text, 'UpdateMode7Scroll_Sub6', 'c_update_mode7_scroll_sub6')
+
+    # --- Batch 37 ---
+    text = _stub_func(text, 'CueTransferPlayAreaAttrsHalfAndAdvanceSubmode', 'c_cue_transfer_play_area_attrs_half_and_advance_submode')
+    text = _stub_func(text, 'UpdateMode11Death_Sub2', 'c_update_mode11_death_sub2')
+    text = _stub_func(text, 'InitMode10', 'c_init_mode10')
+    text = _stub_func(text, 'SetupTileObjectOW', 'c_setup_tile_object_ow')
+    text = _stub_func(text, 'World_FillHearts', 'c_world_fill_hearts')
 
     with open(path, 'w', encoding='utf-8') as f:
         f.write(text)

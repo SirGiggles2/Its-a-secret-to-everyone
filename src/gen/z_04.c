@@ -324,3 +324,56 @@ unsigned int z04_is_quest_secret_mismatch(void) {
         return 0;
     return CARRY_SET;
 }
+
+extern unsigned char z07_get_collidable_tile(unsigned int hotspot_offset, unsigned int slot);
+extern unsigned char z07_get_collidable_tile_still(unsigned int slot);
+
+unsigned int z04_pols_voice_get_colliding_tile(unsigned int slot) {
+    z07_get_collidable_tile(0, slot);
+    unsigned char tile = RAM(0x049E + slot);
+    unsigned char threshold = RAM(0x034A);
+    RAM(0x041F + slot) = tile;
+    if (tile < threshold)
+        return CARRY_SET;
+    return (unsigned int)tile;
+}
+
+unsigned int z04_wizzrobe_get_base_collidable_tile(unsigned int slot) {
+    z07_get_collidable_tile_still(slot);
+    unsigned char tile = RAM(0x049E + slot);
+    unsigned char threshold = RAM(0x034A);
+    RAM(0x041F + slot) = tile;
+    if (tile < threshold)
+        return CARRY_SET;
+    return (unsigned int)tile;
+}
+
+extern unsigned char z01_get_room_flag_uw_item_state(void);
+
+void z04_init_gleeok_head(unsigned int slot) {
+    z04_init_blue_keese(slot);
+    RAM(0x04D1) = 0xE0;
+    RAM(0x041F + slot) = 0xBF;
+}
+
+void z04_ganon_activate_room_item(void) {
+    if (RAM(0x00BF) == 0)
+        return;
+    unsigned char item_state = z01_get_room_flag_uw_item_state();
+    if (item_state != 0)
+        return;
+    RAM(0x00BF) = 0;
+    RAM(0x0602) = 2;
+}
+
+unsigned int z04_shoot(void) {
+    unsigned char shot_slot = RAM(0x0059);
+    z07_set_type_and_clear_object(RAM(0x0000), shot_slot);
+    unsigned char thrower = RAM(0x0340);
+    RAM(0x00AC + shot_slot) = 16;
+    RAM(0x0028 + shot_slot) = 0;
+    RAM(0x0098 + shot_slot) = RAM(0x0098 + thrower);
+    RAM(0x0070 + shot_slot) = RAM(0x0070 + thrower);
+    RAM(0x0084 + shot_slot) = RAM(0x0084 + thrower);
+    return CARRY_SET;
+}

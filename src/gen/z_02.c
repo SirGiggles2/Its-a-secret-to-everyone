@@ -132,3 +132,12 @@ void z02_fetch_profile_name_address(void) {
     RAM(0x000C) = ProfileNameAddrsLo[idx];
     RAM(0x000D) = ProfileNameAddrsHi[idx];
 }
+
+extern void z01_silence_all_sound(void);
+
+void z02_init_mode13_sub3(void) {
+    if (RAM(0x0029) != 0)
+        return;
+    z01_silence_all_sound();
+    RAM(0x0013)++;
+}

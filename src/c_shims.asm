@@ -223,6 +223,23 @@
     xdef    c_get_collidable_tile
     xdef    c_get_collidable_tile_still
     xdef    c_get_colliding_tile_moving
+    xdef    c_play_boomerang_sfx
+    xdef    c_take_hearts_no_sound
+    xdef    c_do_objects_collide_with_thresholds
+    xdef    c_init_underworld_person_c
+    xdef    c_init_grumble_full
+    xdef    c_init_rupee_stash_full
+    xdef    c_init_mode13_sub3
+    xdef    c_pols_voice_get_colliding_tile
+    xdef    c_wizzrobe_get_base_collidable_tile
+    xdef    c_init_gleeok_head
+    xdef    c_ganon_activate_room_item
+    xdef    c_shoot
+    xdef    c_cue_transfer_play_area_attrs_half_and_advance_submode
+    xdef    c_update_mode11_death_sub2
+    xdef    c_init_mode10
+    xdef    c_setup_tile_object_ow
+    xdef    c_world_fill_hearts
 
     xref    c_move_object
     xref    z03_transfer_level_pattern_blocks
@@ -422,6 +439,23 @@
     xref    z07_get_collidable_tile
     xref    z07_get_collidable_tile_still
     xref    z07_get_colliding_tile_moving
+    xref    z01_play_boomerang_sfx
+    xref    z01_take_hearts_no_sound
+    xref    z01_do_objects_collide_with_thresholds
+    xref    z01_init_underworld_person_c
+    xref    z01_init_grumble_full
+    xref    z01_init_rupee_stash_full
+    xref    z02_init_mode13_sub3
+    xref    z04_pols_voice_get_colliding_tile
+    xref    z04_wizzrobe_get_base_collidable_tile
+    xref    z04_init_gleeok_head
+    xref    z04_ganon_activate_room_item
+    xref    z04_shoot
+    xref    z05_cue_transfer_play_area_attrs_half_and_advance_submode
+    xref    z05_update_mode11_death_sub2
+    xref    z05_init_mode10
+    xref    z05_setup_tile_object_ow
+    xref    z05_world_fill_hearts
 
 ;------------------------------------------------------------------------------
 ; _c_move_object_shim — MoveObject trampoline.
@@ -2117,4 +2151,147 @@ c_get_colliding_tile_moving:
     jsr     z07_get_colliding_tile_moving
     addq.l  #4,SP
     rts
+
+;==============================================================================
+; EXPORT side — batch 37.
+;==============================================================================
+
+; PlayBoomerangSfx — D3=sfx_id.
+c_play_boomerang_sfx:
+    moveq   #0,D0
+    move.b  D3,D0
+    move.l  D0,-(SP)
+    jsr     z01_play_boomerang_sfx
+    addq.l  #4,SP
+    rts
+
+; TakeHeartsNoSound — no args, void return.
+c_take_hearts_no_sound:
+    jmp     z01_take_hearts_no_sound
+
+; DoObjectsCollideWithThresholds — no explicit reg args (uses RAM temps).
+; Returns D0.b = collision result.
+c_do_objects_collide_with_thresholds:
+    jsr     z01_do_objects_collide_with_thresholds
+    rts
+
+; InitUnderworldPersonC — D2=slot.
+c_init_underworld_person_c:
+    moveq   #0,D0
+    move.w  D2,D0
+    move.l  D0,-(SP)
+    jsr     z01_init_underworld_person_c
+    addq.l  #4,SP
+    rts
+
+; InitGrumble_Full — D2=slot.
+c_init_grumble_full:
+    moveq   #0,D0
+    move.w  D2,D0
+    move.l  D0,-(SP)
+    jsr     z01_init_grumble_full
+    addq.l  #4,SP
+    rts
+
+; InitRupeeStash_Full — D2=slot.
+c_init_rupee_stash_full:
+    moveq   #0,D0
+    move.w  D2,D0
+    move.l  D0,-(SP)
+    jsr     z01_init_rupee_stash_full
+    addq.l  #4,SP
+    rts
+
+; InitMode13_Sub3 — no args, void return.
+c_init_mode13_sub3:
+    jmp     z02_init_mode13_sub3
+
+; PolsVoice_GetCollidingTile — D2=slot. Returns carry in bit 8.
+c_pols_voice_get_colliding_tile:
+    moveq   #0,D0
+    move.w  D2,D0
+    move.l  D0,-(SP)
+    jsr     z04_pols_voice_get_colliding_tile
+    addq.l  #4,SP
+    btst    #8,D0
+    beq.s   .cc_pvgct
+    ori     #$01,CCR
+    eori    #$01,CCR
+    rts
+.cc_pvgct:
+    andi    #$FE,CCR
+    eori    #$01,CCR
+    rts
+
+; Wizzrobe_GetBaseCollidableTile — D2=slot. Returns carry in bit 8.
+c_wizzrobe_get_base_collidable_tile:
+    moveq   #0,D0
+    move.w  D2,D0
+    move.l  D0,-(SP)
+    jsr     z04_wizzrobe_get_base_collidable_tile
+    addq.l  #4,SP
+    btst    #8,D0
+    beq.s   .cc_wgbct
+    ori     #$01,CCR
+    eori    #$01,CCR
+    rts
+.cc_wgbct:
+    andi    #$FE,CCR
+    eori    #$01,CCR
+    rts
+
+; InitGleeokHead — D2=slot.
+c_init_gleeok_head:
+    moveq   #0,D0
+    move.w  D2,D0
+    move.l  D0,-(SP)
+    jsr     z04_init_gleeok_head
+    addq.l  #4,SP
+    rts
+
+; Ganon_ActivateRoomItem — no args, void return.
+c_ganon_activate_room_item:
+    jmp     z04_ganon_activate_room_item
+
+; Shoot — no explicit reg args (reads RAM temps). Returns carry=1 always.
+c_shoot:
+    jsr     z04_shoot
+    btst    #8,D0
+    beq.s   .cc_shoot
+    ori     #$01,CCR
+    rts
+.cc_shoot:
+    andi    #$FE,CCR
+    rts
+
+; CueTransferPlayAreaAttrsHalfAndAdvanceSubmode — D2=ppu_hi, D0=ppu_lo, D3=end_off.
+c_cue_transfer_play_area_attrs_half_and_advance_submode:
+    moveq   #0,D1
+    move.b  D3,D1
+    move.l  D1,-(SP)
+    moveq   #0,D1
+    move.b  D0,D1
+    move.l  D1,-(SP)
+    moveq   #0,D1
+    move.b  D2,D1
+    move.l  D1,-(SP)
+    jsr     z05_cue_transfer_play_area_attrs_half_and_advance_submode
+    lea     12(SP),SP
+    rts
+
+; UpdateMode11Death_Sub2 — no args, void return.
+c_update_mode11_death_sub2:
+    jmp     z05_update_mode11_death_sub2
+
+; InitMode10 — no args, void return.
+c_init_mode10:
+    jmp     z05_init_mode10
+
+; SetupTileObjectOW — no args, void return.
+c_setup_tile_object_ow:
+    jmp     z05_setup_tile_object_ow
+
+; World_FillHearts — no args, void return.
+c_world_fill_hearts:
+    jmp     z05_world_fill_hearts
 

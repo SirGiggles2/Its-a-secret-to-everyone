@@ -502,3 +502,72 @@ void z05_update_mode7_scroll_sub6(void) {
     RAM(0x0013)++;
 }
 
+extern unsigned char z07_get_collidable_tile_still(unsigned int slot);
+extern unsigned char z01_compare_hearts_to_containers(void);
+extern unsigned char z01_reset_room_tile_obj_info(void);
+
+void z05_cue_transfer_play_area_attrs_half_and_advance_submode(
+        unsigned int ppu_hi, unsigned int ppu_lo, unsigned int end_off) {
+    z05_copy_play_area_attrs_half(ppu_hi, ppu_lo, end_off);
+    RAM(0x0013)++;
+}
+
+void z05_update_mode11_death_sub2(void) {
+    unsigned int result = z05_copy_next_row_advance_submode();
+    if (result & CARRY_SET) {
+        z05_write_and_enable_sprite0();
+    }
+    unsigned char val = RAM(0x0302);
+    val = (unsigned char)(val + 0x08);
+    RAM(0x0302) = val;
+}
+
+void z05_init_mode10(void) {
+    z07_get_collidable_tile_still(0);
+    if (RAM(0x049E) != 0x24)
+        goto done;
+    RAM(0x0619) = 0;
+    RAM(0x0603) = 8;
+    unsigned char y = (unsigned char)(RAM(0x0084) + 0x10);
+    RAM(0x0412) = y;
+done:
+    RAM(0x0011)++;
+}
+
+void z05_setup_tile_object_ow(void) {
+    unsigned char room = RAM(0x00EB);
+    unsigned char type;
+    if (room == 0x3F || room == 0x55) {
+        type = 97;
+    } else {
+        RAM(0x007B) = RAM(0x052C);
+        RAM(0x008F) = RAM(0x052D);
+        type = RAM(0x052B);
+    }
+    RAM(0x035A) = type;
+    z01_reset_room_tile_obj_info();
+    RAM(0x00B7) = 0;
+}
+
+void z05_world_fill_hearts(void) {
+    if (RAM(0x0063) == 0)
+        return;
+    RAM(0x0604) = 16;
+    unsigned char partial = RAM(0x0670);
+    if (partial >= 0xF8) {
+        RAM(0x0670) = 0;
+        unsigned char containers = z01_compare_hearts_to_containers();
+        unsigned char filled = RAM(0x0000);
+        if (containers == filled) {
+            RAM(0x0670)--;
+            RAM(0x052E) = 0;
+            RAM(0x0063) = 0;
+            RAM(0x00E0) = 0;
+            return;
+        }
+        RAM(0x066F)++;
+        return;
+    }
+    RAM(0x0670) = (unsigned char)(partial + 0x06);
+}
+

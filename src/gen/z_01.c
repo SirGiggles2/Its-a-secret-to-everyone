@@ -312,3 +312,92 @@ unsigned char z01_reset_cur_sprite_index(void) {
     RAM(0x0341) = 0;
     return 0;
 }
+
+void z01_play_boomerang_sfx(unsigned int sfx_id) {
+    if (RAM(0x003B) != 0)
+        return;
+    z01_play_effect(sfx_id);
+    RAM(0x003B) = 10;
+}
+
+void z01_take_hearts_no_sound(void) {
+    RAM(0x0001) = RAM(0x000A);
+    for (;;) {
+        unsigned char containers = z01_compare_hearts_to_containers();
+        unsigned char filled = RAM(0x0000);
+        if (containers == filled) {
+            unsigned char partial = RAM(0x0670);
+            partial++;
+            if (partial == 0)
+                return;
+            RAM(0x0670) = 0xFF;
+            return;
+        }
+        RAM(0x066F)++;
+        RAM(0x0001)--;
+        if ((signed char)RAM(0x0001) < 0)
+            return;
+    }
+}
+
+unsigned char z01_do_objects_collide_with_thresholds(void) {
+    RAM(0x0006) = 0;
+    unsigned char dx = (unsigned char)(RAM(0x0002) - RAM(0x0004));
+    unsigned char abs_dx = z01_abs(dx);
+    RAM(0x000A) = abs_dx;
+    if (abs_dx >= RAM(0x000D))
+        return RAM(0x0006);
+    unsigned char dy = (unsigned char)(RAM(0x0003) - RAM(0x0005));
+    unsigned char abs_dy = z01_abs(dy);
+    RAM(0x000B) = abs_dy;
+    if (abs_dy >= RAM(0x000E))
+        return RAM(0x0006);
+    RAM(0x0006)++;
+    return RAM(0x0006);
+}
+
+extern void z07_destroy_monster(unsigned int slot);
+extern const unsigned char UnderworldPersonTextSelectorsC[];
+
+void z01_init_underworld_person_c(unsigned int slot) {
+    z01_set_up_common_cave_objects(120, slot, 0x80);
+    z01_play_character_sfx();
+    unsigned char obj_type = RAM(0x034F + slot);
+    unsigned char idx = (unsigned char)(obj_type - 0x4B);
+    RAM(0x0415) = UnderworldPersonTextSelectorsC[idx];
+    if (obj_type != 0x4B)
+        return;
+    if (RAM(0x0671) != 0xFF)
+        return;
+    RAM(0x04CE) = 1;
+    RAM(0x00AC) = 0;
+    z07_destroy_monster(slot);
+}
+
+extern const unsigned char TextboxLineAddrsLo[];
+
+void z01_init_grumble_full(unsigned int slot) {
+    z01_set_up_common_cave_objects(120, slot, 0x80);
+    RAM(0x0415) = 36;
+    RAM(0x045F) = TextboxLineAddrsLo[2];
+    unsigned char item_state = z01_get_room_flag_uw_item_state();
+    if (item_state == 0) {
+        z01_play_character_sfx();
+        return;
+    }
+    RAM(0x00AC) = 0;
+    RAM(0x0350) = 0;
+}
+
+extern const unsigned char RupeeStashXs[];
+extern const unsigned char RupeeStashYs[];
+
+void z01_init_rupee_stash_full(unsigned int slot) {
+    RAM(0x0001) = RAM(0x04BF + slot);
+    RAM(0x0000) = 53;
+    for (unsigned char i = 10; i >= 1; i--) {
+        z01_init_one_simple_object(i);
+        RAM(0x0070 + i) = RupeeStashXs[i - 1];
+        RAM(0x0084 + i) = RupeeStashYs[i - 1];
+    }
+}
