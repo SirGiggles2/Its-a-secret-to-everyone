@@ -81,6 +81,17 @@ void z02_update_mode_d_save_sub2(void) {
     RAM(0x0013) = 1;
 }
 
+extern void z02_animate_demo_p1_end(void);
+
+void z02_animate_demo_p1_sub3(void) {
+    RAM(0x041A)++;
+    if (RAM(0x041A) == 0) {
+        RAM(0x042D)++;
+    } else {
+        z02_animate_demo_p1_end();
+    }
+}
+
 void z02_animate_demo_p1_end(void) {
     z07_hide_all_sprites();
     c_import_demo_animate_objects();

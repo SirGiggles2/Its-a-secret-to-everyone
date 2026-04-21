@@ -208,6 +208,23 @@ void z05_put_link_behind_background(void) {
 }
 
 extern void z05_reset_inv_obj_state(void);
+extern void z05_copy_row_to_tilebuf(void);
+extern void z05_copy_column_to_tilebuf(void);
+
+void z05_copy_column_or_row_to_tilebuf(void) {
+    unsigned char row = RAM(0x00E9);
+    if (row < 0x16) {
+        if (row == RAM(0x00ED))
+            return;
+        RAM(0x00ED) = row;
+        z05_copy_row_to_tilebuf();
+        return;
+    }
+    unsigned char col = RAM(0x00E8);
+    if (col == 0 || col >= 0x21)
+        return;
+    z05_copy_column_to_tilebuf();
+}
 
 void z05_init_mode_a_sub_a_go_to_mode4(void) {
     z05_reset_inv_obj_state();

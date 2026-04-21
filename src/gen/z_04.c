@@ -74,6 +74,18 @@ void z04_init_digdogger1(unsigned int slot) {
     RAM(0x0507) = 3;
 }
 
+void z04_manhandla_set_all_segments_direction(unsigned int val) {
+    for (signed char i = 4; i >= 0; i--)
+        RAM(0x0099 + (unsigned char)i) = (unsigned char)val;
+}
+
+unsigned int z04_extract_hit_point_value(unsigned int val) {
+    if (RAM(0x0000) & 1)
+        return (val << 4) & 0xFF;
+    else
+        return val & 0xF0;
+}
+
 void z04_reset_flyer_state(unsigned int slot) {
     RAM(0x0412 + slot) = 0;
     RAM(0x042C + slot) = 0;

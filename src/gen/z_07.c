@@ -104,3 +104,10 @@ void z07_anim_set_obj_hflip(unsigned int slot) {
     RAM(0x000F) = RAM(0x03E4 + slot);
 }
 
+unsigned int z07_walker_alt_dir_get_opposite(void) {
+    unsigned char dir = RAM(0x000F);
+    if (dir & 0x0A)
+        return dir >> 1;
+    return (dir << 1) & 0xFF;
+}
+

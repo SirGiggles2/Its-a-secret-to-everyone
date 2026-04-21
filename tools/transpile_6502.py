@@ -3598,6 +3598,9 @@ def _patch_z02(path):
     text = _stub_func(text, 'UpdateModeDSave_Sub2', 'c_update_mode_d_save_sub2')
     text = _stub_func(text, 'AnimateDemoPhase1End_AnimateObjects', 'c_animate_demo_p1_end')
 
+    # --- Stage 4b batch 19: z_02 C function stubs ---
+    text = _stub_func(text, 'AnimateDemoPhase1Subphase3', 'c_animate_demo_p1_sub3')
+
     with open(path, 'w', encoding='utf-8') as f:
         f.write(text)
 
@@ -3795,6 +3798,10 @@ def _patch_z04(path):
 
     # --- Stage 4b batch 17: ROM table tier ---
     text = _stub_func(text, 'InitDigdogger1', 'c_init_digdogger1')
+
+    # --- Stage 4b batch 19: z_04 C function stubs ---
+    text = _stub_func(text, 'Manhandla_SetAllSegmentsDirection', 'c_manhandla_set_all_segments_direction')
+    text = _stub_func(text, 'ExtractHitPointValue', 'c_extract_hit_point_value')
 
     with open(path, 'w', encoding='utf-8') as f:
         f.write(text)
@@ -4980,6 +4987,9 @@ def _patch_z05(path):
 
     # --- Stage 4b batch 18: z_05 C function stubs (with C→C calls) ---
     text = _stub_func(text, 'InitModeA_SubA_GoToMode4', 'c_init_mode_a_sub_a_go_to_mode4')
+
+    # --- Stage 4b batch 19: z_05 C function stubs ---
+    text = _stub_func(text, 'CopyColumnOrRowToTileBuf', 'c_copy_column_or_row_to_tilebuf')
 
     with open(path, 'w', encoding='utf-8') as f:
         f.write(text)
@@ -6317,6 +6327,9 @@ def _patch_z07(path):
     text = _stub_func(text, 'ResetObjMetastate', 'c_reset_obj_metastate')
     text = _stub_func(text, 'Anim_FetchObjPosForSpriteDescriptor', 'c_anim_fetch_obj_pos')
     text = _stub_func(text, 'Anim_SetObjHFlipForSpriteDescriptor', 'c_anim_set_obj_hflip')
+
+    # --- Stage 4b batch 19: z_07 C function stubs ---
+    text = _stub_func(text, 'Walker_AltDir_GetMovingOppositeDir', 'c_walker_alt_dir_get_opposite')
 
     with open(path, 'w', encoding='utf-8') as f:
         f.write(text)

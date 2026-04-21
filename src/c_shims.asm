@@ -117,6 +117,11 @@
     xdef    c_animate_demo_p1_end
     xdef    c_import_sram_commit
     xdef    c_import_demo_animate_objects
+    xdef    c_animate_demo_p1_sub3
+    xdef    c_manhandla_set_all_segments_direction
+    xdef    c_extract_hit_point_value
+    xdef    c_copy_column_or_row_to_tilebuf
+    xdef    c_walker_alt_dir_get_opposite
 
     xref    c_move_object
     xref    z03_transfer_level_pattern_blocks
@@ -210,6 +215,11 @@
     xref    z05_init_mode_a_sub_a_go_to_mode4
     xref    z02_update_mode_d_save_sub2
     xref    z02_animate_demo_p1_end
+    xref    z02_animate_demo_p1_sub3
+    xref    z04_manhandla_set_all_segments_direction
+    xref    z04_extract_hit_point_value
+    xref    z05_copy_column_or_row_to_tilebuf
+    xref    z07_walker_alt_dir_get_opposite
 
 ;------------------------------------------------------------------------------
 ; _c_move_object_shim — MoveObject trampoline.
@@ -975,4 +985,39 @@ c_import_sram_commit:
 ; Demo_AnimateObjects — void→void (z_02.asm).
 c_import_demo_animate_objects:
     jmp     Demo_AnimateObjects
+
+;==============================================================================
+; EXPORT side — batch 19.
+;==============================================================================
+
+; AnimateDemoPhase1Subphase3 — void→void.
+c_animate_demo_p1_sub3:
+    jmp     z02_animate_demo_p1_sub3
+
+; Manhandla_SetAllSegmentsDirection — D0=val.
+c_manhandla_set_all_segments_direction:
+    moveq   #0,D1
+    move.b  D0,D1
+    move.l  D1,-(SP)
+    jsr     z04_manhandla_set_all_segments_direction
+    addq.l  #4,SP
+    rts
+
+; ExtractHitPointValue — D0=val, returns D0.
+c_extract_hit_point_value:
+    moveq   #0,D1
+    move.b  D0,D1
+    move.l  D1,-(SP)
+    jsr     z04_extract_hit_point_value
+    addq.l  #4,SP
+    rts
+
+; CopyColumnOrRowToTileBuf — void→void.
+c_copy_column_or_row_to_tilebuf:
+    jmp     z05_copy_column_or_row_to_tilebuf
+
+; Walker_AltDir_GetMovingOppositeDir — void→D0 return.
+c_walker_alt_dir_get_opposite:
+    jsr     z07_walker_alt_dir_get_opposite
+    rts
 
