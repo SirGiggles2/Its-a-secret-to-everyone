@@ -113,3 +113,10 @@ void z01_anim_set_sprite_desc_attrs(unsigned int val) {
     RAM(0x0004) = (unsigned char)val;
     RAM(0x0005) = (unsigned char)val;
 }
+
+void z01_map_screen_pos_to_ppu_addr(void) {
+    unsigned char y = RAM(0x0002);
+    unsigned char x = RAM(0x0003);
+    RAM(0x0000) = 0x20 | (y >> 6);
+    RAM(0x0001) = ((y << 2) & 0xE0) | (x >> 3);
+}

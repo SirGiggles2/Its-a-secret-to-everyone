@@ -2541,6 +2541,9 @@ def _patch_z01(path):
     text = _stub_func(text, 'SetUpWhirlwind', 'c_set_up_whirlwind')
     text = _stub_func(text, 'Anim_SetSpriteDescriptorAttributes', 'c_anim_set_sprite_desc_attrs')
 
+    # --- Stage 4b batch 18: z_01 C function stubs ---
+    text = _stub_func(text, 'MapScreenPosToPpuAddr', 'c_map_screen_pos_to_ppu_addr')
+
     with open(path, 'w', encoding='utf-8') as f:
         f.write(text)
 
@@ -3590,6 +3593,10 @@ def _patch_z02(path):
             text = xdef_block_z02 + text
             print("  _patch_z02: exported ProfileNameAddrsLo, ProfileNameAddrsHi")
     text = _stub_func(text, 'FetchProfileNameAddress', 'c_fetch_profile_name_address')
+
+    # --- Stage 4b batch 18: z_02 C function stubs (with import shims) ---
+    text = _stub_func(text, 'UpdateModeDSave_Sub2', 'c_update_mode_d_save_sub2')
+    text = _stub_func(text, 'AnimateDemoPhase1End_AnimateObjects', 'c_animate_demo_p1_end')
 
     with open(path, 'w', encoding='utf-8') as f:
         f.write(text)
@@ -4970,6 +4977,9 @@ def _patch_z05(path):
     text = _stub_func(text, 'L1688C_IncSubmode', 'c_inc_submode')
     text = _stub_func(text, 'L1701A_Exit', 'c_inc_submode')
     text = _stub_func(text, 'InitModeSubroom_AdvanceSubmode', 'c_inc_submode')
+
+    # --- Stage 4b batch 18: z_05 C function stubs (with C→C calls) ---
+    text = _stub_func(text, 'InitModeA_SubA_GoToMode4', 'c_init_mode_a_sub_a_go_to_mode4')
 
     with open(path, 'w', encoding='utf-8') as f:
         f.write(text)

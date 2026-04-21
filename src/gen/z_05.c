@@ -207,6 +207,14 @@ void z05_put_link_behind_background(void) {
     RAM(0x024E) |= 0x20;
 }
 
+extern void z05_reset_inv_obj_state(void);
+
+void z05_init_mode_a_sub_a_go_to_mode4(void) {
+    z05_reset_inv_obj_state();
+    RAM(0x0013) = 0;
+    RAM(0x0012) = 4;
+}
+
 void z05_reset_inv_obj_state(void) {
     RAM(0x0064) = 0;
     for (signed char i = 5; i >= 0; i--)

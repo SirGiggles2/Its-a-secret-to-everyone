@@ -7,6 +7,10 @@
 extern const unsigned char ProfileNameAddrsLo[];
 extern const unsigned char ProfileNameAddrsHi[];
 
+extern void c_import_sram_commit(void);
+extern void c_import_demo_animate_objects(void);
+extern void z07_hide_all_sprites(void);
+
 void z02_animate_demo_phase1_sub0(void) {
     if (RAM(0x0015) & 0x01) {
         RAM(0x00FC)++;
@@ -69,6 +73,17 @@ void z02_mode_e_set_name_cursor_sprite_x(void) {
 
 void z02_inc_subphase(void) {
     RAM(0x042D)++;
+}
+
+void z02_update_mode_d_save_sub2(void) {
+    c_import_sram_commit();
+    RAM(0x0012) = 0;
+    RAM(0x0013) = 1;
+}
+
+void z02_animate_demo_p1_end(void) {
+    z07_hide_all_sprites();
+    c_import_demo_animate_objects();
 }
 
 void z02_fetch_profile_name_address(void) {

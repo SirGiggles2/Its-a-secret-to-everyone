@@ -109,6 +109,14 @@
     xdef    c_anim_set_sprite_desc_attrs
     xdef    c_init_tektite
     xdef    c_ganon_randomize_location
+    xdef    c_init_digdogger1
+    xdef    c_fetch_profile_name_address
+    xdef    c_map_screen_pos_to_ppu_addr
+    xdef    c_init_mode_a_sub_a_go_to_mode4
+    xdef    c_update_mode_d_save_sub2
+    xdef    c_animate_demo_p1_end
+    xdef    c_import_sram_commit
+    xdef    c_import_demo_animate_objects
 
     xref    c_move_object
     xref    z03_transfer_level_pattern_blocks
@@ -196,6 +204,12 @@
     xref    z01_anim_set_sprite_desc_attrs
     xref    z04_init_tektite
     xref    z04_ganon_randomize_location
+    xref    z04_init_digdogger1
+    xref    z02_fetch_profile_name_address
+    xref    z01_map_screen_pos_to_ppu_addr
+    xref    z05_init_mode_a_sub_a_go_to_mode4
+    xref    z02_update_mode_d_save_sub2
+    xref    z02_animate_demo_p1_end
 
 ;------------------------------------------------------------------------------
 ; _c_move_object_shim — MoveObject trampoline.
@@ -929,4 +943,36 @@ c_anim_set_sprite_desc_attrs:
     jsr     z01_anim_set_sprite_desc_attrs
     addq.l  #4,SP
     rts
+
+;==============================================================================
+; EXPORT side — batch 18.
+;==============================================================================
+
+; MapScreenPosToPpuAddr — void→void.
+c_map_screen_pos_to_ppu_addr:
+    jmp     z01_map_screen_pos_to_ppu_addr
+
+; InitModeA_SubA_GoToMode4 — void→void.
+c_init_mode_a_sub_a_go_to_mode4:
+    jmp     z05_init_mode_a_sub_a_go_to_mode4
+
+; UpdateModeDSave_Sub2 — void→void.
+c_update_mode_d_save_sub2:
+    jmp     z02_update_mode_d_save_sub2
+
+; AnimateDemoPhase1End_AnimateObjects — void→void.
+c_animate_demo_p1_end:
+    jmp     z02_animate_demo_p1_end
+
+;==============================================================================
+; IMPORT side — batch 18 (C calls ASM).
+;==============================================================================
+
+; _sram_commit_save_slots — void→void (nes_io.asm).
+c_import_sram_commit:
+    jmp     _sram_commit_save_slots
+
+; Demo_AnimateObjects — void→void (z_02.asm).
+c_import_demo_animate_objects:
+    jmp     Demo_AnimateObjects
 
