@@ -386,3 +386,8 @@ void z05_touch_door_wall(void) {
     RAM(0x000E) = 0xFF;
 }
 
+void z05_select_transfer_buf_and_inc_state(unsigned int val) {
+    RAM(0x0014) = (unsigned char)val;
+    RAM(0x00E1)++;
+}
+

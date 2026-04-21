@@ -193,3 +193,24 @@ void z07_go_to_next_mode_reset_grid_offset(void) {
     RAM(0x0394) = 0;
 }
 
+extern unsigned int z01_get_opposite_dir(unsigned int dir);
+
+void z07_reverse_obj_dir(unsigned int slot) {
+    unsigned char dir = RAM(0x0098 + slot);
+    unsigned char new_dir = (unsigned char)z01_get_opposite_dir(dir);
+    RAM(0x0098 + slot) = new_dir;
+    RAM(0x000F) = new_dir;
+}
+
+extern const unsigned char SaveSlotToPaletteRowOffset[];
+extern const unsigned char MenuPalettesTransferBuf[];
+
+void z07_patch_and_cue_level_palettes_transfer(void) {
+    unsigned char slot = RAM(0x0016);
+    unsigned char row_off = SaveSlotToPaletteRowOffset[slot];
+    unsigned char color = MenuPalettesTransferBuf[20 + row_off];
+    nes_ram[0x6000u + 0x0B92] = color;
+    RAM(0x0014) = 24;
+    RAM(0x0013)++;
+}
+

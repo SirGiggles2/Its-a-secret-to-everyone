@@ -197,3 +197,38 @@ void z04_destroy_counted_monster_shot(unsigned int slot) {
     RAM(0x034C)--;
     z07_destroy_monster(slot);
 }
+
+void z04_ganon_get_cur_cloud_bottom(unsigned int slot) {
+    unsigned char y = RAM(0x0084 + slot);
+    unsigned char dist = RAM(0x0478 + slot);
+    RAM(0x0001) = (unsigned char)(y + dist);
+}
+
+void z04_ganon_get_cur_cloud_right(unsigned int slot) {
+    unsigned char x = RAM(0x0070 + slot);
+    unsigned char dist = RAM(0x0478 + slot);
+    RAM(0x0000) = (unsigned char)(x + dist);
+}
+
+extern const unsigned char PolsVoiceWalkSpeedsX[];
+
+void z04_pols_voice_move_x(unsigned int slot) {
+    unsigned char dir_idx = RAM(0x0098 + slot) - 1;
+    unsigned char pos = RAM(0x0070 + slot);
+    unsigned char speed = PolsVoiceWalkSpeedsX[dir_idx];
+    RAM(0x0070 + slot) = (unsigned char)(pos + speed);
+}
+
+void z04_init_blue_keese(unsigned int slot) {
+    unsigned char rnd = RAM(0x0018 + slot) & 0x07;
+    unsigned char dir = Directions8[rnd];
+    RAM(0x0098 + slot) = dir;
+    z04_reset_flyer_state(slot);
+    RAM(0x04D1) = 0xC0;
+    RAM(0x041F + slot) = 31;
+}
+
+void z04_init_red_or_black_keese(unsigned int slot) {
+    z04_init_blue_keese(slot);
+    RAM(0x041F + slot) = 127;
+}

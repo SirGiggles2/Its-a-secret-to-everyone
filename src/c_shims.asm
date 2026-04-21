@@ -186,6 +186,14 @@
     xdef    c_destroy_monster_shot
     xdef    c_destroy_counted_monster_shot
     xdef    c_play_parry_tune
+    xdef    c_reverse_obj_dir
+    xdef    c_patch_and_cue_level_palettes_transfer
+    xdef    c_ganon_get_cur_cloud_bottom
+    xdef    c_ganon_get_cur_cloud_right
+    xdef    c_pols_voice_move_x
+    xdef    c_init_blue_keese
+    xdef    c_init_red_or_black_keese
+    xdef    c_select_transfer_buf_and_inc_state
 
     xref    c_move_object
     xref    z03_transfer_level_pattern_blocks
@@ -348,6 +356,14 @@
     xref    z04_destroy_monster_shot
     xref    z04_destroy_counted_monster_shot
     xref    z01_play_parry_tune
+    xref    z07_reverse_obj_dir
+    xref    z07_patch_and_cue_level_palettes_transfer
+    xref    z04_ganon_get_cur_cloud_bottom
+    xref    z04_ganon_get_cur_cloud_right
+    xref    z04_pols_voice_move_x
+    xref    z04_init_blue_keese
+    xref    z04_init_red_or_black_keese
+    xref    z05_select_transfer_buf_and_inc_state
 
 ;------------------------------------------------------------------------------
 ; _c_move_object_shim — MoveObject trampoline.
@@ -1706,5 +1722,74 @@ c_destroy_counted_monster_shot:
 ; PlayParryTune — no args, leaf.
 c_play_parry_tune:
     jsr     z01_play_parry_tune
+    rts
+
+; --- batch 30 ---
+
+; ReverseObjDir — D2=slot.
+c_reverse_obj_dir:
+    moveq   #0,D0
+    move.w  D2,D0
+    move.l  D0,-(SP)
+    jsr     z07_reverse_obj_dir
+    addq.l  #4,SP
+    rts
+
+; PatchAndCueLevelPalettesTransferAndAdvanceSubmode — no args.
+c_patch_and_cue_level_palettes_transfer:
+    jsr     z07_patch_and_cue_level_palettes_transfer
+    rts
+
+; Ganon_GetCurCloudBottom — D2=slot.
+c_ganon_get_cur_cloud_bottom:
+    moveq   #0,D0
+    move.w  D2,D0
+    move.l  D0,-(SP)
+    jsr     z04_ganon_get_cur_cloud_bottom
+    addq.l  #4,SP
+    rts
+
+; Ganon_GetCurCloudRight — D2=slot.
+c_ganon_get_cur_cloud_right:
+    moveq   #0,D0
+    move.w  D2,D0
+    move.l  D0,-(SP)
+    jsr     z04_ganon_get_cur_cloud_right
+    addq.l  #4,SP
+    rts
+
+; PolsVoice_MoveX — D2=slot.
+c_pols_voice_move_x:
+    moveq   #0,D0
+    move.w  D2,D0
+    move.l  D0,-(SP)
+    jsr     z04_pols_voice_move_x
+    addq.l  #4,SP
+    rts
+
+; InitBlueKeese — D2=slot.
+c_init_blue_keese:
+    moveq   #0,D0
+    move.w  D2,D0
+    move.l  D0,-(SP)
+    jsr     z04_init_blue_keese
+    addq.l  #4,SP
+    rts
+
+; InitRedOrBlackKeese — D2=slot.
+c_init_red_or_black_keese:
+    moveq   #0,D0
+    move.w  D2,D0
+    move.l  D0,-(SP)
+    jsr     z04_init_red_or_black_keese
+    addq.l  #4,SP
+    rts
+
+; SelectTransferBufAndIncState — D0=val.
+c_select_transfer_buf_and_inc_state:
+    andi.l  #$FF,D0
+    move.l  D0,-(SP)
+    jsr     z05_select_transfer_buf_and_inc_state
+    addq.l  #4,SP
     rts
 

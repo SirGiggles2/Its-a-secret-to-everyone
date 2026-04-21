@@ -3923,6 +3923,18 @@ def _patch_z04(path):
     text = _stub_func(text, 'DestroyMonsterShot', 'c_destroy_monster_shot')
     text = _stub_func(text, 'DestroyCountedMonsterShot', 'c_destroy_counted_monster_shot')
 
+    # --- Stage 4b batch 30 ---
+    text = _stub_func(text, 'Ganon_GetCurCloudBottom', 'c_ganon_get_cur_cloud_bottom')
+    text = _stub_func(text, 'Ganon_GetCurCloudRight', 'c_ganon_get_cur_cloud_right')
+    text = _stub_func(text, 'PolsVoice_MoveX', 'c_pols_voice_move_x')
+    text = _stub_func(text, 'InitBlueKeese', 'c_init_blue_keese')
+    text = _stub_func(text, 'InitRedOrBlackKeese', 'c_init_red_or_black_keese')
+
+    # Export ROM data tables referenced by C code
+    if 'xdef    PolsVoiceWalkSpeedsX' not in text and 'PolsVoiceWalkSpeedsX:' in text:
+        text = "\n    xdef    PolsVoiceWalkSpeedsX\n" + text
+        print("  _patch_z04: exported PolsVoiceWalkSpeedsX")
+
     with open(path, 'w', encoding='utf-8') as f:
         f.write(text)
 
@@ -5123,6 +5135,9 @@ def _patch_z05(path):
     # --- Stage 4b batch 28 ---
     text = _stub_func(text, 'SelectTransferBuf', 'c_select_transfer_buf')
     text = _stub_func(text, 'TouchDoorWall', 'c_touch_door_wall')
+
+    # --- Stage 4b batch 30 ---
+    text = _stub_func(text, 'SelectTransferBufAndIncState', 'c_select_transfer_buf_and_inc_state')
 
     with open(path, 'w', encoding='utf-8') as f:
         f.write(text)
@@ -6492,6 +6507,15 @@ def _patch_z07(path):
     # --- Stage 4b batch 29 ---
     text = _stub_func(text, 'GoToNextModePlayLevelSong', 'c_go_to_next_mode_play_level_song')
     text = _stub_func(text, 'GoToNextModeResetGridOffset', 'c_go_to_next_mode_reset_grid_offset')
+
+    # --- Stage 4b batch 30 ---
+    text = _stub_func(text, 'ReverseObjDir', 'c_reverse_obj_dir')
+    text = _stub_func(text, 'PatchAndCueLevelPalettesTransferAndAdvanceSubmode', 'c_patch_and_cue_level_palettes_transfer')
+
+    # Export ROM data tables referenced by C code
+    if 'xdef    SaveSlotToPaletteRowOffset' not in text and 'SaveSlotToPaletteRowOffset:' in text:
+        text = "\n    xdef    SaveSlotToPaletteRowOffset\n" + text
+        print("  _patch_z07: exported SaveSlotToPaletteRowOffset")
 
     with open(path, 'w', encoding='utf-8') as f:
         f.write(text)
