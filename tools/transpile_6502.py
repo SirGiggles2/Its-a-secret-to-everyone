@@ -6564,10 +6564,20 @@ def _patch_z07(path):
     text = _stub_func(text, 'ReverseObjDir', 'c_reverse_obj_dir')
     text = _stub_func(text, 'PatchAndCueLevelPalettesTransferAndAdvanceSubmode', 'c_patch_and_cue_level_palettes_transfer')
 
+    # --- Batch 36: GetCollidableTile family ---
+    text = _stub_func(text, 'GetCollidableTile', 'c_get_collidable_tile')
+    text = _stub_func(text, 'GetCollidableTileStill', 'c_get_collidable_tile_still')
+    text = _stub_func(text, 'GetCollidingTileMoving', 'c_get_colliding_tile_moving')
+
     # Export ROM data tables referenced by C code
     if 'xdef    SaveSlotToPaletteRowOffset' not in text and 'SaveSlotToPaletteRowOffset:' in text:
         text = "\n    xdef    SaveSlotToPaletteRowOffset\n" + text
         print("  _patch_z07: exported SaveSlotToPaletteRowOffset")
+
+    for tbl in ['PlayAreaColumnAddrs', 'WalkableTiles']:
+        if f'xdef    {tbl}' not in text and f'{tbl}:' in text:
+            text = f"\n    xdef    {tbl}\n" + text
+            print(f"  _patch_z07: exported {tbl}")
 
     with open(path, 'w', encoding='utf-8') as f:
         f.write(text)

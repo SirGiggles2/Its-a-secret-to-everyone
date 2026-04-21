@@ -220,6 +220,9 @@
     xdef    c_link_modify_dir_in_doorway
     xdef    c_update_mode11_death_sub_c
     xdef    c_update_mode7_scroll_sub6
+    xdef    c_get_collidable_tile
+    xdef    c_get_collidable_tile_still
+    xdef    c_get_colliding_tile_moving
 
     xref    c_move_object
     xref    z03_transfer_level_pattern_blocks
@@ -416,6 +419,9 @@
     xref    z05_link_modify_dir_in_doorway
     xref    z05_update_mode11_death_sub_c
     xref    z05_update_mode7_scroll_sub6
+    xref    z07_get_collidable_tile
+    xref    z07_get_collidable_tile_still
+    xref    z07_get_colliding_tile_moving
 
 ;------------------------------------------------------------------------------
 ; _c_move_object_shim — MoveObject trampoline.
@@ -2076,5 +2082,39 @@ c_update_mode11_death_sub_c:
 ; UpdateMode7Scroll_Sub6 — no args.
 c_update_mode7_scroll_sub6:
     jsr     z05_update_mode7_scroll_sub6
+    rts
+
+;==============================================================================
+; EXPORT side — batch 36: GetCollidableTile family.
+;==============================================================================
+
+; GetCollidableTile — D3=hotspot_offset, D2=slot. Returns D0.b=tile.
+c_get_collidable_tile:
+    moveq   #0,D0
+    move.w  D2,D0
+    move.l  D0,-(SP)
+    moveq   #0,D0
+    move.b  D3,D0
+    move.l  D0,-(SP)
+    jsr     z07_get_collidable_tile
+    addq.l  #8,SP
+    rts
+
+; GetCollidableTileStill — D2=slot. Returns D0.b=tile.
+c_get_collidable_tile_still:
+    moveq   #0,D0
+    move.w  D2,D0
+    move.l  D0,-(SP)
+    jsr     z07_get_collidable_tile_still
+    addq.l  #4,SP
+    rts
+
+; GetCollidingTileMoving — D2=slot. Returns D0.b=tile.
+c_get_colliding_tile_moving:
+    moveq   #0,D0
+    move.w  D2,D0
+    move.l  D0,-(SP)
+    jsr     z07_get_colliding_tile_moving
+    addq.l  #4,SP
     rts
 
