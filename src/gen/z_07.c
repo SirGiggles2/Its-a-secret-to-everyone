@@ -27,8 +27,9 @@ void z07_reset_player_state(void) {
     RAM(0x066C) = 0;
 }
 
-void z07_reset_moving_dir(void) {
+unsigned char z07_reset_moving_dir(void) {
     RAM(0x000F) = 0;
+    return 0;
 }
 
 void z07_ensure_object_aligned(unsigned int slot) {
@@ -55,8 +56,9 @@ void z07_mark_room_visited(void) {
     nes_ram[ptr + room_id] = flags;
 }
 
-void z07_reset_obj_state(unsigned int slot) {
+unsigned char z07_reset_obj_state(unsigned int slot) {
     RAM(0x00AC + slot) = 0;
+    return 0;
 }
 
 void z07_set_shot_spreading_state(unsigned int slot) {
@@ -80,9 +82,10 @@ void z07_update_dead_dummy(unsigned int slot) {
     RAM(0x0405 + slot) = 16;
 }
 
-void z07_end_game_mode(void) {
+unsigned char z07_end_game_mode(void) {
     RAM(0x0011) = 0;
     RAM(0x0013) = 0;
+    return 0;
 }
 
 void z07_set_shove_info_with0(unsigned int val, unsigned int slot) {
@@ -94,10 +97,11 @@ void z07_reset_obj_metastate(unsigned int slot) {
     RAM(0x0405 + slot) = 0;
 }
 
-void z07_anim_fetch_obj_pos(unsigned int slot) {
+unsigned char z07_anim_fetch_obj_pos(unsigned int slot) {
     RAM(0x0000) = RAM(0x0070 + slot);
     RAM(0x0001) = RAM(0x0084 + slot);
     RAM(0x000F) = 0;
+    return 0;
 }
 
 void z07_anim_set_obj_hflip(unsigned int slot) {

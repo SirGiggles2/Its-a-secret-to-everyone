@@ -10,10 +10,11 @@ void z01_play_character_sfx(void) {
     RAM(0x0602) = 8;
 }
 
-void z01_reset_room_tile_obj_info(void) {
+unsigned char z01_reset_room_tile_obj_info(void) {
     RAM(0x052B) = 0;
     RAM(0x052C) = 0;
     RAM(0x052D) = 0;
+    return 0;
 }
 
 void z01_play_key_taken_tune(void) {
@@ -27,11 +28,12 @@ void z01_take_power_triforce(void) {
     RAM(0x00AC) = 64;
 }
 
-void z01_silence_all_sound(void) {
+unsigned char z01_silence_all_sound(void) {
     RAM(0x0604) = 0x80;
     RAM(0x0603) = 0x80;
     RAM(0x0605) = 0;
     RAM(0x0607) = 0;
+    return 0;
 }
 
 void z01_post_debit(unsigned int amount) {
@@ -111,34 +113,38 @@ void z01_set_up_common_cave_objects(unsigned int x, unsigned int slot, unsigned 
     RAM(0x0086 + slot) = y;
 }
 
-void z01_anim_set_sprite_desc_attrs(unsigned int val) {
+unsigned char z01_anim_set_sprite_desc_attrs(unsigned int val) {
     RAM(0x0004) = (unsigned char)val;
     RAM(0x0005) = (unsigned char)val;
+    return (unsigned char)val;
 }
 
 void z01_post_credit(unsigned int val) {
     RAM(0x067D) = (unsigned char)(RAM(0x067D) + val);
 }
 
-void z01_add_to_int16_at_0(unsigned int val) {
+unsigned char z01_add_to_int16_at_0(unsigned int val) {
     unsigned int sum = (unsigned char)val + RAM(0x0000);
     RAM(0x0000) = (unsigned char)sum;
     if (sum > 0xFF)
         RAM(0x0001)++;
+    return (unsigned char)sum;
 }
 
-void z01_add_to_int16_at_2(unsigned int val) {
+unsigned char z01_add_to_int16_at_2(unsigned int val) {
     unsigned int sum = (unsigned char)val + RAM(0x0002);
     RAM(0x0002) = (unsigned char)sum;
     if (sum > 0xFF)
         RAM(0x0003)++;
+    return (unsigned char)sum;
 }
 
-void z01_add_to_int16_at_4(unsigned int val) {
+unsigned char z01_add_to_int16_at_4(unsigned int val) {
     unsigned int sum = (unsigned char)val + RAM(0x0004);
     RAM(0x0004) = (unsigned char)sum;
     if (sum > 0xFF)
         RAM(0x0005)++;
+    return (unsigned char)sum;
 }
 
 void z01_map_screen_pos_to_ppu_addr(void) {
@@ -182,12 +188,12 @@ void z01_init_whirlwind(unsigned int val, unsigned int slot) {
     z01_set_up_whirlwind(slot);
 }
 
-void z01_add1_to_int16_at_2(void) {
-    z01_add_to_int16_at_2(1);
+unsigned char z01_add1_to_int16_at_2(void) {
+    return z01_add_to_int16_at_2(1);
 }
 
-void z01_add1_to_int16_at_4(void) {
-    z01_add_to_int16_at_4(1);
+unsigned char z01_add1_to_int16_at_4(void) {
+    return z01_add_to_int16_at_4(1);
 }
 
 void z01_cue_transfer_blank_person_wares(void) {
