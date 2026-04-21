@@ -2574,6 +2574,10 @@ def _patch_z01(path):
     text = _stub_func(text, 'Abs', 'c_abs')
     text = _stub_func(text, 'Negate', 'c_negate')
 
+    # --- Stage 4b batch 27 ---
+    text = _stub_func(text, 'SetRoomFlagUWItemState', 'c_set_room_flag_uw_item_state')
+    text = _stub_func(text, 'GetRoomFlagUWItemState', 'c_get_room_flag_uw_item_state')
+
     with open(path, 'w', encoding='utf-8') as f:
         f.write(text)
 
@@ -3900,6 +3904,9 @@ def _patch_z04(path):
     text = _stub_func(text, 'InitMonsterShot', 'c_init_monster_shot')
     text = _stub_func(text, 'InitBoulder', 'c_init_boulder')
     text = _stub_func(text, 'InitBoulderSet', 'c_init_boulder_set')
+
+    # --- Stage 4b batch 27 ---
+    text = _stub_func(text, 'PlayBossHitCryIfNeeded', 'c_play_boss_hit_cry_if_needed')
 
     with open(path, 'w', encoding='utf-8') as f:
         f.write(text)
@@ -6450,6 +6457,13 @@ def _patch_z07(path):
     text = _stub_func(text, 'Walker_AltDir_EndLoop', 'c_walker_alt_dir_end_loop')
     text = _stub_func(text, 'ResetShoveInfo', 'c_reset_shove_info')
     text = _stub_func(text, 'GoToNextMode', 'c_go_to_next_mode')
+
+    # --- Stage 4b batch 27 ---
+    text = _stub_func(text, 'FindEmptyMonsterSlot', 'c_find_empty_monster_slot')
+    text = _stub_func(text, 'DestroyMonster', 'c_destroy_monster')
+    text = _stub_func(text, 'SetTypeAndClearObject', 'c_set_type_and_clear_object')
+    text = _stub_func(text, 'InitTileObjOrItem', 'c_init_tile_obj_or_item')
+    text = _stub_func(text, 'Anim_AdvanceAnimCounterAndSetObjPosForSpriteDescriptor', 'c_anim_advance_and_fetch')
 
     with open(path, 'w', encoding='utf-8') as f:
         f.write(text)

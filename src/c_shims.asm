@@ -167,6 +167,14 @@
     xdef    c_get_opposite_dir
     xdef    c_abs
     xdef    c_negate
+    xdef    c_find_empty_monster_slot
+    xdef    c_destroy_monster
+    xdef    c_set_type_and_clear_object
+    xdef    c_init_tile_obj_or_item
+    xdef    c_anim_advance_and_fetch
+    xdef    c_set_room_flag_uw_item_state
+    xdef    c_get_room_flag_uw_item_state
+    xdef    c_play_boss_hit_cry_if_needed
 
     xref    c_move_object
     xref    z03_transfer_level_pattern_blocks
@@ -310,6 +318,14 @@
     xref    z01_get_opposite_dir
     xref    z01_abs
     xref    z01_negate
+    xref    z07_find_empty_monster_slot
+    xref    z07_destroy_monster
+    xref    z07_set_type_and_clear_object
+    xref    z07_init_tile_obj_or_item
+    xref    z07_anim_advance_and_fetch
+    xref    z01_set_room_flag_uw_item_state
+    xref    z01_get_room_flag_uw_item_state
+    xref    z04_play_boss_hit_cry_if_needed
 
 ;------------------------------------------------------------------------------
 ; _c_move_object_shim — MoveObject trampoline.
@@ -1502,6 +1518,77 @@ c_negate:
     move.b  D0,D1
     move.l  D1,-(SP)
     jsr     z01_negate
+    addq.l  #4,SP
+    rts
+
+;==============================================================================
+; EXPORT side — batch 27.
+;==============================================================================
+
+; FindEmptyMonsterSlot — no args. Returns D3=slot (or 0), Z flag set if not found.
+c_find_empty_monster_slot:
+    jsr     z07_find_empty_monster_slot
+    move.b  D0,D3
+    rts
+
+; DestroyMonster — D2=slot. Sets type to 0, clears object.
+c_destroy_monster:
+    moveq   #0,D0
+    move.w  D2,D0
+    move.l  D0,-(SP)
+    jsr     z07_destroy_monster
+    addq.l  #4,SP
+    rts
+
+; SetTypeAndClearObject — D0=type, D2=slot.
+c_set_type_and_clear_object:
+    moveq   #0,D1
+    move.w  D2,D1
+    move.l  D1,-(SP)
+    moveq   #0,D1
+    move.b  D0,D1
+    move.l  D1,-(SP)
+    jsr     z07_set_type_and_clear_object
+    addq.l  #8,SP
+    rts
+
+; InitTileObjOrItem — D2=slot.
+c_init_tile_obj_or_item:
+    moveq   #0,D0
+    move.w  D2,D0
+    move.l  D0,-(SP)
+    jsr     z07_init_tile_obj_or_item
+    addq.l  #4,SP
+    rts
+
+; Anim_AdvanceAnimCounterAndSetObjPosForSpriteDescriptor — D0=val, D2=slot.
+c_anim_advance_and_fetch:
+    moveq   #0,D1
+    move.w  D2,D1
+    move.l  D1,-(SP)
+    moveq   #0,D1
+    move.b  D0,D1
+    move.l  D1,-(SP)
+    jsr     z07_anim_advance_and_fetch
+    addq.l  #8,SP
+    rts
+
+; SetRoomFlagUWItemState — no args (uses RAM state from GetRoomFlags).
+c_set_room_flag_uw_item_state:
+    jsr     z01_set_room_flag_uw_item_state
+    rts
+
+; GetRoomFlagUWItemState — no args. Returns D0 = flags & 0x10.
+c_get_room_flag_uw_item_state:
+    jsr     z01_get_room_flag_uw_item_state
+    rts
+
+; PlayBossHitCryIfNeeded — D2=slot.
+c_play_boss_hit_cry_if_needed:
+    moveq   #0,D0
+    move.w  D2,D0
+    move.l  D0,-(SP)
+    jsr     z04_play_boss_hit_cry_if_needed
     addq.l  #4,SP
     rts
 

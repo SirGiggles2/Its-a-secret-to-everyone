@@ -143,3 +143,39 @@ void z07_go_to_next_mode(void) {
     z07_end_game_mode();
 }
 
+unsigned int z07_find_empty_monster_slot(void) {
+    for (signed char i = 11; i >= 1; i--) {
+        if (RAM(0x034F + (unsigned char)i) == 0) {
+            RAM(0x0059) = (unsigned char)i;
+            return (unsigned int)(unsigned char)i;
+        }
+    }
+    return 0;
+}
+
+extern void z01_destroy_object_wram(unsigned int val, unsigned int slot);
+
+void z07_destroy_monster(unsigned int slot) {
+    RAM(0x034F + slot) = 0;
+    z01_destroy_object_wram(0, slot);
+}
+
+void z07_set_type_and_clear_object(unsigned int type, unsigned int slot) {
+    RAM(0x034F + slot) = (unsigned char)type;
+    z01_destroy_object_wram(0, slot);
+}
+
+void z07_init_tile_obj_or_item(unsigned int slot) {
+    RAM(0x04BF + slot) = 0x81;
+    z07_reset_obj_metastate_and_timer(slot);
+}
+
+void z07_anim_advance_and_fetch(unsigned int val, unsigned int slot) {
+    RAM(0x0000) = (unsigned char)val;
+    RAM(0x03D0 + slot)--;
+    if (RAM(0x03D0 + slot) == 0) {
+        z07_roll_over_anim_counter(slot);
+    }
+    z07_anim_fetch_obj_pos(slot);
+}
+

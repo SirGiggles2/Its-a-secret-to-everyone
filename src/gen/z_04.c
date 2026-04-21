@@ -167,3 +167,8 @@ void z04_init_boulder_set(unsigned int slot) {
     RAM(0x0515) = 0;
     z04_init_boulder(slot);
 }
+
+void z04_play_boss_hit_cry_if_needed(unsigned int slot) {
+    if (RAM(0x04F0 + slot) == 0x10)
+        RAM(0x0601) = 2;
+}

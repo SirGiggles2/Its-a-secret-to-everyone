@@ -224,3 +224,23 @@ unsigned char z01_negate(unsigned int val) {
     unsigned char v = (unsigned char)val;
     return (~v + 1) & 0xFF;
 }
+
+extern unsigned char z07_get_room_flags(void);
+
+void z01_set_room_flag_uw_item_state(void) {
+    unsigned char flags = z07_get_room_flags();
+    flags |= 0x10;
+    unsigned short ptr = ((unsigned short)RAM(0x01) << 8) | RAM(0x00);
+    unsigned char room_id = RAM(0x00EB);
+    nes_ram[ptr + room_id] = flags;
+}
+
+unsigned char z01_get_room_flag_uw_item_state(void) {
+    unsigned char ptr_lo = nes_ram[0x6000u + 0x0BAF];
+    unsigned char ptr_hi = nes_ram[0x6000u + 0x0BB0];
+    RAM(0x08) = ptr_lo;
+    RAM(0x09) = ptr_hi;
+    unsigned short ptr = ((unsigned short)ptr_hi << 8) | ptr_lo;
+    unsigned char room_id = RAM(0x00EB);
+    return nes_ram[ptr + room_id] & 0x10;
+}
