@@ -36,6 +36,11 @@
     xdef    c_add_door_flags
     xdef    c_split_room_id
     xdef    c_is_dark_room
+    xdef    c_set_door_flag
+    xdef    c_reset_door_flag
+    xdef    c_check_has_living_monsters
+    xdef    c_silence_sound
+    xdef    c_set_entering_doorway
 
     xref    c_move_object
     xref    z03_transfer_level_pattern_blocks
@@ -50,6 +55,11 @@
     xref    z05_add_door_flags
     xref    z05_split_room_id
     xref    z05_is_dark_room
+    xref    z05_set_door_flag
+    xref    z05_reset_door_flag
+    xref    z05_check_has_living_monsters
+    xref    z05_silence_sound
+    xref    z05_set_entering_doorway
 
 ;------------------------------------------------------------------------------
 ; _c_move_object_shim — MoveObject trampoline.
@@ -229,3 +239,33 @@ c_is_dark_room:
     addq.l  #4,SP
     tst.b   D0
     rts
+
+; SetDoorFlag — D2=dir_idx. Calls get_room_flags internally, writes flag.
+c_set_door_flag:
+    moveq   #0,D0
+    move.w  D2,D0
+    move.l  D0,-(SP)
+    jsr     z05_set_door_flag
+    addq.l  #4,SP
+    rts
+
+; ResetDoorFlag — D2=dir_idx.
+c_reset_door_flag:
+    moveq   #0,D0
+    move.w  D2,D0
+    move.l  D0,-(SP)
+    jsr     z05_reset_door_flag
+    addq.l  #4,SP
+    rts
+
+; CheckHasLivingMonsters — no args, void return.
+c_check_has_living_monsters:
+    jmp     z05_check_has_living_monsters
+
+; SilenceSound — no args, void return.
+c_silence_sound:
+    jmp     z05_silence_sound
+
+; SetEnteringDoorwayAsCurOpenedDoors — no args, void return.
+c_set_entering_doorway:
+    jmp     z05_set_entering_doorway

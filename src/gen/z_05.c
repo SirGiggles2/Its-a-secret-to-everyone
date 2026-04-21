@@ -149,3 +149,45 @@ unsigned char z05_is_dark_room(unsigned int col) {
     if (level == 0) return 0;
     return nes_ram[NES_SRAM_BASE + 0x0A7E + col] & 0x80;
 }
+
+void z05_set_door_flag(unsigned int dir_idx) {
+    unsigned char flags = get_room_flags();
+    flags |= level_masks[dir_idx];
+    unsigned short ptr = ((unsigned short)RAM(0x01) << 8) | RAM(0x00);
+    unsigned char room_id = RAM(0x00EB);
+    nes_ram[ptr + room_id] = flags;
+}
+
+void z05_reset_door_flag(unsigned int dir_idx) {
+    get_room_flags();
+    unsigned char mask = level_masks[dir_idx] ^ 0xFF;
+    unsigned short ptr = ((unsigned short)RAM(0x01) << 8) | RAM(0x00);
+    unsigned char room_id = RAM(0x00EB);
+    unsigned char flags = nes_ram[ptr + room_id];
+    nes_ram[ptr + room_id] = flags & mask;
+}
+
+void z05_check_has_living_monsters(void) {
+    unsigned char max_slot = RAM(0x0340);
+    for (signed char i = (signed char)max_slot; i >= 0; i--) {
+        unsigned char obj = RAM(0x0350 + (unsigned char)i);
+        if (obj == 0) continue;
+        if (obj < 0x2B) return;
+        if (obj < 0x2E) continue;
+        if (obj < 0x49) return;
+    }
+    RAM(0x0512) = 0;
+    RAM(0x034D)++;
+}
+
+void z05_silence_sound(void) {
+    RAM(0x0604) = 0x80;
+    RAM(0x0603) = 0x80;
+}
+
+void z05_set_entering_doorway(void) {
+    unsigned char scroll_dir = RAM(0x0098);
+    unsigned char a = (scroll_dir >> 1) & 0x05;
+    unsigned char b = (scroll_dir << 1) & 0x0A;
+    RAM(0x00EE) = a | b;
+}

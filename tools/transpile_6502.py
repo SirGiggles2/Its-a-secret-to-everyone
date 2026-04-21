@@ -4857,6 +4857,11 @@ def _patch_z05(path):
     # --- Stage 4b: more z_05 leaf functions ---
     text = _stub_func(text, 'SplitRoomId', 'c_split_room_id')
     text = _stub_func(text, 'IsDarkRoom_Bank5', 'c_is_dark_room')
+    text = _stub_func(text, 'SetDoorFlag', 'c_set_door_flag')
+    text = _stub_func(text, 'ResetDoorFlag', 'c_reset_door_flag')
+    text = _stub_func(text, 'CheckHasLivingMonsters', 'c_check_has_living_monsters')
+    text = _stub_func(text, 'SilenceSound', 'c_silence_sound')
+    text = _stub_func(text, 'SetEnteringDoorwayAsCurOpenedDoors', 'c_set_entering_doorway')
 
     with open(path, 'w', encoding='utf-8') as f:
         f.write(text)
