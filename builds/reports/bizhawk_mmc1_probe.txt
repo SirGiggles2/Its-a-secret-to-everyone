@@ -1,17 +1,17 @@
 =================================================================
 MMC1 State probe  T11b  —  120 frames
 =================================================================
-  LoopForever=$04FBE2  ExcBus=$000490  ExcAddr=$0004B2  ExcDef=$0004D4
+  LoopForever=$04FC46  ExcBus=$000490  ExcAddr=$0004B2  ExcDef=$0004D4
 
   f001 pc=$000300  forever=-  exc=false
   f002 pc=$00036A  forever=-  exc=false
-  f003 pc=$02F89E  forever=-  exc=false
-  f004 pc=$04A28E  forever=-  exc=false
-  f005 pc=$04A290  forever=-  exc=false
-  f030 pc=$01357C  forever=19  exc=false
-  f060 pc=$013556  forever=19  exc=false
-  f090 pc=$04FBE2  forever=19  exc=false
-  f120 pc=$04FBE2  forever=19  exc=false
+  f003 pc=$02F8DA  forever=-  exc=false
+  f004 pc=$04A2FE  forever=-  exc=false
+  f005 pc=$04A300  forever=-  exc=false
+  f030 pc=$0135B8  forever=19  exc=false
+  f060 pc=$013592  forever=19  exc=false
+  f090 pc=$04FC46  forever=19  exc=false
+  f120 pc=$04FC46  forever=19  exc=false
 
 ─── T11b: MMC1 Shift-Register State ────────────────────────────
 [PASS] T11b_NO_EXCEPTION           no exception handler hit

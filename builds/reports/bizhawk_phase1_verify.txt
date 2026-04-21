@@ -1,7 +1,7 @@
 =================================================================
 Phase 1 verify probe  —  4000 frames
 =================================================================
-  IsrNmi=$04FC16  LoopForever=$04FBE2
+  IsrNmi=$04FC7A  LoopForever=$04FC46
 
 
 ─── V64 intro-scroll Act samples ──────────────────────────────
@@ -17,54 +17,54 @@ Phase 1 verify probe  —  4000 frames
   f181   Mode=$00  Sub=$01  $F8=$00  CTL1=$08  inCtr=$23  nmCtr=$6D
   f182   Mode=$00  Sub=$01  $F8=$00  CTL1=$08  inCtr=$23  nmCtr=$6D
   f183   Mode=$00  Sub=$01  $F8=$00  CTL1=$08  inCtr=$23  nmCtr=$6D
-  f184   Mode=$00  Sub=$02  $F8=$00  CTL1=$08  inCtr=$29  nmCtr=$6E
-  f185   Mode=$00  Sub=$02  $F8=$00  CTL1=$08  inCtr=$29  nmCtr=$6E
-  f186   Mode=$00  Sub=$02  $F8=$00  CTL1=$08  inCtr=$29  nmCtr=$6E
-  f187   Mode=$00  Sub=$02  $F8=$00  CTL1=$08  inCtr=$29  nmCtr=$6E
+  f184   Mode=$00  Sub=$01  $F8=$00  CTL1=$08  inCtr=$23  nmCtr=$6D
+  f185   Mode=$00  Sub=$01  $F8=$00  CTL1=$08  inCtr=$23  nmCtr=$6D
+  f186   Mode=$00  Sub=$01  $F8=$00  CTL1=$08  inCtr=$23  nmCtr=$6D
+  f187   Mode=$00  Sub=$01  $F8=$00  CTL1=$08  inCtr=$23  nmCtr=$6D
   f188   Mode=$00  Sub=$02  $F8=$00  CTL1=$08  inCtr=$29  nmCtr=$6E
-  f189   Mode=$01  Sub=$00  $F8=$00  CTL1=$08  inCtr=$2F  nmCtr=$6F
-  f190   Mode=$01  Sub=$00  $F8=$00  CTL1=$08  inCtr=$2F  nmCtr=$6F
-  f191   Mode=$01  Sub=$00  $F8=$00  CTL1=$08  inCtr=$2F  nmCtr=$6F
-  f192   Mode=$01  Sub=$02  $F8=$00  CTL1=$08  inCtr=$35  nmCtr=$70
-  f193   Mode=$01  Sub=$02  $F8=$00  CTL1=$08  inCtr=$35  nmCtr=$70
-  f194   Mode=$01  Sub=$03  $F8=$00  CTL1=$08  inCtr=$3B  nmCtr=$71
-  f195   Mode=$01  Sub=$03  $F8=$00  CTL1=$08  inCtr=$3B  nmCtr=$72
-  f196   Mode=$01  Sub=$03  $F8=$00  CTL1=$08  inCtr=$3B  nmCtr=$72
-  f197   Mode=$01  Sub=$03  $F8=$00  CTL1=$08  inCtr=$3B  nmCtr=$72
-  f198   Mode=$01  Sub=$03  $F8=$00  CTL1=$08  inCtr=$3B  nmCtr=$72
-  f199   Mode=$01  Sub=$03  $F8=$04  CTL1=$08  inCtr=$3F  nmCtr=$72
-  f200   Mode=$01  Sub=$05  $F8=$00  CTL1=$08  inCtr=$47  nmCtr=$73
-  f201   Mode=$01  Sub=$06  $F8=$00  CTL1=$08  inCtr=$4D  nmCtr=$74
-  f202   Mode=$01  Sub=$00  $F8=$00  CTL1=$08  inCtr=$53  nmCtr=$75
-  f203   Mode=$01  Sub=$00  $F8=$00  CTL1=$08  inCtr=$59  nmCtr=$76
-  f204   Mode=$01  Sub=$00  $F8=$00  CTL1=$08  inCtr=$5F  nmCtr=$77
-  f205   Mode=$01  Sub=$00  $F8=$00  CTL1=$08  inCtr=$65  nmCtr=$78
-  f206   Mode=$01  Sub=$00  $F8=$00  CTL1=$08  inCtr=$6B  nmCtr=$79
-  f207   Mode=$01  Sub=$00  $F8=$00  CTL1=$08  inCtr=$71  nmCtr=$7A
-  f208   Mode=$01  Sub=$00  $F8=$00  CTL1=$08  inCtr=$77  nmCtr=$7B
-  f209   Mode=$01  Sub=$00  $F8=$00  CTL1=$08  inCtr=$7D  nmCtr=$7C
-  f210   Mode=$01  Sub=$00  $F8=$00  CTL1=$08  inCtr=$83  nmCtr=$7D
-  f211   Mode=$01  Sub=$00  $F8=$00  CTL1=$00  inCtr=$88  nmCtr=$7E
-  f212   Mode=$01  Sub=$00  $F8=$00  CTL1=$00  inCtr=$8D  nmCtr=$7F
-  f213   Mode=$01  Sub=$00  $F8=$00  CTL1=$00  inCtr=$92  nmCtr=$80
-  f214   Mode=$01  Sub=$00  $F8=$00  CTL1=$00  inCtr=$97  nmCtr=$81
-  f215   Mode=$01  Sub=$00  $F8=$00  CTL1=$00  inCtr=$9C  nmCtr=$82
-  f216   Mode=$01  Sub=$00  $F8=$00  CTL1=$00  inCtr=$A1  nmCtr=$83
-  f217   Mode=$01  Sub=$00  $F8=$00  CTL1=$00  inCtr=$A6  nmCtr=$84
-  f218   Mode=$01  Sub=$00  $F8=$00  CTL1=$00  inCtr=$AB  nmCtr=$85
-  f219   Mode=$01  Sub=$00  $F8=$00  CTL1=$00  inCtr=$B0  nmCtr=$86
-  f220   Mode=$01  Sub=$00  $F8=$00  CTL1=$00  inCtr=$B5  nmCtr=$87
+  f189   Mode=$00  Sub=$02  $F8=$00  CTL1=$08  inCtr=$29  nmCtr=$6E
+  f190   Mode=$00  Sub=$02  $F8=$00  CTL1=$08  inCtr=$29  nmCtr=$6E
+  f191   Mode=$00  Sub=$02  $F8=$00  CTL1=$08  inCtr=$29  nmCtr=$6E
+  f192   Mode=$00  Sub=$02  $F8=$00  CTL1=$08  inCtr=$29  nmCtr=$6E
+  f193   Mode=$01  Sub=$00  $F8=$00  CTL1=$08  inCtr=$2F  nmCtr=$6F
+  f194   Mode=$01  Sub=$00  $F8=$00  CTL1=$08  inCtr=$2F  nmCtr=$6F
+  f195   Mode=$01  Sub=$00  $F8=$00  CTL1=$08  inCtr=$2F  nmCtr=$6F
+  f196   Mode=$01  Sub=$01  $F8=$00  CTL1=$08  inCtr=$35  nmCtr=$70
+  f197   Mode=$01  Sub=$02  $F8=$00  CTL1=$08  inCtr=$35  nmCtr=$70
+  f198   Mode=$01  Sub=$03  $F8=$00  CTL1=$08  inCtr=$3B  nmCtr=$71
+  f199   Mode=$01  Sub=$03  $F8=$00  CTL1=$08  inCtr=$3B  nmCtr=$72
+  f200   Mode=$01  Sub=$03  $F8=$00  CTL1=$08  inCtr=$3B  nmCtr=$72
+  f201   Mode=$01  Sub=$03  $F8=$00  CTL1=$08  inCtr=$3B  nmCtr=$72
+  f202   Mode=$01  Sub=$03  $F8=$00  CTL1=$08  inCtr=$3B  nmCtr=$72
+  f203   Mode=$01  Sub=$03  $F8=$00  CTL1=$08  inCtr=$3B  nmCtr=$72
+  f204   Mode=$01  Sub=$05  $F8=$00  CTL1=$08  inCtr=$47  nmCtr=$73
+  f205   Mode=$01  Sub=$06  $F8=$00  CTL1=$08  inCtr=$4D  nmCtr=$74
+  f206   Mode=$01  Sub=$00  $F8=$00  CTL1=$08  inCtr=$53  nmCtr=$75
+  f207   Mode=$01  Sub=$00  $F8=$00  CTL1=$08  inCtr=$59  nmCtr=$76
+  f208   Mode=$01  Sub=$00  $F8=$00  CTL1=$08  inCtr=$5F  nmCtr=$77
+  f209   Mode=$01  Sub=$00  $F8=$00  CTL1=$08  inCtr=$65  nmCtr=$78
+  f210   Mode=$01  Sub=$00  $F8=$00  CTL1=$08  inCtr=$6B  nmCtr=$79
+  f211   Mode=$01  Sub=$00  $F8=$00  CTL1=$00  inCtr=$70  nmCtr=$7A
+  f212   Mode=$01  Sub=$00  $F8=$00  CTL1=$00  inCtr=$75  nmCtr=$7B
+  f213   Mode=$01  Sub=$00  $F8=$00  CTL1=$00  inCtr=$7A  nmCtr=$7C
+  f214   Mode=$01  Sub=$00  $F8=$00  CTL1=$00  inCtr=$7F  nmCtr=$7D
+  f215   Mode=$01  Sub=$00  $F8=$00  CTL1=$00  inCtr=$84  nmCtr=$7E
+  f216   Mode=$01  Sub=$00  $F8=$00  CTL1=$00  inCtr=$89  nmCtr=$7F
+  f217   Mode=$01  Sub=$00  $F8=$00  CTL1=$00  inCtr=$8E  nmCtr=$80
+  f218   Mode=$01  Sub=$00  $F8=$00  CTL1=$00  inCtr=$93  nmCtr=$81
+  f219   Mode=$01  Sub=$00  $F8=$00  CTL1=$00  inCtr=$98  nmCtr=$82
+  f220   Mode=$01  Sub=$00  $F8=$00  CTL1=$00  inCtr=$9D  nmCtr=$83
 
 ─── File-select reach ─────────────────────────────────────────
-  first Mode=$01 frame: 189
+  first Mode=$01 frame: 193
 
 ─── Phase 1 shadows ───────────────────────────────────────────
   LAST_GAMEMODE ($FF0810) at run end: $00 (last seen GameMode=$01)
   VRamForceBlankGate releases observed: 1
 
 ─── GameMode histogram (top 5) ────────────────────────────────
-  GameMode $01: 3812 frames
-  GameMode $00: 188 frames
+  GameMode $01: 3808 frames
+  GameMode $00: 192 frames
 
 ─── Soak ──────────────────────────────────────────────────────
   PASS: no exception handler hit
@@ -74,7 +74,7 @@ PHASE 1 VERIFY SUMMARY
 =================================================================
   [PASS] P1_NO_EXCEPTION                 clean soak
   [PASS] P1_V64_SCROLL_ACT8              all 4 samples Act != 487
-  [PASS] P1_FILE_SELECT_REACH            first mode=$01 at frame 189
+  [PASS] P1_FILE_SELECT_REACH            first mode=$01 at frame 193
   [PASS] P1_VRAM_GATE_RELEASE            1 release(s) seen
   [PASS] P1_LAST_GAMEMODE_LATCH          shadow=$00 (cold $FF seeded, must latch to a real mode)
 

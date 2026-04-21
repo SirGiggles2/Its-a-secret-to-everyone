@@ -24,7 +24,16 @@
       "Read(//c/Users/Jake Diggity/Documents/GitHub/FINAL TRY/**)",
       "Bash(ls -la \"C:/Users/Jake Diggity/Documents/GitHub/FINAL TRY/Legend of Zelda, The \\(USA\\).nes\")",
       "Bash(python tools/extract_frontend.py)",
-      "Read(//tmp/**)"
+      "Read(//tmp/**)",
+      "Bash(cp \"/c/Users/Jake Diggity/Documents/GitHub/FINAL TRY/builds/reports/rooms/_gen_state.State\" \"/c/Users/Jake Diggity/Documents/GitHub/FINAL TRY/builds/reports/rooms/_gen_state_77.State\")",
+      "Bash(cp \"/c/Users/Jake Diggity/Documents/GitHub/FINAL TRY/builds/reports/rooms/_nes_state.State\" \"/c/Users/Jake Diggity/Documents/GitHub/FINAL TRY/builds/reports/rooms/_nes_state_77.State\")",
+      "Bash(python tools/room_checklist.py init)",
+      "Bash(cp \"C:/Users/Jake Diggity/Documents/GitHub/FINAL TRY/tools/fresh_boot_position_log.lua\" /c/tmp/fresh_boot_position_log.lua)",
+      "Bash(cp \"C:/Users/Jake Diggity/Documents/GitHub/FINAL TRY/builds/whatif.md\" /c/tmp/whatif.md)",
+      "Bash(rm -f /c/tmp/position_log_p48.txt /c/tmp/position_log_baseline.txt)",
+      "Bash(cmd.exe //c \"tasklist\")",
+      "Bash(rm -rf \"/c/Users/Jake Diggity/.claude/plugins/cache/caveman\")",
+      "Bash(echo \"Done: $?\")"
     ]
   }
 }

@@ -1,52 +1,52 @@
 =================================================================
 T26: Title Sprites Probe  —  up to 600 frames
 =================================================================
-  LoopForever=$016568  ExcBus=$000366  ExcAddr=$000388  ExcDef=$0003AA
+  LoopForever=$04FC46  ExcBus=$000490  ExcAddr=$0004B2  ExcDef=$0004D4
 
 ─── SAT Snapshot (first 32 sprites) ─────────────────────────────
   #   Y    link  tile   pri pal vf hf  X
-  0   248  1     202    1   2   1  1   336  ← visible
-  1   248  2     204    1   2   1  1   328  ← visible
-  2   248  3     202    1   2   1  0   168  ← visible
-  3   248  4     204    1   2   1  0   176  ← visible
-  4   168  5     202    1   2   0  1   336  ← visible
-  5   168  6     204    1   2   0  1   328  ← visible
-  6   168  7     202    1   2   0  0   168  ← visible
-  7   168  8     204    1   2   0  0   176  ← visible
-  8   216  9     206    1   2   0  0   244  ← visible
-  9   216  10    208    1   2   0  0   252  ← visible
-  10  178  11    210    1   2   0  0   215  ← visible
-  11  208  12    210    1   2   0  0   332  ← visible
-  12  232  13    210    1   2   0  0   251  ← visible
-  13  260  14    210    1   2   0  0   208  ← visible
-  14  178  15    212    1   2   0  0   223  ← visible
-  15  192  16    212    1   2   0  0   164  ← visible
-  16  194  17    212    1   2   0  0   228  ← visible
-  17  252  18    212    1   2   0  0   272  ← visible
-  18  168  19    214    1   2   0  0   208  ← visible
-  19  172  20    214    1   2   0  0   288  ← visible
-  20  208  21    214    1   2   0  0   172  ← visible
-  21  252  22    214    1   2   0  0   316  ← visible
-  22  232  23    160    1   3   0  0   224  ← visible
-  23  232  24    160    1   3   0  0   232  ← visible
-  24  232  25    160    1   3   0  0   240  ← visible
-  25  232  26    160    1   3   0  0   248  ← visible
-  26  232  27    160    1   3   0  0   256  ← visible
-  27  232  28    160    1   3   0  0   264  ← visible
-  28  321  29    192    1   0   0  0   232  ← visible
-  29  321  30    190    1   0   0  0   224  ← visible
-  30  321  31    188    1   0   0  0   216  ← visible
-  31  321  32    186    1   0   0  0   208  ← visible
+  0   292  36    292    1   0   0  0   292  ← visible
+  1   292  36    292    1   0   0  0   292  ← visible
+  2   292  36    292    1   0   0  0   292  ← visible
+  3   292  36    292    1   0   0  0   292  ← visible
+  4   292  36    292    1   0   0  0   292  ← visible
+  5   292  36    292    1   0   0  0   292  ← visible
+  6   292  36    292    1   0   0  0   292  ← visible
+  7   292  36    292    1   0   0  0   292  ← visible
+  8   292  36    292    1   0   0  0   292  ← visible
+  9   292  36    292    1   0   0  0   292  ← visible
+  10  292  36    292    1   0   0  0   292  ← visible
+  11  292  36    292    1   0   0  0   292  ← visible
+  12  292  36    292    1   0   0  0   292  ← visible
+  13  292  36    292    1   0   0  0   292  ← visible
+  14  292  36    292    1   0   0  0   292  ← visible
+  15  292  36    292    1   0   0  0   292  ← visible
+  16  292  36    292    1   0   0  0   292  ← visible
+  17  292  36    292    1   0   0  0   292  ← visible
+  18  292  36    292    1   0   0  0   292  ← visible
+  19  292  36    292    1   0   0  0   292  ← visible
+  20  292  36    292    1   0   0  0   292  ← visible
+  21  292  36    292    1   0   0  0   292  ← visible
+  22  292  36    292    1   0   0  0   292  ← visible
+  23  292  36    292    1   0   0  0   292  ← visible
+  24  292  36    292    1   0   0  0   292  ← visible
+  25  292  36    292    1   0   0  0   292  ← visible
+  26  292  36    292    1   0   0  0   292  ← visible
+  27  292  36    292    1   0   0  0   292  ← visible
+  28  292  36    292    1   0   0  0   292  ← visible
+  29  292  36    292    1   0   0  0   292  ← visible
+  30  292  36    292    1   0   0  0   292  ← visible
+  31  292  36    292    1   0   0  0   292  ← visible
 
   Visible sprites (Y 129–352, non-zero tile): 32
-  Distinct Y-bands (16px buckets): 8
+  Distinct Y-bands (16px buckets): 1
   Non-zero tile words among visible: 32
 
 ─── T26: Title Sprites Tests ────────────────────────────────────
 [PASS] T26_NO_EXCEPTION                no exception handler hit
-[PASS] T26_DISPLAY_ON                  display enabled at frame 32
+[PASS] T26_DISPLAY_ON                  display enabled at frame 20
 [PASS] T26_SPRITES_VISIBLE             32 sprites in visible Y range (129–352) with non-zero tiles
-[PASS] T26_MULTI_ROW                   8 distinct Y-bands — sprites span multiple screen rows
+[FAIL] T26_MULTI_ROW                   only 1 Y-band(s) — sprites all on same row or none visible
 [PASS] T26_TILE_CONTENT                32 visible sprites have plausible tile indices (0 < tile < 0x400)
 
 =================================================================
@@ -55,10 +55,10 @@ T26 TITLE SPRITES SUMMARY
   [PASS] T26_NO_EXCEPTION
   [PASS] T26_DISPLAY_ON
   [PASS] T26_SPRITES_VISIBLE
-  [PASS] T26_MULTI_ROW
+  [FAIL] T26_MULTI_ROW
   [PASS] T26_TILE_CONTENT
 
-  5 PASS  /  0 FAIL  /  5 total
+  4 PASS  /  1 FAIL  /  5 total
 
-T26 TITLE SPRITES: ALL PASS
+T26 TITLE SPRITES: 1 FAILURE(S)
 

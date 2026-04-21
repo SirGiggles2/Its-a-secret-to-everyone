@@ -30,14 +30,23 @@
     xdef    c_update_mode2_load_full
     xdef    c_copy_column_to_tilebuf
     xdef    c_copy_row_to_tilebuf
+    xdef    c_has_compass
+    xdef    c_has_map
+    xdef    c_calc_open_doorway_mask
+    xdef    c_add_door_flags
 
     xref    c_move_object
     xref    z03_transfer_level_pattern_blocks
-    xref    z06_init_mode2_submodes
-    xref    z06_copy_common_data_to_ram
-    xref    z06_update_mode2_load_full
+    ; z_06 C functions disabled (boot regression — shims return rts)
+    ; xref    z06_init_mode2_submodes
+    ; xref    z06_copy_common_data_to_ram
+    ; xref    z06_update_mode2_load_full
     xref    z05_copy_column_to_tilebuf
     xref    z05_copy_row_to_tilebuf
+    xref    z05_has_compass
+    xref    z05_has_map
+    xref    z05_calc_open_doorway_mask
+    xref    z05_add_door_flags
 
 ;------------------------------------------------------------------------------
 ; _c_move_object_shim — MoveObject trampoline.
@@ -140,13 +149,16 @@ c_transfer_level_pattern_blocks:
 ;==============================================================================
 
 c_init_mode2_submodes:
-    jmp     z06_init_mode2_submodes
+;    jmp     z06_init_mode2_submodes
+    rts
 
 c_copy_common_data_to_ram:
-    jmp     z06_copy_common_data_to_ram
+;    jmp     z06_copy_common_data_to_ram
+    rts
 
 c_update_mode2_load_full:
-    jmp     z06_update_mode2_load_full
+;    jmp     z06_update_mode2_load_full
+    rts
 
 ;==============================================================================
 ; EXPORT side — z_05 entry points (Stage 3b).
@@ -158,3 +170,36 @@ c_copy_column_to_tilebuf:
 
 c_copy_row_to_tilebuf:
     jmp     z05_copy_row_to_tilebuf
+
+;==============================================================================
+; EXPORT side — z_05 entry points (Stage 4a).
+;==============================================================================
+
+; HasCompass/HasMap — returns D0.b with Z flag set for BNE/BEQ callers
+c_has_compass:
+    jsr     z05_has_compass
+    tst.b   D0
+    rts
+
+c_has_map:
+    jsr     z05_has_map
+    tst.b   D0
+    rts
+
+; CalcOpenDoorwayMask — D0=attr, D2=dir_idx. Preserves D0 on return.
+c_calc_open_doorway_mask:
+    move.l  D0,-(SP)
+    moveq   #0,D1
+    move.b  D2,D1
+    move.l  D1,-(SP)
+    move.l  4(SP),D1
+    andi.l  #$FF,D1
+    move.l  D1,-(SP)
+    jsr     z05_calc_open_doorway_mask
+    addq.l  #8,SP
+    move.l  (SP)+,D0
+    rts
+
+; AddDoorFlagsToCurOpenedDoors — no args, void return
+c_add_door_flags:
+    jmp     z05_add_door_flags

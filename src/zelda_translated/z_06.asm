@@ -39,6 +39,165 @@
 ; .EXPORT UpdateMode2Load_Full
 
     even
+
+; Stage 3a: data-only mode (code ported to src/gen/z_06.c)
+    xdef    AquamentusPaletteRow7TransferBuf
+    xdef    BlankBottomRowNT2TransferBuf
+    xdef    BlankPersonWares
+    xdef    BlankRowTransferBuf
+    xdef    BlankTextBoxLines
+    xdef    BombCapacityPriceTextTransferBuf
+    xdef    BrownBgPaletteRow7TransferBuf
+    xdef    CaveBgPaletteRowsTransferBuf
+    xdef    CellarAttrsTransferBuf
+    xdef    ColumnDirectoryOW
+    xdef    ColumnDirectoryUW
+    xdef    CommonDataBlockAddr_Bank6
+    xdef    CommonDataBlock_Bank6
+    xdef    ContinueTransferTileBuf
+    xdef    CopyCommonDataToRam
+    xdef    EndingPaletteTransferBuf
+    xdef    GameOverTransferBuf
+    xdef    GameTitleTransferBuf
+    xdef    GanonPaletteRow7TransferBuf
+    xdef    GhostPaletteRow7TransferBuf
+    xdef    GleeokPaletteRow7TransferBuf
+    xdef    GreenBgPaletteRow7TransferBuf
+    xdef    InitMode2_Submodes
+    xdef    InventoryBoxBottomTransferBuf
+    xdef    InventoryTextTransferBuf
+    xdef    LevelBlockAddrsQ1
+    xdef    LevelBlockAddrsQ2
+    xdef    LevelBlockAttrsBQ2ReplacementOffsets
+    xdef    LevelBlockAttrsBQ2ReplacementValues
+    xdef    LevelBlockOW
+    xdef    LevelBlockUW1Q1
+    xdef    LevelBlockUW1Q2
+    xdef    LevelBlockUW2Q1
+    xdef    LevelBlockUW2Q2
+    xdef    LevelInfoAddrs
+    xdef    LevelInfoOW
+    xdef    LevelInfoUW1
+    xdef    LevelInfoUW2
+    xdef    LevelInfoUW3
+    xdef    LevelInfoUW4
+    xdef    LevelInfoUW5
+    xdef    LevelInfoUW6
+    xdef    LevelInfoUW7
+    xdef    LevelInfoUW8
+    xdef    LevelInfoUW9
+    xdef    LevelInfoUWQ2ReplacementAddrs
+    xdef    LevelInfoUWQ2ReplacementSizes
+    xdef    LevelInfoUWQ2Replacements1
+    xdef    LevelInfoUWQ2Replacements2
+    xdef    LevelInfoUWQ2Replacements3
+    xdef    LevelInfoUWQ2Replacements4
+    xdef    LevelInfoUWQ2Replacements5
+    xdef    LevelInfoUWQ2Replacements6
+    xdef    LevelInfoUWQ2Replacements7
+    xdef    LevelInfoUWQ2Replacements8
+    xdef    LevelInfoUWQ2Replacements9
+    xdef    LevelNumberTransferBuf
+    xdef    LevelPaletteRow7TransferBuf
+    xdef    LifeOrMoneyCostTextTransferBuf
+    xdef    MenuPalettesTransferBuf
+    xdef    Mode11BackgroundPaletteBottomHalfTransferBuf
+    xdef    Mode11DeadLinkPalette
+    xdef    Mode11PlayAreaAttrsBottomHalfTransferBuf
+    xdef    Mode11PlayAreaAttrsTopHalfTransferBuf
+    xdef    Mode1TileTransferBuf
+    xdef    Mode8TextTileBuffer
+    xdef    ModeFCharsTransferBuf
+    xdef    OrangeBossPaletteRow7TransferBuf
+    xdef    RedArmosPaletteRow7TransferBuf
+    xdef    SelectedItemBoxBottomTransferBuf
+    xdef    SheetMapBottomEdgeTransferBuf
+    xdef    StatusBarStaticsTransferBuf
+    xdef    StoryTileAttrTransferBuf
+    xdef    SubmenuAttrs1TransferBuf
+    xdef    SubmenuAttrs2TransferBuf
+    xdef    SubmenuBoxesSidesTransferBuf
+    xdef    SubmenuBoxesTopsTransferBuf
+    xdef    SubmenuMapRemainderTransferBuf
+    xdef    SubmenuTriforceApexTransferBuf
+    xdef    SubmenuTriforceBottomTransferBuf
+    xdef    TransferBufAddrs
+    xdef    TransferBufPtrs
+    xdef    TransferCurTileBuf
+    xdef    TransferTileBuf
+    xdef    TriforceRow0TransferBuf
+    xdef    TriforceRow1TransferBuf
+    xdef    TriforceRow2TransferBuf
+    xdef    TriforceRow3TransferBuf
+    xdef    TriforceTextTransferBuf
+    xdef    UpdateMode2Load_Full
+    xdef    UseBButtonTextTransferBuf
+    xdef    WhitePaletteBottomHalfTransferBuf
+
+    even
+InitMode2_Submodes:
+    jmp     c_init_mode2_submodes
+
+    even
+CopyCommonDataToRam:
+    jmp     c_copy_common_data_to_ram
+
+    even
+UpdateMode2Load_Full:
+    jmp     c_update_mode2_load_full
+
+    even
+TransferCurTileBuf:
+    ; PATCHED: DynTileBuf pending-record pre-check (generalized Bug C fix).
+    ; If DynTileBuf is non-empty while TileBufSelector already points at a
+    ; later static buffer, consume DynTileBuf first and leave selector intact
+    ; for the next NMI. This preserves NES ordering for dynamic room/menu
+    ; records that would otherwise be dropped by selector timing drift.
+    lea     (NES_RAM+DynTileBuf).l,A0
+    cmpi.b  #$FF,(A0)                  ; DynTileBuf empty sentinel?
+    beq.s   .no_pending_dyn
+    tst.b   ($0014,A4)                  ; TileBufSelector = 0 => normal DynTileBuf path
+    beq.s   .no_pending_dyn
+    movem.l D0-D2/A0,-(SP)             ; save regs around JSR
+    jsr     _transfer_tilebuf_fast      ; process pending DynTileBuf now
+    movem.l (SP)+,D0-D2/A0             ; restore regs
+    move.b  #$FF,(NES_RAM+DynTileBuf).l ; reset sentinel
+    moveq   #63,D0
+    move.b  D0,($0300,A4)
+    moveq   #0,D2
+    move.b  D2,($005C,A4)
+    move.b  D2,($0301,A4)
+    rts
+.no_pending_dyn:
+    ; 32-bit pointer table lookup for main dispatch.
+    moveq   #0,D2
+    move.b  ($0014,A4),D2
+    add.w   D2,D2                       ; 2-byte index -> 4-byte index
+    lea     (TransferBufPtrs).l,A1
+    move.l  (A1,D2.W),D0               ; D0 = 32-bit buffer pointer
+    movea.l D0,A0                      ; A0 = 32-bit buffer pointer
+    jsr     TransferTileBuf
+    moveq   #63,D0
+    move.b  D0,($0300,A4)
+    moveq   #0,D2
+    move.b  D2,($0014,A4)
+    move.b  D2,($005C,A4)
+    move.b  D2,($0301,A4)
+    subq.b  #1,D2
+    move.b  D2,($0302,A4)
+    rts
+
+    even
+    even
+ContinueTransferTileBuf:
+    even
+TransferTileBuf:
+    ; PATCHED: fast tile buffer interpreter (bypasses per-byte _ppu_write_7)
+    jsr     _transfer_tilebuf_fast
+    rts
+
+    even
+    even
 LevelBlockAddrsQ1:
     dc.l    LevelBlockOW
     dc.l    LevelBlockUW1Q1
@@ -51,6 +210,7 @@ LevelBlockAddrsQ1:
     dc.l    LevelBlockUW2Q1
     dc.l    LevelBlockUW2Q1
 
+    even
     even
 LevelInfoAddrs:
     dc.l    LevelInfoOW
@@ -65,9 +225,11 @@ LevelInfoAddrs:
     dc.l    LevelInfoUW9
 
     even
+    even
 CommonDataBlockAddr_Bank6:
     dc.l    CommonDataBlock_Bank6
 
+    even
     even
 LevelBlockAddrsQ2:
     dc.l    LevelBlockOW
@@ -82,255 +244,16 @@ LevelBlockAddrsQ2:
     dc.l    LevelBlockUW2Q2
 
     even
-InitMode2_Submodes:
-    move.b  ($0013,A4),D0
-    jsr     _m68k_tablejump  ; M68K-native table dispatch (replaces JSR TableJump)
-    even
-InitMode2_Submodes_JumpTable:
-    dc.l    InitMode2_Sub0   ; jump table entry (32-bit for _m68k_tablejump)
-    dc.l    InitMode2_Sub1   ; jump table entry (32-bit for _m68k_tablejump)
-
-    even
-InitMode2_Sub0:
-    ; PATCH P32f: load level block source from 32-bit table and copy from ROM.
-    move.b  ($0010,A4),D0
-    lsl.b  #1,D0   ; ASL A
-    moveq   #0,D2
-    move.b  D0,D2
-    add.w   D2,D2                       ; 2-byte index -> 4-byte dc.l index
-    moveq   #0,D3
-    move.b  ($0016,A4),D3
-    lea     ($062D,A4),A0
-    move.b  (A0,D3.W),D0
-    bne.s   _L_z06_InitMode2_Sub0_SecondQuest_P32
-    lea     (LevelBlockAddrsQ1).l,A0
-    bra.s   _L_z06_InitMode2_Sub0_LoadSrc_P32
-
-    even
-_L_z06_InitMode2_Sub0_SecondQuest_P32:
-    lea     (LevelBlockAddrsQ2).l,A0
-
-    even
-_L_z06_InitMode2_Sub0_LoadSrc_P32:
-    movea.l (A0,D2.W),A2
-    jsr     FetchLevelBlockDestInfo
-    jsr     CopyBlock_ROM
-    rts
-
-InitMode2_Sub1:
-    ; PATCH P32g: load level info source from 32-bit table and copy from ROM.
-    move.b  ($0010,A4),D0
-    lsl.b  #1,D0   ; ASL A
-    moveq   #0,D2
-    move.b  D0,D2
-    add.w   D2,D2                       ; 2-byte index -> 4-byte dc.l index
-    lea     (LevelInfoAddrs).l,A0
-    movea.l (A0,D2.W),A2
-    jsr     FetchLevelInfoDestInfo
-    jsr     CopyBlock_ROM
-    moveq   #0,D0
-    move.b  D0,($0013,A4)
-    addq.b  #1,($0011,A4)
-    rts
-
-CopyCommonDataToRam:
-    ; PATCH P32h: copy common data directly from ROM source pointer.
-    lea     (CommonDataBlockAddr_Bank6).l,A0
-    movea.l (A0),A2
-    jsr     FetchDestAddrForCommonDataBlock
-    jsr     CopyBlock_ROM
-    moveq   #0,D0
-    move.b  D0,($0013,A4)
-    rts
-
-FetchLevelBlockDestInfo:
-    moveq   #126,D0
-    move.b  D0,($0002,A4)
-    moveq   #104,D0
-    move.b  D0,($0003,A4)
-    moveq   #125,D0
-    move.b  D0,($0004,A4)
-    moveq   #107,D0
-    move.b  D0,($0005,A4)
-    rts
-
-; Returns:
-; [$02:03]: destination address
-; [$04:05]: end address
-;
-; Destination address $6B7E.
-    even
-FetchLevelInfoDestInfo:
-    moveq   #126,D0
-    move.b  D0,($0002,A4)
-    moveq   #107,D0
-    move.b  D0,($0003,A4)
-    moveq   #125,D0
-    move.b  D0,($0004,A4)
-    moveq   #108,D0
-    move.b  D0,($0005,A4)
-    rts
-
-    even
-FetchDestAddrForCommonDataBlock:
-    move.b  #$F0,D0
-    move.b  D0,($0002,A4)
-    moveq   #103,D0
-    move.b  D0,($0003,A4)
-    moveq   #125,D0
-    move.b  D0,($0004,A4)
-    moveq   #104,D0
-    move.b  D0,($0005,A4)
-    rts
-
-; Params:
-; [$00:01]: source address
-; [$02:03]: destination address
-; [$04:05]: end destination address
-;
-; Also increments submode.
-;
-    even
-CopyBlock:
-    ; PATCH P32e: compatibility wrapper now routes through ROM source path.
-    jmp     CopyBlock_ROM
-
-    even
-CopyBlock_ROM:
-    moveq   #0,D3
-    even
-_L_z06_CopyBlock_ROM_Loop:
-    move.b  (A2,D3.W),D0               ; source byte from ROM
-    move.b  ($02,A4),D1   ; ptr lo
-    move.b  ($03,A4),D4  ; ptr hi
-    andi.w  #$00FF,D1         ; zero-extend lo byte
-    lsl.w   #8,D4
-    or.w    D1,D4
-    ext.l   D4
-    add.l   #NES_RAM,D4
-    movea.l D4,A0
-    move.b  D0,(A0,D3.W)     ; STA ($nn),Y
-    move.b  ($0002,A4),D0
-    move.b  ($0004,A4),D1
-    cmp.b   D1,D0
-    bne.s   _L_z06_CopyBlock_ROM_Next
-    move.b  ($0003,A4),D0
-    move.b  ($0005,A4),D1
-    cmp.b   D1,D0
-    bne.s   _L_z06_CopyBlock_ROM_Next
-    addq.b  #1,($0013,A4)
-    rts
-
-    even
-_L_z06_CopyBlock_ROM_Next:
-    move.b  ($0002,A4),D0
-    andi    #$EE,CCR  ; CLC: clear C+X
-    move.b  #$01,D1
-    addx.b  D1,D0   ; ADC #$01 (X flag = 6502 C)
-    move.b  D0,($0002,A4)
-    move.b  ($0003,A4),D0
-    move.b  #$00,D1
-    addx.b  D1,D0   ; ADC #$00 (X flag = 6502 C)
-    move.b  D0,($0003,A4)
-    addq.l  #1,A2
-    jmp     _L_z06_CopyBlock_ROM_Loop
-
-UpdateMode2Load_Full:
-    moveq   #6,D0
-    jsr     _copy_bank_to_window   ; PATCH P33b: force window bank 6
-    ; Make replacements for the second quest.
-    ;
-    moveq   #0,D3
-    move.b  ($0016,A4),D3
-    lea     ($062D,A4),A0
-    move.b  (A0,D3.W),D0
-    beq  _L_z06_UpdateMode2Load_Full_Exit
-    move.b  ($0010,A4),D0
-    beq  _L_z06_UpdateMode2Load_Full_PatchQ2Rooms
-    moveq   #0,D2
-    move.b  D0,D2
-    lsl.b  #1,D0   ; ASL A
-    moveq   #0,D3
-    move.b  D0,D3
-    ; Get an address for the current level that points
-    ; to an array of replacement bytes for Q2 UW level info.
-    ;
-    ; This address array doesn't access the OW element (0).
-    ; So, it overlaps the last two bytes of LevelInfoUWQ2Replacements9.
-    ;
-    lea     (LevelInfoUWQ2ReplacementAddrs-2).l,A0
-    move.b  (A0,D3.W),D0
-    move.b  D0,($0000,A4)
-    lea     (LevelInfoUWQ2ReplacementAddrs-1).l,A0
-    move.b  (A0,D3.W),D0
-    move.b  D0,($0001,A4)
-    ; Get the number of replacement bytes for Q2 UW level info.
-    ; This address array doesn't access the OW element (0).
-    ;
-    moveq   #0,D3
-    lea     (LevelInfoUWQ2ReplacementSizes-1).l,A0
-    move.b  (A0,D2.W),D3
-    even
-_L_z06_UpdateMode2Load_Full_ReplaceInfoBytes:
-    ; Copy bytes from Q2 replacement array to level info
-    ; starting at offset $29 (shortcut position array).
-    move.b  ($00,A4),D1   ; ptr lo
-    move.b  ($01,A4),D4  ; ptr hi
-    andi.w  #$00FF,D1         ; zero-extend lo byte
-    lsl.w   #8,D4
-    or.w    D1,D4             ; D4 = NES ptr addr
-    ext.l   D4
-    add.l   #NES_RAM,D4       ; → Genesis addr
-    movea.l D4,A0
-    move.b  (A0,D3.W),D0     ; LDA ($nn),Y
-    lea     (NES_SRAM+$0BA7).l,A0
-    move.b  D0,(A0,D3.W)
-    subq.b  #1,D3
-    bpl  _L_z06_UpdateMode2Load_Full_ReplaceInfoBytes
-    even
-_L_z06_UpdateMode2Load_Full_Exit:
-    rts
-
-    even
-_L_z06_UpdateMode2Load_Full_PatchQ2Rooms:
-    ; Replace attributes of several rooms in OW in second quest.
-    ;
-    moveq   #7,D3
-    even
-_L_z06_UpdateMode2Load_Full_ReplaceRoomBytes:
-    moveq   #0,D2
-    lea     (LevelBlockAttrsBQ2ReplacementOffsets).l,A0
-    move.b  (A0,D3.W),D2
-    lea     (LevelBlockAttrsBQ2ReplacementValues).l,A0
-    move.b  (A0,D3.W),D0
-    lea     (NES_SRAM+$08FE).l,A0
-    move.b  D0,(A0,D2.W)
-    subq.b  #1,D3
-    bpl  _L_z06_UpdateMode2Load_Full_ReplaceRoomBytes
-    moveq   #123,D0
-    move.b  D0,(NES_SRAM+$0A09).l
-    moveq   #123,D0
-    move.b  D0,(NES_SRAM+$0A3A).l
-    moveq   #90,D0
-    move.b  D0,(NES_SRAM+$0A72).l
-    moveq   #114,D0
-    move.b  D0,(NES_SRAM+$08BA).l
-    moveq   #114,D0
-    move.b  D0,(NES_SRAM+$08F2).l
-    moveq   #1,D0
-    move.b  D0,(NES_SRAM+$0B3A).l
-    moveq   #0,D0
-    move.b  D0,(NES_SRAM+$0B72).l
-    rts
-
     even
 LevelBlockAttrsBQ2ReplacementOffsets:
     dc.b    $0E, $0F, $22, $34, $3C, $45, $74, $8B
 
     even
+    even
 LevelBlockAttrsBQ2ReplacementValues:
     dc.b    $7B, $83, $84, $0F, $0B, $12, $7A, $2F
 
+    even
     even
 LevelInfoUWQ2Replacements1:
     dc.b    $C9, $AC, $89, $B7, $00, $E0, $77, $08
@@ -343,6 +266,7 @@ LevelInfoUWQ2Replacements1:
     dc.b    $FF
 
     even
+    even
 LevelInfoUWQ2Replacements2:
     dc.b    $C9, $AC, $89, $87, $05, $00, $75, $20
     dc.b    $FF, $06, $03, $56, $FF, $FF, $FF, $FF
@@ -352,6 +276,7 @@ LevelInfoUWQ2Replacements2:
     dc.b    $01, $FB, $20, $82, $01, $FF, $20, $87
     dc.b    $C3, $FF, $20, $C8, $01, $FF, $FF
 
+    even
     even
 LevelInfoUWQ2Replacements3:
     dc.b    $C9, $AC, $89, $37, $0D, $C8, $79, $1B
@@ -364,6 +289,7 @@ LevelInfoUWQ2Replacements3:
     dc.b    $03, $FF, $24, $FF, $FF
 
     even
+    even
 LevelInfoUWQ2Replacements4:
     dc.b    $C9, $AC, $89, $86, $06, $10, $72, $00
     dc.b    $FF, $06, $05, $21, $58, $7A, $FF, $FF
@@ -374,6 +300,7 @@ LevelInfoUWQ2Replacements4:
     dc.b    $A4, $02, $FF, $67, $20, $C4, $43, $FF
     dc.b    $FF
 
+    even
     even
 LevelInfoUWQ2Replacements5:
     dc.b    $C9, $AC, $89, $87, $0A, $B0, $7D, $4F
@@ -387,6 +314,7 @@ LevelInfoUWQ2Replacements5:
     dc.b    $FF, $67, $FF
 
     even
+    even
 LevelInfoUWQ2Replacements6:
     dc.b    $49, $79, $89, $56, $04, $00, $74, $16
     dc.b    $FF, $06, $06, $03, $73, $46, $FF, $FF
@@ -397,6 +325,7 @@ LevelInfoUWQ2Replacements6:
     dc.b    $20, $86, $C3, $FF, $20, $85, $83, $FF
     dc.b    $FF, $67, $20, $A3, $02, $FB, $FF, $FF
 
+    even
     even
 LevelInfoUWQ2Replacements7:
     dc.b    $C9, $AC, $89, $79, $0C, $C0, $7F, $2D
@@ -409,6 +338,7 @@ LevelInfoUWQ2Replacements7:
     dc.b    $C2, $FF, $20, $C2, $46, $67, $FF
 
     even
+    even
 LevelInfoUWQ2Replacements8:
     dc.b    $C9, $AC, $89, $57, $0C, $C0, $79, $1B
     dc.b    $7F, $07, $07, $27, $30, $37, $60, $67
@@ -420,6 +350,7 @@ LevelInfoUWQ2Replacements8:
     dc.b    $01, $FF, $20, $C2, $46, $FB, $20, $C8
     dc.b    $01, $FF, $FF
 
+    even
     even
 LevelInfoUWQ2Replacements9:
     dc.b    $C9, $AC, $89, $B6, $04, $00, $74, $07
@@ -434,6 +365,7 @@ LevelInfoUWQ2Replacements9:
     dc.b    $FF, $FF
 
     even
+    even
 LevelInfoUWQ2ReplacementAddrs:
     dc.b    $6F, $81   ; NES .ADDR (bank window, NES=$816F = LevelInfoUWQ2Replacements1)
     dc.b    $A8, $81   ; NES .ADDR (bank window, NES=$81A8 = LevelInfoUWQ2Replacements2)
@@ -445,6 +377,7 @@ LevelInfoUWQ2ReplacementAddrs:
     dc.b    $17, $83   ; NES .ADDR (bank window, NES=$8317 = LevelInfoUWQ2Replacements8)
     dc.b    $5A, $83   ; NES .ADDR (bank window, NES=$835A = LevelInfoUWQ2Replacements9)
 
+    even
     even
 LevelInfoUWQ2ReplacementSizes:
     dc.b    $39, $37, $3D, $39, $43, $40, $3F, $43
@@ -461,6 +394,7 @@ LevelInfoUWQ2ReplacementSizes:
     dc.b    $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF
     dc.b    $FF
 
+    even
     even
 LevelBlockOW:
 ; .INCBIN dat/LevelBlockOW.dat (768 bytes)
@@ -514,6 +448,7 @@ LevelBlockOW:
     dc.b    $00, $48, $8C, $08, $03, $00, $00, $00, $0C, $22, $00, $40, $00, $00, $00, $00
 
     even
+    even
 LevelBlockUW1Q1:
 ; .INCBIN dat/LevelBlockUW1Q1.dat (768 bytes)
     dc.b    $22, $32, $22, $22, $05, $26, $36, $64, $3A, $36, $3E, $22, $22, $26, $22, $69
@@ -565,6 +500,7 @@ LevelBlockUW1Q1:
     dc.b    $30, $00, $20, $00, $00, $10, $11, $00, $07, $07, $00, $07, $00, $01, $00, $10
     dc.b    $17, $00, $17, $00, $00, $00, $00, $27, $02, $00, $07, $00, $00, $00, $07, $20
 
+    even
     even
 LevelBlockUW2Q1:
 ; .INCBIN dat/LevelBlockUW2Q1.dat (768 bytes)
@@ -618,6 +554,7 @@ LevelBlockUW2Q1:
     dc.b    $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $07, $00, $10, $07, $00, $00
 
     even
+    even
 LevelBlockUW1Q2:
 ; .INCBIN dat/LevelBlockUW1Q2.dat (768 bytes)
     dc.b    $22, $26, $22, $04, $32, $26, $26, $32, $26, $3B, $36, $3A, $2A, $32, $26, $0E
@@ -669,6 +606,7 @@ LevelBlockUW1Q2:
     dc.b    $27, $07, $00, $10, $27, $00, $17, $27, $00, $17, $20, $17, $27, $01, $00, $00
     dc.b    $27, $00, $00, $00, $00, $00, $25, $00, $27, $00, $20, $27, $27, $00, $00, $20
 
+    even
     even
 LevelBlockUW2Q2:
 ; .INCBIN dat/LevelBlockUW2Q2.dat (768 bytes)
@@ -722,6 +660,7 @@ LevelBlockUW2Q2:
     dc.b    $20, $00, $00, $00, $00, $00, $20, $20, $15, $00, $00, $01, $05, $04, $00, $00
 
     even
+    even
 LevelInfoOW:
 ; .INCBIN dat/LevelInfoOW.dat (256 bytes)
     dc.b    $3F, $00, $20, $0F, $30, $00, $12, $0F, $16, $27, $36, $0F, $1A, $37, $12, $0F
@@ -741,6 +680,7 @@ LevelInfoOW:
     dc.b    $0F, $06, $17, $16, $0F, $07, $06, $16, $0F, $07, $06, $16, $0F, $0F, $07, $06
     dc.b    $0F, $0F, $07, $06, $0F, $0F, $0F, $0F, $0F, $0F, $0F, $0F, $3F, $00, $20, $0F
 
+    even
     even
 LevelInfoUW1:
 ; .INCBIN dat/LevelInfoUW1.dat (256 bytes)
@@ -762,6 +702,7 @@ LevelInfoUW1:
     dc.b    $0F, $0F, $0F, $0F, $0F, $0F, $0F, $0F, $3F, $00, $20, $0F, $30, $00, $12, $0F
 
     even
+    even
 LevelInfoUW2:
 ; .INCBIN dat/LevelInfoUW2.dat (256 bytes)
     dc.b    $16, $27, $36, $0F, $02, $12, $22, $0F, $16, $12, $22, $0F, $29, $27, $17, $0F
@@ -781,6 +722,7 @@ LevelInfoUW2:
     dc.b    $0F, $07, $06, $16, $0F, $0F, $07, $06, $0F, $0F, $07, $06, $0F, $0F, $0F, $0F
     dc.b    $0F, $0F, $0F, $0F, $3F, $00, $20, $0F, $30, $00, $12, $0F, $16, $27, $36, $0F
 
+    even
     even
 LevelInfoUW3:
 ; .INCBIN dat/LevelInfoUW3.dat (256 bytes)
@@ -802,6 +744,7 @@ LevelInfoUW3:
     dc.b    $3F, $00, $20, $0F, $30, $00, $12, $0F, $16, $27, $36, $0F, $08, $18, $28, $0F
 
     even
+    even
 LevelInfoUW4:
 ; .INCBIN dat/LevelInfoUW4.dat (256 bytes)
     dc.b    $12, $18, $28, $0F, $29, $27, $17, $0F, $02, $22, $30, $0F, $16, $27, $30, $0F
@@ -821,6 +764,7 @@ LevelInfoUW4:
     dc.b    $0F, $0F, $07, $06, $0F, $0F, $0F, $0F, $0F, $0F, $0F, $0F, $3F, $00, $20, $0F
     dc.b    $30, $00, $12, $0F, $16, $27, $36, $0F, $0A, $1A, $2A, $0F, $16, $1A, $2A, $0F
 
+    even
     even
 LevelInfoUW5:
 ; .INCBIN dat/LevelInfoUW5.dat (256 bytes)
@@ -842,6 +786,7 @@ LevelInfoUW5:
     dc.b    $16, $27, $36, $0F, $08, $18, $28, $0F, $16, $18, $28, $0F, $29, $27, $17, $0F
 
     even
+    even
 LevelInfoUW6:
 ; .INCBIN dat/LevelInfoUW6.dat (256 bytes)
     dc.b    $02, $22, $30, $0F, $16, $27, $30, $0F, $08, $18, $28, $FF, $03, $05, $06, $08
@@ -861,6 +806,7 @@ LevelInfoUW6:
     dc.b    $0F, $0F, $0F, $0F, $3F, $00, $20, $0F, $30, $00, $12, $0F, $16, $27, $36, $0F
     dc.b    $0A, $1A, $2A, $0F, $12, $1A, $2A, $0F, $29, $27, $17, $0F, $02, $22, $30, $0F
 
+    even
     even
 LevelInfoUW7:
 ; .INCBIN dat/LevelInfoUW7.dat (256 bytes)
@@ -882,6 +828,7 @@ LevelInfoUW7:
     dc.b    $22, $10, $30, $0F, $29, $27, $17, $0F, $02, $22, $30, $0F, $16, $27, $30, $0F
 
     even
+    even
 LevelInfoUW8:
 ; .INCBIN dat/LevelInfoUW8.dat (256 bytes)
     dc.b    $00, $10, $30, $FF, $03, $05, $06, $08, $DD, $89, $D6, $26, $2C, $0A, $B0, $7E
@@ -901,6 +848,7 @@ LevelInfoUW8:
     dc.b    $30, $00, $12, $0F, $16, $27, $36, $0F, $00, $10, $30, $0F, $16, $10, $30, $0F
     dc.b    $29, $27, $17, $0F, $02, $22, $30, $0F, $16, $27, $30, $0F, $0F, $10, $30, $FF
 
+    even
     even
 LevelInfoUW9:
 ; .INCBIN dat/LevelInfoUW9.dat (256 bytes)
@@ -922,6 +870,7 @@ LevelInfoUW9:
     dc.b    $22, $27, $07, $0F, $26, $27, $07, $0F, $15, $27, $30, $FF, $3F, $1C, $04, $0F
 
     even
+    even
 CommonDataBlock_Bank6:
 
 ; === .SEGMENT "BANK_06_DATA" ===
@@ -934,6 +883,7 @@ CommonDataBlock_Bank6:
 ; .EXPORT TriforceRow0TransferBuf
 
     even
+    even
 MenuPalettesTransferBuf:
     dc.b    $3F, $00, $20, $0F, $30, $00, $12, $0F
     dc.b    $16, $27, $36, $0F, $0C, $1C, $2C, $0F
@@ -942,14 +892,17 @@ MenuPalettesTransferBuf:
     dc.b    $15, $27, $30, $FF
 
     even
+    even
 LevelPaletteRow7TransferBuf:
     dc.b    $3F, $1C, $04, $0F, $0F, $0F, $0F, $FF
 
+    even
     even
 LevelNumberTransferBuf:
     dc.b    $20, $42, $07, $15, $0E, $1F, $0E, $15
     dc.b    $62, $00, $FF
 
+    even
     even
 ColumnDirectoryOW:
     dc.b    $D8, $9B, $0D, $9C, $3E, $9C, $80, $9C
@@ -958,24 +911,29 @@ ColumnDirectoryOW:
     dc.b    $A9, $9E, $DF, $9E, $21, $9F, $55, $9F
 
     even
+    even
 TriforceRow0TransferBuf:
     dc.b    $2A, $EE, $04, $ED, $E9, $EA, $EE, $FF
 
+    even
     even
 TriforceRow1TransferBuf:
     dc.b    $2B, $0D, $06, $ED, $E9, $24, $24, $EA
     dc.b    $EE, $FF
 
     even
+    even
 TriforceRow2TransferBuf:
     dc.b    $2B, $2C, $08, $ED, $E9, $24, $24, $24
     dc.b    $24, $EA, $EE, $FF
 
     even
+    even
 TriforceRow3TransferBuf:
     dc.b    $2B, $4B, $0A, $ED, $E9, $24, $24, $24
     dc.b    $24, $24, $24, $EA, $EE, $FF
 
+    even
     even
 TriforceTextTransferBuf:
     dc.b    $2B, $AC, $08, $1D, $1B, $12, $0F, $18
@@ -987,6 +945,7 @@ TriforceTextTransferBuf:
 
 ; .EXPORT TransferCurTileBuf
 
+    even
     even
 TransferBufAddrs:
     dc.b    (DynTileBuf)&$FF, (DynTileBuf>>8)&$FF   ; NES .ADDR (little-endian)
@@ -1058,6 +1017,7 @@ TransferBufAddrs:
 ; EQU symbols (NES RAM offsets): NES_RAM + offset
 ; ROM labels: assembler resolves to 68K ROM addr
     even
+    even
 TransferBufPtrs:
     dc.l    NES_RAM+DynTileBuf                              ; idx  0 ($00)
     dc.l    StoryTileAttrTransferBuf                         ; idx  1 ($02)
@@ -1125,53 +1085,6 @@ TransferBufPtrs:
     dc.l    NES_RAM+DynTileBuf                              ; idx 63 ($7E)
 
     even
-TransferCurTileBuf:
-    ; PATCHED: DynTileBuf pending-record pre-check (generalized Bug C fix).
-    ; If DynTileBuf is non-empty while TileBufSelector already points at a
-    ; later static buffer, consume DynTileBuf first and leave selector intact
-    ; for the next NMI. This preserves NES ordering for dynamic room/menu
-    ; records that would otherwise be dropped by selector timing drift.
-    lea     (NES_RAM+DynTileBuf).l,A0
-    cmpi.b  #$FF,(A0)                  ; DynTileBuf empty sentinel?
-    beq.s   .no_pending_dyn
-    tst.b   ($0014,A4)                  ; TileBufSelector = 0 => normal DynTileBuf path
-    beq.s   .no_pending_dyn
-    movem.l D0-D2/A0,-(SP)             ; save regs around JSR
-    jsr     _transfer_tilebuf_fast      ; process pending DynTileBuf now
-    movem.l (SP)+,D0-D2/A0             ; restore regs
-    move.b  #$FF,(NES_RAM+DynTileBuf).l ; reset sentinel
-    moveq   #63,D0
-    move.b  D0,($0300,A4)
-    moveq   #0,D2
-    move.b  D2,($005C,A4)
-    move.b  D2,($0301,A4)
-    rts
-.no_pending_dyn:
-    ; 32-bit pointer table lookup for main dispatch.
-    moveq   #0,D2
-    move.b  ($0014,A4),D2
-    add.w   D2,D2                       ; 2-byte index -> 4-byte index
-    lea     (TransferBufPtrs).l,A1
-    move.l  (A1,D2.W),D0               ; D0 = 32-bit buffer pointer
-    movea.l D0,A0                      ; A0 = 32-bit buffer pointer
-    jsr     TransferTileBuf
-    moveq   #63,D0
-    move.b  D0,($0300,A4)
-    moveq   #0,D2
-    move.b  D2,($0014,A4)
-    move.b  D2,($005C,A4)
-    move.b  D2,($0301,A4)
-    subq.b  #1,D2
-    move.b  D2,($0302,A4)
-    rts
-
-    even
-ContinueTransferTileBuf:
-TransferTileBuf:
-    ; PATCHED: fast tile buffer interpreter (bypasses per-byte _ppu_write_7)
-    jsr     _transfer_tilebuf_fast
-    rts
-
     even
 Mode1TileTransferBuf:
     dc.b    $23, $C0, $7F, $00, $23, $D4, $03, $40
@@ -1193,6 +1106,7 @@ Mode1TileTransferBuf:
     dc.b    $0D, $0E, $FF
 
     even
+    even
 ModeFCharsTransferBuf:
     dc.b    $22, $05, $01, $69, $22, $06, $55, $6A
     dc.b    $22, $1B, $01, $6B, $22, $25, $C7, $6C
@@ -1212,9 +1126,11 @@ ModeFCharsTransferBuf:
     dc.b    $24, $07, $24, $08, $24, $09, $FF
 
     even
+    even
 GanonPaletteRow7TransferBuf:
     dc.b    $3F, $1C, $04, $0F, $16, $2C, $3C, $FF
 
+    even
     even
 EndingPaletteTransferBuf:
     dc.b    $3F, $08, $08, $0F, $22, $10, $00, $0F
@@ -1222,76 +1138,93 @@ EndingPaletteTransferBuf:
     dc.b    $06, $16, $FF
 
     even
+    even
 BlankTextBoxLines:
     dc.b    $21, $A4, $58, $24, $21, $C4, $58, $24
     dc.b    $FF
 
+    even
     even
 BlankPersonWares:
     dc.b    $21, $E4, $58, $24, $22, $C8, $4D, $24
     dc.b    $FF
 
     even
+    even
 SubmenuTriforceApexTransferBuf:
     dc.b    $2A, $CF, $02, $ED, $EE, $FF
 
+    even
     even
 SubmenuTriforceBottomTransferBuf:
     dc.b    $2B, $6A, $0C, $EB, $EF, $F1, $F1, $F1
     dc.b    $F1, $F1, $F1, $F1, $F1, $F0, $EC, $FF
 
     even
+    even
 GhostPaletteRow7TransferBuf:
     dc.b    $3F, $1C, $04, $0F, $30, $00, $12, $FF
 
+    even
     even
 GreenBgPaletteRow7TransferBuf:
     dc.b    $3F, $1C, $04, $0F, $1A, $37, $12, $FF
 
     even
+    even
 BrownBgPaletteRow7TransferBuf:
     dc.b    $3F, $1C, $04, $0F, $17, $37, $12, $FF
 
+    even
     even
 CaveBgPaletteRowsTransferBuf:
     dc.b    $3F, $08, $08, $0F, $30, $00, $12, $0F
     dc.b    $07, $0F, $17, $FF
 
     even
+    even
 CellarAttrsTransferBuf:
     dc.b    $23, $D0, $60, $AA, $23, $F0, $50, $AA
     dc.b    $FF
 
+    even
     even
 WhitePaletteBottomHalfTransferBuf:
     dc.b    $3F, $08, $08, $0F, $30, $30, $30, $0F
     dc.b    $30, $30, $30, $FF
 
     even
+    even
 RedArmosPaletteRow7TransferBuf:
     dc.b    $3F, $1C, $04, $0F, $0F, $1C, $16, $FF
 
+    even
     even
 GleeokPaletteRow7TransferBuf:
     dc.b    $3F, $1C, $04, $0F, $2A, $1A, $0C, $FF
 
     even
+    even
 AquamentusPaletteRow7TransferBuf:
     dc.b    $3F, $1C, $04, $0F, $0A, $29, $30, $FF
 
+    even
     even
 OrangeBossPaletteRow7TransferBuf:
     dc.b    $3F, $1C, $04, $0F, $17, $27, $30, $FF
 
     even
+    even
 BombCapacityPriceTextTransferBuf:
     dc.b    $22, $CD, $04, $62, $01, $00, $00, $FF
 
+    even
     even
 LifeOrMoneyCostTextTransferBuf:
     dc.b    $22, $CB, $0A, $62, $01, $24, $24, $24
     dc.b    $24, $24, $62, $05, $00, $FF
 
+    even
     even
 Mode8TextTileBuffer:
     dc.b    $23, $C0, $7F, $00, $21, $4A, $08, $0C
@@ -1299,6 +1232,7 @@ Mode8TextTileBuffer:
     dc.b    $AA, $04, $1C, $0A, $1F, $0E, $22, $0A
     dc.b    $05, $1B, $0E, $1D, $1B, $22, $FF
 
+    even
     even
 StatusBarStaticsTransferBuf:
     dc.b    $23, $C2, $0E, $40, $00, $00, $44, $55
@@ -1312,10 +1246,12 @@ StatusBarStaticsTransferBuf:
     dc.b    $F9, $61, $FF
 
     even
+    even
 InventoryTextTransferBuf:
     dc.b    $29, $84, $09, $12, $17, $1F, $0E, $17
     dc.b    $1D, $18, $1B, $22, $FF
 
+    even
     even
 SubmenuBoxesTopsTransferBuf:
     dc.b    $29, $C7, $04, $69, $6A, $6A, $6B, $29
@@ -1323,26 +1259,31 @@ SubmenuBoxesTopsTransferBuf:
     dc.b    $DB, $01, $6B, $FF
 
     even
+    even
 SubmenuBoxesSidesTransferBuf:
     dc.b    $29, $E7, $C2, $6C, $29, $EA, $C2, $6C
     dc.b    $29, $EF, $C4, $6C, $29, $FB, $C4, $6C
     dc.b    $FF
 
     even
+    even
 SelectedItemBoxBottomTransferBuf:
     dc.b    $2A, $27, $04, $6E, $6A, $6A, $6D, $FF
 
+    even
     even
 UseBButtonTextTransferBuf:
     dc.b    $2A, $42, $0C, $1E, $1C, $0E, $24, $0B
     dc.b    $24, $0B, $1E, $1D, $1D, $18, $17, $FF
 
     even
+    even
 InventoryBoxBottomTransferBuf:
     dc.b    $2A, $64, $08, $0F, $18, $1B, $24, $1D
     dc.b    $11, $12, $1C, $2A, $6F, $01, $6E, $2A
     dc.b    $70, $4B, $6A, $2A, $7B, $01, $6D, $FF
 
+    even
     even
 SubmenuMapRemainderTransferBuf:
     dc.b    $2B, $43, $07, $0C, $18, $16, $19, $0A
@@ -1352,32 +1293,39 @@ SubmenuMapRemainderTransferBuf:
     dc.b    $F5, $F5, $F5, $FF
 
     even
+    even
 SheetMapBottomEdgeTransferBuf:
     dc.b    $2B, $AC, $10, $F5, $FE, $F5, $F5, $F5
     dc.b    $FE, $F5, $F5, $F5, $F5, $FE, $F5, $F5
     dc.b    $F5, $FE, $F5, $FF
 
     even
+    even
 SubmenuAttrs1TransferBuf:
     dc.b    $2B, $D9, $43, $05, $2B, $DC, $4B, $00
     dc.b    $FF
 
     even
+    even
 SubmenuAttrs2TransferBuf:
     dc.b    $2B, $E9, $56, $55, $FF
 
+    even
     even
 BlankBottomRowNT2TransferBuf:
     dc.b    $2B, $A0, $60, $24, $FF
 
     even
+    even
 BlankRowTransferBuf:
     dc.b    $28, $E0, $60, $24, $FF
 
     even
+    even
 Mode11DeadLinkPalette:
     dc.b    $3F, $10, $04, $0F, $10, $30, $00, $FF
 
+    even
     even
 GameOverTransferBuf:
     dc.b    $23, $E3, $03, $0F, $0F, $CF, $22, $4C
@@ -1385,18 +1333,22 @@ GameOverTransferBuf:
     dc.b    $0E, $1B, $24, $22, $6C, $4A, $24, $FF
 
     even
+    even
 Mode11BackgroundPaletteBottomHalfTransferBuf:
     dc.b    $3F, $08, $08, $0F, $17, $16, $26, $0F
     dc.b    $17, $16, $26, $FF
 
     even
+    even
 Mode11PlayAreaAttrsTopHalfTransferBuf:
     dc.b    $23, $D0, $58, $FF, $FF
 
     even
+    even
 Mode11PlayAreaAttrsBottomHalfTransferBuf:
     dc.b    $23, $E8, $58, $FF, $FF
 
+    even
     even
 StoryTileAttrTransferBuf:
 ; .INCBIN dat/StoryTileAttrTransferBuf.dat (1131 bytes)
@@ -1472,6 +1424,7 @@ StoryTileAttrTransferBuf:
     dc.b    $FF, $FA, $FA, $BA, $AA, $AA, $AA, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF
     dc.b    $2B, $D0, $02, $FF, $FF, $2B, $D6, $02, $FF, $FF, $FF
 
+    even
     even
 GameTitleTransferBuf:
 ; .INCBIN dat/GameTitleTransferBuf.dat (1121 bytes)
