@@ -62,3 +62,21 @@ void z01_destroy_whirlwind(unsigned int slot) {
     RAM(0x0492 + slot) = 0xFF;
     RAM(0x0405 + slot) = 1;
 }
+
+void z01_uw_person_complex_state_delay_and_quit(void) {
+    unsigned char timer = RAM(0x0029);
+    if (timer == 0)
+        RAM(0x0350) = 0;
+}
+
+void z01_set_boomerang_speed(unsigned int val, unsigned int slot) {
+    RAM(0x03BC + slot) = val;
+    unsigned char state = RAM(0x00AC + slot) & 0xF0;
+    if (state == 0x40) {
+        unsigned char spd = RAM(0x03BC + slot);
+        RAM(0x03BC + slot) = spd >> 1;
+        RAM(0x0380 + slot)--;
+        if (RAM(0x0380 + slot) == 0)
+            RAM(0x00AC + slot) = 80;
+    }
+}

@@ -65,6 +65,12 @@
     xdef    c_init_one_simple_object
     xdef    c_destroy_object_wram
     xdef    c_destroy_whirlwind
+    xdef    c_uw_person_delay_quit
+    xdef    c_set_boomerang_speed
+    xdef    c_animate_demo_p1s0
+    xdef    c_animate_demo_p1s1
+    xdef    c_disable_fallen_objects
+    xdef    c_init_mode1_sub2
 
     xref    c_move_object
     xref    z03_transfer_level_pattern_blocks
@@ -108,6 +114,12 @@
     xref    z01_init_one_simple_object
     xref    z01_destroy_object_wram
     xref    z01_destroy_whirlwind
+    xref    z01_uw_person_complex_state_delay_and_quit
+    xref    z01_set_boomerang_speed
+    xref    z02_animate_demo_phase1_sub0
+    xref    z02_animate_demo_phase1_sub1
+    xref    z02_disable_fallen_objects
+    xref    z02_init_mode1_sub2
 
 ;------------------------------------------------------------------------------
 ; _c_move_object_shim — MoveObject trampoline.
@@ -476,4 +488,44 @@ c_destroy_whirlwind:
     jsr     z01_destroy_whirlwind
     addq.l  #4,SP
     rts
+
+;==============================================================================
+; EXPORT side — z_01 entry points (Stage 4b batch 9a).
+;==============================================================================
+
+; UpdateUnderworldPersonComplexState_DelayAndQuit — no args, void return.
+c_uw_person_delay_quit:
+    jmp     z01_uw_person_complex_state_delay_and_quit
+
+; SetBoomerangSpeed — D0=val, D2=slot.
+c_set_boomerang_speed:
+    moveq   #0,D1
+    move.w  D2,D1
+    move.l  D1,-(SP)
+    moveq   #0,D1
+    move.b  D0,D1
+    move.l  D1,-(SP)
+    jsr     z01_set_boomerang_speed
+    addq.l  #8,SP
+    rts
+
+;==============================================================================
+; EXPORT side — z_02 entry points (Stage 4b batch 9b).
+;==============================================================================
+
+; AnimateDemoPhase1Subphase0 — no args, void return.
+c_animate_demo_p1s0:
+    jmp     z02_animate_demo_phase1_sub0
+
+; AnimateDemoPhase1Subphase1 — no args, void return.
+c_animate_demo_p1s1:
+    jmp     z02_animate_demo_phase1_sub1
+
+; DisableFallenObjects — no args, void return.
+c_disable_fallen_objects:
+    jmp     z02_disable_fallen_objects
+
+; InitMode1_Sub2 — no args, void return.
+c_init_mode1_sub2:
+    jmp     z02_init_mode1_sub2
 

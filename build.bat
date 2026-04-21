@@ -102,7 +102,7 @@ rem cmd parses a trailing backslash+space as a line-continuation in some
 rem contexts, so pass the -B arg SEPARATELY (not from a joined variable).
 rem ---------------------------------------------------------------------------
 set "C_SOURCES=c_runtime c_move_object"
-set "C_GEN_SOURCES=z_01 z_03 z_04 z_05 z_06 z_07"
+set "C_GEN_SOURCES=z_01 z_02 z_03 z_04 z_05 z_06 z_07"
 set "C_OBJS="
 for %%F in (%C_SOURCES%) do (
     echo [2a/4] Compiling %%F.c...

@@ -2531,6 +2531,8 @@ def _patch_z01(path):
     text = _stub_func(text, 'InitOneSimpleObject', 'c_init_one_simple_object')
     text = _stub_func(text, 'DestroyObject_WRAM', 'c_destroy_object_wram')
     text = _stub_func(text, 'DestroyWhirlwind', 'c_destroy_whirlwind')
+    text = _stub_func(text, 'UpdateUnderworldPersonComplexState_DelayAndQuit', 'c_uw_person_delay_quit')
+    text = _stub_func(text, 'SetBoomerangSpeed', 'c_set_boomerang_speed')
 
     with open(path, 'w', encoding='utf-8') as f:
         f.write(text)
@@ -3558,6 +3560,12 @@ def _patch_z02(path):
         print("  _patch_z02 P30: Mode1 Link attr=0 pin (FS1-B green Link)")
     else:
         print("  WARNING: _patch_z02 P30 -- Mode1 Link bsr anchor not found")
+
+    # --- Stage 4b batch 9b: z_02 C function stubs ---
+    text = _stub_func(text, 'AnimateDemoPhase1Subphase0', 'c_animate_demo_p1s0')
+    text = _stub_func(text, 'AnimateDemoPhase1Subphase1', 'c_animate_demo_p1s1')
+    text = _stub_func(text, 'DisableFallenObjects', 'c_disable_fallen_objects')
+    text = _stub_func(text, 'InitMode1_Sub2', 'c_init_mode1_sub2')
 
     with open(path, 'w', encoding='utf-8') as f:
         f.write(text)
