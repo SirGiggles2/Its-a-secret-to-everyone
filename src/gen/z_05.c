@@ -372,3 +372,8 @@ void z05_update_mode11_death_sub6(void) {
     z05_inc_submode();
 }
 
+void z05_reset_vscroll_lo(void) {
+    RAM(0x00E2) = 0;
+    z05_inc_submode();
+}
+

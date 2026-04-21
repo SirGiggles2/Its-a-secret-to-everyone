@@ -146,6 +146,14 @@
     xdef    c_update_mode11_death_sub6
     xdef    c_init_flute_secret
     xdef    c_reset_obj_metastate_and_timer
+    xdef    c_cue_transfer_buf_advance_state
+    xdef    c_take_one_rupee
+    xdef    c_set_item_value
+    xdef    c_init_whirlwind
+    xdef    c_gleeok_set_segment_y
+    xdef    c_reset_vscroll_lo
+    xdef    c_deactivate_shot
+    xdef    c_deactivate_link_shot
 
     xref    c_move_object
     xref    z03_transfer_level_pattern_blocks
@@ -268,6 +276,14 @@
     xref    z05_update_mode11_death_sub6
     xref    z07_init_flute_secret
     xref    z07_reset_obj_metastate_and_timer
+    xref    z01_cue_transfer_buf_and_advance_state
+    xref    z01_take_one_rupee
+    xref    z01_set_item_value
+    xref    z01_init_whirlwind
+    xref    z04_gleeok_set_segment_y
+    xref    z05_reset_vscroll_lo
+    xref    z07_deactivate_shot
+    xref    z07_deactivate_link_shot
 
 ;------------------------------------------------------------------------------
 ; _c_move_object_shim — MoveObject trampoline.
@@ -1283,5 +1299,78 @@ c_reset_obj_metastate_and_timer:
     move.l  D0,-(SP)
     jsr     z07_reset_obj_metastate_and_timer
     addq.l  #4,SP
+    rts
+
+;==============================================================================
+; EXPORT side — batch 24.
+;==============================================================================
+
+; CueTransferBufAndAdvanceState — D0=val, C→C chain to inc_cave_state.
+c_cue_transfer_buf_advance_state:
+    moveq   #0,D1
+    move.b  D0,D1
+    move.l  D1,-(SP)
+    jsr     z01_cue_transfer_buf_and_advance_state
+    addq.l  #4,SP
+    rts
+
+; TakeOneRupee — no-arg.
+c_take_one_rupee:
+    jsr     z01_take_one_rupee
+    rts
+
+; SetItemValue — D0=val, D3=slot3.
+c_set_item_value:
+    moveq   #0,D1
+    move.w  D3,D1
+    move.l  D1,-(SP)
+    moveq   #0,D1
+    move.b  D0,D1
+    move.l  D1,-(SP)
+    jsr     z01_set_item_value
+    addq.l  #8,SP
+    rts
+
+; InitWhirlwind — D0=val, D2=slot.
+c_init_whirlwind:
+    moveq   #0,D1
+    move.w  D2,D1
+    move.l  D1,-(SP)
+    moveq   #0,D1
+    move.b  D0,D1
+    move.l  D1,-(SP)
+    jsr     z01_init_whirlwind
+    addq.l  #8,SP
+    rts
+
+; L_Gleeok_SetSegmentY — D3=val, D2=slot.
+c_gleeok_set_segment_y:
+    moveq   #0,D0
+    move.w  D2,D0
+    move.l  D0,-(SP)
+    moveq   #0,D0
+    move.b  D3,D0
+    move.l  D0,-(SP)
+    jsr     z04_gleeok_set_segment_y
+    addq.l  #8,SP
+    rts
+
+; ResetVScrollLo — no-arg, C→C chain to inc_submode.
+c_reset_vscroll_lo:
+    jsr     z05_reset_vscroll_lo
+    rts
+
+; DeactivateShot — D2=slot.
+c_deactivate_shot:
+    moveq   #0,D0
+    move.w  D2,D0
+    move.l  D0,-(SP)
+    jsr     z07_deactivate_shot
+    addq.l  #4,SP
+    rts
+
+; DeactivateLinkShot — no-arg (hardcodes slot 14).
+c_deactivate_link_shot:
+    jsr     z07_deactivate_link_shot
     rts
 

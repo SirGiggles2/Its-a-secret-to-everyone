@@ -146,3 +146,7 @@ void z04_set_dead_dummy_obj_type(unsigned int slot) {
 void z04_jumper_reset_vspeed_frac(unsigned int slot) {
     RAM(0x041F + slot) = 0;
 }
+
+void z04_gleeok_set_segment_y(unsigned int val3, unsigned int slot) {
+    RAM(0x0086 + slot) = (unsigned char)val3;
+}

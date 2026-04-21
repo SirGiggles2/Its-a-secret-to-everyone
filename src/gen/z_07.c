@@ -122,3 +122,11 @@ void z07_init_flute_secret(unsigned int slot) {
     z07_reset_obj_metastate(slot);
 }
 
+void z07_deactivate_shot(unsigned int slot) {
+    z07_reset_obj_state(slot);
+}
+
+void z07_deactivate_link_shot(void) {
+    z07_reset_obj_state(14);
+}
+

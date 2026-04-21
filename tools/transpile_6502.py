@@ -2557,6 +2557,12 @@ def _patch_z01(path):
     text = _stub_func(text, 'UpdatePersonState_ResetCharOffset', 'c_update_person_reset_char_offset')
     text = _stub_func(text, 'BeginUpdateMode', 'c_begin_update_mode')
 
+    # --- Stage 4b batch 24 ---
+    text = _stub_func(text, 'CueTransferBufAndAdvanceState', 'c_cue_transfer_buf_advance_state')
+    text = _stub_func(text, 'TakeOneRupee', 'c_take_one_rupee')
+    text = _stub_func(text, 'SetItemValue', 'c_set_item_value')
+    text = _stub_func(text, 'InitWhirlwind', 'c_init_whirlwind')
+
     with open(path, 'w', encoding='utf-8') as f:
         f.write(text)
 
@@ -3838,6 +3844,9 @@ def _patch_z04(path):
     text = _stub_func(text, 'SetDeadDummyObjType', 'c_set_dead_dummy_obj_type')
     text = _stub_func(text, 'Jumper_ResetVSpeedFrac', 'c_jumper_reset_vspeed_frac')
 
+    # --- Stage 4b batch 24 ---
+    text = _stub_func(text, 'L_Gleeok_SetSegmentY', 'c_gleeok_set_segment_y')
+
     with open(path, 'w', encoding='utf-8') as f:
         f.write(text)
 
@@ -5031,6 +5040,9 @@ def _patch_z05(path):
 
     # --- Stage 4b batch 23: simple leaf stubs ---
     text = _stub_func(text, 'UpdateMode11Death_Sub6', 'c_update_mode11_death_sub6')
+
+    # --- Stage 4b batch 24 ---
+    text = _stub_func(text, 'ResetVScrollLo', 'c_reset_vscroll_lo')
 
     with open(path, 'w', encoding='utf-8') as f:
         f.write(text)
@@ -6375,6 +6387,10 @@ def _patch_z07(path):
     # --- Stage 4b batch 23: simple leaf + C→C chain stubs ---
     text = _stub_func(text, 'InitFluteSecret', 'c_init_flute_secret')
     text = _stub_func(text, 'ResetObjMetastateAndTimer', 'c_reset_obj_metastate_and_timer')
+
+    # --- Stage 4b batch 24 ---
+    text = _stub_func(text, 'DeactivateShot', 'c_deactivate_shot')
+    text = _stub_func(text, 'DeactivateLinkShot', 'c_deactivate_link_shot')
 
     with open(path, 'w', encoding='utf-8') as f:
         f.write(text)

@@ -162,3 +162,22 @@ void z01_begin_update_mode(void) {
     RAM(0x0013) = 0;
     RAM(0x0011)++;
 }
+
+void z01_cue_transfer_buf_and_advance_state(unsigned int val) {
+    RAM(0x0014) = (unsigned char)val;
+    z01_inc_cave_state();
+}
+
+void z01_take_one_rupee(void) {
+    RAM(0x0602) = 1;
+    RAM(0x067D)++;
+}
+
+void z01_set_item_value(unsigned int val, unsigned int slot3) {
+    RAM(0x0657 + slot3) = (unsigned char)val;
+}
+
+void z01_init_whirlwind(unsigned int val, unsigned int slot) {
+    RAM(0x0084) = (unsigned char)val;
+    z01_set_up_whirlwind(slot);
+}
