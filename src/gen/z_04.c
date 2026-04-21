@@ -262,6 +262,7 @@ extern unsigned char z01_anim_set_sprite_desc_attrs(unsigned int val);
 
 extern unsigned int z07_find_empty_monster_slot(void);
 extern void z07_set_type_and_clear_object(unsigned int type, unsigned int slot);
+extern void z07_reset_obj_metastate_and_timer(unsigned int slot);
 
 void z04_shoot_fireball(unsigned int type, unsigned int source_slot) {
     RAM(0x0000) = (unsigned char)type;
@@ -287,4 +288,39 @@ void z04_wallmaster_prepare_to_draw(unsigned int slot) {
         z01_anim_set_sprite_desc_attrs(cur & 0x8F);
         RAM(0x000F)++;
     }
+}
+
+void z04_shoot_fireball_55(unsigned int source_slot) {
+    z04_shoot_fireball(85, source_slot);
+}
+
+void z04_gohma_set_sprite_attributes(unsigned int slot) {
+    unsigned char obj_type = RAM(0x034F + slot);
+    unsigned char attrs = (unsigned char)(obj_type - 0x32);
+    z01_anim_set_sprite_desc_attrs(attrs);
+}
+
+void z04_init_gohma(unsigned int slot) {
+    RAM(0x0601) = 32;
+    RAM(0x04B2 + slot) = 0xFB;
+    RAM(0x0380 + slot)++;
+    RAM(0x0070 + slot) = 0x80;
+    RAM(0x0084 + slot) = 112;
+    z07_reset_obj_metastate_and_timer(slot);
+}
+
+/* --- Carry-flag returning functions --- */
+
+static const unsigned char SecretQuestNumbers[] = { 0x00, 0x00, 0x01 };
+
+unsigned int z04_is_quest_secret_mismatch(void) {
+    unsigned char val = RAM(0x04CD) >> 6;
+    if (val == 0)
+        return 0;
+    unsigned char quest_for_secret = SecretQuestNumbers[val];
+    unsigned char slot = RAM(0x0016);
+    unsigned char save_quest = RAM(0x062D + slot);
+    if (quest_for_secret == save_quest)
+        return 0;
+    return CARRY_SET;
 }

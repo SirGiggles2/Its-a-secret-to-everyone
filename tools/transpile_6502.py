@@ -2591,6 +2591,15 @@ def _patch_z01(path):
     # --- Stage 4b batch 32 ---
     text = _stub_func(text, 'CopyPriceListTemplate', 'c_copy_price_list_template')
 
+    # --- Stage 4b batch 34 ---
+    text = _stub_func(text, 'InitUnderworldPersonB', 'c_init_underworld_person_b')
+
+    # --- Carry-flag + batch 35 ---
+    text = _stub_func(text, 'CompareHeartsToContainers', 'c_compare_hearts_to_containers')
+    text = _stub_func(text, 'UpdateUnderworldPersonComplexState_Begin', 'c_uw_person_complex_state_begin')
+    text = _stub_func(text, 'FormatCharDoublet', 'c_format_char_doublet')
+    text = _stub_func(text, 'ResetCurSpriteIndex', 'c_reset_cur_sprite_index')
+
     with open(path, 'w', encoding='utf-8') as f:
         f.write(text)
 
@@ -3947,6 +3956,14 @@ def _patch_z04(path):
     # --- Stage 4b batch 33 ---
     text = _stub_func(text, 'ShootFireball', 'c_shoot_fireball')
 
+    # --- Stage 4b batch 34 ---
+    text = _stub_func(text, 'ShootFireball55', 'c_shoot_fireball_55')
+    text = _stub_func(text, 'Gohma_SetSpriteAttributes', 'c_gohma_set_sprite_attributes')
+    text = _stub_func(text, 'InitGohma', 'c_init_gohma')
+
+    # --- Carry-flag batch ---
+    text = _stub_func(text, 'IsQuestSecretMismatch', 'c_is_quest_secret_mismatch')
+
     # Export ROM data tables referenced by C code
     if 'xdef    PolsVoiceWalkSpeedsX' not in text and 'PolsVoiceWalkSpeedsX:' in text:
         text = "\n    xdef    PolsVoiceWalkSpeedsX\n" + text
@@ -5158,6 +5175,21 @@ def _patch_z05(path):
 
     # --- Stage 4b batch 32 ---
     text = _stub_func(text, 'GetPlayerCoordsForDirection', 'c_get_player_coords_for_direction')
+
+    # --- Stage 4b batch 34 ---
+    text = _stub_func(text, 'BlockAtWall', 'c_block_at_wall')
+
+    # --- Carry-flag batch ---
+    text = _stub_func(text, 'CopyNextRowToTransferBuf', 'c_copy_next_row_to_transfer_buf')
+    text = _stub_func(text, 'CopyNextRowToTransferBufAndAdvanceSubmodeWhenDone', 'c_copy_next_row_advance_submode')
+    text = _stub_func(text, 'IsDistanceSafeToSpawn', 'c_is_distance_safe_to_spawn')
+
+    # --- Batch 35 ---
+    text = _stub_func(text, 'SetFadeCycleAndAdvanceSubmode', 'c_set_fade_cycle_advance_submode')
+    text = _stub_func(text, 'SetMovingDirAndSwitchToPlayerSlot', 'c_set_moving_dir_switch_player')
+    text = _stub_func(text, 'Link_ModifyDirInDoorway', 'c_link_modify_dir_in_doorway')
+    text = _stub_func(text, 'UpdateMode11Death_SubC', 'c_update_mode11_death_sub_c')
+    text = _stub_func(text, 'UpdateMode7Scroll_Sub6', 'c_update_mode7_scroll_sub6')
 
     with open(path, 'w', encoding='utf-8') as f:
         f.write(text)

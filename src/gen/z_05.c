@@ -391,6 +391,10 @@ void z05_select_transfer_buf_and_inc_state(unsigned int val) {
     RAM(0x00E1)++;
 }
 
+void z05_block_at_wall(void) {
+    RAM(0x000E) = 0xFF;
+}
+
 void z05_get_player_coords_for_direction(unsigned int dir) {
     unsigned char x = RAM(0x0070);
     unsigned char y = RAM(0x0084);
@@ -401,5 +405,100 @@ void z05_get_player_coords_for_direction(unsigned int dir) {
         RAM(0x0000) = x;
         RAM(0x0001) = y;
     }
+}
+
+/* --- Carry-flag returning functions --- */
+
+extern void z05_copy_row_to_tilebuf(void);
+
+unsigned int z05_copy_next_row_to_transfer_buf(void) {
+    z05_copy_row_to_tilebuf();
+    RAM(0x00E9)++;
+    unsigned char row = RAM(0x00E9);
+    unsigned int result = row;
+    if (row < 0x16)
+        result |= CARRY_SET;
+    return result;
+}
+
+unsigned int z05_copy_next_row_advance_submode(void) {
+    unsigned int result = z05_copy_next_row_to_transfer_buf();
+    if (!(result & CARRY_SET)) {
+        RAM(0x0013)++;
+    }
+    return result;
+}
+
+extern unsigned char z01_abs(unsigned int val);
+
+unsigned int z05_is_distance_safe_to_spawn(unsigned int slot) {
+    unsigned char link_x = RAM(0x0070);
+    unsigned char obj_x = RAM(0x0070 + slot);
+    unsigned char dx = z01_abs((unsigned char)(link_x - obj_x));
+    if (dx < 0x22) {
+        unsigned char link_y = RAM(0x0084);
+        unsigned char obj_y = RAM(0x0084 + slot);
+        unsigned char dy = z01_abs((unsigned char)(link_y - obj_y));
+        if (dy < 0x22)
+            return CARRY_SET;
+    }
+    return 0;
+}
+
+void z05_set_fade_cycle_and_advance_submode(unsigned int val) {
+    RAM(0x051C) = (unsigned char)val;
+    RAM(0x0013)++;
+}
+
+void z05_set_moving_dir_and_switch_to_player_slot(unsigned int dir) {
+    RAM(0x000F) = (unsigned char)dir;
+    /* Shim must also set D2=0 (switch to player slot) */
+}
+
+extern unsigned int z01_get_opposite_dir(unsigned int dir);
+
+void z05_link_modify_dir_in_doorway(void) {
+    if (RAM(0x0053) == 0) return;
+    unsigned char input_dir = RAM(0x03F8);
+    if (input_dir == 0) return;
+    unsigned char facing = RAM(0x0098);
+    if (facing & input_dir) {
+        RAM(0x03F8) = facing;
+        return;
+    }
+    unsigned char opp = (unsigned char)z01_get_opposite_dir(facing);
+    if (opp & input_dir) {
+        RAM(0x03F8) = opp;
+        return;
+    }
+    RAM(0x03F8) = facing;
+}
+
+extern unsigned char z07_end_game_mode(void);
+
+void z05_update_mode11_death_sub_c(void) {
+    if (RAM(0x0033) != 0) return;
+    z07_end_game_mode();
+    RAM(0x0012) = 8;
+    RAM(0x0602) = 64;
+    unsigned char slot = RAM(0x0016);
+    unsigned char continue_count = RAM(0x0630 + slot);
+    if (continue_count != 0xFF)
+        RAM(0x0630 + slot) = continue_count + 1;
+}
+
+void z05_update_mode7_scroll_sub6(void) {
+    if (RAM(0x0010) == 0) {
+        z05_update_mode7_scroll_sub7();
+        return;
+    }
+    unsigned char room = RAM(0x00EB);
+    unsigned char dark = z05_is_dark_room(room);
+    if (dark == 0) {
+        z05_update_mode7_scroll_sub7();
+        return;
+    }
+    RAM(0x00E9) = 0;
+    RAM(0x0013)++;
 }
 

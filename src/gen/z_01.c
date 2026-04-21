@@ -269,6 +269,15 @@ void z01_write_blank_priority_sprites(void) {
         RAM(0x0200 + i) = tmpl[i & 7];
 }
 
+void z01_init_underworld_person_b(unsigned int slot) {
+    static const unsigned char text_selectors[] = {0x2A, 0x38, 0x3A, 0x2C, 0x40, 0x42, 0x42, 0x3C};
+    z01_set_up_common_cave_objects(120, slot, 0x80);
+    unsigned char obj_type = RAM(0x034F + slot);
+    unsigned char idx = (unsigned char)(obj_type - 0x4B);
+    RAM(0x0415) = text_selectors[idx];
+    z01_play_character_sfx();
+}
+
 void z01_copy_price_list_template(void) {
     static const unsigned char tmpl[] = {
         0x22, 0xC8, 0x0D, 0x21, 0x24, 0x24, 0x24, 0x24,
@@ -276,4 +285,30 @@ void z01_copy_price_list_template(void) {
     };
     for (signed char i = 16; i >= 0; i--)
         RAM(0x0302 + (unsigned char)i) = tmpl[(unsigned char)i];
+}
+
+unsigned char z01_compare_hearts_to_containers(void) {
+    unsigned char hearts = RAM(0x066F);
+    unsigned char filled = hearts & 0x0F;
+    RAM(0x0000) = filled;
+    unsigned char containers = hearts >> 4;
+    return containers;
+}
+
+void z01_uw_person_complex_state_begin(void) {
+    unsigned char obj = RAM(0x0350);
+    if (obj == 0x4F)
+        RAM(0x0014) = 108;
+    RAM(0x0029) = 10;
+    RAM(0x00AD)++;
+}
+
+void z01_format_char_doublet(unsigned int val) {
+    RAM(0x0002) = (unsigned char)val;
+    RAM(0x0003) = 36;
+}
+
+unsigned char z01_reset_cur_sprite_index(void) {
+    RAM(0x0341) = 0;
+    return 0;
 }

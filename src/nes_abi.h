@@ -45,6 +45,8 @@ register volatile unsigned char *nes_ram asm("a4");
 #define NES_OBJ_POS_FRAC    0x03A8
 #define NES_OBJ_QSPD_FRAC   0x03BC
 
+#define CARRY_SET 0x100u
+
 #ifdef __cplusplus
 }
 #endif

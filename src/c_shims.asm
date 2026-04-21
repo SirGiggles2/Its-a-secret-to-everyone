@@ -202,6 +202,24 @@
     xdef    c_get_player_coords_for_direction
     xdef    c_copy_price_list_template
     xdef    c_shoot_fireball
+    xdef    c_shoot_fireball_55
+    xdef    c_gohma_set_sprite_attributes
+    xdef    c_init_gohma
+    xdef    c_block_at_wall
+    xdef    c_init_underworld_person_b
+    xdef    c_copy_next_row_to_transfer_buf
+    xdef    c_copy_next_row_advance_submode
+    xdef    c_is_quest_secret_mismatch
+    xdef    c_is_distance_safe_to_spawn
+    xdef    c_compare_hearts_to_containers
+    xdef    c_uw_person_complex_state_begin
+    xdef    c_format_char_doublet
+    xdef    c_reset_cur_sprite_index
+    xdef    c_set_fade_cycle_advance_submode
+    xdef    c_set_moving_dir_switch_player
+    xdef    c_link_modify_dir_in_doorway
+    xdef    c_update_mode11_death_sub_c
+    xdef    c_update_mode7_scroll_sub6
 
     xref    c_move_object
     xref    z03_transfer_level_pattern_blocks
@@ -380,6 +398,24 @@
     xref    z05_get_player_coords_for_direction
     xref    z01_copy_price_list_template
     xref    z04_shoot_fireball
+    xref    z04_shoot_fireball_55
+    xref    z04_gohma_set_sprite_attributes
+    xref    z04_init_gohma
+    xref    z05_block_at_wall
+    xref    z01_init_underworld_person_b
+    xref    z05_copy_next_row_to_transfer_buf
+    xref    z05_copy_next_row_advance_submode
+    xref    z04_is_quest_secret_mismatch
+    xref    z05_is_distance_safe_to_spawn
+    xref    z01_compare_hearts_to_containers
+    xref    z01_uw_person_complex_state_begin
+    xref    z01_format_char_doublet
+    xref    z01_reset_cur_sprite_index
+    xref    z05_set_fade_cycle_and_advance_submode
+    xref    z05_set_moving_dir_and_switch_to_player_slot
+    xref    z05_link_modify_dir_in_doorway
+    xref    z05_update_mode11_death_sub_c
+    xref    z05_update_mode7_scroll_sub6
 
 ;------------------------------------------------------------------------------
 ; _c_move_object_shim — MoveObject trampoline.
@@ -1878,5 +1914,167 @@ c_shoot_fireball:
     move.l  D0,-(SP)
     jsr     z04_shoot_fireball
     addq.l  #8,SP
+    rts
+
+; ShootFireball55 — D2=source_slot.
+c_shoot_fireball_55:
+    moveq   #0,D0
+    move.w  D2,D0
+    move.l  D0,-(SP)
+    jsr     z04_shoot_fireball_55
+    addq.l  #4,SP
+    rts
+
+; Gohma_SetSpriteAttributes — D2=slot.
+c_gohma_set_sprite_attributes:
+    moveq   #0,D0
+    move.w  D2,D0
+    move.l  D0,-(SP)
+    jsr     z04_gohma_set_sprite_attributes
+    addq.l  #4,SP
+    rts
+
+; InitGohma — D2=slot.
+c_init_gohma:
+    moveq   #0,D0
+    move.w  D2,D0
+    move.l  D0,-(SP)
+    jsr     z04_init_gohma
+    addq.l  #4,SP
+    rts
+
+; BlockAtWall — no args.
+c_block_at_wall:
+    jsr     z05_block_at_wall
+    rts
+
+; InitUnderworldPersonB — D2=slot.
+c_init_underworld_person_b:
+    moveq   #0,D0
+    move.w  D2,D0
+    move.l  D0,-(SP)
+    jsr     z01_init_underworld_person_b
+    addq.l  #4,SP
+    rts
+
+;==============================================================================
+; EXPORT side — carry-returning shims.
+; Bit 8 of D0 = raw M68K carry. Extracted into CCR, then eori #$01,CCR
+; reproduces the original function's carry normalization.
+;==============================================================================
+
+; CopyNextRowToTransferBuf — no args. Returns D0.b=row, carry in bit 8.
+c_copy_next_row_to_transfer_buf:
+    jsr     z05_copy_next_row_to_transfer_buf
+    btst    #8,D0
+    beq.s   .cc_cnr
+    ori     #$01,CCR
+    eori    #$01,CCR
+    rts
+.cc_cnr:
+    andi    #$FE,CCR
+    eori    #$01,CCR
+    rts
+
+; CopyNextRowToTransferBufAndAdvanceSubmodeWhenDone — no args. Carry-returning.
+c_copy_next_row_advance_submode:
+    jsr     z05_copy_next_row_advance_submode
+    btst    #8,D0
+    beq.s   .cc_cnras
+    ori     #$01,CCR
+    eori    #$01,CCR
+    rts
+.cc_cnras:
+    andi    #$FE,CCR
+    eori    #$01,CCR
+    rts
+
+; IsQuestSecretMismatch — no args. Returns carry in bit 8.
+c_is_quest_secret_mismatch:
+    jsr     z04_is_quest_secret_mismatch
+    btst    #8,D0
+    beq.s   .cc_iqsm
+    ori     #$01,CCR
+    eori    #$01,CCR
+    rts
+.cc_iqsm:
+    andi    #$FE,CCR
+    eori    #$01,CCR
+    rts
+
+; IsDistanceSafeToSpawn — D2=slot. Returns carry in bit 8.
+c_is_distance_safe_to_spawn:
+    moveq   #0,D0
+    move.w  D2,D0
+    move.l  D0,-(SP)
+    jsr     z05_is_distance_safe_to_spawn
+    addq.l  #4,SP
+    btst    #8,D0
+    beq.s   .cc_idsts
+    ori     #$01,CCR
+    eori    #$01,CCR
+    rts
+.cc_idsts:
+    andi    #$FE,CCR
+    eori    #$01,CCR
+    rts
+
+;==============================================================================
+; EXPORT side — batch 35 standard shims.
+;==============================================================================
+
+; CompareHeartsToContainers — no args. Returns D0.b = containers count.
+c_compare_hearts_to_containers:
+    jsr     z01_compare_hearts_to_containers
+    rts
+
+; UpdateUnderworldPersonComplexState_Begin — no args.
+c_uw_person_complex_state_begin:
+    jsr     z01_uw_person_complex_state_begin
+    rts
+
+; FormatCharDoublet — D0.b=character.
+c_format_char_doublet:
+    andi.l  #$FF,D0
+    move.l  D0,-(SP)
+    jsr     z01_format_char_doublet
+    addq.l  #4,SP
+    rts
+
+; ResetCurSpriteIndex — no args. Returns D0=0.
+c_reset_cur_sprite_index:
+    jsr     z01_reset_cur_sprite_index
+    rts
+
+; SetFadeCycleAndAdvanceSubmode — D0.b=val.
+c_set_fade_cycle_advance_submode:
+    andi.l  #$FF,D0
+    move.l  D0,-(SP)
+    jsr     z05_set_fade_cycle_and_advance_submode
+    addq.l  #4,SP
+    rts
+
+; SetMovingDirAndSwitchToPlayerSlot — D0.b=dir. Also sets D2=0.
+c_set_moving_dir_switch_player:
+    andi.l  #$FF,D0
+    move.l  D0,-(SP)
+    jsr     z05_set_moving_dir_and_switch_to_player_slot
+    addq.l  #4,SP
+    moveq   #0,D2
+    rts
+
+; Link_ModifyDirInDoorway — no args.
+c_link_modify_dir_in_doorway:
+    jsr     z05_link_modify_dir_in_doorway
+    rts
+
+; UpdateMode11Death_SubC — no args.
+c_update_mode11_death_sub_c:
+    jsr     z05_update_mode11_death_sub_c
+    rts
+
+; UpdateMode7Scroll_Sub6 — no args.
+c_update_mode7_scroll_sub6:
+    jsr     z05_update_mode7_scroll_sub6
     rts
 
