@@ -3779,19 +3779,57 @@ def _patch_z03_c_mode(path):
 import re as _re_stub
 
 def _stub_func(text, label, c_shim):
-    """Replace a function body (from label: to next top-level label) with a jmp stub."""
+    """Replace a function body with a jmp stub, preserving externally-referenced sub-labels.
+
+    Finds the body from `label:` to the next top-level (letter-starting) label.
+    Any _-prefixed sub-labels inside the body that are referenced from OUTSIDE
+    the body are preserved after the jmp stub so external branches still land.
+    """
     pat = _re_stub.compile(
         r'^(' + _re_stub.escape(label) + r':)\s*\n'
         r'(.*?)(?=^[A-Za-z]\w*:|\Z)',
         _re_stub.MULTILINE | _re_stub.DOTALL
     )
     m = pat.search(text)
-    if m:
-        stub = f"{label}:\n    jmp     {c_shim}\n\n"
-        text = text[:m.start()] + stub + text[m.end():]
-        print(f"  _stub_func: {label} -> {c_shim}")
-    else:
+    if not m:
         print(f"  WARNING: _stub_func -- {label} anchor not found")
+        return text
+
+    body = m.group(2)
+    body_start = m.start(2)
+    body_end = m.end()
+
+    # Find all _-prefixed labels defined inside the body
+    sub_labels = list(_re_stub.finditer(r'^(_\w+:)', body, _re_stub.MULTILINE))
+
+    # Check which sub-labels are referenced outside the body
+    preserved_blocks = []
+    for sl in sub_labels:
+        sl_name = sl.group(1).rstrip(':')
+        # Count references in entire file (excluding the label definition line itself)
+        ref_pat = _re_stub.compile(r'(?<!\w)' + _re_stub.escape(sl_name) + r'(?!\w|:)')
+        all_refs = list(ref_pat.finditer(text))
+        # References inside the body
+        body_refs = list(ref_pat.finditer(body))
+        external_refs = len(all_refs) - len(body_refs)
+        if external_refs > 0:
+            # Extract from this sub-label to the next sub-label or end of body
+            sl_start = sl.start()
+            # Find end: next sub-label start, or end of body
+            next_sl = None
+            for sl2 in sub_labels:
+                if sl2.start() > sl_start:
+                    next_sl = sl2
+                    break
+            sl_end = next_sl.start() if next_sl else len(body)
+            block = body[sl_start:sl_end]
+            preserved_blocks.append(block)
+            print(f"  _stub_func: preserving sub-label {sl_name} ({external_refs} external refs)")
+
+    preserved = ''.join(preserved_blocks)
+    stub = f"{label}:\n    jmp     {c_shim}\n\n{preserved}"
+    text = text[:m.start()] + stub + text[body_end:]
+    print(f"  _stub_func: {label} -> {c_shim}")
     return text
 
 
@@ -3854,6 +3892,7 @@ def _patch_z04(path):
     text = _stub_func(text, 'L_Gleeok_SetSegmentY', 'c_gleeok_set_segment_y')
 
     # --- Stage 4b batch 25 ---
+    text = _stub_func(text, 'InitMonsterShot', 'c_init_monster_shot')
     text = _stub_func(text, 'InitBoulder', 'c_init_boulder')
     text = _stub_func(text, 'InitBoulderSet', 'c_init_boulder_set')
 
@@ -6403,6 +6442,7 @@ def _patch_z07(path):
     text = _stub_func(text, 'DeactivateLinkShot', 'c_deactivate_link_shot')
 
     # --- Stage 4b batch 25 ---
+    text = _stub_func(text, 'Walker_AltDir_EndLoop', 'c_walker_alt_dir_end_loop')
     text = _stub_func(text, 'ResetShoveInfo', 'c_reset_shove_info')
     text = _stub_func(text, 'GoToNextMode', 'c_go_to_next_mode')
 
