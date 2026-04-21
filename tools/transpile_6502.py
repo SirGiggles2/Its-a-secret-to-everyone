@@ -3738,6 +3738,14 @@ def _patch_z04(path):
     # --- Stage 4b batch 6: z_04 C function stubs ---
     text = _stub_func(text, 'HideSpritesOverLink', 'c_hide_sprites_over_link')
 
+    # --- Stage 4b batch 12: more z_04 C function stubs ---
+    text = _stub_func(text, 'PlaySecretFoundTune', 'c_play_secret_found_tune')
+    text = _stub_func(text, 'PlayBossDeathCry', 'c_play_boss_death_cry')
+    text = _stub_func(text, 'L_Dodongo_DecrementBloatedTimer', 'c_dodongo_dec_bloated_timer')
+    text = _stub_func(text, 'Gleeok_DecHeadTimer', 'c_gleeok_dec_head_timer')
+    text = _stub_func(text, 'L_Gleeok_SetSegmentX', 'c_gleeok_set_segment_x')
+    text = _stub_func(text, '_L_z04_Gohma_HandleWeaponCollision_PlayParryTune', 'c_gohma_play_parry_tune')
+
     with open(path, 'w', encoding='utf-8') as f:
         f.write(text)
 
@@ -6236,6 +6244,10 @@ def _patch_z07(path):
     text = _stub_func(text, 'RollOverAnimCounter', 'c_roll_over_anim_counter')
     text = _stub_func(text, 'DecrementInvincibilityTimer', 'c_decrement_invincibility_timer')
     text = _stub_func(text, 'UpdateDeadDummy', 'c_update_dead_dummy')
+
+    # --- Stage 4b batch 12: more z_07 C function stubs ---
+    text = _stub_func(text, 'EndGameMode', 'c_end_game_mode')
+    text = _stub_func(text, 'SetShoveInfoWith0', 'c_set_shove_info_with0')
 
     with open(path, 'w', encoding='utf-8') as f:
         f.write(text)

@@ -79,3 +79,14 @@ void z07_update_dead_dummy(unsigned int slot) {
     RAM(0x0602) = 32;
     RAM(0x0405 + slot) = 16;
 }
+
+void z07_end_game_mode(void) {
+    RAM(0x0011) = 0;
+    RAM(0x0013) = 0;
+}
+
+void z07_set_shove_info_with0(unsigned int val, unsigned int slot) {
+    RAM(0x00C0 + slot) = (unsigned char)val;
+    RAM(0x00D3 + slot) = (unsigned char)val;
+}
+

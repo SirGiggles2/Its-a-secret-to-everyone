@@ -81,6 +81,14 @@
     xdef    c_roll_over_anim_counter
     xdef    c_decrement_invincibility_timer
     xdef    c_update_dead_dummy
+    xdef    c_play_secret_found_tune
+    xdef    c_play_boss_death_cry
+    xdef    c_dodongo_dec_bloated_timer
+    xdef    c_gleeok_dec_head_timer
+    xdef    c_gleeok_set_segment_x
+    xdef    c_gohma_play_parry_tune
+    xdef    c_end_game_mode
+    xdef    c_set_shove_info_with0
 
     xref    c_move_object
     xref    z03_transfer_level_pattern_blocks
@@ -140,6 +148,14 @@
     xref    z07_roll_over_anim_counter
     xref    z07_decrement_invincibility_timer
     xref    z07_update_dead_dummy
+    xref    z04_play_secret_found_tune
+    xref    z04_play_boss_death_cry
+    xref    z04_dodongo_dec_bloated_timer
+    xref    z04_gleeok_dec_head_timer
+    xref    z04_gleeok_set_segment_x
+    xref    z04_gohma_play_parry_tune
+    xref    z07_end_game_mode
+    xref    z07_set_shove_info_with0
 
 ;------------------------------------------------------------------------------
 ; _c_move_object_shim — MoveObject trampoline.
@@ -643,4 +659,62 @@ c_update_dead_dummy:
     jsr     z07_update_dead_dummy
     addq.l  #4,SP
     rts
+
+;==============================================================================
+; EXPORT side — batch 12: z_04 + z_07 leaves.
+;==============================================================================
+
+; PlaySecretFoundTune — void→void.
+c_play_secret_found_tune:
+    jmp     z04_play_secret_found_tune
+
+; PlayBossDeathCry — void→void.
+c_play_boss_death_cry:
+    jmp     z04_play_boss_death_cry
+
+; L_Dodongo_DecrementBloatedTimer — D2=slot.
+c_dodongo_dec_bloated_timer:
+    moveq   #0,D0
+    move.w  D2,D0
+    move.l  D0,-(SP)
+    jsr     z04_dodongo_dec_bloated_timer
+    addq.l  #4,SP
+    rts
+
+; Gleeok_DecHeadTimer — void→void.
+c_gleeok_dec_head_timer:
+    jmp     z04_gleeok_dec_head_timer
+
+; L_Gleeok_SetSegmentX — D3=val, D2=slot.
+c_gleeok_set_segment_x:
+    moveq   #0,D0
+    move.w  D2,D0
+    move.l  D0,-(SP)
+    moveq   #0,D0
+    move.b  D3,D0
+    move.l  D0,-(SP)
+    jsr     z04_gleeok_set_segment_x
+    addq.l  #8,SP
+    rts
+
+; Gohma_PlayParryTune — void→void.
+c_gohma_play_parry_tune:
+    jmp     z04_gohma_play_parry_tune
+
+; EndGameMode — void→void.
+c_end_game_mode:
+    jmp     z07_end_game_mode
+
+; SetShoveInfoWith0 — D0=val, D2=slot.
+c_set_shove_info_with0:
+    moveq   #0,D1
+    move.w  D2,D1
+    move.l  D1,-(SP)
+    moveq   #0,D1
+    move.b  D0,D1
+    move.l  D1,-(SP)
+    jsr     z07_set_shove_info_with0
+    addq.l  #8,SP
+    rts
+
 
