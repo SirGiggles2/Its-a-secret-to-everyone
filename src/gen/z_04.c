@@ -232,3 +232,27 @@ void z04_init_red_or_black_keese(unsigned int slot) {
     z04_init_blue_keese(slot);
     RAM(0x041F + slot) = 127;
 }
+
+extern void z07_set_shove_info_with0(unsigned int val, unsigned int slot);
+
+void z04_destroy_monster_bank4(unsigned int slot) {
+    RAM(0x034F + slot) = 0;
+    z07_set_shove_info_with0(0, slot);
+    RAM(0x0028 + slot) = 0;
+    RAM(0x00AC + slot) = 0;
+    RAM(0x04F0 + slot) = 0;
+    RAM(0x0492 + slot) = 0xFF;
+    RAM(0x0405 + slot) = 1;
+}
+
+void z04_ganon_get_cur_cloud_left(unsigned int slot) {
+    unsigned char x = RAM(0x0070 + slot);
+    unsigned char dist = RAM(0x0478 + slot);
+    RAM(0x0000) = (unsigned char)(x - dist);
+}
+
+void z04_ganon_get_cur_cloud_top(unsigned int slot) {
+    unsigned char y = RAM(0x0084 + slot);
+    unsigned char dist = RAM(0x0478 + slot);
+    RAM(0x0001) = (unsigned char)(y - dist);
+}

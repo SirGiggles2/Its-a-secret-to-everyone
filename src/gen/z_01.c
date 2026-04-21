@@ -256,3 +256,9 @@ void z01_play_sample(unsigned int val) {
 void z01_play_parry_tune(void) {
     RAM(0x0604) = 1;
 }
+
+void z01_write_blank_priority_sprites(void) {
+    static const unsigned char tmpl[] = {0x3D, 0x1C, 0x20, 0x00, 0xDD, 0x1C, 0x20, 0x00};
+    for (unsigned char i = 0; i < 0x40; i++)
+        RAM(0x0200 + i) = tmpl[i & 7];
+}

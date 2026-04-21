@@ -194,6 +194,10 @@
     xdef    c_init_blue_keese
     xdef    c_init_red_or_black_keese
     xdef    c_select_transfer_buf_and_inc_state
+    xdef    c_destroy_monster_bank4
+    xdef    c_ganon_get_cur_cloud_left
+    xdef    c_ganon_get_cur_cloud_top
+    xdef    c_write_blank_priority_sprites
 
     xref    c_move_object
     xref    z03_transfer_level_pattern_blocks
@@ -364,6 +368,10 @@
     xref    z04_init_blue_keese
     xref    z04_init_red_or_black_keese
     xref    z05_select_transfer_buf_and_inc_state
+    xref    z04_destroy_monster_bank4
+    xref    z04_ganon_get_cur_cloud_left
+    xref    z04_ganon_get_cur_cloud_top
+    xref    z01_write_blank_priority_sprites
 
 ;------------------------------------------------------------------------------
 ; _c_move_object_shim — MoveObject trampoline.
@@ -1791,5 +1799,39 @@ c_select_transfer_buf_and_inc_state:
     move.l  D0,-(SP)
     jsr     z05_select_transfer_buf_and_inc_state
     addq.l  #4,SP
+    rts
+
+; --- batch 31 ---
+
+; DestroyMonster_Bank4 — D2=slot.
+c_destroy_monster_bank4:
+    moveq   #0,D0
+    move.w  D2,D0
+    move.l  D0,-(SP)
+    jsr     z04_destroy_monster_bank4
+    addq.l  #4,SP
+    rts
+
+; Ganon_GetCurCloudLeft — D2=slot.
+c_ganon_get_cur_cloud_left:
+    moveq   #0,D0
+    move.w  D2,D0
+    move.l  D0,-(SP)
+    jsr     z04_ganon_get_cur_cloud_left
+    addq.l  #4,SP
+    rts
+
+; Ganon_GetCurCloudTop — D2=slot.
+c_ganon_get_cur_cloud_top:
+    moveq   #0,D0
+    move.w  D2,D0
+    move.l  D0,-(SP)
+    jsr     z04_ganon_get_cur_cloud_top
+    addq.l  #4,SP
+    rts
+
+; WriteBlankPrioritySprites — no args.
+c_write_blank_priority_sprites:
+    jsr     z01_write_blank_priority_sprites
     rts
 

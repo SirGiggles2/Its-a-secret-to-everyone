@@ -2585,6 +2585,9 @@ def _patch_z01(path):
     # --- Stage 4b batch 29 ---
     text = _stub_func(text, 'PlayParryTune', 'c_play_parry_tune')
 
+    # --- Stage 4b batch 31 ---
+    text = _stub_func(text, 'WriteBlankPrioritySprites', 'c_write_blank_priority_sprites')
+
     with open(path, 'w', encoding='utf-8') as f:
         f.write(text)
 
@@ -3929,6 +3932,11 @@ def _patch_z04(path):
     text = _stub_func(text, 'PolsVoice_MoveX', 'c_pols_voice_move_x')
     text = _stub_func(text, 'InitBlueKeese', 'c_init_blue_keese')
     text = _stub_func(text, 'InitRedOrBlackKeese', 'c_init_red_or_black_keese')
+
+    # --- Stage 4b batch 31 ---
+    text = _stub_func(text, 'DestroyMonster_Bank4', 'c_destroy_monster_bank4')
+    text = _stub_func(text, 'Ganon_GetCurCloudLeft', 'c_ganon_get_cur_cloud_left')
+    text = _stub_func(text, 'Ganon_GetCurCloudTop', 'c_ganon_get_cur_cloud_top')
 
     # Export ROM data tables referenced by C code
     if 'xdef    PolsVoiceWalkSpeedsX' not in text and 'PolsVoiceWalkSpeedsX:' in text:
