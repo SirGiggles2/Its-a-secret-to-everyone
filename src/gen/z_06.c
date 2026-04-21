@@ -17,28 +17,24 @@ extern const unsigned char LevelInfoUWQ2ReplacementSizes[];
 extern const unsigned char LevelBlockAttrsBQ2ReplacementOffsets[];
 extern const unsigned char LevelBlockAttrsBQ2ReplacementValues[];
 
-/* CopyBlock_ROM: copy from ROM source to NES RAM dest at ($02:$03 hi:lo).
- * Increments dest pointer byte-by-byte until it equals end addr ($04:$05).
- * Then increments submode ($13). Y index walks through source in parallel. */
+/* CopyBlock_ROM: copy from ROM source to NES RAM dest at $02:$03 (lo:hi).
+ * NES zero-page pointers are little-endian: $02=lo, $03=hi.
+ * Increments dest until it equals end addr at $04:$05 (lo:hi). */
 static void CopyBlock_ROM(const unsigned char *src) {
-    unsigned short y = 0;
     for (;;) {
-        unsigned char dest_hi = RAM(0x0002);
-        unsigned char dest_lo = RAM(0x0003);
-        unsigned short dest = ((unsigned short)dest_hi << 8) | dest_lo;
-        nes_ram[dest + y] = src[y];
+        unsigned short dest = ((unsigned short)RAM(0x0003) << 8) | RAM(0x0002);
+        nes_ram[dest] = *src;
 
         if (RAM(0x0002) == RAM(0x0004) && RAM(0x0003) == RAM(0x0005)) {
             RAM(0x0013)++;
             return;
         }
 
-        /* Increment 16-bit dest address at $02:$03 (hi:lo, CLC; ADC #1) */
-        unsigned char lo = RAM(0x0003);
+        unsigned char lo = RAM(0x0002);
         lo++;
-        RAM(0x0003) = lo;
+        RAM(0x0002) = lo;
         if (lo == 0)
-            RAM(0x0002)++;
+            RAM(0x0003)++;
 
         src++;
     }

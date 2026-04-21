@@ -37,10 +37,9 @@
 
     xref    c_move_object
     xref    z03_transfer_level_pattern_blocks
-    ; z_06 C functions disabled (boot regression — shims return rts)
-    ; xref    z06_init_mode2_submodes
-    ; xref    z06_copy_common_data_to_ram
-    ; xref    z06_update_mode2_load_full
+    xref    z06_init_mode2_submodes
+    xref    z06_copy_common_data_to_ram
+    xref    z06_update_mode2_load_full
     xref    z05_copy_column_to_tilebuf
     xref    z05_copy_row_to_tilebuf
     xref    z05_has_compass
@@ -149,16 +148,13 @@ c_transfer_level_pattern_blocks:
 ;==============================================================================
 
 c_init_mode2_submodes:
-;    jmp     z06_init_mode2_submodes
-    rts
+    jmp     z06_init_mode2_submodes
 
 c_copy_common_data_to_ram:
-;    jmp     z06_copy_common_data_to_ram
-    rts
+    jmp     z06_copy_common_data_to_ram
 
 c_update_mode2_load_full:
-;    jmp     z06_update_mode2_load_full
-    rts
+    jmp     z06_update_mode2_load_full
 
 ;==============================================================================
 ; EXPORT side — z_05 entry points (Stage 3b).
