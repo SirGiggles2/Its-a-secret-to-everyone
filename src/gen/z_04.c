@@ -6,7 +6,7 @@
 
 extern void z04_reset_flyer_state(unsigned int slot);
 extern void z04_init_digdogger1(unsigned int slot);
-extern void z07_reset_obj_state(unsigned int slot);
+extern unsigned char z07_reset_obj_state(unsigned int slot);
 extern void z07_reset_obj_metastate(unsigned int slot);
 extern void z07_reset_obj_metastate_and_timer(unsigned int slot);
 
@@ -258,7 +258,7 @@ void z04_ganon_get_cur_cloud_top(unsigned int slot) {
 }
 
 extern void z07_anim_advance_and_fetch(unsigned int val, unsigned int slot);
-extern void z01_anim_set_sprite_desc_attrs(unsigned int val);
+extern unsigned char z01_anim_set_sprite_desc_attrs(unsigned int val);
 
 void z04_wallmaster_prepare_to_draw(unsigned int slot) {
     static const unsigned char wallmaster_attrs[] = {
