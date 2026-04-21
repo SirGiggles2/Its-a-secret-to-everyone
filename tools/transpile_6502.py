@@ -4854,6 +4854,10 @@ def _patch_z05(path):
     text = _stub_func(text, 'HasCompass', 'c_has_compass')
     text = _stub_func(text, 'HasMap', 'c_has_map')
 
+    # --- Stage 4b: more z_05 leaf functions ---
+    text = _stub_func(text, 'SplitRoomId', 'c_split_room_id')
+    text = _stub_func(text, 'IsDarkRoom_Bank5', 'c_is_dark_room')
+
     with open(path, 'w', encoding='utf-8') as f:
         f.write(text)
 

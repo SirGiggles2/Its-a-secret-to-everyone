@@ -134,3 +134,18 @@ void z05_add_door_flags(void) {
             RAM(0x00EE) |= masked;
     }
 }
+
+/* --- Stage 4b functions --- */
+
+unsigned int z05_split_room_id(void) {
+    unsigned char room = RAM(0x00EB);
+    unsigned char col = room & 0x0F;
+    unsigned char row = room >> 4;
+    return ((unsigned int)row << 8) | col;
+}
+
+unsigned char z05_is_dark_room(unsigned int col) {
+    unsigned char level = RAM(0x0010);
+    if (level == 0) return 0;
+    return nes_ram[NES_SRAM_BASE + 0x0A7E + col] & 0x80;
+}

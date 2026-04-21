@@ -34,6 +34,8 @@
     xdef    c_has_map
     xdef    c_calc_open_doorway_mask
     xdef    c_add_door_flags
+    xdef    c_split_room_id
+    xdef    c_is_dark_room
 
     xref    c_move_object
     xref    z03_transfer_level_pattern_blocks
@@ -46,6 +48,8 @@
     xref    z05_has_map
     xref    z05_calc_open_doorway_mask
     xref    z05_add_door_flags
+    xref    z05_split_room_id
+    xref    z05_is_dark_room
 
 ;------------------------------------------------------------------------------
 ; _c_move_object_shim — MoveObject trampoline.
@@ -199,3 +203,29 @@ c_calc_open_doorway_mask:
 ; AddDoorFlagsToCurOpenedDoors — no args, void return
 c_add_door_flags:
     jmp     z05_add_door_flags
+
+;==============================================================================
+; EXPORT side — z_05 entry points (Stage 4b).
+;==============================================================================
+
+; SplitRoomId — reads RAM($EB), returns D2=row (hi nibble), D3=col (lo nibble).
+; C function returns (row<<8)|col in D0; shim unpacks into D2/D3.
+c_split_room_id:
+    jsr     z05_split_room_id
+    moveq   #0,D3
+    move.b  D0,D3           ; col = low byte of return
+    lsr.w   #8,D0
+    moveq   #0,D2
+    move.b  D0,D2           ; row = high byte of return
+    rts
+
+; IsDarkRoom_Bank5 — D3=column. Returns D0=$80 if dark, 0 otherwise.
+; Sets CCR flags for callers that branch on BEQ/BNE.
+c_is_dark_room:
+    moveq   #0,D0
+    move.w  D3,D0
+    move.l  D0,-(SP)
+    jsr     z05_is_dark_room
+    addq.l  #4,SP
+    tst.b   D0
+    rts
