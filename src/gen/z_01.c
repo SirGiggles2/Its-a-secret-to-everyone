@@ -244,3 +244,11 @@ unsigned char z01_get_room_flag_uw_item_state(void) {
     unsigned char room_id = RAM(0x00EB);
     return nes_ram[ptr + room_id] & 0x10;
 }
+
+void z01_play_effect(unsigned int val) {
+    RAM(0x0603) |= (unsigned char)val;
+}
+
+void z01_play_sample(unsigned int val) {
+    RAM(0x0601) |= (unsigned char)val;
+}

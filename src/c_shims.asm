@@ -175,6 +175,12 @@
     xdef    c_set_room_flag_uw_item_state
     xdef    c_get_room_flag_uw_item_state
     xdef    c_play_boss_hit_cry_if_needed
+    xdef    c_play_effect
+    xdef    c_play_sample
+    xdef    c_flyer_set_flying_state
+    xdef    c_play_boss_death_cry_if_needed
+    xdef    c_select_transfer_buf
+    xdef    c_touch_door_wall
 
     xref    c_move_object
     xref    z03_transfer_level_pattern_blocks
@@ -326,6 +332,12 @@
     xref    z01_set_room_flag_uw_item_state
     xref    z01_get_room_flag_uw_item_state
     xref    z04_play_boss_hit_cry_if_needed
+    xref    z01_play_effect
+    xref    z01_play_sample
+    xref    z04_flyer_set_flying_state
+    xref    z04_play_boss_death_cry_if_needed
+    xref    z05_select_transfer_buf
+    xref    z05_touch_door_wall
 
 ;------------------------------------------------------------------------------
 ; _c_move_object_shim — MoveObject trampoline.
@@ -1590,5 +1602,62 @@ c_play_boss_hit_cry_if_needed:
     move.l  D0,-(SP)
     jsr     z04_play_boss_hit_cry_if_needed
     addq.l  #4,SP
+    rts
+
+;==============================================================================
+; EXPORT side — batch 28.
+;==============================================================================
+
+; PlayEffect — D0=val. ORs into RAM($0603).
+c_play_effect:
+    moveq   #0,D1
+    move.b  D0,D1
+    move.l  D1,-(SP)
+    jsr     z01_play_effect
+    addq.l  #4,SP
+    rts
+
+; PlaySample — D0=val. ORs into RAM($0601).
+c_play_sample:
+    moveq   #0,D1
+    move.b  D0,D1
+    move.l  D1,-(SP)
+    jsr     z01_play_sample
+    addq.l  #4,SP
+    rts
+
+; Flyer_SetFlyingState — D0=val, D2=slot.
+c_flyer_set_flying_state:
+    moveq   #0,D1
+    move.w  D2,D1
+    move.l  D1,-(SP)
+    moveq   #0,D1
+    move.b  D0,D1
+    move.l  D1,-(SP)
+    jsr     z04_flyer_set_flying_state
+    addq.l  #8,SP
+    rts
+
+; PlayBossDeathCryIfNeeded — D2=slot.
+c_play_boss_death_cry_if_needed:
+    moveq   #0,D0
+    move.w  D2,D0
+    move.l  D0,-(SP)
+    jsr     z04_play_boss_death_cry_if_needed
+    addq.l  #4,SP
+    rts
+
+; SelectTransferBuf — D0=val.
+c_select_transfer_buf:
+    moveq   #0,D1
+    move.b  D0,D1
+    move.l  D1,-(SP)
+    jsr     z05_select_transfer_buf
+    addq.l  #4,SP
+    rts
+
+; TouchDoorWall — no args. Sets RAM($0E) = $FF.
+c_touch_door_wall:
+    jsr     z05_touch_door_wall
     rts
 

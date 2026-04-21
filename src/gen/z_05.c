@@ -377,3 +377,12 @@ void z05_reset_vscroll_lo(void) {
     z05_inc_submode();
 }
 
+void z05_select_transfer_buf(unsigned int val) {
+    RAM(0x0014) = (unsigned char)val;
+    z05_inc_submode();
+}
+
+void z05_touch_door_wall(void) {
+    RAM(0x000E) = 0xFF;
+}
+

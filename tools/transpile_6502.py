@@ -2578,6 +2578,10 @@ def _patch_z01(path):
     text = _stub_func(text, 'SetRoomFlagUWItemState', 'c_set_room_flag_uw_item_state')
     text = _stub_func(text, 'GetRoomFlagUWItemState', 'c_get_room_flag_uw_item_state')
 
+    # --- Stage 4b batch 28 ---
+    text = _stub_func(text, 'PlaySample', 'c_play_sample')
+    text = _stub_func(text, 'PlayEffect', 'c_play_effect')
+
     with open(path, 'w', encoding='utf-8') as f:
         f.write(text)
 
@@ -3908,6 +3912,10 @@ def _patch_z04(path):
     # --- Stage 4b batch 27 ---
     text = _stub_func(text, 'PlayBossHitCryIfNeeded', 'c_play_boss_hit_cry_if_needed')
 
+    # --- Stage 4b batch 28 ---
+    text = _stub_func(text, 'Flyer_SetFlyingState', 'c_flyer_set_flying_state')
+    text = _stub_func(text, 'PlayBossDeathCryIfNeeded', 'c_play_boss_death_cry_if_needed')
+
     with open(path, 'w', encoding='utf-8') as f:
         f.write(text)
 
@@ -5104,6 +5112,10 @@ def _patch_z05(path):
 
     # --- Stage 4b batch 24 ---
     text = _stub_func(text, 'ResetVScrollLo', 'c_reset_vscroll_lo')
+
+    # --- Stage 4b batch 28 ---
+    text = _stub_func(text, 'SelectTransferBuf', 'c_select_transfer_buf')
+    text = _stub_func(text, 'TouchDoorWall', 'c_touch_door_wall')
 
     with open(path, 'w', encoding='utf-8') as f:
         f.write(text)

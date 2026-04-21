@@ -172,3 +172,14 @@ void z04_play_boss_hit_cry_if_needed(unsigned int slot) {
     if (RAM(0x04F0 + slot) == 0x10)
         RAM(0x0601) = 2;
 }
+
+void z04_flyer_set_flying_state(unsigned int val, unsigned int slot) {
+    RAM(0x0444 + slot) = (unsigned char)val;
+}
+
+extern void z04_play_boss_death_cry(void);
+
+void z04_play_boss_death_cry_if_needed(unsigned int slot) {
+    if (RAM(0x0405 + slot) == 0) return;
+    z04_play_boss_death_cry();
+}
