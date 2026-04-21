@@ -191,3 +191,44 @@ void z05_set_entering_doorway(void) {
     unsigned char b = (scroll_dir << 1) & 0x0A;
     RAM(0x00EE) = a | b;
 }
+
+/* --- Stage 4b batch 3 functions --- */
+
+static const unsigned char sprite0_descriptor[] = { 0x27, 0x61, 0x20, 0x58 };
+
+void z05_write_and_enable_sprite0(void) {
+    RAM(0x00E3) = 1;
+    for (signed char i = 3; i >= 0; i--)
+        RAM(0x0200 + (unsigned char)i) = sprite0_descriptor[(unsigned char)i];
+}
+
+void z05_put_link_behind_background(void) {
+    RAM(0x024A) |= 0x20;
+    RAM(0x024E) |= 0x20;
+}
+
+void z05_reset_inv_obj_state(void) {
+    RAM(0x0064) = 0;
+    for (signed char i = 5; i >= 0; i--)
+        RAM(0x00B9 + (unsigned char)i) = 0;
+}
+
+void z05_mask_cur_ppu_mask_grayscale(void) {
+    RAM(0x00FE) &= 0xFE;
+}
+
+void z05_init_link_speed(void) {
+    RAM(0x0000) = 96;
+    unsigned char level = RAM(0x0010);
+    if (level != 0) {
+        RAM(0x03BC) = RAM(0x0000);
+        return;
+    }
+    unsigned char tile = RAM(0x049E);
+    if (tile == 0x74 || tile == 0x75) {
+        RAM(0x0000) = 48;
+        if (RAM(0x03BC) != 48)
+            RAM(0x03A8) = 0;
+    }
+    RAM(0x03BC) = RAM(0x0000);
+}

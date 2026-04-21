@@ -41,6 +41,10 @@
     xdef    c_check_has_living_monsters
     xdef    c_silence_sound
     xdef    c_set_entering_doorway
+    xdef    c_write_and_enable_sprite0
+    xdef    c_put_link_behind_background
+    xdef    c_reset_inv_obj_state
+    xdef    c_mask_cur_ppu_mask_grayscale
 
     xref    c_move_object
     xref    z03_transfer_level_pattern_blocks
@@ -60,6 +64,10 @@
     xref    z05_check_has_living_monsters
     xref    z05_silence_sound
     xref    z05_set_entering_doorway
+    xref    z05_write_and_enable_sprite0
+    xref    z05_put_link_behind_background
+    xref    z05_reset_inv_obj_state
+    xref    z05_mask_cur_ppu_mask_grayscale
 
 ;------------------------------------------------------------------------------
 ; _c_move_object_shim — MoveObject trampoline.
@@ -269,3 +277,24 @@ c_silence_sound:
 ; SetEnteringDoorwayAsCurOpenedDoors — no args, void return.
 c_set_entering_doorway:
     jmp     z05_set_entering_doorway
+
+;==============================================================================
+; EXPORT side — z_05 entry points (Stage 4b batch 3).
+;==============================================================================
+
+; WriteAndEnableSprite0 — no args, void return.
+c_write_and_enable_sprite0:
+    jmp     z05_write_and_enable_sprite0
+
+; PutLinkBehindBackground — no args, void return.
+c_put_link_behind_background:
+    jmp     z05_put_link_behind_background
+
+; ResetInvObjState — no args, void return.
+c_reset_inv_obj_state:
+    jmp     z05_reset_inv_obj_state
+
+; MaskCurPpuMaskGrayscale — no args, void return.
+c_mask_cur_ppu_mask_grayscale:
+    jmp     z05_mask_cur_ppu_mask_grayscale
+

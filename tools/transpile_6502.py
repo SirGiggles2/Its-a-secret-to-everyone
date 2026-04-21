@@ -4863,6 +4863,12 @@ def _patch_z05(path):
     text = _stub_func(text, 'SilenceSound', 'c_silence_sound')
     text = _stub_func(text, 'SetEnteringDoorwayAsCurOpenedDoors', 'c_set_entering_doorway')
 
+    # --- Stage 4b batch 3: more z_05 leaf functions ---
+    text = _stub_func(text, 'WriteAndEnableSprite0', 'c_write_and_enable_sprite0')
+    text = _stub_func(text, 'PutLinkBehindBackground', 'c_put_link_behind_background')
+    text = _stub_func(text, 'ResetInvObjState', 'c_reset_inv_obj_state')
+    text = _stub_func(text, 'MaskCurPpuMaskGrayscale', 'c_mask_cur_ppu_mask_grayscale')
+
     with open(path, 'w', encoding='utf-8') as f:
         f.write(text)
 
