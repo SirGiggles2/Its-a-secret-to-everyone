@@ -2569,6 +2569,11 @@ def _patch_z01(path):
     text = _stub_func(text, 'UpdatePersonState_CueTransferBlankPersonWares', 'c_cue_transfer_blank_person_wares')
     text = _stub_func(text, 'Take5Rupees', 'c_take_5_rupees')
 
+    # --- Stage 4b batch 26: high-impact utility functions ---
+    text = _stub_func(text, 'GetOppositeDir', 'c_get_opposite_dir')
+    text = _stub_func(text, 'Abs', 'c_abs')
+    text = _stub_func(text, 'Negate', 'c_negate')
+
     with open(path, 'w', encoding='utf-8') as f:
         f.write(text)
 

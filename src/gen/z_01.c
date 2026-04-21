@@ -198,3 +198,29 @@ void z01_take_5_rupees(void) {
     for (signed char i = 4; i >= 0; i--)
         z01_take_one_rupee();
 }
+
+unsigned int z01_get_opposite_dir(unsigned int dir) {
+    static const unsigned char opposite_dirs[] = {0x04, 0x08, 0x01, 0x02};
+    unsigned char d = (unsigned char)dir;
+    signed char idx = 3;
+    while (idx >= 0) {
+        if (d & 1) break;
+        d >>= 1;
+        idx--;
+    }
+    if (idx < 0) idx = 0;
+    unsigned char result = opposite_dirs[idx];
+    return ((unsigned int)(unsigned char)idx << 8) | result;
+}
+
+unsigned char z01_abs(unsigned int val) {
+    unsigned char v = (unsigned char)val;
+    if (v & 0x80)
+        return (~v + 1) & 0xFF;
+    return v;
+}
+
+unsigned char z01_negate(unsigned int val) {
+    unsigned char v = (unsigned char)val;
+    return (~v + 1) & 0xFF;
+}

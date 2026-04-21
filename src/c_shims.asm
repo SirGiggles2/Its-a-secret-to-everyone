@@ -164,6 +164,9 @@
     xdef    c_init_monster_shot
     xdef    c_init_boulder
     xdef    c_init_boulder_set
+    xdef    c_get_opposite_dir
+    xdef    c_abs
+    xdef    c_negate
 
     xref    c_move_object
     xref    z03_transfer_level_pattern_blocks
@@ -304,6 +307,9 @@
     xref    z04_init_monster_shot
     xref    z04_init_boulder
     xref    z04_init_boulder_set
+    xref    z01_get_opposite_dir
+    xref    z01_abs
+    xref    z01_negate
 
 ;------------------------------------------------------------------------------
 ; _c_move_object_shim — MoveObject trampoline.
@@ -1461,6 +1467,41 @@ c_init_boulder_set:
     move.w  D2,D0
     move.l  D0,-(SP)
     jsr     z04_init_boulder_set
+    addq.l  #4,SP
+    rts
+
+;==============================================================================
+; EXPORT side — batch 26.
+;==============================================================================
+
+; GetOppositeDir — D0=dir in, D0=opposite dir out, D3=reverse index out.
+; C returns packed (index<<8)|dir; shim unpacks to D0 and D3.
+c_get_opposite_dir:
+    moveq   #0,D1
+    move.b  D0,D1
+    move.l  D1,-(SP)
+    jsr     z01_get_opposite_dir
+    addq.l  #4,SP
+    move.l  D0,D1
+    lsr.w   #8,D1
+    move.b  D1,D3
+    rts
+
+; Abs — D0.b in, D0.b out (absolute value).
+c_abs:
+    moveq   #0,D1
+    move.b  D0,D1
+    move.l  D1,-(SP)
+    jsr     z01_abs
+    addq.l  #4,SP
+    rts
+
+; Negate — D0.b in, D0.b out (two's complement).
+c_negate:
+    moveq   #0,D1
+    move.b  D0,D1
+    move.l  D1,-(SP)
+    jsr     z01_negate
     addq.l  #4,SP
     rts
 
