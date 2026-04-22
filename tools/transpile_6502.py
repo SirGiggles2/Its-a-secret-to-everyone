@@ -2619,11 +2619,165 @@ def _patch_z01(path):
     # ClearPricesCaveFlag skipped: body contains IFND Exit/ENDC that _stub_func can't handle cleanly
     text = _stub_func(text, 'UpdatePersonState_DelayThenHide', 'c_update_person_state_delay_then_hide')
 
-    # Data table exports — batch 37
-    for tbl in ['UnderworldPersonTextSelectorsC', 'TextboxLineAddrsLo', 'RupeeStashXs', 'RupeeStashYs']:
+    # --- Batch 40 ---
+    text = _stub_func(text, 'UpdatePersonState_DoNothing', 'c_update_person_state_do_nothing')
+    text = _stub_func(text, 'UpdateCavePersonState_DoNothing', 'c_update_cave_person_state_do_nothing')
+    text = _stub_func(text, 'InitUnderworldPerson_DoNothing', 'c_init_underworld_person_do_nothing')
+    text = _stub_func(text, 'UpdateGrumble1', 'c_update_grumble1')
+
+    # --- Batch 43 ---
+    text = _stub_func(text, 'Add1ToInt16At0', 'c_add1_to_int16_at_0')
+
+    # --- Batch 49 ---
+    text = _stub_func(text, 'TakeHearts', 'c_take_hearts')
+
+    # --- Batch 53 ---
+    text = _stub_func(text, 'CheckInitWhirlwindAndBeginUpdate', 'c_check_init_whirlwind_and_begin_update')
+
+    # --- Batch 55 ---
+    text = _stub_func(text, 'AdvanceTeleportingLevelIndex', 'c_advance_teleporting_level_index')
+    # Stub Brown/Blue before Ashes — Brown/Blue branch into _anon_z01_23 inside Ashes body.
+    # Stub them first so those refs are gone before Ashes body is removed.
+    text = _stub_func(text, 'ReplaceGanonBrownPaletteRow', 'c_replace_ganon_brown_palette_row')
+    text = _stub_func(text, 'ReplaceGanonBluePaletteRow', 'c_replace_ganon_blue_palette_row')
+    text = _stub_func(text, 'ReplaceAshesPaletteRow', 'c_replace_ashes_palette_row')
+
+    # --- Batch 56 ---
+    text = _stub_func(text, 'InitUnderworldPersonA', 'c_init_underworld_person_a')
+    text = _stub_func(text, 'UpdateUnderworldPersonComplexState_SenseLink', 'c_update_uw_person_complex_state_sense_link')
+    text = _stub_func(text, 'UpdateUnderworldPersonLifeOrMoneyState_2', 'c_update_uw_person_life_or_money_state_2')
+
+    # --- Batch 57 ---
+    text = _stub_func(text, 'Person_CheckCollisions', 'c_person_check_collisions')
+    text = _stub_func(text, 'DrawLifeOrMoneyItems', 'c_draw_life_or_money_items')
+    text = _stub_func(text, 'UpdateGrumble3', 'c_update_grumble3')
+    text = _stub_func(text, 'Person_DrawAndCheckCollisions', 'c_person_draw_and_check_collisions')
+    text = _stub_func(text, 'UpdateGrumble_Full', 'c_update_grumble_full')
+    text = _stub_func(text, 'UpdateUnderworldPersonComplex', 'c_update_uw_person_complex')
+    text = _stub_func(text, 'UpdateUnderworldPerson_Full', 'c_update_uw_person_full')
+    text = _stub_func(text, 'UpdateUnderworldPersonLifeOrMoney_Full', 'c_update_uw_person_life_or_money_full')
+
+    # --- Batch 58 ---
+    # DivideBy10 FIRST: it branches back to _anon_z01_41 inside FormatDecimalByte.
+    # Stubbing it removes that cross-body branch before FormatDecimalByte body is removed.
+    text = _stub_func(text, 'DivideBy10', 'c_format_decimal_byte')
+    text = _stub_func(text, 'FormatDecimalByte', 'c_format_decimal_byte')
+    # SwapSpaceAndSign only called from WritePricesToDynamicTransferBuf (being stubbed below).
+    text = _stub_func(text, 'SwapSpaceAndSign', 'c_write_prices_to_dynamic_transfer_buf')
+    # Fallthrough chain: WritePricesToDynamicTransferBuf first, then WritePricesTransferBuf,
+    # then UpdateCavePersonState_TransferPrices.
+    text = _stub_func(text, 'WritePricesToDynamicTransferBuf', 'c_write_prices_to_dynamic_transfer_buf')
+    text = _stub_func(text, 'WritePricesTransferBuf', 'c_write_prices_transfer_buf')
+    text = _stub_func(text, 'UpdateCavePersonState_TransferPrices', 'c_update_cave_person_state_transfer_prices')
+    text = _stub_func(text, 'DrawCavePerson', 'c_draw_cave_person')
+    text = _stub_func(text, 'DrawCaveItems', 'c_draw_cave_items')
+    text = _stub_func(text, 'UpdatePersonState_Textbox', 'c_update_person_state_textbox')
+
+    # --- Batch 59 ---
+    # PrependSignToPrice falls through to UpdateCavePersonState_DoNothing (already stubbed).
+    text = _stub_func(text, 'PrependSignToPrice', 'c_update_cave_person_state_hint_or_money_game')
+    text = _stub_func(text, 'UpdateCavePersonState_TalkOrShopOrDoorCharge', 'c_update_cave_person_state_talk_or_shop_or_door_charge')
+    text = _stub_func(text, 'UpdateCavePersonState_HintOrMoneyGame', 'c_update_cave_person_state_hint_or_money_game')
+    text = _stub_func(text, 'UpdateCavePerson', 'c_update_cave_person')
+
+    # --- Batch 60 ---
+    # CopyTripletToTextBuf first: fallthrough target from FormatDecimalCountByteInTextBuf
+    text = _stub_func(text, 'CopyTripletToTextBuf', 'c_copy_triplet_to_text_buf')
+    text = _stub_func(text, 'FormatDecimalCountByteInTextBuf', 'c_format_decimal_count_byte_in_text_buf')
+    text = _stub_func(text, 'FormatDecimalCountByte', 'c_format_decimal_count_byte')
+    text = _stub_func(text, 'FormatHeartsInTextBuf', 'c_format_hearts_in_text_buf')
+    # FormatStatusBarText before World_ChangeRupees: fallthrough chain
+    text = _stub_func(text, 'FormatStatusBarText', 'c_format_status_bar_text')
+    text = _stub_func(text, 'World_ChangeRupees', 'c_world_change_rupees')
+
+    # --- Batch 61 ---
+    # TryTakeItem before TryTakeRoomItem: fallthrough chain
+    text = _stub_func(text, 'TryTakeItem', 'c_try_take_item')
+    text = _stub_func(text, 'TryTakeRoomItem', 'c_try_take_room_item')
+    text = _stub_func(text, 'InitCave', 'c_init_cave')
+
+    # --- Batch 62 ---
+    # Stub internal helpers first, then TakeItem (all internal callers killed by TakeItem stub)
+    text = _stub_func(text, 'CheckClass1', 'c_take_item')
+    text = _stub_func(text, 'TakeClass0Complex', 'c_take_item')
+    text = _stub_func(text, 'HandleClass2', 'c_take_item')
+    text = _stub_func(text, 'TakeItem', 'c_take_item')
+
+    # --- Batch 63 ---
+    # BoundByRoomWithA falls through to BoundByRoom; stub BoundByRoomWithA first
+    text = _stub_func(text, 'BoundDirectionHorizontally', 'c_bound_direction_horizontally')
+    text = _stub_func(text, 'BoundDirectionVertically', 'c_bound_direction_vertically')
+    text = _stub_func(text, 'BoundByRoomWithA', 'c_bound_by_room_with_a')
+    text = _stub_func(text, 'BoundByRoom', 'c_bound_by_room')
+    text = _stub_func(text, 'AddQSpeedToPositionFraction', 'c_add_q_speed_to_position_fraction')
+    text = _stub_func(text, 'SubQSpeedFromPositionFraction', 'c_sub_q_speed_from_position_fraction')
+    text = _stub_func(text, 'MoveShot', 'c_move_shot')
+
+    # --- Batch 64 ---
+    # Fallthrough chain: stub PlaceWeapon first, then callers
+    text = _stub_func(text, 'GetOneDirectionAndDistanceToTarget', 'c_get_one_direction_and_distance_to_target')
+    text = _stub_func(text, 'GetDirectionsAndDistancesToTarget', 'c_get_directions_and_distances_to_target')
+    text = _stub_func(text, '_CalcDiagonalSpeedIndex', 'c_calc_diagonal_speed_index')
+    text = _stub_func(text, 'PlaceWeapon', 'c_place_weapon')
+    text = _stub_func(text, 'PlaceWeaponForPlayerState', 'c_place_weapon_for_player_state')
+    text = _stub_func(text, 'PlaceWeaponForPlayerStateAndAnim', 'c_place_weapon_for_player_state_and_anim')
+    text = _stub_func(text, 'PlaceWeaponForPlayerStateAndAnimAndWeaponState', 'c_place_weapon_for_player_state_and_anim_and_weapon_state')
+
+    # --- Batch 65 ---
+    text = _stub_func(text, 'Sub1FromInt16At4', 'c_sub1_from_int16_at4')
+    text = _stub_func(text, 'WieldBomb', 'c_wield_bomb')
+    text = _stub_func(text, 'WieldCandle', 'c_wield_candle')
+    text = _stub_func(text, 'GetShortcutOrItemXYForRoom', 'c_get_shortcut_or_item_xy_for_room')
+    text = _stub_func(text, 'GetShortcutOrItemXY', 'c_get_shortcut_or_item_xy')
+
+    # --- Batch 66 ---
+    text = _stub_func(text, 'GetObjectMiddle', 'c_get_object_middle')
+    text = _stub_func(text, 'AnimateWorldFading', 'c_animate_world_fading')
+    text = _stub_func(text, 'CheckMazes', 'c_check_mazes')
+
+    # --- Batch 67 ---
+    text = _stub_func(text, 'CycleCurSpriteIndex', 'c_cycle_cur_sprite_index')
+    # CycleSpriteIndexInA NOT stubbed — body contains ResetCurSpriteIndex which is
+    # externally referenced (z_05) and _stub_func only preserves _-prefixed sub-labels.
+    text = _stub_func(text, 'HideObjectSprites', 'c_hide_object_sprites')
+    text = _stub_func(text, 'ShowLinkSpritesBehindHorizontalDoors', 'c_show_link_sprites_behind_horizontal_doors')
+
+    # --- Batch 68 ---
+    text = _stub_func(text, 'L_PlayParrySoundForDamageType', 'c_play_parry_sound_for_damage_type')
+    text = _stub_func(text, 'HandleMonsterDied', 'c_handle_monster_died')
+    text = _stub_func(text, 'DealDamage', 'c_deal_damage')
+
+    # --- Batch 69 ---
+    text = _stub_func(text, 'CheckMonsterBoomerangOrFoodCollision', 'c_check_monster_boomerang_or_food_collision')
+    text = _stub_func(text, 'CheckMonsterWeaponCollision', 'c_check_monster_weapon_collision')
+    text = _stub_func(text, 'HandleMonsterWeaponCollision', 'c_handle_monster_weapon_collision')
+    text = _stub_func(text, 'CheckMonsterSlenderWeaponCollision', 'c_check_monster_slender_weapon_collision')
+    text = _stub_func(text, 'CheckMonsterSlenderWeaponCollision2', 'c_check_monster_slender_weapon_collision2')
+    text = _stub_func(text, 'CheckMonsterStabbingCollision', 'c_check_monster_stabbing_collision')
+    text = _stub_func(text, 'CheckMonsterSwordCollision', 'c_check_monster_sword_collision')
+    text = _stub_func(text, 'CheckMonsterShotCollision', 'c_check_monster_shot_collision')
+    text = _stub_func(text, 'CheckMonsterArrowOrRodCollision', 'c_check_monster_arrow_or_rod_collision')
+    text = _stub_func(text, 'ParryOrShove', 'c_parry_or_shove')
+
+    # Data table exports — batch 37 + 44 + 53 + 55 + 56 + 57 + 58 + 59 + 60 + 61 + 62
+    for tbl in ['UnderworldPersonTextSelectorsC', 'TextboxLineAddrsLo', 'RupeeStashXs', 'RupeeStashYs',
+                'ReverseDirections', 'TeleportYs', 'PaletteRow7TransferRecord', 'GanonColorTriples',
+                'UnderworldPersonTextSelectorsA', 'LifeOrMoneyItemXs', 'LifeOrMoneyItemTypes',
+                'CaveWareXs', 'PersonTextAddrs', 'TextboxCharTransferRecTemplate',
+                'HintCaveTextSelectors0', 'StatusBarTransferBufTemplate',
+                'OverworldPersonTextSelectors', 'MoneyGameLossAmounts',
+                'MoneyGamePermutations', 'MoneyGamePermutationEndIndexes',
+                'ItemIdToSlot', 'ItemIdToDescriptor', 'LinkColors_CommonCode']:
         if f'xdef    {tbl}' not in text and f'{tbl}:' in text:
             text = f"\n    xdef    {tbl}\n" + text
             print(f"  _patch_z01: exported {tbl}")
+
+    # Export ASM functions callable from C (batch 57 import-side bridges + batch 59)
+    for sym in ['CheckMonsterCollisions', 'DrawObjectMirrored', 'DrawObjectNotMirrored',
+                'TakeItem']:
+        if f'xdef    {sym}' not in text and f'{sym}:' in text:
+            text = f"\n    xdef    {sym}\n" + text
+            print(f"  _patch_z01: exported {sym}")
 
     with open(path, 'w', encoding='utf-8') as f:
         f.write(text)
@@ -4012,6 +4166,57 @@ def _patch_z04(path):
     # --- Batch 39 ---
     text = _stub_func(text, 'InitPeahat', 'c_init_peahat')
 
+    # --- Batch 40 ---
+    text = _stub_func(text, 'InitPondFairy', 'c_init_pond_fairy')
+    text = _stub_func(text, 'InitDodongo', 'c_init_dodongo')
+
+    # --- Batch 41 ---
+    text = _stub_func(text, 'Flyer_FairyDecideState', 'c_flyer_fairy_decide_state')
+
+    # --- Batch 43 ---
+    text = _stub_func(text, 'CheckBossHitReaction', 'c_check_boss_hit_reaction')
+    text = _stub_func(text, 'Anim_SetSpriteDescriptorLevelPaletteRow', 'c_anim_set_sprite_desc_level_palette_row')
+    text = _stub_func(text, 'DeferBounce', 'c_defer_bounce')
+    text = _stub_func(text, 'Flyer_DoNothing', 'c_flyer_do_nothing')
+    text = _stub_func(text, 'Flyer_GhiniDecideState', 'c_flyer_ghini_decide_state')
+    text = _stub_func(text, 'Flyer_GleeokHeadDecideState', 'c_flyer_gleeok_head_decide_state')
+    text = _stub_func(text, 'Flyer_MoldormDecideState', 'c_flyer_moldorm_decide_state')
+    text = _stub_func(text, 'Flyer_PatraDecideState', 'c_flyer_patra_decide_state')
+
+    # --- Batch 45 ---
+    text = _stub_func(text, 'Flyer_CompareMaxSpeed', 'c_flyer_compare_max_speed')
+
+    # --- Batch 46 ---
+    text = _stub_func(text, 'Gleeok_IgnoreSegment', 'c_gleeok_ignore_segment')
+    text = _stub_func(text, 'Gleeok_ContractSegmentX', 'c_gleeok_contract_segment_x')
+    text = _stub_func(text, 'Gleeok_ContractSegmentY', 'c_gleeok_contract_segment_y')
+    text = _stub_func(text, 'IsDarkRoom_Bank4', 'c_is_dark_room_bank4')
+
+    # --- Batch 47 ---
+    text = _stub_func(text, 'Flyer_SlowDown', 'c_flyer_slow_down')
+    text = _stub_func(text, 'Flyer_SpeedUp', 'c_flyer_speed_up')
+    text = _stub_func(text, 'SetFlyingState1', 'c_set_flying_state_1')
+
+    # --- Batch 48 ---
+    text = _stub_func(text, 'Gleeok_ContractSegment', 'c_gleeok_contract_segment')
+
+    # --- Batch 52 ---
+    text = _stub_func(text, 'InitLeever', 'c_init_leever')
+
+    # --- Batch 53 ---
+    text = _stub_func(text, 'UpdateDodongoState1_Bloated_Sub_Die', 'c_update_dodongo_state1_bloated_sub_die')
+
+    # --- Batch 54 ---
+    text = _stub_func(text, 'InitWalker', 'c_init_walker')
+    text = _stub_func(text, 'InitBubble', 'c_init_bubble')
+    text = _stub_func(text, 'InitSlowOctorockOrGhini', 'c_init_slow_octorock_or_ghini')
+    text = _stub_func(text, 'InitFastOctorock', 'c_init_fast_octorock')
+    text = _stub_func(text, 'InitRope', 'c_init_rope')
+    text = _stub_func(text, 'InitDarknut', 'c_init_darknut')
+
+    # --- Batch 55 ---
+    text = _stub_func(text, 'InitGel', 'c_init_gel')
+
     # Export ROM data tables referenced by C code
     if 'xdef    PolsVoiceWalkSpeedsX' not in text and 'PolsVoiceWalkSpeedsX:' in text:
         text = "\n    xdef    PolsVoiceWalkSpeedsX\n" + text
@@ -5253,6 +5458,64 @@ def _patch_z05(path):
     text = _stub_func(text, 'UpdateMenu5OW', 'c_update_menu5_ow')
     text = _stub_func(text, 'L1433A_IncSubmode', 'c_l1433a_inc_submode')
     text = _stub_func(text, 'InitMode7_Finish', 'c_init_mode7_finish')
+
+    # --- Batch 40 ---
+    text = _stub_func(text, 'SwitchToNT1', 'c_switch_to_nt1')
+    text = _stub_func(text, 'UpdateMode11Death_SetTimerIncSubmode', 'c_update_mode11_death_set_timer_inc_submode')
+    text = _stub_func(text, 'UpdateMode11Death_Sub4', 'c_update_mode11_death_sub4')
+    text = _stub_func(text, 'UpdateMode11Death_Sub5', 'c_update_mode11_death_sub5')
+    text = _stub_func(text, 'UpdateMode11Death_Sub9', 'c_update_mode11_death_sub9')
+
+    # --- Batch 41 ---
+    text = _stub_func(text, 'WieldNothing', 'c_wield_nothing')
+    text = _stub_func(text, 'EndPrepareMode', 'c_end_prepare_mode')
+    text = _stub_func(text, 'L1712E_SelectTransferBufAndAdvanceSubmode', 'c_select_transfer_buf')
+    text = _stub_func(text, 'InitMode9_TransferAttrs', 'c_init_mode9_transfer_attrs')
+    text = _stub_func(text, 'StartFillingHearts', 'c_start_filling_hearts')
+    text = _stub_func(text, 'InitModeB_Sub1', 'c_init_mode_b_sub1')
+
+    # --- Batch 42 ---
+    text = _stub_func(text, 'CheckSecretTriggerNone', 'c_check_secret_trigger_none')
+    text = _stub_func(text, 'TriggerShutters', 'c_trigger_shutters')
+    text = _stub_func(text, 'ReturnFalse', 'c_return_false')
+    text = _stub_func(text, 'CheckSecretTriggerAllDead', 'c_check_secret_trigger_all_dead')
+    text = _stub_func(text, 'CheckSecretTriggerLastBoss', 'c_check_secret_trigger_last_boss')
+    text = _stub_func(text, 'CheckSecretTriggerMoneyOrLife', 'c_check_secret_trigger_money_or_life')
+    text = _stub_func(text, 'CheckSecretTriggerBlockDoor', 'c_check_secret_trigger_block_door')
+
+    # --- Batch 43 ---
+    text = _stub_func(text, 'CheckSecretTriggerRingleader', 'c_check_secret_trigger_ringleader')
+    text = _stub_func(text, 'TouchDoorOpen', 'c_touch_door_open')
+    text = _stub_func(text, 'TouchDoorBombable', 'c_touch_door_bombable')
+
+    # --- Batch 46 ---
+    text = _stub_func(text, 'DecSubmenuScroll', 'c_dec_submenu_scroll')
+
+    # --- Batch 49 ---
+    text = _stub_func(text, 'SelectTransferBufAndAdvanceSubmode', 'c_select_transfer_buf')
+    text = _stub_func(text, 'BlockUntilTime', 'c_block_until_time')
+
+    # --- Batch 50 ---
+    text = _stub_func(text, 'InitMode3_Sub2', 'c_init_mode3_sub2')
+    text = _stub_func(text, 'InitMode3_Sub6', 'c_init_mode3_sub6')
+    text = _stub_func(text, 'InitMode3_Sub7', 'c_init_mode3_sub7')
+    text = _stub_func(text, 'UpdateMode12EndLevel_Sub1', 'c_update_mode12_end_level_sub1')
+    text = _stub_func(text, 'TouchDoorFalse', 'c_touch_door_false')
+
+    # --- Batch 51 ---
+    text = _stub_func(text, 'InitModeA_Sub1', 'c_init_mode_a_sub1')
+    text = _stub_func(text, 'EndGameMode12', 'c_end_game_mode12')
+    text = _stub_func(text, 'TouchDoorShutter', 'c_touch_door_shutter')
+    text = _stub_func(text, 'SaveKillCountOW', 'c_save_kill_count_ow')
+
+    # --- Batch 52 ---
+    text = _stub_func(text, 'CueTransferPlayAreaAttrsHalfAndAdvanceSubmodeNT0', 'c_cue_transfer_play_area_attrs_half_nt0')
+
+    # --- Batch 54 ---
+    # Sub4 references _anon_z05_151 defined inside Sub3; stub Sub4 first to drop that ref.
+    text = _stub_func(text, 'InitMode3_Sub4_TransferBottomHalfAttrs', 'c_init_mode3_sub4')
+    text = _stub_func(text, 'InitMode3_Sub3_TransferTopHalfAttrs', 'c_init_mode3_sub3')
+    text = _stub_func(text, 'InitMode3_Sub5', 'c_init_mode3_sub5')
 
     with open(path, 'w', encoding='utf-8') as f:
         f.write(text)
@@ -6632,15 +6895,57 @@ def _patch_z07(path):
     text = _stub_func(text, 'GetCollidableTileStill', 'c_get_collidable_tile_still')
     text = _stub_func(text, 'GetCollidingTileMoving', 'c_get_colliding_tile_moving')
 
+    # --- Batch 44 ---
+    text = _stub_func(text, 'DoNothing', 'c_do_nothing_z07')
+    text = _stub_func(text, 'Walker_AltDir_GetRandomObjPerpendicularDir', 'c_walker_alt_dir_get_random_perpendicular')
+
+    # --- Batch 45 ---
+    text = _stub_func(text, 'InitGrumble', 'c_init_grumble_z07')
+    text = _stub_func(text, 'InitRupeeStash', 'c_init_rupee_stash_z07')
+    text = _stub_func(text, 'InitMode3_Sub1', 'c_init_mode3_sub1_z07')
+
+    # --- Batch 48 ---
+    # MarkRoomVisited ends with IFND Exit / Exit: / ENDC — _stub_func would
+    # stop at Exit: (capital), leaving a dangling ENDC. Use regex replace.
+    import re as _re_mrv
+    _mrv_pat = _re_mrv.compile(
+        r'MarkRoomVisited:\n'
+        r'    jsr     GetRoomFlags\n'
+        r'.*?'
+        r'    IFND Exit\nExit:\n    ENDC\n    rts',
+        _re_mrv.DOTALL
+    )
+    new_mrv = ('MarkRoomVisited:\n'
+               '    jmp     c_mark_room_visited\n'
+               '\n'
+               '    IFND Exit\n'
+               'Exit:\n'
+               '    ENDC\n'
+               '    rts')
+    if _mrv_pat.search(text):
+        text = _mrv_pat.sub(new_mrv, text, count=1)
+        print('  _patch_z07: MarkRoomVisited stubbed (regex replace)')
+    else:
+        print('  WARNING: MarkRoomVisited regex replace: anchor not found')
+
     # Export ROM data tables referenced by C code
     if 'xdef    SaveSlotToPaletteRowOffset' not in text and 'SaveSlotToPaletteRowOffset:' in text:
         text = "\n    xdef    SaveSlotToPaletteRowOffset\n" + text
         print("  _patch_z07: exported SaveSlotToPaletteRowOffset")
+    if 'xdef    LevelMasks' not in text and 'LevelMasks:' in text:
+        text = "\n    xdef    LevelMasks\n" + text
+        print("  _patch_z07: exported LevelMasks")
 
     for tbl in ['PlayAreaColumnAddrs', 'WalkableTiles']:
         if f'xdef    {tbl}' not in text and f'{tbl}:' in text:
             text = f"\n    xdef    {tbl}\n" + text
             print(f"  _patch_z07: exported {tbl}")
+
+    # Export ASM functions callable from C (batch 57 import-side bridges)
+    for sym in ['AnimateItemObject', 'Link_EndMoveAndAnimate_Bank1', 'Link_EndMoveAndDraw_Bank1']:
+        if f'xdef    {sym}' not in text and f'{sym}:' in text:
+            text = f"\n    xdef    {sym}\n" + text
+            print(f"  _patch_z07: exported {sym}")
 
     with open(path, 'w', encoding='utf-8') as f:
         f.write(text)

@@ -260,6 +260,163 @@
     xdef    c_update_menu5_ow
     xdef    c_l1433a_inc_submode
     xdef    c_init_mode7_finish
+    xdef    c_update_person_state_do_nothing
+    xdef    c_update_cave_person_state_do_nothing
+    xdef    c_init_underworld_person_do_nothing
+    xdef    c_update_grumble1
+    xdef    c_init_pond_fairy
+    xdef    c_init_dodongo
+    xdef    c_switch_to_nt1
+    xdef    c_update_mode11_death_set_timer_inc_submode
+    xdef    c_update_mode11_death_sub4
+    xdef    c_update_mode11_death_sub5
+    xdef    c_update_mode11_death_sub9
+    xdef    c_flyer_fairy_decide_state
+    xdef    c_add1_to_int16_at_0
+    xdef    c_check_boss_hit_reaction
+    xdef    c_anim_set_sprite_desc_level_palette_row
+    xdef    c_defer_bounce
+    xdef    c_flyer_do_nothing
+    xdef    c_flyer_ghini_decide_state
+    xdef    c_flyer_gleeok_head_decide_state
+    xdef    c_flyer_moldorm_decide_state
+    xdef    c_flyer_patra_decide_state
+    xdef    c_do_nothing_z07
+    xdef    c_walker_alt_dir_get_random_perpendicular
+    xdef    c_flyer_compare_max_speed
+    xdef    c_init_grumble_z07
+    xdef    c_init_rupee_stash_z07
+    xdef    c_init_mode3_sub1_z07
+    xdef    c_gleeok_ignore_segment
+    xdef    c_gleeok_contract_segment_x
+    xdef    c_gleeok_contract_segment_y
+    xdef    c_is_dark_room_bank4
+    xdef    c_dec_submenu_scroll
+    xdef    c_flyer_slow_down
+    xdef    c_flyer_speed_up
+    xdef    c_set_flying_state_1
+    xdef    c_gleeok_contract_segment
+    xdef    c_take_hearts
+    xdef    c_block_until_time
+    xdef    c_wield_nothing
+    xdef    c_end_prepare_mode
+    xdef    c_init_mode9_transfer_attrs
+    xdef    c_start_filling_hearts
+    xdef    c_init_mode_b_sub1
+    xdef    c_check_secret_trigger_none
+    xdef    c_trigger_shutters
+    xdef    c_return_false
+    xdef    c_check_secret_trigger_all_dead
+    xdef    c_check_secret_trigger_last_boss
+    xdef    c_check_secret_trigger_money_or_life
+    xdef    c_check_secret_trigger_block_door
+    xdef    c_check_secret_trigger_ringleader
+    xdef    c_touch_door_open
+    xdef    c_touch_door_bombable
+    xdef    c_init_mode3_sub2
+    xdef    c_init_mode3_sub6
+    xdef    c_init_mode3_sub7
+    xdef    c_update_mode12_end_level_sub1
+    xdef    c_touch_door_false
+    xdef    c_init_mode_a_sub1
+    xdef    c_end_game_mode12
+    xdef    c_touch_door_shutter
+    xdef    c_save_kill_count_ow
+    xdef    c_cue_transfer_play_area_attrs_half_nt0
+    xdef    c_init_leever
+    xdef    c_check_init_whirlwind_and_begin_update
+    xdef    c_update_dodongo_state1_bloated_sub_die
+    xdef    c_init_walker
+    xdef    c_init_bubble
+    xdef    c_init_rope
+    xdef    c_init_darknut
+    xdef    c_init_slow_octorock_or_ghini
+    xdef    c_init_fast_octorock
+    xdef    c_init_mode3_sub3
+    xdef    c_init_mode3_sub4
+    xdef    c_init_mode3_sub5
+    xdef    c_advance_teleporting_level_index
+    xdef    c_init_underworld_person_a
+    xdef    c_update_uw_person_complex_state_sense_link
+    xdef    c_update_uw_person_life_or_money_state_2
+    xdef    c_replace_ganon_brown_palette_row
+    xdef    c_replace_ganon_blue_palette_row
+    xdef    c_replace_ashes_palette_row
+    xdef    c_init_gel
+    xdef    c_person_check_collisions
+    xdef    c_draw_life_or_money_items
+    xdef    c_update_grumble3
+    xdef    c_update_grumble_full
+    xdef    c_update_uw_person_full
+    xdef    c_update_uw_person_complex
+    xdef    c_update_uw_person_life_or_money_full
+    xdef    c_person_draw_and_check_collisions
+    xdef    c_check_monster_collisions
+    xdef    c_animate_item_object
+    xdef    c_draw_object_mirrored
+    xdef    c_draw_object_not_mirrored
+    xdef    c_link_end_move_and_animate_bank1
+    xdef    c_update_person_state_textbox
+    xdef    c_draw_cave_person
+    xdef    c_draw_cave_items
+    xdef    c_format_decimal_byte
+    xdef    c_write_prices_to_dynamic_transfer_buf
+    xdef    c_write_prices_transfer_buf
+    xdef    c_update_cave_person_state_transfer_prices
+    xdef    c_link_end_move_and_draw_bank1
+    xdef    c_update_cave_person_state_talk_or_shop_or_door_charge
+    xdef    c_update_cave_person_state_hint_or_money_game
+    xdef    c_update_cave_person
+    xdef    c_take_item
+    xdef    c_format_hearts_in_text_buf
+    xdef    c_copy_triplet_to_text_buf
+    xdef    c_format_decimal_count_byte
+    xdef    c_format_decimal_count_byte_in_text_buf
+    xdef    c_format_status_bar_text
+    xdef    c_world_change_rupees
+    xdef    c_init_cave
+    xdef    c_try_take_item
+    xdef    c_try_take_room_item
+    xdef    c_bound_direction_horizontally
+    xdef    c_bound_direction_vertically
+    xdef    c_bound_by_room
+    xdef    c_bound_by_room_with_a
+    xdef    c_add_q_speed_to_position_fraction
+    xdef    c_sub_q_speed_from_position_fraction
+    xdef    c_move_shot
+    xdef    c_get_one_direction_and_distance_to_target
+    xdef    c_get_directions_and_distances_to_target
+    xdef    c_calc_diagonal_speed_index
+    xdef    c_place_weapon
+    xdef    c_place_weapon_for_player_state
+    xdef    c_place_weapon_for_player_state_and_anim
+    xdef    c_place_weapon_for_player_state_and_anim_and_weapon_state
+    xdef    c_sub1_from_int16_at4
+    xdef    c_wield_bomb
+    xdef    c_wield_candle
+    xdef    c_get_shortcut_or_item_xy_for_room
+    xdef    c_get_shortcut_or_item_xy
+    xdef    c_get_object_middle
+    xdef    c_animate_world_fading
+    xdef    c_check_mazes
+    xdef    c_cycle_cur_sprite_index
+    xdef    c_hide_object_sprites
+    xdef    c_show_link_sprites_behind_horizontal_doors
+    xdef    c_play_parry_sound_for_damage_type
+    xdef    c_handle_monster_died
+    xdef    c_deal_damage
+    xdef    c_handle_monster_weapon_collision
+    xdef    c_check_monster_weapon_collision
+    xdef    c_check_monster_slender_weapon_collision2
+    xdef    c_check_monster_slender_weapon_collision
+    xdef    c_check_monster_stabbing_collision
+    xdef    c_check_monster_sword_collision
+    xdef    c_parry_or_shove
+    xdef    c_check_monster_shot_collision
+    xdef    c_check_monster_arrow_or_rod_collision
+    xdef    c_check_monster_boomerang_or_food_collision
+    xdef    c_call_begin_shove
+    xdef    c_call_gohma_handle_weapon_collision
 
     xref    c_move_object
     xref    z03_transfer_level_pattern_blocks
@@ -496,6 +653,162 @@
     xref    z05_update_menu5_ow
     xref    z05_l1433a_inc_submode
     xref    z05_init_mode7_finish
+    xref    z01_update_person_state_do_nothing
+    xref    z01_update_cave_person_state_do_nothing
+    xref    z01_init_underworld_person_do_nothing
+    xref    z01_update_grumble1
+    xref    z04_init_pond_fairy
+    xref    z04_init_dodongo
+    xref    z05_switch_to_nt1
+    xref    z05_update_mode11_death_set_timer_inc_submode
+    xref    z05_update_mode11_death_sub4
+    xref    z05_update_mode11_death_sub5
+    xref    z05_update_mode11_death_sub9
+    xref    z04_flyer_fairy_decide_state
+    xref    z01_add1_to_int16_at_0
+    xref    z04_check_boss_hit_reaction
+    xref    z04_anim_set_sprite_desc_level_palette_row
+    xref    z04_defer_bounce
+    xref    z04_flyer_do_nothing
+    xref    z04_flyer_ghini_decide_state
+    xref    z04_flyer_gleeok_head_decide_state
+    xref    z04_flyer_moldorm_decide_state
+    xref    z04_flyer_patra_decide_state
+    xref    z07_do_nothing
+    xref    z07_walker_alt_dir_get_random_perpendicular
+    xref    z04_flyer_compare_max_speed
+    xref    z07_init_grumble
+    xref    z07_init_mode3_sub1
+    xref    z07_init_rupee_stash
+    xref    z04_gleeok_ignore_segment
+    xref    z04_gleeok_contract_segment_x
+    xref    z04_gleeok_contract_segment_y
+    xref    z04_is_dark_room_bank4
+    xref    z05_dec_submenu_scroll
+    xref    z04_flyer_slow_down
+    xref    z04_flyer_speed_up
+    xref    z04_set_flying_state_1
+    xref    z04_gleeok_contract_segment
+    xref    z01_take_hearts
+    xref    z05_block_until_time
+    xref    z05_init_mode3_sub2
+    xref    z05_init_mode3_sub6
+    xref    z05_init_mode3_sub7
+    xref    z05_update_mode12_end_level_sub1
+    xref    z05_touch_door_false
+    xref    z05_init_mode_a_sub1
+    xref    z05_end_game_mode12
+    xref    z05_touch_door_shutter
+    xref    z05_save_kill_count_ow
+    xref    z04_init_leever
+    xref    z01_check_init_whirlwind_and_begin_update
+    xref    z04_update_dodongo_state1_bloated_sub_die
+    xref    z04_init_walker
+    xref    z04_init_bubble
+    xref    z04_init_rope
+    xref    z04_init_darknut
+    xref    z04_init_slow_octorock_or_ghini
+    xref    z04_init_fast_octorock
+    xref    z05_init_mode3_sub3
+    xref    z05_init_mode3_sub4
+    xref    z05_init_mode3_sub5
+    xref    z01_advance_teleporting_level_index
+    xref    z01_init_underworld_person_a
+    xref    z01_update_uw_person_complex_state_sense_link
+    xref    z01_update_uw_person_life_or_money_state_2
+    xref    z01_replace_ganon_brown_palette_row
+    xref    z01_replace_ganon_blue_palette_row
+    xref    z01_replace_ashes_palette_row
+    xref    z04_init_gel
+    xref    z01_person_check_collisions
+    xref    z01_draw_life_or_money_items
+    xref    z01_update_grumble3
+    xref    z01_update_grumble_full
+    xref    z01_update_uw_person_full
+    xref    z01_update_uw_person_complex
+    xref    z01_update_uw_person_life_or_money_full
+    xref    z01_person_draw_and_check_collisions
+    xref    CheckMonsterCollisions
+    xref    AnimateItemObject
+    xref    DrawObjectMirrored
+    xref    DrawObjectNotMirrored
+    xref    Link_EndMoveAndAnimate_Bank1
+    xref    z01_update_person_state_textbox
+    xref    z01_draw_cave_person
+    xref    z01_draw_cave_items
+    xref    z01_format_decimal_byte
+    xref    z01_write_prices_to_dynamic_transfer_buf
+    xref    z01_write_prices_transfer_buf
+    xref    z01_update_cave_person_state_transfer_prices
+    xref    Link_EndMoveAndDraw_Bank1
+    xref    z01_update_cave_person_state_talk_or_shop_or_door_charge
+    xref    z01_update_cave_person_state_hint_or_money_game
+    xref    z01_update_cave_person
+    xref    z01_take_item
+    xref    z01_format_hearts_in_text_buf
+    xref    z01_copy_triplet_to_text_buf
+    xref    z01_format_decimal_count_byte
+    xref    z01_format_decimal_count_byte_in_text_buf
+    xref    z01_format_status_bar_text
+    xref    z01_world_change_rupees
+    xref    z01_init_cave
+    xref    z01_try_take_item
+    xref    z01_try_take_room_item
+    xref    z01_bound_direction_horizontally
+    xref    z01_bound_direction_vertically
+    xref    z01_bound_by_room
+    xref    z01_bound_by_room_with_a
+    xref    z01_add_q_speed_to_position_fraction
+    xref    z01_sub_q_speed_from_position_fraction
+    xref    z01_move_shot
+    xref    z01_get_one_direction_and_distance_to_target
+    xref    z01_get_directions_and_distances_to_target
+    xref    z01_calc_diagonal_speed_index
+    xref    z01_place_weapon
+    xref    z01_place_weapon_for_player_state
+    xref    z01_place_weapon_for_player_state_and_anim
+    xref    z01_place_weapon_for_player_state_and_anim_and_weapon_state
+    xref    z01_sub1_from_int16_at4
+    xref    z01_wield_bomb
+    xref    z01_wield_candle
+    xref    z01_get_shortcut_or_item_xy_for_room
+    xref    z01_get_shortcut_or_item_xy
+    xref    z01_get_object_middle
+    xref    z01_animate_world_fading
+    xref    z01_check_mazes
+    xref    z01_cycle_cur_sprite_index
+    xref    z01_cycle_sprite_index_in_a
+    xref    z01_hide_object_sprites
+    xref    z01_show_link_sprites_behind_horizontal_doors
+    xref    z01_play_parry_sound_for_damage_type
+    xref    z01_handle_monster_died
+    xref    z01_deal_damage
+    xref    z01_handle_monster_weapon_collision
+    xref    z01_check_monster_weapon_collision
+    xref    z01_check_monster_slender_weapon_collision2
+    xref    z01_check_monster_slender_weapon_collision
+    xref    z01_check_monster_stabbing_collision
+    xref    z01_check_monster_sword_collision
+    xref    z01_parry_or_shove
+    xref    z01_check_monster_shot_collision
+    xref    z01_check_monster_arrow_or_rod_collision
+    xref    z01_check_monster_boomerang_or_food_collision
+    xref    z07_patch_and_cue_level_palettes_transfer
+    xref    z05_wield_nothing
+    xref    z05_end_prepare_mode
+    xref    z05_init_mode9_transfer_attrs
+    xref    z05_start_filling_hearts
+    xref    z05_init_mode_b_sub1
+    xref    z05_check_secret_trigger_none
+    xref    z05_trigger_shutters
+    xref    z05_return_false
+    xref    z05_check_secret_trigger_all_dead
+    xref    z05_check_secret_trigger_last_boss
+    xref    z05_check_secret_trigger_money_or_life
+    xref    z05_check_secret_trigger_block_door
+    xref    z05_check_secret_trigger_ringleader
+    xref    z05_touch_door_open
+    xref    z05_touch_door_bombable
 
 ;------------------------------------------------------------------------------
 ; _c_move_object_shim — MoveObject trampoline.
@@ -2457,4 +2770,1259 @@ c_l1433a_inc_submode:
 ; InitMode7_Finish — no args, void return.
 c_init_mode7_finish:
     jmp     z05_init_mode7_finish
+
+; --- batch 40 ---
+
+; UpdatePersonState_DoNothing — no args, void return.
+c_update_person_state_do_nothing:
+    jmp     z01_update_person_state_do_nothing
+
+; UpdateCavePersonState_DoNothing — no args, void return.
+c_update_cave_person_state_do_nothing:
+    jmp     z01_update_cave_person_state_do_nothing
+
+; InitUnderworldPerson_DoNothing — no args, void return.
+c_init_underworld_person_do_nothing:
+    jmp     z01_init_underworld_person_do_nothing
+
+; UpdateGrumble1 — no args, void return.
+c_update_grumble1:
+    jmp     z01_update_grumble1
+
+; InitPondFairy — D2=slot.
+c_init_pond_fairy:
+    moveq   #0,D0
+    move.w  D2,D0
+    move.l  D0,-(SP)
+    jsr     z04_init_pond_fairy
+    addq.l  #4,SP
+    rts
+
+; InitDodongo — D2=slot.
+c_init_dodongo:
+    moveq   #0,D0
+    move.w  D2,D0
+    move.l  D0,-(SP)
+    jsr     z04_init_dodongo
+    addq.l  #4,SP
+    rts
+
+; SwitchToNT1 — no args, void return.
+c_switch_to_nt1:
+    jmp     z05_switch_to_nt1
+
+; UpdateMode11Death_SetTimerIncSubmode — D0=val.
+c_update_mode11_death_set_timer_inc_submode:
+    andi.l  #$FF,D0
+    move.l  D0,-(SP)
+    jsr     z05_update_mode11_death_set_timer_inc_submode
+    addq.l  #4,SP
+    rts
+
+; UpdateMode11Death_Sub4 — no args, void return.
+c_update_mode11_death_sub4:
+    jmp     z05_update_mode11_death_sub4
+
+; UpdateMode11Death_Sub5 — no args, void return.
+c_update_mode11_death_sub5:
+    jmp     z05_update_mode11_death_sub5
+
+; UpdateMode11Death_Sub9 — no args, void return.
+c_update_mode11_death_sub9:
+    jmp     z05_update_mode11_death_sub9
+
+; --- batch 41 ---
+
+; Flyer_FairyDecideState — D2=slot.
+c_flyer_fairy_decide_state:
+    moveq   #0,D0
+    move.w  D2,D0
+    move.l  D0,-(SP)
+    jsr     z04_flyer_fairy_decide_state
+    addq.l  #4,SP
+    rts
+
+; Add1ToInt16At0 — no args, returns low byte in D0.
+c_add1_to_int16_at_0:
+    jsr     z01_add1_to_int16_at_0
+    rts
+
+; CheckBossHitReaction — D2=slot, void.
+c_check_boss_hit_reaction:
+    moveq   #0,D0
+    move.w  D2,D0
+    move.l  D0,-(SP)
+    jsr     z04_check_boss_hit_reaction
+    addq.l  #4,SP
+    rts
+
+; Anim_SetSpriteDescriptorLevelPaletteRow — no args, void.
+c_anim_set_sprite_desc_level_palette_row:
+    jmp     z04_anim_set_sprite_desc_level_palette_row
+
+; DeferBounce — D2=slot, D3=dir_idx, void.
+c_defer_bounce:
+    moveq   #0,D1
+    move.w  D3,D1
+    move.l  D1,-(SP)        ; arg2: dir_idx
+    moveq   #0,D0
+    move.w  D2,D0
+    move.l  D0,-(SP)        ; arg1: slot
+    jsr     z04_defer_bounce
+    addq.l  #8,SP
+    rts
+
+; Flyer_DoNothing — void, no args.
+c_flyer_do_nothing:
+    jmp     z04_flyer_do_nothing
+
+; Flyer_GhiniDecideState — D2=slot, void.
+c_flyer_ghini_decide_state:
+    moveq   #0,D0
+    move.w  D2,D0
+    move.l  D0,-(SP)
+    jsr     z04_flyer_ghini_decide_state
+    addq.l  #4,SP
+    rts
+
+; Flyer_GleeokHeadDecideState — D2=slot, void.
+c_flyer_gleeok_head_decide_state:
+    moveq   #0,D0
+    move.w  D2,D0
+    move.l  D0,-(SP)
+    jsr     z04_flyer_gleeok_head_decide_state
+    addq.l  #4,SP
+    rts
+
+; Flyer_MoldormDecideState — D2=slot, void.
+c_flyer_moldorm_decide_state:
+    moveq   #0,D0
+    move.w  D2,D0
+    move.l  D0,-(SP)
+    jsr     z04_flyer_moldorm_decide_state
+    addq.l  #4,SP
+    rts
+
+; Flyer_PatraDecideState — D2=slot, void.
+c_flyer_patra_decide_state:
+    moveq   #0,D0
+    move.w  D2,D0
+    move.l  D0,-(SP)
+    jsr     z04_flyer_patra_decide_state
+    addq.l  #4,SP
+    rts
+
+; DoNothing (z07) — void, no args.
+c_do_nothing_z07:
+    jmp     z07_do_nothing
+
+; Walker_AltDir_GetRandomObjPerpendicularDir — D2=slot, returns dir in D0.
+c_walker_alt_dir_get_random_perpendicular:
+    moveq   #0,D0
+    move.w  D2,D0
+    move.l  D0,-(SP)
+    jsr     z07_walker_alt_dir_get_random_perpendicular
+    addq.l  #4,SP
+    rts
+
+; Flyer_CompareMaxSpeed — D0=speed (byte), D2=slot, void.
+c_flyer_compare_max_speed:
+    moveq   #0,D1
+    move.w  D2,D1
+    move.l  D1,-(SP)
+    moveq   #0,D1
+    move.b  D0,D1
+    move.l  D1,-(SP)
+    jsr     z04_flyer_compare_max_speed
+    addq.l  #8,SP
+    rts
+
+; InitGrumble (z07 wrapper) — D2=slot, void.
+c_init_grumble_z07:
+    moveq   #0,D0
+    move.w  D2,D0
+    move.l  D0,-(SP)
+    jsr     z07_init_grumble
+    addq.l  #4,SP
+    rts
+
+; InitRupeeStash (z07 wrapper) — D2=slot, void.
+c_init_rupee_stash_z07:
+    moveq   #0,D0
+    move.w  D2,D0
+    move.l  D0,-(SP)
+    jsr     z07_init_rupee_stash
+    addq.l  #4,SP
+    rts
+
+; InitMode3Sub1 (z07) — no args, void.
+c_init_mode3_sub1_z07:
+    jsr     z07_init_mode3_sub1
+    rts
+
+; --- batch 46 ---
+
+; GleeokIgnoreSegment — no args, void no-op.
+c_gleeok_ignore_segment:
+    jmp     z04_gleeok_ignore_segment
+
+; GleeokContractSegmentX — D2=slot, void.
+c_gleeok_contract_segment_x:
+    moveq   #0,D0
+    move.w  D2,D0
+    move.l  D0,-(SP)
+    jsr     z04_gleeok_contract_segment_x
+    addq.l  #4,SP
+    rts
+
+; GleeokContractSegmentY — D2=slot, void.
+c_gleeok_contract_segment_y:
+    moveq   #0,D0
+    move.w  D2,D0
+    move.l  D0,-(SP)
+    jsr     z04_gleeok_contract_segment_y
+    addq.l  #4,SP
+    rts
+
+; IsDarkRoom_Bank4 — D3=room_idx, returns D0.
+c_is_dark_room_bank4:
+    moveq   #0,D0
+    move.w  D3,D0
+    move.l  D0,-(SP)
+    jsr     z04_is_dark_room_bank4
+    addq.l  #4,SP
+    rts
+
+; DecSubmenuScroll — no args, void.
+c_dec_submenu_scroll:
+    jsr     z05_dec_submenu_scroll
+    rts
+
+; --- batch 47 ---
+
+; Flyer_SlowDown — D2=slot, void.
+c_flyer_slow_down:
+    moveq   #0,D0
+    move.w  D2,D0
+    move.l  D0,-(SP)
+    jsr     z04_flyer_slow_down
+    addq.l  #4,SP
+    rts
+
+; Flyer_SpeedUp — D2=slot, void.
+c_flyer_speed_up:
+    moveq   #0,D0
+    move.w  D2,D0
+    move.l  D0,-(SP)
+    jsr     z04_flyer_speed_up
+    addq.l  #4,SP
+    rts
+
+; SetFlyingState1 — D2=slot, void.
+c_set_flying_state_1:
+    moveq   #0,D0
+    move.w  D2,D0
+    move.l  D0,-(SP)
+    jsr     z04_set_flying_state_1
+    addq.l  #4,SP
+    rts
+
+; --- batch 48 ---
+
+; GleeokContractSegment — D2=slot, void.
+c_gleeok_contract_segment:
+    moveq   #0,D0
+    move.w  D2,D0
+    move.l  D0,-(SP)
+    jsr     z04_gleeok_contract_segment
+    addq.l  #4,SP
+    rts
+
+; --- batch 49 ---
+
+; TakeHearts — no args, void.
+c_take_hearts:
+    jsr     z01_take_hearts
+    rts
+
+; BlockUntilTime — no args, void.
+c_block_until_time:
+    jsr     z05_block_until_time
+    rts
+
+; WieldNothing — no args, void return.
+c_wield_nothing:
+    jmp     z05_wield_nothing
+
+; EndPrepareMode — no args, void return.
+c_end_prepare_mode:
+    jmp     z05_end_prepare_mode
+
+; InitMode9_TransferAttrs — no args, void return.
+c_init_mode9_transfer_attrs:
+    jmp     z05_init_mode9_transfer_attrs
+
+; StartFillingHearts — no args, void return.
+c_start_filling_hearts:
+    jmp     z05_start_filling_hearts
+
+; InitModeB_Sub1 — no args, void return.
+c_init_mode_b_sub1:
+    jmp     z05_init_mode_b_sub1
+
+; --- batch 42 — carry-returning z_05 secret trigger helpers ---
+
+; CheckSecretTriggerNone — no args, always returns C=0.
+c_check_secret_trigger_none:
+    jsr     z05_check_secret_trigger_none
+    btst    #8,D0
+    beq.s   .cc_cstn
+    ori     #$01,CCR
+    eori    #$01,CCR
+    rts
+.cc_cstn:
+    andi    #$FE,CCR
+    eori    #$01,CCR
+    rts
+
+; TriggerShutters — no args, always returns C=1.
+c_trigger_shutters:
+    jsr     z05_trigger_shutters
+    btst    #8,D0
+    beq.s   .cc_ts
+    ori     #$01,CCR
+    eori    #$01,CCR
+    rts
+.cc_ts:
+    andi    #$FE,CCR
+    eori    #$01,CCR
+    rts
+
+; ReturnFalse — no args, always returns C=0.
+c_return_false:
+    jsr     z05_return_false
+    btst    #8,D0
+    beq.s   .cc_rf
+    ori     #$01,CCR
+    eori    #$01,CCR
+    rts
+.cc_rf:
+    andi    #$FE,CCR
+    eori    #$01,CCR
+    rts
+
+; CheckSecretTriggerAllDead — no args, carry return.
+c_check_secret_trigger_all_dead:
+    jsr     z05_check_secret_trigger_all_dead
+    btst    #8,D0
+    beq.s   .cc_cstad
+    ori     #$01,CCR
+    eori    #$01,CCR
+    rts
+.cc_cstad:
+    andi    #$FE,CCR
+    eori    #$01,CCR
+    rts
+
+; CheckSecretTriggerLastBoss — no args, carry return.
+c_check_secret_trigger_last_boss:
+    jsr     z05_check_secret_trigger_last_boss
+    btst    #8,D0
+    beq.s   .cc_cstlb
+    ori     #$01,CCR
+    eori    #$01,CCR
+    rts
+.cc_cstlb:
+    andi    #$FE,CCR
+    eori    #$01,CCR
+    rts
+
+; CheckSecretTriggerMoneyOrLife — no args, carry return.
+c_check_secret_trigger_money_or_life:
+    jsr     z05_check_secret_trigger_money_or_life
+    btst    #8,D0
+    beq.s   .cc_cstmol
+    ori     #$01,CCR
+    eori    #$01,CCR
+    rts
+.cc_cstmol:
+    andi    #$FE,CCR
+    eori    #$01,CCR
+    rts
+
+; CheckSecretTriggerBlockDoor — no args, carry return.
+c_check_secret_trigger_block_door:
+    jsr     z05_check_secret_trigger_block_door
+    btst    #8,D0
+    beq.s   .cc_cstbd
+    ori     #$01,CCR
+    eori    #$01,CCR
+    rts
+.cc_cstbd:
+    andi    #$FE,CCR
+    eori    #$01,CCR
+    rts
+
+; CheckSecretTriggerRingleader — no args, carry return.
+c_check_secret_trigger_ringleader:
+    jsr     z05_check_secret_trigger_ringleader
+    btst    #8,D0
+    beq.s   .cc_cstrl
+    ori     #$01,CCR
+    eori    #$01,CCR
+    rts
+.cc_cstrl:
+    andi    #$FE,CCR
+    eori    #$01,CCR
+    rts
+
+; TouchDoorOpen — no args, no carry (void).
+c_touch_door_open:
+    jmp     z05_touch_door_open
+
+; TouchDoorBombable — no args, void.
+c_touch_door_bombable:
+    jsr     z05_touch_door_bombable
+    rts
+
+; --- batch 50 ---
+
+; InitMode3_Sub2 — no args, void.
+c_init_mode3_sub2:
+    jsr     z05_init_mode3_sub2
+    rts
+
+; InitMode3_Sub6 — no args, void.
+c_init_mode3_sub6:
+    jsr     z05_init_mode3_sub6
+    rts
+
+; InitMode3_Sub7 — no args, void.
+c_init_mode3_sub7:
+    jsr     z05_init_mode3_sub7
+    rts
+
+; UpdateMode12EndLevel_Sub1 — no args, void.
+c_update_mode12_end_level_sub1:
+    jsr     z05_update_mode12_end_level_sub1
+    rts
+
+; --- batch 51 ---
+
+; InitModeA_Sub1 — no args, void.
+c_init_mode_a_sub1:
+    jsr     z05_init_mode_a_sub1
+    rts
+
+; EndGameMode12 — no args, void.
+c_end_game_mode12:
+    jsr     z05_end_game_mode12
+    rts
+
+; TouchDoorShutter — no args, void.
+c_touch_door_shutter:
+    jsr     z05_touch_door_shutter
+    rts
+
+; SaveKillCountOW — D3=slot.
+c_save_kill_count_ow:
+    moveq   #0,D0
+    move.w  D3,D0
+    move.l  D0,-(SP)
+    jsr     z05_save_kill_count_ow
+    addq.l  #4,SP
+    rts
+
+; --- batch 52 ---
+
+; CueTransferPlayAreaAttrsHalfAndAdvanceSubmodeNT0 — no args. NT offset=35 fixed.
+; Delegates to z05_cue_transfer_play_area_attrs_half_and_advance_submode(35, D0, D3).
+c_cue_transfer_play_area_attrs_half_nt0:
+    moveq   #0,D1
+    move.b  D3,D1
+    move.l  D1,-(SP)
+    moveq   #0,D1
+    move.b  D0,D1
+    move.l  D1,-(SP)
+    move.l  #35,-(SP)
+    jsr     z05_cue_transfer_play_area_attrs_half_and_advance_submode
+    lea     12(SP),SP
+    rts
+
+; InitLeever — D2=slot, void.
+c_init_leever:
+    moveq   #0,D0
+    move.w  D2,D0
+    move.l  D0,-(SP)
+    jsr     z04_init_leever
+    addq.l  #4,SP
+    rts
+
+; TouchDoorFalse — no args, carry-returning.
+c_touch_door_false:
+    jsr     z05_touch_door_false
+    btst    #8,D0
+    beq.s   .cc_tdf
+    ori     #$01,CCR
+    eori    #$01,CCR
+    rts
+.cc_tdf:
+    andi    #$FE,CCR
+    eori    #$01,CCR
+    rts
+
+; --- batch 53 ---
+
+; CheckInitWhirlwindAndBeginUpdate — no args, void.
+c_check_init_whirlwind_and_begin_update:
+    jsr     z01_check_init_whirlwind_and_begin_update
+    rts
+
+; UpdateDodongoState1_Bloated_Sub_Die — D2=slot.
+c_update_dodongo_state1_bloated_sub_die:
+    moveq   #0,D0
+    move.w  D2,D0
+    move.l  D0,-(SP)
+    jsr     z04_update_dodongo_state1_bloated_sub_die
+    addq.l  #4,SP
+    rts
+
+; --- batch 54 ---
+
+; InitWalker — D2=slot, void.
+c_init_walker:
+    moveq   #0,D0
+    move.w  D2,D0
+    move.l  D0,-(SP)
+    jsr     z04_init_walker
+    addq.l  #4,SP
+    rts
+
+; InitBubble — D2=slot, void.
+c_init_bubble:
+    moveq   #0,D0
+    move.w  D2,D0
+    move.l  D0,-(SP)
+    jsr     z04_init_bubble
+    addq.l  #4,SP
+    rts
+
+; InitRope — D2=slot, void.
+c_init_rope:
+    moveq   #0,D0
+    move.w  D2,D0
+    move.l  D0,-(SP)
+    jsr     z04_init_rope
+    addq.l  #4,SP
+    rts
+
+; InitDarknut — D2=slot, void.
+c_init_darknut:
+    moveq   #0,D0
+    move.w  D2,D0
+    move.l  D0,-(SP)
+    jsr     z04_init_darknut
+    addq.l  #4,SP
+    rts
+
+; InitSlowOctorockOrGhini — D2=slot, void.
+c_init_slow_octorock_or_ghini:
+    moveq   #0,D0
+    move.w  D2,D0
+    move.l  D0,-(SP)
+    jsr     z04_init_slow_octorock_or_ghini
+    addq.l  #4,SP
+    rts
+
+; InitFastOctorock — D2=slot, void.
+c_init_fast_octorock:
+    moveq   #0,D0
+    move.w  D2,D0
+    move.l  D0,-(SP)
+    jsr     z04_init_fast_octorock
+    addq.l  #4,SP
+    rts
+
+; InitMode3_Sub3_TransferTopHalfAttrs — no args, void.
+c_init_mode3_sub3:
+    jsr     z05_init_mode3_sub3
+    rts
+
+; InitMode3_Sub4_TransferBottomHalfAttrs — no args, void.
+c_init_mode3_sub4:
+    jsr     z05_init_mode3_sub4
+    rts
+
+; InitMode3_Sub5 — no args, void.
+c_init_mode3_sub5:
+    jsr     z05_init_mode3_sub5
+    rts
+
+; --- batch 55 ---
+
+; AdvanceTeleportingLevelIndex — no args, void.
+c_advance_teleporting_level_index:
+    jsr     z01_advance_teleporting_level_index
+    rts
+
+; ReplaceGanonBrownPaletteRow — no args, void.
+c_replace_ganon_brown_palette_row:
+    jsr     z01_replace_ganon_brown_palette_row
+    rts
+
+; ReplaceGanonBluePaletteRow — no args, void.
+c_replace_ganon_blue_palette_row:
+    jsr     z01_replace_ganon_blue_palette_row
+    rts
+
+; ReplaceAshesPaletteRow — no args, void.
+c_replace_ashes_palette_row:
+    jsr     z01_replace_ashes_palette_row
+    rts
+
+; InitGel — D2=slot, void.
+c_init_gel:
+    moveq   #0,D0
+    move.w  D2,D0
+    move.l  D0,-(SP)
+    jsr     z04_init_gel
+    addq.l  #4,SP
+    rts
+
+; --- batch 56 ---
+
+; InitUnderworldPersonA — D2=slot, void.
+c_init_underworld_person_a:
+    moveq   #0,D0
+    move.w  D2,D0
+    move.l  D0,-(SP)
+    jsr     z01_init_underworld_person_a
+    addq.l  #4,SP
+    rts
+
+; UpdateUnderworldPersonComplexState_SenseLink — no args, void.
+c_update_uw_person_complex_state_sense_link:
+    jsr     z01_update_uw_person_complex_state_sense_link
+    rts
+
+; UpdateUnderworldPersonLifeOrMoneyState_2 — no args, void.
+c_update_uw_person_life_or_money_state_2:
+    jsr     z01_update_uw_person_life_or_money_state_2
+    rts
+
+; --- batch 57 ---
+
+; Person_CheckCollisions — D2=slot, void.
+c_person_check_collisions:
+    moveq   #0,D0
+    move.w  D2,D0
+    move.l  D0,-(SP)
+    jsr     z01_person_check_collisions
+    addq.l  #4,SP
+    rts
+
+; DrawLifeOrMoneyItems — no args, void.
+c_draw_life_or_money_items:
+    jsr     z01_draw_life_or_money_items
+    rts
+
+; UpdateGrumble3 — no args, void.
+c_update_grumble3:
+    jsr     z01_update_grumble3
+    rts
+
+; UpdateGrumble_Full — D2=slot, void.
+c_update_grumble_full:
+    moveq   #0,D0
+    move.w  D2,D0
+    move.l  D0,-(SP)
+    jsr     z01_update_grumble_full
+    addq.l  #4,SP
+    rts
+
+; UpdateUnderworldPerson_Full — D2=slot, void.
+c_update_uw_person_full:
+    moveq   #0,D0
+    move.w  D2,D0
+    move.l  D0,-(SP)
+    jsr     z01_update_uw_person_full
+    addq.l  #4,SP
+    rts
+
+; UpdateUnderworldPersonComplex — D2=slot, void.
+c_update_uw_person_complex:
+    moveq   #0,D0
+    move.w  D2,D0
+    move.l  D0,-(SP)
+    jsr     z01_update_uw_person_complex
+    addq.l  #4,SP
+    rts
+
+; UpdateUnderworldPersonLifeOrMoney_Full — D2=slot, void.
+c_update_uw_person_life_or_money_full:
+    moveq   #0,D0
+    move.w  D2,D0
+    move.l  D0,-(SP)
+    jsr     z01_update_uw_person_life_or_money_full
+    addq.l  #4,SP
+    rts
+
+; Person_DrawAndCheckCollisions — D2=slot, void.
+c_person_draw_and_check_collisions:
+    moveq   #0,D0
+    move.w  D2,D0
+    move.l  D0,-(SP)
+    jsr     z01_person_draw_and_check_collisions
+    addq.l  #4,SP
+    rts
+
+; C→ASM import bridges (batch 57):
+
+; CheckMonsterCollisions — C-callable, slot from stack → D2.
+c_check_monster_collisions:
+    move.l  4(SP),D2
+    jsr     CheckMonsterCollisions
+    rts
+
+; AnimateItemObject — C-callable, (item_type, slot) from stack → (D0, D2).
+c_animate_item_object:
+    move.l  4(SP),D0
+    move.l  8(SP),D2
+    jsr     AnimateItemObject
+    rts
+
+; DrawObjectMirrored — C-callable, slot from stack → D2. Tail call.
+c_draw_object_mirrored:
+    move.l  4(SP),D2
+    jmp     DrawObjectMirrored
+
+; DrawObjectNotMirrored — C-callable, slot from stack → D2. Tail call.
+c_draw_object_not_mirrored:
+    move.l  4(SP),D2
+    jmp     DrawObjectNotMirrored
+
+; Link_EndMoveAndAnimate_Bank1 — C-callable, no args.
+c_link_end_move_and_animate_bank1:
+    jsr     Link_EndMoveAndAnimate_Bank1
+    rts
+
+; UpdatePersonState_Textbox — export-side shim (batch 58: now C).
+c_update_person_state_textbox:
+    jsr     z01_update_person_state_textbox
+    rts
+
+; --- batch 58 ---
+
+; DrawCavePerson — D2=slot, void.
+c_draw_cave_person:
+    moveq   #0,D0
+    move.w  D2,D0
+    move.l  D0,-(SP)
+    jsr     z01_draw_cave_person
+    addq.l  #4,SP
+    rts
+
+; DrawCaveItems — no args, void.
+c_draw_cave_items:
+    jsr     z01_draw_cave_items
+    rts
+
+; FormatDecimalByte — D0=val (export side; used as dummy stub target for DivideBy10 too).
+c_format_decimal_byte:
+    andi.l  #$FF,D0
+    move.l  D0,-(SP)
+    jsr     z01_format_decimal_byte
+    addq.l  #4,SP
+    rts
+
+; WritePricesToDynamicTransferBuf — D0=price_char, void.
+c_write_prices_to_dynamic_transfer_buf:
+    andi.l  #$FF,D0
+    move.l  D0,-(SP)
+    jsr     z01_write_prices_to_dynamic_transfer_buf
+    addq.l  #4,SP
+    rts
+
+; WritePricesTransferBuf — no args, void.
+c_write_prices_transfer_buf:
+    jsr     z01_write_prices_transfer_buf
+    rts
+
+; UpdateCavePersonState_TransferPrices — no args, void.
+c_update_cave_person_state_transfer_prices:
+    jsr     z01_update_cave_person_state_transfer_prices
+    rts
+
+; Link_EndMoveAndDraw_Bank1 — C-callable import bridge, no args.
+c_link_end_move_and_draw_bank1:
+    jsr     Link_EndMoveAndDraw_Bank1
+    rts
+
+; --- batch 59 ---
+
+; UpdateCavePersonState_TalkOrShopOrDoorCharge — no args, void.
+c_update_cave_person_state_talk_or_shop_or_door_charge:
+    jsr     z01_update_cave_person_state_talk_or_shop_or_door_charge
+    rts
+
+; UpdateCavePersonState_HintOrMoneyGame — no args, void.
+c_update_cave_person_state_hint_or_money_game:
+    jsr     z01_update_cave_person_state_hint_or_money_game
+    rts
+
+; UpdateCavePerson — D2=slot, void.
+c_update_cave_person:
+    moveq   #0,D0
+    move.w  D2,D0
+    move.l  D0,-(SP)
+    jsr     z01_update_cave_person
+    addq.l  #4,SP
+    rts
+
+; TakeItem — export-side shim (batch 62: now C).
+c_take_item:
+    move.l  4(SP),D0
+    andi.l  #$FF,D0
+    move.l  D0,-(SP)
+    jsr     z01_take_item
+    addq.l  #4,SP
+    rts
+
+; --- batch 60 ---
+
+; FormatHeartsInTextBuf — D3=start_off, void.
+c_format_hearts_in_text_buf:
+    moveq   #0,D0
+    move.b  D3,D0
+    move.l  D0,-(SP)
+    jsr     z01_format_hearts_in_text_buf
+    addq.l  #4,SP
+    rts
+
+; CopyTripletToTextBuf — no args, void.
+c_copy_triplet_to_text_buf:
+    jsr     z01_copy_triplet_to_text_buf
+    rts
+
+; FormatDecimalCountByte — D0=val, void.
+c_format_decimal_count_byte:
+    andi.l  #$FF,D0
+    move.l  D0,-(SP)
+    jsr     z01_format_decimal_count_byte
+    addq.l  #4,SP
+    rts
+
+; FormatDecimalCountByteInTextBuf — D0=val, D3=buf_offset, void.
+c_format_decimal_count_byte_in_text_buf:
+    moveq   #0,D1
+    move.b  D3,D1
+    move.l  D1,-(SP)
+    andi.l  #$FF,D0
+    move.l  D0,-(SP)
+    jsr     z01_format_decimal_count_byte_in_text_buf
+    addq.l  #8,SP
+    rts
+
+; FormatStatusBarText — no args, void.
+c_format_status_bar_text:
+    jsr     z01_format_status_bar_text
+    rts
+
+; WorldChangeRupees — no args, void.
+c_world_change_rupees:
+    jsr     z01_world_change_rupees
+    rts
+
+; --- batch 61 ---
+
+; InitCave — D2=slot, void.
+c_init_cave:
+    moveq   #0,D0
+    move.w  D2,D0
+    move.l  D0,-(SP)
+    jsr     z01_init_cave
+    addq.l  #4,SP
+    rts
+
+; TryTakeItem — D2=slot, void.
+c_try_take_item:
+    moveq   #0,D0
+    move.w  D2,D0
+    move.l  D0,-(SP)
+    jsr     z01_try_take_item
+    addq.l  #4,SP
+    rts
+
+; TryTakeRoomItem — no args, void.
+c_try_take_room_item:
+    jsr     z01_try_take_room_item
+    rts
+
+; --- batch 63 ---
+
+; BoundDirectionHorizontally — D2=slot, void.
+c_bound_direction_horizontally:
+    moveq   #0,D0
+    move.w  D2,D0
+    move.l  D0,-(SP)
+    jsr     z01_bound_direction_horizontally
+    addq.l  #4,SP
+    rts
+
+; BoundDirectionVertically — D2=slot, void.
+c_bound_direction_vertically:
+    moveq   #0,D0
+    move.w  D2,D0
+    move.l  D0,-(SP)
+    jsr     z01_bound_direction_vertically
+    addq.l  #4,SP
+    rts
+
+; BoundByRoom — D2=slot, returns D0.b = RAM[$0F] (0 if blocked).
+c_bound_by_room:
+    moveq   #0,D0
+    move.w  D2,D0
+    move.l  D0,-(SP)
+    jsr     z01_bound_by_room
+    addq.l  #4,SP
+    rts
+
+; BoundByRoomWithA — D0=direction, D2=slot, returns D0.b = RAM[$0F].
+c_bound_by_room_with_a:
+    moveq   #0,D1
+    move.w  D2,D1
+    move.l  D1,-(SP)
+    andi.l  #$FF,D0
+    move.l  D0,-(SP)
+    jsr     z01_bound_by_room_with_a
+    addq.l  #8,SP
+    rts
+
+; AddQSpeedToPositionFraction — D2=slot. Returns carry in CCR (C=1 if advanced).
+c_add_q_speed_to_position_fraction:
+    moveq   #0,D0
+    move.w  D2,D0
+    move.l  D0,-(SP)
+    jsr     z01_add_q_speed_to_position_fraction
+    addq.l  #4,SP
+    btst    #8,D0
+    beq.s   .cc_aqspf
+    ori     #$01,CCR
+    rts
+.cc_aqspf:
+    andi    #$FE,CCR
+    rts
+
+; SubQSpeedFromPositionFraction — D2=slot. Returns carry (C=0 if advanced).
+c_sub_q_speed_from_position_fraction:
+    moveq   #0,D0
+    move.w  D2,D0
+    move.l  D0,-(SP)
+    jsr     z01_sub_q_speed_from_position_fraction
+    addq.l  #4,SP
+    btst    #8,D0
+    beq.s   .cc_sqspf
+    ori     #$01,CCR
+    rts
+.cc_sqspf:
+    andi    #$FE,CCR
+    rts
+
+; MoveShot — D0=direction, D2=slot, void.
+c_move_shot:
+    moveq   #0,D1
+    move.w  D2,D1
+    move.l  D1,-(SP)
+    andi.l  #$FF,D0
+    move.l  D0,-(SP)
+    jsr     z01_move_shot
+    addq.l  #8,SP
+    rts
+
+; --- batch 64 ---
+
+; GetOneDirectionAndDistanceToTarget — D0=target_coord, D3=origin_coord, returns D0=dist.
+c_get_one_direction_and_distance_to_target:
+    moveq   #0,D1
+    move.b  D3,D1
+    move.l  D1,-(SP)
+    andi.l  #$FF,D0
+    move.l  D0,-(SP)
+    jsr     z01_get_one_direction_and_distance_to_target
+    addq.l  #8,SP
+    rts
+
+; GetDirectionsAndDistancesToTarget — D0=target_slot, D2=origin_slot, void.
+c_get_directions_and_distances_to_target:
+    moveq   #0,D1
+    move.w  D2,D1
+    move.l  D1,-(SP)
+    andi.l  #$FF,D0
+    move.l  D0,-(SP)
+    jsr     z01_get_directions_and_distances_to_target
+    addq.l  #8,SP
+    rts
+
+; _CalcDiagonalSpeedIndex — D3=mid_speed_idx, returns D3=result.
+c_calc_diagonal_speed_index:
+    moveq   #0,D0
+    move.b  D3,D0
+    move.l  D0,-(SP)
+    jsr     z01_calc_diagonal_speed_index
+    addq.l  #4,SP
+    moveq   #0,D3
+    move.b  D0,D3
+    rts
+
+; PlaceWeapon — D0=offset, D2=slot, void.
+c_place_weapon:
+    moveq   #0,D1
+    move.w  D2,D1
+    move.l  D1,-(SP)
+    andi.l  #$FF,D0
+    move.l  D0,-(SP)
+    jsr     z01_place_weapon
+    addq.l  #8,SP
+    rts
+
+; PlaceWeaponForPlayerState — D2=slot, void.
+c_place_weapon_for_player_state:
+    moveq   #0,D0
+    move.w  D2,D0
+    move.l  D0,-(SP)
+    jsr     z01_place_weapon_for_player_state
+    addq.l  #4,SP
+    rts
+
+; PlaceWeaponForPlayerStateAndAnim — D2=slot, void.
+c_place_weapon_for_player_state_and_anim:
+    moveq   #0,D0
+    move.w  D2,D0
+    move.l  D0,-(SP)
+    jsr     z01_place_weapon_for_player_state_and_anim
+    addq.l  #4,SP
+    rts
+
+; PlaceWeaponForPlayerStateAndAnimAndWeaponState — D0=weapon_state, D2=slot, void.
+c_place_weapon_for_player_state_and_anim_and_weapon_state:
+    moveq   #0,D1
+    move.w  D2,D1
+    move.l  D1,-(SP)
+    andi.l  #$FF,D0
+    move.l  D0,-(SP)
+    jsr     z01_place_weapon_for_player_state_and_anim_and_weapon_state
+    addq.l  #8,SP
+    rts
+
+; Sub1FromInt16At4 — no args, carry-returning.
+c_sub1_from_int16_at4:
+    jsr     z01_sub1_from_int16_at4
+    btst    #8,D0
+    beq.s   .cc_s1i16
+    ori     #$01,CCR
+    rts
+.cc_s1i16:
+    andi    #$FE,CCR
+    rts
+
+; WieldBomb — D2=slot, void.
+c_wield_bomb:
+    moveq   #0,D0
+    move.w  D2,D0
+    move.l  D0,-(SP)
+    jsr     z01_wield_bomb
+    addq.l  #4,SP
+    rts
+
+; WieldCandle — D2=slot, void (carry ignored by caller).
+c_wield_candle:
+    moveq   #0,D0
+    move.w  D2,D0
+    move.l  D0,-(SP)
+    jsr     z01_wield_candle
+    addq.l  #4,SP
+    rts
+
+; GetShortcutOrItemXYForRoom — D3=room_id, returns D0=X(hi), D3=Y(lo).
+c_get_shortcut_or_item_xy_for_room:
+    moveq   #0,D0
+    move.b  D3,D0
+    move.l  D0,-(SP)
+    jsr     z01_get_shortcut_or_item_xy_for_room
+    addq.l  #4,SP
+    move.b  D0,D3
+    lsr.l   #8,D0
+    rts
+
+; GetShortcutOrItemXY — no args, returns D0=X, D3=Y.
+c_get_shortcut_or_item_xy:
+    jsr     z01_get_shortcut_or_item_xy
+    move.b  D0,D3
+    lsr.l   #8,D0
+    rts
+
+; GetObjectMiddle — D2=slot, void.
+c_get_object_middle:
+    moveq   #0,D0
+    move.w  D2,D0
+    move.l  D0,-(SP)
+    jsr     z01_get_object_middle
+    addq.l  #4,SP
+    rts
+
+; AnimateWorldFading — no args, returns D0 (Z=1 if done).
+c_animate_world_fading:
+    jsr     z01_animate_world_fading
+    tst.l   D0
+    rts
+
+; CheckMazes — no args, void.
+c_check_mazes:
+    jsr     z01_check_mazes
+    rts
+
+; CycleCurSpriteIndex — no args, void.
+c_cycle_cur_sprite_index:
+    jsr     z01_cycle_cur_sprite_index
+    rts
+
+; CycleSpriteIndexInA — D0=idx in, D0=new_idx out.
+c_cycle_sprite_index_in_a:
+    andi.l  #$FF,D0
+    move.l  D0,-(SP)
+    jsr     z01_cycle_sprite_index_in_a
+    addq.l  #4,SP
+    rts
+
+; HideObjectSprites — no args, void (caller ignores carry).
+c_hide_object_sprites:
+    jsr     z01_hide_object_sprites
+    rts
+
+; ShowLinkSpritesBehindHorizontalDoors — no args, void (caller ignores carry).
+c_show_link_sprites_behind_horizontal_doors:
+    jsr     z01_show_link_sprites_behind_horizontal_doors
+    rts
+
+; L_PlayParrySoundForDamageType — no args, void.
+c_play_parry_sound_for_damage_type:
+    jsr     z01_play_parry_sound_for_damage_type
+    rts
+
+; HandleMonsterDied — D2=slot, void.
+c_handle_monster_died:
+    moveq   #0,D0
+    move.w  D2,D0
+    move.l  D0,-(SP)
+    jsr     z01_handle_monster_died
+    addq.l  #4,SP
+    rts
+
+; DealDamage — D2=slot, void.
+c_deal_damage:
+    moveq   #0,D0
+    move.w  D2,D0
+    move.l  D0,-(SP)
+    jsr     z01_deal_damage
+    addq.l  #4,SP
+    rts
+
+; HandleMonsterWeaponCollision — D2=monster_slot, D3=weapon_slot, void.
+c_handle_monster_weapon_collision:
+    move.l  D3,-(SP)
+    move.l  D2,-(SP)
+    jsr     z01_handle_monster_weapon_collision
+    addq.l  #8,SP
+    rts
+
+; CheckMonsterWeaponCollision — D2=monster_slot, D0=weapon_y_mid, void.
+c_check_monster_weapon_collision:
+    moveq   #0,D1
+    move.b  D0,D1
+    move.l  D1,-(SP)
+    move.l  D2,-(SP)
+    jsr     z01_check_monster_weapon_collision
+    addq.l  #8,SP
+    rts
+
+; CheckMonsterSlenderWeaponCollision2 — D2=monster_slot, void.
+c_check_monster_slender_weapon_collision2:
+    move.l  D2,-(SP)
+    jsr     z01_check_monster_slender_weapon_collision2
+    addq.l  #4,SP
+    rts
+
+; CheckMonsterSlenderWeaponCollision — D2=monster_slot, D0=damage_points, void.
+c_check_monster_slender_weapon_collision:
+    moveq   #0,D1
+    move.b  D0,D1
+    move.l  D1,-(SP)
+    move.l  D2,-(SP)
+    jsr     z01_check_monster_slender_weapon_collision
+    addq.l  #8,SP
+    rts
+
+; CheckMonsterStabbingCollision — D2=monster_slot, D0=damage_points, void.
+c_check_monster_stabbing_collision:
+    moveq   #0,D1
+    move.b  D0,D1
+    move.l  D1,-(SP)
+    move.l  D2,-(SP)
+    jsr     z01_check_monster_stabbing_collision
+    addq.l  #8,SP
+    rts
+
+; CheckMonsterSwordCollision — D2=monster_slot, D3=weapon_slot, void.
+c_check_monster_sword_collision:
+    move.l  D3,-(SP)
+    move.l  D2,-(SP)
+    jsr     z01_check_monster_sword_collision
+    addq.l  #8,SP
+    rts
+
+; ParryOrShove — D2=monster_slot, D3=weapon_slot, void.
+c_parry_or_shove:
+    move.l  D3,-(SP)
+    move.l  D2,-(SP)
+    jsr     z01_parry_or_shove
+    addq.l  #8,SP
+    rts
+
+; CheckMonsterShotCollision — D2=monster_slot, D3=weapon_slot, D0=damage_points, void.
+c_check_monster_shot_collision:
+    moveq   #0,D1
+    move.b  D0,D1
+    move.l  D1,-(SP)
+    move.l  D3,-(SP)
+    move.l  D2,-(SP)
+    jsr     z01_check_monster_shot_collision
+    add.l   #12,SP
+    rts
+
+; CheckMonsterArrowOrRodCollision — D2=monster_slot, D3=weapon_slot, void.
+c_check_monster_arrow_or_rod_collision:
+    move.l  D3,-(SP)
+    move.l  D2,-(SP)
+    jsr     z01_check_monster_arrow_or_rod_collision
+    addq.l  #8,SP
+    rts
+
+; CheckMonsterBoomerangOrFoodCollision — D2=monster_slot, D3=weapon_slot, void.
+c_check_monster_boomerang_or_food_collision:
+    move.l  D3,-(SP)
+    move.l  D2,-(SP)
+    jsr     z01_check_monster_boomerang_or_food_collision
+    addq.l  #8,SP
+    rts
+
+; c_call_begin_shove — C calls with (unsigned int monster_slot). Sets D2, tail-calls BeginShove.
+c_call_begin_shove:
+    move.l  4(SP),D2
+    jmp     BeginShove
+
+; c_call_gohma_handle_weapon_collision — C calls with (monster_slot, weapon_slot).
+c_call_gohma_handle_weapon_collision:
+    move.l  4(SP),D2
+    move.l  8(SP),D3
+    jmp     Gohma_HandleWeaponCollision
 
