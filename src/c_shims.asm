@@ -3794,6 +3794,8 @@ c_bound_by_room_with_a:
     rts
 
 ; AddQSpeedToPositionFraction — D2=slot. Returns carry in CCR (C=1 if advanced).
+; ASM MoveObject_Right/Down consume this via `addx.b`, which reads CCR.X (bit 4).
+; 6502 convention: X mirrors C. Set/clear both bits 0 (C) and 4 (X).
 c_add_q_speed_to_position_fraction:
     moveq   #0,D0
     move.w  D2,D0
@@ -3802,13 +3804,14 @@ c_add_q_speed_to_position_fraction:
     addq.l  #4,SP
     btst    #8,D0
     beq.s   .cc_aqspf
-    ori     #$01,CCR
+    ori     #$11,CCR
     rts
 .cc_aqspf:
-    andi    #$FE,CCR
+    andi    #$EE,CCR
     rts
 
 ; SubQSpeedFromPositionFraction — D2=slot. Returns carry (C=0 if advanced).
+; ASM MoveObject_Up/Left consume this via `subx.b` (reads CCR.X). Set X = C.
 c_sub_q_speed_from_position_fraction:
     moveq   #0,D0
     move.w  D2,D0
@@ -3817,10 +3820,10 @@ c_sub_q_speed_from_position_fraction:
     addq.l  #4,SP
     btst    #8,D0
     beq.s   .cc_sqspf
-    ori     #$01,CCR
+    ori     #$11,CCR
     rts
 .cc_sqspf:
-    andi    #$FE,CCR
+    andi    #$EE,CCR
     rts
 
 ; MoveShot — D0=direction, D2=slot, void.
