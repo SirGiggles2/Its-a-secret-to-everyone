@@ -98,7 +98,7 @@ Expected: `builds\reports\t34_movement_gen_capture.json` exists.
 Run:
 
 ```powershell
-python .\tools\compare_t34_movement_parity.py
+<resolved-python> .\tools\compare_t34_movement_parity.py
 ```
 
 Expected: report ends with:
@@ -543,7 +543,7 @@ Expected: Genesis capture completes with no exception.
 Run:
 
 ```powershell
-python .\tools\compare_t34_movement_parity.py
+<resolved-python> .\tools\compare_t34_movement_parity.py
 ```
 
 Expected:
@@ -628,4 +628,3 @@ Expected: build still passes.
 git add src/object_runtime.h src/c_move_object.c
 git commit -m "docs: mark object runtime as owned promoted subsystem"
 ```
-

@@ -494,4 +494,3 @@ void z05_init_mode3_sub4(void) {
 void z05_init_mode3_sub5(void) {
     roommd_init_mode3_sub5();
 }
-

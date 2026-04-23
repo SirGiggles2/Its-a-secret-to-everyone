@@ -35,8 +35,14 @@ if "%NES_ROM%"=="" set "NES_ROM=%ROOT%\reference\zelda.nes"
 
 set "PYTHON="
 if exist "%LOCALAPPDATA%\Python\bin\python.exe"                           set "PYTHON=%LOCALAPPDATA%\Python\bin\python.exe"
+if "%PYTHON%"=="" if exist "%LOCALAPPDATA%\Python\pythoncore-3.14-64\python.exe" set "PYTHON=%LOCALAPPDATA%\Python\pythoncore-3.14-64\python.exe"
+if "%PYTHON%"=="" if exist "%LOCALAPPDATA%\Programs\Python\Python314\python.exe" set "PYTHON=%LOCALAPPDATA%\Programs\Python\Python314\python.exe"
 if "%PYTHON%"=="" if exist "%LOCALAPPDATA%\Programs\Python\Python313\python.exe" set "PYTHON=%LOCALAPPDATA%\Programs\Python\Python313\python.exe"
+if "%PYTHON%"=="" if exist "%LOCALAPPDATA%\Programs\Python\Python312\python.exe" set "PYTHON=%LOCALAPPDATA%\Programs\Python\Python312\python.exe"
+if "%PYTHON%"=="" if exist "C:\Python313\python.exe" set "PYTHON=C:\Python313\python.exe"
+if "%PYTHON%"=="" if exist "C:\Python312\python.exe" set "PYTHON=C:\Python312\python.exe"
 if "%PYTHON%"=="" where python.exe >nul 2>nul && set "PYTHON=python.exe"
+if "%PYTHON%"=="" where py.exe >nul 2>nul && set "PYTHON=py.exe"
 
 if not exist "%EMU%" (
     echo ERROR: BizHawk not found: %EMU%

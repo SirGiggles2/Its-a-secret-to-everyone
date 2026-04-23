@@ -2759,15 +2759,51 @@ def _patch_z01(path):
     text = _stub_func(text, 'CheckMonsterArrowOrRodCollision', 'c_check_monster_arrow_or_rod_collision')
     text = _stub_func(text, 'ParryOrShove', 'c_parry_or_shove')
 
-    # Data table exports — batch 37 + 44 + 53 + 55 + 56 + 57 + 58 + 59 + 60 + 61 + 62
+    # --- Batch 70 ---
+    text = _stub_func(text, 'CheckMonsterSwordShotOrMagicShotCollision', 'c_check_monster_sword_shot_or_magic_shot_collision')
+    text = _stub_func(text, 'CheckMonsterBombOrFireCollision', 'c_check_monster_bomb_or_fire_collision')
+
+    # --- Batch 71 ---
+    # CheckMonsterCollisions: import shim now calls z01_check_monster_collisions directly (batch 73).
+    text = _stub_func(text, 'CheckLinkCollision', 'c_check_link_collision')
+    text = _stub_func(text, 'CheckLinkCollisionPreinit', 'c_check_link_collision_preinit')
+    text = _stub_func(text, 'HarmLink', 'c_harm_link')
+    text = _stub_func(text, 'BeginShove', 'c_begin_shove')
+    text = _stub_func(text, 'Link_BeHarmed', 'c_link_be_harmed')
+    text = _stub_func(text, 'CheckMonsterCollisions', 'c_do_check_monster_collisions')
+    text = _stub_func(text, 'DoObjectsCollide', 'c_do_objects_collide')
+    text = _stub_func(text, 'Person_DrawAndCheckCollisions_Common', 'c_person_draw_and_check_collisions')
+    text = _stub_func(text, 'UpdateBombFlashEffect', 'c_update_bomb_flash_effect')
+    text = _stub_func(text, 'UpdatePositionMarker', 'c_update_position_marker')
+    text = _stub_func(text, 'UpdatePlayerPositionMarker', 'c_update_player_position_marker')
+    text = _stub_func(text, 'UpdateWorldCurtainEffect', 'c_update_world_curtain_effect')
+    text = _stub_func(text, 'UpdateWorldCurtainEffect_Bank2', 'c_update_world_curtain_effect_bank2')
+    text = _stub_func(text, 'FetchFileAAddressSet', 'c_fetch_file_a_address_set')
+    text = _stub_func(text, 'CheckTileObjectsBlocking', 'c_check_tile_objects_blocking')
+    text = _stub_func(text, 'CheckPowerTriforceFanfare', 'c_check_power_triforce_fanfare')
+    # batch 77
+    text = _stub_func(text, 'InitTrap_Full', 'c_init_trap_full')
+    text = _stub_func(text, 'UpdateRupeeStash_Full', 'c_update_rupee_stash_full')
+    text = _stub_func(text, 'InitModeB_EnterCave_Bank5', 'c_init_mode_b_enter_cave_bank5')
+    text = _stub_func(text, 'DrawWhirlwind', 'c_draw_whirlwind')
+    text = _stub_func(text, 'UpdateWhirlwind_Full', 'c_update_whirlwind_full')
+    text = _stub_func(text, 'SummonWhirlwind', 'c_summon_whirlwind')
+    text = _stub_func(text, 'CheckPassiveTileObjects', 'c_check_passive_tile_objects')
+    # batch 78
+    text = _stub_func(text, 'UpdateTrap_Full', 'c_update_trap_full')
+
+    # Data table exports — batch 37 + 44 + 53 + 55 + 56 + 57 + 58 + 59 + 60 + 61 + 62 + 77
     for tbl in ['UnderworldPersonTextSelectorsC', 'TextboxLineAddrsLo', 'RupeeStashXs', 'RupeeStashYs',
+                'TrapXs', 'TrapYs', 'WhirlwindPrevRoomIdList', 'LinkToSquareOffsetsX', 'LinkToSquareOffsetsY',
+                'TrapAllowedDirs',
                 'ReverseDirections', 'TeleportYs', 'PaletteRow7TransferRecord', 'GanonColorTriples',
                 'UnderworldPersonTextSelectorsA', 'LifeOrMoneyItemXs', 'LifeOrMoneyItemTypes',
                 'CaveWareXs', 'PersonTextAddrs', 'TextboxCharTransferRecTemplate',
                 'HintCaveTextSelectors0', 'StatusBarTransferBufTemplate',
                 'OverworldPersonTextSelectors', 'MoneyGameLossAmounts',
                 'MoneyGamePermutations', 'MoneyGamePermutationEndIndexes',
-                'ItemIdToSlot', 'ItemIdToDescriptor', 'LinkColors_CommonCode']:
+                'ItemIdToSlot', 'ItemIdToDescriptor', 'LinkColors_CommonCode',
+                'ObjTypeToDamagePoints', 'SaveFileAAddressSets']:
         if f'xdef    {tbl}' not in text and f'{tbl}:' in text:
             text = f"\n    xdef    {tbl}\n" + text
             print(f"  _patch_z01: exported {tbl}")
@@ -4216,6 +4252,31 @@ def _patch_z04(path):
 
     # --- Batch 55 ---
     text = _stub_func(text, 'InitGel', 'c_init_gel')
+
+    # --- Batch 79/80 ---
+    text = _stub_func(text, 'AnimateAndDrawCommonObject', 'c_animate_and_draw_common_object')
+    text = _stub_func(text, 'UpdateBubble', 'c_update_bubble')
+    text = _stub_func(text, 'UpdateKeese', 'c_update_keese')
+
+    # --- Batch 81 ---
+    text = _stub_func(text, 'UpdateStandingFire', 'c_update_standing_fire')
+    text = _stub_func(text, 'UpdateZol', 'c_update_zol')
+    text = _stub_func(text, 'UpdateGel', 'c_update_gel')
+
+    # --- Batch 82 ---
+    text = _stub_func(text, 'UpdateZora', 'c_update_zora')
+    text = _stub_func(text, 'UpdateCandle', 'c_update_candle')
+    text = _stub_func(text, 'UpdateBoulderSet', 'c_update_boulder_set')
+
+    # --- Batch 83 ---
+    text = _stub_func(text, 'UpdateRope', 'c_update_rope')
+
+    # Export internal z_04 sub-functions callable from C (batch 81-82)
+    for sym in ['UpdateZolState', 'Zol_CheckCollisions', 'Gel_Move', 'Gel_CheckCollisions',
+                'UpdateBurrower']:
+        if f'xdef    {sym}' not in text and f'{sym}:' in text:
+            text = f"\n    xdef    {sym}\n" + text
+            print(f"  _patch_z04: exported {sym}")
 
     # Export ROM data tables referenced by C code
     if 'xdef    PolsVoiceWalkSpeedsX' not in text and 'PolsVoiceWalkSpeedsX:' in text:
@@ -6903,6 +6964,9 @@ def _patch_z07(path):
     text = _stub_func(text, 'InitGrumble', 'c_init_grumble_z07')
     text = _stub_func(text, 'InitRupeeStash', 'c_init_rupee_stash_z07')
     text = _stub_func(text, 'InitMode3_Sub1', 'c_init_mode3_sub1_z07')
+
+    # --- Batch 79 ---
+    text = _stub_func(text, 'AnimateObjectWalking', 'c_animate_object_walking')
 
     # --- Batch 48 ---
     # MarkRoomVisited ends with IFND Exit / Exit: / ENDC — _stub_func would
