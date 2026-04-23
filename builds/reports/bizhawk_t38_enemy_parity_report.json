@@ -1,0 +1,42 @@
+{
+  "verdict": "T38_PARITY: FAIL",
+  "all_pass": false,
+  "gates": {
+    "T38_NES_CAPTURE_OK": {
+      "pass": true,
+      "detail": "len=720"
+    },
+    "T38_GEN_CAPTURE_OK": {
+      "pass": true,
+      "detail": "len=720"
+    },
+    "T38_NO_GEN_EXCEPTION": {
+      "pass": true,
+      "detail": "no exception"
+    },
+    "T38_BASELINE_PARITY": {
+      "pass": true,
+      "detail": "obj_x:OK; obj_y:OK; mode:OK; room:OK"
+    },
+    "T38_CAVE_ENTER_TRIGGERED": {
+      "pass": false,
+      "detail": "nes_t=150 gen_t=90"
+    },
+    "T38_SWORD_PICKUP_NES": {
+      "pass": false,
+      "detail": "NES inv_sword 0->$00 at t=None"
+    },
+    "T38_SWORD_PICKUP_GEN": {
+      "pass": false,
+      "detail": "Gen inv_sword 0->$00 at t=None"
+    },
+    "T38_PICKUP_PHASE_MATCH": {
+      "pass": false,
+      "detail": "pickup missing -- NES t=None, Gen t=None"
+    },
+    "T38_ROUND_TRIP_READY": {
+      "pass": false,
+      "detail": "nes=(r$76,m$05,x$F0,y$8D) gen=(r$76,m$04,x$F0,y$8D)"
+    }
+  }
+}
