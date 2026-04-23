@@ -18,12 +18,15 @@ FWD_RE = re.compile(
     r"^\s*(?P<ret>void|unsigned\s+char|unsigned\s+int|unsigned\s+short|int|char|signed\s+char)"
     r"\s+(?P<old>z0[1-7]_[A-Za-z0-9_]+)\s*"
     r"\((?P<params>[^)]*)\)\s*\{\s*"
-    r"(?:return\s+)?(?P<new>[a-z]+(?:rt|ld|md|obj|pl|xf)_[A-Za-z0-9_]+)\s*"
+    r"(?:return\s+)?(?P<new>(?!z0[1-7]_)[a-z][a-z0-9_]+)\s*"
     r"\((?P<call>[^)]*)\)\s*;\s*\}",
     re.MULTILINE,
 )
 
 PREFIX_HEADERS = {
+    "frontdemo_": "frontend_runtime.h",
+    "frontname_": "frontend_runtime.h",
+    "frontutil_": "frontend_runtime.h",
     "cavert_":  "cave_runtime.h",
     "cobrt_":   "combat_runtime.h",
     "colrt_":   "collision_runtime.h",

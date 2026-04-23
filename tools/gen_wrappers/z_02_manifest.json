@@ -1,17 +1,103 @@
 {
   "bank": "z_02",
   "includes": [
+    "frontend_runtime.h",
     "save_menu_runtime.h"
   ],
   "symbols": [
+    {
+      "old": "z02_animate_demo_phase1_sub0",
+      "new": "frontdemo_animate_phase1_sub0",
+      "sig": "void (void)"
+    },
+    {
+      "old": "z02_animate_demo_phase1_sub1",
+      "new": "frontdemo_animate_phase1_sub1",
+      "sig": "void (void)"
+    },
+    {
+      "old": "z02_disable_fallen_objects",
+      "new": "frontdemo_disable_fallen_objects",
+      "sig": "void (void)"
+    },
+    {
+      "old": "z02_init_mode1_sub2",
+      "new": "frontdemo_init_mode1_sub2",
+      "sig": "void (void)"
+    },
+    {
+      "old": "z02_end_init_demo",
+      "new": "frontdemo_end_init_demo",
+      "sig": "void (unsigned int val)"
+    },
+    {
+      "old": "z02_mode_e_reset_variables",
+      "new": "frontname_reset_variables",
+      "sig": "void (unsigned int val)"
+    },
+    {
+      "old": "z02_reset_button_repeat_state",
+      "new": "frontname_reset_button_repeat_state",
+      "sig": "void (unsigned int val)"
+    },
+    {
+      "old": "z02_mode_e_set_name_cursor_sprite_x",
+      "new": "frontname_set_name_cursor_sprite_x",
+      "sig": "void (void)"
+    },
+    {
+      "old": "z02_inc_subphase",
+      "new": "frontdemo_inc_subphase",
+      "sig": "void (void)"
+    },
+    {
+      "old": "z02_add_a_to_0f0e",
+      "new": "frontutil_add_a_to_0f0e",
+      "sig": "void (unsigned int val)"
+    },
+    {
+      "old": "z02_add_a_to_cfce",
+      "new": "frontutil_add_a_to_cfce",
+      "sig": "void (unsigned int val)"
+    },
+    {
+      "old": "z02_mode_e_sync_char_board_cursor",
+      "new": "frontname_sync_char_board_cursor",
+      "sig": "void (void)"
+    },
     {
       "old": "z02_update_mode_d_save_sub2",
       "new": "savert_update_mode_d_save_sub2",
       "sig": "void (void)"
     },
     {
+      "old": "z02_animate_demo_p1_sub3",
+      "new": "frontdemo_animate_p1_sub3",
+      "sig": "void (void)"
+    },
+    {
+      "old": "z02_animate_demo_p1_end",
+      "new": "frontdemo_animate_p1_end",
+      "sig": "void (void)"
+    },
+    {
       "old": "z02_fetch_profile_name_address",
       "new": "savert_fetch_profile_name_address",
+      "sig": "void (void)"
+    },
+    {
+      "old": "z02_init_mode13_sub3",
+      "new": "frontdemo_init_mode13_sub3",
+      "sig": "void (void)"
+    },
+    {
+      "old": "z02_init_demo_subphase_play_title_song",
+      "new": "frontdemo_init_demo_subphase_play_title_song",
+      "sig": "void (void)"
+    },
+    {
+      "old": "z02_init_mode13_sub4",
+      "new": "frontdemo_init_mode13_sub4",
       "sig": "void (void)"
     }
   ]

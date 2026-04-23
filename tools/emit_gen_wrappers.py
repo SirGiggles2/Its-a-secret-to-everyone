@@ -21,6 +21,9 @@ ALLOWED_TYPES = {
 }
 
 PREFIX_HEADERS = {
+    "frontdemo_": "frontend_runtime.h",
+    "frontname_": "frontend_runtime.h",
+    "frontutil_": "frontend_runtime.h",
     "cavert_":  "cave_runtime.h",
     "cobrt_":   "combat_runtime.h",
     "colrt_":   "collision_runtime.h",
