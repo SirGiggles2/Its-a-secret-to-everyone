@@ -67,7 +67,7 @@ def parse_sig(sig: str) -> tuple[str, list[tuple[str, str]]]:
     if ret not in ALLOWED_TYPES:
         raise ValueError(f"bad return type: {ret!r}")
     args_src = m.group("args").strip()
-    if not args_src:
+    if not args_src or args_src == "void":
         return ret, []
     args: list[tuple[str, str]] = []
     for part in args_src.split(","):
@@ -185,6 +185,8 @@ def main(argv: list[str]) -> int:
     drift = False
     for bank in banks:
         manifest = load_manifest(bank)
+        if not manifest.get("symbols"):
+            continue
         path = bank_path(bank)
         if args.check:
             if check_manifest(manifest, path):
