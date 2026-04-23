@@ -51,6 +51,7 @@ local ADDR_HELD     = 0x00F8
 local ADDR_PREV_HELD = 0x00FA
 local ADDR_ROOM_ID  = 0x00EB
 local ADDR_OBJ_DIR  = 0x03F8
+local ADDR_LINK_DIR = 0x000F
 -- T34 diag: ObjGridOffset/ObjQSpeedFrac slot 0, grid cell limits
 local ADDR_GRID_OFF  = 0x0394
 local ADDR_Q_SPEED_F = 0x03BC
@@ -352,6 +353,7 @@ for frame = 1, MAX_FRAMES do
                     prev_held = ram_u8(ADDR_PREV_HELD),
                     grid_off = ram_u8(ADDR_GRID_OFF), q_speed_f = ram_u8(ADDR_Q_SPEED_F),
                     pos_limit = ram_u8(ADDR_POS_LIMIT), neg_limit = ram_u8(ADDR_NEG_LIMIT),
+                    link_dir = ram_u8(ADDR_LINK_DIR),
                     mode = mode, sub = sub, room = room_id,
                 }
             end
@@ -380,6 +382,7 @@ for frame = 1, MAX_FRAMES do
             prev_held = ram_u8(ADDR_PREV_HELD),
             grid_off = ram_u8(ADDR_GRID_OFF), q_speed_f = ram_u8(ADDR_Q_SPEED_F),
             pos_limit = ram_u8(ADDR_POS_LIMIT), neg_limit = ram_u8(ADDR_NEG_LIMIT),
+            link_dir = ram_u8(ADDR_LINK_DIR),
             mode = mode, sub = sub, room = room_id,
         }
     end
@@ -428,6 +431,7 @@ end
 local function build_json()
     local t_arr, x_arr, xf_arr, y_arr, yf_arr, dir_arr, held_arr = {}, {}, {}, {}, {}, {}, {}
     local ph_arr, go_arr, qs_arr, pl_arr, nl_arr = {}, {}, {}, {}, {}
+    local ld_arr = {}
     for i = 1, trace_len do
         local e = trace[i]
         t_arr[i]    = e.t
@@ -442,6 +446,7 @@ local function build_json()
         qs_arr[i]   = e.q_speed_f or 0
         pl_arr[i]   = e.pos_limit or 0
         nl_arr[i]   = e.neg_limit or 0
+        ld_arr[i]   = e.link_dir or 0
     end
     local phase_parts = {}
     local phases = SCENARIO.phase_summary()
@@ -479,7 +484,8 @@ local function build_json()
         '"grid_off":'  .. json_num_array(go_arr) .. ",",
         '"q_speed_f":' .. json_num_array(qs_arr) .. ",",
         '"pos_limit":' .. json_num_array(pl_arr) .. ",",
-        '"neg_limit":' .. json_num_array(nl_arr),
+        '"neg_limit":' .. json_num_array(nl_arr) .. ",",
+        '"link_dir":'  .. json_num_array(ld_arr),
         "}",
         "}",
     }, "\n")

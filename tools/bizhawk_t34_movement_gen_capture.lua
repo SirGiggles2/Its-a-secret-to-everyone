@@ -51,6 +51,7 @@ local A_HELD     = BUS + 0x00F8
 local A_PREV_HELD = BUS + 0x00FA
 local A_ROOM_ID  = BUS + 0x00EB
 local A_OBJ_DIR  = BUS + 0x03F8
+local A_LINK_DIR = BUS + 0x000F
 -- T34 diag: ObjGridOffset/ObjQSpeedFrac slot 0, grid cell limits
 local A_GRID_OFF  = BUS + 0x0394
 local A_Q_SPEED_F = BUS + 0x03BC
@@ -429,6 +430,7 @@ for frame = 1, MAX_FRAMES do
                     prev_held = ram_u8(A_PREV_HELD),
                     grid_off = ram_u8(A_GRID_OFF), q_speed_f = ram_u8(A_Q_SPEED_F),
                     pos_limit = ram_u8(A_POS_LIMIT), neg_limit = ram_u8(A_NEG_LIMIT),
+                    link_dir = ram_u8(A_LINK_DIR),
                     mode = mode, sub = sub, room = room_id,
                 }
             end
@@ -457,6 +459,7 @@ for frame = 1, MAX_FRAMES do
             prev_held = ram_u8(A_PREV_HELD),
             grid_off = ram_u8(A_GRID_OFF), q_speed_f = ram_u8(A_Q_SPEED_F),
             pos_limit = ram_u8(A_POS_LIMIT), neg_limit = ram_u8(A_NEG_LIMIT),
+            link_dir = ram_u8(A_LINK_DIR),
             mode = mode, sub = sub, room = room_id,
         }
         if SAT_CP_SET[t] then
@@ -512,6 +515,7 @@ end
 local function build_json()
     local t_a, x_a, xf_a, y_a, yf_a, d_a, h_a = {}, {}, {}, {}, {}, {}, {}
     local ph_a, go_a, qs_a, pl_a, nl_a = {}, {}, {}, {}, {}
+    local ld_a = {}
     for i = 1, trace_len do
         local e = trace[i]
         t_a[i]=e.t; x_a[i]=e.obj_x; xf_a[i]=e.obj_xf
@@ -520,6 +524,7 @@ local function build_json()
         ph_a[i]=e.prev_held or 0; go_a[i]=e.grid_off or 0
         qs_a[i]=e.q_speed_f or 0; pl_a[i]=e.pos_limit or 0
         nl_a[i]=e.neg_limit or 0
+        ld_a[i]=e.link_dir or 0
     end
 
     local phase_parts = {}
@@ -572,7 +577,8 @@ local function build_json()
         '"grid_off":'  .. json_num_array(go_a) .. ",",
         '"q_speed_f":' .. json_num_array(qs_a) .. ",",
         '"pos_limit":' .. json_num_array(pl_a) .. ",",
-        '"neg_limit":' .. json_num_array(nl_a),
+        '"neg_limit":' .. json_num_array(nl_a) .. ",",
+        '"link_dir":'  .. json_num_array(ld_a),
         "}",
         "}",
     }, "\n")

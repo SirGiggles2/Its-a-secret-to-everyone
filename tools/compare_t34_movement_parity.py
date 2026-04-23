@@ -172,7 +172,7 @@ def main() -> int:
             emit(f"DIAG {key}_first_diff=t={t} phase={phase_for_t(phases, t)} "
                  f"nes=${nv:02X} gen=${gv:02X}")
 
-    for k in ("prev_held", "grid_off", "q_speed_f", "pos_limit", "neg_limit"):
+    for k in ("prev_held", "grid_off", "q_speed_f", "pos_limit", "neg_limit", "link_dir"):
         diag_diff(k)
 
     # Around-the-bug window dump (HELD t=210-213 and OBJY t=170-173)
@@ -186,7 +186,7 @@ def main() -> int:
             emit(f"  t={t} " + " ".join(cols))
 
     window_dump("HELD-region", ["held", "prev_held", "obj_dir", "obj_x"], 209, 214)
-    window_dump("OBJY-region", ["obj_y", "obj_yf", "grid_off", "q_speed_f"], 169, 174)
+    window_dump("OBJY-region", ["obj_y", "obj_yf", "grid_off", "q_speed_f", "link_dir", "obj_dir"], 169, 174)
 
     all_pass = all(r["pass"] for r in results.values())
     return write(results, lines, all_pass)
