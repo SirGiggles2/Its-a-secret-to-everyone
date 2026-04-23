@@ -865,14 +865,8 @@ _L_z02_InitDemoSubphaseTransferTitlePalette_DisableObjects:
 
     even
 InitDemoSubphasePlayTitleSong:
-    move.b  #$80,D0
-    move.b  D0,($0600,A4)
-    ; Select transfer buffer 8 (offset $10 in table):
-    ; title nametables and attributes.
-    moveq   #16,D0
-    jmp     EndInitDemo
+    jmp     c_init_demo_subphase_play_title_song
 
-    even
 StoryPaletteTransferRecord:
     ; Full 32-byte NES palette record (BG 0-3 + spr 0-3).
     ; Sprite pals 0,2 both map to CRAM pal 2; 1,3 both map to CRAM pal 3.
@@ -4672,24 +4666,11 @@ LA9F4_Exit:
 
     even
 InitMode13_Sub3:
-    move.b  ($0029,A4),D0
-    beq.s  __far_z_02_0012
-    jmp  LA9F4_Exit
-__far_z_02_0012:
-    jsr     SilenceAllSound
-    addq.b  #1,($0013,A4)
-    rts
+    jmp     c_init_mode13_sub3
 
-    even
 InitMode13_Sub4:
-    moveq   #8,D0
-    move.b  D0,($050B,A4)
-    jsr     BeginUpdateMode
-    move.b  D0,($0412,A4)
-    move.b  D0,($0413,A4)
-    jmp     HideAllSprites
+    jmp     c_init_mode13_sub4
 
-    even
 UpdateMode13WinGame:
     move.b  ($0013,A4),D0
     jsr     _m68k_tablejump  ; M68K-native table dispatch (replaces JSR TableJump)
@@ -4972,16 +4953,16 @@ UpdateMode13WinGame_Sub4:
     ; Don't let the player skip ahead for a little while.
     ;
     move.b  ($0028,A4),D0
-    beq.s  __far_z_02_0013
+    beq.s  __far_z_02_0012
     jmp  LAB7E_Exit
-__far_z_02_0013:
+__far_z_02_0012:
     ; If Start hasn't been pressed, then return.
     ;
     move.b  ($00F8,A4),D0
     andi.b #$10,D0
-    bne.s  __far_z_02_0014
+    bne.s  __far_z_02_0013
     jmp  LAB7E_Exit
-__far_z_02_0014:
+__far_z_02_0013:
     ; Start was pressed. We'll transition to mode $D to save.
     ;
     jsr     EndGameMode

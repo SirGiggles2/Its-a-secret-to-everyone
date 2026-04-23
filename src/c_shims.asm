@@ -352,6 +352,16 @@
     xdef    c_update_uw_person_life_or_money_full
     xdef    c_person_draw_and_check_collisions
     xdef    c_check_monster_collisions
+    xdef    c_do_check_monster_collisions
+    xdef    c_do_objects_collide
+    xdef    c_update_bomb_flash_effect
+    xdef    c_update_position_marker
+    xdef    c_update_player_position_marker
+    xdef    c_update_world_curtain_effect
+    xdef    c_update_world_curtain_effect_bank2
+    xdef    c_fetch_file_a_address_set
+    xdef    c_check_tile_objects_blocking
+    xdef    c_check_power_triforce_fanfare
     xdef    c_animate_item_object
     xdef    c_draw_object_mirrored
     xdef    c_draw_object_not_mirrored
@@ -417,6 +427,51 @@
     xdef    c_check_monster_boomerang_or_food_collision
     xdef    c_call_begin_shove
     xdef    c_call_gohma_handle_weapon_collision
+    xdef    c_check_monster_sword_shot_or_magic_shot_collision
+    xdef    c_check_monster_bomb_or_fire_collision
+    xdef    c_call_handle_shot_blocked
+    xdef    c_harm_link
+    xdef    c_check_link_collision
+    xdef    c_check_link_collision_preinit
+    xdef    c_begin_shove
+    xdef    c_link_be_harmed
+    xdef    c_init_trap_full
+    xdef    c_draw_whirlwind
+    xdef    c_update_whirlwind_full
+    xdef    c_summon_whirlwind
+    xdef    c_update_rupee_stash_full
+    xdef    c_init_mode_b_enter_cave_bank5
+    xdef    c_check_passive_tile_objects
+    xdef    c_draw_object_not_mirrored_with_frame
+    xdef    c_draw_item_in_inventory
+    xdef    c_go_to_next_mode_from_play
+    xdef    c_init_mode_enter_room
+    xdef    c_run_cross_room_tasks_no_cellar
+    xdef    c_link_end_move_and_animate
+    xdef    c_update_trap_full
+    xdef    c_animate_object_walking
+    xdef    c_animate_and_draw_common_object
+    xdef    c_obj_shove
+    xdef    c_walker_move
+    xdef    c_update_common_wanderer
+    xdef    c_wanderer_target_player
+    xdef    c_move_flyer
+    xdef    c_control_keese_flight
+    xdef    c_update_bubble
+    xdef    c_update_keese
+    xdef    c_draw_object_mirrored_with_frame
+    xdef    c_update_standing_fire
+    xdef    c_update_zol
+    xdef    c_update_gel
+    xdef    c_update_zol_state
+    xdef    c_zol_check_collisions
+    xdef    c_gel_move
+    xdef    c_gel_check_collisions
+    xdef    c_update_zora
+    xdef    c_update_candle
+    xdef    c_update_boulder_set
+    xdef    c_update_rope
+    xdef    c_update_burrower
 
     xref    c_move_object
     xref    z03_transfer_level_pattern_blocks
@@ -728,7 +783,7 @@
     xref    z01_update_uw_person_complex
     xref    z01_update_uw_person_life_or_money_full
     xref    z01_person_draw_and_check_collisions
-    xref    CheckMonsterCollisions
+    ; CheckMonsterCollisions -- now stubbed to c_do_check_monster_collisions
     xref    AnimateItemObject
     xref    DrawObjectMirrored
     xref    DrawObjectNotMirrored
@@ -793,6 +848,23 @@
     xref    z01_check_monster_shot_collision
     xref    z01_check_monster_arrow_or_rod_collision
     xref    z01_check_monster_boomerang_or_food_collision
+    xref    z01_check_monster_sword_shot_or_magic_shot_collision
+    xref    z01_check_monster_bomb_or_fire_collision
+    xref    z01_harm_link
+    xref    z01_check_link_collision
+    xref    z01_check_link_collision_preinit
+    xref    z01_begin_shove
+    xref    z01_link_be_harmed
+    xref    z01_check_monster_collisions
+    xref    z01_do_objects_collide
+    xref    z01_update_bomb_flash_effect
+    xref    z01_update_position_marker
+    xref    z01_update_player_position_marker
+    xref    z01_update_world_curtain_effect
+    xref    z01_update_world_curtain_effect_bank2
+    xref    z01_fetch_file_a_address_set
+    xref    z01_check_tile_objects_blocking
+    xref    z01_check_power_triforce_fanfare
     xref    z07_patch_and_cue_level_palettes_transfer
     xref    z05_wield_nothing
     xref    z05_end_prepare_mode
@@ -809,6 +881,29 @@
     xref    z05_check_secret_trigger_ringleader
     xref    z05_touch_door_open
     xref    z05_touch_door_bombable
+    xref    z01_init_trap_full
+    xref    z01_draw_whirlwind
+    xref    z01_update_whirlwind_full
+    xref    z01_summon_whirlwind
+    xref    z01_update_rupee_stash_full
+    xref    z01_init_mode_b_enter_cave_bank5
+    xref    z01_check_passive_tile_objects
+    xref    z01_update_trap_full
+    xref    z07_animate_object_walking
+    xref    z04_animate_and_draw_common_object
+    xref    z04_update_bubble
+    xref    z04_update_keese
+    xref    Obj_Shove
+    xref    Walker_Move
+    xref    UpdateCommonWanderer
+    xref    Wanderer_TargetPlayer
+    xref    MoveFlyer
+    xref    ControlKeeseFlight
+    xref    DrawItemInInventory
+    xref    GoToNextModeFromPlay
+    xref    InitMode_EnterRoom
+    xref    RunCrossRoomTasksAndBeginUpdateMode_PlayModesNoCellar
+    xref    Link_EndMoveAndAnimate
 
 ;------------------------------------------------------------------------------
 ; _c_move_object_shim — MoveObject trampoline.
@@ -3481,7 +3576,7 @@ c_person_draw_and_check_collisions:
 ; CheckMonsterCollisions — C-callable, slot from stack → D2.
 c_check_monster_collisions:
     move.l  4(SP),D2
-    jsr     CheckMonsterCollisions
+    jsr     z01_check_monster_collisions
     rts
 
 ; AnimateItemObject — C-callable, (item_type, slot) from stack → (D0, D2).
@@ -4026,3 +4121,426 @@ c_call_gohma_handle_weapon_collision:
     move.l  8(SP),D3
     jmp     Gohma_HandleWeaponCollision
 
+; CheckMonsterSwordShotOrMagicShotCollision — D2=monster_slot, D3=weapon_slot, void.
+c_check_monster_sword_shot_or_magic_shot_collision:
+    move.l  D3,-(SP)
+    move.l  D2,-(SP)
+    jsr     z01_check_monster_sword_shot_or_magic_shot_collision
+    addq.l  #8,SP
+    rts
+
+; CheckMonsterBombOrFireCollision — D2=monster_slot, D3=weapon_slot, void.
+c_check_monster_bomb_or_fire_collision:
+    move.l  D3,-(SP)
+    move.l  D2,-(SP)
+    jsr     z01_check_monster_bomb_or_fire_collision
+    addq.l  #8,SP
+    rts
+
+; c_call_handle_shot_blocked — C calls with (unsigned int weapon_slot). Sets D2, tail-calls HandleShotBlocked.
+c_call_handle_shot_blocked:
+    move.l  4(SP),D2
+    jmp     HandleShotBlocked
+
+; HarmLink — D2=monster_slot, void.
+c_harm_link:
+    move.l  D2,-(SP)
+    jsr     z01_harm_link
+    addq.l  #4,SP
+    rts
+
+; CheckLinkCollision — D2=monster_slot, void.
+c_check_link_collision:
+    move.l  D2,-(SP)
+    jsr     z01_check_link_collision
+    addq.l  #4,SP
+    rts
+
+; CheckLinkCollisionPreinit — D2=monster_slot, void.
+c_check_link_collision_preinit:
+    move.l  D2,-(SP)
+    jsr     z01_check_link_collision_preinit
+    addq.l  #4,SP
+    rts
+
+
+
+; BeginShove — D2=monster_slot, void.
+c_begin_shove:
+    move.l  D2,-(SP)
+    jsr     z01_begin_shove
+    addq.l  #4,SP
+    rts
+
+; Link_BeHarmed — D2=monster_slot, void.
+c_link_be_harmed:
+    move.l  D2,-(SP)
+    jsr     z01_link_be_harmed
+    addq.l  #4,SP
+    rts
+
+; CheckMonsterCollisions ASM stub → C export shim.
+c_do_check_monster_collisions:
+    move.l  D2,-(SP)
+    jsr     z01_check_monster_collisions
+    addq.l  #4,SP
+    rts
+
+; DoObjectsCollide — D0=threshold (byte), sets [0D]=[0E]=threshold then collide.
+c_do_objects_collide:
+    move.l  D0,-(SP)
+    jsr     z01_do_objects_collide
+    addq.l  #4,SP
+    rts
+
+
+; UpdateBombFlashEffect — D2=slot, void.
+c_update_bomb_flash_effect:
+    move.l  D2,-(SP)
+    jsr     z01_update_bomb_flash_effect
+    addq.l  #4,SP
+    rts
+
+; UpdatePositionMarker — D0=room_id (byte), D2=idx, void.
+c_update_position_marker:
+    move.l  D2,-(SP)
+    move.l  D0,-(SP)
+    jsr     z01_update_position_marker
+    addq.l  #8,SP
+    rts
+
+; UpdatePlayerPositionMarker — no args, void.
+c_update_player_position_marker:
+    jsr     z01_update_player_position_marker
+    rts
+
+; UpdateWorldCurtainEffect — no args, void.
+c_update_world_curtain_effect:
+    jsr     z01_update_world_curtain_effect
+    rts
+
+; UpdateWorldCurtainEffect_Bank2 — no args, void.
+c_update_world_curtain_effect_bank2:
+    jsr     z01_update_world_curtain_effect_bank2
+    rts
+
+; FetchFileAAddressSet — no args, void.
+c_fetch_file_a_address_set:
+    jsr     z01_fetch_file_a_address_set
+    rts
+
+; CheckTileObjectsBlocking — no D2 slot arg (uses fixed range), void.
+c_check_tile_objects_blocking:
+    jsr     z01_check_tile_objects_blocking
+    rts
+
+; CheckPowerTriforceFanfare — no args, void.
+c_check_power_triforce_fanfare:
+    jsr     z01_check_power_triforce_fanfare
+    rts
+
+; --- batch 77 export shims ---
+
+; InitTrap_Full(slot) — export: D2=slot
+c_init_trap_full:
+    move.l  D2,-(SP)
+    move.l  4+4(SP),D2
+    jsr     z01_init_trap_full
+    move.l  (SP)+,D2
+    rts
+
+; DrawWhirlwind(slot) — export: D2=slot
+c_draw_whirlwind:
+    move.l  D2,-(SP)
+    move.l  4+4(SP),D2
+    jsr     z01_draw_whirlwind
+    move.l  (SP)+,D2
+    rts
+
+; UpdateWhirlwind_Full(slot) — export: D2=slot
+c_update_whirlwind_full:
+    move.l  D2,-(SP)
+    move.l  4+4(SP),D2
+    jsr     z01_update_whirlwind_full
+    move.l  (SP)+,D2
+    rts
+
+; SummonWhirlwind() — no args, void
+c_summon_whirlwind:
+    jsr     z01_summon_whirlwind
+    rts
+
+; UpdateRupeeStash_Full(slot) — export: D2=slot
+c_update_rupee_stash_full:
+    move.l  D2,-(SP)
+    move.l  4+4(SP),D2
+    jsr     z01_update_rupee_stash_full
+    move.l  (SP)+,D2
+    rts
+
+; InitModeB_EnterCave_Bank5() — no args, void
+c_init_mode_b_enter_cave_bank5:
+    jsr     z01_init_mode_b_enter_cave_bank5
+    rts
+
+; CheckPassiveTileObjects() — no args, sets D2=0 on exit (ASM convention)
+c_check_passive_tile_objects:
+    jsr     z01_check_passive_tile_objects
+    moveq   #0,D2
+    rts
+
+; --- batch 77 import shims (C-callable ASM wrappers) ---
+
+; DrawObjectNotMirrored(frame, slot) — D0=frame, D2=slot, tail-call
+c_draw_object_not_mirrored_with_frame:
+    move.l  8(SP),D2
+    move.l  4(SP),D0
+    jmp     DrawObjectNotMirrored
+
+; DrawItemInInventory(d2, d3) — D2=first arg, D3=second arg
+c_draw_item_in_inventory:
+    move.l  8(SP),D3
+    move.l  4(SP),D2
+    jsr     DrawItemInInventory
+    rts
+
+; GoToNextModeFromPlay() — no args, void
+c_go_to_next_mode_from_play:
+    jsr     GoToNextModeFromPlay
+    rts
+
+; InitMode_EnterRoom() — no args, void
+c_init_mode_enter_room:
+    jsr     InitMode_EnterRoom
+    rts
+
+; RunCrossRoomTasksAndBeginUpdateMode_PlayModesNoCellar() — no args, void
+c_run_cross_room_tasks_no_cellar:
+    jsr     RunCrossRoomTasksAndBeginUpdateMode_PlayModesNoCellar
+    rts
+
+; Link_EndMoveAndAnimate() — no args, void
+c_link_end_move_and_animate:
+    jsr     Link_EndMoveAndAnimate
+    rts
+
+; --- batch 78 export shims ---
+
+; AnimateObjectWalking(slot) — D2=slot, no return value
+c_animate_object_walking:
+    move.l  D2,-(SP)
+    move.l  4+4(SP),D2
+    jsr     z07_animate_object_walking
+    move.l  (SP)+,D2
+    rts
+
+; AnimateAndDrawCommonObject(val, slot) — ASM: D0=val, D2=slot
+c_animate_and_draw_common_object:
+    move.l  D2,-(SP)        ; save D2
+    move.l  D2,-(SP)        ; push slot (arg2, pushed first = at SP+4 after jsr)
+    move.l  D0,-(SP)        ; push val  (arg1, pushed last  = at SP+8 after jsr)
+    ; wait — GCC right-to-left: arg2 pushed first, arg1 second
+    ; before jsr: SP→[val | slot | D2_save | ret]
+    ; after jsr:  SP→[callee_ret | val | slot | D2_save | ret]
+    ;              SP+4=val=arg1, SP+8=slot=arg2 ✓
+    jsr     z04_animate_and_draw_common_object
+    addq.l  #8,SP           ; pop val+slot
+    move.l  (SP)+,D2        ; restore D2
+    rts
+
+; UpdateTrap_Full(slot) — D2=slot
+c_update_trap_full:
+    move.l  D2,-(SP)
+    move.l  4+4(SP),D2
+    jsr     z01_update_trap_full
+    move.l  (SP)+,D2
+    rts
+
+; --- batch 80 import shims (ASM wrappers callable from C) ---
+; C ABI convention: after push D2 to save, SP+8=arg1, SP+12=arg2 (one-arg: SP+8=slot)
+
+; ObjShove(slot) — D2=slot
+c_obj_shove:
+    move.l  D2,-(SP)
+    move.l  8(SP),D2
+    jsr     Obj_Shove
+    move.l  (SP)+,D2
+    rts
+
+; WalkerMove(slot) — D2=slot
+c_walker_move:
+    move.l  D2,-(SP)
+    move.l  8(SP),D2
+    jsr     Walker_Move
+    move.l  (SP)+,D2
+    rts
+
+; UpdateCommonWanderer(turn_rate, slot) — D0=turn_rate, D2=slot
+c_update_common_wanderer:
+    move.l  D2,-(SP)
+    move.l  8(SP),D0    ; turn_rate = arg1 = old SP+4 = now SP+8
+    move.l  12(SP),D2   ; slot = arg2 = old SP+8 = now SP+12
+    jsr     UpdateCommonWanderer
+    move.l  (SP)+,D2
+    rts
+
+; WandererTargetPlayer(slot) — D2=slot
+c_wanderer_target_player:
+    move.l  D2,-(SP)
+    move.l  8(SP),D2
+    jsr     Wanderer_TargetPlayer
+    move.l  (SP)+,D2
+    rts
+
+; MoveFlyer(slot) — D2=slot
+c_move_flyer:
+    move.l  D2,-(SP)
+    move.l  8(SP),D2
+    jsr     MoveFlyer
+    move.l  (SP)+,D2
+    rts
+
+; ControlKeeseFlight(slot) — D2=slot
+c_control_keese_flight:
+    move.l  D2,-(SP)
+    move.l  8(SP),D2
+    jsr     ControlKeeseFlight
+    move.l  (SP)+,D2
+    rts
+
+; --- batch 80 export shims ---
+
+; UpdateBubble(slot) — D2=slot
+c_update_bubble:
+    move.l  D2,-(SP)
+    move.l  8(SP),D2
+    jsr     z04_update_bubble
+    move.l  (SP)+,D2
+    rts
+
+; UpdateKeese(slot) — D2=slot
+c_update_keese:
+    move.l  D2,-(SP)
+    move.l  8(SP),D2
+    jsr     z04_update_keese
+    move.l  (SP)+,D2
+    rts
+
+; DrawObjectMirrored with explicit frame — (frame, slot): D0=frame, D2=slot
+c_draw_object_mirrored_with_frame:
+    move.l  8(SP),D2
+    move.l  4(SP),D0
+    jmp     DrawObjectMirrored
+
+;==============================================================================
+; BATCH 81 — UpdateStandingFire, UpdateZol, UpdateGel
+;==============================================================================
+
+    xref    z04_update_standing_fire
+    xref    z04_update_zol
+    xref    z04_update_gel
+
+; Import shims — z_04.asm sub-functions callable from C (D2=slot, void).
+; These export otherwise-private z_04 functions so C can call them.
+
+; UpdateZolState — D2=slot, void.
+c_update_zol_state:
+    move.l  D2,-(SP)
+    move.l  8(SP),D2
+    jsr     UpdateZolState
+    move.l  (SP)+,D2
+    rts
+
+; Zol_CheckCollisions — D2=slot, void.
+c_zol_check_collisions:
+    move.l  D2,-(SP)
+    move.l  8(SP),D2
+    jsr     Zol_CheckCollisions
+    move.l  (SP)+,D2
+    rts
+
+; Gel_Move — D2=slot, void.
+c_gel_move:
+    move.l  D2,-(SP)
+    move.l  8(SP),D2
+    jsr     Gel_Move
+    move.l  (SP)+,D2
+    rts
+
+; Gel_CheckCollisions — D2=slot, void.
+c_gel_check_collisions:
+    move.l  D2,-(SP)
+    move.l  8(SP),D2
+    jsr     Gel_CheckCollisions
+    move.l  (SP)+,D2
+    rts
+
+; Export shims — C functions exposed to ASM.
+c_update_standing_fire:
+    move.l  D2,-(SP)
+    move.l  8(SP),D2
+    jsr     z04_update_standing_fire
+    move.l  (SP)+,D2
+    rts
+
+c_update_zol:
+    move.l  D2,-(SP)
+    move.l  8(SP),D2
+    jsr     z04_update_zol
+    move.l  (SP)+,D2
+    rts
+
+c_update_gel:
+    move.l  D2,-(SP)
+    move.l  8(SP),D2
+    jsr     z04_update_gel
+    move.l  (SP)+,D2
+    rts
+
+;==============================================================================
+; BATCH 82 — UpdateZora, UpdateCandle, UpdateBoulderSet
+;==============================================================================
+
+    xref    z04_update_zora
+    xref    z04_update_candle
+    xref    z04_update_boulder_set
+    xref    z04_update_rope
+
+; Import shim: UpdateBurrower — D2=slot, void.
+c_update_burrower:
+    move.l  D2,-(SP)
+    move.l  8(SP),D2
+    jsr     UpdateBurrower
+    move.l  (SP)+,D2
+    rts
+
+; Export shims.
+c_update_zora:
+    move.l  D2,-(SP)
+    move.l  8(SP),D2
+    jsr     z04_update_zora
+    move.l  (SP)+,D2
+    rts
+
+; UpdateCandle takes no slot arg — just call C directly.
+c_update_candle:
+    jsr     z04_update_candle
+    rts
+
+c_update_boulder_set:
+    move.l  D2,-(SP)
+    move.l  8(SP),D2
+    jsr     z04_update_boulder_set
+    move.l  (SP)+,D2
+    rts
+
+;==============================================================================
+; BATCH 83 — UpdateRope
+;==============================================================================
+
+c_update_rope:
+    move.l  D2,-(SP)
+    move.l  8(SP),D2
+    jsr     z04_update_rope
+    move.l  (SP)+,D2
+    rts

@@ -220,6 +220,7 @@ void z07_patch_and_cue_level_palettes_transfer(void) {
 
 extern const unsigned char PlayAreaColumnAddrs[];
 extern const unsigned char WalkableTiles[];
+extern const unsigned char ReverseDirections[];
 
 static const unsigned char walkable_count = 9;
 
@@ -315,3 +316,75 @@ unsigned char z07_get_colliding_tile_moving(unsigned int slot) {
     return z07_get_collidable_tile(hotspot, slot);
 }
 
+
+/* --- batch 44 --- */
+
+void z07_do_nothing(void) {}
+
+unsigned char z07_walker_alt_dir_get_random_perpendicular(unsigned int slot) {
+    unsigned char rnd = nes_ram[0x0018 + slot];
+    unsigned char dir = nes_ram[0x0098 + slot];
+    unsigned int idx = (rnd & 0x80) ? 0 : 1;
+    if (dir & 0x0C) idx += 2;
+    return ReverseDirections[idx];
+}
+
+/* --- batch 45 --- */
+
+extern void z01_init_grumble_full(unsigned int slot);
+extern void z01_init_rupee_stash_full(unsigned int slot);
+
+void z07_init_grumble(unsigned int slot) {
+    z01_init_grumble_full(slot);
+}
+
+void z07_init_rupee_stash(unsigned int slot) {
+    z01_init_rupee_stash_full(slot);
+}
+
+/* --- batch 51 --- */
+
+void z07_init_mode3_sub1(void) {
+    unsigned char room_id;
+    if (RAM(0x0010) != 0 || RAM(0x0526) == 0xFF) {
+        room_id = nes_ram[NES_SRAM_BASE + 0x0BAD];
+    } else {
+        room_id = RAM(0x0526);
+    }
+    RAM(0x00EB) = room_id;
+    if (room_id == RAM(0x0526)) {
+        RAM(0x0526) = 0xFF;
+    }
+    z07_patch_and_cue_level_palettes_transfer();
+}
+
+/* --- batch 79 --- */
+
+static void animate_link_obj_state(void) {
+    unsigned char state = RAM(0x00AC);
+    unsigned char major = state & 0x30;
+    if (major == 0x10 || major == 0x20) {
+        if (state & 0x0F)
+            RAM(0x00AC) = state | 0x30;
+        else
+            RAM(0x00AC) = state + 1;
+        RAM(0x03E4) = 1;
+    } else if (major == 0x30) {
+        RAM(0x00AC) = state & 0xC0;
+    }
+}
+
+void z07_animate_object_walking(unsigned int slot) {
+    if (--RAM(0x03D0 + slot) == 0) {
+        if (slot == 0) animate_link_obj_state();
+        RAM(0x0000) = 6;
+        z07_roll_over_anim_counter(slot);
+    }
+    z07_anim_fetch_obj_pos(slot);
+    unsigned char dir = RAM(0x0098 + slot) & 0x0C;
+    if (dir != 0) {
+        z07_anim_set_obj_hflip(slot);
+    } else {
+        if (!(RAM(0x0098 + slot) & 1)) RAM(0x000F)++;
+    }
+}

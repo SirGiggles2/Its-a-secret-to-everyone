@@ -266,49 +266,30 @@ UpdateMenu_Return:
 
     even
 UpdateMenuCommon2:
-    ; Cue the transfer of first set of submenu nametable attributes to NT 2.
-    ; Advance state.
-    ;
-    moveq   #72,D0
-    even
+    jmp     c_update_menu_common2
+
 SelectTransferBufAndIncState:
-    move.b  D0,($0014,A4)
+    jmp     c_select_transfer_buf_and_inc_state
+
 _anon_z05_1:
     addq.b  #1,($00E1,A4)
     rts
 
     even
 UpdateMenuCommon3:
-    ; Cue the transfer of second set of submenu nametable attributes to NT 2.
-    ; Advance state.
-    ;
-    moveq   #74,D0
-    beq.s  __far_z_05_0000
-    jmp  SelectTransferBufAndIncState
-__far_z_05_0000:
-    even
+    jmp     c_update_menu_common3
+
 UpdateMenuCommon4:
-    ; Cue the transfer of a blank row of tiles to the bottom of NT 2.
-    ; Advance state.
-    ;
-    moveq   #76,D0
-    beq.s  __far_z_05_0001
-    jmp  SelectTransferBufAndIncState
-__far_z_05_0001:
-    even
+    jmp     c_update_menu_common4
+
 UpdateMenu5UW:
     jsr     Submenu_CueTransferRowUW
     jmp     _anon_z05_1
 
     even
 UpdateMenu5OW:
-    ; Cue the transfer of "TRIFORCE" text.
-    ;
-    moveq   #92,D0
-    beq.s  __far_z_05_0002
-    jmp  SelectTransferBufAndIncState
-__far_z_05_0002:
-    even
+    jmp     c_update_menu5_ow
+
 UpdateMenuScrollDownOW:
     jsr     Submenu_CueTransferRowOW
     jmp     _anon_z05_2
@@ -443,9 +424,9 @@ _anon_z05_3:
     ;
     move.b  ($00F8,A4),D0
     andi.b #$10,D0
-    bne.s  __far_z_05_0003
+    bne.s  __far_z_05_0000
     jmp  Exit
-__far_z_05_0003:
+__far_z_05_0000:
     move.b  ($0254,A4),D0
     move.b  D0,-(A5)  ; PHA
     move.b  ($0258,A4),D0
@@ -473,9 +454,9 @@ UpdateMenuScrollUp:
     ; If hardware vertical scroll still < $F0, then return.
     ;
     cmpi.b  #$F0,D0
-    bcc.s  __far_z_05_0004
+    bcc.s  __far_z_05_0001
     jmp  Exit
-__far_z_05_0004:
+__far_z_05_0001:
     ; Once vertical scroll >= $F0, switch to NT0.
     ;
     move.b  D0,($005C,A4)
@@ -518,13 +499,13 @@ _anon_z05_5:
     ; If in UW and have the compass, then move the triforce position marker.
     ;
     move.b  ($0010,A4),D0
-    bne.s  __far_z_05_0005
+    bne.s  __far_z_05_0002
     jmp  Exit
-__far_z_05_0005:
+__far_z_05_0002:
     jsr     HasCompass
-    bne.s  __far_z_05_0006
+    bne.s  __far_z_05_0003
     jmp  Exit
-__far_z_05_0006:
+__far_z_05_0003:
     move.b  ($0258,A4),D0
     andi    #$EE,CCR  ; CLC: clear C+X
     move.b  ($0000,A4),D1
@@ -667,15 +648,15 @@ ScrollWorld:
 _anon_z05_8:
     move.b  ($00E6,A4),D1
     cmp.b   D1,D0
-    beq.s  __far_z_05_0007
+    beq.s  __far_z_05_0004
     jmp  ScrollWorldH
-__far_z_05_0007:
+__far_z_05_0004:
     moveq   #8,D0
     move.b  ($0098,A4),D1
     and.b   D0,D1   ; BIT: set Z/N/V from D1 AND A
-    bne.s  __far_z_05_0008
+    bne.s  __far_z_05_0005
     jmp  ScrollWorldDownOrH
-__far_z_05_0008:
+__far_z_05_0005:
     ; then scroll up.
     ; Scrolling up starts from the top of NT 2 at $2800.
     ;
@@ -731,9 +712,9 @@ ScrollWorldDownOrH:
     lsr.b  #1,D0   ; LSR A
     move.b  ($0098,A4),D1
     and.b   D0,D1   ; BIT: set Z/N/V from D1 AND A
-    bne.s  __far_z_05_0009
+    bne.s  __far_z_05_0006
     jmp  ScrollWorldH
-__far_z_05_0009:
+__far_z_05_0006:
     ; then scroll down.
     ;
     addq.b  #1,($00E9,A4)
@@ -755,14 +736,14 @@ _anon_z05_11:
     addq.b  #1,($0058,A4)
 _anon_z05_12:
     cmpi.b  #$C0,D0
-    beq.s  __far_z_05_0010
+    beq.s  __far_z_05_0007
     jmp  L14287_Exit
-__far_z_05_0010:
+__far_z_05_0007:
     move.b  ($0058,A4),D0
     cmpi.b  #$23,D0
-    beq.s  __far_z_05_0011
+    beq.s  __far_z_05_0008
     jmp  L14287_Exit
-__far_z_05_0011:
+__far_z_05_0008:
     ; VScroll address is $23C0, the bottom of NT 0. So, we need
     ; to roll to $2800, the top of NT 2.
     moveq   #40,D0
@@ -784,9 +765,9 @@ _anon_z05_13:
     moveq   #2,D0
     move.b  ($0098,A4),D1
     and.b   D0,D1   ; BIT: set Z/N/V from D1 AND A
-    bne.s  __far_z_05_0012
+    bne.s  __far_z_05_0009
     jmp  ScrollWorldRight
-__far_z_05_0012:
+__far_z_05_0009:
     ; Scroll left.
     ;
     subq.b  #1,($00E8,A4)
@@ -804,30 +785,18 @@ _anon_z05_14:
     subx.b  D1,D0   ; SBC $00
     eori    #$10,CCR  ; restore X = 6502 C
     move.b  D0,($00FD,A4)
-    bne.s  __far_z_05_0013
+    bne.s  __far_z_05_0010
     jmp  IncSubmode
-__far_z_05_0013:
+__far_z_05_0010:
     move.b  ($0001,A4),D1
     cmp.b   D1,D0
-    beq.s  __far_z_05_0014
+    beq.s  __far_z_05_0011
     jmp  L14287_Exit
-__far_z_05_0014:
+__far_z_05_0011:
     even
 SwitchToNT1:
-    ; When we begin scrolling left, CurHScroll = 0 and base
-    ; nametable is 0. This shows the current room completely.
-    ;
-    ; The first time in ScrollWorld, the speed [00] will be
-    ; subtracted from CurHScroll to show most of NT 0, and
-    ; a little of NT 1 to its left. In other words, the
-    ; scroll position now refers to a position in NT 1.
-    ;
-    ; [01] is this first position shown in NT 1. So, once
-    ; CurHScroll matches it (in the first call to this routine),
-    ; turn on this flag that makes NT 1 the base nametable.
-    moveq   #1,D0
-    move.b  D0,($005F,A4)
-    even
+    jmp     c_switch_to_nt1
+
 L14287_Exit:
     rts
 
@@ -836,9 +805,9 @@ ScrollWorldRight:
     lsr.b  #1,D0   ; LSR A
     move.b  ($0098,A4),D1
     and.b   D0,D1   ; BIT: set Z/N/V from D1 AND A
-    bne.s  __far_z_05_0015
+    bne.s  __far_z_05_0012
     jmp  L14287_Exit
-__far_z_05_0015:
+__far_z_05_0012:
     addq.b  #1,($00E8,A4)
     move.b  ($0070,A4),D0
     cmpi.b  #$01,D0
@@ -854,9 +823,9 @@ _anon_z05_15:
     move.b  ($0000,A4),D1
     addx.b  D1,D0   ; ADC $00
     move.b  D0,($00FD,A4)
-    beq.s  __far_z_05_0016
+    beq.s  __far_z_05_0013
     jmp  L14287_Exit
-__far_z_05_0016:
+__far_z_05_0013:
     ; Because CurHScroll is now 0 and base nametable is 0;
     ; we would be showing the new room at the end of the scroll
     ; but with old attributes.
@@ -955,9 +924,9 @@ InitMode7_Sub0:
     move.b  D0,($00EB,A4)
 _anon_z05_19:
     move.b  ($051A,A4),D0
-    bne.s  __far_z_05_0017
+    bne.s  __far_z_05_0014
     jmp  L1433A_IncSubmode
-__far_z_05_0017:
+__far_z_05_0014:
     jmp     AnimatePond
 
     even
@@ -996,7 +965,8 @@ _anon_z05_20:
     bpl  _anon_z05_21
     even
 L1433A_IncSubmode:
-    addq.b  #1,($0013,A4)
+    jmp     c_l1433a_inc_submode
+
 _anon_z05_21:
     rts
 
@@ -1083,9 +1053,9 @@ _L_z05_InitMode7_Sub5_CheckDark:
     moveq   #0,D3
     move.b  ($00EC,A4),D3
     jsr     IsDarkRoom_Bank5
-    bne.s  __far_z_05_0018
+    bne.s  __far_z_05_0015
     jmp  InitMode7_Finish
-__far_z_05_0018:
+__far_z_05_0015:
     ; The next room is dark.
     ;
     moveq   #0,D3
@@ -1111,26 +1081,19 @@ _L_z05_InitMode7_Sub5_CheckIfLit:
     bne  _L_z05_InitMode7_Sub5_DarkenRoom
     ; Not lit. Dark to dark. Nothing to do.
     ; Go finish initializing, and begin updating the mode.
-    bne.s  __far_z_05_0019
+    bne.s  __far_z_05_0016
     jmp  InitMode7_Finish
-__far_z_05_0019:
+__far_z_05_0016:
     even
 InitMode7_Sub6:
     jsr     AnimateWorldFading
-    beq.s  __far_z_05_0020
+    beq.s  __far_z_05_0017
     jmp  L143AD_Exit
-__far_z_05_0020:
+__far_z_05_0017:
     even
 InitMode7_Finish:
-    ; Finish initializing this mode, and start updating it.
-    ;
-    ;
-    ; Set current room to next room.
-    move.b  ($00EC,A4),D0
-    move.b  D0,($00EB,A4)
-    jsr     WriteAndEnableSprite0
-    jsr     BeginUpdateMode
-    even
+    jmp     c_init_mode7_finish
+
 L143AD_Exit:
     rts
 
@@ -1183,15 +1146,15 @@ UpdateMode7Scroll_Sub0:
     moveq   #8,D0
     move.b  ($0098,A4),D1
     and.b   D0,D1   ; BIT: set Z/N/V from D1 AND A
-    beq.s  __far_z_05_0021
+    beq.s  __far_z_05_0018
     jmp  ScrollUp
-__far_z_05_0021:
+__far_z_05_0018:
     lsr.b  #1,D0   ; LSR A
     move.b  ($0098,A4),D1
     and.b   D0,D1   ; BIT: set Z/N/V from D1 AND A
-    bne.s  __far_z_05_0022
+    bne.s  __far_z_05_0019
     jmp  ScrollHorizontal
-__far_z_05_0022:
+__far_z_05_0019:
     ; Scrolling down.
     ;
     ;
@@ -1309,27 +1272,8 @@ _anon_z05_28:
 
     even
 UpdateMode7Scroll_Sub6:
-    move.b  ($0010,A4),D0
-    bne.s  __far_z_05_0023
-    jmp  UpdateMode7Scroll_Sub7
-__far_z_05_0023:
-    moveq   #0,D3
-    move.b  ($00EB,A4),D3
-    jsr     IsDarkRoom_Bank5
-    bne.s  __far_z_05_0024
-    jmp  UpdateMode7Scroll_Sub7
-__far_z_05_0024:
-    ; Set CurRow = 0 (was $FF) to signal to mode 4 that
-    ; it might need to brighten the new room, because we
-    ; scrolled from a dark one.
-    ;
-    ; This isn't a concern, if you enter a room by any other mode.
-    moveq   #0,D0
-    move.b  D0,($00E9,A4)
-    addq.b  #1,($0013,A4)
-    rts
+    jmp     c_update_mode7_scroll_sub6
 
-    even
 UpdateMode7Scroll_Sub7:
     jmp     c_update_mode7_scroll_sub7
 
@@ -1339,9 +1283,9 @@ UpdateMode7Scroll_Sub4:
     moveq   #8,D0
     move.b  ($0098,A4),D1
     and.b   D0,D1   ; BIT: set Z/N/V from D1 AND A
-    bne.s  __far_z_05_0025
+    bne.s  __far_z_05_0020
     jmp  UpdateMode7Scroll_Sub4And5_TransferNTAttrs
-__far_z_05_0025:
+__far_z_05_0020:
     jmp     Inc2Submodes
 
     even
@@ -1351,9 +1295,9 @@ UpdateMode7Scroll_Sub4And5_TransferNTAttrs:
     moveq   #0,D2
     move.b  ($0013,A4),D2
     cmpi.b  #$04,D2
-    bne.s  __far_z_05_0026
+    bne.s  __far_z_05_0021
     jmp  CueTransferPlayAreaAttrsHalfAndAdvanceSubmodeNT0
-__far_z_05_0026:
+__far_z_05_0021:
     ; Transfer bottom half.
     ;
     ;
@@ -1375,19 +1319,17 @@ _anon_z05_29:
 ; High byte of destination PPU address for play area attributes.
     even
 CueTransferPlayAreaAttrsHalfAndAdvanceSubmodeNT0:
-    moveq   #35,D2
-    jmp     CueTransferPlayAreaAttrsHalfAndAdvanceSubmode
+    jmp     c_cue_transfer_play_area_attrs_half_nt0
 
-    even
 CopyColumnOrRowToTileBuf:
     jmp     c_copy_column_or_row_to_tilebuf
 
 WaitAndScrollToSplitBottom:
     jsr     _ppu_read_2  ; PPU $2002 read → D0
     andi.b #$40,D0
-    bne.s  __far_z_05_0027
+    bne.s  __far_z_05_0022
     jmp  WaitAndScrollToSplitBottom
-__far_z_05_0027:
+__far_z_05_0022:
     jsr     _ppu_read_2  ; PPU $2002 read → D0
     ; Wait cycles.
     ; TODO: Why do these differ?
@@ -1527,26 +1469,8 @@ _anon_z05_38:
 
     even
 InitMode10:
-    moveq   #0,D2
-    jsr     GetCollidableTileStill
-    cmpi.b  #$24,D0
-    bne  _anon_z05_39
-    moveq   #0,D0
-    move.b  D0,($0619,A4)
-    moveq   #8,D0
-    move.b  D0,($0603,A4)
-    ; Set the target Y coordinate $10 pixels below current one.
-    ;
-    move.b  ($0084,A4),D0
-    andi    #$EE,CCR  ; CLC: clear C+X
-    move.b  #$10,D1
-    addx.b  D1,D0   ; ADC #$10 (X flag = 6502 C)
-    move.b  D0,($0412,A4)
-_anon_z05_39:
-    addq.b  #1,($0011,A4)
-    rts
+    jmp     c_init_mode10
 
-    even
 SpawnPosListAddrsLo:
     ; PATCH P40: +1 byte to each LO — upstream table was shifted 1 byte
     ; into the preceding HI column, producing a stray $86 first read.
@@ -1692,9 +1616,9 @@ ObjListAddrs:
 InitMode4:
     moveq   #0,D2
     move.b  ($0013,A4),D2
-    bne.s  __far_z_05_0028
+    bne.s  __far_z_05_0023
     jmp  InitMode_EnterRoom
-__far_z_05_0028:
+__far_z_05_0023:
     subq.b  #1,D2
     bne  _L_z05_InitMode4_CheckSub2
     ; Submode 1.
@@ -1727,17 +1651,17 @@ _L_z05_InitMode4_Exit:
     even
 _L_z05_InitMode4_CheckSub2:
     subq.b  #1,D2
-    beq.s  __far_z_05_0029
+    beq.s  __far_z_05_0024
     jmp  InitMode4_Sub3
-__far_z_05_0029:
+__far_z_05_0024:
     ; Submode 2.
     ;
     moveq   #0,D3
     move.b  ($00EB,A4),D3
     jsr     IsDarkRoom_Bank5
-    beq.s  __far_z_05_0030
+    beq.s  __far_z_05_0025
     jmp  InitMode4_GoToSub0
-__far_z_05_0030:
+__far_z_05_0025:
     ; This is a light room.
     ; See if we have to brighten it after leaving a dark room.
     ;
@@ -1757,23 +1681,23 @@ __far_z_05_0030:
     moveq   #0,D3
     move.b  D0,D3
     jsr     IsDarkRoom_Bank5
-    bne.s  __far_z_05_0031
+    bne.s  __far_z_05_0026
     jmp  InitMode4_GoToSub0
-__far_z_05_0031:
+__far_z_05_0026:
     ; The previous room was dark.
     ;
     move.b  ($051F,A4),D0
-    beq.s  __far_z_05_0032
+    beq.s  __far_z_05_0027
     jmp  InitMode4_GoToSub0
-__far_z_05_0032:
+__far_z_05_0027:
     move.b  #$C0,D0
 ; Params:
 ; A: start index of cycle
 ;
     even
 SetFadeCycleAndAdvanceSubmode:
-    move.b  D0,($051C,A4)
-    addq.b  #1,($0013,A4)
+    jmp     c_set_fade_cycle_advance_submode
+
 _anon_z05_41:
     rts
 
@@ -2142,37 +2066,8 @@ _anon_z05_54:
 
     even
 SetupTileObjectOW:
-    ; If this is a room with a dock ($3F and $55), then
-    ; set the dock object type ($61) in tile object slot ($B).
-    ;
-    move.b  ($00EB,A4),D0
-    cmpi.b  #$3F,D0
-    beq  _anon_z05_55
-    cmpi.b  #$55,D0
-    bne  _L_z05_SetupTileObjectOW_PlaceTileObj
-_anon_z05_55:
-    moveq   #97,D0
-    jmp     _L_z05_SetupTileObjectOW_SetType
+    jmp     c_setup_tile_object_ow
 
-    even
-_L_z05_SetupTileObjectOW_PlaceTileObj:
-    ; There's no dock here, but there might be a tile object that
-    ; we found while laying out the room. Set the type, X, and Y
-    ; to the details we determined.
-    ;
-    move.b  ($052C,A4),D0
-    move.b  D0,($007B,A4)
-    move.b  ($052D,A4),D0
-    move.b  D0,($008F,A4)
-    move.b  ($052B,A4),D0
-    even
-_L_z05_SetupTileObjectOW_SetType:
-    move.b  D0,($035A,A4)
-    jsr     ResetRoomTileObjInfo
-    move.b  D0,($00B7,A4)
-    rts
-
-    even
 CellarKeeseXs:
     dc.b    $20, $60, $90, $D0
 
@@ -2339,9 +2234,9 @@ IsSafeToSpawn:
     move.b  (A0,D2.W),D0
     move.b  ($034A,A4),D1
     cmp.b   D1,D0
-    bcs.s  __far_z_05_0033
+    bcs.s  __far_z_05_0028
     jmp  ReturnUnsafeToSpawn
-__far_z_05_0033:
+__far_z_05_0028:
 ; Params:
 ; X: object index
 ;
@@ -2353,34 +2248,8 @@ __far_z_05_0033:
 ;
     even
 IsDistanceSafeToSpawn:
-    move.b  ($0070,A4),D0
-    ori     #$11,CCR  ; SEC: set C+X
-    move.b  ($70,A4,D2.W),D1
-    eori    #$10,CCR  ; flip X: 6502 SBC polarity
-    subx.b  D1,D0   ; SBC ObjX,X
-    eori    #$10,CCR  ; restore X = 6502 C
-    jsr     Abs
-    cmpi.b  #$22,D0
-    bcc  _anon_z05_62
-    ; Get the absolute Y distance to Link.
-    ;
-    move.b  ($0084,A4),D0
-    ori     #$11,CCR  ; SEC: set C+X
-    lea     ($0084,A4),A0
-    move.b  (A0,D2.W),D1
-    eori    #$10,CCR  ; flip X: 6502 SBC polarity
-    subx.b  D1,D0   ; SBC ObjY,X
-    eori    #$10,CCR  ; restore X = 6502 C
-    jsr     Abs
-    cmpi.b  #$22,D0
-    bcc.s  __far_z_05_0034
-    jmp  ReturnUnsafeToSpawn
-__far_z_05_0034:
-_anon_z05_62:
-    andi    #$EE,CCR  ; CLC: clear C+X
-    rts
+    jmp     c_is_distance_safe_to_spawn
 
-    even
 ReturnUnsafeToSpawn:
     ori     #$11,CCR  ; SEC: set C+X
     rts
@@ -2391,9 +2260,9 @@ InitMode11:
     jsr     DecrementInvincibilityTimer
     jsr     Link_EndMoveAndAnimate
     move.b  ($0013,A4),D0
-    beq.s  __far_z_05_0035
+    beq.s  __far_z_05_0029
     jmp  InitMode11_Sub1
-__far_z_05_0035:
+__far_z_05_0029:
     ; Submode 0.
     ;
     jsr     HideAllSprites
@@ -2419,9 +2288,9 @@ __far_z_05_0035:
     even
 InitMode11_Sub1:
     move.b  ($0028,A4),D0
-    beq.s  __far_z_05_0036
+    beq.s  __far_z_05_0030
     jmp  L14A96_Exit
-__far_z_05_0036:
+__far_z_05_0030:
     jsr     GetUniqueRoomId
     andi.b #$3E,D0
     cmpi.b  #$3E,D0
@@ -2674,16 +2543,16 @@ UpdateMode10Stairs_Full:
     ;
     move.b  ($0015,A4),D0
     andi.b #$03,D0
-    beq.s  __far_z_05_0037
+    beq.s  __far_z_05_0031
     jmp  AnimateAndDrawLinkBehindBackground
-__far_z_05_0037:
+__far_z_05_0031:
     addq.b  #1,($0084,A4)
     move.b  ($0084,A4),D0
     move.b  ($0412,A4),D1
     cmp.b   D1,D0
-    beq.s  __far_z_05_0038
+    beq.s  __far_z_05_0032
     jmp  AnimateAndDrawLinkBehindBackground
-__far_z_05_0038:
+__far_z_05_0032:
 _anon_z05_70:
     move.b  ($005B,A4),D0
     move.b  D0,($0012,A4)
@@ -2701,34 +2570,34 @@ CheckUnderworldSecrets:
     ;
     move.b  ($04CD,A4),D0
     andi.b #$07,D0
-    bne.s  __far_z_05_0039
+    bne.s  __far_z_05_0033
     jmp  CheckSecretTriggerNone
-__far_z_05_0039:
+__far_z_05_0033:
     ; If the secret was not triggered, return.
     ;
     jsr     CheckSecretTrigger
-    bcs.s  __far_z_05_0040
+    bcs.s  __far_z_05_0034
     jmp  CheckSecretTriggerNone
-__far_z_05_0040:
+__far_z_05_0034:
     ; If the secret is not "foes for an item", then we're done.
     ;
     move.b  ($04CD,A4),D0
     andi.b #$07,D0
     cmpi.b  #$07,D0
-    beq.s  __far_z_05_0041
+    beq.s  __far_z_05_0035
     jmp  CheckSecretTriggerNone
-__far_z_05_0041:
+__far_z_05_0035:
     ; If the room item was already activated, or the item was
     ; already taken, then return.
     ;
     move.b  ($00BF,A4),D0
-    bne.s  __far_z_05_0042
+    bne.s  __far_z_05_0036
     jmp  CheckSecretTriggerNone
-__far_z_05_0042:
+__far_z_05_0036:
     jsr     GetRoomFlagUWItemState
-    beq.s  __far_z_05_0043
+    beq.s  __far_z_05_0037
     jmp  CheckSecretTriggerNone
-__far_z_05_0043:
+__far_z_05_0037:
     ; Else activate the room item, and play the "item appears" tune.
     ;
     moveq   #0,D0
@@ -2737,12 +2606,8 @@ __far_z_05_0043:
     move.b  D0,($0602,A4)
     even
 CheckSecretTriggerNone:
-    rts
+    jmp     c_check_secret_trigger_none
 
-; Returns:
-; C: 1 if the condition for the secret was met
-;
-    even
 CheckSecretTrigger:
     jsr     _m68k_tablejump  ; M68K-native table dispatch (replaces JSR TableJump)
     even
@@ -2761,100 +2626,34 @@ CheckHasLivingMonsters:
     jmp     c_check_has_living_monsters
 
 CheckSecretTriggerAllDead:
-    ; If there are still monsters, not counting bubbles, then return C=0.
-    ;
-    move.b  ($034D,A4),D0
-    bne.s  __far_z_05_0044
-    jmp  ReturnFalse
-__far_z_05_0044:
-    even
+    jmp     c_check_secret_trigger_all_dead
+
 TriggerShutters:
-    ; No monsters are left. Trigger shutters to open, and return C=1.
-    ;
-    moveq   #1,D0
-    move.b  D0,($04CE,A4)
-    ori     #$11,CCR  ; SEC: set C+X
-    rts
+    jmp     c_trigger_shutters
 
-    even
 ReturnFalse:
-    andi    #$EE,CCR  ; CLC: clear C+X
-    rts
+    jmp     c_return_false
 
-    even
 CheckSecretTriggerRingleader:
-    ; If the first monster slot is empty, go kill all monsters.
-    ;
-    move.b  ($0350,A4),D0
-    beq  _L_z05_CheckSecretTriggerRingleader_KillMonsters
-    ; If the first monster slot has an object other than a monster,
-    ; then return C=0.
-    ;
-    cmpi.b  #$53,D0
-    bcc.s  __far_z_05_0045
-    jmp  ReturnFalse
-__far_z_05_0045:
-    even
-_L_z05_CheckSecretTriggerRingleader_KillMonsters:
-    ; For each object slot from $C to 1:
-    ;
-    ; If the slot is empty, or has something not a monster, or is
-    ; already dying; then go loop again.
-    ;
-    moveq   #0,D3
-    move.b  ($0340,A4),D3
-    even
-_L_z05_CheckSecretTriggerRingleader_Loop:
-    lea     ($0350,A4),A0
-    move.b  (A0,D3.W),D0
-    beq  _L_z05_CheckSecretTriggerRingleader_Next
-    cmpi.b  #$53,D0
-    bcc  _L_z05_CheckSecretTriggerRingleader_Next
-    lea     ($0406,A4),A0
-    move.b  (A0,D3.W),D0
-    bne  _L_z05_CheckSecretTriggerRingleader_Next
-    ; Set the object's metastate to die.
-    ;
-    moveq   #16,D0
-    lea     ($0406,A4),A0
-    move.b  D0,(A0,D3.W)
-    even
-_L_z05_CheckSecretTriggerRingleader_Next:
-    subq.b  #1,D3
-    bpl  _L_z05_CheckSecretTriggerRingleader_Loop
-    ; Return C=1.
-    ;
-    ori     #$11,CCR  ; SEC: set C+X
-    rts
+    jmp     c_check_secret_trigger_ringleader
 
-    even
 CheckSecretTriggerBlockDoor:
-    ; If the block has not been pushed completely, then return C=0.
-    ;
-    move.b  ($04CF,A4),D0
-    bne.s  __far_z_05_0046
-    jmp  ReturnFalse
-__far_z_05_0046:
-    ; Else go trigger shutters to open, and return C=1.
-    ;
-    beq.s  __far_z_05_0047
-    jmp  TriggerShutters
-__far_z_05_0047:
-    even
+    jmp     c_check_secret_trigger_block_door
+
 CheckSecretTriggerBlockStairs:
     ; If the block has not been pushed completely, then return C=0.
     ;
     move.b  ($04CF,A4),D0
-    bne.s  __far_z_05_0048
+    bne.s  __far_z_05_0038
     jmp  ReturnFalse
-__far_z_05_0048:
+__far_z_05_0038:
     ; If BlockPushComplete = 2, then it was pushed, and we already
     ; took action for the secret. So, return C=0.
     ;
     lsr.b  #1,D0   ; LSR A
-    bcs.s  __far_z_05_0049
+    bcs.s  __far_z_05_0039
     jmp  ReturnFalse
-__far_z_05_0049:
+__far_z_05_0039:
     ; Else BlockPushComplete = 1. It was pushed, but this is the
     ; first time checking it for a secret. Make it 2.
     ;
@@ -2876,33 +2675,11 @@ __far_z_05_0049:
 
     even
 CheckSecretTriggerLastBoss:
-    ; If the last boss was defeated, then
-    ; go trigger shutters to open, and return C=1.
-    ;
-    move.b  ($0672,A4),D0
-    beq.s  __far_z_05_0050
-    jmp  TriggerShutters
-__far_z_05_0050:
-    ; Else return C=0.
-    ;
-    andi    #$EE,CCR  ; CLC: clear C+X
-    rts
+    jmp     c_check_secret_trigger_last_boss
 
-    even
 CheckSecretTriggerMoneyOrLife:
-    ; If the money-or-life man is gone, then
-    ; go trigger shutters to open, and return C=1.
-    ;
-    move.b  ($0350,A4),D0
-    bne.s  __far_z_05_0051
-    jmp  TriggerShutters
-__far_z_05_0051:
-    ; Else return C=0.
-    ;
-    andi    #$EE,CCR  ; CLC: clear C+X
-    rts
+    jmp     c_check_secret_trigger_money_or_life
 
-    even
 UpdateMode11Death_Full:
     move.b  ($0013,A4),D0
     jsr     _m68k_tablejump  ; M68K-native table dispatch (replaces JSR TableJump)
@@ -2950,45 +2727,23 @@ CueTransferPlayAreaAttrsHalfAndAdvanceSubmodeNT2:
 ;
     even
 CueTransferPlayAreaAttrsHalfAndAdvanceSubmode:
-    jsr     CopyPlayAreaAttrsHalfToDynTransferBuf
-    addq.b  #1,($0013,A4)
-    rts
+    jmp     c_cue_transfer_play_area_attrs_half_and_advance_submode
 
-    even
 UpdateMode11Death_Sub2:
-    ; Updates all play area tiles.
-    ;
-    jsr     CopyNextRowToTransferBufAndAdvanceSubmodeWhenDone
-    bcc  _anon_z05_71
-    jsr     WriteAndEnableSprite0
-_anon_z05_71:
-    move.b  ($0302,A4),D0
-    andi    #$EE,CCR  ; CLC: clear C+X
-    move.b  #$08,D1
-    addx.b  D1,D0   ; ADC #$08 (X flag = 6502 C)
-    move.b  D0,($0302,A4)
-    rts
+    jmp     c_update_mode11_death_sub2
 
-    even
 UpdateMode11Death_Sub3:
     moveq   #96,D0
     even
 SelectTransferBufAndAdvanceSubmode:
-    jmp     L1712E_SelectTransferBufAndAdvanceSubmode
+    jmp     c_select_transfer_buf
 
-    even
 UpdateMode11Death_Sub4:
-    moveq   #98,D0
-    jmp     SelectTransferBufAndAdvanceSubmode
+    jmp     c_update_mode11_death_sub4
 
-    even
 UpdateMode11Death_Sub5:
-    moveq   #0,D0
-    move.b  D0,($00E3,A4)
-    moveq   #94,D0
-    jmp     SelectTransferBufAndAdvanceSubmode
+    jmp     c_update_mode11_death_sub5
 
-    even
 UpdateMode11Death_Sub6:
     jmp     c_update_mode11_death_sub6
 
@@ -2997,9 +2752,9 @@ L14CD7_IncSubmode:
 
 UpdateMode11Death_Sub7:
     move.b  ($00E5,A4),D0
-    bne.s  __far_z_05_0052
+    bne.s  __far_z_05_0040
     jmp  L14CD7_IncSubmode
-__far_z_05_0052:
+__far_z_05_0040:
     move.b  ($0033,A4),D0
     bne  _L_z05_UpdateMode11Death_Sub7_DrawLink
     moveq   #5,D0
@@ -3033,27 +2788,20 @@ _L_z05_UpdateMode11Death_Sub7_CheckOtherDirs:
     even
 UpdateMode11Death_Sub8_AnimateFade:
     jsr     AnimateWorldFading
-    bne.s  __far_z_05_0053
+    bne.s  __far_z_05_0041
     jmp  L14CD7_IncSubmode
-__far_z_05_0053:
+__far_z_05_0041:
     rts
 
     even
 UpdateMode11Death_Sub9:
-    moveq   #44,D0
-    move.b  D0,($0014,A4)
-    moveq   #15,D0
-    move.b  D0,($00E5,A4)
-    moveq   #24,D0
-    beq.s  __far_z_05_0054
-    jmp  UpdateMode11Death_SetTimerIncSubmode
-__far_z_05_0054:
-    even
+    jmp     c_update_mode11_death_sub9
+
 UpdateMode11Death_SubA:
     move.b  ($0033,A4),D0
-    beq.s  __far_z_05_0055
+    beq.s  __far_z_05_0042
     jmp  L14D55_Exit
-__far_z_05_0055:
+__far_z_05_0042:
     moveq   #98,D2
     move.b  ($00E5,A4),D0
     cmpi.b  #$06,D0
@@ -3076,9 +2824,9 @@ _anon_z05_72:
     addx.b  D1,D0   ; ADC #$08 (X flag = 6502 C)
     move.b  D0,($024F,A4)
     subq.b  #1,($00E5,A4)
-    beq.s  __far_z_05_0056
+    beq.s  __far_z_05_0043
     jmp  L14D55_Exit
-__far_z_05_0056:
+__far_z_05_0043:
     moveq   #16,D0
     move.b  D0,($0604,A4)
     move.b  #$F8,D0
@@ -3087,18 +2835,17 @@ __far_z_05_0056:
     moveq   #46,D0
     even
 UpdateMode11Death_SetTimerIncSubmode:
-    move.b  D0,($0033,A4)
-    addq.b  #1,($0013,A4)
-    even
+    jmp     c_update_mode11_death_set_timer_inc_submode
+
 L14D55_Exit:
     rts
 
     even
 UpdateMode11Death_SubB:
     move.b  ($0033,A4),D0
-    beq.s  __far_z_05_0057
+    beq.s  __far_z_05_0044
     jmp  L14D55_Exit
-__far_z_05_0057:
+__far_z_05_0044:
     moveq   #96,D0
     move.b  D0,($0033,A4)
     moveq   #70,D0
@@ -3106,34 +2853,8 @@ __far_z_05_0057:
 
     even
 UpdateMode11Death_SubC:
-    move.b  ($0033,A4),D0
-    bne  _anon_z05_73
-    jsr     EndGameMode
-    moveq   #8,D0
-    move.b  D0,($0012,A4)
-    moveq   #64,D0
-    move.b  D0,($0602,A4)
-    moveq   #0,D2
-    move.b  ($0016,A4),D2
-    lea     ($0630,A4),A0
-    move.b  (A0,D2.W),D0
-    cmpi.b  #$FF,D0
-    beq  _anon_z05_73
-    lea     ($0630,A4),A0
-    addq.b  #1,(A0,D2.W)
-_anon_z05_73:
-    eori    #$01,CCR  ; normalize C to 6502 polarity before RTS
-    rts
+    jmp     c_update_mode11_death_sub_c
 
-; Three sets of border coordinates:
-; - outer OW
-; - outer UW
-; - inner
-;
-; Within each set, the coordinates are arranged:
-; down, up, right, left
-;
-    even
 BorderBounds:
     dc.b    $D6, $45, $E9, $07, $C6, $55, $D9, $17
     dc.b    $BE, $54, $D1, $1F
@@ -3290,9 +3011,9 @@ WieldSword:
     ; If there's no sword, return.
     ;
     move.b  ($0657,A4),D0
-    bne.s  __far_z_05_0058
+    bne.s  __far_z_05_0045
     jmp  L14DFF_Exit
-__far_z_05_0058:
+__far_z_05_0045:
     ; Switch to the sword slot.
     ;
     moveq   #13,D2
@@ -3300,9 +3021,9 @@ __far_z_05_0058:
     ;
     lea     ($00AC,A4),A0
     move.b  (A0,D2.W),D0
-    beq.s  __far_z_05_0059
+    beq.s  __far_z_05_0046
     jmp  L14DFF_Exit
-__far_z_05_0059:
+__far_z_05_0046:
     ; The first state lasts 5 frames.
     ;
     moveq   #5,D0
@@ -3325,9 +3046,9 @@ WieldItem:
     ;
     move.b  ($0656,A4),D0
     cmpi.b  #$0F,D0
-    bne.s  __far_z_05_0060
+    bne.s  __far_z_05_0047
     jmp  L14E71_Exit
-__far_z_05_0060:
+__far_z_05_0047:
     jsr     _m68k_tablejump  ; M68K-native table dispatch (replaces JSR TableJump)
     even
 WieldItem_JumpTable:
@@ -3348,9 +3069,9 @@ WieldBoomerang:
     move.b  ($0674,A4),D0
     move.b  ($0675,A4),D1
     or.b  D1,D0
-    bne.s  __far_z_05_0061
+    bne.s  __far_z_05_0048
     jmp  L14E71_Exit
-__far_z_05_0061:
+__far_z_05_0048:
     ; Switch to the boomerang slot.
     ;
     moveq   #15,D2
@@ -3360,9 +3081,9 @@ __far_z_05_0061:
     move.b  (A0,D2.W),D0
     beq  _anon_z05_78
     lsl.b  #1,D0   ; ASL A
-    bcs.s  __far_z_05_0062
+    bcs.s  __far_z_05_0049
     jmp  L14E71_Exit
-__far_z_05_0062:
+__far_z_05_0049:
 _anon_z05_78:
     ; Set state to $10 for boomerang.
     ;
@@ -3415,9 +3136,9 @@ WieldArrow:
     ; If there's no bow, return.
     ;
     move.b  ($065A,A4),D0
-    bne.s  __far_z_05_0063
+    bne.s  __far_z_05_0050
     jmp  WieldNothing
-__far_z_05_0063:
+__far_z_05_0050:
     ; Switch to the arrow slot.
     ;
     moveq   #18,D2
@@ -3427,16 +3148,16 @@ __far_z_05_0063:
     move.b  (A0,D2.W),D0
     beq  _anon_z05_80
     lsl.b  #1,D0   ; ASL A
-    bcs.s  __far_z_05_0064
+    bcs.s  __far_z_05_0051
     jmp  WieldNothing
-__far_z_05_0064:
+__far_z_05_0051:
 _anon_z05_80:
     ; If there are no rupees, return.
     ;
     move.b  ($066D,A4),D0
-    bne.s  __far_z_05_0065
+    bne.s  __far_z_05_0052
     jmp  WieldNothing
-__far_z_05_0065:
+__far_z_05_0052:
     moveq   #2,D0
     jsr     PlayEffect
     ; Post a rupee to subtract.
@@ -3463,9 +3184,9 @@ WieldWeapon:
     lea     ($0098,A4),A0
     move.b  (A0,D2.W),D0
     andi.b #$0C,D0
-    bne.s  __far_z_05_0066
+    bne.s  __far_z_05_0053
     jmp  WieldNothing
-__far_z_05_0066:
+__far_z_05_0053:
     move.b  ($70,A4,D2.W),D0
     andi    #$EE,CCR  ; CLC: clear C+X
     move.b  #$03,D1
@@ -3473,9 +3194,8 @@ __far_z_05_0066:
     move.b  D0,($70,A4,D2.W)
     even
 WieldNothing:
-    rts
+    jmp     c_wield_nothing
 
-    even
 WieldFood:
     ; Switch to the food slot.
     ;
@@ -3484,9 +3204,9 @@ WieldFood:
     ;
     lea     ($00AC,A4),A0
     move.b  (A0,D2.W),D0
-    beq.s  __far_z_05_0067
+    beq.s  __far_z_05_0054
     jmp  L14EC6_Exit
-__far_z_05_0067:
+__far_z_05_0054:
     ; The first state of food lasts $FF frames.
     ;
     move.b  #$FF,D0
@@ -3501,9 +3221,9 @@ WieldPotion:
     ; If there's nothing in the item slot, return.
     ;
     move.b  ($065E,A4),D0
-    bne.s  __far_z_05_0068
+    bne.s  __far_z_05_0055
     jmp  L14EC6_Exit
-__far_z_05_0068:
+__far_z_05_0055:
     ; We're using one potion. So decrement the item value.
     ;
     subq.b  #1,($065E,A4)
@@ -3525,9 +3245,9 @@ WieldRod:
     moveq   #18,D2
     lea     ($00AC,A4),A0
     move.b  (A0,D2.W),D0
-    beq.s  __far_z_05_0069
+    beq.s  __far_z_05_0056
     jmp  L14EC6_Exit
-__far_z_05_0069:
+__far_z_05_0056:
     ; The first state lasts 5 frames.
     ;
     moveq   #5,D0
@@ -3555,14 +3275,14 @@ CheckSubroom:
     ;
     move.b  ($0084,A4),D0
     cmpi.b  #$40,D0
-    bcs.s  __far_z_05_0070
+    bcs.s  __far_z_05_0057
     jmp  L14EC6_Exit
-__far_z_05_0070:
+__far_z_05_0057:
     move.b  ($03F8,A4),D0
     andi.b #$08,D0
-    bne.s  __far_z_05_0071
+    bne.s  __far_z_05_0058
     jmp  L14EC6_Exit
-__far_z_05_0071:
+__far_z_05_0058:
     ; Look for this room's ID in the 6-element cellar room array.
     ;
     moveq   #6,D3
@@ -3627,24 +3347,24 @@ _L_z05_CheckSubroom_InCave:
     ; If mode is not $C (shortcuts), go check the screen edge.
     ;
     cmpi.b  #$0C,D0
-    beq.s  __far_z_05_0072
+    beq.s  __far_z_05_0059
     jmp  CheckCaveEdge
-__far_z_05_0072:
+__far_z_05_0059:
     ; In a shortcut cave (mode $C).
     ;
     ; If grid offset <> 0, return.
     ;
     move.b  ($0394,A4),D0
-    beq.s  __far_z_05_0073
+    beq.s  __far_z_05_0060
     jmp  L14F72_Exit
-__far_z_05_0073:
+__far_z_05_0060:
     ; If Link's Y <> $9D, go check the screen edge.
     ;
     move.b  ($0084,A4),D0
     cmpi.b  #$9D,D0
-    beq.s  __far_z_05_0074
+    beq.s  __far_z_05_0061
     jmp  CheckCaveEdge
-__far_z_05_0074:
+__far_z_05_0061:
     ; See if Link is on one of the 3 shortcut stairs.
     ; X = $50: 1
     ; X = $80: 2
@@ -3661,9 +3381,9 @@ __far_z_05_0074:
     beq  _anon_z05_83
     addq.b  #1,D3
     cmpi.b  #$B0,D0
-    beq.s  __far_z_05_0075
+    beq.s  __far_z_05_0062
     jmp  L14F72_Exit
-__far_z_05_0075:
+__far_z_05_0062:
 _anon_z05_83:
     ; Look for the current room in the cellar/shortcut room array.
     ;
@@ -3706,15 +3426,8 @@ GoToModeAFromCave:
     move.b  D0,($0012,A4)
     even
 EndPrepareMode:
-    moveq   #0,D0
-    move.b  D0,($0013,A4)
-    move.b  D0,($0011,A4)
-    move.b  D0,($000F,A4)
-    move.b  D0,($00AC,A4)
-    move.b  D0,($00C0,A4)
-    move.b  D0,($00D3,A4)
-    move.b  D0,($04F0,A4)
-    even
+    jmp     c_end_prepare_mode
+
 L14F72_Exit:
     rts
 
@@ -3725,9 +3438,9 @@ CheckCaveEdge:
     ; a transition to another mode, then go set up the right mode.
     ;
     move.b  ($0011,A4),D0
-    bne.s  __far_z_05_0076
+    bne.s  __far_z_05_0063
     jmp  GoToModeAFromCave
-__far_z_05_0076:
+__far_z_05_0063:
     rts
 
 ; Params:
@@ -3969,11 +3682,8 @@ _L_z05_CheckLadder_DrawLadder:
 ;
     even
 SetMovingDirAndSwitchToPlayerSlot:
-    move.b  D0,($000F,A4)
-    moveq   #0,D2
-    rts
+    jmp     c_set_moving_dir_switch_player
 
-    even
 FindNextEdgeSpawnCell:
     ; Load [0A] with the value before the call.
     ;
@@ -4203,64 +3913,8 @@ _anon_z05_92:
 
     even
 SaveKillCountOW:
-    jsr     GetRoomFlags
-    andi.b #$07,D0
-    move.b  D0,($0002,A4)
-    move.b  ($00,A4),D1   ; ptr lo
-    move.b  ($01,A4),D4  ; ptr hi
-    andi.w  #$00FF,D1         ; zero-extend lo byte
-    lsl.w   #8,D4
-    or.w    D1,D4             ; D4 = NES ptr addr
-    ext.l   D4
-    add.l   #NES_RAM,D4       ; → Genesis addr
-    movea.l D4,A0
-    move.b  (A0,D3.W),D0     ; LDA ($nn),Y
-    andi.b #$F8,D0
-    move.b  ($00,A4),D1   ; ptr lo
-    move.b  ($01,A4),D4  ; ptr hi
-    andi.w  #$00FF,D1         ; zero-extend lo byte
-    lsl.w   #8,D4
-    or.w    D1,D4
-    ext.l   D4
-    add.l   #NES_RAM,D4
-    movea.l D4,A0
-    move.b  D0,(A0,D3.W)     ; STA ($nn),Y
-    move.b  ($034F,A4),D0
-    move.b  ($034E,A4),D1
-    cmp.b   D1,D0
-    bcc  _L_z05_SaveKillCountOW_LimitCount
-    andi.b #$07,D0
-    andi    #$EE,CCR  ; CLC: clear C+X
-    move.b  ($0002,A4),D1
-    addx.b  D1,D0   ; ADC $02
-    cmpi.b  #$07,D0
-    bcs  _anon_z05_93
-    even
-_L_z05_SaveKillCountOW_LimitCount:
-    moveq   #7,D0
-_anon_z05_93:
-    move.b  ($00,A4),D1
-    move.b  ($01,A4),D4
-    andi.w  #$00FF,D1         ; zero-extend lo byte
-    lsl.w   #8,D4
-    or.w    D1,D4
-    ext.l   D4
-    add.l   #NES_RAM,D4
-    movea.l D4,A0
-    move.b  (A0,D3.W),D1
-    or.b  D1,D0
-    move.b  ($00,A4),D1   ; ptr lo
-    move.b  ($01,A4),D4  ; ptr hi
-    andi.w  #$00FF,D1         ; zero-extend lo byte
-    lsl.w   #8,D4
-    or.w    D1,D4
-    ext.l   D4
-    add.l   #NES_RAM,D4
-    movea.l D4,A0
-    move.b  D0,(A0,D3.W)     ; STA ($nn),Y
-    rts
+    jmp     c_save_kill_count_ow
 
-    even
 InitMode9:
     move.b  ($0013,A4),D0
     jsr     _m68k_tablejump  ; M68K-native table dispatch (replaces JSR TableJump)
@@ -4285,53 +3939,8 @@ InitMode9_JumpTable:
 
     even
 Link_ModifyDirInDoorway:
-    ; In a doorway (UW), you can only move in the direction
-    ; that you entered it or the opposite.
-    ;
-    ;
-    ; If not in a doorway nor moving, then return.
-    ;
-    move.b  ($0053,A4),D0
-    beq  _L_z05_Link_ModifyDirInDoorway_Exit
-    moveq   #0,D3
-    move.b  ($03F8,A4),D3
-    beq  _L_z05_Link_ModifyDirInDoorway_Exit
-    ; If the facing direction is part of the input direction, then
-    ; keep moving in the facing direction.
-    ;
-    move.b  ($0098,A4),D0
-    move.b  ($03F8,A4),D1
-    and.b  D1,D0
-    bne  _anon_z05_94
-    ; If the opposite of the facing direction is part of the input direction, then
-    ; face the opposite direction.
-    ;
-    move.b  ($0098,A4),D0
-    jsr     GetOppositeDir
-    move.b  ($03F8,A4),D1
-    and.b  D1,D0
-    ; If neither direction matched input direction, then
-    ; change input direction to facing direction.
-    ;
-    bne  _anon_z05_94
-    move.b  ($0098,A4),D0
-_anon_z05_94:
-    move.b  D0,($03F8,A4)
-    even
-_L_z05_Link_ModifyDirInDoorway_Exit:
-    rts
+    jmp     c_link_modify_dir_in_doorway
 
-; Unknown block
-    dc.b    $A9, $F8, $8D, $40, $02, $8D, $44, $02
-    dc.b    $60
-
-; To be considered within a doorway, one condition is that
-; Link's perpendicular coordinate ([00]) has to match the doorway's
-; (X=$78 for verticals, Y=$8D for horizontals).
-;
-; See GetPlayerCoordsForDirection.
-;
-    even
 DoorwayRequiredCoord:
     dc.b    $78, $78, $8D, $8D
 
@@ -4560,29 +4169,8 @@ _anon_z05_97:
 ;
     even
 GetPlayerCoordsForDirection:
-    moveq   #0,D2
-    move.b  ($0070,A4),D2
-    moveq   #0,D3
-    move.b  ($0084,A4),D3
-    andi.b #$03,D0
-    beq  _anon_z05_98
-    moveq   #0,D3
-    move.b  ($0070,A4),D3
-    moveq   #0,D2
-    move.b  ($0084,A4),D2
-_anon_z05_98:
-    move.b  D2,($0000,A4)
-    move.b  D3,($0001,A4)
-    rts
+    jmp     c_get_player_coords_for_direction
 
-; Params:
-; [0C]: door direction
-; [0E]: reverse index of direction
-;
-; Returns:
-; [0E]: untouched, or $FF if blocked
-;
-    even
 TouchDoor:
     andi.b #$07,D0
     jsr     _m68k_tablejump  ; M68K-native table dispatch (replaces JSR TableJump)
@@ -4599,99 +4187,44 @@ TouchDoor_JumpTable:
 
     even
 TouchDoorWall:
-    move.b  #$FF,D3
-    move.b  D3,($000E,A4)
-    even
+    jmp     c_touch_door_wall
+
 TouchDoorOpen:
-    rts
+    jmp     c_touch_door_open
 
-    even
 TouchDoorFalse:
-    ; At first, Link's timer = 0. So set it to $18 frames, and block movement.
-    ; Subsequently, block movement until timer = 1.
-    ;
-    move.b  ($0028,A4),D0
-    beq  _L_z05_TouchDoorFalse_SetTimer
-    cmpi.b  #$01,D0
-    bne  _L_z05_TouchDoorFalse_BlockMovement
-    eori    #$01,CCR  ; normalize C to 6502 polarity before RTS
-    rts
+    jmp     c_touch_door_false
 
-    even
-_L_z05_TouchDoorFalse_SetTimer:
-    moveq   #24,D0
-    move.b  D0,($0028,A4)
-    even
-_L_z05_TouchDoorFalse_BlockMovement:
-    jmp     TouchDoorWall
-
-    even
 TouchDoorBombable:
-    ; Block movement, if this door's direction is not in the open door mask.
-    ;
-    move.b  ($000C,A4),D0
-    move.b  ($00EE,A4),D1
-    and.b  D1,D0
-    bne.s  __far_z_05_0077
-    jmp  TouchDoorWall
-__far_z_05_0077:
-    rts
+    jmp     c_touch_door_bombable
 
-    even
 TouchDoorShutter:
-    ; If a door is triggered or this door wasn't already opened,
-    ; then block movement.
-    ;
-    move.b  ($0054,A4),D0
-    beq.s  __far_z_05_0078
-    jmp  TouchDoorWall
-__far_z_05_0078:
-    move.b  ($000C,A4),D0
-    move.b  ($00EE,A4),D1
-    and.b  D1,D0
-    bne.s  __far_z_05_0079
-    jmp  TouchDoorWall
-__far_z_05_0079:
-    ; TODO: ?
-    ;
-    move.b  ($0519,A4),D1
-    and.b  D1,D0
-    beq  _anon_z05_99
-    beq.s  __far_z_05_0080
-    jmp  BlockUntilTime
-__far_z_05_0080:
-_anon_z05_99:
-    move.b  ($0519,A4),D0
-    move.b  ($000C,A4),D1
-    or.b  D1,D0
-    move.b  D0,($0519,A4)
-    rts
+    jmp     c_touch_door_shutter
 
-    even
 TouchDoorKey:
     ; If this door was already opened, return.
     ;
     move.b  ($000C,A4),D0
     move.b  ($00EE,A4),D1
     and.b  D1,D0
-    beq.s  __far_z_05_0081
+    beq.s  __far_z_05_0064
     jmp  L15292_Exit
-__far_z_05_0081:
+__far_z_05_0064:
     ; If a door is triggered, go block movement while Link's timer <> 0.
     ;
     move.b  ($0054,A4),D0
-    beq.s  __far_z_05_0082
+    beq.s  __far_z_05_0065
     jmp  BlockUntilTime
-__far_z_05_0082:
+__far_z_05_0065:
     ; If we don't have the magic key nor any normal keys, 
     ; go block movement.
     ;
     move.b  ($0664,A4),D0
     bne  _L_z05_TouchDoorKey_TriggerDoor
     move.b  ($066E,A4),D0
-    bne.s  __far_z_05_0083
+    bne.s  __far_z_05_0066
     jmp  BlockAtWall
-__far_z_05_0083:
+__far_z_05_0066:
     ; If we don't have the magic key, decrease the key count.
     ;
     subq.b  #1,($066E,A4)
@@ -4707,17 +4240,11 @@ _L_z05_TouchDoorKey_TriggerDoor:
     move.b  D0,($0028,A4)
     even
 BlockAtWall:
-    jmp     TouchDoorWall
+    jmp     c_block_at_wall
 
-    even
 BlockUntilTime:
-    ; Block movement while Link's timer <> 0.
-    ;
-    move.b  ($0028,A4),D0
-    beq.s  __far_z_05_0084
-    jmp  BlockAtWall
-__far_z_05_0084:
-    even
+    jmp     c_block_until_time
+
 L15292_Exit:
     rts
 
@@ -5576,9 +5103,9 @@ ReachedTopWallBottom:
     ; so that we keep processing the wall tile list.
     move.b  D0,($0006,A4)
     moveq   #25,D2
-    beq.s  __far_z_05_0085
+    beq.s  __far_z_05_0067
     jmp  MoveWallPtrs
-__far_z_05_0085:
+__far_z_05_0067:
     even
 DecBottomOffset:
     ; Subtract A=1 from bottom offset.
@@ -5620,9 +5147,9 @@ LoopWallTile:
     add.l   #NES_RAM,D4       ; → Genesis addr
     movea.l D4,A0
     move.b  (A0,D3.W),D0     ; LDA ($nn),Y
-    bne.s  __far_z_05_0086
+    bne.s  __far_z_05_0068
     jmp  ReachedTopWallBottom
-__far_z_05_0086:
+__far_z_05_0068:
     move.b  ($02,A4),D1   ; ptr lo
     move.b  ($03,A4),D4  ; ptr hi
     andi.w  #$00FF,D1         ; zero-extend lo byte
@@ -5663,9 +5190,9 @@ _anon_z05_109:
     moveq   #1,D0
     moveq   #1,D2
     subq.b  #1,($0006,A4)
-    beq.s  __far_z_05_0087
+    beq.s  __far_z_05_0069
     jmp  MoveWallPtrs
-__far_z_05_0087:
+__far_z_05_0069:
     moveq   #10,D0
     move.b  D0,($0006,A4)
     moveq   #13,D0
@@ -5677,9 +5204,9 @@ MoveWallPtrs:
     jsr     AddToInt16At2
     move.b  D2,D0
     subq.b  #1,D2
-    bne.s  __far_z_05_0088
+    bne.s  __far_z_05_0070
     jmp  DecBottomOffset
-__far_z_05_0088:
+__far_z_05_0070:
     ; Else add the original X value to bottom offset,
     ; intending to move it to the bottom of the next column.
     jsr     AddToInt16At4
@@ -5687,9 +5214,9 @@ __far_z_05_0088:
 NextLoopWallTile:
     jsr     Add1ToInt16At0
     cmpi.b  #$00,D0
-    beq.s  __far_z_05_0089
+    beq.s  __far_z_05_0071
     jmp  LoopWallTile
-__far_z_05_0089:
+__far_z_05_0071:
     ; Copy rotated 180 degrees, accounting for appropriate
     ; horizontal or vertical flipping of tiles.
     ;
@@ -6104,9 +5631,9 @@ _anon_z05_116:
     ; Decrement door index.
     ;
     subq.b  #1,D2
-    bpl.s  __far_z_05_0090
+    bpl.s  __far_z_05_0072
     jmp  L165D4_Exit
-__far_z_05_0090:
+__far_z_05_0072:
     jmp     L_LayOutDoors_LoopDoors
 
 ; Params:
@@ -6136,9 +5663,9 @@ FetchDoorAddrsFaceTilesSrcAndPlayAreaDst:
     move.b  D0,($0001,A4)
 _anon_z05_117:
     subq.b  #1,D3
-    bne.s  __far_z_05_0091
+    bne.s  __far_z_05_0073
     jmp  L165D4_Exit
-__far_z_05_0091:
+__far_z_05_0073:
     moveq   #12,D0
     jsr     AddToInt16At2
     jmp     _anon_z05_117
@@ -6175,17 +5702,17 @@ UpdateDoors:
     ;
     move.b  ($0012,A4),D0
     cmpi.b  #$12,D0
-    bne.s  __far_z_05_0092
+    bne.s  __far_z_05_0074
     jmp  L165D4_Exit
-__far_z_05_0092:
+__far_z_05_0074:
     move.b  ($0027,A4),D0
-    beq.s  __far_z_05_0093
+    beq.s  __far_z_05_0075
     jmp  L165D4_Exit
-__far_z_05_0093:
+__far_z_05_0075:
     move.b  ($0054,A4),D0
-    bne.s  __far_z_05_0094
+    bne.s  __far_z_05_0076
     jmp  L165D4_Exit
-__far_z_05_0094:
+__far_z_05_0076:
     ; Turn the door command into the desired open or closed state
     ; to store in [08].
     ;
@@ -6882,42 +6409,25 @@ UpdateMode12EndLevel_Full_JumpTable:
     even
 UpdateMode12EndLevel_Sub0:
     move.b  ($0028,A4),D0
-    beq.s  __far_z_05_0095
+    beq.s  __far_z_05_0077
     jmp  L16887_Exit
-__far_z_05_0095:
+__far_z_05_0077:
     moveq   #48,D0
     move.b  D0,($0028,A4)
-    beq.s  __far_z_05_0096
+    beq.s  __far_z_05_0078
     jmp  L1688C_IncSubmode
-__far_z_05_0096:
+__far_z_05_0078:
     even
 UpdateMode12EndLevel_Sub1:
-    ; Flash the screen.
-    ;
-    ; $18 is LevelPaletteTransferBuf.
-    moveq   #24,D3
-    move.b  ($0028,A4),D0
-    bne.s  __far_z_05_0097
-    jmp  StartFillingHearts
-__far_z_05_0097:
-    andi.b #$07,D0
-    cmpi.b  #$04,D0
-    bcs  _anon_z05_133
-    moveq   #120,D3
-_anon_z05_133:
-    move.b  D3,($0014,A4)
-    even
+    jmp     c_update_mode12_end_level_sub1
+
 L16887_Exit:
     rts
 
     even
 StartFillingHearts:
-    ; Start filling hearts, and go to next submode.
-    ;
-    ; TODO: why 2?
-    moveq   #2,D0
-    move.b  D0,($0063,A4)
-    even
+    jmp     c_start_filling_hearts
+
 L1688C_IncSubmode:
     jmp     c_inc_submode
 
@@ -7201,9 +6711,9 @@ _anon_z05_143:
     addq.b  #1,($0006,A4)
     move.b  ($0006,A4),D0
     cmpi.b  #$10,D0
-    bcs.s  __far_z_05_0098
+    bcs.s  __far_z_05_0079
     jmp  L16AF0_Exit
-__far_z_05_0098:
+__far_z_05_0079:
     jmp     _L_z05_LayoutRoomOrCaveOW_LoopColumnOW
 
 ; Params:
@@ -7227,9 +6737,9 @@ _anon_z05_144:
     subq.b  #1,($000A,A4)
     subq.b  #1,D2
     bpl  _anon_z05_144
-    bpl.s  __far_z_05_0099
+    bpl.s  __far_z_05_0080
     jmp  L16AF0_Exit
-__far_z_05_0099:
+__far_z_05_0080:
 _anon_z05_145:
     lea     (TileObjectPrimarySquaresOW).l,A0
     move.b  (A0,D2.W),D0
@@ -7666,23 +7176,11 @@ FetchTileMapAddr:
     jmp     c_fetch_tile_map_addr
 
 CopyNextRowToTransferBufAndAdvanceSubmodeWhenDone:
-    jsr     CopyNextRowToTransferBuf
-    bcs  _anon_z05_150
-    rts
+    jmp     c_copy_next_row_advance_submode
 
-; Returns:
-; C: 1 if copied the last row
-;
-    even
 CopyNextRowToTransferBuf:
-    jsr     CopyRowToTileBuf
-    addq.b  #1,($00E9,A4)
-    move.b  ($00E9,A4),D0
-    cmpi.b  #$16,D0
-    eori    #$01,CCR  ; normalize C to 6502 polarity before RTS
-    rts
+    jmp     c_copy_next_row_to_transfer_buf
 
-    even
 LayoutRoom_SubmodeTask:
     jsr     LayOutRoom
     moveq   #0,D0
@@ -7818,58 +7316,29 @@ _anon_z05_150:
 
     even
 InitMode3_Sub2:
-    move.b  ($00EB,A4),D0
-    jsr     FillPlayAreaAttrs
-    moveq   #24,D0
-    beq.s  __far_z_05_0100
-    jmp  SelectTransferBuf
-__far_z_05_0100:
-    even
-InitMode3_Sub3_TransferTopHalfAttrs:
-    move.b  #$D0,D0
-    moveq   #23,D3
-_anon_z05_151:
-    jmp     CueTransferPlayAreaAttrsHalfAndAdvanceSubmodeNT0
+    jmp     c_init_mode3_sub2
 
-    even
+InitMode3_Sub3_TransferTopHalfAttrs:
+    jmp     c_init_mode3_sub3
+
 InitMode3_Sub4_TransferBottomHalfAttrs:
-    move.b  #$E8,D0
-    moveq   #47,D3
-    bne  _anon_z05_151
-    even
+    jmp     c_init_mode3_sub4
+
 InitMode3_Sub5:
-    moveq   #14,D0
-    even
+    jmp     c_init_mode3_sub5
+
 SelectTransferBuf:
-    move.b  D0,($0014,A4)
-    even
+    jmp     c_select_transfer_buf
+
 L1701A_Exit:
     jmp     c_inc_submode
 
 InitMode3_Sub6:
-    move.b  ($0010,A4),D0
-    beq  _anon_z05_152
-    jsr     HasMap
-    bne.s  __far_z_05_0101
-    jmp  L1701A_Exit
-__far_z_05_0101:
-_anon_z05_152:
-    moveq   #68,D0
-    beq.s  __far_z_05_0102
-    jmp  SelectTransferBuf
-__far_z_05_0102:
-    even
+    jmp     c_init_mode3_sub6
+
 InitMode3_Sub7:
-    move.b  (NES_SRAM+$0BB1).l,D0
-    bne.s  __far_z_05_0103
-    jmp  L1701A_Exit
-__far_z_05_0103:
-    move.b  D0,(LevelNumberTransferBuf+9).l
-    moveq   #12,D0
-    beq.s  __far_z_05_0104
-    jmp  SelectTransferBuf
-__far_z_05_0104:
-    even
+    jmp     c_init_mode3_sub7
+
 InitMode3_Sub8:
     jsr     LayOutRoom
     ; Set up columns numbers for curtain effect.
@@ -8024,9 +7493,9 @@ InitModeSubroom_Sub0:
     move.b  D0,($00E9,A4)
     move.b  D0,($00EE,A4)
     move.b  ($0010,A4),D0
-    beq.s  __far_z_05_0105
+    beq.s  __far_z_05_0081
     jmp  DrawSpritesBetweenRoomsAndAdvanceSubmode
-__far_z_05_0105:
+__far_z_05_0081:
     jsr     DrawSpritesBetweenRoomsAndAdvanceSubmode
     jmp     WriteAndEnableSprite0
 
@@ -8037,11 +7506,11 @@ DrawSpritesBetweenRoomsAndAdvanceSubmode:
 
     even
 InitMode9_TransferAttrs:
-    moveq   #38,D0
-    even
+    jmp     c_init_mode9_transfer_attrs
+
 L1712E_SelectTransferBufAndAdvanceSubmode:
-    move.b  D0,($0014,A4)
-    even
+    jmp     c_select_transfer_buf
+
 InitModeSubroom_AdvanceSubmode:
     jmp     c_inc_submode
 
@@ -8050,17 +7519,17 @@ InitMode9_FadeToDark:
 _anon_z05_162:
     moveq   #0,D3
     move.b  ($0010,A4),D3
-    bne.s  __far_z_05_0106
+    bne.s  __far_z_05_0082
     jmp  InitModeSubroom_AdvanceSubmode
-__far_z_05_0106:
+__far_z_05_0082:
     jsr     SetFadeCycleAndAdvanceSubmode
     even
 InitModeSubroom_AnimateFade:
     moveq   #0,D3
     move.b  ($0010,A4),D3
-    bne.s  __far_z_05_0107
+    bne.s  __far_z_05_0083
     jmp  InitModeSubroom_AdvanceSubmode
-__far_z_05_0107:
+__far_z_05_0083:
     jmp     UpdateMode11Death_Sub8_AnimateFade
 
     even
@@ -8077,24 +7546,11 @@ InitModeA_Sub8:
     bne  _anon_z05_162
     even
 InitModeB_Sub1:
-    ; Transfer the cave BG palette rows.
-    ;
-    moveq   #62,D0
-    beq.s  __far_z_05_0108
-    jmp  L1712E_SelectTransferBufAndAdvanceSubmode
-__far_z_05_0108:
-    even
-InitModeA_Sub1:
-    move.b  ($0010,A4),D0
-    beq.s  __far_z_05_0109
-    jmp  InitModeSubroom_AdvanceSubmode
-__far_z_05_0109:
-    ; Transfer the OW palette again, because it was changed
-    ; for a cave.
-    ;
-    jmp     PatchAndCueLevelPalettesTransferAndAdvanceSubmode
+    jmp     c_init_mode_b_sub1
 
-    even
+InitModeA_Sub1:
+    jmp     c_init_mode_a_sub1
+
 InitModeA_SubA_GoToMode4:
     jmp     c_init_mode_a_sub_a_go_to_mode4
 
@@ -8212,42 +7668,8 @@ _anon_z05_166:
 
     even
 World_FillHearts:
-    move.b  ($0063,A4),D0
-    beq  _L_z05_World_FillHearts_Exit
-    moveq   #16,D0
-    move.b  D0,($0604,A4)
-    move.b  ($0670,A4),D0
-    cmpi.b  #$F8,D0
-    bcc  _L_z05_World_FillHearts_CompleteHeart
-    andi    #$EE,CCR  ; CLC: clear C+X
-    move.b  #$06,D1
-    addx.b  D1,D0   ; ADC #$06 (X flag = 6502 C)
-    move.b  D0,($0670,A4)
-    rts
+    jmp     c_world_fill_hearts
 
-    even
-_L_z05_World_FillHearts_CompleteHeart:
-    moveq   #0,D0
-    move.b  D0,($0670,A4)
-    jsr     CompareHeartsToContainers
-    bne  _L_z05_World_FillHearts_IncHearts
-    ; They're equal, so make HeartPartial full by
-    ; decreasing from 0 to $FF.
-    subq.b  #1,($0670,A4)
-    moveq   #0,D0
-    move.b  D0,($052E,A4)
-    move.b  D0,($0063,A4)
-    move.b  D0,($00E0,A4)
-    even
-_L_z05_World_FillHearts_Exit:
-    rts
-
-    even
-_L_z05_World_FillHearts_IncHearts:
-    addq.b  #1,($066F,A4)
-    rts
-
-    even
 SubmenuTransferBufSelectorsUW:
     dc.b    $00, $00, $00, $30, $32, $34, $38, $3A
     dc.b    $3C, $00, $00, $00, $40
@@ -8264,9 +7686,9 @@ Submenu_CueTransferRowUW:
     ; So, return.
     ;
     move.b  ($005E,A4),D0
-    bpl.s  __far_z_05_0110
+    bpl.s  __far_z_05_0084
     jmp  L1725A_Exit
-__far_z_05_0110:
+__far_z_05_0084:
     ; Shift right. The value in A is now (menu scroll value) / 2,
     ; and represents the current row of the submenu being processed.
     ; The bottom bit tells us (1) whether to transfer a full row of
@@ -8277,9 +7699,9 @@ __far_z_05_0110:
     lsr.b  #1,D0   ; LSR A
     moveq   #0,D3
     move.b  D0,D3
-    bcc.s  __far_z_05_0111
+    bcc.s  __far_z_05_0085
     jmp  PrepFullBlackRow
-__far_z_05_0111:
+__far_z_05_0085:
     ; Submenu rows $D to $15 are parts of the map.
     ; Submenu rows 0 to $C are fixed text and boxes.
     ;
@@ -8309,10 +7731,8 @@ _anon_z05_168:
     jsr     Submenu_WriteSheetMapRowTransferRecord
     even
 DecSubmenuScroll:
-    ; Decrease the counter for the next frame.
-    ;
-    subq.b  #1,($005E,A4)
-    even
+    jmp     c_dec_submenu_scroll
+
 L1725A_Exit:
     rts
 
@@ -8353,9 +7773,9 @@ Submenu_CueTransferRowOW:
     ; So, return.
     ;
     move.b  ($005E,A4),D0
-    bpl.s  __far_z_05_0112
+    bpl.s  __far_z_05_0086
     jmp  L17295_Exit
-__far_z_05_0112:
+__far_z_05_0086:
     ; Shift right. The value in A is now (menu scroll value) / 2,
     ; and represents the current row of the submenu being processed.
     ; The bottom bit tells us (1) whether to transfer a full row of
@@ -8366,9 +7786,9 @@ __far_z_05_0112:
     lsr.b  #1,D0   ; LSR A
     moveq   #0,D3
     move.b  D0,D3
-    bcc.s  __far_z_05_0113
+    bcc.s  __far_z_05_0087
     jmp  PrepFullBlackRow
-__far_z_05_0113:
+__far_z_05_0087:
     ; There's nothing to do for row $15.
     ; If submenu row < $15, cue a transfer of a triforce or other
     ; transfer buffer for this row.
@@ -8429,9 +7849,9 @@ _L_z05_Link_HandleInput_CheckMovement:
     ;
     moveq   #0,D2
     move.b  ($00C0,A4),D0
-    beq.s  __far_z_05_0114
+    beq.s  __far_z_05_0088
     jmp  L172FC_Exit
-__far_z_05_0114:
+__far_z_05_0088:
     ; If in UW, then move correctly inside doorways.
     ;
     move.b  ($0010,A4),D0
@@ -8442,9 +7862,9 @@ _anon_z05_172:
     ; (grid offset = 0) or between points along a line (grid offset <> 0).
     ;
     move.b  ($0394,A4),D0
-    bne.s  __far_z_05_0115
+    bne.s  __far_z_05_0089
     jmp  Link_ModifyDirAtGridPoint
-__far_z_05_0115:
+__far_z_05_0089:
     jmp     Link_ModifyDirOnGridLine
 
     even
@@ -8495,9 +7915,9 @@ _L_z05_Link_ModifyDirAtGridPoint_NextLoopDir:
     ;
     moveq   #0,D3
     move.b  ($000B,A4),D3
-    beq.s  __far_z_05_0116
+    beq.s  __far_z_05_0090
     jmp  HaveInput
-__far_z_05_0116:
+__far_z_05_0090:
     even
 L172FC_Exit:
     rts
@@ -8689,9 +8109,9 @@ Link_ModifyDirOnGridLine:
     ;
     move.b  ($0098,A4),D1
     cmp.b   D1,D0
-    bne.s  __far_z_05_0117
+    bne.s  __far_z_05_0091
     jmp  InitLinkSpeed
-__far_z_05_0117:
+__far_z_05_0091:
     ; If the single input direction is the opposite of object direction, then
     ; change to the single input direction.
     ;
@@ -8721,9 +8141,9 @@ _anon_z05_181:
     ; Keep going in facing direction, if that's what Link's been told to do.
     ;
     move.b  ($0057,A4),D0
-    beq.s  __far_z_05_0118
+    beq.s  __far_z_05_0092
     jmp  InitLinkSpeed
-__far_z_05_0118:
+__far_z_05_0092:
     ; Link's movement grid cell size is 8. If he's moved half that
     ; length or more, then return.
     ;
@@ -8791,9 +8211,9 @@ CheckWarps:
     move.b  ($005A,A4),D0
     move.b  ($0394,A4),D1
     or.b  D1,D0
-    beq.s  __far_z_05_0119
+    beq.s  __far_z_05_0093
     jmp  L1746E_Exit
-__far_z_05_0119:
+__far_z_05_0093:
     ; If in OW room $22 and Link's X is not a multiple of 8, then return.
     ; This is a special case, because Level 6's entrance is wide.
     ;
@@ -8804,9 +8224,9 @@ __far_z_05_0119:
     bne  _L_z05_CheckWarps_EnsureSquareX
     move.b  ($0070,A4),D0
     andi.b #$07,D0
-    beq.s  __far_z_05_0120
+    beq.s  __far_z_05_0094
     jmp  L1746E_Exit
-__far_z_05_0120:
+__far_z_05_0094:
     beq  _L_z05_CheckWarps_EnsureSquareY
     even
 _L_z05_CheckWarps_EnsureSquareX:
@@ -8814,9 +8234,9 @@ _L_z05_CheckWarps_EnsureSquareX:
     ;
     move.b  ($0070,A4),D0
     andi.b #$0F,D0
-    beq.s  __far_z_05_0121
+    beq.s  __far_z_05_0095
     jmp  L1746E_Exit
-__far_z_05_0121:
+__far_z_05_0095:
     even
 _L_z05_CheckWarps_EnsureSquareY:
     ; If Link's Y is not at ((multiple of $10) + $D), then return.
@@ -8824,9 +8244,9 @@ _L_z05_CheckWarps_EnsureSquareY:
     move.b  ($0084,A4),D0
     andi.b #$0F,D0
     cmpi.b  #$0D,D0
-    beq.s  __far_z_05_0122
+    beq.s  __far_z_05_0096
     jmp  L1746E_Exit
-__far_z_05_0122:
+__far_z_05_0096:
     ; Check tile collision standing still.
     ;
     jsr     GetCollidableTileStill
@@ -8835,21 +8255,21 @@ __far_z_05_0122:
     move.b  ($049E,A4),D0
     moveq   #0,D3
     move.b  ($0010,A4),D3
-    bne.s  __far_z_05_0123
+    bne.s  __far_z_05_0097
     jmp  HandleWarpOW
-__far_z_05_0123:
+__far_z_05_0097:
     ; In UW.
     ;
     ; If tile is not part of stairs square (tiles $70 to $74), return.
     ;
     cmpi.b  #$70,D0
-    bcc.s  __far_z_05_0124
+    bcc.s  __far_z_05_0098
     jmp  L1746E_Exit
-__far_z_05_0124:
+__far_z_05_0098:
     cmpi.b  #$74,D0
-    bcs.s  __far_z_05_0125
+    bcs.s  __far_z_05_0099
     jmp  L1746E_Exit
-__far_z_05_0125:
+__far_z_05_0099:
     ; Prepare to leave this room.
     ;
     jsr     SaveKillCount
@@ -8924,13 +8344,13 @@ HandleWarpOW:
     cmpi.b  #$88,D0
     beq  _anon_z05_188
     cmpi.b  #$70,D0
-    bcc.s  __far_z_05_0126
+    bcc.s  __far_z_05_0100
     jmp  L1746E_Exit
-__far_z_05_0126:
+__far_z_05_0100:
     cmpi.b  #$74,D0
-    bcs.s  __far_z_05_0127
+    bcs.s  __far_z_05_0101
     jmp  L1746E_Exit
-__far_z_05_0127:
+__far_z_05_0101:
     ; If Link touched a stairs tile ($70 to $74), then
     ; use $70 to represent them all.
     ;
@@ -8975,9 +8395,9 @@ _L_z05_HandleWarpOW_LoadLevel:
     move.b  ($00EB,A4),D0
     move.b  D0,($0526,A4)
     moveq   #2,D0
-    beq.s  __far_z_05_0128
+    beq.s  __far_z_05_0102
     jmp  SetTargetMode
-__far_z_05_0128:
+__far_z_05_0102:
 ; Returns:
 ; C: 1 if cleared; 0 if already cleared
 ;
@@ -9115,20 +8535,13 @@ _anon_z05_194:
     jsr     CheckMazes
 _anon_z05_195:
     move.b  ($00EC,A4),D0
-    bmi.s  __far_z_05_0129
+    bmi.s  __far_z_05_0103
     jmp  MaskCurPpuMaskGrayscale
-__far_z_05_0129:
+__far_z_05_0103:
     even
 EndGameMode12:
-    jsr     EndGameMode
-    move.b  D0,($00E7,A4)
-    move.b  D0,($0010,A4)
-    moveq   #2,D0
-    move.b  D0,($0012,A4)
-    move.b  D0,($005A,A4)
-    move.b  #$80,D0
-    move.b  D0,($0604,A4)
-    even
+    jmp     c_end_game_mode12
+
 MaskCurPpuMaskGrayscale:
     jmp     c_mask_cur_ppu_mask_grayscale
 
@@ -9613,9 +9026,9 @@ _anon_z05_214:
     move.b  ($03F8,A4),D0
     move.b  ($00EF,A4),D1
     cmp.b   D1,D0
-    bne.s  __far_z_05_0130
+    bne.s  __far_z_05_0104
     jmp  L177F1_Exit
-__far_z_05_0130:
+__far_z_05_0104:
     moveq   #0,D2
     move.b  D0,D2
     ; If input direction = 0, up, or down; then we won't change
@@ -9624,13 +9037,13 @@ __far_z_05_0130:
     ; Instead, jump to this routine to make sure an occupied slot
     ; is selected, then return.
     ;
-    bne.s  __far_z_05_0131
+    bne.s  __far_z_05_0105
     jmp  FindAndSelectOccupiedItemSlot
-__far_z_05_0131:
+__far_z_05_0105:
     cmpi.b  #$04,D2
-    bcs.s  __far_z_05_0132
+    bcs.s  __far_z_05_0106
     jmp  FindAndSelectOccupiedItemSlot
-__far_z_05_0132:
+__far_z_05_0106:
     ; Cue the "selection changed" tune.
     ;
     moveq   #1,D2
@@ -9685,39 +9098,39 @@ FindAndSelectOccupiedItemSlot:
 LoopItemSlot:
     jsr     Cycle9InDirection
     cmpi.b  #$00,D3
-    bne.s  __far_z_05_0133
+    bne.s  __far_z_05_0107
     jmp  CheckBoomerangs
-__far_z_05_0133:
+__far_z_05_0107:
     cmpi.b  #$03,D3
-    bne.s  __far_z_05_0134
+    bne.s  __far_z_05_0108
     jmp  CheckNextItem
-__far_z_05_0134:
+__far_z_05_0108:
     lea     ($0657,A4),A0
     move.b  (A0,D3.W),D0
-    beq.s  __far_z_05_0135
+    beq.s  __far_z_05_0109
     jmp  FoundSlot
-__far_z_05_0135:
+__far_z_05_0109:
     cmpi.b  #$07,D3
-    bne.s  __far_z_05_0136
+    bne.s  __far_z_05_0110
     jmp  CheckLetter
-__far_z_05_0136:
+__far_z_05_0110:
     even
 CheckNextItem:
     subq.b  #1,D2
-    bmi.s  __far_z_05_0137
+    bmi.s  __far_z_05_0111
     jmp  LoopItemSlot
-__far_z_05_0137:
+__far_z_05_0111:
     moveq   #0,D3
     even
 FoundSlot:
     cmpi.b  #$02,D3
-    beq.s  __far_z_05_0138
+    beq.s  __far_z_05_0112
     jmp  SetSlotFound
-__far_z_05_0138:
+__far_z_05_0112:
     move.b  ($065A,A4),D0
-    bne.s  __far_z_05_0139
+    bne.s  __far_z_05_0113
     jmp  LoopItemSlot
-__far_z_05_0139:
+__far_z_05_0113:
     even
 SetSlotFound:
     move.b  D3,($0656,A4)
@@ -9754,18 +9167,18 @@ CheckLetter:
     move.b  (A0,D3.W),D0
     bne  _anon_z05_218
     moveq   #7,D3
-    beq.s  __far_z_05_0140
+    beq.s  __far_z_05_0114
     jmp  CheckNextItem
-__far_z_05_0140:
+__far_z_05_0114:
 _anon_z05_218:
     move.b  ($065E,A4),D0
-    bne.s  __far_z_05_0141
+    bne.s  __far_z_05_0115
     jmp  SetSlotFound
-__far_z_05_0141:
+__far_z_05_0115:
     moveq   #7,D3
-    beq.s  __far_z_05_0142
+    beq.s  __far_z_05_0116
     jmp  SetSlotFound
-__far_z_05_0142:
+__far_z_05_0116:
     even
 DrawItemInInventoryWithX:
     ; [$00]: X

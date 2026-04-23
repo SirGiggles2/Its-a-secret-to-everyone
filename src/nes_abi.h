@@ -37,6 +37,12 @@ register volatile unsigned char *nes_ram asm("a4");
  * and the P48 body below it.
  */
 #define NES_OBJ_DIR         0x000F
+#define NES_TMP0            0x0000
+#define NES_TMP1            0x0001
+#define NES_TMP2            0x0002
+#define NES_TMP3            0x0003
+#define NES_TMP4            0x0004
+#define NES_SHOT_COLLISION_FLAG 0x000E
 #define NES_POS_GRID_LIMIT  0x010E
 #define NES_NEG_GRID_LIMIT  0x010F
 #define NES_OBJ_X           0x0070
@@ -44,6 +50,11 @@ register volatile unsigned char *nes_ram asm("a4");
 #define NES_OBJ_GRID_OFFSET 0x0394
 #define NES_OBJ_POS_FRAC    0x03A8
 #define NES_OBJ_QSPD_FRAC   0x03BC
+#define NES_BOUND_LEFT      0x0346
+#define NES_BOUND_RIGHT     0x0347
+#define NES_BOUND_TOP       0x0348
+#define NES_BOUND_BOTTOM    0x0349
+#define NES_OBJ_TYPE        0x034F
 
 #define CARRY_SET 0x100u
 

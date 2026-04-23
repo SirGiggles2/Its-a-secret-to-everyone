@@ -3,6 +3,8 @@
  */
 
 #include "../nes_abi.h"
+#include "../frontend_runtime.h"
+#include "../save_menu_runtime.h"
 
 extern const unsigned char ProfileNameAddrsLo[];
 extern const unsigned char ProfileNameAddrsHi[];
@@ -12,147 +14,83 @@ extern void c_import_demo_animate_objects(void);
 extern void z07_hide_all_sprites(void);
 
 void z02_animate_demo_phase1_sub0(void) {
-    if (RAM(0x0015) & 0x01) {
-        RAM(0x00FC)++;
-        if (RAM(0x00FC) == 0xF0) {
-            RAM(0x0415)++;
-            RAM(0x00FC) = 0;
-            RAM(0x005C)++;
-        }
-    }
-    unsigned char vscroll = RAM(0x00FC);
-    if (vscroll == 0x08 && RAM(0x0415) != 0) {
-        RAM(0x0415) = 0;
-        RAM(0x042D)++;
-    }
+    frontdemo_animate_phase1_sub0();
 }
 
 void z02_animate_demo_phase1_sub1(void) {
-    RAM(0x041A)++;
-    if (RAM(0x041A) == 0)
-        RAM(0x042D)++;
-    RAM(0x041D) = 41;
-    RAM(0x041C) = 0;
-    RAM(0x0418) = 43;
-    RAM(0x0417) = 0xE0;
+    frontdemo_animate_phase1_sub1();
 }
 
 void z02_disable_fallen_objects(void) {
-    for (unsigned char x = 10; x >= 1; x--) {
-        if (RAM(0x0084 + x) == 0xF0)
-            RAM(0x00AC + x) = 0xFF;
-    }
+    frontdemo_disable_fallen_objects();
 }
 
 void z02_init_mode1_sub2(void) {
-    RAM(0x0014) = 20;
-    RAM(0x0013)++;
+    frontdemo_init_mode1_sub2();
 }
 
 void z02_end_init_demo(unsigned int val) {
-    RAM(0x0014) = (unsigned char)val;
-    RAM(0x042D) = 0;
-    RAM(0x0011)++;
+    frontdemo_end_init_demo(val);
 }
 
 void z02_mode_e_reset_variables(unsigned int val) {
-    RAM(0x041F) = (unsigned char)val;
-    RAM(0x0420) = (unsigned char)val;
-    RAM(0x0421) = (unsigned char)val;
+    frontname_reset_variables(val);
 }
 
 void z02_reset_button_repeat_state(unsigned int val) {
-    RAM(0x0426) = (unsigned char)val;
-    RAM(0x0428) = (unsigned char)val;
-    RAM(0x0429) = (unsigned char)val;
+    frontname_reset_button_repeat_state(val);
 }
 
 void z02_mode_e_set_name_cursor_sprite_x(void) {
-    RAM(0x0207) = RAM(0x0070);
+    frontname_set_name_cursor_sprite_x();
 }
 
 void z02_inc_subphase(void) {
-    RAM(0x042D)++;
+    frontdemo_inc_subphase();
 }
 
 void z02_add_a_to_0f0e(unsigned int val) {
-    unsigned int sum = (unsigned char)val + RAM(0x000F);
-    RAM(0x000F) = (unsigned char)sum;
-    RAM(0x000E) = (unsigned char)(RAM(0x000E) + (sum >> 8));
+    frontutil_add_a_to_0f0e(val);
 }
 
 void z02_add_a_to_cfce(unsigned int val) {
-    unsigned int sum = (unsigned char)val + RAM(0x00CF);
-    RAM(0x00CF) = (unsigned char)sum;
-    RAM(0x00CE) = (unsigned char)(RAM(0x00CE) + (sum >> 8));
+    frontutil_add_a_to_cfce(val);
 }
 
 void z02_mode_e_sync_char_board_cursor(void) {
-    unsigned char idx = RAM(0x041F);
-    if (idx & 0x80)
-        idx += 44;
-    if (idx >= 44)
-        idx -= 44;
-    if (idx == 43)
-        idx = 9;
-    RAM(0x041F) = idx;
-    unsigned char row = 0;
-    while (idx >= 11) {
-        idx -= 11;
-        row++;
-    }
-    RAM(0x0071) = (idx << 4) + 0x30;
-    RAM(0x0085) = (row << 4) + 0x88;
+    frontname_sync_char_board_cursor();
 }
 
 void z02_update_mode_d_save_sub2(void) {
-    c_import_sram_commit();
-    RAM(0x0012) = 0;
-    RAM(0x0013) = 1;
+    savert_update_mode_d_save_sub2();
 }
 
 extern void z02_animate_demo_p1_end(void);
 
 void z02_animate_demo_p1_sub3(void) {
-    RAM(0x041A)++;
-    if (RAM(0x041A) == 0) {
-        RAM(0x042D)++;
-    } else {
-        z02_animate_demo_p1_end();
-    }
+    frontdemo_animate_p1_sub3();
 }
 
 void z02_animate_demo_p1_end(void) {
-    z07_hide_all_sprites();
-    c_import_demo_animate_objects();
+    frontdemo_animate_p1_end();
 }
 
 void z02_fetch_profile_name_address(void) {
-    unsigned char idx = RAM(0x0016);
-    RAM(0x000C) = ProfileNameAddrsLo[idx];
-    RAM(0x000D) = ProfileNameAddrsHi[idx];
+    savert_fetch_profile_name_address();
 }
 
 extern void z01_silence_all_sound(void);
 
 void z02_init_mode13_sub3(void) {
-    if (RAM(0x0029) != 0)
-        return;
-    z01_silence_all_sound();
-    RAM(0x0013)++;
+    frontdemo_init_mode13_sub3();
 }
 
 extern void z01_begin_update_mode(void);
 
 void z02_init_demo_subphase_play_title_song(void) {
-    RAM(0x0600) = 0x80;
-    z02_end_init_demo(16);
+    frontdemo_init_demo_subphase_play_title_song();
 }
 
 void z02_init_mode13_sub4(void) {
-    RAM(0x050B) = 8;
-    z01_begin_update_mode();
-    RAM(0x0412) = 0;
-    RAM(0x0413) = 0;
-    z07_hide_all_sprites();
+    frontdemo_init_mode13_sub4();
 }
