@@ -172,6 +172,40 @@ end
 
 local input_state = { button = nil, hold_left = 0, release_left = 0, release_after = 0 }
 
+-- ---------------------------------------------------------------------------
+-- Recorded-input replay (optional)
+-- ---------------------------------------------------------------------------
+-- If builds/reports/recorded_inputs.txt exists, use it to drive the boot flow
+-- instead of the scripted button scheduler. Recording format (per line):
+--     FRAME:BUTTON1|BUTTON2|...
+-- Lines starting with '#' are comments. Frames missing from the file are
+-- treated as no-input. Playback applies until the last recorded frame or
+-- until gameplay (FLOW_T34_STABILIZE), whichever comes first.
+local REPLAY_PATH = repo_path("builds\\reports\\recorded_inputs.txt")
+local replay_frames = {}
+local replay_last_frame = 0
+local replay_enabled = false
+
+local function load_replay()
+    local fh = io.open(REPLAY_PATH, "r")
+    if not fh then return end
+    for line in fh:lines() do
+        if line:sub(1, 1) ~= "#" and line ~= "" then
+            local f_str, buttons = line:match("^(%d+):(.+)$")
+            if f_str and buttons then
+                local fnum = tonumber(f_str)
+                local pad = {}
+                for btn in buttons:gmatch("[^|]+") do pad[btn] = true end
+                replay_frames[fnum] = pad
+                if fnum > replay_last_frame then replay_last_frame = fnum end
+            end
+        end
+    end
+    fh:close()
+    replay_enabled = (replay_last_frame > 0)
+end
+load_replay()
+
 local function schedule_input(button, hold_frames, release_frames)
     if input_state.hold_left > 0 or input_state.release_left > 0 then return false end
     input_state.button = button
@@ -266,6 +300,11 @@ record("=================================================================")
 record("T34 Genesis capture: room $77 Link movement trace")
 record("=================================================================")
 record(string.format("SCENARIO_LENGTH=%d", SCENARIO.SCENARIO_LENGTH))
+if replay_enabled then
+    record(string.format("REPLAY=enabled last_frame=%d", replay_last_frame))
+else
+    record("REPLAY=disabled (no builds/reports/recorded_inputs.txt)")
+end
 
 -- ---------------------------------------------------------------------------
 -- Main loop
@@ -326,14 +365,18 @@ for frame = 1, MAX_FRAMES do
         if CAPTURE.name_progress_events >= TARGET_NAME_PROGRESS then
             set_flow(FLOW_MODEE_FINISH, frame, "name progress target reached")
         else
-            schedule_input("C", 1, 10)   -- Gen: C = NES A (pick letter)
+            schedule_input("C", 1, 10)   -- Gen C = NES Select; advances cursor (name_ofs)
         end
 
     elseif flow_state == FLOW_MODEE_FINISH then
         if mode ~= 0x0E then
             set_flow(FLOW_WAIT_GAMEPLAY, frame, "left ModeE")
         else
-            schedule_input("Start", 2, 14)  -- Start ends name registration
+            if cur_slot ~= 0x03 then
+                schedule_input("C", 1, 10)      -- Gen C = NES Select; advances cursor to End
+            else
+                schedule_input("Start", 2, 14)  -- Start confirms; ModeE exits when cursor on End
+            end
         end
 
     elseif flow_state == FLOW_WAIT_GAMEPLAY then
@@ -430,6 +473,9 @@ for frame = 1, MAX_FRAMES do
     local pad
     if flow_state == FLOW_T34_CAPTURE then
         pad = SCENARIO.get_input_for_relative_frame(frame - CAPTURE.t0_frame)
+    elseif replay_enabled and frame <= replay_last_frame
+           and flow_state ~= FLOW_T34_STABILIZE then
+        pad = replay_frames[frame] or {}
     else
         pad = build_boot_pad()
     end
