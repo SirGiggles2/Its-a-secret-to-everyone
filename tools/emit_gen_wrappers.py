@@ -191,6 +191,10 @@ def main(argv: list[str]) -> int:
         if not manifest.get("symbols"):
             continue
         path = bank_path(bank)
+        start = START_TMPL.format(bank=bank)
+        if start not in path.read_text():
+            print(f"SKIP: {bank} (no marker region yet)", file=sys.stderr)
+            continue
         if args.check:
             if check_manifest(manifest, path):
                 print(f"DRIFT: {bank}", file=sys.stderr)

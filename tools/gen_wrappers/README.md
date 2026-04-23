@@ -62,6 +62,17 @@ The generator rewrites text between these markers in each bank file:
 Text outside the markers is hand-owned: top-of-file includes, extern
 declarations, static helpers that survived the drain, etc.
 
+## Partial adoption
+
+Banks whose `src/gen/z_0N.c` do not yet contain the auto-wrappers marker
+region are silently skipped by both `apply` and `--check` modes. Once the
+first and last forwarders of a bank are wrapped with the start/end markers,
+the tool takes over that region.
+
+`z_01` and `z_05` have interleaved non-forwarder logic and are deferred until
+their dedicated drain passes (Plan B / Plan C). Their manifests are kept
+current for future use.
+
 ## Commands
 
 ```bash
