@@ -1,60 +1,158 @@
-src/gen/z_03.c:RAM(0x0000)
-src/gen/z_03.c:RAM(0x0001)
-src/gen/z_03.c:RAM(0x0002)
-src/gen/z_03.c:RAM(0x0003)
-src/gen/z_05.c:RAM(0x00)
-src/gen/z_05.c:RAM(0x0000)
-src/gen/z_05.c:RAM(0x0001)
-src/gen/z_05.c:RAM(0x0010)
-src/gen/z_05.c:RAM(0x0012)
-src/gen/z_05.c:RAM(0x0016)
-src/gen/z_05.c:RAM(0x0033)
-src/gen/z_05.c:RAM(0x00E8)
-src/gen/z_05.c:RAM(0x00E9)
-src/gen/z_05.c:RAM(0x00EB)
-src/gen/z_05.c:RAM(0x00FE)
-src/gen/z_05.c:RAM(0x01)
-src/gen/z_05.c:RAM(0x0301)
-src/gen/z_05.c:RAM(0x0302)
-src/gen/z_05.c:RAM(0x0303)
-src/gen/z_05.c:RAM(0x0304)
-src/gen/z_05.c:RAM(0x0325)
-src/gen/z_05.c:RAM(0x0602)
-src/gen/z_06.c:RAM(0x0000)
-src/gen/z_06.c:RAM(0x0001)
-src/gen/z_06.c:RAM(0x0002)
-src/gen/z_06.c:RAM(0x0003)
-src/gen/z_06.c:RAM(0x0004)
-src/gen/z_06.c:RAM(0x0005)
-src/gen/z_06.c:RAM(0x0010)
-src/gen/z_06.c:RAM(0x0011)
-src/gen/z_06.c:RAM(0x0013)
-src/gen/z_06.c:RAM(0x0016)
-src/gen/z_07.c:RAM(0x00)
-src/gen/z_07.c:RAM(0x0000)
-src/gen/z_07.c:RAM(0x0001)
-src/gen/z_07.c:RAM(0x0004)
-src/gen/z_07.c:RAM(0x000E)
-src/gen/z_07.c:RAM(0x000F)
-src/gen/z_07.c:RAM(0x0010)
-src/gen/z_07.c:RAM(0x0011)
-src/gen/z_07.c:RAM(0x0012)
-src/gen/z_07.c:RAM(0x0013)
-src/gen/z_07.c:RAM(0x0014)
-src/gen/z_07.c:RAM(0x0015)
-src/gen/z_07.c:RAM(0x0016)
-src/gen/z_07.c:RAM(0x0059)
-src/gen/z_07.c:RAM(0x0070)
-src/gen/z_07.c:RAM(0x0084)
-src/gen/z_07.c:RAM(0x00AC)
-src/gen/z_07.c:RAM(0x00EB)
-src/gen/z_07.c:RAM(0x01)
-src/gen/z_07.c:RAM(0x0394)
-src/gen/z_07.c:RAM(0x03E4)
-src/gen/z_07.c:RAM(0x049E)
-src/gen/z_07.c:RAM(0x051A)
-src/gen/z_07.c:RAM(0x0526)
-src/gen/z_07.c:RAM(0x0529)
-src/gen/z_07.c:RAM(0x0600)
-src/gen/z_07.c:RAM(0x0602)
-src/gen/z_07.c:RAM(0x066C)
+                        RAM(0x049E) = 0x26;
+                    if (RAM(0x0070) == 0x80 && RAM(0x0084) < 0x56) {
+            RAM(0x0001) = hi;
+            RAM(0x0002) = cnt_hi;
+            RAM(0x0003)++;
+            RAM(0x0013)++;
+            RAM(0x0059) = (unsigned char)i;
+            RAM(0x00AC) = state + 1;
+            RAM(0x00AC) = state | 0x30;
+            RAM(0x049E + slot) = next_tile;
+            hi = RAM(0x0001);
+            if (RAM(0x00EB) == 0x1F) {
+        RAM(0x0000) = 6;
+        RAM(0x0000) = lo;
+        RAM(0x0002) = lo;
+        RAM(0x0003) = cnt_lo;
+        RAM(0x00AC) = state & 0xC0;
+        RAM(0x0200 + (unsigned short)i * 4) = 0xF8;
+        RAM(0x0305 + dst) = nes_ram[src + i];
+        RAM(0x0305 + i) = nes_ram[s];
+        RAM(0x03E4) = 1;
+        RAM(0x049E + slot) = tile;
+        RAM(0x0526) = 0xFF;
+        RAM(0x0621 + (unsigned char)i) = 0;
+        RAM(0x0630 + slot) = continue_count + 1;
+        if (!(RAM(0x0098 + slot) & 1)) RAM(0x000F)++;
+        if (RAM(0x0002) == 0 && RAM(0x0003) == 0)
+        if (RAM(0x0002) == RAM(0x0004) && RAM(0x0003) == RAM(0x0005)) {
+        if (RAM(0x034F + (unsigned char)i) == 0) {
+        lo = RAM(0x0000);
+        room_id = RAM(0x0526);
+        tile = RAM(0x049E + slot);
+        tile_x = RAM(0x0070 + slot);
+        unsigned char cnt_hi = RAM(0x0002);
+        unsigned char cnt_lo = RAM(0x0003);
+        unsigned char hi = RAM(0x0001);
+        unsigned char lo = RAM(0x0000);
+        unsigned char lo = RAM(0x0002);
+        unsigned char ptr_hi = RAM(0x0001);
+        unsigned char ptr_lo = RAM(0x0000);
+        unsigned short dest = ((unsigned short)RAM(0x0003) << 8) | RAM(0x0002);
+    RAM(0x00) = ptr_lo;
+    RAM(0x0000) = (unsigned char)val;
+    RAM(0x0000) = 0x1A;
+    RAM(0x0000) = BossPatternBlockSrcAddrs[idx];
+    RAM(0x0000) = LevelInfoUWQ2ReplacementAddrs[idx - 2];
+    RAM(0x0000) = LevelPatternBlockSrcAddrs[idx];
+    RAM(0x0000) = PatternBlockSrcAddrsOW[idx];
+    RAM(0x0000) = PatternBlockSrcAddrsUW[idx];
+    RAM(0x0000) = RAM(0x0070 + slot);
+    RAM(0x0000) = ptr & 0xFF;
+    RAM(0x0000) = s & 0xFF;
+    RAM(0x0000) = src & 0xFF;
+    RAM(0x0001) = (ptr >> 8) & 0xFF;
+    RAM(0x0001) = (s >> 8) & 0xFF;
+    RAM(0x0001) = (src >> 8) & 0xFF;
+    RAM(0x0001) = 0x65;
+    RAM(0x0001) = BossPatternBlockSrcAddrs[idx + 1];
+    RAM(0x0001) = LevelInfoUWQ2ReplacementAddrs[idx - 1];
+    RAM(0x0001) = LevelPatternBlockSrcAddrs[idx + 1];
+    RAM(0x0001) = PatternBlockSrcAddrsOW[idx + 1];
+    RAM(0x0001) = PatternBlockSrcAddrsUW[idx + 1];
+    RAM(0x0001) = RAM(0x0084 + slot);
+    RAM(0x0002) = 0x7E;
+    RAM(0x0002) = 0xF0;
+    RAM(0x0002) = PatternBlockSizesOW[idx];
+    RAM(0x0002) = PatternBlockSizesUW[idx];
+    RAM(0x0003) = 0x67;
+    RAM(0x0003) = 0x68;
+    RAM(0x0003) = 0x6B;
+    RAM(0x0003) = PatternBlockSizesOW[idx + 1];
+    RAM(0x0003) = PatternBlockSizesUW[idx + 1];
+    RAM(0x0004) = (unsigned char)hotspot_offset;
+    RAM(0x0004) = 0x7D;
+    RAM(0x0005) = 0x68;
+    RAM(0x0005) = 0x6B;
+    RAM(0x0005) = 0x6C;
+    RAM(0x000E) = 0;
+    RAM(0x000F) = 0;
+    RAM(0x000F) = RAM(0x03E4 + slot);
+    RAM(0x000F) = new_dir;
+    RAM(0x0011) = 0;
+    RAM(0x0011)++;
+    RAM(0x0012) = 8;
+    RAM(0x0012)++;
+    RAM(0x0013) = 0;
+    RAM(0x0013)++;
+    RAM(0x0014) = 24;
+    RAM(0x0028 + slot) = 0;
+    RAM(0x0070 + slot) &= 0xF8;
+    RAM(0x0084 + slot) = (RAM(0x0084 + slot) & 0xF8) | 0x05;
+    RAM(0x0098 + slot) = 0xFE;
+    RAM(0x0098 + slot) = new_dir;
+    RAM(0x00AC + slot) = 0;
+    RAM(0x00AC + slot)++;
+    RAM(0x00AC) = 0;
+    RAM(0x00C0 + slot) = (unsigned char)val;
+    RAM(0x00D3 + slot) = (unsigned char)val;
+    RAM(0x00EB) = room_id;
+    RAM(0x00FE) &= 0xFE;
+    RAM(0x01) = ptr_hi;
+    RAM(0x0301) = 35;
+    RAM(0x0301) = dst;
+    RAM(0x0302 + buf) = 33;
+    RAM(0x0302) = (vram >> 8) & 0xFF;
+    RAM(0x0302) = val;
+    RAM(0x0303 + buf) = col;
+    RAM(0x0303) = vram & 0xFF;
+    RAM(0x0304 + buf) = 0x96;
+    RAM(0x0304) = 32;
+    RAM(0x031B + buf) = 0xFF;
+    RAM(0x0325) = 0xFF;
+    RAM(0x034F + slot) = (unsigned char)type;
+    RAM(0x034F + slot) = 0;
+    RAM(0x0394) = 0;
+    RAM(0x03D0 + slot) = RAM(0x00);
+    RAM(0x03D0 + slot)--;
+    RAM(0x03E4 + slot) ^= 0x01;
+    RAM(0x0405 + slot) = 0;
+    RAM(0x0405 + slot) = 16;
+    RAM(0x049E + slot) = tile;
+    RAM(0x04BF + slot) = 0x81;
+    RAM(0x04F0 + slot)--;
+    RAM(0x051A) = 1;
+    RAM(0x0529) = 0;
+    RAM(0x0600) = LevelSongIds[level];
+    RAM(0x0602) = 32;
+    RAM(0x0602) = 64;
+    RAM(0x066C) = 0;
+    if (--RAM(0x03D0 + slot) == 0) {
+    if (RAM(0x0010) != 0 || RAM(0x0526) == 0xFF) {
+    if (RAM(0x0010) == 0) {
+    if (RAM(0x0015) & 1) return;
+    if (RAM(0x0033) != 0) return;
+    if (RAM(0x0394 + slot) != 0) return;
+    if (RAM(0x03D0 + slot) == 0) {
+    if (RAM(0x04F0 + slot) == 0) return;
+    if (room_id == RAM(0x0526)) {
+    return RAM(0x049E + slot);
+    return RAM(0x0657 + offset) & level_masks[bit_idx];
+    tile = RAM(0x049E + slot);
+    unsigned char buf = RAM(0x0301);
+    unsigned char col = RAM(0x00E8) - 1;
+    unsigned char continue_count = RAM(0x0630 + slot);
+    unsigned char dir = RAM(0x000F);
+    unsigned char dir = RAM(0x0098 + slot) & 0x0C;
+    unsigned char dir = RAM(0x0098 + slot);
+    unsigned char level = RAM(0x0010);
+    unsigned char profile = RAM(0x0016);
+    unsigned char room = RAM(0x00EB);
+    unsigned char room_id = RAM(0x00EB);
+    unsigned char row = RAM(0x00E9);
+    unsigned char slot = RAM(0x0016);
+    unsigned char state = RAM(0x00AC);
+    unsigned char submode = RAM(0x0013);
+    unsigned char val = RAM(0x0302);
+    unsigned char y_pos = RAM(0x0084 + slot);
+    unsigned short ptr = ((unsigned short)RAM(0x01) << 8) | RAM(0x00);
