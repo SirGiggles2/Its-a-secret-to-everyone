@@ -158,6 +158,14 @@ void roomrt_touch_door_wall(void) {
     ROOM_TOUCH_BLOCK_FLAG = 0xFF;
 }
 
+void roomrt_touch_door_open(void) {}
+
+void roomrt_wield_nothing(void) {}
+
+void roomrt_mask_cur_ppu_mask_grayscale(void) {
+    RAM(0x00FE) &= 0xFE;
+}
+
 void roomrt_block_at_wall(void) {
     roomrt_touch_door_wall();
 }

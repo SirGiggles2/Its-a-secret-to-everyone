@@ -2,6 +2,9 @@
 #define ROOM_MODE_RUNTIME_H
 
 #include "room_state.h"
+#include "link_state.h"
+#include "save_state.h"
+#include "item_state.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -11,6 +14,8 @@ void roommd_inc_submode(void);
 void roommd_inc_2_submodes(void);
 void roommd_init_mode_a_sub_a_go_to_mode4(void);
 void roommd_init_mode4_go_to_sub0(void);
+void roommd_update_mode11_death_sub_c(void);
+void roommd_update_mode11_death_sub2(void);
 void roommd_update_mode11_death_sub6(void);
 void roommd_reset_vscroll_lo(void);
 void roommd_select_transfer_buf(unsigned int val);

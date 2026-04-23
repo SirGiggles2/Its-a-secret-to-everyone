@@ -428,6 +428,41 @@
       "old": "z05_init_mode3_sub5",
       "new": "roommd_init_mode3_sub5",
       "sig": "void (void)"
+    },
+    {
+      "old": "z05_copy_column_to_tilebuf",
+      "new": "roomxf_copy_column_to_tilebuf",
+      "sig": "void (void)"
+    },
+    {
+      "old": "z05_copy_row_to_tilebuf",
+      "new": "roomxf_copy_row_to_tilebuf",
+      "sig": "void (void)"
+    },
+    {
+      "old": "z05_mask_cur_ppu_mask_grayscale",
+      "new": "roomrt_mask_cur_ppu_mask_grayscale",
+      "sig": "void (void)"
+    },
+    {
+      "old": "z05_update_mode11_death_sub_c",
+      "new": "roommd_update_mode11_death_sub_c",
+      "sig": "void (void)"
+    },
+    {
+      "old": "z05_update_mode11_death_sub2",
+      "new": "roommd_update_mode11_death_sub2",
+      "sig": "void (void)"
+    },
+    {
+      "old": "z05_wield_nothing",
+      "new": "roomrt_wield_nothing",
+      "sig": "void (void)"
+    },
+    {
+      "old": "z05_touch_door_open",
+      "new": "roomrt_touch_door_open",
+      "sig": "void (void)"
     }
   ]
 }

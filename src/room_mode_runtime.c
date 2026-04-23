@@ -217,6 +217,27 @@ void roommd_init_mode_a_sub1(void) {
     z07_patch_and_cue_level_palettes_transfer();
 }
 
+void roommd_update_mode11_death_sub_c(void) {
+    if (MODE11_DEATH_TIMER != 0) return;
+    z07_end_game_mode();
+    MODE_VALUE = 8;
+    DEATH_FRAME_COUNTER = 64;
+    unsigned char slot = SAVE_SLOT_INDEX;
+    unsigned char continue_count = CONTINUE_COUNT(slot);
+    if (continue_count != 0xFF)
+        CONTINUE_COUNT(slot) = continue_count + 1;
+}
+
+void roommd_update_mode11_death_sub2(void) {
+    unsigned int result = roommd_copy_next_row_advance_submode();
+    if (result & CARRY_SET) {
+        roomld_write_and_enable_sprite0();
+    }
+    unsigned char val = RAM(0x0302);
+    val = (unsigned char)(val + 0x08);
+    RAM(0x0302) = val;
+}
+
 void roommd_end_game_mode12(void) {
     unsigned char result = z07_end_game_mode();
     ROOM_LEVEL_INDEX = result;

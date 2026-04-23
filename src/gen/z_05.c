@@ -17,67 +17,14 @@
  * of the play area.  NES RAM[$00E8] = target column + 1.
  * Writes header + 22 column bytes into the tile buffer at RAM[$0302+]. */
 void z05_copy_column_to_tilebuf(void) {
-    RAM(0x0000) = 0x1A;
-    RAM(0x0001) = 0x65;
-
-    unsigned char col = RAM(0x00E8) - 1;
-    unsigned char buf = RAM(0x0301);
-
-    RAM(0x0302 + buf) = 33;
-    RAM(0x0303 + buf) = col;
-
-    unsigned short src = PLAY_AREA_BASE + (unsigned short)col * COL_STRIDE;
-
-    RAM(0x0304 + buf) = 0x96;
-    RAM(0x031B + buf) = 0xFF;
-
-    unsigned char dst = buf;
-    for (unsigned char i = 0; i < 22; i++) {
-        RAM(0x0305 + dst) = nes_ram[src + i];
-        dst++;
-    }
-    src += 22;
-    dst += 3;
-    RAM(0x0301) = dst;
-
-    RAM(0x0000) = src & 0xFF;
-    RAM(0x0001) = (src >> 8) & 0xFF;
+    roomxf_copy_column_to_tilebuf();
 }
 
 /* CopyRowToTileBuf — builds a tile transfer record for one row
  * of the play area.  NES RAM[$00E9] = target row.
  * Reads 32 tiles (one per column, stride $16) into tile buffer. */
 void z05_copy_row_to_tilebuf(void) {
-    unsigned char row = RAM(0x00E9);
-
-    /* Set pointer 00:01 = $6530 + row (8-bit add with carry) */
-    unsigned short ptr = 0x6530u + row;
-    RAM(0x0000) = ptr & 0xFF;
-    RAM(0x0001) = (ptr >> 8) & 0xFF;
-
-    /* Compute VRAM dest address: $20E0 + (row+1)*$20
-     * The NES loop adds $20 to $E0 for (row+1) iterations.
-     * Row 0: $20E0 + $20 = $2100.  Row 1: $2100 + $20 = $2120.  etc. */
-    unsigned short vram = 0x20E0u;
-    for (signed char r = (signed char)row; r >= 0; r--)
-        vram += 0x20;
-    RAM(0x0302) = (vram >> 8) & 0xFF;
-    RAM(0x0303) = vram & 0xFF;
-
-    RAM(0x0304) = 32;
-    RAM(0x0325) = 0xFF;
-
-    /* Copy 32 tiles: one per column, stride $16 */
-    unsigned short s = PLAY_AREA_BASE + row;
-    for (unsigned char i = 0; i < 32; i++) {
-        RAM(0x0305 + i) = nes_ram[s];
-        s += COL_STRIDE;
-    }
-
-    RAM(0x0301) = 35;
-
-    RAM(0x0000) = s & 0xFF;
-    RAM(0x0001) = (s >> 8) & 0xFF;
+    roomxf_copy_row_to_tilebuf();
 }
 
 /* --- Stage 4a functions --- */
@@ -163,7 +110,7 @@ void z05_reset_inv_obj_state(void) {
 }
 
 void z05_mask_cur_ppu_mask_grayscale(void) {
-    RAM(0x00FE) &= 0xFE;
+    roomrt_mask_cur_ppu_mask_grayscale();
 }
 
 void z05_fill_play_area_attrs(unsigned int room_id) {
@@ -273,14 +220,7 @@ void z05_link_modify_dir_in_doorway(void) {
 extern unsigned char z07_end_game_mode(void);
 
 void z05_update_mode11_death_sub_c(void) {
-    if (RAM(0x0033) != 0) return;
-    z07_end_game_mode();
-    RAM(0x0012) = 8;
-    RAM(0x0602) = 64;
-    unsigned char slot = RAM(0x0016);
-    unsigned char continue_count = RAM(0x0630 + slot);
-    if (continue_count != 0xFF)
-        RAM(0x0630 + slot) = continue_count + 1;
+    roommd_update_mode11_death_sub_c();
 }
 
 void z05_update_mode7_scroll_sub6(void) {
@@ -297,13 +237,7 @@ void z05_cue_transfer_play_area_attrs_half_and_advance_submode(
 }
 
 void z05_update_mode11_death_sub2(void) {
-    unsigned int result = z05_copy_next_row_advance_submode();
-    if (result & CARRY_SET) {
-        z05_write_and_enable_sprite0();
-    }
-    unsigned char val = RAM(0x0302);
-    val = (unsigned char)(val + 0x08);
-    RAM(0x0302) = val;
+    roommd_update_mode11_death_sub2();
 }
 
 void z05_init_mode10(void) {
@@ -370,6 +304,7 @@ void z05_update_mode11_death_sub9(void) {
 /* --- batch 41 --- */
 
 void z05_wield_nothing(void) {
+    roomrt_wield_nothing();
 }
 
 void z05_end_prepare_mode(void) {
@@ -419,7 +354,9 @@ unsigned int z05_check_secret_trigger_ringleader(void) {
     return roomrt_check_secret_trigger_ringleader();
 }
 
-void z05_touch_door_open(void) {}
+void z05_touch_door_open(void) {
+    roomrt_touch_door_open();
+}
 
 void z05_touch_door_bombable(void) {
     roomrt_touch_door_bombable();
