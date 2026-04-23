@@ -1,0 +1,837 @@
+{
+  "bank": "z_01",
+  "includes": [
+    "core_runtime.h",
+    "progress_runtime.h",
+    "uw_person_runtime.h",
+    "collision_runtime.h",
+    "cave_runtime.h",
+    "trap_runtime.h",
+    "hud_runtime.h",
+    "item_runtime.h",
+    "object_runtime.h",
+    "targeting_runtime.h",
+    "weapon_runtime.h",
+    "world_runtime.h",
+    "sprite_runtime.h",
+    "combat_runtime.h",
+    "link_collision_runtime.h"
+  ],
+  "symbols": [
+    {
+      "old": "z01_play_character_sfx",
+      "new": "corert_play_character_sfx",
+      "sig": "void (void)"
+    },
+    {
+      "old": "z01_reset_room_tile_obj_info",
+      "new": "progrt_reset_room_tile_obj_info",
+      "sig": "unsigned char (void)"
+    },
+    {
+      "old": "z01_play_key_taken_tune",
+      "new": "corert_play_key_taken_tune",
+      "sig": "void (void)"
+    },
+    {
+      "old": "z01_take_power_triforce",
+      "new": "corert_take_power_triforce",
+      "sig": "void (void)"
+    },
+    {
+      "old": "z01_silence_all_sound",
+      "new": "corert_silence_all_sound",
+      "sig": "unsigned char (void)"
+    },
+    {
+      "old": "z01_post_debit",
+      "new": "corert_post_debit",
+      "sig": "void (unsigned int amount)"
+    },
+    {
+      "old": "z01_init_one_simple_object",
+      "new": "corert_init_one_simple_object",
+      "sig": "void (unsigned int slot)"
+    },
+    {
+      "old": "z01_destroy_object_wram",
+      "new": "corert_destroy_object_wram",
+      "sig": "void (unsigned int val, unsigned int slot)"
+    },
+    {
+      "old": "z01_destroy_whirlwind",
+      "new": "corert_destroy_whirlwind",
+      "sig": "void (unsigned int slot)"
+    },
+    {
+      "old": "z01_unhalt_link",
+      "new": "corert_unhalt_link",
+      "sig": "void (void)"
+    },
+    {
+      "old": "z01_inc_cave_state",
+      "new": "corert_inc_cave_state",
+      "sig": "void (void)"
+    },
+    {
+      "old": "z01_set_up_whirlwind",
+      "new": "corert_set_up_whirlwind",
+      "sig": "void (unsigned int slot)"
+    },
+    {
+      "old": "z01_uw_person_complex_state_delay_and_quit",
+      "new": "corert_uw_person_complex_state_delay_and_quit",
+      "sig": "void (void)"
+    },
+    {
+      "old": "z01_set_boomerang_speed",
+      "new": "corert_set_boomerang_speed",
+      "sig": "void (unsigned int val, unsigned int slot)"
+    },
+    {
+      "old": "z01_set_up_common_cave_objects",
+      "new": "corert_set_up_common_cave_objects",
+      "sig": "void (unsigned int x, unsigned int slot, unsigned int y)"
+    },
+    {
+      "old": "z01_anim_set_sprite_desc_attrs",
+      "new": "corert_anim_set_sprite_desc_attrs",
+      "sig": "unsigned char (unsigned int val)"
+    },
+    {
+      "old": "z01_post_credit",
+      "new": "corert_post_credit",
+      "sig": "void (unsigned int val)"
+    },
+    {
+      "old": "z01_add_to_int16_at_0",
+      "new": "corert_add_to_int16_at_0",
+      "sig": "unsigned char (unsigned int val)"
+    },
+    {
+      "old": "z01_add_to_int16_at_2",
+      "new": "corert_add_to_int16_at_2",
+      "sig": "unsigned char (unsigned int val)"
+    },
+    {
+      "old": "z01_add_to_int16_at_4",
+      "new": "corert_add_to_int16_at_4",
+      "sig": "unsigned char (unsigned int val)"
+    },
+    {
+      "old": "z01_map_screen_pos_to_ppu_addr",
+      "new": "corert_map_screen_pos_to_ppu_addr",
+      "sig": "void (void)"
+    },
+    {
+      "old": "z01_reset_shove_info_and_inv_timer",
+      "new": "corert_reset_shove_info_and_inv_timer",
+      "sig": "void (unsigned int slot)"
+    },
+    {
+      "old": "z01_update_person_state_reset_char_offset",
+      "new": "corert_update_person_state_reset_char_offset",
+      "sig": "void (void)"
+    },
+    {
+      "old": "z01_begin_update_mode",
+      "new": "corert_begin_update_mode",
+      "sig": "void (void)"
+    },
+    {
+      "old": "z01_cue_transfer_buf_and_advance_state",
+      "new": "corert_cue_transfer_buf_and_advance_state",
+      "sig": "void (unsigned int val)"
+    },
+    {
+      "old": "z01_take_one_rupee",
+      "new": "corert_take_one_rupee",
+      "sig": "void (void)"
+    },
+    {
+      "old": "z01_set_item_value",
+      "new": "corert_set_item_value",
+      "sig": "void (unsigned int val, unsigned int slot3)"
+    },
+    {
+      "old": "z01_init_whirlwind",
+      "new": "corert_init_whirlwind",
+      "sig": "void (unsigned int val, unsigned int slot)"
+    },
+    {
+      "old": "z01_add1_to_int16_at_2",
+      "new": "corert_add1_to_int16_at_2",
+      "sig": "unsigned char (void)"
+    },
+    {
+      "old": "z01_add1_to_int16_at_4",
+      "new": "corert_add1_to_int16_at_4",
+      "sig": "unsigned char (void)"
+    },
+    {
+      "old": "z01_cue_transfer_blank_person_wares",
+      "new": "corert_cue_transfer_blank_person_wares",
+      "sig": "void (void)"
+    },
+    {
+      "old": "z01_take_5_rupees",
+      "new": "corert_take_5_rupees",
+      "sig": "void (void)"
+    },
+    {
+      "old": "z01_get_opposite_dir",
+      "new": "corert_get_opposite_dir",
+      "sig": "unsigned int (unsigned int dir)"
+    },
+    {
+      "old": "z01_abs",
+      "new": "corert_abs",
+      "sig": "unsigned char (unsigned int val)"
+    },
+    {
+      "old": "z01_negate",
+      "new": "corert_negate",
+      "sig": "unsigned char (unsigned int val)"
+    },
+    {
+      "old": "z01_set_room_flag_uw_item_state",
+      "new": "progrt_set_room_flag_uw_item_state",
+      "sig": "void (void)"
+    },
+    {
+      "old": "z01_get_room_flag_uw_item_state",
+      "new": "progrt_get_room_flag_uw_item_state",
+      "sig": "unsigned char (void)"
+    },
+    {
+      "old": "z01_play_effect",
+      "new": "corert_play_effect",
+      "sig": "void (unsigned int val)"
+    },
+    {
+      "old": "z01_play_sample",
+      "new": "corert_play_sample",
+      "sig": "void (unsigned int val)"
+    },
+    {
+      "old": "z01_play_parry_tune",
+      "new": "corert_play_parry_tune",
+      "sig": "void (void)"
+    },
+    {
+      "old": "z01_write_blank_priority_sprites",
+      "new": "corert_write_blank_priority_sprites",
+      "sig": "void (void)"
+    },
+    {
+      "old": "z01_init_underworld_person_b",
+      "new": "uwrt_init_underworld_person_b",
+      "sig": "void (unsigned int slot)"
+    },
+    {
+      "old": "z01_copy_price_list_template",
+      "new": "corert_copy_price_list_template",
+      "sig": "void (void)"
+    },
+    {
+      "old": "z01_compare_hearts_to_containers",
+      "new": "corert_compare_hearts_to_containers",
+      "sig": "unsigned char (void)"
+    },
+    {
+      "old": "z01_uw_person_complex_state_begin",
+      "new": "corert_uw_person_complex_state_begin",
+      "sig": "void (void)"
+    },
+    {
+      "old": "z01_format_char_doublet",
+      "new": "corert_format_char_doublet",
+      "sig": "void (unsigned int val)"
+    },
+    {
+      "old": "z01_reset_cur_sprite_index",
+      "new": "corert_reset_cur_sprite_index",
+      "sig": "unsigned char (void)"
+    },
+    {
+      "old": "z01_play_boomerang_sfx",
+      "new": "corert_play_boomerang_sfx",
+      "sig": "void (unsigned int sfx_id)"
+    },
+    {
+      "old": "z01_take_hearts_no_sound",
+      "new": "corert_take_hearts_no_sound",
+      "sig": "void (void)"
+    },
+    {
+      "old": "z01_do_objects_collide_with_thresholds",
+      "new": "colrt_do_objects_collide_with_thresholds",
+      "sig": "unsigned char (void)"
+    },
+    {
+      "old": "z01_init_underworld_person_c",
+      "new": "uwrt_init_underworld_person_c",
+      "sig": "void (unsigned int slot)"
+    },
+    {
+      "old": "z01_init_grumble_full",
+      "new": "uwrt_init_grumble_full",
+      "sig": "void (unsigned int slot)"
+    },
+    {
+      "old": "z01_init_rupee_stash_full",
+      "new": "uwrt_init_rupee_stash_full",
+      "sig": "void (unsigned int slot)"
+    },
+    {
+      "old": "z01_update_uw_person_life_or_money_state_0",
+      "new": "uwrt_update_life_or_money_state_0",
+      "sig": "void (void)"
+    },
+    {
+      "old": "z01_underworld_person_destroy_if_taken",
+      "new": "uwrt_underworld_person_destroy_if_taken",
+      "sig": "void (unsigned int slot)"
+    },
+    {
+      "old": "z01_init_uw_person_life_or_money_full",
+      "new": "uwrt_init_life_or_money_full",
+      "sig": "void (unsigned int slot)"
+    },
+    {
+      "old": "z01_person_flag_item_taken_and_advance_state",
+      "new": "uwrt_person_flag_item_taken_and_advance_state",
+      "sig": "void (void)"
+    },
+    {
+      "old": "z01_check_person_blocking",
+      "new": "uwrt_check_person_blocking",
+      "sig": "void (void)"
+    },
+    {
+      "old": "z01_clear_prices_cave_flag",
+      "new": "cavert_clear_prices_cave_flag",
+      "sig": "void (void)"
+    },
+    {
+      "old": "z01_update_person_state_delay_then_hide",
+      "new": "cavert_update_person_state_delay_then_hide",
+      "sig": "void (void)"
+    },
+    {
+      "old": "z01_update_grumble1",
+      "new": "uwrt_update_grumble1",
+      "sig": "void (void)"
+    },
+    {
+      "old": "z01_add1_to_int16_at_0",
+      "new": "corert_add1_to_int16_at_0",
+      "sig": "unsigned char (void)"
+    },
+    {
+      "old": "z01_take_hearts",
+      "new": "corert_take_hearts",
+      "sig": "void (void)"
+    },
+    {
+      "old": "z01_check_init_whirlwind_and_begin_update",
+      "new": "trprt_check_init_whirlwind_and_begin_update",
+      "sig": "void (void)"
+    },
+    {
+      "old": "z01_advance_teleporting_level_index",
+      "new": "trprt_advance_teleporting_level_index",
+      "sig": "void (void)"
+    },
+    {
+      "old": "z01_replace_ganon_brown_palette_row",
+      "new": "progrt_replace_ganon_brown_palette_row",
+      "sig": "void (void)"
+    },
+    {
+      "old": "z01_replace_ganon_blue_palette_row",
+      "new": "progrt_replace_ganon_blue_palette_row",
+      "sig": "void (void)"
+    },
+    {
+      "old": "z01_replace_ashes_palette_row",
+      "new": "progrt_replace_ashes_palette_row",
+      "sig": "void (void)"
+    },
+    {
+      "old": "z01_init_underworld_person_a",
+      "new": "uwrt_init_underworld_person_a",
+      "sig": "void (unsigned int slot)"
+    },
+    {
+      "old": "z01_update_uw_person_complex_state_sense_link",
+      "new": "uwrt_update_complex_state_sense_link",
+      "sig": "void (void)"
+    },
+    {
+      "old": "z01_update_uw_person_life_or_money_state_2",
+      "new": "uwrt_update_life_or_money_state_2",
+      "sig": "void (void)"
+    },
+    {
+      "old": "z01_person_check_collisions",
+      "new": "uwrt_person_check_collisions",
+      "sig": "void (unsigned int slot)"
+    },
+    {
+      "old": "z01_person_draw_and_check_collisions",
+      "new": "uwrt_person_draw_and_check_collisions",
+      "sig": "void (unsigned int slot)"
+    },
+    {
+      "old": "z01_draw_life_or_money_items",
+      "new": "uwrt_draw_life_or_money_items",
+      "sig": "void (void)"
+    },
+    {
+      "old": "z01_update_grumble3",
+      "new": "uwrt_update_grumble3",
+      "sig": "void (void)"
+    },
+    {
+      "old": "z01_update_uw_person_complex",
+      "new": "uwrt_update_person_complex",
+      "sig": "void (unsigned int slot)"
+    },
+    {
+      "old": "z01_update_uw_person_full",
+      "new": "uwrt_update_person_full",
+      "sig": "void (unsigned int slot)"
+    },
+    {
+      "old": "z01_update_grumble_full",
+      "new": "uwrt_update_grumble_full",
+      "sig": "void (unsigned int slot)"
+    },
+    {
+      "old": "z01_update_uw_person_life_or_money_full",
+      "new": "uwrt_update_life_or_money_full",
+      "sig": "void (unsigned int slot)"
+    },
+    {
+      "old": "z01_draw_cave_person",
+      "new": "cavert_draw_cave_person",
+      "sig": "void (unsigned int slot)"
+    },
+    {
+      "old": "z01_draw_cave_items",
+      "new": "cavert_draw_cave_items",
+      "sig": "void (void)"
+    },
+    {
+      "old": "z01_format_decimal_byte",
+      "new": "cavert_format_decimal_byte",
+      "sig": "void (unsigned char val)"
+    },
+    {
+      "old": "z01_write_prices_to_dynamic_transfer_buf",
+      "new": "cavert_write_prices_to_dynamic_transfer_buf",
+      "sig": "void (unsigned char price_char)"
+    },
+    {
+      "old": "z01_write_prices_transfer_buf",
+      "new": "cavert_write_prices_transfer_buf",
+      "sig": "void (void)"
+    },
+    {
+      "old": "z01_update_cave_person_state_transfer_prices",
+      "new": "cavert_update_transfer_prices",
+      "sig": "void (void)"
+    },
+    {
+      "old": "z01_update_person_state_textbox",
+      "new": "cavert_update_person_state_textbox",
+      "sig": "void (void)"
+    },
+    {
+      "old": "z01_update_cave_person_state_talk_or_shop_or_door_charge",
+      "new": "cavert_update_talk_shop_or_door_charge",
+      "sig": "void (void)"
+    },
+    {
+      "old": "z01_update_cave_person_state_hint_or_money_game",
+      "new": "cavert_update_hint_or_money_game",
+      "sig": "void (void)"
+    },
+    {
+      "old": "z01_update_cave_person",
+      "new": "cavert_update_cave_person",
+      "sig": "void (unsigned int slot)"
+    },
+    {
+      "old": "z01_format_hearts_in_text_buf",
+      "new": "hudrt_format_hearts_in_text_buf",
+      "sig": "void (unsigned char start_off)"
+    },
+    {
+      "old": "z01_copy_triplet_to_text_buf",
+      "new": "hudrt_copy_triplet_to_text_buf",
+      "sig": "void (void)"
+    },
+    {
+      "old": "z01_format_decimal_count_byte",
+      "new": "hudrt_format_decimal_count_byte",
+      "sig": "void (unsigned char val)"
+    },
+    {
+      "old": "z01_format_decimal_count_byte_in_text_buf",
+      "new": "hudrt_format_decimal_count_byte_in_text_buf",
+      "sig": "void (unsigned char val, unsigned char buf_offset)"
+    },
+    {
+      "old": "z01_format_status_bar_text",
+      "new": "hudrt_format_status_bar_text",
+      "sig": "void (void)"
+    },
+    {
+      "old": "z01_world_change_rupees",
+      "new": "hudrt_world_change_rupees",
+      "sig": "void (void)"
+    },
+    {
+      "old": "z01_init_cave",
+      "new": "cavert_init_cave",
+      "sig": "void (unsigned int slot)"
+    },
+    {
+      "old": "z01_try_take_item",
+      "new": "cavert_try_take_item",
+      "sig": "void (unsigned int slot)"
+    },
+    {
+      "old": "z01_try_take_room_item",
+      "new": "cavert_try_take_room_item",
+      "sig": "void (void)"
+    },
+    {
+      "old": "z01_take_item",
+      "new": "itemrt_take_item",
+      "sig": "void (unsigned char item_id)"
+    },
+    {
+      "old": "z01_bound_direction_horizontally",
+      "new": "objrt_bound_direction_horizontally",
+      "sig": "void (unsigned int slot)"
+    },
+    {
+      "old": "z01_bound_direction_vertically",
+      "new": "objrt_bound_direction_vertically",
+      "sig": "void (unsigned int slot)"
+    },
+    {
+      "old": "z01_bound_by_room",
+      "new": "objrt_bound_by_room",
+      "sig": "unsigned char (unsigned int slot)"
+    },
+    {
+      "old": "z01_bound_by_room_with_a",
+      "new": "objrt_bound_by_room_with_dir",
+      "sig": "unsigned char (unsigned char direction, unsigned int slot)"
+    },
+    {
+      "old": "z01_add_q_speed_to_position_fraction",
+      "new": "objrt_add_q_speed_to_position_fraction",
+      "sig": "unsigned int (unsigned int slot)"
+    },
+    {
+      "old": "z01_sub_q_speed_from_position_fraction",
+      "new": "objrt_sub_q_speed_from_position_fraction",
+      "sig": "unsigned int (unsigned int slot)"
+    },
+    {
+      "old": "z01_move_shot",
+      "new": "objrt_move_shot",
+      "sig": "void (unsigned char direction, unsigned int slot)"
+    },
+    {
+      "old": "z01_get_one_direction_and_distance_to_target",
+      "new": "targrt_get_one_direction_and_distance_to_target",
+      "sig": "unsigned char (unsigned char target_coord, unsigned char origin_coord)"
+    },
+    {
+      "old": "z01_get_directions_and_distances_to_target",
+      "new": "targrt_get_directions_and_distances_to_target",
+      "sig": "void (unsigned char target_slot, unsigned int origin_slot)"
+    },
+    {
+      "old": "z01_calc_diagonal_speed_index",
+      "new": "targrt_calc_diagonal_speed_index",
+      "sig": "unsigned int (unsigned int mid_speed_idx)"
+    },
+    {
+      "old": "z01_place_weapon",
+      "new": "weprt_place_weapon",
+      "sig": "void (unsigned char offset, unsigned int slot)"
+    },
+    {
+      "old": "z01_place_weapon_for_player_state",
+      "new": "weprt_place_weapon_for_player_state",
+      "sig": "void (unsigned int slot)"
+    },
+    {
+      "old": "z01_place_weapon_for_player_state_and_anim",
+      "new": "weprt_place_weapon_for_player_state_and_anim",
+      "sig": "void (unsigned int slot)"
+    },
+    {
+      "old": "z01_place_weapon_for_player_state_and_anim_and_weapon_state",
+      "new": "weprt_place_weapon_for_player_state_and_anim_and_weapon_state",
+      "sig": "void (unsigned char weapon_state, unsigned int slot)"
+    },
+    {
+      "old": "z01_sub1_from_int16_at4",
+      "new": "corert_sub1_from_int16_at4",
+      "sig": "unsigned int (void)"
+    },
+    {
+      "old": "z01_wield_bomb",
+      "new": "weprt_wield_bomb",
+      "sig": "void (unsigned int slot)"
+    },
+    {
+      "old": "z01_wield_candle",
+      "new": "weprt_wield_candle",
+      "sig": "unsigned int (unsigned int slot)"
+    },
+    {
+      "old": "z01_get_shortcut_or_item_xy_for_room",
+      "new": "worldrt_get_shortcut_or_item_xy_for_room",
+      "sig": "unsigned int (unsigned int room_id)"
+    },
+    {
+      "old": "z01_get_shortcut_or_item_xy",
+      "new": "worldrt_get_shortcut_or_item_xy",
+      "sig": "unsigned int (void)"
+    },
+    {
+      "old": "z01_get_object_middle",
+      "new": "worldrt_get_object_middle",
+      "sig": "void (unsigned int slot)"
+    },
+    {
+      "old": "z01_animate_world_fading",
+      "new": "worldrt_animate_world_fading",
+      "sig": "unsigned int (void)"
+    },
+    {
+      "old": "z01_check_mazes",
+      "new": "worldrt_check_mazes",
+      "sig": "void (void)"
+    },
+    {
+      "old": "z01_cycle_cur_sprite_index",
+      "new": "sprrt_cycle_cur_sprite_index",
+      "sig": "void (void)"
+    },
+    {
+      "old": "z01_cycle_sprite_index_in_a",
+      "new": "sprrt_cycle_sprite_index_in_a",
+      "sig": "unsigned char (unsigned char idx)"
+    },
+    {
+      "old": "z01_hide_object_sprites",
+      "new": "sprrt_hide_object_sprites",
+      "sig": "void (void)"
+    },
+    {
+      "old": "z01_show_link_sprites_behind_horizontal_doors",
+      "new": "sprrt_show_link_sprites_behind_horizontal_doors",
+      "sig": "void (void)"
+    },
+    {
+      "old": "z01_play_parry_sound_for_damage_type",
+      "new": "cobrt_play_parry_sound_for_damage_type",
+      "sig": "void (void)"
+    },
+    {
+      "old": "z01_handle_monster_died",
+      "new": "cobrt_handle_monster_died",
+      "sig": "void (unsigned int slot)"
+    },
+    {
+      "old": "z01_deal_damage",
+      "new": "cobrt_deal_damage",
+      "sig": "void (unsigned int slot)"
+    },
+    {
+      "old": "z01_handle_monster_weapon_collision",
+      "new": "colrt_handle_monster_weapon_collision",
+      "sig": "void (unsigned int monster_slot, unsigned int weapon_slot)"
+    },
+    {
+      "old": "z01_check_monster_weapon_collision",
+      "new": "colrt_check_monster_weapon_collision",
+      "sig": "void (unsigned int monster_slot, unsigned int weapon_y_mid)"
+    },
+    {
+      "old": "z01_check_monster_slender_weapon_collision2",
+      "new": "colrt_check_monster_slender_weapon_collision2",
+      "sig": "void (unsigned int monster_slot)"
+    },
+    {
+      "old": "z01_check_monster_slender_weapon_collision",
+      "new": "colrt_check_monster_slender_weapon_collision",
+      "sig": "void (unsigned int monster_slot, unsigned int damage_points)"
+    },
+    {
+      "old": "z01_parry_or_shove",
+      "new": "colrt_parry_or_shove",
+      "sig": "void (unsigned int monster_slot, unsigned int weapon_slot)"
+    },
+    {
+      "old": "z01_check_monster_stabbing_collision",
+      "new": "colrt_check_monster_stabbing_collision",
+      "sig": "void (unsigned int monster_slot, unsigned int damage_points)"
+    },
+    {
+      "old": "z01_check_monster_sword_collision",
+      "new": "colrt_check_monster_sword_collision",
+      "sig": "void (unsigned int monster_slot, unsigned int weapon_slot)"
+    },
+    {
+      "old": "z01_check_monster_shot_collision",
+      "new": "colrt_check_monster_shot_collision",
+      "sig": "void (unsigned int monster_slot, unsigned int weapon_slot, unsigned int damage_points)"
+    },
+    {
+      "old": "z01_check_monster_arrow_or_rod_collision",
+      "new": "colrt_check_monster_arrow_or_rod_collision",
+      "sig": "void (unsigned int monster_slot, unsigned int weapon_slot)"
+    },
+    {
+      "old": "z01_check_monster_boomerang_or_food_collision",
+      "new": "colrt_check_monster_boomerang_or_food_collision",
+      "sig": "void (unsigned int monster_slot, unsigned int weapon_slot)"
+    },
+    {
+      "old": "z01_check_monster_sword_shot_or_magic_shot_collision",
+      "new": "colrt_check_monster_sword_shot_or_magic_shot_collision",
+      "sig": "void (unsigned int monster_slot, unsigned int weapon_slot)"
+    },
+    {
+      "old": "z01_check_monster_bomb_or_fire_collision",
+      "new": "colrt_check_monster_bomb_or_fire_collision",
+      "sig": "void (unsigned int monster_slot, unsigned int weapon_slot)"
+    },
+    {
+      "old": "z01_harm_link",
+      "new": "lcrt_harm_link",
+      "sig": "void (unsigned int monster_slot)"
+    },
+    {
+      "old": "z01_link_be_harmed",
+      "new": "lcrt_link_be_harmed",
+      "sig": "void (unsigned int monster_slot)"
+    },
+    {
+      "old": "z01_check_link_collision_preinit",
+      "new": "lcrt_check_link_collision_preinit",
+      "sig": "void (unsigned int monster_slot)"
+    },
+    {
+      "old": "z01_check_link_collision",
+      "new": "lcrt_check_link_collision",
+      "sig": "void (unsigned int monster_slot)"
+    },
+    {
+      "old": "z01_check_monster_collisions",
+      "new": "lcrt_check_monster_collisions",
+      "sig": "void (unsigned int monster_slot)"
+    },
+    {
+      "old": "z01_begin_shove",
+      "new": "lcrt_begin_shove",
+      "sig": "void (unsigned int monster_slot)"
+    },
+    {
+      "old": "z01_do_objects_collide",
+      "new": "colrt_do_objects_collide",
+      "sig": "unsigned char (unsigned int threshold)"
+    },
+    {
+      "old": "z01_update_bomb_flash_effect",
+      "new": "progrt_update_bomb_flash_effect",
+      "sig": "void (unsigned int slot)"
+    },
+    {
+      "old": "z01_update_position_marker",
+      "new": "progrt_update_position_marker",
+      "sig": "void (unsigned char room_id, unsigned int idx)"
+    },
+    {
+      "old": "z01_update_player_position_marker",
+      "new": "progrt_update_player_position_marker",
+      "sig": "void (void)"
+    },
+    {
+      "old": "z01_update_world_curtain_effect",
+      "new": "progrt_update_world_curtain_effect",
+      "sig": "void (void)"
+    },
+    {
+      "old": "z01_update_world_curtain_effect_bank2",
+      "new": "progrt_update_world_curtain_effect_bank2",
+      "sig": "void (void)"
+    },
+    {
+      "old": "z01_fetch_file_a_address_set",
+      "new": "progrt_fetch_file_a_address_set",
+      "sig": "void (void)"
+    },
+    {
+      "old": "z01_check_tile_objects_blocking",
+      "new": "progrt_check_tile_objects_blocking",
+      "sig": "void (void)"
+    },
+    {
+      "old": "z01_check_power_triforce_fanfare",
+      "new": "progrt_check_power_triforce_fanfare",
+      "sig": "void (void)"
+    },
+    {
+      "old": "z01_init_trap_full",
+      "new": "trprt_init_trap_full",
+      "sig": "void (unsigned int slot)"
+    },
+    {
+      "old": "z01_draw_whirlwind",
+      "new": "trprt_draw_whirlwind",
+      "sig": "void (unsigned int slot)"
+    },
+    {
+      "old": "z01_update_whirlwind_full",
+      "new": "trprt_update_whirlwind_full",
+      "sig": "void (unsigned int slot)"
+    },
+    {
+      "old": "z01_summon_whirlwind",
+      "new": "trprt_summon_whirlwind",
+      "sig": "void (void)"
+    },
+    {
+      "old": "z01_update_rupee_stash_full",
+      "new": "trprt_update_rupee_stash_full",
+      "sig": "void (unsigned int slot)"
+    },
+    {
+      "old": "z01_init_mode_b_enter_cave_bank5",
+      "new": "trprt_init_mode_b_enter_cave_bank5",
+      "sig": "void (void)"
+    },
+    {
+      "old": "z01_check_passive_tile_objects",
+      "new": "trprt_check_passive_tile_objects",
+      "sig": "void (void)"
+    },
+    {
+      "old": "z01_update_trap_full",
+      "new": "trprt_update_trap_full",
+      "sig": "void (unsigned int slot)"
+    }
+  ]
+}

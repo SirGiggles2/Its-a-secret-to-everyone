@@ -1,0 +1,18 @@
+{
+  "bank": "z_02",
+  "includes": [
+    "save_menu_runtime.h"
+  ],
+  "symbols": [
+    {
+      "old": "z02_update_mode_d_save_sub2",
+      "new": "savert_update_mode_d_save_sub2",
+      "sig": "void (void)"
+    },
+    {
+      "old": "z02_fetch_profile_name_address",
+      "new": "savert_fetch_profile_name_address",
+      "sig": "void (void)"
+    }
+  ]
+}

@@ -99,6 +99,23 @@ owned `savert_` / `progrt_` layer). Header created as boundary placeholder.
 live in nes_abi.h. `progress_state.h` will re-expose needed ones via symbolic
 aliases where ownership is cleanly progress.
 
+## Empty stubs / non-forwarders (kept as-is in gen/)
+
+Scanner yielded these symbol counts per bank:
+
+| Bank  | Forwarders captured | Non-forwarder fn defs remaining |
+|-------|--------------------:|--------------------------------:|
+| z_01  | 163                 | ~69 (statics + complex-body fns)|
+| z_02  | 2                   | 17                              |
+| z_03  | 0                   | 1                               |
+| z_04  | 96                  | 0                               |
+| z_05  | 84                  | 25 (real logic — drain target Plan B) |
+| z_06  | 0                   | 3                               |
+| z_07  | 0                   | 44 (real logic — drain target Plan C) |
+
+Non-forwarders stay outside the Task 9 marker region and remain
+hand-owned until a future drain promotes them into runtime modules.
+
 ## Exclusions / already-named
 
 - Symbols already defined in current `src/room_state.h`, `src/combat_state.h`,

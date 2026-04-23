@@ -1,0 +1,488 @@
+{
+  "bank": "z_04",
+  "includes": [
+    "enemy_runtime.h"
+  ],
+  "symbols": [
+    {
+      "old": "z04_hide_sprites_over_link",
+      "new": "enrt_hide_sprites_over_link",
+      "sig": "void (void)"
+    },
+    {
+      "old": "z04_play_secret_found_tune",
+      "new": "enrt_play_secret_found_tune",
+      "sig": "void (void)"
+    },
+    {
+      "old": "z04_play_boss_death_cry",
+      "new": "enrt_play_boss_death_cry",
+      "sig": "void (void)"
+    },
+    {
+      "old": "z04_dodongo_dec_bloated_timer",
+      "new": "enrt_dodongo_dec_bloated_timer",
+      "sig": "void (unsigned int slot)"
+    },
+    {
+      "old": "z04_gleeok_dec_head_timer",
+      "new": "enrt_gleeok_dec_head_timer",
+      "sig": "void (void)"
+    },
+    {
+      "old": "z04_gleeok_set_segment_x",
+      "new": "enrt_gleeok_set_segment_x",
+      "sig": "void (unsigned int val, unsigned int slot)"
+    },
+    {
+      "old": "z04_gohma_play_parry_tune",
+      "new": "enrt_gohma_play_parry_tune",
+      "sig": "void (void)"
+    },
+    {
+      "old": "z04_flyer_set_state_and_turns",
+      "new": "enrt_flyer_set_state_and_turns",
+      "sig": "void (unsigned int state, unsigned int slot)"
+    },
+    {
+      "old": "z04_init_aquamentus",
+      "new": "enrt_init_aquamentus",
+      "sig": "void (unsigned int slot)"
+    },
+    {
+      "old": "z04_init_tektite",
+      "new": "enrt_init_tektite",
+      "sig": "void (unsigned int slot)"
+    },
+    {
+      "old": "z04_ganon_randomize_location",
+      "new": "enrt_ganon_randomize_location",
+      "sig": "void (unsigned int slot)"
+    },
+    {
+      "old": "z04_init_digdogger1",
+      "new": "enrt_init_digdogger1",
+      "sig": "void (unsigned int slot)"
+    },
+    {
+      "old": "z04_end_init_flyer",
+      "new": "enrt_end_init_flyer",
+      "sig": "void (unsigned int slot)"
+    },
+    {
+      "old": "z04_init_digdogger2",
+      "new": "enrt_init_digdogger2",
+      "sig": "void (unsigned int slot)"
+    },
+    {
+      "old": "z04_update_dodongo_bloated_sub_end",
+      "new": "enrt_update_dodongo_bloated_sub_end",
+      "sig": "void (unsigned int slot)"
+    },
+    {
+      "old": "z04_set_up_fairy_object",
+      "new": "enrt_set_up_fairy_object",
+      "sig": "void (unsigned int slot)"
+    },
+    {
+      "old": "z04_jumper_point_boulder_downward",
+      "new": "enrt_jumper_point_boulder_downward",
+      "sig": "void (unsigned int slot)"
+    },
+    {
+      "old": "z04_flyer_delay",
+      "new": "enrt_flyer_delay",
+      "sig": "void (unsigned int slot)"
+    },
+    {
+      "old": "z04_manhandla_set_all_segments_direction",
+      "new": "enrt_manhandla_set_all_segments_direction",
+      "sig": "void (unsigned int val)"
+    },
+    {
+      "old": "z04_extract_hit_point_value",
+      "new": "enrt_extract_hit_point_value",
+      "sig": "unsigned int (unsigned int val)"
+    },
+    {
+      "old": "z04_reset_flyer_state",
+      "new": "enrt_reset_flyer_state",
+      "sig": "void (unsigned int slot)"
+    },
+    {
+      "old": "z04_reset_push_timer",
+      "new": "enrt_reset_push_timer",
+      "sig": "void (unsigned int slot)"
+    },
+    {
+      "old": "z04_set_dead_dummy_obj_type",
+      "new": "enrt_set_dead_dummy_obj_type",
+      "sig": "void (unsigned int slot)"
+    },
+    {
+      "old": "z04_jumper_reset_vspeed_frac",
+      "new": "enrt_jumper_reset_vspeed_frac",
+      "sig": "void (unsigned int slot)"
+    },
+    {
+      "old": "z04_gleeok_set_segment_y",
+      "new": "enrt_gleeok_set_segment_y",
+      "sig": "void (unsigned int val3, unsigned int slot)"
+    },
+    {
+      "old": "z04_init_monster_shot",
+      "new": "enrt_init_monster_shot",
+      "sig": "void (unsigned int slot)"
+    },
+    {
+      "old": "z04_init_boulder",
+      "new": "enrt_init_boulder",
+      "sig": "void (unsigned int slot)"
+    },
+    {
+      "old": "z04_init_boulder_set",
+      "new": "enrt_init_boulder_set",
+      "sig": "void (unsigned int slot)"
+    },
+    {
+      "old": "z04_play_boss_hit_cry_if_needed",
+      "new": "enrt_play_boss_hit_cry_if_needed",
+      "sig": "void (unsigned int slot)"
+    },
+    {
+      "old": "z04_flyer_set_flying_state",
+      "new": "enrt_flyer_set_flying_state",
+      "sig": "void (unsigned int val, unsigned int slot)"
+    },
+    {
+      "old": "z04_play_boss_death_cry_if_needed",
+      "new": "enrt_play_boss_death_cry_if_needed",
+      "sig": "void (unsigned int slot)"
+    },
+    {
+      "old": "z04_destroy_monster_shot",
+      "new": "enrt_destroy_monster_shot",
+      "sig": "void (unsigned int slot)"
+    },
+    {
+      "old": "z04_destroy_counted_monster_shot",
+      "new": "enrt_destroy_counted_monster_shot",
+      "sig": "void (unsigned int slot)"
+    },
+    {
+      "old": "z04_ganon_get_cur_cloud_bottom",
+      "new": "enrt_ganon_get_cur_cloud_bottom",
+      "sig": "void (unsigned int slot)"
+    },
+    {
+      "old": "z04_ganon_get_cur_cloud_right",
+      "new": "enrt_ganon_get_cur_cloud_right",
+      "sig": "void (unsigned int slot)"
+    },
+    {
+      "old": "z04_pols_voice_move_x",
+      "new": "enrt_pols_voice_move_x",
+      "sig": "void (unsigned int slot)"
+    },
+    {
+      "old": "z04_init_blue_keese",
+      "new": "enrt_init_blue_keese",
+      "sig": "void (unsigned int slot)"
+    },
+    {
+      "old": "z04_init_red_or_black_keese",
+      "new": "enrt_init_red_or_black_keese",
+      "sig": "void (unsigned int slot)"
+    },
+    {
+      "old": "z04_destroy_monster_bank4",
+      "new": "enrt_destroy_monster_bank4",
+      "sig": "void (unsigned int slot)"
+    },
+    {
+      "old": "z04_ganon_get_cur_cloud_left",
+      "new": "enrt_ganon_get_cur_cloud_left",
+      "sig": "void (unsigned int slot)"
+    },
+    {
+      "old": "z04_ganon_get_cur_cloud_top",
+      "new": "enrt_ganon_get_cur_cloud_top",
+      "sig": "void (unsigned int slot)"
+    },
+    {
+      "old": "z04_shoot_fireball",
+      "new": "enrt_shoot_fireball",
+      "sig": "void (unsigned int type, unsigned int source_slot)"
+    },
+    {
+      "old": "z04_wallmaster_prepare_to_draw",
+      "new": "enrt_wallmaster_prepare_to_draw",
+      "sig": "void (unsigned int slot)"
+    },
+    {
+      "old": "z04_shoot_fireball_55",
+      "new": "enrt_shoot_fireball_55",
+      "sig": "void (unsigned int source_slot)"
+    },
+    {
+      "old": "z04_gohma_set_sprite_attributes",
+      "new": "enrt_gohma_set_sprite_attributes",
+      "sig": "void (unsigned int slot)"
+    },
+    {
+      "old": "z04_init_gohma",
+      "new": "enrt_init_gohma",
+      "sig": "void (unsigned int slot)"
+    },
+    {
+      "old": "z04_is_quest_secret_mismatch",
+      "new": "enrt_is_quest_secret_mismatch",
+      "sig": "unsigned int (void)"
+    },
+    {
+      "old": "z04_pols_voice_get_colliding_tile",
+      "new": "enrt_pols_voice_get_colliding_tile",
+      "sig": "unsigned int (unsigned int slot)"
+    },
+    {
+      "old": "z04_wizzrobe_get_base_collidable_tile",
+      "new": "enrt_wizzrobe_get_base_collidable_tile",
+      "sig": "unsigned int (unsigned int slot)"
+    },
+    {
+      "old": "z04_init_gleeok_head",
+      "new": "enrt_init_gleeok_head",
+      "sig": "void (unsigned int slot)"
+    },
+    {
+      "old": "z04_ganon_activate_room_item",
+      "new": "enrt_ganon_activate_room_item",
+      "sig": "void (void)"
+    },
+    {
+      "old": "z04_shoot",
+      "new": "enrt_shoot",
+      "sig": "unsigned int (void)"
+    },
+    {
+      "old": "z04_flyer_keese_decide_state",
+      "new": "enrt_flyer_keese_decide_state",
+      "sig": "void (unsigned int slot)"
+    },
+    {
+      "old": "z04_flyer_peahat_decide_state",
+      "new": "enrt_flyer_peahat_decide_state",
+      "sig": "void (unsigned int slot)"
+    },
+    {
+      "old": "z04_update_dodongo_state2_stunned",
+      "new": "enrt_update_dodongo_state2_stunned",
+      "sig": "void (unsigned int slot)"
+    },
+    {
+      "old": "z04_init_peahat",
+      "new": "enrt_init_peahat",
+      "sig": "void (unsigned int slot)"
+    },
+    {
+      "old": "z04_pols_voice_is_square_walkable",
+      "new": "enrt_pols_voice_is_square_walkable",
+      "sig": "unsigned int (unsigned int slot)"
+    },
+    {
+      "old": "z04_init_pond_fairy",
+      "new": "enrt_init_pond_fairy",
+      "sig": "void (unsigned int slot)"
+    },
+    {
+      "old": "z04_init_dodongo",
+      "new": "enrt_init_dodongo",
+      "sig": "void (unsigned int slot)"
+    },
+    {
+      "old": "z04_flyer_fairy_decide_state",
+      "new": "enrt_flyer_fairy_decide_state",
+      "sig": "void (unsigned int slot)"
+    },
+    {
+      "old": "z04_check_boss_hit_reaction",
+      "new": "enrt_check_boss_hit_reaction",
+      "sig": "void (unsigned int slot)"
+    },
+    {
+      "old": "z04_anim_set_sprite_desc_level_palette_row",
+      "new": "enrt_anim_set_sprite_desc_level_palette_row",
+      "sig": "void (void)"
+    },
+    {
+      "old": "z04_defer_bounce",
+      "new": "enrt_defer_bounce",
+      "sig": "void (unsigned int slot, unsigned int dir_idx)"
+    },
+    {
+      "old": "z04_flyer_do_nothing",
+      "new": "enrt_flyer_do_nothing",
+      "sig": "void (void)"
+    },
+    {
+      "old": "z04_flyer_ghini_decide_state",
+      "new": "enrt_flyer_ghini_decide_state",
+      "sig": "void (unsigned int slot)"
+    },
+    {
+      "old": "z04_flyer_gleeok_head_decide_state",
+      "new": "enrt_flyer_gleeok_head_decide_state",
+      "sig": "void (unsigned int slot)"
+    },
+    {
+      "old": "z04_flyer_moldorm_decide_state",
+      "new": "enrt_flyer_moldorm_decide_state",
+      "sig": "void (unsigned int slot)"
+    },
+    {
+      "old": "z04_flyer_patra_decide_state",
+      "new": "enrt_flyer_patra_decide_state",
+      "sig": "void (unsigned int slot)"
+    },
+    {
+      "old": "z04_flyer_compare_max_speed",
+      "new": "enrt_flyer_compare_max_speed",
+      "sig": "void (unsigned char speed, unsigned int slot)"
+    },
+    {
+      "old": "z04_gleeok_ignore_segment",
+      "new": "enrt_gleeok_ignore_segment",
+      "sig": "void (void)"
+    },
+    {
+      "old": "z04_gleeok_contract_segment_x",
+      "new": "enrt_gleeok_contract_segment_x",
+      "sig": "void (unsigned int slot)"
+    },
+    {
+      "old": "z04_gleeok_contract_segment_y",
+      "new": "enrt_gleeok_contract_segment_y",
+      "sig": "void (unsigned int slot)"
+    },
+    {
+      "old": "z04_is_dark_room_bank4",
+      "new": "enrt_is_dark_room_bank4",
+      "sig": "unsigned char (unsigned int room_idx)"
+    },
+    {
+      "old": "z04_flyer_slow_down",
+      "new": "enrt_flyer_slow_down",
+      "sig": "void (unsigned int slot)"
+    },
+    {
+      "old": "z04_flyer_speed_up",
+      "new": "enrt_flyer_speed_up",
+      "sig": "void (unsigned int slot)"
+    },
+    {
+      "old": "z04_set_flying_state_1",
+      "new": "enrt_set_flying_state_1",
+      "sig": "void (unsigned int slot)"
+    },
+    {
+      "old": "z04_gleeok_contract_segment",
+      "new": "enrt_gleeok_contract_segment",
+      "sig": "void (unsigned int slot)"
+    },
+    {
+      "old": "z04_init_leever",
+      "new": "enrt_init_leever",
+      "sig": "void (unsigned int slot)"
+    },
+    {
+      "old": "z04_update_dodongo_state1_bloated_sub_die",
+      "new": "enrt_update_dodongo_state1_bloated_sub_die",
+      "sig": "void (unsigned int slot)"
+    },
+    {
+      "old": "z04_init_walker",
+      "new": "enrt_init_walker",
+      "sig": "void (unsigned int slot)"
+    },
+    {
+      "old": "z04_init_bubble",
+      "new": "enrt_init_bubble",
+      "sig": "void (unsigned int slot)"
+    },
+    {
+      "old": "z04_init_rope",
+      "new": "enrt_init_rope",
+      "sig": "void (unsigned int slot)"
+    },
+    {
+      "old": "z04_init_darknut",
+      "new": "enrt_init_darknut",
+      "sig": "void (unsigned int slot)"
+    },
+    {
+      "old": "z04_init_slow_octorock_or_ghini",
+      "new": "enrt_init_slow_octorock_or_ghini",
+      "sig": "void (unsigned int slot)"
+    },
+    {
+      "old": "z04_init_fast_octorock",
+      "new": "enrt_init_fast_octorock",
+      "sig": "void (unsigned int slot)"
+    },
+    {
+      "old": "z04_init_gel",
+      "new": "enrt_init_gel",
+      "sig": "void (unsigned int slot)"
+    },
+    {
+      "old": "z04_animate_and_draw_common_object",
+      "new": "enrt_animate_and_draw_common_object",
+      "sig": "void (unsigned int val, unsigned int slot)"
+    },
+    {
+      "old": "z04_update_bubble",
+      "new": "enrt_update_bubble",
+      "sig": "void (unsigned int slot)"
+    },
+    {
+      "old": "z04_update_keese",
+      "new": "enrt_update_keese",
+      "sig": "void (unsigned int slot)"
+    },
+    {
+      "old": "z04_update_rope",
+      "new": "enrt_update_rope",
+      "sig": "void (unsigned int slot)"
+    },
+    {
+      "old": "z04_update_standing_fire",
+      "new": "enrt_update_standing_fire",
+      "sig": "void (unsigned int slot)"
+    },
+    {
+      "old": "z04_update_zol",
+      "new": "enrt_update_zol",
+      "sig": "void (unsigned int slot)"
+    },
+    {
+      "old": "z04_update_gel",
+      "new": "enrt_update_gel",
+      "sig": "void (unsigned int slot)"
+    },
+    {
+      "old": "z04_update_zora",
+      "new": "enrt_update_zora",
+      "sig": "void (unsigned int slot)"
+    },
+    {
+      "old": "z04_update_candle",
+      "new": "enrt_update_candle",
+      "sig": "void (void)"
+    },
+    {
+      "old": "z04_update_boulder_set",
+      "new": "enrt_update_boulder_set",
+      "sig": "void (unsigned int slot)"
+    }
+  ]
+}
