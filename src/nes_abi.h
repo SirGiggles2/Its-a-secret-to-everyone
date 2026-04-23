@@ -56,6 +56,79 @@ register volatile unsigned char *nes_ram asm("a4");
 #define NES_BOUND_BOTTOM    0x0349
 #define NES_OBJ_TYPE        0x034F
 
+/* ---- Plan W: shared ABI cells ------------------------------------------- */
+/* Multi-use scratch pointer / misc */
+#define NES_TILE_XFER_PTR_LO     0x0000
+#define NES_TILE_XFER_PTR_HI     0x0001
+#define NES_SCRATCH_2            0x0002
+#define NES_SCRATCH_3            0x0003
+#define NES_SCRATCH_4            0x0004
+#define NES_SCRATCH_5            0x0005
+
+/* Game-mode / slot / ticks */
+#define NES_CUR_LEVEL            0x0010
+#define NES_GAME_MODE_PREV       0x0011
+#define NES_GAME_MODE            0x0012
+#define NES_SUB_MODE             0x0013
+#define NES_ROOM_XFER_BUF_SELECT 0x0014
+#define NES_FRAME_TICK           0x0015
+#ifndef NES_SAVE_SLOT
+#define NES_SAVE_SLOT            0x0016
+#endif
+
+/* Tile-transfer / play-area constants */
+#define NES_TILE_XFER_COL        0x00E8
+#define NES_TILE_XFER_ROW        0x00E9
+#define NES_CUR_ROOM_ID          0x00EB
+#define NES_PPU_MASK_SHADOW      0x00FE
+#define NES_TILE_XFER_BUF_IDX    0x0301
+#define NES_TILE_XFER_BUF_BASE   0x0302
+#define NES_TILE_XFER_BUF_END    0x0325
+#define NES_PLAY_AREA_BASE       0x6530u
+#define NES_TILE_COL_STRIDE      0x16u
+
+/* OAM */
+#define NES_OAM_BASE             0x0200
+
+/* Room / progress cells */
+#define NES_ROOM_LAYOUT_SCRATCH  0x051A
+#define NES_ROOM_ID_ALT          0x0526
+#define NES_ROOM_HISTORY_IDX     0x0529
+#define NES_ROOM_HISTORY_BASE    0x0621
+#define NES_CONTINUE_COUNT_BASE  0x0630
+#define NES_ITEMS_BY_LEVEL_BASE  0x0657
+
+/* Link / mode-11 death */
+#define NES_LINK_MOVING_DIR      0x000F
+#define NES_MODE11_DEATH_TIMER   0x0033
+#define NES_LINK_ROOM_SCRATCH    0x0059
+#define NES_DEATH_FRAME_COUNTER  0x0602
+#define NES_LINK_HALT_FLAG       0x066C
+
+/* Audio */
+#define NES_SFX_PRIMARY          0x0600
+
+/* Per-slot object bases (add `+ slot`) */
+#define NES_OBJ_TILE_X_BASE      0x0070
+#define NES_OBJ_TILE_Y_BASE      0x0084
+#define NES_OBJ_FLAG_BASE        0x0098
+#define NES_OBJ_STATE_BASE       0x00AC
+#define NES_OBJ_SHOVE_DIR_BASE   0x00C0
+#define NES_OBJ_SHOVE_DIST_BASE  0x00D3
+#define NES_OBJ_TYPE_BASE        0x034F
+#define NES_OBJ_ALIGN_FLAG_BASE  0x0394
+#define NES_OBJ_ANIM_CNTR_BASE   0x03D0
+#define NES_OBJ_HFLIP_BASE       0x03E4
+#define NES_OBJ_METASTATE_BASE   0x0405
+#define NES_OBJ_TILE_NEXT_BASE   0x049E
+#define NES_OBJ_INV_TIMER_BASE   0x04F0
+
+/* SRAM (NES $6000 base) */
+#define NES_SRAM_BASE                 0x6000u
+#define NES_SRAM_ROOM_UNIQUE_ID_BASE  0x09FE
+#define NES_SRAM_ROOM_FLAGS_PTR_LO    0x0BAF
+#define NES_SRAM_ROOM_FLAGS_PTR_HI    0x0BB0
+
 #define CARRY_SET 0x100u
 
 #ifdef __cplusplus
