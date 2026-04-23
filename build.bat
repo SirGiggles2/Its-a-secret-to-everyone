@@ -101,7 +101,7 @@ rem a separator so it concatenates e.g. "bin\" + "cc1.exe" to find cc1.
 rem cmd parses a trailing backslash+space as a line-continuation in some
 rem contexts, so pass the -B arg SEPARATELY (not from a joined variable).
 rem ---------------------------------------------------------------------------
-set "C_SOURCES=c_runtime c_move_object"
+set "C_SOURCES=c_runtime core_runtime c_move_object c_wanderer object_runtime enemy_runtime enemy_common_runtime enemy_walker_runtime enemy_flyer_runtime enemy_boss_runtime enemy_projectile_runtime uw_person_runtime cave_runtime hud_runtime item_runtime weapon_runtime world_runtime sprite_runtime combat_runtime collision_runtime link_collision_runtime progress_runtime targeting_runtime trap_runtime room_runtime room_load_runtime room_mode_runtime room_transfer_runtime room_player_runtime room_object_runtime frontend_runtime save_menu_runtime"
 set "C_GEN_SOURCES=z_01 z_02 z_03 z_04 z_05 z_06 z_07"
 set "C_OBJS="
 for %%F in (%C_SOURCES%) do (
@@ -129,6 +129,14 @@ popd >nul
 echo [3/4] Linking ELF -^> whatif.elf...
 "%M68K_LD%" -T "%LD_SCRIPT%" -o "%ELF_OUT%" "%ELF_OBJ%" %C_OBJS%
 if errorlevel 1 exit /b 1
+
+echo [gate] verifying gen/ forwarders ...
+"%PYTHON%" "%ROOT%\tools\emit_gen_wrappers.py" --check
+if errorlevel 1 (
+    echo [gate] FAIL: gen/ forwarders drift from manifest
+    exit /b 1
+)
+echo [gate] OK
 
 echo [4/4] objcopy -^> raw binary, fix checksum...
 "%M68K_OBJCOPY%" -O binary "%ELF_OUT%" "%RAW_ROM%"
