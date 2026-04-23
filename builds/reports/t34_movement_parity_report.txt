@@ -9,7 +9,7 @@ T34_OBJX_PARITY: FAIL  first diff at t=215 phase=left nes=$C0 gen=$B8
 T34_OBJY_PARITY: FAIL  first diff at t=172 phase=down nes=$BD gen=$BE
 T34_OBJINPUTDIR_PARITY: PASS  all 361 frames match
 T34_HELD_BUTTONS_PARITY: FAIL  first diff at t=211 phase=left nes=$02 gen=$00
-DIAG nes_final=($78,$6E) baseline=($78,$8D) delta=(+0,-31) [informational â€” walls expected]
+DIAG nes_final=($78,$6E) baseline=($78,$8D) delta=(+0,-31) [informational — walls expected]
 DIAG obj_xf_first_diff=None
 DIAG obj_yf_first_diff=None
 DIAG prev_held_first_diff=None (all 361 match)
@@ -32,3 +32,4 @@ DIAG WINDOW OBJY-region:
   t=173 obj_y:N$BD/G$C0 obj_yf:N$87/G$87 grid_off:N$00/G$03 q_speed_f:N$60/G$60
   t=174 obj_y:N$BD/G$C1 obj_yf:N$87/G$87 grid_off:N$00/G$04 q_speed_f:N$60/G$60
 T34_PARITY: FAIL
+
