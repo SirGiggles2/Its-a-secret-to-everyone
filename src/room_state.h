@@ -64,4 +64,16 @@
 #define ROOM_PAUSED_FLAG               RAM(0x00E0)
 #define ROOM_LEVEL_NUMBER_VALUE        RAM(0x6000u + 0x0BB1)
 
+/* ---- Plan W: room transfer + meta cells --------------------------------- */
+#define ROOM_TILE_XFER_COL       RAM(NES_TILE_XFER_COL)
+#define ROOM_TILE_XFER_ROW       RAM(NES_TILE_XFER_ROW)
+#define ROOM_CUR_ROOM_ID         RAM(NES_CUR_ROOM_ID)
+#define ROOM_PPU_MASK_SHADOW     RAM(NES_PPU_MASK_SHADOW)
+#define ROOM_TILE_XFER_BUF_IDX   RAM(NES_TILE_XFER_BUF_IDX)
+#define ROOM_TILE_XFER_BUF(off)  RAM(NES_TILE_XFER_BUF_BASE + (unsigned short)(off))
+#define ROOM_ID_ALT              RAM(NES_ROOM_ID_ALT)
+#define ROOM_HISTORY_IDX         RAM(NES_ROOM_HISTORY_IDX)
+#define ROOM_HISTORY(i)          RAM(NES_ROOM_HISTORY_BASE + (unsigned char)(i))
+#define PLAY_AREA(i)             nes_ram[NES_PLAY_AREA_BASE + (unsigned short)(i)]
+
 #endif

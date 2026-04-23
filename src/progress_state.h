@@ -34,4 +34,8 @@
 #define MAP_MARKER_ATTR(idx)           RAM(0x0256 + (idx))
 #define MAP_MARKER_X(idx)              RAM(0x0257 + (idx))
 
+/* ---- Plan W: save / progress cells -------------------------------------- */
+#define PROG_CUR_LEVEL           RAM(NES_CUR_LEVEL)
+#define PROG_ITEMS_BY_LEVEL(off) RAM(NES_ITEMS_BY_LEVEL_BASE + (unsigned short)(off))
+
 #endif
