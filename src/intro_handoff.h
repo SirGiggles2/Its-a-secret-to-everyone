@@ -6,6 +6,7 @@ extern "C" {
 typedef struct {
     unsigned char mode_value;
     unsigned char submode_value;
+    unsigned char frontend_demo_phase;
     unsigned char frontend_demo_subphase;
     unsigned char front_start_release_gate;
     unsigned char vram_force_blank_gate;

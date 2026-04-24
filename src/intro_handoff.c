@@ -42,8 +42,10 @@ void intro_handoff(void) {
 }
 
 static void clear_plane(unsigned short plane_base) {
-    unsigned short zero_row[32] = {0};
-    for (unsigned short r = 0; r < 32; r++) {
-        vdp_write_nametable_row(plane_base, r, zero_row);
+    unsigned short zero_row[32];
+    unsigned short i;
+    for (i = 0; i < 32; i++) zero_row[i] = 0;
+    for (i = 0; i < 32; i++) {
+        vdp_write_nametable_row(plane_base, (unsigned short)i, zero_row);
     }
 }

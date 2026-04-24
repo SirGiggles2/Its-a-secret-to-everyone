@@ -15,6 +15,8 @@ extern const unsigned long intro_art_chr_size;
 
 static unsigned long s_scroll_pixel;
 static unsigned short s_next_source_row;
+static unsigned short s_last_row;
+static unsigned short s_done;
 
 void intro_story_enter(void) {
     vdp_set_mode_v32();
@@ -38,9 +40,6 @@ void intro_story_enter(void) {
     s_last_row = 0;
     s_done = 0;
 }
-
-static unsigned short s_last_row;
-static unsigned short s_done;
 
 unsigned int intro_story_update(void) {
     if (s_done) return 1;
