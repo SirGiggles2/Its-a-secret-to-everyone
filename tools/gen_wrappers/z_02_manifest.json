@@ -96,6 +96,11 @@
       "sig": "void (unsigned int val)"
     },
     {
+      "old": "z02_update_waterfall_animation",
+      "new": "frontdemo_update_waterfall_animation",
+      "sig": "void (void)"
+    },
+    {
       "old": "z02_fetch_profile_name_address",
       "new": "savert_fetch_profile_name_address",
       "sig": "void (void)"

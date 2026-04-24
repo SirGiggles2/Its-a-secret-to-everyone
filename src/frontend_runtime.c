@@ -388,6 +388,23 @@ void frontdemo_update_sprites_for_waterfall_wave(unsigned int wave_idx) {
     }
 }
 
+void frontdemo_update_waterfall_animation(void) {
+    if (RAM(0x041F) == 0) {
+        RAM(0x0420) = 0xB6;
+        RAM(0x0421) = 0xC8;
+        RAM(0x0422) = 0xD8;
+        RAM(0x0423) = 0xC0;
+        RAM(0x0424) = 0xD0;
+        RAM(0x0425) = 0xDD;
+        RAM(0x041F)++;
+    }
+    int i;
+    for (i = 2; i >= 0; i--) {
+        frontdemo_update_sprites_for_waterfall_wave((unsigned int)i);
+    }
+    frontdemo_update_sprites_for_waterfall_crest();
+}
+
 void frontdemo_update_sprites_for_waterfall_crest(void) {
     int d2;
     unsigned int d3 = 0xF0;

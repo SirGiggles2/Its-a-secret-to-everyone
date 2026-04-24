@@ -3897,6 +3897,7 @@ def _patch_z02(path):
     text = _stub_func(text, 'AnimateDemoPhase1Subphase4', 'c_animate_demo_phase1_subphase4')
     text = _stub_func(text, 'UpdateSpritesForWaterfallCrest', 'c_update_sprites_for_waterfall_crest')
     text = _stub_func(text, 'UpdateSpritesForWaterfallWave', 'c_update_sprites_for_waterfall_wave')
+    text = _stub_func(text, 'UpdateWaterfallAnimation', 'c_update_waterfall_animation')
 
     # --- Batch 89 (Agent G demo/intro drain) ---
     text = _stub_func(text, 'InitDemo_RunTasks', 'c_init_demo_run_tasks')
