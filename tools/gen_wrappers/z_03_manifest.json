@@ -1,5 +1,7 @@
 {
   "bank": "z_03",
   "includes": [],
-  "symbols": []
+  "symbols": [
+    {"old": "z03_transfer_level_pattern_blocks", "new": "roomld_transfer_level_pattern_blocks", "sig": "void (void)"}
+  ]
 }

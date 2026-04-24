@@ -1,5 +1,9 @@
 {
   "bank": "z_06",
   "includes": [],
-  "symbols": []
+  "symbols": [
+    {"old": "z06_init_mode2_submodes", "new": "roomld_init_mode2_submodes", "sig": "void (void)"},
+    {"old": "z06_copy_common_data_to_ram", "new": "roomld_copy_common_data_to_ram", "sig": "void (void)"},
+    {"old": "z06_update_mode2_load_full", "new": "roomld_update_mode2_load_full", "sig": "void (void)"}
+  ]
 }
