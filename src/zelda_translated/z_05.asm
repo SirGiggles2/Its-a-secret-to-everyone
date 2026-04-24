@@ -8628,48 +8628,11 @@ _anon_z05_201:
 ; Check compasses.
     even
 HasCompass:
-    moveq   #16,D2
-    bne  _anon_z05_202
-; Returns:
-; A: 0 if map of current level is missing.
-;
-;
-; Check maps.
-    even
-HasMap:
-    moveq   #17,D2
-_anon_z05_202:
-    move.b  ($0010,A4),D0
-    beq  _L_z05_HasMap_Exit
-    ori     #$11,CCR  ; SEC: set C+X
-    move.b  #$01,D1
-    eori    #$10,CCR  ; flip X: 6502 SBC polarity
-    subx.b  D1,D0   ; SBC #$01
-    eori    #$10,CCR  ; restore X = 6502 C
-    cmpi.b  #$08,D0
-    bcs  _anon_z05_203
-    addq.b  #1,D2
-    addq.b  #1,D2
-_anon_z05_203:
-    andi.b #$07,D0
-    moveq   #0,D3
-    move.b  D0,D3
-    lea     ($0657,A4),A0
-    move.b  (A0,D2.W),D0
-    lea     (LevelMasks).l,A0
-    move.b  (A0,D3.W),D1
-    and.b  D1,D0
-    even
-_L_z05_HasMap_Exit:
-    rts
+    jmp     c_has_compass
 
-; Params:
-; Y: offset from the third element in dynamic transfer buf
-;    to write at (between 1 and $10)
-;
-;
-; Save dynamic transfer buf offset.
-    even
+HasMap:
+    jmp     c_has_map
+
 Submenu_WriteScanningMapRoomMark:
     move.b  D3,D0
     move.b  D0,-(A5)  ; PHA
