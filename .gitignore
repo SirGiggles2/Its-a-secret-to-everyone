@@ -11,3 +11,10 @@ __pycache__/
 build_out.txt
 build_output.log
 *_run.log
+
+# Local workspace scratch
+.claude/scheduled_tasks.lock
+.claude/worktrees/
+.codex_tmp/
+analyze_funcs.txt
+src.zip

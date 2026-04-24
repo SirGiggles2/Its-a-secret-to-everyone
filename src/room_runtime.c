@@ -10,6 +10,7 @@ static const unsigned char roomrt_reverse_directions[] = { 0x08, 0x04, 0x02, 0x0
 static const unsigned char roomrt_player_screen_edge_bounds[] = { 0x3D, 0xDD, 0x00, 0xF0 };
 
 extern void c_go_to_next_mode_from_play(void);
+extern void c_update_position_marker(unsigned int room_id, unsigned int idx);
 
 unsigned char roomrt_get_room_flags(void) {
     unsigned char ptr_lo = nes_ram[NES_SRAM_BASE + 0x0BAF];
