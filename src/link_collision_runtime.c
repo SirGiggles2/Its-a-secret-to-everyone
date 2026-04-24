@@ -1,4 +1,6 @@
 #include "link_collision_runtime.h"
+#include "link_state.h"
+#include "progress_state.h"
 
 extern const unsigned char ObjTypeToDamagePoints[];
 extern unsigned int z01_get_opposite_dir(unsigned int dir);
@@ -50,7 +52,7 @@ void lcrt_link_be_harmed(unsigned int monster_slot) {
     z07_end_game_mode();
     LINK_PARTIAL_HEART = 0;
     LINK_ACTION_TIMER = 0;
-    RAM(0x0012) = 17;
+    MODE_VALUE = 17;
     LINK_DIR = 4;
 }
 
@@ -102,7 +104,7 @@ void lcrt_check_link_collision(unsigned int monster_slot) {
     COMBAT_DAMAGE_TYPE = 0;
     COMBAT_HARM_FLAG = 0;
     COMBAT_WEAPON_SLOT = 0;
-    if (LINK_STUN_TIMER | RAM(0x066C) | MON_STUN_TIMER(0) | MON_STUN_TIMER(monster_slot)) return;
+    if (LINK_STUN_TIMER | LINK_HALT_FLAG | MON_STUN_TIMER(0) | MON_STUN_TIMER(monster_slot)) return;
     lcrt_check_link_collision_preinit(monster_slot);
 }
 
