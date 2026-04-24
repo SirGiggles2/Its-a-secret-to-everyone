@@ -796,34 +796,34 @@ _turbo_link_boost_disabled:
     beq     .tlb_exit
     ; Edge-safe clamps.
     btst    #3,D1                   ; Up (bit 3)
-    beq.s   .tlb_no_up
+    beq     .tlb_no_up
     move.b  ($0084,A4),D0
     cmpi.b  #$40,D0
-    bls.s   .tlb_no_up
+    bls     .tlb_no_up
     subi.b  #4,D0
     move.b  D0,($0084,A4)
 .tlb_no_up:
     btst    #2,D1                   ; Down (bit 2)
-    beq.s   .tlb_no_down
+    beq     .tlb_no_down
     move.b  ($0084,A4),D0
     cmpi.b  #$D0,D0
-    bcc.s   .tlb_no_down
+    bcc     .tlb_no_down
     addi.b  #4,D0
     move.b  D0,($0084,A4)
 .tlb_no_down:
     btst    #1,D1                   ; Left (bit 1)
-    beq.s   .tlb_no_left
+    beq     .tlb_no_left
     move.b  ($0070,A4),D0
     cmpi.b  #$0A,D0
-    bls.s   .tlb_no_left
+    bls     .tlb_no_left
     subi.b  #4,D0
     move.b  D0,($0070,A4)
 .tlb_no_left:
     btst    #0,D1                   ; Right (bit 0)
-    beq.s   .tlb_no_right
+    beq     .tlb_no_right
     move.b  ($0070,A4),D0
     cmpi.b  #$E6,D0
-    bcc.s   .tlb_no_right
+    bcc     .tlb_no_right
     addi.b  #4,D0
     move.b  D0,($0070,A4)
 .tlb_no_right:
