@@ -22,6 +22,15 @@ Both stages share a root property: **they are transpiled from NES 6502 and scrol
 - Title screen and fade transitions remain untouched (already working).
 - No new regressions in gameplay handoff (mode 2 load → mode 3 unfurl → play).
 
+## Scope Caveat
+
+"Title + fades untouched" refers to their **logic** — title palette cycle, "PUSH START" blink, fade-out sequencing, and fade-in sequencing all remain as-is. However, the rewrite **does** touch the frontend ↔ VDP boundary in two ways the legacy code does not assume today:
+
+1. VDP Reg 16 is flipped V64 ↔ V32 during fade-out / `intro_handoff`.
+2. `frontdemo_init_demo_phase_1` and `frontdemo_animate_phase_1` dispatchers gain a takeover short-circuit that bypasses legacy phase-1 subphases while intro owns the screen.
+
+Both are narrow, contained, and documented in the Integration Hook section. No legacy phase-0 code, no title code, and no post-showcase fade/file-select code is modified.
+
 ## Non-Goals
 
 - Rewriting the title screen.
@@ -60,7 +69,7 @@ unsigned int intro_story_update(void);   // returns 1 when stage done
 void intro_showcase_enter(void);
 unsigned int intro_showcase_update(void);
 
-void intro_handoff(void);                 // V32 → V64, restore gameplay CHR/palette
+void intro_handoff(void);                 // V32 → V64, restore file-select CHR/palette
 ```
 
 ### Stage Flow
@@ -120,18 +129,98 @@ Build tool validates:
 - Each tilemap total rows ≤ 256 (software buffer wrap assumption)
 - Emits SHA of each extracted asset for regression detection
 
+### Build Integration
+
+`build.bat` requires concrete changes to incorporate the new modules and asset pipeline. Current build wiring:
+
+- [build.bat:104](build.bat:104) compiles a fixed `C_SOURCES` list.
+- [build.bat:113](build.bat:113) compiles a fixed `C_GEN_SOURCES` list (gen-forwarder files).
+- [build.bat:134](build.bat:134) runs `tools/emit_gen_wrappers.py --check` as a gate.
+
+**Changes required:**
+
+1. **Pre-compile step — run asset extractor.** Before the `C_SOURCES` compile loop, add:
+   ```
+   echo [2a.0/4] Extracting intro assets from NES reference ROM...
+   "%PYTHON%" "%ROOT%\tools\extract_intro_assets.py" --nes-rom "%ZELDA_NES_ROM%" --out-dir "%ROOT%\src\gen"
+   if errorlevel 1 exit /b 1
+   ```
+   `ZELDA_NES_ROM` env var is set by a pre-build shim (or read from `.nes_rom_path` local file). Extract tool is idempotent — re-runs only if NES ROM mtime > output mtime.
+
+2. **Register new C modules.** Append `intro_common intro_story intro_showcase` to `C_SOURCES` at [build.bat:104](build.bat:104). These compile from `src/intro_*.c` into `C_OBJS` via the existing loop — no new loop logic needed.
+
+3. **Register generated C asset file.** Append `intro_story_tilemap intro_showcase_tilemap intro_palette` to `C_GEN_SOURCES` at [build.bat:105](build.bat:105). The extract tool emits each as a `.c` file in `src/gen/` compatible with the existing `C_GEN_SOURCES` loop.
+
+4. **Ingest binary CHR blobs.** `intro_font_chr.bin`, `intro_art_chr.bin`, and `intro_restore_chr.bin` are raw binary. Embed via one of:
+   - Extractor emits a wrapping C file (`intro_font_chr.c`) with `const unsigned char intro_font_chr[] = { ... };` — fits the existing `C_GEN_SOURCES` model (preferred, zero new build wiring).
+   - Or: add an `objcopy --rename-section .data=.rodata -I binary -O elf32-m68k` step per `.bin` file and link the resulting `.o` into the ELF.
+
+   Preferred approach: emit `.c` wrappers from the extract tool. Keeps build.bat changes minimal.
+
+5. **Asset validation gate.** After extraction, optionally add `tools/extract_intro_assets.py --verify` as a second call to re-check SHA hashes of emitted assets against committed reference SHAs (`src/gen/intro_asset_hashes.txt`). Fails build if assets drift.
+
+No other build wiring needs to change. Linker script, ELF layout, and objcopy step remain as-is because new objects slot into `%C_OBJS%` the same way existing ones do.
+
 ### Integration Hook
 
-Existing `frontend_runtime.c` / `frontdemo_animate_phase_1` dispatch into story scroll is the single replacement point. Current code routes story-scroll subphases via `c_import_animate_demo_phase1_*` into `z_02.asm`. Replaced with:
+Phase-1 progression in the current code is split across **two dispatchers**, both of which the intro rewrite must interpose on:
+
+- `frontdemo_init_demo_phase_1()` ([src/frontend_runtime.c:145](src/frontend_runtime.c:145)) runs story-prep subphases (0 = clear artifacts, 1 = transfer story palette, 2 = transfer story tiles).
+- `frontdemo_animate_phase_1()` ([src/frontend_runtime.c:291](src/frontend_runtime.c:291)) runs story-scroll + item-showcase animation subphases (0/1/2/3/4).
+
+A single-case swap in either dispatcher does **not** own the full story → showcase → handoff progression. The rewrite takes control at the earliest story-related subphase and holds it through handoff.
+
+**Takeover mechanism:** a static flag `g_intro_takeover` (owned by `intro_common.c`) is armed when the first story-related subphase in `frontdemo_init_demo_phase_1` is reached. While armed, **both** dispatchers short-circuit to `intro_story_tick()` for every phase-1 subphase. Legacy phase-1 subphase handlers (`c_import_init_demo_subphase_clear_artifacts`, `c_import_init_demo_subphase_transfer_story_palette`, `c_import_init_demo_subphase_transfer_story_tiles`, `c_import_animate_demo_phase1_subphase0..3`, `frontdemo_animate_demo_phase1_subphase4`) are **not called** for the duration of the intro takeover.
 
 ```c
-// before (broken):
-case 2: c_import_animate_demo_phase1_subphase2(); break;
-// after (native):
-case 2: intro_story_tick(); break;
+void frontdemo_init_demo_phase_1(void) {
+    if (g_intro_takeover || intro_should_take_over()) {
+        intro_story_tick();
+        return;
+    }
+    switch (FRONTEND_DEMO_SUBPHASE) {
+        case 0: c_import_init_demo_subphase_clear_artifacts(); break;
+        case 1: c_import_init_demo_subphase_transfer_story_palette(); break;
+        case 2: c_import_init_demo_subphase_transfer_story_tiles(); break;
+        default: break;
+    }
+}
+
+void frontdemo_animate_phase_1(void) {
+    if (g_intro_takeover) {
+        intro_story_tick();
+        return;
+    }
+    switch (FRONTEND_DEMO_SUBPHASE) {
+        case 0: c_import_animate_demo_phase1_subphase0(); break;
+        /* …remaining legacy cases… */
+    }
+}
 ```
 
-`intro_story_tick()` lives in `intro_common.c` with signature `void intro_story_tick(void)`. It owns a small static state (current sub-stage, entered-flag) and dispatches `intro_story_update` / `intro_showcase_update` / `intro_handoff` in sequence. One-shot enter-if-first on each sub-stage transition. When `intro_handoff` completes, it flips existing FRONTEND state forward (e.g., by incrementing `SUBMODE_VALUE` or the equivalent legacy advance step — exact flip identified during implementation) so the legacy pipeline proceeds.
+`intro_should_take_over()` is a one-shot predicate that returns 1 the first time the init-phase-1 handler is entered during phase 1 (i.e., `RAM(0x042C) != 0`), then arms `g_intro_takeover`.
+
+`intro_story_tick()` lives in `intro_common.c` with signature `void intro_story_tick(void)`. It owns a small static state (current sub-stage enum, entered-flag) and dispatches `intro_story_enter/update` → `intro_showcase_enter/update` → `intro_handoff` in sequence. One-shot enter-if-first on each sub-stage transition. When `intro_handoff` completes, it:
+1. Clears `g_intro_takeover` (dispatchers return to legacy behavior)
+2. Advances `FRONTEND_DEMO_SUBPHASE` / `SUBMODE_VALUE` / `MODE_VALUE` to the exact legacy state the pipeline expects post-showcase (exact state captured during implementation by reading the values the legacy flow would have arrived at had the original subphase chain completed)
+
+State-capture step is done once during implementation: run legacy code (with Start-skip workaround to avoid the crash) and snapshot the FRONTEND state at the moment showcase-end would occur. Bake those values into a constant initializer used by `intro_handoff`.
+
+### Handoff Details
+
+`intro_handoff()` restores the **file-select / frontend state**, not gameplay state. Gameplay CHR and palette are loaded by the existing mode-2 / mode-3 path when the player selects a save slot — the rewrite does not touch that path.
+
+Handoff steps:
+
+1. Switch VDP Reg 16 to V64 ($9011).
+2. DMA the file-select restore CHR (`intro_restore_chr`) to VRAM. This blob is captured once during implementation by snapshotting VRAM state at the point the legacy flow reaches file select (with Start-skip workaround). Baked into `src/gen/intro_restore_chr.c` at build time.
+3. Reload the file-select CRAM snapshot (`intro_restore_palette`), captured the same way.
+4. Reset VSRAM to the value the legacy frontend assumes post-showcase.
+5. Clear plane A + B nametables to their expected post-showcase state (typically zero; confirmed during implementation).
+6. Advance `FRONTEND_DEMO_SUBPHASE` / `SUBMODE_VALUE` / `MODE_VALUE` to the exact values the legacy pipeline would hold post-showcase. These values are captured in the same snapshot pass and stored as constants in `intro_handoff_state.h`.
+7. Clear `g_intro_takeover`.
+
+After step 7, legacy dispatchers return to their normal switch statements and the legacy fade-in / file-select pipeline runs unchanged under V64.
 
 ### VRAM Map During Intro
 
