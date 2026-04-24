@@ -26,16 +26,18 @@ void intro_handoff(void) {
     clear_plane(0x4000);
     clear_plane(0x6000);
 
-    /* 6. Write authoritative state bytes captured by probe during Task 1. */
-    RAM(0x00E0) = INTRO_HANDOFF_EXPECTED.mode_value;
-    RAM(0x0012) = INTRO_HANDOFF_EXPECTED.submode_value;
-    RAM(0x042C) = INTRO_HANDOFF_EXPECTED.frontend_demo_subphase;
+    /* 6. Write authoritative state bytes captured by probe during Task 1.
+     *    Addresses resolved from src/{progress,room,item}_state.h + capture JSON. */
+    RAM(0x0012) = INTRO_HANDOFF_EXPECTED.mode_value;              /* MODE_VALUE */
+    RAM(0x0013) = INTRO_HANDOFF_EXPECTED.submode_value;           /* SUBMODE_VALUE */
+    RAM(0x042C) = INTRO_HANDOFF_EXPECTED.frontend_demo_phase;     /* phase */
+    RAM(0x042D) = INTRO_HANDOFF_EXPECTED.frontend_demo_subphase;  /* FRONTEND_DEMO_SUBPHASE */
     RAM(0x042B) = INTRO_HANDOFF_EXPECTED.front_start_release_gate;
     RAM(0x083D) = INTRO_HANDOFF_EXPECTED.vram_force_blank_gate;
     RAM(0x0528) = INTRO_HANDOFF_EXPECTED.frontend_delay_timer;
-    RAM(0x0013) = INTRO_HANDOFF_EXPECTED.room_mode_timer;
-    RAM(0x0605) = INTRO_HANDOFF_EXPECTED.item_sfx_secondary;
-    RAM(0x060E) = INTRO_HANDOFF_EXPECTED.room_transfer_buf_select;
+    RAM(0x0011) = INTRO_HANDOFF_EXPECTED.room_mode_timer;         /* ROOM_MODE_TIMER */
+    RAM(0x0600) = INTRO_HANDOFF_EXPECTED.item_sfx_secondary;      /* ITEM_SFX_SECONDARY */
+    RAM(0x0014) = INTRO_HANDOFF_EXPECTED.room_transfer_buf_select; /* ROOM_TRANSFER_BUF_SELECT */
 
     /* 7. Clear takeover. */
     g_intro_takeover = 0;
