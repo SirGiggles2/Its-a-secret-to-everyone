@@ -5,8 +5,6 @@
 #include "progress_state.h"
 #include "room_state.h"
 
-extern void z07_set_shove_info_with0(unsigned int val, unsigned int slot);
-
 void corert_play_character_sfx(void) {
     DEATH_FRAME_COUNTER = 8;
 }
@@ -325,9 +323,6 @@ unsigned int corert_sub1_from_int16_at4(void) {
 
 /* ---- Plan C: drained from z_07 (object state cluster) ------------------ */
 
-extern void z01_destroy_object_wram(unsigned int val, unsigned int slot);
-extern unsigned int z01_get_opposite_dir(unsigned int dir);
-
 unsigned char corert_reset_obj_state(unsigned int slot) {
     OBJ_STATE(slot) = 0;
     return 0;
@@ -434,8 +429,6 @@ void corert_clear_ram0300_up_to(unsigned int end_hi, unsigned int start_off) {
         return;
     }
 }
-
-extern void c_wield_candle(void);
 
 void corert_handle_shot_blocked(unsigned int slot) {
     unsigned char saved_link_state;

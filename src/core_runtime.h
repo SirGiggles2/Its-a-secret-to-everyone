@@ -73,4 +73,10 @@ void corert_do_nothing(void);
 void corert_clear_ram0300_up_to(unsigned int end_hi, unsigned int start_off);
 void corert_handle_shot_blocked(unsigned int slot);
 
+/* --- ASM shim / bank-forwarder functions used by core_runtime.c --- */
+extern void z07_set_shove_info_with0(unsigned int val, unsigned int slot);
+extern void z01_destroy_object_wram(unsigned int val, unsigned int slot);
+extern unsigned int z01_get_opposite_dir(unsigned int dir);
+extern void c_wield_candle(void);
+
 #endif
