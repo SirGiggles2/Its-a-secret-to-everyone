@@ -67,3 +67,26 @@ def test_nes_color_range():
         v = nes_color_to_gen_cram(i)
         assert 0 <= v <= 0x0EEE
         assert (v & 0x0111) == 0  # low bit of each nibble zero (Gen format)
+
+def test_emit_produces_font_and_art_chr(tmp_path):
+    import subprocess, sys
+    out_dir = tmp_path
+    result = subprocess.run([
+        sys.executable, str(TOOL),
+        "--ref-dir", str(REPO / "reference" / "aldonunez" / "dat"),
+        "--out-dir", str(out_dir),
+        "--handoff-json", str(REPO / "docs" / "superpowers" / "captures" /
+                              "2026-04-24-intro-handoff-state.json"),
+        "--restore-chr",  str(REPO / "docs" / "superpowers" / "captures" /
+                              "2026-04-24-intro-restore-chr.bin"),
+        "--restore-cram", str(REPO / "docs" / "superpowers" / "captures" /
+                              "2026-04-24-intro-restore-cram.bin"),
+    ], stdin=subprocess.DEVNULL,
+       stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+       text=True)
+    assert result.returncode == 0, result.stderr
+    font = (out_dir / "intro_font_chr.c").read_text()
+    art = (out_dir / "intro_art_chr.c").read_text()
+    assert "const unsigned char intro_font_chr" in font
+    assert "const unsigned char intro_art_chr" in art
+    assert len(font.splitlines()) > 20  # non-empty
