@@ -1,4 +1,7 @@
 #include "enemy_runtime_private.h"
+#include "combat_state.h"
+#include "room_state.h"
+#include "sprite_state.h"
 
 static const unsigned char enrt_secret_quest_numbers[] = { 0x00, 0x00, 0x01 };
 static const unsigned char enrt_vire_jump_offsets[] = {
@@ -439,7 +442,7 @@ void enrt_lamnola_update_head(unsigned int slot) {
 
     for (;;) {
         ENEMY_DIR(slot) = chosen_dir;
-        RAM(0x000F) = chosen_dir;
+        ENEMY_JUMPER_BLOCKED_FLAG = chosen_dir;
         if (c_bound_by_room(slot) != 0) {
             tile = c_get_colliding_tile_moving(slot);
             if (tile < ENEMY_DUNGEON_TILE_FLOOR)
@@ -1021,7 +1024,7 @@ void enrt_gleeok_store_ref_seg_distance(unsigned int signed_ref_dist) {
      * exceeds the limit, nudge cur 2 pixels toward prev. */
     for (seg = 0; seg < 4; seg++) {
         unsigned char prev_x = RAM(0x0071 + seg);
-        unsigned char cur_x  = RAM(0x0072 + seg);
+        unsigned char cur_x  = ENEMY_GLEEOK_SEG_X(seg);
         unsigned char dx = z01_abs((unsigned int)(unsigned char)(prev_x - cur_x));
         unsigned char prev_y, cur_y, dy;
 
@@ -1029,18 +1032,18 @@ void enrt_gleeok_store_ref_seg_distance(unsigned int signed_ref_dist) {
             unsigned char new_x = (unsigned char)(cur_x + 2);
             if (cur_x >= prev_x)
                 new_x = (unsigned char)(new_x - 4);
-            RAM(0x0072 + seg) = new_x;
+            ENEMY_GLEEOK_SEG_X(seg) = new_x;
         }
 
         prev_y = RAM(0x0085 + seg);
-        cur_y  = RAM(0x0086 + seg);
+        cur_y  = ENEMY_GLEEOK_SEG_Y(seg);
         dy = z01_abs((unsigned int)(unsigned char)(prev_y - cur_y));
 
         if (dy >= ENEMY_GLEEOK_REF_LIMIT_V_3) {
             unsigned char new_y = (unsigned char)(cur_y + 2);
             if (cur_y >= prev_y)
                 new_y = (unsigned char)(new_y - 4);
-            RAM(0x0086 + seg) = new_y;
+            ENEMY_GLEEOK_SEG_Y(seg) = new_y;
         }
     }
 
@@ -1056,29 +1059,29 @@ void enrt_gleeok_store_ref_seg_distance(unsigned int signed_ref_dist) {
         for (j = i; j >= 0; j--)
             ref_x = (unsigned char)(ref_x + ENEMY_GLEEOK_REF_SEG_DIST);
         {
-            unsigned char cur = RAM(0x0072 + (unsigned int)i);
+            unsigned char cur = ENEMY_GLEEOK_SEG_X((unsigned int)i);
             unsigned char nudged = (unsigned char)(cur + 1);
             if (cur >= ref_x)
                 nudged = (unsigned char)(nudged - 2);
-            RAM(0x0072 + (unsigned int)i) = nudged;
+            ENEMY_GLEEOK_SEG_X((unsigned int)i) = nudged;
         }
     }
 
     /* Keep the Y of segments 4 and 3 (OBJ(0x87,1..2)) between their
      * vertical neighbors. The asm walks D2=1..0 over OBJ(0x86..0x88). */
     for (i = 1; i >= 0; i--) {
-        unsigned char cur = RAM(0x0087 + (unsigned int)i);
-        unsigned char above = RAM(0x0086 + (unsigned int)i);
+        unsigned char cur = ENEMY_GLEEOK_SEG_Y_TARGET((unsigned int)i);
+        unsigned char above = ENEMY_GLEEOK_SEG_Y((unsigned int)i);
         unsigned char below = RAM(0x0088 + (unsigned int)i);
 
         if (cur < above) {
             /* cur < above: if also cur < below, nudge up (++) toward middle */
             if (cur < below)
-                RAM(0x0087 + (unsigned int)i)++;
+                ENEMY_GLEEOK_SEG_Y_TARGET((unsigned int)i)++;
         } else {
             /* cur >= above: if also cur >= below, nudge down (--) toward middle */
             if (cur >= below)
-                RAM(0x0087 + (unsigned int)i)--;
+                ENEMY_GLEEOK_SEG_Y_TARGET((unsigned int)i)--;
         }
     }
 }
@@ -1156,8 +1159,8 @@ void enrt_gleeok_check_collisions(unsigned int slot) {
         {
             unsigned int sprite_off =
                 (unsigned int)((unsigned char)(ENEMY_GLEEOK_NECK_INDEX << 3));
-            RAM(0x0200 + sprite_off) = 0xF8;
-            RAM(0x0220 + sprite_off) = 0xF8;
+            OAM_BYTE(sprite_off) = 0xF8;
+            OAM_BYTE(0x20 + sprite_off) = 0xF8;
         }
 
         /* Add this neck's bit to the dead-neck mask, then count bits. */
@@ -1203,7 +1206,7 @@ boss_died:
      * cell) to 0x11 to spawn a death spark, and clear types of slots 2..9. */
     c_write_blank_priority_sprites();
     c_play_boss_death_cry();
-    RAM(0x0406) = 17;
+    ROOM_OBJ_STUN_TIMER(0) = 17;
     {
         unsigned int s;
         for (s = 1; s < 0x0A; s++)
@@ -1307,8 +1310,8 @@ void enrt_dodongo_check_collisions(unsigned int slot) {
 die:
     enrt_update_dodongo_state1_bloated_sub_die(slot);
     /* Drop bomb-slot counters at RAM[$50]/[$51] = 10 (NES meta). */
-    RAM(0x0050) = 10;
-    RAM(0x0051) = 10;
+    ROOM_CHAIN_KILL_COUNT = 10;
+    ROOM_CHAIN_KILL_BONUS = 10;
 }
 
 /*--------------------------------------------------------------------
@@ -1327,9 +1330,9 @@ unsigned int enrt_dodongo_is_bomb_in_range(unsigned int limit_idx) {
     unsigned char mask = 3;         /* bit 0 = Y close, bit 1 = X close */
     int axis;
 
-    RAM(0x0006) = pos_limit;
-    RAM(0x0007) = neg_limit;
-    RAM(0x0008) = mask;
+    ENEMY_COLLISION_FLAG = pos_limit;
+    COMBAT_DAMAGE_AMOUNT = neg_limit;
+    COMBAT_SHOVE_DIR = mask;
 
     /* axis=1 first (Y), then axis=0 (X) — matches 6502 LDY #1 / dey loop.
      * Scratch layout: RAM[0],[1] = monster X/Y; RAM[2],[3] = bomb X/Y. */
@@ -1346,10 +1349,10 @@ unsigned int enrt_dodongo_is_bomb_in_range(unsigned int limit_idx) {
         /* In-range on this axis. */
         RAM(0x0004 + axis) = (unsigned char)dist;
         mask = (unsigned char)(mask >> 1);
-        RAM(0x0008) = mask;
+        COMBAT_SHOVE_DIR = mask;
     }
     /* mask == 0 means in-range on both axes; return it as the A reg. */
-    return (unsigned int)RAM(0x0008);
+    return (unsigned int)COMBAT_SHOVE_DIR;
 }
 
 /*--------------------------------------------------------------------
@@ -1376,14 +1379,14 @@ void enrt_dodongo_try_eat_bomb(unsigned int slot) {
         return;
 
     /* Loop counter in NES RAM[0]: starts at 1, decrements after each axis. */
-    RAM(0x0000) = 1;
+    ENEMY_GLEEOK_NECK_X_PTR_LO = 1;
     loop_counter = 1;
 
     /* 5-way direction index for tables: dir >> 1. */
     dir_idx = (unsigned char)(ENEMY_DIR(slot) >> 1);
 
     /* First iteration: horizontal distance in RAM[4]. */
-    dist = RAM(0x0004);
+    dist = ENEMY_GLEEOK_NECK_M_PTR_LO;
     for (;;) {
         if ((signed char)dist < (signed char)neg_table[dir_idx])
             return;
@@ -1394,8 +1397,8 @@ void enrt_dodongo_try_eat_bomb(unsigned int slot) {
         neg_table = DodongoMouthNegativeLimits1;
         pos_table = DodongoMouthPositiveLimits1;
         /* Load vertical distance and decrement loop counter. */
-        dist = RAM(0x0005);
-        RAM(0x0000) = (unsigned char)(--loop_counter);
+        dist = ENEMY_GLEEOK_NECK_M_PTR_HI;
+        ENEMY_GLEEOK_NECK_X_PTR_LO = (unsigned char)(--loop_counter);
         if (loop_counter < 0)
             break;
     }
@@ -1429,13 +1432,13 @@ void enrt_dodongo_check_bomb_hit(unsigned int slot) {
         unsigned char hx = (unsigned char)(ENEMY_X(slot) + 8);
         if (ENEMY_DIR(slot) < 4)
             hx = (unsigned char)(hx + 8);
-        RAM(0x0000) = hx;
-        RAM(0x0001) = (unsigned char)(ENEMY_Y(slot) + 8);
+        ENEMY_GLEEOK_NECK_X_PTR_LO = hx;
+        ENEMY_GLEEOK_NECK_X_PTR_HI = (unsigned char)(ENEMY_Y(slot) + 8);
     }
 
     /* First bomb slot is fixed at $10 (16). */
-    RAM(0x0002) = (unsigned char)(OBJ(NES_OBJ_X, 16) + 8);
-    RAM(0x0003) = (unsigned char)(OBJ(NES_OBJ_Y, 16) + 8);
+    ENEMY_GLEEOK_NECK_Y_PTR_LO = (unsigned char)(OBJ(NES_OBJ_X, 16) + 8);
+    ENEMY_GLEEOK_NECK_Y_PTR_HI = (unsigned char)(OBJ(NES_OBJ_Y, 16) + 8);
 
     bomb_state = OBJ(0x00AC, 16);
     if (bomb_state == 0)
@@ -1478,7 +1481,7 @@ void enrt_dodongo_draw(unsigned int slot) {
 
     enrt_anim_set_sprite_desc_level_palette_row();
     dir_idx = (unsigned char)(ENEMY_DIR(slot) >> 1);
-    RAM(0x0000) = dir_idx;
+    ENEMY_GLEEOK_NECK_X_PTR_LO = dir_idx;
 
     state = ENEMY_STATE_TIMER(slot);
     if (state == 0)
