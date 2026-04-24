@@ -1,0 +1,3 @@
+asset SHA verification: pass (python tools/extract_intro_assets.py --verify, exit 0)
+ROM: Zelda37.455, checksum $1CBA
+Build green: intro_common + intro_story + intro_showcase + intro_handoff + 8 generated modules registered and compiling.
