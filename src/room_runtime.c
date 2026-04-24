@@ -1,5 +1,6 @@
 #include "room_runtime.h"
 #include "core_runtime.h"
+#include "link_state.h"
 
 #define NES_SRAM_BASE 0x6000u
 
@@ -13,8 +14,8 @@ extern void c_go_to_next_mode_from_play(void);
 extern void c_update_position_marker(unsigned int room_id, unsigned int idx);
 
 unsigned char roomrt_get_room_flags(void) {
-    unsigned char ptr_lo = nes_ram[NES_SRAM_BASE + 0x0BAF];
-    unsigned char ptr_hi = nes_ram[NES_SRAM_BASE + 0x0BB0];
+    unsigned char ptr_lo = nes_ram[NES_SRAM_BASE + NES_SRAM_ROOM_FLAGS_PTR_LO];
+    unsigned char ptr_hi = nes_ram[NES_SRAM_BASE + NES_SRAM_ROOM_FLAGS_PTR_HI];
     unsigned short ptr;
     SAVEFILE_PTR_LO = ptr_lo;
     SAVEFILE_PTR_HI = ptr_hi;
@@ -169,7 +170,7 @@ void roomrt_touch_door_open(void) {}
 void roomrt_wield_nothing(void) {}
 
 void roomrt_mask_cur_ppu_mask_grayscale(void) {
-    RAM(0x00FE) &= 0xFE;
+    CUR_INV_TILE &= 0xFE;
 }
 
 void roomrt_block_at_wall(void) {
@@ -273,23 +274,23 @@ void roomrt_touch_door_shutter(void) {
 
 void roomrt_hide_all_sprites(void) {
     for (unsigned char i = 0; i < 64; i++)
-        RAM(0x0200 + (unsigned short)i * 4) = 0xF8;
+        ROOM_OAM_BYTE((unsigned short)i * 4) = 0xF8;
 }
 
 unsigned char roomrt_get_unique_room_id(void) {
     unsigned char room = CUR_ROOM_ID;
-    return nes_ram[NES_SRAM_BASE + 0x09FE + room] & 0x3F;
+    return nes_ram[NES_SRAM_BASE + NES_SRAM_ROOM_UNIQUE_ID_BASE + room] & 0x3F;
 }
 
 void roomrt_clear_room_history(void) {
-    RAM(0x0529) = 0;
+    ROOM_HISTORY_IDX = 0;
     for (signed char i = 5; i >= 0; i--)
-        RAM(0x0621 + (unsigned char)i) = 0;
+        ROOM_HISTORY((unsigned char)i) = 0;
 }
 
 void roomrt_reset_player_state(void) {
-    RAM(0x00AC) = 0;
-    RAM(0x066C) = 0;
+    LINK_ACTION_TIMER = 0;
+    LINK_HALT_FLAG = 0;
 }
 
 void roomrt_mark_room_visited(void) {
