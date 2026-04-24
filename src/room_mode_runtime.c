@@ -312,3 +312,9 @@ void roommd_go_to_next_mode_from_play(void) {
     RAM(0x00D3) = 0;
     LINK_STUN_TIMER = 0;
 }
+
+void roommd_update_mode2_load(void) {
+    c_turn_off_all_video();
+    c_update_mode2_load_full();
+    roommd_go_to_next_mode();
+}

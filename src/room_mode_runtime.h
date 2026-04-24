@@ -57,6 +57,7 @@ void roommd_patch_and_cue_level_palettes_transfer(void);
 void roommd_init_mode3_sub1(void);
 void roommd_update_mode3_unfurl(void);
 void roommd_go_to_next_mode_from_play(void);
+void roommd_update_mode2_load(void);
 
 #ifdef __cplusplus
 }
@@ -76,5 +77,7 @@ extern void z07_patch_and_cue_level_palettes_transfer(void);
 extern unsigned char z07_end_game_mode(void);
 extern void c_update_world_curtain_effect(void);
 extern void c_set_mmc1_control(unsigned int val);
+extern void c_turn_off_all_video(void);
+extern void c_update_mode2_load_full(void);
 
 #endif

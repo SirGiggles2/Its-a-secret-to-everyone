@@ -5616,9 +5616,11 @@ c_draw_ghini_and_check_collisions:
 
     xdef    c_set_mmc1_control
     xdef    c_update_mode3_unfurl
+    xdef    c_update_mode2_load
 
     xref    SetMMC1Control
     xref    z07_update_mode3_unfurl
+    xref    z07_update_mode2_load
 
 ; SetMMC1Control — val on stack (4(SP)), into D0, void.
 c_set_mmc1_control:
@@ -5629,6 +5631,11 @@ c_set_mmc1_control:
 ; UpdateMode3Unfurl — no args, void.
 c_update_mode3_unfurl:
     jsr     z07_update_mode3_unfurl
+    rts
+
+; UpdateMode2Load — no args, void.
+c_update_mode2_load:
+    jsr     z07_update_mode2_load
     rts
 
 ;==============================================================================

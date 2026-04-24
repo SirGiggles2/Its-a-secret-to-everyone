@@ -2932,14 +2932,8 @@ UpdateMode12EndLevel:
 
     even
 UpdateMode2Load:
-    jsr     TurnOffAllVideo
-    moveq   #6,D0
-    jsr     SwitchBank
-    jsr     UpdateMode2Load_Full
-; Returns:
-; A: zero
-;
-    even
+    jmp     c_update_mode2_load
+
 GoToNextMode:
     jmp     c_go_to_next_mode
 

@@ -210,4 +210,8 @@ void z07_go_to_next_mode_from_play(void) {
     roommd_go_to_next_mode_from_play();
 }
 
+void z07_update_mode2_load(void) {
+    roommd_update_mode2_load();
+}
+
 /* <<< end auto-wrappers >>> */

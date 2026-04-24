@@ -50,6 +50,7 @@
     {"old": "z07_clear_ram0300_up_to", "new": "corert_clear_ram0300_up_to", "sig": "void (unsigned int end_hi, unsigned int start_off)"},
     {"old": "z07_handle_shot_blocked", "new": "corert_handle_shot_blocked", "sig": "void (unsigned int slot)"},
     {"old": "z07_update_mode3_unfurl", "new": "roommd_update_mode3_unfurl", "sig": "void (void)"},
-    {"old": "z07_go_to_next_mode_from_play", "new": "roommd_go_to_next_mode_from_play", "sig": "void (void)"}
+    {"old": "z07_go_to_next_mode_from_play", "new": "roommd_go_to_next_mode_from_play", "sig": "void (void)"},
+    {"old": "z07_update_mode2_load", "new": "roommd_update_mode2_load", "sig": "void (void)"}
   ]
 }
