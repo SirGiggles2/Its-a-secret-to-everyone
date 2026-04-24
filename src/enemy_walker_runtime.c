@@ -208,19 +208,19 @@ void enrt_update_zora(unsigned int slot) {
 extern const unsigned char ReverseDirections[];
 
 unsigned int enrt_walker_alt_dir_get_opposite(void) {
-    unsigned char dir = RAM(0x000F);
+    unsigned char dir = ENEMY_FRAME_FLAGS;
     if (dir & 0x0A)
         return dir >> 1;
     return (dir << 1) & 0xFF;
 }
 
 void enrt_walker_alt_dir_end_loop(void) {
-    RAM(0x000E) = 0;
+    ENEMY_BLOCKED_FLAG = 0;
 }
 
 unsigned char enrt_walker_alt_dir_get_random_perpendicular(unsigned int slot) {
-    unsigned char rnd = nes_ram[0x0018 + slot];
-    unsigned char dir = nes_ram[0x0098 + slot];
+    unsigned char rnd = ENEMY_RNG_A(slot);
+    unsigned char dir = ENEMY_DIR(slot);
     unsigned int idx = (rnd & 0x80) ? 0 : 1;
     if (dir & 0x0C) idx += 2;
     return ReverseDirections[idx];
@@ -264,7 +264,7 @@ void enrt_update_block(unsigned int slot) {
 /* DrawBlock — fetch sprite descriptor pos, decrement Y by 1, draw. */
 void enrt_draw_block(unsigned int slot) {
     z07_anim_fetch_obj_pos(slot);
-    RAM(0x0001) = (unsigned char)(RAM(0x0001) - 1);
+    WALLMASTER_MAJOR_MINOR_MIN = (unsigned char)(WALLMASTER_MAJOR_MINOR_MIN - 1);
     c_draw_object_not_mirrored_with_frame(0, slot);
 }
 
@@ -336,14 +336,14 @@ static void enrt_update_block_0_idle(unsigned int slot) {
      */
     ENEMY_DIR(slot) = input_dir;
     ENEMY_STATE_TIMER(slot) = (unsigned char)(ENEMY_STATE_TIMER(slot) + 1);
-    RAM(0x00F7) = (unsigned char)(RAM(0x00F7) + 1);
+    RAM(0x00F7) = (unsigned char)(RAM(0x00F7) + 1);  /* block-push counter */
     c_change_tile_obj_tiles(116u, slot);
 }
 
 /* UpdateBlock1Moving — slide block one tile in its locked direction. */
 static void enrt_update_block_1_moving(unsigned int slot) {
     unsigned char dir = ENEMY_DIR(slot);
-    RAM(0x000F) = dir;
+    ENEMY_FRAME_FLAGS = dir;
     c_move_object((unsigned short)slot);
     enrt_draw_block(slot);
 
@@ -358,7 +358,7 @@ static void enrt_update_block_1_moving(unsigned int slot) {
      * ROOM_BLOCK_SECRET_FLAG so the room knows a push completed.
      */
     enrt_play_secret_found_tune();
-    RAM(0x00F7) = (unsigned char)(RAM(0x00F7) + 1);
+    RAM(0x00F7) = (unsigned char)(RAM(0x00F7) + 1);  /* block-push counter */
     c_change_tile_obj_tiles(0xB0u, slot);
     ENEMY_STATE_TIMER(slot) = (unsigned char)(ENEMY_STATE_TIMER(slot) + 1);
     ROOM_BLOCK_SECRET_FLAG = (unsigned char)(ROOM_BLOCK_SECRET_FLAG + 1);
@@ -563,8 +563,8 @@ void enrt_update_goriya(unsigned int slot) {
             a = obj_y;  b = link_y;
             vdir <<= 1;  /* 4 -> 8 (UP) */
         }
-        RAM(0x0002) = vdir;
-        RAM(0x0000) = (unsigned char)(a - b);  /* |dy| */
+        WALLMASTER_INSTR_AXIS = vdir;
+        WALLMASTER_MINOR_MAJOR_MIN = (unsigned char)(a - b);  /* |dy| */
     }
     {
         unsigned char link_x = LINK_X;
@@ -577,13 +577,13 @@ void enrt_update_goriya(unsigned int slot) {
             a = obj_x;  b = link_x;
             hdir <<= 1;  /* 1 -> 2 (LEFT) */
         }
-        RAM(0x0003) = hdir;
-        RAM(0x0001) = (unsigned char)(a - b);  /* |dx| */
+        WALLMASTER_INSTR_MINOR_MIN = hdir;
+        WALLMASTER_MAJOR_MINOR_MIN = (unsigned char)(a - b);  /* |dx| */
     }
 
     /* Pick the larger distance: index 0 if |dy| >= |dx|, else 1. */
     {
-        unsigned int idx = (RAM(0x0000) >= RAM(0x0001)) ? 0u : 1u;
+        unsigned int idx = (WALLMASTER_MINOR_MAJOR_MIN >= WALLMASTER_MAJOR_MINOR_MIN) ? 0u : 1u;
 
         ENEMY_PUSH_TIMER(slot) = 0;
 
