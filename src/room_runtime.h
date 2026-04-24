@@ -3,6 +3,9 @@
 
 #include "room_state.h"
 
+extern void c_go_to_next_mode_from_play(void);
+extern void c_update_position_marker(unsigned int room_id, unsigned int idx);
+
 #ifdef __cplusplus
 extern "C" {
 #endif
