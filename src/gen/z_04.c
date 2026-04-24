@@ -97,6 +97,14 @@ void z04_manhandla_draw(unsigned int slot) {
     enrt_manhandla_draw(slot);
 }
 
+void z04_lamnola_update_head(unsigned int slot) {
+    enrt_lamnola_update_head(slot);
+}
+
+void z04_lamnola_move(unsigned int slot) {
+    enrt_lamnola_move(slot);
+}
+
 unsigned int z04_extract_hit_point_value(unsigned int val) {
     return enrt_extract_hit_point_value(val);
 }

@@ -115,6 +115,16 @@
       "sig": "void (unsigned int slot)"
     },
     {
+      "old": "z04_lamnola_update_head",
+      "new": "enrt_lamnola_update_head",
+      "sig": "void (unsigned int slot)"
+    },
+    {
+      "old": "z04_lamnola_move",
+      "new": "enrt_lamnola_move",
+      "sig": "void (unsigned int slot)"
+    },
+    {
       "old": "z04_extract_hit_point_value",
       "new": "enrt_extract_hit_point_value",
       "sig": "unsigned int (unsigned int val)"

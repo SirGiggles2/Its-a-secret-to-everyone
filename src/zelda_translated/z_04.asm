@@ -9115,335 +9115,11 @@ L12A6F_Exit:
 
     even
 Lamnola_UpdateHead:
-    ; If X coordinate is not a multiple of 8, then return.
-    ;
-    move.b  ($70,A4,D2.W),D0
-    andi.b #$07,D0
-    beq.s  __far_z_04_0098
-    jmp  L12A6F_Exit
-__far_z_04_0098:
-    ; If (Y + 3) is not a multiple of 8, then return.
-    ; We had to account for the usual offset of 3.
-    ;
-    lea     ($0084,A4),A0
-    move.b  (A0,D2.W),D0
-    andi    #$EE,CCR  ; CLC: clear C+X
-    move.b  #$03,D1
-    addx.b  D1,D0   ; ADC #$03 (X flag = 6502 C)
-    andi.b #$07,D0
-    beq.s  __far_z_04_0099
-    jmp  L12A6F_Exit
-__far_z_04_0099:
-    ; Will loop 4 times, propagating directions down the chain,
-    ; by pulling from the bottom.
-    ;
-    moveq   #4,D0
-    move.b  D0,($0000,A4)
-    ; Choose the tail index of the lamnola that the current segment belongs to.
-    ;
-    moveq   #0,D3
-    cmpi.b  #$05,D2
-    beq  _L_z04_Lamnola_UpdateHead_PropagateDirs
-    moveq   #5,D3
-    even
-_L_z04_Lamnola_UpdateHead_PropagateDirs:
-    ; Loop over every segment under the head, starting from the tail.
-    ; Copy the next segment's direction to the current one in this loop.
-    ;
-    lea     ($009A,A4),A0
-    move.b  (A0,D3.W),D0
-    lea     ($0099,A4),A0
-    move.b  D0,(A0,D3.W)
-    addq.b  #1,D3
-    subq.b  #1,($0000,A4)
-    bne  _L_z04_Lamnola_UpdateHead_PropagateDirs
-    ; If this head segment is not aligned with a square, then return.
-    ;
-    move.b  ($70,A4,D2.W),D0
-    andi.b #$0F,D0
-    bne  _L_z04_Lamnola_UpdateHead_Exit
-    ; If (Y + 3) is not a multiple of $10, then return.
-    ; We had to account for the usual offset of 3.
-    ;
-    lea     ($0084,A4),A0
-    move.b  (A0,D2.W),D0
-    andi    #$EE,CCR  ; CLC: clear C+X
-    move.b  #$03,D1
-    addx.b  D1,D0   ; ADC #$03 (X flag = 6502 C)
-    andi.b #$0F,D0
-    bne  _L_z04_Lamnola_UpdateHead_Exit
-    ; Store the opposite of the facing direction in [00].
-    ;
-    lea     ($0098,A4),A0
-    move.b  (A0,D2.W),D0
-    lsr.b  #1,D0   ; LSR A
-    andi.b #$05,D0
-    move.b  D0,($0000,A4)
-    lea     ($0098,A4),A0
-    move.b  (A0,D2.W),D0
-    lsl.b  #1,D0   ; ASL A
-    andi.b #$0A,D0
-    move.b  ($0000,A4),D1
-    or.b  D1,D0
-    ; Make a mask of the inverted bits of the opposite direction.
-    ;
-    eori.b #$0F,D0
-    move.b  D0,($050F,A4)
-    ; There's a 50% chance of going to try to turn toward Link.
-    ;
-    move.b  ($18,A4,D2.W),D0
-    cmpi.b  #$80,D0
-    bcs  _L_z04_Lamnola_UpdateHead_TurnTowardLink
-    ; Otherwise, we randomly choose a perpendicular direction.
-    ; Load the monster's facing direction.
-    ;
-    lea     ($0098,A4),A0
-    move.b  (A0,D2.W),D0
-    ; Load the next random number into Y register.
-    ;
-    moveq   #0,D3
-    move.b  ($19,A4,D2.W),D3
-    ; Based on it, there's a 50% chance of skipping the loop,
-    ; to keep moving straight.
-    ;
-    cmpi.b  #$80,D3
-    bcc  _L_z04_Lamnola_UpdateHead_SetDirAndCheckTiles
-    even
-_L_z04_Lamnola_UpdateHead_LoopFindPerpendicular:
-    ; Loop to rotate the direction bit over the mask.
-    ; The goal is to calculate a direction perpendicular to the monster's
-    ; facing direction.
-    ;
-    ; Shift right the copy of the direction.
-    ; If the direction bit rolled off the low end, then roll it onto the high end.
-    ;
-    lsr.b  #1,D0   ; LSR A
-    bcc  _anon_z04_151
-    moveq   #8,D0
-_anon_z04_151:
-    ; If the current direction bit is masked off, then we've reached
-    ; the opposite direction. Loop again.
-    ;
-    move.b  ($050F,A4),D1
-    and.b   D0,D1   ; BIT: set Z/N/V from D1 AND A
-    beq  _L_z04_Lamnola_UpdateHead_LoopFindPerpendicular
-    ; If Y register >= $40, then break out of the loop.
-    ; So, 75% of the time, if horizontal, then turn up, else left.
-    ;
-    cmpi.b  #$40,D3
-    bcc  _L_z04_Lamnola_UpdateHead_SetDirAndCheckTiles
-    ; Set Y register to $40 in order to break out of the loop next time;
-    ; and loop again now.
-    ; So, 25% of the time, if horizontal, then turn down, else right.
-    ;
-    moveq   #64,D3
-    bcs  _L_z04_Lamnola_UpdateHead_LoopFindPerpendicular
-    even
-_L_z04_Lamnola_UpdateHead_SetDirAndCheckTiles:
-    ; Change the facing direction to the direction found.
-    ;
-    lea     ($0098,A4),A0
-    move.b  D0,(A0,D2.W)
-    ; Set moving direction [0F] for boundary and tile checks.
-    ;
-    move.b  D0,($000F,A4)
-    jsr     BoundByRoom
-    ; If not blocked by the room boundary, then go check tile collision.
-    ;
-    move.b  ($000F,A4),D0
-    bne  _L_z04_Lamnola_UpdateHead_CheckTileCollision
-    even
-_L_z04_Lamnola_UpdateHead_FindNonOpposite:
-    ; Else it was blocked. So, load the facing direction in preparation
-    ; for looking for any non-opposite direction that is not blocked.
-    ;
-    lea     ($0098,A4),A0
-    move.b  (A0,D2.W),D0
-    even
-_L_z04_Lamnola_UpdateHead_LoopFindNonOpposite:
-    ; Shift right the copy of the direction.
-    ; If the direction bit rolled off the low end, then roll it onto the high end.
-    ;
-    lsr.b  #1,D0   ; LSR A
-    bcc  _anon_z04_152
-    moveq   #8,D0
-_anon_z04_152:
-    ; If the current direction bit is not masked off, then go check the
-    ; room boundary in this direction.
-    ; Else we've reached the opposite direction. Loop again.
-    ;
-    move.b  ($050F,A4),D1
-    and.b   D0,D1   ; BIT: set Z/N/V from D1 AND A
-    bne  _L_z04_Lamnola_UpdateHead_SetDirAndCheckTiles
-    beq  _L_z04_Lamnola_UpdateHead_LoopFindNonOpposite
-    even
-_L_z04_Lamnola_UpdateHead_CheckTileCollision:
-    ; We found a direction that was not blocked by the room boundary.
-    ; Check tile collision. If blocked by a tile, then go look for another direction.
-    ;
-    jsr     GetCollidingTileMoving
-    move.b  ($034A,A4),D1
-    cmp.b   D1,D0
-    bcc  _L_z04_Lamnola_UpdateHead_FindNonOpposite
-    even
-_L_z04_Lamnola_UpdateHead_Exit:
-    ; TODO: confirm this
-    ;
-    ; If there were a room that had lamnolas, and they could get
-    ; surrounded on 3 sides, then the loop above would get stuck in
-    ; an infinite loop.
-    ;
-    ; But, the only room with that configuration has those blocks
-    ; blocked off with a push block, which can only be pushed after
-    ; all monsters are killed.
-    ;
-    rts
+    jmp     c_lamnola_update_head
 
-    even
-_L_z04_Lamnola_UpdateHead_TurnTowardLink:
-    ; Find the horizontal direction toward Link and store it in [02].
-    ;
-    moveq   #1,D0
-    move.b  D0,($0002,A4)
-    move.b  ($0070,A4),D0
-    ori     #$11,CCR  ; SEC: set C+X
-    move.b  ($70,A4,D2.W),D1
-    eori    #$10,CCR  ; flip X: 6502 SBC polarity
-    subx.b  D1,D0   ; SBC ObjX,X
-    eori    #$10,CCR  ; restore X = 6502 C
-    bcc  _anon_z04_153
-    move.b  ($0002,A4),D1
-    lsl.b  #1,D1   ; ASL $02
-    move.b  D1,($0002,A4)
-_anon_z04_153:
-    ; Find the vertical direction toward Link and store it in [03].
-    ;
-    moveq   #4,D0
-    move.b  D0,($0003,A4)
-    move.b  ($0084,A4),D0
-    ori     #$11,CCR  ; SEC: set C+X
-    lea     ($0084,A4),A0
-    move.b  (A0,D2.W),D1
-    eori    #$10,CCR  ; flip X: 6502 SBC polarity
-    subx.b  D1,D0   ; SBC ObjY,X
-    eori    #$10,CCR  ; restore X = 6502 C
-    bcc  _anon_z04_154
-    move.b  ($0003,A4),D1
-    lsl.b  #1,D1   ; ASL $03
-    move.b  D1,($0003,A4)
-_anon_z04_154:
-    ; If the horizontal direction toward Link is not allowed, then
-    ; go check the vertical direction.
-    ;
-    move.b  ($0002,A4),D0
-    move.b  ($050F,A4),D1
-    and.b   D0,D1   ; BIT: set Z/N/V from D1 AND A
-    beq  _L_z04_Lamnola_UpdateHead_SetVertical
-    ; If the horizontal direction toward Link is the same direction
-    ; that Link is facing, then go test it for tile and room boundary collision.
-    ;
-    move.b  ($0098,A4),D1
-    and.b   D0,D1   ; BIT: set Z/N/V from D1 AND A
-    bne  _anon_z04_155
-    even
-_L_z04_Lamnola_UpdateHead_SetVertical:
-    ; Load the vertical direction toward Link in order to test it for
-    ; room boundary and tile collision.
-    ;
-    move.b  ($0003,A4),D0
-_anon_z04_155:
-    ; Go test this direction for collisions with tiles or the room boundary.
-    ;
-    jmp     _L_z04_Lamnola_UpdateHead_SetDirAndCheckTiles
-
-    even
 Lamnola_Move:
-    ; This code is similar to 04:96EB Digdogger_Move.
-    ;
-    ; Change coordinates by the appropriate speed according to the direction.
-    ;
-    ; Start with a mask of $A1 in [02]:
-    ; - low nibble represents the right direction
-    ; - high nibble is used to set or clear carry as we go along
-    ;
-    move.b  #$A1,D0
-    move.b  D0,($0002,A4)
-    ; If direction has a right component (1), then add offset to X coordinate.
-    ;
-    lea     ($0098,A4),A0
-    move.b  (A0,D2.W),D0
-    move.b  ($0002,A4),D1
-    and.b   D0,D1   ; BIT: set Z/N/V from D1 AND A
-    beq  _L_z04_Lamnola_Move_Left
-    move.b  ($70,A4,D2.W),D0
-    andi    #$EE,CCR  ; CLC: clear C+X
-    move.b  ($04E6,A4),D1
-    addx.b  D1,D0   ; ADC Lamnola_Speed
-    move.b  D0,($70,A4,D2.W)
-    even
-_L_z04_Lamnola_Move_Left:
-    ; If direction has a left component (2), then subtract offset from X coordinate.
-    ;
-    lea     ($0098,A4),A0
-    move.b  (A0,D2.W),D0
-    move.b  ($0002,A4),D1
-    lsl.b  #1,D1   ; ASL $02
-    move.b  D1,($0002,A4)
-    move.b  ($0002,A4),D1
-    and.b   D0,D1   ; BIT: set Z/N/V from D1 AND A
-    beq  _L_z04_Lamnola_Move_Down
-    move.b  ($70,A4,D2.W),D0
-    move.b  ($04E6,A4),D1
-    eori    #$10,CCR  ; flip X: 6502 SBC polarity
-    subx.b  D1,D0   ; SBC Lamnola_Speed
-    eori    #$10,CCR  ; restore X = 6502 C
-    move.b  D0,($70,A4,D2.W)
-    even
-_L_z04_Lamnola_Move_Down:
-    ; If direction has a down component (4), then add offset to Y coordinate.
-    ;
-    lea     ($0098,A4),A0
-    move.b  (A0,D2.W),D0
-    move.b  ($0002,A4),D1
-    lsl.b  #1,D1   ; ASL $02
-    move.b  D1,($0002,A4)
-    move.b  ($0002,A4),D1
-    and.b   D0,D1   ; BIT: set Z/N/V from D1 AND A
-    beq  _L_z04_Lamnola_Move_Up
-    lea     ($0084,A4),A0
-    move.b  (A0,D2.W),D0
-    move.b  ($04E6,A4),D1
-    addx.b  D1,D0   ; ADC Lamnola_Speed
-    lea     ($0084,A4),A0
-    move.b  D0,(A0,D2.W)
-    even
-_L_z04_Lamnola_Move_Up:
-    ; If direction has an up component (8), then subtract offset from Y coordinate.
-    ;
-    lea     ($0098,A4),A0
-    move.b  (A0,D2.W),D0
-    move.b  ($0002,A4),D1
-    lsl.b  #1,D1   ; ASL $02
-    move.b  D1,($0002,A4)
-    move.b  ($0002,A4),D1
-    and.b   D0,D1   ; BIT: set Z/N/V from D1 AND A
-    beq  _L_z04_Lamnola_Move_Exit
-    lea     ($0084,A4),A0
-    move.b  (A0,D2.W),D0
-    move.b  ($04E6,A4),D1
-    eori    #$10,CCR  ; flip X: 6502 SBC polarity
-    subx.b  D1,D0   ; SBC Lamnola_Speed
-    eori    #$10,CCR  ; restore X = 6502 C
-    lea     ($0084,A4),A0
-    move.b  D0,(A0,D2.W)
-    even
-_L_z04_Lamnola_Move_Exit:
-    rts
+    jmp     c_lamnola_move
 
-; TODO:
-; Was this intended to be an array of two elements?
-;
-    even
 PatraManeuverTime:
     dc.b    $FF
 
@@ -9553,9 +9229,9 @@ UpdatePatraChild:
     ;
     lea     ($00AC,A4),A0
     move.b  (A0,D2.W),D0
-    beq.s  __far_z_04_0100
+    beq.s  __far_z_04_0098
     jmp  PatraChild_State1
-__far_z_04_0100:
+__far_z_04_0098:
     ; State = 0.
     ;
     ; If the current object slot is 2, then go initialize the patra child.
@@ -9798,9 +9474,9 @@ _L_z04_Ganon_ScenePhase0_CheckFadeCycle:
     move.b  ($051C,A4),D0
     andi.b #$0F,D0
     cmpi.b  #$04,D0
-    beq.s  __far_z_04_0101
+    beq.s  __far_z_04_0099
     jmp  Ganon_DrawBodyFrame0
-__far_z_04_0101:
+__far_z_04_0099:
     ; Set Link's timer to $C0 for the next scene phase.
     ;
     move.b  #$C0,D0
@@ -9808,9 +9484,9 @@ __far_z_04_0101:
     ; Set scene phase 1, and go draw Ganon.
     ;
     addq.b  #1,($0445,A4)
-    beq.s  __far_z_04_0102
+    beq.s  __far_z_04_0100
     jmp  Ganon_DrawBodyFrame0
-__far_z_04_0102:
+__far_z_04_0100:
     even
 _L_z04_Ganon_ScenePhase0_CheckTimeToShout:
     ; If timer = 1, then play Boss hit/hurt sound effect.
@@ -9836,9 +9512,9 @@ Ganon_ScenePhase1:
     ; If Link's timer hasn't expired, then go draw Ganon.
     ;
     move.b  ($0028,A4),D0
-    beq.s  __far_z_04_0103
+    beq.s  __far_z_04_0101
     jmp  Ganon_DrawBodyFrame0
-__far_z_04_0103:
+__far_z_04_0101:
     ; Once the timer expires:
     ; 1. unhalt Link
     ; 2. clear the item to lift
@@ -9869,26 +9545,26 @@ Ganon_DrawBodyFrame0:
 Ganon_ScenePhase2:
     lea     ($042C,A4),A0
     move.b  (A0,D2.W),D0
-    beq.s  __far_z_04_0104
+    beq.s  __far_z_04_0102
     jmp  Ganon_Dying
-__far_z_04_0104:
+__far_z_04_0102:
     jsr     Ganon_CheckCollisions
     jsr     PlayBossHitCryIfNeeded
     ; Go handle the brown state specially.
     ;
     lea     ($00AC,A4),A0
     move.b  (A0,D2.W),D0
-    beq.s  __far_z_04_0105
+    beq.s  __far_z_04_0103
     jmp  Ganon_UpdateBrownState
-__far_z_04_0105:
+__far_z_04_0103:
     ; State = 0: Blue
     ;
     ; If timer = 0, then go move around and shoot.
     ;
     move.b  ($28,A4,D2.W),D0
-    bne.s  __far_z_04_0106
+    bne.s  __far_z_04_0104
     jmp  Ganon_MoveAndShoot
-__far_z_04_0106:
+__far_z_04_0104:
     ; If timer > 1, then Ganon is blue and visible. Only draw.
     ; Collisions were checked already.
     ;
@@ -9896,9 +9572,9 @@ __far_z_04_0106:
     ; in anticipation of moving around when timer becomes 0 next frame.
     ;
     cmpi.b  #$01,D0
-    beq.s  __far_z_04_0107
+    beq.s  __far_z_04_0105
     jmp  L_Ganon_DrawBody
-__far_z_04_0107:
+__far_z_04_0105:
 ; Description:
 ; Put Ganon at Y=$A0, and a random X of $30 or $B0.
 ;
@@ -9969,9 +9645,9 @@ _L_z04_Ganon_UpdateBrownState_Draw:
     lea     ($00AC,A4),A0
     move.b  (A0,D2.W),D0
     cmpi.b  #$30,D0
-    bcs.s  __far_z_04_0108
+    bcs.s  __far_z_04_0106
     jmp  L_Ganon_DrawBody
-__far_z_04_0108:
+__far_z_04_0106:
     move.b  ($0015,A4),D0
     lsr.b  #1,D0   ; LSR A
     bcc  _anon_z04_161
@@ -10000,9 +9676,9 @@ _anon_z04_162:
     ; If Ganon phase < $50, then go draw only.
     ;
     cmpi.b  #$50,D0
-    bcc.s  __far_z_04_0109
+    bcc.s  __far_z_04_0107
     jmp  L_Ganon_DrawBody
-__far_z_04_0109:
+__far_z_04_0107:
     ; If > $50, then go handle ashes only.
     ;
     bne  _L_z04_Ganon_Dying_HandleAshes
@@ -10034,9 +9710,9 @@ _L_z04_Ganon_Dying_HandleAshes:
     lea     ($042C,A4),A0
     move.b  (A0,D2.W),D0
     cmpi.b  #$A0,D0
-    bcc.s  __far_z_04_0110
+    bcc.s  __far_z_04_0108
     jmp  Ganon_DrawBurst
-__far_z_04_0110:
+__far_z_04_0108:
     ; If > $A0, then there's nothing left to do, except return.
     ;
     bne  _L_z04_Ganon_Dying_Exit
@@ -10762,9 +10438,9 @@ _anon_z04_167:
     ;
     lea     ($03A8,A4),A0
     move.b  (A0,D2.W),D0
-    bne.s  __far_z_04_0111
+    bne.s  __far_z_04_0109
     jmp  DestroyMonster_Bank4
-__far_z_04_0111:
+__far_z_04_0109:
     ; Draw the item. Fairies are animated separately.
     ;
     lea     ($00AC,A4),A0
@@ -10849,9 +10525,9 @@ _L_z04_UpdateItem_SkipTaking:
     lea     ($00AC,A4),A0
     move.b  (A0,D2.W),D0
     cmpi.b  #$FF,D0
-    bne.s  __far_z_04_0112
+    bne.s  __far_z_04_0110
     jmp  DestroyMonster_Bank4
-__far_z_04_0112:
+__far_z_04_0110:
     subq.b  #1,($000D,A4)
     bne  _L_z04_UpdateItem_LoopItemTaker
     even
@@ -10871,9 +10547,9 @@ _ShootIfWanted:
     ;
     lea     ($0412,A4),A0
     move.b  (A0,D2.W),D0
-    bne.s  __far_z_04_0113
+    bne.s  __far_z_04_0111
     jmp  ReturnDidNotShoot
-__far_z_04_0113:
+__far_z_04_0111:
 ; Params:
 ; [00]: shot object type
 ;
@@ -10889,22 +10565,22 @@ __far_z_04_0113:
     even
 ShootLimited:
     jsr     FindEmptyMonsterSlot
-    bne.s  __far_z_04_0114
+    bne.s  __far_z_04_0112
     jmp  ReturnDidNotShoot
-__far_z_04_0114:
+__far_z_04_0112:
     ; If the object type to shoot is a true shot (projectile),
     ; and we're at the limit of active shots (4), then return C=0.
     ;
     move.b  ($0000,A4),D0
     cmpi.b  #$53,D0
-    bcc.s  __far_z_04_0115
+    bcc.s  __far_z_04_0113
     jmp  Shoot
-__far_z_04_0115:
+__far_z_04_0113:
     move.b  ($034C,A4),D0
     cmpi.b  #$04,D0
-    bcs.s  __far_z_04_0116
+    bcs.s  __far_z_04_0114
     jmp  ReturnDidNotShoot
-__far_z_04_0116:
+__far_z_04_0114:
     ; Else increase the number of active shots.
     ;
     addq.b  #1,($034C,A4)
@@ -10943,9 +10619,9 @@ UpdateCandle_Begin:
     moveq   #0,D3
     move.b  ($00EB,A4),D3
     jsr     IsDarkRoom_Bank4
-    bne.s  __far_z_04_0117
+    bne.s  __far_z_04_0115
     jmp  UpdateCandle_Done
-__far_z_04_0117:
+__far_z_04_0115:
     move.b  #$C0,D0
     move.b  D0,($051C,A4)
     addq.b  #1,($051E,A4)
@@ -10962,17 +10638,17 @@ L_Candle_StopBrightening:
     ;
     moveq   #0,D0
     move.b  D0,($051E,A4)
-    bne.s  __far_z_04_0118
+    bne.s  __far_z_04_0116
     jmp  L_Candle_IncState
-__far_z_04_0118:
+__far_z_04_0116:
     even
 UpdateCandle_Brightening:
     ; Animating a brightening cycle.
     ;
     jsr     AnimateWorldFading
-    bne.s  __far_z_04_0119
+    bne.s  __far_z_04_0117
     jmp  L_Candle_StopBrightening
-__far_z_04_0119:
+__far_z_04_0117:
     rts
 
 ; Params:
@@ -11154,9 +10830,9 @@ _anon_z04_173:
     ; If movement wasn't restricted, then return.
     ;
     move.b  ($000F,A4),D0
-    beq.s  __far_z_04_0120
+    beq.s  __far_z_04_0118
     jmp  L132F8_Exit
-__far_z_04_0120:
+__far_z_04_0118:
     even
 ReverseObjDir8:
     ; Get the opposite direction of the one the object is facing.
@@ -11175,9 +10851,9 @@ ReverseObjDir8:
     lea     ($034F,A4),A0
     move.b  (A0,D2.W),D0
     cmpi.b  #$41,D0
-    bne.s  __far_z_04_0121
+    bne.s  __far_z_04_0119
     jmp  DeferBounce
-__far_z_04_0121:
+__far_z_04_0119:
     ; Apply the new direction.
     ;
     lea     (Directions8).l,A0
@@ -11205,17 +10881,17 @@ L13307_Exit:
     even
 Flyer_Chase:
     move.b  ($28,A4,D2.W),D0
-    beq.s  __far_z_04_0122
+    beq.s  __far_z_04_0120
     jmp  L13307_Exit
-__far_z_04_0122:
+__far_z_04_0120:
     ; Decrease the turn counter.
     ; Once there are no more turns, go to flying state 1.
     ;
     lea     ($042C,A4),A0
     subq.b  #1,(A0,D2.W)
-    beq.s  __far_z_04_0123
+    beq.s  __far_z_04_0121
     jmp  SetDelayAndTurn
-__far_z_04_0123:
+__far_z_04_0121:
     even
 SetFlyingState1:
     jmp     c_set_flying_state_1
@@ -11298,9 +10974,9 @@ _L_z04_TurnTowardsPlayer8_LoopLeft:
     move.b  (A0,D3.W),D0
     move.b  ($0000,A4),D1
     cmp.b   D1,D0
-    bne.s  __far_z_04_0124
+    bne.s  __far_z_04_0122
     jmp  L1336F_Exit
-__far_z_04_0124:
+__far_z_04_0122:
     subq.b  #1,D3
     subq.b  #1,($0001,A4)
     bne  _L_z04_TurnTowardsPlayer8_LoopLeft
@@ -11325,16 +11001,16 @@ LoopRight:
     move.b  (A0,D3.W),D0
     move.b  ($0000,A4),D1
     and.b   D0,D1   ; BIT: set Z/N/V from D1 AND A
-    beq.s  __far_z_04_0125
+    beq.s  __far_z_04_0123
     jmp  TestDir
-__far_z_04_0125:
+__far_z_04_0123:
     even
 NextLoopRight:
     addq.b  #1,D3
     subq.b  #1,($0001,A4)
-    beq.s  __far_z_04_0126
+    beq.s  __far_z_04_0124
     jmp  LoopRight
-__far_z_04_0126:
+__far_z_04_0124:
     ; We didn't find a direction to switch to.
     ; So turn left once; to one turn right of object direction.
     ;
@@ -11364,12 +11040,12 @@ TestDir:
     move.b  ($0000,A4),D1
     or.b  D1,D0
     cmpi.b  #$07,D0
-    bcs.s  __far_z_04_0127
+    bcs.s  __far_z_04_0125
     jmp  NextLoopRight
-__far_z_04_0127:
-    bcc.s  __far_z_04_0128
+__far_z_04_0125:
+    bcc.s  __far_z_04_0126
     jmp  SetDir8ForIndex
-__far_z_04_0128:
+__far_z_04_0126:
 ; Description:
 ; Delay and turn randomly a number of times.
 ; The go to state 1. After each turn, delay $10 frames.
@@ -11380,9 +11056,9 @@ __far_z_04_0128:
     even
 Flyer_Wander:
     move.b  ($28,A4,D2.W),D0
-    beq.s  __far_z_04_0129
+    beq.s  __far_z_04_0127
     jmp  L133AC_Exit
-__far_z_04_0129:
+__far_z_04_0127:
     ; Decrease the turn counter.
     ; Once there are no more turns, go to flying state 1.
     ;
@@ -11432,9 +11108,9 @@ _anon_z04_178:
     lea     (Directions8).l,A0
     move.b  (A0,D3.W),D1
     cmp.b   D1,D0
-    bne.s  __far_z_04_0130
+    bne.s  __far_z_04_0128
     jmp  L133AC_Exit
-__far_z_04_0130:
+__far_z_04_0128:
     subq.b  #1,D3
     bpl  _anon_z04_178
 ; If not found, then use index 0.

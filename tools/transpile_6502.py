@@ -4336,6 +4336,10 @@ def _patch_z04(path):
     text = _stub_func(text, 'Manhandla_Move', 'c_manhandla_move')
     text = _stub_func(text, 'Manhandla_Draw', 'c_manhandla_draw')
 
+    # --- Batch 94: Lamnola family ---
+    text = _stub_func(text, 'Lamnola_UpdateHead', 'c_lamnola_update_head')
+    text = _stub_func(text, 'Lamnola_Move', 'c_lamnola_move')
+
     with open(path, 'w', encoding='utf-8') as f:
         f.write(text)
 

@@ -70,6 +70,11 @@
 #define ENEMY_MANHANDLA_SEGMENT_DIED_FLAG RAM(0x0383)
 #define ENEMY_MANHANDLA_FRAME_ACCUM(slot) OBJ(0x0451, (slot))
 #define ENEMY_MANHANDLA_FRAME_ATTR(slot)  OBJ(0x0478, (slot))
+#define ENEMY_LAMNOLA_SPEED             RAM(0x04E6)
+#define ENEMY_LAMNOLA_TYPE              RAM(0x04E7)
+#define ENEMY_LAMNOLA_VIABLE_DIR_MASK   RAM(0x050F)
+#define ENEMY_PLAYER_OBJ_X              RAM(0x0070)
+#define ENEMY_PLAYER_OBJ_Y              RAM(0x0084)
 /* Gleeok shared/global state */
 #define ENEMY_GLEEOK_NECK_INDEX         RAM(0x04D7)
 #define ENEMY_GLEEOK_REF_SEG_DIST       RAM(0x04D8)

@@ -72,6 +72,8 @@ extern void c_gleeok_stretch_neck(unsigned int slot);
 extern void c_play_boss_hit_cry_if_needed(unsigned int slot);
 extern void c_play_boss_death_cry(void);
 extern void c_bound_flyer(unsigned int slot);
+extern unsigned char c_bound_by_room(unsigned int slot);
+extern unsigned char c_get_colliding_tile_moving(unsigned int slot);
 extern void c_reset_obj_metastate(unsigned int slot);
 extern void c_write_blank_priority_sprites(void);
 extern void c_shoot_fireball(unsigned int dir, unsigned int slot);

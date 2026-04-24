@@ -61,6 +61,8 @@ void enrt_manhandla_set_all_segments_direction(unsigned int val);
 void enrt_manhandla_check_collisions(unsigned int slot);
 void enrt_manhandla_move(unsigned int slot);
 void enrt_manhandla_draw(unsigned int slot);
+void enrt_lamnola_update_head(unsigned int slot);
+void enrt_lamnola_move(unsigned int slot);
 void enrt_reset_flyer_state(unsigned int slot);
 void enrt_reset_push_timer(unsigned int slot);
 void enrt_set_dead_dummy_obj_type(unsigned int slot);
