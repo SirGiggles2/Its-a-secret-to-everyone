@@ -327,6 +327,71 @@ def rewrite_asm(bank: str, entries: list[dict[str, Any]]) -> int:
 
 
 # -----------------------------------------------------------------------------
+# Transpiler stub registration (CRITICAL — without this, build.bat reruns
+# tools/transpile_6502.py which regenerates the asm and wipes our rewrites).
+# -----------------------------------------------------------------------------
+
+TRANSPILER = ROOT / "tools" / "transpile_6502.py"
+
+# Marker comment + insertion anchor per bank. Anchor = the literal text
+# immediately preceding the `with open(path, 'w'...` write at the end of
+# each `_patch_z??` function. New _stub_func calls are inserted before it.
+PATCH_ANCHORS: dict[str, str] = {
+    "z_02": "    # --- Batch 38 ---\n    text = _stub_func(text, 'InitDemoSubphasePlayTitleSong'",
+    "z_04": "    # Export ROM data tables referenced by C code\n    if 'xdef    PolsVoiceWalkSpeedsX'",
+    "z_05": "    # --- Batch 54 ---\n    # Sub4 references _anon_z05_151 defined inside Sub3",
+}
+
+
+def update_transpiler(bank: str, entries: list[dict[str, Any]], plan_tag: str) -> int:
+    """Append `_stub_func(text, '<Label>', '<c_name>')` calls to the bank's
+    `_patch_z??` function in tools/transpile_6502.py so trampolines survive
+    re-transpilation. Idempotent (skips lines already present)."""
+    if bank not in PATCH_ANCHORS:
+        print(f"  WARNING: no transpiler patch anchor for bank={bank}; "
+              f"trampolines will be wiped on next build")
+        return 0
+
+    text = TRANSPILER.read_text()
+    lines: list[str] = [
+        f"\n    # --- {plan_tag} ---",
+    ]
+    added = 0
+    for e in entries:
+        if e.get("kind") != "jmp":
+            continue
+        name = e["name"]
+        c_shim = "c_" + snake(name)
+        # Idempotency: skip if already present
+        marker = f"_stub_func(text, '{name}',"
+        if marker in text:
+            continue
+        lines.append(f"    text = _stub_func(text, '{name}', '{c_shim}')")
+        added += 1
+    if added == 0:
+        return 0
+
+    block = "\n".join(lines) + "\n\n"
+    # Find anchor in the bank's _patch function and insert before it.
+    func_marker = f"def _patch_{bank.replace('_', '')}(path):"
+    func_idx = text.find(func_marker)
+    if func_idx < 0:
+        # try alternate (e.g. _patch_z04)
+        func_marker = f"def _patch_{bank}(path):".replace("z_", "z")
+        func_idx = text.find(func_marker)
+    if func_idx < 0:
+        raise RuntimeError(f"_patch function for {bank} not found in transpiler")
+    anchor = PATCH_ANCHORS[bank]
+    anchor_idx = text.find(anchor, func_idx)
+    if anchor_idx < 0:
+        raise RuntimeError(f"transpiler anchor for {bank} not found "
+                           f"(does the file structure still match?)")
+    text = text[:anchor_idx] + block + text[anchor_idx:]
+    TRANSPILER.write_text(text)
+    return added
+
+
+# -----------------------------------------------------------------------------
 # Build
 # -----------------------------------------------------------------------------
 
@@ -371,6 +436,10 @@ def main() -> int:
 
     touched = rewrite_asm(bank, entries)
     print(f"  {bank}.asm: {touched} entries rewritten")
+
+    plan_tag = Path(args.plan).stem
+    stubs = update_transpiler(bank, entries, plan_tag)
+    print(f"  transpile_6502.py: +{stubs} _stub_func entries")
 
     if args.build:
         print("\n[drain_finalize] building ...")

@@ -439,14 +439,8 @@ CommonMiscPatterns:
 
     even
 InitDemo_RunTasks:
-    jsr     TurnOffAllVideo
-    move.b  ($042C,A4),D0
-    beq.s  __far_z_02_0000
-    jmp  InitDemo_Phase1
-__far_z_02_0000:
-    move.b  ($042D,A4),D0
-    jsr     _m68k_tablejump  ; M68K-native table dispatch (replaces JSR TableJump)
-    even
+    jmp     c_init_demo_run_tasks
+
 InitDemo_RunTasks_Phase0_JumpTable:
     dc.l    InitDemoSubphaseClearArtifacts   ; jump table entry (32-bit for _m68k_tablejump)
     dc.l    InitDemoSubphaseTransferTitlePalette   ; jump table entry (32-bit for _m68k_tablejump)
@@ -454,9 +448,8 @@ InitDemo_RunTasks_Phase0_JumpTable:
 
     even
 InitDemo_Phase1:
-    move.b  ($042D,A4),D0
-    jsr     _m68k_tablejump  ; M68K-native table dispatch (replaces JSR TableJump)
-    even
+    jmp     c_init_demo_phase1
+
 InitDemo_RunTasks_Phase1_JumpTable:
     dc.l    InitDemoSubphaseClearArtifacts   ; jump table entry (32-bit for _m68k_tablejump)
     dc.l    InitDemoSubphaseTransferStoryPalette   ; jump table entry (32-bit for _m68k_tablejump)
@@ -464,20 +457,8 @@ InitDemo_RunTasks_Phase1_JumpTable:
 
     even
 UpdateMode0Demo:
-    move.b  ($0013,A4),D0
-    bne  _L_z02_UpdateMode0Demo_HandleSubmodes
-    move.b  ($0528,A4),D0
-    bne  _L_z02_UpdateMode0Demo_HandleSubmodes
-    jsr     AnimateDemo
-    move.b  ($0011,A4),D0
-    bne.s  __far_z_02_0001
-    jmp  Exit
-__far_z_02_0001:
-    even
-_L_z02_UpdateMode0Demo_HandleSubmodes:
-    move.b  ($0013,A4),D0
-    jsr     _m68k_tablejump  ; M68K-native table dispatch (replaces JSR TableJump)
-    even
+    jmp     c_update_mode0_demo
+
 UpdateMode0Demo_JumpTable:
     dc.l    UpdateMode0Demo_Sub0   ; jump table entry (32-bit for _m68k_tablejump)
     dc.l    UpdateMode0Demo_Sub1   ; jump table entry (32-bit for _m68k_tablejump)
@@ -485,196 +466,23 @@ UpdateMode0Demo_JumpTable:
 
     even
 UpdateMode0Demo_Sub0:
-    move.b  ($00F8,A4),D0
-    andi.b #$10,D0
-    bne.s  __far_z_02_0002
-    jmp  Exit
-__far_z_02_0002:
-    move.b  #1,($00FF083D).l    ; PATCH P11: hold VRamForceBlankGate
-    move.b  #1,($00FF042B).l    ; PATCH P12: arm FrontendStartReleaseGate
-    move.b  D0,($00F6,A4)
-    moveq   #0,D0
-    move.b  D0,($0600,A4)
-    jsr     SilenceAllSound
-    moveq   #90,D0
-    move.b  D0,($0528,A4)
-    addq.b  #1,($0013,A4)
-    jsr     TurnOffAllVideo
-    jsr     HideAllSprites
-    moveq   #18,D0
-    move.b  D0,($0014,A4)
-    even
-    IFND Exit
-Exit:
-    ENDC
-    rts
+    jmp     c_update_mode0_demo_sub0
 
     even
 UpdateMode0Demo_Sub2:
-    ; Copy data from each save file A to save slot info.
-    ; Most of the game will deal with save slot info.
-    ; Format each inactive file A, to make sure it's clear.
-    ;
-    jsr     TurnOffAllVideo
-    moveq   #0,D0
-    move.b  D0,($0016,A4)
-    jsr     FetchFileAAddressSet
-    moveq   #2,D3
-    even
-_L_z02_UpdateMode0Demo_Sub2_LoopFormatSlot:
-    move.b  ($06,A4),D1   ; ptr lo
-    move.b  ($07,A4),D4  ; ptr hi
-    andi.w  #$00FF,D1         ; zero-extend lo byte
-    lsl.w   #8,D4
-    or.w    D1,D4             ; D4 = NES ptr addr
-    ext.l   D4
-    add.l   #NES_RAM,D4       ; → Genesis addr
-    movea.l D4,A0
-    move.b  (A0,D3.W),D0     ; LDA ($nn),Y
-    lea     ($0633,A4),A0
-    move.b  D0,(A0,D3.W)
-    bne  _L_z02_UpdateMode0Demo_Sub2_NextFormatSlot
-    move.b  D3,D0
-    move.b  D0,-(A5)  ; PHA
-    move.b  D3,($0016,A4)
-    jsr     FetchFileAAddressSet
-    jsr     FormatFileA
-    moveq   #0,D0
-    move.b  D0,($0016,A4)
-    ; Fetch the address set for slot 0 again,
-    ; so that we can keep referring to its
-    ; IsSaveSlotActive address as a table base.
-    ;
-    ; After this, the slot is still not active, but it will
-    ; definitely be clear.
-    jsr     FetchFileAAddressSet
-    move.b  (A5)+,D0  ; PLA
-    moveq   #0,D3
-    move.b  D0,D3
-    even
-_L_z02_UpdateMode0Demo_Sub2_NextFormatSlot:
-    move.b  ($0A,A4),D1   ; ptr lo
-    move.b  ($0B,A4),D4  ; ptr hi
-    andi.w  #$00FF,D1         ; zero-extend lo byte
-    lsl.w   #8,D4
-    or.w    D1,D4             ; D4 = NES ptr addr
-    ext.l   D4
-    add.l   #NES_RAM,D4       ; → Genesis addr
-    movea.l D4,A0
-    move.b  (A0,D3.W),D0     ; LDA ($nn),Y
-    lea     ($0630,A4),A0
-    move.b  D0,(A0,D3.W)
-    move.b  ($0C,A4),D1   ; ptr lo
-    move.b  ($0D,A4),D4  ; ptr hi
-    andi.w  #$00FF,D1         ; zero-extend lo byte
-    lsl.w   #8,D4
-    or.w    D1,D4             ; D4 = NES ptr addr
-    ext.l   D4
-    add.l   #NES_RAM,D4       ; → Genesis addr
-    movea.l D4,A0
-    move.b  (A0,D3.W),D0     ; LDA ($nn),Y
-    lea     ($062D,A4),A0
-    move.b  D0,(A0,D3.W)
-    subq.b  #1,D3
-    bpl  _L_z02_UpdateMode0Demo_Sub2_LoopFormatSlot
-    moveq   #24,D3
-    moveq   #0,D2
-    even
-_L_z02_UpdateMode0Demo_Sub2_LoopHeart:
-    move.b  ($00,A4),D1   ; ptr lo
-    move.b  ($01,A4),D4  ; ptr hi
-    andi.w  #$00FF,D1         ; zero-extend lo byte
-    lsl.w   #8,D4
-    or.w    D1,D4             ; D4 = NES ptr addr
-    ext.l   D4
-    add.l   #NES_RAM,D4       ; → Genesis addr
-    movea.l D4,A0
-    move.b  (A0,D3.W),D0     ; LDA ($nn),Y
-    move.b  D0,-(A5)  ; PHA
-    move.b  D2,D0
-    lsr.b  #1,D0   ; LSR A
-    ; If X is even, then the value is a hearts value.
-    ; So, make the hearts equal the heart containers.
-    bcs  _L_z02_UpdateMode0Demo_Sub2_StoreValue
-    ; Pop what we pushed, because we're going to push
-    ; a modification.
-    move.b  (A5)+,D0  ; PLA
-    andi.b #$F0,D0
-    move.b  D0,($000C,A4)
-    lsr.b  #1,D0   ; LSR A
-    lsr.b  #1,D0   ; LSR A
-    lsr.b  #1,D0   ; LSR A
-    lsr.b  #1,D0   ; LSR A
-    move.b  ($000C,A4),D1
-    or.b  D1,D0
-    move.b  D0,-(A5)  ; PHA
-    even
-_L_z02_UpdateMode0Demo_Sub2_StoreValue:
-    move.b  (A5)+,D0  ; PLA
-    lea     ($0650,A4),A0
-    move.b  D0,(A0,D2.W)
-    ; Point to the next byte in Items block.
-    ; hearts value -> hearts partial
-    addq.b  #1,D3
-    addq.b  #1,D2
-    ; There are 6 values total:
-    ; (hearts value, hearts partial) * 3 slots.
-    cmpi.b  #$06,D2
-    beq  _L_z02_UpdateMode0Demo_Sub2_CopyNames
-    move.b  D2,D0
-    lsr.b  #1,D0   ; LSR A
-    bcs  _L_z02_UpdateMode0Demo_Sub2_LoopHeart
-    ; The 3 files are consecutive in the set.
-    ; Point to the hearts value in the next slot.
-    move.b  D3,D0
-    move.b  #$26,D1
-    addx.b  D1,D0   ; ADC #$26 (X flag = 6502 C)
-    moveq   #0,D3
-    move.b  D0,D3
-    jmp     _L_z02_UpdateMode0Demo_Sub2_LoopHeart
+    jmp     c_update_mode0_demo_sub2
 
-    even
-_L_z02_UpdateMode0Demo_Sub2_CopyNames:
-    moveq   #23,D3
-    even
-_L_z02_UpdateMode0Demo_Sub2_LoopNameByte:
-    move.b  ($04,A4),D1   ; ptr lo
-    move.b  ($05,A4),D4  ; ptr hi
-    andi.w  #$00FF,D1         ; zero-extend lo byte
-    lsl.w   #8,D4
-    or.w    D1,D4             ; D4 = NES ptr addr
-    ext.l   D4
-    add.l   #NES_RAM,D4       ; → Genesis addr
-    movea.l D4,A0
-    move.b  (A0,D3.W),D0     ; LDA ($nn),Y
-    lea     ($0638,A4),A0
-    move.b  D0,(A0,D3.W)
-    subq.b  #1,D3
-    bpl  _L_z02_UpdateMode0Demo_Sub2_LoopNameByte
-    addq.b  #1,($0012,A4)
-    moveq   #0,D0
-    move.b  D0,($0011,A4)
-    move.b  D0,($0013,A4)
-    rts
-
-    even
 AnimateDemo:
-    move.b  ($042C,A4),D0
-    beq.s  __far_z_02_0003
-    jmp  AnimateDemo_Phase1
-__far_z_02_0003:
-    move.b  ($042D,A4),D0
-    jsr     _m68k_tablejump  ; M68K-native table dispatch (replaces JSR TableJump)
-    even
+    jmp     c_animate_demo
+
 AnimateDemo_Phase0_JumpTable:
     dc.l    AnimateDemoPhase0Subphase0   ; jump table entry (32-bit for _m68k_tablejump)
     dc.l    AnimateDemoPhase0Subphase1   ; jump table entry (32-bit for _m68k_tablejump)
 
     even
 AnimateDemo_Phase1:
-    move.b  ($042D,A4),D0
-    jsr     _m68k_tablejump  ; M68K-native table dispatch (replaces JSR TableJump)
-    even
+    jmp     c_animate_demo_phase1
+
 AnimateDemo_Phase1_JumpTable:
     dc.l    AnimateDemoPhase1Subphase0   ; jump table entry (32-bit for _m68k_tablejump)
     dc.l    AnimateDemoPhase1Subphase1   ; jump table entry (32-bit for _m68k_tablejump)
@@ -1363,9 +1171,9 @@ AnimateDemoPhase1Subphase4:
     addq.b  #1,($041A,A4)
     move.b  ($041A,A4),D0
     cmpi.b  #$39,D0
-    beq.s  __far_z_02_0004
+    beq.s  __far_z_02_0000
     jmp  AnimateDemoPhase1End_AnimateObjects
-__far_z_02_0004:
+__far_z_02_0000:
     moveq   #0,D0
     move.b  D0,($0011,A4)
     move.b  D0,($041A,A4)
@@ -2275,9 +2083,9 @@ _anon_z02_9:
     ;
     move.b  ($0016,A4),D0
     cmpi.b  #$03,D0
-    beq.s  __far_z_02_0005
+    beq.s  __far_z_02_0001
     jmp  DeleteSlot
-__far_z_02_0005:
+__far_z_02_0001:
     moveq   #14,D0
     move.b  D0,($0012,A4)
     moveq   #0,D0
@@ -2331,9 +2139,9 @@ _L_z02_DeleteSlot_ClearName:
 ModeE_HandleDirections:
     move.b  ($00FA,A4),D0
     andi.b #$0F,D0
-    beq.s  __far_z_02_0006
+    beq.s  __far_z_02_0002
     jmp  ModeE_HandleDirectionButton
-__far_z_02_0006:
+__far_z_02_0002:
     even
 ResetButtonRepeatState:
     jmp     c_reset_button_repeat_state
@@ -2540,9 +2348,9 @@ ModeE_HandleAOrB:
     moveq   #0,D3
     move.b  ($0016,A4),D3
     cmpi.b  #$03,D3
-    bne.s  __far_z_02_0007
+    bne.s  __far_z_02_0003
     jmp  LA10A_Exit
-__far_z_02_0007:
+__far_z_02_0003:
     ; Set NameCharOffset [$0421] to the offset of first char
     ; in the current slot's name.
     lea     (SlotToNameOffset).l,A0
@@ -4452,9 +4260,9 @@ InitMode13_Full_JumpTable:
 InitMode13_Sub0:
     jsr     UpdateEndGameCurtainEffect
     move.b  ($0013,A4),D0
-    bne.s  __far_z_02_0008
+    bne.s  __far_z_02_0004
     jmp  LA958_Exit
-__far_z_02_0008:
+__far_z_02_0004:
     jsr     HideAllSprites
     jsr     Link_EndMoveAndDraw
     moveq   #1,D2
@@ -4547,9 +4355,9 @@ UpdateZeldaTextbox:
     ; If Zelda's timer has not expired, then return.
     ;
     move.b  ($0029,A4),D0
-    beq.s  __far_z_02_0009
+    beq.s  __far_z_02_0005
     jmp  LA9F4_Exit
-__far_z_02_0009:
+__far_z_02_0005:
     ; Set the timer to wait 6 frames after the next character about
     ; to be shown.
     ;
@@ -4624,9 +4432,9 @@ _anon_z02_32:
     movea.l D4,A0
     move.b  (A0,D3.W),D0     ; LDA ($nn),Y
     andi.b #$C0,D0
-    bne.s  __far_z_02_0010
+    bne.s  __far_z_02_0006
     jmp  LA9F4_Exit
-__far_z_02_0010:
+__far_z_02_0006:
     ; Determine an index based on the high 2 bits of the character element:
     ;   $80: 0
     ;   $40: 1
@@ -4654,9 +4462,9 @@ _anon_z02_33:
     ; So, advance the state of the person object, and unhalt Link.
     ;
     cmpi.b  #$02,D3
-    beq.s  __far_z_02_0011
+    beq.s  __far_z_02_0007
     jmp  LA9F4_Exit
-__far_z_02_0011:
+__far_z_02_0007:
     addq.b  #1,($00AD,A4)
     moveq   #0,D0
     move.b  D0,($00AC,A4)
@@ -4953,16 +4761,16 @@ UpdateMode13WinGame_Sub4:
     ; Don't let the player skip ahead for a little while.
     ;
     move.b  ($0028,A4),D0
-    beq.s  __far_z_02_0012
+    beq.s  __far_z_02_0008
     jmp  LAB7E_Exit
-__far_z_02_0012:
+__far_z_02_0008:
     ; If Start hasn't been pressed, then return.
     ;
     move.b  ($00F8,A4),D0
     andi.b #$10,D0
-    bne.s  __far_z_02_0013
+    bne.s  __far_z_02_0009
     jmp  LAB7E_Exit
-__far_z_02_0013:
+__far_z_02_0009:
     ; Start was pressed. We'll transition to mode $D to save.
     ;
     jsr     EndGameMode

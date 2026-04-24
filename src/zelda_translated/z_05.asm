@@ -178,19 +178,11 @@
 
     even
 UpdateMenuAndMeters:
-    jsr     UpdateMenu
-    jmp     UpdateHeartsAndRupees
+    jmp     c_update_menu_and_meters
 
-    even
 UpdateMenu:
-    move.b  ($00E1,A4),D0
-    moveq   #0,D3
-    move.b  ($0010,A4),D3
-    beq  _anon_z05_0
-    ; Update menu in UW.
-    ;
-    jsr     _m68k_tablejump  ; M68K-native table dispatch (replaces JSR TableJump)
-    even
+    jmp     c_update_menu
+
 UpdateMenuUW_JumpTable:
     dc.l    UpdateMenu_Return   ; jump table entry (32-bit for _m68k_tablejump)
     dc.l    UpdateMenuCommon1   ; jump table entry (32-bit for _m68k_tablejump)
@@ -221,46 +213,8 @@ UpdateMenuOW_JumpTable:
 
     even
 UpdateMenuCommon1:
-    jsr     HideAllSprites
-    jsr     UpdatePlayerPositionMarker
-    jsr     UpdateTriforcePositionMarker
-    ; Move position markers and hardware vertical scroll position
-    ; down 1 pixel.
-    ;
-    ; Because we'll be above the top of NT 0, switch to NT 2 to
-    ; be at the bottom of NT 2.
-    ;
-    move.b  #$EF,D0
-    move.b  D0,($00FC,A4)
-    move.b  D0,($005C,A4)
-    moveq   #1,D0
-    jsr     MovePositionMarkers
-    addq.b  #1,($00E1,A4)
-    ; SubmenuScrollProgress begins at $2B. Each frame it will be
-    ; decremented. It encodes a submenu row index in bits 1 to 7,
-    ; and a flag in bit 0.
-    ;
-    ; When the flag is 1, a full row of black tiles will be transferred
-    ; at the current row. Otherwise, one of various static visual
-    ; elements will be transferred.
-    ;
-    ; For example:
-    ; 1. In the first frame of scrolling, $2B indicates that a full row
-    ;    of black tiles must be transferred to row $15.
-    ; 2. In the second frame ($2A), submenu row will again be
-    ;    $15, but something else will be transferred.
-    ; 3. In the third frame ($29), a full row of black tiles will be
-    ;    transferred to row $14.
-    ;
-    moveq   #43,D0
-    move.b  D0,($005E,A4)
-    ; In UW, this variable will be used to scan every room in order
-    ; to build the big sheet map in the submenu. It will range
-    ; from $7F to 0.
-    ;
-    moveq   #127,D0
-    move.b  D0,($005D,A4)
-    even
+    jmp     c_update_menu_common1
+
 UpdateMenu_Return:
     rts
 
@@ -283,121 +237,17 @@ UpdateMenuCommon4:
     jmp     c_update_menu_common4
 
 UpdateMenu5UW:
-    jsr     Submenu_CueTransferRowUW
-    jmp     _anon_z05_1
+    jmp     c_update_menu5_uw
 
-    even
 UpdateMenu5OW:
     jmp     c_update_menu5_ow
 
 UpdateMenuScrollDownOW:
-    jsr     Submenu_CueTransferRowOW
-    jmp     _anon_z05_2
+    jmp     c_update_menu_scroll_down_ow
 
-    even
 UpdateMenuScrollDownUW:
-    jsr     Submenu_CueTransferRowUW
-_anon_z05_2:
-    ; Move position markers and advance nametable scrolling;
-    ; so that we scroll down 3 pixels.
-    ;
-    moveq   #3,D0
-    jsr     MovePositionMarkers
-    move.b  ($00FC,A4),D0
-    ori     #$11,CCR  ; SEC: set C+X
-    move.b  #$03,D1
-    eori    #$10,CCR  ; flip X: 6502 SBC polarity
-    subx.b  D1,D0   ; SBC #$03
-    eori    #$10,CCR  ; restore X = 6502 C
-    move.b  D0,($00FC,A4)
-    ; There's nothing else to do until we reach hardware VScroll=$41. Return.
-    ;
-    cmpi.b  #$41,D0
-    bne  _L_z05_UpdateMenuScrollDownUW_Exit
-    ; VScroll reached $41.
-    ; Advance the submenu state.
-    ; If in OW or in a cellar, we're done. Return.
-    ;
-    addq.b  #1,($00E1,A4)
-    move.b  ($0010,A4),D0
-    beq  _L_z05_UpdateMenuScrollDownUW_Exit
-    move.b  ($0012,A4),D0
-    cmpi.b  #$09,D0
-    beq  _L_z05_UpdateMenuScrollDownUW_Exit
-    ; Calculate the X coordinate of the submenu position marker.
-    ;
-    ; First, mask off the high nibble of the room ID and multiply by
-    ; the width of a tile, 8. Store the result in [00].
-    ;
-    move.b  ($00EB,A4),D0
-    andi.b #$0F,D0
-    lsl.b  #1,D0   ; ASL A
-    lsl.b  #1,D0   ; ASL A
-    lsl.b  #1,D0   ; ASL A
-    move.b  D0,($0000,A4)
-    ; If the submenu map's rotation >= 8, it's the same as a
-    ; negative or left rotation by ($10 - rotation value).
-    ;
-    ; Subtract the two values as shown. Multiply the result by 8,
-    ; the width of a tile. Then negate it. The final result is the
-    ; negative offset.
-    ;
-    move.b  (NES_SRAM+$0BAB).l,D0
-    cmpi.b  #$08,D0
-    bcs  _L_z05_UpdateMenuScrollDownUW_ShortRotation
-    moveq   #16,D0
-    move.b  (NES_SRAM+$0BAB).l,D1
-    eori    #$10,CCR  ; flip X: 6502 SBC polarity
-    subx.b  D1,D0   ; SBC LevelInfo_SubmenuMapRotation
-    eori    #$10,CCR  ; restore X = 6502 C
-    lsl.b  #1,D0   ; ASL A
-    lsl.b  #1,D0   ; ASL A
-    lsl.b  #1,D0   ; ASL A
-    jsr     Negate
-    jmp     _L_z05_UpdateMenuScrollDownUW_SumMarkerX
+    jmp     c_update_menu_scroll_down_uw
 
-    even
-_L_z05_UpdateMenuScrollDownUW_ShortRotation:
-    ; The submenu map's rotation < 8.
-    ; It represents the number of tiles to move right.
-    ; So, multiply it by 8.
-    ;
-    lsl.b  #1,D0   ; ASL A
-    lsl.b  #1,D0   ; ASL A
-    lsl.b  #1,D0   ; ASL A
-    even
-_L_z05_UpdateMenuScrollDownUW_SumMarkerX:
-    ; Add the offset we calculated, and $62 to [00] to get
-    ; the position marker's X coordinate.
-    ;
-    andi    #$EE,CCR  ; CLC: clear C+X
-    move.b  ($0000,A4),D1
-    addx.b  D1,D0   ; ADC $00
-    andi    #$EE,CCR  ; CLC: clear C+X
-    move.b  #$62,D1
-    addx.b  D1,D0   ; ADC #$62 (X flag = 6502 C)
-    move.b  D0,($0253,A4)
-    ; Mask off the low nibble of room ID to get a multiple of $10.
-    ; Divide by 2 to get a multiple of the tile height.
-    ; Then add $69 to get the Y coordinate of the sprite.
-    ;
-    move.b  ($00EB,A4),D0
-    andi.b #$F0,D0
-    lsr.b  #1,D0   ; LSR A
-    move.b  #$69,D1
-    addx.b  D1,D0   ; ADC #$69 (X flag = 6502 C)
-    move.b  D0,($0250,A4)
-    ; Write tile $3E (dot) and attributes 0 (Link palette row 4).
-    ;
-    moveq   #62,D0
-    move.b  D0,($0251,A4)
-    moveq   #0,D0
-    move.b  D0,($0252,A4)
-    even
-_L_z05_UpdateMenuScrollDownUW_Exit:
-    rts
-
-    even
 UpdateMenuActive:
     jsr     DrawSubmenuItems
     jsr     UpdateSubmenuSelection

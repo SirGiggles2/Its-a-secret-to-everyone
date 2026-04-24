@@ -3886,6 +3886,15 @@ def _patch_z02(path):
     text = _stub_func(text, 'InitDemoSubphasePlayTitleSong', 'c_init_demo_subphase_play_title_song')
     text = _stub_func(text, 'InitMode13_Sub4', 'c_init_mode13_sub4')
 
+    # --- Batch 89 (Agent G demo/intro drain) ---
+    text = _stub_func(text, 'InitDemo_RunTasks', 'c_init_demo_run_tasks')
+    text = _stub_func(text, 'InitDemo_Phase1', 'c_init_demo_phase1')
+    text = _stub_func(text, 'UpdateMode0Demo', 'c_update_mode0_demo')
+    text = _stub_func(text, 'UpdateMode0Demo_Sub0', 'c_update_mode0_demo_sub0')
+    text = _stub_func(text, 'UpdateMode0Demo_Sub2', 'c_update_mode0_demo_sub2')
+    text = _stub_func(text, 'AnimateDemo', 'c_animate_demo')
+    text = _stub_func(text, 'AnimateDemo_Phase1', 'c_animate_demo_phase1')
+
     with open(path, 'w', encoding='utf-8') as f:
         f.write(text)
 
@@ -4081,6 +4090,17 @@ def _stub_func(text, label, c_shim):
 
     preserved = ''.join(preserved_blocks)
     stub = f"{label}:\n    jmp     {c_shim}\n\n{preserved}"
+
+    # Strip orphan `Exit:\n    ENDC\n    rts` stanza that immediately follows.
+    # NES source uses `IFND Exit ... Exit: ENDC` conditional wrappers; when we
+    # drop the body, the matching IFND vanishes but Exit:/ENDC/rts survives as
+    # a non-underscore trailing label, causing "unexpected endif without if".
+    tail = text[body_end:]
+    orphan = _re_stub.match(r'Exit:\s*\n\s*ENDC\s*\n\s*rts\s*\n\s*\n', tail)
+    if orphan:
+        body_end += orphan.end()
+        print(f"  _stub_func: stripped orphan Exit/ENDC after {label}")
+
     text = text[:m.start()] + stub + text[body_end:]
     print(f"  _stub_func: {label} -> {c_shim}")
     return text
@@ -4282,6 +4302,21 @@ def _patch_z04(path):
     if 'xdef    PolsVoiceWalkSpeedsX' not in text and 'PolsVoiceWalkSpeedsX:' in text:
         text = "\n    xdef    PolsVoiceWalkSpeedsX\n" + text
         print("  _patch_z04: exported PolsVoiceWalkSpeedsX")
+
+    # --- Batch 84 (Agent C wanderer + Agent D zol/gel + Agent E gohma/gleeok) ---
+    text = _stub_func(text, 'UpdateCommonWanderer', 'c_update_common_wanderer')
+    text = _stub_func(text, 'Wanderer_TargetPlayer', 'c_wanderer_target_player')
+    text = _stub_func(text, 'UpdateGoriya', 'c_update_goriya')
+    text = _stub_func(text, 'UpdateZolState', 'c_update_zol_state')
+    text = _stub_func(text, 'Zol_CheckCollisions', 'c_zol_check_collisions')
+    text = _stub_func(text, 'Gel_Move', 'c_gel_move')
+    text = _stub_func(text, 'Gel_CheckCollisions', 'c_gel_check_collisions')
+    text = _stub_func(text, 'Gel_MoveSplitting', 'c_gel_move_splitting')
+    text = _stub_func(text, 'UpdateNormalZolOrGel', 'c_update_normal_zol_or_gel')
+    text = _stub_func(text, 'UpdateGohma', 'c_update_gohma')
+    text = _stub_func(text, 'UpdateGleeok', 'c_update_gleeok')
+    text = _stub_func(text, 'L_Gleeok_StoreRefSegDistance', 'c_l_gleeok_store_ref_seg_distance')
+    text = _stub_func(text, 'Gleeok_CheckCollisions', 'c_gleeok_check_collisions')
 
     with open(path, 'w', encoding='utf-8') as f:
         f.write(text)
@@ -5578,6 +5613,14 @@ def _patch_z05(path):
     text = _stub_func(text, 'InitMode3_Sub4_TransferBottomHalfAttrs', 'c_init_mode3_sub4')
     text = _stub_func(text, 'InitMode3_Sub3_TransferTopHalfAttrs', 'c_init_mode3_sub3')
     text = _stub_func(text, 'InitMode3_Sub5', 'c_init_mode3_sub5')
+
+    # --- Batch 90 (Agent F save menu drain) ---
+    text = _stub_func(text, 'UpdateMenuAndMeters', 'c_update_menu_and_meters')
+    text = _stub_func(text, 'UpdateMenu', 'c_update_menu')
+    text = _stub_func(text, 'UpdateMenuCommon1', 'c_update_menu_common1')
+    text = _stub_func(text, 'UpdateMenu5UW', 'c_update_menu5_uw')
+    text = _stub_func(text, 'UpdateMenuScrollDownOW', 'c_update_menu_scroll_down_ow')
+    text = _stub_func(text, 'UpdateMenuScrollDownUW', 'c_update_menu_scroll_down_uw')
 
     with open(path, 'w', encoding='utf-8') as f:
         f.write(text)
