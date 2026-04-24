@@ -1,4 +1,5 @@
 #include "enemy_runtime_private.h"
+#include "combat_state.h"
 
 /* External helpers used by Monster Shot / Fireball ports.
  * MoveObject, BoundByRoom, GetCollidingTileMoving, CheckLinkCollision,
@@ -159,17 +160,17 @@ void enrt_draw_shot(unsigned int slot) {
      * RAM[$0D] for the impending DrawObjectNotMirrored. */
     {
         unsigned char tile = z07_anim_fetch_obj_pos(slot);
-        RAM(0x000D) = tile;
+        COMBAT_THRESHOLD_X = tile;
     }
 
     /* Default: flash attribute from frame counter low bits. */
     {
-        unsigned int attr = (unsigned int)(RAM(0x0015) & 0x03);
+        unsigned int attr = (unsigned int)(ENEMY_CUR_SPRITE_ATTR_ROW & 0x03);
         unsigned char draw_type = ENEMY_TYPE(slot);
         if (draw_type < 0x55) {
             /* Flying-rock variants: shift sprite X right by 4 and force
              * sprite attribute 0 (no flashing). */
-            RAM(0x0000) = (unsigned char)(RAM(0x0000) + 4);
+            ENEMY_SCRATCH_X = (unsigned char)(ENEMY_SCRATCH_X + 4);
             attr = 0;
         }
         z01_anim_set_sprite_desc_attrs(attr);
@@ -218,11 +219,11 @@ void enrt_bounce_shot(unsigned int slot) {
 void enrt_check_shot_link_collision(unsigned int slot) {
     OBJ(0x0394, slot) = 0;
     z01_check_link_collision(slot);
-    if (RAM(0x034B) == 0)
+    if (ROOM_MONSTER_COLLISION_COUNT == 0)
         return;
     /* Bounce off Link's shield: copy Link's facing direction into the
      * shot's bounce-direction slot and put it into bounce state $30. */
-    OBJ(0x0380, slot) = RAM(0x0098);
+    OBJ(0x0380, slot) = LINK_DIR;
     ENEMY_STATE_TIMER(slot) = 48;
 }
 
@@ -232,7 +233,7 @@ void enrt_check_shot_link_collision(unsigned int slot) {
  */
 void enrt_update_monster_shot(unsigned int slot) {
     /* Sync transient direction byte with this object's facing. */
-    RAM(0x000F) = ENEMY_DIR(slot);
+    ENEMY_FRAME_FLAGS = ENEMY_DIR(slot);
 
     {
         unsigned char state_hi = (unsigned char)(ENEMY_STATE_TIMER(slot) & 0xF0);
@@ -249,14 +250,14 @@ void enrt_update_monster_shot(unsigned int slot) {
             if (ENEMY_MOVE_TIMER(slot) != 0) {
                 /* Held back by timer: only check Link collision. */
                 enrt_check_shot_link_collision(slot);
-                if (RAM(0x0006) != 0)
+                if (ENEMY_COLLISION_FLAG != 0)
                     enrt_destroy_monster_shot(slot);
                 return;
             }
             /* Tile collision check; destroy on contact with floor tile. */
             {
                 unsigned char tile = z07_get_colliding_tile_moving(slot);
-                unsigned char floor = RAM(0x034A);
+                unsigned char floor = ENEMY_DUNGEON_TILE_FLOOR;
                 if (tile >= floor) {
                     enrt_destroy_monster_shot(slot);
                     return;
@@ -274,7 +275,7 @@ void enrt_update_monster_shot(unsigned int slot) {
     /* Move, then check for Link collision. */
     c_move_object((unsigned short)slot);
     enrt_check_shot_link_collision(slot);
-    if (RAM(0x0006) != 0)
+    if (ENEMY_COLLISION_FLAG != 0)
         enrt_destroy_monster_shot(slot);
 }
 
@@ -305,11 +306,11 @@ void enrt_update_fireball(unsigned int slot) {
          * and horizontal dir at RAM[$0B] in the original ABI. */
         z01_get_directions_and_distances_to_target(0, slot);
 
-        OBJ(0x0412, slot) = RAM(0x000B); /* horizontal direction */
-        OBJ(0x0437, slot) = RAM(0x000A); /* vertical direction */
+        OBJ(0x0412, slot) = COMBAT_ABS_DY; /* horizontal direction */
+        OBJ(0x0437, slot) = COMBAT_ABS_DX; /* vertical direction */
 
         /* Combined facing = horizontal | vertical. */
-        ENEMY_DIR(slot) = (unsigned char)(RAM(0x000A) | RAM(0x000B));
+        ENEMY_DIR(slot) = (unsigned char)(COMBAT_ABS_DX | COMBAT_ABS_DY);
 
         /* Pick the diagonal speed index (mid index = 4) and look up
          * paired q-speeds. */
@@ -334,17 +335,17 @@ void enrt_update_fireball(unsigned int slot) {
         }
 
         /* Move along horizontal axis. */
-        RAM(0x000F) = OBJ(0x0412, slot);
+        ENEMY_FRAME_FLAGS = OBJ(0x0412, slot);
         OBJ(0x0451, slot) = enrt_fireball_move_one_axis(OBJ(0x041F, slot), OBJ(0x0451, slot), slot);
 
         /* Move along vertical axis. */
-        RAM(0x000F) = OBJ(0x0437, slot);
+        ENEMY_FRAME_FLAGS = OBJ(0x0437, slot);
         OBJ(0x045E, slot) = enrt_fireball_move_one_axis(OBJ(0x0444, slot), OBJ(0x045E, slot), slot);
     }
 
     /* Collision check + draw. */
     enrt_check_shot_link_collision(slot);
-    if (RAM(0x034B) != 0) {
+    if (ROOM_MONSTER_COLLISION_COUNT != 0) {
         z07_destroy_monster(slot);
         return;
     }
