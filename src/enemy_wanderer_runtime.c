@@ -10,8 +10,6 @@
 
 /* ---- Plan C: drained from z_07 (walker_alt_dir cluster) --------------- */
 
-extern const unsigned char ReverseDirections[];
-
 unsigned int enrt_walker_alt_dir_get_opposite(void) {
     unsigned char dir = ENEMY_FRAME_FLAGS;
     if (dir & 0x0A)
@@ -32,17 +30,6 @@ unsigned char enrt_walker_alt_dir_get_random_perpendicular(unsigned int slot) {
 }
 
 /* ---- Plan C: drained from z_04 (Common Wanderer / Goriya family) ------ */
-
-/* IMPORT shim into still-asm _ShootIfWanted (declared in c_shims.asm).
- *   unsigned int c_shoot_if_wanted(type, slot);
- *   Returns 0 on failure; (CARRY_SET | shot_slot) on success.
- */
-extern unsigned int c_shoot_if_wanted(unsigned int type, unsigned int slot);
-
-/* IMPORT shim into still-asm Obj_Shove (already-declared in c_wanderer.c).
- *   void c_obj_shove(slot);
- */
-extern void c_obj_shove(unsigned int slot);
 
 /* Forward decls so the dispatchers can reference each other. */
 void enrt_wanderer_target_player(unsigned int slot);
