@@ -105,6 +105,16 @@ void enrt_init_aquamentus(unsigned int slot) {
     ENEMY_Y(slot) = 0x80;
 }
 
+void enrt_update_aquamentus(unsigned int slot) {
+    if (ENEMY_PAUSE_FLAG == 0) {
+        c_aquamentus_move(slot);
+        c_aquamentus_shoot(slot);
+    }
+    c_aquamentus_draw(slot);
+    c_check_monster_collisions(slot);
+    enrt_play_boss_hit_cry_if_needed(slot);
+}
+
 void enrt_init_tektite(unsigned int slot) {
     unsigned char rnd = ENEMY_RNG_B(slot) & 0x03;
     unsigned char dir = TektiteStartingDirs[rnd];
@@ -634,4 +644,3 @@ animate_eye:
     c_gohma_animate_and_draw((unsigned int)ENEMY_GOHMA_EYE_FRAME(slot), slot);
     c_gohma_check_collisions(slot);
 }
-

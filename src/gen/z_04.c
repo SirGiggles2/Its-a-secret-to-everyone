@@ -45,6 +45,10 @@ void z04_init_aquamentus(unsigned int slot) {
     enrt_init_aquamentus(slot);
 }
 
+void z04_update_aquamentus(unsigned int slot) {
+    enrt_update_aquamentus(slot);
+}
+
 void z04_init_tektite(unsigned int slot) {
     enrt_init_tektite(slot);
 }
@@ -429,12 +433,20 @@ void z04_update_zora(unsigned int slot) {
     enrt_update_zora(slot);
 }
 
+void z04_update_moblin(unsigned int slot) {
+    enrt_update_moblin(slot);
+}
+
 void z04_update_stalfos(unsigned int slot) {
     enrt_update_stalfos(slot);
 }
 
 void z04_update_ghini(unsigned int slot) {
     enrt_update_ghini(slot);
+}
+
+void z04_update_gibdo(unsigned int slot) {
+    enrt_update_gibdo(slot);
 }
 
 void z04_draw_ghini_and_check_collisions(unsigned int slot) {

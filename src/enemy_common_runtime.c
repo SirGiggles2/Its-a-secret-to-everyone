@@ -18,6 +18,14 @@ void enrt_gohma_play_parry_tune(void) {
     ENEMY_SFX_PARRY = 1;
 }
 
+void enrt_update_gibdo(unsigned int slot) {
+    enrt_update_common_wanderer(0x80u, slot);
+    c_check_monster_collisions(slot);
+    z07_anim_advance_and_fetch(8, slot);
+    z07_anim_set_obj_hflip(slot);
+    c_draw_object_not_mirrored_with_frame(0, slot);
+}
+
 /* ---- Plan C: drained from z_04 (Zol + Gel family) --------------------- */
 
 /* RoomObjCount — bumped when Zol splits so the kill-bookkeeping stays

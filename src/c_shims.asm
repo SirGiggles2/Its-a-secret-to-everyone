@@ -917,6 +917,7 @@
     xref    z04_animate_and_draw_common_object
     xref    z04_update_bubble
     xref    z04_update_keese
+    xref    z04_update_moblin
     xref    Obj_Shove
     xref    Walker_Move
     xref    UpdateCommonWanderer
@@ -925,6 +926,11 @@
     xref    z04_move_flyer
     xref    z04_bound_flyer
     xref    ControlKeeseFlight
+    xref    z04_update_gibdo
+    xref    z04_update_aquamentus
+    xref    Aquamentus_Move
+    xref    Aquamentus_Shoot
+    xref    Aquamentus_Draw
     xref    DrawItemInInventory
     xref    GoToNextModeFromPlay
     xref    InitMode_EnterRoom
@@ -4461,6 +4467,15 @@ c_update_keese:
     move.l  (SP)+,D2
     rts
 
+; UpdateMoblin(slot) — D2=slot
+c_update_moblin:
+    moveq   #0,D1
+    move.w  D2,D1
+    move.l  D1,-(SP)
+    jsr     z04_update_moblin
+    addq.l  #4,SP
+    rts
+
 ; DrawObjectMirrored with explicit frame — (frame, slot): D0=frame, D2=slot
 c_draw_object_mirrored_with_frame:
     move.l  8(SP),D2
@@ -5230,6 +5245,47 @@ c_dodongo_draw:
 ; BoundFlyer — C-callable helper, D2=slot.
 c_bound_flyer:
     jmp     z04_bound_flyer
+
+;==============================================================================
+; --- Batch 107: z_04 moblin / gibdo / aquamentus ---
+;==============================================================================
+
+    xdef    c_update_gibdo
+    xdef    c_update_aquamentus
+    xdef    c_aquamentus_move
+    xdef    c_aquamentus_shoot
+    xdef    c_aquamentus_draw
+
+c_update_gibdo:
+    moveq   #0,D1
+    move.w  D2,D1
+    move.l  D1,-(SP)
+    jsr     z04_update_gibdo
+    addq.l  #4,SP
+    rts
+
+c_update_aquamentus:
+    moveq   #0,D1
+    move.w  D2,D1
+    move.l  D1,-(SP)
+    jsr     z04_update_aquamentus
+    addq.l  #4,SP
+    rts
+
+c_aquamentus_move:
+    move.l  4(SP),D2
+    jsr     Aquamentus_Move
+    rts
+
+c_aquamentus_shoot:
+    move.l  4(SP),D2
+    jsr     Aquamentus_Shoot
+    rts
+
+c_aquamentus_draw:
+    move.l  4(SP),D2
+    jsr     Aquamentus_Draw
+    rts
 
 ; Manhandla_CheckCollisions — D2=slot, void.
 c_manhandla_check_collisions:

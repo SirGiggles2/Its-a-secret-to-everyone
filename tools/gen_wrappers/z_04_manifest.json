@@ -50,6 +50,11 @@
       "sig": "void (unsigned int slot)"
     },
     {
+      "old": "z04_update_aquamentus",
+      "new": "enrt_update_aquamentus",
+      "sig": "void (unsigned int slot)"
+    },
+    {
       "old": "z04_init_tektite",
       "new": "enrt_init_tektite",
       "sig": "void (unsigned int slot)"
@@ -530,6 +535,11 @@
       "sig": "void (unsigned int slot)"
     },
     {
+      "old": "z04_update_moblin",
+      "new": "enrt_update_moblin",
+      "sig": "void (unsigned int slot)"
+    },
+    {
       "old": "z04_update_stalfos",
       "new": "enrt_update_stalfos",
       "sig": "void (unsigned int slot)"
@@ -537,6 +547,11 @@
     {
       "old": "z04_update_ghini",
       "new": "enrt_update_ghini",
+      "sig": "void (unsigned int slot)"
+    },
+    {
+      "old": "z04_update_gibdo",
+      "new": "enrt_update_gibdo",
       "sig": "void (unsigned int slot)"
     },
     {

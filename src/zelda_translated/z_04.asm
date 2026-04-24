@@ -1112,16 +1112,8 @@ UpdateZora:
     jmp     c_update_zora
 
 UpdateMoblin:
-    ; Set turn rate to $A0.
-    ;
-    move.b  #$A0,D0
-    lea     ($041F,A4),A0
-    move.b  D0,(A0,D2.W)
-    jsr     Wanderer_TargetPlayer
-    moveq   #91,D3
-    jmp     _anon_z04_34
+    jmp     c_update_moblin
 
-    even
 UpdateLynel:
     jsr     UpdateGoriya
     moveq   #87,D3
@@ -4592,15 +4584,8 @@ _L_z04_Digdogger_Draw_DrawLittle:
 
     even
 UpdateAquamentus:
-    move.b  ($066C,A4),D0
-    bne  _anon_z04_87
-    jsr     Aquamentus_Move
-    jsr     Aquamentus_Shoot
-_anon_z04_87:
-    jsr     Aquamentus_Draw
-    jsr     CheckMonsterCollisions
-    jsr     PlayBossHitCryIfNeeded
-    even
+    jmp     c_update_aquamentus
+
 CheckBossHitReaction:
     jmp     c_check_boss_hit_reaction
 
@@ -5186,16 +5171,8 @@ InitDarknut:
     jmp     c_init_darknut
 
 UpdateGibdo:
-    move.b  #$80,D0
-    jsr     UpdateCommonWanderer
-    jsr     CheckMonsterCollisions
-    moveq   #8,D0
-    jsr     Anim_AdvanceAnimCounterAndSetObjPosForSpriteDescriptor
-    jsr     Anim_SetObjHFlipForSpriteDescriptor
-    moveq   #0,D0
-    jmp     DrawObjectNotMirrored
+    jmp     c_update_gibdo
 
-    even
 UpdateDarknut:
     move.b  #$80,D0
     jsr     UpdateCommonWanderer

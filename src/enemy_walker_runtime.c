@@ -184,20 +184,7 @@ void enrt_update_zora(unsigned int slot) {
     }
 }
 
-void enrt_update_stalfos(unsigned int slot) {
-    enrt_update_common_wanderer(0x80u, slot);
-    c_check_monster_collisions(slot);
-    enrt_animate_and_draw_common_object(8u, slot);
-
-    RAM(0x0001) = 0x20;
-
-    if (SAVE_SLOT_QUEST(SAVE_SLOT_INDEX) == 0)
-        return;
-
-    if (OBJ(0x0451, slot) == 0 && ENEMY_RNG_A(slot) < 0xF8)
-        return;
-
-    unsigned char qspeed_fail = 0x20;
+static void enrt_try_shooting(unsigned char qspeed_fail, unsigned char shot_type, unsigned int slot) {
     unsigned char new_timer;
 
     if (ENEMY_HIT_REACTION(slot) != 0) {
@@ -231,7 +218,7 @@ void enrt_update_stalfos(unsigned int slot) {
         return;
     }
 
-    unsigned int result = c_shoot_if_wanted(0x57u, slot);
+    unsigned int result = c_shoot_if_wanted(shot_type, slot);
     if ((result & CARRY_SET) == 0) {
         ENEMY_WALK_SPEED(slot) = qspeed_fail;
         return;
@@ -241,6 +228,28 @@ void enrt_update_stalfos(unsigned int slot) {
     OBJ(0x0437, slot) = (unsigned char)(OBJ(0x0437, slot) - 1);
     OBJ(0x0412, slot) = 0;
     ENEMY_WALK_SPEED(slot) = 0;
+}
+
+void enrt_update_moblin(unsigned int slot) {
+    ENEMY_AIR_SPEED(slot) = 0xA0;
+    c_wanderer_target_player(slot);
+    enrt_try_shooting(0x20, 0x5Bu, slot);
+}
+
+void enrt_update_stalfos(unsigned int slot) {
+    enrt_update_common_wanderer(0x80u, slot);
+    c_check_monster_collisions(slot);
+    enrt_animate_and_draw_common_object(8u, slot);
+
+    RAM(0x0001) = 0x20;
+
+    if (SAVE_SLOT_QUEST(SAVE_SLOT_INDEX) == 0)
+        return;
+
+    if (OBJ(0x0451, slot) == 0 && ENEMY_RNG_A(slot) < 0xF8)
+        return;
+
+    enrt_try_shooting(0x20, 0x57u, slot);
 }
 
 void enrt_draw_ghini_and_check_collisions(unsigned int slot) {
@@ -274,4 +283,3 @@ void enrt_update_ghini(unsigned int slot) {
         y--;
     }
 }
-
