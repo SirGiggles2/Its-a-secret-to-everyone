@@ -429,6 +429,10 @@ void z04_update_zora(unsigned int slot) {
     enrt_update_zora(slot);
 }
 
+void z04_update_stalfos(unsigned int slot) {
+    enrt_update_stalfos(slot);
+}
+
 void z04_update_candle(void) {
     enrt_update_candle();
 }

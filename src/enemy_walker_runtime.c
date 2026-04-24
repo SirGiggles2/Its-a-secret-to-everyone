@@ -184,3 +184,62 @@ void enrt_update_zora(unsigned int slot) {
     }
 }
 
+void enrt_update_stalfos(unsigned int slot) {
+    enrt_update_common_wanderer(0x80u, slot);
+    c_check_monster_collisions(slot);
+    enrt_animate_and_draw_common_object(8u, slot);
+
+    RAM(0x0001) = 0x20;
+
+    if (SAVE_SLOT_QUEST(SAVE_SLOT_INDEX) == 0)
+        return;
+
+    if (OBJ(0x0451, slot) == 0 && ENEMY_RNG_A(slot) < 0xF8)
+        return;
+
+    unsigned char qspeed_fail = 0x20;
+    unsigned char new_timer;
+
+    if (ENEMY_HIT_REACTION(slot) != 0) {
+        new_timer = 0;
+    } else {
+        unsigned char cur = OBJ(0x0451, slot);
+        if (cur != 0) {
+            new_timer = (unsigned char)(cur - 1);
+        } else if (OBJ(0x0412, slot) == 0) {
+            ENEMY_WALK_SPEED(slot) = qspeed_fail;
+            return;
+        } else {
+            new_timer = 0x30;
+        }
+    }
+
+    OBJ(0x0451, slot) = new_timer;
+
+    if (new_timer == 0) {
+        ENEMY_WALK_SPEED(slot) = qspeed_fail;
+        return;
+    }
+
+    if (new_timer != 0x10) {
+        ENEMY_WALK_SPEED(slot) = 0;
+        return;
+    }
+
+    if ((ENEMY_PAUSE_FLAG | ENEMY_STUN_TIMER(slot)) != 0) {
+        ENEMY_WALK_SPEED(slot) = 0;
+        return;
+    }
+
+    unsigned int result = c_shoot_if_wanted(0x57u, slot);
+    if ((result & CARRY_SET) == 0) {
+        ENEMY_WALK_SPEED(slot) = qspeed_fail;
+        return;
+    }
+
+    ENEMY_MOVE_TIMER(slot) = 0x80;
+    OBJ(0x0437, slot) = (unsigned char)(OBJ(0x0437, slot) - 1);
+    OBJ(0x0412, slot) = 0;
+    ENEMY_WALK_SPEED(slot) = 0;
+}
+

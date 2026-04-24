@@ -530,6 +530,11 @@
       "sig": "void (unsigned int slot)"
     },
     {
+      "old": "z04_update_stalfos",
+      "new": "enrt_update_stalfos",
+      "sig": "void (unsigned int slot)"
+    },
+    {
       "old": "z04_update_candle",
       "new": "enrt_update_candle",
       "sig": "void (void)"

@@ -17,6 +17,7 @@ void enrt_update_standing_fire(unsigned int slot);
 void enrt_update_zol(unsigned int slot);
 void enrt_update_gel(unsigned int slot);
 void enrt_update_zora(unsigned int slot);
+void enrt_update_stalfos(unsigned int slot);
 void enrt_update_candle(void);
 void enrt_update_boulder_set(unsigned int slot);
 void enrt_init_leever(unsigned int slot);

@@ -5405,3 +5405,18 @@ c_handle_shot_blocked:
     rts
 
 ;==============================================================================
+; --- Batch 101: z_04 Stalfos (drained from z_04.asm) ---
+;==============================================================================
+
+    xdef    c_update_stalfos
+    xref    z04_update_stalfos
+
+c_update_stalfos:
+    moveq   #0,D1
+    move.w  D2,D1
+    move.l  D1,-(SP)
+    jsr     z04_update_stalfos
+    addq.l  #4,SP
+    rts
+
+;==============================================================================
