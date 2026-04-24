@@ -90,3 +90,23 @@ def test_emit_produces_font_and_art_chr(tmp_path):
     assert "const unsigned char intro_font_chr" in font
     assert "const unsigned char intro_art_chr" in art
     assert len(font.splitlines()) > 20  # non-empty
+
+def test_emit_produces_palette(tmp_path):
+    import subprocess, sys
+    result = subprocess.run([
+        sys.executable, str(TOOL),
+        "--ref-dir", str(REPO / "reference" / "aldonunez" / "dat"),
+        "--out-dir", str(tmp_path),
+        "--handoff-json", str(REPO / "docs" / "superpowers" / "captures" /
+                              "2026-04-24-intro-handoff-state.json"),
+        "--restore-chr",  str(REPO / "docs" / "superpowers" / "captures" /
+                              "2026-04-24-intro-restore-chr.bin"),
+        "--restore-cram", str(REPO / "docs" / "superpowers" / "captures" /
+                              "2026-04-24-intro-restore-cram.bin"),
+    ], stdin=subprocess.DEVNULL,
+       stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+       text=True)
+    assert result.returncode == 0, result.stderr
+    pal = (tmp_path / "intro_palette.c").read_text()
+    assert "const unsigned short intro_palette" in pal
+    assert pal.count("0x") >= 16  # at least a dozen entries emitted
