@@ -22,6 +22,10 @@ for pair in string.gmatch(addrs_env, "([^,]+)") do
   table.insert(addrs, {name = name, addr = tonumber(hex, 16)})
 end
 
+if #addrs == 0 then
+  error("no addresses parsed from INTRO_STATE_ADDRS env var")
+end
+
 -- ram_u8: tries "68K RAM" domain (offset 0-0xFFFF) then falls back to
 -- "M68K BUS" at 0xFF0000+offset.  Mirrors the T29 probe's try_read pattern.
 local function ram_u8(ofs)
@@ -86,7 +90,8 @@ while emu.framecount() < max_frames and not captured do
   local is_fileselect = (mode == 0x01 and submode == 0x00)
                      or (mode == 0x0E and submode == 0x00)
   if is_fileselect then
-    local fh = io.open(out_json, "w")
+    local fh, err = io.open(out_json, "w")
+    if not fh then error("cannot open output: " .. tostring(err)) end
     fh:write("{\n")
     fh:write(string.format('  "capture_frame": %d,\n', f))
     fh:write(string.format('  "mode_at_capture": "0x%02X",\n', mode))
@@ -105,7 +110,8 @@ while emu.framecount() < max_frames and not captured do
         return memory.read_bytes_as_array(0x0000, 0x4000, "VRAM")
       end)
       if ok then
-        local bf = io.open(out_chr, "wb")
+        local bf, err = io.open(out_chr, "wb")
+        if not bf then error("cannot open VRAM output: " .. tostring(err)) end
         for _, b in ipairs(bytes) do bf:write(string.char(b)) end
         bf:close()
       end
@@ -115,7 +121,8 @@ while emu.framecount() < max_frames and not captured do
         return memory.read_bytes_as_array(0x0000, 128, "CRAM")
       end)
       if ok then
-        local bf = io.open(out_cram, "wb")
+        local bf, err = io.open(out_cram, "wb")
+        if not bf then error("cannot open CRAM output: " .. tostring(err)) end
         for _, b in ipairs(bytes) do bf:write(string.char(b)) end
         bf:close()
       end
@@ -125,7 +132,8 @@ while emu.framecount() < max_frames and not captured do
 end
 
 if not captured then
-  local fh = io.open(out_json, "w")
+  local fh, err = io.open(out_json, "w")
+  if not fh then error("cannot open error output: " .. tostring(err)) end
   fh:write('{ "error": "file-select never reached", "max_frames": ' .. max_frames .. ' }\n')
   fh:close()
 end

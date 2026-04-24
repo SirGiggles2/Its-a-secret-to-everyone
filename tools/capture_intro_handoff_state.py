@@ -49,6 +49,12 @@ def main():
         print(f"error: probe did not emit {args.out}", file=sys.stderr)
         sys.exit(3)
 
+    with open(args.out) as f:
+        data = json.load(f)
+    if "error" in data:
+        print(f"error: probe reported failure: {data['error']}", file=sys.stderr)
+        sys.exit(3)
+
     print(f"captured handoff state -> {args.out}")
 
 if __name__ == "__main__":
