@@ -4367,6 +4367,14 @@ def _patch_z04(path):
     text = _stub_func(text, 'UpdateGhini', 'c_update_ghini')
     text = _stub_func(text, 'DrawGhiniAndCheckCollisions', 'c_draw_ghini_and_check_collisions')
 
+    # --- Batch 103: pre-wired z_04 drains ---
+    text = _stub_func(text, 'UpdateBlock', 'c_update_block')
+    text = _stub_func(text, 'DrawBlock', 'c_draw_block')
+    text = _stub_func(text, 'UpdateMonsterShot', 'c_update_monster_shot')
+    text = _stub_func(text, 'BounceShot', 'c_bounce_shot')
+    text = _stub_func(text, 'CheckShotLinkCollision', 'c_check_shot_link_collision')
+    text = _stub_func(text, 'UpdateFireball', 'c_update_fireball')
+
     with open(path, 'w', encoding='utf-8') as f:
         f.write(text)
 
