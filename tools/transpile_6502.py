@@ -4354,6 +4354,7 @@ def _patch_z04(path):
     # --- Batch 94: Lamnola family ---
     text = _stub_func(text, 'Lamnola_UpdateHead', 'c_lamnola_update_head')
     text = _stub_func(text, 'Lamnola_Move', 'c_lamnola_move')
+    text = _stub_func(text, 'InitLamnola', 'c_init_lamnola')
 
     # --- Batch 95: Vire family ---
     text = _stub_func(text, 'UpdateVire', 'c_update_vire')

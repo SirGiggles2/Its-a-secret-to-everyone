@@ -5381,11 +5381,22 @@ c_manhandla_draw:
 ; --- Batch 94: Lamnola family (drained from z_04.asm) ---
 ;==============================================================================
 
+    xdef    c_init_lamnola
     xdef    c_lamnola_update_head
     xdef    c_lamnola_move
 
+    xref    z04_init_lamnola
     xref    z04_lamnola_update_head
     xref    z04_lamnola_move
+
+; InitLamnola — D2=slot, void.
+c_init_lamnola:
+    moveq   #0,D1
+    move.w  D2,D1
+    move.l  D1,-(SP)
+    jsr     z04_init_lamnola
+    addq.l  #4,SP
+    rts
 
 ; Lamnola_UpdateHead — D2=slot, void.
 c_lamnola_update_head:

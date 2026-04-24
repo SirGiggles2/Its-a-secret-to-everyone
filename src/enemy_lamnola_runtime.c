@@ -11,6 +11,36 @@ static unsigned char enrt_rotate_dir_right(unsigned char dir) {
     return dir;
 }
 
+void enrt_init_lamnola(unsigned int slot) {
+    signed char seg;
+    unsigned char type;
+
+    (void)slot;
+
+    for (seg = 9; seg >= 0; --seg) {
+        unsigned char uidx = (unsigned char)seg;
+        RAM(0x0071u + uidx) = 64;
+        RAM(0x0085u + uidx) = 0x8D;
+        RAM(0x0099u + uidx) = 0;
+        RAM(0x0406u + uidx) = 0;
+        RAM(0x0493u + uidx) = 0;
+        RAM(0x04C0u + uidx) = RAM(0x04C0u);
+        RAM(0x0486u + uidx) = RAM(0x0486u);
+        RAM(0x0350u + uidx) = RAM(0x0350u);
+    }
+
+    RAM(0x009Du) = 8;
+    RAM(0x0385u) = 8;
+    RAM(0x00A2u) = 8;
+    RAM(0x038Au) = 8;
+
+    type = RAM(0x0350u);
+    ENEMY_LAMNOLA_TYPE = type;
+    ENEMY_LAMNOLA_SPEED = (unsigned char)(type - 0x39u);
+
+    RAM(0x034Eu) = 8;
+}
+
 void enrt_lamnola_update_head(unsigned int slot) {
     unsigned char cur_dir;
     unsigned char chosen_dir;

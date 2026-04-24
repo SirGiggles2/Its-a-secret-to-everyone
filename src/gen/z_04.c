@@ -109,6 +109,10 @@ void z04_manhandla_draw(unsigned int slot) {
     enrt_manhandla_draw(slot);
 }
 
+void z04_init_lamnola(unsigned int slot) {
+    enrt_init_lamnola(slot);
+}
+
 void z04_lamnola_update_head(unsigned int slot) {
     enrt_lamnola_update_head(slot);
 }

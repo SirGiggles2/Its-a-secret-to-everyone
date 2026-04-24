@@ -69,6 +69,7 @@ void enrt_manhandla_set_all_segments_direction(unsigned int val);
 void enrt_manhandla_check_collisions(unsigned int slot);
 void enrt_manhandla_move(unsigned int slot);
 void enrt_manhandla_draw(unsigned int slot);
+void enrt_init_lamnola(unsigned int slot);
 void enrt_lamnola_update_head(unsigned int slot);
 void enrt_lamnola_move(unsigned int slot);
 void enrt_update_vire(unsigned int slot);
