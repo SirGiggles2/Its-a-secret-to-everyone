@@ -1,9 +1,5 @@
 #include "combat_runtime.h"
 
-extern void z07_update_dead_dummy(unsigned int slot);
-extern void z01_play_parry_tune(void);
-extern void z01_reset_shove_info_and_inv_timer(unsigned int slot);
-
 void cobrt_play_parry_sound_for_damage_type(void) {
     unsigned char dtype = COMBAT_DAMAGE_TYPE;
     if (dtype == 0x20u || dtype == 0x08u) {

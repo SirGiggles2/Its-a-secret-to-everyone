@@ -15,4 +15,9 @@ void cobrt_deal_damage(unsigned int slot);
 }
 #endif
 
+/* --- ASM shim / bank-forwarder functions used by combat_runtime.c --- */
+extern void z07_update_dead_dummy(unsigned int slot);
+extern void z01_play_parry_tune(void);
+extern void z01_reset_shove_info_and_inv_timer(unsigned int slot);
+
 #endif
