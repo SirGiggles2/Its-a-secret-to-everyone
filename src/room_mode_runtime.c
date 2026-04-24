@@ -2,6 +2,7 @@
 #include "room_load_runtime.h"
 #include "room_runtime.h"
 #include "progress_state.h"
+#include "combat_state.h"
 
 void roommd_inc_submode(void) {
     SUBMODE_VALUE++;
@@ -299,4 +300,15 @@ void roommd_update_mode3_unfurl(void) {
     } else {
         roommd_go_to_next_mode_play_level_song();
     }
+}
+
+void roommd_go_to_next_mode_from_play(void) {
+    MODE_VALUE++;
+    SUBMODE_VALUE = 0;
+    ROOM_MODE_TIMER = 0;
+    RAM(0x000F) = 0;
+    LINK_ACTION_TIMER = 0;
+    RAM(0x00C0) = 0;
+    RAM(0x00D3) = 0;
+    LINK_STUN_TIMER = 0;
 }

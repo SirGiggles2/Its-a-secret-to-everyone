@@ -56,6 +56,7 @@ void roommd_go_to_next_mode_reset_grid_offset(void);
 void roommd_patch_and_cue_level_palettes_transfer(void);
 void roommd_init_mode3_sub1(void);
 void roommd_update_mode3_unfurl(void);
+void roommd_go_to_next_mode_from_play(void);
 
 #ifdef __cplusplus
 }

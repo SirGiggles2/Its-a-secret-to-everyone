@@ -944,7 +944,7 @@
     xref    Aquamentus_Shoot
     xref    Aquamentus_Draw
     xref    DrawItemInInventory
-    xref    GoToNextModeFromPlay
+    xref    z07_go_to_next_mode_from_play
     xref    InitMode_EnterRoom
     xref    RunCrossRoomTasksAndBeginUpdateMode_PlayModesNoCellar
     xref    Link_EndMoveAndAnimate
@@ -4386,9 +4386,11 @@ c_draw_item_in_inventory:
     jsr     DrawItemInInventory
     rts
 
-; GoToNextModeFromPlay() — no args, void
+; GoToNextModeFromPlay() — no args, void. Falls through to ExitX0
+; semantics in orig ASM (D2=0 on return); shim clears D2 for ASM callers.
 c_go_to_next_mode_from_play:
-    jsr     GoToNextModeFromPlay
+    jsr     z07_go_to_next_mode_from_play
+    moveq   #0,D2
     rts
 
 ; InitMode_EnterRoom() — no args, void

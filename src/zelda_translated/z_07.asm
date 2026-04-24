@@ -4272,16 +4272,8 @@ CheckScreenEdge:
     jmp     c_check_screen_edge
 
 GoToNextModeFromPlay:
-    addq.b  #1,($0012,A4)
-    moveq   #0,D0
-    move.b  D0,($0013,A4)
-    move.b  D0,($0011,A4)
-    move.b  D0,($000F,A4)
-    move.b  D0,($00AC,A4)
-    move.b  D0,($00C0,A4)
-    move.b  D0,($00D3,A4)
-    move.b  D0,($04F0,A4)
-    even
+    jmp     c_go_to_next_mode_from_play
+
 ExitX0:
     moveq   #0,D2
     rts

@@ -7098,6 +7098,7 @@ def _patch_z07(path):
 
     # --- Batch 108: z_07 mode dispatch ---
     text = _stub_func(text, 'UpdateMode3Unfurl', 'c_update_mode3_unfurl')
+    text = _stub_func(text, 'GoToNextModeFromPlay', 'c_go_to_next_mode_from_play')
     # --- Batch 48 ---
     # MarkRoomVisited ends with IFND Exit / Exit: / ENDC — _stub_func would
     # stop at Exit: (capital), leaving a dangling ENDC. Use regex replace.

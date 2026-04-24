@@ -206,4 +206,8 @@ void z07_update_mode3_unfurl(void) {
     roommd_update_mode3_unfurl();
 }
 
+void z07_go_to_next_mode_from_play(void) {
+    roommd_go_to_next_mode_from_play();
+}
+
 /* <<< end auto-wrappers >>> */
