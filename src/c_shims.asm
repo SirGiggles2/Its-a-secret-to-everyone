@@ -471,7 +471,17 @@
     xdef    c_update_candle
     xdef    c_update_boulder_set
     xdef    c_update_rope
+    xdef    c_change_tile_obj_tiles
     xdef    c_update_burrower
+    xdef    c_draw_arrow
+    xdef    c_draw_sword_shot_or_magic_shot
+    xdef    c_update_block
+    xdef    c_draw_block
+    xdef    c_update_monster_shot
+    xdef    c_draw_shot
+    xdef    c_bounce_shot
+    xdef    c_check_shot_link_collision
+    xdef    c_update_fireball
 
     xref    c_move_object
     xref    z03_transfer_level_pattern_blocks
@@ -904,6 +914,7 @@
     xref    InitMode_EnterRoom
     xref    RunCrossRoomTasksAndBeginUpdateMode_PlayModesNoCellar
     xref    Link_EndMoveAndAnimate
+    xref    ChangeTileObjTiles
 
 ;------------------------------------------------------------------------------
 ; _c_move_object_shim — MoveObject trampoline.
@@ -4546,4 +4557,94 @@ c_update_rope:
     move.l  8(SP),D2
     jsr     z04_update_rope
     move.l  (SP)+,D2
+    rts
+
+;==============================================================================
+; BATCH 84 — block-push family helper (IMPORT shim)
+;==============================================================================
+
+; ChangeTileObjTiles(tile, slot) — D0=tile (low byte), D2=slot.
+; Used by enrt_update_block_0_idle / _1_moving in C land.
+c_change_tile_obj_tiles:
+    move.l  D2,-(SP)
+    move.l  8(SP),D0    ; arg1 = tile (now SP+8 after push)
+    move.l  12(SP),D2   ; arg2 = slot (now SP+12 after push)
+    jsr     ChangeTileObjTiles
+    move.l  (SP)+,D2
+    rts
+
+;==============================================================================
+; BATCH 85 — Monster Shot / Fireball draw helpers (IMPORT shims: C calls ASM)
+;==============================================================================
+
+; DrawArrow — slot from C stack -> D2, tail-call ASM.
+c_draw_arrow:
+    move.l  4(SP),D2
+    jmp     DrawArrow
+
+; DrawSwordShotOrMagicShot — slot from C stack -> D2, tail-call ASM.
+c_draw_sword_shot_or_magic_shot:
+    move.l  4(SP),D2
+    jmp     DrawSwordShotOrMagicShot
+
+;==============================================================================
+; BATCH 86 — z_04 drained entry shims (asm jmp c_<name> -> push slot -> jsr z04_)
+;==============================================================================
+
+; Block push family
+c_update_block:
+    moveq   #0,D0
+    move.w  D2,D0
+    move.l  D0,-(SP)
+    jsr     z04_update_block
+    addq.l  #4,SP
+    rts
+
+c_draw_block:
+    moveq   #0,D0
+    move.w  D2,D0
+    move.l  D0,-(SP)
+    jsr     z04_draw_block
+    addq.l  #4,SP
+    rts
+
+; Monster shot / Fireball family
+c_update_monster_shot:
+    moveq   #0,D0
+    move.w  D2,D0
+    move.l  D0,-(SP)
+    jsr     z04_update_monster_shot
+    addq.l  #4,SP
+    rts
+
+c_draw_shot:
+    moveq   #0,D0
+    move.w  D2,D0
+    move.l  D0,-(SP)
+    jsr     z04_draw_shot
+    addq.l  #4,SP
+    rts
+
+c_bounce_shot:
+    moveq   #0,D0
+    move.w  D2,D0
+    move.l  D0,-(SP)
+    jsr     z04_bounce_shot
+    addq.l  #4,SP
+    rts
+
+c_check_shot_link_collision:
+    moveq   #0,D0
+    move.w  D2,D0
+    move.l  D0,-(SP)
+    jsr     z04_check_shot_link_collision
+    addq.l  #4,SP
+    rts
+
+c_update_fireball:
+    moveq   #0,D0
+    move.w  D2,D0
+    move.l  D0,-(SP)
+    jsr     z04_update_fireball
+    addq.l  #4,SP
     rts

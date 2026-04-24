@@ -111,6 +111,14 @@ void enrt_walker_alt_dir_end_loop(void);
 unsigned char enrt_walker_alt_dir_get_random_perpendicular(unsigned int slot);
 unsigned int enrt_find_empty_monster_slot(void);
 
+void enrt_update_block(unsigned int slot);
+void enrt_draw_block(unsigned int slot);
+void enrt_update_monster_shot(unsigned int slot);
+void enrt_draw_shot(unsigned int slot);
+void enrt_bounce_shot(unsigned int slot);
+void enrt_check_shot_link_collision(unsigned int slot);
+void enrt_update_fireball(unsigned int slot);
+
 #ifdef __cplusplus
 }
 #endif

@@ -393,4 +393,32 @@ void z04_update_boulder_set(unsigned int slot) {
     enrt_update_boulder_set(slot);
 }
 
+void z04_update_block(unsigned int slot) {
+    enrt_update_block(slot);
+}
+
+void z04_draw_block(unsigned int slot) {
+    enrt_draw_block(slot);
+}
+
+void z04_update_monster_shot(unsigned int slot) {
+    enrt_update_monster_shot(slot);
+}
+
+void z04_draw_shot(unsigned int slot) {
+    enrt_draw_shot(slot);
+}
+
+void z04_bounce_shot(unsigned int slot) {
+    enrt_bounce_shot(slot);
+}
+
+void z04_check_shot_link_collision(unsigned int slot) {
+    enrt_check_shot_link_collision(slot);
+}
+
+void z04_update_fireball(unsigned int slot) {
+    enrt_update_fireball(slot);
+}
+
 /* <<< end auto-wrappers >>> */

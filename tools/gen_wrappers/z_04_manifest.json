@@ -483,6 +483,41 @@
       "old": "z04_update_boulder_set",
       "new": "enrt_update_boulder_set",
       "sig": "void (unsigned int slot)"
+    },
+    {
+      "old": "z04_update_block",
+      "new": "enrt_update_block",
+      "sig": "void (unsigned int slot)"
+    },
+    {
+      "old": "z04_draw_block",
+      "new": "enrt_draw_block",
+      "sig": "void (unsigned int slot)"
+    },
+    {
+      "old": "z04_update_monster_shot",
+      "new": "enrt_update_monster_shot",
+      "sig": "void (unsigned int slot)"
+    },
+    {
+      "old": "z04_draw_shot",
+      "new": "enrt_draw_shot",
+      "sig": "void (unsigned int slot)"
+    },
+    {
+      "old": "z04_bounce_shot",
+      "new": "enrt_bounce_shot",
+      "sig": "void (unsigned int slot)"
+    },
+    {
+      "old": "z04_check_shot_link_collision",
+      "new": "enrt_check_shot_link_collision",
+      "sig": "void (unsigned int slot)"
+    },
+    {
+      "old": "z04_update_fireball",
+      "new": "enrt_update_fireball",
+      "sig": "void (unsigned int slot)"
     }
   ]
 }

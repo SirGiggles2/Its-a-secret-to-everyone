@@ -5426,12 +5426,13 @@ def _patch_z05(path):
         print("  _patch_z05 P46: DISABLED (clustering)")
 
     # --- Stage 4a: C function stubs ---
-    text = _stub_func(text, 'CopyColumnToTileBuf', 'c_copy_column_to_tilebuf')
-    text = _stub_func(text, 'CopyRowToTileBuf', 'c_copy_row_to_tilebuf')
-    text = _stub_func(text, 'AddDoorFlagsToCurOpenedDoors', 'c_add_door_flags')
-    text = _stub_func(text, 'CalcOpenDoorwayMask', 'c_calc_open_doorway_mask')
-    text = _stub_func(text, 'HasCompass', 'c_has_compass')
-    text = _stub_func(text, 'HasMap', 'c_has_map')
+    # BISECT: ALL stubs disabled to confirm regression goes away
+    #text = _stub_func(text, 'CopyColumnToTileBuf', 'c_copy_column_to_tilebuf')
+    #text = _stub_func(text, 'CopyRowToTileBuf', 'c_copy_row_to_tilebuf')
+    #text = _stub_func(text, 'AddDoorFlagsToCurOpenedDoors', 'c_add_door_flags')
+    #text = _stub_func(text, 'CalcOpenDoorwayMask', 'c_calc_open_doorway_mask')
+    #text = _stub_func(text, 'HasCompass', 'c_has_compass')
+    #text = _stub_func(text, 'HasMap', 'c_has_map')
 
     # --- Stage 4b: more z_05 leaf functions ---
     text = _stub_func(text, 'SplitRoomId', 'c_split_room_id')
