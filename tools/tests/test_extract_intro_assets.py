@@ -131,3 +131,24 @@ def test_emit_produces_story_tilemap(tmp_path):
     assert "const unsigned short intro_story_tilemap" in tm
     assert "intro_story_tilemap_rows" in tm
     assert tm.count("0x") >= 64
+
+def test_emit_produces_showcase_tilemap(tmp_path):
+    import subprocess, sys
+    result = subprocess.run([
+        sys.executable, str(TOOL),
+        "--ref-dir", str(REPO / "reference" / "aldonunez" / "dat"),
+        "--out-dir", str(tmp_path),
+        "--handoff-json", str(REPO / "docs" / "superpowers" / "captures" /
+                              "2026-04-24-intro-handoff-state.json"),
+        "--restore-chr",  str(REPO / "docs" / "superpowers" / "captures" /
+                              "2026-04-24-intro-restore-chr.bin"),
+        "--restore-cram", str(REPO / "docs" / "superpowers" / "captures" /
+                              "2026-04-24-intro-restore-cram.bin"),
+    ], stdin=subprocess.DEVNULL,
+       stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+       text=True)
+    assert result.returncode == 0, result.stderr
+    tm = (tmp_path / "intro_showcase_tilemap.c").read_text()
+    assert "const unsigned short intro_showcase_tilemap" in tm
+    assert "intro_showcase_tilemap_rows" in tm
+    assert tm.count("0x") >= 64
