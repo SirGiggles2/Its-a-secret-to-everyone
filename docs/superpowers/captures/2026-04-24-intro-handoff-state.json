@@ -1,0 +1,15 @@
+{
+  "capture_frame": 107,
+  "mode_at_capture": "0x01",
+  "submode_at_capture": "0x00",
+  "mode_value": { "addr": "0x0012", "value": "0x01" },
+  "submode_value": { "addr": "0x0013", "value": "0x00" },
+  "frontend_demo_phase": { "addr": "0x042C", "value": "0x00" },
+  "frontend_demo_subphase": { "addr": "0x042D", "value": "0x00" },
+  "front_start_release_gate": { "addr": "0x042B", "value": "0x01" },
+  "vram_force_blank_gate": { "addr": "0x083D", "value": "0x01" },
+  "frontend_delay_timer": { "addr": "0x0528", "value": "0x5A" },
+  "room_mode_timer": { "addr": "0x0011", "value": "0x00" },
+  "item_sfx_secondary": { "addr": "0x0600", "value": "0x00" },
+  "room_transfer_buf_select": { "addr": "0x0014", "value": "0x00" }
+}
