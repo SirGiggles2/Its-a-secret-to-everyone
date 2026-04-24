@@ -62,6 +62,8 @@ extern const unsigned char PolsVoiceWalkSpeedsX[];
 extern const unsigned char LevelMasks[];
 /* Boss-family asm helpers (IMPORT shims in c_shims.asm batch 88) */
 extern void c_reverse_obj_dir8(unsigned int slot);
+extern void c_bound_direction_horizontally(unsigned int slot);
+extern void c_bound_direction_vertically(unsigned int slot);
 extern void c_gohma_animate_and_draw(unsigned int eye_frame, unsigned int slot);
 extern void c_gohma_check_collisions(unsigned int slot);
 extern void c_gleeok_draw_body(void);

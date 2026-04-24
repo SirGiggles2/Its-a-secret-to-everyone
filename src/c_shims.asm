@@ -922,6 +922,7 @@
     xref    Wanderer_TargetPlayer
     xref    MoveFlyer
     xref    z04_move_flyer
+    xref    z04_bound_flyer
     xref    ControlKeeseFlight
     xref    DrawItemInInventory
     xref    GoToNextModeFromPlay
@@ -5222,9 +5223,7 @@ c_dodongo_draw:
 
 ; BoundFlyer — C-callable helper, D2=slot.
 c_bound_flyer:
-    move.l  4(SP),D2
-    jsr     BoundFlyer
-    rts
+    jmp     z04_bound_flyer
 
 ; Manhandla_CheckCollisions — D2=slot, void.
 c_manhandla_check_collisions:

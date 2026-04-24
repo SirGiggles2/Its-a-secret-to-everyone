@@ -4354,6 +4354,7 @@ def _patch_z04(path):
 
     # --- Batch 98: Flyer movement ---
     text = _stub_func(text, 'MoveFlyer', 'c_move_flyer')
+    text = _stub_func(text, 'BoundFlyer', 'c_bound_flyer')
 
     with open(path, 'w', encoding='utf-8') as f:
         f.write(text)

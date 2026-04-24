@@ -10178,25 +10178,8 @@ MoveFlyer:
     jmp     c_move_flyer
 
 BoundFlyer:
-    lea     ($0098,A4),A0
-    move.b  (A0,D2.W),D0
-    move.b  D0,($000F,A4)
-    jsr     BoundDirectionHorizontally
-    ; Check vertical boundaries, if object is not a boulder.
-    ;
-    lea     ($034F,A4),A0
-    move.b  (A0,D2.W),D0
-    cmpi.b  #$20,D0
-    beq  _anon_z04_173
-    jsr     BoundDirectionVertically
-_anon_z04_173:
-    ; If movement wasn't restricted, then return.
-    ;
-    move.b  ($000F,A4),D0
-    beq.s  __far_z_04_0116
-    jmp  L132F8_Exit
-__far_z_04_0116:
-    even
+    jmp     c_bound_flyer
+
 ReverseObjDir8:
     ; Get the opposite direction of the one the object is facing.
     ;
@@ -10214,9 +10197,9 @@ ReverseObjDir8:
     lea     ($034F,A4),A0
     move.b  (A0,D2.W),D0
     cmpi.b  #$41,D0
-    bne.s  __far_z_04_0117
+    bne.s  __far_z_04_0116
     jmp  DeferBounce
-__far_z_04_0117:
+__far_z_04_0116:
     ; Apply the new direction.
     ;
     lea     (Directions8).l,A0
@@ -10244,17 +10227,17 @@ L13307_Exit:
     even
 Flyer_Chase:
     move.b  ($28,A4,D2.W),D0
-    beq.s  __far_z_04_0118
+    beq.s  __far_z_04_0117
     jmp  L13307_Exit
-__far_z_04_0118:
+__far_z_04_0117:
     ; Decrease the turn counter.
     ; Once there are no more turns, go to flying state 1.
     ;
     lea     ($042C,A4),A0
     subq.b  #1,(A0,D2.W)
-    beq.s  __far_z_04_0119
+    beq.s  __far_z_04_0118
     jmp  SetDelayAndTurn
-__far_z_04_0119:
+__far_z_04_0118:
     even
 SetFlyingState1:
     jmp     c_set_flying_state_1
@@ -10337,9 +10320,9 @@ _L_z04_TurnTowardsPlayer8_LoopLeft:
     move.b  (A0,D3.W),D0
     move.b  ($0000,A4),D1
     cmp.b   D1,D0
-    bne.s  __far_z_04_0120
+    bne.s  __far_z_04_0119
     jmp  L1336F_Exit
-__far_z_04_0120:
+__far_z_04_0119:
     subq.b  #1,D3
     subq.b  #1,($0001,A4)
     bne  _L_z04_TurnTowardsPlayer8_LoopLeft
@@ -10364,16 +10347,16 @@ LoopRight:
     move.b  (A0,D3.W),D0
     move.b  ($0000,A4),D1
     and.b   D0,D1   ; BIT: set Z/N/V from D1 AND A
-    beq.s  __far_z_04_0121
+    beq.s  __far_z_04_0120
     jmp  TestDir
-__far_z_04_0121:
+__far_z_04_0120:
     even
 NextLoopRight:
     addq.b  #1,D3
     subq.b  #1,($0001,A4)
-    beq.s  __far_z_04_0122
+    beq.s  __far_z_04_0121
     jmp  LoopRight
-__far_z_04_0122:
+__far_z_04_0121:
     ; We didn't find a direction to switch to.
     ; So turn left once; to one turn right of object direction.
     ;
@@ -10403,12 +10386,12 @@ TestDir:
     move.b  ($0000,A4),D1
     or.b  D1,D0
     cmpi.b  #$07,D0
-    bcs.s  __far_z_04_0123
+    bcs.s  __far_z_04_0122
     jmp  NextLoopRight
-__far_z_04_0123:
-    bcc.s  __far_z_04_0124
+__far_z_04_0122:
+    bcc.s  __far_z_04_0123
     jmp  SetDir8ForIndex
-__far_z_04_0124:
+__far_z_04_0123:
 ; Description:
 ; Delay and turn randomly a number of times.
 ; The go to state 1. After each turn, delay $10 frames.
@@ -10419,9 +10402,9 @@ __far_z_04_0124:
     even
 Flyer_Wander:
     move.b  ($28,A4,D2.W),D0
-    beq.s  __far_z_04_0125
+    beq.s  __far_z_04_0124
     jmp  L133AC_Exit
-__far_z_04_0125:
+__far_z_04_0124:
     ; Decrease the turn counter.
     ; Once there are no more turns, go to flying state 1.
     ;
@@ -10471,9 +10454,9 @@ _anon_z04_178:
     lea     (Directions8).l,A0
     move.b  (A0,D3.W),D1
     cmp.b   D1,D0
-    bne.s  __far_z_04_0126
+    bne.s  __far_z_04_0125
     jmp  L133AC_Exit
-__far_z_04_0126:
+__far_z_04_0125:
     subq.b  #1,D3
     bpl  _anon_z04_178
 ; If not found, then use index 0.

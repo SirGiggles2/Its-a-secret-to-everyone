@@ -557,4 +557,8 @@ void z04_move_flyer(unsigned int slot) {
     enrt_move_flyer(slot);
 }
 
+void z04_bound_flyer(unsigned int slot) {
+    enrt_bound_flyer(slot);
+}
+
 /* <<< end auto-wrappers >>> */

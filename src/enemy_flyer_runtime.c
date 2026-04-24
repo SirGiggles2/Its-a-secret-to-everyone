@@ -200,3 +200,13 @@ void enrt_move_flyer(unsigned int slot) {
         ENEMY_FLYER_Y_FINE(slot)--;
     }
 }
+
+void enrt_bound_flyer(unsigned int slot) {
+    ENEMY_FRAME_FLAGS = ENEMY_DIR(slot);
+    c_bound_direction_horizontally(slot);
+    if (ENEMY_TYPE(slot) != 0x20)
+        c_bound_direction_vertically(slot);
+    if (ENEMY_FRAME_FLAGS == 0)
+        return;
+    c_reverse_obj_dir8(slot);
+}
