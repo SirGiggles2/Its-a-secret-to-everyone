@@ -182,3 +182,26 @@ void enrt_update_zora(unsigned int slot) {
         z07_destroy_monster(slot);
     }
 }
+
+/* ---- Plan C: drained from z_07 (walker_alt_dir cluster) --------------- */
+
+extern const unsigned char ReverseDirections[];
+
+unsigned int enrt_walker_alt_dir_get_opposite(void) {
+    unsigned char dir = RAM(0x000F);
+    if (dir & 0x0A)
+        return dir >> 1;
+    return (dir << 1) & 0xFF;
+}
+
+void enrt_walker_alt_dir_end_loop(void) {
+    RAM(0x000E) = 0;
+}
+
+unsigned char enrt_walker_alt_dir_get_random_perpendicular(unsigned int slot) {
+    unsigned char rnd = nes_ram[0x0018 + slot];
+    unsigned char dir = nes_ram[0x0098 + slot];
+    unsigned int idx = (rnd & 0x80) ? 0 : 1;
+    if (dir & 0x0C) idx += 2;
+    return ReverseDirections[idx];
+}

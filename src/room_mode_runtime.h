@@ -49,6 +49,12 @@ void roommd_init_mode3_sub6(void);
 void roommd_init_mode3_sub7(void);
 void roommd_init_mode_a_sub1(void);
 void roommd_end_game_mode12(void);
+unsigned char roommd_end_game_mode(void);
+void roommd_go_to_next_mode(void);
+void roommd_go_to_next_mode_play_level_song(void);
+void roommd_go_to_next_mode_reset_grid_offset(void);
+void roommd_patch_and_cue_level_palettes_transfer(void);
+void roommd_init_mode3_sub1(void);
 
 #ifdef __cplusplus
 }

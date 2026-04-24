@@ -9,6 +9,12 @@ extern "C" {
 
 unsigned char roomrt_has_compass(void);
 unsigned char roomrt_has_map(void);
+unsigned char roomrt_get_room_flags(void);
+void roomrt_hide_all_sprites(void);
+unsigned char roomrt_get_unique_room_id(void);
+void roomrt_clear_room_history(void);
+void roomrt_reset_player_state(void);
+void roomrt_mark_room_visited(void);
 void roomrt_calc_open_doorway_mask(unsigned int attr, unsigned int dir_idx);
 void roomrt_add_door_flags(void);
 unsigned int roomrt_split_room_id(void);

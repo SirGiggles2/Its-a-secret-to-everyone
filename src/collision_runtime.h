@@ -21,6 +21,9 @@ void colrt_check_monster_arrow_or_rod_collision(unsigned int monster_slot, unsig
 void colrt_check_monster_boomerang_or_food_collision(unsigned int monster_slot, unsigned int weapon_slot);
 void colrt_check_monster_sword_shot_or_magic_shot_collision(unsigned int monster_slot, unsigned int weapon_slot);
 void colrt_check_monster_bomb_or_fire_collision(unsigned int monster_slot, unsigned int weapon_slot);
+unsigned char colrt_get_collidable_tile(unsigned int hotspot_offset, unsigned int slot);
+unsigned char colrt_get_collidable_tile_still(unsigned int slot);
+unsigned char colrt_get_colliding_tile_moving(unsigned int slot);
 
 #ifdef __cplusplus
 }

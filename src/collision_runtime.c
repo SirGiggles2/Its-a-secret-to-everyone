@@ -236,3 +236,101 @@ void colrt_check_monster_bomb_or_fire_collision(unsigned int monster_slot, unsig
     if (MON_INVINCIBILITY(monster_slot) & COMBAT_DAMAGE_TYPE) return;
     c_call_begin_shove(monster_slot);
 }
+
+/* ---- Plan C: drained from z_07 (collidable tile cluster) -------------- */
+
+extern const unsigned char PlayAreaColumnAddrs[];
+extern const unsigned char WalkableTiles[];
+
+unsigned char colrt_get_collidable_tile(unsigned int hotspot_offset, unsigned int slot) {
+    static const unsigned char walkable_count = 9;
+    RAM(0x0004) = (unsigned char)hotspot_offset;
+    unsigned char y_pos = RAM(0x0084 + slot);
+    unsigned char adjusted_y = (unsigned char)(y_pos + 0x0B);
+    unsigned char dir = RAM(0x000F);
+
+    unsigned char tile_y = adjusted_y;
+    unsigned char tile_x;
+
+    if (dir & 0x0C) {
+        if (dir & 0x04) {
+            if (adjusted_y < 0xDD)
+                tile_y = (unsigned char)(adjusted_y + (unsigned char)hotspot_offset);
+        } else {
+            tile_y = (unsigned char)(adjusted_y + (unsigned char)hotspot_offset);
+        }
+        tile_x = RAM(0x0070 + slot);
+    } else {
+        tile_x = RAM(0x0070 + slot);
+        if (dir & 0x01) {
+            if (tile_x < 0xF0)
+                tile_x = (unsigned char)(tile_x + (unsigned char)hotspot_offset);
+        } else {
+            if (tile_x >= 0x10)
+                tile_x = (unsigned char)(tile_x + (unsigned char)hotspot_offset);
+        }
+    }
+
+    unsigned char col_idx = (tile_x & 0xF8) >> 2;
+    unsigned short col_addr = ((unsigned short)PlayAreaColumnAddrs[col_idx] |
+                               ((unsigned short)PlayAreaColumnAddrs[col_idx + 1] << 8));
+
+    unsigned char row_idx = (unsigned char)((tile_y - 0x40) >> 3);
+
+    unsigned char tile = nes_ram[col_addr + row_idx];
+    RAM(0x049E + slot) = tile;
+
+    if (dir & 0x0C) {
+        unsigned char next_row = (unsigned char)(row_idx + 0x16);
+        unsigned char next_tile = nes_ram[col_addr + next_row];
+        if (next_tile >= tile)
+            RAM(0x049E + slot) = next_tile;
+    }
+
+    tile = RAM(0x049E + slot);
+
+    if (RAM(0x0010) == 0) {
+        tile = RAM(0x049E + slot);
+        for (signed char i = (signed char)(walkable_count - 1); i >= 0; i--) {
+            if (tile == WalkableTiles[i]) {
+                tile = 0x26;
+                break;
+            }
+        }
+        RAM(0x049E + slot) = tile;
+
+        if (slot == 0) {
+            if (RAM(0x00EB) == 0x1F) {
+                if (dir & 0x0C) {
+                    if (RAM(0x0070) == 0x80 && RAM(0x0084) < 0x56) {
+                        RAM(0x049E) = 0x26;
+                    }
+                }
+            }
+        }
+    }
+
+    return RAM(0x049E + slot);
+}
+
+unsigned char colrt_get_collidable_tile_still(unsigned int slot) {
+    RAM(0x000F) = 0;
+    return colrt_get_collidable_tile(0, slot);
+}
+
+unsigned char colrt_get_colliding_tile_moving(unsigned int slot) {
+    unsigned char hotspot;
+    if (slot == 0)
+        hotspot = 0xF8;
+    else
+        hotspot = 0xF0;
+
+    unsigned char dir = RAM(0x000F);
+    if (dir & 0x05) {
+        if (dir & 0x04)
+            hotspot = 8;
+        else
+            hotspot = 16;
+    }
+    return colrt_get_collidable_tile(hotspot, slot);
+}

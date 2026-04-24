@@ -52,4 +52,23 @@ void corert_take_hearts_no_sound(void);
 void corert_take_hearts(void);
 unsigned int corert_sub1_from_int16_at4(void);
 
+unsigned char corert_reset_obj_state(unsigned int slot);
+void corert_set_shove_info_with0(unsigned int val, unsigned int slot);
+void corert_reset_shove_info(unsigned int slot);
+void corert_reset_obj_metastate(unsigned int slot);
+void corert_reset_obj_metastate_and_timer(unsigned int slot);
+void corert_decrement_invincibility_timer(unsigned int slot);
+void corert_update_dead_dummy(unsigned int slot);
+void corert_set_shot_spreading_state(unsigned int slot);
+void corert_deactivate_shot(unsigned int slot);
+void corert_deactivate_link_shot(void);
+void corert_destroy_monster(unsigned int slot);
+void corert_set_type_and_clear_object(unsigned int type, unsigned int slot);
+void corert_init_tile_obj_or_item(unsigned int slot);
+void corert_init_flute_secret(unsigned int slot);
+void corert_ensure_object_aligned(unsigned int slot);
+void corert_reverse_obj_dir(unsigned int slot);
+unsigned char corert_reset_moving_dir(void);
+void corert_do_nothing(void);
+
 #endif

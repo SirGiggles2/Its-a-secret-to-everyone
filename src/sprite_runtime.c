@@ -47,3 +47,59 @@ void sprrt_show_link_sprites_behind_horizontal_doors(void) {
         d2--;
     } while (d2 >= 0);
 }
+
+/* ---- Plan C: drained from z_07 (animation cluster) --------------------- */
+
+static void sprrt_animate_link_obj_state(void) {
+    unsigned char state = RAM(0x00AC);
+    unsigned char major = state & 0x30;
+    if (major == 0x10 || major == 0x20) {
+        if (state & 0x0F)
+            RAM(0x00AC) = state | 0x30;
+        else
+            RAM(0x00AC) = state + 1;
+        RAM(0x03E4) = 1;
+    } else if (major == 0x30) {
+        RAM(0x00AC) = state & 0xC0;
+    }
+}
+
+void sprrt_roll_over_anim_counter(unsigned int slot) {
+    RAM(0x03D0 + slot) = RAM(0x00);
+    RAM(0x03E4 + slot) ^= 0x01;
+}
+
+unsigned char sprrt_anim_fetch_obj_pos(unsigned int slot) {
+    RAM(0x0000) = RAM(0x0070 + slot);
+    RAM(0x0001) = RAM(0x0084 + slot);
+    RAM(0x000F) = 0;
+    return 0;
+}
+
+void sprrt_anim_set_obj_hflip(unsigned int slot) {
+    RAM(0x000F) = RAM(0x03E4 + slot);
+}
+
+void sprrt_anim_advance_and_fetch(unsigned int val, unsigned int slot) {
+    RAM(0x0000) = (unsigned char)val;
+    RAM(0x03D0 + slot)--;
+    if (RAM(0x03D0 + slot) == 0) {
+        sprrt_roll_over_anim_counter(slot);
+    }
+    sprrt_anim_fetch_obj_pos(slot);
+}
+
+void sprrt_animate_object_walking(unsigned int slot) {
+    if (--RAM(0x03D0 + slot) == 0) {
+        if (slot == 0) sprrt_animate_link_obj_state();
+        RAM(0x0000) = 6;
+        sprrt_roll_over_anim_counter(slot);
+    }
+    sprrt_anim_fetch_obj_pos(slot);
+    unsigned char dir = RAM(0x0098 + slot) & 0x0C;
+    if (dir != 0) {
+        sprrt_anim_set_obj_hflip(slot);
+    } else {
+        if (!(RAM(0x0098 + slot) & 1)) RAM(0x000F)++;
+    }
+}

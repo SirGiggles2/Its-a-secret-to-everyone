@@ -106,6 +106,10 @@ unsigned int enrt_wizzrobe_get_base_collidable_tile(unsigned int slot);
 unsigned int enrt_pols_voice_is_square_walkable(unsigned int slot);
 void enrt_shoot_fireball_55(unsigned int source_slot);
 void enrt_animate_and_draw_common_object(unsigned int val, unsigned int slot);
+unsigned int enrt_walker_alt_dir_get_opposite(void);
+void enrt_walker_alt_dir_end_loop(void);
+unsigned char enrt_walker_alt_dir_get_random_perpendicular(unsigned int slot);
+unsigned int enrt_find_empty_monster_slot(void);
 
 #ifdef __cplusplus
 }

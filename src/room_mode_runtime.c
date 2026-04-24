@@ -247,3 +247,55 @@ void roommd_end_game_mode12(void) {
     ROOM_SFX_MAIN = 0x80;
     CUR_INV_TILE &= 0xFE;
 }
+
+/* ---- Plan C: drained from z_07 (mode/song cluster) --------------------- */
+
+extern const unsigned char LevelSongIds[];
+extern const unsigned char SaveSlotToPaletteRowOffset[];
+extern unsigned char MenuPalettesTransferBuf[];
+
+unsigned char roommd_end_game_mode(void) {
+    RAM(0x0011) = 0;
+    RAM(0x0013) = 0;
+    return 0;
+}
+
+void roommd_go_to_next_mode(void) {
+    RAM(0x0012)++;
+    roommd_end_game_mode();
+}
+
+void roommd_go_to_next_mode_play_level_song(void) {
+    unsigned char level = RAM(0x0010);
+    RAM(0x0600) = LevelSongIds[level];
+    roommd_go_to_next_mode();
+    RAM(0x0394) = 0;
+}
+
+void roommd_go_to_next_mode_reset_grid_offset(void) {
+    roommd_go_to_next_mode();
+    RAM(0x0394) = 0;
+}
+
+void roommd_patch_and_cue_level_palettes_transfer(void) {
+    unsigned char slot = RAM(0x0016);
+    unsigned char row_off = SaveSlotToPaletteRowOffset[slot];
+    unsigned char color = MenuPalettesTransferBuf[20 + row_off];
+    nes_ram[0x6000u + 0x0B92] = color;
+    RAM(0x0014) = 24;
+    RAM(0x0013)++;
+}
+
+void roommd_init_mode3_sub1(void) {
+    unsigned char room_id;
+    if (RAM(0x0010) != 0 || RAM(0x0526) == 0xFF) {
+        room_id = nes_ram[0x6000u + 0x0BAD];
+    } else {
+        room_id = RAM(0x0526);
+    }
+    RAM(0x00EB) = room_id;
+    if (room_id == RAM(0x0526)) {
+        RAM(0x0526) = 0xFF;
+    }
+    roommd_patch_and_cue_level_palettes_transfer();
+}

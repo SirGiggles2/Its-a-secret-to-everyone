@@ -6,7 +6,7 @@ static const unsigned char roomrt_level_masks[] = {
     0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80
 };
 
-static unsigned char roomrt_fetch_room_flags(void) {
+unsigned char roomrt_get_room_flags(void) {
     unsigned char ptr_lo = nes_ram[NES_SRAM_BASE + 0x0BAF];
     unsigned char ptr_hi = nes_ram[NES_SRAM_BASE + 0x0BB0];
     unsigned short ptr;
@@ -45,7 +45,7 @@ void roomrt_calc_open_doorway_mask(unsigned int attr, unsigned int dir_idx) {
     if (attr < 4) {
         is_open = 1;
     } else {
-        unsigned char flags = roomrt_fetch_room_flags();
+        unsigned char flags = roomrt_get_room_flags();
         is_open = (flags & roomrt_level_masks[dir_idx]) ? 1u : 0u;
     }
     mask = ROOM_DOOR_MASK_ACC;
@@ -54,7 +54,7 @@ void roomrt_calc_open_doorway_mask(unsigned int attr, unsigned int dir_idx) {
 }
 
 void roomrt_add_door_flags(void) {
-    unsigned char flags = roomrt_fetch_room_flags();
+    unsigned char flags = roomrt_get_room_flags();
     signed char d;
     for (d = 3; d >= 0; d--) {
         unsigned char masked = flags & roomrt_level_masks[(unsigned char)d];
@@ -77,7 +77,7 @@ unsigned char roomrt_is_dark_room(unsigned int col) {
 }
 
 void roomrt_set_door_flag(unsigned int dir_idx) {
-    unsigned char flags = roomrt_fetch_room_flags();
+    unsigned char flags = roomrt_get_room_flags();
     unsigned short ptr = ((unsigned short)SAVEFILE_PTR_HI << 8) | SAVEFILE_PTR_LO;
     flags |= roomrt_level_masks[dir_idx];
     nes_ram[ptr + CUR_ROOM_ID] = flags;
@@ -87,7 +87,7 @@ void roomrt_reset_door_flag(unsigned int dir_idx) {
     unsigned short ptr;
     unsigned char flags;
     unsigned char mask;
-    roomrt_fetch_room_flags();
+    roomrt_get_room_flags();
     ptr = ((unsigned short)SAVEFILE_PTR_HI << 8) | SAVEFILE_PTR_LO;
     mask = roomrt_level_masks[dir_idx] ^ 0xFF;
     flags = nes_ram[ptr + CUR_ROOM_ID];
@@ -126,7 +126,7 @@ void roomrt_set_entering_doorway(void) {
 
 void roomrt_save_kill_count_ow(unsigned int slot) {
     unsigned short ptr;
-    unsigned char flags = roomrt_fetch_room_flags();
+    unsigned char flags = roomrt_get_room_flags();
     unsigned char kill_count = flags & 7;
     unsigned char cell;
     unsigned char cur_count;
@@ -261,4 +261,34 @@ void roomrt_touch_door_shutter(void) {
         return;
     }
     ROOM_SHUTTER_TOUCH_MASK |= ROOM_TOUCH_DOOR_BITS;
+}
+
+/* ---- Plan C: drained from z_07 ----------------------------------------- */
+
+void roomrt_hide_all_sprites(void) {
+    for (unsigned char i = 0; i < 64; i++)
+        RAM(0x0200 + (unsigned short)i * 4) = 0xF8;
+}
+
+unsigned char roomrt_get_unique_room_id(void) {
+    unsigned char room = CUR_ROOM_ID;
+    return nes_ram[NES_SRAM_BASE + 0x09FE + room] & 0x3F;
+}
+
+void roomrt_clear_room_history(void) {
+    RAM(0x0529) = 0;
+    for (signed char i = 5; i >= 0; i--)
+        RAM(0x0621 + (unsigned char)i) = 0;
+}
+
+void roomrt_reset_player_state(void) {
+    RAM(0x00AC) = 0;
+    RAM(0x066C) = 0;
+}
+
+void roomrt_mark_room_visited(void) {
+    unsigned char flags = roomrt_get_room_flags();
+    unsigned short ptr = ((unsigned short)SAVEFILE_PTR_HI << 8) | SAVEFILE_PTR_LO;
+    flags |= 0x20;
+    nes_ram[ptr + CUR_ROOM_ID] = flags;
 }

@@ -5,3 +5,15 @@ void enrt_animate_and_draw_common_object(unsigned int val, unsigned int slot) {
     z07_anim_set_obj_hflip(slot);
     c_draw_object_not_mirrored_with_frame(0, slot);
 }
+
+/* ---- Plan C: drained from z_07 ----------------------------------------- */
+
+unsigned int enrt_find_empty_monster_slot(void) {
+    for (signed char i = 11; i >= 1; i--) {
+        if (RAM(0x034F + (unsigned char)i) == 0) {
+            RAM(0x0059) = (unsigned char)i;
+            return (unsigned int)(unsigned char)i;
+        }
+    }
+    return 0;
+}

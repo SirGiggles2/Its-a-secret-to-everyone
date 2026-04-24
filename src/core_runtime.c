@@ -317,3 +317,96 @@ unsigned int corert_sub1_from_int16_at4(void) {
     }
     return borrow ? 0u : CARRY_SET;
 }
+
+/* ---- Plan C: drained from z_07 (object state cluster) ------------------ */
+
+extern void z01_destroy_object_wram(unsigned int val, unsigned int slot);
+extern unsigned int z01_get_opposite_dir(unsigned int dir);
+
+unsigned char corert_reset_obj_state(unsigned int slot) {
+    RAM(0x00AC + slot) = 0;
+    return 0;
+}
+
+void corert_set_shove_info_with0(unsigned int val, unsigned int slot) {
+    RAM(0x00C0 + slot) = (unsigned char)val;
+    RAM(0x00D3 + slot) = (unsigned char)val;
+}
+
+void corert_reset_shove_info(unsigned int slot) {
+    corert_set_shove_info_with0(0, slot);
+}
+
+void corert_reset_obj_metastate(unsigned int slot) {
+    RAM(0x0405 + slot) = 0;
+}
+
+void corert_reset_obj_metastate_and_timer(unsigned int slot) {
+    RAM(0x0028 + slot) = 0;
+    corert_reset_obj_metastate(slot);
+}
+
+void corert_decrement_invincibility_timer(unsigned int slot) {
+    if (RAM(0x04F0 + slot) == 0) return;
+    if (RAM(0x0015) & 1) return;
+    RAM(0x04F0 + slot)--;
+}
+
+void corert_update_dead_dummy(unsigned int slot) {
+    RAM(0x0602) = 32;
+    RAM(0x0405 + slot) = 16;
+}
+
+void corert_set_shot_spreading_state(unsigned int slot) {
+    RAM(0x00AC + slot)++;
+    RAM(0x0098 + slot) = 0xFE;
+}
+
+void corert_deactivate_shot(unsigned int slot) {
+    corert_reset_obj_state(slot);
+}
+
+void corert_deactivate_link_shot(void) {
+    corert_reset_obj_state(14);
+}
+
+void corert_destroy_monster(unsigned int slot) {
+    RAM(0x034F + slot) = 0;
+    z01_destroy_object_wram(0, slot);
+}
+
+void corert_set_type_and_clear_object(unsigned int type, unsigned int slot) {
+    RAM(0x034F + slot) = (unsigned char)type;
+    z01_destroy_object_wram(0, slot);
+}
+
+void corert_init_tile_obj_or_item(unsigned int slot) {
+    RAM(0x04BF + slot) = 0x81;
+    corert_reset_obj_metastate_and_timer(slot);
+}
+
+void corert_init_flute_secret(unsigned int slot) {
+    RAM(0x051A) = 1;
+    RAM(0x0028 + slot) = 0;
+    corert_reset_obj_metastate(slot);
+}
+
+void corert_ensure_object_aligned(unsigned int slot) {
+    if (RAM(0x0394 + slot) != 0) return;
+    RAM(0x0070 + slot) &= 0xF8;
+    RAM(0x0084 + slot) = (RAM(0x0084 + slot) & 0xF8) | 0x05;
+}
+
+void corert_reverse_obj_dir(unsigned int slot) {
+    unsigned char dir = RAM(0x0098 + slot);
+    unsigned char new_dir = (unsigned char)z01_get_opposite_dir(dir);
+    RAM(0x0098 + slot) = new_dir;
+    RAM(0x000F) = new_dir;
+}
+
+unsigned char corert_reset_moving_dir(void) {
+    RAM(0x000F) = 0;
+    return 0;
+}
+
+void corert_do_nothing(void) {}
