@@ -68,9 +68,25 @@ void vdp_dma_to_vram(unsigned long src, unsigned short dst, unsigned short len) 
 }
 void vdp_write_nametable_row(unsigned short plane_base, unsigned short row,
                              const unsigned short *cells) {
-    (void)plane_base; (void)row; (void)cells;
+    /* plane_base = plane A base ($4000) or plane B base ($6000).
+     * row = 0..31 (V32 plane). Writes 32 cells (64 bytes). */
+    unsigned short addr = (unsigned short)(plane_base + (row * 64));
+    unsigned long cmd = 0x40000000UL | ((unsigned long)(addr & 0x3FFF) << 16)
+                                     | ((addr >> 14) & 0x0003);
+    VDP_CTRL_LONG = cmd;
+    for (int i = 0; i < 32; i++) {
+        VDP_DATA_WORD = cells[i];
+    }
 }
-void vdp_set_vscroll(unsigned short value) { (void)value; }
+void vdp_set_vscroll(unsigned short value) {
+    /* VSRAM write to address $00 (plane A vscroll). */
+    VDP_CTRL_LONG = 0x40000010UL;
+    VDP_DATA_WORD = value;
+}
 void vdp_load_cram(const unsigned short *src, unsigned short count) {
-    (void)src; (void)count;
+    /* CRAM write starting at CRAM address 0. count = words (max 64). */
+    VDP_CTRL_LONG = 0xC0000000UL;
+    for (unsigned short i = 0; i < count; i++) {
+        VDP_DATA_WORD = src[i];
+    }
 }
