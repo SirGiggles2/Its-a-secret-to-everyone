@@ -3,8 +3,6 @@
 #include "room_state.h"
 #include "sprite_state.h"
 
-/* ASM shim not yet in any header. */
-extern unsigned char c_get_opposite_dir(unsigned char dir);
 
 static unsigned char enrt_rotate_dir_right(unsigned char dir) {
     dir = (unsigned char)(dir >> 1);
