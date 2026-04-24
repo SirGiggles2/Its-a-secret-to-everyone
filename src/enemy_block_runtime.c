@@ -13,12 +13,6 @@
  */
 #define WALLMASTER_MAJOR_MINOR_MIN     RAM(0x0001)  /* major coord minimum value  */
 
-/* IMPORT shim into the still-asm ChangeTileObjTiles.
- *   void c_change_tile_obj_tiles(unsigned int tile, unsigned int slot);
- *   D0 = tile, D2 = slot, void return.
- */
-extern void c_change_tile_obj_tiles(unsigned int tile, unsigned int slot);
-extern void c_move_object(unsigned short slot);
 
 /* BlockPushDirections — index by Y[0..3] (which encodes:
  *   0 = Link below block (push UP)

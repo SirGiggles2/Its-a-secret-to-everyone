@@ -91,6 +91,8 @@ extern unsigned int c_shoot(unsigned int type);
 extern unsigned char z01_bound_by_room(unsigned int slot);
 extern unsigned char z07_get_colliding_tile_moving(unsigned int slot);
 extern void          c_move_object(unsigned short slot);
+extern void c_change_tile_obj_tiles(unsigned int tile, unsigned int slot);
+extern unsigned char c_get_opposite_dir(unsigned char dir);
 extern void          c_wanderer_target_player(unsigned int slot);
 extern unsigned int  c_shoot_limited(unsigned int slot);
 
