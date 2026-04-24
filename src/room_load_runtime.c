@@ -1,4 +1,5 @@
 #include "room_load_runtime.h"
+#include "enemy_state.h"
 
 #define NES_SRAM_BASE 0x6000u
 
@@ -232,7 +233,7 @@ static void roomld_copy_block_rom(const unsigned char *src) {
         nes_ram[dest] = *src;
 
         if (RAM(0x0002) == RAM(0x0004) && RAM(0x0003) == RAM(0x0005)) {
-            RAM(0x0013)++;
+            SUBMODE_VALUE++;
             return;
         }
 
@@ -268,11 +269,11 @@ static void roomld_fetch_dest_addr_for_common_data_block(void) {
 }
 
 static void roomld_init_mode2_sub0(void) {
-    unsigned char level = RAM(0x0010);
+    unsigned char level = CUR_LEVEL;
     unsigned char idx = level;
 
-    unsigned char profile = RAM(0x0016);
-    unsigned char quest = nes_ram[0x062D + profile];
+    unsigned char profile = SAVE_SLOT_INDEX;
+    unsigned char quest = SAVE_SLOT_QUEST(profile);
 
     const unsigned long *table = (quest != 0) ? LevelBlockAddrsQ2 : LevelBlockAddrsQ1;
     const unsigned char *src = (const unsigned char *)table[idx];
@@ -281,16 +282,16 @@ static void roomld_init_mode2_sub0(void) {
 }
 
 static void roomld_init_mode2_sub1(void) {
-    unsigned char level = RAM(0x0010);
+    unsigned char level = CUR_LEVEL;
     const unsigned char *src = (const unsigned char *)LevelInfoAddrs[level];
     roomld_fetch_level_info_dest_info();
     roomld_copy_block_rom(src);
-    RAM(0x0013) = 0;
-    RAM(0x0011)++;
+    SUBMODE_VALUE = 0;
+    ROOM_MODE_TIMER++;
 }
 
 void roomld_init_mode2_submodes(void) {
-    unsigned char submode = RAM(0x0013);
+    unsigned char submode = SUBMODE_VALUE;
     if (submode == 0)
         roomld_init_mode2_sub0();
     else
@@ -301,7 +302,7 @@ void roomld_copy_common_data_to_ram(void) {
     const unsigned char *src = (const unsigned char *)CommonDataBlockAddr_Bank6[0];
     roomld_fetch_dest_addr_for_common_data_block();
     roomld_copy_block_rom(src);
-    RAM(0x0013) = 0;
+    SUBMODE_VALUE = 0;
 }
 
 static void roomld_patch_q2_rooms(void) {
@@ -322,12 +323,12 @@ static void roomld_patch_q2_rooms(void) {
 void roomld_update_mode2_load_full(void) {
     c_copy_bank_to_window(6);
 
-    unsigned char profile = RAM(0x0016);
-    unsigned char quest = nes_ram[0x062D + profile];
+    unsigned char profile = SAVE_SLOT_INDEX;
+    unsigned char quest = SAVE_SLOT_QUEST(profile);
     if (quest == 0)
         return;
 
-    unsigned char level = RAM(0x0010);
+    unsigned char level = CUR_LEVEL;
     if (level == 0) {
         roomld_patch_q2_rooms();
         return;
