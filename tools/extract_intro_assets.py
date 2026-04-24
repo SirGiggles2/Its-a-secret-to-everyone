@@ -96,6 +96,7 @@ def _emit_chr_array(out_path: Path, symbol: str, data: bytes) -> None:
         row = ", ".join(f"0x{b:02X}" for b in data[i:i+16])
         lines.append(f"    {row},\n")
     lines.append("};\n")
+    lines.append(f"const unsigned long {symbol}_size = {len(data)};\n")
     out_path.write_text("".join(lines))
 
 def _build_story_cram() -> list[int]:
