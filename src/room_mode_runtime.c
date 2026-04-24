@@ -288,14 +288,14 @@ void roommd_patch_and_cue_level_palettes_transfer(void) {
 
 void roommd_init_mode3_sub1(void) {
     unsigned char room_id;
-    if (CUR_LEVEL != 0 || RAM(0x0526) == 0xFF) {
+    if (CUR_LEVEL != 0 || ROOM_ID_ALT == 0xFF) {
         room_id = nes_ram[0x6000u + 0x0BAD];
     } else {
-        room_id = RAM(0x0526);
+        room_id = ROOM_ID_ALT;
     }
     CUR_ROOM_ID = room_id;
-    if (room_id == RAM(0x0526)) {
-        RAM(0x0526) = 0xFF;
+    if (room_id == ROOM_ID_ALT) {
+        ROOM_ID_ALT = 0xFF;
     }
     roommd_patch_and_cue_level_palettes_transfer();
 }
