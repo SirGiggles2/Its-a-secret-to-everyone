@@ -18,7 +18,7 @@ Both stages share a root property: **they are transpiled from NES 6502 and scrol
 
 - Intro runs start-to-finish with **zero input** (no Start press required) and reaches gameplay without crashing.
 - Item showcase shows no V64 dead-zone artifacts (no duplicated rows, no tear, no stale content).
-- Visual output matches NES reference pixel-for-pixel for font, art, and color (palette mapped from NES to Genesis 9-bit).
+- Visual output matches NES reference at designated checkpoints (visually matched — same font, same art, same palette intent). Pixel-perfect equivalence is not a goal; plane mode, palette quantization, and tile format differ, so exact-byte frame diffs are not expected. Success is measured by visual inspection of reference captures plus a structural mismatch threshold (see Testing).
 - Title screen and fade transitions remain untouched (already working).
 - No new regressions in gameplay handoff (mode 2 load → mode 3 unfurl → play).
 
@@ -41,7 +41,7 @@ Both are narrow, contained, and documented in the Integration Hook section. No l
 
 ## Fidelity Target
 
-Genesis-native implementation with pixel-exact NES content (option B from brainstorm Q1). Same visible output as NES. Wrapper technology is Genesis-native (V32 plane mode, software scroll buffer, no H-int DZ_SKIP hack, no transpiled code path). Assets (font, art, palette) extracted byte-exact from the NES reference ROM at build time.
+Genesis-native implementation with NES-sourced content (option B from brainstorm Q1). Same *visible* output as NES at designated checkpoints — same font glyphs, same art tiles, same palette intent. Wrapper technology is Genesis-native (V32 plane mode, software scroll buffer, no H-int DZ_SKIP hack, no transpiled code path). Assets are derived from the existing disassembly reference data already in the repo (see Asset Source below) — not from an external NES ROM.
 
 ## Architecture
 
@@ -88,7 +88,7 @@ void intro_handoff(void);                 // V32 → V64, restore file-select CH
 
 ### Module Responsibilities
 
-- **`intro_common`** owns all VDP writes during intro stages. Provides primitives for mode switch, CHR DMA, nametable writes, VSRAM updates, CRAM load. Stages call these exclusively — no raw VDP port writes in stage code.
+- **`intro_common`** owns intro-stage VDP access. It is a **thin C wrapper around the existing VDP primitives in `genesis_shell.asm`** (`VDP_CTRL = $00C00004`, `VDP_DATA = $00C00000`, plus the register-write sequence at [genesis_shell.asm:220](src/genesis_shell.asm:220)). It does **not** establish a parallel VDP path and does **not** duplicate VDP ownership. The wrapper exposes typed C entry points (`vdp_set_mode_v32`, `vdp_dma_to_vram`, `vdp_write_nametable_row`, `vdp_set_vscroll`, `vdp_load_cram`) that are implemented either as direct writes to the shared `VDP_CTRL`/`VDP_DATA` constants or as calls into the existing asm helpers. Stages call `intro_common` exclusively — no raw VDP port writes in stage code. During the intro takeover window, nothing else writes the VDP; legacy writers (`frontend_runtime.c` phase-1 subphases) are short-circuited per the Integration Hook section.
 - **`intro_story`** runs the story scroll. Reads its tilemap + scroll speed constants, drives `intro_common` primitives each frame.
 - **`intro_showcase`** runs the item showcase. Same structure as `intro_story` with different assets.
 - **Asset files in `src/gen/`** are build-tool outputs. Passive data, never edited by hand.
@@ -110,13 +110,22 @@ This kills the V64 dead zone at the root without affecting gameplay code. No DZ_
 
 Story tilemap exceeds the 32-row V32 plane (NES story is ~80+ rows when stacked vertically). Simple wrap-scrolling: as `g_scroll_pixel >> 3` crosses a row boundary, copy the next source row into the plane row that just scrolled off the top. No dead zone interaction, simple row-copy bookkeeping, one DMA per row boundary crossed (~1/8 frames at 1 px/frame).
 
+### Asset Source
+
+**Source of truth is the existing committed disassembly reference data in `reference/aldonunez/dat/`, not an external NES ROM.** This matches the repo's current pattern (e.g., `src/nes_io.asm` and `tools/transpile_6502.py` consume this same reference tree). Relevant files for intro:
+
+- `reference/aldonunez/dat/DemoBackgroundPatterns.dat` — background CHR for story screen
+- `reference/aldonunez/dat/DemoSpritePatterns.dat` — sprite CHR for intro
+- `reference/aldonunez/dat/DemoTextFields.dat` — story text strings
+- `reference/aldonunez/dat/DemoLineTextAddrs.inc` — text field address table
+- `reference/aldonunez/dat/StoryTileAttrTransferBuf.dat` — palette-attribute strip
+- `reference/aldonunez/dat/GameTitleTransferBuf.dat` — title-related buffer (inspect for showcase relevance)
+
+The extract tool processes only these files. No external ROM path, no env var, no local ignore file. If a required `.dat` / `.inc` file is missing or unexpectedly sized, the tool fails the build with a clear error.
+
 ### Asset Extraction Pipeline
 
-`tools/extract_intro_assets.py` runs at build time before the transpile stage. Reads the original NES reference ROM and emits Genesis-formatted assets into `src/gen/intro_*`.
-
-**ROM path:** the tool accepts the reference ROM path via CLI arg (e.g., `--nes-rom assets/nes_reference.nes`) or environment variable (e.g., `ZELDA_NES_ROM`). The ROM file is not committed to the repo (licensing); `build.bat` reads the path from a local ignored file (e.g., `.nes_rom_path` — added to `.gitignore`) or from the environment. If the path is absent, the extract tool emits a clear error and the build fails early.
-
-**Known offsets** for font CHR, art CHR, palette table, and each tilemap region are documented inline in the extract tool as hex constants with comments tying each to its NES source. Exact offsets are verified during implementation by comparing emitted assets against NES reference screenshots.
+`tools/extract_intro_assets.py` runs at build time before the C compile stage. Reads the reference data files listed above and emits Genesis-formatted assets into `src/gen/intro_*`.
 
 **Conversions performed:**
 
@@ -206,6 +215,37 @@ void frontdemo_animate_phase_1(void) {
 
 State-capture step is done once during implementation: run legacy code (with Start-skip workaround to avoid the crash) and snapshot the FRONTEND state at the moment showcase-end would occur. Bake those values into a constant initializer used by `intro_handoff`.
 
+### Handoff State Bytes (Authoritative)
+
+The legacy fade-in / file-select pipeline resumes from a specific RAM state. The rewrite must restore **exactly** these bytes to the values they would hold at the moment the legacy (Start-skipped) flow reaches file select:
+
+| Address / symbol          | Current owner            | Expected post-showcase value | Source of truth             |
+|---------------------------|--------------------------|------------------------------|-----------------------------|
+| `MODE_VALUE`              | Global mode dispatcher   | TBD — captured at runtime    | `bizhawk_intro_state_probe.lua` |
+| `SUBMODE_VALUE`           | Within-mode submode      | TBD — captured at runtime    | same                        |
+| `FRONTEND_DEMO_SUBPHASE`  | Phase-1 subphase counter | TBD — captured at runtime    | same                        |
+| `RAM(0x042C)`             | Phase-1 flag             | TBD — captured at runtime    | same                        |
+| `RAM(0x042B)`             | `FrontendStartReleaseGate` | TBD — captured at runtime  | same                        |
+| `RAM(0x083D)`             | `VRamForceBlankGate`     | TBD — captured at runtime    | same                        |
+| `RAM(0x0528)`             | Frontend delay timer     | TBD — captured at runtime    | same                        |
+| `ROOM_MODE_TIMER`         | Mode-progression timer   | TBD — captured at runtime    | same                        |
+| `ITEM_SFX_SECONDARY`      | SFX secondary channel    | TBD — captured at runtime    | same                        |
+| `ROOM_TRANSFER_BUF_SELECT`| Transfer buffer select   | TBD — captured at runtime    | same                        |
+
+**Capture procedure** (one-time, during implementation task P0):
+1. Build a debug ROM with Start-skip path traced.
+2. Run `tools/bizhawk_intro_state_probe.lua` (already exists) — arm it to freeze execution the moment the flow arrives at file-select entry.
+3. Dump the RAM addresses above.
+4. Bake the captured values into `src/gen/intro_handoff_state.c` as a named const struct, e.g.:
+   ```c
+   const intro_handoff_state_t INTRO_HANDOFF_EXPECTED = {
+       .mode_value = 0x??, .submode_value = 0x??, /* … */
+   };
+   ```
+5. `intro_handoff()` writes these exact values as its final act before clearing `g_intro_takeover`.
+
+If the probe reveals the list above is incomplete (other RAM bytes also differ between "before story" and "after showcase"), the table is extended before implementation proceeds. The capture pass is the authoritative answer, not this spec.
+
 ### Handoff Details
 
 `intro_handoff()` restores the **file-select / frontend state**, not gameplay state. Gameplay CHR and palette are loaded by the existing mode-2 / mode-3 path when the player selects a save slot — the rewrite does not touch that path.
@@ -236,14 +276,15 @@ $6000–$FFFF   Free
 
 CRAM: 4 palettes × 16 colors, all loaded once in `intro_story_enter`.
 
-### Frame Budget
+### Frame Budget (Estimate — must be measured during implementation)
 
-Per-frame intro cost during scroll:
+Per-frame intro cost during scroll, **estimated** (not measured from current toolchain; numbers below are order-of-magnitude guidance, not proof):
 
-- Row copy (on 1-in-8 frames): 64 bytes via DMA ≈ 100 μs
-- VSRAM write (every frame): 2 writes ≈ 1 μs
-- Input read + state update: negligible
-- **Total:** well under 1% of the 16.7 ms frame budget.
+- Row copy (on 1-in-8 frames): 64 bytes via DMA ≈ ~100 μs (estimate)
+- VSRAM write (every frame): 2 writes ≈ ~1 μs (estimate)
+- Input read + state update: assumed negligible
+
+These numbers are unverified. The implementation plan must include an instrumented measurement task that records actual wall-clock per frame for `intro_story_update()` and `intro_showcase_update()` on the real toolchain. If measured cost exceeds 1 ms per frame, the design revisits the row-copy strategy (batch rows, use longword DMA, or offload to vblank slice).
 
 ## Data Flow
 
@@ -268,16 +309,21 @@ vsync arrives
 
 ## Testing
 
-### Primary: Idle Run
+Test plan reuses **existing probe/capture tools** in `tools/`. No new generic "BizHawk probe" is invented — every test names a concrete existing script or a named replacement.
 
-Boot ROM with zero input for entire intro sequence. Pass criteria:
-- `MODE_VALUE` reaches gameplay mode (mode 2 or later) without hanging, resetting, or crashing.
+### Primary: Idle Run (no-crash)
+
+Boot ROM with zero input for entire intro sequence. Tool: `tools/bizhawk_capture_intro_sequence.lua` + `tools/analyze_intro_continuity.py` (both already in repo). Pass criteria:
+- `MODE_VALUE` reaches gameplay-entry mode without hanging, resetting, or crashing.
 - Intro completes end-to-end: title → fade-out → story → showcase → handoff → fade-in → file select.
+- `tools/analyze_intro_continuity.py` reports no stall frames in the story/showcase window.
 
-### Visual Parity
+### Visual Parity (Checkpoint Capture)
 
-BizHawk Lua probe captures 10 checkpoint frames during intro:
-1. Title screen stable (unchanged, smoke test)
+Tool: `tools/bizhawk_capture_intro_sequence.lua` (NES side) + `tools/bizhawk_capture_intro_window.lua` (Gen side) to capture matched checkpoint frames. Analyzer: `tools/analyze_intro_scroll_window.py`.
+
+Checkpoints:
+1. Title screen stable (smoke test, should be unchanged)
 2. Fade-out complete (black screen)
 3. Story scroll start
 4. Story scroll mid
@@ -285,36 +331,56 @@ BizHawk Lua probe captures 10 checkpoint frames during intro:
 6. Showcase start
 7. Showcase mid
 8. Showcase end
-9. Handoff (V32 → V64 transition clean)
-10. File select visible (unchanged, smoke test)
+9. Handoff moment (V32 → V64 transition, expect a 1-frame transition artifact allowance)
+10. File select visible (smoke test, should be unchanged)
 
-Pixel-diff each checkpoint against NES reference captures. Pass criteria: < 1% mismatch per checkpoint (matches existing T34 parity harness threshold tradition).
+**Pass criteria:** visual inspection of each matched pair shows the same font glyphs, same art layout, same palette intent. Structural mismatch threshold ≤ 5% per checkpoint (looser than the T34 threshold because plane mode and palette quantization differ by design). Checkpoints 1 and 10 — which the rewrite does not touch — still hold to ≤ 1% mismatch as a regression guard.
 
-### V64 Dead Zone Regression
+### V64 Dead Zone Regression Guard
 
-Capture 60 consecutive frames during showcase scroll. Inspect plane rows 60–63 region. Pass criteria: no stale content, no duplicated rows, no tear. (Since showcase runs under V32, there is no dead zone region to inspect — this test primarily validates the mode switch happened correctly.)
+Tool: `tools/bizhawk_intro_vram_dump.lua` captures 60 consecutive frames' VRAM state during showcase scroll. Pass criteria: no stale content appears in the display window, no duplicated rows, no tear. (Since showcase runs under V32, the dead zone region does not exist during showcase — this test primarily validates the V64 → V32 mode switch actually took effect.)
 
-### Frame Budget
+### Frame Budget (Measurement Task)
 
-Instrumented build measures `intro_story_update()` wall-clock per frame. Pass criteria: < 200 μs per frame.
+Instrumented build measures `intro_story_update()` + `intro_showcase_update()` wall-clock per frame. Tool: extend `tools/bizhawk_sweep_story.lua` to timestamp entry/exit of the intro update functions. Pass criteria: < 1 ms per frame (design allowance). If measurement > 1 ms, revisit row-copy strategy per Frame Budget note above.
+
+### Handoff State Verification
+
+Tool: `tools/bizhawk_intro_state_probe.lua` captures RAM at the moment `intro_handoff` returns. Compares byte-for-byte against `INTRO_HANDOFF_EXPECTED` table (the same values baked into `intro_handoff_state.c`). Pass criteria: exact match — any delta means the legacy pipeline will see a different state than before the rewrite, which is a regression.
 
 ### Asset Extraction Validation
 
-Build tool emits SHA of each extracted asset. SHAs committed to repo. Rebuild diffs SHAs to detect accidental asset regression (e.g., offset drift in the extraction tool).
+Build tool emits SHA of each extracted asset (`src/gen/intro_asset_hashes.txt`). SHAs committed to repo. Rebuild diffs SHAs to detect accidental asset regression (e.g., offset drift in the extractor or a corrupted `reference/aldonunez/dat/` file).
 
 ## Open Questions
 
 None at design-sign-off time. Any residual questions surface in the writing-plans skill and are resolved there.
 
-## Deletion (Follow-up, Separate Commit)
+## Deletion (Follow-up, Gated Cleanup — Separate Commit)
 
-After green build and passing tests, separate commit removes now-unreachable transpiled code:
+After green build and passing all tests above, a separate commit may remove now-unreachable transpiled code. **This deletion is gated** — it does not proceed without both of the following:
 
-- `z_02.asm` story/showcase subphase functions (`AnimateDemoPhase1Subphase2/3/4` and callees)
-- Corresponding `c_import_animate_demo_phase1_subphase*` shims in `c_shims.asm`
-- `frontend_runtime.c` dispatch cases that called those shims
+### Gate 1: Static Unreachability Proof
 
-This deletion is not part of the initial implementation plan — it's a cleanup pass once the rewrite is proven stable.
+A grep-based path map confirms none of the following legacy entry points are referenced except from within their own call graph:
+- `AnimateDemoPhase1Subphase2`, `AnimateDemoPhase1Subphase3`, `AnimateDemoPhase1Subphase4` (in `z_02.asm` and the C forwarders in `src/gen/z_02.c`)
+- `c_import_animate_demo_phase1_subphase0..3` (in `c_shims.asm`)
+- `c_import_init_demo_subphase_clear_artifacts`, `c_import_init_demo_subphase_transfer_story_palette`, `c_import_init_demo_subphase_transfer_story_tiles` — note these may still be reached by phase-0 paths or other call sites; unreachability must be established per-symbol, not assumed.
+- `frontdemo_animate_demo_phase1_subphase4` (in `frontend_runtime.c`) — this one is native C but only called from the about-to-be-short-circuited dispatcher.
+
+Each symbol is grepped across `src/`, `tools/`, and `reference/`. If any reference remains outside the rewrite-owned takeover path, the symbol is **not** deleted in this pass.
+
+### Gate 2: Runtime Path-Map Proof
+
+Tool: extend `tools/bizhawk_intro_hook_probe.lua` (already exists) to instrument the legacy symbol entry addresses with a touched-flag. Run the passing idle-run test end-to-end. After the run, verify every candidate-for-deletion symbol has zero touched-flag increments. A symbol with a positive count is in use by the live path and must not be deleted.
+
+### What This Gate Prevents
+
+Many legacy phase-1 subphases perform palette prep, sound cue, or state setup that the rewrite might silently depend on (for example, a shared init that happens during fade-out and stashes data in a global). Deleting such a symbol before the runtime path map confirms unreachability would remove a hidden dependency and break the very handoff this rewrite is trying to make clean.
+
+### Execution
+
+Only when both gates pass does the deletion commit proceed. The deletion commit message must reference the gate results (grep output hash + runtime probe run id).
 
 ## References
 
