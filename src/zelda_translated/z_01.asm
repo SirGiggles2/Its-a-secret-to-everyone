@@ -539,16 +539,7 @@ UpdateCavePersonState_TalkOrShopOrDoorCharge:
     jmp     c_update_cave_person_state_talk_or_shop_or_door_charge
 
 ClearPricesCaveFlag:
-    ; Remove the "show prices" cave flag to get rid of the generic rupee.
-    ;
-    move.b  ($0413,A4),D0
-    andi.b #$F7,D0
-    move.b  D0,($0413,A4)
-    even
-    IFND Exit
-Exit:
-    ENDC
-    rts
+    jmp     c_clear_prices_cave_flag
 
     even
 UpdatePersonState_DelayThenHide:

@@ -2791,6 +2791,8 @@ def _patch_z01(path):
     text = _stub_func(text, 'CheckPassiveTileObjects', 'c_check_passive_tile_objects')
     # batch 78
     text = _stub_func(text, 'UpdateTrap_Full', 'c_update_trap_full')
+    # batch 79
+    text = _stub_func(text, 'ClearPricesCaveFlag', 'c_clear_prices_cave_flag')
 
     # Data table exports — batch 37 + 44 + 53 + 55 + 56 + 57 + 58 + 59 + 60 + 61 + 62 + 77
     for tbl in ['UnderworldPersonTextSelectorsC', 'TextboxLineAddrsLo', 'RupeeStashXs', 'RupeeStashYs',
