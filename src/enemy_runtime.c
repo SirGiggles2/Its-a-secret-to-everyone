@@ -10,8 +10,8 @@ void enrt_animate_and_draw_common_object(unsigned int val, unsigned int slot) {
 
 unsigned int enrt_find_empty_monster_slot(void) {
     for (signed char i = 11; i >= 1; i--) {
-        if (RAM(0x034F + (unsigned char)i) == 0) {
-            RAM(0x0059) = (unsigned char)i;
+        if (OBJ(NES_OBJ_TYPE, (unsigned char)i) == 0) {
+            ENEMY_NEXT_SHOT_SLOT = (unsigned char)i;
             return (unsigned int)(unsigned char)i;
         }
     }
