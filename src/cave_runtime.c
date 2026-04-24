@@ -1,34 +1,6 @@
 #include "cave_runtime.h"
 #include "combat_state.h"
 
-extern unsigned char z07_anim_fetch_obj_pos(unsigned int slot);
-extern void c_draw_object_mirrored(unsigned int slot);
-extern void c_draw_object_not_mirrored(unsigned int slot);
-extern void c_animate_item_object(unsigned char item_type, unsigned int slot);
-extern void c_link_end_move_and_draw_bank1(void);
-extern void z01_inc_cave_state(void);
-extern void z01_post_credit(unsigned int val);
-extern void z01_post_debit(unsigned int amount);
-extern void z01_copy_price_list_template(void);
-extern void z01_cue_transfer_buf_and_advance_state(unsigned int val);
-extern void z01_cue_transfer_blank_person_wares(void);
-extern void z01_unhalt_link(void);
-extern void z01_set_up_common_cave_objects(unsigned int x, unsigned int slot, unsigned int y);
-extern unsigned char z01_abs(unsigned int val);
-extern void c_take_item(unsigned char item_type);
-extern void z01_take_item(unsigned char item_type);
-extern unsigned char progrt_get_room_flag_uw_item_state(void);
-extern void progrt_set_room_flag_uw_item_state(void);
-extern const unsigned char CaveWareXs[];
-extern const unsigned char HintCaveTextSelectors0[];
-extern const unsigned char OverworldPersonTextSelectors[];
-extern const unsigned char MoneyGameLossAmounts[];
-extern const unsigned char MoneyGamePermutations[];
-extern const unsigned char MoneyGamePermutationEndIndexes[];
-extern const unsigned char TextboxLineAddrsLo[];
-extern const unsigned char PersonTextAddrs[];
-extern const unsigned char TextboxCharTransferRecTemplate[];
-
 #define NES_SRAM_BASE 0x6000u
 
 static void cavert_init_cave_continue(void) {
