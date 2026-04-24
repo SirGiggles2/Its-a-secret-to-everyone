@@ -653,34 +653,8 @@ StoryPaletteTransferRecord:
 
     even
 InitDemoSubphaseTransferStoryPalette:
-    moveq   #35,D2
-    move.b  D2,($0300,A4)
-    move.b  D2,($0301,A4)
-    even
-_L_z02_InitDemoSubphaseTransferStoryPalette_CopyStoryPalette:
-    lea     (StoryPaletteTransferRecord).l,A0
-    move.b  (A0,D2.W),D0
-    lea     ($0302,A4),A0
-    move.b  D0,(A0,D2.W)
-    subq.b  #1,D2
-    bpl  _L_z02_InitDemoSubphaseTransferStoryPalette_CopyStoryPalette
-    moveq   #10,D2
-    moveq   #0,D0
-    even
-_L_z02_InitDemoSubphaseTransferStoryPalette_ClearVars:
-    lea     ($0412,A4),A0
-    move.b  D0,(A0,D2.W)
-    lea     ($041F,A4),A0
-    move.b  D0,(A0,D2.W)
-    lea     ($0437,A4),A0
-    move.b  D0,(A0,D2.W)
-    lea     ($0444,A4),A0
-    move.b  D0,(A0,D2.W)
-    subq.b  #1,D2
-    bpl  _L_z02_InitDemoSubphaseTransferStoryPalette_ClearVars
-    jmp     IncSubphase
+    jmp     c_init_demo_subphase_transfer_story_palette
 
-    even
 InitDemoSubphaseTransferStoryTiles:
     ; PATCHED (P10): Clear both nametables (V64 plane) at story scroll init
     move.b  #$20,D0

@@ -94,6 +94,10 @@ void z02_init_demo_subphase_transfer_title_palette(void) {
     frontdemo_init_demo_subphase_transfer_title_palette();
 }
 
+void z02_init_demo_subphase_transfer_story_palette(void) {
+    frontdemo_init_demo_subphase_transfer_story_palette();
+}
+
 void z02_init_mode13_sub4(void) {
     frontdemo_init_mode13_sub4();
 }
