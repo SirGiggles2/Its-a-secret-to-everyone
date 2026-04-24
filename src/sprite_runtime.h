@@ -3,6 +3,8 @@
 
 #include "nes_abi.h"
 
+extern unsigned char z01_reset_cur_sprite_index(void);
+
 #ifdef __cplusplus
 extern "C" {
 #endif

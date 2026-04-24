@@ -4,7 +4,6 @@
 #include "object_state.h"
 #include "room_state.h"
 
-extern unsigned char z01_reset_cur_sprite_index(void);
 
 void sprrt_cycle_cur_sprite_index(void) {
     unsigned char idx = (unsigned char)(RAM(0x0341) + 1u);
