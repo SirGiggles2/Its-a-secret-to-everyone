@@ -129,6 +129,12 @@ void enrt_walker_alt_dir_end_loop(void);
 unsigned char enrt_walker_alt_dir_get_random_perpendicular(unsigned int slot);
 unsigned int enrt_find_empty_monster_slot(void);
 
+/* Wanderer / Goriya family (drained from z_04.asm / z_07.asm). */
+void enrt_update_common_wanderer(unsigned int turn_rate, unsigned int slot);
+void enrt_wanderer_target_player(unsigned int slot);
+void enrt_update_goriya(unsigned int slot);
+void enrt_walker_set_input_dir_and_try_shooting_boomerang(unsigned int slot);
+
 void enrt_update_block(unsigned int slot);
 void enrt_draw_block(unsigned int slot);
 void enrt_update_monster_shot(unsigned int slot);
