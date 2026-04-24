@@ -1,25 +1,30 @@
 #include "core_runtime.h"
+#include "object_state.h"
+#include "sprite_state.h"
+#include "link_state.h"
+#include "progress_state.h"
+#include "room_state.h"
 
 extern void z07_set_shove_info_with0(unsigned int val, unsigned int slot);
 
 void corert_play_character_sfx(void) {
-    RAM(0x0602) = 8;
+    DEATH_FRAME_COUNTER = 8;
 }
 
 void corert_play_key_taken_tune(void) {
-    RAM(0x0602) = 0;
-    RAM(0x0604) = 8;
+    DEATH_FRAME_COUNTER = 0;
+    ROOM_SFX_MAIN = 8;
 }
 
 void corert_take_power_triforce(void) {
-    RAM(0x0509)++;
+    POWER_TRIFORCE_FANFARE_FLAG++;
     RAM(0x0028) = 0xC0;
-    RAM(0x00AC) = 64;
+    OBJ_STATE(0) = 64;
 }
 
 unsigned char corert_silence_all_sound(void) {
-    RAM(0x0604) = 0x80;
-    RAM(0x0603) = 0x80;
+    ROOM_SFX_MAIN = 0x80;
+    ROOM_SFX_AUX = 0x80;
     RAM(0x0605) = 0;
     RAM(0x0607) = 0;
     return 0;
@@ -30,19 +35,19 @@ void corert_post_debit(unsigned int amount) {
 }
 
 void corert_init_one_simple_object(unsigned int slot) {
-    RAM(0x034F + slot) = RAM(0x00);
+    OBJ_TYPE(slot) = RAM(0x00);
     RAM(0x0492 + slot) = 0;
     RAM(0x04BF + slot) = RAM(0x01);
 }
 
 void corert_destroy_object_wram(unsigned int val, unsigned int slot) {
-    RAM(0x00C0 + slot) = val;
-    RAM(0x00D3 + slot) = val;
+    OBJ_SHOVE_DIR(slot) = val;
+    OBJ_SHOVE_DIST(slot) = val;
     RAM(0x0028 + slot) = val;
-    RAM(0x00AC + slot) = val;
-    RAM(0x04F0 + slot) = val;
+    OBJ_STATE(slot) = val;
+    OBJ_INV_TIMER(slot) = val;
     RAM(0x0492 + slot) = 0xFF;
-    RAM(0x0405 + slot) = 1;
+    OBJ_METASTATE(slot) = 1;
 }
 
 void corert_destroy_whirlwind(unsigned int slot) {
@@ -50,44 +55,44 @@ void corert_destroy_whirlwind(unsigned int slot) {
 }
 
 void corert_unhalt_link(void) {
-    RAM(0x00AC) = 0;
+    OBJ_STATE(0) = 0;
 }
 
 void corert_inc_cave_state(void) {
-    RAM(0x00AD)++;
+    OBJ_STATE(1)++;
 }
 
 void corert_set_up_whirlwind(unsigned int slot) {
-    RAM(0x0084 + slot) = RAM(0x0084);
-    RAM(0x0070 + slot) = 0;
-    RAM(0x034F + slot) = 46;
+    OBJ_TILE_Y(slot) = OBJ_TILE_Y(0);
+    OBJ_TILE_X(slot) = 0;
+    OBJ_TYPE(slot) = 46;
 }
 
 void corert_uw_person_complex_state_delay_and_quit(void) {
     if (RAM(0x0029) == 0) {
-        RAM(0x0350) = 0;
+        ROOM_OBJ_TYPE(0) = 0;
     }
 }
 
 void corert_set_boomerang_speed(unsigned int val, unsigned int slot) {
     RAM(0x03BC + slot) = val;
-    if ((RAM(0x00AC + slot) & 0xF0) == 0x40) {
+    if ((OBJ_STATE(slot) & 0xF0) == 0x40) {
         RAM(0x03BC + slot) >>= 1;
         RAM(0x0380 + slot)--;
         if (RAM(0x0380 + slot) == 0) {
-            RAM(0x00AC + slot) = 80;
+            OBJ_STATE(slot) = 80;
         }
     }
 }
 
 void corert_set_up_common_cave_objects(unsigned int x, unsigned int slot, unsigned int y) {
-    RAM(0x0070 + slot) = x;
-    RAM(0x0084 + slot) = y;
+    OBJ_TILE_X(slot) = x;
+    OBJ_TILE_Y(slot) = y;
     RAM(0x0485 + slot) = 0;
     RAM(0x04BF + slot) = 0x81;
-    RAM(0x00AC) = 64;
-    RAM(0x0351) = 64;
-    RAM(0x0352) = 64;
+    OBJ_STATE(0) = 64;
+    ROOM_OBJ_TYPE(1) = 64;
+    ROOM_OBJ_TYPE(2) = 64;
     RAM(0x0071 + slot) = 72;
     RAM(0x0072 + slot) = 0xA8;
     RAM(0x0085 + slot) = y;
@@ -140,35 +145,35 @@ void corert_map_screen_pos_to_ppu_addr(void) {
 
 void corert_reset_shove_info_and_inv_timer(unsigned int slot) {
     z07_set_shove_info_with0(0, slot);
-    RAM(0x04F0 + slot) = 0;
+    OBJ_INV_TIMER(slot) = 0;
 }
 
 void corert_update_person_state_reset_char_offset(void) {
     RAM(0x0416) = 0;
-    RAM(0x00AD)++;
+    OBJ_STATE(1)++;
 }
 
 void corert_begin_update_mode(void) {
-    RAM(0x0013) = 0;
-    RAM(0x0011)++;
+    SUBMODE_VALUE = 0;
+    ROOM_MODE_TIMER++;
 }
 
 void corert_cue_transfer_buf_and_advance_state(unsigned int val) {
-    RAM(0x0014) = (unsigned char)val;
+    ROOM_TRANSFER_BUF_SELECT = (unsigned char)val;
     corert_inc_cave_state();
 }
 
 void corert_take_one_rupee(void) {
-    RAM(0x0602) = 1;
+    DEATH_FRAME_COUNTER = 1;
     RAM(0x067D)++;
 }
 
 void corert_set_item_value(unsigned int val, unsigned int slot3) {
-    RAM(0x0657 + slot3) = (unsigned char)val;
+    PROG_ITEMS_BY_LEVEL(slot3) = (unsigned char)val;
 }
 
 void corert_init_whirlwind(unsigned int val, unsigned int slot) {
-    RAM(0x0084) = (unsigned char)val;
+    OBJ_TILE_Y(0) = (unsigned char)val;
     corert_set_up_whirlwind(slot);
 }
 
@@ -223,7 +228,7 @@ unsigned char corert_negate(unsigned int val) {
 }
 
 void corert_play_effect(unsigned int val) {
-    RAM(0x0603) |= (unsigned char)val;
+    ROOM_SFX_AUX |= (unsigned char)val;
 }
 
 void corert_play_sample(unsigned int val) {
@@ -231,14 +236,14 @@ void corert_play_sample(unsigned int val) {
 }
 
 void corert_play_parry_tune(void) {
-    RAM(0x0604) = 1;
+    ROOM_SFX_MAIN = 1;
 }
 
 void corert_write_blank_priority_sprites(void) {
     static const unsigned char tmpl[] = {0x3D, 0x1C, 0x20, 0x00, 0xDD, 0x1C, 0x20, 0x00};
     unsigned char i;
     for (i = 0; i < 0x40; i++) {
-        RAM(0x0200 + i) = tmpl[i & 7];
+        OAM_BYTE(i) = tmpl[i & 7];
     }
 }
 
@@ -249,7 +254,7 @@ void corert_copy_price_list_template(void) {
     };
     signed char i;
     for (i = 16; i >= 0; i--) {
-        RAM(0x0302 + (unsigned char)i) = tmpl[(unsigned char)i];
+        ROOM_TILE_XFER_BUF((unsigned char)i) = tmpl[(unsigned char)i];
     }
 }
 
@@ -258,11 +263,11 @@ unsigned char corert_compare_hearts_to_containers(void) {
 }
 
 void corert_uw_person_complex_state_begin(void) {
-    if (RAM(0x0350) == 0x4F) {
-        RAM(0x0014) = 108;
+    if (ROOM_OBJ_TYPE(0) == 0x4F) {
+        ROOM_TRANSFER_BUF_SELECT = 108;
     }
     RAM(0x0029) = 10;
-    RAM(0x00AD)++;
+    OBJ_STATE(1)++;
 }
 
 void corert_format_char_doublet(unsigned int val) {
@@ -324,13 +329,13 @@ extern void z01_destroy_object_wram(unsigned int val, unsigned int slot);
 extern unsigned int z01_get_opposite_dir(unsigned int dir);
 
 unsigned char corert_reset_obj_state(unsigned int slot) {
-    RAM(0x00AC + slot) = 0;
+    OBJ_STATE(slot) = 0;
     return 0;
 }
 
 void corert_set_shove_info_with0(unsigned int val, unsigned int slot) {
-    RAM(0x00C0 + slot) = (unsigned char)val;
-    RAM(0x00D3 + slot) = (unsigned char)val;
+    OBJ_SHOVE_DIR(slot) = (unsigned char)val;
+    OBJ_SHOVE_DIST(slot) = (unsigned char)val;
 }
 
 void corert_reset_shove_info(unsigned int slot) {
@@ -338,7 +343,7 @@ void corert_reset_shove_info(unsigned int slot) {
 }
 
 void corert_reset_obj_metastate(unsigned int slot) {
-    RAM(0x0405 + slot) = 0;
+    OBJ_METASTATE(slot) = 0;
 }
 
 void corert_reset_obj_metastate_and_timer(unsigned int slot) {
@@ -347,19 +352,19 @@ void corert_reset_obj_metastate_and_timer(unsigned int slot) {
 }
 
 void corert_decrement_invincibility_timer(unsigned int slot) {
-    if (RAM(0x04F0 + slot) == 0) return;
-    if (RAM(0x0015) & 1) return;
-    RAM(0x04F0 + slot)--;
+    if (OBJ_INV_TIMER(slot) == 0) return;
+    if (FRAME_COUNTER & 1) return;
+    OBJ_INV_TIMER(slot)--;
 }
 
 void corert_update_dead_dummy(unsigned int slot) {
-    RAM(0x0602) = 32;
-    RAM(0x0405 + slot) = 16;
+    DEATH_FRAME_COUNTER = 32;
+    OBJ_METASTATE(slot) = 16;
 }
 
 void corert_set_shot_spreading_state(unsigned int slot) {
-    RAM(0x00AC + slot)++;
-    RAM(0x0098 + slot) = 0xFE;
+    OBJ_STATE(slot)++;
+    OBJ_FLAG(slot) = 0xFE;
 }
 
 void corert_deactivate_shot(unsigned int slot) {
@@ -371,12 +376,12 @@ void corert_deactivate_link_shot(void) {
 }
 
 void corert_destroy_monster(unsigned int slot) {
-    RAM(0x034F + slot) = 0;
+    OBJ_TYPE(slot) = 0;
     z01_destroy_object_wram(0, slot);
 }
 
 void corert_set_type_and_clear_object(unsigned int type, unsigned int slot) {
-    RAM(0x034F + slot) = (unsigned char)type;
+    OBJ_TYPE(slot) = (unsigned char)type;
     z01_destroy_object_wram(0, slot);
 }
 
@@ -386,26 +391,26 @@ void corert_init_tile_obj_or_item(unsigned int slot) {
 }
 
 void corert_init_flute_secret(unsigned int slot) {
-    RAM(0x051A) = 1;
+    RAM(NES_ROOM_LAYOUT_SCRATCH) = 1;
     RAM(0x0028 + slot) = 0;
     corert_reset_obj_metastate(slot);
 }
 
 void corert_ensure_object_aligned(unsigned int slot) {
-    if (RAM(0x0394 + slot) != 0) return;
-    RAM(0x0070 + slot) &= 0xF8;
-    RAM(0x0084 + slot) = (RAM(0x0084 + slot) & 0xF8) | 0x05;
+    if (OBJ_ALIGN_FLAG(slot) != 0) return;
+    OBJ_TILE_X(slot) &= 0xF8;
+    OBJ_TILE_Y(slot) = (OBJ_TILE_Y(slot) & 0xF8) | 0x05;
 }
 
 void corert_reverse_obj_dir(unsigned int slot) {
-    unsigned char dir = RAM(0x0098 + slot);
+    unsigned char dir = OBJ_FLAG(slot);
     unsigned char new_dir = (unsigned char)z01_get_opposite_dir(dir);
-    RAM(0x0098 + slot) = new_dir;
-    RAM(0x000F) = new_dir;
+    OBJ_FLAG(slot) = new_dir;
+    LINK_MOVING_DIR = new_dir;
 }
 
 unsigned char corert_reset_moving_dir(void) {
-    RAM(0x000F) = 0;
+    LINK_MOVING_DIR = 0;
     return 0;
 }
 
@@ -425,7 +430,7 @@ void corert_clear_ram0300_up_to(unsigned int end_hi, unsigned int start_off) {
             off = 0xFF;
             continue;
         }
-        nes_ram[0x0302] = 0xFF;
+        ROOM_TILE_XFER_BUF(0) = 0xFF;
         return;
     }
 }
@@ -436,7 +441,7 @@ void corert_handle_shot_blocked(unsigned int slot) {
     unsigned char saved_link_state;
     unsigned char saved_candle_used;
 
-    if ((RAM(0x00AC + slot) & 0x80) == 0) {
+    if ((OBJ_STATE(slot) & 0x80) == 0) {
         corert_set_shot_spreading_state(slot);
         return;
     }
@@ -446,21 +451,21 @@ void corert_handle_shot_blocked(unsigned int slot) {
         return;
     }
 
-    saved_link_state = RAM(0x00AC);
+    saved_link_state = OBJ_STATE(0);
     saved_candle_used = RAM(0x0513);
     RAM(0x0513) = 0;
     c_wield_candle();
     RAM(0x0513) = saved_candle_used;
-    RAM(0x00AC) = saved_link_state;
+    OBJ_STATE(0) = saved_link_state;
 
-    if (RAM(0x00AC + slot) != 0x21) {
+    if (OBJ_STATE(slot) != 0x21) {
         corert_deactivate_link_shot();
         return;
     }
 
-    RAM(0x00AC + slot) = 0x22;
-    RAM(0x0070 + slot) = RAM(0x0070 + 14);
-    RAM(0x0084 + slot) = RAM(0x0084 + 14);
-    RAM(0x0098 + slot) = RAM(0x0098 + 14);
+    OBJ_STATE(slot) = 0x22;
+    OBJ_TILE_X(slot) = OBJ_TILE_X(14);
+    OBJ_TILE_Y(slot) = OBJ_TILE_Y(14);
+    OBJ_FLAG(slot) = OBJ_FLAG(14);
     RAM(0x0028 + slot) = 79;
 }
