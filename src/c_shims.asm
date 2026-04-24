@@ -144,6 +144,7 @@
     xdef    c_begin_update_mode
     xdef    c_trigger_open_door
     xdef    c_update_mode11_death_sub6
+    xdef    c_init_link_speed
     xdef    c_init_flute_secret
     xdef    c_reset_obj_metastate_and_timer
     xdef    c_cue_transfer_buf_advance_state
@@ -1927,6 +1928,11 @@ c_trigger_open_door:
 ; UpdateMode11Death_Sub6 — no-arg, C→C chain to inc_submode.
 c_update_mode11_death_sub6:
     jsr     z05_update_mode11_death_sub6
+    rts
+
+; InitLinkSpeed — no-arg, void.
+c_init_link_speed:
+    jsr     z05_init_link_speed
     rts
 
 ; InitFluteSecret — D2=slot, C→C chain.

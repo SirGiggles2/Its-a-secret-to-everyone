@@ -2242,9 +2242,8 @@ _L_z05_CheckShutters_TriggerIfShutter:
 ;
     even
 TriggerOpenDoor:
-    move.b  D0,($0055,A4)
-    moveq   #6,D0
-    move.b  D0,($0054,A4)
+    jmp     c_trigger_open_door
+
 _anon_z05_65:
     rts
 
@@ -8020,29 +8019,8 @@ _L_z05_HaveInput_SetLinkDirAndSpeed:
     moveq   #0,D2
     even
 InitLinkSpeed:
-    moveq   #96,D0
-    move.b  D0,($0000,A4)
-    move.b  ($0010,A4),D0
-    bne  _L_z05_InitLinkSpeed_SetSpeed
-    ; In OW. If standing on mountain stairs, then
-    ; use a lower quarter speed of $30.
-    move.b  ($049E,A4),D0
-    cmpi.b  #$74,D0
-    beq  _anon_z05_178
-    cmpi.b  #$75,D0
-    bne  _L_z05_InitLinkSpeed_SetSpeed
-_anon_z05_178:
-    moveq   #48,D0
-    move.b  D0,($0000,A4)
-    move.b  ($03BC,A4),D1
-    cmp.b   D1,D0
-    beq  _L_z05_InitLinkSpeed_SetSpeed
-    moveq   #0,D0
-    move.b  D0,($03A8,A4)
-    even
-_L_z05_InitLinkSpeed_SetSpeed:
-    move.b  ($0000,A4),D0
-    move.b  D0,($03BC,A4)
+    jmp     c_init_link_speed
+
 _anon_z05_179:
     rts
 
@@ -8776,50 +8754,8 @@ _L_z05_Submenu_WriteScanningMapRoomMark_WriteMapTile:
 ;
     even
 CalcOpenDoorwayMask:
-    moveq   #0,D3
-    move.b  D0,-(A5)  ; PHA
-    cmpi.b  #$04,D0
-    bcs  _L_z05_CalcOpenDoorwayMask_ByDoorType
-    ; Else we have to find out the walkability from the room flags.
-    ;
-    move.b  D2,D0
-    move.b  D0,-(A5)  ; PHA
-    move.b  D3,D0
-    move.b  D0,-(A5)  ; PHA
-    jsr     GetRoomFlags
-    andi    #$EE,CCR  ; CLC: clear C+X
-    lea     (LevelMasks).l,A0
-    move.b  (A0,D2.W),D1
-    and.b  D1,D0
-    beq  _anon_z05_205
-    ori     #$11,CCR  ; SEC: set C+X
-_anon_z05_205:
-    move.b  (A5)+,D0  ; PLA
-    moveq   #0,D3
-    move.b  D0,D3
-    move.b  (A5)+,D0  ; PLA
-    moveq   #0,D2
-    move.b  D0,D2
-    even
-_L_z05_CalcOpenDoorwayMask_ShiftIntoMask:
-    lea     ($033F,A4),A0
-    move.b  (A0,D3.W),D0
-    roxl.b  #1,D0   ; ROL A
-    andi.b #$0F,D0
-    lea     ($033F,A4),A0
-    move.b  D0,(A0,D3.W)
-    move.b  (A5)+,D0  ; PLA
-    rts
+    jmp     c_calc_open_doorway_mask
 
-    even
-_L_z05_CalcOpenDoorwayMask_ByDoorType:
-    ; The door attribute indicates the walkability.
-    ;
-    cmpi.b  #$00,D0
-    beq  _L_z05_CalcOpenDoorwayMask_ShiftIntoMask
-    andi    #$EE,CCR  ; CLC: clear C+X
-    bcc  _L_z05_CalcOpenDoorwayMask_ShiftIntoMask
-    even
 AddDoorFlagsToCurOpenedDoors:
     jsr     GetRoomFlags
     moveq   #3,D2

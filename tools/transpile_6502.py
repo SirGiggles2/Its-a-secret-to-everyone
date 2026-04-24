@@ -5679,6 +5679,11 @@ def _patch_z05(path):
     text = _stub_func(text, 'UpdateMenuScrollDownOW', 'c_update_menu_scroll_down_ow')
     text = _stub_func(text, 'UpdateMenuScrollDownUW', 'c_update_menu_scroll_down_uw')
 
+    # --- Batch 104: pre-wired z_05 drains ---
+    text = _stub_func(text, 'CalcOpenDoorwayMask', 'c_calc_open_doorway_mask')
+    text = _stub_func(text, 'InitLinkSpeed', 'c_init_link_speed')
+    text = _stub_func(text, 'TriggerOpenDoor', 'c_trigger_open_door')
+
     with open(path, 'w', encoding='utf-8') as f:
         f.write(text)
 
