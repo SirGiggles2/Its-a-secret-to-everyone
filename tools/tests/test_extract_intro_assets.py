@@ -45,3 +45,25 @@ def test_nes_tile_to_gen_tile_color_3():
     gen = nes_tile_to_gen_tile(nes)
     assert len(gen) == 32
     assert gen == bytes([0x33] * 32)
+
+
+# Tests for nes_color_to_gen_cram pure function
+from tools.extract_intro_assets import nes_color_to_gen_cram
+
+def test_nes_black_to_gen():
+    # NES $0F is black → Genesis $0000
+    assert nes_color_to_gen_cram(0x0F) == 0x0000
+
+def test_nes_white_to_gen():
+    # NES $30 is white-ish → Genesis $0EEE (all channels max)
+    v = nes_color_to_gen_cram(0x30)
+    # each nibble >= 0xA (top two bins of the quantizer)
+    assert (v & 0x000E) >= 0x000A
+    assert ((v >> 4) & 0x000E) >= 0x000A
+    assert ((v >> 8) & 0x000E) >= 0x000A
+
+def test_nes_color_range():
+    for i in range(64):
+        v = nes_color_to_gen_cram(i)
+        assert 0 <= v <= 0x0EEE
+        assert (v & 0x0111) == 0  # low bit of each nibble zero (Gen format)
