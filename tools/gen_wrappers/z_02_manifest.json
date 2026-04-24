@@ -91,6 +91,11 @@
       "sig": "void (void)"
     },
     {
+      "old": "z02_update_sprites_for_waterfall_wave",
+      "new": "frontdemo_update_sprites_for_waterfall_wave",
+      "sig": "void (unsigned int val)"
+    },
+    {
       "old": "z02_fetch_profile_name_address",
       "new": "savert_fetch_profile_name_address",
       "sig": "void (void)"

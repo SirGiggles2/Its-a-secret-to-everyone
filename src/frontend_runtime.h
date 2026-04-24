@@ -20,6 +20,7 @@ void frontdemo_init_demo_subphase_transfer_title_palette(void);
 void frontdemo_init_demo_subphase_transfer_story_palette(void);
 void frontdemo_animate_demo_phase1_subphase4(void);
 void frontdemo_update_sprites_for_waterfall_crest(void);
+void frontdemo_update_sprites_for_waterfall_wave(unsigned int wave_idx);
 void frontdemo_init_mode13_sub3(void);
 void frontdemo_init_mode13_sub4(void);
 

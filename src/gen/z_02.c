@@ -86,6 +86,10 @@ void z02_update_sprites_for_waterfall_crest(void) {
     frontdemo_update_sprites_for_waterfall_crest();
 }
 
+void z02_update_sprites_for_waterfall_wave(unsigned int val) {
+    frontdemo_update_sprites_for_waterfall_wave(val);
+}
+
 void z02_fetch_profile_name_address(void) {
     savert_fetch_profile_name_address();
 }

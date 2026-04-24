@@ -360,7 +360,33 @@ void frontdemo_init_demo_subphase_transfer_story_palette(void) {
 }
 
 static const unsigned char kWaterfallCrestTiles[4] = { 0xA2, 0xA4, 0xA6, 0xA8 };
+static const unsigned char kWaterfallWaveTiles[4]  = { 0xB2, 0xB4, 0xB6, 0xB8 };
 static const unsigned char kWaterfallSpriteXs[4]   = { 0x50, 0x58, 0x60, 0x68 };
+static const unsigned char kWaterfallWaveSpriteOffsets[3] = { 0x70, 0x80, 0x90 };
+
+void frontdemo_update_sprites_for_waterfall_wave(unsigned int wave_idx) {
+    unsigned char y = (unsigned char)(RAM(0x0420 + wave_idx) + 2);
+    if (y >= 0xE3) y = 0xB2;
+    RAM(0x0420 + wave_idx) = y;
+    RAM(0x0005) = y;
+
+    unsigned char tile_offset;
+    if (y >= 0xC2)      tile_offset = 16;
+    else if (y >= 0xB9) tile_offset = 8;
+    else                tile_offset = 0;
+    RAM(0x0000) = tile_offset;
+    RAM(0x0002) = (unsigned char)wave_idx;
+
+    unsigned int d3 = kWaterfallWaveSpriteOffsets[wave_idx];
+    int d2;
+    for (d2 = 3; d2 >= 0; d2--) {
+        RAM(0x0201 + d3) = (unsigned char)(kWaterfallWaveTiles[d2] + tile_offset);
+        RAM(0x0203 + d3) = kWaterfallSpriteXs[d2];
+        RAM(0x0200 + d3) = y;
+        RAM(0x0202 + d3) = 0x03;
+        d3 += 4;
+    }
+}
 
 void frontdemo_update_sprites_for_waterfall_crest(void) {
     int d2;

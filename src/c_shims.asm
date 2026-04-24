@@ -251,6 +251,7 @@
     xdef    c_init_demo_subphase_transfer_story_palette
     xdef    c_animate_demo_phase1_subphase4
     xdef    c_update_sprites_for_waterfall_crest
+    xdef    c_update_sprites_for_waterfall_wave
     xdef    c_init_mode13_sub4
     xdef    c_flyer_keese_decide_state
     xdef    c_flyer_peahat_decide_state
@@ -726,6 +727,7 @@
     xref    z02_init_demo_subphase_transfer_story_palette
     xref    z02_animate_demo_phase1_subphase4
     xref    z02_update_sprites_for_waterfall_crest
+    xref    z02_update_sprites_for_waterfall_wave
     xref    z02_init_mode13_sub4
     xref    z04_flyer_keese_decide_state
     xref    z04_flyer_peahat_decide_state
@@ -2838,6 +2840,15 @@ c_animate_demo_phase1_subphase4:
 ; UpdateSpritesForWaterfallCrest — no args, void return.
 c_update_sprites_for_waterfall_crest:
     jmp     z02_update_sprites_for_waterfall_crest
+
+; UpdateSpritesForWaterfallWave — D2=wave_idx, void return.
+c_update_sprites_for_waterfall_wave:
+    moveq   #0,D0
+    move.w  D2,D0
+    move.l  D0,-(SP)
+    jsr     z02_update_sprites_for_waterfall_wave
+    addq.l  #4,SP
+    rts
 
 ; InitMode13_Sub4 — no args, void return.
 c_init_mode13_sub4:

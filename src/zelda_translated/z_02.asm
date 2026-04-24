@@ -1222,75 +1222,8 @@ _anon_z02_2:
 
     even
 UpdateSpritesForWaterfallWave:
-    ; Add 2 to current waterfall wave Y.
-    ; But keep it in the range $B2..$E3.
-    ;
-    lea     ($0420,A4),A0
-    addq.b  #1,(A0,D2.W)
-    lea     ($0420,A4),A0
-    addq.b  #1,(A0,D2.W)
-    lea     ($0420,A4),A0
-    move.b  (A0,D2.W),D0
-    cmpi.b  #$E3,D0
-    bcs  _anon_z02_3
-    move.b  #$B2,D0
-    lea     ($0420,A4),A0
-    move.b  D0,(A0,D2.W)
-_anon_z02_3:
-    move.b  D0,($0005,A4)
-    ; Depending on the Y coordinate of the wave,
-    ; modify the animation state.
-    ;
-    ; < $B9, use tile offset 0
-    ; < $C2, use tile offset 8
-    ; else, use tile offset $10
-    moveq   #0,D3
-    move.b  D0,D3
-    moveq   #16,D0
-    cmpi.b  #$C2,D3
-    bcc  _L_z02_UpdateSpritesForWaterfallWave_SetOffset
-    lsr.b  #1,D0   ; LSR A
-    cmpi.b  #$B9,D3
-    bcc  _L_z02_UpdateSpritesForWaterfallWave_SetOffset
-    moveq   #0,D0
-    even
-_L_z02_UpdateSpritesForWaterfallWave_SetOffset:
-    move.b  D0,($0000,A4)
-    move.b  D2,($0002,A4)
-    moveq   #0,D3
-    lea     (WaterfallWaveSpriteOffsets).l,A0
-    move.b  (A0,D2.W),D3
-    moveq   #3,D2
-    even
-_L_z02_UpdateSpritesForWaterfallWave_LoopSprite:
-    lea     (WaterfallWaveTiles).l,A0
-    move.b  (A0,D2.W),D0
-    andi    #$EE,CCR  ; CLC: clear C+X
-    move.b  ($0000,A4),D1
-    addx.b  D1,D0   ; ADC $00
-    lea     ($0201,A4),A0
-    move.b  D0,(A0,D3.W)
-    lea     (WaterfallSpriteXs).l,A0
-    move.b  (A0,D2.W),D0
-    lea     ($0203,A4),A0
-    move.b  D0,(A0,D3.W)
-    move.b  ($0005,A4),D0
-    lea     ($0200,A4),A0
-    move.b  D0,(A0,D3.W)
-    moveq   #3,D0
-    lea     ($0202,A4),A0
-    move.b  D0,(A0,D3.W)
-    addq.b  #1,D3
-    addq.b  #1,D3
-    addq.b  #1,D3
-    addq.b  #1,D3
-    subq.b  #1,D2
-    bpl  _L_z02_UpdateSpritesForWaterfallWave_LoopSprite
-    moveq   #0,D2
-    move.b  ($0002,A4),D2
-    rts
+    jmp     c_update_sprites_for_waterfall_wave
 
-    even
 UpdateSpritesForWaterfallCrest:
     jmp     c_update_sprites_for_waterfall_crest
 
