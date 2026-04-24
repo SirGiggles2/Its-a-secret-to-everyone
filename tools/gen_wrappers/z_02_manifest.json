@@ -81,6 +81,11 @@
       "sig": "void (void)"
     },
     {
+      "old": "z02_animate_demo_phase1_subphase4",
+      "new": "frontdemo_animate_demo_phase1_subphase4",
+      "sig": "void (void)"
+    },
+    {
       "old": "z02_fetch_profile_name_address",
       "new": "savert_fetch_profile_name_address",
       "sig": "void (void)"

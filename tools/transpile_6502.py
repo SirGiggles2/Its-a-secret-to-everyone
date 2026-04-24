@@ -3894,6 +3894,7 @@ def _patch_z02(path):
     text = _stub_func(text, 'InitMode13_Sub4', 'c_init_mode13_sub4')
     text = _stub_func(text, 'InitDemoSubphaseTransferTitlePalette', 'c_init_demo_subphase_transfer_title_palette')
     text = _stub_func(text, 'InitDemoSubphaseTransferStoryPalette', 'c_init_demo_subphase_transfer_story_palette')
+    text = _stub_func(text, 'AnimateDemoPhase1Subphase4', 'c_animate_demo_phase1_subphase4')
 
     # --- Batch 89 (Agent G demo/intro drain) ---
     text = _stub_func(text, 'InitDemo_RunTasks', 'c_init_demo_run_tasks')

@@ -78,6 +78,10 @@ void z02_animate_demo_p1_end(void) {
     frontdemo_animate_p1_end();
 }
 
+void z02_animate_demo_phase1_subphase4(void) {
+    frontdemo_animate_demo_phase1_subphase4();
+}
+
 void z02_fetch_profile_name_address(void) {
     savert_fetch_profile_name_address();
 }

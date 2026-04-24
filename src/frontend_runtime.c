@@ -294,7 +294,7 @@ void frontdemo_animate_phase_1(void) {
         case 1: c_import_animate_demo_phase1_subphase1(); break;
         case 2: c_import_animate_demo_phase1_subphase2(); break;
         case 3: c_import_animate_demo_phase1_subphase3(); break;
-        case 4: c_import_animate_demo_phase1_subphase4(); break;
+        case 4: frontdemo_animate_demo_phase1_subphase4(); break;
         default: break;
     }
 }
@@ -357,4 +357,16 @@ void frontdemo_init_demo_subphase_transfer_story_palette(void) {
         RAM(0x0444 + i) = 0;
     }
     frontdemo_inc_subphase();
+}
+
+void frontdemo_animate_demo_phase1_subphase4(void) {
+    RAM(0x041A)++;
+    if (RAM(0x041A) == 0x39) {
+        RAM(0x0011) = 0;
+        RAM(0x041A) = 0;
+        RAM(0x042C) = 0;
+        RAM(0x042D) = 0;
+        return;
+    }
+    frontdemo_animate_p1_end();
 }

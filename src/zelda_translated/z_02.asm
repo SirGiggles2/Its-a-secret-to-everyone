@@ -1108,21 +1108,8 @@ AnimateDemoPhase1Subphase3:
     jmp     c_animate_demo_p1_sub3
 
 AnimateDemoPhase1Subphase4:
-    addq.b  #1,($041A,A4)
-    move.b  ($041A,A4),D0
-    cmpi.b  #$39,D0
-    beq.s  __far_z_02_0000
-    jmp  AnimateDemoPhase1End_AnimateObjects
-__far_z_02_0000:
-    moveq   #0,D0
-    move.b  D0,($0011,A4)
-    move.b  D0,($041A,A4)
-    move.b  D0,($042C,A4)
-    move.b  D0,($042D,A4)
-    eori    #$01,CCR  ; normalize C to 6502 polarity before RTS
-    rts
+    jmp     c_animate_demo_phase1_subphase4
 
-    even
 AnimateDemoPhase1End_AnimateObjects:
     jmp     c_animate_demo_p1_end
 
@@ -2023,9 +2010,9 @@ _anon_z02_9:
     ;
     move.b  ($0016,A4),D0
     cmpi.b  #$03,D0
-    beq.s  __far_z_02_0001
+    beq.s  __far_z_02_0000
     jmp  DeleteSlot
-__far_z_02_0001:
+__far_z_02_0000:
     moveq   #14,D0
     move.b  D0,($0012,A4)
     moveq   #0,D0
@@ -2079,9 +2066,9 @@ _L_z02_DeleteSlot_ClearName:
 ModeE_HandleDirections:
     move.b  ($00FA,A4),D0
     andi.b #$0F,D0
-    beq.s  __far_z_02_0002
+    beq.s  __far_z_02_0001
     jmp  ModeE_HandleDirectionButton
-__far_z_02_0002:
+__far_z_02_0001:
     even
 ResetButtonRepeatState:
     jmp     c_reset_button_repeat_state
@@ -2288,9 +2275,9 @@ ModeE_HandleAOrB:
     moveq   #0,D3
     move.b  ($0016,A4),D3
     cmpi.b  #$03,D3
-    bne.s  __far_z_02_0003
+    bne.s  __far_z_02_0002
     jmp  LA10A_Exit
-__far_z_02_0003:
+__far_z_02_0002:
     ; Set NameCharOffset [$0421] to the offset of first char
     ; in the current slot's name.
     lea     (SlotToNameOffset).l,A0
@@ -4200,9 +4187,9 @@ InitMode13_Full_JumpTable:
 InitMode13_Sub0:
     jsr     UpdateEndGameCurtainEffect
     move.b  ($0013,A4),D0
-    bne.s  __far_z_02_0004
+    bne.s  __far_z_02_0003
     jmp  LA958_Exit
-__far_z_02_0004:
+__far_z_02_0003:
     jsr     HideAllSprites
     jsr     Link_EndMoveAndDraw
     moveq   #1,D2
@@ -4295,9 +4282,9 @@ UpdateZeldaTextbox:
     ; If Zelda's timer has not expired, then return.
     ;
     move.b  ($0029,A4),D0
-    beq.s  __far_z_02_0005
+    beq.s  __far_z_02_0004
     jmp  LA9F4_Exit
-__far_z_02_0005:
+__far_z_02_0004:
     ; Set the timer to wait 6 frames after the next character about
     ; to be shown.
     ;
@@ -4372,9 +4359,9 @@ _anon_z02_32:
     movea.l D4,A0
     move.b  (A0,D3.W),D0     ; LDA ($nn),Y
     andi.b #$C0,D0
-    bne.s  __far_z_02_0006
+    bne.s  __far_z_02_0005
     jmp  LA9F4_Exit
-__far_z_02_0006:
+__far_z_02_0005:
     ; Determine an index based on the high 2 bits of the character element:
     ;   $80: 0
     ;   $40: 1
@@ -4402,9 +4389,9 @@ _anon_z02_33:
     ; So, advance the state of the person object, and unhalt Link.
     ;
     cmpi.b  #$02,D3
-    beq.s  __far_z_02_0007
+    beq.s  __far_z_02_0006
     jmp  LA9F4_Exit
-__far_z_02_0007:
+__far_z_02_0006:
     addq.b  #1,($00AD,A4)
     moveq   #0,D0
     move.b  D0,($00AC,A4)
@@ -4701,16 +4688,16 @@ UpdateMode13WinGame_Sub4:
     ; Don't let the player skip ahead for a little while.
     ;
     move.b  ($0028,A4),D0
-    beq.s  __far_z_02_0008
+    beq.s  __far_z_02_0007
     jmp  LAB7E_Exit
-__far_z_02_0008:
+__far_z_02_0007:
     ; If Start hasn't been pressed, then return.
     ;
     move.b  ($00F8,A4),D0
     andi.b #$10,D0
-    bne.s  __far_z_02_0009
+    bne.s  __far_z_02_0008
     jmp  LAB7E_Exit
-__far_z_02_0009:
+__far_z_02_0008:
     ; Start was pressed. We'll transition to mode $D to save.
     ;
     jsr     EndGameMode

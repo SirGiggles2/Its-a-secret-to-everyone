@@ -249,6 +249,7 @@
     xdef    c_init_demo_subphase_play_title_song
     xdef    c_init_demo_subphase_transfer_title_palette
     xdef    c_init_demo_subphase_transfer_story_palette
+    xdef    c_animate_demo_phase1_subphase4
     xdef    c_init_mode13_sub4
     xdef    c_flyer_keese_decide_state
     xdef    c_flyer_peahat_decide_state
@@ -722,6 +723,7 @@
     xref    z02_init_demo_subphase_play_title_song
     xref    z02_init_demo_subphase_transfer_title_palette
     xref    z02_init_demo_subphase_transfer_story_palette
+    xref    z02_animate_demo_phase1_subphase4
     xref    z02_init_mode13_sub4
     xref    z04_flyer_keese_decide_state
     xref    z04_flyer_peahat_decide_state
@@ -2826,6 +2828,10 @@ c_init_demo_subphase_transfer_title_palette:
 ; InitDemoSubphaseTransferStoryPalette — no args, void return.
 c_init_demo_subphase_transfer_story_palette:
     jmp     z02_init_demo_subphase_transfer_story_palette
+
+; AnimateDemoPhase1Subphase4 — no args, void return.
+c_animate_demo_phase1_subphase4:
+    jmp     z02_animate_demo_phase1_subphase4
 
 ; InitMode13_Sub4 — no args, void return.
 c_init_mode13_sub4:
