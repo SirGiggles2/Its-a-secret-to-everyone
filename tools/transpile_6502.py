@@ -4323,6 +4323,14 @@ def _patch_z04(path):
     text = _stub_func(text, 'Wallmaster_PutSpritesBehindBgIfNeeded', 'c_wallmaster_put_sprites_behind_bg_if_needed')
     text = _stub_func(text, 'Wallmaster_PutSpriteBehindBgIfNeeded', 'c_wallmaster_put_sprite_behind_bg_if_needed')
 
+    # --- Batch 92: Dodongo family ---
+    text = _stub_func(text, 'Dodongo_CheckCollisions', 'c_dodongo_check_collisions')
+    text = _stub_func(text, 'Dodongo_CheckCollisionsStandardSize', 'c_dodongo_check_collisions_standard_size')
+    text = _stub_func(text, 'Dodongo_CheckBombHit', 'c_dodongo_check_bomb_hit')
+    text = _stub_func(text, 'Dodongo_TryEatBomb', 'c_dodongo_try_eat_bomb')
+    text = _stub_func(text, 'Dodongo_IsBombInRange', 'c_dodongo_is_bomb_in_range')
+    text = _stub_func(text, 'Dodongo_Draw', 'c_dodongo_draw')
+
     with open(path, 'w', encoding='utf-8') as f:
         f.write(text)
 

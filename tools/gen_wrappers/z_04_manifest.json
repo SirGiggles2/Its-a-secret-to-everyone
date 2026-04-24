@@ -598,6 +598,36 @@
       "old": "z04_wallmaster_put_sprites_behind_bg_if_needed",
       "new": "enrt_wallmaster_put_sprites_behind_bg_if_needed",
       "sig": "void (void)"
+    },
+    {
+      "old": "z04_dodongo_check_collisions",
+      "new": "enrt_dodongo_check_collisions",
+      "sig": "void (unsigned int slot)"
+    },
+    {
+      "old": "z04_dodongo_check_collisions_standard_size",
+      "new": "enrt_dodongo_check_collisions_standard_size",
+      "sig": "void (unsigned int slot)"
+    },
+    {
+      "old": "z04_dodongo_check_bomb_hit",
+      "new": "enrt_dodongo_check_bomb_hit",
+      "sig": "void (unsigned int slot)"
+    },
+    {
+      "old": "z04_dodongo_try_eat_bomb",
+      "new": "enrt_dodongo_try_eat_bomb",
+      "sig": "void (unsigned int slot)"
+    },
+    {
+      "old": "z04_dodongo_is_bomb_in_range",
+      "new": "enrt_dodongo_is_bomb_in_range",
+      "sig": "unsigned int (unsigned int limit_idx)"
+    },
+    {
+      "old": "z04_dodongo_draw",
+      "new": "enrt_dodongo_draw",
+      "sig": "void (unsigned int slot)"
     }
   ]
 }

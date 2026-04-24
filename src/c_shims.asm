@@ -5132,3 +5132,79 @@ c_wallmaster_put_sprite_behind_bg_if_needed:
 c_wallmaster_put_sprites_behind_bg_if_needed:
     jsr     z04_wallmaster_put_sprites_behind_bg_if_needed
     rts
+
+;==============================================================================
+; --- Batch 92: Dodongo family (drained from z_04.asm) ---
+; Asm callers go through these export shims so that the Dodongo bodies in
+; z_04.asm can be reduced to `jmp c_dodongo_*` stubs that reach the owned
+; C in src/enemy_boss_runtime.c via the gen/ forwarders.
+;==============================================================================
+
+    xdef    c_dodongo_check_collisions
+    xdef    c_dodongo_check_collisions_standard_size
+    xdef    c_dodongo_check_bomb_hit
+    xdef    c_dodongo_try_eat_bomb
+    xdef    c_dodongo_is_bomb_in_range
+    xdef    c_dodongo_draw
+
+    xref    z04_dodongo_check_collisions
+    xref    z04_dodongo_check_collisions_standard_size
+    xref    z04_dodongo_check_bomb_hit
+    xref    z04_dodongo_try_eat_bomb
+    xref    z04_dodongo_is_bomb_in_range
+    xref    z04_dodongo_draw
+
+; Dodongo_CheckCollisions — D2=slot, void.
+c_dodongo_check_collisions:
+    moveq   #0,D1
+    move.w  D2,D1
+    move.l  D1,-(SP)
+    jsr     z04_dodongo_check_collisions
+    addq.l  #4,SP
+    rts
+
+; Dodongo_CheckCollisionsStandardSize — D2=slot, void.
+c_dodongo_check_collisions_standard_size:
+    moveq   #0,D1
+    move.w  D2,D1
+    move.l  D1,-(SP)
+    jsr     z04_dodongo_check_collisions_standard_size
+    addq.l  #4,SP
+    rts
+
+; Dodongo_CheckBombHit — D2=slot, void.
+c_dodongo_check_bomb_hit:
+    moveq   #0,D1
+    move.w  D2,D1
+    move.l  D1,-(SP)
+    jsr     z04_dodongo_check_bomb_hit
+    addq.l  #4,SP
+    rts
+
+; Dodongo_TryEatBomb — D2=slot, void.
+c_dodongo_try_eat_bomb:
+    moveq   #0,D1
+    move.w  D2,D1
+    move.l  D1,-(SP)
+    jsr     z04_dodongo_try_eat_bomb
+    addq.l  #4,SP
+    rts
+
+; Dodongo_IsBombInRange — D3=limit_idx in, returns A in D0 (Z=1 if in range).
+c_dodongo_is_bomb_in_range:
+    moveq   #0,D1
+    move.w  D3,D1
+    move.l  D1,-(SP)
+    jsr     z04_dodongo_is_bomb_in_range
+    addq.l  #4,SP
+    tst.b   D0
+    rts
+
+; Dodongo_Draw — D2=slot, void.
+c_dodongo_draw:
+    moveq   #0,D1
+    move.w  D2,D1
+    move.l  D1,-(SP)
+    jsr     z04_dodongo_draw
+    addq.l  #4,SP
+    rts

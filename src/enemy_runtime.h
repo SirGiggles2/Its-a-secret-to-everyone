@@ -124,6 +124,14 @@ void enrt_bounce_shot(unsigned int slot);
 void enrt_check_shot_link_collision(unsigned int slot);
 void enrt_update_fireball(unsigned int slot);
 
+/* Dodongo family (drained from z_04.asm). */
+void enrt_dodongo_check_collisions(unsigned int slot);
+void enrt_dodongo_check_collisions_standard_size(unsigned int slot);
+void enrt_dodongo_check_bomb_hit(unsigned int slot);
+void enrt_dodongo_try_eat_bomb(unsigned int slot);
+unsigned int enrt_dodongo_is_bomb_in_range(unsigned int limit_idx);
+void enrt_dodongo_draw(unsigned int slot);
+
 #ifdef __cplusplus
 }
 #endif

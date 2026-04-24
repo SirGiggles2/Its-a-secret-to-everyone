@@ -485,4 +485,28 @@ void z04_wallmaster_put_sprites_behind_bg_if_needed(void) {
     enrt_wallmaster_put_sprites_behind_bg_if_needed();
 }
 
+void z04_dodongo_check_collisions(unsigned int slot) {
+    enrt_dodongo_check_collisions(slot);
+}
+
+void z04_dodongo_check_collisions_standard_size(unsigned int slot) {
+    enrt_dodongo_check_collisions_standard_size(slot);
+}
+
+void z04_dodongo_check_bomb_hit(unsigned int slot) {
+    enrt_dodongo_check_bomb_hit(slot);
+}
+
+void z04_dodongo_try_eat_bomb(unsigned int slot) {
+    enrt_dodongo_try_eat_bomb(slot);
+}
+
+unsigned int z04_dodongo_is_bomb_in_range(unsigned int limit_idx) {
+    return enrt_dodongo_is_bomb_in_range(limit_idx);
+}
+
+void z04_dodongo_draw(unsigned int slot) {
+    enrt_dodongo_draw(slot);
+}
+
 /* <<< end auto-wrappers >>> */

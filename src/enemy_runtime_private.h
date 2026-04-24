@@ -19,6 +19,8 @@ extern void c_control_keese_flight(unsigned int slot);
 extern void c_check_monster_collisions(unsigned int slot);
 extern void c_draw_object_mirrored_with_frame(unsigned int frame, unsigned int slot);
 extern void c_draw_object_not_mirrored_with_frame(unsigned int frame, unsigned int slot);
+extern void c_get_object_middle(unsigned int slot);
+extern void c_check_monster_sword_collision(unsigned int monster_slot, unsigned int weapon_slot);
 extern void c_reset_shove_info(unsigned int slot);
 extern void c_check_link_collision(unsigned int slot);
 extern void c_update_zol_state(unsigned int slot);
