@@ -259,7 +259,7 @@ void corert_copy_price_list_template(void) {
 }
 
 unsigned char corert_compare_hearts_to_containers(void) {
-    return (RAM(0x066F) >> 4);
+    return (LINK_HEARTS >> 4);
 }
 
 void corert_uw_person_complex_state_begin(void) {
@@ -292,15 +292,15 @@ void corert_take_hearts_no_sound(void) {
     RAM(0x0001) = RAM(0x000A);
     for (;;) {
         if (corert_compare_hearts_to_containers() == RAM(0x0000)) {
-            unsigned char partial = RAM(0x0670);
+            unsigned char partial = LINK_PARTIAL_HEART;
             partial++;
             if (partial == 0) {
                 return;
             }
-            RAM(0x0670) = 0xFF;
+            LINK_PARTIAL_HEART = 0xFF;
             return;
         }
-        RAM(0x066F)++;
+        LINK_HEARTS++;
         RAM(0x0001)--;
         if ((signed char)RAM(0x0001) < 0) {
             return;
@@ -452,10 +452,10 @@ void corert_handle_shot_blocked(unsigned int slot) {
     }
 
     saved_link_state = OBJ_STATE(0);
-    saved_candle_used = RAM(0x0513);
-    RAM(0x0513) = 0;
+    saved_candle_used = CANDLE_LIT_FLAG;
+    CANDLE_LIT_FLAG = 0;
     c_wield_candle();
-    RAM(0x0513) = saved_candle_used;
+    CANDLE_LIT_FLAG = saved_candle_used;
     OBJ_STATE(0) = saved_link_state;
 
     if (OBJ_STATE(slot) != 0x21) {
