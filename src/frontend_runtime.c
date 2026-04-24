@@ -293,6 +293,10 @@ void frontdemo_update_mode0_demo(void) {
 }
 
 void frontdemo_animate_phase_1(void) {
+    if (g_intro_takeover) {
+        intro_story_tick();
+        return;
+    }
     switch (FRONTEND_DEMO_SUBPHASE) {
         case 0: c_import_animate_demo_phase1_subphase0(); break;
         case 1: c_import_animate_demo_phase1_subphase1(); break;
