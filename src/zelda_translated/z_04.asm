@@ -4403,115 +4403,14 @@ Wallmaster_PrepareToDraw:
     jmp     c_wallmaster_prepare_to_draw
 
 Wallmaster_CalcStartPosition:
-    lea     ($0412,A4),A0
-    move.b  D0,(A0,D2.W)
-    move.b  D3,($0003,A4)
-    ; If Link is still (input dir = 0), then use distance $24, else $32.
-    ;
-    moveq   #36,D0
-    moveq   #0,D3
-    move.b  ($03F8,A4),D3
-    beq  _anon_z04_70
-    moveq   #50,D0
-_anon_z04_70:
-    ; If Link is facing in the direction passed in (which decreases), then:
-    ; 1. negate the distance
-    ; 2. add 8 to the instruction offset to access
-    ;    the opposite direction for the same wall
-    ;
-    moveq   #0,D3
-    move.b  ($0098,A4),D3
-    move.b  ($0002,A4),D1
-    cmp.b   D1,D3
-    bne  _anon_z04_71
-    move.b  D0,-(A5)  ; PHA
-    lea     ($0412,A4),A0
-    move.b  (A0,D2.W),D0
-    andi    #$EE,CCR  ; CLC: clear C+X
-    move.b  #$08,D1
-    addx.b  D1,D0   ; ADC #$08 (X flag = 6502 C)
-    lea     ($0412,A4),A0
-    move.b  D0,(A0,D2.W)
-    move.b  (A5)+,D0  ; PLA
-    eori.b #$FF,D0
-    andi    #$EE,CCR  ; CLC: clear C+X
-    move.b  #$01,D1
-    addx.b  D1,D0   ; ADC #$01 (X flag = 6502 C)
-_anon_z04_71:
-    ; Add the distance and Link's minor coordinate to calculate
-    ; Wallmaster's initial minor coordinate to store in [04].
-    ; In general, the monster will be put in front of Link.
-    ;
-    andi    #$EE,CCR  ; CLC: clear C+X
-    move.b  ($0000,A4),D1
-    addx.b  D1,D0   ; ADC $00
-    move.b  D0,($0004,A4)
-    ; By default, will return index 0 to choose the minimum value
-    ; for Wallmaster's initial major coordinate. This will be returned,
-    ; if Link is at the wall with a smaller major coordinate.
-    ;
-    moveq   #0,D3
-    ; If Link's major coordinate <> the minimum major coordinate, then
-    ; he's on the farther wall. Add $10 to the instruction offset 
-    ; to access the block for the other direction along the same axis,
-    ; and increment the index for the Wallmaster's initial major coordinate.
-    ;
-    move.b  ($0001,A4),D0
-    move.b  ($0003,A4),D1
-    cmp.b   D1,D0
-    beq  _anon_z04_72
-    lea     ($0412,A4),A0
-    move.b  (A0,D2.W),D0
-    andi    #$EE,CCR  ; CLC: clear C+X
-    move.b  #$10,D1
-    addx.b  D1,D0   ; ADC #$10 (X flag = 6502 C)
-    lea     ($0412,A4),A0
-    move.b  D0,(A0,D2.W)
-    addq.b  #1,D3
-_anon_z04_72:
-    rts
+    jmp     c_wallmaster_calc_start_position
 
-    even
 Wallmaster_PutSpritesBehindBgIfNeeded:
-    moveq   #0,D3
-    move.b  ($0000,A4),D3
-    jsr     Wallmaster_PutSpriteBehindBgIfNeeded
-    moveq   #0,D3
-    move.b  ($0001,A4),D3
-    even
-Wallmaster_PutSpriteBehindBgIfNeeded:
-    ; Loop twice, from 1 to 0, in order to check the left and right
-    ; extents of the sprite (X and X+8).
-    ;
-    moveq   #1,D2
-    even
-_L_z04_Wallmaster_PutSpriteBehindBgIfNeeded_LoopExtent:
-    ; If sprite X + extent >= $E9 or < $18, then
-    ; add priority attribute to show this sprite behind the background.
-    ;
-    lea     ($0203,A4),A0
-    move.b  (A0,D3.W),D0
-    andi    #$EE,CCR  ; CLC: clear C+X
-    lea     (SpriteRelativeExtents).l,A0
-    move.b  (A0,D2.W),D1
-    addx.b  D1,D0   ; ADC SpriteRelativeExtents,X
-    cmpi.b  #$E9,D0
-    bcc  _L_z04_Wallmaster_PutSpriteBehindBgIfNeeded_AddPriorityBit
-    cmpi.b  #$18,D0
-    bcc  _anon_z04_73
-    even
-_L_z04_Wallmaster_PutSpriteBehindBgIfNeeded_AddPriorityBit:
-    lea     ($0202,A4),A0
-    move.b  (A0,D3.W),D0
-    ori.b #$20,D0
-    lea     ($0202,A4),A0
-    move.b  D0,(A0,D3.W)
-_anon_z04_73:
-    subq.b  #1,D2
-    bpl  _L_z04_Wallmaster_PutSpriteBehindBgIfNeeded_LoopExtent
-    rts
+    jmp     c_wallmaster_put_sprites_behind_bg_if_needed
 
-    even
+Wallmaster_PutSpriteBehindBgIfNeeded:
+    jmp     c_wallmaster_put_sprite_behind_bg_if_needed
+
 InitRope:
     jmp     c_init_rope
 

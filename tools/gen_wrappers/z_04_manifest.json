@@ -583,6 +583,21 @@
       "old": "z04_gleeok_check_collisions",
       "new": "enrt_gleeok_check_collisions",
       "sig": "void (unsigned int slot)"
+    },
+    {
+      "old": "z04_wallmaster_calc_start_position",
+      "new": "enrt_wallmaster_calc_start_position",
+      "sig": "unsigned int (unsigned int instr_offset, unsigned int init_major_min, unsigned int slot)"
+    },
+    {
+      "old": "z04_wallmaster_put_sprite_behind_bg_if_needed",
+      "new": "enrt_wallmaster_put_sprite_behind_bg_if_needed",
+      "sig": "void (unsigned int sprite_byte_off)"
+    },
+    {
+      "old": "z04_wallmaster_put_sprites_behind_bg_if_needed",
+      "new": "enrt_wallmaster_put_sprites_behind_bg_if_needed",
+      "sig": "void (void)"
     }
   ]
 }

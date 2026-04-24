@@ -4318,6 +4318,11 @@ def _patch_z04(path):
     text = _stub_func(text, 'L_Gleeok_StoreRefSegDistance', 'c_l_gleeok_store_ref_seg_distance')
     text = _stub_func(text, 'Gleeok_CheckCollisions', 'c_gleeok_check_collisions')
 
+    # --- Batch 91: Wallmaster family ---
+    text = _stub_func(text, 'Wallmaster_CalcStartPosition', 'c_wallmaster_calc_start_position')
+    text = _stub_func(text, 'Wallmaster_PutSpritesBehindBgIfNeeded', 'c_wallmaster_put_sprites_behind_bg_if_needed')
+    text = _stub_func(text, 'Wallmaster_PutSpriteBehindBgIfNeeded', 'c_wallmaster_put_sprite_behind_bg_if_needed')
+
     with open(path, 'w', encoding='utf-8') as f:
         f.write(text)
 

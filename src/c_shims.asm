@@ -4929,6 +4929,9 @@ c_import_format_file_a:
     xdef    c_update_mode0_demo_sub2
     xdef    c_animate_demo
     xdef    c_animate_demo_phase1
+    xdef    c_wallmaster_calc_start_position
+    xdef    c_wallmaster_put_sprite_behind_bg_if_needed
+    xdef    c_wallmaster_put_sprites_behind_bg_if_needed
 
     xref    MovePositionMarkers
     xref    UpdateTriforcePositionMarker
@@ -5091,4 +5094,41 @@ c_animate_demo:
 
 c_animate_demo_phase1:
     jsr     z02_animate_demo_phase1
+    rts
+
+; --- Batch 91: Wallmaster family ---
+
+; Wallmaster_CalcStartPosition — D0=instr_offset, D3=init_major_min, D2=slot.
+; Returns index 0/1 in D3 (caller uses it to index an initial-coord table).
+c_wallmaster_calc_start_position:
+    moveq   #0,D1
+    move.w  D2,D1                ; arg3 slot
+    move.l  D1,-(SP)
+    moveq   #0,D1
+    move.b  D3,D1
+    andi.l  #$FF,D1
+    move.l  D1,-(SP)              ; arg2 init_major_min
+    moveq   #0,D1
+    move.b  D0,D1
+    andi.l  #$FF,D1
+    move.l  D1,-(SP)              ; arg1 instr_offset
+    jsr     z04_wallmaster_calc_start_position
+    lea     (12,SP),SP
+    moveq   #0,D3
+    move.b  D0,D3                 ; return value -> D3
+    rts
+
+; Wallmaster_PutSpriteBehindBgIfNeeded — D3=sprite_byte_off.
+c_wallmaster_put_sprite_behind_bg_if_needed:
+    moveq   #0,D0
+    move.b  D3,D0
+    andi.l  #$FF,D0
+    move.l  D0,-(SP)
+    jsr     z04_wallmaster_put_sprite_behind_bg_if_needed
+    addq.l  #4,SP
+    rts
+
+; Wallmaster_PutSpritesBehindBgIfNeeded — no args.
+c_wallmaster_put_sprites_behind_bg_if_needed:
+    jsr     z04_wallmaster_put_sprites_behind_bg_if_needed
     rts

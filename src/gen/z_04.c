@@ -473,4 +473,16 @@ void z04_gleeok_check_collisions(unsigned int slot) {
     enrt_gleeok_check_collisions(slot);
 }
 
+unsigned int z04_wallmaster_calc_start_position(unsigned int instr_offset, unsigned int init_major_min, unsigned int slot) {
+    return enrt_wallmaster_calc_start_position(instr_offset, init_major_min, slot);
+}
+
+void z04_wallmaster_put_sprite_behind_bg_if_needed(unsigned int sprite_byte_off) {
+    enrt_wallmaster_put_sprite_behind_bg_if_needed(sprite_byte_off);
+}
+
+void z04_wallmaster_put_sprites_behind_bg_if_needed(void) {
+    enrt_wallmaster_put_sprites_behind_bg_if_needed();
+}
+
 /* <<< end auto-wrappers >>> */
