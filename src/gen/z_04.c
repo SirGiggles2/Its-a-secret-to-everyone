@@ -125,6 +125,10 @@ void z04_update_statues(void) {
     enrt_update_statues();
 }
 
+void z04_update_tektite_or_boulder(unsigned int slot) {
+    enrt_update_tektite_or_boulder(slot);
+}
+
 unsigned int z04_extract_hit_point_value(unsigned int val) {
     return enrt_extract_hit_point_value(val);
 }

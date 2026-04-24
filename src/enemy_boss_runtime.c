@@ -11,6 +11,71 @@ static const unsigned char enrt_statue_fireball_start_times[] = { 0x50, 0x80, 0x
 static const unsigned char enrt_statue_pattern_base_index[] = { 0x00, 0x04, 0x06 };
 static const unsigned char enrt_statue_xs[] = { 0x24, 0xC8, 0x24, 0xC8, 0x64, 0x88, 0x48, 0xA8 };
 static const unsigned char enrt_statue_ys[] = { 0xC0, 0xBC, 0x64, 0x5C, 0x94, 0x8C, 0x82, 0x86 };
+static const unsigned char enrt_jumper_y_offsets[] = { 0x00, 0x00, 0x00, 0x00, 0x00, 0x20, 0x20, 0x00, 0x00, 0xE0, 0xE0 };
+static const unsigned char enrt_jumper_y_accelerations[] = {
+    0x00, 0x40, 0x40, 0x00, 0x00, 0x40, 0x40, 0x00, 0x00, 0x30, 0x30,
+    0x00, 0x80, 0x80, 0x00, 0x00, 0x80, 0x80, 0x00, 0x00, 0x50, 0x50,
+    0x60, 0x60, 0x60, 0x60, 0x60, 0x60, 0x60
+};
+static const signed char enrt_jumper_start_speeds_hi[] = { -3, -4, -2 };
+static const unsigned char enrt_jumper_y_accel_base_offsets[] = { 0x00, 0x0B, 0x16 };
+
+static unsigned char enrt_jumper_get_kind(unsigned int slot) {
+    unsigned char obj_type = ENEMY_TYPE(slot);
+    if (obj_type == 0x0D)
+        return 0;
+    if (obj_type == 0x0E)
+        return 1;
+    return 2;
+}
+
+static void enrt_jumper_move_y(unsigned char accel, signed char max_speed_hi,
+                               unsigned int slot) {
+    unsigned int sum;
+    signed char speed_hi;
+
+    ENEMY_Y(slot) = (unsigned char)(ENEMY_Y(slot) + ENEMY_JUMPER_VSPEED_HI(slot));
+
+    sum = (unsigned int)ENEMY_JUMPER_VSPEED_LO(slot) + (unsigned int)accel;
+    ENEMY_JUMPER_VSPEED_LO(slot) = (unsigned char)sum;
+    ENEMY_JUMPER_VSPEED_HI(slot) =
+        (unsigned char)(ENEMY_JUMPER_VSPEED_HI(slot) + (unsigned char)(sum >> 8));
+
+    speed_hi = (signed char)ENEMY_JUMPER_VSPEED_HI(slot);
+    if (speed_hi < max_speed_hi)
+        return;
+    if (ENEMY_JUMPER_VSPEED_LO(slot) < 0x80)
+        return;
+    ENEMY_JUMPER_VSPEED_HI(slot) = (unsigned char)max_speed_hi;
+}
+
+static void enrt_jumper_animate_and_check_collisions(unsigned int slot) {
+    unsigned char frame;
+
+    z07_anim_fetch_obj_pos(slot);
+    if (ENEMY_TYPE(slot) != 0x20) {
+        frame = 0;
+        if (ENEMY_STATE_TIMER(slot) != 0 || ENEMY_MOVE_TIMER(slot) < 0x21) {
+            c_draw_object_mirrored_with_frame(frame, slot);
+            c_check_monster_collisions(slot);
+            return;
+        }
+        c_anim_advance_and_fetch(16, slot);
+        frame = ENEMY_DRAW_FRAME(slot);
+        c_draw_object_mirrored_with_frame(frame, slot);
+        c_check_monster_collisions(slot);
+        return;
+    }
+
+    c_anim_advance_and_fetch(6, slot);
+    frame = ENEMY_DRAW_FRAME(slot);
+    c_draw_object_not_mirrored_with_frame(frame, slot);
+    z01_check_link_collision(slot);
+    if (ENEMY_Y(slot) < 0xF0)
+        return;
+    ENEMY_BOULDER_SET_COUNT--;
+    z07_destroy_monster(slot);
+}
 
 void enrt_dodongo_dec_bloated_timer(unsigned int slot) {
     ENEMY_BLOATED_TIMER(slot)--;
@@ -92,6 +157,118 @@ void enrt_init_tektite(unsigned int slot) {
     unsigned char dir = TektiteStartingDirs[rnd];
     ENEMY_DIR(slot) = dir;
     ENEMY_MOVE_TIMER(slot) = (unsigned char)(dir << 2);
+}
+
+void enrt_update_tektite_or_boulder(unsigned int slot) {
+    unsigned char dir;
+    unsigned char obj_type;
+    unsigned char kind;
+    unsigned char accel_idx;
+    unsigned char timer;
+    unsigned char horiz_dir;
+    unsigned char abs_dist;
+    signed char x_step;
+
+    if (ENEMY_JUMPER_SHOVE(slot) != 0) {
+        enrt_jumper_animate_and_check_collisions(slot);
+        return;
+    }
+
+    if ((ENEMY_PAUSE_FLAG | ENEMY_STUN_TIMER(slot)) != 0) {
+        enrt_jumper_animate_and_check_collisions(slot);
+        return;
+    }
+
+    if (ENEMY_STATE_TIMER(slot) == 0) {
+        if (ENEMY_MOVE_TIMER(slot) != 0) {
+            enrt_jumper_animate_and_check_collisions(slot);
+            return;
+        }
+
+        c_turn_towards_player8();
+        dir = ENEMY_DIR(slot);
+        if ((dir & 0x03) == 0) {
+            horiz_dir = 2;
+            if (LINK_X < ENEMY_X(slot))
+                horiz_dir = 1;
+            ENEMY_DIR(slot) = (unsigned char)(dir | horiz_dir);
+        }
+
+        ENEMY_STATE_TIMER(slot)++;
+    }
+
+    if (ENEMY_JUMPER_REVERSALS(slot) >= 2) {
+        ENEMY_DIR(slot) ^= 0x03;
+        ENEMY_JUMPER_REVERSALS(slot) = 0;
+    }
+
+    enrt_jumper_point_boulder_downward(slot);
+    dir = ENEMY_DIR(slot);
+    ENEMY_JUMPER_TARGET_Y(slot) = (unsigned char)(ENEMY_Y(slot) + enrt_jumper_y_offsets[dir]);
+    kind = enrt_jumper_get_kind(slot);
+    ENEMY_JUMPER_VSPEED_HI(slot) = (unsigned char)enrt_jumper_start_speeds_hi[kind];
+    enrt_jumper_reset_vspeed_frac(slot);
+
+    if (ENEMY_STATE_TIMER(slot) == 0) {
+        enrt_jumper_animate_and_check_collisions(slot);
+        return;
+    }
+
+    c_bound_flyer(slot);
+    if (ENEMY_JUMPER_BLOCKED_FLAG == 0) {
+        ENEMY_JUMPER_REVERSALS(slot)++;
+        enrt_jumper_point_boulder_downward(slot);
+        dir = ENEMY_DIR(slot);
+        ENEMY_JUMPER_TARGET_Y(slot) = (unsigned char)(ENEMY_Y(slot) + enrt_jumper_y_offsets[dir]);
+        kind = enrt_jumper_get_kind(slot);
+        ENEMY_JUMPER_VSPEED_HI(slot) = (unsigned char)enrt_jumper_start_speeds_hi[kind];
+        enrt_jumper_reset_vspeed_frac(slot);
+        enrt_jumper_animate_and_check_collisions(slot);
+        return;
+    }
+
+    enrt_jumper_point_boulder_downward(slot);
+    ENEMY_JUMPER_REVERSALS(slot) = 0;
+    kind = enrt_jumper_get_kind(slot);
+    accel_idx = (unsigned char)(enrt_jumper_y_accel_base_offsets[kind] + ENEMY_DIR(slot));
+    enrt_jumper_move_y(enrt_jumper_y_accelerations[accel_idx], 2, slot);
+
+    x_step = -1;
+    if ((ENEMY_DIR(slot) & 0x02) == 0)
+        x_step = 1;
+    ENEMY_X(slot) = (unsigned char)(ENEMY_X(slot) + x_step);
+
+    if ((signed char)ENEMY_JUMPER_VSPEED_HI(slot) < 0) {
+        enrt_jumper_animate_and_check_collisions(slot);
+        return;
+    }
+
+    abs_dist = z01_abs((unsigned char)(ENEMY_Y(slot) - ENEMY_JUMPER_TARGET_Y(slot)));
+    if (abs_dist >= 3) {
+        enrt_jumper_animate_and_check_collisions(slot);
+        return;
+    }
+
+    (void)z07_reset_obj_state(slot);
+    obj_type = ENEMY_TYPE(slot);
+    if (obj_type == 0x20) {
+        ENEMY_MOVE_TIMER(slot) = 0;
+        enrt_jumper_animate_and_check_collisions(slot);
+        return;
+    }
+
+    timer = (unsigned char)(ENEMY_RNG_B(slot) + 0x10);
+    if (timer < 0x20)
+        timer = (unsigned char)(timer - 0x40);
+
+    if (obj_type != 0x0D) {
+        timer &= 0x7F;
+        if (ENEMY_RNG_B(slot) >= 0xA0)
+            timer &= 0x0F;
+    }
+
+    ENEMY_MOVE_TIMER(slot) = timer;
+    enrt_jumper_animate_and_check_collisions(slot);
 }
 
 void enrt_ganon_randomize_location(unsigned int slot) {

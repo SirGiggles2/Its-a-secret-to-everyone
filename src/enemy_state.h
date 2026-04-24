@@ -78,6 +78,12 @@
 #define ENEMY_VIRE_SPLIT_TYPE           RAM(0x0000)
 #define ENEMY_STATUE_PERSON_FIREBALLS   RAM(0x04CC)
 #define ENEMY_STATUE_FIREBALL_TIMER(idx) RAM(0x04E8 + (idx))
+#define ENEMY_JUMPER_TARGET_Y(slot)     OBJ(0x0444, (slot))
+#define ENEMY_JUMPER_REVERSALS(slot)    OBJ(0x0451, (slot))
+#define ENEMY_JUMPER_VSPEED_HI(slot)    OBJ(0x0412, (slot))
+#define ENEMY_JUMPER_VSPEED_LO(slot)    OBJ(0x041F, (slot))
+#define ENEMY_JUMPER_SHOVE(slot)        OBJ(0x00C0, (slot))
+#define ENEMY_JUMPER_BLOCKED_FLAG       RAM(0x000F)
 /* Gleeok shared/global state */
 #define ENEMY_GLEEOK_NECK_INDEX         RAM(0x04D7)
 #define ENEMY_GLEEOK_REF_SEG_DIST       RAM(0x04D8)

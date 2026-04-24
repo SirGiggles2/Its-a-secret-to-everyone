@@ -150,6 +150,11 @@
       "sig": "void (void)"
     },
     {
+      "old": "z04_update_tektite_or_boulder",
+      "new": "enrt_update_tektite_or_boulder",
+      "sig": "void (unsigned int slot)"
+    },
+    {
       "old": "z04_extract_hit_point_value",
       "new": "enrt_extract_hit_point_value",
       "sig": "unsigned int (unsigned int val)"

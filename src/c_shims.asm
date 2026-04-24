@@ -5341,3 +5341,25 @@ c_draw_vire:
 c_update_statues:
     jsr     z04_update_statues
     rts
+
+;==============================================================================
+; --- Batch 97: Tektite / Boulder family (drained from z_04.asm) ---
+;==============================================================================
+
+    xdef    c_turn_towards_player8
+    xdef    c_update_tektite_or_boulder
+
+    xref    TurnTowardsPlayer8
+    xref    z04_update_tektite_or_boulder
+
+c_turn_towards_player8:
+    jsr     TurnTowardsPlayer8
+    rts
+
+c_update_tektite_or_boulder:
+    moveq   #0,D1
+    move.w  D2,D1
+    move.l  D1,-(SP)
+    jsr     z04_update_tektite_or_boulder
+    addq.l  #4,SP
+    rts

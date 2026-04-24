@@ -68,6 +68,7 @@ void enrt_update_vire_state(unsigned int slot);
 void enrt_check_vire_collisions(unsigned int slot);
 void enrt_draw_vire(unsigned int slot);
 void enrt_update_statues(void);
+void enrt_update_tektite_or_boulder(unsigned int slot);
 void enrt_reset_flyer_state(unsigned int slot);
 void enrt_reset_push_timer(unsigned int slot);
 void enrt_set_dead_dummy_obj_type(unsigned int slot);

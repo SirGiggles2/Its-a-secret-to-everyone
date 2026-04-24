@@ -4349,6 +4349,9 @@ def _patch_z04(path):
     # --- Batch 96: Statue family ---
     text = _stub_func(text, 'UpdateStatues', 'c_update_statues')
 
+    # --- Batch 97: Tektite / Boulder family ---
+    text = _stub_func(text, 'UpdateTektiteOrBoulder', 'c_update_tektite_or_boulder')
+
     with open(path, 'w', encoding='utf-8') as f:
         f.write(text)
 

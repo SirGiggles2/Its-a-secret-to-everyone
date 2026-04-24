@@ -1646,279 +1646,8 @@ JumperYAccelerationBaseOffsets:
 
     even
 UpdateTektiteOrBoulder:
-    ; If the monster is shoved, then keep shoving it.
-    ;
-    lea     ($00C0,A4),A0
-    move.b  (A0,D2.W),D0
-    beq  _L_z04_UpdateTektiteOrBoulder_CheckStunned
-; Unknown block
-    dc.b    $4C, $B8, $EE
+    jmp     c_update_tektite_or_boulder
 
-    even
-_L_z04_UpdateTektiteOrBoulder_DrawAndCheckCollisions:
-    jmp     Jumper_AnimateAndCheckCollisions
-
-    even
-_L_z04_UpdateTektiteOrBoulder_CheckStunned:
-    ; If we have the magic clock, or the monster is stunned; 
-    ; then go animate, draw, and check collisions.
-    ;
-    move.b  ($066C,A4),D0
-    move.b  ($3D,A4,D2.W),D1
-    or.b  D1,D0
-    bne  _L_z04_UpdateTektiteOrBoulder_DrawAndCheckCollisions
-    ; If state <> 0, go update the jump.
-    ;
-    lea     ($00AC,A4),A0
-    move.b  (A0,D2.W),D0
-    bne  _L_z04_UpdateTektiteOrBoulder_State1
-    ; State 0. On the ground.
-    ;
-    ; If timer <> 0, then go animate, draw, and check collisions.
-    ;
-    move.b  ($28,A4,D2.W),D0
-    bne  _L_z04_UpdateTektiteOrBoulder_Animate
-    ; State = 0 and object timer expired. Time to jump.
-    ;
-    ; First, turn 1 step toward the chase target.
-    ;
-    jsr     TurnTowardsPlayer8
-    ; If the facing direction has no horizontal component, then
-    ; find the horizontal direction toward the chase target.
-    ;
-    ; Then combine it with the facing direction.
-    ;
-    lea     ($0098,A4),A0
-    move.b  (A0,D2.W),D0
-    andi.b #$03,D0
-    bne  _L_z04_UpdateTektiteOrBoulder_SetStateJump
-    moveq   #2,D3
-    move.b  ($0061,A4),D0
-    move.b  ($70,A4,D2.W),D1
-    cmp.b   D1,D0
-    bcs  _anon_z04_36
-    subq.b  #1,D3
-_anon_z04_36:
-    move.b  D3,D0
-    lea     ($0098,A4),A0
-    move.b  (A0,D2.W),D1
-    or.b  D1,D0
-    lea     ($0098,A4),A0
-    move.b  D0,(A0,D2.W)
-    even
-_L_z04_UpdateTektiteOrBoulder_SetStateJump:
-    ; Set state 1 to jump.
-    ;
-    lea     ($00AC,A4),A0
-    addq.b  #1,(A0,D2.W)
-    even
-_L_z04_UpdateTektiteOrBoulder_SetUpJump:
-    ; If reversal count >= 2, then
-    ; 1. invert the horizontal component of facing direction,
-    ;    to face away from the chase target
-    ; 2. reset the reversal count to 0.
-    ;
-    ; This prevents a jumper from getting stuck in a corner.
-    ;
-    ; For example, if a tektite's direction is down and right,
-    ; and jumps into the top right corner of the room:
-    ; 1. The right room boundary is hit. So the direction is
-    ;    automatically reversed to up and left.
-    ; 2. The next frame, the top room boundary is hit.
-    ;    The direction is reversed to down and right.
-    ;
-    ; As you can see, an endless loop has been made.
-    ;
-    lea     ($0451,A4),A0
-    move.b  (A0,D2.W),D0
-    cmpi.b  #$02,D0
-    bcs  _L_z04_UpdateTektiteOrBoulder_FinishSetUpJump
-    lea     ($0098,A4),A0
-    move.b  (A0,D2.W),D0
-    eori.b #$03,D0
-    lea     ($0098,A4),A0
-    move.b  D0,(A0,D2.W)
-    moveq   #0,D0
-    lea     ($0451,A4),A0
-    move.b  D0,(A0,D2.W)
-    even
-_L_z04_UpdateTektiteOrBoulder_FinishSetUpJump:
-    ; If the object is a boulder, then make sure its facing direction
-    ; has a down vertical component.
-    ;
-    jsr     Jumper_PointBoulderDownward
-    ; For the given direction, get the Y offset of the destination
-    ; of the jump.
-    ;
-    ; Add it to the object's Y, and store this destination Y.
-    ;
-    moveq   #0,D3
-    lea     ($0098,A4),A0
-    move.b  (A0,D2.W),D3
-    lea     ($0084,A4),A0
-    move.b  (A0,D2.W),D0
-    andi    #$EE,CCR  ; CLC: clear C+X
-    lea     (JumperYOffsets).l,A0
-    move.b  (A0,D3.W),D1
-    addx.b  D1,D0   ; ADC JumperYOffsets,Y
-    lea     ($0444,A4),A0
-    move.b  D0,(A0,D2.W)
-    ; Set the starting speed, depending on the object type.
-    ;
-    jsr     Jumper_GetKind
-    lea     (JumperStartSpeedsHi).l,A0
-    move.b  (A0,D3.W),D0
-    lea     ($0412,A4),A0
-    move.b  D0,(A0,D2.W)
-    ; Reset the vertical speed low byte.
-    ; Then go animate, draw, and check collisions.
-    ;
-    jsr     Jumper_ResetVSpeedFrac
-    even
-_L_z04_UpdateTektiteOrBoulder_Animate:
-    jmp     Jumper_AnimateAndCheckCollisions
-
-    even
-_L_z04_UpdateTektiteOrBoulder_State1:
-    ; State 1. Jumping.
-    ;
-    ; Keep the object inside the bounds of the room.
-    ;
-    jsr     BoundFlyer
-    ; If the object was blocked at the room boundary, then
-    ; increase boundary reversal count, and go set up another jump.
-    ;
-    move.b  ($000F,A4),D0
-    bne  _anon_z04_37
-    lea     ($0451,A4),A0
-    addq.b  #1,(A0,D2.W)
-    jmp     _L_z04_UpdateTektiteOrBoulder_SetUpJump
-
-_anon_z04_37:
-    jsr     Jumper_PointBoulderDownward
-    ; This step in the jump succeeded. So, reset the reversal count.
-    ;
-    moveq   #0,D0
-    lea     ($0451,A4),A0
-    move.b  D0,(A0,D2.W)
-    ; Get the base offset for the kind of jumper the object is.
-    ;
-    jsr     Jumper_GetKind
-    lea     (JumperYAccelerationBaseOffsets).l,A0
-    move.b  (A0,D3.W),D0
-    ; Get the acceleration by indexing with (base offset + direction).
-    ;
-    ; Note that the set of accelerations of Boulder (the third set)
-    ; does not have $B elements like the tektites' sets.
-    ;
-    ; Boulder does not need the upward accelerations.
-    ; So, the elements for those are used for the starting speeds
-    ; at 04:88F2.
-    ;
-    andi    #$EE,CCR  ; CLC: clear C+X
-    lea     ($0098,A4),A0
-    move.b  (A0,D2.W),D1
-    addx.b  D1,D0   ; ADC ObjDir,X
-    moveq   #0,D3
-    move.b  D0,D3
-    lea     (JumperYAccelerations).l,A0
-    move.b  (A0,D3.W),D0
-    moveq   #2,D3
-    jsr     Jumper_MoveY
-    ; If the facing direction has a left component, then
-    ; subtract 1 from the object's X.
-    ;
-    ; Else add 1.
-    ;
-    move.b  #$FF,D3
-    lea     ($0098,A4),A0
-    move.b  (A0,D2.W),D0
-    andi.b #$02,D0
-    bne  _anon_z04_38
-    moveq   #1,D3
-_anon_z04_38:
-    move.b  D3,D0
-    andi    #$EE,CCR  ; CLC: clear C+X
-    move.b  ($70,A4,D2.W),D1
-    addx.b  D1,D0   ; ADC ObjX,X
-    move.b  D0,($70,A4,D2.W)
-    ; If going up (negative v-speed high byte), then
-    ; go animate, draw, and check collisions.
-    ;
-    lea     ($0412,A4),A0
-    move.b  (A0,D2.W),D0
-    bpl.s  __far_z_04_0015
-    jmp  Jumper_AnimateAndCheckCollisions
-__far_z_04_0015:
-    ; Going down. We have to consider the target Y.
-    ;
-    ; If the absolute vertical distance to the target position >= 3,
-    ; then go animate, draw, and check collisions.
-    ;
-    lea     ($0084,A4),A0
-    move.b  (A0,D2.W),D0
-    ori     #$11,CCR  ; SEC: set C+X
-    lea     ($0444,A4),A0
-    move.b  (A0,D2.W),D1
-    eori    #$10,CCR  ; flip X: 6502 SBC polarity
-    subx.b  D1,D0   ; SBC Jumper_ObjTargetY,X
-    eori    #$10,CCR  ; restore X = 6502 C
-    jsr     Abs
-    cmpi.b  #$03,D0
-    bcs.s  __far_z_04_0016
-    jmp  Jumper_AnimateAndCheckCollisions
-__far_z_04_0016:
-    ; Distance < 3. Go to state 0.
-    ;
-    ; If the object is a boulder, then go reset timer, animate, draw.
-    ;
-    jsr     ResetObjState
-    moveq   #0,D3
-    lea     ($034F,A4),A0
-    move.b  (A0,D2.W),D3
-    cmpi.b  #$20,D3
-    beq  _L_z04_UpdateTektiteOrBoulder_SetTimerAndAnimate
-    ; Else calculate a timer value.
-    ;
-    ; t := (Random + $10)
-    ; if t < $20 then
-    ;   t := t - $40
-    ;
-    moveq   #16,D0
-    andi    #$EE,CCR  ; CLC: clear C+X
-    move.b  ($19,A4,D2.W),D1
-    addx.b  D1,D0   ; ADC Random+1,X
-    cmpi.b  #$20,D0
-    bcc  _anon_z04_39
-    ori     #$11,CCR  ; SEC: set C+X
-    move.b  #$40,D1
-    eori    #$10,CCR  ; flip X: 6502 SBC polarity
-    subx.b  D1,D0   ; SBC #$40
-    eori    #$10,CCR  ; restore X = 6502 C
-_anon_z04_39:
-    ; If the object is a blue tektite, then go use this t.
-    ;
-    moveq   #0,D3
-    lea     ($034F,A4),A0
-    move.b  (A0,D2.W),D3
-    cmpi.b  #$0D,D3
-    beq  _L_z04_UpdateTektiteOrBoulder_SetTimerAndAnimate
-    ; t := t AND $7F
-    ;
-    andi.b #$7F,D0
-    ; If Random < $A0, then go use this t.
-    ;
-    moveq   #0,D3
-    move.b  ($19,A4,D2.W),D3
-    cmpi.b  #$A0,D3
-    bcs  _L_z04_UpdateTektiteOrBoulder_SetTimerAndAnimate
-    ; t := t AND $F
-    ;
-    andi.b #$0F,D0
-    even
-_L_z04_UpdateTektiteOrBoulder_SetTimerAndAnimate:
-    move.b  D0,($28,A4,D2.W)
-    even
 Jumper_AnimateAndCheckCollisions:
     jsr     Anim_FetchObjPosForSpriteDescriptor
     ; TODO: [0D] ?
@@ -1970,9 +1699,9 @@ _L_z04_Jumper_AnimateAndCheckCollisions_DrawBoulder:
     lea     ($0084,A4),A0
     move.b  (A0,D2.W),D0
     cmpi.b  #$F0,D0
-    bcc.s  __far_z_04_0017
+    bcc.s  __far_z_04_0015
     jmp  L10A10_Exit
-__far_z_04_0017:
+__far_z_04_0015:
     ; Else the boulder is close enough to the bottom of the screen
     ; to destroy it.
     ;
@@ -1996,9 +1725,9 @@ Jumper_GetKind:
     moveq   #0,D3
     move.b  D0,D3
     cmpi.b  #$02,D3
-    bcc.s  __far_z_04_0018
+    bcc.s  __far_z_04_0016
     jmp  L10A10_Exit
-__far_z_04_0018:
+__far_z_04_0016:
     moveq   #2,D3
     even
 L10A10_Exit:
@@ -2046,17 +1775,17 @@ Jumper_MoveY:
     ;
     move.b  ($0002,A4),D1
     cmp.b   D1,D0
-    bpl.s  __far_z_04_0019
+    bpl.s  __far_z_04_0017
     jmp  L10A52_Exit
-__far_z_04_0019:
+__far_z_04_0017:
     ; Limit the speed to the max speed.
     ;
     lea     ($041F,A4),A0
     move.b  (A0,D2.W),D0
     cmpi.b  #$80,D0
-    bcc.s  __far_z_04_0020
+    bcc.s  __far_z_04_0018
     jmp  L10A52_Exit
-__far_z_04_0020:
+__far_z_04_0018:
     move.b  ($0002,A4),D0
     lea     ($0412,A4),A0
     move.b  D0,(A0,D2.W)
@@ -2454,9 +2183,9 @@ _L_z04_UpdateRedLeever_CheckStunned:
     move.b  ($066C,A4),D0
     move.b  ($3D,A4,D2.W),D1
     or.b  D1,D0
-    beq.s  __far_z_04_0021
+    beq.s  __far_z_04_0019
     jmp  RedLeever_AnimateAndCheckCollisions
-__far_z_04_0021:
+__far_z_04_0019:
     ; If the leever is blocked by a tile or the room boundary,
     ; then go to the next state, in addition to animating, drawing,
     ; and checking for collisions.
@@ -2467,13 +2196,13 @@ __far_z_04_0021:
     jsr     GetCollidingTileMoving
     move.b  ($034A,A4),D1
     cmp.b   D1,D0
-    bcs.s  __far_z_04_0022
+    bcs.s  __far_z_04_0020
     jmp  RedLeever_CycleStateDrawAndCheckCollisions
-__far_z_04_0022:
+__far_z_04_0020:
     jsr     BoundByRoom
-    bne.s  __far_z_04_0023
+    bne.s  __far_z_04_0021
     jmp  RedLeever_CycleStateDrawAndCheckCollisions
-__far_z_04_0023:
+__far_z_04_0021:
     ; Move.
     ;
     jsr     MoveObject
@@ -2496,9 +2225,9 @@ _L_z04_UpdateRedLeever_AnimateIfTime:
     ; go animate, draw, and check for collisions.
     ;
     move.b  ($28,A4,D2.W),D0
-    beq.s  __far_z_04_0024
+    beq.s  __far_z_04_0022
     jmp  RedLeever_AnimateAndCheckCollisions
-__far_z_04_0024:
+__far_z_04_0022:
     even
 RedLeever_CycleStateDrawAndCheckCollisions:
     ; Cycle the state between 0 and 5.
@@ -2920,9 +2649,9 @@ _L_z04_InitArmosOrFlyingGhini_FinishInit:
     lea     ($034F,A4),A0
     move.b  (A0,D2.W),D0
     cmpi.b  #$22,D0
-    bne.s  __far_z_04_0025
+    bne.s  __far_z_04_0023
     jmp  L_EndInitFlyingGhini
-__far_z_04_0025:
+__far_z_04_0023:
     jsr     DrawArmosAndCheckCollisions
 _anon_z04_53:
     eori    #$01,CCR  ; normalize C to 6502 polarity before RTS
@@ -2947,9 +2676,9 @@ UpdateArmos:
     ;
     lea     ($00C0,A4),A0
     move.b  (A0,D2.W),D0
-    beq.s  __far_z_04_0026
+    beq.s  __far_z_04_0024
     jmp  DrawArmosAndCheckCollisions
-__far_z_04_0026:
+__far_z_04_0024:
     ; Animate.
     ;
     ; Decrement the animation counter. But if it hasn't reached 0,
@@ -2957,9 +2686,9 @@ __far_z_04_0026:
     ;
     lea     ($03D0,A4),A0
     subq.b  #1,(A0,D2.W)
-    beq.s  __far_z_04_0027
+    beq.s  __far_z_04_0025
     jmp  DrawArmosAndCheckCollisions
-__far_z_04_0027:
+__far_z_04_0025:
     ; Armos animation frames last 6 screen frames.
     ;
     moveq   #6,D0
@@ -3027,9 +2756,9 @@ UpdatePondFairy:
     ; If not in state 0, then go handle states 1 to 3.
     ;
     move.b  ($00AD,A4),D0
-    beq.s  __far_z_04_0028
+    beq.s  __far_z_04_0026
     jmp  PondFairy_HandleOtherStates
-__far_z_04_0028:
+__far_z_04_0026:
     ; State 0.
     ;
     ; If Link is not at the edge of the pond (Y=$AD), then return.
@@ -3466,9 +3195,9 @@ UpdateTree:
     ; then return.
     ;
     jsr     IsQuestSecretMismatch
-    bcc.s  __far_z_04_0029
+    bcc.s  __far_z_04_0027
     jmp  L10F3E_Exit
-__far_z_04_0029:
+__far_z_04_0027:
     ; If there is no standing fire (state $22) in slots $10 and $11,
     ; then return.
     ;
@@ -3481,9 +3210,9 @@ __far_z_04_0029:
     lea     ($00AC,A4),A0
     move.b  (A0,D3.W),D0
     cmpi.b  #$22,D0
-    beq.s  __far_z_04_0030
+    beq.s  __far_z_04_0028
     jmp  L10F3E_Exit
-__far_z_04_0030:
+__far_z_04_0028:
     even
 _L_z04_UpdateTree_FoundFire:
     ; Store the fire's object slot in [00].
@@ -3493,15 +3222,15 @@ _L_z04_UpdateTree_FoundFire:
     ;
     move.b  ($28,A4,D3.W),D0
     cmpi.b  #$02,D0
-    bcs.s  __far_z_04_0031
+    bcs.s  __far_z_04_0029
     jmp  L10F3E_Exit
-__far_z_04_0031:
+__far_z_04_0029:
     ; If the tile object and weapon collide, then reveal the secret.
     ;
     jsr     CheckTileObjWeaponCollision
-    bne.s  __far_z_04_0032
+    bne.s  __far_z_04_0030
     jmp  L10F3E_Exit
-__far_z_04_0032:
+__far_z_04_0030:
 ; Params:
 ; X: object index of the tile object
 ;
@@ -4555,9 +4284,9 @@ Moldorm_Chase:
     cmpi.b  #$05,D2
     beq  _anon_z04_81
     cmpi.b  #$0A,D2
-    beq.s  __far_z_04_0033
+    beq.s  __far_z_04_0031
     jmp  L1156B_Exit
-__far_z_04_0033:
+__far_z_04_0031:
 _anon_z04_81:
     ; Chase while flying, as usual.
     ;
@@ -4566,9 +4295,9 @@ _anon_z04_81:
     ; go see if it's time to propagate direction changes down the chain.
     ;
     move.b  ($28,A4,D2.W),D0
-    beq.s  __far_z_04_0034
+    beq.s  __far_z_04_0032
     jmp  Moldorm_PropagateDirs
-__far_z_04_0034:
+__far_z_04_0032:
     even
 Moldorm_ChangeFlyingState:
     ; Timer = 0. Choose a new flying state, and arm the timer.
@@ -4597,9 +4326,9 @@ Moldorm_ChangeFlyingState:
     ;
     lea     ($0097,A4),A0
     move.b  (A0,D2.W),D0
-    beq.s  __far_z_04_0035
+    beq.s  __far_z_04_0033
     jmp  Moldorm_PropagateDirs
-__far_z_04_0035:
+__far_z_04_0033:
     rts
 
     even
@@ -4610,9 +4339,9 @@ Moldorm_Wander:
     cmpi.b  #$05,D2
     beq  _anon_z04_82
     cmpi.b  #$0A,D2
-    beq.s  __far_z_04_0036
+    beq.s  __far_z_04_0034
     jmp  L1156B_Exit
-__far_z_04_0036:
+__far_z_04_0034:
 _anon_z04_82:
     ; Turn randomly while flying, as usual.
     ;
@@ -4635,18 +4364,18 @@ _anon_z04_82:
     ; arm the timer again, and shift directions down the chain.
     ;
     move.b  ($28,A4,D2.W),D0
-    bne.s  __far_z_04_0037
+    bne.s  __far_z_04_0035
     jmp  Moldorm_ChangeFlyingState
-__far_z_04_0037:
+__far_z_04_0035:
     even
 Moldorm_PropagateDirs:
     ; If timer <> $10 (rearmed in this frame), then return.
     ;
     move.b  ($28,A4,D2.W),D0
     cmpi.b  #$10,D0
-    beq.s  __far_z_04_0038
+    beq.s  __far_z_04_0036
     jmp  L1156B_Exit
-__far_z_04_0038:
+__far_z_04_0036:
     ; Timer = $10.
     ;
     ; If deferred bounce direction <> 0, then
@@ -4726,9 +4455,9 @@ L_Digdogger_AfterFlute:
     ;
     lea     ($046B,A4),A0
     move.b  (A0,D2.W),D0
-    beq.s  __far_z_04_0039
+    beq.s  __far_z_04_0037
     jmp  L_Digdogger_Turn
-__far_z_04_0039:
+__far_z_04_0037:
     ; Set object timer to $40, and increase flute state to 2.
     ; Then go check collisions as a big digdogger.
     ;
@@ -4758,9 +4487,9 @@ _L_z04_L_Digdogger_AfterFlute_SplitUp:
     eori.b #$01,D0
     lea     ($046B,A4),A0
     move.b  D0,(A0,D2.W)
-    bne.s  __far_z_04_0040
+    bne.s  __far_z_04_0038
     jmp  CheckBigDigdoggerCollisions
-__far_z_04_0040:
+__far_z_04_0038:
 _anon_z04_84:
     jmp     L_Digdogger_DrawAsLittle
 
@@ -4844,17 +4573,17 @@ UpdateDigdogger:
     move.b  ($066C,A4),D0
     move.b  ($3D,A4,D2.W),D1
     or.b  D1,D0
-    beq.s  __far_z_04_0041
+    beq.s  __far_z_04_0039
     jmp  L_Digdogger_DrawAndCheckCollisions
-__far_z_04_0041:
+__far_z_04_0039:
     ; If the flute was used, then go start splitting up,
     ; or handling a child digdogger.
     ;
     moveq   #0,D3
     move.b  ($051B,A4),D3
-    beq.s  __far_z_04_0042
+    beq.s  __far_z_04_0040
     jmp  L_Digdogger_AfterFlute
-__far_z_04_0042:
+__far_z_04_0040:
     even
 L_Digdogger_Turn:
     jsr     Digdogger_ChangeSpeed
@@ -4862,16 +4591,16 @@ L_Digdogger_Turn:
     ; and randomly choose to turn toward Link or randomly.
     ;
     move.b  ($28,A4,D2.W),D0
-    beq.s  __far_z_04_0043
+    beq.s  __far_z_04_0041
     jmp  L_Digdogger_Move
-__far_z_04_0043:
+__far_z_04_0041:
     moveq   #16,D0
     move.b  D0,($28,A4,D2.W)
     move.b  ($18,A4,D2.W),D0
     cmpi.b  #$80,D0
-    bcs.s  __far_z_04_0044
+    bcs.s  __far_z_04_0042
     jmp  L_Digdogger_TurnTowardLink
-__far_z_04_0044:
+__far_z_04_0042:
     jsr     TurnRandomlyDir8
     even
 L_Digdogger_Move:
@@ -4882,9 +4611,9 @@ L_Digdogger_DrawAndCheckCollisions:
     ;
     lea     ($046B,A4),A0
     move.b  (A0,D2.W),D0
-    bne.s  __far_z_04_0045
+    bne.s  __far_z_04_0043
     jmp  CheckBigDigdoggerCollisions
-__far_z_04_0045:
+__far_z_04_0043:
     jsr     BoundFlyer
     jsr     CheckMonsterCollisions
     jmp     Digdogger_Draw
@@ -5034,17 +4763,17 @@ _anon_z04_85:
     lea     ($0437,A4),A0
     move.b  (A0,D2.W),D1
     cmp.b   D1,D0
-    beq.s  __far_z_04_0046
+    beq.s  __far_z_04_0044
     jmp  L116EA_Exit
-__far_z_04_0046:
+__far_z_04_0044:
     lea     ($042C,A4),A0
     move.b  (A0,D2.W),D0
     lea     ($0444,A4),A0
     move.b  (A0,D2.W),D1
     cmp.b   D1,D0
-    beq.s  __far_z_04_0047
+    beq.s  __far_z_04_0045
     jmp  L116EA_Exit
-__far_z_04_0047:
+__far_z_04_0045:
     ; Set speed flag to 1 meaning decelerate.
     ;
     lea     ($045E,A4),A0
@@ -5075,17 +4804,17 @@ _anon_z04_86:
     lea     ($0437,A4),A0
     move.b  (A0,D2.W),D1
     cmp.b   D1,D0
-    beq.s  __far_z_04_0048
+    beq.s  __far_z_04_0046
     jmp  L116EA_Exit
-__far_z_04_0048:
+__far_z_04_0046:
     lea     ($042C,A4),A0
     move.b  (A0,D2.W),D0
     lea     ($0444,A4),A0
     move.b  (A0,D2.W),D1
     cmp.b   D1,D0
-    beq.s  __far_z_04_0049
+    beq.s  __far_z_04_0047
     jmp  L116EA_Exit
-__far_z_04_0049:
+__far_z_04_0047:
     ; Set speed flag to 0 meaning accelerate.
     ;
     lea     ($045E,A4),A0
@@ -5104,9 +4833,9 @@ SetTargetSpeed:
     ;
     lea     ($046B,A4),A0
     move.b  (A0,D2.W),D0
-    bne.s  __far_z_04_0050
+    bne.s  __far_z_04_0048
     jmp  L116EA_Exit
-__far_z_04_0050:
+__far_z_04_0048:
     lea     ($0444,A4),A0
     addq.b  #1,(A0,D2.W)
     even
@@ -5722,9 +5451,9 @@ UpdateDodongoState1_Bloated_Sub_Wait:
     move.b  (A0,D2.W),D3
     subq.b  #1,D3
     beq  _L_z04_UpdateDodongoState1_Bloated_Sub_Wait_AdvanceSubstate
-    bmi.s  __far_z_04_0051
+    bmi.s  __far_z_04_0049
     jmp  L_Dodongo_DecrementBloatedTimer
-__far_z_04_0051:
+__far_z_04_0049:
     ; Set the bloated timer according to the substate.
     ;
     moveq   #0,D3
@@ -5737,9 +5466,9 @@ __far_z_04_0051:
     ; If substate <> 0, go decrement bloated timer.
     ;
     cmpi.b  #$00,D3
-    beq.s  __far_z_04_0052
+    beq.s  __far_z_04_0050
     jmp  L_Dodongo_DecrementBloatedTimer
-__far_z_04_0052:
+__far_z_04_0050:
     ; Deactivate the bomb in the first bomb slot ($10).
     ;
     moveq   #16,D3
@@ -5768,9 +5497,9 @@ _L_z04_UpdateDodongoState1_Bloated_Sub_Wait_AdvanceSubstate:
     lea     ($042C,A4),A0
     move.b  (A0,D2.W),D0
     cmpi.b  #$02,D0
-    bcc.s  __far_z_04_0053
+    bcc.s  __far_z_04_0051
     jmp  L_Dodongo_DecrementBloatedTimer
-__far_z_04_0053:
+__far_z_04_0051:
     ; New bloated substate >= 2.
     ;
     ; If bomb hits < 2, then set bloated substate 4,
@@ -5785,9 +5514,9 @@ __far_z_04_0053:
     lea     ($0437,A4),A0
     move.b  (A0,D2.W),D3
     cmpi.b  #$02,D3
-    bcs.s  __far_z_04_0054
+    bcs.s  __far_z_04_0052
     jmp  L_Dodongo_DecrementBloatedTimer
-__far_z_04_0054:
+__far_z_04_0052:
     moveq   #4,D0
     lea     ($042C,A4),A0
     move.b  D0,(A0,D2.W)
@@ -5997,9 +5726,9 @@ _anon_z04_96:
     ;
     move.b  ($0015,A4),D0
     lsr.b  #1,D0   ; LSR A
-    bcc.s  __far_z_04_0055
+    bcc.s  __far_z_04_0053
     jmp  L_PolsVoice_DrawAndCheckCollisions
-__far_z_04_0055:
+__far_z_04_0053:
     ; Otherwise move horizontally.
     ;
     jsr     PolsVoice_MoveX
@@ -6092,9 +5821,9 @@ _L_z04_UpdatePolsVoice_SetState1:
     ;
     lea     ($00AC,A4),A0
     move.b  (A0,D2.W),D0
-    beq.s  __far_z_04_0056
+    beq.s  __far_z_04_0054
     jmp  L_PolsVoice_DrawAndCheckCollisions
-__far_z_04_0056:
+__far_z_04_0054:
     ; Go to state 1.
     ;
     lea     ($00AC,A4),A0
@@ -6468,9 +6197,9 @@ DrawVire:
 
 UpdateBlueWizzrobe:
     move.b  ($066C,A4),D0
-    beq.s  __far_z_04_0057
+    beq.s  __far_z_04_0055
     jmp  L_Wizzrobe_DrawAndCheckCollisions
-__far_z_04_0057:
+__far_z_04_0055:
     jsr     BlueWizzrobe_WalkOrTeleport
     jsr     BlueWizzrobe_TryShooting
     even
@@ -6487,9 +6216,9 @@ Wizzrobe_DrawAndCheckCollisionsIntermittently:
     lea     ($0394,A4),A0
     move.b  (A0,D2.W),D0
     lsr.b  #1,D0   ; LSR A
-    bcc.s  __far_z_04_0058
+    bcc.s  __far_z_04_0056
     jmp  L11E17_Exit
-__far_z_04_0058:
+__far_z_04_0056:
     even
 L_Wizzrobe_DrawAndCheckCollisions:
     jmp     Wizzrobe_DrawAndCheckCollisions
@@ -6530,13 +6259,13 @@ _L_z04_BlueWizzrobe_WalkOrTeleport_Walk:
     ; a pause of $10 frames at the end.
     ;
     cmpi.b  #$10,D0
-    bcs.s  __far_z_04_0059
+    bcs.s  __far_z_04_0057
     jmp  GoEveryOtherFrame
-__far_z_04_0059:
+__far_z_04_0057:
     cmpi.b  #$01,D0
-    beq.s  __far_z_04_0060
+    beq.s  __far_z_04_0058
     jmp  L11E17_Exit
-__far_z_04_0060:
+__far_z_04_0058:
     jsr     BlueWizzrobe_ChooseTeleportTarget
     even
 L11E17_Exit:
@@ -6549,9 +6278,9 @@ GoEveryOtherFrame:
     ;
     move.b  ($0015,A4),D0
     lsr.b  #1,D0   ; LSR A
-    bcc.s  __far_z_04_0061
+    bcc.s  __far_z_04_0059
     jmp  L_BlueWizzrobe_TurnTowardLinkIfNeeded
-__far_z_04_0061:
+__far_z_04_0059:
     even
 BlueWizzrobe_TurnSometimesAndMoveAndCheckTile:
     jsr     BlueWizzrobe_AdvanceCounterAndTurnTowardLinkIfNeeded
@@ -6578,9 +6307,9 @@ _L_z04_BlueWizzrobe_MoveAndCheckTile_HitBlockOrWater:
     ;
     lea     ($0394,A4),A0
     move.b  (A0,D2.W),D0
-    beq.s  __far_z_04_0062
+    beq.s  __far_z_04_0060
     jmp  L11E17_Exit
-__far_z_04_0062:
+__far_z_04_0060:
     ; Else go start teleporting thru this obstacle.
     ;
     jmp     BeginTeleporting
@@ -6640,9 +6369,9 @@ L_BlueWizzrobe_TurnTowardLinkIfNeeded:
     lea     ($0412,A4),A0
     move.b  (A0,D2.W),D0
     andi.b #$3F,D0
-    beq.s  __far_z_04_0063
+    beq.s  __far_z_04_0061
     jmp  L11EAF_Exit
-__far_z_04_0063:
+__far_z_04_0061:
     even
 BlueWizzrobe_TurnTowardLink:
     ; If the multiple of $40 is even, then turn horizontally,
@@ -6683,9 +6412,9 @@ _L_z04_BlueWizzrobe_TurnTowardLink_SetDir:
     lea     ($0098,A4),A0
     move.b  (A0,D2.W),D1
     cmp.b   D1,D0
-    bne.s  __far_z_04_0064
+    bne.s  __far_z_04_0062
     jmp  L11EAF_Exit
-__far_z_04_0064:
+__far_z_04_0062:
     ; Else face toward Link.
     ;
     lea     ($0098,A4),A0
@@ -6795,9 +6524,9 @@ BlueWizzrobe_ChooseTeleportTarget:
     move.b  D0,($70,A4,D2.W)
     ; If not walkable, then all we can do is align with the nearest square.
     ;
-    bcc.s  __far_z_04_0065
+    bcc.s  __far_z_04_0063
     jmp  BlueWizzrobe_AlignWithNearestSquareAndRandomizeTimer
-__far_z_04_0065:
+__far_z_04_0063:
     ; Set the random diagonal direction.
     ;
     lea     (BlueWizzrobeTeleportDirs).l,A0
@@ -6943,14 +6672,14 @@ BlueWizzrobe_TryShooting:
     ;
     lea     ($0394,A4),A0
     move.b  (A0,D2.W),D0
-    beq.s  __far_z_04_0066
+    beq.s  __far_z_04_0064
     jmp  L11F7E_Exit
-__far_z_04_0066:
+__far_z_04_0064:
     move.b  ($0015,A4),D0
     andi.b #$1F,D0
-    beq.s  __far_z_04_0067
+    beq.s  __far_z_04_0065
     jmp  L11F7E_Exit
-__far_z_04_0067:
+__far_z_04_0065:
     ; If Link and the monster are not within the same square row,
     ; then go see about the same square column.
     ;
@@ -6962,9 +6691,9 @@ __far_z_04_0067:
     andi.b #$F0,D0
     move.b  ($0000,A4),D1
     cmp.b   D1,D0
-    beq.s  __far_z_04_0068
+    beq.s  __far_z_04_0066
     jmp  BlueWizzrobe_CheckSquareColumn
-__far_z_04_0068:
+__far_z_04_0066:
     ; If the monster is to the right of Link, then choose left.
     ; Else choose right.
     ;
@@ -6982,9 +6711,9 @@ _anon_z04_101:
     lea     ($0098,A4),A0
     move.b  (A0,D2.W),D1
     cmp.b   D1,D0
-    bne.s  __far_z_04_0069
+    bne.s  __far_z_04_0067
     jmp  ShootMagicShot58
-__far_z_04_0069:
+__far_z_04_0067:
     even
 L11F7E_Exit:
     rts
@@ -7000,9 +6729,9 @@ BlueWizzrobe_CheckSquareColumn:
     move.b  ($0070,A4),D0
     move.b  ($0000,A4),D1
     cmp.b   D1,D0
-    beq.s  __far_z_04_0070
+    beq.s  __far_z_04_0068
     jmp  L11F7E_Exit
-__far_z_04_0070:
+__far_z_04_0068:
     ; If the monster is down from Link, then choose up.
     ; Else choose down.
     ;
@@ -7021,9 +6750,9 @@ _anon_z04_102:
     lea     ($0098,A4),A0
     move.b  (A0,D2.W),D1
     cmp.b   D1,D0
-    beq.s  __far_z_04_0071
+    beq.s  __far_z_04_0069
     jmp  L11F7E_Exit
-__far_z_04_0071:
+__far_z_04_0069:
     even
 ShootMagicShot58:
     moveq   #88,D0
@@ -7036,9 +6765,9 @@ ShootMagicShot:
     ; If we have the magic clock, then return.
     ;
     move.b  ($066C,A4),D0
-    beq.s  __far_z_04_0072
+    beq.s  __far_z_04_0070
     jmp  L11F7E_Exit
-__far_z_04_0072:
+__far_z_04_0070:
     ; Else play the magic sound, shoot, and return.
     ;
     moveq   #4,D0
@@ -7125,9 +6854,9 @@ UpdateRedWizzrobe_3:
     lea     ($00AC,A4),A0
     move.b  (A0,D2.W),D3
     addq.b  #1,D3
-    beq.s  __far_z_04_0073
+    beq.s  __far_z_04_0071
     jmp  UpdateRedWizzrobe_1
-__far_z_04_0073:
+__far_z_04_0071:
     ; State $FF.
     ;
     ; Face in a random direction.
@@ -7176,9 +6905,9 @@ __far_z_04_0073:
     ; If walkable, then return.
     ; Else increase state to 0, in order to check again next frame.
     ;
-    bcc.s  __far_z_04_0074
+    bcc.s  __far_z_04_0072
     jmp  UpdateRedWizzrobe_0
-__far_z_04_0074:
+__far_z_04_0072:
 _anon_z04_105:
     lea     ($00AC,A4),A0
     addq.b  #1,(A0,D2.W)
@@ -7195,9 +6924,9 @@ UpdateRedWizzrobe_2:
     lea     ($00AC,A4),A0
     move.b  (A0,D2.W),D0
     cmpi.b  #$B0,D0
-    beq.s  __far_z_04_0075
+    beq.s  __far_z_04_0073
     jmp  Wizzrobe_DrawAndCheckCollisions
-__far_z_04_0075:
+__far_z_04_0073:
     moveq   #89,D0
     jsr     ShootMagicShot
     even
@@ -7929,9 +7658,9 @@ Gleeok_MoveNeck:
     eori    #$10,CCR  ; restore X = 6502 C
     ; If the difference is positive, then go divide by 4 unsigned.
     ;
-    bmi.s  __far_z_04_0076
+    bmi.s  __far_z_04_0074
     jmp  L_Gleeok_UDiv4
-__far_z_04_0076:
+__far_z_04_0074:
     ; Else divide by 4 signed.
     ;
     jsr     Negate
@@ -8059,9 +7788,9 @@ Gleeok_ExpandSegment:
     ; Randomly, 50% of the time, go move away from the next segment horizontally.
     ;
     move.b  ($0018,A4),D0
-    bmi.s  __far_z_04_0077
+    bmi.s  __far_z_04_0075
     jmp  L_Gleeok_ExpandHorizontally
-__far_z_04_0077:
+__far_z_04_0075:
     ; Else move away vertically.
     ;
     lea     ($0086,A4),A0
@@ -8073,12 +7802,12 @@ __far_z_04_0077:
     lea     ($0087,A4),A0
     move.b  (A0,D2.W),D1
     cmp.b   D1,D0
-    bne.s  __far_z_04_0078
+    bne.s  __far_z_04_0076
     jmp  L_Gleeok_DecSegmentY
-__far_z_04_0078:
-    bcs.s  __far_z_04_0079
+__far_z_04_0076:
+    bcs.s  __far_z_04_0077
     jmp  L_Gleeok_SetSegmentY
-__far_z_04_0079:
+__far_z_04_0077:
     even
 L_Gleeok_DecSegmentY:
     subq.b  #1,D3
@@ -8105,12 +7834,12 @@ L_Gleeok_ExpandHorizontally:
     addq.b  #1,D3
     move.b  ($73,A4,D2.W),D1
     cmp.b   D1,D0
-    bcs.s  __far_z_04_0080
+    bcs.s  __far_z_04_0078
     jmp  L_Gleeok_SetSegmentX
-__far_z_04_0080:
-    bcc.s  __far_z_04_0081
+__far_z_04_0078:
+    bcc.s  __far_z_04_0079
     jmp  L_Gleeok_DecSegmentX
-__far_z_04_0081:
+__far_z_04_0079:
     even
 Gleeok_ContractSegmentX:
     jmp     c_gleeok_contract_segment_x
@@ -8167,13 +7896,13 @@ Gleeok_DrawSegmentAndCheckCollisions:
     move.b  #$DC,D0
 _anon_z04_140:
     cmpi.b  #$05,D2
-    bne.s  __far_z_04_0082
+    bne.s  __far_z_04_0080
     jmp  Gleeok_WriteHeadOrBaseSpriteAndCheckCollisions
-__far_z_04_0082:
+__far_z_04_0080:
     cmpi.b  #$01,D2
-    bne.s  __far_z_04_0083
+    bne.s  __far_z_04_0081
     jmp  Gleeok_WriteHeadOrBaseSpriteAndCheckCollisions
-__far_z_04_0083:
+__far_z_04_0081:
     ; The segment is not a head nor bottom. So, we can use a
     ; standard routine to draw. It uses one of the rolling sprites
     ; that is drawn under Link and the heads.
@@ -8187,9 +7916,9 @@ Gleeok_MoveHead:
     ; Don't do anything until the head's initial timer expires.
     ;
     move.b  ($0418,A4),D0
-    beq.s  __far_z_04_0084
+    beq.s  __far_z_04_0082
     jmp  Gleeok_DecHeadTimer
-__far_z_04_0084:
+__far_z_04_0082:
     ; Add 1 or -1 to X as needed.
     ;
     move.b  ($0075,A4),D0
@@ -8210,9 +7939,9 @@ __far_z_04_0084:
     addq.b  #1,($0417,A4)
     move.b  ($0417,A4),D0
     cmpi.b  #$04,D0
-    bcc.s  __far_z_04_0085
+    bcc.s  __far_z_04_0083
     jmp  L127FA_Exit
-__far_z_04_0085:
+__far_z_04_0083:
     ; The counter reached 4. So, reset it.
     ; Then check the individual direction counters.
     ;
@@ -8238,9 +7967,9 @@ _L_z04_Gleeok_MoveHead_CheckVertical:
     addq.b  #1,($0414,A4)
     move.b  ($0414,A4),D0
     cmpi.b  #$06,D0
-    bcc.s  __far_z_04_0086
+    bcc.s  __far_z_04_0084
     jmp  L127FA_Exit
-__far_z_04_0086:
+__far_z_04_0084:
     moveq   #0,D0
     move.b  D0,($0414,A4)
     move.b  ($0416,A4),D0
@@ -8300,9 +8029,9 @@ Gleeok_DrawBody:
     ; If it has not expired, then go decrement it and draw.
     ;
     move.b  ($04E6,A4),D0
-    beq.s  __far_z_04_0087
+    beq.s  __far_z_04_0085
     jmp  L_Gleeok_DecAnimTimerAndDraw
-__far_z_04_0087:
+__far_z_04_0085:
     ; The animation timer has expired. There are two choices for arming it.
     ;
     ; When writhing after a hit, Gleeok animates faster.
@@ -8599,27 +8328,27 @@ UpdateZelda:
     jsr     Person_Draw
     lea     ($00AC,A4),A0
     move.b  (A0,D2.W),D0
-    beq.s  __far_z_04_0088
+    beq.s  __far_z_04_0086
     jmp  UpdateZelda_State1
-__far_z_04_0088:
+__far_z_04_0086:
     ; State 0.
     ;
     ; If Link's X < $70 or >= $81, or Link's Y <> $95, then return.
     ;
     move.b  ($0070,A4),D0
     cmpi.b  #$70,D0
-    bcc.s  __far_z_04_0089
+    bcc.s  __far_z_04_0087
     jmp  L129B7_Exit
-__far_z_04_0089:
+__far_z_04_0087:
     cmpi.b  #$81,D0
-    bcs.s  __far_z_04_0090
+    bcs.s  __far_z_04_0088
     jmp  L129B7_Exit
-__far_z_04_0090:
+__far_z_04_0088:
     move.b  ($0084,A4),D0
     cmpi.b  #$95,D0
-    beq.s  __far_z_04_0091
+    beq.s  __far_z_04_0089
     jmp  L129B7_Exit
-__far_z_04_0091:
+__far_z_04_0089:
     ; Else Link is near enough to Zelda.
     ; Go to state 1, and halt Link.
     ;
@@ -8654,9 +8383,9 @@ UpdateZelda_State1:
     ;
     jsr     Link_EndMoveAndDraw_Bank4
     move.b  ($28,A4,D2.W),D0
-    beq.s  __far_z_04_0092
+    beq.s  __far_z_04_0090
     jmp  L129B7_Exit
-__far_z_04_0092:
+__far_z_04_0090:
     ; Go to mode $13.
     ;
     move.b  D0,($0011,A4)
@@ -8686,9 +8415,9 @@ UpdateGuardFire:
     ;
     lea     ($0405,A4),A0
     move.b  (A0,D2.W),D0
-    bne.s  __far_z_04_0093
+    bne.s  __far_z_04_0091
     jmp  L129EA_Exit
-__far_z_04_0093:
+__far_z_04_0091:
     even
 SetDeadDummyObjType:
     jmp     c_set_dead_dummy_obj_type
@@ -8703,9 +8432,9 @@ UpdateLamnola:
     ;
     lea     ($0098,A4),A0
     move.b  (A0,D2.W),D0
-    bne.s  __far_z_04_0094
+    bne.s  __far_z_04_0092
     jmp  L129EA_Exit
-__far_z_04_0094:
+__far_z_04_0092:
     ; If we have the magic clock, then go draw and check collisions.
     ;
     move.b  ($066C,A4),D0
@@ -8760,9 +8489,9 @@ _L_z04_UpdateLamnola_Draw:
     ;
     lea     ($0405,A4),A0
     move.b  (A0,D2.W),D0
-    bne.s  __far_z_04_0095
+    bne.s  __far_z_04_0093
     jmp  L129EA_Exit
-__far_z_04_0095:
+__far_z_04_0093:
     ; Otherwise, the segment is dead.
     ;
     jsr     ResetShoveInfo
@@ -8812,13 +8541,13 @@ _L_z04_UpdateLamnola_FindTail:
     ; So, return and leave it dead.
     ;
     cmpi.b  #$04,D3
-    bne.s  __far_z_04_0096
+    bne.s  __far_z_04_0094
     jmp  L129EA_Exit
-__far_z_04_0096:
+__far_z_04_0094:
     cmpi.b  #$09,D3
-    bne.s  __far_z_04_0097
+    bne.s  __far_z_04_0095
     jmp  L129EA_Exit
-__far_z_04_0097:
+__far_z_04_0095:
     ; Change the tail segment to the dead dummy object, and
     ; bring the current segment back to life.
     ;
@@ -8947,9 +8676,9 @@ UpdatePatraChild:
     ;
     lea     ($00AC,A4),A0
     move.b  (A0,D2.W),D0
-    beq.s  __far_z_04_0098
+    beq.s  __far_z_04_0096
     jmp  PatraChild_State1
-__far_z_04_0098:
+__far_z_04_0096:
     ; State = 0.
     ;
     ; If the current object slot is 2, then go initialize the patra child.
@@ -9192,9 +8921,9 @@ _L_z04_Ganon_ScenePhase0_CheckFadeCycle:
     move.b  ($051C,A4),D0
     andi.b #$0F,D0
     cmpi.b  #$04,D0
-    beq.s  __far_z_04_0099
+    beq.s  __far_z_04_0097
     jmp  Ganon_DrawBodyFrame0
-__far_z_04_0099:
+__far_z_04_0097:
     ; Set Link's timer to $C0 for the next scene phase.
     ;
     move.b  #$C0,D0
@@ -9202,9 +8931,9 @@ __far_z_04_0099:
     ; Set scene phase 1, and go draw Ganon.
     ;
     addq.b  #1,($0445,A4)
-    beq.s  __far_z_04_0100
+    beq.s  __far_z_04_0098
     jmp  Ganon_DrawBodyFrame0
-__far_z_04_0100:
+__far_z_04_0098:
     even
 _L_z04_Ganon_ScenePhase0_CheckTimeToShout:
     ; If timer = 1, then play Boss hit/hurt sound effect.
@@ -9230,9 +8959,9 @@ Ganon_ScenePhase1:
     ; If Link's timer hasn't expired, then go draw Ganon.
     ;
     move.b  ($0028,A4),D0
-    beq.s  __far_z_04_0101
+    beq.s  __far_z_04_0099
     jmp  Ganon_DrawBodyFrame0
-__far_z_04_0101:
+__far_z_04_0099:
     ; Once the timer expires:
     ; 1. unhalt Link
     ; 2. clear the item to lift
@@ -9263,26 +8992,26 @@ Ganon_DrawBodyFrame0:
 Ganon_ScenePhase2:
     lea     ($042C,A4),A0
     move.b  (A0,D2.W),D0
-    beq.s  __far_z_04_0102
+    beq.s  __far_z_04_0100
     jmp  Ganon_Dying
-__far_z_04_0102:
+__far_z_04_0100:
     jsr     Ganon_CheckCollisions
     jsr     PlayBossHitCryIfNeeded
     ; Go handle the brown state specially.
     ;
     lea     ($00AC,A4),A0
     move.b  (A0,D2.W),D0
-    beq.s  __far_z_04_0103
+    beq.s  __far_z_04_0101
     jmp  Ganon_UpdateBrownState
-__far_z_04_0103:
+__far_z_04_0101:
     ; State = 0: Blue
     ;
     ; If timer = 0, then go move around and shoot.
     ;
     move.b  ($28,A4,D2.W),D0
-    bne.s  __far_z_04_0104
+    bne.s  __far_z_04_0102
     jmp  Ganon_MoveAndShoot
-__far_z_04_0104:
+__far_z_04_0102:
     ; If timer > 1, then Ganon is blue and visible. Only draw.
     ; Collisions were checked already.
     ;
@@ -9290,9 +9019,9 @@ __far_z_04_0104:
     ; in anticipation of moving around when timer becomes 0 next frame.
     ;
     cmpi.b  #$01,D0
-    beq.s  __far_z_04_0105
+    beq.s  __far_z_04_0103
     jmp  L_Ganon_DrawBody
-__far_z_04_0105:
+__far_z_04_0103:
 ; Description:
 ; Put Ganon at Y=$A0, and a random X of $30 or $B0.
 ;
@@ -9363,9 +9092,9 @@ _L_z04_Ganon_UpdateBrownState_Draw:
     lea     ($00AC,A4),A0
     move.b  (A0,D2.W),D0
     cmpi.b  #$30,D0
-    bcs.s  __far_z_04_0106
+    bcs.s  __far_z_04_0104
     jmp  L_Ganon_DrawBody
-__far_z_04_0106:
+__far_z_04_0104:
     move.b  ($0015,A4),D0
     lsr.b  #1,D0   ; LSR A
     bcc  _anon_z04_161
@@ -9394,9 +9123,9 @@ _anon_z04_162:
     ; If Ganon phase < $50, then go draw only.
     ;
     cmpi.b  #$50,D0
-    bcc.s  __far_z_04_0107
+    bcc.s  __far_z_04_0105
     jmp  L_Ganon_DrawBody
-__far_z_04_0107:
+__far_z_04_0105:
     ; If > $50, then go handle ashes only.
     ;
     bne  _L_z04_Ganon_Dying_HandleAshes
@@ -9428,9 +9157,9 @@ _L_z04_Ganon_Dying_HandleAshes:
     lea     ($042C,A4),A0
     move.b  (A0,D2.W),D0
     cmpi.b  #$A0,D0
-    bcc.s  __far_z_04_0108
+    bcc.s  __far_z_04_0106
     jmp  Ganon_DrawBurst
-__far_z_04_0108:
+__far_z_04_0106:
     ; If > $A0, then there's nothing left to do, except return.
     ;
     bne  _L_z04_Ganon_Dying_Exit
@@ -10156,9 +9885,9 @@ _anon_z04_167:
     ;
     lea     ($03A8,A4),A0
     move.b  (A0,D2.W),D0
-    bne.s  __far_z_04_0109
+    bne.s  __far_z_04_0107
     jmp  DestroyMonster_Bank4
-__far_z_04_0109:
+__far_z_04_0107:
     ; Draw the item. Fairies are animated separately.
     ;
     lea     ($00AC,A4),A0
@@ -10243,9 +9972,9 @@ _L_z04_UpdateItem_SkipTaking:
     lea     ($00AC,A4),A0
     move.b  (A0,D2.W),D0
     cmpi.b  #$FF,D0
-    bne.s  __far_z_04_0110
+    bne.s  __far_z_04_0108
     jmp  DestroyMonster_Bank4
-__far_z_04_0110:
+__far_z_04_0108:
     subq.b  #1,($000D,A4)
     bne  _L_z04_UpdateItem_LoopItemTaker
     even
@@ -10265,9 +9994,9 @@ _ShootIfWanted:
     ;
     lea     ($0412,A4),A0
     move.b  (A0,D2.W),D0
-    bne.s  __far_z_04_0111
+    bne.s  __far_z_04_0109
     jmp  ReturnDidNotShoot
-__far_z_04_0111:
+__far_z_04_0109:
 ; Params:
 ; [00]: shot object type
 ;
@@ -10283,22 +10012,22 @@ __far_z_04_0111:
     even
 ShootLimited:
     jsr     FindEmptyMonsterSlot
-    bne.s  __far_z_04_0112
+    bne.s  __far_z_04_0110
     jmp  ReturnDidNotShoot
-__far_z_04_0112:
+__far_z_04_0110:
     ; If the object type to shoot is a true shot (projectile),
     ; and we're at the limit of active shots (4), then return C=0.
     ;
     move.b  ($0000,A4),D0
     cmpi.b  #$53,D0
-    bcc.s  __far_z_04_0113
+    bcc.s  __far_z_04_0111
     jmp  Shoot
-__far_z_04_0113:
+__far_z_04_0111:
     move.b  ($034C,A4),D0
     cmpi.b  #$04,D0
-    bcs.s  __far_z_04_0114
+    bcs.s  __far_z_04_0112
     jmp  ReturnDidNotShoot
-__far_z_04_0114:
+__far_z_04_0112:
     ; Else increase the number of active shots.
     ;
     addq.b  #1,($034C,A4)
@@ -10337,9 +10066,9 @@ UpdateCandle_Begin:
     moveq   #0,D3
     move.b  ($00EB,A4),D3
     jsr     IsDarkRoom_Bank4
-    bne.s  __far_z_04_0115
+    bne.s  __far_z_04_0113
     jmp  UpdateCandle_Done
-__far_z_04_0115:
+__far_z_04_0113:
     move.b  #$C0,D0
     move.b  D0,($051C,A4)
     addq.b  #1,($051E,A4)
@@ -10356,17 +10085,17 @@ L_Candle_StopBrightening:
     ;
     moveq   #0,D0
     move.b  D0,($051E,A4)
-    bne.s  __far_z_04_0116
+    bne.s  __far_z_04_0114
     jmp  L_Candle_IncState
-__far_z_04_0116:
+__far_z_04_0114:
     even
 UpdateCandle_Brightening:
     ; Animating a brightening cycle.
     ;
     jsr     AnimateWorldFading
-    bne.s  __far_z_04_0117
+    bne.s  __far_z_04_0115
     jmp  L_Candle_StopBrightening
-__far_z_04_0117:
+__far_z_04_0115:
     rts
 
 ; Params:
@@ -10548,9 +10277,9 @@ _anon_z04_173:
     ; If movement wasn't restricted, then return.
     ;
     move.b  ($000F,A4),D0
-    beq.s  __far_z_04_0118
+    beq.s  __far_z_04_0116
     jmp  L132F8_Exit
-__far_z_04_0118:
+__far_z_04_0116:
     even
 ReverseObjDir8:
     ; Get the opposite direction of the one the object is facing.
@@ -10569,9 +10298,9 @@ ReverseObjDir8:
     lea     ($034F,A4),A0
     move.b  (A0,D2.W),D0
     cmpi.b  #$41,D0
-    bne.s  __far_z_04_0119
+    bne.s  __far_z_04_0117
     jmp  DeferBounce
-__far_z_04_0119:
+__far_z_04_0117:
     ; Apply the new direction.
     ;
     lea     (Directions8).l,A0
@@ -10599,17 +10328,17 @@ L13307_Exit:
     even
 Flyer_Chase:
     move.b  ($28,A4,D2.W),D0
-    beq.s  __far_z_04_0120
+    beq.s  __far_z_04_0118
     jmp  L13307_Exit
-__far_z_04_0120:
+__far_z_04_0118:
     ; Decrease the turn counter.
     ; Once there are no more turns, go to flying state 1.
     ;
     lea     ($042C,A4),A0
     subq.b  #1,(A0,D2.W)
-    beq.s  __far_z_04_0121
+    beq.s  __far_z_04_0119
     jmp  SetDelayAndTurn
-__far_z_04_0121:
+__far_z_04_0119:
     even
 SetFlyingState1:
     jmp     c_set_flying_state_1
@@ -10692,9 +10421,9 @@ _L_z04_TurnTowardsPlayer8_LoopLeft:
     move.b  (A0,D3.W),D0
     move.b  ($0000,A4),D1
     cmp.b   D1,D0
-    bne.s  __far_z_04_0122
+    bne.s  __far_z_04_0120
     jmp  L1336F_Exit
-__far_z_04_0122:
+__far_z_04_0120:
     subq.b  #1,D3
     subq.b  #1,($0001,A4)
     bne  _L_z04_TurnTowardsPlayer8_LoopLeft
@@ -10719,16 +10448,16 @@ LoopRight:
     move.b  (A0,D3.W),D0
     move.b  ($0000,A4),D1
     and.b   D0,D1   ; BIT: set Z/N/V from D1 AND A
-    beq.s  __far_z_04_0123
+    beq.s  __far_z_04_0121
     jmp  TestDir
-__far_z_04_0123:
+__far_z_04_0121:
     even
 NextLoopRight:
     addq.b  #1,D3
     subq.b  #1,($0001,A4)
-    beq.s  __far_z_04_0124
+    beq.s  __far_z_04_0122
     jmp  LoopRight
-__far_z_04_0124:
+__far_z_04_0122:
     ; We didn't find a direction to switch to.
     ; So turn left once; to one turn right of object direction.
     ;
@@ -10758,12 +10487,12 @@ TestDir:
     move.b  ($0000,A4),D1
     or.b  D1,D0
     cmpi.b  #$07,D0
-    bcs.s  __far_z_04_0125
+    bcs.s  __far_z_04_0123
     jmp  NextLoopRight
-__far_z_04_0125:
-    bcc.s  __far_z_04_0126
+__far_z_04_0123:
+    bcc.s  __far_z_04_0124
     jmp  SetDir8ForIndex
-__far_z_04_0126:
+__far_z_04_0124:
 ; Description:
 ; Delay and turn randomly a number of times.
 ; The go to state 1. After each turn, delay $10 frames.
@@ -10774,9 +10503,9 @@ __far_z_04_0126:
     even
 Flyer_Wander:
     move.b  ($28,A4,D2.W),D0
-    beq.s  __far_z_04_0127
+    beq.s  __far_z_04_0125
     jmp  L133AC_Exit
-__far_z_04_0127:
+__far_z_04_0125:
     ; Decrease the turn counter.
     ; Once there are no more turns, go to flying state 1.
     ;
@@ -10826,9 +10555,9 @@ _anon_z04_178:
     lea     (Directions8).l,A0
     move.b  (A0,D3.W),D1
     cmp.b   D1,D0
-    bne.s  __far_z_04_0128
+    bne.s  __far_z_04_0126
     jmp  L133AC_Exit
-__far_z_04_0128:
+__far_z_04_0126:
     subq.b  #1,D3
     bpl  _anon_z04_178
 ; If not found, then use index 0.
