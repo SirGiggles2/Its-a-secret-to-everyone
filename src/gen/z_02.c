@@ -82,6 +82,10 @@ void z02_animate_demo_phase1_subphase4(void) {
     frontdemo_animate_demo_phase1_subphase4();
 }
 
+void z02_update_sprites_for_waterfall_crest(void) {
+    frontdemo_update_sprites_for_waterfall_crest();
+}
+
 void z02_fetch_profile_name_address(void) {
     savert_fetch_profile_name_address();
 }

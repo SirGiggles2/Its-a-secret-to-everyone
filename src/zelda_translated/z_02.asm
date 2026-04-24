@@ -1292,39 +1292,8 @@ _L_z02_UpdateSpritesForWaterfallWave_LoopSprite:
 
     even
 UpdateSpritesForWaterfallCrest:
-    moveq   #3,D2
-    move.b  #$F0,D3
-    even
-_L_z02_UpdateSpritesForWaterfallCrest_LoopSprite:
-    ; Every 16 frames, switch between
-    ; the two frames of animation.
-    move.b  ($0015,A4),D0
-    andi.b #$08,D0
-    andi    #$EE,CCR  ; CLC: clear C+X
-    lea     (WaterfallCrestTiles).l,A0
-    move.b  (A0,D2.W),D1
-    addx.b  D1,D0   ; ADC WaterfallCrestTiles,X
-    lea     ($0201,A4),A0
-    move.b  D0,(A0,D3.W)
-    move.b  #$A8,D0
-    lea     ($0200,A4),A0
-    move.b  D0,(A0,D3.W)
-    lea     (WaterfallSpriteXs).l,A0
-    move.b  (A0,D2.W),D0
-    lea     ($0203,A4),A0
-    move.b  D0,(A0,D3.W)
-    moveq   #3,D0
-    lea     ($0202,A4),A0
-    move.b  D0,(A0,D3.W)
-    addq.b  #1,D3
-    addq.b  #1,D3
-    addq.b  #1,D3
-    addq.b  #1,D3
-    subq.b  #1,D2
-    bpl  _L_z02_UpdateSpritesForWaterfallCrest_LoopSprite
-    rts
+    jmp     c_update_sprites_for_waterfall_crest
 
-    even
 DemoPhase0Subphase1Palettes:
     dc.b    $36, $0F, $00, $10, $36, $17, $27, $0F
     dc.b    $36, $08, $1A, $28, $36, $30, $3B, $22

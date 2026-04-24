@@ -359,6 +359,22 @@ void frontdemo_init_demo_subphase_transfer_story_palette(void) {
     frontdemo_inc_subphase();
 }
 
+static const unsigned char kWaterfallCrestTiles[4] = { 0xA2, 0xA4, 0xA6, 0xA8 };
+static const unsigned char kWaterfallSpriteXs[4]   = { 0x50, 0x58, 0x60, 0x68 };
+
+void frontdemo_update_sprites_for_waterfall_crest(void) {
+    int d2;
+    unsigned int d3 = 0xF0;
+    for (d2 = 3; d2 >= 0; d2--) {
+        unsigned char frame = RAM(0x0015) & 0x08;
+        RAM(0x0201 + d3) = (unsigned char)(kWaterfallCrestTiles[d2] + frame);
+        RAM(0x0200 + d3) = 0xA8;
+        RAM(0x0203 + d3) = kWaterfallSpriteXs[d2];
+        RAM(0x0202 + d3) = 0x03;
+        d3 += 4;
+    }
+}
+
 void frontdemo_animate_demo_phase1_subphase4(void) {
     RAM(0x041A)++;
     if (RAM(0x041A) == 0x39) {
