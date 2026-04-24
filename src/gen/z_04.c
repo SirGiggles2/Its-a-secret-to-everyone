@@ -553,4 +553,8 @@ void z04_dodongo_draw(unsigned int slot) {
     enrt_dodongo_draw(slot);
 }
 
+void z04_move_flyer(unsigned int slot) {
+    enrt_move_flyer(slot);
+}
+
 /* <<< end auto-wrappers >>> */

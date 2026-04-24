@@ -921,6 +921,7 @@
     xref    UpdateCommonWanderer
     xref    Wanderer_TargetPlayer
     xref    MoveFlyer
+    xref    z04_move_flyer
     xref    ControlKeeseFlight
     xref    DrawItemInInventory
     xref    GoToNextModeFromPlay
@@ -4425,11 +4426,7 @@ c_wanderer_target_player:
 
 ; MoveFlyer(slot) — D2=slot
 c_move_flyer:
-    move.l  D2,-(SP)
-    move.l  8(SP),D2
-    jsr     MoveFlyer
-    move.l  (SP)+,D2
-    rts
+    jmp     z04_move_flyer
 
 ; ControlKeeseFlight(slot) — D2=slot
 c_control_keese_flight:
@@ -5407,3 +5404,5 @@ c_handle_shot_blocked:
     jsr     z07_handle_shot_blocked
     addq.l  #4,SP
     rts
+
+;==============================================================================

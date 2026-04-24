@@ -683,6 +683,11 @@
       "old": "z04_dodongo_draw",
       "new": "enrt_dodongo_draw",
       "sig": "void (unsigned int slot)"
+    },
+    {
+      "old": "z04_move_flyer",
+      "new": "enrt_move_flyer",
+      "sig": "void (unsigned int slot)"
     }
   ]
 }

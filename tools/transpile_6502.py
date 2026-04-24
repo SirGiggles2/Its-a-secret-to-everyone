@@ -4352,6 +4352,9 @@ def _patch_z04(path):
     # --- Batch 97: Tektite / Boulder family ---
     text = _stub_func(text, 'UpdateTektiteOrBoulder', 'c_update_tektite_or_boulder')
 
+    # --- Batch 98: Flyer movement ---
+    text = _stub_func(text, 'MoveFlyer', 'c_move_flyer')
+
     with open(path, 'w', encoding='utf-8') as f:
         f.write(text)
 
@@ -7048,7 +7051,6 @@ def _patch_z07(path):
     text = _stub_func(text, 'CheckScreenEdge', 'c_check_screen_edge')
     text = _stub_func(text, 'ClearRam0300UpTo', 'c_clear_ram0300_up_to')
     text = _stub_func(text, 'HandleShotBlocked', 'c_handle_shot_blocked')
-
     # --- Batch 48 ---
     # MarkRoomVisited ends with IFND Exit / Exit: / ENDC — _stub_func would
     # stop at Exit: (capital), leaving a dangling ENDC. Use regex replace.

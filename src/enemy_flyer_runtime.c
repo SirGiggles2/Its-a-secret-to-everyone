@@ -170,3 +170,33 @@ void enrt_update_keese(unsigned int slot) {
     c_check_monster_collisions(slot);
     c_reset_shove_info(slot);
 }
+
+void enrt_move_flyer(unsigned int slot) {
+    unsigned int sum = (unsigned int)(ENEMY_AIR_SPEED(slot) & 0xE0u) + ENEMY_FLYER_SPEED_FRAC(slot);
+    unsigned char dir = ENEMY_DIR(slot);
+    unsigned char mask = 1;
+
+    ENEMY_FLYER_SPEED_FRAC(slot) = (unsigned char)sum;
+    if ((sum & 0x100u) == 0)
+        return;
+
+    if (dir & mask) {
+        ENEMY_X(slot)++;
+        ENEMY_FLYER_X_FINE(slot)++;
+    }
+    mask <<= 1;
+    if (dir & mask) {
+        ENEMY_X(slot)--;
+        ENEMY_FLYER_X_FINE(slot)--;
+    }
+    mask <<= 1;
+    if (dir & mask) {
+        ENEMY_Y(slot)++;
+        ENEMY_FLYER_Y_FINE(slot)++;
+    }
+    mask <<= 1;
+    if (dir & mask) {
+        ENEMY_Y(slot)--;
+        ENEMY_FLYER_Y_FINE(slot)--;
+    }
+}
