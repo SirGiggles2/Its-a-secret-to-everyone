@@ -1,4 +1,6 @@
 #include "progress_runtime.h"
+#include "save_state.h"
+#include "room_state.h"
 
 #define NES_SRAM_BASE 0x6000u
 
@@ -42,8 +44,8 @@ void progrt_set_room_flag_uw_item_state(void) {
 }
 
 unsigned char progrt_get_room_flag_uw_item_state(void) {
-    unsigned char ptr_lo = nes_ram[NES_SRAM_BASE + 0x0BAF];
-    unsigned char ptr_hi = nes_ram[NES_SRAM_BASE + 0x0BB0];
+    unsigned char ptr_lo = SAVE_ROOM_FLAGS_PTR_LO;
+    unsigned char ptr_hi = SAVE_ROOM_FLAGS_PTR_HI;
     unsigned short ptr;
     SAVEFILE_MASK_LO = ptr_lo;
     SAVEFILE_MASK_HI = ptr_hi;
@@ -167,6 +169,6 @@ void progrt_check_power_triforce_fanfare(void) {
     }
     {
         unsigned char phase = CURTAIN_TIMER & 7;
-        RAM(0x0014) = (phase < 4) ? 120 : 24;
+        ROOM_TRANSFER_BUF_SELECT = (phase < 4) ? 120 : 24;
     }
 }
