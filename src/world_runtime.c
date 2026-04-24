@@ -2,7 +2,6 @@
 
 #define NES_SRAM_BASE 0x6000u
 
-extern unsigned char z01_reset_cur_sprite_index(void);
 
 unsigned int worldrt_get_shortcut_or_item_xy_for_room(unsigned int room_id) {
     unsigned char lookup = nes_ram[NES_SRAM_BASE + 0x0AFE + room_id];
