@@ -64,6 +64,7 @@ void enrt_set_up_fairy_object(unsigned int slot);
 void enrt_jumper_point_boulder_downward(unsigned int slot);
 void enrt_flyer_delay(unsigned int slot);
 void enrt_init_manhandla(unsigned int slot);
+void enrt_update_manhandla(unsigned int slot);
 void enrt_manhandla_set_all_segments_direction(unsigned int val);
 void enrt_manhandla_check_collisions(unsigned int slot);
 void enrt_manhandla_move(unsigned int slot);

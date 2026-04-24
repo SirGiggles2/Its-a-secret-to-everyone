@@ -40,6 +40,89 @@ void enrt_init_manhandla(unsigned int slot) {
     }
 }
 
+void enrt_update_manhandla(unsigned int slot) {
+    unsigned char frame;
+    unsigned char new_frame_attrs;
+    unsigned char old_frame_attrs;
+    signed char seg;
+
+    if (slot == 5) {
+        if (ENEMY_MANHANDLA_SEGMENT_DIED_FLAG != 0) {
+            for (seg = 4; seg >= 0; --seg) {
+                unsigned char uidx = (unsigned char)seg;
+                unsigned int sum = (unsigned int)RAM(0x0420u + uidx) + 0x80u;
+                RAM(0x0420u + uidx) = (unsigned char)sum;
+                RAM(0x042Du + uidx) = (unsigned char)(RAM(0x042Du + uidx)
+                                                   + (unsigned char)(sum >> 8));
+            }
+            ENEMY_MANHANDLA_SEGMENT_DIED_FLAG = 0;
+        }
+
+        if (RAM(0x0385u) != 0) {
+            enrt_manhandla_set_all_segments_direction(RAM(0x0385u));
+        }
+
+        if (ENEMY_MOVE_TIMER(slot) == 0) {
+            unsigned char new_dir;
+            ENEMY_MOVE_TIMER(slot) = 16;
+            if (ENEMY_RNG_A(slot) >= 0x80u) {
+                c_turn_towards_player8();
+            } else {
+                c_turn_randomly_dir8(slot);
+            }
+            new_dir = ENEMY_DIR(slot);
+            RAM(0x0385u) = new_dir;
+            enrt_manhandla_set_all_segments_direction(new_dir);
+        }
+    }
+
+    if (slot == 5) {
+        RAM(0x0384u) = ENEMY_DIR(slot);
+    }
+    enrt_manhandla_move(slot);
+    enrt_manhandla_check_collisions(slot);
+
+    {
+        unsigned char post_dir = ENEMY_DIR(slot);
+        if (post_dir != RAM(0x0384u)) {
+            RAM(0x0385u) = post_dir;
+        }
+    }
+
+    frame = (unsigned char)((ENEMY_MANHANDLA_FRAME_ACCUM(slot) & 0x10u) >> 4);
+    RAM(0x0000u) = frame;
+    new_frame_attrs = (unsigned char)((ENEMY_MANHANDLA_FRAME_ATTR(slot) & 0xFEu) | frame);
+    ENEMY_MANHANDLA_FRAME_ATTR(slot) = new_frame_attrs;
+
+    if (slot == 5) {
+        enrt_manhandla_draw(slot);
+        return;
+    }
+
+    old_frame_attrs = OBJ(0x0437u, slot);
+    if (new_frame_attrs == old_frame_attrs) {
+        enrt_manhandla_draw(slot);
+        return;
+    }
+    OBJ(0x0437u, slot) = new_frame_attrs;
+
+    if (new_frame_attrs & 0x01u) {
+        enrt_manhandla_draw(slot);
+        return;
+    }
+
+    if (ENEMY_RNG_B(slot) < 0xE0u) {
+        enrt_manhandla_draw(slot);
+        return;
+    }
+    if (ENEMY_TYPE(7) != 0) {
+        enrt_manhandla_draw(slot);
+        return;
+    }
+    c_shoot_fireball(86, slot);
+    enrt_manhandla_draw(slot);
+}
+
 void enrt_manhandla_set_all_segments_direction(unsigned int val) {
     signed char i;
     for (i = 4; i >= 0; --i)

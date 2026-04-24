@@ -5275,12 +5275,14 @@ c_dodongo_draw:
 
     xdef    c_bound_flyer
     xdef    c_init_manhandla
+    xdef    c_update_manhandla
     xdef    c_manhandla_check_collisions
     xdef    c_manhandla_move
     xdef    c_manhandla_draw
 
     xref    BoundFlyer
     xref    z04_init_manhandla
+    xref    z04_update_manhandla
     xref    z04_manhandla_check_collisions
     xref    z04_manhandla_move
     xref    z04_manhandla_draw
@@ -5336,6 +5338,15 @@ c_init_manhandla:
     move.w  D2,D1
     move.l  D1,-(SP)
     jsr     z04_init_manhandla
+    addq.l  #4,SP
+    rts
+
+; UpdateManhandla — D2=slot, void.
+c_update_manhandla:
+    moveq   #0,D1
+    move.w  D2,D1
+    move.l  D1,-(SP)
+    jsr     z04_update_manhandla
     addq.l  #4,SP
     rts
 
@@ -5457,13 +5468,21 @@ c_update_statues:
 ;==============================================================================
 
     xdef    c_turn_towards_player8
+    xdef    c_turn_randomly_dir8
     xdef    c_update_tektite_or_boulder
 
     xref    TurnTowardsPlayer8
+    xref    TurnRandomlyDir8
     xref    z04_update_tektite_or_boulder
 
 c_turn_towards_player8:
     jsr     TurnTowardsPlayer8
+    rts
+
+; TurnRandomlyDir8 — D2=slot.
+c_turn_randomly_dir8:
+    move.l  4(SP),D2
+    jsr     TurnRandomlyDir8
     rts
 
 c_update_tektite_or_boulder:

@@ -89,6 +89,10 @@ void z04_init_manhandla(unsigned int slot) {
     enrt_init_manhandla(slot);
 }
 
+void z04_update_manhandla(unsigned int slot) {
+    enrt_update_manhandla(slot);
+}
+
 void z04_manhandla_set_all_segments_direction(unsigned int val) {
     enrt_manhandla_set_all_segments_direction(val);
 }
