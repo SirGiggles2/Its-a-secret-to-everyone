@@ -55,6 +55,7 @@ void roommd_go_to_next_mode_play_level_song(void);
 void roommd_go_to_next_mode_reset_grid_offset(void);
 void roommd_patch_and_cue_level_palettes_transfer(void);
 void roommd_init_mode3_sub1(void);
+void roommd_update_mode3_unfurl(void);
 
 #ifdef __cplusplus
 }
@@ -72,5 +73,7 @@ extern void z05_copy_play_area_attrs_half(unsigned int ppu_hi, unsigned int ppu_
 extern void z01_begin_update_mode(void);
 extern void z07_patch_and_cue_level_palettes_transfer(void);
 extern unsigned char z07_end_game_mode(void);
+extern void c_update_world_curtain_effect(void);
+extern void c_set_mmc1_control(unsigned int val);
 
 #endif

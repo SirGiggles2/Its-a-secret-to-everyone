@@ -6645,91 +6645,8 @@ ManhandlaSegmentOffsetsY:
 
     even
 InitManhandla:
-    moveq   #64,D0
-    move.b  D0,($0601,A4)
-    ; Choose a random 8-way direction.
-    ;
-    move.b  ($18,A4,D2.W),D0
-    andi.b #$07,D0
-    moveq   #0,D3
-    move.b  D0,D3
-    lea     (Directions8).l,A0
-    move.b  (A0,D3.W),D0
-    lea     ($0098,A4),A0
-    move.b  D0,(A0,D2.W)
-    ; For 5 segments, from 4 to 0, indexed by Y register:
-    ; Object slots 5 to 1 are accessed.
-    ;
-    moveq   #4,D3
-_anon_z04_109:
-    ; Copy the direction from the base segment.
-    ;
-    move.b  ($0099,A4),D0
-    lea     ($0099,A4),A0
-    move.b  D0,(A0,D3.W)
-    ; All segments are considered Manhandla.
-    ;
-    moveq   #60,D0
-    lea     ($0350,A4),A0
-    move.b  D0,(A0,D3.W)
-    ; Set the segment invincible to fire and boomerang.
-    ;
-    move.b  #$E2,D0
-    lea     ($04B3,A4),A0
-    move.b  D0,(A0,D3.W)
-    ; Look up and store the base frame image and sprite attributes byte.
-    ;
-    ; While updating, the low bit will be flipped on and off
-    ; for each animation frame.
-    ;
-    lea     (ManhandlaBaseFrameImagesAndAttrs).l,A0
-    move.b  (A0,D3.W),D0
-    lea     ($0479,A4),A0
-    move.b  D0,(A0,D3.W)
-    ; All segments start out autonomous, and can update immediately.
-    ;
-    moveq   #0,D0
-    lea     ($0406,A4),A0
-    move.b  D0,(A0,D3.W)
-    lea     ($0493,A4),A0
-    move.b  D0,(A0,D3.W)
-    ; Copy object attributes and HP from the base segment.
-    ;
-    move.b  ($04C0,A4),D0
-    lea     ($04C0,A4),A0
-    move.b  D0,(A0,D3.W)
-    move.b  ($0486,A4),D0
-    lea     ($0486,A4),A0
-    move.b  D0,(A0,D3.W)
-    ; Look up the offset of this segment. Add it to the position of
-    ; the base segment.
-    ;
-    ; The position of the base segment in slot 5 is calculated first.
-    ; Its base position is the spawn position.
-    ;
-    move.b  ($0075,A4),D0
-    andi    #$EE,CCR  ; CLC: clear C+X
-    lea     (ManhandlaSegmentOffsetsX).l,A0
-    move.b  (A0,D3.W),D1
-    addx.b  D1,D0   ; ADC ManhandlaSegmentOffsetsX,Y
-    move.b  D0,($71,A4,D3.W)
-    move.b  ($0089,A4),D0
-    andi    #$EE,CCR  ; CLC: clear C+X
-    lea     (ManhandlaSegmentOffsetsY).l,A0
-    move.b  (A0,D3.W),D1
-    addx.b  D1,D0   ; ADC ManhandlaSegmentOffsetsY,Y
-    lea     ($0085,A4),A0
-    move.b  D0,(A0,D3.W)
-    ; Set low speed byte $80.
-    ;
-    move.b  #$80,D0
-    lea     ($0420,A4),A0
-    move.b  D0,(A0,D3.W)
-    subq.b  #1,D3
-    bpl  _anon_z04_109
-    rts
+    jmp     c_init_manhandla
 
-    even
 InitGohma:
     jmp     c_init_gohma
 
@@ -6737,166 +6654,8 @@ InitGleeokHead:
     jmp     c_init_gleeok_head
 
 UpdateManhandla:
-    ; If this segment is not the base, then skip turning and speeding up.
-    ;
-    cmpi.b  #$05,D2
-    bne  _L_z04_UpdateManhandla_MoveBase
-    ; If no segment just died, then skip increasing the speed.
-    ;
-    move.b  ($0383,A4),D0
-    beq  _L_z04_UpdateManhandla_BounceIfNeeded
-    ; For each segment from 4 to 0, indexed by Y register:
-    ;
-    moveq   #4,D3
-    even
-_L_z04_UpdateManhandla_LoopSegment:
-    ; Add $80 to the low speed byte of this segment.
-    ;
-    lea     ($0420,A4),A0
-    move.b  (A0,D3.W),D0
-    andi    #$EE,CCR  ; CLC: clear C+X
-    move.b  #$80,D1
-    addx.b  D1,D0   ; ADC #$80 (X flag = 6502 C)
-    lea     ($0420,A4),A0
-    move.b  D0,(A0,D3.W)
-    ; Carry to the high speed byte of this segment.
-    ;
-    lea     ($042D,A4),A0
-    move.b  (A0,D3.W),D0
-    move.b  #$00,D1
-    addx.b  D1,D0   ; ADC #$00 (X flag = 6502 C)
-    lea     ($042D,A4),A0
-    move.b  D0,(A0,D3.W)
-    subq.b  #1,D3
-    bpl  _L_z04_UpdateManhandla_LoopSegment
-    ; Reset the "a segment just died" flag.
-    ;
-    moveq   #0,D0
-    move.b  D0,($0383,A4)
-    even
-_L_z04_UpdateManhandla_BounceIfNeeded:
-    ; If there's a bounce direction, then assign it to the facing
-    ; direction of all segments.
-    ;
-    move.b  ($0385,A4),D0
-    beq  _L_z04_UpdateManhandla_TurnIfNeeded
-    jsr     Manhandla_SetAllSegmentsDirection
-    even
-_L_z04_UpdateManhandla_TurnIfNeeded:
-    ; If object timer = 0, then
-    ; 1. set timer to $10
-    ; 2. randomly choose to turn toward Link or turn randomly
-    ; 3. assign the base's direction to all segments and bounce direction
-    ;
-    move.b  ($28,A4,D2.W),D0
-    bne  _L_z04_UpdateManhandla_MoveBase
-    moveq   #16,D0
-    move.b  D0,($28,A4,D2.W)
-    move.b  ($18,A4,D2.W),D0
-    cmpi.b  #$80,D0
-    bcc  _L_z04_UpdateManhandla_TurnTowardLink
-    jsr     TurnRandomlyDir8
-    even
-_L_z04_UpdateManhandla_CopyDirToHands:
-    move.b  ($009D,A4),D0
-    move.b  D0,($0385,A4)
-    jsr     Manhandla_SetAllSegmentsDirection
-    even
-_L_z04_UpdateManhandla_MoveBase:
-    ; If this segment is the base, then remember the
-    ; facing direction before moving.
-    ;
-    ; This is a continuation of the code above,
-    ; which is also only for the base.
-    ;
-    cmpi.b  #$05,D2
-    bne  _anon_z04_110
-    lea     ($0098,A4),A0
-    move.b  (A0,D2.W),D0
-    move.b  D0,($0384,A4)
-_anon_z04_110:
-    jsr     Manhandla_Move
-    jsr     Manhandla_CheckCollisions
-    ; If the direction changed after moving, then
-    ; copy it to the bounce direction.
-    ;
-    lea     ($0098,A4),A0
-    move.b  (A0,D2.W),D0
-    move.b  ($0384,A4),D1
-    cmp.b   D1,D0
-    beq  _anon_z04_111
-    move.b  D0,($0385,A4)
-_anon_z04_111:
-    ; Store in [00] the animation frame that you get from the frame accumulator:
-    ; frame := ((accumulator AND $10) >> 4
-    ;
-    lea     ($0451,A4),A0
-    move.b  (A0,D2.W),D0
-    andi.b #$10,D0
-    lsr.b  #1,D0   ; LSR A
-    lsr.b  #1,D0   ; LSR A
-    lsr.b  #1,D0   ; LSR A
-    lsr.b  #1,D0   ; LSR A
-    move.b  D0,($0000,A4)
-    ; Copy the animation frame bit into the "frame image and
-    ; sprite attributes" byte.
-    ;
-    lea     ($0478,A4),A0
-    move.b  (A0,D2.W),D0
-    andi.b #$FE,D0
-    move.b  ($0000,A4),D1
-    or.b  D1,D0
-    lea     ($0478,A4),A0
-    move.b  D0,(A0,D2.W)
-    ; If this segment is the base, then go draw.
-    ;
-    cmpi.b  #$05,D2
-    beq  _L_z04_UpdateManhandla_Draw
-    ; If the old and new "frame image and sprite attributes" variables
-    ; are the same, then go draw.
-    ;
-    ; The previous frame value begins with value 0, because all
-    ; room data was reset on entry.
-    ;
-    lea     ($0478,A4),A0
-    move.b  (A0,D2.W),D0
-    lea     ($0437,A4),A0
-    move.b  (A0,D2.W),D1
-    cmp.b   D1,D0
-    beq  _L_z04_UpdateManhandla_Draw
-    ; Copy the new value to the old variable, so that they're the same.
-    ;
-    lea     ($0437,A4),A0
-    move.b  D0,(A0,D2.W)
-    ; If animation frame = 1, then go draw.
-    ;
-    ; The low bit of "frame image and sprite attributes" byte
-    ; represents the animation frame.
-    ;
-    lsr.b  #1,D0   ; LSR A
-    bcs  _L_z04_UpdateManhandla_Draw
-    ; If the random value for the next slot up < $E0,
-    ; or there's an object in slot 7; then go draw.
-    ;
-    ; The second condition keeps the number of fireballs <= 4.
-    ;
-    move.b  ($19,A4,D2.W),D0
-    cmpi.b  #$E0,D0
-    bcs  _L_z04_UpdateManhandla_Draw
-    move.b  ($0356,A4),D0
-    bne  _L_z04_UpdateManhandla_Draw
-    moveq   #86,D0
-    jsr     ShootFireball
-    even
-_L_z04_UpdateManhandla_Draw:
-    jmp     Manhandla_Draw
+    jmp     c_update_manhandla
 
-    even
-_L_z04_UpdateManhandla_TurnTowardLink:
-    jsr     TurnTowardsPlayer8
-    jmp     _L_z04_UpdateManhandla_CopyDirToHands
-
-    even
 Manhandla_CheckCollisions:
     jmp     c_manhandla_check_collisions
 
@@ -7722,67 +7481,8 @@ _anon_z04_146:
 
     even
 InitLamnola:
-    ; Make $A segments.
-    ;
-    moveq   #9,D3
-_anon_z04_147:
-    ; Starting location is ($40, $8D) and direction is 0.
-    ;
-    moveq   #64,D0
-    move.b  D0,($71,A4,D3.W)
-    move.b  #$8D,D0
-    lea     ($0085,A4),A0
-    move.b  D0,(A0,D3.W)
-    moveq   #0,D0
-    lea     ($0099,A4),A0
-    move.b  D0,(A0,D3.W)
-    ; Each segment is flagged initialized and ready to update.
-    ;
-    lea     ($0406,A4),A0
-    move.b  D0,(A0,D3.W)
-    lea     ($0493,A4),A0
-    move.b  D0,(A0,D3.W)
-    ; This Lamnola that's making additional segments is in slot 1.
-    ; Copy its object attributes, HP, and type to the others.
-    ;
-    move.b  ($04C0,A4),D0
-    lea     ($04C0,A4),A0
-    move.b  D0,(A0,D3.W)
-    move.b  ($0486,A4),D0
-    lea     ($0486,A4),A0
-    move.b  D0,(A0,D3.W)
-    move.b  ($0350,A4),D0
-    lea     ($0350,A4),A0
-    move.b  D0,(A0,D3.W)
-    subq.b  #1,D3
-    bpl  _anon_z04_147
-    ; Only the heads in slots 5 and $A have a direction and [0380][X] set.
-    ;
-    moveq   #8,D0
-    move.b  D0,($009D,A4)
-    move.b  D0,($0385,A4)
-    move.b  D0,($00A2,A4)
-    move.b  D0,($038A,A4)
-    ; Remember the object type, and set speed to (object type - $39):
-    ; 1 or 2.
-    ;
-    move.b  ($0350,A4),D0
-    move.b  D0,($04E7,A4)
-    ori     #$11,CCR  ; SEC: set C+X
-    move.b  #$39,D1
-    eori    #$10,CCR  ; flip X: 6502 SBC polarity
-    subx.b  D1,D0   ; SBC #$39
-    eori    #$10,CCR  ; restore X = 6502 C
-    move.b  D0,($04E6,A4)
-    ; TODO:
-    ; Do the heads not count?
-    ;
-    moveq   #8,D0
-    move.b  D0,($034E,A4)
-    eori    #$01,CCR  ; normalize C to 6502 polarity before RTS
-    rts
+    jmp     c_init_lamnola
 
-    even
 InitPatra:
     ; Invincible to everything but sword.
     ;
@@ -7962,136 +7662,8 @@ L129EA_Exit:
 
     even
 UpdateLamnola:
-    ; If the direction of this segment is not set, then it has not started
-    ; moving yet. So, return.
-    ;
-    lea     ($0098,A4),A0
-    move.b  (A0,D2.W),D0
-    bne.s  __far_z_04_0086
-    jmp  L129EA_Exit
-__far_z_04_0086:
-    ; If we have the magic clock, then go draw and check collisions.
-    ;
-    move.b  ($066C,A4),D0
-    bne  _L_z04_UpdateLamnola_DrawAndCheckCollisions
-    jsr     Lamnola_Move
-    ; If the current segment is a head, then update the direction it's facing.
-    ;
-    cmpi.b  #$05,D2
-    beq  _anon_z04_150
-    cmpi.b  #$0A,D2
-    bne  _L_z04_UpdateLamnola_DrawAndCheckCollisions
-_anon_z04_150:
-    jsr     Lamnola_UpdateHead
-    even
-_L_z04_UpdateLamnola_DrawAndCheckCollisions:
-    move.b  ($70,A4,D2.W),D0
-    move.b  D0,-(A5)  ; PHA
-    ; Each segment is a full 16x16 object. But, it's drawn as a narrow,
-    ; half-width object. So, center it by temporarily adding 4 to X.
-    ;
-    andi    #$EE,CCR  ; CLC: clear C+X
-    move.b  #$04,D1
-    addx.b  D1,D0   ; ADC #$04 (X flag = 6502 C)
-    move.b  D0,($70,A4,D2.W)
-    ; The speed is 1 or 2. By swapping them, you get sprite attributes
-    ; to store in [03].
-    ;
-    move.b  ($04E6,A4),D0
-    eori.b #$03,D0
-    move.b  D0,($0003,A4)
-    ; If the segment is a head, then use tile $9E, else $A0.
-    ;
-    move.b  #$9E,D0
-    cmpi.b  #$05,D2
-    beq  _L_z04_UpdateLamnola_Draw
-    cmpi.b  #$0A,D2
-    beq  _L_z04_UpdateLamnola_Draw
-    move.b  #$A0,D0
-    even
-_L_z04_UpdateLamnola_Draw:
-    jsr     Anim_WriteSprite
-    move.b  (A5)+,D0  ; PLA
-    move.b  D0,($70,A4,D2.W)
-    lea     ($0098,A4),A0
-    move.b  (A0,D2.W),D0
-    move.b  D0,-(A5)  ; PHA
-    jsr     CheckMonsterCollisions
-    move.b  (A5)+,D0  ; PLA
-    lea     ($0098,A4),A0
-    move.b  D0,(A0,D2.W)
-    ; If still alive, then return.
-    ;
-    lea     ($0405,A4),A0
-    move.b  (A0,D2.W),D0
-    bne.s  __far_z_04_0087
-    jmp  L129EA_Exit
-__far_z_04_0087:
-    ; Otherwise, the segment is dead.
-    ;
-    jsr     ResetShoveInfo
-    ; Set the current segment's HP to the initial value in anticipation
-    ; of bringing this segment back to life.
-    ;
-    moveq   #32,D0
-    lea     ($0485,A4),A0
-    move.b  D0,(A0,D2.W)
-    ; Find the tail of the lamnola that the current segment belongs to.
-    ;
-    ; From the lowest slot, look for one that has the original lamnola
-    ; object type.
-    ;
-    ; The goal is to swap the current dead segment with the tail segment.
-    ;
-    move.b  #$FF,D3
-    cmpi.b  #$06,D2
-    bcs  _L_z04_UpdateLamnola_FindTail
-    moveq   #4,D3
-    even
-_L_z04_UpdateLamnola_FindTail:
-    addq.b  #1,D3
-    lea     ($0350,A4),A0
-    move.b  (A0,D3.W),D0
-    move.b  ($04E7,A4),D1
-    cmp.b   D1,D0
-    bne  _L_z04_UpdateLamnola_FindTail
-    ; Set the timer for the dead dummy object that will replace the tail.
-    ;
-    moveq   #17,D0
-    move.b  D0,($29,A4,D3.W)
-    ; Copy the current dead segment's invincibility timer, X, and Y
-    ; to the tail segment.
-    ;
-    lea     ($04F0,A4),A0
-    move.b  (A0,D2.W),D0
-    lea     ($04F1,A4),A0
-    move.b  D0,(A0,D3.W)
-    move.b  ($70,A4,D2.W),D0
-    move.b  D0,($71,A4,D3.W)
-    lea     ($0084,A4),A0
-    move.b  (A0,D2.W),D0
-    lea     ($0085,A4),A0
-    move.b  D0,(A0,D3.W)
-    ; If the tail segment found is a head, then the whole lamnola died.
-    ; So, return and leave it dead.
-    ;
-    cmpi.b  #$04,D3
-    bne.s  __far_z_04_0088
-    jmp  L129EA_Exit
-__far_z_04_0088:
-    cmpi.b  #$09,D3
-    bne.s  __far_z_04_0089
-    jmp  L129EA_Exit
-__far_z_04_0089:
-    ; Change the tail segment to the dead dummy object, and
-    ; bring the current segment back to life.
-    ;
-    moveq   #93,D0
-    lea     ($0350,A4),A0
-    move.b  D0,(A0,D3.W)
-    jmp     ResetObjMetastate
+    jmp     c_update_lamnola
 
-    even
 L12A6F_Exit:
     rts
 
@@ -8211,9 +7783,9 @@ UpdatePatraChild:
     ;
     lea     ($00AC,A4),A0
     move.b  (A0,D2.W),D0
-    beq.s  __far_z_04_0090
+    beq.s  __far_z_04_0086
     jmp  PatraChild_State1
-__far_z_04_0090:
+__far_z_04_0086:
     ; State = 0.
     ;
     ; If the current object slot is 2, then go initialize the patra child.
@@ -8456,9 +8028,9 @@ _L_z04_Ganon_ScenePhase0_CheckFadeCycle:
     move.b  ($051C,A4),D0
     andi.b #$0F,D0
     cmpi.b  #$04,D0
-    beq.s  __far_z_04_0091
+    beq.s  __far_z_04_0087
     jmp  Ganon_DrawBodyFrame0
-__far_z_04_0091:
+__far_z_04_0087:
     ; Set Link's timer to $C0 for the next scene phase.
     ;
     move.b  #$C0,D0
@@ -8466,9 +8038,9 @@ __far_z_04_0091:
     ; Set scene phase 1, and go draw Ganon.
     ;
     addq.b  #1,($0445,A4)
-    beq.s  __far_z_04_0092
+    beq.s  __far_z_04_0088
     jmp  Ganon_DrawBodyFrame0
-__far_z_04_0092:
+__far_z_04_0088:
     even
 _L_z04_Ganon_ScenePhase0_CheckTimeToShout:
     ; If timer = 1, then play Boss hit/hurt sound effect.
@@ -8494,9 +8066,9 @@ Ganon_ScenePhase1:
     ; If Link's timer hasn't expired, then go draw Ganon.
     ;
     move.b  ($0028,A4),D0
-    beq.s  __far_z_04_0093
+    beq.s  __far_z_04_0089
     jmp  Ganon_DrawBodyFrame0
-__far_z_04_0093:
+__far_z_04_0089:
     ; Once the timer expires:
     ; 1. unhalt Link
     ; 2. clear the item to lift
@@ -8527,26 +8099,26 @@ Ganon_DrawBodyFrame0:
 Ganon_ScenePhase2:
     lea     ($042C,A4),A0
     move.b  (A0,D2.W),D0
-    beq.s  __far_z_04_0094
+    beq.s  __far_z_04_0090
     jmp  Ganon_Dying
-__far_z_04_0094:
+__far_z_04_0090:
     jsr     Ganon_CheckCollisions
     jsr     PlayBossHitCryIfNeeded
     ; Go handle the brown state specially.
     ;
     lea     ($00AC,A4),A0
     move.b  (A0,D2.W),D0
-    beq.s  __far_z_04_0095
+    beq.s  __far_z_04_0091
     jmp  Ganon_UpdateBrownState
-__far_z_04_0095:
+__far_z_04_0091:
     ; State = 0: Blue
     ;
     ; If timer = 0, then go move around and shoot.
     ;
     move.b  ($28,A4,D2.W),D0
-    bne.s  __far_z_04_0096
+    bne.s  __far_z_04_0092
     jmp  Ganon_MoveAndShoot
-__far_z_04_0096:
+__far_z_04_0092:
     ; If timer > 1, then Ganon is blue and visible. Only draw.
     ; Collisions were checked already.
     ;
@@ -8554,9 +8126,9 @@ __far_z_04_0096:
     ; in anticipation of moving around when timer becomes 0 next frame.
     ;
     cmpi.b  #$01,D0
-    beq.s  __far_z_04_0097
+    beq.s  __far_z_04_0093
     jmp  L_Ganon_DrawBody
-__far_z_04_0097:
+__far_z_04_0093:
 ; Description:
 ; Put Ganon at Y=$A0, and a random X of $30 or $B0.
 ;
@@ -8627,9 +8199,9 @@ _L_z04_Ganon_UpdateBrownState_Draw:
     lea     ($00AC,A4),A0
     move.b  (A0,D2.W),D0
     cmpi.b  #$30,D0
-    bcs.s  __far_z_04_0098
+    bcs.s  __far_z_04_0094
     jmp  L_Ganon_DrawBody
-__far_z_04_0098:
+__far_z_04_0094:
     move.b  ($0015,A4),D0
     lsr.b  #1,D0   ; LSR A
     bcc  _anon_z04_161
@@ -8658,9 +8230,9 @@ _anon_z04_162:
     ; If Ganon phase < $50, then go draw only.
     ;
     cmpi.b  #$50,D0
-    bcc.s  __far_z_04_0099
+    bcc.s  __far_z_04_0095
     jmp  L_Ganon_DrawBody
-__far_z_04_0099:
+__far_z_04_0095:
     ; If > $50, then go handle ashes only.
     ;
     bne  _L_z04_Ganon_Dying_HandleAshes
@@ -8692,9 +8264,9 @@ _L_z04_Ganon_Dying_HandleAshes:
     lea     ($042C,A4),A0
     move.b  (A0,D2.W),D0
     cmpi.b  #$A0,D0
-    bcc.s  __far_z_04_0100
+    bcc.s  __far_z_04_0096
     jmp  Ganon_DrawBurst
-__far_z_04_0100:
+__far_z_04_0096:
     ; If > $A0, then there's nothing left to do, except return.
     ;
     bne  _L_z04_Ganon_Dying_Exit
@@ -9420,9 +8992,9 @@ _anon_z04_167:
     ;
     lea     ($03A8,A4),A0
     move.b  (A0,D2.W),D0
-    bne.s  __far_z_04_0101
+    bne.s  __far_z_04_0097
     jmp  DestroyMonster_Bank4
-__far_z_04_0101:
+__far_z_04_0097:
     ; Draw the item. Fairies are animated separately.
     ;
     lea     ($00AC,A4),A0
@@ -9507,9 +9079,9 @@ _L_z04_UpdateItem_SkipTaking:
     lea     ($00AC,A4),A0
     move.b  (A0,D2.W),D0
     cmpi.b  #$FF,D0
-    bne.s  __far_z_04_0102
+    bne.s  __far_z_04_0098
     jmp  DestroyMonster_Bank4
-__far_z_04_0102:
+__far_z_04_0098:
     subq.b  #1,($000D,A4)
     bne  _L_z04_UpdateItem_LoopItemTaker
     even
@@ -9529,9 +9101,9 @@ _ShootIfWanted:
     ;
     lea     ($0412,A4),A0
     move.b  (A0,D2.W),D0
-    bne.s  __far_z_04_0103
+    bne.s  __far_z_04_0099
     jmp  ReturnDidNotShoot
-__far_z_04_0103:
+__far_z_04_0099:
 ; Params:
 ; [00]: shot object type
 ;
@@ -9547,22 +9119,22 @@ __far_z_04_0103:
     even
 ShootLimited:
     jsr     FindEmptyMonsterSlot
-    bne.s  __far_z_04_0104
+    bne.s  __far_z_04_0100
     jmp  ReturnDidNotShoot
-__far_z_04_0104:
+__far_z_04_0100:
     ; If the object type to shoot is a true shot (projectile),
     ; and we're at the limit of active shots (4), then return C=0.
     ;
     move.b  ($0000,A4),D0
     cmpi.b  #$53,D0
-    bcc.s  __far_z_04_0105
+    bcc.s  __far_z_04_0101
     jmp  Shoot
-__far_z_04_0105:
+__far_z_04_0101:
     move.b  ($034C,A4),D0
     cmpi.b  #$04,D0
-    bcs.s  __far_z_04_0106
+    bcs.s  __far_z_04_0102
     jmp  ReturnDidNotShoot
-__far_z_04_0106:
+__far_z_04_0102:
     ; Else increase the number of active shots.
     ;
     addq.b  #1,($034C,A4)
@@ -9601,9 +9173,9 @@ UpdateCandle_Begin:
     moveq   #0,D3
     move.b  ($00EB,A4),D3
     jsr     IsDarkRoom_Bank4
-    bne.s  __far_z_04_0107
+    bne.s  __far_z_04_0103
     jmp  UpdateCandle_Done
-__far_z_04_0107:
+__far_z_04_0103:
     move.b  #$C0,D0
     move.b  D0,($051C,A4)
     addq.b  #1,($051E,A4)
@@ -9620,17 +9192,17 @@ L_Candle_StopBrightening:
     ;
     moveq   #0,D0
     move.b  D0,($051E,A4)
-    bne.s  __far_z_04_0108
+    bne.s  __far_z_04_0104
     jmp  L_Candle_IncState
-__far_z_04_0108:
+__far_z_04_0104:
     even
 UpdateCandle_Brightening:
     ; Animating a brightening cycle.
     ;
     jsr     AnimateWorldFading
-    bne.s  __far_z_04_0109
+    bne.s  __far_z_04_0105
     jmp  L_Candle_StopBrightening
-__far_z_04_0109:
+__far_z_04_0105:
     rts
 
 ; Params:
@@ -9732,9 +9304,9 @@ ReverseObjDir8:
     lea     ($034F,A4),A0
     move.b  (A0,D2.W),D0
     cmpi.b  #$41,D0
-    bne.s  __far_z_04_0110
+    bne.s  __far_z_04_0106
     jmp  DeferBounce
-__far_z_04_0110:
+__far_z_04_0106:
     ; Apply the new direction.
     ;
     lea     (Directions8).l,A0
@@ -9762,17 +9334,17 @@ L13307_Exit:
     even
 Flyer_Chase:
     move.b  ($28,A4,D2.W),D0
-    beq.s  __far_z_04_0111
+    beq.s  __far_z_04_0107
     jmp  L13307_Exit
-__far_z_04_0111:
+__far_z_04_0107:
     ; Decrease the turn counter.
     ; Once there are no more turns, go to flying state 1.
     ;
     lea     ($042C,A4),A0
     subq.b  #1,(A0,D2.W)
-    beq.s  __far_z_04_0112
+    beq.s  __far_z_04_0108
     jmp  SetDelayAndTurn
-__far_z_04_0112:
+__far_z_04_0108:
     even
 SetFlyingState1:
     jmp     c_set_flying_state_1
@@ -9855,9 +9427,9 @@ _L_z04_TurnTowardsPlayer8_LoopLeft:
     move.b  (A0,D3.W),D0
     move.b  ($0000,A4),D1
     cmp.b   D1,D0
-    bne.s  __far_z_04_0113
+    bne.s  __far_z_04_0109
     jmp  L1336F_Exit
-__far_z_04_0113:
+__far_z_04_0109:
     subq.b  #1,D3
     subq.b  #1,($0001,A4)
     bne  _L_z04_TurnTowardsPlayer8_LoopLeft
@@ -9882,16 +9454,16 @@ LoopRight:
     move.b  (A0,D3.W),D0
     move.b  ($0000,A4),D1
     and.b   D0,D1   ; BIT: set Z/N/V from D1 AND A
-    beq.s  __far_z_04_0114
+    beq.s  __far_z_04_0110
     jmp  TestDir
-__far_z_04_0114:
+__far_z_04_0110:
     even
 NextLoopRight:
     addq.b  #1,D3
     subq.b  #1,($0001,A4)
-    beq.s  __far_z_04_0115
+    beq.s  __far_z_04_0111
     jmp  LoopRight
-__far_z_04_0115:
+__far_z_04_0111:
     ; We didn't find a direction to switch to.
     ; So turn left once; to one turn right of object direction.
     ;
@@ -9921,12 +9493,12 @@ TestDir:
     move.b  ($0000,A4),D1
     or.b  D1,D0
     cmpi.b  #$07,D0
-    bcs.s  __far_z_04_0116
+    bcs.s  __far_z_04_0112
     jmp  NextLoopRight
-__far_z_04_0116:
-    bcc.s  __far_z_04_0117
+__far_z_04_0112:
+    bcc.s  __far_z_04_0113
     jmp  SetDir8ForIndex
-__far_z_04_0117:
+__far_z_04_0113:
 ; Description:
 ; Delay and turn randomly a number of times.
 ; The go to state 1. After each turn, delay $10 frames.
@@ -9937,9 +9509,9 @@ __far_z_04_0117:
     even
 Flyer_Wander:
     move.b  ($28,A4,D2.W),D0
-    beq.s  __far_z_04_0118
+    beq.s  __far_z_04_0114
     jmp  L133AC_Exit
-__far_z_04_0118:
+__far_z_04_0114:
     ; Decrease the turn counter.
     ; Once there are no more turns, go to flying state 1.
     ;
@@ -9989,9 +9561,9 @@ _anon_z04_178:
     lea     (Directions8).l,A0
     move.b  (A0,D3.W),D1
     cmp.b   D1,D0
-    bne.s  __far_z_04_0119
+    bne.s  __far_z_04_0115
     jmp  L133AC_Exit
-__far_z_04_0119:
+__far_z_04_0115:
     subq.b  #1,D3
     bpl  _anon_z04_178
 ; If not found, then use index 0.

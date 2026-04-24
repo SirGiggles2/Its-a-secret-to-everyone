@@ -202,4 +202,8 @@ void z07_handle_shot_blocked(unsigned int slot) {
     corert_handle_shot_blocked(slot);
 }
 
+void z07_update_mode3_unfurl(void) {
+    roommd_update_mode3_unfurl();
+}
+
 /* <<< end auto-wrappers >>> */

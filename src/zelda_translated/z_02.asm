@@ -1191,36 +1191,8 @@ WaterfallWaveSpriteOffsets:
 
     even
 UpdateWaterfallAnimation:
-    move.b  ($041F,A4),D0
-    bne  _L_z02_UpdateWaterfallAnimation_UpdateSprites
-    move.b  #$B6,D0
-    move.b  D0,($0420,A4)
-    move.b  #$C8,D0
-    move.b  D0,($0421,A4)
-    move.b  #$D8,D0
-    move.b  D0,($0422,A4)
-    ; UNKNOWN:
-    ; These don't seem to be used in the demo.
-    ; Maybe the waterfall used to be bigger?
-    ;
-    move.b  #$C0,D0
-    move.b  D0,($0423,A4)
-    move.b  #$D0,D0
-    move.b  D0,($0424,A4)
-    move.b  #$DD,D0
-    move.b  D0,($0425,A4)
-    addq.b  #1,($041F,A4)
-    even
-_L_z02_UpdateWaterfallAnimation_UpdateSprites:
-    moveq   #2,D2
-_anon_z02_2:
-    jsr     UpdateSpritesForWaterfallWave
-    subq.b  #1,D2
-    bpl  _anon_z02_2
-    jsr     UpdateSpritesForWaterfallCrest
-    rts
+    jmp     c_update_waterfall_animation
 
-    even
 UpdateSpritesForWaterfallWave:
     jmp     c_update_sprites_for_waterfall_wave
 

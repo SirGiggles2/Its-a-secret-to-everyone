@@ -7095,6 +7095,9 @@ def _patch_z07(path):
     text = _stub_func(text, 'CheckScreenEdge', 'c_check_screen_edge')
     text = _stub_func(text, 'ClearRam0300UpTo', 'c_clear_ram0300_up_to')
     text = _stub_func(text, 'HandleShotBlocked', 'c_handle_shot_blocked')
+
+    # --- Batch 108: z_07 mode dispatch ---
+    text = _stub_func(text, 'UpdateMode3Unfurl', 'c_update_mode3_unfurl')
     # --- Batch 48 ---
     # MarkRoomVisited ends with IFND Exit / Exit: / ENDC — _stub_func would
     # stop at Exit: (capital), leaving a dangling ENDC. Use regex replace.

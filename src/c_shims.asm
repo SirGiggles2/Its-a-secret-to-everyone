@@ -5609,3 +5609,24 @@ c_draw_ghini_and_check_collisions:
     rts
 
 ;==============================================================================
+; --- Batch 108: z_07 mode dispatch (drained from z_07.asm) ---
+;==============================================================================
+
+    xdef    c_set_mmc1_control
+    xdef    c_update_mode3_unfurl
+
+    xref    SetMMC1Control
+    xref    z07_update_mode3_unfurl
+
+; SetMMC1Control — val on stack (4(SP)), into D0, void.
+c_set_mmc1_control:
+    move.l  4(SP),D0
+    jsr     SetMMC1Control
+    rts
+
+; UpdateMode3Unfurl — no args, void.
+c_update_mode3_unfurl:
+    jsr     z07_update_mode3_unfurl
+    rts
+
+;==============================================================================

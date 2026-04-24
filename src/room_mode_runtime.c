@@ -1,6 +1,7 @@
 #include "room_mode_runtime.h"
 #include "room_load_runtime.h"
 #include "room_runtime.h"
+#include "progress_state.h"
 
 void roommd_inc_submode(void) {
     SUBMODE_VALUE++;
@@ -287,4 +288,15 @@ void roommd_init_mode3_sub1(void) {
         ROOM_ID_ALT = 0xFF;
     }
     roommd_patch_and_cue_level_palettes_transfer();
+}
+
+void roommd_update_mode3_unfurl(void) {
+    c_update_world_curtain_effect();
+    if (CURTAIN_LEFT_COL != 0) return;
+    c_set_mmc1_control(15);
+    if (ROOM_LINK_CELLAR_FLAG != 0) {
+        roommd_go_to_next_mode_reset_grid_offset();
+    } else {
+        roommd_go_to_next_mode_play_level_song();
+    }
 }
