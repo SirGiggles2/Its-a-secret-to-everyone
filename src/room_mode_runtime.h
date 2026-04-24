@@ -79,5 +79,9 @@ extern void c_update_world_curtain_effect(void);
 extern void c_set_mmc1_control(unsigned int val);
 extern void c_turn_off_all_video(void);
 extern void c_update_mode2_load_full(void);
+extern void c_switch_bank(unsigned int bank);
+extern void c_world_fill_hearts(void);
+extern void c_world_change_rupees(void);
+void roommd_update_hearts_and_rupees(void);
 
 #endif

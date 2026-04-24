@@ -5014,7 +5014,7 @@ c_update_triforce_position_marker:
     jmp     UpdateTriforcePositionMarker
 
 c_update_hearts_and_rupees:
-    jmp     UpdateHeartsAndRupees
+    jmp     z07_update_hearts_and_rupees
 
 c_submenu_cue_transfer_row_uw:
     jmp     Submenu_CueTransferRowUW
@@ -5617,10 +5617,13 @@ c_draw_ghini_and_check_collisions:
     xdef    c_set_mmc1_control
     xdef    c_update_mode3_unfurl
     xdef    c_update_mode2_load
+    xdef    c_switch_bank
 
     xref    SetMMC1Control
     xref    z07_update_mode3_unfurl
     xref    z07_update_mode2_load
+    xref    z07_update_hearts_and_rupees
+    xref    SwitchBank
 
 ; SetMMC1Control — val on stack (4(SP)), into D0, void.
 c_set_mmc1_control:
@@ -5636,6 +5639,12 @@ c_update_mode3_unfurl:
 ; UpdateMode2Load — no args, void.
 c_update_mode2_load:
     jsr     z07_update_mode2_load
+    rts
+
+; SwitchBank — val on stack (4(SP)), into D0, void.
+c_switch_bank:
+    move.l  4(SP),D0
+    jsr     SwitchBank
     rts
 
 ;==============================================================================

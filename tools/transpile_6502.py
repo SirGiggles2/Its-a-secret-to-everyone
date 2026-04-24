@@ -7100,6 +7100,32 @@ def _patch_z07(path):
     text = _stub_func(text, 'UpdateMode3Unfurl', 'c_update_mode3_unfurl')
     text = _stub_func(text, 'GoToNextModeFromPlay', 'c_go_to_next_mode_from_play')
     text = _stub_func(text, 'UpdateMode2Load', 'c_update_mode2_load')
+
+    # UpdateHeartsAndRupees: size-preserving stub (6-byte jmp + 22-byte
+    # dc.b $FF padding = 28 bytes, matching original body+padding). The
+    # trailing block of 12 dc.b $FF bytes is 6502-era alignment padding;
+    # removing it shifts downstream __far_z_07_XXXX trampoline distances
+    # beyond the 8-bit .s branch range and vasm errors 2029 on 6+ sites.
+    import re as _re_uhr
+    _uhr_pat = _re_uhr.compile(
+        r'UpdateHeartsAndRupees:\n'
+        r'    moveq   #5,D0\n'
+        r'    jsr     SwitchBank\n'
+        r'    jsr     World_FillHearts\n'
+        r'    jmp     World_ChangeRupees\n\n'
+        r'; Unknown block\n'
+        r'    dc\.b    \$FF, \$FF, \$FF, \$FF, \$FF, \$FF, \$FF, \$FF\n'
+        r'    dc\.b    \$FF, \$FF, \$FF, \$FF\n\n'
+        r'    even\n'
+    )
+    text = _uhr_pat.sub(
+        'UpdateHeartsAndRupees:\n'
+        '    jmp     c_update_hearts_and_rupees\n'
+        '    dc.b    $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF\n'
+        '    dc.b    $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF\n\n'
+        '    even\n',
+        text, count=1
+    )
     # --- Batch 48 ---
     # MarkRoomVisited ends with IFND Exit / Exit: / ENDC — _stub_func would
     # stop at Exit: (capital), leaving a dangling ENDC. Use regex replace.

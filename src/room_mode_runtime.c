@@ -318,3 +318,9 @@ void roommd_update_mode2_load(void) {
     c_update_mode2_load_full();
     roommd_go_to_next_mode();
 }
+
+void roommd_update_hearts_and_rupees(void) {
+    c_switch_bank(5);
+    c_world_fill_hearts();
+    c_world_change_rupees();
+}

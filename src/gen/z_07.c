@@ -214,4 +214,8 @@ void z07_update_mode2_load(void) {
     roommd_update_mode2_load();
 }
 
+void z07_update_hearts_and_rupees(void) {
+    roommd_update_hearts_and_rupees();
+}
+
 /* <<< end auto-wrappers >>> */
