@@ -82,21 +82,6 @@ void roomld_init_link_speed(void) {
 
 /* ---- Plan F: drained from z_03 (CHR pattern-block transfer) ----------- */
 
-extern void c_copy_bank_to_window(unsigned int bank);
-extern unsigned char c_ppu_read_2(void);
-extern void c_ppu_write_6(unsigned int val);
-extern void c_ppu_write_7(unsigned int val);
-extern void c_turn_off_all_video(void);
-
-extern const unsigned char LevelPatternBlockSrcAddrs[];
-extern const unsigned char BossPatternBlockSrcAddrs[];
-extern const unsigned char PatternBlockSrcAddrsUW[];
-extern const unsigned char PatternBlockSrcAddrsOW[];
-extern const unsigned char PatternBlockPpuAddrs[];
-extern const unsigned char PatternBlockPpuAddrsExtra[];
-extern const unsigned char PatternBlockSizesOW[];
-extern const unsigned char PatternBlockSizesUW[];
-
 #define PATTERN_BLOCK_INDEX 0x051D
 #define CUR_LEVEL           0x0010
 
@@ -217,15 +202,6 @@ void roomld_transfer_level_pattern_blocks(void) {
 }
 
 /* ---- Plan F: drained from z_06 (level info / Q2 patches) -------------- */
-
-extern const unsigned long LevelBlockAddrsQ1[];
-extern const unsigned long LevelBlockAddrsQ2[];
-extern const unsigned long LevelInfoAddrs[];
-extern const unsigned long CommonDataBlockAddr_Bank6[];
-extern const unsigned char LevelInfoUWQ2ReplacementAddrs[];
-extern const unsigned char LevelInfoUWQ2ReplacementSizes[];
-extern const unsigned char LevelBlockAttrsBQ2ReplacementOffsets[];
-extern const unsigned char LevelBlockAttrsBQ2ReplacementValues[];
 
 static void roomld_copy_block_rom(const unsigned char *src) {
     for (;;) {

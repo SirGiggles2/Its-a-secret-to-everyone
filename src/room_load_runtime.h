@@ -22,4 +22,29 @@ void roomld_update_mode2_load_full(void);
 }
 #endif
 
+/* --- External data arrays used by room_load_runtime.c --- */
+extern const unsigned char LevelPatternBlockSrcAddrs[];
+extern const unsigned char BossPatternBlockSrcAddrs[];
+extern const unsigned char PatternBlockSrcAddrsUW[];
+extern const unsigned char PatternBlockSrcAddrsOW[];
+extern const unsigned char PatternBlockPpuAddrs[];
+extern const unsigned char PatternBlockPpuAddrsExtra[];
+extern const unsigned char PatternBlockSizesOW[];
+extern const unsigned char PatternBlockSizesUW[];
+extern const unsigned long LevelBlockAddrsQ1[];
+extern const unsigned long LevelBlockAddrsQ2[];
+extern const unsigned long LevelInfoAddrs[];
+extern const unsigned long CommonDataBlockAddr_Bank6[];
+extern const unsigned char LevelInfoUWQ2ReplacementAddrs[];
+extern const unsigned char LevelInfoUWQ2ReplacementSizes[];
+extern const unsigned char LevelBlockAttrsBQ2ReplacementOffsets[];
+extern const unsigned char LevelBlockAttrsBQ2ReplacementValues[];
+
+/* --- ASM shim functions used by room_load_runtime.c --- */
+extern void c_copy_bank_to_window(unsigned int bank);
+extern unsigned char c_ppu_read_2(void);
+extern void c_ppu_write_6(unsigned int val);
+extern void c_ppu_write_7(unsigned int val);
+extern void c_turn_off_all_video(void);
+
 #endif
