@@ -2,12 +2,6 @@
 #include "enemy_state.h"
 #include "object_state.h"
 
-extern void c_call_gohma_handle_weapon_collision(unsigned int monster_slot, unsigned int weapon_slot);
-extern void c_call_begin_shove(unsigned int monster_slot);
-extern void c_call_handle_shot_blocked(unsigned int weapon_slot);
-extern void z01_play_parry_tune(void);
-extern void z01_play_parry_sound_for_damage_type(void);
-extern void z01_deal_damage(unsigned int slot);
 static const unsigned char colrt_sword_damage_points[3] = {0x10, 0x20, 0x40};
 
 unsigned char colrt_do_objects_collide_with_thresholds(void) {
@@ -240,9 +234,6 @@ void colrt_check_monster_bomb_or_fire_collision(unsigned int monster_slot, unsig
 }
 
 /* ---- Plan C: drained from z_07 (collidable tile cluster) -------------- */
-
-extern const unsigned char PlayAreaColumnAddrs[];
-extern const unsigned char WalkableTiles[];
 
 unsigned char colrt_get_collidable_tile(unsigned int hotspot_offset, unsigned int slot) {
     static const unsigned char walkable_count = 9;
