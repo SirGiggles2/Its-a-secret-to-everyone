@@ -4,13 +4,13 @@
 #define COL_STRIDE      0x16u
 
 void roomxf_copy_column_to_tilebuf(void) {
-    RAM(0x0000) = 0x1A;
-    RAM(0x0001) = 0x65;
+    SAVEFILE_PTR_LO = 0x1A;
+    SAVEFILE_PTR_HI = 0x65;
 
-    unsigned char col = RAM(0x00E8) - 1;
-    unsigned char buf = RAM(0x0301);
+    unsigned char col = CUR_ROOM_FLAGS_PTR - 1;
+    unsigned char buf = TRANSFER_BUF_POS;
 
-    RAM(0x0302 + buf) = 33;
+    TRANSFER_BUF_BYTE(buf) = 33;
     RAM(0x0303 + buf) = col;
 
     unsigned short src = PLAY_AREA_BASE + (unsigned short)col * COL_STRIDE;
@@ -25,23 +25,23 @@ void roomxf_copy_column_to_tilebuf(void) {
     }
     src += 22;
     dst += 3;
-    RAM(0x0301) = dst;
+    TRANSFER_BUF_POS = dst;
 
-    RAM(0x0000) = src & 0xFF;
-    RAM(0x0001) = (src >> 8) & 0xFF;
+    SAVEFILE_PTR_LO = src & 0xFF;
+    SAVEFILE_PTR_HI = (src >> 8) & 0xFF;
 }
 
 void roomxf_copy_row_to_tilebuf(void) {
-    unsigned char row = RAM(0x00E9);
+    unsigned char row = ROOM_ROW_INDEX;
 
     unsigned short ptr = 0x6530u + row;
-    RAM(0x0000) = ptr & 0xFF;
-    RAM(0x0001) = (ptr >> 8) & 0xFF;
+    SAVEFILE_PTR_LO = ptr & 0xFF;
+    SAVEFILE_PTR_HI = (ptr >> 8) & 0xFF;
 
     unsigned short vram = 0x20E0u;
     for (signed char r = (signed char)row; r >= 0; r--)
         vram += 0x20;
-    RAM(0x0302) = (vram >> 8) & 0xFF;
+    TRANSFER_BUF_BYTE(0) = (vram >> 8) & 0xFF;
     RAM(0x0303) = vram & 0xFF;
 
     RAM(0x0304) = 32;
@@ -53,10 +53,10 @@ void roomxf_copy_row_to_tilebuf(void) {
         s += COL_STRIDE;
     }
 
-    RAM(0x0301) = 35;
+    TRANSFER_BUF_POS = 35;
 
-    RAM(0x0000) = s & 0xFF;
-    RAM(0x0001) = (s >> 8) & 0xFF;
+    SAVEFILE_PTR_LO = s & 0xFF;
+    SAVEFILE_PTR_HI = (s >> 8) & 0xFF;
 }
 
 unsigned int roomxf_cycle9_in_direction(unsigned int d3_in) {
