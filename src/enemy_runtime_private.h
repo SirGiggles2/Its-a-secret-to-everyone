@@ -87,4 +87,16 @@ extern unsigned char c_find_empty_monster_slot(void);
 extern void c_anim_advance_and_fetch(unsigned int val, unsigned int slot);
 extern unsigned int c_shoot(unsigned int type);
 
+/* --- ASM shim helpers used by enemy_common_runtime.c (Zol/Gel family) --- */
+extern unsigned char z01_bound_by_room(unsigned int slot);
+extern unsigned char z07_get_colliding_tile_moving(unsigned int slot);
+extern void          c_move_object(unsigned short slot);
+extern void          c_wanderer_target_player(unsigned int slot);
+extern unsigned int  c_shoot_limited(unsigned int slot);
+
+/* --- External data / shim functions used by enemy_wanderer_runtime.c --- */
+extern const unsigned char ReverseDirections[];
+extern unsigned int c_shoot_if_wanted(unsigned int type, unsigned int slot);
+extern void c_obj_shove(unsigned int slot);
+
 #endif

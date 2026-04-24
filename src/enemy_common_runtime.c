@@ -20,13 +20,6 @@ void enrt_gohma_play_parry_tune(void) {
 
 /* ---- Plan C: drained from z_04 (Zol + Gel family) --------------------- */
 
-/* IMPORT shims into still-asm helpers. */
-extern unsigned char z01_bound_by_room(unsigned int slot);
-extern unsigned char z07_get_colliding_tile_moving(unsigned int slot);
-extern void          c_move_object(unsigned short slot);
-extern void          c_wanderer_target_player(unsigned int slot);
-extern unsigned int  c_shoot_limited(unsigned int slot);
-
 /* RoomObjCount — bumped when Zol splits so the kill-bookkeeping stays
  * balanced after the parent destroys itself but spawns two children.
  */
