@@ -1879,22 +1879,7 @@ LevelMasks:
 
     even
 MarkRoomVisited:
-    jsr     GetRoomFlags
-    ori.b #$20,D0
-    move.b  ($00,A4),D1   ; ptr lo
-    move.b  ($01,A4),D4  ; ptr hi
-    andi.w  #$00FF,D1         ; zero-extend lo byte
-    lsl.w   #8,D4
-    or.w    D1,D4
-    ext.l   D4
-    add.l   #NES_RAM,D4
-    movea.l D4,A0
-    move.b  D0,(A0,D3.W)     ; STA ($nn),Y
-    even
-    IFND Exit
-Exit:
-    ENDC
-    rts
+    jmp     c_mark_room_visited
 
 ; Returns:
 ; A: flags for the room in level block world flags
