@@ -1,4 +1,5 @@
 #include "cave_runtime.h"
+#include "combat_state.h"
 
 extern unsigned char z07_anim_fetch_obj_pos(unsigned int slot);
 extern void c_draw_object_mirrored(unsigned int slot);
@@ -295,7 +296,7 @@ void cavert_update_talk_shop_or_door_charge(void) {
         }
         if (CAVE_FLAGS & 0x40) {
             unsigned char min_hearts = (CAVE_ROOM_TYPE == 0x6C) ? 64 : 0xB0;
-            if (min_hearts < RAM(0x066F))
+            if (min_hearts < LINK_HEARTS)
                 return;
         }
         progrt_set_room_flag_uw_item_state();
@@ -354,7 +355,7 @@ void cavert_update_cave_person(unsigned int slot) {
     if (!(state == 4 && (RAM(0x0015) & 1))) {
         cavert_draw_cave_person(slot);
         if (CAVE_ROOM_TYPE == 0x74 && CAVE_ROOM_SCRIPT_STATE != 2) {
-            if (RAM(0x0656) == 0x0F && (RAM(0x00F8) & 0x40)) {
+            if (RAM(0x0656) == 0x0F && (CAVE_LINK_INPUT_FLAGS & 0x40)) {
                 RAM(0x0602) = 4;
                 CAVE_ROOM_SCRIPT_STATE++;
                 RAM(0x0656) = 7;
@@ -366,7 +367,7 @@ void cavert_update_cave_person(unsigned int slot) {
         }
         cavert_draw_cave_items();
     }
-    switch (RAM(0x00AD)) {
+    switch (CAVE_PERSON_STATE) {
         case 0: cavert_update_transfer_prices(); break;
         case 1: cavert_update_person_state_textbox(); break;
         case 2: cavert_update_talk_shop_or_door_charge(); break;
@@ -384,19 +385,19 @@ void cavert_try_take_item(unsigned int slot) {
         return;
     }
     {
-        unsigned char dy = (unsigned char)(RAM(0x0084) + 3 - RAM(0x0084 + slot));
+        unsigned char dy = (unsigned char)(RAM(0x0084) + 3 - OBJ_Y(slot));
         if (z01_abs(dy) >= 9) {
             return;
         }
     }
     {
-        unsigned char dx = (unsigned char)(RAM(0x0070) - RAM(0x0070 + slot));
+        unsigned char dx = (unsigned char)(RAM(0x0070) - OBJ_X(slot));
         if (z01_abs(dx) >= 9) {
             return;
         }
     }
-    RAM(0x00AC + slot) = 0xFF;
-    RAM(0x0084 + slot) = 0xFF;
+    OBJ_STATE(slot) = 0xFF;
+    OBJ_Y(slot) = 0xFF;
     if (slot == CAVE_WARE_DRAW_SLOT) {
         progrt_set_room_flag_uw_item_state();
     }
@@ -405,15 +406,15 @@ void cavert_try_take_item(unsigned int slot) {
 
 void cavert_try_take_room_item(void) {
     unsigned int slot = CAVE_WARE_DRAW_SLOT;
-    if ((RAM(0x00AC) & 0xC0) == 0x40) {
+    if ((CAVE_LINK_ACTION_TIMER & 0xC0) == 0x40) {
         return;
     }
     if (progrt_get_room_flag_uw_item_state() != 0) {
         return;
     }
-    if (RAM(0x00AC + slot) & 0x80) {
+    if (OBJ_STATE(slot) & 0x80) {
         return;
     }
-    CAVE_TMP4 = RAM(0x0098 + slot);
+    CAVE_TMP4 = OBJ_DIR(slot);
     cavert_try_take_item(slot);
 }
