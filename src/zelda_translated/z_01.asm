@@ -1557,12 +1557,8 @@ CycleCurSpriteIndex:
     jmp     c_cycle_cur_sprite_index
 
 CycleSpriteIndexInA:
-    andi    #$EE,CCR  ; CLC: clear C+X
-    move.b  #$01,D1
-    addx.b  D1,D0   ; ADC #$01 (X flag = 6502 C)
-    cmpi.b  #$28,D0
-    bne  _anon_z01_39
-    even
+    jmp     c_cycle_sprite_index_in_a
+
 ResetCurSpriteIndex:
     jmp     c_reset_cur_sprite_index
 
