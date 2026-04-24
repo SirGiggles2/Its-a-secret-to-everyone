@@ -1,0 +1,9 @@
+{
+  "bank": "z_04",
+  "entries": [
+    {"name": "UpdateBlock", "target": "enrt_update_block", "sig": "void (unsigned int slot)", "kind": "jmp"},
+    {"name": "DrawBlock", "target": "enrt_draw_block", "sig": "void (unsigned int slot)", "kind": "jmp"},
+    {"name": "UpdateMonsterShot", "target": "enrt_update_monster_shot", "sig": "void (unsigned int slot)", "kind": "jmp"},
+    {"name": "BlockPushDirections", "kind": "delete"}
+  ]
+}
