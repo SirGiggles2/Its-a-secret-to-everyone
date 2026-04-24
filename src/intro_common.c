@@ -5,6 +5,8 @@
 #include "nes_abi.h"  /* RAM(addr) macro */
 
 #define VDP_CTRL_WORD (*(volatile unsigned short *)0x00C00004)
+#define VDP_DATA_WORD (*(volatile unsigned short *)0x00C00000)
+#define VDP_CTRL_LONG (*(volatile unsigned long  *)0x00C00004)
 
 unsigned char g_intro_takeover = 0;
 
@@ -48,7 +50,22 @@ void vdp_set_mode_v64(void) {
     /* VDP Reg 16 = $9011 (H64 x V64). Matches gameplay default. */
     VDP_CTRL_WORD = 0x9011;
 }
-void vdp_dma_to_vram(unsigned long src, unsigned short dst, unsigned short len) { (void)src; (void)dst; (void)len; }
+void vdp_dma_to_vram(unsigned long src, unsigned short dst, unsigned short len) {
+    /* Writes `len` bytes from CPU-addressable `src` to VRAM[dst..dst+len].
+     * Register sequence per Genesis VDP DMA manual (matches genesis_shell.asm). */
+    unsigned short len_words = (unsigned short)(len >> 1);
+    unsigned long src_word = (src >> 1) & 0x7FFFFFUL;
+
+    VDP_CTRL_WORD = (unsigned short)(0x9300 | (len_words & 0xFF));
+    VDP_CTRL_WORD = (unsigned short)(0x9400 | ((len_words >> 8) & 0xFF));
+    VDP_CTRL_WORD = (unsigned short)(0x9500 | (src_word & 0xFF));
+    VDP_CTRL_WORD = (unsigned short)(0x9600 | ((src_word >> 8) & 0xFF));
+    VDP_CTRL_WORD = (unsigned short)(0x9700 | ((src_word >> 16) & 0x7F));
+
+    unsigned long cmd = 0x40000080UL | ((unsigned long)(dst & 0x3FFF) << 16)
+                                    | ((dst >> 14) & 0x0003);
+    VDP_CTRL_LONG = cmd;
+}
 void vdp_write_nametable_row(unsigned short plane_base, unsigned short row,
                              const unsigned short *cells) {
     (void)plane_base; (void)row; (void)cells;
