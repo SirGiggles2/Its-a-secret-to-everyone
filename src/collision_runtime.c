@@ -1,4 +1,6 @@
 #include "collision_runtime.h"
+#include "enemy_state.h"
+#include "object_state.h"
 
 extern void c_call_gohma_handle_weapon_collision(unsigned int monster_slot, unsigned int weapon_slot);
 extern void c_call_begin_shove(unsigned int monster_slot);
@@ -11,7 +13,7 @@ static const unsigned char colrt_sword_damage_points[3] = {0x10, 0x20, 0x40};
 unsigned char colrt_do_objects_collide_with_thresholds(void) {
     COMBAT_COLLIDED = 0;
     {
-        unsigned char dx = (unsigned char)(RAM(0x0002) - COMBAT_HITBOX_X);
+        unsigned char dx = (unsigned char)(ENEMY_GLEEOK_NECK_Y_PTR_LO - COMBAT_HITBOX_X);
         unsigned char abs_dx = (dx & 0x80) ? (unsigned char)((~dx + 1) & 0xFF) : dx;
         COMBAT_ABS_DX = abs_dx;
         if (abs_dx >= COMBAT_THRESHOLD_X) {
@@ -19,7 +21,7 @@ unsigned char colrt_do_objects_collide_with_thresholds(void) {
         }
     }
     {
-        unsigned char dy = (unsigned char)(RAM(0x0003) - COMBAT_HITBOX_Y);
+        unsigned char dy = (unsigned char)(ENEMY_GLEEOK_NECK_Y_PTR_HI - COMBAT_HITBOX_Y);
         unsigned char abs_dy = (dy & 0x80) ? (unsigned char)((~dy + 1) & 0xFF) : dy;
         COMBAT_ABS_DY = abs_dy;
         if (abs_dy >= COMBAT_THRESHOLD_Y) {
@@ -244,10 +246,10 @@ extern const unsigned char WalkableTiles[];
 
 unsigned char colrt_get_collidable_tile(unsigned int hotspot_offset, unsigned int slot) {
     static const unsigned char walkable_count = 9;
-    RAM(0x0004) = (unsigned char)hotspot_offset;
-    unsigned char y_pos = RAM(0x0084 + slot);
+    COMBAT_HITBOX_X = (unsigned char)hotspot_offset;
+    unsigned char y_pos = OBJ_TILE_Y(slot);
     unsigned char adjusted_y = (unsigned char)(y_pos + 0x0B);
-    unsigned char dir = RAM(0x000F);
+    unsigned char dir = COMBAT_PART_INDEX;
 
     unsigned char tile_y = adjusted_y;
     unsigned char tile_x;
@@ -259,9 +261,9 @@ unsigned char colrt_get_collidable_tile(unsigned int hotspot_offset, unsigned in
         } else {
             tile_y = (unsigned char)(adjusted_y + (unsigned char)hotspot_offset);
         }
-        tile_x = RAM(0x0070 + slot);
+        tile_x = OBJ_TILE_X(slot);
     } else {
-        tile_x = RAM(0x0070 + slot);
+        tile_x = OBJ_TILE_X(slot);
         if (dir & 0x01) {
             if (tile_x < 0xF0)
                 tile_x = (unsigned char)(tile_x + (unsigned char)hotspot_offset);
@@ -278,7 +280,7 @@ unsigned char colrt_get_collidable_tile(unsigned int hotspot_offset, unsigned in
     unsigned char row_idx = (unsigned char)((tile_y - 0x40) >> 3);
 
     unsigned char tile = nes_ram[col_addr + row_idx];
-    RAM(0x049E + slot) = tile;
+    ENEMY_COLLIDED_TILE(slot) = tile;
 
     if (dir & 0x0C) {
         unsigned char next_row = (unsigned char)(row_idx + 0x16);
@@ -287,34 +289,34 @@ unsigned char colrt_get_collidable_tile(unsigned int hotspot_offset, unsigned in
             RAM(0x049E + slot) = next_tile;
     }
 
-    tile = RAM(0x049E + slot);
+    tile = ENEMY_COLLIDED_TILE(slot);
 
-    if (RAM(0x0010) == 0) {
-        tile = RAM(0x049E + slot);
+    if (ENEMY_DARK_ROOM_FLAG == 0) {
+        tile = ENEMY_COLLIDED_TILE(slot);
         for (signed char i = (signed char)(walkable_count - 1); i >= 0; i--) {
             if (tile == WalkableTiles[i]) {
                 tile = 0x26;
                 break;
             }
         }
-        RAM(0x049E + slot) = tile;
+        ENEMY_COLLIDED_TILE(slot) = tile;
 
         if (slot == 0) {
-            if (RAM(0x00EB) == 0x1F) {
+            if (ENEMY_CANDLE_ROOM_ID == 0x1F) {
                 if (dir & 0x0C) {
-                    if (RAM(0x0070) == 0x80 && RAM(0x0084) < 0x56) {
-                        RAM(0x049E) = 0x26;
+                    if (ENEMY_PLAYER_OBJ_X == 0x80 && ENEMY_PLAYER_OBJ_Y < 0x56) {
+                        ENEMY_COLLIDED_TILE(0) = 0x26;
                     }
                 }
             }
         }
     }
 
-    return RAM(0x049E + slot);
+    return ENEMY_COLLIDED_TILE(slot);
 }
 
 unsigned char colrt_get_collidable_tile_still(unsigned int slot) {
-    RAM(0x000F) = 0;
+    COMBAT_PART_INDEX = 0;
     return colrt_get_collidable_tile(0, slot);
 }
 
@@ -325,7 +327,7 @@ unsigned char colrt_get_colliding_tile_moving(unsigned int slot) {
     else
         hotspot = 0xF0;
 
-    unsigned char dir = RAM(0x000F);
+    unsigned char dir = COMBAT_PART_INDEX;
     if (dir & 0x05) {
         if (dir & 0x04)
             hotspot = 8;
