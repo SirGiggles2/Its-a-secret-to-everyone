@@ -190,4 +190,8 @@ void z07_animate_object_walking(unsigned int slot) {
     sprrt_animate_object_walking(slot);
 }
 
+void z07_check_screen_edge(void) {
+    roomrt_check_screen_edge();
+}
+
 /* <<< end auto-wrappers >>> */

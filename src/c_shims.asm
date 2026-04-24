@@ -5363,3 +5363,14 @@ c_update_tektite_or_boulder:
     jsr     z04_update_tektite_or_boulder
     addq.l  #4,SP
     rts
+
+;==============================================================================
+; --- Batch 98: z_07 room edge helper ---
+;==============================================================================
+
+    xdef    c_check_screen_edge
+    xref    z07_check_screen_edge
+
+c_check_screen_edge:
+    jsr     z07_check_screen_edge
+    rts

@@ -45,6 +45,7 @@
     {"old": "z07_init_grumble", "new": "uwrt_init_grumble_full", "sig": "void (unsigned int slot)"},
     {"old": "z07_init_rupee_stash", "new": "uwrt_init_rupee_stash_full", "sig": "void (unsigned int slot)"},
     {"old": "z07_init_mode3_sub1", "new": "roommd_init_mode3_sub1", "sig": "void (void)"},
-    {"old": "z07_animate_object_walking", "new": "sprrt_animate_object_walking", "sig": "void (unsigned int slot)"}
+    {"old": "z07_animate_object_walking", "new": "sprrt_animate_object_walking", "sig": "void (unsigned int slot)"},
+    {"old": "z07_check_screen_edge", "new": "roomrt_check_screen_edge", "sig": "void (void)"}
   ]
 }

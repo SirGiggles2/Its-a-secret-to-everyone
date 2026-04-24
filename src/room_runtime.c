@@ -1,10 +1,15 @@
 #include "room_runtime.h"
+#include "core_runtime.h"
 
 #define NES_SRAM_BASE 0x6000u
 
 static const unsigned char roomrt_level_masks[] = {
     0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80
 };
+static const unsigned char roomrt_reverse_directions[] = { 0x08, 0x04, 0x02, 0x01 };
+static const unsigned char roomrt_player_screen_edge_bounds[] = { 0x3D, 0xDD, 0x00, 0xF0 };
+
+extern void c_go_to_next_mode_from_play(void);
 
 unsigned char roomrt_get_room_flags(void) {
     unsigned char ptr_lo = nes_ram[NES_SRAM_BASE + 0x0BAF];
@@ -291,4 +296,27 @@ void roomrt_mark_room_visited(void) {
     unsigned short ptr = ((unsigned short)SAVEFILE_PTR_HI << 8) | SAVEFILE_PTR_LO;
     flags |= 0x20;
     nes_ram[ptr + CUR_ROOM_ID] = flags;
+}
+
+void roomrt_check_screen_edge(void) {
+    unsigned int dir_info;
+    unsigned char dir_idx;
+    unsigned char single_dir;
+    unsigned char coord;
+
+    if (ROOM_INPUT_DIR == 0)
+        return;
+
+    dir_info = corert_get_opposite_dir(ROOM_INPUT_DIR);
+    dir_idx = (unsigned char)(dir_info >> 8);
+    single_dir = roomrt_reverse_directions[dir_idx];
+    coord = LINK_Y;
+    if ((single_dir & 0x0C) == 0)
+        coord = LINK_X;
+
+    if (coord != roomrt_player_screen_edge_bounds[dir_idx])
+        return;
+
+    LINK_DIR = single_dir;
+    c_go_to_next_mode_from_play();
 }

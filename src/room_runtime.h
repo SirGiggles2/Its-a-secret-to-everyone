@@ -43,6 +43,7 @@ void roomrt_touch_door_bombable(void);
 void roomrt_block_until_time(void);
 unsigned int roomrt_touch_door_false(void);
 void roomrt_touch_door_shutter(void);
+void roomrt_check_screen_edge(void);
 
 #ifdef __cplusplus
 }
