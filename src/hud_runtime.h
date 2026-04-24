@@ -18,4 +18,9 @@ void hudrt_world_change_rupees(void);
 }
 #endif
 
+/* --- External data / shim functions used by hud_runtime.c --- */
+extern void z01_format_decimal_byte(unsigned char val);
+extern void c_format_char_doublet(unsigned char ch);
+extern const unsigned char StatusBarTransferBufTemplate[];
+
 #endif

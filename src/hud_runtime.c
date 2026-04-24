@@ -2,10 +2,6 @@
 #include "room_state.h"
 #include "cave_state.h"
 
-extern void z01_format_decimal_byte(unsigned char val);
-extern void c_format_char_doublet(unsigned char ch);
-extern const unsigned char StatusBarTransferBufTemplate[];
-
 void hudrt_format_hearts_in_text_buf(unsigned char start_off) {
     unsigned char hearts;
     unsigned char full;
