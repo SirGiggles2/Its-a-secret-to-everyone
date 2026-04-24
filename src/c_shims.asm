@@ -247,6 +247,7 @@
     xdef    c_person_flag_item_taken_and_advance_state
     xdef    c_check_person_blocking
     xdef    c_init_demo_subphase_play_title_song
+    xdef    c_init_demo_subphase_transfer_title_palette
     xdef    c_init_mode13_sub4
     xdef    c_flyer_keese_decide_state
     xdef    c_flyer_peahat_decide_state
@@ -718,6 +719,7 @@
     xref    z01_person_flag_item_taken_and_advance_state
     xref    z01_check_person_blocking
     xref    z02_init_demo_subphase_play_title_song
+    xref    z02_init_demo_subphase_transfer_title_palette
     xref    z02_init_mode13_sub4
     xref    z04_flyer_keese_decide_state
     xref    z04_flyer_peahat_decide_state
@@ -2814,6 +2816,10 @@ c_check_person_blocking:
 ; InitDemoSubphasePlayTitleSong — no args, void return.
 c_init_demo_subphase_play_title_song:
     jmp     z02_init_demo_subphase_play_title_song
+
+; InitDemoSubphaseTransferTitlePalette — no args, void return.
+c_init_demo_subphase_transfer_title_palette:
+    jmp     z02_init_demo_subphase_transfer_title_palette
 
 ; InitMode13_Sub4 — no args, void return.
 c_init_mode13_sub4:

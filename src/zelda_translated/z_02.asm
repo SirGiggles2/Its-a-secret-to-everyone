@@ -636,42 +636,8 @@ TitlePaletteTransferRecord:
 
     even
 InitDemoSubphaseTransferTitlePalette:
-    moveq   #35,D2
-    move.b  D2,($0300,A4)
-    move.b  D2,($0301,A4)
-    even
-_L_z02_InitDemoSubphaseTransferTitlePalette_CopyTitlePalette:
-    lea     (TitlePaletteTransferRecord).l,A0
-    move.b  (A0,D2.W),D0
-    lea     ($0302,A4),A0
-    move.b  D0,(A0,D2.W)
-    subq.b  #1,D2
-    bpl  _L_z02_InitDemoSubphaseTransferTitlePalette_CopyTitlePalette
-    moveq   #10,D2
-    moveq   #0,D0
-    move.b  D0,($042E,A4)
-    move.b  D0,($042F,A4)
-    even
-_L_z02_InitDemoSubphaseTransferTitlePalette_ClearVars:
-    lea     ($0412,A4),A0
-    move.b  D0,(A0,D2.W)
-    lea     ($041F,A4),A0
-    move.b  D0,(A0,D2.W)
-    lea     ($0437,A4),A0
-    move.b  D0,(A0,D2.W)
-    subq.b  #1,D2
-    bpl  _L_z02_InitDemoSubphaseTransferTitlePalette_ClearVars
-    moveq   #10,D2
-    even
-_L_z02_InitDemoSubphaseTransferTitlePalette_DisableObjects:
-    move.b  #$FF,D0
-    lea     ($00AC,A4),A0
-    move.b  D0,(A0,D2.W)
-    subq.b  #1,D2
-    bne  _L_z02_InitDemoSubphaseTransferTitlePalette_DisableObjects
-    jmp     IncSubphase
+    jmp     c_init_demo_subphase_transfer_title_palette
 
-    even
 InitDemoSubphasePlayTitleSong:
     jmp     c_init_demo_subphase_play_title_song
 

@@ -16,6 +16,7 @@ void frontdemo_inc_subphase(void);
 void frontdemo_animate_p1_sub3(void);
 void frontdemo_animate_p1_end(void);
 void frontdemo_init_demo_subphase_play_title_song(void);
+void frontdemo_init_demo_subphase_transfer_title_palette(void);
 void frontdemo_init_mode13_sub3(void);
 void frontdemo_init_mode13_sub4(void);
 

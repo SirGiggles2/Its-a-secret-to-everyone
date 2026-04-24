@@ -96,6 +96,11 @@
       "sig": "void (void)"
     },
     {
+      "old": "z02_init_demo_subphase_transfer_title_palette",
+      "new": "frontdemo_init_demo_subphase_transfer_title_palette",
+      "sig": "void (void)"
+    },
+    {
       "old": "z02_init_mode13_sub4",
       "new": "frontdemo_init_mode13_sub4",
       "sig": "void (void)"
