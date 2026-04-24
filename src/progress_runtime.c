@@ -4,13 +4,6 @@
 
 #define NES_SRAM_BASE 0x6000u
 
-extern const unsigned char SaveFileAAddressSets[];
-extern const unsigned char LevelMasks[];
-extern const unsigned char PaletteRow7TransferRecord[];
-extern const unsigned char GanonColorTriples[];
-extern void z05_copy_column_to_tilebuf(void);
-extern unsigned char z07_get_room_flags(void);
-
 static void progrt_replace_palette_row_common(unsigned char color_index) {
     unsigned char len = TRANSFER_BUF_POS;
     unsigned char i;

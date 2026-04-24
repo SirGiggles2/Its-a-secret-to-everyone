@@ -26,4 +26,14 @@ unsigned char progrt_get_room_flag_uw_item_state(void);
 }
 #endif
 
+/* --- External data arrays used by progress_runtime.c --- */
+extern const unsigned char SaveFileAAddressSets[];
+extern const unsigned char LevelMasks[];
+extern const unsigned char PaletteRow7TransferRecord[];
+extern const unsigned char GanonColorTriples[];
+
+/* --- ASM shim / bank-forwarder functions used by progress_runtime.c --- */
+extern void z05_copy_column_to_tilebuf(void);
+extern unsigned char z07_get_room_flags(void);
+
 #endif
