@@ -143,6 +143,10 @@ void frontutil_add_a_to_cfce(unsigned int val) {
  * ============================================================================ */
 
 void frontdemo_init_demo_phase_1(void) {
+    if (g_intro_takeover || intro_should_take_over()) {
+        intro_story_tick();
+        return;
+    }
     /* Phase-1 subphase dispatch (jump table replaced by switch). */
     switch (FRONTEND_DEMO_SUBPHASE) {
         case 0: c_import_init_demo_subphase_clear_artifacts(); break;

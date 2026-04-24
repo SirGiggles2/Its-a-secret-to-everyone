@@ -2,6 +2,7 @@
 #define FRONTEND_RUNTIME_H
 
 #include "frontend_state.h"
+#include "intro_common.h"
 
 #ifdef __cplusplus
 extern "C" {
