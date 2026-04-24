@@ -2,6 +2,9 @@
 #include "room_state.h"
 #include "world_state.h"
 #include "item_state.h"
+#include "cave_state.h"
+#include "save_state.h"
+#include "enemy_state.h"
 
 extern void c_import_demo_animate_objects(void);
 extern void z07_hide_all_sprites(void);
@@ -75,7 +78,7 @@ void frontdemo_init_demo_subphase_play_title_song(void) {
 }
 
 void frontdemo_init_mode13_sub3(void) {
-    if (RAM(0x0029) != 0)
+    if (CAVE_DELAY_TIMER != 0)
         return;
     z01_silence_all_sound();
     SUBMODE_VALUE++;
@@ -85,7 +88,7 @@ void frontdemo_init_mode13_sub4(void) {
     FRONTEND_CREDITS_TILE_OFFSET = 8;
     z01_begin_update_mode();
     ROOM_PUSH_TIMER = 0;
-    RAM(0x0413) = 0;
+    CAVE_FLAGS = 0;
     z07_hide_all_sprites();
 }
 
@@ -168,7 +171,7 @@ extern void c_import_format_file_a(void);
 
 void frontdemo_init_demo_phase_1(void) {
     /* Phase-1 subphase dispatch (jump table replaced by switch). */
-    switch (RAM(0x042D)) {
+    switch (FRONTEND_DEMO_SUBPHASE) {
         case 0: c_import_init_demo_subphase_clear_artifacts(); break;
         case 1: c_import_init_demo_subphase_transfer_story_palette(); break;
         case 2: c_import_init_demo_subphase_transfer_story_tiles(); break;
@@ -183,7 +186,7 @@ void frontdemo_init_demo_run_tasks(void) {
         return;
     }
     /* Phase-0 subphase dispatch. */
-    switch (RAM(0x042D)) {
+    switch (FRONTEND_DEMO_SUBPHASE) {
         case 0: c_import_init_demo_subphase_clear_artifacts(); break;
         case 1: c_import_init_demo_subphase_transfer_title_palette(); break;
         case 2: c_import_init_demo_subphase_play_title_song(); break;
@@ -193,7 +196,7 @@ void frontdemo_init_demo_run_tasks(void) {
 
 void frontdemo_update_mode0_demo_sub0(void) {
     /* Wait until controller bit 4 (Start) is held, then arm next phase. */
-    unsigned char btn = RAM(0x00F8);
+    unsigned char btn = CAVE_LINK_INPUT_FLAGS;
     if (!(btn & 0x10)) return;
 
     /* PATCH P11: hold VRamForceBlankGate. */
@@ -202,13 +205,13 @@ void frontdemo_update_mode0_demo_sub0(void) {
     RAM(0x042B) = 1;
 
     RAM(0x00F6) = 0x10;          /* D0 was AND #$10 → BNE taken means bit4 set */
-    RAM(0x0600) = 0;             /* clear primary SFX */
+    ITEM_SFX_SECONDARY = 0;      /* clear primary SFX */
     z01_silence_all_sound();
     RAM(0x0528) = 90;            /* delay timer */
-    RAM(0x0013) += 1;            /* advance submode */
+    SUBMODE_VALUE += 1;          /* advance submode */
     c_turn_off_all_video();
     c_hide_all_sprites();
-    RAM(0x0014) = 18;            /* room transfer buf select */
+    ROOM_TRANSFER_BUF_SELECT = 18; /* room transfer buf select */
 }
 
 /* UpdateMode0Demo_Sub2 — copy save-file A data into save-slot info, format
@@ -218,7 +221,7 @@ void frontdemo_update_mode0_demo_sub2(void) {
     unsigned int base;
 
     c_turn_off_all_video();
-    RAM(0x0016) = 0;
+    SAVE_SLOT_INDEX = 0;
     z01_fetch_file_a_address_set();
 
     /* Loop over slots 2..0, formatting any that aren't active. */
@@ -233,10 +236,10 @@ void frontdemo_update_mode0_demo_sub2(void) {
 
         if (val == 0) {
             unsigned char saved_d3 = d3;
-            RAM(0x0016) = d3;
+            SAVE_SLOT_INDEX = d3;
             z01_fetch_file_a_address_set();
             c_import_format_file_a();
-            RAM(0x0016) = 0;
+            SAVE_SLOT_INDEX = 0;
             /* Refetch slot 0 set so $06/$07 (and other ptrs) are restored. */
             z01_fetch_file_a_address_set();
             d3 = saved_d3;
@@ -244,11 +247,11 @@ void frontdemo_update_mode0_demo_sub2(void) {
 
         /* ContinueCount via ptr in $0A/$0B → store at $0630+d3. */
         base = ((unsigned int)RAM(0x0B) << 8) | RAM(0x0A);
-        nes_ram[0x0630 + d3] = nes_ram[base + d3];
+        CONTINUE_COUNT(d3) = nes_ram[base + d3];
 
         /* DeathCount via ptr in $0C/$0D → store at $062D+d3. */
         base = ((unsigned int)RAM(0x0D) << 8) | RAM(0x0C);
-        nes_ram[0x062D + d3] = nes_ram[base + d3];
+        SAVE_SLOT_QUEST(d3) = nes_ram[base + d3];
 
         d3 = (unsigned char)(d3 - 1);
     }
@@ -257,7 +260,7 @@ void frontdemo_update_mode0_demo_sub2(void) {
     d3 = 24;
     d2 = 0;
     while (d2 != 6) {
-        base = ((unsigned int)RAM(0x01) << 8) | RAM(0x00);
+        base = ((unsigned int)SAVEFILE_PTR_HI << 8) | SAVEFILE_PTR_LO;
         unsigned char raw = nes_ram[base + d3];
         unsigned char store;
 
@@ -268,7 +271,7 @@ void frontdemo_update_mode0_demo_sub2(void) {
             /* Even index: hearts-value slot — collapse high nibble into low,
              * mirror containers into hearts so display matches max HP. */
             unsigned char hi = raw & 0xF0;
-            RAM(0x000C) = hi;
+            ROOM_TOUCH_DOOR_BITS = hi;
             store = (unsigned char)((hi >> 4) | hi);
         }
         nes_ram[0x0650 + d2] = store;
@@ -292,19 +295,19 @@ void frontdemo_update_mode0_demo_sub2(void) {
         d3 = (unsigned char)(d3 - 1);
     } while ((signed char)d3 >= 0);
 
-    RAM(0x0012) += 1;
-    RAM(0x0011) = 0;
-    RAM(0x0013) = 0;
+    MODE_VALUE += 1;
+    ROOM_MODE_TIMER = 0;
+    SUBMODE_VALUE = 0;
 }
 
 void frontdemo_update_mode0_demo(void) {
     /* If submode != 0 OR delay $0528 != 0, dispatch submode handler. */
-    if (RAM(0x0013) == 0 && RAM(0x0528) == 0) {
+    if (SUBMODE_VALUE == 0 && RAM(0x0528) == 0) {
         frontdemo_animate_demo();
-        if (RAM(0x0011) == 0) return;   /* Exit if no mode-prev change pending. */
+        if (ROOM_MODE_TIMER == 0) return;   /* Exit if no mode-prev change pending. */
         /* Fall through to submode dispatch. */
     }
-    switch (RAM(0x0013)) {
+    switch (SUBMODE_VALUE) {
         case 0: frontdemo_update_mode0_demo_sub0(); break;
         case 1: c_import_update_mode0_demo_sub1(); break;
         case 2: frontdemo_update_mode0_demo_sub2(); break;
@@ -313,7 +316,7 @@ void frontdemo_update_mode0_demo(void) {
 }
 
 void frontdemo_animate_phase_1(void) {
-    switch (RAM(0x042D)) {
+    switch (FRONTEND_DEMO_SUBPHASE) {
         case 0: c_import_animate_demo_phase1_subphase0(); break;
         case 1: c_import_animate_demo_phase1_subphase1(); break;
         case 2: c_import_animate_demo_phase1_subphase2(); break;
@@ -328,7 +331,7 @@ void frontdemo_animate_demo(void) {
         frontdemo_animate_phase_1();
         return;
     }
-    switch (RAM(0x042D)) {
+    switch (FRONTEND_DEMO_SUBPHASE) {
         case 0: c_import_animate_demo_phase0_subphase0(); break;
         case 1: c_import_animate_demo_phase0_subphase1(); break;
         default: break;
