@@ -5374,3 +5374,21 @@ c_update_tektite_or_boulder:
 c_check_screen_edge:
     jsr     z07_check_screen_edge
     rts
+
+;==============================================================================
+; --- Batch 99: z_07 RAM clear helper ---
+;==============================================================================
+
+    xdef    c_clear_ram0300_up_to
+    xref    z07_clear_ram0300_up_to
+
+c_clear_ram0300_up_to:
+    moveq   #0,D1
+    move.w  D3,D1
+    move.l  D1,-(SP)
+    moveq   #0,D1
+    move.w  D0,D1
+    move.l  D1,-(SP)
+    jsr     z07_clear_ram0300_up_to
+    addq.l  #8,SP
+    rts

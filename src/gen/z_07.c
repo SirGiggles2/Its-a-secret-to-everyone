@@ -194,4 +194,8 @@ void z07_check_screen_edge(void) {
     roomrt_check_screen_edge();
 }
 
+void z07_clear_ram0300_up_to(unsigned int end_hi, unsigned int start_off) {
+    corert_clear_ram0300_up_to(end_hi, start_off);
+}
+
 /* <<< end auto-wrappers >>> */

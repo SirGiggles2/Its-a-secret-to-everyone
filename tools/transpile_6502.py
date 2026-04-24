@@ -7046,6 +7046,7 @@ def _patch_z07(path):
     # --- Batch 79 ---
     text = _stub_func(text, 'AnimateObjectWalking', 'c_animate_object_walking')
     text = _stub_func(text, 'CheckScreenEdge', 'c_check_screen_edge')
+    text = _stub_func(text, 'ClearRam0300UpTo', 'c_clear_ram0300_up_to')
 
     # --- Batch 48 ---
     # MarkRoomVisited ends with IFND Exit / Exit: / ENDC — _stub_func would

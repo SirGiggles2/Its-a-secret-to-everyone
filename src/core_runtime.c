@@ -410,3 +410,22 @@ unsigned char corert_reset_moving_dir(void) {
 }
 
 void corert_do_nothing(void) {}
+
+void corert_clear_ram0300_up_to(unsigned int end_hi, unsigned int start_off) {
+    unsigned char hi = (unsigned char)end_hi;
+    unsigned char off = (unsigned char)start_off;
+
+    for (;;) {
+        nes_ram[((unsigned short)hi << 8) | off] = 0;
+        off--;
+        if (off != 0xFF)
+            continue;
+        hi--;
+        if (hi >= 0x03) {
+            off = 0xFF;
+            continue;
+        }
+        nes_ram[0x0302] = 0xFF;
+        return;
+    }
+}

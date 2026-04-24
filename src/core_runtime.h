@@ -70,5 +70,6 @@ void corert_ensure_object_aligned(unsigned int slot);
 void corert_reverse_obj_dir(unsigned int slot);
 unsigned char corert_reset_moving_dir(void);
 void corert_do_nothing(void);
+void corert_clear_ram0300_up_to(unsigned int end_hi, unsigned int start_off);
 
 #endif

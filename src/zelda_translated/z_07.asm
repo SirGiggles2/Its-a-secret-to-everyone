@@ -1734,37 +1734,8 @@ HideAllSprites:
     jmp     c_hide_all_sprites
 
 ClearRam0300UpTo:
-    move.b  D0,($0001,A4)
-    moveq   #0,D0
-    move.b  D0,($0000,A4)
-    even
-_L_z07_ClearRam0300UpTo_Loop:
-    moveq   #0,D0
-    move.b  ($00,A4),D1   ; ptr lo
-    move.b  ($01,A4),D4  ; ptr hi
-    andi.w  #$00FF,D1         ; zero-extend lo byte
-    lsl.w   #8,D4
-    or.w    D1,D4
-    ext.l   D4
-    add.l   #NES_RAM,D4
-    movea.l D4,A0
-    move.b  D0,(A0,D3.W)     ; STA ($nn),Y
-    subq.b  #1,D3
-    cmpi.b  #$FF,D3
-    bne  _L_z07_ClearRam0300UpTo_Loop
-    subq.b  #1,($0001,A4)
-    move.b  ($0001,A4),D0
-    cmpi.b  #$03,D0
-    bcc  _L_z07_ClearRam0300UpTo_Loop
-    ; We overwrote the dynamic transfer buf with zeroes.
-    ; But the cleared state of the tile buf has the end marker at
-    ; the beginning. Write the end marker.
-    move.b  #$FF,D0
-    move.b  D0,($0302,A4)
-    eori    #$01,CCR  ; normalize C to 6502 polarity before RTS
-    rts
+    jmp     c_clear_ram0300_up_to
 
-    even
 TurnOffAllVideo:
     moveq   #0,D0
     jsr     _ppu_write_1  ; PPU $2001 write, D0=val
