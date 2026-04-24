@@ -1,29 +1,6 @@
 #include "save_menu_runtime.h"
 #include "room_state.h"
 
-extern const unsigned char ProfileNameAddrsLo[];
-extern const unsigned char ProfileNameAddrsHi[];
-extern void c_import_sram_commit(void);
-
-/* C-callable bridges for native asm helpers still in z_05/z_07. */
-extern void c_hide_all_sprites(void);                 /* z_07.HideAllSprites */
-extern void c_update_player_position_marker(void);    /* z_01.UpdatePlayerPositionMarker */
-extern void c_move_position_markers(unsigned int vel);
-extern void c_update_triforce_position_marker(void);
-extern void c_update_hearts_and_rupees(void);
-extern void c_submenu_cue_transfer_row_uw(void);
-extern void c_submenu_cue_transfer_row_ow(void);
-
-/* Already-drained menu helpers (gen forwarders). */
-extern void z05_update_menu_common2(void);
-extern void z05_update_menu_common3(void);
-extern void z05_update_menu_common4(void);
-extern void z05_update_menu5_ow(void);
-
-/* Other dispatch targets that remain native asm. */
-extern void c_update_menu_active(void);
-extern void c_update_menu_scroll_up(void);
-extern void c_update_menu_start_ow(void);
 
 void savert_update_mode_d_save_sub2(void) {
     c_import_sram_commit();

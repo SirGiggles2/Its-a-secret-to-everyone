@@ -22,4 +22,27 @@ void savert_update_menu_scroll_down_uw(void);
 }
 #endif
 
+/* --- External data arrays used by save_menu_runtime.c --- */
+extern const unsigned char ProfileNameAddrsLo[];
+extern const unsigned char ProfileNameAddrsHi[];
+
+/* --- ASM shim functions used by save_menu_runtime.c --- */
+extern void c_import_sram_commit(void);
+extern void c_hide_all_sprites(void);
+extern void c_update_player_position_marker(void);
+extern void c_move_position_markers(unsigned int vel);
+extern void c_update_triforce_position_marker(void);
+extern void c_update_hearts_and_rupees(void);
+extern void c_submenu_cue_transfer_row_uw(void);
+extern void c_submenu_cue_transfer_row_ow(void);
+extern void c_update_menu_active(void);
+extern void c_update_menu_scroll_up(void);
+extern void c_update_menu_start_ow(void);
+
+/* --- Bank-forwarder functions used by save_menu_runtime.c --- */
+extern void z05_update_menu_common2(void);
+extern void z05_update_menu_common3(void);
+extern void z05_update_menu_common4(void);
+extern void z05_update_menu5_ow(void);
+
 #endif
