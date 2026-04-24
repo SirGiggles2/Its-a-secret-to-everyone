@@ -76,6 +76,8 @@
 #define ENEMY_PLAYER_OBJ_X              RAM(0x0070)
 #define ENEMY_PLAYER_OBJ_Y              RAM(0x0084)
 #define ENEMY_VIRE_SPLIT_TYPE           RAM(0x0000)
+#define ENEMY_STATUE_PERSON_FIREBALLS   RAM(0x04CC)
+#define ENEMY_STATUE_FIREBALL_TIMER(idx) RAM(0x04E8 + (idx))
 /* Gleeok shared/global state */
 #define ENEMY_GLEEOK_NECK_INDEX         RAM(0x04D7)
 #define ENEMY_GLEEOK_REF_SEG_DIST       RAM(0x04D8)

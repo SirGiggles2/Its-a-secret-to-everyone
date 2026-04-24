@@ -4346,6 +4346,9 @@ def _patch_z04(path):
     text = _stub_func(text, 'CheckVireCollisions', 'c_check_vire_collisions')
     text = _stub_func(text, 'DrawVire', 'c_draw_vire')
 
+    # --- Batch 96: Statue family ---
+    text = _stub_func(text, 'UpdateStatues', 'c_update_statues')
+
     with open(path, 'w', encoding='utf-8') as f:
         f.write(text)
 

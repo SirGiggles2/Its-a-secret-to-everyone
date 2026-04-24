@@ -5,6 +5,12 @@ static const unsigned char enrt_vire_jump_offsets[] = {
     0x00, 0xFD, 0xFE, 0xFF, 0xFF, 0x00, 0xFF, 0x00,
     0x00, 0x01, 0x00, 0x01, 0x01, 0x02, 0x03, 0x00
 };
+static const unsigned char enrt_statue_room_layouts[] = { 0x24, 0x23 };
+static const unsigned char enrt_statue_fireball_counts[] = { 0x03, 0x01, 0x01 };
+static const unsigned char enrt_statue_fireball_start_times[] = { 0x50, 0x80, 0xF0, 0x60 };
+static const unsigned char enrt_statue_pattern_base_index[] = { 0x00, 0x04, 0x06 };
+static const unsigned char enrt_statue_xs[] = { 0x24, 0xC8, 0x24, 0xC8, 0x64, 0x88, 0x48, 0xA8 };
+static const unsigned char enrt_statue_ys[] = { 0xC0, 0xBC, 0x64, 0x5C, 0x94, 0x8C, 0x82, 0x86 };
 
 void enrt_dodongo_dec_bloated_timer(unsigned int slot) {
     ENEMY_BLOATED_TIMER(slot)--;
@@ -317,6 +323,60 @@ void enrt_draw_vire(unsigned int slot) {
     if (ENEMY_DIR(slot) & 0x08)
         frame = (unsigned char)(frame + 2);
     c_draw_object_mirrored_with_frame(frame, slot);
+}
+
+void enrt_update_statues(void) {
+    unsigned char pattern = 2;
+    unsigned char source_slot;
+    signed char fireball_idx;
+
+    if (ENEMY_STATUE_PERSON_FIREBALLS == 0) {
+        unsigned char room_id = z07_get_unique_room_id();
+        pattern = 1;
+        while (pattern != 0xFF) {
+            if (enrt_statue_room_layouts[pattern] == room_id)
+                break;
+            pattern--;
+        }
+        if (pattern == 0xFF)
+            return;
+    }
+
+    source_slot = c_find_empty_monster_slot();
+    if (source_slot == 0 || source_slot < 6)
+        return;
+
+    for (fireball_idx = (signed char)enrt_statue_fireball_counts[pattern];
+         fireball_idx >= 0;
+         --fireball_idx) {
+        unsigned char idx = (unsigned char)fireball_idx;
+        unsigned char timer = (unsigned char)(ENEMY_STATUE_FIREBALL_TIMER(idx) - 1);
+        ENEMY_STATUE_FIREBALL_TIMER(idx) = timer;
+        if ((unsigned char)(timer + 1) != 0)
+            continue;
+        if (ENEMY_RNG_A(idx) >= 0xF0)
+            continue;
+
+        ENEMY_STATUE_FIREBALL_TIMER(idx) =
+            enrt_statue_fireball_start_times[ENEMY_RNG_A(idx) & 0x03];
+
+        {
+            unsigned char pos_idx = (unsigned char)(idx + enrt_statue_pattern_base_index[pattern]);
+            unsigned char fire_x = enrt_statue_xs[pos_idx];
+            unsigned char fire_y = enrt_statue_ys[pos_idx];
+            unsigned char mask = 3;
+
+            ENEMY_X(source_slot) = fire_x;
+            ENEMY_Y(source_slot) = fire_y;
+
+            if ((unsigned char)(LINK_Y - fire_y) < 0x18 || (unsigned char)(LINK_Y - fire_y) >= 0xE8)
+                mask = (unsigned char)(mask >> 1);
+            if ((unsigned char)(LINK_X - fire_x) < 0x18 || (unsigned char)(LINK_X - fire_x) >= 0xE8)
+                mask = (unsigned char)(mask >> 1);
+            if (mask != 0)
+                c_shoot_fireball(85, source_slot);
+        }
+    }
 }
 
 void enrt_update_vire(unsigned int slot) {

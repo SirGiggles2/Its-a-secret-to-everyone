@@ -5329,3 +5329,15 @@ c_draw_vire:
     jsr     z04_draw_vire
     addq.l  #4,SP
     rts
+
+;==============================================================================
+; --- Batch 96: Statue family (drained from z_04.asm) ---
+;==============================================================================
+
+    xdef    c_update_statues
+
+    xref    z04_update_statues
+
+c_update_statues:
+    jsr     z04_update_statues
+    rts

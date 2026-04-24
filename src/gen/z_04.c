@@ -121,6 +121,10 @@ void z04_draw_vire(unsigned int slot) {
     enrt_draw_vire(slot);
 }
 
+void z04_update_statues(void) {
+    enrt_update_statues();
+}
+
 unsigned int z04_extract_hit_point_value(unsigned int val) {
     return enrt_extract_hit_point_value(val);
 }

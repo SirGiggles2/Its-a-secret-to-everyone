@@ -34,6 +34,7 @@ extern void c_update_burrower(unsigned int slot);
 extern void z04_shoot_fireball(unsigned int dir, unsigned int slot);
 extern unsigned char z04_is_dark_room_bank4(unsigned int room_idx);
 extern unsigned int z07_find_empty_monster_slot(void);
+extern unsigned char z07_get_unique_room_id(void);
 extern void z07_set_type_and_clear_object(unsigned int type, unsigned int slot);
 extern unsigned int z01_animate_world_fading(void);
 extern unsigned char z07_reset_obj_state(unsigned int slot);
