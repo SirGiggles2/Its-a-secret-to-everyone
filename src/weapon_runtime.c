@@ -1,6 +1,5 @@
 #include "weapon_runtime.h"
 
-extern void z01_play_effect(unsigned int val);
 
 static unsigned char weprt_choose_offset_for_direction_h(unsigned char dir) {
     WORLD_TMP0 = 0;
