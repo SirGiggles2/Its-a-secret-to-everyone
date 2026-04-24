@@ -67,6 +67,9 @@
 #define ENEMY_GLEEOK_SEG_X_TARGET(slot) OBJ(0x0073, (slot))
 #define ENEMY_GLEEOK_SEG_Y(slot)        OBJ(0x0086, (slot))
 #define ENEMY_GLEEOK_SEG_Y_TARGET(slot) OBJ(0x0087, (slot))
+#define ENEMY_MANHANDLA_SEGMENT_DIED_FLAG RAM(0x0383)
+#define ENEMY_MANHANDLA_FRAME_ACCUM(slot) OBJ(0x0451, (slot))
+#define ENEMY_MANHANDLA_FRAME_ATTR(slot)  OBJ(0x0478, (slot))
 /* Gleeok shared/global state */
 #define ENEMY_GLEEOK_NECK_INDEX         RAM(0x04D7)
 #define ENEMY_GLEEOK_REF_SEG_DIST       RAM(0x04D8)

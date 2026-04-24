@@ -4331,6 +4331,11 @@ def _patch_z04(path):
     text = _stub_func(text, 'Dodongo_IsBombInRange', 'c_dodongo_is_bomb_in_range')
     text = _stub_func(text, 'Dodongo_Draw', 'c_dodongo_draw')
 
+    # --- Batch 93: Manhandla family ---
+    text = _stub_func(text, 'Manhandla_CheckCollisions', 'c_manhandla_check_collisions')
+    text = _stub_func(text, 'Manhandla_Move', 'c_manhandla_move')
+    text = _stub_func(text, 'Manhandla_Draw', 'c_manhandla_draw')
+
     with open(path, 'w', encoding='utf-8') as f:
         f.write(text)
 

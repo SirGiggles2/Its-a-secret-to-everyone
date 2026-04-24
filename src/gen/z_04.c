@@ -85,6 +85,18 @@ void z04_manhandla_set_all_segments_direction(unsigned int val) {
     enrt_manhandla_set_all_segments_direction(val);
 }
 
+void z04_manhandla_check_collisions(unsigned int slot) {
+    enrt_manhandla_check_collisions(slot);
+}
+
+void z04_manhandla_move(unsigned int slot) {
+    enrt_manhandla_move(slot);
+}
+
+void z04_manhandla_draw(unsigned int slot) {
+    enrt_manhandla_draw(slot);
+}
+
 unsigned int z04_extract_hit_point_value(unsigned int val) {
     return enrt_extract_hit_point_value(val);
 }

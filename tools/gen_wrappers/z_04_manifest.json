@@ -100,6 +100,21 @@
       "sig": "void (unsigned int val)"
     },
     {
+      "old": "z04_manhandla_check_collisions",
+      "new": "enrt_manhandla_check_collisions",
+      "sig": "void (unsigned int slot)"
+    },
+    {
+      "old": "z04_manhandla_move",
+      "new": "enrt_manhandla_move",
+      "sig": "void (unsigned int slot)"
+    },
+    {
+      "old": "z04_manhandla_draw",
+      "new": "enrt_manhandla_draw",
+      "sig": "void (unsigned int slot)"
+    },
+    {
       "old": "z04_extract_hit_point_value",
       "new": "enrt_extract_hit_point_value",
       "sig": "unsigned int (unsigned int val)"

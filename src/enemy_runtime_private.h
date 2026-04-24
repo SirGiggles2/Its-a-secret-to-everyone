@@ -17,6 +17,8 @@ extern void c_walker_move(unsigned int slot);
 extern void c_move_flyer(unsigned int slot);
 extern void c_control_keese_flight(unsigned int slot);
 extern void c_check_monster_collisions(unsigned int slot);
+extern void c_draw_object_mirrored(unsigned int slot);
+extern void c_draw_object_not_mirrored(unsigned int slot);
 extern void c_draw_object_mirrored_with_frame(unsigned int frame, unsigned int slot);
 extern void c_draw_object_not_mirrored_with_frame(unsigned int frame, unsigned int slot);
 extern void c_get_object_middle(unsigned int slot);
@@ -69,6 +71,7 @@ extern void c_gleeok_calc_segment_limits(unsigned int primary_dist, unsigned int
 extern void c_gleeok_stretch_neck(unsigned int slot);
 extern void c_play_boss_hit_cry_if_needed(unsigned int slot);
 extern void c_play_boss_death_cry(void);
+extern void c_bound_flyer(unsigned int slot);
 extern void c_reset_obj_metastate(unsigned int slot);
 extern void c_write_blank_priority_sprites(void);
 extern void c_shoot_fireball(unsigned int dir, unsigned int slot);

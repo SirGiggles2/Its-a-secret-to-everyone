@@ -5208,3 +5208,50 @@ c_dodongo_draw:
     jsr     z04_dodongo_draw
     addq.l  #4,SP
     rts
+
+;==============================================================================
+; --- Batch 93: Manhandla family (drained from z_04.asm) ---
+;==============================================================================
+
+    xdef    c_bound_flyer
+    xdef    c_manhandla_check_collisions
+    xdef    c_manhandla_move
+    xdef    c_manhandla_draw
+
+    xref    BoundFlyer
+    xref    z04_manhandla_check_collisions
+    xref    z04_manhandla_move
+    xref    z04_manhandla_draw
+
+; BoundFlyer — C-callable helper, D2=slot.
+c_bound_flyer:
+    move.l  4(SP),D2
+    jsr     BoundFlyer
+    rts
+
+; Manhandla_CheckCollisions — D2=slot, void.
+c_manhandla_check_collisions:
+    moveq   #0,D1
+    move.w  D2,D1
+    move.l  D1,-(SP)
+    jsr     z04_manhandla_check_collisions
+    addq.l  #4,SP
+    rts
+
+; Manhandla_Move — D2=slot, void.
+c_manhandla_move:
+    moveq   #0,D1
+    move.w  D2,D1
+    move.l  D1,-(SP)
+    jsr     z04_manhandla_move
+    addq.l  #4,SP
+    rts
+
+; Manhandla_Draw — D2=slot, void.
+c_manhandla_draw:
+    moveq   #0,D1
+    move.w  D2,D1
+    move.l  D1,-(SP)
+    jsr     z04_manhandla_draw
+    addq.l  #4,SP
+    rts
