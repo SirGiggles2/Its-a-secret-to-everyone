@@ -2,18 +2,6 @@
 #include "link_state.h"
 #include "progress_state.h"
 
-extern const unsigned char ObjTypeToDamagePoints[];
-extern unsigned int z01_get_opposite_dir(unsigned int dir);
-extern void z01_play_sample(unsigned int val);
-extern void z07_end_game_mode(void);
-extern void z01_get_object_middle(unsigned int slot);
-extern unsigned char z01_do_objects_collide_with_thresholds(void);
-extern void z01_check_monster_boomerang_or_food_collision(unsigned int monster_slot, unsigned int weapon_slot);
-extern void z01_check_monster_sword_shot_or_magic_shot_collision(unsigned int monster_slot, unsigned int weapon_slot);
-extern void z01_check_monster_bomb_or_fire_collision(unsigned int monster_slot, unsigned int weapon_slot);
-extern void z01_check_monster_sword_collision(unsigned int monster_slot, unsigned int weapon_slot);
-extern void z01_check_monster_arrow_or_rod_collision(unsigned int monster_slot, unsigned int weapon_slot);
-
 void lcrt_link_be_harmed(unsigned int monster_slot) {
     if (MON_TYPE(monster_slot) != 0x2E) {
         z01_play_sample(8);
