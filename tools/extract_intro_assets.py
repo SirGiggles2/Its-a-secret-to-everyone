@@ -15,6 +15,31 @@ from pathlib import Path
 
 REPO = Path(__file__).resolve().parent.parent
 
+def nes_tile_to_gen_tile(nes: bytes) -> bytes:
+    """Convert a single 8x8 NES 2bpp tile (16 bytes) to Genesis 4bpp (32 bytes).
+
+    NES layout: 8 bytes of bitplane 0 (rows 0..7), then 8 bytes of bitplane 1.
+    Genesis layout: 8 rows x 4 bytes/row; each row packs 8 pixels as 4-bit
+    indices, high nibble first.
+    """
+    if len(nes) != 16:
+        raise ValueError(f"nes tile must be 16 bytes, got {len(nes)}")
+    out = bytearray(32)
+    for row in range(8):
+        bp0 = nes[row]
+        bp1 = nes[row + 8]
+        row_out = bytearray(4)
+        for px in range(8):
+            bit = 7 - px
+            color = ((bp0 >> bit) & 1) | (((bp1 >> bit) & 1) << 1)
+            byte_idx = px >> 1
+            if (px & 1) == 0:
+                row_out[byte_idx] |= (color & 0x0F) << 4
+            else:
+                row_out[byte_idx] |= (color & 0x0F)
+        out[row * 4:(row + 1) * 4] = row_out
+    return bytes(out)
+
 def main() -> int:
     ap = argparse.ArgumentParser(description="extract intro assets")
     ap.add_argument("--ref-dir", default=str(REPO / "reference" / "aldonunez" / "dat"),
