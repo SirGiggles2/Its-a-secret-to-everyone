@@ -1,21 +1,5 @@
-#include "enemy_runtime_private.h"
+#include "enemy_projectile_runtime.h"
 #include "combat_state.h"
-
-/* External helpers used by Monster Shot / Fireball ports.
- * MoveObject, BoundByRoom, GetCollidingTileMoving, CheckLinkCollision,
- * GetDirectionsAndDistancesToTarget, _CalcDiagonalSpeedIndex come from
- * the asm side via the c_/z01/z07 shim layer.
- */
-extern void c_move_object(unsigned short slot);
-extern unsigned char z01_bound_by_room(unsigned int slot);
-extern unsigned char z01_bound_by_room_with_a(unsigned char direction, unsigned int slot);
-extern unsigned char z07_get_colliding_tile_moving(unsigned int slot);
-extern unsigned int z01_get_opposite_dir(unsigned int dir);
-extern void z01_get_directions_and_distances_to_target(unsigned char target_slot, unsigned int origin_slot);
-extern unsigned int z01_calc_diagonal_speed_index(unsigned int mid_speed_idx);
-extern void c_draw_object_not_mirrored(unsigned int slot);
-extern void c_draw_arrow(unsigned int slot);
-extern void c_draw_sword_shot_or_magic_shot(unsigned int slot);
 
 /* Bounce-displacement tables for L_BounceShot. The bounce direction
  * index (0..3 from GetOppositeDir) selects width/height pairs.
