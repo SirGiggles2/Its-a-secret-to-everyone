@@ -231,7 +231,7 @@ unsigned int enrt_gel_move_splitting(unsigned int slot) {
      */
     if (OBJ(NES_OBJ_GRID_OFFSET, slot) == 0) {
         unsigned char tile = z07_get_colliding_tile_moving(slot);
-        unsigned char floor = RAM(0x034A);          /* dungeon tile floor */
+        unsigned char floor = ENEMY_DUNGEON_TILE_FLOOR;  /* dungeon tile floor */
         /* CMP D1,D0; bcc → 6502 carry set when D0 (tile) >= D1 (floor),
          * which means "blocked" → return CARRY_SET.
          */
