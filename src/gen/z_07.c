@@ -198,4 +198,8 @@ void z07_clear_ram0300_up_to(unsigned int end_hi, unsigned int start_off) {
     corert_clear_ram0300_up_to(end_hi, start_off);
 }
 
+void z07_handle_shot_blocked(unsigned int slot) {
+    corert_handle_shot_blocked(slot);
+}
+
 /* <<< end auto-wrappers >>> */

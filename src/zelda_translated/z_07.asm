@@ -4860,74 +4860,8 @@ _L_z07_DrawSwordShotOrMagicShot_WriteSprites:
 ;
     even
 HandleShotBlocked:
-    lea     ($00AC,A4),A0
-    move.b  (A0,D2.W),D0
-    lsl.b  #1,D0   ; ASL A
-    bcs.s  __far_z_07_0072
-    jmp  SetShotSpreadingState
-__far_z_07_0072:
-    ; This is a magic shot.
-    ;
-    ; If missing the magic book, go deactivate the shot object.
-    ;
-    move.b  ($0661,A4),D0
-    bne.s  __far_z_07_0073
-    jmp  DeactivateShot
-__far_z_07_0073:
-    ; Try to activate a fire object. Temporarily mark the candle
-    ; unused, so it only has to depend on having an empty slot.
-    ;
-    ; If successful, Link's state will have been changed to "using item".
-    ; But we don't want that in this case.
-    ;
-    ; For both these reasons, save state and restore it afterward.
-    ;
-    move.b  ($00AC,A4),D0
-    move.b  D0,-(A5)  ; PHA
-    move.b  ($0513,A4),D0
-    move.b  D0,-(A5)  ; PHA
-    moveq   #0,D0
-    move.b  D0,($0513,A4)
-    jsr     WieldCandle
-    move.b  (A5)+,D0  ; PLA
-    move.b  D0,($0513,A4)
-    move.b  (A5)+,D0  ; PLA
-    move.b  D0,($00AC,A4)
-    ; State $21 means that a moving fire was just made.
-    ;
-    ; If it's any another value, then we didn't find an empty slot
-    ; to make a fire. In this case, all that's left to do is to go
-    ; deactivate the shot object.
-    ;
-    lea     ($00AC,A4),A0
-    move.b  (A0,D2.W),D0
-    cmpi.b  #$21,D0
-    beq.s  __far_z_07_0074
-    jmp  DeactivateLinkShot
-__far_z_07_0074:
-    ; Make state $22 for a standing fire.
-    ;
-    lea     ($00AC,A4),A0
-    addq.b  #1,(A0,D2.W)
-    ; Copy the shot's position and direction to the fire.
-    ;
-    moveq   #14,D3
-    move.b  ($70,A4,D3.W),D0
-    move.b  D0,($70,A4,D2.W)
-    lea     ($0084,A4),A0
-    move.b  (A0,D3.W),D0
-    lea     ($0084,A4),A0
-    move.b  D0,(A0,D2.W)
-    lea     ($0098,A4),A0
-    move.b  (A0,D3.W),D0
-    lea     ($0098,A4),A0
-    move.b  D0,(A0,D2.W)
-    ; The fire lasts $4F frames.
-    ; Deactivate the shot.
-    ;
-    moveq   #79,D0
-    move.b  D0,($28,A4,D2.W)
-    even
+    jmp     c_handle_shot_blocked
+
 DeactivateLinkShot:
     jmp     c_deactivate_link_shot
 
@@ -5097,9 +5031,9 @@ _anon_z07_25:
     lea     ($0098,A4),A0
     move.b  (A0,D2.W),D0
     cmpi.b  #$E8,D0
-    beq.s  __far_z_07_0075
+    beq.s  __far_z_07_0072
     jmp  L1F49F_Exit
-__far_z_07_0075:
+__far_z_07_0072:
     jmp     DeactivateLinkShot
 
     even
@@ -5112,15 +5046,15 @@ UpdateBoomerangOrFood:
     ;
     lea     ($00AC,A4),A0
     move.b  (A0,D2.W),D0
-    bne.s  __far_z_07_0076
+    bne.s  __far_z_07_0073
     jmp  L1F49F_Exit
-__far_z_07_0076:
+__far_z_07_0073:
     ; If the high bit of state is clear, then go update the boomerang.
     ;
     lsl.b  #1,D0   ; ASL A
-    bcs.s  __far_z_07_0077
+    bcs.s  __far_z_07_0074
     jmp  UpdateArrowOrBoomerang
-__far_z_07_0077:
+__far_z_07_0074:
     ; The object is food.
     ;
     ; Once the timer has expired, increment the state and set timer to $FF.
@@ -5227,9 +5161,9 @@ UpdateArrowOrBoomerang:
     ;
     lea     ($00AC,A4),A0
     move.b  (A0,D2.W),D0
-    bne.s  __far_z_07_0078
+    bne.s  __far_z_07_0075
     jmp  L1F49F_Exit
-__far_z_07_0078:
+__far_z_07_0075:
     ; Reset [00], which will hold the number of axes where the distance <= 8
     ; when calculating the angle to return to thrower.
     ; See states $40 and $50 and GetDirectionsAndDistancesToTarget.
@@ -5291,15 +5225,15 @@ _anon_z07_27:
     lea     ($034F,A4),A0
     move.b  (A0,D2.W),D0
     cmpi.b  #$5B,D0
-    bne.s  __far_z_07_0079
+    bne.s  __far_z_07_0076
     jmp  DrawArrow
-__far_z_07_0079:
+__far_z_07_0076:
     even
 _L_z07_UpdateArrowOrBoomerang_CheckPlayerArrow:
     cmpi.b  #$12,D2
-    bne.s  __far_z_07_0080
+    bne.s  __far_z_07_0077
     jmp  DrawArrow
-__far_z_07_0080:
+__far_z_07_0077:
     ; For boomerangs, get the absolute value of the weapon's grid offset:
     ; the distance traveled.
     ;
@@ -5407,9 +5341,9 @@ CheckState20:
     ; If major state <> $20, go check other states.
     ;
     cmpi.b  #$20,D0
-    beq.s  __far_z_07_0081
+    beq.s  __far_z_07_0078
     jmp  CheckState30
-__far_z_07_0081:
+__far_z_07_0078:
     ; State $2x. Spark.
     ;
     ; Change the state to $28, and decrement animation counter.
@@ -5428,9 +5362,9 @@ __far_z_07_0081:
     move.b  D0,(A0,D2.W)
     lea     ($03D0,A4),A0
     subq.b  #1,(A0,D2.W)
-    beq.s  __far_z_07_0082
+    beq.s  __far_z_07_0079
     jmp  DrawArrowOrBoomerangAndCheckCollisions
-__far_z_07_0082:
+__far_z_07_0079:
     ; Animation counter = 0.
     ;
     ; Set state to $40. It will become $50 below in
@@ -5451,9 +5385,9 @@ __far_z_07_0082:
     even
 _L_z07_CheckState20_CheckBoomerangBlocked:
     cmpi.b  #$12,D2
-    beq.s  __far_z_07_0083
+    beq.s  __far_z_07_0080
     jmp  HandleArrowOrBoomerangBlocked
-__far_z_07_0083:
+__far_z_07_0080:
     even
 _L_z07_CheckState20_Deactivate:
     jsr     ResetObjState
@@ -5713,9 +5647,9 @@ AnimateBoomerangAndCheckCollision:
     ;
     lea     ($03D0,A4),A0
     subq.b  #1,(A0,D2.W)
-    beq.s  __far_z_07_0084
+    beq.s  __far_z_07_0081
     jmp  DrawBoomerangAndCheckCollision
-__far_z_07_0084:
+__far_z_07_0081:
     moveq   #2,D0
     lea     ($03D0,A4),A0
     move.b  D0,(A0,D2.W)
@@ -5727,9 +5661,9 @@ __far_z_07_0084:
     lea     ($00AC,A4),A0
     move.b  D0,(A0,D2.W)
     cmpi.b  #$0D,D2
-    bcc.s  __far_z_07_0085
+    bcc.s  __far_z_07_0082
     jmp  CalcBoomerangFrame
-__far_z_07_0085:
+__far_z_07_0082:
     moveq   #2,D3
     jsr     PlayBoomerangSfx
     even
@@ -5740,14 +5674,14 @@ DrawBoomerangAndCheckCollision:
     ; If they collide, then set state $20 and animation counter 3.
     ;
     cmpi.b  #$0D,D2
-    bcs.s  __far_z_07_0086
+    bcs.s  __far_z_07_0083
     jmp  CalcBoomerangFrame
-__far_z_07_0086:
+__far_z_07_0083:
     jsr     CheckLinkCollision
     move.b  ($034B,A4),D0
-    bne.s  __far_z_07_0087
+    bne.s  __far_z_07_0084
     jmp  CalcBoomerangFrame
-__far_z_07_0087:
+__far_z_07_0084:
     moveq   #3,D0
     lea     ($03D0,A4),A0
     move.b  D0,(A0,D2.W)
@@ -5858,9 +5792,9 @@ UpdateRodOrArrow:
     move.b  (A0,D2.W),D0
     andi.b #$F0,D0
     cmpi.b  #$30,D0
-    bcs.s  __far_z_07_0088
+    bcs.s  __far_z_07_0085
     jmp  UpdateSwordOrRod
-__far_z_07_0088:
+__far_z_07_0085:
     jmp     UpdateArrowOrBoomerang
 
 ; 4 sets of horizontal offsets, one for each state of weapon.
@@ -6063,9 +5997,9 @@ _anon_z07_33:
     move.b  (A0,D2.W),D0
     andi.b #$0F,D0
     cmpi.b  #$01,D0
-    bne.s  __far_z_07_0089
+    bne.s  __far_z_07_0086
     jmp  L1F854_Exit
-__far_z_07_0089:
+__far_z_07_0086:
     ; Set Y to the right item slot to pass to the routine to write sprites:
     ; sword or rod
     ;
@@ -6083,17 +6017,17 @@ _anon_z07_34:
     move.b  (A0,D2.W),D0
     andi.b #$0F,D0
     cmpi.b  #$03,D0
-    beq.s  __far_z_07_0090
+    beq.s  __far_z_07_0087
     jmp  L1F854_Exit
-__far_z_07_0090:
+__far_z_07_0087:
     ; State = 3. Time to instantiate a shot.
     ;
     ; If object slot is not the rod's, go instantiate the sword shot separately.
     ;
     cmpi.b  #$12,D2
-    beq.s  __far_z_07_0091
+    beq.s  __far_z_07_0088
     jmp  MakeSwordShot
-__far_z_07_0091:
+__far_z_07_0088:
     ; Instantiate a magic shot (rod shot).
     ; Switch to the shot slot $E.
     ;
@@ -6104,9 +6038,9 @@ __far_z_07_0091:
     move.b  (A0,D2.W),D0
     beq  _L_z07_UpdateSwordOrRod_MakeMagicShot
     lsl.b  #1,D0   ; ASL A
-    bcc.s  __far_z_07_0092
+    bcc.s  __far_z_07_0089
     jmp  L1F854_Exit
-__far_z_07_0092:
+__far_z_07_0089:
     even
 _L_z07_UpdateSwordOrRod_MakeMagicShot:
     ; Play "magic shot" tune.
@@ -6131,13 +6065,13 @@ SetUpWeaponWithState:
     beq  _L_z07_SetUpWeaponWithState_ChooseSpeed
     move.b  ($70,A4,D2.W),D0
     cmpi.b  #$14,D0
-    bcc.s  __far_z_07_0093
+    bcc.s  __far_z_07_0090
     jmp  ResetObjState
-__far_z_07_0093:
+__far_z_07_0090:
     cmpi.b  #$EC,D0
-    bcs.s  __far_z_07_0094
+    bcs.s  __far_z_07_0091
     jmp  ResetObjState
-__far_z_07_0094:
+__far_z_07_0091:
     even
 _L_z07_SetUpWeaponWithState_ChooseSpeed:
     ; If high bit of state is set, use $A0 else $C0 for the q-speed fraction.
@@ -6182,9 +6116,9 @@ MakeSwordShot:
     ;
     lea     ($00AC,A4),A0
     move.b  (A0,D2.W),D0
-    beq.s  __far_z_07_0095
+    beq.s  __far_z_07_0092
     jmp  L1F854_Exit
-__far_z_07_0095:
+__far_z_07_0092:
     ; If [0529] is set, go activate a sword shot regardless of hearts.
     ;
     ; TODO: But is this used?
@@ -6204,16 +6138,16 @@ __far_z_07_0095:
     lsr.b  #1,D0   ; LSR A
     move.b  ($0000,A4),D1
     cmp.b   D1,D0
-    beq.s  __far_z_07_0096
+    beq.s  __far_z_07_0093
     jmp  L1F854_Exit
-__far_z_07_0096:
+__far_z_07_0093:
     ; If partial heart is less than half full, return.
     ;
     move.b  ($0670,A4),D0
     cmpi.b  #$80,D0
-    bcc.s  __far_z_07_0097
+    bcc.s  __far_z_07_0094
     jmp  L1F854_Exit
-__far_z_07_0097:
+__far_z_07_0094:
     even
 _L_z07_MakeSwordShot_SetUp:
     moveq   #1,D0
@@ -6221,9 +6155,9 @@ _L_z07_MakeSwordShot_SetUp:
     ; Go finish setting up a sword shot in initial state $10.
     ;
     moveq   #16,D0
-    beq.s  __far_z_07_0098
+    beq.s  __far_z_07_0095
     jmp  SetUpWeaponWithState
-__far_z_07_0098:
+__far_z_07_0095:
     even
 UpdateFire:
     ; If this is not a walking fire (state $21), skip moving it.
@@ -6274,9 +6208,9 @@ _L_z07_UpdateFire_StandingFie:
     ; If time has run out, deactivate the item and return.
     ;
     move.b  ($28,A4,D2.W),D0
-    bne.s  __far_z_07_0099
+    bne.s  __far_z_07_0096
     jmp  ResetObjState
-__far_z_07_0099:
+__far_z_07_0096:
     ; If in UW, update the candle to brighten the room if needed.
     ;
     move.b  ($0010,A4),D0
@@ -6308,9 +6242,9 @@ _L_z07_UpdateFire_DrawAndCheckCollisions:
     ; First, if the player is invincible, return.
     ;
     move.b  ($04F0,A4),D0
-    beq.s  __far_z_07_0100
+    beq.s  __far_z_07_0097
     jmp  L1F91D_Exit
-__far_z_07_0100:
+__far_z_07_0097:
     ; Save the object index in [00].
     ;
     move.b  D2,($0000,A4)
@@ -6332,9 +6266,9 @@ __far_z_07_0100:
     moveq   #0,D2
     moveq   #14,D0
     jsr     DoObjectsCollide
-    bne.s  __far_z_07_0101
+    bne.s  __far_z_07_0098
     jmp  L1F91D_Exit
-__far_z_07_0101:
+__far_z_07_0098:
     ; The player and the fire collide.
     ;
     ; Make the fire shove the player.
@@ -6395,16 +6329,16 @@ UpdateBombOrFire:
     ;
     lea     ($00AC,A4),A0
     move.b  (A0,D2.W),D0
-    bne.s  __far_z_07_0102
+    bne.s  __far_z_07_0099
     jmp  L1F95F_Exit
-__far_z_07_0102:
+__far_z_07_0099:
     ; Bomb major state = $10. Fire major state = $20.
     ;
     andi.b #$F0,D0
     cmpi.b  #$10,D0
-    bne.s  __far_z_07_0103
+    bne.s  __far_z_07_0100
     jmp  UpdateBomb
-__far_z_07_0103:
+__far_z_07_0100:
     jmp     UpdateFire
 
     even
@@ -6414,9 +6348,9 @@ UpdateBomb:
     ; If the timer has not expired, then go draw.
     ;
     move.b  ($28,A4,D2.W),D0
-    beq.s  __far_z_07_0104
+    beq.s  __far_z_07_0101
     jmp  DrawBomb
-__far_z_07_0104:
+__far_z_07_0101:
     ; The timer has expired. Set another based on the minor state.
     ; Advance the state.
     ;
@@ -6446,9 +6380,9 @@ _L_z07_UpdateBomb_CheckState5:
     ; If minor state = 5, then deactivate the bomb, and return.
     ;
     cmpi.b  #$05,D0
-    beq.s  __far_z_07_0105
+    beq.s  __far_z_07_0102
     jmp  Bomb_CheckState4
-__far_z_07_0105:
+__far_z_07_0102:
     jsr     ResetObjState
     move.b  D0,($28,A4,D2.W)
     even
@@ -6460,33 +6394,33 @@ Bomb_CheckState4:
     ; If minor state <> 4, go draw.
     ;
     cmpi.b  #$04,D0
-    beq.s  __far_z_07_0106
+    beq.s  __far_z_07_0103
     jmp  DrawBomb
-__far_z_07_0106:
+__far_z_07_0103:
     ; Minor state = 4. Try to break a wall.
     ;
     ; If in OW, go draw. Rock walls have a tile object that checks for bombs.
     ;
     move.b  ($0010,A4),D0
-    bne.s  __far_z_07_0107
+    bne.s  __far_z_07_0104
     jmp  DrawBomb
-__far_z_07_0107:
+__far_z_07_0104:
     ; Bombs don't blast walls in cellars (mode 9). Go draw.
     ;
     move.b  ($0012,A4),D0
     cmpi.b  #$09,D0
-    bne.s  __far_z_07_0108
+    bne.s  __far_z_07_0105
     jmp  DrawBomb
-__far_z_07_0108:
+__far_z_07_0105:
     ; We're in UW. See if the bomb is near a bombable wall.
     ;
     moveq   #4,D3
     even
 _L_z07_Bomb_CheckState4_LoopHotspot:
     subq.b  #1,D3
-    bpl.s  __far_z_07_0109
+    bpl.s  __far_z_07_0106
     jmp  DrawBomb
-__far_z_07_0109:
+__far_z_07_0106:
     ; If the bomb's X is not within $18 pixels of the hotspot, then
     ; go check the next hotspot.
     ;
@@ -6523,22 +6457,22 @@ __far_z_07_0109:
     ;
     move.b  ($00EE,A4),D1
     and.b  D1,D0
-    beq.s  __far_z_07_0110
+    beq.s  __far_z_07_0107
     jmp  DrawBomb
-__far_z_07_0110:
+__far_z_07_0107:
     move.b  ($0054,A4),D0
-    beq.s  __far_z_07_0111
+    beq.s  __far_z_07_0108
     jmp  DrawBomb
-__far_z_07_0111:
+__far_z_07_0108:
     ; If it's not a bombable wall, go draw.
     ;
     moveq   #5,D0
     jsr     SwitchBank
     jsr     FindDoorAttrByDoorBit
     cmpi.b  #$04,D0
-    beq.s  __far_z_07_0112
+    beq.s  __far_z_07_0109
     jmp  DrawBomb
-__far_z_07_0112:
+__far_z_07_0109:
     ; Trigger this bombable wall to open.
     ;
     moveq   #6,D0
@@ -6557,9 +6491,9 @@ DrawBomb:
     move.b  (A0,D2.W),D0
     andi.b #$0F,D0
     cmpi.b  #$02,D0
-    bne.s  __far_z_07_0113
+    bne.s  __far_z_07_0110
     jmp  L1F95F_Exit
-__far_z_07_0113:
+__far_z_07_0110:
     ; Otherwise, we drew one dust cloud. Go draw the others.
     ;
     jmp     DrawOtherBombClouds
@@ -6735,22 +6669,22 @@ _L_z07_AnimateAndDrawMetaObject_AnimateSpark:
     even
 AnimateLinkBase:
     move.b  ($00AC,A4),D0
-    beq.s  __far_z_07_0114
+    beq.s  __far_z_07_0111
     jmp  AnimateObjectWalking
-__far_z_07_0114:
+__far_z_07_0111:
     move.b  ($0012,A4),D0
     cmpi.b  #$04,D0
-    bne.s  __far_z_07_0115
+    bne.s  __far_z_07_0112
     jmp  AnimateObjectWalking
-__far_z_07_0115:
+__far_z_07_0112:
     cmpi.b  #$10,D0
-    bne.s  __far_z_07_0116
+    bne.s  __far_z_07_0113
     jmp  AnimateObjectWalking
-__far_z_07_0116:
+__far_z_07_0113:
     move.b  ($03F8,A4),D0
-    bne.s  __far_z_07_0117
+    bne.s  __far_z_07_0114
     jmp  SetUpWalkingSprites
-__far_z_07_0117:
+__far_z_07_0114:
 ; Params:
 ; X: object index
 ;
@@ -6775,18 +6709,18 @@ SetUpWalkingSprites:
     lea     ($0098,A4),A0
     move.b  (A0,D2.W),D0
     andi.b #$0C,D0
-    bne.s  __far_z_07_0118
+    bne.s  __far_z_07_0115
     jmp  SetUpHorizontalWalkingSprites
-__far_z_07_0118:
+__far_z_07_0115:
     ; Facing up or down.
     ;
     ;
     ; Assume animation frame 3 (up).
     moveq   #3,D3
     andi.b #$08,D0
-    beq.s  __far_z_07_0119
+    beq.s  __far_z_07_0116
     jmp  Anim_SetObjHFlipForSpriteDescriptor
-__far_z_07_0119:
+__far_z_07_0116:
     subq.b  #1,D3
 ; Use the movement frame as the value for horizontal flipping.
 ;
@@ -7118,9 +7052,9 @@ UpdateMetaObject:
     move.b  (A0,D2.W),D0
     andi.b #$0F,D0
     cmpi.b  #$04,D0
-    bcs.s  __far_z_07_0120
+    bcs.s  __far_z_07_0117
     jmp  UpdateMetaObjectEnd
-__far_z_07_0120:
+__far_z_07_0117:
     even
 DoNothing:
     jmp     c_do_nothing_z07
@@ -7650,17 +7584,17 @@ UpdateFluteSecret:
     moveq   #0,D3
     move.b  ($051A,A4),D3
     cmpi.b  #$0C,D3
-    bcs.s  __far_z_07_0121
+    bcs.s  __far_z_07_0118
     jmp  L1FF28_Exit
-__far_z_07_0121:
+__far_z_07_0118:
     ; 7 of every 8 frames, return.
     ;
     move.b  ($0015,A4),D0
     andi.b #$07,D0
     cmpi.b  #$04,D0
-    beq.s  __far_z_07_0122
+    beq.s  __far_z_07_0119
     jmp  L1FF28_Exit
-__far_z_07_0122:
+__far_z_07_0119:
     ; So, every 8 frames:
     ; 1. Increment the secret color cycle count.
     ; 2. Change the water palette.
@@ -7669,9 +7603,9 @@ __far_z_07_0122:
     ;
     addq.b  #1,($051A,A4)
     cmpi.b  #$0B,D3
-    bne.s  __far_z_07_0123
+    bne.s  __far_z_07_0120
     jmp  RevealPondStairs
-__far_z_07_0123:
+__far_z_07_0120:
 ; Params:
 ; Y: a point in the cycle (0 to $B)
 ;
@@ -7698,9 +7632,9 @@ _L_z07_CueTransferPondPaletteRow_CopyBytes:
     move.b  (A0,D3.W),D0
     move.b  D0,($0308,A4)
     cmpi.b  #$0A,D3
-    beq.s  __far_z_07_0124
+    beq.s  __far_z_07_0121
     jmp  L1FF28_Exit
-__far_z_07_0124:
+__far_z_07_0121:
     move.b  #$99,D0
     move.b  D0,($034A,A4)
     even
@@ -7726,9 +7660,9 @@ AnimatePond:
     ; * 4 frames delaying
     move.b  ($0015,A4),D0
     andi.b #$04,D0
-    bne.s  __far_z_07_0125
+    bne.s  __far_z_07_0122
     jmp  L1FF28_Exit
-__far_z_07_0125:
+__far_z_07_0122:
     subq.b  #1,($051A,A4)
     moveq   #0,D3
     move.b  ($051A,A4),D3

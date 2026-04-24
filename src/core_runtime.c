@@ -429,3 +429,38 @@ void corert_clear_ram0300_up_to(unsigned int end_hi, unsigned int start_off) {
         return;
     }
 }
+
+extern void c_wield_candle(void);
+
+void corert_handle_shot_blocked(unsigned int slot) {
+    unsigned char saved_link_state;
+    unsigned char saved_candle_used;
+
+    if ((RAM(0x00AC + slot) & 0x80) == 0) {
+        corert_set_shot_spreading_state(slot);
+        return;
+    }
+
+    if (RAM(0x0661) == 0) {
+        corert_deactivate_shot(slot);
+        return;
+    }
+
+    saved_link_state = RAM(0x00AC);
+    saved_candle_used = RAM(0x0513);
+    RAM(0x0513) = 0;
+    c_wield_candle();
+    RAM(0x0513) = saved_candle_used;
+    RAM(0x00AC) = saved_link_state;
+
+    if (RAM(0x00AC + slot) != 0x21) {
+        corert_deactivate_link_shot();
+        return;
+    }
+
+    RAM(0x00AC + slot) = 0x22;
+    RAM(0x0070 + slot) = RAM(0x0070 + 14);
+    RAM(0x0084 + slot) = RAM(0x0084 + 14);
+    RAM(0x0098 + slot) = RAM(0x0098 + 14);
+    RAM(0x0028 + slot) = 79;
+}

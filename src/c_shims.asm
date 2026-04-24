@@ -5392,3 +5392,18 @@ c_clear_ram0300_up_to:
     jsr     z07_clear_ram0300_up_to
     addq.l  #8,SP
     rts
+
+;==============================================================================
+; --- Batch 100: z_07 shot-block helper ---
+;==============================================================================
+
+    xdef    c_handle_shot_blocked
+    xref    z07_handle_shot_blocked
+
+c_handle_shot_blocked:
+    moveq   #0,D1
+    move.w  D2,D1
+    move.l  D1,-(SP)
+    jsr     z07_handle_shot_blocked
+    addq.l  #4,SP
+    rts
