@@ -1,6 +1,10 @@
 #include "enemy_runtime_private.h"
 
 static const unsigned char enrt_secret_quest_numbers[] = { 0x00, 0x00, 0x01 };
+static const unsigned char enrt_vire_jump_offsets[] = {
+    0x00, 0xFD, 0xFE, 0xFF, 0xFF, 0x00, 0xFF, 0x00,
+    0x00, 0x01, 0x00, 0x01, 0x01, 0x02, 0x03, 0x00
+};
 
 void enrt_dodongo_dec_bloated_timer(unsigned int slot) {
     ENEMY_BLOATED_TIMER(slot)--;
@@ -277,6 +281,64 @@ void enrt_lamnola_move(unsigned int slot) {
         ENEMY_Y(slot) = (unsigned char)(ENEMY_Y(slot) + step);
     if (dir & 0x08)
         ENEMY_Y(slot) = (unsigned char)(ENEMY_Y(slot) - step);
+}
+
+void enrt_update_vire_state(unsigned int slot) {
+    if (ENEMY_STATE_TIMER(slot) != 0) {
+        if (c_gel_move_splitting(slot) & CARRY_SET)
+            ENEMY_STATE_TIMER(slot)++;
+        return;
+    }
+
+    z04_update_common_wanderer(0x80, slot);
+    if (ENEMY_PAUSE_FLAG != 0 || ENEMY_STUN_TIMER(slot) != 0)
+        return;
+    if ((ENEMY_DIR(slot) & 0x03) == 0)
+        return;
+
+    ENEMY_Y(slot) = (unsigned char)(ENEMY_Y(slot) + enrt_vire_jump_offsets[z01_abs(OBJ(0x0394, slot))]);
+}
+
+void enrt_check_vire_collisions(unsigned int slot) {
+    if (ENEMY_STATE_TIMER(slot) != 0)
+        return;
+
+    c_check_monster_collisions(slot);
+    if (ENEMY_METASTATE(slot) != 0)
+        return;
+    if (ENEMY_HIT_REACTION(slot) == 0)
+        return;
+    ENEMY_STATE_TIMER(slot)++;
+}
+
+void enrt_draw_vire(unsigned int slot) {
+    unsigned char frame = ENEMY_DRAW_FRAME(slot);
+    c_anim_advance_and_fetch(10, slot);
+    if (ENEMY_DIR(slot) & 0x08)
+        frame = (unsigned char)(frame + 2);
+    c_draw_object_mirrored_with_frame(frame, slot);
+}
+
+void enrt_update_vire(unsigned int slot) {
+    unsigned char tries;
+
+    enrt_update_vire_state(slot);
+    if (ENEMY_STATE_TIMER(slot) < 2) {
+        enrt_check_vire_collisions(slot);
+        enrt_draw_vire(slot);
+        return;
+    }
+
+    ENEMY_SHOT_COUNT++;
+    z07_destroy_monster(slot);
+    for (tries = 1; ; --tries) {
+        if (c_find_empty_monster_slot() != 0) {
+            ENEMY_VIRE_SPLIT_TYPE = 28;
+            c_shoot(ENEMY_VIRE_SPLIT_TYPE);
+        }
+        if ((signed char)tries < 0)
+            break;
+    }
 }
 
 void enrt_set_dead_dummy_obj_type(unsigned int slot) {

@@ -105,6 +105,22 @@ void z04_lamnola_move(unsigned int slot) {
     enrt_lamnola_move(slot);
 }
 
+void z04_update_vire(unsigned int slot) {
+    enrt_update_vire(slot);
+}
+
+void z04_update_vire_state(unsigned int slot) {
+    enrt_update_vire_state(slot);
+}
+
+void z04_check_vire_collisions(unsigned int slot) {
+    enrt_check_vire_collisions(slot);
+}
+
+void z04_draw_vire(unsigned int slot) {
+    enrt_draw_vire(slot);
+}
+
 unsigned int z04_extract_hit_point_value(unsigned int val) {
     return enrt_extract_hit_point_value(val);
 }

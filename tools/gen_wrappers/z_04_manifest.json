@@ -125,6 +125,26 @@
       "sig": "void (unsigned int slot)"
     },
     {
+      "old": "z04_update_vire",
+      "new": "enrt_update_vire",
+      "sig": "void (unsigned int slot)"
+    },
+    {
+      "old": "z04_update_vire_state",
+      "new": "enrt_update_vire_state",
+      "sig": "void (unsigned int slot)"
+    },
+    {
+      "old": "z04_check_vire_collisions",
+      "new": "enrt_check_vire_collisions",
+      "sig": "void (unsigned int slot)"
+    },
+    {
+      "old": "z04_draw_vire",
+      "new": "enrt_draw_vire",
+      "sig": "void (unsigned int slot)"
+    },
+    {
       "old": "z04_extract_hit_point_value",
       "new": "enrt_extract_hit_point_value",
       "sig": "unsigned int (unsigned int val)"

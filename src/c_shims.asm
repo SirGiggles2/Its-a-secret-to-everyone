@@ -5283,3 +5283,49 @@ c_lamnola_move:
     jsr     z04_lamnola_move
     addq.l  #4,SP
     rts
+
+;==============================================================================
+; --- Batch 95: Vire family (drained from z_04.asm) ---
+;==============================================================================
+
+    xdef    c_update_vire
+    xdef    c_update_vire_state
+    xdef    c_check_vire_collisions
+    xdef    c_draw_vire
+
+    xref    z04_update_vire
+    xref    z04_update_vire_state
+    xref    z04_check_vire_collisions
+    xref    z04_draw_vire
+
+c_update_vire:
+    moveq   #0,D1
+    move.w  D2,D1
+    move.l  D1,-(SP)
+    jsr     z04_update_vire
+    addq.l  #4,SP
+    rts
+
+c_update_vire_state:
+    moveq   #0,D1
+    move.w  D2,D1
+    move.l  D1,-(SP)
+    jsr     z04_update_vire_state
+    addq.l  #4,SP
+    rts
+
+c_check_vire_collisions:
+    moveq   #0,D1
+    move.w  D2,D1
+    move.l  D1,-(SP)
+    jsr     z04_check_vire_collisions
+    addq.l  #4,SP
+    rts
+
+c_draw_vire:
+    moveq   #0,D1
+    move.w  D2,D1
+    move.l  D1,-(SP)
+    jsr     z04_draw_vire
+    addq.l  #4,SP
+    rts

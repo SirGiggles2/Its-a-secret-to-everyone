@@ -4340,6 +4340,12 @@ def _patch_z04(path):
     text = _stub_func(text, 'Lamnola_UpdateHead', 'c_lamnola_update_head')
     text = _stub_func(text, 'Lamnola_Move', 'c_lamnola_move')
 
+    # --- Batch 95: Vire family ---
+    text = _stub_func(text, 'UpdateVire', 'c_update_vire')
+    text = _stub_func(text, 'UpdateVireState', 'c_update_vire_state')
+    text = _stub_func(text, 'CheckVireCollisions', 'c_check_vire_collisions')
+    text = _stub_func(text, 'DrawVire', 'c_draw_vire')
+
     with open(path, 'w', encoding='utf-8') as f:
         f.write(text)
 

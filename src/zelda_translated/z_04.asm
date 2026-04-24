@@ -6603,51 +6603,11 @@ _L_z04_UpdateLikeLike_DrawAfterCapture:
 
     even
 UpdateVire:
-    jsr     UpdateVireState
-    ; If state >= 2, then go split up into 2 keeses.
-    ;
-    lea     ($00AC,A4),A0
-    move.b  (A0,D2.W),D0
-    cmpi.b  #$02,D0
-    bcc  _L_z04_UpdateVire_SplitUp
-    jsr     CheckVireCollisions
-    jmp     DrawVire
+    jmp     c_update_vire
 
-    even
-_L_z04_UpdateVire_SplitUp:
-    ; As with Zol, we'll destroy one monster, and make two.
-    ; So, increase object count by 1.
-    ;
-    addq.b  #1,($034E,A4)
-    jsr     DestroyMonster
-    ; Two times, look for an empty monster slot.
-    ; If one is found, then use the "shoot" operation to create a red keese.
-    ;
-    moveq   #1,D3
-    even
-_L_z04_UpdateVire_LoopMakeKeese:
-    move.b  D3,D0
-    move.b  D0,-(A5)  ; PHA
-    jsr     FindEmptyMonsterSlot
-    beq  _L_z04_UpdateVire_NextLoopMakeKeese
-    moveq   #28,D0
-    move.b  D0,($0000,A4)
-    jsr     Shoot
-    even
-_L_z04_UpdateVire_NextLoopMakeKeese:
-    move.b  (A5)+,D0  ; PLA
-    moveq   #0,D3
-    move.b  D0,D3
-    subq.b  #1,D3
-    bpl  _L_z04_UpdateVire_LoopMakeKeese
-    rts
-
-    even
 UpdateVireState:
-    lea     ($00AC,A4),A0
-    move.b  (A0,D2.W),D0
-    jsr     _m68k_tablejump  ; M68K-native table dispatch (replaces JSR TableJump)
-    even
+    jmp     c_update_vire_state
+
 UpdateVireState_JumpTable:
     dc.l    UpdateVireState0   ; jump table entry (32-bit for _m68k_tablejump)
     dc.l    UpdateZolState1_Shove   ; jump table entry (32-bit for _m68k_tablejump)
@@ -6698,56 +6658,11 @@ _L_z04_UpdateVireState0_Exit:
 
     even
 CheckVireCollisions:
-    ; If state <> 0, then the vire's going to split up.
-    ; So, no need to check collisions. Return.
-    ;
-    lea     ($00AC,A4),A0
-    move.b  (A0,D2.W),D0
-    bne  _L_z04_CheckVireCollisions_Exit
-    jsr     CheckMonsterCollisions
-    ; If it was killed, then return.
-    ;
-    lea     ($0405,A4),A0
-    move.b  (A0,D2.W),D0
-    bne  _L_z04_CheckVireCollisions_Exit
-    ; If temporarily invincible, then it was harmed.
-    ; Advance the state to split up.
-    ;
-    lea     ($04F0,A4),A0
-    move.b  (A0,D2.W),D0
-    beq  _L_z04_CheckVireCollisions_Exit
-    lea     ($00AC,A4),A0
-    addq.b  #1,(A0,D2.W)
-    even
-_L_z04_CheckVireCollisions_Exit:
-    rts
+    jmp     c_check_vire_collisions
 
-    even
 DrawVire:
-    moveq   #10,D0
-    jsr     Anim_AdvanceAnimCounterAndSetObjPosForSpriteDescriptor
-    ; The movement frame is the fram image number, unless facing up.
-    ; In this case, add 2 to the frame image.
-    ;
-    lea     ($0098,A4),A0
-    move.b  (A0,D2.W),D0
-    andi.b #$08,D0
-    lsr.b  #1,D0   ; LSR A
-    lsr.b  #1,D0   ; LSR A
-    andi    #$EE,CCR  ; CLC: clear C+X
-    lea     ($03E4,A4),A0
-    move.b  (A0,D2.W),D1
-    addx.b  D1,D0   ; ADC ObjAnimFrame,X
-    jmp     DrawObjectMirrored
+    jmp     c_draw_vire
 
-; Description:
-; Blue Wizzrobe has two states: walking and teleporting.
-; When walking, the object timer is set. When teleporting,
-; the teleporting distance remaining is set.
-;
-; If we have the magic clock, then only go draw and check collisions.
-;
-    even
 UpdateBlueWizzrobe:
     move.b  ($066C,A4),D0
     beq.s  __far_z_04_0057

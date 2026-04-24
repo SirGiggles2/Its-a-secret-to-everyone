@@ -25,6 +25,7 @@ extern void c_get_object_middle(unsigned int slot);
 extern void c_check_monster_sword_collision(unsigned int monster_slot, unsigned int weapon_slot);
 extern void c_reset_shove_info(unsigned int slot);
 extern void c_check_link_collision(unsigned int slot);
+extern unsigned int c_gel_move_splitting(unsigned int slot);
 extern void c_update_zol_state(unsigned int slot);
 extern void c_zol_check_collisions(unsigned int slot);
 extern void c_gel_move(unsigned int slot);
@@ -40,6 +41,7 @@ extern void z07_reset_obj_metastate(unsigned int slot);
 extern void z07_reset_obj_metastate_and_timer(unsigned int slot);
 extern void z04_flyer_compare_max_speed(unsigned char speed, unsigned int slot);
 extern void z04_flyer_set_flying_state(unsigned int val, unsigned int slot);
+extern void z04_update_common_wanderer(unsigned int turn_rate, unsigned int slot);
 extern void z04_gleeok_set_segment_x(unsigned int val, unsigned int slot);
 extern void z04_gleeok_set_segment_y(unsigned int val, unsigned int slot);
 extern void z04_play_boss_death_cry_if_needed(unsigned int slot);
@@ -77,5 +79,8 @@ extern unsigned char c_get_colliding_tile_moving(unsigned int slot);
 extern void c_reset_obj_metastate(unsigned int slot);
 extern void c_write_blank_priority_sprites(void);
 extern void c_shoot_fireball(unsigned int dir, unsigned int slot);
+extern unsigned char c_find_empty_monster_slot(void);
+extern void c_anim_advance_and_fetch(unsigned int val, unsigned int slot);
+extern unsigned int c_shoot(unsigned int type);
 
 #endif
