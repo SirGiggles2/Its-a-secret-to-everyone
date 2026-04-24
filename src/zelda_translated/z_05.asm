@@ -6494,11 +6494,118 @@ LayOutRoom:
 ; The first iteration of the loop below will add $16 to it before using it.
     even
 CopyColumnToTileBuf:
-    jmp     c_copy_column_to_tilebuf
+    moveq   #26,D0
+    move.b  D0,($0000,A4)
+    moveq   #101,D0
+    move.b  D0,($0001,A4)
+    moveq   #0,D2
+    move.b  ($00E8,A4),D2
+    subq.b  #1,D2
+    move.b  D2,D0
+    moveq   #0,D3
+    move.b  ($0301,A4),D3
+    lea     ($0303,A4),A0
+    move.b  D0,(A0,D3.W)
+    moveq   #33,D0
+    lea     ($0302,A4),A0
+    move.b  D0,(A0,D3.W)
+    movea.l #NES_RAM+$651A,A1            ; PATCH P36: direct playmap base
+    even
+_L_z05_CopyColumnToTileBuf_AdvanceCol:
+    adda.w  #$0016,A1                    ; PATCH P36: next source column
+    subq.b  #1,D2
+    bpl  _L_z05_CopyColumnToTileBuf_AdvanceCol
+    move.b  #$96,D0
+    lea     ($0304,A4),A0
+    move.b  D0,(A0,D3.W)
+    move.b  D2,D0
+    lea     ($031B,A4),A0
+    move.b  D0,(A0,D3.W)
+    moveq   #0,D2
+    move.b  D3,D2
+    moveq   #22,D5
+    lea     ($0305,A4),A0
+    even
+_L_z05_CopyColumnToTileBuf_Copy:
+    move.b  (A1)+,D0                     ; PATCH P36: direct source walk
+    move.b  D0,(A0,D2.W)
+    addq.b  #1,D2
+    subq.b  #1,D5
+    bne  _L_z05_CopyColumnToTileBuf_Copy
+    addq.b  #1,D2
+    addq.b  #1,D2
+    addq.b  #1,D2
+    move.b  D2,($0301,A4)
+    move.l  A1,D4                        ; PATCH P36: keep ptr mirror coherent
+    sub.l   #NES_RAM,D4
+    move.b  D4,($0000,A4)
+    lsr.l   #8,D4
+    move.b  D4,($0001,A4)
+    rts
 
+    even
 CopyRowToTileBuf:
-    jmp     c_copy_row_to_tilebuf
+    ; Put in 00:01 the address of the
+    ; first tile of current row in play area.
+    moveq   #101,D0
+    move.b  D0,($0001,A4)
+    move.b  ($00E9,A4),D0
+    moveq   #0,D2
+    move.b  D0,D2
+    andi    #$EE,CCR  ; CLC: clear C+X
+    move.b  #$30,D1
+    addx.b  D1,D0   ; ADC #$30 (X flag = 6502 C)
+    move.b  D0,($0000,A4)
+    bcc  _L_z05_CopyRowToTileBuf_RowAddrReady
+    addq.b  #1,($0001,A4)
+_L_z05_CopyRowToTileBuf_RowAddrReady:
+    ; Indicate the target VRAM address:
+    ; $2100 + (CurRow * $20)
+    moveq   #32,D0
+    move.b  D0,($0302,A4)
+    move.b  #$E0,D0
+    move.b  D0,($0303,A4)
+    even
+_L_z05_CopyRowToTileBuf_Add20H_P36:
+    move.b  ($0303,A4),D0
+    andi    #$EE,CCR  ; CLC: clear C+X
+    move.b  #$20,D1
+    addx.b  D1,D0   ; ADC #$20 (X flag = 6502 C)
+    move.b  D0,($0303,A4)
+    bcc  _L_z05_CopyRowToTileBuf_Add20CarryDone_P36
+    addq.b  #1,($0302,A4)
+_L_z05_CopyRowToTileBuf_Add20CarryDone_P36:
+    subq.b  #1,D2
+    bpl  _L_z05_CopyRowToTileBuf_Add20H_P36
+    moveq   #32,D0
+    move.b  D0,($0304,A4)
+    move.b  D2,($0325,A4)
+    ; Copy a row from column map in RAM to tile buf.
+    ;
+    movea.l #NES_RAM+$6530,A1            ; PATCH P36: playmap row base
+    moveq   #0,D4
+    move.b  ($00E9,A4),D4
+    adda.w  D4,A1                        ; PATCH P36: row offset
+    moveq   #0,D2
+    lea     ($0305,A4),A0
+    even
+_L_z05_CopyRowToTileBuf_Copy_P36:
+    move.b  (A1),D0                      ; PATCH P36: direct source walk
+    move.b  D0,(A0,D2.W)
+    adda.w  #$0016,A1                    ; PATCH P36: next column same row
+    addq.b  #1,D2
+    cmpi.b  #$20,D2
+    bcs  _L_z05_CopyRowToTileBuf_Copy_P36
+    moveq   #35,D0
+    move.b  D0,($0301,A4)
+    move.l  A1,D4                        ; PATCH P36: keep ptr mirror coherent
+    sub.l   #NES_RAM,D4
+    move.b  D4,($0000,A4)
+    lsr.l   #8,D4
+    move.b  D4,($0001,A4)
+    rts
 
+    even
 TileObjectTypes:
     dc.b    $62, $63, $64, $65, $66, $67
 
@@ -8693,11 +8800,48 @@ _anon_z05_201:
 ; Check compasses.
     even
 HasCompass:
-    jmp     c_has_compass
-
+    moveq   #16,D2
+    bne  _anon_z05_202
+; Returns:
+; A: 0 if map of current level is missing.
+;
+;
+; Check maps.
+    even
 HasMap:
-    jmp     c_has_map
+    moveq   #17,D2
+_anon_z05_202:
+    move.b  ($0010,A4),D0
+    beq  _L_z05_HasMap_Exit
+    ori     #$11,CCR  ; SEC: set C+X
+    move.b  #$01,D1
+    eori    #$10,CCR  ; flip X: 6502 SBC polarity
+    subx.b  D1,D0   ; SBC #$01
+    eori    #$10,CCR  ; restore X = 6502 C
+    cmpi.b  #$08,D0
+    bcs  _anon_z05_203
+    addq.b  #1,D2
+    addq.b  #1,D2
+_anon_z05_203:
+    andi.b #$07,D0
+    moveq   #0,D3
+    move.b  D0,D3
+    lea     ($0657,A4),A0
+    move.b  (A0,D2.W),D0
+    lea     (LevelMasks).l,A0
+    move.b  (A0,D3.W),D1
+    and.b  D1,D0
+    even
+_L_z05_HasMap_Exit:
+    rts
 
+; Params:
+; Y: offset from the third element in dynamic transfer buf
+;    to write at (between 1 and $10)
+;
+;
+; Save dynamic transfer buf offset.
+    even
 Submenu_WriteScanningMapRoomMark:
     move.b  D3,D0
     move.b  D0,-(A5)  ; PHA
@@ -8782,11 +8926,77 @@ _L_z05_Submenu_WriteScanningMapRoomMark_WriteMapTile:
 ;
     even
 CalcOpenDoorwayMask:
-    jmp     c_calc_open_doorway_mask
+    moveq   #0,D3
+    move.b  D0,-(A5)  ; PHA
+    cmpi.b  #$04,D0
+    bcs  _L_z05_CalcOpenDoorwayMask_ByDoorType
+    ; Else we have to find out the walkability from the room flags.
+    ;
+    move.b  D2,D0
+    move.b  D0,-(A5)  ; PHA
+    move.b  D3,D0
+    move.b  D0,-(A5)  ; PHA
+    jsr     GetRoomFlags
+    andi    #$EE,CCR  ; CLC: clear C+X
+    lea     (LevelMasks).l,A0
+    move.b  (A0,D2.W),D1
+    and.b  D1,D0
+    beq  _anon_z05_205
+    ori     #$11,CCR  ; SEC: set C+X
+_anon_z05_205:
+    move.b  (A5)+,D0  ; PLA
+    moveq   #0,D3
+    move.b  D0,D3
+    move.b  (A5)+,D0  ; PLA
+    moveq   #0,D2
+    move.b  D0,D2
+    even
+_L_z05_CalcOpenDoorwayMask_ShiftIntoMask:
+    lea     ($033F,A4),A0
+    move.b  (A0,D3.W),D0
+    roxl.b  #1,D0   ; ROL A
+    andi.b #$0F,D0
+    lea     ($033F,A4),A0
+    move.b  D0,(A0,D3.W)
+    move.b  (A5)+,D0  ; PLA
+    rts
 
+    even
+_L_z05_CalcOpenDoorwayMask_ByDoorType:
+    ; The door attribute indicates the walkability.
+    ;
+    cmpi.b  #$00,D0
+    beq  _L_z05_CalcOpenDoorwayMask_ShiftIntoMask
+    andi    #$EE,CCR  ; CLC: clear C+X
+    bcc  _L_z05_CalcOpenDoorwayMask_ShiftIntoMask
+    even
 AddDoorFlagsToCurOpenedDoors:
-    jmp     c_add_door_flags
+    jsr     GetRoomFlags
+    moveq   #3,D2
+    even
+_L_z05_AddDoorFlagsToCurOpenedDoors_LoopDoorBit:
+    move.b  ($00,A4),D1   ; ptr lo
+    move.b  ($01,A4),D4  ; ptr hi
+    andi.w  #$00FF,D1         ; zero-extend lo byte
+    lsl.w   #8,D4
+    or.w    D1,D4             ; D4 = NES ptr addr
+    ext.l   D4
+    add.l   #NES_RAM,D4       ; → Genesis addr
+    movea.l D4,A0
+    move.b  (A0,D3.W),D0     ; LDA ($nn),Y
+    lea     (LevelMasks).l,A0
+    move.b  (A0,D2.W),D1
+    and.b  D1,D0
+    beq  _anon_z05_206
+    move.b  ($00EE,A4),D1
+    or.b  D1,D0
+    move.b  D0,($00EE,A4)
+_anon_z05_206:
+    subq.b  #1,D2
+    bpl  _L_z05_AddDoorFlagsToCurOpenedDoors_LoopDoorBit
+    rts
 
+    even
 SplitRoomId:
     jmp     c_split_room_id
 

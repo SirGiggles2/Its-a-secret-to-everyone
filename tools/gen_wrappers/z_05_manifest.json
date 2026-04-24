@@ -463,6 +463,36 @@
       "old": "z05_touch_door_open",
       "new": "roomrt_touch_door_open",
       "sig": "void (void)"
+    },
+    {
+      "old": "z05_update_menu_and_meters",
+      "new": "savert_update_menu_and_meters",
+      "sig": "void (void)"
+    },
+    {
+      "old": "z05_update_menu",
+      "new": "savert_update_menu",
+      "sig": "void (void)"
+    },
+    {
+      "old": "z05_update_menu_common1",
+      "new": "savert_update_menu_common_1",
+      "sig": "void (void)"
+    },
+    {
+      "old": "z05_update_menu5_uw",
+      "new": "savert_update_menu_5_uw",
+      "sig": "void (void)"
+    },
+    {
+      "old": "z05_update_menu_scroll_down_ow",
+      "new": "savert_update_menu_scroll_down_ow",
+      "sig": "void (void)"
+    },
+    {
+      "old": "z05_update_menu_scroll_down_uw",
+      "new": "savert_update_menu_scroll_down_uw",
+      "sig": "void (void)"
     }
   ]
 }

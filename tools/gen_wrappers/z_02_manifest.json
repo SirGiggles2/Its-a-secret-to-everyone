@@ -99,6 +99,41 @@
       "old": "z02_init_mode13_sub4",
       "new": "frontdemo_init_mode13_sub4",
       "sig": "void (void)"
+    },
+    {
+      "old": "z02_init_demo_run_tasks",
+      "new": "frontdemo_init_demo_run_tasks",
+      "sig": "void (void)"
+    },
+    {
+      "old": "z02_init_demo_phase1",
+      "new": "frontdemo_init_demo_phase_1",
+      "sig": "void (void)"
+    },
+    {
+      "old": "z02_update_mode0_demo",
+      "new": "frontdemo_update_mode0_demo",
+      "sig": "void (void)"
+    },
+    {
+      "old": "z02_update_mode0_demo_sub0",
+      "new": "frontdemo_update_mode0_demo_sub0",
+      "sig": "void (void)"
+    },
+    {
+      "old": "z02_update_mode0_demo_sub2",
+      "new": "frontdemo_update_mode0_demo_sub2",
+      "sig": "void (void)"
+    },
+    {
+      "old": "z02_animate_demo",
+      "new": "frontdemo_animate_demo",
+      "sig": "void (void)"
+    },
+    {
+      "old": "z02_animate_demo_phase1",
+      "new": "frontdemo_animate_phase_1",
+      "sig": "void (void)"
     }
   ]
 }

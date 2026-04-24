@@ -19,6 +19,14 @@ void frontdemo_init_demo_subphase_play_title_song(void);
 void frontdemo_init_mode13_sub3(void);
 void frontdemo_init_mode13_sub4(void);
 
+void frontdemo_init_demo_run_tasks(void);
+void frontdemo_init_demo_phase_1(void);
+void frontdemo_update_mode0_demo(void);
+void frontdemo_update_mode0_demo_sub0(void);
+void frontdemo_update_mode0_demo_sub2(void);
+void frontdemo_animate_demo(void);
+void frontdemo_animate_phase_1(void);
+
 void frontname_reset_variables(unsigned int val);
 void frontname_reset_button_repeat_state(unsigned int val);
 void frontname_set_name_cursor_sprite_x(void);

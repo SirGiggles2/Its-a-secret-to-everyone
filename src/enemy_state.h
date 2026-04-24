@@ -67,6 +67,36 @@
 #define ENEMY_GLEEOK_SEG_X_TARGET(slot) OBJ(0x0073, (slot))
 #define ENEMY_GLEEOK_SEG_Y(slot)        OBJ(0x0086, (slot))
 #define ENEMY_GLEEOK_SEG_Y_TARGET(slot) OBJ(0x0087, (slot))
+/* Gleeok shared/global state */
+#define ENEMY_GLEEOK_NECK_INDEX         RAM(0x04D7)
+#define ENEMY_GLEEOK_REF_SEG_DIST       RAM(0x04D8)
+#define ENEMY_GLEEOK_REF_LIMIT_H_3      RAM(0x04DD)
+#define ENEMY_GLEEOK_REF_LIMIT_V_3      RAM(0x04DE)
+#define ENEMY_GLEEOK_WRITHE_CNTR        RAM(0x04E6)
+#define ENEMY_GLEEOK_ANIM_CNTR          RAM(0x0510)
+#define ENEMY_GLEEOK_DEAD_NECK_MASK     RAM(0x0511)
+#define ENEMY_GLEEOK_HEAD_X             RAM(0x0075)   /* OBJ(0x70, 5) */
+#define ENEMY_GLEEOK_HEAD_Y             RAM(0x0089)   /* OBJ(0x84, 5) */
+#define ENEMY_GLEEOK_BASE_X             RAM(0x0071)   /* OBJ(0x70, 1) */
+#define ENEMY_GLEEOK_BASE_Y             RAM(0x0085)   /* OBJ(0x84, 1) */
+#define ENEMY_OBJ_SHOVE_DIR(slot)       OBJ(0x00C0, (slot))
+#define ENEMY_GOHMA_GO_STRAIGHT(slot)   OBJ(0x0451, (slot))
+#define ENEMY_GOHMA_DIST_TRAVELED(slot) OBJ(0x0412, (slot))   /* aliases ENEMY_PUSH_TIMER */
+#define ENEMY_GOHMA_OPEN_EYE_TIMER(slot)   OBJ(0x0444, (slot))   /* aliases ENEMY_AI_STATE */
+#define ENEMY_GOHMA_NEXT_OPEN_EYE(slot)    OBJ(0x042C, (slot))   /* aliases ENEMY_TURN_TIMER */
+#define ENEMY_GOHMA_SPRINTS(slot)          OBJ(0x045E, (slot))   /* aliases ENEMY_BLOATED_TIMER */
+#define ENEMY_GOHMA_EYE_FRAME(slot)        OBJ(0x046B, (slot))
+#define ENEMY_GOHMA_CLOSED_EYE_CNTR(slot)  OBJ(0x0478, (slot))   /* aliases ENEMY_BOUNCE_FLAGS */
+#define ENEMY_GOHMA_SHOOT_TIMER(slot)      OBJ(0x0380, (slot))   /* aliases ENEMY_BOSS_HP_PHASE */
+#define ENEMY_GOHMA_MOVE_ACCUM(slot)       OBJ(0x041F, (slot))   /* aliases ENEMY_AIR_SPEED */
+/* Gleeok per-segment data when loaded into the working slot 1..6 area */
+#define ENEMY_GLEEOK_NECK_X_PTR_LO      RAM(0x0000)
+#define ENEMY_GLEEOK_NECK_X_PTR_HI      RAM(0x0001)
+#define ENEMY_GLEEOK_NECK_Y_PTR_LO      RAM(0x0002)
+#define ENEMY_GLEEOK_NECK_Y_PTR_HI      RAM(0x0003)
+#define ENEMY_GLEEOK_NECK_M_PTR_LO      RAM(0x0004)
+#define ENEMY_GLEEOK_NECK_M_PTR_HI      RAM(0x0005)
+#define NES_RAM_BASE                    0x0000u  /* RAM() already adds the FF0000 base */
 #define ENEMY_MANHANDLA_SEG_DIR(slot)   OBJ(0x0099, (slot))
 #define ENEMY_DARK_ROOM_FLAG            RAM(0x0010)
 #define ENEMY_THROWER_SLOT              RAM(0x0340)

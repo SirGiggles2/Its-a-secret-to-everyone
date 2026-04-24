@@ -421,4 +421,56 @@ void z04_update_fireball(unsigned int slot) {
     enrt_update_fireball(slot);
 }
 
+void z04_update_common_wanderer(unsigned int turn_rate, unsigned int slot) {
+    enrt_update_common_wanderer(turn_rate, slot);
+}
+
+void z04_wanderer_target_player(unsigned int slot) {
+    enrt_wanderer_target_player(slot);
+}
+
+void z04_update_goriya(unsigned int slot) {
+    enrt_update_goriya(slot);
+}
+
+void z04_update_zol_state(unsigned int slot) {
+    enrt_update_zol_state(slot);
+}
+
+void z04_zol_check_collisions(unsigned int slot) {
+    enrt_zol_check_collisions(slot);
+}
+
+void z04_gel_move(unsigned int slot) {
+    enrt_gel_move(slot);
+}
+
+void z04_gel_check_collisions(unsigned int slot) {
+    enrt_gel_check_collisions(slot);
+}
+
+unsigned int z04_gel_move_splitting(unsigned int slot) {
+    return enrt_gel_move_splitting(slot);
+}
+
+void z04_update_normal_zol_or_gel(unsigned char qspeed, unsigned int slot) {
+    enrt_update_normal_zol_or_gel(qspeed, slot);
+}
+
+void z04_update_gohma(unsigned int slot) {
+    enrt_update_gohma(slot);
+}
+
+void z04_update_gleeok(unsigned int slot) {
+    enrt_update_gleeok(slot);
+}
+
+void z04_l_gleeok_store_ref_seg_distance(unsigned int signed_ref_dist) {
+    enrt_gleeok_store_ref_seg_distance(signed_ref_dist);
+}
+
+void z04_gleeok_check_collisions(unsigned int slot) {
+    enrt_gleeok_check_collisions(slot);
+}
+
 /* <<< end auto-wrappers >>> */

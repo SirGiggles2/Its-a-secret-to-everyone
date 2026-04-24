@@ -1,0 +1,14 @@
+{
+  "bank": "z_05",
+  "entries": [
+    {"name": "UpdateMenuAndMeters", "target": "savert_update_menu_and_meters", "sig": "void (void)", "kind": "jmp"},
+    {"name": "UpdateMenu", "target": "savert_update_menu", "sig": "void (void)", "kind": "jmp"},
+    {"name": "UpdateMenuUW_JumpTable", "kind": "delete"},
+    {"name": "UpdateMenuOW_JumpTable", "kind": "delete"},
+    {"name": "UpdateMenuCommon1", "target": "savert_update_menu_common_1", "sig": "void (void)", "kind": "jmp"},
+    {"name": "UpdateMenu_Return", "kind": "delete"},
+    {"name": "UpdateMenu5UW", "target": "savert_update_menu_5_uw", "sig": "void (void)", "kind": "jmp"},
+    {"name": "UpdateMenuScrollDownOW", "target": "savert_update_menu_scroll_down_ow", "sig": "void (void)", "kind": "jmp"},
+    {"name": "UpdateMenuScrollDownUW", "target": "savert_update_menu_scroll_down_uw", "sig": "void (void)", "kind": "jmp"}
+  ]
+}

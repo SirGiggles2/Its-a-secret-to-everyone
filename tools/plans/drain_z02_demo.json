@@ -1,0 +1,17 @@
+{
+  "bank": "z_02",
+  "entries": [
+    {"name": "InitDemo_RunTasks", "target": "frontdemo_init_demo_run_tasks", "sig": "void (void)", "kind": "jmp"},
+    {"name": "InitDemo_RunTasks_Phase0_JumpTable", "kind": "delete"},
+    {"name": "InitDemo_Phase1", "target": "frontdemo_init_demo_phase_1", "sig": "void (void)", "kind": "jmp"},
+    {"name": "InitDemo_RunTasks_Phase1_JumpTable", "kind": "delete"},
+    {"name": "UpdateMode0Demo", "target": "frontdemo_update_mode0_demo", "sig": "void (void)", "kind": "jmp"},
+    {"name": "UpdateMode0Demo_JumpTable", "kind": "delete"},
+    {"name": "UpdateMode0Demo_Sub0", "target": "frontdemo_update_mode0_demo_sub0", "sig": "void (void)", "kind": "jmp"},
+    {"name": "UpdateMode0Demo_Sub2", "target": "frontdemo_update_mode0_demo_sub2", "sig": "void (void)", "kind": "jmp"},
+    {"name": "AnimateDemo", "target": "frontdemo_animate_demo", "sig": "void (void)", "kind": "jmp"},
+    {"name": "AnimateDemo_Phase0_JumpTable", "kind": "delete"},
+    {"name": "AnimateDemo_Phase1", "target": "frontdemo_animate_phase_1", "sig": "void (void)", "kind": "jmp"},
+    {"name": "AnimateDemo_Phase1_JumpTable", "kind": "delete"}
+  ]
+}

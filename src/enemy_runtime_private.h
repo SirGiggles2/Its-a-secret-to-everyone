@@ -52,5 +52,23 @@ extern unsigned char z07_get_collidable_tile_still(unsigned int slot);
 extern const unsigned char TektiteStartingDirs[];
 extern const unsigned char GanonStartXs[];
 extern const unsigned char PolsVoiceWalkSpeedsX[];
+extern const unsigned char LevelMasks[];
+/* Boss-family asm helpers (IMPORT shims in c_shims.asm batch 88) */
+extern void c_reverse_obj_dir8(unsigned int slot);
+extern void c_gohma_animate_and_draw(unsigned int eye_frame, unsigned int slot);
+extern void c_gohma_check_collisions(unsigned int slot);
+extern void c_gleeok_draw_body(void);
+extern void c_gleeok_fetch_neck_addrs(void);
+extern void c_gleeok_move_neck(void);
+extern void c_gleeok_move_head(void);
+extern void c_gleeok_draw_head_and_check_collisions(void);
+extern void c_gleeok_draw_segment_and_check_collisions(unsigned int slot);
+extern void c_gleeok_calc_segment_limits(unsigned int primary_dist, unsigned int axis);
+extern void c_gleeok_stretch_neck(unsigned int slot);
+extern void c_play_boss_hit_cry_if_needed(unsigned int slot);
+extern void c_play_boss_death_cry(void);
+extern void c_reset_obj_metastate(unsigned int slot);
+extern void c_write_blank_priority_sprites(void);
+extern void c_shoot_fireball(unsigned int dir, unsigned int slot);
 
 #endif

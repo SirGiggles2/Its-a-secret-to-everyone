@@ -79,7 +79,7 @@ def parse_sig(sig: str) -> tuple[str, list[str]]:
     return ret, out
 
 
-def emit_shim(c_name: str, z_name: str, sig: str) -> str:
+def emit_shim(c_name: str, z_name: str, sig: str, arg_regs: list[str] | None = None) -> str:
     """Generate an entry shim body.
 
     Conventions:
@@ -88,18 +88,29 @@ def emit_shim(c_name: str, z_name: str, sig: str) -> str:
       - void (unsigned int, unsigned int): first from stack(4), second from D2
       - unsigned int (unsigned int): carry-returning; sets CCR.C/X from bit 8
         of return value (0x100 = set).
+
+    arg_regs (optional): override default register source per arg, e.g.
+      ["D0"] for a single-arg fn that takes its arg in D0 instead of D2.
+      Length must match arg count. Used when asm callers pass via D0.
     """
     ret, args = parse_sig(sig)
     pushes: list[str] = []
     arg_count = len(args)
+    if arg_regs is None:
+        arg_regs = []
+    if arg_regs and len(arg_regs) != arg_count:
+        raise ValueError(f"arg_regs length {len(arg_regs)} != arg count {arg_count}")
 
     if arg_count == 0:
         body = [f"    jsr     {z_name}", "    rts"]
     elif arg_count == 1:
+        src = arg_regs[0] if arg_regs else "D2"
+        # Use D1 as scratch so we never clobber the source register before
+        # reading it (e.g. arg_regs=["D0"]).
         body = [
-            "    moveq   #0,D0",
-            "    move.w  D2,D0",
-            "    move.l  D0,-(SP)",
+            "    moveq   #0,D1",
+            f"    move.w  {src},D1",
+            "    move.l  D1,-(SP)",
             f"    jsr     {z_name}",
             "    addq.l  #4,SP",
         ]
@@ -115,13 +126,18 @@ def emit_shim(c_name: str, z_name: str, sig: str) -> str:
             ]
         body.append("    rts")
     elif arg_count == 2:
+        s1 = arg_regs[0] if arg_regs else "D0"
+        s2 = arg_regs[1] if arg_regs else "D2"
+        # M68K SysV: args pushed right-to-left → arg2 pushed first (lower
+        # on memory after both pushes? no — last push is at lowest addr; so
+        # arg1 must be LAST push to land at SP+4 inside callee).
         body = [
             "    moveq   #0,D1",
-            "    move.w  D0,D1",
-            "    move.l  D1,-(SP)",       # arg1 = D0 (X at call)
+            f"    move.w  {s2},D1",
+            "    move.l  D1,-(SP)",       # arg2 pushed first → SP+8 inside callee
             "    moveq   #0,D1",
-            "    move.w  D2,D1",
-            "    move.l  D1,-(SP)",       # arg2 = D2 (slot)
+            f"    move.w  {s1},D1",
+            "    move.l  D1,-(SP)",       # arg1 pushed last  → SP+4 inside callee
             f"    jsr     {z_name}",
             "    addq.l  #8,SP",
             "    rts",
@@ -218,7 +234,7 @@ def update_shims(bank: str, entries: list[dict[str, Any]]) -> tuple[int, int]:
         z_name = f"{bank.replace('_', '')}_{snake(e['name'])}"
         if re.search(rf"^{re.escape(c_name)}:", text, re.MULTILINE):
             continue
-        body_blocks.append(emit_shim(c_name, z_name, e["sig"]))
+        body_blocks.append(emit_shim(c_name, z_name, e["sig"], e.get("arg_regs")))
         added_body += 1
 
     if body_blocks:

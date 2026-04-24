@@ -12,6 +12,7 @@
 #include "../room_mode_runtime.h"
 #include "../room_player_runtime.h"
 #include "../room_object_runtime.h"
+#include "../save_menu_runtime.h"
 
 unsigned char z05_has_compass(void) {
     return roomrt_has_compass();
@@ -375,6 +376,30 @@ void z05_wield_nothing(void) {
 
 void z05_touch_door_open(void) {
     roomrt_touch_door_open();
+}
+
+void z05_update_menu_and_meters(void) {
+    savert_update_menu_and_meters();
+}
+
+void z05_update_menu(void) {
+    savert_update_menu();
+}
+
+void z05_update_menu_common1(void) {
+    savert_update_menu_common_1();
+}
+
+void z05_update_menu5_uw(void) {
+    savert_update_menu_5_uw();
+}
+
+void z05_update_menu_scroll_down_ow(void) {
+    savert_update_menu_scroll_down_ow();
+}
+
+void z05_update_menu_scroll_down_uw(void) {
+    savert_update_menu_scroll_down_uw();
 }
 
 /* <<< end auto-wrappers >>> */

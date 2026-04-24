@@ -134,3 +134,203 @@ void frontutil_add_a_to_cfce(unsigned int val) {
     FRONTEND_SAVE_ADD16_LO = (unsigned char)sum;
     FRONTEND_SAVE_ADD16_HI = (unsigned char)(FRONTEND_SAVE_ADD16_HI + (sum >> 8));
 }
+
+/* ============================================================================
+ * Demo / intro mode dispatcher family — ported from z_02.asm
+ *   InitDemo_RunTasks, InitDemo_Phase1
+ *   UpdateMode0Demo, UpdateMode0Demo_Sub0, UpdateMode0Demo_Sub2
+ *   AnimateDemo, AnimateDemo_Phase1
+ * Original M68K jump-table dispatch is replaced with C switches. The
+ * subphase callees remain in z_02.asm and are reached through IMPORT shims.
+ * ============================================================================ */
+
+extern void c_turn_off_all_video(void);
+extern void c_hide_all_sprites(void);
+extern void z01_silence_all_sound(void);
+extern void z01_fetch_file_a_address_set(void);
+
+extern void c_import_init_demo_subphase_clear_artifacts(void);
+extern void c_import_init_demo_subphase_transfer_title_palette(void);
+extern void c_import_init_demo_subphase_play_title_song(void);
+extern void c_import_init_demo_subphase_transfer_story_palette(void);
+extern void c_import_init_demo_subphase_transfer_story_tiles(void);
+
+extern void c_import_animate_demo_phase0_subphase0(void);
+extern void c_import_animate_demo_phase0_subphase1(void);
+extern void c_import_animate_demo_phase1_subphase0(void);
+extern void c_import_animate_demo_phase1_subphase1(void);
+extern void c_import_animate_demo_phase1_subphase2(void);
+extern void c_import_animate_demo_phase1_subphase3(void);
+extern void c_import_animate_demo_phase1_subphase4(void);
+
+extern void c_import_update_mode0_demo_sub1(void);
+extern void c_import_format_file_a(void);
+
+void frontdemo_init_demo_phase_1(void) {
+    /* Phase-1 subphase dispatch (jump table replaced by switch). */
+    switch (RAM(0x042D)) {
+        case 0: c_import_init_demo_subphase_clear_artifacts(); break;
+        case 1: c_import_init_demo_subphase_transfer_story_palette(); break;
+        case 2: c_import_init_demo_subphase_transfer_story_tiles(); break;
+        default: break;
+    }
+}
+
+void frontdemo_init_demo_run_tasks(void) {
+    c_turn_off_all_video();
+    if (RAM(0x042C) != 0) {
+        frontdemo_init_demo_phase_1();
+        return;
+    }
+    /* Phase-0 subphase dispatch. */
+    switch (RAM(0x042D)) {
+        case 0: c_import_init_demo_subphase_clear_artifacts(); break;
+        case 1: c_import_init_demo_subphase_transfer_title_palette(); break;
+        case 2: c_import_init_demo_subphase_play_title_song(); break;
+        default: break;
+    }
+}
+
+void frontdemo_update_mode0_demo_sub0(void) {
+    /* Wait until controller bit 4 (Start) is held, then arm next phase. */
+    unsigned char btn = RAM(0x00F8);
+    if (!(btn & 0x10)) return;
+
+    /* PATCH P11: hold VRamForceBlankGate. */
+    RAM(0x083D) = 1;
+    /* PATCH P12: arm FrontendStartReleaseGate. */
+    RAM(0x042B) = 1;
+
+    RAM(0x00F6) = 0x10;          /* D0 was AND #$10 → BNE taken means bit4 set */
+    RAM(0x0600) = 0;             /* clear primary SFX */
+    z01_silence_all_sound();
+    RAM(0x0528) = 90;            /* delay timer */
+    RAM(0x0013) += 1;            /* advance submode */
+    c_turn_off_all_video();
+    c_hide_all_sprites();
+    RAM(0x0014) = 18;            /* room transfer buf select */
+}
+
+/* UpdateMode0Demo_Sub2 — copy save-file A data into save-slot info, format
+ * any inactive slots, then fold heart values and copy names. */
+void frontdemo_update_mode0_demo_sub2(void) {
+    unsigned char d3, d2;
+    unsigned int base;
+
+    c_turn_off_all_video();
+    RAM(0x0016) = 0;
+    z01_fetch_file_a_address_set();
+
+    /* Loop over slots 2..0, formatting any that aren't active. */
+    d3 = 2;
+    while ((signed char)d3 >= 0) {
+        unsigned char val;
+
+        /* Read IsSaveSlotActive[d3] via ptr in $06/$07 → store at $0633+d3. */
+        base = ((unsigned int)RAM(0x07) << 8) | RAM(0x06);
+        val = nes_ram[base + d3];
+        nes_ram[0x0633 + d3] = val;
+
+        if (val == 0) {
+            unsigned char saved_d3 = d3;
+            RAM(0x0016) = d3;
+            z01_fetch_file_a_address_set();
+            c_import_format_file_a();
+            RAM(0x0016) = 0;
+            /* Refetch slot 0 set so $06/$07 (and other ptrs) are restored. */
+            z01_fetch_file_a_address_set();
+            d3 = saved_d3;
+        }
+
+        /* ContinueCount via ptr in $0A/$0B → store at $0630+d3. */
+        base = ((unsigned int)RAM(0x0B) << 8) | RAM(0x0A);
+        nes_ram[0x0630 + d3] = nes_ram[base + d3];
+
+        /* DeathCount via ptr in $0C/$0D → store at $062D+d3. */
+        base = ((unsigned int)RAM(0x0D) << 8) | RAM(0x0C);
+        nes_ram[0x062D + d3] = nes_ram[base + d3];
+
+        d3 = (unsigned char)(d3 - 1);
+    }
+
+    /* Heart loop: 6 entries, alternating (containers, partial). */
+    d3 = 24;
+    d2 = 0;
+    while (d2 != 6) {
+        base = ((unsigned int)RAM(0x01) << 8) | RAM(0x00);
+        unsigned char raw = nes_ram[base + d3];
+        unsigned char store;
+
+        if (d2 & 0x01) {
+            /* Odd index: hearts-partial slot — store raw byte. */
+            store = raw;
+        } else {
+            /* Even index: hearts-value slot — collapse high nibble into low,
+             * mirror containers into hearts so display matches max HP. */
+            unsigned char hi = raw & 0xF0;
+            RAM(0x000C) = hi;
+            store = (unsigned char)((hi >> 4) | hi);
+        }
+        nes_ram[0x0650 + d2] = store;
+
+        d3 = (unsigned char)(d3 + 1);
+        d2 = (unsigned char)(d2 + 1);
+
+        if (d2 == 6) break;
+        /* If d2 is now odd we stay on the same slot's partial byte. If even
+         * we advance d3 by $26 to step into the next slot's hearts pair. */
+        if (!(d2 & 0x01)) {
+            d3 = (unsigned char)(d3 + 0x26);
+        }
+    }
+
+    /* Name copy: 24 bytes via ptr in $04/$05 → $0638 buffer. */
+    d3 = 23;
+    do {
+        base = ((unsigned int)RAM(0x05) << 8) | RAM(0x04);
+        nes_ram[0x0638 + d3] = nes_ram[base + d3];
+        d3 = (unsigned char)(d3 - 1);
+    } while ((signed char)d3 >= 0);
+
+    RAM(0x0012) += 1;
+    RAM(0x0011) = 0;
+    RAM(0x0013) = 0;
+}
+
+void frontdemo_update_mode0_demo(void) {
+    /* If submode != 0 OR delay $0528 != 0, dispatch submode handler. */
+    if (RAM(0x0013) == 0 && RAM(0x0528) == 0) {
+        frontdemo_animate_demo();
+        if (RAM(0x0011) == 0) return;   /* Exit if no mode-prev change pending. */
+        /* Fall through to submode dispatch. */
+    }
+    switch (RAM(0x0013)) {
+        case 0: frontdemo_update_mode0_demo_sub0(); break;
+        case 1: c_import_update_mode0_demo_sub1(); break;
+        case 2: frontdemo_update_mode0_demo_sub2(); break;
+        default: break;
+    }
+}
+
+void frontdemo_animate_phase_1(void) {
+    switch (RAM(0x042D)) {
+        case 0: c_import_animate_demo_phase1_subphase0(); break;
+        case 1: c_import_animate_demo_phase1_subphase1(); break;
+        case 2: c_import_animate_demo_phase1_subphase2(); break;
+        case 3: c_import_animate_demo_phase1_subphase3(); break;
+        case 4: c_import_animate_demo_phase1_subphase4(); break;
+        default: break;
+    }
+}
+
+void frontdemo_animate_demo(void) {
+    if (RAM(0x042C) != 0) {
+        frontdemo_animate_phase_1();
+        return;
+    }
+    switch (RAM(0x042D)) {
+        case 0: c_import_animate_demo_phase0_subphase0(); break;
+        case 1: c_import_animate_demo_phase0_subphase1(); break;
+        default: break;
+    }
+}

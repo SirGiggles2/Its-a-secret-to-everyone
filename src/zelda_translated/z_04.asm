@@ -681,9 +681,15 @@ _L_z04_L_Walker_SetInputDirAndTryShootingBoomerang_Exit:
     rts
 
     even
+BlockPushDirections:
+    dc.b    $08, $04, $02, $01
+
     even
 UpdateBlock:
-    jmp     c_update_block
+    lea     ($00AC,A4),A0
+    move.b  (A0,D2.W),D0
+    andi.b #$03,D0
+    jsr     _m68k_tablejump  ; M68K-native table dispatch (replaces JSR TableJump)
     even
 UpdateBlock_JumpTable:
     dc.l    UpdateBlock0Idle   ; jump table entry (32-bit for _m68k_tablejump)
@@ -803,7 +809,11 @@ __far_z_04_0009:
     jsr     ChangeTileObjTiles
     even
 DrawBlock:
-    jmp     c_draw_block
+    jsr     Anim_FetchObjPosForSpriteDescriptor
+    subq.b  #1,($0001,A4)
+    moveq   #0,D0
+    jmp     DrawObjectNotMirrored
+
     even
 ResetPushTimer:
     jmp     c_reset_push_timer
@@ -898,7 +908,59 @@ ShotBounceHeights:
 
     even
 UpdateMonsterShot:
-    jmp     c_update_monster_shot
+    ; Set moving direction to facing direction.
+    ;
+    lea     ($0098,A4),A0
+    move.b  (A0,D2.W),D0
+    move.b  D0,($000F,A4)
+    ; If major state <> 1, go bounce.
+    ;
+    lea     ($00AC,A4),A0
+    move.b  (A0,D2.W),D0
+    andi.b #$F0,D0
+    cmpi.b  #$10,D0
+    beq.s  __far_z_04_0011
+    jmp  BounceShot
+__far_z_04_0011:
+    ; If object type < $55 (like flying rock $53), then
+    ; check for tile collision in addition to other checks.
+    ;
+    lea     ($034F,A4),A0
+    move.b  (A0,D2.W),D0
+    cmpi.b  #$55,D0
+    bcc  _L_z04_UpdateMonsterShot_CheckBoundary
+    ; Additionally, if the flying rock is held back by a timer, then
+    ; only check for collision with Link.
+    ;
+    move.b  ($28,A4,D2.W),D0
+    bne  _L_z04_UpdateMonsterShot_CheckLinkCollision
+    ; If the flying rock hit a tile or room boundary, then go destroy it.
+    ;
+    jsr     GetCollidingTileMoving
+    move.b  ($034A,A4),D1
+    cmp.b   D1,D0
+    bcs.s  __far_z_04_0012
+    jmp  DestroyMonsterShot
+__far_z_04_0012:
+    even
+_L_z04_UpdateMonsterShot_CheckBoundary:
+    ; No shots can cross the room boundary.
+    ;
+    jsr     BoundByRoom
+    bne.s  __far_z_04_0013
+    jmp  DestroyMonsterShot
+__far_z_04_0013:
+    ; Move the object, and check for a collision with Link.
+    ; Go destroy the shot object, if there was a harmful collision.
+    ;
+    jsr     MoveObject
+    even
+_L_z04_UpdateMonsterShot_CheckLinkCollision:
+    jsr     CheckShotLinkCollision
+    move.b  ($0006,A4),D0
+    beq.s  __far_z_04_0014
+    jmp  DestroyMonsterShot
+__far_z_04_0014:
     even
 L_DrawShot:
     ; If object type = arrow ($5B), then draw an arrow, and return.

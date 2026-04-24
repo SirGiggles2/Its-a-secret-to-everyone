@@ -467,11 +467,13 @@
     xdef    c_zol_check_collisions
     xdef    c_gel_move
     xdef    c_gel_check_collisions
+    xdef    c_shoot_limited
     xdef    c_update_zora
     xdef    c_update_candle
     xdef    c_update_boulder_set
     xdef    c_update_rope
     xdef    c_change_tile_obj_tiles
+    xdef    c_shoot_if_wanted
     xdef    c_update_burrower
     xdef    c_draw_arrow
     xdef    c_draw_sword_shot_or_magic_shot
@@ -482,6 +484,17 @@
     xdef    c_bounce_shot
     xdef    c_check_shot_link_collision
     xdef    c_update_fireball
+    xdef    c_reverse_obj_dir8
+    xdef    c_gohma_animate_and_draw
+    xdef    c_gohma_check_collisions
+    xdef    c_gleeok_draw_body
+    xdef    c_gleeok_fetch_neck_addrs
+    xdef    c_gleeok_move_neck
+    xdef    c_gleeok_move_head
+    xdef    c_gleeok_draw_head_and_check_collisions
+    xdef    c_gleeok_draw_segment_and_check_collisions
+    xdef    c_gleeok_calc_segment_limits
+    xdef    c_gleeok_stretch_neck
 
     xref    c_move_object
     xref    z03_transfer_level_pattern_blocks
@@ -4389,21 +4402,25 @@ c_walker_move:
     move.l  (SP)+,D2
     rts
 
-; UpdateCommonWanderer(turn_rate, slot) — D0=turn_rate, D2=slot
+; UpdateCommonWanderer(turn_rate, slot) — drained → forwards via z04_*
 c_update_common_wanderer:
-    move.l  D2,-(SP)
-    move.l  8(SP),D0    ; turn_rate = arg1 = old SP+4 = now SP+8
-    move.l  12(SP),D2   ; slot = arg2 = old SP+8 = now SP+12
-    jsr     UpdateCommonWanderer
-    move.l  (SP)+,D2
+    moveq   #0,D1
+    move.w  D2,D1
+    move.l  D1,-(SP)
+    moveq   #0,D1
+    move.w  D0,D1
+    move.l  D1,-(SP)
+    jsr     z04_update_common_wanderer
+    addq.l  #8,SP
     rts
 
-; WandererTargetPlayer(slot) — D2=slot
+; WandererTargetPlayer(slot) — drained → z04_*
 c_wanderer_target_player:
-    move.l  D2,-(SP)
-    move.l  8(SP),D2
-    jsr     Wanderer_TargetPlayer
-    move.l  (SP)+,D2
+    moveq   #0,D1
+    move.w  D2,D1
+    move.l  D1,-(SP)
+    jsr     z04_wanderer_target_player
+    addq.l  #4,SP
     rts
 
 ; MoveFlyer(slot) — D2=slot
@@ -4457,35 +4474,57 @@ c_draw_object_mirrored_with_frame:
 ; Import shims — z_04.asm sub-functions callable from C (D2=slot, void).
 ; These export otherwise-private z_04 functions so C can call them.
 
-; UpdateZolState — D2=slot, void.
+; UpdateZolState — drained → z04_*
 c_update_zol_state:
-    move.l  D2,-(SP)
-    move.l  8(SP),D2
-    jsr     UpdateZolState
-    move.l  (SP)+,D2
+    moveq   #0,D1
+    move.w  D2,D1
+    move.l  D1,-(SP)
+    jsr     z04_update_zol_state
+    addq.l  #4,SP
     rts
 
-; Zol_CheckCollisions — D2=slot, void.
+; Zol_CheckCollisions — drained → z04_*
 c_zol_check_collisions:
-    move.l  D2,-(SP)
-    move.l  8(SP),D2
-    jsr     Zol_CheckCollisions
-    move.l  (SP)+,D2
+    moveq   #0,D1
+    move.w  D2,D1
+    move.l  D1,-(SP)
+    jsr     z04_zol_check_collisions
+    addq.l  #4,SP
     rts
 
-; Gel_Move — D2=slot, void.
+; Gel_Move — drained → z04_*
 c_gel_move:
-    move.l  D2,-(SP)
-    move.l  8(SP),D2
-    jsr     Gel_Move
-    move.l  (SP)+,D2
+    moveq   #0,D1
+    move.w  D2,D1
+    move.l  D1,-(SP)
+    jsr     z04_gel_move
+    addq.l  #4,SP
     rts
 
-; Gel_CheckCollisions — D2=slot, void.
+; Gel_CheckCollisions — drained → z04_*
 c_gel_check_collisions:
-    move.l  D2,-(SP)
-    move.l  8(SP),D2
-    jsr     Gel_CheckCollisions
+    moveq   #0,D1
+    move.w  D2,D1
+    move.l  D1,-(SP)
+    jsr     z04_gel_check_collisions
+    addq.l  #4,SP
+    rts
+
+; ShootLimited — D2=slot in; ASM returns D3=child slot, C=success.
+; C side: unsigned int c_shoot_limited(unsigned int slot);
+;   returns (carry ? 0x100 : 0) | (child_slot & 0xFF) in D0.
+    xref    ShootLimited
+c_shoot_limited:
+    move.l  D2,-(SP)        ; preserve D2
+    move.l  D3,-(SP)        ; preserve D3 (ASM clobbers it)
+    move.l  12(SP),D2       ; slot arg → D2
+    jsr     ShootLimited
+    moveq   #0,D0
+    bcc.s   .csl_no_carry
+    ori.l   #$100,D0
+.csl_no_carry:
+    move.b  D3,D0           ; low byte = new child slot
+    move.l  (SP)+,D3
     move.l  (SP)+,D2
     rts
 
@@ -4647,4 +4686,409 @@ c_update_fireball:
     move.l  D0,-(SP)
     jsr     z04_update_fireball
     addq.l  #4,SP
+    rts
+
+;==============================================================================
+; BATCH 87 — Common Wanderer / Goriya family helper (IMPORT shim)
+;==============================================================================
+
+    xref    _ShootIfWanted
+
+; ShootIfWanted(type, slot)
+;   D0 = shot type (low byte), D2 = monster slot.
+;   On success returns D0 = 0x100 | shot_slot, on failure returns D0 = 0.
+;   Used by enrt_walker_set_input_dir_and_try_shooting_boomerang.
+c_shoot_if_wanted:
+    move.l  D2,-(SP)
+    move.l  8(SP),D0        ; arg1 = type (after D2 push: SP+8)
+    move.l  12(SP),D2       ; arg2 = slot
+    jsr     _ShootIfWanted
+    bcc.s   .csiw_fail
+    moveq   #0,D0
+    move.b  D3,D0           ; D0 = shot slot (low byte)
+    ori.l   #$100,D0        ; D0 |= CARRY_SET
+    bra.s   .csiw_done
+.csiw_fail:
+    moveq   #0,D0
+.csiw_done:
+    move.l  (SP)+,D2
+    rts
+
+;==============================================================================
+; BATCH 88 — Gohma + Gleeok boss family helpers (IMPORT shims: C calls ASM)
+;==============================================================================
+
+    xref    ReverseObjDir8
+    xref    Gohma_AnimateAndDraw
+    xref    Gohma_CheckCollisions
+    xref    Gleeok_DrawBody
+    xref    Gleeok_FetchNeckAddrs
+    xref    Gleeok_MoveNeck
+    xref    Gleeok_MoveHead
+    xref    Gleeok_DrawHeadAndCheckCollisions
+    xref    Gleeok_DrawSegmentAndCheckCollisions
+    xref    Gleeok_CalcSegmentLimits
+    xref    Gleeok_StretchNeck
+
+; ReverseObjDir8(slot) — D2=slot. Reverses ENEMY_DIR for an 8-direction object.
+c_reverse_obj_dir8:
+    move.l  D2,-(SP)
+    move.l  8(SP),D2
+    jsr     ReverseObjDir8
+    move.l  (SP)+,D2
+    rts
+
+; Gohma_AnimateAndDraw(eye_frame, slot) — D0=eye frame image, D2=slot.
+c_gohma_animate_and_draw:
+    move.l  D2,-(SP)
+    move.l  8(SP),D0       ; arg1 = eye_frame (after D2 push: SP+8)
+    move.l  12(SP),D2      ; arg2 = slot
+    jsr     Gohma_AnimateAndDraw
+    move.l  (SP)+,D2
+    rts
+
+; Gohma_CheckCollisions(slot) — D2=slot.
+c_gohma_check_collisions:
+    move.l  D2,-(SP)
+    move.l  8(SP),D2
+    jsr     Gohma_CheckCollisions
+    move.l  (SP)+,D2
+    rts
+
+; Gleeok_DrawBody — no args.
+c_gleeok_draw_body:
+    jsr     Gleeok_DrawBody
+    rts
+
+; Gleeok_FetchNeckAddrs — no register-arg input (reads RAM[$04D7]).
+;   Side effect: writes neck-data pointers to RAM[$00..$05] and sets D3=5.
+c_gleeok_fetch_neck_addrs:
+    move.l  D2,-(SP)
+    jsr     Gleeok_FetchNeckAddrs
+    move.l  (SP)+,D2
+    rts
+
+; Gleeok_MoveNeck — no args; reads head/base coords from RAM, may JMP into
+; L_Gleeok_StoreRefSegDistance (now drained; reachable via its trampoline).
+c_gleeok_move_neck:
+    move.l  D2,-(SP)
+    jsr     Gleeok_MoveNeck
+    move.l  (SP)+,D2
+    rts
+
+; Gleeok_MoveHead — no args.
+c_gleeok_move_head:
+    move.l  D2,-(SP)
+    jsr     Gleeok_MoveHead
+    move.l  (SP)+,D2
+    rts
+
+; Gleeok_DrawHeadAndCheckCollisions — no args (sets D2=5 internally).
+c_gleeok_draw_head_and_check_collisions:
+    move.l  D2,-(SP)
+    jsr     Gleeok_DrawHeadAndCheckCollisions
+    move.l  (SP)+,D2
+    rts
+
+; Gleeok_DrawSegmentAndCheckCollisions(slot) — D2=segment slot.
+c_gleeok_draw_segment_and_check_collisions:
+    move.l  D2,-(SP)
+    move.l  8(SP),D2
+    jsr     Gleeok_DrawSegmentAndCheckCollisions
+    move.l  (SP)+,D2
+    rts
+
+; Gleeok_CalcSegmentLimits(primary_dist, axis) — D0=primary distance,
+; D2=0 horizontal / 1 vertical. Writes 2nd & 3rd tier ref limits to RAM.
+c_gleeok_calc_segment_limits:
+    move.l  D2,-(SP)
+    move.l  8(SP),D0
+    move.l  12(SP),D2
+    jsr     Gleeok_CalcSegmentLimits
+    move.l  (SP)+,D2
+    rts
+
+; Gleeok_StretchNeck(slot) — D2=segment slot.
+c_gleeok_stretch_neck:
+    move.l  D2,-(SP)
+    move.l  8(SP),D2
+    jsr     Gleeok_StretchNeck
+    move.l  (SP)+,D2
+    rts
+
+;==============================================================================
+; BATCH 89 — Demo / intro mode dispatcher (IMPORT shims: C calls ASM).
+; Used by the C ports of InitDemo_RunTasks / UpdateMode0Demo / AnimateDemo
+; in src/frontend_runtime.c. Each subphase callee remains in z_02.asm.
+;==============================================================================
+
+    xdef    c_import_init_demo_subphase_clear_artifacts
+    xdef    c_import_init_demo_subphase_transfer_title_palette
+    xdef    c_import_init_demo_subphase_play_title_song
+    xdef    c_import_init_demo_subphase_transfer_story_palette
+    xdef    c_import_init_demo_subphase_transfer_story_tiles
+    xdef    c_import_animate_demo_phase0_subphase0
+    xdef    c_import_animate_demo_phase0_subphase1
+    xdef    c_import_animate_demo_phase1_subphase0
+    xdef    c_import_animate_demo_phase1_subphase1
+    xdef    c_import_animate_demo_phase1_subphase2
+    xdef    c_import_animate_demo_phase1_subphase3
+    xdef    c_import_animate_demo_phase1_subphase4
+    xdef    c_import_update_mode0_demo_sub1
+    xdef    c_import_format_file_a
+
+    xref    InitDemoSubphaseClearArtifacts
+    xref    InitDemoSubphaseTransferTitlePalette
+    xref    InitDemoSubphasePlayTitleSong
+    xref    InitDemoSubphaseTransferStoryPalette
+    xref    InitDemoSubphaseTransferStoryTiles
+    xref    AnimateDemoPhase0Subphase0
+    xref    AnimateDemoPhase0Subphase1
+    xref    AnimateDemoPhase1Subphase0
+    xref    AnimateDemoPhase1Subphase1
+    xref    AnimateDemoPhase1Subphase2
+    xref    AnimateDemoPhase1Subphase3
+    xref    AnimateDemoPhase1Subphase4
+    xref    UpdateMode0Demo_Sub1
+    xref    FormatFileA
+
+c_import_init_demo_subphase_clear_artifacts:
+    jmp     InitDemoSubphaseClearArtifacts
+
+c_import_init_demo_subphase_transfer_title_palette:
+    jmp     InitDemoSubphaseTransferTitlePalette
+
+c_import_init_demo_subphase_play_title_song:
+    jmp     InitDemoSubphasePlayTitleSong
+
+c_import_init_demo_subphase_transfer_story_palette:
+    jmp     InitDemoSubphaseTransferStoryPalette
+
+c_import_init_demo_subphase_transfer_story_tiles:
+    jmp     InitDemoSubphaseTransferStoryTiles
+
+c_import_animate_demo_phase0_subphase0:
+    jmp     AnimateDemoPhase0Subphase0
+
+c_import_animate_demo_phase0_subphase1:
+    jmp     AnimateDemoPhase0Subphase1
+
+c_import_animate_demo_phase1_subphase0:
+    jmp     AnimateDemoPhase1Subphase0
+
+c_import_animate_demo_phase1_subphase1:
+    jmp     AnimateDemoPhase1Subphase1
+
+c_import_animate_demo_phase1_subphase2:
+    jmp     AnimateDemoPhase1Subphase2
+
+c_import_animate_demo_phase1_subphase3:
+    jmp     AnimateDemoPhase1Subphase3
+
+c_import_animate_demo_phase1_subphase4:
+    jmp     AnimateDemoPhase1Subphase4
+
+c_import_update_mode0_demo_sub1:
+    jmp     UpdateMode0Demo_Sub1
+
+c_import_format_file_a:
+    jmp     FormatFileA
+
+;==============================================================================
+; BATCH 90 — Save-menu / submenu dispatchers (IMPORT shims: C calls ASM).
+; Used by the C ports of UpdateMenu / UpdateMenuAndMeters /
+; UpdateMenuCommon1 / UpdateMenu5UW / UpdateMenuScrollDown* in
+; src/save_menu_runtime.c. Each callee remains in z_05.asm or z_07.asm.
+;==============================================================================
+
+    xdef    c_move_position_markers
+    xdef    c_update_triforce_position_marker
+    xdef    c_update_hearts_and_rupees
+    xdef    c_submenu_cue_transfer_row_uw
+    xdef    c_submenu_cue_transfer_row_ow
+    xdef    c_update_menu_active
+    xdef    c_update_menu_scroll_up
+    xdef    c_update_menu_start_ow
+    xdef    c_update_goriya
+    xdef    c_gel_move_splitting
+    xdef    c_update_normal_zol_or_gel
+    xdef    c_update_gohma
+    xdef    c_update_gleeok
+    xdef    c_l_gleeok_store_ref_seg_distance
+    xdef    c_gleeok_check_collisions
+    xdef    c_update_menu_and_meters
+    xdef    c_update_menu
+    xdef    c_update_menu_common1
+    xdef    c_update_menu5_uw
+    xdef    c_update_menu_scroll_down_ow
+    xdef    c_update_menu_scroll_down_uw
+    xdef    c_init_demo_run_tasks
+    xdef    c_init_demo_phase1
+    xdef    c_update_mode0_demo
+    xdef    c_update_mode0_demo_sub0
+    xdef    c_update_mode0_demo_sub2
+    xdef    c_animate_demo
+    xdef    c_animate_demo_phase1
+
+    xref    MovePositionMarkers
+    xref    UpdateTriforcePositionMarker
+    xref    UpdateHeartsAndRupees
+    xref    Submenu_CueTransferRowUW
+    xref    Submenu_CueTransferRowOW
+    xref    UpdateMenuActive
+    xref    UpdateMenuScrollUp
+    xref    UpdateMenuStartOW
+
+; void c_move_position_markers(unsigned int vel);
+; Native: D0.b = vel, then jmp MovePositionMarkers.
+c_move_position_markers:
+    move.l  4(SP),D0
+    jmp     MovePositionMarkers
+
+c_update_triforce_position_marker:
+    jmp     UpdateTriforcePositionMarker
+
+c_update_hearts_and_rupees:
+    jmp     UpdateHeartsAndRupees
+
+c_submenu_cue_transfer_row_uw:
+    jmp     Submenu_CueTransferRowUW
+
+c_submenu_cue_transfer_row_ow:
+    jmp     Submenu_CueTransferRowOW
+
+c_update_menu_active:
+    jmp     UpdateMenuActive
+
+c_update_menu_scroll_up:
+    jmp     UpdateMenuScrollUp
+
+c_update_menu_start_ow:
+    jmp     UpdateMenuStartOW
+
+;==============================================================================
+; drain_finalize: z_04 drained entry shims
+;==============================================================================
+c_update_goriya:
+    moveq   #0,D0
+    move.w  D2,D0
+    move.l  D0,-(SP)
+    jsr     z04_update_goriya
+    addq.l  #4,SP
+    rts
+
+c_gel_move_splitting:
+    moveq   #0,D0
+    move.w  D2,D0
+    move.l  D0,-(SP)
+    jsr     z04_gel_move_splitting
+    addq.l  #4,SP
+    btst    #8,D0
+    beq.s   ._no_carry_c_gel_move_splitting
+    ori.b   #$11,CCR
+    bra.s   ._done_c_gel_move_splitting
+._no_carry_c_gel_move_splitting:
+    andi.b  #$EE,CCR
+._done_c_gel_move_splitting:
+    rts
+
+c_update_normal_zol_or_gel:
+    moveq   #0,D1
+    move.w  D2,D1
+    move.l  D1,-(SP)
+    moveq   #0,D1
+    move.w  D0,D1
+    move.l  D1,-(SP)
+    jsr     z04_update_normal_zol_or_gel
+    addq.l  #8,SP
+    rts
+
+c_update_gohma:
+    moveq   #0,D0
+    move.w  D2,D0
+    move.l  D0,-(SP)
+    jsr     z04_update_gohma
+    addq.l  #4,SP
+    rts
+
+c_update_gleeok:
+    moveq   #0,D0
+    move.w  D2,D0
+    move.l  D0,-(SP)
+    jsr     z04_update_gleeok
+    addq.l  #4,SP
+    rts
+
+c_l_gleeok_store_ref_seg_distance:
+    moveq   #0,D1
+    move.w  D0,D1
+    move.l  D1,-(SP)
+    jsr     z04_l_gleeok_store_ref_seg_distance
+    addq.l  #4,SP
+    rts
+
+c_gleeok_check_collisions:
+    moveq   #0,D0
+    move.w  D2,D0
+    move.l  D0,-(SP)
+    jsr     z04_gleeok_check_collisions
+    addq.l  #4,SP
+    rts
+
+;==============================================================================
+; drain_finalize: z_05 drained entry shims
+;==============================================================================
+c_update_menu_and_meters:
+    jsr     z05_update_menu_and_meters
+    rts
+
+c_update_menu:
+    jsr     z05_update_menu
+    rts
+
+c_update_menu_common1:
+    jsr     z05_update_menu_common1
+    rts
+
+c_update_menu5_uw:
+    jsr     z05_update_menu5_uw
+    rts
+
+c_update_menu_scroll_down_ow:
+    jsr     z05_update_menu_scroll_down_ow
+    rts
+
+c_update_menu_scroll_down_uw:
+    jsr     z05_update_menu_scroll_down_uw
+    rts
+
+;==============================================================================
+; drain_finalize: z_02 drained entry shims
+;==============================================================================
+c_init_demo_run_tasks:
+    jsr     z02_init_demo_run_tasks
+    rts
+
+c_init_demo_phase1:
+    jsr     z02_init_demo_phase1
+    rts
+
+c_update_mode0_demo:
+    jsr     z02_update_mode0_demo
+    rts
+
+c_update_mode0_demo_sub0:
+    jsr     z02_update_mode0_demo_sub0
+    rts
+
+c_update_mode0_demo_sub2:
+    jsr     z02_update_mode0_demo_sub2
+    rts
+
+c_animate_demo:
+    jsr     z02_animate_demo
+    rts
+
+c_animate_demo_phase1:
+    jsr     z02_animate_demo_phase1
     rts

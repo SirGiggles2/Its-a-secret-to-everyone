@@ -94,4 +94,32 @@ void z02_init_mode13_sub4(void) {
     frontdemo_init_mode13_sub4();
 }
 
+void z02_init_demo_run_tasks(void) {
+    frontdemo_init_demo_run_tasks();
+}
+
+void z02_init_demo_phase1(void) {
+    frontdemo_init_demo_phase_1();
+}
+
+void z02_update_mode0_demo(void) {
+    frontdemo_update_mode0_demo();
+}
+
+void z02_update_mode0_demo_sub0(void) {
+    frontdemo_update_mode0_demo_sub0();
+}
+
+void z02_update_mode0_demo_sub2(void) {
+    frontdemo_update_mode0_demo_sub2();
+}
+
+void z02_animate_demo(void) {
+    frontdemo_animate_demo();
+}
+
+void z02_animate_demo_phase1(void) {
+    frontdemo_animate_phase_1();
+}
+
 /* <<< end auto-wrappers >>> */

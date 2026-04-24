@@ -1,0 +1,20 @@
+{
+  "bank": "z_04",
+  "entries": [
+    {"name": "UpdateCommonWanderer", "target": "enrt_update_common_wanderer", "sig": "void (unsigned int turn_rate, unsigned int slot)", "kind": "jmp"},
+    {"name": "Wanderer_TargetPlayer", "target": "enrt_wanderer_target_player", "sig": "void (unsigned int slot)", "kind": "jmp"},
+    {"name": "UpdateGoriya", "target": "enrt_update_goriya", "sig": "void (unsigned int slot)", "kind": "jmp"},
+    {"name": "UpdateZolState", "target": "enrt_update_zol_state", "sig": "void (unsigned int slot)", "kind": "jmp"},
+    {"name": "Zol_CheckCollisions", "target": "enrt_zol_check_collisions", "sig": "void (unsigned int slot)", "kind": "jmp"},
+    {"name": "Gel_Move", "target": "enrt_gel_move", "sig": "void (unsigned int slot)", "kind": "jmp"},
+    {"name": "Gel_CheckCollisions", "target": "enrt_gel_check_collisions", "sig": "void (unsigned int slot)", "kind": "jmp"},
+    {"name": "Gel_MoveSplitting", "target": "enrt_gel_move_splitting", "sig": "unsigned int (unsigned int slot)", "kind": "jmp"},
+    {"name": "UpdateNormalZolOrGel", "target": "enrt_update_normal_zol_or_gel", "sig": "void (unsigned char qspeed, unsigned int slot)", "kind": "jmp"},
+    {"name": "UpdateZolState_JumpTable", "kind": "delete"},
+    {"name": "ZolGelDelays", "kind": "delete"},
+    {"name": "UpdateGohma", "target": "enrt_update_gohma", "sig": "void (unsigned int slot)", "kind": "jmp"},
+    {"name": "UpdateGleeok", "target": "enrt_update_gleeok", "sig": "void (unsigned int slot)", "kind": "jmp"},
+    {"name": "L_Gleeok_StoreRefSegDistance", "target": "enrt_gleeok_store_ref_seg_distance", "sig": "void (unsigned int signed_ref_dist)", "kind": "jmp", "arg_regs": ["D0"]},
+    {"name": "Gleeok_CheckCollisions", "target": "enrt_gleeok_check_collisions", "sig": "void (unsigned int slot)", "kind": "jmp"}
+  ]
+}
