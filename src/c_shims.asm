@@ -5274,11 +5274,13 @@ c_dodongo_draw:
 ;==============================================================================
 
     xdef    c_bound_flyer
+    xdef    c_init_manhandla
     xdef    c_manhandla_check_collisions
     xdef    c_manhandla_move
     xdef    c_manhandla_draw
 
     xref    BoundFlyer
+    xref    z04_init_manhandla
     xref    z04_manhandla_check_collisions
     xref    z04_manhandla_move
     xref    z04_manhandla_draw
@@ -5326,6 +5328,15 @@ c_aquamentus_shoot:
 c_aquamentus_draw:
     move.l  4(SP),D2
     jsr     Aquamentus_Draw
+    rts
+
+; InitManhandla — D2=slot, void.
+c_init_manhandla:
+    moveq   #0,D1
+    move.w  D2,D1
+    move.l  D1,-(SP)
+    jsr     z04_init_manhandla
+    addq.l  #4,SP
     rts
 
 ; Manhandla_CheckCollisions — D2=slot, void.

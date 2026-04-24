@@ -3,6 +3,43 @@
 #include "room_state.h"
 #include "sprite_state.h"
 
+static const unsigned char kManhandlaBaseFrameImagesAndAttrs[5] = {
+    0x00, 0x80, 0x02, 0x42, 0x04,
+};
+
+/* In ROM OffsetsX and OffsetsY are adjacent; ASM reads past OffsetsX into
+ * OffsetsY for D3=2..4. These arrays reproduce the exact 5-byte window. */
+static const unsigned char kManhandlaSegmentOffsetsX[5] = {
+    0x00, 0x00, 0xF0, 0x10, 0x00,
+};
+static const unsigned char kManhandlaSegmentOffsetsY[5] = {
+    0xF0, 0x10, 0x00, 0x00, 0x00,
+};
+
+void enrt_init_manhandla(unsigned int slot) {
+    unsigned char rand_idx;
+    signed char seg;
+
+    ENEMY_SFX_BOSS_CRY = 64;
+    rand_idx = (unsigned char)(ENEMY_RNG_A(slot) & 0x07u);
+    ENEMY_DIR(slot) = Directions8[rand_idx];
+
+    for (seg = 4; seg >= 0; --seg) {
+        unsigned char uidx = (unsigned char)seg;
+        RAM(0x0099u + uidx) = RAM(0x0099u);
+        RAM(0x0350u + uidx) = 60;
+        RAM(0x04B3u + uidx) = 0xE2;
+        RAM(0x0479u + uidx) = kManhandlaBaseFrameImagesAndAttrs[uidx];
+        RAM(0x0406u + uidx) = 0;
+        RAM(0x0493u + uidx) = 0;
+        RAM(0x04C0u + uidx) = RAM(0x04C0u);
+        RAM(0x0486u + uidx) = RAM(0x0486u);
+        RAM(0x0071u + uidx) = (unsigned char)(RAM(0x0075u) + kManhandlaSegmentOffsetsX[uidx]);
+        RAM(0x0085u + uidx) = (unsigned char)(RAM(0x0089u) + kManhandlaSegmentOffsetsY[uidx]);
+        RAM(0x0420u + uidx) = 0x80;
+    }
+}
+
 void enrt_manhandla_set_all_segments_direction(unsigned int val) {
     signed char i;
     for (i = 4; i >= 0; --i)

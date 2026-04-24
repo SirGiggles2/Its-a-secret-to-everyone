@@ -100,6 +100,11 @@
       "sig": "void (unsigned int slot)"
     },
     {
+      "old": "z04_init_manhandla",
+      "new": "enrt_init_manhandla",
+      "sig": "void (unsigned int slot)"
+    },
+    {
       "old": "z04_manhandla_set_all_segments_direction",
       "new": "enrt_manhandla_set_all_segments_direction",
       "sig": "void (unsigned int val)"

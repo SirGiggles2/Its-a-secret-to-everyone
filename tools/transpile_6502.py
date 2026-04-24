@@ -4348,6 +4348,7 @@ def _patch_z04(path):
     text = _stub_func(text, 'Manhandla_CheckCollisions', 'c_manhandla_check_collisions')
     text = _stub_func(text, 'Manhandla_Move', 'c_manhandla_move')
     text = _stub_func(text, 'Manhandla_Draw', 'c_manhandla_draw')
+    text = _stub_func(text, 'InitManhandla', 'c_init_manhandla')
 
     # --- Batch 94: Lamnola family ---
     text = _stub_func(text, 'Lamnola_UpdateHead', 'c_lamnola_update_head')
