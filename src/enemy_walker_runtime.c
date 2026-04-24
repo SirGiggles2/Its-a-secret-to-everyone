@@ -243,3 +243,35 @@ void enrt_update_stalfos(unsigned int slot) {
     ENEMY_WALK_SPEED(slot) = 0;
 }
 
+void enrt_draw_ghini_and_check_collisions(unsigned int slot) {
+    unsigned char frame = z07_anim_fetch_obj_pos(slot);
+    RAM(0x000D) = frame;
+    unsigned char dir = ENEMY_DIR(slot);
+    if ((dir & 0x08) == 0) {
+        RAM(0x000D) = (unsigned char)(RAM(0x000D) + 1);
+        if ((dir & 0x01) != 0) {
+            RAM(0x000F) = (unsigned char)(RAM(0x000F) + 1);
+        }
+    } else {
+        if ((dir & 0x02) != 0) {
+            RAM(0x000F) = (unsigned char)(RAM(0x000F) + 1);
+        }
+    }
+    c_draw_object_not_mirrored_with_frame((unsigned int)RAM(0x000D), slot);
+    c_check_link_collision(slot);
+}
+
+void enrt_update_ghini(unsigned int slot) {
+    enrt_update_common_wanderer(0xFFu, slot);
+    enrt_draw_ghini_and_check_collisions(slot);
+    c_check_monster_collisions(slot);
+    if (ENEMY_METASTATE(slot) == 0) return;
+    unsigned int y = 0x0B;
+    while (y != 0) {
+        if (OBJ(0x034F, y) == 0x22) {
+            OBJ(0x0405, y) = 0x11;
+        }
+        y--;
+    }
+}
+

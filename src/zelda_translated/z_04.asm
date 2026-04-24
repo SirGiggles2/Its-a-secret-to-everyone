@@ -2396,91 +2396,11 @@ DrawObjectMirroredAndCheckCollisions:
 
     even
 UpdateGhini:
-    move.b  #$FF,D0
-    jsr     UpdateCommonWanderer
-    jsr     DrawGhiniAndCheckCollisions
-    jsr     CheckMonsterCollisions
-    ; If the monster is still alive, then return.
-    ;
-    lea     ($0405,A4),A0
-    move.b  (A0,D2.W),D0
-    beq  _L_z04_UpdateGhini_Exit
-    ; For each object slot from $B to 1:
-    ; If the object is a flying ghini ($22),
-    ; then kill it by setting metastate to $11.
-    ;
-    moveq   #11,D3
-    even
-_L_z04_UpdateGhini_LoopObject:
-    lea     ($034F,A4),A0
-    move.b  (A0,D3.W),D0
-    cmpi.b  #$22,D0
-    bne  _anon_z04_50
-    moveq   #17,D0
-    lea     ($0405,A4),A0
-    move.b  D0,(A0,D3.W)
-_anon_z04_50:
-    subq.b  #1,D3
-    bne  _L_z04_UpdateGhini_LoopObject
-    even
-_L_z04_UpdateGhini_Exit:
-    rts
+    jmp     c_update_ghini
 
-    even
 DrawGhiniAndCheckCollisions:
-    jsr     Anim_FetchObjPosForSpriteDescriptor
-    move.b  D0,($000D,A4)
-    ; If the direction has an "up" component, then keep the
-    ; frame image 0, and go figure out horizontal flipping.
-    ;
-    lea     ($0098,A4),A0
-    move.b  (A0,D2.W),D0
-    andi.b #$08,D0
-    bne  _L_z04_DrawGhiniAndCheckCollisions_CheckHorizontalFlip
-    ; Else make the frame image 1 for the "down" frame.
-    ; Note that this is the frame image to use, even if there's no
-    ; down component in the direction.
-    ;
-    addq.b  #1,($000D,A4)
-    ; If right is a component of the direction, then go set horizontal
-    ; flipping. Else leave horizontal flipping = 0.
-    ;
-    lea     ($0098,A4),A0
-    move.b  (A0,D2.W),D0
-    andi.b #$01,D0
-    beq  _L_z04_DrawGhiniAndCheckCollisions_DrawAndCheckCollisions
-    bne  _L_z04_DrawGhiniAndCheckCollisions_SetHorizontalFlip
-    even
-_L_z04_DrawGhiniAndCheckCollisions_CheckHorizontalFlip:
-    ; Set horizontal flipping if right is a direction component.
-    ; This essentially the same test as above, but for when we jump
-    ; from the "up" test.
-    ;
-    lea     ($0098,A4),A0
-    move.b  (A0,D2.W),D0
-    andi.b #$02,D0
-    beq  _L_z04_DrawGhiniAndCheckCollisions_DrawAndCheckCollisions
-    even
-_L_z04_DrawGhiniAndCheckCollisions_SetHorizontalFlip:
-    addq.b  #1,($000F,A4)
-    even
-_L_z04_DrawGhiniAndCheckCollisions_DrawAndCheckCollisions:
-    move.b  ($000D,A4),D0
-; Params:
-; A: frame image
-; X: object index
-; [00]: object X
-; [01]: object Y
-; [0F]: flip horizontally
-;
-; Returns:
-; [00]: 0 for Link slot
-; [06]: 1 if objects collide
-; [09]: 0 for Link damage type (none)
-; [0C]: 1 if objects collide
-; [034B]: ShotCollidesWithLink
-;
-    even
+    jmp     c_draw_ghini_and_check_collisions
+
 DrawObjectNotMirroredAndCheckLinkCollision:
     jsr     DrawObjectNotMirrored
     jmp     CheckLinkCollision

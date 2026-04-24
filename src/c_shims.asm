@@ -5420,3 +5420,28 @@ c_update_stalfos:
     rts
 
 ;==============================================================================
+; --- Batch 102: z_04 Ghini (drained from z_04.asm) ---
+;==============================================================================
+
+    xdef    c_update_ghini
+    xdef    c_draw_ghini_and_check_collisions
+    xref    z04_update_ghini
+    xref    z04_draw_ghini_and_check_collisions
+
+c_update_ghini:
+    moveq   #0,D1
+    move.w  D2,D1
+    move.l  D1,-(SP)
+    jsr     z04_update_ghini
+    addq.l  #4,SP
+    rts
+
+c_draw_ghini_and_check_collisions:
+    moveq   #0,D1
+    move.w  D2,D1
+    move.l  D1,-(SP)
+    jsr     z04_draw_ghini_and_check_collisions
+    addq.l  #4,SP
+    rts
+
+;==============================================================================

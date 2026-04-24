@@ -433,6 +433,14 @@ void z04_update_stalfos(unsigned int slot) {
     enrt_update_stalfos(slot);
 }
 
+void z04_update_ghini(unsigned int slot) {
+    enrt_update_ghini(slot);
+}
+
+void z04_draw_ghini_and_check_collisions(unsigned int slot) {
+    enrt_draw_ghini_and_check_collisions(slot);
+}
+
 void z04_update_candle(void) {
     enrt_update_candle();
 }

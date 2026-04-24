@@ -535,6 +535,16 @@
       "sig": "void (unsigned int slot)"
     },
     {
+      "old": "z04_update_ghini",
+      "new": "enrt_update_ghini",
+      "sig": "void (unsigned int slot)"
+    },
+    {
+      "old": "z04_draw_ghini_and_check_collisions",
+      "new": "enrt_draw_ghini_and_check_collisions",
+      "sig": "void (unsigned int slot)"
+    },
+    {
       "old": "z04_update_candle",
       "new": "enrt_update_candle",
       "sig": "void (void)"

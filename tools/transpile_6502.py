@@ -4359,6 +4359,10 @@ def _patch_z04(path):
     # --- Batch 101: Stalfos ---
     text = _stub_func(text, 'UpdateStalfos', 'c_update_stalfos')
 
+    # --- Batch 102: Ghini ---
+    text = _stub_func(text, 'UpdateGhini', 'c_update_ghini')
+    text = _stub_func(text, 'DrawGhiniAndCheckCollisions', 'c_draw_ghini_and_check_collisions')
+
     with open(path, 'w', encoding='utf-8') as f:
         f.write(text)
 
