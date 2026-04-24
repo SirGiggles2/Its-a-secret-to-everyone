@@ -2795,6 +2795,9 @@ def _patch_z01(path):
     text = _stub_func(text, 'ClearPricesCaveFlag', 'c_clear_prices_cave_flag')
     # batch 80
     text = _stub_func(text, 'CycleSpriteIndexInA', 'c_cycle_sprite_index_in_a')
+    # batch 81: single-jmp aliases (L_ prefix labels)
+    text = _stub_func(text, 'L_PlayCharacterSfx', 'c_play_character_sfx')
+    text = _stub_func(text, 'L_Trap_DrawAndCheckCollisions', 'c_person_draw_and_check_collisions')
 
     # Data table exports — batch 37 + 44 + 53 + 55 + 56 + 57 + 58 + 59 + 60 + 61 + 62 + 77
     for tbl in ['UnderworldPersonTextSelectorsC', 'TextboxLineAddrsLo', 'RupeeStashXs', 'RupeeStashYs',

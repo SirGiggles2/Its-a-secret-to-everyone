@@ -610,9 +610,8 @@ UnderworldPerson_DestroyIfTaken:
     jmp     c_underworld_person_destroy_if_taken
 
 L_PlayCharacterSfx:
-    jmp     PlayCharacterSfx
+    jmp     c_play_character_sfx
 
-    even
 UnderworldPersonTextSelectorsB:
     dc.b    $2A, $38, $3A, $2C, $40, $42, $42, $3C
 
@@ -1314,9 +1313,8 @@ UpdateTrap_Full:
     jmp     c_update_trap_full
 
 L_Trap_DrawAndCheckCollisions:
-    jmp     Person_DrawAndCheckCollisions_Common
+    jmp     c_person_draw_and_check_collisions
 
-    even
 UpdateRupeeStash_Full:
     jmp     c_update_rupee_stash_full
 
