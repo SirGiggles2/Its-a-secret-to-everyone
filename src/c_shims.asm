@@ -5382,10 +5382,12 @@ c_manhandla_draw:
 ;==============================================================================
 
     xdef    c_init_lamnola
+    xdef    c_update_lamnola
     xdef    c_lamnola_update_head
     xdef    c_lamnola_move
 
     xref    z04_init_lamnola
+    xref    z04_update_lamnola
     xref    z04_lamnola_update_head
     xref    z04_lamnola_move
 
@@ -5395,6 +5397,15 @@ c_init_lamnola:
     move.w  D2,D1
     move.l  D1,-(SP)
     jsr     z04_init_lamnola
+    addq.l  #4,SP
+    rts
+
+; UpdateLamnola — D2=slot, void.
+c_update_lamnola:
+    moveq   #0,D1
+    move.w  D2,D1
+    move.l  D1,-(SP)
+    jsr     z04_update_lamnola
     addq.l  #4,SP
     rts
 
@@ -5480,10 +5491,12 @@ c_update_statues:
 
     xdef    c_turn_towards_player8
     xdef    c_turn_randomly_dir8
+    xdef    c_anim_write_sprite
     xdef    c_update_tektite_or_boulder
 
     xref    TurnTowardsPlayer8
     xref    TurnRandomlyDir8
+    xref    Anim_WriteSprite
     xref    z04_update_tektite_or_boulder
 
 c_turn_towards_player8:
@@ -5494,6 +5507,13 @@ c_turn_towards_player8:
 c_turn_randomly_dir8:
     move.l  4(SP),D2
     jsr     TurnRandomlyDir8
+    rts
+
+; Anim_WriteSprite — (tile, slot) from stack → (D0, D2).
+c_anim_write_sprite:
+    move.l  4(SP),D0
+    move.l  8(SP),D2
+    jsr     Anim_WriteSprite
     rts
 
 c_update_tektite_or_boulder:

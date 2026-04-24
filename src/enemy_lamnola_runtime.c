@@ -41,6 +41,66 @@ void enrt_init_lamnola(unsigned int slot) {
     RAM(0x034Eu) = 8;
 }
 
+void enrt_update_lamnola(unsigned int slot) {
+    unsigned char dir = ENEMY_DIR(slot);
+    unsigned char saved_x;
+    unsigned char saved_dir;
+    unsigned char tile;
+    unsigned char speed;
+    signed char tail;
+
+    if (dir == 0) {
+        return;
+    }
+
+    if (ENEMY_PAUSE_FLAG == 0) {
+        enrt_lamnola_move(slot);
+        if (slot == 5 || slot == 0x0A) {
+            enrt_lamnola_update_head(slot);
+        }
+    }
+
+    saved_x = ENEMY_X(slot);
+    ENEMY_X(slot) = (unsigned char)(saved_x + 4);
+
+    speed = ENEMY_LAMNOLA_SPEED;
+    RAM(0x0003u) = (unsigned char)(speed ^ 0x03u);
+
+    tile = (slot == 5 || slot == 0x0A) ? 0x9E : 0xA0;
+    c_anim_write_sprite(tile, slot);
+
+    ENEMY_X(slot) = saved_x;
+
+    saved_dir = ENEMY_DIR(slot);
+    c_check_monster_collisions(slot);
+    ENEMY_DIR(slot) = saved_dir;
+
+    if (ENEMY_METASTATE(slot) == 0) {
+        return;
+    }
+
+    c_reset_shove_info(slot);
+    OBJ(0x0485u, slot) = 32;
+
+    tail = (slot < 6u) ? (signed char)-1 : (signed char)4;
+    do {
+        ++tail;
+    } while (RAM(0x0350u + (unsigned char)tail) != ENEMY_LAMNOLA_TYPE);
+
+    RAM(0x0029u + (unsigned char)tail) = 17;
+
+    RAM(0x04F1u + (unsigned char)tail) = OBJ(0x04F0u, slot);
+    RAM(0x0071u + (unsigned char)tail) = ENEMY_X(slot);
+    RAM(0x0085u + (unsigned char)tail) = ENEMY_Y(slot);
+
+    if (tail == 4 || tail == 9) {
+        return;
+    }
+
+    RAM(0x0350u + (unsigned char)tail) = 93;
+    c_reset_obj_metastate(slot);
+}
+
 void enrt_lamnola_update_head(unsigned int slot) {
     unsigned char cur_dir;
     unsigned char chosen_dir;

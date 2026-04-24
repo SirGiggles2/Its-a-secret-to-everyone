@@ -82,6 +82,7 @@ extern void c_play_boss_death_cry(void);
 extern void c_bound_flyer(unsigned int slot);
 extern void c_turn_towards_player8(void);
 extern void c_turn_randomly_dir8(unsigned int slot);
+extern void c_anim_write_sprite(unsigned int tile, unsigned int slot);
 extern unsigned char c_bound_by_room(unsigned int slot);
 extern unsigned char c_get_colliding_tile_moving(unsigned int slot);
 extern void c_reset_obj_metastate(unsigned int slot);
