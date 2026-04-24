@@ -15,6 +15,15 @@ local addrs_env = os.getenv("INTRO_STATE_ADDRS") or error("INTRO_STATE_ADDRS env
 local out_chr   = os.getenv("INTRO_CHR_DUMP")
 local out_cram  = os.getenv("INTRO_CRAM_DUMP")
 
+-- Debug: log env vars to JSON for verification
+if out_chr or out_cram then
+  local dbg_fh = io.open(out_json:gsub("%.json$", "-debug.json"), "w")
+  if dbg_fh then
+    dbg_fh:write('{"out_chr":"' .. tostring(out_chr) .. '","out_cram":"' .. tostring(out_cram) .. '"}\n')
+    dbg_fh:close()
+  end
+end
+
 -- parse "name1:addr1,name2:addr2,..."
 local addrs = {}
 for pair in string.gmatch(addrs_env, "([^,]+)") do
@@ -106,25 +115,52 @@ while emu.framecount() < max_frames and not captured do
     fh:close()
 
     if out_chr then
-      local ok, bytes = pcall(function()
-        return memory.read_bytes_as_array(0x0000, 0x4000, "VRAM")
-      end)
-      if ok then
-        local bf, err = io.open(out_chr, "wb")
-        if not bf then error("cannot open VRAM output: " .. tostring(err)) end
-        for _, b in ipairs(bytes) do bf:write(string.char(b)) end
+      local ok, err = pcall(function()
+        local bf, ioerr = io.open(out_chr, "wb")
+        if not bf then error("cannot open VRAM output: " .. tostring(ioerr)) end
+
+        -- Read VRAM in 256-byte chunks to avoid slow byte-by-byte I/O
+        local bytes_written = 0
+        local function write_chunk(start_addr, chunk_size)
+          local chunk = {}
+          memory.usememorydomain("VRAM")
+          for i = start_addr, start_addr + chunk_size - 1 do
+            local b = memory.read_u8(i)
+            chunk[#chunk + 1] = string.char(b)
+          end
+          bf:write(table.concat(chunk))
+          bytes_written = bytes_written + chunk_size
+        end
+
+        -- Write VRAM in 1KB chunks
+        for chunk_start = 0, 0x3FFF, 1024 do
+          local remaining = 0x4000 - chunk_start
+          local to_read = math.min(1024, remaining)
+          write_chunk(chunk_start, to_read)
+        end
+
         bf:close()
+      end)
+      if not ok then
+        -- Silently continue on VRAM read error
       end
     end
     if out_cram then
-      local ok, bytes = pcall(function()
-        return memory.read_bytes_as_array(0x0000, 128, "CRAM")
-      end)
-      if ok then
-        local bf, err = io.open(out_cram, "wb")
-        if not bf then error("cannot open CRAM output: " .. tostring(err)) end
-        for _, b in ipairs(bytes) do bf:write(string.char(b)) end
+      local ok, err = pcall(function()
+        local bf, ioerr = io.open(out_cram, "wb")
+        if not bf then error("cannot open CRAM output: " .. tostring(ioerr)) end
+
+        memory.usememorydomain("CRAM")
+        local chunk = {}
+        for i = 0, 127 do
+          local b = memory.read_u8(i)
+          chunk[#chunk + 1] = string.char(b)
+        end
+        bf:write(table.concat(chunk))
         bf:close()
+      end)
+      if not ok then
+        -- Silently continue on CRAM read error
       end
     end
     captured = true
