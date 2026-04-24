@@ -60,4 +60,17 @@ void roommd_init_mode3_sub1(void);
 }
 #endif
 
+/* --- External data arrays used by room_mode_runtime.c --- */
+extern unsigned char LevelNumberTransferBuf[];
+extern const unsigned char LevelSongIds[];
+extern const unsigned char SaveSlotToPaletteRowOffset[];
+extern unsigned char MenuPalettesTransferBuf[];
+
+/* --- ASM shim / bank-forwarder functions used by room_mode_runtime.c --- */
+extern void z05_copy_row_to_tilebuf(void);
+extern void z05_copy_play_area_attrs_half(unsigned int ppu_hi, unsigned int ppu_lo, unsigned int end_off);
+extern void z01_begin_update_mode(void);
+extern void z07_patch_and_cue_level_palettes_transfer(void);
+extern unsigned char z07_end_game_mode(void);
+
 #endif

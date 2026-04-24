@@ -2,13 +2,6 @@
 #include "room_load_runtime.h"
 #include "room_runtime.h"
 
-extern void z05_copy_row_to_tilebuf(void);
-extern void z05_copy_play_area_attrs_half(unsigned int ppu_hi, unsigned int ppu_lo, unsigned int end_off);
-extern void z01_begin_update_mode(void);
-extern unsigned char LevelNumberTransferBuf[];
-extern void z07_patch_and_cue_level_palettes_transfer(void);
-extern unsigned char z07_end_game_mode(void);
-
 void roommd_inc_submode(void) {
     SUBMODE_VALUE++;
 }
@@ -249,10 +242,6 @@ void roommd_end_game_mode12(void) {
 }
 
 /* ---- Plan C: drained from z_07 (mode/song cluster) --------------------- */
-
-extern const unsigned char LevelSongIds[];
-extern const unsigned char SaveSlotToPaletteRowOffset[];
-extern unsigned char MenuPalettesTransferBuf[];
 
 unsigned char roommd_end_game_mode(void) {
     ROOM_MODE_TIMER = 0;
