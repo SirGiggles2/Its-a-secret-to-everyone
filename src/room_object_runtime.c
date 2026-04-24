@@ -2,8 +2,6 @@
 #include "core_runtime.h"
 #include "progress_runtime.h"
 
-extern unsigned char z07_get_collidable_tile_still(unsigned int slot);
-extern unsigned char z01_compare_hearts_to_containers(void);
 
 void roomobj_init_mode10(void) {
     z07_get_collidable_tile_still(0);

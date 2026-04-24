@@ -3,6 +3,9 @@
 
 #include "room_state.h"
 
+extern unsigned char z07_get_collidable_tile_still(unsigned int slot);
+extern unsigned char z01_compare_hearts_to_containers(void);
+
 #ifdef __cplusplus
 extern "C" {
 #endif
