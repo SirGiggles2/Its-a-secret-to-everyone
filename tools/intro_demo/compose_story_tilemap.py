@@ -86,11 +86,11 @@ def make_body_row(text: str, default_pal: int, pal_overrides: dict, phase: int) 
     row = [cell(0, TILE_SPACE)] * 32
     row[2] = vine_l(phase)
     row[29] = vine_r(phase)
-    # Center text in cols 3-28 (26 wide)
+    # Left-align text in cols 4-29 (text starts at col 4, after left vine)
     text = text.upper()
-    if len(text) > 26:
-        text = text[:26]
-    start = 3 + max(0, (26 - len(text)) // 2)
+    if len(text) > 25:
+        text = text[:25]
+    start = 4
     # Determine per-char palette via override-word matching
     char_pals = [default_pal] * len(text)
     for word, pal in pal_overrides.items():
@@ -118,6 +118,17 @@ def make_empty_vine_row(phase: int) -> list[int]:
 # Header decoration row (blank with single vine cluster on each side, no text).
 def make_blank_header_decor(phase: int) -> list[int]:
     return make_empty_vine_row(phase)
+
+# Bottom box-closure row matching NES original intro_story_tilemap row 29:
+#   blank blank $E6 $E4 $E5 $E4 $E5 ... $E4 $E5 $E6 blank blank
+# Cols 2 + 29 = $E6 corner caps; cols 3-28 = alternating $E4/$E5.
+def make_full_vine_row() -> list[int]:
+    row = [cell(0, TILE_SPACE)] * 32
+    row[2] = cell(3, 0xE6)
+    for c in range(3, 29):
+        row[c] = cell(3, 0xE4 if (c - 3) % 2 == 0 else 0xE5)
+    row[29] = cell(3, 0xE6)
+    return row
 
 LINES = [
     "LONG AGO,  GANON,  PRINCE",
@@ -155,18 +166,21 @@ def build_tilemap() -> tuple[list[int], int]:
         LINES[9:11],  # LINK ... PIECES AND SAVE ZELDA.
     ]
     phase = 0
-    for pi, para in enumerate(PARAGRAPHS):
-        for line in para:
-            cells.extend(make_body_row(line, 0, OVERRIDES, phase))
-            phase += 1
-            cells.extend(make_empty_vine_row(phase))   # spacing row between every line
-            phase += 1
-        # extra blank between paragraphs
-        cells.extend(make_empty_vine_row(phase))
+    all_lines = [ln for para in PARAGRAPHS for ln in para]
+    for i, line in enumerate(all_lines):
+        cells.extend(make_body_row(line, 0, OVERRIDES, phase))
         phase += 1
-    # Trailing rows
+        if i < len(all_lines) - 1:
+            cells.extend(make_empty_vine_row(phase))   # uniform 1-row spacing
+            phase += 1
+    # One blank row, then full-width vine row to close the box at the bottom.
+    cells.extend(make_empty_vine_row(phase))
+    phase += 1
+    cells.extend(make_full_vine_row())
+    # Trailing rows: completely blank (no side vines, box is closed).
+    blank_row = [cell(0, TILE_SPACE)] * 32
     while len(cells) // 32 < 30:
-        cells.extend(make_empty_vine_row(len(cells) // 32))
+        cells.extend(blank_row)
     rows = len(cells) // 32
     return cells, rows
 
