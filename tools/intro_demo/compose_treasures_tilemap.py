@@ -25,6 +25,7 @@ in v2 by extracting DemoSpritePatterns.dat and placing icon tile groups.
 """
 
 import sys
+import json
 from pathlib import Path
 
 OUT = Path(__file__).parent / "intro_treasures_tilemap.c"
@@ -133,7 +134,19 @@ ANIM_ITEM_FRAME_TILES = [
 ]
 
 SPRITE_BASE_TILE = 256
-ICON_PAL = 1
+
+# Per-item palettes from item_db.json (built by build_item_db.py from NES OAM dumps).
+# Maps NES OAM pal_idx (0/1/2) -> Genesis palette index (1/2/3).
+# Genesis pal 0 = text white; pals 1/2/3 = NES sprite pals 0/1/2.
+_db_path = Path(__file__).parent / "item_db.json"
+ITEM_PAL_BY_ID = {}
+if _db_path.exists():
+    _db = json.loads(_db_path.read_text())
+    for it in _db["items"]:
+        ITEM_PAL_BY_ID[it["item_id"]] = (it["pal_idx"] + 1) & 3  # 0->1, 1->2, 2->3
+
+def icon_pal(item_id: int) -> int:
+    return ITEM_PAL_BY_ID.get(item_id, 1)
 
 def item_id_to_tile(item_id: int) -> int:
     """item_id -> slot -> frame offset -> NES sprite tile T.
@@ -167,16 +180,16 @@ def place_icon(row_top: list[int], row_bot: list[int],
     T = item_id_to_tile(item_id)
     if T is None or T > 0xFF:
         return
+    pal = icon_pal(item_id)
     top_l, bot_l = pair_for(T)
-    row_top[col] = cell(ICON_PAL, SPRITE_BASE_TILE + top_l)
-    row_bot[col] = cell(ICON_PAL, SPRITE_BASE_TILE + bot_l)
+    row_top[col] = cell(pal, SPRITE_BASE_TILE + top_l)
+    row_bot[col] = cell(pal, SPRITE_BASE_TILE + bot_l)
     if not is_narrow_tile(T):
-        # Wide: right half from T+2.
         if T + 2 > 0xFF:
             return
         top_r, bot_r = pair_for(T + 2)
-        row_top[col + 1] = cell(ICON_PAL, SPRITE_BASE_TILE + top_r)
-        row_bot[col + 1] = cell(ICON_PAL, SPRITE_BASE_TILE + bot_r)
+        row_top[col + 1] = cell(pal, SPRITE_BASE_TILE + top_r)
+        row_bot[col + 1] = cell(pal, SPRITE_BASE_TILE + bot_r)
 
 # Icon column positions
 ICON_COL_L = 8   # left column center (narrow uses just this col)

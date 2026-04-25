@@ -55,6 +55,14 @@ echo [demo] Compiling intro_palette.c
 "%M68K_GCC%" -B "%M68K_BIN%\\" %CFLAGS% -c "%GEN_DIR%\intro_palette.c" -o "%OUT_DIR%\intro_palette.o"
 if errorlevel 1 exit /b 1
 
+echo [demo] Generating intro_combined_palette.c (story + sprite packed in 4 pals)
+"%PYTHON%" "%DEMO_DIR%\extract_combined_palette.py"
+if errorlevel 1 exit /b 1
+
+echo [demo] Compiling intro_combined_palette.c
+"%M68K_GCC%" -B "%M68K_BIN%\\" %CFLAGS% -c "%DEMO_DIR%\intro_combined_palette.c" -o "%OUT_DIR%\intro_combined_palette.o"
+if errorlevel 1 exit /b 1
+
 echo [demo] Compiling intro_story_tilemap.c
 "%M68K_GCC%" -B "%M68K_BIN%\\" %CFLAGS% -c "%GEN_DIR%\intro_story_tilemap.c" -o "%OUT_DIR%\intro_story_tilemap.o"
 if errorlevel 1 exit /b 1
@@ -93,7 +101,8 @@ echo [demo] Linking
     "%OUT_DIR%\intro_story_tilemap.o" ^
     "%OUT_DIR%\intro_showcase_tilemap.o" ^
     "%OUT_DIR%\intro_treasures_tilemap.o" ^
-    "%OUT_DIR%\intro_sprite_chr.o"
+    "%OUT_DIR%\intro_sprite_chr.o" ^
+    "%OUT_DIR%\intro_combined_palette.o"
 if errorlevel 1 exit /b 1
 
 echo [demo] objcopy -^> raw bin

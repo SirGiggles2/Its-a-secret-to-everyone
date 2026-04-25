@@ -17,7 +17,7 @@ extern const unsigned char  intro_font_chr[];      /* DemoBackgroundPatterns */
 extern const unsigned long  intro_font_chr_size;
 extern const unsigned char  intro_sprite_chr[];    /* Common+Demo sprite CHR */
 extern const unsigned long  intro_sprite_chr_size;
-extern const unsigned short intro_palette[64];
+extern const unsigned short intro_combined_palette[64];
 extern const unsigned short intro_story_tilemap_rows;
 extern const unsigned short intro_story_tilemap[];
 extern const unsigned short intro_showcase_tilemap_rows;
@@ -78,8 +78,9 @@ static void plane_fill_blank(unsigned short base) {
     for (unsigned short i = 0; i < 32 * 32; i++) VDP_DATA_WORD = 0x0024;
 }
 
-/* Sequence: story -> small gap -> treasures -> bottom pause -> loop. */
-#define GAP_ROWS 2
+/* Sequence: story -> blank gap (~NES black-fade duration, 12 rows) -> treasures
+ * -> bottom pause -> loop. With combined CRAM, no palette swap needed. */
+#define GAP_ROWS 12
 
 static const unsigned short *fetch_row(unsigned short n) {
     if (n < intro_story_tilemap_rows)
@@ -103,8 +104,10 @@ int main(void) {
      * are addressable. */
     vram_upload(intro_sprite_chr,    intro_sprite_chr_size,    0x2000);
 
-    /* Palette. */
-    cram_upload(intro_palette, 64);
+    /* Combined palette: slots 0-3 = story BG palettes; slots 4-7 = NES
+     * sprite palettes. Story tiles use slots 0-3; item icons use 4-7
+     * (sprite CHR was re-encoded with color_shift=4). */
+    cram_upload(intro_combined_palette, 64);
 
     /* Initial plane fills + story rows pre-written. */
     plane_fill_blank(0xC000);
@@ -131,8 +134,8 @@ int main(void) {
         unsigned short scroll = 0;
         unsigned short last_row = 0;
         unsigned short next_source_row = (unsigned short)intro_story_tilemap_rows;
-        unsigned short story_pause = 250;   /* NES-measured: ~250 frames story pause */
-        unsigned short end_pause = 0;       /* triggers when TRIFORCE+manual visible */
+        unsigned short story_pause = 250;
+        unsigned short end_pause = 0;
         unsigned char  end_pause_armed = 0;
 
         /* Pixels of total scroll before we reset:
