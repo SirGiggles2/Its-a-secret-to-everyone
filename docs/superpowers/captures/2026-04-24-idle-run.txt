@@ -1,0 +1,30 @@
+Task 25 — idle-run (no-crash) test, Zelda37.455
+
+ROM: builds/whatif.md (CRC 184EAEF0)
+Captured: 2151 frames (850-3000) via tools/bizhawk_capture_intro_sequence.lua
+Output:   builds/reports/intro_idle_run/
+
+Mode/phase transitions:
+  frame  850-1025  mode=00 phase=00 sub=01  title screen + pre-story fade
+  frame 1026-2019  mode=00 phase=01 sub=00  intro phase-1 window (our takeover hook site)
+  frame 2020-3000  mode=01 phase=00 sub=00  gameplay
+
+RESULT: NO CRASH. Mode transitions cleanly 00 -> 01 over 2150 frames.
+This is the first build of this branch where the intro sequence
+does not panic — previously the transpiled story scroll crashed
+mid-sequence (see memory: project_title_story_crash).
+
+OPEN ISSUES (not blocking Phase 7 completion):
+- vsram0 column stayed at 0x0008 throughout phase-01 window rather
+  than sweeping upward. Either our intro_should_take_over() did not
+  arm, or vdp_set_vscroll writes are being clobbered.
+- Mode jumped 00 -> 01 without the expected file-select detour.
+  Either intro_handoff restored mode_value=0x01 directly (matches
+  INTRO_HANDOFF_EXPECTED), or the legacy path ran with our code
+  inert and arrived at mode 01 via its own route.
+
+Next debug steps (Task 26 visual parity + instrumentation probe):
+- Add a trace write to RAM in intro_story_enter / intro_story_tick
+  to confirm takeover fires.
+- Compare NES reference capture vs this gen capture to check where
+  scroll divergence begins.
