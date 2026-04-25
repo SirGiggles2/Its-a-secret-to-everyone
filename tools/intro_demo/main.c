@@ -17,6 +17,10 @@ extern const unsigned char  intro_font_chr[];      /* DemoBackgroundPatterns */
 extern const unsigned long  intro_font_chr_size;
 extern const unsigned char  intro_sprite_chr[];    /* Common+Demo sprite CHR */
 extern const unsigned long  intro_sprite_chr_size;
+extern const unsigned char  intro_misc_chr[];      /* CommonMiscPatterns ($F2-$FF BG tiles) */
+extern const unsigned long  intro_misc_chr_size;
+extern const unsigned char  intro_punct_chr[];     /* Custom comma + apostrophe (Gen tiles 512-513) */
+extern const unsigned long  intro_punct_chr_size;
 extern const unsigned short intro_combined_palette[64];
 extern const unsigned short intro_story_tilemap_rows;
 extern const unsigned short intro_story_tilemap[];
@@ -103,6 +107,16 @@ int main(void) {
      * the treasures scroll. Cell tile-index field is 11 bits so tiles 256+
      * are addressable. */
     vram_upload(intro_sprite_chr,    intro_sprite_chr_size,    0x2000);
+
+    /* Misc CHR -> Genesis tiles 242-255 at VRAM $1E40 (= 242*32). Holds
+     * NES BG pattern tiles $F2-$FF (CommonMiscPatterns). 8x16-mode items
+     * with odd tile numbers (e.g. HEART tile $F3) reference these via the
+     * BG-pattern-table side. */
+    vram_upload(intro_misc_chr,      intro_misc_chr_size,      0x1E40);
+
+    /* Custom punctuation tiles (comma, apostrophe) -> Gen tile 512 at VRAM $4000.
+     * Used by GameCube-version story scroll text. */
+    vram_upload(intro_punct_chr,     intro_punct_chr_size,     0x4000);
 
     /* Combined palette: slots 0-3 = story BG palettes; slots 4-7 = NES
      * sprite palettes. Story tiles use slots 0-3; item icons use 4-7

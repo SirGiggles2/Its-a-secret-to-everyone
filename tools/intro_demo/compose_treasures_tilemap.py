@@ -40,8 +40,11 @@ def tile_for_char(ch: str) -> int:
 def encode_name(name: str) -> list[int]:
     return [tile_for_char(c) for c in name]
 
-def cell(palette: int, tile: int) -> int:
-    return ((palette & 3) << 13) | (tile & 0x7FF)
+def cell(palette: int, tile: int, hflip: bool = False) -> int:
+    base = ((palette & 3) << 13) | (tile & 0x7FF)
+    if hflip:
+        base |= (1 << 11)   # Genesis nametable cell H-flip bit
+    return base
 
 # Vine border tiles from DemoBackgroundPatterns: $E2/$E3 (left), $E5/$E6 (right)
 # These were observed in the working story tilemap for left+right columns.
@@ -145,15 +148,32 @@ if _db_path.exists():
     for it in _db["items"]:
         ITEM_PAL_BY_ID[it["item_id"]] = (it["pal_idx"] + 1) & 3  # 0->1, 1->2, 2->3
 
+# Per-item palette overrides where item_db lookup conflated items by tile
+# (e.g. SWORD/MAGICAL SWORD share tile $20 in lookup, but NES uses different
+# palettes — verified via OAM at item-specific frames).
+# Values are Genesis palette index (1=NES sprite pal 0, 2=pal 1, 3=pal 2).
+ITEM_ID_PAL_OVERRIDE = {
+    0x03: 3,  # MAGICAL SWORD: NES sprite pal 2 (red/orange) per OAM frame 2870
+}
+
 def icon_pal(item_id: int) -> int:
+    if item_id in ITEM_ID_PAL_OVERRIDE:
+        return ITEM_ID_PAL_OVERRIDE[item_id]
     return ITEM_PAL_BY_ID.get(item_id, 1)
+
+# Per Z_07.asm:933-938: items in slot 0 (sword family) with computed palette
+# 2 get remapped to special slot $20 (master sword art). MAGICAL SWORD is the
+# only such item in this demo; verified via OAM dump.
+ITEM_ID_SLOT_OVERRIDE = {
+    0x03: 0x20,  # MAGICAL SWORD -> special master-sword slot
+}
 
 def item_id_to_tile(item_id: int) -> int:
     """item_id -> slot -> frame offset -> NES sprite tile T.
        Per Z_07.asm:854 (LDA ItemIdToSlot,X) then DrawItemBySlot."""
     if item_id >= len(ITEM_ID_TO_SLOT):
         return None
-    slot = ITEM_ID_TO_SLOT[item_id]
+    slot = ITEM_ID_SLOT_OVERRIDE.get(item_id, ITEM_ID_TO_SLOT[item_id])
     if slot >= len(ANIM_ITEM_FRAME_OFFSETS):
         return None
     off = ANIM_ITEM_FRAME_OFFSETS[slot]
@@ -173,23 +193,48 @@ def pair_for(T: int) -> tuple[int, int]:
        regardless of T's parity. Fix for odd tiles like $F3 (HEART)."""
     return (T & 0xFE, T | 0x01)
 
+def gen_tile_for(nes_tile: int, use_bg_table: bool) -> int:
+    """8x16 sprite mode: tile bit 0 selects pattern table.
+       BG table: NES BG tiles $00-$6F (Common BG at Gen 0-111),
+                 $70-$F1 (Demo BG at Gen 112-241),
+                 $F2-$FF (Common Misc at Gen 242-255).
+                 So Gen tile = NES tile (same index space).
+       Sprite table: NES sprite tiles via concat at Gen 256-511 -> Gen tile = 256 + nes_tile."""
+    if use_bg_table:
+        return nes_tile
+    return SPRITE_BASE_TILE + nes_tile
+
+def is_mirrored_tile(T: int) -> bool:
+    """Per NES Zelda Anim_WriteSpecificItemSprites + observed OAM:
+       wide items in tile range $62-$7B render the right half as the LEFT
+       tile with H-flip (mirrored). Items >= $7C use flippable behavior."""
+    return 0x62 <= T < 0x7C
+
 def place_icon(row_top: list[int], row_bot: list[int],
                col: int, item_id: int) -> None:
-    """Place item icon. Narrow=1 cell wide, wide=2 cells wide. Each column is
-       a single 8x16 sprite — pair = (T & ~1) top / (T | 1) bot."""
+    """Place item icon. Narrow=1 cell, wide=2 cells. For wide items in
+       mirror range, right half uses left tile with H-flip."""
     T = item_id_to_tile(item_id)
     if T is None or T > 0xFF:
         return
     pal = icon_pal(item_id)
+    use_bg = (T & 1) == 1
     top_l, bot_l = pair_for(T)
-    row_top[col] = cell(pal, SPRITE_BASE_TILE + top_l)
-    row_bot[col] = cell(pal, SPRITE_BASE_TILE + bot_l)
-    if not is_narrow_tile(T):
+    row_top[col] = cell(pal, gen_tile_for(top_l, use_bg))
+    row_bot[col] = cell(pal, gen_tile_for(bot_l, use_bg))
+    if is_narrow_tile(T):
+        return
+    if is_mirrored_tile(T):
+        # Right half = same tile pair, H-flipped.
+        row_top[col + 1] = cell(pal, gen_tile_for(top_l, use_bg), hflip=True)
+        row_bot[col + 1] = cell(pal, gen_tile_for(bot_l, use_bg), hflip=True)
+    else:
+        # Wide non-mirrored: right half from T+2 pair.
         if T + 2 > 0xFF:
             return
         top_r, bot_r = pair_for(T + 2)
-        row_top[col + 1] = cell(pal, SPRITE_BASE_TILE + top_r)
-        row_bot[col + 1] = cell(pal, SPRITE_BASE_TILE + bot_r)
+        row_top[col + 1] = cell(pal, gen_tile_for(top_r, use_bg))
+        row_bot[col + 1] = cell(pal, gen_tile_for(bot_r, use_bg))
 
 # Icon column positions
 ICON_COL_L = 8   # left column center (narrow uses just this col)
@@ -206,11 +251,27 @@ def build_tilemap() -> tuple[list[int], int]:
     for _ in range(2):
         cells.extend(make_row(vine_phase=len(cells) // 32))
 
-    # Header: "ALL OF TREASURES" in palette 3 (gold/orange)
-    cells.extend(make_row(vine_phase=len(cells) // 32))   # blank
-    cells.extend(make_centered_row("ALL OF TREASURES", 3,
-                                   vine_phase=len(cells) // 32))
-    cells.extend(make_row(vine_phase=len(cells) // 32))   # blank
+    # Header per NES CIRAM dump frame 1900 NT1 row 8 (verified ground truth):
+    #   E4 E5 E4 E5 E4 E5 E6 24 [text] 24 E6 E4 E5 E4 E5 E4 E5
+    # 7-tile vine clusters on each side, alternating $E4/$E5 with $E6 endpoint.
+    # Above + below rows are all spaces ($24).
+    NES_HEADER_ROW = [
+        0xE4, 0xE5, 0xE4, 0xE5, 0xE4, 0xE5, 0xE6, 0x24,
+        0x0A, 0x15, 0x15, 0x24, 0x18, 0x0F, 0x24, 0x1D,
+        0x1B, 0x0E, 0x0A, 0x1C, 0x1E, 0x1B, 0x0E, 0x1C,
+        0x24, 0xE6, 0xE4, 0xE5, 0xE4, 0xE5, 0xE4, 0xE5,
+    ]
+    # Per-cell palette: vines use pal 3 (green), text+spaces use pal 0 (white).
+    HEADER_VINE_PAL = 3
+    HEADER_TEXT_PAL = 0
+    header_row = []
+    for col, t in enumerate(NES_HEADER_ROW):
+        is_vine = t in (0xE4, 0xE5, 0xE6)
+        pal = HEADER_VINE_PAL if is_vine else HEADER_TEXT_PAL
+        header_row.append(cell(pal, t))
+    cells.extend(make_row())   # blank above
+    cells.extend(header_row)
+    cells.extend(make_row())   # blank below
 
     # Item rows: 2 spacer rows + 2 icon rows + 1 gap row + N name rows + 2 spacer rows.
     for left_id, left_lines, right_id, right_lines in ITEM_PAIRS:
@@ -233,22 +294,65 @@ def build_tilemap() -> tuple[list[int], int]:
         cells.extend(make_row())                                # bottom spacer
         cells.extend(make_row())                                # bottom spacer
 
-    # Final centered: TRIFORCE (white text like other names)
-    for _ in range(3):
+    # Final centered: TRIFORCE icon + text. NES tile $7C (item slot $1A,
+    # frame +1) at center of screen. NES sprite pal 0 -> Gen pal 1.
+    for _ in range(2):
         cells.extend(make_row())
+    # Triforce icon: tile $6E (Common sprite), mirrored pair (16x16),
+    # NES sprite pal 2 (red/orange) -> Gen pal 3. Per OAM frame 4500.
+    triforce_top = [BLANK] * 32
+    triforce_bot = [BLANK] * 32
+    TRIFORCE_TILE = 0x6E
+    TRIFORCE_PAL = 3
+    triforce_top[15] = cell(TRIFORCE_PAL, SPRITE_BASE_TILE + TRIFORCE_TILE)
+    triforce_bot[15] = cell(TRIFORCE_PAL, SPRITE_BASE_TILE + TRIFORCE_TILE + 1)
+    triforce_top[16] = cell(TRIFORCE_PAL, SPRITE_BASE_TILE + TRIFORCE_TILE, hflip=True)
+    triforce_bot[16] = cell(TRIFORCE_PAL, SPRITE_BASE_TILE + TRIFORCE_TILE + 1, hflip=True)
+    cells.extend(triforce_top)
+    cells.extend(triforce_bot)
+    cells.extend(make_row())   # gap
     cells.extend(make_centered_row("TRIFORCE", NAME_PAL))
     for _ in range(3):
         cells.extend(make_row())
 
-    # Final centered: PLEASE LOOK UP THE MANUAL FOR DETAILS
-    cells.extend(make_centered_row("PLEASE LOOK UP", NAME_PAL,
-                                   vine_phase=len(cells) // 32))
-    cells.extend(make_centered_row("THE MANUAL",     NAME_PAL,
-                                   vine_phase=len(cells) // 32))
-    cells.extend(make_centered_row("FOR DETAILS",    NAME_PAL,
-                                   vine_phase=len(cells) // 32))
+    # More space above the sign (lower its position).
+    for _ in range(10):
+        cells.extend(make_row())
+
+    # Manual paper sign: 6 cells wide x 6 cells tall, NES sprite pal 0 -> Gen pal 1.
+    # Built from 18 NES 8x16 sprites (per OAM frame 4500), each sprite
+    # contributes top half (T) + bot half (T+1).
+    # Layout (NES tiles per Genesis cell row):
+    SIGN_TILES = [
+        [0xE0, 0xE2, 0xEC, 0xEE, 0xF8, 0xFA],
+        [0xE1, 0xE3, 0xED, 0xEF, 0xF9, 0xFB],
+        [0xE4, 0xE6, 0xF0, 0xF2, 0xFC, 0xFE],
+        [0xE5, 0xE7, 0xF1, 0xF3, 0xFD, 0xFF],
+        [0xE8, 0xEA, 0xF4, 0xF6, 0xDC, 0xDE],
+        [0xE9, 0xEB, 0xF5, 0xF7, 0xDD, 0xDF],
+    ]
+    SIGN_PAL = 1
+    SIGN_COL_START = 13   # 32-cell-wide plane: center 6-wide block at cols 13-18
+    for row_tiles in SIGN_TILES:
+        row = [BLANK] * 32
+        for c, t in enumerate(row_tiles):
+            row[SIGN_COL_START + c] = cell(SIGN_PAL, SPRITE_BASE_TILE + t)
+        cells.extend(row)
+
+    # Link sprite holding the sign at bottom: tile $78 mirrored pair.
+    # Sign touches Link directly (no gap row).
+    link_top = [BLANK] * 32
+    link_bot = [BLANK] * 32
+    LINK_TILE = 0x78
+    LINK_PAL = 1
+    link_top[15] = cell(LINK_PAL, SPRITE_BASE_TILE + LINK_TILE)
+    link_bot[15] = cell(LINK_PAL, SPRITE_BASE_TILE + LINK_TILE + 1)
+    link_top[16] = cell(LINK_PAL, SPRITE_BASE_TILE + LINK_TILE, hflip=True)
+    link_bot[16] = cell(LINK_PAL, SPRITE_BASE_TILE + LINK_TILE + 1, hflip=True)
+    cells.extend(link_top)
+    cells.extend(link_bot)
     for _ in range(4):
-        cells.extend(make_row(vine_phase=len(cells) // 32))
+        cells.extend(make_row())
 
     rows = len(cells) // 32
     return cells, rows

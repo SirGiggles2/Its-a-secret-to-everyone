@@ -63,8 +63,16 @@ echo [demo] Compiling intro_combined_palette.c
 "%M68K_GCC%" -B "%M68K_BIN%\\" %CFLAGS% -c "%DEMO_DIR%\intro_combined_palette.c" -o "%OUT_DIR%\intro_combined_palette.o"
 if errorlevel 1 exit /b 1
 
-echo [demo] Compiling intro_story_tilemap.c
-"%M68K_GCC%" -B "%M68K_BIN%\\" %CFLAGS% -c "%GEN_DIR%\intro_story_tilemap.c" -o "%OUT_DIR%\intro_story_tilemap.o"
+echo [demo] Generating intro_story_tilemap_gc.c (GameCube-version story text)
+"%PYTHON%" "%DEMO_DIR%\compose_story_tilemap.py"
+if errorlevel 1 exit /b 1
+
+echo [demo] Compiling intro_story_tilemap_gc.c
+"%M68K_GCC%" -B "%M68K_BIN%\\" %CFLAGS% -c "%DEMO_DIR%\intro_story_tilemap_gc.c" -o "%OUT_DIR%\intro_story_tilemap.o"
+if errorlevel 1 exit /b 1
+
+echo [demo] Compiling intro_punct_chr.c (custom comma + apostrophe tiles)
+"%M68K_GCC%" -B "%M68K_BIN%\\" %CFLAGS% -c "%DEMO_DIR%\intro_punct_chr.c" -o "%OUT_DIR%\intro_punct_chr.o"
 if errorlevel 1 exit /b 1
 
 echo [demo] Compiling intro_showcase_tilemap.c
@@ -87,6 +95,14 @@ echo [demo] Compiling intro_sprite_chr.c
 "%M68K_GCC%" -B "%M68K_BIN%\\" %CFLAGS% -c "%DEMO_DIR%\intro_sprite_chr.c" -o "%OUT_DIR%\intro_sprite_chr.o"
 if errorlevel 1 exit /b 1
 
+echo [demo] Generating intro_misc_chr.c (CommonMiscPatterns -^> NES BG tiles \$F2-\$FF)
+"%PYTHON%" "%DEMO_DIR%\extract_misc_chr.py"
+if errorlevel 1 exit /b 1
+
+echo [demo] Compiling intro_misc_chr.c
+"%M68K_GCC%" -B "%M68K_BIN%\\" %CFLAGS% -c "%DEMO_DIR%\intro_misc_chr.c" -o "%OUT_DIR%\intro_misc_chr.o"
+if errorlevel 1 exit /b 1
+
 echo [demo] Assembling boot.asm
 "%VASM%" -Felf -m68000 -L "%OUT_DIR%\boot.lst" -o "%OUT_DIR%\boot.o" "%DEMO_DIR%\boot.asm"
 if errorlevel 1 exit /b 1
@@ -101,7 +117,9 @@ echo [demo] Linking
     "%OUT_DIR%\intro_story_tilemap.o" ^
     "%OUT_DIR%\intro_showcase_tilemap.o" ^
     "%OUT_DIR%\intro_treasures_tilemap.o" ^
+    "%OUT_DIR%\intro_punct_chr.o" ^
     "%OUT_DIR%\intro_sprite_chr.o" ^
+    "%OUT_DIR%\intro_misc_chr.o" ^
     "%OUT_DIR%\intro_combined_palette.o"
 if errorlevel 1 exit /b 1
 

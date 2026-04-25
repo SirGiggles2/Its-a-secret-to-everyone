@@ -41,6 +41,13 @@ def main() -> int:
         raise ValueError(f"palram dump bad size {len(palram)}")
 
     cram = list(story)  # start with story palette in slots 0-3 of each
+    # GameCube-version story-scroll color overrides:
+    #   pal 1 color 1 = bright red  (GANON, GANON'S, header THE LEGEND OF ZELDA)
+    #   pal 2 color 1 = rupee blue  (PRINCESS, ZELDA)
+    #   pal 3 color 1 = bright green (LINK)
+    cram[1*16 + 1] = 0x000E   # bright red
+    cram[2*16 + 1] = 0x0E88   # rupee blue (NES sprite pal 1 color 2 — light blue rupee body)
+    cram[3*16 + 1] = 0x00E0   # bright green
     # NES sprite palettes are at $3F10-$3F1F (palram bytes 16-31).
     # Pack into slots 4-7 of Gen pals 1,2,3 (sprite pal 0 -> Gen pal 1,
     # sprite pal 1 -> Gen pal 2, sprite pal 2 -> Gen pal 3).
