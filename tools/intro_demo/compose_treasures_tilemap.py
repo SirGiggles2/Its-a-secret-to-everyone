@@ -220,14 +220,15 @@ def place_icon(row_top: list[int], row_bot: list[int],
     pal = icon_pal(item_id)
     use_bg = (T & 1) == 1
     top_l, bot_l = pair_for(T)
-    row_top[col] = cell(pal, gen_tile_for(top_l, use_bg))
-    row_bot[col] = cell(pal, gen_tile_for(bot_l, use_bg))
+    top_idx = gen_tile_for(top_l, use_bg)
+    bot_idx = gen_tile_for(bot_l, use_bg)
+    row_top[col] = cell(pal, top_idx)
+    row_bot[col] = cell(pal, bot_idx)
     if is_narrow_tile(T):
         return
     if is_mirrored_tile(T):
-        # Right half = same tile pair, H-flipped.
-        row_top[col + 1] = cell(pal, gen_tile_for(top_l, use_bg), hflip=True)
-        row_bot[col + 1] = cell(pal, gen_tile_for(bot_l, use_bg), hflip=True)
+        row_top[col + 1] = cell(pal, top_idx, hflip=True)
+        row_bot[col + 1] = cell(pal, bot_idx, hflip=True)
     else:
         # Wide non-mirrored: right half from T+2 pair.
         if T + 2 > 0xFF:

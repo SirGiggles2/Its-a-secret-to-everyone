@@ -50,6 +50,15 @@ static void cram_upload(const unsigned short *src, unsigned short count) {
     while (count--) VDP_DATA_WORD = *src++;
 }
 
+/* Write a single CRAM word at the given palette slot index (0..63). */
+static void cram_write_one(unsigned short slot, unsigned short value) {
+    unsigned long addr = (unsigned long)slot * 2u;
+    VDP_CTRL_LONG = 0xC0000000UL
+                  | ((addr & 0x3FFFu) << 16)
+                  | ((addr >> 14) & 0x0003u);
+    VDP_DATA_WORD = value;
+}
+
 static void vsram_set0(unsigned short value) {
     VDP_CTRL_LONG = 0x40000010UL;
     VDP_DATA_WORD = value;
@@ -169,6 +178,7 @@ int main(void) {
 
         for (;;) {
             wait_vblank();
+
             /* Initial story pause: hold scroll at 0 so the reader can read
              * the story before it starts scrolling up. NES = ~250 frames. */
             if (story_pause) { story_pause--; continue; }
