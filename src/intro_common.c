@@ -16,7 +16,8 @@ static unsigned char s_entered = 0;
 
 unsigned char intro_should_take_over(void) {
     if (s_takeover_armed) return g_intro_takeover;
-    if (RAM(0x042C) == 0) return 0;
+    if (RAM(0x042C) == 0) return 0;   /* still phase-0 (title) */
+    if (RAM(0x042B) == 0) return 0;   /* FRONT_START_RELEASE_GATE — attract demo, skip */
     g_intro_takeover = 1;
     s_takeover_armed = 1;
     s_substage = 0;
