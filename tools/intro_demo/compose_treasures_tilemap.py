@@ -214,6 +214,16 @@ def place_icon(row_top: list[int], row_bot: list[int],
                col: int, item_id: int) -> None:
     """Place item icon. Narrow=1 cell, wide=2 cells. For wide items in
        mirror range, right half uses left tile with H-flip."""
+    # Recovery heart (item 0x22): redirect to dedicated Gen tiles 514/515
+    # uploaded from intro_blink_chr.c with color_shift=8. Heart's NES pal
+    # is sprite pal 1 -> Gen pal 2, so cell palette = 2; its pixels
+    # reference pal2 slots 8-11 — which main.c animates per NES
+    # DemoPhase0Subphase1 cycles. All other items remain on their static
+    # slots, isolating the flash to this single cell.
+    if item_id == 0x22:
+        row_top[col] = cell(2, 514)
+        row_bot[col] = cell(2, 515)
+        return
     T = item_id_to_tile(item_id)
     if T is None or T > 0xFF:
         return

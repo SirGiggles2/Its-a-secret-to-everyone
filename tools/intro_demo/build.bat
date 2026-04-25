@@ -103,6 +103,22 @@ echo [demo] Compiling intro_misc_chr.c
 "%M68K_GCC%" -B "%M68K_BIN%\\" %CFLAGS% -c "%DEMO_DIR%\intro_misc_chr.c" -o "%OUT_DIR%\intro_misc_chr.o"
 if errorlevel 1 exit /b 1
 
+echo [demo] Generating intro_blink_chr.c (heart/container/triforce/rupee, color-shifted)
+"%PYTHON%" "%DEMO_DIR%\extract_blink_chr.py"
+if errorlevel 1 exit /b 1
+
+echo [demo] Compiling intro_blink_chr.c
+"%M68K_GCC%" -B "%M68K_BIN%\\" %CFLAGS% -c "%DEMO_DIR%\intro_blink_chr.c" -o "%OUT_DIR%\intro_blink_chr.o"
+if errorlevel 1 exit /b 1
+
+echo [demo] Generating intro_demo_palettes.c (Z_02 DemoPhase0Subphase1 cycles)
+"%PYTHON%" "%DEMO_DIR%\extract_demo_palettes.py"
+if errorlevel 1 exit /b 1
+
+echo [demo] Compiling intro_demo_palettes.c
+"%M68K_GCC%" -B "%M68K_BIN%\\" %CFLAGS% -c "%DEMO_DIR%\intro_demo_palettes.c" -o "%OUT_DIR%\intro_demo_palettes.o"
+if errorlevel 1 exit /b 1
+
 echo [demo] Assembling boot.asm
 "%VASM%" -Felf -m68000 -L "%OUT_DIR%\boot.lst" -o "%OUT_DIR%\boot.o" "%DEMO_DIR%\boot.asm"
 if errorlevel 1 exit /b 1
@@ -120,6 +136,8 @@ echo [demo] Linking
     "%OUT_DIR%\intro_punct_chr.o" ^
     "%OUT_DIR%\intro_sprite_chr.o" ^
     "%OUT_DIR%\intro_misc_chr.o" ^
+    "%OUT_DIR%\intro_blink_chr.o" ^
+    "%OUT_DIR%\intro_demo_palettes.o" ^
     "%OUT_DIR%\intro_combined_palette.o"
 if errorlevel 1 exit /b 1
 

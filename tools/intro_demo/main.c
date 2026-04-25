@@ -21,6 +21,10 @@ extern const unsigned char  intro_misc_chr[];      /* CommonMiscPatterns ($F2-$F
 extern const unsigned long  intro_misc_chr_size;
 extern const unsigned char  intro_punct_chr[];     /* Custom comma + apostrophe (Gen tiles 512-513) */
 extern const unsigned long  intro_punct_chr_size;
+extern const unsigned char  intro_blink_chr[];     /* Heart/container/triforce/rupee, color-shifted */
+extern const unsigned long  intro_blink_chr_size;
+extern const unsigned short intro_demo_palette_cycles[14][12];  /* Z_02 DemoPhase0Subphase1 */
+extern const unsigned char  intro_demo_palette_delays[14];
 extern const unsigned short intro_combined_palette[64];
 extern const unsigned short intro_story_tilemap_rows;
 extern const unsigned short intro_story_tilemap[];
@@ -127,10 +131,28 @@ int main(void) {
      * Used by GameCube-version story scroll text. */
     vram_upload(intro_punct_chr,     intro_punct_chr_size,     0x4000);
 
+    /* Heart blink pair (NES misc $F2/$F3, color_shift=8) -> Gen tiles 514-515
+     * at VRAM $4040. Pixels reference pal slots 8-11; only this region animates,
+     * isolating the heart flash from container/fairy/clock at slots 4-7. */
+    vram_upload(intro_blink_chr,     64,                       0x4040);
+
     /* Combined palette: slots 0-3 = story BG palettes; slots 4-7 = NES
      * sprite palettes. Story tiles use slots 0-3; item icons use 4-7
      * (sprite CHR was re-encoded with color_shift=4). */
     cram_upload(intro_combined_palette, 64);
+
+    /* Seed pal1 slots 8-11 with NES DemoPhase0Subphase1 cycle 0 colors.
+     * Cycle layout per intro_demo_palette_cycles: words [0..3] = NES sprite
+     * pal 0 (heart/container's NES palette). We redirect those into slots
+     * 8-11 of Gen pal 1 so only the heart cell — whose tiles are encoded
+     * with color_shift=8 — is affected. */
+    {
+        const unsigned short *cyc0 = intro_demo_palette_cycles[0];
+        cram_write_one((unsigned short)(2*16 + 8),  cyc0[4]);
+        cram_write_one((unsigned short)(2*16 + 9),  cyc0[5]);
+        cram_write_one((unsigned short)(2*16 + 10), cyc0[6]);
+        cram_write_one((unsigned short)(2*16 + 11), cyc0[7]);
+    }
 
     /* Initial plane fills + story rows pre-written. */
     plane_fill_blank(0xC000);
@@ -170,6 +192,19 @@ int main(void) {
 
         unsigned char tick = 0;
 
+        /* Heart-flash state. Heart icon at content rows
+         *   H = story_rows + GAP_ROWS + 2 (top), H+1 (bot)
+         * gets written into plane row (H - story_rows) = 14 (top) and 15
+         * (bot) at scroll = 8*(plane_row+1) = 120, 128. The plane is 256 px
+         * tall; heart-top first becomes visible (y_screen entering from
+         * bottom) at scroll = first_write + 25 = 145, exits top at
+         * scroll = first_write + 256 = 376. heart-bot follows by 8 px.
+         * Use [145, 376] as the visibility gate. */
+        unsigned long heart_visible_start = 145u;
+        unsigned long heart_visible_end   = 376u;
+        unsigned char heart_cycle_idx  = 0;
+        unsigned char heart_delay_left = intro_demo_palette_delays[0];
+
         /* End-pause threshold: when scroll has advanced enough that the
          * TRIFORCE + "PLEASE LOOK UP" rows have settled into the visible
          * window, hold for ~180 frames (NES-measured 3 sec). */
@@ -178,6 +213,29 @@ int main(void) {
 
         for (;;) {
             wait_vblank();
+
+            /* Heart-flash step (every vblank, NES timing). Only writes CRAM
+             * when heart is in the visible window. */
+            {
+                unsigned char heart_visible =
+                    (pixel_count >= heart_visible_start)
+                    && (pixel_count <= heart_visible_end);
+                if (heart_visible) {
+                    if (heart_delay_left == 0) {
+                        heart_cycle_idx++;
+                        if (heart_cycle_idx >= 14u) heart_cycle_idx = 0;
+                        heart_delay_left = intro_demo_palette_delays[heart_cycle_idx];
+                        const unsigned short *cyc =
+                            intro_demo_palette_cycles[heart_cycle_idx];
+                        cram_write_one((unsigned short)(2*16 + 8),  cyc[4]);
+                        cram_write_one((unsigned short)(2*16 + 9),  cyc[5]);
+                        cram_write_one((unsigned short)(2*16 + 10), cyc[6]);
+                        cram_write_one((unsigned short)(2*16 + 11), cyc[7]);
+                    } else {
+                        heart_delay_left--;
+                    }
+                }
+            }
 
             /* Initial story pause: hold scroll at 0 so the reader can read
              * the story before it starts scrolling up. NES = ~250 frames. */
@@ -229,6 +287,16 @@ int main(void) {
                 story_pause = 250;
                 end_pause = 0;
                 end_pause_armed = 0;
+                /* Restart heart flash from cycle 0 + reseed pal2[8..11]. */
+                heart_cycle_idx = 0;
+                heart_delay_left = intro_demo_palette_delays[0];
+                {
+                    const unsigned short *cyc0 = intro_demo_palette_cycles[0];
+                    cram_write_one((unsigned short)(2*16 + 8),  cyc0[4]);
+                    cram_write_one((unsigned short)(2*16 + 9),  cyc0[5]);
+                    cram_write_one((unsigned short)(2*16 + 10), cyc0[6]);
+                    cram_write_one((unsigned short)(2*16 + 11), cyc0[7]);
+                }
             }
         }
     }
