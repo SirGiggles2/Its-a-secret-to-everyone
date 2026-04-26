@@ -177,6 +177,15 @@ void story_runtime_load(void) {
     vram_upload(intro_punct_chr,     intro_punct_chr_size,     0x4000);
     vram_upload(intro_blink_chr,     intro_blink_chr_size,     0x4040);
 
+    /* Clear sprite list left over from title phase. Set sprite 0 to
+     * Y=0 (off-screen) and link=0 (terminate). Genesis sprite table
+     * lives at VRAM $F800 per boot.asm reg 5 = $7C. */
+    vram_write_open(0xF800u);
+    VDP_DATA_WORD = 0;     /* Y = 0 */
+    VDP_DATA_WORD = 0;     /* size + link */
+    VDP_DATA_WORD = 0;     /* attr/tile */
+    VDP_DATA_WORD = 0;     /* X */
+
     /* CRAM: combined palette + heart-flash slot restoration (title fade
      * clobbered all 64 slots so we must rewrite). */
     cram_upload(intro_combined_palette, 64);
