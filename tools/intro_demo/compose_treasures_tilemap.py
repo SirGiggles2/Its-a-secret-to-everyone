@@ -214,15 +214,20 @@ def place_icon(row_top: list[int], row_bot: list[int],
                col: int, item_id: int) -> None:
     """Place item icon. Narrow=1 cell, wide=2 cells. For wide items in
        mirror range, right half uses left tile with H-flip."""
-    # Recovery heart (item 0x22): redirect to dedicated Gen tiles 514/515
-    # uploaded from intro_blink_chr.c with color_shift=8. Heart's NES pal
-    # is sprite pal 1 -> Gen pal 2, so cell palette = 2; its pixels
-    # reference pal2 slots 8-11 — which main.c animates per NES
-    # DemoPhase0Subphase1 cycles. All other items remain on their static
-    # slots, isolating the flash to this single cell.
+    # Heart (0x22) and Rupee (0x18): NES Z_07.asm @Flash flashes their
+    # sprite-palette index between NES sprite pal 1 (blue) and pal 2 (red)
+    # every 8 frames. Both items redirect to the blink-CHR region (Gen
+    # tiles 514-521 with color_shift=8 -> pixels reference pal slots 9-11).
+    # Heart and rupee tiles share the same CRAM region: pal 2 slots 9-11
+    # = blue gradient, pal 3 slots 9-11 = red gradient. main.c toggles
+    # their cell palette field 2<->3 each 8 frames while visible.
     if item_id == 0x22:
         row_top[col] = cell(2, 514)
         row_bot[col] = cell(2, 515)
+        return
+    if item_id == 0x18:
+        row_top[col] = cell(2, 520)
+        row_bot[col] = cell(2, 521)
         return
     T = item_id_to_tile(item_id)
     if T is None or T > 0xFF:
@@ -262,15 +267,19 @@ def build_tilemap() -> tuple[list[int], int]:
     for _ in range(2):
         cells.extend(make_row(vine_phase=len(cells) // 32))
 
-    # Header per NES CIRAM dump frame 1900 NT1 row 8 (verified ground truth):
-    #   E4 E5 E4 E5 E4 E5 E6 24 [text] 24 E6 E4 E5 E4 E5 E4 E5
-    # 7-tile vine clusters on each side, alternating $E4/$E5 with $E6 endpoint.
-    # Above + below rows are all spaces ($24).
+    # Header: vines extend inward, leaving 1-cell breathing space between
+    # vine cap and "ALL TREASURES" text. Vines still touch screen edges.
+    # Layout:
+    #   cols 0-8   = left vine (8 alternating $E4/$E5 + $E6 cap)
+    #   col 9      = space
+    #   cols 10-22 = "ALL TREASURES" (13 chars)
+    #   col 23     = space
+    #   cols 24-31 = right vine ($E6 cap + 7 alternating $E4/$E5)
     NES_HEADER_ROW = [
-        0xE4, 0xE5, 0xE4, 0xE5, 0xE4, 0xE5, 0xE6, 0x24,
-        0x0A, 0x15, 0x15, 0x24, 0x18, 0x0F, 0x24, 0x1D,
-        0x1B, 0x0E, 0x0A, 0x1C, 0x1E, 0x1B, 0x0E, 0x1C,
-        0x24, 0xE6, 0xE4, 0xE5, 0xE4, 0xE5, 0xE4, 0xE5,
+        0xE4, 0xE5, 0xE4, 0xE5, 0xE4, 0xE5, 0xE4, 0xE5,
+        0xE6, 0x24, 0x0A, 0x15, 0x15, 0x24, 0x1D, 0x1B,
+        0x0E, 0x0A, 0x1C, 0x1E, 0x1B, 0x0E, 0x1C, 0x24,
+        0xE6, 0xE4, 0xE5, 0xE4, 0xE5, 0xE4, 0xE5, 0xE4,
     ]
     # Per-cell palette: vines use pal 3 (green), text+spaces use pal 0 (white).
     HEADER_VINE_PAL = 3
@@ -309,16 +318,19 @@ def build_tilemap() -> tuple[list[int], int]:
     # frame +1) at center of screen. NES sprite pal 0 -> Gen pal 1.
     for _ in range(2):
         cells.extend(make_row())
-    # Triforce icon: tile $6E (Common sprite), mirrored pair (16x16),
-    # NES sprite pal 2 (red/orange) -> Gen pal 3. Per OAM frame 4500.
+    # Triforce flashes per NES Z_07 @Flash (sprite pal 1 <-> pal 2 every
+    # 8 frames). Redirect to blink-CHR tiles 518/519 (re-encoded $6E/$6F
+    # with color_shift=8 -> pixel value 2 references slot 10 of cell pal).
+    # Initial palette 2; main.c toggles 2<->3 each 8 frames while visible.
     triforce_top = [BLANK] * 32
     triforce_bot = [BLANK] * 32
-    TRIFORCE_TILE = 0x6E
-    TRIFORCE_PAL = 3
-    triforce_top[15] = cell(TRIFORCE_PAL, SPRITE_BASE_TILE + TRIFORCE_TILE)
-    triforce_bot[15] = cell(TRIFORCE_PAL, SPRITE_BASE_TILE + TRIFORCE_TILE + 1)
-    triforce_top[16] = cell(TRIFORCE_PAL, SPRITE_BASE_TILE + TRIFORCE_TILE, hflip=True)
-    triforce_bot[16] = cell(TRIFORCE_PAL, SPRITE_BASE_TILE + TRIFORCE_TILE + 1, hflip=True)
+    TRIFORCE_TOP_TILE = 518
+    TRIFORCE_BOT_TILE = 519
+    TRIFORCE_PAL = 2
+    triforce_top[15] = cell(TRIFORCE_PAL, TRIFORCE_TOP_TILE)
+    triforce_bot[15] = cell(TRIFORCE_PAL, TRIFORCE_BOT_TILE)
+    triforce_top[16] = cell(TRIFORCE_PAL, TRIFORCE_TOP_TILE, hflip=True)
+    triforce_bot[16] = cell(TRIFORCE_PAL, TRIFORCE_BOT_TILE, hflip=True)
     cells.extend(triforce_top)
     cells.extend(triforce_bot)
     cells.extend(make_row())   # gap

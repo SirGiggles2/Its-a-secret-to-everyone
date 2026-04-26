@@ -131,10 +131,16 @@ int main(void) {
      * Used by GameCube-version story scroll text. */
     vram_upload(intro_punct_chr,     intro_punct_chr_size,     0x4000);
 
-    /* Heart blink pair (NES misc $F2/$F3, color_shift=8) -> Gen tiles 514-515
-     * at VRAM $4040. Pixels reference pal slots 8-11; only this region animates,
-     * isolating the heart flash from container/fairy/clock at slots 4-7. */
-    vram_upload(intro_blink_chr,     64,                       0x4040);
+    /* Blink CHR (heart $F2/$F3, container $68/$69, triforce $6E/$6F,
+     * rupee $32/$33) re-encoded with color_shift=8 -> Gen tiles 514-521
+     * at VRAM $4040. Pixels reference pal slots 8-11; only this region
+     * animates, isolating flash from non-flashing items at slots 4-7.
+     * Container/triforce currently unused (future work).
+     *   514/515: heart top/bot
+     *   516/517: container top/bot (reserved)
+     *   518/519: triforce top/bot (reserved)
+     *   520/521: rupee top/bot */
+    vram_upload(intro_blink_chr,     intro_blink_chr_size,     0x4040);
 
     /* Combined palette: slots 0-3 = story BG palettes; slots 4-7 = NES
      * sprite palettes. Story tiles use slots 0-3; item icons use 4-7
@@ -204,10 +210,27 @@ int main(void) {
          * Heart_bot plane[20] visible [193, 416]. Use union [185, 416]. */
         unsigned long heart_visible_start = 185u;
         unsigned long heart_visible_end   = 416u;
-        /* NES Z_07.asm:888 @Flash: heart palette toggles via FrameCounter
-         * bit 3 — 8 frames blue, 8 frames red, repeat. */
+        /* Rupee at treasures row 24 (icon top) -> content row 66 ->
+         * plane[4] (66-30=36, mod 32 = 4), y_plane=32, written at
+         * scroll=296. Visible at scroll [321, 552] (combined top+bot). */
+        unsigned long rupee_visible_start = 321u;
+        unsigned long rupee_visible_end   = 552u;
+        /* Triforce at treasures row 153 (top), 154 (bot), cols 15-16 with
+         * hflip mirror. Content row 195 = 30 + 12 + 153. Plane row =
+         * 165 mod 32 = 5 (top), 6 (bot). Written at scroll=1328/1336.
+         * Visible at scroll [1353, 1584]. */
+        unsigned long triforce_visible_start = 1353u;
+        unsigned long triforce_visible_end   = 1584u;
+        /* NES Z_07.asm:888 @Flash: palette toggles via FrameCounter
+         * bit 3 — 8 frames pal 1 (blue), 8 frames pal 2 (red), repeat.
+         * Each item animates independently (separate counters since
+         * they may overlap on screen during scroll). */
         unsigned char heart_frame_counter = 0;
         unsigned char heart_last_pal_bit  = 0xFF;
+        unsigned char rupee_frame_counter = 0;
+        unsigned char rupee_last_pal_bit  = 0xFF;
+        unsigned char triforce_frame_counter = 0;
+        unsigned char triforce_last_pal_bit  = 0xFF;
 
         /* End-pause threshold: when scroll has advanced enough that the
          * TRIFORCE + "PLEASE LOOK UP" rows have settled into the visible
@@ -218,16 +241,20 @@ int main(void) {
         for (;;) {
             wait_vblank();
 
-            /* Heart-flash: NES Z_07 toggles heart's sprite palette index
-             * each 8 frames (FrameCounter bit 3). Replicate by rewriting
-             * the heart cell's palette field 2<->3 in plane A. Heart top
-             * at plane row 19 col 8 (VRAM $C4D0), bot at plane row 20
-             * col 8 (VRAM $C510). Pal 2 slots 9-11 hold NES sprite pal 1
-             * (blue); pal 3 slots 9-11 hold NES sprite pal 2 (red). */
+            /* Item flash: NES Z_07 toggles flashing-item sprite palette
+             * index each 8 frames (FrameCounter bit 3). Replicate by
+             * rewriting the cell's palette field 2<->3. Pal 2 slots 9-11
+             * hold NES sprite pal 1 (blue); pal 3 slots 9-11 hold NES
+             * sprite pal 2 (red). Heart and rupee animate independently. */
             {
+                /* Strict-less for end: anim fires every vblank, but the
+                 * scroll-write that clears plane row of heart fires only
+                 * on tick=1 frames. Using <= lets anim fire AFTER the
+                 * scroll-write same boundary, leaving heart in plane to
+                 * show again when plane wraps. <= would re-stamp heart. */
                 unsigned char heart_visible =
                     (pixel_count >= heart_visible_start)
-                    && (pixel_count <= heart_visible_end);
+                    && (pixel_count < heart_visible_end);
                 if (heart_visible) {
                     heart_frame_counter++;
                     unsigned char pal_bit = (heart_frame_counter >> 3) & 1u;
@@ -235,12 +262,52 @@ int main(void) {
                         heart_last_pal_bit = pal_bit;
                         unsigned short pal_field = pal_bit ? (3u << 13)
                                                            : (2u << 13);
-                        unsigned short top_cell = (unsigned short)(pal_field | 514u);
-                        unsigned short bot_cell = (unsigned short)(pal_field | 515u);
+                        /* heart top: plane[19] col 8 = $C4D0; bot: plane[20] = $C510 */
                         vram_write_open(0xC4D0u);
-                        VDP_DATA_WORD = top_cell;
+                        VDP_DATA_WORD = (unsigned short)(pal_field | 514u);
                         vram_write_open(0xC510u);
-                        VDP_DATA_WORD = bot_cell;
+                        VDP_DATA_WORD = (unsigned short)(pal_field | 515u);
+                    }
+                }
+                unsigned char rupee_visible =
+                    (pixel_count >= rupee_visible_start)
+                    && (pixel_count < rupee_visible_end);
+                if (rupee_visible) {
+                    rupee_frame_counter++;
+                    unsigned char pal_bit = (rupee_frame_counter >> 3) & 1u;
+                    if (pal_bit != rupee_last_pal_bit) {
+                        rupee_last_pal_bit = pal_bit;
+                        unsigned short pal_field = pal_bit ? (3u << 13)
+                                                           : (2u << 13);
+                        /* rupee top: plane[4] col 8 = $C110; bot: plane[5] = $C150 */
+                        vram_write_open(0xC110u);
+                        VDP_DATA_WORD = (unsigned short)(pal_field | 520u);
+                        vram_write_open(0xC150u);
+                        VDP_DATA_WORD = (unsigned short)(pal_field | 521u);
+                    }
+                }
+                unsigned char triforce_visible =
+                    (pixel_count >= triforce_visible_start)
+                    && (pixel_count < triforce_visible_end);
+                if (triforce_visible) {
+                    triforce_frame_counter++;
+                    unsigned char pal_bit = (triforce_frame_counter >> 3) & 1u;
+                    if (pal_bit != triforce_last_pal_bit) {
+                        triforce_last_pal_bit = pal_bit;
+                        unsigned short pal_field = pal_bit ? (3u << 13)
+                                                           : (2u << 13);
+                        unsigned short hflip = (unsigned short)(1u << 11);
+                        /* Triforce 4 cells: plane[5,6] x cols 15,16.
+                         * plane[5] col 15 = $C15E, col 16 = $C160
+                         * plane[6] col 15 = $C19E, col 16 = $C1A0 */
+                        vram_write_open(0xC15Eu);
+                        VDP_DATA_WORD = (unsigned short)(pal_field | 518u);
+                        vram_write_open(0xC160u);
+                        VDP_DATA_WORD = (unsigned short)(pal_field | 518u | hflip);
+                        vram_write_open(0xC19Eu);
+                        VDP_DATA_WORD = (unsigned short)(pal_field | 519u);
+                        vram_write_open(0xC1A0u);
+                        VDP_DATA_WORD = (unsigned short)(pal_field | 519u | hflip);
                     }
                 }
             }
@@ -295,11 +362,15 @@ int main(void) {
                 story_pause = 250;
                 end_pause = 0;
                 end_pause_armed = 0;
-                /* Reset heart flash counter; CRAM stays — pal2/pal3 hold
-                 * static blue/red. Heart cell will be redrawn by scroll
-                 * when it re-enters and palette field will toggle. */
+                /* Reset flash counters; CRAM stays — pal2/pal3 hold
+                 * static blue/red. Cells will be redrawn by scroll
+                 * when items re-enter and palette field will toggle. */
                 heart_frame_counter = 0;
                 heart_last_pal_bit  = 0xFF;
+                rupee_frame_counter = 0;
+                rupee_last_pal_bit  = 0xFF;
+                triforce_frame_counter = 0;
+                triforce_last_pal_bit  = 0xFF;
             }
         }
     }

@@ -46,8 +46,8 @@ TILES = [
     ("sprite", 0x69, 8),
     ("sprite", 0x6E, 8),
     ("sprite", 0x6F, 8),
-    ("sprite", 0x32, 12),
-    ("sprite", 0x33, 12),
+    ("sprite", 0x32, 8),
+    ("sprite", 0x33, 8),
 ]
 
 def main() -> int:
