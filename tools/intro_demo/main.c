@@ -141,18 +141,22 @@ int main(void) {
      * (sprite CHR was re-encoded with color_shift=4). */
     cram_upload(intro_combined_palette, 64);
 
-    /* Seed pal1 slots 8-11 with NES DemoPhase0Subphase1 cycle 0 colors.
-     * Cycle layout per intro_demo_palette_cycles: words [0..3] = NES sprite
-     * pal 0 (heart/container's NES palette). We redirect those into slots
-     * 8-11 of Gen pal 1 so only the heart cell — whose tiles are encoded
-     * with color_shift=8 — is affected. */
-    {
-        const unsigned short *cyc0 = intro_demo_palette_cycles[0];
-        cram_write_one((unsigned short)(2*16 + 8),  cyc0[4]);
-        cram_write_one((unsigned short)(2*16 + 9),  cyc0[5]);
-        cram_write_one((unsigned short)(2*16 + 10), cyc0[6]);
-        cram_write_one((unsigned short)(2*16 + 11), cyc0[7]);
-    }
+    /* Heart-flash colors. NES Z_07.asm:878 DrawItemBySlot @Flash flips
+     * the heart sprite's palette index between NES sprite pal 1 (blue)
+     * and sprite pal 2 (red) every 8 frames (FrameCounter bit 3).
+     * Phase-1 PALRAM (palram_2050) shows:
+     *   sprite pal 1: $00 $02 $22 $30 = backdrop, blue, lt-blue, white
+     *   sprite pal 2: $00 $16 $27 $30 = backdrop, red, orange, white
+     * Heart art (intro_blink_chr.c, color_shift=8) references slots 9-11
+     * of cell's palette. Load NES sprite pal 1 colors into pal2[9..11]
+     * and NES sprite pal 2 colors into pal3[9..11]. Animation toggles the
+     * heart cell's palette field 2<->3 each 8 frames; CRAM stays static. */
+    cram_write_one((unsigned short)(2*16 + 9),  0x0C02);
+    cram_write_one((unsigned short)(2*16 + 10), 0x0E88);
+    cram_write_one((unsigned short)(2*16 + 11), 0x0EEE);
+    cram_write_one((unsigned short)(3*16 + 9),  0x002C);
+    cram_write_one((unsigned short)(3*16 + 10), 0x008E);
+    cram_write_one((unsigned short)(3*16 + 11), 0x0EEE);
 
     /* Initial plane fills + story rows pre-written. */
     plane_fill_blank(0xC000);
@@ -192,18 +196,18 @@ int main(void) {
 
         unsigned char tick = 0;
 
-        /* Heart-flash state. Heart icon at content rows
-         *   H = story_rows + GAP_ROWS + 2 (top), H+1 (bot)
-         * gets written into plane row (H - story_rows) = 14 (top) and 15
-         * (bot) at scroll = 8*(plane_row+1) = 120, 128. The plane is 256 px
-         * tall; heart-top first becomes visible (y_screen entering from
-         * bottom) at scroll = first_write + 25 = 145, exits top at
-         * scroll = first_write + 256 = 376. heart-bot follows by 8 px.
-         * Use [145, 376] as the visibility gate. */
-        unsigned long heart_visible_start = 145u;
-        unsigned long heart_visible_end   = 376u;
-        unsigned char heart_cycle_idx  = 0;
-        unsigned char heart_delay_left = intro_demo_palette_delays[0];
+        /* Heart-flash state. Heart icon top at treasures row 7 (after
+         * 5 pre-item rows + 2 spacer rows). Content row 49 = story_rows
+         * (30) + GAP_ROWS (12) + 7. Plane row = content - story_rows = 19,
+         * y_plane = 152. Plane wraps every 256 px; heart_top in plane[19]
+         * holds heart from scroll=160 to 416, visible at scroll [185, 408].
+         * Heart_bot plane[20] visible [193, 416]. Use union [185, 416]. */
+        unsigned long heart_visible_start = 185u;
+        unsigned long heart_visible_end   = 416u;
+        /* NES Z_07.asm:888 @Flash: heart palette toggles via FrameCounter
+         * bit 3 — 8 frames blue, 8 frames red, repeat. */
+        unsigned char heart_frame_counter = 0;
+        unsigned char heart_last_pal_bit  = 0xFF;
 
         /* End-pause threshold: when scroll has advanced enough that the
          * TRIFORCE + "PLEASE LOOK UP" rows have settled into the visible
@@ -214,25 +218,29 @@ int main(void) {
         for (;;) {
             wait_vblank();
 
-            /* Heart-flash step (every vblank, NES timing). Only writes CRAM
-             * when heart is in the visible window. */
+            /* Heart-flash: NES Z_07 toggles heart's sprite palette index
+             * each 8 frames (FrameCounter bit 3). Replicate by rewriting
+             * the heart cell's palette field 2<->3 in plane A. Heart top
+             * at plane row 19 col 8 (VRAM $C4D0), bot at plane row 20
+             * col 8 (VRAM $C510). Pal 2 slots 9-11 hold NES sprite pal 1
+             * (blue); pal 3 slots 9-11 hold NES sprite pal 2 (red). */
             {
                 unsigned char heart_visible =
                     (pixel_count >= heart_visible_start)
                     && (pixel_count <= heart_visible_end);
                 if (heart_visible) {
-                    if (heart_delay_left == 0) {
-                        heart_cycle_idx++;
-                        if (heart_cycle_idx >= 14u) heart_cycle_idx = 0;
-                        heart_delay_left = intro_demo_palette_delays[heart_cycle_idx];
-                        const unsigned short *cyc =
-                            intro_demo_palette_cycles[heart_cycle_idx];
-                        cram_write_one((unsigned short)(2*16 + 8),  cyc[4]);
-                        cram_write_one((unsigned short)(2*16 + 9),  cyc[5]);
-                        cram_write_one((unsigned short)(2*16 + 10), cyc[6]);
-                        cram_write_one((unsigned short)(2*16 + 11), cyc[7]);
-                    } else {
-                        heart_delay_left--;
+                    heart_frame_counter++;
+                    unsigned char pal_bit = (heart_frame_counter >> 3) & 1u;
+                    if (pal_bit != heart_last_pal_bit) {
+                        heart_last_pal_bit = pal_bit;
+                        unsigned short pal_field = pal_bit ? (3u << 13)
+                                                           : (2u << 13);
+                        unsigned short top_cell = (unsigned short)(pal_field | 514u);
+                        unsigned short bot_cell = (unsigned short)(pal_field | 515u);
+                        vram_write_open(0xC4D0u);
+                        VDP_DATA_WORD = top_cell;
+                        vram_write_open(0xC510u);
+                        VDP_DATA_WORD = bot_cell;
                     }
                 }
             }
@@ -287,16 +295,11 @@ int main(void) {
                 story_pause = 250;
                 end_pause = 0;
                 end_pause_armed = 0;
-                /* Restart heart flash from cycle 0 + reseed pal2[8..11]. */
-                heart_cycle_idx = 0;
-                heart_delay_left = intro_demo_palette_delays[0];
-                {
-                    const unsigned short *cyc0 = intro_demo_palette_cycles[0];
-                    cram_write_one((unsigned short)(2*16 + 8),  cyc0[4]);
-                    cram_write_one((unsigned short)(2*16 + 9),  cyc0[5]);
-                    cram_write_one((unsigned short)(2*16 + 10), cyc0[6]);
-                    cram_write_one((unsigned short)(2*16 + 11), cyc0[7]);
-                }
+                /* Reset heart flash counter; CRAM stays — pal2/pal3 hold
+                 * static blue/red. Heart cell will be redrawn by scroll
+                 * when it re-enters and palette field will toggle. */
+                heart_frame_counter = 0;
+                heart_last_pal_bit  = 0xFF;
             }
         }
     }
