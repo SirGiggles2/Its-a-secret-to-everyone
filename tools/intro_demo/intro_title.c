@@ -175,8 +175,8 @@ static void title_sprite_upload(void) {
             unsigned short y = (unsigned short)(128u + (unsigned short)(ny + 1u));
             unsigned short x = (unsigned short)(128u + (unsigned short)waterfall_xs[c]);
             unsigned short tile = (unsigned short)(256u + (unsigned short)tiles[c]);
-            /* NES sprite pal 0 (palette 4 in NES 6-pal numbering) for waterfall. */
-            unsigned short pal = 0u;
+            /* NES sprite pal 3 (attr=$03 in frontend_runtime waterfall update). */
+            unsigned short pal = 3u;
             unsigned short link = (unsigned short)(idx + 1u);
             if (idx == SPRITE_COUNT - 1u) link = 0u;
             unsigned short word1 = link;
@@ -232,7 +232,7 @@ static void title_waterfall_step(void) {
             unsigned short gen_y = (unsigned short)(128u + (unsigned short)(y + 1u));
             unsigned char nes_tile = (unsigned char)(waterfall_wave_tiles[c] + wave_off);
             unsigned short tile = (unsigned short)(256u + (unsigned short)nes_tile);
-            unsigned short pal = 0u;
+            unsigned short pal = 3u;
             unsigned short word2 = (unsigned short)((pal << 13) | (tile & 0x7FFu));
             unsigned short base_addr = (unsigned short)(SPRITE_TABLE_VRAM + idx*8u);
             /* Update Y (word 0). */
@@ -249,7 +249,7 @@ static void title_waterfall_step(void) {
         unsigned char idx = (unsigned char)(WATERFALL_BASE + 0u*WATERFALL_COLS + c);
         unsigned char nes_tile = (unsigned char)(waterfall_crest_tiles[c] + crest_offset);
         unsigned short tile = (unsigned short)(256u + (unsigned short)nes_tile);
-        unsigned short pal = 0u;
+        unsigned short pal = 3u;
         unsigned short word2 = (unsigned short)((pal << 13) | (tile & 0x7FFu));
         unsigned short addr = (unsigned short)(SPRITE_TABLE_VRAM + idx*8u + 4u);
         vram_write_open(addr);
