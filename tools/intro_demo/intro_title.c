@@ -118,8 +118,10 @@ static const unsigned char waterfall_crest_tiles[4] = {0xA2, 0xA4, 0xA6, 0xA8};
 static const unsigned char waterfall_wave_tiles[4]  = {0xB2, 0xB4, 0xB6, 0xB8};
 
 /* Build one Genesis sprite-table entry from NES sprite [Y, tile, attr, X].
- * NES sprites are 8x8 here; Genesis size field 0 = 8x8 single tile.
- * Sprite CHR uploaded at VRAM $2000 -> Gen tile = 256 + nes_tile.
+ * NES PPUCTRL bit 5 = 1 at title -> 8x16 sprites. Top tile = ntile (always
+ * even for this scene); bottom tile = ntile + 1. Genesis encodes 8x16 as
+ * width=1 tile, height=2 tiles -> size field HHWW = 0b0100 = 4.
+ * Sprite CHR uploaded at VRAM $2000 -> Gen top tile = 256 + nes_tile.
  *
  * NES attr bits: 0-1 = palette (sprite pal 0-3), 5 = behind-BG priority,
  * 6 = HFlip, 7 = VFlip.
@@ -152,7 +154,7 @@ static void title_sprite_upload(void) {
         unsigned short vflip = (unsigned short)((nattr >> 7) & 1u);
 
         unsigned short link = (unsigned short)(i + 1u);
-        unsigned short word1 = link;
+        unsigned short word1 = (unsigned short)((4u << 8) | link);  /* size=8x16 */
         unsigned short word2 = (unsigned short)((prio << 15) | (pal << 13)
                                               | (vflip << 12) | (hflip << 11)
                                               | (tile & 0x7FFu));
@@ -175,11 +177,11 @@ static void title_sprite_upload(void) {
             unsigned short y = (unsigned short)(128u + (unsigned short)(ny + 1u));
             unsigned short x = (unsigned short)(128u + (unsigned short)waterfall_xs[c]);
             unsigned short tile = (unsigned short)(256u + (unsigned short)tiles[c]);
-            /* NES sprite pal 3 (attr=$03 in frontend_runtime waterfall update). */
-            unsigned short pal = 3u;
+            /* NES sprite pal 0 (real-NES OAM dump shows attr=$00 for waterfall). */
+            unsigned short pal = 0u;
             unsigned short link = (unsigned short)(idx + 1u);
             if (idx == SPRITE_COUNT - 1u) link = 0u;
-            unsigned short word1 = link;
+            unsigned short word1 = (unsigned short)((4u << 8) | link);  /* size=8x16 */
             unsigned short word2 = (unsigned short)((pal << 13) | (tile & 0x7FFu));
 
             VDP_DATA_WORD = y;
@@ -232,7 +234,7 @@ static void title_waterfall_step(void) {
             unsigned short gen_y = (unsigned short)(128u + (unsigned short)(y + 1u));
             unsigned char nes_tile = (unsigned char)(waterfall_wave_tiles[c] + wave_off);
             unsigned short tile = (unsigned short)(256u + (unsigned short)nes_tile);
-            unsigned short pal = 3u;
+            unsigned short pal = 0u;
             unsigned short word2 = (unsigned short)((pal << 13) | (tile & 0x7FFu));
             unsigned short base_addr = (unsigned short)(SPRITE_TABLE_VRAM + idx*8u);
             /* Update Y (word 0). */
@@ -249,7 +251,7 @@ static void title_waterfall_step(void) {
         unsigned char idx = (unsigned char)(WATERFALL_BASE + 0u*WATERFALL_COLS + c);
         unsigned char nes_tile = (unsigned char)(waterfall_crest_tiles[c] + crest_offset);
         unsigned short tile = (unsigned short)(256u + (unsigned short)nes_tile);
-        unsigned short pal = 3u;
+        unsigned short pal = 0u;
         unsigned short word2 = (unsigned short)((pal << 13) | (tile & 0x7FFu));
         unsigned short addr = (unsigned short)(SPRITE_TABLE_VRAM + idx*8u + 4u);
         vram_write_open(addr);

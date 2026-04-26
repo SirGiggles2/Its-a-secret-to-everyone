@@ -23,7 +23,10 @@ def main() -> int:
     chr_data = CHR_TITLE.read_bytes()
     if len(chr_data) != 8192:
         raise ValueError(f"chr_title.bin must be 8192 bytes, got {len(chr_data)}")
-    sprite_chr = chr_data[0x1000:0x2000]   # 4KB sprite pattern table
+    # PPUCTRL=$B0 at title: 8x16 sprites, sprite PT at $0000. All OAM tile
+    # bytes used (InitialTitleSprites, WaterfallCrestTiles, WaterfallWaveTiles)
+    # are even -> all reference PT0.
+    sprite_chr = chr_data[0x0000:0x1000]   # 4KB sprite pattern table (PT0)
     n_tiles = len(sprite_chr) // 16
     gen = bytearray()
     for T in range(n_tiles):
