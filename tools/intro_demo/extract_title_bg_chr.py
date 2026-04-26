@@ -15,11 +15,19 @@ ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(Path(__file__).parent))
 from extract_sprite_chr import nes_tile_to_gen_tile
 
-BG_DAT = ROOT / "reference" / "aldonunez" / "dat" / "CommonBackgroundPatterns.dat"
-OUT    = Path(__file__).parent / "intro_title_bg_chr.c"
+COMMON_BG = ROOT / "reference" / "aldonunez" / "dat" / "CommonBackgroundPatterns.dat"
+DEMO_BG   = ROOT / "reference" / "aldonunez" / "dat" / "DemoBackgroundPatterns.dat"
+MISC      = ROOT / "reference" / "aldonunez" / "dat" / "CommonMiscPatterns.dat"
+OUT       = Path(__file__).parent / "intro_title_bg_chr.c"
 
 def main() -> int:
-    bg_data = BG_DAT.read_bytes()
+    common = COMMON_BG.read_bytes()
+    demo   = DEMO_BG.read_bytes()
+    misc   = MISC.read_bytes()
+    # NES BG tile address space: 0x00-0x6F = Common (112 tiles, 1792 B);
+    # 0x70-0xF1 = Demo (130 tiles, 2080 B); 0xF2-0xFF = Misc (14 tiles, 224 B).
+    # Concatenate to produce a contiguous Gen tile array spanning 0x00-0xFF.
+    bg_data = common + demo + misc
     n_tiles = len(bg_data) // 16
     gen = bytearray()
     for T in range(n_tiles):
