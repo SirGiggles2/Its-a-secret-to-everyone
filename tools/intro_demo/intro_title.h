@@ -7,9 +7,13 @@
 #ifndef INTRO_TITLE_H
 #define INTRO_TITLE_H
 
-#define TITLE_DISPLAY_FRAMES 520u
+/* Title timing — tuned vs NES f0035..f0785 reference but compressed
+ * for snappier feel per user feedback. NES bright-hold ~520 fr, fade
+ * ~230 fr, black ~255 fr; we keep fade at 230 (preserves 14-cycle
+ * NES color progression) and tighten the holds. */
+#define TITLE_DISPLAY_FRAMES 400u
 #define TITLE_FADE_CYCLES    14u
-#define BLACK_HOLD_FRAMES    255u
+#define BLACK_HOLD_FRAMES    180u
 
 void intro_title_setup(void);                   /* PHASE_TITLE_LOAD */
 void intro_title_step(void);                    /* PHASE_TITLE_DISPLAY */
