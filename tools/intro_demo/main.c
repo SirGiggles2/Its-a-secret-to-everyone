@@ -221,6 +221,13 @@ int main(void) {
          * Visible at scroll [1353, 1584]. */
         unsigned long triforce_visible_start = 1353u;
         unsigned long triforce_visible_end   = 1584u;
+        /* Fairy at treasures row 16 col 8 (sprite tile $50 pal 3 = NES
+         * sprite pal 2 red). Content row 58 -> plane[28] (y=224), written
+         * at scroll=232. Visible at scroll [257, 488). NES Z_02.asm:858
+         * AnimateStationaryFairy alternates frame 0 (tile $50/$51) and
+         * frame 1 ($52/$53) every 4 frames per FrameCounter bit 2. */
+        unsigned long fairy_visible_start = 257u;
+        unsigned long fairy_visible_end   = 488u;
         /* NES Z_07.asm:888 @Flash: palette toggles via FrameCounter
          * bit 3 — 8 frames pal 1 (blue), 8 frames pal 2 (red), repeat.
          * Each item animates independently (separate counters since
@@ -231,6 +238,8 @@ int main(void) {
         unsigned char rupee_last_pal_bit  = 0xFF;
         unsigned char triforce_frame_counter = 0;
         unsigned char triforce_last_pal_bit  = 0xFF;
+        unsigned char fairy_frame_counter = 0;
+        unsigned char fairy_last_frame_bit = 0xFF;
 
         /* End-pause threshold: when scroll has advanced enough that the
          * TRIFORCE + "PLEASE LOOK UP" rows have settled into the visible
@@ -284,6 +293,27 @@ int main(void) {
                         VDP_DATA_WORD = (unsigned short)(pal_field | 520u);
                         vram_write_open(0xC150u);
                         VDP_DATA_WORD = (unsigned short)(pal_field | 521u);
+                    }
+                }
+                /* Fairy frame swap (NES Z_02 AnimateStationaryFairy):
+                 * tile $50/$51 <-> $52/$53 every 4 frames. Cell pal stays
+                 * at 3 (NES sprite pal 2 = red). */
+                unsigned char fairy_visible =
+                    (pixel_count >= fairy_visible_start)
+                    && (pixel_count < fairy_visible_end);
+                if (fairy_visible) {
+                    fairy_frame_counter++;
+                    unsigned char frame_bit = (fairy_frame_counter >> 2) & 1u;
+                    if (frame_bit != fairy_last_frame_bit) {
+                        fairy_last_frame_bit = frame_bit;
+                        unsigned short pal_field = (3u << 13);
+                        unsigned short top_tile = frame_bit ? 338u : 336u;
+                        unsigned short bot_tile = frame_bit ? 339u : 337u;
+                        /* fairy top: plane[28] col 8 = $C710; bot: $C750 */
+                        vram_write_open(0xC710u);
+                        VDP_DATA_WORD = (unsigned short)(pal_field | top_tile);
+                        vram_write_open(0xC750u);
+                        VDP_DATA_WORD = (unsigned short)(pal_field | bot_tile);
                     }
                 }
                 unsigned char triforce_visible =
@@ -371,6 +401,8 @@ int main(void) {
                 rupee_last_pal_bit  = 0xFF;
                 triforce_frame_counter = 0;
                 triforce_last_pal_bit  = 0xFF;
+                fairy_frame_counter = 0;
+                fairy_last_frame_bit = 0xFF;
             }
         }
     }
