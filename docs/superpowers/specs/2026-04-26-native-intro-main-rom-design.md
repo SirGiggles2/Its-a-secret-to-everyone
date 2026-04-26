@@ -73,9 +73,16 @@ intro_main:
 phases:
     PHASE_TITLE_LOAD → PHASE_TITLE_DISPLAY → PHASE_TITLE_FADEOUT
     → PHASE_BLACK_HOLD
-    → PHASE_STORY_LOAD → PHASE_STORY_RUN
-    → PHASE_SHOWCASE_LOAD → PHASE_SHOWCASE_RUN     [NEW]
+    → PHASE_STORY_LOAD → PHASE_STORY_RUN  (covers story text + items as
+                                            ONE continuous vertical scroll
+                                            per intro_demo proof)
     → loop to PHASE_TITLE_LOAD
+
+Story + item scroll are one phase, not two. story_runtime concatenates
+pre-blank rows + story tilemap + GAP_ROWS + treasures tilemap, scrolls
+the union, and toggles item-flash sprites (heart, fairy, rupee, triforce)
+based on pixel-count visibility windows. This matches NES behavior and
+intro_demo's working implementation. No separate PHASE_SHOWCASE.
 ```
 
 ### Start handoff
@@ -90,7 +97,7 @@ Start press in any phase invokes ASM trampoline `intro_to_file_select_trampoline
 | `src/intro_phase.c/.h` | Phase enum + dispatcher. Lifted from `tools/intro_demo/intro_phase.c`, +SHOWCASE phases. |
 | `src/intro_title.c/.h` | Title load/step/fade/blackout. Lifted from `tools/intro_demo/intro_title.c`. |
 | `src/intro_story.c/.h` | Story scroll runtime. Replaces existing stub. Lifted from `tools/intro_demo/story_runtime.c` story half. |
-| `src/intro_showcase.c/.h` | Item scroll + sprite-pal flash. New code. |
+| `src/intro_showcase.c/.h` | Existing stub files; deleted in step 5. Items handled inside `intro_story.c` per intro_demo design (one continuous scroll). |
 | `src/intro_handoff.c` | Start dispatch path. Existing file evolved; calls ASM trampoline. |
 | `src/intro_common.c` | VDP primitives. Existing, kept. |
 | `src/gen/intro_*.c` | Generated assets via `tools/extract_intro_assets.py`. Existing, kept. |
@@ -261,7 +268,7 @@ Each step ships independently, gated by its own test:
 1. **ASM trampoline + `vblank_mode` dispatcher.** Add `vblank_mode` `.bss` symbol. Modify VBlankISR to branch on it. Default `vblank_mode=1` (transpiled). Main ROM behavior unchanged. Verify build green, no regression.
 2. **`intro_main` scaffold.** Add `src/intro_main.c` with empty phase loop. Modify `genesis_shell.asm` to seed `vblank_mode=0` before IPL lower and `jsr intro_main` instead of `jsr IsrReset`. intro_main sits in vblank loop forever. Probe RAM bytes prove control transfer.
 3. **Promote intro_demo phases to `src/`.** Move `intro_phase.c`, `intro_title.c`, `story_runtime.c` → `src/intro_*.c`. Wire into `intro_main`. Title + fade + story play in main ROM. Update `tools/intro_demo/build.bat` to compile from `src/`. Layer 1 + Layer 2 tests pass on both ROMs.
-4. **Item showcase phase.** Implement `PHASE_SHOWCASE_LOAD/RUN` in `src/intro_showcase.c`. NES-faithful scroll + sprite-pal toggle (`FrameCounter & $08`). Layer 1 + Layer 2 pass.
+4. **Delete stub showcase files.** `src/intro_showcase.c/.h` no longer needed — items already part of story_runtime continuous scroll. Remove from build, delete files. Layer 1 + Layer 2 still pass (no behavior change).
 5. **Start handoff trampoline.** Implement ASM `intro_to_file_select_trampoline` per Section "Data flow / Start handoff trampoline." Resolve all TBDs (MODE_FILESELECT, RAM offsets, mainloop re-entry symbol, file-select song bitmap, `_ppu_write_0` register preservation) **before** coding. Layer 3a `handoff_contract` test gates merge. Layer 3b `full_file_select_smoke` runs but tolerated if fails.
 6. **(Optional, future spec.)** Native file-select rewrite if transpiled file-select doesn't cold-start cleanly.
 
