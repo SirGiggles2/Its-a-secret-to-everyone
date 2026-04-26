@@ -5,6 +5,7 @@
  */
 #include "intro_phase.h"
 #include "intro_title.h"
+#include "story_runtime.h"
 
 static intro_phase_t s_phase = PHASE_TITLE_LOAD;
 static unsigned short s_phase_counter = 0;
@@ -54,11 +55,16 @@ void intro_phase_step(void) {
             break;
 
         case PHASE_STORY_LOAD:
+            story_runtime_load();
+            goto_phase(PHASE_STORY_RUN);
+            break;
+
         case PHASE_STORY_RUN:
-            /* Story runtime wired in Task 15. For now, loop back to
-             * title so the binary runs and we can verify the title +
-             * fade + black-hold flow visually before story integration. */
-            goto_phase(PHASE_TITLE_LOAD);
+            story_runtime_step();
+            if (story_runtime_at_end()) {
+                story_runtime_clear_end();
+                goto_phase(PHASE_TITLE_LOAD);
+            }
             break;
     }
 }

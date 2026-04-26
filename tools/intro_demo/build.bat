@@ -175,6 +175,10 @@ echo [demo] Compiling intro_phase.c
 "%M68K_GCC%" -B "%M68K_BIN%\\" %CFLAGS% -c "%DEMO_DIR%\intro_phase.c" -o "%OUT_DIR%\intro_phase.o"
 if errorlevel 1 exit /b 1
 
+echo [demo] Compiling story_runtime.c
+"%M68K_GCC%" -B "%M68K_BIN%\\" %CFLAGS% -c "%DEMO_DIR%\story_runtime.c" -o "%OUT_DIR%\story_runtime.o"
+if errorlevel 1 exit /b 1
+
 echo [demo] Assembling boot.asm
 "%VASM%" -Felf -m68000 -L "%OUT_DIR%\boot.lst" -o "%OUT_DIR%\boot.o" "%DEMO_DIR%\boot.asm"
 if errorlevel 1 exit /b 1
@@ -202,7 +206,8 @@ echo [demo] Linking
     "%OUT_DIR%\intro_title_fade.o" ^
     "%OUT_DIR%\intro_title_glow.o" ^
     "%OUT_DIR%\intro_title.o" ^
-    "%OUT_DIR%\intro_phase.o"
+    "%OUT_DIR%\intro_phase.o" ^
+    "%OUT_DIR%\story_runtime.o"
 if errorlevel 1 exit /b 1
 
 echo [demo] objcopy -^> raw bin
