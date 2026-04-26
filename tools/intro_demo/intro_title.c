@@ -95,12 +95,23 @@ static const unsigned char nes_title_sprites[112] = {
 };
 
 #define SPRITE_TABLE_VRAM 0xF800u
-#define SPRITE_COUNT      28u
-#define WATERFALL_FIRST   22u  /* index of first waterfall sprite */
-#define WATERFALL_COUNT   6u
+#define TITLE_SPRITE_COUNT  28u   /* sprites 0..27 from InitialTitleSprites */
+#define WATERFALL_BASE      28u   /* waterfall sprites start here */
+#define WATERFALL_ROWS      4u    /* 1 crest + 3 wave rows */
+#define WATERFALL_COLS      4u    /* 4 sprites per row */
+#define WATERFALL_COUNT     16u   /* 4 rows x 4 cols */
+#define SPRITE_COUNT        44u   /* total title-phase sprites */
 
-/* WaterfallCrestTiles cycle (Z_02.asm:993). 4-tile rotation. */
+/* Waterfall layout per Z_02.asm:1005-1109 + WaterfallSpriteXs/Tiles tables.
+ * Row 0 = crest (above the waves), rows 1-3 = waves (top to bottom).
+ * NES X positions $50/$58/$60/$68 (4 sprites in a row, 8 px apart).
+ * NES Y positions: crest above $B6, waves at $B6/$C8/$D8.
+ * Tiles: WaterfallCrestTiles=$A2/$A4/$A6/$A8 (toggled with +8 per
+ * FrameCounter bit 3); WaterfallWaveTiles=$B2/$B4/$B6/$B8 (same toggle). */
+static const unsigned char waterfall_xs[4] = {0x50, 0x58, 0x60, 0x68};
+static const unsigned char waterfall_ys[4] = {0xA8, 0xB6, 0xC8, 0xD8};
 static const unsigned char waterfall_crest_tiles[4] = {0xA2, 0xA4, 0xA6, 0xA8};
+static const unsigned char waterfall_wave_tiles[4]  = {0xB2, 0xB4, 0xB6, 0xB8};
 
 /* Build one Genesis sprite-table entry from NES sprite [Y, tile, attr, X].
  * NES sprites are 8x8 here; Genesis size field 0 = 8x8 single tile.
@@ -119,7 +130,10 @@ static const unsigned char waterfall_crest_tiles[4] = {0xA2, 0xA4, 0xA6, 0xA8};
 static void title_sprite_upload(void) {
     unsigned short addr = SPRITE_TABLE_VRAM;
     vram_write_open(addr);
-    for (unsigned char i = 0; i < SPRITE_COUNT; i++) {
+
+    /* First 28 sprites: InitialTitleSprites (logo decoration, sword pieces,
+     * bird, V-chevron under ZELDA). */
+    for (unsigned char i = 0; i < TITLE_SPRITE_COUNT; i++) {
         unsigned char ny    = nes_title_sprites[i*4 + 0];
         unsigned char ntile = nes_title_sprites[i*4 + 1];
         unsigned char nattr = nes_title_sprites[i*4 + 2];
@@ -134,8 +148,7 @@ static void title_sprite_upload(void) {
         unsigned short vflip = (unsigned short)((nattr >> 7) & 1u);
 
         unsigned short link = (unsigned short)(i + 1u);
-        if (i == SPRITE_COUNT - 1u) link = 0u;
-        unsigned short word1 = link;             /* size 0 (8x8) | link */
+        unsigned short word1 = link;
         unsigned short word2 = (unsigned short)((prio << 15) | (pal << 13)
                                               | (vflip << 12) | (hflip << 11)
                                               | (tile & 0x7FFu));
@@ -145,29 +158,57 @@ static void title_sprite_upload(void) {
         VDP_DATA_WORD = word2;
         VDP_DATA_WORD = x;
     }
+
+    /* Waterfall sprites: 1 crest row + 3 wave rows, 4 cols each.
+     * Tile field gets rewritten by title_waterfall_step() per frame.
+     * Initial tile = base tile from waterfall_(crest|wave)_tiles[col]. */
+    for (unsigned char r = 0; r < WATERFALL_ROWS; r++) {
+        unsigned char ny = waterfall_ys[r];
+        const unsigned char *tiles = (r == 0u) ? waterfall_crest_tiles
+                                               : waterfall_wave_tiles;
+        for (unsigned char c = 0; c < WATERFALL_COLS; c++) {
+            unsigned char idx = (unsigned char)(WATERFALL_BASE + r*WATERFALL_COLS + c);
+            unsigned short y = (unsigned short)(128u + (unsigned short)(ny + 1u));
+            unsigned short x = (unsigned short)(128u + (unsigned short)waterfall_xs[c]);
+            unsigned short tile = (unsigned short)(256u + (unsigned short)tiles[c]);
+            /* NES sprite pal 0 (palette 4 in NES 6-pal numbering) for waterfall. */
+            unsigned short pal = 0u;
+            unsigned short link = (unsigned short)(idx + 1u);
+            if (idx == SPRITE_COUNT - 1u) link = 0u;
+            unsigned short word1 = link;
+            unsigned short word2 = (unsigned short)((pal << 13) | (tile & 0x7FFu));
+
+            VDP_DATA_WORD = y;
+            VDP_DATA_WORD = word1;
+            VDP_DATA_WORD = word2;
+            VDP_DATA_WORD = x;
+        }
+    }
 }
 
-/* Update one waterfall sprite's tile word (word 2) in-place. Called
- * from title_waterfall_step every 8 frames. */
+/* Per Z_02.asm WaterfallCrestTiles + UpdateSpritesForWaterfallCrest:
+ * crest tile = base + (FrameCounter & 8); animates between two states
+ * every 8 frames. Same logic for wave rows. We rewrite the tile field
+ * (word 2) of all 16 waterfall sprites each phase change. */
 static void title_waterfall_step(void) {
     s_waterfall_frame++;
     if ((s_waterfall_frame & 0x07u) != 0) return;
-    s_waterfall_phase = (unsigned char)((s_waterfall_phase + 1u) & 3u);
-    unsigned char nes_tile = waterfall_crest_tiles[s_waterfall_phase];
-    unsigned short tile = (unsigned short)(256u + (unsigned short)nes_tile);
-    for (unsigned char i = 0; i < WATERFALL_COUNT; i++) {
-        unsigned char slot = (unsigned char)(WATERFALL_FIRST + i);
-        unsigned char nattr = nes_title_sprites[slot*4 + 2];
-        unsigned short pal   = (unsigned short)(nattr & 3u);
-        unsigned short prio  = (unsigned short)((nattr >> 5) & 1u);
-        unsigned short hflip = (unsigned short)((nattr >> 6) & 1u);
-        unsigned short vflip = (unsigned short)((nattr >> 7) & 1u);
-        unsigned short word2 = (unsigned short)((prio << 15) | (pal << 13)
-                                              | (vflip << 12) | (hflip << 11)
-                                              | (tile & 0x7FFu));
-        unsigned short addr = (unsigned short)(SPRITE_TABLE_VRAM + slot*8u + 4u);
-        vram_write_open(addr);
-        VDP_DATA_WORD = word2;
+    s_waterfall_phase ^= 1u;   /* alternate 0 and 1 */
+    unsigned char tile_offset = s_waterfall_phase ? 8u : 0u;
+
+    for (unsigned char r = 0; r < WATERFALL_ROWS; r++) {
+        const unsigned char *base = (r == 0u) ? waterfall_crest_tiles
+                                              : waterfall_wave_tiles;
+        for (unsigned char c = 0; c < WATERFALL_COLS; c++) {
+            unsigned char idx = (unsigned char)(WATERFALL_BASE + r*WATERFALL_COLS + c);
+            unsigned char nes_tile = (unsigned char)(base[c] + tile_offset);
+            unsigned short tile = (unsigned short)(256u + (unsigned short)nes_tile);
+            unsigned short pal = 0u;
+            unsigned short word2 = (unsigned short)((pal << 13) | (tile & 0x7FFu));
+            unsigned short addr = (unsigned short)(SPRITE_TABLE_VRAM + idx*8u + 4u);
+            vram_write_open(addr);
+            VDP_DATA_WORD = word2;
+        }
     }
 }
 
