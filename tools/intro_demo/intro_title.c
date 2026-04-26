@@ -120,7 +120,8 @@ static const unsigned char waterfall_wave_tiles[4]  = {0xB2, 0xB4, 0xB6, 0xB8};
 /* Build one Genesis sprite-table entry from NES sprite [Y, tile, attr, X].
  * NES PPUCTRL bit 5 = 1 at title -> 8x16 sprites. Top tile = ntile (always
  * even for this scene); bottom tile = ntile + 1. Genesis encodes 8x16 as
- * width=1 tile, height=2 tiles -> size field HHWW = 0b0100 = 4.
+ * Genesis SPRITE_SIZE(w,h) = ((w-1)<<2) | (h-1). For 8x16 (1 wide, 2 tall):
+ * ((1-1)<<2) | (2-1) = 1.
  * Sprite CHR uploaded at VRAM $2000 -> Gen top tile = 256 + nes_tile.
  *
  * NES attr bits: 0-1 = palette (sprite pal 0-3), 5 = behind-BG priority,
@@ -154,7 +155,7 @@ static void title_sprite_upload(void) {
         unsigned short vflip = (unsigned short)((nattr >> 7) & 1u);
 
         unsigned short link = (unsigned short)(i + 1u);
-        unsigned short word1 = (unsigned short)((4u << 8) | link);  /* size=8x16 */
+        unsigned short word1 = (unsigned short)((1u << 8) | link);  /* size=8x16 */
         unsigned short word2 = (unsigned short)((prio << 15) | (pal << 13)
                                               | (vflip << 12) | (hflip << 11)
                                               | (tile & 0x7FFu));
@@ -181,7 +182,7 @@ static void title_sprite_upload(void) {
             unsigned short pal = 0u;
             unsigned short link = (unsigned short)(idx + 1u);
             if (idx == SPRITE_COUNT - 1u) link = 0u;
-            unsigned short word1 = (unsigned short)((4u << 8) | link);  /* size=8x16 */
+            unsigned short word1 = (unsigned short)((1u << 8) | link);  /* size=8x16 */
             unsigned short word2 = (unsigned short)((pal << 13) | (tile & 0x7FFu));
 
             VDP_DATA_WORD = y;
