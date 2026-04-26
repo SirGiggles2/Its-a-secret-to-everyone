@@ -95,9 +95,14 @@ static void plane_fill_blank(unsigned short base) {
     for (unsigned short i = 0; i < 32 * 32; i++) VDP_DATA_WORD = 0x0024;
 }
 
-/* Sequence: story -> blank gap (~NES black-fade duration, 12 rows) -> treasures
- * -> bottom pause -> loop. With combined CRAM, no palette swap needed. */
-#define GAP_ROWS 12
+/* Sequence (post-fade simulation): story hold 260 frames -> scroll up ->
+ * GAP_ROWS blank between story and treasures -> treasures -> bottom pause
+ * -> loop. NES reference: story stop f1445->f1705 = 260 frames hold; gap
+ * measured ~6 rows from f1830 (treasures appear) vs f1705 (scroll-off
+ * start) = 125 frames * 0.5 px/frame = 62 px ~= 7 rows; use 6 to overlap
+ * a touch. */
+#define GAP_ROWS 6
+#define STORY_HOLD_FRAMES 260u
 
 static const unsigned short *fetch_row(unsigned short n) {
     if (n < intro_story_tilemap_rows)
@@ -189,7 +194,7 @@ int main(void) {
         unsigned short scroll = 0;
         unsigned short last_row = 0;
         unsigned short next_source_row = (unsigned short)intro_story_tilemap_rows;
-        unsigned short story_pause = 250;
+        unsigned short story_pause = STORY_HOLD_FRAMES;
         unsigned short end_pause = 0;
         unsigned char  end_pause_armed = 0;
 
@@ -202,32 +207,24 @@ int main(void) {
 
         unsigned char tick = 0;
 
-        /* Heart-flash state. Heart icon top at treasures row 7 (after
-         * 5 pre-item rows + 2 spacer rows). Content row 49 = story_rows
-         * (30) + GAP_ROWS (12) + 7. Plane row = content - story_rows = 19,
-         * y_plane = 152. Plane wraps every 256 px; heart_top in plane[19]
-         * holds heart from scroll=160 to 416, visible at scroll [185, 408].
-         * Heart_bot plane[20] visible [193, 416]. Use union [185, 416]. */
-        unsigned long heart_visible_start = 185u;
-        unsigned long heart_visible_end   = 416u;
-        /* Rupee at treasures row 24 (icon top) -> content row 66 ->
-         * plane[4] (66-30=36, mod 32 = 4), y_plane=32, written at
-         * scroll=296. Visible at scroll [321, 552] (combined top+bot). */
-        unsigned long rupee_visible_start = 321u;
-        unsigned long rupee_visible_end   = 552u;
-        /* Triforce at treasures row 153 (top), 154 (bot), cols 15-16 with
-         * hflip mirror. Content row 195 = 30 + 12 + 153. Plane row =
-         * 165 mod 32 = 5 (top), 6 (bot). Written at scroll=1328/1336.
-         * Visible at scroll [1353, 1584]. */
-        unsigned long triforce_visible_start = 1353u;
-        unsigned long triforce_visible_end   = 1584u;
-        /* Fairy at treasures row 16 col 8 (sprite tile $50 pal 3 = NES
-         * sprite pal 2 red). Content row 58 -> plane[28] (y=224), written
-         * at scroll=232. Visible at scroll [257, 488). NES Z_02.asm:858
-         * AnimateStationaryFairy alternates frame 0 (tile $50/$51) and
-         * frame 1 ($52/$53) every 4 frames per FrameCounter bit 2. */
-        unsigned long fairy_visible_start = 257u;
-        unsigned long fairy_visible_end   = 488u;
+        /* Item visibility windows are derived from each item's content
+         * row (= story_rows + GAP_ROWS + treasures_row). With GAP_ROWS=6:
+         *   Heart    treasures row 7  -> content 43 -> plane[13] y=104
+         *   Fairy    treasures row 16 -> content 52 -> plane[22] y=176
+         *   Rupee    treasures row 24 -> content 60 -> plane[30] y=240
+         *   Triforce treasures row 153 -> content 189 -> plane[31] y=248
+         *            (bot wraps to plane[0] y=0)
+         * Visible scroll range = (plane_y - scroll) mod 256 in [0, 223]
+         * intersected with the scroll range during which plane row holds
+         * the item content. */
+        unsigned long heart_visible_start = 137u;
+        unsigned long heart_visible_end   = 368u;
+        unsigned long fairy_visible_start = 209u;
+        unsigned long fairy_visible_end   = 440u;
+        unsigned long rupee_visible_start = 273u;
+        unsigned long rupee_visible_end   = 504u;
+        unsigned long triforce_visible_start = 1305u;
+        unsigned long triforce_visible_end   = 1536u;
         /* NES Z_07.asm:888 @Flash: palette toggles via FrameCounter
          * bit 3 — 8 frames pal 1 (blue), 8 frames pal 2 (red), repeat.
          * Each item animates independently (separate counters since
@@ -271,10 +268,10 @@ int main(void) {
                         heart_last_pal_bit = pal_bit;
                         unsigned short pal_field = pal_bit ? (3u << 13)
                                                            : (2u << 13);
-                        /* heart top: plane[19] col 8 = $C4D0; bot: plane[20] = $C510 */
-                        vram_write_open(0xC4D0u);
+                        /* heart top: plane[13] col 8 = $C350; bot: plane[14] = $C390 */
+                        vram_write_open(0xC350u);
                         VDP_DATA_WORD = (unsigned short)(pal_field | 514u);
-                        vram_write_open(0xC510u);
+                        vram_write_open(0xC390u);
                         VDP_DATA_WORD = (unsigned short)(pal_field | 515u);
                     }
                 }
@@ -288,10 +285,10 @@ int main(void) {
                         rupee_last_pal_bit = pal_bit;
                         unsigned short pal_field = pal_bit ? (3u << 13)
                                                            : (2u << 13);
-                        /* rupee top: plane[4] col 8 = $C110; bot: plane[5] = $C150 */
-                        vram_write_open(0xC110u);
+                        /* rupee top: plane[30] col 8 = $C790; bot: plane[31] = $C7D0 */
+                        vram_write_open(0xC790u);
                         VDP_DATA_WORD = (unsigned short)(pal_field | 520u);
-                        vram_write_open(0xC150u);
+                        vram_write_open(0xC7D0u);
                         VDP_DATA_WORD = (unsigned short)(pal_field | 521u);
                     }
                 }
@@ -309,10 +306,10 @@ int main(void) {
                         unsigned short pal_field = (3u << 13);
                         unsigned short top_tile = frame_bit ? 338u : 336u;
                         unsigned short bot_tile = frame_bit ? 339u : 337u;
-                        /* fairy top: plane[28] col 8 = $C710; bot: $C750 */
-                        vram_write_open(0xC710u);
+                        /* fairy top: plane[22] col 8 = $C590; bot: $C5D0 */
+                        vram_write_open(0xC590u);
                         VDP_DATA_WORD = (unsigned short)(pal_field | top_tile);
-                        vram_write_open(0xC750u);
+                        vram_write_open(0xC5D0u);
                         VDP_DATA_WORD = (unsigned short)(pal_field | bot_tile);
                     }
                 }
@@ -327,16 +324,16 @@ int main(void) {
                         unsigned short pal_field = pal_bit ? (3u << 13)
                                                            : (2u << 13);
                         unsigned short hflip = (unsigned short)(1u << 11);
-                        /* Triforce 4 cells: plane[5,6] x cols 15,16.
-                         * plane[5] col 15 = $C15E, col 16 = $C160
-                         * plane[6] col 15 = $C19E, col 16 = $C1A0 */
-                        vram_write_open(0xC15Eu);
+                        /* Triforce top in plane[31], bot wraps to plane[0].
+                         * plane[31] col 15 = $C7DE, col 16 = $C7E0
+                         * plane[0]  col 15 = $C01E, col 16 = $C020 */
+                        vram_write_open(0xC7DEu);
                         VDP_DATA_WORD = (unsigned short)(pal_field | 518u);
-                        vram_write_open(0xC160u);
+                        vram_write_open(0xC7E0u);
                         VDP_DATA_WORD = (unsigned short)(pal_field | 518u | hflip);
-                        vram_write_open(0xC19Eu);
+                        vram_write_open(0xC01Eu);
                         VDP_DATA_WORD = (unsigned short)(pal_field | 519u);
-                        vram_write_open(0xC1A0u);
+                        vram_write_open(0xC020u);
                         VDP_DATA_WORD = (unsigned short)(pal_field | 519u | hflip);
                     }
                 }
