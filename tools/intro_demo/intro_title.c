@@ -317,17 +317,6 @@ void intro_title_fade_apply(unsigned char idx) {
     VDP_CTRL_LONG = 0xC0000000UL;
     const unsigned short *src = intro_title_fade_cycles[idx];
     for (unsigned short i = 0; i < 64; i++) VDP_DATA_WORD = src[i];
-    /* Override Gen pal 0 slots 4-7 (NES sprite pal 0 = waterfall colors) with
-     * cycle-0 values so the waterfall stays visible while the title fades.
-     * Divergence from NES PALRAM-wide fade; user request. */
-    const unsigned short *base = intro_title_fade_cycles[0];
-    for (unsigned short s = 4; s < 8; s++) {
-        unsigned long addr = (unsigned long)s * 2u;
-        VDP_CTRL_LONG = 0xC0000000UL
-                      | ((addr & 0x3FFFu) << 16)
-                      | ((addr >> 14) & 0x0003u);
-        VDP_DATA_WORD = base[s];
-    }
     s_fade_delay = intro_title_fade_delays[idx];
     s_fade_cycle = idx;
 }
