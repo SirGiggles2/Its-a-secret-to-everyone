@@ -72,6 +72,10 @@ static unsigned char s_fade_cycle = 0;
 static unsigned short s_fade_delay = 0;
 static unsigned char s_waterfall_frame = 0;
 static unsigned char s_waterfall_phase = 0;
+/* Per-wave-row rolling Y counter (NES TitleWaveYs[0..2]). Each frame
+ * Y += 2; wraps $E3 -> $B2. Initial values $B6/$C8/$D8 set in setup
+ * (linker has no .data section so non-zero statics must init at runtime). */
+static unsigned char s_wave_ys[3];
 
 /* NES InitialTitleSprites table (Z_02.asm:342-356) — 28 sprites, 4 bytes
  * each: [Y, tile, attr, X]. Last 6 entries (Y=$67, tile=$A0) are the
@@ -186,29 +190,70 @@ static void title_sprite_upload(void) {
     }
 }
 
-/* Per Z_02.asm WaterfallCrestTiles + UpdateSpritesForWaterfallCrest:
- * crest tile = base + (FrameCounter & 8); animates between two states
- * every 8 frames. Same logic for wave rows. We rewrite the tile field
- * (word 2) of all 16 waterfall sprites each phase change. */
+/* Per Z_02.asm:1034 UpdateSpritesForWaterfallWave + :1086 Crest:
+ *
+ *   Wave row R (R=0..2):
+ *     - TitleWaveYs[R] += 2 each frame; if >= $E3 wrap to $B2.
+ *     - Tile offset depends on the new Y:
+ *         Y < $B9  -> offset 0
+ *         Y < $C2  -> offset 8
+ *         Y >= $C2 -> offset $10
+ *     - Each of 4 sprites: tile = WaterfallWaveTiles[col] + offset, Y = rolling.
+ *
+ *   Crest row (fixed):
+ *     - Y = $A8.
+ *     - Every 8 frames flip tile = WaterfallCrestTiles[col] + (0 or 8).
+ *
+ * Rewrites Y (word 0) and tile/attr (word 2) for each waterfall sprite. */
+static unsigned char wave_tile_offset(unsigned char y) {
+    if (y < 0xB9u) return 0u;
+    if (y < 0xC2u) return 8u;
+    return 0x10u;
+}
+
 static void title_waterfall_step(void) {
     s_waterfall_frame++;
-    if ((s_waterfall_frame & 0x07u) != 0) return;
-    s_waterfall_phase ^= 1u;   /* alternate 0 and 1 */
-    unsigned char tile_offset = s_waterfall_phase ? 8u : 0u;
+    /* Crest tile flip every 8 frames. */
+    if ((s_waterfall_frame & 0x07u) == 0u) {
+        s_waterfall_phase ^= 1u;
+    }
+    unsigned char crest_offset = s_waterfall_phase ? 8u : 0u;
 
-    for (unsigned char r = 0; r < WATERFALL_ROWS; r++) {
-        const unsigned char *base = (r == 0u) ? waterfall_crest_tiles
-                                              : waterfall_wave_tiles;
+    /* 3 wave rows: Y += 2; wrap. Update sprites. */
+    for (unsigned char r = 0; r < 3u; r++) {
+        unsigned char y = (unsigned char)(s_wave_ys[r] + 2u);
+        if (y >= 0xE3u) y = 0xB2u;
+        s_wave_ys[r] = y;
+        unsigned char wave_off = wave_tile_offset(y);
         for (unsigned char c = 0; c < WATERFALL_COLS; c++) {
-            unsigned char idx = (unsigned char)(WATERFALL_BASE + r*WATERFALL_COLS + c);
-            unsigned char nes_tile = (unsigned char)(base[c] + tile_offset);
+            /* Wave rows occupy waterfall sprite indices BASE+4 .. BASE+15
+             * (rows 1..3 of the 4-row block; row 0 is the crest). */
+            unsigned char idx = (unsigned char)(WATERFALL_BASE + (r + 1u)*WATERFALL_COLS + c);
+            unsigned short gen_y = (unsigned short)(128u + (unsigned short)(y + 1u));
+            unsigned char nes_tile = (unsigned char)(waterfall_wave_tiles[c] + wave_off);
             unsigned short tile = (unsigned short)(256u + (unsigned short)nes_tile);
             unsigned short pal = 0u;
             unsigned short word2 = (unsigned short)((pal << 13) | (tile & 0x7FFu));
-            unsigned short addr = (unsigned short)(SPRITE_TABLE_VRAM + idx*8u + 4u);
-            vram_write_open(addr);
+            unsigned short base_addr = (unsigned short)(SPRITE_TABLE_VRAM + idx*8u);
+            /* Update Y (word 0). */
+            vram_write_open(base_addr);
+            VDP_DATA_WORD = gen_y;
+            /* Update tile/attr (word 2). */
+            vram_write_open((unsigned short)(base_addr + 4u));
             VDP_DATA_WORD = word2;
         }
+    }
+
+    /* Crest row: fixed Y=$A8, tile = WaterfallCrestTiles[col] + crest_offset. */
+    for (unsigned char c = 0; c < WATERFALL_COLS; c++) {
+        unsigned char idx = (unsigned char)(WATERFALL_BASE + 0u*WATERFALL_COLS + c);
+        unsigned char nes_tile = (unsigned char)(waterfall_crest_tiles[c] + crest_offset);
+        unsigned short tile = (unsigned short)(256u + (unsigned short)nes_tile);
+        unsigned short pal = 0u;
+        unsigned short word2 = (unsigned short)((pal << 13) | (tile & 0x7FFu));
+        unsigned short addr = (unsigned short)(SPRITE_TABLE_VRAM + idx*8u + 4u);
+        vram_write_open(addr);
+        VDP_DATA_WORD = word2;
     }
 }
 
@@ -240,6 +285,9 @@ void intro_title_setup(void) {
     s_fade_delay = 0;
     s_waterfall_frame = 0;
     s_waterfall_phase = 0;
+    s_wave_ys[0] = 0xB6u;
+    s_wave_ys[1] = 0xC8u;
+    s_wave_ys[2] = 0xD8u;
 
     /* Sprite list: 28 title sprites including 6 waterfall. */
     title_sprite_upload();
