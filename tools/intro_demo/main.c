@@ -95,20 +95,37 @@ static void plane_fill_blank(unsigned short base) {
     for (unsigned short i = 0; i < 32 * 32; i++) VDP_DATA_WORD = 0x0024;
 }
 
-/* Sequence (post-fade simulation): story hold 260 frames -> scroll up ->
- * GAP_ROWS blank between story and treasures -> treasures -> bottom pause
- * -> loop. NES reference: story stop f1445->f1705 = 260 frames hold; gap
- * measured ~6 rows from f1830 (treasures appear) vs f1705 (scroll-off
- * start) = 125 frames * 0.5 px/frame = 62 px ~= 7 rows; use 6 to overlap
- * a touch. */
+/* Full intro sequence per NES timing reference:
+ *   1. Fade-in 255 frames: CRAM ramps black -> target palette.
+ *   2. Scroll-in: story enters from bottom at 0.5 px/frame, until story
+ *      top reaches top-of-screen (scroll=224, ~448 frames; user-cited
+ *      f1040 -> f1445 = 405 frames is approximate).
+ *   3. Hold 260 frames at story-top-at-top.
+ *   4. Scroll-off: continue at 0.5 px/frame, GAP_ROWS blank, then
+ *      treasures.
+ *
+ * Content stream (used by fetch_row / streamed into plane during scroll):
+ *   rows [0, PRE_BLANK_ROWS)   : pre-blank (off-screen above story init)
+ *   rows [PRE_BLANK, PRE_BLANK+30) : story
+ *   rows [..., +GAP_ROWS)      : blank gap
+ *   rows [..., +treasures_rows): treasures
+ *
+ * PRE_BLANK=28 chosen so initial plane[0..27] = blank (nothing visible)
+ * and plane[28..31] holds story rows 0..3 (just below screen, ready to
+ * scroll up). */
+#define PRE_BLANK_ROWS 28u
 #define GAP_ROWS 6
+#define FADE_FRAMES 255u
 #define STORY_HOLD_FRAMES 260u
+#define STORY_SCROLL_TARGET 216u  /* story top stops 1 row below top of screen */
 
 static const unsigned short *fetch_row(unsigned short n) {
+    if (n < PRE_BLANK_ROWS) return 0;        /* pre-blank padding */
+    n = (unsigned short)(n - PRE_BLANK_ROWS);
     if (n < intro_story_tilemap_rows)
         return &intro_story_tilemap[n * 32];
     n = (unsigned short)(n - intro_story_tilemap_rows);
-    if (n < GAP_ROWS) return 0;   /* blank gap between story and treasures */
+    if (n < GAP_ROWS) return 0;              /* blank gap between story and treasures */
     n = (unsigned short)(n - GAP_ROWS);
     if (n < intro_treasures_tilemap_rows)
         return &intro_treasures_tilemap[n * 32];
@@ -147,84 +164,117 @@ int main(void) {
      *   520/521: rupee top/bot */
     vram_upload(intro_blink_chr,     intro_blink_chr_size,     0x4040);
 
-    /* Combined palette: slots 0-3 = story BG palettes; slots 4-7 = NES
-     * sprite palettes. Story tiles use slots 0-3; item icons use 4-7
-     * (sprite CHR was re-encoded with color_shift=4). */
-    cram_upload(intro_combined_palette, 64);
+    /* Build target palette in RAM: combined palette + heart/rupee/triforce
+     * flash colors (NES sprite pal 1 in pal2[9..11], NES sprite pal 2 in
+     * pal3[9..11]). Used both for fade ramp source and final state. */
+    static unsigned short target_pal[64];
+    {
+        unsigned short i;
+        for (i = 0; i < 64; i++) target_pal[i] = intro_combined_palette[i];
+        target_pal[2*16 + 9]  = 0x0C02;
+        target_pal[2*16 + 10] = 0x0E88;
+        target_pal[2*16 + 11] = 0x0EEE;
+        target_pal[3*16 + 9]  = 0x002C;
+        target_pal[3*16 + 10] = 0x008E;
+        target_pal[3*16 + 11] = 0x0EEE;
+    }
 
-    /* Heart-flash colors. NES Z_07.asm:878 DrawItemBySlot @Flash flips
-     * the heart sprite's palette index between NES sprite pal 1 (blue)
-     * and sprite pal 2 (red) every 8 frames (FrameCounter bit 3).
-     * Phase-1 PALRAM (palram_2050) shows:
-     *   sprite pal 1: $00 $02 $22 $30 = backdrop, blue, lt-blue, white
-     *   sprite pal 2: $00 $16 $27 $30 = backdrop, red, orange, white
-     * Heart art (intro_blink_chr.c, color_shift=8) references slots 9-11
-     * of cell's palette. Load NES sprite pal 1 colors into pal2[9..11]
-     * and NES sprite pal 2 colors into pal3[9..11]. Animation toggles the
-     * heart cell's palette field 2<->3 each 8 frames; CRAM stays static. */
-    cram_write_one((unsigned short)(2*16 + 9),  0x0C02);
-    cram_write_one((unsigned short)(2*16 + 10), 0x0E88);
-    cram_write_one((unsigned short)(2*16 + 11), 0x0EEE);
-    cram_write_one((unsigned short)(3*16 + 9),  0x002C);
-    cram_write_one((unsigned short)(3*16 + 10), 0x008E);
-    cram_write_one((unsigned short)(3*16 + 11), 0x0EEE);
+    /* CRAM starts all black for fade-in. */
+    {
+        VDP_CTRL_LONG = 0xC0000000UL;
+        unsigned short i;
+        for (i = 0; i < 64; i++) VDP_DATA_WORD = 0x0000;
+    }
 
-    /* Initial plane fills + story rows pre-written. */
+    /* Initial plane fill + first 32 stream rows pre-written.
+     * fetch_row(0..27) = blank (pre-blank padding); fetch_row(28..31) =
+     * story rows 0..3 (parked just below the visible window, ready to
+     * scroll up at scroll>=1). */
     plane_fill_blank(0xC000);
     plane_fill_blank(0xE000);
 
     {
-        unsigned short rows = intro_story_tilemap_rows < 32
-                              ? intro_story_tilemap_rows : 32;
         unsigned short r;
-        for (r = 0; r < rows; r++) {
-            write_row(r, &intro_story_tilemap[r * 32]);
+        for (r = 0; r < 32; r++) {
+            const unsigned short *src = fetch_row(r);
+            if (src) write_row(r, src);
+            else write_blank_row(r);
         }
     }
 
     vsram_set0(0);
-    VDP_CTRL_WORD = 0x8174;   /* display ON */
+    VDP_CTRL_WORD = 0x8174;   /* display ON (CRAM black -> screen black) */
 
-    /* Total source content = story + showcase (60 rows for our data).
+    /* Fade-in: stepped CRAM ramp using bit-mask approach (avoids 32-bit
+     * multiply, no libgcc available). 4 levels over FADE_FRAMES vblanks:
+     *   level 0 (0..63 frames):    mask 0x0000  (all black)
+     *   level 1 (64..127):         mask 0x0888  (top bit per channel)
+     *   level 2 (128..191):        mask 0x0CCC  (top 2 bits)
+     *   level 3 (192..254):        mask 0x0EEE  (all 3 bits = full)
+     * NES uses PPU emphasis bits (also stepped); 4 levels visually fine. */
+    {
+        static const unsigned short fade_masks[4] = {
+            0x0000u, 0x0888u, 0x0CCCu, 0x0EEEu
+        };
+        unsigned short level;
+        for (level = 0; level < 4u; level++) {
+            unsigned short mask = fade_masks[level];
+            /* Apply this level: write CRAM with target & mask. */
+            VDP_CTRL_LONG = 0xC0000000UL;
+            unsigned short i;
+            for (i = 0; i < 64; i++) VDP_DATA_WORD = (unsigned short)(target_pal[i] & mask);
+            /* Hold for FADE_FRAMES/4 vblanks. */
+            unsigned short level_frames = (unsigned short)(FADE_FRAMES / 4u);
+            while (level_frames--) {
+                while ( (VDP_CTRL_WORD & 0x0008));
+                while (!(VDP_CTRL_WORD & 0x0008));
+            }
+        }
+        /* Snap to final target. */
+        VDP_CTRL_LONG = 0xC0000000UL;
+        unsigned short i;
+        for (i = 0; i < 64; i++) VDP_DATA_WORD = target_pal[i];
+    }
+
+    /* Total source content = pre-blank + story + gap + treasures rows.
      * After all rows scrolled past + visible region cleared = restart. */
     {
-        unsigned short total_rows = (unsigned short)(intro_story_tilemap_rows
+        unsigned short total_rows = (unsigned short)(PRE_BLANK_ROWS
+                                                   + intro_story_tilemap_rows
                                                    + GAP_ROWS
                                                    + intro_treasures_tilemap_rows);
         unsigned short scroll = 0;
         unsigned short last_row = 0;
-        unsigned short next_source_row = (unsigned short)intro_story_tilemap_rows;
-        unsigned short story_pause = STORY_HOLD_FRAMES;
+        unsigned short next_source_row = 32u;     /* first 32 stream rows pre-written */
+        unsigned short story_hold = 0;
+        unsigned char  story_hold_armed = 0;
         unsigned short end_pause = 0;
         unsigned char  end_pause_armed = 0;
 
-        /* Pixels of total scroll before we reset:
-         * = total_rows * 8 + 32 * 8  (content + visible window)
-         * Use a 16-bit counter that wraps naturally; track the row index
-         * via integer division. */
         unsigned long total_pixels = (unsigned long)total_rows * 8u + 32u * 8u;
         unsigned long pixel_count = 0;
 
         unsigned char tick = 0;
 
-        /* Item visibility windows are derived from each item's content
-         * row (= story_rows + GAP_ROWS + treasures_row). With GAP_ROWS=6:
-         *   Heart    treasures row 7  -> content 43 -> plane[13] y=104
-         *   Fairy    treasures row 16 -> content 52 -> plane[22] y=176
-         *   Rupee    treasures row 24 -> content 60 -> plane[30] y=240
-         *   Triforce treasures row 153 -> content 189 -> plane[31] y=248
-         *            (bot wraps to plane[0] y=0)
+        /* Item visibility windows for content stream with PRE_BLANK=28,
+         * GAP_ROWS=6:
+         *   Heart    treasures row 7   -> content 71  -> plane[7]  y=56
+         *   Fairy    treasures row 16  -> content 80  -> plane[16] y=128
+         *   Rupee    treasures row 24  -> content 88  -> plane[24] y=192
+         *   Triforce treasures row 153 -> content 217 -> plane[25] y=200
+         *            (bot wraps to plane[26] y=208)
          * Visible scroll range = (plane_y - scroll) mod 256 in [0, 223]
          * intersected with the scroll range during which plane row holds
-         * the item content. */
-        unsigned long heart_visible_start = 137u;
-        unsigned long heart_visible_end   = 368u;
-        unsigned long fairy_visible_start = 209u;
-        unsigned long fairy_visible_end   = 440u;
-        unsigned long rupee_visible_start = 273u;
-        unsigned long rupee_visible_end   = 504u;
-        unsigned long triforce_visible_start = 1305u;
-        unsigned long triforce_visible_end   = 1536u;
+         * the item content. Heart/rupee top in plane[N], bot plane[N+1].
+         * Triforce mirrored 4-cell at cols 15-16 of plane[25]/[26]. */
+        unsigned long heart_visible_start = 345u;
+        unsigned long heart_visible_end   = 576u;
+        unsigned long fairy_visible_start = 417u;
+        unsigned long fairy_visible_end   = 648u;
+        unsigned long rupee_visible_start = 481u;
+        unsigned long rupee_visible_end   = 712u;
+        unsigned long triforce_visible_start = 1513u;
+        unsigned long triforce_visible_end   = 1744u;
         /* NES Z_07.asm:888 @Flash: palette toggles via FrameCounter
          * bit 3 — 8 frames pal 1 (blue), 8 frames pal 2 (red), repeat.
          * Each item animates independently (separate counters since
@@ -268,10 +318,10 @@ int main(void) {
                         heart_last_pal_bit = pal_bit;
                         unsigned short pal_field = pal_bit ? (3u << 13)
                                                            : (2u << 13);
-                        /* heart top: plane[13] col 8 = $C350; bot: plane[14] = $C390 */
-                        vram_write_open(0xC350u);
+                        /* heart top: plane[7] col 8 = $C1D0; bot: plane[8] = $C210 */
+                        vram_write_open(0xC1D0u);
                         VDP_DATA_WORD = (unsigned short)(pal_field | 514u);
-                        vram_write_open(0xC390u);
+                        vram_write_open(0xC210u);
                         VDP_DATA_WORD = (unsigned short)(pal_field | 515u);
                     }
                 }
@@ -285,10 +335,10 @@ int main(void) {
                         rupee_last_pal_bit = pal_bit;
                         unsigned short pal_field = pal_bit ? (3u << 13)
                                                            : (2u << 13);
-                        /* rupee top: plane[30] col 8 = $C790; bot: plane[31] = $C7D0 */
-                        vram_write_open(0xC790u);
+                        /* rupee top: plane[24] col 8 = $C610; bot: plane[25] = $C650 */
+                        vram_write_open(0xC610u);
                         VDP_DATA_WORD = (unsigned short)(pal_field | 520u);
-                        vram_write_open(0xC7D0u);
+                        vram_write_open(0xC650u);
                         VDP_DATA_WORD = (unsigned short)(pal_field | 521u);
                     }
                 }
@@ -306,10 +356,10 @@ int main(void) {
                         unsigned short pal_field = (3u << 13);
                         unsigned short top_tile = frame_bit ? 338u : 336u;
                         unsigned short bot_tile = frame_bit ? 339u : 337u;
-                        /* fairy top: plane[22] col 8 = $C590; bot: $C5D0 */
-                        vram_write_open(0xC590u);
+                        /* fairy top: plane[16] col 8 = $C410; bot: plane[17] = $C450 */
+                        vram_write_open(0xC410u);
                         VDP_DATA_WORD = (unsigned short)(pal_field | top_tile);
-                        vram_write_open(0xC5D0u);
+                        vram_write_open(0xC450u);
                         VDP_DATA_WORD = (unsigned short)(pal_field | bot_tile);
                     }
                 }
@@ -324,24 +374,29 @@ int main(void) {
                         unsigned short pal_field = pal_bit ? (3u << 13)
                                                            : (2u << 13);
                         unsigned short hflip = (unsigned short)(1u << 11);
-                        /* Triforce top in plane[31], bot wraps to plane[0].
-                         * plane[31] col 15 = $C7DE, col 16 = $C7E0
-                         * plane[0]  col 15 = $C01E, col 16 = $C020 */
-                        vram_write_open(0xC7DEu);
+                        /* Triforce top plane[25], bot plane[26], cols 15-16.
+                         * plane[25] col 15 = $C65E, col 16 = $C660
+                         * plane[26] col 15 = $C69E, col 16 = $C6A0 */
+                        vram_write_open(0xC65Eu);
                         VDP_DATA_WORD = (unsigned short)(pal_field | 518u);
-                        vram_write_open(0xC7E0u);
+                        vram_write_open(0xC660u);
                         VDP_DATA_WORD = (unsigned short)(pal_field | 518u | hflip);
-                        vram_write_open(0xC01Eu);
+                        vram_write_open(0xC69Eu);
                         VDP_DATA_WORD = (unsigned short)(pal_field | 519u);
-                        vram_write_open(0xC020u);
+                        vram_write_open(0xC6A0u);
                         VDP_DATA_WORD = (unsigned short)(pal_field | 519u | hflip);
                     }
                 }
             }
 
-            /* Initial story pause: hold scroll at 0 so the reader can read
-             * the story before it starts scrolling up. NES = ~250 frames. */
-            if (story_pause) { story_pause--; continue; }
+            /* Story scroll-in -> hold transition: when scroll first reaches
+             * STORY_SCROLL_TARGET (story top at top of screen), hold for
+             * STORY_HOLD_FRAMES. Matches NES f1445 -> f1705 pause. */
+            if (!story_hold_armed && pixel_count >= STORY_SCROLL_TARGET) {
+                story_hold = STORY_HOLD_FRAMES;
+                story_hold_armed = 1;
+            }
+            if (story_hold) { story_hold--; continue; }
             /* End-pause: hold TRIFORCE/manual on screen briefly. */
             if (end_pause) { end_pause--; continue; }
             /* Arm end-pause when scroll first reaches threshold. */
@@ -371,22 +426,22 @@ int main(void) {
                 last_row = new_row;
             }
 
-            /* Restart cycle: rewrite story to plane, reset counters. */
+            /* Restart cycle: re-write first 32 stream rows to plane,
+             * reset counters. (Skips fade-in on loop — instant restart.) */
             if (pixel_count >= total_pixels) {
-                unsigned short rows = intro_story_tilemap_rows < 32
-                                      ? intro_story_tilemap_rows : 32;
                 unsigned short r;
-                for (r = 0; r < rows; r++) {
-                    write_row(r, &intro_story_tilemap[r * 32]);
+                for (r = 0; r < 32; r++) {
+                    const unsigned short *src = fetch_row(r);
+                    if (src) write_row(r, src);
+                    else write_blank_row(r);
                 }
-                /* Fill remaining plane rows with blank. */
-                for (r = rows; r < 32; r++) write_blank_row(r);
                 vsram_set0(0);
                 scroll = 0;
                 last_row = 0;
-                next_source_row = (unsigned short)intro_story_tilemap_rows;
+                next_source_row = 32u;
                 pixel_count = 0;
-                story_pause = 250;
+                story_hold = 0;
+                story_hold_armed = 0;
                 end_pause = 0;
                 end_pause_armed = 0;
                 /* Reset flash counters; CRAM stays — pal2/pal3 hold
