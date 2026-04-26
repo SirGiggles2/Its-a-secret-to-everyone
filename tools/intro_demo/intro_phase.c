@@ -40,6 +40,9 @@ void intro_phase_step(void) {
             break;
 
         case PHASE_TITLE_FADEOUT:
+            /* Continue glow + waterfall anim during fade so the title
+             * keeps moving as the palette fades to black. */
+            intro_title_step();
             intro_title_fade_step();
             if (intro_title_fade_done()) {
                 intro_title_blackout();
