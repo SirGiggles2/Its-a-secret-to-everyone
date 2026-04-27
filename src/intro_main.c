@@ -1,24 +1,31 @@
 /* src/intro_main.c
  *
  * Native intro boot entry. Pre-intro shell init in genesis_shell.asm
- * has already run (VDP regs, RAM zero, A4/A5/D7 seed, save-slot load).
- * IPL is lowered. vblank_mode is 0 (native path active), so VBlankISR
- * is ticking music_tick and incrementing s_intro_frame_counter.
+ * has already run. IPL is lowered. vblank_mode is 0 (native path
+ * active), so VBlankISR is ticking music_tick and incrementing
+ * s_intro_frame_counter.
+ *
+ * intro_main runs the phase machine and polls the controller for
+ * Start press each frame. On press, calls intro_start_pressed which
+ * jumps to the ASM trampoline and never returns.
  *
  * s_intro_frame_counter is accessed via address literal ($00FF0FF8)
  * rather than an extern linkage — the ASM symbol is an equ constant,
  * not a global label, so the linker cannot resolve it directly.
- *
- * Task 3 wires in the placeholder phase machine (intro_phase).
- * Phase bodies will be filled in Tasks 4-5.
  */
 #include "intro_main.h"
-#include "nes_abi.h"   /* nes_ram[] base */
+#include "nes_abi.h"
 #include "intro_phase.h"
+#include "intro_handoff.h"
 
 #define S_INTRO_FRAME_COUNTER (*(volatile unsigned long *)0x00FF0FF8)
 
-extern void music_play(unsigned char song_bitmap);    /* in audio_driver.asm */
+#define CTRL1_DATA  (*(volatile unsigned char *)0x00A10003)
+#define CTRL1_CTRL  (*(volatile unsigned char *)0x00A10009)
+
+#define BTN_START   0x20
+
+extern void music_play(unsigned char song_bitmap);
 
 static void wait_vblank(void) {
     unsigned long start = S_INTRO_FRAME_COUNTER;
@@ -27,17 +34,48 @@ static void wait_vblank(void) {
     }
 }
 
+static unsigned char read_controller_buttons(void) {
+    /* Standard 6-button-pad lite read: TH high latches start/A/C/B in
+     * bits 7..0 of CTRL1_DATA (active-low). This task only needs Start. */
+    CTRL1_DATA = 0x40;
+    /* Brief settle delay so the controller can latch. */
+    volatile int i;
+    for (i = 0; i < 4; i++) { /* nop */ }
+    unsigned char raw = ~CTRL1_DATA;   /* invert: now 1 = pressed */
+    return raw;
+}
+
+static unsigned char poll_start(unsigned short frame) {
+    static unsigned char prev_start = 0;
+    if (frame < 4u) {
+        /* Ignore controller cold-read junk for the first few frames
+         * after boot — port lines may not have settled. */
+        prev_start = 0;
+        return 0;
+    }
+    unsigned char raw = read_controller_buttons();
+    unsigned char start_now = (raw & BTN_START) ? 1 : 0;
+    unsigned char pressed = (start_now && !prev_start);
+    prev_start = start_now;
+    return pressed;
+}
+
 void intro_main(void) {
-    music_play(0x80);         /* SongIntro per audio_driver.asm:691 */
-    nes_ram[0x07FF] = 0xA1;   /* persistent sentinel: intro_main entered
-                                 (separate address from $07F0 phase byte
-                                 so probe can observe both independently) */
+    music_play(0x80);
+    nes_ram[0x07FF] = 0xA1;
     nes_ram[0x07F1] = 0;
+    nes_ram[0x07F2] = 0;
     intro_phase_init();
 
+    unsigned short frame = 0;
     for (;;) {
         wait_vblank();
-        nes_ram[0x07F1]++;
+        nes_ram[0x07F1] = (unsigned char)(frame & 0xFF);
         intro_phase_step();
+        if (poll_start(frame)) {
+            intro_start_pressed();
+            /* unreachable — trampoline jmps, never returns */
+        }
+        frame++;
     }
 }

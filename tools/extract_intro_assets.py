@@ -794,8 +794,8 @@ def main() -> int:
     _emit_restore_chr(out_dir / "intro_restore_chr.c", Path(args.restore_chr))
     _emit_restore_palette(out_dir / "intro_restore_palette.c",
                           Path(args.restore_cram))
-    _emit_handoff_state(out_dir / "intro_handoff_state.c",
-                        Path(args.handoff_json))
+    # intro_handoff_state.c removed in Task 8: legacy intro_handoff_state_t
+    # struct is gone; intro_start_pressed() replaces intro_handoff().
 
     # --- Title-screen assets (Task 4) ---
     title_bg_chr = _read_title_bg_chr()
@@ -851,7 +851,6 @@ def main() -> int:
         "intro_story_tilemap.c": _sha(out_dir / "intro_story_tilemap.c"),
         "intro_restore_chr.c": _sha(out_dir / "intro_restore_chr.c"),
         "intro_restore_palette.c": _sha(out_dir / "intro_restore_palette.c"),
-        "intro_handoff_state.c": _sha(out_dir / "intro_handoff_state.c"),
         "intro_title_bg_chr.c": _sha(out_dir / "intro_title_bg_chr.c"),
         "intro_title_sprite_chr.c": _sha(out_dir / "intro_title_sprite_chr.c"),
         "intro_title_palette.c": _sha(out_dir / "intro_title_palette.c"),

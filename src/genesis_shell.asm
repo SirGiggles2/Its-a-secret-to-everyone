@@ -638,6 +638,17 @@ DefaultException:
     bra.s   .spin
 
 ;==============================================================================
+; intro_to_file_select_trampoline — STUB. Real body in Task 9.
+; For Task 8 it just sets the handoff probe marker and stops, so we can
+; verify Start press is detected and intro_start_pressed runs end-to-end.
+;==============================================================================
+    xdef    intro_to_file_select_trampoline
+intro_to_file_select_trampoline:
+    move.b  #$BB,($00FF07F2).l
+    stop    #$2700
+    bra.s   intro_to_file_select_trampoline
+
+;==============================================================================
 ; NES I/O emulation layer — real implementations of _ppu_*, _apu_*, _ctrl_*,
 ; _oam_dma, _mmc1_*, _indirect_stub.  Must be included BEFORE any bank file
 ; so all helpers are defined when z_XX.asm code references them.

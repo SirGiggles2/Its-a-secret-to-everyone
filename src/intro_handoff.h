@@ -1,25 +1,15 @@
+/* src/intro_handoff.h
+ *
+ * Start press handoff from native intro to the transpiled file-select
+ * path. C side handles VDP cleanup and probe markers, then calls the
+ * ASM trampoline (intro_to_file_select_trampoline, defined in
+ * genesis_shell.asm) which restores A4/A5/D7, seeds RAM contract,
+ * re-enables NMI heartbeat, flips vblank_mode, and jumps to the
+ * translated main loop.
+ */
 #ifndef INTRO_HANDOFF_H
 #define INTRO_HANDOFF_H
-#ifdef __cplusplus
-extern "C" {
-#endif
-typedef struct {
-    unsigned char mode_value;
-    unsigned char submode_value;
-    unsigned char frontend_demo_phase;
-    unsigned char frontend_demo_subphase;
-    unsigned char front_start_release_gate;
-    unsigned char vram_force_blank_gate;
-    unsigned char frontend_delay_timer;
-    unsigned char room_mode_timer;
-    unsigned char item_sfx_secondary;
-    unsigned char room_transfer_buf_select;
-} intro_handoff_state_t;
 
-extern const intro_handoff_state_t INTRO_HANDOFF_EXPECTED;
+void intro_start_pressed(void);   /* called by intro_main poll_start */
 
-void intro_handoff(void);
-#ifdef __cplusplus
-}
-#endif
 #endif

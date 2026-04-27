@@ -1,44 +1,24 @@
 #include "intro_common.h"
-#include "intro_handoff.h"
 #include "nes_abi.h"  /* RAM(addr) macro */
 
 #define VDP_CTRL_WORD (*(volatile unsigned short *)0x00C00004)
 #define VDP_DATA_WORD (*(volatile unsigned short *)0x00C00000)
 #define VDP_CTRL_LONG (*(volatile unsigned long  *)0x00C00004)
 
+/* Legacy attract-takeover bridge symbols — kept as no-op stubs so
+ * frontend_runtime.c:296-298 links without modification. Under native
+ * intro (intro_main owns boot) this path is never reached at runtime.
+ * Task 8: cooperative-takeover bridge is dead; intro_handoff() replaced
+ * by intro_start_pressed() in intro_handoff.c.
+ */
 unsigned char g_intro_takeover = 0;
-unsigned char g_intro_saved_ppuctrl = 0;  /* set by intro_should_take_over, restored by intro_handoff */
-
-static unsigned char s_takeover_armed = 0;
-static unsigned char s_substage = 0;   /* 0 = handoff */
 
 unsigned char intro_should_take_over(void) {
-    if (s_takeover_armed) return g_intro_takeover;
-    if (RAM(0x042C) == 0) return 0;   /* still phase-0 (title) — wait for attract to arm */
-    g_intro_takeover = 1;
-    s_takeover_armed = 1;
-    s_substage = 0;
-    /* Per codex .481 plan: do NOT touch PPUCTRL / NMI. Keep IsrNmi alive
-     * so heartbeat and legacy transfer pipeline continue. */
-    return 1;
+    return 0;   /* always 0 — native intro owns boot, legacy path never arms */
 }
 
-/* TODO(Task 6): delete this bridge along with the legacy attract-takeover
- * path in frontend_runtime.c:296. Under native intro (intro_main owns
- * boot), this function is unreachable. Kept linkable so frontend_runtime
- * doesn't fail at link time during the multi-step migration.
- */
 void intro_story_tick(void) {
-    if (!g_intro_takeover) return;
-    nes_ram[0x07F3] = s_substage;
-
-    /* Native intro (intro_main/intro_phase) handles story+items.
-     * Legacy path (frontend_runtime) just calls handoff when done. */
-    intro_handoff();
-    /* Re-arm so next attract cycle takes over again. intro_handoff
-     * already cleared g_intro_takeover; also clear the armed latch. */
-    s_takeover_armed = 0;
-    s_substage = 0;
+    /* no-op: native intro handles story; legacy attract path is dead */
 }
 
 /* VDP primitives — real bodies follow. Stubs so early linker checks pass. */

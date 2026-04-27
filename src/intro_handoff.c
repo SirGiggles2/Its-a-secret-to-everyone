@@ -1,53 +1,34 @@
+/* src/intro_handoff.c
+ *
+ * C side of Start press handoff. Performs VDP cleanup so the screen
+ * is in a known state (display off, planes blank, V64 mode, vscroll=0)
+ * before the ASM trampoline restores the translated runtime register
+ * contract and re-enables transpiled NMI handling.
+ */
 #include "intro_handoff.h"
-#include "intro_common.h"
+#include "intro_common.h"   /* vdp_display_off, vdp_set_mode_v64, vdp_set_vscroll, vdp_write_nametable_row */
 #include "nes_abi.h"
 
-extern const unsigned char  intro_restore_chr[];
-extern const unsigned long  intro_restore_chr_size;
-extern const unsigned short intro_restore_palette[64];
-
-static void clear_plane(unsigned short plane_base);
-
-void intro_handoff(void) {
-    /* 1. Switch back to V64. */
-    vdp_set_mode_v64();
-
-    /* 2. Restore file-select CHR captured from legacy flow. */
-    vdp_dma_to_vram((unsigned long)intro_restore_chr, 0x0000,
-                    (unsigned short)intro_restore_chr_size);
-
-    /* 3. Restore file-select CRAM. */
-    vdp_load_cram(intro_restore_palette, 64);
-
-    /* 4. Reset VSRAM to 0. */
-    vdp_set_vscroll(0);
-
-    /* 5. Clear plane A + plane B nametables. */
-    clear_plane(0x4000);
-    clear_plane(0x6000);
-
-    /* 6. Write authoritative state bytes captured by probe during Task 1.
-     *    Addresses resolved from src/{progress,room,item}_state.h + capture JSON. */
-    RAM(0x0012) = INTRO_HANDOFF_EXPECTED.mode_value;              /* MODE_VALUE */
-    RAM(0x0013) = INTRO_HANDOFF_EXPECTED.submode_value;           /* SUBMODE_VALUE */
-    RAM(0x042C) = INTRO_HANDOFF_EXPECTED.frontend_demo_phase;     /* phase */
-    RAM(0x042D) = INTRO_HANDOFF_EXPECTED.frontend_demo_subphase;  /* FRONTEND_DEMO_SUBPHASE */
-    RAM(0x042B) = INTRO_HANDOFF_EXPECTED.front_start_release_gate;
-    RAM(0x083D) = INTRO_HANDOFF_EXPECTED.vram_force_blank_gate;
-    RAM(0x0528) = INTRO_HANDOFF_EXPECTED.frontend_delay_timer;
-    RAM(0x0011) = INTRO_HANDOFF_EXPECTED.room_mode_timer;         /* ROOM_MODE_TIMER */
-    RAM(0x0600) = INTRO_HANDOFF_EXPECTED.item_sfx_secondary;      /* ITEM_SFX_SECONDARY */
-    RAM(0x0014) = INTRO_HANDOFF_EXPECTED.room_transfer_buf_select; /* ROOM_TRANSFER_BUF_SELECT */
-
-    /* 7. Clear takeover. */
-    g_intro_takeover = 0;
-}
+extern void intro_to_file_select_trampoline(void);   /* in genesis_shell.asm */
 
 static void clear_plane(unsigned short plane_base) {
     unsigned short zero_row[32];
     unsigned short i;
     for (i = 0; i < 32; i++) zero_row[i] = 0;
     for (i = 0; i < 32; i++) {
-        vdp_write_nametable_row(plane_base, (unsigned short)i, zero_row);
+        vdp_write_nametable_row(plane_base, i, zero_row);
     }
+}
+
+void intro_start_pressed(void) {
+    nes_ram[0x07F2] = 0xAA;   /* probe: handoff begun */
+
+    vdp_display_off();
+    clear_plane(0xC000);
+    clear_plane(0xE000);
+    vdp_set_mode_v64();
+    vdp_set_vscroll(0);
+
+    /* Tail call into ASM trampoline. Trampoline does not return. */
+    intro_to_file_select_trampoline();
 }
