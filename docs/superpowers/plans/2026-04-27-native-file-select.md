@@ -1260,16 +1260,16 @@ git commit -m "fs/test: Layer 1 RAM probe — phase byte + cursor sequence (v2 g
 
 - [ ] **Step 1: Add music_play call**
 
-After v1.R4 locks the bitmap value (call it `SONG_FS_BIT`), update `src/fs_main.c`:
+v1.R4 resolved: FS is silent (`SONG_FS_BIT = 0x00`). `intro_to_file_select_trampoline` at `genesis_shell.asm:681` clears SongRequest to 0 before Mode 1. Original NES FS is also silent. Keep the `music_play(0)` call in place so the call site exists if the design ever changes. Update `src/fs_main.c`:
 
 ```c
 extern void music_play(uint8_t bit);   /* declared by audio_driver, linked from main ROM */
 
-#define SONG_FS_BIT 0x40   /* REPLACE with v1.R4 actual value */
+#define SONG_FS_BIT 0x00   /* FS is silent — trampoline clears SongRequest to 0 before Mode 1 */
 
 static void fs_init(void) {
     /* ... existing init ... */
-    music_play(SONG_FS_BIT);
+    music_play(SONG_FS_BIT);   /* 0 = stop/silence; call kept for future design change */
 }
 ```
 
@@ -2929,7 +2929,7 @@ git commit -m "spec: verify R3 — SRAM \$7000+ free for OPTIONS region"
 
 - v3.1 has `SLOT_NAME_OFFSET(N) (0x6300 + (N) * 0x80)` placeholder. v3.R6 resolves before v3.1 codes. Plan order: R6 first.
 - v6.2 has `MODE_REGISTER_NAME = 0x07`, `MODE_GAMEPLAY_LOAD = 0x10`, `CURRENT_SAVE_SLOT_OFFSET = 0x0500` placeholders. v6.R1, v6.R2 resolve before v6.2 codes. Plan order: R1, R2, R3, R5 first.
-- v2.6 has `SONG_FS_BIT = 0x40` placeholder. v1.R4 resolves before v2.6 codes. Plan order: R4 first (already in v1).
+- v2.6 `SONG_FS_BIT` resolved: `0x00` (silent). v1.R4 complete. No further R4 action needed before v2.6 codes.
 
 All placeholders gated by R-tasks scheduled before consuming task. Plan-execution order: R-tasks always run before the task that needs the value.
 

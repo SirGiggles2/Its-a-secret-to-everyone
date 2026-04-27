@@ -27,7 +27,7 @@ Recorded from brainstorm:
 | Q9 | SRAM = NES save slots untouched at original offsets, OPTIONS bytes in fresh region $7000+. PLAYERS = global byte. |
 | Q10 | Slot pick handoff = empty → transpiled register-name, saved → transpiled gameplay (NES original behavior). |
 | Q11 | Cursor = single heart sprite, sits on selected row (slot rows AND action rows). Link brightness palette = preserve Redux byte-exact (`$0F,$29,$27,$17` saved / dim variants empty per `Zelda1-Redux/src/code/menus/file_select.asm:75`). |
-| Q12 | FS music = same NES FS song bitmap. Exact value TBD plan-write. |
+| Q12 | FS music = `$00` (silent). `intro_to_file_select_trampoline` (genesis_shell.asm:681) clears SongRequest to 0 before Mode 1. Matches NES-Redux silent FS. |
 | Q13 | Iterative landing v1→v6 (see Sequencing). |
 | Q14 | Defaults: PLAYERS=1, all OPTIONS = REDUX (first listed value), AUTOMAP=ON, DUNGEON COLR=ON. |
 | Q15 | Engine wiring v1 = store-only for 14 of 16 OPTIONS. Wire 2 rows end-to-end as proof: LOW HP SFX, AUTOMAP. Other 14 wire as per-feature follow-on specs. |
@@ -143,7 +143,7 @@ fs_main:
     ├─ fs_render_all_slots()            (3 Link sprites, brightness per occupancy,
     │                                    name + heart count for occupied)
     ├─ fs_render_cursor(0)              (heart sprite at slot1 Y position)
-    ├─ music_play(SONG_FS_BIT)          (TBD bitmap value)
+    ├─ music_play(SONG_FS_BIT)          (0x00 — silent; trampoline clears SongRequest before Mode 1)
     ├─ s_fs_phase = FS_NAV
     └─ for (;;) { wait_vblank(); fs_phase_step(); fs_input_poll(); }
 ```
@@ -491,5 +491,5 @@ These behaviors must be preserved exactly. No "simplifications" allowed in imple
 | NAME header tile shift | one tile left | `Zelda1-Redux/src/code/menus/file_select.asm:7` |
 | Heart row flip | `adc.b #$12` / `adc.b #$07` swap | `Zelda1-Redux/src/code/menus/file_select.asm:13-16` |
 | Dash tile reuse | `$2F` (was `$62`) | `Zelda1-Redux/src/code/menus/file_select.asm:25-66` |
-| FS song bitmap | `$80` | `src/frontend_runtime.c:71` (`ITEM_SFX_SECONDARY = 0x80`) — DriveSong bit-7 set → demo/title phrase loop; Mode 1 inherits, no new write |
+| FS song bitmap | `$00` (silent) | `src/genesis_shell.asm:681` clears SongRequest to 0 in `intro_to_file_select_trampoline` before Mode 1; matches NES-Redux silent FS behavior |
 | Cursor sprite | NES heart sprite, single-tile, vertical position per row | NES disasm |
