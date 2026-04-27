@@ -126,25 +126,31 @@ def emit_palette() -> None:
         # Gen pal 0 — BG pal 0: black bg, white text, black, blue (Z_06.asm:445)
         (0x0F, 0x30, 0x00, 0x12),
         # Gen pal 1 — BG pal 1: black, red, beige, light-yellow (Z_06.asm:446)
-        # Used by attr=1 region: LIFE column header + heart-count icons.
+        # Used by attr=1 region: LIFE column header + heart-count icons. Heart
+        # cursor sprite (8x8, pal 1) shares this palette: cursor pixel values
+        # 1+3 land on red/light-yellow — close enough to NES sprite pal 3
+        # (light-red/white) given the Gen 4-palette ceiling.
         (0x0F, 0x16, 0x27, 0x36),
-        # Gen pal 2 — Link sprite palette: black, green, beige, brown
-        # Redux override (file_select.asm:75) of sprite pal 0; v1.fix2 uses for ALL slots.
+        # Gen pal 2 — bright Link palette: black, green, beige, brown
+        # Redux override (file_select.asm:75) of sprite pal 0; OCCUPIED slot tint.
         (0x0F, 0x29, 0x27, 0x17),
-        # Gen pal 3 — heart cursor sprite palette: black, light-red, beige, white
-        # NES sprite pal 3 (Z_06.asm:449); cursor sprite has attr=$03 → palette 3.
-        (0x0F, 0x15, 0x27, 0x30),
+        # Gen pal 3 — faded/empty Link palette: black, dark-olive, dark-brown,
+        # very-dark-red. Source: Zelda1-Redux/menu_tweaks.asm:397-404
+        # main_menu_palette writes $19,$17,$07 to sprite palette buf for any
+        # slot where $0633,y == 0 (no save). EMPTY slot tint.
+        (0x0F, 0x19, 0x17, 0x07),
     ]
 
     out = []
     out.append("/* AUTO-GENERATED — see tools/extract_fs_assets.py */")
     out.append("/* fs_palettes[4][4]: 4 Genesis CRAM palettes × 4 colors each.")
     out.append(" *   pal 0 = NES BG pal 0 (attr=0 cells)")
-    out.append(" *   pal 1 = NES BG pal 1 (attr=1 cells: LIFE/hearts)")
-    out.append(" *   pal 2 = NES sprite pal 0 / Redux override (Link, all slots)")
-    out.append(" *   pal 3 = NES sprite pal 3 (heart cursor)")
+    out.append(" *   pal 1 = NES BG pal 1 (attr=1 cells: LIFE/hearts) + heart cursor")
+    out.append(" *   pal 2 = bright Link  (occupied save slot)")
+    out.append(" *   pal 3 = faded Link   (empty save slot — Redux dark tint)")
     out.append(" * Source: aldonunez/Z_06.asm:444-449 MenuPalettesTransferBuf,")
-    out.append(" *         Zelda1-Redux/src/code/menus/file_select.asm:75-78 */")
+    out.append(" *         Zelda1-Redux/src/code/menus/file_select.asm:75-78,")
+    out.append(" *         Zelda1-Redux/src/code/menus/menu_tweaks.asm:397-404 */")
     out.append("#include <stdint.h>")
     out.append("const uint16_t fs_palettes[4][4] = {")
     for pal in PALETTES:

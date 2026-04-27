@@ -12,9 +12,19 @@ extern const uint8_t  fs_heart_cursor_chr[];
 extern const uint8_t  fs_font_chr[];
 extern const uint8_t  fs_border_chr[];
 
-/* CRAM palette indices (matches src/gen/fs_palette.c layout). */
-#define PAL_BG_LINK     2u   /* Gen pal 2 = NES sprite pal 0 (green Link) */
-#define PAL_BG_CURSOR   3u   /* Gen pal 3 = NES sprite pal 3 (heart cursor) */
+/* CRAM palette indices (matches src/gen/fs_palette.c layout).
+ *
+ * Genesis only has 4 CRAM palettes vs NES's 4 BG + 4 sprite. Layout:
+ *   pal 0  BG attr 0 cells
+ *   pal 1  BG attr 1 cells (LIFE/hearts) — also used by heart cursor sprite
+ *   pal 2  bright Link  (OCCUPIED save slot)
+ *   pal 3  faded  Link  (EMPTY    save slot — Redux dark-olive tint)
+ * Heart cursor moved off pal 3 to free pal 3 for the empty-slot Link tint
+ * (Redux menu_tweaks.asm:397-404). Cursor palette is now BG pal 1 — close
+ * enough red/yellow shading to read as the NES light-red/white heart. */
+#define PAL_BG_LINK_BRIGHT  2u
+#define PAL_BG_LINK_FADED   3u
+#define PAL_BG_CURSOR       1u
 
 #define PLANE_A_BASE  0xC000
 #define PLANE_B_BASE  0xE000  /* boot.asm Reg4=$8407 → plane B @ $E000 */
@@ -83,13 +93,15 @@ static void sat_clear_entry(uint8_t entry) {
 }
 
 /* ---------------------------------------------------------------------------
- * fs_sram_slot_occupied: v1 mock — slot 0 occupied (bright), 1+2 empty (dim).
- * Real SRAM read lands in v3.1.
+ * fs_sram_slot_occupied: weak default — every slot empty until SRAM is wired.
+ * Fresh ROM has no save data, so all 3 Link sprites tint with the faded
+ * (empty-slot) palette. Real SRAM read lands in v3.1.
  * ---------------------------------------------------------------------------
  */
 extern uint8_t fs_sram_slot_occupied(uint8_t slot);
 __attribute__((weak)) uint8_t fs_sram_slot_occupied(uint8_t slot) {
-    return slot == 0 ? 1 : 0;
+    (void)slot;
+    return 0;
 }
 
 void fs_render_clear_screen(void) {
@@ -187,14 +199,17 @@ void fs_render_slot(uint8_t slot_idx) {
     uint16_t sat_y = (uint16_t)(nes_y + 128u);   /* +128 SAT bias */
     uint16_t sat_x = (uint16_t)(0x30u + 128u);   /* NES X=$30, +128 bias → 0xB0 */
 
-    /* v6: Always render all 3 Link sprites to match NES Redux look (3 colored
-     * Links in left margin even when slots are empty). Per-slot tint deferred
-     * (Gen 4-pal budget spent on BG0/BG1/Link/cursor); all use pal 2 = green.
-     * fs_sram_slot_occupied still consulted for future dim-empty / bright-saved
-     * variant — for now, render all bright. */
-    (void)fs_sram_slot_occupied(slot_idx);
+    /* Per-slot tint matching NES Redux:
+     *   occupied slot → pal 2 (bright green Link)
+     *   empty    slot → pal 3 (faded dark-olive Link) — Redux menu_tweaks.asm
+     *                   :397-404 writes $19/$17/$07 to sprite pal buf for any
+     *                   slot where $0633,y == 0.
+     * Per-slot color (blue slot 1 / red slot 2) still deferred — all 3 occupied
+     * slots share pal 2 because Gen has only 4 CRAM palettes. */
     uint8_t sat_entry = (uint8_t)(1u + slot_idx);
-    uint16_t palette = (uint16_t)PAL_BG_LINK;
+    uint16_t palette = fs_sram_slot_occupied(slot_idx)
+                     ? (uint16_t)PAL_BG_LINK_BRIGHT
+                     : (uint16_t)PAL_BG_LINK_FADED;
 
     /* tile_attr: priority=0, palette=palette, no flip, tile=LINK_CHR_BASE.
      * Genesis tile_attr word: pri(15) | pal(14:13) | flipV(12) | flipH(11) | tile(10:0) */
@@ -238,7 +253,7 @@ void fs_render_cursor(uint8_t row) {
     uint16_t sat_y = (uint16_t)(cursor_ys[row] + 128u);
     uint16_t sat_x = (uint16_t)(0x28u + 128u);   /* NES X=$28 */
 
-    /* tile_attr: palette=PAL_BG_CURSOR (Gen pal 3 = NES sprite pal 3), no flip, tile=HEART_CHR_BASE. */
+    /* tile_attr: palette=PAL_BG_CURSOR (Gen pal 1, shared with BG attr 1), no flip, tile=HEART_CHR_BASE. */
     uint16_t tile_attr = (uint16_t)((uint16_t)PAL_BG_CURSOR << 13) | (uint16_t)HEART_CHR_BASE;
 
     /* size: 1×1 cell (8×8 px) = 0x0000 size field.
