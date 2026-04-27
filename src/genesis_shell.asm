@@ -61,7 +61,7 @@ INTRO_SCROLL_MODE equ $00FF081F ; byte: active scroll mode for the current frame
 ; vblank_mode — VBlankISR dispatch flag.
 ;   $00 = native intro path (music_tick + s_intro_frame_counter only)
 ;   $01 = transpiled path (existing PPUCTRL gate + IsrNmi + ags/oam flushes)
-; Owned by ASM. C never touches it. Boot ASM seeds $01 before IPL is lowered;
+; Owned by ASM. C never touches it. Boot ASM seeds $00 before IPL is lowered;
 ; the Start handoff trampoline writes $01 immediately before resuming the
 ; translated main loop. Single byte; aligned naturally.
 ; Lives in the free tail of the NT_CACHE gap ($FF0FC0-$FF0FFF).
@@ -383,11 +383,6 @@ EntryPoint:
     moveq   #-1,D7                  ; D7 = $FF (NES SP shadow)
 
     jsr     audio_init              ; Initialize YM2612 + PSG
-
-    ; Request the title/demo song on boot as a smoke test for the native
-    ; M68K music player.  music_tick (called from VBlank) will pick this
-    ; up on the first frame after SR is lowered.
-    move.b  #$80,(m_song_req).l
 
     ; Pre-write tile buffer sentinel so the first NMI's TransferCurTileBuf
     ; doesn't parse zeroed RAM as phantom records.  DynTileBuf = NES $0302.
