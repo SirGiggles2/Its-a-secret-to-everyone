@@ -1,16 +1,23 @@
-"""Extract Zelda Redux File Select assets from Redux NES reference data + nametable dump.
+"""Extract Zelda Redux File Select assets from live CHR-RAM dump + nametable dump.
 
 Emits src/gen/fs_static_tilemap.c, fs_palette.c, fs_font_chr.c,
 fs_link_sprite_chr.c, fs_heart_cursor_chr.c, fs_border_chr.c.
 Writes src/gen/fs_asset_hashes.txt with SHA256 of every output.
 
-CHR source: reference/aldonunez/dat/CommonBackgroundPatterns.dat (112 tiles)
-            + DemoBackgroundPatterns.dat (130 tiles) = 242 BG tiles (0x00-0xF1)
-            + CommonSpritePatterns.dat (112 tiles)
-            + DemoSpritePatterns.dat (144 tiles) = 256 sprite tiles (0x00-0xFF)
+CHR source: tools/file_select_test/ref/fs_chr.bin — 8KB live CHR-RAM dump
+            captured by dump_fs_chr.lua at the FS screen (BizHawk PPU Bus $0000-$1FFF).
 
-These .dat files contain actual NES 2bpp CHR pixel data, not PRG-ROM code.
-The Zelda Redux ROM is CHR-RAM; the game transfers these patterns to PPU at runtime.
+NES PPU CHR-RAM layout at File Select frame:
+  $0000-$0FFF (lower half, tiles   0-255): sprite patterns
+  $1000-$1FFF (upper half, tiles 256-511): BG patterns (PPUCTRL bit 4 = 1)
+
+The static .dat files (CommonBackgroundPatterns, DemoBackgroundPatterns, etc.)
+contain Mode 0 (demo/title) CHR-RAM content — NOT the FS-mode patterns. Using
+them produced ZELDA title art instead of the File Select layout. The live dump
+captures the CHR state after Mode 1 has uploaded FS-specific tile bitmaps.
+
+To regenerate fs_chr.bin: run tools/file_select_test/dump_fs_chr.lua in BizHawk
+with Zelda1-Redux/Zelda Redux.nes, copy C:\\tmp\\fs_chr.bin here.
 """
 from __future__ import annotations
 
@@ -21,6 +28,7 @@ from pathlib import Path
 REPO = Path(__file__).resolve().parent.parent
 REF_DIR = REPO / "reference" / "aldonunez" / "dat"
 NT_DUMP = REPO / "tools" / "file_select_test" / "ref" / "fs_nt.bin"
+FS_CHR_DUMP = REPO / "tools" / "file_select_test" / "ref" / "fs_chr.bin"
 OUT_DIR = REPO / "src" / "gen"
 
 # Import shared helpers from extract_intro_assets.py (same repo, same tools/ dir).
@@ -29,21 +37,46 @@ from extract_intro_assets import nes_color_to_gen_cram, nes_tile_to_gen_tile
 
 
 # ---------------------------------------------------------------------------
-# CHR data loaders (BG and sprite pattern tables from reference .dat files)
+# CHR data loaders (live CHR-RAM dump from BizHawk FS frame capture)
 # ---------------------------------------------------------------------------
 
+def _load_fs_chr() -> bytes:
+    """Load 8KB live CHR-RAM dump captured at FS screen.
+
+    Returns 8192 bytes: [0:4096] = sprite patterns ($0000-$0FFF),
+                        [4096:8192] = BG patterns ($1000-$1FFF).
+    Run tools/file_select_test/dump_fs_chr.lua to regenerate.
+    """
+    if not FS_CHR_DUMP.exists():
+        sys.stderr.write(
+            f"ERROR: {FS_CHR_DUMP} missing — run tools/file_select_test/dump_fs_chr.lua\n"
+        )
+        sys.exit(1)
+    data = FS_CHR_DUMP.read_bytes()
+    if len(data) != 8192:
+        sys.stderr.write(
+            f"ERROR: expected 8192-byte CHR dump, got {len(data)} bytes\n"
+        )
+        sys.exit(1)
+    return data
+
+
 def _load_bg_chr() -> bytes:
-    """Load CommonBackgroundPatterns + DemoBackgroundPatterns (242 tiles = 0x00-0xF1)."""
-    common = (REF_DIR / "CommonBackgroundPatterns.dat").read_bytes()
-    demo   = (REF_DIR / "DemoBackgroundPatterns.dat").read_bytes()
-    return common + demo
+    """Return the BG pattern table half from the live CHR dump ($1000-$1FFF).
+
+    PPUCTRL bit 4 = 1 at FS screen → BG tiles at $1000. The returned 4096 bytes
+    cover NES BG tile indices 0x00-0xFF (256 tiles), indexed by tile_idx * 16.
+    """
+    return _load_fs_chr()[4096:]  # upper half: $1000-$1FFF
 
 
 def _load_sprite_chr() -> bytes:
-    """Load CommonSpritePatterns + DemoSpritePatterns (256 tiles = 0x00-0xFF)."""
-    common = (REF_DIR / "CommonSpritePatterns.dat").read_bytes()
-    demo   = (REF_DIR / "DemoSpritePatterns.dat").read_bytes()
-    return common + demo
+    """Return the sprite pattern table half from the live CHR dump ($0000-$0FFF).
+
+    PPUCTRL bit 3 = 0 at FS screen → 8x8 sprites at $0000. The returned 4096 bytes
+    cover NES sprite tile indices 0x00-0xFF (256 tiles), indexed by tile_idx * 16.
+    """
+    return _load_fs_chr()[:4096]  # lower half: $0000-$0FFF
 
 
 def _read_bg_tile(tile_idx: int, bg_chr: bytes) -> bytes:
