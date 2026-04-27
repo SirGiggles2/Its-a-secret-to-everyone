@@ -70,12 +70,11 @@ ym_write2:
     rts
 
 ;==============================================================================
-; load_fm_patch_ch — load 25-byte Voice $00 patch into one channel.
-; Input: D6.b = YM channel 0..5
+; load_fm_patch_named — load 25-byte patch into one channel.
+; Input: A0 = pointer to 25-byte patch, D6.b = YM channel 0..5
 ;==============================================================================
-load_fm_patch_ch:
+load_fm_patch_named:
     movem.l D0-D2/D6/A0-A1,-(SP)
-    lea     PATCH_VOICE00(PC),A0
     lea     FM_PATCH_REGS(PC),A1
     moveq   #24,D2                  ; 25 register/value pairs
     cmpi.b  #3,D6
@@ -147,13 +146,20 @@ ym_init:
     cmpi.b  #15,D6                  ; 16 iterations covers $90..$9F (4 ops x 3 ch + skip)
     ble.s   .ssg_loop
 
-    ; Load Voice $00 into ch 0..5
+    ; Load harp patch on ch 0..2 (lead), bell pad on ch 3..5 (backup).
     moveq   #0,D6
-.patch_loop:
-    bsr     load_fm_patch_ch
+.patch_lead:
+    lea     PATCH_VOICE00(PC),A0    ; bell pad on lead — best fit per user A/B
+    bsr     load_fm_patch_named
+    addq.b  #1,D6
+    cmpi.b  #2,D6
+    ble.s   .patch_lead
+.patch_backup:
+    lea     PATCH_PAD(PC),A0        ; slow-swell mystical pad for backup line
+    bsr     load_fm_patch_named
     addq.b  #1,D6
     cmpi.b  #5,D6
-    ble.s   .patch_loop
+    ble.s   .patch_backup
 
     ; Panning L+R for ch 0..2 ($B4..$B6 Part I)
     move.b  #$C0,D1
@@ -381,6 +387,65 @@ PATCH_VOICE00:
     dc.b    $00,$00,$00,$00         ; D2R
     dc.b    $47,$37,$37,$17         ; DL/RR — bell tail
     dc.b    $14,$1E,$1E,$1E         ; TL — modulator $14, carriers $1E
+    even
+
+; Mystical pad — distinctly different from the celesta lead.  Carriers
+; have a SLOW attack so each note swells in like a breath of mist behind
+; the bright lead twinkle.  Op1 modulator stays at MUL 4 with high TL so
+; only a faint metallic shimmer rides on top of pure-tone carriers.  No
+; FB.  Carriers mildly detuned for chorus.  Net effect: airy washes
+; that bloom under the lead's plucks instead of competing with them.
+PATCH_PAD:
+    dc.b    $05                     ; FB/ALG: FB 0, ALG 5
+    dc.b    $04,$11,$01,$51         ; DT/MUL — op1 MUL 4 modulator
+    dc.b    $1F,$10,$10,$10         ; RS/AR — mod instant, carriers SLOW attack
+    dc.b    $00,$02,$02,$02         ; AM/D1R — long decay
+    dc.b    $00,$00,$00,$00         ; D2R
+    dc.b    $4A,$28,$28,$28         ; DL/RR — long sustained tail
+    dc.b    $30,$1A,$1A,$1A         ; TL — mod whisper, carriers gentle
+    even
+
+; Flute/organ patch — additive ALG 7 (4 carriers in parallel).
+;   Op MUL ratios 1:2:3:4 add octave and 5th overtones for an airy, woody
+;   timbre.  Sustained envelope (no decay during note hold), fast release
+;   on key-off.  FB 1 for slight warmth without distortion.
+;   Slot byte order in YM2612 patches is op1, op3, op2, op4.
+PATCH_FLUTE:
+    dc.b    $0F                     ; FB/ALG: (1<<3)|7
+    dc.b    $01,$03,$02,$04         ; DT/MUL (op1=1, op3=3, op2=2, op4=4)
+    dc.b    $1F,$1F,$1F,$1F         ; RS/AR — instant attack
+    dc.b    $00,$00,$00,$00         ; AM/D1R — no decay, sustain at TL
+    dc.b    $00,$00,$00,$00         ; D2R
+    dc.b    $0F,$0F,$0F,$0F         ; DL/RR — DL 0, RR 15 (fast release)
+    dc.b    $18,$24,$20,$2C         ; TL — fundamental loudest, harmonics quieter
+    even
+
+; Voice $03 — EHZ FM3 lead (Sonic 2; bright FB7 / Algorithm 5).
+PATCH_VOICE03:
+    dc.b    $3D                     ; FB/ALG: (7<<3)|5
+    dc.b    $01,$51,$21,$01         ; DT/MUL
+    dc.b    $1F,$1F,$1F,$1F         ; RS/AR
+    dc.b    $0A,$05,$05,$05         ; AM/D1R
+    dc.b    $00,$00,$00,$00         ; D2R
+    dc.b    $2B,$2B,$2B,$1B         ; DL/RR
+    dc.b    $19,$18,$18,$18         ; TL
+    even
+
+; Twinkle / celesta lead — soft mystical bell, light and bright.
+;   Algorithm 5 (3 carriers driven by op1 modulator), FB 0 keeps timbre
+;   clean and pure (no FB-induced grit).  Op1 MUL 2 with low modulator
+;   level adds just a hint of chime without harsh overtones.  Carriers
+;   are slightly detuned (DT 1, 0, -1) for a gentle chorus shimmer that
+;   reads as "mystical" rather than dry.  Long DL+RR gives notes a
+;   relaxing tail that overlaps into chord-like ringouts.
+PATCH_TWINKLE:
+    dc.b    $05                     ; FB/ALG: FB 0, ALG 5
+    dc.b    $02,$11,$01,$51         ; DT/MUL — slot order op1,op3,op2,op4
+    dc.b    $1F,$1F,$1F,$1F         ; RS/AR — instant attack
+    dc.b    $00,$03,$03,$03         ; AM/D1R — mod sustained, carriers gentle decay
+    dc.b    $00,$00,$00,$00         ; D2R
+    dc.b    $48,$36,$36,$26         ; DL/RR — long shimmery tail
+    dc.b    $24,$14,$14,$14         ; TL — mod gentle ($24), carriers bright ($14)
     even
 
 ;==============================================================================

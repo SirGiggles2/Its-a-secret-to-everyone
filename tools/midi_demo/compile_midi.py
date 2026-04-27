@@ -147,8 +147,42 @@ def compile_song(midi_path: Path) -> bytes:
     events_out: list[tuple[int, int, int, int, int]] = []
     # (abs_frame_q, op, ch, bf_hi, fnum_lo)
 
-    midi_to_fm: dict[int, int] = {}  # midi-channel -> FM-channel 0..5
-    next_fm = 0
+    NUM_FM = 6
+    # Two voice pools:
+    #   ch 0..2 = HARP (lead, notes >= LEAD_THRESHOLD)
+    #   ch 3..5 = BELL (backup, notes < LEAD_THRESHOLD)
+    # Each FM voice holds the (midi_ch, note) that owns it plus a serial
+    # for oldest-first stealing within the pool.
+    LEAD_THRESHOLD = 67  # MIDI G4 — anything at/above plays on harp
+    voice_owner: list[tuple[int, int] | None] = [None] * NUM_FM
+    voice_age:   list[int]                    = [0]    * NUM_FM
+    serial = 0
+
+    def pool_for(note: int) -> tuple[int, int]:
+        if note >= LEAD_THRESHOLD:
+            return (0, 3)            # harp pool: ch 0,1,2
+        return (3, 6)                # bell pool: ch 3,4,5
+
+    def voice_alloc(midi_ch: int, note: int) -> int:
+        nonlocal serial
+        serial += 1
+        lo, hi = pool_for(note)
+        for i in range(lo, hi):
+            if voice_owner[i] is None:
+                voice_owner[i] = (midi_ch, note)
+                voice_age[i] = serial
+                return i
+        i = min(range(lo, hi), key=lambda k: voice_age[k])
+        voice_owner[i] = (midi_ch, note)
+        voice_age[i] = serial
+        return i
+
+    def voice_release(midi_ch: int, note: int) -> int | None:
+        for i in range(NUM_FM):
+            if voice_owner[i] == (midi_ch, note):
+                voice_owner[i] = None
+                return i
+        return None
 
     tempo_us_per_quarter = 500000  # default 120 BPM
     cur_tick = 0
@@ -173,22 +207,31 @@ def compile_song(midi_path: Path) -> bytes:
             ch, note, vel = payload
             if ch == DRUM_CHANNEL:
                 continue
-            if ch not in midi_to_fm:
-                if next_fm >= 6:
-                    continue  # out of FM voices
-                midi_to_fm[ch] = next_fm
-                next_fm += 1
-            fm = midi_to_fm[ch]
-            block, fnum = midi_to_ym(note)
+            # If the same (ch,note) is already sounding, release it first
+            # so a key-off / key-on pair retriggers the envelope cleanly.
+            existing = voice_release(ch, note)
+            if existing is not None:
+                # Pitch shift used for the previous note depends on which
+                # pool it was on; recompute via the pool ranges.
+                shifted = note + (24 if existing >= 3 else 0)
+                block, fnum = midi_to_ym(shifted)
+                bf_hi = ((block & 7) << 3) | ((fnum >> 8) & 7)
+                fnum_lo = fnum & 0xFF
+                events_out.append((int(round(f)), 0x00, existing, bf_hi, fnum_lo))
+            fm = voice_alloc(ch, note)
+            played = note + (24 if fm >= 3 else 0)  # backup transposed +1 oct
+            block, fnum = midi_to_ym(played)
             bf_hi = ((block & 7) << 3) | ((fnum >> 8) & 7)
             fnum_lo = fnum & 0xFF
+            events_out.append((int(round(f)), 0x00, fm, bf_hi, fnum_lo))
             events_out.append((int(round(f)), 0x01, fm, bf_hi, fnum_lo))
         elif kind == 'off':
             ch, note = payload
-            if ch not in midi_to_fm:
+            fm = voice_release(ch, note)
+            if fm is None:
                 continue
-            fm = midi_to_fm[ch]
-            block, fnum = midi_to_ym(note)
+            played = note + (24 if fm >= 3 else 0)
+            block, fnum = midi_to_ym(played)
             bf_hi = ((block & 7) << 3) | ((fnum >> 8) & 7)
             fnum_lo = fnum & 0xFF
             events_out.append((int(round(f)), 0x00, fm, bf_hi, fnum_lo))
