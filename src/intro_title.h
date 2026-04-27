@@ -1,4 +1,4 @@
-/* tools/intro_demo/intro_title.h
+/* src/intro_title.h
  *
  * Title runtime: load (CHR/CRAM/plane/sprites), per-vblank step
  * (glow + waterfall), fade-out driver. Setup blanks the display

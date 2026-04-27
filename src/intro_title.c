@@ -1,4 +1,4 @@
-/* tools/intro_demo/intro_title.c
+/* src/intro_title.c
  *
  * Title runtime: load assets, per-vblank step (glow only for now;
  * waterfall added in Task 12), fade-out driver.

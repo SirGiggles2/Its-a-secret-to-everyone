@@ -325,46 +325,9 @@ def _emit_title_palette(out_path: Path, cram: list[int]) -> None:
     lines.append("};\n")
     out_path.write_text("".join(lines))
 
-def _build_title_tilemap() -> tuple[list[int], int]:
-    """Parse GameTitleTransferBuf.dat exactly as extract_title_tilemap.py does:
-    NT tiles $2000-$23BF + attribute table $23C0-$23FF -> 32x30 Genesis cells."""
-    ref_dir = REPO / "reference" / "aldonunez" / "dat"
-    data = (ref_dir / "GameTitleTransferBuf.dat").read_bytes()
-
-    NT_TILES = bytearray(32 * 30)
-    ATTR     = bytearray(64)
-    i = 0
-    while i < len(data):
-        hi = data[i]
-        if hi == 0xFF:
-            break
-        lo = data[i+1]
-        cnt = data[i+2]
-        addr = (hi << 8) | lo
-        i += 3
-        chunk = data[i:i+cnt]
-        i += cnt
-        for k, b in enumerate(chunk):
-            a = addr + k
-            if 0x2000 <= a < 0x23C0:
-                NT_TILES[a - 0x2000] = b
-            elif 0x23C0 <= a < 0x2400:
-                ATTR[a - 0x23C0] = b
-
-    def _cell_palette(col: int, row: int) -> int:
-        attr_idx = (row // 4) * 8 + (col // 4)
-        quad_x   = (col % 4) // 2
-        quad_y   = (row % 4) // 2
-        shift    = (quad_y * 2 + quad_x) * 2
-        return (ATTR[attr_idx] >> shift) & 3
-
-    cells = []
-    for row in range(30):
-        for col in range(32):
-            tile = NT_TILES[row * 32 + col]
-            pal  = _cell_palette(col, row)
-            cells.append((pal << 13) | (tile & 0x7FF))
-    return cells, 30
+def _build_title_tilemap(ref_dir: Path) -> tuple[list[int], int]:
+    """Title tilemap uses the same source data and layout as the showcase tilemap."""
+    return _build_showcase_tilemap(ref_dir)
 
 def _emit_title_tilemap(out_path: Path, cells: list[int], rows: int) -> None:
     lines = [
@@ -560,7 +523,7 @@ def main() -> int:
     title_palette_cram = _read_title_palette()
     _emit_title_palette(out_dir / "intro_title_palette.c", title_palette_cram)
 
-    title_cells, title_rows = _build_title_tilemap()
+    title_cells, title_rows = _build_title_tilemap(ref_dir)
     _emit_title_tilemap(out_dir / "intro_title_tilemap.c", title_cells, title_rows)
 
     title_fade_cycles = _build_title_fade_cycles()
