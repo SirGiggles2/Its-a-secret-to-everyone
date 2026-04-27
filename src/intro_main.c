@@ -17,6 +17,7 @@
 #include "nes_abi.h"
 #include "intro_phase.h"
 #include "intro_handoff.h"
+#include "intro_common.h"   /* vdp_set_mode_v32 */
 
 #define S_INTRO_FRAME_COUNTER (*(volatile unsigned long *)0x00FF0FF8)
 
@@ -67,11 +68,27 @@ static unsigned char poll_start(unsigned short frame) {
 }
 
 void intro_main(void) {
+    /* Switch VDP plane to H32 x V32 ($9000). Lifted intro code (intro_title.c,
+     * intro_story.c, intro_handoff.c clear_plane) uses row*64 byte stride which
+     * is correct only for V32. Main ROM boot sets V64 ($9011) for transpiled
+     * gameplay; trampoline restores V64 on Start press handoff. */
+    vdp_set_mode_v32();
+    /* Disable Window plane. genesis_shell.asm:261 enables Window covering
+     * top 8 rows ($9208) for transpiled-gameplay HUD isolation, with the
+     * Window plane filled by tile $05FF blank. That overlay HIDES the top
+     * 8 rows of plane A in the intro (vines border + "THE LEGEND OF"
+     * subtitle). Set reg 18 = $00 here so plane A's top is visible.
+     * Trampoline restores $9208 before resuming transpiled gameplay. */
+    *(volatile unsigned short *)0x00C00004 = 0x9200;  /* Reg 18 = 0: window V off */
     music_play(0x80);
     nes_ram[0x07FF] = 0xA1;  /* sentinel: intro_main entered (not phase byte at $07F0) */
     nes_ram[0x07F1] = 0;
     nes_ram[0x07F2] = 0;
     intro_phase_init();
+    /* Run first phase step BEFORE any wait_vblank — title_setup enables
+     * the display so vblank polling has stable state afterward. Mirrors
+     * intro_demo's main.c pattern. */
+    intro_phase_step();
 
     unsigned short frame = 0;
     for (;;) {

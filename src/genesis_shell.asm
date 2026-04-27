@@ -688,11 +688,18 @@ intro_to_file_select_trampoline:
     move.b  D0,($00FF,A4)            ; write gameplay mirror
     move.b  D0,(PPU_CTRL).l          ; write absolute mirror ($00FF0804, read by VBlankISR:486)
 
-    ; [4] Flip VBlankISR dispatcher to transpiled path.
+    ; [4] Restore VDP plane size + Window plane to gameplay defaults.
+    ;     intro_main set V32 ($9000) + window OFF ($9200) for the lifted intro
+    ;     code. Transpiled gameplay expects V64 plane ($9011) + Window
+    ;     covering top 8 rows ($9208) per genesis_shell:255-261 boot init.
+    move.w  #$9011,(VDP_CTRL).l      ; Reg 16: H64 x V64 plane size
+    move.w  #$9208,(VDP_CTRL).l      ; Reg 18: window V = 8 (covers top 8 rows)
+
+    ; [5] Flip VBlankISR dispatcher to transpiled path.
     ;     A4/A5/D7 are valid at this point.
     move.b  #1,(vblank_mode).l       ; 0=native intro, 1=transpiled IsrNmi
 
-    ; [5] Spin in LoopForever. Does not return.
+    ; [6] Spin in LoopForever. Does not return.
     ;     VBlank 1: InitializeGameOrMode copies common code/data ($00F4: 0->1)
     ;     VBlank 2: InitMode -> GameMode=$01 -> InitMode1 chain
     ;     VBlank 3+: UpdateMode1Menu (file-select interactive)
