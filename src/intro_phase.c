@@ -1,39 +1,69 @@
 /* src/intro_phase.c
  *
- * Phase dispatcher. Task 3 ships this as a placeholder: each phase
- * just writes its enum value to nes_ram[$07F0] and counts down 60
- * frames before advancing. Tasks 4-5 replace placeholder bodies with
- * lifts from intro_demo.
+ * Phase dispatcher. Title phases (LOAD/DISPLAY/FADEOUT/BLACK_HOLD)
+ * are wired in Task 4. Story phases (LOAD/RUN) remain placeholders
+ * — Task 5 will replace them with the lifted intro_story runtime.
  */
 #include "intro_phase.h"
+#include "intro_title.h"
 #include "nes_abi.h"
 
 static intro_phase_t s_phase;
-static unsigned short s_counter;
+static unsigned short s_phase_counter;
 
 static void goto_phase(intro_phase_t next) {
     s_phase = next;
-    s_counter = 0;
+    s_phase_counter = 0;
     nes_ram[0x07F0] = (unsigned char)next;
 }
 
 void intro_phase_init(void) {
     s_phase = PHASE_TITLE_LOAD;
-    s_counter = 0;
+    s_phase_counter = 0;
     nes_ram[0x07F0] = (unsigned char)PHASE_TITLE_LOAD;
 }
 
 void intro_phase_step(void) {
-    s_counter++;
-    if (s_counter < 60u) return;
-
     switch (s_phase) {
-        case PHASE_TITLE_LOAD:    goto_phase(PHASE_TITLE_DISPLAY); break;
-        case PHASE_TITLE_DISPLAY: goto_phase(PHASE_TITLE_FADEOUT); break;
-        case PHASE_TITLE_FADEOUT: goto_phase(PHASE_BLACK_HOLD);    break;
-        case PHASE_BLACK_HOLD:    goto_phase(PHASE_STORY_LOAD);    break;
-        case PHASE_STORY_LOAD:    goto_phase(PHASE_STORY_RUN);     break;
-        case PHASE_STORY_RUN:     goto_phase(PHASE_TITLE_LOAD);    break;
-        default:                  __builtin_unreachable();
+        case PHASE_TITLE_LOAD:
+            intro_title_setup();
+            goto_phase(PHASE_TITLE_DISPLAY);
+            break;
+
+        case PHASE_TITLE_DISPLAY:
+            intro_title_step();
+            s_phase_counter++;
+            if (s_phase_counter >= TITLE_DISPLAY_FRAMES) {
+                intro_title_fade_reset();
+                intro_title_fade_apply(0);
+                goto_phase(PHASE_TITLE_FADEOUT);
+            }
+            break;
+
+        case PHASE_TITLE_FADEOUT:
+            intro_title_step();
+            intro_title_fade_step();
+            if (intro_title_fade_done()) {
+                intro_title_blackout();
+                goto_phase(PHASE_BLACK_HOLD);
+            }
+            break;
+
+        case PHASE_BLACK_HOLD:
+            s_phase_counter++;
+            if (s_phase_counter >= BLACK_HOLD_FRAMES) {
+                /* Story phases not wired yet (Task 5). Loop to title. */
+                goto_phase(PHASE_TITLE_LOAD);
+            }
+            break;
+
+        case PHASE_STORY_LOAD:
+        case PHASE_STORY_RUN:
+            /* Wired in Task 5. */
+            goto_phase(PHASE_TITLE_LOAD);
+            break;
+
+        default:
+            __builtin_unreachable();
     }
 }
