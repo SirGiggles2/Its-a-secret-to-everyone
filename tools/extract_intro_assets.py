@@ -529,7 +529,24 @@ def _emit_punct_chr(out_path: Path) -> None:
     custom-punctuation tile (comma + apostrophe). Just copy the static source
     with an updated header comment.
     """
+    # intro_punct_chr.c is hand-written (not derived from reference data).
+    # If the generated copy already exists in src/gen/ use it as the source;
+    # that avoids a circular dependency on the tools/intro_demo/ copy which
+    # was deleted in Task 6.  On a clean checkout the caller must supply the
+    # file via a different route (or restore it from git history).
+    gen_copy = out_path  # out_path IS src/gen/intro_punct_chr.c
+    if gen_copy.exists():
+        # Already present — nothing to do.  The file is hand-written and
+        # doesn't need re-generation from reference data.
+        return
+    # Fallback: try the legacy tools/intro_demo/ location (pre-Task-6).
     src_path = REPO / "tools" / "intro_demo" / "intro_punct_chr.c"
+    if not src_path.exists():
+        raise FileNotFoundError(
+            f"intro_punct_chr.c not found at {src_path} or {gen_copy}. "
+            "Restore it from git history: "
+            "git show HEAD:tools/intro_demo/intro_punct_chr.c > src/gen/intro_punct_chr.c"
+        )
     text = src_path.read_text()
     # Replace the intro_demo comment origin with extract_intro_assets provenance.
     text = text.replace(
