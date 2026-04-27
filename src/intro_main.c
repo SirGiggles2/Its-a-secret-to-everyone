@@ -29,7 +29,9 @@ static void wait_vblank(void) {
 
 void intro_main(void) {
     music_play(0x80);         /* SongIntro per audio_driver.asm:691 */
-    nes_ram[0x07F0] = 0xA1;   /* "we entered intro_main" sentinel */
+    nes_ram[0x07FF] = 0xA1;   /* persistent sentinel: intro_main entered
+                                 (separate address from $07F0 phase byte
+                                 so probe can observe both independently) */
     nes_ram[0x07F1] = 0;
     intro_phase_init();
 
