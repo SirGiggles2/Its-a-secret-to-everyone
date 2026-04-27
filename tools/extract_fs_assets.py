@@ -253,7 +253,13 @@ LINK_SPRITE_TILES  = [0x08, 0x09, 0x0A, 0x0B]  # NES OAM evidence: Mode1_WriteLi
                                                 # mode means $08→rows $08/$09 (left col top/bot),
                                                 # $0A→rows $0A/$0B (right col top/bot).
                                                 # Source: aldonunez/Z_02.asm:2698-2700
-HEART_CURSOR_TILE  = 0xF3                        # locked v1.R8
+HEART_CURSOR_TILE  = 0xF2                        # 8x16 sprite mode: OAM tile-byte $F3
+                                                 # → pattern table 1 (LSB), tile pair = $F2.
+                                                 # Top half of the 8x16 cursor lives at BG-
+                                                 # half tile $F2 (visible heart shape); the
+                                                 # bottom half is blank. Source: live FS CHR
+                                                 # dump (fs_chr.bin[0x1F20..0x1F30]) + Z_06
+                                                 # Mode1CursorSpriteTriplet OAM evidence.
 FONT_TILES_START   = 0x00
 FONT_TILES_END     = 0x64   # exclusive; covers 0x00-0x63 (100 tiles)
 BORDER_TILES       = [
@@ -296,10 +302,17 @@ def emit_link_sprite_chr() -> None:
 
 
 def emit_heart_cursor_chr() -> None:
-    """Emit src/gen/fs_heart_cursor_chr.c — 1 sprite tile (locked: 0xF3).
-    color_shift=0: same rationale as Link sprite — palette 3 colors live at 0..3."""
-    sp = _load_sprite_chr()
-    tiles = [_read_sprite_tile(HEART_CURSOR_TILE, sp)]
+    """Emit src/gen/fs_heart_cursor_chr.c — top half of NES 8x16 cursor sprite.
+
+    Cursor uses NES 8x16 sprite mode at File Select. OAM tile-byte $F3 selects
+    pattern table 1 + tile pair starting at $F2; the visible heart pixels live
+    in BG-half tile $F2 (rows 0-7), with $F3 blank. We render that single tile
+    as a Genesis 8x8 sprite (HEART_CHR_BASE in fs_render.c).
+
+    color_shift=0: NES color indices 0-3 map directly to Gen pixel values 0-3
+    of palette 3 (PAL_BG_CURSOR)."""
+    bg = _load_bg_chr()
+    tiles = [_read_bg_tile(HEART_CURSOR_TILE, bg)]
     _emit_chr_array(tiles, "fs_heart_cursor_chr", color_shift=0)
 
 
