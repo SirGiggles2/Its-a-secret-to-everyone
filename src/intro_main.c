@@ -9,15 +9,12 @@
  * rather than an extern linkage — the ASM symbol is an equ constant,
  * not a global label, so the linker cannot resolve it directly.
  *
- * For Task 2 this is a stub that:
- *   - Requests title music via music_play($80) (audio_driver.asm:691).
- *   - Writes a "we are alive" probe byte to nes_ram[$07F0].
- *   - Spins in wait_vblank() forever, bumping nes_ram[$07F1] each frame.
- *
- * Task 3+ wires the real phase machine in.
+ * Task 3 wires in the placeholder phase machine (intro_phase).
+ * Phase bodies will be filled in Tasks 4-5.
  */
 #include "intro_main.h"
 #include "nes_abi.h"   /* nes_ram[] base */
+#include "intro_phase.h"
 
 #define S_INTRO_FRAME_COUNTER (*(volatile unsigned long *)0x00FF0FF8)
 
@@ -32,11 +29,13 @@ static void wait_vblank(void) {
 
 void intro_main(void) {
     music_play(0x80);         /* SongIntro per audio_driver.asm:691 */
-    nes_ram[0x07F0] = 0xA1;   /* probe: intro_main entered */
-    nes_ram[0x07F1] = 0;      /* frame-tick probe (low byte) */
+    nes_ram[0x07F0] = 0xA1;   /* "we entered intro_main" sentinel */
+    nes_ram[0x07F1] = 0;
+    intro_phase_init();
 
     for (;;) {
         wait_vblank();
         nes_ram[0x07F1]++;
+        intro_phase_step();
     }
 }
