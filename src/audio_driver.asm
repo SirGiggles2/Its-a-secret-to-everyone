@@ -664,6 +664,7 @@ dmc_dbg_poll:
 ; music_play — request a song change
 ; Input: D0.b = song bitmap
 ;==============================================================================
+    xdef    music_play
 music_play:
     move.b  D0,(m_song_req).l
     rts

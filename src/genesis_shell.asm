@@ -436,10 +436,10 @@ EntryPoint:
     ; Without this restore, every cold boot would see all-$FF SRAM data.
     jsr     _sram_load_save_slots
 
-    ; Default VBlankISR dispatch = transpiled path so this task is a
-    ; no-op refactor. Task 2 will change the seed to $00 once intro_main
-    ; is wired in.
-    move.b  #1,(vblank_mode).l
+    ; Native intro path is the boot default. vblank_mode is flipped to 1
+    ; by the Start handoff trampoline (Task 9) immediately before resuming
+    ; the translated main loop.
+    move.b  #0,(vblank_mode).l
     clr.l   (s_intro_frame_counter).l
 
     ;--------------------------------------------------------------------------
@@ -458,7 +458,7 @@ EntryPoint:
     ; For T4, VBlank is masked by genesis boot SR ($2700) and IsrReset's SEI
     ; (now a NOP), so LoopForever just spins — that is the expected T4 state.
     ;--------------------------------------------------------------------------
-    jsr     IsrReset                ; never returns (RunGame → LoopForever)
+    jsr     intro_main          ; native intro owns the loop now
 
     ;--------------------------------------------------------------------------
     ; Safety net — should never be reached.
