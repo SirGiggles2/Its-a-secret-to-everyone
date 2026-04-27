@@ -57,6 +57,25 @@ HINT_Q1_VSRAM   equ $00FF081C  ; word: VSRAM to write at active event 1
 HINT_PEND_SPLIT equ $00FF081E  ; byte: 1 = current frame has an armed H-int split
 INTRO_SCROLL_MODE equ $00FF081F ; byte: active scroll mode for the current frame
 
+;------------------------------------------------------------------------------
+; vblank_mode — VBlankISR dispatch flag.
+;   $00 = native intro path (music_tick + s_intro_frame_counter only)
+;   $01 = transpiled path (existing PPUCTRL gate + IsrNmi + ags/oam flushes)
+; Owned by ASM. C never touches it. Boot ASM seeds $01 before IPL is lowered;
+; the Start handoff trampoline writes $01 immediately before resuming the
+; translated main loop. Single byte; aligned naturally.
+; Lives in the free tail of the NT_CACHE gap ($FF0FC0-$FF0FFF).
+;------------------------------------------------------------------------------
+vblank_mode         equ     $00FF0FFC   ; byte
+
+;------------------------------------------------------------------------------
+; s_intro_frame_counter — incremented by VBlankISR every frame the native
+; intro is active. C-side wait_vblank() spins on changes to this longword.
+; Owned by ASM (writer); C reads via extern declaration.
+; Lives at $FF0FF8 (longword, 4-byte aligned).
+;------------------------------------------------------------------------------
+s_intro_frame_counter   equ     $00FF0FF8   ; longword, 4 bytes
+
 ;==============================================================================
 ; VDP command long-words (written to VDP_CTRL to set VRAM/CRAM address)
 ;==============================================================================
@@ -417,6 +436,12 @@ EntryPoint:
     ; Without this restore, every cold boot would see all-$FF SRAM data.
     jsr     _sram_load_save_slots
 
+    ; Default VBlankISR dispatch = transpiled path so this task is a
+    ; no-op refactor. Task 2 will change the seed to $00 once intro_main
+    ; is wired in.
+    move.b  #1,(vblank_mode).l
+    clr.l   (s_intro_frame_counter).l
+
     ;--------------------------------------------------------------------------
     ; Lower interrupt mask so VBlank (level 6) can fire.
     ; A4/A5/D7 are initialised above — IsrNmi is now safe to execute.
@@ -451,12 +476,20 @@ HaltForever:
 ;==============================================================================
 VBlankISR:
     movem.l D0-D7/A0-A6,-(SP)
+    tst.b   (vblank_mode).l
+    bne.s   .vbi_transpiled
+    ; --- native intro path: music + frame counter only ---
+    bsr     music_tick
+    addq.l  #1,(s_intro_frame_counter).l
+    bra.s   .vbi_done
+.vbi_transpiled:
+    ; --- existing transpiled path (unchanged) ---
     ; Only call IsrNmi if PPUCTRL bit 7 = 1 (NMI enable).
     ; On NES, VBlank NMI fires only when PPUCTRL.$80 is set.
     ; During IsrReset warmup PPUCTRL=0, so IsrNmi is suppressed
     ; until RunGame writes $A0 to $2000.
     btst    #7,($00FF0804).l        ; PPU_CTRL = $FF0804, bit 7 = NMI enable
-    beq.s   .nmi_off
+    beq.s   .vbi_done
     addq.b  #1,($00FF1003).l        ; Phase 2.4: NMI probe counter
     ; Phase 1 (HW adoption): flush previous frame's SAT_SHADOW to VRAM $F800
     ; via 68k→VRAM DMA.  Must run before _ags_prearm/IsrNmi so the DMA
@@ -493,7 +526,7 @@ VBlankISR:
     ; VBlankISR's movem preserved from the interrupted caller (RunGame
     ; establishes A4 = $FF0000 before LoopForever).
     bsr     _ags_flush
-.nmi_off:
+.vbi_done:
     movem.l (SP)+,D0-D7/A0-A6
     rte
 
