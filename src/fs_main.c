@@ -1,9 +1,21 @@
 /* src/fs_main.c — entry from boot.asm (proof ROM) or intro_handoff (main ROM v6).
- * v1: render static layout + Link sprites once, then spin forever in vblank loop.
+ * v1: render static layout + Link sprites once at fs_init, hand off to phase loop.
+ * v2: phase machine + input dispatch + cursor nav (FS_LOAD → FS_NAV).
  */
 #include "fs_main.h"
 #include "fs_render.h"
+#include "fs_phase.h"
+#include "fs_input.h"
 #include "intro_common.h"
+
+/* Music driver hooks — proof ROM links music_stub.c (no-op);
+ * main ROM links the real audio driver. */
+extern void music_play(unsigned char bit);
+
+/* SONG_FS_BIT = 0 — original NES FS is silent; intro_to_file_select_trampoline
+ * (genesis_shell.asm:681) clears SongRequest before Mode 1. Call kept so call
+ * site exists if the design ever changes. */
+#define SONG_FS_BIT  0x00
 
 /* Generated assets — defined in src/gen/. */
 extern const uint8_t  fs_bg_chr_full[];        /* 242 tiles × 32 bytes = 7744 bytes */
@@ -86,17 +98,34 @@ static void fs_init(void) {
     vdp_load_cram_at(32u, &fs_palettes[1][0], 4u);  /* pal 1: BG attr=1 (LIFE) */
     vdp_load_cram_at(64u, &fs_palettes[2][0], 4u);  /* pal 2: Link sprite */
     vdp_load_cram_at(96u, &fs_palettes[3][0], 4u);  /* pal 3: heart cursor */
+
+    /* 5. Phase + input init (v2). */
+    fs_input_init();
+    fs_phase_init();
+
+    /* 6. Music: silent on FS per NES original; call site preserved. */
+    music_play(SONG_FS_BIT);
+}
+
+static void fs_input_dispatch(uint8_t edge) {
+    if (s_fs_phase != FS_NAV) return;
+    if ((edge & FS_BTN_UP) && s_fs_cursor > 0u) {
+        s_fs_cursor--;
+        fs_render_cursor(s_fs_cursor);
+    }
+    if ((edge & FS_BTN_DOWN) && s_fs_cursor < FS_CURSOR_MAX) {
+        s_fs_cursor++;
+        fs_render_cursor(s_fs_cursor);
+    }
+    /* A/Start/B handled in v3+ for slot pick / submenu enter / cancel. */
 }
 
 void fs_main(void) {
     fs_init();
-    fs_render_clear_screen();
-    fs_render_static_layout();
-    fs_render_cursor(0);          /* heart cursor at slot 0 (initial selection) */
-    fs_render_all_slots();        /* Link sprites for all 3 save slots */
     vdp_display_on();
     for (;;) {
         wait_vblank();
-        /* Phase machine + input poll added v2. */
+        fs_phase_step();
+        fs_input_dispatch(fs_input_pressed());
     }
 }

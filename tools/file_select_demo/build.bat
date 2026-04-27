@@ -49,6 +49,18 @@ echo [fs_demo] Compiling src\fs_render.c
 "%M68K_GCC%" -B "%M68K_BIN%\\" %CFLAGS% -c "%SRC_DIR%\fs_render.c" -o "%OUT_DIR%\fs_render.o"
 if errorlevel 1 exit /b 1
 
+echo [fs_demo] Compiling src\fs_phase.c
+"%M68K_GCC%" -B "%M68K_BIN%\\" %CFLAGS% -c "%SRC_DIR%\fs_phase.c" -o "%OUT_DIR%\fs_phase.o"
+if errorlevel 1 exit /b 1
+
+echo [fs_demo] Compiling src\fs_input.c
+"%M68K_GCC%" -B "%M68K_BIN%\\" %CFLAGS% -c "%SRC_DIR%\fs_input.c" -o "%OUT_DIR%\fs_input.o"
+if errorlevel 1 exit /b 1
+
+echo [fs_demo] Compiling tools\file_select_demo\music_stub.c
+"%M68K_GCC%" -B "%M68K_BIN%\\" %CFLAGS% -c "%DEMO_DIR%\music_stub.c" -o "%OUT_DIR%\music_stub.o"
+if errorlevel 1 exit /b 1
+
 echo [fs_demo] Compiling gen\fs_palette.c
 "%M68K_GCC%" -B "%M68K_BIN%\\" %CFLAGS% -c "%GEN_DIR%\fs_palette.c" -o "%OUT_DIR%\fs_palette.o"
 if errorlevel 1 exit /b 1
@@ -95,6 +107,9 @@ echo [fs_demo] Linking
     "%OUT_DIR%\intro_common.o" ^
     "%OUT_DIR%\fs_main.o" ^
     "%OUT_DIR%\fs_render.o" ^
+    "%OUT_DIR%\fs_phase.o" ^
+    "%OUT_DIR%\fs_input.o" ^
+    "%OUT_DIR%\music_stub.o" ^
     "%OUT_DIR%\fs_palette.o" ^
     "%OUT_DIR%\fs_static_tilemap.o" ^
     "%OUT_DIR%\fs_static_attr.o" ^
