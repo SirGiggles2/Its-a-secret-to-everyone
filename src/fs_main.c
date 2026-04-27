@@ -67,6 +67,11 @@ static void vdp_load_cram_at(unsigned short cram_byte_addr,
  *   Tile 0x104        Heart cursor CHR
  */
 static void fs_init(void) {
+    /* 0. Force plane size H32xV32. Proof ROM boot.asm sets this directly, but
+     *    main ROM intro_handoff sets V64 before calling fs_main; our nametable
+     *    writes assume V32 stride (32 cells × 2 bytes = 64-byte rows). */
+    vdp_set_mode_v32();
+
     /* 1. Upload full BG CHR block to VRAM tile 0x00 (242 tiles × 32 bytes = 7744 bytes). */
     vdp_dma_to_vram((unsigned long)fs_bg_chr_full,
                     (unsigned short)(0x00u * 32u),

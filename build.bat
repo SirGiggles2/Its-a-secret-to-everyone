@@ -92,6 +92,10 @@ echo [2a.0/4] Extracting intro assets from reference data...
 "%PYTHON%" "%ROOT%\tools\extract_intro_assets.py"
 if errorlevel 1 exit /b 1
 
+echo [2a.0b/4] Extracting File Select assets from live CHR-RAM dump...
+"%PYTHON%" "%ROOT%\tools\extract_fs_assets.py"
+if errorlevel 1 exit /b 1
+
 if not exist "%C_OBJ_DIR%" mkdir "%C_OBJ_DIR%"
 
 rem ---------------------------------------------------------------------------
@@ -105,20 +109,26 @@ rem a separator so it concatenates e.g. "bin\" + "cc1.exe" to find cc1.
 rem cmd parses a trailing backslash+space as a line-continuation in some
 rem contexts, so pass the -B arg SEPARATELY (not from a joined variable).
 rem ---------------------------------------------------------------------------
-set "C_SOURCES=c_runtime core_runtime c_move_object c_wanderer object_runtime enemy_runtime enemy_common_runtime enemy_walker_runtime enemy_wanderer_runtime enemy_block_runtime enemy_wallmaster_runtime enemy_flyer_runtime enemy_boss_runtime enemy_gleeok_runtime enemy_dodongo_runtime enemy_manhandla_runtime enemy_lamnola_runtime enemy_projectile_runtime uw_person_runtime cave_runtime hud_runtime item_runtime weapon_runtime world_runtime sprite_runtime combat_runtime collision_runtime link_collision_runtime progress_runtime targeting_runtime trap_runtime room_runtime room_load_runtime room_mode_runtime room_transfer_runtime room_player_runtime room_object_runtime frontend_runtime save_menu_runtime intro_common intro_story intro_handoff intro_main intro_phase intro_title"
-set "C_GEN_SOURCES=z_01 z_02 z_03 z_04 z_05 z_06 z_07 intro_font_chr intro_art_chr intro_palette intro_story_tilemap intro_restore_chr intro_restore_palette intro_title_bg_chr intro_title_sprite_chr intro_title_palette intro_title_tilemap intro_title_fade intro_title_glow intro_common_bg_chr intro_sprite_chr intro_misc_chr intro_punct_chr intro_blink_chr intro_combined_palette intro_treasures_tilemap"
-set "C_OBJS="
+set "C_SOURCES=c_runtime core_runtime c_move_object c_wanderer object_runtime enemy_runtime enemy_common_runtime enemy_walker_runtime enemy_wanderer_runtime enemy_block_runtime enemy_wallmaster_runtime enemy_flyer_runtime enemy_boss_runtime enemy_gleeok_runtime enemy_dodongo_runtime enemy_manhandla_runtime enemy_lamnola_runtime enemy_projectile_runtime uw_person_runtime cave_runtime hud_runtime item_runtime weapon_runtime world_runtime sprite_runtime combat_runtime collision_runtime link_collision_runtime progress_runtime targeting_runtime trap_runtime room_runtime room_load_runtime room_mode_runtime room_transfer_runtime room_player_runtime room_object_runtime frontend_runtime save_menu_runtime intro_common intro_story intro_handoff intro_main intro_phase intro_title fs_main fs_render fs_phase fs_input"
+set "C_GEN_SOURCES=z_01 z_02 z_03 z_04 z_05 z_06 z_07 intro_font_chr intro_art_chr intro_palette intro_story_tilemap intro_restore_chr intro_restore_palette intro_title_bg_chr intro_title_sprite_chr intro_title_palette intro_title_tilemap intro_title_fade intro_title_glow intro_common_bg_chr intro_sprite_chr intro_misc_chr intro_punct_chr intro_blink_chr intro_combined_palette intro_treasures_tilemap fs_palette fs_static_tilemap fs_static_attr fs_link_sprite_chr fs_heart_cursor_chr fs_bg_chr_full"
+rem Write object list to response file during compile loop. CMD line-length
+rem limit (~8KB) breaks once %C_OBJS% accumulates too many fs_*/intro_*
+rem paths. Convert backslashes to forward slashes in the response file —
+rem ld treats backslashes as escape sequences when reading @file args.
+set "LD_RESP=%C_OBJ_DIR%\link_objs.rsp"
+set "OBJ_DIR_FS=%C_OBJ_DIR:\=/%"
+if exist "%LD_RESP%" del "%LD_RESP%"
 for %%F in (%C_SOURCES%) do (
     echo [2a/4] Compiling %%F.c...
     "%M68K_GCC%" -B "%M68K_BIN%\\" -m68000 -ffreestanding -nostdlib -nostartfiles -ffixed-a4 -fno-builtin -fomit-frame-pointer -fno-PIC -fno-common -O2 -I "%ROOT%\src" -c "%ROOT%\src\%%F.c" -o "%C_OBJ_DIR%\%%F.o"
     if errorlevel 1 exit /b 1
-    call set "C_OBJS=%%C_OBJS%% "%C_OBJ_DIR%\%%F.o""
+    >> "%LD_RESP%" echo "%OBJ_DIR_FS%/%%F.o"
 )
 for %%F in (%C_GEN_SOURCES%) do (
     echo [2a/4] Compiling gen/%%F.c...
     "%M68K_GCC%" -B "%M68K_BIN%\\" -m68000 -ffreestanding -nostdlib -nostartfiles -ffixed-a4 -fno-builtin -fomit-frame-pointer -fno-PIC -fno-common -O2 -I "%ROOT%\src" -c "%ROOT%\src\gen\%%F.c" -o "%C_OBJ_DIR%\%%F.o"
     if errorlevel 1 exit /b 1
-    call set "C_OBJS=%%C_OBJS%% "%C_OBJ_DIR%\%%F.o""
+    >> "%LD_RESP%" echo "%OBJ_DIR_FS%/%%F.o"
 )
 
 echo [2/4] Assembling genesis_shell.asm -^> ELF object...
@@ -131,7 +141,7 @@ if errorlevel 1 (
 popd >nul
 
 echo [3/4] Linking ELF -^> whatif.elf...
-"%M68K_LD%" -T "%LD_SCRIPT%" -o "%ELF_OUT%" "%ELF_OBJ%" %C_OBJS%
+"%M68K_LD%" -T "%LD_SCRIPT%" -o "%ELF_OUT%" "%ELF_OBJ%" @"%LD_RESP%"
 if errorlevel 1 exit /b 1
 
 echo [gate] verifying gen/ forwarders ...

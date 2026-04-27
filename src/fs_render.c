@@ -225,7 +225,7 @@ void fs_render_cursor(uint8_t row) {
     static const uint8_t cursor_ys[7] = {
         0x44, 0x5C, 0x74, 0x90, 0xA0,    /* slot0..ERASE shifted up 24 */
         0xB8,  /* PLAYERS — row 23 (Y = 23*8) */
-        0xC0   /* OPTIONS — row 24 (Y = 24*8) */
+        0xC8   /* OPTIONS — row 25 (Y = 25*8); row 24 is visual gap */
     };
     if (row >= 7) return;
 
@@ -264,12 +264,14 @@ void fs_render_all_slots(void) {
  * ---------------------------------------------------------------------------
  */
 /* v3 row layout (post FS_ROW_SHIFT=3):
- *   row 22 = bottom border line (NES row 25 shifted up to 22)
+ *   row 22 = side-rails only (replaces shifted-down NES bottom border)
  *   row 23 = PLAYERS  N
- *   row 24 = OPTIONS
- * Both inside the shifted border. */
+ *   row 24 = side-rails only (visual gap between PLAYERS and OPTIONS)
+ *   row 25 = OPTIONS
+ *   row 26 = bottom border line
+ * All inside the extended border. */
 #define PLAYERS_ROW   23u
-#define OPTIONS_ROW   24u
+#define OPTIONS_ROW   25u
 #define LABEL_COL      6u   /* matches "  COPY SAVE" indent inside border */
 #define DIGIT_COL     15u   /* "PLAYERS" at col 6..12, 2 spaces, digit at col 15 */
 #define EXTRA_PAL      0u   /* palette 0 — same as COPY/ERASE labels */
@@ -283,7 +285,7 @@ static const uint8_t TILE_OPTIONS[7] = { 0x18, 0x19, 0x1D, 0x12, 0x18, 0x17, 0x1
 #define TILE_BORDER_BR   0x6Du  /* NES bottom-right corner tile (row 25 col 28) */
 #define BORDER_LEFT_COL   3u
 #define BORDER_RIGHT_COL 28u
-#define BOTTOM_BORDER_ROW 25u   /* v3: extended bottom border row (post-shift target) */
+#define BOTTOM_BORDER_ROW 26u   /* v3: extended bottom border row (post-shift target) */
 
 static unsigned short s_extra_row_buf[32];
 
@@ -321,10 +323,12 @@ static void render_bottom_border_row(unsigned short row) {
 }
 
 void fs_render_extra_rows(void) {
-    /* Erase the shifted bottom border that landed at row (25 - SHIFT) = 22, and
-     * extend the side rails through PLAYERS + OPTIONS. */
-    render_side_only_row((unsigned short)(BOTTOM_BORDER_ROW - FS_ROW_SHIFT));
+    /* Erase the shifted bottom border that landed at row (NES 25 - SHIFT) = 22,
+     * insert a visual gap row 24 between PLAYERS and OPTIONS, extend the side
+     * rails through to row 25, and close the box with a bottom border row. */
+    render_side_only_row(22u);
     render_label_row(PLAYERS_ROW, TILE_PLAYERS);
+    render_side_only_row(24u);                     /* gap row between PLAYERS and OPTIONS */
     render_label_row(OPTIONS_ROW, TILE_OPTIONS);
     render_bottom_border_row(BOTTOM_BORDER_ROW);
 }

@@ -1,15 +1,18 @@
 /* src/intro_handoff.c
  *
  * C side of Start press handoff. Performs VDP cleanup so the screen
- * is in a known state (display off, planes blank, V64 mode, vscroll=0)
- * before the ASM trampoline restores the translated runtime register
- * contract and re-enables transpiled NMI handling.
+ * is in a known state (display off, planes blank, vscroll=0) before
+ * fs_main takes over. fs_main sets V32 internally then renders the
+ * native File Select.
+ *
+ * v6 minimal-promote: replaces the transpiled FS trampoline call with
+ * direct fs_main entry. fs_main never returns; back-handoff to transpiled
+ * gameplay is added in v6.2 (FS_HANDOFF phase + ASM trampoline).
  */
 #include "intro_handoff.h"
-#include "intro_common.h"   /* vdp_display_off, vdp_set_mode_v64, vdp_set_vscroll, vdp_write_nametable_row */
+#include "intro_common.h"   /* vdp_display_off, vdp_set_vscroll, vdp_write_nametable_row */
+#include "fs_main.h"
 #include "nes_abi.h"
-
-extern void intro_to_file_select_trampoline(void);   /* in genesis_shell.asm */
 
 static void clear_plane(unsigned short plane_base) {
     unsigned short zero_row[32];
@@ -26,9 +29,9 @@ void intro_start_pressed(void) {
     vdp_display_off();
     clear_plane(0xC000);
     clear_plane(0xE000);
-    vdp_set_mode_v64();
     vdp_set_vscroll(0);
 
-    /* Tail call into ASM trampoline. Trampoline does not return. */
-    intro_to_file_select_trampoline();
+    /* Native File Select. fs_main sets its own VDP plane-size + CHR + palettes
+     * + sprite table + display_on. Never returns. */
+    fs_main();
 }
