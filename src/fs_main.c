@@ -6,11 +6,10 @@
 #include "intro_common.h"
 
 /* Generated assets — defined in src/gen/. */
-extern const uint8_t  fs_bg_chr_full[];        /* 239 tiles × 32 bytes = 7648 bytes */
+extern const uint8_t  fs_bg_chr_full[];        /* 242 tiles × 32 bytes = 7744 bytes */
 extern const uint8_t  fs_link_sprite_chr[];    /* 4 tiles × 32 bytes = 128 bytes */
 extern const uint8_t  fs_heart_cursor_chr[];   /* 1 tile  × 32 bytes =  32 bytes */
-extern const uint16_t fs_bg_palette[4];        /* BG palette 0: black/white/dark/blue */
-extern const uint16_t fs_link_palettes[4][4];  /* 4 Link palettes × 4 colors */
+extern const uint16_t fs_palettes[4][4];       /* 4 Genesis CRAM palettes × 4 colors */
 
 #define VDP_CTRL_WORD (*(volatile unsigned short *)0x00C00004)
 
@@ -42,30 +41,37 @@ static void vdp_load_cram_at(unsigned short cram_byte_addr,
 /* fs_init: upload CHR data and all palettes once at boot.
  *
  * CRAM layout (64 words = 4 palettes × 16 colors on Genesis):
- *   Palette 0 (CRAM byte offset   0): BG palette — black bg, white text
- *   Palette 1 (CRAM byte offset  32): Link slot 0 (green)
- *   Palette 2 (CRAM byte offset  64): Link slot 1 (blue)
- *   Palette 3 (CRAM byte offset  96): Link slot 2 (red) / dim
+ *   Palette 0 (CRAM byte 0)  : NES BG pal 0 (attr=0 cells: black bg, white text)
+ *   Palette 1 (CRAM byte 32) : NES BG pal 1 (attr=1 cells: LIFE/heart icon area)
+ *   Palette 2 (CRAM byte 64) : NES sprite pal 0 / Redux green-Link override (Link sprites)
+ *   Palette 3 (CRAM byte 96) : NES sprite pal 3 (heart cursor sprite)
  *
- * BG cells use palette 0. Sprite entries use palette indices 1-3 (link) or 3 (dim/cursor).
- * To write palette N to Genesis sprite with palette selector=N in tile_attr:
- *   sprite palette N maps to CRAM palette N (same CRAM space as BG).
- *   BG tiles with palette bits=0 → CRAM palette 0.
+ * v1.fix2: Link slot tinting (blue/red) deferred — Gen 4-pal budget spent on
+ * BG 0/1 + Link + cursor. Multi-pal BG (LIFE column) is the visual gate.
  *
  * VRAM layout:
- *   Tile 0x00..0xEE  BG CHR full block (font 0x00-0x63, gaps, border 0xD4-0xEE)
- *   Tile 0x80..0x83  Link sprite CHR  (overwrites zero-gap at 0x80-0x83)
- *   Tile 0x84        Heart cursor CHR (overwrites zero-gap at 0x84)
+ *   Tile 0x00..0xF1  BG CHR full block (242 tiles)
+ *   Tile 0x100..0x103  Link sprite CHR
+ *   Tile 0x104        Heart cursor CHR
  */
 static void fs_init(void) {
-    /* 1. Upload full BG CHR block to VRAM tile 0x00 (242 tiles × 32 bytes = 7744 bytes).
-     *    CommonBG(112)+DemoBG(130)=242 tiles, covers nametable tile refs 0x00-0xF0. */
+    /* 1. Upload full BG CHR block to VRAM tile 0x00 (242 tiles × 32 bytes = 7744 bytes). */
     vdp_dma_to_vram((unsigned long)fs_bg_chr_full,
                     (unsigned short)(0x00u * 32u),
                     (unsigned short)(242u * 32u));
 
-    /* 2. Upload Link sprite CHR to VRAM tile 0x100 (above BG block, no collision).
-     *    4 tiles × 32 bytes = 128 bytes. VRAM offset = 0x100 * 32 = 0x2000. */
+    /* 1a. Zero VRAM tile 0 — both Plane A and Plane B nametables default to cells
+     *     that reference tile 0; if tile 0 holds NES font glyph "0" (which it does
+     *     in fs_bg_chr_full), the screen background fills with "0" digits. Forcing
+     *     tile 0 to all-transparent makes cleared cells render as the BG color. */
+    {
+        volatile unsigned long  *vctrl = (volatile unsigned long  *)0x00C00004;
+        volatile unsigned short *vdata = (volatile unsigned short *)0x00C00000;
+        *vctrl = 0x40000000UL;  /* VRAM write at $0000 */
+        for (unsigned short i = 0; i < 16; i++) *vdata = 0;
+    }
+
+    /* 2. Upload Link sprite CHR to VRAM tile 0x100 (above BG block, no collision). */
     vdp_dma_to_vram((unsigned long)fs_link_sprite_chr,
                     (unsigned short)(0x100u * 32u),
                     (unsigned short)(4u * 32u));
@@ -75,16 +81,11 @@ static void fs_init(void) {
                     (unsigned short)(0x104u * 32u),
                     (unsigned short)(1u * 32u));
 
-    /* 4. Load BG palette into CRAM palette 0 (black bg, white text). */
-    vdp_load_cram_at(0u, fs_bg_palette, 4u);
-
-    /* 5. Load Link palettes into CRAM palettes 1-3 (4 colors each).
-     *    palette 1 = slot 0 green, palette 2 = slot 1 blue,
-     *    palette 3 = slot 2 red OR dim (empty slots).
-     *    v1 mock: slot 0 occupied, slots 1/2 empty → dim wins at pal 3. */
-    vdp_load_cram_at(32u,  &fs_link_palettes[0][0], 4u);  /* CRAM pal 1 = slot 0 green */
-    vdp_load_cram_at(64u,  &fs_link_palettes[1][0], 4u);  /* CRAM pal 2 = slot 1 blue  */
-    vdp_load_cram_at(96u,  &fs_link_palettes[3][0], 4u);  /* CRAM pal 3 = dim (v1: slots 1+2 empty) */
+    /* 4. Load all 4 CRAM palettes (4 colors each at CRAM offsets 0/32/64/96). */
+    vdp_load_cram_at( 0u, &fs_palettes[0][0], 4u);  /* pal 0: BG attr=0 */
+    vdp_load_cram_at(32u, &fs_palettes[1][0], 4u);  /* pal 1: BG attr=1 (LIFE) */
+    vdp_load_cram_at(64u, &fs_palettes[2][0], 4u);  /* pal 2: Link sprite */
+    vdp_load_cram_at(96u, &fs_palettes[3][0], 4u);  /* pal 3: heart cursor */
 }
 
 void fs_main(void) {

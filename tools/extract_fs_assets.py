@@ -104,57 +104,89 @@ def _read_sprite_tile(tile_idx: int, sprite_chr: bytes) -> bytes:
 # ---------------------------------------------------------------------------
 
 def emit_palette() -> None:
-    """Emit src/gen/fs_palette.c with BG palette + Link bright/dim palettes.
+    """Emit src/gen/fs_palette.c — 4 Genesis CRAM palettes for FS render.
 
-    BG palette (palette 0) from aldonunez/Z_06.asm MenuPalettesTransferBuf:
-        BG pal 0: $0F,$30,$00,$12  → black, white, dark, blue
-    Link sprite palettes from Zelda1-Redux file_select.asm:75-78:
-        $0F,$29,$27,$17    ; Black, green, beige, brown  (slot 0 saved / green Link)
-        $0F,$22,$27,$17    ; Black, blue, beige, brown   (slot 1 saved / blue Link)
-        $0F,$16,$27,$17    ; Black, red, beige, brown    (slot 2 saved / red Link)
-        dim variant: placeholder until NES capture validates
+    Genesis has 4 CRAM palettes total (BG + sprites share). NES File Select
+    nametable attribute table uses BG pal 0 + BG pal 1; sprites need green Link
+    + heart cursor. Map:
+
+        Gen pal 0 = NES BG pal 0 ($0F,$30,$00,$12)        attr=0 cells
+        Gen pal 1 = NES BG pal 1 ($0F,$16,$27,$36)        attr=1 cells (LIFE/heart area)
+        Gen pal 2 = NES sprite pal 0 ($0F,$29,$27,$17)    Link slots (green; Redux override)
+        Gen pal 3 = NES sprite pal 3 ($0F,$15,$27,$30)    heart cursor
+
+    Source: aldonunez/Z_06.asm:444-449 MenuPalettesTransferBuf (BG pal 1 + cursor pal),
+            Zelda1-Redux/src/code/menus/file_select.asm:75-78 (Link palette overrides).
+
+    v1.fix2 limitation: all 3 Link sprite slots use Gen pal 2 (green). Per-slot
+    color tinting (blue slot 1, red slot 2) deferred — Gen 4-palette budget is
+    spent on BG 0/1 + Link + cursor. v3 SRAM may revisit.
     """
-    # BG palette 0: NES colors from MenuPalettesTransferBuf (Z_06.asm:444-448)
-    # $3F00: BG pal 0 = $0F,$30,$00,$12 (black bg, white text, black, blue)
-    BG_PAL0 = (0x0F, 0x30, 0x00, 0x12)
-
-    # Link sprite palettes (sprite palette 0-2 + dim)
-    # From Z_06.asm MenuPalettesTransferBuf sprite rows (after 4 BG palettes):
-    #   sprite pal 0: $0F,$29,$27,$07  green Link
-    #   sprite pal 1: $0F,$22,$27,$07  blue Link
-    #   sprite pal 2: $0F,$26,$27,$07  red Link
-    # Redux overrides (file_select.asm:75-78):
-    #   $0F,$29,$27,$17 / $0F,$22,$27,$17 / $0F,$16,$27,$17
-    LINK_PALETTES = [
-        (0x0F, 0x29, 0x27, 0x17),  # slot 0 (green)
-        (0x0F, 0x22, 0x27, 0x17),  # slot 1 (blue)
-        (0x0F, 0x16, 0x27, 0x17),  # slot 2 (red)
-        (0x0F, 0x00, 0x10, 0x10),  # dim / empty slot
+    PALETTES = [
+        # Gen pal 0 — BG pal 0: black bg, white text, black, blue (Z_06.asm:445)
+        (0x0F, 0x30, 0x00, 0x12),
+        # Gen pal 1 — BG pal 1: black, red, beige, light-yellow (Z_06.asm:446)
+        # Used by attr=1 region: LIFE column header + heart-count icons.
+        (0x0F, 0x16, 0x27, 0x36),
+        # Gen pal 2 — Link sprite palette: black, green, beige, brown
+        # Redux override (file_select.asm:75) of sprite pal 0; v1.fix2 uses for ALL slots.
+        (0x0F, 0x29, 0x27, 0x17),
+        # Gen pal 3 — heart cursor sprite palette: black, light-red, beige, white
+        # NES sprite pal 3 (Z_06.asm:449); cursor sprite has attr=$03 → palette 3.
+        (0x0F, 0x15, 0x27, 0x30),
     ]
 
     out = []
     out.append("/* AUTO-GENERATED — see tools/extract_fs_assets.py */")
-    out.append("/* BG pal 0: aldonunez/Z_06.asm:444 MenuPalettesTransferBuf */")
-    out.append("/* Link palettes: Zelda1-Redux/src/code/menus/file_select.asm:75-78 */")
+    out.append("/* fs_palettes[4][4]: 4 Genesis CRAM palettes × 4 colors each.")
+    out.append(" *   pal 0 = NES BG pal 0 (attr=0 cells)")
+    out.append(" *   pal 1 = NES BG pal 1 (attr=1 cells: LIFE/hearts)")
+    out.append(" *   pal 2 = NES sprite pal 0 / Redux override (Link, all slots)")
+    out.append(" *   pal 3 = NES sprite pal 3 (heart cursor)")
+    out.append(" * Source: aldonunez/Z_06.asm:444-449 MenuPalettesTransferBuf,")
+    out.append(" *         Zelda1-Redux/src/code/menus/file_select.asm:75-78 */")
     out.append("#include <stdint.h>")
-
-    # BG palette 0 (4 colors)
-    bg_cram = [nes_color_to_gen_cram(c) for c in BG_PAL0]
-    out.append("/* BG palette 0: black bg, white text, black, blue */")
-    out.append("const uint16_t fs_bg_palette[4] = {")
-    out.append("    " + ", ".join(f"0x{w:04X}" for w in bg_cram) + ",")
-    out.append("};")
-
-    # Link sprite palettes (4 × 4 colors)
-    out.append("/* fs_link_palettes[4][4]: 0=green 1=blue 2=red 3=dim */")
-    out.append("const uint16_t fs_link_palettes[4][4] = {")
-    for pal in LINK_PALETTES:
+    out.append("const uint16_t fs_palettes[4][4] = {")
+    for pal in PALETTES:
         cram = [nes_color_to_gen_cram(c) for c in pal]
         out.append("    { " + ", ".join(f"0x{w:04X}" for w in cram) + " },")
     out.append("};")
 
     (OUT_DIR / "fs_palette.c").write_text("\n".join(out) + "\n")
     print("[fs] emitted fs_palette.c")
+
+
+# ---------------------------------------------------------------------------
+# v1.fix2 — Static attribute table
+# ---------------------------------------------------------------------------
+
+def emit_static_attr() -> None:
+    """Emit src/gen/fs_static_attr.c — 64-byte NES attribute table.
+
+    Bytes 960..1024 of fs_nt.bin. NES PPU attribute layout:
+      8 cols × 8 rows = 64 bytes; each byte covers a 4×4 tile-cell region
+      (32×32 px). Bits per 2×2 quadrant:
+        bits 1:0 = top-left palette (0..3)
+        bits 3:2 = top-right palette
+        bits 5:4 = bottom-left palette
+        bits 7:6 = bottom-right palette
+    fs_render decodes per cell at write time."""
+    if not NT_DUMP.exists():
+        sys.stderr.write(f"ERROR: nametable dump missing: {NT_DUMP}\n")
+        sys.exit(1)
+    raw = NT_DUMP.read_bytes()
+    attr = raw[960:1024]
+    out = []
+    out.append("/* AUTO-GENERATED — see tools/extract_fs_assets.py */")
+    out.append("/* Source: tools/file_select_test/ref/fs_nt.bin[960:1024] */")
+    out.append("#include <stdint.h>")
+    out.append("const uint8_t fs_static_attr[64] = {")
+    for r in range(8):
+        line = "    " + ", ".join(f"0x{attr[r * 8 + c]:02X}" for c in range(8)) + ","
+        out.append(line)
+    out.append("};")
+    (OUT_DIR / "fs_static_attr.c").write_text("\n".join(out) + "\n")
+    print("[fs] emitted fs_static_attr.c")
 
 
 # ---------------------------------------------------------------------------
@@ -254,17 +286,21 @@ def emit_link_sprite_chr() -> None:
 
     Tiles 0x08-0x0B: left-col top/bot + right-col top/bot for front-facing Link
     in 8x16 sprite mode (Mode1_WriteLinkSprites, aldonunez/Z_02.asm:2698).
+
+    color_shift=0: NES color indices 0-3 map directly to Gen pixel values 0-3.
+    Genesis palette 2 (Link) has 4 colors loaded at CRAM byte offsets 0..7 of pal 2.
     """
     sp = _load_sprite_chr()
     tiles = [_read_sprite_tile(ti, sp) for ti in LINK_SPRITE_TILES]
-    _emit_chr_array(tiles, "fs_link_sprite_chr", color_shift=4)
+    _emit_chr_array(tiles, "fs_link_sprite_chr", color_shift=0)
 
 
 def emit_heart_cursor_chr() -> None:
-    """Emit src/gen/fs_heart_cursor_chr.c — 1 sprite tile (locked: 0xF3)."""
+    """Emit src/gen/fs_heart_cursor_chr.c — 1 sprite tile (locked: 0xF3).
+    color_shift=0: same rationale as Link sprite — palette 3 colors live at 0..3."""
     sp = _load_sprite_chr()
     tiles = [_read_sprite_tile(HEART_CURSOR_TILE, sp)]
-    _emit_chr_array(tiles, "fs_heart_cursor_chr", color_shift=4)
+    _emit_chr_array(tiles, "fs_heart_cursor_chr", color_shift=0)
 
 
 def emit_font_chr() -> None:
@@ -364,6 +400,7 @@ if __name__ == "__main__":
     # v1.1 — scaffold
     emit_palette()
     emit_static_tilemap()
+    emit_static_attr()
 
     # v1.2 — CHR extraction
     emit_chr_blocks()

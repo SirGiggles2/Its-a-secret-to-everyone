@@ -16,6 +16,9 @@ build_output.log
 tools/file_select_test/out/
 tools/intro_test/out/
 
+# FS demo build artifacts
+tools/file_select_demo/out/
+
 # Local workspace scratch
 .claude/scheduled_tasks.lock
 .claude/worktrees/

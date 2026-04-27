@@ -57,6 +57,10 @@ echo [fs_demo] Compiling gen\fs_static_tilemap.c
 "%M68K_GCC%" -B "%M68K_BIN%\\" %CFLAGS% -c "%GEN_DIR%\fs_static_tilemap.c" -o "%OUT_DIR%\fs_static_tilemap.o"
 if errorlevel 1 exit /b 1
 
+echo [fs_demo] Compiling gen\fs_static_attr.c
+"%M68K_GCC%" -B "%M68K_BIN%\\" %CFLAGS% -c "%GEN_DIR%\fs_static_attr.c" -o "%OUT_DIR%\fs_static_attr.o"
+if errorlevel 1 exit /b 1
+
 echo [fs_demo] Compiling gen\fs_link_sprite_chr.c
 "%M68K_GCC%" -B "%M68K_BIN%\\" %CFLAGS% -c "%GEN_DIR%\fs_link_sprite_chr.c" -o "%OUT_DIR%\fs_link_sprite_chr.o"
 if errorlevel 1 exit /b 1
@@ -93,6 +97,7 @@ echo [fs_demo] Linking
     "%OUT_DIR%\fs_render.o" ^
     "%OUT_DIR%\fs_palette.o" ^
     "%OUT_DIR%\fs_static_tilemap.o" ^
+    "%OUT_DIR%\fs_static_attr.o" ^
     "%OUT_DIR%\fs_link_sprite_chr.o" ^
     "%OUT_DIR%\fs_heart_cursor_chr.o" ^
     "%OUT_DIR%\fs_font_chr.o" ^
