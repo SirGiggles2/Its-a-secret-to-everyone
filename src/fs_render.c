@@ -16,7 +16,8 @@ extern const uint8_t  fs_border_chr[];
 void fs_render_clear_screen(void) {
     unsigned short zero_row[32];
     for (unsigned short i = 0; i < 32; i++) zero_row[i] = 0;
-    for (unsigned short row = 0; row < 28; row++) {
+    /* V32 plane = 32 rows; clear all 30 visible rows. */
+    for (unsigned short row = 0; row < 30; row++) {
         vdp_write_nametable_row(PLANE_A_BASE, row, zero_row);
     }
 }
@@ -24,11 +25,11 @@ void fs_render_clear_screen(void) {
 void fs_render_static_layout(void) {
     /* Translate fs_static_tilemap byte stream to plane A nametable rows.
      * Genesis cell = 16 bits: priority(1) | palette(2) | flipV(1) | flipH(1) | tile(11).
-     * NES tile byte goes into low 11 bits; palette = 0; no flip. Adjust palette
-     * for header rows (border cells need palette 1 if border CHR uploaded to slot 16+).
+     * NES tile byte goes into low 11 bits; palette = 0; no flip.
+     * V32 plane fits all 30 NES rows (PLAYERS/OPTIONS rows live at 28..29).
      */
     unsigned short cells[32];
-    for (unsigned short row = 0; row < 30 && row < 28; row++) {
+    for (unsigned short row = 0; row < 30; row++) {
         for (unsigned short col = 0; col < 32; col++) {
             uint8_t tile = fs_static_tilemap[row * 32 + col];
             cells[col] = (uint16_t)tile;  /* palette 0, no flip */
