@@ -88,6 +88,10 @@ if not exist "%M68K_LD%" (
     exit /b 1
 )
 
+echo [2a.0/4] Extracting intro assets from reference data...
+"%PYTHON%" "%ROOT%\tools\extract_intro_assets.py"
+if errorlevel 1 exit /b 1
+
 if not exist "%C_OBJ_DIR%" mkdir "%C_OBJ_DIR%"
 
 rem ---------------------------------------------------------------------------
@@ -101,8 +105,8 @@ rem a separator so it concatenates e.g. "bin\" + "cc1.exe" to find cc1.
 rem cmd parses a trailing backslash+space as a line-continuation in some
 rem contexts, so pass the -B arg SEPARATELY (not from a joined variable).
 rem ---------------------------------------------------------------------------
-set "C_SOURCES=c_runtime core_runtime c_move_object c_wanderer object_runtime enemy_runtime enemy_common_runtime enemy_walker_runtime enemy_wanderer_runtime enemy_block_runtime enemy_wallmaster_runtime enemy_flyer_runtime enemy_boss_runtime enemy_gleeok_runtime enemy_dodongo_runtime enemy_manhandla_runtime enemy_lamnola_runtime enemy_projectile_runtime uw_person_runtime cave_runtime hud_runtime item_runtime weapon_runtime world_runtime sprite_runtime combat_runtime collision_runtime link_collision_runtime progress_runtime targeting_runtime trap_runtime room_runtime room_load_runtime room_mode_runtime room_transfer_runtime room_player_runtime room_object_runtime frontend_runtime save_menu_runtime"
-set "C_GEN_SOURCES=z_01 z_02 z_03 z_04 z_05 z_06 z_07"
+set "C_SOURCES=c_runtime core_runtime c_move_object c_wanderer object_runtime enemy_runtime enemy_common_runtime enemy_walker_runtime enemy_wanderer_runtime enemy_block_runtime enemy_wallmaster_runtime enemy_flyer_runtime enemy_boss_runtime enemy_gleeok_runtime enemy_dodongo_runtime enemy_manhandla_runtime enemy_lamnola_runtime enemy_projectile_runtime uw_person_runtime cave_runtime hud_runtime item_runtime weapon_runtime world_runtime sprite_runtime combat_runtime collision_runtime link_collision_runtime progress_runtime targeting_runtime trap_runtime room_runtime room_load_runtime room_mode_runtime room_transfer_runtime room_player_runtime room_object_runtime frontend_runtime save_menu_runtime intro_common intro_story intro_handoff intro_main intro_phase intro_title"
+set "C_GEN_SOURCES=z_01 z_02 z_03 z_04 z_05 z_06 z_07 intro_font_chr intro_art_chr intro_palette intro_story_tilemap intro_restore_chr intro_restore_palette intro_title_bg_chr intro_title_sprite_chr intro_title_palette intro_title_tilemap intro_title_fade intro_title_glow intro_common_bg_chr intro_sprite_chr intro_misc_chr intro_punct_chr intro_blink_chr intro_combined_palette intro_treasures_tilemap"
 set "C_OBJS="
 for %%F in (%C_SOURCES%) do (
     echo [2a/4] Compiling %%F.c...
@@ -183,12 +187,64 @@ set "TAG=Zelda%PHASE%.%BUILD_NUM%"
 "%PYTHON%" -c "import shutil, sys; src_rom=sys.argv[1]; src_lst=sys.argv[2]; dst=sys.argv[3]; ctr=sys.argv[4]; shutil.copy2(src_rom, dst+'.md'); shutil.copy2(src_lst, dst+'.lst'); open(ctr,'w').write(sys.argv[5]); print('Archived as: '+dst.split('\\')[-1])" "%OUT_ROM%" "%OUT_LST%" "%ARCHIVE_DIR%\%TAG%" "%COUNTER_FILE%" "%BUILD_NUM%"
 if errorlevel 1 echo WARNING: archive step failed (non-fatal)
 
+rem ---------------------------------------------------------------------------
+rem [5] Phase-sequence probe (Layer 1 test)
+rem
+rem Boots the ROM headlessly, samples phase bytes every 60 frames for 4000
+rem frames, asserts the expected phase loop. Skipped if BizHawk not present
+rem locally. Failure here means the native intro phase machine regressed.
+rem
+rem BizHawk must be launched from its own directory (paths with spaces require
+rem the copy-and-launch pattern from the bizhawkScript skill).
+rem ---------------------------------------------------------------------------
+set "BIZHAWK_EXE="
+set "BIZHAWK_DIR="
+if exist "C:\Users\Jake Diggity\Documents\GitHub\VDP rebirth tools and asms\BizHawk-2.11-win-x64\EmuHawk.exe" (
+    set "BIZHAWK_EXE=C:\Users\Jake Diggity\Documents\GitHub\VDP rebirth tools and asms\BizHawk-2.11-win-x64\EmuHawk.exe"
+    set "BIZHAWK_DIR=C:\Users\Jake Diggity\Documents\GitHub\VDP rebirth tools and asms\BizHawk-2.11-win-x64"
+)
+if "%BIZHAWK_EXE%"=="" if exist "C:\BizHawk\EmuHawk.exe" (
+    set "BIZHAWK_EXE=C:\BizHawk\EmuHawk.exe"
+    set "BIZHAWK_DIR=C:\BizHawk"
+)
+if "%BIZHAWK_EXE%"=="" if exist "%LOCALAPPDATA%\BizHawk\EmuHawk.exe" (
+    set "BIZHAWK_EXE=%LOCALAPPDATA%\BizHawk\EmuHawk.exe"
+    set "BIZHAWK_DIR=%LOCALAPPDATA%\BizHawk"
+)
+if "%BIZHAWK_EXE%"=="" if exist "%USERPROFILE%\BizHawk\EmuHawk.exe" (
+    set "BIZHAWK_EXE=%USERPROFILE%\BizHawk\EmuHawk.exe"
+    set "BIZHAWK_DIR=%USERPROFILE%\BizHawk"
+)
+
+if "%BIZHAWK_EXE%"=="" (
+    echo [5/5] BizHawk not found - skipping intro phase probe
+) else (
+    echo [5/5] Running phase-sequence probe...
+    del /q "%ROOT%\tools\intro_test\out\phase_sequence.csv" 2>nul
+    del /q "%ROOT%\tools\intro_test\out\phase_sequence.done" 2>nul
+    rem Copy script and ROM into BizHawk dir (path-with-spaces workaround).
+    copy /y "%ROOT%\tools\intro_test\probe_phase_sequence.lua" "%BIZHAWK_DIR%\probe_phase_sequence.lua" >nul 2>nul
+    copy /y "%OUT_ROM%" "%BIZHAWK_DIR%\whatif.md" >nul 2>nul
+    rem Launch BizHawk with array-style args via PowerShell; set env var so
+    rem the Lua script can resolve the out/ path back to the repo.
+    powershell -Command "& { $env:CODEX_BIZHAWK_ROOT='%ROOT%'; Start-Process -Wait -FilePath '%BIZHAWK_EXE%' -ArgumentList @('--lua=probe_phase_sequence.lua','whatif.md') -WorkingDirectory '%BIZHAWK_DIR%' }"
+    if errorlevel 1 (
+        echo [5/5] WARNING: BizHawk exited non-zero - probe may be incomplete
+    )
+    "%PYTHON%" "%ROOT%\tools\intro_test\check_probe_sequence.py"
+    if errorlevel 1 (
+        echo [5/5] FAIL: probe sequence assertion failed
+        exit /b 1
+    )
+    echo [5/5] OK: phase probe passed
+)
+
 echo.
 echo Build complete: %OUT_ROM%
 echo Listing:        %OUT_LST%
 
 rem ---------------------------------------------------------------------------
-rem [5] Git auto-commit — stage build outputs and archive, commit with tag name
+rem [6] Git auto-commit — stage build outputs and archive, commit with tag name
 rem ---------------------------------------------------------------------------
 git -C "%ROOT%" add builds\whatif.md builds\whatif.lst builds\archive\ >nul 2>nul
 git -C "%ROOT%" diff --cached --quiet >nul 2>nul

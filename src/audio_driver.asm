@@ -540,6 +540,11 @@ m_last_psg_nc       equ MUSIC_BASE+$28  ; byte: last noise-control byte written
 ; per sfx-tick. The first two cache here; $400F is the per-hit trigger.
 m_sfx_vol           equ MUSIC_BASE+$29  ; byte: last $400C byte
 m_sfx_ctrl_raw      equ MUSIC_BASE+$2A  ; byte: last $400E byte
+; Set to 1 by tick_sq1.song_ended each time the song script reaches its
+; loop point (opcode $00). C-side intro_story polls this to sync the
+; final-hold-then-loop-back-to-title transition with the music loop.
+; Owner clears it; ASM only ever writes 1.
+m_song_loop_pending equ MUSIC_BASE+$2B  ; byte: 1 = song just looped
 
 ;----------------------------------------------------------------------
 ; DMC → YM2612 DAC state (Phase A of DMC port — see
@@ -664,6 +669,7 @@ dmc_dbg_poll:
 ; music_play — request a song change
 ; Input: D0.b = song bitmap
 ;==============================================================================
+    xdef    music_play
 music_play:
     move.b  D0,(m_song_req).l
     rts
@@ -909,6 +915,7 @@ tick_sq1:
     move.b  (m_sq1_len).l,(m_sq1_cnt).l
     bra     tick_sq0
 .song_ended:
+    move.b  #1,(m_song_loop_pending).l   ; signal loop point to C poller
     move.b  (m_song).l,D0
     andi.b  #$F1,D0
     bne.s   .play_again

@@ -125,15 +125,16 @@ import sys
 from pathlib import Path
 
 HANDOFF_ADDRS = [
-    ("mode_value",              0x00E0),  # MODE_VALUE
-    ("submode_value",           0x0012),  # SUBMODE_VALUE
-    ("frontend_demo_subphase",  0x042C),  # phase-1 flag / subphase
-    ("front_start_release_gate",0x042B),
-    ("vram_force_blank_gate",   0x083D),
-    ("frontend_delay_timer",    0x0528),
-    ("room_mode_timer",         0x0013),  # ROOM_MODE_TIMER
-    ("item_sfx_secondary",      0x0605),  # ITEM_SFX_SECONDARY
-    ("room_transfer_buf_select",0x060E),  # ROOM_TRANSFER_BUF_SELECT
+    ("mode_value",              0x0012),  # MODE_VALUE       (progress_state.h)
+    ("submode_value",           0x0013),  # SUBMODE_VALUE    (trap_state.h)
+    ("frontend_demo_phase",     0x042C),  # phase-0/1 flag   (frontend_runtime.c:157,303)
+    ("frontend_demo_subphase",  0x042D),  # FRONTEND_DEMO_SUBPHASE (frontend_state.h)
+    ("front_start_release_gate",0x042B),  # (frontend_runtime.c:178)
+    ("vram_force_blank_gate",   0x083D),  # (frontend_runtime.c:176)
+    ("frontend_delay_timer",    0x0528),  # (frontend_runtime.c:183,278)
+    ("room_mode_timer",         0x0011),  # ROOM_MODE_TIMER  (room_state.h)
+    ("item_sfx_secondary",      0x0600),  # ITEM_SFX_SECONDARY (item_state.h)
+    ("room_transfer_buf_select",0x0014),  # ROOM_TRANSFER_BUF_SELECT (room_state.h)
 ]
 
 def main():

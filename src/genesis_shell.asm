@@ -57,6 +57,25 @@ HINT_Q1_VSRAM   equ $00FF081C  ; word: VSRAM to write at active event 1
 HINT_PEND_SPLIT equ $00FF081E  ; byte: 1 = current frame has an armed H-int split
 INTRO_SCROLL_MODE equ $00FF081F ; byte: active scroll mode for the current frame
 
+;------------------------------------------------------------------------------
+; vblank_mode — VBlankISR dispatch flag.
+;   $00 = native intro path (music_tick + s_intro_frame_counter only)
+;   $01 = transpiled path (existing PPUCTRL gate + IsrNmi + ags/oam flushes)
+; Owned by ASM. C never touches it. Boot ASM seeds $00 before IPL is lowered;
+; the Start handoff trampoline writes $01 immediately before resuming the
+; translated main loop. Single byte; aligned naturally.
+; Lives in the free tail of the NT_CACHE gap ($FF0FC0-$FF0FFF).
+;------------------------------------------------------------------------------
+vblank_mode         equ     $00FF0FFC   ; byte
+
+;------------------------------------------------------------------------------
+; s_intro_frame_counter — incremented by VBlankISR every frame the native
+; intro is active. C-side wait_vblank() spins on changes to this longword.
+; Owned by ASM (writer); C reads via extern declaration.
+; Lives at $FF0FF8 (longword, 4-byte aligned).
+;------------------------------------------------------------------------------
+s_intro_frame_counter   equ     $00FF0FF8   ; longword, 4 bytes
+
 ;==============================================================================
 ; VDP command long-words (written to VDP_CTRL to set VRAM/CRAM address)
 ;==============================================================================
@@ -365,11 +384,6 @@ EntryPoint:
 
     jsr     audio_init              ; Initialize YM2612 + PSG
 
-    ; Request the title/demo song on boot as a smoke test for the native
-    ; M68K music player.  music_tick (called from VBlank) will pick this
-    ; up on the first frame after SR is lowered.
-    move.b  #$80,(m_song_req).l
-
     ; Pre-write tile buffer sentinel so the first NMI's TransferCurTileBuf
     ; doesn't parse zeroed RAM as phantom records.  DynTileBuf = NES $0302.
     move.b  #$FF,($0302,A4)
@@ -417,6 +431,12 @@ EntryPoint:
     ; Without this restore, every cold boot would see all-$FF SRAM data.
     jsr     _sram_load_save_slots
 
+    ; Native intro path is the boot default. vblank_mode is flipped to 1
+    ; by the Start handoff trampoline (Task 9) immediately before resuming
+    ; the translated main loop.
+    move.b  #0,(vblank_mode).l
+    clr.l   (s_intro_frame_counter).l
+
     ;--------------------------------------------------------------------------
     ; Lower interrupt mask so VBlank (level 6) can fire.
     ; A4/A5/D7 are initialised above — IsrNmi is now safe to execute.
@@ -433,7 +453,7 @@ EntryPoint:
     ; For T4, VBlank is masked by genesis boot SR ($2700) and IsrReset's SEI
     ; (now a NOP), so LoopForever just spins — that is the expected T4 state.
     ;--------------------------------------------------------------------------
-    jsr     IsrReset                ; never returns (RunGame → LoopForever)
+    jsr     intro_main          ; native intro owns the loop now
 
     ;--------------------------------------------------------------------------
     ; Safety net — should never be reached.
@@ -451,12 +471,20 @@ HaltForever:
 ;==============================================================================
 VBlankISR:
     movem.l D0-D7/A0-A6,-(SP)
+    tst.b   (vblank_mode).l
+    bne.s   .vbi_transpiled
+    ; --- native intro path: music + frame counter only ---
+    bsr     music_tick
+    addq.l  #1,(s_intro_frame_counter).l
+    bra.s   .vbi_done
+.vbi_transpiled:
+    ; --- existing transpiled path (unchanged) ---
     ; Only call IsrNmi if PPUCTRL bit 7 = 1 (NMI enable).
     ; On NES, VBlank NMI fires only when PPUCTRL.$80 is set.
     ; During IsrReset warmup PPUCTRL=0, so IsrNmi is suppressed
     ; until RunGame writes $A0 to $2000.
     btst    #7,($00FF0804).l        ; PPU_CTRL = $FF0804, bit 7 = NMI enable
-    beq.s   .nmi_off
+    beq.s   .vbi_done
     addq.b  #1,($00FF1003).l        ; Phase 2.4: NMI probe counter
     ; Phase 1 (HW adoption): flush previous frame's SAT_SHADOW to VRAM $F800
     ; via 68k→VRAM DMA.  Must run before _ags_prearm/IsrNmi so the DMA
@@ -493,7 +521,7 @@ VBlankISR:
     ; VBlankISR's movem preserved from the interrupted caller (RunGame
     ; establishes A4 = $FF0000 before LoopForever).
     bsr     _ags_flush
-.nmi_off:
+.vbi_done:
     movem.l (SP)+,D0-D7/A0-A6
     rte
 
@@ -608,6 +636,74 @@ DefaultException:
     movem.l D0-D7/A0-A6,($FF0908).l
 .spin:
     bra.s   .spin
+
+;==============================================================================
+; intro_to_file_select_trampoline — Start press handoff from native intro
+; to transpiled file-select path.
+;
+; Preconditions (set by intro_handoff.c before calling):
+;   - VDP display off, plane A/B blank, V64 mode, vscroll=0
+;   - vblank_mode still = 0 (native NMI dispatcher; music_tick + counter)
+;
+; This trampoline:
+;   1. Restores translated runtime register contract (A4/A5/D7).
+;   2. Seeds NES RAM file-select entry contract per
+;      docs/superpowers/specs/2026-04-26-native-intro-handoff-tbds.md
+;      Section 2.
+;   3. Re-enables transpiled NMI heartbeat via direct-write to BOTH
+;      PPUCTRL mirrors (gameplay shadow at ($00FF,A4) AND absolute
+;      shadow at (PPU_CTRL).l). This sidesteps _ppu_write_0's
+;      conditional NT_CACHE rebuild — see TBD spec Section 5.
+;   4. Flips vblank_mode = 1 so VBlankISR routes to the transpiled
+;      path starting next frame.
+;   5. Jumps to translated LoopForever (z_07.asm:1461). VBlank fires
+;      IsrNmi -> reads IsUpdatingMode=0 -> calls InitializeGameOrMode
+;      -> InitMode1.
+;
+; Does NOT return.
+;==============================================================================
+    xdef    intro_to_file_select_trampoline
+intro_to_file_select_trampoline:
+    move.b  #$BB,($00FF07F2).l       ; probe: trampoline entered
+
+    ; [1] Restore translated runtime register contract.
+    ;     Must be valid before any NMI fires with vblank_mode=1.
+    move.l  #$00FF0000,A4            ; NES RAM base
+    move.l  #$00FF0200,A5            ; NES OAM base
+    moveq   #-1,D7                   ; D7 = $FFFFFFFF (translated scratch / 6502 SP)
+
+    ; [2] Seed file-select entry RAM contract per TBD spec Section 2.
+    move.b  #$00,($0011,A4)          ; IsUpdatingMode = 0 (triggers InitMode on next NMI)
+    move.b  #$01,($0012,A4)          ; GameMode = $01 (Mode_RegisterMenu / file-select)
+    move.b  #$00,($0013,A4)          ; GameSubmode = 0
+    move.b  #$01,(FrontendStartReleaseGate).l ; = 1 (Start consumed; Mode1_Sub0 waits for release)
+    move.b  #$01,(VRamForceBlankGate).l       ; = 1 (protects VRAM streaming; released by InitMode1_Sub6)
+    move.b  #$00,($0600,A4)          ; SongRequest = 0 (file-select runs silent)
+
+    ; [3] Re-enable transpiled NMI heartbeat: PPUCTRL bit 7 = NMI enable.
+    ;     Direct-write to BOTH mirrors per TBD spec Section 5, avoiding
+    ;     _ppu_write_0's NT_CACHE rebuild branch.
+    move.b  ($00FF,A4),D0            ; read current PPUCTRL gameplay shadow ($00FF00FF)
+    ori.b   #$80,D0                  ; set NMI enable bit
+    move.b  D0,($00FF,A4)            ; write gameplay mirror
+    move.b  D0,(PPU_CTRL).l          ; write absolute mirror ($00FF0804, read by VBlankISR:486)
+
+    ; [4] Restore VDP plane size + Window plane to gameplay defaults.
+    ;     intro_main set V32 ($9000) + window OFF ($9200) for the lifted intro
+    ;     code. Transpiled gameplay expects V64 plane ($9011) + Window
+    ;     covering top 8 rows ($9208) per genesis_shell:255-261 boot init.
+    move.w  #$9011,(VDP_CTRL).l      ; Reg 16: H64 x V64 plane size
+    move.w  #$9208,(VDP_CTRL).l      ; Reg 18: window V = 8 (covers top 8 rows)
+
+    ; [5] Flip VBlankISR dispatcher to transpiled path.
+    ;     A4/A5/D7 are valid at this point.
+    move.b  #1,(vblank_mode).l       ; 0=native intro, 1=transpiled IsrNmi
+
+    ; [6] Spin in LoopForever. Does not return.
+    ;     VBlank 1: InitializeGameOrMode copies common code/data ($00F4: 0->1)
+    ;     VBlank 2: InitMode -> GameMode=$01 -> InitMode1 chain
+    ;     VBlank 3+: UpdateMode1Menu (file-select interactive)
+    jmp     LoopForever
 
 ;==============================================================================
 ; NES I/O emulation layer — real implementations of _ppu_*, _apu_*, _ctrl_*,
