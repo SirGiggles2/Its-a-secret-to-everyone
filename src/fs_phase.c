@@ -5,6 +5,7 @@
  */
 #include "fs_phase.h"
 #include "fs_render.h"
+#include "fs_handoff.h"
 #include <stdint.h>
 
 uint8_t s_fs_phase;
@@ -37,7 +38,15 @@ void fs_phase_step(void) {
         case FS_NAV:
             /* Idle — input dispatch in fs_main moves cursor + cycles PLAYERS. */
             break;
+        case FS_HANDOFF:
+            /* v6.handoff: A pressed on a slot row. v6.minimal SRAM-less mode
+             * always routes via slot 3 → register-name (CurSaveSlot >= 3 in
+             * transpiled chose-slot path). Real save detection lands when
+             * SRAM is wired into fs_sram_slot_occupied. */
+            fs_handoff_to_transpiled(3u);
+            /* unreachable */
+            break;
         default:
-            break;  /* FS_COPY_*, FS_ERASE_*, FS_OPTIONS, FS_HANDOFF land in v4+ */
+            break;  /* FS_COPY_*, FS_ERASE_*, FS_OPTIONS land in v4+ */
     }
 }

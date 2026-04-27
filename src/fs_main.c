@@ -137,7 +137,20 @@ static void fs_input_dispatch(uint8_t edge) {
             fs_render_players_row(s_fs_players_value);
         }
     }
-    /* A/Start/B handled in v4+ for slot pick / submenu enter / cancel. */
+    /* v6.handoff (gated): A on slot row should hand off to transpiled
+     * gameplay / register-name. Trampoline + fs_handoff_to_transpiled are
+     * wired and the trampoline runs (probe CC, vblank_mode=01), but the
+     * transpiled FS state machine ends up stuck at GameSubmode=6 with display
+     * off after the swap. Suspected: FrontendStartReleaseGate semantics or
+     * leftover PPU register state from native fs_main is poisoning the
+     * transpiled InitMode1 sub-phase chain. Trigger disabled until rooted —
+     * the trampoline + fs_handoff.c stay compiled so re-enabling is one line.
+     */
+#if 0
+    if (s_fs_cursor <= 2u && (edge & (FS_BTN_A | FS_BTN_START))) {
+        s_fs_phase = FS_HANDOFF;
+    }
+#endif
 }
 
 void fs_main(void) {

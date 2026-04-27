@@ -57,6 +57,10 @@ echo [fs_demo] Compiling src\fs_input.c
 "%M68K_GCC%" -B "%M68K_BIN%\\" %CFLAGS% -c "%SRC_DIR%\fs_input.c" -o "%OUT_DIR%\fs_input.o"
 if errorlevel 1 exit /b 1
 
+echo [fs_demo] Compiling src\fs_handoff.c
+"%M68K_GCC%" -B "%M68K_BIN%\\" %CFLAGS% -c "%SRC_DIR%\fs_handoff.c" -o "%OUT_DIR%\fs_handoff.o"
+if errorlevel 1 exit /b 1
+
 echo [fs_demo] Compiling tools\file_select_demo\music_stub.c
 "%M68K_GCC%" -B "%M68K_BIN%\\" %CFLAGS% -c "%DEMO_DIR%\music_stub.c" -o "%OUT_DIR%\music_stub.o"
 if errorlevel 1 exit /b 1
@@ -109,6 +113,7 @@ echo [fs_demo] Linking
     "%OUT_DIR%\fs_render.o" ^
     "%OUT_DIR%\fs_phase.o" ^
     "%OUT_DIR%\fs_input.o" ^
+    "%OUT_DIR%\fs_handoff.o" ^
     "%OUT_DIR%\music_stub.o" ^
     "%OUT_DIR%\fs_palette.o" ^
     "%OUT_DIR%\fs_static_tilemap.o" ^

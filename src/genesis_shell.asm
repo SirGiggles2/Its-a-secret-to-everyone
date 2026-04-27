@@ -928,6 +928,63 @@ _turbo_link_boost_disabled:
     endc
 
 ;==============================================================================
+; fs_to_transpiled_trampoline — Native FS → transpiled gameplay/register-name
+; handoff. Mirror of intro_to_file_select_trampoline but enters at
+; UpdateMode1Menu_Sub1 (chose-slot path) with CurSaveSlot pre-seeded.
+;
+; Caller (fs_handoff.c) passes save_slot in D0 (low byte). For empty slots,
+; pass 3 → transpiled chose-slot path detects CurSaveSlot >= 3 and routes
+; to register-name (Mode 1 Sub1 → GameMode = slot+$0B = $0E).
+; For occupied slots, pass 0/1/2 → ChoseSlot copies items + JMP GoToNextMode
+; → Mode 2 → eventually Mode 5 (gameplay).
+;
+; Placed at end-of-file (after all zelda_translated includes) so its byte
+; size doesn't push transpiled .s short-branches out of range.
+;
+; Does NOT return.
+;==============================================================================
+    xdef    fs_to_transpiled_trampoline
+fs_to_transpiled_trampoline:
+    ; No-arg trampoline. Caller (fs_handoff.c) writes CurSaveSlot at
+    ; nes_ram[0x0016] directly before calling — m68k SysV byte-arg passing
+    ; via D0 is unreliable (caller stack-pushes ints), so doing the seed
+    ; in C avoids the ABI guesswork.
+
+    move.b  #$CC,($00FF07F2).l       ; probe: fs trampoline entered
+
+    ; [1] Restore translated runtime register contract.
+    move.l  #$00FF0000,A4
+    move.l  #$00FF0200,A5
+    moveq   #-1,D7
+
+    ; [2] Hand off to transpiled FS at Sub 0 (initial state). Transpiled
+    ;     FS init runs InitMode1_Full → UpdateMode1Menu_Sub0; player picks
+    ;     slot via real transpiled flow. Native FS is the intro screen
+    ;     replacement; transpiled FS still owns the actual save selection.
+    move.b  #$00,($0011,A4)          ; IsUpdatingMode = 0 (next NMI runs InitMode)
+    move.b  #$01,($0012,A4)          ; GameMode = $01 (file-select)
+    move.b  #$00,($0013,A4)          ; GameSubmode = $00 (initial)
+    move.b  #$01,(FrontendStartReleaseGate).l ; Start consumed
+    move.b  #$01,(VRamForceBlankGate).l       ; VRAM streaming protection
+    move.b  #$00,($0600,A4)          ; SongRequest = 0
+
+    ; [3] Re-enable transpiled NMI heartbeat.
+    move.b  ($00FF,A4),D0
+    ori.b   #$80,D0
+    move.b  D0,($00FF,A4)
+    move.b  D0,(PPU_CTRL).l
+
+    ; [4] VDP gameplay defaults (V64 + Window V=8).
+    move.w  #$9011,(VDP_CTRL).l
+    move.w  #$9208,(VDP_CTRL).l
+
+    ; [5] Flip dispatcher.
+    move.b  #1,(vblank_mode).l
+
+    ; [6] Spin.
+    jmp     LoopForever
+
+;==============================================================================
 ; End-of-ROM marker — used by ROM header dc.l RomEnd-1
 ;==============================================================================
 RomEnd:
