@@ -111,8 +111,8 @@ Create `tools/file_select_test/dump_fs_oam.lua`:
 
 ```lua
 -- Boot Redux NES ROM, advance to FS, dump OAM bytes 0..255 to CSV.
-local OUT = (os.getenv("CODEX_BIZHAWK_ROOT") or ".") .. "/tools/file_select_test/out/fs_oam.csv"
-os.execute('mkdir "' .. (os.getenv("CODEX_BIZHAWK_ROOT") or ".") .. '/tools/file_select_test/out" 2>nul')
+local OUT = (os.getenv("CODEX_BIZHAWK_ROOT") or "C:\\Users\\Jake Diggity\\Documents\\GitHub\\FINAL TRY") .. "\\tools\\file_select_test\\out\\fs_oam.csv"
+os.execute('mkdir "' .. (os.getenv("CODEX_BIZHAWK_ROOT") or "C:\\Users\\Jake Diggity\\Documents\\GitHub\\FINAL TRY") .. '\\tools\\file_select_test\\out" 2>nul')
 for f = 1, 600 do emu.frameadvance() end  -- past title screen
 joypad.set({ Start = true }, 1); emu.frameadvance(); joypad.set({}, 1)
 for f = 1, 60 do emu.frameadvance() end
@@ -152,7 +152,7 @@ git commit -m "probe: lock TBD #8 heart cursor sprite tile index"
 Create `tools/file_select_test/dump_fs_nametable.lua`:
 
 ```lua
-local OUT = (os.getenv("CODEX_BIZHAWK_ROOT") or ".") .. "/tools/file_select_test/out/fs_nt.bin"
+local OUT = (os.getenv("CODEX_BIZHAWK_ROOT") or "C:\\Users\\Jake Diggity\\Documents\\GitHub\\FINAL TRY") .. "\\tools\\file_select_test\\out\\fs_nt.bin"
 for f = 1, 600 do emu.frameadvance() end
 joypad.set({ Start = true }, 1); emu.frameadvance(); joypad.set({}, 1)
 for f = 1, 60 do emu.frameadvance() end
@@ -735,8 +735,8 @@ git commit -m "fs/demo: linker script + build.bat (v1 builds clean)"
 
 ```lua
 -- capture_v1_baseline.lua — boot proof ROM, capture PNG at frame 60.
-local OUT = (os.getenv("CODEX_BIZHAWK_ROOT") or ".") .. "/tools/file_select_test/out/v1_frame_60.png"
-os.execute('mkdir "' .. (os.getenv("CODEX_BIZHAWK_ROOT") or ".") .. '/tools/file_select_test/out" 2>nul')
+local OUT = (os.getenv("CODEX_BIZHAWK_ROOT") or "C:\\Users\\Jake Diggity\\Documents\\GitHub\\FINAL TRY") .. "\\tools\\file_select_test\\out\\v1_frame_60.png"
+os.execute('mkdir "' .. (os.getenv("CODEX_BIZHAWK_ROOT") or "C:\\Users\\Jake Diggity\\Documents\\GitHub\\FINAL TRY") .. '\\tools\\file_select_test\\out" 2>nul')
 for f = 1, 60 do emu.frameadvance() end
 client.screenshot(OUT)
 client.exit()
@@ -1162,9 +1162,9 @@ git commit -m "fs/main: wire phase + input dispatch + cursor render (v2)"
 
 ```lua
 -- tools/file_select_test/probe_phase_sequence.lua
-local REPO = os.getenv("CODEX_BIZHAWK_ROOT") or "."
-local OUT  = REPO .. "/tools/file_select_test/out/phase_sequence.csv"
-os.execute('mkdir "' .. REPO .. '/tools/file_select_test/out" 2>nul')
+local REPO = os.getenv("CODEX_BIZHAWK_ROOT") or "C:\\Users\\Jake Diggity\\Documents\\GitHub\\FINAL TRY"
+local OUT  = REPO .. "\\tools\\file_select_test\\out\\phase_sequence.csv"
+os.execute('mkdir "' .. REPO .. '\\tools\\file_select_test\\out" 2>nul')
 
 local domain
 do
@@ -1527,9 +1527,9 @@ git commit -m "fs/main: PLAYERS row L/R cycle (immediate SRAM persist)"
 
 ```lua
 -- probe_options_persist.lua — boot, cycle PLAYERS, soft-reset, verify SRAM byte.
-local REPO = os.getenv("CODEX_BIZHAWK_ROOT") or "."
-local OUT  = REPO .. "/tools/file_select_test/out/sram_after_reset.csv"
-os.execute('mkdir "' .. REPO .. '/tools/file_select_test/out" 2>nul')
+local REPO = os.getenv("CODEX_BIZHAWK_ROOT") or "C:\\Users\\Jake Diggity\\Documents\\GitHub\\FINAL TRY"
+local OUT  = REPO .. "\\tools\\file_select_test\\out\\sram_after_reset.csv"
+os.execute('mkdir "' .. REPO .. '\\tools\\file_select_test\\out" 2>nul')
 
 -- Boot, advance to FS_NAV (frame 30).
 for f = 1, 30 do emu.frameadvance() end
@@ -1829,8 +1829,8 @@ git commit -m "fs/main: wire FS_NAV→COPY/ERASE entry; phase dispatch routes to
 ```lua
 -- probe_copy_flow.lua: cursor to COPY, A, pick slot 0 as src, A, pick slot 1 as dst, A.
 -- Verify SRAM byte at slot1 first byte == slot0 first byte (after copy).
-local REPO = os.getenv("CODEX_BIZHAWK_ROOT") or "."
-local OUT  = REPO .. "/tools/file_select_test/out/copy_flow.csv"
+local REPO = os.getenv("CODEX_BIZHAWK_ROOT") or "C:\\Users\\Jake Diggity\\Documents\\GitHub\\FINAL TRY"
+local OUT  = REPO .. "\\tools\\file_select_test\\out\\copy_flow.csv"
 
 -- Set up: write a known byte to slot0[0] via memory.write_u8 (mock pre-existing save).
 -- For proof ROM, mock SRAM in boot.asm; here just inject after init.
@@ -2183,8 +2183,8 @@ git commit -m "fs/main: wire FS_OPTIONS — A on row 6 enters submenu, B exits"
 
 ```lua
 -- probe_options_cursor.lua
-local REPO = os.getenv("CODEX_BIZHAWK_ROOT") or "."
-local OUT  = REPO .. "/tools/file_select_test/out/options_cursor.csv"
+local REPO = os.getenv("CODEX_BIZHAWK_ROOT") or "C:\\Users\\Jake Diggity\\Documents\\GitHub\\FINAL TRY"
+local OUT  = REPO .. "\\tools\\file_select_test\\out\\options_cursor.csv"
 for f = 1, 30 do emu.frameadvance() end
 for d = 1, 6 do joypad.set({ Down = true }, 1); emu.frameadvance(); joypad.set({}, 1)
                 for f = 1, 8 do emu.frameadvance() end end
@@ -2268,7 +2268,7 @@ for f = 1, 30 do emu.frameadvance() end
 client.softreset()
 for f = 1, 60 do emu.frameadvance() end
 local v = memory.read_u8(0x7000, "M68K BUS")  -- LINK GFX SRAM byte
-local fh = io.open((os.getenv("CODEX_BIZHAWK_ROOT") or ".") .. "/tools/file_select_test/out/options_commit.csv", "w")
+local fh = io.open((os.getenv("CODEX_BIZHAWK_ROOT") or "C:\\Users\\Jake Diggity\\Documents\\GitHub\\FINAL TRY") .. "\\tools\\file_select_test\\out\\options_commit.csv", "w")
 fh:write(string.format("link_gfx,%d\n", v))
 fh:close()
 client.exit()
@@ -2727,8 +2727,8 @@ git commit -m "fs/handoff: intro Start press now lands native FS instead of tran
 ```lua
 -- probe_handoff.lua: boot main ROM, advance through intro, Start, FS, A on slot.
 -- Assert post-trampoline state.
-local REPO = os.getenv("CODEX_BIZHAWK_ROOT") or "."
-local OUT  = REPO .. "/tools/file_select_test/out/handoff.csv"
+local REPO = os.getenv("CODEX_BIZHAWK_ROOT") or "C:\\Users\\Jake Diggity\\Documents\\GitHub\\FINAL TRY"
+local OUT  = REPO .. "\\tools\\file_select_test\\out\\handoff.csv"
 
 -- Past intro fade (~600 frames covers title + fade + part of story).
 for f = 1, 700 do emu.frameadvance() end
