@@ -68,12 +68,12 @@ Add this block immediately after the existing `LAST_GAMEMODE` declaration (or wh
 ; the Start handoff trampoline writes $01 immediately before resuming the
 ; translated main loop. Single byte; aligned naturally.
 ;------------------------------------------------------------------------------
-vblank_mode:    equ     $FF0BFE
+vblank_mode:    equ     $00FF0FFC
 ```
 
-The address $FF0BFE is one byte before the music block at $FF0B00 reserved by `audio_driver.asm:482`. If a grep shows $FF0BFE already used, pick another byte in the same documented region (e.g. $FF0BFF) and update this comment.
+The address $FF0FFC sits in the free RAM tail $FF0FC0–$FF0FFF, after the NT_CACHE block ($FF0840–$FF0FBF). The $FF0Bxx range originally proposed in early plan drafts collides with NT_CACHE — do not use it.
 
-Run: `grep -n "FF0BFE\|FF0BFF" src/genesis_shell.asm src/audio_driver.asm src/nes_io.asm`
+Run: `grep -n "FF0FFC\|FF0FFD\|FF0FFE\|FF0FFF" src/genesis_shell.asm src/audio_driver.asm src/nes_io.asm`
 
 Expected: no hits (or hits only in this new block). If hits, pick an unused address.
 
@@ -137,10 +137,10 @@ Add immediately after the `vblank_mode` declaration from Step 2:
 ; intro is active. C-side wait_vblank() spins on changes to this longword.
 ; Owned by ASM (writer); C reads via extern declaration.
 ;------------------------------------------------------------------------------
-s_intro_frame_counter:  equ     $FF0BFA   ; longword, 4 bytes
+s_intro_frame_counter:  equ     $00FF0FF8   ; longword, 4 bytes
 ```
 
-Run: `grep -n "FF0BFA\|FF0BFB\|FF0BFC\|FF0BFD" src/genesis_shell.asm src/audio_driver.asm src/nes_io.asm`
+Run: `grep -n "FF0FF8\|FF0FF9\|FF0FFA\|FF0FFB" src/genesis_shell.asm src/audio_driver.asm src/nes_io.asm`
 
 Expected: no hits. If hits, pick another 4-byte aligned region.
 
@@ -174,7 +174,7 @@ cmd.exe /c cd /d "C:\path\to\BizHawk" && EmuHawk.exe --lua="C:\Users\Jake Diggit
 
 (Adjust paths per the bizhawkScript skill's launch pattern.)
 
-Expected: ROM still reaches the transpiled title path (or transpiled-intro crash, which is the documented baseline). No new hang from the dispatcher swap. Confirm by RAM-watching `vblank_mode` ($FF0BFE) = $01 and `s_intro_frame_counter` ($FF0BFA) staying at $00000000 (native path never runs in Task 1).
+Expected: ROM still reaches the transpiled title path (or transpiled-intro crash, which is the documented baseline). No new hang from the dispatcher swap. Confirm by RAM-watching `vblank_mode` ($FF0FFC) = $01 and `s_intro_frame_counter` ($FF0FF8) staying at $00000000 (native path never runs in Task 1).
 
 - [ ] **Step 8: Commit**
 
@@ -308,10 +308,10 @@ Expected: build succeeds. No undefined-symbol errors for `intro_main`, `s_intro_
 
 Launch the ROM via the bizhawkScript skill. After ~5 seconds, RAM-watch:
 
-- `$FF0BFE` (vblank_mode) = `$00`
+- `$FF0FFC` (vblank_mode) = `$00`
 - `$FF00F0` (NES RAM offset $07F0 — `nes_ram[0x07F0]`) = `$A1`
 - `$FF00F1` (`nes_ram[0x07F1]`) = increasing value (~0xFF after 4 seconds at 60 Hz wraps)
-- `$FF0BFA` (s_intro_frame_counter) = increasing longword
+- `$FF0FF8` (s_intro_frame_counter) = increasing longword
 
 Note: `nes_ram` base is `$FF0000` per `nes_abi.h`; nes_ram[0x07F0] = absolute $FF07F0. Adjust addresses if the macro maps differently — check `src/nes_abi.h` first.
 
@@ -1300,13 +1300,13 @@ Expected: build succeeds. No unresolved-symbol errors.
 Launch ROM. Wait for title (~t=2s). Press Start. Watch:
 
 - `$FF07F2` = `$BB` (trampoline ran)
-- `$FF0BFE` (vblank_mode) = `$01` (transpiled dispatcher active)
+- `$FF0FFC` (vblank_mode) = `$01` (transpiled dispatcher active)
 - `$FF0804` (PPU_CTRL) bit 7 set
 - Screen: file-select UI renders (or whatever the transpiled file-select path produces)
 
 If file-select UI does NOT render but vblank_mode flipped correctly, the failure is in the transpiled file-select cold-start path, not the handoff. That's tracked separately as Layer 3b in the spec — does not block intro merge.
 
-If `$FF07F2` reaches `$BB` but `$FF0BFE` stays at `$00`, the `move.b #1,(vblank_mode).l` line is failing — debug.
+If `$FF07F2` reaches `$BB` but `$FF0FFC` stays at `$00`, the `move.b #1,(vblank_mode).l` line is failing — debug.
 
 - [ ] **Step 4: Commit**
 
@@ -1590,7 +1590,7 @@ out_csv:write("name,handoff_marker,vblank_mode,ppuctrl,gamemode,a4_low\n")
 out_csv:write(string.format("%s,%d,%d,%d,%d,%d\n",
     scn.name,
     memory.readbyte(0xFF07F2, "M68K BUS"),
-    memory.readbyte(0xFF0BFE, "M68K BUS"),
+    memory.readbyte(0xFF0FFC, "M68K BUS"),
     memory.readbyte(0xFF0804, "M68K BUS"),
     memory.readbyte(0xFFXXXX, "M68K BUS"),  -- substitute GAMEMODE addr from handoff-tbds spec
     0

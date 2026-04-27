@@ -49,7 +49,7 @@ VBlankISR:
     bne     .transpiled
     ; native path
     bsr     music_tick
-    addq.w  #1, s_frame_counter
+    addq.l  #1, s_intro_frame_counter   ; longword to match C-side volatile uint32_t
     rte
 .transpiled:
     ; existing wrapper, gates on PPUCTRL bit 7, calls translated IsrNmi
@@ -129,7 +129,7 @@ intro_main:
 NMI fires (vec 30, every vblank, ~60 Hz)
   └─ VBlankISR (single ROM dispatcher):
        ├─ tst.b vblank_mode
-       │   ├─ =0 (native): bsr music_tick; addq #1,s_frame_counter; rte
+       │   ├─ =0 (native): bsr music_tick; addq.l #1,s_intro_frame_counter; rte
        │   └─ ≠0 (transpiled): existing PPUCTRL-bit-7 gate + IsrNmi call; rte
 
 main loop in intro_main:
