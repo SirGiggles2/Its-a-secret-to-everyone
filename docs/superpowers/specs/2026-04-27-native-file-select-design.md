@@ -492,4 +492,4 @@ These behaviors must be preserved exactly. No "simplifications" allowed in imple
 | Heart row flip | `adc.b #$12` / `adc.b #$07` swap | `Zelda1-Redux/src/code/menus/file_select.asm:13-16` |
 | Dash tile reuse | `$2F` (was `$62`) | `Zelda1-Redux/src/code/menus/file_select.asm:25-66` |
 | FS song bitmap | `$00` (silent) | `src/genesis_shell.asm:681` clears SongRequest to 0 in `intro_to_file_select_trampoline` before Mode 1; matches NES-Redux silent FS behavior |
-| Cursor sprite | NES heart sprite, single-tile, vertical position per row | NES disasm |
+| Heart cursor tile index | `$F3` (OAM: tile=`$F3`, attr=`$03` palette3, X=`$28`; Y-pos table: slot0=`$5C`, slot1=`$74`, slot2=`$8C`, copy=`$A7`, erase=`$B7`) | `tools/file_select_test/dump_fs_oam.lua` + NES ROM `$A589` (file offset `0xA599`) via `Zelda1-Redux/src/code/menus/menu_tweaks.asm:.draw_cursor` |

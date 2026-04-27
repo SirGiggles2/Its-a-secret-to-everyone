@@ -12,6 +12,10 @@ build_out.txt
 build_output.log
 *_run.log
 
+# Probe output directories (transient, not for tracking)
+tools/file_select_test/out/
+tools/intro_test/out/
+
 # Local workspace scratch
 .claude/scheduled_tasks.lock
 .claude/worktrees/
