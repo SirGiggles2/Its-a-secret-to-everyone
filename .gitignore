@@ -16,5 +16,6 @@ build_output.log
 .claude/scheduled_tasks.lock
 .claude/worktrees/
 .codex_tmp/
+.superpowers/
 analyze_funcs.txt
 src.zip
