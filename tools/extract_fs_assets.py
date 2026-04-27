@@ -146,10 +146,11 @@ def emit_static_tilemap() -> None:
 # Heart cursor: 0xF3 — locked by task v1.R8 (NES ROM at PRG addr 0xA589 / file 0xA599
 #   in bank 2). Confirmed: sprite tile byte at OAM+1 for main-menu cursor sprite.
 #
-# Link sprite: PLACEHOLDER tiles 0xC0-0xC3 as specified in the plan skeleton.
-#   NES OAM evidence (bank 2 9DF7 table): sprite 1 tile = 0x03 (body), sprite 2 = 0x45
-#   (head oval). Actual front-facing standing Link may use 0x02+0x44+0x03+0x45 (2x2).
-#   TODO(v1.render): cross-check against BizHawk OAM capture when rendering begins.
+# Link sprite: tiles 0x08-0x0B confirmed from aldonunez/Z_02.asm Mode1_WriteLinkSprites.
+#   NES 8x16 sprite mode: left column tile index $08 (top half=row $08, bot half=row $09),
+#   right column tile index $0A (top half=row $0A, bot half=row $0B).
+#   Mode1_WriteLinkSprites (Z_02.asm:2698-2700): LDA #$08→[$02]=left, LDA #$0A→[$03]=right.
+#   These are sprite CHR tiles from CommonSpritePatterns.dat (tiles 0x00-0x6F).
 #
 # Font: BG tiles 0x00-0x09 = digits 0-9, 0x0A-0x23 = letters A-Z (Zelda 1 standard).
 #   Space = 0x24. Wider range 0x00-0x63 covers all text glyphs in nametable.
@@ -157,7 +158,11 @@ def emit_static_tilemap() -> None:
 # Border: tiles 0xD4-0xE1 + 0xED + 0xEE identified from nametable col 0/1/30/31 analysis.
 #   These are all BG tiles (color_shift=0).
 
-LINK_SPRITE_TILES  = [0xC0, 0xC1, 0xC2, 0xC3]  # 4 tiles (PLACEHOLDER — see above)
+LINK_SPRITE_TILES  = [0x08, 0x09, 0x0A, 0x0B]  # NES OAM evidence: Mode1_WriteLinkSprites sets
+                                                # left tile=$08, right tile=$0A; NES 8x16 sprite
+                                                # mode means $08→rows $08/$09 (left col top/bot),
+                                                # $0A→rows $0A/$0B (right col top/bot).
+                                                # Source: aldonunez/Z_02.asm:2698-2700
 HEART_CURSOR_TILE  = 0xF3                        # locked v1.R8
 FONT_TILES_START   = 0x00
 FONT_TILES_END     = 0x64   # exclusive; covers 0x00-0x63 (100 tiles)
@@ -187,7 +192,11 @@ def _emit_chr_array(
 
 
 def emit_link_sprite_chr() -> None:
-    """Emit src/gen/fs_link_sprite_chr.c from 4 sprite CHR tiles (PLACEHOLDER set)."""
+    """Emit src/gen/fs_link_sprite_chr.c from 4 sprite CHR tiles (NES OAM evidence).
+
+    Tiles 0x08-0x0B: left-col top/bot + right-col top/bot for front-facing Link
+    in 8x16 sprite mode (Mode1_WriteLinkSprites, aldonunez/Z_02.asm:2698).
+    """
     sp = _load_sprite_chr()
     tiles = [_read_sprite_tile(ti, sp) for ti in LINK_SPRITE_TILES]
     _emit_chr_array(tiles, "fs_link_sprite_chr", color_shift=4)
