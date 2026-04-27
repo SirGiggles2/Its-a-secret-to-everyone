@@ -4,10 +4,10 @@
 -- frames so transpiled register-name screen has rendered, capture PNG.
 local OUT = "C:\\tmp\\handoff_register.png"
 
-for f = 1, 20 do emu.frameadvance() end
+for f = 1, 5 do emu.frameadvance() end
 joypad.set({ Start = true }, 1); emu.frameadvance()
 joypad.set({}, 1)
-for f = 1, 30 do emu.frameadvance() end
+for f = 1, 15 do emu.frameadvance() end
 
 joypad.set({ A = true }, 1); emu.frameadvance()
 joypad.set({}, 1)

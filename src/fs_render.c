@@ -145,6 +145,16 @@ void fs_render_static_layout(void) {
             }
             cells[col] = (uint16_t)(((uint16_t)pal & 0x3u) << 13) | (uint16_t)tile;
         }
+        /* Shift COPY (dest row 18) + ERASE (dest row 20) text 1 cell right
+         * to match PLAYERS/OPTIONS LABEL_COL=7 alignment. Side rails at
+         * cols 3 + 28 stay untouched; the rightmost shifted cell drops
+         * onto col 28's space slot, so we restore the right rail after. */
+        if (row == 18u || row == 20u) {
+            unsigned short right_rail = cells[28];
+            for (int c = 28; c >= 5; c--) cells[c] = cells[c - 1];
+            cells[4]  = 0x24u;   /* fill the new gap with a space */
+            cells[28] = right_rail;
+        }
         vdp_write_nametable_row(PLANE_A_BASE, row, cells);
     }
 }
@@ -177,17 +187,13 @@ void fs_render_slot(uint8_t slot_idx) {
     uint16_t sat_y = (uint16_t)(nes_y + 128u);   /* +128 SAT bias */
     uint16_t sat_x = (uint16_t)(0x30u + 128u);   /* NES X=$30, +128 bias → 0xB0 */
 
-    /* v1.fix2: Genesis 4-palette budget is BG0/BG1/Link/cursor — no per-slot tint.
-     * All 3 Link sprite slots use Gen pal 2 (NES sprite pal 0 = green Link).
-     * v3 SRAM may revisit if per-slot color matters more than multi-pal BG fidelity.
-     * Hide Link sprite for empty slots (occupied=0): sat_clear off-screen.
-     */
-    uint8_t occupied = fs_sram_slot_occupied(slot_idx);
+    /* v6: Always render all 3 Link sprites to match NES Redux look (3 colored
+     * Links in left margin even when slots are empty). Per-slot tint deferred
+     * (Gen 4-pal budget spent on BG0/BG1/Link/cursor); all use pal 2 = green.
+     * fs_sram_slot_occupied still consulted for future dim-empty / bright-saved
+     * variant — for now, render all bright. */
+    (void)fs_sram_slot_occupied(slot_idx);
     uint8_t sat_entry = (uint8_t)(1u + slot_idx);
-    if (!occupied) {
-        sat_clear_entry(sat_entry);
-        return;
-    }
     uint16_t palette = (uint16_t)PAL_BG_LINK;
 
     /* tile_attr: priority=0, palette=palette, no flip, tile=LINK_CHR_BASE.
@@ -272,8 +278,8 @@ void fs_render_all_slots(void) {
  * All inside the extended border. */
 #define PLAYERS_ROW   23u
 #define OPTIONS_ROW   25u
-#define LABEL_COL      6u   /* matches "  COPY SAVE" indent inside border */
-#define DIGIT_COL     15u   /* "PLAYERS" at col 6..12, 2 spaces, digit at col 15 */
+#define LABEL_COL      7u   /* +1 col right vs original NES NT for COPY/ERASE row alignment */
+#define DIGIT_COL     16u   /* "PLAYERS" at col 7..13, 2 spaces, digit at col 16 */
 #define EXTRA_PAL      0u   /* palette 0 — same as COPY/ERASE labels */
 
 static const uint8_t TILE_PLAYERS[7] = { 0x19, 0x15, 0x0A, 0x22, 0x0E, 0x1B, 0x1C };  /* P L A Y E R S */

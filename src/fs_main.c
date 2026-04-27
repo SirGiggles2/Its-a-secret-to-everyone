@@ -147,6 +147,9 @@ static void fs_input_dispatch(uint8_t edge) {
      * the trampoline + fs_handoff.c stay compiled so re-enabling is one line.
      */
 #if 0
+    /* GATED: A press on slot row hangs transpiled FS even with
+     * IsSaveSlotActive[0]=1 seeded — InitMode1_Sub6 stalls (display off,
+     * GameSubmode=06). Root cause not yet found. Re-enable when fixed. */
     if (s_fs_cursor <= 2u && (edge & (FS_BTN_A | FS_BTN_START))) {
         s_fs_phase = FS_HANDOFF;
     }
