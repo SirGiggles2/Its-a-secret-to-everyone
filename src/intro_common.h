@@ -13,6 +13,8 @@ void vdp_write_nametable_row(unsigned short plane_base, unsigned short row,
                              const unsigned short *cells);
 void vdp_set_vscroll(unsigned short value);
 void vdp_load_cram(const unsigned short *src, unsigned short count);
+void vdp_display_on(void);
+void vdp_display_off(void);
 #ifdef __cplusplus
 }
 #endif
