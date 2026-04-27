@@ -235,7 +235,7 @@ void intro_main(void);
  *
  * For Task 2 this is a stub that:
  *   - Requests title music via music_play($80) (audio_driver.asm:691).
- *   - Writes a "we are alive" probe byte to nes_ram[$07F0].
+ *   - Writes a "we are alive" probe byte to nes_ram[$07FF].
  *   - Spins in wait_vblank() forever, bumping nes_ram[$07F1] each frame.
  *
  * Task 3+ wires the real phase machine in.
@@ -255,7 +255,7 @@ static void wait_vblank(void) {
 
 void intro_main(void) {
     music_play(0x80);         /* SongIntro per audio_driver.asm:691 */
-    nes_ram[0x07F0] = 0xA1;   /* probe: intro_main entered */
+    nes_ram[0x07FF] = 0xA1;   /* probe: intro_main entered */
     nes_ram[0x07F1] = 0;      /* frame-tick probe (low byte) */
 
     for (;;) {
@@ -309,11 +309,11 @@ Expected: build succeeds. No undefined-symbol errors for `intro_main`, `s_intro_
 Launch the ROM via the bizhawkScript skill. After ~5 seconds, RAM-watch:
 
 - `$FF0FFC` (vblank_mode) = `$00`
-- `$FF00F0` (NES RAM offset $07F0 — `nes_ram[0x07F0]`) = `$A1`
+- `$FF07FF` (NES RAM offset $07FF — `nes_ram[0x07FF]`) = `$A1`  (intro_main entered sentinel)
 - `$FF00F1` (`nes_ram[0x07F1]`) = increasing value (~0xFF after 4 seconds at 60 Hz wraps)
 - `$FF0FF8` (s_intro_frame_counter) = increasing longword
 
-Note: `nes_ram` base is `$FF0000` per `nes_abi.h`; nes_ram[0x07F0] = absolute $FF07F0. Adjust addresses if the macro maps differently — check `src/nes_abi.h` first.
+Note: `nes_ram` base is `$FF0000` per `nes_abi.h`; nes_ram[0x07FF] = absolute $FF07FF. Adjust addresses if the macro maps differently — check `src/nes_abi.h` first.
 
 Expected screen: black or whatever the boot init left in CRAM (likely black). No transpiled gameplay because IsrReset is bypassed and vblank_mode=0 suppresses the IsrNmi call path.
 
@@ -326,7 +326,7 @@ intro: native intro_main scaffold; reset diverted from IsrReset
 
 Boot ASM now seeds vblank_mode=0 and calls intro_main instead of IsrReset.
 intro_main is a stub that proves control transfer via probe bytes at
-nes_ram[$07F0] (=$A1) and nes_ram[$07F1] (frame tick). Task 3 wires the
+nes_ram[$07FF] (=$A1) and nes_ram[$07F1] (frame tick). Task 3 wires the
 phase machine in.
 
 Co-Authored-By: Claude Opus 4.7 <noreply@anthropic.com>
@@ -424,7 +424,7 @@ Replace the `for(;;)` loop body in `src/intro_main.c` with:
 
 ```c
 void intro_main(void) {
-    nes_ram[0x07F0] = 0xA1;   /* "we entered intro_main" sentinel */
+    nes_ram[0x07FF] = 0xA1;   /* "we entered intro_main" sentinel */
     nes_ram[0x07F1] = 0;
     intro_phase_init();
 
@@ -1142,7 +1142,7 @@ static unsigned char poll_start(unsigned short frame) {
 }
 
 void intro_main(void) {
-    nes_ram[0x07F0] = 0xA1;
+    nes_ram[0x07FF] = 0xA1;
     nes_ram[0x07F1] = 0;
     nes_ram[0x07F2] = 0;
     intro_phase_init();

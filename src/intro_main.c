@@ -21,7 +21,6 @@
 #define S_INTRO_FRAME_COUNTER (*(volatile unsigned long *)0x00FF0FF8)
 
 #define CTRL1_DATA  (*(volatile unsigned char *)0x00A10003)
-#define CTRL1_CTRL  (*(volatile unsigned char *)0x00A10009)
 
 #define BTN_START   0x20
 
@@ -35,13 +34,20 @@ static void wait_vblank(void) {
 }
 
 static unsigned char read_controller_buttons(void) {
-    /* Standard 6-button-pad lite read: TH high latches start/A/C/B in
-     * bits 7..0 of CTRL1_DATA (active-low). This task only needs Start. */
+    /* TH=0 read latches Start/A at bits 5,4. Active low, so invert. */
+
+    /* Phase 1: TH=1 idle assert (also reads C, B which we don't need) */
     CTRL1_DATA = 0x40;
-    /* Brief settle delay so the controller can latch. */
     volatile int i;
-    for (i = 0; i < 4; i++) { /* nop */ }
-    unsigned char raw = ~CTRL1_DATA;   /* invert: now 1 = pressed */
+    for (i = 0; i < 4; i++) { /* settle */ }
+
+    /* Phase 2: TH=0 — Start at bit 5, A at bit 4. Active low. */
+    CTRL1_DATA = 0x00;
+    for (i = 0; i < 4; i++) { /* settle */ }
+    unsigned char raw = ~CTRL1_DATA;
+
+    /* Restore TH=1 idle state (matches _ctrl_strobe convention) */
+    CTRL1_DATA = 0x40;
     return raw;
 }
 
@@ -62,7 +68,7 @@ static unsigned char poll_start(unsigned short frame) {
 
 void intro_main(void) {
     music_play(0x80);
-    nes_ram[0x07FF] = 0xA1;
+    nes_ram[0x07FF] = 0xA1;  /* sentinel: intro_main entered (not phase byte at $07F0) */
     nes_ram[0x07F1] = 0;
     nes_ram[0x07F2] = 0;
     intro_phase_init();
