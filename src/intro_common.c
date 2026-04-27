@@ -1,6 +1,4 @@
 #include "intro_common.h"
-#include "intro_story.h"
-#include "intro_showcase.h"
 #include "intro_handoff.h"
 #include "nes_abi.h"  /* RAM(addr) macro */
 
@@ -9,42 +7,40 @@
 #define VDP_CTRL_LONG (*(volatile unsigned long  *)0x00C00004)
 
 unsigned char g_intro_takeover = 0;
+unsigned char g_intro_saved_ppuctrl = 0;  /* set by intro_should_take_over, restored by intro_handoff */
 
 static unsigned char s_takeover_armed = 0;
-static unsigned char s_substage = 0;   /* 0 = story, 1 = showcase, 2 = handoff */
-static unsigned char s_entered = 0;
+static unsigned char s_substage = 0;   /* 0 = handoff */
 
 unsigned char intro_should_take_over(void) {
     if (s_takeover_armed) return g_intro_takeover;
-    if (RAM(0x042C) == 0) return 0;   /* still phase-0 (title) */
-    if (RAM(0x042B) == 0) return 0;   /* FRONT_START_RELEASE_GATE — attract demo, skip */
+    if (RAM(0x042C) == 0) return 0;   /* still phase-0 (title) — wait for attract to arm */
     g_intro_takeover = 1;
     s_takeover_armed = 1;
     s_substage = 0;
-    s_entered = 0;
+    /* Per codex .481 plan: do NOT touch PPUCTRL / NMI. Keep IsrNmi alive
+     * so heartbeat and legacy transfer pipeline continue. */
     return 1;
 }
 
 void intro_story_tick(void) {
     if (!g_intro_takeover) return;
+    nes_ram[0x07F3] = s_substage;
 
-    if (s_substage == 0) {
-        if (!s_entered) { intro_story_enter(); s_entered = 1; }
-        if (intro_story_update()) { s_substage = 1; s_entered = 0; }
-        return;
-    }
-    if (s_substage == 1) {
-        if (!s_entered) { intro_showcase_enter(); s_entered = 1; }
-        if (intro_showcase_update()) { s_substage = 2; s_entered = 0; }
-        return;
-    }
+    /* Native intro (intro_main/intro_phase) handles story+items.
+     * Legacy path (frontend_runtime) just calls handoff when done. */
     intro_handoff();
+    /* Re-arm so next attract cycle takes over again. intro_handoff
+     * already cleared g_intro_takeover; also clear the armed latch. */
+    s_takeover_armed = 0;
+    s_substage = 0;
 }
 
 /* VDP primitives — real bodies follow. Stubs so early linker checks pass. */
 void vdp_set_mode_v32(void) {
-    /* VDP Reg 16 = $9001 (H64 x V32). See src/genesis_shell.asm:236. */
-    VDP_CTRL_WORD = 0x9001;
+    /* VDP Reg 16 = $9000 (H32 x V32). 32x32 plane = 2 KB at $C000-$C7FF.
+     * Row stride = 32 cells * 2 = 64 bytes — matches vdp_write_nametable_row. */
+    VDP_CTRL_WORD = 0x9000;
 }
 
 void vdp_set_mode_v64(void) {
@@ -52,20 +48,24 @@ void vdp_set_mode_v64(void) {
     VDP_CTRL_WORD = 0x9011;
 }
 void vdp_dma_to_vram(unsigned long src, unsigned short dst, unsigned short len) {
-    /* Writes `len` bytes from CPU-addressable `src` to VRAM[dst..dst+len].
-     * Register sequence per Genesis VDP DMA manual (matches genesis_shell.asm). */
-    unsigned short len_words = (unsigned short)(len >> 1);
-    unsigned long src_word = (src >> 1) & 0x7FFFFFUL;
+    /* CPU-based VRAM upload (DMA path commented out — GPGX hang risk).
+     * Writes `len` bytes from `src` to VRAM[dst..dst+len] via word writes.
+     * Slower than DMA (~0.5ms for 4 KB) but reliable in display-off. */
+    const unsigned short *p = (const unsigned short *)src;
+    unsigned short words = (unsigned short)(len >> 1);
 
-    VDP_CTRL_WORD = (unsigned short)(0x9300 | (len_words & 0xFF));
-    VDP_CTRL_WORD = (unsigned short)(0x9400 | ((len_words >> 8) & 0xFF));
-    VDP_CTRL_WORD = (unsigned short)(0x9500 | (src_word & 0xFF));
-    VDP_CTRL_WORD = (unsigned short)(0x9600 | ((src_word >> 8) & 0xFF));
-    VDP_CTRL_WORD = (unsigned short)(0x9700 | ((src_word >> 16) & 0x7F));
+    /* Ensure auto-increment = 2 (word stride). */
+    VDP_CTRL_WORD = 0x8F02;
 
-    unsigned long cmd = 0x40000080UL | ((unsigned long)(dst & 0x3FFF) << 16)
-                                    | ((dst >> 14) & 0x0003);
+    /* Open VRAM write at dst. */
+    unsigned long cmd = 0x40000000UL | ((unsigned long)(dst & 0x3FFF) << 16)
+                                     | ((dst >> 14) & 0x0003);
     VDP_CTRL_LONG = cmd;
+
+    /* Stream words. */
+    for (unsigned short i = 0; i < words; i++) {
+        VDP_DATA_WORD = p[i];
+    }
 }
 void vdp_write_nametable_row(unsigned short plane_base, unsigned short row,
                              const unsigned short *cells) {
@@ -90,4 +90,35 @@ void vdp_load_cram(const unsigned short *src, unsigned short count) {
     for (unsigned short i = 0; i < count; i++) {
         VDP_DATA_WORD = src[i];
     }
+}
+
+#define Z80_BUSREQ_WORD (*(volatile unsigned short *)0x00A11100)
+#define Z80_RESET_WORD  (*(volatile unsigned short *)0x00A11200)
+
+void vdp_display_off(void) {
+    /* Reg 1 = $8134: display OFF, VBlank IRQ, DMA, M5 (matches genesis_shell). */
+    VDP_CTRL_WORD = 0x8134;
+}
+
+void vdp_display_on(void) {
+    /* Reg 1 = $8174: DISP=1, VBlank IRQ, DMA, M5. */
+    VDP_CTRL_WORD = 0x8174;
+}
+
+void vdp_z80_stop(void) {
+    /* Hold Z80 bus so 68K DMA has uncontended access to VRAM. */
+    Z80_BUSREQ_WORD = 0x0100;
+    while ((Z80_BUSREQ_WORD & 0x0100) != 0) { /* wait BUSACK */ }
+}
+
+void vdp_z80_release(void) {
+    Z80_BUSREQ_WORD = 0x0000;
+}
+
+void vdp_irq_mask(void) {
+    __asm__ volatile ("ori.w #0x0700,%sr");
+}
+
+void vdp_irq_unmask(void) {
+    __asm__ volatile ("andi.w #0xF8FF,%sr");
 }

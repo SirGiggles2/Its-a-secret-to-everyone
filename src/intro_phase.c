@@ -1,11 +1,13 @@
 /* src/intro_phase.c
  *
  * Phase dispatcher. Title phases (LOAD/DISPLAY/FADEOUT/BLACK_HOLD)
- * are wired in Task 4. Story phases (LOAD/RUN) remain placeholders
- * — Task 5 will replace them with the lifted intro_story runtime.
+ * wired in Task 4. Story phases (LOAD/RUN) wired in Task 5.
+ * Full attract loop: TITLE_LOAD -> TITLE_DISPLAY -> TITLE_FADEOUT
+ *                    -> BLACK_HOLD -> STORY_LOAD -> STORY_RUN -> TITLE_LOAD
  */
 #include "intro_phase.h"
 #include "intro_title.h"
+#include "intro_story.h"
 #include "nes_abi.h"
 
 static intro_phase_t s_phase;
@@ -52,15 +54,21 @@ void intro_phase_step(void) {
         case PHASE_BLACK_HOLD:
             s_phase_counter++;
             if (s_phase_counter >= BLACK_HOLD_FRAMES) {
-                /* Story phases not wired yet (Task 5). Loop to title. */
-                goto_phase(PHASE_TITLE_LOAD);
+                goto_phase(PHASE_STORY_LOAD);
             }
             break;
 
         case PHASE_STORY_LOAD:
+            intro_story_load();
+            goto_phase(PHASE_STORY_RUN);
+            break;
+
         case PHASE_STORY_RUN:
-            /* Wired in Task 5. */
-            goto_phase(PHASE_TITLE_LOAD);
+            intro_story_step();
+            if (intro_story_at_end()) {
+                intro_story_clear_end();
+                goto_phase(PHASE_TITLE_LOAD);
+            }
             break;
 
         default:
