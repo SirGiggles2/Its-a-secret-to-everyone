@@ -491,5 +491,5 @@ These behaviors must be preserved exactly. No "simplifications" allowed in imple
 | NAME header tile shift | one tile left | `Zelda1-Redux/src/code/menus/file_select.asm:7` |
 | Heart row flip | `adc.b #$12` / `adc.b #$07` swap | `Zelda1-Redux/src/code/menus/file_select.asm:13-16` |
 | Dash tile reuse | `$2F` (was `$62`) | `Zelda1-Redux/src/code/menus/file_select.asm:25-66` |
-| FS song bitmap | TBD | NES disasm + audio_driver.asm |
+| FS song bitmap | `$80` | `src/frontend_runtime.c:71` (`ITEM_SFX_SECONDARY = 0x80`) — DriveSong bit-7 set → demo/title phrase loop; Mode 1 inherits, no new write |
 | Cursor sprite | NES heart sprite, single-tile, vertical position per row | NES disasm |
