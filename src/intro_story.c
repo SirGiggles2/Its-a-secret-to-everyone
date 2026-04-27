@@ -16,6 +16,11 @@
 #define VDP_CTRL_WORD (*(volatile unsigned short *)0x00C00004)
 #define VDP_CTRL_LONG (*(volatile unsigned long  *)0x00C00004)
 
+/* m_song_loop_pending in audio_driver.asm — set to 1 by tick_sq1.song_ended
+ * each time the song script reads its $00 loop opcode. End-of-scroll
+ * hold polls this so the snap-back to title syncs with the music loop. */
+#define M_SONG_LOOP_PENDING (*(volatile unsigned char *)0x00FFE02B)
+
 extern const unsigned char  intro_common_bg_chr[];
 extern const unsigned long  intro_common_bg_chr_size;
 extern const unsigned char  intro_font_chr[];
@@ -213,7 +218,10 @@ void intro_story_load(void) {
                                   + GAP_ROWS
                                   + intro_treasures_tilemap_rows);
     s_total_pixels = (unsigned long)s_total_rows * 8u + 32u * 8u;
-    s_end_pause_threshold = (unsigned long)(s_total_rows - 28) * 8u;
+    /* Hold position: last 24 rows visible. 28 left MAP/COMPASS at the top
+     * of the viewport; 24 scrolls them off so the held screen shows just
+     * Triforce + sign + Link. */
+    s_end_pause_threshold = (unsigned long)(s_total_rows - 24) * 8u;
     reset_counters();
 
     vsram_set0(0);
@@ -300,11 +308,21 @@ void intro_story_step(void) {
         s_story_hold_armed = 1;
     }
     if (s_story_hold) { s_story_hold--; return; }
-    if (s_end_pause)  { s_end_pause--; return; }
+
+    /* End-of-scroll hold: when the last 28 rows are visible (Link sprite +
+     * Triforce + manual sign), pause indefinitely until the song completes
+     * a full loop, then snap back to title. Music engine sets
+     * m_song_loop_pending in tick_sq1.song_ended. */
     if (!s_end_pause_armed && s_pixel_count >= s_end_pause_threshold) {
-        s_end_pause = 180;
         s_end_pause_armed = 1;
+        M_SONG_LOOP_PENDING = 0;   /* arm: clear flag, wait for next loop */
         return;
+    }
+    if (s_end_pause_armed) {
+        if (M_SONG_LOOP_PENDING) {
+            s_at_end = 1;          /* song looped — flip back to title */
+        }
+        return;                    /* hold viewport either way */
     }
 
     /* NES rate = 0.5 px/frame. */

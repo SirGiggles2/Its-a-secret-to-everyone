@@ -338,8 +338,9 @@ def build_tilemap() -> tuple[list[int], int]:
     for _ in range(3):
         cells.extend(make_row())
 
-    # More space above the sign (lower its position).
-    for _ in range(10):
+    # Gap above the sign — close enough that Triforce + sign + Link all
+    # fit in the end-of-scroll viewport together.
+    for _ in range(4):
         cells.extend(make_row())
 
     # Manual paper sign: 6 cells wide x 6 cells tall, NES sprite pal 0 -> Gen pal 1.
