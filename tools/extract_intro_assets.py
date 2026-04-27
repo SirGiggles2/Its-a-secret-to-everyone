@@ -711,6 +711,10 @@ def _build_treasures_tilemap() -> tuple:
     import and call the compose module directly. The intro_demo directory is
     added to sys.path so the relative imports in that module resolve.
     """
+    # TODO(Task 6 or later): inline compose_treasures_tilemap.build_tilemap()
+    # logic here (or factor to tools/lib/) to remove the runtime dependency
+    # on tools/intro_demo/. Importlib bridge is acceptable while intro_demo
+    # tree exists; will break silently if intro_demo is ever deleted.
     import sys as _sys
     demo_dir = str(REPO / "tools" / "intro_demo")
     if demo_dir not in _sys.path:
@@ -766,13 +770,9 @@ def main() -> int:
     _emit_tilemap(out_dir / "intro_story_tilemap.c", "intro_story_tilemap",
                   story_cells, story_rows)
 
-    showcase_cells, showcase_rows = _build_showcase_tilemap(ref_dir)
-    if showcase_rows > 256:
-        print(f"error: showcase tilemap too tall: {showcase_rows} rows",
-              file=sys.stderr)
-        return 2
-    _emit_tilemap(out_dir / "intro_showcase_tilemap.c",
-                  "intro_showcase_tilemap", showcase_cells, showcase_rows)
+    # NOTE: _build_showcase_tilemap is still called by _build_title_tilemap
+    # (Task 4 dedup). The standalone emit was removed in Task 5 cleanup since
+    # build.bat no longer compiles intro_showcase_tilemap.c.
 
     _emit_restore_chr(out_dir / "intro_restore_chr.c", Path(args.restore_chr))
     _emit_restore_palette(out_dir / "intro_restore_palette.c",
@@ -832,7 +832,6 @@ def main() -> int:
         "intro_art_chr.c":  _sha(out_dir / "intro_art_chr.c"),
         "intro_palette.c": _sha(out_dir / "intro_palette.c"),
         "intro_story_tilemap.c": _sha(out_dir / "intro_story_tilemap.c"),
-        "intro_showcase_tilemap.c": _sha(out_dir / "intro_showcase_tilemap.c"),
         "intro_restore_chr.c": _sha(out_dir / "intro_restore_chr.c"),
         "intro_restore_palette.c": _sha(out_dir / "intro_restore_palette.c"),
         "intro_handoff_state.c": _sha(out_dir / "intro_handoff_state.c"),

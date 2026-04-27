@@ -23,6 +23,11 @@ unsigned char intro_should_take_over(void) {
     return 1;
 }
 
+/* TODO(Task 6): delete this bridge along with the legacy attract-takeover
+ * path in frontend_runtime.c:296. Under native intro (intro_main owns
+ * boot), this function is unreachable. Kept linkable so frontend_runtime
+ * doesn't fail at link time during the multi-step migration.
+ */
 void intro_story_tick(void) {
     if (!g_intro_takeover) return;
     nes_ram[0x07F3] = s_substage;
