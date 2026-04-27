@@ -638,15 +638,65 @@ DefaultException:
     bra.s   .spin
 
 ;==============================================================================
-; intro_to_file_select_trampoline — STUB. Real body in Task 9.
-; For Task 8 it just sets the handoff probe marker and stops, so we can
-; verify Start press is detected and intro_start_pressed runs end-to-end.
+; intro_to_file_select_trampoline — Start press handoff from native intro
+; to transpiled file-select path.
+;
+; Preconditions (set by intro_handoff.c before calling):
+;   - VDP display off, plane A/B blank, V64 mode, vscroll=0
+;   - vblank_mode still = 0 (native NMI dispatcher; music_tick + counter)
+;
+; This trampoline:
+;   1. Restores translated runtime register contract (A4/A5/D7).
+;   2. Seeds NES RAM file-select entry contract per
+;      docs/superpowers/specs/2026-04-26-native-intro-handoff-tbds.md
+;      Section 2.
+;   3. Re-enables transpiled NMI heartbeat via direct-write to BOTH
+;      PPUCTRL mirrors (gameplay shadow at ($00FF,A4) AND absolute
+;      shadow at (PPU_CTRL).l). This sidesteps _ppu_write_0's
+;      conditional NT_CACHE rebuild — see TBD spec Section 5.
+;   4. Flips vblank_mode = 1 so VBlankISR routes to the transpiled
+;      path starting next frame.
+;   5. Jumps to translated LoopForever (z_07.asm:1461). VBlank fires
+;      IsrNmi -> reads IsUpdatingMode=0 -> calls InitializeGameOrMode
+;      -> InitMode1.
+;
+; Does NOT return.
 ;==============================================================================
     xdef    intro_to_file_select_trampoline
 intro_to_file_select_trampoline:
-    move.b  #$BB,($00FF07F2).l
-    stop    #$2700
-    bra.s   intro_to_file_select_trampoline
+    move.b  #$BB,($00FF07F2).l       ; probe: trampoline entered
+
+    ; [1] Restore translated runtime register contract.
+    ;     Must be valid before any NMI fires with vblank_mode=1.
+    move.l  #$00FF0000,A4            ; NES RAM base
+    move.l  #$00FF0200,A5            ; NES OAM base
+    moveq   #-1,D7                   ; D7 = $FFFFFFFF (translated scratch / 6502 SP)
+
+    ; [2] Seed file-select entry RAM contract per TBD spec Section 2.
+    move.b  #$00,($0011,A4)          ; IsUpdatingMode = 0 (triggers InitMode on next NMI)
+    move.b  #$01,($0012,A4)          ; GameMode = $01 (Mode_RegisterMenu / file-select)
+    move.b  #$00,($0013,A4)          ; GameSubmode = 0
+    move.b  #$01,(FrontendStartReleaseGate).l ; = 1 (Start consumed; Mode1_Sub0 waits for release)
+    move.b  #$01,(VRamForceBlankGate).l       ; = 1 (protects VRAM streaming; released by InitMode1_Sub6)
+    move.b  #$00,($0600,A4)          ; SongRequest = 0 (file-select runs silent)
+
+    ; [3] Re-enable transpiled NMI heartbeat: PPUCTRL bit 7 = NMI enable.
+    ;     Direct-write to BOTH mirrors per TBD spec Section 5, avoiding
+    ;     _ppu_write_0's NT_CACHE rebuild branch.
+    move.b  ($00FF,A4),D0            ; read current PPUCTRL gameplay shadow ($00FF00FF)
+    ori.b   #$80,D0                  ; set NMI enable bit
+    move.b  D0,($00FF,A4)            ; write gameplay mirror
+    move.b  D0,(PPU_CTRL).l          ; write absolute mirror ($00FF0804, read by VBlankISR:486)
+
+    ; [4] Flip VBlankISR dispatcher to transpiled path.
+    ;     A4/A5/D7 are valid at this point.
+    move.b  #1,(vblank_mode).l       ; 0=native intro, 1=transpiled IsrNmi
+
+    ; [5] Spin in LoopForever. Does not return.
+    ;     VBlank 1: InitializeGameOrMode copies common code/data ($00F4: 0->1)
+    ;     VBlank 2: InitMode -> GameMode=$01 -> InitMode1 chain
+    ;     VBlank 3+: UpdateMode1Menu (file-select interactive)
+    jmp     LoopForever
 
 ;==============================================================================
 ; NES I/O emulation layer — real implementations of _ppu_*, _apu_*, _ctrl_*,
