@@ -107,6 +107,10 @@ static void fs_init(void) {
     music_play(SONG_FS_BIT);
 }
 
+/* Cursor row indices (matches fs_render_cursor table + fs_phase contract). */
+#define FS_ROW_PLAYERS  5u
+#define FS_ROW_OPTIONS  6u
+
 static void fs_input_dispatch(uint8_t edge) {
     if (s_fs_phase != FS_NAV) return;
     if ((edge & FS_BTN_UP) && s_fs_cursor > 0u) {
@@ -117,7 +121,18 @@ static void fs_input_dispatch(uint8_t edge) {
         s_fs_cursor++;
         fs_render_cursor(s_fs_cursor);
     }
-    /* A/Start/B handled in v3+ for slot pick / submenu enter / cancel. */
+    /* PLAYERS row L/R cycle 1..4 with wrap. */
+    if (s_fs_cursor == FS_ROW_PLAYERS) {
+        if (edge & FS_BTN_LEFT) {
+            s_fs_players_value = (s_fs_players_value <= 1u) ? 4u : (uint8_t)(s_fs_players_value - 1u);
+            fs_render_players_row(s_fs_players_value);
+        }
+        if (edge & FS_BTN_RIGHT) {
+            s_fs_players_value = (s_fs_players_value >= 4u) ? 1u : (uint8_t)(s_fs_players_value + 1u);
+            fs_render_players_row(s_fs_players_value);
+        }
+    }
+    /* A/Start/B handled in v4+ for slot pick / submenu enter / cancel. */
 }
 
 void fs_main(void) {

@@ -124,17 +124,25 @@ static uint8_t attr_palette_for_cell(uint16_t row, uint16_t col) {
     return (uint8_t)((b >> shift) & 0x03u);
 }
 
+/* v3: shift entire NES menu UP 3 rows so PLAYERS + OPTIONS fit inside the
+ * border. Source row r' = r + FS_ROW_SHIFT. Dest rows past the shifted border
+ * (>= 30 - SHIFT) get blank fill; PLAYERS/OPTIONS render on top via
+ * fs_render_extra_rows. Link sprite + cursor Y tables also subtract the shift. */
+#define FS_ROW_SHIFT  3u
+
 void fs_render_static_layout(void) {
-    /* Translate fs_static_tilemap + fs_static_attr to plane A nametable rows.
-     * Genesis cell = 16 bits: priority(1) | palette(2) | flipV(1) | flipH(1) | tile(11).
-     * Per-cell palette comes from NES attribute table; LIFE/heart-icon area uses pal 1.
-     * V32 plane fits all 30 NES rows (PLAYERS/OPTIONS rows live at 28..29).
-     */
     unsigned short cells[32];
     for (unsigned short row = 0; row < 30; row++) {
+        unsigned short src = (unsigned short)(row + FS_ROW_SHIFT);
         for (unsigned short col = 0; col < 32; col++) {
-            uint8_t tile = fs_static_tilemap[row * 32 + col];
-            uint8_t pal  = attr_palette_for_cell(row, col);
+            uint8_t tile, pal;
+            if (src < 30) {
+                tile = fs_static_tilemap[src * 32 + col];
+                pal  = attr_palette_for_cell(src, col);
+            } else {
+                tile = 0x24u;  /* space */
+                pal  = 0u;
+            }
             cells[col] = (uint16_t)(((uint16_t)pal & 0x3u) << 13) | (uint16_t)tile;
         }
         vdp_write_nametable_row(PLANE_A_BASE, row, cells);
@@ -163,8 +171,9 @@ void fs_render_static_layout(void) {
  * ---------------------------------------------------------------------------
  */
 void fs_render_slot(uint8_t slot_idx) {
-    /* NES Y base for Link sprites = $58; increment $18 per slot. */
-    uint16_t nes_y = (uint16_t)(0x58u + (uint16_t)slot_idx * 0x18u);
+    /* NES Y base for Link sprites = $58; increment $18 per slot.
+     * v3 shifts UI up FS_ROW_SHIFT*8 px to make room for PLAYERS/OPTIONS. */
+    uint16_t nes_y = (uint16_t)(0x58u - (FS_ROW_SHIFT * 8u) + (uint16_t)slot_idx * 0x18u);
     uint16_t sat_y = (uint16_t)(nes_y + 128u);   /* +128 SAT bias */
     uint16_t sat_x = (uint16_t)(0x30u + 128u);   /* NES X=$30, +128 bias → 0xB0 */
 
@@ -208,9 +217,17 @@ void fs_render_slot(uint8_t slot_idx) {
  * ---------------------------------------------------------------------------
  */
 void fs_render_cursor(uint8_t row) {
-    /* NES slot Y for cursor (Mode1CursorSpriteYs, Z_02.asm:2591-2592). */
-    static const uint8_t cursor_ys[5] = { 0x5C, 0x74, 0x8C, 0xA8, 0xB8 };
-    if (row >= 5) return;
+    /* NES slot Y for cursor (Mode1CursorSpriteYs, Z_02.asm:2591-2592) +
+     * v3 Redux extension: PLAYERS row 25 → Y $C8, OPTIONS row 26 → Y $D0.
+     * (NT_row * 8 matches NES convention used for COPY/ERASE rows.) */
+    /* All Ys reduced by FS_ROW_SHIFT*8 (=24) vs NES original to match v3 menu shift.
+     * PLAYERS row = 23 (post-shift), OPTIONS row = 24. */
+    static const uint8_t cursor_ys[7] = {
+        0x44, 0x5C, 0x74, 0x90, 0xA0,    /* slot0..ERASE shifted up 24 */
+        0xB8,  /* PLAYERS — row 23 (Y = 23*8) */
+        0xC0   /* OPTIONS — row 24 (Y = 24*8) */
+    };
+    if (row >= 7) return;
 
     uint16_t sat_y = (uint16_t)(cursor_ys[row] + 128u);
     uint16_t sat_x = (uint16_t)(0x28u + 128u);   /* NES X=$28 */
@@ -230,4 +247,99 @@ void fs_render_all_slots(void) {
     for (uint8_t i = 0; i < 3; i++) fs_render_slot(i);
 }
 
-void fs_render_players_row(uint8_t value) { (void)value; }
+/* ---------------------------------------------------------------------------
+ * v3 Redux extension: PLAYERS + OPTIONS rows.
+ *
+ * NES capture has 5 menu rows (3 slots + COPY + ERASE). Redux extends FS with
+ * PLAYERS (cycle 1..4) and OPTIONS (submenu, v5). These rows aren't in the
+ * captured nametable, so we render them in C using existing font tiles
+ * (A-Z at NES BG tiles 0x0A-0x23, digits 0-9 at 0x00-0x09).
+ *
+ * Layout (NT cells, palette 0):
+ *   row 25 col 4..10 = "PLAYERS", col 13 = digit (1..4)
+ *   row 26 col 4..10 = "OPTIONS"
+ *
+ * These match NES letter encoding so the same fs_bg_chr_full block renders
+ * them correctly without extra CHR upload.
+ * ---------------------------------------------------------------------------
+ */
+/* v3 row layout (post FS_ROW_SHIFT=3):
+ *   row 22 = bottom border line (NES row 25 shifted up to 22)
+ *   row 23 = PLAYERS  N
+ *   row 24 = OPTIONS
+ * Both inside the shifted border. */
+#define PLAYERS_ROW   23u
+#define OPTIONS_ROW   24u
+#define LABEL_COL      6u   /* matches "  COPY SAVE" indent inside border */
+#define DIGIT_COL     15u   /* "PLAYERS" at col 6..12, 2 spaces, digit at col 15 */
+#define EXTRA_PAL      0u   /* palette 0 — same as COPY/ERASE labels */
+
+static const uint8_t TILE_PLAYERS[7] = { 0x19, 0x15, 0x0A, 0x22, 0x0E, 0x1B, 0x1C };  /* P L A Y E R S */
+static const uint8_t TILE_OPTIONS[7] = { 0x18, 0x19, 0x1D, 0x12, 0x18, 0x17, 0x1C };  /* O P T I O N S */
+#define TILE_SPACE       0x24u
+#define TILE_BORDER_VERT 0x6Cu  /* NES side-border tile (col 3 + col 28 in rows 4..24) */
+#define TILE_BORDER_BL   0x6Eu  /* NES bottom-left corner tile (row 25 col 3) */
+#define TILE_BORDER_HORIZ 0x6Au /* NES bottom horizontal tile (row 25 cols 4..27) */
+#define TILE_BORDER_BR   0x6Du  /* NES bottom-right corner tile (row 25 col 28) */
+#define BORDER_LEFT_COL   3u
+#define BORDER_RIGHT_COL 28u
+#define BOTTOM_BORDER_ROW 25u   /* v3: extended bottom border row (post-shift target) */
+
+static unsigned short s_extra_row_buf[32];
+
+/* Build a row with side borders + label text. Empty cells = space; cols 3 + 28
+ * are the vertical border tiles so the box extends to enclose the text. */
+static void render_label_row(unsigned short row, const uint8_t *text7) {
+    for (unsigned short c = 0; c < 32; c++) s_extra_row_buf[c] = (uint16_t)TILE_SPACE;
+    s_extra_row_buf[BORDER_LEFT_COL]  = (uint16_t)TILE_BORDER_VERT;
+    s_extra_row_buf[BORDER_RIGHT_COL] = (uint16_t)TILE_BORDER_VERT;
+    for (unsigned short i = 0; i < 7u; i++) {
+        s_extra_row_buf[LABEL_COL + i] = (uint16_t)((EXTRA_PAL & 0x3u) << 13) | (uint16_t)text7[i];
+    }
+    vdp_write_nametable_row(PLANE_A_BASE, row, s_extra_row_buf);
+}
+
+/* Replace the bottom-border line that the shifted nametable wrote into row
+ * (25 - SHIFT) = 22 with plain side borders, so PLAYERS/OPTIONS rows below it
+ * are inside the enclosing box. */
+static void render_side_only_row(unsigned short row) {
+    for (unsigned short c = 0; c < 32; c++) s_extra_row_buf[c] = (uint16_t)TILE_SPACE;
+    s_extra_row_buf[BORDER_LEFT_COL]  = (uint16_t)TILE_BORDER_VERT;
+    s_extra_row_buf[BORDER_RIGHT_COL] = (uint16_t)TILE_BORDER_VERT;
+    vdp_write_nametable_row(PLANE_A_BASE, row, s_extra_row_buf);
+}
+
+/* Write the closing bottom-border line: BL corner, horizontal, BR corner. */
+static void render_bottom_border_row(unsigned short row) {
+    for (unsigned short c = 0; c < 32; c++) s_extra_row_buf[c] = (uint16_t)TILE_SPACE;
+    s_extra_row_buf[BORDER_LEFT_COL]  = (uint16_t)TILE_BORDER_BL;
+    for (unsigned short c = BORDER_LEFT_COL + 1u; c < BORDER_RIGHT_COL; c++) {
+        s_extra_row_buf[c] = (uint16_t)TILE_BORDER_HORIZ;
+    }
+    s_extra_row_buf[BORDER_RIGHT_COL] = (uint16_t)TILE_BORDER_BR;
+    vdp_write_nametable_row(PLANE_A_BASE, row, s_extra_row_buf);
+}
+
+void fs_render_extra_rows(void) {
+    /* Erase the shifted bottom border that landed at row (25 - SHIFT) = 22, and
+     * extend the side rails through PLAYERS + OPTIONS. */
+    render_side_only_row((unsigned short)(BOTTOM_BORDER_ROW - FS_ROW_SHIFT));
+    render_label_row(PLAYERS_ROW, TILE_PLAYERS);
+    render_label_row(OPTIONS_ROW, TILE_OPTIONS);
+    render_bottom_border_row(BOTTOM_BORDER_ROW);
+}
+
+void fs_render_players_row(uint8_t value) {
+    /* Patch the digit cell at row 25 col 13 in-place (single-cell write).
+     * Range clamp 1..4 (caller already wraps, but be defensive).
+     * NES digit '1'..'4' = BG tile 0x01..0x04. */
+    if (value < 1u) value = 1u;
+    if (value > 4u) value = 4u;
+
+    unsigned short addr = (unsigned short)(PLANE_A_BASE + (PLAYERS_ROW * 64u) + (DIGIT_COL * 2u));
+    uint32_t cmd = 0x40000000UL
+                 | ((uint32_t)(addr & 0x3FFF) << 16)
+                 | (uint32_t)((addr >> 14) & 0x0003);
+    VDP_CTRL_LONG = cmd;
+    VDP_DATA_WORD = (uint16_t)((EXTRA_PAL & 0x3u) << 13) | (uint16_t)value;
+}

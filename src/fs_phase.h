@@ -22,10 +22,11 @@ typedef enum {
     FS_HANDOFF
 } fs_phase_t;
 
-#define FS_CURSOR_MAX 4u   /* NES original: 5 positions (slot0..ERASE), index range 0..4 */
+#define FS_CURSOR_MAX 6u   /* v3: 7 positions (slot0..OPTIONS), index range 0..6 */
 
 extern uint8_t s_fs_phase;
 extern uint8_t s_fs_cursor;
+extern uint8_t s_fs_players_value;   /* 1..4 — PLAYERS L/R cycle */
 
 void fs_phase_init(void);
 void fs_phase_step(void);
