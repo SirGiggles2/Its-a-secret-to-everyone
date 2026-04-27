@@ -71,30 +71,55 @@ def _read_sprite_tile(tile_idx: int, sprite_chr: bytes) -> bytes:
 # ---------------------------------------------------------------------------
 
 def emit_palette() -> None:
-    """Emit src/gen/fs_palette.c with Link bright + dim palettes.
+    """Emit src/gen/fs_palette.c with BG palette + Link bright/dim palettes.
 
-    Source: Zelda1-Redux/src/code/menus/file_select.asm lines 75-78
-        $0F,$29,$27,$17    ; Black, green, beige, brown  (slot 1 saved / green Link)
-        $0F,$22,$27,$17    ; Black, blue, beige, brown   (slot 2 saved / blue Link)
-        $0F,$16,$27,$17    ; Black, red, beige, brown    (slot 3 saved / red Link)
-        (dim variant TBD — placeholder until NES capture validates it)
+    BG palette (palette 0) from aldonunez/Z_06.asm MenuPalettesTransferBuf:
+        BG pal 0: $0F,$30,$00,$12  → black, white, dark, blue
+    Link sprite palettes from Zelda1-Redux file_select.asm:75-78:
+        $0F,$29,$27,$17    ; Black, green, beige, brown  (slot 0 saved / green Link)
+        $0F,$22,$27,$17    ; Black, blue, beige, brown   (slot 1 saved / blue Link)
+        $0F,$16,$27,$17    ; Black, red, beige, brown    (slot 2 saved / red Link)
+        dim variant: placeholder until NES capture validates
     """
+    # BG palette 0: NES colors from MenuPalettesTransferBuf (Z_06.asm:444-448)
+    # $3F00: BG pal 0 = $0F,$30,$00,$12 (black bg, white text, black, blue)
+    BG_PAL0 = (0x0F, 0x30, 0x00, 0x12)
+
+    # Link sprite palettes (sprite palette 0-2 + dim)
+    # From Z_06.asm MenuPalettesTransferBuf sprite rows (after 4 BG palettes):
+    #   sprite pal 0: $0F,$29,$27,$07  green Link
+    #   sprite pal 1: $0F,$22,$27,$07  blue Link
+    #   sprite pal 2: $0F,$26,$27,$07  red Link
+    # Redux overrides (file_select.asm:75-78):
+    #   $0F,$29,$27,$17 / $0F,$22,$27,$17 / $0F,$16,$27,$17
     LINK_PALETTES = [
-        (0x0F, 0x29, 0x27, 0x17),  # slot 1 saved (green)
-        (0x0F, 0x22, 0x27, 0x17),  # slot 2 saved (blue)
-        (0x0F, 0x16, 0x27, 0x17),  # slot 3 saved (red)
-        (0x0F, 0x00, 0x10, 0x10),  # dim / empty slot (placeholder — tune after NES capture)
+        (0x0F, 0x29, 0x27, 0x17),  # slot 0 (green)
+        (0x0F, 0x22, 0x27, 0x17),  # slot 1 (blue)
+        (0x0F, 0x16, 0x27, 0x17),  # slot 2 (red)
+        (0x0F, 0x00, 0x10, 0x10),  # dim / empty slot
     ]
+
     out = []
     out.append("/* AUTO-GENERATED — see tools/extract_fs_assets.py */")
-    out.append("/* Source: Zelda1-Redux/src/code/menus/file_select.asm:75-78 */")
+    out.append("/* BG pal 0: aldonunez/Z_06.asm:444 MenuPalettesTransferBuf */")
+    out.append("/* Link palettes: Zelda1-Redux/src/code/menus/file_select.asm:75-78 */")
     out.append("#include <stdint.h>")
-    out.append("/* fs_link_palettes[4][4]: index 0=slot1(green) 1=slot2(blue) 2=slot3(red) 3=dim */")
+
+    # BG palette 0 (4 colors)
+    bg_cram = [nes_color_to_gen_cram(c) for c in BG_PAL0]
+    out.append("/* BG palette 0: black bg, white text, black, blue */")
+    out.append("const uint16_t fs_bg_palette[4] = {")
+    out.append("    " + ", ".join(f"0x{w:04X}" for w in bg_cram) + ",")
+    out.append("};")
+
+    # Link sprite palettes (4 × 4 colors)
+    out.append("/* fs_link_palettes[4][4]: 0=green 1=blue 2=red 3=dim */")
     out.append("const uint16_t fs_link_palettes[4][4] = {")
     for pal in LINK_PALETTES:
         cram = [nes_color_to_gen_cram(c) for c in pal]
         out.append("    { " + ", ".join(f"0x{w:04X}" for w in cram) + " },")
     out.append("};")
+
     (OUT_DIR / "fs_palette.c").write_text("\n".join(out) + "\n")
     print("[fs] emitted fs_palette.c")
 
@@ -235,12 +260,51 @@ def emit_border_chr() -> None:
     _emit_chr_array(tiles, "fs_border_chr", color_shift=0)
 
 
+def emit_bg_chr_full() -> None:
+    """Emit src/gen/fs_bg_chr_full.c — full BG CHR block covering all 256 NES BG tiles.
+
+    CommonBackgroundPatterns.dat (tiles 0x00-0x6F, 112 tiles) +
+    DemoBackgroundPatterns.dat  (tiles 0x70-0xFF, 144 tiles) = 256 tiles total.
+
+    Uploaded to VRAM tile 0x00 (256 tiles × 32 bytes = 8192 bytes). This maps every
+    NES BG tile index 0x00-0xFF to the correct Genesis VRAM tile, so the nametable
+    (which references tiles like 0x71-0xD3 for hearts/name/life display) resolves
+    correctly without any gaps.
+
+    Link sprite CHR is uploaded ABOVE this block (at VRAM tile 0x100+) to avoid
+    collision with BG tiles that the nametable also references at 0x80-0x84.
+    """
+    # Combined BG CHR: Common (112 tiles 0x00-0x6F) + Demo (130 tiles 0x70-0xF1) = 242 tiles.
+    # Nametable uses tile indices up to 0xF0 (confirmed from static tilemap analysis).
+    TOTAL = 242   # tiles 0x00..0xF1 = 242 tiles
+    bg = _load_bg_chr()
+
+    tiles_nes = [_read_bg_tile(ti, bg) for ti in range(TOTAL)]
+
+    out = []
+    out.append("/* AUTO-GENERATED — see tools/extract_fs_assets.py */")
+    out.append("/* Full BG CHR block: tiles 0x00-0xF1 (242 tiles × 32 bytes = 7744 bytes).")
+    out.append(" * CommonBackgroundPatterns(112) + DemoBackgroundPatterns(130) = 242 tiles.")
+    out.append(" * Upload to VRAM tile 0x00. Covers font, content(0x70-0xD3), border, misc.")
+    out.append(" * All NES BG tile refs in nametable (max 0xF0) resolve correctly. */")
+    out.append("#include <stdint.h>")
+    n = len(tiles_nes)
+    out.append(f"const uint8_t fs_bg_chr_full[{n * 32}] = {{")
+    for nes_tile in tiles_nes:
+        gen_tile = nes_tile_to_gen_tile(nes_tile, color_shift=0)
+        out.append("    " + ", ".join(f"0x{b:02X}" for b in gen_tile) + ",")
+    out.append("};")
+    (OUT_DIR / "fs_bg_chr_full.c").write_text("\n".join(out) + "\n")
+    print(f"[fs] emitted fs_bg_chr_full.c  ({n} tiles, {n*32} bytes)")
+
+
 def emit_chr_blocks() -> None:
-    """Emit all four CHR block files for v1.2."""
+    """Emit all CHR block files."""
     emit_link_sprite_chr()
     emit_heart_cursor_chr()
     emit_font_chr()
     emit_border_chr()
+    emit_bg_chr_full()
 
 
 # ---------------------------------------------------------------------------

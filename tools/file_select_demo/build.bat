@@ -73,6 +73,10 @@ echo [fs_demo] Compiling gen\fs_border_chr.c
 "%M68K_GCC%" -B "%M68K_BIN%\\" %CFLAGS% -c "%GEN_DIR%\fs_border_chr.c" -o "%OUT_DIR%\fs_border_chr.o"
 if errorlevel 1 exit /b 1
 
+echo [fs_demo] Compiling gen\fs_bg_chr_full.c
+"%M68K_GCC%" -B "%M68K_BIN%\\" %CFLAGS% -c "%GEN_DIR%\fs_bg_chr_full.c" -o "%OUT_DIR%\fs_bg_chr_full.o"
+if errorlevel 1 exit /b 1
+
 echo [fs_demo] Compiling src\intro_common.c (shared VDP primitives)
 "%M68K_GCC%" -B "%M68K_BIN%\\" %CFLAGS% -c "%SRC_DIR%\intro_common.c" -o "%OUT_DIR%\intro_common.o"
 if errorlevel 1 exit /b 1
@@ -92,7 +96,8 @@ echo [fs_demo] Linking
     "%OUT_DIR%\fs_link_sprite_chr.o" ^
     "%OUT_DIR%\fs_heart_cursor_chr.o" ^
     "%OUT_DIR%\fs_font_chr.o" ^
-    "%OUT_DIR%\fs_border_chr.o"
+    "%OUT_DIR%\fs_border_chr.o" ^
+    "%OUT_DIR%\fs_bg_chr_full.o"
 if errorlevel 1 exit /b 1
 
 echo [fs_demo] objcopy -> raw bin
