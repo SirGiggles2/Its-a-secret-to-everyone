@@ -13,7 +13,7 @@ The "golden reference" against which every parity check runs. All values are fil
 
 **Fixed inputs:**
 
-- **NES ROM SHA256:** `<filled at S0 — Legend of Zelda, The (USA).nes>`
+- **NES ROM SHA256:** `8f72dc2e98572eb4ba7c3a902bca5f69c448fc4391837e5f8f0d4556280440ac` (Legend of Zelda, The (USA).nes — locked at S0 from the local copy under `Zelda1-Redux/`)
 - **Current Genesis ROM SHA256 (baseline):** `<filled at S0 — current FINAL TRY known-good ROM>`
 - **NES emulator + version:** BizHawk 2.11 (NES core: `<filled at S0>`)
 - **Genesis emulator + version:** BizHawk 2.11 (Genesis core: `<filled at S0>`)

@@ -1,5 +1,7 @@
-# Copyrighted ROM — never commit
+# Reference ROMs — never committed
 *.nes
+*.NES
+reference/*.nes
 
 # Python cache
 __pycache__/
