@@ -14,7 +14,7 @@ The "golden reference" against which every parity check runs. All values are fil
 **Fixed inputs:**
 
 - **NES ROM SHA256:** `8f72dc2e98572eb4ba7c3a902bca5f69c448fc4391837e5f8f0d4556280440ac` (Legend of Zelda, The (USA).nes — locked at S0 from the local copy under `Zelda1-Redux/`)
-- **Current Genesis ROM SHA256 (baseline):** `<filled at S0 — current FINAL TRY known-good ROM>`
+- **Current Genesis ROM SHA256 (baseline):** `4bcfc1d916f44f31f36ee5bc0862b6b696313a264ffcc8373abde87d318befb4` (`builds/whatif.md`, locked from on-disk artifact at commit `7f0173d1` on 2026-04-28; build reproducibility verified at S1)
 - **NES emulator + version:** BizHawk 2.11 (NES core: `<filled at S0>`)
 - **Genesis emulator + version:** BizHawk 2.11 (Genesis core: `<filled at S0>`)
 - **NES screen palette (RGB):** `<filled at S0 — name and source, e.g. FCEUX default 2C02 or PaletteFromNESHueDecoder>`
