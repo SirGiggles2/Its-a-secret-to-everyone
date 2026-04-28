@@ -120,13 +120,13 @@ set "OBJ_DIR_FS=%C_OBJ_DIR:\=/%"
 if exist "%LD_RESP%" del "%LD_RESP%"
 for %%F in (%C_SOURCES%) do (
     echo [2a/4] Compiling %%F.c...
-    "%M68K_GCC%" -B "%M68K_BIN%\\" -m68000 -ffreestanding -nostdlib -nostartfiles -ffixed-a4 -fno-builtin -fomit-frame-pointer -fno-PIC -fno-common -O2 -I "%ROOT%\src" -c "%ROOT%\src\%%F.c" -o "%C_OBJ_DIR%\%%F.o"
+    "%M68K_GCC%" -B "%M68K_BIN%\\" -m68000 -ffreestanding -nostdlib -nostartfiles -ffixed-a4 -fno-builtin -fomit-frame-pointer -fno-PIC -fno-common -O2 -I "%ROOT%\src" -I "%ROOT%\src\state" -c "%ROOT%\src\%%F.c" -o "%C_OBJ_DIR%\%%F.o"
     if errorlevel 1 exit /b 1
     >> "%LD_RESP%" echo "%OBJ_DIR_FS%/%%F.o"
 )
 for %%F in (%C_GEN_SOURCES%) do (
     echo [2a/4] Compiling gen/%%F.c...
-    "%M68K_GCC%" -B "%M68K_BIN%\\" -m68000 -ffreestanding -nostdlib -nostartfiles -ffixed-a4 -fno-builtin -fomit-frame-pointer -fno-PIC -fno-common -O2 -I "%ROOT%\src" -c "%ROOT%\src\gen\%%F.c" -o "%C_OBJ_DIR%\%%F.o"
+    "%M68K_GCC%" -B "%M68K_BIN%\\" -m68000 -ffreestanding -nostdlib -nostartfiles -ffixed-a4 -fno-builtin -fomit-frame-pointer -fno-PIC -fno-common -O2 -I "%ROOT%\src" -I "%ROOT%\src\state" -c "%ROOT%\src\gen\%%F.c" -o "%C_OBJ_DIR%\%%F.o"
     if errorlevel 1 exit /b 1
     >> "%LD_RESP%" echo "%OBJ_DIR_FS%/%%F.o"
 )
