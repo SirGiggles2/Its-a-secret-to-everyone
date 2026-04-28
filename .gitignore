@@ -24,5 +24,6 @@ tools/file_select_demo/out/
 .claude/worktrees/
 .codex_tmp/
 .superpowers/
+.worktrees/
 analyze_funcs.txt
 src.zip
