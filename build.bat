@@ -198,6 +198,16 @@ set "TAG=Zelda%PHASE%.%BUILD_NUM%"
 if errorlevel 1 echo WARNING: archive step failed (non-fatal)
 
 rem ---------------------------------------------------------------------------
+rem [S0] Warning-only legacy symbol lint
+rem
+rem Runs after the ROM is produced and archived but before any post-build
+rem probes that may exit non-zero (e.g. phase-sequence probe). Always exits
+rem zero — never fails the build at S0. Spec Section 8.1 graduates the
+rem invariant to fail at S1.
+rem ---------------------------------------------------------------------------
+"%PYTHON%" "%ROOT%\tools\probes\lint_legacy_symbols.py"
+
+rem ---------------------------------------------------------------------------
 rem [5] Phase-sequence probe (Layer 1 test)
 rem
 rem Boots the ROM headlessly, samples phase bytes every 60 frames for 4000
@@ -268,11 +278,5 @@ if errorlevel 1 (
 ) else (
     echo No changes to commit.
 )
-
-rem ---------------------------------------------------------------------------
-rem [S0] Warning-only legacy symbol lint
-rem ---------------------------------------------------------------------------
-"%PYTHON%" "%ROOT%\tools\probes\lint_legacy_symbols.py"
-rem (intentionally not gating on errorlevel — S0 lint is warn-only)
 
 exit /b 0
