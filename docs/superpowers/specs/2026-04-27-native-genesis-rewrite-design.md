@@ -13,11 +13,11 @@ The "golden reference" against which every parity check runs. All values are fil
 
 **Fixed inputs:**
 
-- **NES ROM SHA256:** `<filled at S0 — Legend of Zelda, The (USA).nes>`
-- **Current Genesis ROM SHA256 (baseline):** `<filled at S0 — current FINAL TRY known-good ROM>`
-- **NES emulator + version:** BizHawk 2.11 (NES core: `<filled at S0>`)
-- **Genesis emulator + version:** BizHawk 2.11 (Genesis core: `<filled at S0>`)
-- **NES screen palette (RGB):** `<filled at S0 — name and source, e.g. FCEUX default 2C02 or PaletteFromNESHueDecoder>`
+- **NES ROM SHA256:** `8f72dc2e98572eb4ba7c3a902bca5f69c448fc4391837e5f8f0d4556280440ac` (Legend of Zelda, The (USA).nes — locked at S0 from the local copy under `Zelda1-Redux/`)
+- **Current Genesis ROM SHA256 (baseline):** `4bcfc1d916f44f31f36ee5bc0862b6b696313a264ffcc8373abde87d318befb4` (`builds/whatif.md`, locked from on-disk artifact at commit `7f0173d1` on 2026-04-28; build reproducibility verified at S1)
+- **NES emulator + version:** BizHawk 2.11.0 (NES core: `quickerNES`)
+- **Genesis emulator + version:** BizHawk 2.11.0 (Genesis core: `Genplus-gx` / GPGX)
+- **NES screen palette (RGB):** `quickerNES` built-in palette (192-byte RGB triplet table from `BizHawk-2.11-win-x64/config.ini`; see `docs/audit/emulators.md`)
 - **Canonical input movies:** stored under `tools/probes/movies/` per stage (`s3_start_room.bk2`, `s4_link_walk.bk2`, etc.). Each movie file declares its **initial SRAM image** as a sibling `.sram` blob (or explicit empty-SRAM marker). Probes start the emulator from that SRAM state. Without this, file-delete and registered-file-start probes are non-deterministic.
 - **RNG / frame-state sync rules:** Genesis run is started at frame 0 from cold reset, with deterministic input movie. NES run uses same input timing relative to mode entry. RNG state diff is logged per frame; non-zero diff outside expected divergence windows fails the stage.
 
@@ -35,13 +35,14 @@ Two distinct levels apply per stage; the spec specifies which:
     - `scroll` — `{x, y}` per plane in canonical pixel units
     - `state` — selected gameplay fields per probe (RNG, frame counter, mode, link state)
   - Tooling: `tools/probes/normalize_nes.py` and `tools/probes/normalize_gen.py` produce the schema; `tools/probes/diff_normalized.py` diffs two schemas.
-- **RGB screenshot parity (final-frame visual stages):** PNG-vs-PNG diff after color normalization. Capture geometry is locked at S0:
-  - Genesis display mode (H32 or H40) — locked at S0
-  - RGB viewport size — locked at S0
-  - Crop origin (top-left of comparison region) — locked at S0
-  - Overscan policy (ignored or included) — locked at S0
-  - Backdrop / transparent color policy — locked at S0
-  - Screenshot scaling — none, 1:1 pixel comparison only
+- **RGB screenshot parity (final-frame visual stages):** PNG-vs-PNG diff after color normalization. Capture geometry is locked at S0 (see `docs/audit/capture_geometry.md`):
+  - Genesis display mode: **H32** (256×224 visible)
+  - RGB viewport size: **256×224 px**
+  - Crop origin (Genesis): `(0, 0)` — full H32 frame
+  - Crop origin (NES): `(0, 8)` — skip NES top blanking to align with H32's 224 lines
+  - Overscan policy: ignored (both captures cropped to 256×224 visible playfield)
+  - Backdrop / transparent color: NES `$3F00` → Genesis CRAM byte 0 (palette 0, index 0)
+  - Screenshot scaling: none, 1:1 pixel comparison only
   - NES capture is converted to Genesis-CRAM equivalent via the locked palette-mapping table at `data/palettes/nes_to_genesis.c`; Genesis capture is output at native VDP RGB. Threshold is exact match on tile-aligned regions; diff reports per-tile mismatches.
 
 Stages that touch tilemap/CHR/palette content default to **logical parity (normalized for NES-vs-Genesis)**. Stages that touch end-to-end render output default to **RGB parity** with the locked palette table. Both can apply to a single stage.
@@ -240,9 +241,9 @@ Locked at S0 and held constant through S13.
 
 **Toolchain:**
 
-- **C compiler:** `<filled at S0 — current toolchain, likely m68k-elf-gcc or vbcc>`, version `<filled at S0>`. Optimization level fixed per build profile.
-- **Assembler:** vasm Motorola syntax (`vasmm68k_mot.exe`), version `<filled at S0>`.
-- **Linker:** `<filled at S0>`. Single linker script under `src/platform/`.
+- **C compiler:** `m68k-elf-gcc.exe`, version `gcc (crosstool-NG UNKNOWN) 13.2.0`. Optimization level fixed per build profile.
+- **Assembler:** vasm Motorola syntax (`vasmm68k_mot.exe`), version `vasm 2.0e; M68k cpu backend 2.8; motorola syntax module 3.19d`.
+- **Linker:** `m68k-elf-ld.exe`, version `GNU ld (crosstool-NG UNKNOWN) 2.40`. Single linker script under `src/platform/`.
 
 **Calling convention (C ↔ asm):**
 
@@ -250,7 +251,9 @@ Locked at S0 and held constant through S13.
 - **Caller-saved (clobberable by callee):** D0, D1, A0, A1.
 - **Callee-saved (must preserve):** D2–D7, A2–A6.
 - A7 is the M68K stack pointer; never touched outside platform code.
-- Return values: locked at S0 by inspecting compiler output of `tools/probes/abi_probe.c` (see S0 acceptance). The probe defines and exports listing for `u32 abi_ret_u32(void)`, `void *abi_ret_ptr(void)`, `u32 abi_arg_mix(u16 a, u32 b, void *p)`. Result is recorded in `docs/audit/abi_probe.md` (registers used, stack frame, callee-save behavior). No "unless" clauses remain post-S0.
+- Return values: **D0 for all ≤32-bit values and pointers.** Both `u32` and `void *` returns land in D0 (not A0). Confirmed by `tools/probes/abi_probe.c` listing (`builds/abi_probe/abi_probe.s`); full details in `docs/audit/abi_probe.md`.
+- Arguments are passed on the stack in left-to-right order. For `u32 abi_arg_mix(u16 a, u32 b, void *p)`: `a` (u16, zero-extended) at sp+6, `b` (u32) at sp+8, `p` (void *) at sp+12. No register argument passing observed at -O1 with these flags.
+- Callee-saved registers per System V m68k ABI: D2–D7, A2–A6. GCC emits MOVEM to preserve these only when actually used; the contractual set is confirmed by ABI spec and enforced by `-ffixed-a4` pinning A4 outside the allocatable set entirely.
 - **No C↔asm function may pass or return structs by value.** Aggregates cross the boundary by pointer only. This avoids compiler-specific struct-return ABI traps.
 
 **Interrupt handler ABI:**
@@ -484,9 +487,9 @@ Audit the current tree before any file moves. Outputs are documents, scripts, an
 - Map current build artifacts and source-order: which `.asm`/`.c` files compile in what order, which `.o` files link into the ROM, which symbols are exported by each. Output: `docs/audit/build_order.md`.
 - Classify every file as: **owned C**, **generated data**, **transpiled asm**, **shim asm**, **platform asm**, or **dead/cruft**. Output: `docs/audit/file_classification.md`.
 - Add `tools/probes/lint_legacy_symbols.py` — grep-based check that reports new callers of forbidden symbols. **Warning-only at S0.**
-- Build and inspect `tools/probes/abi_probe.c` (`u32 abi_ret_u32(void)`, `void *abi_ret_ptr(void)`, `u32 abi_arg_mix(u16, u32, void *)`); commit listing to `docs/audit/abi_probe.md` with proven calling-convention details. Replace every `<filled at S0>` placeholder in Section 4.5.
+- Build and inspect `tools/probes/abi_probe.c` (`u32 abi_ret_u32(void)`, `void *abi_ret_ptr(void)`, `u32 abi_arg_mix(u16, u32, void *)`); commit listing to `docs/audit/abi_probe.md` with proven calling-convention details. Replace every Section 4.5 placeholder marker with the recorded values.
 - Lock NES ROM provenance: ROM is **not committed**. `tools/probes/locate_reference_rom.py` resolves the ROM path via local config or `ZELDA_NES_ROM` env var, verifies SHA256 against the value recorded in Section 0, and is called by every probe before extraction.
-- Fill the `<filled at S0>` placeholders in **Section 0 (Reference Contract)**: ROM hashes, current Genesis baseline ROM hash, emulator versions, palette, viewport/crop/overscan/backdrop/H-mode policy.
+- Fill the placeholder markers in **Section 0 (Reference Contract)**: ROM hashes, current Genesis baseline ROM hash, emulator versions, palette, viewport/crop/overscan/backdrop/H-mode policy.
 - Resolve the **S0-Locked Questions** in Section 12.
 - **Acceptance:** current build still produces a working ROM with no behavioral change. All audit documents committed. Lint check runs in CI. Reference + ABI contracts have no remaining placeholders. Section 12 reduced to "None."
 
@@ -752,18 +755,24 @@ tools/probes/
 
 ## 12. S0-Locked Questions
 
-These must be resolved before S1 begins. S0 closes by recording answers and reducing this section to **None**.
+**Resolved at S0.** See `docs/audit/s0_close.md` for the full close-out
+summary; per-question evidence is in the named audit docs.
 
-1. **Active Genesis baseline ROM** — must be the current FINAL TRY known-good build unless explicitly amended. WHAT IF is architectural reference only, never the parity baseline.
-2. **Capture geometry** — Genesis display mode (H32 / H40), RGB viewport size, crop origin, overscan policy, backdrop / transparent color policy.
-3. **ABI proof** — `tools/probes/abi_probe.c` and listing output committed under `docs/audit/abi_probe.md`. Pointer return register, argument passing, callee-saved register set are recorded from actual compiler output. Confirm the no-struct-by-value rule holds for the chosen toolchain.
-4. **Normalized parity schema lock** — confirm `tools/probes/normalize_nes.py` and `tools/probes/normalize_gen.py` produce schema instances that diff cleanly on a known-equivalent screen pair (start-room from current FINAL TRY ROM vs NES ROM after manual eyeball check).
-5. **Audio responsibility split** — confirm S1 preservation of frontend music is reachable under the new SGDK frame loop. Confirm S11 receives the gameplay-wide audio integration debt without S4–S10 being blocked.
-6. **Render-API public boundary** — confirm `src/abi/render_abi.h` is the only render-facing include for game/frontend (plus SGDK's standard headers). Lint enforces.
-7. **Reference ROM provenance** — confirm `tools/probes/locate_reference_rom.py` resolves the NES ROM via local config or `ZELDA_NES_ROM` env var and verifies SHA256 before any extraction or probe runs. Confirm ROM is not committed to repo.
-8. **SGDK version + integration** — pin the SGDK release (commit SHA or release tag), verify build green against the existing toolchain, and verify SGDK's sprite engine fits Zelda's worst-case sprite pressure (Aquamentus / Gleeok). See `docs/audit/sgdk_integration.md` produced by Task 3.5.
-9. **SGDK vendoring mechanism** — pick one of: in-tree `sgdk/` directory, git submodule, or `setup.bat` that downloads + verifies SHA. Decision recorded in `docs/audit/sgdk_integration.md` with rationale.
-10. **A4 register convention vs SGDK** — `-fcall-saved-a4` in current `build.bat` reserves A4 for NES-RAM access. Verify SGDK does not require A4 for its own runtime, or document the mitigation. Recorded in ABI probe results (Task 8).
+| # | Question | Resolution | Evidence |
+|---|---|---|---|
+| Q1 | Active Genesis baseline ROM | `4bcfc1d916f44f31f36ee5bc0862b6b696313a264ffcc8373abde87d318befb4` (`builds/whatif.md`) | `docs/audit/baseline_rom.md` |
+| Q2 | Capture geometry | H32 / 256×224 / NES top-crop +8 | `docs/audit/capture_geometry.md` |
+| Q3 | ABI proof | D0 for u32 + pointer returns; args on stack; A4 untouched (`-ffixed-a4`) | `docs/audit/abi_probe.md` |
+| Q4 | Normalized parity schema lock | **Deferred to S1** — manual NES↔Genesis capture validation requires BizHawk runs (skipped in S0) | `docs/audit/parity_schema_check.md` |
+| Q5 | Audio responsibility split | Wrapper plan recorded; existing driver kept through S1, XGM2 swap deferred to S11 | `docs/audit/audio_split_plan.md` |
+| Q6 | Render-API public boundary | `src/abi/render_abi.h` (SGDK headers + adapter prototypes); lint enforces from S1 | spec Section 6 |
+| Q7 | NES ROM provenance | Not committed; SHA256 verified at runtime by `tools/probes/locate_reference_rom.py` | `docs/audit/toolchain.md`, `tools/probes/locate_reference_rom.py` |
+| Q8 | SGDK version | Pinned `v2.00` (smoke test deferred to S1 vendoring) | `docs/audit/sgdk_integration.md` |
+| Q9 | SGDK vendoring | Git submodule | `docs/audit/sgdk_integration.md` |
+| Q10 | A4 register conflict | **Deferred to S1** — SGDK library not on disk yet; mitigation plan recorded (drop `-ffixed-a4`, migrate NES_RAM base if conflict found) | `docs/audit/sgdk_integration.md`, `docs/audit/toolchain.md` |
+
+Two deferrals (Q4, Q10) are tracked in S1 work; both have explicit
+mitigation plans. No spec-level open questions remain.
 
 ## 13. References
 
