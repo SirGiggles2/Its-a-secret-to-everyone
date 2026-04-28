@@ -96,6 +96,16 @@ echo [2a.0b/4] Extracting File Select assets from live CHR-RAM dump...
 "%PYTHON%" "%ROOT%\tools\extract_fs_assets.py"
 if errorlevel 1 exit /b 1
 
+echo [2a.0c/4] Verifying data/MANIFEST.sha256 matches data/ tree...
+"%PYTHON%" "%ROOT%\tools\probes\check_data_manifest.py"
+if errorlevel 1 (
+    echo.
+    echo data/ output differs from committed manifest.
+    echo Re-run: python tools\build_data.py
+    echo Then commit data\MANIFEST.sha256 if intentional.
+    exit /b 1
+)
+
 if not exist "%C_OBJ_DIR%" mkdir "%C_OBJ_DIR%"
 
 rem ---------------------------------------------------------------------------
