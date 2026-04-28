@@ -35,13 +35,14 @@ Two distinct levels apply per stage; the spec specifies which:
     - `scroll` — `{x, y}` per plane in canonical pixel units
     - `state` — selected gameplay fields per probe (RNG, frame counter, mode, link state)
   - Tooling: `tools/probes/normalize_nes.py` and `tools/probes/normalize_gen.py` produce the schema; `tools/probes/diff_normalized.py` diffs two schemas.
-- **RGB screenshot parity (final-frame visual stages):** PNG-vs-PNG diff after color normalization. Capture geometry is locked at S0:
-  - Genesis display mode (H32 or H40) — locked at S0
-  - RGB viewport size — locked at S0
-  - Crop origin (top-left of comparison region) — locked at S0
-  - Overscan policy (ignored or included) — locked at S0
-  - Backdrop / transparent color policy — locked at S0
-  - Screenshot scaling — none, 1:1 pixel comparison only
+- **RGB screenshot parity (final-frame visual stages):** PNG-vs-PNG diff after color normalization. Capture geometry is locked at S0 (see `docs/audit/capture_geometry.md`):
+  - Genesis display mode: **H32** (256×224 visible)
+  - RGB viewport size: **256×224 px**
+  - Crop origin (Genesis): `(0, 0)` — full H32 frame
+  - Crop origin (NES): `(0, 8)` — skip NES top blanking to align with H32's 224 lines
+  - Overscan policy: ignored (both captures cropped to 256×224 visible playfield)
+  - Backdrop / transparent color: NES `$3F00` → Genesis CRAM byte 0 (palette 0, index 0)
+  - Screenshot scaling: none, 1:1 pixel comparison only
   - NES capture is converted to Genesis-CRAM equivalent via the locked palette-mapping table at `data/palettes/nes_to_genesis.c`; Genesis capture is output at native VDP RGB. Threshold is exact match on tile-aligned regions; diff reports per-tile mismatches.
 
 Stages that touch tilemap/CHR/palette content default to **logical parity (normalized for NES-vs-Genesis)**. Stages that touch end-to-end render output default to **RGB parity** with the locked palette table. Both can apply to a single stage.
