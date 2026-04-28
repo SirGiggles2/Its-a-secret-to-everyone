@@ -112,7 +112,10 @@ rem ---------------------------------------------------------------------------
 rem C_SOURCES split around the frontend block to preserve original link order:
 rem   C_SOURCES_PRE  → C_FRONTEND → C_SOURCES_MID → C_FRONTEND_INTRO → C_FRONTEND_FS
 rem   (original order: ...room_object_runtime frontend_runtime save_menu_runtime intro_* fs_*)
-set "C_SOURCES_PRE=core_runtime c_move_object c_wanderer object_runtime enemy_runtime enemy_common_runtime enemy_walker_runtime enemy_wanderer_runtime enemy_block_runtime enemy_wallmaster_runtime enemy_flyer_runtime enemy_boss_runtime enemy_gleeok_runtime enemy_dodongo_runtime enemy_manhandla_runtime enemy_lamnola_runtime enemy_projectile_runtime uw_person_runtime cave_runtime hud_runtime item_runtime weapon_runtime world_runtime sprite_runtime combat_runtime collision_runtime link_collision_runtime progress_runtime targeting_runtime trap_runtime room_runtime room_load_runtime room_mode_runtime room_transfer_runtime room_player_runtime room_object_runtime"
+rem B5a: enemies split into C_GAME_ENEMIES (src/game/enemies/); remaining in C_SOURCES_PRE
+set "C_SOURCES_PRE=core_runtime c_move_object object_runtime"
+set "C_GAME_ENEMIES=c_wanderer enemy_runtime enemy_common_runtime enemy_walker_runtime enemy_wanderer_runtime enemy_block_runtime enemy_wallmaster_runtime enemy_flyer_runtime enemy_boss_runtime enemy_gleeok_runtime enemy_dodongo_runtime enemy_manhandla_runtime enemy_lamnola_runtime enemy_projectile_runtime"
+set "C_SOURCES_PRE_B=uw_person_runtime cave_runtime hud_runtime item_runtime weapon_runtime world_runtime sprite_runtime combat_runtime collision_runtime link_collision_runtime progress_runtime targeting_runtime trap_runtime room_runtime room_load_runtime room_mode_runtime room_transfer_runtime room_player_runtime room_object_runtime"
 set "C_FRONTEND=frontend_runtime"
 set "C_SOURCES_MID=save_menu_runtime"
 set "C_FRONTEND_INTRO=intro_common intro_story intro_handoff intro_main intro_phase intro_title"
@@ -126,42 +129,54 @@ set "LD_RESP=%C_OBJ_DIR%\link_objs.rsp"
 set "OBJ_DIR_FS=%C_OBJ_DIR:\=/%"
 if exist "%LD_RESP%" del "%LD_RESP%"
 echo [2a/4] Compiling core/c_runtime.c...
-"%M68K_GCC%" -B "%M68K_BIN%\\" -m68000 -ffreestanding -nostdlib -nostartfiles -ffixed-a4 -fno-builtin -fomit-frame-pointer -fno-PIC -fno-common -O2 -I "%ROOT%\src" -I "%ROOT%\src\state" -I "%ROOT%\src\core" -I "%ROOT%\src\abi" -I "%ROOT%\src\frontend" -I "%ROOT%\src\frontend\intro" -I "%ROOT%\src\frontend\fs" -c "%ROOT%\src\core\c_runtime.c" -o "%C_OBJ_DIR%\c_runtime.o"
+"%M68K_GCC%" -B "%M68K_BIN%\\" -m68000 -ffreestanding -nostdlib -nostartfiles -ffixed-a4 -fno-builtin -fomit-frame-pointer -fno-PIC -fno-common -O2 -I "%ROOT%\src" -I "%ROOT%\src\state" -I "%ROOT%\src\core" -I "%ROOT%\src\abi" -I "%ROOT%\src\frontend" -I "%ROOT%\src\frontend\intro" -I "%ROOT%\src\frontend\fs" -I "%ROOT%\src\game\enemies" -c "%ROOT%\src\core\c_runtime.c" -o "%C_OBJ_DIR%\c_runtime.o"
 if errorlevel 1 exit /b 1
 >> "%LD_RESP%" echo "%OBJ_DIR_FS%/c_runtime.o"
 for %%F in (%C_SOURCES_PRE%) do (
     echo [2a/4] Compiling %%F.c...
-    "%M68K_GCC%" -B "%M68K_BIN%\\" -m68000 -ffreestanding -nostdlib -nostartfiles -ffixed-a4 -fno-builtin -fomit-frame-pointer -fno-PIC -fno-common -O2 -I "%ROOT%\src" -I "%ROOT%\src\state" -I "%ROOT%\src\core" -I "%ROOT%\src\abi" -I "%ROOT%\src\frontend" -I "%ROOT%\src\frontend\intro" -I "%ROOT%\src\frontend\fs" -c "%ROOT%\src\%%F.c" -o "%C_OBJ_DIR%\%%F.o"
+    "%M68K_GCC%" -B "%M68K_BIN%\\" -m68000 -ffreestanding -nostdlib -nostartfiles -ffixed-a4 -fno-builtin -fomit-frame-pointer -fno-PIC -fno-common -O2 -I "%ROOT%\src" -I "%ROOT%\src\state" -I "%ROOT%\src\core" -I "%ROOT%\src\abi" -I "%ROOT%\src\frontend" -I "%ROOT%\src\frontend\intro" -I "%ROOT%\src\frontend\fs" -I "%ROOT%\src\game\enemies" -c "%ROOT%\src\%%F.c" -o "%C_OBJ_DIR%\%%F.o"
+    if errorlevel 1 exit /b 1
+    >> "%LD_RESP%" echo "%OBJ_DIR_FS%/%%F.o"
+)
+for %%F in (%C_GAME_ENEMIES%) do (
+    echo [2a/4] Compiling game/enemies/%%F.c...
+    "%M68K_GCC%" -B "%M68K_BIN%\\" -m68000 -ffreestanding -nostdlib -nostartfiles -ffixed-a4 -fno-builtin -fomit-frame-pointer -fno-PIC -fno-common -O2 -I "%ROOT%\src" -I "%ROOT%\src\state" -I "%ROOT%\src\core" -I "%ROOT%\src\abi" -I "%ROOT%\src\frontend" -I "%ROOT%\src\frontend\intro" -I "%ROOT%\src\frontend\fs" -I "%ROOT%\src\game\enemies" -c "%ROOT%\src\game\enemies\%%F.c" -o "%C_OBJ_DIR%\%%F.o"
+    if errorlevel 1 exit /b 1
+    >> "%LD_RESP%" echo "%OBJ_DIR_FS%/%%F.o"
+)
+for %%F in (%C_SOURCES_PRE_B%) do (
+    echo [2a/4] Compiling %%F.c...
+    "%M68K_GCC%" -B "%M68K_BIN%\\" -m68000 -ffreestanding -nostdlib -nostartfiles -ffixed-a4 -fno-builtin -fomit-frame-pointer -fno-PIC -fno-common -O2 -I "%ROOT%\src" -I "%ROOT%\src\state" -I "%ROOT%\src\core" -I "%ROOT%\src\abi" -I "%ROOT%\src\frontend" -I "%ROOT%\src\frontend\intro" -I "%ROOT%\src\frontend\fs" -I "%ROOT%\src\game\enemies" -c "%ROOT%\src\%%F.c" -o "%C_OBJ_DIR%\%%F.o"
     if errorlevel 1 exit /b 1
     >> "%LD_RESP%" echo "%OBJ_DIR_FS%/%%F.o"
 )
 for %%F in (%C_FRONTEND%) do (
     echo [2a/4] Compiling frontend/%%F.c...
-    "%M68K_GCC%" -B "%M68K_BIN%\\" -m68000 -ffreestanding -nostdlib -nostartfiles -ffixed-a4 -fno-builtin -fomit-frame-pointer -fno-PIC -fno-common -O2 -I "%ROOT%\src" -I "%ROOT%\src\state" -I "%ROOT%\src\core" -I "%ROOT%\src\abi" -I "%ROOT%\src\frontend" -I "%ROOT%\src\frontend\intro" -I "%ROOT%\src\frontend\fs" -c "%ROOT%\src\frontend\%%F.c" -o "%C_OBJ_DIR%\%%F.o"
+    "%M68K_GCC%" -B "%M68K_BIN%\\" -m68000 -ffreestanding -nostdlib -nostartfiles -ffixed-a4 -fno-builtin -fomit-frame-pointer -fno-PIC -fno-common -O2 -I "%ROOT%\src" -I "%ROOT%\src\state" -I "%ROOT%\src\core" -I "%ROOT%\src\abi" -I "%ROOT%\src\frontend" -I "%ROOT%\src\frontend\intro" -I "%ROOT%\src\frontend\fs" -I "%ROOT%\src\game\enemies" -c "%ROOT%\src\frontend\%%F.c" -o "%C_OBJ_DIR%\%%F.o"
     if errorlevel 1 exit /b 1
     >> "%LD_RESP%" echo "%OBJ_DIR_FS%/%%F.o"
 )
 for %%F in (%C_SOURCES_MID%) do (
     echo [2a/4] Compiling %%F.c...
-    "%M68K_GCC%" -B "%M68K_BIN%\\" -m68000 -ffreestanding -nostdlib -nostartfiles -ffixed-a4 -fno-builtin -fomit-frame-pointer -fno-PIC -fno-common -O2 -I "%ROOT%\src" -I "%ROOT%\src\state" -I "%ROOT%\src\core" -I "%ROOT%\src\abi" -I "%ROOT%\src\frontend" -I "%ROOT%\src\frontend\intro" -I "%ROOT%\src\frontend\fs" -c "%ROOT%\src\%%F.c" -o "%C_OBJ_DIR%\%%F.o"
+    "%M68K_GCC%" -B "%M68K_BIN%\\" -m68000 -ffreestanding -nostdlib -nostartfiles -ffixed-a4 -fno-builtin -fomit-frame-pointer -fno-PIC -fno-common -O2 -I "%ROOT%\src" -I "%ROOT%\src\state" -I "%ROOT%\src\core" -I "%ROOT%\src\abi" -I "%ROOT%\src\frontend" -I "%ROOT%\src\frontend\intro" -I "%ROOT%\src\frontend\fs" -I "%ROOT%\src\game\enemies" -c "%ROOT%\src\%%F.c" -o "%C_OBJ_DIR%\%%F.o"
     if errorlevel 1 exit /b 1
     >> "%LD_RESP%" echo "%OBJ_DIR_FS%/%%F.o"
 )
 for %%F in (%C_FRONTEND_INTRO%) do (
     echo [2a/4] Compiling frontend/intro/%%F.c...
-    "%M68K_GCC%" -B "%M68K_BIN%\\" -m68000 -ffreestanding -nostdlib -nostartfiles -ffixed-a4 -fno-builtin -fomit-frame-pointer -fno-PIC -fno-common -O2 -I "%ROOT%\src" -I "%ROOT%\src\state" -I "%ROOT%\src\core" -I "%ROOT%\src\abi" -I "%ROOT%\src\frontend" -I "%ROOT%\src\frontend\intro" -I "%ROOT%\src\frontend\fs" -c "%ROOT%\src\frontend\intro\%%F.c" -o "%C_OBJ_DIR%\%%F.o"
+    "%M68K_GCC%" -B "%M68K_BIN%\\" -m68000 -ffreestanding -nostdlib -nostartfiles -ffixed-a4 -fno-builtin -fomit-frame-pointer -fno-PIC -fno-common -O2 -I "%ROOT%\src" -I "%ROOT%\src\state" -I "%ROOT%\src\core" -I "%ROOT%\src\abi" -I "%ROOT%\src\frontend" -I "%ROOT%\src\frontend\intro" -I "%ROOT%\src\frontend\fs" -I "%ROOT%\src\game\enemies" -c "%ROOT%\src\frontend\intro\%%F.c" -o "%C_OBJ_DIR%\%%F.o"
     if errorlevel 1 exit /b 1
     >> "%LD_RESP%" echo "%OBJ_DIR_FS%/%%F.o"
 )
 for %%F in (%C_FRONTEND_FS%) do (
     echo [2a/4] Compiling frontend/fs/%%F.c...
-    "%M68K_GCC%" -B "%M68K_BIN%\\" -m68000 -ffreestanding -nostdlib -nostartfiles -ffixed-a4 -fno-builtin -fomit-frame-pointer -fno-PIC -fno-common -O2 -I "%ROOT%\src" -I "%ROOT%\src\state" -I "%ROOT%\src\core" -I "%ROOT%\src\abi" -I "%ROOT%\src\frontend" -I "%ROOT%\src\frontend\intro" -I "%ROOT%\src\frontend\fs" -c "%ROOT%\src\frontend\fs\%%F.c" -o "%C_OBJ_DIR%\%%F.o"
+    "%M68K_GCC%" -B "%M68K_BIN%\\" -m68000 -ffreestanding -nostdlib -nostartfiles -ffixed-a4 -fno-builtin -fomit-frame-pointer -fno-PIC -fno-common -O2 -I "%ROOT%\src" -I "%ROOT%\src\state" -I "%ROOT%\src\core" -I "%ROOT%\src\abi" -I "%ROOT%\src\frontend" -I "%ROOT%\src\frontend\intro" -I "%ROOT%\src\frontend\fs" -I "%ROOT%\src\game\enemies" -c "%ROOT%\src\frontend\fs\%%F.c" -o "%C_OBJ_DIR%\%%F.o"
     if errorlevel 1 exit /b 1
     >> "%LD_RESP%" echo "%OBJ_DIR_FS%/%%F.o"
 )
 for %%F in (%C_GEN_SOURCES%) do (
     echo [2a/4] Compiling gen/%%F.c...
-    "%M68K_GCC%" -B "%M68K_BIN%\\" -m68000 -ffreestanding -nostdlib -nostartfiles -ffixed-a4 -fno-builtin -fomit-frame-pointer -fno-PIC -fno-common -O2 -I "%ROOT%\src" -I "%ROOT%\src\state" -I "%ROOT%\src\core" -I "%ROOT%\src\abi" -I "%ROOT%\src\frontend" -I "%ROOT%\src\frontend\intro" -I "%ROOT%\src\frontend\fs" -c "%ROOT%\src\gen\%%F.c" -o "%C_OBJ_DIR%\%%F.o"
+    "%M68K_GCC%" -B "%M68K_BIN%\\" -m68000 -ffreestanding -nostdlib -nostartfiles -ffixed-a4 -fno-builtin -fomit-frame-pointer -fno-PIC -fno-common -O2 -I "%ROOT%\src" -I "%ROOT%\src\state" -I "%ROOT%\src\core" -I "%ROOT%\src\abi" -I "%ROOT%\src\frontend" -I "%ROOT%\src\frontend\intro" -I "%ROOT%\src\frontend\fs" -I "%ROOT%\src\game\enemies" -c "%ROOT%\src\gen\%%F.c" -o "%C_OBJ_DIR%\%%F.o"
     if errorlevel 1 exit /b 1
     >> "%LD_RESP%" echo "%OBJ_DIR_FS%/%%F.o"
 )

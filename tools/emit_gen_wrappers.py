@@ -121,7 +121,7 @@ def render_bank(manifest: dict) -> str:
     lines = [START_TMPL.format(bank=bank), ""]
     if includes:
         for h in includes:
-            lines.append(f'#include "../{h}"')
+            lines.append(f'#include "{h}"')
         lines.append("")
     for entry in symbols:
         lines.append(render_forwarder(entry).rstrip() + "\n")
