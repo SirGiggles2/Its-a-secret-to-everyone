@@ -268,4 +268,11 @@ if errorlevel 1 (
 ) else (
     echo No changes to commit.
 )
+
+rem ---------------------------------------------------------------------------
+rem [S0] Warning-only legacy symbol lint
+rem ---------------------------------------------------------------------------
+"%PYTHON%" "%ROOT%\tools\probes\lint_legacy_symbols.py"
+rem (intentionally not gating on errorlevel — S0 lint is warn-only)
+
 exit /b 0
