@@ -755,29 +755,24 @@ tools/probes/
 
 ## 12. S0-Locked Questions
 
-These must be resolved before S1 begins. S0 closes by recording answers and reducing this section to **None**.
+**Resolved at S0.** See `docs/audit/s0_close.md` for the full close-out
+summary; per-question evidence is in the named audit docs.
 
-1. **Active Genesis baseline ROM** — must be the current FINAL TRY known-good build unless explicitly amended. WHAT IF is architectural reference only, never the parity baseline.
-2. **Capture geometry** — Genesis display mode (H32 / H40), RGB viewport size, crop origin, overscan policy, backdrop / transparent color policy.
-3. **ABI proof** — `tools/probes/abi_probe.c` and listing output committed under `docs/audit/abi_probe.md`. Pointer return register, argument passing, callee-saved register set are recorded from actual compiler output. Confirm the no-struct-by-value rule holds for the chosen toolchain.
-4. **Normalized parity schema lock** — confirm `tools/probes/normalize_nes.py` and `tools/probes/normalize_gen.py` produce schema instances that diff cleanly on a known-equivalent screen pair (start-room from current FINAL TRY ROM vs NES ROM after manual eyeball check).
-5. **Audio responsibility split** — confirm S1 preservation of frontend music is reachable under the new SGDK frame loop. Confirm S11 receives the gameplay-wide audio integration debt without S4–S10 being blocked.
-6. **Render-API public boundary** — confirm `src/abi/render_abi.h` is the only render-facing include for game/frontend (plus SGDK's standard headers). Lint enforces.
-7. **Reference ROM provenance** — confirm `tools/probes/locate_reference_rom.py` resolves the NES ROM via local config or `ZELDA_NES_ROM` env var and verifies SHA256 before any extraction or probe runs. Confirm ROM is not committed to repo.
-8. **SGDK version + integration** — **Partially resolved at S0; build smoke test deferred to S1.**
-   - Pinned version: **SGDK `v2.00`** (`https://github.com/Stephane-D/SGDK`). Pin is based on ResComp 3.95 (March 2025) present in `build/toolchain/sgdk_bin/bin/` plus training-time knowledge; **must be confirmed at S1 vendoring** (run `git tag -l 'v*' | sort -V | tail -5` after clone and adopt highest stable tag).
-   - Build smoke test: **deferred to S1** — SGDK library (`libmd.a`, `inc/`, `makefile.gen`) is not on disk. Once the submodule is initialized, build `sgdk/sample/sprite/` and confirm it boots in BizHawk 2.11.
-   - Sprite engine pressure: paper analysis complete — worst-case Zelda/Gleeok scene estimates 50–55 hardware sprites, within SGDK's 80-slot ceiling. Live timing test is a Stage 6 deliverable.
-   - See `docs/audit/sgdk_integration.md` for full details.
-9. **SGDK vendoring mechanism** — **Resolved at S0: git submodule.**
-   - Command: `git submodule add -b v2.00 https://github.com/Stephane-D/SGDK sgdk`
-   - Rationale: fresh-clone reproducibility with a single `git submodule update --init`, repo stays small, upgrades are explicit. Setup-script rejected (network dependency at build time). In-tree copy rejected (unnecessary size from `sample/` + `doc/`).
-   - See `docs/audit/sgdk_integration.md` for full rationale.
-10. **A4 register convention vs SGDK** — **Deferred to S1 vendoring — needs SGDK boot source on disk.**
-    - Correction to spec wording: `build.bat` uses `-ffixed-a4` (not `-fcall-saved-a4`). This is stronger: GCC will not touch A4 at all.
-    - Expected result based on SGDK convention: SGDK reserves A5 for the VDP hardware base address, not A4. A4 is expected to be free for user use. However this must be confirmed against `sgdk/boot/sega.s` (or equivalent) before any C↔SGDK boundary is introduced.
-    - Mitigation if conflict found: drop `-ffixed-a4`, migrate NES_RAM base pointer to A3 or a normal global, update `genesis_shell.asm` and all inline-asm stubs. Mechanical change, no semantic effect.
-    - See `docs/audit/sgdk_integration.md` for full details.
+| # | Question | Resolution | Evidence |
+|---|---|---|---|
+| Q1 | Active Genesis baseline ROM | `4bcfc1d916f44f31f36ee5bc0862b6b696313a264ffcc8373abde87d318befb4` (`builds/whatif.md`) | `docs/audit/baseline_rom.md` |
+| Q2 | Capture geometry | H32 / 256×224 / NES top-crop +8 | `docs/audit/capture_geometry.md` |
+| Q3 | ABI proof | D0 for u32 + pointer returns; args on stack; A4 untouched (`-ffixed-a4`) | `docs/audit/abi_probe.md` |
+| Q4 | Normalized parity schema lock | **Deferred to S1** — manual NES↔Genesis capture validation requires BizHawk runs (skipped in S0) | `docs/audit/parity_schema_check.md` |
+| Q5 | Audio responsibility split | Wrapper plan recorded; existing driver kept through S1, XGM2 swap deferred to S11 | `docs/audit/audio_split_plan.md` |
+| Q6 | Render-API public boundary | `src/abi/render_abi.h` (SGDK headers + adapter prototypes); lint enforces from S1 | spec Section 6 |
+| Q7 | NES ROM provenance | Not committed; SHA256 verified at runtime by `tools/probes/locate_reference_rom.py` | `docs/audit/toolchain.md`, `tools/probes/locate_reference_rom.py` |
+| Q8 | SGDK version | Pinned `v2.00` (smoke test deferred to S1 vendoring) | `docs/audit/sgdk_integration.md` |
+| Q9 | SGDK vendoring | Git submodule | `docs/audit/sgdk_integration.md` |
+| Q10 | A4 register conflict | **Deferred to S1** — SGDK library not on disk yet; mitigation plan recorded (drop `-ffixed-a4`, migrate NES_RAM base if conflict found) | `docs/audit/sgdk_integration.md`, `docs/audit/toolchain.md` |
+
+Two deferrals (Q4, Q10) are tracked in S1 work; both have explicit
+mitigation plans. No spec-level open questions remain.
 
 ## 13. References
 
