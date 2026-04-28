@@ -2,7 +2,7 @@
  * SRAM layout fixture (S1 Phase C, Task C3).
  *
  * Pure compile-time check: every assertion fires at preprocessor /
- * codegen time. The .o is produced and discarded — never linked into
+ * codegen time. The .o is produced and discarded - never linked into
  * the ROM. Build success == layout invariants hold.
  *
  * Spec ref: docs/audit/sram_map.md (S0-locked layout)
@@ -13,16 +13,16 @@
 
 enum {
     SRAM_SAVE_SLOTS_OFFSET    = 0x000,
-    SRAM_SAVE_SLOTS_SIZE      = 0x800,   /* 2048 bytes — 3 NES save files */
+    SRAM_SAVE_SLOTS_SIZE      = 0x800,   /* 2048 bytes - 3 NES save files */
 
     SRAM_OPTIONS_STATE_OFFSET = 0x800,
-    SRAM_OPTIONS_STATE_SIZE   = 0x020,   /* 32 bytes — padded; struct is 26 used */
+    SRAM_OPTIONS_STATE_SIZE   = 0x020,   /* 32 bytes - padded; struct is 26 used */
 
     SRAM_UNALLOCATED_OFFSET   = 0x820,
-    SRAM_UNALLOCATED_SIZE     = 0x17D9,  /* 6105 bytes — reserved future use */
+    SRAM_UNALLOCATED_SIZE     = 0x17D9,  /* 6105 bytes - reserved future use */
 
     SRAM_SENTINEL_OFFSET      = 0x1FF9,
-    SRAM_SENTINEL_SIZE        = 0x0007,  /* 7 logical bytes — last 4 used: $5A $A5 $C3 $3C */
+    SRAM_SENTINEL_SIZE        = 0x0007,  /* 7 logical bytes - last 4 used: $5A $A5 $C3 $3C */
 
     SRAM_LOGICAL_TOTAL        = 0x2000   /* 8 KB cart SRAM logical capacity */
 };
