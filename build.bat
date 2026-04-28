@@ -135,7 +135,9 @@ set "C_FRONTEND=frontend_runtime"
 set "C_SOURCES_MID=save_menu_runtime"
 set "C_FRONTEND_INTRO=intro_common intro_story intro_handoff intro_main intro_phase intro_title"
 set "C_FRONTEND_FS=fs_main fs_render fs_phase fs_input fs_handoff"
-set "C_GEN_SOURCES=z_01 z_02 z_03 z_04 z_05 z_06 z_07 intro_font_chr intro_art_chr intro_palette intro_story_tilemap intro_restore_chr intro_restore_palette intro_title_bg_chr intro_title_sprite_chr intro_title_palette intro_title_tilemap intro_title_fade intro_title_glow intro_common_bg_chr intro_sprite_chr intro_misc_chr intro_punct_chr intro_blink_chr intro_combined_palette intro_treasures_tilemap fs_palette fs_static_tilemap fs_static_attr fs_link_sprite_chr fs_heart_cursor_chr fs_bg_chr_full"
+set "C_GEN_TRANSPILE=z_01 z_02 z_03 z_04 z_05 z_06 z_07"
+set "C_DATA_INTRO=intro_font_chr intro_art_chr intro_palette intro_story_tilemap intro_restore_chr intro_restore_palette intro_title_bg_chr intro_title_sprite_chr intro_title_palette intro_title_tilemap intro_title_fade intro_title_glow intro_common_bg_chr intro_sprite_chr intro_misc_chr intro_punct_chr intro_blink_chr intro_combined_palette intro_treasures_tilemap"
+set "C_DATA_FS=fs_palette fs_static_tilemap fs_static_attr fs_link_sprite_chr fs_heart_cursor_chr fs_bg_chr_full"
 rem Write object list to response file during compile loop. CMD line-length
 rem limit (~8KB) breaks once %C_OBJS% accumulates too many fs_*/intro_*
 rem paths. Convert backslashes to forward slashes in the response file —
@@ -243,9 +245,21 @@ for %%F in (%C_FRONTEND_FS%) do (
     if errorlevel 1 exit /b 1
     >> "%LD_RESP%" echo "%OBJ_DIR_FS%/%%F.o"
 )
-for %%F in (%C_GEN_SOURCES%) do (
+for %%F in (%C_GEN_TRANSPILE%) do (
     echo [2a/4] Compiling gen/%%F.c...
-    "%M68K_GCC%" -B "%M68K_BIN%\\" -m68000 -ffreestanding -nostdlib -nostartfiles -ffixed-a4 -fno-builtin -fomit-frame-pointer -fno-PIC -fno-common -O2 -I "%ROOT%\src" -I "%ROOT%\src\state" -I "%ROOT%\src\core" -I "%ROOT%\src\abi" -I "%ROOT%\src\frontend" -I "%ROOT%\src\frontend\intro" -I "%ROOT%\src\frontend\fs" -I "%ROOT%\src\game\enemies" -I "%ROOT%\src\game\combat" -I "%ROOT%\src\game\room" -I "%ROOT%\src\game\cave" -I "%ROOT%\src\game\hud" -I "%ROOT%\src\game\items" -I "%ROOT%\src\game\world" -c "%ROOT%\src\gen\%%F.c" -o "%C_OBJ_DIR%\%%F.o"
+    "%M68K_GCC%" -B "%M68K_BIN%\\" -m68000 -ffreestanding -nostdlib -nostartfiles -ffixed-a4 -fno-builtin -fomit-frame-pointer -fno-PIC -fno-common -O2 -I "%ROOT%\src" -I "%ROOT%\src\state" -I "%ROOT%\src\core" -I "%ROOT%\src\abi" -I "%ROOT%\src\frontend" -I "%ROOT%\src\frontend\intro" -I "%ROOT%\src\frontend\fs" -I "%ROOT%\src\game\enemies" -I "%ROOT%\src\game\combat" -I "%ROOT%\src\game\room" -I "%ROOT%\src\game\cave" -I "%ROOT%\src\game\hud" -I "%ROOT%\src\game\items" -I "%ROOT%\src\game\world" -I "%ROOT%\data\intro" -I "%ROOT%\data\fs" -c "%ROOT%\src\gen\%%F.c" -o "%C_OBJ_DIR%\%%F.o"
+    if errorlevel 1 exit /b 1
+    >> "%LD_RESP%" echo "%OBJ_DIR_FS%/%%F.o"
+)
+for %%F in (%C_DATA_INTRO%) do (
+    echo [2a/4] Compiling data/intro/%%F.c...
+    "%M68K_GCC%" -B "%M68K_BIN%\\" -m68000 -ffreestanding -nostdlib -nostartfiles -ffixed-a4 -fno-builtin -fomit-frame-pointer -fno-PIC -fno-common -O2 -I "%ROOT%\src" -I "%ROOT%\src\state" -I "%ROOT%\src\core" -I "%ROOT%\src\abi" -I "%ROOT%\src\frontend" -I "%ROOT%\src\frontend\intro" -I "%ROOT%\src\frontend\fs" -I "%ROOT%\src\game\enemies" -I "%ROOT%\src\game\combat" -I "%ROOT%\src\game\room" -I "%ROOT%\src\game\cave" -I "%ROOT%\src\game\hud" -I "%ROOT%\src\game\items" -I "%ROOT%\src\game\world" -I "%ROOT%\data\intro" -I "%ROOT%\data\fs" -c "%ROOT%\data\intro\%%F.c" -o "%C_OBJ_DIR%\%%F.o"
+    if errorlevel 1 exit /b 1
+    >> "%LD_RESP%" echo "%OBJ_DIR_FS%/%%F.o"
+)
+for %%F in (%C_DATA_FS%) do (
+    echo [2a/4] Compiling data/fs/%%F.c...
+    "%M68K_GCC%" -B "%M68K_BIN%\\" -m68000 -ffreestanding -nostdlib -nostartfiles -ffixed-a4 -fno-builtin -fomit-frame-pointer -fno-PIC -fno-common -O2 -I "%ROOT%\src" -I "%ROOT%\src\state" -I "%ROOT%\src\core" -I "%ROOT%\src\abi" -I "%ROOT%\src\frontend" -I "%ROOT%\src\frontend\intro" -I "%ROOT%\src\frontend\fs" -I "%ROOT%\src\game\enemies" -I "%ROOT%\src\game\combat" -I "%ROOT%\src\game\room" -I "%ROOT%\src\game\cave" -I "%ROOT%\src\game\hud" -I "%ROOT%\src\game\items" -I "%ROOT%\src\game\world" -I "%ROOT%\data\intro" -I "%ROOT%\data\fs" -c "%ROOT%\data\fs\%%F.c" -o "%C_OBJ_DIR%\%%F.o"
     if errorlevel 1 exit /b 1
     >> "%LD_RESP%" echo "%OBJ_DIR_FS%/%%F.o"
 )

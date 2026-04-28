@@ -29,7 +29,7 @@ REPO = Path(__file__).resolve().parent.parent
 REF_DIR = REPO / "reference" / "aldonunez" / "dat"
 NT_DUMP = REPO / "tools" / "file_select_test" / "ref" / "fs_nt.bin"
 FS_CHR_DUMP = REPO / "tools" / "file_select_test" / "ref" / "fs_chr.bin"
-OUT_DIR = REPO / "src" / "gen"
+OUT_DIR = REPO / "data" / "fs"
 
 # Import shared helpers from extract_intro_assets.py (same repo, same tools/ dir).
 sys.path.insert(0, str(REPO / "tools"))

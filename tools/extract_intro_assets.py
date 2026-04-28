@@ -745,7 +745,7 @@ def main() -> int:
     ap = argparse.ArgumentParser(description="extract intro assets")
     ap.add_argument("--ref-dir", default=str(REPO / "reference" / "aldonunez" / "dat"),
                     help="path to committed disassembly reference data")
-    ap.add_argument("--out-dir", default=str(REPO / "src" / "gen"),
+    ap.add_argument("--out-dir", default=str(REPO / "data" / "intro"),
                     help="output directory for generated C files")
     ap.add_argument("--handoff-json", default=str(REPO / "docs" / "superpowers" /
                     "captures" / "2026-04-24-intro-handoff-state.json"),
