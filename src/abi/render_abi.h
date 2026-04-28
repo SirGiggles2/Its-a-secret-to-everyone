@@ -123,4 +123,16 @@ void render_sat_write(unsigned short sat_base, unsigned char entry,
                       unsigned short tile_attr, unsigned short x);
 void render_vram_write_zero_tile(unsigned short vram_addr);
 
+/* ---- Frame sync + register pokes (F6: handoff cleanup) ----
+ *
+ * render_wait_vblank   -- spin on VDP status until VBlank (bit 3) cycles
+ *                         from set to clear (rising-edge trigger). Used
+ *                         by frontends that don't run from VBlankISR.
+ * render_window_v_set  -- set VDP register 18 (window vertical offset)
+ *                         to value. value=0 turns Window plane off; non-
+ *                         zero sets the row count (top of screen).
+ */
+void render_wait_vblank(void);
+void render_window_v_set(unsigned char value);
+
 #endif /* RENDER_ABI_H */

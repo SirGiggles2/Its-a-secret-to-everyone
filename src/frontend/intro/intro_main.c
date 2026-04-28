@@ -79,7 +79,7 @@ void intro_main(void) {
      * 8 rows of plane A in the intro (vines border + "THE LEGEND OF"
      * subtitle). Set reg 18 = $00 here so plane A's top is visible.
      * Trampoline restores $9208 before resuming transpiled gameplay. */
-    *(volatile unsigned short *)0x00C00004 = 0x9200;  /* Reg 18 = 0: window V off */
+    render_window_v_set(0u);  /* Reg 18 = 0: window V off (plane A top visible) */
     music_play(0x80);
     nes_ram[0x07FF] = 0xA1;  /* sentinel: intro_main entered (not phase byte at $07F0) */
     nes_ram[0x07F1] = 0;

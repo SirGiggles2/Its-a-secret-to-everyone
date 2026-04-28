@@ -23,12 +23,6 @@ extern const uint8_t  fs_link_sprite_chr[];    /* 4 tiles × 32 bytes = 128 byte
 extern const uint8_t  fs_heart_cursor_chr[];   /* 1 tile  × 32 bytes =  32 bytes */
 extern const uint16_t fs_palettes[4][4];       /* 4 Genesis CRAM palettes × 4 colors */
 
-#define VDP_CTRL_WORD (*(volatile unsigned short *)0x00C00004)
-
-static void wait_vblank(void) {
-    while ( (VDP_CTRL_WORD & 0x0008));
-    while (!(VDP_CTRL_WORD & 0x0008));
-}
 
 /* fs_init: upload CHR data and all palettes once at boot.
  *
@@ -151,7 +145,7 @@ void fs_main(void) {
     fs_init();
     render_display_enable(1);
     for (;;) {
-        wait_vblank();
+        render_wait_vblank();
         fs_phase_step();
         fs_input_dispatch(fs_input_pressed());
     }

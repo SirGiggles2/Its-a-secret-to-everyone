@@ -93,6 +93,24 @@ void render_irq_unmask(void)
     __asm__ volatile ("andi.w #0xF8FF,%sr");
 }
 
+void render_wait_vblank(void)
+{
+    /* Wait for VBlank rising edge: drain through any in-progress vblank,
+     * then spin until status bit 3 is set again. Used by frontends that
+     * do not run from VBlankISR. */
+    while ( (VDP_CTRL_WORD & 0x0008));
+    while (!(VDP_CTRL_WORD & 0x0008));
+}
+
+void render_window_v_set(unsigned char value)
+{
+    /* VDP Reg 18: window vertical position byte. value=0 disables the
+     * Window plane vertically; non-zero sets row count (high bit chooses
+     * up vs down direction). genesis_shell.asm uses 0x9208 for 8-row top
+     * window during transpiled gameplay HUD; intro_main resets to 0x9200. */
+    VDP_CTRL_WORD = (unsigned short)(0x9200u | value);
+}
+
 /* ---- Internal DMA / CRAM helpers (were extern'd from intro_common.c) ---- */
 
 /* CPU-based VRAM upload. Writes len bytes from src to VRAM[dst..dst+len-1].
