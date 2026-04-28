@@ -1,27 +1,38 @@
 #!/usr/bin/env python3
 """
-extract_rooms.py - Extract room and level data from NES Zelda 1.
+extract_rooms.py - Extract room and level data from NES Zelda 1 to Genesis C arrays.
 
-This script keeps the original compact, column-based room format intact.
-The Genesis runtime can interpret these tables directly instead of expanding
-them into full tilemaps ahead of time.
+S2 Phase C2: ports the old .inc emission to Genesis-ready C-array output under
+data/rooms/.  The column-encoded room format is preserved verbatim so the
+Genesis runtime can interpret these tables directly without pre-expansion.
 
 Data sources:
   - ROM PRG banks for .INCBIN blocks and common bank data
   - Aldonunez disassembly for inline room tables and patch tables
 
-Outputs:
-  - Overworld and underworld level block attribute tables
-  - Level info blocks
-  - Room layout descriptor tables (OW/UW/caves/cellars)
-  - Column directories and column heaps (OW/UW)
-  - Common data block from bank 6
-  - Second quest room/info patch tables
+Primary outputs (C arrays, data/rooms/):
+  overworld.c   -- overworld room attributes, layouts, column heaps,
+                   level info, common data block
+  dungeons.c    -- underworld room attributes (Q1 + Q2), dungeon level
+                   info, UW column heaps, Q2 patch tables
+  MANIFEST.json -- schema_version + nes_rom_sha256 + per-block metadata
+
+Legacy outputs (--legacy-inc flag only):
+  src/data/rooms_overworld.inc, rooms_underworld1.inc, rooms_underworld2.inc,
+  level_info.inc, room_layouts.inc, room_columns.inc, room_common.inc,
+  room_patches.inc
 """
 
+import argparse
+import hashlib
+import json
 import os
 import re
 import sys
+from pathlib import Path
+
+# Canonical NES ROM SHA256.
+NES_ROM_SHA256 = "8f72dc2e98572eb4ba7c3a902bca5f69c448fc4391837e5f8f0d4556280440ac"
 
 INES_HEADER_SIZE = 16
 PRG_BANK_SIZE = 0x4000
@@ -35,19 +46,8 @@ ROOM_LAYOUT_UW_SIZE = 0x0300
 
 BANK_ISR_SIGNATURE = bytes(
     [
-        0x78,
-        0xD8,
-        0xA9,
-        0x00,
-        0x8D,
-        0x00,
-        0x20,
-        0xA2,
-        0xFF,
-        0x9A,
-        0xAD,
-        0x02,
-        0x20,
+        0x78, 0xD8, 0xA9, 0x00, 0x8D, 0x00, 0x20,
+        0xA2, 0xFF, 0x9A, 0xAD, 0x02, 0x20,
     ]
 )
 
@@ -73,35 +73,16 @@ LEVEL_INFO_LABELS = [
 ]
 
 OW_HEAP_LABELS = [
-    "ColumnHeapOW0",
-    "ColumnHeapOW1",
-    "ColumnHeapOW2",
-    "ColumnHeapOW3",
-    "ColumnHeapOW4",
-    "ColumnHeapOW5",
-    "ColumnHeapOW6",
-    "ColumnHeapOW7",
-    "ColumnHeapOW8",
-    "ColumnHeapOW9",
-    "ColumnHeapOWA",
-    "ColumnHeapOWB",
-    "ColumnHeapOWC",
-    "ColumnHeapOWD",
-    "ColumnHeapOWE",
-    "ColumnHeapOWF",
+    "ColumnHeapOW0", "ColumnHeapOW1", "ColumnHeapOW2", "ColumnHeapOW3",
+    "ColumnHeapOW4", "ColumnHeapOW5", "ColumnHeapOW6", "ColumnHeapOW7",
+    "ColumnHeapOW8", "ColumnHeapOW9", "ColumnHeapOWA", "ColumnHeapOWB",
+    "ColumnHeapOWC", "ColumnHeapOWD", "ColumnHeapOWE", "ColumnHeapOWF",
 ]
 
 UW_HEAP_LABELS = [
-    "ColumnHeapUW0",
-    "ColumnHeapUW1",
-    "ColumnHeapUW2",
-    "ColumnHeapUW3",
-    "ColumnHeapUW4",
-    "ColumnHeapUW5",
-    "ColumnHeapUW6",
-    "ColumnHeapUW7",
-    "ColumnHeapUW8",
-    "ColumnHeapUW9",
+    "ColumnHeapUW0", "ColumnHeapUW1", "ColumnHeapUW2", "ColumnHeapUW3",
+    "ColumnHeapUW4", "ColumnHeapUW5", "ColumnHeapUW6", "ColumnHeapUW7",
+    "ColumnHeapUW8", "ColumnHeapUW9",
 ]
 
 Q2_REPLACEMENT_LABELS = [
@@ -147,27 +128,27 @@ INCBIN_SIZES = {
 LABEL_RE = re.compile(r"^([A-Za-z_][A-Za-z0-9_]*):$")
 
 
-def read_ines_rom(path):
+# ---------------------------------------------------------------------------
+# ROM / ASM parsing
+# ---------------------------------------------------------------------------
+
+def read_ines_rom(path: str) -> bytes:
     with open(path, "rb") as f:
         header = f.read(INES_HEADER_SIZE)
-
     if header[:4] != b"NES\x1a":
         raise ValueError(f"Not a valid iNES ROM: {path}")
-
     prg_banks = header[4]
-
     with open(path, "rb") as f:
         f.seek(INES_HEADER_SIZE)
         prg_data = f.read(prg_banks * PRG_BANK_SIZE)
-
     return prg_data
 
 
-def strip_comment(line):
+def strip_comment(line: str) -> str:
     return line.split(";", 1)[0].strip()
 
 
-def parse_byte_token(token):
+def parse_byte_token(token: str) -> int:
     token = token.strip()
     if not token:
         raise ValueError("Empty .BYTE token")
@@ -176,11 +157,15 @@ def parse_byte_token(token):
     return int(token, 10)
 
 
-def parse_asm_data_blocks(path, target_labels, incbin_sizes=None):
+def parse_asm_data_blocks(
+    path: str,
+    target_labels: set,
+    incbin_sizes: dict | None = None,
+) -> dict:
     if incbin_sizes is None:
         incbin_sizes = {}
 
-    blocks = {}
+    blocks: dict = {}
     current = None
 
     with open(path, "r", encoding="utf-8") as f:
@@ -230,7 +215,7 @@ def parse_asm_data_blocks(path, target_labels, incbin_sizes=None):
     return blocks
 
 
-def find_unique_pattern(data, pattern, description):
+def find_unique_pattern(data: bytes, pattern: bytes, description: str) -> int:
     pos = data.find(pattern)
     if pos < 0:
         raise ValueError(f"Could not find {description}")
@@ -242,7 +227,7 @@ def find_unique_pattern(data, pattern, description):
     return pos
 
 
-def find_bank6_level_data(prg_data, z06_blocks):
+def find_bank6_level_data(prg_data: bytes, z06_blocks: dict) -> dict:
     bank6_offset = 6 * PRG_BANK_SIZE
     bank6_data = prg_data[bank6_offset : bank6_offset + PRG_BANK_SIZE]
 
@@ -323,7 +308,7 @@ def find_bank6_level_data(prg_data, z06_blocks):
     }
 
 
-def find_bank5_room_data(prg_data, z05_blocks):
+def find_bank5_room_data(prg_data: bytes, z05_blocks: dict) -> dict:
     bank5_offset = 5 * PRG_BANK_SIZE
     bank5_data = prg_data[bank5_offset : bank5_offset + PRG_BANK_SIZE]
 
@@ -353,7 +338,6 @@ def find_bank5_room_data(prg_data, z05_blocks):
         f"(ROM ${bank5_offset + room_layouts_uw_start:05X})"
     )
 
-    # Extract the 912 bytes of actual layout data (57 layouts)
     room_layouts_ow = bank5_data[
         room_layouts_ow_start : room_layouts_ow_start + ROOM_LAYOUT_OW_SIZE
     ]
@@ -431,7 +415,202 @@ def find_bank5_room_data(prg_data, z05_blocks):
     }
 
 
-def data_to_inc_bytes(data, label, bytes_per_line=16):
+# ---------------------------------------------------------------------------
+# C-array emission helpers (Phase B pattern)
+# ---------------------------------------------------------------------------
+
+def bytes_to_c_array(data: bytes, var_name: str, comment: str = "") -> str:
+    n = len(data)
+    header = "/* Auto-generated by tools/extract_rooms.py - do not edit. */"
+    if comment:
+        header += f"\n/* {comment} */"
+    lines = [
+        header,
+        f"const unsigned long {var_name}_size = {n}UL;",
+        f"const unsigned char {var_name}[{n}] = {{",
+    ]
+    for i in range(0, n, 16):
+        chunk = data[i : i + 16]
+        hex_vals = ", ".join(f"0x{b:02x}" for b in chunk)
+        comma = "" if (i + 16) >= n else ","
+        lines.append(f"    {hex_vals}{comma}")
+    lines.append("};")
+    lines.append("")
+    return "\n".join(lines)
+
+
+def write_c_file(path: str, data: bytes, var_name: str, comment: str = "") -> None:
+    content = bytes_to_c_array(data, var_name, comment)
+    with open(path, "w", encoding="ascii", newline="\n") as f:
+        f.write(content)
+    print(f"  Wrote {path} ({len(data)} bytes)")
+
+
+# ---------------------------------------------------------------------------
+# overworld.c: all OW data in one file
+# ---------------------------------------------------------------------------
+
+def build_overworld_blob(bank6_data: dict, bank5_data: dict) -> tuple:
+    """Concatenate all overworld data into one blob; return (blob, blocks_info)."""
+    blob = bytearray()
+    blocks_info: list = []
+
+    def add_block(name: str, data: bytes, note: str = "") -> None:
+        entry: dict = {
+            "category": "overworld",
+            "name": name,
+            "file": "overworld.c",
+            "var_name": "rooms_overworld",
+            "byte_offset": len(blob),
+            "byte_size": len(data),
+        }
+        if note:
+            entry["note"] = note
+        blocks_info.append(entry)
+        blob.extend(data)
+
+    # Level block attributes (6 sub-tables x 128 rooms).
+    ow_block = bank6_data["level_blocks"]["LevelBlockOW"]
+    add_block("LevelBlockOW", ow_block, "6 attribute sub-tables x 128 rooms")
+
+    # Overworld level info.
+    add_block("LevelInfoOW", bank6_data["level_infos"]["LevelInfoOW"])
+
+    # Common data block.
+    add_block("CommonDataBlock_Bank6", bank6_data["common_data"])
+
+    # Room layout descriptors (OW).
+    add_block(
+        "RoomLayoutsOW",
+        bank5_data["room_layouts_ow"],
+        f"{ROOM_LAYOUT_OW_SIZE} bytes, column-encoded format",
+    )
+
+    # Cave layouts.
+    for label in ["RoomLayoutOWCave0", "RoomLayoutOWCave1", "RoomLayoutOWCave2"]:
+        add_block(label, bank5_data["ow_cave_layouts"][label])
+
+    # Overworld column heap blob (all heaps concatenated).
+    add_block("ColumnHeapOWBlob", bank5_data["ow_heap_blob"])
+
+    return bytes(blob), blocks_info
+
+
+def write_overworld_c(out_dir: str, bank6_data: dict, bank5_data: dict) -> tuple:
+    blob, blocks_info = build_overworld_blob(bank6_data, bank5_data)
+    write_c_file(os.path.join(out_dir, "overworld.c"), blob, "rooms_overworld")
+    return blob, blocks_info
+
+
+# ---------------------------------------------------------------------------
+# dungeons.c: all UW data in one file
+# ---------------------------------------------------------------------------
+
+def build_dungeons_blob(bank6_data: dict, bank5_data: dict, z06_blocks: dict) -> tuple:
+    """Concatenate all dungeon data into one blob; return (blob, blocks_info)."""
+    blob = bytearray()
+    blocks_info: list = []
+
+    def add_block(name: str, data: bytes, note: str = "") -> None:
+        entry: dict = {
+            "category": "dungeons",
+            "name": name,
+            "file": "dungeons.c",
+            "var_name": "rooms_dungeons",
+            "byte_offset": len(blob),
+            "byte_size": len(data),
+        }
+        if note:
+            entry["note"] = note
+        blocks_info.append(entry)
+        blob.extend(data)
+
+    # UW level block attributes (Q1 + Q2, sets 1 and 2).
+    for label in ["LevelBlockUW1Q1", "LevelBlockUW2Q1", "LevelBlockUW1Q2", "LevelBlockUW2Q2"]:
+        add_block(label, bank6_data["level_blocks"][label])
+
+    # UW level info blocks (dungeons 1-9).
+    for label in LEVEL_INFO_LABELS[1:]:  # skip LevelInfoOW
+        add_block(label, bank6_data["level_infos"][label])
+
+    # Room layout descriptors (UW).
+    add_block(
+        "RoomLayoutsUW",
+        bank5_data["room_layouts_uw"],
+        f"{ROOM_LAYOUT_UW_SIZE} bytes, column-encoded format",
+    )
+
+    # Cellar layouts.
+    for label in ["RoomLayoutUWCellar0", "RoomLayoutUWCellar1"]:
+        add_block(label, bank5_data["uw_cellar_layouts"][label])
+
+    # UW column heaps.
+    for label in UW_HEAP_LABELS:
+        add_block(label, bank5_data["uw_heaps"][label])
+
+    # Cellar heap.
+    add_block("ColumnHeapUWCellar", bank5_data["uw_cellar_heap"])
+
+    # Q2 patch tables.
+    add_block(
+        "LevelBlockAttrsBQ2ReplacementOffsets",
+        bytes(z06_blocks["LevelBlockAttrsBQ2ReplacementOffsets"]["bytes"]),
+    )
+    add_block(
+        "LevelBlockAttrsBQ2ReplacementValues",
+        bytes(z06_blocks["LevelBlockAttrsBQ2ReplacementValues"]["bytes"]),
+    )
+    add_block(
+        "LevelInfoUWQ2ReplacementSizes",
+        bytes(z06_blocks["LevelInfoUWQ2ReplacementSizes"]["bytes"]),
+    )
+    for label in Q2_REPLACEMENT_LABELS:
+        add_block(label, bytes(z06_blocks[label]["bytes"]))
+
+    return bytes(blob), blocks_info
+
+
+def write_dungeons_c(
+    out_dir: str, bank6_data: dict, bank5_data: dict, z06_blocks: dict
+) -> tuple:
+    blob, blocks_info = build_dungeons_blob(bank6_data, bank5_data, z06_blocks)
+    write_c_file(os.path.join(out_dir, "dungeons.c"), blob, "rooms_dungeons")
+    return blob, blocks_info
+
+
+# ---------------------------------------------------------------------------
+# MANIFEST.json
+# ---------------------------------------------------------------------------
+
+def build_manifest(
+    overworld_info: list,
+    dungeons_info: list,
+    ow_heap_offsets: list,
+) -> dict:
+    manifest: dict = {
+        "schema_version": 1,
+        "nes_rom_sha256": NES_ROM_SHA256,
+        "overworld": overworld_info,
+        "dungeons": dungeons_info,
+        "ow_heap_offsets": ow_heap_offsets,
+    }
+    return manifest
+
+
+def write_manifest(path: str, manifest: dict) -> None:
+    with open(path, "w", encoding="ascii", newline="\n") as f:
+        json.dump(manifest, f, indent=2, sort_keys=False, ensure_ascii=True)
+        f.write("\n")
+    ow_count = len(manifest["overworld"])
+    dg_count = len(manifest["dungeons"])
+    print(f"  Wrote {path} ({ow_count} overworld + {dg_count} dungeon block entries)")
+
+
+# ---------------------------------------------------------------------------
+# Legacy .inc emission helpers
+# ---------------------------------------------------------------------------
+
+def data_to_inc_bytes(data: bytes, label: str, bytes_per_line: int = 16) -> str:
     lines = [f"; {label} - {len(data)} bytes", f"{label}:"]
     for i in range(0, len(data), bytes_per_line):
         chunk = data[i : i + bytes_per_line]
@@ -439,7 +618,7 @@ def data_to_inc_bytes(data, label, bytes_per_line=16):
     return "\n".join(lines)
 
 
-def labels_to_inc_words(label_names, table_label, words_per_line=4):
+def labels_to_inc_words(label_names: list, table_label: str, words_per_line: int = 4) -> str:
     lines = [f"{table_label}:"]
     for i in range(0, len(label_names), words_per_line):
         chunk = label_names[i : i + words_per_line]
@@ -447,7 +626,7 @@ def labels_to_inc_words(label_names, table_label, words_per_line=4):
     return "\n".join(lines)
 
 
-def values_to_inc_words(values, table_label, words_per_line=8):
+def values_to_inc_words(values: list, table_label: str, words_per_line: int = 8) -> str:
     lines = [f"{table_label}:"]
     for i in range(0, len(values), words_per_line):
         chunk = values[i : i + words_per_line]
@@ -455,13 +634,13 @@ def values_to_inc_words(values, table_label, words_per_line=8):
     return "\n".join(lines)
 
 
-def write_text_file(path, lines):
+def write_text_file(path: str, lines: list) -> None:
     with open(path, "w", encoding="utf-8", newline="\n") as f:
         f.write("\n".join(lines))
     print(f"  Wrote {path}")
 
 
-def write_room_attr_files(data_dir, level_blocks):
+def write_room_attr_files_inc(data_dir: str, level_blocks: dict) -> None:
     ow_block = level_blocks["LevelBlockOW"]
     lines = [
         "; Overworld room attributes (6 tables x 128 rooms)",
@@ -528,7 +707,7 @@ def write_room_attr_files(data_dir, level_blocks):
         write_text_file(os.path.join(data_dir, f"rooms_underworld{suffix}.inc"), lines)
 
 
-def write_level_info_file(data_dir, level_infos):
+def write_level_info_inc(data_dir: str, level_infos: dict) -> None:
     lines = [
         "; Level info blocks (256 bytes each)",
         "; Auto-generated by extract_rooms.py - DO NOT EDIT",
@@ -537,11 +716,10 @@ def write_level_info_file(data_dir, level_infos):
     for label in LEVEL_INFO_LABELS:
         lines.append(data_to_inc_bytes(level_infos[label], label))
         lines.append("")
-
     write_text_file(os.path.join(data_dir, "level_info.inc"), lines[:-1])
 
 
-def write_room_layouts_file(data_dir, bank5_data):
+def write_room_layouts_inc(data_dir: str, bank5_data: dict) -> None:
     lines = [
         "; Room layout descriptor tables",
         "; Auto-generated by extract_rooms.py - DO NOT EDIT",
@@ -551,27 +729,22 @@ def write_room_layouts_file(data_dir, bank5_data):
         data_to_inc_bytes(bank5_data["room_layouts_ow"], "RoomLayoutsOW"),
         "",
     ]
-
     for label in ["RoomLayoutOWCave0", "RoomLayoutOWCave1", "RoomLayoutOWCave2"]:
         lines.append(data_to_inc_bytes(bank5_data["ow_cave_layouts"][label], label))
         lines.append("")
-
     lines.append(data_to_inc_bytes(bank5_data["room_layouts_uw"], "RoomLayoutsUW"))
     lines.append("")
-
     for label in ["RoomLayoutUWCellar0", "RoomLayoutUWCellar1"]:
         lines.append(data_to_inc_bytes(bank5_data["uw_cellar_layouts"][label], label))
         lines.append("")
-
     write_text_file(os.path.join(data_dir, "room_layouts.inc"), lines[:-1])
 
 
-def write_room_columns_file(data_dir, bank5_data, z05_blocks):
+def write_room_columns_inc(data_dir: str, bank5_data: dict, z05_blocks: dict) -> None:
     uw_directory_labels = z05_blocks["ColumnDirectoryUW"]["addr_labels"]
     ow_directory_exprs = [
         f"ColumnHeapOWBlob+${offset:04X}" for offset in bank5_data["ow_heap_offsets"]
     ]
-
     lines = [
         "; Column directories and compressed column heaps",
         "; Auto-generated by extract_rooms.py - DO NOT EDIT",
@@ -581,24 +754,19 @@ def write_room_columns_file(data_dir, bank5_data, z05_blocks):
         "",
         labels_to_inc_words(ow_directory_exprs, "ColumnDirectoryOW"),
         "",
+        data_to_inc_bytes(bank5_data["ow_heap_blob"], "ColumnHeapOWBlob"),
+        "",
+        labels_to_inc_words(uw_directory_labels, "ColumnDirectoryUW"),
+        "",
     ]
-
-    lines.append(data_to_inc_bytes(bank5_data["ow_heap_blob"], "ColumnHeapOWBlob"))
-    lines.append("")
-
-    lines.append(labels_to_inc_words(uw_directory_labels, "ColumnDirectoryUW"))
-    lines.append("")
-
     for label in UW_HEAP_LABELS:
         lines.append(data_to_inc_bytes(bank5_data["uw_heaps"][label], label))
         lines.append("")
-
     lines.append(data_to_inc_bytes(bank5_data["uw_cellar_heap"], "ColumnHeapUWCellar"))
-
     write_text_file(os.path.join(data_dir, "room_columns.inc"), lines)
 
 
-def write_room_common_file(data_dir, common_data):
+def write_room_common_inc(data_dir: str, common_data: bytes) -> None:
     lines = [
         "; Common room data copied by bank 6 loader",
         "; Auto-generated by extract_rooms.py - DO NOT EDIT",
@@ -608,7 +776,7 @@ def write_room_common_file(data_dir, common_data):
     write_text_file(os.path.join(data_dir, "room_common.inc"), lines)
 
 
-def write_room_patches_file(data_dir, z06_blocks):
+def write_room_patches_inc(data_dir: str, z06_blocks: dict) -> None:
     lines = [
         "; Second quest room/data patch tables",
         "; Auto-generated by extract_rooms.py - DO NOT EDIT",
@@ -631,31 +799,69 @@ def write_room_patches_file(data_dir, z06_blocks):
         ),
         "",
     ]
-
     for label in Q2_REPLACEMENT_LABELS:
         lines.append(data_to_inc_bytes(bytes(z06_blocks[label]["bytes"]), label))
         lines.append("")
-
     write_text_file(os.path.join(data_dir, "room_patches.inc"), lines[:-1])
 
 
-def main():
+# ---------------------------------------------------------------------------
+# main
+# ---------------------------------------------------------------------------
+
+def main() -> None:
+    parser = argparse.ArgumentParser(
+        description="Extract NES Zelda room data and emit Genesis-ready C arrays."
+    )
+    parser.add_argument(
+        "--out-dir",
+        default=None,
+        help="Output directory for data/rooms/ files. Default: <repo>/data/rooms/",
+    )
+    parser.add_argument(
+        "--legacy-inc",
+        action="store_true",
+        default=False,
+        help="Also emit legacy .inc files (vasm format) alongside C arrays.",
+    )
+    args = parser.parse_args()
+
     script_dir = os.path.dirname(os.path.abspath(__file__))
     project_root = os.path.dirname(script_dir)
 
-    rom_path = os.path.join(project_root, "Legend of Zelda, The (USA).nes")
+    if args.out_dir is not None:
+        out_dir = os.path.abspath(args.out_dir)
+    else:
+        out_dir = os.path.join(project_root, "data", "rooms")
+
+    legacy_dir = os.path.join(project_root, "src", "data")
+
+    rom_path_env = os.environ.get("ZELDA_NES_ROM", "")
+    if rom_path_env and os.path.isfile(rom_path_env):
+        rom_path = rom_path_env
+    else:
+        rom_path = os.path.join(project_root, "Legend of Zelda, The (USA).nes")
+
     z05_path = os.path.join(project_root, "reference", "aldonunez", "Z_05.asm")
     z06_path = os.path.join(project_root, "reference", "aldonunez", "Z_06.asm")
-    data_dir = os.path.join(project_root, "src", "data")
 
     for required_path in [rom_path, z05_path, z06_path]:
         if not os.path.exists(required_path):
             print(f"ERROR: required file not found: {required_path}")
             sys.exit(1)
 
-    os.makedirs(data_dir, exist_ok=True)
-
+    # Verify ROM SHA256.
     print(f"Reading NES ROM: {rom_path}")
+    h = hashlib.sha256()
+    with open(rom_path, "rb") as f:
+        for chunk in iter(lambda: f.read(65536), b""):
+            h.update(chunk)
+    actual_sha256 = h.hexdigest()
+    if actual_sha256.lower() != NES_ROM_SHA256.lower():
+        print(f"WARNING: ROM SHA256 mismatch!")
+        print(f"  Expected: {NES_ROM_SHA256}")
+        print(f"  Actual:   {actual_sha256}")
+
     prg_data = read_ines_rom(rom_path)
 
     print(f"Parsing reference data: {z05_path}")
@@ -670,33 +876,49 @@ def main():
     print("\nExtracting bank 5 layout/column data...")
     bank5_data = find_bank5_room_data(prg_data, z05_blocks)
 
-    print("\nWriting room data files...")
-    write_room_attr_files(data_dir, bank6_data["level_blocks"])
-    write_level_info_file(data_dir, bank6_data["level_infos"])
-    write_room_layouts_file(data_dir, bank5_data)
-    write_room_columns_file(data_dir, bank5_data, z05_blocks)
-    write_room_common_file(data_dir, bank6_data["common_data"])
-    write_room_patches_file(data_dir, z06_blocks)
+    os.makedirs(out_dir, exist_ok=True)
 
-    total_bytes = 0
-    total_bytes += sum(len(data) for data in bank6_data["level_blocks"].values())
-    total_bytes += sum(len(data) for data in bank6_data["level_infos"].values())
-    total_bytes += len(bank6_data["common_data"])
-    total_bytes += len(bank5_data["room_layouts_ow"])
-    total_bytes += len(bank5_data["room_layouts_uw"])
-    total_bytes += sum(len(data) for data in bank5_data["ow_cave_layouts"].values())
-    total_bytes += sum(len(data) for data in bank5_data["ow_heaps"].values())
-    total_bytes += sum(len(data) for data in bank5_data["uw_heaps"].values())
-    total_bytes += sum(len(data) for data in bank5_data["uw_cellar_layouts"].values())
-    total_bytes += len(bank5_data["uw_cellar_heap"])
-    total_bytes += len(z06_blocks["LevelBlockAttrsBQ2ReplacementOffsets"]["bytes"])
-    total_bytes += len(z06_blocks["LevelBlockAttrsBQ2ReplacementValues"]["bytes"])
-    total_bytes += len(z06_blocks["LevelInfoUWQ2ReplacementSizes"]["bytes"])
-    total_bytes += sum(len(z06_blocks[label]["bytes"]) for label in Q2_REPLACEMENT_LABELS)
+    print("\nWriting C room data files...")
+    _ow_blob, overworld_info = write_overworld_c(out_dir, bank6_data, bank5_data)
+    _dg_blob, dungeons_info = write_dungeons_c(out_dir, bank6_data, bank5_data, z06_blocks)
+
+    manifest = build_manifest(
+        overworld_info,
+        dungeons_info,
+        bank5_data["ow_heap_offsets"],
+    )
+    write_manifest(os.path.join(out_dir, "MANIFEST.json"), manifest)
+
+    if args.legacy_inc:
+        print("\nEmitting legacy .inc files...")
+        os.makedirs(legacy_dir, exist_ok=True)
+        write_room_attr_files_inc(data_dir=legacy_dir, level_blocks=bank6_data["level_blocks"])
+        write_level_info_inc(legacy_dir, bank6_data["level_infos"])
+        write_room_layouts_inc(legacy_dir, bank5_data)
+        write_room_columns_inc(legacy_dir, bank5_data, z05_blocks)
+        write_room_common_inc(legacy_dir, bank6_data["common_data"])
+        write_room_patches_inc(legacy_dir, z06_blocks)
+
+    total_bytes = (
+        sum(len(data) for data in bank6_data["level_blocks"].values())
+        + sum(len(data) for data in bank6_data["level_infos"].values())
+        + len(bank6_data["common_data"])
+        + len(bank5_data["room_layouts_ow"])
+        + len(bank5_data["room_layouts_uw"])
+        + sum(len(data) for data in bank5_data["ow_cave_layouts"].values())
+        + sum(len(data) for data in bank5_data["ow_heaps"].values())
+        + sum(len(data) for data in bank5_data["uw_heaps"].values())
+        + sum(len(data) for data in bank5_data["uw_cellar_layouts"].values())
+        + len(bank5_data["uw_cellar_heap"])
+        + len(z06_blocks["LevelBlockAttrsBQ2ReplacementOffsets"]["bytes"])
+        + len(z06_blocks["LevelBlockAttrsBQ2ReplacementValues"]["bytes"])
+        + len(z06_blocks["LevelInfoUWQ2ReplacementSizes"]["bytes"])
+        + sum(len(z06_blocks[label]["bytes"]) for label in Q2_REPLACEMENT_LABELS)
+    )
 
     print("\n=== Room extraction complete ===")
     print(f"  Total extracted room data: {total_bytes} bytes")
-    print(f"  Output directory: {data_dir}")
+    print(f"  Output directory: {out_dir}")
 
 
 if __name__ == "__main__":

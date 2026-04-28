@@ -1,0 +1,405 @@
+{
+  "schema_version": 1,
+  "nes_rom_sha256": "8f72dc2e98572eb4ba7c3a902bca5f69c448fc4391837e5f8f0d4556280440ac",
+  "overworld": [
+    {
+      "category": "overworld",
+      "name": "LevelBlockOW",
+      "file": "overworld.c",
+      "var_name": "rooms_overworld",
+      "byte_offset": 0,
+      "byte_size": 768,
+      "note": "6 attribute sub-tables x 128 rooms"
+    },
+    {
+      "category": "overworld",
+      "name": "LevelInfoOW",
+      "file": "overworld.c",
+      "var_name": "rooms_overworld",
+      "byte_offset": 768,
+      "byte_size": 256
+    },
+    {
+      "category": "overworld",
+      "name": "CommonDataBlock_Bank6",
+      "file": "overworld.c",
+      "var_name": "rooms_overworld",
+      "byte_offset": 1024,
+      "byte_size": 142
+    },
+    {
+      "category": "overworld",
+      "name": "RoomLayoutsOW",
+      "file": "overworld.c",
+      "var_name": "rooms_overworld",
+      "byte_offset": 1166,
+      "byte_size": 912,
+      "note": "912 bytes, column-encoded format"
+    },
+    {
+      "category": "overworld",
+      "name": "RoomLayoutOWCave0",
+      "file": "overworld.c",
+      "var_name": "rooms_overworld",
+      "byte_offset": 2078,
+      "byte_size": 16
+    },
+    {
+      "category": "overworld",
+      "name": "RoomLayoutOWCave1",
+      "file": "overworld.c",
+      "var_name": "rooms_overworld",
+      "byte_offset": 2094,
+      "byte_size": 16
+    },
+    {
+      "category": "overworld",
+      "name": "RoomLayoutOWCave2",
+      "file": "overworld.c",
+      "var_name": "rooms_overworld",
+      "byte_offset": 2110,
+      "byte_size": 16
+    },
+    {
+      "category": "overworld",
+      "name": "ColumnHeapOWBlob",
+      "file": "overworld.c",
+      "var_name": "rooms_overworld",
+      "byte_offset": 2126,
+      "byte_size": 964
+    }
+  ],
+  "dungeons": [
+    {
+      "category": "dungeons",
+      "name": "LevelBlockUW1Q1",
+      "file": "dungeons.c",
+      "var_name": "rooms_dungeons",
+      "byte_offset": 0,
+      "byte_size": 768
+    },
+    {
+      "category": "dungeons",
+      "name": "LevelBlockUW2Q1",
+      "file": "dungeons.c",
+      "var_name": "rooms_dungeons",
+      "byte_offset": 768,
+      "byte_size": 768
+    },
+    {
+      "category": "dungeons",
+      "name": "LevelBlockUW1Q2",
+      "file": "dungeons.c",
+      "var_name": "rooms_dungeons",
+      "byte_offset": 1536,
+      "byte_size": 768
+    },
+    {
+      "category": "dungeons",
+      "name": "LevelBlockUW2Q2",
+      "file": "dungeons.c",
+      "var_name": "rooms_dungeons",
+      "byte_offset": 2304,
+      "byte_size": 768
+    },
+    {
+      "category": "dungeons",
+      "name": "LevelInfoUW1",
+      "file": "dungeons.c",
+      "var_name": "rooms_dungeons",
+      "byte_offset": 3072,
+      "byte_size": 256
+    },
+    {
+      "category": "dungeons",
+      "name": "LevelInfoUW2",
+      "file": "dungeons.c",
+      "var_name": "rooms_dungeons",
+      "byte_offset": 3328,
+      "byte_size": 256
+    },
+    {
+      "category": "dungeons",
+      "name": "LevelInfoUW3",
+      "file": "dungeons.c",
+      "var_name": "rooms_dungeons",
+      "byte_offset": 3584,
+      "byte_size": 256
+    },
+    {
+      "category": "dungeons",
+      "name": "LevelInfoUW4",
+      "file": "dungeons.c",
+      "var_name": "rooms_dungeons",
+      "byte_offset": 3840,
+      "byte_size": 256
+    },
+    {
+      "category": "dungeons",
+      "name": "LevelInfoUW5",
+      "file": "dungeons.c",
+      "var_name": "rooms_dungeons",
+      "byte_offset": 4096,
+      "byte_size": 256
+    },
+    {
+      "category": "dungeons",
+      "name": "LevelInfoUW6",
+      "file": "dungeons.c",
+      "var_name": "rooms_dungeons",
+      "byte_offset": 4352,
+      "byte_size": 256
+    },
+    {
+      "category": "dungeons",
+      "name": "LevelInfoUW7",
+      "file": "dungeons.c",
+      "var_name": "rooms_dungeons",
+      "byte_offset": 4608,
+      "byte_size": 256
+    },
+    {
+      "category": "dungeons",
+      "name": "LevelInfoUW8",
+      "file": "dungeons.c",
+      "var_name": "rooms_dungeons",
+      "byte_offset": 4864,
+      "byte_size": 256
+    },
+    {
+      "category": "dungeons",
+      "name": "LevelInfoUW9",
+      "file": "dungeons.c",
+      "var_name": "rooms_dungeons",
+      "byte_offset": 5120,
+      "byte_size": 256
+    },
+    {
+      "category": "dungeons",
+      "name": "RoomLayoutsUW",
+      "file": "dungeons.c",
+      "var_name": "rooms_dungeons",
+      "byte_offset": 5376,
+      "byte_size": 768,
+      "note": "768 bytes, column-encoded format"
+    },
+    {
+      "category": "dungeons",
+      "name": "RoomLayoutUWCellar0",
+      "file": "dungeons.c",
+      "var_name": "rooms_dungeons",
+      "byte_offset": 6144,
+      "byte_size": 16
+    },
+    {
+      "category": "dungeons",
+      "name": "RoomLayoutUWCellar1",
+      "file": "dungeons.c",
+      "var_name": "rooms_dungeons",
+      "byte_offset": 6160,
+      "byte_size": 16
+    },
+    {
+      "category": "dungeons",
+      "name": "ColumnHeapUW0",
+      "file": "dungeons.c",
+      "var_name": "rooms_dungeons",
+      "byte_offset": 6176,
+      "byte_size": 16
+    },
+    {
+      "category": "dungeons",
+      "name": "ColumnHeapUW1",
+      "file": "dungeons.c",
+      "var_name": "rooms_dungeons",
+      "byte_offset": 6192,
+      "byte_size": 30
+    },
+    {
+      "category": "dungeons",
+      "name": "ColumnHeapUW2",
+      "file": "dungeons.c",
+      "var_name": "rooms_dungeons",
+      "byte_offset": 6222,
+      "byte_size": 17
+    },
+    {
+      "category": "dungeons",
+      "name": "ColumnHeapUW3",
+      "file": "dungeons.c",
+      "var_name": "rooms_dungeons",
+      "byte_offset": 6239,
+      "byte_size": 17
+    },
+    {
+      "category": "dungeons",
+      "name": "ColumnHeapUW4",
+      "file": "dungeons.c",
+      "var_name": "rooms_dungeons",
+      "byte_offset": 6256,
+      "byte_size": 23
+    },
+    {
+      "category": "dungeons",
+      "name": "ColumnHeapUW5",
+      "file": "dungeons.c",
+      "var_name": "rooms_dungeons",
+      "byte_offset": 6279,
+      "byte_size": 23
+    },
+    {
+      "category": "dungeons",
+      "name": "ColumnHeapUW6",
+      "file": "dungeons.c",
+      "var_name": "rooms_dungeons",
+      "byte_offset": 6302,
+      "byte_size": 17
+    },
+    {
+      "category": "dungeons",
+      "name": "ColumnHeapUW7",
+      "file": "dungeons.c",
+      "var_name": "rooms_dungeons",
+      "byte_offset": 6319,
+      "byte_size": 18
+    },
+    {
+      "category": "dungeons",
+      "name": "ColumnHeapUW8",
+      "file": "dungeons.c",
+      "var_name": "rooms_dungeons",
+      "byte_offset": 6337,
+      "byte_size": 26
+    },
+    {
+      "category": "dungeons",
+      "name": "ColumnHeapUW9",
+      "file": "dungeons.c",
+      "var_name": "rooms_dungeons",
+      "byte_offset": 6363,
+      "byte_size": 35
+    },
+    {
+      "category": "dungeons",
+      "name": "ColumnHeapUWCellar",
+      "file": "dungeons.c",
+      "var_name": "rooms_dungeons",
+      "byte_offset": 6398,
+      "byte_size": 34
+    },
+    {
+      "category": "dungeons",
+      "name": "LevelBlockAttrsBQ2ReplacementOffsets",
+      "file": "dungeons.c",
+      "var_name": "rooms_dungeons",
+      "byte_offset": 6432,
+      "byte_size": 8
+    },
+    {
+      "category": "dungeons",
+      "name": "LevelBlockAttrsBQ2ReplacementValues",
+      "file": "dungeons.c",
+      "var_name": "rooms_dungeons",
+      "byte_offset": 6440,
+      "byte_size": 8
+    },
+    {
+      "category": "dungeons",
+      "name": "LevelInfoUWQ2ReplacementSizes",
+      "file": "dungeons.c",
+      "var_name": "rooms_dungeons",
+      "byte_offset": 6448,
+      "byte_size": 9
+    },
+    {
+      "category": "dungeons",
+      "name": "LevelInfoUWQ2Replacements1",
+      "file": "dungeons.c",
+      "var_name": "rooms_dungeons",
+      "byte_offset": 6457,
+      "byte_size": 57
+    },
+    {
+      "category": "dungeons",
+      "name": "LevelInfoUWQ2Replacements2",
+      "file": "dungeons.c",
+      "var_name": "rooms_dungeons",
+      "byte_offset": 6514,
+      "byte_size": 55
+    },
+    {
+      "category": "dungeons",
+      "name": "LevelInfoUWQ2Replacements3",
+      "file": "dungeons.c",
+      "var_name": "rooms_dungeons",
+      "byte_offset": 6569,
+      "byte_size": 61
+    },
+    {
+      "category": "dungeons",
+      "name": "LevelInfoUWQ2Replacements4",
+      "file": "dungeons.c",
+      "var_name": "rooms_dungeons",
+      "byte_offset": 6630,
+      "byte_size": 57
+    },
+    {
+      "category": "dungeons",
+      "name": "LevelInfoUWQ2Replacements5",
+      "file": "dungeons.c",
+      "var_name": "rooms_dungeons",
+      "byte_offset": 6687,
+      "byte_size": 67
+    },
+    {
+      "category": "dungeons",
+      "name": "LevelInfoUWQ2Replacements6",
+      "file": "dungeons.c",
+      "var_name": "rooms_dungeons",
+      "byte_offset": 6754,
+      "byte_size": 64
+    },
+    {
+      "category": "dungeons",
+      "name": "LevelInfoUWQ2Replacements7",
+      "file": "dungeons.c",
+      "var_name": "rooms_dungeons",
+      "byte_offset": 6818,
+      "byte_size": 63
+    },
+    {
+      "category": "dungeons",
+      "name": "LevelInfoUWQ2Replacements8",
+      "file": "dungeons.c",
+      "var_name": "rooms_dungeons",
+      "byte_offset": 6881,
+      "byte_size": 67
+    },
+    {
+      "category": "dungeons",
+      "name": "LevelInfoUWQ2Replacements9",
+      "file": "dungeons.c",
+      "var_name": "rooms_dungeons",
+      "byte_offset": 6948,
+      "byte_size": 74
+    }
+  ],
+  "ow_heap_offsets": [
+    0,
+    53,
+    102,
+    168,
+    236,
+    286,
+    346,
+    405,
+    464,
+    526,
+    591,
+    660,
+    721,
+    775,
+    841,
+    893
+  ]
+}
