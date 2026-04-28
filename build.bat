@@ -269,7 +269,7 @@ rem ---------------------------------------------------------------------------
 git -C "%ROOT%" add builds\whatif.md builds\whatif.lst builds\archive\ >nul 2>nul
 git -C "%ROOT%" diff --cached --quiet >nul 2>nul
 if errorlevel 1 (
-    git -C "%ROOT%" commit -m "build: %TAG%" >nul 2>nul
+    git -C "%ROOT%" commit -m "build: %TAG%" --only -- builds\whatif.md builds\whatif.lst builds\archive\ >nul 2>nul
     if errorlevel 1 (
         echo WARNING: git commit failed
     ) else (
