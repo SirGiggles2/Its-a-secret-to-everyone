@@ -1,0 +1,12 @@
+baseline:  tools\probes\baselines\fs_file_delete_cancel.bin  frame=650  payload-hash=0x56C5EE5B
+candidate: tools\probes\baselines\fs_file_delete_cancel.bin  frame=650  payload-hash=0x56C5EE5B
+
+[CRAM] PASS  (128 bytes)
+[PLNA] PASS  (8192 bytes)
+[PLNB] PASS  (8192 bytes)
+[RAM_] PASS  (256 bytes)
+[SAT_] PASS  (640 bytes)
+[VSRA] PASS  (80 bytes)
+
+TOTAL mismatched bytes: 0
+VERDICT: PASS
