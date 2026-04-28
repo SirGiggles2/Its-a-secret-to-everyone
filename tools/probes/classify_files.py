@@ -12,6 +12,8 @@ CATEGORIES = [
     "owned_c",
     "owned_c_frontend",
     "generated_data",
+    "extracted_data_inc",
+    "asset_manifest",
     "transpile_adapter",
     "transpiled_asm",
     "shim_asm",
@@ -27,9 +29,24 @@ SHIM_NAMES = {"src/nes_io.asm", "src/c_shims.asm"}
 PLATFORM_ASM_NAMES = {"src/genesis_shell.asm", "src/audio_driver.asm"}
 
 
+def _is_truly_dead_artifact(rel_norm: str) -> bool:
+    """Files that are confirmed dead by name pattern alone.
+
+    NOT every .txt under src/ is dead — gen/*_asset_hashes.txt are live build
+    manifests. Restrict the truly-dead set to: .bak files, Windows-Explorer
+    duplicate-paste artifacts (' - Copy.<ext>'), and explicitly-stale
+    text files matched by name (not just any .txt).
+    """
+    if rel_norm.endswith(".bak"):
+        return True
+    if " - Copy" in rel_norm:
+        return True
+    return False
+
+
 def classify(rel: str) -> str:
     rel_norm = rel.replace("\\", "/")
-    if rel_norm.endswith(".bak") or " - Copy" in rel_norm or rel_norm.endswith(".txt"):
+    if _is_truly_dead_artifact(rel_norm):
         return "cruft"
     if rel_norm in COMPAT_NAMES:
         return "compat_wrapper"
@@ -39,10 +56,18 @@ def classify(rel: str) -> str:
         return "platform_asm"
     if rel_norm.startswith("src/zelda_translated/"):
         return "transpiled_asm"
+    # src/gen/*_asset_hashes.txt are live build manifests emitted by
+    # tools/extract_*_assets.py. Recognize them before the generic gen/ rule.
+    if rel_norm.startswith("src/gen/") and rel_norm.endswith("_asset_hashes.txt"):
+        return "asset_manifest"
     if rel_norm.startswith("src/gen/"):
         if "/z_" in rel_norm and rel_norm.endswith(".c"):
             return "transpile_adapter"
         return "generated_data"
+    # src/data/*.{inc,bin,dat} are live data includes referenced by
+    # src/audio_driver.asm and the music/sfx/text/room/tile pipeline.
+    if rel_norm.startswith("src/data/") and rel_norm.endswith((".inc", ".bin", ".dat")):
+        return "extracted_data_inc"
     if rel_norm.endswith(".h"):
         return "header"
     if rel_norm.endswith(".c"):

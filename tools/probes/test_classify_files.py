@@ -26,6 +26,18 @@ from classify_files import classify
     ("src/c_wanderer.c",                   "compat_wrapper"),
     ("src/genesis_shell.asm.bak",          "cruft"),
     ("src/nes_io - Copy.txt",              "cruft"),
+    ("src/zelda_translated/z_07 - Copy.txt", "cruft"),
+    # Live data includes pulled in by src/audio_driver.asm and the
+    # extraction pipeline — must NOT be classified as cruft.
+    ("src/data/music_blob.inc",            "extracted_data_inc"),
+    ("src/data/music_blob.dat",            "extracted_data_inc"),
+    ("src/data/dmc_samples.inc",           "extracted_data_inc"),
+    ("src/data/dmc_samples.bin",           "extracted_data_inc"),
+    ("src/data/songs.inc",                 "extracted_data_inc"),
+    ("src/data/tiles_overworld_bg.inc",    "extracted_data_inc"),
+    # Live build manifests emitted by tools/extract_*_assets.py.
+    ("src/gen/intro_asset_hashes.txt",     "asset_manifest"),
+    ("src/gen/fs_asset_hashes.txt",        "asset_manifest"),
 ])
 def test_classification(rel: str, expected: str) -> None:
     assert classify(rel) == expected

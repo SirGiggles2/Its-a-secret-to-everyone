@@ -62,15 +62,27 @@ Mechanical, no behavior change. Verifies S0 outputs still hold and removes 46 de
 - [ ] **Step 4: Confirm SGDK submodule populated.** `ls sgdk/inc/genesis.h sgdk/lib/libmd.a sgdk/bin/make.exe`. Expect: all three exist. If submodule lost: `git submodule update --init`.
 - [ ] **Step 5:** No commit (verification only). Proceed to A2.
 
-### Task A2: Delete cruft files
+### Task A2: Delete truly-dead cruft files (only 3, not 46 — classifier had a bug)
 
-**Files:** 46 deletions (per `docs/audit/file_classification.md` "cruft" category).
+**Files:** 3 deletions (per fixed `tools/probes/classify_files.py` and refreshed `docs/audit/file_classification.md`).
 
-- [ ] **Step 1: Read the cruft list.** `grep -A 100 "^## .cruft." docs/audit/file_classification.md`.
-- [ ] **Step 2: Verify each file is truly dead.** Spot-check 5 random entries — open in editor, confirm `*.bak` / `* - Copy*` / `*.txt` content is superseded by a current file. None should be load-bearing.
-- [ ] **Step 3: Delete in one batch.** `git rm <each path>` per file from the cruft list. Use `git ls-files` to be sure they're tracked first.
-- [ ] **Step 4: Re-run build to confirm nothing depended on them.** `build.bat` → ROM hash must still match baseline.
-- [ ] **Step 5: Commit.** `git commit -m "s1.A: delete 46 cruft files (*.bak, *- Copy*, stale .txt)"`.
+**Background:** The original S0 classifier (T12) used a catch-all rule that put any `.txt` file under `src/` into `cruft`, plus any `.inc` outside `src/zelda_translated/` and `src/gen/`. That misclassified:
+
+- 41 live data includes under `src/data/` (referenced by `src/audio_driver.asm` line 1, 1403, 1411 — `music_blob.inc`, `music_blob.dat`, `dmc_samples.inc`, plus the broader extraction pipeline)
+- 2 live asset-hash manifests under `src/gen/` (emitted by `tools/extract_fs_assets.py` and `tools/extract_intro_assets.py` to fingerprint extraction outputs)
+
+The classifier was fixed to add two new categories (`extracted_data_inc`, `asset_manifest`) and to gate the truly-dead pattern to `*.bak` and `* - Copy*` only — not the broad `*.txt` rule. Tests extended from 16 to 25 cases.
+
+**Truly-dead files after the fix:**
+- `src/genesis_shell.asm.bak`
+- `src/nes_io - Copy.txt`
+- `src/zelda_translated/z_07 - Copy.txt`
+
+- [ ] **Step 1:** `grep -B 1 -A 5 "^## \`cruft\`" docs/audit/file_classification.md`. Confirm 3 entries.
+- [ ] **Step 2:** Verify each file. The two ` - Copy.txt` files are Windows-Explorer duplicates (identical to the canonical files modulo `.txt` extension); the `.bak` is a pre-edit backup. None are referenced anywhere else in the tree.
+- [ ] **Step 3:** `git rm "src/genesis_shell.asm.bak" "src/nes_io - Copy.txt" "src/zelda_translated/z_07 - Copy.txt"`.
+- [ ] **Step 4:** ROM hash unchanged from baseline (these files weren't in any build path).
+- [ ] **Step 5: Commit.** `git commit -m "s1.A2: delete 3 truly-dead files (*.bak + Windows Copy artifacts)"`.
 
 ### Task A3: Verify lint count drops from cruft removal
 
