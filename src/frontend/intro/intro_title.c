@@ -2,12 +2,17 @@
  *
  * Title runtime: load assets, per-vblank step (glow only for now;
  * waterfall added in Task 12), fade-out driver.
+ *
+ * S1.F3: all local VDP helpers removed; calls go through render_abi.h.
  */
 #include "intro_title.h"
+#include "render_abi.h"
 
-#define VDP_DATA_WORD (*(volatile unsigned short *)0x00C00000)
+/* VDP_CTRL_WORD is still needed for display-enable/disable register
+ * writes (VDP register 1 set/clear).  Those are register-file writes,
+ * not data-port streaming, so they do not belong in the render adapter
+ * streaming layer.  Keep the single macro here for those two writes. */
 #define VDP_CTRL_WORD (*(volatile unsigned short *)0x00C00004)
-#define VDP_CTRL_LONG (*(volatile unsigned long  *)0x00C00004)
 
 extern const unsigned char  intro_title_bg_chr[];
 extern const unsigned long  intro_title_bg_chr_size;
@@ -23,49 +28,6 @@ extern const unsigned char  intro_title_glow_delays[8];
 
 #define PLANE_A_BASE 0xC000u
 
-static void vram_write_open(unsigned short dst) {
-    VDP_CTRL_LONG = 0x40000000UL
-                  | ((unsigned long)(dst & 0x3FFF) << 16)
-                  | ((dst >> 14) & 0x0003);
-}
-
-static void vram_upload(const unsigned char *src, unsigned long bytes,
-                        unsigned short dst) {
-    const unsigned short *p = (const unsigned short *)src;
-    unsigned long words = bytes >> 1;
-    vram_write_open(dst);
-    while (words--) VDP_DATA_WORD = *p++;
-}
-
-static void cram_upload(const unsigned short *src, unsigned short count) {
-    VDP_CTRL_LONG = 0xC0000000UL;
-    while (count--) VDP_DATA_WORD = *src++;
-}
-
-static void cram_write_one(unsigned short slot, unsigned short value) {
-    unsigned long addr = (unsigned long)slot * 2u;
-    VDP_CTRL_LONG = 0xC0000000UL
-                  | ((addr & 0x3FFFu) << 16)
-                  | ((addr >> 14) & 0x0003u);
-    VDP_DATA_WORD = value;
-}
-
-static void plane_fill_blank(unsigned short base) {
-    vram_write_open(base);
-    for (unsigned short i = 0; i < 32 * 32; i++) VDP_DATA_WORD = 0x0024;
-}
-
-static void write_row(unsigned short row, const unsigned short *cells) {
-    unsigned short addr = (unsigned short)(PLANE_A_BASE + row * 64);
-    vram_write_open(addr);
-    for (int i = 0; i < 32; i++) VDP_DATA_WORD = cells[i];
-}
-
-static void vsram_set0(unsigned short value) {
-    VDP_CTRL_LONG = 0x40000010UL;
-    VDP_DATA_WORD = value;
-}
-
 static unsigned char s_glow_cycle = 0;
 static unsigned char s_glow_timer = 0;
 static unsigned char s_fade_cycle = 0;
@@ -77,7 +39,7 @@ static unsigned char s_waterfall_phase = 0;
  * (linker has no .data section so non-zero statics must init at runtime). */
 static unsigned char s_wave_ys[3];
 
-/* NES InitialTitleSprites table (Z_02.asm:342-356) — 28 sprites, 4 bytes
+/* NES InitialTitleSprites table (Z_02.asm:342-356) -- 28 sprites, 4 bytes
  * each: [Y, tile, attr, X]. Last 6 entries (Y=$67, tile=$A0) are the
  * waterfall row; their tile field is rotated each 8 frames to animate
  * water using WaterfallCrestTiles. */
@@ -135,8 +97,7 @@ static const unsigned char waterfall_wave_tiles[4]  = {0xB2, 0xB4, 0xB6, 0xB8};
  * of cell pal). Title sprite CHR was generated with color_shift=4.
  */
 static void title_sprite_upload(void) {
-    unsigned short addr = SPRITE_TABLE_VRAM;
-    vram_write_open(addr);
+    render_vram_open_write(SPRITE_TABLE_VRAM);
 
     /* First 28 sprites: InitialTitleSprites (logo decoration, sword pieces,
      * bird, V-chevron under ZELDA). */
@@ -160,10 +121,10 @@ static void title_sprite_upload(void) {
                                               | (vflip << 12) | (hflip << 11)
                                               | (tile & 0x7FFu));
 
-        VDP_DATA_WORD = y;
-        VDP_DATA_WORD = word1;
-        VDP_DATA_WORD = word2;
-        VDP_DATA_WORD = x;
+        render_vram_write_word(y);
+        render_vram_write_word(word1);
+        render_vram_write_word(word2);
+        render_vram_write_word(x);
     }
 
     /* Waterfall sprites: 1 crest row + 3 wave rows, 4 cols each.
@@ -185,10 +146,10 @@ static void title_sprite_upload(void) {
             unsigned short word1 = (unsigned short)((1u << 8) | link);  /* size=8x16 */
             unsigned short word2 = (unsigned short)((pal << 13) | (tile & 0x7FFu));
 
-            VDP_DATA_WORD = y;
-            VDP_DATA_WORD = word1;
-            VDP_DATA_WORD = word2;
-            VDP_DATA_WORD = x;
+            render_vram_write_word(y);
+            render_vram_write_word(word1);
+            render_vram_write_word(word2);
+            render_vram_write_word(x);
         }
     }
 }
@@ -239,11 +200,11 @@ static void title_waterfall_step(void) {
             unsigned short word2 = (unsigned short)((pal << 13) | (tile & 0x7FFu));
             unsigned short base_addr = (unsigned short)(SPRITE_TABLE_VRAM + idx*8u);
             /* Update Y (word 0). */
-            vram_write_open(base_addr);
-            VDP_DATA_WORD = gen_y;
+            render_vram_open_write(base_addr);
+            render_vram_write_word(gen_y);
             /* Update tile/attr (word 2). */
-            vram_write_open((unsigned short)(base_addr + 4u));
-            VDP_DATA_WORD = word2;
+            render_vram_open_write((unsigned short)(base_addr + 4u));
+            render_vram_write_word(word2);
         }
     }
 
@@ -255,8 +216,8 @@ static void title_waterfall_step(void) {
         unsigned short pal = 0u;
         unsigned short word2 = (unsigned short)((pal << 13) | (tile & 0x7FFu));
         unsigned short addr = (unsigned short)(SPRITE_TABLE_VRAM + idx*8u + 4u);
-        vram_write_open(addr);
-        VDP_DATA_WORD = word2;
+        render_vram_open_write(addr);
+        render_vram_write_word(word2);
     }
 }
 
@@ -266,20 +227,23 @@ void intro_title_setup(void) {
     VDP_CTRL_WORD = 0x8134;
 
     /* CHR uploads. */
-    vram_upload(intro_title_bg_chr,     intro_title_bg_chr_size,     0x0000);
-    vram_upload(intro_title_sprite_chr, intro_title_sprite_chr_size, 0x2000);
+    render_chr_upload(0x0000, intro_title_bg_chr,
+                      (unsigned short)intro_title_bg_chr_size);
+    render_chr_upload(0x2000, intro_title_sprite_chr,
+                      (unsigned short)intro_title_sprite_chr_size);
 
     /* Plane A: title rows. Plane B blank. */
-    plane_fill_blank(PLANE_A_BASE);
-    plane_fill_blank(0xE000);
+    render_plane_fill(PLANE_A_BASE, 0x0024u, 32u * 32u);
+    render_plane_fill(0xE000u,      0x0024u, 32u * 32u);
     for (unsigned short r = 0; r < intro_title_tilemap_rows; r++) {
-        write_row(r, &intro_title_tilemap[r * 32]);
+        render_plane_a_write_row(r, &intro_title_tilemap[r * 32], 32u);
     }
 
     /* CRAM: title palette. */
-    cram_upload(intro_title_palette, 64);
+    render_cram_upload(intro_title_palette, 64u);
 
-    vsram_set0(0);
+    render_vsram_open_write(0u);
+    render_vsram_write_word(0u);
 
     /* Reset title state. */
     s_glow_cycle = 0;
@@ -306,7 +270,8 @@ void intro_title_step(void) {
         s_glow_cycle++;
         if (s_glow_cycle >= 8u) s_glow_cycle = 0;
         s_glow_timer = intro_title_glow_delays[s_glow_cycle];
-        cram_write_one((unsigned short)(1*16 + 2), intro_title_glow_colors[s_glow_cycle]);
+        render_cram_write_color((unsigned short)(1*16 + 2),
+                                intro_title_glow_colors[s_glow_cycle]);
     } else {
         s_glow_timer--;
     }
@@ -315,9 +280,7 @@ void intro_title_step(void) {
 
 void intro_title_fade_apply(unsigned char idx) {
     if (idx >= 14u) return;
-    VDP_CTRL_LONG = 0xC0000000UL;
-    const unsigned short *src = intro_title_fade_cycles[idx];
-    for (unsigned short i = 0; i < 64; i++) VDP_DATA_WORD = src[i];
+    render_cram_upload(intro_title_fade_cycles[idx], 64u);
     s_fade_delay = intro_title_fade_delays[idx];
     s_fade_cycle = idx;
 }
@@ -328,7 +291,7 @@ void intro_title_fade_step(void) {
         return;
     }
     if (s_fade_cycle + 1u >= 14u) {
-        /* Last cycle's delay just expired — fade is done. */
+        /* Last cycle's delay just expired -- fade is done. */
         s_fade_cycle = 14u;
         return;
     }
@@ -345,7 +308,10 @@ void intro_title_fade_reset(void) {
 }
 
 void intro_title_blackout(void) {
-    /* CRAM all black, holding the plane content but invisible. */
-    VDP_CTRL_LONG = 0xC0000000UL;
-    for (unsigned short i = 0; i < 64; i++) VDP_DATA_WORD = 0x0000;
+    /* CRAM all black, holding the plane content but invisible.
+     * render_cram_open_write opens the CRAM data port; subsequent
+     * render_vram_write_word calls stream to that port (same VDP_DATA_WORD
+     * address regardless of VRAM vs CRAM target). */
+    render_cram_open_write(0u);
+    for (unsigned short i = 0; i < 64u; i++) render_vram_write_word(0x0000u);
 }

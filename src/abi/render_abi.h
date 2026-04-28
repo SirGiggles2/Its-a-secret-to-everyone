@@ -33,4 +33,47 @@ void render_chr_upload(unsigned short vram_addr,
                        const unsigned char *src,
                        unsigned short byte_count);
 
+/* ---- Raw VRAM streaming (F3: title cutover) ----
+ *
+ * These calls give callers a write cursor into VRAM without touching
+ * VDP registers themselves.  The adapter owns the MMIO.
+ *
+ * render_vram_open_write  -- set VRAM write address; leaves port open.
+ * render_vram_write_word  -- stream one word at the current VRAM cursor.
+ * render_vram_write_words -- stream count words from src[] at the cursor.
+ */
+void render_vram_open_write(unsigned short vram_addr);
+void render_vram_write_word(unsigned short word);
+void render_vram_write_words(const unsigned short *src, unsigned short count);
+
+/* ---- CRAM single-slot write (F3: title cutover) ----
+ *
+ * render_cram_open_write   -- set CRAM write cursor to byte-offset slot*2.
+ * render_cram_write_color  -- open slot and write one color word (combined).
+ * render_cram_upload       -- open CRAM at offset 0 and stream count words.
+ */
+void render_cram_open_write(unsigned short slot);
+void render_cram_write_color(unsigned short slot, unsigned short value);
+void render_cram_upload(const unsigned short *src, unsigned short count);
+
+/* ---- VSRAM write (F3: title cutover) ----
+ *
+ * render_vsram_open_write -- set VSRAM write cursor to byte-offset slot*2.
+ * render_vsram_write_word -- write one word at the open VSRAM cursor.
+ */
+void render_vsram_open_write(unsigned short slot);
+void render_vsram_write_word(unsigned short value);
+
+/* ---- Plane bulk helpers (F3: title cutover) ----
+ *
+ * render_plane_fill          -- fill tile_count nametable words starting at
+ *                               plane_base with fill_word.
+ * render_plane_a_write_row   -- write count cells to row of Plane A.
+ *                               Plane A nametable base is fixed at $C000.
+ */
+void render_plane_fill(unsigned short plane_base, unsigned short fill_word,
+                       unsigned short tile_count);
+void render_plane_a_write_row(unsigned short row, const unsigned short *cells,
+                              unsigned short count);
+
 #endif /* RENDER_ABI_H */
