@@ -36,6 +36,9 @@ RUN_EXTRACTORS: list[Path] = [
     # S2 Phase B: extract_chr.py -> data/chr/
     REPO_ROOT / "tools" / "extract_chr.py",
     # S2 Phase C: extract_audio.py, extract_rooms.py, extract_enemies.py
+    REPO_ROOT / "tools" / "extract_audio.py",
+    REPO_ROOT / "tools" / "extract_rooms.py",
+    REPO_ROOT / "tools" / "extract_enemies.py",
     # S2 Phase D: extract_misc.py, extract_demo_text.py, etc.
 ]
 
@@ -88,6 +91,9 @@ def run_extractors(target_root: Path | None = None) -> int:
     # Extractors that do not appear here write to their default location.
     SUBDIR_MAP: dict[str, str] = {
         "extract_chr.py": "chr",
+        "extract_audio.py": "audio",
+        "extract_rooms.py": "rooms",
+        "extract_enemies.py": "enemies",
     }
 
     for script in RUN_EXTRACTORS:
