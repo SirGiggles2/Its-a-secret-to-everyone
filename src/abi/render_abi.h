@@ -100,4 +100,27 @@ void render_z80_bus_release(void);
 void render_irq_mask(void);
 void render_irq_unmask(void);
 
+/* ---- F5 additions: FS frontend cutover primitives ----
+ *
+ * render_cram_open_write_byte -- open CRAM write cursor at a raw byte address
+ *                                (0, 32, 64, 96 for palettes 0..3).  Honest
+ *                                about CRAM's byte-addressable nature; avoids
+ *                                the /2 conversion at call sites that already
+ *                                work in byte space.
+ * render_sat_write            -- write one complete SAT entry (8 bytes = 4 words)
+ *                                at SAT slot entry.  Computes the VRAM address
+ *                                from sat_base + entry*8 and streams the four
+ *                                words: y, size_link, tile_attr, x.
+ *                                sat_base is the VRAM byte address of the SAT
+ *                                (typically $F800 in our boot config).
+ * render_vram_write_zero_tile -- zero 16 words (32 bytes = one tile) at
+ *                                VRAM address vram_addr.  Used to blank tile 0
+ *                                so default nametable cells render transparent.
+ */
+void render_cram_open_write_byte(unsigned short byte_addr);
+void render_sat_write(unsigned short sat_base, unsigned char entry,
+                      unsigned short y, unsigned short size_link,
+                      unsigned short tile_attr, unsigned short x);
+void render_vram_write_zero_tile(unsigned short vram_addr);
+
 #endif /* RENDER_ABI_H */

@@ -42,11 +42,6 @@ extern const uint8_t  fs_border_chr[];
 #define LINK_CHR_BASE   0x100
 #define HEART_CHR_BASE  0x104
 
-/* VDP registers (word-access). */
-#define VDP_CTRL_WORD (*(volatile uint16_t *)0x00C00004)
-#define VDP_DATA_WORD (*(volatile uint16_t *)0x00C00000)
-#define VDP_CTRL_LONG (*(volatile uint32_t *)0x00C00004)
-
 /* ---------------------------------------------------------------------------
  * SAT write helper.
  *
@@ -70,16 +65,7 @@ extern const uint8_t  fs_border_chr[];
  */
 static void sat_write(uint8_t entry, uint16_t y, uint16_t size_link,
                       uint16_t tile_attr, uint16_t x) {
-    uint16_t addr = (uint16_t)(SAT_VRAM + (uint16_t)entry * 8U);
-    /* Open VRAM write at SAT[entry]. */
-    uint32_t cmd = 0x40000000UL
-                 | ((uint32_t)(addr & 0x3FFF) << 16)
-                 | (uint32_t)((addr >> 14) & 0x0003);
-    VDP_CTRL_LONG = cmd;
-    VDP_DATA_WORD = y;
-    VDP_DATA_WORD = size_link;
-    VDP_DATA_WORD = tile_attr;
-    VDP_DATA_WORD = x;
+    render_sat_write(SAT_VRAM, entry, y, size_link, tile_attr, x);
 }
 
 /* ---------------------------------------------------------------------------
@@ -355,16 +341,13 @@ void fs_render_extra_rows(void) {
 }
 
 void fs_render_players_row(uint8_t value) {
-    /* Patch the digit cell at row 25 col 13 in-place (single-cell write).
+    /* Patch the digit cell at row PLAYERS_ROW col DIGIT_COL in-place.
      * Range clamp 1..4 (caller already wraps, but be defensive).
      * NES digit '1'..'4' = BG tile 0x01..0x04. */
     if (value < 1u) value = 1u;
     if (value > 4u) value = 4u;
 
     unsigned short addr = (unsigned short)(PLANE_A_BASE + (PLAYERS_ROW * 64u) + (DIGIT_COL * 2u));
-    uint32_t cmd = 0x40000000UL
-                 | ((uint32_t)(addr & 0x3FFF) << 16)
-                 | (uint32_t)((addr >> 14) & 0x0003);
-    VDP_CTRL_LONG = cmd;
-    VDP_DATA_WORD = (uint16_t)((EXTRA_PAL & 0x3u) << 13) | (uint16_t)value;
+    render_vram_open_write(addr);
+    render_vram_write_word((uint16_t)((EXTRA_PAL & 0x3u) << 13) | (uint16_t)value);
 }

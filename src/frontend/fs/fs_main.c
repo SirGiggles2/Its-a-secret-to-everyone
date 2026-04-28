@@ -30,26 +30,6 @@ static void wait_vblank(void) {
     while (!(VDP_CTRL_WORD & 0x0008));
 }
 
-/* vdp_load_cram_at: load `count` palette words into CRAM at byte offset `cram_addr`.
- * Genesis CRAM: 64 words = 128 bytes. Each palette = 16 words = 32 bytes.
- * Palette 0 starts at CRAM byte 0, palette 1 at byte 32, etc.
- */
-static void vdp_load_cram_at(unsigned short cram_byte_addr,
-                              const unsigned short *src,
-                              unsigned short count)
-{
-    volatile unsigned long  *vctrl = (volatile unsigned long  *)0x00C00004;
-    volatile unsigned short *vdata = (volatile unsigned short *)0x00C00000;
-    /* CRAM write command: CD[5:2]=0011, addr = cram_byte_addr */
-    unsigned long cmd = 0xC0000000UL
-                      | ((unsigned long)(cram_byte_addr & 0x007F) << 16)
-                      | 0x00000000UL;
-    *vctrl = cmd;
-    for (unsigned short i = 0; i < count; i++) {
-        *vdata = src[i];
-    }
-}
-
 /* fs_init: upload CHR data and all palettes once at boot.
  *
  * CRAM layout (64 words = 4 palettes × 16 colors on Genesis):
@@ -93,12 +73,7 @@ static void fs_init(void) {
      *     that reference tile 0; if tile 0 holds NES font glyph "0" (which it does
      *     in fs_bg_chr_full), the screen background fills with "0" digits. Forcing
      *     tile 0 to all-transparent makes cleared cells render as the BG color. */
-    {
-        volatile unsigned long  *vctrl = (volatile unsigned long  *)0x00C00004;
-        volatile unsigned short *vdata = (volatile unsigned short *)0x00C00000;
-        *vctrl = 0x40000000UL;  /* VRAM write at $0000 */
-        for (unsigned short i = 0; i < 16; i++) *vdata = 0;
-    }
+    render_vram_write_zero_tile(0x0000u);
 
     /* 2. Upload Link sprite CHR to VRAM tile 0x100 (above BG block, no collision). */
     render_chr_upload((unsigned short)(0x100u * 32u), fs_link_sprite_chr,
@@ -108,11 +83,17 @@ static void fs_init(void) {
     render_chr_upload((unsigned short)(0x104u * 32u), fs_heart_cursor_chr,
                       (unsigned short)(1u * 32u));
 
-    /* 4. Load all 4 CRAM palettes (4 colors each at CRAM offsets 0/32/64/96). */
-    vdp_load_cram_at( 0u, &fs_palettes[0][0], 4u);  /* pal 0: BG attr=0 */
-    vdp_load_cram_at(32u, &fs_palettes[1][0], 4u);  /* pal 1: BG attr=1 (LIFE) */
-    vdp_load_cram_at(64u, &fs_palettes[2][0], 4u);  /* pal 2: Link sprite */
-    vdp_load_cram_at(96u, &fs_palettes[3][0], 4u);  /* pal 3: heart cursor */
+    /* 4. Load all 4 CRAM palettes (4 colors each at CRAM byte offsets 0/32/64/96).
+     *    render_cram_open_write_byte takes raw byte address; caller streams words
+     *    after with render_vram_write_words (reuses the open data port). */
+    render_cram_open_write_byte( 0u);
+    render_vram_write_words(&fs_palettes[0][0], 4u);  /* pal 0: BG attr=0 */
+    render_cram_open_write_byte(32u);
+    render_vram_write_words(&fs_palettes[1][0], 4u);  /* pal 1: BG attr=1 (LIFE) */
+    render_cram_open_write_byte(64u);
+    render_vram_write_words(&fs_palettes[2][0], 4u);  /* pal 2: Link sprite */
+    render_cram_open_write_byte(96u);
+    render_vram_write_words(&fs_palettes[3][0], 4u);  /* pal 3: heart cursor */
 
     /* 5. Phase + input init (v2). */
     fs_input_init();

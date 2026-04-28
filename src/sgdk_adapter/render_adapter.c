@@ -235,3 +235,43 @@ void render_plane_a_write_row(unsigned short row, const unsigned short *cells,
     render_vram_open_write(addr);
     while (count--) VDP_DATA_WORD = *cells++;
 }
+
+/* ---- Phase F5 FS frontend cutover primitives ---- */
+
+/* Open CRAM write cursor at a raw byte address.
+ * Genesis CRAM is byte-addressed; palette N starts at byte N*32.
+ * Caller passes byte_addr directly (0, 32, 64, 96 for palettes 0..3).
+ * Same CD encoding as render_cram_open_write but skips the *2 step. */
+void render_cram_open_write_byte(unsigned short byte_addr)
+{
+    unsigned long addr = (unsigned long)byte_addr;
+    VDP_CTRL_LONG = 0xC0000000UL
+                  | ((addr & 0x3FFFu) << 16)
+                  | ((addr >> 14) & 0x0003u);
+}
+
+/* Write one complete SAT entry at slot entry.
+ * SAT VRAM address = sat_base + entry * 8.
+ * Streams 4 words: y, size_link, tile_attr, x (Genesis SAT layout). */
+void render_sat_write(unsigned short sat_base, unsigned char entry,
+                      unsigned short y, unsigned short size_link,
+                      unsigned short tile_attr, unsigned short x)
+{
+    unsigned short addr = (unsigned short)(sat_base + (unsigned short)entry * 8u);
+    VDP_CTRL_LONG = 0x40000000UL
+                  | ((unsigned long)(addr & 0x3FFFu) << 16)
+                  | ((addr >> 14) & 0x0003u);
+    VDP_DATA_WORD = y;
+    VDP_DATA_WORD = size_link;
+    VDP_DATA_WORD = tile_attr;
+    VDP_DATA_WORD = x;
+}
+
+/* Zero 16 words (one 4bpp tile = 32 bytes) at vram_addr.
+ * Used to blank VRAM tile 0 so cells referencing it render transparent. */
+void render_vram_write_zero_tile(unsigned short vram_addr)
+{
+    render_vram_open_write(vram_addr);
+    unsigned short i;
+    for (i = 0; i < 16u; i++) VDP_DATA_WORD = 0;
+}
