@@ -128,7 +128,7 @@ class IdempotencyTests(unittest.TestCase):
         }
         with tempfile.TemporaryDirectory() as d:
             src = Path(d) / "z_05.c"
-            src.write_text("/* z_05.c */\n#include \"../nes_abi.h\"\n")
+            src.write_text("/* z_05.c */\n#include \"platform_abi.h\"\n")
             self.mod.apply_manifest(manifest, src)
             first = src.read_text()
             self.mod.apply_manifest(manifest, src)

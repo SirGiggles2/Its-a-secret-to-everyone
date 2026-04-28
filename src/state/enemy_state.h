@@ -1,7 +1,7 @@
 #ifndef ENEMY_STATE_H
 #define ENEMY_STATE_H
 
-#include "nes_abi.h"
+#include "platform_abi.h"
 
 /* Enemy/object state map for promoted z_04 gameplay code. Keep names
  * close to gameplay meaning so owned C stops depending on raw offsets.

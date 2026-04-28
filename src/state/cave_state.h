@@ -1,7 +1,7 @@
 #ifndef CAVE_STATE_H
 #define CAVE_STATE_H
 
-#include "nes_abi.h"
+#include "platform_abi.h"
 
 /* Cave/person state map for promoted z_01 cave runtime code. Use names
  * at the owned-C boundary so cave logic stops depending on raw offsets.

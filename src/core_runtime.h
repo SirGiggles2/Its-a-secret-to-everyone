@@ -1,7 +1,7 @@
 #ifndef CORE_RUNTIME_H
 #define CORE_RUNTIME_H
 
-#include "nes_abi.h"
+#include "platform_abi.h"
 
 void corert_play_character_sfx(void);
 void corert_play_key_taken_tune(void);

@@ -1,7 +1,7 @@
 #ifndef LINK_STATE_H
 #define LINK_STATE_H
 
-#include "nes_abi.h"
+#include "platform_abi.h"
 
 /* Link (player) state cells. Owned by link_collision_runtime and
  * link-side slices of room_player_runtime.

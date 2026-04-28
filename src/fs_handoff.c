@@ -1,7 +1,7 @@
 /* src/fs_handoff.c — VDP teardown + jump to ASM trampoline. */
 #include "fs_handoff.h"
 #include "intro_common.h"   /* vdp_display_off, vdp_set_vscroll, vdp_write_nametable_row */
-#include "nes_abi.h"
+#include "platform_abi.h"
 
 extern void fs_to_transpiled_trampoline(void);
 

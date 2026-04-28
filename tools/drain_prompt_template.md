@@ -33,7 +33,7 @@ Replace M68K jump-table dispatch (`jsr _m68k_tablejump`) with plain C
 `switch` on the state byte. Name new C functions in lower_snake_case.
 
 ## RAM ABI
-Read `src/nes_abi.h` and the runtime's private header
+Read `src/abi/platform_abi.h` and the runtime's private header
 (e.g. `src/enemy_runtime_private.h`) for the `RAM(addr)` macro and
 `ENEMY_*` accessors. Asm `($XXXX,A4)` addressing translates to
 `RAM(0xXXXX + slot)`; prefer existing typed accessor macros when they

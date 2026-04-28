@@ -1,7 +1,7 @@
 #ifndef UW_PERSON_RUNTIME_H
 #define UW_PERSON_RUNTIME_H
 
-#include "nes_abi.h"
+#include "platform_abi.h"
 
 #ifdef __cplusplus
 extern "C" {

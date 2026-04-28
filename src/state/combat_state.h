@@ -1,7 +1,7 @@
 #ifndef COMBAT_STATE_H
 #define COMBAT_STATE_H
 
-#include "nes_abi.h"
+#include "platform_abi.h"
 
 /* Shared state map for combat/collision/link-collision owned C. Keep
  * the scratch/collision boundary named so raw offsets stop spreading.

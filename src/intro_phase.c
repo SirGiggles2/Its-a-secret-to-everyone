@@ -8,7 +8,7 @@
 #include "intro_phase.h"
 #include "intro_title.h"
 #include "intro_story.h"
-#include "nes_abi.h"
+#include "platform_abi.h"
 
 static intro_phase_t s_phase;
 static unsigned short s_phase_counter;

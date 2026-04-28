@@ -1,7 +1,7 @@
 #ifndef OBJECT_STATE_H
 #define OBJECT_STATE_H
 
-#include "nes_abi.h"
+#include "platform_abi.h"
 
 /* Per-slot object-state cell bases. Index with `+ slot` at the call site.
  * Owned by object_runtime; any new offset touched by object logic belongs here.

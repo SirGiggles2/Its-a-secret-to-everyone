@@ -1,7 +1,7 @@
 #ifndef OBJECT_RUNTIME_H
 #define OBJECT_RUNTIME_H
 
-#include "nes_abi.h"
+#include "platform_abi.h"
 
 #ifdef __cplusplus
 extern "C" {

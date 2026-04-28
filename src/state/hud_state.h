@@ -1,7 +1,7 @@
 #ifndef HUD_STATE_H
 #define HUD_STATE_H
 
-#include "nes_abi.h"
+#include "platform_abi.h"
 
 /* HUD / status-row subsystem state boundary placeholder. */
 

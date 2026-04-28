@@ -1,7 +1,7 @@
 #ifndef SPRITE_RUNTIME_H
 #define SPRITE_RUNTIME_H
 
-#include "nes_abi.h"
+#include "platform_abi.h"
 
 extern unsigned char z01_reset_cur_sprite_index(void);
 

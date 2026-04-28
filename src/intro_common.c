@@ -1,5 +1,5 @@
 #include "intro_common.h"
-#include "nes_abi.h"  /* RAM(addr) macro */
+#include "platform_abi.h"  /* RAM(addr) macro */
 
 #define VDP_CTRL_WORD (*(volatile unsigned short *)0x00C00004)
 #define VDP_DATA_WORD (*(volatile unsigned short *)0x00C00000)

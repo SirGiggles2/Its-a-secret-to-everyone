@@ -14,7 +14,7 @@
  * not a global label, so the linker cannot resolve it directly.
  */
 #include "intro_main.h"
-#include "nes_abi.h"
+#include "platform_abi.h"
 #include "intro_phase.h"
 #include "intro_handoff.h"
 #include "intro_common.h"   /* vdp_set_mode_v32 */

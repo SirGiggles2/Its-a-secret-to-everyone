@@ -1,7 +1,7 @@
 #ifndef ITEM_STATE_H
 #define ITEM_STATE_H
 
-#include "nes_abi.h"
+#include "platform_abi.h"
 
 /* Shared item/inventory state for promoted z_01 gameplay code. */
 #define ITEM_VALUE_SCRATCH              RAM(0x000A)

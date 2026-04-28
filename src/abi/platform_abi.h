@@ -1,4 +1,4 @@
-/* nes_abi.h — minimal C-side interface to the NES-RAM shadow region
+/* platform_abi.h — minimal C-side interface to the NES-RAM shadow region
  * that transpiled asm uses via A4-relative addressing.
  *
  * The boot shell (src/genesis_shell.asm near line 354) loads

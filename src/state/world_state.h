@@ -1,7 +1,7 @@
 #ifndef WORLD_STATE_H
 #define WORLD_STATE_H
 
-#include "nes_abi.h"
+#include "platform_abi.h"
 
 /* Shared world/object state for promoted z_01 world and weapon code. */
 #define WORLD_TMP0                     RAM(0x0000)

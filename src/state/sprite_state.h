@@ -1,7 +1,7 @@
 #ifndef SPRITE_STATE_H
 #define SPRITE_STATE_H
 
-#include "nes_abi.h"
+#include "platform_abi.h"
 
 /* Sprite / OAM shadow cells. Owned by sprite_runtime.
  * OAM layout: 64 sprites * 4 bytes, starting at NES_OAM_BASE.

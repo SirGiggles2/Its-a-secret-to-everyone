@@ -1,7 +1,7 @@
 #ifndef SAVE_STATE_H
 #define SAVE_STATE_H
 
-#include "nes_abi.h"
+#include "platform_abi.h"
 
 /* SRAM-backed save state. NES SRAM maps at NES_SRAM_BASE. */
 

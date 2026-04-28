@@ -1,7 +1,7 @@
 #ifndef ENEMY_RUNTIME_H
 #define ENEMY_RUNTIME_H
 
-#include "nes_abi.h"
+#include "platform_abi.h"
 
 #ifdef __cplusplus
 extern "C" {

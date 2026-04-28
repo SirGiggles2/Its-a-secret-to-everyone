@@ -2,7 +2,7 @@
  * Data tables and remaining code stay in z_02.asm.
  */
 
-#include "../nes_abi.h"
+#include "platform_abi.h"
 #include "../frontend_runtime.h"
 #include "../save_menu_runtime.h"
 

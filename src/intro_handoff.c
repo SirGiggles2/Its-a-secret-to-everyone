@@ -12,7 +12,7 @@
 #include "intro_handoff.h"
 #include "intro_common.h"   /* vdp_display_off, vdp_set_vscroll, vdp_write_nametable_row */
 #include "fs_main.h"
-#include "nes_abi.h"
+#include "platform_abi.h"
 
 static void clear_plane(unsigned short plane_base) {
     unsigned short zero_row[32];
