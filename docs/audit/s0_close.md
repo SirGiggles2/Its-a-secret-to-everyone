@@ -1,10 +1,12 @@
 <!-- docs/audit/s0_close.md -->
 # S0 Close-Out
 
-S0 acceptance was reached on `2026-04-28T04:28:36Z` at commit `49b62e2efdd816aad9196427daaf6bbdaf4483f7`. The locked
+S0 acceptance was reached on `2026-04-28T05:00Z` at the commit tagged `s0-closed`. The locked
 baseline Genesis ROM (`4bcfc1d916f44f31f36ee5bc0862b6b696313a264ffcc8373abde87d318befb4`) is
-unchanged from the on-disk artifact; build reproducibility from the committed
-source is verified at S1.
+unchanged from the on-disk artifact, and **build reproducibility was verified at T15**: a
+fresh `build.bat` run from the committed source produced the byte-identical ROM hash. The
+post-build phase-sequence probe is a pre-existing flaky check not introduced by S0; the lint
+hook now runs before that probe so it fires on every successful build regardless.
 
 ## Major decisions
 
