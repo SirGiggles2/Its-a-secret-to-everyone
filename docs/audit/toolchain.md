@@ -21,10 +21,14 @@
   SGDK pivot decided 2026-04-27: we will adopt the full SGDK runtime/library on
   top of the compiler we already use, rather than rolling our own render layer.
   See spec Section 4 (Architecture) for the SGDK integration plan.
-- The `-fcall-saved-a4` flag in `build.bat` enforces the existing A4 = NES_RAM
-  base contract; that flag may need revisiting under SGDK because SGDK
-  conventionally keeps A5 reserved for hardware register access. To be
-  resolved during SGDK integration audit (Task 3.5).
+- The `-ffixed-a4` flag in `build.bat` (not `-fcall-saved-a4` — earlier spec
+  drafts misnamed it) reserves A4 entirely for the NES_RAM = $FF0000 base
+  pointer. `-ffixed-a4` is stronger than `-fcall-saved-a4`: GCC will not
+  touch A4 at all, even as callee-saved. SGDK conventionally reserves A5 for
+  the VDP base, so A4 is expected to be safe with SGDK on top, but this is
+  to be confirmed against SGDK's `boot/sega.s` once the library is on disk
+  (deferred from T3.5 to S1 vendoring). See `docs/audit/sgdk_integration.md`
+  for the deferral rationale and mitigation plan.
 
 ## Open issues recorded at S0 (not blocking close)
 
