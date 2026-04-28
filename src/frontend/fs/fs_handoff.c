@@ -1,6 +1,8 @@
-/* src/fs_handoff.c — VDP teardown + jump to ASM trampoline. */
+/* src/fs_handoff.c -- VDP teardown + jump to ASM trampoline.
+ * S1.F4: vdp_* calls replaced with render_* API.
+ */
 #include "fs_handoff.h"
-#include "intro_common.h"   /* vdp_display_off, vdp_set_vscroll, vdp_write_nametable_row */
+#include "render_abi.h"
 #include "platform_abi.h"
 
 extern void fs_to_transpiled_trampoline(void);
@@ -10,27 +12,27 @@ static void clear_plane(unsigned short plane_base) {
     unsigned short i;
     for (i = 0; i < 32; i++) zero_row[i] = 0;
     for (i = 0; i < 32; i++) {
-        vdp_write_nametable_row(plane_base, i, zero_row);
+        render_plane_write_row(plane_base, i, zero_row, 32u);
     }
 }
 
 void fs_handoff_to_transpiled(uint8_t slot) {
     nes_ram[0x07F2] = 0xCC;   /* probe: fs handoff begun */
 
-    vdp_display_off();
+    render_display_enable(0);
     clear_plane(0xC000);
     clear_plane(0xE000);
-    vdp_set_mode_v64();          /* match intro_handoff: V64 before trampoline */
-    vdp_set_vscroll(0);
+    render_mode_set_v64();
+    render_vscroll_set(0);
 
-    /* Seed CurSaveSlot ($0016) directly here — m68k SysV byte-arg ABI is
+    /* Seed CurSaveSlot ($0016) directly here -- m68k SysV byte-arg ABI is
      * unreliable, so the trampoline takes no args and reads from RAM. */
     nes_ram[0x0016] = slot;
 
     /* InitMode1_Sub6 (Z_02.asm:2526) runs @FindActiveSlot which loops while
      * IsSaveSlotActive[Y] == 0, scanning $0633+. With fresh RAM (all zero)
      * the loop runs off-array, INCing CurSaveSlot to a garbage value and
-     * eventually catching a stray non-zero byte — but in practice we observe
+     * eventually catching a stray non-zero byte -- but in practice we observe
      * the init chain stalling at GameSubmode=06 with display off. Mark slot 0
      * active so @FindActiveSlot exits cleanly on the first iteration with
      * CurSaveSlot=0 and the rest of Sub6 (LDA #$00 STA GameSubmode INC

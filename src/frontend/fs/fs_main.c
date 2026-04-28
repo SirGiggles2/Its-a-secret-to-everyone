@@ -6,7 +6,7 @@
 #include "fs_render.h"
 #include "fs_phase.h"
 #include "fs_input.h"
-#include "intro_common.h"
+#include "render_abi.h"
 
 /* Music driver hooks — proof ROM links music_stub.c (no-op);
  * main ROM links the real audio driver. */
@@ -83,12 +83,11 @@ static void fs_init(void) {
     /* 0. Force plane size H32xV32. Proof ROM boot.asm sets this directly, but
      *    main ROM intro_handoff sets V64 before calling fs_main; our nametable
      *    writes assume V32 stride (32 cells × 2 bytes = 64-byte rows). */
-    vdp_set_mode_v32();
+    render_mode_set_v32();
 
     /* 1. Upload full BG CHR block to VRAM tile 0x00 (242 tiles × 32 bytes = 7744 bytes). */
-    vdp_dma_to_vram((unsigned long)fs_bg_chr_full,
-                    (unsigned short)(0x00u * 32u),
-                    (unsigned short)(242u * 32u));
+    render_chr_upload((unsigned short)(0x00u * 32u), fs_bg_chr_full,
+                      (unsigned short)(242u * 32u));
 
     /* 1a. Zero VRAM tile 0 — both Plane A and Plane B nametables default to cells
      *     that reference tile 0; if tile 0 holds NES font glyph "0" (which it does
@@ -102,14 +101,12 @@ static void fs_init(void) {
     }
 
     /* 2. Upload Link sprite CHR to VRAM tile 0x100 (above BG block, no collision). */
-    vdp_dma_to_vram((unsigned long)fs_link_sprite_chr,
-                    (unsigned short)(0x100u * 32u),
-                    (unsigned short)(4u * 32u));
+    render_chr_upload((unsigned short)(0x100u * 32u), fs_link_sprite_chr,
+                      (unsigned short)(4u * 32u));
 
     /* 3. Upload heart cursor CHR to VRAM tile 0x104 (32 bytes). */
-    vdp_dma_to_vram((unsigned long)fs_heart_cursor_chr,
-                    (unsigned short)(0x104u * 32u),
-                    (unsigned short)(1u * 32u));
+    render_chr_upload((unsigned short)(0x104u * 32u), fs_heart_cursor_chr,
+                      (unsigned short)(1u * 32u));
 
     /* 4. Load all 4 CRAM palettes (4 colors each at CRAM offsets 0/32/64/96). */
     vdp_load_cram_at( 0u, &fs_palettes[0][0], 4u);  /* pal 0: BG attr=0 */
@@ -171,7 +168,7 @@ static void fs_input_dispatch(uint8_t edge) {
 
 void fs_main(void) {
     fs_init();
-    vdp_display_on();
+    render_display_enable(1);
     for (;;) {
         wait_vblank();
         fs_phase_step();

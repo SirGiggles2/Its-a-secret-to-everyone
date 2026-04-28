@@ -1,7 +1,7 @@
 /* src/fs_render.h
  *
  * VDP primitives for File Select. Each function writes plane bytes
- * directly via vdp_* helpers in intro_common.h (shared infra).
+ * via render_* helpers from render_abi.h (S1.F4: vdp_* removed).
  */
 #ifndef FS_RENDER_H
 #define FS_RENDER_H

@@ -8,11 +8,7 @@
 #include "intro_title.h"
 #include "render_abi.h"
 
-/* VDP_CTRL_WORD is still needed for display-enable/disable register
- * writes (VDP register 1 set/clear).  Those are register-file writes,
- * not data-port streaming, so they do not belong in the render adapter
- * streaming layer.  Keep the single macro here for those two writes. */
-#define VDP_CTRL_WORD (*(volatile unsigned short *)0x00C00004)
+/* S1.F4: display-enable register writes moved to render_display_enable(). */
 
 extern const unsigned char  intro_title_bg_chr[];
 extern const unsigned long  intro_title_bg_chr_size;
@@ -224,7 +220,7 @@ static void title_waterfall_step(void) {
 void intro_title_setup(void) {
     /* Display off during upload (display will be all-black on enable
      * because CRAM is rewritten before the display flips on). */
-    VDP_CTRL_WORD = 0x8134;
+    render_display_enable(0);
 
     /* CHR uploads. */
     render_chr_upload(0x0000, intro_title_bg_chr,
@@ -260,7 +256,7 @@ void intro_title_setup(void) {
     title_sprite_upload();
 
     /* Display on. */
-    VDP_CTRL_WORD = 0x8174;
+    render_display_enable(1);
 }
 
 void intro_title_step(void) {

@@ -1,6 +1,6 @@
 /* src/fs_render.c — VDP primitives for native File Select. */
 #include "fs_render.h"
-#include "intro_common.h"   /* vdp_write_nametable_row, vdp_load_cram, etc. */
+#include "render_abi.h"
 #include <stdint.h>
 
 /* Generated assets. */
@@ -111,8 +111,8 @@ void fs_render_clear_screen(void) {
      * Plane B must be cleared too — uninitialised cells point to VRAM tile 0,
      * which holds NES font tile 0 ('0' digit) → background fills with '0's. */
     for (unsigned short row = 0; row < 32; row++) {
-        vdp_write_nametable_row(PLANE_A_BASE, row, zero_row);
-        vdp_write_nametable_row(PLANE_B_BASE, row, zero_row);
+        render_plane_write_row(PLANE_A_BASE, row, zero_row, 32u);
+        render_plane_write_row(PLANE_B_BASE, row, zero_row, 32u);
     }
 }
 
@@ -167,7 +167,7 @@ void fs_render_static_layout(void) {
             cells[4]  = 0x24u;   /* fill the new gap with a space */
             cells[28] = right_rail;
         }
-        vdp_write_nametable_row(PLANE_A_BASE, row, cells);
+        render_plane_write_row(PLANE_A_BASE, row, cells, 32u);
     }
 }
 
@@ -319,7 +319,7 @@ static void render_label_row(unsigned short row, const uint8_t *text7) {
     for (unsigned short i = 0; i < 7u; i++) {
         s_extra_row_buf[LABEL_COL + i] = (uint16_t)((EXTRA_PAL & 0x3u) << 13) | (uint16_t)text7[i];
     }
-    vdp_write_nametable_row(PLANE_A_BASE, row, s_extra_row_buf);
+    render_plane_write_row(PLANE_A_BASE, row, s_extra_row_buf, 32u);
 }
 
 /* Replace the bottom-border line that the shifted nametable wrote into row
@@ -329,7 +329,7 @@ static void render_side_only_row(unsigned short row) {
     for (unsigned short c = 0; c < 32; c++) s_extra_row_buf[c] = (uint16_t)TILE_SPACE;
     s_extra_row_buf[BORDER_LEFT_COL]  = (uint16_t)TILE_BORDER_VERT;
     s_extra_row_buf[BORDER_RIGHT_COL] = (uint16_t)TILE_BORDER_VERT;
-    vdp_write_nametable_row(PLANE_A_BASE, row, s_extra_row_buf);
+    render_plane_write_row(PLANE_A_BASE, row, s_extra_row_buf, 32u);
 }
 
 /* Write the closing bottom-border line: BL corner, horizontal, BR corner. */
@@ -340,7 +340,7 @@ static void render_bottom_border_row(unsigned short row) {
         s_extra_row_buf[c] = (uint16_t)TILE_BORDER_HORIZ;
     }
     s_extra_row_buf[BORDER_RIGHT_COL] = (uint16_t)TILE_BORDER_BR;
-    vdp_write_nametable_row(PLANE_A_BASE, row, s_extra_row_buf);
+    render_plane_write_row(PLANE_A_BASE, row, s_extra_row_buf, 32u);
 }
 
 void fs_render_extra_rows(void) {

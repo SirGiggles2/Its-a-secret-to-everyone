@@ -17,7 +17,7 @@
 #include "platform_abi.h"
 #include "intro_phase.h"
 #include "intro_handoff.h"
-#include "intro_common.h"   /* vdp_set_mode_v32 */
+#include "render_abi.h"
 
 #define S_INTRO_FRAME_COUNTER (*(volatile unsigned long *)0x00FF0FF8)
 
@@ -72,7 +72,7 @@ void intro_main(void) {
      * intro_story.c, intro_handoff.c clear_plane) uses row*64 byte stride which
      * is correct only for V32. Main ROM boot sets V64 ($9011) for transpiled
      * gameplay; trampoline restores V64 on Start press handoff. */
-    vdp_set_mode_v32();
+    render_mode_set_v32();
     /* Disable Window plane. genesis_shell.asm:261 enables Window covering
      * top 8 rows ($9208) for transpiled-gameplay HUD isolation, with the
      * Window plane filled by tile $05FF blank. That overlay HIDES the top

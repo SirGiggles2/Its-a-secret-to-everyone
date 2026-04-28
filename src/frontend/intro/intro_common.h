@@ -3,18 +3,14 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+/* Legacy attract-takeover bridge. Bodies in intro_common.c.
+ * All vdp_* IO primitives have been moved to render_adapter.c
+ * and renamed to render_* (S1.F4). */
 extern unsigned char g_intro_takeover;
 unsigned char intro_should_take_over(void);
 void intro_story_tick(void);
-void vdp_set_mode_v32(void);
-void vdp_set_mode_v64(void);
-void vdp_dma_to_vram(unsigned long src, unsigned short dst, unsigned short len);
-void vdp_write_nametable_row(unsigned short plane_base, unsigned short row,
-                             const unsigned short *cells);
-void vdp_set_vscroll(unsigned short value);
-void vdp_load_cram(const unsigned short *src, unsigned short count);
-void vdp_display_on(void);
-void vdp_display_off(void);
+
 #ifdef __cplusplus
 }
 #endif

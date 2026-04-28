@@ -76,4 +76,28 @@ void render_plane_fill(unsigned short plane_base, unsigned short fill_word,
 void render_plane_a_write_row(unsigned short row, const unsigned short *cells,
                               unsigned short count);
 
+/* ---- F4 additions: IO primitives consolidated from intro_common.c ----
+ *
+ * render_display_enable    -- write VDP Reg 1: 1=display on, 0=display off.
+ * render_vscroll_set       -- write value to VSRAM slot 0 (plane A vscroll).
+ * render_plane_write_row   -- write 32 cells to row of any plane (A or B).
+ *                             plane_base = $C000 (A) or $E000 (B).
+ * render_mode_set_v32      -- set VDP Reg 16 to H32xV32 ($9000).
+ * render_mode_set_v64      -- set VDP Reg 16 to H64xV64 ($9011).
+ * render_z80_bus_grab      -- assert Z80 bus request; spin until ACKed.
+ * render_z80_bus_release   -- release Z80 bus request.
+ * render_irq_mask          -- raise SR IPL to 7 (mask all interrupts).
+ * render_irq_unmask        -- lower SR IPL to 0 (unmask all interrupts).
+ */
+void render_display_enable(unsigned char on);
+void render_vscroll_set(unsigned short value);
+void render_plane_write_row(unsigned short plane_base, unsigned short row,
+                            const unsigned short *cells, unsigned short count);
+void render_mode_set_v32(void);
+void render_mode_set_v64(void);
+void render_z80_bus_grab(void);
+void render_z80_bus_release(void);
+void render_irq_mask(void);
+void render_irq_unmask(void);
+
 #endif /* RENDER_ABI_H */
