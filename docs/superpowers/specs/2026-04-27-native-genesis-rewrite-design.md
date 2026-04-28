@@ -216,9 +216,9 @@ Locked at S0 and held constant through S13.
 
 **Toolchain:**
 
-- **C compiler:** `<filled at S0 — current toolchain, likely m68k-elf-gcc or vbcc>`, version `<filled at S0>`. Optimization level fixed per build profile.
-- **Assembler:** vasm Motorola syntax (`vasmm68k_mot.exe`), version `<filled at S0>`.
-- **Linker:** `<filled at S0>`. Single linker script under `src/platform/`.
+- **C compiler:** `m68k-elf-gcc.exe`, version `gcc (crosstool-NG UNKNOWN) 13.2.0`. Optimization level fixed per build profile.
+- **Assembler:** vasm Motorola syntax (`vasmm68k_mot.exe`), version `vasm 2.0e; M68k cpu backend 2.8; motorola syntax module 3.19d`.
+- **Linker:** `m68k-elf-ld.exe`, version `GNU ld (crosstool-NG UNKNOWN) 2.40`. Single linker script under `src/platform/`.
 
 **Calling convention (C ↔ asm):**
 
