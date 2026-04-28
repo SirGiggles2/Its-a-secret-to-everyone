@@ -1,5 +1,5 @@
-baseline:  tools\probes\baselines\fs_file_delete_cancel.bin  frame=650  payload-hash=0x56C5EE5B
-candidate: tools\probes\baselines\fs_file_delete_cancel.bin  frame=650  payload-hash=0x56C5EE5B
+baseline:  tools\probes\baselines\fs_file_delete_cancel.bin  frame=650  payload-hash=0x4B367E07
+candidate: tools\probes\baselines\fs_file_delete_cancel.bin  frame=650  payload-hash=0x4B367E07
 
 [CRAM] PASS  (128 bytes)
 [PLNA] PASS  (8192 bytes)

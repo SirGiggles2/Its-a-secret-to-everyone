@@ -1,5 +1,5 @@
-baseline:  tools\probes\baselines\fs_cursor_wrap.bin  frame=320  payload-hash=0x2D07D10B
-candidate: tools\probes\baselines\fs_cursor_wrap.bin  frame=320  payload-hash=0x2D07D10B
+baseline:  tools\probes\baselines\fs_cursor_wrap.bin  frame=320  payload-hash=0x841B07B7
+candidate: tools\probes\baselines\fs_cursor_wrap.bin  frame=320  payload-hash=0x841B07B7
 
 [CRAM] PASS  (128 bytes)
 [PLNA] PASS  (8192 bytes)
