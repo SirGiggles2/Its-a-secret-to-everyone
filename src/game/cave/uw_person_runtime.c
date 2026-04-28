@@ -1,4 +1,5 @@
 #include "uw_person_runtime.h"
+#include "legacy_bridge.h"
 #include "cave_state.h"
 #include "object_state.h"
 #include "room_state.h"

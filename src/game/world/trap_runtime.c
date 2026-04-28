@@ -1,4 +1,5 @@
 #include "trap_runtime.h"
+#include "legacy_bridge.h"
 
 void trprt_init_trap_full(unsigned int slot) {
     WORLD_TMP1 = OBJ_STATUS_FLAGS(slot);

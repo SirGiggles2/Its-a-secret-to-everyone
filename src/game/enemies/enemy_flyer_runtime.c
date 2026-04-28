@@ -1,4 +1,5 @@
 #include "enemy_runtime_private.h"
+#include "legacy_bridge.h"
 
 static void enrt_flyer_adjust_speed_threshold(unsigned int slot) {
     unsigned char speed = ENEMY_AIR_SPEED(slot);

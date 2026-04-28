@@ -1,4 +1,5 @@
 #include "combat_runtime.h"
+#include "legacy_bridge.h"
 
 void cobrt_play_parry_sound_for_damage_type(void) {
     unsigned char dtype = COMBAT_DAMAGE_TYPE;

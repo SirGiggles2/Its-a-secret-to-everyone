@@ -1,4 +1,5 @@
 #include "cave_runtime.h"
+#include "legacy_bridge.h"
 #include "combat_state.h"
 
 #define NES_SRAM_BASE 0x6000u

@@ -1,4 +1,5 @@
 #include "enemy_runtime_private.h"
+#include "legacy_bridge.h"
 #include "sprite_state.h"
 
 static void enrt_octorock_common(unsigned int slot, unsigned char speed) {

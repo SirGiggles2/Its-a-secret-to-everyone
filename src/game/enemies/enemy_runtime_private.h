@@ -4,14 +4,6 @@
 #include "enemy_runtime.h"
 #include "enemy_state.h"
 
-extern void z07_animate_object_walking(unsigned int slot);
-extern void z07_anim_set_obj_hflip(unsigned int slot);
-extern unsigned char z07_anim_fetch_obj_pos(unsigned int slot);
-extern void z07_anim_advance_and_fetch(unsigned int val, unsigned int slot);
-extern void z07_destroy_monster(unsigned int slot);
-extern unsigned char z01_anim_set_sprite_desc_attrs(unsigned int val);
-extern unsigned char z01_check_link_collision(unsigned int slot);
-extern unsigned char z01_abs(unsigned int val);
 extern void wanderer_update_common(unsigned int turn_rate, unsigned int slot);
 extern void c_walker_move(unsigned int slot);
 extern void c_move_flyer(unsigned int slot);
@@ -36,29 +28,17 @@ extern void c_gel_check_collisions(unsigned int slot);
 extern void c_update_burrower(unsigned int slot);
 extern void z04_shoot_fireball(unsigned int dir, unsigned int slot);
 extern unsigned char z04_is_dark_room_bank4(unsigned int room_idx);
-extern unsigned int z07_find_empty_monster_slot(void);
-extern unsigned char z07_get_unique_room_id(void);
-extern void z07_set_type_and_clear_object(unsigned int type, unsigned int slot);
-extern unsigned int z01_animate_world_fading(void);
-extern unsigned char z07_reset_obj_state(unsigned int slot);
-extern void z07_reset_obj_metastate(unsigned int slot);
-extern void z07_reset_obj_metastate_and_timer(unsigned int slot);
 extern void z04_flyer_compare_max_speed(unsigned char speed, unsigned int slot);
 extern void z04_flyer_set_flying_state(unsigned int val, unsigned int slot);
 extern void z04_update_common_wanderer(unsigned int turn_rate, unsigned int slot);
 extern void z04_gleeok_set_segment_x(unsigned int val, unsigned int slot);
 extern void z04_gleeok_set_segment_y(unsigned int val, unsigned int slot);
 extern void z04_play_boss_death_cry_if_needed(unsigned int slot);
-extern void z07_set_shove_info_with0(unsigned int val, unsigned int slot);
 extern void z04_flyer_set_state_and_turns(unsigned int state, unsigned int slot);
 extern const unsigned char Directions8[];
 extern void z04_update_dodongo_bloated_sub_end(unsigned int slot);
 extern void z04_end_init_flyer(unsigned int slot);
 extern void z04_init_blue_keese(unsigned int slot);
-extern unsigned char z01_get_room_flag_uw_item_state(void);
-extern void z07_update_dead_dummy(unsigned int slot);
-extern unsigned char z07_get_collidable_tile(unsigned int hotspot_offset, unsigned int slot);
-extern unsigned char z07_get_collidable_tile_still(unsigned int slot);
 extern const unsigned char TektiteStartingDirs[];
 extern const unsigned char GanonStartXs[];
 extern const unsigned char PolsVoiceWalkSpeedsX[];
@@ -93,8 +73,6 @@ extern void c_anim_advance_and_fetch(unsigned int val, unsigned int slot);
 extern unsigned int c_shoot(unsigned int type);
 
 /* --- ASM shim helpers used by enemy_common_runtime.c (Zol/Gel family) --- */
-extern unsigned char z01_bound_by_room(unsigned int slot);
-extern unsigned char z07_get_colliding_tile_moving(unsigned int slot);
 extern void          c_move_object(unsigned short slot);
 extern void c_change_tile_obj_tiles(unsigned int tile, unsigned int slot);
 extern unsigned char c_get_opposite_dir(unsigned char dir);

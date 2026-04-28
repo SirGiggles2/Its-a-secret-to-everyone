@@ -1,4 +1,5 @@
 #include "hud_runtime.h"
+#include "legacy_bridge.h"
 #include "room_state.h"
 #include "cave_state.h"
 

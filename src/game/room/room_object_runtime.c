@@ -1,4 +1,5 @@
 #include "room_object_runtime.h"
+#include "legacy_bridge.h"
 #include "core_runtime.h"
 #include "progress_runtime.h"
 

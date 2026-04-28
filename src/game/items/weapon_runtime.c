@@ -1,4 +1,5 @@
 #include "weapon_runtime.h"
+#include "legacy_bridge.h"
 
 
 static unsigned char weprt_choose_offset_for_direction_h(unsigned char dir) {

@@ -39,19 +39,6 @@ extern const unsigned char TextboxLineAddrsLo[];
 extern const unsigned char PersonTextAddrs[];
 extern const unsigned char TextboxCharTransferRecTemplate[];
 
-/* --- Bank-forwarder functions used by cave_runtime.c --- */
-extern unsigned char z07_anim_fetch_obj_pos(unsigned int slot);
-extern void z01_inc_cave_state(void);
-extern void z01_post_credit(unsigned int val);
-extern void z01_post_debit(unsigned int amount);
-extern void z01_copy_price_list_template(void);
-extern void z01_cue_transfer_buf_and_advance_state(unsigned int val);
-extern void z01_cue_transfer_blank_person_wares(void);
-extern void z01_unhalt_link(void);
-extern void z01_set_up_common_cave_objects(unsigned int x, unsigned int slot, unsigned int y);
-extern unsigned char z01_abs(unsigned int val);
-extern void z01_take_item(unsigned char item_type);
-
 /* --- ASM shim functions used by cave_runtime.c --- */
 extern void c_draw_object_mirrored(unsigned int slot);
 extern void c_draw_object_not_mirrored(unsigned int slot);

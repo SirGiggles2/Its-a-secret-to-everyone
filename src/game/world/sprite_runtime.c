@@ -1,4 +1,5 @@
 #include "sprite_runtime.h"
+#include "legacy_bridge.h"
 #include "combat_state.h"
 #include "enemy_state.h"
 #include "object_state.h"

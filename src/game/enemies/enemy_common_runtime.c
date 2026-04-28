@@ -1,4 +1,5 @@
 #include "enemy_runtime_private.h"
+#include "legacy_bridge.h"
 
 void enrt_hide_sprites_over_link(void) {
     ENEMY_OAM_HIDE_0 = 0xF8;

@@ -4,8 +4,6 @@
 #include "world_state.h"
 #include "item_state.h"
 
-extern void z01_play_effect(unsigned int val);
-
 #ifdef __cplusplus
 extern "C" {
 #endif

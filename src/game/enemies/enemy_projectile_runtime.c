@@ -1,4 +1,5 @@
 #include "enemy_projectile_runtime.h"
+#include "legacy_bridge.h"
 #include "combat_state.h"
 
 /* Bounce-displacement tables for L_BounceShot. The bounce direction

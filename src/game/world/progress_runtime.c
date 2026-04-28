@@ -1,4 +1,5 @@
 #include "progress_runtime.h"
+#include "legacy_bridge.h"
 #include "save_state.h"
 #include "room_state.h"
 

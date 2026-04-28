@@ -1,4 +1,5 @@
 #include "enemy_runtime_private.h"
+#include "legacy_bridge.h"
 
 /* Wallmaster scratch aliases reused by enrt_update_goriya distance calc.
  * Same definitions as in enemy_walker_runtime.c / enemy_wallmaster_runtime.c.

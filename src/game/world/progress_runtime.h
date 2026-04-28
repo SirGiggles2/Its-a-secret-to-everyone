@@ -34,6 +34,5 @@ extern const unsigned char GanonColorTriples[];
 
 /* --- ASM shim / bank-forwarder functions used by progress_runtime.c --- */
 extern void z05_copy_column_to_tilebuf(void);
-extern unsigned char z07_get_room_flags(void);
 
 #endif

@@ -1,4 +1,5 @@
 #include "enemy_runtime_private.h"
+#include "legacy_bridge.h"
 #include "combat_state.h"
 #include "room_state.h"
 #include "sprite_state.h"

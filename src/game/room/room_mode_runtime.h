@@ -72,9 +72,6 @@ extern unsigned char MenuPalettesTransferBuf[];
 /* --- ASM shim / bank-forwarder functions used by room_mode_runtime.c --- */
 extern void z05_copy_row_to_tilebuf(void);
 extern void z05_copy_play_area_attrs_half(unsigned int ppu_hi, unsigned int ppu_lo, unsigned int end_off);
-extern void z01_begin_update_mode(void);
-extern void z07_patch_and_cue_level_palettes_transfer(void);
-extern unsigned char z07_end_game_mode(void);
 extern void c_update_world_curtain_effect(void);
 extern void c_set_mmc1_control(unsigned int val);
 extern void c_turn_off_all_video(void);

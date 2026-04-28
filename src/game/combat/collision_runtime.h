@@ -33,12 +33,9 @@ unsigned char colrt_get_colliding_tile_moving(unsigned int slot);
 extern const unsigned char PlayAreaColumnAddrs[];
 extern const unsigned char WalkableTiles[];
 
-/* --- ASM shim / bank-forwarder functions used by collision_runtime.c --- */
+/* --- ASM shim functions used by collision_runtime.c --- */
 extern void c_call_gohma_handle_weapon_collision(unsigned int monster_slot, unsigned int weapon_slot);
 extern void c_call_begin_shove(unsigned int monster_slot);
 extern void c_call_handle_shot_blocked(unsigned int weapon_slot);
-extern void z01_play_parry_tune(void);
-extern void z01_play_parry_sound_for_damage_type(void);
-extern void z01_deal_damage(unsigned int slot);
 
 #endif

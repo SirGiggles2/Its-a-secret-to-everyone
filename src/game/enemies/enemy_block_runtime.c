@@ -1,4 +1,5 @@
 #include "enemy_runtime_private.h"
+#include "legacy_bridge.h"
 
 /* Block-push family uses three room-state cells. Pull them in directly
  * to avoid including room_state.h here, which would re-include

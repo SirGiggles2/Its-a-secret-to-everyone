@@ -1,4 +1,5 @@
 #include "enemy_runtime_private.h"
+#include "legacy_bridge.h"
 
 void enrt_animate_and_draw_common_object(unsigned int val, unsigned int slot) {
     z07_anim_advance_and_fetch(val, slot);

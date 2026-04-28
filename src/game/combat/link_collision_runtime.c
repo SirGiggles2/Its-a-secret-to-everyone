@@ -1,4 +1,5 @@
 #include "link_collision_runtime.h"
+#include "legacy_bridge.h"
 #include "link_state.h"
 #include "progress_state.h"
 

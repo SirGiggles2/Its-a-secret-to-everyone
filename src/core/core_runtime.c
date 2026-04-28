@@ -1,4 +1,5 @@
 #include "core_runtime.h"
+#include "legacy_bridge.h"
 #include "object_state.h"
 #include "sprite_state.h"
 #include "link_state.h"

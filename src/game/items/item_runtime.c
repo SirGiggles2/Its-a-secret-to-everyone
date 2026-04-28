@@ -1,4 +1,5 @@
 #include "item_runtime.h"
+#include "legacy_bridge.h"
 
 static void itemrt_take_class0_complex(unsigned char item_slot) {
     unsigned char level_raw = ITEM_LEVEL_RAW;

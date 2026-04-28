@@ -33,22 +33,7 @@ extern const unsigned char LevelMasks[];
 extern const unsigned char TeleportYs[];
 
 /* --- Bank-forwarder functions used by trap_runtime.c --- */
-extern unsigned int z07_find_empty_monster_slot(void);
-extern void z01_init_one_simple_object(unsigned int slot);
-extern void z07_anim_advance_and_fetch(unsigned int val, unsigned int slot);
-extern void z07_anim_set_obj_hflip(unsigned int slot);
-extern unsigned char z01_anim_set_sprite_desc_attrs(unsigned int val);
-extern void z01_check_link_collision(unsigned int slot);
-extern void z01_update_player_position_marker(void);
-extern void z01_destroy_whirlwind(unsigned int slot);
-extern void z01_set_up_whirlwind(unsigned int slot);
-extern void z01_take_one_rupee(void);
-extern void z07_destroy_monster(unsigned int slot);
-extern unsigned char z01_abs(unsigned int val);
-extern unsigned int z01_get_opposite_dir(unsigned int dir);
 extern void z05_reset_inv_obj_state(void);
-extern unsigned char z07_anim_fetch_obj_pos(unsigned int slot);
-extern void z07_reset_obj_metastate(unsigned int slot);
 
 /* --- ASM shim functions used by trap_runtime.c --- */
 extern void c_draw_object_not_mirrored_with_frame(unsigned int frame, unsigned int slot);
