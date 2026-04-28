@@ -149,6 +149,11 @@ echo [2a/4] Compiling core/c_runtime.c...
 "%M68K_GCC%" -B "%M68K_BIN%\\" -m68000 -ffreestanding -nostdlib -nostartfiles -ffixed-a4 -fno-builtin -fomit-frame-pointer -fno-PIC -fno-common -O2 -I "%ROOT%\src" -I "%ROOT%\src\state" -I "%ROOT%\src\core" -I "%ROOT%\src\abi" -I "%ROOT%\src\frontend" -I "%ROOT%\src\frontend\intro" -I "%ROOT%\src\frontend\fs" -I "%ROOT%\src\game\enemies" -I "%ROOT%\src\game\combat" -I "%ROOT%\src\game\room" -I "%ROOT%\src\game\cave" -I "%ROOT%\src\game\hud" -I "%ROOT%\src\game\items" -I "%ROOT%\src\game\world" -I "%ROOT%\sgdk\inc" -c "%ROOT%\src\core\c_runtime.c" -o "%C_OBJ_DIR%\c_runtime.o"
 if errorlevel 1 exit /b 1
 >> "%LD_RESP%" echo "%OBJ_DIR_FS%/c_runtime.o"
+
+echo [2a.fixture/4] Compiling tools/probes/sram_layout_test.c (compile-only)...
+"%M68K_GCC%" -B "%M68K_BIN%\\" -m68000 -ffreestanding -nostdlib -nostartfiles -ffixed-a4 -fno-builtin -fomit-frame-pointer -fno-PIC -fno-common -O2 -c "%ROOT%\tools\probes\sram_layout_test.c" -o "%C_OBJ_DIR%\sram_layout_test.o"
+if errorlevel 1 exit /b 1
+rem fixture .o is not appended to LD_RESP — static asserts already fired
 for %%F in (%C_CORE_RT%) do (
     echo [2a/4] Compiling core/%%F.c...
     "%M68K_GCC%" -B "%M68K_BIN%\\" -m68000 -ffreestanding -nostdlib -nostartfiles -ffixed-a4 -fno-builtin -fomit-frame-pointer -fno-PIC -fno-common -O2 -I "%ROOT%\src" -I "%ROOT%\src\state" -I "%ROOT%\src\core" -I "%ROOT%\src\abi" -I "%ROOT%\src\frontend" -I "%ROOT%\src\frontend\intro" -I "%ROOT%\src\frontend\fs" -I "%ROOT%\src\game\enemies" -I "%ROOT%\src\game\combat" -I "%ROOT%\src\game\room" -I "%ROOT%\src\game\cave" -I "%ROOT%\src\game\hud" -I "%ROOT%\src\game\items" -I "%ROOT%\src\game\world" -I "%ROOT%\sgdk\inc" -c "%ROOT%\src\core\%%F.c" -o "%C_OBJ_DIR%\%%F.o"
