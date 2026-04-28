@@ -1,0 +1,308 @@
+{
+  "schema_version": 1,
+  "nes_rom_sha256": "8f72dc2e98572eb4ba7c3a902bca5f69c448fc4391837e5f8f0d4556280440ac",
+  "songs": [
+    {
+      "name": "SongTable",
+      "file": "songs.c",
+      "var_name": "audio_songs",
+      "byte_offset": 0,
+      "byte_size": 36
+    },
+    {
+      "name": "SongHeaderDemo0",
+      "file": "songs.c",
+      "var_name": "audio_songs",
+      "byte_offset": 36,
+      "byte_size": 64
+    },
+    {
+      "name": "SongHeaderItemTaken0",
+      "file": "songs.c",
+      "var_name": "audio_songs",
+      "byte_offset": 100,
+      "byte_size": 7
+    },
+    {
+      "name": "SongHeaderEndLevel0",
+      "file": "songs.c",
+      "var_name": "audio_songs",
+      "byte_offset": 107,
+      "byte_size": 7
+    },
+    {
+      "name": "SongHeaderOverworld0",
+      "file": "songs.c",
+      "var_name": "audio_songs",
+      "byte_offset": 114,
+      "byte_size": 40
+    },
+    {
+      "name": "SongHeaderUnderworld0",
+      "file": "songs.c",
+      "var_name": "audio_songs",
+      "byte_offset": 154,
+      "byte_size": 16
+    },
+    {
+      "name": "SongHeaderLastLevel0",
+      "file": "songs.c",
+      "var_name": "audio_songs",
+      "byte_offset": 170,
+      "byte_size": 8
+    },
+    {
+      "name": "SongHeaderGanon0",
+      "file": "songs.c",
+      "var_name": "audio_songs",
+      "byte_offset": 178,
+      "byte_size": 8
+    },
+    {
+      "name": "SongHeaderEnding0",
+      "file": "songs.c",
+      "var_name": "audio_songs",
+      "byte_offset": 186,
+      "byte_size": 56
+    },
+    {
+      "name": "SongHeaderZelda",
+      "file": "songs.c",
+      "var_name": "audio_songs",
+      "byte_offset": 242,
+      "byte_size": 8
+    },
+    {
+      "name": "TuneScripts0",
+      "file": "songs.c",
+      "var_name": "audio_songs",
+      "byte_offset": 250,
+      "byte_size": 110
+    },
+    {
+      "name": "TuneScripts1",
+      "file": "songs.c",
+      "var_name": "audio_songs",
+      "byte_offset": 360,
+      "byte_size": 128
+    },
+    {
+      "name": "NoiseVolumes",
+      "file": "songs.c",
+      "var_name": "audio_songs",
+      "byte_offset": 488,
+      "byte_size": 4
+    },
+    {
+      "name": "NoisePeriods",
+      "file": "songs.c",
+      "var_name": "audio_songs",
+      "byte_offset": 492,
+      "byte_size": 4
+    },
+    {
+      "name": "NoiseLengths",
+      "file": "songs.c",
+      "var_name": "audio_songs",
+      "byte_offset": 496,
+      "byte_size": 4
+    },
+    {
+      "name": "NotePeriodTable",
+      "file": "songs.c",
+      "var_name": "audio_songs",
+      "byte_offset": 500,
+      "byte_size": 114
+    },
+    {
+      "name": "NoteLengthTable0",
+      "file": "songs.c",
+      "var_name": "audio_songs",
+      "byte_offset": 614,
+      "byte_size": 8
+    },
+    {
+      "name": "NoteLengthTable1",
+      "file": "songs.c",
+      "var_name": "audio_songs",
+      "byte_offset": 622,
+      "byte_size": 8
+    },
+    {
+      "name": "NoteLengthTable2",
+      "file": "songs.c",
+      "var_name": "audio_songs",
+      "byte_offset": 630,
+      "byte_size": 8
+    },
+    {
+      "name": "NoteLengthTable3",
+      "file": "songs.c",
+      "var_name": "audio_songs",
+      "byte_offset": 638,
+      "byte_size": 8
+    },
+    {
+      "name": "NoteLengthTable4",
+      "file": "songs.c",
+      "var_name": "audio_songs",
+      "byte_offset": 646,
+      "byte_size": 8
+    },
+    {
+      "name": "CustomEnvelopeSong",
+      "file": "songs.c",
+      "var_name": "audio_songs",
+      "byte_offset": 654,
+      "byte_size": 32
+    },
+    {
+      "name": "CustomEnvelopeTune1",
+      "file": "songs.c",
+      "var_name": "audio_songs",
+      "byte_offset": 686,
+      "byte_size": 32
+    }
+  ],
+  "sfx": [
+    {
+      "name": "BombSfxNotes",
+      "file": "sfx.c",
+      "var_name": "audio_sfx",
+      "byte_offset": 0,
+      "byte_size": 24
+    },
+    {
+      "name": "StairsSfxNotes",
+      "file": "sfx.c",
+      "var_name": "audio_sfx",
+      "byte_offset": 24,
+      "byte_size": 6
+    },
+    {
+      "name": "SwordSfxNotes",
+      "file": "sfx.c",
+      "var_name": "audio_sfx",
+      "byte_offset": 30,
+      "byte_size": 10
+    },
+    {
+      "name": "ArrowSfxNotes",
+      "file": "sfx.c",
+      "var_name": "audio_sfx",
+      "byte_offset": 40,
+      "byte_size": 5
+    },
+    {
+      "name": "FlameSfxNotes",
+      "file": "sfx.c",
+      "var_name": "audio_sfx",
+      "byte_offset": 45,
+      "byte_size": 16
+    },
+    {
+      "name": "SampleAddrs",
+      "file": "sfx.c",
+      "var_name": "audio_sfx",
+      "byte_offset": 61,
+      "byte_size": 7
+    },
+    {
+      "name": "SampleLengths",
+      "file": "sfx.c",
+      "var_name": "audio_sfx",
+      "byte_offset": 68,
+      "byte_size": 7
+    },
+    {
+      "name": "SampleRates",
+      "file": "sfx.c",
+      "var_name": "audio_sfx",
+      "byte_offset": 75,
+      "byte_size": 7
+    }
+  ],
+  "song_scripts": [
+    {
+      "name": "SongScriptItemTaken0",
+      "file": "song_scripts.c",
+      "var_name": "audio_song_scripts",
+      "byte_offset": 0,
+      "byte_size": 19,
+      "nes_start_addr": 36445
+    },
+    {
+      "name": "SongScriptOverworld0",
+      "file": "song_scripts.c",
+      "var_name": "audio_song_scripts",
+      "byte_offset": 19,
+      "byte_size": 621,
+      "nes_start_addr": 36464
+    },
+    {
+      "name": "SongScriptUnderworld0",
+      "file": "song_scripts.c",
+      "var_name": "audio_song_scripts",
+      "byte_offset": 640,
+      "byte_size": 199,
+      "nes_start_addr": 37085
+    },
+    {
+      "name": "SongScriptEndLevel0",
+      "file": "song_scripts.c",
+      "var_name": "audio_song_scripts",
+      "byte_offset": 839,
+      "byte_size": 89,
+      "nes_start_addr": 37284
+    },
+    {
+      "name": "SongScriptLastLevel0",
+      "file": "song_scripts.c",
+      "var_name": "audio_song_scripts",
+      "byte_offset": 928,
+      "byte_size": 207,
+      "nes_start_addr": 37373
+    },
+    {
+      "name": "SongScriptGanon0",
+      "file": "song_scripts.c",
+      "var_name": "audio_song_scripts",
+      "byte_offset": 1135,
+      "byte_size": 43,
+      "nes_start_addr": 37580
+    },
+    {
+      "name": "SongScriptEnding0",
+      "file": "song_scripts.c",
+      "var_name": "audio_song_scripts",
+      "byte_offset": 1178,
+      "byte_size": 404,
+      "nes_start_addr": 37623
+    },
+    {
+      "name": "SongScriptDemo0",
+      "file": "song_scripts.c",
+      "var_name": "audio_song_scripts",
+      "byte_offset": 1582,
+      "byte_size": 825,
+      "nes_start_addr": 38027
+    },
+    {
+      "name": "SongScriptZelda0",
+      "file": "song_scripts.c",
+      "var_name": "audio_song_scripts",
+      "byte_offset": 2407,
+      "byte_size": 97,
+      "nes_start_addr": 38852
+    }
+  ],
+  "pcm": [
+    {
+      "name": "PcmSamples",
+      "file": "pcm_samples.c",
+      "var_name": "audio_pcm_samples",
+      "byte_offset": 0,
+      "byte_size": 9216
+    }
+  ]
+}
