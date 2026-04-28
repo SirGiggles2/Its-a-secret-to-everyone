@@ -15,9 +15,9 @@ The "golden reference" against which every parity check runs. All values are fil
 
 - **NES ROM SHA256:** `8f72dc2e98572eb4ba7c3a902bca5f69c448fc4391837e5f8f0d4556280440ac` (Legend of Zelda, The (USA).nes — locked at S0 from the local copy under `Zelda1-Redux/`)
 - **Current Genesis ROM SHA256 (baseline):** `4bcfc1d916f44f31f36ee5bc0862b6b696313a264ffcc8373abde87d318befb4` (`builds/whatif.md`, locked from on-disk artifact at commit `7f0173d1` on 2026-04-28; build reproducibility verified at S1)
-- **NES emulator + version:** BizHawk 2.11 (NES core: `<filled at S0>`)
-- **Genesis emulator + version:** BizHawk 2.11 (Genesis core: `<filled at S0>`)
-- **NES screen palette (RGB):** `<filled at S0 — name and source, e.g. FCEUX default 2C02 or PaletteFromNESHueDecoder>`
+- **NES emulator + version:** BizHawk 2.11.0 (NES core: `quickerNES`)
+- **Genesis emulator + version:** BizHawk 2.11.0 (Genesis core: `Genplus-gx` / GPGX)
+- **NES screen palette (RGB):** `quickerNES` built-in palette (192-byte RGB triplet table from `BizHawk-2.11-win-x64/config.ini`; see `docs/audit/emulators.md`)
 - **Canonical input movies:** stored under `tools/probes/movies/` per stage (`s3_start_room.bk2`, `s4_link_walk.bk2`, etc.). Each movie file declares its **initial SRAM image** as a sibling `.sram` blob (or explicit empty-SRAM marker). Probes start the emulator from that SRAM state. Without this, file-delete and registered-file-start probes are non-deterministic.
 - **RNG / frame-state sync rules:** Genesis run is started at frame 0 from cold reset, with deterministic input movie. NES run uses same input timing relative to mode entry. RNG state diff is logged per frame; non-zero diff outside expected divergence windows fails the stage.
 
