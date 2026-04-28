@@ -437,6 +437,13 @@ EntryPoint:
     move.b  #0,(vblank_mode).l
     clr.l   (s_intro_frame_counter).l
 
+    ; Native intro path: request title song ($80 = NES song-bitmap for
+    ; NesMusicId_Title). The audio_driver SongRequest bridge in music_tick
+    ; consumes $FF0600 on the next vbi and routes through change_song +
+    ; tick_sq1. Transpiled boot would write this from IsrReset; native
+    ; intro path bypasses that, so we set it here.
+    move.b  #$80,($0600,A4)
+
     ;--------------------------------------------------------------------------
     ; Lower interrupt mask so VBlank (level 6) can fire.
     ; A4/A5/D7 are initialised above — IsrNmi is now safe to execute.
