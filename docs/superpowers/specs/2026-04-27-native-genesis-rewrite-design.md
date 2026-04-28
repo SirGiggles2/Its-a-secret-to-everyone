@@ -251,7 +251,9 @@ Locked at S0 and held constant through S13.
 - **Caller-saved (clobberable by callee):** D0, D1, A0, A1.
 - **Callee-saved (must preserve):** D2–D7, A2–A6.
 - A7 is the M68K stack pointer; never touched outside platform code.
-- Return values: locked at S0 by inspecting compiler output of `tools/probes/abi_probe.c` (see S0 acceptance). The probe defines and exports listing for `u32 abi_ret_u32(void)`, `void *abi_ret_ptr(void)`, `u32 abi_arg_mix(u16 a, u32 b, void *p)`. Result is recorded in `docs/audit/abi_probe.md` (registers used, stack frame, callee-save behavior). No "unless" clauses remain post-S0.
+- Return values: **D0 for all ≤32-bit values and pointers.** Both `u32` and `void *` returns land in D0 (not A0). Confirmed by `tools/probes/abi_probe.c` listing (`builds/abi_probe/abi_probe.s`); full details in `docs/audit/abi_probe.md`.
+- Arguments are passed on the stack in left-to-right order. For `u32 abi_arg_mix(u16 a, u32 b, void *p)`: `a` (u16, zero-extended) at sp+6, `b` (u32) at sp+8, `p` (void *) at sp+12. No register argument passing observed at -O1 with these flags.
+- Callee-saved registers per System V m68k ABI: D2–D7, A2–A6. GCC emits MOVEM to preserve these only when actually used; the contractual set is confirmed by ABI spec and enforced by `-ffixed-a4` pinning A4 outside the allocatable set entirely.
 - **No C↔asm function may pass or return structs by value.** Aggregates cross the boundary by pointer only. This avoids compiler-specific struct-return ABI traps.
 
 **Interrupt handler ABI:**

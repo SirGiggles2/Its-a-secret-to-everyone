@@ -13,6 +13,7 @@ __pycache__/
 build_out.txt
 build_output.log
 *_run.log
+builds/abi_probe/
 
 # Probe output directories (transient, not for tracking)
 tools/file_select_test/out/
