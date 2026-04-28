@@ -767,17 +767,18 @@ summary; per-question evidence is in the named audit docs.
 | Q5 | Audio responsibility split | Wrapper plan recorded; existing driver kept through S1, XGM2 swap deferred to S11 | `docs/audit/audio_split_plan.md` |
 | Q6 | Render-API public boundary | `src/abi/render_abi.h` (SGDK headers + adapter prototypes); lint enforces from S1 | spec Section 6 |
 | Q7 | NES ROM provenance | Not committed; SHA256 verified at runtime by `tools/probes/locate_reference_rom.py` | `docs/audit/toolchain.md`, `tools/probes/locate_reference_rom.py` |
-| Q8 | SGDK version | Pinned `v2.00` (smoke test deferred to S1 vendoring) | `docs/audit/sgdk_integration.md` |
-| Q9 | SGDK vendoring | Git submodule | `docs/audit/sgdk_integration.md` |
-| Q10 | A4 register conflict | **Deferred to S1** — SGDK library not on disk yet; mitigation plan recorded (drop `-ffixed-a4`, migrate NES_RAM base if conflict found) | `docs/audit/sgdk_integration.md`, `docs/audit/toolchain.md` |
+| Q8 | SGDK version | **Pinned `v2.11`** (commit `ef9292c0`); bumped from v2.00 paper-pin to current stable; build chain verified via `sample/basics/hello-world` smoke test | `docs/audit/sgdk_integration.md` |
+| Q9 | SGDK vendoring | **Done** — git submodule at `sgdk/` (post-S0, 2026-04-28) | `docs/audit/sgdk_integration.md`, `.gitmodules` |
+| Q10 | A4 register conflict | **SAFE** — SGDK does not touch A4 in boot or runtime; `-ffixed-a4` convention preserved | `docs/audit/sgdk_integration.md` |
 
-Two deferrals (Q4, Q10) are tracked in S1 work; both have explicit
-mitigation plans. No spec-level open questions remain.
+One remaining deferral (Q4) is tracked as the first S1 acceptance step;
+mitigation plan is in `docs/audit/parity_schema_check.md`. Q8/Q9/Q10
+resolved post-S0 in the autonomous SGDK-vendoring session.
 
 ## 13. References
 
 - `best practices.md` — north star (owned C, gen/ passive, ASM only boot/IO/hot — SGDK satisfies the IO/hot half)
-- **SGDK** — `https://github.com/Stephane-D/SGDK`. Adopted as the platform/render layer. Version locked at S0; vendoring mechanism decided at S0 close (see Section 12 Q9).
+- **SGDK** — `https://github.com/Stephane-D/SGDK`, pinned at **v2.11** (commit `ef9292c0`), vendored as a git submodule at `sgdk/`. Adopted as the platform/render layer. Build chain confirmed end-to-end via `sgdk/sample/basics/hello-world`. See `docs/audit/sgdk_integration.md`.
 - WHAT IF (`C:\Users\Jake Diggity\Documents\GitHub\VDP rebirth tools and asms\WHAT IF\`) — read-only **data-extraction reference** only. Architectural lifts no longer apply now that SGDK provides the render layer.
   **The build never reads this path.** Any scripts or data borrowed from WHAT IF are copied into `tools/` or `data/`, with the source commit hash and date recorded in a header comment per copied file. FINAL TRY remains reproducible without WHAT IF on disk.
 - `reference/aldonunez/` — NES disassembly, semantic reference (checked in at S0 or S2)

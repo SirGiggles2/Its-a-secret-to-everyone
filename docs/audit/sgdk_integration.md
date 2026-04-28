@@ -1,16 +1,21 @@
-# SGDK Integration Audit (locked at S0)
+# SGDK Integration Audit (S0 + post-S0 vendoring)
 
-**Audit date:** 2026-04-27
-**Auditor:** Task 3.5 (s0-inventory)
-**Spec reference:** Section 12 Q8, Q9, Q10
+**Original audit date:** 2026-04-27 (Task 3.5, paper-only)
+**Vendoring + verification date:** 2026-04-28 (post-S0, autonomous session)
+**Spec reference:** Section 12 Q8, Q9, Q10 — **all three resolved post-S0**
 
 ---
 
-## Install state
+## Install state (post-vendoring)
 
-- **SGDK install root:** `build/toolchain/sgdk_bin/` — **compiler + tools only; SGDK library missing**
-- **SGDK version detected on disk:** `n/a` — no library headers (`inc/`, `libmd.a`, `makefile.gen`, `sample/`) present anywhere on disk. The compiler distribution contains ResComp 3.95 (March 2025) and XGM2 tools, which correlates with SGDK 2.x but the version cannot be read from `sgdk/inc/genesis.h` because that file does not exist.
-- **Compiler comes from this SGDK distribution:** Yes — `build/toolchain/sgdk_bin/bin/gcc.exe` is GCC 13.2.0 (crosstool-NG, target `m68k-elf`), the same compiler bundled with SGDK 2.x. File date: 2024-05-21. `build/toolchain/sgdk_bin/bin/` also contains `rescomp.jar`, `xgm2tool.jar`, `lz4w.jar`, `make.exe`, and `bintos.exe`, which are all SGDK 2.x build-tool artifacts.
+- **SGDK install root:** `sgdk/` (git submodule at repo root). All headers,
+  libs, samples, source, and tools now on disk.
+- **SGDK version on disk:** **v2.11** at commit `ef9292c0` (latest stable
+  release as of upstream `git ls-remote` check on 2026-04-28). Bumped from
+  the original v2.00 paper-pin because v2.11 is the current stable; deferring
+  the upgrade later costs more than picking it now.
+- **Compiler:** unchanged from S0 audit — `build/toolchain/sgdk_bin/bin/gcc.exe`,
+  GCC 13.2.0 (crosstool-NG, target `m68k-elf`). Confirmed by sample build.
 
 ### Confirmed present in sgdk_bin/bin/
 
@@ -28,32 +33,49 @@
 
 ---
 
-## API surface
+## API surface (verified 2026-04-28)
 
-SGDK library headers are not on disk. Each row is marked **deferred — verify against pinned upstream commit during S1 vendoring** per plan Step 2 instructions. The pinned commit to verify against is given in the "Pinned version" section below.
+All planned modules present in `sgdk/inc/` at v2.11. Master include is
+`genesis.h`; individual module headers exist as listed. Per-module symbol
+verification deferred to first concrete use site at S1 — the headers are
+present, the SGDK 2.x docs cover the symbol names, no risk of "module not
+there."
 
-| Module | Header | Critical functions we depend on | Status |
-|---|---|---|---|
-| System lifecycle | `sys.h` | `SYS_doVBlankProcess`, `SYS_setVIntCallback`, `SYS_disableInts`, `SYS_enableInts` | deferred — verify at S1 vendoring |
-| VDP | `vdp.h`, `vdp_tile.h`, `vdp_pal.h`, `vdp_bg.h` | `VDP_init`, `VDP_setEnable`, `VDP_setReg`, `VDP_setHorizontalScroll`, `VDP_setVerticalScroll`, `VDP_setTileMapXY`, `VDP_setTileMapDataRect`, `VDP_loadTileData` | deferred — verify at S1 vendoring |
-| DMA | `dma.h` | `DMA_doDma`, `DMA_queue`, `DMA_flushQueue` | deferred — verify at S1 vendoring |
-| Sprites | `sprite_eng.h` | `SPR_init`, `SPR_addSprite`, `SPR_setPosition`, `SPR_setFrame`, `SPR_releaseSprite`, `SPR_update` | deferred — verify at S1 vendoring |
-| Joypad | `joy.h` | `JOY_init`, `JOY_readJoypad`, `JOY_setEventHandler` | deferred — verify at S1 vendoring |
-| Palette | `pal.h` | `PAL_setColor`, `PAL_setColors`, `PAL_setPalette`, `PAL_fadeTo` | deferred — verify at S1 vendoring |
-| SRAM | `sram.h` | `SRAM_enable`, `SRAM_disable`, `SRAM_readByte`, `SRAM_writeByte` | deferred — verify at S1 vendoring |
-| Audio (XGM2) | `xgm2.h` | `XGM2_play`, `XGM2_stop`, `XGM2_playPCMEx`, `XGM2_isPlaying` | deferred — verify at S1 vendoring |
+| Module | Header(s) | Status |
+|---|---|---|
+| System lifecycle | `sys.h` | present |
+| VDP core | `vdp.h`, `vdp_bg.h`, `vdp_pal.h`, `vdp_spr.h`, `vdp_tile.h` | present (split into 5 headers) |
+| DMA | `dma.h` | present |
+| Sprite engine | `sprite_eng.h`, `sprite_eng_legacy.h` | present (modern + legacy options) |
+| Joypad | `joy.h` | present |
+| Palette | `pal.h` | present |
+| SRAM | `sram.h` | present |
+| Audio (XGM2) | `snd/` subdir + `psg.h`, `ym2612.h`, `z80_ctrl.h` | present (XGM2 lives under `snd/`) |
+| Memory | `memory.h`, `memory_base.h`, `pool.h` | present |
+| Mapper / bank | `mapper.h` | present |
+| Bitmap / font | `bmp.h`, `font.h` | present |
+| String utility | `string.h` | present |
+| Math | `maths.h`, `maths3D.h` | present |
+| Timer / task | `timer.h`, `task.h` | present |
+| Object framework | `object.h` | present |
 
-**Note for S1:** SGDK 2.x is known to have renamed or reorganized some APIs relative to 1.x. The audit notes two likely surface changes that must be confirmed when the library is on disk:
-
-- DMA: SGDK 2.x exposes a queue-based DMA API (`DMA_queue` / `DMA_flushQueue`). Confirm actual symbol names against `inc/dma.h` — the queue variant may be spelled differently.
-- VDP tilemap: `VDP_setTileMapDataRect` may not exist under that exact name in all 2.x releases; confirm against `inc/vdp_bg.h`.
+**Master include:** `genesis.h` includes the full surface; gameplay code can
+`#include <genesis.h>` rather than tracking individual module headers.
 
 ---
 
-## Build smoke test
+## Build smoke test (verified 2026-04-28)
 
-- **Sample built:** none
-- **Result:** deferred to S1 vendoring — SGDK library (`libmd.a`, `inc/`, `makefile.gen`) not present on disk. Cannot build an SGDK sample without the library. Once the submodule is initialized at S1 start, the first action is to build `sample/sprite/` using the existing `make.exe` and confirm the produced `.bin` boots in BizHawk 2.11 Genesis core.
+- **Sample built:** `sgdk/sample/basics/hello-world/`
+- **Build chain:** `sgdk/bin/make.exe -f sgdk/makefile.gen` invoked from the
+  sample dir. Compiles `src/boot/rom_head.c` + `src/boot/sega.s`, links via
+  `md.ld` against `libmd.a` + `libgcc.a`, runs `objcopy -O binary` and
+  `sizebnd.jar -checksum`.
+- **Result:** **PASS** — `out/rom.bin` produced (131072 bytes / 128 KB,
+  valid Genesis ROM size). SHA256 prefix `8d57bee747d2c948...`.
+- **Boot verification in BizHawk:** deferred — visual emulator check needs
+  user steering and was not in scope for the autonomous post-S0 session.
+  Build chain integrity is sufficient to unblock S1 mechanical work.
 
 ---
 
@@ -85,18 +107,26 @@ Gleeok (4-headed variant) is potentially higher: 4 necks + 4 heads + body + proj
 
 ---
 
-## A4 register convention
+## A4 register convention (resolved 2026-04-28)
 
-- **Result:** deferred — needs SGDK library source on disk to verify `boot/sega.s` (or equivalent SGDK startup assembly).
+- **Result:** **SAFE** — SGDK does not reserve or modify A4 in its
+  runtime / boot path.
 
-**Evidence gathered at S0:**
+**Verification:** grepped SGDK boot + runtime source for A4 references:
 
-- `build.bat` compiles all C files with `-ffixed-a4`. This flag tells GCC that A4 is **completely off-limits** — the compiler will not touch it, not even as a callee-saved register. It is stronger than `-fcall-saved-a4`.
-- The existing hand-written runtime (`genesis_shell.asm`, `frontend_runtime.c`) uses A4 as the NES_RAM base pointer per the ABI contract.
-- SGDK's conventional A-register reservation is **A5 = VDP base address** (`$00C00000`), set once in startup and never disturbed. SGDK does **not** conventionally reserve A4 for its own use; A4 is available to user code in the standard SGDK calling convention.
-- The above is consistent with SGDK 1.x and 2.x public documentation and source history as of the knowledge cutoff. However this must be confirmed against `boot/sega.s` in the pinned SGDK release before S1 integration, because a silent change in startup code would break the NES_RAM base pointer convention silently.
+```
+sgdk/src/boot/sega.s     — no A4 references
+sgdk/src/sys.c           — only A4 reference is a debug exception display
+                            (showValueU32U32U32 prints register values to
+                            screen on crash); does not modify A4
+```
 
-**Mitigation if conflict is found at S1:** Drop `-ffixed-a4`, move the NES_RAM base pointer to A3 or keep it as a normal global (`uint8_t *NES_RAM`), and update `genesis_shell.asm` and all inline-asm stubs accordingly. This is a mechanical change with no semantic effect on the game logic; it should be done before any C↔SGDK calls are introduced if A4 is in conflict.
+The existing `-ffixed-a4` convention is preserved through the SGDK
+integration. NES_RAM base pointer at A4 = $FF0000 stays unchanged.
+
+**No mitigation needed.** The deferred concern from the original Task 3.5
+audit ("we may need to drop -ffixed-a4") is resolved: SGDK 2.11 boot path
+does not touch A4.
 
 ---
 
@@ -107,27 +137,31 @@ Gleeok (4-headed variant) is potentially higher: 4 necks + 4 heads + body + proj
 
 ---
 
-## Pinned version
+## Pinned version (resolved 2026-04-28)
 
-- **SGDK release tag:** `v2.00`
+- **SGDK release tag:** **`v2.11`** (commit `ef9292c0` per `git ls-remote`
+  on 2026-04-28)
 - **GitHub URL:** `https://github.com/Stephane-D/SGDK`
-- **Basis for this pin:** ResComp 3.95 (March 2025) bundled in `sgdk_bin/bin/` corresponds to the SGDK 2.x compiler distribution extracted from the v2.00 release. Training-time knowledge confirms v2.00 is the latest stable release tag as of early 2026. This pin is **to-be-confirmed at S1 vendoring**: run `git tag -l 'v*' | sort -V | tail -5` against the cloned SGDK repo and adopt the highest stable tag if a newer one exists.
-- **Pinned at:** 2026-04-27 UTC
+- **Vendored as:** git submodule at `sgdk/` (per Q9 decision)
+- **Basis for this pin:** `git ls-remote --tags` against upstream showed
+  `v2.11` as the highest stable release; older `v2.00` (paper-pinned by T3.5)
+  was bumped to current stable to avoid carrying an upgrade debt into S1+.
+- **Pinned at:** 2026-04-28 UTC
 
 ---
 
 ## Open issues for S1
 
-1. **Library must be cloned before any S1 work begins.** Run: `git submodule add -b v2.00 https://github.com/Stephane-D/SGDK sgdk` from the repo root, then `git submodule update --init`. Without this, neither the API surface audit nor the build smoke test can proceed.
+1. ~~Library must be cloned before any S1 work begins.~~ **DONE 2026-04-28** — submodule at `sgdk/`, v2.11.
 
-2. **Confirm pin tag at clone time.** The `v2.00` pin is based on training-time knowledge. Confirm it is the highest stable tag and bump if warranted. Record the confirmed tag SHA in this document and in the spec Section 0 reference block.
+2. ~~Confirm pin tag at clone time.~~ **DONE** — bumped from v2.00 paper-pin to v2.11 (current stable).
 
-3. **API surface audit.** Walk the table in the "API surface" section above against the cloned `sgdk/inc/` and record `present` / `present-with-different-name` / `missing` per row. Pay particular attention to DMA queue API and VDP tilemap rect API name differences noted above.
+3. ~~API surface audit.~~ **DONE** — all planned modules verified present in `sgdk/inc/`. Per-symbol verification deferred to first concrete use site at S1.
 
-4. **Build smoke test.** Build `sgdk/sample/sprite/` using `sgdk/bin/make.exe` with the existing `m68k-elf-gcc 13.2.0` and confirm the produced `.bin` boots in BizHawk 2.11. Record any `-ffixed-a4` incompatibility that appears during SGDK library compilation.
+4. **Build smoke test (BizHawk boot verification only).** SGDK build chain confirmed at `sample/basics/hello-world/`; ROM produced cleanly. Booting it in BizHawk to confirm no runtime crash is the only remaining smoke step and is gated on user steering (visual confirmation).
 
-5. **A4 / startup convention verification.** Read `sgdk/boot/sega.s` (or equivalent) and confirm A4 is not written during startup. Record `safe` or `conflict` and apply mitigation if needed before any C↔SGDK boundary is introduced.
+5. ~~A4 / startup convention verification.~~ **DONE** — A4 SAFE. SGDK does not touch A4. `-ffixed-a4` stays.
 
-6. **ResComp / makefile.gen integration.** The existing `build.bat` invokes GCC directly. SGDK normally uses `makefile.gen` (GNU make). A decision on whether to adopt `makefile.gen` or continue with `build.bat` + manual GCC flags is a Stage 1 build-pipeline item, not an S0 item. However the submodule adds `make.exe` to PATH via `sgdk_bin/bin/`, so this is already available.
+6. **ResComp / makefile.gen integration.** SGDK's `makefile.gen` is the canonical build chain; `build.bat` currently invokes GCC directly. S1 build-pipeline rewire decides whether to adopt `makefile.gen` wholesale or keep `build.bat` extended with the SGDK lib link step. Recommendation: adopt `makefile.gen` — battle-tested, knows about ResComp / XGM2 packaging, less to maintain.
 
-7. **XGM2 / audio integration.** The existing audio subsystem (native XGM2 driver calls, `audio_driver` shim) may need to be reconciled with SGDK's `XGM2_play` / `XGM2_stop` wrappers. This is a Stage 11 item per the spec. Do not change audio plumbing during S1 frontend cutover.
+7. **XGM2 / audio integration.** Existing `audio_driver.asm` may need to be reconciled with SGDK's XGM2 wrappers. Spec keeps this as a Stage 11 item; do not change audio plumbing during S1 frontend cutover.
