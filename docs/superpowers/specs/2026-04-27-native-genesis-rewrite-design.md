@@ -487,9 +487,9 @@ Audit the current tree before any file moves. Outputs are documents, scripts, an
 - Map current build artifacts and source-order: which `.asm`/`.c` files compile in what order, which `.o` files link into the ROM, which symbols are exported by each. Output: `docs/audit/build_order.md`.
 - Classify every file as: **owned C**, **generated data**, **transpiled asm**, **shim asm**, **platform asm**, or **dead/cruft**. Output: `docs/audit/file_classification.md`.
 - Add `tools/probes/lint_legacy_symbols.py` — grep-based check that reports new callers of forbidden symbols. **Warning-only at S0.**
-- Build and inspect `tools/probes/abi_probe.c` (`u32 abi_ret_u32(void)`, `void *abi_ret_ptr(void)`, `u32 abi_arg_mix(u16, u32, void *)`); commit listing to `docs/audit/abi_probe.md` with proven calling-convention details. Replace every `<filled at S0>` placeholder in Section 4.5.
+- Build and inspect `tools/probes/abi_probe.c` (`u32 abi_ret_u32(void)`, `void *abi_ret_ptr(void)`, `u32 abi_arg_mix(u16, u32, void *)`); commit listing to `docs/audit/abi_probe.md` with proven calling-convention details. Replace every Section 4.5 placeholder marker with the recorded values.
 - Lock NES ROM provenance: ROM is **not committed**. `tools/probes/locate_reference_rom.py` resolves the ROM path via local config or `ZELDA_NES_ROM` env var, verifies SHA256 against the value recorded in Section 0, and is called by every probe before extraction.
-- Fill the `<filled at S0>` placeholders in **Section 0 (Reference Contract)**: ROM hashes, current Genesis baseline ROM hash, emulator versions, palette, viewport/crop/overscan/backdrop/H-mode policy.
+- Fill the placeholder markers in **Section 0 (Reference Contract)**: ROM hashes, current Genesis baseline ROM hash, emulator versions, palette, viewport/crop/overscan/backdrop/H-mode policy.
 - Resolve the **S0-Locked Questions** in Section 12.
 - **Acceptance:** current build still produces a working ROM with no behavioral change. All audit documents committed. Lint check runs in CI. Reference + ABI contracts have no remaining placeholders. Section 12 reduced to "None."
 
