@@ -2,16 +2,45 @@
 """
 extract_frontend.py - Extract frontend, save-menu, and ending text tables.
 
-This fills one of the remaining Phase 1 gaps by pulling inline Z_02 menu and
-ending data into Genesis include files:
-  - file-select / register / elimination UI tables
-  - save-slot helper address tables
-  - ending text / flash / textbox metadata
+S2 Phase D1: ports .inc emission to Genesis-ready C-array output under
+data/text/ as NES reference data.
+
+OVERLAP NOTE (S2 D1 decision):
+  extract_fs_assets.py -> data/fs/  : Genesis-customized FS layout (Redux
+      palette, Genesis tile IDs, layout tuned for 320px display).
+  extract_frontend.py  -> data/text/: NES-reference frontend tables (original
+      NES CPU addresses, NES tile indices, original menu layouts).
+
+They intentionally coexist. Callers needing the NES-original layout use
+data/text/nes_frontend_*.c; callers needing the Genesis-tuned layout use
+data/fs/*.c.  Output files are prefixed "nes_frontend_" to make this loud.
+
+Primary outputs (C arrays, data/text/):
+  nes_frontend_ui.c          -- file-select / register / elimination UI tables
+  nes_frontend_palettes.c    -- raw NES palette transfer records (reference only)
+  nes_frontend_save.c        -- save-slot helper address tables
+  nes_frontend_text.c        -- ending and credits text-support tables
+  nes_frontend_demo_text.c   -- DemoTextField blobs + DemoLineTextAddrs
+  nes_frontend_credits.c     -- CreditsTextLine blobs
+  nes_frontend_transfers.c   -- StoryTileAttrTransferBuf + GameTitleTransferBuf
+  MANIFEST.json              -- schema_version + nes_rom_sha256 + per-block metadata
+
+Legacy outputs (--legacy-inc flag only, vasm .inc format):
+  src/data/frontend_ui.inc, frontend_palettes.inc, save_tables.inc,
+  text.inc, demo_text.inc, credits_text.inc, frontend_transfers.inc
+  reference/aldonunez/dat/StoryTileAttrTransferBuf.dat
+  reference/aldonunez/dat/GameTitleTransferBuf.dat
 """
 
+import argparse
+import hashlib
+import json
 import os
 import re
 import sys
+
+# Canonical NES ROM SHA256 (locked in spec Section 0 / docs/audit/baseline_rom.md).
+NES_ROM_SHA256 = "8f72dc2e98572eb4ba7c3a902bca5f69c448fc4391837e5f8f0d4556280440ac"
 
 INES_HEADER_SIZE = 16
 PRG_BANK_SIZE = 0x4000
@@ -70,6 +99,14 @@ Z06_TARGET_LABELS = {
 
 def strip_comment(line):
     return line.split(";", 1)[0].strip()
+
+
+def sha256_of_file(path):
+    h = hashlib.sha256()
+    with open(path, "rb") as f:
+        for chunk in iter(lambda: f.read(65536), b""):
+            h.update(chunk)
+    return h.hexdigest()
 
 
 def parse_byte_token(token):
@@ -145,11 +182,11 @@ def parse_asm_data_blocks(path, target_labels, symbols):
                 items = [item.strip() for item in line[5:].split(",") if item.strip()]
                 blocks[current].extend(parse_byte_token(item) for item in items)
             elif line.startswith(".LOBYTES"):
-                expr = line[len(".LOBYTES") :].strip()
+                expr = line[len(".LOBYTES"):].strip()
                 value = eval_offset_expr(expr, symbols)
                 blocks[current].append(value & 0xFF)
             elif line.startswith(".HIBYTES"):
-                expr = line[len(".HIBYTES") :].strip()
+                expr = line[len(".HIBYTES"):].strip()
                 value = eval_offset_expr(expr, symbols)
                 blocks[current].append((value >> 8) & 0xFF)
 
@@ -229,33 +266,6 @@ def build_pointer_labels(addresses, prefix):
     return labels_by_addr, table_labels, ordered_addrs
 
 
-def labels_to_inc_words(label_names, table_label, words_per_line=4):
-    lines = [f"; {table_label} - {len(label_names)} entries", f"{table_label}:"]
-    for i in range(0, len(label_names), words_per_line):
-        chunk = label_names[i : i + words_per_line]
-        lines.append("    dc.w " + ",".join(chunk))
-    return "\n".join(lines)
-
-
-def write_labeled_records(lines, blob, ordered_addrs, labels_by_addr):
-    first_offset = cpu_addr_to_bank_offset(ordered_addrs[0])
-    ordered_offsets = [cpu_addr_to_bank_offset(addr) for addr in ordered_addrs]
-    for index, addr in enumerate(ordered_addrs):
-        start = ordered_offsets[index] - first_offset
-        if index + 1 < len(ordered_offsets):
-            end = ordered_offsets[index + 1] - first_offset
-        else:
-            end = len(blob)
-        label = labels_by_addr[addr]
-        lines.append(f"; {label} - {end - start} bytes")
-        lines.append(f"{label}:")
-        data = blob[start:end]
-        for i in range(0, len(data), 16):
-            chunk = data[i : i + 16]
-            lines.append("    dc.b " + ",".join(f"${byte:02X}" for byte in chunk))
-        lines.append("")
-
-
 def extract_demo_text_data(prg_data, blocks):
     bank2_data = prg_data[2 * PRG_BANK_SIZE : 3 * PRG_BANK_SIZE]
     title_palette = bytes(blocks["TitlePaletteTransferRecord"])
@@ -318,7 +328,6 @@ def parse_transfer_buf_end(data, start):
         first = data[pos]
         if first >= 0x80:
             return pos  # terminator byte
-        # Skip header (3 bytes)
         if pos + 2 >= len(data):
             raise ValueError(f"Transfer buf truncated at offset {pos}")
         control = data[pos + 2]
@@ -356,21 +365,46 @@ def extract_frontend_transfer_blobs(prg_data, z06_blocks):
     }
 
 
-def data_to_inc_bytes(data, label, bytes_per_line=16):
-    lines = [f"; {label} - {len(data)} bytes", f"{label}:"]
-    for i in range(0, len(data), bytes_per_line):
+# ---------------------------------------------------------------------------
+# C-array emission helpers
+# ---------------------------------------------------------------------------
+
+def bytes_to_c_array(data, var_name, bytes_per_line=16):
+    size = len(data)
+    lines = ["/* Auto-generated by tools/extract_frontend.py - do not edit. */"]
+    lines.append(f"const unsigned long {var_name}_size = {size}UL;")
+    lines.append(f"const unsigned char {var_name}[{size}] = {{")
+    for i in range(0, size, bytes_per_line):
         chunk = data[i : i + bytes_per_line]
-        lines.append("    dc.b " + ",".join(f"${byte:02X}" for byte in chunk))
-    return "\n".join(lines)
+        lines.append("    " + ", ".join(f"0x{b:02X}" for b in chunk) + ",")
+    lines.append("};")
+    return "\n".join(lines) + "\n"
 
 
-def write_text_file(path, lines):
+def write_c_file(path, content):
     with open(path, "w", encoding="utf-8", newline="\n") as f:
-        f.write("\n".join(lines))
+        f.write(content)
+    print(f"  Wrote {path} ({len(content)} bytes)")
+
+
+def write_manifest(out_dir, all_blocks_meta, rom_sha256):
+    manifest = {
+        "schema_version": 1,
+        "nes_rom_sha256": rom_sha256,
+        "blocks": all_blocks_meta,
+    }
+    path = os.path.join(out_dir, "MANIFEST.json")
+    with open(path, "w", encoding="utf-8", newline="\n") as f:
+        json.dump(manifest, f, indent=2)
+        f.write("\n")
     print(f"  Wrote {path}")
 
 
-def write_frontend_ui(data_dir, blocks):
+# ---------------------------------------------------------------------------
+# C output writers
+# ---------------------------------------------------------------------------
+
+def write_frontend_ui_c(out_dir, blocks):
     ordered = [
         "ModeFTitleTransferBuf",
         "ModeFSaveSlotTemplatePatchRegister",
@@ -389,18 +423,23 @@ def write_frontend_ui(data_dir, blocks):
         "SlotToBlankNameTransferBufEndOffset",
         "SlotToNameOffset",
     ]
-    lines = [
-        "; Frontend and menu UI tables extracted from NES Zelda Z_02",
-        "; Auto-generated by extract_frontend.py - DO NOT EDIT",
-        "",
-    ]
+    chunks = []
+    meta = []
+    offset = 0
     for label in ordered:
-        lines.append(data_to_inc_bytes(bytes(blocks[label]), label))
-        lines.append("")
-    write_text_file(os.path.join(data_dir, "frontend_ui.inc"), lines[:-1])
+        data = bytes(blocks[label])
+        meta.append({"name": label, "file": "nes_frontend_ui.c",
+                     "var_name": "nes_frontend_ui",
+                     "byte_offset": offset, "byte_size": len(data)})
+        chunks.append(data)
+        offset += len(data)
+    payload = b"".join(chunks)
+    write_c_file(os.path.join(out_dir, "nes_frontend_ui.c"),
+                 bytes_to_c_array(payload, "nes_frontend_ui"))
+    return meta
 
 
-def write_frontend_palettes(data_dir, blocks):
+def write_frontend_palettes_c(out_dir, blocks):
     ordered = [
         "TitlePaletteTransferRecord",
         "StoryPaletteTransferRecord",
@@ -408,108 +447,46 @@ def write_frontend_palettes(data_dir, blocks):
         "TriforceGlowingColors",
         "DemoPhase0Subphase1Palettes",
     ]
-    lines = [
-        "; Frontend palette and demo color tables extracted from NES Zelda Z_02",
-        "; Auto-generated by extract_frontend.py - DO NOT EDIT",
-        "",
-    ]
+    chunks = []
+    meta = []
+    offset = 0
     for label in ordered:
-        lines.append(data_to_inc_bytes(bytes(blocks[label]), label))
-        lines.append("")
-    write_text_file(os.path.join(data_dir, "frontend_palettes.inc"), lines[:-1])
+        data = bytes(blocks[label])
+        meta.append({"name": label, "file": "nes_frontend_palettes.c",
+                     "var_name": "nes_frontend_palettes",
+                     "byte_offset": offset, "byte_size": len(data)})
+        chunks.append(data)
+        offset += len(data)
+    payload = b"".join(chunks)
+    write_c_file(os.path.join(out_dir, "nes_frontend_palettes.c"),
+                 bytes_to_c_array(payload, "nes_frontend_palettes"))
+    return meta
 
 
-def write_save_tables(data_dir, blocks):
+def write_save_tables_c(out_dir, blocks):
     ordered = [
         "SaveSlotHeartsAddrsLo",
         "SaveSlotHeartsAddrsHi",
         "ProfileNameAddrsLo",
         "ProfileNameAddrsHi",
     ]
-    lines = [
-        "; Save/profile helper tables extracted from NES Zelda Z_02",
-        "; Auto-generated by extract_frontend.py - DO NOT EDIT",
-        "",
-    ]
+    chunks = []
+    meta = []
+    offset = 0
     for label in ordered:
-        lines.append(data_to_inc_bytes(bytes(blocks[label]), label))
-        lines.append("")
-    write_text_file(os.path.join(data_dir, "save_tables.inc"), lines[:-1])
+        data = bytes(blocks[label])
+        meta.append({"name": label, "file": "nes_frontend_save.c",
+                     "var_name": "nes_frontend_save",
+                     "byte_offset": offset, "byte_size": len(data)})
+        chunks.append(data)
+        offset += len(data)
+    payload = b"".join(chunks)
+    write_c_file(os.path.join(out_dir, "nes_frontend_save.c"),
+                 bytes_to_c_array(payload, "nes_frontend_save"))
+    return meta
 
 
-def write_demo_text_file(data_dir, blocks, demo_text_data):
-    labels_by_addr, table_labels, ordered_addrs = build_pointer_labels(
-        demo_text_data["addresses"], "DemoTextField"
-    )
-
-    lines = [
-        "; Demo/story text field blobs extracted from NES Zelda bank 2",
-        "; Auto-generated by extract_frontend.py - DO NOT EDIT",
-        "",
-        data_to_inc_bytes(bytes(blocks["DemoLineAttrs"]), "DemoLineAttrs"),
-        "",
-        labels_to_inc_words(table_labels, "DemoLineTextAddrs"),
-        "",
-    ]
-
-    write_labeled_records(lines, demo_text_data["fields_blob"], ordered_addrs, labels_by_addr)
-    write_text_file(os.path.join(data_dir, "demo_text.inc"), lines[:-1])
-
-
-def write_credits_text_file(data_dir, credits_text_data):
-    labels_by_addr, table_labels, ordered_addrs = build_pointer_labels(
-        credits_text_data["addresses"], "CreditsTextLine"
-    )
-
-    lines = [
-        "; Credits text line blobs extracted from NES Zelda bank 2",
-        "; Auto-generated by extract_frontend.py - DO NOT EDIT",
-        "",
-        labels_to_inc_words(table_labels, "CreditsTextAddrs"),
-        "",
-    ]
-
-    write_labeled_records(
-        lines,
-        credits_text_data["text_lines_blob"],
-        ordered_addrs,
-        labels_by_addr,
-    )
-    write_text_file(os.path.join(data_dir, "credits_text.inc"), lines[:-1])
-
-
-def write_frontend_transfers_file(data_dir, transfer_blobs):
-    lines = [
-        "; Frontend transfer buffers extracted from NES Zelda bank 6",
-        "; Auto-generated by extract_frontend.py - DO NOT EDIT",
-        "",
-        data_to_inc_bytes(
-            transfer_blobs["story_tile_attr_transfer_buf"],
-            "StoryTileAttrTransferBuf",
-        ),
-        "",
-        data_to_inc_bytes(
-            transfer_blobs["game_title_transfer_buf"],
-            "GameTitleTransferBuf",
-        ),
-    ]
-    write_text_file(os.path.join(data_dir, "frontend_transfers.inc"), lines)
-
-
-def write_raw_dat_files(ref_dat_dir, transfer_blobs):
-    """Write raw binary .dat files so the transpiler's .INCBIN can find them."""
-    os.makedirs(ref_dat_dir, exist_ok=True)
-    for filename, key in [
-        ("StoryTileAttrTransferBuf.dat", "story_tile_attr_transfer_buf"),
-        ("GameTitleTransferBuf.dat", "game_title_transfer_buf"),
-    ]:
-        path = os.path.join(ref_dat_dir, filename)
-        with open(path, "wb") as f:
-            f.write(transfer_blobs[key])
-        print(f"  Wrote {path} ({len(transfer_blobs[key])} bytes)")
-
-
-def write_text_tables(data_dir, blocks):
+def write_text_tables_c(out_dir, blocks):
     ordered = [
         "PlayAreaAttr0TransferBuf",
         "ThanksText",
@@ -525,18 +502,295 @@ def write_text_tables(data_dir, blocks):
         "CreditsPagesTextMasks",
         "CreditsAttrs",
     ]
-    lines = [
-        "; Ending and credits text-support tables extracted from NES Zelda Z_02",
-        "; Auto-generated by extract_frontend.py - DO NOT EDIT",
-        "",
-    ]
+    chunks = []
+    meta = []
+    offset = 0
     for label in ordered:
+        data = bytes(blocks[label])
+        meta.append({"name": label, "file": "nes_frontend_text.c",
+                     "var_name": "nes_frontend_text",
+                     "byte_offset": offset, "byte_size": len(data)})
+        chunks.append(data)
+        offset += len(data)
+    payload = b"".join(chunks)
+    write_c_file(os.path.join(out_dir, "nes_frontend_text.c"),
+                 bytes_to_c_array(payload, "nes_frontend_text"))
+    return meta
+
+
+def write_demo_text_c(out_dir, blocks, demo_text_data):
+    """Emit nes_frontend_demo_text.c: DemoLineAttrs + pointer table + field blobs."""
+    demo_line_attrs = bytes(blocks["DemoLineAttrs"])
+
+    # Pointer table: flat LE 16-bit NES CPU addresses
+    addrs_raw = b"".join(
+        bytes([addr & 0xFF, (addr >> 8) & 0xFF])
+        for addr in demo_text_data["addresses"]
+    )
+
+    fields_blob = demo_text_data["fields_blob"]
+
+    payload = demo_line_attrs + addrs_raw + fields_blob
+    meta = [
+        {"name": "DemoLineAttrs", "file": "nes_frontend_demo_text.c",
+         "var_name": "nes_frontend_demo_text",
+         "byte_offset": 0, "byte_size": len(demo_line_attrs)},
+        {"name": "DemoLineTextAddrs", "file": "nes_frontend_demo_text.c",
+         "var_name": "nes_frontend_demo_text",
+         "byte_offset": len(demo_line_attrs), "byte_size": len(addrs_raw),
+         "entry_count": len(demo_text_data["addresses"]),
+         "format": "u16le_nes_cpu_addr"},
+        {"name": "DemoTextFieldsBlob", "file": "nes_frontend_demo_text.c",
+         "var_name": "nes_frontend_demo_text",
+         "byte_offset": len(demo_line_attrs) + len(addrs_raw),
+         "byte_size": len(fields_blob)},
+    ]
+    write_c_file(os.path.join(out_dir, "nes_frontend_demo_text.c"),
+                 bytes_to_c_array(payload, "nes_frontend_demo_text"))
+    return meta
+
+
+def write_credits_text_c(out_dir, credits_text_data):
+    """Emit nes_frontend_credits.c: pointer table + text line blobs."""
+    addrs_raw = b"".join(
+        bytes([addr & 0xFF, (addr >> 8) & 0xFF])
+        for addr in credits_text_data["addresses"]
+    )
+    text_lines_blob = credits_text_data["text_lines_blob"]
+    payload = addrs_raw + text_lines_blob
+
+    meta = [
+        {"name": "CreditsTextAddrs", "file": "nes_frontend_credits.c",
+         "var_name": "nes_frontend_credits",
+         "byte_offset": 0, "byte_size": len(addrs_raw),
+         "entry_count": len(credits_text_data["addresses"]),
+         "format": "u16le_nes_cpu_addr"},
+        {"name": "CreditsTextLinesBlob", "file": "nes_frontend_credits.c",
+         "var_name": "nes_frontend_credits",
+         "byte_offset": len(addrs_raw), "byte_size": len(text_lines_blob)},
+    ]
+    write_c_file(os.path.join(out_dir, "nes_frontend_credits.c"),
+                 bytes_to_c_array(payload, "nes_frontend_credits"))
+    return meta
+
+
+def write_frontend_transfers_c(out_dir, transfer_blobs):
+    """Emit nes_frontend_transfers.c: both PPU transfer buffer blobs."""
+    story = transfer_blobs["story_tile_attr_transfer_buf"]
+    title = transfer_blobs["game_title_transfer_buf"]
+    payload = story + title
+
+    meta = [
+        {"name": "StoryTileAttrTransferBuf", "file": "nes_frontend_transfers.c",
+         "var_name": "nes_frontend_transfers",
+         "byte_offset": 0, "byte_size": len(story)},
+        {"name": "GameTitleTransferBuf", "file": "nes_frontend_transfers.c",
+         "var_name": "nes_frontend_transfers",
+         "byte_offset": len(story), "byte_size": len(title)},
+    ]
+    write_c_file(os.path.join(out_dir, "nes_frontend_transfers.c"),
+                 bytes_to_c_array(payload, "nes_frontend_transfers"))
+    return meta
+
+
+# ---------------------------------------------------------------------------
+# Legacy .inc writers (only called with --legacy-inc)
+# ---------------------------------------------------------------------------
+
+def data_to_inc_bytes(data, label, bytes_per_line=16):
+    lines = [f"; {label} - {len(data)} bytes", f"{label}:"]
+    for i in range(0, len(data), bytes_per_line):
+        chunk = data[i : i + bytes_per_line]
+        lines.append("    dc.b " + ",".join(f"${byte:02X}" for byte in chunk))
+    return "\n".join(lines)
+
+
+def labels_to_inc_words(label_names, table_label, words_per_line=4):
+    lines = [f"; {table_label} - {len(label_names)} entries", f"{table_label}:"]
+    for i in range(0, len(label_names), words_per_line):
+        chunk = label_names[i : i + words_per_line]
+        lines.append("    dc.w " + ",".join(chunk))
+    return "\n".join(lines)
+
+
+def write_labeled_records(lines, blob, ordered_addrs, labels_by_addr):
+    first_offset = cpu_addr_to_bank_offset(ordered_addrs[0])
+    ordered_offsets = [cpu_addr_to_bank_offset(addr) for addr in ordered_addrs]
+    for index, addr in enumerate(ordered_addrs):
+        start = ordered_offsets[index] - first_offset
+        if index + 1 < len(ordered_offsets):
+            end = ordered_offsets[index + 1] - first_offset
+        else:
+            end = len(blob)
+        label = labels_by_addr[addr]
+        lines.append(f"; {label} - {end - start} bytes")
+        lines.append(f"{label}:")
+        data = blob[start:end]
+        for i in range(0, len(data), 16):
+            chunk = data[i : i + 16]
+            lines.append("    dc.b " + ",".join(f"${byte:02X}" for byte in chunk))
+        lines.append("")
+
+
+def write_text_file(path, lines):
+    with open(path, "w", encoding="utf-8", newline="\n") as f:
+        f.write("\n".join(lines))
+    print(f"  Wrote {path}")
+
+
+def write_legacy_inc_files(project_root, blocks, demo_text_data, credits_text_data,
+                           frontend_transfer_blobs):
+    data_dir = os.path.join(project_root, "src", "data")
+    os.makedirs(data_dir, exist_ok=True)
+
+    # frontend_ui.inc
+    ordered_ui = [
+        "ModeFTitleTransferBuf",
+        "ModeFSaveSlotTemplatePatchRegister",
+        "ModeFSaveSlotTemplateTransferBuf",
+        "Mode1SlotLineTransferBuf",
+        "Mode1DeathCountsTransferBuf",
+        "LinkColors",
+        "Mode1CursorSpriteTriplet",
+        "Mode1CursorSpriteYs",
+        "ModeEandFSlotCursorYs",
+        "ModeEandFCursorSprites",
+        "ModeE_CharMap",
+        "ModeE_CharBoardYOffsetsAndBounds",
+        "SlotToInitialNameCharTransferHeaders",
+        "DeletedSlotBlankNameTransferBuf",
+        "SlotToBlankNameTransferBufEndOffset",
+        "SlotToNameOffset",
+    ]
+    lines = ["; Frontend and menu UI tables extracted from NES Zelda Z_02",
+             "; Auto-generated by extract_frontend.py - DO NOT EDIT", ""]
+    for label in ordered_ui:
+        lines.append(data_to_inc_bytes(bytes(blocks[label]), label))
+        lines.append("")
+    write_text_file(os.path.join(data_dir, "frontend_ui.inc"), lines[:-1])
+
+    # frontend_palettes.inc
+    ordered_pal = [
+        "TitlePaletteTransferRecord",
+        "StoryPaletteTransferRecord",
+        "TriforcePaletteTransferRecord",
+        "TriforceGlowingColors",
+        "DemoPhase0Subphase1Palettes",
+    ]
+    lines = ["; Frontend palette and demo color tables extracted from NES Zelda Z_02",
+             "; Auto-generated by extract_frontend.py - DO NOT EDIT", ""]
+    for label in ordered_pal:
+        lines.append(data_to_inc_bytes(bytes(blocks[label]), label))
+        lines.append("")
+    write_text_file(os.path.join(data_dir, "frontend_palettes.inc"), lines[:-1])
+
+    # save_tables.inc
+    ordered_save = [
+        "SaveSlotHeartsAddrsLo",
+        "SaveSlotHeartsAddrsHi",
+        "ProfileNameAddrsLo",
+        "ProfileNameAddrsHi",
+    ]
+    lines = ["; Save/profile helper tables extracted from NES Zelda Z_02",
+             "; Auto-generated by extract_frontend.py - DO NOT EDIT", ""]
+    for label in ordered_save:
+        lines.append(data_to_inc_bytes(bytes(blocks[label]), label))
+        lines.append("")
+    write_text_file(os.path.join(data_dir, "save_tables.inc"), lines[:-1])
+
+    # text.inc
+    ordered_text = [
+        "PlayAreaAttr0TransferBuf",
+        "ThanksText",
+        "ThanksTextboxCharTransferRecTemplate",
+        "ThanksTextboxLineAddrsLo",
+        "EndingFlashColors",
+        "PeaceTextboxCharTransferRecTemplate",
+        "PeaceTextboxCharAddrsLo",
+        "PeaceText",
+        "CreditsLastScreenList",
+        "CreditsLastVscrollList",
+        "CreditLineVramAddrsHi",
+        "CreditsPagesTextMasks",
+        "CreditsAttrs",
+    ]
+    lines = ["; Ending and credits text-support tables extracted from NES Zelda Z_02",
+             "; Auto-generated by extract_frontend.py - DO NOT EDIT", ""]
+    for label in ordered_text:
         lines.append(data_to_inc_bytes(bytes(blocks[label]), label))
         lines.append("")
     write_text_file(os.path.join(data_dir, "text.inc"), lines[:-1])
 
+    # demo_text.inc
+    labels_by_addr, table_labels, ordered_addrs = build_pointer_labels(
+        demo_text_data["addresses"], "DemoTextField"
+    )
+    lines = ["; Demo/story text field blobs extracted from NES Zelda bank 2",
+             "; Auto-generated by extract_frontend.py - DO NOT EDIT", "",
+             data_to_inc_bytes(bytes(blocks["DemoLineAttrs"]), "DemoLineAttrs"), "",
+             labels_to_inc_words(table_labels, "DemoLineTextAddrs"), ""]
+    write_labeled_records(lines, demo_text_data["fields_blob"], ordered_addrs, labels_by_addr)
+    write_text_file(os.path.join(data_dir, "demo_text.inc"), lines[:-1])
+
+    # credits_text.inc
+    labels_by_addr, table_labels, ordered_addrs = build_pointer_labels(
+        credits_text_data["addresses"], "CreditsTextLine"
+    )
+    lines = ["; Credits text line blobs extracted from NES Zelda bank 2",
+             "; Auto-generated by extract_frontend.py - DO NOT EDIT", "",
+             labels_to_inc_words(table_labels, "CreditsTextAddrs"), ""]
+    write_labeled_records(lines, credits_text_data["text_lines_blob"], ordered_addrs,
+                          labels_by_addr)
+    write_text_file(os.path.join(data_dir, "credits_text.inc"), lines[:-1])
+
+    # frontend_transfers.inc
+    lines = ["; Frontend transfer buffers extracted from NES Zelda bank 6",
+             "; Auto-generated by extract_frontend.py - DO NOT EDIT", "",
+             data_to_inc_bytes(
+                 frontend_transfer_blobs["story_tile_attr_transfer_buf"],
+                 "StoryTileAttrTransferBuf"),
+             "",
+             data_to_inc_bytes(
+                 frontend_transfer_blobs["game_title_transfer_buf"],
+                 "GameTitleTransferBuf")]
+    write_text_file(os.path.join(data_dir, "frontend_transfers.inc"), lines)
+
+    # .dat binaries
+    ref_dat_dir = os.path.join(project_root, "reference", "aldonunez", "dat")
+    os.makedirs(ref_dat_dir, exist_ok=True)
+    for filename, key in [
+        ("StoryTileAttrTransferBuf.dat", "story_tile_attr_transfer_buf"),
+        ("GameTitleTransferBuf.dat", "game_title_transfer_buf"),
+    ]:
+        path = os.path.join(ref_dat_dir, filename)
+        with open(path, "wb") as f:
+            f.write(frontend_transfer_blobs[key])
+        print(f"  Wrote {path} ({len(frontend_transfer_blobs[key])} bytes)")
+
+
+# ---------------------------------------------------------------------------
+# main
+# ---------------------------------------------------------------------------
 
 def main():
+    parser = argparse.ArgumentParser(
+        description="Extract NES-reference frontend tables to data/text/ (nes_frontend_*.c)"
+    )
+    parser.add_argument(
+        "--out-dir",
+        default=None,
+        help="Output directory for C arrays and MANIFEST.json (default: <repo>/data/text/)",
+    )
+    parser.add_argument(
+        "--legacy-inc",
+        action="store_true",
+        help=(
+            "Also emit legacy vasm .inc files to <repo>/src/data/ and "
+            ".dat binaries to reference/aldonunez/dat/ for transitional callers"
+        ),
+    )
+    args = parser.parse_args()
+
     script_dir = os.path.dirname(os.path.abspath(__file__))
     project_root = os.path.dirname(script_dir)
 
@@ -544,14 +798,19 @@ def main():
     z06_path = os.path.join(project_root, "reference", "aldonunez", "Z_06.asm")
     vars_path = os.path.join(project_root, "reference", "aldonunez", "Variables.inc")
     rom_path = os.path.join(project_root, "Legend of Zelda, The (USA).nes")
-    data_dir = os.path.join(project_root, "src", "data")
 
     for required_path in [z02_path, z06_path, vars_path, rom_path]:
         if not os.path.exists(required_path):
             print(f"ERROR: required file not found: {required_path}")
             sys.exit(1)
 
-    os.makedirs(data_dir, exist_ok=True)
+    rom_sha256 = sha256_of_file(rom_path)
+    if rom_sha256 != NES_ROM_SHA256:
+        print(f"ERROR: ROM SHA256 mismatch. Expected {NES_ROM_SHA256}, got {rom_sha256}")
+        sys.exit(1)
+
+    out_dir = args.out_dir if args.out_dir else os.path.join(project_root, "data", "text")
+    os.makedirs(out_dir, exist_ok=True)
 
     print(f"Parsing variables: {vars_path}")
     symbols = parse_variables(vars_path)
@@ -564,16 +823,50 @@ def main():
     credits_text_data = extract_credits_text_data(prg_data, blocks)
     frontend_transfer_blobs = extract_frontend_transfer_blobs(prg_data, z06_blocks)
 
-    print("\nWriting frontend data files...")
-    write_frontend_ui(data_dir, blocks)
-    write_frontend_palettes(data_dir, blocks)
-    write_save_tables(data_dir, blocks)
-    write_text_tables(data_dir, blocks)
-    write_demo_text_file(data_dir, blocks, demo_text_data)
-    write_credits_text_file(data_dir, credits_text_data)
-    write_frontend_transfers_file(data_dir, frontend_transfer_blobs)
-    ref_dat_dir = os.path.join(project_root, "reference", "aldonunez", "dat")
-    write_raw_dat_files(ref_dat_dir, frontend_transfer_blobs)
+    print(f"\nWriting NES-reference C-array frontend data files to {out_dir}...")
+    all_meta = []
+    all_meta.extend(write_frontend_ui_c(out_dir, blocks))
+    all_meta.extend(write_frontend_palettes_c(out_dir, blocks))
+    all_meta.extend(write_save_tables_c(out_dir, blocks))
+    all_meta.extend(write_text_tables_c(out_dir, blocks))
+    all_meta.extend(write_demo_text_c(out_dir, blocks, demo_text_data))
+    all_meta.extend(write_credits_text_c(out_dir, credits_text_data))
+    all_meta.extend(write_frontend_transfers_c(out_dir, frontend_transfer_blobs))
+
+    # MANIFEST.json for data/text/ is shared with extract_demo_text.py output.
+    # We update it here; build_data.py will run extractors in order so this
+    # runs after extract_demo_text.py and merges into the same MANIFEST.
+    # To avoid overwriting demo_text extractor's manifest, we append a
+    # separate key for the frontend blocks.
+    manifest_path = os.path.join(out_dir, "MANIFEST.json")
+    if os.path.exists(manifest_path):
+        with open(manifest_path, "r", encoding="utf-8") as f:
+            existing = json.load(f)
+        existing_blocks = existing.get("blocks", [])
+        # Only keep blocks not from this extractor (avoid duplicates on re-run)
+        keep = [b for b in existing_blocks
+                if not b.get("file", "").startswith("nes_frontend_")]
+        merged_blocks = keep + all_meta
+        manifest = {
+            "schema_version": 1,
+            "nes_rom_sha256": rom_sha256,
+            "blocks": merged_blocks,
+        }
+    else:
+        manifest = {
+            "schema_version": 1,
+            "nes_rom_sha256": rom_sha256,
+            "blocks": all_meta,
+        }
+    with open(manifest_path, "w", encoding="utf-8", newline="\n") as f:
+        json.dump(manifest, f, indent=2)
+        f.write("\n")
+    print(f"  Wrote {manifest_path}")
+
+    if args.legacy_inc:
+        print(f"\nWriting legacy .inc files...")
+        write_legacy_inc_files(project_root, blocks, demo_text_data,
+                               credits_text_data, frontend_transfer_blobs)
 
     total_bytes = sum(len(block) for block in blocks.values())
     total_bytes += len(demo_text_data["fields_blob"])
@@ -582,9 +875,11 @@ def main():
     total_bytes += len(credits_text_data["addresses"]) * 2
     total_bytes += len(frontend_transfer_blobs["story_tile_attr_transfer_buf"])
     total_bytes += len(frontend_transfer_blobs["game_title_transfer_buf"])
+
     print("\n=== Frontend extraction complete ===")
     print(f"  Total extracted frontend/text table bytes: {total_bytes}")
-    print(f"  Output directory: {data_dir}")
+    print(f"  Manifest entries: {len(all_meta)}")
+    print(f"  Output directory: {out_dir}")
 
 
 if __name__ == "__main__":

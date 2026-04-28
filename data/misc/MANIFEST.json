@@ -1,0 +1,285 @@
+{
+  "schema_version": 1,
+  "nes_rom_sha256": "8f72dc2e98572eb4ba7c3a902bca5f69c448fc4391837e5f8f0d4556280440ac",
+  "blocks": [
+    {
+      "name": "ItemIdToSlot",
+      "file": "item_tables.c",
+      "var_name": "misc_item_tables",
+      "byte_offset": 0,
+      "byte_size": 36
+    },
+    {
+      "name": "ItemIdToDescriptor",
+      "file": "item_tables.c",
+      "var_name": "misc_item_tables",
+      "byte_offset": 36,
+      "byte_size": 36
+    },
+    {
+      "name": "ItemSlotToPaletteOffsetsOrValues",
+      "file": "item_tables.c",
+      "var_name": "misc_item_tables",
+      "byte_offset": 72,
+      "byte_size": 32
+    },
+    {
+      "name": "PriceListTemplateTransferBuf",
+      "file": "ui_layout.c",
+      "var_name": "misc_ui_layout",
+      "byte_offset": 0,
+      "byte_size": 17
+    },
+    {
+      "name": "LifeOrMoneyItemXs",
+      "file": "ui_layout.c",
+      "var_name": "misc_ui_layout",
+      "byte_offset": 17,
+      "byte_size": 2
+    },
+    {
+      "name": "LifeOrMoneyItemTypes",
+      "file": "ui_layout.c",
+      "var_name": "misc_ui_layout",
+      "byte_offset": 19,
+      "byte_size": 2
+    },
+    {
+      "name": "StatusBarTransferBufTemplate",
+      "file": "ui_layout.c",
+      "var_name": "misc_ui_layout",
+      "byte_offset": 21,
+      "byte_size": 41
+    },
+    {
+      "name": "SubmenuItemXs",
+      "file": "ui_layout.c",
+      "var_name": "misc_ui_layout",
+      "byte_offset": 62,
+      "byte_size": 16
+    },
+    {
+      "name": "SubmenuCursorXs",
+      "file": "ui_layout.c",
+      "var_name": "misc_ui_layout",
+      "byte_offset": 78,
+      "byte_size": 9
+    },
+    {
+      "name": "TriforceTransferBufOffsets",
+      "file": "ui_layout.c",
+      "var_name": "misc_ui_layout",
+      "byte_offset": 87,
+      "byte_size": 24
+    },
+    {
+      "name": "TriforceTriforceBufReplacements",
+      "file": "ui_layout.c",
+      "var_name": "misc_ui_layout",
+      "byte_offset": 111,
+      "byte_size": 24
+    },
+    {
+      "name": "TriforceTransferBufTiles",
+      "file": "ui_layout.c",
+      "var_name": "misc_ui_layout",
+      "byte_offset": 135,
+      "byte_size": 24
+    },
+    {
+      "name": "PaletteRow7TransferRecord",
+      "file": "palette_tables.c",
+      "var_name": "misc_palette_tables",
+      "byte_offset": 0,
+      "byte_size": 8
+    },
+    {
+      "name": "GanonColorTriples",
+      "file": "palette_tables.c",
+      "var_name": "misc_palette_tables",
+      "byte_offset": 8,
+      "byte_size": 9
+    },
+    {
+      "name": "LinkColors_CommonCode",
+      "file": "palette_tables.c",
+      "var_name": "misc_palette_tables",
+      "byte_offset": 17,
+      "byte_size": 3
+    },
+    {
+      "name": "RoomPaletteSelectorToNTAttr",
+      "file": "palette_tables.c",
+      "var_name": "misc_palette_tables",
+      "byte_offset": 20,
+      "byte_size": 4
+    },
+    {
+      "name": "NesColorToGenesisCRAM",
+      "file": "palettes.c",
+      "var_name": "misc_palettes",
+      "byte_offset": 0,
+      "byte_size": 128,
+      "entry_count": 64,
+      "format": "u16le_genesis_cram"
+    },
+    {
+      "name": "TitlePaletteGenesis",
+      "file": "palettes.c",
+      "var_name": "misc_palettes",
+      "byte_offset": 128,
+      "byte_size": 64,
+      "entry_count": 32,
+      "format": "u16le_genesis_cram"
+    },
+    {
+      "name": "StoryPaletteGenesis",
+      "file": "palettes.c",
+      "var_name": "misc_palettes",
+      "byte_offset": 192,
+      "byte_size": 64,
+      "entry_count": 32,
+      "format": "u16le_genesis_cram"
+    },
+    {
+      "name": "TriforcePaletteGenesis",
+      "file": "palettes.c",
+      "var_name": "misc_palettes",
+      "byte_offset": 256,
+      "byte_size": 8,
+      "entry_count": 4,
+      "format": "u16le_genesis_cram"
+    },
+    {
+      "name": "PaletteRow7Genesis",
+      "file": "palettes.c",
+      "var_name": "misc_palettes",
+      "byte_offset": 264,
+      "byte_size": 8,
+      "entry_count": 4,
+      "format": "u16le_genesis_cram"
+    },
+    {
+      "name": "TriforceGlowingColorsGenesis",
+      "file": "palettes.c",
+      "var_name": "misc_palettes",
+      "byte_offset": 272,
+      "byte_size": 16,
+      "entry_count": 8,
+      "format": "u16le_genesis_cram"
+    },
+    {
+      "name": "LinkColorsGenesis",
+      "file": "palettes.c",
+      "var_name": "misc_palettes",
+      "byte_offset": 288,
+      "byte_size": 6,
+      "entry_count": 3,
+      "format": "u16le_genesis_cram"
+    },
+    {
+      "name": "GanonColorTriplesGenesis",
+      "file": "palettes.c",
+      "var_name": "misc_palettes",
+      "byte_offset": 294,
+      "byte_size": 18,
+      "entry_count": 9,
+      "format": "u16le_genesis_cram"
+    },
+    {
+      "name": "DemoPhase0Subphase1PalettesGenesis",
+      "file": "palettes.c",
+      "var_name": "misc_palettes",
+      "byte_offset": 312,
+      "byte_size": 896,
+      "entry_count": 448,
+      "format": "u16le_genesis_cram"
+    },
+    {
+      "name": "OverworldPersonTextSelectors",
+      "file": "person_text.c",
+      "var_name": "misc_person_text",
+      "byte_offset": 0,
+      "byte_size": 20
+    },
+    {
+      "name": "HintCaveTextSelectors0",
+      "file": "person_text.c",
+      "var_name": "misc_person_text",
+      "byte_offset": 20,
+      "byte_size": 3
+    },
+    {
+      "name": "HintCaveTextSelectors1",
+      "file": "person_text.c",
+      "var_name": "misc_person_text",
+      "byte_offset": 23,
+      "byte_size": 3
+    },
+    {
+      "name": "UnderworldPersonTextSelectorsA",
+      "file": "person_text.c",
+      "var_name": "misc_person_text",
+      "byte_offset": 26,
+      "byte_size": 8
+    },
+    {
+      "name": "UnderworldPersonTextSelectorsB",
+      "file": "person_text.c",
+      "var_name": "misc_person_text",
+      "byte_offset": 34,
+      "byte_size": 8
+    },
+    {
+      "name": "UnderworldPersonTextSelectorsC",
+      "file": "person_text.c",
+      "var_name": "misc_person_text",
+      "byte_offset": 42,
+      "byte_size": 4
+    },
+    {
+      "name": "PersonTextAddrs",
+      "file": "person_text.c",
+      "var_name": "misc_person_text",
+      "byte_offset": 46,
+      "byte_size": 76,
+      "entry_count": 38,
+      "format": "u16le_nes_cpu_addr"
+    },
+    {
+      "name": "PersonTextBlob",
+      "file": "person_text.c",
+      "var_name": "misc_person_text",
+      "byte_offset": 122,
+      "byte_size": 1366
+    },
+    {
+      "name": "LinkQSpeedDefault",
+      "file": "player_constants.c",
+      "var_name": "misc_player_constants",
+      "byte_offset": 0,
+      "byte_size": 1
+    },
+    {
+      "name": "LinkQSpeedMountainStairs",
+      "file": "player_constants.c",
+      "var_name": "misc_player_constants",
+      "byte_offset": 1,
+      "byte_size": 1
+    },
+    {
+      "name": "LinkToSquareOffsetsX",
+      "file": "player_constants.c",
+      "var_name": "misc_player_constants",
+      "byte_offset": 2,
+      "byte_size": 4
+    },
+    {
+      "name": "LinkToSquareOffsetsY",
+      "file": "player_constants.c",
+      "var_name": "misc_player_constants",
+      "byte_offset": 6,
+      "byte_size": 4
+    }
+  ]
+}

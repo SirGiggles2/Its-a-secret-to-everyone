@@ -39,7 +39,14 @@ RUN_EXTRACTORS: list[Path] = [
     REPO_ROOT / "tools" / "extract_audio.py",
     REPO_ROOT / "tools" / "extract_rooms.py",
     REPO_ROOT / "tools" / "extract_enemies.py",
-    # S2 Phase D: extract_misc.py, extract_demo_text.py, etc.
+    # S2 Phase D: extract_misc.py, extract_demo_text.py, extract_frontend.py
+    # extract_demo_text.py runs before extract_frontend.py so the text/ MANIFEST
+    # is created first and extract_frontend.py can merge into it.
+    REPO_ROOT / "tools" / "extract_misc.py",
+    REPO_ROOT / "tools" / "extract_demo_text.py",
+    REPO_ROOT / "tools" / "extract_frontend.py",
+    # extract_dat_sidecars.py is intentionally NOT listed here: it writes
+    # reference/aldonunez/dat/ for the transpiler, not the data/ tree.
 ]
 
 
@@ -94,6 +101,9 @@ def run_extractors(target_root: Path | None = None) -> int:
         "extract_audio.py": "audio",
         "extract_rooms.py": "rooms",
         "extract_enemies.py": "enemies",
+        "extract_misc.py": "misc",
+        "extract_demo_text.py": "text",
+        "extract_frontend.py": "text",
     }
 
     for script in RUN_EXTRACTORS:

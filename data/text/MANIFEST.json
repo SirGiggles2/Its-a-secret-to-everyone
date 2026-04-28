@@ -1,0 +1,342 @@
+{
+  "schema_version": 1,
+  "nes_rom_sha256": "8f72dc2e98572eb4ba7c3a902bca5f69c448fc4391837e5f8f0d4556280440ac",
+  "blocks": [
+    {
+      "name": "DemoTextFields",
+      "file": "demo_text.c",
+      "var_name": "text_demo_text",
+      "byte_offset": 0,
+      "byte_size": 531,
+      "ff_terminated_records": 29
+    },
+    {
+      "name": "DemoLineTextAddrs",
+      "file": "demo_text.c",
+      "var_name": "text_demo_text",
+      "byte_offset": 531,
+      "byte_size": 58,
+      "entry_count": 29,
+      "format": "u16le_nes_cpu_addr"
+    },
+    {
+      "name": "ModeFTitleTransferBuf",
+      "file": "nes_frontend_ui.c",
+      "var_name": "nes_frontend_ui",
+      "byte_offset": 0,
+      "byte_size": 29
+    },
+    {
+      "name": "ModeFSaveSlotTemplatePatchRegister",
+      "file": "nes_frontend_ui.c",
+      "var_name": "nes_frontend_ui",
+      "byte_offset": 29,
+      "byte_size": 11
+    },
+    {
+      "name": "ModeFSaveSlotTemplateTransferBuf",
+      "file": "nes_frontend_ui.c",
+      "var_name": "nes_frontend_ui",
+      "byte_offset": 40,
+      "byte_size": 52
+    },
+    {
+      "name": "Mode1SlotLineTransferBuf",
+      "file": "nes_frontend_ui.c",
+      "var_name": "nes_frontend_ui",
+      "byte_offset": 92,
+      "byte_size": 32
+    },
+    {
+      "name": "Mode1DeathCountsTransferBuf",
+      "file": "nes_frontend_ui.c",
+      "var_name": "nes_frontend_ui",
+      "byte_offset": 124,
+      "byte_size": 19
+    },
+    {
+      "name": "LinkColors",
+      "file": "nes_frontend_ui.c",
+      "var_name": "nes_frontend_ui",
+      "byte_offset": 143,
+      "byte_size": 3
+    },
+    {
+      "name": "Mode1CursorSpriteTriplet",
+      "file": "nes_frontend_ui.c",
+      "var_name": "nes_frontend_ui",
+      "byte_offset": 146,
+      "byte_size": 3
+    },
+    {
+      "name": "Mode1CursorSpriteYs",
+      "file": "nes_frontend_ui.c",
+      "var_name": "nes_frontend_ui",
+      "byte_offset": 149,
+      "byte_size": 5
+    },
+    {
+      "name": "ModeEandFSlotCursorYs",
+      "file": "nes_frontend_ui.c",
+      "var_name": "nes_frontend_ui",
+      "byte_offset": 154,
+      "byte_size": 4
+    },
+    {
+      "name": "ModeEandFCursorSprites",
+      "file": "nes_frontend_ui.c",
+      "var_name": "nes_frontend_ui",
+      "byte_offset": 158,
+      "byte_size": 11
+    },
+    {
+      "name": "ModeE_CharMap",
+      "file": "nes_frontend_ui.c",
+      "var_name": "nes_frontend_ui",
+      "byte_offset": 169,
+      "byte_size": 44
+    },
+    {
+      "name": "ModeE_CharBoardYOffsetsAndBounds",
+      "file": "nes_frontend_ui.c",
+      "var_name": "nes_frontend_ui",
+      "byte_offset": 213,
+      "byte_size": 6
+    },
+    {
+      "name": "SlotToInitialNameCharTransferHeaders",
+      "file": "nes_frontend_ui.c",
+      "var_name": "nes_frontend_ui",
+      "byte_offset": 219,
+      "byte_size": 9
+    },
+    {
+      "name": "DeletedSlotBlankNameTransferBuf",
+      "file": "nes_frontend_ui.c",
+      "var_name": "nes_frontend_ui",
+      "byte_offset": 228,
+      "byte_size": 15
+    },
+    {
+      "name": "SlotToBlankNameTransferBufEndOffset",
+      "file": "nes_frontend_ui.c",
+      "var_name": "nes_frontend_ui",
+      "byte_offset": 243,
+      "byte_size": 3
+    },
+    {
+      "name": "SlotToNameOffset",
+      "file": "nes_frontend_ui.c",
+      "var_name": "nes_frontend_ui",
+      "byte_offset": 246,
+      "byte_size": 3
+    },
+    {
+      "name": "TitlePaletteTransferRecord",
+      "file": "nes_frontend_palettes.c",
+      "var_name": "nes_frontend_palettes",
+      "byte_offset": 0,
+      "byte_size": 36
+    },
+    {
+      "name": "StoryPaletteTransferRecord",
+      "file": "nes_frontend_palettes.c",
+      "var_name": "nes_frontend_palettes",
+      "byte_offset": 36,
+      "byte_size": 36
+    },
+    {
+      "name": "TriforcePaletteTransferRecord",
+      "file": "nes_frontend_palettes.c",
+      "var_name": "nes_frontend_palettes",
+      "byte_offset": 72,
+      "byte_size": 8
+    },
+    {
+      "name": "TriforceGlowingColors",
+      "file": "nes_frontend_palettes.c",
+      "var_name": "nes_frontend_palettes",
+      "byte_offset": 80,
+      "byte_size": 8
+    },
+    {
+      "name": "DemoPhase0Subphase1Palettes",
+      "file": "nes_frontend_palettes.c",
+      "var_name": "nes_frontend_palettes",
+      "byte_offset": 88,
+      "byte_size": 448
+    },
+    {
+      "name": "SaveSlotHeartsAddrsLo",
+      "file": "nes_frontend_save.c",
+      "var_name": "nes_frontend_save",
+      "byte_offset": 0,
+      "byte_size": 3
+    },
+    {
+      "name": "SaveSlotHeartsAddrsHi",
+      "file": "nes_frontend_save.c",
+      "var_name": "nes_frontend_save",
+      "byte_offset": 3,
+      "byte_size": 3
+    },
+    {
+      "name": "ProfileNameAddrsLo",
+      "file": "nes_frontend_save.c",
+      "var_name": "nes_frontend_save",
+      "byte_offset": 6,
+      "byte_size": 3
+    },
+    {
+      "name": "ProfileNameAddrsHi",
+      "file": "nes_frontend_save.c",
+      "var_name": "nes_frontend_save",
+      "byte_offset": 9,
+      "byte_size": 3
+    },
+    {
+      "name": "PlayAreaAttr0TransferBuf",
+      "file": "nes_frontend_text.c",
+      "var_name": "nes_frontend_text",
+      "byte_offset": 0,
+      "byte_size": 5
+    },
+    {
+      "name": "ThanksText",
+      "file": "nes_frontend_text.c",
+      "var_name": "nes_frontend_text",
+      "byte_offset": 5,
+      "byte_size": 38
+    },
+    {
+      "name": "ThanksTextboxCharTransferRecTemplate",
+      "file": "nes_frontend_text.c",
+      "var_name": "nes_frontend_text",
+      "byte_offset": 43,
+      "byte_size": 5
+    },
+    {
+      "name": "ThanksTextboxLineAddrsLo",
+      "file": "nes_frontend_text.c",
+      "var_name": "nes_frontend_text",
+      "byte_offset": 48,
+      "byte_size": 3
+    },
+    {
+      "name": "EndingFlashColors",
+      "file": "nes_frontend_text.c",
+      "var_name": "nes_frontend_text",
+      "byte_offset": 51,
+      "byte_size": 4
+    },
+    {
+      "name": "PeaceTextboxCharTransferRecTemplate",
+      "file": "nes_frontend_text.c",
+      "var_name": "nes_frontend_text",
+      "byte_offset": 55,
+      "byte_size": 5
+    },
+    {
+      "name": "PeaceTextboxCharAddrsLo",
+      "file": "nes_frontend_text.c",
+      "var_name": "nes_frontend_text",
+      "byte_offset": 60,
+      "byte_size": 52
+    },
+    {
+      "name": "PeaceText",
+      "file": "nes_frontend_text.c",
+      "var_name": "nes_frontend_text",
+      "byte_offset": 112,
+      "byte_size": 53
+    },
+    {
+      "name": "CreditsLastScreenList",
+      "file": "nes_frontend_text.c",
+      "var_name": "nes_frontend_text",
+      "byte_offset": 165,
+      "byte_size": 2
+    },
+    {
+      "name": "CreditsLastVscrollList",
+      "file": "nes_frontend_text.c",
+      "var_name": "nes_frontend_text",
+      "byte_offset": 167,
+      "byte_size": 2
+    },
+    {
+      "name": "CreditLineVramAddrsHi",
+      "file": "nes_frontend_text.c",
+      "var_name": "nes_frontend_text",
+      "byte_offset": 169,
+      "byte_size": 12
+    },
+    {
+      "name": "CreditsPagesTextMasks",
+      "file": "nes_frontend_text.c",
+      "var_name": "nes_frontend_text",
+      "byte_offset": 181,
+      "byte_size": 12
+    },
+    {
+      "name": "CreditsAttrs",
+      "file": "nes_frontend_text.c",
+      "var_name": "nes_frontend_text",
+      "byte_offset": 193,
+      "byte_size": 24
+    },
+    {
+      "name": "DemoLineAttrs",
+      "file": "nes_frontend_demo_text.c",
+      "var_name": "nes_frontend_demo_text",
+      "byte_offset": 0,
+      "byte_size": 175
+    },
+    {
+      "name": "DemoLineTextAddrs",
+      "file": "nes_frontend_demo_text.c",
+      "var_name": "nes_frontend_demo_text",
+      "byte_offset": 175,
+      "byte_size": 58,
+      "entry_count": 29,
+      "format": "u16le_nes_cpu_addr"
+    },
+    {
+      "name": "DemoTextFieldsBlob",
+      "file": "nes_frontend_demo_text.c",
+      "var_name": "nes_frontend_demo_text",
+      "byte_offset": 233,
+      "byte_size": 531
+    },
+    {
+      "name": "CreditsTextAddrs",
+      "file": "nes_frontend_credits.c",
+      "var_name": "nes_frontend_credits",
+      "byte_offset": 0,
+      "byte_size": 46,
+      "entry_count": 23,
+      "format": "u16le_nes_cpu_addr"
+    },
+    {
+      "name": "CreditsTextLinesBlob",
+      "file": "nes_frontend_credits.c",
+      "var_name": "nes_frontend_credits",
+      "byte_offset": 46,
+      "byte_size": 414
+    },
+    {
+      "name": "StoryTileAttrTransferBuf",
+      "file": "nes_frontend_transfers.c",
+      "var_name": "nes_frontend_transfers",
+      "byte_offset": 0,
+      "byte_size": 1131
+    },
+    {
+      "name": "GameTitleTransferBuf",
+      "file": "nes_frontend_transfers.c",
+      "var_name": "nes_frontend_transfers",
+      "byte_offset": 1131,
+      "byte_size": 1121
+    }
+  ]
+}

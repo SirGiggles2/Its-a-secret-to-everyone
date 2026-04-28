@@ -2,6 +2,10 @@
 """
 extract_misc.py - Extract foundational item, UI, and player constants.
 
+S2 Phase D1: ports .inc emission to Genesis-ready C-array output under
+data/misc/.  A --legacy-inc flag preserves the old src/data/ .inc files for
+transitional callers.
+
 This script focuses on the first high-value slice of "misc" data needed by the
 Genesis engine:
   - item metadata tables from Z_01
@@ -9,13 +13,30 @@ Genesis engine:
   - player movement helper constants from Z_01 + Z_05
   - palette helpers and Genesis CRAM conversion tables from Z_01 + Z_02 + Z_05
 
-It deliberately keeps scope modest so the extraction pipeline can keep growing
-in working increments instead of waiting on every text/UI system at once.
+Primary outputs (C arrays, data/misc/):
+  item_tables.c      -- ItemIdToSlot, ItemIdToDescriptor, ItemSlotToPaletteOffsetsOrValues
+  ui_layout.c        -- PriceList, LifeOrMoney, StatusBar, Submenu, Triforce tables
+  palette_tables.c   -- PaletteRow7, GanonColorTriples, LinkColors, RoomPaletteSelector
+  palettes.c         -- NesColorToGenesisCRAM lookup + all scene Genesis palettes
+  person_text.c      -- PersonText blobs with selector tables
+  player_constants.c -- LinkQSpeed constants + LinkToSquareOffsets
+  MANIFEST.json      -- schema_version + nes_rom_sha256 + per-block metadata
+
+Legacy outputs (--legacy-inc flag only, vasm .inc format):
+  src/data/item_tables.inc, ui_layout.inc, palette_tables.inc, palettes.inc,
+  person_text.inc, player_constants.inc
 """
 
+import argparse
+import hashlib
+import json
 import os
 import re
 import sys
+from pathlib import Path
+
+# Canonical NES ROM SHA256 (locked in spec Section 0 / docs/audit/baseline_rom.md).
+NES_ROM_SHA256 = "8f72dc2e98572eb4ba7c3a902bca5f69c448fc4391837e5f8f0d4556280440ac"
 
 INES_HEADER_SIZE = 16
 PRG_BANK_SIZE = 0x4000
@@ -88,6 +109,14 @@ def read_ines_prg(path):
     return prg_data
 
 
+def sha256_of_file(path):
+    h = hashlib.sha256()
+    with open(path, "rb") as f:
+        for chunk in iter(lambda: f.read(65536), b""):
+            h.update(chunk)
+    return h.hexdigest()
+
+
 def parse_asm_data_blocks(path, target_labels):
     blocks = {}
     current = None
@@ -120,14 +149,6 @@ def parse_asm_data_blocks(path, target_labels):
         raise ValueError(f"Missing expected labels in {path}: {', '.join(missing)}")
 
     return blocks
-
-
-def bytes_to_words_inc(words, label, words_per_line=8):
-    lines = [f"; {label} - {len(words)} words", f"{label}:"]
-    for i in range(0, len(words), words_per_line):
-        chunk = words[i : i + words_per_line]
-        lines.append("    dc.w " + ",".join(f"${word:04X}" for word in chunk))
-    return "\n".join(lines)
 
 
 def find_unique_pattern(data, pattern, description):
@@ -165,15 +186,7 @@ def build_pointer_labels(addresses, prefix):
     return labels_by_addr, table_labels, ordered_addrs
 
 
-def labels_to_inc_words(label_names, table_label, words_per_line=4):
-    lines = [f"; {table_label} - {len(label_names)} entries", f"{table_label}:"]
-    for i in range(0, len(label_names), words_per_line):
-        chunk = label_names[i : i + words_per_line]
-        lines.append("    dc.w " + ",".join(chunk))
-    return "\n".join(lines)
-
-
-def write_labeled_records(lines, blob, ordered_addrs, labels_by_addr):
+def write_labeled_records_bytes(lines, blob, ordered_addrs, labels_by_addr):
     first_offset = cpu_addr_to_bank_offset(ordered_addrs[0])
     ordered_offsets = [cpu_addr_to_bank_offset(addr) for addr in ordered_addrs]
     for index, addr in enumerate(ordered_addrs):
@@ -183,13 +196,10 @@ def write_labeled_records(lines, blob, ordered_addrs, labels_by_addr):
         else:
             end = len(blob)
         label = labels_by_addr[addr]
-        lines.append(f"; {label} - {end - start} bytes")
-        lines.append(f"{label}:")
         data = blob[start:end]
         for i in range(0, len(data), 16):
             chunk = data[i : i + 16]
-            lines.append("    dc.b " + ",".join(f"${byte:02X}" for byte in chunk))
-        lines.append("")
+            lines.append("    " + ", ".join(f"0x{byte:02X}" for byte in chunk) + ",")
 
 
 def max_person_text_selector(z01_blocks):
@@ -259,14 +269,6 @@ def extract_init_link_speed_constants(z05_path):
     }
 
 
-def data_to_inc_bytes(data, label, bytes_per_line=16):
-    lines = [f"; {label} - {len(data)} bytes", f"{label}:"]
-    for i in range(0, len(data), bytes_per_line):
-        chunk = data[i : i + bytes_per_line]
-        lines.append("    dc.b " + ",".join(f"${byte:02X}" for byte in chunk))
-    return "\n".join(lines)
-
-
 def nes_level_to_genesis(level):
     level = clamp(level, 0.0, 1.0)
     return int(round(level * 7.0)) * 2
@@ -327,13 +329,336 @@ def tuned_link_colors_genesis():
     return [0x0C8, 0x28E, 0x04A]
 
 
+# ---------------------------------------------------------------------------
+# C-array emission helpers
+# ---------------------------------------------------------------------------
+
+def bytes_to_c_array(data, var_name, bytes_per_line=16):
+    """Return a C-array string for the given raw bytes."""
+    size = len(data)
+    lines = [f"/* Auto-generated by tools/extract_misc.py - do not edit. */"]
+    lines.append(f"const unsigned long {var_name}_size = {size}UL;")
+    lines.append(f"const unsigned char {var_name}[{size}] = {{")
+    for i in range(0, size, bytes_per_line):
+        chunk = data[i : i + bytes_per_line]
+        lines.append("    " + ", ".join(f"0x{b:02X}" for b in chunk) + ",")
+    lines.append("};")
+    return "\n".join(lines) + "\n"
+
+
+def words_to_c_array(words, var_name, words_per_line=8):
+    """Return a C-array string for the given 16-bit words (stored as unsigned short)."""
+    size = len(words)
+    lines = [f"/* Auto-generated by tools/extract_misc.py - do not edit. */"]
+    lines.append(f"const unsigned long {var_name}_count = {size}UL;")
+    lines.append(f"const unsigned short {var_name}[{size}] = {{")
+    for i in range(0, size, words_per_line):
+        chunk = words[i : i + words_per_line]
+        lines.append("    " + ", ".join(f"0x{w:04X}" for w in chunk) + ",")
+    lines.append("};")
+    return "\n".join(lines) + "\n"
+
+
+def write_c_file(path, content):
+    with open(path, "w", encoding="utf-8", newline="\n") as f:
+        f.write(content)
+    print(f"  Wrote {path} ({len(content)} bytes)")
+
+
+# ---------------------------------------------------------------------------
+# Legacy .inc emission helpers (only used with --legacy-inc)
+# ---------------------------------------------------------------------------
+
+def bytes_to_words_inc(words, label, words_per_line=8):
+    lines = [f"; {label} - {len(words)} words", f"{label}:"]
+    for i in range(0, len(words), words_per_line):
+        chunk = words[i : i + words_per_line]
+        lines.append("    dc.w " + ",".join(f"${word:04X}" for word in chunk))
+    return "\n".join(lines)
+
+
+def data_to_inc_bytes(data, label, bytes_per_line=16):
+    lines = [f"; {label} - {len(data)} bytes", f"{label}:"]
+    for i in range(0, len(data), bytes_per_line):
+        chunk = data[i : i + bytes_per_line]
+        lines.append("    dc.b " + ",".join(f"${byte:02X}" for byte in chunk))
+    return "\n".join(lines)
+
+
+def labels_to_inc_words(label_names, table_label, words_per_line=4):
+    lines = [f"; {table_label} - {len(label_names)} entries", f"{table_label}:"]
+    for i in range(0, len(label_names), words_per_line):
+        chunk = label_names[i : i + words_per_line]
+        lines.append("    dc.w " + ",".join(chunk))
+    return "\n".join(lines)
+
+
+def write_labeled_records(lines, blob, ordered_addrs, labels_by_addr):
+    first_offset = cpu_addr_to_bank_offset(ordered_addrs[0])
+    ordered_offsets = [cpu_addr_to_bank_offset(addr) for addr in ordered_addrs]
+    for index, addr in enumerate(ordered_addrs):
+        start = ordered_offsets[index] - first_offset
+        if index + 1 < len(ordered_offsets):
+            end = ordered_offsets[index + 1] - first_offset
+        else:
+            end = len(blob)
+        label = labels_by_addr[addr]
+        lines.append(f"; {label} - {end - start} bytes")
+        lines.append(f"{label}:")
+        data = blob[start:end]
+        for i in range(0, len(data), 16):
+            chunk = data[i : i + 16]
+            lines.append("    dc.b " + ",".join(f"${byte:02X}" for byte in chunk))
+        lines.append("")
+
+
 def write_text_file(path, lines):
     with open(path, "w", encoding="utf-8", newline="\n") as f:
         f.write("\n".join(lines))
     print(f"  Wrote {path}")
 
 
-def write_item_tables(data_dir, z01_blocks):
+# ---------------------------------------------------------------------------
+# C-array output writers
+# ---------------------------------------------------------------------------
+
+def write_item_tables_c(out_dir, z01_blocks):
+    """Emit item_tables.c with three concatenated arrays packed into one var."""
+    item_id_to_slot = bytes(z01_blocks["ItemIdToSlot"]["bytes"])
+    item_id_to_desc = bytes(z01_blocks["ItemIdToDescriptor"]["bytes"])
+    item_slot_to_pal = bytes(z01_blocks["ItemSlotToPaletteOffsetsOrValues"]["bytes"])
+
+    # Pack into a single array; callers use known offsets (documented in MANIFEST)
+    payload = item_id_to_slot + item_id_to_desc + item_slot_to_pal
+    content = bytes_to_c_array(payload, "misc_item_tables")
+    write_c_file(os.path.join(out_dir, "item_tables.c"), content)
+
+    return [
+        {"name": "ItemIdToSlot", "file": "item_tables.c", "var_name": "misc_item_tables",
+         "byte_offset": 0, "byte_size": len(item_id_to_slot)},
+        {"name": "ItemIdToDescriptor", "file": "item_tables.c", "var_name": "misc_item_tables",
+         "byte_offset": len(item_id_to_slot), "byte_size": len(item_id_to_desc)},
+        {"name": "ItemSlotToPaletteOffsetsOrValues", "file": "item_tables.c",
+         "var_name": "misc_item_tables",
+         "byte_offset": len(item_id_to_slot) + len(item_id_to_desc),
+         "byte_size": len(item_slot_to_pal)},
+    ]
+
+
+def write_ui_layout_c(out_dir, z01_blocks, z05_blocks):
+    """Emit ui_layout.c with all submenu/cave/Triforce UI tables."""
+    labels_z01 = [
+        "PriceListTemplateTransferBuf",
+        "LifeOrMoneyItemXs",
+        "LifeOrMoneyItemTypes",
+        "StatusBarTransferBufTemplate",
+    ]
+    labels_z05 = [
+        "SubmenuItemXs",
+        "SubmenuCursorXs",
+        "TriforceTransferBufOffsets",
+        "TriforceTriforceBufReplacements",
+        "TriforceTransferBufTiles",
+    ]
+
+    chunks = []
+    meta = []
+    offset = 0
+    for label in labels_z01:
+        data = bytes(z01_blocks[label]["bytes"])
+        meta.append({"name": label, "file": "ui_layout.c", "var_name": "misc_ui_layout",
+                     "byte_offset": offset, "byte_size": len(data)})
+        chunks.append(data)
+        offset += len(data)
+    for label in labels_z05:
+        data = bytes(z05_blocks[label]["bytes"])
+        meta.append({"name": label, "file": "ui_layout.c", "var_name": "misc_ui_layout",
+                     "byte_offset": offset, "byte_size": len(data)})
+        chunks.append(data)
+        offset += len(data)
+
+    payload = b"".join(chunks)
+    content = bytes_to_c_array(payload, "misc_ui_layout")
+    write_c_file(os.path.join(out_dir, "ui_layout.c"), content)
+    return meta
+
+
+def write_palette_tables_c(out_dir, z01_blocks, z05_blocks):
+    """Emit palette_tables.c with attribute and color-selector tables."""
+    labels = [
+        ("z01", "PaletteRow7TransferRecord"),
+        ("z01", "GanonColorTriples"),
+        ("z01", "LinkColors_CommonCode"),
+        ("z05", "RoomPaletteSelectorToNTAttr"),
+    ]
+
+    chunks = []
+    meta = []
+    offset = 0
+    for src, label in labels:
+        blocks = z01_blocks if src == "z01" else z05_blocks
+        data = bytes(blocks[label]["bytes"])
+        meta.append({"name": label, "file": "palette_tables.c",
+                     "var_name": "misc_palette_tables",
+                     "byte_offset": offset, "byte_size": len(data)})
+        chunks.append(data)
+        offset += len(data)
+
+    payload = b"".join(chunks)
+    content = bytes_to_c_array(payload, "misc_palette_tables")
+    write_c_file(os.path.join(out_dir, "palette_tables.c"), content)
+    return meta
+
+
+def write_palettes_c(out_dir, z01_blocks, z02_blocks):
+    """Emit palettes.c with NES->Genesis CRAM lookup + all scene palettes."""
+    title_colors = palette_record_to_nes_colors(
+        bytes(z02_blocks["TitlePaletteTransferRecord"]["bytes"])
+    )
+    story_colors = palette_record_to_nes_colors(
+        bytes(z02_blocks["StoryPaletteTransferRecord"]["bytes"])
+    )
+    triforce_colors = palette_record_to_nes_colors(
+        bytes(z02_blocks["TriforcePaletteTransferRecord"]["bytes"])
+    )
+    row7_colors = palette_record_to_nes_colors(
+        bytes(z01_blocks["PaletteRow7TransferRecord"]["bytes"])
+    )
+    demo_colors = bytes(z02_blocks["DemoPhase0Subphase1Palettes"]["bytes"])
+    triforce_glow_colors = bytes(z02_blocks["TriforceGlowingColors"]["bytes"])
+    link_colors_raw = bytes(z01_blocks["LinkColors_CommonCode"]["bytes"])
+    ganon_colors = bytes(z01_blocks["GanonColorTriples"]["bytes"])
+
+    lookup_words = [nes_color_index_to_genesis(index) for index in range(0x40)]
+
+    named_word_tables = [
+        ("NesColorToGenesisCRAM", lookup_words),
+        ("TitlePaletteGenesis", nes_colors_to_genesis_words(title_colors)),
+        ("StoryPaletteGenesis", nes_colors_to_genesis_words(story_colors)),
+        ("TriforcePaletteGenesis", nes_colors_to_genesis_words(triforce_colors)),
+        ("PaletteRow7Genesis", nes_colors_to_genesis_words(row7_colors)),
+        ("TriforceGlowingColorsGenesis", nes_colors_to_genesis_words(list(triforce_glow_colors))),
+        ("LinkColorsGenesis", tuned_link_colors_genesis()),
+        ("GanonColorTriplesGenesis", nes_colors_to_genesis_words(list(ganon_colors))),
+        ("DemoPhase0Subphase1PalettesGenesis", nes_colors_to_genesis_words(list(demo_colors))),
+    ]
+
+    # Pack all word tables end-to-end as raw bytes (16-bit unsigned LE)
+    import struct
+    chunks = []
+    meta = []
+    offset = 0
+    for name, words in named_word_tables:
+        raw = struct.pack(f"<{len(words)}H", *words)
+        meta.append({"name": name, "file": "palettes.c", "var_name": "misc_palettes",
+                     "byte_offset": offset, "byte_size": len(raw),
+                     "entry_count": len(words), "format": "u16le_genesis_cram"})
+        chunks.append(raw)
+        offset += len(raw)
+
+    payload = b"".join(chunks)
+    content = bytes_to_c_array(payload, "misc_palettes")
+    write_c_file(os.path.join(out_dir, "palettes.c"), content)
+    return meta
+
+
+def write_person_text_c(out_dir, z01_blocks, person_text_data):
+    """Emit person_text.c with selector tables + PersonText blobs."""
+    selector_labels = [
+        "OverworldPersonTextSelectors",
+        "HintCaveTextSelectors0",
+        "HintCaveTextSelectors1",
+        "UnderworldPersonTextSelectorsA",
+        "UnderworldPersonTextSelectorsB",
+        "UnderworldPersonTextSelectorsC",
+    ]
+
+    chunks = []
+    meta = []
+    offset = 0
+    for label in selector_labels:
+        data = bytes(z01_blocks[label]["bytes"])
+        meta.append({"name": label, "file": "person_text.c", "var_name": "misc_person_text",
+                     "byte_offset": offset, "byte_size": len(data)})
+        chunks.append(data)
+        offset += len(data)
+
+    # PersonTextAddrs: flat array of LE 16-bit NES CPU addresses
+    addrs_raw = b"".join(
+        bytes([addr & 0xFF, (addr >> 8) & 0xFF])
+        for addr in person_text_data["addresses"]
+    )
+    meta.append({"name": "PersonTextAddrs", "file": "person_text.c",
+                 "var_name": "misc_person_text", "byte_offset": offset,
+                 "byte_size": len(addrs_raw), "entry_count": len(person_text_data["addresses"]),
+                 "format": "u16le_nes_cpu_addr"})
+    chunks.append(addrs_raw)
+    offset += len(addrs_raw)
+
+    # PersonText blob
+    text_blob = person_text_data["text_blob"]
+    meta.append({"name": "PersonTextBlob", "file": "person_text.c",
+                 "var_name": "misc_person_text", "byte_offset": offset,
+                 "byte_size": len(text_blob)})
+    chunks.append(text_blob)
+
+    payload = b"".join(chunks)
+    content = bytes_to_c_array(payload, "misc_person_text")
+    write_c_file(os.path.join(out_dir, "person_text.c"), content)
+    return meta
+
+
+def write_player_constants_c(out_dir, z01_blocks, link_speed_constants):
+    """Emit player_constants.c with speed constants + offset tables."""
+    offset_x = bytes(z01_blocks["LinkToSquareOffsetsX"]["bytes"])
+    offset_y = bytes(z01_blocks["LinkToSquareOffsetsY"]["bytes"])
+
+    # Speed constants stored as a 2-byte prefix before the table data
+    speed_bytes = bytes([
+        link_speed_constants["LinkQSpeedDefault"],
+        link_speed_constants["LinkQSpeedMountainStairs"],
+    ])
+    payload = speed_bytes + offset_x + offset_y
+
+    meta = [
+        {"name": "LinkQSpeedDefault", "file": "player_constants.c",
+         "var_name": "misc_player_constants",
+         "byte_offset": 0, "byte_size": 1},
+        {"name": "LinkQSpeedMountainStairs", "file": "player_constants.c",
+         "var_name": "misc_player_constants",
+         "byte_offset": 1, "byte_size": 1},
+        {"name": "LinkToSquareOffsetsX", "file": "player_constants.c",
+         "var_name": "misc_player_constants",
+         "byte_offset": 2, "byte_size": len(offset_x)},
+        {"name": "LinkToSquareOffsetsY", "file": "player_constants.c",
+         "var_name": "misc_player_constants",
+         "byte_offset": 2 + len(offset_x), "byte_size": len(offset_y)},
+    ]
+
+    content = bytes_to_c_array(payload, "misc_player_constants")
+    write_c_file(os.path.join(out_dir, "player_constants.c"), content)
+    return meta
+
+
+def write_manifest(out_dir, all_blocks_meta, rom_sha256):
+    """Write MANIFEST.json for data/misc/."""
+    manifest = {
+        "schema_version": 1,
+        "nes_rom_sha256": rom_sha256,
+        "blocks": all_blocks_meta,
+    }
+    path = os.path.join(out_dir, "MANIFEST.json")
+    with open(path, "w", encoding="utf-8", newline="\n") as f:
+        json.dump(manifest, f, indent=2)
+        f.write("\n")
+    print(f"  Wrote {path}")
+
+
+# ---------------------------------------------------------------------------
+# Legacy .inc writers (only called with --legacy-inc)
+# ---------------------------------------------------------------------------
+
+def write_item_tables_inc(data_dir, z01_blocks):
     lines = [
         "; Item metadata tables extracted from NES Zelda",
         "; Auto-generated by extract_misc.py - DO NOT EDIT",
@@ -350,11 +675,10 @@ def write_item_tables(data_dir, z01_blocks):
             "ItemSlotToPaletteOffsetsOrValues",
         ),
     ]
-
     write_text_file(os.path.join(data_dir, "item_tables.inc"), lines)
 
 
-def write_ui_layout(data_dir, z01_blocks, z05_blocks):
+def write_ui_layout_inc(data_dir, z01_blocks, z05_blocks):
     lines = [
         "; UI and submenu placement tables extracted from NES Zelda",
         "; Auto-generated by extract_misc.py - DO NOT EDIT",
@@ -401,11 +725,10 @@ def write_ui_layout(data_dir, z01_blocks, z05_blocks):
             "TriforceTransferBufTiles",
         ),
     ]
-
     write_text_file(os.path.join(data_dir, "ui_layout.inc"), lines)
 
 
-def write_palette_tables(data_dir, z01_blocks, z05_blocks):
+def write_palette_tables_inc(data_dir, z01_blocks, z05_blocks):
     lines = [
         "; Gameplay palette and attribute helper tables extracted from NES Zelda",
         "; Auto-generated by extract_misc.py - DO NOT EDIT",
@@ -430,7 +753,6 @@ def write_palette_tables(data_dir, z01_blocks, z05_blocks):
             "RoomPaletteSelectorToNTAttr",
         ),
     ]
-
     write_text_file(os.path.join(data_dir, "palette_tables.inc"), lines)
 
 
@@ -482,7 +804,7 @@ def write_palettes_inc(data_dir, z01_blocks, z02_blocks):
         ),
         "",
         bytes_to_words_inc(
-            nes_colors_to_genesis_words(triforce_glow_colors),
+            nes_colors_to_genesis_words(list(triforce_glow_colors)),
             "TriforceGlowingColorsGenesis",
         ),
         "",
@@ -492,20 +814,19 @@ def write_palettes_inc(data_dir, z01_blocks, z02_blocks):
         ),
         "",
         bytes_to_words_inc(
-            nes_colors_to_genesis_words(ganon_colors),
+            nes_colors_to_genesis_words(list(ganon_colors)),
             "GanonColorTriplesGenesis",
         ),
         "",
         bytes_to_words_inc(
-            nes_colors_to_genesis_words(demo_colors),
+            nes_colors_to_genesis_words(list(demo_colors)),
             "DemoPhase0Subphase1PalettesGenesis",
         ),
     ]
-
     write_text_file(os.path.join(data_dir, "palettes.inc"), lines)
 
 
-def write_person_text_file(data_dir, z01_blocks, person_text_data):
+def write_person_text_inc(data_dir, z01_blocks, person_text_data):
     labels_by_addr, table_labels, ordered_addrs = build_pointer_labels(
         person_text_data["addresses"], "PersonText"
     )
@@ -553,7 +874,7 @@ def write_person_text_file(data_dir, z01_blocks, person_text_data):
     write_text_file(os.path.join(data_dir, "person_text.inc"), lines[:-1])
 
 
-def write_player_constants(data_dir, z01_blocks, link_speed_constants):
+def write_player_constants_inc(data_dir, z01_blocks, link_speed_constants):
     lines = [
         "; Player constants extracted from NES Zelda",
         "; Auto-generated by extract_misc.py - DO NOT EDIT",
@@ -571,11 +892,29 @@ def write_player_constants(data_dir, z01_blocks, link_speed_constants):
             "LinkToSquareOffsetsY",
         ),
     ]
-
     write_text_file(os.path.join(data_dir, "player_constants.inc"), lines)
 
 
+# ---------------------------------------------------------------------------
+# main
+# ---------------------------------------------------------------------------
+
 def main():
+    parser = argparse.ArgumentParser(
+        description="Extract misc tables from NES Zelda to C arrays under data/misc/"
+    )
+    parser.add_argument(
+        "--out-dir",
+        default=None,
+        help="Output directory for C arrays and MANIFEST.json (default: <repo>/data/misc/)",
+    )
+    parser.add_argument(
+        "--legacy-inc",
+        action="store_true",
+        help="Also emit legacy vasm .inc files to <repo>/src/data/ for transitional callers",
+    )
+    args = parser.parse_args()
+
     script_dir = os.path.dirname(os.path.abspath(__file__))
     project_root = os.path.dirname(script_dir)
 
@@ -583,14 +922,19 @@ def main():
     z02_path = os.path.join(project_root, "reference", "aldonunez", "Z_02.asm")
     z05_path = os.path.join(project_root, "reference", "aldonunez", "Z_05.asm")
     rom_path = os.path.join(project_root, "Legend of Zelda, The (USA).nes")
-    data_dir = os.path.join(project_root, "src", "data")
 
     for required_path in [z01_path, z02_path, z05_path, rom_path]:
         if not os.path.exists(required_path):
             print(f"ERROR: required file not found: {required_path}")
             sys.exit(1)
 
-    os.makedirs(data_dir, exist_ok=True)
+    rom_sha256 = sha256_of_file(rom_path)
+    if rom_sha256 != NES_ROM_SHA256:
+        print(f"ERROR: ROM SHA256 mismatch. Expected {NES_ROM_SHA256}, got {rom_sha256}")
+        sys.exit(1)
+
+    out_dir = args.out_dir if args.out_dir else os.path.join(project_root, "data", "misc")
+    os.makedirs(out_dir, exist_ok=True)
 
     print(f"Parsing reference data: {z01_path}")
     z01_blocks = parse_asm_data_blocks(z01_path, Z01_TARGET_LABELS)
@@ -604,16 +948,28 @@ def main():
     prg_data = read_ines_prg(rom_path)
     person_text_data = extract_person_text(prg_data, z01_blocks)
 
-    print("\nWriting misc data files...")
-    write_item_tables(data_dir, z01_blocks)
-    write_ui_layout(data_dir, z01_blocks, z05_blocks)
-    write_palette_tables(data_dir, z01_blocks, z05_blocks)
-    write_palettes_inc(data_dir, z01_blocks, z02_blocks)
-    write_player_constants(data_dir, z01_blocks, link_speed_constants)
-    write_person_text_file(data_dir, z01_blocks, person_text_data)
+    print(f"\nWriting C-array misc data files to {out_dir}...")
+    all_meta = []
+    all_meta.extend(write_item_tables_c(out_dir, z01_blocks))
+    all_meta.extend(write_ui_layout_c(out_dir, z01_blocks, z05_blocks))
+    all_meta.extend(write_palette_tables_c(out_dir, z01_blocks, z05_blocks))
+    all_meta.extend(write_palettes_c(out_dir, z01_blocks, z02_blocks))
+    all_meta.extend(write_person_text_c(out_dir, z01_blocks, person_text_data))
+    all_meta.extend(write_player_constants_c(out_dir, z01_blocks, link_speed_constants))
+    write_manifest(out_dir, all_meta, rom_sha256)
 
-    total_bytes = 0
-    total_bytes += sum(len(block["bytes"]) for block in z01_blocks.values())
+    if args.legacy_inc:
+        legacy_dir = os.path.join(project_root, "src", "data")
+        os.makedirs(legacy_dir, exist_ok=True)
+        print(f"\nWriting legacy .inc files to {legacy_dir}...")
+        write_item_tables_inc(legacy_dir, z01_blocks)
+        write_ui_layout_inc(legacy_dir, z01_blocks, z05_blocks)
+        write_palette_tables_inc(legacy_dir, z01_blocks, z05_blocks)
+        write_palettes_inc(legacy_dir, z01_blocks, z02_blocks)
+        write_player_constants_inc(legacy_dir, z01_blocks, link_speed_constants)
+        write_person_text_inc(legacy_dir, z01_blocks, person_text_data)
+
+    total_bytes = sum(len(block["bytes"]) for block in z01_blocks.values())
     total_bytes += sum(len(block["bytes"]) for block in z02_blocks.values())
     total_bytes += sum(len(block["bytes"]) for block in z05_blocks.values())
     total_bytes += len(person_text_data["text_blob"])
@@ -621,7 +977,8 @@ def main():
 
     print("\n=== Misc extraction complete ===")
     print(f"  Total extracted misc table bytes: {total_bytes}")
-    print(f"  Output directory: {data_dir}")
+    print(f"  Manifest entries: {len(all_meta)}")
+    print(f"  Output directory: {out_dir}")
 
 
 if __name__ == "__main__":
