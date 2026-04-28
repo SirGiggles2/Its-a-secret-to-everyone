@@ -266,7 +266,74 @@ Locked at S0 and held constant through S13.
 - Callers submitting large bulk transfers (CHR uploads on room load) must check both before submission and split across frames if needed.
 - `dma_q_reset_frame_stats()` is called by the frame loop after `dma_q_flush`; debug builds verify overflow count is 0 at that point.
 
-### 4.6 Frame Timing Contract
+### 4.6 Preferences Subsystem (Redux Options)
+
+The FS menu already exposes a `FS_OPTIONS` row (see `src/fs_phase.h`, currently a label without a submenu). The native rewrite turns this into a real preferences subsystem that persists Zelda-Redux–style feature toggles across all gameplay subsystems.
+
+**Architecture:**
+
+```
+src/game/options/
+├── options_runtime.c/.h    flag table, query API, mutation API
+├── options_menu.c/.h       OPTIONS submenu UI (phase machine like fs_phase)
+├── options_state.h         OptionsState struct, default values, version field
+└── options_persist.c/.h    SRAM read/write, migration on version bump
+```
+
+**Public query API** (called from gameplay anywhere — Link, items, combat, HUD, render):
+
+```c
+// options_abi.h — exposed via render_abi.h's sibling include
+bool opt_is_enabled(opt_flag_t flag);
+u8   opt_get_value(opt_flag_t flag);   // for non-bool options (text speed, etc.)
+void opt_set(opt_flag_t flag, u8 value);
+void opt_apply_defaults(void);          // reset to ship defaults
+```
+
+**Initial flag set** (drawn from existing Redux integration in FS + commonly requested toggles; not all are wired to gameplay at S8 — some are wired in S4/S6/S7 as the relevant subsystem lands):
+
+| Flag | Default | Wired in stage | Effect |
+|---|---|---|---|
+| `OPT_TEXT_SPEED` (0=slow, 1=normal, 2=fast) | 1 | S9 (cave NPC text) | Skip per-char delay multiplier |
+| `OPT_DARK_ROOM_LIGHT` | off | S10b (dungeon dark rooms) | Render dark rooms fully lit without candle |
+| `OPT_SWAP_AB` | off | S4 (Link input mapping) | Swap sword/secondary item buttons |
+| `OPT_AUTO_COLLECT_DROPS` | off | S7 (drops) | Drops walk to Link on spawn |
+| `OPT_FS_MUSIC` | off | S1 (frontend music) | Re-enables FS music; current build matches NES (silent) |
+| `OPT_REDUX_LINK_TINT` | on | S1 (FS palette) | Faded-Link palette for empty slots (already implemented) |
+| `OPT_PERMANENT_MAGIC_SHIELD` | off | S7 (drops/damage) | Magic shield not lost on like-like contact |
+| `OPT_FAST_DEATH_SKIP` | off | S12 (death) | Skip death-jingle delay on continue |
+| `OPT_SHOW_SECRETS` | off | S3 (overworld) / S10 (dungeon) | Reveal bombable walls, burnable trees on inspection |
+| `OPT_NO_FLASHING` | off | S12 (ending) / S11 (audio) | Reduces strobing for photosensitivity |
+
+**Persistence:**
+
+- `OptionsState` lives in SRAM at a **new** byte range, separate from per-save-file state. Layout:
+  ```c
+  struct OptionsState {
+      u8  version;          // schema version, bumped on layout change
+      u8  flags[N];         // packed flag bytes
+      u8  reserved[16];     // future expansion, must be zero
+      u8  checksum;         // simple XOR
+  };
+  ```
+- On boot, `options_persist_load()` reads SRAM, validates checksum, migrates if `version < CURRENT_VERSION`, falls back to defaults if invalid.
+- Existing per-save-file SRAM layout (the three NES save slots) is **not** changed. Options live alongside, in unused SRAM space.
+- SRAM byte range allocation is locked at S0 (`docs/audit/sram_map.md`) so S1's SRAM fixture test can assert on the new range without breaking existing save slots.
+
+**OPTIONS submenu UI:**
+
+- Phase-machine architecture mirroring `fs_phase` (memory: title-screen + FS quality bar applies).
+- Reachable from FS_OPTIONS row (existing) and from in-game pause sub-screen (new in S8a).
+- Cursor moves between toggles, A toggles bool flags or cycles enum values, B returns.
+- Visual style matches existing FS / pause aesthetic; pixel-perfect against a reference mock at acceptance.
+
+**Future-proofing rule:**
+
+- Adding a new flag is a **single-file change in `options_state.h`** (extend `opt_flag_t` enum + default), plus the call site that consumes it. No central registry edits, no menu code edits if the menu auto-reflects the enum (preferred design).
+- Bumping `version` triggers automatic migration; never breaks existing saves.
+- The OPTIONS submenu is the **only** UI surface for these toggles. No debug-only build flags get promoted into runtime — all runtime preferences flow through this subsystem.
+
+### 4.7 Frame Timing Contract
 
 ```
                     one frame (~16.67ms NTSC, ~20ms PAL)
@@ -352,7 +419,9 @@ final-try/
 │   │   ├── enemies/           enemy_*_runtime family
 │   │   ├── items/             item_runtime + inventory/pause menu
 │   │   ├── hud/               hud_runtime
-│   │   └── cave/              cave_runtime + NPC/person
+│   │   ├── cave/              cave_runtime + NPC/person
+│   │   └── options/           preferences subsystem — Redux feature toggles,
+│   │                          OPTIONS submenu UI, persisted to SRAM
 │   ├── state/             shared RAM map headers (typed structs)
 │   └── core/              types, intrinsics, RNG
 ├── data/                  extracted Genesis-ready data
@@ -481,13 +550,16 @@ Audit the current tree before any file moves. Outputs are documents, scripts, an
 - `src/game/combat/` — Link↔enemy collision, damage, knockback, death animation, drop spawn, item pickup
 - **Acceptance:** Link kills moblin, gets drop, picks it up, count increments. Frame-accurate.
 
-### S8 — Items + Inventory + Pause (~3 wks, split into sub-stages)
+### S8 — Items + Inventory + Pause + Options (~3–4 wks, split into sub-stages)
 
 Subdivided to keep per-stage scope honest. All sub-stages use per-item probes; "every item works" is replaced by an enumerated probe table.
 
-- **S8a — Inventory model + pause screen** (~3–5 days)
+- **S8a — Inventory model + pause screen + OPTIONS submenu** (~5–7 days)
   - `src/game/items/inventory.c`, `pause_runtime.c` (phase machine like FS)
-  - Acceptance: pause sub-screen renders pixel-identical to NES, item-select cursor moves correctly, map view shows correct dots.
+  - `src/game/options/` — full preferences subsystem per Section 4.6: `options_runtime.c`, `options_menu.c`, `options_state.h`, `options_persist.c`. Implements the initial flag set defined in Section 4.6's table.
+  - OPTIONS submenu reachable from both the existing FS_OPTIONS row and the in-game pause sub-screen.
+  - SRAM persistence wired (separate byte range from save slots; layout locked at S0).
+  - Acceptance: pause sub-screen renders pixel-identical to NES; item-select cursor moves correctly; map view shows correct dots; OPTIONS submenu UI matches the locked reference mock; all flags toggle, persist across power cycle, and survive a `version` bump migration test (`tools/probes/test_options_migration.py`); the SRAM fixture test from S1 still passes (existing save layout untouched).
 - **S8b — Simple active items** (~3–5 days): sword, boomerang, bombs, bow + arrows
   - Acceptance: per-item canonical movie probe; projectile spawn/despawn frame-accurate.
 - **S8c — Traversal items** (~3–5 days): ladder, raft, recorder/flute (warp + dungeon-7 entrance)
