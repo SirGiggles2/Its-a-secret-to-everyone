@@ -165,6 +165,11 @@ echo [2a.adapter/4] Compiling src/sgdk_adapter/audio_adapter.c (compile-only)...
 if errorlevel 1 exit /b 1
 rem adapter .o not in LD_RESP — no live caller until Phase F retargets frontend
 
+echo [2a.adapter/4] Compiling src/sgdk_adapter/joy_adapter.c (compile-only)...
+"%M68K_GCC%" -B "%M68K_BIN%\\" -m68000 -ffreestanding -nostdlib -nostartfiles -ffixed-a4 -fno-builtin -fomit-frame-pointer -fno-PIC -fno-common -O2 -I "%ROOT%\src\abi" -I "%ROOT%\src\sgdk_adapter" -c "%ROOT%\src\sgdk_adapter\joy_adapter.c" -o "%C_OBJ_DIR%\joy_adapter.o"
+if errorlevel 1 exit /b 1
+rem adapter .o not in LD_RESP — no live caller until Phase F retargets frontend
+
 for %%F in (%C_CORE_RT%) do (
     echo [2a/4] Compiling core/%%F.c...
     "%M68K_GCC%" -B "%M68K_BIN%\\" -m68000 -ffreestanding -nostdlib -nostartfiles -ffixed-a4 -fno-builtin -fomit-frame-pointer -fno-PIC -fno-common -O2 -I "%ROOT%\src" -I "%ROOT%\src\state" -I "%ROOT%\src\core" -I "%ROOT%\src\abi" -I "%ROOT%\src\frontend" -I "%ROOT%\src\frontend\intro" -I "%ROOT%\src\frontend\fs" -I "%ROOT%\src\game\enemies" -I "%ROOT%\src\game\combat" -I "%ROOT%\src\game\room" -I "%ROOT%\src\game\cave" -I "%ROOT%\src\game\hud" -I "%ROOT%\src\game\items" -I "%ROOT%\src\game\world" -I "%ROOT%\sgdk\inc" -c "%ROOT%\src\core\%%F.c" -o "%C_OBJ_DIR%\%%F.o"
