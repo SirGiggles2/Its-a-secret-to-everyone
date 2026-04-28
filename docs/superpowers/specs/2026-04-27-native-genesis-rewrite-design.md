@@ -761,9 +761,20 @@ These must be resolved before S1 begins. S0 closes by recording answers and redu
 5. **Audio responsibility split** — confirm S1 preservation of frontend music is reachable under the new SGDK frame loop. Confirm S11 receives the gameplay-wide audio integration debt without S4–S10 being blocked.
 6. **Render-API public boundary** — confirm `src/abi/render_abi.h` is the only render-facing include for game/frontend (plus SGDK's standard headers). Lint enforces.
 7. **Reference ROM provenance** — confirm `tools/probes/locate_reference_rom.py` resolves the NES ROM via local config or `ZELDA_NES_ROM` env var and verifies SHA256 before any extraction or probe runs. Confirm ROM is not committed to repo.
-8. **SGDK version + integration** — pin the SGDK release (commit SHA or release tag), verify build green against the existing toolchain, and verify SGDK's sprite engine fits Zelda's worst-case sprite pressure (Aquamentus / Gleeok). See `docs/audit/sgdk_integration.md` produced by Task 3.5.
-9. **SGDK vendoring mechanism** — pick one of: in-tree `sgdk/` directory, git submodule, or `setup.bat` that downloads + verifies SHA. Decision recorded in `docs/audit/sgdk_integration.md` with rationale.
-10. **A4 register convention vs SGDK** — `-fcall-saved-a4` in current `build.bat` reserves A4 for NES-RAM access. Verify SGDK does not require A4 for its own runtime, or document the mitigation. Recorded in ABI probe results (Task 8).
+8. **SGDK version + integration** — **Partially resolved at S0; build smoke test deferred to S1.**
+   - Pinned version: **SGDK `v2.00`** (`https://github.com/Stephane-D/SGDK`). Pin is based on ResComp 3.95 (March 2025) present in `build/toolchain/sgdk_bin/bin/` plus training-time knowledge; **must be confirmed at S1 vendoring** (run `git tag -l 'v*' | sort -V | tail -5` after clone and adopt highest stable tag).
+   - Build smoke test: **deferred to S1** — SGDK library (`libmd.a`, `inc/`, `makefile.gen`) is not on disk. Once the submodule is initialized, build `sgdk/sample/sprite/` and confirm it boots in BizHawk 2.11.
+   - Sprite engine pressure: paper analysis complete — worst-case Zelda/Gleeok scene estimates 50–55 hardware sprites, within SGDK's 80-slot ceiling. Live timing test is a Stage 6 deliverable.
+   - See `docs/audit/sgdk_integration.md` for full details.
+9. **SGDK vendoring mechanism** — **Resolved at S0: git submodule.**
+   - Command: `git submodule add -b v2.00 https://github.com/Stephane-D/SGDK sgdk`
+   - Rationale: fresh-clone reproducibility with a single `git submodule update --init`, repo stays small, upgrades are explicit. Setup-script rejected (network dependency at build time). In-tree copy rejected (unnecessary size from `sample/` + `doc/`).
+   - See `docs/audit/sgdk_integration.md` for full rationale.
+10. **A4 register convention vs SGDK** — **Deferred to S1 vendoring — needs SGDK boot source on disk.**
+    - Correction to spec wording: `build.bat` uses `-ffixed-a4` (not `-fcall-saved-a4`). This is stronger: GCC will not touch A4 at all.
+    - Expected result based on SGDK convention: SGDK reserves A5 for the VDP hardware base address, not A4. A4 is expected to be free for user use. However this must be confirmed against `sgdk/boot/sega.s` (or equivalent) before any C↔SGDK boundary is introduced.
+    - Mitigation if conflict found: drop `-ffixed-a4`, migrate NES_RAM base pointer to A3 or a normal global, update `genesis_shell.asm` and all inline-asm stubs. Mechanical change, no semantic effect.
+    - See `docs/audit/sgdk_integration.md` for full details.
 
 ## 13. References
 
