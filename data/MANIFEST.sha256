@@ -2,6 +2,13 @@
 # Do not edit by hand. Re-run tools/build_data.py after
 # any extractor changes its output. CI verifies against this
 # file via tools/probes/check_data_manifest.py.
+7665073991b7aa17cc12a3cac66d91926b93a6dc0672588f9927a64a05c27025  chr/bosses.c
+4bce2830e8bc34148ae6f2a46fa6d4d7338d63f3f8259940aa3f9607645816d6  chr/common.c
+c3009c7472fae3c50771d05d3e0c71c78873189e12a49d6a388d3b08bdcfbfbe  chr/demo.c
+28745dcf533ec5525a57a5de8f26aecfbf6ae185e1fc319436a32ec166183f03  chr/MANIFEST.json
+50e1ebfd08a23109603e7470c7504e389a3f27d4203c9f13c42a1bd99713c583  chr/overworld_bg.c
+6a2f5eb6c4afddcc99fa9cb4f61f5b24c5580de2fdc9c087e9607f887d364668  chr/sprites.c
+a1bd35d487774431f00c83a476abd5bc73641a21863ffb1f842f75687a29fb08  chr/underworld_bg.c
 89df334056f9093b83c7d0c2d5eae46c615a8e73b7724d4fe9b1a24c49f17e37  dmc_samples_wav/01_SFX_01.wav
 f516455e51fd6c824374e3c71e72e3e72425df10a3cc7fadb696152897401274  dmc_samples_wav/02_SFX_02.wav
 793354ff247ef05bedd0bcec4db77fcbbb6860a736d40742dce51e4329ee10ce  dmc_samples_wav/03_SFX_03.wav

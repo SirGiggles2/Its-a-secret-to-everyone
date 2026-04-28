@@ -1,24 +1,25 @@
 #!/usr/bin/env python3
 """Normalize a Genesis VDP capture into the canonical scene schema.
 
-Scope (S1 Phase H1, Q4 schema validation):
+Scope (S1 Phase H1 + S2 Phase B update, Q4 schema resolution):
     Reads a GDMP dump from tools/probes/bizhawk_capture_gen.lua and emits
-    the same schema shape that normalize_nes.py emits. NES->Genesis tile
-    re-mapping is a TODO that lands in S2 once data/chr/MANIFEST.json
-    documents the correspondence.
+    the same schema shape that normalize_nes.py emits.
 
 Schema (per spec Section 0): same as normalize_nes.py output.
 
-Status at S1 close:
-    - Schema shape IS LOCKED (matches normalize_nes.py output).
-    - bg_tile field currently uses RAW Genesis tile index (0..2047).
-      To diff against NES side, the S2 mapping table will translate
-      Genesis tile index -> canonical NES tile id (the inverse of the
-      extraction step that put NES CHR into Genesis VRAM).
-    - sprite tile_id similarly uses raw Genesis tile index.
-    - palette index uses raw CRAM palette slot (0..3) which maps 1:1
-      to NES BG/sprite palette index after the extraction's palette
-      packing convention (S2 confirms).
+S2 Phase B update:
+    - bg_tile field now contains the CANONICAL NES TILE ID (0..N) instead of
+      the raw Genesis VRAM tile index. Translation uses data/chr/MANIFEST.json
+      which maps Genesis VRAM tile index -> (block, nes_tile_id). Tiles with
+      no entry in the map (tile index 0, or tiles not yet covered by the
+      extractor) retain the raw Genesis tile index as a fallback.
+    - If MANIFEST.json is absent the script falls back to raw Genesis indices
+      (identical to S1 behavior) with a stderr warning.
+    - sprite tile_id still uses raw Genesis tile index (sprite mapping lands
+      in a later phase once the sprite CHR extraction is verified).
+    - palette index uses raw CRAM palette slot (0..3) which maps 1:1 to
+      NES BG/sprite palette index after the extraction's palette packing
+      convention (S2 confirms).
 """
 
 from __future__ import annotations
@@ -30,6 +31,33 @@ from pathlib import Path
 from typing import Any
 
 MAGIC = b"GDMP"
+
+# Path to the CHR MANIFEST that maps Genesis VRAM tile index -> NES tile id.
+# Resolved relative to this file's repo root at import time.
+_REPO_ROOT = Path(__file__).resolve().parents[2]
+_CHR_MANIFEST_PATH = _REPO_ROOT / "data" / "chr" / "MANIFEST.json"
+
+
+def _load_tile_index_map() -> dict[int, dict[str, Any]]:
+    """Load data/chr/MANIFEST.json and return {gen_tile_index: {block, nes_tile_id}}.
+
+    Returns an empty dict and warns on stderr if the manifest is absent.
+    """
+    if not _CHR_MANIFEST_PATH.is_file():
+        sys.stderr.write(
+            f"[normalize_gen] WARNING: {_CHR_MANIFEST_PATH} not found; "
+            "bg_tile will use raw Genesis tile indices (pre-S2 behavior).\n"
+        )
+        return {}
+    with _CHR_MANIFEST_PATH.open(encoding="ascii") as f:
+        data = json.load(f)
+    raw_map = data.get("tile_index_map", {})
+    # JSON keys are always strings; convert to int for fast lookup.
+    return {int(k): v for k, v in raw_map.items()}
+
+
+# Load once at module import so normalize() is pure (no repeated I/O).
+_TILE_INDEX_MAP: dict[int, dict[str, Any]] = _load_tile_index_map()
 
 
 def read_dump(path: Path) -> tuple[dict[str, bytes], int]:
@@ -60,6 +88,9 @@ def normalize(dump_path: Path) -> dict[str, Any]:
     zp = regions.get("RAM_", b"")
 
     # Plane A: H32 mode = 64x32 tile cells, 2 bytes per cell.
+    # bg_tile values are canonical NES tile ids (S2 Phase B: translated via
+    # data/chr/MANIFEST.json).  Raw Genesis VRAM tile indices that have no
+    # MANIFEST entry (tile 0, or unmapped tiles) are stored as-is.
     bg_tile: dict[str, int] = {}
     bg_palette: dict[str, int] = {}
     bg_priority: dict[str, int] = {}
@@ -68,9 +99,12 @@ def normalize(dump_path: Path) -> dict[str, Any]:
             for col in range(64):
                 base = (row * 64 + col) * 2
                 cell = (plana[base] << 8) | plana[base + 1]
-                tile = cell & 0x07FF
+                raw_tile = cell & 0x07FF
                 pal = (cell >> 13) & 0x03
                 pri = (cell >> 15) & 0x01
+                # Translate raw Genesis tile index to NES tile id when available.
+                entry = _TILE_INDEX_MAP.get(raw_tile)
+                tile = entry["nes_tile_id"] if entry is not None else raw_tile
                 bg_tile[f"{col},{row}"] = tile
                 bg_palette[f"{col},{row}"] = pal
                 bg_priority[f"{col},{row}"] = pri

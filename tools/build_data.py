@@ -33,7 +33,8 @@ MANIFEST_PATH = DATA_DIR / "MANIFEST.sha256"
 # they run there and emit into data/intro/ and data/fs/ respectively, so
 # we do NOT list them here (they would double-run).
 RUN_EXTRACTORS: list[Path] = [
-    # S2 Phase B: extract_chr.py once ported -> data/chr/
+    # S2 Phase B: extract_chr.py -> data/chr/
+    REPO_ROOT / "tools" / "extract_chr.py",
     # S2 Phase C: extract_audio.py, extract_rooms.py, extract_enemies.py
     # S2 Phase D: extract_misc.py, extract_demo_text.py, etc.
 ]
@@ -78,14 +79,23 @@ def write_manifest(entries: list[tuple[str, str]]) -> None:
 
 
 def run_extractors(target_root: Path | None = None) -> int:
-    """Run every entry in RUN_EXTRACTORS. target_root overrides the output
-    location for the reproducibility check; the script must support it via
-    --out-dir. Real extractors write to repo data/ when target_root is None.
+    """Run every entry in RUN_EXTRACTORS. target_root overrides the data/
+    tree root for the reproducibility check; each script receives
+    --out-dir pointing to the appropriate subdirectory. Real extractors
+    write to repo data/ when target_root is None.
     """
+    # Map each extractor script name to the data/ subdirectory it owns.
+    # Extractors that do not appear here write to their default location.
+    SUBDIR_MAP: dict[str, str] = {
+        "extract_chr.py": "chr",
+    }
+
     for script in RUN_EXTRACTORS:
         cmd = [sys.executable, str(script)]
         if target_root is not None:
-            cmd += ["--out-root", str(target_root)]
+            subdir = SUBDIR_MAP.get(script.name, "")
+            out_dir = target_root / subdir if subdir else target_root
+            cmd += ["--out-dir", str(out_dir)]
         rc = subprocess.run(cmd, check=False).returncode
         if rc != 0:
             sys.stderr.write(f"[build_data] extractor failed: {script}\n")
