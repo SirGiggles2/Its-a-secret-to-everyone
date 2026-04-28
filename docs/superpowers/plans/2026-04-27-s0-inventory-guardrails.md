@@ -302,6 +302,138 @@ git commit -m "s0: lock toolchain versions in spec"
 
 ---
 
+## Task 3.5: SGDK integration audit
+
+The 2026-04-27 SGDK pivot (spec Section 3) makes SGDK the platform/render layer. Before any S1 work begins we need the integration risks understood, the version pinned, and the vendoring mechanism chosen.
+
+**Files:**
+
+- Create: `docs/audit/sgdk_integration.md`
+- Modify: `docs/superpowers/specs/2026-04-27-native-genesis-rewrite-design.md` (Section 12 Q8/Q9/Q10 if any decision is reached during S0; otherwise leave as open and resolve in T14)
+
+- [ ] **Step 1: Locate SGDK on disk**
+
+The toolchain at `<sibling>/NES-TO-SEGA-GENESIS/build/toolchain/sgdk_bin/` is the SGDK 2.x **compiler** distribution. Determine whether the **library/headers** part of SGDK is present alongside it (look for `inc/`, `lib/`, `res/`, `sample/`, `makefile.gen`, `vscripts/` or similar SGDK-typical directories under any parent of `sgdk_bin/`).
+
+```bash
+# from the worktree root
+ls -d "$(dirname "$(dirname "$M68K_BIN")")"/* 2>/dev/null | head -30
+```
+
+Record:
+- Resolved SGDK install root (or `<not present, library missing>`)
+- Detected SGDK version: check `sgdk/inc/genesis.h` or `sgdk/VERSION` for a version string
+- Whether `m68k-elf-gcc` from this distribution is the SGDK-bundled one (very likely yes per T3)
+
+- [ ] **Step 2: Inventory the SGDK API surface we plan to depend on**
+
+Open `sgdk/inc/` (if SGDK is on disk) or fetch the upstream `sgdk/inc/` listing from the pinned commit. Confirm each of these public modules exists with a public header:
+
+| Module | Header | Critical functions we depend on |
+|---|---|---|
+| System lifecycle | `sys.h` | `SYS_doVBlankProcess`, `SYS_setVIntCallback`, `SYS_disableInts`, `SYS_enableInts` |
+| VDP | `vdp.h`, `vdp_tile.h`, `vdp_pal.h`, `vdp_bg.h` | `VDP_init`, `VDP_setEnable`, `VDP_setReg`, `VDP_setHorizontalScroll`, `VDP_setVerticalScroll`, `VDP_setTileMapXY`, `VDP_setTileMapDataRect`, `VDP_loadTileData` |
+| DMA | `dma.h` | `DMA_doDma`, `DMA_queue`, `DMA_flushQueue` (or whatever current SGDK calls these) |
+| Sprites | `sprite_eng.h` | `SPR_init`, `SPR_addSprite`, `SPR_setPosition`, `SPR_setFrame`, `SPR_releaseSprite`, `SPR_update` |
+| Joypad | `joy.h` | `JOY_init`, `JOY_readJoypad`, `JOY_setEventHandler` |
+| Palette | `pal.h` | `PAL_setColor`, `PAL_setColors`, `PAL_setPalette`, `PAL_fadeTo` |
+| SRAM | `sram.h` | `SRAM_enable`, `SRAM_disable`, `SRAM_readByte`, `SRAM_writeByte` (or word equivalents) |
+| Audio (XGM2) | `xgm2.h` | `XGM2_play`, `XGM2_stop`, `XGM2_playPCMEx`, `XGM2_isPlaying` |
+
+Record per-row: `present` / `present-with-different-name` / `missing` and the actual SGDK function name where it differs.
+
+- [ ] **Step 3: Verify SGDK can build the existing FINAL TRY ROM (or a minimal SGDK sample)**
+
+Pick whichever is faster:
+
+(a) Build SGDK's `sample/sprite/` example using the existing toolchain and confirm the produced ROM boots in BizHawk.
+(b) Or build any one SGDK sample headlessly to confirm the makefile chain works end-to-end on this machine.
+
+Record build output and any errors in the audit doc.
+
+- [ ] **Step 4: Sprite-engine pressure check**
+
+Zelda's worst-case sprite pressure is multi-part bosses (Aquamentus 8 parts + projectiles + Link + sword + 2–3 other enemies = ~15 sprites at 8x16 each → 30+ hardware sprites). Verify SGDK's `SPR_addSprite` allocator handles 80-slot pressure without per-frame surprises.
+
+This is a paper check at S0 (read SGDK's sprite-engine docs / source). A live test is a Stage 6 deliverable, not S0.
+
+Record any limits or red flags found.
+
+- [ ] **Step 5: A4 register convention check (S12 Q10)**
+
+`build.bat` uses `-fcall-saved-a4`. SGDK's runtime — does it require A4 for its own use? Check SGDK's startup code (typically `boot/sega.s` or similar) for any A4 reference.
+
+Record outcome:
+- `safe` (SGDK doesn't touch A4)
+- `conflict` (SGDK uses A4; we must drop `-fcall-saved-a4` and migrate the NES_RAM = A4 convention to a different register or to a normal global pointer)
+
+- [ ] **Step 6: Decide vendoring mechanism (S12 Q9)**
+
+Pick one and record rationale:
+
+- **In-tree copy**: vendor SGDK into `final-try/sgdk/` at a pinned commit. Pros: clones work standalone. Cons: repo size +~10 MB, harder to upgrade.
+- **Git submodule**: `git submodule add https://github.com/Stephane-D/SGDK sgdk`. Pros: easy upgrade, repo stays small. Cons: requires `git submodule update --init` step on fresh clone.
+- **Setup script**: `tools/setup_sgdk.bat` downloads SGDK release ZIP to `build/toolchain/sgdk/` and verifies SHA. Pros: smallest repo. Cons: build prerequisite added.
+
+The SRAM / save-format compatibility constraint (spec Section 0 reproducibility rule) favors in-tree copy or submodule for determinism; setup-script makes the build network-dependent.
+
+- [ ] **Step 7: Pin SGDK version (S12 Q8)**
+
+Record the exact SGDK release tag or commit SHA that S1 will build against. This is the version frozen for the project unless explicitly amended.
+
+- [ ] **Step 8: Write `docs/audit/sgdk_integration.md`**
+
+Use this frame:
+
+```markdown
+# SGDK Integration Audit (locked at S0)
+
+## Install state
+- SGDK install root: <path or "library missing — must download/clone">
+- SGDK version detected on disk: <version or "n/a">
+- Compiler comes from this SGDK: <yes/no, see toolchain.md>
+
+## API surface
+<table from Step 2>
+
+## Build smoke test
+- Sample built: <name>
+- Result: <pass/fail + log excerpt>
+
+## Sprite engine pressure
+<paper analysis from Step 4>
+
+## A4 register convention
+- Result: <safe / conflict>
+- Mitigation if conflict: <notes>
+
+## Vendoring mechanism
+- Decision: <in-tree / submodule / setup-script>
+- Rationale: <one paragraph>
+
+## Pinned version
+- SGDK release / commit SHA: <value>
+- Pinned at: <UTC date>
+
+## Open issues for S1
+<list any blockers or risks for the actual S1 integration work>
+```
+
+- [ ] **Step 9: Update spec Section 12 (S0-Locked Questions)**
+
+Q8, Q9, Q10 in Section 12 are owned by this task. If all three are resolvable now, replace each with the recorded answer. If any cannot be resolved without doing actual S1 work (e.g. sprite pressure can only be truly proven during S6), keep the question open with a reference to the audit doc and a clear "deferred to <stage>" annotation.
+
+- [ ] **Step 10: Commit**
+
+```bash
+git add docs/audit/sgdk_integration.md docs/superpowers/specs/2026-04-27-native-genesis-rewrite-design.md
+git commit -m "s0: SGDK integration audit (version pinned, vendoring decided)"
+```
+
+**Reporting protocol applies as in other tasks (DONE / DONE_WITH_CONCERNS / NEEDS_CONTEXT / BLOCKED).**
+
+---
+
 ## Task 4: NES reference ROM resolver + SHA256 lock
 
 **Files:**
