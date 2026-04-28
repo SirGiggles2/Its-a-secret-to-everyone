@@ -25,12 +25,28 @@ static void clear_plane(unsigned short plane_base) {
     }
 }
 
+/* Frames for the CRAM fade-to-black on Start press. 16 frames at 60Hz =
+ * about 0.27s -- snappier than the title-loop's 230-frame fade but slow
+ * enough to read as an intentional transition. */
+#define HANDOFF_FADE_STEPS  16u
+
 void intro_start_pressed(void) {
     nes_ram[0x07F2] = 0xAA;   /* probe: handoff begun */
+
+    /* Fade the currently-visible scene (title / fadeout / black hold /
+     * story / items) to black over HANDOFF_FADE_STEPS frames before
+     * blanking the planes + SAT. Snapshot reads live CRAM so this works
+     * from any phase. */
+    render_cram_fade_capture();
+    for (unsigned char s = 1u; s <= HANDOFF_FADE_STEPS; s++) {
+        render_wait_vblank();
+        render_cram_fade_apply(s, HANDOFF_FADE_STEPS);
+    }
 
     render_display_enable(0);
     clear_plane(0xC000);
     clear_plane(0xE000);
+    render_sat_clear();
     render_vscroll_set(0);
 
     /* Native File Select. fs_main sets its own VDP plane-size + CHR + palettes

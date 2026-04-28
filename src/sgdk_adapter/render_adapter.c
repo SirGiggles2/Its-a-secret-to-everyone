@@ -111,6 +111,62 @@ void render_window_v_set(unsigned char value)
     VDP_CTRL_WORD = (unsigned short)(0x9200u | value);
 }
 
+void render_sat_clear(void)
+{
+    /* SAT lives at VRAM $FC00 in our genesis_shell.asm boot (VDP reg 5 =
+     * $7E for H32 mode, 80 sprite slots * 8 bytes each = 640 bytes).
+     * Zero every slot. Slot 0 with y=0 link=0 attr=0 x=0 is the standard
+     * "end of sprite list" terminator and produces an off-screen sprite. */
+    render_vram_open_write(0xFC00u);
+    /* 640 bytes = 320 words. */
+    unsigned short i;
+    for (i = 0; i < 320u; i++) {
+        VDP_DATA_WORD = 0;
+    }
+}
+
+/* CRAM read access:
+ *   VDP control word $00000020 = CD bits for CRAM read at byte addr 0.
+ *   Auto-increment (VDP reg 15 = 2) drives sequential reads. After
+ *   genesis_shell.asm boot, auto-inc is locked at 2.
+ * CRAM write access:
+ *   $C0000000 base for CRAM write at offset 0 (existing render_cram_open
+ *   formula). */
+
+static unsigned short s_fade_snapshot[64];
+
+void render_cram_fade_capture(void)
+{
+    VDP_CTRL_LONG = 0x00000020UL;
+    unsigned char i;
+    for (i = 0; i < 64u; i++) {
+        s_fade_snapshot[i] = VDP_DATA_WORD;
+    }
+}
+
+void render_cram_fade_apply(unsigned char step, unsigned char total)
+{
+    if (total == 0u) return;
+    if (step > total) step = total;
+    unsigned short remaining = (unsigned short)(total - step);
+
+    VDP_CTRL_LONG = 0xC0000000UL;
+    unsigned char i;
+    for (i = 0; i < 64u; i++) {
+        unsigned short c = s_fade_snapshot[i];
+        /* Each channel: 4-bit value in low 4 of nibble, even-step encoded
+         * (0, 2, 4, 6, 8, 10, 12, 14). Mask off the high bit of each nibble
+         * since CRAM ignores it on read but the snapshot may carry junk. */
+        unsigned short b = (c >> 8) & 0x000Eu;
+        unsigned short g = (c >> 4) & 0x000Eu;
+        unsigned short r = (c >> 0) & 0x000Eu;
+        b = (unsigned short)((b * remaining) / total) & 0x000Eu;
+        g = (unsigned short)((g * remaining) / total) & 0x000Eu;
+        r = (unsigned short)((r * remaining) / total) & 0x000Eu;
+        VDP_DATA_WORD = (unsigned short)((b << 8) | (g << 4) | r);
+    }
+}
+
 /* ---- Internal DMA / CRAM helpers (were extern'd from intro_common.c) ---- */
 
 /* CPU-based VRAM upload. Writes len bytes from src to VRAM[dst..dst+len-1].

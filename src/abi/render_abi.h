@@ -135,4 +135,40 @@ void render_vram_write_zero_tile(unsigned short vram_addr);
 void render_wait_vblank(void);
 void render_window_v_set(unsigned char value);
 
+/* ---- Sprite attribute table clear ----
+ *
+ * render_sat_clear -- zero all 80 sprite slots (VRAM $FC00..$FE7F, 640 bytes).
+ * Used by frontend handoffs to drop the previous scene's sprites cleanly
+ * before the next scene rebuilds its SAT. Without this, title-screen
+ * sprite-list waterfall + ZELDA fragments persist on top of File Select
+ * for the duration of fs_init's CHR upload + palette load.
+ */
+void render_sat_clear(void);
+
+/* ---- CRAM fade-to-black ----
+ *
+ * render_cram_fade_capture  -- snapshot the current 64 CRAM color words
+ *                              into an internal shadow buffer.
+ * render_cram_fade_apply    -- write a dimmed CRAM frame: each color is
+ *                              snapshot[i] * (total-step)/total per channel,
+ *                              snapped back to Genesis even-step quantization
+ *                              (0,2,4,...,E). step=0 -> full color, step=total
+ *                              -> all black.
+ *
+ * Usage (caller drives N-frame fade in a wait_vblank loop):
+ *
+ *     render_cram_fade_capture();
+ *     for (s = 1; s <= STEPS; s++) {
+ *         render_wait_vblank();
+ *         render_cram_fade_apply(s, STEPS);
+ *     }
+ *
+ * Works from ANY palette state because the snapshot reads live CRAM via
+ * VDP CRAM-read mode. Used by intro_start_pressed to dim whatever the
+ * current scene is showing (title / fade / black / story / items) before
+ * the FS handoff blanks the planes.
+ */
+void render_cram_fade_capture(void);
+void render_cram_fade_apply(unsigned char step, unsigned char total);
+
 #endif /* RENDER_ABI_H */
