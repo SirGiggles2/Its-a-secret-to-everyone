@@ -1,5 +1,28 @@
 """Lint for legacy shim, transpile symbols, and raw VDP MMIO writes.
 
+# S2 graduated invariant: data/ reproducibility
+#
+# Spec table 8.1 row 7 says every file under data/ must be byte-reproducible
+# from the locked NES ROM via tools/extract_*.py, enforced as WARN at S1 and
+# FAIL at S2 close.
+#
+# This check is delegated to tools/probes/check_data_manifest.py which is
+# already wired into build.bat phase 2a.0c (since S2 Phase A).  That probe
+# re-runs all extractors against a temp directory and diffs the resulting
+# MANIFEST.sha256 against the committed one, failing the build on any
+# divergence.
+#
+# Decision: no subprocess call added here.  The build-time check at 2a.0c is
+# the single canonical gate.  Running it here too would double-run all
+# extractors on every lint pass (slow) and produce no additional signal.
+# Document this in the lint module so future sessions do not re-add a
+# redundant subprocess call.
+#
+# If you need to run the data reproducibility check standalone:
+#   python tools/probes/check_data_manifest.py
+# If you need to regenerate the manifest after extractor changes:
+#   python tools/build_data.py && git add data/MANIFEST.sha256 data/
+
 Path-aware severity per spec Section 8.1:
 
 | Scope                    | _ppu_/_oam_/_apu_/_ctrl_/_mmc1_/z00_..z07_ | Raw VDP MMIO writes |
