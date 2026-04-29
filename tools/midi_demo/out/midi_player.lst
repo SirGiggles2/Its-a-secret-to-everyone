@@ -1,0 +1,1578 @@
+Sections:
+00: "text" (0-29E)
+01: "rodata" (0-1E42)
+
+
+Source: "C:\Users\Jake Diggity\Documents\GitHub\FINAL TRY\tools\midi_demo\midi_player.asm"
+                            	     1: ;==============================================================================
+                            	     2: ; midi_player.asm — Compact event-driven YM2612 MIDI player.
+                            	     3: ;
+                            	     4: ; Public symbols (called from main.c):
+                            	     5: ;       ym_init        — load Voice 00 bell pad on YM channels 0..5, mute PSG
+                            	     6: ;       midi_init      — point play state at compiled blob, prime time_to_next
+                            	     7: ;       midi_tick      — call once per VBlank; dispatches due events
+                            	     8: ;
+                            	     9: ; Compiled blob is incbin'd at label `midi_blob`.  Layout (big-endian):
+                            	    10: ;       u32 magic = 'MIDI'
+                            	    11: ;       u32 num_events
+                            	    12: ;       u32 loop_offset    (byte offset into events[] for loop point)
+                            	    13: ;       events[N]:
+                            	    14: ;           u16 delta_frames
+                            	    15: ;           u8  op        ($00 note-off, $01 note-on, $FF end-of-song)
+                            	    16: ;           u8  ch        (0..5 -> YM channel)
+                            	    17: ;           u8  bf_hi     ((block<<3)|fnum_hi)  — destined for $A4+offset
+                            	    18: ;           u8  fnum_lo   — destined for $A0+offset
+                            	    19: ;==============================================================================
+                            	    20: 
+                            	    21: ;----------------------------------------------------------------------
+                            	    22: ; Hardware ports
+                            	    23: ;----------------------------------------------------------------------
+                            	    24: YM_ADDR1        equ $A04000
+                            	    25: YM_DATA1        equ $A04001
+                            	    26: YM_ADDR2        equ $A04002
+                            	    27: YM_DATA2        equ $A04003
+                            	    28: PSG_PORT        equ $C00011
+                            	    29: 
+                            	    30: ;----------------------------------------------------------------------
+                            	    31: ; Player state (lives in RAM)
+                            	    32: ;----------------------------------------------------------------------
+                            	    33: MIDI_STATE      equ $FFE000
+                            	    34: MS_PLAY_PTR     equ MIDI_STATE+0     ; long: pointer to next event's delta byte
+                            	    35: MS_EVENTS_BASE  equ MIDI_STATE+4     ; long: pointer to events[] start
+                            	    36: MS_LOOP_PTR     equ MIDI_STATE+8     ; long: events[] + loop_offset
+                            	    37: MS_TIME_NEXT    equ MIDI_STATE+12    ; word: frames until next event
+                            	    38: MS_END_PTR      equ MIDI_STATE+14    ; long: events[] end (events_base + 6*num_events)
+                            	    39: 
+                            	    40:     section "text",code
+                            	    41: 
+                            	    42: ;==============================================================================
+                            	    43: ; ym_write1 — write address+data atomically to YM2612 Part I.
+                            	    44: ; Input:  D0.b = register, D1.b = data.  Preserves D0,D1.
+                            	    45: ;==============================================================================
+                            	    46: ym_write1:
+                            	    47: .wait1:
+00:00000000 4A3900A04000    	    48:     tst.b   (YM_ADDR1).l
+00:00000006 6BF8            	    49:     bmi.s   .wait1
+00:00000008 13C000A04000    	    50:     move.b  D0,(YM_ADDR1).l
+00:0000000E 4E71            	    51:     nop
+00:00000010 4E71            	    52:     nop
+00:00000012 4E71            	    53:     nop
+00:00000014 13C100A04001    	    54:     move.b  D1,(YM_DATA1).l
+00:0000001A 4E75            	    55:     rts
+                            	    56: 
+                            	    57: ;==============================================================================
+                            	    58: ; ym_write2 — write address+data atomically to YM2612 Part II.
+                            	    59: ; Busy flag is shared, so still poll Part I.
+                            	    60: ;==============================================================================
+                            	    61: ym_write2:
+                            	    62: .wait2:
+00:0000001C 4A3900A04000    	    63:     tst.b   (YM_ADDR1).l
+00:00000022 6BF8            	    64:     bmi.s   .wait2
+00:00000024 13C000A04002    	    65:     move.b  D0,(YM_ADDR2).l
+00:0000002A 4E71            	    66:     nop
+00:0000002C 4E71            	    67:     nop
+00:0000002E 4E71            	    68:     nop
+00:00000030 13C100A04003    	    69:     move.b  D1,(YM_DATA2).l
+00:00000036 4E75            	    70:     rts
+                            	    71: 
+                            	    72: ;==============================================================================
+                            	    73: ; load_fm_patch_named — load 25-byte patch into one channel.
+                            	    74: ; Input: A0 = pointer to 25-byte patch, D6.b = YM channel 0..5
+                            	    75: ;==============================================================================
+                            	    76: load_fm_patch_named:
+00:00000038 48E7E2C0        	    77:     movem.l D0-D2/D6/A0-A1,-(SP)
+00:0000003C 43FA0000        	    78:     lea     FM_PATCH_REGS(PC),A1
+00:00000040 7418            	    79:     moveq   #24,D2                  ; 25 register/value pairs
+00:00000042 0C060003        	    80:     cmpi.b  #3,D6
+00:00000046 6D10            	    81:     blt.s   .partI
+                            	    82:     ; ch 3..5 — Part II, channel offset = ch-3
+00:00000048 5706            	    83:     subi.b  #3,D6
+                            	    84: .lpII:
+00:0000004A 1019            	    85:     move.b  (A1)+,D0
+00:0000004C D006            	    86:     add.b   D6,D0
+00:0000004E 1218            	    87:     move.b  (A0)+,D1
+00:00000050 61CA            	    88:     bsr     ym_write2
+00:00000052 51CAFFF6        	    89:     dbra    D2,.lpII
+00:00000056 600C            	    90:     bra.s   .done
+                            	    91: .partI:
+                            	    92: .lpI:
+00:00000058 1019            	    93:     move.b  (A1)+,D0
+00:0000005A D006            	    94:     add.b   D6,D0
+00:0000005C 1218            	    95:     move.b  (A0)+,D1
+00:0000005E 61A0            	    96:     bsr     ym_write1
+00:00000060 51CAFFF6        	    97:     dbra    D2,.lpI
+                            	    98: .done:
+00:00000064 4CDF0347        	    99:     movem.l (SP)+,D0-D2/D6/A0-A1
+00:00000068 4E75            	   100:     rts
+                            	   101: 
+                            	   102: ;==============================================================================
+                            	   103: ; ym_init — set up YM2612 for 6-voice bell pad playback.
+                            	   104: ;==============================================================================
+                            	   105:     xdef    ym_init
+                            	   106: ym_init:
+00:0000006A 48E7FE80        	   107:     movem.l D0-D6/A0,-(SP)
+                            	   108: 
+                            	   109:     ; Key-off all 6 channels (reg $28; key bits = $00, ch bits 0,1,2,4,5,6)
+00:0000006E 103C0028        	   110:     move.b  #$28,D0
+00:00000072 7200            	   111:     moveq   #$00,D1
+00:00000074 618A            	   112:     bsr     ym_write1
+00:00000076 7201            	   113:     moveq   #$01,D1
+00:00000078 6186            	   114:     bsr     ym_write1
+00:0000007A 7202            	   115:     moveq   #$02,D1
+00:0000007C 6182            	   116:     bsr     ym_write1
+00:0000007E 7204            	   117:     moveq   #$04,D1
+00:00000080 6100FF7E        	   118:     bsr     ym_write1
+00:00000084 7205            	   119:     moveq   #$05,D1
+00:00000086 6100FF78        	   120:     bsr     ym_write1
+00:0000008A 7206            	   121:     moveq   #$06,D1
+00:0000008C 6100FF72        	   122:     bsr     ym_write1
+                            	   123: 
+                            	   124:     ; LFO off
+00:00000090 103C0022        	   125:     move.b  #$22,D0
+00:00000094 7200            	   126:     moveq   #0,D1
+00:00000096 6100FF68        	   127:     bsr     ym_write1
+                            	   128: 
+                            	   129:     ; DAC disabled (ch 6 stays as FM, but we don't use it)
+00:0000009A 103C002B        	   130:     move.b  #$2B,D0
+00:0000009E 7200            	   131:     moveq   #0,D1
+00:000000A0 6100FF5E        	   132:     bsr     ym_write1
+                            	   133: 
+                            	   134:     ; Clear SSG-EG for every operator on all 6 channels.
+                            	   135:     ; Part I = ch 0,1,2.  Part II = ch 3,4,5 (channel offsets 0,1,2 on Part II).
+00:000000A4 7200            	   136:     moveq   #0,D1
+00:000000A6 7C00            	   137:     moveq   #0,D6
+                            	   138: .ssg_loop:
+00:000000A8 1006            	   139:     move.b  D6,D0
+00:000000AA 06000090        	   140:     addi.b  #$90,D0
+00:000000AE 6100FF50        	   141:     bsr     ym_write1
+00:000000B2 1006            	   142:     move.b  D6,D0
+00:000000B4 06000090        	   143:     addi.b  #$90,D0
+00:000000B8 6100FF62        	   144:     bsr     ym_write2
+00:000000BC 5206            	   145:     addq.b  #1,D6
+00:000000BE 0C06000F        	   146:     cmpi.b  #15,D6                  ; 16 iterations covers $90..$9F (4 ops x 3 ch + skip)
+00:000000C2 6FE4            	   147:     ble.s   .ssg_loop
+                            	   148: 
+                            	   149:     ; Load harp patch on ch 0..2 (lead), bell pad on ch 3..5 (backup).
+00:000000C4 7C00            	   150:     moveq   #0,D6
+                            	   151: .patch_lead:
+00:000000C6 41FA001A        	   152:     lea     PATCH_VOICE00(PC),A0    ; bell pad on lead — best fit per user A/B
+00:000000CA 6100FF6C        	   153:     bsr     load_fm_patch_named
+00:000000CE 5206            	   154:     addq.b  #1,D6
+00:000000D0 0C060002        	   155:     cmpi.b  #2,D6
+00:000000D4 6FF0            	   156:     ble.s   .patch_lead
+                            	   157: .patch_backup:
+00:000000D6 41FA0034        	   158:     lea     PATCH_PAD(PC),A0        ; slow-swell mystical pad for backup line
+00:000000DA 6100FF5C        	   159:     bsr     load_fm_patch_named
+00:000000DE 5206            	   160:     addq.b  #1,D6
+00:000000E0 0C060005        	   161:     cmpi.b  #5,D6
+00:000000E4 6FF0            	   162:     ble.s   .patch_backup
+                            	   163: 
+                            	   164:     ; Panning L+R for ch 0..2 ($B4..$B6 Part I)
+00:000000E6 123C00C0        	   165:     move.b  #$C0,D1
+00:000000EA 103C00B4        	   166:     move.b  #$B4,D0
+00:000000EE 6100FF10        	   167:     bsr     ym_write1
+00:000000F2 103C00B5        	   168:     move.b  #$B5,D0
+00:000000F6 6100FF08        	   169:     bsr     ym_write1
+00:000000FA 103C00B6        	   170:     move.b  #$B6,D0
+00:000000FE 6100FF00        	   171:     bsr     ym_write1
+                            	   172:     ; ch 3..5 ($B4..$B6 Part II)
+00:00000102 103C00B4        	   173:     move.b  #$B4,D0
+00:00000106 6100FF14        	   174:     bsr     ym_write2
+00:0000010A 103C00B5        	   175:     move.b  #$B5,D0
+00:0000010E 6100FF0C        	   176:     bsr     ym_write2
+00:00000112 103C00B6        	   177:     move.b  #$B6,D0
+00:00000116 6100FF04        	   178:     bsr     ym_write2
+                            	   179: 
+                            	   180:     ; Mute PSG (we don't use it)
+00:0000011A 13FC009F00C00011	   181:     move.b  #$9F,(PSG_PORT).l
+00:00000122 13FC00BF00C00011	   182:     move.b  #$BF,(PSG_PORT).l
+00:0000012A 13FC00DF00C00011	   183:     move.b  #$DF,(PSG_PORT).l
+00:00000132 13FC00FF00C00011	   184:     move.b  #$FF,(PSG_PORT).l
+                            	   185: 
+00:0000013A 4CDF017F        	   186:     movem.l (SP)+,D0-D6/A0
+00:0000013E 4E75            	   187:     rts
+                            	   188: 
+                            	   189: ;==============================================================================
+                            	   190: ; midi_init — initialize player state from the compiled blob.
+                            	   191: ;==============================================================================
+                            	   192:     xdef    midi_init
+                            	   193: midi_init:
+00:00000140 48E7E080        	   194:     movem.l D0-D2/A0,-(SP)
+00:00000144 41FA009C        	   195:     lea     midi_blob(PC),A0
+                            	   196: 
+                            	   197:     ; Verify magic == 'MIDI'.  If wrong, leave state zeroed (player no-ops).
+00:00000148 0C904D494449    	   198:     cmpi.l  #$4D494449,(A0)
+00:0000014E 6644            	   199:     bne     .bad
+                            	   200: 
+00:00000150 20280004        	   201:     move.l  4(A0),D0                 ; num_events
+00:00000154 22280008        	   202:     move.l  8(A0),D1                 ; loop_offset (bytes)
+                            	   203: 
+00:00000158 41E8000C        	   204:     lea     12(A0),A0                ; A0 -> events_base (skip 12-byte header)
+00:0000015C 23C800FFE004    	   205:     move.l  A0,(MS_EVENTS_BASE).l
+00:00000162 23C800FFE000    	   206:     move.l  A0,(MS_PLAY_PTR).l
+                            	   207: 
+                            	   208:     ; Loop pointer = events_base + loop_offset
+00:00000168 2408            	   209:     move.l  A0,D2
+00:0000016A D481            	   210:     add.l   D1,D2
+00:0000016C 23C200FFE008    	   211:     move.l  D2,(MS_LOOP_PTR).l
+                            	   212: 
+                            	   213:     ; End pointer = events_base + 6 * num_events
+00:00000172 2400            	   214:     move.l  D0,D2
+00:00000174 E38A            	   215:     lsl.l   #1,D2                    ; *2
+00:00000176 D480            	   216:     add.l   D0,D2
+00:00000178 D480            	   217:     add.l   D0,D2
+00:0000017A D480            	   218:     add.l   D0,D2
+00:0000017C D480            	   219:     add.l   D0,D2                    ; D2 = num_events*6 (1+1+1+1+1+1 = 6)
+00:0000017E D488            	   220:     add.l   A0,D2
+00:00000180 23C200FFE00E    	   221:     move.l  D2,(MS_END_PTR).l
+                            	   222: 
+                            	   223:     ; Prime time_to_next from the first event's delta (peek u16 at A0).
+00:00000186 3010            	   224:     move.w  (A0),D0
+00:00000188 33C000FFE00C    	   225:     move.w  D0,(MS_TIME_NEXT).l
+                            	   226: 
+00:0000018E 4CDF0107        	   227:     movem.l (SP)+,D0-D2/A0
+00:00000192 4E75            	   228:     rts
+                            	   229: 
+                            	   230: .bad:
+00:00000194 33FC7FFF00FFE00C	   231:     move.w  #$7FFF,(MS_TIME_NEXT).l  ; effectively idle forever
+00:0000019C 4CDF0107        	   232:     movem.l (SP)+,D0-D2/A0
+00:000001A0 4E75            	   233:     rts
+                            	   234: 
+                            	   235: ;==============================================================================
+                            	   236: ; midi_tick — called once per VBlank.
+                            	   237: ;==============================================================================
+                            	   238:     xdef    midi_tick
+                            	   239: midi_tick:
+00:000001A2 48E7FE80        	   240:     movem.l D0-D6/A0,-(SP)
+                            	   241: 
+00:000001A6 3E3900FFE00C    	   242:     move.w  (MS_TIME_NEXT).l,D7
+00:000001AC 670A            	   243:     beq.s   .due
+00:000001AE 5347            	   244:     subq.w  #1,D7
+00:000001B0 33C700FFE00C    	   245:     move.w  D7,(MS_TIME_NEXT).l
+00:000001B6 6664            	   246:     bne     .out
+                            	   247: .due:
+00:000001B8 207900FFE000    	   248:     movea.l (MS_PLAY_PTR).l,A0
+                            	   249: 
+                            	   250: .dispatch:
+                            	   251:     ; Bounds check (defensive — well-formed blob hits 0xFF before this)
+00:000001BE 2008            	   252:     move.l  A0,D0
+00:000001C0 B0B900FFE00E    	   253:     cmp.l   (MS_END_PTR).l,D0
+00:000001C6 6C3C            	   254:     bge.s   .loop_back
+                            	   255: 
+                            	   256:     ; Read header: u16 delta, u8 op, u8 ch, u8 bf_hi, u8 fnum_lo
+00:000001C8 3A18            	   257:     move.w  (A0)+,D5                 ; delta (already consumed when we entered)
+00:000001CA 1018            	   258:     move.b  (A0)+,D0                 ; op
+00:000001CC 1C18            	   259:     move.b  (A0)+,D6                 ; ch (0..5)
+00:000001CE 1618            	   260:     move.b  (A0)+,D3                 ; bf_hi (block<<3 | fnum_hi)
+00:000001D0 1818            	   261:     move.b  (A0)+,D4                 ; fnum_lo
+                            	   262: 
+00:000001D2 0C0000FF        	   263:     cmpi.b  #$FF,D0
+00:000001D6 672C            	   264:     beq.s   .loop_back
+                            	   265: 
+00:000001D8 0C000001        	   266:     cmpi.b  #$01,D0
+00:000001DC 6706            	   267:     beq.s   .note_on
+                            	   268:     ; else note-off
+00:000001DE 6100009E        	   269:     bsr     do_note_off
+00:000001E2 6002            	   270:     bra.s   .next_event
+                            	   271: 
+                            	   272: .note_on:
+00:000001E4 613C            	   273:     bsr     do_note_on
+                            	   274: 
+                            	   275: .next_event:
+                            	   276:     ; Peek next event's delta to see whether to keep dispatching this frame.
+00:000001E6 2008            	   277:     move.l  A0,D0
+00:000001E8 B0B900FFE00E    	   278:     cmp.l   (MS_END_PTR).l,D0
+00:000001EE 6C14            	   279:     bge.s   .loop_back
+00:000001F0 3010            	   280:     move.w  (A0),D0                  ; next event's delta
+00:000001F2 6602            	   281:     bne.s   .stop_dispatch
+00:000001F4 60C8            	   282:     bra.s   .dispatch                ; delta=0, dispatch immediately
+                            	   283: 
+                            	   284: .stop_dispatch:
+00:000001F6 33C000FFE00C    	   285:     move.w  D0,(MS_TIME_NEXT).l
+00:000001FC 23C800FFE000    	   286:     move.l  A0,(MS_PLAY_PTR).l
+00:00000202 6018            	   287:     bra.s   .out
+                            	   288: 
+                            	   289: .loop_back:
+00:00000204 207900FFE008    	   290:     movea.l (MS_LOOP_PTR).l,A0
+00:0000020A 3010            	   291:     move.w  (A0),D0
+00:0000020C 33C000FFE00C    	   292:     move.w  D0,(MS_TIME_NEXT).l
+00:00000212 23C800FFE000    	   293:     move.l  A0,(MS_PLAY_PTR).l
+                            	   294:     ; If we just landed on a delta-0 event, dispatch it now.
+00:00000218 4A40            	   295:     tst.w   D0
+00:0000021A 67A2            	   296:     beq.s   .dispatch
+                            	   297: 
+                            	   298: .out:
+00:0000021C 4CDF017F        	   299:     movem.l (SP)+,D0-D6/A0
+00:00000220 4E75            	   300:     rts
+                            	   301: 
+                            	   302: ;==============================================================================
+                            	   303: ; do_note_on — emit block/fnum to YM ch in D6, then key-on all operators.
+                            	   304: ; Input:  D6.b = ch 0..5, D3.b = bf_hi, D4.b = fnum_lo
+                            	   305: ;==============================================================================
+                            	   306: do_note_on:
+00:00000222 48E7E000        	   307:     movem.l D0-D2,-(SP)
+                            	   308: 
+00:00000226 0C060003        	   309:     cmpi.b  #3,D6
+00:0000022A 6D1E            	   310:     blt.s   .freq_partI
+                            	   311:     ; Part II
+00:0000022C 1406            	   312:     move.b  D6,D2
+00:0000022E 5702            	   313:     subi.b  #3,D2                    ; ch-3 = Part II offset
+00:00000230 1002            	   314:     move.b  D2,D0
+00:00000232 060000A4        	   315:     addi.b  #$A4,D0                  ; reg $A4+offset
+00:00000236 1203            	   316:     move.b  D3,D1                    ; data = bf_hi
+00:00000238 6100FDE2        	   317:     bsr     ym_write2
+00:0000023C 1002            	   318:     move.b  D2,D0
+00:0000023E 060000A0        	   319:     addi.b  #$A0,D0
+00:00000242 1204            	   320:     move.b  D4,D1
+00:00000244 6100FDD6        	   321:     bsr     ym_write2
+00:00000248 6018            	   322:     bra.s   .key_on
+                            	   323: 
+                            	   324: .freq_partI:
+00:0000024A 1006            	   325:     move.b  D6,D0
+00:0000024C 060000A4        	   326:     addi.b  #$A4,D0
+00:00000250 1203            	   327:     move.b  D3,D1
+00:00000252 6100FDAC        	   328:     bsr     ym_write1
+00:00000256 1006            	   329:     move.b  D6,D0
+00:00000258 060000A0        	   330:     addi.b  #$A0,D0
+00:0000025C 1204            	   331:     move.b  D4,D1
+00:0000025E 6100FDA0        	   332:     bsr     ym_write1
+                            	   333: 
+                            	   334: .key_on:
+                            	   335:     ; Key-on: reg $28 always Part I.  Data = $F0 | yamaha_id where
+                            	   336:     ; yamaha_id = ch for ch<3, else ch+1.
+00:00000262 103C0028        	   337:     move.b  #$28,D0
+00:00000266 1206            	   338:     move.b  D6,D1
+00:00000268 0C060003        	   339:     cmpi.b  #3,D6
+00:0000026C 6D02            	   340:     blt.s   .ko_lt
+00:0000026E 5201            	   341:     addq.b  #1,D1
+                            	   342: .ko_lt:
+00:00000270 000100F0        	   343:     ori.b   #$F0,D1
+00:00000274 6100FD8A        	   344:     bsr     ym_write1
+                            	   345: 
+00:00000278 4CDF0007        	   346:     movem.l (SP)+,D0-D2
+00:0000027C 4E75            	   347:     rts
+                            	   348: 
+                            	   349: ;==============================================================================
+                            	   350: ; do_note_off — key-off all operators on YM ch in D6.
+                            	   351: ;==============================================================================
+                            	   352: do_note_off:
+00:0000027E 48E7C000        	   353:     movem.l D0-D1,-(SP)
+00:00000282 103C0028        	   354:     move.b  #$28,D0
+00:00000286 1206            	   355:     move.b  D6,D1
+00:00000288 0C060003        	   356:     cmpi.b  #3,D6
+00:0000028C 6D02            	   357:     blt.s   .kf_lt
+00:0000028E 5201            	   358:     addq.b  #1,D1
+                            	   359: .kf_lt:
+00:00000290 0201000F        	   360:     andi.b  #$0F,D1                  ; key bits = 0 -> all operators off
+00:00000294 6100FD6A        	   361:     bsr     ym_write1
+00:00000298 4CDF0003        	   362:     movem.l (SP)+,D0-D1
+00:0000029C 4E75            	   363:     rts
+                            	   364: 
+                            	   365: ;==============================================================================
+                            	   366: ; FM patch tables
+                            	   367: ;==============================================================================
+                            	   368:     section "rodata",data
+                            	   369: 
+                            	   370:     even
+                            	   371: FM_PATCH_REGS:
+01:00000000 B0              	   372:     dc.b    $B0
+01:00000001 30              	   373:     dc.b    $30,$34,$38,$3C
+01:00000002 34
+01:00000003 38
+01:00000004 3C
+01:00000005 50              	   374:     dc.b    $50,$54,$58,$5C
+01:00000006 54
+01:00000007 58
+01:00000008 5C
+01:00000009 60              	   375:     dc.b    $60,$64,$68,$6C
+01:0000000A 64
+01:0000000B 68
+01:0000000C 6C
+01:0000000D 70              	   376:     dc.b    $70,$74,$78,$7C
+01:0000000E 74
+01:0000000F 78
+01:00000010 7C
+01:00000011 80              	   377:     dc.b    $80,$84,$88,$8C
+01:00000012 84
+01:00000013 88
+01:00000014 8C
+01:00000015 40              	   378:     dc.b    $40,$44,$48,$4C
+01:00000016 44
+01:00000017 48
+01:00000018 4C
+                            	   379:     even
+                            	   380: 
+                            	   381: ; Voice $00 — bell pad (Sonic 2 EHZ; verbatim from src/audio_driver.asm)
+                            	   382: PATCH_VOICE00:
+01:0000001A 2D              	   383:     dc.b    $2D                     ; FB/ALG: (5<<3)|5
+01:0000001B 04              	   384:     dc.b    $04,$01,$01,$01         ; DT/MUL — op1 MUL 4 (bell modulator)
+01:0000001C 01
+01:0000001D 01
+01:0000001E 01
+01:0000001F 1F              	   385:     dc.b    $1F,$1F,$1F,$1F         ; RS/AR max
+01:00000020 1F
+01:00000021 1F
+01:00000022 1F
+01:00000023 08              	   386:     dc.b    $08,$04,$04,$04         ; AM/D1R
+01:00000024 04
+01:00000025 04
+01:00000026 04
+01:00000027 00              	   387:     dc.b    $00,$00,$00,$00         ; D2R
+01:00000028 00
+01:00000029 00
+01:0000002A 00
+01:0000002B 47              	   388:     dc.b    $47,$37,$37,$17         ; DL/RR — bell tail
+01:0000002C 37
+01:0000002D 37
+01:0000002E 17
+01:0000002F 14              	   389:     dc.b    $14,$1E,$1E,$1E         ; TL — modulator $14, carriers $1E
+01:00000030 1E
+01:00000031 1E
+01:00000032 1E
+                            	   390:     even
+                            	   391: 
+                            	   392: ; Mystical pad — distinctly different from the celesta lead.  Carriers
+                            	   393: ; have a SLOW attack so each note swells in like a breath of mist behind
+                            	   394: ; the bright lead twinkle.  Op1 modulator stays at MUL 4 with high TL so
+                            	   395: ; only a faint metallic shimmer rides on top of pure-tone carriers.  No
+                            	   396: ; FB.  Carriers mildly detuned for chorus.  Net effect: airy washes
+                            	   397: ; that bloom under the lead's plucks instead of competing with them.
+                            	   398: PATCH_PAD:
+01:00000034 05              	   399:     dc.b    $05                     ; FB/ALG: FB 0, ALG 5
+01:00000035 04              	   400:     dc.b    $04,$11,$01,$51         ; DT/MUL — op1 MUL 4 modulator
+01:00000036 11
+01:00000037 01
+01:00000038 51
+01:00000039 1F              	   401:     dc.b    $1F,$10,$10,$10         ; RS/AR — mod instant, carriers SLOW attack
+01:0000003A 10
+01:0000003B 10
+01:0000003C 10
+01:0000003D 00              	   402:     dc.b    $00,$02,$02,$02         ; AM/D1R — long decay
+01:0000003E 02
+01:0000003F 02
+01:00000040 02
+01:00000041 00              	   403:     dc.b    $00,$00,$00,$00         ; D2R
+01:00000042 00
+01:00000043 00
+01:00000044 00
+01:00000045 4A              	   404:     dc.b    $4A,$28,$28,$28         ; DL/RR — long sustained tail
+01:00000046 28
+01:00000047 28
+01:00000048 28
+01:00000049 30              	   405:     dc.b    $30,$1A,$1A,$1A         ; TL — mod whisper, carriers gentle
+01:0000004A 1A
+01:0000004B 1A
+01:0000004C 1A
+                            	   406:     even
+                            	   407: 
+                            	   408: ; Flute/organ patch — additive ALG 7 (4 carriers in parallel).
+                            	   409: ;   Op MUL ratios 1:2:3:4 add octave and 5th overtones for an airy, woody
+                            	   410: ;   timbre.  Sustained envelope (no decay during note hold), fast release
+                            	   411: ;   on key-off.  FB 1 for slight warmth without distortion.
+                            	   412: ;   Slot byte order in YM2612 patches is op1, op3, op2, op4.
+                            	   413: PATCH_FLUTE:
+01:0000004E 0F              	   414:     dc.b    $0F                     ; FB/ALG: (1<<3)|7
+01:0000004F 01              	   415:     dc.b    $01,$03,$02,$04         ; DT/MUL (op1=1, op3=3, op2=2, op4=4)
+01:00000050 03
+01:00000051 02
+01:00000052 04
+01:00000053 1F              	   416:     dc.b    $1F,$1F,$1F,$1F         ; RS/AR — instant attack
+01:00000054 1F
+01:00000055 1F
+01:00000056 1F
+01:00000057 00              	   417:     dc.b    $00,$00,$00,$00         ; AM/D1R — no decay, sustain at TL
+01:00000058 00
+01:00000059 00
+01:0000005A 00
+01:0000005B 00              	   418:     dc.b    $00,$00,$00,$00         ; D2R
+01:0000005C 00
+01:0000005D 00
+01:0000005E 00
+01:0000005F 0F              	   419:     dc.b    $0F,$0F,$0F,$0F         ; DL/RR — DL 0, RR 15 (fast release)
+01:00000060 0F
+01:00000061 0F
+01:00000062 0F
+01:00000063 18              	   420:     dc.b    $18,$24,$20,$2C         ; TL — fundamental loudest, harmonics quieter
+01:00000064 24
+01:00000065 20
+01:00000066 2C
+                            	   421:     even
+                            	   422: 
+                            	   423: ; Voice $03 — EHZ FM3 lead (Sonic 2; bright FB7 / Algorithm 5).
+                            	   424: PATCH_VOICE03:
+01:00000068 3D              	   425:     dc.b    $3D                     ; FB/ALG: (7<<3)|5
+01:00000069 01              	   426:     dc.b    $01,$51,$21,$01         ; DT/MUL
+01:0000006A 51
+01:0000006B 21
+01:0000006C 01
+01:0000006D 1F              	   427:     dc.b    $1F,$1F,$1F,$1F         ; RS/AR
+01:0000006E 1F
+01:0000006F 1F
+01:00000070 1F
+01:00000071 0A              	   428:     dc.b    $0A,$05,$05,$05         ; AM/D1R
+01:00000072 05
+01:00000073 05
+01:00000074 05
+01:00000075 00              	   429:     dc.b    $00,$00,$00,$00         ; D2R
+01:00000076 00
+01:00000077 00
+01:00000078 00
+01:00000079 2B              	   430:     dc.b    $2B,$2B,$2B,$1B         ; DL/RR
+01:0000007A 2B
+01:0000007B 2B
+01:0000007C 1B
+01:0000007D 19              	   431:     dc.b    $19,$18,$18,$18         ; TL
+01:0000007E 18
+01:0000007F 18
+01:00000080 18
+                            	   432:     even
+                            	   433: 
+                            	   434: ; Twinkle / celesta lead — soft mystical bell, light and bright.
+                            	   435: ;   Algorithm 5 (3 carriers driven by op1 modulator), FB 0 keeps timbre
+                            	   436: ;   clean and pure (no FB-induced grit).  Op1 MUL 2 with low modulator
+                            	   437: ;   level adds just a hint of chime without harsh overtones.  Carriers
+                            	   438: ;   are slightly detuned (DT 1, 0, -1) for a gentle chorus shimmer that
+                            	   439: ;   reads as "mystical" rather than dry.  Long DL+RR gives notes a
+                            	   440: ;   relaxing tail that overlaps into chord-like ringouts.
+                            	   441: PATCH_TWINKLE:
+01:00000082 05              	   442:     dc.b    $05                     ; FB/ALG: FB 0, ALG 5
+01:00000083 02              	   443:     dc.b    $02,$11,$01,$51         ; DT/MUL — slot order op1,op3,op2,op4
+01:00000084 11
+01:00000085 01
+01:00000086 51
+01:00000087 1F              	   444:     dc.b    $1F,$1F,$1F,$1F         ; RS/AR — instant attack
+01:00000088 1F
+01:00000089 1F
+01:0000008A 1F
+01:0000008B 00              	   445:     dc.b    $00,$03,$03,$03         ; AM/D1R — mod sustained, carriers gentle decay
+01:0000008C 03
+01:0000008D 03
+01:0000008E 03
+01:0000008F 00              	   446:     dc.b    $00,$00,$00,$00         ; D2R
+01:00000090 00
+01:00000091 00
+01:00000092 00
+01:00000093 48              	   447:     dc.b    $48,$36,$36,$26         ; DL/RR — long shimmery tail
+01:00000094 36
+01:00000095 36
+01:00000096 26
+01:00000097 24              	   448:     dc.b    $24,$14,$14,$14         ; TL — mod gentle ($24), carriers bright ($14)
+01:00000098 14
+01:00000099 14
+01:0000009A 14
+                            	   449:     even
+                            	   450: 
+                            	   451: ;==============================================================================
+                            	   452: ; midi_blob — compiled MIDI event blob (incbin'd from out/midi_data.bin)
+                            	   453: ;==============================================================================
+                            	   454:     xdef    midi_blob
+                            	   455:     even
+                            	   456: midi_blob:
+01:0000009C 4D494449000004EF	   457:     incbin  "out/midi_data.bin"
+01:000000A4 0000000000000000
+01:000000AC 243B00000100243B
+01:000000B4 000000031C7B0000
+01:000000BC 01031C7B000B0000
+01:000000C4 243B000000001DA5
+01:000000CC 000001001DA5000B
+01:000000D4 00001DA500000000
+01:000000DC 1C7B000001001C7B
+01:000000E4 000000041DA50000
+01:000000EC 01041DA5000C0000
+01:000000F4 1C7B00000005243B
+01:000000FC 00000105243B0000
+01:00000104 0000178900000100
+01:0000010C 1789000000041DA5
+01:00000114 000B0005243B0000
+01:0000011C 0000178900000000
+01:00000124 1F89000001001F89
+01:0000012C 000B00001F890000
+01:00000134 00001DA500000100
+01:0000013C 1DA5000C00001DA5
+01:00000144 000000001C7B0000
+01:0000014C 01001C7B000B0000
+01:00000154 1C7B000000001789
+01:0000015C 000001001789000B
+01:00000164 0000178900000000
+01:0000016C 1F1D000001001F1D
+01:00000174 000000031C7B000B
+01:0000017C 00001F1D00000000
+01:00000184 1DA5000001001DA5
+01:0000018C 000000031DA50000
+01:00000194 01031DA5000B0000
+01:0000019C 1DA500000004243B
+01:000001A4 00000104243B0000
+01:000001AC 00001C7B00000100
+01:000001B4 1C7B000000031DA5
+01:000001BC 000C0004243B0000
+01:000001C4 00001C7B00000003
+01:000001CC 1F89000001031F89
+01:000001D4 0000000017890000
+01:000001DC 01001789000B0003
+01:000001E4 1F89000000001789
+01:000001EC 0000000325080000
+01:000001F4 0103250800000000
+01:000001FC 1F89000001001F89
+01:00000204 000B000325080000
+01:0000020C 00001F8900000003
+01:00000214 243B00000103243B
+01:0000021C 000000001DA50000
+01:00000224 01001DA5000C0003
+01:0000022C 243B000000001DA5
+01:00000234 000000031F890000
+01:0000023C 01031F8900000000
+01:00000244 1C7B000001001C7B
+01:0000024C 000B00031F890000
+01:00000254 00001C7B00000000
+01:0000025C 1789000001001789
+01:00000264 000000031DA50000
+01:0000026C 01031DA5000B0000
+01:00000274 1789000000031DA5
+01:0000027C 000000001F890000
+01:00000284 01001F8900000003
+01:0000028C 1C3B000001031C3B
+01:00000294 000B00001F890000
+01:0000029C 00001D0800000100
+01:000002A4 1D08000B00001D08
+01:000002AC 000000001C3B0000
+01:000002B4 01001C3B00000004
+01:000002BC 1D08000001041D08
+01:000002C4 000C00001C3B0000
+01:000002CC 00051F8900000105
+01:000002D4 1F890000000326B7
+01:000002DC 0000010326B70000
+01:000002E4 00041D08000B0005
+01:000002EC 1F890000000326B7
+01:000002F4 000000001EB70000
+01:000002FC 01001EB7000B0000
+01:00000304 1EB7000000001D08
+01:0000030C 000001001D08000C
+01:00000314 00001D0800000000
+01:0000031C 1C3B000001001C3B
+01:00000324 000B00001C3B0000
+01:0000032C 000326B700000103
+01:00000334 26B7000B000326B7
+01:0000033C 000000001E560000
+01:00000344 01001E56000B0000
+01:0000034C 1E56000000001D08
+01:00000354 000001001D080000
+01:0000035C 00031D0800000103
+01:00000364 1D08000B00001D08
+01:0000036C 000000041F890000
+01:00000374 01041F8900000000
+01:0000037C 1C3B000001001C3B
+01:00000384 000000031D08000C
+01:0000038C 00041F8900000000
+01:00000394 1C3B000000031EB7
+01:0000039C 000001031EB70000
+01:000003A4 000426B700000104
+01:000003AC 26B7000B00031EB7
+01:000003B4 0000000426B70000
+01:000003BC 0003250800000103
+01:000003C4 2508000000001EB7
+01:000003CC 000001001EB7000B
+01:000003D4 0003250800000000
+01:000003DC 1EB7000000031F89
+01:000003E4 000001031F890000
+01:000003EC 00001D0800000100
+01:000003F4 1D08000C00031F89
+01:000003FC 000000001D080000
+01:00000404 00031EB700000103
+01:0000040C 1EB7000000001C3B
+01:00000414 000001001C3B000B
+01:0000041C 00031EB700000000
+01:00000424 1C3B0000000326B7
+01:0000042C 0000010326B70000
+01:00000434 00041D0800000104
+01:0000043C 1D08000B000326B7
+01:00000444 000000041D080000
+01:0000044C 00001EB700000100
+01:00000454 1EB7000000031789
+01:0000045C 000001031789000B
+01:00000464 00001EB700000000
+01:0000046C 1C7B000001001C7B
+01:00000474 000B00001C7B0000
+01:0000047C 0000178900000100
+01:00000484 1789000000041C7B
+01:0000048C 000001041C7B000C
+01:00000494 0000178900000005
+01:0000049C 1EB7000001051EB7
+01:000004A4 0000000326560000
+01:000004AC 0103265600000004
+01:000004B4 1C7B000B00051EB7
+01:000004BC 0000000326560000
+01:000004C4 00001E5600000100
+01:000004CC 1E56000B00001E56
+01:000004D4 000000001C7B0000
+01:000004DC 01001C7B000C0000
+01:000004E4 1C7B000000001789
+01:000004EC 000001001789000B
+01:000004F4 0000178900000003
+01:000004FC 2656000001032656
+01:00000504 000B000326560000
+01:0000050C 00001DFB00000100
+01:00000514 1DFB000B00001DFB
+01:0000051C 000000001C7B0000
+01:00000524 01001C7B00000003
+01:0000052C 1789000001031789
+01:00000534 000B00001C7B0000
+01:0000053C 00041EB700000104
+01:00000544 1EB7000000001789
+01:0000054C 0000010017890000
+01:00000554 00031789000C0004
+01:0000055C 1EB7000000001789
+01:00000564 0000000326560000
+01:0000056C 0103265600000004
+01:00000574 1E56000001041E56
+01:0000057C 000B000326560000
+01:00000584 00031F8900000103
+01:0000058C 1F89000000001E56
+01:00000594 000001001E560000
+01:0000059C 00041E56000B0003
+01:000005A4 1F89000000001E56
+01:000005AC 000000001C7B0000
+01:000005B4 01001C7B00000003
+01:000005BC 1E56000001031E56
+01:000005C4 000C00001C7B0000
+01:000005CC 0000178900000100
+01:000005D4 1789000000031E56
+01:000005DC 000000031DA50000
+01:000005E4 01031DA5000B0000
+01:000005EC 1789000000042656
+01:000005F4 0000010426560000
+01:000005FC 00031DA500000003
+01:00000604 1C7B000001031C7B
+01:0000060C 000B000426560000
+01:00000614 00031C7B00000000
+01:0000061C 1E56000001001E56
+01:00000624 0000000316B70000
+01:0000062C 010316B7000B0000
+01:00000634 1E56000000001C3B
+01:0000063C 000001001C3B000B
+01:00000644 00001C3B00000004
+01:0000064C 26B70000010426B7
+01:00000654 000000051C3B0000
+01:0000065C 01051C3B000C0004
+01:00000664 26B70000000425A5
+01:0000066C 0000010425A50000
+01:00000674 00051C3B00000005
+01:0000067C 1E56000001051E56
+01:00000684 000B000425A50000
+01:0000068C 00001DA500000100
+01:00000694 1DA5000000051E56
+01:0000069C 000B00001DA50000
+01:000006A4 00001C3B00000100
+01:000006AC 1C3B000C00001C3B
+01:000006B4 0000000426B70000
+01:000006BC 010426B7000B0004
+01:000006C4 26B70000000425A5
+01:000006CC 0000010425A5000B
+01:000006D4 000425A500000000
+01:000006DC 1D54000001001D54
+01:000006E4 0000000316B7000B
+01:000006EC 00001D5400000000
+01:000006F4 1C3B000001001C3B
+01:000006FC 0000000316B70000
+01:00000704 010316B7000B0000
+01:0000070C 1C3B0000000426B7
+01:00000714 0000010426B70000
+01:0000071C 000316B700000003
+01:00000724 1E56000001031E56
+01:0000072C 000C000426B70000
+01:00000734 000425A500000104
+01:0000073C 25A5000000031E56
+01:00000744 000000031DA50000
+01:0000074C 01031DA5000B0004
+01:00000754 25A5000000041F89
+01:0000075C 000001041F890000
+01:00000764 00001DA500000100
+01:0000076C 1DA5000000031DA5
+01:00000774 000B00041F890000
+01:0000077C 00001DA500000003
+01:00000784 1EB7000001031EB7
+01:0000078C 000000001C3B0000
+01:00000794 01001C3B000C0003
+01:0000079C 1EB7000000001C3B
+01:000007A4 0000000325080000
+01:000007AC 0103250800000004
+01:000007B4 26B70000010426B7
+01:000007BC 000B000325080000
+01:000007C4 000426B700000003
+01:000007CC 247B00000103247B
+01:000007D4 0000000425A50000
+01:000007DC 010425A5000B0003
+01:000007E4 247B0000000425A5
+01:000007EC 00000000243B0000
+01:000007F4 0100243B00000003
+01:000007FC 1C7B000001031C7B
+01:00000804 000B0000243B0000
+01:0000080C 00001DA500000100
+01:00000814 1DA5000B00001DA5
+01:0000081C 000000001C7B0000
+01:00000824 01001C7B00000004
+01:0000082C 1DA5000001041DA5
+01:00000834 000C00001C7B0000
+01:0000083C 0005243B00000105
+01:00000844 243B000000001789
+01:0000084C 0000010017890000
+01:00000854 00041DA5000B0005
+01:0000085C 243B000000001789
+01:00000864 000000001F890000
+01:0000086C 01001F89000B0000
+01:00000874 1F89000000001DA5
+01:0000087C 000001001DA5000C
+01:00000884 00001DA500000000
+01:0000088C 1C7B000001001C7B
+01:00000894 000B00001C7B0000
+01:0000089C 0000178900000100
+01:000008A4 1789000B00001789
+01:000008AC 000000001F1D0000
+01:000008B4 01001F1D00000003
+01:000008BC 1C7B000B00001F1D
+01:000008C4 000000001DA50000
+01:000008CC 01001DA500000003
+01:000008D4 1DA5000001031DA5
+01:000008DC 000B00001DA50000
+01:000008E4 0004243B00000104
+01:000008EC 243B000000001C7B
+01:000008F4 000001001C7B0000
+01:000008FC 00031DA5000C0004
+01:00000904 243B000000001C7B
+01:0000090C 000000031F890000
+01:00000914 01031F8900000000
+01:0000091C 1789000001001789
+01:00000924 000B00031F890000
+01:0000092C 0000178900000003
+01:00000934 2508000001032508
+01:0000093C 000000001F890000
+01:00000944 01001F89000B0003
+01:0000094C 2508000000001F89
+01:00000954 00000003243B0000
+01:0000095C 0103243B00000000
+01:00000964 1DA5000001001DA5
+01:0000096C 000C0003243B0000
+01:00000974 00001DA500000003
+01:0000097C 1F89000001031F89
+01:00000984 000000001C7B0000
+01:0000098C 01001C7B000B0003
+01:00000994 1F89000000001C7B
+01:0000099C 0000000017890000
+01:000009A4 0100178900000003
+01:000009AC 1DA5000001031DA5
+01:000009B4 000B000017890000
+01:000009BC 00031DA500000000
+01:000009C4 247B00000100247B
+01:000009CC 000000031C3B0000
+01:000009D4 01031C3B000B0000
+01:000009DC 247B000000001DFB
+01:000009E4 000001001DFB000B
+01:000009EC 00001DFB00000000
+01:000009F4 1D08000001001D08
+01:000009FC 000000031C3B0000
+01:00000A04 00031D0800000103
+01:00000A0C 1D08000C00001D08
+01:00000A14 0000000425080000
+01:00000A1C 0104250800000005
+01:00000A24 271D00000105271D
+01:00000A2C 000000031D08000B
+01:00000A34 0004250800000005
+01:00000A3C 271D00000000243B
+01:00000A44 00000100243B000B
+01:00000A4C 0000243B00000000
+01:00000A54 1DFB000001001DFB
+01:00000A5C 000C00001DFB0000
+01:00000A64 00001D0800000100
+01:00000A6C 1D08000B00001D08
+01:00000A74 00000003271D0000
+01:00000A7C 0103271D000B0003
+01:00000A84 271D000000001FFC
+01:00000A8C 000001001FFC0000
+01:00000A94 00031DA500000103
+01:00000A9C 1DA5000B00001FFC
+01:00000AA4 000000001DFB0000
+01:00000AAC 01001DFB00000003
+01:00000AB4 1DA5000000031D08
+01:00000ABC 000001031D08000B
+01:00000AC4 00001DFB00000004
+01:00000ACC 2508000001042508
+01:00000AD4 000000001D080000
+01:00000ADC 01001D0800000003
+01:00000AE4 1D08000C00042508
+01:00000AEC 000000001D080000
+01:00000AF4 0003243B00000103
+01:00000AFC 243B00000004271D
+01:00000B04 00000104271D000B
+01:00000B0C 0003243B00000004
+01:00000B14 271D0000000325FB
+01:00000B1C 0000010325FB0000
+01:00000B24 0000243B00000100
+01:00000B2C 243B000B000325FB
+01:00000B34 00000000243B0000
+01:00000B3C 000325A500000103
+01:00000B44 25A5000000001DFB
+01:00000B4C 000001001DFB000C
+01:00000B54 000325A500000000
+01:00000B5C 1DFB000000032508
+01:00000B64 0000010325080000
+01:00000B6C 00001D0800000100
+01:00000B74 1D08000B00032508
+01:00000B7C 000000001D080000
+01:00000B84 0003243B00000103
+01:00000B8C 243B00000004271D
+01:00000B94 00000104271D000B
+01:00000B9C 0003243B00000004
+01:00000BA4 271D000000002508
+01:00000BAC 0000010025080000
+01:00000BB4 0003178900000103
+01:00000BBC 1789000B00002508
+01:00000BC4 000000001DA50000
+01:00000BCC 01001DA500000003
+01:00000BD4 1789000000031C7B
+01:00000BDC 000001031C7B000B
+01:00000BE4 00001DA500000000
+01:00000BEC 1C7B000001001C7B
+01:00000BF4 000000031C7B0000
+01:00000BFC 00031DA500000103
+01:00000C04 1DA5000C00001C7B
+01:00000C0C 00000004247B0000
+01:00000C14 0104247B00000000
+01:00000C1C 1789000001001789
+01:00000C24 000000031DA5000B
+01:00000C2C 0004247B00000000
+01:00000C34 178900000000247B
+01:00000C3C 00000100247B000B
+01:00000C44 0000247B00000000
+01:00000C4C 1DA5000001001DA5
+01:00000C54 000C00001DA50000
+01:00000C5C 00001C7B00000100
+01:00000C64 1C7B000B00001C7B
+01:00000C6C 0000000017890000
+01:00000C74 01001789000B0000
+01:00000C7C 178900000000243B
+01:00000C84 00000100243B000B
+01:00000C8C 0000243B00000000
+01:00000C94 1DA5000001001DA5
+01:00000C9C 000000031C7B0000
+01:00000CA4 01031C7B000B0000
+01:00000CAC 1DA500000004247B
+01:00000CB4 00000104247B0000
+01:00000CBC 00001C7B00000100
+01:00000CC4 1C7B000000031C7B
+01:00000CCC 000C0004247B0000
+01:00000CD4 00001C7B00000003
+01:00000CDC 243B00000103243B
+01:00000CE4 0000000017890000
+01:00000CEC 01001789000B0003
+01:00000CF4 243B000000001789
+01:00000CFC 0000000325080000
+01:00000D04 0103250800000000
+01:00000D0C 247B00000100247B
+01:00000D14 000B000325080000
+01:00000D1C 0000247B00000003
+01:00000D24 247B00000103247B
+01:00000D2C 000000001DA50000
+01:00000D34 01001DA5000C0003
+01:00000D3C 247B000000001DA5
+01:00000D44 000000031F890000
+01:00000D4C 01031F8900000000
+01:00000D54 1C7B000001001C7B
+01:00000D5C 000B00031F890000
+01:00000D64 00001C7B00000000
+01:00000D6C 1789000001001789
+01:00000D74 000000031DA50000
+01:00000D7C 01031DA5000B0000
+01:00000D84 1789000000031DA5
+01:00000D8C 00000000243B0000
+01:00000D94 0100243B00000003
+01:00000D9C 1789000001031789
+01:00000DA4 000B0000243B0000
+01:00000DAC 00001C7B00000100
+01:00000DB4 1C7B000000031789
+01:00000DBC 000000031D080000
+01:00000DC4 01031D08000B0000
+01:00000DCC 1C7B000000041F89
+01:00000DD4 000001041F890000
+01:00000DDC 0000178900000100
+01:00000DE4 1789000000031D08
+01:00000DEC 000C00041F890000
+01:00000DF4 0000178900000003
+01:00000DFC 247B00000103247B
+01:00000E04 0000000426560000
+01:00000E0C 01042656000B0003
+01:00000E14 247B000000042656
+01:00000E1C 000000001F890000
+01:00000E24 01001F89000B0000
+01:00000E2C 1F89000000001C7B
+01:00000E34 000001001C7B000C
+01:00000E3C 00001C7B00000000
+01:00000E44 1789000001001789
+01:00000E4C 000B000017890000
+01:00000E54 0003265600000103
+01:00000E5C 2656000B00032656
+01:00000E64 000000001EB70000
+01:00000E6C 01001EB7000B0000
+01:00000E74 1EB7000000001C7B
+01:00000E7C 000001001C7B0000
+01:00000E84 00031D0800000103
+01:00000E8C 1D08000B00001C7B
+01:00000E94 00000004247B0000
+01:00000E9C 0104247B00000000
+01:00000EA4 1789000001001789
+01:00000EAC 000000031D08000C
+01:00000EB4 0004247B00000000
+01:00000EBC 1789000000031F89
+01:00000EC4 000001031F890000
+01:00000ECC 0004265600000104
+01:00000ED4 2656000B00031F89
+01:00000EDC 0000000426560000
+01:00000EE4 00001E5600000100
+01:00000EEC 1E56000000031E56
+01:00000EF4 000001031E56000B
+01:00000EFC 00001E5600000000
+01:00000F04 1C7B000001001C7B
+01:00000F0C 000000031E560000
+01:00000F14 00031DA500000103
+01:00000F1C 1DA5000C00001C7B
+01:00000F24 000000041F890000
+01:00000F2C 01041F8900000000
+01:00000F34 1789000001001789
+01:00000F3C 000000031DA5000B
+01:00000F44 00041F8900000000
+01:00000F4C 1789000000032656
+01:00000F54 0000010326560000
+01:00000F5C 00041E5600000104
+01:00000F64 1E56000B00032656
+01:00000F6C 000000041E560000
+01:00000F74 0000243B00000100
+01:00000F7C 243B000000031C7B
+01:00000F84 000001031C7B000B
+01:00000F8C 0000243B00000000
+01:00000F94 1DA5000001001DA5
+01:00000F9C 000B00001DA50000
+01:00000FA4 00001C7B00000100
+01:00000FAC 1C7B000000041DA5
+01:00000FB4 000001041DA5000C
+01:00000FBC 00001C7B00000005
+01:00000FC4 243B00000105243B
+01:00000FCC 0000000017890000
+01:00000FD4 0100178900000004
+01:00000FDC 1DA5000B0005243B
+01:00000FE4 0000000017890000
+01:00000FEC 00001F8900000100
+01:00000FF4 1F89000B00001F89
+01:00000FFC 000000001DA50000
+01:00001004 01001DA5000C0000
+01:0000100C 1DA5000000001C7B
+01:00001014 000001001C7B000B
+01:0000101C 00001C7B00000000
+01:00001024 1789000001001789
+01:0000102C 000B000017890000
+01:00001034 00001F1D00000100
+01:0000103C 1F1D000000031C7B
+01:00001044 000B00001F1D0000
+01:0000104C 00001DA500000100
+01:00001054 1DA5000000031DA5
+01:0000105C 000001031DA5000B
+01:00001064 00001DA500000004
+01:0000106C 243B00000104243B
+01:00001074 000000001C7B0000
+01:0000107C 01001C7B00000003
+01:00001084 1DA5000C0004243B
+01:0000108C 000000001C7B0000
+01:00001094 00031F8900000103
+01:0000109C 1F89000000001789
+01:000010A4 000001001789000B
+01:000010AC 00031F8900000000
+01:000010B4 1789000000032508
+01:000010BC 0000010325080000
+01:000010C4 00001F8900000100
+01:000010CC 1F89000B00032508
+01:000010D4 000000001F890000
+01:000010DC 0003243B00000103
+01:000010E4 243B000000001DA5
+01:000010EC 000001001DA5000C
+01:000010F4 0003243B00000000
+01:000010FC 1DA5000000031F89
+01:00001104 000001031F890000
+01:0000110C 00001C7B00000100
+01:00001114 1C7B000B00031F89
+01:0000111C 000000001C7B0000
+01:00001124 0000178900000100
+01:0000112C 1789000000031DA5
+01:00001134 000001031DA5000B
+01:0000113C 0000178900000003
+01:00001144 1DA5000000001F89
+01:0000114C 000001001F890000
+01:00001154 00031C3B00000103
+01:0000115C 1C3B000B00001F89
+01:00001164 000000001D080000
+01:0000116C 01001D08000B0000
+01:00001174 1D08000000001C3B
+01:0000117C 000001001C3B0000
+01:00001184 00041D0800000104
+01:0000118C 1D08000C00001C3B
+01:00001194 000000051F890000
+01:0000119C 01051F8900000003
+01:000011A4 26B70000010326B7
+01:000011AC 000000041D08000B
+01:000011B4 00051F8900000003
+01:000011BC 26B7000000001EB7
+01:000011C4 000001001EB7000B
+01:000011CC 00001EB700000000
+01:000011D4 1D08000001001D08
+01:000011DC 000C00001D080000
+01:000011E4 00001C3B00000100
+01:000011EC 1C3B000B00001C3B
+01:000011F4 0000000326B70000
+01:000011FC 010326B7000B0003
+01:00001204 26B7000000001E56
+01:0000120C 000001001E56000B
+01:00001214 00001E5600000000
+01:0000121C 1D08000001001D08
+01:00001224 000000031D080000
+01:0000122C 01031D08000B0000
+01:00001234 1D08000000041F89
+01:0000123C 000001041F890000
+01:00001244 00001C3B00000100
+01:0000124C 1C3B000000031D08
+01:00001254 000C00041F890000
+01:0000125C 00001C3B00000003
+01:00001264 1EB7000001031EB7
+01:0000126C 0000000426B70000
+01:00001274 010426B7000B0003
+01:0000127C 1EB70000000426B7
+01:00001284 0000000325080000
+01:0000128C 0103250800000000
+01:00001294 1EB7000001001EB7
+01:0000129C 000B000325080000
+01:000012A4 00001EB700000003
+01:000012AC 1F89000001031F89
+01:000012B4 000000001D080000
+01:000012BC 01001D08000C0003
+01:000012C4 1F89000000001D08
+01:000012CC 000000031EB70000
+01:000012D4 01031EB700000000
+01:000012DC 1C3B000001001C3B
+01:000012E4 000B00031EB70000
+01:000012EC 00001C3B00000003
+01:000012F4 26B70000010326B7
+01:000012FC 000000041D080000
+01:00001304 01041D08000B0003
+01:0000130C 26B7000000041D08
+01:00001314 000000001EB70000
+01:0000131C 01001EB700000003
+01:00001324 1789000001031789
+01:0000132C 000B00001EB70000
+01:00001334 00001C7B00000100
+01:0000133C 1C7B000B00001C7B
+01:00001344 0000000017890000
+01:0000134C 0100178900000004
+01:00001354 1C7B000001041C7B
+01:0000135C 000C000017890000
+01:00001364 00051EB700000105
+01:0000136C 1EB7000000032656
+01:00001374 0000010326560000
+01:0000137C 00041C7B000B0005
+01:00001384 1EB7000000032656
+01:0000138C 000000001E560000
+01:00001394 01001E56000B0000
+01:0000139C 1E56000000001C7B
+01:000013A4 000001001C7B000C
+01:000013AC 00001C7B00000000
+01:000013B4 1789000001001789
+01:000013BC 000B000017890000
+01:000013C4 0003265600000103
+01:000013CC 2656000B00032656
+01:000013D4 000000001DFB0000
+01:000013DC 01001DFB000B0000
+01:000013E4 1DFB000000001C7B
+01:000013EC 000001001C7B0000
+01:000013F4 0003178900000103
+01:000013FC 1789000B00001C7B
+01:00001404 000000041EB70000
+01:0000140C 01041EB700000000
+01:00001414 1789000001001789
+01:0000141C 000000031789000C
+01:00001424 00041EB700000000
+01:0000142C 1789000000032656
+01:00001434 0000010326560000
+01:0000143C 00041E5600000104
+01:00001444 1E56000B00032656
+01:0000144C 000000031F890000
+01:00001454 01031F8900000000
+01:0000145C 1E56000001001E56
+01:00001464 000000041E56000B
+01:0000146C 00031F8900000000
+01:00001474 1E56000000001C7B
+01:0000147C 000001001C7B0000
+01:00001484 00031E5600000103
+01:0000148C 1E56000C00001C7B
+01:00001494 0000000017890000
+01:0000149C 0100178900000003
+01:000014A4 1E56000000031DA5
+01:000014AC 000001031DA5000B
+01:000014B4 0000178900000004
+01:000014BC 2656000001042656
+01:000014C4 000000031DA50000
+01:000014CC 00031C7B00000103
+01:000014D4 1C7B000B00042656
+01:000014DC 000000031C7B0000
+01:000014E4 00001E5600000100
+01:000014EC 1E560000000316B7
+01:000014F4 0000010316B7000B
+01:000014FC 00001E5600000000
+01:00001504 1C3B000001001C3B
+01:0000150C 000B00001C3B0000
+01:00001514 000426B700000104
+01:0000151C 26B7000000051C3B
+01:00001524 000001051C3B000C
+01:0000152C 000426B700000004
+01:00001534 25A50000010425A5
+01:0000153C 000000051C3B0000
+01:00001544 00051E5600000105
+01:0000154C 1E56000B000425A5
+01:00001554 000000001DA50000
+01:0000155C 01001DA500000005
+01:00001564 1E56000B00001DA5
+01:0000156C 000000001C3B0000
+01:00001574 01001C3B000C0000
+01:0000157C 1C3B0000000426B7
+01:00001584 0000010426B7000B
+01:0000158C 000426B700000004
+01:00001594 25A50000010425A5
+01:0000159C 000B000425A50000
+01:000015A4 00001D5400000100
+01:000015AC 1D540000000316B7
+01:000015B4 000B00001D540000
+01:000015BC 00001C3B00000100
+01:000015C4 1C3B0000000316B7
+01:000015CC 0000010316B7000B
+01:000015D4 00001C3B00000004
+01:000015DC 26B70000010426B7
+01:000015E4 0000000316B70000
+01:000015EC 00031E5600000103
+01:000015F4 1E56000C000426B7
+01:000015FC 0000000425A50000
+01:00001604 010425A500000003
+01:0000160C 1E56000000031DA5
+01:00001614 000001031DA5000B
+01:0000161C 000425A500000004
+01:00001624 1F89000001041F89
+01:0000162C 000000001DA50000
+01:00001634 01001DA500000003
+01:0000163C 1DA5000B00041F89
+01:00001644 000000001DA50000
+01:0000164C 00031EB700000103
+01:00001654 1EB7000000001C3B
+01:0000165C 000001001C3B000C
+01:00001664 00031EB700000000
+01:0000166C 1C3B000000032508
+01:00001674 0000010325080000
+01:0000167C 000426B700000104
+01:00001684 26B7000B00032508
+01:0000168C 0000000426B70000
+01:00001694 0003247B00000103
+01:0000169C 247B0000000425A5
+01:000016A4 0000010425A5000B
+01:000016AC 0003247B00000004
+01:000016B4 25A500000000243B
+01:000016BC 00000100243B0000
+01:000016C4 00031C7B00000103
+01:000016CC 1C7B000B0000243B
+01:000016D4 000000001DA50000
+01:000016DC 01001DA5000B0000
+01:000016E4 1DA5000000001C7B
+01:000016EC 000001001C7B0000
+01:000016F4 00041DA500000104
+01:000016FC 1DA5000C00001C7B
+01:00001704 00000005243B0000
+01:0000170C 0105243B00000000
+01:00001714 1789000001001789
+01:0000171C 000000041DA5000B
+01:00001724 0005243B00000000
+01:0000172C 1789000000001F89
+01:00001734 000001001F89000B
+01:0000173C 00001F8900000000
+01:00001744 1DA5000001001DA5
+01:0000174C 000C00001DA50000
+01:00001754 00001C7B00000100
+01:0000175C 1C7B000B00001C7B
+01:00001764 0000000017890000
+01:0000176C 01001789000B0000
+01:00001774 1789000000001F1D
+01:0000177C 000001001F1D0000
+01:00001784 00031C7B000B0000
+01:0000178C 1F1D000000001DA5
+01:00001794 000001001DA50000
+01:0000179C 00031DA500000103
+01:000017A4 1DA5000B00001DA5
+01:000017AC 00000004243B0000
+01:000017B4 0104243B00000000
+01:000017BC 1C7B000001001C7B
+01:000017C4 000000031DA5000C
+01:000017CC 0004243B00000000
+01:000017D4 1C7B000000031F89
+01:000017DC 000001031F890000
+01:000017E4 0000178900000100
+01:000017EC 1789000B00031F89
+01:000017F4 0000000017890000
+01:000017FC 0003250800000103
+01:00001804 2508000000001F89
+01:0000180C 000001001F89000B
+01:00001814 0003250800000000
+01:0000181C 1F8900000003243B
+01:00001824 00000103243B0000
+01:0000182C 00001DA500000100
+01:00001834 1DA5000C0003243B
+01:0000183C 000000001DA50000
+01:00001844 00031F8900000103
+01:0000184C 1F89000000001C7B
+01:00001854 000001001C7B000B
+01:0000185C 00031F8900000000
+01:00001864 1C7B000000001789
+01:0000186C 0000010017890000
+01:00001874 00031DA500000103
+01:0000187C 1DA5000B00001789
+01:00001884 000000031DA50000
+01:0000188C 0000247B00000100
+01:00001894 247B000000031C3B
+01:0000189C 000001031C3B000B
+01:000018A4 0000247B00000000
+01:000018AC 1DFB000001001DFB
+01:000018B4 000B00001DFB0000
+01:000018BC 00001D0800000100
+01:000018C4 1D08000000031C3B
+01:000018CC 000000031D080000
+01:000018D4 01031D08000C0000
+01:000018DC 1D08000000042508
+01:000018E4 0000010425080000
+01:000018EC 0005271D00000105
+01:000018F4 271D000000031D08
+01:000018FC 000B000425080000
+01:00001904 0005271D00000000
+01:0000190C 243B00000100243B
+01:00001914 000B0000243B0000
+01:0000191C 00001DFB00000100
+01:00001924 1DFB000C00001DFB
+01:0000192C 000000001D080000
+01:00001934 01001D08000B0000
+01:0000193C 1D0800000003271D
+01:00001944 00000103271D000B
+01:0000194C 0003271D00000000
+01:00001954 1FFC000001001FFC
+01:0000195C 000000031DA50000
+01:00001964 01031DA5000B0000
+01:0000196C 1FFC000000001DFB
+01:00001974 000001001DFB0000
+01:0000197C 00031DA500000003
+01:00001984 1D08000001031D08
+01:0000198C 000B00001DFB0000
+01:00001994 0004250800000104
+01:0000199C 2508000000001D08
+01:000019A4 000001001D080000
+01:000019AC 00031D08000C0004
+01:000019B4 2508000000001D08
+01:000019BC 00000003243B0000
+01:000019C4 0103243B00000004
+01:000019CC 271D00000104271D
+01:000019D4 000B0003243B0000
+01:000019DC 0004271D00000003
+01:000019E4 25FB0000010325FB
+01:000019EC 00000000243B0000
+01:000019F4 0100243B000B0003
+01:000019FC 25FB00000000243B
+01:00001A04 0000000325A50000
+01:00001A0C 010325A500000000
+01:00001A14 1DFB000001001DFB
+01:00001A1C 000C000325A50000
+01:00001A24 00001DFB00000003
+01:00001A2C 2508000001032508
+01:00001A34 000000001D080000
+01:00001A3C 01001D08000B0003
+01:00001A44 2508000000001D08
+01:00001A4C 00000003243B0000
+01:00001A54 0103243B00000004
+01:00001A5C 271D00000104271D
+01:00001A64 000B0003243B0000
+01:00001A6C 0004271D00000000
+01:00001A74 2508000001002508
+01:00001A7C 0000000317890000
+01:00001A84 01031789000B0000
+01:00001A8C 2508000000001DA5
+01:00001A94 000001001DA50000
+01:00001A9C 0003178900000003
+01:00001AA4 1C7B000001031C7B
+01:00001AAC 000B00001DA50000
+01:00001AB4 00001C7B00000100
+01:00001ABC 1C7B000000031C7B
+01:00001AC4 000000031DA50000
+01:00001ACC 01031DA5000C0000
+01:00001AD4 1C7B00000004247B
+01:00001ADC 00000104247B0000
+01:00001AE4 0000178900000100
+01:00001AEC 1789000000031DA5
+01:00001AF4 000B0004247B0000
+01:00001AFC 0000178900000000
+01:00001B04 247B00000100247B
+01:00001B0C 000B0000247B0000
+01:00001B14 00001DA500000100
+01:00001B1C 1DA5000C00001DA5
+01:00001B24 000000001C7B0000
+01:00001B2C 01001C7B000B0000
+01:00001B34 1C7B000000001789
+01:00001B3C 000001001789000B
+01:00001B44 0000178900000000
+01:00001B4C 243B00000100243B
+01:00001B54 000B0000243B0000
+01:00001B5C 00001DA500000100
+01:00001B64 1DA5000000031C7B
+01:00001B6C 000001031C7B000B
+01:00001B74 00001DA500000004
+01:00001B7C 247B00000104247B
+01:00001B84 000000001C7B0000
+01:00001B8C 01001C7B00000003
+01:00001B94 1C7B000C0004247B
+01:00001B9C 000000001C7B0000
+01:00001BA4 0003243B00000103
+01:00001BAC 243B000000001789
+01:00001BB4 000001001789000B
+01:00001BBC 0003243B00000000
+01:00001BC4 1789000000032508
+01:00001BCC 0000010325080000
+01:00001BD4 0000247B00000100
+01:00001BDC 247B000B00032508
+01:00001BE4 00000000247B0000
+01:00001BEC 0003247B00000103
+01:00001BF4 247B000000001DA5
+01:00001BFC 000001001DA5000C
+01:00001C04 0003247B00000000
+01:00001C0C 1DA5000000031F89
+01:00001C14 000001031F890000
+01:00001C1C 00001C7B00000100
+01:00001C24 1C7B000B00031F89
+01:00001C2C 000000001C7B0000
+01:00001C34 0000178900000100
+01:00001C3C 1789000000031DA5
+01:00001C44 000001031DA5000B
+01:00001C4C 0000178900000003
+01:00001C54 1DA500000000243B
+01:00001C5C 00000100243B0000
+01:00001C64 0003178900000103
+01:00001C6C 1789000B0000243B
+01:00001C74 000000001C7B0000
+01:00001C7C 01001C7B00000003
+01:00001C84 1789000000031D08
+01:00001C8C 000001031D08000B
+01:00001C94 00001C7B00000004
+01:00001C9C 1F89000001041F89
+01:00001CA4 0000000017890000
+01:00001CAC 0100178900000003
+01:00001CB4 1D08000C00041F89
+01:00001CBC 0000000017890000
+01:00001CC4 0003247B00000103
+01:00001CCC 247B000000042656
+01:00001CD4 000001042656000B
+01:00001CDC 0003247B00000004
+01:00001CE4 2656000000001F89
+01:00001CEC 000001001F89000B
+01:00001CF4 00001F8900000000
+01:00001CFC 1C7B000001001C7B
+01:00001D04 000C00001C7B0000
+01:00001D0C 0000178900000100
+01:00001D14 1789000B00001789
+01:00001D1C 0000000326560000
+01:00001D24 01032656000B0003
+01:00001D2C 2656000000001EB7
+01:00001D34 000001001EB7000B
+01:00001D3C 00001EB700000000
+01:00001D44 1C7B000001001C7B
+01:00001D4C 000000031D080000
+01:00001D54 01031D08000B0000
+01:00001D5C 1C7B00000004247B
+01:00001D64 00000104247B0000
+01:00001D6C 0000178900000100
+01:00001D74 1789000000031D08
+01:00001D7C 000C0004247B0000
+01:00001D84 0000178900000003
+01:00001D8C 1F89000001031F89
+01:00001D94 0000000426560000
+01:00001D9C 01042656000B0003
+01:00001DA4 1F89000000042656
+01:00001DAC 000000001E560000
+01:00001DB4 01001E5600000003
+01:00001DBC 1E56000001031E56
+01:00001DC4 000B00001E560000
+01:00001DCC 00001C7B00000100
+01:00001DD4 1C7B000000031E56
+01:00001DDC 000000031DA50000
+01:00001DE4 01031DA5000C0000
+01:00001DEC 1C7B000000041F89
+01:00001DF4 000001041F890000
+01:00001DFC 0000178900000100
+01:00001E04 1789000000031DA5
+01:00001E0C 000B00041F890000
+01:00001E14 0000178900000003
+01:00001E1C 2656000001032656
+01:00001E24 000000041E560000
+01:00001E2C 01041E56000B0003
+01:00001E34 2656000000041E56
+01:00001E3C 0000FF000000
+                            	   458:     even
+                            	   459: 
+
+
+Symbols by name:
+FM_PATCH_REGS                   01:00000000
+MIDI_STATE                       E:00FFE000
+MS_END_PTR                       E:00FFE00E
+MS_EVENTS_BASE                   E:00FFE004
+MS_LOOP_PTR                      E:00FFE008
+MS_PLAY_PTR                      E:00FFE000
+MS_TIME_NEXT                     E:00FFE00C
+PATCH_FLUTE                     01:0000004E
+PATCH_PAD                       01:00000034
+PATCH_TWINKLE                   01:00000082
+PATCH_VOICE00                   01:0000001A
+PATCH_VOICE03                   01:00000068
+PSG_PORT                         E:00C00011
+YM_ADDR1                         E:00A04000
+YM_ADDR2                         E:00A04002
+YM_DATA1                         E:00A04001
+YM_DATA2                         E:00A04003
+do_note_off                     00:0000027E
+do_note_on                      00:00000222
+load_fm_patch_named             00:00000038
+midi_blob                       01:0000009C EXP
+midi_init                       00:00000140 EXP
+midi_tick                       00:000001A2 EXP
+ym_init                         00:0000006A EXP
+ym_write1                       00:00000000
+ym_write2                       00:0000001C
+
+Symbols by value:
+00000000 ym_write1
+00000000 FM_PATCH_REGS
+0000001A PATCH_VOICE00
+0000001C ym_write2
+00000034 PATCH_PAD
+00000038 load_fm_patch_named
+0000004E PATCH_FLUTE
+00000068 PATCH_VOICE03
+0000006A ym_init
+00000082 PATCH_TWINKLE
+0000009C midi_blob
+00000140 midi_init
+000001A2 midi_tick
+00000222 do_note_on
+0000027E do_note_off
+00A04000 YM_ADDR1
+00A04001 YM_DATA1
+00A04002 YM_ADDR2
+00A04003 YM_DATA2
+00C00011 PSG_PORT
+00FFE000 MS_PLAY_PTR
+00FFE000 MIDI_STATE
+00FFE004 MS_EVENTS_BASE
+00FFE008 MS_LOOP_PTR
+00FFE00C MS_TIME_NEXT
+00FFE00E MS_END_PTR

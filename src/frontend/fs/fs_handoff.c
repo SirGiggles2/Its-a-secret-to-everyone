@@ -48,7 +48,6 @@ void fs_handoff_to_transpiled(uint8_t slot) {
      * LoopForever. Does not return. */
 #ifdef OW_DEBUG_ENTRY
     render_display_enable(0);
-    render_mode_set_v32();
     ow_debug_entry(0x77);  /* start room $77; does not return */
 #else
     fs_to_transpiled_trampoline();

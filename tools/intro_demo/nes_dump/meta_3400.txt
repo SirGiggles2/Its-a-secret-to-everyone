@@ -1,0 +1,3 @@
+frame=3400
+scroll_y=138
+scroll_x=0

@@ -1,0 +1,76 @@
+== title_initial @frame 91 ==
+  gamemode($FF0012)   = 0x00
+  midi_active($FFE120)= 0x00
+  m_song              = 0xFF
+  m_song_req          = 0x00
+  ppuctrl             = 0x00
+  MS_PLAY_PTR         = 0x00000000
+  MS_LOOP_PTR         = 0x00000000
+  MS_END_PTR          = 0x00000000
+  MS_TIME_NEXT        = 0x0000
+  audio_peak          = -1
+
+-- VDP @ title --
+  Plane A first 32 cells:
+    2024 2024 2024 2024 2024 2024 2024 2024 
+    2024 2024 2024 2024 2024 2024 2024 2024 
+    2024 2024 2024 2024 2024 2024 2024 2024 
+    2024 2024 2024 2024 2024 2024 2024 2024 
+  CRAM (64 entries x 2 bytes BE):
+    0CCE 0000 0666 0AAA 0666 0EEE 0CEA 002C 0000 0000 0000 0000 0000 0000 0000 0000 
+    0CCE 0048 08CE 0000 0666 0048 008E 0000 0000 0000 0000 0000 0000 0000 0000 0000 
+    0CCE 0042 00A0 00CA 0666 0042 00A0 00CA 0000 0000 0000 0000 0000 0000 0000 0000 
+    0CCE 0EEE 0CEA 0E88 0666 0EEE 0CEA 0E88 0000 0000 0000 0000 0000 0000 0000 0000 
+  SAT entry 0:
+    00 F8 01 01 59 CA 01 50
+
+>>> Pressing Start <<<
+Frame-by-frame post-Start trace (10 frames):
+  +1f gm=0x01 flag=0x01 play=0x0000E678 time=0x0009 peak=-1
+  +2f gm=0x01 flag=0x01 play=0x0000E678 time=0x0009 peak=-1
+  +3f gm=0x01 flag=0x01 play=0x0000E678 time=0x0009 peak=-1
+  +4f gm=0x01 flag=0x01 play=0x0000E678 time=0x0009 peak=-1
+  +5f gm=0x01 flag=0x01 play=0x0000E678 time=0x0009 peak=-1
+  +6f gm=0x01 flag=0x01 play=0x0000E678 time=0x0007 peak=-1
+  +7f gm=0x01 flag=0x01 play=0x0000E678 time=0x0007 peak=-1
+  +8f gm=0x01 flag=0x01 play=0x0000E678 time=0x0007 peak=-1
+  +9f gm=0x01 flag=0x01 play=0x0000E678 time=0x0007 peak=-1
+  +10f gm=0x01 flag=0x01 play=0x0000E678 time=0x0004 peak=-1
+== post_start_70f @frame 165 ==
+  gamemode($FF0012)   = 0x01
+  midi_active($FFE120)= 0x01
+  m_song              = 0xFF
+  m_song_req          = 0x00
+  ppuctrl             = 0x30
+  MS_PLAY_PTR         = 0x0000E68A
+  MS_LOOP_PTR         = 0x0000E660
+  MS_END_PTR          = 0x000103FA
+  MS_TIME_NEXT        = 0x0008
+  audio_peak          = -1
+
+-- VDP @ post_start_70f --
+  Plane A first 32 cells:
+    8124 8124 8124 8124 8124 8124 8124 8124 
+    8124 8124 8124 8124 8124 8124 8124 8124 
+    8124 8124 8124 8124 8124 8124 8124 8124 
+    8124 8124 8124 8124 8124 8124 8124 8124 
+  CRAM (64 entries x 2 bytes BE):
+    0000 0EEE 0666 0E40 0666 02EA 048E 0028 0000 0E86 048E 0028 0000 046E 048E 0028 
+    0000 004A 048E 0CCE 0666 040C 048E 0EEE 0000 0000 0000 0000 0000 0000 0000 0000 
+    0000 0440 0880 0CC0 0666 0042 00A0 00CA 0000 0000 0000 0000 0000 0000 0000 0000 
+    0000 0E40 0880 0CC0 0666 0EEE 0CEA 0E88 0000 0000 0000 0000 0000 0000 0000 0000 
+  SAT entry 0:
+    01 71 01 01 80 00 00 80
+
+== post_start_250f @frame 345 ==
+  gamemode($FF0012)   = 0x01
+  midi_active($FFE120)= 0x01
+  m_song              = 0xFF
+  m_song_req          = 0x00
+  ppuctrl             = 0x30
+  MS_PLAY_PTR         = 0x0000E68A
+  MS_LOOP_PTR         = 0x0000E660
+  MS_END_PTR          = 0x000103FA
+  MS_TIME_NEXT        = 0x0008
+  audio_peak          = -1
+

@@ -1,0 +1,3 @@
+frame=2700
+scroll_y=28
+scroll_x=0

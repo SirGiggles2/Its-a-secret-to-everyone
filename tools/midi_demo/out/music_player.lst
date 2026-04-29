@@ -1,0 +1,1597 @@
+Sections:
+00: "text" (0-20E8)
+
+
+Source: "C:\Users\Jake Diggity\Documents\GitHub\FINAL TRY\src\music_player.asm"
+                            	     1: ;==============================================================================
+                            	     2: ; music_player.asm — Compact event-driven YM2612 MIDI player.
+                            	     3: ;
+                            	     4: ; Public symbols:
+                            	     5: ;       music_player_ym_init     — load Voice 00 bell pad on YM channels 0..5, mute PSG
+                            	     6: ;       music_player_init_song   — point play state at caller-provided blob ptr (A0)
+                            	     7: ;       music_player_tick        — call once per VBlank; dispatches due events
+                            	     8: ;       music_player_silence_all — key-off all 6 FM channels, mute PSG
+                            	     9: ;
+                            	    10: ; Compiled blob is at label `song_great_fairy_blob`.  Layout (big-endian):
+                            	    11: ;       u32 magic = 'MIDI'
+                            	    12: ;       u32 num_events
+                            	    13: ;       u32 loop_offset    (byte offset into events[] for loop point)
+                            	    14: ;       events[N]:
+                            	    15: ;           u16 delta_frames
+                            	    16: ;           u8  op        ($00 note-off, $01 note-on, $FF end-of-song)
+                            	    17: ;           u8  ch        (0..5 -> YM channel)
+                            	    18: ;           u8  bf_hi     ((block<<3)|fnum_hi)  — destined for $A4+offset
+                            	    19: ;           u8  fnum_lo   — destined for $A0+offset
+                            	    20: ;
+                            	    21: ; Private helpers use mp_ prefix to avoid name collisions with audio_driver.asm
+                            	    22: ; when both are included into the same vasm translation unit (main ROM build).
+                            	    23: ; The standalone midi_demo build links music_player.o alone — no conflicts either.
+                            	    24: ;==============================================================================
+                            	    25: 
+                            	    26: ;----------------------------------------------------------------------
+                            	    27: ; Hardware ports (private names: audio_driver.asm defines YM_ADDR1 etc.
+                            	    28: ; globally, but we use our own copies for locality so bsr stays in range)
+                            	    29: ;----------------------------------------------------------------------
+                            	    30: MP_YM_ADDR1     equ $A04000
+                            	    31: MP_YM_DATA1     equ $A04001
+                            	    32: MP_YM_ADDR2     equ $A04002
+                            	    33: MP_YM_DATA2     equ $A04003
+                            	    34: MP_PSG_PORT     equ $C00011
+                            	    35: 
+                            	    36: ;----------------------------------------------------------------------
+                            	    37: ; Player state (lives in RAM)
+                            	    38: ;----------------------------------------------------------------------
+                            	    39: MIDI_STATE      equ $FFE140
+                            	    40: MS_PLAY_PTR     equ MIDI_STATE+0     ; long: pointer to next event's delta byte
+                            	    41: MS_EVENTS_BASE  equ MIDI_STATE+4     ; long: pointer to events[] start
+                            	    42: MS_LOOP_PTR     equ MIDI_STATE+8     ; long: events[] + loop_offset
+                            	    43: MS_TIME_NEXT    equ MIDI_STATE+12    ; word: frames until next event
+                            	    44: MS_END_PTR      equ MIDI_STATE+14    ; long: events[] end (events_base + 6*num_events)
+                            	    45: 
+                            	    46:     section "text",code
+                            	    47: 
+                            	    48: ;==============================================================================
+                            	    49: ; mp_ym_w1 — write address+data atomically to YM2612 Part I.
+                            	    50: ; Input:  D0.b = register, D1.b = data.  Preserves D0,D1.
+                            	    51: ; Private to music_player.asm — keeps bsr calls local (always in range).
+                            	    52: ;==============================================================================
+                            	    53: mp_ym_w1:
+                            	    54: .wait1:
+00:00000000 4A3900A04000    	    55:     tst.b   (MP_YM_ADDR1).l
+00:00000006 6BF8            	    56:     bmi.s   .wait1
+00:00000008 13C000A04000    	    57:     move.b  D0,(MP_YM_ADDR1).l
+00:0000000E 4E71            	    58:     nop
+00:00000010 4E71            	    59:     nop
+00:00000012 4E71            	    60:     nop
+00:00000014 13C100A04001    	    61:     move.b  D1,(MP_YM_DATA1).l
+00:0000001A 4E75            	    62:     rts
+                            	    63: 
+                            	    64: ;==============================================================================
+                            	    65: ; mp_ym_w2 — write address+data atomically to YM2612 Part II.
+                            	    66: ; Busy flag is shared, so still poll Part I.
+                            	    67: ;==============================================================================
+                            	    68: mp_ym_w2:
+                            	    69: .wait2:
+00:0000001C 4A3900A04000    	    70:     tst.b   (MP_YM_ADDR1).l
+00:00000022 6BF8            	    71:     bmi.s   .wait2
+00:00000024 13C000A04002    	    72:     move.b  D0,(MP_YM_ADDR2).l
+00:0000002A 4E71            	    73:     nop
+00:0000002C 4E71            	    74:     nop
+00:0000002E 4E71            	    75:     nop
+00:00000030 13C100A04003    	    76:     move.b  D1,(MP_YM_DATA2).l
+00:00000036 4E75            	    77:     rts
+                            	    78: 
+                            	    79: ;==============================================================================
+                            	    80: ; mp_load_patch — load 25-byte patch into one channel.
+                            	    81: ; Input: A0 = pointer to 25-byte patch, D6.b = YM channel 0..5
+                            	    82: ;==============================================================================
+                            	    83: mp_load_patch:
+00:00000038 48E7E2C0        	    84:     movem.l D0-D2/D6/A0-A1,-(SP)
+00:0000003C 43FA0268        	    85:     lea     mp_FM_PATCH_REGS(PC),A1
+00:00000040 7418            	    86:     moveq   #24,D2                  ; 25 register/value pairs
+00:00000042 0C060003        	    87:     cmpi.b  #3,D6
+00:00000046 6D10            	    88:     blt.s   .partI
+                            	    89:     ; ch 3..5 — Part II, channel offset = ch-3
+00:00000048 5706            	    90:     subi.b  #3,D6
+                            	    91: .lpII:
+00:0000004A 1019            	    92:     move.b  (A1)+,D0
+00:0000004C D006            	    93:     add.b   D6,D0
+00:0000004E 1218            	    94:     move.b  (A0)+,D1
+00:00000050 61CA            	    95:     bsr     mp_ym_w2
+00:00000052 51CAFFF6        	    96:     dbra    D2,.lpII
+00:00000056 600C            	    97:     bra.s   .done
+                            	    98: .partI:
+                            	    99: .lpI:
+00:00000058 1019            	   100:     move.b  (A1)+,D0
+00:0000005A D006            	   101:     add.b   D6,D0
+00:0000005C 1218            	   102:     move.b  (A0)+,D1
+00:0000005E 61A0            	   103:     bsr     mp_ym_w1
+00:00000060 51CAFFF6        	   104:     dbra    D2,.lpI
+                            	   105: .done:
+00:00000064 4CDF0347        	   106:     movem.l (SP)+,D0-D2/D6/A0-A1
+00:00000068 4E75            	   107:     rts
+                            	   108: 
+                            	   109: ;==============================================================================
+                            	   110: ; music_player_silence_all — key-off all 6 FM channels, mute PSG.
+                            	   111: ; Called by music_player_ym_init at start of patch load AND by
+                            	   112: ; music_dispatch.music_stop before handing YM back to audio_driver.
+                            	   113: ;==============================================================================
+                            	   114:     xdef    music_player_silence_all
+                            	   115: music_player_silence_all:
+00:0000006A 48E7C000        	   116:     movem.l D0-D1,-(SP)
+00:0000006E 103C0028        	   117:     move.b  #$28,D0
+00:00000072 7200            	   118:     moveq   #$00,D1
+00:00000074 618A            	   119:     bsr     mp_ym_w1
+00:00000076 7201            	   120:     moveq   #$01,D1
+00:00000078 6186            	   121:     bsr     mp_ym_w1
+00:0000007A 7202            	   122:     moveq   #$02,D1
+00:0000007C 6182            	   123:     bsr     mp_ym_w1
+00:0000007E 7204            	   124:     moveq   #$04,D1
+00:00000080 6100FF7E        	   125:     bsr     mp_ym_w1
+00:00000084 7205            	   126:     moveq   #$05,D1
+00:00000086 6100FF78        	   127:     bsr     mp_ym_w1
+00:0000008A 7206            	   128:     moveq   #$06,D1
+00:0000008C 6100FF72        	   129:     bsr     mp_ym_w1
+                            	   130: 
+00:00000090 13FC009F00C00011	   131:     move.b  #$9F,(MP_PSG_PORT).l
+00:00000098 13FC00BF00C00011	   132:     move.b  #$BF,(MP_PSG_PORT).l
+00:000000A0 13FC00DF00C00011	   133:     move.b  #$DF,(MP_PSG_PORT).l
+00:000000A8 13FC00FF00C00011	   134:     move.b  #$FF,(MP_PSG_PORT).l
+                            	   135: 
+00:000000B0 4CDF0003        	   136:     movem.l (SP)+,D0-D1
+00:000000B4 4E75            	   137:     rts
+                            	   138: 
+                            	   139: ;==============================================================================
+                            	   140: ; music_player_ym_init — set up YM2612 for 6-voice bell pad playback.
+                            	   141: ;==============================================================================
+                            	   142:     xdef    music_player_ym_init
+                            	   143: music_player_ym_init:
+00:000000B6 48E7FE80        	   144:     movem.l D0-D6/A0,-(SP)
+                            	   145: 
+                            	   146:     ; Key-off all 6 channels + mute PSG
+00:000000BA 61AE            	   147:     bsr     music_player_silence_all
+                            	   148: 
+                            	   149:     ; LFO off
+00:000000BC 103C0022        	   150:     move.b  #$22,D0
+00:000000C0 7200            	   151:     moveq   #0,D1
+00:000000C2 6100FF3C        	   152:     bsr     mp_ym_w1
+                            	   153: 
+                            	   154:     ; DAC disabled (ch 6 stays as FM, but we don't use it)
+00:000000C6 103C002B        	   155:     move.b  #$2B,D0
+00:000000CA 7200            	   156:     moveq   #0,D1
+00:000000CC 6100FF32        	   157:     bsr     mp_ym_w1
+                            	   158: 
+                            	   159:     ; Clear SSG-EG for every operator on all 6 channels.
+                            	   160:     ; Part I = ch 0,1,2.  Part II = ch 3,4,5 (channel offsets 0,1,2 on Part II).
+00:000000D0 7200            	   161:     moveq   #0,D1
+00:000000D2 7C00            	   162:     moveq   #0,D6
+                            	   163: .ssg_loop:
+00:000000D4 1006            	   164:     move.b  D6,D0
+00:000000D6 06000090        	   165:     addi.b  #$90,D0
+00:000000DA 6100FF24        	   166:     bsr     mp_ym_w1
+00:000000DE 1006            	   167:     move.b  D6,D0
+00:000000E0 06000090        	   168:     addi.b  #$90,D0
+00:000000E4 6100FF36        	   169:     bsr     mp_ym_w2
+00:000000E8 5206            	   170:     addq.b  #1,D6
+00:000000EA 0C06000F        	   171:     cmpi.b  #15,D6                  ; 16 iterations covers $90..$9F (4 ops x 3 ch + skip)
+00:000000EE 6FE4            	   172:     ble.s   .ssg_loop
+                            	   173: 
+                            	   174:     ; Load harp patch on ch 0..2 (lead), bell pad on ch 3..5 (backup).
+00:000000F0 7C00            	   175:     moveq   #0,D6
+                            	   176: .patch_lead:
+00:000000F2 41FA01CC        	   177:     lea     mp_PATCH_VOICE00(PC),A0 ; bell pad on lead — best fit per user A/B
+00:000000F6 6100FF40        	   178:     bsr     mp_load_patch
+00:000000FA 5206            	   179:     addq.b  #1,D6
+00:000000FC 0C060002        	   180:     cmpi.b  #2,D6
+00:00000100 6FF0            	   181:     ble.s   .patch_lead
+                            	   182: .patch_backup:
+00:00000102 41FA01D6        	   183:     lea     mp_PATCH_PAD(PC),A0     ; slow-swell mystical pad for backup line
+00:00000106 6100FF30        	   184:     bsr     mp_load_patch
+00:0000010A 5206            	   185:     addq.b  #1,D6
+00:0000010C 0C060005        	   186:     cmpi.b  #5,D6
+00:00000110 6FF0            	   187:     ble.s   .patch_backup
+                            	   188: 
+                            	   189:     ; Panning L+R for ch 0..2 ($B4..$B6 Part I)
+00:00000112 123C00C0        	   190:     move.b  #$C0,D1
+00:00000116 103C00B4        	   191:     move.b  #$B4,D0
+00:0000011A 6100FEE4        	   192:     bsr     mp_ym_w1
+00:0000011E 103C00B5        	   193:     move.b  #$B5,D0
+00:00000122 6100FEDC        	   194:     bsr     mp_ym_w1
+00:00000126 103C00B6        	   195:     move.b  #$B6,D0
+00:0000012A 6100FED4        	   196:     bsr     mp_ym_w1
+                            	   197:     ; ch 3..5 ($B4..$B6 Part II)
+00:0000012E 103C00B4        	   198:     move.b  #$B4,D0
+00:00000132 6100FEE8        	   199:     bsr     mp_ym_w2
+00:00000136 103C00B5        	   200:     move.b  #$B5,D0
+00:0000013A 6100FEE0        	   201:     bsr     mp_ym_w2
+00:0000013E 103C00B6        	   202:     move.b  #$B6,D0
+00:00000142 6100FED8        	   203:     bsr     mp_ym_w2
+                            	   204: 
+00:00000146 4CDF017F        	   205:     movem.l (SP)+,D0-D6/A0
+00:0000014A 4E75            	   206:     rts
+                            	   207: 
+                            	   208: ;==============================================================================
+                            	   209: ; music_player_init_song — initialize player state from a compiled blob.
+                            	   210: ; Input: A0 = pointer to blob (12-byte header + events[] + 0xFF terminator)
+                            	   211: ;==============================================================================
+                            	   212:     xdef    music_player_init_song
+                            	   213: music_player_init_song:
+00:0000014C 48E7E000        	   214:     movem.l D0-D2,-(SP)              ; A0 is input, do not save/restore
+00:00000150 0C904D494449    	   215:     cmpi.l  #$4D494449,(A0)
+00:00000156 6644            	   216:     bne     .bad
+                            	   217: 
+00:00000158 20280004        	   218:     move.l  4(A0),D0                 ; num_events
+00:0000015C 22280008        	   219:     move.l  8(A0),D1                 ; loop_offset (bytes)
+                            	   220: 
+00:00000160 41E8000C        	   221:     lea     12(A0),A0                ; A0 -> events_base (skip 12-byte header)
+00:00000164 23C800FFE144    	   222:     move.l  A0,(MS_EVENTS_BASE).l
+00:0000016A 23C800FFE140    	   223:     move.l  A0,(MS_PLAY_PTR).l
+                            	   224: 
+00:00000170 2408            	   225:     move.l  A0,D2
+00:00000172 D481            	   226:     add.l   D1,D2
+00:00000174 23C200FFE148    	   227:     move.l  D2,(MS_LOOP_PTR).l
+                            	   228: 
+00:0000017A 2400            	   229:     move.l  D0,D2
+00:0000017C E38A            	   230:     lsl.l   #1,D2
+00:0000017E D480            	   231:     add.l   D0,D2
+00:00000180 D480            	   232:     add.l   D0,D2
+00:00000182 D480            	   233:     add.l   D0,D2
+00:00000184 D480            	   234:     add.l   D0,D2
+00:00000186 D488            	   235:     add.l   A0,D2
+00:00000188 23C200FFE14E    	   236:     move.l  D2,(MS_END_PTR).l
+                            	   237: 
+00:0000018E 3010            	   238:     move.w  (A0),D0
+00:00000190 33C000FFE14C    	   239:     move.w  D0,(MS_TIME_NEXT).l
+                            	   240: 
+00:00000196 4CDF0007        	   241:     movem.l (SP)+,D0-D2
+00:0000019A 4E75            	   242:     rts
+                            	   243: 
+                            	   244: .bad:
+00:0000019C 33FC7FFF00FFE14C	   245:     move.w  #$7FFF,(MS_TIME_NEXT).l
+00:000001A4 4CDF0007        	   246:     movem.l (SP)+,D0-D2
+00:000001A8 4E75            	   247:     rts
+                            	   248: 
+                            	   249: ;==============================================================================
+                            	   250: ; music_player_tick — called once per VBlank.
+                            	   251: ;==============================================================================
+                            	   252:     xdef    music_player_tick
+                            	   253: music_player_tick:
+00:000001AA 48E7FE80        	   254:     movem.l D0-D6/A0,-(SP)
+                            	   255: 
+00:000001AE 3E3900FFE14C    	   256:     move.w  (MS_TIME_NEXT).l,D7
+00:000001B4 670A            	   257:     beq.s   .due
+00:000001B6 5347            	   258:     subq.w  #1,D7
+00:000001B8 33C700FFE14C    	   259:     move.w  D7,(MS_TIME_NEXT).l
+00:000001BE 6664            	   260:     bne     .out
+                            	   261: .due:
+00:000001C0 207900FFE140    	   262:     movea.l (MS_PLAY_PTR).l,A0
+                            	   263: 
+                            	   264: .dispatch:
+                            	   265:     ; Bounds check (defensive — well-formed blob hits 0xFF before this)
+00:000001C6 2008            	   266:     move.l  A0,D0
+00:000001C8 B0B900FFE14E    	   267:     cmp.l   (MS_END_PTR).l,D0
+00:000001CE 6C3C            	   268:     bge.s   .loop_back
+                            	   269: 
+                            	   270:     ; Read header: u16 delta, u8 op, u8 ch, u8 bf_hi, u8 fnum_lo
+00:000001D0 3A18            	   271:     move.w  (A0)+,D5                 ; delta (already consumed when we entered)
+00:000001D2 1018            	   272:     move.b  (A0)+,D0                 ; op
+00:000001D4 1C18            	   273:     move.b  (A0)+,D6                 ; ch (0..5)
+00:000001D6 1618            	   274:     move.b  (A0)+,D3                 ; bf_hi (block<<3 | fnum_hi)
+00:000001D8 1818            	   275:     move.b  (A0)+,D4                 ; fnum_lo
+                            	   276: 
+00:000001DA 0C0000FF        	   277:     cmpi.b  #$FF,D0
+00:000001DE 672C            	   278:     beq.s   .loop_back
+                            	   279: 
+00:000001E0 0C000001        	   280:     cmpi.b  #$01,D0
+00:000001E4 6706            	   281:     beq.s   .note_on
+                            	   282:     ; else note-off
+00:000001E6 6100009E        	   283:     bsr     mp_do_note_off
+00:000001EA 6002            	   284:     bra.s   .next_event
+                            	   285: 
+                            	   286: .note_on:
+00:000001EC 613C            	   287:     bsr     mp_do_note_on
+                            	   288: 
+                            	   289: .next_event:
+                            	   290:     ; Peek next event's delta to see whether to keep dispatching this frame.
+00:000001EE 2008            	   291:     move.l  A0,D0
+00:000001F0 B0B900FFE14E    	   292:     cmp.l   (MS_END_PTR).l,D0
+00:000001F6 6C14            	   293:     bge.s   .loop_back
+00:000001F8 3010            	   294:     move.w  (A0),D0                  ; next event's delta
+00:000001FA 6602            	   295:     bne.s   .stop_dispatch
+00:000001FC 60C8            	   296:     bra.s   .dispatch                ; delta=0, dispatch immediately
+                            	   297: 
+                            	   298: .stop_dispatch:
+00:000001FE 33C000FFE14C    	   299:     move.w  D0,(MS_TIME_NEXT).l
+00:00000204 23C800FFE140    	   300:     move.l  A0,(MS_PLAY_PTR).l
+00:0000020A 6018            	   301:     bra.s   .out
+                            	   302: 
+                            	   303: .loop_back:
+00:0000020C 207900FFE148    	   304:     movea.l (MS_LOOP_PTR).l,A0
+00:00000212 3010            	   305:     move.w  (A0),D0
+00:00000214 33C000FFE14C    	   306:     move.w  D0,(MS_TIME_NEXT).l
+00:0000021A 23C800FFE140    	   307:     move.l  A0,(MS_PLAY_PTR).l
+                            	   308:     ; If we just landed on a delta-0 event, dispatch it now.
+00:00000220 4A40            	   309:     tst.w   D0
+00:00000222 67A2            	   310:     beq.s   .dispatch
+                            	   311: 
+                            	   312: .out:
+00:00000224 4CDF017F        	   313:     movem.l (SP)+,D0-D6/A0
+00:00000228 4E75            	   314:     rts
+                            	   315: 
+                            	   316: ;==============================================================================
+                            	   317: ; mp_do_note_on — emit block/fnum to YM ch in D6, then key-on all operators.
+                            	   318: ; Input:  D6.b = ch 0..5, D3.b = bf_hi, D4.b = fnum_lo
+                            	   319: ;==============================================================================
+                            	   320: mp_do_note_on:
+00:0000022A 48E7E000        	   321:     movem.l D0-D2,-(SP)
+                            	   322: 
+00:0000022E 0C060003        	   323:     cmpi.b  #3,D6
+00:00000232 6D1E            	   324:     blt.s   .freq_partI
+                            	   325:     ; Part II
+00:00000234 1406            	   326:     move.b  D6,D2
+00:00000236 5702            	   327:     subi.b  #3,D2                    ; ch-3 = Part II offset
+00:00000238 1002            	   328:     move.b  D2,D0
+00:0000023A 060000A4        	   329:     addi.b  #$A4,D0                  ; reg $A4+offset
+00:0000023E 1203            	   330:     move.b  D3,D1                    ; data = bf_hi
+00:00000240 6100FDDA        	   331:     bsr     mp_ym_w2
+00:00000244 1002            	   332:     move.b  D2,D0
+00:00000246 060000A0        	   333:     addi.b  #$A0,D0
+00:0000024A 1204            	   334:     move.b  D4,D1
+00:0000024C 6100FDCE        	   335:     bsr     mp_ym_w2
+00:00000250 6018            	   336:     bra.s   .key_on
+                            	   337: 
+                            	   338: .freq_partI:
+00:00000252 1006            	   339:     move.b  D6,D0
+00:00000254 060000A4        	   340:     addi.b  #$A4,D0
+00:00000258 1203            	   341:     move.b  D3,D1
+00:0000025A 6100FDA4        	   342:     bsr     mp_ym_w1
+00:0000025E 1006            	   343:     move.b  D6,D0
+00:00000260 060000A0        	   344:     addi.b  #$A0,D0
+00:00000264 1204            	   345:     move.b  D4,D1
+00:00000266 6100FD98        	   346:     bsr     mp_ym_w1
+                            	   347: 
+                            	   348: .key_on:
+                            	   349:     ; Key-on: reg $28 always Part I.  Data = $F0 | yamaha_id where
+                            	   350:     ; yamaha_id = ch for ch<3, else ch+1.
+00:0000026A 103C0028        	   351:     move.b  #$28,D0
+00:0000026E 1206            	   352:     move.b  D6,D1
+00:00000270 0C060003        	   353:     cmpi.b  #3,D6
+00:00000274 6D02            	   354:     blt.s   .ko_lt
+00:00000276 5201            	   355:     addq.b  #1,D1
+                            	   356: .ko_lt:
+00:00000278 000100F0        	   357:     ori.b   #$F0,D1
+00:0000027C 6100FD82        	   358:     bsr     mp_ym_w1
+                            	   359: 
+00:00000280 4CDF0007        	   360:     movem.l (SP)+,D0-D2
+00:00000284 4E75            	   361:     rts
+                            	   362: 
+                            	   363: ;==============================================================================
+                            	   364: ; mp_do_note_off — key-off all operators on YM ch in D6.
+                            	   365: ;==============================================================================
+                            	   366: mp_do_note_off:
+00:00000286 48E7C000        	   367:     movem.l D0-D1,-(SP)
+00:0000028A 103C0028        	   368:     move.b  #$28,D0
+00:0000028E 1206            	   369:     move.b  D6,D1
+00:00000290 0C060003        	   370:     cmpi.b  #3,D6
+00:00000294 6D02            	   371:     blt.s   .kf_lt
+00:00000296 5201            	   372:     addq.b  #1,D1
+                            	   373: .kf_lt:
+00:00000298 0201000F        	   374:     andi.b  #$0F,D1                  ; key bits = 0 -> all operators off
+00:0000029C 6100FD62        	   375:     bsr     mp_ym_w1
+00:000002A0 4CDF0003        	   376:     movem.l (SP)+,D0-D1
+00:000002A4 4E75            	   377:     rts
+                            	   378: 
+                            	   379: ;==============================================================================
+                            	   380: ; FM patch tables (private mp_ prefix — no conflict with audio_driver.asm)
+                            	   381: ; Stay in "text" section (no section switch) so PC-relative lea stays within
+                            	   382: ; ±32KB of the code that references these tables. audio_driver.asm does the
+                            	   383: ; same: its patch tables live in "text" with no section change.
+                            	   384: ;==============================================================================
+                            	   385:     even
+                            	   386: mp_FM_PATCH_REGS:
+00:000002A6 B0              	   387:     dc.b    $B0
+00:000002A7 30              	   388:     dc.b    $30,$34,$38,$3C
+00:000002A8 34
+00:000002A9 38
+00:000002AA 3C
+00:000002AB 50              	   389:     dc.b    $50,$54,$58,$5C
+00:000002AC 54
+00:000002AD 58
+00:000002AE 5C
+00:000002AF 60              	   390:     dc.b    $60,$64,$68,$6C
+00:000002B0 64
+00:000002B1 68
+00:000002B2 6C
+00:000002B3 70              	   391:     dc.b    $70,$74,$78,$7C
+00:000002B4 74
+00:000002B5 78
+00:000002B6 7C
+00:000002B7 80              	   392:     dc.b    $80,$84,$88,$8C
+00:000002B8 84
+00:000002B9 88
+00:000002BA 8C
+00:000002BB 40              	   393:     dc.b    $40,$44,$48,$4C
+00:000002BC 44
+00:000002BD 48
+00:000002BE 4C
+                            	   394:     even
+                            	   395: 
+                            	   396: ; Voice $00 — bell pad (Sonic 2 EHZ; verbatim from src/audio_driver.asm)
+                            	   397: mp_PATCH_VOICE00:
+00:000002C0 2D              	   398:     dc.b    $2D                     ; FB/ALG: (5<<3)|5
+00:000002C1 04              	   399:     dc.b    $04,$01,$01,$01         ; DT/MUL — op1 MUL 4 (bell modulator)
+00:000002C2 01
+00:000002C3 01
+00:000002C4 01
+00:000002C5 1F              	   400:     dc.b    $1F,$1F,$1F,$1F         ; RS/AR max
+00:000002C6 1F
+00:000002C7 1F
+00:000002C8 1F
+00:000002C9 08              	   401:     dc.b    $08,$04,$04,$04         ; AM/D1R
+00:000002CA 04
+00:000002CB 04
+00:000002CC 04
+00:000002CD 00              	   402:     dc.b    $00,$00,$00,$00         ; D2R
+00:000002CE 00
+00:000002CF 00
+00:000002D0 00
+00:000002D1 47              	   403:     dc.b    $47,$37,$37,$17         ; DL/RR — bell tail
+00:000002D2 37
+00:000002D3 37
+00:000002D4 17
+00:000002D5 14              	   404:     dc.b    $14,$1E,$1E,$1E         ; TL — modulator $14, carriers $1E
+00:000002D6 1E
+00:000002D7 1E
+00:000002D8 1E
+                            	   405:     even
+                            	   406: 
+                            	   407: ; Mystical pad — distinctly different from the celesta lead.  Carriers
+                            	   408: ; have a SLOW attack so each note swells in like a breath of mist behind
+                            	   409: ; the bright lead twinkle.  Op1 modulator stays at MUL 4 with high TL so
+                            	   410: ; only a faint metallic shimmer rides on top of pure-tone carriers.  No
+                            	   411: ; FB.  Carriers mildly detuned for chorus.  Net effect: airy washes
+                            	   412: ; that bloom under the lead's plucks instead of competing with them.
+                            	   413: mp_PATCH_PAD:
+00:000002DA 05              	   414:     dc.b    $05                     ; FB/ALG: FB 0, ALG 5
+00:000002DB 04              	   415:     dc.b    $04,$11,$01,$51         ; DT/MUL — op1 MUL 4 modulator
+00:000002DC 11
+00:000002DD 01
+00:000002DE 51
+00:000002DF 1F              	   416:     dc.b    $1F,$10,$10,$10         ; RS/AR — mod instant, carriers SLOW attack
+00:000002E0 10
+00:000002E1 10
+00:000002E2 10
+00:000002E3 00              	   417:     dc.b    $00,$02,$02,$02         ; AM/D1R — long decay
+00:000002E4 02
+00:000002E5 02
+00:000002E6 02
+00:000002E7 00              	   418:     dc.b    $00,$00,$00,$00         ; D2R
+00:000002E8 00
+00:000002E9 00
+00:000002EA 00
+00:000002EB 4A              	   419:     dc.b    $4A,$28,$28,$28         ; DL/RR — long sustained tail
+00:000002EC 28
+00:000002ED 28
+00:000002EE 28
+00:000002EF 30              	   420:     dc.b    $30,$1A,$1A,$1A         ; TL — mod whisper, carriers gentle
+00:000002F0 1A
+00:000002F1 1A
+00:000002F2 1A
+                            	   421:     even
+                            	   422: 
+                            	   423: ; Flute/organ patch — additive ALG 7 (4 carriers in parallel).
+                            	   424: ;   Op MUL ratios 1:2:3:4 add octave and 5th overtones for an airy, woody
+                            	   425: ;   timbre.  Sustained envelope (no decay during note hold), fast release
+                            	   426: ;   on key-off.  FB 1 for slight warmth without distortion.
+                            	   427: ;   Slot byte order in YM2612 patches is op1, op3, op2, op4.
+                            	   428: mp_PATCH_FLUTE:
+00:000002F4 0F              	   429:     dc.b    $0F                     ; FB/ALG: (1<<3)|7
+00:000002F5 01              	   430:     dc.b    $01,$03,$02,$04         ; DT/MUL (op1=1, op3=3, op2=2, op4=4)
+00:000002F6 03
+00:000002F7 02
+00:000002F8 04
+00:000002F9 1F              	   431:     dc.b    $1F,$1F,$1F,$1F         ; RS/AR — instant attack
+00:000002FA 1F
+00:000002FB 1F
+00:000002FC 1F
+00:000002FD 00              	   432:     dc.b    $00,$00,$00,$00         ; AM/D1R — no decay, sustain at TL
+00:000002FE 00
+00:000002FF 00
+00:00000300 00
+00:00000301 00              	   433:     dc.b    $00,$00,$00,$00         ; D2R
+00:00000302 00
+00:00000303 00
+00:00000304 00
+00:00000305 0F              	   434:     dc.b    $0F,$0F,$0F,$0F         ; DL/RR — DL 0, RR 15 (fast release)
+00:00000306 0F
+00:00000307 0F
+00:00000308 0F
+00:00000309 18              	   435:     dc.b    $18,$24,$20,$2C         ; TL — fundamental loudest, harmonics quieter
+00:0000030A 24
+00:0000030B 20
+00:0000030C 2C
+                            	   436:     even
+                            	   437: 
+                            	   438: ; Voice $03 — EHZ FM3 lead (Sonic 2; bright FB7 / Algorithm 5).
+                            	   439: mp_PATCH_VOICE03:
+00:0000030E 3D              	   440:     dc.b    $3D                     ; FB/ALG: (7<<3)|5
+00:0000030F 01              	   441:     dc.b    $01,$51,$21,$01         ; DT/MUL
+00:00000310 51
+00:00000311 21
+00:00000312 01
+00:00000313 1F              	   442:     dc.b    $1F,$1F,$1F,$1F         ; RS/AR
+00:00000314 1F
+00:00000315 1F
+00:00000316 1F
+00:00000317 0A              	   443:     dc.b    $0A,$05,$05,$05         ; AM/D1R
+00:00000318 05
+00:00000319 05
+00:0000031A 05
+00:0000031B 00              	   444:     dc.b    $00,$00,$00,$00         ; D2R
+00:0000031C 00
+00:0000031D 00
+00:0000031E 00
+00:0000031F 2B              	   445:     dc.b    $2B,$2B,$2B,$1B         ; DL/RR
+00:00000320 2B
+00:00000321 2B
+00:00000322 1B
+00:00000323 19              	   446:     dc.b    $19,$18,$18,$18         ; TL
+00:00000324 18
+00:00000325 18
+00:00000326 18
+                            	   447:     even
+                            	   448: 
+                            	   449: ; Twinkle / celesta lead — soft mystical bell, light and bright.
+                            	   450: ;   Algorithm 5 (3 carriers driven by op1 modulator), FB 0 keeps timbre
+                            	   451: ;   clean and pure (no FB-induced grit).  Op1 MUL 2 with low modulator
+                            	   452: ;   level adds just a hint of chime without harsh overtones.  Carriers
+                            	   453: ;   are slightly detuned (DT 1, 0, -1) for a gentle chorus shimmer that
+                            	   454: ;   reads as "mystical" rather than dry.  Long DL+RR gives notes a
+                            	   455: ;   relaxing tail that overlaps into chord-like ringouts.
+                            	   456: mp_PATCH_TWINKLE:
+00:00000328 05              	   457:     dc.b    $05                     ; FB/ALG: FB 0, ALG 5
+00:00000329 02              	   458:     dc.b    $02,$11,$01,$51         ; DT/MUL — slot order op1,op3,op2,op4
+00:0000032A 11
+00:0000032B 01
+00:0000032C 51
+00:0000032D 1F              	   459:     dc.b    $1F,$1F,$1F,$1F         ; RS/AR — instant attack
+00:0000032E 1F
+00:0000032F 1F
+00:00000330 1F
+00:00000331 00              	   460:     dc.b    $00,$03,$03,$03         ; AM/D1R — mod sustained, carriers gentle decay
+00:00000332 03
+00:00000333 03
+00:00000334 03
+00:00000335 00              	   461:     dc.b    $00,$00,$00,$00         ; D2R
+00:00000336 00
+00:00000337 00
+00:00000338 00
+00:00000339 48              	   462:     dc.b    $48,$36,$36,$26         ; DL/RR — long shimmery tail
+00:0000033A 36
+00:0000033B 36
+00:0000033C 26
+00:0000033D 24              	   463:     dc.b    $24,$14,$14,$14         ; TL — mod gentle ($24), carriers bright ($14)
+00:0000033E 14
+00:0000033F 14
+00:00000340 14
+                            	   464:     even
+                            	   465: 
+                            	   466: ;==============================================================================
+                            	   467: ; song_great_fairy_blob — compiled MIDI event blob.
+                            	   468: ; Path "gen/music_great_fairy.bin" is relative to src/ because vasm is
+                            	   469: ; invoked from src/ (build.bat:125 pushd src). File is generated by
+                            	   470: ; tools/compile_midi.py during the main build.
+                            	   471: ;==============================================================================
+                            	   472:     xdef    song_great_fairy_blob
+                            	   473:     even
+                            	   474: song_great_fairy_blob:
+00:00000342 4D494449000004EF	   475:     incbin  "gen/music_great_fairy.bin"
+00:0000034A 0000000000000000
+00:00000352 243B00000100243B
+00:0000035A 000000031C7B0000
+00:00000362 01031C7B000B0000
+00:0000036A 243B000000001DA5
+00:00000372 000001001DA5000B
+00:0000037A 00001DA500000000
+00:00000382 1C7B000001001C7B
+00:0000038A 000000041DA50000
+00:00000392 01041DA5000C0000
+00:0000039A 1C7B00000005243B
+00:000003A2 00000105243B0000
+00:000003AA 0000178900000100
+00:000003B2 1789000000041DA5
+00:000003BA 000B0005243B0000
+00:000003C2 0000178900000000
+00:000003CA 1F89000001001F89
+00:000003D2 000B00001F890000
+00:000003DA 00001DA500000100
+00:000003E2 1DA5000C00001DA5
+00:000003EA 000000001C7B0000
+00:000003F2 01001C7B000B0000
+00:000003FA 1C7B000000001789
+00:00000402 000001001789000B
+00:0000040A 0000178900000000
+00:00000412 1F1D000001001F1D
+00:0000041A 000000031C7B000B
+00:00000422 00001F1D00000000
+00:0000042A 1DA5000001001DA5
+00:00000432 000000031DA50000
+00:0000043A 01031DA5000B0000
+00:00000442 1DA500000004243B
+00:0000044A 00000104243B0000
+00:00000452 00001C7B00000100
+00:0000045A 1C7B000000031DA5
+00:00000462 000C0004243B0000
+00:0000046A 00001C7B00000003
+00:00000472 1F89000001031F89
+00:0000047A 0000000017890000
+00:00000482 01001789000B0003
+00:0000048A 1F89000000001789
+00:00000492 0000000325080000
+00:0000049A 0103250800000000
+00:000004A2 1F89000001001F89
+00:000004AA 000B000325080000
+00:000004B2 00001F8900000003
+00:000004BA 243B00000103243B
+00:000004C2 000000001DA50000
+00:000004CA 01001DA5000C0003
+00:000004D2 243B000000001DA5
+00:000004DA 000000031F890000
+00:000004E2 01031F8900000000
+00:000004EA 1C7B000001001C7B
+00:000004F2 000B00031F890000
+00:000004FA 00001C7B00000000
+00:00000502 1789000001001789
+00:0000050A 000000031DA50000
+00:00000512 01031DA5000B0000
+00:0000051A 1789000000031DA5
+00:00000522 000000001F890000
+00:0000052A 01001F8900000003
+00:00000532 1C3B000001031C3B
+00:0000053A 000B00001F890000
+00:00000542 00001D0800000100
+00:0000054A 1D08000B00001D08
+00:00000552 000000001C3B0000
+00:0000055A 01001C3B00000004
+00:00000562 1D08000001041D08
+00:0000056A 000C00001C3B0000
+00:00000572 00051F8900000105
+00:0000057A 1F890000000326B7
+00:00000582 0000010326B70000
+00:0000058A 00041D08000B0005
+00:00000592 1F890000000326B7
+00:0000059A 000000001EB70000
+00:000005A2 01001EB7000B0000
+00:000005AA 1EB7000000001D08
+00:000005B2 000001001D08000C
+00:000005BA 00001D0800000000
+00:000005C2 1C3B000001001C3B
+00:000005CA 000B00001C3B0000
+00:000005D2 000326B700000103
+00:000005DA 26B7000B000326B7
+00:000005E2 000000001E560000
+00:000005EA 01001E56000B0000
+00:000005F2 1E56000000001D08
+00:000005FA 000001001D080000
+00:00000602 00031D0800000103
+00:0000060A 1D08000B00001D08
+00:00000612 000000041F890000
+00:0000061A 01041F8900000000
+00:00000622 1C3B000001001C3B
+00:0000062A 000000031D08000C
+00:00000632 00041F8900000000
+00:0000063A 1C3B000000031EB7
+00:00000642 000001031EB70000
+00:0000064A 000426B700000104
+00:00000652 26B7000B00031EB7
+00:0000065A 0000000426B70000
+00:00000662 0003250800000103
+00:0000066A 2508000000001EB7
+00:00000672 000001001EB7000B
+00:0000067A 0003250800000000
+00:00000682 1EB7000000031F89
+00:0000068A 000001031F890000
+00:00000692 00001D0800000100
+00:0000069A 1D08000C00031F89
+00:000006A2 000000001D080000
+00:000006AA 00031EB700000103
+00:000006B2 1EB7000000001C3B
+00:000006BA 000001001C3B000B
+00:000006C2 00031EB700000000
+00:000006CA 1C3B0000000326B7
+00:000006D2 0000010326B70000
+00:000006DA 00041D0800000104
+00:000006E2 1D08000B000326B7
+00:000006EA 000000041D080000
+00:000006F2 00001EB700000100
+00:000006FA 1EB7000000031789
+00:00000702 000001031789000B
+00:0000070A 00001EB700000000
+00:00000712 1C7B000001001C7B
+00:0000071A 000B00001C7B0000
+00:00000722 0000178900000100
+00:0000072A 1789000000041C7B
+00:00000732 000001041C7B000C
+00:0000073A 0000178900000005
+00:00000742 1EB7000001051EB7
+00:0000074A 0000000326560000
+00:00000752 0103265600000004
+00:0000075A 1C7B000B00051EB7
+00:00000762 0000000326560000
+00:0000076A 00001E5600000100
+00:00000772 1E56000B00001E56
+00:0000077A 000000001C7B0000
+00:00000782 01001C7B000C0000
+00:0000078A 1C7B000000001789
+00:00000792 000001001789000B
+00:0000079A 0000178900000003
+00:000007A2 2656000001032656
+00:000007AA 000B000326560000
+00:000007B2 00001DFB00000100
+00:000007BA 1DFB000B00001DFB
+00:000007C2 000000001C7B0000
+00:000007CA 01001C7B00000003
+00:000007D2 1789000001031789
+00:000007DA 000B00001C7B0000
+00:000007E2 00041EB700000104
+00:000007EA 1EB7000000001789
+00:000007F2 0000010017890000
+00:000007FA 00031789000C0004
+00:00000802 1EB7000000001789
+00:0000080A 0000000326560000
+00:00000812 0103265600000004
+00:0000081A 1E56000001041E56
+00:00000822 000B000326560000
+00:0000082A 00031F8900000103
+00:00000832 1F89000000001E56
+00:0000083A 000001001E560000
+00:00000842 00041E56000B0003
+00:0000084A 1F89000000001E56
+00:00000852 000000001C7B0000
+00:0000085A 01001C7B00000003
+00:00000862 1E56000001031E56
+00:0000086A 000C00001C7B0000
+00:00000872 0000178900000100
+00:0000087A 1789000000031E56
+00:00000882 000000031DA50000
+00:0000088A 01031DA5000B0000
+00:00000892 1789000000042656
+00:0000089A 0000010426560000
+00:000008A2 00031DA500000003
+00:000008AA 1C7B000001031C7B
+00:000008B2 000B000426560000
+00:000008BA 00031C7B00000000
+00:000008C2 1E56000001001E56
+00:000008CA 0000000316B70000
+00:000008D2 010316B7000B0000
+00:000008DA 1E56000000001C3B
+00:000008E2 000001001C3B000B
+00:000008EA 00001C3B00000004
+00:000008F2 26B70000010426B7
+00:000008FA 000000051C3B0000
+00:00000902 01051C3B000C0004
+00:0000090A 26B70000000425A5
+00:00000912 0000010425A50000
+00:0000091A 00051C3B00000005
+00:00000922 1E56000001051E56
+00:0000092A 000B000425A50000
+00:00000932 00001DA500000100
+00:0000093A 1DA5000000051E56
+00:00000942 000B00001DA50000
+00:0000094A 00001C3B00000100
+00:00000952 1C3B000C00001C3B
+00:0000095A 0000000426B70000
+00:00000962 010426B7000B0004
+00:0000096A 26B70000000425A5
+00:00000972 0000010425A5000B
+00:0000097A 000425A500000000
+00:00000982 1D54000001001D54
+00:0000098A 0000000316B7000B
+00:00000992 00001D5400000000
+00:0000099A 1C3B000001001C3B
+00:000009A2 0000000316B70000
+00:000009AA 010316B7000B0000
+00:000009B2 1C3B0000000426B7
+00:000009BA 0000010426B70000
+00:000009C2 000316B700000003
+00:000009CA 1E56000001031E56
+00:000009D2 000C000426B70000
+00:000009DA 000425A500000104
+00:000009E2 25A5000000031E56
+00:000009EA 000000031DA50000
+00:000009F2 01031DA5000B0004
+00:000009FA 25A5000000041F89
+00:00000A02 000001041F890000
+00:00000A0A 00001DA500000100
+00:00000A12 1DA5000000031DA5
+00:00000A1A 000B00041F890000
+00:00000A22 00001DA500000003
+00:00000A2A 1EB7000001031EB7
+00:00000A32 000000001C3B0000
+00:00000A3A 01001C3B000C0003
+00:00000A42 1EB7000000001C3B
+00:00000A4A 0000000325080000
+00:00000A52 0103250800000004
+00:00000A5A 26B70000010426B7
+00:00000A62 000B000325080000
+00:00000A6A 000426B700000003
+00:00000A72 247B00000103247B
+00:00000A7A 0000000425A50000
+00:00000A82 010425A5000B0003
+00:00000A8A 247B0000000425A5
+00:00000A92 00000000243B0000
+00:00000A9A 0100243B00000003
+00:00000AA2 1C7B000001031C7B
+00:00000AAA 000B0000243B0000
+00:00000AB2 00001DA500000100
+00:00000ABA 1DA5000B00001DA5
+00:00000AC2 000000001C7B0000
+00:00000ACA 01001C7B00000004
+00:00000AD2 1DA5000001041DA5
+00:00000ADA 000C00001C7B0000
+00:00000AE2 0005243B00000105
+00:00000AEA 243B000000001789
+00:00000AF2 0000010017890000
+00:00000AFA 00041DA5000B0005
+00:00000B02 243B000000001789
+00:00000B0A 000000001F890000
+00:00000B12 01001F89000B0000
+00:00000B1A 1F89000000001DA5
+00:00000B22 000001001DA5000C
+00:00000B2A 00001DA500000000
+00:00000B32 1C7B000001001C7B
+00:00000B3A 000B00001C7B0000
+00:00000B42 0000178900000100
+00:00000B4A 1789000B00001789
+00:00000B52 000000001F1D0000
+00:00000B5A 01001F1D00000003
+00:00000B62 1C7B000B00001F1D
+00:00000B6A 000000001DA50000
+00:00000B72 01001DA500000003
+00:00000B7A 1DA5000001031DA5
+00:00000B82 000B00001DA50000
+00:00000B8A 0004243B00000104
+00:00000B92 243B000000001C7B
+00:00000B9A 000001001C7B0000
+00:00000BA2 00031DA5000C0004
+00:00000BAA 243B000000001C7B
+00:00000BB2 000000031F890000
+00:00000BBA 01031F8900000000
+00:00000BC2 1789000001001789
+00:00000BCA 000B00031F890000
+00:00000BD2 0000178900000003
+00:00000BDA 2508000001032508
+00:00000BE2 000000001F890000
+00:00000BEA 01001F89000B0003
+00:00000BF2 2508000000001F89
+00:00000BFA 00000003243B0000
+00:00000C02 0103243B00000000
+00:00000C0A 1DA5000001001DA5
+00:00000C12 000C0003243B0000
+00:00000C1A 00001DA500000003
+00:00000C22 1F89000001031F89
+00:00000C2A 000000001C7B0000
+00:00000C32 01001C7B000B0003
+00:00000C3A 1F89000000001C7B
+00:00000C42 0000000017890000
+00:00000C4A 0100178900000003
+00:00000C52 1DA5000001031DA5
+00:00000C5A 000B000017890000
+00:00000C62 00031DA500000000
+00:00000C6A 247B00000100247B
+00:00000C72 000000031C3B0000
+00:00000C7A 01031C3B000B0000
+00:00000C82 247B000000001DFB
+00:00000C8A 000001001DFB000B
+00:00000C92 00001DFB00000000
+00:00000C9A 1D08000001001D08
+00:00000CA2 000000031C3B0000
+00:00000CAA 00031D0800000103
+00:00000CB2 1D08000C00001D08
+00:00000CBA 0000000425080000
+00:00000CC2 0104250800000005
+00:00000CCA 271D00000105271D
+00:00000CD2 000000031D08000B
+00:00000CDA 0004250800000005
+00:00000CE2 271D00000000243B
+00:00000CEA 00000100243B000B
+00:00000CF2 0000243B00000000
+00:00000CFA 1DFB000001001DFB
+00:00000D02 000C00001DFB0000
+00:00000D0A 00001D0800000100
+00:00000D12 1D08000B00001D08
+00:00000D1A 00000003271D0000
+00:00000D22 0103271D000B0003
+00:00000D2A 271D000000001FFC
+00:00000D32 000001001FFC0000
+00:00000D3A 00031DA500000103
+00:00000D42 1DA5000B00001FFC
+00:00000D4A 000000001DFB0000
+00:00000D52 01001DFB00000003
+00:00000D5A 1DA5000000031D08
+00:00000D62 000001031D08000B
+00:00000D6A 00001DFB00000004
+00:00000D72 2508000001042508
+00:00000D7A 000000001D080000
+00:00000D82 01001D0800000003
+00:00000D8A 1D08000C00042508
+00:00000D92 000000001D080000
+00:00000D9A 0003243B00000103
+00:00000DA2 243B00000004271D
+00:00000DAA 00000104271D000B
+00:00000DB2 0003243B00000004
+00:00000DBA 271D0000000325FB
+00:00000DC2 0000010325FB0000
+00:00000DCA 0000243B00000100
+00:00000DD2 243B000B000325FB
+00:00000DDA 00000000243B0000
+00:00000DE2 000325A500000103
+00:00000DEA 25A5000000001DFB
+00:00000DF2 000001001DFB000C
+00:00000DFA 000325A500000000
+00:00000E02 1DFB000000032508
+00:00000E0A 0000010325080000
+00:00000E12 00001D0800000100
+00:00000E1A 1D08000B00032508
+00:00000E22 000000001D080000
+00:00000E2A 0003243B00000103
+00:00000E32 243B00000004271D
+00:00000E3A 00000104271D000B
+00:00000E42 0003243B00000004
+00:00000E4A 271D000000002508
+00:00000E52 0000010025080000
+00:00000E5A 0003178900000103
+00:00000E62 1789000B00002508
+00:00000E6A 000000001DA50000
+00:00000E72 01001DA500000003
+00:00000E7A 1789000000031C7B
+00:00000E82 000001031C7B000B
+00:00000E8A 00001DA500000000
+00:00000E92 1C7B000001001C7B
+00:00000E9A 000000031C7B0000
+00:00000EA2 00031DA500000103
+00:00000EAA 1DA5000C00001C7B
+00:00000EB2 00000004247B0000
+00:00000EBA 0104247B00000000
+00:00000EC2 1789000001001789
+00:00000ECA 000000031DA5000B
+00:00000ED2 0004247B00000000
+00:00000EDA 178900000000247B
+00:00000EE2 00000100247B000B
+00:00000EEA 0000247B00000000
+00:00000EF2 1DA5000001001DA5
+00:00000EFA 000C00001DA50000
+00:00000F02 00001C7B00000100
+00:00000F0A 1C7B000B00001C7B
+00:00000F12 0000000017890000
+00:00000F1A 01001789000B0000
+00:00000F22 178900000000243B
+00:00000F2A 00000100243B000B
+00:00000F32 0000243B00000000
+00:00000F3A 1DA5000001001DA5
+00:00000F42 000000031C7B0000
+00:00000F4A 01031C7B000B0000
+00:00000F52 1DA500000004247B
+00:00000F5A 00000104247B0000
+00:00000F62 00001C7B00000100
+00:00000F6A 1C7B000000031C7B
+00:00000F72 000C0004247B0000
+00:00000F7A 00001C7B00000003
+00:00000F82 243B00000103243B
+00:00000F8A 0000000017890000
+00:00000F92 01001789000B0003
+00:00000F9A 243B000000001789
+00:00000FA2 0000000325080000
+00:00000FAA 0103250800000000
+00:00000FB2 247B00000100247B
+00:00000FBA 000B000325080000
+00:00000FC2 0000247B00000003
+00:00000FCA 247B00000103247B
+00:00000FD2 000000001DA50000
+00:00000FDA 01001DA5000C0003
+00:00000FE2 247B000000001DA5
+00:00000FEA 000000031F890000
+00:00000FF2 01031F8900000000
+00:00000FFA 1C7B000001001C7B
+00:00001002 000B00031F890000
+00:0000100A 00001C7B00000000
+00:00001012 1789000001001789
+00:0000101A 000000031DA50000
+00:00001022 01031DA5000B0000
+00:0000102A 1789000000031DA5
+00:00001032 00000000243B0000
+00:0000103A 0100243B00000003
+00:00001042 1789000001031789
+00:0000104A 000B0000243B0000
+00:00001052 00001C7B00000100
+00:0000105A 1C7B000000031789
+00:00001062 000000031D080000
+00:0000106A 01031D08000B0000
+00:00001072 1C7B000000041F89
+00:0000107A 000001041F890000
+00:00001082 0000178900000100
+00:0000108A 1789000000031D08
+00:00001092 000C00041F890000
+00:0000109A 0000178900000003
+00:000010A2 247B00000103247B
+00:000010AA 0000000426560000
+00:000010B2 01042656000B0003
+00:000010BA 247B000000042656
+00:000010C2 000000001F890000
+00:000010CA 01001F89000B0000
+00:000010D2 1F89000000001C7B
+00:000010DA 000001001C7B000C
+00:000010E2 00001C7B00000000
+00:000010EA 1789000001001789
+00:000010F2 000B000017890000
+00:000010FA 0003265600000103
+00:00001102 2656000B00032656
+00:0000110A 000000001EB70000
+00:00001112 01001EB7000B0000
+00:0000111A 1EB7000000001C7B
+00:00001122 000001001C7B0000
+00:0000112A 00031D0800000103
+00:00001132 1D08000B00001C7B
+00:0000113A 00000004247B0000
+00:00001142 0104247B00000000
+00:0000114A 1789000001001789
+00:00001152 000000031D08000C
+00:0000115A 0004247B00000000
+00:00001162 1789000000031F89
+00:0000116A 000001031F890000
+00:00001172 0004265600000104
+00:0000117A 2656000B00031F89
+00:00001182 0000000426560000
+00:0000118A 00001E5600000100
+00:00001192 1E56000000031E56
+00:0000119A 000001031E56000B
+00:000011A2 00001E5600000000
+00:000011AA 1C7B000001001C7B
+00:000011B2 000000031E560000
+00:000011BA 00031DA500000103
+00:000011C2 1DA5000C00001C7B
+00:000011CA 000000041F890000
+00:000011D2 01041F8900000000
+00:000011DA 1789000001001789
+00:000011E2 000000031DA5000B
+00:000011EA 00041F8900000000
+00:000011F2 1789000000032656
+00:000011FA 0000010326560000
+00:00001202 00041E5600000104
+00:0000120A 1E56000B00032656
+00:00001212 000000041E560000
+00:0000121A 0000243B00000100
+00:00001222 243B000000031C7B
+00:0000122A 000001031C7B000B
+00:00001232 0000243B00000000
+00:0000123A 1DA5000001001DA5
+00:00001242 000B00001DA50000
+00:0000124A 00001C7B00000100
+00:00001252 1C7B000000041DA5
+00:0000125A 000001041DA5000C
+00:00001262 00001C7B00000005
+00:0000126A 243B00000105243B
+00:00001272 0000000017890000
+00:0000127A 0100178900000004
+00:00001282 1DA5000B0005243B
+00:0000128A 0000000017890000
+00:00001292 00001F8900000100
+00:0000129A 1F89000B00001F89
+00:000012A2 000000001DA50000
+00:000012AA 01001DA5000C0000
+00:000012B2 1DA5000000001C7B
+00:000012BA 000001001C7B000B
+00:000012C2 00001C7B00000000
+00:000012CA 1789000001001789
+00:000012D2 000B000017890000
+00:000012DA 00001F1D00000100
+00:000012E2 1F1D000000031C7B
+00:000012EA 000B00001F1D0000
+00:000012F2 00001DA500000100
+00:000012FA 1DA5000000031DA5
+00:00001302 000001031DA5000B
+00:0000130A 00001DA500000004
+00:00001312 243B00000104243B
+00:0000131A 000000001C7B0000
+00:00001322 01001C7B00000003
+00:0000132A 1DA5000C0004243B
+00:00001332 000000001C7B0000
+00:0000133A 00031F8900000103
+00:00001342 1F89000000001789
+00:0000134A 000001001789000B
+00:00001352 00031F8900000000
+00:0000135A 1789000000032508
+00:00001362 0000010325080000
+00:0000136A 00001F8900000100
+00:00001372 1F89000B00032508
+00:0000137A 000000001F890000
+00:00001382 0003243B00000103
+00:0000138A 243B000000001DA5
+00:00001392 000001001DA5000C
+00:0000139A 0003243B00000000
+00:000013A2 1DA5000000031F89
+00:000013AA 000001031F890000
+00:000013B2 00001C7B00000100
+00:000013BA 1C7B000B00031F89
+00:000013C2 000000001C7B0000
+00:000013CA 0000178900000100
+00:000013D2 1789000000031DA5
+00:000013DA 000001031DA5000B
+00:000013E2 0000178900000003
+00:000013EA 1DA5000000001F89
+00:000013F2 000001001F890000
+00:000013FA 00031C3B00000103
+00:00001402 1C3B000B00001F89
+00:0000140A 000000001D080000
+00:00001412 01001D08000B0000
+00:0000141A 1D08000000001C3B
+00:00001422 000001001C3B0000
+00:0000142A 00041D0800000104
+00:00001432 1D08000C00001C3B
+00:0000143A 000000051F890000
+00:00001442 01051F8900000003
+00:0000144A 26B70000010326B7
+00:00001452 000000041D08000B
+00:0000145A 00051F8900000003
+00:00001462 26B7000000001EB7
+00:0000146A 000001001EB7000B
+00:00001472 00001EB700000000
+00:0000147A 1D08000001001D08
+00:00001482 000C00001D080000
+00:0000148A 00001C3B00000100
+00:00001492 1C3B000B00001C3B
+00:0000149A 0000000326B70000
+00:000014A2 010326B7000B0003
+00:000014AA 26B7000000001E56
+00:000014B2 000001001E56000B
+00:000014BA 00001E5600000000
+00:000014C2 1D08000001001D08
+00:000014CA 000000031D080000
+00:000014D2 01031D08000B0000
+00:000014DA 1D08000000041F89
+00:000014E2 000001041F890000
+00:000014EA 00001C3B00000100
+00:000014F2 1C3B000000031D08
+00:000014FA 000C00041F890000
+00:00001502 00001C3B00000003
+00:0000150A 1EB7000001031EB7
+00:00001512 0000000426B70000
+00:0000151A 010426B7000B0003
+00:00001522 1EB70000000426B7
+00:0000152A 0000000325080000
+00:00001532 0103250800000000
+00:0000153A 1EB7000001001EB7
+00:00001542 000B000325080000
+00:0000154A 00001EB700000003
+00:00001552 1F89000001031F89
+00:0000155A 000000001D080000
+00:00001562 01001D08000C0003
+00:0000156A 1F89000000001D08
+00:00001572 000000031EB70000
+00:0000157A 01031EB700000000
+00:00001582 1C3B000001001C3B
+00:0000158A 000B00031EB70000
+00:00001592 00001C3B00000003
+00:0000159A 26B70000010326B7
+00:000015A2 000000041D080000
+00:000015AA 01041D08000B0003
+00:000015B2 26B7000000041D08
+00:000015BA 000000001EB70000
+00:000015C2 01001EB700000003
+00:000015CA 1789000001031789
+00:000015D2 000B00001EB70000
+00:000015DA 00001C7B00000100
+00:000015E2 1C7B000B00001C7B
+00:000015EA 0000000017890000
+00:000015F2 0100178900000004
+00:000015FA 1C7B000001041C7B
+00:00001602 000C000017890000
+00:0000160A 00051EB700000105
+00:00001612 1EB7000000032656
+00:0000161A 0000010326560000
+00:00001622 00041C7B000B0005
+00:0000162A 1EB7000000032656
+00:00001632 000000001E560000
+00:0000163A 01001E56000B0000
+00:00001642 1E56000000001C7B
+00:0000164A 000001001C7B000C
+00:00001652 00001C7B00000000
+00:0000165A 1789000001001789
+00:00001662 000B000017890000
+00:0000166A 0003265600000103
+00:00001672 2656000B00032656
+00:0000167A 000000001DFB0000
+00:00001682 01001DFB000B0000
+00:0000168A 1DFB000000001C7B
+00:00001692 000001001C7B0000
+00:0000169A 0003178900000103
+00:000016A2 1789000B00001C7B
+00:000016AA 000000041EB70000
+00:000016B2 01041EB700000000
+00:000016BA 1789000001001789
+00:000016C2 000000031789000C
+00:000016CA 00041EB700000000
+00:000016D2 1789000000032656
+00:000016DA 0000010326560000
+00:000016E2 00041E5600000104
+00:000016EA 1E56000B00032656
+00:000016F2 000000031F890000
+00:000016FA 01031F8900000000
+00:00001702 1E56000001001E56
+00:0000170A 000000041E56000B
+00:00001712 00031F8900000000
+00:0000171A 1E56000000001C7B
+00:00001722 000001001C7B0000
+00:0000172A 00031E5600000103
+00:00001732 1E56000C00001C7B
+00:0000173A 0000000017890000
+00:00001742 0100178900000003
+00:0000174A 1E56000000031DA5
+00:00001752 000001031DA5000B
+00:0000175A 0000178900000004
+00:00001762 2656000001042656
+00:0000176A 000000031DA50000
+00:00001772 00031C7B00000103
+00:0000177A 1C7B000B00042656
+00:00001782 000000031C7B0000
+00:0000178A 00001E5600000100
+00:00001792 1E560000000316B7
+00:0000179A 0000010316B7000B
+00:000017A2 00001E5600000000
+00:000017AA 1C3B000001001C3B
+00:000017B2 000B00001C3B0000
+00:000017BA 000426B700000104
+00:000017C2 26B7000000051C3B
+00:000017CA 000001051C3B000C
+00:000017D2 000426B700000004
+00:000017DA 25A50000010425A5
+00:000017E2 000000051C3B0000
+00:000017EA 00051E5600000105
+00:000017F2 1E56000B000425A5
+00:000017FA 000000001DA50000
+00:00001802 01001DA500000005
+00:0000180A 1E56000B00001DA5
+00:00001812 000000001C3B0000
+00:0000181A 01001C3B000C0000
+00:00001822 1C3B0000000426B7
+00:0000182A 0000010426B7000B
+00:00001832 000426B700000004
+00:0000183A 25A50000010425A5
+00:00001842 000B000425A50000
+00:0000184A 00001D5400000100
+00:00001852 1D540000000316B7
+00:0000185A 000B00001D540000
+00:00001862 00001C3B00000100
+00:0000186A 1C3B0000000316B7
+00:00001872 0000010316B7000B
+00:0000187A 00001C3B00000004
+00:00001882 26B70000010426B7
+00:0000188A 0000000316B70000
+00:00001892 00031E5600000103
+00:0000189A 1E56000C000426B7
+00:000018A2 0000000425A50000
+00:000018AA 010425A500000003
+00:000018B2 1E56000000031DA5
+00:000018BA 000001031DA5000B
+00:000018C2 000425A500000004
+00:000018CA 1F89000001041F89
+00:000018D2 000000001DA50000
+00:000018DA 01001DA500000003
+00:000018E2 1DA5000B00041F89
+00:000018EA 000000001DA50000
+00:000018F2 00031EB700000103
+00:000018FA 1EB7000000001C3B
+00:00001902 000001001C3B000C
+00:0000190A 00031EB700000000
+00:00001912 1C3B000000032508
+00:0000191A 0000010325080000
+00:00001922 000426B700000104
+00:0000192A 26B7000B00032508
+00:00001932 0000000426B70000
+00:0000193A 0003247B00000103
+00:00001942 247B0000000425A5
+00:0000194A 0000010425A5000B
+00:00001952 0003247B00000004
+00:0000195A 25A500000000243B
+00:00001962 00000100243B0000
+00:0000196A 00031C7B00000103
+00:00001972 1C7B000B0000243B
+00:0000197A 000000001DA50000
+00:00001982 01001DA5000B0000
+00:0000198A 1DA5000000001C7B
+00:00001992 000001001C7B0000
+00:0000199A 00041DA500000104
+00:000019A2 1DA5000C00001C7B
+00:000019AA 00000005243B0000
+00:000019B2 0105243B00000000
+00:000019BA 1789000001001789
+00:000019C2 000000041DA5000B
+00:000019CA 0005243B00000000
+00:000019D2 1789000000001F89
+00:000019DA 000001001F89000B
+00:000019E2 00001F8900000000
+00:000019EA 1DA5000001001DA5
+00:000019F2 000C00001DA50000
+00:000019FA 00001C7B00000100
+00:00001A02 1C7B000B00001C7B
+00:00001A0A 0000000017890000
+00:00001A12 01001789000B0000
+00:00001A1A 1789000000001F1D
+00:00001A22 000001001F1D0000
+00:00001A2A 00031C7B000B0000
+00:00001A32 1F1D000000001DA5
+00:00001A3A 000001001DA50000
+00:00001A42 00031DA500000103
+00:00001A4A 1DA5000B00001DA5
+00:00001A52 00000004243B0000
+00:00001A5A 0104243B00000000
+00:00001A62 1C7B000001001C7B
+00:00001A6A 000000031DA5000C
+00:00001A72 0004243B00000000
+00:00001A7A 1C7B000000031F89
+00:00001A82 000001031F890000
+00:00001A8A 0000178900000100
+00:00001A92 1789000B00031F89
+00:00001A9A 0000000017890000
+00:00001AA2 0003250800000103
+00:00001AAA 2508000000001F89
+00:00001AB2 000001001F89000B
+00:00001ABA 0003250800000000
+00:00001AC2 1F8900000003243B
+00:00001ACA 00000103243B0000
+00:00001AD2 00001DA500000100
+00:00001ADA 1DA5000C0003243B
+00:00001AE2 000000001DA50000
+00:00001AEA 00031F8900000103
+00:00001AF2 1F89000000001C7B
+00:00001AFA 000001001C7B000B
+00:00001B02 00031F8900000000
+00:00001B0A 1C7B000000001789
+00:00001B12 0000010017890000
+00:00001B1A 00031DA500000103
+00:00001B22 1DA5000B00001789
+00:00001B2A 000000031DA50000
+00:00001B32 0000247B00000100
+00:00001B3A 247B000000031C3B
+00:00001B42 000001031C3B000B
+00:00001B4A 0000247B00000000
+00:00001B52 1DFB000001001DFB
+00:00001B5A 000B00001DFB0000
+00:00001B62 00001D0800000100
+00:00001B6A 1D08000000031C3B
+00:00001B72 000000031D080000
+00:00001B7A 01031D08000C0000
+00:00001B82 1D08000000042508
+00:00001B8A 0000010425080000
+00:00001B92 0005271D00000105
+00:00001B9A 271D000000031D08
+00:00001BA2 000B000425080000
+00:00001BAA 0005271D00000000
+00:00001BB2 243B00000100243B
+00:00001BBA 000B0000243B0000
+00:00001BC2 00001DFB00000100
+00:00001BCA 1DFB000C00001DFB
+00:00001BD2 000000001D080000
+00:00001BDA 01001D08000B0000
+00:00001BE2 1D0800000003271D
+00:00001BEA 00000103271D000B
+00:00001BF2 0003271D00000000
+00:00001BFA 1FFC000001001FFC
+00:00001C02 000000031DA50000
+00:00001C0A 01031DA5000B0000
+00:00001C12 1FFC000000001DFB
+00:00001C1A 000001001DFB0000
+00:00001C22 00031DA500000003
+00:00001C2A 1D08000001031D08
+00:00001C32 000B00001DFB0000
+00:00001C3A 0004250800000104
+00:00001C42 2508000000001D08
+00:00001C4A 000001001D080000
+00:00001C52 00031D08000C0004
+00:00001C5A 2508000000001D08
+00:00001C62 00000003243B0000
+00:00001C6A 0103243B00000004
+00:00001C72 271D00000104271D
+00:00001C7A 000B0003243B0000
+00:00001C82 0004271D00000003
+00:00001C8A 25FB0000010325FB
+00:00001C92 00000000243B0000
+00:00001C9A 0100243B000B0003
+00:00001CA2 25FB00000000243B
+00:00001CAA 0000000325A50000
+00:00001CB2 010325A500000000
+00:00001CBA 1DFB000001001DFB
+00:00001CC2 000C000325A50000
+00:00001CCA 00001DFB00000003
+00:00001CD2 2508000001032508
+00:00001CDA 000000001D080000
+00:00001CE2 01001D08000B0003
+00:00001CEA 2508000000001D08
+00:00001CF2 00000003243B0000
+00:00001CFA 0103243B00000004
+00:00001D02 271D00000104271D
+00:00001D0A 000B0003243B0000
+00:00001D12 0004271D00000000
+00:00001D1A 2508000001002508
+00:00001D22 0000000317890000
+00:00001D2A 01031789000B0000
+00:00001D32 2508000000001DA5
+00:00001D3A 000001001DA50000
+00:00001D42 0003178900000003
+00:00001D4A 1C7B000001031C7B
+00:00001D52 000B00001DA50000
+00:00001D5A 00001C7B00000100
+00:00001D62 1C7B000000031C7B
+00:00001D6A 000000031DA50000
+00:00001D72 01031DA5000C0000
+00:00001D7A 1C7B00000004247B
+00:00001D82 00000104247B0000
+00:00001D8A 0000178900000100
+00:00001D92 1789000000031DA5
+00:00001D9A 000B0004247B0000
+00:00001DA2 0000178900000000
+00:00001DAA 247B00000100247B
+00:00001DB2 000B0000247B0000
+00:00001DBA 00001DA500000100
+00:00001DC2 1DA5000C00001DA5
+00:00001DCA 000000001C7B0000
+00:00001DD2 01001C7B000B0000
+00:00001DDA 1C7B000000001789
+00:00001DE2 000001001789000B
+00:00001DEA 0000178900000000
+00:00001DF2 243B00000100243B
+00:00001DFA 000B0000243B0000
+00:00001E02 00001DA500000100
+00:00001E0A 1DA5000000031C7B
+00:00001E12 000001031C7B000B
+00:00001E1A 00001DA500000004
+00:00001E22 247B00000104247B
+00:00001E2A 000000001C7B0000
+00:00001E32 01001C7B00000003
+00:00001E3A 1C7B000C0004247B
+00:00001E42 000000001C7B0000
+00:00001E4A 0003243B00000103
+00:00001E52 243B000000001789
+00:00001E5A 000001001789000B
+00:00001E62 0003243B00000000
+00:00001E6A 1789000000032508
+00:00001E72 0000010325080000
+00:00001E7A 0000247B00000100
+00:00001E82 247B000B00032508
+00:00001E8A 00000000247B0000
+00:00001E92 0003247B00000103
+00:00001E9A 247B000000001DA5
+00:00001EA2 000001001DA5000C
+00:00001EAA 0003247B00000000
+00:00001EB2 1DA5000000031F89
+00:00001EBA 000001031F890000
+00:00001EC2 00001C7B00000100
+00:00001ECA 1C7B000B00031F89
+00:00001ED2 000000001C7B0000
+00:00001EDA 0000178900000100
+00:00001EE2 1789000000031DA5
+00:00001EEA 000001031DA5000B
+00:00001EF2 0000178900000003
+00:00001EFA 1DA500000000243B
+00:00001F02 00000100243B0000
+00:00001F0A 0003178900000103
+00:00001F12 1789000B0000243B
+00:00001F1A 000000001C7B0000
+00:00001F22 01001C7B00000003
+00:00001F2A 1789000000031D08
+00:00001F32 000001031D08000B
+00:00001F3A 00001C7B00000004
+00:00001F42 1F89000001041F89
+00:00001F4A 0000000017890000
+00:00001F52 0100178900000003
+00:00001F5A 1D08000C00041F89
+00:00001F62 0000000017890000
+00:00001F6A 0003247B00000103
+00:00001F72 247B000000042656
+00:00001F7A 000001042656000B
+00:00001F82 0003247B00000004
+00:00001F8A 2656000000001F89
+00:00001F92 000001001F89000B
+00:00001F9A 00001F8900000000
+00:00001FA2 1C7B000001001C7B
+00:00001FAA 000C00001C7B0000
+00:00001FB2 0000178900000100
+00:00001FBA 1789000B00001789
+00:00001FC2 0000000326560000
+00:00001FCA 01032656000B0003
+00:00001FD2 2656000000001EB7
+00:00001FDA 000001001EB7000B
+00:00001FE2 00001EB700000000
+00:00001FEA 1C7B000001001C7B
+00:00001FF2 000000031D080000
+00:00001FFA 01031D08000B0000
+00:00002002 1C7B00000004247B
+00:0000200A 00000104247B0000
+00:00002012 0000178900000100
+00:0000201A 1789000000031D08
+00:00002022 000C0004247B0000
+00:0000202A 0000178900000003
+00:00002032 1F89000001031F89
+00:0000203A 0000000426560000
+00:00002042 01042656000B0003
+00:0000204A 1F89000000042656
+00:00002052 000000001E560000
+00:0000205A 01001E5600000003
+00:00002062 1E56000001031E56
+00:0000206A 000B00001E560000
+00:00002072 00001C7B00000100
+00:0000207A 1C7B000000031E56
+00:00002082 000000031DA50000
+00:0000208A 01031DA5000C0000
+00:00002092 1C7B000000041F89
+00:0000209A 000001041F890000
+00:000020A2 0000178900000100
+00:000020AA 1789000000031DA5
+00:000020B2 000B00041F890000
+00:000020BA 0000178900000003
+00:000020C2 2656000001032656
+00:000020CA 000000041E560000
+00:000020D2 01041E56000B0003
+00:000020DA 2656000000041E56
+00:000020E2 0000FF000000
+                            	   476:     even
+                            	   477: 
+
+
+Symbols by name:
+MIDI_STATE                       E:00FFE140
+MP_PSG_PORT                      E:00C00011
+MP_YM_ADDR1                      E:00A04000
+MP_YM_ADDR2                      E:00A04002
+MP_YM_DATA1                      E:00A04001
+MP_YM_DATA2                      E:00A04003
+MS_END_PTR                       E:00FFE14E
+MS_EVENTS_BASE                   E:00FFE144
+MS_LOOP_PTR                      E:00FFE148
+MS_PLAY_PTR                      E:00FFE140
+MS_TIME_NEXT                     E:00FFE14C
+mp_FM_PATCH_REGS                00:000002A6
+mp_PATCH_FLUTE                  00:000002F4
+mp_PATCH_PAD                    00:000002DA
+mp_PATCH_TWINKLE                00:00000328
+mp_PATCH_VOICE00                00:000002C0
+mp_PATCH_VOICE03                00:0000030E
+mp_do_note_off                  00:00000286
+mp_do_note_on                   00:0000022A
+mp_load_patch                   00:00000038
+mp_ym_w1                        00:00000000
+mp_ym_w2                        00:0000001C
+music_player_init_song          00:0000014C EXP
+music_player_silence_all        00:0000006A EXP
+music_player_tick               00:000001AA EXP
+music_player_ym_init            00:000000B6 EXP
+song_great_fairy_blob           00:00000342 EXP
+
+Symbols by value:
+00000000 mp_ym_w1
+0000001C mp_ym_w2
+00000038 mp_load_patch
+0000006A music_player_silence_all
+000000B6 music_player_ym_init
+0000014C music_player_init_song
+000001AA music_player_tick
+0000022A mp_do_note_on
+00000286 mp_do_note_off
+000002A6 mp_FM_PATCH_REGS
+000002C0 mp_PATCH_VOICE00
+000002DA mp_PATCH_PAD
+000002F4 mp_PATCH_FLUTE
+0000030E mp_PATCH_VOICE03
+00000328 mp_PATCH_TWINKLE
+00000342 song_great_fairy_blob
+00A04000 MP_YM_ADDR1
+00A04001 MP_YM_DATA1
+00A04002 MP_YM_ADDR2
+00A04003 MP_YM_DATA2
+00C00011 MP_PSG_PORT
+00FFE140 MIDI_STATE
+00FFE140 MS_PLAY_PTR
+00FFE144 MS_EVENTS_BASE
+00FFE148 MS_LOOP_PTR
+00FFE14C MS_TIME_NEXT
+00FFE14E MS_END_PTR

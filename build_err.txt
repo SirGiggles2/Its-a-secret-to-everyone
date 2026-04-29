@@ -1,463 +1,544 @@
-In file included from C:\Users\Jake Diggity\Documents\GitHub\FINAL TRY\src\progress_state.h:4,
-                 from C:\Users\Jake Diggity\Documents\GitHub\FINAL TRY\src\core_runtime.c:5:
-C:\Users\Jake Diggity\Documents\GitHub\FINAL TRY\src\world_state.h:35: warning: "OBJ_STATE" redefined
+In file included from C:\Users\Jake Diggity\Documents\GitHub\FINAL TRY\src\state/progress_state.h:4,
+                 from C:\Users\Jake Diggity\Documents\GitHub\FINAL TRY\src\core\core_runtime.c:6:
+C:\Users\Jake Diggity\Documents\GitHub\FINAL TRY\src\state/world_state.h:35: warning: "OBJ_STATE" redefined
    35 | #define OBJ_STATE(slot)                OBJ(0x00AC, (slot))
       | 
-In file included from C:\Users\Jake Diggity\Documents\GitHub\FINAL TRY\src\core_runtime.c:2:
-C:\Users\Jake Diggity\Documents\GitHub\FINAL TRY\src\object_state.h:19: note: this is the location of the previous definition
+In file included from C:\Users\Jake Diggity\Documents\GitHub\FINAL TRY\src\core\core_runtime.c:3:
+C:\Users\Jake Diggity\Documents\GitHub\FINAL TRY\src\state/object_state.h:19: note: this is the location of the previous definition
    19 | #define OBJ_STATE(slot)         RAM(NES_OBJ_STATE_BASE + (slot))
       | 
-In file included from C:\Users\Jake Diggity\Documents\GitHub\FINAL TRY\src\progress_state.h:4,
-                 from C:\Users\Jake Diggity\Documents\GitHub\FINAL TRY\src\room_state.h:4,
-                 from C:\Users\Jake Diggity\Documents\GitHub\FINAL TRY\src\enemy_boss_runtime.c:3:
-C:\Users\Jake Diggity\Documents\GitHub\FINAL TRY\src\world_state.h:13: warning: "LINK_X" redefined
+In file included from C:\Users\Jake Diggity\Documents\GitHub\FINAL TRY\src\state/progress_state.h:4,
+                 from C:\Users\Jake Diggity\Documents\GitHub\FINAL TRY\src\state/room_state.h:4,
+                 from C:\Users\Jake Diggity\Documents\GitHub\FINAL TRY\src\game\enemies\enemy_boss_runtime.c:4:
+C:\Users\Jake Diggity\Documents\GitHub\FINAL TRY\src\state/world_state.h:13: warning: "LINK_X" redefined
    13 | #define LINK_X                         RAM(NES_OBJ_X)
       | 
-In file included from C:\Users\Jake Diggity\Documents\GitHub\FINAL TRY\src\enemy_runtime_private.h:5,
-                 from C:\Users\Jake Diggity\Documents\GitHub\FINAL TRY\src\enemy_boss_runtime.c:1:
-C:\Users\Jake Diggity\Documents\GitHub\FINAL TRY\src\enemy_state.h:61: note: this is the location of the previous definition
+In file included from C:\Users\Jake Diggity\Documents\GitHub\FINAL TRY\src\game\enemies\enemy_runtime_private.h:5,
+                 from C:\Users\Jake Diggity\Documents\GitHub\FINAL TRY\src\game\enemies\enemy_boss_runtime.c:1:
+C:\Users\Jake Diggity\Documents\GitHub\FINAL TRY\src\state/enemy_state.h:61: note: this is the location of the previous definition
    61 | #define LINK_X                          RAM(0x0061)
       | 
-C:\Users\Jake Diggity\Documents\GitHub\FINAL TRY\src\world_state.h:14: warning: "LINK_Y" redefined
+C:\Users\Jake Diggity\Documents\GitHub\FINAL TRY\src\state/world_state.h:14: warning: "LINK_Y" redefined
    14 | #define LINK_Y                         RAM(NES_OBJ_Y)
       | 
-C:\Users\Jake Diggity\Documents\GitHub\FINAL TRY\src\enemy_state.h:64: note: this is the location of the previous definition
+C:\Users\Jake Diggity\Documents\GitHub\FINAL TRY\src\state/enemy_state.h:64: note: this is the location of the previous definition
    64 | #define LINK_Y                          RAM(0x0062)
       | 
-C:\Users\Jake Diggity\Documents\GitHub\FINAL TRY\src\enemy_boss_runtime.c: In function 'enrt_lamnola_update_head':
-C:\Users\Jake Diggity\Documents\GitHub\FINAL TRY\src\enemy_boss_runtime.c:415:61: warning: implicit declaration of function 'c_get_opposite_dir' [-Wimplicit-function-declaration]
-  415 |     ENEMY_LAMNOLA_VIABLE_DIR_MASK = (unsigned char)(0x0Fu ^ c_get_opposite_dir(cur_dir));
-      |                                                             ^~~~~~~~~~~~~~~~~~
-In file included from C:\Users\Jake Diggity\Documents\GitHub\FINAL TRY\src\progress_state.h:4,
-                 from C:\Users\Jake Diggity\Documents\GitHub\FINAL TRY\src\room_state.h:4,
-                 from C:\Users\Jake Diggity\Documents\GitHub\FINAL TRY\src\uw_person_runtime.c:4:
-C:\Users\Jake Diggity\Documents\GitHub\FINAL TRY\src\world_state.h:35: warning: "OBJ_STATE" redefined
-   35 | #define OBJ_STATE(slot)                OBJ(0x00AC, (slot))
-      | 
-In file included from C:\Users\Jake Diggity\Documents\GitHub\FINAL TRY\src\uw_person_runtime.c:3:
-C:\Users\Jake Diggity\Documents\GitHub\FINAL TRY\src\object_state.h:19: note: this is the location of the previous definition
-   19 | #define OBJ_STATE(slot)         RAM(NES_OBJ_STATE_BASE + (slot))
-      | 
-In file included from C:\Users\Jake Diggity\Documents\GitHub\FINAL TRY\src\sprite_runtime.c:4:
-C:\Users\Jake Diggity\Documents\GitHub\FINAL TRY\src\object_state.h:19: warning: "OBJ_STATE" redefined
-   19 | #define OBJ_STATE(slot)         RAM(NES_OBJ_STATE_BASE + (slot))
-      | 
-In file included from C:\Users\Jake Diggity\Documents\GitHub\FINAL TRY\src\sprite_runtime.c:2:
-C:\Users\Jake Diggity\Documents\GitHub\FINAL TRY\src\combat_state.h:38: note: this is the location of the previous definition
-   38 | #define OBJ_STATE(slot)                 OBJ(0x00AC, (slot))
-      | 
-In file included from C:\Users\Jake Diggity\Documents\GitHub\FINAL TRY\src\progress_state.h:4,
-                 from C:\Users\Jake Diggity\Documents\GitHub\FINAL TRY\src\room_state.h:4,
-                 from C:\Users\Jake Diggity\Documents\GitHub\FINAL TRY\src\sprite_runtime.c:5:
-C:\Users\Jake Diggity\Documents\GitHub\FINAL TRY\src\world_state.h:13: warning: "LINK_X" redefined
+In file included from C:\Users\Jake Diggity\Documents\GitHub\FINAL TRY\src\state/progress_state.h:4,
+                 from C:\Users\Jake Diggity\Documents\GitHub\FINAL TRY\src\state/room_state.h:4,
+                 from C:\Users\Jake Diggity\Documents\GitHub\FINAL TRY\src\game\enemies\enemy_gleeok_runtime.c:4:
+C:\Users\Jake Diggity\Documents\GitHub\FINAL TRY\src\state/world_state.h:13: warning: "LINK_X" redefined
    13 | #define LINK_X                         RAM(NES_OBJ_X)
       | 
-In file included from C:\Users\Jake Diggity\Documents\GitHub\FINAL TRY\src\sprite_runtime.c:3:
-C:\Users\Jake Diggity\Documents\GitHub\FINAL TRY\src\enemy_state.h:61: note: this is the location of the previous definition
+In file included from C:\Users\Jake Diggity\Documents\GitHub\FINAL TRY\src\game\enemies\enemy_runtime_private.h:5,
+                 from C:\Users\Jake Diggity\Documents\GitHub\FINAL TRY\src\game\enemies\enemy_gleeok_runtime.c:1:
+C:\Users\Jake Diggity\Documents\GitHub\FINAL TRY\src\state/enemy_state.h:61: note: this is the location of the previous definition
    61 | #define LINK_X                          RAM(0x0061)
       | 
-C:\Users\Jake Diggity\Documents\GitHub\FINAL TRY\src\world_state.h:14: warning: "LINK_Y" redefined
+C:\Users\Jake Diggity\Documents\GitHub\FINAL TRY\src\state/world_state.h:14: warning: "LINK_Y" redefined
    14 | #define LINK_Y                         RAM(NES_OBJ_Y)
       | 
-C:\Users\Jake Diggity\Documents\GitHub\FINAL TRY\src\enemy_state.h:64: note: this is the location of the previous definition
+C:\Users\Jake Diggity\Documents\GitHub\FINAL TRY\src\state/enemy_state.h:64: note: this is the location of the previous definition
    64 | #define LINK_Y                          RAM(0x0062)
       | 
-C:\Users\Jake Diggity\Documents\GitHub\FINAL TRY\src\world_state.h:35: warning: "OBJ_STATE" redefined
+In file included from C:\Users\Jake Diggity\Documents\GitHub\FINAL TRY\src\state/progress_state.h:4,
+                 from C:\Users\Jake Diggity\Documents\GitHub\FINAL TRY\src\state/room_state.h:4,
+                 from C:\Users\Jake Diggity\Documents\GitHub\FINAL TRY\src\game\enemies\enemy_dodongo_runtime.c:4:
+C:\Users\Jake Diggity\Documents\GitHub\FINAL TRY\src\state/world_state.h:13: warning: "LINK_X" redefined
+   13 | #define LINK_X                         RAM(NES_OBJ_X)
+      | 
+In file included from C:\Users\Jake Diggity\Documents\GitHub\FINAL TRY\src\game\enemies\enemy_runtime_private.h:5,
+                 from C:\Users\Jake Diggity\Documents\GitHub\FINAL TRY\src\game\enemies\enemy_dodongo_runtime.c:1:
+C:\Users\Jake Diggity\Documents\GitHub\FINAL TRY\src\state/enemy_state.h:61: note: this is the location of the previous definition
+   61 | #define LINK_X                          RAM(0x0061)
+      | 
+C:\Users\Jake Diggity\Documents\GitHub\FINAL TRY\src\state/world_state.h:14: warning: "LINK_Y" redefined
+   14 | #define LINK_Y                         RAM(NES_OBJ_Y)
+      | 
+C:\Users\Jake Diggity\Documents\GitHub\FINAL TRY\src\state/enemy_state.h:64: note: this is the location of the previous definition
+   64 | #define LINK_Y                          RAM(0x0062)
+      | 
+In file included from C:\Users\Jake Diggity\Documents\GitHub\FINAL TRY\src\state/progress_state.h:4,
+                 from C:\Users\Jake Diggity\Documents\GitHub\FINAL TRY\src\state/room_state.h:4,
+                 from C:\Users\Jake Diggity\Documents\GitHub\FINAL TRY\src\game\enemies\enemy_manhandla_runtime.c:4:
+C:\Users\Jake Diggity\Documents\GitHub\FINAL TRY\src\state/world_state.h:13: warning: "LINK_X" redefined
+   13 | #define LINK_X                         RAM(NES_OBJ_X)
+      | 
+In file included from C:\Users\Jake Diggity\Documents\GitHub\FINAL TRY\src\game\enemies\enemy_runtime_private.h:5,
+                 from C:\Users\Jake Diggity\Documents\GitHub\FINAL TRY\src\game\enemies\enemy_manhandla_runtime.c:1:
+C:\Users\Jake Diggity\Documents\GitHub\FINAL TRY\src\state/enemy_state.h:61: note: this is the location of the previous definition
+   61 | #define LINK_X                          RAM(0x0061)
+      | 
+C:\Users\Jake Diggity\Documents\GitHub\FINAL TRY\src\state/world_state.h:14: warning: "LINK_Y" redefined
+   14 | #define LINK_Y                         RAM(NES_OBJ_Y)
+      | 
+C:\Users\Jake Diggity\Documents\GitHub\FINAL TRY\src\state/enemy_state.h:64: note: this is the location of the previous definition
+   64 | #define LINK_Y                          RAM(0x0062)
+      | 
+In file included from C:\Users\Jake Diggity\Documents\GitHub\FINAL TRY\src\state/progress_state.h:4,
+                 from C:\Users\Jake Diggity\Documents\GitHub\FINAL TRY\src\state/room_state.h:4,
+                 from C:\Users\Jake Diggity\Documents\GitHub\FINAL TRY\src\game\enemies\enemy_lamnola_runtime.c:3:
+C:\Users\Jake Diggity\Documents\GitHub\FINAL TRY\src\state/world_state.h:13: warning: "LINK_X" redefined
+   13 | #define LINK_X                         RAM(NES_OBJ_X)
+      | 
+In file included from C:\Users\Jake Diggity\Documents\GitHub\FINAL TRY\src\game\enemies\enemy_runtime_private.h:5,
+                 from C:\Users\Jake Diggity\Documents\GitHub\FINAL TRY\src\game\enemies\enemy_lamnola_runtime.c:1:
+C:\Users\Jake Diggity\Documents\GitHub\FINAL TRY\src\state/enemy_state.h:61: note: this is the location of the previous definition
+   61 | #define LINK_X                          RAM(0x0061)
+      | 
+C:\Users\Jake Diggity\Documents\GitHub\FINAL TRY\src\state/world_state.h:14: warning: "LINK_Y" redefined
+   14 | #define LINK_Y                         RAM(NES_OBJ_Y)
+      | 
+C:\Users\Jake Diggity\Documents\GitHub\FINAL TRY\src\state/enemy_state.h:64: note: this is the location of the previous definition
+   64 | #define LINK_Y                          RAM(0x0062)
+      | 
+In file included from C:\Users\Jake Diggity\Documents\GitHub\FINAL TRY\src\state/progress_state.h:4,
+                 from C:\Users\Jake Diggity\Documents\GitHub\FINAL TRY\src\state/room_state.h:4,
+                 from C:\Users\Jake Diggity\Documents\GitHub\FINAL TRY\src\game\cave\uw_person_runtime.c:5:
+C:\Users\Jake Diggity\Documents\GitHub\FINAL TRY\src\state/world_state.h:35: warning: "OBJ_STATE" redefined
    35 | #define OBJ_STATE(slot)                OBJ(0x00AC, (slot))
       | 
-C:\Users\Jake Diggity\Documents\GitHub\FINAL TRY\src\object_state.h:19: note: this is the location of the previous definition
+In file included from C:\Users\Jake Diggity\Documents\GitHub\FINAL TRY\src\game\cave\uw_person_runtime.c:4:
+C:\Users\Jake Diggity\Documents\GitHub\FINAL TRY\src\state/object_state.h:19: note: this is the location of the previous definition
    19 | #define OBJ_STATE(slot)         RAM(NES_OBJ_STATE_BASE + (slot))
       | 
-In file included from C:\Users\Jake Diggity\Documents\GitHub\FINAL TRY\src\collision_runtime.c:3:
-C:\Users\Jake Diggity\Documents\GitHub\FINAL TRY\src\object_state.h:19: warning: "OBJ_STATE" redefined
+In file included from C:\Users\Jake Diggity\Documents\GitHub\FINAL TRY\src\game\world\sprite_runtime.c:5:
+C:\Users\Jake Diggity\Documents\GitHub\FINAL TRY\src\state/object_state.h:19: warning: "OBJ_STATE" redefined
    19 | #define OBJ_STATE(slot)         RAM(NES_OBJ_STATE_BASE + (slot))
       | 
-In file included from C:\Users\Jake Diggity\Documents\GitHub\FINAL TRY\src\collision_runtime.h:4,
-                 from C:\Users\Jake Diggity\Documents\GitHub\FINAL TRY\src\collision_runtime.c:1:
-C:\Users\Jake Diggity\Documents\GitHub\FINAL TRY\src\combat_state.h:38: note: this is the location of the previous definition
+In file included from C:\Users\Jake Diggity\Documents\GitHub\FINAL TRY\src\game\world\sprite_runtime.c:3:
+C:\Users\Jake Diggity\Documents\GitHub\FINAL TRY\src\state/combat_state.h:38: note: this is the location of the previous definition
    38 | #define OBJ_STATE(slot)                 OBJ(0x00AC, (slot))
       | 
-C:\Users\Jake Diggity\Documents\GitHub\FINAL TRY\src\room_load_runtime.c:101: warning: "CUR_LEVEL" redefined
-  101 | #define CUR_LEVEL           0x0010
+In file included from C:\Users\Jake Diggity\Documents\GitHub\FINAL TRY\src\state/progress_state.h:4,
+                 from C:\Users\Jake Diggity\Documents\GitHub\FINAL TRY\src\state/room_state.h:4,
+                 from C:\Users\Jake Diggity\Documents\GitHub\FINAL TRY\src\game\world\sprite_runtime.c:6:
+C:\Users\Jake Diggity\Documents\GitHub\FINAL TRY\src\state/world_state.h:13: warning: "LINK_X" redefined
+   13 | #define LINK_X                         RAM(NES_OBJ_X)
       | 
-In file included from C:\Users\Jake Diggity\Documents\GitHub\FINAL TRY\src\room_state.h:4,
-                 from C:\Users\Jake Diggity\Documents\GitHub\FINAL TRY\src\room_load_runtime.h:4,
-                 from C:\Users\Jake Diggity\Documents\GitHub\FINAL TRY\src\room_load_runtime.c:1:
-C:\Users\Jake Diggity\Documents\GitHub\FINAL TRY\src\progress_state.h:14: note: this is the location of the previous definition
+In file included from C:\Users\Jake Diggity\Documents\GitHub\FINAL TRY\src\game\world\sprite_runtime.c:4:
+C:\Users\Jake Diggity\Documents\GitHub\FINAL TRY\src\state/enemy_state.h:61: note: this is the location of the previous definition
+   61 | #define LINK_X                          RAM(0x0061)
+      | 
+C:\Users\Jake Diggity\Documents\GitHub\FINAL TRY\src\state/world_state.h:14: warning: "LINK_Y" redefined
+   14 | #define LINK_Y                         RAM(NES_OBJ_Y)
+      | 
+C:\Users\Jake Diggity\Documents\GitHub\FINAL TRY\src\state/enemy_state.h:64: note: this is the location of the previous definition
+   64 | #define LINK_Y                          RAM(0x0062)
+      | 
+C:\Users\Jake Diggity\Documents\GitHub\FINAL TRY\src\state/world_state.h:35: warning: "OBJ_STATE" redefined
+   35 | #define OBJ_STATE(slot)                OBJ(0x00AC, (slot))
+      | 
+C:\Users\Jake Diggity\Documents\GitHub\FINAL TRY\src\state/object_state.h:19: note: this is the location of the previous definition
+   19 | #define OBJ_STATE(slot)         RAM(NES_OBJ_STATE_BASE + (slot))
+      | 
+In file included from C:\Users\Jake Diggity\Documents\GitHub\FINAL TRY\src\game\combat\collision_runtime.c:4:
+C:\Users\Jake Diggity\Documents\GitHub\FINAL TRY\src\state/object_state.h:19: warning: "OBJ_STATE" redefined
+   19 | #define OBJ_STATE(slot)         RAM(NES_OBJ_STATE_BASE + (slot))
+      | 
+In file included from C:\Users\Jake Diggity\Documents\GitHub\FINAL TRY\src\game\combat\collision_runtime.h:4,
+                 from C:\Users\Jake Diggity\Documents\GitHub\FINAL TRY\src\game\combat\collision_runtime.c:1:
+C:\Users\Jake Diggity\Documents\GitHub\FINAL TRY\src\state/combat_state.h:38: note: this is the location of the previous definition
+   38 | #define OBJ_STATE(slot)                 OBJ(0x00AC, (slot))
+      | 
+C:\Users\Jake Diggity\Documents\GitHub\FINAL TRY\src\game\room\room_load_runtime.c:86: warning: "CUR_LEVEL" redefined
+   86 | #define CUR_LEVEL           0x0010
+      | 
+In file included from C:\Users\Jake Diggity\Documents\GitHub\FINAL TRY\src\state/room_state.h:4,
+                 from C:\Users\Jake Diggity\Documents\GitHub\FINAL TRY\src\game\room\room_load_runtime.h:4,
+                 from C:\Users\Jake Diggity\Documents\GitHub\FINAL TRY\src\game\room\room_load_runtime.c:1:
+C:\Users\Jake Diggity\Documents\GitHub\FINAL TRY\src\state/progress_state.h:14: note: this is the location of the previous definition
    14 | #define CUR_LEVEL                      RAM(0x0010)
       | 
-C:\Users\Jake Diggity\Documents\GitHub\FINAL TRY\src\gen\z_04.c: In function 'z04_update_common_wanderer':
-C:\Users\Jake Diggity\Documents\GitHub\FINAL TRY\src\gen\z_04.c:469:5: warning: implicit declaration of function 'enrt_update_common_wanderer'; did you mean 'z04_update_common_wanderer'? [-Wimplicit-function-declaration]
-  469 |     enrt_update_common_wanderer(turn_rate, slot);
-      |     ^~~~~~~~~~~~~~~~~~~~~~~~~~~
-      |     z04_update_common_wanderer
-C:\Users\Jake Diggity\Documents\GitHub\FINAL TRY\src\gen\z_04.c: In function 'z04_wanderer_target_player':
-C:\Users\Jake Diggity\Documents\GitHub\FINAL TRY\src\gen\z_04.c:473:5: warning: implicit declaration of function 'enrt_wanderer_target_player'; did you mean 'z04_wanderer_target_player'? [-Wimplicit-function-declaration]
-  473 |     enrt_wanderer_target_player(slot);
-      |     ^~~~~~~~~~~~~~~~~~~~~~~~~~~
-      |     z04_wanderer_target_player
-C:\Users\Jake Diggity\Documents\GitHub\FINAL TRY\src\gen\z_04.c: In function 'z04_update_goriya':
-C:\Users\Jake Diggity\Documents\GitHub\FINAL TRY\src\gen\z_04.c:477:5: warning: implicit declaration of function 'enrt_update_goriya'; did you mean 'enrt_update_zora'? [-Wimplicit-function-declaration]
-  477 |     enrt_update_goriya(slot);
-      |     ^~~~~~~~~~~~~~~~~~
-      |     enrt_update_zora
 C:\Users\Jake Diggity\Documents\GitHub\FINAL TRY\src\gen\z_04.c: In function 'z04_update_zol_state':
-C:\Users\Jake Diggity\Documents\GitHub\FINAL TRY\src\gen\z_04.c:481:5: warning: implicit declaration of function 'enrt_update_zol_state'; did you mean 'z04_update_zol_state'? [-Wimplicit-function-declaration]
-  481 |     enrt_update_zol_state(slot);
+C:\Users\Jake Diggity\Documents\GitHub\FINAL TRY\src\gen\z_04.c:521:5: warning: implicit declaration of function 'enrt_update_zol_state'; did you mean 'z04_update_zol_state'? [-Wimplicit-function-declaration]
+  521 |     enrt_update_zol_state(slot);
       |     ^~~~~~~~~~~~~~~~~~~~~
       |     z04_update_zol_state
 C:\Users\Jake Diggity\Documents\GitHub\FINAL TRY\src\gen\z_04.c: In function 'z04_zol_check_collisions':
-C:\Users\Jake Diggity\Documents\GitHub\FINAL TRY\src\gen\z_04.c:485:5: warning: implicit declaration of function 'enrt_zol_check_collisions'; did you mean 'z04_zol_check_collisions'? [-Wimplicit-function-declaration]
-  485 |     enrt_zol_check_collisions(slot);
+C:\Users\Jake Diggity\Documents\GitHub\FINAL TRY\src\gen\z_04.c:525:5: warning: implicit declaration of function 'enrt_zol_check_collisions'; did you mean 'z04_zol_check_collisions'? [-Wimplicit-function-declaration]
+  525 |     enrt_zol_check_collisions(slot);
       |     ^~~~~~~~~~~~~~~~~~~~~~~~~
       |     z04_zol_check_collisions
 C:\Users\Jake Diggity\Documents\GitHub\FINAL TRY\src\gen\z_04.c: In function 'z04_gel_move':
-C:\Users\Jake Diggity\Documents\GitHub\FINAL TRY\src\gen\z_04.c:489:5: warning: implicit declaration of function 'enrt_gel_move'; did you mean 'z04_gel_move'? [-Wimplicit-function-declaration]
-  489 |     enrt_gel_move(slot);
+C:\Users\Jake Diggity\Documents\GitHub\FINAL TRY\src\gen\z_04.c:529:5: warning: implicit declaration of function 'enrt_gel_move'; did you mean 'z04_gel_move'? [-Wimplicit-function-declaration]
+  529 |     enrt_gel_move(slot);
       |     ^~~~~~~~~~~~~
       |     z04_gel_move
 C:\Users\Jake Diggity\Documents\GitHub\FINAL TRY\src\gen\z_04.c: In function 'z04_gel_check_collisions':
-C:\Users\Jake Diggity\Documents\GitHub\FINAL TRY\src\gen\z_04.c:493:5: warning: implicit declaration of function 'enrt_gel_check_collisions'; did you mean 'z04_gel_check_collisions'? [-Wimplicit-function-declaration]
-  493 |     enrt_gel_check_collisions(slot);
+C:\Users\Jake Diggity\Documents\GitHub\FINAL TRY\src\gen\z_04.c:533:5: warning: implicit declaration of function 'enrt_gel_check_collisions'; did you mean 'z04_gel_check_collisions'? [-Wimplicit-function-declaration]
+  533 |     enrt_gel_check_collisions(slot);
       |     ^~~~~~~~~~~~~~~~~~~~~~~~~
       |     z04_gel_check_collisions
 C:\Users\Jake Diggity\Documents\GitHub\FINAL TRY\src\gen\z_04.c: In function 'z04_gel_move_splitting':
-C:\Users\Jake Diggity\Documents\GitHub\FINAL TRY\src\gen\z_04.c:497:12: warning: implicit declaration of function 'enrt_gel_move_splitting'; did you mean 'z04_gel_move_splitting'? [-Wimplicit-function-declaration]
-  497 |     return enrt_gel_move_splitting(slot);
+C:\Users\Jake Diggity\Documents\GitHub\FINAL TRY\src\gen\z_04.c:537:12: warning: implicit declaration of function 'enrt_gel_move_splitting'; did you mean 'z04_gel_move_splitting'? [-Wimplicit-function-declaration]
+  537 |     return enrt_gel_move_splitting(slot);
       |            ^~~~~~~~~~~~~~~~~~~~~~~
       |            z04_gel_move_splitting
 C:\Users\Jake Diggity\Documents\GitHub\FINAL TRY\src\gen\z_04.c: In function 'z04_update_normal_zol_or_gel':
-C:\Users\Jake Diggity\Documents\GitHub\FINAL TRY\src\gen\z_04.c:501:5: warning: implicit declaration of function 'enrt_update_normal_zol_or_gel'; did you mean 'z04_update_normal_zol_or_gel'? [-Wimplicit-function-declaration]
-  501 |     enrt_update_normal_zol_or_gel(qspeed, slot);
+C:\Users\Jake Diggity\Documents\GitHub\FINAL TRY\src\gen\z_04.c:541:5: warning: implicit declaration of function 'enrt_update_normal_zol_or_gel'; did you mean 'z04_update_normal_zol_or_gel'? [-Wimplicit-function-declaration]
+  541 |     enrt_update_normal_zol_or_gel(qspeed, slot);
       |     ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~
       |     z04_update_normal_zol_or_gel
 C:\Users\Jake Diggity\Documents\GitHub\FINAL TRY\src\gen\z_04.c: In function 'z04_update_gohma':
-C:\Users\Jake Diggity\Documents\GitHub\FINAL TRY\src\gen\z_04.c:505:5: warning: implicit declaration of function 'enrt_update_gohma'; did you mean 'enrt_update_zora'? [-Wimplicit-function-declaration]
-  505 |     enrt_update_gohma(slot);
+C:\Users\Jake Diggity\Documents\GitHub\FINAL TRY\src\gen\z_04.c:545:5: warning: implicit declaration of function 'enrt_update_gohma'; did you mean 'enrt_update_goriya'? [-Wimplicit-function-declaration]
+  545 |     enrt_update_gohma(slot);
       |     ^~~~~~~~~~~~~~~~~
-      |     enrt_update_zora
+      |     enrt_update_goriya
 C:\Users\Jake Diggity\Documents\GitHub\FINAL TRY\src\gen\z_04.c: In function 'z04_update_gleeok':
-C:\Users\Jake Diggity\Documents\GitHub\FINAL TRY\src\gen\z_04.c:509:5: warning: implicit declaration of function 'enrt_update_gleeok'; did you mean 'z04_update_gleeok'? [-Wimplicit-function-declaration]
-  509 |     enrt_update_gleeok(slot);
+C:\Users\Jake Diggity\Documents\GitHub\FINAL TRY\src\gen\z_04.c:549:5: warning: implicit declaration of function 'enrt_update_gleeok'; did you mean 'z04_update_gleeok'? [-Wimplicit-function-declaration]
+  549 |     enrt_update_gleeok(slot);
       |     ^~~~~~~~~~~~~~~~~~
       |     z04_update_gleeok
 C:\Users\Jake Diggity\Documents\GitHub\FINAL TRY\src\gen\z_04.c: In function 'z04_l_gleeok_store_ref_seg_distance':
-C:\Users\Jake Diggity\Documents\GitHub\FINAL TRY\src\gen\z_04.c:513:5: warning: implicit declaration of function 'enrt_gleeok_store_ref_seg_distance'; did you mean 'z04_l_gleeok_store_ref_seg_distance'? [-Wimplicit-function-declaration]
-  513 |     enrt_gleeok_store_ref_seg_distance(signed_ref_dist);
+C:\Users\Jake Diggity\Documents\GitHub\FINAL TRY\src\gen\z_04.c:553:5: warning: implicit declaration of function 'enrt_gleeok_store_ref_seg_distance'; did you mean 'z04_l_gleeok_store_ref_seg_distance'? [-Wimplicit-function-declaration]
+  553 |     enrt_gleeok_store_ref_seg_distance(signed_ref_dist);
       |     ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
       |     z04_l_gleeok_store_ref_seg_distance
 C:\Users\Jake Diggity\Documents\GitHub\FINAL TRY\src\gen\z_04.c: In function 'z04_gleeok_check_collisions':
-C:\Users\Jake Diggity\Documents\GitHub\FINAL TRY\src\gen\z_04.c:517:5: warning: implicit declaration of function 'enrt_gleeok_check_collisions'; did you mean 'z04_gleeok_check_collisions'? [-Wimplicit-function-declaration]
-  517 |     enrt_gleeok_check_collisions(slot);
+C:\Users\Jake Diggity\Documents\GitHub\FINAL TRY\src\gen\z_04.c:557:5: warning: implicit declaration of function 'enrt_gleeok_check_collisions'; did you mean 'z04_gleeok_check_collisions'? [-Wimplicit-function-declaration]
+  557 |     enrt_gleeok_check_collisions(slot);
       |     ^~~~~~~~~~~~~~~~~~~~~~~~~~~~
       |     z04_gleeok_check_collisions
 
-warning 40 in line 1687 of "zelda_translated\z_01.asm": label name conflicts with mnemonic
-	included from line 643 of "genesis_shell.asm"
+warning 40 in line 1672 of "zelda_translated\z_01.asm": label name conflicts with mnemonic
+	included from line 746 of "genesis_shell.asm"
 >Abs:
 
-warning 86 in line 2073 of "zelda_translated\z_01.asm": external symbol <DrawObjectMirrored> must not be defined
-	included from line 643 of "genesis_shell.asm"
+warning 86 in line 2058 of "zelda_translated\z_01.asm": external symbol <DrawObjectMirrored> must not be defined
+	included from line 746 of "genesis_shell.asm"
 >DrawObjectMirrored:
 
-warning 86 in line 2084 of "zelda_translated\z_01.asm": external symbol <DrawObjectNotMirrored> must not be defined
-	included from line 643 of "genesis_shell.asm"
+warning 86 in line 2069 of "zelda_translated\z_01.asm": external symbol <DrawObjectNotMirrored> must not be defined
+	included from line 746 of "genesis_shell.asm"
 >DrawObjectNotMirrored:
 
+warning 86 in line 2509 of "zelda_translated\z_01.asm": external symbol <Anim_WriteSprite> must not be defined
+	included from line 746 of "genesis_shell.asm"
+>Anim_WriteSprite:
+
 warning 86 in line 624 of "zelda_translated\z_02.asm": external symbol <InitDemoSubphaseClearArtifacts> must not be defined
-	included from line 644 of "genesis_shell.asm"
+	included from line 747 of "genesis_shell.asm"
 >InitDemoSubphaseClearArtifacts:
 
 warning 86 in line 638 of "zelda_translated\z_02.asm": external symbol <InitDemoSubphaseTransferTitlePalette> must not be defined
-	included from line 644 of "genesis_shell.asm"
+	included from line 747 of "genesis_shell.asm"
 >InitDemoSubphaseTransferTitlePalette:
 
-warning 86 in line 675 of "zelda_translated\z_02.asm": external symbol <InitDemoSubphasePlayTitleSong> must not be defined
-	included from line 644 of "genesis_shell.asm"
+warning 86 in line 641 of "zelda_translated\z_02.asm": external symbol <InitDemoSubphasePlayTitleSong> must not be defined
+	included from line 747 of "genesis_shell.asm"
 >InitDemoSubphasePlayTitleSong:
 
-warning 86 in line 689 of "zelda_translated\z_02.asm": external symbol <InitDemoSubphaseTransferStoryPalette> must not be defined
-	included from line 644 of "genesis_shell.asm"
+warning 86 in line 655 of "zelda_translated\z_02.asm": external symbol <InitDemoSubphaseTransferStoryPalette> must not be defined
+	included from line 747 of "genesis_shell.asm"
 >InitDemoSubphaseTransferStoryPalette:
 
-warning 86 in line 718 of "zelda_translated\z_02.asm": external symbol <InitDemoSubphaseTransferStoryTiles> must not be defined
-	included from line 644 of "genesis_shell.asm"
+warning 86 in line 658 of "zelda_translated\z_02.asm": external symbol <InitDemoSubphaseTransferStoryTiles> must not be defined
+	included from line 747 of "genesis_shell.asm"
 >InitDemoSubphaseTransferStoryTiles:
 
-warning 86 in line 736 of "zelda_translated\z_02.asm": external symbol <AnimateDemoPhase0Subphase0> must not be defined
-	included from line 644 of "genesis_shell.asm"
+warning 86 in line 676 of "zelda_translated\z_02.asm": external symbol <AnimateDemoPhase0Subphase0> must not be defined
+	included from line 747 of "genesis_shell.asm"
 >AnimateDemoPhase0Subphase0:
 
-warning 86 in line 753 of "zelda_translated\z_02.asm": external symbol <AnimateDemoPhase1Subphase0> must not be defined
-	included from line 644 of "genesis_shell.asm"
+warning 86 in line 693 of "zelda_translated\z_02.asm": external symbol <AnimateDemoPhase1Subphase0> must not be defined
+	included from line 747 of "genesis_shell.asm"
 >AnimateDemoPhase1Subphase0:
 
-warning 86 in line 756 of "zelda_translated\z_02.asm": external symbol <AnimateDemoPhase1Subphase1> must not be defined
-	included from line 644 of "genesis_shell.asm"
+warning 86 in line 696 of "zelda_translated\z_02.asm": external symbol <AnimateDemoPhase1Subphase1> must not be defined
+	included from line 747 of "genesis_shell.asm"
 >AnimateDemoPhase1Subphase1:
 
-warning 86 in line 759 of "zelda_translated\z_02.asm": external symbol <AnimateDemoPhase1Subphase2> must not be defined
-	included from line 644 of "genesis_shell.asm"
+warning 86 in line 699 of "zelda_translated\z_02.asm": external symbol <AnimateDemoPhase1Subphase2> must not be defined
+	included from line 747 of "genesis_shell.asm"
 >AnimateDemoPhase1Subphase2:
 
-warning 86 in line 1167 of "zelda_translated\z_02.asm": external symbol <AnimateDemoPhase1Subphase3> must not be defined
-	included from line 644 of "genesis_shell.asm"
+warning 86 in line 1107 of "zelda_translated\z_02.asm": external symbol <AnimateDemoPhase1Subphase3> must not be defined
+	included from line 747 of "genesis_shell.asm"
 >AnimateDemoPhase1Subphase3:
 
-warning 86 in line 1170 of "zelda_translated\z_02.asm": external symbol <AnimateDemoPhase1Subphase4> must not be defined
-	included from line 644 of "genesis_shell.asm"
+warning 86 in line 1110 of "zelda_translated\z_02.asm": external symbol <AnimateDemoPhase1Subphase4> must not be defined
+	included from line 747 of "genesis_shell.asm"
 >AnimateDemoPhase1Subphase4:
 
-warning 86 in line 1478 of "zelda_translated\z_02.asm": external symbol <AnimateDemoPhase0Subphase1> must not be defined
-	included from line 644 of "genesis_shell.asm"
+warning 86 in line 1279 of "zelda_translated\z_02.asm": external symbol <AnimateDemoPhase0Subphase1> must not be defined
+	included from line 747 of "genesis_shell.asm"
 >AnimateDemoPhase0Subphase1:
 
-warning 86 in line 2694 of "zelda_translated\z_02.asm": external symbol <UpdateMode0Demo_Sub1> must not be defined
-	included from line 644 of "genesis_shell.asm"
+warning 86 in line 2495 of "zelda_translated\z_02.asm": external symbol <UpdateMode0Demo_Sub1> must not be defined
+	included from line 747 of "genesis_shell.asm"
 >UpdateMode0Demo_Sub1:
 
-warning 86 in line 2885 of "zelda_translated\z_02.asm": external symbol <FormatFileA> must not be defined
-	included from line 644 of "genesis_shell.asm"
+warning 86 in line 2686 of "zelda_translated\z_02.asm": external symbol <FormatFileA> must not be defined
+	included from line 747 of "genesis_shell.asm"
 >FormatFileA:
 
 warning 86 in line 249 of "zelda_translated\z_04.asm": external symbol <UpdateCommonWanderer> must not be defined
-	included from line 646 of "genesis_shell.asm"
+	included from line 749 of "genesis_shell.asm"
 >UpdateCommonWanderer:
 
 warning 86 in line 252 of "zelda_translated\z_04.asm": external symbol <Wanderer_TargetPlayer> must not be defined
-	included from line 646 of "genesis_shell.asm"
+	included from line 749 of "genesis_shell.asm"
 >Wanderer_TargetPlayer:
 
-warning 86 in line 1089 of "zelda_translated\z_04.asm": external symbol <ControlKeeseFlight> must not be defined
-	included from line 646 of "genesis_shell.asm"
+warning 86 in line 836 of "zelda_translated\z_04.asm": external symbol <ControlKeeseFlight> must not be defined
+	included from line 749 of "genesis_shell.asm"
 >ControlKeeseFlight:
 
-warning 86 in line 7389 of "zelda_translated\z_04.asm": external symbol <Gohma_AnimateAndDraw> must not be defined
-	included from line 646 of "genesis_shell.asm"
+warning 86 in line 4596 of "zelda_translated\z_04.asm": external symbol <Aquamentus_Move> must not be defined
+	included from line 749 of "genesis_shell.asm"
+>Aquamentus_Move:
+
+warning 86 in line 4686 of "zelda_translated\z_04.asm": external symbol <Aquamentus_Shoot> must not be defined
+	included from line 749 of "genesis_shell.asm"
+>Aquamentus_Shoot:
+
+warning 86 in line 4781 of "zelda_translated\z_04.asm": external symbol <Aquamentus_Draw> must not be defined
+	included from line 749 of "genesis_shell.asm"
+>Aquamentus_Draw:
+
+warning 86 in line 6683 of "zelda_translated\z_04.asm": external symbol <Gohma_AnimateAndDraw> must not be defined
+	included from line 749 of "genesis_shell.asm"
 >Gohma_AnimateAndDraw:
 
-warning 86 in line 7455 of "zelda_translated\z_04.asm": external symbol <Gohma_CheckCollisions> must not be defined
-	included from line 646 of "genesis_shell.asm"
+warning 86 in line 6749 of "zelda_translated\z_04.asm": external symbol <Gohma_CheckCollisions> must not be defined
+	included from line 749 of "genesis_shell.asm"
 >Gohma_CheckCollisions:
 
-warning 86 in line 7619 of "zelda_translated\z_04.asm": external symbol <Gleeok_FetchNeckAddrs> must not be defined
-	included from line 646 of "genesis_shell.asm"
+warning 86 in line 6913 of "zelda_translated\z_04.asm": external symbol <Gleeok_FetchNeckAddrs> must not be defined
+	included from line 749 of "genesis_shell.asm"
 >Gleeok_FetchNeckAddrs:
 
-warning 86 in line 7650 of "zelda_translated\z_04.asm": external symbol <Gleeok_MoveNeck> must not be defined
-	included from line 646 of "genesis_shell.asm"
+warning 86 in line 6944 of "zelda_translated\z_04.asm": external symbol <Gleeok_MoveNeck> must not be defined
+	included from line 749 of "genesis_shell.asm"
 >Gleeok_MoveNeck:
 
-warning 86 in line 7674 of "zelda_translated\z_04.asm": external symbol <Gleeok_CalcSegmentLimits> must not be defined
-	included from line 646 of "genesis_shell.asm"
+warning 86 in line 6968 of "zelda_translated\z_04.asm": external symbol <Gleeok_CalcSegmentLimits> must not be defined
+	included from line 749 of "genesis_shell.asm"
 >Gleeok_CalcSegmentLimits:
 
-warning 86 in line 7716 of "zelda_translated\z_04.asm": external symbol <Gleeok_StretchNeck> must not be defined
-	included from line 646 of "genesis_shell.asm"
+warning 86 in line 7010 of "zelda_translated\z_04.asm": external symbol <Gleeok_StretchNeck> must not be defined
+	included from line 749 of "genesis_shell.asm"
 >Gleeok_StretchNeck:
 
-warning 86 in line 7889 of "zelda_translated\z_04.asm": external symbol <Gleeok_DrawHeadAndCheckCollisions> must not be defined
-	included from line 646 of "genesis_shell.asm"
+warning 86 in line 7183 of "zelda_translated\z_04.asm": external symbol <Gleeok_DrawHeadAndCheckCollisions> must not be defined
+	included from line 749 of "genesis_shell.asm"
 >Gleeok_DrawHeadAndCheckCollisions:
 
-warning 86 in line 7892 of "zelda_translated\z_04.asm": external symbol <Gleeok_DrawSegmentAndCheckCollisions> must not be defined
-	included from line 646 of "genesis_shell.asm"
+warning 86 in line 7186 of "zelda_translated\z_04.asm": external symbol <Gleeok_DrawSegmentAndCheckCollisions> must not be defined
+	included from line 749 of "genesis_shell.asm"
 >Gleeok_DrawSegmentAndCheckCollisions:
 
-warning 86 in line 7915 of "zelda_translated\z_04.asm": external symbol <Gleeok_MoveHead> must not be defined
-	included from line 646 of "genesis_shell.asm"
+warning 86 in line 7209 of "zelda_translated\z_04.asm": external symbol <Gleeok_MoveHead> must not be defined
+	included from line 749 of "genesis_shell.asm"
 >Gleeok_MoveHead:
 
-warning 86 in line 8027 of "zelda_translated\z_04.asm": external symbol <Gleeok_DrawBody> must not be defined
-	included from line 646 of "genesis_shell.asm"
+warning 86 in line 7321 of "zelda_translated\z_04.asm": external symbol <Gleeok_DrawBody> must not be defined
+	included from line 749 of "genesis_shell.asm"
 >Gleeok_DrawBody:
 
-warning 86 in line 9991 of "zelda_translated\z_04.asm": external symbol <_ShootIfWanted> must not be defined
-	included from line 646 of "genesis_shell.asm"
+warning 86 in line 9098 of "zelda_translated\z_04.asm": external symbol <_ShootIfWanted> must not be defined
+	included from line 749 of "genesis_shell.asm"
 >_ShootIfWanted:
 
-warning 86 in line 10013 of "zelda_translated\z_04.asm": external symbol <ShootLimited> must not be defined
-	included from line 646 of "genesis_shell.asm"
+warning 86 in line 9120 of "zelda_translated\z_04.asm": external symbol <ShootLimited> must not be defined
+	included from line 749 of "genesis_shell.asm"
 >ShootLimited:
 
-warning 86 in line 10177 of "zelda_translated\z_04.asm": external symbol <MoveFlyer> must not be defined
-	included from line 646 of "genesis_shell.asm"
+warning 86 in line 9284 of "zelda_translated\z_04.asm": external symbol <MoveFlyer> must not be defined
+	included from line 749 of "genesis_shell.asm"
 >MoveFlyer:
 
-warning 86 in line 10180 of "zelda_translated\z_04.asm": external symbol <BoundFlyer> must not be defined
-	included from line 646 of "genesis_shell.asm"
+warning 86 in line 9287 of "zelda_translated\z_04.asm": external symbol <BoundFlyer> must not be defined
+	included from line 749 of "genesis_shell.asm"
 >BoundFlyer:
 
-warning 86 in line 10183 of "zelda_translated\z_04.asm": external symbol <ReverseObjDir8> must not be defined
-	included from line 646 of "genesis_shell.asm"
+warning 86 in line 9290 of "zelda_translated\z_04.asm": external symbol <ReverseObjDir8> must not be defined
+	included from line 749 of "genesis_shell.asm"
 >ReverseObjDir8:
 
-warning 86 in line 10251 of "zelda_translated\z_04.asm": external symbol <TurnTowardsPlayer8> must not be defined
-	included from line 646 of "genesis_shell.asm"
+warning 86 in line 9358 of "zelda_translated\z_04.asm": external symbol <TurnTowardsPlayer8> must not be defined
+	included from line 749 of "genesis_shell.asm"
 >TurnTowardsPlayer8:
 
+warning 86 in line 9529 of "zelda_translated\z_04.asm": external symbol <TurnRandomlyDir8> must not be defined
+	included from line 749 of "genesis_shell.asm"
+>TurnRandomlyDir8:
+
 warning 86 in line 251 of "zelda_translated\z_05.asm": external symbol <UpdateMenuActive> must not be defined
-	included from line 647 of "genesis_shell.asm"
+	included from line 750 of "genesis_shell.asm"
 >UpdateMenuActive:
 
 warning 86 in line 294 of "zelda_translated\z_05.asm": external symbol <UpdateMenuScrollUp> must not be defined
-	included from line 647 of "genesis_shell.asm"
+	included from line 750 of "genesis_shell.asm"
 >UpdateMenuScrollUp:
 
 warning 86 in line 337 of "zelda_translated\z_05.asm": external symbol <MovePositionMarkers> must not be defined
-	included from line 647 of "genesis_shell.asm"
+	included from line 750 of "genesis_shell.asm"
 >MovePositionMarkers:
 
 warning 86 in line 389 of "zelda_translated\z_05.asm": external symbol <UpdateMenuStartOW> must not be defined
-	included from line 647 of "genesis_shell.asm"
+	included from line 750 of "genesis_shell.asm"
 >UpdateMenuStartOW:
 
 warning 86 in line 1564 of "zelda_translated\z_05.asm": external symbol <InitMode_EnterRoom> must not be defined
-	included from line 647 of "genesis_shell.asm"
+	included from line 750 of "genesis_shell.asm"
 >InitMode_EnterRoom:
 
-warning 86 in line 7641 of "zelda_translated\z_05.asm": external symbol <Submenu_CueTransferRowUW> must not be defined
-	included from line 647 of "genesis_shell.asm"
+warning 86 in line 7533 of "zelda_translated\z_05.asm": external symbol <Submenu_CueTransferRowUW> must not be defined
+	included from line 750 of "genesis_shell.asm"
 >Submenu_CueTransferRowUW:
 
-warning 86 in line 7726 of "zelda_translated\z_05.asm": external symbol <Submenu_CueTransferRowOW> must not be defined
-	included from line 647 of "genesis_shell.asm"
+warning 86 in line 7618 of "zelda_translated\z_05.asm": external symbol <Submenu_CueTransferRowOW> must not be defined
+	included from line 750 of "genesis_shell.asm"
 >Submenu_CueTransferRowOW:
 
 warning 86 in line 1821 of "zelda_translated\z_07.asm": external symbol <UpdateTriforcePositionMarker> must not be defined
-	included from line 649 of "genesis_shell.asm"
+	included from line 752 of "genesis_shell.asm"
 >UpdateTriforcePositionMarker:
 
-warning 86 in line 1970 of "zelda_translated\z_07.asm": external symbol <AnimateItemObject> must not be defined
-	included from line 649 of "genesis_shell.asm"
+warning 86 in line 1955 of "zelda_translated\z_07.asm": external symbol <AnimateItemObject> must not be defined
+	included from line 752 of "genesis_shell.asm"
 >AnimateItemObject:
 
-warning 86 in line 2026 of "zelda_translated\z_07.asm": external symbol <DrawItemInInventory> must not be defined
-	included from line 649 of "genesis_shell.asm"
+warning 86 in line 2011 of "zelda_translated\z_07.asm": external symbol <DrawItemInInventory> must not be defined
+	included from line 752 of "genesis_shell.asm"
 >DrawItemInInventory:
 
-warning 86 in line 2327 of "zelda_translated\z_07.asm": external symbol <ChangeTileObjTiles> must not be defined
-	included from line 649 of "genesis_shell.asm"
+warning 86 in line 2312 of "zelda_translated\z_07.asm": external symbol <ChangeTileObjTiles> must not be defined
+	included from line 752 of "genesis_shell.asm"
 >ChangeTileObjTiles:
 
-warning 86 in line 2795 of "zelda_translated\z_07.asm": external symbol <RunCrossRoomTasksAndBeginUpdateMode_PlayModesNoCellar> must not be defined
-	included from line 649 of "genesis_shell.asm"
+warning 86 in line 2780 of "zelda_translated\z_07.asm": external symbol <RunCrossRoomTasksAndBeginUpdateMode_PlayModesNoCellar> must not be defined
+	included from line 752 of "genesis_shell.asm"
 >RunCrossRoomTasksAndBeginUpdateMode_PlayModesNoCellar:
 
-warning 86 in line 3362 of "zelda_translated\z_07.asm": external symbol <UpdateHeartsAndRupees> must not be defined
-	included from line 649 of "genesis_shell.asm"
+warning 86 in line 3328 of "zelda_translated\z_07.asm": external symbol <UpdateHeartsAndRupees> must not be defined
+	included from line 752 of "genesis_shell.asm"
 >UpdateHeartsAndRupees:
 
-warning 86 in line 3458 of "zelda_translated\z_07.asm": external symbol <Obj_Shove> must not be defined
-	included from line 649 of "genesis_shell.asm"
+warning 86 in line 3424 of "zelda_translated\z_07.asm": external symbol <Obj_Shove> must not be defined
+	included from line 752 of "genesis_shell.asm"
 >Obj_Shove:
 
-warning 86 in line 3797 of "zelda_translated\z_07.asm": external symbol <Walker_Move> must not be defined
-	included from line 649 of "genesis_shell.asm"
+warning 86 in line 3763 of "zelda_translated\z_07.asm": external symbol <Walker_Move> must not be defined
+	included from line 752 of "genesis_shell.asm"
 >Walker_Move:
 
-warning 86 in line 4302 of "zelda_translated\z_07.asm": external symbol <GoToNextModeFromPlay> must not be defined
-	included from line 649 of "genesis_shell.asm"
->GoToNextModeFromPlay:
-
-warning 86 in line 4408 of "zelda_translated\z_07.asm": external symbol <Link_EndMoveAndDraw_Bank1> must not be defined
-	included from line 649 of "genesis_shell.asm"
+warning 86 in line 4366 of "zelda_translated\z_07.asm": external symbol <Link_EndMoveAndDraw_Bank1> must not be defined
+	included from line 752 of "genesis_shell.asm"
 >Link_EndMoveAndDraw_Bank1:
 
-warning 86 in line 4415 of "zelda_translated\z_07.asm": external symbol <Link_EndMoveAndAnimate_Bank1> must not be defined
-	included from line 649 of "genesis_shell.asm"
+warning 86 in line 4373 of "zelda_translated\z_07.asm": external symbol <Link_EndMoveAndAnimate_Bank1> must not be defined
+	included from line 752 of "genesis_shell.asm"
 >Link_EndMoveAndAnimate_Bank1:
 
-warning 86 in line 4442 of "zelda_translated\z_07.asm": external symbol <Link_EndMoveAndAnimate> must not be defined
-	included from line 649 of "genesis_shell.asm"
+warning 86 in line 4400 of "zelda_translated\z_07.asm": external symbol <Link_EndMoveAndAnimate> must not be defined
+	included from line 752 of "genesis_shell.asm"
 >Link_EndMoveAndAnimate:
 
-warning 2047 in line 466 of "genesis_shell.asm": branch out of range changed to jmp
+warning 86 in line 7673 of "zelda_translated\z_07.asm": external symbol <SetMMC1Control> must not be defined
+	included from line 752 of "genesis_shell.asm"
+>SetMMC1Control:
+
+warning 86 in line 7686 of "zelda_translated\z_07.asm": external symbol <SwitchBank> must not be defined
+	included from line 752 of "genesis_shell.asm"
+>SwitchBank:
+
+warning 2047 in line 501 of "genesis_shell.asm": branch out of range changed to jmp
 >    bsr     _oam_dma_flush
 
-warning 2047 in line 472 of "genesis_shell.asm": branch out of range changed to jmp
+warning 2047 in line 507 of "genesis_shell.asm": branch out of range changed to jmp
 >    bsr     _ags_prearm
 
-warning 2047 in line 478 of "genesis_shell.asm": branch out of range changed to jmp
+warning 2047 in line 513 of "genesis_shell.asm": branch out of range changed to jmp
 >    bsr     _mode_transition_check
 
-warning 2047 in line 495 of "genesis_shell.asm": branch out of range changed to jmp
+warning 2047 in line 530 of "genesis_shell.asm": branch out of range changed to jmp
 >    bsr     _ags_flush
 
 warning 2047 in line 2527 of "nes_io.asm": branch out of range changed to jmp
-	included from line 619 of "genesis_shell.asm"
+	included from line 722 of "genesis_shell.asm"
 >    bsr     dmc_trigger
 
 warning 2047 in line 2609 of "nes_io.asm": branch out of range changed to jmp
-	included from line 619 of "genesis_shell.asm"
+	included from line 722 of "genesis_shell.asm"
 >    bsr     _compose_bg_tile_word
 
 warning 2047 in line 2725 of "nes_io.asm": branch out of range changed to jmp
-	included from line 619 of "genesis_shell.asm"
+	included from line 722 of "genesis_shell.asm"
 >    bsr     _chr_upload_sprite_4x
 
 warning 2047 in line 2826 of "nes_io.asm": branch out of range changed to jmp
-	included from line 619 of "genesis_shell.asm"
+	included from line 722 of "genesis_shell.asm"
 >    bsr     _chr_upload_sprite_4x
 
 warning 2047 in line 3033 of "nes_io.asm": branch out of range changed to jmp
-	included from line 619 of "genesis_shell.asm"
+	included from line 722 of "genesis_shell.asm"
 >    bsr     _chr_upload_sprite_4x
 
 warning 2047 in line 3036 of "nes_io.asm": branch out of range changed to jmp
-	included from line 619 of "genesis_shell.asm"
+	included from line 722 of "genesis_shell.asm"
 >    bsr     _chr_convert_upload
 
 warning 2047 in line 3044 of "nes_io.asm": branch out of range changed to jmp
-	included from line 619 of "genesis_shell.asm"
+	included from line 722 of "genesis_shell.asm"
 >    bsr     _chr_upload_sprite_4x
 
 warning 2047 in line 3131 of "nes_io.asm": branch out of range changed to jmp
-	included from line 619 of "genesis_shell.asm"
+	included from line 722 of "genesis_shell.asm"
 >    bsr     _compose_bg_tile_word
 
 warning 2047 in line 3195 of "nes_io.asm": branch out of range changed to jmp
-	included from line 619 of "genesis_shell.asm"
+	included from line 722 of "genesis_shell.asm"
 >    bsr     _attr_write_2x2
 
 warning 2047 in line 3205 of "nes_io.asm": branch out of range changed to jmp
-	included from line 619 of "genesis_shell.asm"
+	included from line 722 of "genesis_shell.asm"
 >    bsr     _attr_write_2x2
 
 warning 2047 in line 3216 of "nes_io.asm": branch out of range changed to jmp
-	included from line 619 of "genesis_shell.asm"
+	included from line 722 of "genesis_shell.asm"
 >    bsr     _attr_write_2x2
 
 warning 2047 in line 3228 of "nes_io.asm": branch out of range changed to jmp
-	included from line 619 of "genesis_shell.asm"
+	included from line 722 of "genesis_shell.asm"
 >    bsr     _attr_write_2x2
 
 warning 2047 in line 3311 of "nes_io.asm": branch out of range changed to jmp
-	included from line 619 of "genesis_shell.asm"
+	included from line 722 of "genesis_shell.asm"
 >    bsr     _compose_bg_tile_word
 
 warning 2047 in line 3389 of "nes_io.asm": branch out of range changed to jmp
-	included from line 619 of "genesis_shell.asm"
+	included from line 722 of "genesis_shell.asm"
 >    bsr     _attr_write_2x2
 
 warning 2047 in line 3399 of "nes_io.asm": branch out of range changed to jmp
-	included from line 619 of "genesis_shell.asm"
+	included from line 722 of "genesis_shell.asm"
 >    bsr     _attr_write_2x2
 
 warning 2047 in line 3410 of "nes_io.asm": branch out of range changed to jmp
-	included from line 619 of "genesis_shell.asm"
+	included from line 722 of "genesis_shell.asm"
 >    bsr     _attr_write_2x2
 
 warning 2047 in line 3422 of "nes_io.asm": branch out of range changed to jmp
-	included from line 619 of "genesis_shell.asm"
+	included from line 722 of "genesis_shell.asm"
 >    bsr     _attr_write_2x2
 
-warning 51 in line 4802 of "zelda_translated\z_04.asm": instruction has been auto-aligned
-	included from line 646 of "genesis_shell.asm"
+warning 51 in line 4352 of "zelda_translated\z_04.asm": instruction has been auto-aligned
+	included from line 749 of "genesis_shell.asm"
 >    lea     ($041F,A4),A0
 
-warning 51 in line 7746 of "zelda_translated\z_04.asm": instruction has been auto-aligned
-	included from line 646 of "genesis_shell.asm"
+warning 51 in line 7040 of "zelda_translated\z_04.asm": instruction has been auto-aligned
+	included from line 749 of "genesis_shell.asm"
 >    lea     ($0087,A4),A0
 C:\Users\Jake Diggity\Documents\GitHub\FINAL TRY\build\toolchain\sgdk_bin\bin\ld.exe: warning: cannot find entry symbol EntryPoint; defaulting to 00000200
 C:\Users\Jake Diggity\Documents\GitHub\FINAL TRY\build\toolchain\sgdk_bin\bin\ld.exe: warning: C:\Users\Jake Diggity\Documents\GitHub\FINAL TRY\builds\whatif.elf has a LOAD segment with RWX permissions
+[lint_legacy_symbols] WARN: 258 legacy/MMIO references in src/game/ + other (warn-only at S1):
+  z00_*..z07_*: 258 hits
+    src/core/core_runtime.c:146  z07_set_shove_info_with0
+    src/core/core_runtime.c:376  z01_destroy_object_wram
+    src/core/core_runtime.c:381  z01_destroy_object_wram
+    src/core/core_runtime.c:403  z01_get_opposite_dir
+    src/frontend/frontend_runtime.c:59  z07_hide_all_sprites
+    ... +253 more

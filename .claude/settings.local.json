@@ -33,7 +33,8 @@
       "Bash(rm -f /c/tmp/position_log_p48.txt /c/tmp/position_log_baseline.txt)",
       "Bash(cmd.exe //c \"tasklist\")",
       "Bash(rm -rf \"/c/Users/Jake Diggity/.claude/plugins/cache/caveman\")",
-      "Bash(echo \"Done: $?\")"
+      "Bash(echo \"Done: $?\")",
+      "Bash(git add *)"
     ]
   }
 }

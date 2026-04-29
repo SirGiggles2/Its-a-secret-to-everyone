@@ -1,0 +1,30 @@
+=== Memory domains ===
+[1] WRAM                 size=8192
+[2] CHR                  size=8192
+[3] CIRAM (nametables)   size=4096
+[4] PRG ROM              size=131072
+[5] PALRAM               size=32
+[6] OAM                  size=256
+[7] System Bus           size=65536
+
+=== First 32 bytes of each domain ===
+--- WRAM ---
+00 5A 0A 0A 0A 0A 24 24 24 24 0A 0A 0A 0A 0A 0A 0A 0A 24 24 24 24 24 24 24 24 00 00 00 00 00 00 
+--- CHR ---
+00 07 1F 77 F3 B1 39 1C 00 00 00 09 0F 0F 1F 1F 0F 3E 3E 7E 7F FF FF 70 00 19 3F 3F 1E C1 E0 70 
+--- CIRAM (nametables) ---
+24 24 24 24 24 24 24 24 24 24 24 24 24 24 24 24 24 24 24 24 24 24 24 24 24 24 24 24 24 24 24 24 
+--- PRG ROM ---
+FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF 
+--- PALRAM ---
+0F 30 30 30 0F 21 30 30 0F 16 30 30 0F 29 1A 09 00 29 37 17 00 02 22 30 00 16 27 30 00 0B 1B 2B 
+--- OAM ---
+F8 CA C2 D0 F8 CC C2 C8 F8 CA 82 28 F8 CC 82 30 F8 CA 42 D0 F8 CC 42 C8 F8 CA 02 28 F8 CC 02 30 
+--- System Bus ---
+34 90 3B 90 01 01 00 FF 0F 00 08 00 00 00 00 00 00 01 00 00 00 80 00 00 2D 19 43 71 F7 14 FA D3 
+
+=== Palette-y domains last 32 bytes ===
+--- CIRAM (nametables) ---
+FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF 
+--- PALRAM ---
+0F 30 30 30 0F 21 30 30 0F 16 30 30 0F 29 1A 09 00 29 37 17 00 02 22 30 00 16 27 30 00 0B 1B 2B 
