@@ -68,6 +68,10 @@ echo [3] Compiling ow_room_render.c...
 "%GCC%" %CFLAGS% %INCS% -c "%PROJ%\src\ow_room_render_roomrom.c" -o "%OUT%\ow_room_render.o"
 if errorlevel 1 ( echo FAIL: ow_room_render.c & exit /b 1 )
 
+echo [3] Compiling roomrom_hud.c...
+"%GCC%" %CFLAGS% %INCS% -c "%PROJ%\src\roomrom_hud.c" -o "%OUT%\roomrom_hud.o"
+if errorlevel 1 ( echo FAIL: roomrom_hud.c & exit /b 1 )
+
 echo [3] Compiling overworld.c...
 "%GCC%" %CFLAGS% %INCS% -c "%REPO%\data\rooms\overworld.c" -o "%OUT%\overworld.o"
 if errorlevel 1 ( echo FAIL: overworld.c & exit /b 1 )
@@ -84,6 +88,10 @@ echo [3] Compiling redux_overworld_bg.c...
 "%GCC%" %CFLAGS% %INCS% -c "%PROJ%\src\redux_overworld_bg.c" -o "%OUT%\redux_overworld_bg.o"
 if errorlevel 1 ( echo FAIL: redux_overworld_bg.c & exit /b 1 )
 
+echo [3] Compiling redux_hud_chr.c...
+"%GCC%" %CFLAGS% %INCS% -c "%PROJ%\src\redux_hud_chr.c" -o "%OUT%\redux_hud_chr.o"
+if errorlevel 1 ( echo FAIL: redux_hud_chr.c & exit /b 1 )
+
 echo [3] Compiling common.c...
 "%GCC%" %CFLAGS% %INCS% -c "%REPO%\data\chr\common.c" -o "%OUT%\common.o"
 if errorlevel 1 ( echo FAIL: common.c & exit /b 1 )
@@ -96,7 +104,7 @@ rem ---------------------------------------------------------------------------
 rem Step 4: Link
 rem ---------------------------------------------------------------------------
 echo [4] Linking...
-set "OBJS=%OUT%\main.o %OUT%\render_adapter_sgdk.o %OUT%\ow_room_render.o %OUT%\overworld.o %OUT%\overworld_bg.o %OUT%\redux_overworld.o %OUT%\redux_overworld_bg.o %OUT%\common.o %OUT%\palettes.o"
+set "OBJS=%OUT%\main.o %OUT%\render_adapter_sgdk.o %OUT%\ow_room_render.o %OUT%\roomrom_hud.o %OUT%\overworld.o %OUT%\overworld_bg.o %OUT%\redux_overworld.o %OUT%\redux_overworld_bg.o %OUT%\redux_hud_chr.o %OUT%\common.o %OUT%\palettes.o"
 "%GCC%" -m68000 -B%TOOLBIN%\ -n -T "%SGDK%\md.ld" -nostdlib "%OUT%\sega.o" %OBJS% "%LIB%\libmd.a" "%LIB%\libgcc.a" -o "%OUT%\rom.out" -Wl,--gc-sections
 if errorlevel 1 ( echo FAIL: link & exit /b 1 )
 

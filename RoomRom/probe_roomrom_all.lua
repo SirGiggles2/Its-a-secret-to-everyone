@@ -1,10 +1,14 @@
 local out = "C:\\Users\\Jake Diggity\\Documents\\GitHub\\FINAL TRY\\RoomRom\\out\\roomrom_all_dump.json"
 
 local PLANE_A = 0xE000
-local ROW_BYTES = 128
-local FIRST_ROW = 2
+local PLANE_B = 0xC000
+local ROW_BYTES = 64
+local FIRST_ROW = 7
+local HUD_ROWS = 7
 local ROOM_ROWS = 22
 local ROOM_COLS = 32
+local HUD_TILE_BASE = 1
+local TILE_REDUX_HEART_OUTLINE = 0x50
 
 local function frame(pad)
     joypad.set(pad or {}, 1)
@@ -27,6 +31,10 @@ local function vram_u16(addr)
     return memory.read_u16_be(addr, "VRAM")
 end
 
+local function vram_u8(addr)
+    return memory.read_u8(addr, "VRAM")
+end
+
 local function cram_u16(addr)
     return memory.read_u16_be(addr, "CRAM")
 end
@@ -44,10 +52,32 @@ local function dump_room_words()
     return rows
 end
 
+local function dump_hud_words(plane)
+    local rows = {}
+    for row = 0, HUD_ROWS - 1 do
+        local vals = {}
+        local base = plane + row * ROW_BYTES
+        for col = 0, ROOM_COLS - 1 do
+            vals[#vals + 1] = vram_u16(base + col * 2)
+        end
+        rows[#rows + 1] = vals
+    end
+    return rows
+end
+
 local function dump_cram()
     local vals = {}
     for i = 0, 63 do
         vals[#vals + 1] = cram_u16(i * 2)
+    end
+    return vals
+end
+
+local function dump_chr_tile(raw_tile)
+    local vals = {}
+    local base = (raw_tile + HUD_TILE_BASE) * 32
+    for i = 0, 31 do
+        vals[#vals + 1] = vram_u8(base + i)
     end
     return vals
 end
@@ -105,13 +135,23 @@ end
 
 local f = assert(io.open(out, "w"))
 f:write("{\n")
+f:write('  "first_row": ' .. tostring(FIRST_ROW) .. ',\n')
+f:write('  "row_bytes": ' .. tostring(ROW_BYTES) .. ',\n')
+f:write('  "room_rows": ' .. tostring(ROOM_ROWS) .. ',\n')
+f:write('  "room_cols": ' .. tostring(ROOM_COLS) .. ',\n')
+f:write('  "hud_rows": ' .. tostring(HUD_ROWS) .. ',\n')
 f:write('  "maps": [\n')
 for map_id = 0, 1 do
     if map_id == 1 then
         tap("C")
+        for _ = 1, 60 do
+            frame({})
+        end
     end
     f:write("    {\n")
     f:write('      "map_id": ' .. tostring(map_id) .. ',\n')
+    f:write('      "hud": ' .. json_rows(dump_hud_words(PLANE_A)) .. ',\n')
+    f:write('      "hud_b": ' .. json_rows(dump_hud_words(PLANE_B)) .. ',\n')
     f:write('      "rooms": [\n')
     for room = 0, 127 do
         move_to(room)
@@ -132,6 +172,7 @@ for map_id = 0, 1 do
     f:write("\n")
 end
 f:write("  ],\n")
+f:write('  "redux_heart_chr": ' .. json_array(dump_chr_tile(TILE_REDUX_HEART_OUTLINE)) .. ',\n')
 f:write('  "cram": ' .. json_array(dump_cram()) .. "\n")
 f:write("}\n")
 f:close()

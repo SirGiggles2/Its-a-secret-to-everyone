@@ -9,6 +9,7 @@ ROOMROM_SRC = ROOT / "RoomRom" / "src"
 REDUX_OW = ROOT / "Zelda1-Redux" / "code" / "gameplay" / "overworld_screens.asm"
 REDUX_OW_CHR = ROOT / "Zelda1-Redux" / "code" / "gfx" / "data_02b.bin"
 REDUX_SECRET_CHR = ROOT / "Zelda1-Redux" / "code" / "gfx" / "OverworldAssets.bin"
+REDUX_AUTOMAP_CHR = ROOT / "Zelda1-Redux" / "code" / "gameplay" / "automap_tiles.bin"
 ORIGINAL_OW_C = ROOT / "data" / "rooms" / "overworld.c"
 
 OW_ATTRS_A_OFFSET = 0
@@ -164,6 +165,11 @@ def main() -> None:
         raise ValueError(
             f"Redux visible-secret CHR converted to {len(secret_chr_data)} bytes; expected 384"
         )
+    automap_chr_data = convert_chr(REDUX_AUTOMAP_CHR.read_bytes())
+    if len(automap_chr_data) != 1024:
+        raise ValueError(
+            f"Redux automap CHR converted to {len(automap_chr_data)} bytes; expected 1024"
+        )
 
     ROOMROM_SRC.mkdir(parents=True, exist_ok=True)
     (ROOMROM_SRC / "redux_overworld.c").write_text(
@@ -186,9 +192,15 @@ def main() -> None:
         encoding="ascii",
         newline="\n",
     )
+    (ROOMROM_SRC / "redux_hud_chr.c").write_text(
+        emit_c_array("redux_automap_chr", automap_chr_data, "RoomRom/tools/gen_redux_roomrom.py"),
+        encoding="ascii",
+        newline="\n",
+    )
     print(f"wrote RoomRom Redux overworld: {len(redux)} bytes, heap {len(heap)} bytes")
     print("wrote RoomRom Redux overworld CHR: 4160 bytes")
     print("wrote RoomRom Redux visible-secret CHR: 384 bytes")
+    print("wrote RoomRom Redux automap CHR: 1024 bytes")
 
 
 if __name__ == "__main__":

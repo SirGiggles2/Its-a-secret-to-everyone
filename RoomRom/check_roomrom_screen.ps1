@@ -29,22 +29,22 @@ try {
         return $count
     }
 
-    $zones = @(
-        @{ Name = "hud_top"; X0 = 0;   Y0 = 0;   X1 = 320; Y1 = 16  },
-        @{ Name = "right_border"; X0 = 256; Y0 = 16;  X1 = 320; Y1 = 192 },
-        @{ Name = "bottom_border"; X0 = 0;   Y0 = 192; X1 = 320; Y1 = 224 }
-    )
-
     $failed = $false
-    foreach ($zone in $zones) {
-        $nonBlack = Count-NonBlackPixels $bitmap $zone.X0 $zone.Y0 $zone.X1 $zone.Y1
-        Write-Host "$($zone.Name): non_black=$nonBlack"
-        if ($nonBlack -ne 0) {
-            $failed = $true
-        }
+
+    Write-Host "size: $($bitmap.Width)x$($bitmap.Height)"
+    if ($bitmap.Width -ne 256 -or $bitmap.Height -ne 224) {
+        Write-Host "size: expected H32 256x224"
+        $failed = $true
     }
 
-    $roomPixels = Count-NonBlackPixels $bitmap 0 16 256 192
+    $hudPixels = Count-NonBlackPixels $bitmap 0 0 256 56
+    Write-Host "hud_area: non_black=$hudPixels"
+    if ($hudPixels -lt 50) {
+        Write-Host "hud_area: expected rendered HUD tiles"
+        $failed = $true
+    }
+
+    $roomPixels = Count-NonBlackPixels $bitmap 0 56 256 224
     Write-Host "room_content: non_black=$roomPixels"
     if ($roomPixels -lt 500) {
         Write-Host "room_content: expected rendered overworld tiles"

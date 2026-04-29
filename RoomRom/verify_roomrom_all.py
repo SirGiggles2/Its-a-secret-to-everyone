@@ -11,6 +11,9 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 
 ROOM_ROWS = 22
 ROOM_COLS = 32
+ROOM_FIRST_ROW = 7
+HUD_ROWS = 7
+ROW_BYTES_H32 = 64
 
 LEVEL_INFO_OW_OFFSET = 768
 OW_ATTRS_A_OFFSET = 0
@@ -62,6 +65,61 @@ TILE_OBJECT_PRIMARY_SQUARES_OW = [0xC8, 0xD8, 0xC4, 0xBC, 0xC0, 0xC0]
 TILE_OBJECT_PRIMARY_SQUARES_OW_REDUX = [0xC8, 0x58, 0x5C, 0xBC, 0xC0, 0xC0]
 HEAP_OFFSETS = [0,53,102,168,236,286,346,405,464,526,591,660,721,775,841,893]
 PAL_TO_ATTR = [0x00, 0x55, 0xAA, 0xFF]
+TILE_ORIGINAL_MAP_MARKER = 0x51
+TILE_REDUX_HEART_OUTLINE = 0x50
+TILE_REDUX_HEART_FILL = 0x52
+EXPECTED_REDUX_HEART_CHR = [
+    0x01, 0x10, 0x01, 0x10,
+    0x10, 0x01, 0x10, 0x01,
+    0x10, 0x00, 0x00, 0x01,
+    0x10, 0x00, 0x00, 0x01,
+    0x01, 0x00, 0x00, 0x10,
+    0x00, 0x10, 0x01, 0x00,
+    0x00, 0x01, 0x10, 0x00,
+    0x00, 0x00, 0x00, 0x00,
+]
+
+HUD_EXPECT_TILE_IDS = {
+    0: [
+        (5, 5, TILE_ORIGINAL_MAP_MARKER),
+        (23, 2, 0x2F),
+        (24, 2, 0x15),
+        (25, 2, 0x12),
+        (26, 2, 0x0F),
+        (27, 2, 0x0E),
+        (28, 2, 0x2F),
+    ],
+    1: [
+        (22, 2, 0x30),
+        (29, 2, 0x37),
+        (3, 2, 0x2F),
+        (4, 2, 0x15),
+        (5, 2, 0x12),
+        (6, 2, 0x0F),
+        (7, 2, 0x0E),
+        (8, 2, 0x2F),
+        (4, 5, TILE_REDUX_HEART_FILL),
+    ],
+}
+
+HUD_EXPECT_EMPTY_CELLS = {
+    0: [
+        (2, 2),
+        (9, 2),
+    ],
+}
+
+HUD_EXPECT_WORDS = {
+    1: [
+        (4, 5, (1 << 13) | (TILE_REDUX_HEART_FILL + 1)),
+    ],
+}
+
+HUD_B_EXPECT_WORDS = {
+    1: [
+        (4, 5, TILE_REDUX_HEART_OUTLINE + 1),
+    ],
+}
 
 
 def c_bytes(path: Path) -> list[int]:
@@ -186,6 +244,74 @@ def check_chr_contract() -> None:
     assert len(ow) == OW_BG_TILES * 32
 
 
+def verify_dump_contract(dump: dict) -> list[str]:
+    errors = []
+    expected = {
+        "first_row": ROOM_FIRST_ROW,
+        "row_bytes": ROW_BYTES_H32,
+        "room_rows": ROOM_ROWS,
+        "room_cols": ROOM_COLS,
+        "hud_rows": HUD_ROWS,
+    }
+    for key, value in expected.items():
+        if dump.get(key) != value:
+            errors.append(f"{key}: expected={value} got={dump.get(key)}")
+    return errors
+
+
+def verify_hud_rows(map_id: int, label: str, hud_rows: list[list[int]]) -> list[str]:
+    errors = []
+    if len(hud_rows) != HUD_ROWS:
+        return [f"map {map_id} {label} rows: expected={HUD_ROWS} got={len(hud_rows)}"]
+    for row, vals in enumerate(hud_rows):
+        if len(vals) != ROOM_COLS:
+            errors.append(
+                f"map {map_id} {label} row {row}: expected {ROOM_COLS} cols got {len(vals)}"
+            )
+    return errors
+
+
+def verify_hud(map_id: int, hud_rows: list[list[int]], hud_b_rows: list[list[int]]) -> list[str]:
+    errors = verify_hud_rows(map_id, "hud", hud_rows)
+    errors.extend(verify_hud_rows(map_id, "hud_b", hud_b_rows))
+    if errors:
+        return errors
+    for col, row, raw_tile in HUD_EXPECT_TILE_IDS[map_id]:
+        got = hud_rows[row][col] & 0x07FF
+        expected = raw_tile + 1
+        if got != expected:
+            errors.append(
+                f"map {map_id} hud ({col},{row}): "
+                f"expected tile=0x{expected:03X} got=0x{got:03X}"
+            )
+    for col, row in HUD_EXPECT_EMPTY_CELLS.get(map_id, []):
+        got = hud_rows[row][col]
+        if got != 0:
+            errors.append(
+                f"map {map_id} hud ({col},{row}): expected empty original map cell got=0x{got:04X}"
+            )
+    for col, row, expected in HUD_EXPECT_WORDS.get(map_id, []):
+        got = hud_rows[row][col]
+        if got != expected:
+            errors.append(
+                f"map {map_id} hud ({col},{row}): expected word=0x{expected:04X} got=0x{got:04X}"
+            )
+    for col, row, expected in HUD_B_EXPECT_WORDS.get(map_id, []):
+        got = hud_b_rows[row][col]
+        if got != expected:
+            errors.append(
+                f"map {map_id} hud_b ({col},{row}): expected word=0x{expected:04X} got=0x{got:04X}"
+            )
+    return errors
+
+
+def verify_redux_heart_chr(dump: dict) -> list[str]:
+    got = dump.get("redux_heart_chr", [])
+    if got != EXPECTED_REDUX_HEART_CHR:
+        return ["redux_heart_chr: expected white-outline heart tile pattern"]
+    return []
+
+
 def verify_dump(dump_path: Path) -> int:
     rooms = c_bytes(REPO_ROOT / "data" / "rooms" / "overworld.c")
     rooms_redux = c_bytes(REPO_ROOT / "RoomRom" / "src" / "redux_overworld.c")
@@ -197,12 +323,19 @@ def verify_dump(dump_path: Path) -> int:
     check_chr_contract()
 
     dump = json.loads(dump_path.read_text(encoding="utf-8"))
+    contract_errors = verify_dump_contract(dump)
+    chr_errors = verify_redux_heart_chr(dump)
     map_entries = dump.get("maps")
     if map_entries is None:
         map_entries = [{"map_id": 0, "rooms": dump["rooms"]}]
 
     total_tile = 0
+    total_hud = 0
     first: list[str] = []
+    for line in contract_errors:
+        first.append(line)
+    for line in chr_errors:
+        first.append(line)
     for map_entry in map_entries:
         map_id = int(map_entry.get("map_id", 0))
         if map_id == 1:
@@ -217,6 +350,10 @@ def verify_dump(dump_path: Path) -> int:
             expected_secondary = SECONDARY_SQUARES
             expected_tile_objects = TILE_OBJECT_PRIMARY_SQUARES_OW
             map_name = "original"
+        hud_errors = verify_hud(map_id, map_entry.get("hud", []), map_entry.get("hud_b", []))
+        total_hud += len(hud_errors)
+        for line in hud_errors[:24 - len(first)]:
+            first.append(line)
         actual_rooms = {int(r["room_id"]): r["plane_a"] for r in map_entry["rooms"]}
         for room_id in range(128):
             expected = expected_room(
@@ -259,8 +396,9 @@ def verify_dump(dump_path: Path) -> int:
         print(f"... +{len(cram_mismatch) - 16} more CRAM mismatches")
 
     print(f"tile_word_mismatches={total_tile}")
+    print(f"hud_mismatches={total_hud + len(contract_errors) + len(chr_errors)}")
     print(f"cram_mismatches={len(cram_mismatch)}")
-    return 0 if total_tile == 0 and not cram_mismatch else 1
+    return 0 if total_tile == 0 and total_hud == 0 and not contract_errors and not chr_errors and not cram_mismatch else 1
 
 
 def main() -> int:

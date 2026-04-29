@@ -1,14 +1,26 @@
 #include <genesis.h>
 #include "ow_room_render_roomrom.h"
+#include "roomrom_hud.h"
 
 /* Boots to overworld room 0x77. D-pad navigates all 128 rooms.
  * Room layout: 16 wide x 8 tall, room_id = (row << 4) | col. */
+
+static void init_video(void)
+{
+    VDP_setScreenWidth256();
+    VDP_setPlaneSize(32, 32, TRUE);
+    VDP_setWindowOff();
+    VDP_setScrollingMode(HSCROLL_PLANE, VSCROLL_PLANE);
+    VDP_setHorizontalScroll(BG_A, 0);
+    VDP_setVerticalScroll(BG_A, 0);
+}
 
 static void load_room(u8 room_id)
 {
     roomrom_ow_room_render_load_palette(room_id);
     VDP_clearPlane(BG_A, TRUE);
     roomrom_ow_room_render_fill_plane_a(room_id);
+    roomrom_hud_draw(roomrom_ow_room_render_get_map(), room_id);
 }
 
 int main(bool hardReset)
@@ -19,7 +31,9 @@ int main(bool hardReset)
 
     (void)hardReset;
 
+    init_video();
     roomrom_ow_room_render_upload_chr();
+    roomrom_hud_upload_chr();
     {
         u32 blank[8] = {0,0,0,0,0,0,0,0};
         VDP_loadTileData(blank, 0, 1, CPU);
@@ -40,6 +54,7 @@ int main(bool hardReset)
             u8 map_id = roomrom_ow_room_render_get_map();
             roomrom_ow_room_render_set_map(map_id ^ 1u);
             roomrom_ow_room_render_upload_chr();
+            roomrom_hud_upload_chr();
             load_room(room_id);
             continue;
         }

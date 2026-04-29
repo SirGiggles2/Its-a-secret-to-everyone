@@ -1,8 +1,8 @@
 local out = "C:\\Users\\Jake Diggity\\Documents\\GitHub\\FINAL TRY\\RoomRom\\out\\roomrom_nav_dump.json"
 
 local PLANE_A = 0xE000
-local ROW_BYTES = 128
-local FIRST_ROW = 2
+local ROW_BYTES = 64
+local FIRST_ROW = 7
 local ROOM_ROWS = 22
 local ROOM_COLS = 32
 

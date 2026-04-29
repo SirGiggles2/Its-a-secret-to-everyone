@@ -8,6 +8,7 @@ extern const unsigned char common_chr[7616];
 extern const unsigned char overworld_bg_chr[4160];
 extern const unsigned char redux_overworld_bg_chr[4160];
 extern const unsigned char redux_overworld_secret_chr[384];
+extern const unsigned char redux_automap_chr[1024];
 extern const unsigned char misc_palettes[1208];
 
 #define LEVEL_INFO_OW_OFFSET 768
@@ -23,6 +24,7 @@ extern const unsigned char misc_palettes[1208];
 #define COMMON_BG_TILE_COUNT      112u
 #define OW_BG_TILE_COUNT          130u
 #define COMMON_MISC_TILE_COUNT    14u
+#define REDUX_AUTOMAP_TILE_COUNT  32u
 #define COMMON_BG_CHR_OFFSET      (112u * 32u)
 #define COMMON_MISC_CHR_OFFSET    (224u * 32u)
 
@@ -156,6 +158,9 @@ void roomrom_ow_room_render_upload_chr(void)
     render_chr_upload((unsigned short)(OW_VDP_TILE_BASE * 32u),
                       common_chr + COMMON_BG_CHR_OFFSET,
                       (unsigned short)(COMMON_BG_TILE_COUNT * 32u));
+    render_chr_upload((unsigned short)((OW_VDP_TILE_BASE + 0x30u) * 32u),
+                      redux_automap_chr,
+                      (unsigned short)(REDUX_AUTOMAP_TILE_COUNT * 32u));
     if (s_roomrom_map_id == ROOMROM_MAP_REDUX) {
         render_chr_upload((unsigned short)((OW_VDP_TILE_BASE + 0x54u) * 32u),
                           redux_overworld_secret_chr,
@@ -205,7 +210,7 @@ static void write_tile(unsigned char tile_col, unsigned char tile_row,
                        unsigned char inner_pal)
 {
     unsigned char pal = ow_tile_palette(tile_col, tile_row, outer_pal, inner_pal);
-    render_set_plane_a_word(tile_col, (unsigned short)(tile_row + 2),
+    render_set_plane_a_word(tile_col, (unsigned short)(tile_row + ROOMROM_ROOM_FIRST_ROW),
                             tile_word(raw_tile, pal));
 }
 

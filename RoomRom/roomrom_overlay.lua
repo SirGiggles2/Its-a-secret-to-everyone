@@ -13,9 +13,10 @@ end
 local function draw_room_id()
     local col = room_id % 16
     local row = math.floor(room_id / 16)
-    gui.drawBox(0, 0, 96, 15, 0x000000FF, 0x000000D0)
+    local y = 208
+    gui.drawBox(0, y, 108, y + 15, 0x000000FF, 0x000000D0)
     local map_name = (map_id == 1) and "REDUX" or "ORIG"
-    gui.text(4, 3, string.format("%s ROOM %02X  %02d,%02d", map_name, room_id, col, row), "white", "black")
+    gui.text(4, y + 3, string.format("%s ROOM %02X  %02d,%02d", map_name, room_id, col, row), "white", "black")
 end
 
 event.onframeend(function()
