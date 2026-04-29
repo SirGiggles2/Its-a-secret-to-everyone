@@ -38,14 +38,18 @@ TOOLS_PROBES = _THIS.parent
 # ---------------------------------------------------------------------------
 # Build toolchain constants (mirrors build.bat layout)
 # ---------------------------------------------------------------------------
-M68K_BIN = REPO_ROOT / "build" / "toolchain" / "sgdk_bin" / "bin"
-M68K_GCC = M68K_BIN / "gcc.exe"
-M68K_LD  = M68K_BIN / "ld.exe"
-LD_SCRIPT = REPO_ROOT / "build" / "genesis.ld"
-OBJ_DIR   = REPO_ROOT / "builds" / "obj"
+M68K_BIN     = REPO_ROOT / "build" / "toolchain" / "sgdk_bin" / "bin"
+M68K_GCC     = M68K_BIN / "gcc.exe"
+M68K_LD      = M68K_BIN / "ld.exe"
+M68K_OBJCOPY = M68K_BIN / "objcopy.exe"
+LD_SCRIPT    = REPO_ROOT / "build" / "genesis.ld"
+OBJ_DIR      = REPO_ROOT / "builds" / "obj"
+FIX_CHECKSUM = REPO_ROOT / "tools" / "fix_checksum.py"
 
-# Output ELF for the debug build (does NOT overwrite the main ROM)
-DEBUG_ELF = REPO_ROOT / "builds" / "whatif_ow_debug.elf"
+# Debug build outputs (do NOT overwrite the main ROM)
+_DEBUG_ELF     = REPO_ROOT / "builds" / "whatif_ow_debug.elf"
+_DEBUG_RAW     = REPO_ROOT / "builds" / "whatif_ow_debug_raw.md"
+DEBUG_ROM      = REPO_ROOT / "builds" / "whatif_ow_debug.md"
 
 # Common compile flags (taken verbatim from build.bat)
 _COMMON_CFLAGS = [
@@ -155,8 +159,8 @@ def build_debug_rom() -> Path:
         )
 
     obj_lines = ld_resp.read_text(encoding="utf-8").splitlines()
-    # Each line is a quoted forward-slash path like "/full/path/to/foo.o"
-    # Strip quotes and convert to Path objects.
+    # Each line is a quoted forward-slash path like "C:/full/path/to/foo.o"
+    # Keep the original forward-slash strings to avoid backslash mangling.
     obj_paths: list[str] = []
     substituted_fs_handoff = False
     substituted_ow_room_debug = False
@@ -164,15 +168,15 @@ def build_debug_rom() -> Path:
         stripped = line.strip().strip('"')
         if not stripped:
             continue
-        p = Path(stripped)
-        if p.name == "fs_handoff.o":
+        basename = stripped.rsplit("/", 1)[-1]
+        if basename == "fs_handoff.o":
             obj_paths.append(str(debug_fs_handoff_obj).replace("\\", "/"))
             substituted_fs_handoff = True
-        elif p.name == "ow_room_debug.o":
+        elif basename == "ow_room_debug.o":
             obj_paths.append(str(debug_ow_room_obj).replace("\\", "/"))
             substituted_ow_room_debug = True
         else:
-            obj_paths.append(str(p))
+            obj_paths.append(stripped)
 
     # If the normal objects weren't in the rsp (e.g. fresh setup), add debug objs.
     if not substituted_fs_handoff:
@@ -195,11 +199,11 @@ def build_debug_rom() -> Path:
             "Run build.bat once to assemble genesis_shell.asm first."
         )
 
-    print(f"[build] Linking debug ELF -> {DEBUG_ELF.name} ...")
+    print(f"[build] Linking -> {_DEBUG_ELF.name} ...")
     link_cmd = [
         str(M68K_LD),
         "-T", str(LD_SCRIPT),
-        "-o", str(DEBUG_ELF),
+        "-o", str(_DEBUG_ELF),
         str(asm_obj),
         f"@{debug_rsp}",
         "-L", str(REPO_ROOT / "sgdk" / "lib"),
@@ -208,12 +212,34 @@ def build_debug_rom() -> Path:
     ]
     result = subprocess.run(link_cmd, capture_output=True, text=True)
     if result.returncode != 0:
-        print("[build] FAIL linking debug ELF:", file=sys.stderr)
+        print("[build] FAIL linking debug ROM:", file=sys.stderr)
         print(result.stderr, file=sys.stderr)
         raise RuntimeError("Link failed")
 
-    print(f"[build] Debug ELF ready: {DEBUG_ELF}")
-    return DEBUG_ELF
+    print(f"[build] objcopy -> {_DEBUG_RAW.name} ...")
+    result = subprocess.run(
+        [str(M68K_OBJCOPY), "-O", "binary", str(_DEBUG_ELF), str(_DEBUG_RAW)],
+        capture_output=True, text=True,
+    )
+    if result.returncode != 0:
+        print("[build] FAIL objcopy:", file=sys.stderr)
+        print(result.stderr, file=sys.stderr)
+        raise RuntimeError("objcopy failed")
+
+    print(f"[build] fix_checksum -> {DEBUG_ROM.name} ...")
+    result = subprocess.run(
+        [sys.executable, str(FIX_CHECKSUM), str(_DEBUG_RAW), str(DEBUG_ROM)],
+        capture_output=True, text=True,
+    )
+    if result.returncode != 0:
+        print("[build] FAIL fix_checksum:", file=sys.stderr)
+        print(result.stderr, file=sys.stderr)
+        raise RuntimeError("fix_checksum failed")
+    if _DEBUG_RAW.exists():
+        _DEBUG_RAW.unlink()
+
+    print(f"[build] Debug ROM ready: {DEBUG_ROM}")
+    return DEBUG_ROM
 
 
 # ---------------------------------------------------------------------------
@@ -416,7 +442,7 @@ def main() -> int:
     # -----------------------------------------------------------------
     print("\n--- Step 1: Build debug Genesis ROM ---")
     try:
-        debug_elf = build_debug_rom()
+        debug_rom = build_debug_rom()
     except RuntimeError as e:
         print(f"ERROR (build): {e}", file=sys.stderr)
         return 1
@@ -435,7 +461,7 @@ def main() -> int:
     print(f"[gen] Launching BizHawk (Genesis) with debug ROM ...")
     print(f"[gen] Lua: {gen_lua}")
     print(f"[gen] Dump: {gen_dump}")
-    _launch_bizhawk(bizhawk_dir, debug_elf, gen_lua)
+    _launch_bizhawk(bizhawk_dir, debug_rom, gen_lua)
 
     try:
         _wait_for_file(gen_dump, DUMP_TIMEOUT)

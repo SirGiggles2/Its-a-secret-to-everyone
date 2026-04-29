@@ -195,15 +195,11 @@ static void vram_dma_upload(unsigned long src, unsigned short dst,
 void render_set_plane_a_word(unsigned short col, unsigned short row,
                              unsigned short word)
 {
-    /* Compute VRAM nametable byte address, then upload 1 word.
-     * For sparse single-word writes a direct VDP_CTRL/VDP_DATA poke is
-     * cheaper, but we have no helper for that today; F-phase replaces
-     * with SGDK VDP_setTileMapXY. For now, DMA path keeps wiring valid
-     * if a caller appears (no caller exists at S1 D-phase). */
-    unsigned short vram_addr =
-        (unsigned short)(PLANE_A_BASE + (row * 64u + col) * 2u);
-    unsigned short tmp = word;
-    vram_dma_upload((unsigned long)&tmp, vram_addr, 1);
+    unsigned short addr = (unsigned short)(PLANE_A_BASE + (row * 64u + col) * 2u);
+    VDP_CTRL_LONG = 0x40000000UL
+                  | ((unsigned long)(addr & 0x3FFFu) << 16)
+                  | ((addr >> 14) & 0x0003u);
+    VDP_DATA_WORD = word;
 }
 
 void render_load_palette(unsigned short idx, const unsigned short *src)
