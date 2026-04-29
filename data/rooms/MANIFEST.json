@@ -33,15 +33,15 @@
       "file": "overworld.c",
       "var_name": "rooms_overworld",
       "byte_offset": 1166,
-      "byte_size": 912,
-      "note": "912 bytes, column-encoded format"
+      "byte_size": 1936,
+      "note": "1936 bytes, column-encoded format"
     },
     {
       "category": "overworld",
       "name": "RoomLayoutOWCave0",
       "file": "overworld.c",
       "var_name": "rooms_overworld",
-      "byte_offset": 2078,
+      "byte_offset": 3102,
       "byte_size": 16
     },
     {
@@ -49,7 +49,7 @@
       "name": "RoomLayoutOWCave1",
       "file": "overworld.c",
       "var_name": "rooms_overworld",
-      "byte_offset": 2094,
+      "byte_offset": 3118,
       "byte_size": 16
     },
     {
@@ -57,7 +57,7 @@
       "name": "RoomLayoutOWCave2",
       "file": "overworld.c",
       "var_name": "rooms_overworld",
-      "byte_offset": 2110,
+      "byte_offset": 3134,
       "byte_size": 16
     },
     {
@@ -65,7 +65,7 @@
       "name": "ColumnHeapOWBlob",
       "file": "overworld.c",
       "var_name": "rooms_overworld",
-      "byte_offset": 2126,
+      "byte_offset": 3150,
       "byte_size": 964
     }
   ],

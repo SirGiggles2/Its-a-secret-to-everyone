@@ -1,7 +1,7 @@
 #include "ow_room_render.h"
 #include "render_abi.h"
 
-extern const unsigned char rooms_overworld[3090];
+extern const unsigned char rooms_overworld[];
 extern const unsigned char common_chr[7616];
 extern const unsigned char overworld_bg_chr[4160];
 extern const unsigned char misc_palettes[1208];
@@ -11,7 +11,7 @@ extern const unsigned char misc_palettes[1208];
 #define OW_ATTRS_B_OFFSET    128
 #define OW_ATTRS_D_OFFSET    384
 #define OW_LAYOUTS_OFFSET    1166
-#define OW_HEAP_BLOB_OFFSET  2126
+#define OW_HEAP_BLOB_OFFSET  3150
 
 #define LEVEL_INFO_PALETTE_OFFSET (LEVEL_INFO_OW_OFFSET + 3)
 
@@ -170,7 +170,7 @@ void ow_room_render_fill_plane_a(unsigned char room_id)
 
     outer_pal = rooms_overworld[OW_ATTRS_A_OFFSET + room_id] & 0x03;
     inner_pal = rooms_overworld[OW_ATTRS_B_OFFSET + room_id] & 0x03;
-    unique_id = rooms_overworld[OW_ATTRS_D_OFFSET + room_id] & 0x3F;
+    unique_id = rooms_overworld[OW_ATTRS_D_OFFSET + room_id] & 0x7F;
     col_dirs  = &rooms_overworld[OW_LAYOUTS_OFFSET + (unsigned short)unique_id * 16];
 
     for (col = 0; col < 16; col++) {

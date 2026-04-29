@@ -17,7 +17,7 @@ OW_ATTRS_A_OFFSET = 0
 OW_ATTRS_B_OFFSET = 128
 OW_ATTRS_D_OFFSET = 384
 OW_LAYOUTS_OFFSET = 1166
-OW_HEAP_BLOB_OFFSET = 2126
+OW_HEAP_BLOB_OFFSET = 3150
 
 COMMON_BG_TILE_OFFSET = 112
 COMMON_MISC_TILE_OFFSET = 224
@@ -91,7 +91,7 @@ def normalize_primary_tile(raw: int) -> int:
 def expected_room(rooms: list[int], room_id: int) -> list[list[int]]:
     outer = rooms[OW_ATTRS_A_OFFSET + room_id] & 0x03
     inner = rooms[OW_ATTRS_B_OFFSET + room_id] & 0x03
-    unique = rooms[OW_ATTRS_D_OFFSET + room_id] & 0x3F
+    unique = rooms[OW_ATTRS_D_OFFSET + room_id] & 0x7F
     layout_base = OW_LAYOUTS_OFFSET + unique * 16
     grid = [[0 for _ in range(ROOM_COLS)] for _ in range(ROOM_ROWS)]
 
