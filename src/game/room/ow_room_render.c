@@ -4,6 +4,8 @@
 extern const unsigned char rooms_overworld[3090];
 extern const unsigned char overworld_bg_chr[4160];
 
+#define OW_ATTRS_A_OFFSET    0
+#define OW_ATTRS_B_OFFSET    128
 #define OW_ATTRS_D_OFFSET    384
 #define OW_LAYOUTS_OFFSET    1166
 #define OW_HEAP_BLOB_OFFSET  2126
@@ -41,20 +43,22 @@ static const unsigned short s_heap_offsets[16] = {
 
 static void write_square(unsigned char col, unsigned char row,
                          unsigned char tile_tl, unsigned char tile_bl,
-                         unsigned char tile_tr, unsigned char tile_br)
+                         unsigned char tile_tr, unsigned char tile_br,
+                         unsigned char pal)
 {
     unsigned short pc = (unsigned short)(col * 2);
     unsigned short pr = (unsigned short)(row * 2 + 2);
+    unsigned short pal_bits = (unsigned short)pal << 13;
     unsigned short w;
 
-    /* NES tile index >= 130: CHR pattern is blank in ROM; collapse to tile 0 (A3 will fix palette+tile map) */
-    w = (tile_tl < 130) ? (unsigned short)tile_tl : 0u;
+    /* NES tile index >= 130: CHR pattern is blank in ROM; collapse to tile 0 */
+    w = pal_bits | ((tile_tl < 130) ? (unsigned short)tile_tl : 0u);
     render_set_plane_a_word(pc,     pr,     w);
-    w = (tile_bl < 130) ? (unsigned short)tile_bl : 0u;
+    w = pal_bits | ((tile_bl < 130) ? (unsigned short)tile_bl : 0u);
     render_set_plane_a_word(pc,     pr + 1, w);
-    w = (tile_tr < 130) ? (unsigned short)tile_tr : 0u;
+    w = pal_bits | ((tile_tr < 130) ? (unsigned short)tile_tr : 0u);
     render_set_plane_a_word(pc + 1, pr,     w);
-    w = (tile_br < 130) ? (unsigned short)tile_br : 0u;
+    w = pal_bits | ((tile_br < 130) ? (unsigned short)tile_br : 0u);
     render_set_plane_a_word(pc + 1, pr + 1, w);
 }
 
@@ -63,12 +67,58 @@ void ow_room_render_upload_chr(void)
     render_chr_upload(0x0000, overworld_bg_chr, 4160);
 }
 
+/*
+ * ow_room_palette() -- derive the Genesis palette index (0..3) for a square.
+ *
+ * Mirrors FillPlayAreaAttrs (Z_05.asm line 984):
+ *   - outer_pal = AttrsA[room_id] & 0x03  (fills borders and first attr-row)
+ *   - inner_pal = AttrsB[room_id] & 0x03  (fills inner area, attr-rows 1..5)
+ *
+ * Genesis square (col, row) maps to NES attribute byte via:
+ *   attr_col = col / 2  (0..7)
+ *   attr_row = row / 2  (0..5, where row = 0..10 are the 11 square rows)
+ *
+ * FillPlayAreaAttrs fills PlayAreaAttrs[0..47] which corresponds to NES
+ * attribute table rows 2..7 (genesis square rows 4..10).  Genesis square
+ * rows 0..3 fall in the NES HUD attribute area which uses the outer palette.
+ *
+ * Within PlayAreaAttrs:
+ *   pa_row 0 (genesis sq rows 4,5): entirely outer (inner loop starts at
+ *            PlayAreaAttrs offset 9, so row 0 = offsets 0-7 = all outer)
+ *   pa_rows 1..3 (genesis sq rows 6..10): border cols (0,7) = outer,
+ *            inner cols (1..6) = inner
+ *
+ * Simplified condition: outer unless attr_row >= 3 && attr_col in [1..6].
+ */
+static unsigned char ow_room_palette(unsigned char col, unsigned char row,
+                                     unsigned char outer_pal,
+                                     unsigned char inner_pal)
+{
+    unsigned char attr_col = col >> 1;   /* col / 2 */
+    unsigned char attr_row = row >> 1;   /* row / 2 */
+
+    /* Border columns always use outer palette */
+    if (attr_col == 0 || attr_col == 7) {
+        return outer_pal;
+    }
+    /* attr_row < 3: HUD area (rows 0-3) + PlayAreaAttrs row 0 (rows 4-5) = outer */
+    if (attr_row < 3) {
+        return outer_pal;
+    }
+    /* Inner area: attr_rows 3..5, attr_cols 1..6 = inner palette */
+    return inner_pal;
+}
+
 void ow_room_render_fill_plane_a(unsigned char room_id)
 {
     unsigned char unique_id;
+    unsigned char outer_pal;
+    unsigned char inner_pal;
     const unsigned char *col_dirs;
     unsigned char col;
 
+    outer_pal = rooms_overworld[OW_ATTRS_A_OFFSET + room_id] & 0x03;
+    inner_pal = rooms_overworld[OW_ATTRS_B_OFFSET + room_id] & 0x03;
     unique_id = rooms_overworld[OW_ATTRS_D_OFFSET + room_id] & 0x3F;
     col_dirs  = &rooms_overworld[OW_LAYOUTS_OFFSET + (unsigned short)unique_id * 16];
 
@@ -102,6 +152,7 @@ void ow_room_render_fill_plane_a(unsigned char room_id)
             unsigned char sq_byte = heap_ptr[0];
             unsigned char sq_idx  = sq_byte & 0x3F;
             unsigned char tile_tl, tile_bl, tile_tr, tile_br;
+            unsigned char pal;
 
             if (sq_idx >= 0x10) {
                 unsigned char p = s_primary_squares[sq_idx];
@@ -117,7 +168,8 @@ void ow_room_render_fill_plane_a(unsigned char room_id)
                 tile_br = s_secondary_squares[b + 3];
             }
 
-            write_square(col, row, tile_tl, tile_bl, tile_tr, tile_br);
+            pal = ow_room_palette(col, row, outer_pal, inner_pal);
+            write_square(col, row, tile_tl, tile_bl, tile_tr, tile_br, pal);
             row++;
 
             if (sq_byte & 0x40) {
