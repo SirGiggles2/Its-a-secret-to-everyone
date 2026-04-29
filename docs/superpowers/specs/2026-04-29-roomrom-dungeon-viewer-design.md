@@ -26,9 +26,10 @@ boot, no FS in the loop.
 **In scope**
 - New "scene" axis in RoomRom: scene = overworld | dungeon.
   - Button `B` toggles scene (overworld ↔ dungeon).
-  - Button `C` continues to toggle map variant (original/Redux) and is
-    scoped per-scene (Redux dungeons reuse the existing Redux dungeon
-    data if present; otherwise C is a no-op in dungeon scene).
+  - Button `C` toggles map variant (original/Redux) and is scoped
+    per-scene. Dungeon scene gets the same redux/original treatment as
+    overworld: original CHR + palette, or redux CHR + redux palette
+    (room layouts are unchanged between the two).
 - Dungeon room renderer that consumes `rooms_dungeons` the same way
   the overworld renderer consumes `rooms_overworld`:
   - Pull palette + attrs from `LevelBlockUW1Q1` style sub-tables.
@@ -140,6 +141,11 @@ Existing functions to reuse:
 - Dungeon BG CHR may overlap or share VRAM tile slots with HUD glyphs.
   If so, the dungeon CHR upload must avoid the HUD slot range (currently
   $50..$52 custom + the font/digit range in common_chr).
-- Redux-mode dungeons: `s_secondary_squares_redux` exists for OW but no
-  redux dungeon data exists yet. First cut leaves dungeon-redux toggle
-  as a no-op and prints nothing different.
+- Redux-mode dungeons: Redux ships recoloured dungeon palettes
+  (`Zelda1-Redux/code/optional/RecolouredDungeons.asm`) and dungeon CHR
+  (`Zelda1-Redux/code/gfx/DungeonAssets.bin`). Same room layouts as
+  original. Implementation adds a `redux_underworld_bg.c` (extracted
+  via `gen_redux_roomrom.py`) and palette overrides; button C in dungeon
+  scene flips it the same way it flips overworld.
+- Future: a real options-menu toggle in the main game replaces the
+  per-scene C button. Out of scope for this plan; RoomRom uses C.
