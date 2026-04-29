@@ -8,15 +8,18 @@ extern const unsigned char overworld_bg_chr[4160];
 #define OW_LAYOUTS_OFFSET    1166
 #define OW_HEAP_BLOB_OFFSET  2126
 
-/* PrimarySquaresOW from Z_05.asm line 5731 */
-static const unsigned char s_primary_squares[56] = {
+/* PrimarySquaresOW from Z_05.asm line 5731 (56 entries).
+ * NES accesses this table with the raw sq_idx (0-63); indices 56-63 fall into
+ * SecondarySquaresOW[0..7] due to ROM table adjacency, so we replicate that here. */
+static const unsigned char s_primary_squares[64] = {
     0x24,0x6F,0xF3,0xFA,0x98,0x90,0x8F,0x95,
     0x8E,0x90,0x74,0x76,0xF3,0x24,0x26,0x89,
     0x03,0x04,0x70,0xC8,0xBC,0x8D,0x8F,0x93,
     0x95,0xC4,0xCE,0xD8,0xB0,0xB4,0xAA,0xAC,
     0xB8,0x9C,0xA6,0x9A,0xA2,0xA0,0xE5,0xE6,
     0xE7,0xE8,0xE9,0xEA,0xC0,0xE0,0x78,0x7A,
-    0x7E,0x80,0xCC,0xD0,0xD4,0xDC,0x89,0x84
+    0x7E,0x80,0xCC,0xD0,0xD4,0xDC,0x89,0x84,
+    0x24,0x24,0x24,0x24,0x6F,0x6F,0x6F,0x6F  /* SecondarySquaresOW[0..7] */
 };
 
 /* SecondarySquaresOW from Z_05.asm line 5740 */
@@ -44,6 +47,7 @@ static void write_square(unsigned char col, unsigned char row,
     unsigned short pr = (unsigned short)(row * 2 + 2);
     unsigned short w;
 
+    /* NES tile index >= 130: CHR pattern is blank in ROM; collapse to tile 0 (A3 will fix palette+tile map) */
     w = (tile_tl < 130) ? (unsigned short)tile_tl : 0u;
     render_set_plane_a_word(pc,     pr,     w);
     w = (tile_bl < 130) ? (unsigned short)tile_bl : 0u;
@@ -80,6 +84,7 @@ void ow_room_render_fill_plane_a(unsigned char room_id)
 
         heap_ptr = &rooms_overworld[OW_HEAP_BLOB_OFFSET + s_heap_offsets[heap_idx]];
 
+        /* Each column block opens with a bit7-set byte that doubles as the first tile row */
         y = 0;
         cols_found = col_in_heap;
         while (1) {
