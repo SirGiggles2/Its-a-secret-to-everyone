@@ -72,6 +72,10 @@ echo [3] Compiling roomrom_hud.c...
 "%GCC%" %CFLAGS% %INCS% -c "%PROJ%\src\roomrom_hud.c" -o "%OUT%\roomrom_hud.o"
 if errorlevel 1 ( echo FAIL: roomrom_hud.c & exit /b 1 )
 
+echo [3] Compiling uw_room_render_roomrom.c...
+"%GCC%" %CFLAGS% %INCS% -c "%PROJ%\src\uw_room_render_roomrom.c" -o "%OUT%\uw_room_render.o"
+if errorlevel 1 ( echo FAIL: uw_room_render_roomrom.c & exit /b 1 )
+
 echo [3] Compiling overworld.c...
 "%GCC%" %CFLAGS% %INCS% -c "%REPO%\data\rooms\overworld.c" -o "%OUT%\overworld.o"
 if errorlevel 1 ( echo FAIL: overworld.c & exit /b 1 )
@@ -79,6 +83,14 @@ if errorlevel 1 ( echo FAIL: overworld.c & exit /b 1 )
 echo [3] Compiling overworld_bg.c...
 "%GCC%" %CFLAGS% %INCS% -c "%REPO%\data\chr\overworld_bg.c" -o "%OUT%\overworld_bg.o"
 if errorlevel 1 ( echo FAIL: overworld_bg.c & exit /b 1 )
+
+echo [3] Compiling dungeons.c...
+"%GCC%" %CFLAGS% %INCS% -c "%REPO%\data\rooms\dungeons.c" -o "%OUT%\dungeons.o"
+if errorlevel 1 ( echo FAIL: dungeons.c & exit /b 1 )
+
+echo [3] Compiling underworld_bg.c...
+"%GCC%" %CFLAGS% %INCS% -c "%REPO%\data\chr\underworld_bg.c" -o "%OUT%\underworld_bg.o"
+if errorlevel 1 ( echo FAIL: underworld_bg.c & exit /b 1 )
 
 echo [3] Compiling redux_overworld.c...
 "%GCC%" %CFLAGS% %INCS% -c "%PROJ%\src\redux_overworld.c" -o "%OUT%\redux_overworld.o"
@@ -104,7 +116,7 @@ rem ---------------------------------------------------------------------------
 rem Step 4: Link
 rem ---------------------------------------------------------------------------
 echo [4] Linking...
-set "OBJS=%OUT%\main.o %OUT%\render_adapter_sgdk.o %OUT%\ow_room_render.o %OUT%\roomrom_hud.o %OUT%\overworld.o %OUT%\overworld_bg.o %OUT%\redux_overworld.o %OUT%\redux_overworld_bg.o %OUT%\redux_hud_chr.o %OUT%\common.o %OUT%\palettes.o"
+set "OBJS=%OUT%\main.o %OUT%\render_adapter_sgdk.o %OUT%\ow_room_render.o %OUT%\uw_room_render.o %OUT%\roomrom_hud.o %OUT%\overworld.o %OUT%\overworld_bg.o %OUT%\dungeons.o %OUT%\underworld_bg.o %OUT%\redux_overworld.o %OUT%\redux_overworld_bg.o %OUT%\redux_hud_chr.o %OUT%\common.o %OUT%\palettes.o"
 "%GCC%" -m68000 -B%TOOLBIN%\ -n -T "%SGDK%\md.ld" -nostdlib "%OUT%\sega.o" %OBJS% "%LIB%\libmd.a" "%LIB%\libgcc.a" -o "%OUT%\rom.out" -Wl,--gc-sections
 if errorlevel 1 ( echo FAIL: link & exit /b 1 )
 
