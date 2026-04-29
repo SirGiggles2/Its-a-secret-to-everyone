@@ -7,6 +7,7 @@ extern const unsigned short rooms_overworld_redux_heap_offsets[16];
 extern const unsigned char common_chr[7616];
 extern const unsigned char overworld_bg_chr[4160];
 extern const unsigned char redux_overworld_bg_chr[4160];
+extern const unsigned char redux_overworld_secret_chr[384];
 extern const unsigned char misc_palettes[1208];
 
 #define LEVEL_INFO_OW_OFFSET 768
@@ -53,6 +54,10 @@ static const unsigned char s_secondary_squares[64] = {
 
 static const unsigned char s_tile_object_primary_ow[6] = {
     0xC8,0xD8,0xC4,0xBC,0xC0,0xC0
+};
+
+static const unsigned char s_tile_object_primary_ow_redux[6] = {
+    0xC8,0x58,0x5C,0xBC,0xC0,0xC0
 };
 
 static const unsigned char s_pal_to_attr[4] = {
@@ -133,8 +138,12 @@ void roomrom_ow_room_render_load_palette(unsigned char room_id)
 
 static unsigned char normalize_primary_tile(unsigned char raw)
 {
-    if (raw >= 0xE5 && raw <= 0xEA)
-        return s_tile_object_primary_ow[raw - 0xE5];
+    if (raw >= 0xE5 && raw <= 0xEA) {
+        unsigned char idx = (unsigned char)(raw - 0xE5);
+        if (s_roomrom_map_id == ROOMROM_MAP_REDUX)
+            return s_tile_object_primary_ow_redux[idx];
+        return s_tile_object_primary_ow[idx];
+    }
     return raw;
 }
 
@@ -147,6 +156,11 @@ void roomrom_ow_room_render_upload_chr(void)
     render_chr_upload((unsigned short)(OW_VDP_TILE_BASE * 32u),
                       common_chr + COMMON_BG_CHR_OFFSET,
                       (unsigned short)(COMMON_BG_TILE_COUNT * 32u));
+    if (s_roomrom_map_id == ROOMROM_MAP_REDUX) {
+        render_chr_upload((unsigned short)((OW_VDP_TILE_BASE + 0x54u) * 32u),
+                          redux_overworld_secret_chr,
+                          (unsigned short)(12u * 32u));
+    }
     render_chr_upload((unsigned short)((OW_VDP_TILE_BASE + COMMON_BG_TILE_COUNT) * 32u),
                       ow_chr,
                       (unsigned short)(OW_BG_TILE_COUNT * 32u));

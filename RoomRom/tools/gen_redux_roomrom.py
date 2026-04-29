@@ -8,6 +8,7 @@ ROOT = Path(__file__).resolve().parents[2]
 ROOMROM_SRC = ROOT / "RoomRom" / "src"
 REDUX_OW = ROOT / "Zelda1-Redux" / "code" / "gameplay" / "overworld_screens.asm"
 REDUX_OW_CHR = ROOT / "Zelda1-Redux" / "code" / "gfx" / "data_02b.bin"
+REDUX_SECRET_CHR = ROOT / "Zelda1-Redux" / "code" / "gfx" / "OverworldAssets.bin"
 ORIGINAL_OW_C = ROOT / "data" / "rooms" / "overworld.c"
 
 OW_ATTRS_A_OFFSET = 0
@@ -158,6 +159,11 @@ def main() -> None:
     chr_data = convert_chr(REDUX_OW_CHR.read_bytes())
     if len(chr_data) != 4160:
         raise ValueError(f"Redux overworld CHR converted to {len(chr_data)} bytes; expected 4160")
+    secret_chr_data = convert_chr(REDUX_SECRET_CHR.read_bytes())
+    if len(secret_chr_data) != 384:
+        raise ValueError(
+            f"Redux visible-secret CHR converted to {len(secret_chr_data)} bytes; expected 384"
+        )
 
     ROOMROM_SRC.mkdir(parents=True, exist_ok=True)
     (ROOMROM_SRC / "redux_overworld.c").write_text(
@@ -171,12 +177,18 @@ def main() -> None:
         newline="\n",
     )
     (ROOMROM_SRC / "redux_overworld_bg.c").write_text(
-        emit_c_array("redux_overworld_bg_chr", chr_data, "RoomRom/tools/gen_redux_roomrom.py"),
+        emit_c_array("redux_overworld_bg_chr", chr_data, "RoomRom/tools/gen_redux_roomrom.py")
+        + emit_c_array(
+            "redux_overworld_secret_chr",
+            secret_chr_data,
+            "RoomRom/tools/gen_redux_roomrom.py",
+        ),
         encoding="ascii",
         newline="\n",
     )
     print(f"wrote RoomRom Redux overworld: {len(redux)} bytes, heap {len(heap)} bytes")
     print("wrote RoomRom Redux overworld CHR: 4160 bytes")
+    print("wrote RoomRom Redux visible-secret CHR: 384 bytes")
 
 
 if __name__ == "__main__":

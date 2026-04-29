@@ -59,6 +59,7 @@ SECONDARY_SQUARES_REDUX = [
 ]
 
 TILE_OBJECT_PRIMARY_SQUARES_OW = [0xC8, 0xD8, 0xC4, 0xBC, 0xC0, 0xC0]
+TILE_OBJECT_PRIMARY_SQUARES_OW_REDUX = [0xC8, 0x58, 0x5C, 0xBC, 0xC0, 0xC0]
 HEAP_OFFSETS = [0,53,102,168,236,286,346,405,464,526,591,660,721,775,841,893]
 PAL_TO_ATTR = [0x00, 0x55, 0xAA, 0xFF]
 
@@ -101,9 +102,9 @@ def palette_selector(tile_col: int, tile_row: int, outer: int, inner: int) -> in
     return (attr >> shift) & 0x03
 
 
-def normalize_primary_tile(raw: int) -> int:
+def normalize_primary_tile(raw: int, tile_object_primary: list[int]) -> int:
     if 0xE5 <= raw <= 0xEA:
-        return TILE_OBJECT_PRIMARY_SQUARES_OW[raw - 0xE5]
+        return tile_object_primary[raw - 0xE5]
     return raw
 
 
@@ -112,6 +113,7 @@ def expected_room(
     room_id: int,
     heap_offsets: list[int] = HEAP_OFFSETS,
     secondary_squares: list[int] = SECONDARY_SQUARES,
+    tile_object_primary: list[int] = TILE_OBJECT_PRIMARY_SQUARES_OW,
 ) -> list[list[int]]:
     outer = rooms[OW_ATTRS_A_OFFSET + room_id] & 0x03
     inner = rooms[OW_ATTRS_B_OFFSET + room_id] & 0x03
@@ -136,7 +138,7 @@ def expected_room(
             sq_byte = rooms[ptr]
             sq_idx = sq_byte & 0x3F
             if sq_idx >= 0x10:
-                p = normalize_primary_tile(PRIMARY_SQUARES[sq_idx])
+                p = normalize_primary_tile(PRIMARY_SQUARES[sq_idx], tile_object_primary)
                 raw_tiles = [p, p + 2, p + 1, p + 3]
             else:
                 b = sq_idx * 4
@@ -207,11 +209,13 @@ def verify_dump(dump_path: Path) -> int:
             expected_rooms = rooms_redux
             expected_heap_offsets = redux_heap_offsets
             expected_secondary = SECONDARY_SQUARES_REDUX
+            expected_tile_objects = TILE_OBJECT_PRIMARY_SQUARES_OW_REDUX
             map_name = "redux"
         else:
             expected_rooms = rooms
             expected_heap_offsets = HEAP_OFFSETS
             expected_secondary = SECONDARY_SQUARES
+            expected_tile_objects = TILE_OBJECT_PRIMARY_SQUARES_OW
             map_name = "original"
         actual_rooms = {int(r["room_id"]): r["plane_a"] for r in map_entry["rooms"]}
         for room_id in range(128):
@@ -220,6 +224,7 @@ def verify_dump(dump_path: Path) -> int:
                 room_id,
                 expected_heap_offsets,
                 expected_secondary,
+                expected_tile_objects,
             )
             actual = actual_rooms.get(room_id)
             if actual is None:

@@ -5,9 +5,22 @@ local function frame(pad)
     emu.frameadvance()
 end
 
-local pad = { C = true, ["P1 C"] = true }
+local function tap(button)
+    local pad = {}
+    pad[button] = true
+    pad["P1 " .. button] = true
+    for _ = 1, 8 do frame(pad) end
+    for _ = 1, 8 do frame({}) end
+end
+
 for _ = 1, 120 do frame({}) end
-for _ = 1, 8 do frame(pad) end
+tap("C")
+tap("Right")
+tap("Up")
+tap("Up")
+tap("Up")
+tap("Up")
+tap("Up")
 for _ = 1, 30 do frame({}) end
 client.screenshot(png)
 client.exit()
