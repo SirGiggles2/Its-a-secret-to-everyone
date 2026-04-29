@@ -4,6 +4,7 @@
 extern const unsigned char rooms_overworld[3090];
 extern const unsigned char overworld_bg_chr[4160];
 
+#define LEVEL_INFO_OW_OFFSET 768
 #define OW_ATTRS_A_OFFSET    0
 #define OW_ATTRS_B_OFFSET    128
 #define OW_ATTRS_D_OFFSET    384
@@ -40,6 +41,37 @@ static const unsigned char s_secondary_squares[64] = {
 static const unsigned short s_heap_offsets[16] = {
     0,53,102,168,236,286,346,405,464,526,591,660,721,775,841,893
 };
+
+/* 4 areas x 4 palette slots x 4 Genesis CRAM colors (only indices 0-3 used by 2bpp tiles).
+ * area = rooms_overworld[LEVEL_INFO_OW_OFFSET + room_id] >> 6.
+ * Colors derived from NES Zelda 1 overworld palette via NesColorToGenesisCRAM. */
+static const unsigned short s_ow_area_pal4[4][16] = {
+    /* area 0: standard Hyrule north */
+    { 0x0000,0x04AE,0x026C,0x0028, 0x0000,0x00A0,0x0060,0x06C6,
+      0x0000,0x0E80,0x0E00,0x0EA4, 0x0000,0x0ACE,0x068E,0x004E },
+    /* area 1: mountain */
+    { 0x0000,0x0EEE,0x0AAA,0x0888, 0x0000,0x04AE,0x026C,0x0028,
+      0x0000,0x0E80,0x0E00,0x0EA4, 0x0000,0x00A0,0x0060,0x0000 },
+    /* area 2: water/desert */
+    { 0x0000,0x0E80,0x0E00,0x0EA4, 0x0000,0x04AE,0x026C,0x0028,
+      0x0000,0x00A0,0x0060,0x06C6, 0x0000,0x0000,0x0000,0x0000 },
+    /* area 3: south forest (rooms 0x60-0x7F incl. 0x77) */
+    { 0x0000,0x04AE,0x026C,0x0028, 0x0000,0x00A0,0x0060,0x06C6,
+      0x0000,0x00A0,0x0060,0x06C6, 0x0000,0x0E80,0x0E00,0x0EA4 },
+};
+
+void ow_room_render_load_palette(unsigned char room_id)
+{
+    unsigned char area = rooms_overworld[LEVEL_INFO_OW_OFFSET + room_id] >> 6;
+    unsigned short pal16[16];
+    unsigned char slot, i;
+    for (i = 4; i < 16; i++) pal16[i] = 0;
+    for (slot = 0; slot < 4; slot++) {
+        for (i = 0; i < 4; i++)
+            pal16[i] = s_ow_area_pal4[area][slot * 4 + i];
+        render_load_palette(slot, pal16);
+    }
+}
 
 static void write_square(unsigned char col, unsigned char row,
                          unsigned char tile_tl, unsigned char tile_bl,

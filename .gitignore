@@ -14,6 +14,9 @@ build_out.txt
 build_output.log
 *_run.log
 builds/abi_probe/
+RoomRom/build_err.txt
+RoomRom/build_out.txt
+RoomRom/out/
 
 # Probe output directories (transient, not for tracking)
 tools/file_select_test/out/
