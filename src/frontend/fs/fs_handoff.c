@@ -7,6 +7,10 @@
 
 extern void fs_to_transpiled_trampoline(void);
 
+#ifdef OW_DEBUG_ENTRY
+extern void ow_debug_entry(unsigned char room_id);
+#endif
+
 static void clear_plane(unsigned short plane_base) {
     unsigned short zero_row[32];
     unsigned short i;
@@ -42,5 +46,11 @@ void fs_handoff_to_transpiled(uint8_t slot) {
 
     /* Trampoline restores V64 + Window 8, sets vblank_mode=1, jumps to
      * LoopForever. Does not return. */
+#ifdef OW_DEBUG_ENTRY
+    render_display_enable(0);
+    render_mode_set_v32();
+    ow_debug_entry(0x77);  /* start room $77; does not return */
+#else
     fs_to_transpiled_trampoline();
+#endif
 }
