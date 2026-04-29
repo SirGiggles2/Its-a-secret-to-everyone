@@ -1,4 +1,5 @@
 #include "uw_room_render_roomrom.h"
+#include "uw_room_blob.h"
 #include "render_abi.h"
 
 extern const unsigned char rooms_dungeons[];
@@ -51,16 +52,39 @@ static unsigned short nes_color_to_cram(unsigned char color)
            ((unsigned short)misc_palettes[off + 1] << 8);
 }
 
-void roomrom_uw_room_render_load_palette(unsigned char room_id)
+static int find_blob_entry(unsigned char level, unsigned char room_id)
+{
+    unsigned short i;
+    for (i = 0; i < g_uw_room_count; i++) {
+        if (g_uw_room_index[i][0] == level &&
+            g_uw_room_index[i][1] == room_id) {
+            return (int)i;
+        }
+    }
+    return -1;
+}
+
+static void load_palette_from_blob(int idx)
+{
+    unsigned short pal16[16];
+    unsigned char slot, i;
+    const unsigned char *pal = g_uw_room_palette[idx];
+    for (slot = 0; slot < 4; slot++) {
+        for (i = 0; i < 16; i++)
+            pal16[i] = 0;
+        for (i = 0; i < 4; i++)
+            pal16[i] = nes_color_to_cram(pal[slot * 4 + i]);
+        render_load_palette(slot, pal16);
+    }
+}
+
+static void load_palette_from_levelinfo(void)
 {
     unsigned short pal16[16];
     unsigned char slot, i;
     unsigned short level_off = (unsigned short)(UW_LEVELINFO_BASE +
         ((unsigned short)(s_uw_level - 1u) * UW_LEVELINFO_SIZE) +
         UW_LEVELINFO_PAL_OFFSET);
-
-    (void)room_id;
-
     for (slot = 0; slot < 4; slot++) {
         for (i = 0; i < 16; i++)
             pal16[i] = 0;
@@ -68,6 +92,16 @@ void roomrom_uw_room_render_load_palette(unsigned char room_id)
             pal16[i] = nes_color_to_cram(
                 rooms_dungeons[level_off + slot * 4 + i]);
         render_load_palette(slot, pal16);
+    }
+}
+
+void roomrom_uw_room_render_load_palette(unsigned char room_id)
+{
+    int idx = find_blob_entry(s_uw_level, room_id);
+    if (idx >= 0) {
+        load_palette_from_blob(idx);
+    } else {
+        load_palette_from_levelinfo();
     }
 }
 
@@ -107,22 +141,59 @@ static unsigned char digit_tile(unsigned char d)
     return (unsigned char)(d & 0x0F);
 }
 
-void roomrom_uw_room_render_fill_plane_a(unsigned char room_id)
+static unsigned char attr_palette_for(const unsigned char *attr,
+                                       unsigned char nt_col,
+                                       unsigned char nt_row)
+{
+    /* AT covers NT in 8x8 grid of 32x32 quads. Each AT byte holds 4
+     * 2-bit palette quads laid out: bits 0-1=TL, 2-3=TR, 4-5=BL, 6-7=BR.
+     * AT byte index: (nt_row/4)*8 + (nt_col/4). */
+    unsigned char at_idx = (unsigned char)(((nt_row >> 2) << 3) | (nt_col >> 2));
+    unsigned char byte = attr[at_idx & 0x3F];
+    unsigned char shift = (unsigned char)((((nt_row >> 1) & 1u) << 2) |
+                                          (((nt_col >> 1) & 1u) << 1));
+    return (unsigned char)((byte >> shift) & 0x03u);
+}
+
+static void blit_blob(int idx)
+{
+    const unsigned char *nt = g_uw_room_nt[idx];
+    const unsigned char *attr = g_uw_room_attr[idx];
+    unsigned char row, col;
+    for (row = 0; row < ROOMROM_UW_BLOB_ROWS; row++) {
+        for (col = 0; col < ROOMROM_UW_BLOB_COLS; col++) {
+            unsigned char raw = nt[row * ROOMROM_UW_BLOB_COLS + col];
+            /* Play area starts at NT row 8 (HUD occupies rows 0..7). */
+            unsigned char nt_row = (unsigned char)(row + 8u);
+            unsigned char pal = attr_palette_for(attr, col, nt_row);
+            write_tile_raw(col, row, raw, pal);
+        }
+    }
+}
+
+static void draw_placeholder(unsigned char room_id)
 {
     unsigned char col, row;
     unsigned char floor_tile = 0x70;
-
     for (row = 0; row < ROOMROM_ROOM_ROWS; row++) {
         for (col = 0; col < ROOMROM_ROOM_COLS; col++) {
             unsigned char t = (unsigned char)(floor_tile + ((col + row) & 1));
             write_tile_raw(col, row, t, 1);
         }
     }
-
-    write_tile_raw(2, 1, 0x15, 0); /* L */
+    write_tile_raw(2, 1, 0x15, 0);
     write_tile_raw(3, 1, digit_tile(s_uw_level), 0);
-
-    write_tile_raw(6, 1, 0x1B, 0); /* R */
+    write_tile_raw(6, 1, 0x1B, 0);
     write_tile_raw(7, 1, digit_tile((unsigned char)(room_id >> 4)), 0);
     write_tile_raw(8, 1, digit_tile(room_id), 0);
+}
+
+void roomrom_uw_room_render_fill_plane_a(unsigned char room_id)
+{
+    int idx = find_blob_entry(s_uw_level, room_id);
+    if (idx >= 0) {
+        blit_blob(idx);
+    } else {
+        draw_placeholder(room_id);
+    }
 }

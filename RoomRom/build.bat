@@ -76,6 +76,10 @@ echo [3] Compiling uw_room_render_roomrom.c...
 "%GCC%" %CFLAGS% %INCS% -c "%PROJ%\src\uw_room_render_roomrom.c" -o "%OUT%\uw_room_render.o"
 if errorlevel 1 ( echo FAIL: uw_room_render_roomrom.c & exit /b 1 )
 
+echo [3] Compiling uw_room_blob.c...
+"%GCC%" %CFLAGS% %INCS% -c "%PROJ%\src\uw_room_blob.c" -o "%OUT%\uw_room_blob.o"
+if errorlevel 1 ( echo FAIL: uw_room_blob.c & exit /b 1 )
+
 echo [3] Compiling overworld.c...
 "%GCC%" %CFLAGS% %INCS% -c "%REPO%\data\rooms\overworld.c" -o "%OUT%\overworld.o"
 if errorlevel 1 ( echo FAIL: overworld.c & exit /b 1 )
@@ -116,7 +120,7 @@ rem ---------------------------------------------------------------------------
 rem Step 4: Link
 rem ---------------------------------------------------------------------------
 echo [4] Linking...
-set "OBJS=%OUT%\main.o %OUT%\render_adapter_sgdk.o %OUT%\ow_room_render.o %OUT%\uw_room_render.o %OUT%\roomrom_hud.o %OUT%\overworld.o %OUT%\overworld_bg.o %OUT%\dungeons.o %OUT%\underworld_bg.o %OUT%\redux_overworld.o %OUT%\redux_overworld_bg.o %OUT%\redux_hud_chr.o %OUT%\common.o %OUT%\palettes.o"
+set "OBJS=%OUT%\main.o %OUT%\render_adapter_sgdk.o %OUT%\ow_room_render.o %OUT%\uw_room_render.o %OUT%\uw_room_blob.o %OUT%\roomrom_hud.o %OUT%\overworld.o %OUT%\overworld_bg.o %OUT%\dungeons.o %OUT%\underworld_bg.o %OUT%\redux_overworld.o %OUT%\redux_overworld_bg.o %OUT%\redux_hud_chr.o %OUT%\common.o %OUT%\palettes.o"
 "%GCC%" -m68000 -B%TOOLBIN%\ -n -T "%SGDK%\md.ld" -nostdlib "%OUT%\sega.o" %OBJS% "%LIB%\libmd.a" "%LIB%\libgcc.a" -o "%OUT%\rom.out" -Wl,--gc-sections
 if errorlevel 1 ( echo FAIL: link & exit /b 1 )
 
