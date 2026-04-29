@@ -9,6 +9,6 @@ event.onframeend(function()
     if frame == 120 then
         client.screenshot(png)
         print("Screenshot saved: " .. png)
-        client.pause()
+        client.exit()
     end
 end)

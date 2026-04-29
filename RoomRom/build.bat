@@ -76,11 +76,19 @@ echo [3] Compiling overworld_bg.c...
 "%GCC%" %CFLAGS% %INCS% -c "%REPO%\data\chr\overworld_bg.c" -o "%OUT%\overworld_bg.o"
 if errorlevel 1 ( echo FAIL: overworld_bg.c & exit /b 1 )
 
+echo [3] Compiling common.c...
+"%GCC%" %CFLAGS% %INCS% -c "%REPO%\data\chr\common.c" -o "%OUT%\common.o"
+if errorlevel 1 ( echo FAIL: common.c & exit /b 1 )
+
+echo [3] Compiling palettes.c...
+"%GCC%" %CFLAGS% %INCS% -c "%REPO%\data\misc\palettes.c" -o "%OUT%\palettes.o"
+if errorlevel 1 ( echo FAIL: palettes.c & exit /b 1 )
+
 rem ---------------------------------------------------------------------------
 rem Step 4: Link
 rem ---------------------------------------------------------------------------
 echo [4] Linking...
-set "OBJS=%OUT%\main.o %OUT%\render_adapter_sgdk.o %OUT%\ow_room_render.o %OUT%\overworld.o %OUT%\overworld_bg.o"
+set "OBJS=%OUT%\main.o %OUT%\render_adapter_sgdk.o %OUT%\ow_room_render.o %OUT%\overworld.o %OUT%\overworld_bg.o %OUT%\common.o %OUT%\palettes.o"
 "%GCC%" -m68000 -B%TOOLBIN%\ -n -T "%SGDK%\md.ld" -nostdlib "%OUT%\sega.o" %OBJS% "%LIB%\libmd.a" "%LIB%\libgcc.a" -o "%OUT%\rom.out" -Wl,--gc-sections
 if errorlevel 1 ( echo FAIL: link & exit /b 1 )
 

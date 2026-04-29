@@ -1,6 +1,5 @@
 /* SGDK-backed render_abi.h implementation for RoomRom.
- * Maps render_set_plane_a_word and render_chr_upload onto SGDK VDP API.
- * Only the two functions called by ow_room_render.c are implemented here.
+ * Maps the room renderer's plane, palette, and CHR calls onto SGDK VDP API.
  */
 #include <genesis.h>
 #include "render_abi.h"
