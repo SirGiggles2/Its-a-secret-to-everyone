@@ -1,14 +1,14 @@
 #include <genesis.h>
-#include "ow_room_render.h"
+#include "ow_room_render_roomrom.h"
 
 /* Boots to overworld room 0x77. D-pad navigates all 128 rooms.
  * Room layout: 16 wide x 8 tall, room_id = (row << 4) | col. */
 
 static void load_room(u8 room_id)
 {
-    ow_room_render_load_palette(room_id);
+    roomrom_ow_room_render_load_palette(room_id);
     VDP_clearPlane(BG_A, TRUE);
-    ow_room_render_fill_plane_a(room_id);
+    roomrom_ow_room_render_fill_plane_a(room_id);
 }
 
 int main(bool hardReset)
@@ -19,7 +19,7 @@ int main(bool hardReset)
 
     (void)hardReset;
 
-    ow_room_render_upload_chr();
+    roomrom_ow_room_render_upload_chr();
     {
         u32 blank[8] = {0,0,0,0,0,0,0,0};
         VDP_loadTileData(blank, 0, 1, CPU);
@@ -35,6 +35,14 @@ int main(bool hardReset)
 
         col = room_id & 0x0F;
         row = room_id >> 4;
+
+        if (pressed & BUTTON_C) {
+            u8 map_id = roomrom_ow_room_render_get_map();
+            roomrom_ow_room_render_set_map(map_id ^ 1u);
+            roomrom_ow_room_render_upload_chr();
+            load_room(room_id);
+            continue;
+        }
 
         if      ((pressed & BUTTON_LEFT)  && col > 0)  col--;
         else if ((pressed & BUTTON_RIGHT) && col < 15) col++;

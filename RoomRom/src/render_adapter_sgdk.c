@@ -19,9 +19,24 @@ void render_chr_upload(unsigned short vram_addr,
                        const unsigned char *src,
                        unsigned short byte_count)
 {
-    /* vram_addr and byte_count are in bytes; SGDK counts in tiles (32 bytes). */
-    VDP_loadTileData((const u32 *)src,
-                     (u16)(vram_addr >> 5),
-                     (u16)(byte_count >> 5),
-                     CPU);
+    u16 tile = (u16)(vram_addr >> 5);
+    u16 count = (u16)(byte_count >> 5);
+    u16 i;
+
+    /* Generated C byte arrays are not guaranteed to be long-aligned after
+     * linking. SGDK's CPU tile upload reads u32s, so copy through an aligned
+     * tile buffer instead of casting the source pointer directly. */
+    for (i = 0; i < count; i++) {
+        u32 buf[8];
+        u16 j;
+        const unsigned char *tile_src = src + ((unsigned short)i << 5);
+        for (j = 0; j < 8; j++) {
+            u16 off = (u16)(j << 2);
+            buf[j] = ((u32)tile_src[off] << 24) |
+                     ((u32)tile_src[off + 1] << 16) |
+                     ((u32)tile_src[off + 2] << 8) |
+                     (u32)tile_src[off + 3];
+        }
+        VDP_loadTileData(buf, (u16)(tile + i), 1, CPU);
+    }
 }

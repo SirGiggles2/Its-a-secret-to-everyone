@@ -65,7 +65,7 @@ echo [3] Compiling render_adapter_sgdk.c...
 if errorlevel 1 ( echo FAIL: render_adapter_sgdk.c & exit /b 1 )
 
 echo [3] Compiling ow_room_render.c...
-"%GCC%" %CFLAGS% %INCS% -c "%REPO%\src\game\room\ow_room_render.c" -o "%OUT%\ow_room_render.o"
+"%GCC%" %CFLAGS% %INCS% -c "%PROJ%\src\ow_room_render_roomrom.c" -o "%OUT%\ow_room_render.o"
 if errorlevel 1 ( echo FAIL: ow_room_render.c & exit /b 1 )
 
 echo [3] Compiling overworld.c...
@@ -75,6 +75,14 @@ if errorlevel 1 ( echo FAIL: overworld.c & exit /b 1 )
 echo [3] Compiling overworld_bg.c...
 "%GCC%" %CFLAGS% %INCS% -c "%REPO%\data\chr\overworld_bg.c" -o "%OUT%\overworld_bg.o"
 if errorlevel 1 ( echo FAIL: overworld_bg.c & exit /b 1 )
+
+echo [3] Compiling redux_overworld.c...
+"%GCC%" %CFLAGS% %INCS% -c "%PROJ%\src\redux_overworld.c" -o "%OUT%\redux_overworld.o"
+if errorlevel 1 ( echo FAIL: redux_overworld.c & exit /b 1 )
+
+echo [3] Compiling redux_overworld_bg.c...
+"%GCC%" %CFLAGS% %INCS% -c "%PROJ%\src\redux_overworld_bg.c" -o "%OUT%\redux_overworld_bg.o"
+if errorlevel 1 ( echo FAIL: redux_overworld_bg.c & exit /b 1 )
 
 echo [3] Compiling common.c...
 "%GCC%" %CFLAGS% %INCS% -c "%REPO%\data\chr\common.c" -o "%OUT%\common.o"
@@ -88,7 +96,7 @@ rem ---------------------------------------------------------------------------
 rem Step 4: Link
 rem ---------------------------------------------------------------------------
 echo [4] Linking...
-set "OBJS=%OUT%\main.o %OUT%\render_adapter_sgdk.o %OUT%\ow_room_render.o %OUT%\overworld.o %OUT%\overworld_bg.o %OUT%\common.o %OUT%\palettes.o"
+set "OBJS=%OUT%\main.o %OUT%\render_adapter_sgdk.o %OUT%\ow_room_render.o %OUT%\overworld.o %OUT%\overworld_bg.o %OUT%\redux_overworld.o %OUT%\redux_overworld_bg.o %OUT%\common.o %OUT%\palettes.o"
 "%GCC%" -m68000 -B%TOOLBIN%\ -n -T "%SGDK%\md.ld" -nostdlib "%OUT%\sega.o" %OBJS% "%LIB%\libmd.a" "%LIB%\libgcc.a" -o "%OUT%\rom.out" -Wl,--gc-sections
 if errorlevel 1 ( echo FAIL: link & exit /b 1 )
 

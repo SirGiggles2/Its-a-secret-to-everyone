@@ -47,6 +47,17 @@ SECONDARY_SQUARES = [
     0x26,0x26,0x26,0x26,0x89,0x88,0x8B,0x88,
 ]
 
+SECONDARY_SQUARES_REDUX = [
+    0x24,0x24,0x24,0x24,0x6F,0x6F,0x6F,0x6F,
+    0xF3,0xF3,0xF3,0xF3,0xFA,0xFA,0xFA,0xFA,
+    0xF3,0x24,0xF3,0x24,0x90,0x95,0x90,0x95,
+    0x8F,0x90,0x8F,0x90,0x95,0x96,0x95,0x96,
+    0x8E,0x93,0x90,0x95,0x90,0x95,0x92,0x97,
+    0x74,0x74,0x75,0x75,0x76,0x77,0x76,0x77,
+    0x54,0x24,0x56,0x24,0x24,0x24,0x24,0x24,
+    0x26,0x26,0x26,0x26,0x89,0x88,0x8B,0x88,
+]
+
 TILE_OBJECT_PRIMARY_SQUARES_OW = [0xC8, 0xD8, 0xC4, 0xBC, 0xC0, 0xC0]
 HEAP_OFFSETS = [0,53,102,168,236,286,346,405,464,526,591,660,721,775,841,893]
 PAL_TO_ATTR = [0x00, 0x55, 0xAA, 0xFF]
@@ -60,6 +71,14 @@ def c_bytes(path: Path) -> list[int]:
 def c_words_from_bytes(path: Path) -> list[int]:
     vals = c_bytes(path)
     return [vals[i] | (vals[i + 1] << 8) for i in range(0, len(vals), 2)]
+
+
+def c_u16_array(path: Path, name: str) -> list[int]:
+    text = path.read_text(encoding="ascii")
+    match = re.search(rf"{name}\[[^\]]+\]\s*=\s*\{{(.*?)\}};", text, re.S)
+    if not match:
+        raise ValueError(f"missing C array {name} in {path}")
+    return [int(x, 0) for x in re.findall(r"0x[0-9a-fA-F]+|\d+", match.group(1))]
 
 
 def palette_selector(tile_col: int, tile_row: int, outer: int, inner: int) -> int:
@@ -88,7 +107,12 @@ def normalize_primary_tile(raw: int) -> int:
     return raw
 
 
-def expected_room(rooms: list[int], room_id: int) -> list[list[int]]:
+def expected_room(
+    rooms: list[int],
+    room_id: int,
+    heap_offsets: list[int] = HEAP_OFFSETS,
+    secondary_squares: list[int] = SECONDARY_SQUARES,
+) -> list[list[int]]:
     outer = rooms[OW_ATTRS_A_OFFSET + room_id] & 0x03
     inner = rooms[OW_ATTRS_B_OFFSET + room_id] & 0x03
     unique = rooms[OW_ATTRS_D_OFFSET + room_id] & 0x7F
@@ -99,7 +123,7 @@ def expected_room(rooms: list[int], room_id: int) -> list[list[int]]:
         desc = rooms[layout_base + square_col]
         heap_idx = (desc >> 4) & 0x0F
         col_in_heap = desc & 0x0F
-        ptr = OW_HEAP_BLOB_OFFSET + HEAP_OFFSETS[heap_idx]
+        ptr = OW_HEAP_BLOB_OFFSET + heap_offsets[heap_idx]
         while True:
             if rooms[ptr] & 0x80:
                 if col_in_heap == 0:
@@ -117,10 +141,10 @@ def expected_room(rooms: list[int], room_id: int) -> list[list[int]]:
             else:
                 b = sq_idx * 4
                 raw_tiles = [
-                    SECONDARY_SQUARES[b],
-                    SECONDARY_SQUARES[b + 2],
-                    SECONDARY_SQUARES[b + 1],
-                    SECONDARY_SQUARES[b + 3],
+                    secondary_squares[b],
+                    secondary_squares[b + 2],
+                    secondary_squares[b + 1],
+                    secondary_squares[b + 3],
                 ]
 
             tile_col = square_col * 2
@@ -162,30 +186,55 @@ def check_chr_contract() -> None:
 
 def verify_dump(dump_path: Path) -> int:
     rooms = c_bytes(REPO_ROOT / "data" / "rooms" / "overworld.c")
+    rooms_redux = c_bytes(REPO_ROOT / "RoomRom" / "src" / "redux_overworld.c")
+    redux_heap_offsets = c_u16_array(
+        REPO_ROOT / "RoomRom" / "src" / "redux_overworld.c",
+        "rooms_overworld_redux_heap_offsets",
+    )
     misc_words = c_words_from_bytes(REPO_ROOT / "data" / "misc" / "palettes.c")
     check_chr_contract()
 
     dump = json.loads(dump_path.read_text(encoding="utf-8"))
-    actual_rooms = {int(r["room_id"]): r["plane_a"] for r in dump["rooms"]}
+    map_entries = dump.get("maps")
+    if map_entries is None:
+        map_entries = [{"map_id": 0, "rooms": dump["rooms"]}]
 
     total_tile = 0
     first: list[str] = []
-    for room_id in range(128):
-        expected = expected_room(rooms, room_id)
-        actual = actual_rooms.get(room_id)
-        if actual is None:
-            total_tile += ROOM_ROWS * ROOM_COLS
-            first.append(f"room {room_id:02X}: missing dump")
-            continue
-        for row in range(ROOM_ROWS):
-            for col in range(ROOM_COLS):
-                if actual[row][col] != expected[row][col]:
-                    total_tile += 1
-                    if len(first) < 24:
-                        first.append(
-                            f"room {room_id:02X} ({col},{row}): "
-                            f"expected=0x{expected[row][col]:04X} got=0x{actual[row][col]:04X}"
-                        )
+    for map_entry in map_entries:
+        map_id = int(map_entry.get("map_id", 0))
+        if map_id == 1:
+            expected_rooms = rooms_redux
+            expected_heap_offsets = redux_heap_offsets
+            expected_secondary = SECONDARY_SQUARES_REDUX
+            map_name = "redux"
+        else:
+            expected_rooms = rooms
+            expected_heap_offsets = HEAP_OFFSETS
+            expected_secondary = SECONDARY_SQUARES
+            map_name = "original"
+        actual_rooms = {int(r["room_id"]): r["plane_a"] for r in map_entry["rooms"]}
+        for room_id in range(128):
+            expected = expected_room(
+                expected_rooms,
+                room_id,
+                expected_heap_offsets,
+                expected_secondary,
+            )
+            actual = actual_rooms.get(room_id)
+            if actual is None:
+                total_tile += ROOM_ROWS * ROOM_COLS
+                first.append(f"{map_name} room {room_id:02X}: missing dump")
+                continue
+            for row in range(ROOM_ROWS):
+                for col in range(ROOM_COLS):
+                    if actual[row][col] != expected[row][col]:
+                        total_tile += 1
+                        if len(first) < 24:
+                            first.append(
+                                f"{map_name} room {room_id:02X} ({col},{row}): "
+                                f"expected=0x{expected[row][col]:04X} got=0x{actual[row][col]:04X}"
+                            )
 
     expected_palette = expected_cram(rooms, misc_words)
     actual_palette = dump.get("cram", [])

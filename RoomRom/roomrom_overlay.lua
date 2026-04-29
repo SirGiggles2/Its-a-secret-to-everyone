@@ -3,6 +3,7 @@
 -- navigation so the visible room ID stays in sync while testing.
 
 local room_id = 0x77
+local map_id = 0
 local prev = {}
 
 local function pressed(pad, name)
@@ -13,7 +14,8 @@ local function draw_room_id()
     local col = room_id % 16
     local row = math.floor(room_id / 16)
     gui.drawBox(0, 0, 96, 15, 0x000000FF, 0x000000D0)
-    gui.text(4, 3, string.format("ROOM %02X  %02d,%02d", room_id, col, row), "white", "black")
+    local map_name = (map_id == 1) and "REDUX" or "ORIG"
+    gui.text(4, 3, string.format("%s ROOM %02X  %02d,%02d", map_name, room_id, col, row), "white", "black")
 end
 
 event.onframeend(function()
@@ -29,6 +31,10 @@ event.onframeend(function()
         row = row - 1
     elseif pressed(pad, "Down") and row < 7 then
         row = row + 1
+    end
+
+    if pressed(pad, "C") then
+        map_id = 1 - map_id
     end
 
     room_id = row * 16 + col

@@ -105,14 +105,28 @@ end
 
 local f = assert(io.open(out, "w"))
 f:write("{\n")
-f:write('  "rooms": [\n')
-for room = 0, 127 do
-    move_to(room)
-    f:write("    {")
-    f:write('"room_id": ' .. tostring(room) .. ', ')
-    f:write('"plane_a": ' .. json_rows(dump_room_words()))
-    f:write("}")
-    if room ~= 127 then
+f:write('  "maps": [\n')
+for map_id = 0, 1 do
+    if map_id == 1 then
+        tap("C")
+    end
+    f:write("    {\n")
+    f:write('      "map_id": ' .. tostring(map_id) .. ',\n')
+    f:write('      "rooms": [\n')
+    for room = 0, 127 do
+        move_to(room)
+        f:write("        {")
+        f:write('"room_id": ' .. tostring(room) .. ', ')
+        f:write('"plane_a": ' .. json_rows(dump_room_words()))
+        f:write("}")
+        if room ~= 127 then
+            f:write(",")
+        end
+        f:write("\n")
+    end
+    f:write("      ]\n")
+    f:write("    }")
+    if map_id ~= 1 then
         f:write(",")
     end
     f:write("\n")
