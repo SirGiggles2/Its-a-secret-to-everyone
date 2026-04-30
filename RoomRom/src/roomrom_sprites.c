@@ -52,12 +52,12 @@ void roomrom_sprites_spawn_link(short x, short y)
     unsigned short sx = (unsigned short)(x + 0x80);
     unsigned short sy = (unsigned short)(y + 0x80);
 
-    VDP_setSprite(0,
-                  sy,
-                  sx,
-                  SPRITE_SIZE(2, 2),
-                  TILE_ATTR_FULL(PAL3, 1 /*pri*/, 0 /*vflip*/, 0 /*hflip*/,
-                                 LINK_VRAM_TILE),
-                  0 /*link terminator*/);
+    VDP_setSpriteFull(0,
+                      (s16)sx,
+                      (s16)sy,
+                      SPRITE_SIZE(2, 2),
+                      TILE_ATTR_FULL(PAL3, 1 /*pri*/, 0 /*vflip*/, 0 /*hflip*/,
+                                     LINK_VRAM_TILE),
+                      0 /*link terminator*/);
     VDP_updateSprites(1, DMA);
 }
