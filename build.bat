@@ -149,7 +149,8 @@ set "C_GEN_TRANSPILE=z_01 z_02 z_03 z_04 z_05 z_06 z_07"
 set "C_DATA_INTRO=intro_font_chr intro_art_chr intro_palette intro_story_tilemap intro_restore_chr intro_restore_palette intro_title_bg_chr intro_title_sprite_chr intro_title_palette intro_title_tilemap intro_title_fade intro_title_glow intro_common_bg_chr intro_sprite_chr intro_misc_chr intro_punct_chr intro_blink_chr intro_combined_palette intro_treasures_tilemap"
 set "C_DATA_FS=fs_palette fs_static_tilemap fs_static_attr fs_link_sprite_chr fs_heart_cursor_chr fs_bg_chr_full"
 set "C_DATA_ROOMS=overworld"
-set "C_DATA_CHR=overworld_bg"
+set "C_DATA_CHR=overworld_bg common"
+set "C_DATA_MISC=palettes"
 rem Write object list to response file during compile loop. CMD line-length
 rem limit (~8KB) breaks once %C_OBJS% accumulates too many fs_*/intro_*
 rem paths. Convert backslashes to forward slashes in the response file —
@@ -172,10 +173,15 @@ echo [2a.adapter/4] Compiling src/sgdk_adapter/render_adapter.c...
 if errorlevel 1 exit /b 1
 >> "%LD_RESP%" echo "%OBJ_DIR_FS%/render_adapter.o"
 
-echo [2a.adapter/4] Compiling src/sgdk_adapter/audio_adapter.c (compile-only)...
-"%M68K_GCC%" -B "%M68K_BIN%\\" -m68000 -ffreestanding -nostdlib -nostartfiles -ffixed-a4 -fno-builtin -fomit-frame-pointer -fno-PIC -fno-common -O2 -I "%ROOT%\src\abi" -I "%ROOT%\src\sgdk_adapter" -c "%ROOT%\src\sgdk_adapter\audio_adapter.c" -o "%C_OBJ_DIR%\audio_adapter.o"
+echo [2a.adapter/4] Compiling src/sgdk_adapter/audio_adapter.c (XGM-wired)...
+"%M68K_GCC%" -B "%M68K_BIN%\\" -m68000 -ffreestanding -nostdlib -nostartfiles -ffixed-a4 -fno-builtin -fomit-frame-pointer -fno-PIC -fno-common -O2 -I "%ROOT%\src\abi" -I "%ROOT%\src\sgdk_adapter" -I "%ROOT%\data\audio" -I "%ROOT%\sgdk\inc" -I "%ROOT%\sgdk\inc\snd" -c "%ROOT%\src\sgdk_adapter\audio_adapter.c" -o "%C_OBJ_DIR%\audio_adapter.o"
 if errorlevel 1 exit /b 1
-rem adapter .o not in LD_RESP — no live caller until Phase F retargets frontend
+>> "%LD_RESP%" echo "%OBJ_DIR_FS%/audio_adapter.o"
+
+echo [2a.adapter/4] Compiling data/audio/sfx_pcm.c (XGM PCM bank)...
+"%M68K_GCC%" -B "%M68K_BIN%\\" -m68000 -ffreestanding -nostdlib -nostartfiles -ffixed-a4 -fno-builtin -fomit-frame-pointer -fno-PIC -fno-common -O2 -I "%ROOT%\data\audio" -I "%ROOT%\sgdk\inc" -c "%ROOT%\data\audio\sfx_pcm.c" -o "%C_OBJ_DIR%\sfx_pcm.o"
+if errorlevel 1 exit /b 1
+>> "%LD_RESP%" echo "%OBJ_DIR_FS%/sfx_pcm.o"
 
 echo [2a.adapter/4] Compiling src/sgdk_adapter/joy_adapter.c (compile-only)...
 "%M68K_GCC%" -B "%M68K_BIN%\\" -m68000 -ffreestanding -nostdlib -nostartfiles -ffixed-a4 -fno-builtin -fomit-frame-pointer -fno-PIC -fno-common -O2 -I "%ROOT%\src\abi" -I "%ROOT%\src\sgdk_adapter" -c "%ROOT%\src\sgdk_adapter\joy_adapter.c" -o "%C_OBJ_DIR%\joy_adapter.o"
@@ -310,6 +316,12 @@ for %%F in (%C_DATA_ROOMS%) do (
 for %%F in (%C_DATA_CHR%) do (
     echo [2a/4] Compiling data/chr/%%F.c...
     "%M68K_GCC%" -B "%M68K_BIN%\\" -m68000 -ffreestanding -nostdlib -nostartfiles -ffixed-a4 -fno-builtin -fomit-frame-pointer -fno-PIC -fno-common -O2 -c "%ROOT%\data\chr\%%F.c" -o "%C_OBJ_DIR%\%%F.o"
+    if errorlevel 1 exit /b 1
+    >> "%LD_RESP%" echo "%OBJ_DIR_FS%/%%F.o"
+)
+for %%F in (%C_DATA_MISC%) do (
+    echo [2a/4] Compiling data/misc/%%F.c...
+    "%M68K_GCC%" -B "%M68K_BIN%\\" -m68000 -ffreestanding -nostdlib -nostartfiles -ffixed-a4 -fno-builtin -fomit-frame-pointer -fno-PIC -fno-common -O2 -c "%ROOT%\data\misc\%%F.c" -o "%C_OBJ_DIR%\%%F.o"
     if errorlevel 1 exit /b 1
     >> "%LD_RESP%" echo "%OBJ_DIR_FS%/%%F.o"
 )
