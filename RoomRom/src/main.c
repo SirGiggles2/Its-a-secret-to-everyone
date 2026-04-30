@@ -24,6 +24,10 @@ static mode_t  s_mode  = MODE_WALK;
 static u8 s_room_id = 0x77;   /* exposed for Lua overlay */
 static short s_link_x = 128;
 static short s_link_y =  88;
+static link_face_t s_link_face = LINK_FACE_DOWN;
+static u8          s_link_frame = 0u;
+static u8          s_link_anim_tick = 0u;
+#define LINK_ANIM_PERIOD 8u
 
 static void init_video(void)
 {
@@ -139,16 +143,36 @@ int main(bool hardReset)
             s_room_id = (u8)((row << 4) | col);
             load_room(s_room_id);
         } else {
-            /* WALK: D-pad held -> 1 px/frame motion with playfield clamp. */
+            /* WALK: D-pad held -> 1 px/frame motion + facing + anim tick. */
+            u16 dir = joy & (BUTTON_LEFT|BUTTON_RIGHT|BUTTON_UP|BUTTON_DOWN);
+
+            /* Facing: H wins over V when both pressed. */
+            if      (dir & BUTTON_LEFT)  s_link_face = LINK_FACE_LEFT;
+            else if (dir & BUTTON_RIGHT) s_link_face = LINK_FACE_RIGHT;
+            else if (dir & BUTTON_UP)    s_link_face = LINK_FACE_UP;
+            else if (dir & BUTTON_DOWN)  s_link_face = LINK_FACE_DOWN;
+
+            if (dir) {
+                if (++s_link_anim_tick >= LINK_ANIM_PERIOD) {
+                    s_link_frame ^= 1u;
+                    s_link_anim_tick = 0u;
+                }
+            } else {
+                s_link_frame = 0u;
+                s_link_anim_tick = 0u;
+            }
+
             if (joy & BUTTON_LEFT)  s_link_x--;
             if (joy & BUTTON_RIGHT) s_link_x++;
             if (joy & BUTTON_UP)    s_link_y--;
             if (joy & BUTTON_DOWN)  s_link_y++;
             if (s_link_x < 0)   s_link_x = 0;
             if (s_link_x > 240) s_link_x = 240;
-            if (s_link_y < 56)  s_link_y = 56;   /* HUD top 7 tile-rows */
+            if (s_link_y < 56)  s_link_y = 56;
             if (s_link_y > 208) s_link_y = 208;
-            roomrom_sprites_set_link_pos(s_link_x, s_link_y);
+
+            roomrom_sprites_set_link_pose(s_link_x, s_link_y,
+                                          s_link_face, s_link_frame);
         }
     }
 
