@@ -10,9 +10,18 @@
  * S2+ will add motion, animation frames, and additional sprites.
  */
 
+typedef enum {
+    LINK_FACE_DOWN  = 0,
+    LINK_FACE_UP    = 1,
+    LINK_FACE_LEFT  = 2,
+    LINK_FACE_RIGHT = 3
+} link_face_t;
+
 void roomrom_sprites_upload_chr(void);    /* one-shot at boot */
 void roomrom_sprites_load_palette(void);  /* call after every load_room() */
 void roomrom_sprites_spawn_link(short x, short y);
 void roomrom_sprites_set_link_pos(short x, short y);
+void roomrom_sprites_set_link_pose(short x, short y,
+                                   link_face_t face, unsigned char frame);
 
 #endif
