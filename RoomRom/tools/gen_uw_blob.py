@@ -1,16 +1,17 @@
 #!/usr/bin/env python3
-"""Generate RoomRom UW NT blob from a NES dungeon dump JSON.
+"""Generate RoomRom UW NT blob from one or more NES dungeon dump JSONs.
 
-Reads RoomRom/out/nes_uw_warp_v2.json (or path passed as arg).
+By default reads the original-ROM dump (RoomRom/out/nes_uw_warp_v2.json)
+and the redux-ROM dump (RoomRom/out/nes_uw_warp_redux.json). Each
+dungeon snapshot becomes one blob entry tagged with map_id (0 = original,
+1 = redux). RoomRom looks up entries by (map_id, level, room_id).
+
 Emits RoomRom/src/uw_room_blob.c containing:
-  - g_uw_room_count : number of captured (level, room) entries
-  - g_uw_room_index[] : (level, room_id) pairs
-  - g_uw_room_nt[][22*32] : play-area nametable (NT rows 8..29) per entry
-  - g_uw_room_attr[][16] : attribute table bytes for play-area rows
-  - g_uw_room_palette[][32] : NES palette ram per entry
-
-Each NT byte is the NES tile index. RoomRom blits raw_tile + UW_VDP_TILE_BASE
-to plane A row (HUD_ROWS + r), col c.
+  - g_uw_room_count
+  - g_uw_room_index[][3]  : (map_id, level, room_id)
+  - g_uw_room_nt[][22*32] : play-area nametable (NT rows 8..29)
+  - g_uw_room_attr[][64]  : full attribute table $23C0..$23FF
+  - g_uw_room_palette[][32] : NES PALRAM
 """
 from __future__ import annotations
 
@@ -19,7 +20,8 @@ import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
-DEFAULT_JSON = ROOT / "RoomRom" / "out" / "nes_uw_warp_v2.json"
+DEFAULT_ORIG = ROOT / "RoomRom" / "out" / "nes_uw_warp_v2.json"
+DEFAULT_REDUX = ROOT / "RoomRom" / "out" / "nes_uw_warp_redux.json"
 OUT_C = ROOT / "RoomRom" / "src" / "uw_room_blob.c"
 
 PLAY_NT_TOP = 8
@@ -27,9 +29,10 @@ PLAY_ROWS = 22
 PLAY_COLS = 32
 
 
-def load_dump(path: Path) -> list[dict]:
-    """Return list of {level, room_id, nt[30][32], palram[32]} entries that
-    are dungeon (cur_level != 0) and in gameplay mode."""
+def load_dump(path: Path, map_id: int) -> list[dict]:
+    """Return list of dungeon entries from one dump JSON, tagged with map_id."""
+    if not path.exists():
+        return []
     data = json.loads(path.read_text())
     rows = []
     for r in data.get("results", []):
@@ -37,6 +40,7 @@ def load_dump(path: Path) -> list[dict]:
             continue
         if r.get("game_mode", 0) != 5:
             continue
+        r["map_id"] = map_id
         rows.append(r)
     return rows
 
@@ -50,13 +54,14 @@ def emit_c(entries: list[dict], out_path: Path) -> None:
     n = len(entries)
     lines.append(f"const unsigned short g_uw_room_count = {n}u;")
     lines.append("")
-    lines.append(f"const unsigned char g_uw_room_index[{max(n,1)}][2] = {{")
+    lines.append(f"const unsigned char g_uw_room_index[{max(n,1)}][3] = {{")
     for e in entries:
+        mid = e.get("map_id", 0)
         lvl = e["cur_level"]
         rid = e["room_id"]
-        lines.append(f"    {{ {lvl:#04x}, {rid:#04x} }},")
+        lines.append(f"    {{ {mid:#04x}, {lvl:#04x}, {rid:#04x} }},")
     if n == 0:
-        lines.append("    { 0, 0 }, /* placeholder */")
+        lines.append("    { 0, 0, 0 }, /* placeholder */")
     lines.append("};")
     lines.append("")
     lines.append(f"const unsigned char g_uw_room_nt[{max(n,1)}][{PLAY_ROWS * PLAY_COLS}] = {{")
@@ -96,14 +101,15 @@ def emit_c(entries: list[dict], out_path: Path) -> None:
 
 
 def main(argv: list[str]) -> int:
-    json_path = DEFAULT_JSON
-    if len(argv) > 1:
-        json_path = Path(argv[1])
-    if not json_path.exists():
-        print(f"input not found: {json_path}", file=sys.stderr)
-        return 1
-    entries = load_dump(json_path)
-    print(f"Loaded {len(entries)} dungeon room entries from {json_path}")
+    orig_path = Path(argv[1]) if len(argv) > 1 else DEFAULT_ORIG
+    redux_path = Path(argv[2]) if len(argv) > 2 else DEFAULT_REDUX
+    entries: list[dict] = []
+    entries += load_dump(orig_path,  map_id=0)
+    entries += load_dump(redux_path, map_id=1)
+    print(f"Original entries from {orig_path}: "
+          f"{sum(1 for e in entries if e['map_id'] == 0)}")
+    print(f"Redux entries from {redux_path}: "
+          f"{sum(1 for e in entries if e['map_id'] == 1)}")
     emit_c(entries, OUT_C)
     print(f"Wrote {OUT_C}")
     return 0

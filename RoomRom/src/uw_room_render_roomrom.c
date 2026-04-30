@@ -55,9 +55,11 @@ static unsigned short nes_color_to_cram(unsigned char color)
 static int find_blob_entry(unsigned char level, unsigned char room_id)
 {
     unsigned short i;
+    unsigned char want_map = (s_uw_map_id == ROOMROM_MAP_REDUX) ? 1u : 0u;
     for (i = 0; i < g_uw_room_count; i++) {
-        if (g_uw_room_index[i][0] == level &&
-            g_uw_room_index[i][1] == room_id) {
+        if (g_uw_room_index[i][0] == want_map &&
+            g_uw_room_index[i][1] == level &&
+            g_uw_room_index[i][2] == room_id) {
             return (int)i;
         }
     }

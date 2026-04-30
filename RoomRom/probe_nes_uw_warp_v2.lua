@@ -6,8 +6,12 @@
 --   $0012 (GameMode) = $10  (transition)
 -- Wait until mode = 5 sub = 0 (in dungeon gameplay), screenshot, dump CIRAM.
 
-local OUT_PNG  = "C:\\Users\\Jake Diggity\\Documents\\GitHub\\FINAL TRY\\RoomRom\\out\\nes_uw_warp_v2.png"
-local OUT_JSON = "C:\\Users\\Jake Diggity\\Documents\\GitHub\\FINAL TRY\\RoomRom\\out\\nes_uw_warp_v2.json"
+-- Output paths can be overridden by setting CODEX_UW_OUT_PNG / CODEX_UW_OUT_JSON
+-- in the environment before launching BizHawk. Defaults dump original.
+local OUT_PNG  = (os.getenv and os.getenv("CODEX_UW_OUT_PNG"))  or
+                 "C:\\Users\\Jake Diggity\\Documents\\GitHub\\FINAL TRY\\RoomRom\\out\\nes_uw_warp_v2.png"
+local OUT_JSON = (os.getenv and os.getenv("CODEX_UW_OUT_JSON")) or
+                 "C:\\Users\\Jake Diggity\\Documents\\GitHub\\FINAL TRY\\RoomRom\\out\\nes_uw_warp_v2.json"
 
 local ROOM_ID        = 0x00EB
 local CUR_LEVEL      = 0x0010
