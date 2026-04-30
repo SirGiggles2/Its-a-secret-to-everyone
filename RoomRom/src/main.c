@@ -125,7 +125,7 @@ int main(bool hardReset)
         if (joy & BUTTON_DOWN)  s_link_y++;
         if (s_link_x < 0)   s_link_x = 0;
         if (s_link_x > 240) s_link_x = 240;
-        if (s_link_y < 32)  s_link_y = 32;
+        if (s_link_y < 56)  s_link_y = 56;   /* HUD reserves top 7 tile-rows (56 px) */
         if (s_link_y > 208) s_link_y = 208;
         roomrom_sprites_set_link_pos(s_link_x, s_link_y);
     }
