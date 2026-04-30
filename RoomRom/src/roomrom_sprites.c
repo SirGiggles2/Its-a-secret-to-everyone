@@ -16,7 +16,8 @@ extern const unsigned char misc_palettes[1208];
 /* Dedicated VRAM region for Link's facing-down frame, laid out in Genesis
  * sprite column-major order (TL, BL, TR, BR). Sits just past the main 232-tile
  * sprite block to avoid colliding with anything else. */
-#define LINK_VRAM_TILE         744u
+#define SPRITE_BLOCK_TILE_COUNT 232u
+#define LINK_VRAM_TILE         (SPRITE_VRAM_TILE_BASE + SPRITE_BLOCK_TILE_COUNT)
 
 static unsigned short nes_to_cram(unsigned char nes_idx)
 {
@@ -57,10 +58,10 @@ void roomrom_sprites_load_palette(void)
 
     for (i = 0; i < 16; i++) pal16[i] = 0;
 
-    /* NES sprite sub-palette 0 = Link's gameplay palette ($3F10..$3F13).
-     * Canonical Zelda 1 gameplay values: 0F (transparent), 30 (skin highlight),
-     * 16 (red/orange detail), 27 (green tunic). Sourced empirically from NES
-     * runtime PALRAM; refine via a NES probe in a follow-up if colors drift. */
+    /* Sprite pal 0 used for Link. $0F transparent, $30 white, $16 red detail,
+     * $27 green tunic. $27 chosen empirically (visual verify); spec said $06
+     * but $06 is a skin shadow, wrong for the tunic. A NES PALRAM probe in
+     * S2 will pin the canonical gameplay values. */
     pal16[0] = nes_to_cram(0x0Fu);
     pal16[1] = nes_to_cram(0x30u);
     pal16[2] = nes_to_cram(0x16u);
