@@ -7,11 +7,22 @@
 /* Boots to overworld room 0x77.
  *
  * Modes (toggled by X):
- *   WALK       D-pad moves Link (1 px/frame)
+ *   WALK       D-pad moves Link
  *   TELEPORT   D-pad jumps room (16x8 grid: room_id = (row<<4)|col)
  *
+ * Walk style (toggled by Y):
+ *   NES        Z1-faithful: single-axis only, grid-locked turns,
+ *              QSpeed=$60 -> 1.5 px/frame avg, instant stop on release.
+ *              Source: reference/aldonunez/Z_05.asm Link_HandleInput +
+ *              Z_07.asm Walker_Move / MoveObject.
+ *   ALTTP      8-direction (real diagonal), 8.8 sub-pixel position,
+ *              cardinal vel=24, diagonal vel=16 (sqrt(2) compensation).
+ *              Source: github.com/snesrev/zelda3 src/player.c
+ *              Link_HandleVelocity + Link_MovePosition + kSpeedMod.
+ *
  * Buttons (always):
- *   X         toggle WALK <-> TELEPORT mode
+ *   X         toggle WALK <-> TELEPORT
+ *   Y         toggle NES <-> ALTTP walk style
  *   B         scene toggle (overworld <-> dungeon)
  *   C         map variant toggle (original <-> redux), per-scene
  *   A         (dungeon scene) cycle level 1..9
@@ -19,6 +30,7 @@
 
 typedef enum { SCENE_OW = 0, SCENE_UW = 1 } scene_t;
 typedef enum { MODE_WALK = 0, MODE_TELEPORT = 1 } mode_t;
+typedef enum { MOVE_STYLE_NES = 0, MOVE_STYLE_ALTTP = 1 } move_style_t;
 
 /* NES Z1 movement direction (matches Z_05.asm Link_ModifyDir bit layout
  * conceptually: only one axis at a time, no diagonal). */
@@ -30,15 +42,18 @@ typedef enum {
     LINK_DIR_RIGHT = 4
 } link_dir_t;
 
-static scene_t s_scene = SCENE_OW;
-static mode_t  s_mode  = MODE_WALK;
+static scene_t       s_scene       = SCENE_OW;
+static mode_t        s_mode        = MODE_WALK;
+static move_style_t  s_move_style  = MOVE_STYLE_NES;
 static u8 s_room_id = 0x77;   /* exposed for Lua overlay */
 static short s_link_x = 128;
 static short s_link_y =  88;
 static link_face_t s_link_face = LINK_FACE_DOWN;
 static link_dir_t  s_link_dir  = LINK_DIR_NONE;  /* current motion axis (NES-style) */
 static u8          s_link_grid_offset = 0u;      /* 0..7, pixels past last grid line */
-static u8          s_link_pos_frac   = 0u;       /* sub-pixel accumulator (NES ObjPosFrac) */
+static u8          s_link_pos_frac   = 0u;       /* NES single-axis sub-pixel */
+static u8          s_link_subx       = 0u;       /* ALTTP per-axis sub-pixel X */
+static u8          s_link_suby       = 0u;       /* ALTTP per-axis sub-pixel Y */
 static u8          s_link_frame = 0u;
 static u8          s_link_anim_tick = 0u;
 #define LINK_ANIM_PERIOD 8u
@@ -108,6 +123,18 @@ int main(bool hardReset)
             continue;
         }
 
+        if (pressed & BUTTON_Y) {
+            s_move_style = (s_move_style == MOVE_STYLE_NES)
+                         ? MOVE_STYLE_ALTTP : MOVE_STYLE_NES;
+            /* Reset sub-pixel/grid state so style switch is clean. */
+            s_link_pos_frac = 0u;
+            s_link_subx = 0u;
+            s_link_suby = 0u;
+            s_link_grid_offset = 0u;
+            s_link_dir = LINK_DIR_NONE;
+            continue;
+        }
+
         if (pressed & BUTTON_B) {
             s_scene = (s_scene == SCENE_OW) ? SCENE_UW : SCENE_OW;
             s_room_id = (s_scene == SCENE_UW) ? 0x00 : 0x77;
@@ -158,6 +185,69 @@ int main(bool hardReset)
             else continue;
             s_room_id = (u8)((row << 4) | col);
             load_room(s_room_id);
+        } else if (s_move_style == MOVE_STYLE_ALTTP) {
+            /* ALTTP-style 8-direction movement, ported from
+             * github.com/snesrev/zelda3 src/player.c Link_HandleVelocity
+             * + Link_MovePosition + kSpeedMod. 8.8 fixed-point sub-pixel
+             * per axis. Cardinal vel = 24 (kSpeedMod[0]); diagonal vel = 16
+             * (kSpeedMod[1]) so sqrt(2) doesn't double diagonal speed. */
+
+            u8 dir_bits = 0u;   /* bit 0=R, bit 1=L, bit 2=D, bit 3=U */
+            if (joy & BUTTON_RIGHT) dir_bits |= 0x1u;
+            if (joy & BUTTON_LEFT)  dir_bits |= 0x2u;
+            if (joy & BUTTON_DOWN)  dir_bits |= 0x4u;
+            if (joy & BUTTON_UP)    dir_bits |= 0x8u;
+
+            {
+                u8 has_h = (dir_bits & 0x3u) != 0u;
+                u8 has_v = (dir_bits & 0xCu) != 0u;
+                s8 vel = (has_h && has_v) ? (s8)16 : (s8)24;
+                s8 vx = 0, vy = 0;
+
+                if (dir_bits & 0x3u) vx = (dir_bits & 0x2u) ? (s8)-vel : vel;
+                if (dir_bits & 0xCu) vy = (dir_bits & 0x8u) ? (s8)-vel : vel;
+
+                /* Facing: keep current if compatible with motion; else pick
+                 * H over V (matches general 4-frame sprite limitation). */
+                if      (vx > 0) s_link_face = LINK_FACE_RIGHT;
+                else if (vx < 0) s_link_face = LINK_FACE_LEFT;
+                else if (vy > 0) s_link_face = LINK_FACE_DOWN;
+                else if (vy < 0) s_link_face = LINK_FACE_UP;
+
+                if (vx || vy) {
+                    if (++s_link_anim_tick >= LINK_ANIM_PERIOD) {
+                        s_link_frame ^= 1u;
+                        s_link_anim_tick = 0u;
+                    }
+                } else {
+                    s_link_frame = 0u;
+                    s_link_anim_tick = 0u;
+                }
+
+                /* ALTTP Link_MovePosition formula (8.8 fixed-point):
+                 * tmp = subpixel + vel*16 + coord*256
+                 * subpixel = tmp & 0xFF; coord = tmp >> 8 */
+                if (vx) {
+                    int tmp = (int)s_link_subx + ((int)vx * 16)
+                            + ((int)s_link_x << 8);
+                    s_link_subx = (u8)(tmp & 0xFF);
+                    s_link_x = (short)(tmp >> 8);
+                }
+                if (vy) {
+                    int tmp = (int)s_link_suby + ((int)vy * 16)
+                            + ((int)s_link_y << 8);
+                    s_link_suby = (u8)(tmp & 0xFF);
+                    s_link_y = (short)(tmp >> 8);
+                }
+            }
+
+            if (s_link_x < 0)   { s_link_x = 0;   s_link_subx = 0u; }
+            if (s_link_x > 240) { s_link_x = 240; s_link_subx = 0u; }
+            if (s_link_y < 56)  { s_link_y = 56;  s_link_suby = 0u; }
+            if (s_link_y > 208) { s_link_y = 208; s_link_suby = 0u; }
+
+            roomrom_sprites_set_link_pose(s_link_x, s_link_y,
+                                          s_link_face, s_link_frame);
         } else {
             /* NES-faithful Link movement, ported from
              *   Z_05.asm Link_HandleInput / Link_ModifyDirAtGridPoint
