@@ -1,31 +1,38 @@
 /*
- * Audio adapter implementation (S1 Phase D, Task D2).
+ * audio_adapter.c — bridge between owned game code and SGDK XGM audio.
  *
- * Forwards to existing music_play / music_tick in src/audio_driver.asm.
- * Phase F migrates each forwarder to SGDK audio API. The adapter exists
- * now so frontend code can be retargeted call-site by call-site without
- * editing call signatures again at S11+.
- *
- * Compile-only at S1 Phase D: no live caller exists until F-phase
- * frontend cutover wires audio_music_play etc. into intro/fs code.
- * genesis_shell.asm still calls music_tick directly; that retarget is
- * Phase F work (plan D2 step 3 deferred). The .o is produced and
- * dropped (not in LD_RESP).
+ * Music path forwards to the legacy music_play / music_tick in
+ * src/audio_driver.asm (FM driver). SFX path is now wired to the SGDK
+ * XGM (Doppler) Z80 driver: 4 PCM channels mixed at 14 kHz, with the 7
+ * NES DMC samples ripped from the stock ROM registered as XGM SFX
+ * sample IDs 64..70 (XGM reserves 1..63 for music).
  */
 
 #include "audio_adapter.h"
+#include "sfx_pcm.h"
+#include "z80_ctrl.h"
+#include "sound.h"
+#include "xgm.h"
 
-/* Forward declarations of existing helpers we wrap. Definitions live
- * in src/audio_driver.asm. Declared here to avoid pulling in any
- * audio-driver-specific headers at the adapter layer. */
-
-/* music_play: D0.b = song bitmap. GCC ABI passes first arg in D0. */
 extern void music_play(unsigned char song_bitmap);
-
-/* music_tick: call once per VBlank; no arguments. */
 extern void music_tick(void);
 
-/* ---- Public API ---- */
+static u8 xgm_initialized = 0;
+static u8 sfx_next_channel = 0;  /* round-robin index 0..2 → CH2..CH4 */
+
+void audio_xgm_init(void)
+{
+    if (xgm_initialized) return;
+    xgm_initialized = 1;
+
+    Z80_loadDriver(Z80_DRIVER_XGM, 1);
+
+    for (u8 i = 0; i < SFX_PCM_COUNT; i++) {
+        XGM_setPCM(sfx_pcm_table[i].id,
+                   sfx_pcm_table[i].data,
+                   sfx_pcm_table[i].len);
+    }
+}
 
 void audio_music_play(unsigned char song)
 {
@@ -34,9 +41,13 @@ void audio_music_play(unsigned char song)
 
 void audio_sfx_play(unsigned char sfx)
 {
-    /* No SFX dispatch in the current audio driver. Stub for ABI
-     * stability; Phase F wires to SGDK XGM/PCM SFX API. */
-    (void)sfx;
+    if (!xgm_initialized) audio_xgm_init();
+    if (sfx == 0 || sfx > SFX_PCM_COUNT) return;
+
+    SoundPCMChannel chan = (SoundPCMChannel)(SOUND_PCM_CH2 + sfx_next_channel);
+    sfx_next_channel = (sfx_next_channel + 1) % 3;
+
+    XGM_startPlayPCM(SFX_PCM_ID_BASE + (sfx - 1), 1, chan);
 }
 
 void audio_tick_vblank(void)

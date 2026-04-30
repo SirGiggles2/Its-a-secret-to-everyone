@@ -14,12 +14,20 @@
 #ifndef AUDIO_ABI_H
 #define AUDIO_ABI_H
 
+/* One-time XGM driver upload + sample registration. Safe to call
+ * multiple times; subsequent calls are no-ops. Runs Z80 reset release,
+ * uploads the XGM Doppler driver, and registers all 7 ripped DMC SFX
+ * samples (IDs 64..70) so XGM_startPlayPCM can dispatch them. */
+void audio_xgm_init(void);
+
 /* Request a song change. song is the song bitmap passed to music_play.
  * Call from any mode; music_tick in the VBlank handler picks it up. */
 void audio_music_play(unsigned char song);
 
-/* Play a one-shot sound effect. sfx identifies the effect. Not yet
- * dispatched in the underlying driver; stub exists for ABI stability. */
+/* Play a one-shot sound effect. sfx is the 1-based DMC sample index
+ * (1..7) that the NES $4015 stub recovers via DMC_SAMPLE_LOOKUP. Maps
+ * to XGM SFX ID 64+(sfx-1) and dispatches on a round-robin XGM PCM
+ * channel (CH2..CH4) so music's CH1 stays clear. */
 void audio_sfx_play(unsigned char sfx);
 
 /* VBlank audio tick. Call once per VBlank (replaces direct music_tick

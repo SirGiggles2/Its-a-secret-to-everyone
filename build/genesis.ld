@@ -42,14 +42,24 @@ SECTIONS {
     } > rom
 
     .text    0x000200 : {
+        _stext = .;
         *(text)
         *(.text*)
         *(.rodata*)
+        _etext = .;
     } > rom
 
+    .data : {
+        _sdata = .;
+        *(.data*)
+        _edata = .;
+    } > ram
+
     .bss : {
+        _bstart = .;
         *(.bss*)
         *(COMMON)
+        _bend = .;
     } > ram
 
     /DISCARD/ : {
@@ -58,3 +68,9 @@ SECTIONS {
         *(.eh_frame*)
     }
 }
+
+/* Stubs: SGDK's libmd.a (sys.c, memory.c) references these markers and
+ * a `main` entry point. We use a custom boot in genesis_shell.asm and
+ * never run SGDK's _reset_entry / _start_entry, so these stubs are
+ * never read at runtime — they exist only to satisfy the linker. */
+PROVIDE(main = 0);

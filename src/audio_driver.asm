@@ -361,6 +361,16 @@ audio_init:
     ;------------------------------------------------------------------
     move.b  #1,(dmc_dbg_next).l
 
+    ;------------------------------------------------------------------
+    ; Hand audio off to the SGDK XGM Z80 driver. audio_xgm_init() does:
+    ;   1. Z80_loadDriver(Z80_DRIVER_XGM, TRUE)  - upload + wait ready
+    ;   2. XGM_setPCM(64..70, sfx_pcm_NN, len)   - register 7 SFX samples
+    ; After this, dmc_trigger trampolines to audio_sfx_play and the Z80
+    ; owns YM2612 reg $2A. The legacy HBlank streamer is dead.
+    ;------------------------------------------------------------------
+    xref    audio_xgm_init
+    jsr     audio_xgm_init
+
     movem.l (SP)+,D0-D6/A0
     rts
 
@@ -566,48 +576,29 @@ dmc_dbg_prev_btn    equ DMC_BASE+$0F    ; byte: pad state from last frame (edge 
 dmc_dbg_next        equ DMC_BASE+$10    ; byte: next sample index (1..7) to trigger
 
 ;==============================================================================
-; dmc_trigger — non-blocking HBlank DAC streamer.
+; dmc_trigger — trampoline to SGDK XGM PCM playback.
 ;
-; Samples are pre-processed by tools/extract_dmc_samples.py: proper bandlimited
-; resampling (scipy.signal.resample_poly with Kaiser-window FIR) from native
-; NES rate (21/25/33 kHz) down to the empirically-measured Genesis HINT rate
-; (~8751 Hz with music active). That's where the "crunchy" sound came from
-; before — linear interpolation without anti-alias filter caused aliasing.
-; With proper prefiltered resampling, playback sounds clean even at the lower
-; effective rate, and the game does NOT hitch.
+; D0.b = 1-based sample index (1..7). Forwards to audio_sfx_play, which
+; maps to XGM SFX ID 64+(idx-1) and dispatches on a round-robin XGM PCM
+; channel (CH2..CH4). Z80 mixer streams to YM2612 reg $2A; the legacy
+; HBlank DAC streamer below is dead (kept temporarily for reference, to
+; be deleted in step 5).
+;
+; Sample format conversion lives in tools/extract_dmc_samples.py:
+; bandlimited resample (scipy resample_poly + Kaiser FIR) from native NES
+; rate to XGM's fixed 14 kHz, padded to 256-byte boundaries, emitted as
+; aligned C arrays in data/audio/sfx_pcm.c.
 ;==============================================================================
+    xref    audio_sfx_play
 dmc_trigger:
     tst.b   D0
     beq.s   .bad
     cmp.b   #DMC_SAMPLE_COUNT,D0
     bhi.s   .bad
-    movem.l D0-D2/A0-A1,-(SP)
-    move.b  D0,(dmc_last_idx).l
-    moveq   #0,D1
-    move.b  D0,D1                   ; D1.l = 1-based index
-    subq.l  #1,D1                   ; 0-based
-    add.l   D1,D1                   ; idx * 2
-    add.l   D1,D1                   ; idx * 4
-
-    lea     (DMC_SAMPLE_PCM_OFFS).l,A0
-    move.l  (A0,D1.l),D2
-    lea     (DMC_SAMPLE_PCM_BLOB).l,A1
-    add.l   D2,A1
-
-    lea     (DMC_SAMPLE_PCM_LENS).l,A0
-    move.l  (A0,D1.l),D2
-    tst.l   D2
-    beq.s   .bad_restore
-
-    move.l  A1,(dmc_ptr).l
-    move.l  D2,(dmc_remain).l
-    move.b  #1,(dmc_active).l
-
-    ; Arm HBlank every line, enable HINT (preserve colorfix bit).
-    move.w  #$8A00,(VDP_CTRL).l     ; Reg 10 = 0 -> fire every line
-    move.w  #$8014,(VDP_CTRL).l     ; Reg  0 = $14 -> HINT on + colorfix
-.bad_restore:
-    movem.l (SP)+,D0-D2/A0-A1
+    move.b  D0,(dmc_last_idx).l     ; HUD readout still uses this
+    move.l  D0,-(SP)                ; GCC m68k ABI: arg in stack
+    jsr     audio_sfx_play
+    addq.l  #4,SP
 .bad:
     rts
 
