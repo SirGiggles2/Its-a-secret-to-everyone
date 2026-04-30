@@ -38,10 +38,12 @@ static short s_link_y =  88;
 static link_face_t s_link_face = LINK_FACE_DOWN;
 static link_dir_t  s_link_dir  = LINK_DIR_NONE;  /* current motion axis (NES-style) */
 static u8          s_link_grid_offset = 0u;      /* 0..7, pixels past last grid line */
+static u8          s_link_pos_frac   = 0u;       /* sub-pixel accumulator (NES ObjPosFrac) */
 static u8          s_link_frame = 0u;
 static u8          s_link_anim_tick = 0u;
 #define LINK_ANIM_PERIOD 8u
 #define LINK_GRID_SIZE   8u
+#define LINK_QSPEED      0x60u   /* NES Z_05.asm InitLinkSpeed: $60 = 1.5 px/frame avg */
 
 static void init_video(void)
 {
@@ -157,54 +159,49 @@ int main(bool hardReset)
             s_room_id = (u8)((row << 4) | col);
             load_room(s_room_id);
         } else {
-            /* NES-faithful movement (Z_05.asm Link_HandleInput +
-             * Link_ModifyDirAtGridPoint + Walker_Move):
+            /* NES-faithful Link movement, ported from
+             *   Z_05.asm Link_HandleInput / Link_ModifyDirAtGridPoint
+             *   Z_07.asm Walker_Move / MoveObject / AddQSpeedToPositionFraction
              *
-             * - Grid-locked: direction can only change when on an 8-px
-             *   grid line (s_link_grid_offset == 0).
-             * - Single-axis: no true diagonal. When two D-pad buttons
-             *   are held, perpendicular-to-current-facing wins (NES
-             *   "GoStraight" rule for dungeon corner behavior); on OW
-             *   we fall back to H-over-V.
-             * - Constant speed: 1 px/frame in the active axis.
-             * - Releasing all D-pad stops Link instantly. */
+             * Per-frame:
+             * 1. If on a grid intersection (offset == 0), pick a single-axis
+             *    direction from current input (no diagonal). H over V on tie.
+             * 2. If input released, stop instantly (even mid-grid). Walker_Move
+             *    @ChooseObjDirOrInputDir: input=0 -> moving_dir=0.
+             * 3. If moving, run 4 quarter-steps. Each step adds QSpeed=$60 to
+             *    pos_frac; on 8-bit overflow, advance 1 px in active axis and
+             *    increment grid_offset. When grid_offset hits 8, wrap to 0
+             *    (next intersection -> direction can change next frame). */
 
             u16 input = joy & (BUTTON_LEFT|BUTTON_RIGHT|BUTTON_UP|BUTTON_DOWN);
+            u8 h_dir = (input & BUTTON_LEFT) ? 1u
+                     : ((input & BUTTON_RIGHT) ? 2u : 0u);
+            u8 v_dir = (input & BUTTON_UP)   ? 1u
+                     : ((input & BUTTON_DOWN) ? 2u : 0u);
 
-            if (s_link_grid_offset == 0u) {
-                link_dir_t want = LINK_DIR_NONE;
-                u8 h = (u8)((input & BUTTON_LEFT) ? 1u : 0u)
-                     | (u8)((input & BUTTON_RIGHT) ? 2u : 0u);
-                u8 v = (u8)((input & BUTTON_UP)   ? 1u : 0u)
-                     | (u8)((input & BUTTON_DOWN) ? 2u : 0u);
-                u8 h_dir = (h == 1u) ? 1u : ((h == 2u) ? 2u : 0u);
-                u8 v_dir = (v == 1u) ? 1u : ((v == 2u) ? 2u : 0u);
-
+            if (input == 0u) {
+                s_link_dir = LINK_DIR_NONE;
+                s_link_pos_frac = 0u;       /* reset frac on stop */
+            } else if (s_link_grid_offset == 0u) {
+                link_dir_t want;
                 if (h_dir && v_dir) {
-                    /* Two axes pressed: pick perpendicular to current
-                     * facing if any; else H over V. */
-                    if (s_link_dir == LINK_DIR_LEFT || s_link_dir == LINK_DIR_RIGHT)
-                        want = (v_dir == 1u) ? LINK_DIR_UP : LINK_DIR_DOWN;
-                    else if (s_link_dir == LINK_DIR_UP || s_link_dir == LINK_DIR_DOWN)
-                        want = (h_dir == 1u) ? LINK_DIR_LEFT : LINK_DIR_RIGHT;
-                    else
-                        want = (h_dir == 1u) ? LINK_DIR_LEFT : LINK_DIR_RIGHT;
+                    /* NES Link_ModifyDirAtGridPoint with 2 inputs: in OW,
+                     * picks "last walkable" (h_dir last in bit-iteration).
+                     * H over V matches OW behavior. */
+                    want = (h_dir == 1u) ? LINK_DIR_LEFT : LINK_DIR_RIGHT;
                 } else if (h_dir) {
                     want = (h_dir == 1u) ? LINK_DIR_LEFT : LINK_DIR_RIGHT;
-                } else if (v_dir) {
+                } else {
                     want = (v_dir == 1u) ? LINK_DIR_UP : LINK_DIR_DOWN;
                 }
                 s_link_dir = want;
             }
-            /* Off-grid: keep current direction unless input released. */
-            else if (input == 0u) {
-                /* NES holds direction until grid line; we mirror by
-                 * letting it keep moving until offset wraps to 0. */
-            }
+            /* off-grid + input held: keep current direction (NES) */
 
-            /* Update facing + anim. Facing only changes when we're
-             * actively moving in a direction. */
             if (s_link_dir != LINK_DIR_NONE) {
+                u8 step_count;
+                u8 q;
+
                 switch (s_link_dir) {
                     case LINK_DIR_LEFT:  s_link_face = LINK_FACE_LEFT;  break;
                     case LINK_DIR_RIGHT: s_link_face = LINK_FACE_RIGHT; break;
@@ -217,18 +214,31 @@ int main(bool hardReset)
                     s_link_anim_tick = 0u;
                 }
 
-                /* Step 1 px in the active axis. */
+                /* 4 quarter-steps, each adds $60 to pos_frac; carry -> 1 px. */
+                step_count = 0u;
+                for (q = 0; q < 4u; q++) {
+                    unsigned short sum = (unsigned short)s_link_pos_frac + LINK_QSPEED;
+                    s_link_pos_frac = (u8)(sum & 0xFFu);
+                    if (sum >= 0x100u) {
+                        step_count++;
+                        s_link_grid_offset++;
+                        if (s_link_grid_offset >= LINK_GRID_SIZE) {
+                            s_link_grid_offset = 0u;
+                        }
+                    }
+                }
+
                 switch (s_link_dir) {
-                    case LINK_DIR_LEFT:  s_link_x--; break;
-                    case LINK_DIR_RIGHT: s_link_x++; break;
-                    case LINK_DIR_UP:    s_link_y--; break;
-                    case LINK_DIR_DOWN:  s_link_y++; break;
+                    case LINK_DIR_LEFT:  s_link_x -= step_count; break;
+                    case LINK_DIR_RIGHT: s_link_x += step_count; break;
+                    case LINK_DIR_UP:    s_link_y -= step_count; break;
+                    case LINK_DIR_DOWN:  s_link_y += step_count; break;
                     default: break;
                 }
-                s_link_grid_offset = (u8)((s_link_grid_offset + 1u) & (LINK_GRID_SIZE - 1u));
             } else {
                 s_link_frame = 0u;
                 s_link_anim_tick = 0u;
+                s_link_grid_offset = 0u;
             }
 
             if (s_link_x < 0)   s_link_x = 0;
