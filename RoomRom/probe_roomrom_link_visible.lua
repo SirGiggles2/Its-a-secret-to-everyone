@@ -18,11 +18,13 @@ wait(120)
 -- OW capture
 client.screenshot(OUTDIR .. "/probe_link_ow.png")
 
--- Press B (scene toggle to UW). Genesis controller mapping.
-joypad.set({["P1 B"] = true}, 1)
-wait(2)
-joypad.set({["P1 B"] = false}, 1)
-wait(60)
+-- Press B (scene toggle to UW). BizHawk Genesis core uses unprefixed names.
+for _ = 1, 3 do
+    joypad.set({B = true}, 1)
+    emu.frameadvance()
+end
+joypad.set({}, 1)
+wait(120)
 
 -- UW capture
 client.screenshot(OUTDIR .. "/probe_link_uw.png")

@@ -12,8 +12,11 @@ extern const unsigned char misc_palettes[1208];
 
 #define SPRITE_VRAM_TILE_BASE  512u
 #define SPRITE_CHR_BYTES       7424u
-#define LINK_TILE_NES_BASE     0x60u   /* facing-down standstill, top-left tile */
-#define LINK_VRAM_TILE         (SPRITE_VRAM_TILE_BASE + LINK_TILE_NES_BASE)
+
+/* Dedicated VRAM region for Link's facing-down frame, laid out in Genesis
+ * sprite column-major order (TL, BL, TR, BR). Sits just past the main 232-tile
+ * sprite block to avoid colliding with anything else. */
+#define LINK_VRAM_TILE         744u
 
 static unsigned short nes_to_cram(unsigned char nes_idx)
 {
@@ -24,8 +27,27 @@ static unsigned short nes_to_cram(unsigned char nes_idx)
 
 void roomrom_sprites_upload_chr(void)
 {
+    /* Main sprite block (NES tile order, contiguous). */
     render_chr_upload((unsigned short)(SPRITE_VRAM_TILE_BASE * 32u),
                       sprites_chr, SPRITE_CHR_BYTES);
+
+    /* Link facing-down standstill: 4 tiles laid out for Genesis 2x2 sprite
+     * (column-major). NES sprite-mode-8x16 pairs $60/$61 (left col) and
+     * $70/$71 (right col); copy them into LINK_VRAM_TILE..+3 in that order. */
+    {
+        static const unsigned char nes_link_down_ids[4] = {
+            0x60u,  /* TL */
+            0x61u,  /* BL */
+            0x70u,  /* TR */
+            0x71u   /* BR */
+        };
+        unsigned char i;
+        for (i = 0; i < 4; i++) {
+            unsigned short src_off = (unsigned short)nes_link_down_ids[i] * 32u;
+            render_chr_upload((unsigned short)((LINK_VRAM_TILE + i) * 32u),
+                              sprites_chr + src_off, 32u);
+        }
+    }
 }
 
 void roomrom_sprites_load_palette(void)
@@ -35,11 +57,14 @@ void roomrom_sprites_load_palette(void)
 
     for (i = 0; i < 16; i++) pal16[i] = 0;
 
-    /* NES sprite sub-palette 0 = Link's gameplay palette ($3F10..$3F13). */
-    pal16[0] = nes_to_cram(0x0F);  /* transparent / black */
-    pal16[1] = nes_to_cram(0x30);  /* white  (shield highlights) */
-    pal16[2] = nes_to_cram(0x16);  /* tan    (skin) */
-    pal16[3] = nes_to_cram(0x06);  /* dark red / brown */
+    /* NES sprite sub-palette 0 = Link's gameplay palette ($3F10..$3F13).
+     * Canonical Zelda 1 gameplay values: 0F (transparent), 30 (skin highlight),
+     * 16 (red/orange detail), 27 (green tunic). Sourced empirically from NES
+     * runtime PALRAM; refine via a NES probe in a follow-up if colors drift. */
+    pal16[0] = nes_to_cram(0x0Fu);
+    pal16[1] = nes_to_cram(0x30u);
+    pal16[2] = nes_to_cram(0x16u);
+    pal16[3] = nes_to_cram(0x27u);
 
     /* sub-pals 1..3 left zero - populated in later slices for enemy colors. */
 
