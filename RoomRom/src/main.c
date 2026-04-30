@@ -54,6 +54,13 @@ static u8          s_link_grid_offset = 0u;      /* 0..7, pixels past last grid 
 static u8          s_link_pos_frac   = 0u;       /* NES single-axis sub-pixel */
 static u8          s_link_subx       = 0u;       /* ALTTP per-axis sub-pixel X */
 static u8          s_link_suby       = 0u;       /* ALTTP per-axis sub-pixel Y */
+
+/* S6 transition: brief screen blank when crossing room edges. */
+#define TRANSITION_TOTAL_FRAMES 16u
+static u8    s_transition_timer  = 0u;
+static u8    s_transition_target = 0u;
+static short s_transition_link_x = 0;
+static short s_transition_link_y = 0;
 static u8          s_link_frame = 0u;
 static u8          s_link_anim_tick = 0u;
 #define LINK_ANIM_PERIOD 8u
@@ -145,14 +152,19 @@ static void edge_load_or_clamp(void)
     }
 
     if (transitioned) {
-        s_room_id = (u8)((row << 4) | col);
-        load_room(s_room_id);
+        /* S6: defer the actual room swap to a transition state machine
+         * driven from the main loop. Stage target + Link coords. */
+        s_transition_target = (u8)((row << 4) | col);
+        s_transition_link_x = s_link_x;
+        s_transition_link_y = s_link_y;
+        s_transition_timer  = TRANSITION_TOTAL_FRAMES;
+        VDP_setEnable(FALSE);
+        /* Reset sub-pixel/grid/anim now so motion starts clean post-swap. */
         s_link_pos_frac    = 0u;
         s_link_subx        = 0u;
         s_link_suby        = 0u;
         s_link_grid_offset = 0u;
         s_link_anim_tick   = 0u;
-        /* keep s_link_dir + s_link_face so motion continues smoothly */
     }
 }
 
@@ -174,6 +186,22 @@ int main(bool hardReset)
 
     while (TRUE) {
         SYS_doVBlankProcess();
+
+        /* S6: transition (screen blank between rooms). Skip input/movement
+         * while the timer runs; swap room at midpoint, restore display at end. */
+        if (s_transition_timer > 0u) {
+            if (s_transition_timer == TRANSITION_TOTAL_FRAMES / 2u) {
+                s_room_id = s_transition_target;
+                s_link_x  = s_transition_link_x;
+                s_link_y  = s_transition_link_y;
+                load_room(s_room_id);
+            } else if (s_transition_timer == 1u) {
+                VDP_setEnable(TRUE);
+            }
+            s_transition_timer--;
+            joy_prev = 0u;     /* swallow input held across the transition */
+            continue;
+        }
 
         u16 joy = JOY_readJoypad(JOY_1);
         u16 pressed = joy & ~joy_prev;
