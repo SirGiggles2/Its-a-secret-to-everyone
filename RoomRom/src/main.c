@@ -42,12 +42,14 @@ typedef enum {
     LINK_DIR_RIGHT = 4
 } link_dir_t;
 
-static scene_t       s_scene       = SCENE_OW;
+/* TEST DEFAULTS: boot into UW Level 1 starting room (0x73 per
+ * data/uw_level1_quest1_rooms.json "start_room_id"). Toggle B to OW. */
+static scene_t       s_scene       = SCENE_UW;
 static mode_t        s_mode        = MODE_WALK;
 static move_style_t  s_move_style  = MOVE_STYLE_NES;
-static u8 s_room_id = 0x77;   /* exposed for Lua overlay */
-static short s_link_x = 128;
-static short s_link_y =  88;
+static u8 s_room_id = 0x73;   /* L1Q1 start room */
+static short s_link_x = 124;  /* center of playfield, nudged 4px left */
+static short s_link_y = 144;  /* center of UW playfield (y=56 HUD + 88) */
 static link_face_t s_link_face = LINK_FACE_DOWN;
 static link_dir_t  s_link_dir  = LINK_DIR_NONE;  /* current motion axis (NES-style) */
 static u8          s_link_grid_offset = 0u;      /* 0..7, pixels past last grid line */
@@ -292,6 +294,16 @@ static void edge_load_or_clamp(void)
         s_scroll_target_x = s_active_scroll_x;
         s_scroll_target_y = s_active_scroll_y;
         s_transition_row_base = s_active_row_base;
+        /* Load new room's palette at scroll start — UW palettes vary per
+         * room and the BG_A tile attributes baked into the rendered new
+         * room reference whatever's in PAL0..PAL2 at render time. Old
+         * room briefly shows in new palette during scroll; acceptable
+         * trade vs new room wrong throughout. */
+        if (s_scene == SCENE_UW)
+            roomrom_uw_room_render_load_palette(s_transition_target);
+        else
+            roomrom_ow_room_render_load_palette(s_transition_target);
+        roomrom_sprites_load_palette();
         if (want == SCROLL_H_RIGHT || want == SCROLL_H_LEFT) {
             u8 target_slot_x = (u8)(s_active_slot_x ^ 1u);
             render_room_into_slot(s_transition_target,
@@ -356,16 +368,13 @@ int main(bool hardReset)
                 (((int)s_scroll_target_y - (int)s_scroll_start_y) * num) / den);
             set_bg_scroll(h_scroll, v_scroll);
 
-            /* Linearly interpolate Link's screen position from pre-edge
-             * to the new-room entry coord over the scroll duration. */
-            {
-                short lx = (short)(s_scroll_start_link_x +
-                    (((int)s_transition_link_x - (int)s_scroll_start_link_x) * num) / den);
-                short ly = (short)(s_scroll_start_link_y +
-                    (((int)s_transition_link_y - (int)s_scroll_start_link_y) * num) / den);
-                u8 frame = (u8)((s_scroll_frame >> 3) & 1u);
-                roomrom_sprites_set_link_pose(lx, ly, s_link_face, frame);
-            }
+            /* NES Z1 UW: Link is drawn behind door tiles during the
+             * scroll (Z_07.asm ShowLinkSpritesBehindHorizontalDoors).
+             * We approximate by hiding the sprite off-screen for the
+             * scroll duration, then snapping to the new-room entry
+             * position on finalize. */
+            roomrom_sprites_set_link_pose((short)-32, (short)-32,
+                                          s_link_face, 0u);
 
             if (s_scroll_frame >= s_scroll_total_frames - 1u) {
                 if (s_scroll_state == SCROLL_H_RIGHT ||

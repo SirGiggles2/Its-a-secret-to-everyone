@@ -28,22 +28,17 @@ static unsigned char s_uw_quest  = 1u;
  * Filled during blit_blob; queried by main loop. 16 cols x 11 rows. */
 static unsigned char s_uw_walkable[16][11];
 
-/* UW wall/blocking NES BG tile IDs sourced from
- * RoomRom/data/uw_level*_*_manifest.json wall_tiles[] across all 9 levels.
- * Includes mountain/stone wall blocks ($B8..$E0 even byte family) plus
- * border-fill tile $F5/$F6 and dark cells $F2..$F4 used as decorative
- * pillars. Door tiles are treated as walkable (collision through doors
- * works in NES). Anything not in this set is walkable. */
+/* UW wall classifier — TEMPORARILY all-walkable while the actual
+ * blob tile-id space is mapped out. Manifest's wall_tiles[] are NES
+ * tile IDs ($B8/$BC/$C0/etc per L1Q1 manifest), but the blob's raw
+ * values are written via write_tile_raw which adds UW_VDP_TILE_BASE,
+ * meaning blob raw = (Genesis tile id - 1). Need to translate
+ * NES wall ids -> Genesis equivalents through the renderer's NES->Gen
+ * mapping (common_chr at base 1, underworld_bg at base 113, etc.)
+ * before the classifier matches reality. Coming in S5.5b. */
 static unsigned char uw_walkable_tile_id(unsigned char t)
 {
-    /* Common wall families seen across L1..L9 manifests. */
-    if (t >= 0xB0u && t <= 0xE0u) {
-        /* Many tiles in this range are wall blocks; specific exceptions
-         * for door/passage tiles below. */
-        return 0u;
-    }
-    if (t == 0xF5u || t == 0xF6u) return 0u;   /* border / dark fill */
-    if (t == 0xF2u || t == 0xF3u || t == 0xF4u) return 0u; /* statues / pillars */
+    (void)t;
     return 1u;
 }
 
@@ -259,6 +254,7 @@ static void blit_blob_one_metacol_at(int idx, unsigned char src_col,
     const unsigned char *nt   = g_uw_room_nt[idx];
     const unsigned char *attr = g_uw_room_attr[idx];
     unsigned char row;
+    unsigned char mt_row;
     unsigned char src_p0 = (unsigned char)(src_col << 1);
     unsigned char src_p1 = (unsigned char)(src_p0 + 1);
     unsigned char dst_p0 = (unsigned char)(dst_col << 1);
@@ -271,6 +267,14 @@ static void blit_blob_one_metacol_at(int idx, unsigned char src_col,
         unsigned char pal1 = attr_palette_for(attr, src_p1, nt_row);
         write_tile_raw_at(dst_p0, row, dst_row_base, raw0, pal0);
         write_tile_raw_at(dst_p1, row, dst_row_base, raw1, pal1);
+    }
+    /* S5.5: populate walkable grid for this metatile col. Use TL plane
+     * tile of each metatile row. Indexed by dst_col (must be 0..15). */
+    if (dst_col < 16u) {
+        for (mt_row = 0; mt_row < 11u; mt_row++) {
+            unsigned char tl = nt[(mt_row * 2u) * ROOMROM_UW_BLOB_COLS + (src_col * 2u)];
+            s_uw_walkable[dst_col][mt_row] = uw_walkable_tile_id(tl);
+        }
     }
 }
 
