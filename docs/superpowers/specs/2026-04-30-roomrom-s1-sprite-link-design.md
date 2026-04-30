@@ -81,9 +81,9 @@ S1 deliberately exposes no setter for Link position beyond `_spawn_link`. S2 wil
 | PAL0 | room BG (existing) | per-room |
 | PAL1 | room BG (existing) | per-room |
 | PAL2 | HUD (existing) | static after boot |
-| **PAL3 (new)** | Link sprite | static after boot |
+| **PAL3 (revised)** | Link sprite | overwritten at boot AND after every `load_room()` call |
 
-S1 verification step: confirm PAL3 is unused by HUD and BG renderer before commit. If any existing module touches PAL3, the design changes to PAL2 (and HUD moves) — but inspection of `roomrom_hud.c` is expected to confirm PAL3 is free.
+**PAL3 conflict:** The BG renderer (`roomrom_ow_room_render_load_palette`) writes all four palette slots 0..3 from the NES level info, so PAL3 is currently a BG sub-palette. The fix is to modify the OW and UW BG palette loaders to write slots 0..2 only, freeing PAL3 for sprites. NES BG sub-palette 3 is rarely referenced in the OW/UW attribute tables; if any room shows a BG color regression after the change, that room will be flagged at verify and remapped in a follow-up. This is the long-term-correct split: BG owns PAL0..PAL2, sprites own PAL3.
 
 ## Link sprite definition
 
@@ -94,25 +94,32 @@ S1 verification step: confirm PAL3 is unused by HUD and BG renderer before commi
 - Attribute: `TILE_ATTR_FULL(PAL3, 1 /*priority*/, 0 /*vflip*/, 0 /*hflip*/, 512 + 0x60)`.
 - Position: room center, screen coords `(128, 88)`. SGDK applies sprite-table Y/X offsets internally; we pass screen-space.
 
-Implementation can use either:
-- (a) `SPR_addSpriteEx` with a synthesized `SpriteDefinition` covering one frame of one anim, OR
-- (b) Direct `VDP_setSprite` + manual sprite-link-list management.
+Implementation uses **raw VDP sprite table** (`VDP_setSprite` + `VDP_updateSprites`):
 
-S1 picks **(a)** — the SGDK engine — because it auto-handles the sprite link list and double buffers the OAM update. The `SpriteDefinition` is built statically in `roomrom_sprites.c` (one anim, one frame, four 8x8 tiles, no animation timer).
+- `VDP_setSprite(0, x+0x80, y+0x80, SPRITE_SIZE(2,2), TILE_ATTR_FULL(PAL3, 1, 0, 0, 512+0x60), 0)`
+- `VDP_updateSprites(1, DMA)` — DMA the single-entry sprite cache to VRAM
+- One link entry, terminator at index 0 (`linkData = 0`)
+
+S1 picks raw VDP over the SGDK `SPR_*` engine because:
+- Single static sprite — no link-list management needed
+- Matches the codebase's existing pattern of using SGDK as a thin VDP wrapper (the BG path uses `VDP_setTileMapXY` / `VDP_loadTileData` directly, not `MAP_*` engines)
+- No `SpriteDefinition` / `Animation` / `TileSet` boilerplate for a one-frame sprite
+- The SGDK `SPR_*` engine becomes the right choice in S2+ when Link animates and enemies are added; can be adopted then with no S1 rewrite (raw VDP and SPR engine coexist)
 
 ## Per-frame contract
 
-The main loop becomes:
+S1 sprite is static, so no per-frame work is required after spawn. `VDP_updateSprites(1, DMA)` is called once inside `roomrom_sprites_spawn_link()`. The main loop is unchanged.
 
 ```c
 while (TRUE) {
     SYS_doVBlankProcess();
-    roomrom_sprites_update();   /* SPR_update() — must run every frame */
     /* existing input + load_room logic, unchanged */
 }
 ```
 
-`SPR_update()` is mandatory for the SGDK sprite engine. Skipping it leaves OAM stale or empty.
+S2 will introduce a per-frame update entry when Link starts moving / animating.
+
+After every `load_room()` call (including scene/ROM/level/quest toggles), `roomrom_sprites_load_palette()` must be called to re-write PAL3, because the BG palette loader runs first inside `load_room()` — see the PAL3 conflict note above. The sprite CHR upload itself is one-shot at boot and does not need replay.
 
 ## Verification
 
@@ -130,7 +137,7 @@ S1 is done when all of:
 
 | Risk | Mitigation |
 |---|---|
-| PAL3 already used by HUD or another module | Grep `roomrom_hud.c` and renderer modules for PAL3 / `PAL_setColor*` before commit. If used, swap HUD to PAL3 and Link to PAL2 — same delta, no architecture change. |
+| BG renderer overwrites PAL3 (confirmed) | Modify `roomrom_ow_room_render_load_palette` and `roomrom_uw_room_render_load_palette` to write slots 0..2 only. Sprite module owns PAL3. Re-load sprite palette after every `load_room()` for safety. Spot-check OW + UW rooms for any tile that was using BG sub-palette 3; remap if visually broken. |
 | Sprite Y/X coordinate offset confusion (SGDK adds +128 internally) | S1 verification step explicitly checks Link is on-screen at `(128,88)`, not off-screen. If hidden, adjust by the documented SGDK offset. |
 | `sprites_chr` byte alignment for `VDP_loadTileData` | `render_chr_upload` already handles unaligned source via per-tile copy through aligned buffer. Reuse it. |
 | Palette source for Link not yet captured from NES ROM | Hard-code from canonical Zelda 1 sprite palette 0: `$0F, $30, $16, $06` for sub-pal 0; populate other 12 colors with NES sprite sub-palettes 1..3 ($3F14..$3F1F) for completeness. Capture-from-ROM probe is non-blocking for S1. |
