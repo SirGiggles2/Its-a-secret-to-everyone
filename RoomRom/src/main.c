@@ -2,6 +2,7 @@
 #include "ow_room_render_roomrom.h"
 #include "uw_room_render_roomrom.h"
 #include "roomrom_hud.h"
+#include "roomrom_sprites.h"
 
 /* Boots to overworld room 0x77. D-pad navigates all 128 rooms.
  * Room layout: 16 wide x 8 tall, room_id = (row << 4) | col.
@@ -39,6 +40,7 @@ static void load_room(u8 room_id)
         roomrom_ow_room_render_fill_plane_a(room_id);
         roomrom_hud_draw(roomrom_ow_room_render_get_map(), room_id);
     }
+    roomrom_sprites_load_palette();   /* PAL3 - reload after BG palette write */
 }
 
 static void upload_scene_chr(void)
@@ -64,7 +66,9 @@ int main(bool hardReset)
         u32 blank[8] = {0,0,0,0,0,0,0,0};
         VDP_loadTileData(blank, 0, 1, CPU);
     }
-    load_room(s_room_id);
+    roomrom_sprites_upload_chr();          /* one-shot sprite CHR */
+    load_room(s_room_id);                  /* loads BG pal + sprite PAL3 */
+    roomrom_sprites_spawn_link(128, 88);   /* center of room */
 
     while (TRUE) {
         SYS_doVBlankProcess();
