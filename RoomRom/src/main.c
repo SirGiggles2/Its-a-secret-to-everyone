@@ -95,6 +95,47 @@ static void upload_scene_chr(void)
     roomrom_hud_upload_chr();
 }
 
+/* S4: edge-triggered room transition. Both OW and UW use the same 16x8 grid
+ * (room_id = (row<<4)|col). When Link's position crosses a playfield edge:
+ *  - if the adjacent grid cell exists, load it and snap Link to the opposite
+ *    edge (preserving the perpendicular coordinate);
+ *  - else, clamp at the edge (no transition).
+ * Resets sub-pixel/grid/anim state on transition so movement starts clean
+ * in the new room. */
+static void edge_load_or_clamp(void)
+{
+    u8 col = s_room_id & 0x0Fu;
+    u8 row = (u8)(s_room_id >> 4);
+    u8 transitioned = 0u;
+
+    if (s_link_x < 0) {
+        if (col > 0u) { col--; s_link_x = 232; transitioned = 1u; }
+        else          { s_link_x = 0; }
+    } else if (s_link_x > 240) {
+        if (col < 15u) { col++; s_link_x = 8;   transitioned = 1u; }
+        else           { s_link_x = 240; }
+    }
+
+    if (s_link_y < 56) {
+        if (row > 0u) { row--; s_link_y = 200; transitioned = 1u; }
+        else          { s_link_y = 56; }
+    } else if (s_link_y > 208) {
+        if (row < 7u) { row++; s_link_y = 64;  transitioned = 1u; }
+        else          { s_link_y = 208; }
+    }
+
+    if (transitioned) {
+        s_room_id = (u8)((row << 4) | col);
+        load_room(s_room_id);
+        s_link_pos_frac    = 0u;
+        s_link_subx        = 0u;
+        s_link_suby        = 0u;
+        s_link_grid_offset = 0u;
+        s_link_anim_tick   = 0u;
+        /* keep s_link_dir + s_link_face so motion continues smoothly */
+    }
+}
+
 int main(bool hardReset)
 {
     u16 joy_prev = 0;
@@ -241,11 +282,7 @@ int main(bool hardReset)
                 }
             }
 
-            if (s_link_x < 0)   { s_link_x = 0;   s_link_subx = 0u; }
-            if (s_link_x > 240) { s_link_x = 240; s_link_subx = 0u; }
-            if (s_link_y < 56)  { s_link_y = 56;  s_link_suby = 0u; }
-            if (s_link_y > 208) { s_link_y = 208; s_link_suby = 0u; }
-
+            edge_load_or_clamp();
             roomrom_sprites_set_link_pose(s_link_x, s_link_y,
                                           s_link_face, s_link_frame);
         } else {
@@ -331,11 +368,7 @@ int main(bool hardReset)
                 s_link_grid_offset = 0u;
             }
 
-            if (s_link_x < 0)   s_link_x = 0;
-            if (s_link_x > 240) s_link_x = 240;
-            if (s_link_y < 56)  s_link_y = 56;
-            if (s_link_y > 208) s_link_y = 208;
-
+            edge_load_or_clamp();
             roomrom_sprites_set_link_pose(s_link_x, s_link_y,
                                           s_link_face, s_link_frame);
         }
