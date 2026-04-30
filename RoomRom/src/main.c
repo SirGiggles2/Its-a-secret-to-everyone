@@ -208,22 +208,23 @@ static void upload_scene_chr(void)
     roomrom_hud_upload_chr();
 }
 
-/* S5 collision: returns 1 if Link's hotspot at the given pixel position
- * lands on a walkable metatile in the current room. Hotspot is roughly
- * Link's foot center: (x+8, y+12), mapped to 16x16 metatile grid where
- * the playfield starts at y=56 (HUD reserves top 56 px). UW currently
- * always walkable (collision data not yet exposed). */
+/* S5 + S5.5 collision: returns 1 if Link's hotspot at the given pixel
+ * position lands on a walkable metatile in the current room. Hotspot:
+ * foot center (x+8, y+12) -> 16x16 metatile grid; playfield top at y=56.
+ * Dispatches to OW or UW renderer based on s_scene. */
 static unsigned char link_walkable_at(short x, short y)
 {
     short hot_x, hot_y;
     int col, row;
-    if (s_scene == SCENE_UW) return 1u;
     hot_x = (short)(x + 8);
     hot_y = (short)(y + 12);
     if (hot_y < 56) return 0u;          /* HUD strip: blocked */
     col = (int)hot_x / 16;
     row = (int)(hot_y - 56) / 16;
     if (col < 0 || col > 15 || row < 0 || row > 10) return 1u;
+    if (s_scene == SCENE_UW)
+        return roomrom_uw_room_render_walkable_at((unsigned char)col,
+                                                  (unsigned char)row);
     return roomrom_ow_room_render_walkable_at((unsigned char)col,
                                               (unsigned char)row);
 }

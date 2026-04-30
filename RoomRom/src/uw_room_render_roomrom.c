@@ -24,6 +24,36 @@ static unsigned char s_uw_map_id = ROOMROM_MAP_ORIGINAL;
 static unsigned char s_uw_level  = 1u;
 static unsigned char s_uw_quest  = 1u;
 
+/* S5.5 collision: walkable metatile grid for the current UW room.
+ * Filled during blit_blob; queried by main loop. 16 cols x 11 rows. */
+static unsigned char s_uw_walkable[16][11];
+
+/* UW wall/blocking NES BG tile IDs sourced from
+ * RoomRom/data/uw_level*_*_manifest.json wall_tiles[] across all 9 levels.
+ * Includes mountain/stone wall blocks ($B8..$E0 even byte family) plus
+ * border-fill tile $F5/$F6 and dark cells $F2..$F4 used as decorative
+ * pillars. Door tiles are treated as walkable (collision through doors
+ * works in NES). Anything not in this set is walkable. */
+static unsigned char uw_walkable_tile_id(unsigned char t)
+{
+    /* Common wall families seen across L1..L9 manifests. */
+    if (t >= 0xB0u && t <= 0xE0u) {
+        /* Many tiles in this range are wall blocks; specific exceptions
+         * for door/passage tiles below. */
+        return 0u;
+    }
+    if (t == 0xF5u || t == 0xF6u) return 0u;   /* border / dark fill */
+    if (t == 0xF2u || t == 0xF3u || t == 0xF4u) return 0u; /* statues / pillars */
+    return 1u;
+}
+
+unsigned char roomrom_uw_room_render_walkable_at(unsigned char col,
+                                                 unsigned char row)
+{
+    if (col >= 16u || row >= 11u) return 0u;
+    return s_uw_walkable[col][row];
+}
+
 void roomrom_uw_room_render_set_map(unsigned char map_id)
 {
     s_uw_map_id = (map_id == ROOMROM_MAP_REDUX) ? ROOMROM_MAP_REDUX
@@ -199,6 +229,7 @@ static void blit_blob(int idx)
     const unsigned char *nt = g_uw_room_nt[idx];
     const unsigned char *attr = g_uw_room_attr[idx];
     unsigned char row, col;
+    unsigned char mt_col, mt_row;
     for (row = 0; row < ROOMROM_UW_BLOB_ROWS; row++) {
         for (col = 0; col < ROOMROM_UW_BLOB_COLS; col++) {
             unsigned char raw = nt[row * ROOMROM_UW_BLOB_COLS + col];
@@ -206,6 +237,14 @@ static void blit_blob(int idx)
             unsigned char nt_row = (unsigned char)(row + 8u);
             unsigned char pal = attr_palette_for(attr, col, nt_row);
             write_tile_raw(col, row, raw, pal);
+        }
+    }
+    /* Build walkable grid: each metatile (mt_col, mt_row) classified by
+     * its TL plane tile (= nt[mt_row*2 * COLS + mt_col*2]). */
+    for (mt_row = 0; mt_row < 11; mt_row++) {
+        for (mt_col = 0; mt_col < 16; mt_col++) {
+            unsigned char tl = nt[(mt_row * 2u) * ROOMROM_UW_BLOB_COLS + (mt_col * 2u)];
+            s_uw_walkable[mt_col][mt_row] = uw_walkable_tile_id(tl);
         }
     }
 }
@@ -238,6 +277,7 @@ static void blit_blob_one_metacol_at(int idx, unsigned char src_col,
 static void draw_placeholder(unsigned char room_id)
 {
     unsigned char col, row;
+    unsigned char mt_col, mt_row;
     unsigned char floor_tile = 0x70;
     for (row = 0; row < ROOMROM_ROOM_ROWS; row++) {
         for (col = 0; col < ROOMROM_ROOM_COLS; col++) {
@@ -245,6 +285,10 @@ static void draw_placeholder(unsigned char room_id)
             write_tile_raw(col, row, t, 1);
         }
     }
+    /* Placeholder rooms: all metatiles walkable. */
+    for (mt_row = 0; mt_row < 11; mt_row++)
+        for (mt_col = 0; mt_col < 16; mt_col++)
+            s_uw_walkable[mt_col][mt_row] = 1u;
     write_tile_raw(2, 1, 0x15, 0);
     write_tile_raw(3, 1, digit_tile(s_uw_level), 0);
     write_tile_raw(6, 1, 0x1B, 0);

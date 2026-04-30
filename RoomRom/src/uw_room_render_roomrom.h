@@ -31,4 +31,9 @@ void roomrom_uw_room_render_fill_one_col_at(unsigned char room_id,
                                             unsigned char dst_col,
                                             unsigned char dst_row_base);
 
+/* S5.5 collision: returns non-zero if metatile (col, row) of the current
+ * UW room is walkable. col 0..15, row 0..10. Out-of-bounds = 0. */
+unsigned char roomrom_uw_room_render_walkable_at(unsigned char col,
+                                                 unsigned char row);
+
 #endif
