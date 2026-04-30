@@ -12,6 +12,8 @@ extern const unsigned char misc_palettes[1208];
 
 #define SPRITE_VRAM_TILE_BASE  512u
 #define SPRITE_CHR_BYTES       7424u
+#define LINK_TILE_NES_BASE     0x60u   /* facing-down standstill, top-left tile */
+#define LINK_VRAM_TILE         (SPRITE_VRAM_TILE_BASE + LINK_TILE_NES_BASE)
 
 static unsigned short nes_to_cram(unsigned char nes_idx)
 {
@@ -46,6 +48,16 @@ void roomrom_sprites_load_palette(void)
 
 void roomrom_sprites_spawn_link(short x, short y)
 {
-    (void)x; (void)y;
-    /* implemented in next commit */
+    /* SGDK sprite-table coords: screen + 0x80 origin. */
+    unsigned short sx = (unsigned short)(x + 0x80);
+    unsigned short sy = (unsigned short)(y + 0x80);
+
+    VDP_setSprite(0,
+                  sy,
+                  sx,
+                  SPRITE_SIZE(2, 2),
+                  TILE_ATTR_FULL(PAL3, 1 /*pri*/, 0 /*vflip*/, 0 /*hflip*/,
+                                 LINK_VRAM_TILE),
+                  0 /*link terminator*/);
+    VDP_updateSprites(1, DMA);
 }
