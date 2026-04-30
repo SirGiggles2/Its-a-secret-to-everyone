@@ -48,13 +48,10 @@ void roomrom_sprites_load_palette(void)
 
 void roomrom_sprites_spawn_link(short x, short y)
 {
-    /* SGDK sprite-table coords: screen + 0x80 origin. */
-    unsigned short sx = (unsigned short)(x + 0x80);
-    unsigned short sy = (unsigned short)(y + 0x80);
-
+    /* SGDK adds the 0x80 sprite-table origin internally; pass screen coords. */
     VDP_setSpriteFull(0,
-                      (s16)sx,
-                      (s16)sy,
+                      (s16)x,
+                      (s16)y,
                       SPRITE_SIZE(2, 2),
                       TILE_ATTR_FULL(PAL3, 1 /*pri*/, 0 /*vflip*/, 0 /*hflip*/,
                                      LINK_VRAM_TILE),
