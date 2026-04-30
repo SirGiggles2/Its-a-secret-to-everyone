@@ -1,27 +1,45 @@
 #!/usr/bin/env python3
-"""Generate RoomRom UW NT blob from one or more NES dungeon dump JSONs.
+"""Generate RoomRom UW NT blob from RoomRom/out/nes_uw_aggregate.json.
 
-By default reads the original-ROM dump (RoomRom/out/nes_uw_warp_v2.json)
-and the redux-ROM dump (RoomRom/out/nes_uw_warp_redux.json). Each
-dungeon snapshot becomes one blob entry tagged with map_id (0 = original,
-1 = redux). RoomRom looks up entries by (map_id, level, room_id).
+Replaces the legacy two-file `nes_uw_warp_v2.json`/`nes_uw_warp_redux.json`
+inputs. Consumes only the verified aggregate produced by
+verify_uw_aggregate.py. Each captured (rom, quest, level, room_id)
+becomes one blob entry.
 
-Emits RoomRom/src/uw_room_blob.c containing:
-  - g_uw_room_count
-  - g_uw_room_index[][3]  : (map_id, level, room_id)
-  - g_uw_room_nt[][22*32] : play-area nametable (NT rows 8..29)
-  - g_uw_room_attr[][64]  : full attribute table $23C0..$23FF
-  - g_uw_room_palette[][32] : NES PALRAM
+Schema migration (3-tuple -> 4-tuple):
+  Old: g_uw_room_index[][3] = {map_id, level, room_id}
+  New: g_uw_room_index[][4] = {map_id, quest, level, room_id}
+
+The runtime consumer in RoomRom/src/uw_room_render_roomrom.c filters on
+all four fields (map -> rom, quest, level, room).
+
+Emits:
+  RoomRom/src/uw_room_blob.c containing:
+    - g_uw_room_count
+    - g_uw_room_index[][4]   : (map_id, quest, level, room_id)
+    - g_uw_room_nt[][22*32]  : play-area nametable (NT rows 8..29)
+    - g_uw_room_attr[][64]   : full attribute table $23C0..$23FF
+    - g_uw_room_palette[][32]: NES PALRAM
+
+Sort order: (map_id, quest, level, source_block, room_id).
+
+Fail conditions:
+  - Aggregate missing.
+  - Same (rom, quest, level, room_id) appears with conflicting hashes
+    across different source_blocks (would silently pick one); blob gen
+    aborts in that case.
 """
+
 from __future__ import annotations
 
+import hashlib
 import json
 import sys
 from pathlib import Path
 
+
 ROOT = Path(__file__).resolve().parents[2]
-DEFAULT_ORIG = ROOT / "RoomRom" / "out" / "nes_uw_warp_v2.json"
-DEFAULT_REDUX = ROOT / "RoomRom" / "out" / "nes_uw_warp_redux.json"
+AGG_PATH = ROOT / "RoomRom" / "out" / "nes_uw_aggregate.json"
 OUT_C = ROOT / "RoomRom" / "src" / "uw_room_blob.c"
 
 PLAY_NT_TOP = 8
@@ -29,20 +47,13 @@ PLAY_ROWS = 22
 PLAY_COLS = 32
 
 
-def load_dump(path: Path, map_id: int) -> list[dict]:
-    """Return list of dungeon entries from one dump JSON, tagged with map_id."""
-    if not path.exists():
-        return []
-    data = json.loads(path.read_text())
-    rows = []
-    for r in data.get("results", []):
-        if r.get("cur_level", 0) == 0:
-            continue
-        if r.get("game_mode", 0) != 5:
-            continue
-        r["map_id"] = map_id
-        rows.append(r)
-    return rows
+def hash_entry(e: dict) -> str:
+    nt_bytes = bytes(b for row in e["nt"] for b in row)
+    attr_bytes = bytes(e["attr"])
+    pal_bytes = bytes(e["palram"])
+    h = hashlib.sha256()
+    h.update(nt_bytes); h.update(attr_bytes); h.update(pal_bytes)
+    return h.hexdigest()
 
 
 def emit_c(entries: list[dict], out_path: Path) -> None:
@@ -54,14 +65,15 @@ def emit_c(entries: list[dict], out_path: Path) -> None:
     n = len(entries)
     lines.append(f"const unsigned short g_uw_room_count = {n}u;")
     lines.append("")
-    lines.append(f"const unsigned char g_uw_room_index[{max(n,1)}][3] = {{")
+    lines.append(f"const unsigned char g_uw_room_index[{max(n,1)}][4] = {{")
     for e in entries:
-        mid = e.get("map_id", 0)
-        lvl = e["cur_level"]
+        mid = e["map_id"]
+        q = e["quest"]
+        lvl = e["level"]
         rid = e["room_id"]
-        lines.append(f"    {{ {mid:#04x}, {lvl:#04x}, {rid:#04x} }},")
+        lines.append(f"    {{ {mid:#04x}, {q:#04x}, {lvl:#04x}, {rid:#04x} }},")
     if n == 0:
-        lines.append("    { 0, 0, 0 }, /* placeholder */")
+        lines.append("    { 0, 0, 0, 0 }, /* placeholder */")
     lines.append("};")
     lines.append("")
     lines.append(f"const unsigned char g_uw_room_nt[{max(n,1)}][{PLAY_ROWS * PLAY_COLS}] = {{")
@@ -81,7 +93,7 @@ def emit_c(entries: list[dict], out_path: Path) -> None:
     for e in entries:
         attr = e.get("attr") or ([0] * 64)
         if len(attr) < 64:
-            attr = attr + [0] * (64 - len(attr))
+            attr = list(attr) + [0] * (64 - len(attr))
         byte_strs = ", ".join(f"{b:#04x}" for b in attr[:64])
         lines.append(f"    {{ {byte_strs} }},")
     if n == 0:
@@ -101,17 +113,47 @@ def emit_c(entries: list[dict], out_path: Path) -> None:
 
 
 def main(argv: list[str]) -> int:
-    orig_path = Path(argv[1]) if len(argv) > 1 else DEFAULT_ORIG
-    redux_path = Path(argv[2]) if len(argv) > 2 else DEFAULT_REDUX
-    entries: list[dict] = []
-    entries += load_dump(orig_path,  map_id=0)
-    entries += load_dump(redux_path, map_id=1)
-    print(f"Original entries from {orig_path}: "
-          f"{sum(1 for e in entries if e['map_id'] == 0)}")
-    print(f"Redux entries from {redux_path}: "
-          f"{sum(1 for e in entries if e['map_id'] == 1)}")
-    emit_c(entries, OUT_C)
-    print(f"Wrote {OUT_C}")
+    if not AGG_PATH.exists():
+        sys.stderr.write(
+            f"FATAL: aggregate dump missing: {AGG_PATH}\n"
+            "Run: python RoomRom/tools/uw_aggregate.py\n"
+        )
+        return 2
+
+    data = json.loads(AGG_PATH.read_text(encoding="utf-8"))
+    entries = list(data.get("entries") or [])
+
+    # Detect cross-source-block hash conflicts for same (rom,quest,level,room_id).
+    seen: dict[tuple, dict] = {}
+    for e in entries:
+        key = (e["rom"], e["quest"], e["level"], e["room_id"])
+        h = hash_entry(e)
+        if key in seen:
+            prev = seen[key]
+            if prev["_hash"] != h and prev["source_block"] != e["source_block"]:
+                sys.stderr.write(
+                    f"FATAL: conflicting hashes for {key} across source_blocks "
+                    f"{prev['source_block']} vs {e['source_block']}\n"
+                )
+                return 3
+        else:
+            e2 = dict(e)
+            e2["_hash"] = h
+            seen[key] = e2
+
+    deduped = list(seen.values())
+    deduped.sort(key=lambda e: (
+        e["map_id"], e["quest"], e["level"], e["source_block"], e["room_id"]
+    ))
+
+    counts = {0: 0, 1: 0}
+    for e in deduped:
+        counts[e["map_id"]] = counts.get(e["map_id"], 0) + 1
+    print(f"orig (map_id=0): {counts[0]} entries")
+    print(f"redux (map_id=1): {counts[1]} entries")
+
+    emit_c(deduped, OUT_C)
+    print(f"wrote {OUT_C} ({len(deduped)} total entries)")
     return 0
 
 

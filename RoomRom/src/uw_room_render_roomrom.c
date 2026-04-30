@@ -6,6 +6,7 @@ extern const unsigned char rooms_dungeons[];
 extern const unsigned char common_chr[7616];
 extern const unsigned char underworld_bg_chr[4160];
 extern const unsigned char misc_palettes[1208];
+extern const unsigned char redux_uw_bg_chr[8192];
 
 #define UW_LEVELBLOCK_SIZE       768u
 #define UW_LEVELINFO_SIZE        256u
@@ -21,6 +22,7 @@ extern const unsigned char misc_palettes[1208];
 
 static unsigned char s_uw_map_id = ROOMROM_MAP_ORIGINAL;
 static unsigned char s_uw_level  = 1u;
+static unsigned char s_uw_quest  = 1u;
 
 void roomrom_uw_room_render_set_map(unsigned char map_id)
 {
@@ -45,6 +47,18 @@ unsigned char roomrom_uw_room_render_get_level(void)
     return s_uw_level;
 }
 
+void roomrom_uw_room_render_set_quest(unsigned char quest)
+{
+    if (quest < ROOMROM_UW_QUEST_MIN) quest = ROOMROM_UW_QUEST_MIN;
+    if (quest > ROOMROM_UW_QUEST_MAX) quest = ROOMROM_UW_QUEST_MAX;
+    s_uw_quest = quest;
+}
+
+unsigned char roomrom_uw_room_render_get_quest(void)
+{
+    return s_uw_quest;
+}
+
 static unsigned short nes_color_to_cram(unsigned char color)
 {
     unsigned short off = (unsigned short)color * 2u;
@@ -56,10 +70,12 @@ static int find_blob_entry(unsigned char level, unsigned char room_id)
 {
     unsigned short i;
     unsigned char want_map = (s_uw_map_id == ROOMROM_MAP_REDUX) ? 1u : 0u;
+    unsigned char want_quest = s_uw_quest;
     for (i = 0; i < g_uw_room_count; i++) {
         if (g_uw_room_index[i][0] == want_map &&
-            g_uw_room_index[i][1] == level &&
-            g_uw_room_index[i][2] == room_id) {
+            g_uw_room_index[i][1] == want_quest &&
+            g_uw_room_index[i][2] == level &&
+            g_uw_room_index[i][3] == room_id) {
             return (int)i;
         }
     }
@@ -109,6 +125,17 @@ void roomrom_uw_room_render_load_palette(unsigned char room_id)
 
 void roomrom_uw_room_render_upload_chr(void)
 {
+    if (s_uw_map_id == ROOMROM_MAP_REDUX) {
+        /* Redux: live PPU $0000-$0FFF dump (256 tiles, 8192 bytes Genesis
+         * 4bpp). Includes Redux's bombable-wall crack patterns at NES tile
+         * indices the engine writes into the play area NT (e.g. $5B/$5D
+         * at L1 room $43). NES tile N -> Genesis VRAM tile (N + 1) so we
+         * upload at the same UW_VDP_TILE_BASE = 1. */
+        render_chr_upload((unsigned short)(UW_VDP_TILE_BASE * 32u),
+                          redux_uw_bg_chr,
+                          (unsigned short)(256u * 32u));
+        return;
+    }
     render_chr_upload((unsigned short)(UW_VDP_TILE_BASE * 32u),
                       common_chr + COMMON_BG_CHR_OFFSET,
                       (unsigned short)(COMMON_BG_TILE_COUNT * 32u));
