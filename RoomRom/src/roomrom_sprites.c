@@ -22,6 +22,27 @@ extern const unsigned char misc_palettes[1208];
 #define COMMON_BLOCK_TILE_COUNT 238u
 
 #define LINK_VRAM_TILE          (COMMON_VRAM_TILE_BASE + COMMON_BLOCK_TILE_COUNT)
+#define LINK_TILES_PER_POSE     4u
+#define LINK_POSE_COUNT         8u   /* 4 facings x 2 frames */
+
+typedef struct {
+    unsigned char nes_ids[4];     /* TL, BL, TR, BR (Genesis 2x2 column-major) */
+    unsigned char per_tile_hflip; /* bitmask: bit 0 = TL flipped, bit 1 = BL, etc. */
+} link_pose_def_t;
+
+/* Pose table values from /spritefix NES live OAM capture (S3 plan T1).
+ * pose_index = face*2 + frame. Down values cross-checked against S1
+ * findings. UP/LEFT/RIGHT captured 2026-04-30 from BizHawk Z1 gameplay. */
+static const link_pose_def_t link_poses[LINK_POSE_COUNT] = {
+    /* DOWN  frame 0 */ { {0x58u, 0x59u, 0x0Au, 0x0Bu}, 0x0u },
+    /* DOWN  frame 1 */ { {0x5Au, 0x5Bu, 0x08u, 0x09u}, 0xCu },
+    /* UP    frame 0 */ { {0x0Cu, 0x0Du, 0x0Eu, 0x0Fu}, 0x0u },
+    /* UP    frame 1 */ { {0x0Eu, 0x0Fu, 0x0Cu, 0x0Du}, 0xFu },
+    /* LEFT  frame 0 */ { {0x06u, 0x07u, 0x04u, 0x05u}, 0xFu },
+    /* LEFT  frame 1 */ { {0x02u, 0x03u, 0x00u, 0x01u}, 0xFu },
+    /* RIGHT frame 0 */ { {0x04u, 0x05u, 0x06u, 0x07u}, 0x0u },
+    /* RIGHT frame 1 */ { {0x00u, 0x01u, 0x02u, 0x03u}, 0x0u },
+};
 
 static unsigned short nes_to_cram(unsigned char nes_idx)
 {
@@ -30,28 +51,47 @@ static unsigned short nes_to_cram(unsigned char nes_idx)
          | ((unsigned short)misc_palettes[off + 1] << 8);
 }
 
+/* Horizontally flip a Genesis 4bpp 8x8 tile (32 bytes) in place.
+ * Each row is 4 bytes (2 pixels per byte, high nibble = left pixel). */
+static void hflip_tile_inplace(unsigned char *t)
+{
+    unsigned char r;
+    for (r = 0; r < 8; r++) {
+        unsigned char b0 = t[r*4 + 0], b1 = t[r*4 + 1],
+                      b2 = t[r*4 + 2], b3 = t[r*4 + 3];
+        t[r*4 + 0] = (unsigned char)(((b3 & 0xF0u) >> 4) | ((b3 & 0x0Fu) << 4));
+        t[r*4 + 1] = (unsigned char)(((b2 & 0xF0u) >> 4) | ((b2 & 0x0Fu) << 4));
+        t[r*4 + 2] = (unsigned char)(((b1 & 0xF0u) >> 4) | ((b1 & 0x0Fu) << 4));
+        t[r*4 + 3] = (unsigned char)(((b0 & 0xF0u) >> 4) | ((b0 & 0x0Fu) << 4));
+    }
+}
+
 void roomrom_sprites_upload_chr(void)
 {
-    /* Main sprite block (OW enemies — kept for S3+). */
+    /* OW enemy sprite block. */
     render_chr_upload((unsigned short)(SPRITE_VRAM_TILE_BASE * 32u),
                       sprites_chr, SPRITE_CHR_BYTES);
 
-    /* Common sprite block (always-loaded gameplay sprites including Link). */
+    /* Common gameplay sprite block (Link, sword, hearts). */
     render_chr_upload((unsigned short)(COMMON_VRAM_TILE_BASE * 32u),
                       common_chr, COMMON_CHR_BYTES);
 
-    /* Link facing-down standstill — copy 4 tiles from common_chr into the
-     * dedicated LINK_VRAM_TILE region in Genesis 2x2 column-major order
-     * (TL, BL, TR, BR). NES tile IDs: $58, $59, $0A, $0B. */
+    /* Pre-upload all 8 Link poses (32 tiles), baking per-tile hflip
+     * so render-side sprite hflip is always 0. */
     {
-        static const unsigned char link_down_nes_ids[4] = {
-            0x58u, 0x59u, 0x0Au, 0x0Bu
-        };
-        unsigned char i;
-        for (i = 0; i < 4; i++) {
-            unsigned short src_off = (unsigned short)link_down_nes_ids[i] * 32u;
-            render_chr_upload((unsigned short)((LINK_VRAM_TILE + i) * 32u),
-                              common_chr + src_off, 32u);
+        unsigned char p, t, i;
+        unsigned char buf[32];
+        for (p = 0; p < LINK_POSE_COUNT; p++) {
+            for (t = 0; t < LINK_TILES_PER_POSE; t++) {
+                unsigned short nes_off = (unsigned short)link_poses[p].nes_ids[t] * 32u;
+                for (i = 0; i < 32; i++) buf[i] = common_chr[nes_off + i];
+                if (link_poses[p].per_tile_hflip & (1u << t)) {
+                    hflip_tile_inplace(buf);
+                }
+                render_chr_upload(
+                    (unsigned short)((LINK_VRAM_TILE + p*LINK_TILES_PER_POSE + t) * 32u),
+                    buf, 32u);
+            }
         }
     }
 }
@@ -60,39 +100,34 @@ void roomrom_sprites_load_palette(void)
 {
     unsigned short pal16[16];
     unsigned char i;
-
     for (i = 0; i < 16; i++) pal16[i] = 0;
-
-    /* Sprite sub-pal 0 = Link's gameplay palette. Verified live PALRAM dump
-     * ($3F11..$3F13) returns $29, $27, $17 for color indices 1..3 — green
-     * tunic, peach skin, brown shadow. */
-    pal16[0] = nes_to_cram(0x0Fu);  /* transparent (NES uses $00 here, $0F == universal black) */
-    pal16[1] = nes_to_cram(0x29u);  /* green tunic */
-    pal16[2] = nes_to_cram(0x27u);  /* peach skin */
-    pal16[3] = nes_to_cram(0x17u);  /* brown shadow / boots */
-
+    pal16[0] = nes_to_cram(0x0Fu);
+    pal16[1] = nes_to_cram(0x29u);
+    pal16[2] = nes_to_cram(0x27u);
+    pal16[3] = nes_to_cram(0x17u);
     render_load_palette(3 /* PAL3 */, pal16);
+}
+
+void roomrom_sprites_set_link_pose(short x, short y,
+                                   link_face_t face, unsigned char frame)
+{
+    unsigned short pose_idx = (unsigned short)face * 2u + (unsigned short)frame;
+    unsigned short tile = LINK_VRAM_TILE + pose_idx * LINK_TILES_PER_POSE;
+    VDP_setSpriteFull(0,
+                      (s16)x,
+                      (s16)y,
+                      SPRITE_SIZE(2, 2),
+                      TILE_ATTR_FULL(PAL3, 1, 0, 0, tile),
+                      0);
+    VDP_updateSprites(1, DMA);
 }
 
 void roomrom_sprites_spawn_link(short x, short y)
 {
-    VDP_setSpriteFull(0,
-                      (s16)x,
-                      (s16)y,
-                      SPRITE_SIZE(2, 2),
-                      TILE_ATTR_FULL(PAL3, 1 /*pri*/, 0 /*vflip*/, 0 /*hflip*/,
-                                     LINK_VRAM_TILE),
-                      0 /*link terminator*/);
-    VDP_updateSprites(1, DMA);
+    roomrom_sprites_set_link_pose(x, y, LINK_FACE_DOWN, 0u);
 }
 
 void roomrom_sprites_set_link_pos(short x, short y)
 {
-    VDP_setSpriteFull(0,
-                      (s16)x,
-                      (s16)y,
-                      SPRITE_SIZE(2, 2),
-                      TILE_ATTR_FULL(PAL3, 1, 0, 0, LINK_VRAM_TILE),
-                      0);
-    VDP_updateSprites(1, DMA);
+    roomrom_sprites_set_link_pose(x, y, LINK_FACE_DOWN, 0u);
 }
