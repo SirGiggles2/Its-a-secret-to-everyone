@@ -87,7 +87,8 @@ static void load_palette_from_blob(int idx)
     unsigned short pal16[16];
     unsigned char slot, i;
     const unsigned char *pal = g_uw_room_palette[idx];
-    for (slot = 0; slot < 4; slot++) {
+    /* PAL3 reserved for sprites (see roomrom_sprites). BG owns PAL0..PAL2. */
+    for (slot = 0; slot < 3; slot++) {
         for (i = 0; i < 16; i++)
             pal16[i] = 0;
         for (i = 0; i < 4; i++)
@@ -103,7 +104,8 @@ static void load_palette_from_levelinfo(void)
     unsigned short level_off = (unsigned short)(UW_LEVELINFO_BASE +
         ((unsigned short)(s_uw_level - 1u) * UW_LEVELINFO_SIZE) +
         UW_LEVELINFO_PAL_OFFSET);
-    for (slot = 0; slot < 4; slot++) {
+    /* PAL3 reserved for sprites (see roomrom_sprites). BG owns PAL0..PAL2. */
+    for (slot = 0; slot < 3; slot++) {
         for (i = 0; i < 16; i++)
             pal16[i] = 0;
         for (i = 0; i < 4; i++)

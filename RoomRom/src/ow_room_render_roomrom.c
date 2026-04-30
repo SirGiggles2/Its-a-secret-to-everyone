@@ -128,7 +128,8 @@ void roomrom_ow_room_render_load_palette(unsigned char room_id)
 
     (void)room_id;
 
-    for (slot = 0; slot < 4; slot++) {
+    /* PAL3 reserved for sprites (see roomrom_sprites). BG owns PAL0..PAL2. */
+    for (slot = 0; slot < 3; slot++) {
         for (i = 0; i < 16; i++)
             pal16[i] = 0;
         for (i = 0; i < 4; i++)
