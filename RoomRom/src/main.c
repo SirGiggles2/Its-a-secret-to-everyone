@@ -17,6 +17,8 @@
 typedef enum { SCENE_OW = 0, SCENE_UW = 1 } scene_t;
 static scene_t s_scene = SCENE_OW;
 static u8 s_room_id = 0x77;   /* exposed for Lua overlay */
+static short s_link_x = 128;
+static short s_link_y =  88;
 
 static void init_video(void)
 {
@@ -56,7 +58,6 @@ static void upload_scene_chr(void)
 int main(bool hardReset)
 {
     u16 joy_prev = 0;
-    u8 col, row;
 
     (void)hardReset;
 
@@ -68,7 +69,7 @@ int main(bool hardReset)
     }
     roomrom_sprites_upload_chr();          /* one-shot sprite CHR */
     load_room(s_room_id);                  /* loads BG pal + sprite PAL3 */
-    roomrom_sprites_spawn_link(128, 88);   /* center of room */
+    roomrom_sprites_spawn_link(s_link_x, s_link_y);
 
     while (TRUE) {
         SYS_doVBlankProcess();
@@ -76,9 +77,6 @@ int main(bool hardReset)
         u16 joy = JOY_readJoypad(JOY_1);
         u16 pressed = joy & ~joy_prev;
         joy_prev = joy;
-
-        col = s_room_id & 0x0F;
-        row = s_room_id >> 4;
 
         if (pressed & BUTTON_B) {
             s_scene = (s_scene == SCENE_OW) ? SCENE_UW : SCENE_OW;
@@ -119,20 +117,17 @@ int main(bool hardReset)
             continue;
         }
 
-        {
-            /* UW grid: 16 cols x 8 rows (room_id = (row<<4)|col, col 0..15).
-             * OW grid: 16 cols x 8 rows. Same bounds. */
-            u8 max_col = 15u;
-            u8 max_row = 7u;
-            if      ((pressed & BUTTON_LEFT)  && col > 0)        col--;
-            else if ((pressed & BUTTON_RIGHT) && col < max_col)  col++;
-            else if ((pressed & BUTTON_UP)    && row > 0)        row--;
-            else if ((pressed & BUTTON_DOWN)  && row < max_row)  row++;
-            else continue;
-        }
-
-        s_room_id = (u8)((row << 4) | col);
-        load_room(s_room_id);
+        /* D-pad now drives Link movement (1 px/frame, held). Room-jump nav
+         * removed — see S2 spec. */
+        if (joy & BUTTON_LEFT)  s_link_x--;
+        if (joy & BUTTON_RIGHT) s_link_x++;
+        if (joy & BUTTON_UP)    s_link_y--;
+        if (joy & BUTTON_DOWN)  s_link_y++;
+        if (s_link_x < 0)   s_link_x = 0;
+        if (s_link_x > 240) s_link_x = 240;
+        if (s_link_y < 32)  s_link_y = 32;
+        if (s_link_y > 208) s_link_y = 208;
+        roomrom_sprites_set_link_pos(s_link_x, s_link_y);
     }
 
     return 0;
