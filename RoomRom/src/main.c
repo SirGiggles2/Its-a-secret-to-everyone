@@ -4,18 +4,23 @@
 #include "roomrom_hud.h"
 #include "roomrom_sprites.h"
 
-/* Boots to overworld room 0x77. D-pad navigates all 128 rooms.
- * Room layout: 16 wide x 8 tall, room_id = (row << 4) | col.
+/* Boots to overworld room 0x77.
  *
- * Buttons:
- *   D-pad     room navigation
+ * Modes (toggled by X):
+ *   WALK       D-pad moves Link (1 px/frame)
+ *   TELEPORT   D-pad jumps room (16x8 grid: room_id = (row<<4)|col)
+ *
+ * Buttons (always):
+ *   X         toggle WALK <-> TELEPORT mode
  *   B         scene toggle (overworld <-> dungeon)
  *   C         map variant toggle (original <-> redux), per-scene
  *   A         (dungeon scene) cycle level 1..9
  *   START     (dungeon scene) toggle quest 1 <-> 2 */
 
 typedef enum { SCENE_OW = 0, SCENE_UW = 1 } scene_t;
+typedef enum { MODE_WALK = 0, MODE_TELEPORT = 1 } mode_t;
 static scene_t s_scene = SCENE_OW;
+static mode_t  s_mode  = MODE_WALK;
 static u8 s_room_id = 0x77;   /* exposed for Lua overlay */
 static short s_link_x = 128;
 static short s_link_y =  88;
@@ -78,6 +83,11 @@ int main(bool hardReset)
         u16 pressed = joy & ~joy_prev;
         joy_prev = joy;
 
+        if (pressed & BUTTON_X) {
+            s_mode = (s_mode == MODE_WALK) ? MODE_TELEPORT : MODE_WALK;
+            continue;
+        }
+
         if (pressed & BUTTON_B) {
             s_scene = (s_scene == SCENE_OW) ? SCENE_UW : SCENE_OW;
             s_room_id = (s_scene == SCENE_UW) ? 0x00 : 0x77;
@@ -117,17 +127,29 @@ int main(bool hardReset)
             continue;
         }
 
-        /* D-pad now drives Link movement (1 px/frame, held). Room-jump nav
-         * removed — see S2 spec. */
-        if (joy & BUTTON_LEFT)  s_link_x--;
-        if (joy & BUTTON_RIGHT) s_link_x++;
-        if (joy & BUTTON_UP)    s_link_y--;
-        if (joy & BUTTON_DOWN)  s_link_y++;
-        if (s_link_x < 0)   s_link_x = 0;
-        if (s_link_x > 240) s_link_x = 240;
-        if (s_link_y < 56)  s_link_y = 56;   /* HUD reserves top 7 tile-rows (56 px) */
-        if (s_link_y > 208) s_link_y = 208;
-        roomrom_sprites_set_link_pos(s_link_x, s_link_y);
+        if (s_mode == MODE_TELEPORT) {
+            /* D-pad edge-press warps room across the 16x8 grid. */
+            u8 col = s_room_id & 0x0F;
+            u8 row = s_room_id >> 4;
+            if      ((pressed & BUTTON_LEFT)  && col > 0)  col--;
+            else if ((pressed & BUTTON_RIGHT) && col < 15) col++;
+            else if ((pressed & BUTTON_UP)    && row > 0)  row--;
+            else if ((pressed & BUTTON_DOWN)  && row < 7)  row++;
+            else continue;
+            s_room_id = (u8)((row << 4) | col);
+            load_room(s_room_id);
+        } else {
+            /* WALK: D-pad held -> 1 px/frame motion with playfield clamp. */
+            if (joy & BUTTON_LEFT)  s_link_x--;
+            if (joy & BUTTON_RIGHT) s_link_x++;
+            if (joy & BUTTON_UP)    s_link_y--;
+            if (joy & BUTTON_DOWN)  s_link_y++;
+            if (s_link_x < 0)   s_link_x = 0;
+            if (s_link_x > 240) s_link_x = 240;
+            if (s_link_y < 56)  s_link_y = 56;   /* HUD top 7 tile-rows */
+            if (s_link_y > 208) s_link_y = 208;
+            roomrom_sprites_set_link_pos(s_link_x, s_link_y);
+        }
     }
 
     return 0;
