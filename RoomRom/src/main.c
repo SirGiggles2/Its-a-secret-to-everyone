@@ -19,15 +19,29 @@
 
 typedef enum { SCENE_OW = 0, SCENE_UW = 1 } scene_t;
 typedef enum { MODE_WALK = 0, MODE_TELEPORT = 1 } mode_t;
+
+/* NES Z1 movement direction (matches Z_05.asm Link_ModifyDir bit layout
+ * conceptually: only one axis at a time, no diagonal). */
+typedef enum {
+    LINK_DIR_NONE  = 0,
+    LINK_DIR_DOWN  = 1,
+    LINK_DIR_UP    = 2,
+    LINK_DIR_LEFT  = 3,
+    LINK_DIR_RIGHT = 4
+} link_dir_t;
+
 static scene_t s_scene = SCENE_OW;
 static mode_t  s_mode  = MODE_WALK;
 static u8 s_room_id = 0x77;   /* exposed for Lua overlay */
 static short s_link_x = 128;
 static short s_link_y =  88;
 static link_face_t s_link_face = LINK_FACE_DOWN;
+static link_dir_t  s_link_dir  = LINK_DIR_NONE;  /* current motion axis (NES-style) */
+static u8          s_link_grid_offset = 0u;      /* 0..7, pixels past last grid line */
 static u8          s_link_frame = 0u;
 static u8          s_link_anim_tick = 0u;
 #define LINK_ANIM_PERIOD 8u
+#define LINK_GRID_SIZE   8u
 
 static void init_video(void)
 {
@@ -143,29 +157,80 @@ int main(bool hardReset)
             s_room_id = (u8)((row << 4) | col);
             load_room(s_room_id);
         } else {
-            /* WALK: D-pad held -> 1 px/frame motion + facing + anim tick. */
-            u16 dir = joy & (BUTTON_LEFT|BUTTON_RIGHT|BUTTON_UP|BUTTON_DOWN);
+            /* NES-faithful movement (Z_05.asm Link_HandleInput +
+             * Link_ModifyDirAtGridPoint + Walker_Move):
+             *
+             * - Grid-locked: direction can only change when on an 8-px
+             *   grid line (s_link_grid_offset == 0).
+             * - Single-axis: no true diagonal. When two D-pad buttons
+             *   are held, perpendicular-to-current-facing wins (NES
+             *   "GoStraight" rule for dungeon corner behavior); on OW
+             *   we fall back to H-over-V.
+             * - Constant speed: 1 px/frame in the active axis.
+             * - Releasing all D-pad stops Link instantly. */
 
-            /* Facing: H wins over V when both pressed. */
-            if      (dir & BUTTON_LEFT)  s_link_face = LINK_FACE_LEFT;
-            else if (dir & BUTTON_RIGHT) s_link_face = LINK_FACE_RIGHT;
-            else if (dir & BUTTON_UP)    s_link_face = LINK_FACE_UP;
-            else if (dir & BUTTON_DOWN)  s_link_face = LINK_FACE_DOWN;
+            u16 input = joy & (BUTTON_LEFT|BUTTON_RIGHT|BUTTON_UP|BUTTON_DOWN);
 
-            if (dir) {
+            if (s_link_grid_offset == 0u) {
+                link_dir_t want = LINK_DIR_NONE;
+                u8 h = (u8)((input & BUTTON_LEFT) ? 1u : 0u)
+                     | (u8)((input & BUTTON_RIGHT) ? 2u : 0u);
+                u8 v = (u8)((input & BUTTON_UP)   ? 1u : 0u)
+                     | (u8)((input & BUTTON_DOWN) ? 2u : 0u);
+                u8 h_dir = (h == 1u) ? 1u : ((h == 2u) ? 2u : 0u);
+                u8 v_dir = (v == 1u) ? 1u : ((v == 2u) ? 2u : 0u);
+
+                if (h_dir && v_dir) {
+                    /* Two axes pressed: pick perpendicular to current
+                     * facing if any; else H over V. */
+                    if (s_link_dir == LINK_DIR_LEFT || s_link_dir == LINK_DIR_RIGHT)
+                        want = (v_dir == 1u) ? LINK_DIR_UP : LINK_DIR_DOWN;
+                    else if (s_link_dir == LINK_DIR_UP || s_link_dir == LINK_DIR_DOWN)
+                        want = (h_dir == 1u) ? LINK_DIR_LEFT : LINK_DIR_RIGHT;
+                    else
+                        want = (h_dir == 1u) ? LINK_DIR_LEFT : LINK_DIR_RIGHT;
+                } else if (h_dir) {
+                    want = (h_dir == 1u) ? LINK_DIR_LEFT : LINK_DIR_RIGHT;
+                } else if (v_dir) {
+                    want = (v_dir == 1u) ? LINK_DIR_UP : LINK_DIR_DOWN;
+                }
+                s_link_dir = want;
+            }
+            /* Off-grid: keep current direction unless input released. */
+            else if (input == 0u) {
+                /* NES holds direction until grid line; we mirror by
+                 * letting it keep moving until offset wraps to 0. */
+            }
+
+            /* Update facing + anim. Facing only changes when we're
+             * actively moving in a direction. */
+            if (s_link_dir != LINK_DIR_NONE) {
+                switch (s_link_dir) {
+                    case LINK_DIR_LEFT:  s_link_face = LINK_FACE_LEFT;  break;
+                    case LINK_DIR_RIGHT: s_link_face = LINK_FACE_RIGHT; break;
+                    case LINK_DIR_UP:    s_link_face = LINK_FACE_UP;    break;
+                    case LINK_DIR_DOWN:  s_link_face = LINK_FACE_DOWN;  break;
+                    default: break;
+                }
                 if (++s_link_anim_tick >= LINK_ANIM_PERIOD) {
                     s_link_frame ^= 1u;
                     s_link_anim_tick = 0u;
                 }
+
+                /* Step 1 px in the active axis. */
+                switch (s_link_dir) {
+                    case LINK_DIR_LEFT:  s_link_x--; break;
+                    case LINK_DIR_RIGHT: s_link_x++; break;
+                    case LINK_DIR_UP:    s_link_y--; break;
+                    case LINK_DIR_DOWN:  s_link_y++; break;
+                    default: break;
+                }
+                s_link_grid_offset = (u8)((s_link_grid_offset + 1u) & (LINK_GRID_SIZE - 1u));
             } else {
                 s_link_frame = 0u;
                 s_link_anim_tick = 0u;
             }
 
-            if (joy & BUTTON_LEFT)  s_link_x--;
-            if (joy & BUTTON_RIGHT) s_link_x++;
-            if (joy & BUTTON_UP)    s_link_y--;
-            if (joy & BUTTON_DOWN)  s_link_y++;
             if (s_link_x < 0)   s_link_x = 0;
             if (s_link_x > 240) s_link_x = 240;
             if (s_link_y < 56)  s_link_y = 56;
