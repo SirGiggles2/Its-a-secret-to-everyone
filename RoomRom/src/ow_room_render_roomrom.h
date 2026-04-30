@@ -27,5 +27,9 @@ unsigned char roomrom_ow_room_render_walkable_at(unsigned char col,
 void roomrom_ow_room_render_fill_one_col(unsigned char room_id,
                                          unsigned char src_col,
                                          unsigned char dst_col);
+void roomrom_ow_room_render_fill_one_col_at(unsigned char room_id,
+                                            unsigned char src_col,
+                                            unsigned char dst_col,
+                                            unsigned char dst_row_base);
 
 #endif

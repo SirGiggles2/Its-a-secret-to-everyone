@@ -123,7 +123,7 @@ static void draw_hud_tile(unsigned char col, unsigned char row,
 {
     if (col >= ROOMROM_ROOM_COLS || row >= ROOMROM_HUD_ROWS)
         return;
-    render_set_plane_a_word(col, row, hud_word(raw_tile, pal));
+    VDP_setTileMapXY(WINDOW, hud_word(raw_tile, pal), col, row);
 }
 
 static void draw_hud_tile_b(unsigned char col, unsigned char row,
@@ -152,6 +152,11 @@ static void clear_hud_pal(void)
 static void clear_hud_b(void)
 {
     VDP_clearTileMapRect(BG_B, 0, 0, ROOMROM_ROOM_COLS, ROOMROM_HUD_ROWS);
+}
+
+static void clear_hud_window(void)
+{
+    VDP_clearTileMapRect(WINDOW, 0, 0, ROOMROM_ROOM_COLS, ROOMROM_HUD_ROWS);
 }
 
 static void apply_attr_byte(unsigned char attr_offset, unsigned char attr)
@@ -261,6 +266,7 @@ void roomrom_hud_upload_chr(void)
 void roomrom_hud_draw(unsigned char hud_id, unsigned char room_id)
 {
     clear_hud_pal();
+    clear_hud_window();
     clear_hud_b();
     apply_transfer_macro((hud_id == ROOMROM_MAP_REDUX) ? s_redux_hud_macro
                                                        : s_original_hud_macro);

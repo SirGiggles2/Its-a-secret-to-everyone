@@ -247,6 +247,7 @@ static unsigned short tile_word(unsigned char raw_tile, unsigned char pal)
  * lands on the BG plane — supports off-room rendering during scroll). */
 static void write_tile_at(unsigned char src_tile_col, unsigned char src_tile_row,
                           unsigned char dst_tile_col, unsigned char dst_tile_row,
+                          unsigned char dst_row_base,
                           unsigned char raw_tile,
                           unsigned char outer_pal,
                           unsigned char inner_pal)
@@ -254,20 +255,13 @@ static void write_tile_at(unsigned char src_tile_col, unsigned char src_tile_row
     unsigned char pal = ow_tile_palette(src_tile_col, src_tile_row,
                                         outer_pal, inner_pal);
     render_set_plane_a_word(dst_tile_col,
-                            (unsigned short)(dst_tile_row + ROOMROM_ROOM_FIRST_ROW),
+                            (unsigned short)(dst_row_base + dst_tile_row +
+                                             ROOMROM_ROOM_FIRST_ROW),
                             tile_word(raw_tile, pal));
 }
 
-static void write_tile(unsigned char tile_col, unsigned char tile_row,
-                       unsigned char raw_tile,
-                       unsigned char outer_pal,
-                       unsigned char inner_pal)
-{
-    write_tile_at(tile_col, tile_row, tile_col, tile_row,
-                  raw_tile, outer_pal, inner_pal);
-}
-
 static void write_square_at(unsigned char src_col, unsigned char dst_col,
+                            unsigned char dst_row_base,
                             unsigned char row,
                             unsigned char tile_tl, unsigned char tile_bl,
                             unsigned char tile_tr, unsigned char tile_br,
@@ -278,25 +272,14 @@ static void write_square_at(unsigned char src_col, unsigned char dst_col,
     unsigned char dst_tc = (unsigned char)(dst_col << 1);
     unsigned char tile_row = (unsigned char)(row << 1);
 
-    write_tile_at(src_tc,     tile_row,     dst_tc,     tile_row,
+    write_tile_at(src_tc,     tile_row,     dst_tc,     tile_row,     dst_row_base,
                   tile_tl, outer_pal, inner_pal);
-    write_tile_at(src_tc,     tile_row + 1, dst_tc,     tile_row + 1,
+    write_tile_at(src_tc,     tile_row + 1, dst_tc,     tile_row + 1, dst_row_base,
                   tile_bl, outer_pal, inner_pal);
-    write_tile_at(src_tc + 1, tile_row,     dst_tc + 1, tile_row,
+    write_tile_at(src_tc + 1, tile_row,     dst_tc + 1, tile_row,     dst_row_base,
                   tile_tr, outer_pal, inner_pal);
-    write_tile_at(src_tc + 1, tile_row + 1, dst_tc + 1, tile_row + 1,
+    write_tile_at(src_tc + 1, tile_row + 1, dst_tc + 1, tile_row + 1, dst_row_base,
                   tile_br, outer_pal, inner_pal);
-}
-
-static void write_square(unsigned char col, unsigned char row,
-                         unsigned char tile_tl, unsigned char tile_bl,
-                         unsigned char tile_tr, unsigned char tile_br,
-                         unsigned char outer_pal,
-                         unsigned char inner_pal)
-{
-    write_square_at(col, col, row,
-                    tile_tl, tile_bl, tile_tr, tile_br,
-                    outer_pal, inner_pal);
 }
 
 /* Render a single source metatile column from `room_id` into plane
@@ -306,7 +289,8 @@ static void write_square(unsigned char col, unsigned char row,
  * plane cols via SGDK's setTileMapXY. */
 static void render_one_metatile_col(unsigned char room_id,
                                     unsigned char src_col,
-                                    unsigned char dst_col)
+                                    unsigned char dst_col,
+                                    unsigned char dst_row_base)
 {
     const unsigned char *rooms = roomrom_rooms();
     const unsigned short *heap_offsets = roomrom_heap_offsets();
@@ -356,7 +340,7 @@ static void render_one_metatile_col(unsigned char room_id,
             primary_for_walk = tile_tl;
         }
 
-        write_square_at(src_col, dst_col, row,
+        write_square_at(src_col, dst_col, dst_row_base, row,
                         tile_tl, tile_bl, tile_tr, tile_br,
                         outer_pal, inner_pal);
         s_walkable[dst_col & 0x0F][row] = ow_walkable_primary(primary_for_walk);
@@ -374,14 +358,23 @@ void roomrom_ow_room_render_fill_one_col(unsigned char room_id,
                                          unsigned char src_col,
                                          unsigned char dst_col)
 {
-    render_one_metatile_col(room_id, src_col & 0x0F, dst_col & 0x1F);
+    roomrom_ow_room_render_fill_one_col_at(room_id, src_col, dst_col, 0);
+}
+
+void roomrom_ow_room_render_fill_one_col_at(unsigned char room_id,
+                                            unsigned char src_col,
+                                            unsigned char dst_col,
+                                            unsigned char dst_row_base)
+{
+    render_one_metatile_col(room_id, src_col & 0x0F, dst_col & 0x1F,
+                            dst_row_base);
 }
 
 void roomrom_ow_room_render_fill_plane_a(unsigned char room_id)
 {
     unsigned char col;
     for (col = 0; col < 16; col++) {
-        render_one_metatile_col(room_id, col, col);
+        render_one_metatile_col(room_id, col, col, 0);
     }
 }
 
