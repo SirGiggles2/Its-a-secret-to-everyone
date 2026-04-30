@@ -242,14 +242,50 @@ static unsigned short tile_word(unsigned char raw_tile, unsigned char pal)
                             ((unsigned short)raw_tile + OW_VDP_TILE_BASE));
 }
 
+/* Palette uses src tile coords (where the tile semantically lives in its
+ * source room). Plane write uses dst tile coords (where the tile actually
+ * lands on the BG plane — supports off-room rendering during scroll). */
+static void write_tile_at(unsigned char src_tile_col, unsigned char src_tile_row,
+                          unsigned char dst_tile_col, unsigned char dst_tile_row,
+                          unsigned char raw_tile,
+                          unsigned char outer_pal,
+                          unsigned char inner_pal)
+{
+    unsigned char pal = ow_tile_palette(src_tile_col, src_tile_row,
+                                        outer_pal, inner_pal);
+    render_set_plane_a_word(dst_tile_col,
+                            (unsigned short)(dst_tile_row + ROOMROM_ROOM_FIRST_ROW),
+                            tile_word(raw_tile, pal));
+}
+
 static void write_tile(unsigned char tile_col, unsigned char tile_row,
                        unsigned char raw_tile,
                        unsigned char outer_pal,
                        unsigned char inner_pal)
 {
-    unsigned char pal = ow_tile_palette(tile_col, tile_row, outer_pal, inner_pal);
-    render_set_plane_a_word(tile_col, (unsigned short)(tile_row + ROOMROM_ROOM_FIRST_ROW),
-                            tile_word(raw_tile, pal));
+    write_tile_at(tile_col, tile_row, tile_col, tile_row,
+                  raw_tile, outer_pal, inner_pal);
+}
+
+static void write_square_at(unsigned char src_col, unsigned char dst_col,
+                            unsigned char row,
+                            unsigned char tile_tl, unsigned char tile_bl,
+                            unsigned char tile_tr, unsigned char tile_br,
+                            unsigned char outer_pal,
+                            unsigned char inner_pal)
+{
+    unsigned char src_tc = (unsigned char)(src_col << 1);
+    unsigned char dst_tc = (unsigned char)(dst_col << 1);
+    unsigned char tile_row = (unsigned char)(row << 1);
+
+    write_tile_at(src_tc,     tile_row,     dst_tc,     tile_row,
+                  tile_tl, outer_pal, inner_pal);
+    write_tile_at(src_tc,     tile_row + 1, dst_tc,     tile_row + 1,
+                  tile_bl, outer_pal, inner_pal);
+    write_tile_at(src_tc + 1, tile_row,     dst_tc + 1, tile_row,
+                  tile_tr, outer_pal, inner_pal);
+    write_tile_at(src_tc + 1, tile_row + 1, dst_tc + 1, tile_row + 1,
+                  tile_br, outer_pal, inner_pal);
 }
 
 static void write_square(unsigned char col, unsigned char row,
@@ -258,16 +294,100 @@ static void write_square(unsigned char col, unsigned char row,
                          unsigned char outer_pal,
                          unsigned char inner_pal)
 {
-    unsigned char tile_col = (unsigned char)(col << 1);
-    unsigned char tile_row = (unsigned char)(row << 1);
+    write_square_at(col, col, row,
+                    tile_tl, tile_bl, tile_tr, tile_br,
+                    outer_pal, inner_pal);
+}
 
-    write_tile(tile_col,     tile_row,     tile_tl, outer_pal, inner_pal);
-    write_tile(tile_col,     tile_row + 1, tile_bl, outer_pal, inner_pal);
-    write_tile(tile_col + 1, tile_row,     tile_tr, outer_pal, inner_pal);
-    write_tile(tile_col + 1, tile_row + 1, tile_br, outer_pal, inner_pal);
+/* Render a single source metatile column from `room_id` into plane
+ * metatile column `dst_col`. `src_col` selects which column of the
+ * source room (so palette/attribute logic uses src coords). Updates
+ * s_walkable[dst_col] for collision queries. Plane writes wrap at 32
+ * plane cols via SGDK's setTileMapXY. */
+static void render_one_metatile_col(unsigned char room_id,
+                                    unsigned char src_col,
+                                    unsigned char dst_col)
+{
+    const unsigned char *rooms = roomrom_rooms();
+    const unsigned short *heap_offsets = roomrom_heap_offsets();
+    const unsigned char *secondary_squares = roomrom_secondary_squares();
+    unsigned char outer_pal = rooms[OW_ATTRS_A_OFFSET + room_id] & 0x03;
+    unsigned char inner_pal = rooms[OW_ATTRS_B_OFFSET + room_id] & 0x03;
+    unsigned char unique_id = rooms[OW_ATTRS_D_OFFSET + room_id] & 0x7F;
+    const unsigned char *col_dirs = &rooms[OW_LAYOUTS_OFFSET +
+                                            (unsigned short)unique_id * 16];
+    unsigned char desc        = col_dirs[src_col];
+    unsigned char heap_idx    = (desc >> 4) & 0x0F;
+    unsigned char col_in_heap = desc & 0x0F;
+    const unsigned char *heap_ptr = &rooms[OW_HEAP_BLOB_OFFSET + heap_offsets[heap_idx]];
+    unsigned short y = 0;
+    unsigned char cols_found = col_in_heap;
+    unsigned char row = 0;
+    unsigned char repeat_state = 0;
+
+    while (1) {
+        if (heap_ptr[y] & 0x80) {
+            if (cols_found == 0) break;
+            cols_found--;
+        }
+        y++;
+    }
+    heap_ptr += y;
+
+    while (row < 11) {
+        unsigned char sq_byte = heap_ptr[0];
+        unsigned char sq_idx  = sq_byte & 0x3F;
+        unsigned char tile_tl, tile_bl, tile_tr, tile_br;
+        unsigned char primary_for_walk;
+
+        if (sq_idx >= 0x10) {
+            unsigned char p = normalize_primary_tile(s_primary_squares[sq_idx]);
+            tile_tl = p;
+            tile_bl = p + 1;
+            tile_tr = p + 2;
+            tile_br = p + 3;
+            primary_for_walk = p;
+        } else {
+            unsigned char b = (unsigned char)(sq_idx * 4);
+            tile_tl = secondary_squares[b];
+            tile_bl = secondary_squares[b + 1];
+            tile_tr = secondary_squares[b + 2];
+            tile_br = secondary_squares[b + 3];
+            primary_for_walk = tile_tl;
+        }
+
+        write_square_at(src_col, dst_col, row,
+                        tile_tl, tile_bl, tile_tr, tile_br,
+                        outer_pal, inner_pal);
+        s_walkable[dst_col & 0x0F][row] = ow_walkable_primary(primary_for_walk);
+        row++;
+
+        if (sq_byte & 0x40) {
+            repeat_state ^= 0x40;
+            if (repeat_state != 0) continue;
+        }
+        heap_ptr++;
+    }
+}
+
+void roomrom_ow_room_render_fill_one_col(unsigned char room_id,
+                                         unsigned char src_col,
+                                         unsigned char dst_col)
+{
+    render_one_metatile_col(room_id, src_col & 0x0F, dst_col & 0x1F);
 }
 
 void roomrom_ow_room_render_fill_plane_a(unsigned char room_id)
+{
+    unsigned char col;
+    for (col = 0; col < 16; col++) {
+        render_one_metatile_col(room_id, col, col);
+    }
+}
+
+/* Old monolithic body kept for reference until verified equivalent; now dead. */
+#if 0
+void roomrom_ow_room_render_fill_plane_a_OLD(unsigned char room_id)
 {
     unsigned char unique_id;
     unsigned char outer_pal;
@@ -346,3 +466,4 @@ void roomrom_ow_room_render_fill_plane_a(unsigned char room_id)
         }
     }
 }
+#endif

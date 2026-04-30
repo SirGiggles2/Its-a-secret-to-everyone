@@ -202,6 +202,29 @@ static void blit_blob(int idx)
     }
 }
 
+/* S6.5 scroll: render two plane cols (one metatile col) of `room_id` from
+ * blob src_col into plane dst_col. src_col / dst_col are metatile cols (0..15).
+ * Falls back to no-op if room not found in blob (stays as previous content). */
+static void blit_blob_one_metacol(int idx, unsigned char src_col, unsigned char dst_col)
+{
+    const unsigned char *nt   = g_uw_room_nt[idx];
+    const unsigned char *attr = g_uw_room_attr[idx];
+    unsigned char row;
+    unsigned char src_p0 = (unsigned char)(src_col << 1);
+    unsigned char src_p1 = (unsigned char)(src_p0 + 1);
+    unsigned char dst_p0 = (unsigned char)(dst_col << 1);
+    unsigned char dst_p1 = (unsigned char)(dst_p0 + 1);
+    for (row = 0; row < ROOMROM_UW_BLOB_ROWS; row++) {
+        unsigned char nt_row = (unsigned char)(row + 8u);
+        unsigned char raw0 = nt[row * ROOMROM_UW_BLOB_COLS + src_p0];
+        unsigned char raw1 = nt[row * ROOMROM_UW_BLOB_COLS + src_p1];
+        unsigned char pal0 = attr_palette_for(attr, src_p0, nt_row);
+        unsigned char pal1 = attr_palette_for(attr, src_p1, nt_row);
+        write_tile_raw(dst_p0, row, raw0, pal0);
+        write_tile_raw(dst_p1, row, raw1, pal1);
+    }
+}
+
 static void draw_placeholder(unsigned char room_id)
 {
     unsigned char col, row;
@@ -227,4 +250,16 @@ void roomrom_uw_room_render_fill_plane_a(unsigned char room_id)
     } else {
         draw_placeholder(room_id);
     }
+}
+
+void roomrom_uw_room_render_fill_one_col(unsigned char room_id,
+                                         unsigned char src_col,
+                                         unsigned char dst_col)
+{
+    int idx = find_blob_entry(s_uw_level, room_id);
+    if (idx >= 0) {
+        blit_blob_one_metacol(idx, src_col & 0x0F, dst_col & 0x1F);
+    }
+    /* If room not found in blob, leave plane content unchanged (caller's
+     * responsibility to only request known rooms during scroll). */
 }

@@ -55,12 +55,55 @@ static u8          s_link_pos_frac   = 0u;       /* NES single-axis sub-pixel */
 static u8          s_link_subx       = 0u;       /* ALTTP per-axis sub-pixel X */
 static u8          s_link_suby       = 0u;       /* ALTTP per-axis sub-pixel Y */
 
-/* S6 transition: brief screen blank when crossing room edges. */
-#define TRANSITION_TOTAL_FRAMES 16u
-static u8    s_transition_timer  = 0u;
-static u8    s_transition_target = 0u;
-static short s_transition_link_x = 0;
-static short s_transition_link_y = 0;
+/* S6.5 transition state machine.
+ *  HSCROLL: 64-frame ping-pong between two 32-col halves of the 64x32 plane.
+ *           Plane half A (cols 0..31) and B (cols 32..63) alternate hosting
+ *           the "current" room. Edge crossing renders the new room into the
+ *           inactive half, animates HSCROLL across, toggles active_half.
+ *  VSCROLL: 16-frame blank-flash (S6 v1 fallback — vertical needs HUD-aware
+ *           per-row VSCROLL split which is deferred to a later slice). */
+#define SCROLL_H_TOTAL_FRAMES 64u   /* 4 px/frame x 64 = 256 px = full screen */
+#define SCROLL_H_PX_PER_FRAME 4
+#define BLANK_FLASH_FRAMES    16u
+
+typedef enum {
+    SCROLL_NONE         = 0,
+    SCROLL_H_RIGHT      = 1,   /* Link walked right; new room slides in from right */
+    SCROLL_H_LEFT       = 2,   /* Link walked left;  new room slides in from left */
+    SCROLL_BLANK_FLASH  = 3    /* vertical or fallback */
+} scroll_state_t;
+
+static scroll_state_t s_scroll_state    = SCROLL_NONE;
+static u8             s_scroll_frame    = 0u;     /* counts up during scroll */
+static u8             s_active_half     = 0u;     /* 0 = cols 0..31 active, 1 = cols 32..63 */
+static u8             s_transition_target = 0u;
+static short          s_transition_link_x = 0;
+static short          s_transition_link_y = 0;
+static u8             s_transition_target_scene = 0u;  /* future: cross-scene */
+
+/* Map plane metatile col 0..15 -> physical plane metatile col, given which
+ * half of the 64x32 plane is active. Half 0 = cols 0..15 (plane cols 0..31).
+ * Half 1 = cols 16..31 (plane cols 32..63). */
+static u8 plane_col_for_active(u8 src_col, u8 half)
+{
+    return (u8)(src_col + (half ? 16u : 0u));
+}
+
+/* Render a room into the specified plane half. Used both at boot and to
+ * stage the incoming room during a scroll. */
+static void render_room_into_half(u8 room_id, u8 half)
+{
+    u8 c;
+    if (s_scene == SCENE_UW) {
+        for (c = 0; c < 16; c++) {
+            roomrom_uw_room_render_fill_one_col(room_id, c, plane_col_for_active(c, half));
+        }
+    } else {
+        for (c = 0; c < 16; c++) {
+            roomrom_ow_room_render_fill_one_col(room_id, c, plane_col_for_active(c, half));
+        }
+    }
+}
 static u8          s_link_frame = 0u;
 static u8          s_link_anim_tick = 0u;
 #define LINK_ANIM_PERIOD 8u
@@ -70,25 +113,45 @@ static u8          s_link_anim_tick = 0u;
 static void init_video(void)
 {
     VDP_setScreenWidth256();
-    VDP_setPlaneSize(32, 32, TRUE);
+    /* 64x32 plane — extra horizontal half hosts incoming room during
+     * S6.5 horizontal scroll. */
+    VDP_setPlaneSize(64, 32, TRUE);
     VDP_setWindowOff();
-    VDP_setScrollingMode(HSCROLL_PLANE, VSCROLL_PLANE);
-    VDP_setHorizontalScroll(BG_A, 0);
+    /* Per-tile-row HSCROLL so the HUD (rows 0..6) can stay anchored at
+     * scroll = 0 while the playfield (rows 7..27) animates. */
+    VDP_setScrollingMode(HSCROLL_TILE, VSCROLL_PLANE);
     VDP_setVerticalScroll(BG_A, 0);
 }
+
+/* Apply an HSCROLL value to all 28 visible tile rows of BG_A. HUD rows
+ * (0..ROOMROM_HUD_ROWS-1) always get 0; playfield rows get `play_scroll`. */
+static void set_split_hscroll(short play_scroll)
+{
+    short values[28];
+    u8 r;
+    for (r = 0; r < ROOMROM_HUD_ROWS; r++) values[r] = 0;
+    for (r = ROOMROM_HUD_ROWS; r < 28; r++) values[r] = play_scroll;
+    VDP_setHorizontalScrollTile(BG_A, 0, values, 28, CPU);
+}
+
+/* Forward decl — defined later. */
+static void render_room_into_half(u8 room_id, u8 half);
 
 static void load_room(u8 room_id)
 {
     VDP_clearPlane(BG_A, TRUE);
+    /* HUD: always rendered to plane rows 0..6, cols 0..31 only. The active
+     * playfield half occupies the remaining playfield rows. */
     if (s_scene == SCENE_UW) {
         roomrom_uw_room_render_load_palette(room_id);
-        roomrom_uw_room_render_fill_plane_a(room_id);
         roomrom_hud_draw(roomrom_uw_room_render_get_map(), room_id);
     } else {
         roomrom_ow_room_render_load_palette(room_id);
-        roomrom_ow_room_render_fill_plane_a(room_id);
         roomrom_hud_draw(roomrom_ow_room_render_get_map(), room_id);
     }
+    render_room_into_half(room_id, s_active_half);
+    /* Reset HSCROLL so the active half is centered on visible window. */
+    set_split_hscroll(s_active_half ? -(short)(32 * 8) : 0);
     roomrom_sprites_load_palette();   /* PAL3 - reload after BG palette write */
 }
 
@@ -133,38 +196,49 @@ static void edge_load_or_clamp(void)
 {
     u8 col = s_room_id & 0x0Fu;
     u8 row = (u8)(s_room_id >> 4);
-    u8 transitioned = 0u;
+    scroll_state_t want = SCROLL_NONE;
+
+    /* Don't re-trigger while a scroll is already running. */
+    if (s_scroll_state != SCROLL_NONE) return;
 
     if (s_link_x < 0) {
-        if (col > 0u) { col--; s_link_x = 232; transitioned = 1u; }
+        if (col > 0u) { col--; s_link_x = 232; want = SCROLL_H_LEFT; }
         else          { s_link_x = 0; }
     } else if (s_link_x > 240) {
-        if (col < 15u) { col++; s_link_x = 8;   transitioned = 1u; }
+        if (col < 15u) { col++; s_link_x = 8; want = SCROLL_H_RIGHT; }
         else           { s_link_x = 240; }
     }
 
     if (s_link_y < 56) {
-        if (row > 0u) { row--; s_link_y = 200; transitioned = 1u; }
+        if (row > 0u) { row--; s_link_y = 200; want = SCROLL_BLANK_FLASH; }
         else          { s_link_y = 56; }
     } else if (s_link_y > 208) {
-        if (row < 7u) { row++; s_link_y = 64;  transitioned = 1u; }
+        if (row < 7u) { row++; s_link_y = 64; want = SCROLL_BLANK_FLASH; }
         else          { s_link_y = 208; }
     }
 
-    if (transitioned) {
-        /* S6: defer the actual room swap to a transition state machine
-         * driven from the main loop. Stage target + Link coords. */
+    if (want != SCROLL_NONE) {
         s_transition_target = (u8)((row << 4) | col);
         s_transition_link_x = s_link_x;
         s_transition_link_y = s_link_y;
-        s_transition_timer  = TRANSITION_TOTAL_FRAMES;
-        VDP_setEnable(FALSE);
-        /* Reset sub-pixel/grid/anim now so motion starts clean post-swap. */
+        s_scroll_state = want;
+        s_scroll_frame = 0u;
+        /* Reset sub-pixel/grid so motion starts clean post-transition. */
         s_link_pos_frac    = 0u;
         s_link_subx        = 0u;
         s_link_suby        = 0u;
         s_link_grid_offset = 0u;
         s_link_anim_tick   = 0u;
+
+        if (want == SCROLL_H_RIGHT || want == SCROLL_H_LEFT) {
+            /* Pre-render the incoming room into the inactive half so it's
+             * ready to scroll into view. */
+            u8 inactive_half = (u8)(s_active_half ^ 1u);
+            render_room_into_half(s_transition_target, inactive_half);
+        } else {
+            /* Vertical: blank-flash fallback. */
+            VDP_setEnable(FALSE);
+        }
     }
 }
 
@@ -187,19 +261,66 @@ int main(bool hardReset)
     while (TRUE) {
         SYS_doVBlankProcess();
 
-        /* S6: transition (screen blank between rooms). Skip input/movement
-         * while the timer runs; swap room at midpoint, restore display at end. */
-        if (s_transition_timer > 0u) {
-            if (s_transition_timer == TRANSITION_TOTAL_FRAMES / 2u) {
-                s_room_id = s_transition_target;
-                s_link_x  = s_transition_link_x;
-                s_link_y  = s_transition_link_y;
-                load_room(s_room_id);
-            } else if (s_transition_timer == 1u) {
-                VDP_setEnable(TRUE);
+        /* S6.5 transition state machine. */
+        if (s_scroll_state != SCROLL_NONE) {
+            joy_prev = 0u;     /* swallow input across transition */
+            if (s_scroll_state == SCROLL_BLANK_FLASH) {
+                /* Vertical fallback: 16-frame blank, swap mid-flash. */
+                if (s_scroll_frame == 0u) VDP_setEnable(FALSE);
+                if (s_scroll_frame == BLANK_FLASH_FRAMES / 2u) {
+                    s_room_id = s_transition_target;
+                    s_link_x  = s_transition_link_x;
+                    s_link_y  = s_transition_link_y;
+                    load_room(s_room_id);
+                }
+                if (s_scroll_frame >= BLANK_FLASH_FRAMES - 1u) {
+                    VDP_setEnable(TRUE);
+                    s_scroll_state = SCROLL_NONE;
+                } else {
+                    s_scroll_frame++;
+                }
+            } else {
+                /* Horizontal scroll: advance HSCROLL by 4 px/frame for 64
+                 * frames. Direction sign depends on left vs right. */
+                int sign = (s_scroll_state == SCROLL_H_RIGHT) ? -1 : +1;
+                u8  inactive_half = (u8)(s_active_half ^ 1u);
+                int active_offset = (s_active_half ? -(int)(32 * 8) : 0);
+                int delta = (int)s_scroll_frame * SCROLL_H_PX_PER_FRAME * sign;
+                /* Animate HSCROLL from active_offset toward inactive_offset.
+                 * HUD rows stay anchored via set_split_hscroll. */
+                set_split_hscroll((short)(active_offset + delta));
+
+                /* Slide Link in the direction of scroll so he stays anchored
+                 * to the new room as it comes in. Each frame Link's screen
+                 * position appears static while world moves; visually he
+                 * travels alongside. */
+                /* (Sprite already at staged target coord; held there.) */
+                roomrom_sprites_set_link_pose(s_transition_link_x,
+                                              s_transition_link_y,
+                                              s_link_face, 0u);
+
+                if (s_scroll_frame >= SCROLL_H_TOTAL_FRAMES - 1u) {
+                    /* Finalize: switch active half, set HSCROLL to that half,
+                     * commit room state, restore Link pose. */
+                    s_active_half  = inactive_half;
+                    s_room_id      = s_transition_target;
+                    s_link_x       = s_transition_link_x;
+                    s_link_y       = s_transition_link_y;
+                    /* Reload palette/HUD/walkable for new room (HUD redraws
+                     * to plane cols 0..31, but the now-active half might be
+                     * 32..63 — accept HUD ghost for v1, fix in S6.6). */
+                    if (s_scene == SCENE_UW)
+                        roomrom_uw_room_render_load_palette(s_room_id);
+                    else
+                        roomrom_ow_room_render_load_palette(s_room_id);
+                    roomrom_sprites_load_palette();
+                    /* Anchor HSCROLL on the new active half. */
+                    set_split_hscroll(s_active_half ? -(short)(32 * 8) : 0);
+                    s_scroll_state = SCROLL_NONE;
+                } else {
+                    s_scroll_frame++;
+                }
             }
-            s_transition_timer--;
-            joy_prev = 0u;     /* swallow input held across the transition */
             continue;
         }
 

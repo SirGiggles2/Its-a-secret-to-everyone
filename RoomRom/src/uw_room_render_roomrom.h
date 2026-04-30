@@ -21,4 +21,10 @@ void roomrom_uw_room_render_load_palette(unsigned char room_id);
 void roomrom_uw_room_render_upload_chr(void);
 void roomrom_uw_room_render_fill_plane_a(unsigned char room_id);
 
+/* S6.5 scroll: render one metatile col (2 plane cols) of room_id from blob
+ * at plane metatile col dst_col. */
+void roomrom_uw_room_render_fill_one_col(unsigned char room_id,
+                                         unsigned char src_col,
+                                         unsigned char dst_col);
+
 #endif
