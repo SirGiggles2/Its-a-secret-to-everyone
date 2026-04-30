@@ -77,6 +77,10 @@ static scroll_state_t s_scroll_state    = SCROLL_NONE;
 static u8             s_scroll_frame    = 0u;     /* counts up during scroll */
 static u8             s_active_half     = 0u;     /* 0 = cols 0..31 active, 1 = cols 32..63 */
 static u8             s_transition_target = 0u;
+/* Pre-scroll Link screen position (where he was when edge was crossed). */
+static short          s_scroll_start_link_x = 0;
+static short          s_scroll_start_link_y = 0;
+/* Post-scroll Link screen position (entry pos in the new room). */
 static short          s_transition_link_x = 0;
 static short          s_transition_link_y = 0;
 static u8             s_transition_target_scene = 0u;  /* future: cross-scene */
@@ -201,6 +205,10 @@ static void edge_load_or_clamp(void)
     /* Don't re-trigger while a scroll is already running. */
     if (s_scroll_state != SCROLL_NONE) return;
 
+    /* Capture pre-edge position before clamping/snapping. */
+    short pre_x = s_link_x;
+    short pre_y = s_link_y;
+
     if (s_link_x < 0) {
         if (col > 0u) { col--; s_link_x = 232; want = SCROLL_H_LEFT; }
         else          { s_link_x = 0; }
@@ -221,6 +229,15 @@ static void edge_load_or_clamp(void)
         s_transition_target = (u8)((row << 4) | col);
         s_transition_link_x = s_link_x;
         s_transition_link_y = s_link_y;
+        /* Pre-edge screen pos clamped to playfield bounds, used as scroll
+         * start. For H_RIGHT pre_x is just past 240 (clamp to 240); for
+         * H_LEFT pre_x is just past 0 (clamp to 0). Y is unchanged. */
+        if (pre_x < 0)   pre_x = 0;
+        if (pre_x > 240) pre_x = 240;
+        if (pre_y < 56)  pre_y = 56;
+        if (pre_y > 208) pre_y = 208;
+        s_scroll_start_link_x = pre_x;
+        s_scroll_start_link_y = pre_y;
         s_scroll_state = want;
         s_scroll_frame = 0u;
         /* Reset sub-pixel/grid so motion starts clean post-transition. */
@@ -290,14 +307,20 @@ int main(bool hardReset)
                  * HUD rows stay anchored via set_split_hscroll. */
                 set_split_hscroll((short)(active_offset + delta));
 
-                /* Slide Link in the direction of scroll so he stays anchored
-                 * to the new room as it comes in. Each frame Link's screen
-                 * position appears static while world moves; visually he
-                 * travels alongside. */
-                /* (Sprite already at staged target coord; held there.) */
-                roomrom_sprites_set_link_pose(s_transition_link_x,
-                                              s_transition_link_y,
-                                              s_link_face, 0u);
+                /* Linearly interpolate Link's screen position from pre-edge
+                 * (where he stood when crossing) to the new-room entry coord
+                 * over the scroll duration. Visually he walks across the seam.
+                 * Anim cycles every 8 frames so legs alternate during walk. */
+                {
+                    int num = (int)(s_scroll_frame + 1);
+                    int den = (int)SCROLL_H_TOTAL_FRAMES;
+                    short lx = (short)(s_scroll_start_link_x +
+                        (((int)s_transition_link_x - (int)s_scroll_start_link_x) * num) / den);
+                    short ly = (short)(s_scroll_start_link_y +
+                        (((int)s_transition_link_y - (int)s_scroll_start_link_y) * num) / den);
+                    u8 frame = (u8)((s_scroll_frame >> 3) & 1u);
+                    roomrom_sprites_set_link_pose(lx, ly, s_link_face, frame);
+                }
 
                 if (s_scroll_frame >= SCROLL_H_TOTAL_FRAMES - 1u) {
                     /* Finalize: switch active half, set HSCROLL to that half,
@@ -306,13 +329,16 @@ int main(bool hardReset)
                     s_room_id      = s_transition_target;
                     s_link_x       = s_transition_link_x;
                     s_link_y       = s_transition_link_y;
-                    /* Reload palette/HUD/walkable for new room (HUD redraws
-                     * to plane cols 0..31, but the now-active half might be
-                     * 32..63 — accept HUD ghost for v1, fix in S6.6). */
-                    if (s_scene == SCENE_UW)
+                    /* Reload palette + HUD for new room. HUD writes to plane
+                     * cols 0..31 rows 0..6, which always show via the
+                     * HSCROLL_TILE split (HUD rows always scroll=0). */
+                    if (s_scene == SCENE_UW) {
                         roomrom_uw_room_render_load_palette(s_room_id);
-                    else
+                        roomrom_hud_draw(roomrom_uw_room_render_get_map(), s_room_id);
+                    } else {
                         roomrom_ow_room_render_load_palette(s_room_id);
+                        roomrom_hud_draw(roomrom_ow_room_render_get_map(), s_room_id);
+                    }
                     roomrom_sprites_load_palette();
                     /* Anchor HSCROLL on the new active half. */
                     set_split_hscroll(s_active_half ? -(short)(32 * 8) : 0);
