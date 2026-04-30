@@ -28,18 +28,24 @@ static unsigned char s_uw_quest  = 1u;
  * Filled during blit_blob; queried by main loop. 16 cols x 11 rows. */
 static unsigned char s_uw_walkable[16][11];
 
-/* UW wall classifier — TEMPORARILY all-walkable while the actual
- * blob tile-id space is mapped out. Manifest's wall_tiles[] are NES
- * tile IDs ($B8/$BC/$C0/etc per L1Q1 manifest), but the blob's raw
- * values are written via write_tile_raw which adds UW_VDP_TILE_BASE,
- * meaning blob raw = (Genesis tile id - 1). Need to translate
- * NES wall ids -> Genesis equivalents through the renderer's NES->Gen
- * mapping (common_chr at base 1, underworld_bg at base 113, etc.)
- * before the classifier matches reality. Coming in S5.5b. */
+/* UW wall classifier. Blob nt[] stores NES tile IDs (sourced from CIRAM
+ * via probe_nes_uw_l1_floodwalk.lua), so we match against NES tile IDs
+ * directly. The 14 wall IDs below are the union of wall_tiles[] +
+ * border_fill_tile across all 9 levels x 2 quests in
+ * RoomRom/data/uw_level*_*_manifest.json (same set every level). Doors,
+ * stairs, blocks, and decorative tiles fall outside this set => walkable. */
 static unsigned char uw_walkable_tile_id(unsigned char t)
 {
-    (void)t;
-    return 1u;
+    switch (t) {
+        case 0xB8u: case 0xBCu:
+        case 0xC0u: case 0xC4u: case 0xC8u: case 0xCCu:
+        case 0xD0u: case 0xD4u: case 0xD8u: case 0xDCu: case 0xDEu:
+        case 0xE0u:
+        case 0xF5u: case 0xF6u:
+            return 0u;
+        default:
+            return 1u;
+    }
 }
 
 unsigned char roomrom_uw_room_render_walkable_at(unsigned char col,
