@@ -95,6 +95,26 @@ static void upload_scene_chr(void)
     roomrom_hud_upload_chr();
 }
 
+/* S5 collision: returns 1 if Link's hotspot at the given pixel position
+ * lands on a walkable metatile in the current room. Hotspot is roughly
+ * Link's foot center: (x+8, y+12), mapped to 16x16 metatile grid where
+ * the playfield starts at y=56 (HUD reserves top 56 px). UW currently
+ * always walkable (collision data not yet exposed). */
+static unsigned char link_walkable_at(short x, short y)
+{
+    short hot_x, hot_y;
+    int col, row;
+    if (s_scene == SCENE_UW) return 1u;
+    hot_x = (short)(x + 8);
+    hot_y = (short)(y + 12);
+    if (hot_y < 56) return 0u;          /* HUD strip: blocked */
+    col = (int)hot_x / 16;
+    row = (int)(hot_y - 56) / 16;
+    if (col < 0 || col > 15 || row < 0 || row > 10) return 1u;
+    return roomrom_ow_room_render_walkable_at((unsigned char)col,
+                                              (unsigned char)row);
+}
+
 /* S4: edge-triggered room transition. Both OW and UW use the same 16x8 grid
  * (room_id = (row<<4)|col). When Link's position crosses a playfield edge:
  *  - if the adjacent grid cell exists, load it and snap Link to the opposite
@@ -267,18 +287,31 @@ int main(bool hardReset)
 
                 /* ALTTP Link_MovePosition formula (8.8 fixed-point):
                  * tmp = subpixel + vel*16 + coord*256
-                 * subpixel = tmp & 0xFF; coord = tmp >> 8 */
+                 * subpixel = tmp & 0xFF; coord = tmp >> 8.
+                 * Per-axis collision check after each step enables wall-slide. */
                 if (vx) {
+                    short old_x = s_link_x;
+                    u8    old_sub = s_link_subx;
                     int tmp = (int)s_link_subx + ((int)vx * 16)
                             + ((int)s_link_x << 8);
                     s_link_subx = (u8)(tmp & 0xFF);
                     s_link_x = (short)(tmp >> 8);
+                    if (!link_walkable_at(s_link_x, s_link_y)) {
+                        s_link_x = old_x;
+                        s_link_subx = old_sub;
+                    }
                 }
                 if (vy) {
+                    short old_y = s_link_y;
+                    u8    old_sub = s_link_suby;
                     int tmp = (int)s_link_suby + ((int)vy * 16)
                             + ((int)s_link_y << 8);
                     s_link_suby = (u8)(tmp & 0xFF);
                     s_link_y = (short)(tmp >> 8);
+                    if (!link_walkable_at(s_link_x, s_link_y)) {
+                        s_link_y = old_y;
+                        s_link_suby = old_sub;
+                    }
                 }
             }
 
@@ -355,12 +388,20 @@ int main(bool hardReset)
                     }
                 }
 
-                switch (s_link_dir) {
-                    case LINK_DIR_LEFT:  s_link_x -= step_count; break;
-                    case LINK_DIR_RIGHT: s_link_x += step_count; break;
-                    case LINK_DIR_UP:    s_link_y -= step_count; break;
-                    case LINK_DIR_DOWN:  s_link_y += step_count; break;
-                    default: break;
+                {
+                    short old_x = s_link_x, old_y = s_link_y;
+                    switch (s_link_dir) {
+                        case LINK_DIR_LEFT:  s_link_x -= step_count; break;
+                        case LINK_DIR_RIGHT: s_link_x += step_count; break;
+                        case LINK_DIR_UP:    s_link_y -= step_count; break;
+                        case LINK_DIR_DOWN:  s_link_y += step_count; break;
+                        default: break;
+                    }
+                    if (!link_walkable_at(s_link_x, s_link_y)) {
+                        s_link_x = old_x;
+                        s_link_y = old_y;
+                        /* Single-axis NES motion -> blocking just halts. */
+                    }
                 }
             } else {
                 s_link_frame = 0u;

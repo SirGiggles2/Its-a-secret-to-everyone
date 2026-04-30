@@ -73,6 +73,43 @@ static const unsigned short s_heap_offsets[16] = {
 
 static unsigned char s_roomrom_map_id = ROOMROM_MAP_ORIGINAL;
 
+/* S5 collision: walkable metatile grid for the current OW room. Filled
+ * during fill_plane_a; queried by main loop pre-step.
+ * 16 cols x 11 rows, 1 = walkable, 0 = blocking. */
+static unsigned char s_walkable[16][11];
+
+/* OW walkable NES tile IDs. Sourced from
+ *   reference/aldonunez/Z_07.asm WalkableTiles ($8D,$91,$9C,$AC,$AD,$CC,$D2,$D5,$DF)
+ * plus paths/sand/stairs/shore/redux variants observed in s_primary_squares
+ * and s_secondary_squares_redux. */
+static unsigned char ow_walkable_primary(unsigned char primary)
+{
+    switch (primary) {
+        case 0x03: case 0x04:
+        case 0x24: case 0x26:
+        case 0x54: case 0x56: case 0x58: case 0x5C:
+        case 0x6F: case 0x70:
+        case 0x74: case 0x75: case 0x76: case 0x77:
+        case 0x84:
+        case 0x8D:
+        case 0x91:
+        case 0x9C:
+        case 0xAC: case 0xAD:
+        case 0xCC:
+        case 0xD2: case 0xD5: case 0xDF:
+            return 1u;
+        default:
+            return 0u;
+    }
+}
+
+unsigned char roomrom_ow_room_render_walkable_at(unsigned char col,
+                                                 unsigned char row)
+{
+    if (col >= 16u || row >= 11u) return 0u;
+    return s_walkable[col][row];
+}
+
 static const unsigned char s_secondary_squares_redux[64] = {
     0x24,0x24,0x24,0x24,0x6F,0x6F,0x6F,0x6F,
     0xF3,0xF3,0xF3,0xF3,0xFA,0xFA,0xFA,0xFA,
@@ -276,6 +313,7 @@ void roomrom_ow_room_render_fill_plane_a(unsigned char room_id)
             unsigned char sq_byte = heap_ptr[0];
             unsigned char sq_idx  = sq_byte & 0x3F;
             unsigned char tile_tl, tile_bl, tile_tr, tile_br;
+            unsigned char primary_for_walk;
 
             if (sq_idx >= 0x10) {
                 unsigned char p = normalize_primary_tile(s_primary_squares[sq_idx]);
@@ -283,16 +321,21 @@ void roomrom_ow_room_render_fill_plane_a(unsigned char room_id)
                 tile_bl = p + 1;
                 tile_tr = p + 2;
                 tile_br = p + 3;
+                primary_for_walk = p;
             } else {
                 unsigned char b = (unsigned char)(sq_idx * 4);
                 tile_tl = secondary_squares[b];
                 tile_bl = secondary_squares[b + 1];
                 tile_tr = secondary_squares[b + 2];
                 tile_br = secondary_squares[b + 3];
+                /* Classify secondary squares by their TL tile id (close enough
+                 * for v1; secondary squares are rare and mostly path/edge). */
+                primary_for_walk = tile_tl;
             }
 
             write_square(col, row, tile_tl, tile_bl, tile_tr, tile_br,
                          outer_pal, inner_pal);
+            s_walkable[col][row] = ow_walkable_primary(primary_for_walk);
             row++;
 
             if (sq_byte & 0x40) {
