@@ -2,42 +2,26 @@
 #include "roomrom_sprites.h"
 #include "render_abi.h"
 
-/* Sprite CHR block from data/chr/sprites.c. Note: the extractor pulls this
- * from the wrong PRG bank (intro/title sprite seam, not gameplay), so it does
- * NOT contain Link's gameplay tiles. We embed Link's 4 tiles below as a fix.
- * Long-term: tools/extract_chr.py needs its sprite seam corrected from
- * PRG $D15B to PRG $807F (verified via /spritefix probe). */
+/* Sprite CHR sources.
+ * sprites_chr (data/chr/sprites.c) holds OW enemy tiles (Octorok / Leever /
+ * Tektite). common_chr (data/chr/common.c) holds the always-loaded sprites
+ * including Link, sword, heart. NES tile IDs in common_chr are 1:1 (NES
+ * tile $58 = common_chr + 0x58*32). */
 extern const unsigned char sprites_chr[7424];
+extern const unsigned char common_chr[7616];
 extern const unsigned char misc_palettes[1208];
 
-#define SPRITE_VRAM_TILE_BASE  512u
-#define SPRITE_CHR_BYTES       7424u
-
+#define SPRITE_VRAM_TILE_BASE   512u
+#define SPRITE_CHR_BYTES        7424u
 #define SPRITE_BLOCK_TILE_COUNT 232u
-#define LINK_VRAM_TILE         (SPRITE_VRAM_TILE_BASE + SPRITE_BLOCK_TILE_COUNT)
 
-/* Link facing-down standstill, 4 tiles in Genesis 2x2 column-major order
- * (TL, BL, TR, BR). Sourced from NES gameplay CHR-RAM at NES tile IDs
- * $58, $59, $0A, $0B (verified via OAM dump in BizHawk: spr18 tile=$58,
- * spr19 tile=$0A, palette 0). NES 2bpp -> Genesis 4bpp converted offline. */
-static const unsigned char link_down_chr[128] = {
-    /* tile $58 (TL) */
-    0x00, 0x00, 0x01, 0x11, 0x00, 0x00, 0x11, 0x11, 0x00, 0x20, 0x13, 0x33,
-    0x00, 0x20, 0x33, 0x33, 0x00, 0x22, 0x32, 0x12, 0x00, 0x22, 0x32, 0x32,
-    0x00, 0x02, 0x22, 0x22, 0x00, 0x01, 0x12, 0x23,
-    /* tile $59 (BL) */
-    0x03, 0x33, 0x33, 0x22, 0x33, 0x23, 0x33, 0x31, 0x32, 0x22, 0x33, 0x23,
-    0x33, 0x23, 0x33, 0x21, 0x33, 0x23, 0x33, 0x23, 0x33, 0x33, 0x33, 0x21,
-    0x02, 0x22, 0x22, 0x30, 0x00, 0x00, 0x33, 0x30,
-    /* tile $0A (TR) */
-    0x11, 0x10, 0x00, 0x00, 0x11, 0x11, 0x00, 0x00, 0x33, 0x31, 0x02, 0x00,
-    0x33, 0x33, 0x02, 0x00, 0x21, 0x23, 0x22, 0x00, 0x23, 0x23, 0x22, 0x00,
-    0x22, 0x22, 0x23, 0x00, 0x32, 0x21, 0x13, 0x00,
-    /* tile $0B (BR) */
-    0x22, 0x11, 0x33, 0x30, 0x11, 0x11, 0x23, 0x30, 0x31, 0x12, 0x22, 0x30,
-    0x33, 0x33, 0x22, 0x20, 0x31, 0x11, 0x12, 0x00, 0x11, 0x11, 0x00, 0x00,
-    0x03, 0x33, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-};
+/* Per data/chr/MANIFEST.json: common block lives at VRAM tile 936. Plus 238
+ * tiles to land just past it for our Link slot. */
+#define COMMON_VRAM_TILE_BASE   936u
+#define COMMON_CHR_BYTES        7616u
+#define COMMON_BLOCK_TILE_COUNT 238u
+
+#define LINK_VRAM_TILE          (COMMON_VRAM_TILE_BASE + COMMON_BLOCK_TILE_COUNT)
 
 static unsigned short nes_to_cram(unsigned char nes_idx)
 {
@@ -48,14 +32,28 @@ static unsigned short nes_to_cram(unsigned char nes_idx)
 
 void roomrom_sprites_upload_chr(void)
 {
-    /* Main extracted sprite block (kept for future S2+ tiles even though it
-     * doesn't contain gameplay Link). */
+    /* Main sprite block (OW enemies — kept for S3+). */
     render_chr_upload((unsigned short)(SPRITE_VRAM_TILE_BASE * 32u),
                       sprites_chr, SPRITE_CHR_BYTES);
 
-    /* Link's actual gameplay tiles, ground-truth from live NES CHR. */
-    render_chr_upload((unsigned short)(LINK_VRAM_TILE * 32u),
-                      link_down_chr, sizeof(link_down_chr));
+    /* Common sprite block (always-loaded gameplay sprites including Link). */
+    render_chr_upload((unsigned short)(COMMON_VRAM_TILE_BASE * 32u),
+                      common_chr, COMMON_CHR_BYTES);
+
+    /* Link facing-down standstill — copy 4 tiles from common_chr into the
+     * dedicated LINK_VRAM_TILE region in Genesis 2x2 column-major order
+     * (TL, BL, TR, BR). NES tile IDs: $58, $59, $0A, $0B. */
+    {
+        static const unsigned char link_down_nes_ids[4] = {
+            0x58u, 0x59u, 0x0Au, 0x0Bu
+        };
+        unsigned char i;
+        for (i = 0; i < 4; i++) {
+            unsigned short src_off = (unsigned short)link_down_nes_ids[i] * 32u;
+            render_chr_upload((unsigned short)((LINK_VRAM_TILE + i) * 32u),
+                              common_chr + src_off, 32u);
+        }
+    }
 }
 
 void roomrom_sprites_load_palette(void)
@@ -85,5 +83,16 @@ void roomrom_sprites_spawn_link(short x, short y)
                       TILE_ATTR_FULL(PAL3, 1 /*pri*/, 0 /*vflip*/, 0 /*hflip*/,
                                      LINK_VRAM_TILE),
                       0 /*link terminator*/);
+    VDP_updateSprites(1, DMA);
+}
+
+void roomrom_sprites_set_link_pos(short x, short y)
+{
+    VDP_setSpriteFull(0,
+                      (s16)x,
+                      (s16)y,
+                      SPRITE_SIZE(2, 2),
+                      TILE_ATTR_FULL(PAL3, 1, 0, 0, LINK_VRAM_TILE),
+                      0);
     VDP_updateSprites(1, DMA);
 }
