@@ -13,5 +13,6 @@
 void roomrom_sprites_upload_chr(void);    /* one-shot at boot */
 void roomrom_sprites_load_palette(void);  /* call after every load_room() */
 void roomrom_sprites_spawn_link(short x, short y);
+void roomrom_sprites_set_link_pos(short x, short y);
 
 #endif
