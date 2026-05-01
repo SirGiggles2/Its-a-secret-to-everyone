@@ -1,0 +1,42 @@
+NES sword capture verdict (probe_nes_sword_capture.lua, 2026-04-30)
+====================================================================
+
+Vertical sword tile (NES OAM tile, 8x16 sprite mode): $20
+  -> Genesis 8x8 tile pair: common_chr[$20*32 .. $20*32+31] (top)
+                            common_chr[$21*32 .. $21*32+31] (bottom)
+  PPU pattern table 0 bytes for $20 (offset $0200, 16 bytes): non-zero
+  PPU pattern table 0 bytes for $14 / $18: all $FF (blank/transparent)
+  Heuristic-confirmed: $20/$21 hold the real sword graphics.
+
+Canonical orientation: UP-pointing
+  UP   facing -> attr byte 2 = $00 (no flip)
+  DOWN facing -> attr byte 2 = $80 (vflip set)
+
+Empirical sword position offset relative to Link OAM (NES Y/X bytes):
+  DOWN: link=(120, 152), sword=(125, 165)  -> dx=+5, dy=+13
+  UP:   link=(120, 140), sword=(123, 130)  -> dx=+3, dy=-10
+
+Implementation note (deviates from plan's idealized +4/±16):
+  Per CLAUDE.md NES-accuracy rule, RoomRom should match these empirical
+  offsets. Adjust roomrom_combat.c compute_sword_pos to:
+    DOWN: sx = link_x + 5, sy = link_y + 13
+    UP:   sx = link_x + 3, sy = link_y - 10
+
+Sword sprite is stable from frame 2 (after A press release) onward,
+re-linked through different OAM slots (engine swaps slots each frame
+but tile + attr + position remain identical) for the 5-frame extend
+window.
+
+Frame-by-frame samples (from tools/out/nes_sword_capture.json,
+analyzed via offline filter for "new tile in $10-$30 range near Link"):
+  DOWN  f2: slot36 tile $20 @(125,165) attr $80
+  DOWN  f3: slot59 tile $20 @(125,165) attr $80
+  ...   stable through f9
+  UP    f2: slot33 tile $20 @(123,130) attr $00
+  UP    f3: slot54 tile $20 @(123,130) attr $00
+  ...   stable through f9
+
+Conclusion: spec/plan tile assumption ($20/$21 from common_chr) is
+correct. Spec's vflip mapping (UP no flip, DOWN vflip) is correct.
+Spec's offset values (+4/±16) need empirical replacement (+5/+13,
++3/-10) before C patch lands.
