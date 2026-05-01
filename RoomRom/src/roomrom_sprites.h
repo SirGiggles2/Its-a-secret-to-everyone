@@ -39,4 +39,15 @@ void roomrom_sprites_set_sword_vertical(short x, short y, unsigned char vflip);
 void roomrom_sprites_set_sword_horizontal(short x, short y, unsigned char hflip);
 void roomrom_sprites_clear_sword(void);
 
+/* S7 v5 beam: sword shot projectile (slot 2). Flicker cycles vflip/hflip
+ * each frame to imitate Z1's palette-cycling beam (Genesis can't cheaply
+ * cycle the palette index without re-uploading PAL0-2 with sword colors).
+ * vertical=1 for UP/DOWN beams (uses 8x16 sword tile $20/$21);
+ * vertical=0 for LEFT/RIGHT beams (uses 16x16 horizontal sword tiles
+ * $82-$85). */
+void roomrom_sprites_set_beam(short x, short y,
+                              unsigned char vertical,
+                              unsigned char frame_phase);
+void roomrom_sprites_clear_beam(void);
+
 #endif

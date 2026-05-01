@@ -48,6 +48,25 @@ static combat_state_t s_state    = COMBAT_IDLE;
 static unsigned char  s_frame    = 0u;   /* 0..COMBAT_TOTAL_FRAMES-1 */
 static link_face_t    s_face     = LINK_FACE_DOWN;
 
+/* S7 v5 sword beam (Z_07.asm UpdateSwordShotOrMagicShot, MakeSwordShot
+ * at Z_07:4581). Beam spawns at sword state 3 transition (frame 13 of
+ * 16). Travels at q-speed $C0 = 3 px/frame in facing direction.
+ * Lifetime: until off-screen. RoomRom OW playfield rough bounds:
+ * x in [0, 256), y in [HUD_BOTTOM, 224). Use generous bounds for
+ * v5 (x in [-16, 272), y in [-16, 240)). */
+#define BEAM_FRAME_SPAWN     (COMBAT_STATE1_FRAMES + COMBAT_STATE2_FRAMES)  /* 13 */
+#define BEAM_SPEED_PX        3
+#define BEAM_BOUND_X_MIN     ((short)(-16))
+#define BEAM_BOUND_X_MAX     ((short)272)
+#define BEAM_BOUND_Y_MIN     ((short)(-16))
+#define BEAM_BOUND_Y_MAX     ((short)240)
+
+static unsigned char  s_beam_active   = 0u;
+static link_face_t    s_beam_face     = LINK_FACE_DOWN;
+static short          s_beam_x        = 0;
+static short          s_beam_y        = 0;
+static unsigned char  s_beam_phase    = 0u;
+
 /* Per-state, per-facing X offset. Index: [state-1][face].
  * face order: 0=DOWN, 1=UP, 2=LEFT, 3=RIGHT.
  * NES tables are in reverse direction order (up, down, left, right);
@@ -72,7 +91,9 @@ void roomrom_combat_init(void)
 {
     s_state = COMBAT_IDLE;
     s_frame = 0u;
+    s_beam_active = 0u;
     roomrom_sprites_clear_sword();
+    roomrom_sprites_clear_beam();
 }
 
 void roomrom_combat_try_swing(link_face_t face, short link_x, short link_y)
@@ -104,6 +125,52 @@ static unsigned char compute_state(unsigned char frame)
     return 5u;
 }
 
+/* Tick the beam: move it BEAM_SPEED_PX in s_beam_face direction, redraw,
+ * and despawn if it leaves the playfield. Called every frame regardless
+ * of sword swing state — beam outlives the swing. */
+static void update_beam(void)
+{
+    if (!s_beam_active) {
+        roomrom_sprites_clear_beam();
+        return;
+    }
+
+    switch (s_beam_face) {
+    case LINK_FACE_UP:    s_beam_y = (short)(s_beam_y - BEAM_SPEED_PX); break;
+    case LINK_FACE_DOWN:  s_beam_y = (short)(s_beam_y + BEAM_SPEED_PX); break;
+    case LINK_FACE_LEFT:  s_beam_x = (short)(s_beam_x - BEAM_SPEED_PX); break;
+    case LINK_FACE_RIGHT: s_beam_x = (short)(s_beam_x + BEAM_SPEED_PX); break;
+    }
+
+    if (s_beam_x < BEAM_BOUND_X_MIN || s_beam_x > BEAM_BOUND_X_MAX
+        || s_beam_y < BEAM_BOUND_Y_MIN || s_beam_y > BEAM_BOUND_Y_MAX) {
+        s_beam_active = 0u;
+        roomrom_sprites_clear_beam();
+        return;
+    }
+
+    {
+        unsigned char vertical = (s_beam_face == LINK_FACE_UP
+                               || s_beam_face == LINK_FACE_DOWN) ? 1u : 0u;
+        roomrom_sprites_set_beam(s_beam_x, s_beam_y, vertical, s_beam_phase);
+    }
+    s_beam_phase = (unsigned char)((s_beam_phase + 1u) & 0x3u);
+}
+
+/* Spawn the beam at the current sword tip. Called once when the swing
+ * reaches BEAM_FRAME_SPAWN. */
+static void spawn_beam(short link_x, short link_y)
+{
+    /* Reuse state-2 (full extend) sword offset for the beam spawn point —
+     * mirrors NES Z1 spawning the shot from the extended sword tip. */
+    unsigned char face_idx = (unsigned char)s_face;
+    s_beam_face   = s_face;
+    s_beam_x      = (short)(link_x + sword_offset_x[1][face_idx]);
+    s_beam_y      = (short)(link_y + sword_offset_y[1][face_idx]);
+    s_beam_phase  = 0u;
+    s_beam_active = 1u;
+}
+
 void roomrom_combat_update(short link_x, short link_y, link_face_t face)
 {
     unsigned char st;
@@ -112,6 +179,7 @@ void roomrom_combat_update(short link_x, short link_y, link_face_t face)
 
     if (s_state == COMBAT_IDLE) {
         roomrom_sprites_clear_sword();
+        update_beam();
         return;
     }
 
@@ -124,8 +192,6 @@ void roomrom_combat_update(short link_x, short link_y, link_face_t face)
     }
 
     if (st == 5u) {
-        /* Invisible — sword sprite hidden. Link's walk pose will be
-         * restored by main.c after combat_link_locked() returns 0. */
         roomrom_sprites_clear_sword();
     } else {
         unsigned char tier = (unsigned char)(st - 1u);   /* 0..3 */
@@ -134,12 +200,9 @@ void roomrom_combat_update(short link_x, short link_y, link_face_t face)
         sy = (short)(link_y + sword_offset_y[tier][face_idx]);
 
         if (st == 1u) {
-            /* Windup: sword raised UP (vertical, no flip) regardless of
-             * facing. Z_07.asm UpdateSwordOrRod: "If state = 1, use up
-             * direction." */
+            /* Windup: sword raised UP (vertical, no flip). */
             roomrom_sprites_set_sword_vertical(sx, sy, 0u);
         } else {
-            /* States 2-4: sword in facing direction. */
             switch (s_face) {
             case LINK_FACE_DOWN:
                 roomrom_sprites_set_sword_vertical(sx, sy, 1u);
@@ -156,6 +219,13 @@ void roomrom_combat_update(short link_x, short link_y, link_face_t face)
             }
         }
     }
+
+    /* Spawn beam at start of state 3 (frame 13). RoomRom approximates
+     * Z1's "full HP" check by always spawning (no HP system yet). */
+    if (s_frame == BEAM_FRAME_SPAWN && !s_beam_active) {
+        spawn_beam(link_x, link_y);
+    }
+    update_beam();
 
     s_frame++;
     if (s_frame >= COMBAT_TOTAL_FRAMES) {

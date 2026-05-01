@@ -214,8 +214,14 @@ void roomrom_sprites_set_link_attack_pose(short x, short y, link_face_t face)
 
 void roomrom_sprites_spawn_link(short x, short y)
 {
-    /* Init slot 1 (sword) hidden, terminator link, before first link draw. */
+    /* Init slot 1 (sword) -> slot 2 (beam), beam terminates the chain. */
     VDP_setSpriteFull(1,
+                      (s16)-32,
+                      (s16)-32,
+                      SPRITE_SIZE(1, 2),
+                      TILE_ATTR_FULL(PAL3, 0, 0, 0, SWORD_VERT_VRAM_TILE),
+                      2);
+    VDP_setSpriteFull(2,
                       (s16)-32,
                       (s16)-32,
                       SPRITE_SIZE(1, 2),
@@ -236,8 +242,8 @@ void roomrom_sprites_set_sword_vertical(short x, short y, unsigned char vflip)
                       (s16)y,
                       SPRITE_SIZE(1, 2),
                       TILE_ATTR_FULL(PAL3, 0, vflip, 0, SWORD_VERT_VRAM_TILE),
-                      0);
-    VDP_updateSprites(2, DMA);
+                      2);
+    VDP_updateSprites(3, DMA);
 }
 
 void roomrom_sprites_set_sword_horizontal(short x, short y, unsigned char hflip)
@@ -247,8 +253,8 @@ void roomrom_sprites_set_sword_horizontal(short x, short y, unsigned char hflip)
                       (s16)y,
                       SPRITE_SIZE(2, 2),
                       TILE_ATTR_FULL(PAL3, 0, 0, hflip, SWORD_HORZ_VRAM_TILE),
-                      0);
-    VDP_updateSprites(2, DMA);
+                      2);
+    VDP_updateSprites(3, DMA);
 }
 
 void roomrom_sprites_clear_sword(void)
@@ -258,6 +264,51 @@ void roomrom_sprites_clear_sword(void)
                       (s16)-32,
                       SPRITE_SIZE(1, 2),
                       TILE_ATTR_FULL(PAL3, 0, 0, 0, SWORD_VERT_VRAM_TILE),
+                      2);
+    VDP_updateSprites(3, DMA);
+}
+
+/* S7 v5 sword beam (slot 2). Reuses sword vertical/horizontal tiles.
+ * NES Z1 cycles palette index each frame for a flash effect
+ * (DrawSwordShotOrMagicShot, Z_07.asm:3459):
+ *     ATTR = (FrameCounter & 3) | RDirectionToWeaponBaseAttribute[Y]
+ * On Genesis, PAL0-2 hold BG colors so we can't cheaply rotate palette
+ * index. Approximate by toggling vflip + hflip each frame (4 phases:
+ * 0=no flip, 1=hflip, 2=vflip, 3=both). Visible flicker at the tile
+ * silhouette level. */
+void roomrom_sprites_set_beam(short x, short y,
+                              unsigned char vertical,
+                              unsigned char frame_phase)
+{
+    unsigned char vflip = (unsigned char)((frame_phase & 0x2u) ? 1u : 0u);
+    unsigned char hflip = (unsigned char)((frame_phase & 0x1u) ? 1u : 0u);
+    if (vertical) {
+        VDP_setSpriteFull(2,
+                          (s16)x,
+                          (s16)y,
+                          SPRITE_SIZE(1, 2),
+                          TILE_ATTR_FULL(PAL3, 0, vflip, hflip,
+                                         SWORD_VERT_VRAM_TILE),
+                          0);
+    } else {
+        VDP_setSpriteFull(2,
+                          (s16)x,
+                          (s16)y,
+                          SPRITE_SIZE(2, 2),
+                          TILE_ATTR_FULL(PAL3, 0, vflip, hflip,
+                                         SWORD_HORZ_VRAM_TILE),
+                          0);
+    }
+    VDP_updateSprites(3, DMA);
+}
+
+void roomrom_sprites_clear_beam(void)
+{
+    VDP_setSpriteFull(2,
+                      (s16)-32,
+                      (s16)-32,
+                      SPRITE_SIZE(1, 2),
+                      TILE_ATTR_FULL(PAL3, 0, 0, 0, SWORD_VERT_VRAM_TILE),
                       0);
-    VDP_updateSprites(2, DMA);
+    VDP_updateSprites(3, DMA);
 }
