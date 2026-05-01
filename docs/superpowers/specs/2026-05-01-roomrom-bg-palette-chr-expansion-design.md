@@ -26,12 +26,23 @@ Solving the slot collision properly requires CHR expansion (pixel-biased tile co
 
 | Gen slot | Owner | NES source |
 |----------|-------|------------|
-| PAL0 | Packed NES BG PALRAM `[0..15]` (4 sub-pals × 4 colors) | per-room PALRAM dump |
+| PAL0 | Packed NES BG PALRAM `[0..15]` (4 sub-pals × 4 colors). Used by plane-A BG **and** Window-plane HUD (HUD is NES BG content). | per-room PALRAM dump |
 | PAL1 | Packed NES SPR PALRAM `[16..31]` (4 sub-pals × 4 colors) | per-room PALRAM dump |
-| PAL2 | Reserved / preserved (fade, redux secrets, HUD overlays) | — |
+| PAL2 | Reserved for truly non-NES overlays (fade, redux secrets that are not in NES PALRAM). NOT used by normal Zelda HUD. | — |
 | PAL3 | Reserved / preserved | — |
 
 Layout within PAL0: BG sub-pal `s` color `c` lives at PAL0 entry `s*4 + c`. Same for PAL1. Index 0 of each Gen palette stays the universal NES backdrop (transparent for sprites).
+
+### HUD / Window-plane rule
+
+NES Zelda 1 HUD is BG content (rows 0..7 of the NES nametable). On Genesis the HUD lives on the Window plane. Window shares VRAM tile space + palette slots with plane A.
+
+- HUD uses PAL0 (same as BG) — not PAL2.
+- HUD attribute decode still emits NES sub-pal `s ∈ {0..3}`.
+- HUD tile word uses the expanded BG tile bank: `HUD_TILE_BASE_PAL(s) + raw_tile`. Same `_PAL(s)` macro family as plane A.
+- Gen pal-slot bits in the Window-plane tile word fixed to PAL0.
+- Custom Redux HUD tiles (heart outline, custom glyphs at NES tile IDs around `$50..$52`) live INSIDE the expanded BG/window bank — same bank, same expansion rule. They consume 4 sub-pal copies like any other BG tile. Do not move them to a separate overlay range.
+- Non-NES overlays (e.g. fade-to-black layers, redux secret indicators that are NOT NES BG content) may use PAL2.
 
 ### Tile pixel bias
 
@@ -120,9 +131,49 @@ Data + infrastructure. No renderer changes.
    - Centralizes `nes_to_cram` so OW + UW + sprite paths share one converter.
 4. Build links `roomrom_bg_palette.c` and `roomrom_ow_palette.c`. No renderer wiring yet.
 
+### Phase 2.5 — VRAM layout definition
+
+Must land before Phase 3 asset expansion. Current bases collide once BG goes 4x:
+
+- Today: `HUD_TILE_BASE = 1`, BG starts at tile 1, `SPRITE_VRAM_TILE_BASE = 512`, `COMMON_VRAM_TILE_BASE = 936`.
+- Full 4x BG expansion (256 NES BG tiles × 4 copies = 1024 Gen tiles) starting at tile 1 ends at tile ~1024 → overwrites sprite bases.
+
+New fixed RoomRom VRAM map (single source of truth, defined in a new header `RoomRom/src/roomrom_vram_map.h`):
+
+```
+tile 0                                     blank tile (transparent + bounds-check fallback)
+tile 1                                  .. expanded BG/window tile bank
+                                           - holds NES BG + HUD tiles, 4 sub-pal copies each
+                                           - subset-loaded per scene if total > budget
+[BG_END+1]                              .. expanded sprite/item tile bank
+                                           - Link, sword, beam, boomerang, arrow, bomb,
+                                             explosion, items — 4 sub-pal copies each
+                                           - subset-loaded per scene
+[SPR_END+1]                             .. unused / future
+```
+
+Concrete numeric bases will be set in Phase 2.5 implementation after a per-scene tile-count audit (`tools/verify_vram_budget.py` running on the current trees) — not hand-picked. Header exposes:
+
+```c
+#define ROOMROM_BG_TILE_BASE         1u
+#define ROOMROM_BG_TILE_COUNT_PER_PAL  /* per-scene; tightest = UW with redux extras */
+#define ROOMROM_SPR_TILE_BASE        (ROOMROM_BG_TILE_BASE + 4u * ROOMROM_BG_TILE_COUNT_PER_PAL)
+#define ROOMROM_SPR_TILE_COUNT_PER_PAL /* per-scene; tightest = OW combat scene */
+```
+
+Phase 2.5 deliverables:
+
+1. Add `RoomRom/src/roomrom_vram_map.h` with the constants above (initial values from per-scene audit).
+2. Move `SPRITE_VRAM_TILE_BASE`, `COMMON_VRAM_TILE_BASE`, `LINK_VRAM_TILE`, item atlas base, all combat-module bases to derive from `ROOMROM_SPR_TILE_BASE`.
+3. Move `HUD_TILE_BASE` to derive from `ROOMROM_BG_TILE_BASE` (HUD is BG).
+4. `tools/verify_vram_budget.py` checks tile-bank ranges do NOT overlap each other AND do not collide with VDP plane-A nametable, plane-B nametable, Window nametable, SAT, H-scroll table addresses (read from SGDK config / linker layout).
+5. Build clean and emu smoke at sub-pal=0-only mode (no expansion yet) to confirm the rebased addresses still work pre-expansion.
+
+Phase 2.5 is a pure refactor: no expansion, no slot-map cutover. Only address relocations + new header. Locks in the layout that Phase 3 fills.
+
 ### Phase 3 — CHR expansion (BG + sprite)
 
-Pixel-biased 4x tile copies. Solves slot collision.
+Pixel-biased 4x tile copies. Solves slot collision. Uses VRAM map from Phase 2.5.
 
 1. `RoomRom/tools/expand_bg_chr.py`:
    - Inputs: existing BG CHR bins (`overworld_bg_chr.bin`, `underworld_bg_chr.bin`, `redux_overworld_bg_chr.bin`, `redux_uw_bg_chr.bin`, BG section of common CHR).
@@ -131,12 +182,14 @@ Pixel-biased 4x tile copies. Solves slot collision.
 2. `RoomRom/tools/expand_sprite_chr.py`:
    - Same rule, applied to RoomRom item atlas CHR + Link/sword/beam/boomerang/arrow/bomb/explosion CHR.
    - Output to `RoomRom/data/expanded/`.
-3. New tile-base macros — one base per sub-pal:
+3. New tile-base macros — one base per sub-pal, all derived from Phase 2.5 `roomrom_vram_map.h`:
    ```c
-   #define UW_VDP_TILE_BASE_PAL(s) (UW_VDP_TILE_BASE + (s) * UW_BG_PACKED_TILE_COUNT)
-   #define LINK_VRAM_TILE_PAL(s)   (LINK_VRAM_TILE_BASE + (s) * SPRITE_ATLAS_TILE_COUNT)
+   #define UW_VDP_TILE_BASE_PAL(s)  (ROOMROM_BG_TILE_BASE  + (s) * ROOMROM_BG_TILE_COUNT_PER_PAL)
+   #define HUD_TILE_BASE_PAL(s)     (ROOMROM_BG_TILE_BASE  + (s) * ROOMROM_BG_TILE_COUNT_PER_PAL)
+   #define LINK_VRAM_TILE_PAL(s)    (ROOMROM_SPR_TILE_BASE + (s) * ROOMROM_SPR_TILE_COUNT_PER_PAL)
    ```
-   Sprite stride uses the actual atlas tile count, not `0x100`.
+   Sprite stride uses the actual per-scene atlas tile count, not `0x100`.
+   HUD shares the BG tile bank — `HUD_TILE_BASE_PAL(s)` is identical to `UW_VDP_TILE_BASE_PAL(s)` because HUD tiles live in the same expanded BG bank.
 4. CHR uploader writes 4 banks per scene. VRAM layout pinned in code constants (one source of truth).
 5. New `tile_word`:
    ```c
@@ -153,7 +206,13 @@ Pixel-biased 4x tile copies. Solves slot collision.
 
 ### Phase 4 — Renderer wiring + slot-map cutover
 
-Activates Phase 2 data + Phase 3 infrastructure.
+Activates Phase 2 data + Phase 3 infrastructure. Includes HUD/Window cutover.
+
+0. `RoomRom/src/roomrom_hud.c`:
+   - Drop `(pal & 0x03) << 13` from HUD tile-word builder.
+   - Switch HUD tile word to `HUD_TILE_BASE_PAL(sub_pal) + raw_tile`.
+   - Gen pal-slot bits in Window-plane tile word fixed to PAL0.
+   - Custom Redux HUD tile uploads (`TILE_REDUX_HEART_OUTLINE` and friends near NES tile IDs `$50..$52`) emit 4 sub-pal copies via Phase 3 expansion machinery, written into the BG tile bank — not a separate range.
 
 1. `roomrom_ow_room_render_load_palette(room_id)`:
    ```c
@@ -180,12 +239,15 @@ Activates Phase 2 data + Phase 3 infrastructure.
    - `roomrom_ow_palette.h` shape is `[2][128][32]`.
 2. `RoomRom/tools/verify_item_chr_manifest.py` (Phase 1).
 3. `RoomRom/tools/verify_slot_map.py`:
-   - Greps `RoomRom/src/{ow,uw}_room_render_roomrom.c` for `(pal & 0x03) << 13` → must be absent.
+   - Greps `RoomRom/src/{ow,uw}_room_render_roomrom.c`, `RoomRom/src/roomrom_hud.c`, `RoomRom/src/roomrom_sprites.c`, `RoomRom/src/roomrom_combat.c`, `RoomRom/src/roomrom_arrow.c`, `RoomRom/src/roomrom_bomb.c`, `RoomRom/src/roomrom_boomerang.c` for `(pal & 0x03) << 13` → must be absent.
    - Greps for `slot < 3` BG palette loaders → must be absent.
    - Greps for `s_pal_to_attr[`-based Gen-pal-slot writes (must be tile-index path only).
+   - Greps HUD source for `PAL2`, `PAL3` palette-slot writes on Window-plane tile words → must be absent (HUD = PAL0).
 4. `RoomRom/tools/verify_vram_budget.py`:
-   - Computes per-scene tile residency (BG copies + sprite copies + HUD + automap + redux extras).
-   - Confirms tile range does not overlap VDP plane-A nametable, plane-B, window, SAT, or H-scroll table regions in the linker / SGDK config.
+   - Computes per-scene tile residency (BG bank including HUD tiles × 4 copies + sprite bank × 4 copies + redux extras).
+   - Confirms BG bank range and SPR bank range do NOT overlap each other.
+   - Confirms neither range collides with VDP plane-A nametable, plane-B nametable, Window nametable, SAT, or H-scroll table addresses (read from SGDK linker / config).
+   - Confirms `ROOMROM_SPR_TILE_BASE` ≥ `ROOMROM_BG_TILE_BASE + 4 * ROOMROM_BG_TILE_COUNT_PER_PAL`.
    - Not just `≤ 2048 tiles`; actual address-range non-overlap check.
 5. NES side-by-side acceptance gate:
    - For 6 sample rooms (L1 R0, L1 R73, OW screen 0x77, OW screen 0x00, redux UW R0, redux OW screen 0x77):
@@ -204,6 +266,7 @@ Activates Phase 2 data + Phase 3 infrastructure.
 - `RoomRom/tools/verify_bg_palette_manifest.py`
 - `RoomRom/tools/verify_slot_map.py`
 - `RoomRom/tools/verify_vram_budget.py`
+- `RoomRom/src/roomrom_vram_map.h` (Phase 2.5)
 - `RoomRom/src/roomrom_bg_palette.{c,h}`
 - `RoomRom/src/roomrom_ow_palette.{c,h}` (generated)
 - `RoomRom/src/roomrom_item_chr.{c,h}` (generated, Phase 1)
@@ -212,8 +275,9 @@ Activates Phase 2 data + Phase 3 infrastructure.
 
 - `RoomRom/src/ow_room_render_roomrom.c` — palette loader + `tile_word` + tile-base macros
 - `RoomRom/src/uw_room_render_roomrom.c` — palette loader + `write_tile_raw` + tile-base macros
-- `RoomRom/src/roomrom_sprites.{c,h}` — atlas offsets, PAL1, sub-pal-in-tile, redux toggle
-- `RoomRom/src/roomrom_combat.c` — redux variant, sub-pal-in-tile
+- `RoomRom/src/roomrom_hud.c` — drop `(pal & 0x03) << 13`, use `HUD_TILE_BASE_PAL(s)`, redux HUD tiles routed through expansion
+- `RoomRom/src/roomrom_sprites.{c,h}` — atlas offsets, PAL1, sub-pal-in-tile, redux toggle, bases derived from `roomrom_vram_map.h`
+- `RoomRom/src/roomrom_combat.c` — redux variant, sub-pal-in-tile, base from VRAM map
 - `RoomRom/src/roomrom_arrow.c`, `roomrom_bomb.c`, `roomrom_boomerang.c` — same
 - `RoomRom/src/main.c` — set_redux on toggles
 - `RoomRom/build.bat` — link new modules
@@ -238,7 +302,10 @@ Shared `data/common_chr.bin` is NOT regenerated. RoomRom CHR expansion stays sco
 
 - All visible item sprites sourced from live NES item atlas. No `guessed_common_chr` flags. No `$82..$89` literals in `roomrom_sprites.c`.
 - Horizontal sword, beam, arrow render correct NES art.
-- Renderer source has no `(pal & 0x03) << 13` pattern, no `slot < 3` BG palette loaders.
+- Renderer + HUD + sprite + combat sources have no `(pal & 0x03) << 13` pattern, no `slot < 3` BG palette loaders. HUD source has no `PAL2`/`PAL3` Window-plane palette-slot writes.
+- HUD renders with NES BG sub-palettes (PAL0); custom Redux HUD tiles live in the expanded BG bank.
+- All sprite + HUD VRAM bases derive from `roomrom_vram_map.h`. No hand-picked literals.
+- BG bank and SPR bank ranges do not overlap each other or any VDP plane / window / SAT / H-scroll address.
 - Captured NES PALRAM bytes (from probe) match generated source data for sampled rooms.
 - Gen CRAM = `nes_to_cram(PALRAM byte)` for each loaded color in PAL0 + PAL1, sampled across L1 R0, L1 R73, OW 0x77, OW 0x00, redux UW R0, redux OW 0x77.
 - VRAM budget verifier confirms per-scene tile ranges do not overlap VDP plane / window / SAT / H-scroll regions.
@@ -259,5 +326,9 @@ Shared `data/common_chr.bin` is NOT regenerated. RoomRom CHR expansion stays sco
 - BG palette truth = live NES PALRAM bytes captured per room, not Gen CRAM words.
 - All RoomRom OAM sprites currently use NES sprite sub-pal 0; sub-pals 1..3 enabled by Phase 3 infra but consumer code lit up incrementally per item.
 - NES attribute-byte decode (`s_pal_to_attr`, `attr_palette_for`) is correct as-is. Only the Gen-side consumer changes.
+- HUD is NES BG content; HUD palette = PAL0; HUD tiles share the expanded BG bank. Custom Redux HUD tiles (heart outline, etc.) follow the same expansion rule and live in the BG bank, not a separate range.
+- Window plane shares VRAM tile + palette space with plane A. Window palette-slot field stays 0 (PAL0).
+- PAL2 only used for non-NES overlays (fade, redux secret indicators that are not NES PALRAM data).
 - Phase 1 ships independently; visible item ART fix lands before COLOR fix.
+- Phase 2.5 (VRAM map definition + base relocation) is a pure refactor preceding any expansion. Locks in the layout Phase 3 fills.
 - Sprite tile copies for unused sub-pals are tolerated (VRAM cost) until per-scene residency optimizer lands.
