@@ -27,11 +27,15 @@
  * Buttons (always):
  *   X         toggle WALK <-> TELEPORT
  *   Y         toggle NES <-> ALTTP walk style
- *   B         scene toggle (overworld <-> dungeon)
+ *   A         swing sword
+ *   B         use selected B-item (boomerang/arrow/bomb/candle/rod)
+ *   Z         cycle B-item slot forward
  *   C         map variant toggle (original <-> redux), per-scene
- *   A         swing sword (S7 — UP/DOWN facings only in v1)
- *   MODE      (dungeon scene) cycle level 1..9
- *   START     (dungeon scene) toggle quest 1 <-> 2 */
+ *   START     scene toggle (overworld <-> dungeon)
+ *   Z+START   (dungeon scene) toggle quest 1 <-> 2
+ *
+ *   MODE button is reserved (Genesis 6-button hardware mode select)
+ *   and intentionally unbound. */
 
 typedef enum { SCENE_OW = 0, SCENE_UW = 1 } scene_t;
 typedef enum { MODE_WALK = 0, MODE_TELEPORT = 1 } mode_t;
@@ -473,9 +477,10 @@ int main(bool hardReset)
             continue;
         }
 
-        /* MODE+B held edge-press = scene toggle (was B-alone in v5).
-         * Moving scene toggle to a combo frees B for Z1-style B-item use. */
-        if ((joy & BUTTON_MODE) && (pressed & BUTTON_B)) {
+        /* START edge-press = scene toggle. Z held + START = quest toggle
+         * (handled below). MODE button is reserved hardware-side, never
+         * bound. B is freed for Z1-style B-item use. */
+        if ((pressed & BUTTON_START) && !(joy & BUTTON_Z)) {
             s_scene = (s_scene == SCENE_OW) ? SCENE_UW : SCENE_OW;
             s_room_id = (s_scene == SCENE_UW) ? 0x00 : 0x77;
             upload_scene_chr();
@@ -516,15 +521,16 @@ int main(bool hardReset)
             roomrom_combat_try_swing(s_link_face, s_link_x, s_link_y);
         }
 
-        /* S7 v7 B-item slot:
-         *   Z (edge press) = cycle B-item forward
-         *   B (edge press, MODE not held) = use current B-item */
-        if (pressed & BUTTON_Z) {
+        /* B-item slot:
+         *   Z press (alone)   = cycle B-item forward
+         *   Z held + START    = quest toggle (handled below; suppress cycle)
+         *   B press           = use current B-item */
+        if ((pressed & BUTTON_Z) && !(joy & BUTTON_START)) {
             unsigned char nxt = (unsigned char)(s_b_item + 1u);
             if (nxt >= (unsigned char)B_ITEM_COUNT) nxt = (unsigned char)B_ITEM_BOOMERANG;
             s_b_item = (b_item_t)nxt;
         }
-        if ((pressed & BUTTON_B) && !(joy & BUTTON_MODE)) {
+        if (pressed & BUTTON_B) {
             switch (s_b_item) {
             case B_ITEM_BOOMERANG:
                 if (!roomrom_boomerang_active()) {
@@ -560,16 +566,9 @@ int main(bool hardReset)
             }
         }
 
-        if ((pressed & BUTTON_MODE) && s_scene == SCENE_UW) {
-            u8 lvl = roomrom_uw_room_render_get_level();
-            lvl = (lvl >= ROOMROM_UW_LEVEL_MAX) ? ROOMROM_UW_LEVEL_MIN
-                                                : (u8)(lvl + 1u);
-            roomrom_uw_room_render_set_level(lvl);
-            load_room(s_room_id);
-            continue;
-        }
-
-        if ((pressed & BUTTON_START) && s_scene == SCENE_UW) {
+        /* Z held + START press = quest toggle (UW only). Z-held suppresses
+         * the item-cycle path above so the press is unambiguous. */
+        if ((pressed & BUTTON_START) && (joy & BUTTON_Z) && s_scene == SCENE_UW) {
             u8 q = roomrom_uw_room_render_get_quest();
             q = (q == ROOMROM_UW_QUEST_MIN) ? ROOMROM_UW_QUEST_MAX
                                              : ROOMROM_UW_QUEST_MIN;
@@ -577,6 +576,9 @@ int main(bool hardReset)
             load_room(s_room_id);
             continue;
         }
+        /* Level cycle (was MODE-only) removed -- MODE is reserved hardware.
+         * Reach a different level via teleport (X mode + DPAD) which warps
+         * across the 16x8 room grid. */
 
         /* S7: while sword is mid-swing, swallow D-pad so Link freezes on
          * his swing pose. Combat module ticks below + clears sword on
