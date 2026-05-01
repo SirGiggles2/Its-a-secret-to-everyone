@@ -369,6 +369,7 @@ int main(bool hardReset)
     load_room(s_room_id);                  /* loads BG pal + sprite PAL3 */
     roomrom_sprites_spawn_link(s_link_x, s_link_y);
     roomrom_combat_init();                 /* S7: clear sword sprite slot */
+    roomrom_combat_set_uw(s_scene == SCENE_UW);  /* sword Y bias for UW */
     roomrom_boomerang_init();              /* S7 v6: clear boomerang slot */
     roomrom_arrow_init();                  /* S7 v7: clear arrow slot */
     roomrom_bomb_init();                   /* S7 v8: clear bomb + explosion slots */
@@ -465,6 +466,7 @@ int main(bool hardReset)
             s_room_id = (s_scene == SCENE_UW) ? 0x00 : 0x77;
             upload_scene_chr();
             load_room(s_room_id);
+            roomrom_combat_set_uw(s_scene == SCENE_UW);
             continue;
         }
 

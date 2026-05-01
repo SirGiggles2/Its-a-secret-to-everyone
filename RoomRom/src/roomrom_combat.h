@@ -34,4 +34,9 @@ void roomrom_combat_try_swing(link_face_t face, short link_x, short link_y);
 void roomrom_combat_update(short link_x, short link_y, link_face_t face);
 unsigned char roomrom_combat_link_locked(void);
 
+/* Apply a -2 px Y bias to sword + beam when Link is in a dungeon
+ * (NES Z1 dungeons render sword/beam 2 px higher than overworld due
+ * to a different sprite Y baseline). 0 = OW (no bias), 1 = UW. */
+void roomrom_combat_set_uw(unsigned char in_uw);
+
 #endif

@@ -67,6 +67,28 @@ static short          s_beam_x        = 0;
 static short          s_beam_y        = 0;
 static unsigned char  s_beam_phase    = 0u;
 
+/* -2 Y bias applied to sword + beam when Link is in a dungeon.
+ * Default 0 (OW). Toggled via roomrom_combat_set_uw. */
+static short s_uw_y_bias = 0;
+
+/* Beam tip-offset table (from sword tip into open space). Indexed by
+ * face. Beam spawns at link + this offset, then travels in facing
+ * direction. Tuned to align with sword's state-2 tip + a small forward
+ * extension. */
+static const signed char beam_spawn_x[4] = {
+    /* DOWN UP LEFT RIGHT */
+     +4,  +4, -16, +16
+};
+static const signed char beam_spawn_y[4] = {
+    /* DOWN UP LEFT RIGHT */
+    +24, -16,  +4,  +4
+};
+
+void roomrom_combat_set_uw(unsigned char in_uw)
+{
+    s_uw_y_bias = in_uw ? (short)-2 : (short)0;
+}
+
 /* Per-state, per-facing X offset. Index: [state-1][face].
  * face order: 0=DOWN, 1=UP, 2=LEFT, 3=RIGHT.
  * NES tables are in reverse direction order (up, down, left, right);
@@ -157,16 +179,17 @@ static void update_beam(void)
     s_beam_phase = (unsigned char)((s_beam_phase + 1u) & 0x3u);
 }
 
-/* Spawn the beam at the current sword tip. Called once when the swing
- * reaches BEAM_FRAME_SPAWN. */
+/* Spawn the beam at the sword TIP for the current facing. Earlier
+ * versions reused the state-2 sword sprite offset (which is the sword
+ * sprite top-left, not the blade tip). The dedicated beam_spawn_x/y
+ * table places the beam at the actual blade tip + a small forward
+ * gap so the beam looks like it pops off the sword. */
 static void spawn_beam(short link_x, short link_y)
 {
-    /* Reuse state-2 (full extend) sword offset for the beam spawn point —
-     * mirrors NES Z1 spawning the shot from the extended sword tip. */
     unsigned char face_idx = (unsigned char)s_face;
     s_beam_face   = s_face;
-    s_beam_x      = (short)(link_x + sword_offset_x[1][face_idx]);
-    s_beam_y      = (short)(link_y + sword_offset_y[1][face_idx]);
+    s_beam_x      = (short)(link_x + beam_spawn_x[face_idx]);
+    s_beam_y      = (short)(link_y + beam_spawn_y[face_idx] + s_uw_y_bias);
     s_beam_phase  = 0u;
     s_beam_active = 1u;
 }
@@ -197,7 +220,7 @@ void roomrom_combat_update(short link_x, short link_y, link_face_t face)
         unsigned char tier = (unsigned char)(st - 1u);   /* 0..3 */
         unsigned char face_idx = (unsigned char)s_face;
         sx = (short)(link_x + sword_offset_x[tier][face_idx]);
-        sy = (short)(link_y + sword_offset_y[tier][face_idx]);
+        sy = (short)(link_y + sword_offset_y[tier][face_idx] + s_uw_y_bias);
 
         if (st == 1u) {
             /* Windup: sword raised UP (vertical, no flip). */
