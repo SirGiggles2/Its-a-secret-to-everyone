@@ -24,11 +24,15 @@ void roomrom_sprites_set_link_pos(short x, short y);
 void roomrom_sprites_set_link_pose(short x, short y,
                                    link_face_t face, unsigned char frame);
 
-/* S7 combat: sword sprite (slot 1). Sword tile data uploaded inside
- * roomrom_sprites_upload_chr alongside Link poses. set_sword_pose draws
- * sword 8x16 in current facing direction at the given screen coords;
- * clear_sword hides it (Y off-screen). UP/DOWN supported in v1; LEFT/RIGHT
- * fall through to clear (TODO horizontal sword tiles). */
+/* S7 v3 combat: sword sprite (slot 1). Vertical only.
+ *
+ * Sword tile data (2 tiles, NES $20 + $21 from common_chr) uploaded
+ * inside roomrom_sprites_upload_chr alongside Link poses.
+ * set_sword_pose draws an 8x16 sword (SPRITE_SIZE(1, 2), PAL3) at the
+ * given screen coords: UP = no flip, DOWN = vflip. LEFT/RIGHT clear
+ * the sprite (horizontal source is in sprites_chr / NES pattern
+ * table 1, deferred to S7b). clear_sword hides slot 1 by parking it
+ * off-screen. */
 void roomrom_sprites_set_sword_pose(link_face_t face, short x, short y);
 void roomrom_sprites_clear_sword(void);
 
