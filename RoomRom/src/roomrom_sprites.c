@@ -31,37 +31,19 @@ extern const unsigned char misc_palettes[1208];
 #define ATTACK_POSE_COUNT       4u
 #define ATTACK_VRAM_TILE        (LINK_VRAM_TILE + LINK_POSE_COUNT * LINK_TILES_PER_POSE)
 
-/* Sword tile data follows the attack poses. NES Z1 sword:
- *   Anim_ItemFrameTiles[0] = $20 (vertical 8x16, narrow / half-width)
- *   Anim_ItemFrameTiles[1] = $82 (horizontal 16x16, hflip-able)
- * Vertical: 2 8x8 tiles ($20 top + $21 bottom).
- * Horizontal: 4 8x8 tiles ($82+$83 left half, $84+$85 right half). */
-#define SWORD_VERT_VRAM_TILE    (ATTACK_VRAM_TILE + ATTACK_POSE_COUNT * LINK_TILES_PER_POSE)
-#define SWORD_VERT_TILE_COUNT   2u
-#define SWORD_HORZ_VRAM_TILE    (SWORD_VERT_VRAM_TILE + SWORD_VERT_TILE_COUNT)
-#define SWORD_HORZ_TILE_COUNT   4u
+/* Phase 1: item atlas tiles live in their own contiguous block starting
+ * after Link attack poses. Tile offsets come from the live NES item CHR
+ * generator (RoomRom/src/roomrom_item_chr.h). Replaces the old guessed
+ * common_chr-sourced literals at $82..$89 / $36..$3D / etc. */
+#define ITEM_VRAM_TILE          (ATTACK_VRAM_TILE + ATTACK_POSE_COUNT * LINK_TILES_PER_POSE)
 
-/* S7 v6 boomerang: 8 tiles ($36..$3D) for 3 frame shapes that overlap.
- * Frame 0 uses tiles offset 0..3 (= $36..$39), frame 1 offset 2..5
- * (= $38..$3B), frame 2 offset 4..7 (= $3A..$3D). Each frame is a
- * 16x16 wide sprite drawn as SPRITE_SIZE(2,2) column-major
- * TL/BL/TR/BR. */
-#define BOOMERANG_VRAM_TILE     (SWORD_HORZ_VRAM_TILE + SWORD_HORZ_TILE_COUNT)
-#define BOOMERANG_TILE_COUNT    8u
-
-/* S7 v7 arrow: 6 tiles. Vertical = $28 + $29 (2 tiles, narrow 8x16),
- * horizontal = $86 + $87 + $88 + $89 (4 tiles, wide 16x16). */
-#define ARROW_VERT_VRAM_TILE    (BOOMERANG_VRAM_TILE + BOOMERANG_TILE_COUNT)
-#define ARROW_VERT_TILE_COUNT   2u
-#define ARROW_HORZ_VRAM_TILE    (ARROW_VERT_VRAM_TILE + ARROW_VERT_TILE_COUNT)
-#define ARROW_HORZ_TILE_COUNT   4u
-
-/* S7 v8 bomb: 2 tiles for body ($24/$25, narrow 8x16) and 4 tiles
- * for explosion ($32/$33/$34/$35, wide 16x16). */
-#define BOMB_VRAM_TILE          (ARROW_HORZ_VRAM_TILE + ARROW_HORZ_TILE_COUNT)
-#define BOMB_TILE_COUNT         2u
-#define EXPLOSION_VRAM_TILE     (BOMB_VRAM_TILE + BOMB_TILE_COUNT)
-#define EXPLOSION_TILE_COUNT    4u
+#define SWORD_VERT_VRAM_TILE    (ITEM_VRAM_TILE + ROOMROM_ITEM_TILE_SWORD_VERT)
+#define SWORD_HORZ_VRAM_TILE    (ITEM_VRAM_TILE + ROOMROM_ITEM_TILE_SWORD_HORZ)
+#define BOOMERANG_VRAM_TILE     (ITEM_VRAM_TILE + ROOMROM_ITEM_TILE_BOOMERANG)
+#define ARROW_VERT_VRAM_TILE    (ITEM_VRAM_TILE + ROOMROM_ITEM_TILE_ARROW_VERT)
+#define ARROW_HORZ_VRAM_TILE    (ITEM_VRAM_TILE + ROOMROM_ITEM_TILE_ARROW_HORZ)
+#define BOMB_VRAM_TILE          (ITEM_VRAM_TILE + ROOMROM_ITEM_TILE_BOMB)
+#define EXPLOSION_VRAM_TILE     (ITEM_VRAM_TILE + ROOMROM_ITEM_TILE_EXPLOSION)
 
 typedef struct {
     unsigned char nes_ids[4];     /* TL, BL, TR, BR (Genesis 2x2 column-major) */
@@ -129,6 +111,15 @@ static void hflip_tile_inplace(unsigned char *t)
 }
 
 /* Helper: upload one pose's 4 tiles into VRAM, baking per-tile hflip. */
+#ifndef COMMON_SPRITE_PATTERN_TILE_COUNT
+/* NES Z1 always-loaded sprite pattern block: tiles 0x00..0x6F (= 112)
+ * are the canonical Link/Sword/Boomerang/etc. CHR. Any pose tile_id
+ * >= 112 means the source CHR isn't in common_chr — should be sourced
+ * from item atlas (Phase 1) or a future per-room CHR slot. Filling
+ * with zeros prevents accidental garbage from extractor over-reach. */
+#define COMMON_SPRITE_PATTERN_TILE_COUNT 112u
+#endif
+
 static void upload_pose(unsigned short vram_tile_base,
                         const link_pose_def_t *pose)
 {
@@ -136,7 +127,11 @@ static void upload_pose(unsigned short vram_tile_base,
     unsigned char buf[32];
     for (t = 0; t < LINK_TILES_PER_POSE; t++) {
         unsigned short nes_off = (unsigned short)pose->nes_ids[t] * 32u;
-        for (i = 0; i < 32; i++) buf[i] = common_chr[nes_off + i];
+        if (pose->nes_ids[t] >= COMMON_SPRITE_PATTERN_TILE_COUNT) {
+            for (i = 0; i < 32; i++) buf[i] = 0;
+        } else {
+            for (i = 0; i < 32; i++) buf[i] = common_chr[nes_off + i];
+        }
         if (pose->per_tile_hflip & (1u << t)) {
             hflip_tile_inplace(buf);
         }
@@ -176,94 +171,14 @@ void roomrom_sprites_upload_chr(void)
         }
     }
 
-    /* Sword vertical: 2 tiles ($20 top, $21 bottom) for the 8x16 narrow
-     * sword used facing UP / DOWN. */
-    {
-        unsigned char i;
-        unsigned char nes_ids[SWORD_VERT_TILE_COUNT] = { 0x20u, 0x21u };
-        for (i = 0; i < SWORD_VERT_TILE_COUNT; i++) {
-            unsigned short nes_off = (unsigned short)nes_ids[i] * 32u;
-            render_chr_upload(
-                (unsigned short)((SWORD_VERT_VRAM_TILE + i) * 32u),
-                common_chr + nes_off, 32u);
-        }
-    }
-
-    /* Sword horizontal: 4 tiles ($82, $83, $84, $85) for the 16x16
-     * horizontal sword used facing LEFT / RIGHT. SGDK SPRITE_SIZE(2,2)
-     * tile order is column-major: TL=$82, BL=$83, TR=$84, BR=$85. */
-    {
-        unsigned char i;
-        unsigned char nes_ids[SWORD_HORZ_TILE_COUNT] = {
-            0x82u, 0x83u, 0x84u, 0x85u
-        };
-        for (i = 0; i < SWORD_HORZ_TILE_COUNT; i++) {
-            unsigned short nes_off = (unsigned short)nes_ids[i] * 32u;
-            render_chr_upload(
-                (unsigned short)((SWORD_HORZ_VRAM_TILE + i) * 32u),
-                common_chr + nes_off, 32u);
-        }
-    }
-
-    /* Boomerang: 8 contiguous tiles $36..$3D from common_chr. */
-    {
-        unsigned char i;
-        for (i = 0; i < BOOMERANG_TILE_COUNT; i++) {
-            unsigned char nes_id = (unsigned char)(0x36u + i);
-            unsigned short nes_off = (unsigned short)nes_id * 32u;
-            render_chr_upload(
-                (unsigned short)((BOOMERANG_VRAM_TILE + i) * 32u),
-                common_chr + nes_off, 32u);
-        }
-    }
-
-    /* Arrow vertical: $28, $29. */
-    {
-        unsigned char ids[ARROW_VERT_TILE_COUNT] = { 0x28u, 0x29u };
-        unsigned char i;
-        for (i = 0; i < ARROW_VERT_TILE_COUNT; i++) {
-            unsigned short nes_off = (unsigned short)ids[i] * 32u;
-            render_chr_upload(
-                (unsigned short)((ARROW_VERT_VRAM_TILE + i) * 32u),
-                common_chr + nes_off, 32u);
-        }
-    }
-
-    /* Arrow horizontal: $86, $87, $88, $89. */
-    {
-        unsigned char ids[ARROW_HORZ_TILE_COUNT] = { 0x86u, 0x87u, 0x88u, 0x89u };
-        unsigned char i;
-        for (i = 0; i < ARROW_HORZ_TILE_COUNT; i++) {
-            unsigned short nes_off = (unsigned short)ids[i] * 32u;
-            render_chr_upload(
-                (unsigned short)((ARROW_HORZ_VRAM_TILE + i) * 32u),
-                common_chr + nes_off, 32u);
-        }
-    }
-
-    /* Bomb body: $24, $25. */
-    {
-        unsigned char ids[BOMB_TILE_COUNT] = { 0x24u, 0x25u };
-        unsigned char i;
-        for (i = 0; i < BOMB_TILE_COUNT; i++) {
-            unsigned short nes_off = (unsigned short)ids[i] * 32u;
-            render_chr_upload(
-                (unsigned short)((BOMB_VRAM_TILE + i) * 32u),
-                common_chr + nes_off, 32u);
-        }
-    }
-
-    /* Explosion: $32, $33, $34, $35 (column-major TL/BL/TR/BR). */
-    {
-        unsigned char ids[EXPLOSION_TILE_COUNT] = { 0x32u, 0x33u, 0x34u, 0x35u };
-        unsigned char i;
-        for (i = 0; i < EXPLOSION_TILE_COUNT; i++) {
-            unsigned short nes_off = (unsigned short)ids[i] * 32u;
-            render_chr_upload(
-                (unsigned short)((EXPLOSION_VRAM_TILE + i) * 32u),
-                common_chr + nes_off, 32u);
-        }
-    }
+    /* Item atlas: live NES CHR, variant-selected. Replaces the old
+     * per-item common_chr loops (sword vert/horz, boomerang, arrow
+     * vert/horz, bomb, explosion). Upload one contiguous block
+     * starting at ITEM_VRAM_TILE; per-item offsets come from
+     * roomrom_item_chr.h. */
+    render_chr_upload((unsigned short)(ITEM_VRAM_TILE * 32u),
+                      roomrom_item_chr[s_item_chr_variant],
+                      roomrom_item_chr_byte_count);
 }
 
 void roomrom_sprites_load_palette(void)
@@ -488,13 +403,20 @@ void roomrom_sprites_set_arrow(short x, short y, link_face_t face)
                           5);
         break;
     case LINK_FACE_LEFT:
+        /* Phase 1: horizontal arrow ($86..$89) now sourced from live NES
+         * item atlas. RIGHT renders as-is, LEFT mirrors via hflip. */
+        VDP_setSpriteFull(4, (s16)x, (s16)y, SPRITE_SIZE(2, 2),
+                          TILE_ATTR_FULL(PAL3, 0, 0, 1,
+                                         ARROW_HORZ_VRAM_TILE),
+                          5);
+        break;
     case LINK_FACE_RIGHT:
+        VDP_setSpriteFull(4, (s16)x, (s16)y, SPRITE_SIZE(2, 2),
+                          TILE_ATTR_FULL(PAL3, 0, 0, 0,
+                                         ARROW_HORZ_VRAM_TILE),
+                          5);
+        break;
     default:
-        /* Horizontal arrow tiles ($86-$89) live in a Z1 CHR-bank that
-         * isn't part of the always-loaded common_chr Genesis blob.
-         * Until those bytes are extracted, hide LEFT/RIGHT arrow
-         * rather than render the wrong tiles (which would be HUD
-         * letters at common_chr tile offsets $86-$89). */
         roomrom_sprites_clear_arrow();
         return;
     }
