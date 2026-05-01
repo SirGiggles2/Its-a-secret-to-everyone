@@ -25,15 +25,22 @@ extern const unsigned char misc_palettes[1208];
 #define LINK_TILES_PER_POSE     4u
 #define LINK_POSE_COUNT         8u   /* 4 facings x 2 frames */
 
-/* Sword tiles follow Link's 32 pose tiles. 4 tiles total: 2 for UP, 2 for DOWN.
- * Each is an 8x16 sprite (1x2 in 8x8 tile units). */
+/* Sword tiles follow Link's 32 pose tiles. 8 tiles total: 4 for vertical
+ * (UP+DOWN share same art), 4 for horizontal (LEFT+RIGHT share, hflip
+ * differs). Each direction is a 16x16 sprite (SPRITE_SIZE(2,2)).
+ *
+ * NES tile IDs sourced from live capture (probe_nes_sword.lua, 2026-04-30):
+ *   Vertical:   $18, $19, $1A, $1B  (NES OAM in 8x16 mode: pairs $18+$19
+ *                                    and $1A+$1B side by side)
+ *   Horizontal: $82, $83, $84, $85  (hflip=1 for LEFT, hflip=0 for RIGHT)
+ *
+ * SGDK SPRITE_SIZE(2,2) tile order is column-major: TL, BL, TR, BR.
+ * Genesis tile order in VRAM: SWORD_VRAM_TILE + 0..3 = vertical 4 tiles;
+ *                             SWORD_VRAM_TILE + 4..7 = horizontal 4 tiles. */
 #define SWORD_VRAM_TILE         (LINK_VRAM_TILE + LINK_POSE_COUNT * LINK_TILES_PER_POSE)
-#define SWORD_TILES_PER_FACE    2u   /* 1 wide x 2 tall */
-#define SWORD_FACE_COUNT        2u   /* UP, DOWN — LEFT/RIGHT TODO */
-#define SWORD_NES_TILE_UP_TOP   0x20u  /* blade tip pointing up */
-#define SWORD_NES_TILE_UP_BOT   0x21u  /* guard + handle */
-#define SWORD_NES_TILE_DN_TOP   0x22u  /* handle + guard */
-#define SWORD_NES_TILE_DN_BOT   0x23u  /* blade tip pointing down */
+#define SWORD_VRAM_TILE_VERT    (SWORD_VRAM_TILE + 0u)
+#define SWORD_VRAM_TILE_HORZ    (SWORD_VRAM_TILE + 4u)
+#define SWORD_VRAM_TILE_COUNT   8u
 
 typedef struct {
     unsigned char nes_ids[4];     /* TL, BL, TR, BR (Genesis 2x2 column-major) */
@@ -105,17 +112,18 @@ void roomrom_sprites_upload_chr(void)
         }
     }
 
-    /* S7: upload 4 sword tiles ($20-$23) starting at SWORD_VRAM_TILE.
-     * Layout: tile 0 = UP top, 1 = UP bottom, 2 = DOWN top, 3 = DOWN bottom.
-     * Tile IDs verified by ASCII decode of common_chr (RoomRom tools/out
-     * common_chr_tiles_full.txt); see S7 spec design doc. */
+    /* S7: upload 8 sword tiles ($18-$1B vertical, $82-$85 horizontal) into
+     * SWORD_VRAM_TILE region in SGDK column-major order (TL, BL, TR, BR).
+     * NES tile IDs verified by live OAM capture (probe_nes_sword.lua). */
     {
-        static const unsigned char sword_nes[4] = {
-            SWORD_NES_TILE_UP_TOP, SWORD_NES_TILE_UP_BOT,
-            SWORD_NES_TILE_DN_TOP, SWORD_NES_TILE_DN_BOT
+        static const unsigned char sword_nes[SWORD_VRAM_TILE_COUNT] = {
+            /* Vertical (UP+DOWN): NES pairs $18+$19, $1A+$1B */
+            0x18u, 0x19u, 0x1Au, 0x1Bu,
+            /* Horizontal (LEFT+RIGHT): NES pairs $82+$83, $84+$85 */
+            0x82u, 0x83u, 0x84u, 0x85u
         };
         unsigned char i;
-        for (i = 0; i < 4; i++) {
+        for (i = 0; i < SWORD_VRAM_TILE_COUNT; i++) {
             unsigned short nes_off = (unsigned short)sword_nes[i] * 32u;
             render_chr_upload(
                 (unsigned short)((SWORD_VRAM_TILE + i) * 32u),
@@ -171,32 +179,31 @@ void roomrom_sprites_set_link_pos(short x, short y)
     roomrom_sprites_set_link_pose(x, y, LINK_FACE_DOWN, 0u);
 }
 
-/* Sword tile offsets within the SWORD_VRAM_TILE region. Each face is 2 tiles
- * (top + bottom of an 8x16 vertical sprite). */
-#define SWORD_VRAM_UP   (SWORD_VRAM_TILE + 0u)  /* tiles 0,1 */
-#define SWORD_VRAM_DN   (SWORD_VRAM_TILE + 2u)  /* tiles 2,3 */
-
 void roomrom_sprites_set_sword_pose(link_face_t face, short x, short y)
 {
     unsigned short tile;
+    unsigned char  hflip = 0u;
     switch (face) {
     case LINK_FACE_UP:
-        tile = SWORD_VRAM_UP;
-        break;
     case LINK_FACE_DOWN:
-        tile = SWORD_VRAM_DN;
+        tile = SWORD_VRAM_TILE_VERT;  /* same 4 tiles for both per NES capture */
+        break;
+    case LINK_FACE_LEFT:
+        tile = SWORD_VRAM_TILE_HORZ;
+        hflip = 1u;
+        break;
+    case LINK_FACE_RIGHT:
+        tile = SWORD_VRAM_TILE_HORZ;
         break;
     default:
-        /* LEFT/RIGHT TODO — horizontal sword tiles not yet captured.
-         * Hide sword for v1 by clearing. */
         roomrom_sprites_clear_sword();
         return;
     }
     VDP_setSpriteFull(1,
                       (s16)x,
                       (s16)y,
-                      SPRITE_SIZE(1, 2),  /* 8 wide x 16 tall */
-                      TILE_ATTR_FULL(PAL3, 0, 0, 0, tile),
+                      SPRITE_SIZE(2, 2),  /* 16x16 (matches NES 2x 8x16 sprites) */
+                      TILE_ATTR_FULL(PAL3, 0, 0, hflip, tile),
                       0);                  /* terminator */
     VDP_updateSprites(2, DMA);
 }
@@ -206,7 +213,7 @@ void roomrom_sprites_clear_sword(void)
     VDP_setSpriteFull(1,
                       (s16)-32,
                       (s16)-32,
-                      SPRITE_SIZE(1, 2),
+                      SPRITE_SIZE(2, 2),
                       TILE_ATTR_FULL(PAL3, 0, 0, 0, SWORD_VRAM_TILE),
                       0);
     VDP_updateSprites(2, DMA);

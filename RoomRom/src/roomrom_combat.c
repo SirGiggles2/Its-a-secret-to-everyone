@@ -37,20 +37,19 @@ unsigned char roomrom_combat_link_locked(void)
     return s_state != COMBAT_IDLE;
 }
 
-/* Sword draw position offset from Link's 16x16 sprite top-left.
- * UP: blade extends 16px above Link's top. Sword sprite is 8 wide x 16 tall,
- *     centered on Link's X (Link is 16 wide so sword X = Link X + 4).
- * DOWN: blade extends 16px below Link's feet, same X centering. */
+/* Sword draw position offset from Link's 16x16 sprite top-left, all 4 facings.
+ * Sword sprite is 16x16; Link is 16x16. Sword extends 16 pixels in the facing
+ * direction. */
 static void compute_sword_pos(link_face_t face, short link_x, short link_y,
                               short *out_x, short *out_y)
 {
-    short sx = (short)(link_x + 4);
+    short sx = link_x;
     short sy = link_y;
     switch (face) {
     case LINK_FACE_UP:    sy = (short)(link_y - 16); break;
     case LINK_FACE_DOWN:  sy = (short)(link_y + 16); break;
-    case LINK_FACE_LEFT:  /* TODO horizontal sword */ sy = link_y; break;
-    case LINK_FACE_RIGHT: /* TODO horizontal sword */ sy = link_y; break;
+    case LINK_FACE_LEFT:  sx = (short)(link_x - 16); break;
+    case LINK_FACE_RIGHT: sx = (short)(link_x + 16); break;
     }
     *out_x = sx;
     *out_y = sy;
