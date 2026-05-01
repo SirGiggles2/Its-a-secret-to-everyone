@@ -50,4 +50,11 @@ void roomrom_sprites_set_beam(short x, short y,
                               unsigned char frame_phase);
 void roomrom_sprites_clear_beam(void);
 
+/* S7 v6 boomerang (slot 3). 8-phase rotation cycle from
+ * BoomerangFrameCycle / BoomerangBaseSpriteAttrCycle. phase_idx is
+ * masked to bottom 3 bits. */
+void roomrom_sprites_set_boomerang(short x, short y,
+                                   unsigned char phase_idx);
+void roomrom_sprites_clear_boomerang(void);
+
 #endif

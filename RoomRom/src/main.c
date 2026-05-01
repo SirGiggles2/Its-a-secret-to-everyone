@@ -4,6 +4,7 @@
 #include "roomrom_hud.h"
 #include "roomrom_sprites.h"
 #include "roomrom_combat.h"
+#include "roomrom_boomerang.h"
 
 /* Boots to overworld room 0x77.
  *
@@ -353,6 +354,7 @@ int main(bool hardReset)
     load_room(s_room_id);                  /* loads BG pal + sprite PAL3 */
     roomrom_sprites_spawn_link(s_link_x, s_link_y);
     roomrom_combat_init();                 /* S7: clear sword sprite slot */
+    roomrom_boomerang_init();              /* S7 v6: clear boomerang slot */
 
     while (TRUE) {
         SYS_doVBlankProcess();
@@ -410,6 +412,9 @@ int main(bool hardReset)
         /* S7: tick combat (sword timer + draw/clear sword sprite slot 1).
          * Runs every frame so the swing completes even in TELEPORT mode. */
         roomrom_combat_update(s_link_x, s_link_y, s_link_face);
+        /* S7 v6: tick boomerang (slot 3). Independent of combat lock —
+         * NES Z1 lets Link move while boomerang is in flight. */
+        roomrom_boomerang_update(s_link_x, s_link_y);
 
         u16 joy = JOY_readJoypad(JOY_1);
         u16 pressed = joy & ~joy_prev;
@@ -458,6 +463,13 @@ int main(bool hardReset)
          * swing so Link snaps to the swing pose for COMBAT_EXTEND_FRAMES. */
         if ((pressed & BUTTON_A) && !roomrom_combat_link_locked()) {
             roomrom_combat_try_swing(s_link_face, s_link_x, s_link_y);
+        }
+
+        /* S7 v6: Z throws boomerang. NES Z1 binds it to the B button —
+         * RoomRom keeps B for scene toggle and routes the boomerang to
+         * the otherwise-unused Z. Link can keep moving while it flies. */
+        if ((pressed & BUTTON_Z) && !roomrom_boomerang_active()) {
+            roomrom_boomerang_throw(s_link_face, s_link_x, s_link_y);
         }
 
         if ((pressed & BUTTON_MODE) && s_scene == SCENE_UW) {

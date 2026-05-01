@@ -40,6 +40,14 @@ extern const unsigned char misc_palettes[1208];
 #define SWORD_HORZ_VRAM_TILE    (SWORD_VERT_VRAM_TILE + SWORD_VERT_TILE_COUNT)
 #define SWORD_HORZ_TILE_COUNT   4u
 
+/* S7 v6 boomerang: 8 tiles ($36..$3D) for 3 frame shapes that overlap.
+ * Frame 0 uses tiles offset 0..3 (= $36..$39), frame 1 offset 2..5
+ * (= $38..$3B), frame 2 offset 4..7 (= $3A..$3D). Each frame is a
+ * 16x16 wide sprite drawn as SPRITE_SIZE(2,2) column-major
+ * TL/BL/TR/BR. */
+#define BOOMERANG_VRAM_TILE     (SWORD_HORZ_VRAM_TILE + SWORD_HORZ_TILE_COUNT)
+#define BOOMERANG_TILE_COUNT    8u
+
 typedef struct {
     unsigned char nes_ids[4];     /* TL, BL, TR, BR (Genesis 2x2 column-major) */
     unsigned char per_tile_hflip; /* bitmask: bit 0 = TL flipped, bit 1 = BL, etc. */
@@ -171,6 +179,18 @@ void roomrom_sprites_upload_chr(void)
                 common_chr + nes_off, 32u);
         }
     }
+
+    /* Boomerang: 8 contiguous tiles $36..$3D from common_chr. */
+    {
+        unsigned char i;
+        for (i = 0; i < BOOMERANG_TILE_COUNT; i++) {
+            unsigned char nes_id = (unsigned char)(0x36u + i);
+            unsigned short nes_off = (unsigned short)nes_id * 32u;
+            render_chr_upload(
+                (unsigned short)((BOOMERANG_VRAM_TILE + i) * 32u),
+                common_chr + nes_off, 32u);
+        }
+    }
 }
 
 void roomrom_sprites_load_palette(void)
@@ -214,7 +234,7 @@ void roomrom_sprites_set_link_attack_pose(short x, short y, link_face_t face)
 
 void roomrom_sprites_spawn_link(short x, short y)
 {
-    /* Init slot 1 (sword) -> slot 2 (beam), beam terminates the chain. */
+    /* SAT chain: 0 (Link) -> 1 (sword) -> 2 (beam) -> 3 (boomerang) -> end. */
     VDP_setSpriteFull(1,
                       (s16)-32,
                       (s16)-32,
@@ -226,6 +246,12 @@ void roomrom_sprites_spawn_link(short x, short y)
                       (s16)-32,
                       SPRITE_SIZE(1, 2),
                       TILE_ATTR_FULL(PAL3, 0, 0, 0, SWORD_VERT_VRAM_TILE),
+                      3);
+    VDP_setSpriteFull(3,
+                      (s16)-32,
+                      (s16)-32,
+                      SPRITE_SIZE(2, 2),
+                      TILE_ATTR_FULL(PAL3, 0, 0, 0, BOOMERANG_VRAM_TILE),
                       0);
     roomrom_sprites_set_link_pose(x, y, LINK_FACE_DOWN, 0u);
 }
@@ -289,7 +315,7 @@ void roomrom_sprites_set_beam(short x, short y,
                           SPRITE_SIZE(1, 2),
                           TILE_ATTR_FULL(PAL3, 0, vflip, hflip,
                                          SWORD_VERT_VRAM_TILE),
-                          0);
+                          3);
     } else {
         VDP_setSpriteFull(2,
                           (s16)x,
@@ -297,9 +323,9 @@ void roomrom_sprites_set_beam(short x, short y,
                           SPRITE_SIZE(2, 2),
                           TILE_ATTR_FULL(PAL3, 0, vflip, hflip,
                                          SWORD_HORZ_VRAM_TILE),
-                          0);
+                          3);
     }
-    VDP_updateSprites(3, DMA);
+    VDP_updateSprites(4, DMA);
 }
 
 void roomrom_sprites_clear_beam(void)
@@ -309,6 +335,46 @@ void roomrom_sprites_clear_beam(void)
                       (s16)-32,
                       SPRITE_SIZE(1, 2),
                       TILE_ATTR_FULL(PAL3, 0, 0, 0, SWORD_VERT_VRAM_TILE),
+                      3);
+    VDP_updateSprites(4, DMA);
+}
+
+/* S7 v6 boomerang (slot 3). 8-phase rotation cycle from
+ * BoomerangFrameCycle (0,1,2,1,0,1,2,1) and BoomerangBaseSpriteAttrCycle
+ * ($00,$00,$00,$40,$40,$C0,$80,$80) at Z_07.asm:3779. */
+static const unsigned char k_boomerang_frame_cycle[8] = {
+    0u, 1u, 2u, 1u, 0u, 1u, 2u, 1u
+};
+static const unsigned char k_boomerang_attr_cycle[8] = {
+    0x00u, 0x00u, 0x00u, 0x40u, 0x40u, 0xC0u, 0x80u, 0x80u
+};
+
+void roomrom_sprites_set_boomerang(short x, short y,
+                                   unsigned char phase_idx)
+{
+    unsigned char p = (unsigned char)(phase_idx & 0x7u);
+    unsigned char frame_n = k_boomerang_frame_cycle[p];   /* 0, 1, or 2 */
+    unsigned char attr    = k_boomerang_attr_cycle[p];
+    unsigned char vflip   = (unsigned char)((attr & 0x80u) ? 1u : 0u);
+    unsigned char hflip   = (unsigned char)((attr & 0x40u) ? 1u : 0u);
+    unsigned short tile   = (unsigned short)(BOOMERANG_VRAM_TILE
+                                             + (frame_n * 2u));
+    VDP_setSpriteFull(3,
+                      (s16)x,
+                      (s16)y,
+                      SPRITE_SIZE(2, 2),
+                      TILE_ATTR_FULL(PAL3, 0, vflip, hflip, tile),
                       0);
-    VDP_updateSprites(3, DMA);
+    VDP_updateSprites(4, DMA);
+}
+
+void roomrom_sprites_clear_boomerang(void)
+{
+    VDP_setSpriteFull(3,
+                      (s16)-32,
+                      (s16)-32,
+                      SPRITE_SIZE(2, 2),
+                      TILE_ATTR_FULL(PAL3, 0, 0, 0, BOOMERANG_VRAM_TILE),
+                      0);
+    VDP_updateSprites(4, DMA);
 }
