@@ -2,6 +2,8 @@
 #include "roomrom_hud.h"
 #include "ow_room_render_roomrom.h"
 #include "render_abi.h"
+#include "roomrom_vram_map.h"
+#include "expanded_bg_chr.h"
 
 #define HUD_TILE_SPACE  0x24u
 #define TILE_DASH       0x62u
@@ -12,7 +14,8 @@
 #define TILE_ORIGINAL_MAP_MARKER 0x51u
 #define TILE_REDUX_HEART_FILL    0x52u
 
-#define HUD_TILE_BASE   1u
+/* HUD lives in the BG bank (NES BG content). Same per-sub-pal stride. */
+#define HUD_TILE_BASE   ROOMROM_BG_TILE_BASE
 
 static unsigned char s_hud_pal[ROOMROM_HUD_ROWS][ROOMROM_ROOM_COLS];
 
@@ -114,8 +117,10 @@ static const unsigned char s_redux_hud_macro[] = {
 
 static unsigned short hud_word(unsigned char raw_tile, unsigned char pal)
 {
-    return (unsigned short)(((unsigned short)(pal & 0x03) << 13) |
-                            ((unsigned short)raw_tile + HUD_TILE_BASE));
+    /* Phase 4: HUD = NES BG content. Sub-pal selector lives in tile index
+     * (pixel-biased copy in the BG bank); Gen pal-slot bits stay 0. */
+    return (unsigned short)(ROOMROM_BG_TILE_BASE_PAL(pal & 0x03)
+                            + (unsigned short)raw_tile);
 }
 
 static void draw_hud_tile(unsigned char col, unsigned char row,
@@ -258,9 +263,24 @@ static void draw_original_map_marker(unsigned char room_id)
 
 void roomrom_hud_upload_chr(void)
 {
-    render_chr_upload((unsigned short)((TILE_REDUX_HEART_OUTLINE + HUD_TILE_BASE) * 32u),
-                      s_hud_custom_chr,
-                      (unsigned short)sizeof(s_hud_custom_chr));
+    /* Phase 3: write 4 sub-pal copies of the 3-tile custom HUD CHR into
+     * the BG bank. Bias rule per nibble: out = (in==0) ? 0 : (s*4 + in). */
+    unsigned char buf[sizeof(s_hud_custom_chr)];
+    unsigned char s, i;
+    for (s = 0; s < 4; s++) {
+        for (i = 0; i < sizeof(s_hud_custom_chr); i++) {
+            unsigned char b = s_hud_custom_chr[i];
+            unsigned char hi = (b >> 4) & 0x0F;
+            unsigned char lo = b & 0x0F;
+            unsigned char ho = (hi == 0) ? 0 : (s * 4 + hi);
+            unsigned char lz = (lo == 0) ? 0 : (s * 4 + lo);
+            buf[i] = (unsigned char)((ho << 4) | lz);
+        }
+        render_chr_upload(
+            (unsigned short)((ROOMROM_BG_TILE_BASE_PAL(s) + TILE_REDUX_HEART_OUTLINE) * 32u),
+            buf,
+            (unsigned short)sizeof(s_hud_custom_chr));
+    }
 }
 
 void roomrom_hud_draw(unsigned char hud_id, unsigned char room_id)

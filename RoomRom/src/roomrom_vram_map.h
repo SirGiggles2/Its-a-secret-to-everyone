@@ -47,12 +47,17 @@
  *   rule, same sub-pal stride.
  */
 
+/* Per-sub-pal stride is 256 because NES BG addresses tiles by 8-bit NES
+ * tile ID. OW renderer uploads common BG (112) + OW BG (130) + common
+ * misc (14) = 256 distinct NES tile slots; redux automap (32) and secrets
+ * (12) get patched into existing slots, not appended. HUD custom tiles
+ * (3) likewise live at NES IDs $50..$52 (shared bank). */
 #define ROOMROM_BG_TILE_BASE            1u
-#define ROOMROM_BG_TILE_COUNT_PER_PAL   303u
+#define ROOMROM_BG_TILE_COUNT_PER_PAL   256u
 #define ROOMROM_BG_SUBPAL_COUNT         4u
-#define ROOMROM_SPR_TILE_BASE           1213u
+#define ROOMROM_SPR_TILE_BASE           1025u   /* 1 + 4*256 */
 #define ROOMROM_SPR_TILE_COUNT_PER_PAL  312u
-#define ROOMROM_SPR_SUBPAL_COUNT        1u  /* sub-pal 0 only; expand later */
+#define ROOMROM_SPR_SUBPAL_COUNT        1u      /* sub-pal 0 only; expand later */
 
 #define ROOMROM_BG_TILE_BASE_PAL(s)  \
     (ROOMROM_BG_TILE_BASE  + (unsigned short)(s) * ROOMROM_BG_TILE_COUNT_PER_PAL)

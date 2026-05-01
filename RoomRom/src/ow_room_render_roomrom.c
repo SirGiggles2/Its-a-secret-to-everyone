@@ -1,15 +1,13 @@
 #include "ow_room_render_roomrom.h"
 #include "render_abi.h"
+#include "roomrom_vram_map.h"
+#include "roomrom_bg_palette.h"
+#include "roomrom_ow_palette.h"
+#include "expanded_bg_chr.h"
 
 extern const unsigned char rooms_overworld[];
 extern const unsigned char rooms_overworld_redux[];
 extern const unsigned short rooms_overworld_redux_heap_offsets[16];
-extern const unsigned char common_chr[7616];
-extern const unsigned char overworld_bg_chr[4160];
-extern const unsigned char redux_overworld_bg_chr[4160];
-extern const unsigned char redux_overworld_secret_chr[384];
-extern const unsigned char redux_automap_chr[1024];
-extern const unsigned char misc_palettes[1208];
 
 #define LEVEL_INFO_OW_OFFSET 768
 #define OW_ATTRS_A_OFFSET    0
@@ -18,9 +16,11 @@ extern const unsigned char misc_palettes[1208];
 #define OW_LAYOUTS_OFFSET    1166
 #define OW_HEAP_BLOB_OFFSET  3150
 
+/* Phase 4: legacy LEVEL_INFO_PALETTE_OFFSET path replaced by live NES
+ * PALRAM data (g_roomrom_ow_palram). Define kept for any out-of-tree
+ * consumer; not used internally. */
 #define LEVEL_INFO_PALETTE_OFFSET (LEVEL_INFO_OW_OFFSET + 3)
 
-#define OW_VDP_TILE_BASE          1u
 #define COMMON_BG_TILE_COUNT      112u
 #define OW_BG_TILE_COUNT          130u
 #define COMMON_MISC_TILE_COUNT    14u
@@ -150,30 +150,14 @@ unsigned char roomrom_ow_room_render_get_map(void)
     return s_roomrom_map_id;
 }
 
-static unsigned short nes_color_to_cram(unsigned char color)
-{
-    unsigned short off = (unsigned short)color * 2u;
-    return (unsigned short)misc_palettes[off] |
-           ((unsigned short)misc_palettes[off + 1] << 8);
-}
-
 void roomrom_ow_room_render_load_palette(unsigned char room_id)
 {
-    unsigned short pal16[16];
-    unsigned char slot, i;
-    const unsigned char *rooms = roomrom_rooms();
-
+    unsigned char map = (s_roomrom_map_id == ROOMROM_MAP_REDUX) ? 1u : 0u;
     (void)room_id;
-
-    /* PAL3 reserved for sprites (see roomrom_sprites). BG owns PAL0..PAL2. */
-    for (slot = 0; slot < 3; slot++) {
-        for (i = 0; i < 16; i++)
-            pal16[i] = 0;
-        for (i = 0; i < 4; i++)
-            pal16[i] = nes_color_to_cram(
-                rooms[LEVEL_INFO_PALETTE_OFFSET + slot * 4 + i]);
-        render_load_palette(slot, pal16);
-    }
+    /* Live NES PALRAM extracted from each ROM's LevelInfoOW transfer buffer.
+     * Loads Gen PAL0 (NES BG sub-pals 0..3 packed) and Gen PAL1 (NES SPR
+     * sub-pals 0..3 packed). Per-room sub-pal-3 patches deferred. */
+    roomrom_bg_palette_load_palram_full(g_roomrom_ow_palram[map]);
 }
 
 static unsigned char normalize_primary_tile(unsigned char raw)
@@ -189,27 +173,42 @@ static unsigned char normalize_primary_tile(unsigned char raw)
 
 void roomrom_ow_room_render_upload_chr(void)
 {
-    const unsigned char *ow_chr =
-        (s_roomrom_map_id == ROOMROM_MAP_REDUX) ? redux_overworld_bg_chr
-                                                : overworld_bg_chr;
-
-    render_chr_upload((unsigned short)(OW_VDP_TILE_BASE * 32u),
-                      common_chr + COMMON_BG_CHR_OFFSET,
-                      (unsigned short)(COMMON_BG_TILE_COUNT * 32u));
-    render_chr_upload((unsigned short)((OW_VDP_TILE_BASE + 0x30u) * 32u),
-                      redux_automap_chr,
-                      (unsigned short)(REDUX_AUTOMAP_TILE_COUNT * 32u));
-    if (s_roomrom_map_id == ROOMROM_MAP_REDUX) {
-        render_chr_upload((unsigned short)((OW_VDP_TILE_BASE + 0x54u) * 32u),
-                          redux_overworld_secret_chr,
-                          (unsigned short)(12u * 32u));
+    /* Phase 3: 4 sub-pal banks. Each NES BG section is uploaded 4 times,
+     * once per Gen PAL0 sub-pal slot, from the corresponding pixel-biased
+     * copy in the *_x4 expanded array. NES tile T sub-pal s lives at Gen
+     * VRAM tile ROOMROM_BG_TILE_BASE_PAL(s) + T. */
+    unsigned char s;
+    const unsigned char redux = (s_roomrom_map_id == ROOMROM_MAP_REDUX);
+    const unsigned char *ow_x4 = redux ? redux_overworld_bg_chr_x4
+                                       : overworld_bg_chr_x4;
+    const unsigned short ow_per_pal_bytes = redux
+        ? REDUX_OVERWORLD_BG_CHR_PER_PAL_BYTES
+        : OVERWORLD_BG_CHR_PER_PAL_BYTES;
+    for (s = 0; s < 4; s++) {
+        unsigned short bank_tile = ROOMROM_BG_TILE_BASE_PAL(s);
+        /* common BG section (NES tiles 0..0x6F) */
+        render_chr_upload((unsigned short)(bank_tile * 32u),
+                          common_chr_x4 + s * COMMON_CHR_PER_PAL_BYTES + COMMON_BG_CHR_OFFSET,
+                          (unsigned short)(COMMON_BG_TILE_COUNT * 32u));
+        /* redux automap (NES tiles starting at 0x30) */
+        render_chr_upload((unsigned short)((bank_tile + 0x30u) * 32u),
+                          redux_automap_chr_x4 + s * REDUX_AUTOMAP_CHR_PER_PAL_BYTES,
+                          (unsigned short)(REDUX_AUTOMAP_TILE_COUNT * 32u));
+        if (redux) {
+            /* redux secrets (NES tiles starting at 0x54) */
+            render_chr_upload((unsigned short)((bank_tile + 0x54u) * 32u),
+                              redux_overworld_secret_chr_x4 + s * REDUX_OVERWORLD_SECRET_CHR_PER_PAL_BYTES,
+                              (unsigned short)(12u * 32u));
+        }
+        /* OW BG section (NES tiles 0x70..0xF1) */
+        render_chr_upload((unsigned short)((bank_tile + COMMON_BG_TILE_COUNT) * 32u),
+                          ow_x4 + s * ow_per_pal_bytes,
+                          (unsigned short)(OW_BG_TILE_COUNT * 32u));
+        /* common misc (NES tiles 0xF2..0xFF) */
+        render_chr_upload((unsigned short)((bank_tile + COMMON_BG_TILE_COUNT + OW_BG_TILE_COUNT) * 32u),
+                          common_chr_x4 + s * COMMON_CHR_PER_PAL_BYTES + COMMON_MISC_CHR_OFFSET,
+                          (unsigned short)(COMMON_MISC_TILE_COUNT * 32u));
     }
-    render_chr_upload((unsigned short)((OW_VDP_TILE_BASE + COMMON_BG_TILE_COUNT) * 32u),
-                      ow_chr,
-                      (unsigned short)(OW_BG_TILE_COUNT * 32u));
-    render_chr_upload((unsigned short)((OW_VDP_TILE_BASE + COMMON_BG_TILE_COUNT + OW_BG_TILE_COUNT) * 32u),
-                      common_chr + COMMON_MISC_CHR_OFFSET,
-                      (unsigned short)(COMMON_MISC_TILE_COUNT * 32u));
 }
 
 static unsigned char ow_tile_palette(unsigned char tile_col, unsigned char tile_row,
@@ -238,8 +237,10 @@ static unsigned char ow_tile_palette(unsigned char tile_col, unsigned char tile_
 
 static unsigned short tile_word(unsigned char raw_tile, unsigned char pal)
 {
-    return (unsigned short)(((unsigned short)(pal & 0x03) << 13) |
-                            ((unsigned short)raw_tile + OW_VDP_TILE_BASE));
+    /* Phase 4: NES sub-pal selector lives in the tile index (pixel-biased
+     * sub-pal copy); Gen pal-slot bits stay 0 (PAL0 owns NES BG). */
+    return (unsigned short)(ROOMROM_BG_TILE_BASE_PAL(pal & 0x03)
+                            + (unsigned short)raw_tile);
 }
 
 /* Palette uses src tile coords (where the tile semantically lives in its

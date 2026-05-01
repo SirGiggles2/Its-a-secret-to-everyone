@@ -1,19 +1,17 @@
 #include "uw_room_render_roomrom.h"
 #include "uw_room_blob.h"
 #include "render_abi.h"
+#include "roomrom_vram_map.h"
+#include "roomrom_bg_palette.h"
+#include "expanded_bg_chr.h"
 
 extern const unsigned char rooms_dungeons[];
-extern const unsigned char common_chr[7616];
-extern const unsigned char underworld_bg_chr[4160];
-extern const unsigned char misc_palettes[1208];
-extern const unsigned char redux_uw_bg_chr[8192];
 
 #define UW_LEVELBLOCK_SIZE       768u
 #define UW_LEVELINFO_SIZE        256u
 #define UW_LEVELINFO_BASE        3072u
 #define UW_LEVELINFO_PAL_OFFSET  3u
 
-#define UW_VDP_TILE_BASE         1u
 #define COMMON_BG_TILE_COUNT     112u
 #define UW_BG_TILE_COUNT         130u
 #define COMMON_MISC_TILE_COUNT   14u
@@ -102,13 +100,6 @@ unsigned char roomrom_uw_room_render_get_quest(void)
     return s_uw_quest;
 }
 
-static unsigned short nes_color_to_cram(unsigned char color)
-{
-    unsigned short off = (unsigned short)color * 2u;
-    return (unsigned short)misc_palettes[off] |
-           ((unsigned short)misc_palettes[off + 1] << 8);
-}
-
 static int find_blob_entry(unsigned char level, unsigned char room_id)
 {
     unsigned short i;
@@ -127,35 +118,22 @@ static int find_blob_entry(unsigned char level, unsigned char room_id)
 
 static void load_palette_from_blob(int idx)
 {
-    unsigned short pal16[16];
-    unsigned char slot, i;
-    const unsigned char *pal = g_uw_room_palette[idx];
-    /* PAL3 reserved for sprites (see roomrom_sprites). BG owns PAL0..PAL2. */
-    for (slot = 0; slot < 3; slot++) {
-        for (i = 0; i < 16; i++)
-            pal16[i] = 0;
-        for (i = 0; i < 4; i++)
-            pal16[i] = nes_color_to_cram(pal[slot * 4 + i]);
-        render_load_palette(slot, pal16);
-    }
+    /* g_uw_room_palette[idx][32] = full per-room NES PALRAM captured from
+     * BizHawk runtime; bytes 0..15 = NES BG sub-pals 0..3, 16..31 = SPR. */
+    roomrom_bg_palette_load_palram_full(g_uw_room_palette[idx]);
 }
 
 static void load_palette_from_levelinfo(void)
 {
-    unsigned short pal16[16];
-    unsigned char slot, i;
+    unsigned char buf[16];
+    unsigned char i;
     unsigned short level_off = (unsigned short)(UW_LEVELINFO_BASE +
         ((unsigned short)(s_uw_level - 1u) * UW_LEVELINFO_SIZE) +
         UW_LEVELINFO_PAL_OFFSET);
-    /* PAL3 reserved for sprites (see roomrom_sprites). BG owns PAL0..PAL2. */
-    for (slot = 0; slot < 3; slot++) {
-        for (i = 0; i < 16; i++)
-            pal16[i] = 0;
-        for (i = 0; i < 4; i++)
-            pal16[i] = nes_color_to_cram(
-                rooms_dungeons[level_off + slot * 4 + i]);
-        render_load_palette(slot, pal16);
-    }
+    for (i = 0; i < 16; i++) buf[i] = rooms_dungeons[level_off + i];
+    /* Sprite half (PAL1) preserved from prior room load. Levelinfo
+     * fallback only fires when blob lookup misses. */
+    roomrom_bg_palette_load_bg_only(buf);
 }
 
 void roomrom_uw_room_render_load_palette(unsigned char room_id)
@@ -170,26 +148,31 @@ void roomrom_uw_room_render_load_palette(unsigned char room_id)
 
 void roomrom_uw_room_render_upload_chr(void)
 {
+    /* Phase 3: 4 sub-pal banks. NES tile T sub-pal s lives at Gen VRAM
+     * tile ROOMROM_BG_TILE_BASE_PAL(s) + T. */
+    unsigned char s;
     if (s_uw_map_id == ROOMROM_MAP_REDUX) {
-        /* Redux: live PPU $0000-$0FFF dump (256 tiles, 8192 bytes Genesis
-         * 4bpp). Includes Redux's bombable-wall crack patterns at NES tile
-         * indices the engine writes into the play area NT (e.g. $5B/$5D
-         * at L1 room $43). NES tile N -> Genesis VRAM tile (N + 1) so we
-         * upload at the same UW_VDP_TILE_BASE = 1. */
-        render_chr_upload((unsigned short)(UW_VDP_TILE_BASE * 32u),
-                          redux_uw_bg_chr,
-                          (unsigned short)(256u * 32u));
+        /* Redux UW: 256-tile live PPU dump uploaded into each sub-pal bank. */
+        for (s = 0; s < 4; s++) {
+            unsigned short bank_tile = ROOMROM_BG_TILE_BASE_PAL(s);
+            render_chr_upload((unsigned short)(bank_tile * 32u),
+                              redux_uw_bg_chr_x4 + s * REDUX_UW_BG_CHR_PER_PAL_BYTES,
+                              (unsigned short)(256u * 32u));
+        }
         return;
     }
-    render_chr_upload((unsigned short)(UW_VDP_TILE_BASE * 32u),
-                      common_chr + COMMON_BG_CHR_OFFSET,
-                      (unsigned short)(COMMON_BG_TILE_COUNT * 32u));
-    render_chr_upload((unsigned short)((UW_VDP_TILE_BASE + COMMON_BG_TILE_COUNT) * 32u),
-                      underworld_bg_chr,
-                      (unsigned short)(UW_BG_TILE_COUNT * 32u));
-    render_chr_upload((unsigned short)((UW_VDP_TILE_BASE + COMMON_BG_TILE_COUNT + UW_BG_TILE_COUNT) * 32u),
-                      common_chr + COMMON_MISC_CHR_OFFSET,
-                      (unsigned short)(COMMON_MISC_TILE_COUNT * 32u));
+    for (s = 0; s < 4; s++) {
+        unsigned short bank_tile = ROOMROM_BG_TILE_BASE_PAL(s);
+        render_chr_upload((unsigned short)(bank_tile * 32u),
+                          common_chr_x4 + s * COMMON_CHR_PER_PAL_BYTES + COMMON_BG_CHR_OFFSET,
+                          (unsigned short)(COMMON_BG_TILE_COUNT * 32u));
+        render_chr_upload((unsigned short)((bank_tile + COMMON_BG_TILE_COUNT) * 32u),
+                          underworld_bg_chr_x4 + s * UNDERWORLD_BG_CHR_PER_PAL_BYTES,
+                          (unsigned short)(UW_BG_TILE_COUNT * 32u));
+        render_chr_upload((unsigned short)((bank_tile + COMMON_BG_TILE_COUNT + UW_BG_TILE_COUNT) * 32u),
+                          common_chr_x4 + s * COMMON_CHR_PER_PAL_BYTES + COMMON_MISC_CHR_OFFSET,
+                          (unsigned short)(COMMON_MISC_TILE_COUNT * 32u));
+    }
 }
 
 /* Stub renderer.
@@ -221,10 +204,12 @@ static void write_tile_raw_at(unsigned char col, unsigned char row,
                            unsigned char dst_row_base,
                            unsigned char raw_tile, unsigned char pal)
 {
+    /* Phase 4: NES sub-pal selector lives in the tile index (pixel-biased
+     * sub-pal copy); Gen pal-slot bits stay 0 (PAL0 owns NES BG).
+     * Priority bit (0x8000) preserved for door art. */
     unsigned short pri = uw_is_door_tile(raw_tile) ? 0x8000u : 0u;
     unsigned short word = (unsigned short)(pri |
-                                           ((unsigned short)(pal & 0x03) << 13) |
-                                           ((unsigned short)raw_tile + UW_VDP_TILE_BASE));
+        (ROOMROM_BG_TILE_BASE_PAL(pal & 0x03) + (unsigned short)raw_tile));
     render_set_plane_a_word(col, (unsigned short)(dst_row_base + row +
                                                   ROOMROM_ROOM_FIRST_ROW), word);
 }
