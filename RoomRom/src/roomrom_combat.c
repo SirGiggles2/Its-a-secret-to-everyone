@@ -37,32 +37,19 @@ unsigned char roomrom_combat_link_locked(void)
     return s_state != COMBAT_IDLE;
 }
 
-/* Sword draw position relative to Link's 16x16 top-left.
- * v3: vertical sword is an 8x16 sprite. Offsets are NES-empirical
- * (probe_nes_sword_capture.lua, 2026-04-30):
- *   DOWN: sword = link + (+5, +13)
- *   UP:   sword = link + (+3, -10)
- * LEFT/RIGHT positions are never drawn (set_sword_pose clears slot 1)
- * but the function still writes sane values so callers never read
- * uninitialized memory. */
+/* Sword draw position offset from Link's 16x16 sprite top-left, all 4 facings.
+ * Sword sprite is 16x16; Link is 16x16. Sword extends 16 pixels in the facing
+ * direction. */
 static void compute_sword_pos(link_face_t face, short link_x, short link_y,
                               short *out_x, short *out_y)
 {
     short sx = link_x;
     short sy = link_y;
     switch (face) {
-    case LINK_FACE_UP:
-        sx = (short)(link_x + 3);
-        sy = (short)(link_y - 10);
-        break;
-    case LINK_FACE_DOWN:
-        sx = (short)(link_x + 5);
-        sy = (short)(link_y + 13);
-        break;
-    case LINK_FACE_LEFT:
-    case LINK_FACE_RIGHT:
-        /* Sprite cleared by set_sword_pose; values harmless. */
-        break;
+    case LINK_FACE_UP:    sy = (short)(link_y - 16); break;
+    case LINK_FACE_DOWN:  sy = (short)(link_y + 16); break;
+    case LINK_FACE_LEFT:  sx = (short)(link_x - 16); break;
+    case LINK_FACE_RIGHT: sx = (short)(link_x + 16); break;
     }
     *out_x = sx;
     *out_y = sy;
