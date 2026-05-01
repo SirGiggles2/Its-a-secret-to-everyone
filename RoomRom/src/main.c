@@ -6,6 +6,7 @@
 #include "roomrom_combat.h"
 #include "roomrom_boomerang.h"
 #include "roomrom_arrow.h"
+#include "roomrom_bomb.h"
 
 /* Boots to overworld room 0x77.
  *
@@ -370,6 +371,7 @@ int main(bool hardReset)
     roomrom_combat_init();                 /* S7: clear sword sprite slot */
     roomrom_boomerang_init();              /* S7 v6: clear boomerang slot */
     roomrom_arrow_init();                  /* S7 v7: clear arrow slot */
+    roomrom_bomb_init();                   /* S7 v8: clear bomb + explosion slots */
 
     while (TRUE) {
         SYS_doVBlankProcess();
@@ -432,6 +434,8 @@ int main(bool hardReset)
         roomrom_boomerang_update(s_link_x, s_link_y);
         /* S7 v7: tick arrow (slot 4). Single-frame, flies straight. */
         roomrom_arrow_update();
+        /* S7 v8: tick bomb (slot 5) + explosion (slot 6). */
+        roomrom_bomb_update();
 
         u16 joy = JOY_readJoypad(JOY_1);
         u16 pressed = joy & ~joy_prev;
@@ -506,7 +510,12 @@ int main(bool hardReset)
                                        s_link_x, s_link_y);
                 }
                 break;
-            case B_ITEM_BOMB:    break;  /* v8 */
+            case B_ITEM_BOMB:
+                if (!roomrom_bomb_active()) {
+                    roomrom_bomb_place(s_link_face,
+                                       s_link_x, s_link_y);
+                }
+                break;
             case B_ITEM_CANDLE:  break;  /* v9 */
             case B_ITEM_ROD:     break;  /* v10 */
             default:             break;

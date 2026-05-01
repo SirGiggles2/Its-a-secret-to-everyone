@@ -57,9 +57,15 @@ void roomrom_sprites_set_boomerang(short x, short y,
                                    unsigned char phase_idx);
 void roomrom_sprites_clear_boomerang(void);
 
-/* S7 v7 arrow (slot 4). vertical 8x16 (UP/DOWN, vflip on DOWN) or
- * horizontal 16x16 (LEFT/RIGHT, hflip on LEFT). */
+/* S7 v7 arrow (slot 4). vertical 8x16 (UP/DOWN, vflip on DOWN). LEFT
+ * and RIGHT clear (horizontal CHR not yet extracted). */
 void roomrom_sprites_set_arrow(short x, short y, link_face_t face);
 void roomrom_sprites_clear_arrow(void);
+
+/* S7 v8 bomb (slot 5) + explosion (slot 6). */
+void roomrom_sprites_set_bomb(short x, short y);
+void roomrom_sprites_clear_bomb(void);
+void roomrom_sprites_set_explosion(short x, short y, unsigned char timer);
+void roomrom_sprites_clear_explosion(void);
 
 #endif

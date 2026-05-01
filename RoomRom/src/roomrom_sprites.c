@@ -55,6 +55,13 @@ extern const unsigned char misc_palettes[1208];
 #define ARROW_HORZ_VRAM_TILE    (ARROW_VERT_VRAM_TILE + ARROW_VERT_TILE_COUNT)
 #define ARROW_HORZ_TILE_COUNT   4u
 
+/* S7 v8 bomb: 2 tiles for body ($24/$25, narrow 8x16) and 4 tiles
+ * for explosion ($32/$33/$34/$35, wide 16x16). */
+#define BOMB_VRAM_TILE          (ARROW_HORZ_VRAM_TILE + ARROW_HORZ_TILE_COUNT)
+#define BOMB_TILE_COUNT         2u
+#define EXPLOSION_VRAM_TILE     (BOMB_VRAM_TILE + BOMB_TILE_COUNT)
+#define EXPLOSION_TILE_COUNT    4u
+
 typedef struct {
     unsigned char nes_ids[4];     /* TL, BL, TR, BR (Genesis 2x2 column-major) */
     unsigned char per_tile_hflip; /* bitmask: bit 0 = TL flipped, bit 1 = BL, etc. */
@@ -222,6 +229,30 @@ void roomrom_sprites_upload_chr(void)
                 common_chr + nes_off, 32u);
         }
     }
+
+    /* Bomb body: $24, $25. */
+    {
+        unsigned char ids[BOMB_TILE_COUNT] = { 0x24u, 0x25u };
+        unsigned char i;
+        for (i = 0; i < BOMB_TILE_COUNT; i++) {
+            unsigned short nes_off = (unsigned short)ids[i] * 32u;
+            render_chr_upload(
+                (unsigned short)((BOMB_VRAM_TILE + i) * 32u),
+                common_chr + nes_off, 32u);
+        }
+    }
+
+    /* Explosion: $32, $33, $34, $35 (column-major TL/BL/TR/BR). */
+    {
+        unsigned char ids[EXPLOSION_TILE_COUNT] = { 0x32u, 0x33u, 0x34u, 0x35u };
+        unsigned char i;
+        for (i = 0; i < EXPLOSION_TILE_COUNT; i++) {
+            unsigned short nes_off = (unsigned short)ids[i] * 32u;
+            render_chr_upload(
+                (unsigned short)((EXPLOSION_VRAM_TILE + i) * 32u),
+                common_chr + nes_off, 32u);
+        }
+    }
 }
 
 void roomrom_sprites_load_palette(void)
@@ -289,6 +320,18 @@ void roomrom_sprites_spawn_link(short x, short y)
                       (s16)-32,
                       SPRITE_SIZE(1, 2),
                       TILE_ATTR_FULL(PAL3, 0, 0, 0, ARROW_VERT_VRAM_TILE),
+                      5);
+    VDP_setSpriteFull(5,
+                      (s16)-32,
+                      (s16)-32,
+                      SPRITE_SIZE(1, 2),
+                      TILE_ATTR_FULL(PAL3, 0, 0, 0, BOMB_VRAM_TILE),
+                      6);
+    VDP_setSpriteFull(6,
+                      (s16)-32,
+                      (s16)-32,
+                      SPRITE_SIZE(2, 2),
+                      TILE_ATTR_FULL(PAL3, 0, 0, 0, EXPLOSION_VRAM_TILE),
                       0);
     roomrom_sprites_set_link_pose(x, y, LINK_FACE_DOWN, 0u);
 }
@@ -425,13 +468,13 @@ void roomrom_sprites_set_arrow(short x, short y, link_face_t face)
         VDP_setSpriteFull(4, (s16)x, (s16)y, SPRITE_SIZE(1, 2),
                           TILE_ATTR_FULL(PAL3, 0, 0, 0,
                                          ARROW_VERT_VRAM_TILE),
-                          0);
+                          5);
         break;
     case LINK_FACE_DOWN:
         VDP_setSpriteFull(4, (s16)x, (s16)y, SPRITE_SIZE(1, 2),
                           TILE_ATTR_FULL(PAL3, 0, 1, 0,
                                          ARROW_VERT_VRAM_TILE),
-                          0);
+                          5);
         break;
     case LINK_FACE_LEFT:
     case LINK_FACE_RIGHT:
@@ -454,6 +497,62 @@ void roomrom_sprites_clear_arrow(void)
                       (s16)-32,
                       SPRITE_SIZE(1, 2),
                       TILE_ATTR_FULL(PAL3, 0, 0, 0, ARROW_VERT_VRAM_TILE),
+                      5);
+    VDP_updateSprites(7, DMA);
+}
+
+/* S7 v8 bomb (slot 5). 8x16 sprite at fuse position. */
+void roomrom_sprites_set_bomb(short x, short y)
+{
+    VDP_setSpriteFull(5,
+                      (s16)x,
+                      (s16)y,
+                      SPRITE_SIZE(1, 2),
+                      TILE_ATTR_FULL(PAL3, 0, 0, 0, BOMB_VRAM_TILE),
+                      6);
+    VDP_updateSprites(7, DMA);
+}
+
+void roomrom_sprites_clear_bomb(void)
+{
+    VDP_setSpriteFull(5,
+                      (s16)-32,
+                      (s16)-32,
+                      SPRITE_SIZE(1, 2),
+                      TILE_ATTR_FULL(PAL3, 0, 0, 0, BOMB_VRAM_TILE),
+                      6);
+    VDP_updateSprites(7, DMA);
+}
+
+/* S7 v8 explosion (slot 6). 16x16 sprite. timer is the residual frame
+ * countdown — animate by toggling vflip+hflip every 4 frames so the
+ * burst looks lively without needing extra tile data. */
+void roomrom_sprites_set_explosion(short x, short y, unsigned char timer)
+{
+    unsigned char phase = (unsigned char)((timer >> 2) & 0x3u);
+    unsigned char vflip = (unsigned char)((phase & 0x2u) ? 1u : 0u);
+    unsigned char hflip = (unsigned char)((phase & 0x1u) ? 1u : 0u);
+    /* Anchor the 16x16 explosion sprite so its center aligns with the
+     * 8x16 bomb position. Bomb's top-left was at (x, y); shift the
+     * 16x16 explosion 4 px left and 0 px up so its center coincides. */
+    short ex = (short)(x - 4);
+    VDP_setSpriteFull(6,
+                      (s16)ex,
+                      (s16)y,
+                      SPRITE_SIZE(2, 2),
+                      TILE_ATTR_FULL(PAL3, 0, vflip, hflip,
+                                     EXPLOSION_VRAM_TILE),
                       0);
-    VDP_updateSprites(5, DMA);
+    VDP_updateSprites(7, DMA);
+}
+
+void roomrom_sprites_clear_explosion(void)
+{
+    VDP_setSpriteFull(6,
+                      (s16)-32,
+                      (s16)-32,
+                      SPRITE_SIZE(2, 2),
+                      TILE_ATTR_FULL(PAL3, 0, 0, 0, EXPLOSION_VRAM_TILE),
+                      0);
+    VDP_updateSprites(7, DMA);
 }
