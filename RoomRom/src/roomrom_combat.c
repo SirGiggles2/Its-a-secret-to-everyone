@@ -30,7 +30,13 @@
  * varies per facing (Link's hand position differs).
  */
 
-#define COMBAT_STATE1_FRAMES   5u
+/* NES Z1 doesn't visibly draw a sword windup (sword raised UP above
+ * Link for all facings before extending). Verified 2026-05-01 via
+ * BizHawk OAM scan of NES Z1 sword swing: gameplay sword sprite first
+ * appears at state 2 extend in facing direction — disassembly's state 1
+ * branch may exist but isn't visible on real hardware. State 1 skipped
+ * here to match observed NES behavior. */
+#define COMBAT_STATE1_FRAMES   0u
 #define COMBAT_STATE2_FRAMES   8u
 #define COMBAT_STATE3_FRAMES   1u
 #define COMBAT_STATE4_FRAMES   1u
