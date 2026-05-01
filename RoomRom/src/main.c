@@ -3,6 +3,7 @@
 #include "uw_room_render_roomrom.h"
 #include "roomrom_hud.h"
 #include "roomrom_sprites.h"
+#include "roomrom_combat.h"
 
 /* Boots to overworld room 0x77.
  *
@@ -25,7 +26,8 @@
  *   Y         toggle NES <-> ALTTP walk style
  *   B         scene toggle (overworld <-> dungeon)
  *   C         map variant toggle (original <-> redux), per-scene
- *   A         (dungeon scene) cycle level 1..9
+ *   A         swing sword (S7 — UP/DOWN facings only in v1)
+ *   MODE      (dungeon scene) cycle level 1..9
  *   START     (dungeon scene) toggle quest 1 <-> 2 */
 
 typedef enum { SCENE_OW = 0, SCENE_UW = 1 } scene_t;
@@ -350,6 +352,7 @@ int main(bool hardReset)
     roomrom_sprites_upload_chr();          /* one-shot sprite CHR */
     load_room(s_room_id);                  /* loads BG pal + sprite PAL3 */
     roomrom_sprites_spawn_link(s_link_x, s_link_y);
+    roomrom_combat_init();                 /* S7: clear sword sprite slot */
 
     while (TRUE) {
         SYS_doVBlankProcess();
@@ -404,6 +407,10 @@ int main(bool hardReset)
             continue;
         }
 
+        /* S7: tick combat (sword timer + draw/clear sword sprite slot 1).
+         * Runs every frame so the swing completes even in TELEPORT mode. */
+        roomrom_combat_update(s_link_x, s_link_y, s_link_face);
+
         u16 joy = JOY_readJoypad(JOY_1);
         u16 pressed = joy & ~joy_prev;
         joy_prev = joy;
@@ -446,7 +453,14 @@ int main(bool hardReset)
             continue;
         }
 
-        if ((pressed & BUTTON_A) && s_scene == SCENE_UW) {
+        /* S7: A swings sword (NES-faithful single A-press). UW level cycle
+         * moved to MODE button below. Movement is suppressed during the
+         * swing so Link snaps to the swing pose for COMBAT_EXTEND_FRAMES. */
+        if ((pressed & BUTTON_A) && !roomrom_combat_link_locked()) {
+            roomrom_combat_try_swing(s_link_face, s_link_x, s_link_y);
+        }
+
+        if ((pressed & BUTTON_MODE) && s_scene == SCENE_UW) {
             u8 lvl = roomrom_uw_room_render_get_level();
             lvl = (lvl >= ROOMROM_UW_LEVEL_MAX) ? ROOMROM_UW_LEVEL_MIN
                                                 : (u8)(lvl + 1u);
@@ -462,6 +476,13 @@ int main(bool hardReset)
             roomrom_uw_room_render_set_quest(q);
             load_room(s_room_id);
             continue;
+        }
+
+        /* S7: while sword is mid-swing, swallow D-pad so Link freezes on
+         * his swing pose. Combat module ticks below + clears sword on
+         * retract, returning control. */
+        if (roomrom_combat_link_locked()) {
+            joy = (u16)(joy & ~(BUTTON_LEFT|BUTTON_RIGHT|BUTTON_UP|BUTTON_DOWN));
         }
 
         if (s_mode == MODE_TELEPORT) {

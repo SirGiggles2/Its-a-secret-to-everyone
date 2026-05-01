@@ -25,6 +25,16 @@ extern const unsigned char misc_palettes[1208];
 #define LINK_TILES_PER_POSE     4u
 #define LINK_POSE_COUNT         8u   /* 4 facings x 2 frames */
 
+/* Sword tiles follow Link's 32 pose tiles. 4 tiles total: 2 for UP, 2 for DOWN.
+ * Each is an 8x16 sprite (1x2 in 8x8 tile units). */
+#define SWORD_VRAM_TILE         (LINK_VRAM_TILE + LINK_POSE_COUNT * LINK_TILES_PER_POSE)
+#define SWORD_TILES_PER_FACE    2u   /* 1 wide x 2 tall */
+#define SWORD_FACE_COUNT        2u   /* UP, DOWN — LEFT/RIGHT TODO */
+#define SWORD_NES_TILE_UP_TOP   0x20u  /* blade tip pointing up */
+#define SWORD_NES_TILE_UP_BOT   0x21u  /* guard + handle */
+#define SWORD_NES_TILE_DN_TOP   0x22u  /* handle + guard */
+#define SWORD_NES_TILE_DN_BOT   0x23u  /* blade tip pointing down */
+
 typedef struct {
     unsigned char nes_ids[4];     /* TL, BL, TR, BR (Genesis 2x2 column-major) */
     unsigned char per_tile_hflip; /* bitmask: bit 0 = TL flipped, bit 1 = BL, etc. */
@@ -94,6 +104,24 @@ void roomrom_sprites_upload_chr(void)
             }
         }
     }
+
+    /* S7: upload 4 sword tiles ($20-$23) starting at SWORD_VRAM_TILE.
+     * Layout: tile 0 = UP top, 1 = UP bottom, 2 = DOWN top, 3 = DOWN bottom.
+     * Tile IDs verified by ASCII decode of common_chr (RoomRom tools/out
+     * common_chr_tiles_full.txt); see S7 spec design doc. */
+    {
+        static const unsigned char sword_nes[4] = {
+            SWORD_NES_TILE_UP_TOP, SWORD_NES_TILE_UP_BOT,
+            SWORD_NES_TILE_DN_TOP, SWORD_NES_TILE_DN_BOT
+        };
+        unsigned char i;
+        for (i = 0; i < 4; i++) {
+            unsigned short nes_off = (unsigned short)sword_nes[i] * 32u;
+            render_chr_upload(
+                (unsigned short)((SWORD_VRAM_TILE + i) * 32u),
+                common_chr + nes_off, 32u);
+        }
+    }
 }
 
 void roomrom_sprites_load_palette(void)
@@ -113,6 +141,8 @@ void roomrom_sprites_set_link_pose(short x, short y,
 {
     unsigned short pose_idx = (unsigned short)face * 2u + (unsigned short)frame;
     unsigned short tile = LINK_VRAM_TILE + pose_idx * LINK_TILES_PER_POSE;
+    /* Slot 0 link = 1 so the chain reaches slot 1 (sword). Slot 1 stays
+     * Y-hidden when sword is inactive. */
     VDP_setSpriteFull(0,
                       (s16)x,
                       (s16)y,
@@ -120,16 +150,64 @@ void roomrom_sprites_set_link_pose(short x, short y,
                       /* Priority=0 (low) so HIGH-priority BG door tiles
                        * render in front of Link as he walks through. */
                       TILE_ATTR_FULL(PAL3, 0, 0, 0, tile),
-                      0);
-    VDP_updateSprites(1, DMA);
+                      1);
+    VDP_updateSprites(2, DMA);
 }
 
 void roomrom_sprites_spawn_link(short x, short y)
 {
+    /* Init slot 1 (sword) to hidden, terminator link, before first link draw. */
+    VDP_setSpriteFull(1,
+                      (s16)-32,
+                      (s16)-32,
+                      SPRITE_SIZE(1, 2),
+                      TILE_ATTR_FULL(PAL3, 0, 0, 0, SWORD_VRAM_TILE),
+                      0);
     roomrom_sprites_set_link_pose(x, y, LINK_FACE_DOWN, 0u);
 }
 
 void roomrom_sprites_set_link_pos(short x, short y)
 {
     roomrom_sprites_set_link_pose(x, y, LINK_FACE_DOWN, 0u);
+}
+
+/* Sword tile offsets within the SWORD_VRAM_TILE region. Each face is 2 tiles
+ * (top + bottom of an 8x16 vertical sprite). */
+#define SWORD_VRAM_UP   (SWORD_VRAM_TILE + 0u)  /* tiles 0,1 */
+#define SWORD_VRAM_DN   (SWORD_VRAM_TILE + 2u)  /* tiles 2,3 */
+
+void roomrom_sprites_set_sword_pose(link_face_t face, short x, short y)
+{
+    unsigned short tile;
+    switch (face) {
+    case LINK_FACE_UP:
+        tile = SWORD_VRAM_UP;
+        break;
+    case LINK_FACE_DOWN:
+        tile = SWORD_VRAM_DN;
+        break;
+    default:
+        /* LEFT/RIGHT TODO — horizontal sword tiles not yet captured.
+         * Hide sword for v1 by clearing. */
+        roomrom_sprites_clear_sword();
+        return;
+    }
+    VDP_setSpriteFull(1,
+                      (s16)x,
+                      (s16)y,
+                      SPRITE_SIZE(1, 2),  /* 8 wide x 16 tall */
+                      TILE_ATTR_FULL(PAL3, 0, 0, 0, tile),
+                      0);                  /* terminator */
+    VDP_updateSprites(2, DMA);
+}
+
+void roomrom_sprites_clear_sword(void)
+{
+    VDP_setSpriteFull(1,
+                      (s16)-32,
+                      (s16)-32,
+                      SPRITE_SIZE(1, 2),
+                      TILE_ATTR_FULL(PAL3, 0, 0, 0, SWORD_VRAM_TILE),
+                      0);
+    VDP_updateSprites(2, DMA);
 }
