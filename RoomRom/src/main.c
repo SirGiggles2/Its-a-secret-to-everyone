@@ -218,6 +218,16 @@ static void load_room(u8 room_id)
     roomrom_sprites_load_palette();   /* PAL3 - reload after BG palette write */
 }
 
+/* Phase 1: pick the live-NES item-atlas variant for the current scene+map.
+ * 0 = orig (vanilla Z1), 1 = redux. Read by roomrom_sprites_set_redux +
+ * roomrom_combat_set_redux at boot and after every C-button toggle. */
+static unsigned char current_redux_flag(void)
+{
+    if (s_scene == SCENE_UW)
+        return (unsigned char)(roomrom_uw_room_render_get_map() != 0u);
+    return (unsigned char)(roomrom_ow_room_render_get_map() != 0u);
+}
+
 static void upload_scene_chr(void)
 {
     if (s_scene == SCENE_UW) {
@@ -365,6 +375,10 @@ int main(bool hardReset)
         u32 blank[8] = {0,0,0,0,0,0,0,0};
         VDP_loadTileData(blank, 0, 1, CPU);
     }
+    /* Phase 1: select item-atlas variant before the first CHR upload so
+     * the right NES item bytes land in VRAM from frame 0. */
+    roomrom_sprites_set_redux(current_redux_flag());
+    roomrom_combat_set_redux(current_redux_flag());
     roomrom_sprites_upload_chr();          /* one-shot sprite CHR */
     load_room(s_room_id);                  /* loads BG pal + sprite PAL3 */
     roomrom_sprites_spawn_link(s_link_x, s_link_y);
@@ -467,23 +481,31 @@ int main(bool hardReset)
             upload_scene_chr();
             load_room(s_room_id);
             roomrom_combat_set_uw(s_scene == SCENE_UW);
+            /* Phase 1: scene change can flip which redux flag is active
+             * (UW and OW maintain independent map_id state). Re-select
+             * variant + re-upload item CHR so the atlas matches. */
+            roomrom_sprites_set_redux(current_redux_flag());
+            roomrom_combat_set_redux(current_redux_flag());
+            roomrom_sprites_upload_chr();
             continue;
         }
 
         if (pressed & BUTTON_C) {
-            unsigned char redux_flag;
             if (s_scene == SCENE_UW) {
                 u8 map_id = roomrom_uw_room_render_get_map();
                 roomrom_uw_room_render_set_map(map_id ^ 1u);
-                redux_flag = (u8)((map_id ^ 1u) != 0u);
             } else {
                 u8 map_id = roomrom_ow_room_render_get_map();
                 roomrom_ow_room_render_set_map(map_id ^ 1u);
-                redux_flag = (u8)((map_id ^ 1u) != 0u);
             }
             upload_scene_chr();
             load_room(s_room_id);
-            roomrom_combat_set_redux(redux_flag);
+            /* Phase 1: re-select item atlas variant + re-upload item CHR
+             * so the new map's NES item bytes land in VRAM. Combat keeps
+             * its existing redux flag (reserved for v11+ alt-swing). */
+            roomrom_sprites_set_redux(current_redux_flag());
+            roomrom_combat_set_redux(current_redux_flag());
+            roomrom_sprites_upload_chr();
             continue;
         }
 
