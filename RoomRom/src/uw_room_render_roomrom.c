@@ -59,6 +59,30 @@ unsigned char roomrom_uw_room_render_get_quest(void)
     return s_uw_quest;
 }
 
+/* Door arch / wall priority is decided by blob-grid position, not tile ID.
+ * The DoorFaceTiles{N,S,E,W} tile-ID enumeration overlaps the dungeon's
+ * primary-squares decoration set (e.g. PrimarySquaresUW square 1 covers
+ * tiles $74-$77 which appear as both door context AND interior floor
+ * decoration), so a tile-ID bitmap over-tags ~50% of the room.
+ *
+ * Position-based gate: blob outer border (top/bottom 2 rows, left/right
+ * 2 cols) gets Plane A high priority; interior stays low. With Link's
+ * sprite at low priority (S1 + door priority spec 2026-04-30), the
+ * Genesis VDP layer order delivers:
+ *   - sprite low > plane A low: Link draws over interior floor/decor
+ *   - plane A high > sprite low: arch border cells cover Link's sprite
+ *     when he enters a doorway
+ * Color-0 transparent pixels inside arch tile patterns let Link's body
+ * show through naturally. NES feel emerges from CHR pattern, not from
+ * per-tile-ID logic. */
+static unsigned char uw_pos_is_arch_zone(unsigned char col, unsigned char row)
+{
+    return (unsigned char)((row < 2u) ||
+                           (row >= (ROOMROM_UW_BLOB_ROWS - 2u)) ||
+                           (col < 2u) ||
+                           (col >= (ROOMROM_UW_BLOB_COLS - 2u)));
+}
+
 static unsigned short nes_color_to_cram(unsigned char color)
 {
     unsigned short off = (unsigned short)color * 2u;
@@ -160,8 +184,14 @@ void roomrom_uw_room_render_upload_chr(void)
 static void write_tile_raw(unsigned char col, unsigned char row,
                            unsigned char raw_tile, unsigned char pal)
 {
+    /* Plane A high priority on outer-border cells only (see uw_pos_is_arch_zone
+     * above). Interior cells stay low priority so Link's low-prio sprite
+     * draws over them. */
     unsigned short word = (unsigned short)(((unsigned short)(pal & 0x03) << 13) |
                                             ((unsigned short)raw_tile + UW_VDP_TILE_BASE));
+    if (uw_pos_is_arch_zone(col, row)) {
+        word |= (unsigned short)0x8000u;
+    }
     render_set_plane_a_word(col, (unsigned short)(row + ROOMROM_ROOM_FIRST_ROW), word);
 }
 

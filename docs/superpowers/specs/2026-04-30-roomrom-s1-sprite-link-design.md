@@ -91,12 +91,16 @@ S1 deliberately exposes no setter for Link position beyond `_spawn_link`. S2 wil
 - Frame for S1: facing-down standstill (canonical Link pose).
 - NES tile IDs (sprites block): `0x60, 0x61, 0x70, 0x71` — top-left, top-right, bottom-left, bottom-right.
 - Genesis VRAM tile indices: `512 + nes_tile_id`.
-- Attribute: `TILE_ATTR_FULL(PAL3, 1 /*priority*/, 0 /*vflip*/, 0 /*hflip*/, 512 + 0x60)`.
+- Attribute: `TILE_ATTR_FULL(PAL3, 0 /*priority*/, 0 /*vflip*/, 0 /*hflip*/, 512 + 0x60)`.
+  Priority **0** (low) per the door-priority design (`2026-04-30-roomrom-uw-door-priority-design.md`):
+  Plane A door arch cells are tagged high-prio so they occlude Link; sprite
+  stays low so it draws over low-prio walls/floor (sprite low > plane A low
+  in the Genesis VDP layer order).
 - Position: room center, screen coords `(128, 88)`. SGDK applies sprite-table Y/X offsets internally; we pass screen-space.
 
 Implementation uses **raw VDP sprite table** (`VDP_setSprite` + `VDP_updateSprites`):
 
-- `VDP_setSprite(0, x+0x80, y+0x80, SPRITE_SIZE(2,2), TILE_ATTR_FULL(PAL3, 1, 0, 0, 512+0x60), 0)`
+- `VDP_setSprite(0, x+0x80, y+0x80, SPRITE_SIZE(2,2), TILE_ATTR_FULL(PAL3, 0, 0, 0, 512+0x60), 0)`
 - `VDP_updateSprites(1, DMA)` — DMA the single-entry sprite cache to VRAM
 - One link entry, terminator at index 0 (`linkData = 0`)
 
