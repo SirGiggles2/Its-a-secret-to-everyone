@@ -5,6 +5,7 @@
 #include "roomrom_sprites.h"
 #include "roomrom_combat.h"
 #include "roomrom_boomerang.h"
+#include "roomrom_arrow.h"
 
 /* Boots to overworld room 0x77.
  *
@@ -54,6 +55,19 @@ static u8 s_room_id = 0x73;   /* L1Q1 start room */
 static short s_link_x = 124;  /* center of playfield, nudged 4px left */
 static short s_link_y = 144;  /* center of UW playfield (y=56 HUD + 88) */
 static link_face_t s_link_face = LINK_FACE_DOWN;
+
+/* S7 B-item slot (cycle with Z, fire with B). Order roughly matches
+ * Z1 inventory grid: boomerang -> bombs -> arrow -> candle -> rod. */
+typedef enum {
+    B_ITEM_NONE      = 0,
+    B_ITEM_BOOMERANG = 1,
+    B_ITEM_ARROW     = 2,
+    B_ITEM_BOMB      = 3,
+    B_ITEM_CANDLE    = 4,
+    B_ITEM_ROD       = 5,
+    B_ITEM_COUNT     = 6
+} b_item_t;
+static b_item_t s_b_item = B_ITEM_BOOMERANG;
 static link_dir_t  s_link_dir  = LINK_DIR_NONE;  /* current motion axis (NES-style) */
 static u8          s_link_grid_offset = 0u;      /* 0..7, pixels past last grid line */
 static u8          s_link_pos_frac   = 0u;       /* NES single-axis sub-pixel */
@@ -355,6 +369,7 @@ int main(bool hardReset)
     roomrom_sprites_spawn_link(s_link_x, s_link_y);
     roomrom_combat_init();                 /* S7: clear sword sprite slot */
     roomrom_boomerang_init();              /* S7 v6: clear boomerang slot */
+    roomrom_arrow_init();                  /* S7 v7: clear arrow slot */
 
     while (TRUE) {
         SYS_doVBlankProcess();
@@ -415,6 +430,8 @@ int main(bool hardReset)
         /* S7 v6: tick boomerang (slot 3). Independent of combat lock —
          * NES Z1 lets Link move while boomerang is in flight. */
         roomrom_boomerang_update(s_link_x, s_link_y);
+        /* S7 v7: tick arrow (slot 4). Single-frame, flies straight. */
+        roomrom_arrow_update();
 
         u16 joy = JOY_readJoypad(JOY_1);
         u16 pressed = joy & ~joy_prev;
@@ -437,7 +454,9 @@ int main(bool hardReset)
             continue;
         }
 
-        if (pressed & BUTTON_B) {
+        /* MODE+B held edge-press = scene toggle (was B-alone in v5).
+         * Moving scene toggle to a combo frees B for Z1-style B-item use. */
+        if ((joy & BUTTON_MODE) && (pressed & BUTTON_B)) {
             s_scene = (s_scene == SCENE_OW) ? SCENE_UW : SCENE_OW;
             s_room_id = (s_scene == SCENE_UW) ? 0x00 : 0x77;
             upload_scene_chr();
@@ -465,11 +484,33 @@ int main(bool hardReset)
             roomrom_combat_try_swing(s_link_face, s_link_x, s_link_y);
         }
 
-        /* S7 v6: Z throws boomerang. NES Z1 binds it to the B button —
-         * RoomRom keeps B for scene toggle and routes the boomerang to
-         * the otherwise-unused Z. Link can keep moving while it flies. */
-        if ((pressed & BUTTON_Z) && !roomrom_boomerang_active()) {
-            roomrom_boomerang_throw(s_link_face, s_link_x, s_link_y);
+        /* S7 v7 B-item slot:
+         *   Z (edge press) = cycle B-item forward
+         *   B (edge press, MODE not held) = use current B-item */
+        if (pressed & BUTTON_Z) {
+            unsigned char nxt = (unsigned char)(s_b_item + 1u);
+            if (nxt >= (unsigned char)B_ITEM_COUNT) nxt = (unsigned char)B_ITEM_BOOMERANG;
+            s_b_item = (b_item_t)nxt;
+        }
+        if ((pressed & BUTTON_B) && !(joy & BUTTON_MODE)) {
+            switch (s_b_item) {
+            case B_ITEM_BOOMERANG:
+                if (!roomrom_boomerang_active()) {
+                    roomrom_boomerang_throw(s_link_face,
+                                            s_link_x, s_link_y);
+                }
+                break;
+            case B_ITEM_ARROW:
+                if (!roomrom_arrow_active()) {
+                    roomrom_arrow_fire(s_link_face,
+                                       s_link_x, s_link_y);
+                }
+                break;
+            case B_ITEM_BOMB:    break;  /* v8 */
+            case B_ITEM_CANDLE:  break;  /* v9 */
+            case B_ITEM_ROD:     break;  /* v10 */
+            default:             break;
+            }
         }
 
         if ((pressed & BUTTON_MODE) && s_scene == SCENE_UW) {

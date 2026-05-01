@@ -48,6 +48,13 @@ extern const unsigned char misc_palettes[1208];
 #define BOOMERANG_VRAM_TILE     (SWORD_HORZ_VRAM_TILE + SWORD_HORZ_TILE_COUNT)
 #define BOOMERANG_TILE_COUNT    8u
 
+/* S7 v7 arrow: 6 tiles. Vertical = $28 + $29 (2 tiles, narrow 8x16),
+ * horizontal = $86 + $87 + $88 + $89 (4 tiles, wide 16x16). */
+#define ARROW_VERT_VRAM_TILE    (BOOMERANG_VRAM_TILE + BOOMERANG_TILE_COUNT)
+#define ARROW_VERT_TILE_COUNT   2u
+#define ARROW_HORZ_VRAM_TILE    (ARROW_VERT_VRAM_TILE + ARROW_VERT_TILE_COUNT)
+#define ARROW_HORZ_TILE_COUNT   4u
+
 typedef struct {
     unsigned char nes_ids[4];     /* TL, BL, TR, BR (Genesis 2x2 column-major) */
     unsigned char per_tile_hflip; /* bitmask: bit 0 = TL flipped, bit 1 = BL, etc. */
@@ -191,6 +198,30 @@ void roomrom_sprites_upload_chr(void)
                 common_chr + nes_off, 32u);
         }
     }
+
+    /* Arrow vertical: $28, $29. */
+    {
+        unsigned char ids[ARROW_VERT_TILE_COUNT] = { 0x28u, 0x29u };
+        unsigned char i;
+        for (i = 0; i < ARROW_VERT_TILE_COUNT; i++) {
+            unsigned short nes_off = (unsigned short)ids[i] * 32u;
+            render_chr_upload(
+                (unsigned short)((ARROW_VERT_VRAM_TILE + i) * 32u),
+                common_chr + nes_off, 32u);
+        }
+    }
+
+    /* Arrow horizontal: $86, $87, $88, $89. */
+    {
+        unsigned char ids[ARROW_HORZ_TILE_COUNT] = { 0x86u, 0x87u, 0x88u, 0x89u };
+        unsigned char i;
+        for (i = 0; i < ARROW_HORZ_TILE_COUNT; i++) {
+            unsigned short nes_off = (unsigned short)ids[i] * 32u;
+            render_chr_upload(
+                (unsigned short)((ARROW_HORZ_VRAM_TILE + i) * 32u),
+                common_chr + nes_off, 32u);
+        }
+    }
 }
 
 void roomrom_sprites_load_palette(void)
@@ -252,6 +283,12 @@ void roomrom_sprites_spawn_link(short x, short y)
                       (s16)-32,
                       SPRITE_SIZE(2, 2),
                       TILE_ATTR_FULL(PAL3, 0, 0, 0, BOOMERANG_VRAM_TILE),
+                      4);
+    VDP_setSpriteFull(4,
+                      (s16)-32,
+                      (s16)-32,
+                      SPRITE_SIZE(1, 2),
+                      TILE_ATTR_FULL(PAL3, 0, 0, 0, ARROW_VERT_VRAM_TILE),
                       0);
     roomrom_sprites_set_link_pose(x, y, LINK_FACE_DOWN, 0u);
 }
@@ -364,8 +401,8 @@ void roomrom_sprites_set_boomerang(short x, short y,
                       (s16)y,
                       SPRITE_SIZE(2, 2),
                       TILE_ATTR_FULL(PAL3, 0, vflip, hflip, tile),
-                      0);
-    VDP_updateSprites(4, DMA);
+                      4);
+    VDP_updateSprites(5, DMA);
 }
 
 void roomrom_sprites_clear_boomerang(void)
@@ -375,6 +412,48 @@ void roomrom_sprites_clear_boomerang(void)
                       (s16)-32,
                       SPRITE_SIZE(2, 2),
                       TILE_ATTR_FULL(PAL3, 0, 0, 0, BOOMERANG_VRAM_TILE),
+                      4);
+    VDP_updateSprites(5, DMA);
+}
+
+/* S7 v7 arrow (slot 4). Vertical 8x16 for UP/DOWN, horizontal 16x16
+ * for LEFT/RIGHT (hflip on LEFT). */
+void roomrom_sprites_set_arrow(short x, short y, link_face_t face)
+{
+    switch (face) {
+    case LINK_FACE_UP:
+        VDP_setSpriteFull(4, (s16)x, (s16)y, SPRITE_SIZE(1, 2),
+                          TILE_ATTR_FULL(PAL3, 0, 0, 0,
+                                         ARROW_VERT_VRAM_TILE),
+                          0);
+        break;
+    case LINK_FACE_DOWN:
+        VDP_setSpriteFull(4, (s16)x, (s16)y, SPRITE_SIZE(1, 2),
+                          TILE_ATTR_FULL(PAL3, 0, 1, 0,
+                                         ARROW_VERT_VRAM_TILE),
+                          0);
+        break;
+    case LINK_FACE_LEFT:
+    case LINK_FACE_RIGHT:
+    default:
+        /* Horizontal arrow tiles ($86-$89) live in a Z1 CHR-bank that
+         * isn't part of the always-loaded common_chr Genesis blob.
+         * Until those bytes are extracted, hide LEFT/RIGHT arrow
+         * rather than render the wrong tiles (which would be HUD
+         * letters at common_chr tile offsets $86-$89). */
+        roomrom_sprites_clear_arrow();
+        return;
+    }
+    VDP_updateSprites(5, DMA);
+}
+
+void roomrom_sprites_clear_arrow(void)
+{
+    VDP_setSpriteFull(4,
+                      (s16)-32,
+                      (s16)-32,
+                      SPRITE_SIZE(1, 2),
+                      TILE_ATTR_FULL(PAL3, 0, 0, 0, ARROW_VERT_VRAM_TILE),
                       0);
-    VDP_updateSprites(4, DMA);
+    VDP_updateSprites(5, DMA);
 }
