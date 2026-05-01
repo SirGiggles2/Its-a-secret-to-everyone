@@ -67,9 +67,13 @@ static short          s_beam_x        = 0;
 static short          s_beam_y        = 0;
 static unsigned char  s_beam_phase    = 0u;
 
-/* -2 Y bias applied to sword + beam when Link is in a dungeon.
- * Default 0 (OW). Toggled via roomrom_combat_set_uw. */
-static short s_uw_y_bias = 0;
+/* Y bias applied to sword + beam to match NES Z_07.asm:3320 — in OW
+ * (CurLevel == 0), Link is drawn 2 px DOWN from ObjY (INC $01 twice),
+ * but the sword is NOT shifted. To replicate that visual relationship
+ * on Genesis (where Link is drawn at link_y directly with no shift),
+ * bias the sword/beam UP by 2 in OW; in UW (CurLevel != 0) NES draws
+ * neither shifted, so bias = 0. Default OW (-2). */
+static short s_uw_y_bias = -2;
 
 /* Beam tip-offset table (from sword tip into open space). Indexed by
  * face. Beam spawns at link + this offset, then travels in facing
@@ -86,7 +90,7 @@ static const signed char beam_spawn_y[4] = {
 
 void roomrom_combat_set_uw(unsigned char in_uw)
 {
-    s_uw_y_bias = in_uw ? (short)-2 : (short)0;
+    s_uw_y_bias = in_uw ? (short)0 : (short)-2;
 }
 
 static unsigned char s_redux = 0u;
