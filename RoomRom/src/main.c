@@ -668,8 +668,10 @@ int main(bool hardReset)
             }
 
             edge_load_or_clamp();
-            roomrom_sprites_set_link_pose(s_link_x, s_link_y,
-                                          s_link_face, s_link_frame);
+            if (!roomrom_combat_link_locked()) {
+                roomrom_sprites_set_link_pose(s_link_x, s_link_y,
+                                              s_link_face, s_link_frame);
+            }
         } else {
             /* NES-faithful Link movement, ported from
              *   Z_05.asm Link_HandleInput / Link_ModifyDirAtGridPoint
@@ -762,8 +764,10 @@ int main(bool hardReset)
             }
 
             edge_load_or_clamp();
-            roomrom_sprites_set_link_pose(s_link_x, s_link_y,
-                                          s_link_face, s_link_frame);
+            if (!roomrom_combat_link_locked()) {
+                roomrom_sprites_set_link_pose(s_link_x, s_link_y,
+                                              s_link_face, s_link_frame);
+            }
         }
     }
 
