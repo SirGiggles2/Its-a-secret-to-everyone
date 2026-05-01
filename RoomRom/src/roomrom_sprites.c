@@ -117,7 +117,9 @@ void roomrom_sprites_set_link_pose(short x, short y,
                       (s16)x,
                       (s16)y,
                       SPRITE_SIZE(2, 2),
-                      TILE_ATTR_FULL(PAL3, 1, 0, 0, tile),
+                      /* Priority=0 (low) so HIGH-priority BG door tiles
+                       * render in front of Link as he walks through. */
+                      TILE_ATTR_FULL(PAL3, 0, 0, 0, tile),
                       0);
     VDP_updateSprites(1, DMA);
 }

@@ -28,14 +28,23 @@ static unsigned char s_uw_quest  = 1u;
  * Filled during blit_blob; queried by main loop. 16 cols x 11 rows. */
 static unsigned char s_uw_walkable[16][11];
 
-/* UW wall classifier. Blob nt[] stores NES tile IDs (sourced from CIRAM
- * via probe_nes_uw_l1_floodwalk.lua), so we match against NES tile IDs
- * directly. The 14 wall IDs below are the union of wall_tiles[] +
- * border_fill_tile across all 9 levels x 2 quests in
- * RoomRom/data/uw_level*_*_manifest.json (same set every level). Doors,
- * stairs, blocks, and decorative tiles fall outside this set => walkable. */
+/* UW wall + locked-door classifier. Blob nt[] stores NES tile IDs
+ * (sourced from CIRAM via probe_nes_uw_l1_floodwalk.lua), so we match
+ * against NES tile IDs directly.
+ *
+ * Wall set: aggregated wall_tiles[] + border_fill_tile across all 9
+ * levels x 2 quests in RoomRom/data/uw_level*_*_manifest.json (same
+ * 14 IDs every level).
+ *
+ * Locked-door / shutter art ($98..$A3): NES Z1 renders closed doors
+ * with these tile IDs. door_type 0 (open) uses $74..$77 as walkable
+ * threshold; door_type >= 1 (shut/walled/bombable/locked) places art
+ * from the $98..$A3 family into the doorway NT cells. Blocking this
+ * range means locked / walled / bombable / shutter doors all behave
+ * as walls, while open doors still pass. */
 static unsigned char uw_walkable_tile_id(unsigned char t)
 {
+    /* Walls. */
     switch (t) {
         case 0xB8u: case 0xBCu:
         case 0xC0u: case 0xC4u: case 0xC8u: case 0xCCu:
@@ -44,8 +53,11 @@ static unsigned char uw_walkable_tile_id(unsigned char t)
         case 0xF5u: case 0xF6u:
             return 0u;
         default:
-            return 1u;
+            break;
     }
+    /* Locked / shutter / walled door art. */
+    if (t >= 0x98u && t <= 0xA3u) return 0u;
+    return 1u;
 }
 
 unsigned char roomrom_uw_room_render_walkable_at(unsigned char col,
@@ -190,12 +202,29 @@ void roomrom_uw_room_render_upload_chr(void)
  *   - Writes the level number and room id as glyphs for diagnostic visibility.
  *
  * Real renderer ports the LayoutUWFloor logic in a follow-up commit. */
+/* Door art tiles that render IN FRONT of Link as he walks through.
+ * Verified by dumping L1Q1 R73 blob NT:
+ *   N doorway (rows 1-3): $78,$79,$7A,$7B,$7C arches + $24 interior
+ *   E doorway (rows 9-12): $88,$89,$8A,$8B posts
+ *   S doorway (rows 18-20): $7D,$7E,$7F,$80,$81 bottom arches
+ * Walkable floor / thresholds ($74,$75,$76,$77) stay LOW priority so
+ * Link renders normally on them. Locked-art ($98..$AF) also blocks. */
+static unsigned char uw_is_door_tile(unsigned char t)
+{
+    if (t >= 0x78u && t <= 0x81u) return 1u;
+    if (t >= 0x88u && t <= 0x8Bu) return 1u;
+    if (t >= 0x98u && t <= 0xAFu) return 1u;
+    return 0u;
+}
+
 static void write_tile_raw_at(unsigned char col, unsigned char row,
                            unsigned char dst_row_base,
                            unsigned char raw_tile, unsigned char pal)
 {
-    unsigned short word = (unsigned short)(((unsigned short)(pal & 0x03) << 13) |
-                                            ((unsigned short)raw_tile + UW_VDP_TILE_BASE));
+    unsigned short pri = uw_is_door_tile(raw_tile) ? 0x8000u : 0u;
+    unsigned short word = (unsigned short)(pri |
+                                           ((unsigned short)(pal & 0x03) << 13) |
+                                           ((unsigned short)raw_tile + UW_VDP_TILE_BASE));
     render_set_plane_a_word(col, (unsigned short)(dst_row_base + row +
                                                   ROOMROM_ROOM_FIRST_ROW), word);
 }
