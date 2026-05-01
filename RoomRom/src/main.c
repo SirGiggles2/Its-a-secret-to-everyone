@@ -471,15 +471,19 @@ int main(bool hardReset)
         }
 
         if (pressed & BUTTON_C) {
+            unsigned char redux_flag;
             if (s_scene == SCENE_UW) {
                 u8 map_id = roomrom_uw_room_render_get_map();
                 roomrom_uw_room_render_set_map(map_id ^ 1u);
+                redux_flag = (u8)((map_id ^ 1u) != 0u);
             } else {
                 u8 map_id = roomrom_ow_room_render_get_map();
                 roomrom_ow_room_render_set_map(map_id ^ 1u);
+                redux_flag = (u8)((map_id ^ 1u) != 0u);
             }
             upload_scene_chr();
             load_room(s_room_id);
+            roomrom_combat_set_redux(redux_flag);
             continue;
         }
 

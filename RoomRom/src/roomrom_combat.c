@@ -89,6 +89,13 @@ void roomrom_combat_set_uw(unsigned char in_uw)
     s_uw_y_bias = in_uw ? (short)-2 : (short)0;
 }
 
+static unsigned char s_redux = 0u;
+void roomrom_combat_set_redux(unsigned char redux)
+{
+    s_redux = redux ? 1u : 0u;
+    (void)s_redux;  /* Reserved for v11+ — diagonal sword + ALttP arc swing. */
+}
+
 /* Per-state, per-facing X offset. Index: [state-1][face].
  * face order: 0=DOWN, 1=UP, 2=LEFT, 3=RIGHT.
  * NES tables are in reverse direction order (up, down, left, right);

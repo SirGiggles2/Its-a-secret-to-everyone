@@ -39,4 +39,11 @@ unsigned char roomrom_combat_link_locked(void);
  * to a different sprite Y baseline). 0 = OW (no bias), 1 = UW. */
 void roomrom_combat_set_uw(unsigned char in_uw);
 
+/* Redux mode toggle (per docs/audit/redux_touchpoints.md, diagonal
+ * sword + ALttP-style sword arc are out-of-scope IPS extensions of
+ * NES Z1). v11 hooks the flag so future patches can vary timing or
+ * dispatch alternate animation paths without touching the cardinal
+ * combat state machine. Currently a no-op flag — reserved for v11+. */
+void roomrom_combat_set_redux(unsigned char redux);
+
 #endif
