@@ -68,4 +68,9 @@ void roomrom_sprites_clear_bomb(void);
 void roomrom_sprites_set_explosion(short x, short y, unsigned char timer);
 void roomrom_sprites_clear_explosion(void);
 
+/* Phase 1: select item-atlas variant (orig vs redux). Affects the next
+ * call to roomrom_sprites_upload_chr (item CHR is variant-selected at
+ * upload time). */
+void roomrom_sprites_set_redux(unsigned char redux);
+
 #endif

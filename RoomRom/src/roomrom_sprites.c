@@ -1,6 +1,7 @@
 #include <genesis.h>
 #include "roomrom_sprites.h"
 #include "render_abi.h"
+#include "roomrom_item_chr.h"
 
 /* Sprite CHR sources.
  * sprites_chr (data/chr/sprites.c) holds OW enemy tiles (Octorok / Leever /
@@ -94,6 +95,16 @@ static const link_pose_def_t attack_poses[ATTACK_POSE_COUNT] = {
     /* LEFT  */ { {0x12u, 0x13u, 0x10u, 0x11u}, 0xFu },
     /* RIGHT */ { {0x10u, 0x11u, 0x12u, 0x13u}, 0x0u },
 };
+
+/* Phase 1: item-atlas variant selector. 0 = orig, 1 = redux. Read at
+ * upload time by roomrom_sprites_upload_chr to pick the correct slice
+ * of roomrom_item_chr[][]. */
+static unsigned char s_item_chr_variant = 0u;  /* ROOMROM_ITEM_VARIANT_ORIG */
+
+void roomrom_sprites_set_redux(unsigned char redux)
+{
+    s_item_chr_variant = redux ? 1u : 0u;
+}
 
 static unsigned short nes_to_cram(unsigned char nes_idx)
 {
