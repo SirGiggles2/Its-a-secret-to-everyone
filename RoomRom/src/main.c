@@ -516,8 +516,18 @@ int main(bool hardReset)
                                        s_link_x, s_link_y);
                 }
                 break;
-            case B_ITEM_CANDLE:  break;  /* v9 */
-            case B_ITEM_ROD:     break;  /* v10 */
+            case B_ITEM_CANDLE:
+                /* v9 deferred: candle fire tiles ($28+ in pattern table 0
+                 * during candle wield) aren't in common_chr. Same
+                 * CHR-extraction limitation as horizontal sword + arrow.
+                 * Wire later once tools/extract_chr.py is extended to
+                 * pull on-demand-loaded item patterns. */
+                break;
+            case B_ITEM_ROD:
+                /* v10 deferred: rod uses UpdateSwordOrRod path with its
+                 * own tile data + magic shot ($1A magic shot tile). Same
+                 * blocker as candle. */
+                break;
             default:             break;
             }
         }
