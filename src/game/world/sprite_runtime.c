@@ -4,6 +4,7 @@
 #include "enemy_state.h"
 #include "object_state.h"
 #include "room_state.h"
+#include "sprite_state.h"
 
 
 void sprrt_cycle_cur_sprite_index(void) {
@@ -35,21 +36,28 @@ void sprrt_hide_object_sprites(void) {
 }
 
 void sprrt_show_link_sprites_behind_horizontal_doors(void) {
-    static const unsigned char extents[2] = {0x08, 0x00};
-    unsigned int d3 = 10;
-    int d2 = 1;
-    COMBAT_WEAPON_SLOT = ENEMY_PLAYER_OBJ_X;
-    do {
-        unsigned char x = (unsigned char)(COMBAT_WEAPON_SLOT + extents[d2]);
-        if (x >= 0xE9u || x < 0x10u) {
-            RAM(0x0240 + d3) = RAM(0x0240 + d3) | 0x20u;
-        }
-        d3 = (d3 + 4u) & 0xFFu;
-        if (d3 == 0) {
-            d3 = 32;
-        }
-        d2--;
-    } while (d2 >= 0);
+    /* NES Zelda 1: when Link's body straddles a horizontal screen edge (i.e.,
+     * during a side-doorway transition), force his top-half OAM sprites into
+     * "behind background" priority by setting OAM attr bit 5. _oam_dma
+     * (nes_io.asm) honors bit 5 by clearing Genesis SAT word-2 bit 15, which
+     * drops the sprite below high-priority Plane A pixels (every BG tile is
+     * promoted to high prio in _compose_bg_tile_word). Door arch opaque
+     * pixels then cover Link's head/torso; color-0 floor pixels let his feet
+     * show through. Bottom-half sprites stay high-prio so feet remain on top.
+     *
+     * Slot layout matches original 6502 (z_01:1594): top-left = 18,
+     * top-right = 19. The two halves are gated independently by Link's left
+     * (link_x) and right (link_x+8) edges so the priority drop tracks the
+     * half that's actually crossing the edge mid-transition. */
+    unsigned char link_x  = ENEMY_PLAYER_OBJ_X;
+    unsigned char x_left  = link_x;
+    unsigned char x_right = (unsigned char)(link_x + 8u);
+    if (x_left < 0x10u || x_left >= 0xE9u) {
+        OAM_SPRITE_ATTR(18) |= 0x20u;
+    }
+    if (x_right < 0x10u || x_right >= 0xE9u) {
+        OAM_SPRITE_ATTR(19) |= 0x20u;
+    }
 }
 
 /* ---- Plan C: drained from z_07 (animation cluster) --------------------- */
