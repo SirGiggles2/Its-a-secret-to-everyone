@@ -37,6 +37,7 @@ extern const unsigned char common_chr[7616];
 #define ARROW_HORZ_VRAM_TILE    (ITEM_VRAM_TILE + ROOMROM_ITEM_TILE_ARROW_HORZ)
 #define BOMB_VRAM_TILE          (ITEM_VRAM_TILE + ROOMROM_ITEM_TILE_BOMB)
 #define EXPLOSION_VRAM_TILE     (ITEM_VRAM_TILE + ROOMROM_ITEM_TILE_EXPLOSION)
+#define SWORD_DIAG_VRAM_TILE    (ITEM_VRAM_TILE + ROOMROM_ITEM_TILE_SWORD_DIAG)
 
 typedef struct {
     unsigned char nes_ids[4];     /* TL, BL, TR, BR (Genesis 2x2 column-major) */
@@ -276,6 +277,21 @@ void roomrom_sprites_clear_sword(void)
                       (s16)-32,
                       SPRITE_SIZE(1, 2),
                       TILE_ATTR_FULL(PAL1,0, 0, 0, SWORD_VERT_VRAM_TILE),
+                      2);
+    VDP_updateSprites(3, DMA);
+}
+
+/* Redux ALttP-style diagonal sword (16x16). Used in arc swing frames 2-5
+ * where the blade rotates between horizontal and vertical orientations. */
+void roomrom_sprites_set_sword_diagonal(short x, short y,
+                                        unsigned char hflip,
+                                        unsigned char vflip)
+{
+    VDP_setSpriteFull(1,
+                      (s16)x,
+                      (s16)y,
+                      SPRITE_SIZE(2, 2),
+                      TILE_ATTR_FULL(PAL1,0, vflip, hflip, SWORD_DIAG_VRAM_TILE),
                       2);
     VDP_updateSprites(3, DMA);
 }

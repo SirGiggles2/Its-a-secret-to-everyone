@@ -103,8 +103,63 @@ static unsigned char s_redux = 0u;
 void roomrom_combat_set_redux(unsigned char redux)
 {
     s_redux = redux ? 1u : 0u;
-    (void)s_redux;  /* Reserved for v11+ — diagonal sword + ALttP arc swing. */
 }
+
+/* Redux ALttP-style 8-frame arc swing.
+ *
+ * Source: Zelda1-Redux/code/gameplay/sword_draw.asm wide_sword_xpos/ypos/
+ * sprite/face/flip/flip_h16 tables. Each direction has 8 frames; the sword
+ * arcs from one orthogonal side (windup) through diagonal to extended in
+ * the facing direction.
+ *
+ * Direction order: NES tables use UP, DOWN, LEFT, RIGHT (reverse-direction
+ * index). RoomRom link_face_t uses DOWN, UP, LEFT, RIGHT — tables below
+ * are reordered to match.
+ */
+#define REDUX_TOTAL_FRAMES   8u
+#define REDUX_BEAM_SPAWN     7u
+
+/* Per-face per-frame sword X/Y offsets from Link's top-left. */
+static const signed char redux_x[4][8] = {
+    /* DOWN  */ { -9, -9, -5, -3, -2, -1,  0,  1 },
+    /* UP    */ { 10, 10,  7,  6,  4,  2,  0, -1 },
+    /* LEFT  */ {  1, -1, -5, -6, -7, -8,-10,-11 },
+    /* RIGHT */ {  1,  3,  5,  6,  7,  8, 10, 11 },
+};
+
+static const signed char redux_y[4][8] = {
+    /* DOWN  */ {  3,  5,  9, 10, 11, 12, 13, 13 },
+    /* UP    */ {  2,  0, -5, -6, -7, -8, -9,-10 },
+    /* LEFT  */ {-10,-10, -9, -8, -6, -4,  2,  3 },
+    /* RIGHT */ {-10,-10, -8, -7, -5, -3,  2,  3 },
+};
+
+/* 0=vertical (8x16), 1=horizontal (16x16), 2=diagonal (16x16). */
+static const unsigned char redux_sprite[4][8] = {
+    /* DOWN  */ { 1, 1, 2, 2, 2, 2, 0, 0 },
+    /* UP    */ { 1, 1, 2, 2, 2, 2, 0, 0 },
+    /* LEFT  */ { 0, 0, 2, 2, 2, 2, 1, 1 },
+    /* RIGHT */ { 0, 0, 2, 2, 2, 2, 1, 1 },
+};
+
+/* Genesis-side combined flip flags per frame.
+ * NES uses (wide_sword_flip & $40) for sprite hflip and a separate
+ * wide_sword_flip_h16 for swapping the wide-sprite halves. On Genesis,
+ * a single hflip on the 16x16 sprite handles both, so combined hflip =
+ * (NES_flip & $40 ? 1 : 0) XOR NES_flip_h16. */
+static const unsigned char redux_hflip[4][8] = {
+    /* DOWN  */ { 1, 1, 1, 0, 0, 0, 1, 1 },
+    /* UP    */ { 0, 0, 1, 0, 0, 1, 0, 0 },
+    /* LEFT  */ { 0, 0, 0, 0, 0, 1, 1, 1 },
+    /* RIGHT */ { 0, 0, 1, 0, 0, 1, 0, 0 },
+};
+
+static const unsigned char redux_vflip[4][8] = {
+    /* DOWN  */ { 0, 0, 1, 1, 1, 1, 1, 1 },
+    /* UP    */ { 0, 0, 0, 0, 0, 0, 0, 0 },
+    /* LEFT  */ { 0, 0, 0, 0, 0, 0, 0, 0 },
+    /* RIGHT */ { 0, 0, 0, 0, 0, 0, 0, 0 },
+};
 
 /* Per-state, per-facing X offset. Index: [state-1][face].
  * face order: 0=DOWN, 1=UP, 2=LEFT, 3=RIGHT.
@@ -220,6 +275,45 @@ void roomrom_combat_update(short link_x, short link_y, link_face_t face)
     if (s_state == COMBAT_IDLE) {
         roomrom_sprites_clear_sword();
         update_beam();
+        return;
+    }
+
+    /* Redux 8-frame ALttP-style arc swing — separate state machine. */
+    if (s_redux) {
+        unsigned char fr = s_frame;
+        unsigned char face_idx = (unsigned char)s_face;
+        if (fr >= REDUX_TOTAL_FRAMES) fr = (unsigned char)(REDUX_TOTAL_FRAMES - 1u);
+
+        roomrom_sprites_set_link_attack_pose(link_x, link_y, s_face);
+
+        sx = (short)(link_x + redux_x[face_idx][fr]);
+        sy = (short)(link_y + redux_y[face_idx][fr] + s_uw_y_bias);
+
+        switch (redux_sprite[face_idx][fr]) {
+        case 0:
+            roomrom_sprites_set_sword_vertical(sx, sy, redux_vflip[face_idx][fr]);
+            break;
+        case 1:
+            roomrom_sprites_set_sword_horizontal(sx, sy, redux_hflip[face_idx][fr]);
+            break;
+        case 2:
+            roomrom_sprites_set_sword_diagonal(sx, sy,
+                                               redux_hflip[face_idx][fr],
+                                               redux_vflip[face_idx][fr]);
+            break;
+        }
+
+        if (s_frame == REDUX_BEAM_SPAWN && !s_beam_active) {
+            spawn_beam(link_x, link_y);
+        }
+        update_beam();
+
+        s_frame++;
+        if (s_frame >= REDUX_TOTAL_FRAMES) {
+            s_state = COMBAT_IDLE;
+            s_frame = 0u;
+            roomrom_sprites_clear_sword();
+        }
         return;
     }
 

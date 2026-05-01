@@ -38,6 +38,10 @@ void roomrom_sprites_set_link_attack_pose(short x, short y, link_face_t face);
 void roomrom_sprites_set_sword_vertical(short x, short y, unsigned char vflip);
 void roomrom_sprites_set_sword_horizontal(short x, short y, unsigned char hflip);
 void roomrom_sprites_clear_sword(void);
+/* Redux ALttP-style diagonal sword (16x16). Used in Redux arc swing. */
+void roomrom_sprites_set_sword_diagonal(short x, short y,
+                                        unsigned char hflip,
+                                        unsigned char vflip);
 
 /* S7 v5 beam: sword shot projectile (slot 2). Flicker cycles vflip/hflip
  * each frame to imitate Z1's palette-cycling beam (Genesis can't cheaply

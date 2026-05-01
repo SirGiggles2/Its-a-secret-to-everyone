@@ -3,8 +3,8 @@
 #define ROOMROM_ITEM_CHR_H
 
 #define ROOMROM_ITEM_CHR_VARIANT_COUNT 2u
-#define ROOMROM_ITEM_CHR_TILE_COUNT 26u
-#define ROOMROM_ITEM_CHR_BYTES 832u
+#define ROOMROM_ITEM_CHR_TILE_COUNT 30u
+#define ROOMROM_ITEM_CHR_BYTES 960u
 
 #define ROOMROM_ITEM_TILE_SWORD_VERT 0u
 #define ROOMROM_ITEM_TILE_SWORD_HORZ 2u
@@ -13,6 +13,7 @@
 #define ROOMROM_ITEM_TILE_ARROW_HORZ 16u
 #define ROOMROM_ITEM_TILE_BOMB 20u
 #define ROOMROM_ITEM_TILE_EXPLOSION 22u
+#define ROOMROM_ITEM_TILE_SWORD_DIAG 26u
 
 extern const unsigned long roomrom_item_chr_size;
 extern const unsigned short roomrom_item_chr_byte_count;
