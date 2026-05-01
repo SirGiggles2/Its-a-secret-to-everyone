@@ -3,11 +3,20 @@
 
 /* RoomRom sprite/OAM scaffold.
  *
- * Owns PAL3 and the sprite-CHR VRAM region (tiles 512..743). Renders Link
- * as a single static 16x16 sprite via raw VDP_setSprite + VDP_updateSprites.
- * BG palette loaders must skip PAL3 - see ow_/uw_room_render_roomrom.c.
+ * Owns PAL3 and the sprite-CHR VRAM region. Renders Link as slot 0 +
+ * sword as slot 1.
  *
- * S2+ will add motion, animation frames, and additional sprites.
+ * S7 v4 combat additions:
+ *   - Attack-pose tiles uploaded alongside walk poses (4 facings, 4
+ *     tiles each = 16 tiles). Wielding-sword body sprite per Z1
+ *     PlayerObjState = $10 — see Z_05.asm WieldSword.
+ *   - Vertical sword (UP/DOWN): 8x16 sprite, NES tile $20 (top) +
+ *     $21 (bottom) from common_chr. UP no flip, DOWN vflip.
+ *   - Horizontal sword (LEFT/RIGHT): 16x16 sprite, NES tiles $82-$85
+ *     from common_chr. RIGHT no flip, LEFT hflip.
+ *
+ * NES Z1 source: reference/aldonunez/Z_01.asm Anim_ItemFrameTiles +
+ * Z_07.asm RDirectionToWeaponBaseAttribute + PlayerToWeaponOffsetsX/Y.
  */
 
 typedef enum {
@@ -24,12 +33,10 @@ void roomrom_sprites_set_link_pos(short x, short y);
 void roomrom_sprites_set_link_pose(short x, short y,
                                    link_face_t face, unsigned char frame);
 
-/* S7 combat: sword sprite (slot 1). Sword tile data uploaded inside
- * roomrom_sprites_upload_chr alongside Link poses. set_sword_pose draws
- * sword 8x16 in current facing direction at the given screen coords;
- * clear_sword hides it (Y off-screen). UP/DOWN supported in v1; LEFT/RIGHT
- * fall through to clear (TODO horizontal sword tiles). */
-void roomrom_sprites_set_sword_pose(link_face_t face, short x, short y);
+/* S7 v4 combat. */
+void roomrom_sprites_set_link_attack_pose(short x, short y, link_face_t face);
+void roomrom_sprites_set_sword_vertical(short x, short y, unsigned char vflip);
+void roomrom_sprites_set_sword_horizontal(short x, short y, unsigned char hflip);
 void roomrom_sprites_clear_sword(void);
 
 #endif

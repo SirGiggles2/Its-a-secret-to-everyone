@@ -23,33 +23,29 @@ extern const unsigned char misc_palettes[1208];
 
 #define LINK_VRAM_TILE          (COMMON_VRAM_TILE_BASE + COMMON_BLOCK_TILE_COUNT)
 #define LINK_TILES_PER_POSE     4u
-#define LINK_POSE_COUNT         8u   /* 4 facings x 2 frames */
+#define LINK_POSE_COUNT         8u   /* 4 facings x 2 walk frames */
 
-/* Sword tiles follow Link's 32 pose tiles. 8 tiles total: 4 for vertical
- * (UP+DOWN share same art), 4 for horizontal (LEFT+RIGHT share, hflip
- * differs). Each direction is a 16x16 sprite (SPRITE_SIZE(2,2)).
- *
- * NES tile IDs sourced from live capture (probe_nes_sword.lua, 2026-04-30):
- *   Vertical:   $18, $19, $1A, $1B  (NES OAM in 8x16 mode: pairs $18+$19
- *                                    and $1A+$1B side by side)
- *   Horizontal: $82, $83, $84, $85  (hflip=1 for LEFT, hflip=0 for RIGHT)
- *
- * SGDK SPRITE_SIZE(2,2) tile order is column-major: TL, BL, TR, BR.
- * Genesis tile order in VRAM: SWORD_VRAM_TILE + 0..3 = vertical 4 tiles;
- *                             SWORD_VRAM_TILE + 4..7 = horizontal 4 tiles. */
-#define SWORD_VRAM_TILE         (LINK_VRAM_TILE + LINK_POSE_COUNT * LINK_TILES_PER_POSE)
-#define SWORD_VRAM_TILE_VERT    (SWORD_VRAM_TILE + 0u)
-#define SWORD_VRAM_TILE_HORZ    (SWORD_VRAM_TILE + 4u)
-#define SWORD_VRAM_TILE_COUNT   8u
+/* S7 v4: attack poses follow the 8 walk poses. 4 attack poses (one per
+ * facing), 4 tiles each = 16 contiguous tiles. */
+#define ATTACK_POSE_COUNT       4u
+#define ATTACK_VRAM_TILE        (LINK_VRAM_TILE + LINK_POSE_COUNT * LINK_TILES_PER_POSE)
+
+/* Sword tile data follows the attack poses. NES Z1 sword:
+ *   Anim_ItemFrameTiles[0] = $20 (vertical 8x16, narrow / half-width)
+ *   Anim_ItemFrameTiles[1] = $82 (horizontal 16x16, hflip-able)
+ * Vertical: 2 8x8 tiles ($20 top + $21 bottom).
+ * Horizontal: 4 8x8 tiles ($82+$83 left half, $84+$85 right half). */
+#define SWORD_VERT_VRAM_TILE    (ATTACK_VRAM_TILE + ATTACK_POSE_COUNT * LINK_TILES_PER_POSE)
+#define SWORD_VERT_TILE_COUNT   2u
+#define SWORD_HORZ_VRAM_TILE    (SWORD_VERT_VRAM_TILE + SWORD_VERT_TILE_COUNT)
+#define SWORD_HORZ_TILE_COUNT   4u
 
 typedef struct {
     unsigned char nes_ids[4];     /* TL, BL, TR, BR (Genesis 2x2 column-major) */
     unsigned char per_tile_hflip; /* bitmask: bit 0 = TL flipped, bit 1 = BL, etc. */
 } link_pose_def_t;
 
-/* Pose table values from /spritefix NES live OAM capture (S3 plan T1).
- * pose_index = face*2 + frame. Down values cross-checked against S1
- * findings. UP/LEFT/RIGHT captured 2026-04-30 from BizHawk Z1 gameplay. */
+/* Walk poses. pose_index = face*2 + frame. Captured from NES live OAM. */
 static const link_pose_def_t link_poses[LINK_POSE_COUNT] = {
     /* DOWN  frame 0 */ { {0x58u, 0x59u, 0x0Au, 0x0Bu}, 0x0u },
     /* DOWN  frame 1 */ { {0x5Au, 0x5Bu, 0x08u, 0x09u}, 0xCu },
@@ -59,6 +55,22 @@ static const link_pose_def_t link_poses[LINK_POSE_COUNT] = {
     /* LEFT  frame 1 */ { {0x02u, 0x03u, 0x00u, 0x01u}, 0xFu },
     /* RIGHT frame 0 */ { {0x04u, 0x05u, 0x06u, 0x07u}, 0x0u },
     /* RIGHT frame 1 */ { {0x00u, 0x01u, 0x02u, 0x03u}, 0x0u },
+};
+
+/* Attack poses (Link wielding sword, body sprite changes during the swing
+ * window — Z1 sets Player ObjState = $10 when WieldSword fires). NES tile
+ * IDs from probe_nes_link_swing_capture.lua, 2026-04-30:
+ *   DOWN: slot18=$14, slot19=$16, no flip
+ *   UP  : slot18=$18, slot19=$1A, no flip
+ *   LEFT: slot18=$12 hflip, slot19=$10 hflip (mirror of RIGHT)
+ *   RIGHT:slot18=$10, slot19=$12, no flip
+ * In 8x16 NES sprite mode, slot18 tile $XX expands to common_chr tiles
+ * $XX (top) + $XX+1 (bottom). So 4 8x8 tiles per facing. */
+static const link_pose_def_t attack_poses[ATTACK_POSE_COUNT] = {
+    /* DOWN  */ { {0x14u, 0x15u, 0x16u, 0x17u}, 0x0u },
+    /* UP    */ { {0x18u, 0x19u, 0x1Au, 0x1Bu}, 0x0u },
+    /* LEFT  */ { {0x12u, 0x13u, 0x10u, 0x11u}, 0xFu },
+    /* RIGHT */ { {0x10u, 0x11u, 0x12u, 0x13u}, 0x0u },
 };
 
 static unsigned short nes_to_cram(unsigned char nes_idx)
@@ -83,6 +95,24 @@ static void hflip_tile_inplace(unsigned char *t)
     }
 }
 
+/* Helper: upload one pose's 4 tiles into VRAM, baking per-tile hflip. */
+static void upload_pose(unsigned short vram_tile_base,
+                        const link_pose_def_t *pose)
+{
+    unsigned char t, i;
+    unsigned char buf[32];
+    for (t = 0; t < LINK_TILES_PER_POSE; t++) {
+        unsigned short nes_off = (unsigned short)pose->nes_ids[t] * 32u;
+        for (i = 0; i < 32; i++) buf[i] = common_chr[nes_off + i];
+        if (pose->per_tile_hflip & (1u << t)) {
+            hflip_tile_inplace(buf);
+        }
+        render_chr_upload(
+            (unsigned short)((vram_tile_base + t) * 32u),
+            buf, 32u);
+    }
+}
+
 void roomrom_sprites_upload_chr(void)
 {
     /* OW enemy sprite block. */
@@ -93,40 +123,51 @@ void roomrom_sprites_upload_chr(void)
     render_chr_upload((unsigned short)(COMMON_VRAM_TILE_BASE * 32u),
                       common_chr, COMMON_CHR_BYTES);
 
-    /* Pre-upload all 8 Link poses (32 tiles), baking per-tile hflip
-     * so render-side sprite hflip is always 0. */
+    /* Walk poses (32 tiles). */
     {
-        unsigned char p, t, i;
-        unsigned char buf[32];
+        unsigned char p;
         for (p = 0; p < LINK_POSE_COUNT; p++) {
-            for (t = 0; t < LINK_TILES_PER_POSE; t++) {
-                unsigned short nes_off = (unsigned short)link_poses[p].nes_ids[t] * 32u;
-                for (i = 0; i < 32; i++) buf[i] = common_chr[nes_off + i];
-                if (link_poses[p].per_tile_hflip & (1u << t)) {
-                    hflip_tile_inplace(buf);
-                }
-                render_chr_upload(
-                    (unsigned short)((LINK_VRAM_TILE + p*LINK_TILES_PER_POSE + t) * 32u),
-                    buf, 32u);
-            }
+            upload_pose(
+                (unsigned short)(LINK_VRAM_TILE + p * LINK_TILES_PER_POSE),
+                &link_poses[p]);
         }
     }
 
-    /* S7: upload 8 sword tiles ($18-$1B vertical, $82-$85 horizontal) into
-     * SWORD_VRAM_TILE region in SGDK column-major order (TL, BL, TR, BR).
-     * NES tile IDs verified by live OAM capture (probe_nes_sword.lua). */
+    /* Attack poses (16 tiles). */
     {
-        static const unsigned char sword_nes[SWORD_VRAM_TILE_COUNT] = {
-            /* Vertical (UP+DOWN): NES pairs $18+$19, $1A+$1B */
-            0x18u, 0x19u, 0x1Au, 0x1Bu,
-            /* Horizontal (LEFT+RIGHT): NES pairs $82+$83, $84+$85 */
+        unsigned char p;
+        for (p = 0; p < ATTACK_POSE_COUNT; p++) {
+            upload_pose(
+                (unsigned short)(ATTACK_VRAM_TILE + p * LINK_TILES_PER_POSE),
+                &attack_poses[p]);
+        }
+    }
+
+    /* Sword vertical: 2 tiles ($20 top, $21 bottom) for the 8x16 narrow
+     * sword used facing UP / DOWN. */
+    {
+        unsigned char i;
+        unsigned char nes_ids[SWORD_VERT_TILE_COUNT] = { 0x20u, 0x21u };
+        for (i = 0; i < SWORD_VERT_TILE_COUNT; i++) {
+            unsigned short nes_off = (unsigned short)nes_ids[i] * 32u;
+            render_chr_upload(
+                (unsigned short)((SWORD_VERT_VRAM_TILE + i) * 32u),
+                common_chr + nes_off, 32u);
+        }
+    }
+
+    /* Sword horizontal: 4 tiles ($82, $83, $84, $85) for the 16x16
+     * horizontal sword used facing LEFT / RIGHT. SGDK SPRITE_SIZE(2,2)
+     * tile order is column-major: TL=$82, BL=$83, TR=$84, BR=$85. */
+    {
+        unsigned char i;
+        unsigned char nes_ids[SWORD_HORZ_TILE_COUNT] = {
             0x82u, 0x83u, 0x84u, 0x85u
         };
-        unsigned char i;
-        for (i = 0; i < SWORD_VRAM_TILE_COUNT; i++) {
-            unsigned short nes_off = (unsigned short)sword_nes[i] * 32u;
+        for (i = 0; i < SWORD_HORZ_TILE_COUNT; i++) {
+            unsigned short nes_off = (unsigned short)nes_ids[i] * 32u;
             render_chr_upload(
-                (unsigned short)((SWORD_VRAM_TILE + i) * 32u),
+                (unsigned short)((SWORD_HORZ_VRAM_TILE + i) * 32u),
                 common_chr + nes_off, 32u);
         }
     }
@@ -149,14 +190,23 @@ void roomrom_sprites_set_link_pose(short x, short y,
 {
     unsigned short pose_idx = (unsigned short)face * 2u + (unsigned short)frame;
     unsigned short tile = LINK_VRAM_TILE + pose_idx * LINK_TILES_PER_POSE;
-    /* Slot 0 link = 1 so the chain reaches slot 1 (sword). Slot 1 stays
-     * Y-hidden when sword is inactive. */
     VDP_setSpriteFull(0,
                       (s16)x,
                       (s16)y,
                       SPRITE_SIZE(2, 2),
-                      /* Priority=0 (low) so HIGH-priority BG door tiles
-                       * render in front of Link as he walks through. */
+                      TILE_ATTR_FULL(PAL3, 0, 0, 0, tile),
+                      1);
+    VDP_updateSprites(2, DMA);
+}
+
+void roomrom_sprites_set_link_attack_pose(short x, short y, link_face_t face)
+{
+    unsigned short pose_idx = (unsigned short)face;
+    unsigned short tile = ATTACK_VRAM_TILE + pose_idx * LINK_TILES_PER_POSE;
+    VDP_setSpriteFull(0,
+                      (s16)x,
+                      (s16)y,
+                      SPRITE_SIZE(2, 2),
                       TILE_ATTR_FULL(PAL3, 0, 0, 0, tile),
                       1);
     VDP_updateSprites(2, DMA);
@@ -164,12 +214,12 @@ void roomrom_sprites_set_link_pose(short x, short y,
 
 void roomrom_sprites_spawn_link(short x, short y)
 {
-    /* Init slot 1 (sword) to hidden, terminator link, before first link draw. */
+    /* Init slot 1 (sword) hidden, terminator link, before first link draw. */
     VDP_setSpriteFull(1,
                       (s16)-32,
                       (s16)-32,
                       SPRITE_SIZE(1, 2),
-                      TILE_ATTR_FULL(PAL3, 0, 0, 0, SWORD_VRAM_TILE),
+                      TILE_ATTR_FULL(PAL3, 0, 0, 0, SWORD_VERT_VRAM_TILE),
                       0);
     roomrom_sprites_set_link_pose(x, y, LINK_FACE_DOWN, 0u);
 }
@@ -179,32 +229,25 @@ void roomrom_sprites_set_link_pos(short x, short y)
     roomrom_sprites_set_link_pose(x, y, LINK_FACE_DOWN, 0u);
 }
 
-void roomrom_sprites_set_sword_pose(link_face_t face, short x, short y)
+void roomrom_sprites_set_sword_vertical(short x, short y, unsigned char vflip)
 {
-    unsigned short tile;
-    unsigned char  hflip = 0u;
-    switch (face) {
-    case LINK_FACE_UP:
-    case LINK_FACE_DOWN:
-        tile = SWORD_VRAM_TILE_VERT;  /* same 4 tiles for both per NES capture */
-        break;
-    case LINK_FACE_LEFT:
-        tile = SWORD_VRAM_TILE_HORZ;
-        hflip = 1u;
-        break;
-    case LINK_FACE_RIGHT:
-        tile = SWORD_VRAM_TILE_HORZ;
-        break;
-    default:
-        roomrom_sprites_clear_sword();
-        return;
-    }
     VDP_setSpriteFull(1,
                       (s16)x,
                       (s16)y,
-                      SPRITE_SIZE(2, 2),  /* 16x16 (matches NES 2x 8x16 sprites) */
-                      TILE_ATTR_FULL(PAL3, 0, 0, hflip, tile),
-                      0);                  /* terminator */
+                      SPRITE_SIZE(1, 2),
+                      TILE_ATTR_FULL(PAL3, 0, vflip, 0, SWORD_VERT_VRAM_TILE),
+                      0);
+    VDP_updateSprites(2, DMA);
+}
+
+void roomrom_sprites_set_sword_horizontal(short x, short y, unsigned char hflip)
+{
+    VDP_setSpriteFull(1,
+                      (s16)x,
+                      (s16)y,
+                      SPRITE_SIZE(2, 2),
+                      TILE_ATTR_FULL(PAL3, 0, 0, hflip, SWORD_HORZ_VRAM_TILE),
+                      0);
     VDP_updateSprites(2, DMA);
 }
 
@@ -213,8 +256,8 @@ void roomrom_sprites_clear_sword(void)
     VDP_setSpriteFull(1,
                       (s16)-32,
                       (s16)-32,
-                      SPRITE_SIZE(2, 2),
-                      TILE_ATTR_FULL(PAL3, 0, 0, 0, SWORD_VRAM_TILE),
+                      SPRITE_SIZE(1, 2),
+                      TILE_ATTR_FULL(PAL3, 0, 0, 0, SWORD_VERT_VRAM_TILE),
                       0);
     VDP_updateSprites(2, DMA);
 }
