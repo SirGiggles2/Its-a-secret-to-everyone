@@ -19,6 +19,32 @@ Use a two-ROM development split until the end:
 
 This is the best long-term shape because it keeps iteration fast, keeps bugs localized, and lets Codex + Claude (Coding CLIs) work in deterministic slices with probes and screenshots instead of constantly booting through frontend state.
 
+## Parallelism Strategy
+
+Codex + Claude perform best when the work splits into independent, deterministic slices with their own probe and acceptance gate. Phases that match this shape MUST dispatch via `superpowers:dispatching-parallel-agents`; phases that depend on shared state run sequentially under `superpowers:executing-plans` or `superpowers:subagent-driven-development`.
+
+| Phase | Mode | Slices |
+|-------|------|--------|
+| Phase 1 (Builder) | Parallel | One agent per extractor: CHR, rooms, palettes, items, audio, text, enemy tables. |
+| Phase 2 (Graphics registry) | Sequential | Shared VRAM/CRAM/CHR state; one slot at a time. |
+| Phase 3-5 (Caves, secrets, dungeon core) | Sequential | World/state model is shared; ordering is dependency-correct. |
+| Phase 6 (Link/items/combat) | Mixed | Inventory + state sequential, then per-item agents in parallel (sword, boomerang, bombs, bow, candle, recorder, wand). |
+| Phase 7 (Enemy families) | Parallel | One agent per family: walkers, flyers, projectile users, special, aquatic. |
+| Phase 8 (Bosses) | Parallel | One agent per boss after the boss framework lands. |
+| Phase 9 (Options/HUD/save) | Mixed | Runtime + SRAM sequential; option consumers in parallel after wiring lands. |
+| Phase 10 (Audio events) | Parallel | Music, SFX, low-health, scene-music routing as independent agents. |
+| Phase 13 (Multiplayer) | Sequential | PlayerState refactor is shared. |
+| Phase 15a (Inline opts) | Sequential | Embedded in earlier phases. |
+| Phase 15b (Measured opts) | Parallel | Per-subsystem perf re-pass agents (DMA, VRAM residency, sprite SAT, CRAM, audio). |
+| Phase 17 (Release) | Sequential | Single packaging pipeline. |
+
+Hard rules for parallel dispatch:
+
+1. Each agent owns a disjoint file set or a disjoint state struct field set.
+2. Each agent ships its own probe and report under `builds/reports/`.
+3. Merge-back is sequential, with one rebuild and one full smoke run between merges.
+4. RoomRom worktree (`FINAL TRY-roomrom-s1`) is the only authorized location for parallel RoomRom edits; main worktree is reserved for promoted `src/game/` modules.
+
 ## Approaches Considered
 
 ### 1. Keep extending the old transpiled WHATIF path
@@ -101,6 +127,12 @@ Primary source ownership:
 7. Optional 4-player mode is a separate enhanced mode. It must not destabilize 1-player NES parity.
 8. Child implementation plans run under `superpowers:executing-plans`.
 9. Independent implementation slices use `superpowers:subagent-driven-development` and `superpowers:dispatching-parallel-agents`.
+10. State contract is binding: typed C structs for owned modules, NES RAM mirror layer for transpiled code only. Source of truth: `docs/audit/state_contract.md`. No new `RAM()`/`OBJ()` macros in owned C.
+11. Parity verification is mechanical, not improvised: every "compare against NES" claim cites a Phase 1.5 capture id and a parity-oracle-schema diff (Task 2.8 in master plan).
+12. Build is strict: every phase builds with `REQUIRE_GENERATED_ASSETS=1` so legal-builder fallback never hides missing extractors during development.
+13. Promotion is incremental: each subsystem evaluates the Phase 12 promotion gate as soon as its phase closes; late bulk promotion is forbidden.
+14. Worktree merge protocol (`docs/audit/worktree_merge_protocol.md`) governs all cross-worktree edits. Memory rule `feedback_check_worktree_first` is hard.
+15. Regression matrix (`tools/run_regression_matrix.py`) must be green before any phase-close commit.
 
 ## Immediate Roadmap From Current State
 
@@ -150,23 +182,41 @@ Steps:
 6. Change build scripts to prefer generated local assets and fail clearly when missing.
 7. Add a clean-build test: delete generated cache, drag/pass ROM to builder, rebuild assets, build `Title.md` and `RoomRom.md`.
 8. Add release-packaging check that rejects Nintendo-derived generated assets in the public bundle.
+9. Add strict generated-only build gate (`REQUIRE_GENERATED_ASSETS=1`) that fails the build instead of warning when checked-in derived data is read. Required for legal-builder integrity and to prevent silent fallback during development.
+
+## Phase 1.5 - NES Reference Capture Harness
+
+Goal: produce ONE deterministic, hash-pinned, RNG-seeded NES capture pipeline so every later "compare against NES" task consumes a single source of truth.
+
+Steps:
+
+1. Define canonical scenario manifest at `tools/nes_capture/captures.json`: title, fs, intro pages, intro item flash cycle, OW rooms 0x00 + 0x77, lost woods/hills, every cave type, every dungeon entry, every boss, save/load round trip, enemy family stress rooms.
+2. Implement `tools/nes_capture/run_capture.py` driving BizHawk in headless mode with seeded RNG, deterministic input movies, and bundled output (screenshot, PPU/OAM/PALRAM/CIRAM, RAM, frame, input log, seed) per memory rule `feedback_one_big_probe`.
+3. Emit captures into `build/generated/nes_reference/<rom_hash>/<scenario_id>/` with per-scenario `manifest.json` (source ROM hash, capture tool version, emulator core version, frame, seed, artifact SHA-256).
+4. Add `tools/nes_capture/verify_capture.py` that re-runs scenarios and asserts artifact hashes reproduce.
+5. Wire verifier into the strict builder gate so missing or stale captures fail the build.
+6. Captures are gitignored; the manifest and recipe are committed.
+7. Verification: every later phase that says "compare against NES capture" cites a scenario id from this harness instead of inventing one.
 
 ## Phase 2 - Finish RoomRom Graphics Registry
 
-Goal: eliminate sprite/tile/palette clobber permanently.
+Goal: eliminate sprite/tile/palette clobber permanently AND lock the state contract before any new owned-C state field lands.
 
 Worktree rule: active RoomRom implementation for this phase happens in `C:\Users\Jake Diggity\Documents\GitHub\FINAL TRY-roomrom-s1`, not the main worktree.
 
 Steps:
 
-1. Finish current full sprite atlas work.
-2. Finish item atlas wiring for sword, beam, boomerang, arrow, bomb, explosion, pickups, NPCs, enemies, and bosses.
-3. Finish BG palette + full PALRAM capture pipeline.
-4. Finish CHR expansion so NES sub-palettes become tile-index selection, not Genesis palette-slot collisions.
-5. Centralize VRAM allocation in `roomrom_vram_map.h`.
-6. Add slot-map verifier: no renderer can use `(pal & 0x03) << 13` after cutover.
-7. Add per-scene VRAM budget verifier.
-8. Verification: orig/Redux, OW/UW, all toggles, no stale CHR, no palette clobber, sprite atlas strict mode green.
+1. Pre-2.1 BLOCK: state contract audit (see `docs/audit/state_contract.md`). Inventory every macro shim, classify subsystem ownership, resolve known alias collisions (e.g., `enemy_state.h:17,21` aliasing `OBJ(0x0412, slot)` under two names), commit `tools/state/verify_no_alias_collisions.py` green. No Phase 2.1 work begins until this commit lands.
+2. Finish current full sprite atlas work.
+3. Finish item atlas wiring for sword, beam, boomerang, arrow, bomb, explosion, pickups, NPCs, enemies, and bosses.
+4. Finish BG palette + full PALRAM capture pipeline.
+5. Finish CHR expansion so NES sub-palettes become tile-index selection, not Genesis palette-slot collisions.
+6. Centralize VRAM allocation in `roomrom_vram_map.h`.
+7. Add slot-map verifier: no renderer can use `(pal & 0x03) << 13` after cutover.
+8. Add per-scene VRAM budget verifier.
+9. Preserve NES frame-cadence palette toggles (intro item flash, low-health flash, boss palette flash, hit-invuln flash) as a typed `palette_toggle_t` runtime, not strip them with the CHR cutover.
+10. Define parity oracle schema at `tools/parity/schema.json` (frame, input, RNG seed/current, room id, link, enemies[16], items[8], ram bytes, CRAM[64], SAT[80]/OAM[64], plane excerpts, screenshot SHA-256) plus `diff.py`/`genesis_probe.lua`/`nes_to_schema.py`. Every later phase consumes this schema.
+11. Verification: orig/Redux, OW/UW, all toggles, no stale CHR, no palette clobber, frame-cadence palette toggles diff clean against Phase 1.5 captures, sprite atlas strict mode green.
 
 ## Phase 3 - Overworld Caves
 
@@ -378,17 +428,20 @@ Implementation order:
 
 Goal: complete the game, not just systems.
 
+Approach: per-dungeon save-state injection harness, NOT manual playthrough or unprimed input movies. CLIs cannot play the game and movies desync without seeded preconditions. The harness is deterministic, parallelizable, and consumes Phase 1.5 captures + Task 2.8 parity oracle schema for diff.
+
 Steps:
 
-1. First Quest complete from new file to ending.
-2. Second Quest complete from new file to ending.
-3. All caves visited.
-4. All dungeons cleared.
-5. All items collected.
-6. All bosses defeated.
-7. All save/load/death/continue paths verified.
-8. NES-mode probes green or documented with explicit option-driven divergence.
-9. Genesis-enhanced modes smoke-tested separately.
+1. Build `tools/dungeon_harness/`: one BizHawk save state per dungeon × quest (18 total) at boss-room entry with correct inventory/flag preconditions, plus one Lua probe script per dungeon that injects the minimal critical-path inputs and emits a parity-oracle schema instance.
+2. First Quest harness pass: 9 dungeons green, ending trigger captured.
+3. Second Quest harness pass: 9 dungeons green, ending trigger captured.
+4. All caves visited via cave matrix probe (Phase 3).
+5. All overworld rooms visited via overworld matrix probe (Phase 4).
+6. All items collected verified by inventory state diff at end-of-quest harness.
+7. All bosses defeated verified by boss harness.
+8. All save/load/death/continue paths verified via SRAM round-trip probe.
+9. NES-mode probes green or documented with explicit option-driven divergence in the parity oracle expected-failures list.
+10. Genesis-enhanced modes (4-player, Redux toggles) smoke-tested separately and isolated from NES-faithful matrix.
 
 ## Phase 15 - Genesis-Specific Optimization
 
@@ -457,22 +510,28 @@ Steps:
 
 Every phase closes with:
 
-- clean build;
+- clean build with `REQUIRE_GENERATED_ASSETS=1` (strict generated-only gate);
 - focused RoomRom or Title.md probe;
+- parity-oracle-schema diff against a Phase 1.5 NES reference capture for every "match NES" claim;
 - NES-vs-Genesis screenshot or normalized state diff where applicable;
 - one BizHawk launch per probe report per `feedback_one_big_probe`, with screenshot, SAT, CRAM, plane/Window dumps, RAM/state bytes, and input log captured together;
-- report provenance: source ROM SHA, generated asset manifest hash, emulator/core/version, frame number, target ROM hash, and probe script hash;
-- regression run for previously green gates;
+- report provenance: source ROM SHA, generated asset manifest hash, emulator/core/version, frame number, target ROM hash, probe script hash, and Phase 1.5 capture id where applicable;
+- `tools/run_regression_matrix.py` green for all archived probes (Workstream F);
+- per-subsystem `PROBE_CYCLE_LIMIT` envelope honored (Workstream F cycle gate, from Phase 6 onward);
+- `tools/state/verify_no_alias_collisions.py` green for any phase that touches `src/state/` (Workstream G);
 - `superpowers:requesting-code-review` checkpoint for non-trivial implementation phases;
 - archived report under `builds/reports/`;
 - commit with a clear phase label.
 
+Promotion is incremental: each subsystem's owning phase evaluates the Phase 12 promotion gate as soon as it closes; late bulk promotion is forbidden.
+
 Probe priority:
 
-1. State diffs for behavior.
-2. Plane/SAT/CRAM dumps for rendering.
-3. Screenshots for final visual verification.
-4. Hardware/emulator smoke for release confidence.
+1. Parity-oracle-schema diffs for behavior (state, RAM, RNG, frame-aligned).
+2. State diffs at struct field granularity for non-NES-mirror state.
+3. Plane/SAT/CRAM dumps for rendering.
+4. Screenshots for final visual verification.
+5. Hardware/emulator smoke for release confidence.
 
 ## Completion Definition
 
@@ -489,10 +548,23 @@ The project is finished when:
 
 ## Spec Self-Review
 
-- No open decisions require user questions; `$PrimeDirective` resolves ordering and architecture.
+- No open decisions require user questions; `$PrimeDirective` resolved state contract (typed C structs + NES RAM mirror, recorded at `docs/audit/state_contract.md`).
 - The roadmap keeps RoomRom fast while preventing RoomRom-only forks.
-- Legal builder requirement is integrated from Phase 1 through release, not bolted on at the end.
+- Legal builder requirement is integrated from Phase 1 through release, not bolted on at the end; strict generated-only build gate (`REQUIRE_GENERATED_ASSETS=1`) prevents silent fallback.
+- Phase 1.5 NES reference capture harness gives every later "match NES" claim a single source of truth.
+- Phase 2 state contract audit forces the typed-struct migration before any new owned C state field; alias collisions verified mechanically.
+- Parity oracle schema (`tools/parity/schema.json`) makes "compare against NES" enforceable instead of improvised per task.
 - Overworld Caves are placed correctly before overworld secrets, dungeons, enemies, and final integration.
-- Genesis-specific optimization has a dedicated phase after quest completion and before hardware release validation.
-- 4-player mode is explicitly optional and isolated so NES parity remains protected.
-- Each phase has concrete acceptance gates.
+- SRAM map is committed at Phase 4 (foundation) instead of waiting for Phase 9; eliminates save-corruption risk across targets.
+- Phase 5 collision is sourced from NES room attribute bytes + metatile tables, not rendered tile indices.
+- Phase 6 defines `PlayerState[4]` shape and Genesis sprite-per-line budget envelope; Phase 13 4-player implementation can defer post-Phase-17 without rewriting Link.
+- Phase 7 enemy framework commits `roomrom_rng.h` and `enemy_parity_matrix.md` BEFORE family agents fan out — five parallel agents share interfaces by construction.
+- Phase 10 audio legal policy and FS routing decision are locked before music wiring, eliminating release-blocker risk.
+- Phase 12 promotion is incremental, evaluated after every feature phase; late bulk promotion forbidden.
+- Phase 14 quest completion uses per-dungeon save-state injection harness, not manual playthrough or unprimed input movies; deterministic and parallelizable.
+- Genesis-specific optimization splits into 15a (inline during phases 2-6 for structural wins, with per-subsystem `PROBE_CYCLE_LIMIT` enforced in phase close) and 15b (post-quest measured re-pass driven by regression matrix).
+- Workstream F regression matrix runs every archived probe before any phase-close commit.
+- Workstream G state contract enforcement runs alias-collision verifier and macro-shim lint as cross-cutting gates.
+- 4-player mode is explicitly optional and isolated so NES parity remains protected; multiplayer-only state lives in a separate versioned SRAM region.
+- Worktree merge protocol (`docs/audit/worktree_merge_protocol.md`) governs all `roomrom-s1` ↔ `main` movement.
+- Each phase has concrete acceptance gates and a documented close gate sequence.
