@@ -1,7 +1,7 @@
 # RoomRom Full Graphics Registry / Atlas — North-Star Design
 
-**Status:** north-star design (NOT yet an approved implementation spec)
-**Date:** 2026-05-01 (rev 2 after Codex review)
+**Status:** north-star design — approved at north-star level (NOT yet implementation-scheduled). Stays north-star until the active CHR / palette expansion (Phase −1) lands.
+**Date:** 2026-05-01 (rev 3 after Codex review of rev 2)
 **Owner:** RoomRom S-series sprite/atlas track
 **Worktree:** `FINAL TRY-roomrom-s1` (branch `roomrom-s1`)
 **Depends on:** [2026-05-01-roomrom-bg-palette-chr-expansion-design.md](2026-05-01-roomrom-bg-palette-chr-expansion-design.md) (active), [roomrom_vram_map.h](../../../RoomRom/src/roomrom_vram_map.h) (existing slot-map authority)
@@ -12,7 +12,7 @@
 
 Codex review (2026-05-01) flagged three blocking issues that prevent this from being scheduled directly:
 
-1. **Source-truth error.** Earlier rev claimed Z1 has CHR ROM banks. iNES headers say byte 5 = 0 for both vanilla (`Legend of Zelda, The (USA).nes`) and Redux (`Zelda Redux.nes`) → **CHR RAM, not CHR ROM**. Pattern data lives in PRG ROM as `.INCBIN`-style blocks that get DMA'd into CHR RAM at runtime by Z1 boot/scene code. Source extraction must walk PRG pattern labels in disasm + verify against live BizHawk CHR RAM, never split a non-existent CHR ROM bank.
+1. **Source-truth error.** Earlier rev claimed Z1 has CHR ROM banks. iNES headers say byte 5 = 0 for both vanilla (`Legend of Zelda, The (USA).nes`) and Redux (`Zelda Redux.nes`) → **CHR RAM, not CHR ROM**. Pattern data lives in PRG ROM as `.INCBIN`-style blocks that get copied/transferred into CHR RAM (CPU/PPU transfer, not Genesis-style DMA) at runtime by Z1 boot/scene code. Source extraction must walk PRG pattern labels in disasm + verify against live BizHawk CHR RAM, never split a non-existent CHR ROM bank.
 2. **VRAM authority duplication.** [roomrom_vram_map.h](../../../RoomRom/src/roomrom_vram_map.h) is already the single source of truth for VRAM tile bases (`ROOMROM_BG_TILE_BASE`, `ROOMROM_SPR_TILE_BASE`, sub-pal stride math). Earlier rev proposed a parallel `roomrom_vram_slots.h` — would split the authority and re-introduce the clobber it claims to fix. **Atlas work must consume / extend `roomrom_vram_map.h`, not replace it.**
 3. **Global VRAM residency overreach.** Genesis VRAM (1024 tiles) cannot keep every BG + HUD + item + enemy + boss + title + FS tile resident simultaneously. Stable ROM atlas offsets — yes. Stable per-scene VRAM contracts — yes. Stable global VRAM tile indices for every category — not realistic.
 
@@ -123,7 +123,7 @@ Reads `reference/aldonunez/Z_00..Z_07.asm`. Walks every sprite-emitting code pat
 For each **sprite category entry**:
 - `name`, `category`, `nes_tile_ids` (list per frame), `dispatch_class`, `disasm_citation` (file/line/label), `frame_count`, `palette_assumption`.
 
-For each **pattern-data block** (the actual bytes that get DMA'd into CHR RAM at runtime):
+For each **pattern-data block** (the actual bytes that the NES CPU writes into CHR RAM via PPUDATA at runtime — Z1 is CHR RAM, no Genesis-style DMA on NES side):
 - `label` (e.g., `CommonSpritePatterns`, `OwBgPatterns`, `Level1SprPatterns`)
 - `disasm_file_line`, `byte_count`, `target_chr_ram_address` (where the boot/scene code copies it to)
 - `referenced_by` — list of disasm code paths that DMA this block
@@ -175,6 +175,10 @@ bg_overworld    bg_underworld
 ```
 
 Per category: one `unsigned char roomrom_atlas_<cat>[VARIANT_COUNT][BYTES]` blob, plus `ROOMROM_ATLAS_<CAT>_<NAME>_OFFSET` constants for named entries inside the blob. Byte offsets stable within a category as long as the registry's entry order is stable. Adding a sprite within a category appends; doesn't shift other categories.
+
+**Bytes stored: NES 2bpp source.** `atlas_master.json` and the per-category blobs store the canonical NES 2bpp pattern bytes (16 bytes per 8x8 tile, plane-0 then plane-1, exactly as they appear in PRG ROM). The pixel-biased NES → Genesis 4bpp expansion (sub-palette tile copies) stays owned by the active [CHR expansion pipeline](2026-05-01-roomrom-bg-palette-chr-expansion-design.md). Atlas → renderer flow: 2bpp bytes from the atlas → CHR-expansion conversion at upload time → 4bpp tiles in VRAM at the address the per-scene contract specifies. The atlas does NOT bake 4bpp; doing so would couple atlas data to whichever palette layout the expansion pipeline picks today, re-introducing the clobber.
+
+**No-compaction rule.** Once a named entry is added to a category blob, its byte offset is permanent. Removing a sprite tombstones the entry: the bytes stay, the constant gets a `_DEPRECATED` suffix, and a registry-level `removed: true` marker lets the validator skip dispatch checks on it. Generators never compact existing category blobs across builds. Compaction is allowed only via an explicit `atlas_version` bump that all renderers and per-scene contracts re-check against. This is what guarantees stable offsets — without it, "remove a sprite" silently becomes "shift every later renderer's tile reference".
 
 ### 6.2 Per-scene VRAM contracts (extend `roomrom_vram_map.h`)
 
@@ -285,7 +289,7 @@ The current `verify_item_chr_manifest.py` becomes a thin wrapper around (a). Str
 
 ### Phase 0 — pre-flight
 - Pin both `Legend of Zelda, The (USA).nes` and `Zelda Redux.nes` SHA-256 into `RoomRom/data/rom_inputs.lock`.
-- Smoke test: `tools/extract_z1_prg_chr.py` extracts a known pattern block (e.g., `CommonSpritePatterns`) from PRG → byte-matches existing `RoomRom/out/nes_item_chr_pt0_orig.bin` for the overlapping tile range.
+- Smoke test: `tools/extract_z1_prg_chr.py` extracts the `CommonSpritePatterns` block from PRG. Verifier launches BizHawk, scene-loads the overworld, captures the live CHR RAM slice at `CommonSpritePatterns`'s known target address (per disasm), byte-matches that slice — NOT the whole `nes_item_chr_pt0_orig.bin` dump — against the PRG-extracted bytes. Per-block target-address comparison is the only valid check; whole-pattern-table dumps mix multiple blocks at different addresses and would mask offset bugs.
 
 ### Phase 1 — source tools (Layer 1)
 - Implement `tools/extract_z1_prg_chr.py` first (no disasm dependency beyond pattern labels).
@@ -355,16 +359,20 @@ Each phase is its own spec → plan → implement loop. This document is the des
 
 ## 14. Spec review
 
-Self-review pass (rev 2 after Codex review):
+Self-review pass (rev 3 after Codex review of rev 2):
 
-- [x] Source-truth correction applied: PRG `.INCBIN` block extraction + live verify, NOT a non-existent CHR ROM split.
+- [x] Source-truth correction applied: PRG block extraction + live verify, NOT a non-existent CHR ROM split.
 - [x] VRAM authority: extends `roomrom_vram_map.h`. NO competing slot map.
 - [x] Per-scene VRAM contracts only; no claim of stable global VRAM indices for every category.
 - [x] Disasm + live capture both required for source truth.
 - [x] Positioned as a north-star with explicit `Phase −1` dependency on the active CHR / palette expansion spec.
 - [x] CPU-upload acknowledged as current path; DMA queue noted as future-only.
+- [x] Rev 3: NES-side wording fixed — "DMA into CHR RAM" → CPU/PPU-bus PPUDATA writes (no Genesis-style DMA on NES).
+- [x] Rev 3: no-compaction rule added — tombstone removed entries, never compact without explicit `atlas_version` migration.
+- [x] Rev 3: PRG smoke test scoped to per-block target-address slice, not whole `nes_item_chr_pt0_orig.bin`.
+- [x] Rev 3: atlas stores NES 2bpp source bytes; pixel-biased 4bpp expansion stays owned by the CHR-expansion pipeline.
 - [x] All sections internally consistent; no "TBD" / "TODO" in substance.
 
 ---
 
-End of design (rev 2).
+End of design (rev 3).
