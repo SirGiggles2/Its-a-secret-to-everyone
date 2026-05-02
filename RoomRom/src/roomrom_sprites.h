@@ -35,13 +35,23 @@ void roomrom_sprites_set_link_pose(short x, short y,
 
 /* S7 v4 combat. */
 void roomrom_sprites_set_link_attack_pose(short x, short y, link_face_t face);
-void roomrom_sprites_set_sword_vertical(short x, short y, unsigned char vflip);
-void roomrom_sprites_set_sword_horizontal(short x, short y, unsigned char hflip);
+
+/* sub_pal: NES sprite sub-palette index (0-3).
+ * NES @CalcSwordAttrs (Z_07.asm:4471): sub-pal = base_attr + Items - 1.
+ * base_attr = 0 (RDirectionToWeaponBaseAttribute for sword), so
+ * sub-pal == Items - 1.  Wood sword (Items=1) -> 0, white (Items=2) -> 1,
+ * magic (Items=3) -> 2.  Callers resolve via sword_subpal_for_items(). */
+void roomrom_sprites_set_sword_vertical(short x, short y, unsigned char vflip,
+                                        unsigned char sub_pal);
+void roomrom_sprites_set_sword_horizontal(short x, short y, unsigned char hflip,
+                                          unsigned char sub_pal);
 void roomrom_sprites_clear_sword(void);
-/* Redux ALttP-style diagonal sword (16x16). Used in Redux arc swing. */
+/* Redux ALttP-style diagonal sword (16x16). Used in Redux arc swing.
+ * sub_pal: same NES @CalcSwordAttrs derivation as above. */
 void roomrom_sprites_set_sword_diagonal(short x, short y,
                                         unsigned char hflip,
-                                        unsigned char vflip);
+                                        unsigned char vflip,
+                                        unsigned char sub_pal);
 
 /* S7 v5 beam: sword shot projectile (slot 2). NES Z1 draws sword shot
  * via Anim_WriteItemSprites with the same tile pattern as the sword

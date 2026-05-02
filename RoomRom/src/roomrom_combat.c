@@ -99,6 +99,22 @@ static const signed char beam_spawn_y[4] = {
     +24, -16,  +4,  +4
 };
 
+/* RoomRom currently boots with wood sword (Items=1). NES
+ * @CalcSwordAttrs (Z_07.asm:4471) computes sub-pal = base_attr +
+ * Items - 1 with base_attr = 0 (RDirectionToWeaponBaseAttribute),
+ * so sub-pal == Items - 1. Future white sword (Items=2) -> 1,
+ * magic sword (Items=3) -> 2. Defensive: clamp >3 (NES Items
+ * tops out at 3 for sword). */
+static unsigned char sword_subpal_for_items(unsigned char items_val) {
+    if (items_val == 0u) return 0u;          /* defensive: holds sprite at 0 */
+    if (items_val > 4u) items_val = 4u;       /* clamp */
+    return (unsigned char)(items_val - 1u);
+}
+
+/* Track current sword level (1=wood, 2=white, 3=magic). Default 1.
+ * Future inventory wiring populates this from $0657 ITEMS register. */
+static unsigned char s_sword_level = 1u;
+
 /* Track UW separately so set_redux can recompute bias in case the redux
  * flag changes after set_uw was called. */
 static unsigned char s_in_uw = 0u;
@@ -354,15 +370,18 @@ void roomrom_combat_update(short link_x, short link_y, link_face_t face)
 
         switch (sprite_type) {
         case 0:
-            roomrom_sprites_set_sword_vertical(sx, sy, redux_vflip[face_idx][fr]);
+            roomrom_sprites_set_sword_vertical(sx, sy, redux_vflip[face_idx][fr],
+                                               sword_subpal_for_items(s_sword_level));
             break;
         case 1:
-            roomrom_sprites_set_sword_horizontal(sx, sy, redux_hflip[face_idx][fr]);
+            roomrom_sprites_set_sword_horizontal(sx, sy, redux_hflip[face_idx][fr],
+                                                 sword_subpal_for_items(s_sword_level));
             break;
         case 2:
             roomrom_sprites_set_sword_diagonal(sx, sy,
                                                redux_hflip[face_idx][fr],
-                                               redux_vflip[face_idx][fr]);
+                                               redux_vflip[face_idx][fr],
+                                               sword_subpal_for_items(s_sword_level));
             break;
         }
 
@@ -398,20 +417,25 @@ void roomrom_combat_update(short link_x, short link_y, link_face_t face)
 
         if (st == 1u) {
             /* Windup: sword raised UP (vertical, no flip). */
-            roomrom_sprites_set_sword_vertical(sx, sy, 0u);
+            roomrom_sprites_set_sword_vertical(sx, sy, 0u,
+                                               sword_subpal_for_items(s_sword_level));
         } else {
             switch (s_face) {
             case LINK_FACE_DOWN:
-                roomrom_sprites_set_sword_vertical(sx, sy, 1u);
+                roomrom_sprites_set_sword_vertical(sx, sy, 1u,
+                                                   sword_subpal_for_items(s_sword_level));
                 break;
             case LINK_FACE_UP:
-                roomrom_sprites_set_sword_vertical(sx, sy, 0u);
+                roomrom_sprites_set_sword_vertical(sx, sy, 0u,
+                                                   sword_subpal_for_items(s_sword_level));
                 break;
             case LINK_FACE_LEFT:
-                roomrom_sprites_set_sword_horizontal(sx, sy, 1u);
+                roomrom_sprites_set_sword_horizontal(sx, sy, 1u,
+                                                     sword_subpal_for_items(s_sword_level));
                 break;
             case LINK_FACE_RIGHT:
-                roomrom_sprites_set_sword_horizontal(sx, sy, 0u);
+                roomrom_sprites_set_sword_horizontal(sx, sy, 0u,
+                                                     sword_subpal_for_items(s_sword_level));
                 break;
             }
         }

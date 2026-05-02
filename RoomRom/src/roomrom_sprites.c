@@ -263,24 +263,30 @@ void roomrom_sprites_set_link_pos(short x, short y)
     roomrom_sprites_set_link_pose(x, y, LINK_FACE_DOWN, 0u);
 }
 
-void roomrom_sprites_set_sword_vertical(short x, short y, unsigned char vflip)
+void roomrom_sprites_set_sword_vertical(short x, short y, unsigned char vflip,
+                                        unsigned char sub_pal)
 {
+    unsigned short tile = (unsigned short)(ROOMROM_ITEM_TILE_BASE_PAL(sub_pal)
+                                           + ROOMROM_ITEM_TILE_SWORD_VERT);
     VDP_setSpriteFull(1,
                       (s16)x,
                       (s16)y,
                       SPRITE_SIZE(1, 2),
-                      TILE_ATTR_FULL(PAL1,0, vflip, 0, SWORD_VERT_VRAM_TILE),
+                      TILE_ATTR_FULL(PAL1,0, vflip, 0, tile),
                       2);
     VDP_updateSprites(3, DMA);
 }
 
-void roomrom_sprites_set_sword_horizontal(short x, short y, unsigned char hflip)
+void roomrom_sprites_set_sword_horizontal(short x, short y, unsigned char hflip,
+                                          unsigned char sub_pal)
 {
+    unsigned short tile = (unsigned short)(ROOMROM_ITEM_TILE_BASE_PAL(sub_pal)
+                                           + ROOMROM_ITEM_TILE_SWORD_HORZ);
     VDP_setSpriteFull(1,
                       (s16)x,
                       (s16)y,
                       SPRITE_SIZE(2, 2),
-                      TILE_ATTR_FULL(PAL1,0, 0, hflip, SWORD_HORZ_VRAM_TILE),
+                      TILE_ATTR_FULL(PAL1,0, 0, hflip, tile),
                       2);
     VDP_updateSprites(3, DMA);
 }
@@ -301,13 +307,16 @@ void roomrom_sprites_clear_sword(void)
  * (not 16x16). Tile $48 + auto-paired $49 only. */
 void roomrom_sprites_set_sword_diagonal(short x, short y,
                                         unsigned char hflip,
-                                        unsigned char vflip)
+                                        unsigned char vflip,
+                                        unsigned char sub_pal)
 {
+    unsigned short tile = (unsigned short)(ROOMROM_ITEM_TILE_BASE_PAL(sub_pal)
+                                           + ROOMROM_ITEM_TILE_SWORD_DIAG);
     VDP_setSpriteFull(1,
                       (s16)x,
                       (s16)y,
                       SPRITE_SIZE(1, 2),
-                      TILE_ATTR_FULL(PAL1,0, vflip, hflip, SWORD_DIAG_VRAM_TILE),
+                      TILE_ATTR_FULL(PAL1,0, vflip, hflip, tile),
                       2);
     VDP_updateSprites(3, DMA);
 }
