@@ -2,6 +2,7 @@
 #define ENEMY_STATE_H
 
 #include "platform_abi.h"
+#include "scratch_state.h"
 
 /* Enemy/object state map for promoted z_04 gameplay code. Keep names
  * close to gameplay meaning so owned C stops depending on raw offsets.
@@ -52,8 +53,8 @@
 #define ENEMY_CANDLE_ROOM_ID            RAM(0x00EB)
 #define ENEMY_PAUSE_FLAG                RAM(0x066C)
 #define ENEMY_FREEZE_FLAG               RAM(0x0506)
-#define ENEMY_COLLISION_FLAG            RAM(0x0006)
-#define ENEMY_BLOCKED_FLAG              RAM(0x000E)
+#define ENEMY_COLLISION_FLAG            ZP_TMP6
+#define ENEMY_BLOCKED_FLAG              ZP_TMPE
 #define ENEMY_BUBBLE_EFFECT             RAM(0x004C)
 #define ENEMY_LEEVER_TIMER              RAM(0x004D)
 #define ENEMY_BUBBLE_STATUS             RAM(0x052E)
@@ -81,7 +82,7 @@
 #define ENEMY_LAMNOLA_VIABLE_DIR_MASK   RAM(0x050F)
 #define ENEMY_PLAYER_OBJ_X              RAM(0x0070)
 #define ENEMY_PLAYER_OBJ_Y              RAM(0x0084)
-#define ENEMY_VIRE_SPLIT_TYPE           RAM(0x0000)
+#define ENEMY_VIRE_SPLIT_TYPE           ZP_TMP0
 #define ENEMY_STATUE_PERSON_FIREBALLS   RAM(0x04CC)
 #define ENEMY_STATUE_FIREBALL_TIMER(idx) RAM(0x04E8 + (idx))
 #define ENEMY_JUMPER_TARGET_Y(slot)     OBJ(0x0444, (slot))
@@ -89,7 +90,7 @@
 #define ENEMY_JUMPER_VSPEED_HI(slot)    OBJ(0x0412, (slot))
 #define ENEMY_JUMPER_VSPEED_LO(slot)    OBJ(0x041F, (slot))
 #define ENEMY_JUMPER_SHOVE(slot)        OBJ(0x00C0, (slot))
-#define ENEMY_JUMPER_BLOCKED_FLAG       RAM(0x000F)
+#define ENEMY_JUMPER_BLOCKED_FLAG       ZP_TMPF
 /* Gleeok shared/global state */
 #define ENEMY_GLEEOK_NECK_INDEX         RAM(0x04D7)
 #define ENEMY_GLEEOK_REF_SEG_DIST       RAM(0x04D8)
@@ -113,22 +114,22 @@
 #define ENEMY_GOHMA_SHOOT_TIMER(slot)      OBJ(0x0380, (slot))   /* aliases ENEMY_BOSS_HP_PHASE */
 #define ENEMY_GOHMA_MOVE_ACCUM(slot)       OBJ(0x041F, (slot))   /* aliases ENEMY_AIR_SPEED */
 /* Gleeok per-segment data when loaded into the working slot 1..6 area */
-#define ENEMY_GLEEOK_NECK_X_PTR_LO      RAM(0x0000)
-#define ENEMY_GLEEOK_NECK_X_PTR_HI      RAM(0x0001)
-#define ENEMY_GLEEOK_NECK_Y_PTR_LO      RAM(0x0002)
-#define ENEMY_GLEEOK_NECK_Y_PTR_HI      RAM(0x0003)
-#define ENEMY_GLEEOK_NECK_M_PTR_LO      RAM(0x0004)
-#define ENEMY_GLEEOK_NECK_M_PTR_HI      RAM(0x0005)
+#define ENEMY_GLEEOK_NECK_X_PTR_LO      ZP_TMP0
+#define ENEMY_GLEEOK_NECK_X_PTR_HI      ZP_TMP1
+#define ENEMY_GLEEOK_NECK_Y_PTR_LO      ZP_TMP2
+#define ENEMY_GLEEOK_NECK_Y_PTR_HI      ZP_TMP3
+#define ENEMY_GLEEOK_NECK_M_PTR_LO      ZP_TMP4
+#define ENEMY_GLEEOK_NECK_M_PTR_HI      ZP_TMP5
 #define NES_RAM_BASE                    0x0000u  /* RAM() already adds the FF0000 base */
 #define ENEMY_MANHANDLA_SEG_DIR(slot)   OBJ(0x0099, (slot))
 #define ENEMY_DARK_ROOM_FLAG            RAM(0x0010)
 #define ENEMY_THROWER_SLOT              RAM(0x0340)
 #define ENEMY_NEXT_SHOT_SLOT            RAM(0x0059)
-#define ENEMY_SHOT_TYPE_SCRATCH         RAM(0x0000)
-#define ENEMY_SCRATCH_X                 RAM(0x0000)
-#define ENEMY_SCRATCH_Y                 RAM(0x0001)
-#define ENEMY_ATTR_SCRATCH              RAM(0x0004)
-#define ENEMY_FRAME_FLAGS               RAM(0x000F)
+#define ENEMY_SHOT_TYPE_SCRATCH         ZP_TMP0
+#define ENEMY_SCRATCH_X                 ZP_TMP0
+#define ENEMY_SCRATCH_Y                 ZP_TMP1
+#define ENEMY_ATTR_SCRATCH              ZP_TMP4
+#define ENEMY_FRAME_FLAGS               ZP_TMPF
 #define ENEMY_CUR_SPRITE_ATTR_ROW       RAM(0x0015)
 #define ENEMY_DUNGEON_TILE_FLOOR        RAM(0x034A)
 #define ENEMY_BOSS_HP_PHASE(slot)       OBJ(0x0380, (slot))

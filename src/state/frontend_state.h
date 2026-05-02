@@ -2,6 +2,7 @@
 #define FRONTEND_STATE_H
 
 #include "progress_state.h"
+#include "scratch_state.h"
 
 /* Shared title/demo/name-entry/save-menu state for promoted z_02 code. */
 #define FRONTEND_CUR_VSCROLL            RAM(0x00FC)
@@ -25,8 +26,9 @@
 #define FRONTEND_DEMO_SUBPHASE          RAM(0x042D)
 #define FRONTEND_CREDITS_TILE_OFFSET    RAM(0x050B)
 
-#define FRONTEND_ADD16_LO               RAM(0x000F)
-#define FRONTEND_ADD16_HI               RAM(0x000E)
+/* Zero-page scratch slots aliased through scratch_state.h. */
+#define FRONTEND_ADD16_LO               ZP_TMPF
+#define FRONTEND_ADD16_HI               ZP_TMPE
 #define FRONTEND_SAVE_ADD16_LO          RAM(0x00CF)
 #define FRONTEND_SAVE_ADD16_HI          RAM(0x00CE)
 

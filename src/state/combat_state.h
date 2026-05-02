@@ -2,23 +2,26 @@
 #define COMBAT_STATE_H
 
 #include "platform_abi.h"
+#include "scratch_state.h"
 
 /* Shared state map for combat/collision/link-collision owned C. Keep
  * the scratch/collision boundary named so raw offsets stop spreading.
+ *
+ * Zero-page scratch slots aliased through scratch_state.h canonical names.
  */
-#define COMBAT_WEAPON_SLOT              RAM(0x0000)
-#define COMBAT_HITBOX_X                 RAM(0x0004)
-#define COMBAT_HITBOX_Y                 RAM(0x0005)
-#define COMBAT_COLLIDED                 RAM(0x0006)
-#define COMBAT_DAMAGE_AMOUNT            RAM(0x0007)
-#define COMBAT_SHOVE_DIR                RAM(0x0008)
-#define COMBAT_DAMAGE_TYPE              RAM(0x0009)
-#define COMBAT_ABS_DX                   RAM(0x000A)
-#define COMBAT_ABS_DY                   RAM(0x000B)
-#define COMBAT_HARM_FLAG                RAM(0x000C)
-#define COMBAT_THRESHOLD_X              RAM(0x000D)
-#define COMBAT_THRESHOLD_Y              RAM(0x000E)
-#define COMBAT_PART_INDEX               RAM(0x000F)
+#define COMBAT_WEAPON_SLOT              ZP_TMP0
+#define COMBAT_HITBOX_X                 ZP_TMP4
+#define COMBAT_HITBOX_Y                 ZP_TMP5
+#define COMBAT_COLLIDED                 ZP_TMP6
+#define COMBAT_DAMAGE_AMOUNT            ZP_TMP7
+#define COMBAT_SHOVE_DIR                ZP_TMP8
+#define COMBAT_DAMAGE_TYPE              ZP_TMP9
+#define COMBAT_ABS_DX                   ZP_TMPA
+#define COMBAT_ABS_DY                   ZP_TMPB
+#define COMBAT_HARM_FLAG                ZP_TMPC
+#define COMBAT_THRESHOLD_X              ZP_TMPD
+#define COMBAT_THRESHOLD_Y              ZP_TMPE
+#define COMBAT_PART_INDEX               ZP_TMPF
 
 #define LINK_ACTION_TIMER               RAM(0x00AC)
 #define LINK_DIR                        RAM(0x0098)

@@ -3,6 +3,7 @@
 
 #include <stdint.h>
 #include "platform_abi.h"
+#include "scratch_state.h"
 
 /* Cave subsystem state.
  *
@@ -89,13 +90,14 @@ static inline void     cave_active_ware_index_set(uint8_t v) { RAM(0x0421) = v; 
  * Legacy macro view — kept until Phase 3 close gate confirms all
  * cave-runtime callers have migrated to the inline accessors above.
  * -------------------------------------------------------------------- */
-#define CAVE_TMP0                        RAM(0x0000)
-#define CAVE_TMP1                        RAM(0x0001)
-#define CAVE_TMP2                        RAM(0x0002)
-#define CAVE_TMP3                        RAM(0x0003)
-#define CAVE_TMP4                        RAM(0x0004)
-#define CAVE_RANDOM_A                    RAM(0x0019)
-#define CAVE_RANDOM_B                    RAM(0x001A)
+/* Zero-page scratch + RNG aliases through scratch_state.h canonical names. */
+#define CAVE_TMP0                        ZP_TMP0
+#define CAVE_TMP1                        ZP_TMP1
+#define CAVE_TMP2                        ZP_TMP2
+#define CAVE_TMP3                        ZP_TMP3
+#define CAVE_TMP4                        ZP_TMP4
+#define CAVE_RANDOM_A                    ZP_RNG_A
+#define CAVE_RANDOM_B                    ZP_RNG_B
 #define CAVE_DELAY_TIMER                 RAM(0x0029)
 #define CAVE_LINK_ACTION_TIMER           RAM(0x00AC)
 #define CAVE_PERSON_STATE                RAM(0x00AD)

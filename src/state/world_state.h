@@ -3,6 +3,7 @@
 
 #include <stdint.h>
 #include "platform_abi.h"
+#include "scratch_state.h"
 
 /* World subsystem state.
  *
@@ -54,10 +55,11 @@ static inline void    world_prev_room_id_set(uint8_t v){ RAM(0x00EC) = v; }
  * Legacy macro view — kept until Phase 4 close-gate confirms migration.
  * -------------------------------------------------------------------- */
 /* Shared world/object state for promoted z_01 world and weapon code. */
-#define WORLD_TMP0                     RAM(0x0000)
-#define WORLD_TMP1                     RAM(0x0001)
-#define WORLD_TMP2                     RAM(0x0002)
-#define WORLD_TMP3                     RAM(0x0003)
+/* Zero-page scratch aliases through scratch_state.h. */
+#define WORLD_TMP0                     ZP_TMP0
+#define WORLD_TMP1                     ZP_TMP1
+#define WORLD_TMP2                     ZP_TMP2
+#define WORLD_TMP3                     ZP_TMP3
 
 #define LINK_DIR                       RAM(0x0098)
 #define LINK_X                         RAM(NES_OBJ_X)

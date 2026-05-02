@@ -2,10 +2,11 @@
 #define ROOM_STATE_H
 
 #include "progress_state.h"
+#include "scratch_state.h"
 
 /* Shared room / doorway / room-flag state for promoted z_05 helpers. */
-#define ROOM_TOUCH_DOOR_BITS            RAM(0x000C)
-#define ROOM_TOUCH_BLOCK_FLAG           RAM(0x000E)
+#define ROOM_TOUCH_DOOR_BITS            ZP_TMPC
+#define ROOM_TOUCH_BLOCK_FLAG           ZP_TMPE
 #define ROOM_MODE_TIMER                 RAM(0x0011)
 #define ROOM_TRANSFER_BUF_SELECT        RAM(0x0014)
 #define ROOM_SCROLL_FRAME               RAM(0x00E6)

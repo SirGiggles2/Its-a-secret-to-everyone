@@ -2,9 +2,10 @@
 #define ITEM_STATE_H
 
 #include "platform_abi.h"
+#include "scratch_state.h"
 
 /* Shared item/inventory state for promoted z_01 gameplay code. */
-#define ITEM_VALUE_SCRATCH              RAM(0x000A)
+#define ITEM_VALUE_SCRATCH              ZP_TMPA
 #define ITEM_LEVEL_RAW                 RAM(0x0010)
 #define GAME_MODE                      RAM(0x0012)
 
