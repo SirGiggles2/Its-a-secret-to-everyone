@@ -231,13 +231,13 @@ void roomrom_sprites_spawn_link(short x, short y)
     VDP_setSpriteFull(5,
                       (s16)-32,
                       (s16)-32,
-                      SPRITE_SIZE(1, 2),
+                      SPRITE_SIZE(1, 1),
                       TILE_ATTR_FULL(PAL1,0, 0, 0, BOMB_VRAM_TILE),
                       6);
     VDP_setSpriteFull(6,
                       (s16)-32,
                       (s16)-32,
-                      SPRITE_SIZE(2, 2),
+                      SPRITE_SIZE(1, 2),
                       TILE_ATTR_FULL(PAL1,0, 0, 0, EXPLOSION_VRAM_TILE),
                       0);
     roomrom_sprites_set_link_pose(x, y, LINK_FACE_DOWN, 0u);
@@ -461,13 +461,15 @@ void roomrom_sprites_clear_arrow(void)
     VDP_updateSprites(7, DMA);
 }
 
-/* S7 v8 bomb (slot 5). 8x16 sprite at fuse position. */
+/* S7 v8 bomb (slot 5). NES Z1 DrawBomb (Z_07.asm:4869) -> DrawCloud ->
+ * Anim_WriteItemSprites with item slot $01, frame 0 -> ItemFrameTiles[$03]
+ * = $34. Tile $34 in [$20, $62) -> @Narrow path -> single 8x8 sprite. */
 void roomrom_sprites_set_bomb(short x, short y)
 {
     VDP_setSpriteFull(5,
                       (s16)x,
                       (s16)y,
-                      SPRITE_SIZE(1, 2),
+                      SPRITE_SIZE(1, 1),
                       TILE_ATTR_FULL(PAL1,0, 0, 0, BOMB_VRAM_TILE),
                       6);
     VDP_updateSprites(7, DMA);
@@ -478,29 +480,29 @@ void roomrom_sprites_clear_bomb(void)
     VDP_setSpriteFull(5,
                       (s16)-32,
                       (s16)-32,
-                      SPRITE_SIZE(1, 2),
+                      SPRITE_SIZE(1, 1),
                       TILE_ATTR_FULL(PAL1,0, 0, 0, BOMB_VRAM_TILE),
                       6);
     VDP_updateSprites(7, DMA);
 }
 
-/* S7 v8 explosion (slot 6). 16x16 sprite. timer is the residual frame
- * countdown — animate by toggling vflip+hflip every 4 frames so the
- * burst looks lively without needing extra tile data. */
+/* S7 v8 explosion (slot 6). NES Z1 explosion uses item slot $01 frames
+ * 1-3 = NES tiles $70/$72/$74 with @Wide -> @Mirrored dispatch (16x8
+ * each, drawn as 4 separate clusters at offsets per
+ * BombCloudOffsetsX1/Y1 etc, Z_07.asm:4924-4974). Those cloud tiles
+ * aren't yet in the extracted item CHR atlas (extractor only pulls
+ * $20-$4B and $82-$89), so render an 8x16 placeholder cluster from
+ * tiles $32+$33 until the extractor pulls $70+. No frame cycling
+ * (NES cycles tile, not flip — earlier vflip/hflip rotation produced
+ * the same fake-spin bug as the boomerang/beam, dropped). */
 void roomrom_sprites_set_explosion(short x, short y, unsigned char timer)
 {
-    unsigned char phase = (unsigned char)((timer >> 2) & 0x3u);
-    unsigned char vflip = (unsigned char)((phase & 0x2u) ? 1u : 0u);
-    unsigned char hflip = (unsigned char)((phase & 0x1u) ? 1u : 0u);
-    /* Anchor the 16x16 explosion sprite so its center aligns with the
-     * 8x16 bomb position. Bomb's top-left was at (x, y); shift the
-     * 16x16 explosion 4 px left and 0 px up so its center coincides. */
-    short ex = (short)(x - 4);
+    (void)timer;
     VDP_setSpriteFull(6,
-                      (s16)ex,
+                      (s16)x,
                       (s16)y,
-                      SPRITE_SIZE(2, 2),
-                      TILE_ATTR_FULL(PAL1,0, vflip, hflip,
+                      SPRITE_SIZE(1, 2),
+                      TILE_ATTR_FULL(PAL1,0, 0, 0,
                                      EXPLOSION_VRAM_TILE),
                       0);
     VDP_updateSprites(7, DMA);
@@ -511,7 +513,7 @@ void roomrom_sprites_clear_explosion(void)
     VDP_setSpriteFull(6,
                       (s16)-32,
                       (s16)-32,
-                      SPRITE_SIZE(2, 2),
+                      SPRITE_SIZE(1, 2),
                       TILE_ATTR_FULL(PAL1,0, 0, 0, EXPLOSION_VRAM_TILE),
                       0);
     VDP_updateSprites(7, DMA);
