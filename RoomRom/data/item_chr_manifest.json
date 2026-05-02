@@ -1,0 +1,558 @@
+{
+  "schema_version": 1,
+  "source_policy": "live_nes_chr_only",
+  "notes": [
+    "Do not source weapon/item tiles from guessed common_chr offsets.",
+    "NES tile IDs >= 0x70 are valid only when backed by live CHR bytes."
+  ],
+  "item_defs": [
+    {
+      "name": "sword_vert",
+      "item": "sword",
+      "direction_class": "vertical",
+      "nes_frame_tile": "0x20",
+      "sprite_size": [
+        1,
+        2
+      ],
+      "tile_ids": [
+        "0x20",
+        "0x21"
+      ],
+      "draw_rule": "narrow_8x16",
+      "sprite_size_override_reason": "NES uses 8x16 hardware sprites (PPU OAM obj size bit): tile $20 is the top 8x8, tile $21 is the bottom 8x8 of the same 8x16 sprite. Anim_WriteSpecificItemSprites @Narrow (Z_01.asm:5288) emits a single OAM entry whose hardware height is 16px. Genesis SPRITE_SIZE(1,2) matches NES visual output exactly. The dispatch table [1,1] reflects the NES tile-count per OAM entry, not the rendered pixel height."
+    },
+    {
+      "name": "sword_horz",
+      "item": "sword",
+      "direction_class": "horizontal",
+      "nes_frame_tile": "0x82",
+      "sprite_size": [
+        2,
+        2
+      ],
+      "tile_ids": [
+        "0x82",
+        "0x83",
+        "0x84",
+        "0x85"
+      ],
+      "draw_rule": "wide_16x16_hflippable",
+      "sprite_size_override_reason": "NES Flippable dispatch (Z_01.asm:5301) draws two 8x8 sprites side-by-side (tiles $82+$84, 16x8 visible). Genesis renderer stores all 4 tiles ($82-$85, the full 2x2 NES CHR block) in a 2x2 SPRITE_SIZE so both the top row and bottom row are uploaded and accessible for Genesis column-major tile layout. SPRITE_SIZE(2,1) would omit bottom-row tiles needed for the sword cross-guard graphic."
+    },
+    {
+      "name": "boomerang",
+      "item": "boomerang",
+      "direction_class": "rotating",
+      "nes_frame_tile": "0x36",
+      "sprite_size": [
+        1,
+        1
+      ],
+      "tile_ids": [
+        "0x36",
+        "0x37",
+        "0x38",
+        "0x39",
+        "0x3A",
+        "0x3B",
+        "0x3C",
+        "0x3D"
+      ],
+      "draw_rule": "narrow_8x8_phase_cycle",
+      "nes_dispatch_note": "Anim_WriteSpecificItemSprites @Narrow (Z_01.asm:5288) draws single 8x8 sprite per frame at $36/$38/$3A. Genesis renderer reads tiles $36/$38/$3A (blob offsets 0,2,4); $37/$39/$3B-$3D over-extracted, harmless VRAM."
+    },
+    {
+      "name": "arrow_vert",
+      "item": "arrow",
+      "direction_class": "vertical",
+      "nes_frame_tile": "0x28",
+      "sprite_size": [
+        1,
+        2
+      ],
+      "tile_ids": [
+        "0x28",
+        "0x29"
+      ],
+      "draw_rule": "narrow_8x16",
+      "sprite_size_override_reason": "NES uses 8x16 hardware sprites for the vertical arrow: tile $28 is the top 8x8, tile $29 is the bottom 8x8 (same OAM 8x16 entry). Anim_WriteSpecificItemSprites @Narrow (Z_01.asm:5288) emits a single 8x16 OAM entry. Genesis SPRITE_SIZE(1,2) matches NES rendered height. Same reasoning as sword_vert."
+    },
+    {
+      "name": "arrow_horz",
+      "item": "arrow",
+      "direction_class": "horizontal",
+      "nes_frame_tile": "0x86",
+      "sprite_size": [
+        2,
+        2
+      ],
+      "tile_ids": [
+        "0x86",
+        "0x87",
+        "0x88",
+        "0x89"
+      ],
+      "draw_rule": "wide_16x16_hflippable",
+      "sprite_size_override_reason": "NES Flippable dispatch draws two 8x8 sprites side-by-side (tiles $86+$88, 16x8 visible). Genesis renderer stores the full 2x2 NES CHR block ($86-$89) as SPRITE_SIZE(2,2) so the bottom-row tiles are available for the arrowhead graphic. Same reasoning as sword_horz."
+    },
+    {
+      "name": "bomb",
+      "item": "bomb",
+      "direction_class": "static",
+      "nes_frame_tile": "0x34",
+      "sprite_size": [
+        1,
+        1
+      ],
+      "tile_ids": [
+        "0x34"
+      ],
+      "draw_rule": "narrow_8x8",
+      "nes_dispatch_note": "DrawBomb (Z_07.asm:4869) -> DrawCloud -> Anim_WriteItemSprites with item slot $01, frame 0 -> ItemFrameTiles[$03] = $34. Tile $34 in [$20,$62) -> @Narrow path (Z_01.asm:5288), single 8x8 sprite."
+    },
+    {
+      "name": "explosion",
+      "item": "explosion",
+      "direction_class": "static",
+      "nes_frame_tile": "0x70",
+      "sprite_size": [
+        2,
+        1
+      ],
+      "tile_ids": [
+        "0x70",
+        "0x72",
+        "0x74"
+      ],
+      "draw_rule": "mirrored_16x8_phase_cycle",
+      "nes_dispatch_note": "DrawOtherBombClouds (Z_07.asm:4936) draws cloud cluster via DrawBombOrCloudNoFlashing -> Anim_WriteItemSprites with item slot $01, frames 1-3 -> ItemFrameTiles[$04..$06] = $70/$72/$74. Each tile in [$6C,$7C) -> @Wide -> Anim_WriteMirroredSpritePair (Z_01.asm:5304): 2 8x8 sprites side-by-side, right=left hflipped, total 16x8. Generator emits 2 Genesis tiles per NES tile (raw + hflipped) so SGDK SPRITE_SIZE(2,1) renders both halves."
+    },
+    {
+      "name": "sword_diag",
+      "item": "sword",
+      "direction_class": "diagonal",
+      "nes_frame_tile": "0x48",
+      "sprite_size": [
+        2,
+        2
+      ],
+      "tile_ids": [
+        "0x48",
+        "0x49",
+        "0x4A",
+        "0x4B"
+      ],
+      "draw_rule": "wide_16x16_hflippable",
+      "sprite_size_override_reason": "Genesis-native ALttP-style diagonal sword swing (Redux mode). NES Z1 has no diagonal sword sprite; the diagonal swing is a Genesis extension with no NES dispatch equivalent. Tiles $48-$4B form the full 2x2 diagonal blade graphic. NES dispatch classification of nes_frame_tile $48 as Narrow is inapplicable here."
+    }
+  ],
+  "variants": [
+    {
+      "rom_id": "orig",
+      "chr_dump": "C:\\Users\\Jake Diggity\\Documents\\GitHub\\FINAL TRY-roomrom-s1\\RoomRom\\out\\nes_item_chr_pt0_orig.bin",
+      "chr_dump_sha256": "1fc7f834bc02befc518c8409f7c08ddc337a481f9973f886e98f453cd5d38966",
+      "tiles": {
+        "0x20": {
+          "ppu_addr": "0x0200",
+          "source": "common_sprite_live_chr",
+          "sha256": "d236206ddc29f82e0fb072e74715416a48bd4851f59bfa3d6e33e8325e765949",
+          "flat_pattern": false,
+          "bytes": "10383838383838381038383838383838"
+        },
+        "0x21": {
+          "ppu_addr": "0x0210",
+          "source": "common_sprite_live_chr",
+          "sha256": "1381d9990b60d2602afe978f741a06b449c04b4e1276090c94da2f85e4d6e691",
+          "flat_pattern": false,
+          "bytes": "383838FE823800383838380038003800"
+        },
+        "0x82": {
+          "ppu_addr": "0x0820",
+          "source": "runtime_gap_live_chr",
+          "sha256": "596e9ee777bfbb225f21595cf5141a283ae123a749c09353f390fa0e7ecc2da1",
+          "flat_pattern": false,
+          "bytes": "00000000001808AF0000000000000057"
+        },
+        "0x83": {
+          "ppu_addr": "0x0830",
+          "source": "runtime_gap_live_chr",
+          "sha256": "a3e5c7f4ec7893d47f026ec0c54f6c0c7d4c7a70b621ae57cfda79c67070966d",
+          "flat_pattern": false,
+          "bytes": "AFAF0818000000005757000000000000"
+        },
+        "0x84": {
+          "ppu_addr": "0x0840",
+          "source": "runtime_gap_live_chr",
+          "sha256": "295865c37e18cbac4e667c7531c47394c9c4411fc572e47bdfe790fdcbc51743",
+          "flat_pattern": false,
+          "bytes": "00000000000000FE00000000000000FE"
+        },
+        "0x85": {
+          "ppu_addr": "0x0850",
+          "source": "runtime_gap_live_chr",
+          "sha256": "ed734eb3250befe0d30282540ddfc3bab486ce9a33d1d19190f495255a7d1bab",
+          "flat_pattern": false,
+          "bytes": "FFFE000000000000FFFE000000000000"
+        },
+        "0x36": {
+          "ppu_addr": "0x0360",
+          "source": "common_sprite_live_chr",
+          "sha256": "55e26359f0162ae50f0075a3aeee8830699bd2cb1e65ff4ee0cac623c49ab035",
+          "flat_pattern": false,
+          "bytes": "0000000014383010000000000C085070"
+        },
+        "0x37": {
+          "ppu_addr": "0x0370",
+          "source": "common_sprite_live_chr",
+          "sha256": "0943a23d4a5cc5a3664c63cd2ee23b6fb2a91ab652605f6e60856749b27f5b83",
+          "flat_pattern": false,
+          "bytes": "10100804000000007070381C00000000"
+        },
+        "0x38": {
+          "ppu_addr": "0x0380",
+          "source": "common_sprite_live_chr",
+          "sha256": "1dfd1283c8a2a00ebb8e683e202326ddcf0c6cbc89125a745ea063362ab43082",
+          "flat_pattern": false,
+          "bytes": "00000000404060F000000000C0C0A010"
+        },
+        "0x39": {
+          "ppu_addr": "0x0390",
+          "source": "common_sprite_live_chr",
+          "sha256": "3b78eab14a702760b6c86b01bc499d3b8dd22b89d610991a661159409aee53d9",
+          "flat_pattern": false,
+          "bytes": "4804030000000000387C3F0F00000000"
+        },
+        "0x3A": {
+          "ppu_addr": "0x03A0",
+          "source": "common_sprite_live_chr",
+          "sha256": "32ac3d53fd8b282a51e828258c2f583a3d8c004c18facf56549dda1358974bc7",
+          "flat_pattern": false,
+          "bytes": "000000000000814200000000000081C3"
+        },
+        "0x3B": {
+          "ppu_addr": "0x03B0",
+          "source": "common_sprite_live_chr",
+          "sha256": "c5fac516b1635ad1888ad766edf5c621746fc7ec9355ac142a9669225830490f",
+          "flat_pattern": false,
+          "bytes": "FC600000000000003F1E3C0000000000"
+        },
+        "0x3C": {
+          "ppu_addr": "0x03C0",
+          "source": "common_sprite_live_chr",
+          "sha256": "74188d485d985176424061e8b36cdf63c62d8c16cb60c4088b81df74c74b8fd0",
+          "flat_pattern": false,
+          "bytes": "00000000442DBE7C00000000442DBE7C"
+        },
+        "0x3D": {
+          "ppu_addr": "0x03D0",
+          "source": "common_sprite_live_chr",
+          "sha256": "5b84f7adc2b6f0626d324e9622d20409286ecd3b9d87b60d262c2214f819f7e2",
+          "flat_pattern": false,
+          "bytes": "387C900800000000387C900800000000"
+        },
+        "0x28": {
+          "ppu_addr": "0x0280",
+          "source": "common_sprite_live_chr",
+          "sha256": "779dfb527dc7304cb1b212f1034505caf56a5072696f906dbbf0a231f6209889",
+          "flat_pattern": false,
+          "bytes": "000000080808080808081C1400000000"
+        },
+        "0x29": {
+          "ppu_addr": "0x0290",
+          "source": "common_sprite_live_chr",
+          "sha256": "476403bc1f109c8b0cac3a49898e1b9f7962a4aa343b855986102984f56e2a42",
+          "flat_pattern": false,
+          "bytes": "08081C2A1C2A1C2A0000142214221422"
+        },
+        "0x86": {
+          "ppu_addr": "0x0860",
+          "source": "runtime_gap_live_chr",
+          "sha256": "08ccb906da7644127907ae0b5c1822425577f402b48a2e0fadc3eda09ebf1d0c",
+          "flat_pattern": false,
+          "bytes": "0000000000A854FF0000000000A85400"
+        },
+        "0x87": {
+          "ppu_addr": "0x0870",
+          "source": "runtime_gap_live_chr",
+          "sha256": "a522c967afbfc59f7e1956960b61ee306e1c2a7214ccfe7f2c99751fed3ac46e",
+          "flat_pattern": false,
+          "bytes": "54A800000000000054A8000000000000"
+        },
+        "0x88": {
+          "ppu_addr": "0x0880",
+          "source": "runtime_gap_live_chr",
+          "sha256": "d4d8bebf4395a0a1faea414f3a24474e33f36261e58bbf85d9ef4e6f589d860e",
+          "flat_pattern": false,
+          "bytes": "00000000000000F80000000000000C07"
+        },
+        "0x89": {
+          "ppu_addr": "0x0890",
+          "source": "runtime_gap_live_chr",
+          "sha256": "df065f4871e06699366ccb668ce9b2a58f41b698fc7f95123d307a70c5379505",
+          "flat_pattern": false,
+          "bytes": "00000000000000000C00000000000000"
+        },
+        "0x34": {
+          "ppu_addr": "0x0340",
+          "source": "common_sprite_live_chr",
+          "sha256": "c0a311326c3e23e20f910c3639358ee82320691ff630411156a5d37c0a6c6a74",
+          "flat_pattern": false,
+          "bytes": "0404020101023C4E0404020101020030"
+        },
+        "0x70": {
+          "ppu_addr": "0x0700",
+          "source": "runtime_gap_live_chr",
+          "sha256": "7fc3e80f993d374e4a7f97b5ac2b3151e884faf48a7efcd868825df896c90eb2",
+          "flat_pattern": false,
+          "bytes": "070F3F776F6FEFF7070F3F7F7F7FFFFF"
+        },
+        "0x72": {
+          "ppu_addr": "0x0720",
+          "source": "runtime_gap_live_chr",
+          "sha256": "dd15122382188b1197e17fcf35b9022aa5ed7297c9285381735469be06c03c9d",
+          "flat_pattern": false,
+          "bytes": "030E292311307694030E2B2311307694"
+        },
+        "0x74": {
+          "ppu_addr": "0x0740",
+          "source": "runtime_gap_live_chr",
+          "sha256": "69ce1577cb03b43054e58707875959f85609a3f98677332f35671ea78db65bf2",
+          "flat_pattern": false,
+          "bytes": "020008200310200A020008200310200A"
+        },
+        "0x48": {
+          "ppu_addr": "0x0480",
+          "source": "common_sprite_live_chr",
+          "sha256": "59ff981dfefbd44e77f9d513e69f6f9ddf3231dca409edbcff5ef357e877cd46",
+          "flat_pattern": false,
+          "bytes": "80C0E0E07070343A80C0E0E07070303A"
+        },
+        "0x49": {
+          "ppu_addr": "0x0490",
+          "source": "common_sprite_live_chr",
+          "sha256": "c0c9a56cf27231f5050c5aa8b25e86d735385099b2e1370d4f01165dffcb56f8",
+          "flat_pattern": false,
+          "bytes": "1A5F4E2C18120001181C480206050302"
+        },
+        "0x4A": {
+          "ppu_addr": "0x04A0",
+          "source": "common_sprite_live_chr",
+          "sha256": "a1a1d148073bc2cc021f301667cd4415b3d3bef77e17a6c901b9ce0223a05eaa",
+          "flat_pattern": false,
+          "bytes": "183C3C3C180018000010002418181818"
+        },
+        "0x4B": {
+          "ppu_addr": "0x04B0",
+          "source": "common_sprite_live_chr",
+          "sha256": "f26da6ead755cc86927aebae70f814ee017ad9e719b17a507ec05bbe37df2781",
+          "flat_pattern": false,
+          "bytes": "00000000000000001818181818181818"
+        }
+      }
+    },
+    {
+      "rom_id": "redux",
+      "chr_dump": "C:\\Users\\Jake Diggity\\Documents\\GitHub\\FINAL TRY-roomrom-s1\\RoomRom\\out\\nes_item_chr_pt0_redux.bin",
+      "chr_dump_sha256": "a2b93a447d4c8df0619210a70a3afb1188c8cbc2dc45ee99da9bcd293ce985ae",
+      "tiles": {
+        "0x20": {
+          "ppu_addr": "0x0200",
+          "source": "common_sprite_live_chr",
+          "sha256": "d236206ddc29f82e0fb072e74715416a48bd4851f59bfa3d6e33e8325e765949",
+          "flat_pattern": false,
+          "bytes": "10383838383838381038383838383838"
+        },
+        "0x21": {
+          "ppu_addr": "0x0210",
+          "source": "common_sprite_live_chr",
+          "sha256": "24f3b2dcd799168a64fecb3173e3b8e931fb89395d00ad49c0bfc4d8409ed298",
+          "flat_pattern": false,
+          "bytes": "3838BAFE003800383838380038003800"
+        },
+        "0x82": {
+          "ppu_addr": "0x0820",
+          "source": "runtime_gap_live_chr",
+          "sha256": "0566421277594df4e55979200ee76eab65410e55a5a5af0b8fc48b48555a0051",
+          "flat_pattern": false,
+          "bytes": "00000000000C08AF0000000000000057"
+        },
+        "0x83": {
+          "ppu_addr": "0x0830",
+          "source": "runtime_gap_live_chr",
+          "sha256": "5715dcb74449bcd594cd9145c0ad2c7f00e2b33d39ba91d62f1042ff07ebd7fc",
+          "flat_pattern": false,
+          "bytes": "AFAF080C000000005757000000000000"
+        },
+        "0x84": {
+          "ppu_addr": "0x0840",
+          "source": "runtime_gap_live_chr",
+          "sha256": "295865c37e18cbac4e667c7531c47394c9c4411fc572e47bdfe790fdcbc51743",
+          "flat_pattern": false,
+          "bytes": "00000000000000FE00000000000000FE"
+        },
+        "0x85": {
+          "ppu_addr": "0x0850",
+          "source": "runtime_gap_live_chr",
+          "sha256": "ed734eb3250befe0d30282540ddfc3bab486ce9a33d1d19190f495255a7d1bab",
+          "flat_pattern": false,
+          "bytes": "FFFE000000000000FFFE000000000000"
+        },
+        "0x36": {
+          "ppu_addr": "0x0360",
+          "source": "common_sprite_live_chr",
+          "sha256": "55e26359f0162ae50f0075a3aeee8830699bd2cb1e65ff4ee0cac623c49ab035",
+          "flat_pattern": false,
+          "bytes": "0000000014383010000000000C085070"
+        },
+        "0x37": {
+          "ppu_addr": "0x0370",
+          "source": "common_sprite_live_chr",
+          "sha256": "0943a23d4a5cc5a3664c63cd2ee23b6fb2a91ab652605f6e60856749b27f5b83",
+          "flat_pattern": false,
+          "bytes": "10100804000000007070381C00000000"
+        },
+        "0x38": {
+          "ppu_addr": "0x0380",
+          "source": "common_sprite_live_chr",
+          "sha256": "1dfd1283c8a2a00ebb8e683e202326ddcf0c6cbc89125a745ea063362ab43082",
+          "flat_pattern": false,
+          "bytes": "00000000404060F000000000C0C0A010"
+        },
+        "0x39": {
+          "ppu_addr": "0x0390",
+          "source": "common_sprite_live_chr",
+          "sha256": "3b78eab14a702760b6c86b01bc499d3b8dd22b89d610991a661159409aee53d9",
+          "flat_pattern": false,
+          "bytes": "4804030000000000387C3F0F00000000"
+        },
+        "0x3A": {
+          "ppu_addr": "0x03A0",
+          "source": "common_sprite_live_chr",
+          "sha256": "32ac3d53fd8b282a51e828258c2f583a3d8c004c18facf56549dda1358974bc7",
+          "flat_pattern": false,
+          "bytes": "000000000000814200000000000081C3"
+        },
+        "0x3B": {
+          "ppu_addr": "0x03B0",
+          "source": "common_sprite_live_chr",
+          "sha256": "c5fac516b1635ad1888ad766edf5c621746fc7ec9355ac142a9669225830490f",
+          "flat_pattern": false,
+          "bytes": "FC600000000000003F1E3C0000000000"
+        },
+        "0x3C": {
+          "ppu_addr": "0x03C0",
+          "source": "common_sprite_live_chr",
+          "sha256": "74188d485d985176424061e8b36cdf63c62d8c16cb60c4088b81df74c74b8fd0",
+          "flat_pattern": false,
+          "bytes": "00000000442DBE7C00000000442DBE7C"
+        },
+        "0x3D": {
+          "ppu_addr": "0x03D0",
+          "source": "common_sprite_live_chr",
+          "sha256": "5b84f7adc2b6f0626d324e9622d20409286ecd3b9d87b60d262c2214f819f7e2",
+          "flat_pattern": false,
+          "bytes": "387C900800000000387C900800000000"
+        },
+        "0x28": {
+          "ppu_addr": "0x0280",
+          "source": "common_sprite_live_chr",
+          "sha256": "779dfb527dc7304cb1b212f1034505caf56a5072696f906dbbf0a231f6209889",
+          "flat_pattern": false,
+          "bytes": "000000080808080808081C1400000000"
+        },
+        "0x29": {
+          "ppu_addr": "0x0290",
+          "source": "common_sprite_live_chr",
+          "sha256": "476403bc1f109c8b0cac3a49898e1b9f7962a4aa343b855986102984f56e2a42",
+          "flat_pattern": false,
+          "bytes": "08081C2A1C2A1C2A0000142214221422"
+        },
+        "0x86": {
+          "ppu_addr": "0x0860",
+          "source": "runtime_gap_live_chr",
+          "sha256": "08ccb906da7644127907ae0b5c1822425577f402b48a2e0fadc3eda09ebf1d0c",
+          "flat_pattern": false,
+          "bytes": "0000000000A854FF0000000000A85400"
+        },
+        "0x87": {
+          "ppu_addr": "0x0870",
+          "source": "runtime_gap_live_chr",
+          "sha256": "a522c967afbfc59f7e1956960b61ee306e1c2a7214ccfe7f2c99751fed3ac46e",
+          "flat_pattern": false,
+          "bytes": "54A800000000000054A8000000000000"
+        },
+        "0x88": {
+          "ppu_addr": "0x0880",
+          "source": "runtime_gap_live_chr",
+          "sha256": "d4d8bebf4395a0a1faea414f3a24474e33f36261e58bbf85d9ef4e6f589d860e",
+          "flat_pattern": false,
+          "bytes": "00000000000000F80000000000000C07"
+        },
+        "0x89": {
+          "ppu_addr": "0x0890",
+          "source": "runtime_gap_live_chr",
+          "sha256": "df065f4871e06699366ccb668ce9b2a58f41b698fc7f95123d307a70c5379505",
+          "flat_pattern": false,
+          "bytes": "00000000000000000C00000000000000"
+        },
+        "0x34": {
+          "ppu_addr": "0x0340",
+          "source": "common_sprite_live_chr",
+          "sha256": "c0a311326c3e23e20f910c3639358ee82320691ff630411156a5d37c0a6c6a74",
+          "flat_pattern": false,
+          "bytes": "0404020101023C4E0404020101020030"
+        },
+        "0x70": {
+          "ppu_addr": "0x0700",
+          "source": "runtime_gap_live_chr",
+          "sha256": "7fc3e80f993d374e4a7f97b5ac2b3151e884faf48a7efcd868825df896c90eb2",
+          "flat_pattern": false,
+          "bytes": "070F3F776F6FEFF7070F3F7F7F7FFFFF"
+        },
+        "0x72": {
+          "ppu_addr": "0x0720",
+          "source": "runtime_gap_live_chr",
+          "sha256": "dd15122382188b1197e17fcf35b9022aa5ed7297c9285381735469be06c03c9d",
+          "flat_pattern": false,
+          "bytes": "030E292311307694030E2B2311307694"
+        },
+        "0x74": {
+          "ppu_addr": "0x0740",
+          "source": "runtime_gap_live_chr",
+          "sha256": "69ce1577cb03b43054e58707875959f85609a3f98677332f35671ea78db65bf2",
+          "flat_pattern": false,
+          "bytes": "020008200310200A020008200310200A"
+        },
+        "0x48": {
+          "ppu_addr": "0x0480",
+          "source": "common_sprite_live_chr",
+          "sha256": "59ff981dfefbd44e77f9d513e69f6f9ddf3231dca409edbcff5ef357e877cd46",
+          "flat_pattern": false,
+          "bytes": "80C0E0E07070343A80C0E0E07070303A"
+        },
+        "0x49": {
+          "ppu_addr": "0x0490",
+          "source": "common_sprite_live_chr",
+          "sha256": "c0c9a56cf27231f5050c5aa8b25e86d735385099b2e1370d4f01165dffcb56f8",
+          "flat_pattern": false,
+          "bytes": "1A5F4E2C18120001181C480206050302"
+        },
+        "0x4A": {
+          "ppu_addr": "0x04A0",
+          "source": "common_sprite_live_chr",
+          "sha256": "a1a1d148073bc2cc021f301667cd4415b3d3bef77e17a6c901b9ce0223a05eaa",
+          "flat_pattern": false,
+          "bytes": "183C3C3C180018000010002418181818"
+        },
+        "0x4B": {
+          "ppu_addr": "0x04B0",
+          "source": "common_sprite_live_chr",
+          "sha256": "f26da6ead755cc86927aebae70f814ee017ad9e719b17a507ec05bbe37df2781",
+          "flat_pattern": false,
+          "bytes": "00000000000000001818181818181818"
+        }
+      }
+    }
+  ]
+}

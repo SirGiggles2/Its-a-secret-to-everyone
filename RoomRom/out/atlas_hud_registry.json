@@ -1,0 +1,383 @@
+{
+  "schema_version": 1,
+  "generator": "RoomRom/tools/walk_z1_disasm.py",
+  "source": [
+    "reference/aldonunez/Z_01.asm",
+    "reference/aldonunez/Z_06.asm",
+    "reference/aldonunez/Z_02.asm"
+  ],
+  "notes": [
+    "HUD is BG content (NES nametable rows 0-3, PPU addr $2000-$204F)",
+    "Heart tiles: Z_01.asm:3233-3246 FormatHeartsInTextBuf",
+    "Digit tiles 0x00-0x09: Z_02.asm:1351 ModeE_CharMap character set",
+    "Status bar format: Z_01.asm:2850 FormatStatusBarText / StatusBarTransferBufTemplate",
+    "Level name: Z_06.asm:454 LevelNumberTransferBuf",
+    "Map tiles: Z_06.asm:464 TriforceRow0TransferBuf",
+    "B-item icon: drawn as sprite via DrawStatusBarItemB Z_07.asm:970 (see items category)",
+    "TODO: StatusBarStaticsTransferBuf (TransferBufAddrs entry 7) for static HUD graphics"
+  ],
+  "hud": [
+    {
+      "name": "hud_heart_full",
+      "category": "hud",
+      "nes_tile_ids": [
+        "0xF2"
+      ],
+      "dispatch_class": "Wide_Flippable",
+      "frame_count": 1,
+      "chr_target": "bg_table_1",
+      "disasm_citation": {
+        "file": "Z_01.asm",
+        "line": 3161,
+        "label": "FormatHeartsInTextBuf",
+        "note": "full heart \u2014 FormatHeartsInTextBuf:@EmitFullHeart LDA #$F2"
+      }
+    },
+    {
+      "name": "hud_heart_half",
+      "category": "hud",
+      "nes_tile_ids": [
+        "0x65"
+      ],
+      "dispatch_class": "Wide_Slim",
+      "frame_count": 1,
+      "chr_target": "bg_table_1",
+      "disasm_citation": {
+        "file": "Z_01.asm",
+        "line": 3161,
+        "label": "FormatHeartsInTextBuf",
+        "note": "half heart \u2014 FormatHeartsInTextBuf:@EmitHalfHeart LDA #$65"
+      }
+    },
+    {
+      "name": "hud_heart_empty",
+      "category": "hud",
+      "nes_tile_ids": [
+        "0x66"
+      ],
+      "dispatch_class": "Wide_Slim",
+      "frame_count": 1,
+      "chr_target": "bg_table_1",
+      "disasm_citation": {
+        "file": "Z_01.asm",
+        "line": 3161,
+        "label": "FormatHeartsInTextBuf",
+        "note": "empty heart \u2014 FormatHeartsInTextBuf:@EmitEmptyHeart LDA #$66"
+      }
+    },
+    {
+      "name": "hud_digit_0",
+      "category": "hud",
+      "nes_tile_ids": [
+        "0x00"
+      ],
+      "dispatch_class": "Narrow",
+      "frame_count": 1,
+      "chr_target": "bg_table_0",
+      "disasm_citation": {
+        "file": "Z_02.asm",
+        "line": 1351,
+        "label": "ModeE_CharMap",
+        "note": "digit 0 -> tile 0x00 (FormatDecimalCountByte output)"
+      }
+    },
+    {
+      "name": "hud_digit_1",
+      "category": "hud",
+      "nes_tile_ids": [
+        "0x01"
+      ],
+      "dispatch_class": "Narrow",
+      "frame_count": 1,
+      "chr_target": "bg_table_0",
+      "disasm_citation": {
+        "file": "Z_02.asm",
+        "line": 1351,
+        "label": "ModeE_CharMap",
+        "note": "digit 1 -> tile 0x01 (FormatDecimalCountByte output)"
+      }
+    },
+    {
+      "name": "hud_digit_2",
+      "category": "hud",
+      "nes_tile_ids": [
+        "0x02"
+      ],
+      "dispatch_class": "Narrow",
+      "frame_count": 1,
+      "chr_target": "bg_table_0",
+      "disasm_citation": {
+        "file": "Z_02.asm",
+        "line": 1351,
+        "label": "ModeE_CharMap",
+        "note": "digit 2 -> tile 0x02 (FormatDecimalCountByte output)"
+      }
+    },
+    {
+      "name": "hud_digit_3",
+      "category": "hud",
+      "nes_tile_ids": [
+        "0x03"
+      ],
+      "dispatch_class": "Narrow",
+      "frame_count": 1,
+      "chr_target": "bg_table_0",
+      "disasm_citation": {
+        "file": "Z_02.asm",
+        "line": 1351,
+        "label": "ModeE_CharMap",
+        "note": "digit 3 -> tile 0x03 (FormatDecimalCountByte output)"
+      }
+    },
+    {
+      "name": "hud_digit_4",
+      "category": "hud",
+      "nes_tile_ids": [
+        "0x04"
+      ],
+      "dispatch_class": "Narrow",
+      "frame_count": 1,
+      "chr_target": "bg_table_0",
+      "disasm_citation": {
+        "file": "Z_02.asm",
+        "line": 1351,
+        "label": "ModeE_CharMap",
+        "note": "digit 4 -> tile 0x04 (FormatDecimalCountByte output)"
+      }
+    },
+    {
+      "name": "hud_digit_5",
+      "category": "hud",
+      "nes_tile_ids": [
+        "0x05"
+      ],
+      "dispatch_class": "Narrow",
+      "frame_count": 1,
+      "chr_target": "bg_table_0",
+      "disasm_citation": {
+        "file": "Z_02.asm",
+        "line": 1351,
+        "label": "ModeE_CharMap",
+        "note": "digit 5 -> tile 0x05 (FormatDecimalCountByte output)"
+      }
+    },
+    {
+      "name": "hud_digit_6",
+      "category": "hud",
+      "nes_tile_ids": [
+        "0x06"
+      ],
+      "dispatch_class": "Narrow",
+      "frame_count": 1,
+      "chr_target": "bg_table_0",
+      "disasm_citation": {
+        "file": "Z_02.asm",
+        "line": 1351,
+        "label": "ModeE_CharMap",
+        "note": "digit 6 -> tile 0x06 (FormatDecimalCountByte output)"
+      }
+    },
+    {
+      "name": "hud_digit_7",
+      "category": "hud",
+      "nes_tile_ids": [
+        "0x07"
+      ],
+      "dispatch_class": "Narrow",
+      "frame_count": 1,
+      "chr_target": "bg_table_0",
+      "disasm_citation": {
+        "file": "Z_02.asm",
+        "line": 1351,
+        "label": "ModeE_CharMap",
+        "note": "digit 7 -> tile 0x07 (FormatDecimalCountByte output)"
+      }
+    },
+    {
+      "name": "hud_digit_8",
+      "category": "hud",
+      "nes_tile_ids": [
+        "0x08"
+      ],
+      "dispatch_class": "Narrow",
+      "frame_count": 1,
+      "chr_target": "bg_table_0",
+      "disasm_citation": {
+        "file": "Z_02.asm",
+        "line": 1351,
+        "label": "ModeE_CharMap",
+        "note": "digit 8 -> tile 0x08 (FormatDecimalCountByte output)"
+      }
+    },
+    {
+      "name": "hud_digit_9",
+      "category": "hud",
+      "nes_tile_ids": [
+        "0x09"
+      ],
+      "dispatch_class": "Narrow",
+      "frame_count": 1,
+      "chr_target": "bg_table_0",
+      "disasm_citation": {
+        "file": "Z_02.asm",
+        "line": 1351,
+        "label": "ModeE_CharMap",
+        "note": "digit 9 -> tile 0x09 (FormatDecimalCountByte output)"
+      }
+    },
+    {
+      "name": "hud_blank",
+      "category": "hud",
+      "nes_tile_ids": [
+        "0x24"
+      ],
+      "dispatch_class": "Narrow",
+      "frame_count": 1,
+      "chr_target": "bg_table_0",
+      "disasm_citation": {
+        "file": "Z_01.asm",
+        "line": 2850,
+        "label": "StatusBarTransferBufTemplate",
+        "note": "blank tile 0x24 used as placeholder in status bar template (Z_01.asm:2805)"
+      }
+    },
+    {
+      "name": "hud_rupee_count",
+      "category": "hud",
+      "nes_tile_ids": [
+        "0x00",
+        "0x01",
+        "0x02"
+      ],
+      "dispatch_class": "Narrow",
+      "frame_count": 1,
+      "chr_target": "bg_table_0",
+      "disasm_citation": {
+        "file": "Z_01.asm",
+        "line": 2850,
+        "label": "FormatStatusBarText",
+        "note": "FormatDecimalCountByteInTextBuf for InvRupees -> 3 BG digit tiles at DynTileBuf+0x1B"
+      }
+    },
+    {
+      "name": "hud_key_count",
+      "category": "hud",
+      "nes_tile_ids": [
+        "0x00",
+        "0x01",
+        "0x02"
+      ],
+      "dispatch_class": "Narrow",
+      "frame_count": 1,
+      "chr_target": "bg_table_0",
+      "disasm_citation": {
+        "file": "Z_01.asm",
+        "line": 2850,
+        "label": "FormatStatusBarText",
+        "note": "FormatDecimalCountByteInTextBuf for InvKeys -> 3 BG digit tiles at DynTileBuf+0x08"
+      }
+    },
+    {
+      "name": "hud_bomb_count",
+      "category": "hud",
+      "nes_tile_ids": [
+        "0x00",
+        "0x01",
+        "0x02"
+      ],
+      "dispatch_class": "Narrow",
+      "frame_count": 1,
+      "chr_target": "bg_table_0",
+      "disasm_citation": {
+        "file": "Z_01.asm",
+        "line": 2850,
+        "label": "FormatStatusBarText",
+        "note": "FormatDecimalCountByteInTextBuf for InvBombs -> 3 BG digit tiles at DynTileBuf+0x27"
+      }
+    },
+    {
+      "name": "hud_level_text",
+      "category": "hud",
+      "nes_tile_ids": [
+        "0x15",
+        "0x0E",
+        "0x1F",
+        "0x0E",
+        "0x15"
+      ],
+      "dispatch_class": "Narrow",
+      "frame_count": 1,
+      "chr_target": "bg_table_0",
+      "disasm_citation": {
+        "file": "Z_06.asm",
+        "line": 454,
+        "label": "LevelNumberTransferBuf",
+        "note": "LEVEL text + digit; BG tiles 0x15=L 0x0E=E 0x1F=V"
+      }
+    },
+    {
+      "name": "hud_map_dot",
+      "category": "hud",
+      "nes_tile_ids": [
+        "0xED"
+      ],
+      "dispatch_class": "Narrow",
+      "frame_count": 1,
+      "chr_target": "bg_table_0",
+      "disasm_citation": {
+        "file": "Z_06.asm",
+        "line": 464,
+        "label": "TriforceRow0TransferBuf",
+        "note": "map room visited dot"
+      }
+    },
+    {
+      "name": "hud_map_current",
+      "category": "hud",
+      "nes_tile_ids": [
+        "0xE9"
+      ],
+      "dispatch_class": "Narrow",
+      "frame_count": 1,
+      "chr_target": "bg_table_0",
+      "disasm_citation": {
+        "file": "Z_06.asm",
+        "line": 464,
+        "label": "TriforceRow0TransferBuf",
+        "note": "triforce/current room indicator"
+      }
+    },
+    {
+      "name": "hud_map_border",
+      "category": "hud",
+      "nes_tile_ids": [
+        "0xEA"
+      ],
+      "dispatch_class": "Narrow",
+      "frame_count": 1,
+      "chr_target": "bg_table_0",
+      "disasm_citation": {
+        "file": "Z_06.asm",
+        "line": 464,
+        "label": "TriforceRow0TransferBuf",
+        "note": "map border tile"
+      }
+    },
+    {
+      "name": "hud_map_blank",
+      "category": "hud",
+      "nes_tile_ids": [
+        "0xEE"
+      ],
+      "dispatch_class": "Narrow",
+      "frame_count": 1,
+      "chr_target": "bg_table_0",
+      "disasm_citation": {
+        "file": "Z_06.asm",
+        "line": 464,
+        "label": "TriforceRow0TransferBuf",
+        "note": "map empty tile"
+      }
+    }
+  ]
+}

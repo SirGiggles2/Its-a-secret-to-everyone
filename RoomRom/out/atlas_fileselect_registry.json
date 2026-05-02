@@ -1,0 +1,734 @@
+{
+  "schema_version": 1,
+  "generator": "RoomRom/tools/walk_z1_disasm.py",
+  "source": "reference/aldonunez/Z_02.asm",
+  "notes": [
+    "ModeE_CharMap: Z_02.asm:1351 \u2014 43-entry char board tile map",
+    "ModeEandFCursorSprites: Z_02.asm:1367 \u2014 hand cursor sprite",
+    "File select slot template: ModeFSaveSlotTemplateTransferBuf (Z_02.asm:1339) \u2014 BG",
+    "Title patch: ModeFTitleTransferBuf (Z_02.asm:1324) + ModeFTitlePatchRegister (Z_02.asm:1330)",
+    "Character tiles are BG (nametable write via DynTileBuf); cursor is sprite (OAM)"
+  ],
+  "fileselect": [
+    {
+      "name": "fs_char_a",
+      "category": "fileselect",
+      "nes_tile_ids": [
+        "0x0A"
+      ],
+      "dispatch_class": "Narrow",
+      "frame_count": 1,
+      "chr_target": "bg_table_0",
+      "disasm_citation": {
+        "file": "Z_02.asm",
+        "line": 1352,
+        "label": "ModeE_CharMap[0]",
+        "note": "character board tile for 'A'"
+      }
+    },
+    {
+      "name": "fs_char_b",
+      "category": "fileselect",
+      "nes_tile_ids": [
+        "0x0B"
+      ],
+      "dispatch_class": "Narrow",
+      "frame_count": 1,
+      "chr_target": "bg_table_0",
+      "disasm_citation": {
+        "file": "Z_02.asm",
+        "line": 1352,
+        "label": "ModeE_CharMap[1]",
+        "note": "character board tile for 'B'"
+      }
+    },
+    {
+      "name": "fs_char_c",
+      "category": "fileselect",
+      "nes_tile_ids": [
+        "0x0C"
+      ],
+      "dispatch_class": "Narrow",
+      "frame_count": 1,
+      "chr_target": "bg_table_0",
+      "disasm_citation": {
+        "file": "Z_02.asm",
+        "line": 1352,
+        "label": "ModeE_CharMap[2]",
+        "note": "character board tile for 'C'"
+      }
+    },
+    {
+      "name": "fs_char_d",
+      "category": "fileselect",
+      "nes_tile_ids": [
+        "0x0D"
+      ],
+      "dispatch_class": "Narrow",
+      "frame_count": 1,
+      "chr_target": "bg_table_0",
+      "disasm_citation": {
+        "file": "Z_02.asm",
+        "line": 1352,
+        "label": "ModeE_CharMap[3]",
+        "note": "character board tile for 'D'"
+      }
+    },
+    {
+      "name": "fs_char_e",
+      "category": "fileselect",
+      "nes_tile_ids": [
+        "0x0E"
+      ],
+      "dispatch_class": "Narrow",
+      "frame_count": 1,
+      "chr_target": "bg_table_0",
+      "disasm_citation": {
+        "file": "Z_02.asm",
+        "line": 1352,
+        "label": "ModeE_CharMap[4]",
+        "note": "character board tile for 'E'"
+      }
+    },
+    {
+      "name": "fs_char_f",
+      "category": "fileselect",
+      "nes_tile_ids": [
+        "0x0F"
+      ],
+      "dispatch_class": "Narrow",
+      "frame_count": 1,
+      "chr_target": "bg_table_0",
+      "disasm_citation": {
+        "file": "Z_02.asm",
+        "line": 1352,
+        "label": "ModeE_CharMap[5]",
+        "note": "character board tile for 'F'"
+      }
+    },
+    {
+      "name": "fs_char_g",
+      "category": "fileselect",
+      "nes_tile_ids": [
+        "0x10"
+      ],
+      "dispatch_class": "Narrow",
+      "frame_count": 1,
+      "chr_target": "bg_table_0",
+      "disasm_citation": {
+        "file": "Z_02.asm",
+        "line": 1352,
+        "label": "ModeE_CharMap[6]",
+        "note": "character board tile for 'G'"
+      }
+    },
+    {
+      "name": "fs_char_h",
+      "category": "fileselect",
+      "nes_tile_ids": [
+        "0x11"
+      ],
+      "dispatch_class": "Narrow",
+      "frame_count": 1,
+      "chr_target": "bg_table_0",
+      "disasm_citation": {
+        "file": "Z_02.asm",
+        "line": 1352,
+        "label": "ModeE_CharMap[7]",
+        "note": "character board tile for 'H'"
+      }
+    },
+    {
+      "name": "fs_char_i",
+      "category": "fileselect",
+      "nes_tile_ids": [
+        "0x12"
+      ],
+      "dispatch_class": "Narrow",
+      "frame_count": 1,
+      "chr_target": "bg_table_0",
+      "disasm_citation": {
+        "file": "Z_02.asm",
+        "line": 1352,
+        "label": "ModeE_CharMap[8]",
+        "note": "character board tile for 'I'"
+      }
+    },
+    {
+      "name": "fs_char_j",
+      "category": "fileselect",
+      "nes_tile_ids": [
+        "0x13"
+      ],
+      "dispatch_class": "Narrow",
+      "frame_count": 1,
+      "chr_target": "bg_table_0",
+      "disasm_citation": {
+        "file": "Z_02.asm",
+        "line": 1352,
+        "label": "ModeE_CharMap[9]",
+        "note": "character board tile for 'J'"
+      }
+    },
+    {
+      "name": "fs_char_k",
+      "category": "fileselect",
+      "nes_tile_ids": [
+        "0x14"
+      ],
+      "dispatch_class": "Narrow",
+      "frame_count": 1,
+      "chr_target": "bg_table_0",
+      "disasm_citation": {
+        "file": "Z_02.asm",
+        "line": 1352,
+        "label": "ModeE_CharMap[10]",
+        "note": "character board tile for 'K'"
+      }
+    },
+    {
+      "name": "fs_char_l",
+      "category": "fileselect",
+      "nes_tile_ids": [
+        "0x15"
+      ],
+      "dispatch_class": "Narrow",
+      "frame_count": 1,
+      "chr_target": "bg_table_0",
+      "disasm_citation": {
+        "file": "Z_02.asm",
+        "line": 1352,
+        "label": "ModeE_CharMap[11]",
+        "note": "character board tile for 'L'"
+      }
+    },
+    {
+      "name": "fs_char_m",
+      "category": "fileselect",
+      "nes_tile_ids": [
+        "0x16"
+      ],
+      "dispatch_class": "Narrow",
+      "frame_count": 1,
+      "chr_target": "bg_table_0",
+      "disasm_citation": {
+        "file": "Z_02.asm",
+        "line": 1352,
+        "label": "ModeE_CharMap[12]",
+        "note": "character board tile for 'M'"
+      }
+    },
+    {
+      "name": "fs_char_n",
+      "category": "fileselect",
+      "nes_tile_ids": [
+        "0x17"
+      ],
+      "dispatch_class": "Narrow",
+      "frame_count": 1,
+      "chr_target": "bg_table_0",
+      "disasm_citation": {
+        "file": "Z_02.asm",
+        "line": 1352,
+        "label": "ModeE_CharMap[13]",
+        "note": "character board tile for 'N'"
+      }
+    },
+    {
+      "name": "fs_char_o",
+      "category": "fileselect",
+      "nes_tile_ids": [
+        "0x18"
+      ],
+      "dispatch_class": "Narrow",
+      "frame_count": 1,
+      "chr_target": "bg_table_0",
+      "disasm_citation": {
+        "file": "Z_02.asm",
+        "line": 1352,
+        "label": "ModeE_CharMap[14]",
+        "note": "character board tile for 'O'"
+      }
+    },
+    {
+      "name": "fs_char_p",
+      "category": "fileselect",
+      "nes_tile_ids": [
+        "0x19"
+      ],
+      "dispatch_class": "Narrow",
+      "frame_count": 1,
+      "chr_target": "bg_table_0",
+      "disasm_citation": {
+        "file": "Z_02.asm",
+        "line": 1352,
+        "label": "ModeE_CharMap[15]",
+        "note": "character board tile for 'P'"
+      }
+    },
+    {
+      "name": "fs_char_q",
+      "category": "fileselect",
+      "nes_tile_ids": [
+        "0x1A"
+      ],
+      "dispatch_class": "Narrow",
+      "frame_count": 1,
+      "chr_target": "bg_table_0",
+      "disasm_citation": {
+        "file": "Z_02.asm",
+        "line": 1352,
+        "label": "ModeE_CharMap[16]",
+        "note": "character board tile for 'Q'"
+      }
+    },
+    {
+      "name": "fs_char_r",
+      "category": "fileselect",
+      "nes_tile_ids": [
+        "0x1B"
+      ],
+      "dispatch_class": "Narrow",
+      "frame_count": 1,
+      "chr_target": "bg_table_0",
+      "disasm_citation": {
+        "file": "Z_02.asm",
+        "line": 1352,
+        "label": "ModeE_CharMap[17]",
+        "note": "character board tile for 'R'"
+      }
+    },
+    {
+      "name": "fs_char_s",
+      "category": "fileselect",
+      "nes_tile_ids": [
+        "0x1C"
+      ],
+      "dispatch_class": "Narrow",
+      "frame_count": 1,
+      "chr_target": "bg_table_0",
+      "disasm_citation": {
+        "file": "Z_02.asm",
+        "line": 1352,
+        "label": "ModeE_CharMap[18]",
+        "note": "character board tile for 'S'"
+      }
+    },
+    {
+      "name": "fs_char_t",
+      "category": "fileselect",
+      "nes_tile_ids": [
+        "0x1D"
+      ],
+      "dispatch_class": "Narrow",
+      "frame_count": 1,
+      "chr_target": "bg_table_0",
+      "disasm_citation": {
+        "file": "Z_02.asm",
+        "line": 1352,
+        "label": "ModeE_CharMap[19]",
+        "note": "character board tile for 'T'"
+      }
+    },
+    {
+      "name": "fs_char_u",
+      "category": "fileselect",
+      "nes_tile_ids": [
+        "0x1E"
+      ],
+      "dispatch_class": "Narrow",
+      "frame_count": 1,
+      "chr_target": "bg_table_0",
+      "disasm_citation": {
+        "file": "Z_02.asm",
+        "line": 1352,
+        "label": "ModeE_CharMap[20]",
+        "note": "character board tile for 'U'"
+      }
+    },
+    {
+      "name": "fs_char_v",
+      "category": "fileselect",
+      "nes_tile_ids": [
+        "0x1F"
+      ],
+      "dispatch_class": "Narrow",
+      "frame_count": 1,
+      "chr_target": "bg_table_0",
+      "disasm_citation": {
+        "file": "Z_02.asm",
+        "line": 1352,
+        "label": "ModeE_CharMap[21]",
+        "note": "character board tile for 'V'"
+      }
+    },
+    {
+      "name": "fs_char_w",
+      "category": "fileselect",
+      "nes_tile_ids": [
+        "0x20"
+      ],
+      "dispatch_class": "Narrow",
+      "frame_count": 1,
+      "chr_target": "bg_table_0",
+      "disasm_citation": {
+        "file": "Z_02.asm",
+        "line": 1352,
+        "label": "ModeE_CharMap[22]",
+        "note": "character board tile for 'W'"
+      }
+    },
+    {
+      "name": "fs_char_x",
+      "category": "fileselect",
+      "nes_tile_ids": [
+        "0x21"
+      ],
+      "dispatch_class": "Narrow",
+      "frame_count": 1,
+      "chr_target": "bg_table_0",
+      "disasm_citation": {
+        "file": "Z_02.asm",
+        "line": 1352,
+        "label": "ModeE_CharMap[23]",
+        "note": "character board tile for 'X'"
+      }
+    },
+    {
+      "name": "fs_char_y",
+      "category": "fileselect",
+      "nes_tile_ids": [
+        "0x22"
+      ],
+      "dispatch_class": "Narrow",
+      "frame_count": 1,
+      "chr_target": "bg_table_0",
+      "disasm_citation": {
+        "file": "Z_02.asm",
+        "line": 1352,
+        "label": "ModeE_CharMap[24]",
+        "note": "character board tile for 'Y'"
+      }
+    },
+    {
+      "name": "fs_char_z",
+      "category": "fileselect",
+      "nes_tile_ids": [
+        "0x23"
+      ],
+      "dispatch_class": "Narrow",
+      "frame_count": 1,
+      "chr_target": "bg_table_0",
+      "disasm_citation": {
+        "file": "Z_02.asm",
+        "line": 1352,
+        "label": "ModeE_CharMap[25]",
+        "note": "character board tile for 'Z'"
+      }
+    },
+    {
+      "name": "fs_char_dash",
+      "category": "fileselect",
+      "nes_tile_ids": [
+        "0x62"
+      ],
+      "dispatch_class": "Narrow",
+      "frame_count": 1,
+      "chr_target": "bg_table_0",
+      "disasm_citation": {
+        "file": "Z_02.asm",
+        "line": 1352,
+        "label": "ModeE_CharMap[26]",
+        "note": "character board tile for '-'"
+      }
+    },
+    {
+      "name": "fs_char_dot",
+      "category": "fileselect",
+      "nes_tile_ids": [
+        "0x63"
+      ],
+      "dispatch_class": "Narrow",
+      "frame_count": 1,
+      "chr_target": "bg_table_0",
+      "disasm_citation": {
+        "file": "Z_02.asm",
+        "line": 1352,
+        "label": "ModeE_CharMap[27]",
+        "note": "character board tile for '.'"
+      }
+    },
+    {
+      "name": "fs_char_space",
+      "category": "fileselect",
+      "nes_tile_ids": [
+        "0x28"
+      ],
+      "dispatch_class": "Narrow",
+      "frame_count": 1,
+      "chr_target": "bg_table_0",
+      "disasm_citation": {
+        "file": "Z_02.asm",
+        "line": 1352,
+        "label": "ModeE_CharMap[28]",
+        "note": "character board tile for ' '"
+      }
+    },
+    {
+      "name": "fs_digit_0",
+      "category": "fileselect",
+      "nes_tile_ids": [
+        "0x29"
+      ],
+      "dispatch_class": "Narrow",
+      "frame_count": 1,
+      "chr_target": "bg_table_0",
+      "disasm_citation": {
+        "file": "Z_02.asm",
+        "line": 1352,
+        "label": "ModeE_CharMap[29]",
+        "note": "character board tile for '0'"
+      }
+    },
+    {
+      "name": "fs_digit_1",
+      "category": "fileselect",
+      "nes_tile_ids": [
+        "0x2A"
+      ],
+      "dispatch_class": "Narrow",
+      "frame_count": 1,
+      "chr_target": "bg_table_0",
+      "disasm_citation": {
+        "file": "Z_02.asm",
+        "line": 1352,
+        "label": "ModeE_CharMap[30]",
+        "note": "character board tile for '1'"
+      }
+    },
+    {
+      "name": "fs_digit_2",
+      "category": "fileselect",
+      "nes_tile_ids": [
+        "0x2B"
+      ],
+      "dispatch_class": "Narrow",
+      "frame_count": 1,
+      "chr_target": "bg_table_0",
+      "disasm_citation": {
+        "file": "Z_02.asm",
+        "line": 1352,
+        "label": "ModeE_CharMap[31]",
+        "note": "character board tile for '2'"
+      }
+    },
+    {
+      "name": "fs_digit_3",
+      "category": "fileselect",
+      "nes_tile_ids": [
+        "0x2C"
+      ],
+      "dispatch_class": "Narrow",
+      "frame_count": 1,
+      "chr_target": "bg_table_0",
+      "disasm_citation": {
+        "file": "Z_02.asm",
+        "line": 1352,
+        "label": "ModeE_CharMap[32]",
+        "note": "character board tile for '3'"
+      }
+    },
+    {
+      "name": "fs_digit_4",
+      "category": "fileselect",
+      "nes_tile_ids": [
+        "0x00"
+      ],
+      "dispatch_class": "Narrow",
+      "frame_count": 1,
+      "chr_target": "bg_table_0",
+      "disasm_citation": {
+        "file": "Z_02.asm",
+        "line": 1352,
+        "label": "ModeE_CharMap[33]",
+        "note": "character board tile for '4'"
+      }
+    },
+    {
+      "name": "fs_digit_5",
+      "category": "fileselect",
+      "nes_tile_ids": [
+        "0x01"
+      ],
+      "dispatch_class": "Narrow",
+      "frame_count": 1,
+      "chr_target": "bg_table_0",
+      "disasm_citation": {
+        "file": "Z_02.asm",
+        "line": 1352,
+        "label": "ModeE_CharMap[34]",
+        "note": "character board tile for '5'"
+      }
+    },
+    {
+      "name": "fs_digit_6",
+      "category": "fileselect",
+      "nes_tile_ids": [
+        "0x02"
+      ],
+      "dispatch_class": "Narrow",
+      "frame_count": 1,
+      "chr_target": "bg_table_0",
+      "disasm_citation": {
+        "file": "Z_02.asm",
+        "line": 1352,
+        "label": "ModeE_CharMap[35]",
+        "note": "character board tile for '6'"
+      }
+    },
+    {
+      "name": "fs_digit_7",
+      "category": "fileselect",
+      "nes_tile_ids": [
+        "0x03"
+      ],
+      "dispatch_class": "Narrow",
+      "frame_count": 1,
+      "chr_target": "bg_table_0",
+      "disasm_citation": {
+        "file": "Z_02.asm",
+        "line": 1352,
+        "label": "ModeE_CharMap[36]",
+        "note": "character board tile for '7'"
+      }
+    },
+    {
+      "name": "fs_digit_8",
+      "category": "fileselect",
+      "nes_tile_ids": [
+        "0x04"
+      ],
+      "dispatch_class": "Narrow",
+      "frame_count": 1,
+      "chr_target": "bg_table_0",
+      "disasm_citation": {
+        "file": "Z_02.asm",
+        "line": 1352,
+        "label": "ModeE_CharMap[37]",
+        "note": "character board tile for '8'"
+      }
+    },
+    {
+      "name": "fs_digit_9",
+      "category": "fileselect",
+      "nes_tile_ids": [
+        "0x05"
+      ],
+      "dispatch_class": "Narrow",
+      "frame_count": 1,
+      "chr_target": "bg_table_0",
+      "disasm_citation": {
+        "file": "Z_02.asm",
+        "line": 1352,
+        "label": "ModeE_CharMap[38]",
+        "note": "character board tile for '9'"
+      }
+    },
+    {
+      "name": "fs_char_e",
+      "category": "fileselect",
+      "nes_tile_ids": [
+        "0x06"
+      ],
+      "dispatch_class": "Narrow",
+      "frame_count": 1,
+      "chr_target": "bg_table_0",
+      "disasm_citation": {
+        "file": "Z_02.asm",
+        "line": 1352,
+        "label": "ModeE_CharMap[39]",
+        "note": "character board tile for 'E'"
+      }
+    },
+    {
+      "name": "fs_char_n",
+      "category": "fileselect",
+      "nes_tile_ids": [
+        "0x07"
+      ],
+      "dispatch_class": "Narrow",
+      "frame_count": 1,
+      "chr_target": "bg_table_0",
+      "disasm_citation": {
+        "file": "Z_02.asm",
+        "line": 1352,
+        "label": "ModeE_CharMap[40]",
+        "note": "character board tile for 'N'"
+      }
+    },
+    {
+      "name": "fs_char_d",
+      "category": "fileselect",
+      "nes_tile_ids": [
+        "0x08"
+      ],
+      "dispatch_class": "Narrow",
+      "frame_count": 1,
+      "chr_target": "bg_table_0",
+      "disasm_citation": {
+        "file": "Z_02.asm",
+        "line": 1352,
+        "label": "ModeE_CharMap[41]",
+        "note": "character board tile for 'D'"
+      }
+    },
+    {
+      "name": "fs_char_42",
+      "category": "fileselect",
+      "nes_tile_ids": [
+        "0x09"
+      ],
+      "dispatch_class": "Narrow",
+      "frame_count": 1,
+      "chr_target": "bg_table_0",
+      "disasm_citation": {
+        "file": "Z_02.asm",
+        "line": 1352,
+        "label": "ModeE_CharMap[42]",
+        "note": "character board tile for 'char_42'"
+      }
+    },
+    {
+      "name": "fs_char_43",
+      "category": "fileselect",
+      "nes_tile_ids": [
+        "0x24"
+      ],
+      "dispatch_class": "Narrow",
+      "frame_count": 1,
+      "chr_target": "bg_table_0",
+      "disasm_citation": {
+        "file": "Z_02.asm",
+        "line": 1352,
+        "label": "ModeE_CharMap[43]",
+        "note": "character board tile for 'char_43'"
+      }
+    },
+    {
+      "name": "fs_cursor_hand",
+      "category": "fileselect",
+      "nes_tile_ids": [
+        "0x03"
+      ],
+      "dispatch_class": "Wide_Slim",
+      "frame_count": 1,
+      "chr_bank": "CommonSpritePatterns",
+      "disasm_citation": {
+        "file": "Z_02.asm",
+        "line": 1368,
+        "label": "ModeEandFCursorSprites",
+        "note": "hand cursor sprite tile[1]; Y=$F3 marks hidden sprite"
+      }
+    }
+  ]
+}

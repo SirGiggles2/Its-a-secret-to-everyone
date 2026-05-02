@@ -30,6 +30,24 @@ rem Change to project dir so .incbin "out/rom_head.bin" resolves correctly
 cd /d "%PROJ%"
 
 rem ---------------------------------------------------------------------------
+rem Step 0: NES-dispatch / item CHR manifest sanity check (strict).
+rem All sprite_size divergences must be documented with sprite_size_override_reason
+rem in item_chr_manifest.json (atlas spec P6a). New items must reconcile with
+rem NES dispatch or add an override_reason before the build will pass.
+rem ---------------------------------------------------------------------------
+echo [0] Verifying item CHR manifest (strict)...
+python "%PROJ%\tools\verify_item_chr_manifest.py" --strict
+if errorlevel 1 ( echo FAIL: item CHR manifest verify & exit /b 1 )
+
+echo [0] verify_slot_map...
+python "%PROJ%\tools\verify_slot_map.py"
+if errorlevel 1 ( echo FAIL: verify_slot_map & exit /b 1 )
+
+echo [0] verify_vram_budget...
+python "%PROJ%\tools\verify_vram_budget.py"
+if errorlevel 1 ( echo FAIL: verify_vram_budget & exit /b 1 )
+
+rem ---------------------------------------------------------------------------
 rem Compiler flags (match makefile.gen release config)
 rem ---------------------------------------------------------------------------
 set "CFLAGS=-DSGDK_GCC -m68000 -Wall -Wno-main -Wno-unused-parameter -fno-builtin -ffunction-sections -fdata-sections -fms-extensions -Os -fomit-frame-pointer -B%TOOLBIN%\"
@@ -80,6 +98,50 @@ echo [3] Compiling uw_room_blob.c...
 "%GCC%" %CFLAGS% %INCS% -c "%PROJ%\src\uw_room_blob.c" -o "%OUT%\uw_room_blob.o"
 if errorlevel 1 ( echo FAIL: uw_room_blob.c & exit /b 1 )
 
+echo [3] Compiling roomrom_sprites.c...
+"%GCC%" %CFLAGS% %INCS% -c "%PROJ%\src\roomrom_sprites.c" -o "%OUT%\roomrom_sprites.o"
+if errorlevel 1 ( echo FAIL: roomrom_sprites.c & exit /b 1 )
+
+echo [3] Compiling roomrom_combat.c...
+"%GCC%" %CFLAGS% %INCS% -c "%PROJ%\src\roomrom_combat.c" -o "%OUT%\roomrom_combat.o"
+if errorlevel 1 ( echo FAIL: roomrom_combat.c & exit /b 1 )
+
+echo [3] Compiling roomrom_boomerang.c...
+"%GCC%" %CFLAGS% %INCS% -c "%PROJ%\src\roomrom_boomerang.c" -o "%OUT%\roomrom_boomerang.o"
+if errorlevel 1 ( echo FAIL: roomrom_boomerang.c & exit /b 1 )
+
+echo [3] Compiling roomrom_arrow.c...
+"%GCC%" %CFLAGS% %INCS% -c "%PROJ%\src\roomrom_arrow.c" -o "%OUT%\roomrom_arrow.o"
+if errorlevel 1 ( echo FAIL: roomrom_arrow.c & exit /b 1 )
+
+echo [3] Compiling roomrom_bomb.c...
+"%GCC%" %CFLAGS% %INCS% -c "%PROJ%\src\roomrom_bomb.c" -o "%OUT%\roomrom_bomb.o"
+if errorlevel 1 ( echo FAIL: roomrom_bomb.c & exit /b 1 )
+
+rem roomrom_item_chr.c removed in atlas FU4 - superseded by atlas/items_chr_x4.c
+
+echo [3] Compiling roomrom_bg_palette.c...
+"%GCC%" %CFLAGS% %INCS% -c "%PROJ%\src\roomrom_bg_palette.c" -o "%OUT%\roomrom_bg_palette.o"
+if errorlevel 1 ( echo FAIL: roomrom_bg_palette.c & exit /b 1 )
+
+echo [3] Compiling roomrom_scene_load.c...
+"%GCC%" %CFLAGS% %INCS% -c "%PROJ%\src\roomrom_scene_load.c" -o "%OUT%\roomrom_scene_load.o"
+if errorlevel 1 ( echo FAIL: roomrom_scene_load.c & exit /b 1 )
+
+echo [3] Compiling roomrom_ow_palette.c...
+"%GCC%" %CFLAGS% %INCS% -c "%PROJ%\src\roomrom_ow_palette.c" -o "%OUT%\roomrom_ow_palette.o"
+if errorlevel 1 ( echo FAIL: roomrom_ow_palette.c & exit /b 1 )
+
+echo [3] Compiling expanded_bg_chr.c...
+"%GCC%" %CFLAGS% %INCS% -c "%PROJ%\src\expanded_bg_chr.c" -o "%OUT%\expanded_bg_chr.o"
+if errorlevel 1 ( echo FAIL: expanded_bg_chr.c & exit /b 1 )
+
+rem expanded_sprite_chr.c removed in atlas FU4 - superseded by atlas/items_chr_x4.c
+
+echo [3] Compiling atlas/items_chr_x4.c...
+"%GCC%" %CFLAGS% %INCS% -c "%PROJ%\src\atlas\items_chr_x4.c" -o "%OUT%\atlas_items_chr_x4.o"
+if errorlevel 1 ( echo FAIL: atlas/items_chr_x4.c & exit /b 1 )
+
 echo [3] Compiling overworld.c...
 "%GCC%" %CFLAGS% %INCS% -c "%REPO%\data\rooms\overworld.c" -o "%OUT%\overworld.o"
 if errorlevel 1 ( echo FAIL: overworld.c & exit /b 1 )
@@ -116,6 +178,10 @@ echo [3] Compiling common.c...
 "%GCC%" %CFLAGS% %INCS% -c "%REPO%\data\chr\common.c" -o "%OUT%\common.o"
 if errorlevel 1 ( echo FAIL: common.c & exit /b 1 )
 
+echo [3] Compiling sprites.c...
+"%GCC%" %CFLAGS% %INCS% -c "%REPO%\data\chr\sprites.c" -o "%OUT%\sprites.o"
+if errorlevel 1 ( echo FAIL: sprites.c & exit /b 1 )
+
 echo [3] Compiling palettes.c...
 "%GCC%" %CFLAGS% %INCS% -c "%REPO%\data\misc\palettes.c" -o "%OUT%\palettes.o"
 if errorlevel 1 ( echo FAIL: palettes.c & exit /b 1 )
@@ -124,7 +190,7 @@ rem ---------------------------------------------------------------------------
 rem Step 4: Link
 rem ---------------------------------------------------------------------------
 echo [4] Linking...
-set "OBJS=%OUT%\main.o %OUT%\render_adapter_sgdk.o %OUT%\ow_room_render.o %OUT%\uw_room_render.o %OUT%\uw_room_blob.o %OUT%\roomrom_hud.o %OUT%\overworld.o %OUT%\overworld_bg.o %OUT%\dungeons.o %OUT%\underworld_bg.o %OUT%\redux_overworld.o %OUT%\redux_overworld_bg.o %OUT%\redux_uw_bg.o %OUT%\redux_hud_chr.o %OUT%\common.o %OUT%\palettes.o"
+set "OBJS=%OUT%\main.o %OUT%\render_adapter_sgdk.o %OUT%\ow_room_render.o %OUT%\uw_room_render.o %OUT%\uw_room_blob.o %OUT%\roomrom_hud.o %OUT%\roomrom_sprites.o %OUT%\roomrom_combat.o %OUT%\roomrom_boomerang.o %OUT%\roomrom_arrow.o %OUT%\roomrom_bomb.o %OUT%\roomrom_bg_palette.o %OUT%\roomrom_ow_palette.o %OUT%\roomrom_scene_load.o %OUT%\expanded_bg_chr.o %OUT%\atlas_items_chr_x4.o %OUT%\overworld.o %OUT%\overworld_bg.o %OUT%\dungeons.o %OUT%\underworld_bg.o %OUT%\redux_overworld.o %OUT%\redux_overworld_bg.o %OUT%\redux_uw_bg.o %OUT%\redux_hud_chr.o %OUT%\common.o %OUT%\palettes.o %OUT%\sprites.o"
 "%GCC%" -m68000 -B%TOOLBIN%\ -n -T "%SGDK%\md.ld" -nostdlib "%OUT%\sega.o" %OBJS% "%LIB%\libmd.a" "%LIB%\libgcc.a" -o "%OUT%\rom.out" -Wl,--gc-sections
 if errorlevel 1 ( echo FAIL: link & exit /b 1 )
 

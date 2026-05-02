@@ -1,0 +1,336 @@
+{
+  "schema_version": 1,
+  "generator": "RoomRom/tools/walk_z1_disasm.py",
+  "source": [
+    "reference/aldonunez/Z_07.asm",
+    "reference/aldonunez/Z_01.asm",
+    "reference/aldonunez/Z_02.asm"
+  ],
+  "notes": [
+    "NPC types: UnderworldPerson (0x4B-0x52), Grumble (0x36), Zelda (0x37), PondFairy (0x2F)",
+    "UpdateUnderworldPerson_Full + UpdateGrumble_Full in bank 1 (imported to Z_07)",
+    "UpdateZelda in bank 4 (imported); UpdatePondFairy in bank 4",
+    "NPC dialog: PersonText.dat INCBIN at Z_01.asm:51 (BG text transfer, not sprites)",
+    "Cave persons (type >= 0x6A) dispatch to UpdateCavePerson (bank 1) \u2014 not in table",
+    "TODO: old man / old woman specific sprites from bank 1 UW person code"
+  ],
+  "npc": [
+    {
+      "name": "pond_fairy",
+      "category": "npc",
+      "obj_type_index": "0x2F",
+      "update_routine": "UpdatePondFairy",
+      "nes_tile_ids": [
+        "0xF3",
+        "0xF5",
+        "0xC9",
+        "0xCB",
+        "0xBD",
+        "0xBF",
+        "0xC1",
+        "0xC3"
+      ],
+      "dispatch_class": "Narrow",
+      "frame_count": 4,
+      "chr_bank": "CommonSpritePatterns",
+      "disasm_citation": {
+        "file": "Z_07.asm",
+        "line": 5343,
+        "label": "UpdateObject_JumpTable[0x2F]",
+        "anim_source": {
+          "file": "Z_01.asm",
+          "label": "ObjAnimations",
+          "line": 4884,
+          "anim_index": "0x30"
+        }
+      }
+    },
+    {
+      "name": "grumble",
+      "category": "npc",
+      "obj_type_index": "0x36",
+      "update_routine": "UpdateGrumble",
+      "nes_tile_ids": [
+        "0xB0",
+        "0xB2",
+        "0xF6",
+        "0xF8",
+        "0xF0",
+        "0xF2",
+        "0xD4",
+        "0xD6"
+      ],
+      "dispatch_class": "Wide_Flippable",
+      "frame_count": 4,
+      "chr_bank": "CommonSpritePatterns",
+      "disasm_citation": {
+        "file": "Z_07.asm",
+        "line": 5350,
+        "label": "UpdateObject_JumpTable[0x36]",
+        "anim_source": {
+          "file": "Z_01.asm",
+          "label": "ObjAnimations",
+          "line": 4884,
+          "anim_index": "0x37"
+        }
+      }
+    },
+    {
+      "name": "zelda",
+      "category": "npc",
+      "obj_type_index": "0x37",
+      "update_routine": "UpdateZelda",
+      "nes_tile_ids": [
+        "0xF6",
+        "0xF8",
+        "0xF0",
+        "0xF2",
+        "0xD4",
+        "0xD6",
+        "0xFC",
+        "0xFE"
+      ],
+      "dispatch_class": "Wide_Flippable",
+      "frame_count": 4,
+      "chr_bank": "CommonSpritePatterns",
+      "disasm_citation": {
+        "file": "Z_07.asm",
+        "line": 5351,
+        "label": "UpdateObject_JumpTable[0x37]",
+        "anim_source": {
+          "file": "Z_01.asm",
+          "label": "ObjAnimations",
+          "line": 4884,
+          "anim_index": "0x38"
+        }
+      }
+    },
+    {
+      "name": "uw_person_0",
+      "category": "npc",
+      "obj_type_index": "0x4B",
+      "update_routine": "UpdateUnderworldPerson",
+      "nes_tile_ids": [
+        "0x98",
+        "0x9A",
+        "0xB1",
+        "0xB3"
+      ],
+      "dispatch_class": "Wide_Flippable",
+      "frame_count": 2,
+      "chr_bank": "CommonSpritePatterns",
+      "disasm_citation": {
+        "file": "Z_07.asm",
+        "line": 5371,
+        "label": "UpdateObject_JumpTable[0x4B]",
+        "anim_source": {
+          "file": "Z_01.asm",
+          "label": "ObjAnimations",
+          "line": 4884,
+          "anim_index": "0x4C"
+        }
+      }
+    },
+    {
+      "name": "uw_person_1",
+      "category": "npc",
+      "obj_type_index": "0x4C",
+      "update_routine": "UpdateUnderworldPerson",
+      "nes_tile_ids": [
+        "0x98",
+        "0x9A",
+        "0xB1",
+        "0xB3"
+      ],
+      "dispatch_class": "Wide_Flippable",
+      "frame_count": 2,
+      "chr_bank": "CommonSpritePatterns",
+      "disasm_citation": {
+        "file": "Z_07.asm",
+        "line": 5372,
+        "label": "UpdateObject_JumpTable[0x4C]",
+        "anim_source": {
+          "file": "Z_01.asm",
+          "label": "ObjAnimations",
+          "line": 4884,
+          "anim_index": "0x4D"
+        }
+      }
+    },
+    {
+      "name": "uw_person_2",
+      "category": "npc",
+      "obj_type_index": "0x4D",
+      "update_routine": "UpdateUnderworldPerson",
+      "nes_tile_ids": [
+        "0x98",
+        "0x9A",
+        "0xB1",
+        "0xB3"
+      ],
+      "dispatch_class": "Wide_Flippable",
+      "frame_count": 2,
+      "chr_bank": "CommonSpritePatterns",
+      "disasm_citation": {
+        "file": "Z_07.asm",
+        "line": 5373,
+        "label": "UpdateObject_JumpTable[0x4D]",
+        "anim_source": {
+          "file": "Z_01.asm",
+          "label": "ObjAnimations",
+          "line": 4884,
+          "anim_index": "0x4E"
+        }
+      }
+    },
+    {
+      "name": "uw_person_3",
+      "category": "npc",
+      "obj_type_index": "0x4E",
+      "update_routine": "UpdateUnderworldPerson",
+      "nes_tile_ids": [
+        "0x98",
+        "0x9A",
+        "0xB1",
+        "0xB3"
+      ],
+      "dispatch_class": "Wide_Flippable",
+      "frame_count": 2,
+      "chr_bank": "CommonSpritePatterns",
+      "disasm_citation": {
+        "file": "Z_07.asm",
+        "line": 5374,
+        "label": "UpdateObject_JumpTable[0x4E]",
+        "anim_source": {
+          "file": "Z_01.asm",
+          "label": "ObjAnimations",
+          "line": 4884,
+          "anim_index": "0x4F"
+        }
+      }
+    },
+    {
+      "name": "uw_person_4",
+      "category": "npc",
+      "obj_type_index": "0x4F",
+      "update_routine": "UpdateUnderworldPerson",
+      "nes_tile_ids": [
+        "0x98",
+        "0x9A",
+        "0xB1",
+        "0xB3"
+      ],
+      "dispatch_class": "Wide_Flippable",
+      "frame_count": 2,
+      "chr_bank": "CommonSpritePatterns",
+      "disasm_citation": {
+        "file": "Z_07.asm",
+        "line": 5375,
+        "label": "UpdateObject_JumpTable[0x4F]",
+        "anim_source": {
+          "file": "Z_01.asm",
+          "label": "ObjAnimations",
+          "line": 4884,
+          "anim_index": "0x50"
+        }
+      }
+    },
+    {
+      "name": "uw_person_5",
+      "category": "npc",
+      "obj_type_index": "0x50",
+      "update_routine": "UpdateUnderworldPerson",
+      "nes_tile_ids": [
+        "0x98",
+        "0x9A",
+        "0xB1",
+        "0xB3"
+      ],
+      "dispatch_class": "Wide_Flippable",
+      "frame_count": 2,
+      "chr_bank": "CommonSpritePatterns",
+      "disasm_citation": {
+        "file": "Z_07.asm",
+        "line": 5376,
+        "label": "UpdateObject_JumpTable[0x50]",
+        "anim_source": {
+          "file": "Z_01.asm",
+          "label": "ObjAnimations",
+          "line": 4884,
+          "anim_index": "0x51"
+        }
+      }
+    },
+    {
+      "name": "uw_person_money",
+      "category": "npc",
+      "obj_type_index": "0x51",
+      "update_routine": "UpdateUnderworldPersonLifeOrMoney",
+      "nes_tile_ids": [
+        "0x98",
+        "0x9A",
+        "0xB1",
+        "0xB3"
+      ],
+      "dispatch_class": "Wide_Flippable",
+      "frame_count": 2,
+      "chr_bank": "CommonSpritePatterns",
+      "disasm_citation": {
+        "file": "Z_07.asm",
+        "line": 5377,
+        "label": "UpdateObject_JumpTable[0x51]",
+        "anim_source": {
+          "file": "Z_01.asm",
+          "label": "ObjAnimations",
+          "line": 4884,
+          "anim_index": "0x52"
+        }
+      }
+    },
+    {
+      "name": "uw_person_6",
+      "category": "npc",
+      "obj_type_index": "0x52",
+      "update_routine": "UpdateUnderworldPerson",
+      "nes_tile_ids": [
+        "0x98",
+        "0x9A",
+        "0xB1",
+        "0xB3"
+      ],
+      "dispatch_class": "Wide_Flippable",
+      "frame_count": 2,
+      "chr_bank": "CommonSpritePatterns",
+      "disasm_citation": {
+        "file": "Z_07.asm",
+        "line": 5378,
+        "label": "UpdateObject_JumpTable[0x52]",
+        "anim_source": {
+          "file": "Z_01.asm",
+          "label": "ObjAnimations",
+          "line": 4884,
+          "anim_index": "0x53"
+        }
+      }
+    },
+    {
+      "name": "fairy_stationary",
+      "category": "npc",
+      "obj_type_index": "0x2F",
+      "update_routine": "AnimateStationaryFairy",
+      "nes_tile_ids": [
+        "0xC6",
+        "0xC8"
+      ],
+      "dispatch_class": "Wide_Flippable",
+      "frame_count": 2,
+      "chr_bank": "CommonSpritePatterns",
+      "disasm_citation": {
+        "file": "Z_02.asm",
+        "line": 858,
+        "label": "AnimateStationaryFairy",
+        "note": "title/demo screen stationary fairy animation"
+      }
+    }
+  ]
+}

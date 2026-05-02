@@ -2,6 +2,35 @@
 #include "roomrom_hud.h"
 #include "ow_room_render_roomrom.h"
 #include "render_abi.h"
+#include "roomrom_vram_map.h"
+#include "expanded_bg_chr.h"
+/* P4c: atlas header included for named constant reference and future
+ * ATLAS_ASSERT_SIZE hooks.
+ *
+ * hud_chr.h provides ROOMROM_ATLAS_HUD_HUD_*_OFFSET byte-offset constants
+ * into the roomrom_atlas_hud blob and W_HUD_x/H_HUD_x dispatch defines.
+ *
+ * Migration gap: this renderer addresses HUD content as raw NES BG tile IDs
+ * (e.g., TILE_FULL_HEART = 0xF2u) passed to hud_word() which calls
+ * ROOMROM_BG_TILE_BASE_PAL(pal) + raw_tile.  The atlas hud_chr offsets are
+ * atlas-blob-local indices (heart_full at byte 0, digit_0 at byte 96, etc.)
+ * and do NOT correspond to NES BG tile IDs.  The roomrom_atlas_hud blob is
+ * also not currently uploaded to VRAM -- HUD content is sourced from the
+ * expanded BG CHR bank which already contains NES BG tiles at their native
+ * NES tile-ID positions.
+ *
+ * Additionally, hud_chr.h W_HUD_x/H_HUD_x dispatch defines describe sprite
+ * SPRITE_SIZE widths, but this renderer uses VDP_setTileMapXY (BG tile maps),
+ * not VDP_setSpriteFull.  ATLAS_ASSERT_SIZE has nothing to verify here.
+ *
+ * TODO(Phase-4c / Phase 6): once the HUD CHR upload path is reworked to
+ * source tiles from roomrom_atlas_hud rather than the expanded BG bank:
+ *   1. Replace raw tile-ID literals with
+ *      ROOMROM_ATLAS_HUD_HUD_<NAME>_OFFSET / 32
+ *      (after confirming NES tile IDs match atlas byte ordering).
+ *   2. Add ATLAS_ASSERT_SIZE-equivalent BG-tile checks (need a new
+ *      ATLAS_ASSERT_BG_TILE macro for tile-map rather than sprite use). */
+#include "atlas/hud_chr.h"
 
 #define HUD_TILE_SPACE  0x24u
 #define TILE_DASH       0x62u
@@ -12,7 +41,8 @@
 #define TILE_ORIGINAL_MAP_MARKER 0x51u
 #define TILE_REDUX_HEART_FILL    0x52u
 
-#define HUD_TILE_BASE   1u
+/* HUD lives in the BG bank (NES BG content). Same per-sub-pal stride. */
+#define HUD_TILE_BASE   ROOMROM_BG_TILE_BASE
 
 static unsigned char s_hud_pal[ROOMROM_HUD_ROWS][ROOMROM_ROOM_COLS];
 
@@ -114,8 +144,10 @@ static const unsigned char s_redux_hud_macro[] = {
 
 static unsigned short hud_word(unsigned char raw_tile, unsigned char pal)
 {
-    return (unsigned short)(((unsigned short)(pal & 0x03) << 13) |
-                            ((unsigned short)raw_tile + HUD_TILE_BASE));
+    /* Phase 4: HUD = NES BG content. Sub-pal selector lives in tile index
+     * (pixel-biased copy in the BG bank); Gen pal-slot bits stay 0. */
+    return (unsigned short)(ROOMROM_BG_TILE_BASE_PAL(pal & 0x03)
+                            + (unsigned short)raw_tile);
 }
 
 static void draw_hud_tile(unsigned char col, unsigned char row,
@@ -123,7 +155,7 @@ static void draw_hud_tile(unsigned char col, unsigned char row,
 {
     if (col >= ROOMROM_ROOM_COLS || row >= ROOMROM_HUD_ROWS)
         return;
-    render_set_plane_a_word(col, row, hud_word(raw_tile, pal));
+    VDP_setTileMapXY(WINDOW, hud_word(raw_tile, pal), col, row);
 }
 
 static void draw_hud_tile_b(unsigned char col, unsigned char row,
@@ -152,6 +184,11 @@ static void clear_hud_pal(void)
 static void clear_hud_b(void)
 {
     VDP_clearTileMapRect(BG_B, 0, 0, ROOMROM_ROOM_COLS, ROOMROM_HUD_ROWS);
+}
+
+static void clear_hud_window(void)
+{
+    VDP_clearTileMapRect(WINDOW, 0, 0, ROOMROM_ROOM_COLS, ROOMROM_HUD_ROWS);
 }
 
 static void apply_attr_byte(unsigned char attr_offset, unsigned char attr)
@@ -253,14 +290,30 @@ static void draw_original_map_marker(unsigned char room_id)
 
 void roomrom_hud_upload_chr(void)
 {
-    render_chr_upload((unsigned short)((TILE_REDUX_HEART_OUTLINE + HUD_TILE_BASE) * 32u),
-                      s_hud_custom_chr,
-                      (unsigned short)sizeof(s_hud_custom_chr));
+    /* Phase 3: write 4 sub-pal copies of the 3-tile custom HUD CHR into
+     * the BG bank. Bias rule per nibble: out = (in==0) ? 0 : (s*4 + in). */
+    unsigned char buf[sizeof(s_hud_custom_chr)];
+    unsigned char s, i;
+    for (s = 0; s < 4; s++) {
+        for (i = 0; i < sizeof(s_hud_custom_chr); i++) {
+            unsigned char b = s_hud_custom_chr[i];
+            unsigned char hi = (b >> 4) & 0x0F;
+            unsigned char lo = b & 0x0F;
+            unsigned char ho = (hi == 0) ? 0 : (s * 4 + hi);
+            unsigned char lz = (lo == 0) ? 0 : (s * 4 + lo);
+            buf[i] = (unsigned char)((ho << 4) | lz);
+        }
+        render_chr_upload(
+            (unsigned short)((ROOMROM_BG_TILE_BASE_PAL(s) + TILE_REDUX_HEART_OUTLINE) * 32u),
+            buf,
+            (unsigned short)sizeof(s_hud_custom_chr));
+    }
 }
 
 void roomrom_hud_draw(unsigned char hud_id, unsigned char room_id)
 {
     clear_hud_pal();
+    clear_hud_window();
     clear_hud_b();
     apply_transfer_macro((hud_id == ROOMROM_MAP_REDUX) ? s_redux_hud_macro
                                                        : s_original_hud_macro);

@@ -7,7 +7,9 @@
 void render_set_plane_a_word(unsigned short col, unsigned short row,
                              unsigned short word)
 {
-    VDP_setTileMapXY(BG_A, word, col, row);
+    VDP_setTileMapXY(BG_A, word,
+                     (unsigned short)(col & 0x3Fu),
+                     (unsigned short)(row & 0x3Fu));
 }
 
 void render_load_palette(unsigned short idx, const unsigned short *src)

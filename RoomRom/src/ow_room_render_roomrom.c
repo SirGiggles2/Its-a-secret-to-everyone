@@ -1,15 +1,13 @@
 #include "ow_room_render_roomrom.h"
 #include "render_abi.h"
+#include "roomrom_vram_map.h"
+#include "roomrom_bg_palette.h"
+#include "roomrom_ow_palette.h"
+#include "expanded_bg_chr.h"
 
 extern const unsigned char rooms_overworld[];
 extern const unsigned char rooms_overworld_redux[];
 extern const unsigned short rooms_overworld_redux_heap_offsets[16];
-extern const unsigned char common_chr[7616];
-extern const unsigned char overworld_bg_chr[4160];
-extern const unsigned char redux_overworld_bg_chr[4160];
-extern const unsigned char redux_overworld_secret_chr[384];
-extern const unsigned char redux_automap_chr[1024];
-extern const unsigned char misc_palettes[1208];
 
 #define LEVEL_INFO_OW_OFFSET 768
 #define OW_ATTRS_A_OFFSET    0
@@ -18,9 +16,11 @@ extern const unsigned char misc_palettes[1208];
 #define OW_LAYOUTS_OFFSET    1166
 #define OW_HEAP_BLOB_OFFSET  3150
 
+/* Phase 4: legacy LEVEL_INFO_PALETTE_OFFSET path replaced by live NES
+ * PALRAM data (g_roomrom_ow_palram). Define kept for any out-of-tree
+ * consumer; not used internally. */
 #define LEVEL_INFO_PALETTE_OFFSET (LEVEL_INFO_OW_OFFSET + 3)
 
-#define OW_VDP_TILE_BASE          1u
 #define COMMON_BG_TILE_COUNT      112u
 #define OW_BG_TILE_COUNT          130u
 #define COMMON_MISC_TILE_COUNT    14u
@@ -73,6 +73,43 @@ static const unsigned short s_heap_offsets[16] = {
 
 static unsigned char s_roomrom_map_id = ROOMROM_MAP_ORIGINAL;
 
+/* S5 collision: walkable metatile grid for the current OW room. Filled
+ * during fill_plane_a; queried by main loop pre-step.
+ * 16 cols x 11 rows, 1 = walkable, 0 = blocking. */
+static unsigned char s_walkable[16][11];
+
+/* OW walkable NES tile IDs. Sourced from
+ *   reference/aldonunez/Z_07.asm WalkableTiles ($8D,$91,$9C,$AC,$AD,$CC,$D2,$D5,$DF)
+ * plus paths/sand/stairs/shore/redux variants observed in s_primary_squares
+ * and s_secondary_squares_redux. */
+static unsigned char ow_walkable_primary(unsigned char primary)
+{
+    switch (primary) {
+        case 0x03: case 0x04:
+        case 0x24: case 0x26:
+        case 0x54: case 0x56: case 0x58: case 0x5C:
+        case 0x6F: case 0x70:
+        case 0x74: case 0x75: case 0x76: case 0x77:
+        case 0x84:
+        case 0x8D:
+        case 0x91:
+        case 0x9C:
+        case 0xAC: case 0xAD:
+        case 0xCC:
+        case 0xD2: case 0xD5: case 0xDF:
+            return 1u;
+        default:
+            return 0u;
+    }
+}
+
+unsigned char roomrom_ow_room_render_walkable_at(unsigned char col,
+                                                 unsigned char row)
+{
+    if (col >= 16u || row >= 11u) return 0u;
+    return s_walkable[col][row];
+}
+
 static const unsigned char s_secondary_squares_redux[64] = {
     0x24,0x24,0x24,0x24,0x6F,0x6F,0x6F,0x6F,
     0xF3,0xF3,0xF3,0xF3,0xFA,0xFA,0xFA,0xFA,
@@ -113,29 +150,14 @@ unsigned char roomrom_ow_room_render_get_map(void)
     return s_roomrom_map_id;
 }
 
-static unsigned short nes_color_to_cram(unsigned char color)
-{
-    unsigned short off = (unsigned short)color * 2u;
-    return (unsigned short)misc_palettes[off] |
-           ((unsigned short)misc_palettes[off + 1] << 8);
-}
-
 void roomrom_ow_room_render_load_palette(unsigned char room_id)
 {
-    unsigned short pal16[16];
-    unsigned char slot, i;
-    const unsigned char *rooms = roomrom_rooms();
-
+    unsigned char map = (s_roomrom_map_id == ROOMROM_MAP_REDUX) ? 1u : 0u;
     (void)room_id;
-
-    for (slot = 0; slot < 4; slot++) {
-        for (i = 0; i < 16; i++)
-            pal16[i] = 0;
-        for (i = 0; i < 4; i++)
-            pal16[i] = nes_color_to_cram(
-                rooms[LEVEL_INFO_PALETTE_OFFSET + slot * 4 + i]);
-        render_load_palette(slot, pal16);
-    }
+    /* Live NES PALRAM extracted from each ROM's LevelInfoOW transfer buffer.
+     * Loads Gen PAL0 (NES BG sub-pals 0..3 packed) and Gen PAL1 (NES SPR
+     * sub-pals 0..3 packed). Per-room sub-pal-3 patches deferred. */
+    roomrom_bg_palette_load_palram_full(g_roomrom_ow_palram[map]);
 }
 
 static unsigned char normalize_primary_tile(unsigned char raw)
@@ -151,27 +173,42 @@ static unsigned char normalize_primary_tile(unsigned char raw)
 
 void roomrom_ow_room_render_upload_chr(void)
 {
-    const unsigned char *ow_chr =
-        (s_roomrom_map_id == ROOMROM_MAP_REDUX) ? redux_overworld_bg_chr
-                                                : overworld_bg_chr;
-
-    render_chr_upload((unsigned short)(OW_VDP_TILE_BASE * 32u),
-                      common_chr + COMMON_BG_CHR_OFFSET,
-                      (unsigned short)(COMMON_BG_TILE_COUNT * 32u));
-    render_chr_upload((unsigned short)((OW_VDP_TILE_BASE + 0x30u) * 32u),
-                      redux_automap_chr,
-                      (unsigned short)(REDUX_AUTOMAP_TILE_COUNT * 32u));
-    if (s_roomrom_map_id == ROOMROM_MAP_REDUX) {
-        render_chr_upload((unsigned short)((OW_VDP_TILE_BASE + 0x54u) * 32u),
-                          redux_overworld_secret_chr,
-                          (unsigned short)(12u * 32u));
+    /* Phase 3: 4 sub-pal banks. Each NES BG section is uploaded 4 times,
+     * once per Gen PAL0 sub-pal slot, from the corresponding pixel-biased
+     * copy in the *_x4 expanded array. NES tile T sub-pal s lives at Gen
+     * VRAM tile ROOMROM_BG_TILE_BASE_PAL(s) + T. */
+    unsigned char s;
+    const unsigned char redux = (s_roomrom_map_id == ROOMROM_MAP_REDUX);
+    const unsigned char *ow_x4 = redux ? redux_overworld_bg_chr_x4
+                                       : overworld_bg_chr_x4;
+    const unsigned short ow_per_pal_bytes = redux
+        ? REDUX_OVERWORLD_BG_CHR_PER_PAL_BYTES
+        : OVERWORLD_BG_CHR_PER_PAL_BYTES;
+    for (s = 0; s < 4; s++) {
+        unsigned short bank_tile = ROOMROM_BG_TILE_BASE_PAL(s);
+        /* common BG section (NES tiles 0..0x6F) */
+        render_chr_upload((unsigned short)(bank_tile * 32u),
+                          common_chr_x4 + s * COMMON_CHR_PER_PAL_BYTES + COMMON_BG_CHR_OFFSET,
+                          (unsigned short)(COMMON_BG_TILE_COUNT * 32u));
+        /* redux automap (NES tiles starting at 0x30) */
+        render_chr_upload((unsigned short)((bank_tile + 0x30u) * 32u),
+                          redux_automap_chr_x4 + s * REDUX_AUTOMAP_CHR_PER_PAL_BYTES,
+                          (unsigned short)(REDUX_AUTOMAP_TILE_COUNT * 32u));
+        if (redux) {
+            /* redux secrets (NES tiles starting at 0x54) */
+            render_chr_upload((unsigned short)((bank_tile + 0x54u) * 32u),
+                              redux_overworld_secret_chr_x4 + s * REDUX_OVERWORLD_SECRET_CHR_PER_PAL_BYTES,
+                              (unsigned short)(12u * 32u));
+        }
+        /* OW BG section (NES tiles 0x70..0xF1) */
+        render_chr_upload((unsigned short)((bank_tile + COMMON_BG_TILE_COUNT) * 32u),
+                          ow_x4 + s * ow_per_pal_bytes,
+                          (unsigned short)(OW_BG_TILE_COUNT * 32u));
+        /* common misc (NES tiles 0xF2..0xFF) */
+        render_chr_upload((unsigned short)((bank_tile + COMMON_BG_TILE_COUNT + OW_BG_TILE_COUNT) * 32u),
+                          common_chr_x4 + s * COMMON_CHR_PER_PAL_BYTES + COMMON_MISC_CHR_OFFSET,
+                          (unsigned short)(COMMON_MISC_TILE_COUNT * 32u));
     }
-    render_chr_upload((unsigned short)((OW_VDP_TILE_BASE + COMMON_BG_TILE_COUNT) * 32u),
-                      ow_chr,
-                      (unsigned short)(OW_BG_TILE_COUNT * 32u));
-    render_chr_upload((unsigned short)((OW_VDP_TILE_BASE + COMMON_BG_TILE_COUNT + OW_BG_TILE_COUNT) * 32u),
-                      common_chr + COMMON_MISC_CHR_OFFSET,
-                      (unsigned short)(COMMON_MISC_TILE_COUNT * 32u));
 }
 
 static unsigned char ow_tile_palette(unsigned char tile_col, unsigned char tile_row,
@@ -200,36 +237,151 @@ static unsigned char ow_tile_palette(unsigned char tile_col, unsigned char tile_
 
 static unsigned short tile_word(unsigned char raw_tile, unsigned char pal)
 {
-    return (unsigned short)(((unsigned short)(pal & 0x03) << 13) |
-                            ((unsigned short)raw_tile + OW_VDP_TILE_BASE));
+    /* Phase 4: NES sub-pal selector lives in the tile index (pixel-biased
+     * sub-pal copy); Gen pal-slot bits stay 0 (PAL0 owns NES BG). */
+    return (unsigned short)(ROOMROM_BG_TILE_BASE_PAL(pal & 0x03)
+                            + (unsigned short)raw_tile);
 }
 
-static void write_tile(unsigned char tile_col, unsigned char tile_row,
-                       unsigned char raw_tile,
-                       unsigned char outer_pal,
-                       unsigned char inner_pal)
+/* Palette uses src tile coords (where the tile semantically lives in its
+ * source room). Plane write uses dst tile coords (where the tile actually
+ * lands on the BG plane — supports off-room rendering during scroll). */
+static void write_tile_at(unsigned char src_tile_col, unsigned char src_tile_row,
+                          unsigned char dst_tile_col, unsigned char dst_tile_row,
+                          unsigned char dst_row_base,
+                          unsigned char raw_tile,
+                          unsigned char outer_pal,
+                          unsigned char inner_pal)
 {
-    unsigned char pal = ow_tile_palette(tile_col, tile_row, outer_pal, inner_pal);
-    render_set_plane_a_word(tile_col, (unsigned short)(tile_row + ROOMROM_ROOM_FIRST_ROW),
+    unsigned char pal = ow_tile_palette(src_tile_col, src_tile_row,
+                                        outer_pal, inner_pal);
+    render_set_plane_a_word(dst_tile_col,
+                            (unsigned short)(dst_row_base + dst_tile_row +
+                                             ROOMROM_ROOM_FIRST_ROW),
                             tile_word(raw_tile, pal));
 }
 
-static void write_square(unsigned char col, unsigned char row,
-                         unsigned char tile_tl, unsigned char tile_bl,
-                         unsigned char tile_tr, unsigned char tile_br,
-                         unsigned char outer_pal,
-                         unsigned char inner_pal)
+static void write_square_at(unsigned char src_col, unsigned char dst_col,
+                            unsigned char dst_row_base,
+                            unsigned char row,
+                            unsigned char tile_tl, unsigned char tile_bl,
+                            unsigned char tile_tr, unsigned char tile_br,
+                            unsigned char outer_pal,
+                            unsigned char inner_pal)
 {
-    unsigned char tile_col = (unsigned char)(col << 1);
+    unsigned char src_tc = (unsigned char)(src_col << 1);
+    unsigned char dst_tc = (unsigned char)(dst_col << 1);
     unsigned char tile_row = (unsigned char)(row << 1);
 
-    write_tile(tile_col,     tile_row,     tile_tl, outer_pal, inner_pal);
-    write_tile(tile_col,     tile_row + 1, tile_bl, outer_pal, inner_pal);
-    write_tile(tile_col + 1, tile_row,     tile_tr, outer_pal, inner_pal);
-    write_tile(tile_col + 1, tile_row + 1, tile_br, outer_pal, inner_pal);
+    write_tile_at(src_tc,     tile_row,     dst_tc,     tile_row,     dst_row_base,
+                  tile_tl, outer_pal, inner_pal);
+    write_tile_at(src_tc,     tile_row + 1, dst_tc,     tile_row + 1, dst_row_base,
+                  tile_bl, outer_pal, inner_pal);
+    write_tile_at(src_tc + 1, tile_row,     dst_tc + 1, tile_row,     dst_row_base,
+                  tile_tr, outer_pal, inner_pal);
+    write_tile_at(src_tc + 1, tile_row + 1, dst_tc + 1, tile_row + 1, dst_row_base,
+                  tile_br, outer_pal, inner_pal);
+}
+
+/* Render a single source metatile column from `room_id` into plane
+ * metatile column `dst_col`. `src_col` selects which column of the
+ * source room (so palette/attribute logic uses src coords). Updates
+ * s_walkable[dst_col] for collision queries. Plane writes wrap at 32
+ * plane cols via SGDK's setTileMapXY. */
+static void render_one_metatile_col(unsigned char room_id,
+                                    unsigned char src_col,
+                                    unsigned char dst_col,
+                                    unsigned char dst_row_base)
+{
+    const unsigned char *rooms = roomrom_rooms();
+    const unsigned short *heap_offsets = roomrom_heap_offsets();
+    const unsigned char *secondary_squares = roomrom_secondary_squares();
+    unsigned char outer_pal = rooms[OW_ATTRS_A_OFFSET + room_id] & 0x03;
+    unsigned char inner_pal = rooms[OW_ATTRS_B_OFFSET + room_id] & 0x03;
+    unsigned char unique_id = rooms[OW_ATTRS_D_OFFSET + room_id] & 0x7F;
+    const unsigned char *col_dirs = &rooms[OW_LAYOUTS_OFFSET +
+                                            (unsigned short)unique_id * 16];
+    unsigned char desc        = col_dirs[src_col];
+    unsigned char heap_idx    = (desc >> 4) & 0x0F;
+    unsigned char col_in_heap = desc & 0x0F;
+    const unsigned char *heap_ptr = &rooms[OW_HEAP_BLOB_OFFSET + heap_offsets[heap_idx]];
+    unsigned short y = 0;
+    unsigned char cols_found = col_in_heap;
+    unsigned char row = 0;
+    unsigned char repeat_state = 0;
+
+    while (1) {
+        if (heap_ptr[y] & 0x80) {
+            if (cols_found == 0) break;
+            cols_found--;
+        }
+        y++;
+    }
+    heap_ptr += y;
+
+    while (row < 11) {
+        unsigned char sq_byte = heap_ptr[0];
+        unsigned char sq_idx  = sq_byte & 0x3F;
+        unsigned char tile_tl, tile_bl, tile_tr, tile_br;
+        unsigned char primary_for_walk;
+
+        if (sq_idx >= 0x10) {
+            unsigned char p = normalize_primary_tile(s_primary_squares[sq_idx]);
+            tile_tl = p;
+            tile_bl = p + 1;
+            tile_tr = p + 2;
+            tile_br = p + 3;
+            primary_for_walk = p;
+        } else {
+            unsigned char b = (unsigned char)(sq_idx * 4);
+            tile_tl = secondary_squares[b];
+            tile_bl = secondary_squares[b + 1];
+            tile_tr = secondary_squares[b + 2];
+            tile_br = secondary_squares[b + 3];
+            primary_for_walk = tile_tl;
+        }
+
+        write_square_at(src_col, dst_col, dst_row_base, row,
+                        tile_tl, tile_bl, tile_tr, tile_br,
+                        outer_pal, inner_pal);
+        s_walkable[dst_col & 0x0F][row] = ow_walkable_primary(primary_for_walk);
+        row++;
+
+        if (sq_byte & 0x40) {
+            repeat_state ^= 0x40;
+            if (repeat_state != 0) continue;
+        }
+        heap_ptr++;
+    }
+}
+
+void roomrom_ow_room_render_fill_one_col(unsigned char room_id,
+                                         unsigned char src_col,
+                                         unsigned char dst_col)
+{
+    roomrom_ow_room_render_fill_one_col_at(room_id, src_col, dst_col, 0);
+}
+
+void roomrom_ow_room_render_fill_one_col_at(unsigned char room_id,
+                                            unsigned char src_col,
+                                            unsigned char dst_col,
+                                            unsigned char dst_row_base)
+{
+    render_one_metatile_col(room_id, src_col & 0x0F, dst_col & 0x1F,
+                            dst_row_base);
 }
 
 void roomrom_ow_room_render_fill_plane_a(unsigned char room_id)
+{
+    unsigned char col;
+    for (col = 0; col < 16; col++) {
+        render_one_metatile_col(room_id, col, col, 0);
+    }
+}
+
+/* Old monolithic body kept for reference until verified equivalent; now dead. */
+#if 0
+void roomrom_ow_room_render_fill_plane_a_OLD(unsigned char room_id)
 {
     unsigned char unique_id;
     unsigned char outer_pal;
@@ -275,6 +427,7 @@ void roomrom_ow_room_render_fill_plane_a(unsigned char room_id)
             unsigned char sq_byte = heap_ptr[0];
             unsigned char sq_idx  = sq_byte & 0x3F;
             unsigned char tile_tl, tile_bl, tile_tr, tile_br;
+            unsigned char primary_for_walk;
 
             if (sq_idx >= 0x10) {
                 unsigned char p = normalize_primary_tile(s_primary_squares[sq_idx]);
@@ -282,16 +435,21 @@ void roomrom_ow_room_render_fill_plane_a(unsigned char room_id)
                 tile_bl = p + 1;
                 tile_tr = p + 2;
                 tile_br = p + 3;
+                primary_for_walk = p;
             } else {
                 unsigned char b = (unsigned char)(sq_idx * 4);
                 tile_tl = secondary_squares[b];
                 tile_bl = secondary_squares[b + 1];
                 tile_tr = secondary_squares[b + 2];
                 tile_br = secondary_squares[b + 3];
+                /* Classify secondary squares by their TL tile id (close enough
+                 * for v1; secondary squares are rare and mostly path/edge). */
+                primary_for_walk = tile_tl;
             }
 
             write_square(col, row, tile_tl, tile_bl, tile_tr, tile_br,
                          outer_pal, inner_pal);
+            s_walkable[col][row] = ow_walkable_primary(primary_for_walk);
             row++;
 
             if (sq_byte & 0x40) {
@@ -302,3 +460,4 @@ void roomrom_ow_room_render_fill_plane_a(unsigned char room_id)
         }
     }
 }
+#endif

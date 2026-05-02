@@ -1,0 +1,359 @@
+{
+  "schema_version": 1,
+  "generator": "RoomRom/tools/walk_z1_disasm.py",
+  "source": [
+    "reference/aldonunez/Z_01.asm",
+    "reference/aldonunez/Z_02.asm",
+    "reference/aldonunez/Z_03.asm",
+    "reference/aldonunez/Z_05.asm",
+    "reference/aldonunez/Z_06.asm"
+  ],
+  "notes": [
+    "NES Z1 uses CHR RAM (iNES header byte5=0); no CHR ROM banks exist.",
+    "Pattern blocks live in PRG ROM as .INCBIN data; CPU copies to CHR RAM via PPUDATA.",
+    "Common patterns (Z_02.asm:69 TransferCommonPatterns): sprite@0x0000, bg@0x1000, misc@0x1F20.",
+    "Scene-specific sprite patterns in Z_03.asm: OW, UW per dungeon, boss per dungeon group.",
+    "48 .dat files extracted by extract_z1_prg_chr.py; this registry covers pattern blocks only.",
+    "Sound/music dat files (Z_00.asm), room layout dat files (Z_05.asm) are excluded (not CHR).",
+    "TODO: verify byte_count for non-common blocks via BizHawk CHR-RAM capture (verify_chr_live.py)."
+  ],
+  "bg": [
+    {
+      "name": "bg_commonspritepatterns",
+      "category": "bg",
+      "label": "CommonSpritePatterns",
+      "dat_file": "dat/CommonSpritePatterns.dat",
+      "block_type": "sprite",
+      "chr_target_vram": "0x0000",
+      "byte_count": 1792,
+      "scene": "all",
+      "referenced_by": [
+        "TransferCommonPatterns (Z_02.asm:69)"
+      ],
+      "disasm_citation": {
+        "file": "Z_02.asm",
+        "line": 147,
+        "label": "CommonSpritePatterns",
+        "note": "Common sprite patterns: Link walk, all items, enemy walk frames. Always loaded at boot."
+      }
+    },
+    {
+      "name": "bg_commonbackgroundpatterns",
+      "category": "bg",
+      "label": "CommonBackgroundPatterns",
+      "dat_file": "dat/CommonBackgroundPatterns.dat",
+      "block_type": "bg",
+      "chr_target_vram": "0x1000",
+      "byte_count": 1792,
+      "scene": "all",
+      "referenced_by": [
+        "TransferCommonPatterns (Z_02.asm:69)"
+      ],
+      "disasm_citation": {
+        "file": "Z_02.asm",
+        "line": 150,
+        "label": "CommonBackgroundPatterns",
+        "note": "Common BG patterns: HUD font, status bar tiles, common map tiles. Always loaded."
+      }
+    },
+    {
+      "name": "bg_commonmiscpatterns",
+      "category": "bg",
+      "label": "CommonMiscPatterns",
+      "dat_file": "dat/CommonMiscPatterns.dat",
+      "block_type": "misc",
+      "chr_target_vram": "0x1F20",
+      "byte_count": 224,
+      "scene": "all",
+      "referenced_by": [
+        "TransferCommonPatterns (Z_02.asm:69)"
+      ],
+      "disasm_citation": {
+        "file": "Z_02.asm",
+        "line": 153,
+        "label": "CommonMiscPatterns",
+        "note": "Miscellaneous common patterns appended at end of BG table. Always loaded."
+      }
+    },
+    {
+      "name": "bg_demospritepatterns",
+      "category": "bg",
+      "label": "DemoSpritePatterns",
+      "dat_file": "dat/DemoSpritePatterns.dat",
+      "block_type": "sprite",
+      "chr_target_vram": "0x0000",
+      "byte_count": null,
+      "scene": "title_demo",
+      "referenced_by": [
+        "InitDemo_Phase1 (Z_01.asm:189)",
+        "title/demo mode load"
+      ],
+      "disasm_citation": {
+        "file": "Z_01.asm",
+        "line": 1696,
+        "label": "DemoSpritePatterns",
+        "note": "Demo/title mode sprite patterns loaded over CommonSpritePatterns during title."
+      }
+    },
+    {
+      "name": "bg_demobackgroundpatterns",
+      "category": "bg",
+      "label": "DemoBackgroundPatterns",
+      "dat_file": "dat/DemoBackgroundPatterns.dat",
+      "block_type": "bg",
+      "chr_target_vram": "0x1000",
+      "byte_count": null,
+      "scene": "title_demo",
+      "referenced_by": [
+        "InitDemo_Phase1 (Z_01.asm:189)",
+        "title/demo mode load"
+      ],
+      "disasm_citation": {
+        "file": "Z_01.asm",
+        "line": 1699,
+        "label": "DemoBackgroundPatterns",
+        "note": "Demo/title mode BG patterns loaded over CommonBackgroundPatterns during title."
+      }
+    },
+    {
+      "name": "bg_patternblockuwbg",
+      "category": "bg",
+      "label": "PatternBlockUWBG",
+      "dat_file": "dat/PatternBlockUWBG.dat",
+      "block_type": "bg",
+      "chr_target_vram": "0x1000",
+      "byte_count": null,
+      "scene": "underworld",
+      "referenced_by": [
+        "CopyBlock (Z_06.asm:171)",
+        "InitMode2 scene load"
+      ],
+      "disasm_citation": {
+        "file": "Z_03.asm",
+        "line": 203,
+        "label": "PatternBlockUWBG",
+        "note": "Underworld background patterns. Loaded for all dungeon levels."
+      }
+    },
+    {
+      "name": "bg_patternblockowbg",
+      "category": "bg",
+      "label": "PatternBlockOWBG",
+      "dat_file": "dat/PatternBlockOWBG.dat",
+      "block_type": "bg",
+      "chr_target_vram": "0x1000",
+      "byte_count": null,
+      "scene": "overworld",
+      "referenced_by": [
+        "CopyBlock (Z_06.asm:171)",
+        "InitMode2 scene load"
+      ],
+      "disasm_citation": {
+        "file": "Z_03.asm",
+        "line": 206,
+        "label": "PatternBlockOWBG",
+        "note": "Overworld background patterns. Loaded for overworld map scenes."
+      }
+    },
+    {
+      "name": "bg_patternblockowsp",
+      "category": "bg",
+      "label": "PatternBlockOWSP",
+      "dat_file": "dat/PatternBlockOWSP.dat",
+      "block_type": "sprite",
+      "chr_target_vram": "0x0000",
+      "byte_count": null,
+      "scene": "overworld",
+      "referenced_by": [
+        "CopyBlock (Z_06.asm:171)",
+        "InitMode2 scene load"
+      ],
+      "disasm_citation": {
+        "file": "Z_03.asm",
+        "line": 209,
+        "label": "PatternBlockOWSP",
+        "note": "Overworld sprite patterns (enemy frames for OW enemies). Loaded for overworld."
+      }
+    },
+    {
+      "name": "bg_patternblockuwsp358",
+      "category": "bg",
+      "label": "PatternBlockUWSP358",
+      "dat_file": "dat/PatternBlockUWSP358.dat",
+      "block_type": "sprite",
+      "chr_target_vram": "0x0000",
+      "byte_count": null,
+      "scene": "underworld_levels_3_5_8",
+      "referenced_by": [
+        "CopyBlock (Z_06.asm:171)",
+        "InitMode2 scene load"
+      ],
+      "disasm_citation": {
+        "file": "Z_03.asm",
+        "line": 212,
+        "label": "PatternBlockUWSP358",
+        "note": "UW sprite patterns for dungeons 3, 5, 8 (non-boss enemies)."
+      }
+    },
+    {
+      "name": "bg_patternblockuwsp469",
+      "category": "bg",
+      "label": "PatternBlockUWSP469",
+      "dat_file": "dat/PatternBlockUWSP469.dat",
+      "block_type": "sprite",
+      "chr_target_vram": "0x0000",
+      "byte_count": null,
+      "scene": "underworld_levels_4_6_9",
+      "referenced_by": [
+        "CopyBlock (Z_06.asm:171)",
+        "InitMode2 scene load"
+      ],
+      "disasm_citation": {
+        "file": "Z_03.asm",
+        "line": 215,
+        "label": "PatternBlockUWSP469",
+        "note": "UW sprite patterns for dungeons 4, 6, 9 (non-boss enemies)."
+      }
+    },
+    {
+      "name": "bg_patternblockuwsp",
+      "category": "bg",
+      "label": "PatternBlockUWSP",
+      "dat_file": "dat/PatternBlockUWSP.dat",
+      "block_type": "sprite",
+      "chr_target_vram": "0x0000",
+      "byte_count": null,
+      "scene": "underworld_default",
+      "referenced_by": [
+        "CopyBlock (Z_06.asm:171)",
+        "InitMode2 scene load"
+      ],
+      "disasm_citation": {
+        "file": "Z_03.asm",
+        "line": 218,
+        "label": "PatternBlockUWSP",
+        "note": "Default UW sprite patterns (dungeons without a specific set)."
+      }
+    },
+    {
+      "name": "bg_patternblockuwsp127",
+      "category": "bg",
+      "label": "PatternBlockUWSP127",
+      "dat_file": "dat/PatternBlockUWSP127.dat",
+      "block_type": "sprite",
+      "chr_target_vram": "0x0000",
+      "byte_count": null,
+      "scene": "underworld_levels_1_2_7",
+      "referenced_by": [
+        "CopyBlock (Z_06.asm:171)",
+        "InitMode2 scene load"
+      ],
+      "disasm_citation": {
+        "file": "Z_03.asm",
+        "line": 221,
+        "label": "PatternBlockUWSP127",
+        "note": "UW sprite patterns for dungeons 1, 2, 7 (non-boss enemies)."
+      }
+    },
+    {
+      "name": "bg_patternblockuwspboss1257",
+      "category": "bg",
+      "label": "PatternBlockUWSPBoss1257",
+      "dat_file": "dat/PatternBlockUWSPBoss1257.dat",
+      "block_type": "sprite",
+      "chr_target_vram": "0x0000",
+      "byte_count": null,
+      "scene": "boss_levels_1_2_5_7",
+      "referenced_by": [
+        "CopyBlock (Z_06.asm:171)",
+        "boss room load"
+      ],
+      "disasm_citation": {
+        "file": "Z_03.asm",
+        "line": 224,
+        "label": "PatternBlockUWSPBoss1257",
+        "note": "Boss sprite patterns for dungeons 1 (Aquamentus), 2 (Dodongo), 5 (Digdogger), 7 (Aquamentus)."
+      }
+    },
+    {
+      "name": "bg_patternblockuwspboss3468",
+      "category": "bg",
+      "label": "PatternBlockUWSPBoss3468",
+      "dat_file": "dat/PatternBlockUWSPBoss3468.dat",
+      "block_type": "sprite",
+      "chr_target_vram": "0x0000",
+      "byte_count": null,
+      "scene": "boss_levels_3_4_6_8",
+      "referenced_by": [
+        "CopyBlock (Z_06.asm:171)",
+        "boss room load"
+      ],
+      "disasm_citation": {
+        "file": "Z_03.asm",
+        "line": 227,
+        "label": "PatternBlockUWSPBoss3468",
+        "note": "Boss sprite patterns for dungeons 3 (Manhandla), 4 (Gleeok), 6 (Gohma), 8 (Moldorm)."
+      }
+    },
+    {
+      "name": "bg_patternblockuwspboss9",
+      "category": "bg",
+      "label": "PatternBlockUWSPBoss9",
+      "dat_file": "dat/PatternBlockUWSPBoss9.dat",
+      "block_type": "sprite",
+      "chr_target_vram": "0x0000",
+      "byte_count": null,
+      "scene": "boss_level_9",
+      "referenced_by": [
+        "CopyBlock (Z_06.asm:171)",
+        "boss room load"
+      ],
+      "disasm_citation": {
+        "file": "Z_03.asm",
+        "line": 230,
+        "label": "PatternBlockUWSPBoss9",
+        "note": "Boss sprite patterns for dungeon 9 (Ganon, Patra)."
+      }
+    },
+    {
+      "name": "bg_storytileattrtransferbuf",
+      "category": "bg",
+      "label": "StoryTileAttrTransferBuf",
+      "dat_file": "dat/StoryTileAttrTransferBuf.dat",
+      "block_type": "bg_attr",
+      "chr_target_vram": null,
+      "byte_count": null,
+      "scene": "title_story",
+      "referenced_by": [
+        "TransferBufAddrs[1] (Z_06.asm:490)",
+        "TransferCurTileBuf"
+      ],
+      "disasm_citation": {
+        "file": "Z_06.asm",
+        "line": 832,
+        "label": "StoryTileAttrTransferBuf",
+        "note": "Story screen BG attribute (palette) transfer buffer (nametable attributes, not CHR)."
+      }
+    },
+    {
+      "name": "bg_gametitletransferbuf",
+      "category": "bg",
+      "label": "GameTitleTransferBuf",
+      "dat_file": "dat/GameTitleTransferBuf.dat",
+      "block_type": "bg_nametable",
+      "chr_target_vram": null,
+      "byte_count": null,
+      "scene": "title",
+      "referenced_by": [
+        "TransferBufAddrs[8] (Z_06.asm:498)",
+        "TransferCurTileBuf"
+      ],
+      "disasm_citation": {
+        "file": "Z_06.asm",
+        "line": 835,
+        "label": "GameTitleTransferBuf",
+        "note": "ZELDA title logo BG nametable transfer buffer (tile indices, not CHR bytes)."
+      }
+    }
+  ]
+}
