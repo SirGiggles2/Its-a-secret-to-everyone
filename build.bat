@@ -30,9 +30,14 @@ for %%I in ("%~dp0.") do set "ROOT=%%~fI"
 
 set "PYTHON="
 set "VASM="
-set "RAW_ROM=%ROOT%\builds\whatif_raw.md"
-set "OUT_ROM=%ROOT%\builds\whatif.md"
-set "OUT_LST=%ROOT%\builds\whatif.lst"
+rem Phase 0 rename (master plan Task 0.2): whatif -> Title.
+rem Compatibility aliases below preserve old whatif.* paths until every
+rem probe and launcher migrates. Aliases removed in Phase 16.5.
+set "RAW_ROM=%ROOT%\builds\Title_raw.md"
+set "OUT_ROM=%ROOT%\builds\Title.md"
+set "OUT_LST=%ROOT%\builds\Title.lst"
+set "ALIAS_ROM=%ROOT%\builds\whatif.md"
+set "ALIAS_LST=%ROOT%\builds\whatif.lst"
 
 rem ---------------------------------------------------------------------------
 rem Locate Python
@@ -98,8 +103,8 @@ rem     to flat binary via objcopy. Stage-2a pivot: vasm -Fbin is gone;
 rem     we now have a real linker stage that C object files can be linked
 rem     into (Stage 2b+). genesis_shell.asm is still the sole asm root.
 rem ---------------------------------------------------------------------------
-set "ELF_OBJ=%ROOT%\builds\whatif.o"
-set "ELF_OUT=%ROOT%\builds\whatif.elf"
+set "ELF_OBJ=%ROOT%\builds\Title.o"
+set "ELF_OUT=%ROOT%\builds\Title.elf"
 set "C_OBJ_DIR=%ROOT%\builds\obj"
 set "LD_SCRIPT=%ROOT%\build\genesis.ld"
 set "M68K_BIN=%ROOT%\build\toolchain\sgdk_bin\bin"
@@ -424,7 +429,7 @@ if errorlevel 1 (
 )
 popd >nul
 
-echo [3/4] Linking ELF -^> whatif.elf...
+echo [3/4] Linking ELF -^> Title.elf...
 "%M68K_LD%" -T "%LD_SCRIPT%" -o "%ELF_OUT%" "%ELF_OBJ%" @"%LD_RESP%" -L "%ROOT%\sgdk\lib" -lmd -lgcc
 if errorlevel 1 exit /b 1
 
@@ -547,13 +552,19 @@ echo.
 echo Build complete: %OUT_ROM%
 echo Listing:        %OUT_LST%
 
+rem Phase 0 compatibility aliases (master plan Task 0.2): copy Title.* to whatif.*
+rem until every probe and launcher migrates. Aliases removed in Phase 16.5.
+copy /y "%OUT_ROM%" "%ALIAS_ROM%" >nul 2>nul
+copy /y "%OUT_LST%" "%ALIAS_LST%" >nul 2>nul
+
 rem ---------------------------------------------------------------------------
-rem [6] Git auto-commit — stage build outputs and archive, commit with tag name
+rem [6] Git auto-commit — builds/ is gitignored as of debate 002 cleanup; this
+rem     stage is preserved for backwards compatibility but should be a no-op.
 rem ---------------------------------------------------------------------------
-git -C "%ROOT%" add builds\whatif.md builds\whatif.lst builds\archive\ >nul 2>nul
+git -C "%ROOT%" add builds\Title.md builds\Title.lst >nul 2>nul
 git -C "%ROOT%" diff --cached --quiet >nul 2>nul
 if errorlevel 1 (
-    git -C "%ROOT%" commit -m "build: %TAG%" --only -- builds\whatif.md builds\whatif.lst builds\archive\ >nul 2>nul
+    git -C "%ROOT%" commit -m "build: %TAG%" --only -- builds\Title.md builds\Title.lst >nul 2>nul
     if errorlevel 1 (
         echo WARNING: git commit failed
     ) else (
