@@ -2077,13 +2077,13 @@ Decision is recorded at `docs/audit/state_contract.md` (typed C structs for owne
 
 **Why:** Per-phase gates close phases independently, but Phase N can silently break Phase M's probe. Without a global regression matrix, drift is invisible until release.
 
-- [ ] Create `tools/run_regression_matrix.py`.
-- [ ] Discover every probe under `builds/reports/` and `tools/parity/`.
-- [ ] Run each probe against current build of every active target (Title.md, RoomRom.md, Final.md when it exists).
-- [ ] Diff each probe's current output against its archived report using parity oracle (Task 2.8).
-- [ ] Emit `builds/reports/regression_matrix.md` with green/red per probe.
-- [ ] Required green before any phase-close commit. New probes are added incrementally; existing probes never silently regress.
-- [ ] Add per-subsystem `PROBE_CYCLE_LIMIT` enforcement: every probe records CPU cycles for the subsystem under test, fails close gate if cycles exceed published budget at `builds/reports/perf/genesis_budget_baseline.md`. (Gemini debate add, Codex hybrid: cycle limits enforced inline from Phase 6 onward, not deferred to Phase 15b.)
+- [x] Create `tools/run_regression_matrix.py`. **Implemented 2026-05-02.**
+- [x] Discover every probe under `builds/reports/` and `tools/parity/`. **Implemented: discovers parity-oracle pairs (`build/generated/parity/*_nes.json` + `*_gen.json`), archived report pairs (`builds/reports/**/*_gen.json`), binary baselines (`tools/probes/baselines/*.bin`), and screenshot baselines (`tools/probes/baselines/*.png`).**
+- [x] Run each probe against current build of every active target (Title.md, RoomRom.md, Final.md when it exists). **Implemented: infers target from scenario_id prefix; skips with `SKIP: ROM missing` when the target ROM has not been built.**
+- [x] Diff each probe's current output against its archived report using parity oracle (Task 2.8). **Implemented: dispatches to `tools/parity/diff.py` for parity-oracle probes, byte-exact diff for binary baselines, SHA-256 / pixel-L1 for screenshot baselines.**
+- [x] Emit `builds/reports/regression_matrix.md` with green/red per probe. **Implemented: also emits `regression_matrix.json` companion for CI. See `tools/regression_matrix_README.md` for output format and CI job spec.**
+- [x] Required green before any phase-close commit. New probes are added incrementally; existing probes never silently regress. **Enforced: exit code 1 on any unexpected red; expected failures require explicit `expected_failures.yaml` entries with `owner_phase`.**
+- [x] Add per-subsystem `PROBE_CYCLE_LIMIT` enforcement: every probe records CPU cycles for the subsystem under test, fails close gate if cycles exceed published budget at `builds/reports/perf/genesis_budget_baseline.md`. (Gemini debate add, Codex hybrid: cycle limits enforced inline from Phase 6 onward, not deferred to Phase 15b.) **Implemented: `tools/per_subsystem_cycle_check.py` reads `docs/audit/genesis_budget_baseline.md` (skeleton checked in; `builds/reports/perf/genesis_budget_baseline.md` as fallback) and compares against `builds/reports/perf/<phase>_<scene>.json` measurements. Budget values are TBD until Phase 15.2.**
 - [ ] Phase 16.5 polish pass removes any probes the matrix marks chronically flaky; do not delete probes silently.
 
 ### Workstream G: State Contract Enforcement (debate-driven)

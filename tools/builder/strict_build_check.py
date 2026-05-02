@@ -214,3 +214,35 @@ def main() -> int:
 
 if __name__ == "__main__":
     sys.exit(main())
+
+
+# ---------------------------------------------------------------------------
+# Workstream F: Regression Matrix integration
+# ---------------------------------------------------------------------------
+# After this script exits 0 (strict build gate green), the Phase Close Gate
+# continues to step 5:
+#
+#   5. Run tools/run_regression_matrix.py; require green (Workstream F).
+#
+# The regression matrix is NOT called from here — it is called by the phase
+# close script or CI job AFTER a green strict build. Calling it here would
+# create a circular dependency (the matrix requires built ROM output, which
+# requires a successful build).
+#
+# Integration sequence for a full phase close:
+#
+#   # Step 1 — strict build gate (this script):
+#   python tools/builder/strict_build_check.py
+#
+#   # Step 5 — regression matrix (after build succeeds and probes are run):
+#   python tools/run_regression_matrix.py --phase <N>
+#
+#   # Step 7 — cycle budget check (Phase 6+):
+#   python tools/per_subsystem_cycle_check.py
+#
+# See tools/regression_matrix_README.md for the full integration specification
+# and CI job spec.
+#
+# See docs/audit/genesis_budget_baseline.md for the per-subsystem
+# cycle budget table (Phase 15.2 fills in the actual values).
+# ---------------------------------------------------------------------------
