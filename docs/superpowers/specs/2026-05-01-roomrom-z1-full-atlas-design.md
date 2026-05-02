@@ -306,7 +306,7 @@ The current `verify_item_chr_manifest.py` becomes a thin wrapper around (a). Str
 
 ## 10. Migration plan (now phased on top of existing work)
 
-### Phase −1 — finish dependencies (NOT this spec)
+### Phase −1 — finish dependencies (LANDED 2026-05-02)
 - BG palette / item atlas / CHR expansion ([2026-05-01-roomrom-bg-palette-chr-expansion-design.md](2026-05-01-roomrom-bg-palette-chr-expansion-design.md)) lands first.
 - All renderers stable on the corrected slot map + populated PAL0/PAL1 + `roomrom_vram_map.h` post-Phase-3 layout.
 - Only after Phase −1 does Phase 0 below get its own writing-plans pass.
@@ -380,7 +380,7 @@ Each phase is its own spec → plan → implement loop. This document is the des
 - [ ] `roomrom_scene_load(scene_id, variant)` replaces `roomrom_sprites_upload_chr`. Cycle visually identical.
 - [ ] Per-category pixel-diff CI gate green.
 - [ ] `build.bat` runs validator strict by default. Fail = build fail.
-- [ ] **Phase −1 dependency** ([2026-05-01-roomrom-bg-palette-chr-expansion-design.md](2026-05-01-roomrom-bg-palette-chr-expansion-design.md)) shipped before this spec graduates to implementation.
+- [x] **Phase −1 dependency** ([2026-05-01-roomrom-bg-palette-chr-expansion-design.md](2026-05-01-roomrom-bg-palette-chr-expansion-design.md)) shipped before this spec graduates to implementation.
 
 ## 14. Spec review
 
