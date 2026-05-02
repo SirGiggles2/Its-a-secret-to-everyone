@@ -4,7 +4,17 @@
 
 **Goal:** Land the remaining sprite-side work in [docs/superpowers/specs/2026-05-01-roomrom-bg-palette-chr-expansion-design.md](../specs/2026-05-01-roomrom-bg-palette-chr-expansion-design.md): sprite CHR 4x expansion (Phase 3 sprite half), sprite-renderer sub-pal wiring (Phase 4 sprite half), HUD/sprite stale-PAL3-comment cleanup, and Phase 5 acceptance verifiers. Closes the prerequisite blocking the atlas north-star spec.
 
-**Architecture:** Sprite CHR is currently single-copy (sub-pal 0 only) per `roomrom_vram_map.h:ROOMROM_SPR_SUBPAL_COUNT = 1u`. NES Z1 draws bomb / explosion / certain enemies with sprite sub-pal 1+. Without 4x expansion the renderer falls back to sub-pal 0 colors → wrong art tone. We replicate the working BG expansion path: `tools/expand_sprite_chr.py` emits 4-copy sprite CHR with the pixel-bias rule, `roomrom_sprites_upload_chr` uploads all 4 banks, sprite renderers select the correct sub-pal via `ROOMROM_SPR_TILE_BASE_PAL(s) + local_tile`, with `s` driven by NES dispatch citations. Verifier walks all renderer sources to gate the cutover.
+**Architecture:** Sprite CHR is currently single-copy (sub-pal 0 only) per `roomrom_vram_map.h:ROOMROM_SPR_SUBPAL_COUNT = 1u`. NES Z1 draws bomb / explosion / certain items with sprite sub-pal 1+. Without sub-pal expansion the renderer falls back to sub-pal 0 colors → wrong art tone.
+
+**VRAM-budget revision (2026-05-02 after T1 audit):** Audit (`tools/audit_vram_tile_usage.py`) shows full SPR bank stride is 549 tiles per sub-pal (Link + sword + common + sprites_chr + items). 4× the entire SPR bank = 2196 tiles, exceeds Genesis VRAM and collides with VDP table region at tile 1536. Approach revised to **per-category sub-pal expansion**: ITEM atlas gets its own bank with 4× sub-pal copies (the only category with non-trivial sub-pal variation); Link / sword / common stay 1× in the main SPR bank (always sub-pal 0).
+
+Aligned with the atlas north-star spec's per-category VRAM model:
+
+- **Persistent 1× banks**: `ROOMROM_SPR_TILE_BASE` holds Link + sword + common (~518 tiles).
+- **Persistent 4× bank**: NEW `ROOMROM_ITEM_TILE_BASE` holds the 31-tile item atlas, replicated 4× = 124 tiles.
+- **Scene-conditional banks** (enemies, bosses): out of scope this plan.
+
+Generator pipeline: `tools/expand_sprite_chr.py` emits a 4-copy expansion of the item atlas only; `roomrom_sprites_upload_chr` uploads all 4 banks to `ROOMROM_ITEM_TILE_BASE_PAL(s)`. Sprite renderers select the correct sub-pal via `ROOMROM_ITEM_TILE_BASE_PAL(s) + item_local_tile`, with `s` driven by NES dispatch citations. Non-item sprites continue using `ROOMROM_SPR_TILE_BASE` directly. Verifier walks all renderer sources to gate the cutover.
 
 **Tech Stack:** SGDK m68k gcc (existing toolchain), Python 3 generator scripts (existing pattern in `RoomRom/tools/`), BizHawk Lua probes (existing pattern), build via `RoomRom/build.bat`.
 
@@ -28,7 +38,7 @@
 - `RoomRom/src/roomrom_bomb.c` — drive sub-pal per `DrawCloud` (NES sprite sub-pal 1)
 - `RoomRom/src/roomrom_arrow.c`, `RoomRom/src/roomrom_boomerang.c` — drive sub-pal (sub-pal 0 unless NES says otherwise)
 - `RoomRom/src/main.c` — comment cleanup; remove "PAL3" residue
-- `RoomRom/tools/verify_slot_map.py` — extend to check sprite renderers for `ROOMROM_SPR_TILE_BASE_PAL` usage and absence of PAL3 in sprite-side calls
+- `RoomRom/tools/verify_slot_map.py` — extend to check item-rendering sprite renderers for `ROOMROM_ITEM_TILE_BASE_PAL` usage and absence of PAL3 in sprite-side calls
 - `RoomRom/tools/verify_vram_budget.py` — recompute with sprite x4 expansion
 - `RoomRom/build.bat` — link `expanded_sprite_chr.c`
 
@@ -144,9 +154,9 @@ No commit yet (no changes if macro is correct).
 
 ---
 
-## Task 2: Build `tools/expand_sprite_chr.py` (mirror of `expand_bg_chr.py`)
+## Task 2: Build `tools/expand_sprite_chr.py` (mirror of `expand_bg_chr.py`, ITEM atlas only)
 
-Reads single-copy sprite CHR arrays, applies per-nibble pixel-bias rule, emits 4-copy expansion.
+Reads the single-copy item atlas array (`roomrom_item_chr`), applies per-nibble pixel-bias rule, emits 4-copy expansion. Other sprite CHR (Link, sword body sprites, common_chr sprite half) is NOT expanded — those stay 1× per the VRAM-budget revision in Task 3.
 
 **Files:**
 - Create: `RoomRom/tools/expand_sprite_chr.py`
@@ -248,7 +258,8 @@ ROOMROM = ROOT / "RoomRom"
 
 SOURCES = [
     # (path_relative_to_repo_root, array_name, declared_dim_count)
-    ("data/chr/sprites.c",                 "sprites_chr",         1),
+    # ITEM atlas only - per per-category VRAM model. Link / sword body /
+    # common_chr sprite half stay 1x in the main SPR bank.
     ("RoomRom/src/roomrom_item_chr.c",     "roomrom_item_chr",    2),
 ]
 
@@ -426,9 +437,11 @@ bias rule. Phase 3 sprite half of the active CHR-expansion spec."
 
 ---
 
-## Task 3: Bump `ROOMROM_SPR_SUBPAL_COUNT` from 1 to 4
+## Task 3: Add `ROOMROM_ITEM_TILE_BASE_PAL(s)` macros (item-only 4x sub-pal)
 
-Activate the macro stride. Renderers don't reference sub-pal != 0 yet, so this is a pure metadata bump that the next tasks build on.
+Add a NEW per-category bank for the item atlas. Keep the existing `ROOMROM_SPR_TILE_BASE` family at 1× for Link / sword / common (sub-pal 0 only). Items get their own 4×-expanded bank that lives just past the SPR bank end.
+
+Why item-only (not whole SPR bank): 4× the full SPR bank is 549 × 4 = 2196 tiles, exceeds Genesis VRAM and collides with VDP tables at tile 1536. Audit confirmed via `tools/audit_vram_tile_usage.py`. Items are the only sprite category with non-trivial sub-pal variation (bomb sub-pal 1, explosion sub-pal 1, future sword level 0/1/2).
 
 **Files:**
 - Modify: `RoomRom/src/roomrom_vram_map.h`
@@ -439,16 +452,38 @@ Activate the macro stride. Renderers don't reference sub-pal != 0 yet, so this i
 python RoomRom/tools/verify_vram_budget.py
 ```
 
-Expected: passes. Capture the printed `tile bank ends at N` line.
+Expected: passes at current 1× SPR. Capture the printed `tile bank ends at N` line.
 
-- [ ] **Step 3.2: Edit the macro.**
+- [ ] **Step 3.2: Add ITEM bank macros to `roomrom_vram_map.h`.**
+
+Append after the existing SPR macros (do not modify SPR_SUBPAL_COUNT — leave at 1):
 
 ```c
-/* RoomRom/src/roomrom_vram_map.h */
-#define ROOMROM_SPR_SUBPAL_COUNT        4u      /* 4 sub-pal copies; was 1 */
+/* Item atlas sub-bank: per-category 4x sub-pal expansion. NES Z1 draws
+ * bomb / explosion with sprite sub-pal 1; future sword-level upgrades
+ * use sub-pal 1 / 2 (Items inventory). Other persistent sprites
+ * (Link, sword, beam, common) only ever use sub-pal 0 — they stay in
+ * the 1x SPR bank above.
+ *
+ * VRAM math: ITEM bank starts immediately after the SPR bank end and
+ * holds 4 copies of the item atlas (sub-pal 0..3), each ITEM_TILE_COUNT
+ * tiles wide. Total = 4 * ITEM_TILE_COUNT. Layout per stride:
+ *   tile ITEM_TILE_BASE         ..  + COUNT - 1   sub-pal 0 copy
+ *   tile ITEM_TILE_BASE + COUNT ..  + 2*COUNT - 1 sub-pal 1 copy
+ *   ...
+ *
+ * ITEM_TILE_COUNT_PER_PAL is sourced from the generated header
+ * roomrom_item_chr.h (ROOMROM_ITEM_CHR_TILE_COUNT). The verifier
+ * tools/verify_vram_budget.py confirms ITEM bank does not overlap
+ * with VDP table region or any other VRAM consumer. */
+#define ROOMROM_ITEM_TILE_BASE          (ROOMROM_SPR_TILE_BASE + ROOMROM_SPR_TILE_COUNT_PER_PAL)
+#define ROOMROM_ITEM_TILE_COUNT_PER_PAL ROOMROM_ITEM_CHR_TILE_COUNT
+#define ROOMROM_ITEM_SUBPAL_COUNT       4u
+#define ROOMROM_ITEM_TILE_BASE_PAL(s) \
+    (ROOMROM_ITEM_TILE_BASE + (unsigned short)(s) * ROOMROM_ITEM_TILE_COUNT_PER_PAL)
 ```
 
-Also update the leading comment block to drop the "sub-pal 0 only for now" callout, replacing with a note that all 4 copies are populated and renderer selects via `ROOMROM_SPR_TILE_BASE_PAL(s)`.
+The macro references `ROOMROM_ITEM_CHR_TILE_COUNT` which is already exposed by `RoomRom/src/roomrom_item_chr.h`. Add `#include "roomrom_item_chr.h"` near the top of `roomrom_vram_map.h` so the macro resolves.
 
 - [ ] **Step 3.3: Re-run VRAM budget verifier.**
 
@@ -456,34 +491,48 @@ Also update the leading comment block to drop the "sub-pal 0 only for now" callo
 python RoomRom/tools/verify_vram_budget.py
 ```
 
-Expected: still passes (the audit comment in `roomrom_vram_map.h` already accounts for 4x BG; sprite stride of 312 × 4 = 1248 tiles starting at 1025 ends at tile 2272 — exceeds 1536-table-region). If verifier flags overlap, shrink `ROOMROM_SPR_TILE_COUNT_PER_PAL` to fit (audit `tools/audit_vram_tile_usage.py` to find the actual minimum).
+Expected: passes. Total VRAM tiles used should grow by `4 × 31 = 124` tiles. Final layout:
+- BG bank: tiles 1..1212 (4 × 303)
+- SPR bank: tiles 1213..1761 (549 tiles, 1× sub-pal 0 only)
+- ITEM bank: tiles 1762..1885 (4 × 31)
+- VDP plane B / window / SAT / hscroll: 1536+ — **conflict** with ITEM bank at 1762.
+
+If the verifier flags overlap with VDP tables: SPR bank end (1761) is already past the VDP table threshold (1536). Audit shows BG + SPR alone exceed the 1536 boundary. Investigate `RoomRom/tools/verify_vram_budget.py`'s actual VDP-table address constants — the audit comment in `roomrom_vram_map.h` references SGDK's plane-B at $C000 = tile 1536, but if SGDK's actual layout is shifted (e.g., VDP tables at $E000 = tile 1792), the budget may still fit. Read the verifier output carefully and report what it says.
+
+If the budget genuinely overflows VDP tables, escalate as DONE_WITH_CONCERNS with the verifier output and the proposed mitigation (drop `sprites_chr` 232-tile OW enemy block from SPR bank — out of RoomRom roadmap anyway, so its 232 tiles are wasted).
 
 - [ ] **Step 3.4: Build, confirm clean.**
 
 ```bash
 cd "C:/Users/Jake Diggity/Documents/GitHub/FINAL TRY-roomrom-s1"
-cmd.exe /c "RoomRom\\build.bat" 2>&1 | tail -8
+cmd.exe /c "RoomRom\\build.bat" 2>&1 | tail -10
 ```
 
-Expected: build succeeds. ROM size unchanged (the macro change only affects tile-base math and uploads, not yet wired).
+Expected: build succeeds. ROM size unchanged (header changes only; no .c references the new macros yet — Tasks 4-7 wire them in).
 
 - [ ] **Step 3.5: Commit.**
 
 ```bash
 git add RoomRom/src/roomrom_vram_map.h
-git commit -m "roomrom: vram map - bump SPR_SUBPAL_COUNT 1 -> 4
+git commit -m "roomrom: vram map - add ITEM bank with 4x sub-pal expansion
 
-Phase 3 sprite half: activate 4 sub-pal sprite CHR copies.
-Macro change only; renderers are untouched in this commit and
-still select sub-pal 0 implicitly. Subsequent commits wire
-sub-pal selection per item per NES dispatch."
+Per-category VRAM expansion: items need sub-pal 1+ (bomb,
+explosion, future sword-level upgrades) but Link / sword /
+common only ever use sub-pal 0. 4x-expanding the entire SPR
+bank exceeds Genesis VRAM (audit: 549*4=2196 collides with
+VDP tables at tile 1536). Item atlas (~31 tiles) gets its own
+4x bank past SPR bank end; SPR_SUBPAL_COUNT stays 1.
+
+Adds ROOMROM_ITEM_TILE_BASE / ITEM_TILE_COUNT_PER_PAL /
+ITEM_SUBPAL_COUNT / ITEM_TILE_BASE_PAL(s) macros. Renderer
+wiring deferred to Tasks 5-7."
 ```
 
 ---
 
-## Task 4: Upload all 4 sprite CHR banks at boot
+## Task 4: Upload 4 ITEM sub-pal banks at boot
 
-Modify `roomrom_sprites_upload_chr` to push 4 banks of `expanded_sprite_chr_x4` data into VRAM at `ROOMROM_SPR_TILE_BASE_PAL(s) * 32` for `s ∈ {0..3}`.
+Modify `roomrom_sprites_upload_chr` to push 4 banks of `roomrom_item_chr_x4` data into VRAM at `ROOMROM_ITEM_TILE_BASE_PAL(s) * 32` for `s ∈ {0..3}`. Existing single-copy uploads to the SPR bank (Link / sword body / common) stay unchanged.
 
 **Files:**
 - Modify: `RoomRom/src/roomrom_sprites.c`
@@ -517,24 +566,27 @@ grep -n "roomrom_sprites_upload_chr\|render_chr_upload\|ITEM_VRAM_TILE\|roomrom_
 
 Identify the line that uploads the live item atlas (`render_chr_upload(ITEM_VRAM_TILE * 32, roomrom_item_chr[s_item_chr_variant], ...)`).
 
-- [ ] **Step 4.4: Replace single-bank upload with 4-bank loop.**
+- [ ] **Step 4.4: Replace single-bank ITEM upload with 4-bank loop.**
 
-In `roomrom_sprites_upload_chr`, replace the existing item atlas upload block with:
+In `roomrom_sprites_upload_chr`, locate the existing item atlas upload (which currently pushes `roomrom_item_chr[s_item_chr_variant]` to `ITEM_VRAM_TILE * 32`). Replace it with a loop that pushes the pre-baked 4-copy `roomrom_item_chr_x4[variant]` blob to each ITEM sub-pal bank:
 
 ```c
-/* Phase 3 sprite expansion: 4 sub-pal copies. The pre-baked
- * expanded_sprite_chr_x4 array contains 4 concatenated copies
- * (one per NES sprite sub-pal) of the live item atlas tile bytes.
- * Upload each copy to its sub-pal-specific VRAM tile range so
- * sprite renderers can pick the correct color set via
- * ROOMROM_SPR_TILE_BASE_PAL(s) + local_tile. */
+/* Phase 3 sprite expansion (item-only): 4 sub-pal copies of the live
+ * item atlas. The pre-baked roomrom_item_chr_x4 array holds 4
+ * concatenated copies (one per NES sprite sub-pal) of the variant's
+ * tile bytes. Upload each copy to its sub-pal-specific VRAM tile range
+ * so sprite renderers can pick the correct color set via
+ * ROOMROM_ITEM_TILE_BASE_PAL(s) + item_local_tile.
+ *
+ * Link / sword body / common sprite tiles continue to upload to the
+ * 1x SPR bank below; only the item atlas gets the 4x treatment. */
 {
     extern const unsigned char roomrom_item_chr_x4[ROOMROM_ITEM_CHR_VARIANT_COUNT]
                                                   [ROOMROM_ITEM_CHR_X4_BYTES];
     unsigned short variant = s_item_chr_variant;
     unsigned char  s;
     for (s = 0; s < 4u; s++) {
-        unsigned short vram_tile = (unsigned short)(ROOMROM_SPR_TILE_BASE_PAL(s) + ITEM_LOCAL_TILE);
+        unsigned short vram_tile = (unsigned short)ROOMROM_ITEM_TILE_BASE_PAL(s);
         unsigned long  blob_off  = (unsigned long)(roomrom_item_chr_byte_count) * (unsigned long)s;
         render_chr_upload(
             (unsigned short)(vram_tile * 32u),
@@ -545,9 +597,7 @@ In `roomrom_sprites_upload_chr`, replace the existing item atlas upload block wi
 }
 ```
 
-Replace `ITEM_LOCAL_TILE` with whatever local-tile-offset constant the existing code uses for the item atlas within the SPR bank (likely `0` if items live at the top of the SPR bank).
-
-Add `#include "expanded_sprite_chr.h"` at the top of `roomrom_sprites.c` if not present.
+Add `#include "expanded_sprite_chr.h"` near the top of `roomrom_sprites.c` if not already present. Other (non-item) upload code stays at `ROOMROM_SPR_TILE_BASE` and is unchanged in this task.
 
 - [ ] **Step 4.5: Build, confirm clean.**
 
@@ -612,9 +662,9 @@ void roomrom_sprites_set_explosion(short x, short y,
                                    unsigned char sub_pal);
 ```
 
-`RoomRom/src/roomrom_sprites.c`: update the two function bodies. Replace the bare `BOMB_VRAM_TILE` reference with `(unsigned short)(ROOMROM_SPR_TILE_BASE_PAL(sub_pal) + BOMB_LOCAL_TILE)`. Same for explosion: tile = `ROOMROM_SPR_TILE_BASE_PAL(sub_pal) + EXPLOSION_LOCAL_TILE + phase * 2`.
+`RoomRom/src/roomrom_sprites.c`: update the two function bodies. Replace the bare `BOMB_VRAM_TILE` reference with `(unsigned short)(ROOMROM_ITEM_TILE_BASE_PAL(sub_pal) + ROOMROM_ATLAS_ITEM_TILE_BOMB)`. Same for explosion: tile = `ROOMROM_ITEM_TILE_BASE_PAL(sub_pal) + ROOMROM_ATLAS_ITEM_TILE_EXPLOSION + phase * 2`.
 
-You'll need a per-item "local tile" constant relative to the SPR bank base: the offset within the item atlas slice. Currently `BOMB_VRAM_TILE` etc are absolute tile indices. Convert: `BOMB_LOCAL_TILE = BOMB_VRAM_TILE - ROOMROM_SPR_TILE_BASE`. Define these alongside the existing macros at the top of `roomrom_sprites.c`.
+The "local tile" constant is the item atlas's own offset (e.g., `ROOMROM_ITEM_TILE_BOMB` from the generated `roomrom_item_chr.h` — value 20 in the current atlas). Use those generated constants directly. The legacy `BOMB_VRAM_TILE` macros become `BOMB_VRAM_TILE = ROOMROM_ITEM_TILE_BASE + ROOMROM_ITEM_TILE_BOMB` (sub-pal 0 for legacy callers); new sub-pal-aware code uses `ROOMROM_ITEM_TILE_BASE_PAL(s) + ROOMROM_ITEM_TILE_BOMB`.
 
 - [ ] **Step 5.2: Update `clear_bomb` and `clear_explosion` similarly.** Use `sub_pal=0` for the off-screen cleared sprite (color doesn't matter at -32, -32, but pick a deterministic value).
 
@@ -675,7 +725,7 @@ git commit -m "roomrom: bomb + explosion - render with NES sprite sub-pal 1
 NES DrawCloud (Z_07.asm:4912) loads Y=1 into [\$04]/[\$05], so
 the sprite attribute palette bits select sub-pal 1 throughout
 the bomb-visible state and cloud animation frames. On Genesis
-this maps to ROOMROM_SPR_TILE_BASE_PAL(1) + local_tile, which
+this maps to ROOMROM_ITEM_TILE_BASE_PAL(1) + ROOMROM_ITEM_TILE_BOMB, which
 indexes into PAL1[5..7] (NES sprite sub-pal 1 colors).
 
 Adds sub_pal arg to roomrom_sprites_set_bomb / set_explosion.
@@ -695,7 +745,7 @@ NES draws boomerang and arrow with sub-pal 0 (sword colors). The current rendere
 - Modify: `RoomRom/src/roomrom_boomerang.c`, `RoomRom/src/roomrom_arrow.c`
 - Citations: NES `Z_07.asm` boomerang draws default attr 0; arrow same
 
-- [ ] **Step 6.1: Add subpal arg, wire local-tile math.** Mirror the bomb/explosion change. Tile = `ROOMROM_SPR_TILE_BASE_PAL(sub_pal) + LOCAL_TILE`.
+- [ ] **Step 6.1: Add subpal arg, wire local-tile math.** Mirror the bomb/explosion change. Tile = `ROOMROM_ITEM_TILE_BASE_PAL(sub_pal) + ROOMROM_ITEM_TILE_BOOMERANG` (and similarly for arrow with `ROOMROM_ITEM_TILE_ARROW_VERT` / `ARROW_HORZ`).
 
 - [ ] **Step 6.2: Callers pass `sub_pal=0`.**
 
@@ -850,7 +900,7 @@ in roomrom_sprites.h and main.c never got updated. Fixed."
 
 ## Task 9: Extend `verify_slot_map.py` to gate sprite renderers
 
-Spec §5 step 3: verify_slot_map must also check sprite-side renderers for absence of `(pal & 0x03) << 13` and presence of `ROOMROM_SPR_TILE_BASE_PAL` usage.
+Spec §5 step 3: verify_slot_map must also check sprite-side renderers for absence of `(pal & 0x03) << 13` and presence of `ROOMROM_ITEM_TILE_BASE_PAL` usage in any file that draws items.
 
 **Files:**
 - Modify: `RoomRom/tools/verify_slot_map.py`
@@ -877,11 +927,11 @@ def check_sprite_uses_subpal_macro():
         # Forbidden: hard-coded PAL3 in TILE_ATTR_FULL (PAL2 OK for beam flash)
         if re.search(r"TILE_ATTR_FULL\(\s*PAL3\b", text):
             fail(f"{path}: forbidden TILE_ATTR_FULL(PAL3 present (post-cutover)")
-        # Required: at least one ROOMROM_SPR_TILE_BASE_PAL reference
-        # (skip files that only clear sprites; check the main renderer)
+        # Required: at least one ROOMROM_ITEM_TILE_BASE_PAL reference
+        # (item-rendering files; skip non-item files like Link pose).
         if path.endswith("roomrom_sprites.c"):
-            if "ROOMROM_SPR_TILE_BASE_PAL" not in text:
-                fail(f"{path}: missing ROOMROM_SPR_TILE_BASE_PAL reference")
+            if "ROOMROM_ITEM_TILE_BASE_PAL" not in text:
+                fail(f"{path}: missing ROOMROM_ITEM_TILE_BASE_PAL reference")
 ```
 
 Wire `check_sprite_uses_subpal_macro()` into `main()`.
@@ -902,8 +952,9 @@ git commit -m "roomrom: verify_slot_map - gate sprite renderers post-cutover
 
 Greps roomrom_sprites.c / combat.c / bomb.c / boomerang.c /
 arrow.c for forbidden patterns ((pal & 0x03) << 13, PAL3 in
-TILE_ATTR_FULL) and required ROOMROM_SPR_TILE_BASE_PAL macro
-usage. Closes Phase 5 verifier coverage of the sprite half."
+TILE_ATTR_FULL) and required ROOMROM_ITEM_TILE_BASE_PAL macro
+usage in any item-drawing renderer. Closes Phase 5 verifier
+coverage of the sprite half."
 ```
 
 ---
