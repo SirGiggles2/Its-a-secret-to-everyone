@@ -13,8 +13,12 @@ User invoked /octo:debate (debate 003 = SGDK integration), then "BEST LONG TERM 
 | f18f661b | state: verify_no_alias_collisions --scope flag for per-phase gate |
 | a415f942 | state: vram_map_state.h + palette_state.h typed promotion targets |
 | 37322553 | state: cave_state + world_state typed-struct prep (Phase 3+4) |
+| b6e8e6e6 | docs: autonomous session 2026-05-02 status |
+| 408c11e0 | state: remove duplicate SAVE_SLOT_INDEX + SUBMODE_VALUE definitions |
+| 9decf66e | docs: extend session status with scratch_state.h design sketch |
+| 96c64da3 | state: scratch_state.h canonical owner of NES zero-page ($0000-$001F) |
 
-7 commits. Each landed with a clean atomic scope. Build green at every step.
+11 commits. Each landed with a clean atomic scope. Build green at every step. Final verifier state: 199 → 106 collisions strict-all (47% reduction); scope cave 29 → 6; scope enemy 134 → 74.
 
 ## Tier-1 audit results
 
@@ -80,7 +84,7 @@ Pattern established: typed struct + inline accessors layered ON TOP of the exist
 1. **Phase 1.5 input scripts** for 5 cold-boot-feasible scenarios — write Lua autodriver per scenario, run against actual BizHawk, populate `build/generated/nes_reference/8f72dc2e/<scenario>/`. Pattern proven once, applies to others as they get save states.
 2. **Phase 5 typed prep** — `room_state.h` + `collision_state.h` (room has 50+ macros; collision is empty placeholder).
 3. **Phase 7 enemy_state semantic resolution** — 134 in-scope when scope=enemy. Includes the OBJ(0x0412) within-header alias (PUSH_TIMER vs FLYER_SPEED_FRAC for different enemy types). Likely needs union or tagged-state decision per enemy class.
-4. **scratch_state.h** — owns NES zero-page $0000-$001F. Subsystem TMP* macros become aliases of the canonical names. Resolves the cross-subsystem ~30-50 collisions in one move. Design sketch:
+4. ~~**scratch_state.h** — owns NES zero-page $0000-$001F~~. **DONE** (commit 96c64da3). Resolved 93 cross-subsystem collisions. Design sketch retained for reference:
    ```c
    /* src/state/scratch_state.h */
    #include "platform_abi.h"
