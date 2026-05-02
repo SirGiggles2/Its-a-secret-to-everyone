@@ -4,6 +4,15 @@
 The manifest is intentionally based on CHR bytes captured from a running NES
 emulator, not on guessed common_chr offsets.  RoomRom's generated item atlas
 uses this manifest as its only source.
+
+DEPRECATED (atlas spec P6b, 2026-05-02): this script is superseded by
+gen_atlas.py which owns manifest generation for all sprite categories.
+See RoomRom/tools/gen_atlas.py for the replacement.
+
+This script remains runnable; walk_z1_disasm.py imports ITEM_DEFS from
+it for informational diffing against the disassembly. Do not extend this
+script; add new item manifest entries to item_chr_manifest.json directly
+and regenerate via gen_atlas.py instead.
 """
 
 from __future__ import annotations

@@ -1,5 +1,16 @@
 #!/usr/bin/env python3
-"""Generate RoomRom item CHR C/H files from item_chr_manifest.json."""
+"""Generate RoomRom item CHR C/H files from item_chr_manifest.json.
+
+DEPRECATED (atlas spec P6b, 2026-05-02): this script is superseded by
+gen_atlas.py which generates the full per-category atlas C/H pairs under
+RoomRom/src/atlas/. See RoomRom/tools/gen_atlas.py for the replacement.
+
+This script remains runnable because roomrom_item_chr.{c,h} are still
+compiled into the build (the items renderer has not yet migrated to
+atlas/items_chr.{c,h}). Do not extend this script; add new item atlas
+categories to gen_atlas.py instead. Remove this script once the items
+renderer migration (Phase 6 cleanup) replaces roomrom_item_chr.{c,h}.
+"""
 
 from __future__ import annotations
 
