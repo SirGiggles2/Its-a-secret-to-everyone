@@ -3,20 +3,12 @@
 #include "render_abi.h"
 #include "roomrom_item_chr.h"
 #include "roomrom_vram_map.h"
-#include "expanded_sprite_chr.h"
-/* P4a: atlas headers for ATLAS_ASSERT_SIZE and named dispatch constants.
- * items_chr.h covers the full 37-item NES inventory atlas.  The renderer
- * still indexes into roomrom_item_chr_x4 (the 8-tile weapon blob uploaded
- * by roomrom_sprites_upload_chr); ROOMROM_ITEM_TILE_* continue to provide
- * the tile indices into that blob.  ATLAS_ASSERT_SIZE calls below verify
- * that the renderer's SPRITE_SIZE matches the registry dispatch for each
- * item category that has a 1:1 atlas dispatch entry.
- *
- * TODO(Phase 6 cleanup): once roomrom_item_chr_x4 is replaced by the full
- * atlas blob upload, switch tile-index expressions to
- * ROOMROM_ATLAS_ITEMS_<NAME>_OFFSET / 32.  The atlas ordering currently
- * differs from item_chr ordering so the substitution is not yet safe
- * (BOMB: item_chr tile 20 vs atlas offset 96/32=3, etc.). */
+/* FU3: renderer reads from atlas/items_chr_x4 (byte-identical to legacy
+ * expanded_sprite_chr via FU2).  ROOMROM_ITEM_TILE_* tile-index constants
+ * stay sourced from roomrom_item_chr.h (the 8-item legacy manifest header)
+ * because item tile indices into the blob are the same in both pipelines.
+ * P4a: atlas headers for ATLAS_ASSERT_SIZE and named dispatch constants. */
+#include "atlas/items_chr_x4.h"
 #include "atlas/items_chr.h"
 #include "atlas/atlas_dispatch.h"
 
@@ -27,24 +19,20 @@ ATLAS_ASSERT_SIZE(BOMB, 1, 1);
 /* BOOMERANG -> SPRITE_SIZE(1,1) -> W_BOOMERANG=1, H_BOOMERANG=1 (NES_NARROW) */
 ATLAS_ASSERT_SIZE(BOOMERANG, 1, 1);
 
-/* TODO(Phase 6): add ATLAS_ASSERT_SIZE for sword_vert/horz, arrow_vert/horz,
- * explosion, sword_diag once items_chr.h gains multi-tile W/H dispatch
- * entries for those draw rules (NES_NARROW 1x2, NES_SLIM 2x1, etc.). */
+/* TODO(Phase 6 cleanup): add ATLAS_ASSERT_SIZE for sword_vert/horz,
+ * arrow_vert/horz, explosion, sword_diag once items_chr.h gains multi-tile
+ * W/H dispatch entries for those draw rules (NES_NARROW 1x2, NES_SLIM 2x1).
+ * Also replace ROOMROM_ITEM_TILE_* tile-index expressions with
+ * ROOMROM_ATLAS_ITEMS_<NAME>_OFFSET / 32 once the atlas ordering is
+ * reconciled with the legacy blob ordering. */
 
 /* P4b: Link renderer migration - DEFERRED.
- * link_chr.h provides ROOMROM_ATLAS_LINK_*_OFFSET byte-offset constants for
- * walk/attack poses (face_down_f1..stab_side, 1024 bytes / 32 tiles total)
- * but does NOT emit W_x/H_x/ATLAS_x_DISPATCH defines.  ATLAS_ASSERT_SIZE
- * therefore cannot be called against Link pose entries.
+ * link_chr.h now emits W_x/H_x dispatch defines (FU1). However, the Link
+ * upload path still reads tiles from common_chr via upload_pose(); the atlas
+ * link_chr.c blob is not compiled into the build.  ATLAS_ASSERT_SIZE for
+ * Link poses is deferred until the upload path switches to atlas/link_chr.
  *
- * Additionally, the Link upload path reads tiles from common_chr (not the
- * link_chr.c atlas blob) via upload_pose(); link_chr.c is not compiled into
- * the build at all.  ROOMROM_ATLAS_LINK_*_OFFSET / 32 values (0,2,4,6,...
- * walk poses) do NOT equal LINK_VRAM_TILE + pose_idx offsets used by
- * set_link_pose/set_link_attack_pose.
- *
- * TODO(Phase-4b / Phase 6): once link_chr.h gains W_x/H_x dispatch defines
- * and the upload path switches from common_chr to the atlas link blob,
+ * TODO(Phase-4b / Phase 6): switch upload_pose() to read from atlas/link_chr;
  * replace LINK_VRAM_TILE + pose offsets with
  *   ROOMROM_LINK_TILE_BASE + ROOMROM_ATLAS_LINK_<POSE>_OFFSET / 32
  * and add ATLAS_ASSERT_SIZE(FACE_DOWN_F1, 2, 2) etc. per-pose. */
@@ -201,25 +189,25 @@ void roomrom_sprites_upload_chr(void)
         }
     }
 
-    /* Phase 3 sprite expansion (item-only): 4 sub-pal copies of the live
-     * item atlas. The pre-baked roomrom_item_chr_x4 array holds 4
-     * concatenated copies (one per NES sprite sub-pal) of the variant's
-     * tile bytes. Upload each copy to its sub-pal-specific VRAM tile range
-     * so sprite renderers can pick the correct color set via
-     * ROOMROM_ITEM_TILE_BASE_PAL(s) + item_local_tile.
+    /* FU3 (atlas pipeline): 4 sub-pal copies of the item atlas from the
+     * atlas/items_chr_x4 blob (byte-identical to legacy expanded_sprite_chr
+     * via gen_atlas.py FU2).  Blob layout: pal0_bytes||pal1_bytes||
+     * pal2_bytes||pal3_bytes; per-pal stride =
+     * ROOMROM_ATLAS_ITEMS_X4_PER_PAL_BYTES.
      *
      * Link / sword body / common sprite tiles continue to upload to the
-     * 1x SPR bank below; only the item atlas gets the 4x treatment. */
+     * 1x SPR bank above; only the item atlas gets the 4x treatment. */
     {
         unsigned short variant = s_item_chr_variant;
         unsigned char  s;
         for (s = 0; s < 4u; s++) {
             unsigned short vram_tile = (unsigned short)ROOMROM_ITEM_TILE_BASE_PAL(s);
-            unsigned long  blob_off  = (unsigned long)(roomrom_item_chr_byte_count) * (unsigned long)s;
+            unsigned long  blob_off  = (unsigned long)(ROOMROM_ATLAS_ITEMS_X4_PER_PAL_BYTES)
+                                       * (unsigned long)s;
             render_chr_upload(
                 (unsigned short)(vram_tile * 32u),
-                &roomrom_item_chr_x4[variant][blob_off],
-                (unsigned short)roomrom_item_chr_byte_count
+                &roomrom_atlas_items_x4[variant][blob_off],
+                (unsigned short)ROOMROM_ATLAS_ITEMS_X4_PER_PAL_BYTES
             );
         }
     }
