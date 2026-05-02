@@ -83,3 +83,12 @@ reference/Sonic The Hedgehog 2 (World) (Rev B).md
 /run_build.bat
 /t.out
 /test_copy.tmp
+
+# Untracked vendor/reference dumps (kept on disk for citation)
+reference/Zelda1-Redux/
+reference/external/
+
+# Bug-report videos (memory rule feedback_fix_this_avi: keep locally, not tracked)
+docs/bug_reports/*.avi
+docs/bug_reports/*.mp4
+docs/bug_reports/*.mov
