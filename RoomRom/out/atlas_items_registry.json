@@ -1,0 +1,690 @@
+{
+  "schema_version": 1,
+  "generator": "RoomRom/tools/walk_z1_disasm.py",
+  "source": "reference/aldonunez/Z_01.asm",
+  "notes": [
+    "Anim_ItemFrameOffsets: 37-byte table at Z_01.asm:5193",
+    "Anim_ItemFrameTiles: 48-byte table at Z_01.asm:5201",
+    "Dispatch classification: Z_01.asm:5279-5306",
+    "frame_count: derived from consecutive offset differences + KNOWN_SLOTS overrides"
+  ],
+  "anim_item_frame_offsets": {
+    "entry_count": 37,
+    "values_hex": [
+      "0x00",
+      "0x03",
+      "0x07",
+      "0x0A",
+      "0x0B",
+      "0x0C",
+      "0x0D",
+      "0x0E",
+      "0x0F",
+      "0x11",
+      "0x12",
+      "0x13",
+      "0x14",
+      "0x15",
+      "0x16",
+      "0x17",
+      "0x18",
+      "0x17",
+      "0x18",
+      "0x17",
+      "0x19",
+      "0x1B",
+      "0x1C",
+      "0x1D",
+      "0x1E",
+      "0x1F",
+      "0x20",
+      "0x21",
+      "0x1C",
+      "0x22",
+      "0x22",
+      "0x26",
+      "0x27",
+      "0x28",
+      "0x29",
+      "0x2B",
+      "0x2E"
+    ],
+    "disasm_citation": {
+      "file": "Z_01.asm",
+      "line": 5195,
+      "label": "Anim_ItemFrameOffsets"
+    }
+  },
+  "anim_item_frame_tiles": {
+    "entry_count": 48,
+    "values_hex": [
+      "0x20",
+      "0x82",
+      "0x3C",
+      "0x34",
+      "0x70",
+      "0x72",
+      "0x74",
+      "0x28",
+      "0x86",
+      "0x3C",
+      "0x2A",
+      "0x26",
+      "0x24",
+      "0x22",
+      "0x40",
+      "0x4A",
+      "0x8A",
+      "0x6C",
+      "0x42",
+      "0x46",
+      "0x76",
+      "0x2C",
+      "0x4E",
+      "0x4C",
+      "0x6A",
+      "0x50",
+      "0x52",
+      "0x66",
+      "0x32",
+      "0x2E",
+      "0x68",
+      "0xF3",
+      "0x6E",
+      "0xF2",
+      "0x36",
+      "0x38",
+      "0x3A",
+      "0x3C",
+      "0x56",
+      "0x48",
+      "0x78",
+      "0x20",
+      "0x82",
+      "0x7A",
+      "0x7C",
+      "0x30",
+      "0x64",
+      "0x62"
+    ],
+    "disasm_citation": {
+      "file": "Z_01.asm",
+      "line": 5202,
+      "label": "Anim_ItemFrameTiles"
+    }
+  },
+  "items": [
+    {
+      "name": "sword",
+      "category": "items",
+      "nes_item_slot": "0x00",
+      "nes_frame_offset": "0x00",
+      "nes_tile_ids": [
+        "0x20",
+        "0x82",
+        "0x3C"
+      ],
+      "dispatch_class": "Narrow",
+      "disasm_citation": {
+        "file": "Z_01.asm",
+        "line": 5202,
+        "label": "Anim_ItemFrameTiles+0x00"
+      }
+    },
+    {
+      "name": "bomb",
+      "category": "items",
+      "nes_item_slot": "0x01",
+      "nes_frame_offset": "0x03",
+      "nes_tile_ids": [
+        "0x34",
+        "0x70",
+        "0x72",
+        "0x74"
+      ],
+      "dispatch_class": "Narrow",
+      "disasm_citation": {
+        "file": "Z_01.asm",
+        "line": 5202,
+        "label": "Anim_ItemFrameTiles+0x03"
+      }
+    },
+    {
+      "name": "arrow",
+      "category": "items",
+      "nes_item_slot": "0x02",
+      "nes_frame_offset": "0x07",
+      "nes_tile_ids": [
+        "0x28",
+        "0x86",
+        "0x3C"
+      ],
+      "dispatch_class": "Narrow",
+      "disasm_citation": {
+        "file": "Z_01.asm",
+        "line": 5202,
+        "label": "Anim_ItemFrameTiles+0x07"
+      }
+    },
+    {
+      "name": "bow",
+      "category": "items",
+      "nes_item_slot": "0x03",
+      "nes_frame_offset": "0x0A",
+      "nes_tile_ids": [
+        "0x2A"
+      ],
+      "dispatch_class": "Narrow",
+      "disasm_citation": {
+        "file": "Z_01.asm",
+        "line": 5203,
+        "label": "Anim_ItemFrameTiles+0x0A"
+      }
+    },
+    {
+      "name": "candle",
+      "category": "items",
+      "nes_item_slot": "0x04",
+      "nes_frame_offset": "0x0B",
+      "nes_tile_ids": [
+        "0x26"
+      ],
+      "dispatch_class": "Narrow",
+      "disasm_citation": {
+        "file": "Z_01.asm",
+        "line": 5203,
+        "label": "Anim_ItemFrameTiles+0x0B"
+      }
+    },
+    {
+      "name": "recorder",
+      "category": "items",
+      "nes_item_slot": "0x05",
+      "nes_frame_offset": "0x0C",
+      "nes_tile_ids": [
+        "0x24"
+      ],
+      "dispatch_class": "Narrow",
+      "disasm_citation": {
+        "file": "Z_01.asm",
+        "line": 5203,
+        "label": "Anim_ItemFrameTiles+0x0C"
+      }
+    },
+    {
+      "name": "food",
+      "category": "items",
+      "nes_item_slot": "0x06",
+      "nes_frame_offset": "0x0D",
+      "nes_tile_ids": [
+        "0x22"
+      ],
+      "dispatch_class": "Narrow",
+      "disasm_citation": {
+        "file": "Z_01.asm",
+        "line": 5203,
+        "label": "Anim_ItemFrameTiles+0x0D"
+      }
+    },
+    {
+      "name": "letter",
+      "category": "items",
+      "nes_item_slot": "0x07",
+      "nes_frame_offset": "0x0E",
+      "nes_tile_ids": [
+        "0x40"
+      ],
+      "dispatch_class": "Narrow",
+      "disasm_citation": {
+        "file": "Z_01.asm",
+        "line": 5203,
+        "label": "Anim_ItemFrameTiles+0x0E"
+      }
+    },
+    {
+      "name": "potion",
+      "category": "items",
+      "nes_item_slot": "0x08",
+      "nes_frame_offset": "0x0F",
+      "nes_tile_ids": [
+        "0x4A",
+        "0x8A"
+      ],
+      "dispatch_class": "Narrow",
+      "disasm_citation": {
+        "file": "Z_01.asm",
+        "line": 5203,
+        "label": "Anim_ItemFrameTiles+0x0F"
+      }
+    },
+    {
+      "name": "wand",
+      "category": "items",
+      "nes_item_slot": "0x09",
+      "nes_frame_offset": "0x11",
+      "nes_tile_ids": [
+        "0x6C"
+      ],
+      "dispatch_class": "Wide_Mirrored",
+      "disasm_citation": {
+        "file": "Z_01.asm",
+        "line": 5204,
+        "label": "Anim_ItemFrameTiles+0x11"
+      }
+    },
+    {
+      "name": "raft",
+      "category": "items",
+      "nes_item_slot": "0x0A",
+      "nes_frame_offset": "0x12",
+      "nes_tile_ids": [
+        "0x42"
+      ],
+      "dispatch_class": "Narrow",
+      "disasm_citation": {
+        "file": "Z_01.asm",
+        "line": 5204,
+        "label": "Anim_ItemFrameTiles+0x12"
+      }
+    },
+    {
+      "name": "book",
+      "category": "items",
+      "nes_item_slot": "0x0B",
+      "nes_frame_offset": "0x13",
+      "nes_tile_ids": [
+        "0x46"
+      ],
+      "dispatch_class": "Narrow",
+      "disasm_citation": {
+        "file": "Z_01.asm",
+        "line": 5204,
+        "label": "Anim_ItemFrameTiles+0x13"
+      }
+    },
+    {
+      "name": "ring",
+      "category": "items",
+      "nes_item_slot": "0x0C",
+      "nes_frame_offset": "0x14",
+      "nes_tile_ids": [
+        "0x76"
+      ],
+      "dispatch_class": "Wide_Mirrored",
+      "disasm_citation": {
+        "file": "Z_01.asm",
+        "line": 5204,
+        "label": "Anim_ItemFrameTiles+0x14"
+      }
+    },
+    {
+      "name": "ladder",
+      "category": "items",
+      "nes_item_slot": "0x0D",
+      "nes_frame_offset": "0x15",
+      "nes_tile_ids": [
+        "0x2C"
+      ],
+      "dispatch_class": "Narrow",
+      "disasm_citation": {
+        "file": "Z_01.asm",
+        "line": 5204,
+        "label": "Anim_ItemFrameTiles+0x15"
+      }
+    },
+    {
+      "name": "magickey",
+      "category": "items",
+      "nes_item_slot": "0x0E",
+      "nes_frame_offset": "0x16",
+      "nes_tile_ids": [
+        "0x4E"
+      ],
+      "dispatch_class": "Narrow",
+      "disasm_citation": {
+        "file": "Z_01.asm",
+        "line": 5204,
+        "label": "Anim_ItemFrameTiles+0x16"
+      }
+    },
+    {
+      "name": "bracelet",
+      "category": "items",
+      "nes_item_slot": "0x0F",
+      "nes_frame_offset": "0x17",
+      "nes_tile_ids": [
+        "0x4C"
+      ],
+      "dispatch_class": "Narrow",
+      "disasm_citation": {
+        "file": "Z_01.asm",
+        "line": 5204,
+        "label": "Anim_ItemFrameTiles+0x17"
+      }
+    },
+    {
+      "name": "shield",
+      "category": "items",
+      "nes_item_slot": "0x10",
+      "nes_frame_offset": "0x18",
+      "nes_tile_ids": [
+        "0x6A"
+      ],
+      "dispatch_class": "Wide_Slim",
+      "disasm_citation": {
+        "file": "Z_01.asm",
+        "line": 5205,
+        "label": "Anim_ItemFrameTiles+0x18"
+      }
+    },
+    {
+      "name": "boomerang",
+      "category": "items",
+      "nes_item_slot": "0x11",
+      "nes_frame_offset": "0x17",
+      "nes_tile_ids": [
+        "0x4C"
+      ],
+      "dispatch_class": "Narrow",
+      "disasm_citation": {
+        "file": "Z_01.asm",
+        "line": 5204,
+        "label": "Anim_ItemFrameTiles+0x17"
+      }
+    },
+    {
+      "name": "boomerang2",
+      "category": "items",
+      "nes_item_slot": "0x12",
+      "nes_frame_offset": "0x18",
+      "nes_tile_ids": [
+        "0x6A"
+      ],
+      "dispatch_class": "Wide_Slim",
+      "disasm_citation": {
+        "file": "Z_01.asm",
+        "line": 5205,
+        "label": "Anim_ItemFrameTiles+0x18"
+      }
+    },
+    {
+      "name": "shield2",
+      "category": "items",
+      "nes_item_slot": "0x13",
+      "nes_frame_offset": "0x17",
+      "nes_tile_ids": [
+        "0x4C"
+      ],
+      "dispatch_class": "Narrow",
+      "disasm_citation": {
+        "file": "Z_01.asm",
+        "line": 5204,
+        "label": "Anim_ItemFrameTiles+0x17"
+      }
+    },
+    {
+      "name": "heartcontainer",
+      "category": "items",
+      "nes_item_slot": "0x14",
+      "nes_frame_offset": "0x19",
+      "nes_tile_ids": [
+        "0x50",
+        "0x52"
+      ],
+      "dispatch_class": "Narrow",
+      "disasm_citation": {
+        "file": "Z_01.asm",
+        "line": 5205,
+        "label": "Anim_ItemFrameTiles+0x19"
+      }
+    },
+    {
+      "name": "triforce",
+      "category": "items",
+      "nes_item_slot": "0x15",
+      "nes_frame_offset": "0x1B",
+      "nes_tile_ids": [
+        "0x66"
+      ],
+      "dispatch_class": "Wide_Slim",
+      "disasm_citation": {
+        "file": "Z_01.asm",
+        "line": 5205,
+        "label": "Anim_ItemFrameTiles+0x1B"
+      }
+    },
+    {
+      "name": "map",
+      "category": "items",
+      "nes_item_slot": "0x16",
+      "nes_frame_offset": "0x1C",
+      "nes_tile_ids": [
+        "0x32"
+      ],
+      "dispatch_class": "Narrow",
+      "disasm_citation": {
+        "file": "Z_01.asm",
+        "line": 5205,
+        "label": "Anim_ItemFrameTiles+0x1C"
+      }
+    },
+    {
+      "name": "compass",
+      "category": "items",
+      "nes_item_slot": "0x17",
+      "nes_frame_offset": "0x1D",
+      "nes_tile_ids": [
+        "0x2E"
+      ],
+      "dispatch_class": "Narrow",
+      "disasm_citation": {
+        "file": "Z_01.asm",
+        "line": 5205,
+        "label": "Anim_ItemFrameTiles+0x1D"
+      }
+    },
+    {
+      "name": "bigkey",
+      "category": "items",
+      "nes_item_slot": "0x18",
+      "nes_frame_offset": "0x1E",
+      "nes_tile_ids": [
+        "0x68"
+      ],
+      "dispatch_class": "Wide_Slim",
+      "disasm_citation": {
+        "file": "Z_01.asm",
+        "line": 5205,
+        "label": "Anim_ItemFrameTiles+0x1E"
+      }
+    },
+    {
+      "name": "sword2",
+      "category": "items",
+      "nes_item_slot": "0x19",
+      "nes_frame_offset": "0x1F",
+      "nes_tile_ids": [
+        "0xF3"
+      ],
+      "dispatch_class": "Narrow",
+      "disasm_citation": {
+        "file": "Z_01.asm",
+        "line": 5205,
+        "label": "Anim_ItemFrameTiles+0x1F"
+      }
+    },
+    {
+      "name": "sword3",
+      "category": "items",
+      "nes_item_slot": "0x1A",
+      "nes_frame_offset": "0x20",
+      "nes_tile_ids": [
+        "0x6E"
+      ],
+      "dispatch_class": "Wide_Mirrored",
+      "disasm_citation": {
+        "file": "Z_01.asm",
+        "line": 5206,
+        "label": "Anim_ItemFrameTiles+0x20"
+      }
+    },
+    {
+      "name": "sword4",
+      "category": "items",
+      "nes_item_slot": "0x1B",
+      "nes_frame_offset": "0x21",
+      "nes_tile_ids": [
+        "0xF2"
+      ],
+      "dispatch_class": "Wide_Flippable",
+      "disasm_citation": {
+        "file": "Z_01.asm",
+        "line": 5206,
+        "label": "Anim_ItemFrameTiles+0x21"
+      }
+    },
+    {
+      "name": "map2",
+      "category": "items",
+      "nes_item_slot": "0x1C",
+      "nes_frame_offset": "0x1C",
+      "nes_tile_ids": [
+        "0x32"
+      ],
+      "dispatch_class": "Narrow",
+      "disasm_citation": {
+        "file": "Z_01.asm",
+        "line": 5205,
+        "label": "Anim_ItemFrameTiles+0x1C"
+      }
+    },
+    {
+      "name": "boomerang3",
+      "category": "items",
+      "nes_item_slot": "0x1D",
+      "nes_frame_offset": "0x22",
+      "nes_tile_ids": [
+        "0x36",
+        "0x38",
+        "0x3A",
+        "0x3C"
+      ],
+      "dispatch_class": "Narrow",
+      "disasm_citation": {
+        "file": "Z_01.asm",
+        "line": 5206,
+        "label": "Anim_ItemFrameTiles+0x22"
+      }
+    },
+    {
+      "name": "sword_beam",
+      "category": "items",
+      "nes_item_slot": "0x1E",
+      "nes_frame_offset": "0x22",
+      "nes_tile_ids": [
+        "0x36",
+        "0x38",
+        "0x3A",
+        "0x3C"
+      ],
+      "dispatch_class": "Narrow",
+      "disasm_citation": {
+        "file": "Z_01.asm",
+        "line": 5206,
+        "label": "Anim_ItemFrameTiles+0x22"
+      }
+    },
+    {
+      "name": "fire",
+      "category": "items",
+      "nes_item_slot": "0x1F",
+      "nes_frame_offset": "0x26",
+      "nes_tile_ids": [
+        "0x56"
+      ],
+      "dispatch_class": "Narrow",
+      "disasm_citation": {
+        "file": "Z_01.asm",
+        "line": 5206,
+        "label": "Anim_ItemFrameTiles+0x26"
+      }
+    },
+    {
+      "name": "unknown32",
+      "category": "items",
+      "nes_item_slot": "0x20",
+      "nes_frame_offset": "0x27",
+      "nes_tile_ids": [
+        "0x48"
+      ],
+      "dispatch_class": "Narrow",
+      "disasm_citation": {
+        "file": "Z_01.asm",
+        "line": 5206,
+        "label": "Anim_ItemFrameTiles+0x27"
+      }
+    },
+    {
+      "name": "unknown33",
+      "category": "items",
+      "nes_item_slot": "0x21",
+      "nes_frame_offset": "0x28",
+      "nes_tile_ids": [
+        "0x78"
+      ],
+      "dispatch_class": "Wide_Mirrored",
+      "disasm_citation": {
+        "file": "Z_01.asm",
+        "line": 5207,
+        "label": "Anim_ItemFrameTiles+0x28"
+      }
+    },
+    {
+      "name": "boomerang_anim0",
+      "category": "items",
+      "nes_item_slot": "0x22",
+      "nes_frame_offset": "0x29",
+      "nes_tile_ids": [
+        "0x20"
+      ],
+      "dispatch_class": "Narrow",
+      "disasm_citation": {
+        "file": "Z_01.asm",
+        "line": 5207,
+        "label": "Anim_ItemFrameTiles+0x29"
+      }
+    },
+    {
+      "name": "boomerang_anim1",
+      "category": "items",
+      "nes_item_slot": "0x23",
+      "nes_frame_offset": "0x2B",
+      "nes_tile_ids": [
+        "0x7A",
+        "0x7C"
+      ],
+      "dispatch_class": "Wide_Mirrored",
+      "disasm_citation": {
+        "file": "Z_01.asm",
+        "line": 5207,
+        "label": "Anim_ItemFrameTiles+0x2B"
+      }
+    },
+    {
+      "name": "boomerang_anim2",
+      "category": "items",
+      "nes_item_slot": "0x24",
+      "nes_frame_offset": "0x2E",
+      "nes_tile_ids": [
+        "0x64",
+        "0x62"
+      ],
+      "dispatch_class": "Wide_Slim",
+      "disasm_citation": {
+        "file": "Z_01.asm",
+        "line": 5207,
+        "label": "Anim_ItemFrameTiles+0x2E"
+      }
+    }
+  ]
+}
