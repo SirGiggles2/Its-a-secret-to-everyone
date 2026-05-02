@@ -1,6 +1,8 @@
 #ifndef ROOMROM_VRAM_MAP_H
 #define ROOMROM_VRAM_MAP_H
 
+#include "roomrom_item_chr.h"
+
 /* RoomRom VRAM tile map -- single source of truth.
  *
  * Concrete numeric values committed after running
@@ -63,5 +65,25 @@
     (ROOMROM_BG_TILE_BASE  + (unsigned short)(s) * ROOMROM_BG_TILE_COUNT_PER_PAL)
 #define ROOMROM_SPR_TILE_BASE_PAL(s) \
     (ROOMROM_SPR_TILE_BASE + (unsigned short)(s) * ROOMROM_SPR_TILE_COUNT_PER_PAL)
+
+/* Item atlas sub-bank: per-category 4x sub-pal expansion. NES Z1 draws
+ * bomb / explosion with sprite sub-pal 1; future sword-level upgrades
+ * use sub-pal 1 / 2 (Items inventory). Other persistent sprites
+ * (Link, sword, beam, common) only ever use sub-pal 0 -- they stay in
+ * the 1x SPR bank above.
+ *
+ * VRAM math: ITEM bank starts immediately after the SPR bank end and
+ * holds 4 copies of the item atlas (sub-pal 0..3), each ITEM_TILE_COUNT
+ * tiles wide. Total = 4 * ITEM_TILE_COUNT.
+ *
+ * ITEM_TILE_COUNT_PER_PAL is sourced from the generated header
+ * roomrom_item_chr.h (ROOMROM_ITEM_CHR_TILE_COUNT). The verifier
+ * tools/verify_vram_budget.py confirms ITEM bank does not overlap
+ * with VDP table region or any other VRAM consumer. */
+#define ROOMROM_ITEM_TILE_BASE          (ROOMROM_SPR_TILE_BASE + ROOMROM_SPR_TILE_COUNT_PER_PAL)
+#define ROOMROM_ITEM_TILE_COUNT_PER_PAL ROOMROM_ITEM_CHR_TILE_COUNT
+#define ROOMROM_ITEM_SUBPAL_COUNT       4u
+#define ROOMROM_ITEM_TILE_BASE_PAL(s) \
+    (ROOMROM_ITEM_TILE_BASE + (unsigned short)(s) * ROOMROM_ITEM_TILE_COUNT_PER_PAL)
 
 #endif
