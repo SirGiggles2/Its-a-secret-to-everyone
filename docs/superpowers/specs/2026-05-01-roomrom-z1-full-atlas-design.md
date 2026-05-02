@@ -1,7 +1,7 @@
 # RoomRom Full Graphics Registry / Atlas — North-Star Design
 
 **Status:** north-star design — approved at north-star level (NOT yet implementation-scheduled). Stays north-star until the active CHR / palette expansion (Phase −1) lands.
-**Date:** 2026-05-01 (rev 3 after Codex review of rev 2)
+**Date:** 2026-05-01 (rev 4 after Codex P3 cleanups)
 **Owner:** RoomRom S-series sprite/atlas track
 **Worktree:** `FINAL TRY-roomrom-s1` (branch `roomrom-s1`)
 **Depends on:** [2026-05-01-roomrom-bg-palette-chr-expansion-design.md](2026-05-01-roomrom-bg-palette-chr-expansion-design.md) (active), [roomrom_vram_map.h](../../../RoomRom/src/roomrom_vram_map.h) (existing slot-map authority)
@@ -126,7 +126,7 @@ For each **sprite category entry**:
 For each **pattern-data block** (the actual bytes that the NES CPU writes into CHR RAM via PPUDATA at runtime — Z1 is CHR RAM, no Genesis-style DMA on NES side):
 - `label` (e.g., `CommonSpritePatterns`, `OwBgPatterns`, `Level1SprPatterns`)
 - `disasm_file_line`, `byte_count`, `target_chr_ram_address` (where the boot/scene code copies it to)
-- `referenced_by` — list of disasm code paths that DMA this block
+- `referenced_by` — list of disasm code paths that copy/transfer this block into CHR RAM (NES side: CPU writes through PPUDATA; the runtime transfer may transform bytes — bit-flip, mask, or pack — before they land in CHR RAM, but the canonical PRG bytes themselves are read-only).
 
 Routines walked (sprite categories):
 - `Anim_WriteItemSprites` callers (Z_07 + Z_05)
@@ -154,7 +154,7 @@ Hermetic. No emulator. Same .nes file → same output bytes forever.
 
 Drives BizHawk to a known scene state per pattern block (e.g., enter Level 1 to load `Level1SprPatterns`, kill all enemies + load File Select to load title patterns, etc). For each scene, captures **CHR RAM** (the live tile bytes the PPU is rendering from), OAM (so we know which sprite indices are active mid-action), and PALRAM. Byte-matches captured CHR RAM against the PRG-extracted block from §5.2.
 
-Mismatch → fail. The disasm-located label is wrong, or the PRG offset extraction is wrong, or Z1 mutates the bytes in PRG before DMA. All three are bugs we want caught up front.
+Mismatch → fail. Possible causes: the disasm-located label is wrong; the PRG offset extraction is wrong; or Z1's runtime transfer routine transforms the bytes (bit-flip, mask, etc.) on the way into CHR RAM. The third case is not a PRG mutation — PRG ROM is read-only — but a transfer-time transform that the registry must record so generators can replay it. All three are bugs / gaps we want caught up front.
 
 This is the live-verify-mandatory step Codex called out. It runs on CI when ROM changes (rare), not on every renderer commit.
 
@@ -228,7 +228,26 @@ Per-category `.h` exposes:
 #define ATLAS_SWORD_HORZ_DISPATCH   { .w = 2, .h = 1, .class = NES_FLIPPABLE }
 ```
 
-`ATLAS_ASSERT_SIZE(name, w, h)` wraps `_Static_assert` against the dispatch struct. Wrong SGDK `SPRITE_SIZE` → compile error with file/line.
+`ATLAS_ASSERT_SIZE(name, w, h)` triggers a compile error if the renderer's claimed size disagrees with the registry entry.
+
+**Implementation depends on compiler capability.** SGDK's m68k toolchain (`gcc-m68k` shipped under `sgdk/bin/`) is not guaranteed to default to a C11-supporting standard. Phase 0 verifies in a smoke test:
+
+```c
+/* phase0_static_assert_probe.c */
+_Static_assert(sizeof(int) >= 4, "C11 _Static_assert available");
+```
+
+If the smoke test passes (likely on modern SGDK gcc with `-std=gnu11` or higher), `ATLAS_ASSERT_SIZE` expands to a `_Static_assert`. If the smoke test fails, `ATLAS_ASSERT_SIZE` falls back to a portable typedef-based assertion macro:
+
+```c
+/* Portable C89-compatible static assert. Generates a typedef of an
+ * array; size is positive when the predicate holds, -1 (illegal)
+ * when it fails. Compile error fires at the typedef. */
+#define ATLAS_STATIC_ASSERT_C89(predicate, name) \
+    typedef char atlas_static_assert_##name[(predicate) ? 1 : -1]
+```
+
+The macro contract is unchanged — wrong SGDK `SPRITE_SIZE` is still a compile error with file/line. Only the underlying mechanism switches per Phase 0 result. Phase 0 commits the chosen fallback path into `RoomRom/src/atlas/atlas_static_assert.h` so the registry contract is not compiler-version brittle.
 
 ## 7. Scene-load contract (CPU-based, corrected)
 
@@ -244,7 +263,12 @@ Sprite atlas total estimate: 8–12 KB per variant (orig + redux). Splits across
 | Overworld | link, items, pickups, hud, bg_overworld, npc, enemies(OW), bosses(none) |
 | Underworld L1-L9 | link, items, pickups, hud, bg_underworld, enemies(L<n>), bosses(L<n>) |
 
-Scene transition: existing render loop blocks for ~2 frames while the per-scene loader runs. Visible glitch acceptable during transitions today (matches NES Z1 transition behaviour).
+Scene transition: target ≤ 2 frames blocked for the per-scene loader. **This is a measurement gate, not a promise.** Phase 1 emits per-scene upload-byte counts; the implementation spec measures actual elapsed VBLANK time across representative scenes (Title→OW, OW→UW1, UW1→UW9 boss). If a scene exceeds the 2-frame budget, two explicit fallbacks apply, in this order:
+
+1. **Forced display-off multi-frame load.** Blank the screen via `VDP_setEnable(FALSE)` for the duration of the upload. No VBLANK contention; CPU upload runs at full speed across N frames. Visible glitch is now an explicit black-frame transition (still matches NES behavior).
+2. **Split scene-load.** Move category uploads that aren't immediately needed (e.g. boss tiles when entering a non-boss room of a dungeon) to deferred uploads inside subsequent VBLANKs while gameplay continues with placeholder tiles in those slots.
+
+Visible-glitch behaviour during transitions is acceptable as long as it's deterministic and one of the documented fallbacks. Renderers must not assume scene-load completes in any specific frame count; they only assume the per-scene VRAM contract is in place by the time `roomrom_scene_load` returns.
 
 DMA-queued upload is a separate future spec. When implemented, scene-load timing improves to 1 VBLANK / scene; the renderer ABI does not change.
 
@@ -274,7 +298,7 @@ Three lines of defense:
 
 (a) **Build-time validator (`tools/verify_atlas.py`).** Walks `atlas_master.json`. For every entry, classifies the NES tile through the disasm dispatch logic; fails build if `dispatch_class` disagrees with disasm. Cross-checks: every renderer source file is scanned for `ATLAS_ASSERT_SIZE(...)` macros + every `roomrom_sprites_set_*` function — every claimed name must exist in the registry. Strict by default in `RoomRom/build.bat`.
 
-(b) **Compile-time `_Static_assert`** via `ATLAS_ASSERT_SIZE`.
+(b) **Compile-time assert** via `ATLAS_ASSERT_SIZE` (C11 `_Static_assert` if SGDK toolchain supports it; otherwise the C89-compatible typedef-array fallback — see §6.4).
 
 (c) **Pixel-diff regression test.** Per category, a Lua probe captures NES OAM mid-action and a Genesis screenshot of the matching renderer. Diff > threshold → fail. CI gate at PR time. Tolerates timing-sensitive effects (color flash) by allowing N-of-M-frame matches.
 
@@ -289,7 +313,8 @@ The current `verify_item_chr_manifest.py` becomes a thin wrapper around (a). Str
 
 ### Phase 0 — pre-flight
 - Pin both `Legend of Zelda, The (USA).nes` and `Zelda Redux.nes` SHA-256 into `RoomRom/data/rom_inputs.lock`.
-- Smoke test: `tools/extract_z1_prg_chr.py` extracts the `CommonSpritePatterns` block from PRG. Verifier launches BizHawk, scene-loads the overworld, captures the live CHR RAM slice at `CommonSpritePatterns`'s known target address (per disasm), byte-matches that slice — NOT the whole `nes_item_chr_pt0_orig.bin` dump — against the PRG-extracted bytes. Per-block target-address comparison is the only valid check; whole-pattern-table dumps mix multiple blocks at different addresses and would mask offset bugs.
+- PRG extraction smoke test: `tools/extract_z1_prg_chr.py` extracts the `CommonSpritePatterns` block from PRG. Verifier launches BizHawk, scene-loads the overworld, captures the live CHR RAM slice at `CommonSpritePatterns`'s known target address (per disasm), byte-matches that slice — NOT the whole `nes_item_chr_pt0_orig.bin` dump — against the PRG-extracted bytes. Per-block target-address comparison is the only valid check; whole-pattern-table dumps mix multiple blocks at different addresses and would mask offset bugs.
+- Compiler capability smoke test: compile `phase0_static_assert_probe.c` against the SGDK m68k gcc. If `_Static_assert` builds, commit `ATLAS_ASSERT_SIZE` to expand to it. If not, commit the C89 typedef-array fallback. Either way, write the chosen path into `RoomRom/src/atlas/atlas_static_assert.h` so subsequent phases inherit a stable assertion mechanism.
 
 ### Phase 1 — source tools (Layer 1)
 - Implement `tools/extract_z1_prg_chr.py` first (no disasm dependency beyond pattern labels).
@@ -329,13 +354,13 @@ Each phase is its own spec → plan → implement loop. This document is the des
 | PRG extraction | Byte-match extracted blocks vs live BizHawk CHR-RAM captures (mandatory). |
 | Atlas C | Byte-match against captured BizHawk OAM / PALRAM bytes for known items. |
 | VRAM contracts | Sum of per-scene tile counts ≤ regions in `roomrom_vram_map.h`. No overlap within a scene. |
-| Upload functions | Per-scene CPU-upload time fits in transition budget (≤ 2 frames). |
+| Upload functions | Per-scene CPU-upload time MEASURED at Phase 1; ≤ 2 frames is the target gate. Over-budget scenes invoke a documented fallback (display-off multi-frame OR split deferred load). Renderer ABI does not assume a specific frame count. |
 | Renderers | `ATLAS_ASSERT_SIZE` compile gate. Pixel-diff vs NES reference per item action. |
 | End-to-end | Title → OW → UW1 → … → UW9 walkthrough screenshot per room. Diffs against current build = passing migration. |
 
 ## 12. Open questions / risks
 
-1. **PRG pattern-label coverage.** Z1 may DMA bytes from non-labelled PRG offsets in some scenes. Mitigation: Phase 1 tool reports any CHR-RAM bytes that don't match a labelled block; we either label them or document them as known divergences.
+1. **PRG pattern-label coverage.** Z1 may copy bytes into CHR RAM from non-labelled PRG offsets in some scenes (CPU/PPUDATA writes from a PRG region the disasm walker did not catch). Mitigation: Phase 1 tool reports any CHR-RAM bytes that don't match a labelled block; we either label them or document them as known divergences.
 2. **Pattern-block aliasing.** Z1 sometimes copies subsets of one block into multiple CHR RAM regions per scene. The registry tracks `target_chr_ram_address` per (block, scene) so aliases are explicit, not hidden.
 3. **Redux variant divergence.** Redux modifies some pattern blocks but keeps disasm dispatch. Variants are byte-pair entries in the master registry; one disasm citation, two byte payloads.
 4. **VRAM budget overflow per scene.** Mitigation: scene-conditional categories (enemies / bosses). If still over budget after gating, drop frames of low-priority categories rather than expanding `roomrom_vram_map.h` regions.
@@ -371,8 +396,11 @@ Self-review pass (rev 3 after Codex review of rev 2):
 - [x] Rev 3: no-compaction rule added — tombstone removed entries, never compact without explicit `atlas_version` migration.
 - [x] Rev 3: PRG smoke test scoped to per-block target-address slice, not whole `nes_item_chr_pt0_orig.bin`.
 - [x] Rev 3: atlas stores NES 2bpp source bytes; pixel-biased 4bpp expansion stays owned by the CHR-expansion pipeline.
+- [x] Rev 4: remnant DMA wording cleaned up. Pattern-block transfers consistently described as CPU/PPUDATA copy/transfer/load. Runtime byte transformation (bit-flip / mask) explicitly noted as transfer-time, not PRG mutation.
+- [x] Rev 4: scene-load 2-frame timing reframed as a measurement gate (Phase 1 measures, fallbacks documented: forced display-off multi-frame OR split deferred load). Renderer ABI does not assume frame count.
+- [x] Rev 4: `_Static_assert` portability handled. Phase 0 compiler-capability smoke test picks `_Static_assert` (C11) or C89 typedef-array fallback. `ATLAS_ASSERT_SIZE` macro contract unchanged either way.
 - [x] All sections internally consistent; no "TBD" / "TODO" in substance.
 
 ---
 
-End of design (rev 3).
+End of design (rev 4).
