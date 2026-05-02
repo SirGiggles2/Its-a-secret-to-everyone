@@ -58,6 +58,30 @@ if "%PYTHON%"=="" (
 )
 
 rem ---------------------------------------------------------------------------
+rem SGDK gates (debate 003, Rules SGDK-1/SGDK-2)
+rem
+rem   check_sgdk_pin.py        — SGDK submodule SHA must match tools/sgdk_pin.json
+rem   check_adapter_boundary.py — owned src/game/, src/frontend/ must not include
+rem                              SGDK public headers
+rem   check_raw_vdp.py          — owned src/game/, src/frontend/, src/zelda_translated/
+rem                              must not touch raw VDP registers
+rem
+rem   To intentionally bump the SGDK pin: pass --accept-sgdk-bump and update
+rem   tools/sgdk_pin.json + docs/sgdk_audit.md in the same commit.
+rem ---------------------------------------------------------------------------
+echo [SGDK gate] check_sgdk_pin.py
+"%PYTHON%" "%ROOT%\tools\check_sgdk_pin.py" %SGDK_PIN_ARGS%
+if errorlevel 1 exit /b 1
+
+echo [SGDK gate] check_adapter_boundary.py
+"%PYTHON%" "%ROOT%\tools\check_adapter_boundary.py"
+if errorlevel 1 exit /b 1
+
+echo [SGDK gate] check_raw_vdp.py
+"%PYTHON%" "%ROOT%\tools\check_raw_vdp.py"
+if errorlevel 1 exit /b 1
+
+rem ---------------------------------------------------------------------------
 rem Locate vasmm68k_mot
 rem ---------------------------------------------------------------------------
 if exist "%ROOT%\build\toolchain\vasmm68k_mot.exe"                          set "VASM=%ROOT%\build\toolchain\vasmm68k_mot.exe"

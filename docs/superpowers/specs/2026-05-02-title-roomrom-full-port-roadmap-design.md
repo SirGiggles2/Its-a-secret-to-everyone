@@ -133,6 +133,7 @@ Primary source ownership:
 13. Promotion is incremental: each subsystem evaluates the Phase 12 promotion gate as soon as its phase closes; late bulk promotion is forbidden.
 14. Worktree merge protocol (`docs/audit/worktree_merge_protocol.md`) governs all cross-worktree edits. Memory rule `feedback_check_worktree_first` is hard.
 15. Regression matrix (`tools/run_regression_matrix.py`) must be green before any phase-close commit.
+16. Genesis hardware is accessed through `src/sgdk_adapter/` only. SGDK is a vendored runtime dependency at SHA `ef9292c0` (v2.11), pinned in `tools/sgdk_pin.json`; reasoning in `docs/sgdk_audit.md`. Adapter signatures are hybrid: NES-semantic primitives (audio APU regs, OAM, palette, joypad latch) where NES parity is spec; thin SGDK wrappers (sprite engine, DMA queue, scroll, tile cache) where Genesis-native is impl. Audio defaults to in-tree custom driver per `docs/audio_migration_trigger.md`. Phase 12 promotion checks both `<genesis.h>` includes and raw VDP literals (per-directory matrix in `tools/check_adapter_boundary.py` and `tools/check_raw_vdp.py`). Phase 17 reproducibility builds refuse SGDK SHA drift via `tools/check_sgdk_pin.py`. Master plan Rules SGDK-1 through SGDK-5 are binding.
 
 ## Immediate Roadmap From Current State
 
