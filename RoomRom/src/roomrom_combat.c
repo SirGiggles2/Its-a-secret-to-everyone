@@ -1,5 +1,7 @@
+#include <genesis.h>
 #include "roomrom_combat.h"
 #include "roomrom_sprites.h"
+#include "roomrom_bg_palette.h"
 
 /* RoomRom S7 v4 combat — sword swing.
  *
@@ -67,10 +69,14 @@ static link_face_t    s_face     = LINK_FACE_DOWN;
 #define BEAM_BOUND_Y_MIN     ((short)(-16))
 #define BEAM_BOUND_Y_MAX     ((short)240)
 
-static unsigned char  s_beam_active   = 0u;
-static link_face_t    s_beam_face     = LINK_FACE_DOWN;
-static short          s_beam_x        = 0;
-static short          s_beam_y        = 0;
+static unsigned char  s_beam_active        = 0u;
+static link_face_t    s_beam_face          = LINK_FACE_DOWN;
+static short          s_beam_x             = 0;
+static short          s_beam_y             = 0;
+/* NES color flash counter. Cycles 0..3, indexes which sprite sub-palette
+ * the beam renders with this frame (Z_07.asm:3459 ATTR = base |
+ * (FrameCounter & 3)). */
+static unsigned char  s_beam_palette_phase = 0u;
 
 /* Y bias applied to sword + beam to match NES Z_07.asm:3320 — in OW
  * (CurLevel == 0), Link is drawn 2 px DOWN from ObjY (INC $01 twice),
@@ -281,6 +287,20 @@ static void update_beam(void)
         return;
     }
 
+    /* NES color flash: each frame, swap the 4 sprite-palette colors
+     * the beam renders with. PAL2[0..3] gets sprite sub-palette N
+     * where N = (frame & 3). Reproduces Z_07.asm:3459's
+     *   ATTR = base | (FrameCounter & 3)
+     * on Genesis (sprite palette index isn't a single attr bit on
+     * Genesis — bank-switch via CRAM rewrite instead). */
+    {
+        const unsigned short *subpal = roomrom_bg_palette_get_sprite_subpal_cram(
+            s_beam_palette_phase);
+        if (subpal != (const unsigned short *)0) {
+            PAL_setColors(2u * 16u, subpal, 4u, CPU);
+        }
+        s_beam_palette_phase = (unsigned char)((s_beam_palette_phase + 1u) & 0x3u);
+    }
     roomrom_sprites_set_beam(s_beam_x, s_beam_y, s_beam_face);
 }
 
@@ -292,10 +312,11 @@ static void update_beam(void)
 static void spawn_beam(short link_x, short link_y)
 {
     unsigned char face_idx = (unsigned char)s_face;
-    s_beam_face   = s_face;
-    s_beam_x      = (short)(link_x + beam_spawn_x[face_idx]);
-    s_beam_y      = (short)(link_y + beam_spawn_y[face_idx] + s_uw_y_bias);
-    s_beam_active = 1u;
+    s_beam_face          = s_face;
+    s_beam_x             = (short)(link_x + beam_spawn_x[face_idx]);
+    s_beam_y             = (short)(link_y + beam_spawn_y[face_idx] + s_uw_y_bias);
+    s_beam_palette_phase = 0u;
+    s_beam_active        = 1u;
 }
 
 void roomrom_combat_update(short link_x, short link_y, link_face_t face)

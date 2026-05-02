@@ -214,7 +214,7 @@ void roomrom_sprites_spawn_link(short x, short y)
                       (s16)-32,
                       (s16)-32,
                       SPRITE_SIZE(1, 1),
-                      TILE_ATTR_FULL(PAL1,0, 0, 0, SWORD_VERT_VRAM_TILE),
+                      TILE_ATTR_FULL(PAL2,0, 0, 0, SWORD_VERT_VRAM_TILE),
                       3);
     VDP_setSpriteFull(3,
                       (s16)-32,
@@ -330,12 +330,15 @@ void roomrom_sprites_set_beam(short x, short y, link_face_t face)
                                           ? 1u : 0u);
     unsigned char vflip = (unsigned char)((face == LINK_FACE_DOWN) ? 1u : 0u);
     unsigned char hflip = (unsigned char)((face == LINK_FACE_LEFT) ? 1u : 0u);
+    /* Beam uses PAL2 (dedicated flash bank). roomrom_combat update_beam
+     * rewrites PAL2[0..3] each frame with a different NES sprite sub-
+     * palette to imitate Z1's color flash (Z_07.asm:3459). */
     if (vertical) {
         VDP_setSpriteFull(2,
                           (s16)x,
                           (s16)y,
                           SPRITE_SIZE(1, 1),
-                          TILE_ATTR_FULL(PAL1,0, vflip, hflip,
+                          TILE_ATTR_FULL(PAL2,0, vflip, hflip,
                                          SWORD_VERT_VRAM_TILE),
                           3);
     } else {
@@ -343,7 +346,7 @@ void roomrom_sprites_set_beam(short x, short y, link_face_t face)
                           (s16)x,
                           (s16)y,
                           SPRITE_SIZE(2, 2),
-                          TILE_ATTR_FULL(PAL1,0, vflip, hflip,
+                          TILE_ATTR_FULL(PAL2,0, vflip, hflip,
                                          SWORD_HORZ_VRAM_TILE),
                           3);
     }
@@ -356,7 +359,7 @@ void roomrom_sprites_clear_beam(void)
                       (s16)-32,
                       (s16)-32,
                       SPRITE_SIZE(1, 1),
-                      TILE_ATTR_FULL(PAL1,0, 0, 0, SWORD_VERT_VRAM_TILE),
+                      TILE_ATTR_FULL(PAL2,0, 0, 0, SWORD_VERT_VRAM_TILE),
                       3);
     VDP_updateSprites(4, DMA);
 }
