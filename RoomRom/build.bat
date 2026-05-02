@@ -30,6 +30,16 @@ rem Change to project dir so .incbin "out/rom_head.bin" resolves correctly
 cd /d "%PROJ%"
 
 rem ---------------------------------------------------------------------------
+rem Step 0: NES-dispatch / item CHR manifest sanity check (non-blocking).
+rem Prints WARN lines for items whose manifest sprite_size disagrees with the
+rem Anim_WriteSpecificItemSprites dispatch path. Pass --strict via env to
+rem fail the build on mismatches once renderers are aligned.
+rem ---------------------------------------------------------------------------
+echo [0] Verifying item CHR manifest...
+python "%PROJ%\tools\verify_item_chr_manifest.py" %ROOMROM_VERIFY_FLAGS%
+if errorlevel 1 ( echo FAIL: item CHR manifest verify & exit /b 1 )
+
+rem ---------------------------------------------------------------------------
 rem Compiler flags (match makefile.gen release config)
 rem ---------------------------------------------------------------------------
 set "CFLAGS=-DSGDK_GCC -m68000 -Wall -Wno-main -Wno-unused-parameter -fno-builtin -ffunction-sections -fdata-sections -fms-extensions -Os -fomit-frame-pointer -B%TOOLBIN%\"
