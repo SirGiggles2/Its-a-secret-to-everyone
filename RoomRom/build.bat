@@ -30,13 +30,13 @@ rem Change to project dir so .incbin "out/rom_head.bin" resolves correctly
 cd /d "%PROJ%"
 
 rem ---------------------------------------------------------------------------
-rem Step 0: NES-dispatch / item CHR manifest sanity check (non-blocking).
-rem Prints WARN lines for items whose manifest sprite_size disagrees with the
-rem Anim_WriteSpecificItemSprites dispatch path. Pass --strict via env to
-rem fail the build on mismatches once renderers are aligned.
+rem Step 0: NES-dispatch / item CHR manifest sanity check (strict).
+rem All sprite_size divergences must be documented with sprite_size_override_reason
+rem in item_chr_manifest.json (atlas spec P6a). New items must reconcile with
+rem NES dispatch or add an override_reason before the build will pass.
 rem ---------------------------------------------------------------------------
-echo [0] Verifying item CHR manifest...
-python "%PROJ%\tools\verify_item_chr_manifest.py" %ROOMROM_VERIFY_FLAGS%
+echo [0] Verifying item CHR manifest (strict)...
+python "%PROJ%\tools\verify_item_chr_manifest.py" --strict
 if errorlevel 1 ( echo FAIL: item CHR manifest verify & exit /b 1 )
 
 echo [0] verify_slot_map...
