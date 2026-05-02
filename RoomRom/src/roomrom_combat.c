@@ -178,16 +178,19 @@ static const unsigned char redux_sprite[4][8] = {
     /* RIGHT */ { 0, 0, 2, 2, 2, 2, 1, 1 },
 };
 
-/* Genesis-side combined flip flags per frame.
- * NES uses (wide_sword_flip & $40) for sprite hflip and a separate
- * wide_sword_flip_h16 for swapping the wide-sprite halves. On Genesis,
- * a single hflip on the 16x16 sprite handles both, so combined hflip =
- * (NES_flip & $40 ? 1 : 0) XOR NES_flip_h16. */
+/* Genesis-side combined flip flags per frame. NES handles flips
+ * differently for narrow (vertical/diagonal) vs wide (horizontal):
+ *   - Narrow tile (in [$20,$62)): goes to Anim_WriteSpritePair directly.
+ *     wide_sword_flip_h16 is NOT applied. hflip = wide_sword_flip & $40.
+ *   - Wide tile (>= $7C): goes to Anim_WriteHorizontallyFlippableSpritePair
+ *     which toggles hflip when h16=1. Genesis hflip on 16x16 sprite
+ *     replicates this: hflip = (flip & $40 ? 1 : 0) XOR h16.
+ * Tables below pre-compute the per-frame hflip with this distinction. */
 static const unsigned char redux_hflip[4][8] = {
-    /* DOWN  */ { 1, 1, 1, 0, 0, 0, 1, 1 },
-    /* UP    */ { 0, 0, 1, 0, 0, 1, 0, 0 },
+    /* DOWN  */ { 1, 1, 0, 0, 0, 0, 1, 1 },
+    /* UP    */ { 0, 0, 1, 1, 1, 1, 0, 0 },
     /* LEFT  */ { 0, 0, 0, 0, 0, 1, 1, 1 },
-    /* RIGHT */ { 0, 0, 1, 0, 0, 1, 0, 0 },
+    /* RIGHT */ { 0, 0, 1, 1, 1, 1, 0, 0 },
 };
 
 static const unsigned char redux_vflip[4][8] = {
@@ -318,14 +321,24 @@ void roomrom_combat_update(short link_x, short link_y, link_face_t face)
     if (s_redux) {
         unsigned char fr = s_frame;
         unsigned char face_idx = (unsigned char)s_face;
+        unsigned char sprite_type;
+        short narrow_x_shift;
         if (fr >= REDUX_TOTAL_FRAMES) fr = (unsigned char)(REDUX_TOTAL_FRAMES - 1u);
 
         roomrom_sprites_set_link_attack_pose(link_x, link_y, s_face);
 
-        sx = (short)(link_x + redux_x[face_idx][fr]);
+        sprite_type = redux_sprite[face_idx][fr];
+        /* NES @Narrow path adds +4 to X to center the half-width sprite
+         * within its 16x16 bounding box (Z_01.asm:5289). Applies to
+         * vertical (sprite type 0) and diagonal (type 2). Wide
+         * horizontal (type 1) is not centered — its 2 sprites already
+         * span the full 16-pixel width. */
+        narrow_x_shift = (sprite_type == 1u) ? (short)0 : (short)4;
+
+        sx = (short)(link_x + redux_x[face_idx][fr] + narrow_x_shift);
         sy = (short)(link_y + redux_y[face_idx][fr] + s_uw_y_bias);
 
-        switch (redux_sprite[face_idx][fr]) {
+        switch (sprite_type) {
         case 0:
             roomrom_sprites_set_sword_vertical(sx, sy, redux_vflip[face_idx][fr]);
             break;

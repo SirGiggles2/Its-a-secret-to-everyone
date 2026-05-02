@@ -281,8 +281,9 @@ void roomrom_sprites_clear_sword(void)
     VDP_updateSprites(3, DMA);
 }
 
-/* Redux ALttP-style diagonal sword (16x16). Used in arc swing frames 2-5
- * where the blade rotates between horizontal and vertical orientations. */
+/* Redux ALttP-style diagonal sword. Per NES Anim_WriteItemSprites,
+ * tiles in [$20,$62) take the @Narrow path which draws ONE 8x16 sprite
+ * (not 16x16). Tile $48 + auto-paired $49 only. */
 void roomrom_sprites_set_sword_diagonal(short x, short y,
                                         unsigned char hflip,
                                         unsigned char vflip)
@@ -290,7 +291,7 @@ void roomrom_sprites_set_sword_diagonal(short x, short y,
     VDP_setSpriteFull(1,
                       (s16)x,
                       (s16)y,
-                      SPRITE_SIZE(2, 2),
+                      SPRITE_SIZE(1, 2),
                       TILE_ATTR_FULL(PAL1,0, vflip, hflip, SWORD_DIAG_VRAM_TILE),
                       2);
     VDP_updateSprites(3, DMA);
