@@ -80,9 +80,20 @@ Pattern established: typed struct + inline accessors layered ON TOP of the exist
 1. **Phase 1.5 input scripts** for 5 cold-boot-feasible scenarios — write Lua autodriver per scenario, run against actual BizHawk, populate `build/generated/nes_reference/8f72dc2e/<scenario>/`. Pattern proven once, applies to others as they get save states.
 2. **Phase 5 typed prep** — `room_state.h` + `collision_state.h` (room has 50+ macros; collision is empty placeholder).
 3. **Phase 7 enemy_state semantic resolution** — 134 in-scope when scope=enemy. Includes the OBJ(0x0412) within-header alias (PUSH_TIMER vs FLYER_SPEED_FRAC for different enemy types). Likely needs union or tagged-state decision per enemy class.
-4. **scratch_state.h** — owns NES zero-page $0000-$001F. Subsystem TMP* macros become aliases of the canonical names. Resolves the cross-subsystem ~30-50 collisions in one move.
+4. **scratch_state.h** — owns NES zero-page $0000-$001F. Subsystem TMP* macros become aliases of the canonical names. Resolves the cross-subsystem ~30-50 collisions in one move. Design sketch:
+   ```c
+   /* src/state/scratch_state.h */
+   #include "platform_abi.h"
+   #define ZP_TMP0    RAM(0x0000)   /* NES zero-page scratch byte 0 */
+   #define ZP_TMP1    RAM(0x0001)
+   /* ... ZP_TMP2..ZP_TMPF ... */
+   #define ZP_RNG_A   RAM(0x0019)   /* NES Z_Rand seed A */
+   #define ZP_RNG_B   RAM(0x001A)   /* NES Z_Rand seed B */
+   ```
+   Then in each subsystem header, replace `#define CAVE_TMP0 RAM(0x0000)` with `#define CAVE_TMP0 ZP_TMP0` (alias chain preserves runtime semantics; verifier scans `#define X RAM(literal)` only, so aliases drop out of collision count). Touches 6 subsystem headers (cave, combat, enemy, world, targeting, frontend, item, progress, room). Each consumer compiles unchanged because alias chain resolves to identical lvalue.
 5. **Phase 2 promotion** — wire `VramMapState` and `PaletteState` consumers from RoomRom modules as they get touched. Eventually deprecates the `ROOMROM_*_TILE_BASE_PAL` macros.
 6. **Audit doc**: confirm Task 2.3 master plan checkboxes against reality (verify_vram_budget exists + wired).
+7. **Master plan checkbox sync** — many `[ ]` items are actually `[x]` (Task 2.3 verify_vram_budget, Task 2.0 audit script, debate 003 SGDK guardrails). User-driven decision: mark complete or leave for incremental phase-close cadence.
 
 ## Pre-existing dirty tree
 
