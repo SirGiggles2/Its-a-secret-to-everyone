@@ -1,0 +1,1390 @@
+{
+  "schema_version": 1,
+  "generator": "RoomRom/tools/walk_z1_disasm.py",
+  "source": [
+    "reference/aldonunez/Z_07.asm",
+    "reference/aldonunez/Z_01.asm"
+  ],
+  "notes": [
+    "UpdateObject_JumpTable: Z_07.asm:5295-5401 (107 entries)",
+    "ObjAnimations: Z_01.asm:4884 (121-byte index table)",
+    "ObjAnimFrameHeap: Z_01.asm:4902 (200-byte tile ID heap)",
+    "Tile pair: left=ObjAnimFrameHeap[ObjAnimations[obj_type+1]], right=left+2",
+    "chr_bank: level_conditional (dungeon sprite banks per Z_03.asm PatternBlock* INCBINs)",
+    "frame_count: up to 4 walk frames derived from heap; 0xFF or table boundary terminates"
+  ],
+  "enemies": [
+    {
+      "name": "lynel_red",
+      "category": "enemies",
+      "obj_type_index": "0x01",
+      "update_routine": "UpdateLynel",
+      "nes_tile_ids": [
+        "0xCE",
+        "0xD0",
+        "0xD2",
+        "0xD4",
+        "0xD6",
+        "0xD8",
+        "0xDA",
+        "0xDC"
+      ],
+      "dispatch_class": "Wide_Flippable",
+      "frame_count": 4,
+      "chr_bank": "level_conditional",
+      "disasm_citation": {
+        "file": "Z_07.asm",
+        "line": 5297,
+        "label": "UpdateObject_JumpTable[0x01]",
+        "anim_source": {
+          "file": "Z_01.asm",
+          "label": "ObjAnimations",
+          "line": 4884,
+          "anim_index": "0x02",
+          "heap_label": "ObjAnimFrameHeap",
+          "heap_line": 4902
+        }
+      }
+    },
+    {
+      "name": "lynel_blue",
+      "category": "enemies",
+      "obj_type_index": "0x02",
+      "update_routine": "UpdateLynel",
+      "nes_tile_ids": [
+        "0xCE",
+        "0xD0",
+        "0xD2",
+        "0xD4",
+        "0xD6",
+        "0xD8",
+        "0xDA",
+        "0xDC"
+      ],
+      "dispatch_class": "Wide_Flippable",
+      "frame_count": 4,
+      "chr_bank": "level_conditional",
+      "disasm_citation": {
+        "file": "Z_07.asm",
+        "line": 5298,
+        "label": "UpdateObject_JumpTable[0x02]",
+        "anim_source": {
+          "file": "Z_01.asm",
+          "label": "ObjAnimations",
+          "line": 4884,
+          "anim_index": "0x03",
+          "heap_label": "ObjAnimFrameHeap",
+          "heap_line": 4902
+        }
+      }
+    },
+    {
+      "name": "moblin_red",
+      "category": "enemies",
+      "obj_type_index": "0x03",
+      "update_routine": "UpdateMoblin",
+      "nes_tile_ids": [
+        "0xF0",
+        "0xF2",
+        "0xF4",
+        "0xF6",
+        "0xF8",
+        "0xFA",
+        "0xFC",
+        "0xFE"
+      ],
+      "dispatch_class": "Wide_Flippable",
+      "frame_count": 4,
+      "chr_bank": "level_conditional",
+      "disasm_citation": {
+        "file": "Z_07.asm",
+        "line": 5299,
+        "label": "UpdateObject_JumpTable[0x03]",
+        "anim_source": {
+          "file": "Z_01.asm",
+          "label": "ObjAnimations",
+          "line": 4884,
+          "anim_index": "0x04",
+          "heap_label": "ObjAnimFrameHeap",
+          "heap_line": 4902
+        }
+      }
+    },
+    {
+      "name": "moblin_blue",
+      "category": "enemies",
+      "obj_type_index": "0x04",
+      "update_routine": "UpdateMoblin",
+      "nes_tile_ids": [
+        "0xF0",
+        "0xF2",
+        "0xF4",
+        "0xF6",
+        "0xF8",
+        "0xFA",
+        "0xFC",
+        "0xFE"
+      ],
+      "dispatch_class": "Wide_Flippable",
+      "frame_count": 4,
+      "chr_bank": "level_conditional",
+      "disasm_citation": {
+        "file": "Z_07.asm",
+        "line": 5300,
+        "label": "UpdateObject_JumpTable[0x04]",
+        "anim_source": {
+          "file": "Z_01.asm",
+          "label": "ObjAnimations",
+          "line": 4884,
+          "anim_index": "0x05",
+          "heap_label": "ObjAnimFrameHeap",
+          "heap_line": 4902
+        }
+      }
+    },
+    {
+      "name": "goriya_red",
+      "category": "enemies",
+      "obj_type_index": "0x05",
+      "update_routine": "UpdateGoriya",
+      "nes_tile_ids": [
+        "0xB8",
+        "0xBA",
+        "0xBC",
+        "0xBE",
+        "0xB0",
+        "0xB2",
+        "0xB4",
+        "0xB6"
+      ],
+      "dispatch_class": "Wide_Flippable",
+      "frame_count": 4,
+      "chr_bank": "level_conditional",
+      "disasm_citation": {
+        "file": "Z_07.asm",
+        "line": 5301,
+        "label": "UpdateObject_JumpTable[0x05]",
+        "anim_source": {
+          "file": "Z_01.asm",
+          "label": "ObjAnimations",
+          "line": 4884,
+          "anim_index": "0x06",
+          "heap_label": "ObjAnimFrameHeap",
+          "heap_line": 4902
+        }
+      }
+    },
+    {
+      "name": "goriya_blue",
+      "category": "enemies",
+      "obj_type_index": "0x06",
+      "update_routine": "UpdateGoriya",
+      "nes_tile_ids": [
+        "0xB8",
+        "0xBA",
+        "0xBC",
+        "0xBE",
+        "0xB0",
+        "0xB2",
+        "0xB4",
+        "0xB6"
+      ],
+      "dispatch_class": "Wide_Flippable",
+      "frame_count": 4,
+      "chr_bank": "level_conditional",
+      "disasm_citation": {
+        "file": "Z_07.asm",
+        "line": 5302,
+        "label": "UpdateObject_JumpTable[0x06]",
+        "anim_source": {
+          "file": "Z_01.asm",
+          "label": "ObjAnimations",
+          "line": 4884,
+          "anim_index": "0x07",
+          "heap_label": "ObjAnimFrameHeap",
+          "heap_line": 4902
+        }
+      }
+    },
+    {
+      "name": "octorok_slow_red",
+      "category": "enemies",
+      "obj_type_index": "0x07",
+      "update_routine": "UpdateOctorock",
+      "nes_tile_ids": [
+        "0xB4",
+        "0xB6",
+        "0xB0",
+        "0xB2",
+        "0xB0",
+        "0xB2",
+        "0xB8",
+        "0xBA"
+      ],
+      "dispatch_class": "Wide_Flippable",
+      "frame_count": 4,
+      "chr_bank": "level_conditional",
+      "disasm_citation": {
+        "file": "Z_07.asm",
+        "line": 5303,
+        "label": "UpdateObject_JumpTable[0x07]",
+        "anim_source": {
+          "file": "Z_01.asm",
+          "label": "ObjAnimations",
+          "line": 4884,
+          "anim_index": "0x08",
+          "heap_label": "ObjAnimFrameHeap",
+          "heap_line": 4902
+        }
+      }
+    },
+    {
+      "name": "octorok_fast_red",
+      "category": "enemies",
+      "obj_type_index": "0x08",
+      "update_routine": "UpdateOctorock",
+      "nes_tile_ids": [
+        "0xB4",
+        "0xB6",
+        "0xB0",
+        "0xB2",
+        "0xB0",
+        "0xB2",
+        "0xB8",
+        "0xBA"
+      ],
+      "dispatch_class": "Wide_Flippable",
+      "frame_count": 4,
+      "chr_bank": "level_conditional",
+      "disasm_citation": {
+        "file": "Z_07.asm",
+        "line": 5304,
+        "label": "UpdateObject_JumpTable[0x08]",
+        "anim_source": {
+          "file": "Z_01.asm",
+          "label": "ObjAnimations",
+          "line": 4884,
+          "anim_index": "0x09",
+          "heap_label": "ObjAnimFrameHeap",
+          "heap_line": 4902
+        }
+      }
+    },
+    {
+      "name": "octorok_slow_blue",
+      "category": "enemies",
+      "obj_type_index": "0x09",
+      "update_routine": "UpdateOctorock",
+      "nes_tile_ids": [
+        "0xB4",
+        "0xB6",
+        "0xB0",
+        "0xB2",
+        "0xB0",
+        "0xB2",
+        "0xB8",
+        "0xBA"
+      ],
+      "dispatch_class": "Wide_Flippable",
+      "frame_count": 4,
+      "chr_bank": "level_conditional",
+      "disasm_citation": {
+        "file": "Z_07.asm",
+        "line": 5305,
+        "label": "UpdateObject_JumpTable[0x09]",
+        "anim_source": {
+          "file": "Z_01.asm",
+          "label": "ObjAnimations",
+          "line": 4884,
+          "anim_index": "0x0A",
+          "heap_label": "ObjAnimFrameHeap",
+          "heap_line": 4902
+        }
+      }
+    },
+    {
+      "name": "octorok_fast_blue",
+      "category": "enemies",
+      "obj_type_index": "0x0A",
+      "update_routine": "UpdateOctorock",
+      "nes_tile_ids": [
+        "0xB4",
+        "0xB6",
+        "0xB0",
+        "0xB2",
+        "0xB0",
+        "0xB2",
+        "0xB8",
+        "0xBA"
+      ],
+      "dispatch_class": "Wide_Flippable",
+      "frame_count": 4,
+      "chr_bank": "level_conditional",
+      "disasm_citation": {
+        "file": "Z_07.asm",
+        "line": 5306,
+        "label": "UpdateObject_JumpTable[0x0A]",
+        "anim_source": {
+          "file": "Z_01.asm",
+          "label": "ObjAnimations",
+          "line": 4884,
+          "anim_index": "0x0B",
+          "heap_label": "ObjAnimFrameHeap",
+          "heap_line": 4902
+        }
+      }
+    },
+    {
+      "name": "darknut_red",
+      "category": "enemies",
+      "obj_type_index": "0x0B",
+      "update_routine": "UpdateDarknut",
+      "nes_tile_ids": [
+        "0xB8",
+        "0xBA",
+        "0xAC",
+        "0xAE",
+        "0xB4",
+        "0xB6",
+        "0xBC",
+        "0xBE"
+      ],
+      "dispatch_class": "Wide_Flippable",
+      "frame_count": 4,
+      "chr_bank": "level_conditional",
+      "disasm_citation": {
+        "file": "Z_07.asm",
+        "line": 5307,
+        "label": "UpdateObject_JumpTable[0x0B]",
+        "anim_source": {
+          "file": "Z_01.asm",
+          "label": "ObjAnimations",
+          "line": 4884,
+          "anim_index": "0x0C",
+          "heap_label": "ObjAnimFrameHeap",
+          "heap_line": 4902
+        }
+      }
+    },
+    {
+      "name": "darknut_blue",
+      "category": "enemies",
+      "obj_type_index": "0x0C",
+      "update_routine": "UpdateDarknut",
+      "nes_tile_ids": [
+        "0xB8",
+        "0xBA",
+        "0xAC",
+        "0xAE",
+        "0xB4",
+        "0xB6",
+        "0xBC",
+        "0xBE"
+      ],
+      "dispatch_class": "Wide_Flippable",
+      "frame_count": 4,
+      "chr_bank": "level_conditional",
+      "disasm_citation": {
+        "file": "Z_07.asm",
+        "line": 5308,
+        "label": "UpdateObject_JumpTable[0x0C]",
+        "anim_source": {
+          "file": "Z_01.asm",
+          "label": "ObjAnimations",
+          "line": 4884,
+          "anim_index": "0x0D",
+          "heap_label": "ObjAnimFrameHeap",
+          "heap_line": 4902
+        }
+      }
+    },
+    {
+      "name": "tektite_red",
+      "category": "enemies",
+      "obj_type_index": "0x0D",
+      "update_routine": "UpdateTektiteOrBoulder",
+      "nes_tile_ids": [
+        "0xCA",
+        "0xCC",
+        "0xCC",
+        "0xCE",
+        "0xCA",
+        "0xCC",
+        "0xCC",
+        "0xCE"
+      ],
+      "dispatch_class": "Wide_Flippable",
+      "frame_count": 4,
+      "chr_bank": "level_conditional",
+      "disasm_citation": {
+        "file": "Z_07.asm",
+        "line": 5309,
+        "label": "UpdateObject_JumpTable[0x0D]",
+        "anim_source": {
+          "file": "Z_01.asm",
+          "label": "ObjAnimations",
+          "line": 4884,
+          "anim_index": "0x0E",
+          "heap_label": "ObjAnimFrameHeap",
+          "heap_line": 4902
+        }
+      }
+    },
+    {
+      "name": "tektite_blue",
+      "category": "enemies",
+      "obj_type_index": "0x0E",
+      "update_routine": "UpdateTektiteOrBoulder",
+      "nes_tile_ids": [
+        "0xCA",
+        "0xCC",
+        "0xCC",
+        "0xCE",
+        "0xBC",
+        "0xBE",
+        "0xBE",
+        "0xC0"
+      ],
+      "dispatch_class": "Wide_Flippable",
+      "frame_count": 4,
+      "chr_bank": "level_conditional",
+      "disasm_citation": {
+        "file": "Z_07.asm",
+        "line": 5310,
+        "label": "UpdateObject_JumpTable[0x0E]",
+        "anim_source": {
+          "file": "Z_01.asm",
+          "label": "ObjAnimations",
+          "line": 4884,
+          "anim_index": "0x0F",
+          "heap_label": "ObjAnimFrameHeap",
+          "heap_line": 4902
+        }
+      }
+    },
+    {
+      "name": "leever_blue",
+      "category": "enemies",
+      "obj_type_index": "0x0F",
+      "update_routine": "UpdateBlueLeever",
+      "nes_tile_ids": [
+        "0xBC",
+        "0xBE",
+        "0xBE",
+        "0xC0",
+        "0xC0",
+        "0xC2",
+        "0xC0",
+        "0xC2"
+      ],
+      "dispatch_class": "Wide_Flippable",
+      "frame_count": 4,
+      "chr_bank": "level_conditional",
+      "disasm_citation": {
+        "file": "Z_07.asm",
+        "line": 5311,
+        "label": "UpdateObject_JumpTable[0x0F]",
+        "anim_source": {
+          "file": "Z_01.asm",
+          "label": "ObjAnimations",
+          "line": 4884,
+          "anim_index": "0x10",
+          "heap_label": "ObjAnimFrameHeap",
+          "heap_line": 4902
+        }
+      }
+    },
+    {
+      "name": "leever_red",
+      "category": "enemies",
+      "obj_type_index": "0x10",
+      "update_routine": "UpdateRedLeever",
+      "nes_tile_ids": [
+        "0xBC",
+        "0xBE",
+        "0xBE",
+        "0xC0",
+        "0xC0",
+        "0xC2",
+        "0xC0",
+        "0xC2"
+      ],
+      "dispatch_class": "Wide_Flippable",
+      "frame_count": 4,
+      "chr_bank": "level_conditional",
+      "disasm_citation": {
+        "file": "Z_07.asm",
+        "line": 5312,
+        "label": "UpdateObject_JumpTable[0x10]",
+        "anim_source": {
+          "file": "Z_01.asm",
+          "label": "ObjAnimations",
+          "line": 4884,
+          "anim_index": "0x11",
+          "heap_label": "ObjAnimFrameHeap",
+          "heap_line": 4902
+        }
+      }
+    },
+    {
+      "name": "zora",
+      "category": "enemies",
+      "obj_type_index": "0x11",
+      "update_routine": "UpdateZora",
+      "nes_tile_ids": [
+        "0xBC",
+        "0xBE",
+        "0xBE",
+        "0xC0",
+        "0xEC",
+        "0xEE",
+        "0xEE",
+        "0xF0"
+      ],
+      "dispatch_class": "Wide_Flippable",
+      "frame_count": 4,
+      "chr_bank": "level_conditional",
+      "disasm_citation": {
+        "file": "Z_07.asm",
+        "line": 5313,
+        "label": "UpdateObject_JumpTable[0x11]",
+        "anim_source": {
+          "file": "Z_01.asm",
+          "label": "ObjAnimations",
+          "line": 4884,
+          "anim_index": "0x12",
+          "heap_label": "ObjAnimFrameHeap",
+          "heap_line": 4902
+        }
+      }
+    },
+    {
+      "name": "vire",
+      "category": "enemies",
+      "obj_type_index": "0x12",
+      "update_routine": "UpdateVire",
+      "nes_tile_ids": [
+        "0xAC",
+        "0xAE",
+        "0xAE",
+        "0xB0",
+        "0xB0",
+        "0xB2",
+        "0xB2",
+        "0xB4"
+      ],
+      "dispatch_class": "Wide_Flippable",
+      "frame_count": 4,
+      "chr_bank": "level_conditional",
+      "disasm_citation": {
+        "file": "Z_07.asm",
+        "line": 5314,
+        "label": "UpdateObject_JumpTable[0x12]",
+        "anim_source": {
+          "file": "Z_01.asm",
+          "label": "ObjAnimations",
+          "line": 4884,
+          "anim_index": "0x13",
+          "heap_label": "ObjAnimFrameHeap",
+          "heap_line": 4902
+        }
+      }
+    },
+    {
+      "name": "zol",
+      "category": "enemies",
+      "obj_type_index": "0x13",
+      "update_routine": "UpdateZol",
+      "nes_tile_ids": [
+        "0xA8",
+        "0xAA",
+        "0xAA",
+        "0xAC",
+        "0x92",
+        "0x94",
+        "0x94",
+        "0x96"
+      ],
+      "dispatch_class": "Wide_Flippable",
+      "frame_count": 4,
+      "chr_bank": "level_conditional",
+      "disasm_citation": {
+        "file": "Z_07.asm",
+        "line": 5315,
+        "label": "UpdateObject_JumpTable[0x13]",
+        "anim_source": {
+          "file": "Z_01.asm",
+          "label": "ObjAnimations",
+          "line": 4884,
+          "anim_index": "0x14",
+          "heap_label": "ObjAnimFrameHeap",
+          "heap_line": 4902
+        }
+      }
+    },
+    {
+      "name": "gel_0",
+      "category": "enemies",
+      "obj_type_index": "0x14",
+      "update_routine": "UpdateGel",
+      "nes_tile_ids": [
+        "0x92",
+        "0x94",
+        "0x94",
+        "0x96",
+        "0xA0",
+        "0xA2",
+        "0xA2",
+        "0xA4"
+      ],
+      "dispatch_class": "Wide_Flippable",
+      "frame_count": 4,
+      "chr_bank": "level_conditional",
+      "disasm_citation": {
+        "file": "Z_07.asm",
+        "line": 5316,
+        "label": "UpdateObject_JumpTable[0x14]",
+        "anim_source": {
+          "file": "Z_01.asm",
+          "label": "ObjAnimations",
+          "line": 4884,
+          "anim_index": "0x15",
+          "heap_label": "ObjAnimFrameHeap",
+          "heap_line": 4902
+        }
+      }
+    },
+    {
+      "name": "gel_1",
+      "category": "enemies",
+      "obj_type_index": "0x15",
+      "update_routine": "UpdateGel",
+      "nes_tile_ids": [
+        "0x92",
+        "0x94",
+        "0x94",
+        "0x96",
+        "0xA0",
+        "0xA2",
+        "0xA2",
+        "0xA4"
+      ],
+      "dispatch_class": "Wide_Flippable",
+      "frame_count": 4,
+      "chr_bank": "level_conditional",
+      "disasm_citation": {
+        "file": "Z_07.asm",
+        "line": 5317,
+        "label": "UpdateObject_JumpTable[0x15]",
+        "anim_source": {
+          "file": "Z_01.asm",
+          "label": "ObjAnimations",
+          "line": 4884,
+          "anim_index": "0x16",
+          "heap_label": "ObjAnimFrameHeap",
+          "heap_line": 4902
+        }
+      }
+    },
+    {
+      "name": "pols_voice",
+      "category": "enemies",
+      "obj_type_index": "0x16",
+      "update_routine": "UpdatePolsVoice",
+      "nes_tile_ids": [
+        "0xA0",
+        "0xA2",
+        "0xA2",
+        "0xA4",
+        "0xA6",
+        "0xA8",
+        "0xA4",
+        "0xA6"
+      ],
+      "dispatch_class": "Wide_Flippable",
+      "frame_count": 4,
+      "chr_bank": "level_conditional",
+      "disasm_citation": {
+        "file": "Z_07.asm",
+        "line": 5318,
+        "label": "UpdateObject_JumpTable[0x16]",
+        "anim_source": {
+          "file": "Z_01.asm",
+          "label": "ObjAnimations",
+          "line": 4884,
+          "anim_index": "0x17",
+          "heap_label": "ObjAnimFrameHeap",
+          "heap_line": 4902
+        }
+      }
+    },
+    {
+      "name": "like_like",
+      "category": "enemies",
+      "obj_type_index": "0x17",
+      "update_routine": "UpdateLikeLike",
+      "nes_tile_ids": [
+        "0xA6",
+        "0xA8",
+        "0xA4",
+        "0xA6",
+        "0xA2",
+        "0xA4",
+        "0xA4",
+        "0xA6"
+      ],
+      "dispatch_class": "Wide_Flippable",
+      "frame_count": 4,
+      "chr_bank": "level_conditional",
+      "disasm_citation": {
+        "file": "Z_07.asm",
+        "line": 5319,
+        "label": "UpdateObject_JumpTable[0x17]",
+        "anim_source": {
+          "file": "Z_01.asm",
+          "label": "ObjAnimations",
+          "line": 4884,
+          "anim_index": "0x18",
+          "heap_label": "ObjAnimFrameHeap",
+          "heap_line": 4902
+        }
+      }
+    },
+    {
+      "name": "peahat",
+      "category": "enemies",
+      "obj_type_index": "0x1A",
+      "update_routine": "UpdatePeahat",
+      "nes_tile_ids": [
+        "0xC6",
+        "0xC8",
+        "0xC8",
+        "0xCA",
+        "0xA0",
+        "0xA2",
+        "0xA8",
+        "0xAA"
+      ],
+      "dispatch_class": "Wide_Flippable",
+      "frame_count": 4,
+      "chr_bank": "level_conditional",
+      "disasm_citation": {
+        "file": "Z_07.asm",
+        "line": 5322,
+        "label": "UpdateObject_JumpTable[0x1A]",
+        "anim_source": {
+          "file": "Z_01.asm",
+          "label": "ObjAnimations",
+          "line": 4884,
+          "anim_index": "0x1B",
+          "heap_label": "ObjAnimFrameHeap",
+          "heap_line": 4902
+        }
+      }
+    },
+    {
+      "name": "keese_blue",
+      "category": "enemies",
+      "obj_type_index": "0x1B",
+      "update_routine": "UpdateKeese",
+      "nes_tile_ids": [
+        "0x9A",
+        "0x9C",
+        "0x9C",
+        "0x9E",
+        "0x9A",
+        "0x9C",
+        "0x9C",
+        "0x9E"
+      ],
+      "dispatch_class": "Wide_Flippable",
+      "frame_count": 4,
+      "chr_bank": "level_conditional",
+      "disasm_citation": {
+        "file": "Z_07.asm",
+        "line": 5323,
+        "label": "UpdateObject_JumpTable[0x1B]",
+        "anim_source": {
+          "file": "Z_01.asm",
+          "label": "ObjAnimations",
+          "line": 4884,
+          "anim_index": "0x1C",
+          "heap_label": "ObjAnimFrameHeap",
+          "heap_line": 4902
+        }
+      }
+    },
+    {
+      "name": "keese_red",
+      "category": "enemies",
+      "obj_type_index": "0x1C",
+      "update_routine": "UpdateKeese",
+      "nes_tile_ids": [
+        "0x9A",
+        "0x9C",
+        "0x9C",
+        "0x9E",
+        "0x9A",
+        "0x9C",
+        "0x9C",
+        "0x9E"
+      ],
+      "dispatch_class": "Wide_Flippable",
+      "frame_count": 4,
+      "chr_bank": "level_conditional",
+      "disasm_citation": {
+        "file": "Z_07.asm",
+        "line": 5324,
+        "label": "UpdateObject_JumpTable[0x1C]",
+        "anim_source": {
+          "file": "Z_01.asm",
+          "label": "ObjAnimations",
+          "line": 4884,
+          "anim_index": "0x1D",
+          "heap_label": "ObjAnimFrameHeap",
+          "heap_line": 4902
+        }
+      }
+    },
+    {
+      "name": "keese_black",
+      "category": "enemies",
+      "obj_type_index": "0x1D",
+      "update_routine": "UpdateKeese",
+      "nes_tile_ids": [
+        "0x9A",
+        "0x9C",
+        "0x9C",
+        "0x9E",
+        "0xB4",
+        "0xB6",
+        "0xB8",
+        "0xBA"
+      ],
+      "dispatch_class": "Wide_Flippable",
+      "frame_count": 4,
+      "chr_bank": "level_conditional",
+      "disasm_citation": {
+        "file": "Z_07.asm",
+        "line": 5325,
+        "label": "UpdateObject_JumpTable[0x1D]",
+        "anim_source": {
+          "file": "Z_01.asm",
+          "label": "ObjAnimations",
+          "line": 4884,
+          "anim_index": "0x1E",
+          "heap_label": "ObjAnimFrameHeap",
+          "heap_line": 4902
+        }
+      }
+    },
+    {
+      "name": "armos",
+      "category": "enemies",
+      "obj_type_index": "0x1E",
+      "update_routine": "UpdateArmos",
+      "nes_tile_ids": [
+        "0xA0",
+        "0xA2",
+        "0xA8",
+        "0xAA",
+        "0xA4",
+        "0xA6",
+        "0xAC",
+        "0xAE"
+      ],
+      "dispatch_class": "Wide_Flippable",
+      "frame_count": 4,
+      "chr_bank": "level_conditional",
+      "disasm_citation": {
+        "file": "Z_07.asm",
+        "line": 5326,
+        "label": "UpdateObject_JumpTable[0x1E]",
+        "anim_source": {
+          "file": "Z_01.asm",
+          "label": "ObjAnimations",
+          "line": 4884,
+          "anim_index": "0x1F",
+          "heap_label": "ObjAnimFrameHeap",
+          "heap_line": 4902
+        }
+      }
+    },
+    {
+      "name": "boulder_set",
+      "category": "enemies",
+      "obj_type_index": "0x1F",
+      "update_routine": "UpdateBoulderSet",
+      "nes_tile_ids": [
+        "0x90",
+        "0x92",
+        "0xE8",
+        "0xEA",
+        "0xE4",
+        "0xE6",
+        "0xE0",
+        "0xE2"
+      ],
+      "dispatch_class": "Wide_Flippable",
+      "frame_count": 4,
+      "chr_bank": "level_conditional",
+      "disasm_citation": {
+        "file": "Z_07.asm",
+        "line": 5327,
+        "label": "UpdateObject_JumpTable[0x1F]",
+        "anim_source": {
+          "file": "Z_01.asm",
+          "label": "ObjAnimations",
+          "line": 4884,
+          "anim_index": "0x20",
+          "heap_label": "ObjAnimFrameHeap",
+          "heap_line": 4902
+        }
+      }
+    },
+    {
+      "name": "boulder",
+      "category": "enemies",
+      "obj_type_index": "0x20",
+      "update_routine": "UpdateTektiteOrBoulder",
+      "nes_tile_ids": [
+        "0x90",
+        "0x92",
+        "0xE8",
+        "0xEA",
+        "0xE4",
+        "0xE6",
+        "0xE0",
+        "0xE2"
+      ],
+      "dispatch_class": "Wide_Flippable",
+      "frame_count": 4,
+      "chr_bank": "level_conditional",
+      "disasm_citation": {
+        "file": "Z_07.asm",
+        "line": 5328,
+        "label": "UpdateObject_JumpTable[0x20]",
+        "anim_source": {
+          "file": "Z_01.asm",
+          "label": "ObjAnimations",
+          "line": 4884,
+          "anim_index": "0x21",
+          "heap_label": "ObjAnimFrameHeap",
+          "heap_line": 4902
+        }
+      }
+    },
+    {
+      "name": "ghini",
+      "category": "enemies",
+      "obj_type_index": "0x21",
+      "update_routine": "UpdateGhini",
+      "nes_tile_ids": [
+        "0xE4",
+        "0xE6",
+        "0xE0",
+        "0xE2",
+        "0x94",
+        "0x96",
+        "0xF3",
+        "0xF5"
+      ],
+      "dispatch_class": "Wide_Flippable",
+      "frame_count": 4,
+      "chr_bank": "level_conditional",
+      "disasm_citation": {
+        "file": "Z_07.asm",
+        "line": 5329,
+        "label": "UpdateObject_JumpTable[0x21]",
+        "anim_source": {
+          "file": "Z_01.asm",
+          "label": "ObjAnimations",
+          "line": 4884,
+          "anim_index": "0x22",
+          "heap_label": "ObjAnimFrameHeap",
+          "heap_line": 4902
+        }
+      }
+    },
+    {
+      "name": "flying_ghini",
+      "category": "enemies",
+      "obj_type_index": "0x22",
+      "update_routine": "UpdateFlyingGhini",
+      "nes_tile_ids": [
+        "0xE4",
+        "0xE6",
+        "0xE0",
+        "0xE2",
+        "0x94",
+        "0x96",
+        "0xF3",
+        "0xF5"
+      ],
+      "dispatch_class": "Wide_Flippable",
+      "frame_count": 4,
+      "chr_bank": "level_conditional",
+      "disasm_citation": {
+        "file": "Z_07.asm",
+        "line": 5330,
+        "label": "UpdateObject_JumpTable[0x22]",
+        "anim_source": {
+          "file": "Z_01.asm",
+          "label": "ObjAnimations",
+          "line": 4884,
+          "anim_index": "0x23",
+          "heap_label": "ObjAnimFrameHeap",
+          "heap_line": 4902
+        }
+      }
+    },
+    {
+      "name": "wizzrobe_blue",
+      "category": "enemies",
+      "obj_type_index": "0x23",
+      "update_routine": "UpdateBlueWizzrobe",
+      "nes_tile_ids": [
+        "0xB4",
+        "0xB6",
+        "0xB8",
+        "0xBA",
+        "0xBC",
+        "0xBE",
+        "0xBE",
+        "0xC0"
+      ],
+      "dispatch_class": "Wide_Flippable",
+      "frame_count": 4,
+      "chr_bank": "level_conditional",
+      "disasm_citation": {
+        "file": "Z_07.asm",
+        "line": 5331,
+        "label": "UpdateObject_JumpTable[0x23]",
+        "anim_source": {
+          "file": "Z_01.asm",
+          "label": "ObjAnimations",
+          "line": 4884,
+          "anim_index": "0x24",
+          "heap_label": "ObjAnimFrameHeap",
+          "heap_line": 4902
+        }
+      }
+    },
+    {
+      "name": "wizzrobe_red",
+      "category": "enemies",
+      "obj_type_index": "0x24",
+      "update_routine": "UpdateRedWizzrobe",
+      "nes_tile_ids": [
+        "0xB4",
+        "0xB6",
+        "0xB8",
+        "0xBA",
+        "0xBC",
+        "0xBE",
+        "0xBE",
+        "0xC0"
+      ],
+      "dispatch_class": "Wide_Flippable",
+      "frame_count": 4,
+      "chr_bank": "level_conditional",
+      "disasm_citation": {
+        "file": "Z_07.asm",
+        "line": 5332,
+        "label": "UpdateObject_JumpTable[0x24]",
+        "anim_source": {
+          "file": "Z_01.asm",
+          "label": "ObjAnimations",
+          "line": 4884,
+          "anim_index": "0x25",
+          "heap_label": "ObjAnimFrameHeap",
+          "heap_line": 4902
+        }
+      }
+    },
+    {
+      "name": "wallmaster",
+      "category": "enemies",
+      "obj_type_index": "0x27",
+      "update_routine": "UpdateWallmaster",
+      "nes_tile_ids": [
+        "0xAC",
+        "0xAE",
+        "0x9C",
+        "0x9E",
+        "0xA0",
+        "0xA2",
+        "0xA4",
+        "0xA6"
+      ],
+      "dispatch_class": "Wide_Flippable",
+      "frame_count": 4,
+      "chr_bank": "level_conditional",
+      "disasm_citation": {
+        "file": "Z_07.asm",
+        "line": 5335,
+        "label": "UpdateObject_JumpTable[0x27]",
+        "anim_source": {
+          "file": "Z_01.asm",
+          "label": "ObjAnimations",
+          "line": 4884,
+          "anim_index": "0x28",
+          "heap_label": "ObjAnimFrameHeap",
+          "heap_line": 4902
+        }
+      }
+    },
+    {
+      "name": "rope",
+      "category": "enemies",
+      "obj_type_index": "0x28",
+      "update_routine": "UpdateRope",
+      "nes_tile_ids": [
+        "0xA0",
+        "0xA2",
+        "0xA4",
+        "0xA6",
+        "0xA0",
+        "0xA2",
+        "0xA4",
+        "0xA6"
+      ],
+      "dispatch_class": "Wide_Flippable",
+      "frame_count": 4,
+      "chr_bank": "level_conditional",
+      "disasm_citation": {
+        "file": "Z_07.asm",
+        "line": 5336,
+        "label": "UpdateObject_JumpTable[0x28]",
+        "anim_source": {
+          "file": "Z_01.asm",
+          "label": "ObjAnimations",
+          "line": 4884,
+          "anim_index": "0x29",
+          "heap_label": "ObjAnimFrameHeap",
+          "heap_line": 4902
+        }
+      }
+    },
+    {
+      "name": "stalfos",
+      "category": "enemies",
+      "obj_type_index": "0x2A",
+      "update_routine": "UpdateStalfos",
+      "nes_tile_ids": [
+        "0xA8",
+        "0xAA",
+        "0x8E",
+        "0x90",
+        "0xA4",
+        "0xA6",
+        "0xDC",
+        "0xDE"
+      ],
+      "dispatch_class": "Wide_Flippable",
+      "frame_count": 4,
+      "chr_bank": "level_conditional",
+      "disasm_citation": {
+        "file": "Z_07.asm",
+        "line": 5338,
+        "label": "UpdateObject_JumpTable[0x2A]",
+        "anim_source": {
+          "file": "Z_01.asm",
+          "label": "ObjAnimations",
+          "line": 4884,
+          "anim_index": "0x2B",
+          "heap_label": "ObjAnimFrameHeap",
+          "heap_line": 4902
+        }
+      }
+    },
+    {
+      "name": "bubble_red",
+      "category": "enemies",
+      "obj_type_index": "0x2B",
+      "update_routine": "UpdateBubble",
+      "nes_tile_ids": [
+        "0x8E",
+        "0x90",
+        "0xA4",
+        "0xA6",
+        "0xDC",
+        "0xDE",
+        "0xE0",
+        "0xE2"
+      ],
+      "dispatch_class": "Wide_Flippable",
+      "frame_count": 4,
+      "chr_bank": "level_conditional",
+      "disasm_citation": {
+        "file": "Z_07.asm",
+        "line": 5339,
+        "label": "UpdateObject_JumpTable[0x2B]",
+        "anim_source": {
+          "file": "Z_01.asm",
+          "label": "ObjAnimations",
+          "line": 4884,
+          "anim_index": "0x2C",
+          "heap_label": "ObjAnimFrameHeap",
+          "heap_line": 4902
+        }
+      }
+    },
+    {
+      "name": "bubble_blue",
+      "category": "enemies",
+      "obj_type_index": "0x2C",
+      "update_routine": "UpdateBubble",
+      "nes_tile_ids": [
+        "0x8E",
+        "0x90",
+        "0xA4",
+        "0xA6",
+        "0xDC",
+        "0xDE",
+        "0xE0",
+        "0xE2"
+      ],
+      "dispatch_class": "Wide_Flippable",
+      "frame_count": 4,
+      "chr_bank": "level_conditional",
+      "disasm_citation": {
+        "file": "Z_07.asm",
+        "line": 5340,
+        "label": "UpdateObject_JumpTable[0x2C]",
+        "anim_source": {
+          "file": "Z_01.asm",
+          "label": "ObjAnimations",
+          "line": 4884,
+          "anim_index": "0x2D",
+          "heap_label": "ObjAnimFrameHeap",
+          "heap_line": 4902
+        }
+      }
+    },
+    {
+      "name": "bubble_black",
+      "category": "enemies",
+      "obj_type_index": "0x2D",
+      "update_routine": "UpdateBubble",
+      "nes_tile_ids": [
+        "0x8E",
+        "0x90",
+        "0xA4",
+        "0xA6",
+        "0xDC",
+        "0xDE",
+        "0xE0",
+        "0xE2"
+      ],
+      "dispatch_class": "Wide_Flippable",
+      "frame_count": 4,
+      "chr_bank": "level_conditional",
+      "disasm_citation": {
+        "file": "Z_07.asm",
+        "line": 5341,
+        "label": "UpdateObject_JumpTable[0x2D]",
+        "anim_source": {
+          "file": "Z_01.asm",
+          "label": "ObjAnimations",
+          "line": 4884,
+          "anim_index": "0x2E",
+          "heap_label": "ObjAnimFrameHeap",
+          "heap_line": 4902
+        }
+      }
+    },
+    {
+      "name": "gibdo",
+      "category": "enemies",
+      "obj_type_index": "0x30",
+      "update_routine": "UpdateGibdo",
+      "nes_tile_ids": [
+        "0xA4",
+        "0xA6",
+        "0xDC",
+        "0xDE",
+        "0xE0",
+        "0xE2",
+        "0xE4",
+        "0xE6"
+      ],
+      "dispatch_class": "Wide_Flippable",
+      "frame_count": 4,
+      "chr_bank": "level_conditional",
+      "disasm_citation": {
+        "file": "Z_07.asm",
+        "line": 5344,
+        "label": "UpdateObject_JumpTable[0x30]",
+        "anim_source": {
+          "file": "Z_01.asm",
+          "label": "ObjAnimations",
+          "line": 4884,
+          "anim_index": "0x31",
+          "heap_label": "ObjAnimFrameHeap",
+          "heap_line": 4902
+        }
+      }
+    },
+    {
+      "name": "trap_0",
+      "category": "enemies",
+      "obj_type_index": "0x49",
+      "update_routine": "UpdateTrap",
+      "nes_tile_ids": [
+        "0x96",
+        "0x98",
+        "0x98",
+        "0x9A",
+        "0xB1",
+        "0xB3"
+      ],
+      "dispatch_class": "Wide_Flippable",
+      "frame_count": 3,
+      "chr_bank": "level_conditional",
+      "disasm_citation": {
+        "file": "Z_07.asm",
+        "line": 5369,
+        "label": "UpdateObject_JumpTable[0x49]",
+        "anim_source": {
+          "file": "Z_01.asm",
+          "label": "ObjAnimations",
+          "line": 4884,
+          "anim_index": "0x4A",
+          "heap_label": "ObjAnimFrameHeap",
+          "heap_line": 4902
+        }
+      }
+    },
+    {
+      "name": "trap_1",
+      "category": "enemies",
+      "obj_type_index": "0x4A",
+      "update_routine": "UpdateTrap",
+      "nes_tile_ids": [
+        "0x96",
+        "0x98",
+        "0x98",
+        "0x9A",
+        "0xB1",
+        "0xB3"
+      ],
+      "dispatch_class": "Wide_Flippable",
+      "frame_count": 3,
+      "chr_bank": "level_conditional",
+      "disasm_citation": {
+        "file": "Z_07.asm",
+        "line": 5370,
+        "label": "UpdateObject_JumpTable[0x4A]",
+        "anim_source": {
+          "file": "Z_01.asm",
+          "label": "ObjAnimations",
+          "line": 4884,
+          "anim_index": "0x4B",
+          "heap_label": "ObjAnimFrameHeap",
+          "heap_line": 4902
+        }
+      }
+    }
+  ]
+}

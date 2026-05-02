@@ -125,6 +125,7 @@
         "0x3C"
       ],
       "dispatch_class": "Narrow",
+      "frame_count": 3,
       "disasm_citation": {
         "file": "Z_01.asm",
         "line": 5202,
@@ -143,6 +144,7 @@
         "0x74"
       ],
       "dispatch_class": "Narrow",
+      "frame_count": 4,
       "disasm_citation": {
         "file": "Z_01.asm",
         "line": 5202,
@@ -160,6 +162,7 @@
         "0x3C"
       ],
       "dispatch_class": "Narrow",
+      "frame_count": 3,
       "disasm_citation": {
         "file": "Z_01.asm",
         "line": 5202,
@@ -175,6 +178,7 @@
         "0x2A"
       ],
       "dispatch_class": "Narrow",
+      "frame_count": 1,
       "disasm_citation": {
         "file": "Z_01.asm",
         "line": 5203,
@@ -190,6 +194,7 @@
         "0x26"
       ],
       "dispatch_class": "Narrow",
+      "frame_count": 1,
       "disasm_citation": {
         "file": "Z_01.asm",
         "line": 5203,
@@ -205,6 +210,7 @@
         "0x24"
       ],
       "dispatch_class": "Narrow",
+      "frame_count": 1,
       "disasm_citation": {
         "file": "Z_01.asm",
         "line": 5203,
@@ -220,6 +226,7 @@
         "0x22"
       ],
       "dispatch_class": "Narrow",
+      "frame_count": 1,
       "disasm_citation": {
         "file": "Z_01.asm",
         "line": 5203,
@@ -235,6 +242,7 @@
         "0x40"
       ],
       "dispatch_class": "Narrow",
+      "frame_count": 1,
       "disasm_citation": {
         "file": "Z_01.asm",
         "line": 5203,
@@ -251,6 +259,7 @@
         "0x8A"
       ],
       "dispatch_class": "Narrow",
+      "frame_count": 2,
       "disasm_citation": {
         "file": "Z_01.asm",
         "line": 5203,
@@ -266,6 +275,7 @@
         "0x6C"
       ],
       "dispatch_class": "Wide_Mirrored",
+      "frame_count": 1,
       "disasm_citation": {
         "file": "Z_01.asm",
         "line": 5204,
@@ -281,6 +291,7 @@
         "0x42"
       ],
       "dispatch_class": "Narrow",
+      "frame_count": 1,
       "disasm_citation": {
         "file": "Z_01.asm",
         "line": 5204,
@@ -296,6 +307,7 @@
         "0x46"
       ],
       "dispatch_class": "Narrow",
+      "frame_count": 1,
       "disasm_citation": {
         "file": "Z_01.asm",
         "line": 5204,
@@ -311,6 +323,7 @@
         "0x76"
       ],
       "dispatch_class": "Wide_Mirrored",
+      "frame_count": 1,
       "disasm_citation": {
         "file": "Z_01.asm",
         "line": 5204,
@@ -326,6 +339,7 @@
         "0x2C"
       ],
       "dispatch_class": "Narrow",
+      "frame_count": 1,
       "disasm_citation": {
         "file": "Z_01.asm",
         "line": 5204,
@@ -341,6 +355,7 @@
         "0x4E"
       ],
       "dispatch_class": "Narrow",
+      "frame_count": 1,
       "disasm_citation": {
         "file": "Z_01.asm",
         "line": 5204,
@@ -356,6 +371,7 @@
         "0x4C"
       ],
       "dispatch_class": "Narrow",
+      "frame_count": 1,
       "disasm_citation": {
         "file": "Z_01.asm",
         "line": 5204,
@@ -371,6 +387,7 @@
         "0x6A"
       ],
       "dispatch_class": "Wide_Slim",
+      "frame_count": 1,
       "disasm_citation": {
         "file": "Z_01.asm",
         "line": 5205,
@@ -386,6 +403,7 @@
         "0x4C"
       ],
       "dispatch_class": "Narrow",
+      "frame_count": 1,
       "disasm_citation": {
         "file": "Z_01.asm",
         "line": 5204,
@@ -401,6 +419,7 @@
         "0x6A"
       ],
       "dispatch_class": "Wide_Slim",
+      "frame_count": 1,
       "disasm_citation": {
         "file": "Z_01.asm",
         "line": 5205,
@@ -416,6 +435,7 @@
         "0x4C"
       ],
       "dispatch_class": "Narrow",
+      "frame_count": 1,
       "disasm_citation": {
         "file": "Z_01.asm",
         "line": 5204,
@@ -432,6 +452,7 @@
         "0x52"
       ],
       "dispatch_class": "Narrow",
+      "frame_count": 2,
       "disasm_citation": {
         "file": "Z_01.asm",
         "line": 5205,
@@ -447,6 +468,7 @@
         "0x66"
       ],
       "dispatch_class": "Wide_Slim",
+      "frame_count": 1,
       "disasm_citation": {
         "file": "Z_01.asm",
         "line": 5205,
@@ -462,6 +484,7 @@
         "0x32"
       ],
       "dispatch_class": "Narrow",
+      "frame_count": 1,
       "disasm_citation": {
         "file": "Z_01.asm",
         "line": 5205,
@@ -477,6 +500,7 @@
         "0x2E"
       ],
       "dispatch_class": "Narrow",
+      "frame_count": 1,
       "disasm_citation": {
         "file": "Z_01.asm",
         "line": 5205,
@@ -492,6 +516,7 @@
         "0x68"
       ],
       "dispatch_class": "Wide_Slim",
+      "frame_count": 1,
       "disasm_citation": {
         "file": "Z_01.asm",
         "line": 5205,
@@ -507,6 +532,7 @@
         "0xF3"
       ],
       "dispatch_class": "Narrow",
+      "frame_count": 1,
       "disasm_citation": {
         "file": "Z_01.asm",
         "line": 5205,
@@ -522,6 +548,7 @@
         "0x6E"
       ],
       "dispatch_class": "Wide_Mirrored",
+      "frame_count": 1,
       "disasm_citation": {
         "file": "Z_01.asm",
         "line": 5206,
@@ -537,6 +564,7 @@
         "0xF2"
       ],
       "dispatch_class": "Wide_Flippable",
+      "frame_count": 1,
       "disasm_citation": {
         "file": "Z_01.asm",
         "line": 5206,
@@ -552,6 +580,7 @@
         "0x32"
       ],
       "dispatch_class": "Narrow",
+      "frame_count": 1,
       "disasm_citation": {
         "file": "Z_01.asm",
         "line": 5205,
@@ -570,6 +599,7 @@
         "0x3C"
       ],
       "dispatch_class": "Narrow",
+      "frame_count": 4,
       "disasm_citation": {
         "file": "Z_01.asm",
         "line": 5206,
@@ -588,6 +618,7 @@
         "0x3C"
       ],
       "dispatch_class": "Narrow",
+      "frame_count": 4,
       "disasm_citation": {
         "file": "Z_01.asm",
         "line": 5206,
@@ -603,6 +634,7 @@
         "0x56"
       ],
       "dispatch_class": "Narrow",
+      "frame_count": 1,
       "disasm_citation": {
         "file": "Z_01.asm",
         "line": 5206,
@@ -618,6 +650,7 @@
         "0x48"
       ],
       "dispatch_class": "Narrow",
+      "frame_count": 1,
       "disasm_citation": {
         "file": "Z_01.asm",
         "line": 5206,
@@ -633,6 +666,7 @@
         "0x78"
       ],
       "dispatch_class": "Wide_Mirrored",
+      "frame_count": 1,
       "disasm_citation": {
         "file": "Z_01.asm",
         "line": 5207,
@@ -648,6 +682,7 @@
         "0x20"
       ],
       "dispatch_class": "Narrow",
+      "frame_count": 1,
       "disasm_citation": {
         "file": "Z_01.asm",
         "line": 5207,
@@ -664,6 +699,7 @@
         "0x7C"
       ],
       "dispatch_class": "Wide_Mirrored",
+      "frame_count": 2,
       "disasm_citation": {
         "file": "Z_01.asm",
         "line": 5207,
@@ -680,6 +716,7 @@
         "0x62"
       ],
       "dispatch_class": "Wide_Slim",
+      "frame_count": 3,
       "disasm_citation": {
         "file": "Z_01.asm",
         "line": 5207,

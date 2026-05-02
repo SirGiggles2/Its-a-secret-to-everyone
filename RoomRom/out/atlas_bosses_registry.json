@@ -1,0 +1,722 @@
+{
+  "schema_version": 1,
+  "generator": "RoomRom/tools/walk_z1_disasm.py",
+  "source": [
+    "reference/aldonunez/Z_07.asm",
+    "reference/aldonunez/Z_01.asm"
+  ],
+  "notes": [
+    "Boss object types derived from UpdateObject_JumpTable Z_07.asm:5295-5401",
+    "Boss update routines imported from separate banks (all .IMPORT in Z_07.asm:140-175)",
+    "Tile IDs derived from ObjAnimations + ObjAnimFrameHeap (Z_01.asm:4884/4902)",
+    "Boss-specific pattern banks: PatternBlockUWSPBoss1257/3468/9 (Z_03.asm:223-230)",
+    "chr_bank: boss-specific (PatternBlockUWSPBoss1257 levels 1,2,5,7; Boss3468 3,4,6,8; Boss9 level 9)",
+    "TODO: boss draw routines in imported banks (bank 4) have additional multi-sprite logic not captured here"
+  ],
+  "bosses": [
+    {
+      "name": "digdogger",
+      "category": "bosses",
+      "obj_type_index": "0x18",
+      "update_routine": "UpdateDigdogger",
+      "nes_tile_ids": [
+        "0xD8",
+        "0xDA",
+        "0xDA",
+        "0xDC",
+        "0x00",
+        "0x02",
+        "0x00",
+        "0x02"
+      ],
+      "dispatch_class": "Wide_Flippable",
+      "frame_count": 4,
+      "chr_bank": "level_conditional",
+      "disasm_citation": {
+        "file": "Z_07.asm",
+        "line": 5320,
+        "label": "UpdateObject_JumpTable[0x18]",
+        "anim_source": {
+          "file": "Z_01.asm",
+          "label": "ObjAnimations",
+          "line": 4884,
+          "anim_index": "0x19",
+          "heap_label": "ObjAnimFrameHeap",
+          "heap_line": 4902
+        }
+      }
+    },
+    {
+      "name": "patra_child_0",
+      "category": "bosses",
+      "obj_type_index": "0x25",
+      "update_routine": "UpdatePatraChild",
+      "nes_tile_ids": [
+        "0xFC",
+        "0xFE",
+        "0xFE",
+        "0x00",
+        "0xAC",
+        "0xAE",
+        "0x9C",
+        "0x9E"
+      ],
+      "dispatch_class": "Wide_Flippable",
+      "frame_count": 4,
+      "chr_bank": "level_conditional",
+      "disasm_citation": {
+        "file": "Z_07.asm",
+        "line": 5333,
+        "label": "UpdateObject_JumpTable[0x25]",
+        "anim_source": {
+          "file": "Z_01.asm",
+          "label": "ObjAnimations",
+          "line": 4884,
+          "anim_index": "0x26",
+          "heap_label": "ObjAnimFrameHeap",
+          "heap_line": 4902
+        }
+      }
+    },
+    {
+      "name": "patra_child_1",
+      "category": "bosses",
+      "obj_type_index": "0x26",
+      "update_routine": "UpdatePatraChild",
+      "nes_tile_ids": [
+        "0xFC",
+        "0xFE",
+        "0xFE",
+        "0x00",
+        "0xAC",
+        "0xAE",
+        "0x9C",
+        "0x9E"
+      ],
+      "dispatch_class": "Wide_Flippable",
+      "frame_count": 4,
+      "chr_bank": "level_conditional",
+      "disasm_citation": {
+        "file": "Z_07.asm",
+        "line": 5334,
+        "label": "UpdateObject_JumpTable[0x26]",
+        "anim_source": {
+          "file": "Z_01.asm",
+          "label": "ObjAnimations",
+          "line": 4884,
+          "anim_index": "0x27",
+          "heap_label": "ObjAnimFrameHeap",
+          "heap_line": 4902
+        }
+      }
+    },
+    {
+      "name": "dodongo_0",
+      "category": "bosses",
+      "obj_type_index": "0x31",
+      "update_routine": "UpdateDodongo",
+      "nes_tile_ids": [
+        "0xDC",
+        "0xDE",
+        "0xE0",
+        "0xE2",
+        "0xE4",
+        "0xE6",
+        "0xE8",
+        "0xEA"
+      ],
+      "dispatch_class": "Wide_Flippable",
+      "frame_count": 4,
+      "chr_bank": "level_conditional",
+      "disasm_citation": {
+        "file": "Z_07.asm",
+        "line": 5345,
+        "label": "UpdateObject_JumpTable[0x31]",
+        "anim_source": {
+          "file": "Z_01.asm",
+          "label": "ObjAnimations",
+          "line": 4884,
+          "anim_index": "0x32",
+          "heap_label": "ObjAnimFrameHeap",
+          "heap_line": 4902
+        }
+      }
+    },
+    {
+      "name": "dodongo_1",
+      "category": "bosses",
+      "obj_type_index": "0x32",
+      "update_routine": "UpdateDodongo",
+      "nes_tile_ids": [
+        "0xDC",
+        "0xDE",
+        "0xE0",
+        "0xE2",
+        "0xE4",
+        "0xE6",
+        "0xE8",
+        "0xEA"
+      ],
+      "dispatch_class": "Wide_Flippable",
+      "frame_count": 4,
+      "chr_bank": "level_conditional",
+      "disasm_citation": {
+        "file": "Z_07.asm",
+        "line": 5346,
+        "label": "UpdateObject_JumpTable[0x32]",
+        "anim_source": {
+          "file": "Z_01.asm",
+          "label": "ObjAnimations",
+          "line": 4884,
+          "anim_index": "0x33",
+          "heap_label": "ObjAnimFrameHeap",
+          "heap_line": 4902
+        }
+      }
+    },
+    {
+      "name": "gohma_red",
+      "category": "bosses",
+      "obj_type_index": "0x33",
+      "update_routine": "UpdateGohma",
+      "nes_tile_ids": [
+        "0xF4",
+        "0xF6",
+        "0xF6",
+        "0xF8",
+        "0xFE",
+        "0x00",
+        "0xFC",
+        "0xFE"
+      ],
+      "dispatch_class": "Wide_Flippable",
+      "frame_count": 4,
+      "chr_bank": "level_conditional",
+      "disasm_citation": {
+        "file": "Z_07.asm",
+        "line": 5347,
+        "label": "UpdateObject_JumpTable[0x33]",
+        "anim_source": {
+          "file": "Z_01.asm",
+          "label": "ObjAnimations",
+          "line": 4884,
+          "anim_index": "0x34",
+          "heap_label": "ObjAnimFrameHeap",
+          "heap_line": 4902
+        }
+      }
+    },
+    {
+      "name": "gohma_blue",
+      "category": "bosses",
+      "obj_type_index": "0x34",
+      "update_routine": "UpdateGohma",
+      "nes_tile_ids": [
+        "0xF4",
+        "0xF6",
+        "0xF6",
+        "0xF8",
+        "0xFE",
+        "0x00",
+        "0xFC",
+        "0xFE"
+      ],
+      "dispatch_class": "Wide_Flippable",
+      "frame_count": 4,
+      "chr_bank": "level_conditional",
+      "disasm_citation": {
+        "file": "Z_07.asm",
+        "line": 5348,
+        "label": "UpdateObject_JumpTable[0x34]",
+        "anim_source": {
+          "file": "Z_01.asm",
+          "label": "ObjAnimations",
+          "line": 4884,
+          "anim_index": "0x35",
+          "heap_label": "ObjAnimFrameHeap",
+          "heap_line": 4902
+        }
+      }
+    },
+    {
+      "name": "digdogger_part_0",
+      "category": "bosses",
+      "obj_type_index": "0x38",
+      "update_routine": "UpdateDigdogger",
+      "nes_tile_ids": [
+        "0xD4",
+        "0xD6",
+        "0xFC",
+        "0xFE",
+        "0xFE",
+        "0x00",
+        "0xF8",
+        "0xFA"
+      ],
+      "dispatch_class": "Wide_Flippable",
+      "frame_count": 4,
+      "chr_bank": "level_conditional",
+      "disasm_citation": {
+        "file": "Z_07.asm",
+        "line": 5352,
+        "label": "UpdateObject_JumpTable[0x38]",
+        "anim_source": {
+          "file": "Z_01.asm",
+          "label": "ObjAnimations",
+          "line": 4884,
+          "anim_index": "0x39",
+          "heap_label": "ObjAnimFrameHeap",
+          "heap_line": 4902
+        }
+      }
+    },
+    {
+      "name": "digdogger_part_1",
+      "category": "bosses",
+      "obj_type_index": "0x39",
+      "update_routine": "UpdateDigdogger",
+      "nes_tile_ids": [
+        "0xD4",
+        "0xD6",
+        "0xFC",
+        "0xFE",
+        "0xFE",
+        "0x00",
+        "0xF8",
+        "0xFA"
+      ],
+      "dispatch_class": "Wide_Flippable",
+      "frame_count": 4,
+      "chr_bank": "level_conditional",
+      "disasm_citation": {
+        "file": "Z_07.asm",
+        "line": 5353,
+        "label": "UpdateObject_JumpTable[0x39]",
+        "anim_source": {
+          "file": "Z_01.asm",
+          "label": "ObjAnimations",
+          "line": 4884,
+          "anim_index": "0x3A",
+          "heap_label": "ObjAnimFrameHeap",
+          "heap_line": 4902
+        }
+      }
+    },
+    {
+      "name": "lamnola_0",
+      "category": "bosses",
+      "obj_type_index": "0x3A",
+      "update_routine": "UpdateLamnola",
+      "nes_tile_ids": [
+        "0xFC",
+        "0xFE",
+        "0xFE",
+        "0x00",
+        "0xF8",
+        "0xFA",
+        "0xE8",
+        "0xEA"
+      ],
+      "dispatch_class": "Wide_Flippable",
+      "frame_count": 4,
+      "chr_bank": "level_conditional",
+      "disasm_citation": {
+        "file": "Z_07.asm",
+        "line": 5354,
+        "label": "UpdateObject_JumpTable[0x3A]",
+        "anim_source": {
+          "file": "Z_01.asm",
+          "label": "ObjAnimations",
+          "line": 4884,
+          "anim_index": "0x3B",
+          "heap_label": "ObjAnimFrameHeap",
+          "heap_line": 4902
+        }
+      }
+    },
+    {
+      "name": "lamnola_1",
+      "category": "bosses",
+      "obj_type_index": "0x3B",
+      "update_routine": "UpdateLamnola",
+      "nes_tile_ids": [
+        "0xFC",
+        "0xFE",
+        "0xFE",
+        "0x00",
+        "0xF8",
+        "0xFA",
+        "0xE8",
+        "0xEA"
+      ],
+      "dispatch_class": "Wide_Flippable",
+      "frame_count": 4,
+      "chr_bank": "level_conditional",
+      "disasm_citation": {
+        "file": "Z_07.asm",
+        "line": 5355,
+        "label": "UpdateObject_JumpTable[0x3B]",
+        "anim_source": {
+          "file": "Z_01.asm",
+          "label": "ObjAnimations",
+          "line": 4884,
+          "anim_index": "0x3C",
+          "heap_label": "ObjAnimFrameHeap",
+          "heap_line": 4902
+        }
+      }
+    },
+    {
+      "name": "manhandla",
+      "category": "bosses",
+      "obj_type_index": "0x3C",
+      "update_routine": "UpdateManhandla",
+      "nes_tile_ids": [
+        "0xE8",
+        "0xEA",
+        "0xEA",
+        "0xEC",
+        "0xE0",
+        "0xE2",
+        "0xE4",
+        "0xE6"
+      ],
+      "dispatch_class": "Wide_Flippable",
+      "frame_count": 4,
+      "chr_bank": "level_conditional",
+      "disasm_citation": {
+        "file": "Z_07.asm",
+        "line": 5356,
+        "label": "UpdateObject_JumpTable[0x3C]",
+        "anim_source": {
+          "file": "Z_01.asm",
+          "label": "ObjAnimations",
+          "line": 4884,
+          "anim_index": "0x3D",
+          "heap_label": "ObjAnimFrameHeap",
+          "heap_line": 4902
+        }
+      }
+    },
+    {
+      "name": "aquamentus",
+      "category": "bosses",
+      "obj_type_index": "0x3D",
+      "update_routine": "UpdateAquamentus",
+      "nes_tile_ids": [
+        "0xD0",
+        "0xD2",
+        "0xD4",
+        "0xD6",
+        "0xD8",
+        "0xDA",
+        "0xDC",
+        "0xDE"
+      ],
+      "dispatch_class": "Wide_Flippable",
+      "frame_count": 4,
+      "chr_bank": "level_conditional",
+      "disasm_citation": {
+        "file": "Z_07.asm",
+        "line": 5357,
+        "label": "UpdateObject_JumpTable[0x3D]",
+        "anim_source": {
+          "file": "Z_01.asm",
+          "label": "ObjAnimations",
+          "line": 4884,
+          "anim_index": "0x3E",
+          "heap_label": "ObjAnimFrameHeap",
+          "heap_line": 4902
+        }
+      }
+    },
+    {
+      "name": "ganon",
+      "category": "bosses",
+      "obj_type_index": "0x3E",
+      "update_routine": "UpdateGanon",
+      "nes_tile_ids": [
+        "0xD0",
+        "0xD2",
+        "0xD4",
+        "0xD6",
+        "0xD8",
+        "0xDA",
+        "0xDC",
+        "0xDE"
+      ],
+      "dispatch_class": "Wide_Flippable",
+      "frame_count": 4,
+      "chr_bank": "level_conditional",
+      "disasm_citation": {
+        "file": "Z_07.asm",
+        "line": 5358,
+        "label": "UpdateObject_JumpTable[0x3E]",
+        "anim_source": {
+          "file": "Z_01.asm",
+          "label": "ObjAnimations",
+          "line": 4884,
+          "anim_index": "0x3F",
+          "heap_label": "ObjAnimFrameHeap",
+          "heap_line": 4902
+        }
+      }
+    },
+    {
+      "name": "moldorm",
+      "category": "bosses",
+      "obj_type_index": "0x41",
+      "update_routine": "UpdateMoldorm",
+      "nes_tile_ids": [
+        "0xDE",
+        "0xE0",
+        "0xEE",
+        "0xF0",
+        "0xF8",
+        "0xFA",
+        "0x96",
+        "0x98"
+      ],
+      "dispatch_class": "Wide_Flippable",
+      "frame_count": 4,
+      "chr_bank": "level_conditional",
+      "disasm_citation": {
+        "file": "Z_07.asm",
+        "line": 5361,
+        "label": "UpdateObject_JumpTable[0x41]",
+        "anim_source": {
+          "file": "Z_01.asm",
+          "label": "ObjAnimations",
+          "line": 4884,
+          "anim_index": "0x42",
+          "heap_label": "ObjAnimFrameHeap",
+          "heap_line": 4902
+        }
+      }
+    },
+    {
+      "name": "gleeok_1head",
+      "category": "bosses",
+      "obj_type_index": "0x42",
+      "update_routine": "UpdateGleeok",
+      "nes_tile_ids": [
+        "0xDE",
+        "0xE0",
+        "0xEE",
+        "0xF0",
+        "0xF8",
+        "0xFA",
+        "0x96",
+        "0x98"
+      ],
+      "dispatch_class": "Wide_Flippable",
+      "frame_count": 4,
+      "chr_bank": "level_conditional",
+      "disasm_citation": {
+        "file": "Z_07.asm",
+        "line": 5362,
+        "label": "UpdateObject_JumpTable[0x42]",
+        "anim_source": {
+          "file": "Z_01.asm",
+          "label": "ObjAnimations",
+          "line": 4884,
+          "anim_index": "0x43",
+          "heap_label": "ObjAnimFrameHeap",
+          "heap_line": 4902
+        }
+      }
+    },
+    {
+      "name": "gleeok_2head",
+      "category": "bosses",
+      "obj_type_index": "0x43",
+      "update_routine": "UpdateGleeok",
+      "nes_tile_ids": [
+        "0xDE",
+        "0xE0",
+        "0xEE",
+        "0xF0",
+        "0xF8",
+        "0xFA",
+        "0x96",
+        "0x98"
+      ],
+      "dispatch_class": "Wide_Flippable",
+      "frame_count": 4,
+      "chr_bank": "level_conditional",
+      "disasm_citation": {
+        "file": "Z_07.asm",
+        "line": 5363,
+        "label": "UpdateObject_JumpTable[0x43]",
+        "anim_source": {
+          "file": "Z_01.asm",
+          "label": "ObjAnimations",
+          "line": 4884,
+          "anim_index": "0x44",
+          "heap_label": "ObjAnimFrameHeap",
+          "heap_line": 4902
+        }
+      }
+    },
+    {
+      "name": "gleeok_3head",
+      "category": "bosses",
+      "obj_type_index": "0x44",
+      "update_routine": "UpdateGleeok",
+      "nes_tile_ids": [
+        "0xDE",
+        "0xE0",
+        "0xEE",
+        "0xF0",
+        "0xF8",
+        "0xFA",
+        "0x96",
+        "0x98"
+      ],
+      "dispatch_class": "Wide_Flippable",
+      "frame_count": 4,
+      "chr_bank": "level_conditional",
+      "disasm_citation": {
+        "file": "Z_07.asm",
+        "line": 5364,
+        "label": "UpdateObject_JumpTable[0x44]",
+        "anim_source": {
+          "file": "Z_01.asm",
+          "label": "ObjAnimations",
+          "line": 4884,
+          "anim_index": "0x45",
+          "heap_label": "ObjAnimFrameHeap",
+          "heap_line": 4902
+        }
+      }
+    },
+    {
+      "name": "gleeok_4head",
+      "category": "bosses",
+      "obj_type_index": "0x45",
+      "update_routine": "UpdateGleeok",
+      "nes_tile_ids": [
+        "0xDE",
+        "0xE0",
+        "0xEE",
+        "0xF0",
+        "0xF8",
+        "0xFA",
+        "0x96",
+        "0x98"
+      ],
+      "dispatch_class": "Wide_Flippable",
+      "frame_count": 4,
+      "chr_bank": "level_conditional",
+      "disasm_citation": {
+        "file": "Z_07.asm",
+        "line": 5365,
+        "label": "UpdateObject_JumpTable[0x45]",
+        "anim_source": {
+          "file": "Z_01.asm",
+          "label": "ObjAnimations",
+          "line": 4884,
+          "anim_index": "0x46",
+          "heap_label": "ObjAnimFrameHeap",
+          "heap_line": 4902
+        }
+      }
+    },
+    {
+      "name": "gleeok_head",
+      "category": "bosses",
+      "obj_type_index": "0x46",
+      "update_routine": "UpdateGleeokHead",
+      "nes_tile_ids": [
+        "0xDE",
+        "0xE0",
+        "0xEE",
+        "0xF0",
+        "0xF8",
+        "0xFA",
+        "0x96",
+        "0x98"
+      ],
+      "dispatch_class": "Wide_Flippable",
+      "frame_count": 4,
+      "chr_bank": "level_conditional",
+      "disasm_citation": {
+        "file": "Z_07.asm",
+        "line": 5366,
+        "label": "UpdateObject_JumpTable[0x46]",
+        "anim_source": {
+          "file": "Z_01.asm",
+          "label": "ObjAnimations",
+          "line": 4884,
+          "anim_index": "0x47",
+          "heap_label": "ObjAnimFrameHeap",
+          "heap_line": 4902
+        }
+      }
+    },
+    {
+      "name": "patra_0",
+      "category": "bosses",
+      "obj_type_index": "0x47",
+      "update_routine": "UpdatePatra",
+      "nes_tile_ids": [
+        "0xF8",
+        "0xFA",
+        "0x96",
+        "0x98",
+        "0x98",
+        "0x9A",
+        "0xB1",
+        "0xB3"
+      ],
+      "dispatch_class": "Wide_Flippable",
+      "frame_count": 4,
+      "chr_bank": "level_conditional",
+      "disasm_citation": {
+        "file": "Z_07.asm",
+        "line": 5367,
+        "label": "UpdateObject_JumpTable[0x47]",
+        "anim_source": {
+          "file": "Z_01.asm",
+          "label": "ObjAnimations",
+          "line": 4884,
+          "anim_index": "0x48",
+          "heap_label": "ObjAnimFrameHeap",
+          "heap_line": 4902
+        }
+      }
+    },
+    {
+      "name": "patra_1",
+      "category": "bosses",
+      "obj_type_index": "0x48",
+      "update_routine": "UpdatePatra",
+      "nes_tile_ids": [
+        "0xF8",
+        "0xFA",
+        "0x96",
+        "0x98",
+        "0x98",
+        "0x9A",
+        "0xB1",
+        "0xB3"
+      ],
+      "dispatch_class": "Wide_Flippable",
+      "frame_count": 4,
+      "chr_bank": "level_conditional",
+      "disasm_citation": {
+        "file": "Z_07.asm",
+        "line": 5368,
+        "label": "UpdateObject_JumpTable[0x48]",
+        "anim_source": {
+          "file": "Z_01.asm",
+          "label": "ObjAnimations",
+          "line": 4884,
+          "anim_index": "0x49",
+          "heap_label": "ObjAnimFrameHeap",
+          "heap_line": 4902
+        }
+      }
+    }
+  ]
+}

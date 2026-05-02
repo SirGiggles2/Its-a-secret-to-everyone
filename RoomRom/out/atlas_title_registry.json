@@ -1,0 +1,454 @@
+{
+  "schema_version": 1,
+  "generator": "RoomRom/tools/walk_z1_disasm.py",
+  "source": "reference/aldonunez/Z_02.asm",
+  "notes": [
+    "InitialTitleSprites: Z_02.asm:342 \u2014 NES OAM 4-byte records [Y,tile,attr,X]",
+    "DemoStoryFinalSpriteTiles: Z_02.asm:407 \u2014 final story frame (Link+Zelda+Triforce)",
+    "CHR source: CommonSpritePatterns (Z_02.asm:147) + DemoSpritePatterns (Z_01.asm:1696)",
+    "Title ZELDA logo and Triforce are BG content via GameTitleTransferBuf (Z_06.asm:835)",
+    "TODO: waterfall animation sprites (Z_02.asm:990 WaterfallWaveTiles)"
+  ],
+  "title": [
+    {
+      "name": "title_sprite_00_tileCA",
+      "category": "title",
+      "nes_tile_ids": [
+        "0xCA"
+      ],
+      "dispatch_class": "Wide_Flippable",
+      "frame_count": 1,
+      "oam_y": "0x77",
+      "oam_x": "0xD0",
+      "oam_attr": "0xC2",
+      "chr_bank": "CommonSpritePatterns + DemoSpritePatterns",
+      "disasm_citation": {
+        "file": "Z_02.asm",
+        "line": 343,
+        "label": "InitialTitleSprites[0]",
+        "note": "NES OAM record: [Y, tile, attr, X]"
+      }
+    },
+    {
+      "name": "title_sprite_01_tileCC",
+      "category": "title",
+      "nes_tile_ids": [
+        "0xCC"
+      ],
+      "dispatch_class": "Wide_Flippable",
+      "frame_count": 1,
+      "oam_y": "0x77",
+      "oam_x": "0xC8",
+      "oam_attr": "0xC2",
+      "chr_bank": "CommonSpritePatterns + DemoSpritePatterns",
+      "disasm_citation": {
+        "file": "Z_02.asm",
+        "line": 343,
+        "label": "InitialTitleSprites[1]",
+        "note": "NES OAM record: [Y, tile, attr, X]"
+      }
+    },
+    {
+      "name": "title_sprite_08_tileCE",
+      "category": "title",
+      "nes_tile_ids": [
+        "0xCE"
+      ],
+      "dispatch_class": "Wide_Flippable",
+      "frame_count": 1,
+      "oam_y": "0x57",
+      "oam_x": "0x74",
+      "oam_attr": "0x02",
+      "chr_bank": "CommonSpritePatterns + DemoSpritePatterns",
+      "disasm_citation": {
+        "file": "Z_02.asm",
+        "line": 343,
+        "label": "InitialTitleSprites[8]",
+        "note": "NES OAM record: [Y, tile, attr, X]"
+      }
+    },
+    {
+      "name": "title_sprite_09_tileD0",
+      "category": "title",
+      "nes_tile_ids": [
+        "0xD0"
+      ],
+      "dispatch_class": "Wide_Flippable",
+      "frame_count": 1,
+      "oam_y": "0x57",
+      "oam_x": "0x7C",
+      "oam_attr": "0x02",
+      "chr_bank": "CommonSpritePatterns + DemoSpritePatterns",
+      "disasm_citation": {
+        "file": "Z_02.asm",
+        "line": 343,
+        "label": "InitialTitleSprites[9]",
+        "note": "NES OAM record: [Y, tile, attr, X]"
+      }
+    },
+    {
+      "name": "title_sprite_10_tileD2",
+      "category": "title",
+      "nes_tile_ids": [
+        "0xD2"
+      ],
+      "dispatch_class": "Wide_Flippable",
+      "frame_count": 1,
+      "oam_y": "0x31",
+      "oam_x": "0x57",
+      "oam_attr": "0x02",
+      "chr_bank": "CommonSpritePatterns + DemoSpritePatterns",
+      "disasm_citation": {
+        "file": "Z_02.asm",
+        "line": 343,
+        "label": "InitialTitleSprites[10]",
+        "note": "NES OAM record: [Y, tile, attr, X]"
+      }
+    },
+    {
+      "name": "title_sprite_14_tileD4",
+      "category": "title",
+      "nes_tile_ids": [
+        "0xD4"
+      ],
+      "dispatch_class": "Wide_Flippable",
+      "frame_count": 1,
+      "oam_y": "0x31",
+      "oam_x": "0x5F",
+      "oam_attr": "0x02",
+      "chr_bank": "CommonSpritePatterns + DemoSpritePatterns",
+      "disasm_citation": {
+        "file": "Z_02.asm",
+        "line": 343,
+        "label": "InitialTitleSprites[14]",
+        "note": "NES OAM record: [Y, tile, attr, X]"
+      }
+    },
+    {
+      "name": "title_sprite_18_tileD6",
+      "category": "title",
+      "nes_tile_ids": [
+        "0xD6"
+      ],
+      "dispatch_class": "Wide_Flippable",
+      "frame_count": 1,
+      "oam_y": "0x27",
+      "oam_x": "0x50",
+      "oam_attr": "0x02",
+      "chr_bank": "CommonSpritePatterns + DemoSpritePatterns",
+      "disasm_citation": {
+        "file": "Z_02.asm",
+        "line": 343,
+        "label": "InitialTitleSprites[18]",
+        "note": "NES OAM record: [Y, tile, attr, X]"
+      }
+    },
+    {
+      "name": "title_sprite_22_tileA0",
+      "category": "title",
+      "nes_tile_ids": [
+        "0xA0"
+      ],
+      "dispatch_class": "Wide_Flippable",
+      "frame_count": 1,
+      "oam_y": "0x67",
+      "oam_x": "0x60",
+      "oam_attr": "0x03",
+      "chr_bank": "CommonSpritePatterns + DemoSpritePatterns",
+      "disasm_citation": {
+        "file": "Z_02.asm",
+        "line": 343,
+        "label": "InitialTitleSprites[22]",
+        "note": "NES OAM record: [Y, tile, attr, X]"
+      }
+    },
+    {
+      "name": "title_story_final_00_tileE0",
+      "category": "title",
+      "nes_tile_ids": [
+        "0xE0"
+      ],
+      "dispatch_class": "Wide_Flippable",
+      "frame_count": 1,
+      "chr_bank": "CommonSpritePatterns",
+      "disasm_citation": {
+        "file": "Z_02.asm",
+        "line": 408,
+        "label": "DemoStoryFinalSpriteTiles[0]",
+        "note": "Final story frame sprites (Link + Zelda + Triforce)"
+      }
+    },
+    {
+      "name": "title_story_final_01_tileE2",
+      "category": "title",
+      "nes_tile_ids": [
+        "0xE2"
+      ],
+      "dispatch_class": "Wide_Flippable",
+      "frame_count": 1,
+      "chr_bank": "CommonSpritePatterns",
+      "disasm_citation": {
+        "file": "Z_02.asm",
+        "line": 408,
+        "label": "DemoStoryFinalSpriteTiles[1]",
+        "note": "Final story frame sprites (Link + Zelda + Triforce)"
+      }
+    },
+    {
+      "name": "title_story_final_02_tileEC",
+      "category": "title",
+      "nes_tile_ids": [
+        "0xEC"
+      ],
+      "dispatch_class": "Wide_Flippable",
+      "frame_count": 1,
+      "chr_bank": "CommonSpritePatterns",
+      "disasm_citation": {
+        "file": "Z_02.asm",
+        "line": 408,
+        "label": "DemoStoryFinalSpriteTiles[2]",
+        "note": "Final story frame sprites (Link + Zelda + Triforce)"
+      }
+    },
+    {
+      "name": "title_story_final_03_tileEE",
+      "category": "title",
+      "nes_tile_ids": [
+        "0xEE"
+      ],
+      "dispatch_class": "Wide_Flippable",
+      "frame_count": 1,
+      "chr_bank": "CommonSpritePatterns",
+      "disasm_citation": {
+        "file": "Z_02.asm",
+        "line": 408,
+        "label": "DemoStoryFinalSpriteTiles[3]",
+        "note": "Final story frame sprites (Link + Zelda + Triforce)"
+      }
+    },
+    {
+      "name": "title_story_final_04_tileF8",
+      "category": "title",
+      "nes_tile_ids": [
+        "0xF8"
+      ],
+      "dispatch_class": "Wide_Flippable",
+      "frame_count": 1,
+      "chr_bank": "CommonSpritePatterns",
+      "disasm_citation": {
+        "file": "Z_02.asm",
+        "line": 408,
+        "label": "DemoStoryFinalSpriteTiles[4]",
+        "note": "Final story frame sprites (Link + Zelda + Triforce)"
+      }
+    },
+    {
+      "name": "title_story_final_05_tileFA",
+      "category": "title",
+      "nes_tile_ids": [
+        "0xFA"
+      ],
+      "dispatch_class": "Wide_Flippable",
+      "frame_count": 1,
+      "chr_bank": "CommonSpritePatterns",
+      "disasm_citation": {
+        "file": "Z_02.asm",
+        "line": 408,
+        "label": "DemoStoryFinalSpriteTiles[5]",
+        "note": "Final story frame sprites (Link + Zelda + Triforce)"
+      }
+    },
+    {
+      "name": "title_story_final_06_tileE4",
+      "category": "title",
+      "nes_tile_ids": [
+        "0xE4"
+      ],
+      "dispatch_class": "Wide_Flippable",
+      "frame_count": 1,
+      "chr_bank": "CommonSpritePatterns",
+      "disasm_citation": {
+        "file": "Z_02.asm",
+        "line": 408,
+        "label": "DemoStoryFinalSpriteTiles[6]",
+        "note": "Final story frame sprites (Link + Zelda + Triforce)"
+      }
+    },
+    {
+      "name": "title_story_final_07_tileE6",
+      "category": "title",
+      "nes_tile_ids": [
+        "0xE6"
+      ],
+      "dispatch_class": "Wide_Flippable",
+      "frame_count": 1,
+      "chr_bank": "CommonSpritePatterns",
+      "disasm_citation": {
+        "file": "Z_02.asm",
+        "line": 408,
+        "label": "DemoStoryFinalSpriteTiles[7]",
+        "note": "Final story frame sprites (Link + Zelda + Triforce)"
+      }
+    },
+    {
+      "name": "title_story_final_08_tileF0",
+      "category": "title",
+      "nes_tile_ids": [
+        "0xF0"
+      ],
+      "dispatch_class": "Wide_Flippable",
+      "frame_count": 1,
+      "chr_bank": "CommonSpritePatterns",
+      "disasm_citation": {
+        "file": "Z_02.asm",
+        "line": 408,
+        "label": "DemoStoryFinalSpriteTiles[8]",
+        "note": "Final story frame sprites (Link + Zelda + Triforce)"
+      }
+    },
+    {
+      "name": "title_story_final_09_tileF2",
+      "category": "title",
+      "nes_tile_ids": [
+        "0xF2"
+      ],
+      "dispatch_class": "Wide_Flippable",
+      "frame_count": 1,
+      "chr_bank": "CommonSpritePatterns",
+      "disasm_citation": {
+        "file": "Z_02.asm",
+        "line": 408,
+        "label": "DemoStoryFinalSpriteTiles[9]",
+        "note": "Final story frame sprites (Link + Zelda + Triforce)"
+      }
+    },
+    {
+      "name": "title_story_final_10_tileFC",
+      "category": "title",
+      "nes_tile_ids": [
+        "0xFC"
+      ],
+      "dispatch_class": "Wide_Flippable",
+      "frame_count": 1,
+      "chr_bank": "CommonSpritePatterns",
+      "disasm_citation": {
+        "file": "Z_02.asm",
+        "line": 408,
+        "label": "DemoStoryFinalSpriteTiles[10]",
+        "note": "Final story frame sprites (Link + Zelda + Triforce)"
+      }
+    },
+    {
+      "name": "title_story_final_11_tileFE",
+      "category": "title",
+      "nes_tile_ids": [
+        "0xFE"
+      ],
+      "dispatch_class": "Wide_Flippable",
+      "frame_count": 1,
+      "chr_bank": "CommonSpritePatterns",
+      "disasm_citation": {
+        "file": "Z_02.asm",
+        "line": 408,
+        "label": "DemoStoryFinalSpriteTiles[11]",
+        "note": "Final story frame sprites (Link + Zelda + Triforce)"
+      }
+    },
+    {
+      "name": "title_story_final_12_tileE8",
+      "category": "title",
+      "nes_tile_ids": [
+        "0xE8"
+      ],
+      "dispatch_class": "Wide_Flippable",
+      "frame_count": 1,
+      "chr_bank": "CommonSpritePatterns",
+      "disasm_citation": {
+        "file": "Z_02.asm",
+        "line": 408,
+        "label": "DemoStoryFinalSpriteTiles[12]",
+        "note": "Final story frame sprites (Link + Zelda + Triforce)"
+      }
+    },
+    {
+      "name": "title_story_final_13_tileEA",
+      "category": "title",
+      "nes_tile_ids": [
+        "0xEA"
+      ],
+      "dispatch_class": "Wide_Flippable",
+      "frame_count": 1,
+      "chr_bank": "CommonSpritePatterns",
+      "disasm_citation": {
+        "file": "Z_02.asm",
+        "line": 408,
+        "label": "DemoStoryFinalSpriteTiles[13]",
+        "note": "Final story frame sprites (Link + Zelda + Triforce)"
+      }
+    },
+    {
+      "name": "title_story_final_14_tileF4",
+      "category": "title",
+      "nes_tile_ids": [
+        "0xF4"
+      ],
+      "dispatch_class": "Wide_Flippable",
+      "frame_count": 1,
+      "chr_bank": "CommonSpritePatterns",
+      "disasm_citation": {
+        "file": "Z_02.asm",
+        "line": 408,
+        "label": "DemoStoryFinalSpriteTiles[14]",
+        "note": "Final story frame sprites (Link + Zelda + Triforce)"
+      }
+    },
+    {
+      "name": "title_story_final_15_tileF6",
+      "category": "title",
+      "nes_tile_ids": [
+        "0xF6"
+      ],
+      "dispatch_class": "Wide_Flippable",
+      "frame_count": 1,
+      "chr_bank": "CommonSpritePatterns",
+      "disasm_citation": {
+        "file": "Z_02.asm",
+        "line": 408,
+        "label": "DemoStoryFinalSpriteTiles[15]",
+        "note": "Final story frame sprites (Link + Zelda + Triforce)"
+      }
+    },
+    {
+      "name": "title_story_final_16_tileDC",
+      "category": "title",
+      "nes_tile_ids": [
+        "0xDC"
+      ],
+      "dispatch_class": "Wide_Flippable",
+      "frame_count": 1,
+      "chr_bank": "CommonSpritePatterns",
+      "disasm_citation": {
+        "file": "Z_02.asm",
+        "line": 408,
+        "label": "DemoStoryFinalSpriteTiles[16]",
+        "note": "Final story frame sprites (Link + Zelda + Triforce)"
+      }
+    },
+    {
+      "name": "title_story_final_17_tileDE",
+      "category": "title",
+      "nes_tile_ids": [
+        "0xDE"
+      ],
+      "dispatch_class": "Wide_Flippable",
+      "frame_count": 1,
+      "chr_bank": "CommonSpritePatterns",
+      "disasm_citation": {
+        "file": "Z_02.asm",
+        "line": 408,
+        "label": "DemoStoryFinalSpriteTiles[17]",
+        "note": "Final story frame sprites (Link + Zelda + Triforce)"
+      }
+    }
+  ]
+}
