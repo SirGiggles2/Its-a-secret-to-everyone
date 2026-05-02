@@ -94,15 +94,51 @@ static const signed char beam_spawn_y[4] = {
     +24, -16,  +4,  +4
 };
 
+/* Track UW separately so set_redux can recompute bias in case the redux
+ * flag changes after set_uw was called. */
+static unsigned char s_in_uw = 0u;
+
+static void recompute_y_bias(void);
+
 void roomrom_combat_set_uw(unsigned char in_uw)
 {
-    s_uw_y_bias = in_uw ? (short)0 : (short)-2;
+    s_in_uw = in_uw ? 1u : 0u;
+    recompute_y_bias();
 }
 
 static unsigned char s_redux = 0u;
 void roomrom_combat_set_redux(unsigned char redux)
 {
     s_redux = redux ? 1u : 0u;
+    recompute_y_bias();
+}
+
+/* Compute sword/beam Y bias.
+ *
+ * Vanilla Z1 (Z_07.asm:3320): in OW (CurLevel==0), Link is drawn +2 px
+ * down via INC $01 twice; sword draw doesn't get this shift, so visual
+ * sword Y - link Y = offset - 2. UW skips the +2 shift entirely so
+ * visual diff = offset.
+ *
+ * Redux (Zelda1-Redux/code/gameplay/sword_draw.asm:104): OW does not
+ * shift the sword (BEQ skips the DECs), but UW shifts sword Y -= 2.
+ * Link's +2 OW shift from vanilla is still active (Redux only patches
+ * sword draw). Net: visual diff = offset - 2 in both OW and UW.
+ *
+ * RoomRom Genesis Link is drawn at link_y always (no shift). So the
+ * sword bias must compensate to match the NES visual diff:
+ *   Vanilla OW: offset - 2 → bias = -2
+ *   Vanilla UW: offset      → bias =  0
+ *   Redux   OW: offset - 2 → bias = -2
+ *   Redux   UW: offset - 2 → bias = -2
+ */
+static void recompute_y_bias(void)
+{
+    if (s_redux) {
+        s_uw_y_bias = (short)-2;
+    } else {
+        s_uw_y_bias = s_in_uw ? (short)0 : (short)-2;
+    }
 }
 
 /* Redux ALttP-style 8-frame arc swing.
