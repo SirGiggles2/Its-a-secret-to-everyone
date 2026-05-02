@@ -7,6 +7,7 @@
 #include "roomrom_boomerang.h"
 #include "roomrom_arrow.h"
 #include "roomrom_bomb.h"
+#include "roomrom_scene_load.h"
 
 /* Boots to overworld room 0x77.
  *
@@ -379,11 +380,10 @@ int main(bool hardReset)
         u32 blank[8] = {0,0,0,0,0,0,0,0};
         VDP_loadTileData(blank, 0, 1, CPU);
     }
-    /* Phase 1: select item-atlas variant before the first CHR upload so
-     * the right NES item bytes land in VRAM from frame 0. */
-    roomrom_sprites_set_redux(current_redux_flag());
+    /* P5: scene-load coordinator handles variant selection + sprite CHR
+     * upload.  combat redux is not a CHR-load concern, kept separate. */
+    roomrom_scene_load(ROOMROM_SCENE_UW_L1, current_redux_flag());
     roomrom_combat_set_redux(current_redux_flag());
-    roomrom_sprites_upload_chr();          /* one-shot sprite CHR */
     load_room(s_room_id);                  /* loads BG pal + sprite PAL1 */
     roomrom_sprites_spawn_link(s_link_x, s_link_y);
     roomrom_combat_init();                 /* S7: clear sword sprite slot */
@@ -486,12 +486,13 @@ int main(bool hardReset)
             upload_scene_chr();
             load_room(s_room_id);
             roomrom_combat_set_uw(s_scene == SCENE_UW);
-            /* Phase 1: scene change can flip which redux flag is active
-             * (UW and OW maintain independent map_id state). Re-select
-             * variant + re-upload item CHR so the atlas matches. */
-            roomrom_sprites_set_redux(current_redux_flag());
+            /* P5: scene change uses coordinator to re-upload sprite CHR
+             * with correct variant. combat redux kept separate. */
+            roomrom_scene_load(
+                (s_scene == SCENE_UW) ? ROOMROM_SCENE_UW_L1
+                                      : ROOMROM_SCENE_OVERWORLD,
+                current_redux_flag());
             roomrom_combat_set_redux(current_redux_flag());
-            roomrom_sprites_upload_chr();
             continue;
         }
 
@@ -505,12 +506,13 @@ int main(bool hardReset)
             }
             upload_scene_chr();
             load_room(s_room_id);
-            /* Phase 1: re-select item atlas variant + re-upload item CHR
-             * so the new map's NES item bytes land in VRAM. Combat keeps
-             * its existing redux flag (reserved for v11+ alt-swing). */
-            roomrom_sprites_set_redux(current_redux_flag());
+            /* P5: map toggle re-uploads sprite CHR via coordinator.
+             * Combat keeps its existing redux flag (v11+ alt-swing). */
+            roomrom_scene_load(
+                (s_scene == SCENE_UW) ? ROOMROM_SCENE_UW_L1
+                                      : ROOMROM_SCENE_OVERWORLD,
+                current_redux_flag());
             roomrom_combat_set_redux(current_redux_flag());
-            roomrom_sprites_upload_chr();
             continue;
         }
 
