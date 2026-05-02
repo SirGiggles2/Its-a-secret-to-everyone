@@ -219,7 +219,7 @@ void roomrom_sprites_spawn_link(short x, short y)
     VDP_setSpriteFull(3,
                       (s16)-32,
                       (s16)-32,
-                      SPRITE_SIZE(2, 2),
+                      SPRITE_SIZE(1, 1),
                       TILE_ATTR_FULL(PAL1,0, 0, 0, BOOMERANG_VRAM_TILE),
                       4);
     VDP_setSpriteFull(4,
@@ -342,9 +342,17 @@ void roomrom_sprites_clear_beam(void)
     VDP_updateSprites(4, DMA);
 }
 
-/* S7 v6 boomerang (slot 3). 8-phase rotation cycle from
- * BoomerangFrameCycle (0,1,2,1,0,1,2,1) and BoomerangBaseSpriteAttrCycle
- * ($00,$00,$00,$40,$40,$C0,$80,$80) at Z_07.asm:3779. */
+/* S7 v6 boomerang (slot 3). NES Z1 draws boomerang as a SINGLE 8x8
+ * sprite via the @Narrow path in Anim_WriteSpecificItemSprites
+ * (Z_01.asm:5279). Tile $36 is in [$20,$62), so $07 := 0 → only the
+ * left half of the sprite pair is written. The "spin" comes from
+ * cycling 3 frame tiles ($36/$38/$3A) and 4 flip combos ($00,$40,
+ * $C0,$80) per BoomerangFrameCycle / BoomerangBaseSpriteAttrCycle
+ * at Z_07.asm:3779.
+ * Earlier code rendered SPRITE_SIZE(2,2) which packed 4 sequential
+ * blob tiles into a 16x16 quad, producing the "two boomerangs"
+ * visual ($37 + $39 are not part of frame 0 — they belong to other
+ * animation phases). 8x8 single-tile is the NES-faithful shape. */
 static const unsigned char k_boomerang_frame_cycle[8] = {
     0u, 1u, 2u, 1u, 0u, 1u, 2u, 1u
 };
@@ -365,7 +373,7 @@ void roomrom_sprites_set_boomerang(short x, short y,
     VDP_setSpriteFull(3,
                       (s16)x,
                       (s16)y,
-                      SPRITE_SIZE(2, 2),
+                      SPRITE_SIZE(1, 1),
                       TILE_ATTR_FULL(PAL1,0, vflip, hflip, tile),
                       4);
     VDP_updateSprites(5, DMA);
@@ -376,7 +384,7 @@ void roomrom_sprites_clear_boomerang(void)
     VDP_setSpriteFull(3,
                       (s16)-32,
                       (s16)-32,
-                      SPRITE_SIZE(2, 2),
+                      SPRITE_SIZE(1, 1),
                       TILE_ATTR_FULL(PAL1,0, 0, 0, BOOMERANG_VRAM_TILE),
                       4);
     VDP_updateSprites(5, DMA);
