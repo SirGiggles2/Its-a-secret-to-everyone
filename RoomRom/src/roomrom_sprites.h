@@ -43,15 +43,23 @@ void roomrom_sprites_set_sword_diagonal(short x, short y,
                                         unsigned char hflip,
                                         unsigned char vflip);
 
-/* S7 v5 beam: sword shot projectile (slot 2). Flicker cycles vflip/hflip
- * each frame to imitate Z1's palette-cycling beam (Genesis can't cheaply
- * cycle the palette index without re-uploading PAL0-2 with sword colors).
- * vertical=1 for UP/DOWN beams (uses 8x16 sword tile $20/$21);
- * vertical=0 for LEFT/RIGHT beams (uses 16x16 horizontal sword tiles
- * $82-$85). */
-void roomrom_sprites_set_beam(short x, short y,
-                              unsigned char vertical,
-                              unsigned char frame_phase);
+/* S7 v5 beam: sword shot projectile (slot 2). NES Z1 draws sword shot
+ * via Anim_WriteItemSprites with the same tile pattern as the sword
+ * itself (Z_07.asm:3437 DrawSwordShotOrMagicShot, item slot $22 →
+ * ItemFrameTiles offset $29 = $20 vertical / $82 horizontal). Per
+ * Z_07.asm:3459 the only frame-to-frame variation is a palette-index
+ * rotation (FrameCounter & 3) — the sprite SHAPE does not flip or
+ * rotate. NES base attribute per direction (RDirectionToWeaponBase
+ * Attribute, Z_07.asm:3804): UP=$00, DOWN=$80 (vflip), LEFT=$00 (set
+ * via [0F] hflip in DrawSwordShotOrMagicShot:3469), RIGHT=$00.
+ *
+ * Earlier Genesis impl approximated the palette flash by cycling
+ * vflip+hflip each frame; that creates a visible orientation flicker
+ * not present on NES. Drop the flicker and apply the NES per-direction
+ * flip exactly. Vertical beam = single 8x8 (matches NES @Narrow path
+ * for tile $20). Horizontal beam keeps 16x16 because top row of the
+ * sword_horz blob contains NES tiles $82+$84 in column-major order. */
+void roomrom_sprites_set_beam(short x, short y, link_face_t face);
 void roomrom_sprites_clear_beam(void);
 
 /* S7 v6 boomerang (slot 3). 8-phase rotation cycle from

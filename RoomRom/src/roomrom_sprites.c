@@ -213,7 +213,7 @@ void roomrom_sprites_spawn_link(short x, short y)
     VDP_setSpriteFull(2,
                       (s16)-32,
                       (s16)-32,
-                      SPRITE_SIZE(1, 2),
+                      SPRITE_SIZE(1, 1),
                       TILE_ATTR_FULL(PAL1,0, 0, 0, SWORD_VERT_VRAM_TILE),
                       3);
     VDP_setSpriteFull(3,
@@ -297,25 +297,44 @@ void roomrom_sprites_set_sword_diagonal(short x, short y,
     VDP_updateSprites(3, DMA);
 }
 
-/* S7 v5 sword beam (slot 2). Reuses sword vertical/horizontal tiles.
- * NES Z1 cycles palette index each frame for a flash effect
- * (DrawSwordShotOrMagicShot, Z_07.asm:3459):
- *     ATTR = (FrameCounter & 3) | RDirectionToWeaponBaseAttribute[Y]
- * On Genesis, PAL0-2 hold BG colors so we can't cheaply rotate palette
- * index. Approximate by toggling vflip + hflip each frame (4 phases:
- * 0=no flip, 1=hflip, 2=vflip, 3=both). Visible flicker at the tile
- * silhouette level. */
-void roomrom_sprites_set_beam(short x, short y,
-                              unsigned char vertical,
-                              unsigned char frame_phase)
+/* S7 v5 sword beam (slot 2). NES Z1 sword shot draws via the same
+ * Anim_WriteItemSprites path as the held sword (Z_07.asm:3437):
+ *   - Vertical (UP/DOWN, RDirectionToWeaponFrame=0): tile $20, falls
+ *     into @Narrow path → single 8x8 sprite. Base attr from
+ *     RDirectionToWeaponBaseAttribute: UP=$00, DOWN=$80 (vflip).
+ *   - Horizontal (LEFT/RIGHT, frame=1): tile $82, falls into @Wide /
+ *     HorizontallyFlippableSpritePair → 2 8x8 sprites side-by-side
+ *     (NES tiles $82 + $84). Base attr 0 for both; LEFT direction
+ *     sets [0F]=1 in DrawSwordShotOrMagicShot:3471 to hflip the pair.
+ *
+ * Per Z_07.asm:3459 the per-frame attribute is
+ *   ATTR = base | (FrameCounter & 3)
+ * — the bottom 2 bits cycle palette index for a color flash. The
+ * sprite SHAPE never flips or rotates between frames. On Genesis we
+ * don't have 4 sprite palettes wired up to imitate the flash, so the
+ * beam renders with a static palette and only the NES per-direction
+ * base attribute. Better than the earlier vflip/hflip frame-cycle
+ * approximation, which introduced an orientation flicker not present
+ * on NES.
+ *
+ * Vertical beam = SPRITE_SIZE(1, 1) (8x8, NES-faithful single tile).
+ * Horizontal beam keeps SPRITE_SIZE(2, 2): in column-major SGDK
+ * iteration the top row of the sword_horz blob is NES tiles $82+$84
+ * (the exact pair NES draws), and the bottom row holds the unused
+ * sword_horz tiles $83+$85 — visually close enough until the CHR
+ * blob is reshaped to a 16x8 layout. */
+void roomrom_sprites_set_beam(short x, short y, link_face_t face)
 {
-    unsigned char vflip = (unsigned char)((frame_phase & 0x2u) ? 1u : 0u);
-    unsigned char hflip = (unsigned char)((frame_phase & 0x1u) ? 1u : 0u);
+    unsigned char vertical = (unsigned char)((face == LINK_FACE_UP
+                                           || face == LINK_FACE_DOWN)
+                                          ? 1u : 0u);
+    unsigned char vflip = (unsigned char)((face == LINK_FACE_DOWN) ? 1u : 0u);
+    unsigned char hflip = (unsigned char)((face == LINK_FACE_LEFT) ? 1u : 0u);
     if (vertical) {
         VDP_setSpriteFull(2,
                           (s16)x,
                           (s16)y,
-                          SPRITE_SIZE(1, 2),
+                          SPRITE_SIZE(1, 1),
                           TILE_ATTR_FULL(PAL1,0, vflip, hflip,
                                          SWORD_VERT_VRAM_TILE),
                           3);
@@ -336,7 +355,7 @@ void roomrom_sprites_clear_beam(void)
     VDP_setSpriteFull(2,
                       (s16)-32,
                       (s16)-32,
-                      SPRITE_SIZE(1, 2),
+                      SPRITE_SIZE(1, 1),
                       TILE_ATTR_FULL(PAL1,0, 0, 0, SWORD_VERT_VRAM_TILE),
                       3);
     VDP_updateSprites(4, DMA);

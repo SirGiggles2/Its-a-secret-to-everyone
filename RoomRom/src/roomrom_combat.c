@@ -71,7 +71,6 @@ static unsigned char  s_beam_active   = 0u;
 static link_face_t    s_beam_face     = LINK_FACE_DOWN;
 static short          s_beam_x        = 0;
 static short          s_beam_y        = 0;
-static unsigned char  s_beam_phase    = 0u;
 
 /* Y bias applied to sword + beam to match NES Z_07.asm:3320 — in OW
  * (CurLevel == 0), Link is drawn 2 px DOWN from ObjY (INC $01 twice),
@@ -282,12 +281,7 @@ static void update_beam(void)
         return;
     }
 
-    {
-        unsigned char vertical = (s_beam_face == LINK_FACE_UP
-                               || s_beam_face == LINK_FACE_DOWN) ? 1u : 0u;
-        roomrom_sprites_set_beam(s_beam_x, s_beam_y, vertical, s_beam_phase);
-    }
-    s_beam_phase = (unsigned char)((s_beam_phase + 1u) & 0x3u);
+    roomrom_sprites_set_beam(s_beam_x, s_beam_y, s_beam_face);
 }
 
 /* Spawn the beam at the sword TIP for the current facing. Earlier
@@ -301,7 +295,6 @@ static void spawn_beam(short link_x, short link_y)
     s_beam_face   = s_face;
     s_beam_x      = (short)(link_x + beam_spawn_x[face_idx]);
     s_beam_y      = (short)(link_y + beam_spawn_y[face_idx] + s_uw_y_bias);
-    s_beam_phase  = 0u;
     s_beam_active = 1u;
 }
 
