@@ -3,6 +3,7 @@
 **Date:** 2026-05-02
 **Status:** Draft roadmap, PrimeDirective-selected
 **Rule:** `$PrimeDirective` governs unanswered choices: best long-term outcome, maximal efficiency, best coding practices, NES accuracy first, Genesis-native implementation, and task shapes that fit Codex + Claude (Coding CLIs) strengths.
+**Implementation index:** [Master plan](../plans/2026-05-02-title-roomrom-full-port-master-plan.md) is the executable phase checklist; this roadmap is the strategic spec.
 
 ## Goal
 
@@ -98,6 +99,8 @@ Primary source ownership:
 5. Generated assets must be reproducible from the user-supplied ROM.
 6. Public release must build from a clean tree with no private asset files present.
 7. Optional 4-player mode is a separate enhanced mode. It must not destabilize 1-player NES parity.
+8. Child implementation plans run under `superpowers:executing-plans`.
+9. Independent implementation slices use `superpowers:subagent-driven-development` and `superpowers:dispatching-parallel-agents`.
 
 ## Immediate Roadmap From Current State
 
@@ -118,7 +121,7 @@ After Overworld Caves, the correct next step is not enemies first and not final 
 5. Then Link combat/items.
 6. Then enemies and bosses.
 
-That order prevents enemy/combat work from being written against a half-real world model.
+That order is dependency-correct: caves and overworld secrets define world transitions and persistent flags; dungeon core defines doors, stairs, collision, and room-clear state; Link/items/combat need those room rules; enemies need combat and room-clear rules; bosses need the enemy/combat/render pipeline plus dungeon reward state. This prevents enemy/combat work from being written against a half-real world model.
 
 ## Phase 0 - Rename And Split Targets
 
@@ -140,16 +143,19 @@ Goal: make the future legal release path real early, not as an afterthought.
 Steps:
 
 1. Define `tools/builder/` as the final asset/build pipeline home.
-2. Add ROM hash validation for supported input ROMs.
-3. Generate all current `data/` and `RoomRom/data/` assets from the NES ROM into a gitignored cache.
-4. Add manifest files recording source ROM hash, extractor version, output file hashes, and generation timestamp.
-5. Change build scripts to prefer generated local assets and fail clearly when missing.
-6. Add a clean-build test: delete generated cache, drag/pass ROM to builder, rebuild assets, build `Title.md` and `RoomRom.md`.
-7. Add release-packaging check that rejects Nintendo-derived generated assets in the public bundle.
+2. Add ROM hash validation for USA PRG0 and USA PRG1; reject PAL and unsupported hashes with clear messages.
+3. Add a Redux input recipe: user supplies either a supported Redux-patched ROM or a locally-owned patch plus a supported base ROM.
+4. Generate all current `data/` and `RoomRom/data/` assets from the NES ROM into a gitignored cache.
+5. Add manifest files recording source ROM hash, extractor version, output file hashes, and generation timestamp.
+6. Change build scripts to prefer generated local assets and fail clearly when missing.
+7. Add a clean-build test: delete generated cache, drag/pass ROM to builder, rebuild assets, build `Title.md` and `RoomRom.md`.
+8. Add release-packaging check that rejects Nintendo-derived generated assets in the public bundle.
 
 ## Phase 2 - Finish RoomRom Graphics Registry
 
 Goal: eliminate sprite/tile/palette clobber permanently.
+
+Worktree rule: active RoomRom implementation for this phase happens in `C:\Users\Jake Diggity\Documents\GitHub\FINAL TRY-roomrom-s1`, not the main worktree.
 
 Steps:
 
@@ -165,6 +171,8 @@ Steps:
 ## Phase 3 - Overworld Caves
 
 Goal: make every overworld cave entrance behave like NES Zelda.
+
+Worktree rule: active RoomRom implementation for this phase happens in `C:\Users\Jake Diggity\Documents\GitHub\FINAL TRY-roomrom-s1`, not the main worktree.
 
 Steps:
 
@@ -183,6 +191,8 @@ Steps:
 
 Goal: make the overworld stateful, not just rendered.
 
+Worktree rule: active RoomRom implementation for this phase happens in `C:\Users\Jake Diggity\Documents\GitHub\FINAL TRY-roomrom-s1`, not the main worktree.
+
 Steps:
 
 1. Bombable walls and burnable bushes.
@@ -199,6 +209,8 @@ Steps:
 ## Phase 5 - Dungeon Core
 
 Goal: make underworld rooms physically and statefully correct before adding full enemy pressure.
+
+Worktree rule: active RoomRom implementation for this phase happens in `C:\Users\Jake Diggity\Documents\GitHub\FINAL TRY-roomrom-s1`, not the main worktree.
 
 Steps:
 
@@ -217,6 +229,8 @@ Steps:
 
 Goal: complete the player system against NES behavior.
 
+Worktree rule: active RoomRom implementation for this phase happens in `C:\Users\Jake Diggity\Documents\GitHub\FINAL TRY-roomrom-s1`, not the main worktree.
+
 Steps:
 
 1. Link movement parity: overworld, cave, dungeon, stairs, doors, scroll transitions.
@@ -233,6 +247,8 @@ Steps:
 ## Phase 7 - Enemies
 
 Goal: implement enemies by behavior family, not random sprite type.
+
+Worktree rule: active RoomRom implementation for this phase happens in `C:\Users\Jake Diggity\Documents\GitHub\FINAL TRY-roomrom-s1`, not the main worktree.
 
 Order:
 
@@ -290,7 +306,7 @@ Goal: all songs and SFX play correctly through the Genesis audio path.
 
 Steps:
 
-1. Lock final driver path: SGDK XGM/XGM2 or current custom driver behind adapter.
+1. Keep the current custom driver behind the audio adapter as the default; revisit SGDK XGM/XGM2 only if Phase 15 measurements show a budget, maintainability, or fidelity reason.
 2. Extract or transform NES song/SFX data through builder pipeline.
 3. Map overworld, dungeon, title, cave, item, death, boss, and ending music.
 4. Map SFX: sword, beam, item, rupee, heart, door, bomb, enemy hit/death, boss, low-health.
@@ -298,9 +314,9 @@ Steps:
 6. Add audio event probes for discrete SFX and transition events, plus a manual/hardware listen checklist for full music-track quality.
 7. Verification: no audio subsystem breaks VBlank/DMA budget.
 
-## Phase 11 - Title.md Frontend Completion
+## Phase 11 - Title.md Frontend Gap-Fill + Regression Lock
 
-Goal: make `Title.md` a polished release frontend before final gameplay merge.
+Goal: treat the mostly-built title/file-select work as an existing frontend, fill remaining gaps, and lock it with regression probes before final gameplay merge.
 
 Steps:
 
@@ -315,6 +331,8 @@ Steps:
 ## Phase 12 - Promote RoomRom Core Into Final Game
 
 Goal: combine the proven gameplay core with Title.md without losing RoomRom speed.
+
+Promotion gate: a RoomRom module moves only after two green RoomRom probe runs, no RoomRom-only globals, typed `src/state/` ownership, a public `src/game/<subsystem>/` header, and recorded NES reference provenance.
 
 Steps:
 
@@ -343,6 +361,7 @@ Rules:
 7. Extra players use Genesis sprite capacity carefully; enemies/bosses retain priority over cosmetic extras.
 8. Support Genesis multi-controller adapters through an input adapter layer, not scattered controller reads.
 9. Multiplayer mode has separate balance options and does not affect 1-player probes.
+10. NES save slot bytes remain unchanged; multiplayer-only state lives in a separate versioned SRAM region that 1-player NES-faithful saves ignore.
 
 Implementation order:
 
@@ -375,6 +394,8 @@ Steps:
 
 Goal: use the Genesis hardware deliberately after correctness is proven, without turning optimization into guesswork or breaking NES parity.
 
+Timing model: Phase 15a happens inline during Phases 2-6 for structural Genesis-native wins that are already part of the work, including VRAM map ownership, Window-plane HUD, DMA chunking, CRAM ownership, and sprite atlas layout. Phase 15b is the post-quest measured re-pass where broader rewrites require perf evidence.
+
 Rules:
 
 1. Optimize from measurements, not instinct.
@@ -391,7 +412,7 @@ Steps:
 4. Use horizontal/vertical scroll hardware for room transitions instead of redrawing when scrolling is cheaper.
 5. Keep scene-specific VRAM residency tables so common gameplay tiles stay resident and rare tiles stream only on scene load.
 6. Use Genesis sprite sizes and link fields to collapse NES multi-OAM objects into fewer SAT entries when visual parity is preserved.
-7. Precompute 68K-friendly room, collision, enemy, and animation tables from extracted NES data.
+7. Precompute 68K-friendly room, collision, enemy, and animation tables under `build/generated/tables/` from extracted NES data.
 8. Pack palettes and expanded CHR around Genesis CRAM/VRAM realities, not NES PPU register habits.
 9. Keep audio events asynchronous and VBlank-safe so dense music/SFX never starve rendering.
 10. Verify optimized paths against pre-optimization captures and keep unoptimized reference probes for regression diagnosis.
@@ -429,7 +450,8 @@ Steps:
    - final `.md` hash.
 8. Add "clean legal package" CI job: public release zip must contain no generated Nintendo-derived data.
 9. Add "from scratch" CI/manual gate: fresh checkout + builder + user ROM produces final ROM.
-10. Add documentation for users and contributors.
+10. Enforce reproducibility: the same NES ROM, builder version, and git SHA must produce byte-identical final `.md` output.
+11. Add documentation for users and contributors.
 
 ## Verification Strategy
 
@@ -438,7 +460,10 @@ Every phase closes with:
 - clean build;
 - focused RoomRom or Title.md probe;
 - NES-vs-Genesis screenshot or normalized state diff where applicable;
+- one BizHawk launch per probe report per `feedback_one_big_probe`, with screenshot, SAT, CRAM, plane/Window dumps, RAM/state bytes, and input log captured together;
+- report provenance: source ROM SHA, generated asset manifest hash, emulator/core/version, frame number, target ROM hash, and probe script hash;
 - regression run for previously green gates;
+- `superpowers:requesting-code-review` checkpoint for non-trivial implementation phases;
 - archived report under `builds/reports/`;
 - commit with a clear phase label.
 

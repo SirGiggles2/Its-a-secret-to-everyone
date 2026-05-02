@@ -15,12 +15,64 @@
 - [ ] Treat `$PrimeDirective` as the decision rule for every unresolved choice: best long-term outcome, maximal efficiency, best coding practices, NES accuracy first, Genesis-native implementation, and task shapes that fit Codex + Claude (Coding CLIs) strengths.
 - [ ] Do not ask for option selection unless a destructive or external publishing action is required.
 - [ ] Keep `RoomRom` as the fast gameplay harness and `Title.md` as the frontend/release harness until Phase 12.
-- [ ] Before editing or building `RoomRom`, run `git worktree list` and use `C:\Users\Jake Diggity\Documents\GitHub\FINAL TRY-roomrom-s1` for active RoomRom work.
+- [ ] Before editing or building `RoomRom`, run `git worktree list` and use `C:\Users\Jake Diggity\Documents\GitHub\FINAL TRY-roomrom-s1` for active RoomRom work. This encodes memory rule `feedback_check_worktree_first`.
 - [ ] Never hand-edit generated assets as the permanent solution.
 - [ ] Never add Nintendo-derived generated data to the public release package.
 - [ ] Every major phase gets its own child spec and child implementation plan before code changes.
-- [ ] Every code phase closes with build, probe, screenshot/state evidence, and an atomic commit.
+- [ ] Execute child implementation plans with `superpowers:executing-plans`.
+- [ ] Use `superpowers:subagent-driven-development` when a child plan has independent implementation slices.
+- [ ] Every code phase closes with build, probe, screenshot/state evidence, `superpowers:requesting-code-review`, and an atomic commit.
 - [ ] Keep 1-player NES parity protected. Redux options and 4-player mode are option-driven divergence only.
+
+## Phase Close Gate
+
+Every implementation phase closes in this exact order:
+
+1. Build the touched target.
+2. Run the focused probe set.
+3. Capture screenshot/state evidence.
+4. Run `superpowers:requesting-code-review` against the diff and evidence.
+5. Fix review findings or record technical deferrals in the phase report.
+6. Run the focused probe set again after fixes.
+7. Commit the phase with the report paths in the commit message body when the phase is substantial.
+
+## Subagent Strategy
+
+Use `superpowers:dispatching-parallel-agents` when a phase has independent workstreams with disjoint write scopes. Default dispatch shapes:
+
+- Phase 1 extractors: one agent per asset class (`intro/fs`, `rooms`, `CHR/palette`, `enemies/items`, `audio/text`) plus one verifier/package-check agent.
+- Phase 7 enemies: one agent per behavior family (`walkers`, `flyers/jumpers`, `projectiles`, `special`, `aquatic/terrain`) after the enemy framework lands.
+- Phase 8 bosses: one agent per boss after the boss framework lands.
+- Phase 13 multiplayer: separate agents for input adapter, render/sprite budget, player state, and combat rules after `PlayerState[4]` exists.
+- Phase 17 builder release: separate agents for package checker, drag/drop UX, reproducibility gate, and docs.
+
+Rules:
+
+- [ ] Each parallel agent owns a disjoint file/module set.
+- [ ] Shared headers and state structs land before parallel dispatch.
+- [ ] Workers do not edit RoomRom files unless they are in `FINAL TRY-roomrom-s1`.
+- [ ] Each worker returns changed paths, build/probe evidence, and unresolved risks.
+- [ ] Parent session integrates and runs the phase close gate.
+
+## Probe Contract
+
+Every BizHawk probe follows the one-launch bundle rule from memory rule `feedback_one_big_probe`:
+
+- [ ] One probe per BizHawk launch.
+- [ ] Bundle screenshot, SAT, CRAM, plane/Window dumps, relevant RAM/state bytes, and input log in the same launch.
+- [ ] Record source ROM SHA-256, generated asset manifest hash, emulator name/version/core, frame number, target ROM hash, and probe script hash in every report.
+- [ ] Deterministic probes expose RNG seed injection or record the exact seeded state before first gameplay frame.
+- [ ] Enemy, boss, drop, recorder, gambling, and room-spawn probes must run from a deterministic seed harness.
+- [ ] Reports end with `ALL PASS` or `FAIL` so runners can gate automatically.
+
+## Cross-Workstream Dependency Graph
+
+- Builder/data extraction feeds every generated asset and must become strict before public release.
+- Graphics registry feeds rooms, caves, dungeons, Link/items, enemies, bosses, HUD, frontend promotion, and multiplayer.
+- Typed state feeds caves, overworld secrets, dungeon state, Link/items, enemies, bosses, save/options, promotion, and multiplayer.
+- Probe infrastructure feeds every phase close gate and must grow before each subsystem is called complete.
+- Options runtime feeds file select, pause, HUD, audio, combat toggles, traversal toggles, accessibility, and multiplayer player-count selection.
+- Audio adapter feeds frontend, caves, items/combat, enemies, bosses, and hardware validation.
 
 ## Repository Targets
 
@@ -69,7 +121,7 @@
 - [ ] Keep temporary compatibility copy:
   - [ ] After `Title.md` is created, copy it to `whatif.md`.
   - [ ] After `Title.lst` is created, copy it to `whatif.lst`.
-  - [ ] Add a comment saying this alias exists only until all probes are migrated.
+  - [ ] Add a comment saying this alias exists only until all probes are migrated and is deleted in Phase 16.5.
 - [ ] Build once to prove alias and renamed output are both produced.
 
 ### Task 0.3: Rename Probe Inputs
@@ -127,11 +179,14 @@
 ### Task 1.1: Define Builder Inputs And Outputs
 
 - [ ] Create `tools/builder/README.md`.
-- [ ] Document supported input ROM: `Legend of Zelda, The (USA).nes`.
-- [ ] Record required SHA-256: `8f72dc2e98572eb4ba7c3a902bca5f69c448fc4391837e5f8f0d4556280440ac`.
+- [ ] Document supported input ROMs:
+  - [ ] PRG0 / Rev 0: `Legend of Zelda, The (USA).nes`, SHA-256 `8f72dc2e98572eb4ba7c3a902bca5f69c448fc4391837e5f8f0d4556280440ac`.
+  - [ ] PRG1 / Rev A: `Legend of Zelda, The (USA) (Rev A).nes`, SHA-256 `89232edf4f9b52e3cb872094bc78973de080befca2ddea893b6e936066514d4e`.
+- [ ] Record hash provenance in the builder README: PRG0 from local S0 audit; PRG1 cross-checked against TASVideos SHA-1/MD5 listing and a No-Intro-compatible SHA-256 listing.
 - [ ] Document optional Redux input policy:
-  - [ ] If exact Redux assets are required, user supplies a compatible Redux ROM or patch.
-  - [ ] The public package does not bundle Redux IPS payloads unless license is verified.
+  - [ ] User supplies a compatible Redux-patched ROM, or supplies a base ROM plus a locally-owned Redux patch file.
+  - [ ] Builder validates the post-patch Redux ROM hash against a supported Redux hash table.
+  - [ ] The public package does not bundle Redux IPS payloads unless license is verified and recorded.
 - [ ] Define output cache path: `build/generated/<rom_hash>/`.
 - [ ] Define final ROM output path: `build/output/`.
 - [ ] Define output manifest path: `build/output/build_manifest.json`.
@@ -145,7 +200,9 @@
 - [ ] Implement validation for iNES header.
 - [ ] Reject missing file.
 - [ ] Reject unsupported hash with a clear error.
+- [ ] Reject PAL ROMs with: `PAL Zelda ROMs are not supported; use a supported USA PRG0 or PRG1 ROM hash.`
 - [ ] Reject ROMs with CHR ROM banks if Zelda 1 CHR-RAM expectation is violated.
+- [ ] Accept PRG0 and PRG1 as separate supported inputs and route extractor offsets through a ROM-version descriptor, not ad hoc conditionals.
 - [ ] Add tests for valid hash, invalid hash, missing file, and invalid iNES header.
 
 ### Task 1.3: Define Generated Asset Manifest
@@ -246,7 +303,7 @@
 
 **Goal:** Finish the current RoomRom graphics/atlas/palette/VRAM work so future gameplay systems never clobber sprites, palettes, HUD, or BG tiles.
 
-**Worktree:** `C:\Users\Jake Diggity\Documents\GitHub\FINAL TRY-roomrom-s1`
+**Worktree:** Active RoomRom implementation for this phase happens in `C:\Users\Jake Diggity\Documents\GitHub\FINAL TRY-roomrom-s1`; do not edit RoomRom phase files from the main worktree.
 
 **Files:**
 - Modify: `RoomRom/src/roomrom_sprites.c`
@@ -378,6 +435,8 @@
 ## Phase 3: Overworld Caves
 
 **Goal:** Implement every overworld cave entrance, cave interior, NPC/shop/item/text behavior, and exit path in RoomRom.
+
+**Worktree:** Active RoomRom implementation for this phase happens in `C:\Users\Jake Diggity\Documents\GitHub\FINAL TRY-roomrom-s1`; do not edit RoomRom phase files from the main worktree.
 
 **Files:**
 - Create: `RoomRom/src/roomrom_cave.c`
@@ -530,6 +589,8 @@
 
 **Goal:** Make the overworld stateful and traversable beyond basic walking.
 
+**Worktree:** Active RoomRom implementation for this phase happens in `C:\Users\Jake Diggity\Documents\GitHub\FINAL TRY-roomrom-s1`; do not edit RoomRom phase files from the main worktree.
+
 ### Task 4.1: Create World State Module
 
 - [ ] Add `src/state/world_state.h`.
@@ -635,6 +696,8 @@
 ## Phase 5: Dungeon Core
 
 **Goal:** Make dungeons fully navigable and stateful before enemy/boss completion.
+
+**Worktree:** Active RoomRom implementation for this phase happens in `C:\Users\Jake Diggity\Documents\GitHub\FINAL TRY-roomrom-s1`; do not edit RoomRom phase files from the main worktree.
 
 ### Task 5.1: Dungeon State Model
 
@@ -747,6 +810,8 @@
 ## Phase 6: Link, Inventory, Items, And Combat
 
 **Goal:** Complete player behavior and all usable item mechanics.
+
+**Worktree:** Active RoomRom implementation for this phase happens in `C:\Users\Jake Diggity\Documents\GitHub\FINAL TRY-roomrom-s1`; do not edit RoomRom phase files from the main worktree.
 
 ### Task 6.1: Promote Link State Names
 
@@ -879,6 +944,8 @@
 ## Phase 7: Enemies By Behavior Family
 
 **Goal:** Implement all non-boss enemies with family-level probes and shared behavior modules.
+
+**Worktree:** Active RoomRom implementation for this phase happens in `C:\Users\Jake Diggity\Documents\GitHub\FINAL TRY-roomrom-s1`; do not edit RoomRom phase files from the main worktree.
 
 ### Task 7.1: Enemy Framework
 
@@ -1164,12 +1231,13 @@
 
 **Goal:** Make all music and SFX correct, option-aware, and VBlank-safe.
 
-### Task 10.1: Lock Driver
+### Task 10.1: Lock Driver Policy
 
-- [ ] Compare current custom driver vs SGDK XGM/XGM2.
-- [ ] Pick the path with best long-term maintainability and fidelity.
-- [ ] Keep C-facing audio adapter stable.
-- [ ] Document driver decision.
+- [ ] Keep the current custom driver as the default because the project already has working native intro/audio substrate.
+- [ ] Do not block audio data extraction on an SGDK XGM/XGM2 migration.
+- [ ] Keep the C-facing audio adapter stable so the driver can change later without touching gameplay.
+- [ ] Revisit SGDK XGM/XGM2 only if Phase 15 measurements show the custom driver over budget, unmaintainable, or fidelity-blocking.
+- [ ] Document the decision in `docs/audit/audio_driver_decision.md`.
 
 ### Task 10.2: Builder Audio Extraction
 
@@ -1221,9 +1289,9 @@
 
 ---
 
-## Phase 11: Title.md Frontend Completion
+## Phase 11: Title.md Frontend Gap-Fill + Regression Lock
 
-**Goal:** Finish the release-facing frontend target before final gameplay merge.
+**Goal:** Treat the mostly-built title/file-select work as an existing frontend and close remaining gaps with regression probes before final gameplay merge.
 
 ### Task 11.1: Title Loop
 
@@ -1279,6 +1347,15 @@
 ## Phase 12: Promote RoomRom Core And Integrate Final ROM
 
 **Goal:** Combine proven gameplay core with Title.md while keeping RoomRom as a harness.
+
+**Promotion gate:** A module is eligible to move from RoomRom into `src/game/` only when:
+
+- [ ] It has two consecutive green RoomRom probe runs from a clean build.
+- [ ] It has no RoomRom-only global state outside harness configuration.
+- [ ] Its persistent state lives in a typed `src/state/` struct.
+- [ ] Its public header lives under `src/game/<subsystem>/`.
+- [ ] Its harness adapter is thin enough that Final.md can call the same core module.
+- [ ] Its NES reference provenance is recorded in the phase report.
 
 ### Task 12.1: Module Ownership Audit
 
@@ -1342,6 +1419,8 @@
 
 **Goal:** Add 2-4 player support as an optional Genesis-enhanced mode isolated from NES-faithful 1-player.
 
+**Save rule:** NES save-slot bytes remain unchanged. Multiplayer-only state uses a separate versioned SRAM range so 1-player NES-faithful saves remain byte-compatible and never read multiplayer state by accident.
+
 ### Task 13.1: Generalize Player State
 
 - [ ] Change `LinkState` to `PlayerState`.
@@ -1350,6 +1429,7 @@
 - [ ] Add active player count.
 - [ ] Add player spawn positions.
 - [ ] Add per-player input state.
+- [ ] Add multiplayer SRAM version flag and separate multiplayer state range.
 - [ ] Verify 1-player probes unchanged.
 
 ### Task 13.2: Input Adapter
@@ -1442,6 +1522,8 @@
 ## Phase 15: Genesis-Specific Optimization
 
 **Goal:** Use Genesis hardware strengths deliberately after correctness is proven, with measurements and parity gates protecting NES-faithful mode.
+
+**Timing model:** Phase 15a is inline optimization that happens during Phases 2-6 when the optimization is structurally required or trivially local: VRAM map ownership, Window-plane HUD, DMA chunking for large scene loads, CRAM ownership, and sprite atlas layout. Phase 15b is this measured re-pass after Phase 14, where broad rewrites are allowed only when probes show a real budget or hardware risk.
 
 ### Task 15.1: Instrument The Frame
 
@@ -1541,7 +1623,7 @@
 - [ ] Align frequently-read tables to word boundaries.
 - [ ] Avoid bytewise decoding in per-frame hot paths when a generated table can do it once.
 - [ ] Preserve original NES source data in builder cache for verification.
-- [ ] Generate optimized Genesis tables from source data deterministically.
+- [ ] Generate optimized Genesis tables under `build/generated/tables/` from source data deterministically.
 - [ ] Add hash checks proving optimized tables derive from the same NES inputs.
 
 ### Task 15.9: Hot Path C/ASM Policy
@@ -1636,6 +1718,8 @@
 - [ ] Remove dead debug code from release build.
 - [ ] Keep debug build diagnostics.
 - [ ] Remove obsolete aliases if all probes migrated.
+- [ ] Delete `whatif.md`, `whatif.lst`, `whatif.elf`, and `whatif.o` compatibility aliases after every active probe and launcher uses `Title.*` or `Final.*`.
+- [ ] Add a one-release migration note for old local SaveRAM names, then stop regenerating `whatif.SaveRAM` aliases.
 - [ ] Ensure `RoomRom` still builds.
 - [ ] Ensure `Title.md` still builds.
 - [ ] Ensure `Final.md` builds.
@@ -1684,6 +1768,9 @@
 - [ ] Run smoke probe.
 - [ ] Delete cache.
 - [ ] Repeat to prove reproducibility.
+- [ ] Re-run builder with the same NES ROM, same generated extractor versions, and same git SHA.
+- [ ] Byte-compare rebuilt `Final.md` against the previous `Final.md`; require diff=0.
+- [ ] Fail release if manifest inputs match but ROM bytes differ.
 
 ### Task 17.4: Release Documentation
 
@@ -1716,6 +1803,8 @@
 - [ ] Keep screenshot comparison for visual gates.
 - [ ] Keep state diff for behavior gates.
 - [ ] Keep CRAM/SAT/plane dumps for graphics gates.
+- [ ] Enforce one BizHawk launch per probe report with bundled screenshot, SAT, CRAM, plane/Window dumps, RAM/state bytes, and input log.
+- [ ] Accept and record a deterministic RNG seed for enemy, boss, drop, gambling, and timing-sensitive probes.
 - [ ] Every new subsystem gets a probe before it is called complete.
 
 ### Workstream B: Data Extraction
