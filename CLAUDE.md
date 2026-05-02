@@ -23,14 +23,16 @@ RAM tables) to confirm ground truth before changing anything. See memory:
 ## Worktree rule (HARD)
 
 `git worktree list` BEFORE:
-- building any RoomRom ROM
+- building any RoomRom ROM from a non-main worktree
 - copying any `RoomRom.md` into the BizHawk dir
 - editing any file under `RoomRom/src/`, `RoomRom/data/`, or `RoomRom/tools/`
 - claiming what RoomRom code currently does
 
-Main worktree lacks RoomRom S2+ features. Real RoomRom dev lives at
-`C:\Users\Jake Diggity\Documents\GitHub\FINAL TRY-roomrom-s1` (branch
-`roomrom-s1`). Build, edit, copy from there. See memory:
+RoomRom S0–S2 work has been merged into `main` (tags `roomrom-s1-closed`,
+`roomrom-s2-closed`). The historical `FINAL TRY-roomrom-s1` worktree is
+gone. Active RoomRom edits land in `main` unless `git worktree list` shows
+a parallel branch with newer RoomRom commits — in that case, use that
+worktree to avoid trampling in-flight work. See memory:
 `feedback_check_worktree_first`.
 
 ## Build / verify
