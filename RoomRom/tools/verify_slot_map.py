@@ -8,6 +8,12 @@ Forbidden patterns post-Phase-4:
   - `TILE_ATTR_FULL(PAL3,` -- sprite SAT pal-slot was PAL3, now PAL1
   - `PAL3` Gen-slot writes in HUD (Window plane) -- HUD lives in PAL0
 
+Phase 5 sprite-renderer gates (check_sprite_renderers):
+  - Forbidden: (pal & 0x03) << 13 in any sprite renderer
+  - Forbidden: TILE_ATTR_FULL(PAL3, ...) in any sprite renderer
+  - Required: ROOMROM_ITEM_TILE_BASE_PAL in roomrom_sprites.c (item-bank
+    renderer wiring)
+
 Exit code 0 = pass, 1 = fail.
 """
 import re
@@ -26,6 +32,14 @@ SCAN = [
     "src/roomrom_boomerang.c",
 ]
 
+SPRITE_RENDERERS = [
+    "src/roomrom_sprites.c",
+    "src/roomrom_combat.c",
+    "src/roomrom_bomb.c",
+    "src/roomrom_boomerang.c",
+    "src/roomrom_arrow.c",
+]
+
 PAT_PAL_SHIFT = re.compile(r"\(\s*pal\s*&\s*0x0?3\s*\)\s*<<\s*13", re.IGNORECASE)
 PAT_SLOT_LT_3 = re.compile(r"\bslot\s*<\s*3\b")
 PAT_PAL3      = re.compile(r"TILE_ATTR_FULL\s*\(\s*PAL3\b")
@@ -35,6 +49,35 @@ PAT_PAL2_HUD  = re.compile(r"TILE_ATTR_FULL\s*\(\s*PAL2\b")
 def fail(msg):
     print(f"verify_slot_map: FAIL: {msg}", file=sys.stderr)
     sys.exit(1)
+
+
+def check_sprite_renderers():
+    """Phase 5: gate sprite renderers for forbidden patterns + required macro."""
+    bad = []
+    for rel in SPRITE_RENDERERS:
+        path = ROOT / rel
+        if not path.exists():
+            bad.append((rel, 0, "missing sprite renderer file"))
+            continue
+        text = path.read_text(encoding="utf-8")
+        # Forbidden: legacy (pal & 0x03) << 13 pattern
+        if PAT_PAL_SHIFT.search(text):
+            bad.append((rel, 0, "forbidden (pal & 0x03) << 13 pattern present"))
+        # Forbidden: TILE_ATTR_FULL(PAL3, ...) -- post-cutover sprite slot is PAL1
+        # (PAL2 is OK; beam flash deliberately borrows it)
+        if PAT_PAL3.search(text):
+            bad.append((rel, 0, "forbidden TILE_ATTR_FULL(PAL3 (post-cutover sprite slot is PAL1)"))
+    # Item-rendering files must reference ROOMROM_ITEM_TILE_BASE_PAL
+    items_renderer = ROOT / "src" / "roomrom_sprites.c"
+    if items_renderer.exists():
+        if "ROOMROM_ITEM_TILE_BASE_PAL" not in items_renderer.read_text(encoding="utf-8"):
+            bad.append((str(items_renderer.relative_to(ROOT)), 0,
+                        "missing ROOMROM_ITEM_TILE_BASE_PAL reference "
+                        "(Phase 3 item-bank renderer wiring)"))
+    if bad:
+        for rel, ln, msg in bad:
+            print(f"  {rel}:{ln}  {msg}", file=sys.stderr)
+        fail(f"{len(bad)} sprite-renderer violations")
 
 
 def main():
@@ -63,6 +106,8 @@ def main():
         for rel, ln, msg in bad:
             print(f"  {rel}:{ln}  {msg}", file=sys.stderr)
         fail(f"{len(bad)} slot-map violations")
+
+    check_sprite_renderers()
     print("verify_slot_map: OK")
 
 
