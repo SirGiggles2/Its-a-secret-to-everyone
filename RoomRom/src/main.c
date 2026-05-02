@@ -219,7 +219,7 @@ static void load_room(u8 room_id)
     }
     render_room_into_slot(room_id, s_active_slot_x, s_active_row_base);
     anchor_active_slot();
-    roomrom_sprites_load_palette();   /* PAL3 - reload after BG palette write */
+    roomrom_sprites_load_palette();   /* PAL1 - reload after BG palette write */
 }
 
 /* Phase 1: pick the live-NES item-atlas variant for the current scene+map.
@@ -384,7 +384,7 @@ int main(bool hardReset)
     roomrom_sprites_set_redux(current_redux_flag());
     roomrom_combat_set_redux(current_redux_flag());
     roomrom_sprites_upload_chr();          /* one-shot sprite CHR */
-    load_room(s_room_id);                  /* loads BG pal + sprite PAL3 */
+    load_room(s_room_id);                  /* loads BG pal + sprite PAL1 */
     roomrom_sprites_spawn_link(s_link_x, s_link_y);
     roomrom_combat_init();                 /* S7: clear sword sprite slot */
     roomrom_combat_set_uw(s_scene == SCENE_UW);  /* sword Y bias for UW */

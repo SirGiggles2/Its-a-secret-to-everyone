@@ -3,7 +3,8 @@
 
 /* RoomRom sprite/OAM scaffold.
  *
- * Owns PAL3 and the sprite-CHR VRAM region. Renders Link as slot 0 +
+ * Owns PAL1 (NES SPR PALRAM) + the sprite-CHR VRAM region. PAL2 is borrowed
+ * dynamically by the sword-beam color flash. Renders Link as slot 0 +
  * sword as slot 1.
  *
  * S7 v4 combat additions:
