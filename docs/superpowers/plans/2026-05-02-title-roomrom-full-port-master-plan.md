@@ -12,7 +12,7 @@
 
 ## Execution Rules
 
-- [ ] Treat `$PrimeDirective` as the decision rule for every unresolved choice.
+- [ ] Treat `$PrimeDirective` as the decision rule for every unresolved choice: best long-term outcome, maximal efficiency, best coding practices, NES accuracy first, Genesis-native implementation, and task shapes that fit Codex + Claude (Coding CLIs) strengths.
 - [ ] Do not ask for option selection unless a destructive or external publishing action is required.
 - [ ] Keep `RoomRom` as the fast gameplay harness and `Title.md` as the frontend/release harness until Phase 12.
 - [ ] Before editing or building `RoomRom`, run `git worktree list` and use `C:\Users\Jake Diggity\Documents\GitHub\FINAL TRY-roomrom-s1` for active RoomRom work.

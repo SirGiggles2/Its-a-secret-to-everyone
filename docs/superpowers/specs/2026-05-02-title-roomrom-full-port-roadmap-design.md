@@ -2,7 +2,7 @@
 
 **Date:** 2026-05-02
 **Status:** Draft roadmap, PrimeDirective-selected
-**Rule:** `$PrimeDirective` governs unanswered choices: best long-term outcome, maximal efficiency, best coding practices, NES accuracy first, Genesis-native implementation, and task shapes that fit Codex strengths.
+**Rule:** `$PrimeDirective` governs unanswered choices: best long-term outcome, maximal efficiency, best coding practices, NES accuracy first, Genesis-native implementation, and task shapes that fit Codex + Claude (Coding CLIs) strengths.
 
 ## Goal
 
@@ -16,7 +16,7 @@ Use a two-ROM development split until the end:
 - `RoomRom`: remains the fast gameplay laboratory. It boots directly into gameplay scenes, proves rendering/state/combat/enemies/dungeons/caves without frontend friction, and stays the first place new gameplay systems land.
 - Final release combines them only after RoomRom proves the full gameplay core and Title.md proves frontend/options/save flow.
 
-This is the best long-term shape because it keeps iteration fast, keeps bugs localized, and lets Codex work in deterministic slices with probes and screenshots instead of constantly booting through frontend state.
+This is the best long-term shape because it keeps iteration fast, keeps bugs localized, and lets Codex + Claude (Coding CLIs) work in deterministic slices with probes and screenshots instead of constantly booting through frontend state.
 
 ## Approaches Considered
 
@@ -32,7 +32,7 @@ Decision: reject as the main path. Use old WHATIF/transpiled code only as a refe
 
 Pros: one ROM sooner.
 
-Cons: slows every gameplay iteration, couples frontend bugs to gameplay work, and makes Codex less efficient because every probe has to traverse title/file-select state.
+Cons: slows every gameplay iteration, couples frontend bugs to gameplay work, and makes the coding CLIs less efficient because every probe has to traverse title/file-select state.
 
 Decision: reject until the gameplay core is nearly complete.
 
