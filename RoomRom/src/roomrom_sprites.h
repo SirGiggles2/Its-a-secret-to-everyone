@@ -74,10 +74,14 @@ void roomrom_sprites_clear_boomerang(void);
 void roomrom_sprites_set_arrow(short x, short y, link_face_t face);
 void roomrom_sprites_clear_arrow(void);
 
-/* S7 v8 bomb (slot 5) + explosion (slot 6). */
-void roomrom_sprites_set_bomb(short x, short y);
+/* S7 v8 bomb (slot 5) + explosion (slot 6).
+ * sub_pal: NES sprite sub-palette index (0-3). Per NES DrawCloud
+ * (Z_07.asm:4912) both bomb-visible state and cloud animation frames
+ * use sprite attribute Y=1, so callers pass sub_pal=1. */
+void roomrom_sprites_set_bomb(short x, short y, unsigned char sub_pal);
 void roomrom_sprites_clear_bomb(void);
-void roomrom_sprites_set_explosion(short x, short y, unsigned char timer);
+void roomrom_sprites_set_explosion(short x, short y, unsigned char timer,
+                                   unsigned char sub_pal);
 void roomrom_sprites_clear_explosion(void);
 
 /* Phase 1: select item-atlas variant (orig vs redux). Affects the next

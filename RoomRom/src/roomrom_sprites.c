@@ -478,14 +478,17 @@ void roomrom_sprites_clear_arrow(void)
 
 /* S7 v8 bomb (slot 5). NES Z1 DrawBomb (Z_07.asm:4869) -> DrawCloud ->
  * Anim_WriteItemSprites with item slot $01, frame 0 -> ItemFrameTiles[$03]
- * = $34. Tile $34 in [$20, $62) -> @Narrow path -> single 8x8 sprite. */
-void roomrom_sprites_set_bomb(short x, short y)
+ * = $34. Tile $34 in [$20, $62) -> @Narrow path -> single 8x8 sprite.
+ * sub_pal selects which 4-copy bank to read (NES DrawCloud sets Y=1). */
+void roomrom_sprites_set_bomb(short x, short y, unsigned char sub_pal)
 {
+    unsigned short tile = (unsigned short)(ROOMROM_ITEM_TILE_BASE_PAL(sub_pal)
+                                           + ROOMROM_ITEM_TILE_BOMB);
     VDP_setSpriteFull(5,
                       (s16)x,
                       (s16)y,
                       SPRITE_SIZE(1, 1),
-                      TILE_ATTR_FULL(PAL1,0, 0, 0, BOMB_VRAM_TILE),
+                      TILE_ATTR_FULL(PAL1,0, 0, 0, tile),
                       6);
     VDP_updateSprites(7, DMA);
 }
@@ -523,14 +526,17 @@ void roomrom_sprites_clear_bomb(void)
  * centered on the bomb origin. */
 #define EXPLOSION_PHASE_FRAMES 6u
 
-void roomrom_sprites_set_explosion(short x, short y, unsigned char timer)
+void roomrom_sprites_set_explosion(short x, short y, unsigned char timer,
+                                   unsigned char sub_pal)
 {
     /* timer counts DOWN from BOMB_EXPLODE_FRAMES (24). Map to phase 0..2
      * advancing every 6 elapsed frames so each NES frame holds for ~6
-     * Genesis ticks (4 phases over 24 frames, clamped to 0..2). */
+     * Genesis ticks (4 phases over 24 frames, clamped to 0..2).
+     * sub_pal selects which 4-copy bank to read (NES DrawCloud sets Y=1). */
     unsigned char elapsed = (unsigned char)(24u - (unsigned char)(timer & 0x1Fu));
     unsigned char phase   = (unsigned char)((elapsed / EXPLOSION_PHASE_FRAMES) % 3u);
-    unsigned short tile   = (unsigned short)(EXPLOSION_VRAM_TILE
+    unsigned short tile   = (unsigned short)(ROOMROM_ITEM_TILE_BASE_PAL(sub_pal)
+                                             + ROOMROM_ITEM_TILE_EXPLOSION
                                              + (unsigned short)phase * 2u);
     VDP_setSpriteFull(6,
                       (s16)x,

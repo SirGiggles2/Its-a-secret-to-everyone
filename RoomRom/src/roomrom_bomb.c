@@ -1,6 +1,9 @@
 #include "roomrom_bomb.h"
 #include "roomrom_sprites.h"
 
+/* NES: DrawCloud (Z_07.asm:4912) sets sprite attr Y=1 -> sub-pal 1 (blue). */
+#define ROOMROM_BOMB_SUBPAL 1u
+
 #define BOMB_FUSE_FRAMES        60u
 #define BOMB_EXPLODE_FRAMES     24u
 #define BOMB_PLACE_OFFSET       16
@@ -52,7 +55,7 @@ void roomrom_bomb_update(void)
         roomrom_sprites_clear_explosion();
         return;
     case BOMB_FUSE:
-        roomrom_sprites_set_bomb(s_x, s_y);
+        roomrom_sprites_set_bomb(s_x, s_y, ROOMROM_BOMB_SUBPAL);
         roomrom_sprites_clear_explosion();
         if (s_timer > 0u) s_timer--;
         if (s_timer == 0u) {
@@ -62,7 +65,7 @@ void roomrom_bomb_update(void)
         return;
     case BOMB_EXPLODE:
         roomrom_sprites_clear_bomb();
-        roomrom_sprites_set_explosion(s_x, s_y, s_timer);
+        roomrom_sprites_set_explosion(s_x, s_y, s_timer, ROOMROM_BOMB_SUBPAL);
         if (s_timer > 0u) s_timer--;
         if (s_timer == 0u) {
             s_state = BOMB_IDLE;
