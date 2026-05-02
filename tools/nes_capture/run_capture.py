@@ -333,17 +333,20 @@ def main() -> int:
         if not emuhawk.exists():
             print(f"ERROR: --bizhawk path not found: {emuhawk}", file=sys.stderr)
             return 1
-    elif not args.dry_run:
+    else:
         emuhawk = find_emuhawk()
         if emuhawk is None:
-            print(
-                "SCAFFOLDING MODE: EmuHawk.exe not found."
-                " Set BIZHAWK_ROOT or use --bizhawk to point at your BizHawk install."
-            )
-            print(
-                "  All scenarios will be reported as 'skipped (no BizHawk)'"
-                " — run_capture.py structure is verified.\n"
-            )
+            if args.dry_run:
+                print("DRY-RUN: EmuHawk.exe not found; reporting scenario plan only.\n")
+            else:
+                print(
+                    "SCAFFOLDING MODE: EmuHawk.exe not found."
+                    " Set BIZHAWK_ROOT or use --bizhawk to point at your BizHawk install."
+                )
+                print(
+                    "  All scenarios will be reported as 'skipped (no BizHawk)'"
+                    " — run_capture.py structure is verified.\n"
+                )
             scaffolding_mode = True
 
     # --- Filter scenarios ---
@@ -374,9 +377,15 @@ def main() -> int:
             skipped.append((sid, skip_reason))
             continue
 
-        if scaffolding_mode:
+        if scaffolding_mode and not args.dry_run:
             print("  SKIP: no BizHawk (scaffolding mode)")
             skipped.append((sid, "no BizHawk"))
+            continue
+
+        if args.dry_run and emuhawk is None:
+            print(f"  DRY-RUN: would run frame={scenario.get('target_frame', 60)} "
+                  f"seed={scenario.get('rng_seed')} movie={scenario.get('input_movie')}")
+            ran += 1
             continue
 
         assert emuhawk is not None

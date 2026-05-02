@@ -3,9 +3,9 @@
   "_comment": "Master plan Phase 1.5 — canonical NES reference scenario manifest. All null fields require user-supplied save states / input movies before the runner will execute them. The runner skips any scenario whose prerequisites are missing and reports the reason.",
   "capture_tool_version": "1.0.0",
   "supported_rom_hashes": [
-    "PLACEHOLDER_PRG0_SHA256_REPLACE_WITH_REAL_HASH",
-    "PLACEHOLDER_PRG1_SHA256_REPLACE_WITH_REAL_HASH"
+    "8f72dc2e98572eb4ba7c3a902bca5f69c448fc4391837e5f8f0d4556280440ac"
   ],
+  "_supported_rom_hashes_note": "8f72dc2e... = 'Legend of Zelda, The (USA).nes' (PRG0). PRG1 hash will be added once a PRG1 dump lands in roms/.",
   "default_artifacts": [
     "screenshot.png",
     "ppu.bin",
