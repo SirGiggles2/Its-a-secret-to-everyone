@@ -4,6 +4,32 @@
 #include "roomrom_item_chr.h"
 #include "roomrom_vram_map.h"
 #include "expanded_sprite_chr.h"
+/* P4a: atlas headers for ATLAS_ASSERT_SIZE and named dispatch constants.
+ * items_chr.h covers the full 37-item NES inventory atlas.  The renderer
+ * still indexes into roomrom_item_chr_x4 (the 8-tile weapon blob uploaded
+ * by roomrom_sprites_upload_chr); ROOMROM_ITEM_TILE_* continue to provide
+ * the tile indices into that blob.  ATLAS_ASSERT_SIZE calls below verify
+ * that the renderer's SPRITE_SIZE matches the registry dispatch for each
+ * item category that has a 1:1 atlas dispatch entry.
+ *
+ * TODO(Phase 6 cleanup): once roomrom_item_chr_x4 is replaced by the full
+ * atlas blob upload, switch tile-index expressions to
+ * ROOMROM_ATLAS_ITEMS_<NAME>_OFFSET / 32.  The atlas ordering currently
+ * differs from item_chr ordering so the substitution is not yet safe
+ * (BOMB: item_chr tile 20 vs atlas offset 96/32=3, etc.). */
+#include "atlas/items_chr.h"
+#include "atlas/atlas_dispatch.h"
+
+/* Compile-time dispatch size checks for items that have a direct 1:1
+ * atlas entry with matching single-tile W/H (SPRITE_SIZE(1,1)):
+ * BOMB   -> SPRITE_SIZE(1,1)  -> W_BOMB=1, H_BOMB=1   (NES_NARROW) */
+ATLAS_ASSERT_SIZE(BOMB, 1, 1);
+/* BOOMERANG -> SPRITE_SIZE(1,1) -> W_BOOMERANG=1, H_BOOMERANG=1 (NES_NARROW) */
+ATLAS_ASSERT_SIZE(BOOMERANG, 1, 1);
+
+/* TODO(Phase 6): add ATLAS_ASSERT_SIZE for sword_vert/horz, arrow_vert/horz,
+ * explosion, sword_diag once items_chr.h gains multi-tile W/H dispatch
+ * entries for those draw rules (NES_NARROW 1x2, NES_SLIM 2x1, etc.). */
 
 /* Sprite CHR source.
  * common_chr (data/chr/common.c) holds the always-loaded sprites including
