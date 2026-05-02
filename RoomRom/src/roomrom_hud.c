@@ -8,7 +8,7 @@
  * ATLAS_ASSERT_SIZE hooks.
  *
  * hud_chr.h provides ROOMROM_ATLAS_HUD_HUD_*_OFFSET byte-offset constants
- * into the roomrom_atlas_hud blob and W_HUD_*/H_HUD_* dispatch defines.
+ * into the roomrom_atlas_hud blob and W_HUD_x/H_HUD_x dispatch defines.
  *
  * Migration gap: this renderer addresses HUD content as raw NES BG tile IDs
  * (e.g., TILE_FULL_HEART = 0xF2u) passed to hud_word() which calls
@@ -19,11 +19,11 @@
  * expanded BG CHR bank which already contains NES BG tiles at their native
  * NES tile-ID positions.
  *
- * Additionally, hud_chr.h W_HUD_*/H_HUD_* dispatch defines describe sprite
+ * Additionally, hud_chr.h W_HUD_x/H_HUD_x dispatch defines describe sprite
  * SPRITE_SIZE widths, but this renderer uses VDP_setTileMapXY (BG tile maps),
  * not VDP_setSpriteFull.  ATLAS_ASSERT_SIZE has nothing to verify here.
  *
- * TODO(Phase 4c / Phase 6): once the HUD CHR upload path is reworked to
+ * TODO(Phase-4c / Phase 6): once the HUD CHR upload path is reworked to
  * source tiles from roomrom_atlas_hud rather than the expanded BG bank:
  *   1. Replace raw tile-ID literals with
  *      ROOMROM_ATLAS_HUD_HUD_<NAME>_OFFSET / 32

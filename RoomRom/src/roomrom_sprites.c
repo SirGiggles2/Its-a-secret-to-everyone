@@ -34,7 +34,7 @@ ATLAS_ASSERT_SIZE(BOOMERANG, 1, 1);
 /* P4b: Link renderer migration - DEFERRED.
  * link_chr.h provides ROOMROM_ATLAS_LINK_*_OFFSET byte-offset constants for
  * walk/attack poses (face_down_f1..stab_side, 1024 bytes / 32 tiles total)
- * but does NOT emit W_*/H_*/ATLAS_*_DISPATCH defines.  ATLAS_ASSERT_SIZE
+ * but does NOT emit W_x/H_x/ATLAS_x_DISPATCH defines.  ATLAS_ASSERT_SIZE
  * therefore cannot be called against Link pose entries.
  *
  * Additionally, the Link upload path reads tiles from common_chr (not the
@@ -43,7 +43,7 @@ ATLAS_ASSERT_SIZE(BOOMERANG, 1, 1);
  * walk poses) do NOT equal LINK_VRAM_TILE + pose_idx offsets used by
  * set_link_pose/set_link_attack_pose.
  *
- * TODO(Phase 4b / Phase 6): once link_chr.h gains W_*/H_* dispatch defines
+ * TODO(Phase-4b / Phase 6): once link_chr.h gains W_x/H_x dispatch defines
  * and the upload path switches from common_chr to the atlas link blob,
  * replace LINK_VRAM_TILE + pose offsets with
  *   ROOMROM_LINK_TILE_BASE + ROOMROM_ATLAS_LINK_<POSE>_OFFSET / 32
