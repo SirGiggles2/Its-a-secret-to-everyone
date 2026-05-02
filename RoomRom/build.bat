@@ -39,6 +39,14 @@ echo [0] Verifying item CHR manifest...
 python "%PROJ%\tools\verify_item_chr_manifest.py" %ROOMROM_VERIFY_FLAGS%
 if errorlevel 1 ( echo FAIL: item CHR manifest verify & exit /b 1 )
 
+echo [0] verify_slot_map...
+python "%PROJ%\tools\verify_slot_map.py"
+if errorlevel 1 ( echo FAIL: verify_slot_map & exit /b 1 )
+
+echo [0] verify_vram_budget...
+python "%PROJ%\tools\verify_vram_budget.py"
+if errorlevel 1 ( echo FAIL: verify_vram_budget & exit /b 1 )
+
 rem ---------------------------------------------------------------------------
 rem Compiler flags (match makefile.gen release config)
 rem ---------------------------------------------------------------------------
