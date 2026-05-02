@@ -1439,11 +1439,164 @@
 
 ---
 
-## Phase 15: Hardware, Performance, And Polish
+## Phase 15: Genesis-Specific Optimization
+
+**Goal:** Use Genesis hardware strengths deliberately after correctness is proven, with measurements and parity gates protecting NES-faithful mode.
+
+### Task 15.1: Instrument The Frame
+
+- [ ] Add per-frame CPU tick measurement.
+- [ ] Add VBlank duration measurement.
+- [ ] Add DMA queue byte/word count measurement.
+- [ ] Add DMA queue overflow counter.
+- [ ] Add SAT upload count measurement.
+- [ ] Add active sprite count measurement.
+- [ ] Add VRAM upload byte count measurement.
+- [ ] Add CRAM write count measurement.
+- [ ] Add audio tick duration measurement.
+- [ ] Add worst-frame report output under `builds/reports/perf/`.
+- [ ] Add RoomRom perf overlay for current scene, room, sprite count, DMA words, and worst frame.
+- [ ] Add Final.md perf capture probe after Phase 12 exists.
+
+### Task 15.2: Establish Baseline Budgets
+
+- [ ] Measure title idle.
+- [ ] Measure story scroll.
+- [ ] Measure file select.
+- [ ] Measure overworld idle room.
+- [ ] Measure overworld enemy-heavy room.
+- [ ] Measure cave with NPC/text.
+- [ ] Measure dungeon normal room.
+- [ ] Measure dungeon enemy-heavy room.
+- [ ] Measure boss room.
+- [ ] Measure 4-player stress room.
+- [ ] Record CPU, VBlank, DMA, sprite, and audio maxima.
+- [ ] Save baseline to `builds/reports/perf/genesis_budget_baseline.md`.
+- [ ] Fail the phase if any baseline already exceeds VBlank/DMA safety margins.
+
+### Task 15.3: VDP Plane Strategy
+
+- [ ] Keep Window plane as the stable HUD/menu band.
+- [ ] Keep Plane A as the active playfield by default.
+- [ ] Use Plane B as transition/staging/backdrop where it reduces redraw cost.
+- [ ] Verify no HUD rows are redrawn as playfield tiles during gameplay.
+- [ ] Verify title/file-select static bands use bulk plane writes.
+- [ ] Add a verifier that catches direct playfield writes into the Window plane outside HUD/menu owners.
+- [ ] Add a verifier that catches large per-tile loops where a bulk plane transfer exists.
+
+### Task 15.4: DMA Transfer Optimization
+
+- [ ] Inventory every VRAM/CRAM/SAT transfer site.
+- [ ] Classify transfers as scene-load, room-load, per-frame, or rare event.
+- [ ] Convert scene-load CHR uploads to bulk DMA when source alignment permits.
+- [ ] Convert room tilemap fills to row/rect DMA where data is contiguous.
+- [ ] Keep tiny one-off writes as CPU writes when DMA setup costs more.
+- [ ] Split large uploads across display-off frames or multiple VBlanks.
+- [ ] Ensure SAT DMA remains ordered after sprite list updates.
+- [ ] Add regression probe comparing post-DMA plane/CRAM/SAT dumps to pre-DMA dumps.
+
+### Task 15.5: VRAM Residency Optimization
+
+- [ ] List always-resident tiles: blank, HUD, font, Link, core items.
+- [ ] List scene-resident tiles: overworld BG, dungeon BG, cave BG, title, file select.
+- [ ] List room/actor-resident tiles: bosses, rare enemies, special effects.
+- [ ] Generate per-scene VRAM residency tables.
+- [ ] Ensure common gameplay tiles do not stream every room.
+- [ ] Stream rare enemy/boss tiles on room/scene entry only.
+- [ ] Keep tile base contracts generated from `roomrom_vram_map.h`.
+- [ ] Add no-overlap verifier for every scene residency table.
+- [ ] Add stale-CHR probe for scene transitions.
+
+### Task 15.6: Sprite Hardware Optimization
+
+- [ ] Inventory every NES multi-OAM object.
+- [ ] Collapse objects into larger Genesis sprites when the visual result is identical.
+- [ ] Preserve NES-like priority where it affects gameplay visuals.
+- [ ] Use SAT link ordering intentionally for Link, weapons, enemies, drops, and boss pieces.
+- [ ] Define sprite priority classes.
+- [ ] Define overflow policy for optional multiplayer mode.
+- [ ] Guarantee 1-player NES mode keeps gameplay-critical sprites over cosmetic extras.
+- [ ] Add stress probe for enemy-heavy rooms.
+- [ ] Add stress probe for boss + projectiles.
+- [ ] Add stress probe for 4-player + enemies.
+
+### Task 15.7: CRAM And Palette Optimization
+
+- [ ] Keep PAL0 for packed NES BG subpalettes.
+- [ ] Keep PAL1 for packed NES sprite subpalettes.
+- [ ] Reserve PAL2/PAL3 for non-NES overlays and transition effects.
+- [ ] Batch CRAM updates by palette range.
+- [ ] Avoid rewriting unchanged palettes on every frame.
+- [ ] Add palette dirty flags.
+- [ ] Add palette transition/fade routines that do not corrupt NES palette ownership.
+- [ ] Probe no-flashing/reduced-flashing palette paths.
+- [ ] Compare CRAM dumps before and after optimization.
+
+### Task 15.8: 68K-Friendly Data Layout
+
+- [ ] Precompute room metatile decode tables from NES data.
+- [ ] Precompute collision grids from room render data.
+- [ ] Precompute enemy spawn tables in 68K-friendly order.
+- [ ] Precompute animation frame descriptors.
+- [ ] Align frequently-read tables to word boundaries.
+- [ ] Avoid bytewise decoding in per-frame hot paths when a generated table can do it once.
+- [ ] Preserve original NES source data in builder cache for verification.
+- [ ] Generate optimized Genesis tables from source data deterministically.
+- [ ] Add hash checks proving optimized tables derive from the same NES inputs.
+
+### Task 15.9: Hot Path C/ASM Policy
+
+- [ ] Profile room render.
+- [ ] Profile collision.
+- [ ] Profile sprite list assembly.
+- [ ] Profile enemy update.
+- [ ] Profile boss update.
+- [ ] Profile audio tick.
+- [ ] Keep C for any path inside budget.
+- [ ] Use inline/static C helpers before assembly.
+- [ ] Introduce assembly only for measured over-budget hot paths.
+- [ ] Document every assembly optimization with hotspot, measurement, and fallback C behavior.
+- [ ] Add ABI tests for every C/ASM boundary.
+
+### Task 15.10: Audio Hardware Optimization
+
+- [ ] Ensure music tick never blocks rendering transfers.
+- [ ] Batch SFX requests.
+- [ ] Prioritize gameplay SFX over cosmetic SFX when channels are exhausted.
+- [ ] Keep low-health warning option cheap.
+- [ ] Measure dense combat audio.
+- [ ] Measure boss audio.
+- [ ] Measure title/story music.
+- [ ] Verify Z80/audio driver state survives scene transitions.
+
+### Task 15.11: Input And Multiplayer Hardware Optimization
+
+- [ ] Poll controllers once per frame through input adapter.
+- [ ] Cache decoded button state per player.
+- [ ] Keep 6-button and multitap/teamplayer logic inside the adapter.
+- [ ] Ensure 1-player path is not slowed by 4-player decoding when player count is 1.
+- [ ] Add controller stress probe for four active players.
+- [ ] Add input latency check against frame counter.
+
+### Task 15.12: Optimization Regression Gate
+
+- [ ] For each optimized subsystem, capture pre-optimization reference dumps.
+- [ ] Capture post-optimization dumps.
+- [ ] Diff state schema.
+- [ ] Diff plane/SAT/CRAM where applicable.
+- [ ] Diff screenshots for visual systems.
+- [ ] Run full RoomRom smoke.
+- [ ] Run Final.md smoke after Phase 12 exists.
+- [ ] Run hardware smoke after Phase 16 starts.
+- [ ] Commit as `perf: add genesis-specific optimization pass`.
+
+---
+
+## Phase 16: Hardware, Performance, And Polish
 
 **Goal:** Make the final ROM reliable on hardware and comfortable to play.
 
-### Task 15.1: Performance Gates
+### Task 16.1: Performance Gates
 
 - [ ] Add per-frame CPU budget measurement.
 - [ ] Add VBlank DMA budget measurement.
@@ -1452,7 +1605,7 @@
 - [ ] Add worst-case enemy/boss room tests.
 - [ ] Optimize only measured hot spots.
 
-### Task 15.2: Hardware Tests
+### Task 16.2: Hardware Tests
 
 - [ ] Test on real Genesis/Mega Drive.
 - [ ] Test with flash cart.
@@ -1461,7 +1614,7 @@
 - [ ] Test controller combinations.
 - [ ] Record hardware notes.
 
-### Task 15.3: Emulator Matrix
+### Task 16.3: Emulator Matrix
 
 - [ ] BizHawk/GPGX.
 - [ ] BlastEm.
@@ -1469,7 +1622,7 @@
 - [ ] Flash cart runtime used for final hardware smoke.
 - [ ] Record differences.
 
-### Task 15.4: Accessibility And Safety
+### Task 16.4: Accessibility And Safety
 
 - [ ] No/reduced flashing option verified.
 - [ ] Low health warning options verified.
@@ -1477,7 +1630,7 @@
 - [ ] Text speed option verified if implemented.
 - [ ] Document photosensitivity option.
 
-### Task 15.5: Polish Pass
+### Task 16.5: Polish Pass
 
 - [ ] Audit naming.
 - [ ] Remove dead debug code from release build.
@@ -1490,11 +1643,11 @@
 
 ---
 
-## Phase 16: Public Builder Release
+## Phase 17: Public Builder Release
 
 **Goal:** Ship the project as a legal builder, not a copyrighted-asset ROM package.
 
-### Task 16.1: Clean Public Package
+### Task 17.1: Clean Public Package
 
 - [ ] Define release package contents.
 - [ ] Include source code.
@@ -1508,7 +1661,7 @@
 - [ ] Exclude private screenshots/videos if they contain copyrighted frames and are not needed.
 - [ ] Run package checker.
 
-### Task 16.2: Builder UX
+### Task 17.2: Builder UX
 
 - [ ] Drag NES ROM onto builder.
 - [ ] Validate ROM.
@@ -1520,7 +1673,7 @@
 - [ ] Show missing dependency error clearly.
 - [ ] Keep logs for troubleshooting.
 
-### Task 16.3: From-Scratch Build Gate
+### Task 17.3: From-Scratch Build Gate
 
 - [ ] Clone clean public package.
 - [ ] Confirm no generated asset cache.
@@ -1532,7 +1685,7 @@
 - [ ] Delete cache.
 - [ ] Repeat to prove reproducibility.
 
-### Task 16.4: Release Documentation
+### Task 17.4: Release Documentation
 
 - [ ] User build instructions.
 - [ ] Supported ROM hash.
@@ -1542,7 +1695,7 @@
 - [ ] Contributor guide: do not commit generated copyrighted assets.
 - [ ] Verification guide.
 
-### Task 16.5: Final Release Gate
+### Task 17.5: Final Release Gate
 
 - [ ] Run package checker.
 - [ ] Run from-scratch builder gate.
@@ -1615,7 +1768,7 @@
 - [x] Covers legal builder path.
 - [x] Covers graphics no-clobber foundation before caves.
 - [x] Covers caves immediately after current work.
-- [x] Covers overworld, dungeon, Link/items/combat, enemies, bosses, HUD/options/save, audio, frontend, integration, multiplayer, completion, hardware, and release.
+- [x] Covers overworld, dungeon, Link/items/combat, enemies, bosses, HUD/options/save, audio, frontend, integration, multiplayer, completion, Genesis-specific optimization, hardware, and release.
 - [x] Leaves no phase without verification.
 - [x] Keeps 4-player mode isolated from NES parity.
 - [x] Requires child plans before code-level implementation.

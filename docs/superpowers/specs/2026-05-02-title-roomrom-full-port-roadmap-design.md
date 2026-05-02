@@ -371,21 +371,46 @@ Steps:
 8. NES-mode probes green or documented with explicit option-driven divergence.
 9. Genesis-enhanced modes smoke-tested separately.
 
-## Phase 15 - Hardware, Performance, And Accessibility
+## Phase 15 - Genesis-Specific Optimization
+
+Goal: use the Genesis hardware deliberately after correctness is proven, without turning optimization into guesswork or breaking NES parity.
+
+Rules:
+
+1. Optimize from measurements, not instinct.
+2. Preserve NES-faithful behavior and timing unless an option explicitly changes it.
+3. Prefer Genesis-native strengths: VDP planes, Window plane HUD, DMA, sprite hardware, CRAM organization, YM2612/PSG audio, flat ROM access, and 68K-friendly data layouts.
+4. Keep optimizations behind narrow subsystem interfaces so RoomRom and Final.md share the same fast path.
+5. Keep C as the default; use assembly only for measured hot paths, hard ABI glue, or hardware timing.
+
+Steps:
+
+1. Add per-frame CPU, VBlank, DMA, SAT, sprite-count, VRAM-upload, and audio-tick instrumentation.
+2. Convert room/HUD/static UI transfers to bulk DMA where it is measurably faster and VBlank-safe.
+3. Use Window plane for stable HUD/menu bands and Plane A/B for playfield/transition staging.
+4. Use horizontal/vertical scroll hardware for room transitions instead of redrawing when scrolling is cheaper.
+5. Keep scene-specific VRAM residency tables so common gameplay tiles stay resident and rare tiles stream only on scene load.
+6. Use Genesis sprite sizes and link fields to collapse NES multi-OAM objects into fewer SAT entries when visual parity is preserved.
+7. Precompute 68K-friendly room, collision, enemy, and animation tables from extracted NES data.
+8. Pack palettes and expanded CHR around Genesis CRAM/VRAM realities, not NES PPU register habits.
+9. Keep audio events asynchronous and VBlank-safe so dense music/SFX never starve rendering.
+10. Verify optimized paths against pre-optimization captures and keep unoptimized reference probes for regression diagnosis.
+
+## Phase 16 - Hardware, Performance, And Accessibility
 
 Goal: make it reliable on real hardware and safe for players.
 
 Steps:
 
 1. Test on real Genesis/Mega Drive hardware and flash cart.
-2. Test common emulators: BizHawk/GPGX, BlastEm, Genesis Plus GX where practical.
+2. Test common emulators: BizHawk/GPGX, BlastEm, and Genesis Plus GX.
 3. Enforce VBlank/DMA budget.
 4. Enforce sprite count/overflow policy.
 5. Add no-flashing/reduced-flashing option.
 6. Add deterministic crash/exception diagnostics for debug builds.
 7. Add release build profile with diagnostics disabled or minimized.
 
-## Phase 16 - Public Builder Release
+## Phase 17 - Public Builder Release
 
 Goal: distribute legally and reproducibly.
 
@@ -443,5 +468,6 @@ The project is finished when:
 - The roadmap keeps RoomRom fast while preventing RoomRom-only forks.
 - Legal builder requirement is integrated from Phase 1 through release, not bolted on at the end.
 - Overworld Caves are placed correctly before overworld secrets, dungeons, enemies, and final integration.
+- Genesis-specific optimization has a dedicated phase after quest completion and before hardware release validation.
 - 4-player mode is explicitly optional and isolated so NES parity remains protected.
 - Each phase has concrete acceptance gates.
