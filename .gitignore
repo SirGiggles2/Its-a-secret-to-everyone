@@ -33,3 +33,53 @@ tools/file_select_demo/out/
 .worktrees/
 analyze_funcs.txt
 src.zip
+
+# === Cleanup commit 1 (debate 002) ===
+
+# Build outputs (regenerable)
+builds/reports/
+builds/archive/
+builds/obj/
+builds/build_*.txt
+builds/build_*.log
+builds/*.elf
+builds/*.o
+builds/*.lnk
+builds/*.exe
+builds/*.nes
+
+# Backup/temp trees
+.pre-merge-backup/
+.codex_tmp/
+.superpowers/brainstorm/
+tools/out/
+
+# Vendor / submodule checkout fat (not tracked, suppress noise)
+sgdk/sample/
+sgdk/doc/
+
+# ROMs (legal model: user supplies locally)
+roms/
+local/
+
+# Reference / non-Zelda material that escaped earlier
+reference/Sonic 2/
+reference/sega2f_files/
+reference/SONIC2_W.68K
+reference/Sonic The Hedgehog 2 (World) (Rev B).md
+
+# Root tracked stragglers (now untracked)
+/FINAL TRY.zip
+/bout.txt
+/build_a3_fix*.txt
+/build_f3.bat
+/build_f3_out.txt
+/build_run.tmp
+/capture.log
+/capture2.log
+/event
+/nes_reference.png
+/raw
+/run_build.bat
+/t.out
+/test_copy.tmp
