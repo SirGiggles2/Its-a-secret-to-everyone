@@ -40,7 +40,7 @@ Every implementation phase closes in this exact order:
 3. Capture screenshot/state evidence; emit a parity-oracle-schema instance per probe (Task 2.8).
 4. Diff each schema instance against the matching `build/generated/nes_reference/` capture (Phase 1.5).
 5. Run `tools/run_regression_matrix.py`; require green (Workstream F).
-6. Run `tools/state/verify_no_alias_collisions.py` if the phase touched `src/state/` (Workstream G).
+6. Run `tools/state/verify_no_alias_collisions.py --scope <subsystems>` if the phase touched `src/state/` (Workstream G). The `--scope` list names the subsystems being promoted in this phase (e.g. `vram_map,palette` for Phase 2; `enemy` for Phase 7). Out-of-scope collisions are reported as INFO and deferred to their owning phase per `docs/audit/state_contract.md` migration order. Use `--strict-all` for the Phase 12 promotion gate (then everything must be green).
 7. Confirm per-subsystem `PROBE_CYCLE_LIMIT` envelope was not exceeded (Workstream F cycle gate).
 8. Run `superpowers:requesting-code-review` against the diff + evidence.
 9. Fix review findings or record technical deferrals in the phase report.
