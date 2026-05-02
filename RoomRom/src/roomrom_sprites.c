@@ -3,6 +3,7 @@
 #include "render_abi.h"
 #include "roomrom_item_chr.h"
 #include "roomrom_vram_map.h"
+#include "expanded_sprite_chr.h"
 
 /* Sprite CHR source.
  * common_chr (data/chr/common.c) holds the always-loaded sprites including
@@ -156,14 +157,28 @@ void roomrom_sprites_upload_chr(void)
         }
     }
 
-    /* Item atlas: live NES CHR, variant-selected. Replaces the old
-     * per-item common_chr loops (sword vert/horz, boomerang, arrow
-     * vert/horz, bomb, explosion). Upload one contiguous block
-     * starting at ITEM_VRAM_TILE; per-item offsets come from
-     * roomrom_item_chr.h. */
-    render_chr_upload((unsigned short)(ITEM_VRAM_TILE * 32u),
-                      roomrom_item_chr[s_item_chr_variant],
-                      roomrom_item_chr_byte_count);
+    /* Phase 3 sprite expansion (item-only): 4 sub-pal copies of the live
+     * item atlas. The pre-baked roomrom_item_chr_x4 array holds 4
+     * concatenated copies (one per NES sprite sub-pal) of the variant's
+     * tile bytes. Upload each copy to its sub-pal-specific VRAM tile range
+     * so sprite renderers can pick the correct color set via
+     * ROOMROM_ITEM_TILE_BASE_PAL(s) + item_local_tile.
+     *
+     * Link / sword body / common sprite tiles continue to upload to the
+     * 1x SPR bank below; only the item atlas gets the 4x treatment. */
+    {
+        unsigned short variant = s_item_chr_variant;
+        unsigned char  s;
+        for (s = 0; s < 4u; s++) {
+            unsigned short vram_tile = (unsigned short)ROOMROM_ITEM_TILE_BASE_PAL(s);
+            unsigned long  blob_off  = (unsigned long)(roomrom_item_chr_byte_count) * (unsigned long)s;
+            render_chr_upload(
+                (unsigned short)(vram_tile * 32u),
+                &roomrom_item_chr_x4[variant][blob_off],
+                (unsigned short)roomrom_item_chr_byte_count
+            );
+        }
+    }
 }
 
 void roomrom_sprites_load_palette(void)
