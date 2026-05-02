@@ -1552,22 +1552,23 @@ def run_merge(
 
 
 # ---------------------------------------------------------------------------
-# Diff against gen_item_chr_manifest.py ITEM_DEFS (informational)
+# Diff against item_chr_manifest.json item_defs (informational)
 # ---------------------------------------------------------------------------
 
 def diff_against_manifest(registry: List[dict]) -> None:
-    """Print discrepancies between items registry and ITEM_DEFS. Not fatal."""
+    """Print discrepancies between items registry and item_chr_manifest.json item_defs.
+
+    Reads item_defs from RoomRom/data/item_chr_manifest.json directly.
+    (gen_item_chr_manifest.py was the legacy source of ITEM_DEFS; it has been
+    deleted as part of atlas FU4 cleanup. The manifest JSON is the authority.)
+    """
+    import json
+    manifest_path = ROOT / "RoomRom" / "data" / "item_chr_manifest.json"
     try:
-        import importlib.util
-        spec = importlib.util.spec_from_file_location(
-            "gen_item_chr_manifest",
-            ROOT / "RoomRom" / "tools" / "gen_item_chr_manifest.py",
-        )
-        mod = importlib.util.module_from_spec(spec)
-        spec.loader.exec_module(mod)
-        item_defs = mod.ITEM_DEFS
+        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+        item_defs = manifest.get("item_defs", [])
     except Exception as e:
-        print(f"diff_against_manifest: could not import ITEM_DEFS: {e}", file=sys.stderr)
+        print(f"diff_against_manifest: could not load {manifest_path}: {e}", file=sys.stderr)
         return
 
     tile_to_reg: Dict[int, dict] = {}
@@ -1576,13 +1577,19 @@ def diff_against_manifest(registry: List[dict]) -> None:
             tile_val = int(entry["nes_tile_ids"][0], 16)
             tile_to_reg[tile_val] = entry
 
-    print("\n--- diff vs gen_item_chr_manifest.py ITEM_DEFS ---")
+    print("\n--- diff vs item_chr_manifest.json item_defs ---")
     discrepancies = 0
     for idef in item_defs:
-        frame_tile = idef["nes_frame_tile"]
+        raw_frame_tile = idef.get("nes_frame_tile", "")
+        # nes_frame_tile may be stored as hex string ("0x20") in the manifest
+        try:
+            frame_tile = int(raw_frame_tile, 16) if isinstance(raw_frame_tile, str) else int(raw_frame_tile)
+        except (ValueError, TypeError):
+            print(f"  SKIP: '{idef.get('name', '?')}' — nes_frame_tile unparseable: {raw_frame_tile!r}")
+            continue
         reg_entry = tile_to_reg.get(frame_tile)
         if reg_entry is None:
-            print(f"  MISSING: ITEM_DEFS '{idef['name']}' (frame_tile=0x{frame_tile:02X})")
+            print(f"  MISSING: item_def '{idef['name']}' (frame_tile=0x{frame_tile:02X})")
             discrepancies += 1
             continue
         manifest_draw_rule = idef.get("draw_rule", "")
@@ -1602,7 +1609,7 @@ def diff_against_manifest(registry: List[dict]) -> None:
         else:
             print(f"  OK: '{idef['name']}' tile=0x{frame_tile:02X} dispatch={reg_dispatch}")
     if discrepancies == 0:
-        print("  All ITEM_DEFS match registry dispatch classes.")
+        print("  All item_defs match registry dispatch classes.")
     else:
         print(f"  {discrepancies} discrepancy(ies) noted (informational, not fatal).")
     print("--- end diff ---\n")

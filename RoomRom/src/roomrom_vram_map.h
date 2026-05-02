@@ -1,7 +1,7 @@
 #ifndef ROOMROM_VRAM_MAP_H
 #define ROOMROM_VRAM_MAP_H
 
-#include "roomrom_item_chr.h"
+#include "atlas/items_chr_x4.h"
 
 /* RoomRom VRAM tile map -- single source of truth.
  *
@@ -88,11 +88,11 @@
  * tiles wide. Total = 4 * ITEM_TILE_COUNT.
  *
  * ITEM_TILE_COUNT_PER_PAL is sourced from the generated header
- * roomrom_item_chr.h (ROOMROM_ITEM_CHR_TILE_COUNT). The verifier
+ * atlas/items_chr_x4.h (ROOMROM_ATLAS_ITEMS_X4_TILE_COUNT). The verifier
  * tools/verify_vram_budget.py confirms ITEM bank does not overlap
  * with VDP table region or any other VRAM consumer. */
 #define ROOMROM_ITEM_TILE_BASE          (ROOMROM_SPR_TILE_BASE + ROOMROM_SPR_TILE_COUNT_PER_PAL)
-#define ROOMROM_ITEM_TILE_COUNT_PER_PAL ROOMROM_ITEM_CHR_TILE_COUNT
+#define ROOMROM_ITEM_TILE_COUNT_PER_PAL ROOMROM_ATLAS_ITEMS_X4_TILE_COUNT
 #define ROOMROM_ITEM_SUBPAL_COUNT       4u
 #define ROOMROM_ITEM_TILE_BASE_PAL(s) \
     (ROOMROM_ITEM_TILE_BASE + (unsigned short)(s) * ROOMROM_ITEM_TILE_COUNT_PER_PAL)

@@ -2,7 +2,7 @@
 """Hard gate: VRAM tile-bank ranges do not overlap each other or VDP tables.
 
 Reads constants from RoomRom/src/roomrom_vram_map.h and
-RoomRom/src/roomrom_item_chr.h.
+RoomRom/src/atlas/items_chr_x4.h.
 VDP table layout from SGDK defaults (sgdk/src/vdp.c:23-27):
   plane B  = $C000 (size depends on plane size; 64x32 = $0800)
   window   = $D000 ($1000 in H40)
@@ -20,7 +20,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 VRAM_MAP_H    = ROOT / "src" / "roomrom_vram_map.h"
-ITEM_CHR_H    = ROOT / "src" / "roomrom_item_chr.h"
+ITEM_CHR_H    = ROOT / "src" / "atlas" / "items_chr_x4.h"
 
 VDP_TABLES = {
     "plane_b":  (0xC000, 0xC000 + 0x2000),  # max 8KB region (game-config dependent)
@@ -65,11 +65,11 @@ def parse_constants():
         consts["ROOMROM_SPR_TILE_BASE"] + consts["ROOMROM_SPR_TILE_COUNT_PER_PAL"]
     )
 
-    # ROOMROM_ITEM_TILE_COUNT_PER_PAL aliases ROOMROM_ITEM_CHR_TILE_COUNT from
-    # roomrom_item_chr.h
-    m = re.search(r"#define\s+ROOMROM_ITEM_CHR_TILE_COUNT\s+(\d+)u?", text_item)
+    # ROOMROM_ITEM_TILE_COUNT_PER_PAL aliases ROOMROM_ATLAS_ITEMS_X4_TILE_COUNT
+    # from atlas/items_chr_x4.h (supersedes legacy ROOMROM_ITEM_CHR_TILE_COUNT)
+    m = re.search(r"#define\s+ROOMROM_ATLAS_ITEMS_X4_TILE_COUNT\s+(\d+)u?", text_item)
     if not m:
-        fail(f"missing ROOMROM_ITEM_CHR_TILE_COUNT in {ITEM_CHR_H}")
+        fail(f"missing ROOMROM_ATLAS_ITEMS_X4_TILE_COUNT in {ITEM_CHR_H}")
     consts["ROOMROM_ITEM_TILE_COUNT_PER_PAL"] = int(m.group(1))
 
     # ROOMROM_ITEM_SUBPAL_COUNT is a literal numeric define

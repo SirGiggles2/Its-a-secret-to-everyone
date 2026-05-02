@@ -18,7 +18,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 MANIFEST = ROOT / "RoomRom" / "data" / "item_chr_manifest.json"
-HEADER = ROOT / "RoomRom" / "src" / "roomrom_item_chr.h"
+HEADER = ROOT / "RoomRom" / "src" / "atlas" / "items_chr_x4.h"
 SOURCE = ROOT / "RoomRom" / "src" / "roomrom_sprites.c"
 
 REQUIRED_DEFS = {
@@ -178,18 +178,18 @@ def main() -> int:
     if not HEADER.exists():
         fail(f"missing generated header: {HEADER}")
     htext = HEADER.read_text(encoding="ascii")
-    m = re.search(r"#define\s+ROOMROM_ITEM_CHR_TILE_COUNT\s+(\d+)u", htext)
+    m = re.search(r"#define\s+ROOMROM_ATLAS_ITEMS_X4_TILE_COUNT\s+(\d+)u", htext)
     if not m:
-        fail("generated header missing ROOMROM_ITEM_CHR_TILE_COUNT")
+        fail("atlas header missing ROOMROM_ATLAS_ITEMS_X4_TILE_COUNT")
     if int(m.group(1)) != total_tiles:
-        fail("generated header tile count does not match manifest")
+        fail("atlas header tile count does not match manifest")
 
     src = SOURCE.read_text(encoding="utf-8")
     for token in FORBIDDEN_COMMON_GUESSES:
         if token in src:
             fail(f"renderer still contains forbidden guessed item tile {token}")
-    if "roomrom_item_chr" not in src:
-        fail("renderer is not wired to generated item CHR atlas")
+    if "roomrom_atlas_items_x4" not in src:
+        fail("renderer is not wired to atlas/items_chr_x4 blob")
 
     print(
         f"OK: item CHR manifest verified "

@@ -1,12 +1,12 @@
 #include <genesis.h>
 #include "roomrom_sprites.h"
 #include "render_abi.h"
-#include "roomrom_item_chr.h"
 #include "roomrom_vram_map.h"
-/* FU3: renderer reads from atlas/items_chr_x4 (byte-identical to legacy
- * expanded_sprite_chr via FU2).  ROOMROM_ITEM_TILE_* tile-index constants
- * stay sourced from roomrom_item_chr.h (the 8-item legacy manifest header)
- * because item tile indices into the blob are the same in both pipelines.
+/* FU3+FU4: renderer reads from atlas/items_chr_x4 (byte-identical to
+ * legacy expanded_sprite_chr via FU2).  ROOMROM_ITEM_TILE_* tile-index
+ * constants are now in atlas/items_chr_x4.h (supersede roomrom_item_chr.h,
+ * same values).  roomrom_vram_map.h includes atlas/items_chr_x4.h, so
+ * ROOMROM_ITEM_TILE_* are already visible through that path.
  * P4a: atlas headers for ATLAS_ASSERT_SIZE and named dispatch constants. */
 #include "atlas/items_chr_x4.h"
 #include "atlas/items_chr.h"
@@ -58,9 +58,9 @@ extern const unsigned char common_chr[7616];
 #define ATTACK_VRAM_TILE        (LINK_VRAM_TILE + LINK_POSE_COUNT * LINK_TILES_PER_POSE)
 
 /* Phase 1: item atlas tiles live in their own contiguous block starting
- * after Link attack poses. Tile offsets come from the live NES item CHR
- * generator (RoomRom/src/roomrom_item_chr.h). Replaces the old guessed
- * common_chr-sourced literals at $82..$89 / $36..$3D / etc. */
+ * after Link attack poses. Tile offsets come from atlas/items_chr_x4.h
+ * (ROOMROM_ITEM_TILE_*). Replaces the old guessed common_chr-sourced
+ * literals at $82..$89 / $36..$3D / etc. */
 #define ITEM_VRAM_TILE          (ATTACK_VRAM_TILE + ATTACK_POSE_COUNT * LINK_TILES_PER_POSE)
 
 #define SWORD_VERT_VRAM_TILE    (ITEM_VRAM_TILE + ROOMROM_ITEM_TILE_SWORD_VERT)
@@ -107,7 +107,7 @@ static const link_pose_def_t attack_poses[ATTACK_POSE_COUNT] = {
 
 /* Phase 1: item-atlas variant selector. 0 = orig, 1 = redux. Read at
  * upload time by roomrom_sprites_upload_chr to pick the correct slice
- * of roomrom_item_chr[][]. */
+ * of roomrom_atlas_items_x4[][]. */
 static unsigned char s_item_chr_variant = 0u;  /* ROOMROM_ITEM_VARIANT_ORIG */
 
 void roomrom_sprites_set_redux(unsigned char redux)

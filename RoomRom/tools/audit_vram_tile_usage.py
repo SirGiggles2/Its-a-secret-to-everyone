@@ -21,7 +21,7 @@ Categories (per scene):
     sprites_chr                      (232)
     common_chr full block            (238)
     Link walk + attack poses         (32 + 16)
-    item atlas                       (from roomrom_item_chr.h)
+    item atlas                       (from atlas/items_chr_x4.h)
 """
 import re
 import sys
@@ -45,18 +45,13 @@ CONSTS = {
 }
 
 def get_item_atlas_tiles():
-    """Item atlas tile count from generated roomrom_item_chr.{h,c}."""
-    for path in (ROOT / "src" / "roomrom_item_chr.h",
-                 ROOT / "src" / "roomrom_item_chr.c"):
-        if not path.exists():
-            continue
-        text = path.read_text(encoding="utf-8")
-        m = re.search(r"ROOMROM_ITEM_CHR_TILE_COUNT\s+(\d+)u?", text)
+    """Item atlas tile count from atlas/items_chr_x4.h (supersedes legacy roomrom_item_chr.h)."""
+    atlas_x4 = ROOT / "src" / "atlas" / "items_chr_x4.h"
+    if atlas_x4.exists():
+        text = atlas_x4.read_text(encoding="utf-8")
+        m = re.search(r"ROOMROM_ATLAS_ITEMS_X4_TILE_COUNT\s+(\d+)u?", text)
         if m:
             return int(m.group(1))
-        m = re.search(r"roomrom_item_chr_byte_count\s*=\s*(\d+)", text)
-        if m:
-            return int(m.group(1)) // 32
     return 0
 
 
