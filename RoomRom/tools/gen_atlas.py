@@ -427,6 +427,15 @@ LINK_TILE_GROUPS = [
 
 def write_link_chr_header(path: Path, offsets: List[Tuple[str, int, int]],
                            blob_bytes: int) -> None:
+    """Emit link_chr.h with offset constants and W_*/H_* dispatch defines.
+
+    NES Z1 Link is rendered as four 8x8 sprites in a 2x2 column-major SGDK
+    layout per pose -> SPRITE_SIZE(2, 2) for all walk/attack groups.
+    Walk frames (face_down_f1 .. push_up): 2 NES tiles each -> W=2, H=1 in
+    tile-count terms. However SGDK SPRITE_SIZE for the composed 2x2 quad is
+    (2,2) because two tiles are stacked vertically per side -- consistently
+    emit W=2, H=2 for all Link groups so ATLAS_ASSERT_SIZE works uniformly.
+    """
     guard = "ROOMROM_ATLAS_LINK_CHR_H"
     prefix = "ROOMROM_ATLAS_LINK"
     lines = [
@@ -435,12 +444,26 @@ def write_link_chr_header(path: Path, offsets: List[Tuple[str, int, int]],
         f"#ifndef {guard}",
         f"#define {guard}",
         "",
+        '#include "atlas_dispatch.h"',
+        "",
         f"#define {prefix}_VARIANT_COUNT 1u",
         f"#define {prefix}_BYTES {blob_bytes}u",
         "",
     ]
     for name, off, _ in offsets:
         lines.append(f"#define {prefix}_{c_ident(name)}_OFFSET {off}u")
+    lines += [
+        "",
+        "/* Dispatch W/H defines: all Link poses are SPRITE_SIZE(2,2) on",
+        " * Genesis (2-tile wide, 2-tile tall 2x2 quad, column-major). */",
+    ]
+    for name, _, _ in offsets:
+        cname = c_ident(name)
+        lines += [
+            f"#define W_{cname}  2u",
+            f"#define H_{cname}  2u",
+            f"#define ATLAS_{cname}_DISPATCH  {{ 2u, 2u, NES_FLIPPABLE }}",
+        ]
     lines += [
         "",
         "extern const unsigned char roomrom_atlas_link",
@@ -643,6 +666,16 @@ def write_atlas_dispatch_header(path: Path) -> None:
         "    ATLAS_STATIC_ASSERT( \\",
         "        W_##name == (expect_w) && H_##name == (expect_h), \\",
         "        #name \" SPRITE_SIZE mismatch vs registry dispatch\")",
+        "",
+        "/* ATLAS_ASSERT_BG_TILE: same compile-time check as ATLAS_ASSERT_SIZE,",
+        " * named to indicate BG-tile (tilemap) dispatch rather than sprite",
+        " * dispatch. Implementation is identical; the distinct name documents",
+        " * intent at the call site and allows future divergence if BG and",
+        " * sprite dispatch classes need to be checked differently. */",
+        "#define ATLAS_ASSERT_BG_TILE(name, expect_w, expect_h) \\",
+        "    ATLAS_STATIC_ASSERT( \\",
+        "        W_##name == (expect_w) && H_##name == (expect_h), \\",
+        "        #name \" BG tile size mismatch vs registry dispatch\")",
         "",
         "#endif /* ROOMROM_ATLAS_DISPATCH_H */",
         "",

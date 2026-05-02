@@ -34,5 +34,15 @@ typedef struct {
         W_##name == (expect_w) && H_##name == (expect_h), \
         #name " SPRITE_SIZE mismatch vs registry dispatch")
 
+/* ATLAS_ASSERT_BG_TILE: same compile-time check as ATLAS_ASSERT_SIZE,
+ * named to indicate BG-tile (tilemap) dispatch rather than sprite
+ * dispatch. Implementation is identical; the distinct name documents
+ * intent at the call site and allows future divergence if BG and
+ * sprite dispatch classes need to be checked differently. */
+#define ATLAS_ASSERT_BG_TILE(name, expect_w, expect_h) \
+    ATLAS_STATIC_ASSERT( \
+        W_##name == (expect_w) && H_##name == (expect_h), \
+        #name " BG tile size mismatch vs registry dispatch")
+
 #endif /* ROOMROM_ATLAS_DISPATCH_H */
 

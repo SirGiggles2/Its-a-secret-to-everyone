@@ -3,6 +3,8 @@
 #ifndef ROOMROM_ATLAS_LINK_CHR_H
 #define ROOMROM_ATLAS_LINK_CHR_H
 
+#include "atlas_dispatch.h"
+
 #define ROOMROM_ATLAS_LINK_VARIANT_COUNT 1u
 #define ROOMROM_ATLAS_LINK_BYTES 1024u
 
@@ -18,6 +20,45 @@
 #define ROOMROM_ATLAS_LINK_ATTACK_UP_OFFSET 640u
 #define ROOMROM_ATLAS_LINK_ATTACK_SIDE_OFFSET 768u
 #define ROOMROM_ATLAS_LINK_STAB_SIDE_OFFSET 896u
+
+/* Dispatch W/H defines: all Link poses are SPRITE_SIZE(2,2) on
+ * Genesis (2-tile wide, 2-tile tall 2x2 quad, column-major). */
+#define W_FACE_DOWN_F1  2u
+#define H_FACE_DOWN_F1  2u
+#define ATLAS_FACE_DOWN_F1_DISPATCH  { 2u, 2u, NES_FLIPPABLE }
+#define W_FACE_DOWN_F2  2u
+#define H_FACE_DOWN_F2  2u
+#define ATLAS_FACE_DOWN_F2_DISPATCH  { 2u, 2u, NES_FLIPPABLE }
+#define W_FACE_UP_F1  2u
+#define H_FACE_UP_F1  2u
+#define ATLAS_FACE_UP_F1_DISPATCH  { 2u, 2u, NES_FLIPPABLE }
+#define W_FACE_UP_F2  2u
+#define H_FACE_UP_F2  2u
+#define ATLAS_FACE_UP_F2_DISPATCH  { 2u, 2u, NES_FLIPPABLE }
+#define W_FACE_SIDE_F1  2u
+#define H_FACE_SIDE_F1  2u
+#define ATLAS_FACE_SIDE_F1_DISPATCH  { 2u, 2u, NES_FLIPPABLE }
+#define W_FACE_SIDE_F2  2u
+#define H_FACE_SIDE_F2  2u
+#define ATLAS_FACE_SIDE_F2_DISPATCH  { 2u, 2u, NES_FLIPPABLE }
+#define W_PUSH_SIDE  2u
+#define H_PUSH_SIDE  2u
+#define ATLAS_PUSH_SIDE_DISPATCH  { 2u, 2u, NES_FLIPPABLE }
+#define W_PUSH_UP  2u
+#define H_PUSH_UP  2u
+#define ATLAS_PUSH_UP_DISPATCH  { 2u, 2u, NES_FLIPPABLE }
+#define W_ATTACK_DOWN  2u
+#define H_ATTACK_DOWN  2u
+#define ATLAS_ATTACK_DOWN_DISPATCH  { 2u, 2u, NES_FLIPPABLE }
+#define W_ATTACK_UP  2u
+#define H_ATTACK_UP  2u
+#define ATLAS_ATTACK_UP_DISPATCH  { 2u, 2u, NES_FLIPPABLE }
+#define W_ATTACK_SIDE  2u
+#define H_ATTACK_SIDE  2u
+#define ATLAS_ATTACK_SIDE_DISPATCH  { 2u, 2u, NES_FLIPPABLE }
+#define W_STAB_SIDE  2u
+#define H_STAB_SIDE  2u
+#define ATLAS_STAB_SIDE_DISPATCH  { 2u, 2u, NES_FLIPPABLE }
 
 extern const unsigned char roomrom_atlas_link
     [ROOMROM_ATLAS_LINK_VARIANT_COUNT][ROOMROM_ATLAS_LINK_BYTES];
