@@ -44,9 +44,15 @@ ITEM_DEFS = [
         "item": "boomerang",
         "direction_class": "rotating",
         "nes_frame_tile": 0x36,
-        "sprite_size": [2, 2],
+        "sprite_size": [1, 1],
         "tile_ids": list(range(0x36, 0x3E)),
-        "draw_rule": "wide_16x16_phase_cycle",
+        "draw_rule": "narrow_8x8_phase_cycle",
+        "nes_dispatch_note": (
+            "Anim_WriteSpecificItemSprites @Narrow (Z_01.asm:5288) "
+            "draws single 8x8 sprite per frame at $36/$38/$3A. Genesis "
+            "renderer reads tiles $36/$38/$3A (blob offsets 0,2,4); "
+            "$37/$39/$3B-$3D over-extracted, harmless VRAM."
+        ),
     },
     {
         "name": "arrow_vert",
@@ -70,19 +76,44 @@ ITEM_DEFS = [
         "name": "bomb",
         "item": "bomb",
         "direction_class": "static",
-        "nes_frame_tile": 0x24,
-        "sprite_size": [1, 2],
-        "tile_ids": [0x24, 0x25],
-        "draw_rule": "narrow_8x16",
+        "nes_frame_tile": 0x34,
+        "sprite_size": [1, 1],
+        "tile_ids": [0x34],
+        "draw_rule": "narrow_8x8",
+        "nes_dispatch_note": (
+            "DrawBomb (Z_07.asm:4869) -> DrawCloud -> "
+            "Anim_WriteItemSprites with item slot $01, frame 0 -> "
+            "ItemFrameTiles[$03] = $34. Tile $34 in [$20,$62) -> "
+            "@Narrow path (Z_01.asm:5288), single 8x8 sprite."
+        ),
     },
     {
         "name": "explosion",
         "item": "explosion",
         "direction_class": "static",
-        "nes_frame_tile": 0x32,
+        "nes_frame_tile": 0x70,
+        "sprite_size": [2, 1],
+        "tile_ids": [0x70, 0x72, 0x74],
+        "draw_rule": "mirrored_16x8_phase_cycle",
+        "nes_dispatch_note": (
+            "DrawOtherBombClouds (Z_07.asm:4936) draws cloud cluster "
+            "via DrawBombOrCloudNoFlashing -> Anim_WriteItemSprites "
+            "with item slot $01, frames 1-3 -> ItemFrameTiles[$04..$06] "
+            "= $70/$72/$74. Each tile in [$6C,$7C) -> @Wide -> "
+            "Anim_WriteMirroredSpritePair (Z_01.asm:5304): 2 8x8 "
+            "sprites side-by-side, right=left hflipped, total 16x8. "
+            "Generator emits 2 Genesis tiles per NES tile (raw + "
+            "hflipped) so SGDK SPRITE_SIZE(2,1) renders both halves."
+        ),
+    },
+    {
+        "name": "sword_diag",
+        "item": "sword",
+        "direction_class": "diagonal",
+        "nes_frame_tile": 0x48,
         "sprite_size": [2, 2],
-        "tile_ids": [0x32, 0x33, 0x34, 0x35],
-        "draw_rule": "wide_16x16_flip_cycle",
+        "tile_ids": [0x48, 0x49, 0x4A, 0x4B],
+        "draw_rule": "wide_16x16_hflippable",
     },
 ]
 

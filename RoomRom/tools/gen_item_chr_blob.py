@@ -33,6 +33,22 @@ def nes_tile_to_genesis(nes_tile: bytes) -> bytes:
     return bytes(out)
 
 
+def hflip_genesis_tile(gen_tile: bytes) -> bytes:
+    """Mirror a Genesis 4bpp tile horizontally. Layout: 8 rows x 4 bytes,
+    each byte holds 2 pixels (high nibble = even col, low nibble = odd col).
+    Mirrored row reverses pixel order — swap nibbles within each byte AND
+    reverse byte order across the row."""
+    if len(gen_tile) != 32:
+        raise ValueError("Genesis tile must be exactly 32 bytes")
+    out = bytearray(32)
+    for row in range(8):
+        for byte_idx in range(4):
+            src = gen_tile[row * 4 + byte_idx]
+            swapped = ((src & 0x0F) << 4) | ((src >> 4) & 0x0F)
+            out[row * 4 + (3 - byte_idx)] = swapped
+    return bytes(out)
+
+
 def c_ident(name: str) -> str:
     return name.upper().replace("-", "_")
 
@@ -50,6 +66,18 @@ def parse_manifest(path: Path) -> Dict[str, object]:
     return manifest
 
 
+def tiles_per_input(item_def: Dict[str, object]) -> int:
+    """Number of Genesis tiles produced per declared NES tile_id.
+    `mirrored_*` draw_rules emit (raw, hflipped) per NES tile so SGDK
+    SPRITE_SIZE(2,1) can render both halves of an @Mirrored cluster
+    (NES Z1 right column = left column hflipped) without per-sprite
+    flip attribute juggling."""
+    rule = str(item_def.get("draw_rule", ""))
+    if rule.startswith("mirrored_"):
+        return 2
+    return 1
+
+
 def build_variant_bytes(item_defs: List[Dict[str, object]],
                         variant: Dict[str, object]) -> bytes:
     tiles = variant.get("tiles", {})
@@ -57,6 +85,8 @@ def build_variant_bytes(item_defs: List[Dict[str, object]],
         raise SystemExit(f"variant {variant.get('rom_id')} has invalid tiles map")
     out = bytearray()
     for item_def in item_defs:
+        rule = str(item_def.get("draw_rule", ""))
+        bake_mirror = rule.startswith("mirrored_")
         for tile_id in item_def["tile_ids"]:
             tile_meta = tiles.get(tile_id)
             if tile_meta is None:
@@ -67,7 +97,10 @@ def build_variant_bytes(item_defs: List[Dict[str, object]],
             raw = bytes.fromhex(tile_meta["bytes"])
             if len(raw) != 16:
                 raise SystemExit(f"tile {tile_id} in variant {variant.get('rom_id')} is not 16 bytes")
-            out.extend(nes_tile_to_genesis(raw))
+            gen = nes_tile_to_genesis(raw)
+            out.extend(gen)
+            if bake_mirror:
+                out.extend(hflip_genesis_tile(gen))
     return bytes(out)
 
 
@@ -87,7 +120,7 @@ def write_header(path: Path, item_defs: List[Dict[str, object]],
     for item_def in item_defs:
         name = c_ident(str(item_def["name"]))
         lines.append(f"#define ROOMROM_ITEM_TILE_{name} {offset}u")
-        offset += len(item_def["tile_ids"])
+        offset += len(item_def["tile_ids"]) * tiles_per_input(item_def)
     lines += [
         "",
         "extern const unsigned long roomrom_item_chr_size;",

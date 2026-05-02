@@ -103,7 +103,11 @@ def main() -> int:
         tile_ids = item_def.get("tile_ids", [])
         if not tile_ids:
             fail(f"{name} has no tile_ids")
-        total_tiles += len(tile_ids)
+        # Generator emits 2 Genesis tiles per declared NES tile for
+        # mirrored_* draw rules (raw + hflipped).
+        rule = str(item_def.get("draw_rule", ""))
+        per_input = 2 if rule.startswith("mirrored_") else 1
+        total_tiles += len(tile_ids) * per_input
 
         nes_frame_tile = item_def.get("nes_frame_tile")
         if not nes_frame_tile:
