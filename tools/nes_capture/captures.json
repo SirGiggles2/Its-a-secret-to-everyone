@@ -1,0 +1,713 @@
+{
+  "$schema": "tools/nes_capture/captures_schema.json",
+  "_comment": "Master plan Phase 1.5 — canonical NES reference scenario manifest. All null fields require user-supplied save states / input movies before the runner will execute them. The runner skips any scenario whose prerequisites are missing and reports the reason.",
+  "capture_tool_version": "1.0.0",
+  "supported_rom_hashes": [
+    "PLACEHOLDER_PRG0_SHA256_REPLACE_WITH_REAL_HASH",
+    "PLACEHOLDER_PRG1_SHA256_REPLACE_WITH_REAL_HASH"
+  ],
+  "default_artifacts": [
+    "screenshot.png",
+    "ppu.bin",
+    "oam.bin",
+    "palram.bin",
+    "ciram.bin",
+    "ram.bin",
+    "frame.txt",
+    "input_log.txt",
+    "rng_seed.txt"
+  ],
+  "scenarios": [
+
+    {
+      "id": "title_idle",
+      "title": "Title screen — idle at frame 600 (after logo fully drawn)",
+      "source_rom_hash": null,
+      "starting_save_state": null,
+      "input_movie": null,
+      "target_frame": 600,
+      "rng_seed": 0,
+      "expected_room_id": null,
+      "capture_artifacts": [
+        "screenshot.png", "ppu.bin", "oam.bin", "palram.bin",
+        "ciram.bin", "ram.bin", "frame.txt", "rng_seed.txt"
+      ]
+    },
+
+    {
+      "id": "title_to_fs",
+      "title": "Title screen → File Select transition (Start pressed at title)",
+      "source_rom_hash": null,
+      "starting_save_state": null,
+      "input_movie": null,
+      "target_frame": 900,
+      "rng_seed": 0,
+      "expected_room_id": null,
+      "capture_artifacts": [
+        "screenshot.png", "ppu.bin", "oam.bin", "palram.bin",
+        "ciram.bin", "ram.bin", "frame.txt", "input_log.txt", "rng_seed.txt"
+      ]
+    },
+
+    {
+      "id": "intro_story_pages",
+      "title": "Intro — story scroll pages fully displayed",
+      "source_rom_hash": null,
+      "starting_save_state": null,
+      "input_movie": null,
+      "target_frame": 1800,
+      "rng_seed": 0,
+      "expected_room_id": null,
+      "capture_artifacts": [
+        "screenshot.png", "ppu.bin", "oam.bin", "palram.bin",
+        "ciram.bin", "ram.bin", "frame.txt", "rng_seed.txt"
+      ]
+    },
+
+    {
+      "id": "intro_item_showcase",
+      "title": "Intro — item showcase screen (all items visible, no flash)",
+      "source_rom_hash": null,
+      "starting_save_state": null,
+      "input_movie": null,
+      "target_frame": 2400,
+      "rng_seed": 0,
+      "expected_room_id": null,
+      "capture_artifacts": [
+        "screenshot.png", "ppu.bin", "oam.bin", "palram.bin",
+        "ciram.bin", "ram.bin", "frame.txt", "rng_seed.txt"
+      ]
+    },
+
+    {
+      "id": "intro_item_flash_cycle",
+      "title": "Intro — item flash cycle captured at frame with heart/container flashing (FrameCounter bit 3 set)",
+      "source_rom_hash": null,
+      "starting_save_state": null,
+      "input_movie": null,
+      "target_frame": 2408,
+      "rng_seed": 0,
+      "expected_room_id": null,
+      "capture_artifacts": [
+        "screenshot.png", "ppu.bin", "oam.bin", "palram.bin",
+        "ciram.bin", "ram.bin", "frame.txt", "rng_seed.txt"
+      ]
+    },
+
+    {
+      "id": "ow_room_00",
+      "title": "Overworld — room $00 (starting room, Link at spawn)",
+      "source_rom_hash": null,
+      "starting_save_state": null,
+      "input_movie": null,
+      "target_frame": 60,
+      "rng_seed": 0,
+      "expected_room_id": 0,
+      "capture_artifacts": [
+        "screenshot.png", "ppu.bin", "oam.bin", "palram.bin",
+        "ciram.bin", "ram.bin", "frame.txt", "input_log.txt", "rng_seed.txt"
+      ]
+    },
+
+    {
+      "id": "ow_room_77",
+      "title": "Overworld — room $77 (Death Mountain entrance area)",
+      "source_rom_hash": null,
+      "starting_save_state": null,
+      "input_movie": null,
+      "target_frame": 60,
+      "rng_seed": 0,
+      "expected_room_id": 119,
+      "capture_artifacts": [
+        "screenshot.png", "ppu.bin", "oam.bin", "palram.bin",
+        "ciram.bin", "ram.bin", "frame.txt", "input_log.txt", "rng_seed.txt"
+      ]
+    },
+
+    {
+      "id": "ow_lost_woods_correct",
+      "title": "Overworld — Lost Woods correct path sequence (exits north)",
+      "source_rom_hash": null,
+      "starting_save_state": null,
+      "input_movie": null,
+      "target_frame": 60,
+      "rng_seed": 0,
+      "expected_room_id": null,
+      "capture_artifacts": [
+        "screenshot.png", "ppu.bin", "oam.bin", "palram.bin",
+        "ciram.bin", "ram.bin", "frame.txt", "input_log.txt", "rng_seed.txt"
+      ]
+    },
+
+    {
+      "id": "ow_lost_hills_correct",
+      "title": "Overworld — Lost Hills correct path sequence (exits north to get heart)",
+      "source_rom_hash": null,
+      "starting_save_state": null,
+      "input_movie": null,
+      "target_frame": 60,
+      "rng_seed": 0,
+      "expected_room_id": null,
+      "capture_artifacts": [
+        "screenshot.png", "ppu.bin", "oam.bin", "palram.bin",
+        "ciram.bin", "ram.bin", "frame.txt", "input_log.txt", "rng_seed.txt"
+      ]
+    },
+
+    {
+      "id": "cave_sword",
+      "title": "Cave — old man with sword (room $77 cave, sword pickup scene)",
+      "source_rom_hash": null,
+      "starting_save_state": null,
+      "input_movie": null,
+      "target_frame": 60,
+      "rng_seed": 0,
+      "expected_room_id": null,
+      "capture_artifacts": [
+        "screenshot.png", "ppu.bin", "oam.bin", "palram.bin",
+        "ciram.bin", "ram.bin", "frame.txt", "rng_seed.txt"
+      ]
+    },
+
+    {
+      "id": "cave_heart",
+      "title": "Cave — heart container reward cave",
+      "source_rom_hash": null,
+      "starting_save_state": null,
+      "input_movie": null,
+      "target_frame": 60,
+      "rng_seed": 0,
+      "expected_room_id": null,
+      "capture_artifacts": [
+        "screenshot.png", "ppu.bin", "oam.bin", "palram.bin",
+        "ciram.bin", "ram.bin", "frame.txt", "rng_seed.txt"
+      ]
+    },
+
+    {
+      "id": "cave_shop_three_item",
+      "title": "Cave — three-item shop (all three items visible)",
+      "source_rom_hash": null,
+      "starting_save_state": null,
+      "input_movie": null,
+      "target_frame": 60,
+      "rng_seed": 0,
+      "expected_room_id": null,
+      "capture_artifacts": [
+        "screenshot.png", "ppu.bin", "oam.bin", "palram.bin",
+        "ciram.bin", "ram.bin", "frame.txt", "rng_seed.txt"
+      ]
+    },
+
+    {
+      "id": "cave_old_man_letter",
+      "title": "Cave — old man with letter (burn-the-bush cave)",
+      "source_rom_hash": null,
+      "starting_save_state": null,
+      "input_movie": null,
+      "target_frame": 60,
+      "rng_seed": 0,
+      "expected_room_id": null,
+      "capture_artifacts": [
+        "screenshot.png", "ppu.bin", "oam.bin", "palram.bin",
+        "ciram.bin", "ram.bin", "frame.txt", "rng_seed.txt"
+      ]
+    },
+
+    {
+      "id": "cave_money_game",
+      "title": "Cave — money-making game (gambling cave, options visible)",
+      "source_rom_hash": null,
+      "starting_save_state": null,
+      "input_movie": null,
+      "target_frame": 60,
+      "rng_seed": 0,
+      "expected_room_id": null,
+      "capture_artifacts": [
+        "screenshot.png", "ppu.bin", "oam.bin", "palram.bin",
+        "ciram.bin", "ram.bin", "frame.txt", "rng_seed.txt"
+      ]
+    },
+
+    {
+      "id": "uw_l1_room_0_through_5",
+      "title": "Underworld L1 — rooms 0-5 traversal sequence (entry to fifth room)",
+      "source_rom_hash": null,
+      "starting_save_state": null,
+      "input_movie": null,
+      "target_frame": 60,
+      "rng_seed": 0,
+      "expected_room_id": null,
+      "capture_artifacts": [
+        "screenshot.png", "ppu.bin", "oam.bin", "palram.bin",
+        "ciram.bin", "ram.bin", "frame.txt", "input_log.txt", "rng_seed.txt"
+      ]
+    },
+
+    {
+      "id": "uw_l2_entry",
+      "title": "Underworld L2 — dungeon entry room capture",
+      "source_rom_hash": null,
+      "starting_save_state": null,
+      "input_movie": null,
+      "target_frame": 60,
+      "rng_seed": 0,
+      "expected_room_id": null,
+      "capture_artifacts": [
+        "screenshot.png", "ppu.bin", "oam.bin", "palram.bin",
+        "ciram.bin", "ram.bin", "frame.txt", "rng_seed.txt"
+      ]
+    },
+
+    {
+      "id": "uw_l3_entry",
+      "title": "Underworld L3 — dungeon entry room capture",
+      "source_rom_hash": null,
+      "starting_save_state": null,
+      "input_movie": null,
+      "target_frame": 60,
+      "rng_seed": 0,
+      "expected_room_id": null,
+      "capture_artifacts": [
+        "screenshot.png", "ppu.bin", "oam.bin", "palram.bin",
+        "ciram.bin", "ram.bin", "frame.txt", "rng_seed.txt"
+      ]
+    },
+
+    {
+      "id": "uw_l4_entry",
+      "title": "Underworld L4 — dungeon entry room capture",
+      "source_rom_hash": null,
+      "starting_save_state": null,
+      "input_movie": null,
+      "target_frame": 60,
+      "rng_seed": 0,
+      "expected_room_id": null,
+      "capture_artifacts": [
+        "screenshot.png", "ppu.bin", "oam.bin", "palram.bin",
+        "ciram.bin", "ram.bin", "frame.txt", "rng_seed.txt"
+      ]
+    },
+
+    {
+      "id": "uw_l5_entry",
+      "title": "Underworld L5 — dungeon entry room capture",
+      "source_rom_hash": null,
+      "starting_save_state": null,
+      "input_movie": null,
+      "target_frame": 60,
+      "rng_seed": 0,
+      "expected_room_id": null,
+      "capture_artifacts": [
+        "screenshot.png", "ppu.bin", "oam.bin", "palram.bin",
+        "ciram.bin", "ram.bin", "frame.txt", "rng_seed.txt"
+      ]
+    },
+
+    {
+      "id": "uw_l6_entry",
+      "title": "Underworld L6 — dungeon entry room capture",
+      "source_rom_hash": null,
+      "starting_save_state": null,
+      "input_movie": null,
+      "target_frame": 60,
+      "rng_seed": 0,
+      "expected_room_id": null,
+      "capture_artifacts": [
+        "screenshot.png", "ppu.bin", "oam.bin", "palram.bin",
+        "ciram.bin", "ram.bin", "frame.txt", "rng_seed.txt"
+      ]
+    },
+
+    {
+      "id": "uw_l7_entry",
+      "title": "Underworld L7 — dungeon entry room capture",
+      "source_rom_hash": null,
+      "starting_save_state": null,
+      "input_movie": null,
+      "target_frame": 60,
+      "rng_seed": 0,
+      "expected_room_id": null,
+      "capture_artifacts": [
+        "screenshot.png", "ppu.bin", "oam.bin", "palram.bin",
+        "ciram.bin", "ram.bin", "frame.txt", "rng_seed.txt"
+      ]
+    },
+
+    {
+      "id": "uw_l8_entry",
+      "title": "Underworld L8 — dungeon entry room capture",
+      "source_rom_hash": null,
+      "starting_save_state": null,
+      "input_movie": null,
+      "target_frame": 60,
+      "rng_seed": 0,
+      "expected_room_id": null,
+      "capture_artifacts": [
+        "screenshot.png", "ppu.bin", "oam.bin", "palram.bin",
+        "ciram.bin", "ram.bin", "frame.txt", "rng_seed.txt"
+      ]
+    },
+
+    {
+      "id": "uw_l9_entry",
+      "title": "Underworld L9 (Death Mountain) — dungeon entry room capture",
+      "source_rom_hash": null,
+      "starting_save_state": null,
+      "input_movie": null,
+      "target_frame": 60,
+      "rng_seed": 0,
+      "expected_room_id": null,
+      "capture_artifacts": [
+        "screenshot.png", "ppu.bin", "oam.bin", "palram.bin",
+        "ciram.bin", "ram.bin", "frame.txt", "rng_seed.txt"
+      ]
+    },
+
+    {
+      "id": "boss_aquamentus",
+      "title": "Boss — Aquamentus (L1 boss, first frame after door opens)",
+      "source_rom_hash": null,
+      "starting_save_state": null,
+      "input_movie": null,
+      "target_frame": 60,
+      "rng_seed": 0,
+      "expected_room_id": null,
+      "capture_artifacts": [
+        "screenshot.png", "ppu.bin", "oam.bin", "palram.bin",
+        "ciram.bin", "ram.bin", "frame.txt", "rng_seed.txt"
+      ]
+    },
+
+    {
+      "id": "boss_dodongo",
+      "title": "Boss — Dodongo (L2 boss)",
+      "source_rom_hash": null,
+      "starting_save_state": null,
+      "input_movie": null,
+      "target_frame": 60,
+      "rng_seed": 0,
+      "expected_room_id": null,
+      "capture_artifacts": [
+        "screenshot.png", "ppu.bin", "oam.bin", "palram.bin",
+        "ciram.bin", "ram.bin", "frame.txt", "rng_seed.txt"
+      ]
+    },
+
+    {
+      "id": "boss_manhandla",
+      "title": "Boss — Manhandla (L3/L4 boss)",
+      "source_rom_hash": null,
+      "starting_save_state": null,
+      "input_movie": null,
+      "target_frame": 60,
+      "rng_seed": 0,
+      "expected_room_id": null,
+      "capture_artifacts": [
+        "screenshot.png", "ppu.bin", "oam.bin", "palram.bin",
+        "ciram.bin", "ram.bin", "frame.txt", "rng_seed.txt"
+      ]
+    },
+
+    {
+      "id": "boss_gleeok_2head",
+      "title": "Boss — Gleeok 2-head variant",
+      "source_rom_hash": null,
+      "starting_save_state": null,
+      "input_movie": null,
+      "target_frame": 60,
+      "rng_seed": 0,
+      "expected_room_id": null,
+      "capture_artifacts": [
+        "screenshot.png", "ppu.bin", "oam.bin", "palram.bin",
+        "ciram.bin", "ram.bin", "frame.txt", "rng_seed.txt"
+      ]
+    },
+
+    {
+      "id": "boss_gleeok_3head",
+      "title": "Boss — Gleeok 3-head variant",
+      "source_rom_hash": null,
+      "starting_save_state": null,
+      "input_movie": null,
+      "target_frame": 60,
+      "rng_seed": 0,
+      "expected_room_id": null,
+      "capture_artifacts": [
+        "screenshot.png", "ppu.bin", "oam.bin", "palram.bin",
+        "ciram.bin", "ram.bin", "frame.txt", "rng_seed.txt"
+      ]
+    },
+
+    {
+      "id": "boss_gleeok_4head",
+      "title": "Boss — Gleeok 4-head variant",
+      "source_rom_hash": null,
+      "starting_save_state": null,
+      "input_movie": null,
+      "target_frame": 60,
+      "rng_seed": 0,
+      "expected_room_id": null,
+      "capture_artifacts": [
+        "screenshot.png", "ppu.bin", "oam.bin", "palram.bin",
+        "ciram.bin", "ram.bin", "frame.txt", "rng_seed.txt"
+      ]
+    },
+
+    {
+      "id": "boss_digdogger",
+      "title": "Boss — Digdogger (splits into three on whistle)",
+      "source_rom_hash": null,
+      "starting_save_state": null,
+      "input_movie": null,
+      "target_frame": 60,
+      "rng_seed": 0,
+      "expected_room_id": null,
+      "capture_artifacts": [
+        "screenshot.png", "ppu.bin", "oam.bin", "palram.bin",
+        "ciram.bin", "ram.bin", "frame.txt", "rng_seed.txt"
+      ]
+    },
+
+    {
+      "id": "boss_gohma_blue",
+      "title": "Boss — Gohma blue variant (eye open, vulnerable)",
+      "source_rom_hash": null,
+      "starting_save_state": null,
+      "input_movie": null,
+      "target_frame": 60,
+      "rng_seed": 0,
+      "expected_room_id": null,
+      "capture_artifacts": [
+        "screenshot.png", "ppu.bin", "oam.bin", "palram.bin",
+        "ciram.bin", "ram.bin", "frame.txt", "rng_seed.txt"
+      ]
+    },
+
+    {
+      "id": "boss_gohma_red",
+      "title": "Boss — Gohma red variant (eye open, vulnerable)",
+      "source_rom_hash": null,
+      "starting_save_state": null,
+      "input_movie": null,
+      "target_frame": 60,
+      "rng_seed": 0,
+      "expected_room_id": null,
+      "capture_artifacts": [
+        "screenshot.png", "ppu.bin", "oam.bin", "palram.bin",
+        "ciram.bin", "ram.bin", "frame.txt", "rng_seed.txt"
+      ]
+    },
+
+    {
+      "id": "boss_patra",
+      "title": "Boss — Patra (L8 boss, eyes orbiting)",
+      "source_rom_hash": null,
+      "starting_save_state": null,
+      "input_movie": null,
+      "target_frame": 60,
+      "rng_seed": 0,
+      "expected_room_id": null,
+      "capture_artifacts": [
+        "screenshot.png", "ppu.bin", "oam.bin", "palram.bin",
+        "ciram.bin", "ram.bin", "frame.txt", "rng_seed.txt"
+      ]
+    },
+
+    {
+      "id": "boss_moldorm",
+      "title": "Boss — Moldorm (worm boss, full length visible)",
+      "source_rom_hash": null,
+      "starting_save_state": null,
+      "input_movie": null,
+      "target_frame": 60,
+      "rng_seed": 0,
+      "expected_room_id": null,
+      "capture_artifacts": [
+        "screenshot.png", "ppu.bin", "oam.bin", "palram.bin",
+        "ciram.bin", "ram.bin", "frame.txt", "rng_seed.txt"
+      ]
+    },
+
+    {
+      "id": "boss_lanmola",
+      "title": "Boss — Lanmola (centipede boss, segments visible)",
+      "source_rom_hash": null,
+      "starting_save_state": null,
+      "input_movie": null,
+      "target_frame": 60,
+      "rng_seed": 0,
+      "expected_room_id": null,
+      "capture_artifacts": [
+        "screenshot.png", "ppu.bin", "oam.bin", "palram.bin",
+        "ciram.bin", "ram.bin", "frame.txt", "rng_seed.txt"
+      ]
+    },
+
+    {
+      "id": "boss_ganon",
+      "title": "Boss — Ganon (L9 boss, darkness room)",
+      "source_rom_hash": null,
+      "starting_save_state": null,
+      "input_movie": null,
+      "target_frame": 60,
+      "rng_seed": 0,
+      "expected_room_id": null,
+      "capture_artifacts": [
+        "screenshot.png", "ppu.bin", "oam.bin", "palram.bin",
+        "ciram.bin", "ram.bin", "frame.txt", "rng_seed.txt"
+      ]
+    },
+
+    {
+      "id": "enemy_stress_octoroks",
+      "title": "Enemy family stress — 6 Octoroks active in OW room (max density)",
+      "source_rom_hash": null,
+      "starting_save_state": null,
+      "input_movie": null,
+      "target_frame": 120,
+      "rng_seed": 0,
+      "expected_room_id": null,
+      "capture_artifacts": [
+        "screenshot.png", "ppu.bin", "oam.bin", "palram.bin",
+        "ciram.bin", "ram.bin", "frame.txt", "rng_seed.txt"
+      ]
+    },
+
+    {
+      "id": "enemy_stress_moblins",
+      "title": "Enemy family stress — Moblins + arrows active simultaneously",
+      "source_rom_hash": null,
+      "starting_save_state": null,
+      "input_movie": null,
+      "target_frame": 120,
+      "rng_seed": 0,
+      "expected_room_id": null,
+      "capture_artifacts": [
+        "screenshot.png", "ppu.bin", "oam.bin", "palram.bin",
+        "ciram.bin", "ram.bin", "frame.txt", "rng_seed.txt"
+      ]
+    },
+
+    {
+      "id": "enemy_stress_wizrobes",
+      "title": "Enemy family stress — Wizrobes firing in UW room",
+      "source_rom_hash": null,
+      "starting_save_state": null,
+      "input_movie": null,
+      "target_frame": 120,
+      "rng_seed": 0,
+      "expected_room_id": null,
+      "capture_artifacts": [
+        "screenshot.png", "ppu.bin", "oam.bin", "palram.bin",
+        "ciram.bin", "ram.bin", "frame.txt", "rng_seed.txt"
+      ]
+    },
+
+    {
+      "id": "enemy_stress_peahats",
+      "title": "Enemy family stress — Peahats spinning OW room",
+      "source_rom_hash": null,
+      "starting_save_state": null,
+      "input_movie": null,
+      "target_frame": 120,
+      "rng_seed": 0,
+      "expected_room_id": null,
+      "capture_artifacts": [
+        "screenshot.png", "ppu.bin", "oam.bin", "palram.bin",
+        "ciram.bin", "ram.bin", "frame.txt", "rng_seed.txt"
+      ]
+    },
+
+    {
+      "id": "enemy_stress_keese",
+      "title": "Enemy family stress — Keese swarm in UW room",
+      "source_rom_hash": null,
+      "starting_save_state": null,
+      "input_movie": null,
+      "target_frame": 120,
+      "rng_seed": 0,
+      "expected_room_id": null,
+      "capture_artifacts": [
+        "screenshot.png", "ppu.bin", "oam.bin", "palram.bin",
+        "ciram.bin", "ram.bin", "frame.txt", "rng_seed.txt"
+      ]
+    },
+
+    {
+      "id": "enemy_stress_gibdos",
+      "title": "Enemy family stress — Gibdos in L7 UW room",
+      "source_rom_hash": null,
+      "starting_save_state": null,
+      "input_movie": null,
+      "target_frame": 120,
+      "rng_seed": 0,
+      "expected_room_id": null,
+      "capture_artifacts": [
+        "screenshot.png", "ppu.bin", "oam.bin", "palram.bin",
+        "ciram.bin", "ram.bin", "frame.txt", "rng_seed.txt"
+      ]
+    },
+
+    {
+      "id": "enemy_stress_wizzrobes_fire",
+      "title": "Enemy family stress — Fire Wizzrobes with fire projectiles",
+      "source_rom_hash": null,
+      "starting_save_state": null,
+      "input_movie": null,
+      "target_frame": 120,
+      "rng_seed": 0,
+      "expected_room_id": null,
+      "capture_artifacts": [
+        "screenshot.png", "ppu.bin", "oam.bin", "palram.bin",
+        "ciram.bin", "ram.bin", "frame.txt", "rng_seed.txt"
+      ]
+    },
+
+    {
+      "id": "enemy_stress_darknuts",
+      "title": "Enemy family stress — Darknuts in UW L4+ room",
+      "source_rom_hash": null,
+      "starting_save_state": null,
+      "input_movie": null,
+      "target_frame": 120,
+      "rng_seed": 0,
+      "expected_room_id": null,
+      "capture_artifacts": [
+        "screenshot.png", "ppu.bin", "oam.bin", "palram.bin",
+        "ciram.bin", "ram.bin", "frame.txt", "rng_seed.txt"
+      ]
+    },
+
+    {
+      "id": "save_load_roundtrip",
+      "title": "Save and load round-trip — save slot 1 with specific state, reload, verify RAM mirrors",
+      "source_rom_hash": null,
+      "starting_save_state": null,
+      "input_movie": null,
+      "target_frame": 120,
+      "rng_seed": 0,
+      "expected_room_id": null,
+      "capture_artifacts": [
+        "screenshot.png", "ppu.bin", "oam.bin", "palram.bin",
+        "ciram.bin", "ram.bin", "frame.txt", "input_log.txt", "rng_seed.txt"
+      ]
+    },
+
+    {
+      "id": "save_load_three_slots",
+      "title": "Save and load — all three save slots populated, File Select visible",
+      "source_rom_hash": null,
+      "starting_save_state": null,
+      "input_movie": null,
+      "target_frame": 60,
+      "rng_seed": 0,
+      "expected_room_id": null,
+      "capture_artifacts": [
+        "screenshot.png", "ppu.bin", "oam.bin", "palram.bin",
+        "ciram.bin", "ram.bin", "frame.txt", "rng_seed.txt"
+      ]
+    }
+
+  ]
+}

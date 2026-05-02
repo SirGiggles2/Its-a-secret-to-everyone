@@ -173,5 +173,44 @@ def main() -> int:
     return 1
 
 
+# ---------------------------------------------------------------------------
+# Phase 1.5 NES Reference Capture verification gate
+# ---------------------------------------------------------------------------
+# When Phase 1.5 captures are fully populated, wire the verifier here so that
+# a missing or stale NES reference capture fails this strict build gate.
+#
+# Uncomment and integrate the block below once run_capture.py has been run
+# successfully for all canonical scenarios:
+#
+#   import subprocess as _subprocess
+#
+#   def _run_nes_capture_verify(repo_root: Path) -> list[tuple[str, str]]:
+#       """Call verify_capture.py and return any failures as (label, msg) pairs."""
+#       verifier = repo_root / "tools" / "nes_capture" / "verify_capture.py"
+#       if not verifier.exists():
+#           return []  # harness not installed; skip silently
+#       result = _subprocess.run(
+#           [sys.executable, str(verifier), "--strict"],
+#           cwd=str(repo_root),
+#           stdout=_subprocess.PIPE,
+#           stderr=_subprocess.STDOUT,
+#           text=True,
+#           encoding="utf-8",
+#           errors="replace",
+#       )
+#       if result.returncode != 0:
+#           return [("NES Capture", "verify_capture.py --strict returned non-zero")]
+#       return []
+#
+# Then in main(), before "return 1":
+#
+#   nes_fails = _run_nes_capture_verify(REPO_ROOT)
+#   for label, msg in nes_fails:
+#       all_fails.append((label, msg))
+#
+# See tools/nes_capture/README.md for the full integration description.
+# ---------------------------------------------------------------------------
+
+
 if __name__ == "__main__":
     sys.exit(main())
