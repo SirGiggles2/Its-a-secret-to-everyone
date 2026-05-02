@@ -16,7 +16,7 @@
 
 #define LINK_CELLAR_FLAG               RAM(0x005A)
 #define MODE_TIMER                     RAM(0x0011)
-#define SUBMODE_VALUE                  RAM(0x0013)
+/* SUBMODE_VALUE comes from progress_state.h (already included above). */
 
 #define OAM_HIDE_2                     RAM(0x0248)
 #define OAM_HIDE_3                     RAM(0x024C)

@@ -63,7 +63,10 @@
 #ifndef LINK_Y
 #define LINK_Y                          RAM(0x0062)
 #endif
-#define SAVE_SLOT_INDEX                 RAM(0x0016)
+/* SAVE_SLOT_INDEX is defined in item_state.h (canonical owner). Pulled
+ * in transitively via the include below so existing enemy_*_runtime.c
+ * consumers don't need their own #include. */
+#include "item_state.h"
 #define SAVE_SLOT_QUEST(slot)           RAM(0x062D + (slot))
 #define ENEMY_GLEEOK_HEAD_TIMER         RAM(0x0418)
 #define ENEMY_GLEEOK_SEG_X(slot)        OBJ(0x0072, (slot))
