@@ -14,14 +14,23 @@
  * defines the *target* post-expansion layout; Phase 3 relocates the
  * upload addresses + emits the 4 sub-pal tile copies to fill the bank.
  *
- * Layout (post-Phase-3):
+ * Layout (post-Phase-3, post-ITEM-bank, per `audit_vram_tile_usage.py`):
  *   tile 0                                  blank (transparent fallback)
- *   tile 1   .. 1 + 4*303 - 1 = 1212        BG bank (NES BG + HUD tiles,
- *                                            4 sub-pal copies x 303 tiles)
- *   tile 1213 .. 1213 + 312 - 1 = 1524      SPR bank (Link, sword, items,
+ *   tile 1   .. 1 + 4*256 - 1 = 1024        BG bank (NES BG + HUD tiles,
+ *                                            4 sub-pal copies x 256 tiles)
+ *   tile 1025 .. 1025 + 312 - 1 = 1336      SPR bank (Link, sword body,
  *                                            common_chr sprite half --
- *                                            sub-pal 0 only for now)
- *   tile 1525 .. 1535                       reserved / future
+ *                                            intentionally 1x: every
+ *                                            sprite in this bank only
+ *                                            uses NES sprite sub-pal 0)
+ *   tile 1337 .. 1337 + 4*31 - 1 = 1460     ITEM bank (item atlas:
+ *                                            sword, beam, boomerang,
+ *                                            arrow, bomb, explosion,
+ *                                            sword_diag -- 4 sub-pal
+ *                                            copies x 31 tiles, NES
+ *                                            DrawCloud/etc cite sub-pal
+ *                                            1+ per tile)
+ *   tile 1461 .. 1535                       reserved / future
  *   tile 1536+                              VDP plane / window / SAT / HScroll
  *                                            tables (SGDK default layout
  *                                            allocates $C000+ for tables;
@@ -34,7 +43,7 @@
  *   hscroll  = $F000  (tiles 1920..1935)
  *   SAT      = $F400  (tiles 1952..1971)
  *
- * Tile bank ends at 1524 -- 11 tiles of headroom before the table region.
+ * Tile bank ends at 1460 -- 75 tiles of headroom before the table region.
  * Audit command:  python RoomRom/tools/audit_vram_tile_usage.py
  *
  * Notes:
@@ -42,9 +51,11 @@
  *   + Link attack (16) + item atlas (26). sprites_chr (232 OW enemies) is
  *   NOT in the bank -- enemies are out-of-scope per RoomRom roadmap; they
  *   re-enter the bank when ported.
- * - SPR currently single-copy (sub-pal 0) since all RoomRom OAM uses NES
- *   sprite sub-pal 0. ROOMROM_SPR_TILE_BASE_PAL(s) reserves the math but
- *   only s=0 is populated. Future enemy work expands to s=1..3.
+ * - SPR is intentionally 1x (sub-pal 0 only). The full SPR bank at 4x
+ *   would be 549*4=2196 tiles and collide with the VDP table region at
+ *   tile 1536. Items -- the only sprite category with non-trivial NES
+ *   sub-pal variation -- live in the dedicated ITEM bank below with
+ *   their own 4x sub-pal expansion.
  * - HUD shares the BG bank: HUD tiles ARE NES BG tiles, same expansion
  *   rule, same sub-pal stride.
  */
@@ -59,7 +70,7 @@
 #define ROOMROM_BG_SUBPAL_COUNT         4u
 #define ROOMROM_SPR_TILE_BASE           1025u   /* 1 + 4*256 */
 #define ROOMROM_SPR_TILE_COUNT_PER_PAL  312u
-#define ROOMROM_SPR_SUBPAL_COUNT        1u      /* sub-pal 0 only; expand later */
+#define ROOMROM_SPR_SUBPAL_COUNT        1u      /* intentionally 1x: items use the dedicated ITEM bank below for sub-pal 1+ variation; SPR-bank sprites (Link, sword body, common) only ever use NES sprite sub-pal 0 */
 
 #define ROOMROM_BG_TILE_BASE_PAL(s)  \
     (ROOMROM_BG_TILE_BASE  + (unsigned short)(s) * ROOMROM_BG_TILE_COUNT_PER_PAL)
