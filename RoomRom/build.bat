@@ -2,10 +2,36 @@
 setlocal EnableExtensions
 
 rem ---------------------------------------------------------------------------
-rem RoomRom build script ? standalone SGDK project for room render testing.
+rem RoomRom build script — standalone SGDK project for room render testing.
 rem Boots straight to overworld room 0x77, no game init, no file select.
 rem Output: out\RoomRom.md
 rem ---------------------------------------------------------------------------
+rem
+rem REQUIRE_GENERATED_ASSETS — strict generated-only build gate (Task 1.11)
+rem
+rem   Default (unset): soft-warning mode.  Checked-in data/ files are used as
+rem     a fallback when GENERATED_ASSET_ROOT is missing or incomplete.  A
+rem     WARNING is printed but the build continues.  This is the normal
+rem     developer workflow until all Phase 1 extractors are complete.
+rem
+rem   Set to 1: strict mode.  Any compile step that reads a Nintendo-derived
+rem     file from data/, src/data/, src/gen/, or RoomRom/data/ without a
+rem     matching entry in the generated manifest at GENERATED_ASSET_ROOT will
+rem     print "STRICT GATE FAIL: <path>" and abort the build (exit /b 1).
+rem     Use this mode when verifying legal reproducibility:
+rem
+rem       set REQUIRE_GENERATED_ASSETS=1
+rem       RoomRom\build.bat
+rem
+rem     Or invoke through tools\builder\strict_build_check.py which sets the
+rem     flag, runs both targets, and collects all FAIL lines.
+rem
+rem   This gate is currently EXPECTED TO FAIL (Phase 1 extractors incomplete).
+rem   It becomes mandatory (must be green) at Phase 1.10 close per master plan.
+rem   See docs/audit/strict_build_gate.md for the full policy.
+rem ---------------------------------------------------------------------------
+
+set "GATE_FAIL="
 
 for %%I in ("%~dp0.") do set "PROJ=%%~fsI"
 set "REPO=%PROJ%\.."
@@ -142,6 +168,13 @@ echo [3] Compiling atlas/items_chr_x4.c...
 "%GCC%" %CFLAGS% %INCS% -c "%PROJ%\src\atlas\items_chr_x4.c" -o "%OUT%\atlas_items_chr_x4.o"
 if errorlevel 1 ( echo FAIL: atlas/items_chr_x4.c & exit /b 1 )
 
+rem --- strict gate: data/rooms/ + data/chr/ are Nintendo-derived extracted assets ---
+if defined REQUIRE_GENERATED_ASSETS (
+    call :check_generated "%REPO%\data\rooms\overworld.c"
+    call :check_generated "%REPO%\data\chr\overworld_bg.c"
+    call :check_generated "%REPO%\data\rooms\dungeons.c"
+    call :check_generated "%REPO%\data\chr\underworld_bg.c"
+)
 echo [3] Compiling overworld.c...
 "%GCC%" %CFLAGS% %INCS% -c "%REPO%\data\rooms\overworld.c" -o "%OUT%\overworld.o"
 if errorlevel 1 ( echo FAIL: overworld.c & exit /b 1 )
@@ -174,6 +207,12 @@ echo [3] Compiling redux_hud_chr.c...
 "%GCC%" %CFLAGS% %INCS% -c "%PROJ%\src\redux_hud_chr.c" -o "%OUT%\redux_hud_chr.o"
 if errorlevel 1 ( echo FAIL: redux_hud_chr.c & exit /b 1 )
 
+rem --- strict gate: data/chr/common, sprites; data/misc/palettes are Nintendo-derived ---
+if defined REQUIRE_GENERATED_ASSETS (
+    call :check_generated "%REPO%\data\chr\common.c"
+    call :check_generated "%REPO%\data\chr\sprites.c"
+    call :check_generated "%REPO%\data\misc\palettes.c"
+)
 echo [3] Compiling common.c...
 "%GCC%" %CFLAGS% %INCS% -c "%REPO%\data\chr\common.c" -o "%OUT%\common.o"
 if errorlevel 1 ( echo FAIL: common.c & exit /b 1 )
@@ -185,6 +224,16 @@ if errorlevel 1 ( echo FAIL: sprites.c & exit /b 1 )
 echo [3] Compiling palettes.c...
 "%GCC%" %CFLAGS% %INCS% -c "%REPO%\data\misc\palettes.c" -o "%OUT%\palettes.o"
 if errorlevel 1 ( echo FAIL: palettes.c & exit /b 1 )
+
+rem --- strict gate: abort if any Nintendo-derived file failed manifest check ---
+if defined GATE_FAIL (
+    echo.
+    echo STRICT GATE FAIL: one or more Nintendo-derived source files are not covered
+    echo by the generated manifest at GENERATED_ASSET_ROOT.  Run the Phase 1
+    echo extractors first, or unset REQUIRE_GENERATED_ASSETS for soft-warning mode.
+    echo See docs/audit/strict_build_gate.md for guidance.
+    exit /b 1
+)
 
 rem ---------------------------------------------------------------------------
 rem Step 4: Link
@@ -209,3 +258,35 @@ del "%OUT%\RoomRom_raw.md" >nul 2>nul
 
 echo.
 echo RoomRom built: %OUT%\RoomRom.md
+
+exit /b 0
+
+rem ---------------------------------------------------------------------------
+rem :check_generated <file-path>
+rem
+rem Called only when REQUIRE_GENERATED_ASSETS=1.  Checks whether the file is
+rem covered by the generated manifest.  Three tiers of evidence (most to least):
+rem   1. File lives under %GENERATED_ASSET_ROOT% (extractor placed it there).
+rem   2. %GENERATED_ASSET_ROOT%\manifest.json mentions the basename.
+rem   3. Neither — print STRICT GATE FAIL and set GATE_FAIL=1.
+rem
+rem In soft-warning mode this label is never called so there is zero overhead.
+rem ---------------------------------------------------------------------------
+:check_generated
+set "_CGF=%~1"
+set "_CGF_BASE=%~nx1"
+rem Fast path: file was placed directly under GENERATED_ASSET_ROOT
+if defined GENERATED_ASSET_ROOT (
+    if exist "%GENERATED_ASSET_ROOT%\%_CGF_BASE%" goto :check_generated_ok
+    rem Slower path: manifest.json present — check for basename entry
+    if exist "%GENERATED_ASSET_ROOT%\manifest.json" (
+        findstr /i /c:"%_CGF_BASE%" "%GENERATED_ASSET_ROOT%\manifest.json" >nul 2>nul
+        if not errorlevel 1 goto :check_generated_ok
+    )
+)
+rem Neither condition met — fail the gate
+echo STRICT GATE FAIL: %_CGF%
+set "GATE_FAIL=1"
+goto :eof
+:check_generated_ok
+goto :eof

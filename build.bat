@@ -1,6 +1,31 @@
 @echo off
 setlocal EnableExtensions
 
+rem ---------------------------------------------------------------------------
+rem REQUIRE_GENERATED_ASSETS — strict generated-only build gate (Task 1.11)
+rem
+rem   Default (unset): soft-warning mode.  Checked-in data/ and src/gen/ files
+rem     are used as a fallback when GENERATED_ASSET_ROOT is missing or
+rem     incomplete.  A WARNING is printed but the build continues.  This is the
+rem     normal developer workflow until all Phase 1 extractors are complete.
+rem
+rem   Set to 1: strict mode.  Any compile step that reads a Nintendo-derived
+rem     file from data/, src/data/, src/gen/, or RoomRom/data/ without a
+rem     matching entry in the generated manifest at GENERATED_ASSET_ROOT will
+rem     print "STRICT GATE FAIL: <path>" and abort the build (exit /b 1).
+rem     Use this mode when verifying legal reproducibility:
+rem
+rem       set REQUIRE_GENERATED_ASSETS=1
+rem       build.bat
+rem
+rem     Or invoke through tools\builder\strict_build_check.py which sets the
+rem     flag, runs both targets, and collects all FAIL lines.
+rem
+rem   This gate is currently EXPECTED TO FAIL (Phase 1 extractors incomplete).
+rem   It becomes mandatory (must be green) at Phase 1.10 close per master plan.
+rem   See docs/audit/strict_build_gate.md for the full policy.
+rem ---------------------------------------------------------------------------
+
 for %%I in ("%~dp0.") do set "ROOT=%%~fI"
 
 set "PYTHON="
@@ -88,6 +113,24 @@ if not exist "%M68K_LD%" (
     exit /b 1
 )
 
+rem ---------------------------------------------------------------------------
+rem Strict generated-asset gate helper.
+rem
+rem   When REQUIRE_GENERATED_ASSETS=1, call :check_generated <file-path> before
+rem   compiling any Nintendo-derived source.  The helper verifies the file is
+rem   listed in %GENERATED_ASSET_ROOT%\manifest.json (or a per-dir manifest).
+rem   If the manifest is absent or the entry is missing it prints
+rem   "STRICT GATE FAIL: <path>" and sets the GATE_FAIL flag.
+rem   At the end of this section GATE_FAIL is tested; if set the build aborts.
+rem
+rem   In soft-warning mode (REQUIRE_GENERATED_ASSETS unset) the helper is a
+rem   no-op; the existing checked-in fallback data is silently accepted.
+rem ---------------------------------------------------------------------------
+set "GATE_FAIL="
+
+rem ---------------------------------------------------------------------------
+rem [2a.0/4] Asset extraction — run extractors to populate GENERATED_ASSET_ROOT
+rem ---------------------------------------------------------------------------
 echo [2a.0/4] Extracting intro assets from reference data...
 "%PYTHON%" "%ROOT%\tools\extract_intro_assets.py"
 if errorlevel 1 exit /b 1
@@ -289,11 +332,23 @@ for %%F in (%C_FRONTEND_FS%) do (
     if errorlevel 1 exit /b 1
     >> "%LD_RESP%" echo "%OBJ_DIR_FS%/%%F.o"
 )
+rem --- strict gate: src/gen/ files are Nintendo-derived transpiler output ---
+if defined REQUIRE_GENERATED_ASSETS (
+    for %%F in (%C_GEN_TRANSPILE%) do (
+        call :check_generated "%ROOT%\src\gen\%%F.c"
+    )
+)
 for %%F in (%C_GEN_TRANSPILE%) do (
     echo [2a/4] Compiling gen/%%F.c...
     "%M68K_GCC%" -B "%M68K_BIN%\\" -m68000 -ffreestanding -nostdlib -nostartfiles -ffixed-a4 -fno-builtin -fomit-frame-pointer -fno-PIC -fno-common -O2 -I "%ROOT%\src" -I "%ROOT%\src\state" -I "%ROOT%\src\core" -I "%ROOT%\src\abi" -I "%ROOT%\src\frontend" -I "%ROOT%\src\frontend\intro" -I "%ROOT%\src\frontend\fs" -I "%ROOT%\src\game\enemies" -I "%ROOT%\src\game\combat" -I "%ROOT%\src\game\room" -I "%ROOT%\src\game\cave" -I "%ROOT%\src\game\hud" -I "%ROOT%\src\game\items" -I "%ROOT%\src\game\world" -I "%ROOT%\data\intro" -I "%ROOT%\data\fs" -I "%ROOT%\sgdk\inc" -c "%ROOT%\src\gen\%%F.c" -o "%C_OBJ_DIR%\%%F.o"
     if errorlevel 1 exit /b 1
     >> "%LD_RESP%" echo "%OBJ_DIR_FS%/%%F.o"
+)
+rem --- strict gate: data/intro/ files are Nintendo-derived extracted assets ---
+if defined REQUIRE_GENERATED_ASSETS (
+    for %%F in (%C_DATA_INTRO%) do (
+        call :check_generated "%ROOT%\data\intro\%%F.c"
+    )
 )
 for %%F in (%C_DATA_INTRO%) do (
     echo [2a/4] Compiling data/intro/%%F.c...
@@ -301,11 +356,23 @@ for %%F in (%C_DATA_INTRO%) do (
     if errorlevel 1 exit /b 1
     >> "%LD_RESP%" echo "%OBJ_DIR_FS%/%%F.o"
 )
+rem --- strict gate: data/fs/ files are Nintendo-derived extracted assets ---
+if defined REQUIRE_GENERATED_ASSETS (
+    for %%F in (%C_DATA_FS%) do (
+        call :check_generated "%ROOT%\data\fs\%%F.c"
+    )
+)
 for %%F in (%C_DATA_FS%) do (
     echo [2a/4] Compiling data/fs/%%F.c...
     "%M68K_GCC%" -B "%M68K_BIN%\\" -m68000 -ffreestanding -nostdlib -nostartfiles -ffixed-a4 -fno-builtin -fomit-frame-pointer -fno-PIC -fno-common -O2 -I "%ROOT%\src" -I "%ROOT%\src\state" -I "%ROOT%\src\core" -I "%ROOT%\src\abi" -I "%ROOT%\src\frontend" -I "%ROOT%\src\frontend\intro" -I "%ROOT%\src\frontend\fs" -I "%ROOT%\src\game\enemies" -I "%ROOT%\src\game\combat" -I "%ROOT%\src\game\room" -I "%ROOT%\src\game\cave" -I "%ROOT%\src\game\hud" -I "%ROOT%\src\game\items" -I "%ROOT%\src\game\world" -I "%ROOT%\data\intro" -I "%ROOT%\data\fs" -I "%ROOT%\sgdk\inc" -c "%ROOT%\data\fs\%%F.c" -o "%C_OBJ_DIR%\%%F.o"
     if errorlevel 1 exit /b 1
     >> "%LD_RESP%" echo "%OBJ_DIR_FS%/%%F.o"
+)
+rem --- strict gate: data/rooms/ files are Nintendo-derived extracted assets ---
+if defined REQUIRE_GENERATED_ASSETS (
+    for %%F in (%C_DATA_ROOMS%) do (
+        call :check_generated "%ROOT%\data\rooms\%%F.c"
+    )
 )
 for %%F in (%C_DATA_ROOMS%) do (
     echo [2a/4] Compiling data/rooms/%%F.c...
@@ -313,17 +380,39 @@ for %%F in (%C_DATA_ROOMS%) do (
     if errorlevel 1 exit /b 1
     >> "%LD_RESP%" echo "%OBJ_DIR_FS%/%%F.o"
 )
+rem --- strict gate: data/chr/ files are Nintendo-derived CHR assets ---
+if defined REQUIRE_GENERATED_ASSETS (
+    for %%F in (%C_DATA_CHR%) do (
+        call :check_generated "%ROOT%\data\chr\%%F.c"
+    )
+)
 for %%F in (%C_DATA_CHR%) do (
     echo [2a/4] Compiling data/chr/%%F.c...
     "%M68K_GCC%" -B "%M68K_BIN%\\" -m68000 -ffreestanding -nostdlib -nostartfiles -ffixed-a4 -fno-builtin -fomit-frame-pointer -fno-PIC -fno-common -O2 -c "%ROOT%\data\chr\%%F.c" -o "%C_OBJ_DIR%\%%F.o"
     if errorlevel 1 exit /b 1
     >> "%LD_RESP%" echo "%OBJ_DIR_FS%/%%F.o"
 )
+rem --- strict gate: data/misc/ files are Nintendo-derived palette/misc assets ---
+if defined REQUIRE_GENERATED_ASSETS (
+    for %%F in (%C_DATA_MISC%) do (
+        call :check_generated "%ROOT%\data\misc\%%F.c"
+    )
+)
 for %%F in (%C_DATA_MISC%) do (
     echo [2a/4] Compiling data/misc/%%F.c...
     "%M68K_GCC%" -B "%M68K_BIN%\\" -m68000 -ffreestanding -nostdlib -nostartfiles -ffixed-a4 -fno-builtin -fomit-frame-pointer -fno-PIC -fno-common -O2 -c "%ROOT%\data\misc\%%F.c" -o "%C_OBJ_DIR%\%%F.o"
     if errorlevel 1 exit /b 1
     >> "%LD_RESP%" echo "%OBJ_DIR_FS%/%%F.o"
+)
+
+rem --- strict gate: abort if any Nintendo-derived file failed manifest check ---
+if defined GATE_FAIL (
+    echo.
+    echo STRICT GATE FAIL: one or more Nintendo-derived source files are not covered
+    echo by the generated manifest at GENERATED_ASSET_ROOT.  Run the Phase 1
+    echo extractors first, or unset REQUIRE_GENERATED_ASSETS for soft-warning mode.
+    echo See docs/audit/strict_build_gate.md for guidance.
+    exit /b 1
 )
 
 echo [2/4] Assembling genesis_shell.asm -^> ELF object...
@@ -475,3 +564,33 @@ if errorlevel 1 (
 )
 
 exit /b 0
+
+rem ---------------------------------------------------------------------------
+rem :check_generated <file-path>
+rem
+rem Called only when REQUIRE_GENERATED_ASSETS=1.  Checks whether the file is
+rem covered by the generated manifest.  Three tiers of evidence (most to least):
+rem   1. File lives under %GENERATED_ASSET_ROOT% (extractor placed it there).
+rem   2. %GENERATED_ASSET_ROOT%\manifest.json mentions the basename.
+rem   3. Neither — print STRICT GATE FAIL and set GATE_FAIL=1.
+rem
+rem In soft-warning mode this label is never called so there is zero overhead.
+rem ---------------------------------------------------------------------------
+:check_generated
+set "_CGF=%~1"
+set "_CGF_BASE=%~nx1"
+rem Fast path: file was placed directly under GENERATED_ASSET_ROOT
+if defined GENERATED_ASSET_ROOT (
+    if exist "%GENERATED_ASSET_ROOT%\%_CGF_BASE%" goto :check_generated_ok
+    rem Slower path: manifest.json present — check for basename entry
+    if exist "%GENERATED_ASSET_ROOT%\manifest.json" (
+        findstr /i /c:"%_CGF_BASE%" "%GENERATED_ASSET_ROOT%\manifest.json" >nul 2>nul
+        if not errorlevel 1 goto :check_generated_ok
+    )
+)
+rem Neither condition met — fail the gate
+echo STRICT GATE FAIL: %_CGF%
+set "GATE_FAIL=1"
+goto :eof
+:check_generated_ok
+goto :eof
