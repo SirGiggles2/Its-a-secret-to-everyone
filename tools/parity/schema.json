@@ -1,0 +1,370 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://github.com/FINAL-TRY/tools/parity/schema.json",
+  "title": "ParityOracleInstance",
+  "description": "Canonical parity-oracle diff schema for NES Zelda 1 vs Genesis port comparison. Every Phase 3+ close gate emits one instance per probe run (NES capture side and Genesis probe side) and diffs them through diff.py.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "frame",
+    "input_bitmask",
+    "rng_seed",
+    "rng_current",
+    "room_id",
+    "quest",
+    "link",
+    "enemies",
+    "items",
+    "ram_bytes",
+    "cram",
+    "sat",
+    "oam",
+    "plane_a_excerpt",
+    "plane_b_excerpt",
+    "nametable_excerpt",
+    "screenshot_sha256"
+  ],
+  "properties": {
+    "frame": {
+      "description": "Absolute frame counter at capture time. NES: PPU frame counter. Genesis: VDP frame counter. Must match within ±1 under NES VBlank cadence (see tolerances.yaml).",
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 4294967295
+    },
+    "input_bitmask": {
+      "description": "Controller 1 input bitmask at this frame. NES layout: bit7=A bit6=B bit5=Select bit4=Start bit3=Up bit2=Down bit1=Left bit0=Right.",
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 255
+    },
+    "rng_seed": {
+      "description": "RNG seed value injected (or recorded) at scenario start. NES: $0619+$061A LFSR seed bytes, packed as (seed_hi << 8 | seed_lo). Genesis: equivalent Genesis PRNG seed.",
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 65535
+    },
+    "rng_current": {
+      "description": "Live RNG state at capture frame. NES: $0619+$061A current. Genesis: equivalent Genesis PRNG current.",
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 65535
+    },
+    "room_id": {
+      "description": "Current room identifier. NES: $EB. Genesis: RoomState.room_id. Range 0x00-0x7F overworld, 0x80+ underworld.",
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 255
+    },
+    "quest": {
+      "description": "Active quest number. NES: $10C (0 = quest 1, 1 = quest 2). Genesis: SaveState.quest.",
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 1
+    },
+    "link": {
+      "description": "Link object state at capture frame.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["x", "y", "dir", "action", "anim_frame", "hp", "invuln_timer", "b_item"],
+      "properties": {
+        "x": {
+          "description": "Link X pixel coordinate. NES: $70 (screen X). Genesis: LinkState.x.",
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 255
+        },
+        "y": {
+          "description": "Link Y pixel coordinate. NES: $84 (screen Y). Genesis: LinkState.y.",
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 255
+        },
+        "dir": {
+          "description": "Facing direction. 0=Up 1=Down 2=Left 3=Right. NES: $98. Genesis: LinkState.dir.",
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 3
+        },
+        "action": {
+          "description": "Link action/state byte. NES: $0641. Genesis: LinkState.action.",
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 255
+        },
+        "anim_frame": {
+          "description": "Animation frame index within current action. NES: derived from $10 (frame counter) and action. Genesis: LinkState.anim_frame.",
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 255
+        },
+        "hp": {
+          "description": "Link HP in half-hearts. NES: $066F. Genesis: LinkState.hp.",
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 255
+        },
+        "invuln_timer": {
+          "description": "Invulnerability countdown timer. NES: $0627. Genesis: LinkState.invuln_timer.",
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 255
+        },
+        "b_item": {
+          "description": "Currently equipped B-button item. NES: $0657. Genesis: LinkState.b_item.",
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 255
+        }
+      }
+    },
+    "enemies": {
+      "description": "Enemy object array, always exactly 16 entries (NES object slots 0-15). Unused slots have type=0.",
+      "type": "array",
+      "minItems": 16,
+      "maxItems": 16,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["type", "x", "y", "dir", "action", "hp", "anim_frame", "projectile_id"],
+        "properties": {
+          "type": {
+            "description": "Enemy type ID. 0 = empty slot. NES: $0340+slot. Genesis: EnemyState[slot].type.",
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 255
+          },
+          "x": {
+            "description": "Enemy X pixel coordinate. NES: $0470+slot. Genesis: EnemyState[slot].x.",
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 255
+          },
+          "y": {
+            "description": "Enemy Y pixel coordinate. NES: $0460+slot. Genesis: EnemyState[slot].y.",
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 255
+          },
+          "dir": {
+            "description": "Enemy facing direction. 0=Up 1=Down 2=Left 3=Right. NES: $04B0+slot. Genesis: EnemyState[slot].dir.",
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 3
+          },
+          "action": {
+            "description": "Enemy action/AI state byte. NES: $0420+slot. Genesis: EnemyState[slot].action.",
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 255
+          },
+          "hp": {
+            "description": "Enemy HP. NES: $06B0+slot (nibble-packed in some slots). Genesis: EnemyState[slot].hp.",
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 255
+          },
+          "anim_frame": {
+            "description": "Enemy animation frame index. NES: $0560+slot. Genesis: EnemyState[slot].anim_frame.",
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 255
+          },
+          "projectile_id": {
+            "description": "Projectile object slot index spawned by this enemy, 0xFF if none. NES: $04C0+slot. Genesis: EnemyState[slot].projectile_id.",
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 255
+          }
+        }
+      }
+    },
+    "items": {
+      "description": "Floor item array, always exactly 8 entries. Unused slots have type=0.",
+      "type": "array",
+      "minItems": 8,
+      "maxItems": 8,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["type", "x", "y", "state"],
+        "properties": {
+          "type": {
+            "description": "Item type ID. 0 = empty slot. NES: $0410+slot. Genesis: ItemState[slot].type.",
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 255
+          },
+          "x": {
+            "description": "Item X pixel coordinate. NES: $0490+slot. Genesis: ItemState[slot].x.",
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 255
+          },
+          "y": {
+            "description": "Item Y pixel coordinate. NES: $0480+slot. Genesis: ItemState[slot].y.",
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 255
+          },
+          "state": {
+            "description": "Item pickup state. 0=visible 1=collected/despawning. NES: $05B0+slot. Genesis: ItemState[slot].state.",
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 255
+          }
+        }
+      }
+    },
+    "ram_bytes": {
+      "description": "Named address-bucketed RAM excerpts. Each key is a bucket name; value is a hex string of the raw bytes (lowercase, no separator). Bucket boundaries are defined in tolerances.yaml.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["globals", "link_state_block", "enemy_state_block", "save_buffer"],
+      "properties": {
+        "globals": {
+          "description": "NES RAM $0000-$00FF (zero page globals) or Genesis mirror. Hex string, 512 chars (256 bytes).",
+          "type": "string",
+          "pattern": "^[0-9a-f]{512}$"
+        },
+        "link_state_block": {
+          "description": "NES RAM $0620-$067F (Link state block) or Genesis mirror. Hex string, 192 chars (96 bytes).",
+          "type": "string",
+          "pattern": "^[0-9a-f]{192}$"
+        },
+        "enemy_state_block": {
+          "description": "NES RAM $0340-$05FF (enemy/object state arrays) or Genesis mirror. Hex string, 960 chars (480 bytes). Covers $0340 type[], $0420 action[], $0460 y[], $0470 x[], $04B0 dir[], $0560 anim_frame[].",
+          "type": "string",
+          "pattern": "^[0-9a-f]{960}$"
+        },
+        "save_buffer": {
+          "description": "NES SRAM $6000-$68FF save buffer or Genesis mirror. Hex string, 4608 chars (2304 bytes).",
+          "type": "string",
+          "pattern": "^[0-9a-f]{4608}$"
+        }
+      }
+    },
+    "cram": {
+      "description": "Genesis CRAM dump, exactly 64 entries. Each entry is a Genesis CRAM word (0x0BGR nibble encoding, 0-0xFFF). NES captures populate this via NES PALRAM -> Genesis CRAM conversion (see nes_to_schema.py + roomrom_bg_palette_nes_to_cram). Index layout: [0-15]=PAL0(BG), [16-31]=PAL1(sprites), [32-47]=PAL2, [48-63]=PAL3.",
+      "type": "array",
+      "minItems": 64,
+      "maxItems": 64,
+      "items": {
+        "type": "integer",
+        "minimum": 0,
+        "maximum": 4095
+      }
+    },
+    "sat": {
+      "description": "Genesis Sprite Attribute Table (SAT), exactly 80 entries (Genesis hardware maximum). Each entry is an object with the 4 Genesis SAT fields. NES captures populate this via OAM-to-SAT collapse (see nes_to_schema.py). Unused slots have link=0 and tile=0.",
+      "type": "array",
+      "minItems": 80,
+      "maxItems": 80,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["y", "size_link", "x", "attr_tile"],
+        "properties": {
+          "y": {
+            "description": "Sprite Y position (Genesis VDP vertical coordinate, 0-based, +128 offset applied by VDP).",
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 511
+          },
+          "size_link": {
+            "description": "Packed size (bits 11-8) and sprite link index (bits 6-0). Size: 0=1x1 1=1x2 2=1x3 3=1x4 4=2x1 ... 15=4x4 cells.",
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 65535
+          },
+          "x": {
+            "description": "Sprite X position (Genesis VDP horizontal coordinate, 0-based, +128 offset applied by VDP).",
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 511
+          },
+          "attr_tile": {
+            "description": "Packed attribute word: bit15=priority, bits14-13=palette(0-3), bit12=vflip, bit11=hflip, bits10-0=tile index.",
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 65535
+          }
+        }
+      }
+    },
+    "oam": {
+      "description": "NES OAM, exactly 64 entries. Each entry represents one NES hardware sprite. Genesis captures populate this as null array (all zeros) when the source is Genesis-only.",
+      "type": "array",
+      "minItems": 64,
+      "maxItems": 64,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["y", "tile", "attr", "x"],
+        "properties": {
+          "y": {
+            "description": "NES OAM Y coordinate (top scanline - 1).",
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 255
+          },
+          "tile": {
+            "description": "NES tile index. For 8x16 mode bit0 selects pattern table.",
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 255
+          },
+          "attr": {
+            "description": "NES OAM attribute byte. bits7-6=palette(0-3), bit5=priority, bit6=hflip, bit7... see NES PPU reference.",
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 255
+          },
+          "x": {
+            "description": "NES OAM X coordinate.",
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 255
+          }
+        }
+      }
+    },
+    "plane_a_excerpt": {
+      "description": "Genesis Plane A nametable bytes for the active scene area (cropped to 32x28 tiles = 1792 bytes), serialized row-major. Each entry is the 16-bit Genesis nametable word: bit15=priority, bits14-13=palette, bit12=vflip, bit11=hflip, bits10-0=tile index. Stored as array of integers.",
+      "type": "array",
+      "minItems": 896,
+      "maxItems": 896,
+      "items": {
+        "type": "integer",
+        "minimum": 0,
+        "maximum": 65535
+      }
+    },
+    "plane_b_excerpt": {
+      "description": "Genesis Plane B nametable bytes for the active scene area (32x28 tiles = 896 entries). Same encoding as plane_a_excerpt.",
+      "type": "array",
+      "minItems": 896,
+      "maxItems": 896,
+      "items": {
+        "type": "integer",
+        "minimum": 0,
+        "maximum": 65535
+      }
+    },
+    "nametable_excerpt": {
+      "description": "NES nametable bytes for the active scene area (32x30 tiles = 960 bytes from CIRAM $2000 or $2400), row-major. Each byte is a raw NES tile index as written by the PPU renderer. Genesis captures populate this as an empty array.",
+      "type": "array",
+      "minItems": 0,
+      "maxItems": 960,
+      "items": {
+        "type": "integer",
+        "minimum": 0,
+        "maximum": 255
+      }
+    },
+    "screenshot_sha256": {
+      "description": "SHA-256 hex digest (lowercase, 64 chars) of the PNG screenshot captured at this frame. Used for byte-exact static scene comparison. See tolerances.yaml for per-scenario screenshot policy.",
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    }
+  }
+}

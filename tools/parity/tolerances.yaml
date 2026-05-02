@@ -1,0 +1,294 @@
+# tools/parity/tolerances.yaml
+# ─────────────────────────────────────────────────────────────────────────────
+# Tolerance policy for every field in schema.json.
+# Used by diff.py to decide PASS / FAIL for each field path.
+#
+# Format per field group:
+#   field_path: JSON Pointer path (RFC 6901), supports array wildcards [*]
+#   policy:     exact | window | functional | stub
+#   details:    human-readable elaboration
+#   comparator: Python function name in diff.py that implements the check
+#               (for non-trivial policies)
+# ─────────────────────────────────────────────────────────────────────────────
+
+---
+version: 1
+
+tolerances:
+
+  # ── Scalar game state ───────────────────────────────────────────────────────
+
+  - field_path: /frame
+    policy: window
+    window: 1
+    details: >
+      Must match within ±1 frame. Genesis VDP frame counter increments on
+      every VBlank; NES PPU frame counter increments identically. Off-by-one
+      is acceptable when Genesis probe captures one VBlank ahead of the NES
+      capture tool due to scripting latency.
+    comparator: cmp_window_int
+
+  - field_path: /input_bitmask
+    policy: exact
+    details: Injected identically via deterministic scenario harness; must be byte-exact.
+    comparator: cmp_exact
+
+  - field_path: /rng_seed
+    policy: exact
+    details: Scenario harness injects the same seed on both sides; must match exactly.
+    comparator: cmp_exact
+
+  - field_path: /rng_current
+    policy: exact
+    details: >
+      RNG state after the same number of frames from the same seed must match
+      exactly. Any divergence indicates a logic error in the Genesis PRNG path.
+    comparator: cmp_exact
+
+  - field_path: /room_id
+    policy: exact
+    details: Room ID drives every other comparison; must match exactly.
+    comparator: cmp_exact
+
+  - field_path: /quest
+    policy: exact
+    details: Quest flag drives item/room layout; must match exactly.
+    comparator: cmp_exact
+
+  # ── Link object ─────────────────────────────────────────────────────────────
+
+  - field_path: /link/x
+    policy: exact
+    details: Pixel coordinate; must match exactly for movement parity.
+    comparator: cmp_exact
+
+  - field_path: /link/y
+    policy: exact
+    details: Pixel coordinate; must match exactly for movement parity.
+    comparator: cmp_exact
+
+  - field_path: /link/dir
+    policy: exact
+    details: Direction enum; must match exactly.
+    comparator: cmp_exact
+
+  - field_path: /link/action
+    policy: exact
+    details: Action state byte; must match exactly.
+    comparator: cmp_exact
+
+  - field_path: /link/anim_frame
+    policy: exact
+    details: Animation frame index; must match exactly given identical frame counter.
+    comparator: cmp_exact
+
+  - field_path: /link/hp
+    policy: exact
+    details: HP in half-hearts; must match exactly.
+    comparator: cmp_exact
+
+  - field_path: /link/invuln_timer
+    policy: exact
+    details: Invulnerability timer; must match exactly.
+    comparator: cmp_exact
+
+  - field_path: /link/b_item
+    policy: exact
+    details: Equipped item ID; must match exactly.
+    comparator: cmp_exact
+
+  # ── Enemies array ───────────────────────────────────────────────────────────
+
+  - field_path: /enemies/[*]/type
+    policy: exact
+    details: Enemy type ID; must match exactly per slot.
+    comparator: cmp_exact
+
+  - field_path: /enemies/[*]/x
+    policy: exact
+    details: Enemy X coordinate; must match exactly per slot.
+    comparator: cmp_exact
+
+  - field_path: /enemies/[*]/y
+    policy: exact
+    details: Enemy Y coordinate; must match exactly per slot.
+    comparator: cmp_exact
+
+  - field_path: /enemies/[*]/dir
+    policy: exact
+    details: Enemy direction; must match exactly per slot.
+    comparator: cmp_exact
+
+  - field_path: /enemies/[*]/action
+    policy: exact
+    details: Enemy AI state; must match exactly per slot.
+    comparator: cmp_exact
+
+  - field_path: /enemies/[*]/hp
+    policy: exact
+    details: Enemy HP; must match exactly per slot.
+    comparator: cmp_exact
+
+  - field_path: /enemies/[*]/anim_frame
+    policy: exact
+    details: Enemy animation frame; must match exactly per slot.
+    comparator: cmp_exact
+
+  - field_path: /enemies/[*]/projectile_id
+    policy: exact
+    details: Projectile slot reference; must match exactly per slot.
+    comparator: cmp_exact
+
+  # ── Items array ─────────────────────────────────────────────────────────────
+
+  - field_path: /items/[*]/type
+    policy: exact
+    comparator: cmp_exact
+
+  - field_path: /items/[*]/x
+    policy: exact
+    comparator: cmp_exact
+
+  - field_path: /items/[*]/y
+    policy: exact
+    comparator: cmp_exact
+
+  - field_path: /items/[*]/state
+    policy: exact
+    comparator: cmp_exact
+
+  # ── RAM buckets ─────────────────────────────────────────────────────────────
+
+  - field_path: /ram_bytes/globals
+    policy: exact
+    details: >
+      Zero-page globals ($0000-$00FF): byte-exact. This bucket contains
+      the frame counter ($10), scroll registers, game mode ($12), and
+      other timing-sensitive state that must be byte-identical.
+    comparator: cmp_exact_hex
+
+  - field_path: /ram_bytes/link_state_block
+    policy: exact
+    details: >
+      Link state block ($0620-$067F): byte-exact. Contains HP, inventory,
+      item slots, and position sub-pixel state; all must match NES bytes.
+    comparator: cmp_exact_hex
+
+  - field_path: /ram_bytes/enemy_state_block
+    policy: exact
+    details: >
+      Enemy/object state arrays ($0340-$05FF): byte-exact for all active
+      slots. Inactive slots (type=0) are zeroed on both sides.
+    comparator: cmp_exact_hex
+
+  - field_path: /ram_bytes/save_buffer
+    policy: structural
+    details: >
+      Save buffer ($6000-$68FF): structural comparison. Unioned/aliased
+      fields (e.g., quest flags packed into nibbles) compare by logical
+      field value, not raw byte identity, to survive Genesis-side layout
+      differences. Structural comparator unpacks known field offsets and
+      compares them individually; unknown bytes are compared exact.
+    comparator: cmp_structural_save_buffer
+
+  # ── CRAM ────────────────────────────────────────────────────────────────────
+
+  - field_path: /cram
+    policy: exact
+    details: >
+      CRAM[64]: byte-exact after conversion. The NES PALRAM bytes must be
+      converted to Genesis CRAM words via roomrom_bg_palette_nes_to_cram
+      (misc_palettes LUT) before comparison. If the Genesis probe's CRAM
+      differs from the converted NES PALRAM, that is a palette regression.
+      Comparator: cmp_exact on the integer array (each entry already
+      converted to Genesis CRAM word format on both sides).
+    comparator: cmp_exact
+
+  # ── SAT vs OAM ──────────────────────────────────────────────────────────────
+
+  - field_path: /sat
+    policy: functional
+    details: >
+      SAT[80] vs OAM[64]: equivalent under Genesis sprite-collapse rules.
+      Multiple NES 8x8 OAM entries that form a single logical sprite (e.g.,
+      Link body + arm tiles) may collapse into one Genesis multi-cell SAT
+      entry. Visual identity (position, palette, tile, flip) must be
+      preserved; byte identity across SAT words is not required.
+      Comparator: cmp_sat_oam_functional — collapses NES OAM into logical
+      sprite groups per Anim_WriteSpecificItemSprites grouping rules, then
+      compares each Genesis SAT entry against its NES logical-sprite
+      equivalent. Tolerance: ±1 pixel position (sub-pixel rounding),
+      exact palette, exact flip flags.
+    comparator: cmp_sat_oam_functional
+
+  - field_path: /oam
+    policy: functional
+    details: >
+      NES OAM is the reference source; Genesis SAT is derived. OAM field
+      itself is compared via cmp_sat_oam_functional (see /sat entry above).
+      This field is not independently diffed; it feeds the SAT comparator.
+    comparator: cmp_sat_oam_functional
+
+  # ── Nametable / Plane excerpts ───────────────────────────────────────────────
+
+  - field_path: /plane_a_excerpt
+    policy: exact
+    details: >
+      Genesis Plane A (32x28 tiles): byte-exact after NES->Genesis
+      nametable conversion. Each Genesis nametable word encodes tile index
+      and palette; must match the converted NES nametable values.
+    comparator: cmp_exact
+
+  - field_path: /plane_b_excerpt
+    policy: exact
+    details: >
+      Genesis Plane B: byte-exact (Plane B is typically the scroll layer
+      or is unused; must match reference for any active content).
+    comparator: cmp_exact
+
+  - field_path: /nametable_excerpt
+    policy: exact
+    details: >
+      NES nametable bytes (32x30 tiles): byte-exact. Genesis side populates
+      this as an empty array; this field is only compared NES vs NES (e.g.,
+      across two NES scenario captures for regression).
+    comparator: cmp_exact
+
+  # ── Screenshot ──────────────────────────────────────────────────────────────
+
+  - field_path: /screenshot_sha256
+    policy: per_scenario
+    details: >
+      Screenshot comparison policy depends on the scenario class:
+        static:   byte-exact SHA-256 match. Applies to title screen (NES
+                  mode), file select (NES mode), static dungeon frames,
+                  and any frame that contains no animation.
+        animated: per-pixel L1 distance threshold. The raw PNG pixels
+                  (after decompression) are compared; the sum of absolute
+                  differences across all pixels must be <= pixel_l1_threshold.
+      Scenario classification is in the scenario_id whitelist below.
+      The SHA-256 comparator is never used for animated scenes — the
+      pixel_l1 comparator is always used instead.
+    comparator: cmp_screenshot_per_scenario
+    pixel_l1_threshold: 512
+    static_scenario_whitelist:
+      # Scenarios where byte-exact SHA-256 comparison is enforced.
+      # Animated sequences use pixel_l1 regardless of this list.
+      - title_screen_nes_mode
+      - file_select_nes_mode_frame0
+      - dungeon_l1_room0_static
+      - overworld_room77_static
+      - cave_entrance_static
+
+# ── Notes ─────────────────────────────────────────────────────────────────────
+# 1. The cmp_sat_oam_functional comparator is documented at:
+#    tools/parity/diff.py::_cmp_sat_oam_functional
+#    Collapse rules must be kept in sync with Anim_WriteSpecificItemSprites
+#    in the NES disassembly (reference/aldonunez/sprites.asm).
+#
+# 2. The cmp_structural_save_buffer comparator unpacks known NES SRAM field
+#    offsets from docs/audit/state_macro_inventory.md. When new fields are
+#    added to SaveState, update the structural comparator's field map.
+#
+# 3. Redux option divergences (option-driven: not NES parity failures) are
+#    tracked in expected_failures.yaml, not here.

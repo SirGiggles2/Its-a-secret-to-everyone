@@ -1,0 +1,192 @@
+# tools/parity/expected_failures.yaml
+# ─────────────────────────────────────────────────────────────────────────────
+# Known intentional divergences from NES parity.
+# diff.py reads this file and downgrades matching failures to WARN instead of
+# FAIL. An entry here is NOT a suppression — it is a documented contract.
+# Every entry must have an owner_phase that will resolve or re-evaluate it.
+#
+# Entry schema:
+#   scenario_id:  string — matches the scenario_id field in capture bundles.
+#                 Supports glob patterns (e.g. "title_screen_*").
+#   field_path:   JSON Pointer (RFC 6901), or "*" to cover all fields in the
+#                 scenario. Array wildcards [*] are supported.
+#   reason:       Human-readable explanation of why this divergence is intentional.
+#   owner_phase:  Phase number (int) that will resolve or re-evaluate this entry.
+#                 Set to 0 for permanent intentional divergences (e.g. customized
+#                 scenes that will never match NES).
+#   memory_ref:   Optional cross-reference to a MEMORY.md entry key.
+# ─────────────────────────────────────────────────────────────────────────────
+
+---
+version: 1
+
+# Schema for entries (kept here as a comment for reference):
+# - scenario_id: <string or glob>
+#   field_path: <JSON Pointer or "*">
+#   reason: <string>
+#   owner_phase: <int>   # 0 = permanent; N = revisit at phase N
+#   memory_ref: <string> # optional
+
+expected_failures:
+
+  # ── Title Screen (intentionally not NES-faithful) ───────────────────────────
+  # Memory ref: project_title_screen_goal
+  # "Title + FS customized, NOT NES parity" — title/FS deliberately diverge.
+
+  - scenario_id: "title_screen_*"
+    field_path: /screenshot_sha256
+    reason: >
+      Title screen visuals are deliberately customized for the Genesis port
+      (layout, font, color palette, branding). NES pixel-exact match is not
+      a goal. See docs/superpowers/plans/* Title.md customization notes and
+      memory entry project_title_screen_goal.
+    owner_phase: 0
+    memory_ref: project_title_screen_goal
+
+  - scenario_id: "title_screen_*"
+    field_path: /cram
+    reason: >
+      Title screen palette is Genesis-custom. NES PALRAM -> CRAM conversion
+      will not match the Genesis title screen palette intentionally.
+    owner_phase: 0
+    memory_ref: project_title_screen_goal
+
+  - scenario_id: "title_screen_*"
+    field_path: /plane_a_excerpt
+    reason: >
+      Title screen nametable layout is Genesis-custom (different tile
+      arrangement, scrolling text, custom logo tiles).
+    owner_phase: 0
+    memory_ref: project_title_screen_goal
+
+  - scenario_id: "title_screen_*"
+    field_path: /plane_b_excerpt
+    reason: >
+      Title screen Plane B is Genesis-custom.
+    owner_phase: 0
+    memory_ref: project_title_screen_goal
+
+  - scenario_id: "title_screen_*"
+    field_path: /sat
+    reason: >
+      Title screen sprite layout is Genesis-custom.
+    owner_phase: 0
+    memory_ref: project_title_screen_goal
+
+  # ── File Select (intentionally not NES-faithful) ───────────────────────────
+  # Memory ref: project_title_screen_goal (FS is in the same divergence bucket)
+
+  - scenario_id: "file_select_*"
+    field_path: /screenshot_sha256
+    reason: >
+      File Select screen is deliberately customized for the Genesis port.
+      Not NES-faithful. Same rationale as title screen.
+    owner_phase: 0
+    memory_ref: project_title_screen_goal
+
+  - scenario_id: "file_select_*"
+    field_path: /cram
+    reason: File Select palette is Genesis-custom. Not NES-faithful.
+    owner_phase: 0
+    memory_ref: project_title_screen_goal
+
+  - scenario_id: "file_select_*"
+    field_path: /plane_a_excerpt
+    reason: File Select nametable is Genesis-custom.
+    owner_phase: 0
+    memory_ref: project_title_screen_goal
+
+  - scenario_id: "file_select_*"
+    field_path: /plane_b_excerpt
+    reason: File Select Plane B is Genesis-custom.
+    owner_phase: 0
+    memory_ref: project_title_screen_goal
+
+  - scenario_id: "file_select_*"
+    field_path: /sat
+    reason: File Select sprite layout is Genesis-custom.
+    owner_phase: 0
+    memory_ref: project_title_screen_goal
+
+  # ── Redux Option-Driven Divergences ─────────────────────────────────────────
+  # These scenarios are only divergent when Redux options are active.
+  # They are NOT failures in NES-mode runs.
+
+  - scenario_id: "redux_overworld_*"
+    field_path: /nametable_excerpt
+    reason: >
+      Redux overworld uses expanded BG tile sets (subpalette-expanded CHR).
+      Nametable tile indices differ from NES when Redux options are active.
+      This is option-driven divergence, not a parity regression.
+    owner_phase: 4
+    memory_ref: project_chr_expansion
+
+  - scenario_id: "redux_dungeon_*"
+    field_path: /nametable_excerpt
+    reason: >
+      Redux dungeon uses expanded BG tile sets. Same rationale as
+      redux_overworld nametable divergence.
+    owner_phase: 5
+    memory_ref: project_chr_expansion
+
+  - scenario_id: "redux_*"
+    field_path: /cram
+    reason: >
+      Redux palette slots PAL2/PAL3 are reserved for non-NES overlays
+      (subpalette expansion tiles). These CRAM entries will not match
+      NES PALRAM conversion. Redux-only divergence.
+    owner_phase: 3
+    memory_ref: project_chr_expansion
+
+  - scenario_id: "redux_automap_*"
+    field_path: /room_id
+    reason: >
+      Redux Dungeon Automap hack restores $EB from $6BAD on room reload.
+      Forced room reloads write $6BAD=target before $EB; timing of room_id
+      snapshot may catch the transient state. Redux-only divergence.
+    owner_phase: 5
+    memory_ref: feedback_redux_automap_room_reset
+
+  # ── Multiplayer Mode ─────────────────────────────────────────────────────────
+
+  - scenario_id: "multiplayer_*"
+    field_path: "*"
+    reason: >
+      Multiplayer mode (Phase 13) introduces PlayerState[4] array and
+      per-player link objects. All fields diverge from 1-player NES parity
+      by design. Multiplayer scenarios are excluded from the NES parity gate.
+    owner_phase: 13
+
+  # ── TURBO_LINK debug flag ────────────────────────────────────────────────────
+  # Memory ref: project_t34_t172_findings
+
+  - scenario_id: "t34_movement_*"
+    field_path: /link/x
+    reason: >
+      genesis_shell.asm:44 TURBO_LINK no-clip flag enables collision bypass
+      at t=172 for debug. When TURBO_LINK=1 Link x/y will diverge from NES
+      parity. Flip genesis_shell.asm:44 to 0 for real parity gate.
+      This entry tracks the known debug state.
+    owner_phase: 4
+    memory_ref: project_t34_t172_findings
+
+  - scenario_id: "t34_movement_*"
+    field_path: /link/y
+    reason: >
+      Same TURBO_LINK no-clip debug flag as x coordinate. See field_path
+      /link/x entry above.
+    owner_phase: 4
+    memory_ref: project_t34_t172_findings
+
+  # ── Audio / MIDI ─────────────────────────────────────────────────────────────
+
+  - scenario_id: "*"
+    field_path: /ram_bytes/globals
+    reason: >
+      Audio driver tick state bytes within $0000-$00FF may diverge from NES
+      until the native FS/audio rewrite is complete (Phase 2 audio unblock).
+      Structural audio bytes are not yet byte-exact. See memory entries
+      project_midi_fs_integration and project_fs_no_song_change.
+      TEMPORARY: remove when native audio driver achieves NES byte parity.
+    owner_phase: 2
+    memory_ref: project_midi_fs_integration
