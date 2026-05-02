@@ -64,14 +64,23 @@ void roomrom_sprites_clear_beam(void);
 
 /* S7 v6 boomerang (slot 3). 8-phase rotation cycle from
  * BoomerangFrameCycle / BoomerangBaseSpriteAttrCycle. phase_idx is
- * masked to bottom 3 bits. */
+ * masked to bottom 3 bits.
+ * sub_pal: NES sprite sub-palette index (0-3). Per NES
+ * DrawBoomerangAndCheckCollision (Z_07.asm:3437) -> base attribute = 0
+ * (RDirectionToWeaponBaseAttribute = 0 for all dirs); callers pass
+ * sub_pal=0. */
 void roomrom_sprites_set_boomerang(short x, short y,
-                                   unsigned char phase_idx);
+                                   unsigned char phase_idx,
+                                   unsigned char sub_pal);
 void roomrom_sprites_clear_boomerang(void);
 
 /* S7 v7 arrow (slot 4). vertical 8x16 (UP/DOWN, vflip on DOWN). LEFT
- * and RIGHT clear (horizontal CHR not yet extracted). */
-void roomrom_sprites_set_arrow(short x, short y, link_face_t face);
+ * and RIGHT clear (horizontal CHR not yet extracted).
+ * sub_pal: NES sprite sub-palette index (0-3). Per NES
+ * UpdateRodOrArrow (Z_07.asm:4322) -> arrow item slot 2 -> frame 0/1
+ * (vert/horz) -> tile $28/$86 -> base attr 0 (sub-pal 0). */
+void roomrom_sprites_set_arrow(short x, short y, link_face_t face,
+                               unsigned char sub_pal);
 void roomrom_sprites_clear_arrow(void);
 
 /* S7 v8 bomb (slot 5) + explosion (slot 6).

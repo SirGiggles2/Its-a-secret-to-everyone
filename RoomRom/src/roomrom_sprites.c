@@ -398,15 +398,17 @@ static const unsigned char k_boomerang_attr_cycle[8] = {
 };
 
 void roomrom_sprites_set_boomerang(short x, short y,
-                                   unsigned char phase_idx)
+                                   unsigned char phase_idx,
+                                   unsigned char sub_pal)
 {
     unsigned char p = (unsigned char)(phase_idx & 0x7u);
     unsigned char frame_n = k_boomerang_frame_cycle[p];   /* 0, 1, or 2 */
     unsigned char attr    = k_boomerang_attr_cycle[p];
     unsigned char vflip   = (unsigned char)((attr & 0x80u) ? 1u : 0u);
     unsigned char hflip   = (unsigned char)((attr & 0x40u) ? 1u : 0u);
-    unsigned short tile   = (unsigned short)(BOOMERANG_VRAM_TILE
-                                             + (frame_n * 2u));
+    unsigned short tile   = (unsigned short)(ROOMROM_ITEM_TILE_BASE_PAL(sub_pal)
+                                             + ROOMROM_ITEM_TILE_BOOMERANG
+                                             + (unsigned short)frame_n * 2u);
     VDP_setSpriteFull(3,
                       (s16)x,
                       (s16)y,
@@ -428,34 +430,36 @@ void roomrom_sprites_clear_boomerang(void)
 }
 
 /* S7 v7 arrow (slot 4). Vertical 8x16 for UP/DOWN, horizontal 16x16
- * for LEFT/RIGHT (hflip on LEFT). */
-void roomrom_sprites_set_arrow(short x, short y, link_face_t face)
+ * for LEFT/RIGHT (hflip on LEFT).
+ * sub_pal selects which 4-copy bank to read (NES base attr = 0). */
+void roomrom_sprites_set_arrow(short x, short y, link_face_t face,
+                               unsigned char sub_pal)
 {
+    unsigned short tile_vert = (unsigned short)(ROOMROM_ITEM_TILE_BASE_PAL(sub_pal)
+                                                + ROOMROM_ITEM_TILE_ARROW_VERT);
+    unsigned short tile_horz = (unsigned short)(ROOMROM_ITEM_TILE_BASE_PAL(sub_pal)
+                                                + ROOMROM_ITEM_TILE_ARROW_HORZ);
     switch (face) {
     case LINK_FACE_UP:
         VDP_setSpriteFull(4, (s16)x, (s16)y, SPRITE_SIZE(1, 2),
-                          TILE_ATTR_FULL(PAL1,0, 0, 0,
-                                         ARROW_VERT_VRAM_TILE),
+                          TILE_ATTR_FULL(PAL1,0, 0, 0, tile_vert),
                           5);
         break;
     case LINK_FACE_DOWN:
         VDP_setSpriteFull(4, (s16)x, (s16)y, SPRITE_SIZE(1, 2),
-                          TILE_ATTR_FULL(PAL1,0, 1, 0,
-                                         ARROW_VERT_VRAM_TILE),
+                          TILE_ATTR_FULL(PAL1,0, 1, 0, tile_vert),
                           5);
         break;
     case LINK_FACE_LEFT:
         /* Phase 1: horizontal arrow ($86..$89) now sourced from live NES
          * item atlas. RIGHT renders as-is, LEFT mirrors via hflip. */
         VDP_setSpriteFull(4, (s16)x, (s16)y, SPRITE_SIZE(2, 2),
-                          TILE_ATTR_FULL(PAL1,0, 0, 1,
-                                         ARROW_HORZ_VRAM_TILE),
+                          TILE_ATTR_FULL(PAL1,0, 0, 1, tile_horz),
                           5);
         break;
     case LINK_FACE_RIGHT:
         VDP_setSpriteFull(4, (s16)x, (s16)y, SPRITE_SIZE(2, 2),
-                          TILE_ATTR_FULL(PAL1,0, 0, 0,
-                                         ARROW_HORZ_VRAM_TILE),
+                          TILE_ATTR_FULL(PAL1,0, 0, 0, tile_horz),
                           5);
         break;
     default:

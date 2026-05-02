@@ -1,6 +1,10 @@
 #include "roomrom_boomerang.h"
 #include "roomrom_sprites.h"
 
+/* NES: DrawBoomerangAndCheckCollision (Z_07.asm:3437) -> base attr 0
+ * (RDirectionToWeaponBaseAttribute = 0 for all dirs). */
+#define ROOMROM_BOOMERANG_SUBPAL 0u
+
 /* See roomrom_boomerang.h for NES disasm references. */
 
 #define BOOMERANG_OUT_FRAMES     32u
@@ -80,7 +84,7 @@ void roomrom_boomerang_update(short link_x, short link_y)
         else if (s_y > link_y) s_y = (short)(s_y - BOOMERANG_SPEED_PX);
     }
 
-    roomrom_sprites_set_boomerang(s_x, s_y, s_phase_idx);
+    roomrom_sprites_set_boomerang(s_x, s_y, s_phase_idx, ROOMROM_BOOMERANG_SUBPAL);
     advance_phase();
 
     s_frame++;

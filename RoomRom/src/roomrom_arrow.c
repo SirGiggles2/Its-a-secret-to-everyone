@@ -1,6 +1,10 @@
 #include "roomrom_arrow.h"
 #include "roomrom_sprites.h"
 
+/* NES: UpdateRodOrArrow (Z_07.asm:4322) -> arrow item slot 2, base attr 0
+ * (RDirectionToWeaponBaseAttribute = 0 for all dirs). */
+#define ROOMROM_ARROW_SUBPAL 0u
+
 #define ARROW_SPEED_PX        3
 #define ARROW_BOUND_X_MIN     ((short)(-16))
 #define ARROW_BOUND_X_MAX     ((short)272)
@@ -59,5 +63,5 @@ void roomrom_arrow_update(void)
         roomrom_sprites_clear_arrow();
         return;
     }
-    roomrom_sprites_set_arrow(s_x, s_y, s_face);
+    roomrom_sprites_set_arrow(s_x, s_y, s_face, ROOMROM_ARROW_SUBPAL);
 }
