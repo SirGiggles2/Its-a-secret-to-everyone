@@ -8,6 +8,7 @@
 #include "roomrom_arrow.h"
 #include "roomrom_bomb.h"
 #include "roomrom_scene_load.h"
+#include "cave_dispatch.h"  /* debate 006 D2: native cave gamemode entry */
 
 /* Boots to overworld room 0x77.
  *
@@ -391,6 +392,15 @@ int main(bool hardReset)
     roomrom_boomerang_init();              /* S7 v6: clear boomerang slot */
     roomrom_arrow_init();                  /* S7 v7: clear arrow slot */
     roomrom_bomb_init();                   /* S7 v8: clear bomb + explosion slots */
+
+    /* debate 006 D2 native cave smoke: prove cave_init / cave_tick /
+     * cave_exit link cleanly into RoomRom + execute without crash.
+     * No visible effect yet (cave_tick is a stub); future commits add
+     * SCENE_CAVE dispatch + render. cave_id 0x6A = first valid cave
+     * room type per NES Z_01.asm:80. */
+    cave_init((cave_id_t)0x6A);
+    cave_tick();
+    cave_exit();
 
     while (TRUE) {
         SYS_doVBlankProcess();
