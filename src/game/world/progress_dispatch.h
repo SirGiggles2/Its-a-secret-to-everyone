@@ -63,6 +63,18 @@ void progress_check_tile_objects_blocking(void);
  * progress_runtime.c:154-168. */
 void progress_check_power_triforce_fanfare(void);
 
+/* Update one map-marker slot (idx) with the screen position of the
+ * given room_id. Decodes room_id grid into (row, col), writes
+ * MAP_MARKER_Y/X/TILE/ATTR. idx==0 is Link (always full-bright);
+ * idx>0 is a per-level item marker (flashing if not yet found).
+ * Mirrors NES UpdatePositionMarker. drain at progress_runtime.c:67-96. */
+void progress_update_position_marker(unsigned char room_id, unsigned int idx);
+
+/* No-arg variant: Link's marker for the current room. Skipped if
+ * MODE_VALUE == 9 (game over) or PLAYER_MARKER_DISABLE set. drain
+ * at progress_runtime.c:98-102. */
+void progress_update_player_position_marker(void);
+
 #ifdef __cplusplus
 }
 #endif

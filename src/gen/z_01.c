@@ -478,14 +478,6 @@ unsigned char z01_do_objects_collide(unsigned int threshold) {
     return colrt_do_objects_collide(threshold);
 }
 
-void z01_update_position_marker(unsigned char room_id, unsigned int idx) {
-    progrt_update_position_marker(room_id, idx);
-}
-
-void z01_update_player_position_marker(void) {
-    progrt_update_player_position_marker();
-}
-
 void z01_update_world_curtain_effect(void) {
     progrt_update_world_curtain_effect();
 }
@@ -904,6 +896,22 @@ void z01_check_power_triforce_fanfare(void) {
     progress_check_power_triforce_fanfare();
 #else
     progrt_check_power_triforce_fanfare();
+#endif
+}
+
+void z01_update_position_marker(unsigned char room_id, unsigned int idx) {
+#ifdef NATIVE_PROGRESS
+    progress_update_position_marker(room_id, idx);
+#else
+    progrt_update_position_marker(room_id, idx);
+#endif
+}
+
+void z01_update_player_position_marker(void) {
+#ifdef NATIVE_PROGRESS
+    progress_update_player_position_marker();
+#else
+    progrt_update_player_position_marker();
 #endif
 }
 

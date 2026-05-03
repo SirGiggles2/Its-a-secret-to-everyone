@@ -173,6 +173,62 @@ void progress_check_tile_objects_blocking(void)
     }
 }
 
+/* NES Z_07.asm LevelMasks (line 747): bit-flag table for 8 levels. */
+static const unsigned char k_level_masks[8] = {
+    0x01u, 0x02u, 0x04u, 0x08u, 0x10u, 0x20u, 0x40u, 0x80u
+};
+
+void progress_update_position_marker(unsigned char room_id, unsigned int idx)
+{
+    /* drain at progress_runtime.c:67-96. NES UpdatePositionMarker. */
+    const unsigned char level = (unsigned char)CUR_LEVEL;
+    const unsigned char row   = (unsigned char)((room_id & 0x70u) >> 2);
+    const unsigned char col   = (unsigned char)(room_id & 0x0Fu);
+    unsigned char tile_val;
+    unsigned char col_shifted;
+
+    MAP_MARKER_Y(idx) = (uint8_t)(row + 0x17u);
+    if (level == 0u) {
+        tile_val    = 17u;
+        col_shifted = (unsigned char)(col << 2);
+    } else {
+        tile_val    = 18u;
+        col_shifted = (unsigned char)(col << 3);
+    }
+    MAP_MARKER_TILE(idx) = 62u;
+    MAP_MARKER_X(idx)    = (uint8_t)(col_shifted + tile_val +
+                                     nes_ram[NES_SRAM_BASE + 0x0BACu]);
+
+    if (idx == 0u) {
+        MAP_MARKER_ATTR(0) = 0u;
+        return;
+    }
+    {
+        unsigned char attr = 3u;
+        if (level != 9u && (RAM(0x0671) & k_level_masks[level - 1u])) {
+            /* Item already found in this level — stay full-bright. */
+        } else {
+            const unsigned char flash = (unsigned char)(FRAME_COUNTER & 0x1Fu);
+            if (flash < 0x10u) {
+                attr = 2u;
+            }
+        }
+        MAP_MARKER_ATTR(idx) = attr;
+    }
+}
+
+void progress_update_player_position_marker(void)
+{
+    /* drain at progress_runtime.c:98-102. */
+    if (MODE_VALUE == 9u) {
+        return;
+    }
+    if (PLAYER_MARKER_DISABLE) {
+        return;
+    }
+    progress_update_position_marker((unsigned char)CUR_ROOM_ID, 0u);
+}
+
 void progress_check_power_triforce_fanfare(void)
 {
     /* drain at progress_runtime.c:154-168. NES CheckPowerTriforceFanfare. */

@@ -579,16 +579,6 @@
       "sig": "unsigned char (unsigned int threshold)"
     },
     {
-      "old": "z01_update_position_marker",
-      "new": "progrt_update_position_marker",
-      "sig": "void (unsigned char room_id, unsigned int idx)"
-    },
-    {
-      "old": "z01_update_player_position_marker",
-      "new": "progrt_update_player_position_marker",
-      "sig": "void (void)"
-    },
-    {
       "old": "z01_update_world_curtain_effect",
       "new": "progrt_update_world_curtain_effect",
       "sig": "void (void)"
