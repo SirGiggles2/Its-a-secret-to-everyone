@@ -116,6 +116,10 @@ echo [3] Compiling src/game/world/world_dispatch.c (Phase 4 native world per deb
 "%GCC%" %CFLAGS% %INCS% -c "%REPO%\src\game\world\world_dispatch.c" -o "%OUT%\world_dispatch.o"
 if errorlevel 1 ( echo FAIL: src/game/world/world_dispatch.c & exit /b 1 )
 
+echo [3] Compiling src/game/world/object_dispatch.c (Phase 4 native object)...
+"%GCC%" %CFLAGS% %INCS% -c "%REPO%\src\game\world\object_dispatch.c" -o "%OUT%\object_dispatch.o"
+if errorlevel 1 ( echo FAIL: src/game/world/object_dispatch.c & exit /b 1 )
+
 echo [3] Compiling main.c...
 "%GCC%" %CFLAGS% %INCS% -c "%PROJ%\src\main.c" -o "%OUT%\main.o"
 if errorlevel 1 ( echo FAIL: main.c & exit /b 1 )
@@ -255,7 +259,7 @@ rem ---------------------------------------------------------------------------
 rem Step 4: Link
 rem ---------------------------------------------------------------------------
 echo [4] Linking...
-set "OBJS=%OUT%\nes_ram_init.o %OUT%\cave_dispatch.o %OUT%\world_dispatch.o %OUT%\main.o %OUT%\render_adapter_sgdk.o %OUT%\ow_room_render.o %OUT%\uw_room_render.o %OUT%\uw_room_blob.o %OUT%\roomrom_hud.o %OUT%\roomrom_sprites.o %OUT%\roomrom_combat.o %OUT%\roomrom_boomerang.o %OUT%\roomrom_arrow.o %OUT%\roomrom_bomb.o %OUT%\roomrom_bg_palette.o %OUT%\roomrom_ow_palette.o %OUT%\roomrom_scene_load.o %OUT%\expanded_bg_chr.o %OUT%\atlas_items_chr_x4.o %OUT%\overworld.o %OUT%\overworld_bg.o %OUT%\dungeons.o %OUT%\underworld_bg.o %OUT%\redux_overworld.o %OUT%\redux_overworld_bg.o %OUT%\redux_uw_bg.o %OUT%\redux_hud_chr.o %OUT%\common.o %OUT%\palettes.o %OUT%\sprites.o"
+set "OBJS=%OUT%\nes_ram_init.o %OUT%\cave_dispatch.o %OUT%\world_dispatch.o %OUT%\object_dispatch.o %OUT%\main.o %OUT%\render_adapter_sgdk.o %OUT%\ow_room_render.o %OUT%\uw_room_render.o %OUT%\uw_room_blob.o %OUT%\roomrom_hud.o %OUT%\roomrom_sprites.o %OUT%\roomrom_combat.o %OUT%\roomrom_boomerang.o %OUT%\roomrom_arrow.o %OUT%\roomrom_bomb.o %OUT%\roomrom_bg_palette.o %OUT%\roomrom_ow_palette.o %OUT%\roomrom_scene_load.o %OUT%\expanded_bg_chr.o %OUT%\atlas_items_chr_x4.o %OUT%\overworld.o %OUT%\overworld_bg.o %OUT%\dungeons.o %OUT%\underworld_bg.o %OUT%\redux_overworld.o %OUT%\redux_overworld_bg.o %OUT%\redux_uw_bg.o %OUT%\redux_hud_chr.o %OUT%\common.o %OUT%\palettes.o %OUT%\sprites.o"
 "%GCC%" -m68000 -B%TOOLBIN%\ -n -T "%SGDK%\md.ld" -nostdlib "%OUT%\sega.o" %OBJS% "%LIB%\libmd.a" "%LIB%\libgcc.a" -o "%OUT%\rom.out" -Wl,--gc-sections
 if errorlevel 1 ( echo FAIL: link & exit /b 1 )
 

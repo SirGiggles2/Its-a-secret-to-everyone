@@ -454,26 +454,6 @@
       "sig": "void (unsigned char item_id)"
     },
     {
-      "old": "z01_bound_direction_horizontally",
-      "new": "objrt_bound_direction_horizontally",
-      "sig": "void (unsigned int slot)"
-    },
-    {
-      "old": "z01_bound_direction_vertically",
-      "new": "objrt_bound_direction_vertically",
-      "sig": "void (unsigned int slot)"
-    },
-    {
-      "old": "z01_bound_by_room",
-      "new": "objrt_bound_by_room",
-      "sig": "unsigned char (unsigned int slot)"
-    },
-    {
-      "old": "z01_bound_by_room_with_a",
-      "new": "objrt_bound_by_room_with_dir",
-      "sig": "unsigned char (unsigned char direction, unsigned int slot)"
-    },
-    {
       "old": "z01_add_q_speed_to_position_fraction",
       "new": "objrt_add_q_speed_to_position_fraction",
       "sig": "unsigned int (unsigned int slot)"

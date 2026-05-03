@@ -378,22 +378,6 @@ void z01_take_item(unsigned char item_id) {
     itemrt_take_item(item_id);
 }
 
-void z01_bound_direction_horizontally(unsigned int slot) {
-    objrt_bound_direction_horizontally(slot);
-}
-
-void z01_bound_direction_vertically(unsigned int slot) {
-    objrt_bound_direction_vertically(slot);
-}
-
-unsigned char z01_bound_by_room(unsigned int slot) {
-    return objrt_bound_by_room(slot);
-}
-
-unsigned char z01_bound_by_room_with_a(unsigned char direction, unsigned int slot) {
-    return objrt_bound_by_room_with_dir(direction, slot);
-}
-
 unsigned int z01_add_q_speed_to_position_fraction(unsigned int slot) {
     return objrt_add_q_speed_to_position_fraction(slot);
 }
@@ -838,5 +822,49 @@ unsigned int z01_animate_world_fading(void) {
     return world_animate_world_fading();
 #else
     return worldrt_animate_world_fading();
+#endif
+}
+
+/* Phase 4 native object subsystem cutover gate — NATIVE_OBJECT.
+ *
+ * First batch: bound_direction_horizontally + _vertically +
+ * bound_by_room + bound_by_room_with_dir. Used by overworld
+ * collision detection + enemy AI. Pure C, no shims, drain MATCH per
+ * finding 4_2n. Independent gate from NATIVE_WORLD because object
+ * + world subsystems are exposed independently. */
+#ifdef NATIVE_OBJECT
+#include "world/object_dispatch.h"
+#endif
+
+void z01_bound_direction_horizontally(unsigned int slot) {
+#ifdef NATIVE_OBJECT
+    object_bound_direction_horizontally(slot);
+#else
+    objrt_bound_direction_horizontally(slot);
+#endif
+}
+
+void z01_bound_direction_vertically(unsigned int slot) {
+#ifdef NATIVE_OBJECT
+    object_bound_direction_vertically(slot);
+#else
+    objrt_bound_direction_vertically(slot);
+#endif
+}
+
+unsigned char z01_bound_by_room(unsigned int slot) {
+#ifdef NATIVE_OBJECT
+    return object_bound_by_room(slot);
+#else
+    return objrt_bound_by_room(slot);
+#endif
+}
+
+unsigned char z01_bound_by_room_with_a(unsigned char direction,
+                                       unsigned int slot) {
+#ifdef NATIVE_OBJECT
+    return object_bound_by_room_with_dir(direction, slot);
+#else
+    return objrt_bound_by_room_with_dir(direction, slot);
 #endif
 }
