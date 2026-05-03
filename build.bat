@@ -252,7 +252,7 @@ set "LD_RESP=%C_OBJ_DIR%\link_objs.rsp"
 set "OBJ_DIR_FS=%C_OBJ_DIR:\=/%"
 if exist "%LD_RESP%" del "%LD_RESP%"
 echo [2a/4] Compiling core/c_runtime.c...
-"%M68K_GCC%" -B "%M68K_BIN%\\" -m68000 -ffreestanding -nostdlib -nostartfiles -ffixed-a4 -fno-builtin -fomit-frame-pointer -fno-PIC -fno-common -O2 -I "%ROOT%\src" -I "%ROOT%\src\state" -I "%ROOT%\src\core" -I "%ROOT%\src\abi" -I "%ROOT%\src\frontend" -I "%ROOT%\src\frontend\intro" -I "%ROOT%\src\frontend\fs" -I "%ROOT%\src\game\enemies" -I "%ROOT%\src\game\combat" -I "%ROOT%\src\game\room" -I "%ROOT%\src\game\cave" -I "%ROOT%\src\game\hud" -I "%ROOT%\src\game\items" -I "%ROOT%\src\game\world" -I "%ROOT%\sgdk\inc" -c "%ROOT%\src\core\c_runtime.c" -o "%C_OBJ_DIR%\c_runtime.o"
+"%M68K_GCC%" -B "%M68K_BIN%\\" -m68000 -ffreestanding -nostdlib -nostartfiles -ffixed-a4 -fno-builtin -fomit-frame-pointer -fno-PIC -fno-common -O2 -I "%ROOT%\src" -I "%ROOT%\src\state" -I "%ROOT%\src\core" -I "%ROOT%\src\abi" -I "%ROOT%\src\frontend" -I "%ROOT%\src\frontend\intro" -I "%ROOT%\src\frontend\fs" -I "%ROOT%\src\oracle\enemies" -I "%ROOT%\src\oracle\combat" -I "%ROOT%\src\oracle\room" -I "%ROOT%\src\oracle\cave" -I "%ROOT%\src\oracle\hud" -I "%ROOT%\src\oracle\items" -I "%ROOT%\src\oracle\world" -I "%ROOT%\sgdk\inc" -c "%ROOT%\src\core\c_runtime.c" -o "%C_OBJ_DIR%\c_runtime.o"
 if errorlevel 1 exit /b 1
 >> "%LD_RESP%" echo "%OBJ_DIR_FS%/c_runtime.o"
 
@@ -293,97 +293,97 @@ rem state .o not in LD_RESP yet — wired into LD_RESP when first caller (RoomRo
 
 for %%F in (%C_CORE_RT%) do (
     echo [2a/4] Compiling core/%%F.c...
-    "%M68K_GCC%" -B "%M68K_BIN%\\" -m68000 -ffreestanding -nostdlib -nostartfiles -ffixed-a4 -fno-builtin -fomit-frame-pointer -fno-PIC -fno-common -O2 -I "%ROOT%\src" -I "%ROOT%\src\state" -I "%ROOT%\src\core" -I "%ROOT%\src\abi" -I "%ROOT%\src\frontend" -I "%ROOT%\src\frontend\intro" -I "%ROOT%\src\frontend\fs" -I "%ROOT%\src\game\enemies" -I "%ROOT%\src\game\combat" -I "%ROOT%\src\game\room" -I "%ROOT%\src\game\cave" -I "%ROOT%\src\game\hud" -I "%ROOT%\src\game\items" -I "%ROOT%\src\game\world" -I "%ROOT%\sgdk\inc" -c "%ROOT%\src\core\%%F.c" -o "%C_OBJ_DIR%\%%F.o"
+    "%M68K_GCC%" -B "%M68K_BIN%\\" -m68000 -ffreestanding -nostdlib -nostartfiles -ffixed-a4 -fno-builtin -fomit-frame-pointer -fno-PIC -fno-common -O2 -I "%ROOT%\src" -I "%ROOT%\src\state" -I "%ROOT%\src\core" -I "%ROOT%\src\abi" -I "%ROOT%\src\frontend" -I "%ROOT%\src\frontend\intro" -I "%ROOT%\src\frontend\fs" -I "%ROOT%\src\oracle\enemies" -I "%ROOT%\src\oracle\combat" -I "%ROOT%\src\oracle\room" -I "%ROOT%\src\oracle\cave" -I "%ROOT%\src\oracle\hud" -I "%ROOT%\src\oracle\items" -I "%ROOT%\src\oracle\world" -I "%ROOT%\sgdk\inc" -c "%ROOT%\src\core\%%F.c" -o "%C_OBJ_DIR%\%%F.o"
     if errorlevel 1 exit /b 1
     >> "%LD_RESP%" echo "%OBJ_DIR_FS%/%%F.o"
 )
 for %%F in (%C_GAME_WORLD_PRE%) do (
     echo [2a/4] Compiling game/world/%%F.c...
-    "%M68K_GCC%" -B "%M68K_BIN%\\" -m68000 -ffreestanding -nostdlib -nostartfiles -ffixed-a4 -fno-builtin -fomit-frame-pointer -fno-PIC -fno-common -O2 -I "%ROOT%\src" -I "%ROOT%\src\state" -I "%ROOT%\src\core" -I "%ROOT%\src\abi" -I "%ROOT%\src\frontend" -I "%ROOT%\src\frontend\intro" -I "%ROOT%\src\frontend\fs" -I "%ROOT%\src\game\enemies" -I "%ROOT%\src\game\combat" -I "%ROOT%\src\game\room" -I "%ROOT%\src\game\cave" -I "%ROOT%\src\game\hud" -I "%ROOT%\src\game\items" -I "%ROOT%\src\game\world" -I "%ROOT%\sgdk\inc" -c "%ROOT%\src\game\world\%%F.c" -o "%C_OBJ_DIR%\%%F.o"
+    "%M68K_GCC%" -B "%M68K_BIN%\\" -m68000 -ffreestanding -nostdlib -nostartfiles -ffixed-a4 -fno-builtin -fomit-frame-pointer -fno-PIC -fno-common -O2 -I "%ROOT%\src" -I "%ROOT%\src\state" -I "%ROOT%\src\core" -I "%ROOT%\src\abi" -I "%ROOT%\src\frontend" -I "%ROOT%\src\frontend\intro" -I "%ROOT%\src\frontend\fs" -I "%ROOT%\src\oracle\enemies" -I "%ROOT%\src\oracle\combat" -I "%ROOT%\src\oracle\room" -I "%ROOT%\src\oracle\cave" -I "%ROOT%\src\oracle\hud" -I "%ROOT%\src\oracle\items" -I "%ROOT%\src\oracle\world" -I "%ROOT%\sgdk\inc" -c "%ROOT%\src\oracle\world\%%F.c" -o "%C_OBJ_DIR%\%%F.o"
     if errorlevel 1 exit /b 1
     >> "%LD_RESP%" echo "%OBJ_DIR_FS%/%%F.o"
 )
 for %%F in (%C_GAME_ENEMIES%) do (
     echo [2a/4] Compiling game/enemies/%%F.c...
-    "%M68K_GCC%" -B "%M68K_BIN%\\" -m68000 -ffreestanding -nostdlib -nostartfiles -ffixed-a4 -fno-builtin -fomit-frame-pointer -fno-PIC -fno-common -O2 -I "%ROOT%\src" -I "%ROOT%\src\state" -I "%ROOT%\src\core" -I "%ROOT%\src\abi" -I "%ROOT%\src\frontend" -I "%ROOT%\src\frontend\intro" -I "%ROOT%\src\frontend\fs" -I "%ROOT%\src\game\enemies" -I "%ROOT%\src\game\combat" -I "%ROOT%\src\game\room" -I "%ROOT%\src\game\cave" -I "%ROOT%\src\game\hud" -I "%ROOT%\src\game\items" -I "%ROOT%\src\game\world" -I "%ROOT%\sgdk\inc" -c "%ROOT%\src\game\enemies\%%F.c" -o "%C_OBJ_DIR%\%%F.o"
+    "%M68K_GCC%" -B "%M68K_BIN%\\" -m68000 -ffreestanding -nostdlib -nostartfiles -ffixed-a4 -fno-builtin -fomit-frame-pointer -fno-PIC -fno-common -O2 -I "%ROOT%\src" -I "%ROOT%\src\state" -I "%ROOT%\src\core" -I "%ROOT%\src\abi" -I "%ROOT%\src\frontend" -I "%ROOT%\src\frontend\intro" -I "%ROOT%\src\frontend\fs" -I "%ROOT%\src\oracle\enemies" -I "%ROOT%\src\oracle\combat" -I "%ROOT%\src\oracle\room" -I "%ROOT%\src\oracle\cave" -I "%ROOT%\src\oracle\hud" -I "%ROOT%\src\oracle\items" -I "%ROOT%\src\oracle\world" -I "%ROOT%\sgdk\inc" -c "%ROOT%\src\oracle\enemies\%%F.c" -o "%C_OBJ_DIR%\%%F.o"
     if errorlevel 1 exit /b 1
     >> "%LD_RESP%" echo "%OBJ_DIR_FS%/%%F.o"
 )
 for %%F in (%C_GAME_CAVE%) do (
     echo [2a/4] Compiling game/cave/%%F.c...
-    "%M68K_GCC%" -B "%M68K_BIN%\\" -m68000 -ffreestanding -nostdlib -nostartfiles -ffixed-a4 -fno-builtin -fomit-frame-pointer -fno-PIC -fno-common -O2 -I "%ROOT%\src" -I "%ROOT%\src\state" -I "%ROOT%\src\core" -I "%ROOT%\src\abi" -I "%ROOT%\src\frontend" -I "%ROOT%\src\frontend\intro" -I "%ROOT%\src\frontend\fs" -I "%ROOT%\src\game\enemies" -I "%ROOT%\src\game\combat" -I "%ROOT%\src\game\room" -I "%ROOT%\src\game\cave" -I "%ROOT%\src\game\hud" -I "%ROOT%\src\game\items" -I "%ROOT%\src\game\world" -I "%ROOT%\sgdk\inc" -c "%ROOT%\src\game\cave\%%F.c" -o "%C_OBJ_DIR%\%%F.o"
+    "%M68K_GCC%" -B "%M68K_BIN%\\" -m68000 -ffreestanding -nostdlib -nostartfiles -ffixed-a4 -fno-builtin -fomit-frame-pointer -fno-PIC -fno-common -O2 -I "%ROOT%\src" -I "%ROOT%\src\state" -I "%ROOT%\src\core" -I "%ROOT%\src\abi" -I "%ROOT%\src\frontend" -I "%ROOT%\src\frontend\intro" -I "%ROOT%\src\frontend\fs" -I "%ROOT%\src\oracle\enemies" -I "%ROOT%\src\oracle\combat" -I "%ROOT%\src\oracle\room" -I "%ROOT%\src\oracle\cave" -I "%ROOT%\src\oracle\hud" -I "%ROOT%\src\oracle\items" -I "%ROOT%\src\oracle\world" -I "%ROOT%\sgdk\inc" -c "%ROOT%\src\oracle\cave\%%F.c" -o "%C_OBJ_DIR%\%%F.o"
     if errorlevel 1 exit /b 1
     >> "%LD_RESP%" echo "%OBJ_DIR_FS%/%%F.o"
 )
 for %%F in (%C_GAME_HUD%) do (
     echo [2a/4] Compiling game/hud/%%F.c...
-    "%M68K_GCC%" -B "%M68K_BIN%\\" -m68000 -ffreestanding -nostdlib -nostartfiles -ffixed-a4 -fno-builtin -fomit-frame-pointer -fno-PIC -fno-common -O2 -I "%ROOT%\src" -I "%ROOT%\src\state" -I "%ROOT%\src\core" -I "%ROOT%\src\abi" -I "%ROOT%\src\frontend" -I "%ROOT%\src\frontend\intro" -I "%ROOT%\src\frontend\fs" -I "%ROOT%\src\game\enemies" -I "%ROOT%\src\game\combat" -I "%ROOT%\src\game\room" -I "%ROOT%\src\game\cave" -I "%ROOT%\src\game\hud" -I "%ROOT%\src\game\items" -I "%ROOT%\src\game\world" -I "%ROOT%\sgdk\inc" -c "%ROOT%\src\game\hud\%%F.c" -o "%C_OBJ_DIR%\%%F.o"
+    "%M68K_GCC%" -B "%M68K_BIN%\\" -m68000 -ffreestanding -nostdlib -nostartfiles -ffixed-a4 -fno-builtin -fomit-frame-pointer -fno-PIC -fno-common -O2 -I "%ROOT%\src" -I "%ROOT%\src\state" -I "%ROOT%\src\core" -I "%ROOT%\src\abi" -I "%ROOT%\src\frontend" -I "%ROOT%\src\frontend\intro" -I "%ROOT%\src\frontend\fs" -I "%ROOT%\src\oracle\enemies" -I "%ROOT%\src\oracle\combat" -I "%ROOT%\src\oracle\room" -I "%ROOT%\src\oracle\cave" -I "%ROOT%\src\oracle\hud" -I "%ROOT%\src\oracle\items" -I "%ROOT%\src\oracle\world" -I "%ROOT%\sgdk\inc" -c "%ROOT%\src\oracle\hud\%%F.c" -o "%C_OBJ_DIR%\%%F.o"
     if errorlevel 1 exit /b 1
     >> "%LD_RESP%" echo "%OBJ_DIR_FS%/%%F.o"
 )
 for %%F in (%C_GAME_ITEMS%) do (
     echo [2a/4] Compiling game/items/%%F.c...
-    "%M68K_GCC%" -B "%M68K_BIN%\\" -m68000 -ffreestanding -nostdlib -nostartfiles -ffixed-a4 -fno-builtin -fomit-frame-pointer -fno-PIC -fno-common -O2 -I "%ROOT%\src" -I "%ROOT%\src\state" -I "%ROOT%\src\core" -I "%ROOT%\src\abi" -I "%ROOT%\src\frontend" -I "%ROOT%\src\frontend\intro" -I "%ROOT%\src\frontend\fs" -I "%ROOT%\src\game\enemies" -I "%ROOT%\src\game\combat" -I "%ROOT%\src\game\room" -I "%ROOT%\src\game\cave" -I "%ROOT%\src\game\hud" -I "%ROOT%\src\game\items" -I "%ROOT%\src\game\world" -I "%ROOT%\sgdk\inc" -c "%ROOT%\src\game\items\%%F.c" -o "%C_OBJ_DIR%\%%F.o"
+    "%M68K_GCC%" -B "%M68K_BIN%\\" -m68000 -ffreestanding -nostdlib -nostartfiles -ffixed-a4 -fno-builtin -fomit-frame-pointer -fno-PIC -fno-common -O2 -I "%ROOT%\src" -I "%ROOT%\src\state" -I "%ROOT%\src\core" -I "%ROOT%\src\abi" -I "%ROOT%\src\frontend" -I "%ROOT%\src\frontend\intro" -I "%ROOT%\src\frontend\fs" -I "%ROOT%\src\oracle\enemies" -I "%ROOT%\src\oracle\combat" -I "%ROOT%\src\oracle\room" -I "%ROOT%\src\oracle\cave" -I "%ROOT%\src\oracle\hud" -I "%ROOT%\src\oracle\items" -I "%ROOT%\src\oracle\world" -I "%ROOT%\sgdk\inc" -c "%ROOT%\src\oracle\items\%%F.c" -o "%C_OBJ_DIR%\%%F.o"
     if errorlevel 1 exit /b 1
     >> "%LD_RESP%" echo "%OBJ_DIR_FS%/%%F.o"
 )
 for %%F in (%C_GAME_WORLD_MID%) do (
     echo [2a/4] Compiling game/world/%%F.c...
-    "%M68K_GCC%" -B "%M68K_BIN%\\" -m68000 -ffreestanding -nostdlib -nostartfiles -ffixed-a4 -fno-builtin -fomit-frame-pointer -fno-PIC -fno-common -O2 -I "%ROOT%\src" -I "%ROOT%\src\state" -I "%ROOT%\src\core" -I "%ROOT%\src\abi" -I "%ROOT%\src\frontend" -I "%ROOT%\src\frontend\intro" -I "%ROOT%\src\frontend\fs" -I "%ROOT%\src\game\enemies" -I "%ROOT%\src\game\combat" -I "%ROOT%\src\game\room" -I "%ROOT%\src\game\cave" -I "%ROOT%\src\game\hud" -I "%ROOT%\src\game\items" -I "%ROOT%\src\game\world" -I "%ROOT%\sgdk\inc" -c "%ROOT%\src\game\world\%%F.c" -o "%C_OBJ_DIR%\%%F.o"
+    "%M68K_GCC%" -B "%M68K_BIN%\\" -m68000 -ffreestanding -nostdlib -nostartfiles -ffixed-a4 -fno-builtin -fomit-frame-pointer -fno-PIC -fno-common -O2 -I "%ROOT%\src" -I "%ROOT%\src\state" -I "%ROOT%\src\core" -I "%ROOT%\src\abi" -I "%ROOT%\src\frontend" -I "%ROOT%\src\frontend\intro" -I "%ROOT%\src\frontend\fs" -I "%ROOT%\src\oracle\enemies" -I "%ROOT%\src\oracle\combat" -I "%ROOT%\src\oracle\room" -I "%ROOT%\src\oracle\cave" -I "%ROOT%\src\oracle\hud" -I "%ROOT%\src\oracle\items" -I "%ROOT%\src\oracle\world" -I "%ROOT%\sgdk\inc" -c "%ROOT%\src\oracle\world\%%F.c" -o "%C_OBJ_DIR%\%%F.o"
     if errorlevel 1 exit /b 1
     >> "%LD_RESP%" echo "%OBJ_DIR_FS%/%%F.o"
 )
 for %%F in (%C_GAME_COMBAT_A%) do (
     echo [2a/4] Compiling game/combat/%%F.c...
-    "%M68K_GCC%" -B "%M68K_BIN%\\" -m68000 -ffreestanding -nostdlib -nostartfiles -ffixed-a4 -fno-builtin -fomit-frame-pointer -fno-PIC -fno-common -O2 -I "%ROOT%\src" -I "%ROOT%\src\state" -I "%ROOT%\src\core" -I "%ROOT%\src\abi" -I "%ROOT%\src\frontend" -I "%ROOT%\src\frontend\intro" -I "%ROOT%\src\frontend\fs" -I "%ROOT%\src\game\enemies" -I "%ROOT%\src\game\combat" -I "%ROOT%\src\game\room" -I "%ROOT%\src\game\cave" -I "%ROOT%\src\game\hud" -I "%ROOT%\src\game\items" -I "%ROOT%\src\game\world" -I "%ROOT%\sgdk\inc" -c "%ROOT%\src\game\combat\%%F.c" -o "%C_OBJ_DIR%\%%F.o"
+    "%M68K_GCC%" -B "%M68K_BIN%\\" -m68000 -ffreestanding -nostdlib -nostartfiles -ffixed-a4 -fno-builtin -fomit-frame-pointer -fno-PIC -fno-common -O2 -I "%ROOT%\src" -I "%ROOT%\src\state" -I "%ROOT%\src\core" -I "%ROOT%\src\abi" -I "%ROOT%\src\frontend" -I "%ROOT%\src\frontend\intro" -I "%ROOT%\src\frontend\fs" -I "%ROOT%\src\oracle\enemies" -I "%ROOT%\src\oracle\combat" -I "%ROOT%\src\oracle\room" -I "%ROOT%\src\oracle\cave" -I "%ROOT%\src\oracle\hud" -I "%ROOT%\src\oracle\items" -I "%ROOT%\src\oracle\world" -I "%ROOT%\sgdk\inc" -c "%ROOT%\src\oracle\combat\%%F.c" -o "%C_OBJ_DIR%\%%F.o"
     if errorlevel 1 exit /b 1
     >> "%LD_RESP%" echo "%OBJ_DIR_FS%/%%F.o"
 )
 for %%F in (%C_GAME_WORLD_POST%) do (
     echo [2a/4] Compiling game/world/%%F.c...
-    "%M68K_GCC%" -B "%M68K_BIN%\\" -m68000 -ffreestanding -nostdlib -nostartfiles -ffixed-a4 -fno-builtin -fomit-frame-pointer -fno-PIC -fno-common -O2 -I "%ROOT%\src" -I "%ROOT%\src\state" -I "%ROOT%\src\core" -I "%ROOT%\src\abi" -I "%ROOT%\src\frontend" -I "%ROOT%\src\frontend\intro" -I "%ROOT%\src\frontend\fs" -I "%ROOT%\src\game\enemies" -I "%ROOT%\src\game\combat" -I "%ROOT%\src\game\room" -I "%ROOT%\src\game\cave" -I "%ROOT%\src\game\hud" -I "%ROOT%\src\game\items" -I "%ROOT%\src\game\world" -I "%ROOT%\sgdk\inc" -c "%ROOT%\src\game\world\%%F.c" -o "%C_OBJ_DIR%\%%F.o"
+    "%M68K_GCC%" -B "%M68K_BIN%\\" -m68000 -ffreestanding -nostdlib -nostartfiles -ffixed-a4 -fno-builtin -fomit-frame-pointer -fno-PIC -fno-common -O2 -I "%ROOT%\src" -I "%ROOT%\src\state" -I "%ROOT%\src\core" -I "%ROOT%\src\abi" -I "%ROOT%\src\frontend" -I "%ROOT%\src\frontend\intro" -I "%ROOT%\src\frontend\fs" -I "%ROOT%\src\oracle\enemies" -I "%ROOT%\src\oracle\combat" -I "%ROOT%\src\oracle\room" -I "%ROOT%\src\oracle\cave" -I "%ROOT%\src\oracle\hud" -I "%ROOT%\src\oracle\items" -I "%ROOT%\src\oracle\world" -I "%ROOT%\sgdk\inc" -c "%ROOT%\src\oracle\world\%%F.c" -o "%C_OBJ_DIR%\%%F.o"
     if errorlevel 1 exit /b 1
     >> "%LD_RESP%" echo "%OBJ_DIR_FS%/%%F.o"
 )
 for %%F in (%C_GAME_COMBAT_B%) do (
     echo [2a/4] Compiling game/combat/%%F.c...
-    "%M68K_GCC%" -B "%M68K_BIN%\\" -m68000 -ffreestanding -nostdlib -nostartfiles -ffixed-a4 -fno-builtin -fomit-frame-pointer -fno-PIC -fno-common -O2 -I "%ROOT%\src" -I "%ROOT%\src\state" -I "%ROOT%\src\core" -I "%ROOT%\src\abi" -I "%ROOT%\src\frontend" -I "%ROOT%\src\frontend\intro" -I "%ROOT%\src\frontend\fs" -I "%ROOT%\src\game\enemies" -I "%ROOT%\src\game\combat" -I "%ROOT%\src\game\room" -I "%ROOT%\src\game\cave" -I "%ROOT%\src\game\hud" -I "%ROOT%\src\game\items" -I "%ROOT%\src\game\world" -I "%ROOT%\sgdk\inc" -c "%ROOT%\src\game\combat\%%F.c" -o "%C_OBJ_DIR%\%%F.o"
+    "%M68K_GCC%" -B "%M68K_BIN%\\" -m68000 -ffreestanding -nostdlib -nostartfiles -ffixed-a4 -fno-builtin -fomit-frame-pointer -fno-PIC -fno-common -O2 -I "%ROOT%\src" -I "%ROOT%\src\state" -I "%ROOT%\src\core" -I "%ROOT%\src\abi" -I "%ROOT%\src\frontend" -I "%ROOT%\src\frontend\intro" -I "%ROOT%\src\frontend\fs" -I "%ROOT%\src\oracle\enemies" -I "%ROOT%\src\oracle\combat" -I "%ROOT%\src\oracle\room" -I "%ROOT%\src\oracle\cave" -I "%ROOT%\src\oracle\hud" -I "%ROOT%\src\oracle\items" -I "%ROOT%\src\oracle\world" -I "%ROOT%\sgdk\inc" -c "%ROOT%\src\oracle\combat\%%F.c" -o "%C_OBJ_DIR%\%%F.o"
     if errorlevel 1 exit /b 1
     >> "%LD_RESP%" echo "%OBJ_DIR_FS%/%%F.o"
 )
 for %%F in (%C_GAME_WORLD_TRAP%) do (
     echo [2a/4] Compiling game/world/%%F.c...
-    "%M68K_GCC%" -B "%M68K_BIN%\\" -m68000 -ffreestanding -nostdlib -nostartfiles -ffixed-a4 -fno-builtin -fomit-frame-pointer -fno-PIC -fno-common -O2 -I "%ROOT%\src" -I "%ROOT%\src\state" -I "%ROOT%\src\core" -I "%ROOT%\src\abi" -I "%ROOT%\src\frontend" -I "%ROOT%\src\frontend\intro" -I "%ROOT%\src\frontend\fs" -I "%ROOT%\src\game\enemies" -I "%ROOT%\src\game\combat" -I "%ROOT%\src\game\room" -I "%ROOT%\src\game\cave" -I "%ROOT%\src\game\hud" -I "%ROOT%\src\game\items" -I "%ROOT%\src\game\world" -I "%ROOT%\sgdk\inc" -c "%ROOT%\src\game\world\%%F.c" -o "%C_OBJ_DIR%\%%F.o"
+    "%M68K_GCC%" -B "%M68K_BIN%\\" -m68000 -ffreestanding -nostdlib -nostartfiles -ffixed-a4 -fno-builtin -fomit-frame-pointer -fno-PIC -fno-common -O2 -I "%ROOT%\src" -I "%ROOT%\src\state" -I "%ROOT%\src\core" -I "%ROOT%\src\abi" -I "%ROOT%\src\frontend" -I "%ROOT%\src\frontend\intro" -I "%ROOT%\src\frontend\fs" -I "%ROOT%\src\oracle\enemies" -I "%ROOT%\src\oracle\combat" -I "%ROOT%\src\oracle\room" -I "%ROOT%\src\oracle\cave" -I "%ROOT%\src\oracle\hud" -I "%ROOT%\src\oracle\items" -I "%ROOT%\src\oracle\world" -I "%ROOT%\sgdk\inc" -c "%ROOT%\src\oracle\world\%%F.c" -o "%C_OBJ_DIR%\%%F.o"
     if errorlevel 1 exit /b 1
     >> "%LD_RESP%" echo "%OBJ_DIR_FS%/%%F.o"
 )
 for %%F in (%C_GAME_ROOM%) do (
     echo [2a/4] Compiling game/room/%%F.c...
-    "%M68K_GCC%" -B "%M68K_BIN%\\" -m68000 -ffreestanding -nostdlib -nostartfiles -ffixed-a4 -fno-builtin -fomit-frame-pointer -fno-PIC -fno-common -O2 -I "%ROOT%\src" -I "%ROOT%\src\state" -I "%ROOT%\src\core" -I "%ROOT%\src\abi" -I "%ROOT%\src\frontend" -I "%ROOT%\src\frontend\intro" -I "%ROOT%\src\frontend\fs" -I "%ROOT%\src\game\enemies" -I "%ROOT%\src\game\combat" -I "%ROOT%\src\game\room" -I "%ROOT%\src\game\cave" -I "%ROOT%\src\game\hud" -I "%ROOT%\src\game\items" -I "%ROOT%\src\game\world" -I "%ROOT%\sgdk\inc" -c "%ROOT%\src\game\room\%%F.c" -o "%C_OBJ_DIR%\%%F.o"
+    "%M68K_GCC%" -B "%M68K_BIN%\\" -m68000 -ffreestanding -nostdlib -nostartfiles -ffixed-a4 -fno-builtin -fomit-frame-pointer -fno-PIC -fno-common -O2 -I "%ROOT%\src" -I "%ROOT%\src\state" -I "%ROOT%\src\core" -I "%ROOT%\src\abi" -I "%ROOT%\src\frontend" -I "%ROOT%\src\frontend\intro" -I "%ROOT%\src\frontend\fs" -I "%ROOT%\src\oracle\enemies" -I "%ROOT%\src\oracle\combat" -I "%ROOT%\src\oracle\room" -I "%ROOT%\src\oracle\cave" -I "%ROOT%\src\oracle\hud" -I "%ROOT%\src\oracle\items" -I "%ROOT%\src\oracle\world" -I "%ROOT%\sgdk\inc" -c "%ROOT%\src\oracle\room\%%F.c" -o "%C_OBJ_DIR%\%%F.o"
     if errorlevel 1 exit /b 1
     >> "%LD_RESP%" echo "%OBJ_DIR_FS%/%%F.o"
 )
 for %%F in (%C_FRONTEND%) do (
     echo [2a/4] Compiling frontend/%%F.c...
-    "%M68K_GCC%" -B "%M68K_BIN%\\" -m68000 -ffreestanding -nostdlib -nostartfiles -ffixed-a4 -fno-builtin -fomit-frame-pointer -fno-PIC -fno-common -O2 -I "%ROOT%\src" -I "%ROOT%\src\state" -I "%ROOT%\src\core" -I "%ROOT%\src\abi" -I "%ROOT%\src\frontend" -I "%ROOT%\src\frontend\intro" -I "%ROOT%\src\frontend\fs" -I "%ROOT%\src\game\enemies" -I "%ROOT%\src\game\combat" -I "%ROOT%\src\game\room" -I "%ROOT%\src\game\cave" -I "%ROOT%\src\game\hud" -I "%ROOT%\src\game\items" -I "%ROOT%\src\game\world" -I "%ROOT%\sgdk\inc" -c "%ROOT%\src\frontend\%%F.c" -o "%C_OBJ_DIR%\%%F.o"
+    "%M68K_GCC%" -B "%M68K_BIN%\\" -m68000 -ffreestanding -nostdlib -nostartfiles -ffixed-a4 -fno-builtin -fomit-frame-pointer -fno-PIC -fno-common -O2 -I "%ROOT%\src" -I "%ROOT%\src\state" -I "%ROOT%\src\core" -I "%ROOT%\src\abi" -I "%ROOT%\src\frontend" -I "%ROOT%\src\frontend\intro" -I "%ROOT%\src\frontend\fs" -I "%ROOT%\src\oracle\enemies" -I "%ROOT%\src\oracle\combat" -I "%ROOT%\src\oracle\room" -I "%ROOT%\src\oracle\cave" -I "%ROOT%\src\oracle\hud" -I "%ROOT%\src\oracle\items" -I "%ROOT%\src\oracle\world" -I "%ROOT%\sgdk\inc" -c "%ROOT%\src\frontend\%%F.c" -o "%C_OBJ_DIR%\%%F.o"
     if errorlevel 1 exit /b 1
     >> "%LD_RESP%" echo "%OBJ_DIR_FS%/%%F.o"
 )
 for %%F in (%C_SOURCES_MID%) do (
     echo [2a/4] Compiling %%F.c...
-    "%M68K_GCC%" -B "%M68K_BIN%\\" -m68000 -ffreestanding -nostdlib -nostartfiles -ffixed-a4 -fno-builtin -fomit-frame-pointer -fno-PIC -fno-common -O2 -I "%ROOT%\src" -I "%ROOT%\src\state" -I "%ROOT%\src\core" -I "%ROOT%\src\abi" -I "%ROOT%\src\frontend" -I "%ROOT%\src\frontend\intro" -I "%ROOT%\src\frontend\fs" -I "%ROOT%\src\game\enemies" -I "%ROOT%\src\game\combat" -I "%ROOT%\src\game\room" -I "%ROOT%\src\game\cave" -I "%ROOT%\src\game\hud" -I "%ROOT%\src\game\items" -I "%ROOT%\src\game\world" -I "%ROOT%\sgdk\inc" -c "%ROOT%\src\%%F.c" -o "%C_OBJ_DIR%\%%F.o"
+    "%M68K_GCC%" -B "%M68K_BIN%\\" -m68000 -ffreestanding -nostdlib -nostartfiles -ffixed-a4 -fno-builtin -fomit-frame-pointer -fno-PIC -fno-common -O2 -I "%ROOT%\src" -I "%ROOT%\src\state" -I "%ROOT%\src\core" -I "%ROOT%\src\abi" -I "%ROOT%\src\frontend" -I "%ROOT%\src\frontend\intro" -I "%ROOT%\src\frontend\fs" -I "%ROOT%\src\oracle\enemies" -I "%ROOT%\src\oracle\combat" -I "%ROOT%\src\oracle\room" -I "%ROOT%\src\oracle\cave" -I "%ROOT%\src\oracle\hud" -I "%ROOT%\src\oracle\items" -I "%ROOT%\src\oracle\world" -I "%ROOT%\sgdk\inc" -c "%ROOT%\src\%%F.c" -o "%C_OBJ_DIR%\%%F.o"
     if errorlevel 1 exit /b 1
     >> "%LD_RESP%" echo "%OBJ_DIR_FS%/%%F.o"
 )
 for %%F in (%C_FRONTEND_INTRO%) do (
     echo [2a/4] Compiling frontend/intro/%%F.c...
-    "%M68K_GCC%" -B "%M68K_BIN%\\" -m68000 -ffreestanding -nostdlib -nostartfiles -ffixed-a4 -fno-builtin -fomit-frame-pointer -fno-PIC -fno-common -O2 -I "%ROOT%\src" -I "%ROOT%\src\state" -I "%ROOT%\src\core" -I "%ROOT%\src\abi" -I "%ROOT%\src\frontend" -I "%ROOT%\src\frontend\intro" -I "%ROOT%\src\frontend\fs" -I "%ROOT%\src\game\enemies" -I "%ROOT%\src\game\combat" -I "%ROOT%\src\game\room" -I "%ROOT%\src\game\cave" -I "%ROOT%\src\game\hud" -I "%ROOT%\src\game\items" -I "%ROOT%\src\game\world" -I "%ROOT%\sgdk\inc" -c "%ROOT%\src\frontend\intro\%%F.c" -o "%C_OBJ_DIR%\%%F.o"
+    "%M68K_GCC%" -B "%M68K_BIN%\\" -m68000 -ffreestanding -nostdlib -nostartfiles -ffixed-a4 -fno-builtin -fomit-frame-pointer -fno-PIC -fno-common -O2 -I "%ROOT%\src" -I "%ROOT%\src\state" -I "%ROOT%\src\core" -I "%ROOT%\src\abi" -I "%ROOT%\src\frontend" -I "%ROOT%\src\frontend\intro" -I "%ROOT%\src\frontend\fs" -I "%ROOT%\src\oracle\enemies" -I "%ROOT%\src\oracle\combat" -I "%ROOT%\src\oracle\room" -I "%ROOT%\src\oracle\cave" -I "%ROOT%\src\oracle\hud" -I "%ROOT%\src\oracle\items" -I "%ROOT%\src\oracle\world" -I "%ROOT%\sgdk\inc" -c "%ROOT%\src\frontend\intro\%%F.c" -o "%C_OBJ_DIR%\%%F.o"
     if errorlevel 1 exit /b 1
     >> "%LD_RESP%" echo "%OBJ_DIR_FS%/%%F.o"
 )
 for %%F in (%C_FRONTEND_FS%) do (
     echo [2a/4] Compiling frontend/fs/%%F.c...
-    "%M68K_GCC%" -B "%M68K_BIN%\\" -m68000 -ffreestanding -nostdlib -nostartfiles -ffixed-a4 -fno-builtin -fomit-frame-pointer -fno-PIC -fno-common -O2 -I "%ROOT%\src" -I "%ROOT%\src\state" -I "%ROOT%\src\core" -I "%ROOT%\src\abi" -I "%ROOT%\src\frontend" -I "%ROOT%\src\frontend\intro" -I "%ROOT%\src\frontend\fs" -I "%ROOT%\src\game\enemies" -I "%ROOT%\src\game\combat" -I "%ROOT%\src\game\room" -I "%ROOT%\src\game\cave" -I "%ROOT%\src\game\hud" -I "%ROOT%\src\game\items" -I "%ROOT%\src\game\world" -I "%ROOT%\sgdk\inc" -c "%ROOT%\src\frontend\fs\%%F.c" -o "%C_OBJ_DIR%\%%F.o"
+    "%M68K_GCC%" -B "%M68K_BIN%\\" -m68000 -ffreestanding -nostdlib -nostartfiles -ffixed-a4 -fno-builtin -fomit-frame-pointer -fno-PIC -fno-common -O2 -I "%ROOT%\src" -I "%ROOT%\src\state" -I "%ROOT%\src\core" -I "%ROOT%\src\abi" -I "%ROOT%\src\frontend" -I "%ROOT%\src\frontend\intro" -I "%ROOT%\src\frontend\fs" -I "%ROOT%\src\oracle\enemies" -I "%ROOT%\src\oracle\combat" -I "%ROOT%\src\oracle\room" -I "%ROOT%\src\oracle\cave" -I "%ROOT%\src\oracle\hud" -I "%ROOT%\src\oracle\items" -I "%ROOT%\src\oracle\world" -I "%ROOT%\sgdk\inc" -c "%ROOT%\src\frontend\fs\%%F.c" -o "%C_OBJ_DIR%\%%F.o"
     if errorlevel 1 exit /b 1
     >> "%LD_RESP%" echo "%OBJ_DIR_FS%/%%F.o"
 )
@@ -395,7 +395,7 @@ if defined REQUIRE_GENERATED_ASSETS (
 )
 for %%F in (%C_GEN_TRANSPILE%) do (
     echo [2a/4] Compiling gen/%%F.c...
-    "%M68K_GCC%" -B "%M68K_BIN%\\" -m68000 -ffreestanding -nostdlib -nostartfiles -ffixed-a4 -fno-builtin -fomit-frame-pointer -fno-PIC -fno-common -O2 -I "%ROOT%\src" -I "%ROOT%\src\state" -I "%ROOT%\src\core" -I "%ROOT%\src\abi" -I "%ROOT%\src\frontend" -I "%ROOT%\src\frontend\intro" -I "%ROOT%\src\frontend\fs" -I "%ROOT%\src\game\enemies" -I "%ROOT%\src\game\combat" -I "%ROOT%\src\game\room" -I "%ROOT%\src\game\cave" -I "%ROOT%\src\game\hud" -I "%ROOT%\src\game\items" -I "%ROOT%\src\game\world" -I "%ROOT%\data\intro" -I "%ROOT%\data\fs" -I "%ROOT%\sgdk\inc" -c "%ROOT%\src\gen\%%F.c" -o "%C_OBJ_DIR%\%%F.o"
+    "%M68K_GCC%" -B "%M68K_BIN%\\" -m68000 -ffreestanding -nostdlib -nostartfiles -ffixed-a4 -fno-builtin -fomit-frame-pointer -fno-PIC -fno-common -O2 -I "%ROOT%\src" -I "%ROOT%\src\state" -I "%ROOT%\src\core" -I "%ROOT%\src\abi" -I "%ROOT%\src\frontend" -I "%ROOT%\src\frontend\intro" -I "%ROOT%\src\frontend\fs" -I "%ROOT%\src\oracle\enemies" -I "%ROOT%\src\oracle\combat" -I "%ROOT%\src\oracle\room" -I "%ROOT%\src\oracle\cave" -I "%ROOT%\src\oracle\hud" -I "%ROOT%\src\oracle\items" -I "%ROOT%\src\oracle\world" -I "%ROOT%\data\intro" -I "%ROOT%\data\fs" -I "%ROOT%\sgdk\inc" -c "%ROOT%\src\gen\%%F.c" -o "%C_OBJ_DIR%\%%F.o"
     if errorlevel 1 exit /b 1
     >> "%LD_RESP%" echo "%OBJ_DIR_FS%/%%F.o"
 )
@@ -407,7 +407,7 @@ if defined REQUIRE_GENERATED_ASSETS (
 )
 for %%F in (%C_DATA_INTRO%) do (
     echo [2a/4] Compiling data/intro/%%F.c...
-    "%M68K_GCC%" -B "%M68K_BIN%\\" -m68000 -ffreestanding -nostdlib -nostartfiles -ffixed-a4 -fno-builtin -fomit-frame-pointer -fno-PIC -fno-common -O2 -I "%ROOT%\src" -I "%ROOT%\src\state" -I "%ROOT%\src\core" -I "%ROOT%\src\abi" -I "%ROOT%\src\frontend" -I "%ROOT%\src\frontend\intro" -I "%ROOT%\src\frontend\fs" -I "%ROOT%\src\game\enemies" -I "%ROOT%\src\game\combat" -I "%ROOT%\src\game\room" -I "%ROOT%\src\game\cave" -I "%ROOT%\src\game\hud" -I "%ROOT%\src\game\items" -I "%ROOT%\src\game\world" -I "%ROOT%\data\intro" -I "%ROOT%\data\fs" -I "%ROOT%\sgdk\inc" -c "%ROOT%\data\intro\%%F.c" -o "%C_OBJ_DIR%\%%F.o"
+    "%M68K_GCC%" -B "%M68K_BIN%\\" -m68000 -ffreestanding -nostdlib -nostartfiles -ffixed-a4 -fno-builtin -fomit-frame-pointer -fno-PIC -fno-common -O2 -I "%ROOT%\src" -I "%ROOT%\src\state" -I "%ROOT%\src\core" -I "%ROOT%\src\abi" -I "%ROOT%\src\frontend" -I "%ROOT%\src\frontend\intro" -I "%ROOT%\src\frontend\fs" -I "%ROOT%\src\oracle\enemies" -I "%ROOT%\src\oracle\combat" -I "%ROOT%\src\oracle\room" -I "%ROOT%\src\oracle\cave" -I "%ROOT%\src\oracle\hud" -I "%ROOT%\src\oracle\items" -I "%ROOT%\src\oracle\world" -I "%ROOT%\data\intro" -I "%ROOT%\data\fs" -I "%ROOT%\sgdk\inc" -c "%ROOT%\data\intro\%%F.c" -o "%C_OBJ_DIR%\%%F.o"
     if errorlevel 1 exit /b 1
     >> "%LD_RESP%" echo "%OBJ_DIR_FS%/%%F.o"
 )
@@ -419,7 +419,7 @@ if defined REQUIRE_GENERATED_ASSETS (
 )
 for %%F in (%C_DATA_FS%) do (
     echo [2a/4] Compiling data/fs/%%F.c...
-    "%M68K_GCC%" -B "%M68K_BIN%\\" -m68000 -ffreestanding -nostdlib -nostartfiles -ffixed-a4 -fno-builtin -fomit-frame-pointer -fno-PIC -fno-common -O2 -I "%ROOT%\src" -I "%ROOT%\src\state" -I "%ROOT%\src\core" -I "%ROOT%\src\abi" -I "%ROOT%\src\frontend" -I "%ROOT%\src\frontend\intro" -I "%ROOT%\src\frontend\fs" -I "%ROOT%\src\game\enemies" -I "%ROOT%\src\game\combat" -I "%ROOT%\src\game\room" -I "%ROOT%\src\game\cave" -I "%ROOT%\src\game\hud" -I "%ROOT%\src\game\items" -I "%ROOT%\src\game\world" -I "%ROOT%\data\intro" -I "%ROOT%\data\fs" -I "%ROOT%\sgdk\inc" -c "%ROOT%\data\fs\%%F.c" -o "%C_OBJ_DIR%\%%F.o"
+    "%M68K_GCC%" -B "%M68K_BIN%\\" -m68000 -ffreestanding -nostdlib -nostartfiles -ffixed-a4 -fno-builtin -fomit-frame-pointer -fno-PIC -fno-common -O2 -I "%ROOT%\src" -I "%ROOT%\src\state" -I "%ROOT%\src\core" -I "%ROOT%\src\abi" -I "%ROOT%\src\frontend" -I "%ROOT%\src\frontend\intro" -I "%ROOT%\src\frontend\fs" -I "%ROOT%\src\oracle\enemies" -I "%ROOT%\src\oracle\combat" -I "%ROOT%\src\oracle\room" -I "%ROOT%\src\oracle\cave" -I "%ROOT%\src\oracle\hud" -I "%ROOT%\src\oracle\items" -I "%ROOT%\src\oracle\world" -I "%ROOT%\data\intro" -I "%ROOT%\data\fs" -I "%ROOT%\sgdk\inc" -c "%ROOT%\data\fs\%%F.c" -o "%C_OBJ_DIR%\%%F.o"
     if errorlevel 1 exit /b 1
     >> "%LD_RESP%" echo "%OBJ_DIR_FS%/%%F.o"
 )
