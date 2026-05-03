@@ -429,11 +429,6 @@
       "sig": "void (void)"
     },
     {
-      "old": "z01_update_cave_person_state_transfer_prices",
-      "new": "cavert_update_transfer_prices",
-      "sig": "void (void)"
-    },
-    {
       "old": "z01_update_person_state_textbox",
       "new": "cavert_update_person_state_textbox",
       "sig": "void (void)"

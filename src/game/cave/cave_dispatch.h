@@ -93,6 +93,18 @@ void cave_draw_person(unsigned int slot);
  * CaveWareXs = $58/$78/$98 baked in as ware_xs[]. */
 void cave_draw_items(void);
 
+/* One state of the cave-person update state machine: format ware prices
+ * into the textbox transfer buffer, OR if prices aren't being shown,
+ * simply advance person_state by one (state++). Mirrors NES
+ * UpdateCavePersonState_TransferPrices (Z_01.asm:442) — drain MATCH
+ * (verdict) per Phase 3 summary.
+ *
+ * Stage-1: state-advance branch native; price formatter (BCD digit
+ * write into transfer buf) Phase 4 deferred — that helper chains into
+ * cavert_write_prices_to_dynamic_transfer_buf + cavert_format_decimal_byte
+ * which need their own ports first. */
+void cave_update_transfer_prices(void);
+
 #ifdef __cplusplus
 }
 #endif

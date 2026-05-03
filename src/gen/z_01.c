@@ -358,10 +358,6 @@ void z01_write_prices_transfer_buf(void) {
     cavert_write_prices_transfer_buf();
 }
 
-void z01_update_cave_person_state_transfer_prices(void) {
-    cavert_update_transfer_prices();
-}
-
 void z01_update_person_state_textbox(void) {
     cavert_update_person_state_textbox();
 }
@@ -739,5 +735,25 @@ void z01_draw_cave_items(void) {
     cave_draw_items();
 #else
     cavert_draw_cave_items();
+#endif
+}
+
+/* Cave-person update state machine starts being ported here.
+ *
+ * NATIVE_CAVE_PERSON gates the per-state update handlers
+ * (UpdateCavePersonState_*). Independent gate from NATIVE_CAVE/_DRAW
+ * because state-machine semantics need their own verification and
+ * are typically the riskiest cutover (jump-table mismatches caught
+ * by Phase 3 summary as the main `cavert_update_cave_person`
+ * NEEDS-FULL-FINDING risk).
+ *
+ * z01_update_cave_person_state_transfer_prices is one such state
+ * (CAVE_PERSON_STATE arm). Stage-1 native: state-advance branch only,
+ * price-formatter body Phase 4 deferred. */
+void z01_update_cave_person_state_transfer_prices(void) {
+#ifdef NATIVE_CAVE_PERSON
+    cave_update_transfer_prices();
+#else
+    cavert_update_transfer_prices();
 #endif
 }

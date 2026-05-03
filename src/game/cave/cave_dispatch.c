@@ -88,6 +88,32 @@ cave_id_t cave_current_id(void)
     return g_active_cave;
 }
 
+void cave_update_transfer_prices(void)
+{
+    /* NES UpdateCavePersonState_TransferPrices (Z_01.asm:442):
+     *   AND CaveFlags, #$08
+     *   BEQ skip_to_inc_state
+     *   JSR WritePricesTransferBuf  ; format prices
+     *   RTS
+     *  skip_to_inc_state:
+     *   INC CavePersonState         ; advance state machine
+     *   RTS
+     *
+     * Drain (cave_runtime.c:220): logically equivalent — early-return
+     * via inc_cave_state if no prices, else write prices buf.
+     *
+     * Native: inline state++ instead of z01_inc_cave_state (transpile
+     * shim forbidden in src/game/). CAVE_PERSON_STATE macro = RAM($00AD)
+     * via cave_state.h. */
+    if (!(cave_flags_get() & 0x08u)) {
+        CAVE_PERSON_STATE = (uint8_t)(CAVE_PERSON_STATE + 1u);
+        return;
+    }
+    /* TODO Phase 4: native cave_write_prices_transfer_buf — BCD digit
+     * formatter + transfer-buf writes (cavert_format_decimal_byte +
+     * cavert_write_prices_to_dynamic_transfer_buf chain). Stage-1 stub. */
+}
+
 void cave_draw_items(void)
 {
     /* NES CaveWareXs (Z_01.asm:385): .BYTE $58, $78, $98. Baked in as
