@@ -8,7 +8,6 @@
 
 #include "room_runtime.h"
 #include "core_runtime.h"
-#include "sprite_runtime.h"
 #include "room_mode_runtime.h"
 #include "enemy_runtime.h"
 #include "collision_runtime.h"
@@ -54,10 +53,6 @@ void z07_set_shot_spreading_state(unsigned int slot) {
     corert_set_shot_spreading_state(slot);
 }
 
-void z07_roll_over_anim_counter(unsigned int slot) {
-    sprrt_roll_over_anim_counter(slot);
-}
-
 void z07_decrement_invincibility_timer(unsigned int slot) {
     corert_decrement_invincibility_timer(slot);
 }
@@ -76,14 +71,6 @@ void z07_set_shove_info_with0(unsigned int val, unsigned int slot) {
 
 void z07_reset_obj_metastate(unsigned int slot) {
     corert_reset_obj_metastate(slot);
-}
-
-unsigned char z07_anim_fetch_obj_pos(unsigned int slot) {
-    return sprrt_anim_fetch_obj_pos(slot);
-}
-
-void z07_anim_set_obj_hflip(unsigned int slot) {
-    sprrt_anim_set_obj_hflip(slot);
 }
 
 unsigned int z07_walker_alt_dir_get_opposite(void) {
@@ -134,10 +121,6 @@ void z07_init_tile_obj_or_item(unsigned int slot) {
     corert_init_tile_obj_or_item(slot);
 }
 
-void z07_anim_advance_and_fetch(unsigned int val, unsigned int slot) {
-    sprrt_anim_advance_and_fetch(val, slot);
-}
-
 void z07_go_to_next_mode_play_level_song(void) {
     roommd_go_to_next_mode_play_level_song();
 }
@@ -186,10 +169,6 @@ void z07_init_mode3_sub1(void) {
     roommd_init_mode3_sub1();
 }
 
-void z07_animate_object_walking(unsigned int slot) {
-    sprrt_animate_object_walking(slot);
-}
-
 void z07_check_screen_edge(void) {
     roomrt_check_screen_edge();
 }
@@ -219,3 +198,50 @@ void z07_update_hearts_and_rupees(void) {
 }
 
 /* <<< end auto-wrappers >>> */
+
+/* Phase 4 native sprite animation cluster — shares NATIVE_SPRITE gate
+ * with z_01.c sprite helpers. Drain MATCH per finding 4_3n_b. Pure C,
+ * no shims. */
+#ifdef NATIVE_SPRITE
+#include "world/sprite_dispatch.h"
+#endif
+
+void z07_roll_over_anim_counter(unsigned int slot) {
+#ifdef NATIVE_SPRITE
+    sprite_roll_over_anim_counter(slot);
+#else
+    sprrt_roll_over_anim_counter(slot);
+#endif
+}
+
+unsigned char z07_anim_fetch_obj_pos(unsigned int slot) {
+#ifdef NATIVE_SPRITE
+    return sprite_anim_fetch_obj_pos(slot);
+#else
+    return sprrt_anim_fetch_obj_pos(slot);
+#endif
+}
+
+void z07_anim_set_obj_hflip(unsigned int slot) {
+#ifdef NATIVE_SPRITE
+    sprite_anim_set_obj_hflip(slot);
+#else
+    sprrt_anim_set_obj_hflip(slot);
+#endif
+}
+
+void z07_anim_advance_and_fetch(unsigned int val, unsigned int slot) {
+#ifdef NATIVE_SPRITE
+    sprite_anim_advance_and_fetch(val, slot);
+#else
+    sprrt_anim_advance_and_fetch(val, slot);
+#endif
+}
+
+void z07_animate_object_walking(unsigned int slot) {
+#ifdef NATIVE_SPRITE
+    sprite_animate_object_walking(slot);
+#else
+    sprrt_animate_object_walking(slot);
+#endif
+}
