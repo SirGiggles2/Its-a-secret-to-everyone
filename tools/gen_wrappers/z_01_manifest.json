@@ -49,11 +49,6 @@
       "sig": "void (unsigned int val, unsigned int slot)"
     },
     {
-      "old": "z01_anim_set_sprite_desc_attrs",
-      "new": "corert_anim_set_sprite_desc_attrs",
-      "sig": "unsigned char (unsigned int val)"
-    },
-    {
       "old": "z01_add_to_int16_at_0",
       "new": "corert_add_to_int16_at_0",
       "sig": "unsigned char (unsigned int val)"
@@ -84,21 +79,6 @@
       "sig": "void (void)"
     },
     {
-      "old": "z01_begin_update_mode",
-      "new": "corert_begin_update_mode",
-      "sig": "void (void)"
-    },
-    {
-      "old": "z01_set_item_value",
-      "new": "corert_set_item_value",
-      "sig": "void (unsigned int val, unsigned int slot3)"
-    },
-    {
-      "old": "z01_init_whirlwind",
-      "new": "corert_init_whirlwind",
-      "sig": "void (unsigned int val, unsigned int slot)"
-    },
-    {
       "old": "z01_add1_to_int16_at_2",
       "new": "corert_add1_to_int16_at_2",
       "sig": "unsigned char (void)"
@@ -107,26 +87,6 @@
       "old": "z01_add1_to_int16_at_4",
       "new": "corert_add1_to_int16_at_4",
       "sig": "unsigned char (void)"
-    },
-    {
-      "old": "z01_get_opposite_dir",
-      "new": "corert_get_opposite_dir",
-      "sig": "unsigned int (unsigned int dir)"
-    },
-    {
-      "old": "z01_negate",
-      "new": "corert_negate",
-      "sig": "unsigned char (unsigned int val)"
-    },
-    {
-      "old": "z01_play_effect",
-      "new": "corert_play_effect",
-      "sig": "void (unsigned int val)"
-    },
-    {
-      "old": "z01_play_sample",
-      "new": "corert_play_sample",
-      "sig": "void (unsigned int val)"
     },
     {
       "old": "z01_play_parry_tune",

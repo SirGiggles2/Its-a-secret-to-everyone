@@ -82,6 +82,37 @@ void core_init_one_simple_object(unsigned int slot);
  * set OBJ_TYPE to 46. NES SetUpWhirlwind. drain at core_runtime.c:64-68. */
 void core_set_up_whirlwind(unsigned int slot);
 
+/* Init whirlwind: writes Link's tile-Y from `val` then runs
+ * core_set_up_whirlwind. NES InitWhirlwind. drain at core_runtime.c:174-177. */
+void core_init_whirlwind(unsigned int val, unsigned int slot);
+
+/* Stash anim sprite-descriptor attrs into ZP $04/$05 + return val.
+ * NES AnimSetSpriteDescAttrs. drain at core_runtime.c:101-105. */
+unsigned char core_anim_set_sprite_desc_attrs(unsigned int val);
+
+/* Set per-level item value. NES SetItemValue. drain at core_runtime.c:170-172. */
+void core_set_item_value(unsigned int val, unsigned int slot3);
+
+/* Get opposite of a single-bit direction. Walks the 4 dir bits and
+ * returns (idx << 8) | opposite_dir. NES GetOppositeDir. drain at
+ * core_runtime.c:202-217. */
+unsigned int core_get_opposite_dir(unsigned int dir);
+
+/* 6502 negate of a signed byte (~v + 1). NES Negate. drain at
+ * core_runtime.c:224-227. */
+unsigned char core_negate(unsigned int val);
+
+/* Reset SUBMODE_VALUE + bump ROOM_MODE_TIMER. NES BeginUpdateMode.
+ * drain at core_runtime.c:155-158. */
+void core_begin_update_mode(void);
+
+/* Bump ROOM_SFX_AUX with bitmask. NES PlayEffect. drain at
+ * core_runtime.c:229-231. */
+void core_play_effect(unsigned int val);
+
+/* Bump RAM($0601) with bitmask. NES PlaySample. drain at core_runtime.c:233+. */
+void core_play_sample(unsigned int val);
+
 #ifdef __cplusplus
 }
 #endif

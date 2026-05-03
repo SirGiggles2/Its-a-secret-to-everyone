@@ -54,10 +54,6 @@ void z01_set_boomerang_speed(unsigned int val, unsigned int slot) {
     corert_set_boomerang_speed(val, slot);
 }
 
-unsigned char z01_anim_set_sprite_desc_attrs(unsigned int val) {
-    return corert_anim_set_sprite_desc_attrs(val);
-}
-
 unsigned char z01_add_to_int16_at_0(unsigned int val) {
     return corert_add_to_int16_at_0(val);
 }
@@ -82,40 +78,12 @@ void z01_update_person_state_reset_char_offset(void) {
     corert_update_person_state_reset_char_offset();
 }
 
-void z01_begin_update_mode(void) {
-    corert_begin_update_mode();
-}
-
-void z01_set_item_value(unsigned int val, unsigned int slot3) {
-    corert_set_item_value(val, slot3);
-}
-
-void z01_init_whirlwind(unsigned int val, unsigned int slot) {
-    corert_init_whirlwind(val, slot);
-}
-
 unsigned char z01_add1_to_int16_at_2(void) {
     return corert_add1_to_int16_at_2();
 }
 
 unsigned char z01_add1_to_int16_at_4(void) {
     return corert_add1_to_int16_at_4();
-}
-
-unsigned int z01_get_opposite_dir(unsigned int dir) {
-    return corert_get_opposite_dir(dir);
-}
-
-unsigned char z01_negate(unsigned int val) {
-    return corert_negate(val);
-}
-
-void z01_play_effect(unsigned int val) {
-    corert_play_effect(val);
-}
-
-void z01_play_sample(unsigned int val) {
-    corert_play_sample(val);
 }
 
 void z01_play_parry_tune(void) {
@@ -996,6 +964,70 @@ void z01_set_up_whirlwind(unsigned int slot) {
     core_set_up_whirlwind(slot);
 #else
     corert_set_up_whirlwind(slot);
+#endif
+}
+
+void z01_init_whirlwind(unsigned int val, unsigned int slot) {
+#ifdef NATIVE_CORE
+    core_init_whirlwind(val, slot);
+#else
+    corert_init_whirlwind(val, slot);
+#endif
+}
+
+unsigned char z01_anim_set_sprite_desc_attrs(unsigned int val) {
+#ifdef NATIVE_CORE
+    return core_anim_set_sprite_desc_attrs(val);
+#else
+    return corert_anim_set_sprite_desc_attrs(val);
+#endif
+}
+
+void z01_set_item_value(unsigned int val, unsigned int slot3) {
+#ifdef NATIVE_CORE
+    core_set_item_value(val, slot3);
+#else
+    corert_set_item_value(val, slot3);
+#endif
+}
+
+unsigned int z01_get_opposite_dir(unsigned int dir) {
+#ifdef NATIVE_CORE
+    return core_get_opposite_dir(dir);
+#else
+    return corert_get_opposite_dir(dir);
+#endif
+}
+
+unsigned char z01_negate(unsigned int val) {
+#ifdef NATIVE_CORE
+    return core_negate(val);
+#else
+    return corert_negate(val);
+#endif
+}
+
+void z01_begin_update_mode(void) {
+#ifdef NATIVE_CORE
+    core_begin_update_mode();
+#else
+    corert_begin_update_mode();
+#endif
+}
+
+void z01_play_effect(unsigned int val) {
+#ifdef NATIVE_CORE
+    core_play_effect(val);
+#else
+    corert_play_effect(val);
+#endif
+}
+
+void z01_play_sample(unsigned int val) {
+#ifdef NATIVE_CORE
+    core_play_sample(val);
+#else
+    corert_play_sample(val);
 #endif
 }
 

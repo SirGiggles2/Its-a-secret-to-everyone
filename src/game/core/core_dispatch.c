@@ -10,6 +10,7 @@
 #include "room_state.h"        /* ROOM_TRANSFER_BUF_SELECT */
 #include "link_state.h"        /* DEATH_FRAME_COUNTER */
 #include "object_state.h"      /* OBJ_TILE_X/_Y, OBJ_STATE, OBJ_TYPE, OBJ_SHOVE_DIR/DIST, OBJ_INV_TIMER, OBJ_METASTATE */
+#include "progress_state.h"    /* SUBMODE_VALUE, PROG_ITEMS_BY_LEVEL */
 
 void core_unhalt_link(void)
 {
@@ -127,6 +128,73 @@ void core_set_up_whirlwind(unsigned int slot)
     OBJ_TILE_Y(slot) = (uint8_t)OBJ_TILE_Y(0);
     OBJ_TILE_X(slot) = 0u;
     OBJ_TYPE(slot)   = 46u;
+}
+
+void core_init_whirlwind(unsigned int val, unsigned int slot)
+{
+    /* drain at core_runtime.c:174-177. */
+    OBJ_TILE_Y(0) = (uint8_t)val;
+    core_set_up_whirlwind(slot);
+}
+
+unsigned char core_anim_set_sprite_desc_attrs(unsigned int val)
+{
+    /* drain at core_runtime.c:101-105. */
+    RAM(0x0004u) = (uint8_t)val;
+    RAM(0x0005u) = (uint8_t)val;
+    return (uint8_t)val;
+}
+
+void core_set_item_value(unsigned int val, unsigned int slot3)
+{
+    /* drain at core_runtime.c:170-172. */
+    PROG_ITEMS_BY_LEVEL(slot3) = (uint8_t)val;
+}
+
+unsigned int core_get_opposite_dir(unsigned int dir)
+{
+    /* drain at core_runtime.c:202-217. NES GetOppositeDir. */
+    static const unsigned char opposite_dirs[] = { 0x04u, 0x08u, 0x01u, 0x02u };
+    unsigned char d = (unsigned char)dir;
+    signed char idx = 3;
+    while (idx >= 0) {
+        if (d & 1u) {
+            break;
+        }
+        d = (unsigned char)(d >> 1);
+        idx--;
+    }
+    if (idx < 0) {
+        idx = 0;
+    }
+    return ((unsigned int)(unsigned char)idx << 8) |
+           (unsigned int)opposite_dirs[(unsigned char)idx];
+}
+
+unsigned char core_negate(unsigned int val)
+{
+    /* drain at core_runtime.c:224-227. NES Negate (2's complement). */
+    const unsigned char v = (unsigned char)val;
+    return (unsigned char)((~v + 1u) & 0xFFu);
+}
+
+void core_begin_update_mode(void)
+{
+    /* drain at core_runtime.c:155-158. */
+    SUBMODE_VALUE = 0u;
+    RAM(0x0011) = (uint8_t)(RAM(0x0011) + 1u);  /* ROOM_MODE_TIMER */
+}
+
+void core_play_effect(unsigned int val)
+{
+    /* drain at core_runtime.c:229-231. */
+    RAM(0x0603) = (uint8_t)(RAM(0x0603) | (uint8_t)val);  /* ROOM_SFX_AUX */
+}
+
+void core_play_sample(unsigned int val)
+{
+    /* drain at core_runtime.c:233+. */
+    RAM(0x0601) = (uint8_t)(RAM(0x0601) | (uint8_t)val);
 }
 
 void core_set_up_common_cave_objects(unsigned int x, unsigned int slot,
