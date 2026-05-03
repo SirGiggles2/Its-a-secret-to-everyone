@@ -14,7 +14,7 @@ local OUT_DIR    = ROOT .. "reports\\"
 local OUT_PATH   = OUT_DIR .. "bizhawk_t5_ppu_probe.txt"
 local FALLBACK   = ROOT .. "bizhawk_t5_ppu_probe_fallback.txt"
 
--- Exception handler addresses (from builds/whatif.lst):
+-- Exception handler addresses (from builds/Title.lst):
 --   ExcBusError    $000362  (vec 2, bus error)
 --   ExcAddrError   $000384  (vec 3, address error)
 --   DefaultException $0003A6 (all other exceptions)

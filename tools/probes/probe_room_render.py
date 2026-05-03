@@ -48,9 +48,9 @@ OBJ_DIR      = REPO_ROOT / "builds" / "obj"
 FIX_CHECKSUM = REPO_ROOT / "tools" / "fix_checksum.py"
 
 # Debug build outputs (do NOT overwrite the main ROM)
-_DEBUG_ELF     = REPO_ROOT / "builds" / "whatif_ow_debug.elf"
-_DEBUG_RAW     = REPO_ROOT / "builds" / "whatif_ow_debug_raw.md"
-DEBUG_ROM      = REPO_ROOT / "builds" / "whatif_ow_debug.md"
+_DEBUG_ELF     = REPO_ROOT / "builds" / "Title_ow_debug.elf"
+_DEBUG_RAW     = REPO_ROOT / "builds" / "Title_ow_debug_raw.md"
+DEBUG_ROM      = REPO_ROOT / "builds" / "Title_ow_debug.md"
 
 # Common compile flags (taken verbatim from build.bat)
 _COMMON_CFLAGS = [
@@ -116,7 +116,7 @@ def _compile(src: Path, obj: Path, extra_flags: list[str] | None = None) -> None
 
 def build_debug_rom() -> Path:
     """Compile debug variants of fs_handoff.c and ow_room_debug.c, then link
-    with all existing .o files to produce builds/whatif_ow_debug.elf.
+    with all existing .o files to produce builds/Title_ow_debug.elf.
 
     Returns the path to the debug ELF.
     """
@@ -189,8 +189,8 @@ def build_debug_rom() -> Path:
         encoding="utf-8",
     )
 
-    # The ASM root object (builds/whatif.o) is always the first positional arg.
-    asm_obj = REPO_ROOT / "builds" / "whatif.o"
+    # The ASM root object (builds/Title.o) is always the first positional arg.
+    asm_obj = REPO_ROOT / "builds" / "Title.o"
     if not asm_obj.is_file():
         raise RuntimeError(
             f"{asm_obj} not found.\n"

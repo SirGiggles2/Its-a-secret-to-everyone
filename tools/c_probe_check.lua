@@ -6,7 +6,7 @@
 -- probe isn't corrupting controller state, which was the original
 -- collision the plan had to work around.
 
-local C_PROBE  = 0xFFC000       -- .bss start (from `nm whatif.elf`)
+local C_PROBE  = 0xFFC000       -- .bss start (from `nm Title.elf`)
 local CTL_LAT  = 0xFF1100       -- nes_io.asm CTL1_LATCH
 local CTL_IDX  = 0xFF1101       -- nes_io.asm CTL1_IDX
 local LOG      = "C:\\tmp\\c_probe_check.txt"

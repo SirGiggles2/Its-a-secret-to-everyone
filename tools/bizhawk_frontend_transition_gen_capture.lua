@@ -27,7 +27,7 @@ local TRANSFER_STREAM_MAX_RECORDS = 64
 local TRANSFER_STREAM_MAX_EVENTS = 128
 
 local function read_listing_addr(symbol)
-    local f = io.open(repo_path("builds\\whatif.lst"), "r")
+    local f = io.open(repo_path("builds\\Title.lst"), "r")
     if not f then return nil end
     for line in f:lines() do
         local name, hex = line:match("^(%w+)%s+A:(%x+)$")

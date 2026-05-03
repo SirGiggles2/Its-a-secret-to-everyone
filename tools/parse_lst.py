@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Parse builds/whatif.lst and emit tools/cycle_profile_buckets.json.
+Parse builds/Title.lst and emit tools/cycle_profile_buckets.json.
 
 For each target bucket symbol:
   - resolve the label to its instruction address (entry_addr)
@@ -271,7 +271,7 @@ def lua_str(s):
 
 def main():
     if len(sys.argv) < 2:
-        lst = Path("builds/whatif.lst")
+        lst = Path("builds/Title.lst")
     else:
         lst = Path(sys.argv[1])
     if not lst.exists():

@@ -6,7 +6,7 @@ local ROOT = "C:/Users/Jake Diggity/Documents/GitHub/FINAL TRY/"
 local REPORT = ROOT .. "builds/reports/bizhawk_chr_loop_count_probe.txt"
 local M68K = "M68K BUS"
 
--- Addresses from whatif.lst
+-- Addresses from Title.lst
 local ADDR_ISRNMI      = 0x017A68  -- IsrNmi entry
 local ADDR_FTCB_ENTRY  = 0x0009DE  -- _transfer_chr_block_fast entry (movem.l push)
 local ADDR_FTCB_TILE   = 0x0009EA  -- .ftcb_tile (tst.l D2)

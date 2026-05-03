@@ -1,4 +1,4 @@
--- capture_handoff_register.lua — boot whatif.md, advance through intro,
+-- capture_handoff_register.lua — boot Title.md, advance through intro,
 -- press Start at frame 120 (lands native FS), advance 60 more frames so
 -- FS renders, press A on slot 0 (cursor 0 default), advance ~120 more
 -- frames so transpiled register-name screen has rendered, capture PNG.

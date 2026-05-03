@@ -3,7 +3,7 @@ setlocal EnableExtensions
 
 for %%I in ("%~dp0..") do set "ROOT=%%~fI"
 set "EMU=C:\Users\Jake Diggity\Documents\GitHub\VDP rebirth tools and asms\BizHawk-2.11-win-x64\EmuHawk.exe"
-set "ROM=%ROOT%\builds\whatif.md"
+set "ROM=%ROOT%\builds\Title.md"
 set "LUA=%ROOT%\tools\bizhawk_boot_probe.lua"
 set "REPORT_DIR=%ROOT%\builds\reports"
 set "REPORT=%REPORT_DIR%\bizhawk_boot_probe.txt"

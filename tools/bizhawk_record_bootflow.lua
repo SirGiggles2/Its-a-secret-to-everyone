@@ -6,7 +6,7 @@
 -- state machine. One recording per system: NES or Genesis.
 --
 -- Usage (Genesis):
---   tools\bizhawk_record_bootflow.lua (via EmuHawk --lua=) on ROM builds/whatif.md
+--   tools\bizhawk_record_bootflow.lua (via EmuHawk --lua=) on ROM builds/Title.md
 --   1. Press buttons to boot into gameplay (title → FS1 → register → start)
 --   2. Probe auto-stops when Mode=$05 + room=$77 + Link stable 60 frames
 --   3. Output: tools/bootflow_gen.txt

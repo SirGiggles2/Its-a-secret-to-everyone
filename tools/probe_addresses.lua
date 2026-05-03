@@ -1,5 +1,5 @@
 -- probe_addresses.lua
--- Reads builds/whatif.lst to resolve current symbol addresses automatically.
+-- Reads builds/Title.lst to resolve current symbol addresses automatically.
 --
 -- Usage in any probe script (after ROOT is defined):
 --   dofile(ROOT .. "tools/probe_addresses.lua")
@@ -43,14 +43,14 @@ do
     dofile(tools_dir .. "\\probe_root.lua")
 end
 
-local _a = read_listing_addrs(repo_path("builds\\whatif.lst"))
+local _a = read_listing_addrs(repo_path("builds\\Title.lst"))
 
 -- Fail loudly if a required symbol is missing — means listing is stale or
 -- the symbol was renamed.  Probes must not run silently against wrong addresses.
 local function require_sym(name)
     local v = _a[name]
     if not v then
-        error("probe_addresses.lua: symbol '" .. name .. "' not found in " .. repo_path("builds\\whatif.lst") .. " -- rebuild first")
+        error("probe_addresses.lua: symbol '" .. name .. "' not found in " .. repo_path("builds\\Title.lst") .. " -- rebuild first")
     end
     return v
 end

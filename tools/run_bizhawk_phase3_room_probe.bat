@@ -3,7 +3,7 @@ setlocal EnableExtensions
 
 for %%I in ("%~dp0..") do set "ROOT=%%~fI"
 set "EMU=%ROOT%\BizHawk-2.11-win-x64\EmuHawk.exe"
-set "ROM=%ROOT%\builds\whatif.md"
+set "ROM=%ROOT%\builds\Title.md"
 set "LUA=%ROOT%\tools\bizhawk_phase3_room_probe.lua"
 set "REPORT_DIR=%ROOT%\builds\reports"
 set "REPORT=%REPORT_DIR%\bizhawk_phase3_room_probe.txt"

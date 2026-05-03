@@ -3,7 +3,7 @@
 -- ym_write2 and reading D0 (register address) / D1 (data value) from the M68K
 -- register file.  This bypasses Genplus-gx's lack of bus-write hooks.
 --
--- Addresses are extracted from builds/whatif.lst:
+-- Addresses are extracted from builds/Title.lst:
 --   ym_write1 = $454   (Part I, reg + data to $A04000 / $A04001)
 --   ym_write2 = $470   (Part II, reg + data to $A04002 / $A04003)
 --

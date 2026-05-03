@@ -5,7 +5,7 @@
 local ROOT = "C:/Users/Jake Diggity/Documents/GitHub/FINAL TRY/"
 local REPORT = ROOT .. "builds/reports/bizhawk_nmi3_diag_probe.txt"
 
--- Key addresses from whatif.lst
+-- Key addresses from Title.lst
 local ADDR_ISRNMI           = 0x017A68   -- IsrNmi entry
 local ADDR_TRANSFER_CUR_TB  = nil        -- TransferCurTileBuf (resolve below)
 local ADDR_FTCB_ENTRY       = 0x0009DE   -- _transfer_chr_block_fast entry

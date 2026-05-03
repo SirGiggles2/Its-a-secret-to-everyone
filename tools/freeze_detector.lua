@@ -41,7 +41,7 @@ local OBJ_QSPD_FRAC = BUS + 0x03BC
 local function u8(a)  memory.usememorydomain("M68K BUS"); return memory.read_u8(a) end
 local function u16(a) memory.usememorydomain("M68K BUS"); return memory.read_u16_be(a) end
 
--- Symbol addresses from builds/whatif.lst
+-- Symbol addresses from builds/Title.lst
 local HOTSPOTS = {
     MoveObject          = 0x4C8E4,
     Walker_Move         = 0x4C7BA,

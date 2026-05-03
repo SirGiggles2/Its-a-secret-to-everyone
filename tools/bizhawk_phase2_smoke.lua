@@ -1,7 +1,7 @@
 -- WHAT IF Phase 2 smoke test for BizHawk
 --
 -- Usage:
---   1. Open builds/whatif.md in BizHawk EmuHawk.
+--   1. Open builds/Title.md in BizHawk EmuHawk.
 --   2. Run this script from Tools -> Lua Console.
 --      or autoload it from the BizHawk Lua session list.
 --

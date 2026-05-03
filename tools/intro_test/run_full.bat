@@ -48,7 +48,7 @@ if "%PYTHON%"=="" (
 rem ---------------------------------------------------------------------------
 rem Verify ROM is built.
 rem ---------------------------------------------------------------------------
-set "OUT_ROM=%ROOT%\builds\whatif.md"
+set "OUT_ROM=%ROOT%\builds\Title.md"
 if not exist "%OUT_ROM%" (
     echo ERROR: ROM not found at %OUT_ROM% - build it first with build.bat
     exit /b 1
@@ -59,7 +59,7 @@ rem Copy script and ROM into BizHawk dir (path-with-spaces workaround).
 rem This is the same pattern used by build.bat [5/5] for probe_phase_sequence.lua.
 rem ---------------------------------------------------------------------------
 copy /y "%ROOT%\tools\intro_test\probe_start_handoff.lua" "%BIZHAWK_DIR%\probe_start_handoff.lua" >nul 2>nul
-copy /y "%OUT_ROM%" "%BIZHAWK_DIR%\whatif.md" >nul 2>nul
+copy /y "%OUT_ROM%" "%BIZHAWK_DIR%\Title.md" >nul 2>nul
 
 rem ---------------------------------------------------------------------------
 rem Run each scenario in sequence. Each BizHawk launch runs one Start-press
@@ -75,7 +75,7 @@ for %%S in (1 2 3 4) do (
     copy /y "%OUT_DIR%\scenario.idx" "%BIZHAWK_DIR%\scenario.idx" >nul 2>nul
     rem Launch BizHawk with array-style args via PowerShell; set CODEX_BIZHAWK_ROOT
     rem so the Lua script resolves out/ back to the repo (same as build.bat [5/5]).
-    powershell -Command "& { $env:CODEX_BIZHAWK_ROOT='%ROOT%'; Start-Process -Wait -FilePath '%BIZHAWK_EXE%' -ArgumentList @('--lua=probe_start_handoff.lua','whatif.md') -WorkingDirectory '%BIZHAWK_DIR%' }"
+    powershell -Command "& { $env:CODEX_BIZHAWK_ROOT='%ROOT%'; Start-Process -Wait -FilePath '%BIZHAWK_EXE%' -ArgumentList @('--lua=probe_start_handoff.lua','Title.md') -WorkingDirectory '%BIZHAWK_DIR%' }"
     if errorlevel 1 (
         echo [run_full] WARNING: BizHawk exited non-zero on scenario %%S
     )

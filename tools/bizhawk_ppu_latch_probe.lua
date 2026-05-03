@@ -23,7 +23,7 @@
 --                           now occupy high byte), and T21 (title screen
 --                           overlays blank $24 fill). Retired 2026-04-16.
 --
--- Addresses from builds/whatif.lst (regenerate after code changes):
+-- Addresses from builds/Title.lst (regenerate after code changes):
 --   LoopForever    $0005F2
 --   IsrNmi         $000622
 --   ExcBus         $000362

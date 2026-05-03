@@ -6,7 +6,7 @@
 local ROOT = "C:/Users/Jake Diggity/Documents/GitHub/FINAL TRY/"
 local OUT_DIR = ROOT .. "builds/reports/intro_window"
 local OUT_CSV = OUT_DIR .. "/intro_rowwrite_probe.csv"
-local LST_PATH = ROOT .. "builds/whatif.lst"
+local LST_PATH = ROOT .. "builds/Title.lst"
 local START_FRAME = tonumber(os.getenv("INTRO_START") or "850")
 local END_FRAME = tonumber(os.getenv("INTRO_END") or "3000")
 

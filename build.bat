@@ -79,6 +79,30 @@ echo [SGDK gate] check_raw_vdp.py
 if errorlevel 1 exit /b 1
 
 rem ---------------------------------------------------------------------------
+rem Worktree gates (debate 004, Rules WT-1/WT-3/WT-4)
+rem
+rem   check_no_whatif.py            — legacy alias gone; no whatif refs in code
+rem   check_frontend_boundary.py    — owned src/game/, RoomRom/src/ must not
+rem                                  include src/frontend/* headers (Phase 12
+rem                                  promotion gate)
+rem   active_scope.py --quiet       — refresh .active_scope + docs/audit/active_scope.md
+rem
+rem   Substrate-dual-rom gate (check_substrate_dual_rom.py) is wired into
+rem   pre-commit / pre-push hook, NOT here, because it triggers a RoomRom
+rem   rebuild on substrate diffs (slow on every Title build).
+rem ---------------------------------------------------------------------------
+echo [WT gate] check_no_whatif.py
+"%PYTHON%" "%ROOT%\tools\gates\check_no_whatif.py"
+if errorlevel 1 exit /b 1
+
+echo [WT gate] check_frontend_boundary.py
+"%PYTHON%" "%ROOT%\tools\gates\check_frontend_boundary.py"
+if errorlevel 1 exit /b 1
+
+echo [WT gate] active_scope.py (refresh pointer)
+"%PYTHON%" "%ROOT%\tools\audit\active_scope.py" --quiet
+
+rem ---------------------------------------------------------------------------
 rem Locate vasmm68k_mot
 rem ---------------------------------------------------------------------------
 if exist "%ROOT%\build\toolchain\vasmm68k_mot.exe"                          set "VASM=%ROOT%\build\toolchain\vasmm68k_mot.exe"

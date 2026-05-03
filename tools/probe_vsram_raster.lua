@@ -2,7 +2,7 @@
 -- cycles-into-frame for each hit. Codex hypothesis: P2 call lands during
 -- active display on alternating frames.
 --
--- Target PCs in whatif.md build:
+-- Target PCs in Title.md build:
 --   $0000061C = move.w D0,(VDP_DATA).l   (case-2 initial VSRAM write)
 --   $00000660 = move.w D0,(VDP_DATA).l   (case-1 initial VSRAM write)
 --   $00000502 = AGS entry

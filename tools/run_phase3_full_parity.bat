@@ -3,7 +3,7 @@ setlocal EnableExtensions
 
 for %%I in ("%~dp0..") do set "ROOT=%%~fI"
 set "TOOLS=%ROOT%\tools"
-set "ROM=%ROOT%\builds\whatif.md"
+set "ROM=%ROOT%\builds\Title.md"
 set "FAIL=0"
 
 call :run "Overworld All-Rooms Reference" "%TOOLS%\run_render_overworld_reference_all.bat"

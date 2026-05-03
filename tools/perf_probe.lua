@@ -7,7 +7,7 @@
 --     per frame. The function with a huge calls/frame count is the
 --     offender.
 
--- Symbol addresses from builds/whatif.lst. These are 68K PC addresses,
+-- Symbol addresses from builds/Title.lst. These are 68K PC addresses,
 -- NOT NES-RAM offsets — they go through "M68K BUS" at their direct addr.
 local SYM = {
     transfer_tilebuf_fast = 0x2B2C8,

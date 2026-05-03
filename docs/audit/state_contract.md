@@ -63,17 +63,19 @@
 
 ## Migration Order (matches phase plan)
 
-| Phase | Subsystem | State header migrated |
-|-------|-----------|----------------------|
-| 2     | Graphics registry | `vram_map_state.h` (new), `palette_state.h` |
-| 3     | Caves | `cave_state.h` (new) |
-| 4     | Overworld | `world_state.h` |
-| 5     | Dungeon | `room_state.h`, `collision_state.h` |
-| 6     | Link/items/combat | `link_state.h` (refactor from shims), `item_state.h` |
-| 7     | Enemies | `enemy_state.h` (resolves `OBJ(0x0412)` alias collision) |
-| 8     | Bosses | `boss_state.h` (new) |
-| 9     | HUD/options/save | `save_state.h` (refactor), `options_state.h` |
-| 13    | Multiplayer | `link_state.h` → `player_state.h` array generalization |
+| Phase | Subsystem | State header migrated | Owner Worktree |
+|-------|-----------|----------------------|----------------|
+| 2     | Graphics registry | `vram_map_state.h` (new), `palette_state.h` | main (substrate) |
+| 3     | Caves | `cave_state.h` (new) | main (substrate); RoomRom consumes |
+| 4     | Overworld | `world_state.h` | main (substrate); RoomRom consumes |
+| 5     | Dungeon | `room_state.h`, `collision_state.h` | main (substrate); RoomRom consumes |
+| 6     | Link/items/combat | `link_state.h` (refactor from shims), `item_state.h` | main (substrate); RoomRom consumes |
+| 7     | Enemies | `enemy_state.h` (resolves `OBJ(0x0412)` alias collision) | main (substrate); RoomRom consumes |
+| 8     | Bosses | `boss_state.h` (new) | main (substrate); RoomRom consumes |
+| 9     | HUD/options/save | `save_state.h` (refactor), `options_state.h` | main (substrate) |
+| 13    | Multiplayer | `link_state.h` → `player_state.h` array generalization | main (substrate) |
+
+**Rule:** all `src/state/*.h` headers live in `main` worktree. RoomRom rebases on `main` to consume substrate changes (debate 004 Rule WT-1). Defense-in-depth: `tools/gates/check_substrate_dual_rom.py` builds both ROMs after any substrate-touching commit.
 
 Each migration step:
 1. Define typed struct in the header.

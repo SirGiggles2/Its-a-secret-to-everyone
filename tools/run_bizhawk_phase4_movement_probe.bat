@@ -2,7 +2,7 @@
 setlocal EnableExtensions
 
 for %%I in ("%~dp0..") do set "ROOT=%%~fI"
-set "ROM=%ROOT%\builds\whatif.md"
+set "ROM=%ROOT%\builds\Title.md"
 set "LUA=%ROOT%\tools\bizhawk_phase4_movement_probe.lua"
 set "REPORT_DIR=%ROOT%\builds\reports"
 set "REPORT=%REPORT_DIR%\bizhawk_phase4_movement_probe.txt"

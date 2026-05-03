@@ -7,7 +7,7 @@
 -- T10 NES RAM map soundness — key boot-time RAM values are sane
 -- T11 RAM snapshot parity   — pre-PPU init values match expected NES boot state
 --
--- Addresses from builds/whatif.lst (regenerate after any code change):
+-- Addresses from builds/Title.lst (regenerate after any code change):
 --   IsrReset       $0034F2
 --   RunGame        $0005CC
 --   LoopForever    $0005F2
@@ -18,7 +18,7 @@
 
 -- Resolve ROOT via CODEX_BIZHAWK_ROOT env var (set by run batch files).
 -- Prior hard-coded ROOT pointed at the main tree and silently read that
--- tree's whatif.lst, producing wrong landmark addresses when run from a
+-- tree's Title.lst, producing wrong landmark addresses when run from a
 -- worktree.  Fall back to main tree only if env var is unset.
 local ROOT = os.getenv("CODEX_BIZHAWK_ROOT")
 if not ROOT or ROOT == "" then

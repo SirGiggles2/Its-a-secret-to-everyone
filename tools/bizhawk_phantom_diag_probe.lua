@@ -7,7 +7,7 @@ local REPORT = ROOT .. "builds/reports/bizhawk_phantom_diag_probe.txt"
 local M68K = "M68K BUS"
 local FRAMES_TO_RUN = 200
 
--- ROM addresses (from whatif.lst, current build)
+-- ROM addresses (from Title.lst, current build)
 local ADDR_FTCB_ENTRY  = 0x0009E4   -- _transfer_chr_block_fast (movem.l)
 local ADDR_ISR_NMI     = 0x017F54   -- IsrNmi
 local NES_RAM          = 0xFF0000

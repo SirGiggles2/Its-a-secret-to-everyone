@@ -7,7 +7,7 @@
 -- We hook EXECUTE on each landmark and WRITE on $FF0014 / $FF0302, logging
 -- the call site PC plus mode/sub/sel/dyn0 at every event.
 --
--- Addresses pulled from builds/whatif.lst (Zelda27.66 build):
+-- Addresses pulled from builds/Title.lst (Zelda27.66 build):
 --   _mode_transition_check entry  $0000071A
 --   _mode_transition_check clr14  $00000746
 --   InitMode1_Sub1 entry          $0000A586

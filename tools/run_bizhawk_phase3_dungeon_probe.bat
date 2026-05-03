@@ -3,7 +3,7 @@ setlocal EnableExtensions
 
 for %%I in ("%~dp0..") do set "ROOT=%%~fI"
 set "BIZHAWK=%ROOT%\tools\launch_bizhawk.ps1"
-set "ROM=%ROOT%\builds\whatif.md"
+set "ROM=%ROOT%\builds\Title.md"
 set "SCRIPT=%ROOT%\tools\bizhawk_phase3_dungeon_probe.lua"
 set "OUT=%ROOT%\builds\reports\bizhawk_phase3_dungeon_probe.txt"
 

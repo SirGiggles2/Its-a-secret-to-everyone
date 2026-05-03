@@ -1,4 +1,4 @@
--- capture_main_fs.lua — boot main ROM whatif.md, press Start at frame 120
+-- capture_main_fs.lua — boot main ROM Title.md, press Start at frame 120
 -- (mid title display), advance 180 more frames so fs_main has rendered the
 -- native File Select, capture PNG.
 local OUT = "C:\\tmp\\main_fs_after_start.png"
