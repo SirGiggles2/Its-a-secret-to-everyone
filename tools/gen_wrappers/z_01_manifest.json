@@ -69,11 +69,6 @@
       "sig": "void (unsigned int val, unsigned int slot)"
     },
     {
-      "old": "z01_set_up_common_cave_objects",
-      "new": "corert_set_up_common_cave_objects",
-      "sig": "void (unsigned int x, unsigned int slot, unsigned int y)"
-    },
-    {
       "old": "z01_anim_set_sprite_desc_attrs",
       "new": "corert_anim_set_sprite_desc_attrs",
       "sig": "unsigned char (unsigned int val)"

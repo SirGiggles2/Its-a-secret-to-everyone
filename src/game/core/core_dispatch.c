@@ -9,6 +9,7 @@
 #include "object_state.h"      /* OBJ_STATE */
 #include "room_state.h"        /* ROOM_TRANSFER_BUF_SELECT */
 #include "link_state.h"        /* DEATH_FRAME_COUNTER */
+#include "object_state.h"      /* OBJ_TILE_X/_Y, OBJ_STATE */
 
 void core_unhalt_link(void)
 {
@@ -81,4 +82,25 @@ void core_cue_transfer_blank_person_wares(void)
     /* drain at core_runtime.c:191-193. NES UpdatePersonState_CueTransferBlankPersonWares:
      *   LDA #$2A / JMP CueTransferBufAndAdvanceState  -- selector 42 + state++ */
     core_cue_transfer_buf_and_advance_state(42u);
+}
+
+void core_set_up_common_cave_objects(unsigned int x, unsigned int slot,
+                                     unsigned int y)
+{
+    /* drain at core_runtime.c:87-99. NES SetUpCommonCaveObjects (Z_01.asm).
+     * Seeds the cave's 3 object slots (slot, slot+1, slot+2) with
+     * tile-grid coords + walk frame state. */
+    OBJ_TILE_X(slot) = (uint8_t)x;
+    OBJ_TILE_Y(slot) = (uint8_t)y;
+    RAM(0x0485 + slot) = 0u;
+    RAM(0x04BF + slot) = 0x81u;
+    OBJ_STATE(0) = 64u;
+    /* ROOM_OBJ_TYPE(slot) = RAM($0350 + slot). For NES InitCave path,
+     * slots 1 and 2 are filled with type 64. */
+    RAM(0x0350 + 1u) = 64u;
+    RAM(0x0350 + 2u) = 64u;
+    RAM(0x0071 + slot) = 72u;
+    RAM(0x0072 + slot) = 0xA8u;
+    RAM(0x0085 + slot) = (uint8_t)y;
+    RAM(0x0086 + slot) = (uint8_t)y;
 }

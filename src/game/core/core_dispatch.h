@@ -53,6 +53,14 @@ void core_take_5_rupees(void);
  * core_runtime.c:191-193. */
 void core_cue_transfer_blank_person_wares(void);
 
+/* Initialize the 3 cave-person object slots with their tile + grid +
+ * tilebuf positions. NES SetUpCommonCaveObjects (Z_01.asm). drain at
+ * core_runtime.c:87-99. Used by NES InitCave to seed the cave's
+ * primary, ware, and rupee-display object slots before InitCaveContinue
+ * loads the per-cave-id text/wares tables. */
+void core_set_up_common_cave_objects(unsigned int x, unsigned int slot,
+                                     unsigned int y);
+
 #ifdef __cplusplus
 }
 #endif

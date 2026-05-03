@@ -70,10 +70,6 @@ void z01_set_boomerang_speed(unsigned int val, unsigned int slot) {
     corert_set_boomerang_speed(val, slot);
 }
 
-void z01_set_up_common_cave_objects(unsigned int x, unsigned int slot, unsigned int y) {
-    corert_set_up_common_cave_objects(x, slot, y);
-}
-
 unsigned char z01_anim_set_sprite_desc_attrs(unsigned int val) {
     return corert_anim_set_sprite_desc_attrs(val);
 }
@@ -975,6 +971,15 @@ void z01_cue_transfer_blank_person_wares(void) {
     core_cue_transfer_blank_person_wares();
 #else
     corert_cue_transfer_blank_person_wares();
+#endif
+}
+
+void z01_set_up_common_cave_objects(unsigned int x, unsigned int slot,
+                                    unsigned int y) {
+#ifdef NATIVE_CORE
+    core_set_up_common_cave_objects(x, slot, y);
+#else
+    corert_set_up_common_cave_objects(x, slot, y);
 #endif
 }
 
