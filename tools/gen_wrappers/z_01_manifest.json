@@ -194,16 +194,6 @@
       "sig": "unsigned char (unsigned int val)"
     },
     {
-      "old": "z01_set_room_flag_uw_item_state",
-      "new": "progrt_set_room_flag_uw_item_state",
-      "sig": "void (void)"
-    },
-    {
-      "old": "z01_get_room_flag_uw_item_state",
-      "new": "progrt_get_room_flag_uw_item_state",
-      "sig": "unsigned char (void)"
-    },
-    {
       "old": "z01_play_effect",
       "new": "corert_play_effect",
       "sig": "void (unsigned int val)"

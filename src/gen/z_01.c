@@ -170,14 +170,6 @@ unsigned char z01_negate(unsigned int val) {
     return corert_negate(val);
 }
 
-void z01_set_room_flag_uw_item_state(void) {
-    progrt_set_room_flag_uw_item_state();
-}
-
-unsigned char z01_get_room_flag_uw_item_state(void) {
-    return progrt_get_room_flag_uw_item_state();
-}
-
 void z01_play_effect(unsigned int val) {
     corert_play_effect(val);
 }
@@ -862,6 +854,32 @@ void z01_move_shot(unsigned char direction, unsigned int slot) {
     object_move_shot(direction, slot);
 #else
     objrt_move_shot(direction, slot);
+#endif
+}
+
+/* Phase 4 native progress subsystem cutover gate — NATIVE_PROGRESS.
+ *
+ * First batch: room-flag persistence pair that unblocks Phase 3 cave
+ * stubs (set_room_flag_uw_item_state was a STAGE-1 STUB in cave's
+ * talk_shop / hint_or_money_game ports). Drain MATCH per finding 4_4n.
+ */
+#ifdef NATIVE_PROGRESS
+#include "world/progress_dispatch.h"
+#endif
+
+void z01_set_room_flag_uw_item_state(void) {
+#ifdef NATIVE_PROGRESS
+    progress_set_room_flag_uw_item_state();
+#else
+    progrt_set_room_flag_uw_item_state();
+#endif
+}
+
+unsigned char z01_get_room_flag_uw_item_state(void) {
+#ifdef NATIVE_PROGRESS
+    return progress_get_room_flag_uw_item_state();
+#else
+    return progrt_get_room_flag_uw_item_state();
 #endif
 }
 
