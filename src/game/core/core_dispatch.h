@@ -74,6 +74,14 @@ void core_destroy_whirlwind(unsigned int slot);
  * DestroyMonster. drain at core_runtime.c:374. */
 void core_destroy_monster(unsigned int slot);
 
+/* Initialize a "simple" object slot from ZP scratch ($00 = type, $01 =
+ * status flags). NES InitOneSimpleObject. drain at core_runtime.c:36-40. */
+void core_init_one_simple_object(unsigned int slot);
+
+/* Initialize a whirlwind in `slot`: copy Link's tile-Y, zero tile-X,
+ * set OBJ_TYPE to 46. NES SetUpWhirlwind. drain at core_runtime.c:64-68. */
+void core_set_up_whirlwind(unsigned int slot);
+
 #ifdef __cplusplus
 }
 #endif

@@ -109,6 +109,26 @@ void core_destroy_monster(unsigned int slot)
     core_destroy_object_wram(0u, slot);
 }
 
+void core_init_one_simple_object(unsigned int slot)
+{
+    /* drain at core_runtime.c:36-40. NES InitOneSimpleObject:
+     *   $00 holds object type, $01 holds status flag byte. */
+    OBJ_TYPE(slot)     = (uint8_t)RAM(0x0000u);
+    RAM(0x0492 + slot) = 0u;
+    RAM(0x04BF + slot) = (uint8_t)RAM(0x0001u);
+}
+
+void core_set_up_whirlwind(unsigned int slot)
+{
+    /* drain at core_runtime.c:64-68. NES SetUpWhirlwind:
+     *   OBJ_TILE_Y(slot) = OBJ_TILE_Y(0)  -- copy Link's tile Y
+     *   OBJ_TILE_X(slot) = 0
+     *   OBJ_TYPE(slot)   = 46             -- whirlwind type. */
+    OBJ_TILE_Y(slot) = (uint8_t)OBJ_TILE_Y(0);
+    OBJ_TILE_X(slot) = 0u;
+    OBJ_TYPE(slot)   = 46u;
+}
+
 void core_set_up_common_cave_objects(unsigned int x, unsigned int slot,
                                      unsigned int y)
 {

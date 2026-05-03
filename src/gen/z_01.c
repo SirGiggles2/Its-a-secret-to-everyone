@@ -46,14 +46,6 @@ unsigned char z01_silence_all_sound(void) {
     return corert_silence_all_sound();
 }
 
-void z01_init_one_simple_object(unsigned int slot) {
-    corert_init_one_simple_object(slot);
-}
-
-void z01_set_up_whirlwind(unsigned int slot) {
-    corert_set_up_whirlwind(slot);
-}
-
 void z01_uw_person_complex_state_delay_and_quit(void) {
     corert_uw_person_complex_state_delay_and_quit();
 }
@@ -988,6 +980,22 @@ void z01_destroy_whirlwind(unsigned int slot) {
     core_destroy_whirlwind(slot);
 #else
     corert_destroy_whirlwind(slot);
+#endif
+}
+
+void z01_init_one_simple_object(unsigned int slot) {
+#ifdef NATIVE_CORE
+    core_init_one_simple_object(slot);
+#else
+    corert_init_one_simple_object(slot);
+#endif
+}
+
+void z01_set_up_whirlwind(unsigned int slot) {
+#ifdef NATIVE_CORE
+    core_set_up_whirlwind(slot);
+#else
+    corert_set_up_whirlwind(slot);
 #endif
 }
 

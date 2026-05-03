@@ -39,16 +39,6 @@
       "sig": "unsigned char (void)"
     },
     {
-      "old": "z01_init_one_simple_object",
-      "new": "corert_init_one_simple_object",
-      "sig": "void (unsigned int slot)"
-    },
-    {
-      "old": "z01_set_up_whirlwind",
-      "new": "corert_set_up_whirlwind",
-      "sig": "void (unsigned int slot)"
-    },
-    {
       "old": "z01_uw_person_complex_state_delay_and_quit",
       "new": "corert_uw_person_complex_state_delay_and_quit",
       "sig": "void (void)"
