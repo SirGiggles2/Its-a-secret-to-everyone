@@ -4,12 +4,16 @@
 #include "world_state.h"
 #include "item_state.h"
 #include "combat_state.h"
+#include "scratch_state.h"
 
-/* Shared state for save/progress/map/curtain owned C. */
-#define SAVEFILE_PTR_LO                 RAM(0x00)
-#define SAVEFILE_PTR_HI                 RAM(0x01)
-#define SAVEFILE_MASK_LO                RAM(0x08)
-#define SAVEFILE_MASK_HI                RAM(0x09)
+/* Shared state for save/progress/map/curtain owned C.
+ *
+ * SAVEFILE_* zero-page bytes are scratch-time uses of $00/$01/$08/$09;
+ * aliased through scratch_state.h canonical names. */
+#define SAVEFILE_PTR_LO                 ZP_TMP0
+#define SAVEFILE_PTR_HI                 ZP_TMP1
+#define SAVEFILE_MASK_LO                ZP_TMP8
+#define SAVEFILE_MASK_HI                ZP_TMP9
 
 #define CUR_LEVEL                      RAM(0x0010)
 #define FRAME_COUNTER                  RAM(0x0015)

@@ -31,13 +31,10 @@ for %%I in ("%~dp0.") do set "ROOT=%%~fI"
 set "PYTHON="
 set "VASM="
 rem Phase 0 rename (master plan Task 0.2): whatif -> Title.
-rem Compatibility aliases below preserve old whatif.* paths until every
-rem probe and launcher migrates. Aliases removed in Phase 16.5.
+rem whatif.* aliases REMOVED 2026-05-02 (user hard rule).
 set "RAW_ROM=%ROOT%\builds\Title_raw.md"
 set "OUT_ROM=%ROOT%\builds\Title.md"
 set "OUT_LST=%ROOT%\builds\Title.lst"
-set "ALIAS_ROM=%ROOT%\builds\whatif.md"
-set "ALIAS_LST=%ROOT%\builds\whatif.lst"
 
 rem ---------------------------------------------------------------------------
 rem Locate Python
@@ -557,10 +554,10 @@ if "%BIZHAWK_EXE%"=="" (
     del /q "%ROOT%\tools\intro_test\out\phase_sequence.done" 2>nul
     rem Copy script and ROM into BizHawk dir (path-with-spaces workaround).
     copy /y "%ROOT%\tools\intro_test\probe_phase_sequence.lua" "%BIZHAWK_DIR%\probe_phase_sequence.lua" >nul 2>nul
-    copy /y "%OUT_ROM%" "%BIZHAWK_DIR%\whatif.md" >nul 2>nul
+    copy /y "%OUT_ROM%" "%BIZHAWK_DIR%\Title.md" >nul 2>nul
     rem Launch BizHawk with array-style args via PowerShell; set env var so
     rem the Lua script can resolve the out/ path back to the repo.
-    powershell -Command "& { $env:CODEX_BIZHAWK_ROOT='%ROOT%'; Start-Process -Wait -FilePath '%BIZHAWK_EXE%' -ArgumentList @('--lua=probe_phase_sequence.lua','whatif.md') -WorkingDirectory '%BIZHAWK_DIR%' }"
+    powershell -Command "& { $env:CODEX_BIZHAWK_ROOT='%ROOT%'; Start-Process -Wait -FilePath '%BIZHAWK_EXE%' -ArgumentList @('--lua=probe_phase_sequence.lua','Title.md') -WorkingDirectory '%BIZHAWK_DIR%' }"
     if errorlevel 1 (
         echo [5/5] WARNING: BizHawk exited non-zero - probe may be incomplete
     )
@@ -576,10 +573,11 @@ echo.
 echo Build complete: %OUT_ROM%
 echo Listing:        %OUT_LST%
 
-rem Phase 0 compatibility aliases (master plan Task 0.2): copy Title.* to whatif.*
-rem until every probe and launcher migrates. Aliases removed in Phase 16.5.
-copy /y "%OUT_ROM%" "%ALIAS_ROM%" >nul 2>nul
-copy /y "%OUT_LST%" "%ALIAS_LST%" >nul 2>nul
+rem ---------------------------------------------------------------------------
+rem whatif.* alias REMOVED 2026-05-02 (user hard rule). build.bat must NEVER
+rem emit whatif.md, whatif.lst, or whatif.elf again. Probes / launchers that
+rem still reference whatif.* must migrate to Title.* before they can run.
+rem ---------------------------------------------------------------------------
 
 rem ---------------------------------------------------------------------------
 rem [6] Git auto-commit — builds/ is gitignored as of debate 002 cleanup; this
