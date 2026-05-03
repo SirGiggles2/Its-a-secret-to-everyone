@@ -266,10 +266,6 @@ void z01_check_init_whirlwind_and_begin_update(void) {
     trprt_check_init_whirlwind_and_begin_update();
 }
 
-void z01_advance_teleporting_level_index(void) {
-    trprt_advance_teleporting_level_index();
-}
-
 void z01_init_underworld_person_a(unsigned int slot) {
     uwrt_init_underworld_person_a(slot);
 }
@@ -908,6 +904,20 @@ void z01_check_power_triforce_fanfare(void) {
     progress_check_power_triforce_fanfare();
 #else
     progrt_check_power_triforce_fanfare();
+#endif
+}
+
+/* Phase 4 native trap subsystem cutover gate — NATIVE_TRAP. First port:
+ * advance_teleporting_level_index trivial. Drain MATCH per finding 4_5n. */
+#ifdef NATIVE_TRAP
+#include "world/trap_dispatch.h"
+#endif
+
+void z01_advance_teleporting_level_index(void) {
+#ifdef NATIVE_TRAP
+    trap_advance_teleporting_level_index();
+#else
+    trprt_advance_teleporting_level_index();
 #endif
 }
 

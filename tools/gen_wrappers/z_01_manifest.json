@@ -314,11 +314,6 @@
       "sig": "void (void)"
     },
     {
-      "old": "z01_advance_teleporting_level_index",
-      "new": "trprt_advance_teleporting_level_index",
-      "sig": "void (void)"
-    },
-    {
       "old": "z01_init_underworld_person_a",
       "new": "uwrt_init_underworld_person_a",
       "sig": "void (unsigned int slot)"
