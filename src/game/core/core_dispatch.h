@@ -164,6 +164,25 @@ unsigned char core_add1_to_int16_at_4(void);
  * else 0. NES Sub1FromInt16At4. drain at core_runtime.c:315-323. */
 unsigned int core_sub1_from_int16_at4(void);
 
+/* Quit complex UW person state if delay timer expired (RAM($0029) == 0
+ * → ROOM_OBJ_TYPE(0) = 0). NES UWPersonComplexStateDelayAndQuit.
+ * drain at core_runtime.c:70-74. */
+void core_uw_person_complex_state_delay_and_quit(void);
+
+/* Set boomerang speed for a slot. Halves speed + decrements timer if
+ * state nibble is $40. NES SetBoomerangSpeed. drain at core_runtime.c:76-85. */
+void core_set_boomerang_speed(unsigned int val, unsigned int slot);
+
+/* Compute PPU nametable address from screen pixel position in
+ * RAM($02 = Y, $03 = X). Result lands at RAM($00/$01) as a 16-bit
+ * PPU address. NES MapScreenPosToPpuAddr. drain at core_runtime.c:138-143. */
+void core_map_screen_pos_to_ppu_addr(void);
+
+/* Reset RAM($0416) (CAVE_TEXT_CHAR_INDEX) to 0 and increment
+ * OBJ_STATE(1) (cave-person state machine). NES
+ * UpdatePersonState_ResetCharOffset. drain at core_runtime.c:150-153. */
+void core_update_person_state_reset_char_offset(void);
+
 #ifdef __cplusplus
 }
 #endif

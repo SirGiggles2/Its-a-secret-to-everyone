@@ -30,24 +30,8 @@ void z01_init_underworld_person_do_nothing(void) {}
 #include "combat_runtime.h"
 #include "link_collision_runtime.h"
 
-void z01_uw_person_complex_state_delay_and_quit(void) {
-    corert_uw_person_complex_state_delay_and_quit();
-}
-
-void z01_set_boomerang_speed(unsigned int val, unsigned int slot) {
-    corert_set_boomerang_speed(val, slot);
-}
-
-void z01_map_screen_pos_to_ppu_addr(void) {
-    corert_map_screen_pos_to_ppu_addr();
-}
-
 void z01_reset_shove_info_and_inv_timer(unsigned int slot) {
     corert_reset_shove_info_and_inv_timer(slot);
-}
-
-void z01_update_person_state_reset_char_offset(void) {
-    corert_update_person_state_reset_char_offset();
 }
 
 void z01_init_underworld_person_b(unsigned int slot) {
@@ -1100,6 +1084,38 @@ unsigned int z01_sub1_from_int16_at4(void) {
     return core_sub1_from_int16_at4();
 #else
     return corert_sub1_from_int16_at4();
+#endif
+}
+
+void z01_uw_person_complex_state_delay_and_quit(void) {
+#ifdef NATIVE_CORE
+    core_uw_person_complex_state_delay_and_quit();
+#else
+    corert_uw_person_complex_state_delay_and_quit();
+#endif
+}
+
+void z01_set_boomerang_speed(unsigned int val, unsigned int slot) {
+#ifdef NATIVE_CORE
+    core_set_boomerang_speed(val, slot);
+#else
+    corert_set_boomerang_speed(val, slot);
+#endif
+}
+
+void z01_map_screen_pos_to_ppu_addr(void) {
+#ifdef NATIVE_CORE
+    core_map_screen_pos_to_ppu_addr();
+#else
+    corert_map_screen_pos_to_ppu_addr();
+#endif
+}
+
+void z01_update_person_state_reset_char_offset(void) {
+#ifdef NATIVE_CORE
+    core_update_person_state_reset_char_offset();
+#else
+    corert_update_person_state_reset_char_offset();
 #endif
 }
 

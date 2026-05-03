@@ -346,6 +346,43 @@ unsigned int core_sub1_from_int16_at4(void)
     return borrow ? 0u : CARRY_SET;
 }
 
+void core_uw_person_complex_state_delay_and_quit(void)
+{
+    /* drain at core_runtime.c:70-74. NES UWPersonComplexStateDelayAndQuit. */
+    if (RAM(0x0029u) == 0u) {
+        RAM(0x0350u) = 0u;  /* ROOM_OBJ_TYPE(0) */
+    }
+}
+
+void core_set_boomerang_speed(unsigned int val, unsigned int slot)
+{
+    /* drain at core_runtime.c:76-85. NES SetBoomerangSpeed. */
+    RAM(0x03BC + slot) = (uint8_t)val;
+    if ((OBJ_STATE(slot) & 0xF0u) == 0x40u) {
+        RAM(0x03BC + slot) = (uint8_t)(RAM(0x03BC + slot) >> 1);
+        RAM(0x0380 + slot) = (uint8_t)(RAM(0x0380 + slot) - 1u);
+        if (RAM(0x0380 + slot) == 0u) {
+            OBJ_STATE(slot) = 80u;
+        }
+    }
+}
+
+void core_map_screen_pos_to_ppu_addr(void)
+{
+    /* drain at core_runtime.c:138-143. NES MapScreenPosToPpuAddr. */
+    const unsigned char y = (unsigned char)RAM(0x0002u);
+    const unsigned char x = (unsigned char)RAM(0x0003u);
+    RAM(0x0000u) = (uint8_t)(0x20u | (y >> 6));
+    RAM(0x0001u) = (uint8_t)(((y << 2) & 0xE0u) | (x >> 3));
+}
+
+void core_update_person_state_reset_char_offset(void)
+{
+    /* drain at core_runtime.c:150-153. */
+    RAM(0x0416u) = 0u;  /* CAVE_TEXT_CHAR_INDEX */
+    OBJ_STATE(1) = (uint8_t)(OBJ_STATE(1) + 1u);
+}
+
 void core_set_up_common_cave_objects(unsigned int x, unsigned int slot,
                                      unsigned int y)
 {

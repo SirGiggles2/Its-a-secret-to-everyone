@@ -19,29 +19,9 @@
   ],
   "symbols": [
     {
-      "old": "z01_uw_person_complex_state_delay_and_quit",
-      "new": "corert_uw_person_complex_state_delay_and_quit",
-      "sig": "void (void)"
-    },
-    {
-      "old": "z01_set_boomerang_speed",
-      "new": "corert_set_boomerang_speed",
-      "sig": "void (unsigned int val, unsigned int slot)"
-    },
-    {
-      "old": "z01_map_screen_pos_to_ppu_addr",
-      "new": "corert_map_screen_pos_to_ppu_addr",
-      "sig": "void (void)"
-    },
-    {
       "old": "z01_reset_shove_info_and_inv_timer",
       "new": "corert_reset_shove_info_and_inv_timer",
       "sig": "void (unsigned int slot)"
-    },
-    {
-      "old": "z01_update_person_state_reset_char_offset",
-      "new": "corert_update_person_state_reset_char_offset",
-      "sig": "void (void)"
     },
     {
       "old": "z01_init_underworld_person_b",
