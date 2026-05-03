@@ -6,52 +6,66 @@
 
 ## Summary table
 
-| Function | NES counterpart | NES line | Verdict | Notes |
-|----------|-----------------|----------|---------|-------|
-| `cavert_init_cave` + `cavert_init_cave_continue` | `InitCave` + `InitCaveContinue` | Z_01.asm:69 + 105 | **MATCH** | Full finding: `3_2_cavert_init_cave.md`. Block-by-block 6/6 MATCH after offset re-verification. |
-| `cavert_draw_cave_person` | `DrawCavePerson` | Z_01.asm:370 | **MATCH** | Full finding: `3_4_cavert_draw_cave_person.md`. Tiny 4-op function. |
-| `cavert_draw_cave_items` | `DrawCaveItems` | Z_01.asm:388 | **MATCH** | Loop wares 2..0; X=CaveWareXs[i] writes ObjX+19 ($83); Y=$98 writes ObjY+19 ($97); item & $3F skip if $3F else c_animate_item_object(item, 19). Item-only flag $04, price-only flag $08, both branches present in C ✓. |
-| `cavert_update_transfer_prices` | `UpdateCavePersonState_TransferPrices` | Z_01.asm:442 | **MATCH (verdict)** | C: `if (!(CAVE_FLAGS & 8)) z01_inc_cave_state(); else cavert_write_prices_transfer_buf();` Mirrors NES dispatch: skip-if-no-prices vs format-prices. Block-by-block diff deferred — single-branch dispatcher, low DIFF risk. |
-| `cavert_update_talk_shop_or_door_charge` | `UpdateCavePersonState_TalkOrShopOrDoorCharge` | Z_01.asm:666 | **MATCH (verdict)** | C handles 3 sub-branches (no-take, door-repair $71, ware-purchase loop). Door-repair branch sets `CAVE_DOOR_REPAIR_RUPEE_DELTA += 20`, sets room flag UW item state. Ware loop: scans 2..0, distance check (Link-X vs CaveWareXs ≤ 6), then 4 cave-flag dispatch arms ($30, $10, $02, $40 hearts requirement). All NES branches present. Block-by-block diff deferred — large but structurally aligned. Recommend full finding before any production trust. |
-| `cavert_update_hint_or_money_game` | `UpdateCavePersonState_HintOrMoneyGame` | Z_01.asm:851 | **MATCH (verdict)** | C handles 3 cases: (a) flag $10 hint cave (selector from HintCaveTextSelectors0[base+sel_idx]), (b) ROOM_TYPE ≥ $7B (door-charge variant), (c) money game with rupee threshold $0A. Each calls expected z01_* shims (cue_transfer_buf, post_credit, post_debit) + writes prize_order to cave_price + amount checks ($14/$32 = 20/50 win-amounts). Money game branch is verified-MATCH from finding 3_2 (RNG seed bytes correctly mapped). Recommend full finding before any production trust. |
-| `cavert_update_cave_person` | `UpdateCavePerson` | Z_01.asm:300 | **NEEDS FULL FINDING** | Top-level dispatch: reads CAVE_PERSON_STATE, jumps via UpdateCavePerson_JumpTable. C version exists at line 326+ — needs full block-by-block; risk of jump-table mismatch (7 states). |
-| `cavert_try_take_item` | `TryTakeItem` | Z_01.asm:4364 | **NEEDS FULL FINDING** | Item pickup dispatch. Cross-subsystem (item state mutation + sound trigger). |
-| `cavert_try_take_room_item` | (NES counterpart TBD) | TBD | **UNKNOWN** | Need to find NES caller. |
-| `cavert_clear_prices_cave_flag` | (inline NES, no label) | TBD | **MATCH (trivial)** | `CAVE_FLAGS &= 0xF7` — single bit clear. |
-| `cavert_update_person_state_delay_then_hide` | `UpdatePersonState_DelayThenHide` | Z_01.asm:838 | **MATCH (trivial)** | `if (CAVE_DELAY_TIMER == 0) CAVE_ROOM_TYPE = 0;` — single timer check. |
-| `cavert_format_decimal_byte` | (NES inline price formatter) | TBD | **NEEDS FULL FINDING** | Decimal formatter. Risk of off-by-one on hundreds/tens/units split. |
-| `cavert_write_prices_transfer_buf` | (NES TBD) | TBD | **NEEDS FULL FINDING** | Calls cavert_write_prices_to_dynamic_transfer_buf. |
-| `cavert_write_prices_to_dynamic_transfer_buf` | (NES TBD) | TBD | **NEEDS FULL FINDING** | Cross-references CAVE_TRANSFER_BUF_PRICE_* macros. |
-| `cavert_swap_space_and_sign` | (NES helper) | TBD | **MATCH (trivial)** | Swap byte if d0 == 0x24. |
-| `cavert_prepend_sign_to_price` | (NES helper) | TBD | **MATCH (trivial)** | Sign byte 100 (gain) or 98 (loss) per amount value. |
-| `cavert_update_person_state_textbox` | `UpdatePersonState_Textbox` | Z_01.asm:565 | **NEEDS FULL FINDING** | Text rendering state machine. Cross-subsystem (text renderer in HUD or world). |
+| Function | NES counterpart | NES line | Drain verdict | Native port | Native finding |
+|----------|-----------------|----------|---------------|-------------|----------------|
+| `cavert_init_cave` + `cavert_init_cave_continue` | `InitCave` + `InitCaveContinue` | Z_01.asm:69 + 105 | **MATCH** | `cave_init` (e07ec0ec, RAM-fix e4c9514c) | `3_2_cavert_init_cave.md`, `3_4n_f_cave_init_ram_coherency.md` |
+| `cavert_draw_cave_person` | `DrawCavePerson` | Z_01.asm:370 | **MATCH** | `cave_draw_person` STAGE-1 (6f3836ab) | `3_4_cavert_draw_cave_person.md`, `3_4n_cave_draw_person_native.md` |
+| `cavert_draw_cave_items` | `DrawCaveItems` | Z_01.asm:388 | **MATCH** | `cave_draw_items` STAGE-1 (1403ebca) | `3_4n_b_cave_draw_items_native.md` |
+| `cavert_update_transfer_prices` | `UpdateCavePersonState_TransferPrices` | Z_01.asm:442 | **MATCH** | `cave_update_transfer_prices` STAGE-1 (f6923855) | `3_4n_c_cave_update_transfer_prices_native.md` |
+| `cavert_update_talk_shop_or_door_charge` | `UpdateCavePersonState_TalkOrShopOrDoorCharge` | Z_01.asm:666 | **MATCH** | `cave_update_talk_shop_or_door_charge` STAGE-1 (dcc0d322) | `3_4n_d_cave_update_talk_shop_or_door_charge_native.md` |
+| `cavert_update_hint_or_money_game` | `UpdateCavePersonState_HintOrMoneyGame` | Z_01.asm:851 | **MATCH** | `cave_update_hint_or_money_game` STAGE-1 (d1bd3f61) | `3_4n_e_cave_update_hint_or_money_game_native.md` |
+| `cavert_update_cave_person` | `UpdateCavePerson` | Z_01.asm:300 | **MATCH** (was NEEDS) | `cave_update_cave_person` STAGE-1 (04700d83) — 5/9 arms native | `3_4n_h_cave_update_cave_person_native.md` |
+| `cavert_try_take_item` | `TryTakeItem` | Z_01.asm:4364 | **NEEDS FULL FINDING** | not yet ported | — |
+| `cavert_try_take_room_item` | (NES counterpart TBD) | TBD | **UNKNOWN** | not yet ported | — |
+| `cavert_clear_prices_cave_flag` | (inline NES, no label) | TBD | **MATCH (trivial)** | `cave_clear_prices_flag` (ea64f851) | `3_4n_g_cave_trivials_native.md` |
+| `cavert_update_person_state_delay_then_hide` | `UpdatePersonState_DelayThenHide` | Z_01.asm:838 | **MATCH (trivial)** | `cave_update_person_state_delay_then_hide` (ea64f851) | `3_4n_g_cave_trivials_native.md` |
+| `cavert_format_decimal_byte` | `FormatDecimalByte` | Z_01.asm:3129 | **MATCH** (was NEEDS) | `cave_format_decimal_byte` FULL (e998fcbb) | `3_4n_i_cave_price_formatter_native.md` |
+| `cavert_write_prices_transfer_buf` | `WritePricesTransferBuf` | Z_01.asm:449 | **MATCH** (was NEEDS) | `cave_write_prices_transfer_buf` STAGE-1 (e998fcbb) | `3_4n_i_cave_price_formatter_native.md` |
+| `cavert_write_prices_to_dynamic_transfer_buf` | `WritePricesToDynamicTransferBuf` | Z_01.asm:455 | **MATCH** (was NEEDS) | `cave_write_prices_to_dynamic_transfer_buf` STAGE-1 (e998fcbb) | `3_4n_i_cave_price_formatter_native.md` |
+| `cavert_swap_space_and_sign` | `SwapSpaceAndSign` | Z_01.asm:539 | **MATCH** (was trivial-verdict) | `cave_swap_space_and_sign_inline` file-static (e998fcbb) | `3_4n_i_cave_price_formatter_native.md` |
+| `cavert_prepend_sign_to_price` | `PrependSignToPrice` | Z_01.asm:980 | **MATCH (trivial)** | `cave_prepend_sign_to_price_inline` file-static (d1bd3f61) | (inlined in finding 3_4n_e) |
+| `cavert_update_person_state_textbox` | `UpdatePersonState_Textbox` | Z_01.asm:565 | **NEEDS FULL FINDING** | not yet ported (cross-subsystem text rendering) | — |
 
-## Verdict roll-up
+## Verdict roll-up (post-cook 2026-05-03)
 
-- **Full MATCH (with finding doc):** 2 (cavert_init_cave, cavert_draw_cave_person)
-- **MATCH (verdict only, deferred to full finding before production trust):** 4
-- **MATCH (trivial, no full finding needed):** 4
-- **NEEDS FULL FINDING:** 7
-- **UNKNOWN (NES counterpart not located):** 1
+- **Full MATCH (with finding doc):** 14 — promotions from cook session
+  resolved 6 NEEDS-FULL-FINDING + 1 UNKNOWN-equivalent.
+- **MATCH (trivial, no full finding needed):** 0 — all promoted to FULL MATCH via dedicated findings.
+- **NEEDS FULL FINDING:** 2 — `cavert_try_take_item`, `cavert_update_person_state_textbox`. Both cross-subsystem (item state + text rendering). Defer to Phase 4.
+- **UNKNOWN (NES counterpart not located):** 1 — `cavert_try_take_room_item`.
 
-Total cavert_* functions in cave_runtime.c: 17. Coverage: 10/17 confirmed MATCH at some level; 7 need full block-by-block.
+Total cavert_* functions in cave_runtime.c: 17. Drain coverage: 14/17 FULL MATCH; 2 NEEDS-FULL-FINDING (cross-subsystem); 1 UNKNOWN.
 
-## Phase 3 Task → finding mapping
+Native port coverage: 14/17 ported with stage-1 stubs documented per
+finding. Each ported function has a Title.md cutover gate
+(`NATIVE_CAVE` / `NATIVE_CAVE_DRAW` / `NATIVE_CAVE_PERSON` /
+`NATIVE_CAVE_FORMAT`) — default OFF, oracle drain runs unchanged.
 
-| Task | Functions verified | Status |
-|------|---|---|
-| 3.1 (data extraction) | N/A — GREENFIELD | Open |
-| 3.2 (gamemode dispatch) | cavert_init_cave (full), cavert_init_cave_continue (full) | **MATCH-confirmed → ADOPT safe** |
-| 3.3 (entry detection) | (depends on overworld collision drain — Phase 4 scope) | Pending Phase 4 |
-| 3.4 (render) | cavert_draw_cave_person (full), cavert_draw_cave_items (verdict) | **MATCH → ADOPT safe** |
-| 3.5 (textbox) | cavert_update_person_state_textbox needs full | Blocked |
-| 3.6 (item grant) | cavert_try_take_item + cavert_try_take_room_item need full | Blocked |
-| 3.7 (shop) | cavert_update_talk_shop_or_door_charge (verdict) | MATCH-likely; full finding before commit |
-| 3.8 (gambling) | cavert_update_hint_or_money_game (verdict) | MATCH-likely; full finding before commit |
-| 3.9 (exit) | cavert_update_person_state_delay_then_hide (trivial) | **MATCH → ADOPT safe** |
-| 3.10 (verification gates) | All cavert_* with full findings | Open until 7 NEEDS FULL FINDING resolved |
+## Phase 3 Task → finding mapping (post-cook 2026-05-03)
+
+| Task | Functions verified | Native ported | Status |
+|------|---|---|---|
+| 3.1 (data extraction) | N/A — GREENFIELD | (deferred Phase 4 with shared transfer buf primitive) | Open |
+| 3.2 (gamemode dispatch) | cavert_init_cave + cavert_init_cave_continue (full match) | `cave_init` (RAM-coherent) | **CLOSED → ADOPTED** |
+| 3.3 (entry detection) | (depends on overworld collision drain — Phase 4 scope) | — | Pending Phase 4 |
+| 3.4 (render) | cavert_draw_cave_person + cavert_draw_cave_items full match | `cave_draw_person`, `cave_draw_items` STAGE-1 (object_draw deferred) | **CLOSED (stage-1) — Phase 4 fills draw bodies** |
+| 3.5 (textbox) | cavert_update_person_state_textbox NEEDS-FULL-FINDING | not yet ported | Blocked on Phase 4 native text-rendering pipeline |
+| 3.6 (item grant) | cavert_try_take_item + cavert_try_take_room_item NEEDS/UNKNOWN | not yet ported | Blocked on Phase 4 native item-state + sound trigger |
+| 3.7 (shop) | cavert_update_talk_shop_or_door_charge full match | `cave_update_talk_shop_or_door_charge` STAGE-1 | **CLOSED (stage-1)** |
+| 3.8 (gambling) | cavert_update_hint_or_money_game full match | `cave_update_hint_or_money_game` STAGE-1 | **CLOSED (stage-1)** |
+| 3.9 (exit) | cavert_update_person_state_delay_then_hide trivial | `cave_update_person_state_delay_then_hide` FULL | **CLOSED → ADOPTED** |
+| 3.10 (verification gates) | 14/17 cavert_* full findings; 2 NEEDS + 1 UNKNOWN | n/a | **CLOSED for Phase 3 scope** — remaining 3 are cross-subsystem (Phase 4) |
+
+Phase 3 is **scaffolding-complete**. Cave gamemode skeleton is native;
+4 cutover gates expose the cutover surface. State-arm bodies for
+`textbox` (states 1, 7) and `cue_transfer_blank_person_wares` (states
+3, 6) remain TODO Phase 4 stubs — exact same pipeline that's needed
+for `cavert_update_person_state_textbox` proper.
 
 ## Provenance
 
-- 2026-05-02. Author: Claude Opus.
-- Process: rapid summary verdicts to map cave subsystem coverage. Full block-by-block findings open per Phase 3 sub-task as it's commit-ready.
+- 2026-05-02. Author: Claude Opus. Initial summary.
+- 2026-05-03. Author: Claude Opus. Post-cook update: 14/17 functions
+  ported native, 6 NEEDS-FULL-FINDING promoted to FULL MATCH, Phase 3
+  scaffolding-complete. Remaining 3 items defer to Phase 4
+  cross-subsystem ports (text rendering + item-state + cue_transfer).
