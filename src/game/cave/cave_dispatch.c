@@ -25,6 +25,7 @@
 #include "cave_state.h"
 #include "combat_state.h"               /* LINK_HEARTS = RAM(0x066F) */
 #include "world/progress_dispatch.h"    /* progress_set_room_flag_uw_item_state */
+#include "core/core_dispatch.h"         /* core_cue_transfer_buf_and_advance_state */
 
 /* Cave-id of the currently active cave (0 = none active).
  *
@@ -281,7 +282,7 @@ void cave_update_talk_shop_or_door_charge(void)
         RAM(0x0422 + i) = 0xFFu;  /* CAVE_WARE_ITEM(i) = 0xFF */
         /* TODO Phase 4: native cave_take_item(item) (cross-subsystem). */
         (void)item;
-        /* TODO Phase 4: native cue_transfer_buf_and_advance_state(30). */
+        core_cue_transfer_buf_and_advance_state(30u);
         CAVE_DELAY_TIMER = 64u;
         cave_clear_prices_flag_inline();
         return;
@@ -374,8 +375,7 @@ void cave_write_prices_to_dynamic_transfer_buf(unsigned char price_char)
     } while (CAVE_TRANSFER_PRICE_COUNT < CAVE_WARES_PER_ROOM);
 
     CAVE_DELAY_TIMER = 10u;
-    /* TODO Phase 4: native cue_transfer_buf_and_advance_state(10). NES
-     * does `STA TileBufSelector / INC ObjState+1`. */
+    core_cue_transfer_buf_and_advance_state(10u);
 }
 
 void cave_write_prices_transfer_buf(void)
@@ -488,7 +488,7 @@ void cave_update_hint_or_money_game(void)
         CAVE_TEXT_LINE_ADDR_LO = k_textbox_line_addrs_lo[2];
         CAVE_TEXT_CHAR_INDEX  = 0u;
         cave_clear_prices_flag_inline();
-        /* TODO Phase 4: native cue_transfer_buf_and_advance_state(30). */
+        core_cue_transfer_buf_and_advance_state(30u);
         return;
     }
 

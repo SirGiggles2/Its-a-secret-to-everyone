@@ -59,16 +59,6 @@
       "sig": "void (unsigned int slot)"
     },
     {
-      "old": "z01_unhalt_link",
-      "new": "corert_unhalt_link",
-      "sig": "void (void)"
-    },
-    {
-      "old": "z01_inc_cave_state",
-      "new": "corert_inc_cave_state",
-      "sig": "void (void)"
-    },
-    {
       "old": "z01_set_up_whirlwind",
       "new": "corert_set_up_whirlwind",
       "sig": "void (unsigned int slot)"
@@ -134,11 +124,6 @@
       "sig": "void (void)"
     },
     {
-      "old": "z01_cue_transfer_buf_and_advance_state",
-      "new": "corert_cue_transfer_buf_and_advance_state",
-      "sig": "void (unsigned int val)"
-    },
-    {
       "old": "z01_take_one_rupee",
       "new": "corert_take_one_rupee",
       "sig": "void (void)"
@@ -177,11 +162,6 @@
       "old": "z01_get_opposite_dir",
       "new": "corert_get_opposite_dir",
       "sig": "unsigned int (unsigned int dir)"
-    },
-    {
-      "old": "z01_abs",
-      "new": "corert_abs",
-      "sig": "unsigned char (unsigned int val)"
     },
     {
       "old": "z01_negate",

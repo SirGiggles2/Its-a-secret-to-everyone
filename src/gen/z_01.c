@@ -62,14 +62,6 @@ void z01_destroy_whirlwind(unsigned int slot) {
     corert_destroy_whirlwind(slot);
 }
 
-void z01_unhalt_link(void) {
-    corert_unhalt_link();
-}
-
-void z01_inc_cave_state(void) {
-    corert_inc_cave_state();
-}
-
 void z01_set_up_whirlwind(unsigned int slot) {
     corert_set_up_whirlwind(slot);
 }
@@ -122,10 +114,6 @@ void z01_begin_update_mode(void) {
     corert_begin_update_mode();
 }
 
-void z01_cue_transfer_buf_and_advance_state(unsigned int val) {
-    corert_cue_transfer_buf_and_advance_state(val);
-}
-
 void z01_take_one_rupee(void) {
     corert_take_one_rupee();
 }
@@ -156,10 +144,6 @@ void z01_take_5_rupees(void) {
 
 unsigned int z01_get_opposite_dir(unsigned int dir) {
     return corert_get_opposite_dir(dir);
-}
-
-unsigned char z01_abs(unsigned int val) {
-    return corert_abs(val);
 }
 
 unsigned char z01_negate(unsigned int val) {
@@ -930,6 +914,47 @@ void z01_advance_teleporting_level_index(void) {
     trap_advance_teleporting_level_index();
 #else
     trprt_advance_teleporting_level_index();
+#endif
+}
+
+/* Phase 4 native core subsystem cutover gate — NATIVE_CORE.
+ *
+ * First batch: 4 trivial helpers that unblock Phase 3 cave deferred
+ * stubs. Drain MATCH per finding 4_6n. Independent gate from prior
+ * gates. */
+#ifdef NATIVE_CORE
+#include "core/core_dispatch.h"
+#endif
+
+void z01_unhalt_link(void) {
+#ifdef NATIVE_CORE
+    core_unhalt_link();
+#else
+    corert_unhalt_link();
+#endif
+}
+
+void z01_inc_cave_state(void) {
+#ifdef NATIVE_CORE
+    core_inc_cave_state();
+#else
+    corert_inc_cave_state();
+#endif
+}
+
+void z01_cue_transfer_buf_and_advance_state(unsigned int val) {
+#ifdef NATIVE_CORE
+    core_cue_transfer_buf_and_advance_state(val);
+#else
+    corert_cue_transfer_buf_and_advance_state(val);
+#endif
+}
+
+unsigned char z01_abs(unsigned int val) {
+#ifdef NATIVE_CORE
+    return core_abs(val);
+#else
+    return corert_abs(val);
 #endif
 }
 
