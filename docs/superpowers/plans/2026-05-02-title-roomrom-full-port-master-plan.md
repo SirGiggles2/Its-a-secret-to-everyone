@@ -759,7 +759,9 @@ Gates:
 
 **Goal:** Make the overworld stateful and traversable beyond basic walking.
 
-**Worktree:** Active RoomRom implementation for this phase happens in `C:\Users\Jake Diggity\Documents\GitHub\FINAL TRY-roomrom-s1`; do not edit RoomRom phase files from the main worktree.
+**Worktree:** Active RoomRom implementation. Substrate (`src/state/world_state.h`, `src/state/save_state.h`) lands in main per Rule WT-1; gameplay wire-up in RoomRom; rebase clean.
+
+**Drain coverage entry point (Rule D1):** Run `python tools/audit/drain_coverage.py --phase 4` before opening any sub-task. Existing drain candidates: `src/game/world/{world_runtime, object_runtime, sprite_runtime, trap_runtime, progress_runtime, c_move_object}.c`; `src/game/room/{room_runtime, room_load_runtime, room_mode_runtime, room_object_runtime, room_player_runtime, room_transfer_runtime}.c`. NES asm: `reference/aldonunez/Z_02.asm`, `Z_05.asm` overworld + room sections. See `docs/audit/drain/world.md` and `docs/audit/drain/room.md`. Each sub-task below MUST fill 4-line header (NES source / Drained C / Coverage / Stance) before its body — `drain_coverage.py` exit 0 gate at phase entry.
 
 ### Task 4.0: SRAM Map Foundation (moved up from Phase 9)
 
@@ -885,7 +887,9 @@ Gates:
 
 **Goal:** Make dungeons fully navigable and stateful before enemy/boss completion.
 
-**Worktree:** Active RoomRom implementation for this phase happens in `C:\Users\Jake Diggity\Documents\GitHub\FINAL TRY-roomrom-s1`; do not edit RoomRom phase files from the main worktree.
+**Worktree:** Active RoomRom implementation. Substrate (`src/state/room_state.h`, `src/state/collision_state.h`) lands in main per Rule WT-1.
+
+**Drain coverage entry point (Rule D1):** Run `python tools/audit/drain_coverage.py --phase 5` before opening any sub-task. Existing drain candidates: `src/game/room/{room_runtime, room_load_runtime, room_mode_runtime, room_object_runtime, room_player_runtime, room_transfer_runtime}.c` (heavily used by dungeon dispatch); `src/game/cave/uw_person_runtime.c` (UW NPCs). NES asm: `reference/aldonunez/Z_05.asm` (dungeon-heavy). See `docs/audit/drain/room.md`. Each sub-task below MUST fill 4-line header before its body.
 
 ### Task 5.1: Dungeon State Model
 
@@ -1000,7 +1004,9 @@ Gates:
 
 **Goal:** Complete player behavior and all usable item mechanics.
 
-**Worktree:** Active RoomRom implementation for this phase happens in `C:\Users\Jake Diggity\Documents\GitHub\FINAL TRY-roomrom-s1`; do not edit RoomRom phase files from the main worktree.
+**Worktree:** Active RoomRom implementation. Substrate (`src/state/link_state.h`, `src/state/item_state.h`, `src/state/combat_state.h`) lands in main per Rule WT-1.
+
+**Drain coverage entry point (Rule D1):** Run `python tools/audit/drain_coverage.py --phase 6` before opening any sub-task. Existing drain candidates: `src/game/items/{item_runtime, weapon_runtime}.c`; `src/game/combat/{combat_runtime, collision_runtime, link_collision_runtime, targeting_runtime}.c`. NES asm: `reference/aldonunez/Z_07.asm` (Link + items + combat heavy). See `docs/audit/drain/{items,combat}.md`. Each sub-task below MUST fill 4-line header before its body.
 
 ### Task 6.1: Promote Link State Names + Define PlayerState[4] Shape
 
@@ -1142,7 +1148,9 @@ Gates:
 
 **Goal:** Implement all non-boss enemies with family-level probes and shared behavior modules.
 
-**Worktree:** Active RoomRom implementation for this phase happens in `C:\Users\Jake Diggity\Documents\GitHub\FINAL TRY-roomrom-s1`; do not edit RoomRom phase files from the main worktree.
+**Worktree:** Active RoomRom implementation. Substrate (`src/state/enemy_state.h` — has 134 in-scope OBJ(0x0412) collisions to resolve via union/tagged-state per Phase 7 promotion) lands in main per Rule WT-1.
+
+**Drain coverage entry point (Rule D1):** Run `python tools/audit/drain_coverage.py --phase 7` before opening any sub-task. Existing drain candidates: `src/game/enemies/{enemy_runtime, enemy_common_runtime, enemy_walker_runtime, enemy_flyer_runtime, enemy_wanderer_runtime, enemy_wallmaster_runtime, enemy_block_runtime, enemy_projectile_runtime, c_wanderer}.c` (15+ enemy family files). NES asm: `reference/aldonunez/Z_04.asm` (enemy AI heavy). See `docs/audit/drain/enemies.md`. Each sub-task below MUST fill 4-line header before its body.
 
 ### Task 7.1: Enemy Framework (BLOCKING for parallel family fan-out)
 
@@ -1239,6 +1247,8 @@ Gates:
 **Goal:** Implement every boss with independent AI, render, damage, and room-clear probes.
 
 **Worktree:** Active RoomRom implementation (boss AI is gameplay scaffold; promoted to `src/game/enemies/bosses/` at Phase 12). State headers live in `src/state/boss_state.h` (substrate, main worktree).
+
+**Drain coverage entry point (Rule D1):** Run `python tools/audit/drain_coverage.py --phase 8` before opening any sub-task. Existing drain candidates: `src/game/enemies/{enemy_boss_runtime, enemy_dodongo_runtime, enemy_gleeok_runtime, enemy_lamnola_runtime, enemy_manhandla_runtime}.c` (per-boss + framework already drained). NES asm: `reference/aldonunez/Z_04.asm` (boss AI). See `docs/audit/drain/enemies.md`. Each sub-task below MUST fill 4-line header before its body.
 
 ### Task 8.1: Boss Framework
 
@@ -1339,6 +1349,8 @@ Gates:
 ## Phase 9: HUD, Options, Save, Menus
 
 **Goal:** Complete user-facing state, persistence, pause/menu systems, and Redux options.
+
+**Drain coverage entry point (Rule D1):** Run `python tools/audit/drain_coverage.py --phase 9` before opening any sub-task. Existing drain candidates: `src/game/hud/hud_runtime.c`; `src/game/world/progress_runtime.c` (save flag mutation drained); `src/game/items/item_runtime.c` (inventory mutation drained). NES asm: `reference/aldonunez/Z_05.asm` (HUD) + `Z_07.asm` (inventory/save). See `docs/audit/drain/{hud,world,items}.md`. Options runtime (Task 9.1) is GREENFIELD per debate 004 (no NES equivalent — NES Zelda 1 has no options menu; Redux adds this). Each remaining sub-task MUST fill 4-line header before its body.
 
 **Worktree:** SPLIT per task (debate 004 ask 6 resolution):
 - **9.1 Options Runtime** → `main` (substrate): `src/game/options/options_state.h`, `src/game/options/options_runtime.c/h`. State is gameplay-mutable (sound on/off, difficulty); UI is FS-adjacent.
