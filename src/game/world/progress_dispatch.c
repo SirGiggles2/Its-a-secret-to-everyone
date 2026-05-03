@@ -11,8 +11,8 @@
 #include "progress_dispatch.h"
 #include "platform_abi.h"      /* RAM, nes_ram[], NES_SRAM_*, OBJ */
 #include "save_state.h"        /* SAVE_ROOM_FLAGS_PTR_LO/HI */
-#include "progress_state.h"    /* SAVEFILE_PTR_LO/HI, SAVEFILE_MASK_LO/HI */
-#include "world_state.h"       /* CUR_ROOM_ID */
+#include "progress_state.h"    /* SAVEFILE_PTR_LO/HI, SAVEFILE_MASK_LO/HI, ROOM_TILE_OBJ_* */
+#include "world_state.h"       /* CUR_ROOM_ID, TRANSFER_BUF_BYTE/POS */
 
 #define NES_SRAM_BASE 0x6000u
 
@@ -47,6 +47,64 @@ void progress_set_room_flag_uw_item_state(void)
     const unsigned short ptr =
         (unsigned short)(((unsigned short)SAVEFILE_PTR_HI << 8) | SAVEFILE_PTR_LO);
     nes_ram[ptr + CUR_ROOM_ID] = flags;
+}
+
+/* NES Z_01.asm PaletteRow7TransferRecord (8-byte transfer header,
+ * extracted from src/data/palette_tables.inc by extract_misc.py). */
+static const unsigned char k_palette_row7_transfer_record[8] = {
+    0x3Fu, 0x1Cu, 0x04u, 0x0Fu, 0x07u, 0x17u, 0x27u, 0xFFu
+};
+
+/* NES Z_01.asm GanonColorTriples (9-byte color seed table,
+ * src/data/palette_tables.inc). 3 triples of 3 bytes:
+ *   [0..2] = brown ganon
+ *   [3..5] = blue ganon
+ *   [6..8] = ashes
+ * drain reads `triples[color_index - 2 + j]` so brown=2, blue=5, ashes=8. */
+static const unsigned char k_ganon_color_triples[9] = {
+    0x07u, 0x17u, 0x30u, 0x16u, 0x2Cu, 0x3Cu, 0x27u, 0x06u, 0x16u
+};
+
+/* Common helper for the 3 ganon-palette-replace variants. */
+static void progress_replace_palette_row_common(unsigned char color_index)
+{
+    /* Append PaletteRow7TransferRecord into transfer buf at TRANSFER_BUF_POS. */
+    unsigned char len = TRANSFER_BUF_POS;
+    for (unsigned char i = 0u; i < 8u; i++) {
+        TRANSFER_BUF_BYTE(len) = k_palette_row7_transfer_record[i];
+        len = (unsigned char)(len + 1u);
+    }
+    TRANSFER_BUF_POS = len;
+
+    /* Stash 3 color triple bytes at RAM($0306..$0308). */
+    for (int j = 0; j < 3; j++) {
+        RAM(0x0306 + j) = k_ganon_color_triples[color_index - 2 + j];
+    }
+}
+
+void progress_replace_ganon_brown_palette_row(void)
+{
+    progress_replace_palette_row_common(2u);
+}
+
+void progress_replace_ganon_blue_palette_row(void)
+{
+    progress_replace_palette_row_common(5u);
+}
+
+void progress_replace_ashes_palette_row(void)
+{
+    progress_replace_palette_row_common(8u);
+}
+
+unsigned char progress_reset_room_tile_obj_info(void)
+{
+    /* drain at progress_runtime.c:25-30. NES ResetRoomTileObjInfo
+     * trivial: zero 3 RAM cells, return A=0. */
+    ROOM_TILE_OBJ_0 = 0u;
+    ROOM_TILE_OBJ_1 = 0u;
+    ROOM_TILE_OBJ_2 = 0u;
+    return 0u;
 }
 
 unsigned char progress_get_room_flag_uw_item_state(void)

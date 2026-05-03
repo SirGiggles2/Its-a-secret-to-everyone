@@ -24,11 +24,6 @@
       "sig": "void (void)"
     },
     {
-      "old": "z01_reset_room_tile_obj_info",
-      "new": "progrt_reset_room_tile_obj_info",
-      "sig": "unsigned char (void)"
-    },
-    {
       "old": "z01_play_key_taken_tune",
       "new": "corert_play_key_taken_tune",
       "sig": "void (void)"
@@ -321,21 +316,6 @@
     {
       "old": "z01_advance_teleporting_level_index",
       "new": "trprt_advance_teleporting_level_index",
-      "sig": "void (void)"
-    },
-    {
-      "old": "z01_replace_ganon_brown_palette_row",
-      "new": "progrt_replace_ganon_brown_palette_row",
-      "sig": "void (void)"
-    },
-    {
-      "old": "z01_replace_ganon_blue_palette_row",
-      "new": "progrt_replace_ganon_blue_palette_row",
-      "sig": "void (void)"
-    },
-    {
-      "old": "z01_replace_ashes_palette_row",
-      "new": "progrt_replace_ashes_palette_row",
       "sig": "void (void)"
     },
     {

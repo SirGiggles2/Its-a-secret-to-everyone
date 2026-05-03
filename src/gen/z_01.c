@@ -34,10 +34,6 @@ void z01_play_character_sfx(void) {
     corert_play_character_sfx();
 }
 
-unsigned char z01_reset_room_tile_obj_info(void) {
-    return progrt_reset_room_tile_obj_info();
-}
-
 void z01_play_key_taken_tune(void) {
     corert_play_key_taken_tune();
 }
@@ -272,18 +268,6 @@ void z01_check_init_whirlwind_and_begin_update(void) {
 
 void z01_advance_teleporting_level_index(void) {
     trprt_advance_teleporting_level_index();
-}
-
-void z01_replace_ganon_brown_palette_row(void) {
-    progrt_replace_ganon_brown_palette_row();
-}
-
-void z01_replace_ganon_blue_palette_row(void) {
-    progrt_replace_ganon_blue_palette_row();
-}
-
-void z01_replace_ashes_palette_row(void) {
-    progrt_replace_ashes_palette_row();
 }
 
 void z01_init_underworld_person_a(unsigned int slot) {
@@ -880,6 +864,38 @@ unsigned char z01_get_room_flag_uw_item_state(void) {
     return progress_get_room_flag_uw_item_state();
 #else
     return progrt_get_room_flag_uw_item_state();
+#endif
+}
+
+void z01_replace_ganon_brown_palette_row(void) {
+#ifdef NATIVE_PROGRESS
+    progress_replace_ganon_brown_palette_row();
+#else
+    progrt_replace_ganon_brown_palette_row();
+#endif
+}
+
+void z01_replace_ganon_blue_palette_row(void) {
+#ifdef NATIVE_PROGRESS
+    progress_replace_ganon_blue_palette_row();
+#else
+    progrt_replace_ganon_blue_palette_row();
+#endif
+}
+
+void z01_replace_ashes_palette_row(void) {
+#ifdef NATIVE_PROGRESS
+    progress_replace_ashes_palette_row();
+#else
+    progrt_replace_ashes_palette_row();
+#endif
+}
+
+unsigned char z01_reset_room_tile_obj_info(void) {
+#ifdef NATIVE_PROGRESS
+    return progress_reset_room_tile_obj_info();
+#else
+    return progrt_reset_room_tile_obj_info();
 #endif
 }
 
