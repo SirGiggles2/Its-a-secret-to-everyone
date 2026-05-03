@@ -69,3 +69,30 @@ for `cavert_update_person_state_textbox` proper.
   ported native, 6 NEEDS-FULL-FINDING promoted to FULL MATCH, Phase 3
   scaffolding-complete. Remaining 3 items defer to Phase 4
   cross-subsystem ports (text rendering + item-state + cue_transfer).
+- 2026-05-03 (later cook session). Author: Claude Opus. Phase 4 cross-
+  subsystem ports landed enough cave Phase-4 stubs to back-fill:
+  - `progress_set_room_flag_uw_item_state` (3 cave call-sites filled)
+  - `core_cue_transfer_buf_and_advance_state` (3 cave call-sites filled)
+  - `core_cue_transfer_blank_person_wares` (cave dispatch states 3 + 6
+    upgraded from STUB to native via cave_update_cave_person)
+  - `core_post_debit` / `core_post_credit` (4 cave call-sites filled)
+
+  cave_tick wired to call `cave_update_cave_person(1)` so SCENE_CAVE
+  harness exercises the full top-level dispatch. 5/9 state arms native
+  + 2 cue-transfer arms native via core; 2 textbox arms (states 1/7)
+  + take_item paths still STAGE-1 STUBS pending text-rendering and
+  item-state cross-subsystem ports.
+
+  Phase 4 progress (this cook):
+  - world_runtime: 4/4 native
+  - object_runtime: 8/8 native
+  - sprite_runtime: 11/11 native
+  - progress_runtime: 13/14 native (curtain_effect z05-shim deferred)
+  - trap_runtime: 1/10 native (dependency-blocked)
+  - core_runtime: 40+ functions native (NATIVE_CORE gate)
+
+  Cutover gates introduced: NATIVE_CAVE, NATIVE_CAVE_DRAW,
+  NATIVE_CAVE_PERSON, NATIVE_CAVE_FORMAT, NATIVE_WORLD, NATIVE_OBJECT,
+  NATIVE_SPRITE, NATIVE_PROGRESS, NATIVE_TRAP, NATIVE_CORE. All
+  default OFF; Title.md byte-identical to pre-cutover. RoomRom links
+  native code unconditionally; SCENE_CAVE harness verifies dispatch.
