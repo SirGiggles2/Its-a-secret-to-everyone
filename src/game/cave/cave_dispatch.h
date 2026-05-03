@@ -140,6 +140,20 @@ void cave_update_talk_shop_or_door_charge(void);
  * Phase 4 deferred. */
 void cave_update_hint_or_money_game(void);
 
+/* Trivial state arm: hide person object after delay timer expires.
+ * Mirrors NES UpdatePersonState_DelayThenHide (Z_01.asm:838).
+ *
+ *   if (CAVE_DELAY_TIMER == 0) CAVE_ROOM_TYPE = 0;
+ *
+ * No deferred shims, no cross-subsystem deps. Drain MATCH (trivial)
+ * per Phase 3 summary. */
+void cave_update_person_state_delay_then_hide(void);
+
+/* Trivial cave-flag-bit-clear helper. Mirrors cavert_clear_prices_cave_flag
+ * (drain trivial). Public version of the file-static cave_clear_prices_flag_inline
+ * helper used by other cave functions. */
+void cave_clear_prices_flag(void);
+
 #ifdef __cplusplus
 }
 #endif

@@ -309,16 +309,6 @@
       "sig": "void (void)"
     },
     {
-      "old": "z01_clear_prices_cave_flag",
-      "new": "cavert_clear_prices_cave_flag",
-      "sig": "void (void)"
-    },
-    {
-      "old": "z01_update_person_state_delay_then_hide",
-      "new": "cavert_update_person_state_delay_then_hide",
-      "sig": "void (void)"
-    },
-    {
       "old": "z01_update_grumble1",
       "new": "uwrt_update_grumble1",
       "sig": "void (void)"

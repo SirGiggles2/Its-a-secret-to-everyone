@@ -262,14 +262,6 @@ void z01_check_person_blocking(void) {
     uwrt_check_person_blocking();
 }
 
-void z01_clear_prices_cave_flag(void) {
-    cavert_clear_prices_cave_flag();
-}
-
-void z01_update_person_state_delay_then_hide(void) {
-    cavert_update_person_state_delay_then_hide();
-}
-
 void z01_update_grumble1(void) {
     uwrt_update_grumble1();
 }
@@ -763,5 +755,24 @@ void z01_update_cave_person_state_hint_or_money_game(void) {
     cave_update_hint_or_money_game();
 #else
     cavert_update_hint_or_money_game();
+#endif
+}
+
+/* Trivial cave fns share NATIVE_CAVE_PERSON gate. Both have drain
+ * MATCH (trivial) verdicts per Phase 3 summary so flipping the gate
+ * here is safe-by-construction once cave_dispatch.c body is verified. */
+void z01_clear_prices_cave_flag(void) {
+#ifdef NATIVE_CAVE_PERSON
+    cave_clear_prices_flag();
+#else
+    cavert_clear_prices_cave_flag();
+#endif
+}
+
+void z01_update_person_state_delay_then_hide(void) {
+#ifdef NATIVE_CAVE_PERSON
+    cave_update_person_state_delay_then_hide();
+#else
+    cavert_update_person_state_delay_then_hide();
 #endif
 }

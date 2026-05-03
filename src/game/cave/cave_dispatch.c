@@ -287,6 +287,24 @@ void cave_update_talk_shop_or_door_charge(void)
     }
 }
 
+void cave_update_person_state_delay_then_hide(void)
+{
+    /* NES UpdatePersonState_DelayThenHide (Z_01.asm:838). Drain trivial
+     * per Phase 3 summary. Sets CAVE_ROOM_TYPE = 0 (i.e. "no cave
+     * person") once the delay timer reaches zero. */
+    if (CAVE_DELAY_TIMER == 0u) {
+        cave_room_type_set(0u);
+    }
+}
+
+void cave_clear_prices_flag(void)
+{
+    /* Public wrapper around the file-static inline helper. Mirrors
+     * cavert_clear_prices_cave_flag (drain trivial: CAVE_FLAGS &= 0xF7,
+     * i.e. clear the show-prices bit 0x08). */
+    cave_clear_prices_flag_inline();
+}
+
 void cave_update_hint_or_money_game(void)
 {
     /* NES UpdateCavePersonState_HintOrMoneyGame (Z_01.asm:851).
