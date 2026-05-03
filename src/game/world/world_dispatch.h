@@ -40,6 +40,20 @@ void world_get_object_middle(unsigned int slot);
  * src/oracle/world/world_runtime.c:68-109. Pure C, no shims. */
 void world_check_mazes(void);
 
+/* Decode the (X, Y) screen coordinate for the shortcut (overworld) or
+ * item (underworld) of the given room, packed as `(X << 8) | Y` so a
+ * single unsigned int return carries both. Mirrors NES
+ * GetShortcutOrItemXYForRoom (Z_01.asm:4002). Reads the per-room
+ * attribute byte from `LevelBlockAttrsF` (NES SRAM offset $6AFE +
+ * room_id), extracts a 2-bit type index from bits 4-5, and indexes
+ * `LevelInfo_ShortcutOrItemPosArray` at $6BA7 to get the packed
+ * position byte (high nibble = X*16, low nibble = Y/16). */
+unsigned int world_get_shortcut_or_item_xy_for_room(unsigned int room_id);
+
+/* No-arg variant: looks up the shortcut/item XY for the current room
+ * (CUR_ROOM_ID = $00EB). Mirrors NES GetShortcutOrItemXY (Z_01.asm:3993). */
+unsigned int world_get_shortcut_or_item_xy(void);
+
 #ifdef __cplusplus
 }
 #endif

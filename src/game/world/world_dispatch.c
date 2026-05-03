@@ -5,7 +5,43 @@
  */
 
 #include "world_dispatch.h"
-#include "world_state.h"  /* WORLD_TMP2/3, OBJ_X/_Y/_STATUS_FLAGS */
+#include "world_state.h"      /* WORLD_TMP2/3, OBJ_X/_Y/_STATUS_FLAGS */
+#include "platform_abi.h"     /* nes_ram[] direct access for SRAM ($6000+) tables */
+
+/* NES SRAM base. Cartridge data tables (LevelBlockAttrsF,
+ * LevelInfo_*) live at $6000+offset and are accessed through nes_ram[]
+ * since the bridge layer mirrors SRAM into the same address space. */
+#define NES_SRAM_BASE 0x6000u
+
+unsigned int world_get_shortcut_or_item_xy_for_room(unsigned int room_id)
+{
+    /* NES GetShortcutOrItemXYForRoom (Z_01.asm:4002). Drain at
+     * world_runtime.c:6-13. Drain MATCH per finding 4_1n_c.
+     *
+     *   LDA LevelBlockAttrsF, Y     ; SRAM $6AFE + room_id
+     *   AND #$30 / LSR x4           ; isolate bits 4-5 -> type_idx
+     *   LDA LevelInfo_ShortcutOrItemPosArray, Y  ; SRAM $6BA7 + type_idx
+     *   PHA / AND #$0F / ASL x4     ; low nibble << 4 = Y
+     *   PLA / AND #$F0              ; high nibble = X
+     *   RTS                          ; A=X, Y=Y
+     *
+     * Native packs (X, Y) into one return: (X << 8) | Y. */
+    const unsigned char lookup =
+        nes_ram[NES_SRAM_BASE + 0x0AFEu + (room_id & 0xFFu)];
+    const unsigned char type_idx = (unsigned char)((lookup & 0x30u) >> 4);
+    const unsigned char entry =
+        nes_ram[NES_SRAM_BASE + 0x0BA7u + type_idx];
+    const unsigned char y = (unsigned char)((entry & 0x0Fu) << 4);
+    const unsigned char x = (unsigned char)(entry & 0xF0u);
+    return ((unsigned int)x << 8) | (unsigned int)y;
+}
+
+unsigned int world_get_shortcut_or_item_xy(void)
+{
+    /* NES GetShortcutOrItemXY (Z_01.asm:3993): LDY RoomId / fall-through
+     * to GetShortcutOrItemXYForRoom. Native passes CUR_ROOM_ID = RAM($00EB). */
+    return world_get_shortcut_or_item_xy_for_room((unsigned int)CUR_ROOM_ID);
+}
 
 void world_check_mazes(void)
 {

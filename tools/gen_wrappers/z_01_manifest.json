@@ -539,16 +539,6 @@
       "sig": "unsigned int (unsigned int slot)"
     },
     {
-      "old": "z01_get_shortcut_or_item_xy_for_room",
-      "new": "worldrt_get_shortcut_or_item_xy_for_room",
-      "sig": "unsigned int (unsigned int room_id)"
-    },
-    {
-      "old": "z01_get_shortcut_or_item_xy",
-      "new": "worldrt_get_shortcut_or_item_xy",
-      "sig": "unsigned int (void)"
-    },
-    {
       "old": "z01_animate_world_fading",
       "new": "worldrt_animate_world_fading",
       "sig": "unsigned int (void)"

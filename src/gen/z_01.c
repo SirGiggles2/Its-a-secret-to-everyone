@@ -446,14 +446,6 @@ unsigned int z01_wield_candle(unsigned int slot) {
     return weprt_wield_candle(slot);
 }
 
-unsigned int z01_get_shortcut_or_item_xy_for_room(unsigned int room_id) {
-    return worldrt_get_shortcut_or_item_xy_for_room(room_id);
-}
-
-unsigned int z01_get_shortcut_or_item_xy(void) {
-    return worldrt_get_shortcut_or_item_xy();
-}
-
 unsigned int z01_animate_world_fading(void) {
     return worldrt_animate_world_fading();
 }
@@ -826,5 +818,21 @@ void z01_check_mazes(void) {
     world_check_mazes();
 #else
     worldrt_check_mazes();
+#endif
+}
+
+unsigned int z01_get_shortcut_or_item_xy_for_room(unsigned int room_id) {
+#ifdef NATIVE_WORLD
+    return world_get_shortcut_or_item_xy_for_room(room_id);
+#else
+    return worldrt_get_shortcut_or_item_xy_for_room(room_id);
+#endif
+}
+
+unsigned int z01_get_shortcut_or_item_xy(void) {
+#ifdef NATIVE_WORLD
+    return world_get_shortcut_or_item_xy();
+#else
+    return worldrt_get_shortcut_or_item_xy();
 #endif
 }
