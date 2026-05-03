@@ -618,7 +618,11 @@ Decision is recorded at `docs/audit/state_contract.md` (typed C structs for owne
 
 **Goal:** Implement every overworld cave entrance, cave interior, NPC/shop/item/text behavior, and exit path in RoomRom.
 
-**Worktree:** Active RoomRom implementation. Per debate 004 Rule WT-1, substrate edits (`src/state/cave_state.h`) land in main; gameplay wire-up lands in RoomRom; both rebase clean. Per debate 005 Rule D1, **read drained C in `src/game/cave/*_runtime.c` BEFORE writing any task body**; NES asm in `reference/aldonunez/Z_*.asm` and `src/zelda_translated/z_*.asm` is verification + final authority. Phase 3 is now mostly INTEGRATION + GAP-FILL (drain shipped pre-S0/S1 with 686 LOC of cavert_* + uw_person_* functions); only Task 3.1 (data extraction) is true GREENFIELD.
+**Worktree:** Cave gameplay LIVES IN TITLE.MD path, not RoomRom. **Critical finding 2026-05-02:** drained `cavert_*` functions are ALREADY wired into Title.md's gameplay loop via `src/gen/z_01.c` (transpiler-generated C that calls `cavert_init_cave`, `cavert_update_cave_person`, `cavert_draw_cave_person`, `cavert_draw_cave_items` directly). RoomRom is a fresh-start scaffold that does NOT link `src/game/cave/*` — RoomRom has no `nes_ram` image, no transpile bridge, no z01_/z07_ shims.
+
+Therefore Phase 3 worktree is **main** (not RoomRom). Substrate edits (`src/state/cave_state.h`) and drain audits both land in main worktree. RoomRom-side cave work is deferred to either Phase 12 promotion (when RoomRom inherits the drain) OR a separate Phase 3.X RoomRom-cave-port subproject.
+
+Per debate 005 Rule D1, **read drained C in `src/game/cave/*_runtime.c` BEFORE writing any task body**; NES asm is verification + final authority. Phase 3 work is now: (a) verify drain matches NES via Gate 1 per-function diffs, (b) fix any Gate 1 DIFFs found, (c) unblock the title→gameplay handoff so the wired drain actually executes (memory: `project_title_story_crash`). Only Task 3.1 (caves.json structured manifest) is true GREENFIELD — and even that is partially done (cave-data tables already extracted in `src/data/person_text.inc`).
 
 **Files:**
 - Existing drain (DO NOT REWRITE): `src/game/cave/cave_runtime.c`, `src/game/cave/uw_person_runtime.c`
