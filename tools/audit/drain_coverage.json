@@ -1,0 +1,154 @@
+{
+  "schema_version": 1,
+  "generated_at": "2026-05-03T04:14:07Z",
+  "rows": [
+    {
+      "nes_file": "reference/aldonunez/Z_01.asm",
+      "nes_symbol": "CaveSpec_*",
+      "drained_c": "NONE (data extraction, not behavior)",
+      "phase": "3",
+      "task": "3.1",
+      "task_name": "Build Cave Source Data Manifest",
+      "subsystem": "",
+      "coverage": "NONE",
+      "stance": "GREENFIELD"
+    },
+    {
+      "nes_file": "reference/aldonunez/Z_01.asm",
+      "nes_symbol": "GameMode_Cave",
+      "drained_c": "`src/game/cave/cave_runtime.c:cavert_init_cave`, `cavert_update_cave_person`",
+      "phase": "3",
+      "task": "3.2",
+      "task_name": "Cave Gamemode Dispatch",
+      "subsystem": "cave",
+      "coverage": "PARTIAL",
+      "stance": "ADOPT"
+    },
+    {
+      "nes_file": "reference/aldonunez/Z_01.asm",
+      "nes_symbol": "CheckCaveEntry",
+      "drained_c": "`src/game/cave/cave_runtime.c:cavert_init_cave_continue` (entry transition), entry-point detection drained in `src/game/world/` overworld code.",
+      "phase": "3",
+      "task": "3.3",
+      "task_name": "Cave Entrance Detection",
+      "subsystem": "cave",
+      "coverage": "PARTIAL",
+      "stance": "EXTEND"
+    },
+    {
+      "nes_file": "Z_02.asm",
+      "nes_symbol": "OW_TileCollision",
+      "drained_c": "`src/game/cave/cave_runtime.c:cavert_init_cave_continue` (entry transition), entry-point detection drained in `src/game/world/` overworld code.",
+      "phase": "3",
+      "task": "3.3",
+      "task_name": "Cave Entrance Detection",
+      "subsystem": "cave",
+      "coverage": "PARTIAL",
+      "stance": "EXTEND"
+    },
+    {
+      "nes_file": "reference/aldonunez/Z_01.asm",
+      "nes_symbol": "DrawCave",
+      "drained_c": "`src/game/cave/cave_runtime.c:cavert_draw_cave_person`, `cavert_draw_cave_items`; `src/game/cave/uw_person_runtime.c` (UW NPC draw)",
+      "phase": "3",
+      "task": "3.4",
+      "task_name": "Render Cave Interior",
+      "subsystem": "cave",
+      "coverage": "PARTIAL",
+      "stance": "EXTEND"
+    },
+    {
+      "nes_file": "reference/aldonunez/Z_01.asm",
+      "nes_symbol": "CaveText_*",
+      "drained_c": "`src/game/cave/cave_runtime.c:cavert_update_person_state_textbox`, `cavert_format_decimal_byte`, `cavert_write_prices_transfer_buf`",
+      "phase": "3",
+      "task": "3.5",
+      "task_name": "Cave Text Box",
+      "subsystem": "cave",
+      "coverage": "PARTIAL",
+      "stance": "EXTEND"
+    },
+    {
+      "nes_file": "Z_05.asm",
+      "nes_symbol": "Text_RenderChar",
+      "drained_c": "`src/game/cave/cave_runtime.c:cavert_update_person_state_textbox`, `cavert_format_decimal_byte`, `cavert_write_prices_transfer_buf`",
+      "phase": "3",
+      "task": "3.5",
+      "task_name": "Cave Text Box",
+      "subsystem": "cave",
+      "coverage": "PARTIAL",
+      "stance": "EXTEND"
+    },
+    {
+      "nes_file": "reference/aldonunez/Z_01.asm",
+      "nes_symbol": "CaveItemGrant",
+      "drained_c": "`src/game/cave/cave_runtime.c:cavert_try_take_item`, `cavert_try_take_room_item`",
+      "phase": "3",
+      "task": "3.6",
+      "task_name": "Item Grant Caves",
+      "subsystem": "cave",
+      "coverage": "PARTIAL",
+      "stance": "ADOPT"
+    },
+    {
+      "nes_file": "Z_07.asm",
+      "nes_symbol": "Inventory_Mutate",
+      "drained_c": "`src/game/cave/cave_runtime.c:cavert_try_take_item`, `cavert_try_take_room_item`",
+      "phase": "3",
+      "task": "3.6",
+      "task_name": "Item Grant Caves",
+      "subsystem": "cave",
+      "coverage": "PARTIAL",
+      "stance": "ADOPT"
+    },
+    {
+      "nes_file": "reference/aldonunez/Z_01.asm",
+      "nes_symbol": "Shop_Tick",
+      "drained_c": "`src/game/cave/cave_runtime.c:cavert_update_talk_shop_or_door_charge`, `cavert_update_transfer_prices`, `cavert_clear_prices_cave_flag`, `cavert_write_prices_to_dynamic_transfer_buf`, `cavert_update_hint_or_money_game` (also covers door-repair charge)",
+      "phase": "3",
+      "task": "3.7",
+      "task_name": "Shop Caves",
+      "subsystem": "cave",
+      "coverage": "FULL",
+      "stance": "ADOPT"
+    },
+    {
+      "nes_file": "reference/aldonunez/Z_01.asm",
+      "nes_symbol": "MoneyGame_Tick",
+      "drained_c": "`src/game/cave/cave_runtime.c:cavert_update_hint_or_money_game` (handles both hint caves and money-making game per name)",
+      "phase": "3",
+      "task": "3.8",
+      "task_name": "Gambling / Money-Making Game",
+      "subsystem": "cave",
+      "coverage": "FULL",
+      "stance": "ADOPT"
+    },
+    {
+      "nes_file": "reference/aldonunez/Z_01.asm",
+      "nes_symbol": "ExitCave",
+      "drained_c": "`src/game/cave/cave_runtime.c:cavert_update_person_state_delay_then_hide` (covers cave\u2192OW transition); palette restore likely in `src/game/world/`",
+      "phase": "3",
+      "task": "3.9",
+      "task_name": "Cave Exit + Palette Restore",
+      "subsystem": "cave",
+      "coverage": "PARTIAL",
+      "stance": "EXTEND"
+    },
+    {
+      "nes_file": "",
+      "nes_symbol": "",
+      "drained_c": "N/A",
+      "phase": "3",
+      "task": "3.10",
+      "task_name": "Phase 3 Verification Gates",
+      "subsystem": "",
+      "coverage": "NONE",
+      "stance": "GREENFIELD"
+    }
+  ],
+  "malformed_headers": [],
+  "drained_function_count": 433,
+  "nes_file_count": 16,
+  "orphan_count": 425,
+  "phantom_count": 0
+}

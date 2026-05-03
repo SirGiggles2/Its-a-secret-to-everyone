@@ -58,6 +58,34 @@ any substrate-touching commit (defense-in-depth).
 `tools/gates/check_no_whatif.py` greps active code paths and fails CI on
 any `whatif` reference outside `debates/` and `docs/archive/`.
 
+## Drain coverage (HARD)
+
+Drained C in `src/game/<subsystem>/*_runtime.c` is the **PRIMARY
+implementation evidence**. NES disassembly (`reference/aldonunez/*.asm`,
+`src/zelda_translated/*.asm`) is the **SECONDARY verification + final
+authority** — it wins ties when drain is wrong. Per debate 005 RULE D1.
+
+Before any task that touches a subsystem with drained C:
+
+1. `git ls-files src/game/<subsystem>/ | grep _runtime.c` — list candidates.
+2. Read the drain end-to-end. Do not skim. 433 drained functions exist
+   across 7 subsystems (cave, combat, enemies, hud, items, room, world).
+3. Fill the 4-line task header (NES source / Drained C / Coverage /
+   Stance) — see master plan Rule D1 for format.
+4. `Stance: GREENFIELD` is illegal when `tools/audit/drain_coverage.py`
+   finds a candidate drain.
+5. Per-function diff vs NES asm before any rewrite. `Stance: REPLACE`
+   requires evidence (RAM trace, oracle scenario id, NES asm line).
+
+3-gate verification (per task / phase / milestone):
+- Gate 1: per-function diff in `tools/audit/drain_findings/<phase>_<task>.md`.
+- Gate 2: per-RAM-cell parity oracle trace before phase exit.
+- Gate 3: per-scenario parity oracle before milestone tag.
+
+Violations = duplicated implementations + silent drift. See memory:
+`feedback_drain_primary_nes_secondary`, `feedback_long_term_fix`,
+`feedback_check_dont_guess`, `feedback_source_first_then_nes`.
+
 ## Build / verify
 
 - I build, I launch BizHawk, I screenshot. Never ask user to do those.
