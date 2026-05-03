@@ -50,10 +50,22 @@
 #define ZP_TMPF    RAM(0x000F)
 
 /* NES Z_Rand seed bytes — semantic but live in zero-page scratch.
- * Cave subsystem references these as CAVE_RANDOM_A/B; enemy as
- * ENEMY_RNG_A/B (different offsets — $0019/$001A vs $0018/$0019).
- * Canonicalize the actual NES PRNG locations here. */
-#define ZP_RNG_A   RAM(0x0019)
-#define ZP_RNG_B   RAM(0x001A)
+ * Per reference/aldonunez/Variables.inc:8 — `Random := $18`. NES code
+ * reads Random+0/+1/+2 for three decorrelated PRNG bytes.
+ *
+ * Subsystem aliases:
+ *   CAVE_RANDOM_A → ZP_RNG_A ($0019 = Random+1)
+ *   CAVE_RANDOM_B → ZP_RNG_B ($001A = Random+2)
+ *   ENEMY_RNG_A   → ZP_RNG_BASE ($0018 = Random+0) — DIFFERENT from cave
+ *   ENEMY_RNG_B   → ZP_RNG_A ($0019 = Random+1)
+ *
+ * Past audit confusion: scratch_state.h originally exposed only ZP_RNG_A
+ * + ZP_RNG_B which named Random+1/+2. Drained code that needs Random+0
+ * (NES base PRNG read) goes through ZP_RNG_BASE. Renaming for full
+ * clarity (PLUS1/PLUS2) deferred to avoid breaking many consumers.
+ */
+#define ZP_RNG_BASE  RAM(0x0018)   /* NES Random+0 */
+#define ZP_RNG_A     RAM(0x0019)   /* NES Random+1 */
+#define ZP_RNG_B     RAM(0x001A)   /* NES Random+2 */
 
 #endif /* SCRATCH_STATE_H */
