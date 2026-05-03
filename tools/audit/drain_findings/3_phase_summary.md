@@ -69,30 +69,57 @@ for `cavert_update_person_state_textbox` proper.
   ported native, 6 NEEDS-FULL-FINDING promoted to FULL MATCH, Phase 3
   scaffolding-complete. Remaining 3 items defer to Phase 4
   cross-subsystem ports (text rendering + item-state + cue_transfer).
-- 2026-05-03 (later cook session). Author: Claude Opus. Phase 4 cross-
-  subsystem ports landed enough cave Phase-4 stubs to back-fill:
-  - `progress_set_room_flag_uw_item_state` (3 cave call-sites filled)
-  - `core_cue_transfer_buf_and_advance_state` (3 cave call-sites filled)
-  - `core_cue_transfer_blank_person_wares` (cave dispatch states 3 + 6
-    upgraded from STUB to native via cave_update_cave_person)
-  - `core_post_debit` / `core_post_credit` (4 cave call-sites filled)
+- 2026-05-03 (cook session, 41 commits since debate-006-D2 commit
+  e07ec0ec). Author: Claude Opus. Phase 4 cross-subsystem ports
+  landed; cave Phase-4 stubs back-filled extensively.
+
+  Cave back-fills (all 11 cross-subsystem deferred sites filled):
+  - `progress_set_room_flag_uw_item_state` (3 sites)
+  - `core_cue_transfer_buf_and_advance_state` (3 sites)
+  - `core_cue_transfer_blank_person_wares` (dispatch arms 3 + 6)
+  - `core_post_debit` / `core_post_credit` (4 sites)
 
   cave_tick wired to call `cave_update_cave_person(1)` so SCENE_CAVE
-  harness exercises the full top-level dispatch. 5/9 state arms native
-  + 2 cue-transfer arms native via core; 2 textbox arms (states 1/7)
-  + take_item paths still STAGE-1 STUBS pending text-rendering and
-  item-state cross-subsystem ports.
+  harness exercises full top-level dispatch. 5/9 state arms direct
+  native + 2 cue arms native via core = 7/9 effective coverage.
+  Remaining 2 textbox arms (states 1/7) + take_item paths still
+  STAGE-1 STUBS pending text-rendering and item-state cross-
+  subsystem ports.
 
-  Phase 4 progress (this cook):
-  - world_runtime: 4/4 native
-  - object_runtime: 8/8 native
-  - sprite_runtime: 11/11 native
+  Phase 4 surface progress:
+  - world_runtime:    4/4   native
+  - object_runtime:   8/8   native
+  - sprite_runtime:   11/11 native
   - progress_runtime: 13/14 native (curtain_effect z05-shim deferred)
-  - trap_runtime: 1/10 native (dependency-blocked)
-  - core_runtime: 40+ functions native (NATIVE_CORE gate)
+  - trap_runtime:     1/10  native (link_collision/draw_object blocked)
+  - core_runtime:     ~46   functions native (most leaf helpers)
+  - enemy_runtime / enemy_common_runtime: 8 leaf helpers ported
+    (find_empty_monster_slot, hide_sprites_over_link, 3 sfx tunes,
+     walker_alt_dir cluster); per-monster updaters defer until
+     cross-subsystem deps (c_draw_object_*, c_check_monster_collisions,
+     c_shoot_limited, c_wanderer_target_player) port natively.
 
-  Cutover gates introduced: NATIVE_CAVE, NATIVE_CAVE_DRAW,
+  Cutover gates introduced (11 total): NATIVE_CAVE, NATIVE_CAVE_DRAW,
   NATIVE_CAVE_PERSON, NATIVE_CAVE_FORMAT, NATIVE_WORLD, NATIVE_OBJECT,
-  NATIVE_SPRITE, NATIVE_PROGRESS, NATIVE_TRAP, NATIVE_CORE. All
-  default OFF; Title.md byte-identical to pre-cutover. RoomRom links
-  native code unconditionally; SCENE_CAVE harness verifies dispatch.
+  NATIVE_SPRITE, NATIVE_PROGRESS, NATIVE_TRAP, NATIVE_CORE,
+  NATIVE_ENEMY. All default OFF; Title.md byte-identical to pre-
+  cutover. RoomRom links native code unconditionally; SCENE_CAVE
+  harness verifies cave dispatch end-to-end.
+
+  20+ Gate 1 finding docs produced. Native code structure:
+  - src/game/cave/cave_dispatch.{h,c}
+  - src/game/world/world_dispatch.{h,c}
+  - src/game/world/object_dispatch.{h,c}
+  - src/game/world/sprite_dispatch.{h,c}
+  - src/game/world/progress_dispatch.{h,c}
+  - src/game/world/trap_dispatch.{h,c}
+  - src/game/core/core_dispatch.{h,c}
+  - src/game/enemies/enemy_dispatch.{h,c}
+
+  RoomRom OW gameplay-tier gaps (per user feedback "tiles correct,
+  no enemies/objects"):
+  - enemy update/draw (oracle-only; per-monster updaters not yet ported)
+  - sprite-descriptor → SAT bridge for object_draw (Phase 4 deferred
+    for cave_draw_person/_items + enemy draw)
+  - text rendering pipeline (cavert_update_person_state_textbox
+    + cue_transfer with text mid-streaming)
