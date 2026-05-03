@@ -102,26 +102,6 @@ void z01_copy_price_list_template(void) {
     corert_copy_price_list_template();
 }
 
-unsigned char z01_compare_hearts_to_containers(void) {
-    return corert_compare_hearts_to_containers();
-}
-
-void z01_uw_person_complex_state_begin(void) {
-    corert_uw_person_complex_state_begin();
-}
-
-void z01_format_char_doublet(unsigned int val) {
-    corert_format_char_doublet(val);
-}
-
-unsigned char z01_reset_cur_sprite_index(void) {
-    return corert_reset_cur_sprite_index();
-}
-
-void z01_play_boomerang_sfx(unsigned int sfx_id) {
-    corert_play_boomerang_sfx(sfx_id);
-}
-
 void z01_take_hearts_no_sound(void) {
     corert_take_hearts_no_sound();
 }
@@ -1028,6 +1008,46 @@ void z01_play_sample(unsigned int val) {
     core_play_sample(val);
 #else
     corert_play_sample(val);
+#endif
+}
+
+unsigned char z01_compare_hearts_to_containers(void) {
+#ifdef NATIVE_CORE
+    return core_compare_hearts_to_containers();
+#else
+    return corert_compare_hearts_to_containers();
+#endif
+}
+
+void z01_format_char_doublet(unsigned int val) {
+#ifdef NATIVE_CORE
+    core_format_char_doublet(val);
+#else
+    corert_format_char_doublet(val);
+#endif
+}
+
+unsigned char z01_reset_cur_sprite_index(void) {
+#ifdef NATIVE_CORE
+    return core_reset_cur_sprite_index();
+#else
+    return corert_reset_cur_sprite_index();
+#endif
+}
+
+void z01_uw_person_complex_state_begin(void) {
+#ifdef NATIVE_CORE
+    core_uw_person_complex_state_begin();
+#else
+    corert_uw_person_complex_state_begin();
+#endif
+}
+
+void z01_play_boomerang_sfx(unsigned int sfx_id) {
+#ifdef NATIVE_CORE
+    core_play_boomerang_sfx(sfx_id);
+#else
+    corert_play_boomerang_sfx(sfx_id);
 #endif
 }
 

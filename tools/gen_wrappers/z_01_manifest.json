@@ -109,31 +109,6 @@
       "sig": "void (void)"
     },
     {
-      "old": "z01_compare_hearts_to_containers",
-      "new": "corert_compare_hearts_to_containers",
-      "sig": "unsigned char (void)"
-    },
-    {
-      "old": "z01_uw_person_complex_state_begin",
-      "new": "corert_uw_person_complex_state_begin",
-      "sig": "void (void)"
-    },
-    {
-      "old": "z01_format_char_doublet",
-      "new": "corert_format_char_doublet",
-      "sig": "void (unsigned int val)"
-    },
-    {
-      "old": "z01_reset_cur_sprite_index",
-      "new": "corert_reset_cur_sprite_index",
-      "sig": "unsigned char (void)"
-    },
-    {
-      "old": "z01_play_boomerang_sfx",
-      "new": "corert_play_boomerang_sfx",
-      "sig": "void (unsigned int sfx_id)"
-    },
-    {
       "old": "z01_take_hearts_no_sound",
       "new": "corert_take_hearts_no_sound",
       "sig": "void (void)"

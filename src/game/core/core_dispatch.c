@@ -11,6 +11,7 @@
 #include "link_state.h"        /* DEATH_FRAME_COUNTER */
 #include "object_state.h"      /* OBJ_TILE_X/_Y, OBJ_STATE, OBJ_TYPE, OBJ_SHOVE_DIR/DIST, OBJ_INV_TIMER, OBJ_METASTATE */
 #include "progress_state.h"    /* SUBMODE_VALUE, PROG_ITEMS_BY_LEVEL */
+#include "combat_state.h"      /* LINK_HEARTS */
 
 void core_unhalt_link(void)
 {
@@ -195,6 +196,47 @@ void core_play_sample(unsigned int val)
 {
     /* drain at core_runtime.c:233+. */
     RAM(0x0601) = (uint8_t)(RAM(0x0601) | (uint8_t)val);
+}
+
+unsigned char core_compare_hearts_to_containers(void)
+{
+    /* drain at core_runtime.c:260-262. NES CompareHeartsToContainers. */
+    return (uint8_t)(LINK_HEARTS >> 4);
+}
+
+void core_format_char_doublet(unsigned int val)
+{
+    /* drain at core_runtime.c:272-275. NES FormatCharDoublet. */
+    RAM(0x0002u) = (uint8_t)val;
+    RAM(0x0003u) = 36u;
+}
+
+unsigned char core_reset_cur_sprite_index(void)
+{
+    /* drain at core_runtime.c:277-280. NES ResetCurSpriteIndex. */
+    RAM(0x0341u) = 0u;
+    return 0u;
+}
+
+void core_uw_person_complex_state_begin(void)
+{
+    /* drain at core_runtime.c:264-270. NES UWPersonComplexStateBegin.
+     * RAM($0029) = ObjTimer+1 (drain comment says CAVE_DELAY_TIMER alias). */
+    if (RAM(0x0350u) == 0x4Fu) {  /* ROOM_OBJ_TYPE(0) */
+        ROOM_TRANSFER_BUF_SELECT = 108u;
+    }
+    RAM(0x0029u) = 10u;
+    OBJ_STATE(1) = (uint8_t)(OBJ_STATE(1) + 1u);
+}
+
+void core_play_boomerang_sfx(unsigned int sfx_id)
+{
+    /* drain at core_runtime.c:282-288. NES PlayBoomerangSfx. */
+    if (RAM(0x003Bu) != 0u) {
+        return;
+    }
+    core_play_effect(sfx_id);
+    RAM(0x003Bu) = 10u;
 }
 
 void core_set_up_common_cave_objects(unsigned int x, unsigned int slot,

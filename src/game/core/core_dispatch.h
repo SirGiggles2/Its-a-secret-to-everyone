@@ -113,6 +113,29 @@ void core_play_effect(unsigned int val);
 /* Bump RAM($0601) with bitmask. NES PlaySample. drain at core_runtime.c:233+. */
 void core_play_sample(unsigned int val);
 
+/* Heart-container hearts >> 4. NES CompareHeartsToContainers.
+ * drain at core_runtime.c:260-262. */
+unsigned char core_compare_hearts_to_containers(void);
+
+/* Format a doublet character into ZP $02/$03 — $02 = val, $03 = $24
+ * (space). NES FormatCharDoublet. drain at core_runtime.c:272-275. */
+void core_format_char_doublet(unsigned int val);
+
+/* RAM($0341) = 0; return 0. NES ResetCurSpriteIndex.
+ * drain at core_runtime.c:277-280. (Already file-static inline in
+ * sprite_dispatch; this is the public z01_-callable wrapper.) */
+unsigned char core_reset_cur_sprite_index(void);
+
+/* UW person complex state begin: if room obj type 0 = $4F, set
+ * ROOM_TRANSFER_BUF_SELECT = 108; then $0029 = 10 + cave_state++.
+ * NES UWPersonComplexStateBegin. drain at core_runtime.c:264-270. */
+void core_uw_person_complex_state_begin(void);
+
+/* Boomerang sfx with refractory timer: if RAM($003B) != 0, skip;
+ * else play_effect(sfx_id) + reset timer to 10. NES PlayBoomerangSfx.
+ * drain at core_runtime.c:282-288. */
+void core_play_boomerang_sfx(unsigned int sfx_id);
+
 #ifdef __cplusplus
 }
 #endif
