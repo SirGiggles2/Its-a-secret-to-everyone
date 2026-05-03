@@ -434,11 +434,6 @@
       "sig": "void (void)"
     },
     {
-      "old": "z01_update_cave_person_state_hint_or_money_game",
-      "new": "cavert_update_hint_or_money_game",
-      "sig": "void (void)"
-    },
-    {
       "old": "z01_update_cave_person",
       "new": "cavert_update_cave_person",
       "sig": "void (unsigned int slot)"

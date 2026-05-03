@@ -121,6 +121,25 @@ void cave_update_transfer_prices(void);
  * progrt_set_room_flag_uw_item_state) Phase 4 deferred. */
 void cave_update_talk_shop_or_door_charge(void);
 
+/* State arm: hint cave / door-charge variant / money game.
+ * Mirrors NES UpdateCavePersonState_HintOrMoneyGame (Z_01.asm:851).
+ * Drain at src/oracle/cave/cave_runtime.c:285-324.
+ *
+ * Three sub-branches:
+ *   1. CAVE_FLAGS & 0x10 (hint cave) -> select hint text via room/sel
+ *      offset, point at line 2, clear chars, cue text transfer.
+ *   2. CAVE_ROOM_TYPE >= 0x7B (door-charge variant) -> copy price list
+ *      template, write prices, set sfx, post credit middle slot.
+ *   3. else money game -> rupee gate ($0A), copy prizes to prices, write
+ *      prices, prepend signs (gain $14/$32 = '+' = 100, else '-' = 98),
+ *      post credit/debit on chosen amount.
+ *
+ * Stage-1: branch shape, RAM writes, sign-prepend native; cross-
+ * subsystem shims (post_credit/_debit, copy_price_list_template,
+ * write_prices_*, cue_transfer_buf, progrt_set_room_flag_uw_item_state)
+ * Phase 4 deferred. */
+void cave_update_hint_or_money_game(void);
+
 #ifdef __cplusplus
 }
 #endif

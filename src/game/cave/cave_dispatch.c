@@ -108,6 +108,31 @@ static inline unsigned char cave_abs_inline(unsigned char x)
     return (unsigned char)(((signed char)x < 0) ? -(signed char)x : (signed char)x);
 }
 
+/* Inline equivalent of cavert_prepend_sign_to_price (drain trivial,
+ * src/oracle/cave/cave_runtime.c:56). Sign tile = 100 (gain) when
+ * amount is $14 (20) or $32 (50), else 98 (loss). Writes to the
+ * transfer-buf sign byte at offset RAM(0x0306 + off). */
+static inline void cave_prepend_sign_to_price_inline(unsigned char val,
+                                                     unsigned char off)
+{
+    const unsigned char sign = (val == 0x14u || val == 0x32u) ? 100u : 98u;
+    CAVE_TRANSFER_BUF_PRICE_SIGN(off) = sign;
+}
+
+/* NES Z_01.asm HintCaveTextSelectors0 (line 845: $14 $14 $16) +
+ * HintCaveTextSelectors1 (line 848: $14 $18 $1A). Adjacent in ROM,
+ * NES indexes past selectors0 to read selectors1 when base_off=3.
+ * Bake in as a 6-byte combined table. */
+static const unsigned char k_hint_cave_text_selectors[6] = {
+    0x14u, 0x14u, 0x16u,   /* HintCaveTextSelectors0 (room $75) */
+    0x14u, 0x18u, 0x1Au,   /* HintCaveTextSelectors1 (room != $75) */
+};
+
+/* NES Z_01.asm TextboxLineAddrsLo (line 562: $C4 $E4 $A4). */
+static const unsigned char k_textbox_line_addrs_lo[3] = {
+    0xC4u, 0xE4u, 0xA4u,
+};
+
 void cave_update_transfer_prices(void)
 {
     /* NES UpdateCavePersonState_TransferPrices (Z_01.asm:442):
@@ -248,6 +273,64 @@ void cave_update_talk_shop_or_door_charge(void)
         CAVE_DELAY_TIMER = 64u;
         cave_clear_prices_flag_inline();
         return;
+    }
+}
+
+void cave_update_hint_or_money_game(void)
+{
+    /* NES UpdateCavePersonState_HintOrMoneyGame (Z_01.asm:851).
+     * Drain: src/oracle/cave/cave_runtime.c:285-324. MATCH verdict per
+     * Phase 3 summary. */
+
+    /* Branch 1: hint cave (cave_flag $10). */
+    if (cave_flags_get() & 0x10u) {
+        const unsigned char base_off =
+            (cave_room_type_get() == 0x75u) ? 0u : 3u;
+        const unsigned char sel_idx =
+            (unsigned char)(base_off + RAM(0x0438));  /* CAVE_SELECTED_WARE_INDEX */
+        CAVE_TEXT_SELECTOR    = k_hint_cave_text_selectors[sel_idx];
+        CAVE_TEXT_LINE_ADDR_LO = k_textbox_line_addrs_lo[2];
+        CAVE_TEXT_CHAR_INDEX  = 0u;
+        cave_clear_prices_flag_inline();
+        /* TODO Phase 4: native cue_transfer_buf_and_advance_state(30). */
+        return;
+    }
+
+    /* Branch 2: door-charge variant (CAVE_ROOM_TYPE >= $7B). */
+    if (cave_room_type_get() >= 0x7Bu) {
+        /* TODO Phase 4: native cave_copy_price_list_template(). */
+        /* TODO Phase 4: native cave_write_prices_to_dynamic_transfer_buf(36). */
+        CAVE_TEXT_TICK_SFX = 8u;
+        /* TODO Phase 4: native progrt_set_room_flag_uw_item_state(). */
+        CAVE_PERSON_STATE  = 8u;
+        /* TODO Phase 4: native cave_post_credit(CAVE_PRICE(1)). */
+        return;
+    }
+
+    /* Branch 3: money game. */
+    if ((unsigned char)LINK_RUPEES < 0x0Au) {
+        return;
+    }
+    CAVE_TEXT_TICK_SFX = 8u;
+    /* Copy prize amounts to ware prices (3 slots). */
+    RAM(0x0430 + 0) = RAM(0x0448 + 0);  /* CAVE_PRICE(0) = CAVE_PRIZE_ORDER(0) */
+    RAM(0x0430 + 1) = RAM(0x0448 + 1);
+    RAM(0x0430 + 2) = RAM(0x0448 + 2);
+    /* TODO Phase 4: native cave_write_prices_transfer_buf(). */
+    CAVE_PERSON_STATE = 8u;
+    cave_prepend_sign_to_price_inline(RAM(0x0448 + 0), 1u);
+    cave_prepend_sign_to_price_inline(RAM(0x0448 + 1), 5u);
+    cave_prepend_sign_to_price_inline(RAM(0x0448 + 2), 9u);
+    {
+        const unsigned char chosen = RAM(0x0438);  /* CAVE_SELECTED_WARE_INDEX */
+        const unsigned char amount = RAM(0x0448 + chosen);  /* CAVE_PRIZE_ORDER */
+        if (amount == 0x14u || amount == 0x32u) {
+            /* TODO Phase 4: native cave_post_credit(amount). */
+            (void)amount;
+        } else {
+            /* TODO Phase 4: native cave_post_debit(amount). */
+            (void)amount;
+        }
     }
 }
 
