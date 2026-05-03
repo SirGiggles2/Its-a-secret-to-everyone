@@ -105,6 +105,22 @@ void cave_draw_items(void);
  * which need their own ports first. */
 void cave_update_transfer_prices(void);
 
+/* State arm: handle Link talking to a shop person, paying door charges,
+ * and ware-purchase loop. Mirrors NES UpdateCavePersonState_TalkOrShopOrDoorCharge
+ * (Z_01.asm:666). Drain at src/oracle/cave/cave_runtime.c:228-283.
+ *
+ * Three sub-branches:
+ *   1. CAVE_FLAGS & 0x01 not set  -> set state=8, door-repair $20-bump
+ *                                    if ROOM_TYPE=0x71.
+ *   2. door_repair_rupee_delta!=0 -> wait (return).
+ *   3. ware purchase loop (slots 2..0): collision check vs Link pos,
+ *                                    rupee/heart gates, take item.
+ *
+ * Stage-1: full branch shape native, RAM writes inline. Cross-subsystem
+ * shims (post_debit, take_item, cue_transfer_buf_and_advance_state,
+ * progrt_set_room_flag_uw_item_state) Phase 4 deferred. */
+void cave_update_talk_shop_or_door_charge(void);
+
 #ifdef __cplusplus
 }
 #endif

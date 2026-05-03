@@ -23,6 +23,7 @@
 
 #include "cave_dispatch.h"
 #include "cave_state.h"
+#include "combat_state.h"  /* LINK_HEARTS = RAM(0x066F) */
 
 /* CaveState instance. Single global for now; future Phase 6/7 may add
  * multi-instance for replay/seed harness, but NES Z_01 has one cave
@@ -88,6 +89,25 @@ cave_id_t cave_current_id(void)
     return g_active_cave;
 }
 
+/* NES Z_01.asm CaveWareXs (line 385): X coords for the 3 ware slots. */
+static const unsigned char k_cave_ware_xs[CAVE_WARES_PER_ROOM] = {
+    0x58u, 0x78u, 0x98u
+};
+
+/* Inline equivalent of cavert_clear_prices_cave_flag (drain trivial):
+ *   CAVE_FLAGS &= 0xF7  (clear bit 0x08 = show-prices). */
+static inline void cave_clear_prices_flag_inline(void)
+{
+    cave_flags_set((uint8_t)(cave_flags_get() & 0xF7u));
+}
+
+/* Inline 6502 abs(signed_byte). Native equivalent of z01_abs shim
+ * (corert_abs trivial). */
+static inline unsigned char cave_abs_inline(unsigned char x)
+{
+    return (unsigned char)(((signed char)x < 0) ? -(signed char)x : (signed char)x);
+}
+
 void cave_update_transfer_prices(void)
 {
     /* NES UpdateCavePersonState_TransferPrices (Z_01.asm:442):
@@ -116,11 +136,7 @@ void cave_update_transfer_prices(void)
 
 void cave_draw_items(void)
 {
-    /* NES CaveWareXs (Z_01.asm:385): .BYTE $58, $78, $98. Baked in as
-     * a const so native code is independent of the transpile data .inc. */
-    static const unsigned char ware_xs[CAVE_WARES_PER_ROOM] = {
-        0x58u, 0x78u, 0x98u
-    };
+    /* CaveWareXs (k_cave_ware_xs at file scope): NES Z_01.asm:385. */
 
     /* Show-items flag. Loop wares 2 -> 0 (NES: STA $0421 ; DEC ; BPL). */
     if (cave_flags_get() & 0x04u) {
@@ -130,7 +146,7 @@ void cave_draw_items(void)
             /* ObjX/ObjY for slot 19 = CAVE_WARE_DRAW_SLOT.
              * NES: STA ObjX+19 / STA ObjY+19. ObjX base = $0070 → +19 = $0083.
              * ObjY base = $0084 → +19 = $0097. */
-            RAM(0x0083) = ware_xs[i];
+            RAM(0x0083) = k_cave_ware_xs[i];
             RAM(0x0097) = 0x98u;
             /* CaveItemIds[i] = $0422 + i (CAVE_WARE_ITEM macro). $3F = sentinel. */
             const unsigned char item = (unsigned char)(RAM(0x0422 + i) & 0x3Fu);
@@ -148,6 +164,90 @@ void cave_draw_items(void)
         RAM(0x0083) = 0x30u;
         RAM(0x0097) = 0xABu;
         /* TODO Phase 4: native cave_animate_item_object(0x18u, 19u). */
+    }
+}
+
+void cave_update_talk_shop_or_door_charge(void)
+{
+    /* NES UpdateCavePersonState_TalkOrShopOrDoorCharge (Z_01.asm:666).
+     * Drain at src/oracle/cave/cave_runtime.c:228. Verdict MATCH per
+     * Phase 3 summary. */
+
+    /* Branch 1: shop is closed for the cave-flag $01 conditions.
+     * Set state=8 (terminal), and if door-repair cave (room $71)
+     * accumulate +20 rupees of pending door-charge. */
+    if (!(cave_flags_get() & 0x01u)) {
+        CAVE_PERSON_STATE = 8u;
+        if (cave_room_type_get() == 0x71u) {
+            CAVE_DOOR_REPAIR_RUPEE_DELTA = (int8_t)(CAVE_DOOR_REPAIR_RUPEE_DELTA + 20);
+            /* TODO Phase 4: native progrt_set_room_flag_uw_item_state(). */
+        }
+        return;
+    }
+
+    /* Branch 2: door-repair pending (delta != 0) — wait. */
+    if (CAVE_DOOR_REPAIR_RUPEE_DELTA != 0) {
+        return;
+    }
+
+    /* Branch 3: ware-purchase loop. Scan slots 2,1,0. NES: LDX #$02 / DEX / BPL. */
+    for (signed int i = 2; i >= 0; --i) {
+        const unsigned char item = (unsigned char)(RAM(0x0422 + i) & 0x3Fu);
+        if (item == 0x3Fu) {
+            continue;
+        }
+        /* Link X ($0070) must equal ware slot's X. */
+        if (RAM(0x0070) != k_cave_ware_xs[i]) {
+            continue;
+        }
+        /* abs(Link Y ($0084) - 0x98) < 6. */
+        const unsigned char dist = cave_abs_inline((unsigned char)(RAM(0x0084) - 0x98u));
+        if (dist >= 6u) {
+            continue;
+        }
+
+        /* Selected ware index latches. */
+        RAM(0x0438) = (unsigned char)i;  /* NES $0438 = CAVE_SELECTED_WARE_INDEX */
+
+        const unsigned char flags30 = (unsigned char)(cave_flags_get() & 0x30u);
+        if (flags30) {
+            /* If $20 alone (not $10), advance to state=5 immediately. */
+            if (!(flags30 & 0x10u)) {
+                CAVE_PERSON_STATE = 5u;
+                return;
+            }
+            /* Pay then advance. */
+            if (LINK_RUPEES < RAM(0x0430 + i)) {
+                return;  /* not enough rupees */
+            }
+            /* TODO Phase 4: native cave_post_debit(price). Stage-1 stub. */
+            CAVE_PERSON_STATE = 5u;
+            return;
+        }
+
+        /* No $30 flags: regular ware purchase. */
+        if (cave_flags_get() & 0x02u) {
+            if (LINK_RUPEES < RAM(0x0430 + i)) {
+                return;
+            }
+            /* TODO Phase 4: native cave_post_debit(price). Stage-1 stub. */
+        }
+        if (cave_flags_get() & 0x40u) {
+            const unsigned char min_hearts =
+                (cave_room_type_get() == 0x6Cu) ? 64u : 0xB0u;
+            if (min_hearts < LINK_HEARTS) {
+                return;
+            }
+        }
+        /* Take the ware. */
+        /* TODO Phase 4: native progrt_set_room_flag_uw_item_state(). */
+        RAM(0x0422 + i) = 0xFFu;  /* CAVE_WARE_ITEM(i) = 0xFF */
+        /* TODO Phase 4: native cave_take_item(item) (cross-subsystem). */
+        (void)item;
+        /* TODO Phase 4: native cue_transfer_buf_and_advance_state(30). */
+        CAVE_DELAY_TIMER = 64u;
+        cave_clear_prices_flag_inline();
+        return;
     }
 }
 

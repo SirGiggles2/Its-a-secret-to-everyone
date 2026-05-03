@@ -362,10 +362,6 @@ void z01_update_person_state_textbox(void) {
     cavert_update_person_state_textbox();
 }
 
-void z01_update_cave_person_state_talk_or_shop_or_door_charge(void) {
-    cavert_update_talk_shop_or_door_charge();
-}
-
 void z01_update_cave_person_state_hint_or_money_game(void) {
     cavert_update_hint_or_money_game();
 }
@@ -755,5 +751,13 @@ void z01_update_cave_person_state_transfer_prices(void) {
     cave_update_transfer_prices();
 #else
     cavert_update_transfer_prices();
+#endif
+}
+
+void z01_update_cave_person_state_talk_or_shop_or_door_charge(void) {
+#ifdef NATIVE_CAVE_PERSON
+    cave_update_talk_shop_or_door_charge();
+#else
+    cavert_update_talk_shop_or_door_charge();
 #endif
 }
