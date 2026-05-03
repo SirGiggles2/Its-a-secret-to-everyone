@@ -28,24 +28,12 @@ void z07_reset_player_state(void) {
     roomrt_reset_player_state();
 }
 
-unsigned char z07_reset_moving_dir(void) {
-    return corert_reset_moving_dir();
-}
-
-void z07_ensure_object_aligned(unsigned int slot) {
-    corert_ensure_object_aligned(slot);
-}
-
 unsigned char z07_get_room_flags(void) {
     return roomrt_get_room_flags();
 }
 
 void z07_mark_room_visited(void) {
     roomrt_mark_room_visited();
-}
-
-unsigned char z07_reset_obj_state(unsigned int slot) {
-    return corert_reset_obj_state(slot);
 }
 
 void z07_set_shot_spreading_state(unsigned int slot) {
@@ -60,18 +48,6 @@ unsigned char z07_end_game_mode(void) {
     return roommd_end_game_mode();
 }
 
-void z07_init_flute_secret(unsigned int slot) {
-    corert_init_flute_secret(slot);
-}
-
-void z07_deactivate_shot(unsigned int slot) {
-    corert_deactivate_shot(slot);
-}
-
-void z07_deactivate_link_shot(void) {
-    corert_deactivate_link_shot();
-}
-
 void z07_go_to_next_mode(void) {
     roommd_go_to_next_mode();
 }
@@ -80,24 +56,12 @@ void z07_destroy_monster(unsigned int slot) {
     corert_destroy_monster(slot);
 }
 
-void z07_set_type_and_clear_object(unsigned int type, unsigned int slot) {
-    corert_set_type_and_clear_object(type, slot);
-}
-
-void z07_init_tile_obj_or_item(unsigned int slot) {
-    corert_init_tile_obj_or_item(slot);
-}
-
 void z07_go_to_next_mode_play_level_song(void) {
     roommd_go_to_next_mode_play_level_song();
 }
 
 void z07_go_to_next_mode_reset_grid_offset(void) {
     roommd_go_to_next_mode_reset_grid_offset();
-}
-
-void z07_reverse_obj_dir(unsigned int slot) {
-    corert_reverse_obj_dir(slot);
 }
 
 void z07_patch_and_cue_level_palettes_transfer(void) {
@@ -114,10 +78,6 @@ unsigned char z07_get_collidable_tile_still(unsigned int slot) {
 
 unsigned char z07_get_colliding_tile_moving(unsigned int slot) {
     return colrt_get_colliding_tile_moving(slot);
-}
-
-void z07_do_nothing(void) {
-    corert_do_nothing();
 }
 
 void z07_init_grumble(unsigned int slot) {
@@ -292,5 +252,85 @@ void z07_decrement_invincibility_timer(unsigned int slot) {
     core_decrement_invincibility_timer(slot);
 #else
     corert_decrement_invincibility_timer(slot);
+#endif
+}
+
+unsigned char z07_reset_obj_state(unsigned int slot) {
+#ifdef NATIVE_CORE
+    return core_reset_obj_state(slot);
+#else
+    return corert_reset_obj_state(slot);
+#endif
+}
+
+void z07_deactivate_shot(unsigned int slot) {
+#ifdef NATIVE_CORE
+    core_deactivate_shot(slot);
+#else
+    corert_deactivate_shot(slot);
+#endif
+}
+
+void z07_deactivate_link_shot(void) {
+#ifdef NATIVE_CORE
+    core_deactivate_link_shot();
+#else
+    corert_deactivate_link_shot();
+#endif
+}
+
+void z07_set_type_and_clear_object(unsigned int type, unsigned int slot) {
+#ifdef NATIVE_CORE
+    core_set_type_and_clear_object(type, slot);
+#else
+    corert_set_type_and_clear_object(type, slot);
+#endif
+}
+
+void z07_init_tile_obj_or_item(unsigned int slot) {
+#ifdef NATIVE_CORE
+    core_init_tile_obj_or_item(slot);
+#else
+    corert_init_tile_obj_or_item(slot);
+#endif
+}
+
+void z07_init_flute_secret(unsigned int slot) {
+#ifdef NATIVE_CORE
+    core_init_flute_secret(slot);
+#else
+    corert_init_flute_secret(slot);
+#endif
+}
+
+void z07_ensure_object_aligned(unsigned int slot) {
+#ifdef NATIVE_CORE
+    core_ensure_object_aligned(slot);
+#else
+    corert_ensure_object_aligned(slot);
+#endif
+}
+
+void z07_reverse_obj_dir(unsigned int slot) {
+#ifdef NATIVE_CORE
+    core_reverse_obj_dir(slot);
+#else
+    corert_reverse_obj_dir(slot);
+#endif
+}
+
+unsigned char z07_reset_moving_dir(void) {
+#ifdef NATIVE_CORE
+    return core_reset_moving_dir();
+#else
+    return corert_reset_moving_dir();
+#endif
+}
+
+void z07_do_nothing(void) {
+#ifdef NATIVE_CORE
+    core_do_nothing();
+#else
+    corert_do_nothing();
 #endif
 }

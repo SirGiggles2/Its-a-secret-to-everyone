@@ -214,6 +214,42 @@ void core_reset_obj_metastate_and_timer(unsigned int slot);
  * DecrementInvincibilityTimer. drain at core_runtime.c:350+. */
 void core_decrement_invincibility_timer(unsigned int slot);
 
+/* OBJ_STATE(slot) = 0; return 0. NES ResetObjState. drain at
+ * core_runtime.c:327-330. */
+unsigned char core_reset_obj_state(unsigned int slot);
+
+/* core_reset_obj_state(slot). NES DeactivateShot. */
+void core_deactivate_shot(unsigned int slot);
+
+/* core_reset_obj_state(14). NES DeactivateLinkShot. */
+void core_deactivate_link_shot(void);
+
+/* OBJ_TYPE(slot) = type; core_destroy_object_wram(0, slot).
+ * NES SetTypeAndClearObject. */
+void core_set_type_and_clear_object(unsigned int type, unsigned int slot);
+
+/* RAM($04BF + slot) = $81; core_reset_obj_metastate_and_timer(slot).
+ * NES InitTileObjOrItem. */
+void core_init_tile_obj_or_item(unsigned int slot);
+
+/* RAM($051A) = 1; RAM($0028 + slot) = 0; core_reset_obj_metastate(slot).
+ * NES InitFluteSecret. */
+void core_init_flute_secret(unsigned int slot);
+
+/* if OBJ_ALIGN_FLAG(slot) != 0 return; OBJ_TILE_X &= $F8;
+ * OBJ_TILE_Y = (OBJ_TILE_Y & $F8) | $05. NES EnsureObjectAligned. */
+void core_ensure_object_aligned(unsigned int slot);
+
+/* OBJ_FLAG(slot) = opposite of dir; LINK_MOVING_DIR = same.
+ * NES ReverseObjDir. */
+void core_reverse_obj_dir(unsigned int slot);
+
+/* LINK_MOVING_DIR = 0; return 0. NES ResetMovingDir. */
+unsigned char core_reset_moving_dir(void);
+
+/* No-op. NES DoNothing. */
+void core_do_nothing(void);
+
 #ifdef __cplusplus
 }
 #endif

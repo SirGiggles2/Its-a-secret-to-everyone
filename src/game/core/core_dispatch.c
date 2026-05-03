@@ -448,6 +448,81 @@ void core_decrement_invincibility_timer(unsigned int slot)
     OBJ_INV_TIMER(slot) = (uint8_t)(OBJ_INV_TIMER(slot) - 1u);
 }
 
+unsigned char core_reset_obj_state(unsigned int slot)
+{
+    /* drain at core_runtime.c:327-330. */
+    OBJ_STATE(slot) = 0u;
+    return 0u;
+}
+
+void core_deactivate_shot(unsigned int slot)
+{
+    /* drain at core_runtime.c:366-368. */
+    (void)core_reset_obj_state(slot);
+}
+
+void core_deactivate_link_shot(void)
+{
+    /* drain at core_runtime.c:370-372. */
+    (void)core_reset_obj_state(14u);
+}
+
+void core_set_type_and_clear_object(unsigned int type, unsigned int slot)
+{
+    /* drain at core_runtime.c:379-382. */
+    OBJ_TYPE(slot) = (uint8_t)type;
+    core_destroy_object_wram(0u, slot);
+}
+
+void core_init_tile_obj_or_item(unsigned int slot)
+{
+    /* drain at core_runtime.c:384-387. */
+    RAM(0x04BF + slot) = 0x81u;
+    core_reset_obj_metastate_and_timer(slot);
+}
+
+void core_init_flute_secret(unsigned int slot)
+{
+    /* drain at core_runtime.c:389-393. */
+    RAM(0x051Au) = 1u;             /* NES_ROOM_LAYOUT_SCRATCH */
+    RAM(0x0028 + slot) = 0u;
+    core_reset_obj_metastate(slot);
+}
+
+void core_ensure_object_aligned(unsigned int slot)
+{
+    /* drain at core_runtime.c:395-399. */
+    if (RAM(0x0394 + slot) != 0u) {  /* OBJ_ALIGN_FLAG(slot) */
+        return;
+    }
+    OBJ_TILE_X(slot) = (uint8_t)(OBJ_TILE_X(slot) & 0xF8u);
+    OBJ_TILE_Y(slot) =
+        (uint8_t)((OBJ_TILE_Y(slot) & 0xF8u) | 0x05u);
+}
+
+void core_reverse_obj_dir(unsigned int slot)
+{
+    /* drain at core_runtime.c:401-406. NES ReverseObjDir.
+     * OBJ_FLAG(slot) reads from NES_OBJ_FLAG_BASE; see object_state.h. */
+    const unsigned char dir =
+        (unsigned char)RAM(NES_OBJ_FLAG_BASE + slot);
+    const unsigned char new_dir = (unsigned char)core_get_opposite_dir(dir);
+    RAM(NES_OBJ_FLAG_BASE + slot) = new_dir;
+    RAM(NES_LINK_MOVING_DIR) = new_dir;
+}
+
+unsigned char core_reset_moving_dir(void)
+{
+    /* drain at core_runtime.c:408-411. */
+    RAM(NES_LINK_MOVING_DIR) = 0u;
+    return 0u;
+}
+
+void core_do_nothing(void)
+{
+    /* drain at core_runtime.c:413. */
+}
+
 void core_set_up_common_cave_objects(unsigned int x, unsigned int slot,
                                      unsigned int y)
 {
