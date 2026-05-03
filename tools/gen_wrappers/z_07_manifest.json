@@ -25,7 +25,6 @@
     {"old": "z07_walker_alt_dir_end_loop", "new": "enrt_walker_alt_dir_end_loop", "sig": "void (void)"},
     {"old": "z07_reset_shove_info", "new": "corert_reset_shove_info", "sig": "void (unsigned int slot)"},
     {"old": "z07_go_to_next_mode", "new": "roommd_go_to_next_mode", "sig": "void (void)"},
-    {"old": "z07_find_empty_monster_slot", "new": "enrt_find_empty_monster_slot", "sig": "unsigned int (void)"},
     {"old": "z07_destroy_monster", "new": "corert_destroy_monster", "sig": "void (unsigned int slot)"},
     {"old": "z07_set_type_and_clear_object", "new": "corert_set_type_and_clear_object", "sig": "void (unsigned int type, unsigned int slot)"},
     {"old": "z07_init_tile_obj_or_item", "new": "corert_init_tile_obj_or_item", "sig": "void (unsigned int slot)"},

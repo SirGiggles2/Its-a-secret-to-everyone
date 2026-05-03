@@ -105,10 +105,6 @@ void z07_go_to_next_mode(void) {
     roommd_go_to_next_mode();
 }
 
-unsigned int z07_find_empty_monster_slot(void) {
-    return enrt_find_empty_monster_slot();
-}
-
 void z07_destroy_monster(unsigned int slot) {
     corert_destroy_monster(slot);
 }
@@ -243,5 +239,20 @@ void z07_animate_object_walking(unsigned int slot) {
     sprite_animate_object_walking(slot);
 #else
     sprrt_animate_object_walking(slot);
+#endif
+}
+
+/* Phase 4 native enemy subsystem cutover gate — NATIVE_ENEMY. First
+ * batch: find_empty_monster_slot. Pure C, no shims. Drain MATCH per
+ * finding 4_7n. */
+#ifdef NATIVE_ENEMY
+#include "enemies/enemy_dispatch.h"
+#endif
+
+unsigned int z07_find_empty_monster_slot(void) {
+#ifdef NATIVE_ENEMY
+    return enemy_find_empty_monster_slot();
+#else
+    return enrt_find_empty_monster_slot();
 #endif
 }
