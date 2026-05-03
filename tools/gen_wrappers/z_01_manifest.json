@@ -29,21 +29,6 @@
       "sig": "void (unsigned int val, unsigned int slot)"
     },
     {
-      "old": "z01_add_to_int16_at_0",
-      "new": "corert_add_to_int16_at_0",
-      "sig": "unsigned char (unsigned int val)"
-    },
-    {
-      "old": "z01_add_to_int16_at_2",
-      "new": "corert_add_to_int16_at_2",
-      "sig": "unsigned char (unsigned int val)"
-    },
-    {
-      "old": "z01_add_to_int16_at_4",
-      "new": "corert_add_to_int16_at_4",
-      "sig": "unsigned char (unsigned int val)"
-    },
-    {
       "old": "z01_map_screen_pos_to_ppu_addr",
       "new": "corert_map_screen_pos_to_ppu_addr",
       "sig": "void (void)"
@@ -57,16 +42,6 @@
       "old": "z01_update_person_state_reset_char_offset",
       "new": "corert_update_person_state_reset_char_offset",
       "sig": "void (void)"
-    },
-    {
-      "old": "z01_add1_to_int16_at_2",
-      "new": "corert_add1_to_int16_at_2",
-      "sig": "unsigned char (void)"
-    },
-    {
-      "old": "z01_add1_to_int16_at_4",
-      "new": "corert_add1_to_int16_at_4",
-      "sig": "unsigned char (void)"
     },
     {
       "old": "z01_init_underworld_person_b",
@@ -132,11 +107,6 @@
       "old": "z01_update_grumble1",
       "new": "uwrt_update_grumble1",
       "sig": "void (void)"
-    },
-    {
-      "old": "z01_add1_to_int16_at_0",
-      "new": "corert_add1_to_int16_at_0",
-      "sig": "unsigned char (void)"
     },
     {
       "old": "z01_take_hearts",
@@ -287,11 +257,6 @@
       "old": "z01_place_weapon_for_player_state_and_anim_and_weapon_state",
       "new": "weprt_place_weapon_for_player_state_and_anim_and_weapon_state",
       "sig": "void (unsigned char weapon_state, unsigned int slot)"
-    },
-    {
-      "old": "z01_sub1_from_int16_at4",
-      "new": "corert_sub1_from_int16_at4",
-      "sig": "unsigned int (void)"
     },
     {
       "old": "z01_wield_bomb",

@@ -38,18 +38,6 @@ void z01_set_boomerang_speed(unsigned int val, unsigned int slot) {
     corert_set_boomerang_speed(val, slot);
 }
 
-unsigned char z01_add_to_int16_at_0(unsigned int val) {
-    return corert_add_to_int16_at_0(val);
-}
-
-unsigned char z01_add_to_int16_at_2(unsigned int val) {
-    return corert_add_to_int16_at_2(val);
-}
-
-unsigned char z01_add_to_int16_at_4(unsigned int val) {
-    return corert_add_to_int16_at_4(val);
-}
-
 void z01_map_screen_pos_to_ppu_addr(void) {
     corert_map_screen_pos_to_ppu_addr();
 }
@@ -60,14 +48,6 @@ void z01_reset_shove_info_and_inv_timer(unsigned int slot) {
 
 void z01_update_person_state_reset_char_offset(void) {
     corert_update_person_state_reset_char_offset();
-}
-
-unsigned char z01_add1_to_int16_at_2(void) {
-    return corert_add1_to_int16_at_2();
-}
-
-unsigned char z01_add1_to_int16_at_4(void) {
-    return corert_add1_to_int16_at_4();
 }
 
 void z01_init_underworld_person_b(unsigned int slot) {
@@ -120,10 +100,6 @@ void z01_check_person_blocking(void) {
 
 void z01_update_grumble1(void) {
     uwrt_update_grumble1();
-}
-
-unsigned char z01_add1_to_int16_at_0(void) {
-    return corert_add1_to_int16_at_0();
 }
 
 void z01_take_hearts(void) {
@@ -244,10 +220,6 @@ void z01_place_weapon_for_player_state_and_anim(unsigned int slot) {
 
 void z01_place_weapon_for_player_state_and_anim_and_weapon_state(unsigned char weapon_state, unsigned int slot) {
     weprt_place_weapon_for_player_state_and_anim_and_weapon_state(weapon_state, slot);
-}
-
-unsigned int z01_sub1_from_int16_at4(void) {
-    return corert_sub1_from_int16_at4();
 }
 
 void z01_wield_bomb(unsigned int slot) {
@@ -1072,6 +1044,62 @@ void z01_write_blank_priority_sprites(void) {
     core_write_blank_priority_sprites();
 #else
     corert_write_blank_priority_sprites();
+#endif
+}
+
+unsigned char z01_add_to_int16_at_0(unsigned int val) {
+#ifdef NATIVE_CORE
+    return core_add_to_int16_at_0(val);
+#else
+    return corert_add_to_int16_at_0(val);
+#endif
+}
+
+unsigned char z01_add_to_int16_at_2(unsigned int val) {
+#ifdef NATIVE_CORE
+    return core_add_to_int16_at_2(val);
+#else
+    return corert_add_to_int16_at_2(val);
+#endif
+}
+
+unsigned char z01_add_to_int16_at_4(unsigned int val) {
+#ifdef NATIVE_CORE
+    return core_add_to_int16_at_4(val);
+#else
+    return corert_add_to_int16_at_4(val);
+#endif
+}
+
+unsigned char z01_add1_to_int16_at_0(void) {
+#ifdef NATIVE_CORE
+    return core_add1_to_int16_at_0();
+#else
+    return corert_add1_to_int16_at_0();
+#endif
+}
+
+unsigned char z01_add1_to_int16_at_2(void) {
+#ifdef NATIVE_CORE
+    return core_add1_to_int16_at_2();
+#else
+    return corert_add1_to_int16_at_2();
+#endif
+}
+
+unsigned char z01_add1_to_int16_at_4(void) {
+#ifdef NATIVE_CORE
+    return core_add1_to_int16_at_4();
+#else
+    return corert_add1_to_int16_at_4();
+#endif
+}
+
+unsigned int z01_sub1_from_int16_at4(void) {
+#ifdef NATIVE_CORE
+    return core_sub1_from_int16_at4();
+#else
+    return corert_sub1_from_int16_at4();
 #endif
 }
 

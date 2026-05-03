@@ -148,6 +148,22 @@ void core_take_power_triforce(void);
  * drain at core_runtime.c:241-247. */
 void core_write_blank_priority_sprites(void);
 
+/* 16-bit add helpers: add `val` to ZP int16 at $00/$01, $02/$03,
+ * or $04/$05; carry out increments the high byte. Return the low
+ * byte. NES AddToInt16AtX. drain at core_runtime.c:111-138. */
+unsigned char core_add_to_int16_at_0(unsigned int val);
+unsigned char core_add_to_int16_at_2(unsigned int val);
+unsigned char core_add_to_int16_at_4(unsigned int val);
+
+/* +1 variants. drain at core_runtime.c:179-189. */
+unsigned char core_add1_to_int16_at_0(void);
+unsigned char core_add1_to_int16_at_2(void);
+unsigned char core_add1_to_int16_at_4(void);
+
+/* 16-bit sub-1 helper at $04/$05; returns CARRY_SET when no borrow,
+ * else 0. NES Sub1FromInt16At4. drain at core_runtime.c:315-323. */
+unsigned int core_sub1_from_int16_at4(void);
+
 #ifdef __cplusplus
 }
 #endif

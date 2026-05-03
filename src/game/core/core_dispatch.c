@@ -289,6 +289,63 @@ void core_write_blank_priority_sprites(void)
     }
 }
 
+/* 16-bit add helpers shared body: add val to lo, carry out to hi. */
+static inline unsigned char core_add_to_int16_at_inline(unsigned int val,
+                                                        unsigned short lo_addr)
+{
+    const unsigned int sum =
+        (unsigned int)(unsigned char)val +
+        (unsigned int)nes_ram[lo_addr];
+    nes_ram[lo_addr] = (unsigned char)sum;
+    if (sum > 0xFFu) {
+        nes_ram[lo_addr + 1u] = (uint8_t)(nes_ram[lo_addr + 1u] + 1u);
+    }
+    return (unsigned char)sum;
+}
+
+unsigned char core_add_to_int16_at_0(unsigned int val)
+{
+    return core_add_to_int16_at_inline(val, 0x0000u);
+}
+
+unsigned char core_add_to_int16_at_2(unsigned int val)
+{
+    return core_add_to_int16_at_inline(val, 0x0002u);
+}
+
+unsigned char core_add_to_int16_at_4(unsigned int val)
+{
+    return core_add_to_int16_at_inline(val, 0x0004u);
+}
+
+unsigned char core_add1_to_int16_at_0(void)
+{
+    return core_add_to_int16_at_0(1u);
+}
+
+unsigned char core_add1_to_int16_at_2(void)
+{
+    return core_add_to_int16_at_2(1u);
+}
+
+unsigned char core_add1_to_int16_at_4(void)
+{
+    return core_add_to_int16_at_4(1u);
+}
+
+unsigned int core_sub1_from_int16_at4(void)
+{
+    /* drain at core_runtime.c:315-323. NES Sub1FromInt16At4. Returns
+     * CARRY_SET when no borrow occurred, else 0. */
+    const unsigned char lo = (unsigned char)RAM(0x0004u);
+    const unsigned int borrow = (lo == 0u) ? 1u : 0u;
+    RAM(0x0004u) = (unsigned char)(lo - 1u);
+    if (borrow) {
+        RAM(0x0005u) = (unsigned char)(RAM(0x0005u) - 1u);
+    }
+    return borrow ? 0u : CARRY_SET;
+}
+
 void core_set_up_common_cave_objects(unsigned int x, unsigned int slot,
                                      unsigned int y)
 {
