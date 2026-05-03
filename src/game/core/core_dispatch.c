@@ -10,6 +10,7 @@
 #include "room_state.h"        /* ROOM_TRANSFER_BUF_SELECT */
 #include "link_state.h"        /* DEATH_FRAME_COUNTER */
 #include "object_state.h"      /* OBJ_TILE_X/_Y, OBJ_STATE, OBJ_TYPE, OBJ_SHOVE_DIR/DIST, OBJ_INV_TIMER, OBJ_METASTATE */
+#include "sprite_state.h"      /* OAM_BYTE */
 #include "progress_state.h"    /* SUBMODE_VALUE, PROG_ITEMS_BY_LEVEL */
 #include "combat_state.h"      /* LINK_HEARTS */
 
@@ -237,6 +238,55 @@ void core_play_boomerang_sfx(unsigned int sfx_id)
     }
     core_play_effect(sfx_id);
     RAM(0x003Bu) = 10u;
+}
+
+void core_play_character_sfx(void)
+{
+    /* drain at core_runtime.c:9-11. */
+    DEATH_FRAME_COUNTER = 8u;
+}
+
+void core_play_key_taken_tune(void)
+{
+    /* drain at core_runtime.c:13-16. */
+    DEATH_FRAME_COUNTER = 0u;
+    RAM(0x0604u) = 8u;  /* ROOM_SFX_MAIN */
+}
+
+void core_play_parry_tune(void)
+{
+    /* drain at core_runtime.c:237-239. */
+    RAM(0x0604u) = 1u;  /* ROOM_SFX_MAIN */
+}
+
+unsigned char core_silence_all_sound(void)
+{
+    /* drain at core_runtime.c:24-30. */
+    RAM(0x0604u) = 0x80u;  /* ROOM_SFX_MAIN */
+    RAM(0x0603u) = 0x80u;  /* ROOM_SFX_AUX */
+    RAM(0x0605u) = 0u;
+    RAM(0x0607u) = 0u;
+    return 0u;
+}
+
+void core_take_power_triforce(void)
+{
+    /* drain at core_runtime.c:18-22. */
+    RAM(0x0509u) = (uint8_t)(RAM(0x0509u) + 1u);  /* POWER_TRIFORCE_FANFARE_FLAG */
+    RAM(0x0028u) = 0xC0u;
+    OBJ_STATE(0) = 64u;
+}
+
+void core_write_blank_priority_sprites(void)
+{
+    /* drain at core_runtime.c:241-247. NES WriteBlankPrioritySprites.
+     * 8-byte template repeated 8 times = 64 OAM bytes (16 sprites). */
+    static const unsigned char tmpl[8] = {
+        0x3Du, 0x1Cu, 0x20u, 0x00u, 0xDDu, 0x1Cu, 0x20u, 0x00u
+    };
+    for (unsigned char i = 0u; i < 0x40u; i++) {
+        OAM_BYTE(i) = tmpl[i & 7u];
+    }
 }
 
 void core_set_up_common_cave_objects(unsigned int x, unsigned int slot,

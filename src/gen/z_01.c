@@ -30,22 +30,6 @@ void z01_init_underworld_person_do_nothing(void) {}
 #include "combat_runtime.h"
 #include "link_collision_runtime.h"
 
-void z01_play_character_sfx(void) {
-    corert_play_character_sfx();
-}
-
-void z01_play_key_taken_tune(void) {
-    corert_play_key_taken_tune();
-}
-
-void z01_take_power_triforce(void) {
-    corert_take_power_triforce();
-}
-
-unsigned char z01_silence_all_sound(void) {
-    return corert_silence_all_sound();
-}
-
 void z01_uw_person_complex_state_delay_and_quit(void) {
     corert_uw_person_complex_state_delay_and_quit();
 }
@@ -84,14 +68,6 @@ unsigned char z01_add1_to_int16_at_2(void) {
 
 unsigned char z01_add1_to_int16_at_4(void) {
     return corert_add1_to_int16_at_4();
-}
-
-void z01_play_parry_tune(void) {
-    corert_play_parry_tune();
-}
-
-void z01_write_blank_priority_sprites(void) {
-    corert_write_blank_priority_sprites();
 }
 
 void z01_init_underworld_person_b(unsigned int slot) {
@@ -1048,6 +1024,54 @@ void z01_play_boomerang_sfx(unsigned int sfx_id) {
     core_play_boomerang_sfx(sfx_id);
 #else
     corert_play_boomerang_sfx(sfx_id);
+#endif
+}
+
+void z01_play_character_sfx(void) {
+#ifdef NATIVE_CORE
+    core_play_character_sfx();
+#else
+    corert_play_character_sfx();
+#endif
+}
+
+void z01_play_key_taken_tune(void) {
+#ifdef NATIVE_CORE
+    core_play_key_taken_tune();
+#else
+    corert_play_key_taken_tune();
+#endif
+}
+
+void z01_play_parry_tune(void) {
+#ifdef NATIVE_CORE
+    core_play_parry_tune();
+#else
+    corert_play_parry_tune();
+#endif
+}
+
+unsigned char z01_silence_all_sound(void) {
+#ifdef NATIVE_CORE
+    return core_silence_all_sound();
+#else
+    return corert_silence_all_sound();
+#endif
+}
+
+void z01_take_power_triforce(void) {
+#ifdef NATIVE_CORE
+    core_take_power_triforce();
+#else
+    corert_take_power_triforce();
+#endif
+}
+
+void z01_write_blank_priority_sprites(void) {
+#ifdef NATIVE_CORE
+    core_write_blank_priority_sprites();
+#else
+    corert_write_blank_priority_sprites();
 #endif
 }
 

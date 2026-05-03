@@ -19,26 +19,6 @@
   ],
   "symbols": [
     {
-      "old": "z01_play_character_sfx",
-      "new": "corert_play_character_sfx",
-      "sig": "void (void)"
-    },
-    {
-      "old": "z01_play_key_taken_tune",
-      "new": "corert_play_key_taken_tune",
-      "sig": "void (void)"
-    },
-    {
-      "old": "z01_take_power_triforce",
-      "new": "corert_take_power_triforce",
-      "sig": "void (void)"
-    },
-    {
-      "old": "z01_silence_all_sound",
-      "new": "corert_silence_all_sound",
-      "sig": "unsigned char (void)"
-    },
-    {
       "old": "z01_uw_person_complex_state_delay_and_quit",
       "new": "corert_uw_person_complex_state_delay_and_quit",
       "sig": "void (void)"
@@ -87,16 +67,6 @@
       "old": "z01_add1_to_int16_at_4",
       "new": "corert_add1_to_int16_at_4",
       "sig": "unsigned char (void)"
-    },
-    {
-      "old": "z01_play_parry_tune",
-      "new": "corert_play_parry_tune",
-      "sig": "void (void)"
-    },
-    {
-      "old": "z01_write_blank_priority_sprites",
-      "new": "corert_write_blank_priority_sprites",
-      "sig": "void (void)"
     },
     {
       "old": "z01_init_underworld_person_b",

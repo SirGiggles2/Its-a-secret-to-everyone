@@ -136,6 +136,18 @@ void core_uw_person_complex_state_begin(void);
  * drain at core_runtime.c:282-288. */
 void core_play_boomerang_sfx(unsigned int sfx_id);
 
+/* SFX trivials. drain at core_runtime.c:9-30, 237-247. */
+void core_play_character_sfx(void);
+void core_play_key_taken_tune(void);
+void core_play_parry_tune(void);
+unsigned char core_silence_all_sound(void);
+void core_take_power_triforce(void);
+
+/* Write blank-priority sprite template (8-byte pattern $3D $1C $20 $00
+ * $DD $1C $20 $00) into OAM bytes 0..$3F. NES WriteBlankPrioritySprites.
+ * drain at core_runtime.c:241-247. */
+void core_write_blank_priority_sprites(void);
+
 #ifdef __cplusplus
 }
 #endif
