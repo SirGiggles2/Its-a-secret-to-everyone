@@ -144,8 +144,12 @@ typedef struct palette_toggle_t {
  *   nes_palram[], and bumps generation. Caller flushes CRAM cache via
  *   the existing palette path on next render.
  *
- * Implementation lives in RoomRom (gameplay-side; promoted to
- * src/game/palette_runtime.c at Phase 12).
+ * Implementation lives in `src/state/palette_tick.c` (substrate, main
+ * worktree per Rule WT-1). Both RoomRom (gameplay toggles: low-health,
+ * boss flash, hit-invuln) and Title.md frontend (intro item flash) call
+ * palette_tick from their per-frame update; the runtime is pure C with
+ * no SGDK dependencies, so it lands in substrate rather than gameplay-
+ * side.
  */
 
 #define PALETTE_TOGGLE_MAX 16u
