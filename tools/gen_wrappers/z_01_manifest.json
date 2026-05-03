@@ -494,11 +494,6 @@
       "sig": "void (void)"
     },
     {
-      "old": "z01_init_cave",
-      "new": "cavert_init_cave",
-      "sig": "void (unsigned int slot)"
-    },
-    {
       "old": "z01_try_take_item",
       "new": "cavert_try_take_item",
       "sig": "void (unsigned int slot)"

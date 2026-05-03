@@ -410,10 +410,6 @@ void z01_world_change_rupees(void) {
     hudrt_world_change_rupees();
 }
 
-void z01_init_cave(unsigned int slot) {
-    cavert_init_cave(slot);
-}
-
 void z01_try_take_item(unsigned int slot) {
     cavert_try_take_item(slot);
 }
@@ -683,3 +679,43 @@ void z01_update_trap_full(unsigned int slot) {
 }
 
 /* <<< end auto-wrappers >>> */
+
+/* ----------------------------------------------------------------------
+ * Phase 3 cave cutover — debate 006 D3.
+ *
+ * z01_init_cave is the Title.md transpile-bridge entry point for cave
+ * gamemode init. Pre-cutover it forwarded straight to cavert_init_cave
+ * (oracle drain in src/oracle/cave/, verified MATCH per Gate 1 finding
+ * 3_2 / 3_2b). The Phase 3 plan migrates cave gameplay to native code in
+ * src/game/cave/ behind NATIVE_CAVE so Title.md keeps shipping while the
+ * native path bakes in RoomRom.md.
+ *
+ * Default: NATIVE_CAVE undefined → oracle path → byte-identical to
+ * pre-cutover ROM.
+ * Defined  : route through src/game/cave/cave_dispatch.c. NES-side
+ *            cave_id derives from $0350 (ObjType+1) per Z_01.asm:78
+ *            (slot is unused for the cave_id load — InitCave reads
+ *            ObjType+1 bare, not ObjType+1,X). Native cave_init expects
+ *            cave_id_t directly; we read it through cave_room_type_get().
+ *
+ * Removed from tools/gen_wrappers/z_01_manifest.json: this wrapper is
+ * now hand-written so the ifdef stays under source control. When the
+ * full cavert_* surface ports + verifies, NATIVE_CAVE goes default and
+ * the ifdef collapses to the native branch only; oracle drain retires.
+ * -------------------------------------------------------------------- */
+
+#ifdef NATIVE_CAVE
+#include "cave/cave_dispatch.h"
+#include "cave_state.h"  /* cave_room_type_get() — reads RAM($0350) */
+#endif
+
+void z01_init_cave(unsigned int slot) {
+#ifdef NATIVE_CAVE
+    (void)slot;  /* NES InitCave reads ObjType+1 bare; slot is forwarded
+                  * to SetUpCommonCaveObjects internally by native
+                  * cave_init once that callsite ports. */
+    (void)cave_init((cave_id_t)cave_room_type_get());
+#else
+    cavert_init_cave(slot);
+#endif
+}
