@@ -73,6 +73,28 @@ void enemy_ganon_randomize_location(unsigned int slot);
  * 2 bits of dir. NES JumperPointBoulderDownward. */
 void enemy_jumper_point_boulder_downward(unsigned int slot);
 
+/* ENEMY_TYPE = 93 (dead-dummy). NES SetDeadDummyObjType. */
+void enemy_set_dead_dummy_obj_type(unsigned int slot);
+
+/* if ENEMY_HIT_REACTION == $10, ENEMY_SFX_BOSS_CRY = 2.
+ * NES PlayBossHitCryIfNeeded. */
+void enemy_play_boss_hit_cry_if_needed(unsigned int slot);
+
+/* ENEMY_SCRATCH_Y = ENEMY_Y(slot) + ENEMY_BOUNCE_FLAGS(slot).
+ * NES GanonGetCurCloudBottom. */
+void enemy_ganon_get_cur_cloud_bottom(unsigned int slot);
+
+/* if ENEMY_LIFE(0) == 0 return; if get_room_flag_uw_item_state() != 0
+ * return; ENEMY_LIFE(0) = 0; ENEMY_SFX_SECRET = 2.
+ * NES GanonActivateRoomItem. Calls progress_get_room_flag_uw_item_state. */
+void enemy_ganon_activate_room_item(void);
+
+/* play_boss_death_cry_if_needed + core_set_shove_info_with0(0, slot).
+ * NES CheckBossHitReaction. Stage-1: shove_info still STUB pending
+ * core port; play_boss_death_cry_if_needed itself depends on z04_
+ * shim. Document the shim chain. */
+void enemy_check_boss_hit_reaction(unsigned int slot);
+
 #ifdef __cplusplus
 }
 #endif

@@ -9,6 +9,7 @@
 #include "platform_abi.h"      /* RAM, OBJ, NES_OBJ_TYPE */
 #include "enemy_state.h"       /* ENEMY_OAM_HIDE_*, ENEMY_SFX_*, ENEMY_NEXT_SHOT_SLOT, ENEMY_X/Y, ENEMY_DIR, ENEMY_RNG_A/B, ENEMY_FRAME_FLAGS, ENEMY_BLOCKED_FLAG, ENEMY_AI_STATE, ENEMY_TURN_TIMER, ENEMY_INVINCIBILITY, ENEMY_TYPE, ENEMY_CUR_SPRITE_ATTR_ROW, ENEMY_MOVE_TIMER */
 #include "core/core_dispatch.h"  /* core_anim_set_sprite_desc_attrs */
+#include "world/progress_dispatch.h"  /* progress_get_room_flag_uw_item_state */
 
 unsigned int enemy_find_empty_monster_slot(void)
 {
@@ -143,4 +144,54 @@ void enemy_jumper_point_boulder_downward(unsigned int slot)
         return;
     }
     ENEMY_DIR(slot) = (uint8_t)((ENEMY_DIR(slot) & 0x03u) | 0x04u);
+}
+
+void enemy_set_dead_dummy_obj_type(unsigned int slot)
+{
+    /* drain at enemy_boss_runtime.c:361-363. */
+    ENEMY_TYPE(slot) = 93u;
+}
+
+void enemy_play_boss_hit_cry_if_needed(unsigned int slot)
+{
+    /* drain at enemy_boss_runtime.c:374-377. */
+    if (ENEMY_HIT_REACTION(slot) == 0x10u) {
+        ENEMY_SFX_BOSS_CRY = 2u;
+    }
+}
+
+void enemy_ganon_get_cur_cloud_bottom(unsigned int slot)
+{
+    /* drain at enemy_boss_runtime.c:379-381. */
+    ENEMY_SCRATCH_Y =
+        (uint8_t)((unsigned char)ENEMY_Y(slot) +
+                  (unsigned char)ENEMY_BOUNCE_FLAGS(slot));
+}
+
+void enemy_ganon_activate_room_item(void)
+{
+    /* drain at enemy_boss_runtime.c:365-372. NES GanonActivateRoomItem. */
+    if (ENEMY_LIFE(0) == 0u) {
+        return;
+    }
+    if (progress_get_room_flag_uw_item_state() != 0u) {
+        return;
+    }
+    ENEMY_LIFE(0) = 0u;
+    ENEMY_SFX_SECRET = 2u;
+}
+
+void enemy_check_boss_hit_reaction(unsigned int slot)
+{
+    /* drain at enemy_boss_runtime.c:93-96. NES CheckBossHitReaction.
+     * Two transpile shims:
+     *   z04_play_boss_death_cry_if_needed - z04 bank logic, defer.
+     *   z07_set_shove_info_with0(0, slot)  - corert_set_shove_info_with0
+     *                                        not yet ported, defer.
+     *
+     * Stage-1: skeleton-only. Native fills land when those substrate
+     * helpers port. */
+    (void)slot;
+    /* TODO Phase 4: native equivalent of z04_play_boss_death_cry_if_needed. */
+    /* TODO Phase 4: native core_set_shove_info_with0(0, slot). */
 }
