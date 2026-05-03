@@ -52,28 +52,12 @@ void z07_set_shot_spreading_state(unsigned int slot) {
     corert_set_shot_spreading_state(slot);
 }
 
-void z07_decrement_invincibility_timer(unsigned int slot) {
-    corert_decrement_invincibility_timer(slot);
-}
-
 void z07_update_dead_dummy(unsigned int slot) {
     corert_update_dead_dummy(slot);
 }
 
 unsigned char z07_end_game_mode(void) {
     return roommd_end_game_mode();
-}
-
-void z07_set_shove_info_with0(unsigned int val, unsigned int slot) {
-    corert_set_shove_info_with0(val, slot);
-}
-
-void z07_reset_obj_metastate(unsigned int slot) {
-    corert_reset_obj_metastate(slot);
-}
-
-void z07_reset_obj_metastate_and_timer(unsigned int slot) {
-    corert_reset_obj_metastate_and_timer(slot);
 }
 
 void z07_init_flute_secret(unsigned int slot) {
@@ -86,10 +70,6 @@ void z07_deactivate_shot(unsigned int slot) {
 
 void z07_deactivate_link_shot(void) {
     corert_deactivate_link_shot();
-}
-
-void z07_reset_shove_info(unsigned int slot) {
-    corert_reset_shove_info(slot);
 }
 
 void z07_go_to_next_mode(void) {
@@ -266,5 +246,51 @@ unsigned char z07_walker_alt_dir_get_random_perpendicular(unsigned int slot) {
     return enemy_walker_alt_dir_get_random_perpendicular(slot);
 #else
     return enrt_walker_alt_dir_get_random_perpendicular(slot);
+#endif
+}
+
+/* Phase 4 NATIVE_CORE additions for shove/metastate/inv-timer batch.
+ * core_dispatch.h already included via NATIVE_CORE chain. */
+#ifdef NATIVE_CORE
+#include "core/core_dispatch.h"
+#endif
+
+void z07_set_shove_info_with0(unsigned int val, unsigned int slot) {
+#ifdef NATIVE_CORE
+    core_set_shove_info_with0(val, slot);
+#else
+    corert_set_shove_info_with0(val, slot);
+#endif
+}
+
+void z07_reset_shove_info(unsigned int slot) {
+#ifdef NATIVE_CORE
+    core_reset_shove_info(slot);
+#else
+    corert_reset_shove_info(slot);
+#endif
+}
+
+void z07_reset_obj_metastate(unsigned int slot) {
+#ifdef NATIVE_CORE
+    core_reset_obj_metastate(slot);
+#else
+    corert_reset_obj_metastate(slot);
+#endif
+}
+
+void z07_reset_obj_metastate_and_timer(unsigned int slot) {
+#ifdef NATIVE_CORE
+    core_reset_obj_metastate_and_timer(slot);
+#else
+    corert_reset_obj_metastate_and_timer(slot);
+#endif
+}
+
+void z07_decrement_invincibility_timer(unsigned int slot) {
+#ifdef NATIVE_CORE
+    core_decrement_invincibility_timer(slot);
+#else
+    corert_decrement_invincibility_timer(slot);
 #endif
 }

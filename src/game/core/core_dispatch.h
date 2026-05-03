@@ -194,6 +194,26 @@ void core_take_hearts_no_sound(void);
  * NES TakeHearts. drain at core_runtime.c:310-313. */
 void core_take_hearts(void);
 
+/* OBJ_SHOVE_DIR + OBJ_SHOVE_DIST = val. NES SetShoveInfoWith0.
+ * drain at core_runtime.c:332-335. */
+void core_set_shove_info_with0(unsigned int val, unsigned int slot);
+
+/* core_set_shove_info_with0(0, slot). NES ResetShoveInfo.
+ * drain at core_runtime.c:337-339. */
+void core_reset_shove_info(unsigned int slot);
+
+/* OBJ_METASTATE(slot) = 0. NES ResetObjMetastate.
+ * drain at core_runtime.c:341-343. */
+void core_reset_obj_metastate(unsigned int slot);
+
+/* RAM($0028 + slot) = 0; OBJ_METASTATE(slot) = 0. NES
+ * ResetObjMetastateAndTimer. drain at core_runtime.c:345-348. */
+void core_reset_obj_metastate_and_timer(unsigned int slot);
+
+/* if OBJ_INV_TIMER(slot) > 0: OBJ_INV_TIMER--. NES
+ * DecrementInvincibilityTimer. drain at core_runtime.c:350+. */
+void core_decrement_invincibility_timer(unsigned int slot);
+
 #ifdef __cplusplus
 }
 #endif

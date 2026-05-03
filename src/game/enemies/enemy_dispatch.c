@@ -183,15 +183,8 @@ void enemy_ganon_activate_room_item(void)
 
 void enemy_check_boss_hit_reaction(unsigned int slot)
 {
-    /* drain at enemy_boss_runtime.c:93-96. NES CheckBossHitReaction.
-     * Two transpile shims:
-     *   z04_play_boss_death_cry_if_needed - z04 bank logic, defer.
-     *   z07_set_shove_info_with0(0, slot)  - corert_set_shove_info_with0
-     *                                        not yet ported, defer.
-     *
-     * Stage-1: skeleton-only. Native fills land when those substrate
-     * helpers port. */
-    (void)slot;
-    /* TODO Phase 4: native equivalent of z04_play_boss_death_cry_if_needed. */
-    /* TODO Phase 4: native core_set_shove_info_with0(0, slot). */
+    /* drain at enemy_boss_runtime.c:93-96. NES CheckBossHitReaction. */
+    /* TODO Phase 4: native equivalent of z04_play_boss_death_cry_if_needed
+     * (z04 bank logic not yet drained). */
+    core_set_shove_info_with0(0u, slot);
 }

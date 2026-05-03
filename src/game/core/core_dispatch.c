@@ -413,6 +413,41 @@ void core_take_hearts(void)
     core_take_hearts_no_sound();
 }
 
+void core_set_shove_info_with0(unsigned int val, unsigned int slot)
+{
+    /* drain at core_runtime.c:332-335. */
+    OBJ_SHOVE_DIR(slot)  = (uint8_t)val;
+    OBJ_SHOVE_DIST(slot) = (uint8_t)val;
+}
+
+void core_reset_shove_info(unsigned int slot)
+{
+    /* drain at core_runtime.c:337-339. */
+    core_set_shove_info_with0(0u, slot);
+}
+
+void core_reset_obj_metastate(unsigned int slot)
+{
+    /* drain at core_runtime.c:341-343. */
+    OBJ_METASTATE(slot) = 0u;
+}
+
+void core_reset_obj_metastate_and_timer(unsigned int slot)
+{
+    /* drain at core_runtime.c:345-348. */
+    RAM(0x0028 + slot) = 0u;
+    core_reset_obj_metastate(slot);
+}
+
+void core_decrement_invincibility_timer(unsigned int slot)
+{
+    /* drain at core_runtime.c:350+. */
+    if (OBJ_INV_TIMER(slot) == 0u) {
+        return;
+    }
+    OBJ_INV_TIMER(slot) = (uint8_t)(OBJ_INV_TIMER(slot) - 1u);
+}
+
 void core_set_up_common_cave_objects(unsigned int x, unsigned int slot,
                                      unsigned int y)
 {
