@@ -69,7 +69,7 @@ for `cavert_update_person_state_textbox` proper.
   ported native, 6 NEEDS-FULL-FINDING promoted to FULL MATCH, Phase 3
   scaffolding-complete. Remaining 3 items defer to Phase 4
   cross-subsystem ports (text rendering + item-state + cue_transfer).
-- 2026-05-03 (cook session, 41 commits since debate-006-D2 commit
+- 2026-05-03 (cook session, 45+ commits since debate-006-D2 commit
   e07ec0ec). Author: Claude Opus. Phase 4 cross-subsystem ports
   landed; cave Phase-4 stubs back-filled extensively.
 
@@ -93,11 +93,13 @@ for `cavert_update_person_state_textbox` proper.
   - progress_runtime: 13/14 native (curtain_effect z05-shim deferred)
   - trap_runtime:     1/10  native (link_collision/draw_object blocked)
   - core_runtime:     ~46   functions native (most leaf helpers)
-  - enemy_runtime / enemy_common_runtime: 8 leaf helpers ported
-    (find_empty_monster_slot, hide_sprites_over_link, 3 sfx tunes,
-     walker_alt_dir cluster); per-monster updaters defer until
-     cross-subsystem deps (c_draw_object_*, c_check_monster_collisions,
-     c_shoot_limited, c_wanderer_target_player) port natively.
+  - enemy_runtime / enemy_common_runtime / enemy_boss_runtime: 19
+    helpers ported (5 leaf trivials + 3 walker_alt_dir + 6 boss/init
+    + 5 boss/state + 1 stage-1 skeleton + check_boss_hit_reaction
+    fully filled). Per-monster updaters defer until c_draw_object_*,
+    c_check_monster_collisions, c_shoot_limited, c_wanderer_target_player
+    port natively. core_set_shove_info_with0 (and 4 related core
+    helpers) added to unblock partial fills.
 
   Cutover gates introduced (11 total): NATIVE_CAVE, NATIVE_CAVE_DRAW,
   NATIVE_CAVE_PERSON, NATIVE_CAVE_FORMAT, NATIVE_WORLD, NATIVE_OBJECT,
