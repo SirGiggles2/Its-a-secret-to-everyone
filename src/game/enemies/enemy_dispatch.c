@@ -46,3 +46,44 @@ void enemy_gohma_play_parry_tune(void)
     /* drain at enemy_common_runtime.c:18-20. */
     ENEMY_SFX_PARRY = 1u;
 }
+
+/* NES Z_01.asm ReverseDirections (line 3003): $08 $04 $02 $01.
+ * Used by walker_alt_dir_get_random_perpendicular. */
+static const unsigned char k_reverse_directions[4] = {
+    0x08u, 0x04u, 0x02u, 0x01u
+};
+
+unsigned int enemy_walker_alt_dir_get_opposite(void)
+{
+    /* drain at enemy_wanderer_runtime.c:14-19. NES WalkerAltDirGetOpposite. */
+    const unsigned char dir = ENEMY_FRAME_FLAGS;
+    if (dir & 0x0Au) {
+        return (unsigned int)(dir >> 1);
+    }
+    return (unsigned int)((dir << 1) & 0xFFu);
+}
+
+void enemy_walker_alt_dir_end_loop(void)
+{
+    /* drain at enemy_wanderer_runtime.c:21-23. */
+    ENEMY_BLOCKED_FLAG = 0u;
+}
+
+unsigned char enemy_walker_alt_dir_get_random_perpendicular(unsigned int slot)
+{
+    /* drain at enemy_wanderer_runtime.c:25-31. NES
+     * WalkerAltDirGetRandomPerpendicular.
+     *
+     *   rnd = ENEMY_RNG_A(slot)
+     *   dir = ENEMY_DIR(slot)
+     *   idx = (rnd & $80) ? 0 : 1
+     *   if (dir & $0C) idx += 2     ; vertical movement → use second pair
+     *   return ReverseDirections[idx] */
+    const unsigned char rnd = (unsigned char)ENEMY_RNG_A(slot);
+    const unsigned char dir = (unsigned char)ENEMY_DIR(slot);
+    unsigned int idx = (rnd & 0x80u) ? 0u : 1u;
+    if (dir & 0x0Cu) {
+        idx += 2u;
+    }
+    return k_reverse_directions[idx];
+}

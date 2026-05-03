@@ -9,7 +9,6 @@
 #include "room_runtime.h"
 #include "core_runtime.h"
 #include "room_mode_runtime.h"
-#include "enemy_runtime.h"
 #include "collision_runtime.h"
 #include "uw_person_runtime.h"
 
@@ -73,10 +72,6 @@ void z07_reset_obj_metastate(unsigned int slot) {
     corert_reset_obj_metastate(slot);
 }
 
-unsigned int z07_walker_alt_dir_get_opposite(void) {
-    return enrt_walker_alt_dir_get_opposite();
-}
-
 void z07_reset_obj_metastate_and_timer(unsigned int slot) {
     corert_reset_obj_metastate_and_timer(slot);
 }
@@ -91,10 +86,6 @@ void z07_deactivate_shot(unsigned int slot) {
 
 void z07_deactivate_link_shot(void) {
     corert_deactivate_link_shot();
-}
-
-void z07_walker_alt_dir_end_loop(void) {
-    enrt_walker_alt_dir_end_loop();
 }
 
 void z07_reset_shove_info(unsigned int slot) {
@@ -147,10 +138,6 @@ unsigned char z07_get_colliding_tile_moving(unsigned int slot) {
 
 void z07_do_nothing(void) {
     corert_do_nothing();
-}
-
-unsigned char z07_walker_alt_dir_get_random_perpendicular(unsigned int slot) {
-    return enrt_walker_alt_dir_get_random_perpendicular(slot);
 }
 
 void z07_init_grumble(unsigned int slot) {
@@ -243,8 +230,9 @@ void z07_animate_object_walking(unsigned int slot) {
 }
 
 /* Phase 4 native enemy subsystem cutover gate — NATIVE_ENEMY. First
- * batch: find_empty_monster_slot. Pure C, no shims. Drain MATCH per
- * finding 4_7n. */
+ * batch: find_empty_monster_slot + walker_alt_dir cluster. Pure C, no
+ * shims. Drain MATCH per findings 4_7n + 4_7n_b. */
+#include "enemy_runtime.h"  /* enrt_* prototypes for OFF-branch oracle calls */
 #ifdef NATIVE_ENEMY
 #include "enemies/enemy_dispatch.h"
 #endif
@@ -254,5 +242,29 @@ unsigned int z07_find_empty_monster_slot(void) {
     return enemy_find_empty_monster_slot();
 #else
     return enrt_find_empty_monster_slot();
+#endif
+}
+
+unsigned int z07_walker_alt_dir_get_opposite(void) {
+#ifdef NATIVE_ENEMY
+    return enemy_walker_alt_dir_get_opposite();
+#else
+    return enrt_walker_alt_dir_get_opposite();
+#endif
+}
+
+void z07_walker_alt_dir_end_loop(void) {
+#ifdef NATIVE_ENEMY
+    enemy_walker_alt_dir_end_loop();
+#else
+    enrt_walker_alt_dir_end_loop();
+#endif
+}
+
+unsigned char z07_walker_alt_dir_get_random_perpendicular(unsigned int slot) {
+#ifdef NATIVE_ENEMY
+    return enemy_walker_alt_dir_get_random_perpendicular(slot);
+#else
+    return enrt_walker_alt_dir_get_random_perpendicular(slot);
 #endif
 }

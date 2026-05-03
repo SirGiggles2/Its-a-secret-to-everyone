@@ -32,6 +32,22 @@ void enemy_play_secret_found_tune(void);
 void enemy_play_boss_death_cry(void);
 void enemy_gohma_play_parry_tune(void);
 
+/* Walker alt-dir cluster (NES Plan-C drained from Z_07). */
+
+/* Compute opposite of ENEMY_FRAME_FLAGS direction bit. If $0A bits set
+ * (UP|LEFT), shift right; else shift left. NES WalkerAltDirGetOpposite.
+ * drain at enemy_wanderer_runtime.c:14-19. */
+unsigned int enemy_walker_alt_dir_get_opposite(void);
+
+/* Clear ENEMY_BLOCKED_FLAG. NES WalkerAltDirEndLoop.
+ * drain at enemy_wanderer_runtime.c:21-23. */
+void enemy_walker_alt_dir_end_loop(void);
+
+/* Pick a random perpendicular direction for slot via ENEMY_RNG_A and
+ * ENEMY_DIR. Uses NES ReverseDirections table ($08 $04 $02 $01).
+ * NES WalkerAltDirGetRandomPerpendicular. drain at enemy_wanderer_runtime.c:25-31. */
+unsigned char enemy_walker_alt_dir_get_random_perpendicular(unsigned int slot);
+
 #ifdef __cplusplus
 }
 #endif
