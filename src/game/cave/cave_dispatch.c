@@ -79,10 +79,11 @@ void cave_tick(void)
      * cavert_update_transfer_prices. Subsequent commits add states
      * 1-8 + draw_cave_person + draw_cave_items.
      *
-     * Currently empty — proves cave gamemode dispatch wires up
-     * without crashing. Verify via RoomRom probe screenshot showing
-     * blank scene with cave palette loaded. */
-    (void)0;
+     * As of Phase 4 native cave_update_cave_person port, cave_tick
+     * runs the full top-level dispatch (5/9 state arms native, 4
+     * deferred to text rendering pipeline). Slot 1 is NES convention
+     * for the cave person object slot. */
+    cave_update_cave_person(1u);
 }
 
 void cave_exit(void)
