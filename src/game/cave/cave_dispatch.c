@@ -23,7 +23,8 @@
 
 #include "cave_dispatch.h"
 #include "cave_state.h"
-#include "combat_state.h"  /* LINK_HEARTS = RAM(0x066F) */
+#include "combat_state.h"               /* LINK_HEARTS = RAM(0x066F) */
+#include "world/progress_dispatch.h"    /* progress_set_room_flag_uw_item_state */
 
 /* Cave-id of the currently active cave (0 = none active).
  *
@@ -216,7 +217,7 @@ void cave_update_talk_shop_or_door_charge(void)
         CAVE_PERSON_STATE = 8u;
         if (cave_room_type_get() == 0x71u) {
             CAVE_DOOR_REPAIR_RUPEE_DELTA = (int8_t)(CAVE_DOOR_REPAIR_RUPEE_DELTA + 20);
-            /* TODO Phase 4: native progrt_set_room_flag_uw_item_state(). */
+            progress_set_room_flag_uw_item_state();
         }
         return;
     }
@@ -276,7 +277,7 @@ void cave_update_talk_shop_or_door_charge(void)
             }
         }
         /* Take the ware. */
-        /* TODO Phase 4: native progrt_set_room_flag_uw_item_state(). */
+        progress_set_room_flag_uw_item_state();
         RAM(0x0422 + i) = 0xFFu;  /* CAVE_WARE_ITEM(i) = 0xFF */
         /* TODO Phase 4: native cave_take_item(item) (cross-subsystem). */
         (void)item;
@@ -496,7 +497,7 @@ void cave_update_hint_or_money_game(void)
         /* TODO Phase 4: native cave_copy_price_list_template(). */
         /* TODO Phase 4: native cave_write_prices_to_dynamic_transfer_buf(36). */
         CAVE_TEXT_TICK_SFX = 8u;
-        /* TODO Phase 4: native progrt_set_room_flag_uw_item_state(). */
+        progress_set_room_flag_uw_item_state();
         CAVE_PERSON_STATE  = 8u;
         /* TODO Phase 4: native cave_post_credit(CAVE_PRICE(1)). */
         return;

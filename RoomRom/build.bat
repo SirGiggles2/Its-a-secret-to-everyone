@@ -81,7 +81,7 @@ rem non-A4 nes_ram variant (regular global pointer, initialized in
 rem RoomRom/src/boot/nes_ram_init.c). Title.md build leaves this undefined
 rem and uses the A4-pinned variant for transpile-bridge perf parity.
 set "CFLAGS=-DSGDK_GCC -DROOMROM_BUILD -m68000 -Wall -Wno-main -Wno-unused-parameter -fno-builtin -ffunction-sections -fdata-sections -fms-extensions -Os -fomit-frame-pointer -B%TOOLBIN%\"
-set "INCS=-I%PROJ%\src -I%SGDK%\inc -I%SGDK%\res -I%REPO%\src -I%REPO%\src\abi -I%REPO%\src\state -I%REPO%\src\game\cave -I%REPO%\src\oracle\room"
+set "INCS=-I%PROJ%\src -I%SGDK%\inc -I%SGDK%\res -I%REPO%\src -I%REPO%\src\abi -I%REPO%\src\state -I%REPO%\src\game -I%REPO%\src\game\cave -I%REPO%\src\game\world -I%REPO%\src\oracle\room"
 
 rem ---------------------------------------------------------------------------
 rem Step 1: Compile ROM header (must be first ? sega.s .incbin-s it)
