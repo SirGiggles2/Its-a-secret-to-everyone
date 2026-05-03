@@ -42,10 +42,6 @@ void z01_copy_price_list_template(void) {
     corert_copy_price_list_template();
 }
 
-unsigned char z01_do_objects_collide_with_thresholds(void) {
-    return colrt_do_objects_collide_with_thresholds();
-}
-
 void z01_init_underworld_person_c(unsigned int slot) {
     uwrt_init_underworld_person_c(slot);
 }
@@ -1124,6 +1120,19 @@ void z01_take_hearts(void) {
     core_take_hearts();
 #else
     corert_take_hearts();
+#endif
+}
+
+/* Phase 4 native collision subsystem cutover gate — NATIVE_COLLISION. */
+#ifdef NATIVE_COLLISION
+#include "combat/collision_dispatch.h"
+#endif
+
+unsigned char z01_do_objects_collide_with_thresholds(void) {
+#ifdef NATIVE_COLLISION
+    return collision_do_objects_collide_with_thresholds();
+#else
+    return colrt_do_objects_collide_with_thresholds();
 #endif
 }
 

@@ -9,7 +9,6 @@
 #include "room_runtime.h"
 #include "room_mode_runtime.h"
 #include "core_runtime.h"
-#include "collision_runtime.h"
 #include "uw_person_runtime.h"
 
 void z07_hide_all_sprites(void) {
@@ -58,18 +57,6 @@ void z07_go_to_next_mode_reset_grid_offset(void) {
 
 void z07_patch_and_cue_level_palettes_transfer(void) {
     roommd_patch_and_cue_level_palettes_transfer();
-}
-
-unsigned char z07_get_collidable_tile(unsigned int hotspot_offset, unsigned int slot) {
-    return colrt_get_collidable_tile(hotspot_offset, slot);
-}
-
-unsigned char z07_get_collidable_tile_still(unsigned int slot) {
-    return colrt_get_collidable_tile_still(slot);
-}
-
-unsigned char z07_get_colliding_tile_moving(unsigned int slot) {
-    return colrt_get_colliding_tile_moving(slot);
 }
 
 void z07_init_grumble(unsigned int slot) {
@@ -348,5 +335,35 @@ void z07_handle_shot_blocked(unsigned int slot) {
     core_handle_shot_blocked(slot);
 #else
     corert_handle_shot_blocked(slot);
+#endif
+}
+
+/* NATIVE_COLLISION wrappers for collidable-tile cluster. */
+#include "collision_runtime.h"  /* colrt_* OFF-branch refs */
+#ifdef NATIVE_COLLISION
+#include "combat/collision_dispatch.h"
+#endif
+
+unsigned char z07_get_collidable_tile(unsigned int hotspot_offset, unsigned int slot) {
+#ifdef NATIVE_COLLISION
+    return collision_get_collidable_tile(hotspot_offset, slot);
+#else
+    return colrt_get_collidable_tile(hotspot_offset, slot);
+#endif
+}
+
+unsigned char z07_get_collidable_tile_still(unsigned int slot) {
+#ifdef NATIVE_COLLISION
+    return collision_get_collidable_tile_still(slot);
+#else
+    return colrt_get_collidable_tile_still(slot);
+#endif
+}
+
+unsigned char z07_get_colliding_tile_moving(unsigned int slot) {
+#ifdef NATIVE_COLLISION
+    return collision_get_colliding_tile_moving(slot);
+#else
+    return colrt_get_colliding_tile_moving(slot);
 #endif
 }

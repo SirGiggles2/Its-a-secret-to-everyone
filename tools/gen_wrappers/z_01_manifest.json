@@ -34,11 +34,6 @@
       "sig": "void (void)"
     },
     {
-      "old": "z01_do_objects_collide_with_thresholds",
-      "new": "colrt_do_objects_collide_with_thresholds",
-      "sig": "unsigned char (void)"
-    },
-    {
       "old": "z01_init_underworld_person_c",
       "new": "uwrt_init_underworld_person_c",
       "sig": "void (unsigned int slot)"
