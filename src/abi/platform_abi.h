@@ -1,12 +1,27 @@
 /* platform_abi.h — minimal C-side interface to the NES-RAM shadow region
  * that transpiled asm uses via A4-relative addressing.
  *
- * The boot shell (src/genesis_shell.asm near line 354) loads
- *     lea     (NES_RAM_BASE).l,A4       ; $FF0000
- * before any C function runs. All C translation units are compiled
- * with -ffixed-a4, which reserves A4 globally so gcc never clobbers
- * it. The net effect: `nes_ram[offset]` compiles to `move.b (off,A4)`
- * — the same addressing mode the transpiled asm uses.
+ * Two ABI variants per debate 006 D3 (one header, build-time switch):
+ *
+ * 1. Title.md build (default, NO -DROOMROM_BUILD): A4-pinned `nes_ram`.
+ *    - `register volatile unsigned char *nes_ram asm("a4")` reserves A4 globally
+ *    - `-ffixed-a4` flag tells gcc to never clobber it
+ *    - Boot shell (`src/genesis_shell.asm` near line 354) loads
+ *      `lea (NES_RAM_BASE).l, A4` (= $FF0000) before any C runs
+ *    - Net effect: `nes_ram[offset]` compiles to `move.b (off,A4)` —
+ *      the same addressing mode the transpiled asm uses. Zero perf cost.
+ *
+ * 2. RoomRom build (`-DROOMROM_BUILD`): regular global pointer.
+ *    - `extern volatile unsigned char *nes_ram` — no register binding
+ *    - RoomRom boot init (`RoomRom/src/boot/nes_ram_init.c`) allocates
+ *      `static unsigned char roomrom_nes_ram[0x800]` and sets pointer
+ *      BEFORE any drained code runs
+ *    - SGDK-friendly: A4 not reserved, no `-ffixed-a4` collision
+ *    - Cost: one extra indirection per RAM access vs Title's A4 path
+ *
+ * Both variants expose identical `RAM(off)` / `OBJ(off, slot)` macros so
+ * drained C in `src/oracle/<subsystem>/*_runtime.c` (and future native
+ * code in `src/game/`) compiles unchanged for either target.
  *
  * No stdint.h (SGDK vendored toolchain ships no GCC builtin headers).
  * Primitive C types on m68k-elf:
@@ -22,7 +37,15 @@
 extern "C" {
 #endif
 
+#ifdef ROOMROM_BUILD
+/* RoomRom variant: regular global pointer. Initialized at boot by
+ * RoomRom/src/boot/nes_ram_init.c BEFORE any drained code runs. */
+extern volatile unsigned char *nes_ram;
+#else
+/* Title.md variant: A4-register pinned. Boot shell loads A4 = $FF0000
+ * before C entry; -ffixed-a4 flag prevents gcc from clobbering. */
 register volatile unsigned char *nes_ram asm("a4");
+#endif
 
 #define RAM(off) (nes_ram[(off)])
 
