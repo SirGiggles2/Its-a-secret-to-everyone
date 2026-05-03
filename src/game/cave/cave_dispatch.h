@@ -58,6 +58,26 @@ void cave_exit(void);
  * cave entered since last cave_exit. */
 cave_id_t cave_current_id(void);
 
+/* Draw a cave NPC sprite for the given object slot.
+ *
+ * Native rewrite of NES Z_01.asm DrawCavePerson (lines 370-383),
+ * verified MATCH per Gate 1 finding 3_4. NES dispatch logic:
+ *
+ *   JSR Anim_FetchObjPosForSpriteDescriptor
+ *   LDY ObjType+1
+ *   CPY #$7B
+ *   BCS NotMirrored          ; ObjType+1 >= 0x7B
+ *   JMP DrawObjectMirrored   ; otherwise
+ *   NotMirrored: JMP DrawObjectNotMirrored
+ *
+ * Stage 1 (this commit): port branch shape only. The actual sprite
+ * descriptor fetch + SAT writes are stubs — Phase 4 cross-subsystem
+ * native object_draw port replaces them with render_sat_write-based
+ * impl. Title.md gates this via NATIVE_CAVE_DRAW (default OFF), so
+ * stage-1 stub never runs in shipping path. RoomRom links it but
+ * doesn't call it yet (cave_tick is also stub). */
+void cave_draw_person(unsigned int slot);
+
 #ifdef __cplusplus
 }
 #endif

@@ -346,10 +346,6 @@ void z01_update_uw_person_life_or_money_full(unsigned int slot) {
     uwrt_update_life_or_money_full(slot);
 }
 
-void z01_draw_cave_person(unsigned int slot) {
-    cavert_draw_cave_person(slot);
-}
-
 void z01_draw_cave_items(void) {
     cavert_draw_cave_items();
 }
@@ -704,7 +700,7 @@ void z01_update_trap_full(unsigned int slot) {
  * the ifdef collapses to the native branch only; oracle drain retires.
  * -------------------------------------------------------------------- */
 
-#ifdef NATIVE_CAVE
+#if defined(NATIVE_CAVE) || defined(NATIVE_CAVE_DRAW)
 #include "cave/cave_dispatch.h"
 #include "cave_state.h"  /* cave_room_type_get() — reads RAM($0350) */
 #endif
@@ -717,5 +713,23 @@ void z01_init_cave(unsigned int slot) {
     (void)cave_init((cave_id_t)cave_room_type_get());
 #else
     cavert_init_cave(slot);
+#endif
+}
+
+/* Phase 3 cave_draw_person cutover — independent gate from NATIVE_CAVE.
+ *
+ * NATIVE_CAVE_DRAW undefined -> cavert_draw_cave_person (oracle drain,
+ *                               default; verified MATCH per finding 3_4)
+ * NATIVE_CAVE_DRAW defined   -> cave_draw_person() in src/game/cave/.
+ *                               STAGE-1 stub: branch logic correct, draw
+ *                               body deferred to Phase 4 native object_draw
+ *                               port. Enabling visibly drops cave NPC sprite
+ *                               until that lands — gated to keep Title.md
+ *                               default path correct. */
+void z01_draw_cave_person(unsigned int slot) {
+#ifdef NATIVE_CAVE_DRAW
+    cave_draw_person(slot);
+#else
+    cavert_draw_cave_person(slot);
 #endif
 }

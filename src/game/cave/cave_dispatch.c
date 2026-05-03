@@ -87,3 +87,31 @@ cave_id_t cave_current_id(void)
 {
     return g_active_cave;
 }
+
+void cave_draw_person(unsigned int slot)
+{
+    /* NES DrawCavePerson (Z_01.asm:370-383):
+     *   - Fetch sprite descriptor + position for slot.
+     *   - Branch on ObjType+1 ($0350 = cave_room_type) vs $7B threshold:
+     *       cave_id <  0x7B -> DrawObjectMirrored
+     *       cave_id >= 0x7B -> DrawObjectNotMirrored
+     *
+     * Stage-1 port: branch logic native, draw bodies stubbed pending
+     * Phase 4 cross-subsystem native object_draw. cave_room_type_get()
+     * reads RAM($0350) per state_contract.md typed accessor — same byte
+     * NES DrawCavePerson reads via LDY ObjType+1.
+     *
+     * `slot` is forwarded to underlying object draw (when ported). For
+     * now we only consume the branch decision; descriptor fetch + SAT
+     * write are deferred to keep the Phase 3 cave port focused on cave-
+     * specific logic, not the broader sprite-descriptor pipeline. */
+    (void)slot;
+
+    const unsigned char cave_id = cave_room_type_get();
+    if (cave_id < 0x7Bu) {
+        /* TODO Phase 4: native cave_object_draw_mirrored(slot) using
+         * sprite descriptor + render_sat_write. */
+    } else {
+        /* TODO Phase 4: native cave_object_draw_not_mirrored(slot). */
+    }
+}

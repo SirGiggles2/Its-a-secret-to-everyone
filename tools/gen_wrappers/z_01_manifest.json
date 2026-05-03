@@ -414,11 +414,6 @@
       "sig": "void (unsigned int slot)"
     },
     {
-      "old": "z01_draw_cave_person",
-      "new": "cavert_draw_cave_person",
-      "sig": "void (unsigned int slot)"
-    },
-    {
       "old": "z01_draw_cave_items",
       "new": "cavert_draw_cave_items",
       "sig": "void (void)"
