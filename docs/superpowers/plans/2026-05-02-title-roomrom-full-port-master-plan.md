@@ -2120,15 +2120,17 @@ Decision is recorded at `docs/audit/state_contract.md` (typed C structs for owne
 
 ## Current Next Action
 
-Order is fixed: Tier-1 contracts gate first, then graphics registry resumes, then caves.
+**Active phase: Phase 2 — RoomRom Graphics Registry.** Tier-1 substrate work has shipped (debate 003 SGDK guardrails + debate 004 mergeability tools). Phase 1.5 captures + Task 1.11 strict-mode green are non-blocking parallel workstreams.
 
-- [ ] Tier-1 gate, in order:
-  - [ ] Task 0.6 Worktree Merge Protocol committed.
-  - [ ] Phase 1.5 NES Reference Capture Harness produces deterministic captures for at least the canonical title/FS/OW/UW/cave/boss scenarios.
-  - [ ] Task 1.11 Strict Generated-Only Build Gate green for current asset set.
-  - [ ] Task 2.0 State Contract Audit committed; alias collision verifier green.
-- [ ] Then resume Phase 2 graphics registry (Task 2.1+) in the RoomRom worktree.
-- [ ] Then Phase 3 Overworld Caves with Task 2.8 parity oracle in the close gate.
+- [x] Tier-1 gate, partial-but-unblocking close:
+  - [x] Task 0.6 Worktree Merge Protocol committed (`f30b806f`).
+  - [~] Phase 1.5 NES Reference Capture Harness — code shipped + ROM hash locked + dry-run fixed (`e9101890`); 46 scenario input scripts pending as parallel workstream (does not block Phase 2).
+  - [~] Task 1.11 Strict Generated-Only Build Gate — implementation committed (`f27447cc`); strict-mode RED expected until Phase 1.10 close (by design per build.bat comment).
+  - [x] Task 2.0 State Contract Audit committed (`d59ee68e`); verifier `--scope` flag for per-phase enforcement (`f18f661b`); scratch_state.h migration resolved 47% of cross-subsystem aliases (`96c64da3`).
+- [x] Debate 003 SGDK guardrails landed (`35d35bd9`): Rules SGDK-1..5, build-time gates, audit doc.
+- [x] Debate 004 mergeability tools landed (`78c2ecb1`): Rules WT-1..4, 5 tools (no-whatif / frontend-boundary / substrate-dual-rom / active-scope / merge-readiness), state_contract Owner Worktree column.
+- [ ] **Phase 2 RoomRom Graphics Registry — ACTIVE.** Tasks 2.2-2.7 in RoomRom/src/* (Task 2.1 dirty-sprite reconcile already done via atlas P3-P6 + FU1-FU4 commits in main).
+- [ ] Phase 3 Overworld Caves follows with Task 2.8 parity oracle in close gate.
 - [ ] Keep this master plan updated only when phase order changes; do not turn it into a scratch log.
 
 ## Self-Review

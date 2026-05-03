@@ -85,6 +85,83 @@ static inline void palette_invalidate_cache(PaletteState *p) {
     p->generation++;
 }
 
+/* ----------------------------------------------------------------------
+ * Frame-cadence palette toggle (Phase 2.6.5)
+ *
+ * NES Zelda 1 animates several palette flashes by toggling a sub-palette
+ * index every N frames against FrameCounter bits. Phase 2.6 cuts the
+ * Genesis renderer to per-tile-index sub-palette selection; without a
+ * frame-cadence preservation layer, those NES animations die.
+ *
+ * Each palette_toggle_t describes one such toggle: which palette slot
+ * (BG sub-palette or sprite sub-palette) gets flipped, what the two
+ * states are, and what frame-counter bit triggers the flip. The runtime
+ * iterates a registered table once per frame and applies state.
+ *
+ * See docs/audit/palette_toggle_inventory.md for the full inventory of
+ * NES toggles we preserve. Memory rule: project_intro_item_flash.
+ * -------------------------------------------------------------------- */
+
+typedef enum {
+    PALETTE_TOGGLE_BG_SUBPAL  = 0,   /* operates on a BG sub-palette index */
+    PALETTE_TOGGLE_SPR_SUBPAL = 1,   /* operates on a sprite sub-palette index */
+    PALETTE_TOGGLE_CRAM_SLOT  = 2,   /* operates on a single CRAM word slot */
+} palette_toggle_kind_t;
+
+typedef struct palette_toggle_t {
+    /* Identification. Stable string for logging + parity-oracle diff. */
+    const char *id;
+
+    /* Which kind of palette write fires. */
+    palette_toggle_kind_t kind;
+
+    /* Index this toggle targets (sub-pal index 0..3 OR CRAM slot 0..63). */
+    uint8_t target_index;
+
+    /* Two NES color values to flip between (kind=BG_SUBPAL/SPR_SUBPAL:
+     * indices into PALETTE_COLORS_PER_SUBPAL; kind=CRAM_SLOT: raw NES
+     * color bytes). */
+    uint8_t value_a;
+    uint8_t value_b;
+
+    /* FrameCounter bit that selects state. Bit set -> value_b; clear ->
+     * value_a. NES Zelda 1 most often uses bit 3 (8-frame cadence). */
+    uint8_t frame_bit;
+
+    /* Per-toggle enable flag — runtime can mute without removing entry. */
+    uint8_t enabled;
+} palette_toggle_t;
+
+/* Runtime API.
+ *
+ * palette_tick_init(state) — call once at scene-enter; clears registered
+ *   toggle table.
+ * palette_register_toggle(state, t) — append a toggle. Caller owns the
+ *   palette_toggle_t storage (typically a static const). Returns 0 on
+ *   success, -1 if table full.
+ * palette_tick(state, frame_counter) — call once per frame from the
+ *   per-frame update. Iterates registered toggles, applies state to
+ *   nes_palram[], and bumps generation. Caller flushes CRAM cache via
+ *   the existing palette path on next render.
+ *
+ * Implementation lives in RoomRom (gameplay-side; promoted to
+ * src/game/palette_runtime.c at Phase 12).
+ */
+
+#define PALETTE_TOGGLE_MAX 16u
+
+typedef struct palette_tick_state_t {
+    const palette_toggle_t *toggles[PALETTE_TOGGLE_MAX];
+    uint8_t  toggle_count;
+    uint16_t last_frame_seen;
+} palette_tick_state_t;
+
+void palette_tick_init(palette_tick_state_t *ts);
+int  palette_register_toggle(palette_tick_state_t *ts,
+                             const palette_toggle_t *t);
+void palette_tick(palette_tick_state_t *ts, PaletteState *p,
+                  uint16_t frame_counter);
+
 /* Compile-time sanity. */
 _Static_assert(PALETTE_BG_HALF_BYTES + PALETTE_SPR_HALF_BYTES ==
                PALETTE_PALRAM_BYTES,
