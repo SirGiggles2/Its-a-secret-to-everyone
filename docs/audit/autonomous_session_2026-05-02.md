@@ -17,8 +17,33 @@ User invoked /octo:debate (debate 003 = SGDK integration), then "BEST LONG TERM 
 | 408c11e0 | state: remove duplicate SAVE_SLOT_INDEX + SUBMODE_VALUE definitions |
 | 9decf66e | docs: extend session status with scratch_state.h design sketch |
 | 96c64da3 | state: scratch_state.h canonical owner of NES zero-page ($0000-$001F) |
+| a8092778 | docs: session status reflects scratch_state.h landing |
+| 0cbc2469 | build: remove whatif.* alias entirely (user hard rule) |
+| 78c2ecb1 | debate 004: 5 tools + 4 doc edits + 3 memory entries — Phase 12 mergeability |
+| c9ff9c03 | phase 2.6.5: typed palette_toggle_t + palette_tick API + inventory doc |
+| (latest) | phase 2.6.5: palette_tick runtime in substrate (main worktree per WT-1) |
 
-11 commits. Each landed with a clean atomic scope. Build green at every step. Final verifier state: 199 → 106 collisions strict-all (47% reduction); scope cave 29 → 6; scope enemy 134 → 74.
+16 commits. Each landed with a clean atomic scope. Build green at every step. Final verifier state: 199 → 106 collisions strict-all (47% reduction); scope cave 29 → 6; scope enemy 134 → 74.
+
+**Debate 004 outcome:** YELLOW → GREEN-on-tool-land. 5 tools shipped (`tools/gates/check_no_whatif.py`, `check_frontend_boundary.py`, `check_substrate_dual_rom.py`; `tools/audit/active_scope.py`, `merge_readiness.py`). 4 master plan rules added (WT-1 substrate single-writer, WT-2 active scope, WT-3 frontend boundary, WT-4 no whatif). state_contract gained Owner Worktree column. CLAUDE.md gained 3 HARD-rule sections. 3 new memory entries.
+
+**Whatif alias removal:** 199 files migrated from `whatif.*` to `Title.*` (117 .bat + 82 .lua/.py + probe debug names). build.bat emits Title.* only. `check_no_whatif.py` enforces in CI.
+
+**Active scope:** Phase 2 / RoomRom worktree. `.active_scope` + `docs/audit/active_scope.md` auto-emitted per build. Pre-commit warns on out-of-scope edits.
+
+**Phase 2.6.5 substrate landed:**
+- `src/state/palette_state.h` — typed `palette_toggle_t`, `palette_tick_state_t`, API decls
+- `src/state/palette_tick.c` — runtime (idempotent, kind-switch BG_SUBPAL/SPR_SUBPAL/CRAM_SLOT, generation bump on change)
+- `docs/audit/palette_toggle_inventory.md` — 6 NES toggles documented with per-toggle implementation owner
+- build.bat compiles palette_tick.o (compile-only; .o joins LD_RESP when first consumer registers a toggle)
+
+Per-toggle implementations gated on respective phases:
+- intro_item_flash_8f → src/frontend/intro/ (Phase 11; existing intro_story.c uses old plane-attr writes — migration optional)
+- low_health_hearts_flash → RoomRom/src/ (Phase 6 needs Link HP plumbed)
+- boss_aquamentus_palette_flash → RoomRom/src/ (Phase 8)
+- link_hit_invuln_flash → RoomRom/src/ (Phase 6/7)
+- heart_container_pickup_blink → RoomRom/src/ (Phase 6)
+- triforce_dungeon_clear_flash → RoomRom/src/ (Phase 5)
 
 ## Tier-1 audit results
 
