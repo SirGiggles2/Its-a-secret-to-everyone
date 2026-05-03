@@ -183,6 +183,17 @@ void core_map_screen_pos_to_ppu_addr(void);
  * UpdatePersonState_ResetCharOffset. drain at core_runtime.c:150-153. */
 void core_update_person_state_reset_char_offset(void);
 
+/* Take hearts (no sound): credit hearts toward containers. NES
+ * TakeHeartsNoSound. Uses RAM($0001) as scratch counter; loops
+ * until LINK_HEARTS == container max (compare_hearts_to_containers)
+ * or RAM($0001) underflows (signed). Caps LINK_PARTIAL_HEART at $FF
+ * on max. drain at core_runtime.c:290-308. */
+void core_take_hearts_no_sound(void);
+
+/* Take hearts with sound: play_key_taken_tune + take_hearts_no_sound.
+ * NES TakeHearts. drain at core_runtime.c:310-313. */
+void core_take_hearts(void);
+
 #ifdef __cplusplus
 }
 #endif

@@ -42,10 +42,6 @@ void z01_copy_price_list_template(void) {
     corert_copy_price_list_template();
 }
 
-void z01_take_hearts_no_sound(void) {
-    corert_take_hearts_no_sound();
-}
-
 unsigned char z01_do_objects_collide_with_thresholds(void) {
     return colrt_do_objects_collide_with_thresholds();
 }
@@ -84,10 +80,6 @@ void z01_check_person_blocking(void) {
 
 void z01_update_grumble1(void) {
     uwrt_update_grumble1();
-}
-
-void z01_take_hearts(void) {
-    corert_take_hearts();
 }
 
 void z01_check_init_whirlwind_and_begin_update(void) {
@@ -1116,6 +1108,22 @@ void z01_update_person_state_reset_char_offset(void) {
     core_update_person_state_reset_char_offset();
 #else
     corert_update_person_state_reset_char_offset();
+#endif
+}
+
+void z01_take_hearts_no_sound(void) {
+#ifdef NATIVE_CORE
+    core_take_hearts_no_sound();
+#else
+    corert_take_hearts_no_sound();
+#endif
+}
+
+void z01_take_hearts(void) {
+#ifdef NATIVE_CORE
+    core_take_hearts();
+#else
+    corert_take_hearts();
 #endif
 }
 

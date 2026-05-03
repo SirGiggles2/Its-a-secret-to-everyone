@@ -34,11 +34,6 @@
       "sig": "void (void)"
     },
     {
-      "old": "z01_take_hearts_no_sound",
-      "new": "corert_take_hearts_no_sound",
-      "sig": "void (void)"
-    },
-    {
       "old": "z01_do_objects_collide_with_thresholds",
       "new": "colrt_do_objects_collide_with_thresholds",
       "sig": "unsigned char (void)"
@@ -86,11 +81,6 @@
     {
       "old": "z01_update_grumble1",
       "new": "uwrt_update_grumble1",
-      "sig": "void (void)"
-    },
-    {
-      "old": "z01_take_hearts",
-      "new": "corert_take_hearts",
       "sig": "void (void)"
     },
     {

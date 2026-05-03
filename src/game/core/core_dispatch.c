@@ -383,6 +383,36 @@ void core_update_person_state_reset_char_offset(void)
     OBJ_STATE(1) = (uint8_t)(OBJ_STATE(1) + 1u);
 }
 
+void core_take_hearts_no_sound(void)
+{
+    /* drain at core_runtime.c:290-308. NES TakeHeartsNoSound.
+     * Loop credit hearts, capped by container count. */
+    RAM(0x0001u) = (uint8_t)RAM(0x000Au);
+    for (;;) {
+        if (core_compare_hearts_to_containers() == (unsigned char)RAM(0x0000u)) {
+            unsigned char partial = LINK_PARTIAL_HEART;
+            partial = (unsigned char)(partial + 1u);
+            if (partial == 0u) {
+                return;
+            }
+            LINK_PARTIAL_HEART = 0xFFu;
+            return;
+        }
+        LINK_HEARTS = (uint8_t)(LINK_HEARTS + 1u);
+        RAM(0x0001u) = (uint8_t)(RAM(0x0001u) - 1u);
+        if ((signed char)RAM(0x0001u) < 0) {
+            return;
+        }
+    }
+}
+
+void core_take_hearts(void)
+{
+    /* drain at core_runtime.c:310-313. NES TakeHearts. */
+    core_play_key_taken_tune();
+    core_take_hearts_no_sound();
+}
+
 void core_set_up_common_cave_objects(unsigned int x, unsigned int slot,
                                      unsigned int y)
 {
