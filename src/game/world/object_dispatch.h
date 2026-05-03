@@ -42,6 +42,32 @@ unsigned char object_bound_by_room(unsigned int slot);
 unsigned char object_bound_by_room_with_dir(unsigned char direction,
                                             unsigned int slot);
 
+/* Move an object slot one frame's worth, decoded across the 4 dir
+ * bits (right $01, left $02, down $04, up $08). Each axis is a
+ * fractional position accumulator (NES_OBJ_POS_FRAC) advanced by the
+ * speed (NES_OBJ_QSPD_FRAC); on overflow/underflow the object steps
+ * one pixel in the direction. Grid offset (NES_OBJ_GRID_OFFSET)
+ * clamps stepping at room cell boundaries. Mirrors NES Z_01.asm
+ * MoveObject. Drain at object_runtime.c:8-72. */
+void object_move_object(unsigned short slot);
+
+/* Returns CARRY_SET if the fractional add carried into the integer
+ * step (i.e. one pixel of movement). Mirrors NES
+ * AddQSpeedToPositionFraction (Z_01.asm:3470). */
+unsigned int object_add_q_speed_to_position_fraction(unsigned int slot);
+
+/* Mirror of add for negative direction; returns CARRY_SET when no
+ * borrow occurred AND grid offset wasn't at limit. */
+unsigned int object_sub_q_speed_from_position_fraction(unsigned int slot);
+
+/* Move a "shot" (arrow/boomerang/etc.) one frame, with collision-
+ * sensitive grid-offset accounting. If bound_by_room kills the
+ * direction, sets NES_SHOT_COLLISION_FLAG = $80 and returns. Else
+ * runs move_object with grid offset zeroed, then restores or merges
+ * grid offset based on shot collision flag. Mirrors NES MoveShot
+ * (Z_01.asm). */
+void object_move_shot(unsigned char direction, unsigned int slot);
+
 #ifdef __cplusplus
 }
 #endif

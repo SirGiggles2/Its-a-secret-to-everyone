@@ -454,21 +454,6 @@
       "sig": "void (unsigned char item_id)"
     },
     {
-      "old": "z01_add_q_speed_to_position_fraction",
-      "new": "objrt_add_q_speed_to_position_fraction",
-      "sig": "unsigned int (unsigned int slot)"
-    },
-    {
-      "old": "z01_sub_q_speed_from_position_fraction",
-      "new": "objrt_sub_q_speed_from_position_fraction",
-      "sig": "unsigned int (unsigned int slot)"
-    },
-    {
-      "old": "z01_move_shot",
-      "new": "objrt_move_shot",
-      "sig": "void (unsigned char direction, unsigned int slot)"
-    },
-    {
       "old": "z01_get_one_direction_and_distance_to_target",
       "new": "targrt_get_one_direction_and_distance_to_target",
       "sig": "unsigned char (unsigned char target_coord, unsigned char origin_coord)"

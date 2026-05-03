@@ -378,18 +378,6 @@ void z01_take_item(unsigned char item_id) {
     itemrt_take_item(item_id);
 }
 
-unsigned int z01_add_q_speed_to_position_fraction(unsigned int slot) {
-    return objrt_add_q_speed_to_position_fraction(slot);
-}
-
-unsigned int z01_sub_q_speed_from_position_fraction(unsigned int slot) {
-    return objrt_sub_q_speed_from_position_fraction(slot);
-}
-
-void z01_move_shot(unsigned char direction, unsigned int slot) {
-    objrt_move_shot(direction, slot);
-}
-
 unsigned char z01_get_one_direction_and_distance_to_target(unsigned char target_coord, unsigned char origin_coord) {
     return targrt_get_one_direction_and_distance_to_target(target_coord, origin_coord);
 }
@@ -866,5 +854,29 @@ unsigned char z01_bound_by_room_with_a(unsigned char direction,
     return object_bound_by_room_with_dir(direction, slot);
 #else
     return objrt_bound_by_room_with_dir(direction, slot);
+#endif
+}
+
+unsigned int z01_add_q_speed_to_position_fraction(unsigned int slot) {
+#ifdef NATIVE_OBJECT
+    return object_add_q_speed_to_position_fraction(slot);
+#else
+    return objrt_add_q_speed_to_position_fraction(slot);
+#endif
+}
+
+unsigned int z01_sub_q_speed_from_position_fraction(unsigned int slot) {
+#ifdef NATIVE_OBJECT
+    return object_sub_q_speed_from_position_fraction(slot);
+#else
+    return objrt_sub_q_speed_from_position_fraction(slot);
+#endif
+}
+
+void z01_move_shot(unsigned char direction, unsigned int slot) {
+#ifdef NATIVE_OBJECT
+    object_move_shot(direction, slot);
+#else
+    objrt_move_shot(direction, slot);
 #endif
 }
