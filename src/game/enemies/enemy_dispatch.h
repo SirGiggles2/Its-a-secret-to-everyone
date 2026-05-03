@@ -48,6 +48,31 @@ void enemy_walker_alt_dir_end_loop(void);
  * NES WalkerAltDirGetRandomPerpendicular. drain at enemy_wanderer_runtime.c:25-31. */
 unsigned char enemy_walker_alt_dir_get_random_perpendicular(unsigned int slot);
 
+/* Boss / mob init/state trivials. drain at enemy_boss_runtime.c. */
+
+/* ENEMY_AI_STATE = state, ENEMY_TURN_TIMER = 6. NES FlyerSetStateAndTurns. */
+void enemy_flyer_set_state_and_turns(unsigned int state, unsigned int slot);
+
+/* core_anim_set_sprite_desc_attrs(3) — boss palette row 3.
+ * NES AnimSetSpriteDescLevelPaletteRow. */
+void enemy_anim_set_sprite_desc_level_palette_row(void);
+
+/* Aquamentus init: invincibility=$E2, sfx_boss_cry=16, X=$B0, Y=$80. */
+void enemy_init_aquamentus(unsigned int slot);
+
+/* Tektite init: pick starting dir from TektiteStartingDirs[rng_b & 3]
+ * ($01 $02 $05 $0A); seed move_timer = dir << 2. NES InitTektite.
+ * Table baked inline from NES Z_04.asm:1832. */
+void enemy_init_tektite(unsigned int slot);
+
+/* Ganon randomize: Y=$A0, X=GanonStartXs[sprite_attr_row & 1] ($30 or $B0).
+ * NES Z_04.asm:10488 table baked inline. */
+void enemy_ganon_randomize_location(unsigned int slot);
+
+/* Jumper-boulder dir-down: only if ENEMY_TYPE == $20, OR $04 into low
+ * 2 bits of dir. NES JumperPointBoulderDownward. */
+void enemy_jumper_point_boulder_downward(unsigned int slot);
+
 #ifdef __cplusplus
 }
 #endif

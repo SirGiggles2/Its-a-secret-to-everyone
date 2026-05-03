@@ -5,8 +5,10 @@
  */
 
 #include "enemy_dispatch.h"
+#include <stdint.h>            /* uint8_t */
 #include "platform_abi.h"      /* RAM, OBJ, NES_OBJ_TYPE */
-#include "enemy_state.h"       /* ENEMY_OAM_HIDE_*, ENEMY_SFX_*, ENEMY_NEXT_SHOT_SLOT */
+#include "enemy_state.h"       /* ENEMY_OAM_HIDE_*, ENEMY_SFX_*, ENEMY_NEXT_SHOT_SLOT, ENEMY_X/Y, ENEMY_DIR, ENEMY_RNG_A/B, ENEMY_FRAME_FLAGS, ENEMY_BLOCKED_FLAG, ENEMY_AI_STATE, ENEMY_TURN_TIMER, ENEMY_INVINCIBILITY, ENEMY_TYPE, ENEMY_CUR_SPRITE_ATTR_ROW, ENEMY_MOVE_TIMER */
+#include "core/core_dispatch.h"  /* core_anim_set_sprite_desc_attrs */
 
 unsigned int enemy_find_empty_monster_slot(void)
 {
@@ -86,4 +88,59 @@ unsigned char enemy_walker_alt_dir_get_random_perpendicular(unsigned int slot)
         idx += 2u;
     }
     return k_reverse_directions[idx];
+}
+
+/* NES Z_04.asm TektiteStartingDirs (line 1832): $01 $02 $05 $0A. */
+static const unsigned char k_tektite_starting_dirs[4] = {
+    0x01u, 0x02u, 0x05u, 0x0Au
+};
+
+/* NES Z_04.asm GanonStartXs (line 10488): $30 $B0. */
+static const unsigned char k_ganon_start_xs[2] = { 0x30u, 0xB0u };
+
+void enemy_flyer_set_state_and_turns(unsigned int state, unsigned int slot)
+{
+    /* drain at enemy_boss_runtime.c:88-91. */
+    ENEMY_AI_STATE(slot) = (uint8_t)state;
+    ENEMY_TURN_TIMER(slot) = 6u;
+}
+
+void enemy_anim_set_sprite_desc_level_palette_row(void)
+{
+    /* drain at enemy_boss_runtime.c:98-100. NES — boss palette row 3. */
+    (void)core_anim_set_sprite_desc_attrs(3u);
+}
+
+void enemy_init_aquamentus(unsigned int slot)
+{
+    /* drain at enemy_boss_runtime.c:102-107. */
+    ENEMY_INVINCIBILITY(slot) = 0xE2u;
+    ENEMY_SFX_BOSS_CRY = 16u;
+    ENEMY_X(slot) = 0xB0u;
+    ENEMY_Y(slot) = 0x80u;
+}
+
+void enemy_init_tektite(unsigned int slot)
+{
+    /* drain at enemy_boss_runtime.c:119-124. NES InitTektite. */
+    const unsigned char rnd = (unsigned char)(ENEMY_RNG_B(slot) & 0x03u);
+    const unsigned char dir = k_tektite_starting_dirs[rnd];
+    ENEMY_DIR(slot) = dir;
+    ENEMY_MOVE_TIMER(slot) = (uint8_t)(dir << 2);
+}
+
+void enemy_ganon_randomize_location(unsigned int slot)
+{
+    /* drain at enemy_boss_runtime.c:238-241. */
+    ENEMY_Y(slot) = 0xA0u;
+    ENEMY_X(slot) = k_ganon_start_xs[ENEMY_CUR_SPRITE_ATTR_ROW & 0x01u];
+}
+
+void enemy_jumper_point_boulder_downward(unsigned int slot)
+{
+    /* drain at enemy_boss_runtime.c:243-247. NES — only if type == $20. */
+    if (ENEMY_TYPE(slot) != 0x20u) {
+        return;
+    }
+    ENEMY_DIR(slot) = (uint8_t)((ENEMY_DIR(slot) & 0x03u) | 0x04u);
 }
