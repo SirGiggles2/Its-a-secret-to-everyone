@@ -338,18 +338,6 @@ void z01_update_uw_person_life_or_money_full(unsigned int slot) {
     uwrt_update_life_or_money_full(slot);
 }
 
-void z01_format_decimal_byte(unsigned char val) {
-    cavert_format_decimal_byte(val);
-}
-
-void z01_write_prices_to_dynamic_transfer_buf(unsigned char price_char) {
-    cavert_write_prices_to_dynamic_transfer_buf(price_char);
-}
-
-void z01_write_prices_transfer_buf(void) {
-    cavert_write_prices_transfer_buf();
-}
-
 void z01_update_person_state_textbox(void) {
     cavert_update_person_state_textbox();
 }
@@ -784,5 +772,38 @@ void z01_update_cave_person(unsigned int slot) {
     cave_update_cave_person(slot);
 #else
     cavert_update_cave_person(slot);
+#endif
+}
+
+/* Price formatter chain — independent gate NATIVE_CAVE_FORMAT.
+ *
+ * Chain: format_decimal_byte -> write_prices_to_dynamic_transfer_buf
+ *        -> write_prices_transfer_buf
+ *
+ * format_decimal_byte is a pure leaf (no shims). The two write_prices
+ * functions still STAGE-1 STUB the cue_transfer_buf_and_advance_state
+ * shim (Phase 4) and copy_price_list_template (Phase 4). Default OFF
+ * keeps oracle drain — drain MATCH per finding 3_4n_i. */
+void z01_format_decimal_byte(unsigned char val) {
+#ifdef NATIVE_CAVE_FORMAT
+    cave_format_decimal_byte(val);
+#else
+    cavert_format_decimal_byte(val);
+#endif
+}
+
+void z01_write_prices_to_dynamic_transfer_buf(unsigned char price_char) {
+#ifdef NATIVE_CAVE_FORMAT
+    cave_write_prices_to_dynamic_transfer_buf(price_char);
+#else
+    cavert_write_prices_to_dynamic_transfer_buf(price_char);
+#endif
+}
+
+void z01_write_prices_transfer_buf(void) {
+#ifdef NATIVE_CAVE_FORMAT
+    cave_write_prices_transfer_buf();
+#else
+    cavert_write_prices_transfer_buf();
 #endif
 }

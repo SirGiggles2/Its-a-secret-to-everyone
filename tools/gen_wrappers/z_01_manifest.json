@@ -404,21 +404,6 @@
       "sig": "void (unsigned int slot)"
     },
     {
-      "old": "z01_format_decimal_byte",
-      "new": "cavert_format_decimal_byte",
-      "sig": "void (unsigned char val)"
-    },
-    {
-      "old": "z01_write_prices_to_dynamic_transfer_buf",
-      "new": "cavert_write_prices_to_dynamic_transfer_buf",
-      "sig": "void (unsigned char price_char)"
-    },
-    {
-      "old": "z01_write_prices_transfer_buf",
-      "new": "cavert_write_prices_transfer_buf",
-      "sig": "void (void)"
-    },
-    {
       "old": "z01_update_person_state_textbox",
       "new": "cavert_update_person_state_textbox",
       "sig": "void (void)"

@@ -172,6 +172,36 @@ void cave_clear_prices_flag(void);
  * shims). Other 5 arms are native. */
 void cave_update_cave_person(unsigned int slot);
 
+/* Format an unsigned 0..255 byte into BCD digits with leading-zero
+ * suppression. Mirrors NES FormatDecimalByte (Z_01.asm:3129). Drain
+ * MATCH per finding 3_4n_i.
+ *
+ * Outputs:
+ *   CAVE_TMP1 = hundreds digit (0..9, or $24 = space if leading zero)
+ *   CAVE_TMP2 = tens digit (0..9, or $24 if hundreds==0 AND tens==0)
+ *   CAVE_TMP3 = units digit (0..9)
+ *
+ * Pure C, no shims. */
+void cave_format_decimal_byte(unsigned char val);
+
+/* Write all 3 ware prices into the dynamic transfer buffer using the
+ * given price prefix character (e.g. $21 = "X" for shop, $24 = space
+ * for price-list display). Mirrors NES WritePricesToDynamicTransferBuf
+ * (Z_01.asm:455). Drain MATCH per finding 3_4n_i.
+ *
+ * Loops 3 wares: format price digits, swap space/sign for alignment,
+ * write to DynTileBuf+5/6/7 at per-ware offset. Bumps cave delay timer
+ * by 10 frames. cue_transfer_buf_and_advance_state is STAGE-1 STUB
+ * pending Phase 4 native equivalent. */
+void cave_write_prices_to_dynamic_transfer_buf(unsigned char price_char);
+
+/* Write all 3 ware prices into the static price-list transfer buf.
+ * Mirrors NES WritePricesTransferBuf (Z_01.asm:449). Two-step:
+ * copy_price_list_template (STAGE-1 STUB pending Phase 4) +
+ * write_prices_to_dynamic_transfer_buf(33). Drain at
+ * src/oracle/cave/cave_runtime.c:126. */
+void cave_write_prices_transfer_buf(void);
+
 #ifdef __cplusplus
 }
 #endif

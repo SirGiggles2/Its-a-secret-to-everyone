@@ -287,6 +287,113 @@ void cave_update_talk_shop_or_door_charge(void)
     }
 }
 
+/* Inline equivalent of cavert_swap_space_and_sign (drain trivial,
+ * src/oracle/cave/cave_runtime.c:61). NES SwapSpaceAndSign at
+ * Z_01.asm:539 — if input == $24 (space), swap with CAVE_TMP4 (the
+ * dash/sign prefix). */
+static inline unsigned char cave_swap_space_and_sign_inline(unsigned char d0)
+{
+    if (d0 == 0x24u) {
+        const unsigned char tmp = CAVE_TMP4;
+        CAVE_TMP4 = d0;
+        d0 = tmp;
+    }
+    return d0;
+}
+
+void cave_format_decimal_byte(unsigned char val)
+{
+    /* NES FormatDecimalByte (Z_01.asm:3129). Drain MATCH per finding
+     * 3_4n_i. NES does two DivideBy10 calls to extract units / tens /
+     * hundreds; native uses /10 + %10 directly (same arithmetic).
+     *
+     * Leading-zero suppression: hundreds 0 -> $24 (space). If both
+     * hundreds and tens are zero, tens also -> $24 (the units digit
+     * is always rendered, even for value 0). */
+    const unsigned char units    = (unsigned char)(val % 10u);
+    const unsigned char rest     = (unsigned char)(val / 10u);
+    unsigned char       tens     = (unsigned char)(rest % 10u);
+    unsigned char       hundreds = (unsigned char)(rest / 10u);
+
+    CAVE_TMP3 = units;
+    if (hundreds == 0u) {
+        hundreds = 0x24u;
+        if (tens == 0u) {
+            tens = 0x24u;
+        }
+    }
+    CAVE_TMP2 = tens;
+    CAVE_TMP1 = hundreds;
+}
+
+void cave_write_prices_to_dynamic_transfer_buf(unsigned char price_char)
+{
+    /* NES WritePricesToDynamicTransferBuf (Z_01.asm:455). Drain at
+     * src/oracle/cave/cave_runtime.c:96. Drain MATCH per finding 3_4n_i.
+     *
+     * For each of 3 ware slots:
+     *   - If price == 0: store space ($24) in tmp1/2/3.
+     *   - Else: format digits via cave_format_decimal_byte.
+     *   - Determine sign char ($62 if cave-flag bit 0x80 = "negative
+     *     amounts", else $24 space).
+     *   - Swap space/sign across hundreds/tens slots so the dash sits
+     *     directly beside the leftmost non-space digit.
+     *   - Write hundreds/tens/units (and the sign byte) into the
+     *     dynamic transfer buffer at offset.
+     * Bumps delay timer to 10 frames + cues advance-state. */
+    RAM(0x0305) = price_char;        /* DynTileBuf+3 = price char */
+    CAVE_TRANSFER_PRICE_COUNT  = 0u; /* CaveCurPriceIndex  = $042E */
+    CAVE_TRANSFER_PRICE_OFFSET = 0u; /* CaveCurPriceOffset = $042F */
+    do {
+        const unsigned char price_index = CAVE_TRANSFER_PRICE_COUNT;
+        const unsigned char price = (unsigned char)RAM(0x0430 + price_index);
+        unsigned char dash;
+        unsigned char off;
+
+        if (price == 0u) {
+            CAVE_TMP1 = 0x24u;
+            CAVE_TMP2 = 0x24u;
+            CAVE_TMP3 = 0x24u;
+        } else {
+            cave_format_decimal_byte(price);
+        }
+
+        /* Cave flag $80 = negative-amount display → dash, else space. */
+        dash = (cave_flags_get() & 0x80u) ? 98u : 0x24u;
+        CAVE_TMP4 = dash;
+
+        off = CAVE_TRANSFER_PRICE_OFFSET;
+        CAVE_TRANSFER_BUF_PRICE_TENS(off) =
+            cave_swap_space_and_sign_inline(CAVE_TMP2);
+        CAVE_TRANSFER_BUF_PRICE_HUNDREDS(off) =
+            cave_swap_space_and_sign_inline(CAVE_TMP1);
+        CAVE_TRANSFER_BUF_PRICE_UNITS(off) = CAVE_TMP3;
+        CAVE_TRANSFER_PRICE_OFFSET = (unsigned char)(off + 4u);
+        CAVE_TRANSFER_PRICE_COUNT  = (unsigned char)(price_index + 1u);
+    } while (CAVE_TRANSFER_PRICE_COUNT < CAVE_WARES_PER_ROOM);
+
+    CAVE_DELAY_TIMER = 10u;
+    /* TODO Phase 4: native cue_transfer_buf_and_advance_state(10). NES
+     * does `STA TileBufSelector / INC ObjState+1`. */
+}
+
+void cave_write_prices_transfer_buf(void)
+{
+    /* NES WritePricesTransferBuf (Z_01.asm:449):
+     *   JSR CopyPriceListTemplate  ; (Phase 4 stub)
+     *   LDA #$21                   ; "X"
+     *   fall through to WritePricesToDynamicTransferBuf
+     *
+     * Drain at src/oracle/cave/cave_runtime.c:126. */
+
+    /* TODO Phase 4: native cave_copy_price_list_template(). The
+     * template is a fixed 30-byte ROM blob copied into the static
+     * transfer buf — not yet ported. */
+
+    /* Price char $21 = NES tile "X" (multiplier prefix in shop). */
+    cave_write_prices_to_dynamic_transfer_buf(0x21u);
+}
+
 void cave_update_cave_person(unsigned int slot)
 {
     /* NES UpdateCavePerson (Z_01.asm:300). Drain at
