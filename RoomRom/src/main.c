@@ -39,7 +39,13 @@
  *   MODE button is reserved (Genesis 6-button hardware mode select)
  *   and intentionally unbound. */
 
-typedef enum { SCENE_OW = 0, SCENE_UW = 1 } scene_t;
+/* SCENE_CAVE (debate 006 D2 follow-up): native cave gamemode harness.
+ * Toggle from SCENE_OW with C+START. While SCENE_CAVE is active the
+ * main loop calls cave_tick per VBlank — currently a stub, so the
+ * scene visually inherits OW (no dedicated cave render until Phase 4
+ * native object_draw lands). C+START again exits back to SCENE_OW
+ * and calls cave_exit. */
+typedef enum { SCENE_OW = 0, SCENE_UW = 1, SCENE_CAVE = 2 } scene_t;
 typedef enum { MODE_WALK = 0, MODE_TELEPORT = 1 } mode_t;
 typedef enum { MOVE_STYLE_NES = 0, MOVE_STYLE_ALTTP = 1 } move_style_t;
 
@@ -470,6 +476,18 @@ int main(bool hardReset)
         u16 pressed = joy & ~joy_prev;
         joy_prev = joy;
 
+        /* SCENE_CAVE harness: tick the native cave gamemode each frame.
+         * Only the C+START exit chord is honored — all other input is
+         * swallowed so the chord toggle behavior stays unambiguous. */
+        if (s_scene == SCENE_CAVE) {
+            cave_tick();
+            if ((pressed & BUTTON_START) && (joy & BUTTON_C)) {
+                cave_exit();
+                s_scene = SCENE_OW;
+            }
+            continue;
+        }
+
         if (pressed & BUTTON_X) {
             s_mode = (s_mode == MODE_WALK) ? MODE_TELEPORT : MODE_WALK;
             continue;
@@ -487,10 +505,26 @@ int main(bool hardReset)
             continue;
         }
 
+        /* C held + START press = SCENE_CAVE toggle. Detected before the
+         * START-alone branch so the chord doesn't fall through to the
+         * regular OW<->UW toggle. cave_id 0x6A is the first valid NES
+         * cave room type per Z_01.asm:80 — pick something deterministic
+         * for the harness. */
+        if ((pressed & BUTTON_START) && (joy & BUTTON_C)) {
+            if (s_scene == SCENE_OW) {
+                (void)cave_init((cave_id_t)0x6A);
+                s_scene = SCENE_CAVE;
+            } else if (s_scene == SCENE_CAVE) {
+                cave_exit();
+                s_scene = SCENE_OW;
+            }
+            continue;
+        }
+
         /* START edge-press = scene toggle. Z held + START = quest toggle
-         * (handled below). MODE button is reserved hardware-side, never
-         * bound. B is freed for Z1-style B-item use. */
-        if ((pressed & BUTTON_START) && !(joy & BUTTON_Z)) {
+         * (handled below). C held + START handled above. MODE button is
+         * reserved hardware-side, never bound. */
+        if ((pressed & BUTTON_START) && !(joy & BUTTON_Z) && !(joy & BUTTON_C)) {
             s_scene = (s_scene == SCENE_OW) ? SCENE_UW : SCENE_OW;
             s_room_id = (s_scene == SCENE_UW) ? 0x00 : 0x77;
             upload_scene_chr();

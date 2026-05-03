@@ -25,12 +25,14 @@
 #include "cave_state.h"
 #include "combat_state.h"  /* LINK_HEARTS = RAM(0x066F) */
 
-/* CaveState instance. Single global for now; future Phase 6/7 may add
- * multi-instance for replay/seed harness, but NES Z_01 has one cave
- * active at a time, so one instance matches NES semantics. */
-static CaveState g_cave_state;
-
-/* Cave-id of the currently active cave (0 = none active). */
+/* Cave-id of the currently active cave (0 = none active).
+ *
+ * The persistent cave state lives in NES RAM (read/written via the
+ * bridge accessors in src/state/cave_state.h). Per state_contract.md
+ * "two views coexist," accessor calls go through `RAM($XXX)` so that
+ * drained C reading via macros + native code reading via accessors
+ * see the same byte. We do NOT keep a duplicate typed struct here —
+ * that would diverge silently from the RAM-backed view. */
 static cave_id_t g_active_cave = 0;
 
 /* Cave-id range gate per NES InitCave (Z_01.asm:79-86): valid cave
@@ -44,20 +46,25 @@ int cave_init(cave_id_t cave_id)
         return -1;
     }
 
-    /* Populate CaveState typed struct. NES InitCaveContinue
-     * (Z_01.asm:105) computes cave_idx = cave_id - 0x6A then loads
-     * tables; we mirror the index but do NOT yet load OverworldPerson
-     * tables (that requires src/data/person_text.inc which lives in
-     * the transpile bridge today). Future commit ports the data load
-     * via a shared `data/cave_tables.h` extracted by Task 3.1. */
-    g_cave_state.room_type = cave_id;
-    g_cave_state.person_state = 0;
-    g_cave_state.flags = 0;
-    g_cave_state.text_selector = 0;
-    g_cave_state.text_char_index = 0;
-    g_cave_state.delay_timer = 0;
-    g_cave_state.link_action_timer = 0;
-    g_cave_state.link_input_flags = 0;
+    /* Write through RAM-backed accessors. NES InitCaveContinue
+     * (Z_01.asm:105) does `cave_idx = cave_id - $6A` then loads tables;
+     * we set the cave_id in RAM($0350) so downstream cave_draw_*,
+     * cave_update_* (and any drain-side code reading via CAVE_ROOM_TYPE
+     * macro) see the same byte.
+     *
+     * OverworldPerson table loads (text selector / line addr / ware
+     * inventory) are deferred — those need a Phase 4 cross-subsystem
+     * data port from src/data/person_text.inc into a native const table.
+     * Stage-1 leaves text/ware state zeroed; cave appears empty until
+     * the table port lands. */
+    cave_room_type_set(cave_id);          /* RAM($0350) */
+    CAVE_PERSON_STATE      = 0u;          /* RAM($00AD) */
+    cave_flags_set(0u);                   /* RAM($0413) */
+    CAVE_TEXT_SELECTOR     = 0u;          /* RAM($0415) */
+    CAVE_TEXT_CHAR_INDEX   = 0u;          /* RAM($0416) */
+    CAVE_DELAY_TIMER       = 0u;          /* RAM($0029) */
+    CAVE_LINK_ACTION_TIMER = 0u;          /* RAM($00AC) */
+    CAVE_LINK_INPUT_FLAGS  = 0u;          /* RAM($00F8) */
 
     g_active_cave = cave_id;
     return 0;
@@ -78,10 +85,14 @@ void cave_tick(void)
 
 void cave_exit(void)
 {
-    g_cave_state.room_type = 0;
-    g_cave_state.person_state = 0;
-    g_cave_state.flags = 0;
-    g_active_cave = 0;
+    /* Clear RAM-backed cave state. NES InitCave's "destroy cave object"
+     * path (Z_01.asm:98-103) writes ObjType+1=0 + ObjState=0 then RTS;
+     * mirror that minimal teardown. Other RAM cells (delay timer, ware
+     * inventory) are left as-is — NES code does not zero them on exit. */
+    cave_room_type_set(0u);
+    CAVE_PERSON_STATE = 0u;
+    cave_flags_set(0u);
+    g_active_cave = 0u;
 }
 
 cave_id_t cave_current_id(void)
