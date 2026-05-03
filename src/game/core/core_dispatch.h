@@ -250,6 +250,22 @@ unsigned char core_reset_moving_dir(void);
 /* No-op. NES DoNothing. */
 void core_do_nothing(void);
 
+/* DEATH_FRAME_COUNTER = 32; OBJ_METASTATE = 16. NES UpdateDeadDummy. */
+void core_update_dead_dummy(unsigned int slot);
+
+/* OBJ_STATE++; OBJ_FLAG = $FE. NES SetShotSpreadingState. */
+void core_set_shot_spreading_state(unsigned int slot);
+
+/* Backwards-clear loop: nes_ram[(hi<<8)|off]=0, walk off down to $FF
+ * then dec hi; loop until hi < $03; commit ROOM_TILE_XFER_BUF(0)=$FF.
+ * NES ClearRam0300UpTo. */
+void core_clear_ram0300_up_to(unsigned int end_hi, unsigned int start_off);
+
+/* Handle shot collision aftermath. NES HandleShotBlocked. STAGE-1
+ * STUB at the c_wield_candle path; rest of branches native. drain
+ * at core_runtime.c:434+. */
+void core_handle_shot_blocked(unsigned int slot);
+
 #ifdef __cplusplus
 }
 #endif

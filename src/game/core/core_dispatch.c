@@ -523,6 +523,79 @@ void core_do_nothing(void)
     /* drain at core_runtime.c:413. */
 }
 
+void core_update_dead_dummy(unsigned int slot)
+{
+    /* drain at core_runtime.c:356-359. */
+    DEATH_FRAME_COUNTER = 32u;
+    OBJ_METASTATE(slot) = 16u;
+}
+
+void core_set_shot_spreading_state(unsigned int slot)
+{
+    /* drain at core_runtime.c:361-364. */
+    OBJ_STATE(slot) = (uint8_t)(OBJ_STATE(slot) + 1u);
+    RAM(NES_OBJ_FLAG_BASE + slot) = 0xFEu;
+}
+
+void core_clear_ram0300_up_to(unsigned int end_hi, unsigned int start_off)
+{
+    /* drain at core_runtime.c:415-432. NES ClearRam0300UpTo. Backwards
+     * clear of nes_ram[$0300+] until hi < $03. */
+    unsigned char hi  = (unsigned char)end_hi;
+    unsigned char off = (unsigned char)start_off;
+    for (;;) {
+        nes_ram[((unsigned short)hi << 8) | off] = 0u;
+        off = (unsigned char)(off - 1u);
+        if (off != 0xFFu) {
+            continue;
+        }
+        hi = (unsigned char)(hi - 1u);
+        if (hi >= 0x03u) {
+            off = 0xFFu;
+            continue;
+        }
+        /* ROOM_TILE_XFER_BUF(0) = $FF — terminator. */
+        RAM(0x0301u) = 0xFFu;
+        return;
+    }
+}
+
+void core_handle_shot_blocked(unsigned int slot)
+{
+    /* drain at core_runtime.c:434-465. NES HandleShotBlocked.
+     * STAGE-1: c_wield_candle path is a transpile shim; emit a TODO
+     * for that arm. Other branches port natively. */
+    if ((OBJ_STATE(slot) & 0x80u) == 0u) {
+        core_set_shot_spreading_state(slot);
+        return;
+    }
+    if (RAM(0x0661u) == 0u) {
+        core_deactivate_shot(slot);
+        return;
+    }
+    /* TODO Phase 4: native equivalent of c_wield_candle (item subsystem
+     * cross-port). Currently stage-1 stub: skip the candle-relight side
+     * effect; downstream OBJ_STATE 0x21 -> 0x22 promotion still runs
+     * because saved_link_state and saved_candle_used round-trip via
+     * c_wield_candle which we elide. Marking as STAGE-1: light-but-
+     * functional, may diverge from NES on candle-shot-block scenes. */
+    /* saved_link_state = OBJ_STATE(0);   -- NES side-effect preservation */
+    /* saved_candle_used = CANDLE_LIT_FLAG; */
+    /* CANDLE_LIT_FLAG = 0; c_wield_candle(); CANDLE_LIT_FLAG = saved_candle_used; */
+    /* OBJ_STATE(0) = saved_link_state; */
+
+    if (OBJ_STATE(slot) != 0x21u) {
+        core_deactivate_link_shot();
+        return;
+    }
+    OBJ_STATE(slot) = 0x22u;
+    OBJ_TILE_X(slot) = (uint8_t)OBJ_TILE_X(14);
+    OBJ_TILE_Y(slot) = (uint8_t)OBJ_TILE_Y(14);
+    RAM(NES_OBJ_FLAG_BASE + slot) =
+        (uint8_t)RAM(NES_OBJ_FLAG_BASE + 14u);
+    RAM(0x0028 + slot) = 79u;
+}
+
 void core_set_up_common_cave_objects(unsigned int x, unsigned int slot,
                                      unsigned int y)
 {
