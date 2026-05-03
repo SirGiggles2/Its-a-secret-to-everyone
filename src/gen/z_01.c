@@ -418,22 +418,6 @@ unsigned int z01_wield_candle(unsigned int slot) {
     return weprt_wield_candle(slot);
 }
 
-void z01_cycle_cur_sprite_index(void) {
-    sprrt_cycle_cur_sprite_index();
-}
-
-unsigned char z01_cycle_sprite_index_in_a(unsigned char idx) {
-    return sprrt_cycle_sprite_index_in_a(idx);
-}
-
-void z01_hide_object_sprites(void) {
-    sprrt_hide_object_sprites();
-}
-
-void z01_show_link_sprites_behind_horizontal_doors(void) {
-    sprrt_show_link_sprites_behind_horizontal_doors();
-}
-
 void z01_play_parry_sound_for_damage_type(void) {
     cobrt_play_parry_sound_for_damage_type();
 }
@@ -878,5 +862,47 @@ void z01_move_shot(unsigned char direction, unsigned int slot) {
     object_move_shot(direction, slot);
 #else
     objrt_move_shot(direction, slot);
+#endif
+}
+
+/* Phase 4 native sprite subsystem cutover gate — NATIVE_SPRITE.
+ *
+ * First batch: rolling sprite-index helpers + OAM hide + Link
+ * priority-drop. Pure C, no shims (z01_reset_cur_sprite_index inlined
+ * per NES Z_01.asm:3095 which is just RAM($0341) = 0). Drain MATCH
+ * per finding 4_3n. Independent gate from NATIVE_OBJECT/_WORLD. */
+#ifdef NATIVE_SPRITE
+#include "world/sprite_dispatch.h"
+#endif
+
+void z01_cycle_cur_sprite_index(void) {
+#ifdef NATIVE_SPRITE
+    sprite_cycle_cur_sprite_index();
+#else
+    sprrt_cycle_cur_sprite_index();
+#endif
+}
+
+unsigned char z01_cycle_sprite_index_in_a(unsigned char idx) {
+#ifdef NATIVE_SPRITE
+    return sprite_cycle_sprite_index_in_a(idx);
+#else
+    return sprrt_cycle_sprite_index_in_a(idx);
+#endif
+}
+
+void z01_hide_object_sprites(void) {
+#ifdef NATIVE_SPRITE
+    sprite_hide_object_sprites();
+#else
+    sprrt_hide_object_sprites();
+#endif
+}
+
+void z01_show_link_sprites_behind_horizontal_doors(void) {
+#ifdef NATIVE_SPRITE
+    sprite_show_link_sprites_behind_horizontal_doors();
+#else
+    sprrt_show_link_sprites_behind_horizontal_doors();
 #endif
 }
