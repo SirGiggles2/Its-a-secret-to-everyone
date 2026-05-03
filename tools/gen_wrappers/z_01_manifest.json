@@ -39,11 +39,6 @@
       "sig": "unsigned char (void)"
     },
     {
-      "old": "z01_post_debit",
-      "new": "corert_post_debit",
-      "sig": "void (unsigned int amount)"
-    },
-    {
       "old": "z01_init_one_simple_object",
       "new": "corert_init_one_simple_object",
       "sig": "void (unsigned int slot)"
@@ -84,11 +79,6 @@
       "sig": "unsigned char (unsigned int val)"
     },
     {
-      "old": "z01_post_credit",
-      "new": "corert_post_credit",
-      "sig": "void (unsigned int val)"
-    },
-    {
       "old": "z01_add_to_int16_at_0",
       "new": "corert_add_to_int16_at_0",
       "sig": "unsigned char (unsigned int val)"
@@ -124,11 +114,6 @@
       "sig": "void (void)"
     },
     {
-      "old": "z01_take_one_rupee",
-      "new": "corert_take_one_rupee",
-      "sig": "void (void)"
-    },
-    {
       "old": "z01_set_item_value",
       "new": "corert_set_item_value",
       "sig": "void (unsigned int val, unsigned int slot3)"
@@ -147,16 +132,6 @@
       "old": "z01_add1_to_int16_at_4",
       "new": "corert_add1_to_int16_at_4",
       "sig": "unsigned char (void)"
-    },
-    {
-      "old": "z01_cue_transfer_blank_person_wares",
-      "new": "corert_cue_transfer_blank_person_wares",
-      "sig": "void (void)"
-    },
-    {
-      "old": "z01_take_5_rupees",
-      "new": "corert_take_5_rupees",
-      "sig": "void (void)"
     },
     {
       "old": "z01_get_opposite_dir",

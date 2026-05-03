@@ -34,6 +34,25 @@ void core_cue_transfer_buf_and_advance_state(unsigned int val);
  * src/core/core_runtime.c:219+. */
 unsigned char core_abs(unsigned int val);
 
+/* Rupee debit/credit accumulators. NES uses lazy deferred animation:
+ * gameplay code adjusts $067E (debit pending) or $067D (credit pending),
+ * the HUD per-frame ticks the actual LinkRupees down or up by 1 with
+ * a tune. drain at core_runtime.c:32-34 (debit), 107-109 (credit). */
+void core_post_debit(unsigned int amount);
+void core_post_credit(unsigned int val);
+
+/* Increment credit accumulator by 1 + set DEATH_FRAME_COUNTER = 1
+ * (HUD anim trigger). drain at core_runtime.c:165-168. */
+void core_take_one_rupee(void);
+
+/* Loop core_take_one_rupee 5 times. drain at core_runtime.c:195-200. */
+void core_take_5_rupees(void);
+
+/* cue_transfer_buf_and_advance_state(42) — used by cave state-arms
+ * 3 + 6 in cavert_update_cave_person dispatch. drain at
+ * core_runtime.c:191-193. */
+void core_cue_transfer_blank_person_wares(void);
+
 #ifdef __cplusplus
 }
 #endif

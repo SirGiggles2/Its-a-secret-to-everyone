@@ -46,10 +46,6 @@ unsigned char z01_silence_all_sound(void) {
     return corert_silence_all_sound();
 }
 
-void z01_post_debit(unsigned int amount) {
-    corert_post_debit(amount);
-}
-
 void z01_init_one_simple_object(unsigned int slot) {
     corert_init_one_simple_object(slot);
 }
@@ -82,10 +78,6 @@ unsigned char z01_anim_set_sprite_desc_attrs(unsigned int val) {
     return corert_anim_set_sprite_desc_attrs(val);
 }
 
-void z01_post_credit(unsigned int val) {
-    corert_post_credit(val);
-}
-
 unsigned char z01_add_to_int16_at_0(unsigned int val) {
     return corert_add_to_int16_at_0(val);
 }
@@ -114,10 +106,6 @@ void z01_begin_update_mode(void) {
     corert_begin_update_mode();
 }
 
-void z01_take_one_rupee(void) {
-    corert_take_one_rupee();
-}
-
 void z01_set_item_value(unsigned int val, unsigned int slot3) {
     corert_set_item_value(val, slot3);
 }
@@ -132,14 +120,6 @@ unsigned char z01_add1_to_int16_at_2(void) {
 
 unsigned char z01_add1_to_int16_at_4(void) {
     return corert_add1_to_int16_at_4();
-}
-
-void z01_cue_transfer_blank_person_wares(void) {
-    corert_cue_transfer_blank_person_wares();
-}
-
-void z01_take_5_rupees(void) {
-    corert_take_5_rupees();
 }
 
 unsigned int z01_get_opposite_dir(unsigned int dir) {
@@ -955,6 +935,46 @@ unsigned char z01_abs(unsigned int val) {
     return core_abs(val);
 #else
     return corert_abs(val);
+#endif
+}
+
+void z01_post_debit(unsigned int amount) {
+#ifdef NATIVE_CORE
+    core_post_debit(amount);
+#else
+    corert_post_debit(amount);
+#endif
+}
+
+void z01_post_credit(unsigned int val) {
+#ifdef NATIVE_CORE
+    core_post_credit(val);
+#else
+    corert_post_credit(val);
+#endif
+}
+
+void z01_take_one_rupee(void) {
+#ifdef NATIVE_CORE
+    core_take_one_rupee();
+#else
+    corert_take_one_rupee();
+#endif
+}
+
+void z01_take_5_rupees(void) {
+#ifdef NATIVE_CORE
+    core_take_5_rupees();
+#else
+    corert_take_5_rupees();
+#endif
+}
+
+void z01_cue_transfer_blank_person_wares(void) {
+#ifdef NATIVE_CORE
+    core_cue_transfer_blank_person_wares();
+#else
+    corert_cue_transfer_blank_person_wares();
 #endif
 }
 

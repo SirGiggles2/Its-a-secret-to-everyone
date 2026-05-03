@@ -258,7 +258,7 @@ void cave_update_talk_shop_or_door_charge(void)
             if (LINK_RUPEES < RAM(0x0430 + i)) {
                 return;  /* not enough rupees */
             }
-            /* TODO Phase 4: native cave_post_debit(price). Stage-1 stub. */
+            core_post_debit((unsigned int)RAM(0x0430 + i));
             CAVE_PERSON_STATE = 5u;
             return;
         }
@@ -268,7 +268,7 @@ void cave_update_talk_shop_or_door_charge(void)
             if (LINK_RUPEES < RAM(0x0430 + i)) {
                 return;
             }
-            /* TODO Phase 4: native cave_post_debit(price). Stage-1 stub. */
+            core_post_debit((unsigned int)RAM(0x0430 + i));
         }
         if (cave_flags_get() & 0x40u) {
             const unsigned char min_hearts =
@@ -440,13 +440,11 @@ void cave_update_cave_person(unsigned int slot)
         case 1u: /* TODO Phase 4: native cave_update_person_state_textbox(). */
                  break;
         case 2u: cave_update_talk_shop_or_door_charge(); break;
-        case 3u: /* TODO Phase 4: native cue_transfer_blank_person_wares(). */
-                 break;
+        case 3u: core_cue_transfer_blank_person_wares(); break;
         case 4u: cave_update_person_state_delay_then_hide(); break;
         case 5u: cave_update_hint_or_money_game(); break;
-        case 6u: /* TODO Phase 4: same as state 3. */
-                 break;
-        case 7u: /* TODO Phase 4: same as state 1. */
+        case 6u: core_cue_transfer_blank_person_wares(); break;  /* same as state 3 */
+        case 7u: /* TODO Phase 4: same as state 1 (textbox). */
                  break;
         case 8u: /* DoNothing */
                  break;
@@ -499,7 +497,7 @@ void cave_update_hint_or_money_game(void)
         CAVE_TEXT_TICK_SFX = 8u;
         progress_set_room_flag_uw_item_state();
         CAVE_PERSON_STATE  = 8u;
-        /* TODO Phase 4: native cave_post_credit(CAVE_PRICE(1)). */
+        core_post_credit((unsigned int)RAM(0x0430 + 1));  /* CAVE_PRICE(1) */
         return;
     }
 
@@ -512,7 +510,7 @@ void cave_update_hint_or_money_game(void)
     RAM(0x0430 + 0) = RAM(0x0448 + 0);  /* CAVE_PRICE(0) = CAVE_PRIZE_ORDER(0) */
     RAM(0x0430 + 1) = RAM(0x0448 + 1);
     RAM(0x0430 + 2) = RAM(0x0448 + 2);
-    /* TODO Phase 4: native cave_write_prices_transfer_buf(). */
+    cave_write_prices_transfer_buf();
     CAVE_PERSON_STATE = 8u;
     cave_prepend_sign_to_price_inline(RAM(0x0448 + 0), 1u);
     cave_prepend_sign_to_price_inline(RAM(0x0448 + 1), 5u);
@@ -521,11 +519,9 @@ void cave_update_hint_or_money_game(void)
         const unsigned char chosen = RAM(0x0438);  /* CAVE_SELECTED_WARE_INDEX */
         const unsigned char amount = RAM(0x0448 + chosen);  /* CAVE_PRIZE_ORDER */
         if (amount == 0x14u || amount == 0x32u) {
-            /* TODO Phase 4: native cave_post_credit(amount). */
-            (void)amount;
+            core_post_credit((unsigned int)amount);
         } else {
-            /* TODO Phase 4: native cave_post_debit(amount). */
-            (void)amount;
+            core_post_debit((unsigned int)amount);
         }
     }
 }
