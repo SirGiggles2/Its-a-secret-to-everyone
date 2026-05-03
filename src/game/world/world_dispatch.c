@@ -43,6 +43,67 @@ unsigned int world_get_shortcut_or_item_xy(void)
     return world_get_shortcut_or_item_xy_for_room((unsigned int)CUR_ROOM_ID);
 }
 
+unsigned int world_animate_world_fading(void)
+{
+    /* NES AnimateWorldFading (Z_01.asm:4701). Drain at
+     * src/oracle/world/world_runtime.c:29-66. Drain MATCH per Gate 1
+     * finding 4_1n_d (with one fixed scratch-state divergence noted
+     * below).
+     *
+     * NES uses ZP $00 as both initial val-stash AND loop counter.
+     * After the @CopyPalette loop completes, $00 = 0 (decremented to
+     * exit). Drain stores 8 to WORLD_TMP0 then uses a local `count`
+     * variable, leaving WORLD_TMP0 = 8 — that's a scratch-state
+     * divergence vs NES. Native faithfully decrements WORLD_TMP0 in
+     * the loop so $00 final value matches NES (= 0). */
+    if (WORLD_FADE_TIMER != 0u) {
+        return 1u;  /* timer not expired — wait */
+    }
+
+    /* Cycle value, with bit-7 mirror for reverse fade. NES `EOR #$83`. */
+    unsigned char val = WORLD_FADE_STEP;
+    if (val & 0x80u) {
+        val = (unsigned char)(val ^ 0x83u);
+    }
+    WORLD_TMP0 = val;
+
+    /* Encode (val) into SRAM index: ((val << 3) + val) & $FC = val*9
+     * with low 2 bits cleared. */
+    unsigned char sram_idx =
+        (unsigned char)(((unsigned char)(val << 3) + val) & 0xFCu);
+
+    unsigned char pos = TRANSFER_BUF_POS;
+    /* Record header: PPU address $3F08, length 8. */
+    TRANSFER_BUF_BYTE(pos) = 0x3Fu; pos++;
+    TRANSFER_BUF_BYTE(pos) = 0x08u; pos++;
+    TRANSFER_BUF_BYTE(pos) = 0x08u; pos++;
+
+    /* Loop counter — NES uses $00 (= WORLD_TMP0). 8 byte palette copy
+     * from LevelInfo_PaletteCycles (SRAM $6BFA + sram_idx). */
+    WORLD_TMP0 = 8u;
+    while (WORLD_TMP0 != 0u) {
+        TRANSFER_BUF_BYTE(pos) =
+            nes_ram[NES_SRAM_BASE + 0x0BFAu + sram_idx];
+        sram_idx = (unsigned char)(sram_idx + 1u);
+        pos      = (unsigned char)(pos + 1u);
+        WORLD_TMP0 = (uint8_t)(WORLD_TMP0 - 1u);
+    }
+
+    /* End marker + commit transfer-buf cursor. */
+    TRANSFER_BUF_BYTE(pos) = 0xFFu;
+    TRANSFER_BUF_POS = pos;
+
+    /* Advance fade step. (step & $0F) == 4 = quarter-cycle done. */
+    WORLD_FADE_STEP = (uint8_t)(WORLD_FADE_STEP + 1u);
+    if ((WORLD_FADE_STEP & 0x0Fu) == 4u) {
+        return 0u;  /* this frame's fade slice complete */
+    }
+
+    /* Continue fade — wait 10 frames. */
+    WORLD_FADE_TIMER = 10u;
+    return 1u;
+}
+
 void world_check_mazes(void)
 {
     /* NES CheckMazes (Z_01.asm:4791). Drain at world_runtime.c:68-109.

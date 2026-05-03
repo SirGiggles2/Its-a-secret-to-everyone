@@ -54,6 +54,27 @@ unsigned int world_get_shortcut_or_item_xy_for_room(unsigned int room_id);
  * (CUR_ROOM_ID = $00EB). Mirrors NES GetShortcutOrItemXY (Z_01.asm:3993). */
 unsigned int world_get_shortcut_or_item_xy(void);
 
+/* Stream one frame of the overworld palette-fade animation into the
+ * dynamic transfer buffer. Called per VBlank from the world tick.
+ *
+ *   WORLD_FADE_TIMER ($0034 = ObjTimer+12) gates: nonzero returns 1
+ *     (in-progress, no transfer this frame).
+ *   WORLD_FADE_STEP  ($051C = FadeCycle) drives table indexing
+ *     (forward + reverse via bit-7 mirror via XOR $83).
+ *
+ * Builds a transfer-buf record:
+ *   [pos]   = $3F        ; PPU address high (palette area)
+ *   [pos+1] = $08        ; PPU address low  (bottom half BG palette)
+ *   [pos+2] = $08        ; record length
+ *   [pos+3..10] = LevelInfo_PaletteCycles[sram_idx..+7]   (SRAM $6BFA)
+ *   [pos+11] = $FF       ; end marker
+ *
+ * Returns 1 while fade is in progress; 0 when the cycle (step & $0F)
+ * reaches 4 (one full quarter of the cycle complete = frame done).
+ *
+ * Mirrors NES AnimateWorldFading (Z_01.asm:4701). */
+unsigned int world_animate_world_fading(void);
+
 #ifdef __cplusplus
 }
 #endif

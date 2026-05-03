@@ -446,10 +446,6 @@ unsigned int z01_wield_candle(unsigned int slot) {
     return weprt_wield_candle(slot);
 }
 
-unsigned int z01_animate_world_fading(void) {
-    return worldrt_animate_world_fading();
-}
-
 void z01_cycle_cur_sprite_index(void) {
     sprrt_cycle_cur_sprite_index();
 }
@@ -834,5 +830,13 @@ unsigned int z01_get_shortcut_or_item_xy(void) {
     return world_get_shortcut_or_item_xy();
 #else
     return worldrt_get_shortcut_or_item_xy();
+#endif
+}
+
+unsigned int z01_animate_world_fading(void) {
+#ifdef NATIVE_WORLD
+    return world_animate_world_fading();
+#else
+    return worldrt_animate_world_fading();
 #endif
 }

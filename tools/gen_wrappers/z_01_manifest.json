@@ -539,11 +539,6 @@
       "sig": "unsigned int (unsigned int slot)"
     },
     {
-      "old": "z01_animate_world_fading",
-      "new": "worldrt_animate_world_fading",
-      "sig": "unsigned int (void)"
-    },
-    {
       "old": "z01_cycle_cur_sprite_index",
       "new": "sprrt_cycle_cur_sprite_index",
       "sig": "void (void)"
