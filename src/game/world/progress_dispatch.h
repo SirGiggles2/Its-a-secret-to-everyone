@@ -75,6 +75,12 @@ void progress_update_position_marker(unsigned char room_id, unsigned int idx);
  * at progress_runtime.c:98-102. */
 void progress_update_player_position_marker(void);
 
+/* Copy the 14-byte save-file pointer set for the current save slot
+ * (SAVE_SLOT_INDEX) into ZP RAM($00..$0D), backwards from the end
+ * of the block. Then write RAM($0E)=$7F, RAM($0F)=$06 as the
+ * "items pointer" trailer. Mirrors NES FetchFileAAddressSet (Z_01.asm:3030). */
+void progress_fetch_file_a_address_set(void);
+
 #ifdef __cplusplus
 }
 #endif

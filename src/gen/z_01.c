@@ -486,10 +486,6 @@ void z01_update_world_curtain_effect_bank2(void) {
     progrt_update_world_curtain_effect_bank2();
 }
 
-void z01_fetch_file_a_address_set(void) {
-    progrt_fetch_file_a_address_set();
-}
-
 void z01_init_trap_full(unsigned int slot) {
     trprt_init_trap_full(slot);
 }
@@ -912,6 +908,14 @@ void z01_update_player_position_marker(void) {
     progress_update_player_position_marker();
 #else
     progrt_update_player_position_marker();
+#endif
+}
+
+void z01_fetch_file_a_address_set(void) {
+#ifdef NATIVE_PROGRESS
+    progress_fetch_file_a_address_set();
+#else
+    progrt_fetch_file_a_address_set();
 #endif
 }
 

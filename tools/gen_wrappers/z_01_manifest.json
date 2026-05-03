@@ -589,11 +589,6 @@
       "sig": "void (void)"
     },
     {
-      "old": "z01_fetch_file_a_address_set",
-      "new": "progrt_fetch_file_a_address_set",
-      "sig": "void (void)"
-    },
-    {
       "old": "z01_init_trap_full",
       "new": "trprt_init_trap_full",
       "sig": "void (unsigned int slot)"

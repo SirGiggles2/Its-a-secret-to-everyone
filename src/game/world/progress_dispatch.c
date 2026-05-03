@@ -16,7 +16,7 @@
 #include "combat_state.h"      /* MON_TYPE, COMBAT_PART_INDEX, LINK_ACTION_TIMER */
 #include "object_state.h"      /* OBJ_STATE */
 #include "enemy_state.h"       /* LINK_X, LINK_Y, OBJ_X, OBJ_Y */
-#include "item_state.h"        /* ITEM_SFX_SECONDARY */
+#include "item_state.h"        /* ITEM_SFX_SECONDARY, SAVE_SLOT_INDEX */
 #include "room_state.h"        /* ROOM_TRANSFER_BUF_SELECT */
 
 #define NES_SRAM_BASE 0x6000u
@@ -177,6 +177,40 @@ void progress_check_tile_objects_blocking(void)
 static const unsigned char k_level_masks[8] = {
     0x01u, 0x02u, 0x04u, 0x08u, 0x10u, 0x20u, 0x40u, 0x80u
 };
+
+/* NES Z_01.asm SaveFileAAddressSets (line 3006) + Set1 (3010) + Set2
+ * (3014). 3 save slots, 14-byte pointer set each = 42 bytes flat. */
+static const unsigned char k_save_file_a_address_sets[42] = {
+    /* Slot 0: $1A $60 $92 $60 $02 $60 $12 $65 $15 $65 $18 $65 $1B $65 */
+    0x1Au, 0x60u, 0x92u, 0x60u, 0x02u, 0x60u, 0x12u, 0x65u,
+    0x15u, 0x65u, 0x18u, 0x65u, 0x1Bu, 0x65u,
+    /* Slot 1: $42 $60 $12 $62 $0A $60 $13 $65 $16 $65 $19 $65 $1C $65 */
+    0x42u, 0x60u, 0x12u, 0x62u, 0x0Au, 0x60u, 0x13u, 0x65u,
+    0x16u, 0x65u, 0x19u, 0x65u, 0x1Cu, 0x65u,
+    /* Slot 2: $6A $60 $92 $63 $12 $60 $14 $65 $17 $65 $1A $65 $1D $65 */
+    0x6Au, 0x60u, 0x92u, 0x63u, 0x12u, 0x60u, 0x14u, 0x65u,
+    0x17u, 0x65u, 0x1Au, 0x65u, 0x1Du, 0x65u
+};
+
+void progress_fetch_file_a_address_set(void)
+{
+    /* drain at progress_runtime.c:123-132. NES FetchFileAAddressSet
+     * (Z_01.asm:3030).
+     *
+     * NES: end_idx = $FF + $0E * (slot+1) = $0D + slot*$0E (= 13 for
+     * slot 0, 27 for slot 1, 41 for slot 2 — index of last byte of
+     * the slot's 14-byte block). Loop copies 14 bytes backwards into
+     * ZP RAM($00..$0D). Then writes the items-pointer trailer at
+     * RAM($0E)=$7F + RAM($0F)=$06. */
+    const unsigned char file_slot = (unsigned char)SAVE_SLOT_INDEX;
+    unsigned char end_idx = (unsigned char)(0x0Du + file_slot * 0x0Eu);
+    for (int i = 13; i >= 0; i--) {
+        RAM(i) = k_save_file_a_address_sets[end_idx];
+        end_idx = (unsigned char)(end_idx - 1u);
+    }
+    RAM(0x000Eu) = 0x7Fu;
+    RAM(0x000Fu) = 0x06u;
+}
 
 void progress_update_position_marker(unsigned char room_id, unsigned int idx)
 {
