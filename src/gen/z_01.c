@@ -482,10 +482,6 @@ unsigned char z01_do_objects_collide(unsigned int threshold) {
     return colrt_do_objects_collide(threshold);
 }
 
-void z01_update_bomb_flash_effect(unsigned int slot) {
-    progrt_update_bomb_flash_effect(slot);
-}
-
 void z01_update_position_marker(unsigned char room_id, unsigned int idx) {
     progrt_update_position_marker(room_id, idx);
 }
@@ -504,14 +500,6 @@ void z01_update_world_curtain_effect_bank2(void) {
 
 void z01_fetch_file_a_address_set(void) {
     progrt_fetch_file_a_address_set();
-}
-
-void z01_check_tile_objects_blocking(void) {
-    progrt_check_tile_objects_blocking();
-}
-
-void z01_check_power_triforce_fanfare(void) {
-    progrt_check_power_triforce_fanfare();
 }
 
 void z01_init_trap_full(unsigned int slot) {
@@ -896,6 +884,30 @@ unsigned char z01_reset_room_tile_obj_info(void) {
     return progress_reset_room_tile_obj_info();
 #else
     return progrt_reset_room_tile_obj_info();
+#endif
+}
+
+void z01_update_bomb_flash_effect(unsigned int slot) {
+#ifdef NATIVE_PROGRESS
+    progress_update_bomb_flash_effect(slot);
+#else
+    progrt_update_bomb_flash_effect(slot);
+#endif
+}
+
+void z01_check_tile_objects_blocking(void) {
+#ifdef NATIVE_PROGRESS
+    progress_check_tile_objects_blocking();
+#else
+    progrt_check_tile_objects_blocking();
+#endif
+}
+
+void z01_check_power_triforce_fanfare(void) {
+#ifdef NATIVE_PROGRESS
+    progress_check_power_triforce_fanfare();
+#else
+    progrt_check_power_triforce_fanfare();
 #endif
 }
 

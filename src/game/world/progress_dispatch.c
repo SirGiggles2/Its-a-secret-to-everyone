@@ -11,8 +11,13 @@
 #include "progress_dispatch.h"
 #include "platform_abi.h"      /* RAM, nes_ram[], NES_SRAM_*, OBJ */
 #include "save_state.h"        /* SAVE_ROOM_FLAGS_PTR_LO/HI */
-#include "progress_state.h"    /* SAVEFILE_PTR_LO/HI, SAVEFILE_MASK_LO/HI, ROOM_TILE_OBJ_* */
-#include "world_state.h"       /* CUR_ROOM_ID, TRANSFER_BUF_BYTE/POS */
+#include "progress_state.h"    /* SAVEFILE_PTR_LO/HI, SAVEFILE_MASK_LO/HI, ROOM_TILE_OBJ_*, CUR_INV_TILE, POWER_TRIFORCE_FANFARE_FLAG, CURTAIN_TIMER, HUD_DIRTY_FLAG */
+#include "world_state.h"       /* CUR_ROOM_ID, TRANSFER_BUF_BYTE/POS, OBJ_MOVE_TIMER */
+#include "combat_state.h"      /* MON_TYPE, COMBAT_PART_INDEX, LINK_ACTION_TIMER */
+#include "object_state.h"      /* OBJ_STATE */
+#include "enemy_state.h"       /* LINK_X, LINK_Y, OBJ_X, OBJ_Y */
+#include "item_state.h"        /* ITEM_SFX_SECONDARY */
+#include "room_state.h"        /* ROOM_TRANSFER_BUF_SELECT */
 
 #define NES_SRAM_BASE 0x6000u
 
@@ -105,6 +110,87 @@ unsigned char progress_reset_room_tile_obj_info(void)
     ROOM_TILE_OBJ_1 = 0u;
     ROOM_TILE_OBJ_2 = 0u;
     return 0u;
+}
+
+void progress_update_bomb_flash_effect(unsigned int slot)
+{
+    /* drain at progress_runtime.c:50-65. NES UpdateBombFlashEffect.
+     * Animate the bomb-flash overlay tile mask by shifting on a few
+     * specific timer values during state $13 (bomb explosion). */
+    if (OBJ_STATE(slot) != 0x13u) {
+        return;
+    }
+    unsigned char mask = CUR_INV_TILE;
+    const unsigned char timer = (unsigned char)OBJ_MOVE_TIMER(slot);
+    mask = (unsigned char)(mask >> 1);
+    if (timer == 0x16u || timer == 0x11u) {
+        mask = (unsigned char)((mask << 1) | 1u);
+    } else if (timer == 0x12u || timer == 0x0Du) {
+        mask = (unsigned char)(mask << 1);
+    } else {
+        return;
+    }
+    CUR_INV_TILE = mask;
+}
+
+void progress_check_tile_objects_blocking(void)
+{
+    /* drain at progress_runtime.c:134-152. NES CheckTileObjectsBlocking.
+     * Slot 12..1 scan for blocking monster types ($68/$62/$65/$66) in
+     * state 1; on hit within $10 px (X/Y) of Link, clear
+     * COMBAT_PART_INDEX. */
+    for (int slot = 12; slot >= 1; slot--) {
+        const unsigned char mtype = (unsigned char)MON_TYPE(slot);
+        if (mtype != 0x68u && mtype != 0x62u &&
+            mtype != 0x65u && mtype != 0x66u) {
+            continue;
+        }
+        if (OBJ_STATE(slot) != 1u) {
+            continue;
+        }
+        {
+            signed char dx =
+                (signed char)((unsigned char)LINK_X - (unsigned char)OBJ_X(slot));
+            if (dx < 0) {
+                dx = (signed char)(-dx);
+            }
+            if ((unsigned char)dx >= 0x10u) {
+                continue;
+            }
+        }
+        {
+            const unsigned char ly_adj = (unsigned char)((unsigned char)LINK_Y + 3u);
+            signed char dy =
+                (signed char)(ly_adj - (unsigned char)OBJ_Y(slot));
+            if (dy < 0) {
+                dy = (signed char)(-dy);
+            }
+            if ((unsigned char)dy >= 0x10u) {
+                continue;
+            }
+        }
+        COMBAT_PART_INDEX = 0u;
+    }
+}
+
+void progress_check_power_triforce_fanfare(void)
+{
+    /* drain at progress_runtime.c:154-168. NES CheckPowerTriforceFanfare. */
+    if (!POWER_TRIFORCE_FANFARE_FLAG) {
+        return;
+    }
+    if (!CURTAIN_TIMER) {
+        progress_replace_ashes_palette_row();
+        ITEM_SFX_SECONDARY = 32u;
+        HUD_DIRTY_FLAG = 1u;
+        LINK_ACTION_TIMER = 0u;
+        POWER_TRIFORCE_FANFARE_FLAG = 0u;
+        return;
+    }
+    {
+        const unsigned char phase = (unsigned char)(CURTAIN_TIMER & 7u);
+        ROOM_TRANSFER_BUF_SELECT = (phase < 4u) ? 120u : 24u;
+    }
 }
 
 unsigned char progress_get_room_flag_uw_item_state(void)

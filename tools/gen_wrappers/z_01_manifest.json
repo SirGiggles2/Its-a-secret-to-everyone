@@ -584,11 +584,6 @@
       "sig": "unsigned char (unsigned int threshold)"
     },
     {
-      "old": "z01_update_bomb_flash_effect",
-      "new": "progrt_update_bomb_flash_effect",
-      "sig": "void (unsigned int slot)"
-    },
-    {
       "old": "z01_update_position_marker",
       "new": "progrt_update_position_marker",
       "sig": "void (unsigned char room_id, unsigned int idx)"
@@ -611,16 +606,6 @@
     {
       "old": "z01_fetch_file_a_address_set",
       "new": "progrt_fetch_file_a_address_set",
-      "sig": "void (void)"
-    },
-    {
-      "old": "z01_check_tile_objects_blocking",
-      "new": "progrt_check_tile_objects_blocking",
-      "sig": "void (void)"
-    },
-    {
-      "old": "z01_check_power_triforce_fanfare",
-      "new": "progrt_check_power_triforce_fanfare",
       "sig": "void (void)"
     },
     {

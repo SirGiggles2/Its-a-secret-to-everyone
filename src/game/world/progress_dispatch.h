@@ -46,6 +46,23 @@ void progress_replace_ashes_palette_row(void);
  * ResetRoomTileObjInfo. drain at progress_runtime.c:25-30. */
 unsigned char progress_reset_room_tile_obj_info(void);
 
+/* Bomb-flash mask animation: shifts CUR_INV_TILE left/right based on
+ * the bomb's OBJ_MOVE_TIMER phase. Mirrors NES UpdateBombFlashEffect.
+ * drain at progress_runtime.c:50-65. */
+void progress_update_bomb_flash_effect(unsigned int slot);
+
+/* Scan slots 12..1 for blocking tile-object monsters (types $68/$62/$65/$66
+ * with OBJ_STATE == 1) within $10 px of Link. On hit, clear
+ * COMBAT_PART_INDEX. drain at progress_runtime.c:134-152. */
+void progress_check_tile_objects_blocking(void);
+
+/* Per-frame Power Triforce fanfare driver: when curtain timer expires,
+ * replace ashes palette + trigger SFX + redraw HUD + clear Link's
+ * action timer + clear the fanfare flag. While timer ticks, alternates
+ * the room transfer buf selector based on phase. drain at
+ * progress_runtime.c:154-168. */
+void progress_check_power_triforce_fanfare(void);
+
 #ifdef __cplusplus
 }
 #endif
