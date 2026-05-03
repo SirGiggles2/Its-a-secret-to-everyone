@@ -118,7 +118,13 @@ static inline void     cave_active_ware_index_set(uint8_t v) { RAM(0x0421) = v; 
 #define CAVE_MONEY_GAME_AMOUNT(idx)      RAM(0x046F + (idx))
 #define CAVE_TEXT_TICK_SFX               RAM(0x0604)
 #define LINK_RUPEES                      RAM(0x066D)
+/* NES name: InvLetter (Variables.inc). $0666 holds inventory letter
+ * state (used / unused / received) globally; cave runtime aliases it
+ * as CAVE_ROOM_SCRIPT_STATE because medicine-shop script logic reads
+ * + bumps it on letter-use (Z_01.asm:UpdateCavePerson @UseLetter).
+ * Both names refer to the SAME byte. Per Gate 1 finding 3_2b. */
 #define CAVE_ROOM_SCRIPT_STATE           RAM(0x0666)
+#define INV_LETTER                       RAM(0x0666)  /* canonical NES name */
 #define CAVE_DOOR_REPAIR_RUPEE_DELTA     RAM(0x067E)
 
 /* CAVE_TRANSFER_BUF_CHAR_BASE moved above with the typed view's constants. */
