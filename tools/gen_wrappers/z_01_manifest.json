@@ -549,11 +549,6 @@
       "sig": "unsigned int (void)"
     },
     {
-      "old": "z01_get_object_middle",
-      "new": "worldrt_get_object_middle",
-      "sig": "void (unsigned int slot)"
-    },
-    {
       "old": "z01_animate_world_fading",
       "new": "worldrt_animate_world_fading",
       "sig": "unsigned int (void)"

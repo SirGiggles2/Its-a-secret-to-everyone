@@ -454,10 +454,6 @@ unsigned int z01_get_shortcut_or_item_xy(void) {
     return worldrt_get_shortcut_or_item_xy();
 }
 
-void z01_get_object_middle(unsigned int slot) {
-    worldrt_get_object_middle(slot);
-}
-
 unsigned int z01_animate_world_fading(void) {
     return worldrt_animate_world_fading();
 }
@@ -805,5 +801,26 @@ void z01_write_prices_transfer_buf(void) {
     cave_write_prices_transfer_buf();
 #else
     cavert_write_prices_transfer_buf();
+#endif
+}
+
+/* Phase 4 native overworld cutover gate — NATIVE_WORLD.
+ *
+ * First port: world_get_object_middle. Independent gate from any
+ * cave gate because world subsystem has no dependency on cave state.
+ * Default OFF — Title.md uses oracle worldrt_get_object_middle (drain
+ * MATCH per finding 4_1n_world_get_object_middle.md). When defined,
+ * Title.md must compile + link src/game/world/world_dispatch.c (build.bat
+ * not yet wired for this — flipping the gate will fail link until
+ * build.bat is updated). RoomRom links it unconditionally. */
+#ifdef NATIVE_WORLD
+#include "world/world_dispatch.h"
+#endif
+
+void z01_get_object_middle(unsigned int slot) {
+#ifdef NATIVE_WORLD
+    world_get_object_middle(slot);
+#else
+    worldrt_get_object_middle(slot);
 #endif
 }
