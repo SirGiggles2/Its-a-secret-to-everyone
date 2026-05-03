@@ -9,7 +9,7 @@
 #include "object_state.h"      /* OBJ_STATE */
 #include "room_state.h"        /* ROOM_TRANSFER_BUF_SELECT */
 #include "link_state.h"        /* DEATH_FRAME_COUNTER */
-#include "object_state.h"      /* OBJ_TILE_X/_Y, OBJ_STATE */
+#include "object_state.h"      /* OBJ_TILE_X/_Y, OBJ_STATE, OBJ_TYPE, OBJ_SHOVE_DIR/DIST, OBJ_INV_TIMER, OBJ_METASTATE */
 
 void core_unhalt_link(void)
 {
@@ -82,6 +82,31 @@ void core_cue_transfer_blank_person_wares(void)
     /* drain at core_runtime.c:191-193. NES UpdatePersonState_CueTransferBlankPersonWares:
      *   LDA #$2A / JMP CueTransferBufAndAdvanceState  -- selector 42 + state++ */
     core_cue_transfer_buf_and_advance_state(42u);
+}
+
+void core_destroy_object_wram(unsigned int val, unsigned int slot)
+{
+    /* drain at core_runtime.c:42-50. NES DestroyObjectWram. */
+    OBJ_SHOVE_DIR(slot)  = (uint8_t)val;
+    OBJ_SHOVE_DIST(slot) = (uint8_t)val;
+    RAM(0x0028 + slot)   = (uint8_t)val;  /* ObjTimer+slot */
+    OBJ_STATE(slot)      = (uint8_t)val;
+    OBJ_INV_TIMER(slot)  = (uint8_t)val;
+    RAM(0x0492 + slot)   = 0xFFu;
+    OBJ_METASTATE(slot)  = 1u;
+}
+
+void core_destroy_whirlwind(unsigned int slot)
+{
+    /* drain at core_runtime.c:52-54. NES DestroyWhirlwind. */
+    core_destroy_object_wram(0u, slot);
+}
+
+void core_destroy_monster(unsigned int slot)
+{
+    /* drain at core_runtime.c:374. NES DestroyMonster. */
+    OBJ_TYPE(slot) = 0u;
+    core_destroy_object_wram(0u, slot);
 }
 
 void core_set_up_common_cave_objects(unsigned int x, unsigned int slot,

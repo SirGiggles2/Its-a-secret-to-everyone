@@ -44,16 +44,6 @@
       "sig": "void (unsigned int slot)"
     },
     {
-      "old": "z01_destroy_object_wram",
-      "new": "corert_destroy_object_wram",
-      "sig": "void (unsigned int val, unsigned int slot)"
-    },
-    {
-      "old": "z01_destroy_whirlwind",
-      "new": "corert_destroy_whirlwind",
-      "sig": "void (unsigned int slot)"
-    },
-    {
       "old": "z01_set_up_whirlwind",
       "new": "corert_set_up_whirlwind",
       "sig": "void (unsigned int slot)"

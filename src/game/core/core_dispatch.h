@@ -61,6 +61,19 @@ void core_cue_transfer_blank_person_wares(void);
 void core_set_up_common_cave_objects(unsigned int x, unsigned int slot,
                                      unsigned int y);
 
+/* Clear an object slot's WRAM state (shove dir/dist, ObjTimer+slot,
+ * ObjState, InvTimer, $0492 = 0xFF, metastate=1). NES DestroyObjectWram.
+ * drain at core_runtime.c:42-50. */
+void core_destroy_object_wram(unsigned int val, unsigned int slot);
+
+/* core_destroy_object_wram(0, slot). NES DestroyWhirlwind.
+ * drain at core_runtime.c:52-54. */
+void core_destroy_whirlwind(unsigned int slot);
+
+/* OBJ_TYPE(slot) = 0 + core_destroy_object_wram(0, slot). NES
+ * DestroyMonster. drain at core_runtime.c:374. */
+void core_destroy_monster(unsigned int slot);
+
 #ifdef __cplusplus
 }
 #endif

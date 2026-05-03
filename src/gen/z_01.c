@@ -50,14 +50,6 @@ void z01_init_one_simple_object(unsigned int slot) {
     corert_init_one_simple_object(slot);
 }
 
-void z01_destroy_object_wram(unsigned int val, unsigned int slot) {
-    corert_destroy_object_wram(val, slot);
-}
-
-void z01_destroy_whirlwind(unsigned int slot) {
-    corert_destroy_whirlwind(slot);
-}
-
 void z01_set_up_whirlwind(unsigned int slot) {
     corert_set_up_whirlwind(slot);
 }
@@ -980,6 +972,22 @@ void z01_set_up_common_cave_objects(unsigned int x, unsigned int slot,
     core_set_up_common_cave_objects(x, slot, y);
 #else
     corert_set_up_common_cave_objects(x, slot, y);
+#endif
+}
+
+void z01_destroy_object_wram(unsigned int val, unsigned int slot) {
+#ifdef NATIVE_CORE
+    core_destroy_object_wram(val, slot);
+#else
+    corert_destroy_object_wram(val, slot);
+#endif
+}
+
+void z01_destroy_whirlwind(unsigned int slot) {
+#ifdef NATIVE_CORE
+    core_destroy_whirlwind(slot);
+#else
+    corert_destroy_whirlwind(slot);
 #endif
 }
 
