@@ -554,11 +554,6 @@
       "sig": "unsigned int (void)"
     },
     {
-      "old": "z01_check_mazes",
-      "new": "worldrt_check_mazes",
-      "sig": "void (void)"
-    },
-    {
       "old": "z01_cycle_cur_sprite_index",
       "new": "sprrt_cycle_cur_sprite_index",
       "sig": "void (void)"

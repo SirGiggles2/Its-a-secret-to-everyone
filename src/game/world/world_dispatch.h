@@ -30,6 +30,16 @@ extern "C" {
  * Z_01.asm:5498. Used by collision detection in subsequent ports. */
 void world_get_object_middle(unsigned int slot);
 
+/* Maze step-tracker for the forest ($61) and mountain ($1B) overworld
+ * mazes. Reads LINK_DIR + CUR_ROOM_ID + WORLD_MAZE_STEP, advances or
+ * resets the step, and either lets Link exit (right in forest, left in
+ * mountain) or pins the next room to current. Plays "secret found"
+ * tune (Tune1Request = 4 = WORLD_SECRET_SFX) on the 4th matching step.
+ *
+ * Mirrors NES CheckMazes (Z_01.asm:4791). Drain at
+ * src/oracle/world/world_runtime.c:68-109. Pure C, no shims. */
+void world_check_mazes(void);
+
 #ifdef __cplusplus
 }
 #endif

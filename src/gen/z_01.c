@@ -458,10 +458,6 @@ unsigned int z01_animate_world_fading(void) {
     return worldrt_animate_world_fading();
 }
 
-void z01_check_mazes(void) {
-    worldrt_check_mazes();
-}
-
 void z01_cycle_cur_sprite_index(void) {
     sprrt_cycle_cur_sprite_index();
 }
@@ -822,5 +818,13 @@ void z01_get_object_middle(unsigned int slot) {
     world_get_object_middle(slot);
 #else
     worldrt_get_object_middle(slot);
+#endif
+}
+
+void z01_check_mazes(void) {
+#ifdef NATIVE_WORLD
+    world_check_mazes();
+#else
+    worldrt_check_mazes();
 #endif
 }
