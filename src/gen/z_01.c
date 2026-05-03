@@ -346,10 +346,6 @@ void z01_update_uw_person_life_or_money_full(unsigned int slot) {
     uwrt_update_life_or_money_full(slot);
 }
 
-void z01_draw_cave_items(void) {
-    cavert_draw_cave_items();
-}
-
 void z01_format_decimal_byte(unsigned char val) {
     cavert_format_decimal_byte(val);
 }
@@ -731,5 +727,17 @@ void z01_draw_cave_person(unsigned int slot) {
     cave_draw_person(slot);
 #else
     cavert_draw_cave_person(slot);
+#endif
+}
+
+/* z01_draw_cave_items shares the NATIVE_CAVE_DRAW gate with
+ * z01_draw_cave_person — both belong to the cave render pass. Same
+ * stage-1 caveat: native body's underlying c_animate_item_object draw
+ * is Phase 4 deferred, so enabling drops cave wares + price rupee. */
+void z01_draw_cave_items(void) {
+#ifdef NATIVE_CAVE_DRAW
+    cave_draw_items();
+#else
+    cavert_draw_cave_items();
 #endif
 }

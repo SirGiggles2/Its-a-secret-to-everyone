@@ -78,6 +78,21 @@ cave_id_t cave_current_id(void);
  * doesn't call it yet (cave_tick is also stub). */
 void cave_draw_person(unsigned int slot);
 
+/* Draw the cave's wares row + price rupee.
+ *
+ * Native rewrite of NES Z_01.asm DrawCaveItems (lines 388-440), MATCH
+ * verdict per Phase 3 summary. Two cave-flag conditions:
+ *
+ *   CAVE_FLAGS & 0x04 (show items)  -> loop wares 2..0, position via
+ *                                      ware_xs[i] / Y=$98, draw item if
+ *                                      not $3F (sentinel).
+ *   CAVE_FLAGS & 0x08 (show prices) -> draw rupee sprite at ($30, $AB).
+ *
+ * Stage-1: positioning + flag dispatch native; underlying item_object
+ * draw is Phase 4 deferred (c_animate_item_object stub). NES table
+ * CaveWareXs = $58/$78/$98 baked in as ware_xs[]. */
+void cave_draw_items(void);
+
 #ifdef __cplusplus
 }
 #endif

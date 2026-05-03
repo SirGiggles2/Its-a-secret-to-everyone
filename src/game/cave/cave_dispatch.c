@@ -88,6 +88,43 @@ cave_id_t cave_current_id(void)
     return g_active_cave;
 }
 
+void cave_draw_items(void)
+{
+    /* NES CaveWareXs (Z_01.asm:385): .BYTE $58, $78, $98. Baked in as
+     * a const so native code is independent of the transpile data .inc. */
+    static const unsigned char ware_xs[CAVE_WARES_PER_ROOM] = {
+        0x58u, 0x78u, 0x98u
+    };
+
+    /* Show-items flag. Loop wares 2 -> 0 (NES: STA $0421 ; DEC ; BPL). */
+    if (cave_flags_get() & 0x04u) {
+        cave_active_ware_index_set(2u);
+        do {
+            const unsigned char i = cave_active_ware_index_get();
+            /* ObjX/ObjY for slot 19 = CAVE_WARE_DRAW_SLOT.
+             * NES: STA ObjX+19 / STA ObjY+19. ObjX base = $0070 → +19 = $0083.
+             * ObjY base = $0084 → +19 = $0097. */
+            RAM(0x0083) = ware_xs[i];
+            RAM(0x0097) = 0x98u;
+            /* CaveItemIds[i] = $0422 + i (CAVE_WARE_ITEM macro). $3F = sentinel. */
+            const unsigned char item = (unsigned char)(RAM(0x0422 + i) & 0x3Fu);
+            if (item != 0x3Fu) {
+                /* TODO Phase 4: native cave_animate_item_object(item, 19u). */
+                (void)item;
+            }
+            cave_active_ware_index_set(
+                (unsigned char)(cave_active_ware_index_get() - 1u));
+        } while ((signed char)cave_active_ware_index_get() >= 0);
+    }
+
+    /* Show-prices flag → draw rupee sprite at ($30, $AB), item id $18 (rupee). */
+    if (cave_flags_get() & 0x08u) {
+        RAM(0x0083) = 0x30u;
+        RAM(0x0097) = 0xABu;
+        /* TODO Phase 4: native cave_animate_item_object(0x18u, 19u). */
+    }
+}
+
 void cave_draw_person(unsigned int slot)
 {
     /* NES DrawCavePerson (Z_01.asm:370-383):

@@ -414,11 +414,6 @@
       "sig": "void (unsigned int slot)"
     },
     {
-      "old": "z01_draw_cave_items",
-      "new": "cavert_draw_cave_items",
-      "sig": "void (void)"
-    },
-    {
       "old": "z01_format_decimal_byte",
       "new": "cavert_format_decimal_byte",
       "sig": "void (unsigned char val)"
