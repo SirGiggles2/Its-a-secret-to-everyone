@@ -354,10 +354,6 @@ void z01_update_person_state_textbox(void) {
     cavert_update_person_state_textbox();
 }
 
-void z01_update_cave_person(unsigned int slot) {
-    cavert_update_cave_person(slot);
-}
-
 void z01_format_hearts_in_text_buf(unsigned char start_off) {
     hudrt_format_hearts_in_text_buf(start_off);
 }
@@ -774,5 +770,19 @@ void z01_update_person_state_delay_then_hide(void) {
     cave_update_person_state_delay_then_hide();
 #else
     cavert_update_person_state_delay_then_hide();
+#endif
+}
+
+/* Top-level cave-person orchestrator. NES UpdateCavePerson (Z_01.asm:300).
+ * When NATIVE_CAVE_PERSON is on, the native dispatch runs — state arms
+ * 0, 2, 4, 5, 8 are native-MATCH; arms 1, 3, 6, 7 are TODO Phase 4
+ * stubs (textbox + cue_transfer_blank_person_wares). Hint cave dialog
+ * + ware-purchase shop will work; medicine-shop letter will work; but
+ * dialog text won't render (state 1/7 arms stubbed). */
+void z01_update_cave_person(unsigned int slot) {
+#ifdef NATIVE_CAVE_PERSON
+    cave_update_cave_person(slot);
+#else
+    cavert_update_cave_person(slot);
 #endif
 }

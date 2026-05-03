@@ -424,11 +424,6 @@
       "sig": "void (void)"
     },
     {
-      "old": "z01_update_cave_person",
-      "new": "cavert_update_cave_person",
-      "sig": "void (unsigned int slot)"
-    },
-    {
       "old": "z01_format_hearts_in_text_buf",
       "new": "hudrt_format_hearts_in_text_buf",
       "sig": "void (unsigned char start_off)"

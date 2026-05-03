@@ -154,6 +154,24 @@ void cave_update_person_state_delay_then_hide(void);
  * helper used by other cave functions. */
 void cave_clear_prices_flag(void);
 
+/* Top-level cave-person update orchestrator. Mirrors NES Z_01.asm
+ * UpdateCavePerson (line 300). Drain MATCH per finding 3_4n_h.
+ *
+ * Frame skip: in state 4, skip draws + go directly to dispatch on
+ * every other frame (FrameCounter bit 0).
+ *
+ * Medicine-shop ($74) letter handling: when InvLetter != 2 and the
+ * letter is selected with B pressed, run the use-letter actions
+ * (sfx + letter state++ + select potion); otherwise unhalt Link if
+ * halted and return early without item draw or dispatch.
+ *
+ * Otherwise: draw cave items, then 9-way state dispatch via switch
+ * (states 0..8, NES UpdateCavePerson_JumpTable).
+ *
+ * State arms 1, 3, 6, 7 are TODO Phase 4 (textbox + cue_transfer_*
+ * shims). Other 5 arms are native. */
+void cave_update_cave_person(unsigned int slot);
+
 #ifdef __cplusplus
 }
 #endif

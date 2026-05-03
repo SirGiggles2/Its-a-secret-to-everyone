@@ -287,6 +287,65 @@ void cave_update_talk_shop_or_door_charge(void)
     }
 }
 
+void cave_update_cave_person(unsigned int slot)
+{
+    /* NES UpdateCavePerson (Z_01.asm:300). Drain at
+     * src/oracle/cave/cave_runtime.c:326-353. Drain MATCH per Gate 1
+     * finding 3_4n_h_cave_update_cave_person.md. */
+
+    /* State 4 frame-skip: every other frame skip draw + go straight to
+     * dispatch. NES `LDA ObjState+1 / CMP #4 / BNE :+ / LDA FrameCounter
+     *               / AND #$01 / BNE @UpdateCavePersonDirect`. */
+    const unsigned char state = CAVE_PERSON_STATE;
+    if (!(state == 4u && (RAM(0x0015) & 1u))) {  /* FrameCounter = $0015 */
+        cave_draw_person(slot);
+
+        /* Medicine-shop letter ($74) logic. NES: `LDA ObjType+1 / CMP #$74
+         *   / BNE @DrawItems / LDA InvLetter / CMP #$02 / BEQ @DrawItems`. */
+        if (cave_room_type_get() == 0x74u && CAVE_ROOM_SCRIPT_STATE != 2u) {
+            /* SelectedItemSlot ($0656) == 0x0F (letter slot) AND B pressed
+             * (ButtonsPressed bit 0x40) → use letter. */
+            if (RAM(0x0656) == 0x0Fu && (CAVE_LINK_INPUT_FLAGS & 0x40u)) {
+                RAM(0x0602) = 4u;                /* Tune1Request = secret-found tune */
+                CAVE_ROOM_SCRIPT_STATE =
+                    (uint8_t)(CAVE_ROOM_SCRIPT_STATE + 1u);  /* INC InvLetter */
+                RAM(0x0656) = 7u;                /* SelectedItemSlot = potion */
+                /* Falls through to draw_items + dispatch below. */
+            } else {
+                /* @Unhalt: if halted (ObjState == $40), unhalt. NES UnhaltLink
+                 * (Z_01.asm:100) = `LDA #$00 / STA ObjState`. */
+                if (CAVE_LINK_ACTION_TIMER == 0x40u) {
+                    CAVE_LINK_ACTION_TIMER = 0u;
+                }
+                return;
+            }
+        }
+        cave_draw_items();
+    }
+
+    /* 9-state dispatch — NES UpdateCavePerson_JumpTable (Z_01.asm:359-368).
+     * Native arms invoked where ported; states 1/3/6/7 are stubs pending
+     * Phase 4 native cave_update_person_state_textbox + native
+     * cue_transfer_blank_person_wares. */
+    switch (CAVE_PERSON_STATE) {
+        case 0u: cave_update_transfer_prices(); break;
+        case 1u: /* TODO Phase 4: native cave_update_person_state_textbox(). */
+                 break;
+        case 2u: cave_update_talk_shop_or_door_charge(); break;
+        case 3u: /* TODO Phase 4: native cue_transfer_blank_person_wares(). */
+                 break;
+        case 4u: cave_update_person_state_delay_then_hide(); break;
+        case 5u: cave_update_hint_or_money_game(); break;
+        case 6u: /* TODO Phase 4: same as state 3. */
+                 break;
+        case 7u: /* TODO Phase 4: same as state 1. */
+                 break;
+        case 8u: /* DoNothing */
+                 break;
+        default: break;
+    }
+}
+
 void cave_update_person_state_delay_then_hide(void)
 {
     /* NES UpdatePersonState_DelayThenHide (Z_01.asm:838). Drain trivial
