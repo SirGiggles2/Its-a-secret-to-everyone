@@ -31,10 +31,6 @@ void z07_mark_room_visited(void) {
     roomrt_mark_room_visited();
 }
 
-unsigned char z07_end_game_mode(void) {
-    return roommd_end_game_mode();
-}
-
 void z07_go_to_next_mode(void) {
     roommd_go_to_next_mode();
 }
@@ -374,5 +370,13 @@ unsigned char z07_get_room_flags(void) {
     return room_get_room_flags();
 #else
     return roomrt_get_room_flags();
+#endif
+}
+
+unsigned char z07_end_game_mode(void) {
+#ifdef NATIVE_ROOM
+    return room_end_game_mode();
+#else
+    return roommd_end_game_mode();
 #endif
 }

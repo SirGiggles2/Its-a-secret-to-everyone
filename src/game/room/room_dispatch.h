@@ -30,6 +30,10 @@ void room_silence_sound(void);
  * NES CheckHasLivingMonsters. */
 void room_check_has_living_monsters(void);
 
+/* Reset ROOM_MODE_TIMER + SUBMODE_VALUE; return 0. NES EndGameMode
+ * (the inner Plan-C drain in src/oracle/room/room_mode_runtime.c:249). */
+unsigned char room_end_game_mode(void);
+
 #ifdef __cplusplus
 }
 #endif

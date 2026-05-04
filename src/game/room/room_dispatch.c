@@ -7,9 +7,9 @@
 #include <stdint.h>
 #include "platform_abi.h"
 #include "world_state.h"       /* CUR_ROOM_ID */
-#include "progress_state.h"    /* CUR_LEVEL, SAVEFILE_PTR_LO/HI */
+#include "progress_state.h"    /* CUR_LEVEL, SAVEFILE_PTR_LO/HI, SUBMODE_VALUE */
 #include "room_state.h"        /* ROOM_MAX_MONSTER_SLOT, ROOM_MONSTER_ALL_DEAD,
-                                * ROOM_OBJ_TYPE */
+                                * ROOM_OBJ_TYPE, ROOM_MODE_TIMER */
 #include "combat_state.h"      /* LINK_DAMAGE_DISABLE_FLAG */
 
 #define NES_SRAM_BASE 0x6000u
@@ -76,4 +76,14 @@ void room_check_has_living_monsters(void)
     }
     LINK_DAMAGE_DISABLE_FLAG = 0u;
     ROOM_MONSTER_ALL_DEAD = (uint8_t)(ROOM_MONSTER_ALL_DEAD + 1u);
+}
+
+unsigned char room_end_game_mode(void)
+{
+    /* drain at room_mode_runtime.c:249-253. Plan-C drain (the inner
+     * one). Outer roommd_end_game_mode12 is the cellar dance + level
+     * fall — defer until cellar logic ports. */
+    ROOM_MODE_TIMER = 0u;
+    SUBMODE_VALUE = 0u;
+    return 0u;
 }
