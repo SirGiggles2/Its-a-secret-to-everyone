@@ -30,6 +30,17 @@ void link_collision_begin_shove(unsigned int monster_slot);
  * NES HarmLink. drain at link_collision_runtime.c:48-58. */
 void link_collision_harm_link(unsigned int monster_slot);
 
+/* Inner half of CheckLinkCollision: hitbox + threshold setup, dispatch
+ * collision check, gate harm by Link's parry/shield posture per
+ * monster type. NES CheckLinkCollision_PreInit. drain at
+ * link_collision_runtime.c:60-87. */
+void link_collision_check_link_collision_preinit(unsigned int monster_slot);
+
+/* Outer wrapper: get object middle, clear collision scratch + flags,
+ * gate by stun/halt timers, then preinit. NES CheckLinkCollision.
+ * drain at link_collision_runtime.c:89-98. */
+void link_collision_check_link_collision(unsigned int monster_slot);
+
 #ifdef __cplusplus
 }
 #endif

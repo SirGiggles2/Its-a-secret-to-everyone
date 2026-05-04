@@ -126,14 +126,6 @@ void z01_check_monster_bomb_or_fire_collision(unsigned int monster_slot, unsigne
     colrt_check_monster_bomb_or_fire_collision(monster_slot, weapon_slot);
 }
 
-void z01_check_link_collision_preinit(unsigned int monster_slot) {
-    lcrt_check_link_collision_preinit(monster_slot);
-}
-
-void z01_check_link_collision(unsigned int monster_slot) {
-    lcrt_check_link_collision(monster_slot);
-}
-
 void z01_check_monster_collisions(unsigned int monster_slot) {
     lcrt_check_monster_collisions(monster_slot);
 }
@@ -1380,5 +1372,21 @@ void z01_harm_link(unsigned int monster_slot) {
     link_collision_harm_link(monster_slot);
 #else
     lcrt_harm_link(monster_slot);
+#endif
+}
+
+void z01_check_link_collision_preinit(unsigned int monster_slot) {
+#ifdef NATIVE_LINK_COLLISION
+    link_collision_check_link_collision_preinit(monster_slot);
+#else
+    lcrt_check_link_collision_preinit(monster_slot);
+#endif
+}
+
+void z01_check_link_collision(unsigned int monster_slot) {
+#ifdef NATIVE_LINK_COLLISION
+    link_collision_check_link_collision(monster_slot);
+#else
+    lcrt_check_link_collision(monster_slot);
 #endif
 }

@@ -22,8 +22,14 @@
                                 * LINK_STUN_TIMER, OBJ_GRID_OFFSET */
 #include "object_state.h"      /* OBJ_X, OBJ_Y, OBJ_DIR */
 #include "progress_state.h"    /* MODE_VALUE */
+#include "link_state.h"              /* LINK_HALT_FLAG */
 #include "core/core_dispatch.h"      /* core_play_sample, core_get_opposite_dir */
 #include "room/room_dispatch.h"      /* room_end_game_mode */
+#include "combat/collision_dispatch.h" /* collision_do_objects_collide_with_thresholds */
+#include "world/world_dispatch.h"      /* world_get_object_middle */
+/* COMBAT_COLLIDED, MON_STUN_TIMER, LINK_DAMAGE_DISABLE_FLAG,
+ * LINK_SHIELD_BLOCK_FLAG, SFX_COMBAT, ROOM_MONSTER_COLLISION_COUNT —
+ * already in combat_state.h. */
 
 /* Z_01.asm ObjTypeToDamagePoints[93] (line 2577). Used by HarmLink to
  * look up damage threshold per monster type. */
@@ -179,4 +185,76 @@ void link_collision_harm_link(unsigned int monster_slot)
     COMBAT_THRESHOLD_X = (uint8_t)(tbl & 0x0Fu);
     COMBAT_THRESHOLD_Y = (uint8_t)(tbl & 0xF0u);
     link_collision_link_be_harmed(monster_slot);
+}
+
+void link_collision_check_link_collision_preinit(unsigned int monster_slot)
+{
+    /* drain at link_collision_runtime.c:60-87. */
+    if ((unsigned char)LINK_ACTION_TIMER == 0x40u) {
+        return;
+    }
+    if ((unsigned char)LINK_DAMAGE_DISABLE_FLAG) {
+        return;
+    }
+    const unsigned char mtype = (unsigned char)MON_TYPE(monster_slot);
+    if (mtype >= 0x53u &&
+        ((unsigned char)OBJ_STATE(monster_slot) & 0xF0u) != 0x10u) {
+        return;
+    }
+    COMBAT_HITBOX_X = (uint8_t)((unsigned char)OBJ_X(0) + 8u);
+    COMBAT_HITBOX_Y = (uint8_t)((unsigned char)OBJ_Y(0) + 8u);
+    COMBAT_THRESHOLD_X = 9u;
+    COMBAT_THRESHOLD_Y = 9u;
+    if (!collision_do_objects_collide_with_thresholds()) {
+        return;
+    }
+    if (mtype < 0x53u) {
+        link_collision_harm_link(monster_slot);
+        return;
+    }
+    ROOM_MONSTER_COLLISION_COUNT =
+        (uint8_t)((unsigned char)ROOM_MONSTER_COLLISION_COUNT + 1u);
+    if (mtype == 0x56u || mtype == 0x5Au) {
+        link_collision_harm_link(monster_slot);
+        return;
+    }
+    if ((unsigned char)LINK_ACTION_TIMER & 0xF0u) {
+        link_collision_harm_link(monster_slot);
+        return;
+    }
+    {
+        const unsigned char or_dirs =
+            (unsigned char)((unsigned char)LINK_DIR |
+                            (unsigned char)OBJ_DIR(monster_slot));
+        if ((or_dirs & 0x0Cu) != 0x0Cu && (or_dirs & 0x03u) != 0x03u) {
+            link_collision_harm_link(monster_slot);
+            return;
+        }
+    }
+    if (mtype >= 0x55u && mtype <= 0x5Au) {
+        if (!(unsigned char)LINK_SHIELD_BLOCK_FLAG) {
+            link_collision_harm_link(monster_slot);
+            return;
+        }
+    }
+    SFX_COMBAT = 1u;
+    COMBAT_COLLIDED = 0u;
+}
+
+void link_collision_check_link_collision(unsigned int monster_slot)
+{
+    /* drain at link_collision_runtime.c:89-98. */
+    world_get_object_middle(monster_slot);
+    ROOM_MONSTER_COLLISION_COUNT = 0u;
+    COMBAT_COLLIDED = 0u;
+    COMBAT_DAMAGE_TYPE = 0u;
+    COMBAT_HARM_FLAG = 0u;
+    COMBAT_WEAPON_SLOT = 0u;
+    if ((unsigned char)LINK_STUN_TIMER ||
+        (unsigned char)LINK_HALT_FLAG ||
+        (unsigned char)MON_STUN_TIMER(0) ||
+        (unsigned char)MON_STUN_TIMER(monster_slot)) {
+        return;
+    }
+    link_collision_check_link_collision_preinit(monster_slot);
 }

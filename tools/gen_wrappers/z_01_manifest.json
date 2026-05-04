@@ -139,16 +139,6 @@
       "sig": "void (unsigned int monster_slot, unsigned int weapon_slot)"
     },
     {
-      "old": "z01_check_link_collision_preinit",
-      "new": "lcrt_check_link_collision_preinit",
-      "sig": "void (unsigned int monster_slot)"
-    },
-    {
-      "old": "z01_check_link_collision",
-      "new": "lcrt_check_link_collision",
-      "sig": "void (unsigned int monster_slot)"
-    },
-    {
       "old": "z01_check_monster_collisions",
       "new": "lcrt_check_monster_collisions",
       "sig": "void (unsigned int monster_slot)"
