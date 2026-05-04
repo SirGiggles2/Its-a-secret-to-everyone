@@ -428,6 +428,22 @@ void z07_update_mode2_load(void) {
 #endif
 }
 
+void z07_patch_and_cue_level_palettes_transfer(void) {
+#ifdef NATIVE_ROOM
+    room_patch_and_cue_level_palettes_transfer();
+#else
+    roommd_patch_and_cue_level_palettes_transfer();
+#endif
+}
+
+void z07_init_mode3_sub1(void) {
+#ifdef NATIVE_ROOM
+    room_init_mode3_sub1();
+#else
+    roommd_init_mode3_sub1();
+#endif
+}
+
 /* Phase 4 native uw_person init forwarders — forwards to existing
  * NATIVE_UW_PERSON gate symbols so flipping that flag here also
  * routes z07_init_grumble + z07_init_rupee_stash through native. */

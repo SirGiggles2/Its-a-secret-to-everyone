@@ -20,7 +20,8 @@
                                   * core_compare_hearts_to_containers */
 #include "hud/hud_dispatch.h"   /* hud_world_change_rupees */
 #include "world/progress_dispatch.h" /* progress_update_world_curtain_effect */
-#include "item_state.h"         /* LINK_PARTIAL_HEART, LINK_HEARTS, ITEM_SFX_PRIMARY */
+#include "item_state.h"         /* LINK_PARTIAL_HEART, LINK_HEARTS, ITEM_SFX_PRIMARY,
+                                 * SAVE_SLOT_INDEX */
 
 /* Genesis VDP native primitive — display enable/disable (Reg 1 bit 6).
  * Forward decl from src/sgdk_adapter/render_adapter.c. */
@@ -30,6 +31,15 @@ extern void render_display_enable(unsigned char on);
  * NOT NES MMC1 emulation. Forward decl from
  * src/sgdk_adapter/render_adapter.c. */
 extern void render_bank_window_load(unsigned char bank);
+
+/* Asm-bound data tables — NOT shims (not c_/z01_/z07_ prefixed).
+ * MenuPalettesTransferBuf is RW state shared across item-pickup,
+ * file-select, and palette-cue paths. SaveSlotToPaletteRowOffset
+ * is read-only. Native code reads/writes the same backing memory
+ * the transpile-asm path uses, ensuring NATIVE_ROOM=on/off paths
+ * stay coherent. */
+extern unsigned char MenuPalettesTransferBuf[];
+extern const unsigned char SaveSlotToPaletteRowOffset[];
 
 #define NES_SRAM_BASE 0x6000u
 
@@ -405,4 +415,32 @@ void room_update_mode3_unfurl(void)
     } else {
         room_go_to_next_mode_play_level_song();
     }
+}
+
+void room_patch_and_cue_level_palettes_transfer(void)
+{
+    /* drain at room_mode_runtime.c:272-279. */
+    const unsigned char slot = (unsigned char)SAVE_SLOT_INDEX;
+    const unsigned char row_off = SaveSlotToPaletteRowOffset[slot & 3u];
+    const unsigned char color = MenuPalettesTransferBuf[20u + row_off];
+    nes_ram[NES_SRAM_BASE + 0x0B92u] = color;
+    ROOM_TRANSFER_BUF_SELECT = 24u;
+    SUBMODE_VALUE = (uint8_t)((unsigned char)SUBMODE_VALUE + 1u);
+}
+
+void room_init_mode3_sub1(void)
+{
+    /* drain at room_mode_runtime.c:281-293. */
+    unsigned char room_id;
+    if ((unsigned char)CUR_LEVEL != 0u ||
+        (unsigned char)ROOM_ID_ALT == 0xFFu) {
+        room_id = nes_ram[NES_SRAM_BASE + 0x0BADu];
+    } else {
+        room_id = (unsigned char)ROOM_ID_ALT;
+    }
+    CUR_ROOM_ID = room_id;
+    if (room_id == (unsigned char)ROOM_ID_ALT) {
+        ROOM_ID_ALT = 0xFFu;
+    }
+    room_patch_and_cue_level_palettes_transfer();
 }

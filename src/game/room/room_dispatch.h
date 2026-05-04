@@ -113,6 +113,19 @@ void room_update_mode3_unfurl(void);
  * blobs (~600 bytes). Q2 level=0 patch_q2_rooms native. */
 void room_update_mode2_load(void);
 
+/* Read MenuPalettesTransferBuf[20 + SaveSlotToPaletteRowOffset[slot]],
+ * write to SRAM($0B92), set ROOM_TRANSFER_BUF_SELECT=24, advance
+ * submode. Patches the level palette row 7 to match the player's
+ * personal color (selected at file-select). NES
+ * PatchAndCueLevelPalettesTransfer.
+ * drain at room_mode_runtime.c:272-279. */
+void room_patch_and_cue_level_palettes_transfer(void);
+
+/* If CUR_LEVEL!=0 or ROOM_ID_ALT==$FF, read room_id from SRAM($0BAD);
+ * else use ROOM_ID_ALT (and clear it). Then patch_and_cue. NES
+ * InitMode3_Sub1. drain at room_mode_runtime.c:281-293. */
+void room_init_mode3_sub1(void);
+
 #ifdef __cplusplus
 }
 #endif
