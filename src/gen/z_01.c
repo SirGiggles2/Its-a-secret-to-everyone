@@ -130,30 +130,6 @@ void z01_update_person_state_textbox(void) {
     cavert_update_person_state_textbox();
 }
 
-void z01_format_hearts_in_text_buf(unsigned char start_off) {
-    hudrt_format_hearts_in_text_buf(start_off);
-}
-
-void z01_copy_triplet_to_text_buf(void) {
-    hudrt_copy_triplet_to_text_buf();
-}
-
-void z01_format_decimal_count_byte(unsigned char val) {
-    hudrt_format_decimal_count_byte(val);
-}
-
-void z01_format_decimal_count_byte_in_text_buf(unsigned char val, unsigned char buf_offset) {
-    hudrt_format_decimal_count_byte_in_text_buf(val, buf_offset);
-}
-
-void z01_format_status_bar_text(void) {
-    hudrt_format_status_bar_text();
-}
-
-void z01_world_change_rupees(void) {
-    hudrt_world_change_rupees();
-}
-
 void z01_try_take_item(unsigned int slot) {
     cavert_try_take_item(slot);
 }
@@ -1133,6 +1109,59 @@ unsigned char z01_do_objects_collide_with_thresholds(void) {
     return collision_do_objects_collide_with_thresholds();
 #else
     return colrt_do_objects_collide_with_thresholds();
+#endif
+}
+
+/* Phase 4 native HUD subsystem cutover gate — NATIVE_HUD. */
+#ifdef NATIVE_HUD
+#include "hud/hud_dispatch.h"
+#endif
+
+void z01_format_hearts_in_text_buf(unsigned char start_off) {
+#ifdef NATIVE_HUD
+    hud_format_hearts_in_text_buf(start_off);
+#else
+    hudrt_format_hearts_in_text_buf(start_off);
+#endif
+}
+
+void z01_copy_triplet_to_text_buf(void) {
+#ifdef NATIVE_HUD
+    hud_copy_triplet_to_text_buf();
+#else
+    hudrt_copy_triplet_to_text_buf();
+#endif
+}
+
+void z01_format_decimal_count_byte(unsigned char val) {
+#ifdef NATIVE_HUD
+    hud_format_decimal_count_byte(val);
+#else
+    hudrt_format_decimal_count_byte(val);
+#endif
+}
+
+void z01_format_decimal_count_byte_in_text_buf(unsigned char val, unsigned char buf_offset) {
+#ifdef NATIVE_HUD
+    hud_format_decimal_count_byte_in_text_buf(val, buf_offset);
+#else
+    hudrt_format_decimal_count_byte_in_text_buf(val, buf_offset);
+#endif
+}
+
+void z01_format_status_bar_text(void) {
+#ifdef NATIVE_HUD
+    hud_format_status_bar_text();
+#else
+    hudrt_format_status_bar_text();
+#endif
+}
+
+void z01_world_change_rupees(void) {
+#ifdef NATIVE_HUD
+    hud_world_change_rupees();
+#else
+    hudrt_world_change_rupees();
 #endif
 }
 
