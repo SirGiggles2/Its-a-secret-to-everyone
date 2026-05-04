@@ -41,9 +41,6 @@
 #define TILE_ORIGINAL_MAP_MARKER 0x51u
 #define TILE_REDUX_HEART_FILL    0x52u
 
-/* HUD lives in the BG bank (NES BG content). Same per-sub-pal stride. */
-#define HUD_TILE_BASE   ROOMROM_BG_TILE_BASE
-
 static unsigned char s_hud_pal[ROOMROM_HUD_ROWS][ROOMROM_ROOM_COLS];
 
 static const unsigned char s_hud_custom_chr[96] = {

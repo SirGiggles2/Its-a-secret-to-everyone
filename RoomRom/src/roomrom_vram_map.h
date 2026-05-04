@@ -60,6 +60,9 @@
  *   rule, same sub-pal stride.
  */
 
+/* tile 0 is always blank (transparent fallback for any plane). */
+#define ROOMROM_BLANK_TILE              0u
+
 /* Per-sub-pal stride is 256 because NES BG addresses tiles by 8-bit NES
  * tile ID. OW renderer uploads common BG (112) + OW BG (130) + common
  * misc (14) = 256 distinct NES tile slots; redux automap (32) and secrets
@@ -76,6 +79,9 @@
     (ROOMROM_BG_TILE_BASE  + (unsigned short)(s) * ROOMROM_BG_TILE_COUNT_PER_PAL)
 #define ROOMROM_SPR_TILE_BASE_PAL(s) \
     (ROOMROM_SPR_TILE_BASE + (unsigned short)(s) * ROOMROM_SPR_TILE_COUNT_PER_PAL)
+/* HUD tiles live in the BG bank (same NES BG content, same sub-pal stride). */
+#define ROOMROM_HUD_TILE_BASE_PAL(s) \
+    ROOMROM_BG_TILE_BASE_PAL(s)
 
 /* Item atlas sub-bank: per-category 4x sub-pal expansion. NES Z1 draws
  * bomb / explosion with sprite sub-pal 1; future sword-level upgrades
