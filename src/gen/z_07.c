@@ -8,7 +8,6 @@
 
 #include "core_runtime.h"
 #include "room_mode_runtime.h"
-#include "uw_person_runtime.h"
 #include "room_runtime.h"
 
 void z07_destroy_monster(unsigned int slot) {
@@ -25,14 +24,6 @@ void z07_go_to_next_mode_reset_grid_offset(void) {
 
 void z07_patch_and_cue_level_palettes_transfer(void) {
     roommd_patch_and_cue_level_palettes_transfer();
-}
-
-void z07_init_grumble(unsigned int slot) {
-    uwrt_init_grumble_full(slot);
-}
-
-void z07_init_rupee_stash(unsigned int slot) {
-    uwrt_init_rupee_stash_full(slot);
 }
 
 void z07_init_mode3_sub1(void) {
@@ -402,5 +393,29 @@ void z07_go_to_next_mode(void) {
     room_go_to_next_mode();
 #else
     roommd_go_to_next_mode();
+#endif
+}
+
+/* Phase 4 native uw_person init forwarders — forwards to existing
+ * NATIVE_UW_PERSON gate symbols so flipping that flag here also
+ * routes z07_init_grumble + z07_init_rupee_stash through native. */
+#include "uw_person_runtime.h"  /* uwrt_* OFF-branch */
+#ifdef NATIVE_UW_PERSON
+#include "cave/uw_person_dispatch.h"
+#endif
+
+void z07_init_grumble(unsigned int slot) {
+#ifdef NATIVE_UW_PERSON
+    uw_person_init_grumble_full(slot);
+#else
+    uwrt_init_grumble_full(slot);
+#endif
+}
+
+void z07_init_rupee_stash(unsigned int slot) {
+#ifdef NATIVE_UW_PERSON
+    uw_person_init_rupee_stash_full(slot);
+#else
+    uwrt_init_rupee_stash_full(slot);
 #endif
 }
