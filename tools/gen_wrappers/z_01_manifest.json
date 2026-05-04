@@ -179,11 +179,6 @@
       "sig": "void (void)"
     },
     {
-      "old": "z01_check_passive_tile_objects",
-      "new": "trprt_check_passive_tile_objects",
-      "sig": "void (void)"
-    },
-    {
       "old": "z01_update_trap_full",
       "new": "trprt_update_trap_full",
       "sig": "void (unsigned int slot)"

@@ -10,12 +10,14 @@
 #include "trap_state.h"        /* TELEPORT_LEVEL_INDEX, TELEPORT_ACTIVE_FLAG,
                                 * WHIRLWIND_ACTIVE_FLAG, MODE_TIMER,
                                 * TRAP_OBJ_TYPE, TRAP_BASE_SLOT */
-#include "world_state.h"       /* LINK_DIR, LINK_Y, LINK_ACTION_TIMER,
-                                * WORLD_TMP0/_1 */
+#include "world_state.h"       /* LINK_DIR, LINK_Y, LINK_X, LINK_ACTION_TIMER,
+                                * WORLD_TMP0/_1/_2/_3, OBJ_MOVE_TIMER */
 #include "progress_state.h"    /* MODE_VALUE, SUBMODE_VALUE */
 #include "object_state.h"      /* OBJ_X, OBJ_Y */
 #include "combat_state.h"      /* MON_TYPE, MON_STATUS_FLAGS */
-#include "core/core_dispatch.h"     /* core_set_up_whirlwind, core_init_one_simple_object */
+#include "enemy_state.h"       /* ENEMY_COLLIDED_TILE, ENEMY_ALIVE_FLAG */
+#include "core/core_dispatch.h"     /* core_set_up_whirlwind, core_init_one_simple_object,
+                                     * core_get_opposite_dir, core_reset_obj_metastate */
 #include "enemies/enemy_dispatch.h" /* enemy_find_empty_monster_slot */
 
 /* TeleportYs — Z_01.asm:1226. Per-level teleport Y coords. */
@@ -31,6 +33,17 @@ static const unsigned char k_trap_xs[6] = {
 /* TrapYs — Z_01.asm:1301. */
 static const unsigned char k_trap_ys[6] = {
     0x5Du, 0xBDu, 0x5Du, 0xBDu, 0x8Du, 0x8Du
+};
+
+/* LinkToSquareOffsetsX — Z_01.asm:1264 (mirrored in
+ * src/data/player_constants.inc). */
+static const unsigned char k_link_to_square_offsets_x[4] = {
+    0x00u, 0x00u, 0xF0u, 0x10u
+};
+
+/* LinkToSquareOffsetsY — Z_01.asm:1268. */
+static const unsigned char k_link_to_square_offsets_y[4] = {
+    0xFBu, 0x13u, 0x03u, 0x03u
 };
 
 /* LevelMasks — Z_01.asm. Used by SummonWhirlwind to gate teleport
@@ -126,4 +139,91 @@ void trap_init_trap_full(unsigned int slot)
         core_init_one_simple_object(ns);
         --count;
     } while (count >= 0);
+}
+
+void trap_check_passive_tile_objects(void)
+{
+    /* drain at trap_runtime.c:140-188. */
+    if ((unsigned char)OBJ_GRID_OFFSET(0) != 0u) {
+        return;
+    }
+    if ((unsigned char)PASSIVE_OBJ_FLAG == 0u) {
+        return;
+    }
+    {
+        const unsigned char collided_tile =
+            (unsigned char)ENEMY_COLLIDED_TILE(0);
+        unsigned char tile = 0xBBu;
+        int found = 0;
+        for (int count = 8; count > 0; --count) {
+            ++tile;
+            WORLD_TMP2 = tile;
+            if (collided_tile == tile) {
+                found = 1;
+                break;
+            }
+        }
+        if (!found) {
+            return;
+        }
+    }
+    WORLD_TMP0 = (uint8_t)LINK_X;
+    WORLD_TMP1 = (uint8_t)LINK_Y;
+    if ((unsigned char)LINK_DIR & 0x0Cu) {
+        const unsigned char col_type =
+            (unsigned char)((unsigned char)WORLD_TMP2 & 3u);
+        unsigned char lx = (unsigned char)WORLD_TMP0;
+        if (col_type < 2u) {
+            lx = (unsigned char)(lx + 8u);
+        }
+        WORLD_TMP0 = (uint8_t)(lx & 0xF0u);
+    } else {
+        if (!((unsigned char)WORLD_TMP2 & 1u)) {
+            WORLD_TMP1 = (uint8_t)((unsigned char)WORLD_TMP1 + 8u);
+        }
+    }
+    {
+        const unsigned int empty = enemy_find_empty_monster_slot();
+        if (empty == 0u) {
+            return;
+        }
+        const unsigned int opp =
+            core_get_opposite_dir((unsigned int)(unsigned char)LINK_DIR);
+        const unsigned char opp_idx = (unsigned char)(opp >> 8);
+        OBJ_X(empty) =
+            (uint8_t)((unsigned char)WORLD_TMP0 +
+                      k_link_to_square_offsets_x[opp_idx & 3u]);
+        OBJ_Y(empty) =
+            (uint8_t)((unsigned char)WORLD_TMP1 +
+                      k_link_to_square_offsets_y[opp_idx & 3u]);
+        if (!(unsigned char)ENEMY_ALIVE_FLAG(empty)) {
+            return;
+        }
+        WORLD_TMP3 = (uint8_t)empty;
+        for (signed char i = 11; i >= 1; --i) {
+            const unsigned char si = (unsigned char)i;
+            if (si == (unsigned char)empty) {
+                continue;
+            }
+            if ((unsigned char)OBJ_X(si) != (unsigned char)OBJ_X(empty)) {
+                continue;
+            }
+            if ((unsigned char)OBJ_Y(si) != (unsigned char)OBJ_Y(empty)) {
+                continue;
+            }
+            if ((unsigned char)MON_TYPE(si) != 0u) {
+                return;
+            }
+            if (!(unsigned char)ENEMY_ALIVE_FLAG(si)) {
+                return;
+            }
+            break;
+        }
+        MON_TYPE(empty) =
+            (uint8_t)(((unsigned char)WORLD_TMP2 >= 0xC0u)
+                          ? TRAP_ALT_OBJ_TYPE
+                          : TRAP_PUSHED_OBJ_TYPE);
+        core_reset_obj_metastate(empty);
+        OBJ_MOVE_TIMER(empty) = 63u;
+    }
 }

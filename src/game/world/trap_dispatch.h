@@ -40,6 +40,12 @@ void trap_summon_whirlwind(void);
  * drain at trap_runtime.c:4-17. */
 void trap_init_trap_full(unsigned int slot);
 
+/* If Link is on a tile-aligned grid + PASSIVE_OBJ_FLAG is set, scan
+ * for tile types $BC..$C3, then spawn a passive bumped object adjacent
+ * to Link via empty enemy slot. NES CheckPassiveTileObjects. drain
+ * at trap_runtime.c:140-188. */
+void trap_check_passive_tile_objects(void);
+
 #ifdef __cplusplus
 }
 #endif

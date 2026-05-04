@@ -158,10 +158,6 @@ void z01_init_mode_b_enter_cave_bank5(void) {
     trprt_init_mode_b_enter_cave_bank5();
 }
 
-void z01_check_passive_tile_objects(void) {
-    trprt_check_passive_tile_objects();
-}
-
 void z01_update_trap_full(unsigned int slot) {
     trprt_update_trap_full(slot);
 }
@@ -602,6 +598,14 @@ void z01_init_trap_full(unsigned int slot) {
     trap_init_trap_full(slot);
 #else
     trprt_init_trap_full(slot);
+#endif
+}
+
+void z01_check_passive_tile_objects(void) {
+#ifdef NATIVE_TRAP
+    trap_check_passive_tile_objects();
+#else
+    trprt_check_passive_tile_objects();
 #endif
 }
 
