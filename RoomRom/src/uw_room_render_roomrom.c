@@ -336,9 +336,12 @@ void roomrom_uw_room_render_fill_one_col_at(unsigned char room_id,
                                  dst_row_base);
     } else {
         /* Non-blob room: plane tiles left unchanged; populate s_uw_walkable
-         * from precomputed NES grid so collision is valid for all rooms. */
+         * from precomputed NES grid so collision is valid for all rooms.
+         * Guard dst_col: s_uw_walkable is sized [16][11] for the active slot
+         * only; slot-1 prefetch (dst_col 16-31) is out-of-bounds — skip. */
         unsigned char mt_row;
         unsigned char mc = src_col & 0x0Fu;
+        if (dst_col >= 16u) return;
         for (mt_row = 0u; mt_row < 11u; mt_row++) {
             s_uw_walkable[dst_col][mt_row] =
                 uw_room_walkable(s_uw_level, s_uw_quest, room_id,
