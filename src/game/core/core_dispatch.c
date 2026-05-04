@@ -426,6 +426,13 @@ void core_reset_shove_info(unsigned int slot)
     core_set_shove_info_with0(0u, slot);
 }
 
+void core_reset_shove_info_and_inv_timer(unsigned int slot)
+{
+    /* drain at core_runtime.c:145-148. */
+    core_set_shove_info_with0(0u, slot);
+    OBJ_INV_TIMER(slot) = 0u;
+}
+
 void core_reset_obj_metastate(unsigned int slot)
 {
     /* drain at core_runtime.c:341-343. */

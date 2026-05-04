@@ -159,21 +159,6 @@
       "sig": "void (unsigned char item_id)"
     },
     {
-      "old": "z01_play_parry_sound_for_damage_type",
-      "new": "cobrt_play_parry_sound_for_damage_type",
-      "sig": "void (void)"
-    },
-    {
-      "old": "z01_handle_monster_died",
-      "new": "cobrt_handle_monster_died",
-      "sig": "void (unsigned int slot)"
-    },
-    {
-      "old": "z01_deal_damage",
-      "new": "cobrt_deal_damage",
-      "sig": "void (unsigned int slot)"
-    },
-    {
       "old": "z01_handle_monster_weapon_collision",
       "new": "colrt_handle_monster_weapon_collision",
       "sig": "void (unsigned int monster_slot, unsigned int weapon_slot)"

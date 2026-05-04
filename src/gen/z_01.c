@@ -142,18 +142,6 @@ void z01_take_item(unsigned char item_id) {
     itemrt_take_item(item_id);
 }
 
-void z01_play_parry_sound_for_damage_type(void) {
-    cobrt_play_parry_sound_for_damage_type();
-}
-
-void z01_handle_monster_died(unsigned int slot) {
-    cobrt_handle_monster_died(slot);
-}
-
-void z01_deal_damage(unsigned int slot) {
-    cobrt_deal_damage(slot);
-}
-
 void z01_handle_monster_weapon_collision(unsigned int monster_slot, unsigned int weapon_slot) {
     colrt_handle_monster_weapon_collision(monster_slot, weapon_slot);
 }
@@ -1257,5 +1245,39 @@ unsigned int z01_calc_diagonal_speed_index(unsigned int mid_speed_idx) {
     return targeting_calc_diagonal_speed_index(mid_speed_idx);
 #else
     return targrt_calc_diagonal_speed_index(mid_speed_idx);
+#endif
+}
+
+/* Phase 4 native combat subsystem cutover gate — NATIVE_COMBAT.
+ *
+ * 3 damage / monster-died functions. Drain MATCH per finding
+ * 4_9n_combat. Native body uses core_play_parry_tune,
+ * core_update_dead_dummy, core_reset_shove_info_and_inv_timer (all
+ * native via core_dispatch). Independent gate. */
+#ifdef NATIVE_COMBAT
+#include "combat/combat_dispatch.h"
+#endif
+
+void z01_play_parry_sound_for_damage_type(void) {
+#ifdef NATIVE_COMBAT
+    combat_play_parry_sound_for_damage_type();
+#else
+    cobrt_play_parry_sound_for_damage_type();
+#endif
+}
+
+void z01_handle_monster_died(unsigned int slot) {
+#ifdef NATIVE_COMBAT
+    combat_handle_monster_died(slot);
+#else
+    cobrt_handle_monster_died(slot);
+#endif
+}
+
+void z01_deal_damage(unsigned int slot) {
+#ifdef NATIVE_COMBAT
+    combat_deal_damage(slot);
+#else
+    cobrt_deal_damage(slot);
 #endif
 }

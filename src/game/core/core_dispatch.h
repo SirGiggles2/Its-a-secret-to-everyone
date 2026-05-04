@@ -202,6 +202,10 @@ void core_set_shove_info_with0(unsigned int val, unsigned int slot);
  * drain at core_runtime.c:337-339. */
 void core_reset_shove_info(unsigned int slot);
 
+/* core_set_shove_info_with0(0, slot); OBJ_INV_TIMER(slot) = 0.
+ * NES ResetShoveInfoAndInvTimer. drain at core_runtime.c:145-148. */
+void core_reset_shove_info_and_inv_timer(unsigned int slot);
+
 /* OBJ_METASTATE(slot) = 0. NES ResetObjMetastate.
  * drain at core_runtime.c:341-343. */
 void core_reset_obj_metastate(unsigned int slot);
