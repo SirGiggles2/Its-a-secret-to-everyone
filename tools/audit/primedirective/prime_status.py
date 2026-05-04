@@ -98,10 +98,19 @@ def detect_staleness(tr: dict) -> list[str]:
 
     for ph in tr.get("phases", []):
         for ev in ph.get("evidence", []):
+            if not isinstance(ev, str):
+                continue
             if ev.startswith("commit:"):
                 continue
-            if not (REPO / ev).exists():
-                reasons.append(f"evidence_missing:{ev}")
+            # Format: "<step>|<path-or-note>" — strip step prefix, then take
+            # everything up to first space (path) and verify if it looks like
+            # a repo path. Notes (containing parens) are skipped.
+            payload = ev.split("|", 1)[-1] if "|" in ev else ev
+            head = payload.split()[0] if payload else ""
+            if not head or "(" in head or "/" not in head:
+                continue
+            if not (REPO / head).exists():
+                reasons.append(f"evidence_missing:{head}")
 
     seen_complete = False
     seen_active = False

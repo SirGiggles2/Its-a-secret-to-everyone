@@ -283,6 +283,8 @@ def main() -> int:
     ap.add_argument("--record-out-of-phase", nargs=3, metavar=("TARGET", "REASON", "STANCE"))
     ap.add_argument("--record-deferral", nargs=3, metavar=("PHASE", "STEP", "REASON"))
     ap.add_argument("--close-phase", metavar="ID")
+    ap.add_argument("--mark-passed", nargs=3, metavar=("PHASE", "STEP", "EVIDENCE"),
+                    help="Mark a close-gate step as 'passed' with an evidence path/note")
     ap.add_argument("--no-render", action="store_true")
     args = ap.parse_args()
 
@@ -316,6 +318,22 @@ def main() -> int:
             "reason": reason,
             "recorded_at": now_iso(),
         })
+
+    if args.mark_passed:
+        phase_id, step, evidence = args.mark_passed
+        if step not in GATE_STEPS:
+            print(f"ERROR: unknown gate step '{step}'. Valid: {GATE_STEPS}", file=sys.stderr)
+            return 2
+        found = False
+        for ph in tr["phases"]:
+            if ph["id"] == phase_id:
+                ph.setdefault("close_gate", {})[step] = "passed"
+                ph.setdefault("evidence", []).append(f"{step}|{evidence}")
+                found = True
+                break
+        if not found:
+            print(f"ERROR: phase {phase_id} not found", file=sys.stderr)
+            return 2
 
     if args.close_phase:
         for ph in tr["phases"]:
