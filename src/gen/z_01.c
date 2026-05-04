@@ -142,18 +142,6 @@ void z01_take_item(unsigned char item_id) {
     itemrt_take_item(item_id);
 }
 
-unsigned char z01_get_one_direction_and_distance_to_target(unsigned char target_coord, unsigned char origin_coord) {
-    return targrt_get_one_direction_and_distance_to_target(target_coord, origin_coord);
-}
-
-void z01_get_directions_and_distances_to_target(unsigned char target_slot, unsigned int origin_slot) {
-    targrt_get_directions_and_distances_to_target(target_slot, origin_slot);
-}
-
-unsigned int z01_calc_diagonal_speed_index(unsigned int mid_speed_idx) {
-    return targrt_calc_diagonal_speed_index(mid_speed_idx);
-}
-
 void z01_play_parry_sound_for_damage_type(void) {
     cobrt_play_parry_sound_for_damage_type();
 }
@@ -1233,5 +1221,41 @@ void z01_show_link_sprites_behind_horizontal_doors(void) {
     sprite_show_link_sprites_behind_horizontal_doors();
 #else
     sprrt_show_link_sprites_behind_horizontal_doors();
+#endif
+}
+
+/* Phase 4 native targeting subsystem cutover gate — NATIVE_TARGETING.
+ *
+ * 3 distance/direction helpers used by enemy AI. Pure C, no shims.
+ * Drain MATCH per finding 4_7n_targeting. Independent gate. */
+#ifdef NATIVE_TARGETING
+#include "combat/targeting_dispatch.h"
+#endif
+
+unsigned char z01_get_one_direction_and_distance_to_target(
+    unsigned char target_coord, unsigned char origin_coord) {
+#ifdef NATIVE_TARGETING
+    return targeting_get_one_direction_and_distance_to_target(target_coord,
+                                                              origin_coord);
+#else
+    return targrt_get_one_direction_and_distance_to_target(target_coord,
+                                                           origin_coord);
+#endif
+}
+
+void z01_get_directions_and_distances_to_target(unsigned char target_slot,
+                                                unsigned int origin_slot) {
+#ifdef NATIVE_TARGETING
+    targeting_get_directions_and_distances_to_target(target_slot, origin_slot);
+#else
+    targrt_get_directions_and_distances_to_target(target_slot, origin_slot);
+#endif
+}
+
+unsigned int z01_calc_diagonal_speed_index(unsigned int mid_speed_idx) {
+#ifdef NATIVE_TARGETING
+    return targeting_calc_diagonal_speed_index(mid_speed_idx);
+#else
+    return targrt_calc_diagonal_speed_index(mid_speed_idx);
 #endif
 }

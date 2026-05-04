@@ -159,21 +159,6 @@
       "sig": "void (unsigned char item_id)"
     },
     {
-      "old": "z01_get_one_direction_and_distance_to_target",
-      "new": "targrt_get_one_direction_and_distance_to_target",
-      "sig": "unsigned char (unsigned char target_coord, unsigned char origin_coord)"
-    },
-    {
-      "old": "z01_get_directions_and_distances_to_target",
-      "new": "targrt_get_directions_and_distances_to_target",
-      "sig": "void (unsigned char target_slot, unsigned int origin_slot)"
-    },
-    {
-      "old": "z01_calc_diagonal_speed_index",
-      "new": "targrt_calc_diagonal_speed_index",
-      "sig": "unsigned int (unsigned int mid_speed_idx)"
-    },
-    {
       "old": "z01_play_parry_sound_for_damage_type",
       "new": "cobrt_play_parry_sound_for_damage_type",
       "sig": "void (void)"
