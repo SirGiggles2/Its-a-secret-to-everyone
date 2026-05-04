@@ -142,6 +142,20 @@ unsigned char room_has_map(void);
  * UpdateTriforcePositionMarker. drain at Z_07.asm:1821-1834. */
 void room_update_triforce_position_marker(void);
 
+/* Copy 5-byte ObjRoomBounds bank (OW base 0 / UW base 5) into
+ * ROOM_BOUNDS[0..4]. Resets ROOM_IN_DOORWAY_FLAG when in OW.
+ * NES SetupObjRoomBounds. drain at room_load_runtime.c:58-67. */
+void room_setup_obj_room_bounds(void);
+
+/* ROOM_SPRITE0_ENABLED = 1; copy 4-byte sprite0 descriptor into
+ * OAM bytes 0..3. NES WriteAndEnableSprite0.
+ * drain at room_load_runtime.c:13-18. */
+void room_write_and_enable_sprite0(void);
+
+/* ROOM_LINK_BG_ATTR_A/B |= 0x20. NES PutLinkBehindBackground.
+ * drain at room_load_runtime.c:20-23. */
+void room_put_link_behind_background(void);
+
 #ifdef __cplusplus
 }
 #endif

@@ -615,3 +615,45 @@ void room_update_triforce_position_marker(void)
     progress_update_position_marker(
         nes_ram[NES_SRAM_BASE + 0x0BAEu], 4u);
 }
+
+/* roomld_obj_room_bounds[10]: 5 OW bounds + 5 UW bounds.
+ * NES room_load_runtime.c:8-11. */
+static const unsigned char k_obj_room_bounds[10] = {
+    0x11u, 0xE0u, 0x4Eu, 0xCDu, 0x89u,
+    0x21u, 0xD0u, 0x5Eu, 0xBDu, 0x78u
+};
+
+void room_setup_obj_room_bounds(void)
+{
+    /* drain at room_load_runtime.c:58-67. */
+    unsigned char base = 5u;
+    if ((unsigned char)CUR_LEVEL == 0u) {
+        base = 0u;
+        RAM(0x0053u) = 0u;  /* ROOM_IN_DOORWAY_FLAG */
+    }
+    for (unsigned char i = 0u; i < 5u; ++i) {
+        RAM(0x0346u + i) = k_obj_room_bounds[base + i];
+    }
+}
+
+/* roomld_sprite0_descriptor[4] (room_load_runtime.c:6). */
+static const unsigned char k_sprite0_descriptor[4] = {
+    0x27u, 0x61u, 0x20u, 0x58u
+};
+
+void room_write_and_enable_sprite0(void)
+{
+    /* drain at room_load_runtime.c:13-18. */
+    RAM(0x00E3u) = 1u;  /* ROOM_SPRITE0_ENABLED */
+    for (signed char i = 3; i >= 0; --i) {
+        RAM(0x0200u + (unsigned char)i) =
+            k_sprite0_descriptor[(unsigned char)i];
+    }
+}
+
+void room_put_link_behind_background(void)
+{
+    /* drain at room_load_runtime.c:20-23. */
+    RAM(0x024Au) = (uint8_t)(RAM(0x024Au) | 0x20u);
+    RAM(0x024Eu) = (uint8_t)(RAM(0x024Eu) | 0x20u);
+}
