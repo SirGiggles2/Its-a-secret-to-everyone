@@ -23,6 +23,10 @@ static unsigned char s_uw_map_id = ROOMROM_MAP_ORIGINAL;
 static unsigned char s_uw_level  = 1u;
 static unsigned char s_uw_quest  = 1u;
 
+/* Cached AT pointer for the current room's blob; set by blit_blob,
+ * cleared by draw_placeholder. Used by roomrom_uw_room_render_palette_at. */
+static const unsigned char *s_cur_attr = (const unsigned char *)0;
+
 /* S5.5 collision: walkable metatile grid for the current UW room.
  * Filled during blit_blob; queried by main loop. 16 cols x 11 rows. */
 static unsigned char s_uw_walkable[16][11];
@@ -229,6 +233,7 @@ static void blit_blob(int idx)
 {
     const unsigned char *nt = g_uw_room_nt[idx];
     const unsigned char *attr = g_uw_room_attr[idx];
+    s_cur_attr = attr;
     unsigned char row, col;
     unsigned char mt_col, mt_row;
     for (row = 0; row < ROOMROM_UW_BLOB_ROWS; row++) {
@@ -259,6 +264,7 @@ static void blit_blob_one_metacol_at(int idx, unsigned char src_col,
 {
     const unsigned char *nt   = g_uw_room_nt[idx];
     const unsigned char *attr = g_uw_room_attr[idx];
+    s_cur_attr = attr; /* keep current so palette_at is valid for door patches */
     unsigned char row;
     unsigned char mt_row;
     unsigned char src_p0 = (unsigned char)(src_col << 1);
@@ -289,6 +295,7 @@ static void draw_placeholder(unsigned char room_id)
     unsigned char col, row;
     unsigned char mt_col, mt_row;
     unsigned char floor_tile = 0x70;
+    s_cur_attr = (const unsigned char *)0;
     for (row = 0; row < ROOMROM_ROOM_ROWS; row++) {
         for (col = 0; col < ROOMROM_ROOM_COLS; col++) {
             unsigned char t = (unsigned char)(floor_tile + ((col + row) & 1));
@@ -348,4 +355,28 @@ void roomrom_uw_room_render_fill_one_col_at(unsigned char room_id,
                                  mc, mt_row);
         }
     }
+}
+
+/* Ph5.3 door-state layer: public write accessors used by uw_door_state.c. */
+
+void roomrom_uw_room_render_write_tile(unsigned char col, unsigned char row,
+                                       unsigned char raw_tile, unsigned char pal)
+{
+    write_tile_raw(col, row, raw_tile, pal);
+}
+
+void roomrom_uw_room_render_set_walkable(unsigned char col, unsigned char row,
+                                         unsigned char val)
+{
+    if (col >= 16u || row >= 11u) return;
+    s_uw_walkable[col][row] = val ? 1u : 0u;
+}
+
+/* Return AT palette for NT coordinates (col 0..31, row 8..29 in full NT space).
+ * Falls back to 0 if no blob is loaded (placeholder room). */
+unsigned char roomrom_uw_room_render_palette_at(unsigned char nt_col,
+                                                unsigned char nt_row)
+{
+    if (s_cur_attr == (const unsigned char *)0) return 0u;
+    return attr_palette_for(s_cur_attr, nt_col, nt_row);
 }

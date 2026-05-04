@@ -10,6 +10,7 @@
 #include "roomrom_scene_load.h"
 #include "roomrom_palette_tick.h"
 #include "cave_dispatch.h"  /* debate 006 D2: native cave gamemode entry */
+#include "uw_door_state.h"
 
 /* Boots to overworld room 0x77.
  *
@@ -68,6 +69,8 @@ static u8 s_room_id = 0x73;   /* UW L1 room $73 */
 static short s_link_x = 124;  /* center of playfield, nudged 4px left */
 static short s_link_y = 144;  /* center of UW playfield (y=56 HUD + 88) */
 static link_face_t s_link_face = LINK_FACE_DOWN;
+/* Ph5.3: key inventory for UW door gating. Start with 3 for dev testing. */
+static unsigned char s_link_keys = 3u;
 
 /* S7 B-item slot (cycle with Z, fire with B). Order roughly matches
  * Z1 inventory grid: boomerang -> bombs -> arrow -> candle -> rod. */
@@ -233,6 +236,12 @@ static void load_room(u8 room_id)
     roomrom_sprites_load_palette();   /* PAL1 - reload after BG palette write */
     /* Phase 2.6.5: reset toggle table on room load (empty at Phase 2). */
     roomrom_palette_tick_init((const unsigned char *)0);
+    /* Ph5.3: init door state after room render (needs filled plane + attr cache). */
+    if (s_scene == SCENE_UW) {
+        uw_door_state_room_init(roomrom_uw_room_render_get_level(),
+                                roomrom_uw_room_render_get_quest(),
+                                room_id);
+    }
 }
 
 /* Phase 1: pick the live-NES item-atlas variant for the current scene+map.
@@ -340,19 +349,27 @@ static void edge_load_or_clamp(void)
     short pre_y = s_link_y;
 
     if (s_link_x < 0) {
-        if (col > 0u) { col--; s_link_x = 232; want = SCROLL_H_LEFT; }
-        else          { s_link_x = 0; }
+        if (col > 0u && (s_scene != SCENE_UW ||
+                uw_door_state_touch(DOOR_DIR_W, &s_link_keys))) {
+            col--; s_link_x = 232; want = SCROLL_H_LEFT;
+        } else { s_link_x = 0; }
     } else if (s_link_x > 240) {
-        if (col < 15u) { col++; s_link_x = 8; want = SCROLL_H_RIGHT; }
-        else           { s_link_x = 240; }
+        if (col < 15u && (s_scene != SCENE_UW ||
+                uw_door_state_touch(DOOR_DIR_E, &s_link_keys))) {
+            col++; s_link_x = 8; want = SCROLL_H_RIGHT;
+        } else { s_link_x = 240; }
     }
 
     if (s_link_y < 56) {
-        if (row > 0u) { row--; s_link_y = 200; want = SCROLL_V_UP; }
-        else          { s_link_y = 56; }
+        if (row > 0u && (s_scene != SCENE_UW ||
+                uw_door_state_touch(DOOR_DIR_N, &s_link_keys))) {
+            row--; s_link_y = 200; want = SCROLL_V_UP;
+        } else { s_link_y = 56; }
     } else if (s_link_y > 208) {
-        if (row < 7u) { row++; s_link_y = 64; want = SCROLL_V_DOWN; }
-        else          { s_link_y = 208; }
+        if (row < 7u && (s_scene != SCENE_UW ||
+                uw_door_state_touch(DOOR_DIR_S, &s_link_keys))) {
+            row++; s_link_y = 64; want = SCROLL_V_DOWN;
+        } else { s_link_y = 208; }
     }
 
     if (want != SCROLL_NONE) {
@@ -462,6 +479,7 @@ int main(bool hardReset)
         SYS_doVBlankProcess();
         s_frame_counter++;
         roomrom_palette_tick_frame(s_frame_counter);
+        if (s_scene == SCENE_UW) uw_door_state_tick();
 
         /* S6.6 transition state machine. */
         if (s_scroll_state != SCROLL_NONE) {
@@ -500,6 +518,9 @@ int main(bool hardReset)
                 if (s_scene == SCENE_UW) {
                     roomrom_uw_room_render_load_palette(s_room_id);
                     roomrom_hud_draw(roomrom_uw_room_render_get_map(), s_room_id);
+                    uw_door_state_room_init(roomrom_uw_room_render_get_level(),
+                                            roomrom_uw_room_render_get_quest(),
+                                            s_room_id);
                 } else {
                     roomrom_ow_room_render_load_palette(s_room_id);
                     roomrom_hud_draw(roomrom_ow_room_render_get_map(), s_room_id);

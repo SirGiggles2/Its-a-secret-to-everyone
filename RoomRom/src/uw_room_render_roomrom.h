@@ -36,4 +36,13 @@ void roomrom_uw_room_render_fill_one_col_at(unsigned char room_id,
 unsigned char roomrom_uw_room_render_walkable_at(unsigned char col,
                                                  unsigned char row);
 
+/* Ph5.3 door-state layer: write tile, override walkability, query AT palette.
+ * Call these AFTER fill_plane_a / fill_one_col_at (s_cur_attr must be set). */
+void roomrom_uw_room_render_write_tile(unsigned char col, unsigned char row,
+                                       unsigned char raw_tile, unsigned char pal);
+void roomrom_uw_room_render_set_walkable(unsigned char col, unsigned char row,
+                                         unsigned char val);
+unsigned char roomrom_uw_room_render_palette_at(unsigned char nt_col,
+                                                unsigned char nt_row);
+
 #endif
