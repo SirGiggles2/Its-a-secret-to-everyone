@@ -1,0 +1,44 @@
+# title_only_allowlist.txt
+#
+# Paths that are LEGITIMATELY Title.md-only and need no RoomRom mirror.
+# Per debate roomrom-default-rule (2026-05-04), the pre-commit hook
+# tools/gates/check_title_roomrom_parity.py warns when a commit touches
+# Title-only paths without touching RoomRom/. Lines below silence those
+# warnings for known-good cases.
+#
+# Format: one path glob per line. Lines starting with # are comments.
+# Glob is matched as a Python fnmatch against repo-relative paths.
+
+# Title.md frontend assets — Phase 11 only
+src/frontend/**
+data/intro/**
+data/fs/**
+
+# Title-only intro / FS test scaffolds
+tools/intro_test/**
+tools/file_select_test/**
+tools/file_select_demo/**
+
+# Build-time generated source for Title (substrate but Title-emitted)
+src/zelda_translated/**
+src/oracle/**
+
+# Title-only build artifacts
+builds/**
+
+# Documentation about Title-specific phases
+docs/audit/strict_build_gate.md
+docs/audit/active_scope.md
+
+# Plan / status files (not source)
+docs/superpowers/**
+debates/**
+.claude/**
+
+# This allowlist itself + the gate that reads it
+tools/gates/title_only_allowlist.txt
+tools/gates/check_title_roomrom_parity.py
+
+# Audio data — Title-only until Phase 10 (audio finalization)
+data/audio/**
+src/audio_driver.asm
