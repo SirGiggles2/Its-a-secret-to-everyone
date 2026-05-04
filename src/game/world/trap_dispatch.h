@@ -46,6 +46,12 @@ void trap_init_trap_full(unsigned int slot);
  * at trap_runtime.c:140-188. */
 void trap_check_passive_tile_objects(void);
 
+/* Animate + draw whirlwind sprite. Calls anim_advance_and_fetch +
+ * anim_set_sprite_desc_attrs (palette = FRAME_COUNTER & 3) +
+ * anim_set_obj_hflip + draw_object_not_mirrored_with_frame. NES
+ * DrawWhirlwind. drain at trap_runtime.c:19-24. */
+void trap_draw_whirlwind(unsigned int slot);
+
 #ifdef __cplusplus
 }
 #endif

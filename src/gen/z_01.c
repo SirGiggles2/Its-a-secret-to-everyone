@@ -134,10 +134,6 @@ unsigned char z01_do_objects_collide(unsigned int threshold) {
     return colrt_do_objects_collide(threshold);
 }
 
-void z01_draw_whirlwind(unsigned int slot) {
-    trprt_draw_whirlwind(slot);
-}
-
 void z01_update_whirlwind_full(unsigned int slot) {
     trprt_update_whirlwind_full(slot);
 }
@@ -614,6 +610,14 @@ void z01_check_passive_tile_objects(void) {
     trap_check_passive_tile_objects();
 #else
     trprt_check_passive_tile_objects();
+#endif
+}
+
+void z01_draw_whirlwind(unsigned int slot) {
+#ifdef NATIVE_TRAP
+    trap_draw_whirlwind(slot);
+#else
+    trprt_draw_whirlwind(slot);
 #endif
 }
 

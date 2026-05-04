@@ -12,13 +12,17 @@
                                 * TRAP_OBJ_TYPE, TRAP_BASE_SLOT */
 #include "world_state.h"       /* LINK_DIR, LINK_Y, LINK_X, LINK_ACTION_TIMER,
                                 * WORLD_TMP0/_1/_2/_3, OBJ_MOVE_TIMER */
-#include "progress_state.h"    /* MODE_VALUE, SUBMODE_VALUE */
+#include "progress_state.h"    /* MODE_VALUE, SUBMODE_VALUE, FRAME_COUNTER */
 #include "object_state.h"      /* OBJ_X, OBJ_Y */
 #include "combat_state.h"      /* MON_TYPE, MON_STATUS_FLAGS */
 #include "enemy_state.h"       /* ENEMY_COLLIDED_TILE, ENEMY_ALIVE_FLAG */
 #include "core/core_dispatch.h"     /* core_set_up_whirlwind, core_init_one_simple_object,
-                                     * core_get_opposite_dir, core_reset_obj_metastate */
+                                     * core_get_opposite_dir, core_reset_obj_metastate,
+                                     * core_anim_set_sprite_desc_attrs */
 #include "enemies/enemy_dispatch.h" /* enemy_find_empty_monster_slot */
+#include "world/sprite_dispatch.h"  /* sprite_anim_advance_and_fetch,
+                                     * sprite_anim_set_obj_hflip */
+#include "world/draw_dispatch.h"    /* draw_object_not_mirrored_with_frame */
 
 /* TeleportYs — Z_01.asm:1226. Per-level teleport Y coords. */
 static const unsigned char k_teleport_ys[8] = {
@@ -139,6 +143,16 @@ void trap_init_trap_full(unsigned int slot)
         core_init_one_simple_object(ns);
         --count;
     } while (count >= 0);
+}
+
+void trap_draw_whirlwind(unsigned int slot)
+{
+    /* drain at trap_runtime.c:19-24. */
+    sprite_anim_advance_and_fetch(1u, slot);
+    (void)core_anim_set_sprite_desc_attrs(
+        (unsigned int)((unsigned char)FRAME_COUNTER & 3u));
+    sprite_anim_set_obj_hflip(slot);
+    draw_object_not_mirrored_with_frame(0u, slot);
 }
 
 void trap_check_passive_tile_objects(void)
