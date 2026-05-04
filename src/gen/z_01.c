@@ -46,28 +46,12 @@ void z01_init_rupee_stash_full(unsigned int slot) {
     uwrt_init_rupee_stash_full(slot);
 }
 
-void z01_update_uw_person_life_or_money_state_0(void) {
-    uwrt_update_life_or_money_state_0();
-}
-
 void z01_underworld_person_destroy_if_taken(unsigned int slot) {
     uwrt_underworld_person_destroy_if_taken(slot);
 }
 
 void z01_init_uw_person_life_or_money_full(unsigned int slot) {
     uwrt_init_life_or_money_full(slot);
-}
-
-void z01_person_flag_item_taken_and_advance_state(void) {
-    uwrt_person_flag_item_taken_and_advance_state();
-}
-
-void z01_check_person_blocking(void) {
-    uwrt_check_person_blocking();
-}
-
-void z01_update_grumble1(void) {
-    uwrt_update_grumble1();
 }
 
 void z01_init_underworld_person_a(unsigned int slot) {
@@ -1295,5 +1279,47 @@ void z01_deal_damage(unsigned int slot) {
     combat_deal_damage(slot);
 #else
     cobrt_deal_damage(slot);
+#endif
+}
+
+/* Phase 4 native uw_person subsystem cutover gate — NATIVE_UW_PERSON.
+ *
+ * 4 leaf functions ported. Drain MATCH per finding 4_11n_uw_person.
+ * Larger functions (init_*, update_person_full / _grumble_full /
+ * _life_or_money_full, draw_*) defer until c_draw_object_* /
+ * c_animate_item_object / c_update_person_state_textbox land native. */
+#ifdef NATIVE_UW_PERSON
+#include "cave/uw_person_dispatch.h"
+#endif
+
+void z01_update_uw_person_life_or_money_state_0(void) {
+#ifdef NATIVE_UW_PERSON
+    uw_person_update_life_or_money_state_0();
+#else
+    uwrt_update_life_or_money_state_0();
+#endif
+}
+
+void z01_check_person_blocking(void) {
+#ifdef NATIVE_UW_PERSON
+    uw_person_check_person_blocking();
+#else
+    uwrt_check_person_blocking();
+#endif
+}
+
+void z01_person_flag_item_taken_and_advance_state(void) {
+#ifdef NATIVE_UW_PERSON
+    uw_person_flag_item_taken_and_advance_state();
+#else
+    uwrt_person_flag_item_taken_and_advance_state();
+#endif
+}
+
+void z01_update_grumble1(void) {
+#ifdef NATIVE_UW_PERSON
+    uw_person_update_grumble1();
+#else
+    uwrt_update_grumble1();
 #endif
 }

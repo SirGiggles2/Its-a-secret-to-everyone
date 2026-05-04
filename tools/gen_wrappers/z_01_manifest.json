@@ -39,11 +39,6 @@
       "sig": "void (unsigned int slot)"
     },
     {
-      "old": "z01_update_uw_person_life_or_money_state_0",
-      "new": "uwrt_update_life_or_money_state_0",
-      "sig": "void (void)"
-    },
-    {
       "old": "z01_underworld_person_destroy_if_taken",
       "new": "uwrt_underworld_person_destroy_if_taken",
       "sig": "void (unsigned int slot)"
@@ -52,21 +47,6 @@
       "old": "z01_init_uw_person_life_or_money_full",
       "new": "uwrt_init_life_or_money_full",
       "sig": "void (unsigned int slot)"
-    },
-    {
-      "old": "z01_person_flag_item_taken_and_advance_state",
-      "new": "uwrt_person_flag_item_taken_and_advance_state",
-      "sig": "void (void)"
-    },
-    {
-      "old": "z01_check_person_blocking",
-      "new": "uwrt_check_person_blocking",
-      "sig": "void (void)"
-    },
-    {
-      "old": "z01_update_grumble1",
-      "new": "uwrt_update_grumble1",
-      "sig": "void (void)"
     },
     {
       "old": "z01_init_underworld_person_a",
