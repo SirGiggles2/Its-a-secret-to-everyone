@@ -1,16 +1,18 @@
--- probe_roomrom_items_bundled.lua
+-- probe_roomrom_items_bundled.lua  (rev2 — synthesis of /octo:debate skeptic+pragmatist)
 -- Phase 2 Task 2.2 close-gate evidence: one launch covers
 -- sword swing + sword beam + boomerang + arrow + bomb + explosion.
--- Captures screenshot + SAT slot 1 + CRAM at each phase.
--- All output under RoomRom/out/items_probe/.
+-- Per /octo:debate synthesis:
+--   * drop SAT slot readout (screenshots sufficient for atlas correctness)
+--   * multi-frame screenshot strip per item action (catches transient sprites)
+--   * settle >=30 frames between item triggers (clears combat lock between swings)
+--   * 4-frame button hold (cheap insurance, edge-detect doesn't need it)
+--   * add VRAM CHR-slot tile dump (cross-checks project_chr_extraction_items_blocker memory:
+--     if boomerang/arrow/bomb tile bytes are all zero, items render but point at unloaded VRAM)
 
 local OUT_DIR = "C:\\tmp\\items_probe"
 local LOG_PATH = OUT_DIR .. "\\bundled.txt"
 
 os.execute('mkdir "' .. OUT_DIR .. '" 2>nul')
-
-local SAT_BASE = 0xF400
-local SAT_DOMAINS = { "VRAM", "VRAM (VDP)", "VDP", "MD VRAM" }
 
 local lines = {}
 local function log(s) lines[#lines + 1] = s end
@@ -26,37 +28,8 @@ local function press_held(pad, hold)
     for _ = 1, (hold or 1) do safe_set(pad); emu.frameadvance() end
 end
 local function tap(button, hold)
-    press_held({ [button] = true, ["P1 " .. button] = true }, hold or 1)
-    settle(4)
-end
-
-local function try_read_u8(domain, addr)
-    local ok, v = pcall(function()
-        memory.usememorydomain(domain)
-        return memory.read_u8(addr)
-    end)
-    if ok then return v end
-    return nil
-end
-
-local function dump_sat_slot(slot)
-    local base = SAT_BASE + slot * 8
-    for _, d in ipairs(SAT_DOMAINS) do
-        local b0 = try_read_u8(d, base)
-        if b0 ~= nil then
-            local bytes = { b0 }
-            for i = 1, 7 do bytes[i + 1] = try_read_u8(d, base + i) or 0 end
-            return d, bytes
-        end
-    end
-    return nil, { 0, 0, 0, 0, 0, 0, 0, 0 }
-end
-
-local function fmt_slot(slot)
-    local d, b = dump_sat_slot(slot)
-    return string.format(
-        "slot %d (dom=%s): Y=%02X%02X size=%02X link=%02X TA=%02X%02X X=%02X%02X",
-        slot, d or "?", b[1], b[2], b[3], b[4], b[5], b[6], b[7], b[8])
+    press_held({ [button] = true, ["P1 " .. button] = true }, hold or 4)
+    settle(2)
 end
 
 local function dump_cram_line(prefix)
@@ -71,15 +44,44 @@ local function dump_cram_line(prefix)
     return prefix .. " CRAM " .. table.concat(parts, " ")
 end
 
-local function checkpoint(label, slot_list)
+-- VRAM tile dump: read 32 bytes (one Genesis tile) from VRAM at tile_index.
+-- A tile is "blank" if all 32 bytes are 0 (no CHR loaded into that slot).
+local function dump_vram_tile(tile_index)
+    local ok, _ = pcall(function() memory.usememorydomain("VRAM") end)
+    if not ok then return "VRAM unavailable" end
+    local base = tile_index * 32
+    local nonzero = 0
+    local first8 = {}
+    for i = 0, 31 do
+        local b = memory.read_u8(base + i) or 0
+        if b ~= 0 then nonzero = nonzero + 1 end
+        if i < 8 then first8[#first8 + 1] = string.format("%02X", b) end
+    end
+    return string.format("tile 0x%03X: nonzero=%d/32 first8=%s",
+        tile_index, nonzero, table.concat(first8, " "))
+end
+
+-- snapshot: write screenshot at given label
+local function snap(label)
     local png = OUT_DIR .. "\\" .. label .. ".png"
     client.screenshot(png)
-    log("=== " .. label .. " ===")
-    log("  png: " .. png)
-    for _, s in ipairs(slot_list or { 0, 1, 2, 3 }) do
-        log("  " .. fmt_slot(s))
+end
+
+-- strip_capture: capture screenshots every `stride` frames over `total_frames`
+-- so transient sprites (beam, fuse, explosion) can't slip past one capture.
+local function strip_capture(label_prefix, total_frames, stride)
+    stride = stride or 4
+    local count = 0
+    for f = 1, total_frames do
+        if (f - 1) % stride == 0 then
+            count = count + 1
+            snap(string.format("%s_f%02d", label_prefix, f - 1))
+        end
+        emu.frameadvance()
     end
-    log("  " .. dump_cram_line(label))
+    log(string.format("=== %s (%d frames, stride %d, %d captures) ===",
+        label_prefix, total_frames, stride, count))
+    log("  " .. dump_cram_line(label_prefix))
 end
 
 -- system info
@@ -95,60 +97,73 @@ end
 
 -- boot settle
 settle(240)
-checkpoint("00_boot")
+snap("00_boot")
+log("=== 00_boot ===")
+log("  " .. dump_cram_line("00_boot"))
 
--- 1. Sword swing per facing (slot 1 = sword)
+-- VRAM CHR-slot tile dump: cross-check project_chr_extraction_items_blocker.
+-- Tile indices below are the ROOMROM_ITEM_TILE_BASE_PAL(0) + atlas offset
+-- per RoomRom/src/atlas/items_chr_x4.h.  ITEM_TILE_BASE on this build is
+-- not statically known to the probe, but most SGDK projects place item CHR
+-- in VRAM tile range 0x100-0x300.  Dump enough range to find any nonzero
+-- region.  If everything is zero, CHR was never DMAed into VRAM.
+log("--- VRAM tile-data sweep (looking for item CHR loaded) ---")
+for _, ti in ipairs({ 0x100, 0x120, 0x140, 0x160, 0x180, 0x1A0, 0x1C0, 0x1E0,
+                      0x200, 0x220, 0x240, 0x260, 0x280, 0x2A0, 0x2C0, 0x2E0,
+                      0x300, 0x320, 0x340, 0x360 }) do
+    log("  " .. dump_vram_tile(ti))
+end
+
+-- 1. Sword swing per facing.  Strip-capture 24 frames (stride 4 = 6 PNGs)
+-- which spans the COMBAT_EXTEND swing window (~16 frames per combat.c).
 local FACINGS = { "down", "up", "left", "right" }
 local DIR_KEY = { down = "Down", up = "Up", left = "Left", right = "Right" }
 for _, f in ipairs(FACINGS) do
     press_held({ [DIR_KEY[f]] = true, ["P1 " .. DIR_KEY[f]] = true }, 8)
-    settle(2)
-    tap("A", 1)
-    settle(8)
-    checkpoint("01_sword_" .. f, { 0, 1 })
-    settle(20)
+    settle(4)
+    tap("A", 4)
+    strip_capture("01_sword_" .. f, 24, 4)
+    settle(30)   -- clear combat lock before next iteration (skeptic's note)
 end
 
--- 2. Sword beam (full HP — RoomRom may not gate this; A press anyway)
+-- 2. Sword beam — same as sword but full HP path (Z1 sword shot fires
+-- when HP at max).  Probe doesn't manipulate HP, captures whatever fires.
 for _, f in ipairs({ "right", "down" }) do
     press_held({ [DIR_KEY[f]] = true, ["P1 " .. DIR_KEY[f]] = true }, 4)
-    settle(2)
-    tap("A", 1)
-    settle(6)
-    checkpoint("02_beam_" .. f, { 0, 1, 2 })
-    settle(20)
-end
-
--- 3. Boomerang (default B-item slot, B button)
-for _, f in ipairs({ "down", "right" }) do
-    press_held({ [DIR_KEY[f]] = true, ["P1 " .. DIR_KEY[f]] = true }, 4)
-    settle(2)
-    tap("B", 1)
-    settle(8)
-    checkpoint("03_boomerang_" .. f, { 0, 3 })
+    settle(4)
+    tap("A", 4)
+    strip_capture("02_beam_" .. f, 30, 4)
     settle(30)
 end
 
--- 4. Cycle B-item to arrow (Z once)
-tap("Z", 1); settle(4)
-for _, f in ipairs({ "right" }) do
+-- 3. Boomerang (default B-item slot, B button).  NES boomerang flight is
+-- ~50 frames out + return; capture 60 to see launch + mid-flight.
+for _, f in ipairs({ "down", "right" }) do
     press_held({ [DIR_KEY[f]] = true, ["P1 " .. DIR_KEY[f]] = true }, 4)
-    settle(2)
-    tap("B", 1)
-    settle(6)
-    checkpoint("04_arrow_" .. f, { 0, 4 })
-    settle(20)
+    settle(4)
+    tap("B", 4)
+    strip_capture("03_boomerang_" .. f, 60, 4)
+    settle(40)
 end
 
--- 5. Cycle B-item to bomb (Z once more)
-tap("Z", 1); settle(4)
-press_held({ Down = true, ["P1 Down"] = true }, 4); settle(2)
-tap("B", 1)
-settle(15)
-checkpoint("05_bomb_fuse", { 0, 5, 6 })
-settle(50)
-checkpoint("06_explosion_mid", { 0, 5, 6 })
-settle(40)
+-- 4. Cycle B-item to arrow (Z once).
+tap("Z", 4); settle(8)
+for _, f in ipairs({ "right" }) do
+    press_held({ [DIR_KEY[f]] = true, ["P1 " .. DIR_KEY[f]] = true }, 4)
+    settle(4)
+    tap("B", 4)
+    strip_capture("04_arrow_" .. f, 30, 4)
+    settle(30)
+end
+
+-- 5. Cycle B-item to bomb (Z once more) and fire.  Bomb fuse ~60-90 frames
+-- then explosion ~30 frames.  Total capture window 120 with stride 6
+-- (=20 PNGs) covers fuse start, fuse mid, explosion.
+tap("Z", 4); settle(8)
+press_held({ Down = true, ["P1 Down"] = true }, 4); settle(4)
+tap("B", 4)
+strip_capture("05_bomb", 120, 6)
+settle(20)
 
 -- write log
 do
