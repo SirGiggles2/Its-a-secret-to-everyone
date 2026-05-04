@@ -52,6 +52,13 @@ void trap_check_passive_tile_objects(void);
  * DrawWhirlwind. drain at trap_runtime.c:19-24. */
 void trap_draw_whirlwind(unsigned int slot);
 
+/* Move whirlwind 2px right; teleport-mode override of LINK_X if
+ * teleport active; check link collision when not in teleport
+ * mode; despawn at $F0 and dispatch go-to-next-mode if teleport
+ * was active. NES UpdateWhirlwind_Full. drain at
+ * trap_runtime.c:26-67. */
+void trap_update_whirlwind_full(unsigned int slot);
+
 #ifdef __cplusplus
 }
 #endif

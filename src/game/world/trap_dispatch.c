@@ -14,19 +14,30 @@
                                 * WORLD_TMP0/_1/_2/_3, OBJ_MOVE_TIMER */
 #include "progress_state.h"    /* MODE_VALUE, SUBMODE_VALUE, FRAME_COUNTER */
 #include "object_state.h"      /* OBJ_X, OBJ_Y */
-#include "combat_state.h"      /* MON_TYPE, MON_STATUS_FLAGS */
+#include "combat_state.h"      /* MON_TYPE, MON_STATUS_FLAGS,
+                                * COMBAT_COLLIDED, MON_SHOVE_DIR/TIMER */
 #include "enemy_state.h"       /* ENEMY_COLLIDED_TILE, ENEMY_ALIVE_FLAG */
 #include "core/core_dispatch.h"     /* core_set_up_whirlwind, core_init_one_simple_object,
                                      * core_get_opposite_dir, core_reset_obj_metastate,
-                                     * core_anim_set_sprite_desc_attrs */
+                                     * core_anim_set_sprite_desc_attrs,
+                                     * core_destroy_whirlwind */
 #include "enemies/enemy_dispatch.h" /* enemy_find_empty_monster_slot */
 #include "world/sprite_dispatch.h"  /* sprite_anim_advance_and_fetch,
                                      * sprite_anim_set_obj_hflip */
 #include "world/draw_dispatch.h"    /* draw_object_not_mirrored_with_frame */
+#include "world/progress_dispatch.h" /* progress_update_player_position_marker */
+#include "combat/link_collision_dispatch.h" /* link_collision_check_link_collision */
+#include "room/room_dispatch.h"     /* room_go_to_next_mode_from_play */
 
 /* TeleportYs — Z_01.asm:1226. Per-level teleport Y coords. */
 static const unsigned char k_teleport_ys[8] = {
     0x8Du, 0xADu, 0x8Du, 0x8Du, 0xADu, 0x8Du, 0xADu, 0x5Du
+};
+
+/* WhirlwindPrevRoomIdList — Z_01.asm:1203. Per-level previous room id
+ * to restore after a whirlwind cycle (level 1..8). */
+static const unsigned char k_whirlwind_prev_room_id_list[8] = {
+    0x36u, 0x3Bu, 0x73u, 0x44u, 0x0Au, 0x21u, 0x41u, 0x6Cu
 };
 
 /* TrapXs — Z_01.asm:1297. */
@@ -153,6 +164,58 @@ void trap_draw_whirlwind(unsigned int slot)
         (unsigned int)((unsigned char)FRAME_COUNTER & 3u));
     sprite_anim_set_obj_hflip(slot);
     draw_object_not_mirrored_with_frame(0u, slot);
+}
+
+void trap_update_whirlwind_full(unsigned int slot)
+{
+    /* drain at trap_runtime.c:26-67. */
+    const unsigned char halted =
+        (unsigned char)((unsigned char)LINK_ACTION_TIMER & 0x40u);
+    const unsigned char new_x =
+        (unsigned char)(2u + (unsigned char)OBJ_X(slot));
+    OBJ_X(slot) = new_x;
+    int skip_collision = 0;
+    if (halted == 0x40u) {
+        const unsigned char tele = (unsigned char)TELEPORT_ACTIVE_FLAG;
+        if (tele != 0u) {
+            LINK_X = new_x;
+            if (tele != 1u && new_x == 0x80u) {
+                LINK_ACTION_TIMER = 0u;
+                TELEPORT_ACTIVE_FLAG = 0u;
+                MON_TYPE(slot) = 0u;
+                progress_update_player_position_marker();
+                trap_draw_whirlwind(slot);
+                return;
+            }
+            skip_collision = 1;
+        }
+    }
+    if (!skip_collision) {
+        link_collision_check_link_collision(slot);
+        if ((unsigned char)COMBAT_COLLIDED) {
+            LINK_DIR = 1u;
+            MON_SHOVE_DIR(0) = 0u;
+            MON_SHOVE_TIMER(0) = 0u;
+            LINK_CELLAR_FLAG = 0u;
+            LINK_ACTION_TIMER = 0x40u;
+            OAM_HIDE_2 = 0xF8u;
+            OAM_HIDE_3 = 0xF8u;
+            WHIRLWIND_PREV_ROOM_ID =
+                k_whirlwind_prev_room_id_list[
+                    (unsigned char)TELEPORT_LEVEL_INDEX & 7u];
+            TELEPORT_ACTIVE_FLAG =
+                (uint8_t)((unsigned char)TELEPORT_ACTIVE_FLAG + 1u);
+        }
+    }
+    if ((unsigned char)OBJ_X(slot) < 0xF0u) {
+        trap_draw_whirlwind(slot);
+        return;
+    }
+    core_destroy_whirlwind(slot);
+    if ((unsigned char)TELEPORT_ACTIVE_FLAG) {
+        room_go_to_next_mode_from_play();
+    }
+    trap_draw_whirlwind(slot);
 }
 
 void trap_check_passive_tile_objects(void)

@@ -134,10 +134,6 @@ unsigned char z01_do_objects_collide(unsigned int threshold) {
     return colrt_do_objects_collide(threshold);
 }
 
-void z01_update_whirlwind_full(unsigned int slot) {
-    trprt_update_whirlwind_full(slot);
-}
-
 void z01_update_rupee_stash_full(unsigned int slot) {
     trprt_update_rupee_stash_full(slot);
 }
@@ -618,6 +614,14 @@ void z01_draw_whirlwind(unsigned int slot) {
     trap_draw_whirlwind(slot);
 #else
     trprt_draw_whirlwind(slot);
+#endif
+}
+
+void z01_update_whirlwind_full(unsigned int slot) {
+#ifdef NATIVE_TRAP
+    trap_update_whirlwind_full(slot);
+#else
+    trprt_update_whirlwind_full(slot);
 #endif
 }
 

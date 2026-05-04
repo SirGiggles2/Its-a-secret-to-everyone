@@ -149,11 +149,6 @@
       "sig": "unsigned char (unsigned int threshold)"
     },
     {
-      "old": "z01_update_whirlwind_full",
-      "new": "trprt_update_whirlwind_full",
-      "sig": "void (unsigned int slot)"
-    },
-    {
       "old": "z01_update_rupee_stash_full",
       "new": "trprt_update_rupee_stash_full",
       "sig": "void (unsigned int slot)"
