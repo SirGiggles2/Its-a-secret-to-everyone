@@ -42,10 +42,6 @@ void z01_try_take_room_item(void) {
     cavert_try_take_room_item();
 }
 
-void z01_take_item(unsigned char item_id) {
-    itemrt_take_item(item_id);
-}
-
 void z01_init_mode_b_enter_cave_bank5(void) {
     trprt_init_mode_b_enter_cave_bank5();
 }
@@ -1159,6 +1155,19 @@ unsigned int z01_wield_candle(unsigned int slot) {
     return weapon_wield_candle(slot);
 #else
     return weprt_wield_candle(slot);
+#endif
+}
+
+/* Phase 4 native item subsystem cutover gate — NATIVE_ITEM. */
+#ifdef NATIVE_ITEM
+#include "items/item_dispatch.h"
+#endif
+
+void z01_take_item(unsigned char item_id) {
+#ifdef NATIVE_ITEM
+    item_take_item(item_id);
+#else
+    itemrt_take_item(item_id);
 #endif
 }
 

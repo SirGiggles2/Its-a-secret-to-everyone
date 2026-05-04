@@ -34,11 +34,6 @@
       "sig": "void (void)"
     },
     {
-      "old": "z01_take_item",
-      "new": "itemrt_take_item",
-      "sig": "void (unsigned char item_id)"
-    },
-    {
       "old": "z01_init_mode_b_enter_cave_bank5",
       "new": "trprt_init_mode_b_enter_cave_bank5",
       "sig": "void (void)"
