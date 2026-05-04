@@ -54,6 +54,10 @@ void room_reset_player_state(void);
  * MarkRoomVisited. drain at room_runtime.c:294-299. */
 void room_mark_room_visited(void);
 
+/* MODE_VALUE++; room_end_game_mode(). NES GoToNextMode.
+ * drain at room_mode_runtime.c:255-258. */
+void room_go_to_next_mode(void);
+
 #ifdef __cplusplus
 }
 #endif

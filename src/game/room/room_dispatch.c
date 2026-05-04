@@ -7,7 +7,8 @@
 #include <stdint.h>
 #include "platform_abi.h"
 #include "world_state.h"       /* CUR_ROOM_ID */
-#include "progress_state.h"    /* CUR_LEVEL, SAVEFILE_PTR_LO/HI, SUBMODE_VALUE */
+#include "progress_state.h"    /* CUR_LEVEL, SAVEFILE_PTR_LO/HI, SUBMODE_VALUE,
+                                * MODE_VALUE */
 #include "room_state.h"        /* ROOM_MAX_MONSTER_SLOT, ROOM_MONSTER_ALL_DEAD,
                                 * ROOM_OBJ_TYPE, ROOM_MODE_TIMER */
 #include "combat_state.h"      /* LINK_DAMAGE_DISABLE_FLAG, LINK_ACTION_TIMER */
@@ -131,4 +132,11 @@ void room_mark_room_visited(void)
         (unsigned short)(((unsigned short)(unsigned char)SAVEFILE_PTR_HI << 8) |
                          (unsigned char)SAVEFILE_PTR_LO);
     nes_ram[ptr + CUR_ROOM_ID] = (uint8_t)(flags | 0x20u);
+}
+
+void room_go_to_next_mode(void)
+{
+    /* drain at room_mode_runtime.c:255-258. */
+    MODE_VALUE = (uint8_t)((unsigned char)MODE_VALUE + 1u);
+    (void)room_end_game_mode();
 }
