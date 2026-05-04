@@ -154,30 +154,6 @@ unsigned int z01_calc_diagonal_speed_index(unsigned int mid_speed_idx) {
     return targrt_calc_diagonal_speed_index(mid_speed_idx);
 }
 
-void z01_place_weapon(unsigned char offset, unsigned int slot) {
-    weprt_place_weapon(offset, slot);
-}
-
-void z01_place_weapon_for_player_state(unsigned int slot) {
-    weprt_place_weapon_for_player_state(slot);
-}
-
-void z01_place_weapon_for_player_state_and_anim(unsigned int slot) {
-    weprt_place_weapon_for_player_state_and_anim(slot);
-}
-
-void z01_place_weapon_for_player_state_and_anim_and_weapon_state(unsigned char weapon_state, unsigned int slot) {
-    weprt_place_weapon_for_player_state_and_anim_and_weapon_state(weapon_state, slot);
-}
-
-void z01_wield_bomb(unsigned int slot) {
-    weprt_wield_bomb(slot);
-}
-
-unsigned int z01_wield_candle(unsigned int slot) {
-    return weprt_wield_candle(slot);
-}
-
 void z01_play_parry_sound_for_damage_type(void) {
     cobrt_play_parry_sound_for_damage_type();
 }
@@ -1162,6 +1138,59 @@ void z01_world_change_rupees(void) {
     hud_world_change_rupees();
 #else
     hudrt_world_change_rupees();
+#endif
+}
+
+/* Phase 4 native weapon subsystem cutover gate — NATIVE_WEAPON. */
+#ifdef NATIVE_WEAPON
+#include "items/weapon_dispatch.h"
+#endif
+
+void z01_place_weapon(unsigned char offset, unsigned int slot) {
+#ifdef NATIVE_WEAPON
+    weapon_place_weapon(offset, slot);
+#else
+    weprt_place_weapon(offset, slot);
+#endif
+}
+
+void z01_place_weapon_for_player_state(unsigned int slot) {
+#ifdef NATIVE_WEAPON
+    weapon_place_weapon_for_player_state(slot);
+#else
+    weprt_place_weapon_for_player_state(slot);
+#endif
+}
+
+void z01_place_weapon_for_player_state_and_anim(unsigned int slot) {
+#ifdef NATIVE_WEAPON
+    weapon_place_weapon_for_player_state_and_anim(slot);
+#else
+    weprt_place_weapon_for_player_state_and_anim(slot);
+#endif
+}
+
+void z01_place_weapon_for_player_state_and_anim_and_weapon_state(unsigned char weapon_state, unsigned int slot) {
+#ifdef NATIVE_WEAPON
+    weapon_place_weapon_for_player_state_and_anim_and_weapon_state(weapon_state, slot);
+#else
+    weprt_place_weapon_for_player_state_and_anim_and_weapon_state(weapon_state, slot);
+#endif
+}
+
+void z01_wield_bomb(unsigned int slot) {
+#ifdef NATIVE_WEAPON
+    weapon_wield_bomb(slot);
+#else
+    weprt_wield_bomb(slot);
+#endif
+}
+
+unsigned int z01_wield_candle(unsigned int slot) {
+#ifdef NATIVE_WEAPON
+    return weapon_wield_candle(slot);
+#else
+    return weprt_wield_candle(slot);
 #endif
 }
 

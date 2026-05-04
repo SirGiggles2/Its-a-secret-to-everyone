@@ -174,36 +174,6 @@
       "sig": "unsigned int (unsigned int mid_speed_idx)"
     },
     {
-      "old": "z01_place_weapon",
-      "new": "weprt_place_weapon",
-      "sig": "void (unsigned char offset, unsigned int slot)"
-    },
-    {
-      "old": "z01_place_weapon_for_player_state",
-      "new": "weprt_place_weapon_for_player_state",
-      "sig": "void (unsigned int slot)"
-    },
-    {
-      "old": "z01_place_weapon_for_player_state_and_anim",
-      "new": "weprt_place_weapon_for_player_state_and_anim",
-      "sig": "void (unsigned int slot)"
-    },
-    {
-      "old": "z01_place_weapon_for_player_state_and_anim_and_weapon_state",
-      "new": "weprt_place_weapon_for_player_state_and_anim_and_weapon_state",
-      "sig": "void (unsigned char weapon_state, unsigned int slot)"
-    },
-    {
-      "old": "z01_wield_bomb",
-      "new": "weprt_wield_bomb",
-      "sig": "void (unsigned int slot)"
-    },
-    {
-      "old": "z01_wield_candle",
-      "new": "weprt_wield_candle",
-      "sig": "unsigned int (unsigned int slot)"
-    },
-    {
       "old": "z01_play_parry_sound_for_damage_type",
       "new": "cobrt_play_parry_sound_for_damage_type",
       "sig": "void (void)"
