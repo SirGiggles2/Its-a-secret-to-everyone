@@ -46,10 +46,6 @@ void z01_take_item(unsigned char item_id) {
     itemrt_take_item(item_id);
 }
 
-unsigned char z01_do_objects_collide(unsigned int threshold) {
-    return colrt_do_objects_collide(threshold);
-}
-
 void z01_init_mode_b_enter_cave_bank5(void) {
     trprt_init_mode_b_enter_cave_bank5();
 }
@@ -949,6 +945,14 @@ unsigned char z01_do_objects_collide_with_thresholds(void) {
     return collision_do_objects_collide_with_thresholds();
 #else
     return colrt_do_objects_collide_with_thresholds();
+#endif
+}
+
+unsigned char z01_do_objects_collide(unsigned int threshold) {
+#ifdef NATIVE_COLLISION
+    return collision_do_objects_collide(threshold);
+#else
+    return colrt_do_objects_collide(threshold);
 #endif
 }
 

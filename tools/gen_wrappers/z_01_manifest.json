@@ -39,11 +39,6 @@
       "sig": "void (unsigned char item_id)"
     },
     {
-      "old": "z01_do_objects_collide",
-      "new": "colrt_do_objects_collide",
-      "sig": "unsigned char (unsigned int threshold)"
-    },
-    {
       "old": "z01_init_mode_b_enter_cave_bank5",
       "new": "trprt_init_mode_b_enter_cave_bank5",
       "sig": "void (void)"
