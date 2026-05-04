@@ -78,10 +78,6 @@ void z01_update_grumble1(void) {
     uwrt_update_grumble1();
 }
 
-void z01_check_init_whirlwind_and_begin_update(void) {
-    trprt_check_init_whirlwind_and_begin_update();
-}
-
 void z01_init_underworld_person_a(unsigned int slot) {
     uwrt_init_underworld_person_a(slot);
 }
@@ -236,10 +232,6 @@ void z01_draw_whirlwind(unsigned int slot) {
 
 void z01_update_whirlwind_full(unsigned int slot) {
     trprt_update_whirlwind_full(slot);
-}
-
-void z01_summon_whirlwind(void) {
-    trprt_summon_whirlwind();
 }
 
 void z01_update_rupee_stash_full(unsigned int slot) {
@@ -670,6 +662,22 @@ void z01_advance_teleporting_level_index(void) {
     trap_advance_teleporting_level_index();
 #else
     trprt_advance_teleporting_level_index();
+#endif
+}
+
+void z01_check_init_whirlwind_and_begin_update(void) {
+#ifdef NATIVE_TRAP
+    trap_check_init_whirlwind_and_begin_update();
+#else
+    trprt_check_init_whirlwind_and_begin_update();
+#endif
+}
+
+void z01_summon_whirlwind(void) {
+#ifdef NATIVE_TRAP
+    trap_summon_whirlwind();
+#else
+    trprt_summon_whirlwind();
 #endif
 }
 

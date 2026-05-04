@@ -79,11 +79,6 @@
       "sig": "void (void)"
     },
     {
-      "old": "z01_check_init_whirlwind_and_begin_update",
-      "new": "trprt_check_init_whirlwind_and_begin_update",
-      "sig": "void (void)"
-    },
-    {
       "old": "z01_init_underworld_person_a",
       "new": "uwrt_init_underworld_person_a",
       "sig": "void (unsigned int slot)"
@@ -277,11 +272,6 @@
       "old": "z01_update_whirlwind_full",
       "new": "trprt_update_whirlwind_full",
       "sig": "void (unsigned int slot)"
-    },
-    {
-      "old": "z01_summon_whirlwind",
-      "new": "trprt_summon_whirlwind",
-      "sig": "void (void)"
     },
     {
       "old": "z01_update_rupee_stash_full",

@@ -22,6 +22,18 @@ extern "C" {
  * AdvanceTeleportingLevelIndex. drain at trap_runtime.c:81-86. */
 void trap_advance_teleporting_level_index(void);
 
+/* If TELEPORT_ACTIVE_FLAG is non-zero, advance teleport state +
+ * spawn a whirlwind at slot 9 with LINK_Y from TeleportYs[]. Then
+ * SUBMODE_VALUE = 0; MODE_TIMER++. NES CheckInitWhirlwindAndBeginUpdate.
+ * drain at trap_runtime.c:69-79. */
+void trap_check_init_whirlwind_and_begin_update(void);
+
+/* If MODE_VALUE == 5, walk LevelMasks[] to find an unconquered
+ * level mask; if found and no whirlwind/teleport active, spawn
+ * whirlwind in an empty enemy slot. NES SummonWhirlwind.
+ * drain at trap_runtime.c:88-110. */
+void trap_summon_whirlwind(void);
+
 #ifdef __cplusplus
 }
 #endif
