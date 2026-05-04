@@ -213,6 +213,16 @@ void cave_try_take_item(unsigned int slot);
  * TryTakeRoomItem. drain at cave_runtime.c:380-393. */
 void cave_try_take_room_item(void);
 
+/* Tick textbox char-streamer: advance one char into transfer buf,
+ * dispatch line-flag handlers ($00 = mid-line, $40 = next, $80 =
+ * blank, $C0 = end-of-text). NES UpdatePersonState_Textbox.
+ * drain at cave_runtime.c:131-174.
+ *
+ * STAGE-1: Link draw side-render (c_link_end_move_and_draw_bank1)
+ * stubbed pending native NES Link rendering pipeline. Text-render
+ * core fully native. */
+void cave_update_person_state_textbox(void);
+
 #ifdef __cplusplus
 }
 #endif

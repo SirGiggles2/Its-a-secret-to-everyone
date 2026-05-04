@@ -19,11 +19,6 @@
   ],
   "symbols": [
     {
-      "old": "z01_update_person_state_textbox",
-      "new": "cavert_update_person_state_textbox",
-      "sig": "void (void)"
-    },
-    {
       "old": "z01_init_mode_b_enter_cave_bank5",
       "new": "trprt_init_mode_b_enter_cave_bank5",
       "sig": "void (void)"
