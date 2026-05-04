@@ -2,7 +2,6 @@
   "bank": "z_07",
   "includes": [],
   "symbols": [
-    {"old": "z07_destroy_monster", "new": "corert_destroy_monster", "sig": "void (unsigned int slot)"},
     {"old": "z07_patch_and_cue_level_palettes_transfer", "new": "roommd_patch_and_cue_level_palettes_transfer", "sig": "void (void)"},
     {"old": "z07_init_mode3_sub1", "new": "roommd_init_mode3_sub1", "sig": "void (void)"},
     {"old": "z07_update_mode3_unfurl", "new": "roommd_update_mode3_unfurl", "sig": "void (void)"},
