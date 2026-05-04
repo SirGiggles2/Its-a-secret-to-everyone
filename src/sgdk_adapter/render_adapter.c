@@ -345,3 +345,24 @@ void render_vram_write_zero_tile(unsigned short vram_addr)
     unsigned short i;
     for (i = 0; i < 16u; i++) VDP_DATA_WORD = 0;
 }
+
+/* Genesis ROM bank-window load. Wraps the asm primitive
+ * `c_copy_bank_to_window` (which itself wraps `_copy_bank_to_window`
+ * with the C calling convention).
+ *
+ * Why this exists: src/game/ native code can't call c_-prefixed
+ * shims per CLAUDE.md rule "no transpile-bridge shims (z01_/z07_/c_/
+ * ...) in src/game/". This wrapper is in src/sgdk_adapter/ — the
+ * Genesis platform layer — so callers in src/game/ get a clean
+ * `render_bank_window_load(bank)` API without naming a c_ shim.
+ *
+ * Per debate 007 synthesis option D resolution: bank-window cache
+ * is Genesis-native ROM access (NOT NES MMC1 emulation). The c_
+ * prefix on c_copy_bank_to_window is misleading nomenclature —
+ * functional reality is "Genesis cartridge ROM bank reader." */
+extern void c_copy_bank_to_window(unsigned int bank);
+
+void render_bank_window_load(unsigned char bank)
+{
+    c_copy_bank_to_window((unsigned int)bank);
+}

@@ -104,13 +104,14 @@ void room_update_hearts_and_rupees(void);
  * drain at room_mode_runtime.c:295-304. */
 void room_update_mode3_unfurl(void);
 
-/* room_update_mode2_load DEFERRED per debate 007 synthesis: drain
- * (roomld_update_mode2_load_full) calls c_copy_bank_to_window which
- * is a c_-prefixed shim — strict reading of CLAUDE.md "no shims in
- * src/game/" rule blocks the drain call. Need either:
- * (a) port roomld_update_mode2_load_full natively (heavy z_06 chain)
- * (b) expose non-c_-prefixed bank-window primitive for src/game/.
- * See tools/audit/drain_findings/4_14n_room_mode_helpers.md. */
+/* turn_off_all_video; UpdateMode2Load_Full (bank-window load + Q2
+ * patch dispatch); go_to_next_mode. NES UpdateMode2_Load.
+ * drain at room_mode_runtime.c:317-321 + room_load_runtime.c:299-325.
+ *
+ * Q1 (default quest) path fully native. Q2 (second quest) level>0
+ * Q2-patch loop is STAGE-1 STUB pending bake of 9 LevelInfoUWQ2Replacements
+ * blobs (~600 bytes). Q2 level=0 patch_q2_rooms native. */
+void room_update_mode2_load(void);
 
 #ifdef __cplusplus
 }

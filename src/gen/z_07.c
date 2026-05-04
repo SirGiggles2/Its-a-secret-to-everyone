@@ -16,10 +16,6 @@ void z07_init_mode3_sub1(void) {
     roommd_init_mode3_sub1();
 }
 
-void z07_update_mode2_load(void) {
-    roommd_update_mode2_load();
-}
-
 /* <<< end auto-wrappers >>> */
 
 /* Phase 4 native sprite animation cluster — shares NATIVE_SPRITE gate
@@ -421,6 +417,14 @@ void z07_update_hearts_and_rupees(void) {
     room_update_hearts_and_rupees();
 #else
     roommd_update_hearts_and_rupees();
+#endif
+}
+
+void z07_update_mode2_load(void) {
+#ifdef NATIVE_ROOM
+    room_update_mode2_load();
+#else
+    roommd_update_mode2_load();
 #endif
 }
 

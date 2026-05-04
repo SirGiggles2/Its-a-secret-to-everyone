@@ -171,4 +171,22 @@ void render_sat_clear(void);
 void render_cram_fade_capture(void);
 void render_cram_fade_apply(unsigned char step, unsigned char total);
 
+/* ---- Genesis ROM bank-window cache ----
+ *
+ * render_bank_window_load(bank) -- ensure the M68K bank-window at
+ *   $FF8000 mirrors PRG bank `bank` (0-7). No-op if already cached;
+ *   else copies bank ROM bytes into RAM window. Bank 7 is exempt
+ *   (always direct-mapped per genesis_shell.asm).
+ *
+ *   Genesis-native ROM access primitive — mirrors what the M68K
+ *   boot path uses for bank-windowed asset reads. This is NOT NES
+ *   MMC1 emulation; the bank window is a Genesis-cartridge feature
+ *   that pre-stages ROM bytes into addressable RAM for code that
+ *   reads via $FF8000+offset.
+ *
+ *   Wraps the asm primitive `_copy_bank_to_window` (nes_io.asm:1719)
+ *   with a clean C-callable interface. Native code in src/game/
+ *   calls this; no c_-prefixed shim. */
+void render_bank_window_load(unsigned char bank);
+
 #endif /* RENDER_ABI_H */
