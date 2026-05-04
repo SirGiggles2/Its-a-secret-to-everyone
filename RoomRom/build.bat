@@ -104,6 +104,10 @@ echo [data gate] check_data_manifest.py
 python "%REPO%\tools\probes\check_data_manifest.py"
 if errorlevel 1 ( echo FAIL: check_data_manifest ^(parity with Title build^) & exit /b 1 )
 
+echo [data gate] check_roomrom_data_manifest.py
+python "%REPO%\tools\probes\check_roomrom_data_manifest.py"
+if errorlevel 1 ( echo FAIL: check_roomrom_data_manifest ^(Codex audit ACTION 2^) & exit /b 1 )
+
 rem ---------------------------------------------------------------------------
 rem Compiler flags (match makefile.gen release config)
 rem ---------------------------------------------------------------------------
