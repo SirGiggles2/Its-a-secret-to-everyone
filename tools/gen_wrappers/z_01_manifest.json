@@ -34,21 +34,6 @@
       "sig": "void (unsigned int slot)"
     },
     {
-      "old": "z01_underworld_person_destroy_if_taken",
-      "new": "uwrt_underworld_person_destroy_if_taken",
-      "sig": "void (unsigned int slot)"
-    },
-    {
-      "old": "z01_init_uw_person_life_or_money_full",
-      "new": "uwrt_init_life_or_money_full",
-      "sig": "void (unsigned int slot)"
-    },
-    {
-      "old": "z01_init_underworld_person_a",
-      "new": "uwrt_init_underworld_person_a",
-      "sig": "void (unsigned int slot)"
-    },
-    {
       "old": "z01_update_uw_person_complex_state_sense_link",
       "new": "uwrt_update_complex_state_sense_link",
       "sig": "void (void)"

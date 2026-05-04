@@ -41,6 +41,22 @@ void uw_person_update_grumble1(void);
  * InitUnderworldPersonB. drain at uw_person_runtime.c:34-43. */
 void uw_person_init_underworld_person_b(unsigned int slot);
 
+/* If room item already taken, destroy person + clear obj-state;
+ * otherwise play char sfx. NES UnderworldPerson_DestroyIfTaken.
+ * drain at uw_person_runtime.c:93-101. */
+void uw_person_destroy_if_taken(unsigned int slot);
+
+/* Init underworld-person variant A (woman/store). Sets up cave objs,
+ * picks text selector A by obj type. If room is $4F (life-or-money),
+ * dispatch to destroy_if_taken; otherwise play char sfx. NES
+ * InitUnderworldPersonA. drain at uw_person_runtime.c:133-143. */
+void uw_person_init_underworld_person_a(unsigned int slot);
+
+/* Init life-or-money person: same as variant A's tail but always
+ * dispatches to destroy_if_taken. NES
+ * InitUnderworldPersonLifeOrMoney_Full. drain at uw_person_runtime.c:103-108. */
+void uw_person_init_life_or_money_full(unsigned int slot);
+
 #ifdef __cplusplus
 }
 #endif

@@ -42,18 +42,6 @@ void z01_init_rupee_stash_full(unsigned int slot) {
     uwrt_init_rupee_stash_full(slot);
 }
 
-void z01_underworld_person_destroy_if_taken(unsigned int slot) {
-    uwrt_underworld_person_destroy_if_taken(slot);
-}
-
-void z01_init_uw_person_life_or_money_full(unsigned int slot) {
-    uwrt_init_life_or_money_full(slot);
-}
-
-void z01_init_underworld_person_a(unsigned int slot) {
-    uwrt_init_underworld_person_a(slot);
-}
-
 void z01_update_uw_person_complex_state_sense_link(void) {
     uwrt_update_complex_state_sense_link();
 }
@@ -1329,5 +1317,29 @@ void z01_init_underworld_person_b(unsigned int slot) {
     uw_person_init_underworld_person_b(slot);
 #else
     uwrt_init_underworld_person_b(slot);
+#endif
+}
+
+void z01_underworld_person_destroy_if_taken(unsigned int slot) {
+#ifdef NATIVE_UW_PERSON
+    uw_person_destroy_if_taken(slot);
+#else
+    uwrt_underworld_person_destroy_if_taken(slot);
+#endif
+}
+
+void z01_init_underworld_person_a(unsigned int slot) {
+#ifdef NATIVE_UW_PERSON
+    uw_person_init_underworld_person_a(slot);
+#else
+    uwrt_init_underworld_person_a(slot);
+#endif
+}
+
+void z01_init_uw_person_life_or_money_full(unsigned int slot) {
+#ifdef NATIVE_UW_PERSON
+    uw_person_init_life_or_money_full(slot);
+#else
+    uwrt_init_life_or_money_full(slot);
 #endif
 }
