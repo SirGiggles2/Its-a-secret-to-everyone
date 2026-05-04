@@ -34,6 +34,26 @@ void room_check_has_living_monsters(void);
  * (the inner Plan-C drain in src/oracle/room/room_mode_runtime.c:249). */
 unsigned char room_end_game_mode(void);
 
+/* Walk OAM 64 sprites; set Y=$F8 to hide all. NES HideAllSprites.
+ * drain at room_runtime.c:273-276. */
+void room_hide_all_sprites(void);
+
+/* CUR_ROOM_ID indexes SRAM unique-id table; mask bottom 6 bits.
+ * NES GetUniqueRoomId. drain at room_runtime.c:278-281. */
+unsigned char room_get_unique_room_id(void);
+
+/* Clear ROOM_HISTORY[0..5] + ROOM_HISTORY_IDX. NES ClearRoomHistory.
+ * drain at room_runtime.c:283-287. */
+void room_clear_room_history(void);
+
+/* Reset LINK_ACTION_TIMER + LINK_HALT_FLAG. NES ResetPlayerState.
+ * drain at room_runtime.c:289-292. */
+void room_reset_player_state(void);
+
+/* Set room-flag bit 5 (visited) at SRAM[ptr + CUR_ROOM_ID]. NES
+ * MarkRoomVisited. drain at room_runtime.c:294-299. */
+void room_mark_room_visited(void);
+
 #ifdef __cplusplus
 }
 #endif

@@ -10,7 +10,8 @@
 #include "progress_state.h"    /* CUR_LEVEL, SAVEFILE_PTR_LO/HI, SUBMODE_VALUE */
 #include "room_state.h"        /* ROOM_MAX_MONSTER_SLOT, ROOM_MONSTER_ALL_DEAD,
                                 * ROOM_OBJ_TYPE, ROOM_MODE_TIMER */
-#include "combat_state.h"      /* LINK_DAMAGE_DISABLE_FLAG */
+#include "combat_state.h"      /* LINK_DAMAGE_DISABLE_FLAG, LINK_ACTION_TIMER */
+#include "link_state.h"        /* LINK_HALT_FLAG */
 
 #define NES_SRAM_BASE 0x6000u
 
@@ -86,4 +87,48 @@ unsigned char room_end_game_mode(void)
     ROOM_MODE_TIMER = 0u;
     SUBMODE_VALUE = 0u;
     return 0u;
+}
+
+void room_hide_all_sprites(void)
+{
+    /* drain at room_runtime.c:273-276. */
+    for (unsigned char i = 0u; i < 64u; ++i) {
+        RAM(0x0200u + (unsigned short)((unsigned short)i * 4u)) = 0xF8u;
+    }
+}
+
+unsigned char room_get_unique_room_id(void)
+{
+    /* drain at room_runtime.c:278-281. */
+    const unsigned char room = (unsigned char)CUR_ROOM_ID;
+    return (unsigned char)(nes_ram[NES_SRAM_BASE +
+                                   NES_SRAM_ROOM_UNIQUE_ID_BASE + room] &
+                           0x3Fu);
+}
+
+void room_clear_room_history(void)
+{
+    /* drain at room_runtime.c:283-287. */
+    RAM(NES_ROOM_HISTORY_IDX) = 0u;
+    for (signed char i = 5; i >= 0; --i) {
+        RAM(NES_ROOM_HISTORY_BASE + (unsigned char)i) = 0u;
+    }
+}
+
+void room_reset_player_state(void)
+{
+    /* drain at room_runtime.c:289-292. */
+    LINK_ACTION_TIMER = 0u;
+    LINK_HALT_FLAG = 0u;
+}
+
+void room_mark_room_visited(void)
+{
+    /* drain at room_runtime.c:294-299. Re-uses the GetRoomFlags ptr
+     * stash side-effect. */
+    const unsigned char flags = room_get_room_flags();
+    const unsigned short ptr =
+        (unsigned short)(((unsigned short)(unsigned char)SAVEFILE_PTR_HI << 8) |
+                         (unsigned char)SAVEFILE_PTR_LO);
+    nes_ram[ptr + CUR_ROOM_ID] = (uint8_t)(flags | 0x20u);
 }

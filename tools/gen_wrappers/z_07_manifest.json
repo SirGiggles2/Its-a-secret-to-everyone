@@ -2,11 +2,6 @@
   "bank": "z_07",
   "includes": [],
   "symbols": [
-    {"old": "z07_hide_all_sprites", "new": "roomrt_hide_all_sprites", "sig": "void (void)"},
-    {"old": "z07_get_unique_room_id", "new": "roomrt_get_unique_room_id", "sig": "unsigned char (void)"},
-    {"old": "z07_clear_room_history", "new": "roomrt_clear_room_history", "sig": "void (void)"},
-    {"old": "z07_reset_player_state", "new": "roomrt_reset_player_state", "sig": "void (void)"},
-    {"old": "z07_mark_room_visited", "new": "roomrt_mark_room_visited", "sig": "void (void)"},
     {"old": "z07_go_to_next_mode", "new": "roommd_go_to_next_mode", "sig": "void (void)"},
     {"old": "z07_destroy_monster", "new": "corert_destroy_monster", "sig": "void (unsigned int slot)"},
     {"old": "z07_go_to_next_mode_play_level_song", "new": "roommd_go_to_next_mode_play_level_song", "sig": "void (void)"},
