@@ -41,6 +41,14 @@ void link_collision_check_link_collision_preinit(unsigned int monster_slot);
  * drain at link_collision_runtime.c:89-98. */
 void link_collision_check_link_collision(unsigned int monster_slot);
 
+/* Top-level monster-vs-Link/weapon dispatch. Runs the colrt_* battery
+ * (boomerang, sword shot, bomb x2, sword, arrow) gated by
+ * MON_STATUS_FLAGS bit $20 (some monsters skip weapon collisions).
+ * Then runs check_link_collision. Then bookkeeping for bounce-turn
+ * monsters ($27/$17) and dying-monster cleanup ($05/$06). NES
+ * CheckMonsterCollisions. drain at link_collision_runtime.c:100-128. */
+void link_collision_check_monster_collisions(unsigned int monster_slot);
+
 #ifdef __cplusplus
 }
 #endif

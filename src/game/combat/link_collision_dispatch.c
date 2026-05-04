@@ -25,7 +25,8 @@
 #include "link_state.h"              /* LINK_HALT_FLAG */
 #include "core/core_dispatch.h"      /* core_play_sample, core_get_opposite_dir */
 #include "room/room_dispatch.h"      /* room_end_game_mode */
-#include "combat/collision_dispatch.h" /* collision_do_objects_collide_with_thresholds */
+#include "combat/collision_dispatch.h" /* collision_do_objects_collide_with_thresholds,
+                                        * collision_check_monster_*_collision battery */
 #include "world/world_dispatch.h"      /* world_get_object_middle */
 /* COMBAT_COLLIDED, MON_STUN_TIMER, LINK_DAMAGE_DISABLE_FLAG,
  * LINK_SHIELD_BLOCK_FLAG, SFX_COMBAT, ROOM_MONSTER_COLLISION_COUNT —
@@ -257,4 +258,41 @@ void link_collision_check_link_collision(unsigned int monster_slot)
         return;
     }
     link_collision_check_link_collision_preinit(monster_slot);
+}
+
+void link_collision_check_monster_collisions(unsigned int monster_slot)
+{
+    /* drain at link_collision_runtime.c:100-128. */
+    world_get_object_middle(monster_slot);
+    if (!((unsigned char)MON_STATUS_FLAGS(monster_slot) & 0x20u)) {
+        if ((unsigned char)MON_HIT_REACTION(monster_slot)) {
+            return;
+        }
+        collision_check_monster_boomerang_or_food_collision(monster_slot, 15u);
+        collision_check_monster_sword_shot_or_magic_shot_collision(monster_slot, 14u);
+        collision_check_monster_bomb_or_fire_collision(monster_slot, 16u);
+        collision_check_monster_bomb_or_fire_collision(monster_slot, 17u);
+        collision_check_monster_sword_collision(monster_slot, 13u);
+        collision_check_monster_arrow_or_rod_collision(monster_slot, 18u);
+    }
+    link_collision_check_link_collision(monster_slot);
+    {
+        const unsigned char mtype = (unsigned char)MON_TYPE(monster_slot);
+        const unsigned char dying = (unsigned char)MON_METASTATE(monster_slot);
+        if (!dying) {
+            if ((mtype == 0x27u || mtype == 0x17u) &&
+                (unsigned char)COMBAT_HARM_FLAG) {
+                MON_BOUNCE_TURNS(monster_slot) =
+                    (uint8_t)((unsigned char)MON_BOUNCE_TURNS(monster_slot) + 1u);
+            }
+            return;
+        }
+        if (mtype == 0x05u || mtype == 0x06u) {
+            if ((unsigned char)OBJ_STATE(monster_slot) & 0x80u) {
+                const unsigned char bslot =
+                    (unsigned char)MON_BOUNCE_TURNS(monster_slot);
+                MON_TYPE(bslot) = 0u;
+            }
+        }
+    }
 }

@@ -74,10 +74,6 @@ void z01_take_item(unsigned char item_id) {
     itemrt_take_item(item_id);
 }
 
-void z01_check_monster_collisions(unsigned int monster_slot) {
-    lcrt_check_monster_collisions(monster_slot);
-}
-
 unsigned char z01_do_objects_collide(unsigned int threshold) {
     return colrt_do_objects_collide(threshold);
 }
@@ -1464,5 +1460,13 @@ void z01_check_link_collision(unsigned int monster_slot) {
     link_collision_check_link_collision(monster_slot);
 #else
     lcrt_check_link_collision(monster_slot);
+#endif
+}
+
+void z01_check_monster_collisions(unsigned int monster_slot) {
+#ifdef NATIVE_LINK_COLLISION
+    link_collision_check_monster_collisions(monster_slot);
+#else
+    lcrt_check_monster_collisions(monster_slot);
 #endif
 }
