@@ -17,11 +17,5 @@
     "combat_runtime.h",
     "link_collision_runtime.h"
   ],
-  "symbols": [
-    {
-      "old": "z01_init_mode_b_enter_cave_bank5",
-      "new": "trprt_init_mode_b_enter_cave_bank5",
-      "sig": "void (void)"
-    }
-  ]
+  "symbols": []
 }

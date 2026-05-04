@@ -331,6 +331,39 @@ void trap_update_trap_full(unsigned int slot)
     uw_person_person_draw_and_check_collisions(slot);
 }
 
+void trap_init_mode_b_enter_cave_bank5(void)
+{
+    /* drain at trap_runtime.c:124-138. NES InitMode_B_EnterCave_Bank5.
+     *
+     * STAGE-1 STUB for 4 heavy NES asm chains:
+     *   - InitMode_EnterRoom: room load init
+     *   - z05_reset_inv_obj_state: bank-5 inv obj reset
+     *   - Link_EndMoveAndAnimate: Link rendering pipeline
+     *   - RunCrossRoomTasksAndBeginUpdateMode_PlayModesNoCellar:
+     *     cross-room state plumbing
+     * All 4 deferred — native ports substantial. Title.md
+     * NATIVE_TRAP=off keeps full asm cellar-entry intact. RoomRom
+     * doesn't exercise cellar mode-B. */
+    const unsigned char submode = (unsigned char)SUBMODE_VALUE;
+
+    /* TODO Phase 4: native InitMode_EnterRoom port. */
+    /* TODO Phase 4: native z05_reset_inv_obj_state port. */
+
+    LINK_X = 112u;
+    LINK_Y = 0xDDu;
+    LINK_DIR = 8u;
+
+    /* TODO Phase 4: native Link_EndMoveAndAnimate port. */
+    /* TODO Phase 4: native RunCrossRoomTasksAndBeginUpdateMode_PlayModesNoCellar
+     * port. */
+
+    SUBMODE_VALUE = submode;
+    MODE_TIMER = 0u;
+    SUBMODE_VALUE = (uint8_t)((unsigned char)SUBMODE_VALUE + 1u);
+    OBJ_GRID_OFFSET(0) = 48u;
+    LINK_CELLAR_FLAG = 1u;
+}
+
 void trap_check_passive_tile_objects(void)
 {
     /* drain at trap_runtime.c:140-188. */

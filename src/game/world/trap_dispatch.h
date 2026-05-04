@@ -72,6 +72,19 @@ void trap_update_rupee_stash_full(unsigned int slot);
  * NES UpdateTrap_Full. drain at trap_runtime.c:190-252. */
 void trap_update_trap_full(unsigned int slot);
 
+/* Mode-B cellar entry init: save submode; init_mode_enter_room (STAGE-1
+ * stub); reset bank-5 inv obj state (STAGE-1 stub); set Link to
+ * cellar entry coords ($70, $DD, dir DOWN); link_end_move_and_animate
+ * + run_cross_room_tasks (both STAGE-1 stubs); restore submode + 1;
+ * MODE_TIMER=0; OBJ_GRID_OFFSET(0)=48; LINK_CELLAR_FLAG=1.
+ * NES InitMode_B_EnterCave_Bank5. drain at trap_runtime.c:124-138.
+ *
+ * STAGE-1: 4 heavy NES asm chains stubbed (InitMode_EnterRoom,
+ * z05_reset_inv_obj_state, Link_EndMoveAndAnimate, RunCrossRoomTasks).
+ * Native cellar entry sets coords + flags only. Room reload + Link
+ * animation deferred to native port of those substantial chains. */
+void trap_init_mode_b_enter_cave_bank5(void);
+
 #ifdef __cplusplus
 }
 #endif

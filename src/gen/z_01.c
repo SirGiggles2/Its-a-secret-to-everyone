@@ -30,10 +30,6 @@ void z01_init_underworld_person_do_nothing(void) {}
 #include "combat_runtime.h"
 #include "link_collision_runtime.h"
 
-void z01_init_mode_b_enter_cave_bank5(void) {
-    trprt_init_mode_b_enter_cave_bank5();
-}
-
 /* <<< end auto-wrappers >>> */
 
 /* ----------------------------------------------------------------------
@@ -1187,6 +1183,14 @@ void z01_update_person_state_textbox(void) {
     cave_update_person_state_textbox();
 #else
     cavert_update_person_state_textbox();
+#endif
+}
+
+void z01_init_mode_b_enter_cave_bank5(void) {
+#ifdef NATIVE_TRAP
+    trap_init_mode_b_enter_cave_bank5();
+#else
+    trprt_init_mode_b_enter_cave_bank5();
 #endif
 }
 
