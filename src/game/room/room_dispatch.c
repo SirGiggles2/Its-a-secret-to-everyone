@@ -16,7 +16,15 @@
                                 * LINK_STUN_TIMER */
 #include "link_state.h"        /* LINK_HALT_FLAG */
 #include "item_state.h"        /* ITEM_SFX_SECONDARY */
-#include "core/core_dispatch.h" /* core_get_opposite_dir */
+#include "core/core_dispatch.h" /* core_get_opposite_dir,
+                                  * core_compare_hearts_to_containers */
+#include "hud/hud_dispatch.h"   /* hud_world_change_rupees */
+#include "world/progress_dispatch.h" /* progress_update_world_curtain_effect */
+#include "item_state.h"         /* LINK_PARTIAL_HEART, LINK_HEARTS, ITEM_SFX_PRIMARY */
+
+/* Genesis VDP native primitive — display enable/disable (Reg 1 bit 6).
+ * Forward decl from src/sgdk_adapter/render_adapter.c. */
+extern void render_display_enable(unsigned char on);
 
 #define NES_SRAM_BASE 0x6000u
 
@@ -256,4 +264,80 @@ void room_check_screen_edge(void)
 
     LINK_DIR = single_dir;
     room_go_to_next_mode_from_play();
+}
+
+void room_turn_off_all_video(void)
+{
+    /* drain Z_07.asm:1739 TurnOffAllVideo. NES asm path:
+     *   moveq #0,D0
+     *   jsr _ppu_write_1     ; PPUMASK=0 + Genesis VDP Reg 1 = $8134
+     *   move.b D0,($00FE,A4) ; PPU_MASK shadow = 0
+     *
+     * Native equivalent: maintain shadow + disable Genesis VDP display.
+     * Per debate 007 synthesis: Sonnet flagged that pure shadow write
+     * is insufficient — without VDP Reg 1 disable, mode transitions
+     * display stale VRAM (tearing). Both writes required. */
+    RAM(NES_PPU_MASK_SHADOW) = 0u;
+    render_display_enable(0u);
+}
+
+void room_world_fill_hearts(void)
+{
+    /* drain at room_object_runtime.c:31-48. NES WorldFillHearts.
+     * Heart-fill animation tick: advance partial-heart by +6/tick;
+     * roll over to next heart when full; stop at hearts=containers. */
+    if ((unsigned char)ROOM_HEART_FILL_STATE == 0u) {
+        return;
+    }
+    ROOM_SFX_MAIN = 16u;
+    if ((unsigned char)LINK_PARTIAL_HEART >= 0xF8u) {
+        LINK_PARTIAL_HEART = 0u;
+        /* WORLD_TMP0 was set by caller (room_mode flow) to current
+         * partial-heart filled-count; compare to containers. */
+        if (core_compare_hearts_to_containers() == (unsigned char)RAM(0x0000u)) {
+            LINK_PARTIAL_HEART = 0xFFu;
+            RAM(0x052Eu) = 0u;             /* ROOM_SWORD_BLOCKED_FLAG */
+            ROOM_HEART_FILL_STATE = 0u;
+            RAM(0x00E0u) = 0u;             /* ROOM_PAUSED_FLAG */
+            return;
+        }
+        LINK_HEARTS = (uint8_t)((unsigned char)LINK_HEARTS + 1u);
+        return;
+    }
+    LINK_PARTIAL_HEART =
+        (uint8_t)((unsigned char)LINK_PARTIAL_HEART + 6u);
+}
+
+void room_update_hearts_and_rupees(void)
+{
+    /* drain at room_mode_runtime.c:323-327. NES UpdateHeartsAndRupees:
+     *   c_switch_bank(5);          // MMC1 PRG bank switch — Genesis no-op
+     *   c_world_fill_hearts();
+     *   c_world_change_rupees();
+     *
+     * Per debate 007 synthesis option A: drop MMC1 SwitchBank entirely
+     * (Genesis flat M68K address space, no mapper). */
+    room_world_fill_hearts();
+    hud_world_change_rupees();
+}
+
+void room_update_mode3_unfurl(void)
+{
+    /* drain at room_mode_runtime.c:295-304. NES UpdateMode3Unfurl:
+     *   c_update_world_curtain_effect();
+     *   if (CURTAIN_LEFT_COL != 0) return;
+     *   c_set_mmc1_control(15);    // MMC1 ctrl reg — Genesis no-op
+     *   if (ROOM_LINK_CELLAR_FLAG) go_to_next_mode_reset_grid_offset;
+     *   else                       go_to_next_mode_play_level_song;
+     *
+     * Per debate 007 synthesis option A: drop MMC1 SetMMC1Control. */
+    progress_update_world_curtain_effect();
+    if ((unsigned char)CURTAIN_LEFT_COL != 0u) {
+        return;
+    }
+    if ((unsigned char)ROOM_LINK_CELLAR_FLAG != 0u) {
+        room_go_to_next_mode_reset_grid_offset();
+    } else {
+        room_go_to_next_mode_play_level_song();
+    }
 }

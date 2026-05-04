@@ -83,6 +83,35 @@ void room_go_to_next_mode_from_play(void);
  * drain at room_runtime.c:301-322. */
 void room_check_screen_edge(void);
 
+/* PPU_MASK shadow = 0; clear NES_PPU_MASK_SHADOW. NES TurnOffAllVideo
+ * (Z_07.asm:1739). Genesis-native: maintain shadow for re-upload via
+ * existing pipeline. drain semantics: write 0 to RAM($00FE). */
+void room_turn_off_all_video(void);
+
+/* Heart-fill animation tick: if state set, advance partial heart by
+ * +6 each tick; rollover to next heart when full; stop at hearts ==
+ * containers. NES WorldFillHearts.
+ * drain at room_object_runtime.c:31-48. */
+void room_world_fill_hearts(void);
+
+/* SwitchBank(5) [no-op on Genesis — MMC1 was NES] + WorldFillHearts +
+ * WorldChangeRupees. NES UpdateHeartsAndRupees.
+ * drain at room_mode_runtime.c:323-327. */
+void room_update_hearts_and_rupees(void);
+
+/* update_world_curtain_effect; if curtain done, [skip MMC1 ctrl —
+ * Genesis no-op] + dispatch by cellar flag. NES UpdateMode3Unfurl.
+ * drain at room_mode_runtime.c:295-304. */
+void room_update_mode3_unfurl(void);
+
+/* room_update_mode2_load DEFERRED per debate 007 synthesis: drain
+ * (roomld_update_mode2_load_full) calls c_copy_bank_to_window which
+ * is a c_-prefixed shim — strict reading of CLAUDE.md "no shims in
+ * src/game/" rule blocks the drain call. Need either:
+ * (a) port roomld_update_mode2_load_full natively (heavy z_06 chain)
+ * (b) expose non-c_-prefixed bank-window primitive for src/game/.
+ * See tools/audit/drain_findings/4_14n_room_mode_helpers.md. */
+
 #ifdef __cplusplus
 }
 #endif

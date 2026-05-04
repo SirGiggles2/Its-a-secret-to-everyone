@@ -16,16 +16,8 @@ void z07_init_mode3_sub1(void) {
     roommd_init_mode3_sub1();
 }
 
-void z07_update_mode3_unfurl(void) {
-    roommd_update_mode3_unfurl();
-}
-
 void z07_update_mode2_load(void) {
     roommd_update_mode2_load();
-}
-
-void z07_update_hearts_and_rupees(void) {
-    roommd_update_hearts_and_rupees();
 }
 
 /* <<< end auto-wrappers >>> */
@@ -413,6 +405,22 @@ void z07_check_screen_edge(void) {
     room_check_screen_edge();
 #else
     roomrt_check_screen_edge();
+#endif
+}
+
+void z07_update_mode3_unfurl(void) {
+#ifdef NATIVE_ROOM
+    room_update_mode3_unfurl();
+#else
+    roommd_update_mode3_unfurl();
+#endif
+}
+
+void z07_update_hearts_and_rupees(void) {
+#ifdef NATIVE_ROOM
+    room_update_hearts_and_rupees();
+#else
+    roommd_update_hearts_and_rupees();
 #endif
 }
 
