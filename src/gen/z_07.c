@@ -27,10 +27,6 @@ void z07_reset_player_state(void) {
     roomrt_reset_player_state();
 }
 
-unsigned char z07_get_room_flags(void) {
-    return roomrt_get_room_flags();
-}
-
 void z07_mark_room_visited(void) {
     roomrt_mark_room_visited();
 }
@@ -365,5 +361,18 @@ unsigned char z07_get_colliding_tile_moving(unsigned int slot) {
     return collision_get_colliding_tile_moving(slot);
 #else
     return colrt_get_colliding_tile_moving(slot);
+#endif
+}
+
+/* Phase 4 native room subsystem cutover gate — NATIVE_ROOM. */
+#ifdef NATIVE_ROOM
+#include "room/room_dispatch.h"
+#endif
+
+unsigned char z07_get_room_flags(void) {
+#ifdef NATIVE_ROOM
+    return room_get_room_flags();
+#else
+    return roomrt_get_room_flags();
 #endif
 }
