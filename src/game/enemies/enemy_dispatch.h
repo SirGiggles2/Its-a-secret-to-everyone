@@ -95,6 +95,14 @@ void enemy_ganon_activate_room_item(void);
  * shim. Document the shim chain. */
 void enemy_check_boss_hit_reaction(unsigned int slot);
 
+/* Gohma boss weapon-hit handler: arrow-spark setup, eye-state /
+ * eye-direction parry checks, deal damage on hit. Called by
+ * collision_handle_monster_weapon_collision when MON_TYPE is
+ * 0x33 (red gohma) or 0x34 (blue gohma). NES
+ * Gohma_HandleWeaponCollision (Z_04.asm:6787). */
+void enemy_gohma_handle_weapon_collision(unsigned int monster_slot,
+                                         unsigned int weapon_slot);
+
 #ifdef __cplusplus
 }
 #endif

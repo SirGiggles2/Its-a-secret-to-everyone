@@ -8,8 +8,10 @@
 #include <stdint.h>            /* uint8_t */
 #include "platform_abi.h"      /* RAM, OBJ, NES_OBJ_TYPE */
 #include "enemy_state.h"       /* ENEMY_OAM_HIDE_*, ENEMY_SFX_*, ENEMY_NEXT_SHOT_SLOT, ENEMY_X/Y, ENEMY_DIR, ENEMY_RNG_A/B, ENEMY_FRAME_FLAGS, ENEMY_BLOCKED_FLAG, ENEMY_AI_STATE, ENEMY_TURN_TIMER, ENEMY_INVINCIBILITY, ENEMY_TYPE, ENEMY_CUR_SPRITE_ATTR_ROW, ENEMY_MOVE_TIMER */
+#include "combat_state.h"      /* MON_SUBSTATE, COMBAT_PART_INDEX, OBJ_DIR */
 #include "core/core_dispatch.h"  /* core_anim_set_sprite_desc_attrs */
 #include "world/progress_dispatch.h"  /* progress_get_room_flag_uw_item_state */
+#include "combat/combat_dispatch.h"   /* combat_deal_damage */
 
 unsigned int enemy_find_empty_monster_slot(void)
 {
@@ -187,4 +189,51 @@ void enemy_check_boss_hit_reaction(unsigned int slot)
     /* TODO Phase 4: native equivalent of z04_play_boss_death_cry_if_needed
      * (z04 bank logic not yet drained). */
     core_set_shove_info_with0(0u, slot);
+}
+
+void enemy_gohma_handle_weapon_collision(unsigned int monster_slot,
+                                         unsigned int weapon_slot)
+{
+    /* drain at reference/aldonunez/Z_04.asm:6787-6832. NES
+     * Gohma_HandleWeaponCollision.
+     *
+     * D2 = monster_slot, D3 = weapon_slot (asm convention).
+     *
+     * Behavior:
+     *   1. If weapon is arrow ($12), set arrow life timer to 40 +
+     *      arrow spark state to 4.
+     *   2. If COMBAT_PART_INDEX is not 3 or 4 (eye parts) -> parry tune.
+     *   3. If MON_SUBSTATE(monster_slot) != 3 (eye not open) -> parry tune.
+     *   4. If OBJ_DIR(weapon_slot) != 8 (arrow not aimed up) -> parry tune.
+     *   5. RAM($0601)=2; deal damage; play boss hit cry.
+     *   6. Fall through to parry tune (NES asm has no rts before
+     *      PlayParryTune label — both damage and parry tune fire when
+     *      hit lands).
+     */
+    if (weapon_slot == 0x12u) {
+        /* nes_ram[$00AC + weapon_slot] = 40 (arrow's lifetime/anim).
+         * Use OBJ()-style addressing to mirror asm's lea+move.b. */
+        OBJ(0x00ACu, weapon_slot) = 40u;
+        OBJ(0x03D0u, weapon_slot) = 4u;
+    }
+
+    const unsigned char part = (unsigned char)COMBAT_PART_INDEX;
+    if (part != 3u && part != 4u) {
+        enemy_gohma_play_parry_tune();
+        return;
+    }
+    if ((unsigned char)MON_SUBSTATE(monster_slot) != 3u) {
+        enemy_gohma_play_parry_tune();
+        return;
+    }
+    if ((unsigned char)OBJ_DIR(weapon_slot) != 8u) {
+        enemy_gohma_play_parry_tune();
+        return;
+    }
+    RAM(0x0601u) = 2u;
+    combat_deal_damage(monster_slot);
+    enemy_play_boss_hit_cry_if_needed(monster_slot);
+    /* Fall-through: NES Gohma_HandleWeaponCollision_PlayParryTune.
+     * Damage + parry tune both fire on successful hit. */
+    enemy_gohma_play_parry_tune();
 }
