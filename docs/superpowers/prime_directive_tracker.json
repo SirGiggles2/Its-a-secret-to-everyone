@@ -1,16 +1,16 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-05-04T15:10:11.017465+00:00",
+  "generated_at": "2026-05-04T15:29:17.115374+00:00",
   "generated_by": "tools/audit/primedirective/prime_refresh.py",
   "plan": {
     "path": "docs/superpowers/plans/2026-05-02-title-roomrom-full-port-master-plan.md",
     "sha256": "f129ba650b820d310f057c676a00319f121021db36ce405e2f5c515ece2a9151"
   },
   "active": {
-    "phase_id": "5",
-    "phase_name": "Dungeon Core",
-    "task_id": "5.substrate",
-    "task_title": "Phase 5 substrate native ports",
+    "phase_id": "2",
+    "phase_name": "RoomRom Graphics Registry And No-Clobber Foundation",
+    "task_id": "?",
+    "task_title": "",
     "worktree": {
       "path": "C:/Users/Jake Diggity/Documents/GitHub/FINAL TRY",
       "branch": "main",
@@ -85,7 +85,7 @@
     {
       "id": "2",
       "name": "RoomRom Graphics Registry And No-Clobber Foundation",
-      "status": "complete",
+      "status": "active",
       "tasks": [],
       "evidence": [
         "focused_probe_set|build/probes/ph2/items/FINDINGS.md",
@@ -118,7 +118,7 @@
     {
       "id": "3",
       "name": "Overworld Caves",
-      "status": "complete",
+      "status": "pending",
       "tasks": [],
       "evidence": [
         "focused_probe_set|Phase 3 work committed: drain_findings/cave_*.md (tasks 3.2-3.9), cave_dispatch.c (native rewrite, Gate1 verified), uw_person_dispatch.c. Evidence commits: 57a282ec..82032194.",
@@ -149,7 +149,7 @@
     {
       "id": "4",
       "name": "Overworld Secrets, Traversal, And State",
-      "status": "complete",
+      "status": "pending",
       "tasks": [],
       "evidence": [
         "focused_probe_set|Phase 4 work committed: drain_findings/4_*n_*.md (20+ native ports), cave_dispatch.c + uw_person_dispatch.c Phase4 ports. Summary: c84180f4 \u2014 all STAGE-1 stubs cleared, both manifests EMPTY, no shim calls.",
@@ -538,16 +538,20 @@
     },
     "drain_coverage_json": {
       "path": "tools/audit/drain_coverage.json",
-      "sha256": "7e6fbec9e4c2606aa2009dcb34f866c847d67bc55a90ea23e9153382109bbb98",
+      "sha256": "ddc03162c0c3da486d1860e9fb8278fcbe1d43cfbf40188f4e07ad1fc9c542bb",
       "ok": true
     },
-    "git_head": "1b39833c77cc046fe95971183e2bac6727f75578",
+    "git_head": "28cde9d6247774ae673e69f6636e55ffbf29edaf",
     "dirty_paths_relevant": [
-      "tools/audit/drain_coverage.json"
+      "src/gen/z_07.c",
+      "src/state/room_state.h",
+      "tools/audit/drain_coverage.json",
+      "tools/gates/check_no_whatif.py",
+      "src/state/dungeon_state.h"
     ],
     "evidence_paths_present": true,
     "complete_phase_invariant_ok": true,
-    "last_refresh_at": "2026-05-04T15:10:11.058344+00:00",
+    "last_refresh_at": "2026-05-04T15:29:17.153335+00:00",
     "stale_reasons": []
   },
   "blockers": []

@@ -12,3 +12,14 @@
 |------|------|-----------|----------|--------|
 | 3.1 | Build Cave Source Data Manifest | `reference/aldonunez/Z_01.asm:CaveSpec_*` | NONE | GREENFIELD |
 | 3.10 | Phase 3 Verification Gates | `:` | NONE | GREENFIELD |
+| 3.2 | Cave Gamemode Dispatch | `reference/aldonunez/Z_01.asm:GameMode_Cave` | PARTIAL | ADOPT |
+| 3.3 | Cave Entrance Detection | `reference/aldonunez/Z_01.asm:CheckCaveEntry` | PARTIAL | EXTEND |
+| 3.3 | Cave Entrance Detection | `Z_02.asm:OW_TileCollision` | PARTIAL | EXTEND |
+| 3.4 | Render Cave Interior | `reference/aldonunez/Z_01.asm:DrawCave` | PARTIAL | EXTEND |
+| 3.5 | Cave Text Box | `reference/aldonunez/Z_01.asm:CaveText_*` | PARTIAL | EXTEND |
+| 3.5 | Cave Text Box | `Z_05.asm:Text_RenderChar` | PARTIAL | EXTEND |
+| 3.6 | Item Grant Caves | `reference/aldonunez/Z_01.asm:CaveItemGrant` | PARTIAL | ADOPT |
+| 3.6 | Item Grant Caves | `Z_07.asm:Inventory_Mutate` | PARTIAL | ADOPT |
+| 3.7 | Shop Caves | `reference/aldonunez/Z_01.asm:Shop_Tick` | FULL | ADOPT |
+| 3.8 | Gambling / Money-Making Game | `reference/aldonunez/Z_01.asm:MoneyGame_Tick` | FULL | ADOPT |
+| 3.9 | Cave Exit + Palette Restore | `reference/aldonunez/Z_01.asm:ExitCave` | PARTIAL | EXTEND |

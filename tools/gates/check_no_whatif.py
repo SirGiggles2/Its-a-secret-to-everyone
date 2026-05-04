@@ -38,6 +38,7 @@ ALLOWLIST_PARTS = [
     "docs/archive/",                         # historical
     "docs/audit/autonomous_session_",        # session status docs that quote the rule
     "tools/gates/check_no_whatif.py",        # this file
+    "tools/gates/prime_guard.py",            # enforcement gate references the rule
     ".git/",                                 # git internals
     "node_modules/",
 ]

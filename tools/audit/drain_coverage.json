@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-05-03T04:45:31+00:00",
+  "generated_at": "2026-05-04T15:17:34+00:00",
   "rows": [
     {
       "nes_file": "reference/aldonunez/Z_01.asm",
@@ -20,7 +20,7 @@
       "phase": "3",
       "task": "3.2",
       "task_name": "Cave Gamemode Dispatch",
-      "subsystem": "cave",
+      "subsystem": "",
       "coverage": "PARTIAL",
       "stance": "ADOPT"
     },
@@ -31,7 +31,7 @@
       "phase": "3",
       "task": "3.3",
       "task_name": "Cave Entrance Detection",
-      "subsystem": "cave",
+      "subsystem": "",
       "coverage": "PARTIAL",
       "stance": "EXTEND"
     },
@@ -42,7 +42,7 @@
       "phase": "3",
       "task": "3.3",
       "task_name": "Cave Entrance Detection",
-      "subsystem": "cave",
+      "subsystem": "",
       "coverage": "PARTIAL",
       "stance": "EXTEND"
     },
@@ -53,7 +53,7 @@
       "phase": "3",
       "task": "3.4",
       "task_name": "Render Cave Interior",
-      "subsystem": "cave",
+      "subsystem": "",
       "coverage": "PARTIAL",
       "stance": "EXTEND"
     },
@@ -64,7 +64,7 @@
       "phase": "3",
       "task": "3.5",
       "task_name": "Cave Text Box",
-      "subsystem": "cave",
+      "subsystem": "",
       "coverage": "PARTIAL",
       "stance": "EXTEND"
     },
@@ -75,7 +75,7 @@
       "phase": "3",
       "task": "3.5",
       "task_name": "Cave Text Box",
-      "subsystem": "cave",
+      "subsystem": "",
       "coverage": "PARTIAL",
       "stance": "EXTEND"
     },
@@ -86,7 +86,7 @@
       "phase": "3",
       "task": "3.6",
       "task_name": "Item Grant Caves",
-      "subsystem": "cave",
+      "subsystem": "",
       "coverage": "PARTIAL",
       "stance": "ADOPT"
     },
@@ -97,7 +97,7 @@
       "phase": "3",
       "task": "3.6",
       "task_name": "Item Grant Caves",
-      "subsystem": "cave",
+      "subsystem": "",
       "coverage": "PARTIAL",
       "stance": "ADOPT"
     },
@@ -108,7 +108,7 @@
       "phase": "3",
       "task": "3.7",
       "task_name": "Shop Caves",
-      "subsystem": "cave",
+      "subsystem": "",
       "coverage": "FULL",
       "stance": "ADOPT"
     },
@@ -119,7 +119,7 @@
       "phase": "3",
       "task": "3.8",
       "task_name": "Gambling / Money-Making Game",
-      "subsystem": "cave",
+      "subsystem": "",
       "coverage": "FULL",
       "stance": "ADOPT"
     },
@@ -130,7 +130,7 @@
       "phase": "3",
       "task": "3.9",
       "task_name": "Cave Exit + Palette Restore",
-      "subsystem": "cave",
+      "subsystem": "",
       "coverage": "PARTIAL",
       "stance": "EXTEND"
     },
@@ -147,8 +147,8 @@
     }
   ],
   "malformed_headers": [],
-  "drained_function_count": 433,
+  "drained_function_count": 0,
   "nes_file_count": 16,
-  "orphan_count": 425,
+  "orphan_count": 0,
   "phantom_count": 0
 }

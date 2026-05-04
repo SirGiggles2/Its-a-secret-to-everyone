@@ -3,6 +3,7 @@
 
 #include "progress_state.h"
 #include "scratch_state.h"
+#include "dungeon_state.h"
 
 /* Shared room / doorway / room-flag state for promoted z_05 helpers. */
 #define ROOM_TOUCH_DOOR_BITS            ZP_TMPC
