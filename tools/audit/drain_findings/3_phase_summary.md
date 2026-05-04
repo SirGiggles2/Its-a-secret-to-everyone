@@ -165,22 +165,28 @@ for `cavert_update_person_state_textbox` proper.
   All previously manifest-routed symbols now native via NATIVE_*
   cutover gates. 20 cutover gates active.
 
-  Documented STAGE-1 stubs (deferred substantial NES asm chains):
-  1. cave_link_end_move_and_draw_stub (in cave_update_person_state_textbox):
-     Link side-render during dialog text — Link sprite freezes
-     mid-animation. Pending Link_EndMoveAndDraw_Bank1 native port.
-  2. uw_person_link_end_move_stub (in update_grumble3): same chain
-     for grumble dialog. Pending same native port.
-  3. uw_person_state_textbox_stub (in full updaters): TODO swap to
-     cave_update_person_state_textbox now that it's native.
-  4. trap_init_mode_b_enter_cave_bank5: 4 nested stubs
-     (InitMode_EnterRoom, z05_reset_inv_obj_state,
-     Link_EndMoveAndAnimate, RunCrossRoomTasksAndBeginUpdateMode_
-     PlayModesNoCellar) — heavy room-reload + Link rendering chain.
-  5. room_update_mode2_load Q2 UW patches:
-     LevelInfoUWQ2Replacements{1..9} blob bake (~565 bytes)
-     pending — Q2 UW level palette patches non-functional under
-     NATIVE_ROOM (Title.md path keeps via asm).
+  STAGE-1 stubs CLEARED (all 5 unstubbed):
+  1. cave_link_end_move_and_draw_stub: STAGE-2 partial port —
+     freeze anim + sprite_anim_fetch_obj_pos + draw_object_mirrored.
+     Full Link_EndMoveAndDraw deferred phase 5.
+  2. uw_person_link_end_move_stub (grumble dialog): same STAGE-2.
+  3. uw_person_state_textbox_stub: now routes to native
+     cave_update_person_state_textbox.
+  4. trap_init_mode_b_enter_cave_bank5: STAGE-2 partial — 3 of 4
+     nested chains native (room_reset_player_state +
+     core_clear_ram0300_up_to + room_reset_inv_obj_state). Still
+     deferred phase 5: DrawSpritesBetweenRooms + level-attr-F
+     cache + Link_EndMoveAndAnimate + RunCrossRoomTasks.
+  5. Q2 UW patches: 565 bytes baked inline as 9
+     k_q2_uw_replacements_{1..9} arrays + dispatch table.
+
+  Phase 5 deferred work (heavy NES asm chains):
+  - Link_EndMoveAndAnimate (Z_07.asm:4400 — ~hundreds of lines:
+    ladder/water/warp/animation/draw)
+  - InitMode_EnterRoom (Z_05.asm:1564 — DrawSpritesBetweenRooms
+    + level-attr cache + more)
+  - RunCrossRoomTasksAndBeginUpdateMode_PlayModesNoCellar
+    (Z_07.asm:2780 — cross-room state plumbing)
 
 ## Debate 007 (no-emulation MMC1) verdict applied 2026-05-03
 
