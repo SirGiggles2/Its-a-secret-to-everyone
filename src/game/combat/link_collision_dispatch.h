@@ -21,6 +21,15 @@ extern "C" {
  * drain at link_collision_runtime.c:6-46. */
 void link_collision_link_be_harmed(unsigned int monster_slot);
 
+/* Set up shove direction + advance hit-reaction depending on whether
+ * weapon is a sword (slot 0 axis) or shot (per-axis dy). NES
+ * BeginShove. drain at link_collision_runtime.c:130-179. */
+void link_collision_begin_shove(unsigned int monster_slot);
+
+/* Look up object damage points + dispatch begin_shove + link_be_harmed.
+ * NES HarmLink. drain at link_collision_runtime.c:48-58. */
+void link_collision_harm_link(unsigned int monster_slot);
+
 #ifdef __cplusplus
 }
 #endif
