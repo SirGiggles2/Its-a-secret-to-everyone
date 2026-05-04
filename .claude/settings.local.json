@@ -34,7 +34,12 @@
       "Bash(cmd.exe //c \"tasklist\")",
       "Bash(rm -rf \"/c/Users/Jake Diggity/.claude/plugins/cache/caveman\")",
       "Bash(echo \"Done: $?\")",
-      "Bash(git add *)"
+      "Bash(git add *)",
+      "Bash(rm -rf \"/c/Users/Jake Diggity/.claude/plugins/cache/openai-codex\")",
+      "Read(//c/Users/Jake Diggity/.claude/plugins/cache//**)",
+      "Read(//c/Users/Jake Diggity/.claude/plugins/**)",
+      "Bash(rm \"C:/Users/Jake Diggity/Documents/GitHub/FINAL TRY-roomrom-s1/sgdk/.git\")",
+      "Bash(git -C \"C:/Users/Jake Diggity/Documents/GitHub/FINAL TRY-roomrom-s1\" status)"
     ]
   }
 }

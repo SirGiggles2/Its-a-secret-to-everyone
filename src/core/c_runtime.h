@@ -20,7 +20,7 @@ extern "C" {
 extern void c_probe_tick(void);
 
 /* Observable counter. Linker pins to $FFC000+ via build/genesis.ld.
- * Find its actual address in whatif.lst or the ELF symbol table. */
+ * Find its actual address in Title.lst or the ELF symbol table. */
 extern volatile unsigned int c_probe_counter;
 
 #ifdef __cplusplus

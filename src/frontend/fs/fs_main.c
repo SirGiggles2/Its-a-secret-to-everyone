@@ -41,18 +41,13 @@ extern const uint16_t fs_palettes[4][4];       /* 4 Genesis CRAM palettes × 4 c
  *   Tile 0x104        Heart cursor CHR
  */
 static void fs_init(void) {
-    /* 0a. Silence audio_driver music. Native intro_start_pressed bypasses the
-     *     transpiled FS trampoline (which would have written SongRequest=0 at
-     *     genesis_shell.asm:681) — so we silence here. Writing $80 to NES RAM
-     *     $0604 (Tune0 silence request) triggers audio_driver's attract-mode-exit
-     *     hook on the next VBlank: music_tick reads it, calls music_silence,
-     *     and clears all sound state. Matches Redux-spec silent FS. */
-    {
-        volatile unsigned char *song_request    = (volatile unsigned char *)0x00FF0600;
-        volatile unsigned char *tune0_silence   = (volatile unsigned char *)0x00FF0604;
-        *song_request  = 0x00;
-        *tune0_silence = 0x80;
-    }
+    /* Audio handoff: SongRequest=$08 (LA "Get Item") is fired from
+     * intro_start_pressed BEFORE the fade. Jingle is single-phrase and
+     * self-silences via song_ended -> music_silence after sq1 hits $00,
+     * so FS ends up silent without any explicit silence write here.
+     * Calling render_wait_vblank inside fs_init while display is off and
+     * the plane size is mid-transition (V64 -> V32) crashed Zelda37.560,
+     * so do NOT poll from this function. */
 
     /* 0. Force plane size H32xV32. Proof ROM boot.asm sets this directly, but
      *    main ROM intro_handoff sets V64 before calling fs_main; our nametable

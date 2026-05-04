@@ -345,21 +345,17 @@ audio_init:
     dbra    D0,.clr_music
 
     ;------------------------------------------------------------------
-    ; Clear DMC state block ($FFE100, 17 bytes — rounded to 20).  Zero
-    ; dmc_active, dmc_burst, dmc_ptr, dmc_remain, shadow registers, and
-    ; debug scaffold state.
+    ; Clear DMC shadow block ($FFE100, 16 bytes). The remaining state
+    ; is just dmc_last_idx (HUD readout) plus the three NES-reg
+    ; shadows ($4010/$4012/$4013) used by the lookup in nes_io.asm —
+    ; everything else (active flag, ptr, remain, debug scaffolds)
+    ; went away with the HBlank streamer in the XGM migration.
     ;------------------------------------------------------------------
     lea     (DMC_BASE).l,A0
-    clr.l   (A0)+                   ; active + burst
-    clr.l   (A0)+                   ; dmc_ptr
-    clr.l   (A0)+                   ; dmc_remain
-    clr.l   (A0)+                   ; rate/addr/len sel + prev_btn
-    clr.l   (A0)+                   ; dbg_next + pad (over-clear, safe)
-    ;------------------------------------------------------------------
-    ; Scaffold: preload dmc_dbg_next = 1 so the first Start press fires
-    ; sample #1.  dmc_trigger wraps 1..7 from there.
-    ;------------------------------------------------------------------
-    move.b  #1,(dmc_dbg_next).l
+    clr.l   (A0)+
+    clr.l   (A0)+
+    clr.l   (A0)+
+    clr.l   (A0)+
 
     ;------------------------------------------------------------------
     ; Hand audio off to the SGDK XGM Z80 driver. audio_xgm_init() does:
@@ -367,9 +363,14 @@ audio_init:
     ;   2. XGM_setPCM(64..70, sfx_pcm_NN, len)   - register 7 SFX samples
     ; After this, dmc_trigger trampolines to audio_sfx_play and the Z80
     ; owns YM2612 reg $2A. The legacy HBlank streamer is dead.
+    ;
+    ; LA-jingle bring-up: the XGM Z80 driver mutes the FM channels we
+    ; need for the ItemTaken (LA "Get Item") song. Skip XGM init so the
+    ; legacy FM driver retains exclusive YM2612 ownership. SFX path is
+    ; lost until xgm-mig finishes a coexistence story.
     ;------------------------------------------------------------------
     xref    audio_xgm_init
-    jsr     audio_xgm_init
+    ; jsr     audio_xgm_init       ; disabled: see comment above
 
     movem.l (SP)+,D0-D6/A0
     rts
@@ -557,23 +558,16 @@ m_sfx_ctrl_raw      equ MUSIC_BASE+$2A  ; byte: last $400E byte
 m_song_loop_pending equ MUSIC_BASE+$2B  ; byte: 1 = song just looped
 
 ;----------------------------------------------------------------------
-; DMC → YM2612 DAC state (Phase A of DMC port — see
-; C:\Users\Jake Diggity\.claude\plans\quirky-baking-goose.md).
-;
-; Lives at $FFE100, clear of the music-state block at $FFE000-$FFE03F.
-; Written by the DMC APU stubs in nes_io.asm, consumed by dmc_feed which
-; runs at the tail of music_tick and bursts PCM bytes to YM reg $2A.
+; DMC NES-register shadows. The XGM Z80 driver owns playback now; the
+; only state we keep on the 68K side is what nes_io.asm needs to
+; recover the 1-based sample index from the NES $4010/$4012 writes
+; (DMC_SAMPLE_LOOKUP) plus a HUD readout cell.
 ;----------------------------------------------------------------------
 DMC_BASE            equ $FFE100
-dmc_active          equ DMC_BASE+$00    ; byte: 0 = idle, 1 = playing
 dmc_last_idx        equ DMC_BASE+$01    ; byte: last triggered sample index (for HUD)
-dmc_ptr             equ DMC_BASE+$04    ; long: current M68K pointer into PCM blob
-dmc_remain          equ DMC_BASE+$08    ; long: PCM bytes left in current sample
 dmc_rate_sel        equ DMC_BASE+$0C    ; byte: shadow of last $4010 write
 dmc_addr_sel        equ DMC_BASE+$0D    ; byte: shadow of last $4012 write
 dmc_len_sel         equ DMC_BASE+$0E    ; byte: shadow of last $4013 write
-dmc_dbg_prev_btn    equ DMC_BASE+$0F    ; byte: pad state from last frame (edge det)
-dmc_dbg_next        equ DMC_BASE+$10    ; byte: next sample index (1..7) to trigger
 
 ;==============================================================================
 ; dmc_trigger — trampoline to SGDK XGM PCM playback.
@@ -600,60 +594,6 @@ dmc_trigger:
     jsr     audio_sfx_play
     addq.l  #4,SP
 .bad:
-    rts
-
-;==============================================================================
-; dmc_hint_tick — per-HBlank PCM byte -> YM2612 reg $2A DAC write.
-;==============================================================================
-dmc_hint_tick:
-    move.l  (dmc_ptr).l,A0
-    move.b  (A0)+,D0
-    move.l  A0,(dmc_ptr).l
-    lea     (YM_ADDR1).l,A0
-.wait:
-    tst.b   (A0)
-    bmi.s   .wait
-    move.b  #$2A,(A0)
-    move.b  D0,(YM_DATA1).l
-    subq.l  #1,(dmc_remain).l
-    beq.s   .end
-    rts
-.end:
-    lea     (YM_ADDR1).l,A0
-.wait2:
-    tst.b   (A0)
-    bmi.s   .wait2
-    move.b  #$2A,(A0)
-    move.b  #$80,(YM_DATA1).l       ; park DAC at mid-rail
-    clr.b   (dmc_active).l
-    move.w  #$8004,(VDP_CTRL).l     ; Reg 0 = $04 -> HINT off, colorfix on
-    rts
-
-;==============================================================================
-; dmc_feed — legacy VBlank entry point, retained as labeled rts.
-;
-; music_tick used to call this to drain a frame's worth of PCM in VBlank.
-; All streaming now happens from HBlank via dmc_hint_tick.  Kept as a cheap
-; rts so we don't have to surgically delete the call from music_tick.
-;==============================================================================
-dmc_feed:
-    rts
-
-;==============================================================================
-; dmc_dbg_poll - Phase-C/D scaffold (REMOVED in Phase E).
-;
-; Previously watched the NES-format controller latch for a Start rising edge
-; and cycled through the 7 DMC samples.  That scaffold served its purpose at
-; T27/T28 PASS — DMC triggering is now fully driven by the game's own APU
-; $4015 writes via the _apu_write_4015 stub in nes_io.asm (Phase D), and
-; Start has a real game function (exit attract mode).  Polling it here would
-; fire a stray DMC burst every time the player presses Start on the title
-; screen, masking real game audio events.
-;
-; The label is kept as a labeled rts for backward-compat with the call in
-; music_tick, which we'll peel out in a later cleanup pass.
-;==============================================================================
-dmc_dbg_poll:
     rts
 
 ;==============================================================================
@@ -713,24 +653,21 @@ music_tick:
     clr.b   ($FF0605).l
     clr.b   ($FF0607).l
     bsr     music_silence
-    bra.s   .dmc_poll
+    bra.s   .done
 .no_silence_req:
     move.b  (m_song_req).l,D0
     beq.s   .no_req
     clr.b   (m_song_req).l
     move.b  D0,(m_song).l
     bsr     change_song
-    bra.s   .dmc_poll
+    bra.s   .done
 .no_req:
     tst.b   (m_song).l
-    beq.s   .dmc_poll
+    beq.s   .done
     bsr     tick_sq1
-.dmc_poll:
-    bsr     dmc_dbg_poll            ; scaffold: Start cycles DMC samples
-    bsr     dmc_feed                ; no-op stub (backward-compat call)
-    ; DMC and noise-SFX dispatch paused -- neither produced acceptable
-    ; audio yet. Revisit in a future pass. Music + SongRequest bridge
-    ; stay wired.
+.done:
+    ; SFX dispatch lives on the SGDK XGM Z80 driver now (Z80 mixes PCM
+    ; on its own clock); no per-VBlank DMC drain or scaffold poll here.
     movem.l (SP)+,D0-D7/A0-A2
     rts
 
@@ -1395,9 +1332,6 @@ MusicBlob:
     incbin  "data/music_blob.dat"
     even
 
-;==============================================================================
-; DMC sample tables + PCM blob (auto-generated from Zelda NES ROM).
-; See tools/extract_dmc_samples.py.  Always included at the end of
-; audio_driver.asm so absolute references from dmc_trigger/dmc_feed resolve.
-;==============================================================================
-    include "data/dmc_samples.inc"
+; DMC samples now ship as 14 kHz PCM C arrays in data/audio/sfx_pcm.c
+; and play through SGDK's XGM Z80 driver. The legacy dmc_samples.inc
+; include is gone; dmc_trigger trampolines through audio_sfx_play.

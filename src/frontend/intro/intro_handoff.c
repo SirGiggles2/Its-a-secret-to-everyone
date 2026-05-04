@@ -33,6 +33,15 @@ static void clear_plane(unsigned short plane_base) {
 void intro_start_pressed(void) {
     nes_ram[0x07F2] = 0xAA;   /* probe: handoff begun */
 
+    /* Fire LA "Get Item" jingle ($08 -> SongRequest mailbox). audio_driver's
+     * VBlank tick consumes $FF0600 on the next vbi: m_song_req=$08 -> change_song
+     * -> m_song=$08 (replaces title $80) -> tick_sq1 plays the ItemTaken slot,
+     * which has been repurposed with the 7-byte LA reduction (see
+     * tools/midi_to_zelda_song.py). Jingle is single-phrase: sq1 terminates with
+     * $00, song_ended path runs music_silence, and FS sits silent thereafter.
+     * No silence write needed. */
+    *((volatile unsigned char *)0x00FF0600) = 0x08;
+
     /* Fade the currently-visible scene (title / fadeout / black hold /
      * story / items) to black over HANDOFF_FADE_STEPS frames before
      * blanking the planes + SAT. Snapshot reads live CRAM so this works

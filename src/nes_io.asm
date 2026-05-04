@@ -549,15 +549,11 @@ _ags_activate_staged:
 _ags_apply_active:
     cmpi.b  #INTRO_SCROLL_NO_SPLIT,(INTRO_SCROLL_MODE).l
     bne.s   .aaa_split
-    ; No-split path. When DMC is NOT active, do the full H-int off sequence.
-    ; When DMC IS active, skip the Reg 10 / Reg 0 writes so dmc_trigger's
-    ; HINT arm survives -- DMC only fires in no-split contexts (see
-    ; dmc_trigger gate), so there's no scroll-split to service this frame.
-    tst.b   (dmc_active).l
-    bne.s   .aaa_dmc_vsram_only
+    ; No-split path: full H-int off sequence. PCM streaming moved off
+    ; HBlank onto the SGDK XGM Z80 driver, so HINT can be unconditionally
+    ; disabled here without stomping any sample DAC writes.
     move.w  #$8AFF,(VDP_CTRL).l             ; Reg 10 = $FF (inactive)
     move.w  #$8004,(VDP_CTRL).l             ; Reg 0: H-int off
-.aaa_dmc_vsram_only:
     move.l  #VSRAM_WRITE_0000,(VDP_CTRL).l
     move.w  (ACTIVE_BASE_VSRAM).l,(VDP_DATA).l
     moveq   #0,D0
@@ -2534,12 +2530,29 @@ _apu_write_4015:
     movem.l (SP)+,D1-D3/A0
     rts
 .no_dmc:
-    ; Bit 4 clear — if DMC currently playing, stop it.
-    tst.b   (dmc_active).l
-    beq.s   .no_dmc_done
-    clr.l   (dmc_remain).l
-.no_dmc_done:
+    ; Bit 4 clear: NES wanted to stop DMC playback. With XGM the Z80
+    ; mixer auto-finishes samples; we don't proactively kill them mid-
+    ; stream. NES Zelda doesn't issue mid-SFX stop in normal play, so a
+    ; no-op is safe.
     rts
+
+; $4015 (addr, rate) -> 1-based DMC sample index lookup. Mirror of
+; SampleAddrs / SampleRates in src/zelda_translated/z_00.asm. Inlined
+; here because the data is tiny (28 bytes), tightly coupled to the APU
+; stub above, and used to be code-generated into dmc_samples.inc which
+; was deleted in the XGM migration.
+DMC_SAMPLE_COUNT    equ     7
+
+    even
+DMC_SAMPLE_LOOKUP:
+    dc.b    $00,$0F, 1,0   ; 1 SFX_01
+    dc.b    $4C,$0F, 2,0   ; 2 SFX_02
+    dc.b    $80,$0D, 3,0   ; 3 SFX_03
+    dc.b    $1D,$0F, 4,0   ; 4 SFX_04
+    dc.b    $20,$0E, 5,0   ; 5 SFX_05
+    dc.b    $28,$0F, 6,0   ; 6 SFX_06
+    dc.b    $4C,$0E, 7,0   ; 7 SFX_07
+DMC_SAMPLE_LOOKUP_END:
 
 ;==============================================================================
 ; _indirect_stub — JMP (abs) indirect placeholder.
