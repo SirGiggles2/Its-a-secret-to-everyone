@@ -1,0 +1,158 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Prime Directive Tracker",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "generated_at",
+    "generated_by",
+    "plan",
+    "active",
+    "phases",
+    "scope_lock",
+    "out_of_phase_tasks",
+    "deferrals",
+    "freshness",
+    "blockers"
+  ],
+  "properties": {
+    "schema_version": {"type": "integer", "const": 1},
+    "generated_at": {"type": "string", "format": "date-time"},
+    "generated_by": {"type": "string"},
+    "plan": {
+      "type": "object",
+      "required": ["path", "sha256"],
+      "properties": {
+        "path": {"type": "string"},
+        "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+      }
+    },
+    "active": {
+      "type": "object",
+      "required": ["phase_id", "phase_name", "task_id", "worktree", "next_concrete_action"],
+      "properties": {
+        "phase_id": {"type": "string"},
+        "phase_name": {"type": "string"},
+        "task_id": {"type": "string"},
+        "task_title": {"type": "string"},
+        "worktree": {
+          "type": "object",
+          "required": ["path", "branch", "is_substrate_writer"],
+          "properties": {
+            "path": {"type": "string"},
+            "branch": {"type": "string"},
+            "is_substrate_writer": {"type": "boolean"}
+          }
+        },
+        "next_concrete_action": {"type": "string"}
+      }
+    },
+    "phases": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "name", "status"],
+        "properties": {
+          "id": {"type": "string"},
+          "name": {"type": "string"},
+          "status": {"enum": ["complete", "active", "pending", "blocked"]},
+          "tasks": {"type": "array"},
+          "evidence": {"type": "array", "items": {"type": "string"}},
+          "deferrals": {"type": "array"},
+          "close_gate": {
+            "type": "object",
+            "properties": {
+              "build_REQUIRE_GENERATED_ASSETS": {"enum": ["pending", "passed", "failed", "not_applicable"]},
+              "focused_probe_set": {"enum": ["pending", "passed", "failed", "not_applicable"]},
+              "screenshot_state_evidence": {"enum": ["pending", "passed", "failed", "not_applicable"]},
+              "diff_vs_nes_reference": {"enum": ["pending", "passed", "failed", "not_applicable"]},
+              "regression_matrix": {"enum": ["pending", "passed", "failed", "not_applicable"]},
+              "verify_no_alias_collisions": {"enum": ["pending", "passed", "failed", "not_applicable"]},
+              "PROBE_CYCLE_LIMIT_envelope": {"enum": ["pending", "passed", "failed", "not_applicable"]},
+              "code_review_requested": {"enum": ["pending", "passed", "failed", "not_applicable"]},
+              "findings_resolved_or_deferred": {"enum": ["pending", "passed", "failed", "not_applicable"]},
+              "rerun_probes_and_matrix": {"enum": ["pending", "passed", "failed", "not_applicable"]},
+              "phase_commit_with_report_paths": {"enum": ["pending", "passed", "failed", "not_applicable"]}
+            }
+          }
+        }
+      }
+    },
+    "scope_lock": {
+      "type": "object",
+      "required": ["active_task_only", "allowed_escape_hatches", "requires_tracker_note"],
+      "properties": {
+        "active_task_only": {"type": "boolean"},
+        "allowed_escape_hatches": {
+          "type": "array",
+          "items": {"enum": ["blocking_fix", "phase_close_gate", "user_interrupt", "out_of_phase_task"]}
+        },
+        "requires_tracker_note": {"type": "boolean"}
+      }
+    },
+    "out_of_phase_tasks": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["target_phase_id", "reason", "stance", "recorded_at"],
+        "properties": {
+          "target_phase_id": {"type": "string"},
+          "reason": {"type": "string"},
+          "stance": {"enum": ["PARTIAL", "REPLACE"]},
+          "regression_matrix_run": {"type": ["string", "null"]},
+          "recorded_at": {"type": "string", "format": "date-time"}
+        }
+      }
+    },
+    "deferrals": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["phase_id", "reason", "recorded_at"],
+        "properties": {
+          "phase_id": {"type": "string"},
+          "gate_step": {"type": "string"},
+          "reason": {"type": "string"},
+          "recorded_at": {"type": "string", "format": "date-time"}
+        }
+      }
+    },
+    "freshness": {
+      "type": "object",
+      "required": ["last_refresh_at", "stale_reasons"],
+      "properties": {
+        "active_scope_md": {"$ref": "#/$defs/file_check"},
+        "drain_coverage_json": {"$ref": "#/$defs/file_check"},
+        "git_head": {"type": "string"},
+        "dirty_paths_relevant": {"type": "array", "items": {"type": "string"}},
+        "evidence_paths_present": {"type": "boolean"},
+        "complete_phase_invariant_ok": {"type": "boolean"},
+        "last_refresh_at": {"type": "string", "format": "date-time"},
+        "stale_reasons": {"type": "array", "items": {"type": "string"}}
+      }
+    },
+    "blockers": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["kind", "description"],
+        "properties": {
+          "kind": {"enum": ["worktree", "drain_stance", "scope", "whatif", "phase_close", "out_of_phase", "freshness"]},
+          "description": {"type": "string"},
+          "path": {"type": "string"}
+        }
+      }
+    }
+  },
+  "$defs": {
+    "file_check": {
+      "type": "object",
+      "required": ["path", "sha256", "ok"],
+      "properties": {
+        "path": {"type": "string"},
+        "sha256": {"type": ["string", "null"]},
+        "ok": {"type": "boolean"}
+      }
+    }
+  }
+}
