@@ -29,11 +29,6 @@
       "sig": "void (unsigned int slot)"
     },
     {
-      "old": "z01_draw_life_or_money_items",
-      "new": "uwrt_draw_life_or_money_items",
-      "sig": "void (void)"
-    },
-    {
       "old": "z01_update_grumble3",
       "new": "uwrt_update_grumble3",
       "sig": "void (void)"

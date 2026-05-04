@@ -38,10 +38,6 @@ void z01_person_draw_and_check_collisions(unsigned int slot) {
     uwrt_person_draw_and_check_collisions(slot);
 }
 
-void z01_draw_life_or_money_items(void) {
-    uwrt_draw_life_or_money_items();
-}
-
 void z01_update_grumble3(void) {
     uwrt_update_grumble3();
 }
@@ -1361,6 +1357,14 @@ void z01_update_uw_person_life_or_money_state_2(void) {
     uw_person_update_life_or_money_state_2();
 #else
     uwrt_update_life_or_money_state_2();
+#endif
+}
+
+void z01_draw_life_or_money_items(void) {
+#ifdef NATIVE_UW_PERSON
+    uw_person_draw_life_or_money_items();
+#else
+    uwrt_draw_life_or_money_items();
 #endif
 }
 

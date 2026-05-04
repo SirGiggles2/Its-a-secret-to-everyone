@@ -23,6 +23,7 @@
                                       * core_abs */
 #include "world/progress_dispatch.h" /* progress_set_room_flag_uw_item_state,
                                       * progress_get_room_flag_uw_item_state */
+#include "world/draw_dispatch.h"     /* draw_animate_item_object */
 
 /* Z_01.asm UnderworldPersonTextSelectorsB[8]. drain at
  * uw_person_runtime.c:35. */
@@ -58,6 +59,11 @@ static const unsigned char k_rupee_stash_ys[10] = {
 /* Z_01.asm LifeOrMoneyItemXs[2] (687). */
 static const unsigned char k_life_or_money_item_xs[2] = {
     0x58u, 0x98u
+};
+
+/* Z_01.asm LifeOrMoneyItemTypes[2] (691). */
+static const unsigned char k_life_or_money_item_types[2] = {
+    0x1Au, 0x18u
 };
 
 /* z07_reset_moving_dir is `LINK_MOVING_DIR = 0` — inline to avoid the
@@ -265,5 +271,18 @@ void uw_person_update_life_or_money_state_2(void)
         ROOM_SHUTTER_TRIGGERED = 1u;
         uw_person_flag_item_taken_and_advance_state();
         return;
+    }
+}
+
+void uw_person_draw_life_or_money_items(void)
+{
+    /* drain at uw_person_runtime.c:210-217. NES DrawLifeOrMoneyItems.
+     * Loops i = 1 -> 0 ; sets ObjX[19]=LifeOrMoneyItemXs[i],
+     * ObjY[19]=$98, AnimateItemObject(LifeOrMoneyItemTypes[i], 19). */
+    for (signed char i = 1; i >= 0; --i) {
+        RAM(0x0083u) = k_life_or_money_item_xs[(unsigned char)i];
+        RAM(0x0097u) = 0x98u;
+        draw_animate_item_object(
+            k_life_or_money_item_types[(unsigned char)i], 19u);
     }
 }

@@ -85,6 +85,11 @@ void uw_person_update_complex_state_sense_link(void);
  * uw_person_runtime.c:165-198. */
 void uw_person_update_life_or_money_state_2(void);
 
+/* Draw the 2 life-or-money cave items (heart container + rupee
+ * stash) at fixed positions ($58, $98) and ($98, $98). NES
+ * DrawLifeOrMoneyItems. drain at uw_person_runtime.c:210-217. */
+void uw_person_draw_life_or_money_items(void);
+
 #ifdef __cplusplus
 }
 #endif
