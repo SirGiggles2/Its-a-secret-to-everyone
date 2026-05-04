@@ -112,30 +112,46 @@ for `cavert_update_person_state_textbox` proper.
 
   Phase 4 update — added since prior summary:
   - src/game/combat/collision_dispatch.{h,c} — 5 fns.
-  - src/game/room/room_dispatch.{h,c} — 12 fns
+  - src/game/room/room_dispatch.{h,c} — 16 fns
     (get_room_flags, split_room_id, is_dark_room, silence_sound,
      check_has_living_monsters, end_game_mode, hide_all_sprites,
      get_unique_room_id, clear_room_history, reset_player_state,
-     mark_room_visited, go_to_next_mode, copy_column_to_tilebuf).
+     mark_room_visited, go_to_next_mode, copy_column_to_tilebuf,
+     go_to_next_mode_play_level_song, _reset_grid_offset, _from_play,
+     check_screen_edge).
   - src/game/hud/hud_dispatch.{h,c} — 6 fns.
   - src/game/items/weapon_dispatch.{h,c} — 6 fns.
   - src/game/combat/targeting_dispatch.{h,c} — 3 fns.
   - src/game/combat/combat_dispatch.{h,c} — 3 fns.
-  - src/game/cave/uw_person_dispatch.{h,c} — 13 fns.
+  - src/game/cave/uw_person_dispatch.{h,c} — 14 fns.
   - src/game/combat/link_collision_dispatch.{h,c} — 5 fns
     (link_be_harmed, harm_link, begin_shove,
      check_link_collision, check_link_collision_preinit).
+  - src/game/world/draw_dispatch.{h,c} — full sprite-descriptor +
+    item-draw substrate. Native rewrite of NES sprite pipeline:
+    DrawObjectMirrored / DrawObjectNotMirrored chain, Anim_WriteSpritePair
+    family (writes nes_ram[$0200..$02FF] OAM mirror), AnimateItemObject
+    chain, DrawItemBySlot, DrawItemInInventory. Bakes 9 tables byte-for-
+    byte from Z_01.asm + Z_07.asm: ObjAnimations[127],
+    ObjAnimFrameHeap[228], ObjAnimAttrHeap[228], SpriteOffsets[41],
+    ItemIdToSlot[36], ItemIdToDescriptor[36],
+    ItemSlotToPaletteOffsetsOrValues[32], Anim_ItemFrameOffsets[37],
+    Anim_ItemFrameTiles[48]. ~860 bytes baked.
 
   Surface progress (post-cook):
   - world_runtime:    4/4   native
   - object_runtime:   8/8   native
   - sprite_runtime:   11/11 native
   - progress_runtime: 14/14 native (curtain ported via room_copy_column_to_tilebuf)
-  - trap_runtime:     5/10  native (init_full, summon, check_init_whirlwind,
-                                    advance_teleport_idx, check_passive_tile)
+  - trap_runtime:     8/10  native (init_full, summon, check_init_whirlwind,
+                                    advance_teleport_idx, check_passive_tile,
+                                    draw_whirlwind, update_whirlwind_full,
+                                    update_rupee_stash_full)
   - core_runtime:     50+ leaves native
   - enemy_runtime:    19 helpers native; per-monster updaters deferred
-  - cave/uw_person:   13/14 native (full updaters need c_draw_object_*)
+  - cave/uw_person:   14/14 native (full updaters need c_check_monster_collisions /
+                                     c_link_end_move_and_animate_bank1 /
+                                     c_update_person_state_textbox)
   - combat/collision: 5/12 (do_objects_*, get_collidable_tile_*)
                       7/12 deferred behind c_call_gohma_handle_weapon_collision
   - combat/link_collision: 5/6 native
@@ -143,7 +159,10 @@ for `cavert_update_person_state_textbox` proper.
   - combat/targeting: 3/3 native
   - hud:              6/6 native
   - items/weapon:     6/6 native
-  - room:             12 fns native
+  - room:             17 fns native
+  - draw_dispatch:    full sprite-descriptor + item-draw pipeline native
+                      (DrawObject* + AnimateItemObject + DrawItemBySlot /
+                       DrawItemInInventory + Anim_WriteSpritePair family)
 
   20+ Gate 1 finding docs produced. Native code structure:
   - src/game/cave/cave_dispatch.{h,c}
