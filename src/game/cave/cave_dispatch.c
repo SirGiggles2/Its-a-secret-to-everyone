@@ -193,8 +193,7 @@ void cave_draw_items(void)
             /* CaveItemIds[i] = $0422 + i (CAVE_WARE_ITEM macro). $3F = sentinel. */
             const unsigned char item = (unsigned char)(RAM(0x0422 + i) & 0x3Fu);
             if (item != 0x3Fu) {
-                /* TODO Phase 4: native cave_animate_item_object(item, 19u). */
-                (void)item;
+                draw_animate_item_object(item, 19u);
             }
             cave_active_ware_index_set(
                 (unsigned char)(cave_active_ware_index_get() - 1u));
@@ -205,7 +204,7 @@ void cave_draw_items(void)
     if (cave_flags_get() & 0x08u) {
         RAM(0x0083) = 0x30u;
         RAM(0x0097) = 0xABu;
-        /* TODO Phase 4: native cave_animate_item_object(0x18u, 19u). */
+        draw_animate_item_object(0x18u, 19u);
     }
 }
 
