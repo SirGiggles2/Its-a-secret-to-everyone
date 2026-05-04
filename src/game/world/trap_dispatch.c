@@ -29,7 +29,9 @@
 #include "world/draw_dispatch.h"    /* draw_object_not_mirrored_with_frame,
                                      * draw_item_in_inventory */
 #include "world/progress_dispatch.h" /* progress_update_player_position_marker */
+#include "world/object_dispatch.h"   /* object_move_object */
 #include "combat/link_collision_dispatch.h" /* link_collision_check_link_collision */
+#include "cave/uw_person_dispatch.h" /* uw_person_person_draw_and_check_collisions */
 #include "room/room_dispatch.h"     /* room_go_to_next_mode_from_play */
 
 /* TeleportYs — Z_01.asm:1226. Per-level teleport Y coords. */
@@ -51,6 +53,12 @@ static const unsigned char k_trap_xs[6] = {
 /* TrapYs — Z_01.asm:1301. */
 static const unsigned char k_trap_ys[6] = {
     0x5Du, 0xBDu, 0x5Du, 0xBDu, 0x8Du, 0x8Du
+};
+
+/* TrapAllowedDirs — Z_01.asm:1308. Per-slot gate of which dirs
+ * the trap is allowed to charge in. */
+static const unsigned char k_trap_allowed_dirs[6] = {
+    0x05u, 0x09u, 0x06u, 0x0Au, 0x01u, 0x02u
 };
 
 /* LinkToSquareOffsetsX — Z_01.asm:1264 (mirrored in
@@ -236,6 +244,91 @@ void trap_update_rupee_stash_full(unsigned int slot)
     }
     sprite_anim_fetch_obj_pos(slot);
     draw_item_in_inventory(22u, 22u);
+}
+
+void trap_update_trap_full(unsigned int slot)
+{
+    /* drain at trap_runtime.c:190-252. NES UpdateTrap_Full.
+     * State 0 = idle (sense Link's bbox); non-zero = charging or
+     * returning. Always falls through to draw_and_check. */
+    const unsigned char state = (unsigned char)OBJ_STATE(slot);
+    if (state == 0u) {
+        const unsigned char dy_init =
+            (unsigned char)((unsigned char)LINK_Y - (unsigned char)OBJ_Y(slot));
+        int handled = 0;
+        if (core_abs((unsigned int)dy_init) < 0x0Eu) {
+            const unsigned char dx_init =
+                (unsigned char)((unsigned char)LINK_X -
+                                (unsigned char)OBJ_X(slot));
+            if (core_abs((unsigned int)dx_init) < 0x0Eu) {
+                handled = 1;
+                unsigned char dir = 4u;
+                const unsigned char lnky = (unsigned char)LINK_Y;
+                const unsigned char trapy = (unsigned char)OBJ_Y(slot);
+                if (lnky != trapy && trapy != 0u) {
+                    if (lnky < trapy) {
+                        dir = 8u;
+                    }
+                    TRAP_RETURN_COORD(slot) = trapy;
+                    OBJ_DIR(slot) = dir;
+                    if ((dir & k_trap_allowed_dirs[(slot - 1u) & 7u]) != 0u) {
+                        OBJ_STATE(slot) =
+                            (uint8_t)((unsigned char)OBJ_STATE(slot) + 1u);
+                        OBJ_QSPD_FRAC(slot) = 0x70u;
+                    }
+                }
+            }
+        }
+        if (!handled) {
+            unsigned char dir = 1u;
+            const unsigned char lnkx = (unsigned char)LINK_X;
+            const unsigned char trapx = (unsigned char)OBJ_X(slot);
+            if (lnkx != trapx) {
+                if (lnkx < trapx) {
+                    dir = 2u;
+                }
+                TRAP_RETURN_COORD(slot) = trapx;
+                OBJ_DIR(slot) = dir;
+                if ((dir & k_trap_allowed_dirs[(slot - 1u) & 7u]) != 0u) {
+                    OBJ_STATE(slot) =
+                        (uint8_t)((unsigned char)OBJ_STATE(slot) + 1u);
+                    OBJ_QSPD_FRAC(slot) = 0x70u;
+                }
+            }
+        }
+    } else {
+        COMBAT_PART_INDEX = (uint8_t)OBJ_DIR(slot);
+        object_move_object((unsigned short)slot);
+        if (((unsigned char)OBJ_GRID_OFFSET(slot) & 0x0Fu) == 0u) {
+            OBJ_GRID_OFFSET(slot) = 0u;
+        }
+        link_collision_check_link_collision(slot);
+        unsigned char coord;
+        unsigned char target;
+        if ((unsigned char)OBJ_DIR(slot) & 0x0Cu) {
+            coord = (unsigned char)OBJ_Y(slot);
+            target = 0x90u;
+        } else {
+            coord = (unsigned char)OBJ_X(slot);
+            target = 0x78u;
+        }
+        if ((unsigned char)OBJ_STATE(slot) & 1u) {
+            const unsigned char dist =
+                core_abs((unsigned int)(unsigned char)(coord - target));
+            if (dist < 5u) {
+                OBJ_DIR(slot) = (uint8_t)core_get_opposite_dir(
+                    (unsigned int)(unsigned char)OBJ_DIR(slot));
+                OBJ_QSPD_FRAC(slot) = 0x20u;
+                OBJ_STATE(slot) =
+                    (uint8_t)((unsigned char)OBJ_STATE(slot) + 1u);
+            }
+        } else {
+            if (coord == (unsigned char)TRAP_RETURN_COORD(slot)) {
+                OBJ_STATE(slot) = 0u;
+            }
+        }
+    }
+    uw_person_person_draw_and_check_collisions(slot);
 }
 
 void trap_check_passive_tile_objects(void)

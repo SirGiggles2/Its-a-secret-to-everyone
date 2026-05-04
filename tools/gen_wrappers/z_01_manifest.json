@@ -42,11 +42,6 @@
       "old": "z01_init_mode_b_enter_cave_bank5",
       "new": "trprt_init_mode_b_enter_cave_bank5",
       "sig": "void (void)"
-    },
-    {
-      "old": "z01_update_trap_full",
-      "new": "trprt_update_trap_full",
-      "sig": "void (unsigned int slot)"
     }
   ]
 }

@@ -65,6 +65,13 @@ void trap_update_whirlwind_full(unsigned int slot);
  * trap_runtime.c:112-122. */
 void trap_update_rupee_stash_full(unsigned int slot);
 
+/* Trap state machine: if state==0, sense Link's bbox and decide
+ * whether to charge along axis (per TrapAllowedDirs gate); if
+ * state!=0, move object + check collisions + reverse at edge.
+ * Always falls through to person_draw_and_check_collisions.
+ * NES UpdateTrap_Full. drain at trap_runtime.c:190-252. */
+void trap_update_trap_full(unsigned int slot);
+
 #ifdef __cplusplus
 }
 #endif
