@@ -325,13 +325,12 @@ static void uw_person_complex_state_begin(void)
         (uint8_t)((unsigned char)CAVE_PERSON_STATE + 1u);
 }
 
-/* Textbox state arm — STAGE-1 STUB. Native textbox port pending. */
-static void uw_person_state_textbox_stub(void)
+/* Textbox state arm — now native. Forward decl to avoid header
+ * cycle between uw_person_dispatch.h and cave_dispatch.h. */
+extern void cave_update_person_state_textbox(void);
+static inline void uw_person_state_textbox_stub(void)
 {
-    /* TODO Phase 4: native cavert_update_person_state_textbox port.
-     * Currently stubbed: cave dialog visually silent under NATIVE_UW_PERSON
-     * for full updaters. Title.md path with NATIVE_UW_PERSON OFF still
-     * uses oracle drain (dialog renders correctly). */
+    cave_update_person_state_textbox();
 }
 
 /* Link_EndMoveAndAnimate_Bank1 — STAGE-1 STUB pending native NES
