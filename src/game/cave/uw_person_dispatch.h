@@ -90,6 +90,17 @@ void uw_person_update_life_or_money_state_2(void);
  * DrawLifeOrMoneyItems. drain at uw_person_runtime.c:210-217. */
 void uw_person_draw_life_or_money_items(void);
 
+/* Run check_monster_collisions (full battery), then if statue-person
+ * fireball state was set on slot 0, copy it to ENEMY_STATUE_PERSON_FIREBALLS
+ * and clear it. NES PersonCheckCollisions.
+ * drain at uw_person_runtime.c:200-208. */
+void uw_person_person_check_collisions(unsigned int slot);
+
+/* uw_person_person_check_collisions then anim_fetch_obj_pos +
+ * draw_object_mirrored. NES Person_DrawAndCheckCollisions.
+ * drain at uw_person_runtime.c:28-32. */
+void uw_person_person_draw_and_check_collisions(unsigned int slot);
+
 #ifdef __cplusplus
 }
 #endif

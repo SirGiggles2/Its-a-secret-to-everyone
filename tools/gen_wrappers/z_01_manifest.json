@@ -19,16 +19,6 @@
   ],
   "symbols": [
     {
-      "old": "z01_person_check_collisions",
-      "new": "uwrt_person_check_collisions",
-      "sig": "void (unsigned int slot)"
-    },
-    {
-      "old": "z01_person_draw_and_check_collisions",
-      "new": "uwrt_person_draw_and_check_collisions",
-      "sig": "void (unsigned int slot)"
-    },
-    {
       "old": "z01_update_grumble3",
       "new": "uwrt_update_grumble3",
       "sig": "void (void)"

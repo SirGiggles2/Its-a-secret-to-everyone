@@ -30,14 +30,6 @@ void z01_init_underworld_person_do_nothing(void) {}
 #include "combat_runtime.h"
 #include "link_collision_runtime.h"
 
-void z01_person_check_collisions(unsigned int slot) {
-    uwrt_person_check_collisions(slot);
-}
-
-void z01_person_draw_and_check_collisions(unsigned int slot) {
-    uwrt_person_draw_and_check_collisions(slot);
-}
-
 void z01_update_grumble3(void) {
     uwrt_update_grumble3();
 }
@@ -1413,6 +1405,22 @@ void z01_draw_life_or_money_items(void) {
     uw_person_draw_life_or_money_items();
 #else
     uwrt_draw_life_or_money_items();
+#endif
+}
+
+void z01_person_check_collisions(unsigned int slot) {
+#ifdef NATIVE_UW_PERSON
+    uw_person_person_check_collisions(slot);
+#else
+    uwrt_person_check_collisions(slot);
+#endif
+}
+
+void z01_person_draw_and_check_collisions(unsigned int slot) {
+#ifdef NATIVE_UW_PERSON
+    uw_person_person_draw_and_check_collisions(slot);
+#else
+    uwrt_person_draw_and_check_collisions(slot);
 #endif
 }
 

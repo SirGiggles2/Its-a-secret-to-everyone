@@ -23,7 +23,12 @@
                                       * core_abs */
 #include "world/progress_dispatch.h" /* progress_set_room_flag_uw_item_state,
                                       * progress_get_room_flag_uw_item_state */
-#include "world/draw_dispatch.h"     /* draw_animate_item_object */
+#include "world/draw_dispatch.h"     /* draw_animate_item_object,
+                                      * draw_object_mirrored */
+#include "world/sprite_dispatch.h"   /* sprite_anim_fetch_obj_pos */
+#include "combat/link_collision_dispatch.h" /* link_collision_check_monster_collisions */
+#include "room_state.h"             /* ROOM_OBJ_STUN_TIMER */
+#include "enemy_state.h"            /* ENEMY_STATUE_PERSON_FIREBALLS */
 
 /* Z_01.asm UnderworldPersonTextSelectorsB[8]. drain at
  * uw_person_runtime.c:35. */
@@ -285,4 +290,23 @@ void uw_person_draw_life_or_money_items(void)
         draw_animate_item_object(
             k_life_or_money_item_types[(unsigned char)i], 19u);
     }
+}
+
+void uw_person_person_check_collisions(unsigned int slot)
+{
+    /* drain at uw_person_runtime.c:200-208. NES PersonCheckCollisions. */
+    link_collision_check_monster_collisions(slot);
+    const unsigned char killed = (unsigned char)ROOM_OBJ_STUN_TIMER(0);
+    if (killed) {
+        ENEMY_STATUE_PERSON_FIREBALLS = killed;
+        ROOM_OBJ_STUN_TIMER(0) = 0u;
+    }
+}
+
+void uw_person_person_draw_and_check_collisions(unsigned int slot)
+{
+    /* drain at uw_person_runtime.c:28-32. NES Person_DrawAndCheckCollisions. */
+    uw_person_person_check_collisions(slot);
+    sprite_anim_fetch_obj_pos(slot);
+    draw_object_mirrored(0u, slot);
 }
