@@ -38,10 +38,6 @@ void z01_init_underworld_person_b(unsigned int slot) {
     uwrt_init_underworld_person_b(slot);
 }
 
-void z01_copy_price_list_template(void) {
-    corert_copy_price_list_template();
-}
-
 void z01_init_underworld_person_c(unsigned int slot) {
     uwrt_init_underworld_person_c(slot);
 }
@@ -695,6 +691,14 @@ void z01_unhalt_link(void) {
     core_unhalt_link();
 #else
     corert_unhalt_link();
+#endif
+}
+
+void z01_copy_price_list_template(void) {
+#ifdef NATIVE_CORE
+    core_copy_price_list_template();
+#else
+    corert_copy_price_list_template();
 #endif
 }
 

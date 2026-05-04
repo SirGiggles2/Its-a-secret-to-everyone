@@ -29,11 +29,6 @@
       "sig": "void (unsigned int slot)"
     },
     {
-      "old": "z01_copy_price_list_template",
-      "new": "corert_copy_price_list_template",
-      "sig": "void (void)"
-    },
-    {
       "old": "z01_init_underworld_person_c",
       "new": "uwrt_init_underworld_person_c",
       "sig": "void (unsigned int slot)"

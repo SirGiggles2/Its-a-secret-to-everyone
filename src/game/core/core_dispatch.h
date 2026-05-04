@@ -34,6 +34,10 @@ void core_cue_transfer_buf_and_advance_state(unsigned int val);
  * src/core/core_runtime.c:219+. */
 unsigned char core_abs(unsigned int val);
 
+/* Copy 17-byte CopyPriceListTemplate into ROOM_TILE_XFER_BUF[0..16].
+ * NES CopyPriceListTemplate. drain at src/core/core_runtime.c:249-258. */
+void core_copy_price_list_template(void);
+
 /* Rupee debit/credit accumulators. NES uses lazy deferred animation:
  * gameplay code adjusts $067E (debit pending) or $067D (credit pending),
  * the HUD per-frame ticks the actual LinkRupees down or up by 1 with

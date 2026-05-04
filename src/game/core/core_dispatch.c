@@ -7,7 +7,7 @@
 #include "core_dispatch.h"
 #include "platform_abi.h"      /* RAM, OBJ */
 #include "object_state.h"      /* OBJ_STATE */
-#include "room_state.h"        /* ROOM_TRANSFER_BUF_SELECT */
+#include "room_state.h"        /* ROOM_TRANSFER_BUF_SELECT, ROOM_TILE_XFER_BUF */
 #include "link_state.h"        /* DEATH_FRAME_COUNTER */
 #include "object_state.h"      /* OBJ_TILE_X/_Y, OBJ_STATE, OBJ_TYPE, OBJ_SHOVE_DIR/DIST, OBJ_INV_TIMER, OBJ_METASTATE */
 #include "sprite_state.h"      /* OAM_BYTE */
@@ -44,6 +44,19 @@ unsigned char core_abs(unsigned int val)
      * signed byte. */
     const signed char s = (signed char)(unsigned char)val;
     return (unsigned char)((s < 0) ? -s : s);
+}
+
+void core_copy_price_list_template(void)
+{
+    /* drain at core_runtime.c:249-258. NES CopyPriceListTemplate.
+     * Static 17-byte template into ROOM_TILE_XFER_BUF[0..16]. */
+    static const unsigned char tmpl[17] = {
+        0x22u, 0xC8u, 0x0Du, 0x21u, 0x24u, 0x24u, 0x24u, 0x24u,
+        0x24u, 0x24u, 0x24u, 0x24u, 0x24u, 0x24u, 0x24u, 0x24u, 0xFFu
+    };
+    for (signed char i = 16; i >= 0; --i) {
+        ROOM_TILE_XFER_BUF((unsigned char)i) = tmpl[(unsigned char)i];
+    }
 }
 
 void core_post_debit(unsigned int amount)
