@@ -170,9 +170,24 @@ for `cavert_update_person_state_textbox` proper.
     c_run_cross_room_tasks_no_cellar)
   - z07_patch_and_cue_level_palettes_transfer + chained users
     (MenuPalettesTransferBuf)
-  - z07_update_mode3_unfurl (c_set_mmc1_control — MMC1 mapper)
-  - z07_update_mode2_load (c_turn_off_all_video, c_update_mode2_load_full)
-  - z07_update_hearts_and_rupees (c_switch_bank — MMC1 PRG)
+  - z07_init_mode3_sub1 (chains to patch_and_cue)
+  - z07_update_mode2_load (drain c_copy_bank_to_window;
+    deferred per debate 007 — needs non-c_-prefixed bank-window
+    primitive or full z_06 native port)
+
+## Debate 007 (no-emulation MMC1) verdict applied 2026-05-03
+
+Per 4-way debate synthesis (Codex+Gemini+Sonnet+Opus consensus):
+  - DROP MMC1/SwitchBank calls entirely in native code.
+  - TurnOffAllVideo: shadow write + Genesis VDP Reg 1 disable
+    (Sonnet correction — pure shadow insufficient).
+  - Drain calls (roomld_/roomobj_/roommd_) from src/game/ NOT shim
+    violation per strict text + spirit.
+
+Cooked: room_turn_off_all_video, room_world_fill_hearts,
+room_update_hearts_and_rupees (drops MMC1 SwitchBank), room_update_mode3_unfurl
+(drops MMC1 SetMMC1Control). 4 fns native. Title.md sha
+56f1e2f7681562fc preserved.
 
   20+ Gate 1 finding docs produced. Native code structure:
   - src/game/cave/cave_dispatch.{h,c}
