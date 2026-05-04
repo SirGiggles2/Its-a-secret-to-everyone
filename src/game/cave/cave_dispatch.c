@@ -25,6 +25,9 @@
 #include "cave_state.h"
 #include "combat_state.h"               /* LINK_HEARTS = RAM(0x066F) */
 #include "world/progress_dispatch.h"    /* progress_set_room_flag_uw_item_state */
+#include "world/sprite_dispatch.h"      /* sprite_anim_fetch_obj_pos */
+#include "world/draw_dispatch.h"        /* draw_object_mirrored,
+                                         * draw_object_not_mirrored */
 #include "core/core_dispatch.h"         /* core_cue_transfer_buf_and_advance_state */
 
 /* Cave-id of the currently active cave (0 = none active).
@@ -529,28 +532,18 @@ void cave_update_hint_or_money_game(void)
 
 void cave_draw_person(unsigned int slot)
 {
-    /* NES DrawCavePerson (Z_01.asm:370-383):
-     *   - Fetch sprite descriptor + position for slot.
-     *   - Branch on ObjType+1 ($0350 = cave_room_type) vs $7B threshold:
-     *       cave_id <  0x7B -> DrawObjectMirrored
-     *       cave_id >= 0x7B -> DrawObjectNotMirrored
+    /* drain at oracle/cave/cave_runtime.c:191-197. NES DrawCavePerson
+     * (Z_01.asm DrawCavePerson via c_draw_cave_person).
      *
-     * Stage-1 port: branch logic native, draw bodies stubbed pending
-     * Phase 4 cross-subsystem native object_draw. cave_room_type_get()
-     * reads RAM($0350) per state_contract.md typed accessor — same byte
-     * NES DrawCavePerson reads via LDY ObjType+1.
-     *
-     * `slot` is forwarded to underlying object draw (when ported). For
-     * now we only consume the branch decision; descriptor fetch + SAT
-     * write are deferred to keep the Phase 3 cave port focused on cave-
-     * specific logic, not the broader sprite-descriptor pipeline. */
-    (void)slot;
-
+     * Fetch sprite descriptor pos, then mirrored vs non-mirrored
+     * draw based on cave_id $7B threshold. Frame defaults to 0 —
+     * the c_draw_object_* shim doesn't set D0 either, and cave
+     * persons are static. */
+    sprite_anim_fetch_obj_pos(slot);
     const unsigned char cave_id = cave_room_type_get();
     if (cave_id < 0x7Bu) {
-        /* TODO Phase 4: native cave_object_draw_mirrored(slot) using
-         * sprite descriptor + render_sat_write. */
+        draw_object_mirrored(0u, slot);
     } else {
-        /* TODO Phase 4: native cave_object_draw_not_mirrored(slot). */
+        draw_object_not_mirrored(0u, slot);
     }
 }
