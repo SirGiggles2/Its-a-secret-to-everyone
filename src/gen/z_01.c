@@ -130,10 +130,6 @@ void z01_harm_link(unsigned int monster_slot) {
     lcrt_harm_link(monster_slot);
 }
 
-void z01_link_be_harmed(unsigned int monster_slot) {
-    lcrt_link_be_harmed(monster_slot);
-}
-
 void z01_check_link_collision_preinit(unsigned int monster_slot) {
     lcrt_check_link_collision_preinit(monster_slot);
 }
@@ -1361,5 +1357,20 @@ void z01_update_uw_person_life_or_money_state_2(void) {
     uw_person_update_life_or_money_state_2();
 #else
     uwrt_update_life_or_money_state_2();
+#endif
+}
+
+/* Phase 4 native link_collision subsystem cutover gate —
+ * NATIVE_LINK_COLLISION. First port: link_be_harmed (heart-damage core).
+ * Drain MATCH per finding 4_12n_link_collision. */
+#ifdef NATIVE_LINK_COLLISION
+#include "combat/link_collision_dispatch.h"
+#endif
+
+void z01_link_be_harmed(unsigned int monster_slot) {
+#ifdef NATIVE_LINK_COLLISION
+    link_collision_link_be_harmed(monster_slot);
+#else
+    lcrt_link_be_harmed(monster_slot);
 #endif
 }
