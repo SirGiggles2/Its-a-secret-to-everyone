@@ -36,6 +36,11 @@ void uw_person_flag_item_taken_and_advance_state(void);
  * drain at uw_person_runtime.c:124-131. */
 void uw_person_update_grumble1(void);
 
+/* Init underworld-person variant B (older man). Sets up cave objs,
+ * picks text selector by obj type, plays char sfx. NES
+ * InitUnderworldPersonB. drain at uw_person_runtime.c:34-43. */
+void uw_person_init_underworld_person_b(unsigned int slot);
+
 #ifdef __cplusplus
 }
 #endif

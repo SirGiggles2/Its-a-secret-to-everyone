@@ -19,11 +19,6 @@
   ],
   "symbols": [
     {
-      "old": "z01_init_underworld_person_b",
-      "new": "uwrt_init_underworld_person_b",
-      "sig": "void (unsigned int slot)"
-    },
-    {
       "old": "z01_init_underworld_person_c",
       "new": "uwrt_init_underworld_person_c",
       "sig": "void (unsigned int slot)"

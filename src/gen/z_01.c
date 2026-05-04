@@ -30,10 +30,6 @@ void z01_init_underworld_person_do_nothing(void) {}
 #include "combat_runtime.h"
 #include "link_collision_runtime.h"
 
-void z01_init_underworld_person_b(unsigned int slot) {
-    uwrt_init_underworld_person_b(slot);
-}
-
 void z01_init_underworld_person_c(unsigned int slot) {
     uwrt_init_underworld_person_c(slot);
 }
@@ -1325,5 +1321,13 @@ void z01_update_grumble1(void) {
     uw_person_update_grumble1();
 #else
     uwrt_update_grumble1();
+#endif
+}
+
+void z01_init_underworld_person_b(unsigned int slot) {
+#ifdef NATIVE_UW_PERSON
+    uw_person_init_underworld_person_b(slot);
+#else
+    uwrt_init_underworld_person_b(slot);
 #endif
 }

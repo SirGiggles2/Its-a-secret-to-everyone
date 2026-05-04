@@ -8,12 +8,20 @@
 #include "uw_person_dispatch.h"
 #include <stdint.h>
 #include "platform_abi.h"
-#include "cave_state.h"        /* CAVE_DELAY_TIMER */
-#include "object_state.h"      /* OBJ_STATE, OBJ_TILE_Y */
+#include "cave_state.h"        /* CAVE_DELAY_TIMER, CAVE_TEXT_SELECTOR */
+#include "object_state.h"      /* OBJ_STATE, OBJ_TILE_Y, OBJ_TYPE */
 #include "link_state.h"        /* LINK_MOVING_DIR */
 #include "item_state.h"        /* ITEM_SFX_PRIMARY */
-#include "core/core_dispatch.h"      /* core_cue_transfer_buf_and_advance_state */
+#include "core/core_dispatch.h"      /* core_cue_transfer_buf_and_advance_state,
+                                      * core_set_up_common_cave_objects,
+                                      * core_play_character_sfx */
 #include "world/progress_dispatch.h" /* progress_set_room_flag_uw_item_state */
+
+/* Z_01.asm UnderworldPersonTextSelectorsB[8]. drain at
+ * uw_person_runtime.c:35. */
+static const unsigned char k_underworld_person_text_selectors_b[8] = {
+    0x2Au, 0x38u, 0x3Au, 0x2Cu, 0x40u, 0x42u, 0x42u, 0x3Cu
+};
 
 /* z07_reset_moving_dir is `LINK_MOVING_DIR = 0` — inline to avoid the
  * not-yet-native core ASM-bridge wrapper. NES ResetMovingDir is one
@@ -60,4 +68,14 @@ void uw_person_update_grumble1(void)
     OBJ_STATE(0) = 64u;
     ITEM_SFX_PRIMARY = 4u;
     uw_person_flag_item_taken_and_advance_state();
+}
+
+void uw_person_init_underworld_person_b(unsigned int slot)
+{
+    /* drain at uw_person_runtime.c:34-43. */
+    core_set_up_common_cave_objects(120u, slot, 0x80u);
+    const unsigned char obj_type = (unsigned char)OBJ_TYPE(slot);
+    const unsigned char idx = (unsigned char)(obj_type - 0x4Bu);
+    CAVE_TEXT_SELECTOR = k_underworld_person_text_selectors_b[idx & 7u];
+    core_play_character_sfx();
 }
