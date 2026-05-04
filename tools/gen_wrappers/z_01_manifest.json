@@ -74,66 +74,6 @@
       "sig": "void (unsigned char item_id)"
     },
     {
-      "old": "z01_handle_monster_weapon_collision",
-      "new": "colrt_handle_monster_weapon_collision",
-      "sig": "void (unsigned int monster_slot, unsigned int weapon_slot)"
-    },
-    {
-      "old": "z01_check_monster_weapon_collision",
-      "new": "colrt_check_monster_weapon_collision",
-      "sig": "void (unsigned int monster_slot, unsigned int weapon_y_mid)"
-    },
-    {
-      "old": "z01_check_monster_slender_weapon_collision2",
-      "new": "colrt_check_monster_slender_weapon_collision2",
-      "sig": "void (unsigned int monster_slot)"
-    },
-    {
-      "old": "z01_check_monster_slender_weapon_collision",
-      "new": "colrt_check_monster_slender_weapon_collision",
-      "sig": "void (unsigned int monster_slot, unsigned int damage_points)"
-    },
-    {
-      "old": "z01_parry_or_shove",
-      "new": "colrt_parry_or_shove",
-      "sig": "void (unsigned int monster_slot, unsigned int weapon_slot)"
-    },
-    {
-      "old": "z01_check_monster_stabbing_collision",
-      "new": "colrt_check_monster_stabbing_collision",
-      "sig": "void (unsigned int monster_slot, unsigned int damage_points)"
-    },
-    {
-      "old": "z01_check_monster_sword_collision",
-      "new": "colrt_check_monster_sword_collision",
-      "sig": "void (unsigned int monster_slot, unsigned int weapon_slot)"
-    },
-    {
-      "old": "z01_check_monster_shot_collision",
-      "new": "colrt_check_monster_shot_collision",
-      "sig": "void (unsigned int monster_slot, unsigned int weapon_slot, unsigned int damage_points)"
-    },
-    {
-      "old": "z01_check_monster_arrow_or_rod_collision",
-      "new": "colrt_check_monster_arrow_or_rod_collision",
-      "sig": "void (unsigned int monster_slot, unsigned int weapon_slot)"
-    },
-    {
-      "old": "z01_check_monster_boomerang_or_food_collision",
-      "new": "colrt_check_monster_boomerang_or_food_collision",
-      "sig": "void (unsigned int monster_slot, unsigned int weapon_slot)"
-    },
-    {
-      "old": "z01_check_monster_sword_shot_or_magic_shot_collision",
-      "new": "colrt_check_monster_sword_shot_or_magic_shot_collision",
-      "sig": "void (unsigned int monster_slot, unsigned int weapon_slot)"
-    },
-    {
-      "old": "z01_check_monster_bomb_or_fire_collision",
-      "new": "colrt_check_monster_bomb_or_fire_collision",
-      "sig": "void (unsigned int monster_slot, unsigned int weapon_slot)"
-    },
-    {
       "old": "z01_check_monster_collisions",
       "new": "lcrt_check_monster_collisions",
       "sig": "void (unsigned int monster_slot)"

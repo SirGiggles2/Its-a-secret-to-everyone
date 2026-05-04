@@ -74,54 +74,6 @@ void z01_take_item(unsigned char item_id) {
     itemrt_take_item(item_id);
 }
 
-void z01_handle_monster_weapon_collision(unsigned int monster_slot, unsigned int weapon_slot) {
-    colrt_handle_monster_weapon_collision(monster_slot, weapon_slot);
-}
-
-void z01_check_monster_weapon_collision(unsigned int monster_slot, unsigned int weapon_y_mid) {
-    colrt_check_monster_weapon_collision(monster_slot, weapon_y_mid);
-}
-
-void z01_check_monster_slender_weapon_collision2(unsigned int monster_slot) {
-    colrt_check_monster_slender_weapon_collision2(monster_slot);
-}
-
-void z01_check_monster_slender_weapon_collision(unsigned int monster_slot, unsigned int damage_points) {
-    colrt_check_monster_slender_weapon_collision(monster_slot, damage_points);
-}
-
-void z01_parry_or_shove(unsigned int monster_slot, unsigned int weapon_slot) {
-    colrt_parry_or_shove(monster_slot, weapon_slot);
-}
-
-void z01_check_monster_stabbing_collision(unsigned int monster_slot, unsigned int damage_points) {
-    colrt_check_monster_stabbing_collision(monster_slot, damage_points);
-}
-
-void z01_check_monster_sword_collision(unsigned int monster_slot, unsigned int weapon_slot) {
-    colrt_check_monster_sword_collision(monster_slot, weapon_slot);
-}
-
-void z01_check_monster_shot_collision(unsigned int monster_slot, unsigned int weapon_slot, unsigned int damage_points) {
-    colrt_check_monster_shot_collision(monster_slot, weapon_slot, damage_points);
-}
-
-void z01_check_monster_arrow_or_rod_collision(unsigned int monster_slot, unsigned int weapon_slot) {
-    colrt_check_monster_arrow_or_rod_collision(monster_slot, weapon_slot);
-}
-
-void z01_check_monster_boomerang_or_food_collision(unsigned int monster_slot, unsigned int weapon_slot) {
-    colrt_check_monster_boomerang_or_food_collision(monster_slot, weapon_slot);
-}
-
-void z01_check_monster_sword_shot_or_magic_shot_collision(unsigned int monster_slot, unsigned int weapon_slot) {
-    colrt_check_monster_sword_shot_or_magic_shot_collision(monster_slot, weapon_slot);
-}
-
-void z01_check_monster_bomb_or_fire_collision(unsigned int monster_slot, unsigned int weapon_slot) {
-    colrt_check_monster_bomb_or_fire_collision(monster_slot, weapon_slot);
-}
-
 void z01_check_monster_collisions(unsigned int monster_slot) {
     lcrt_check_monster_collisions(monster_slot);
 }
@@ -1029,6 +981,102 @@ unsigned char z01_do_objects_collide_with_thresholds(void) {
     return collision_do_objects_collide_with_thresholds();
 #else
     return colrt_do_objects_collide_with_thresholds();
+#endif
+}
+
+void z01_handle_monster_weapon_collision(unsigned int monster_slot, unsigned int weapon_slot) {
+#ifdef NATIVE_COLLISION
+    collision_handle_monster_weapon_collision(monster_slot, weapon_slot);
+#else
+    colrt_handle_monster_weapon_collision(monster_slot, weapon_slot);
+#endif
+}
+
+void z01_check_monster_weapon_collision(unsigned int monster_slot, unsigned int weapon_y_mid) {
+#ifdef NATIVE_COLLISION
+    collision_check_monster_weapon_collision(monster_slot, weapon_y_mid);
+#else
+    colrt_check_monster_weapon_collision(monster_slot, weapon_y_mid);
+#endif
+}
+
+void z01_check_monster_slender_weapon_collision2(unsigned int monster_slot) {
+#ifdef NATIVE_COLLISION
+    collision_check_monster_slender_weapon_collision2(monster_slot);
+#else
+    colrt_check_monster_slender_weapon_collision2(monster_slot);
+#endif
+}
+
+void z01_check_monster_slender_weapon_collision(unsigned int monster_slot, unsigned int damage_points) {
+#ifdef NATIVE_COLLISION
+    collision_check_monster_slender_weapon_collision(monster_slot, damage_points);
+#else
+    colrt_check_monster_slender_weapon_collision(monster_slot, damage_points);
+#endif
+}
+
+void z01_parry_or_shove(unsigned int monster_slot, unsigned int weapon_slot) {
+#ifdef NATIVE_COLLISION
+    collision_parry_or_shove(monster_slot, weapon_slot);
+#else
+    colrt_parry_or_shove(monster_slot, weapon_slot);
+#endif
+}
+
+void z01_check_monster_stabbing_collision(unsigned int monster_slot, unsigned int damage_points) {
+#ifdef NATIVE_COLLISION
+    collision_check_monster_stabbing_collision(monster_slot, damage_points);
+#else
+    colrt_check_monster_stabbing_collision(monster_slot, damage_points);
+#endif
+}
+
+void z01_check_monster_sword_collision(unsigned int monster_slot, unsigned int weapon_slot) {
+#ifdef NATIVE_COLLISION
+    collision_check_monster_sword_collision(monster_slot, weapon_slot);
+#else
+    colrt_check_monster_sword_collision(monster_slot, weapon_slot);
+#endif
+}
+
+void z01_check_monster_shot_collision(unsigned int monster_slot, unsigned int weapon_slot, unsigned int damage_points) {
+#ifdef NATIVE_COLLISION
+    collision_check_monster_shot_collision(monster_slot, weapon_slot, damage_points);
+#else
+    colrt_check_monster_shot_collision(monster_slot, weapon_slot, damage_points);
+#endif
+}
+
+void z01_check_monster_arrow_or_rod_collision(unsigned int monster_slot, unsigned int weapon_slot) {
+#ifdef NATIVE_COLLISION
+    collision_check_monster_arrow_or_rod_collision(monster_slot, weapon_slot);
+#else
+    colrt_check_monster_arrow_or_rod_collision(monster_slot, weapon_slot);
+#endif
+}
+
+void z01_check_monster_boomerang_or_food_collision(unsigned int monster_slot, unsigned int weapon_slot) {
+#ifdef NATIVE_COLLISION
+    collision_check_monster_boomerang_or_food_collision(monster_slot, weapon_slot);
+#else
+    colrt_check_monster_boomerang_or_food_collision(monster_slot, weapon_slot);
+#endif
+}
+
+void z01_check_monster_sword_shot_or_magic_shot_collision(unsigned int monster_slot, unsigned int weapon_slot) {
+#ifdef NATIVE_COLLISION
+    collision_check_monster_sword_shot_or_magic_shot_collision(monster_slot, weapon_slot);
+#else
+    colrt_check_monster_sword_shot_or_magic_shot_collision(monster_slot, weapon_slot);
+#endif
+}
+
+void z01_check_monster_bomb_or_fire_collision(unsigned int monster_slot, unsigned int weapon_slot) {
+#ifdef NATIVE_COLLISION
+    collision_check_monster_bomb_or_fire_collision(monster_slot, weapon_slot);
+#else
+    colrt_check_monster_bomb_or_fire_collision(monster_slot, weapon_slot);
 #endif
 }
 

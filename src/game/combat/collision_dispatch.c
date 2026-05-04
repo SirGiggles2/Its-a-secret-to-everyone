@@ -9,7 +9,12 @@
 #include "platform_abi.h"
 #include "combat_state.h"      /* COMBAT_*, COMBAT_HITBOX_X/Y, COMBAT_THRESHOLD_X/Y, COMBAT_COLLIDED, COMBAT_ABS_DX/DY, COMBAT_PART_INDEX */
 #include "enemy_state.h"       /* ENEMY_GLEEOK_NECK_Y_PTR_LO/HI, ENEMY_COLLIDED_TILE, ENEMY_DARK_ROOM_FLAG, ENEMY_CANDLE_ROOM_ID, ENEMY_PLAYER_OBJ_X/Y */
-#include "object_state.h"      /* OBJ_TILE_X/_Y */
+#include "object_state.h"      /* OBJ_TILE_X/_Y, OBJ_X, OBJ_Y, OBJ_DIR, OBJ_STATE */
+#include "world_state.h"       /* LINK_DIR */
+#include "core/core_dispatch.h"        /* core_play_parry_tune, core_handle_shot_blocked */
+#include "combat/combat_dispatch.h"    /* combat_play_parry_sound_for_damage_type, combat_deal_damage */
+#include "combat/link_collision_dispatch.h" /* link_collision_begin_shove */
+#include "enemies/enemy_dispatch.h"    /* enemy_gohma_handle_weapon_collision */
 
 /* NES Z_07.asm PlayAreaColumnAddrs (line 336): 32 LE 16-bit pointers
  * pointing into nes_ram (SRAM range $6500..$67DA). Baked inline. */
@@ -27,6 +32,12 @@ static const unsigned char k_play_area_column_addrs[64] = {
 /* NES Z_07.asm WalkableTiles (line 2099): 9 bytes. */
 static const unsigned char k_walkable_tiles[9] = {
     0x8Du, 0x91u, 0x9Cu, 0xACu, 0xADu, 0xCCu, 0xD2u, 0xD5u, 0xDFu
+};
+
+/* SwordDamagePoints[3] — sword level 1/2/3 damage. NES drain
+ * at collision_runtime.c:6. */
+static const unsigned char k_sword_damage_points[3] = {
+    0x10u, 0x20u, 0x40u
 };
 
 unsigned char collision_do_objects_collide_with_thresholds(void)
@@ -172,4 +183,276 @@ unsigned char collision_get_colliding_tile_moving(unsigned int slot)
         }
     }
     return collision_get_collidable_tile(hotspot, slot);
+}
+
+/* --------------------------------------------------------------- */
+/* Monster-vs-weapon battery — drain at collision_runtime.c:36-235.*/
+/* --------------------------------------------------------------- */
+
+void collision_handle_monster_weapon_collision(unsigned int monster_slot,
+                                               unsigned int weapon_slot)
+{
+    /* drain at collision_runtime.c:36-63. */
+    if ((unsigned char)MON_INVINCIBILITY(monster_slot) &
+        (unsigned char)COMBAT_DAMAGE_TYPE) {
+        combat_play_parry_sound_for_damage_type();
+        return;
+    }
+    const unsigned char mtype = (unsigned char)MON_TYPE(monster_slot);
+    if (mtype == 0x33u || mtype == 0x34u) {
+        enemy_gohma_handle_weapon_collision(monster_slot, weapon_slot);
+        return;
+    }
+    if (mtype == 0x13u || mtype == 0x12u) {
+        if (weapon_slot != 0x0Fu) {
+            OBJ_DIR(monster_slot) = (uint8_t)OBJ_DIR(weapon_slot);
+        }
+        combat_deal_damage(monster_slot);
+        return;
+    }
+    if (mtype == 0x0Bu || mtype == 0x0Cu) {
+        const unsigned char combined =
+            (unsigned char)((unsigned char)OBJ_DIR(weapon_slot) |
+                            (unsigned char)OBJ_DIR(monster_slot));
+        if (combined == 0x0Cu || combined == 0x03u) {
+            combat_play_parry_sound_for_damage_type();
+            return;
+        }
+    }
+    combat_deal_damage(monster_slot);
+}
+
+void collision_check_monster_weapon_collision(unsigned int monster_slot,
+                                              unsigned int weapon_y_mid)
+{
+    /* drain at collision_runtime.c:65-89. */
+    COMBAT_HITBOX_Y = (uint8_t)weapon_y_mid;
+    COMBAT_COLLIDED = 0u;
+    const unsigned int weapon_slot = (unsigned int)COMBAT_WEAPON_SLOT;
+    if ((unsigned char)OBJ_STATE(weapon_slot) == 0u) {
+        return;
+    }
+    if (!collision_do_objects_collide_with_thresholds()) {
+        return;
+    }
+    if (weapon_slot == 0x0Fu) {
+        const unsigned char inv =
+            (unsigned char)((unsigned char)MON_INVINCIBILITY(monster_slot) &
+                            (unsigned char)COMBAT_DAMAGE_TYPE);
+        if (inv) {
+            core_play_parry_tune();
+        }
+        OBJ_STATE(weapon_slot) = 80u;
+        if (inv) {
+            return;
+        }
+        COMBAT_DAMAGE_AMOUNT = 0u;
+        MON_STUN_TIMER(monster_slot) = 16u;
+    }
+    collision_handle_monster_weapon_collision(monster_slot, weapon_slot);
+}
+
+void collision_check_monster_slender_weapon_collision2(unsigned int monster_slot)
+{
+    /* drain at collision_runtime.c:91-105. */
+    const unsigned int weapon_slot = (unsigned int)COMBAT_WEAPON_SLOT;
+    const unsigned char dir = (unsigned char)((unsigned char)LINK_DIR & 0x0Cu);
+    unsigned char wx;
+    unsigned char wy;
+    if (dir != 0u) {
+        wx = (unsigned char)((unsigned char)OBJ_X(weapon_slot) + 6u);
+        wy = (unsigned char)((unsigned char)OBJ_Y(weapon_slot) + 8u);
+    } else {
+        wx = (unsigned char)((unsigned char)OBJ_X(weapon_slot) + 8u);
+        wy = (unsigned char)((unsigned char)OBJ_Y(weapon_slot) + 6u);
+    }
+    COMBAT_HITBOX_X = wx;
+    collision_check_monster_weapon_collision(monster_slot, (unsigned int)wy);
+}
+
+void collision_check_monster_slender_weapon_collision(unsigned int monster_slot,
+                                                      unsigned int damage_points)
+{
+    /* drain at collision_runtime.c:107-111. */
+    COMBAT_DAMAGE_AMOUNT = (uint8_t)damage_points;
+    COMBAT_THRESHOLD_Y = (uint8_t)COMBAT_THRESHOLD_X;
+    collision_check_monster_slender_weapon_collision2(monster_slot);
+}
+
+void collision_parry_or_shove(unsigned int monster_slot,
+                              unsigned int weapon_slot)
+{
+    /* drain at collision_runtime.c:113-123. */
+    const unsigned char mtype = (unsigned char)MON_TYPE(monster_slot);
+    if (mtype == 0x0Bu || mtype == 0x0Cu) {
+        const unsigned char combined =
+            (unsigned char)((unsigned char)OBJ_DIR(weapon_slot) |
+                            (unsigned char)OBJ_DIR(monster_slot));
+        if (combined == 0x0Cu || combined == 0x03u) {
+            core_play_parry_tune();
+            return;
+        }
+    }
+    link_collision_begin_shove(monster_slot);
+}
+
+void collision_check_monster_stabbing_collision(unsigned int monster_slot,
+                                                unsigned int damage_points)
+{
+    /* drain at collision_runtime.c:125-142. */
+    COMBAT_DAMAGE_AMOUNT = (uint8_t)damage_points;
+    {
+        const unsigned char dir =
+            (unsigned char)((unsigned char)LINK_DIR & 0x0Cu);
+        if (dir != 0u) {
+            COMBAT_THRESHOLD_X = 12u;
+            COMBAT_THRESHOLD_Y = 16u;
+        } else {
+            COMBAT_THRESHOLD_X = 16u;
+            COMBAT_THRESHOLD_Y = 12u;
+        }
+    }
+    collision_check_monster_slender_weapon_collision2(monster_slot);
+    if (!(unsigned char)COMBAT_COLLIDED) {
+        return;
+    }
+    collision_parry_or_shove(monster_slot,
+                             (unsigned int)(unsigned char)COMBAT_WEAPON_SLOT);
+}
+
+void collision_check_monster_sword_collision(unsigned int monster_slot,
+                                             unsigned int weapon_slot)
+{
+    /* drain at collision_runtime.c:144-149. */
+    COMBAT_WEAPON_SLOT = (uint8_t)weapon_slot;
+    COMBAT_DAMAGE_TYPE = 1u;
+    if ((unsigned char)OBJ_STATE(weapon_slot) != 2u) {
+        return;
+    }
+    const unsigned char level = (unsigned char)ITEM_SWORD_LEVEL;
+    const unsigned char idx = (level >= 1u && level <= 3u) ? (level - 1u) : 0u;
+    collision_check_monster_stabbing_collision(
+        monster_slot, (unsigned int)k_sword_damage_points[idx]);
+}
+
+void collision_check_monster_shot_collision(unsigned int monster_slot,
+                                            unsigned int weapon_slot,
+                                            unsigned int damage_points)
+{
+    /* drain at collision_runtime.c:151-166. */
+    collision_check_monster_slender_weapon_collision(monster_slot, damage_points);
+    if (!(unsigned char)COMBAT_COLLIDED) {
+        return;
+    }
+    if (weapon_slot != 0x12u) {
+        collision_parry_or_shove(monster_slot, weapon_slot);
+        return;
+    }
+    if ((unsigned char)MON_TYPE(monster_slot) == 0x16u) {
+        MON_HP(monster_slot) = 0u;
+        combat_deal_damage(monster_slot);
+        return;
+    }
+    OBJ_STATE(weapon_slot) = 32u;
+    OBJ_ANIM_TIMER(weapon_slot) = 3u;
+    collision_parry_or_shove(monster_slot, weapon_slot);
+}
+
+void collision_check_monster_arrow_or_rod_collision(unsigned int monster_slot,
+                                                    unsigned int weapon_slot)
+{
+    /* drain at collision_runtime.c:168-181. */
+    COMBAT_WEAPON_SLOT = (uint8_t)weapon_slot;
+    const unsigned char state = (unsigned char)OBJ_STATE(weapon_slot);
+    if (state >= 0x30u) {
+        COMBAT_DAMAGE_TYPE = 1u;
+        collision_check_monster_stabbing_collision(monster_slot, 32u);
+        return;
+    }
+    if (state >= 0x20u) {
+        return;
+    }
+    COMBAT_DAMAGE_TYPE = 4u;
+    COMBAT_THRESHOLD_X = 11u;
+    const unsigned int dmg =
+        ((unsigned char)ITEM_ARROW_OR_ROD_LEVEL == 1u) ? 32u : 64u;
+    collision_check_monster_shot_collision(monster_slot, weapon_slot, dmg);
+}
+
+void collision_check_monster_boomerang_or_food_collision(
+    unsigned int monster_slot, unsigned int weapon_slot)
+{
+    /* drain at collision_runtime.c:183-191. */
+    if ((unsigned char)OBJ_STATE(weapon_slot) & 0x80u) {
+        return;
+    }
+    COMBAT_WEAPON_SLOT = (uint8_t)weapon_slot;
+    COMBAT_DAMAGE_TYPE = 2u;
+    COMBAT_THRESHOLD_X = 10u;
+    COMBAT_THRESHOLD_Y = 10u;
+    COMBAT_HITBOX_X =
+        (uint8_t)((unsigned char)OBJ_X(weapon_slot) + 4u);
+    collision_check_monster_weapon_collision(
+        monster_slot,
+        (unsigned int)(unsigned char)((unsigned char)OBJ_Y(weapon_slot) + 8u));
+}
+
+void collision_check_monster_sword_shot_or_magic_shot_collision(
+    unsigned int monster_slot, unsigned int weapon_slot)
+{
+    /* drain at collision_runtime.c:193-211. */
+    COMBAT_WEAPON_SLOT = (uint8_t)weapon_slot;
+    COMBAT_DAMAGE_TYPE = 16u;
+    const unsigned char state = (unsigned char)OBJ_STATE(weapon_slot);
+    if (state & 1u) {
+        return;
+    }
+    COMBAT_THRESHOLD_X = 12u;
+    unsigned int damage;
+    if (state & 0x80u) {
+        damage = 32u;
+    } else {
+        const unsigned char level = (unsigned char)ITEM_SWORD_LEVEL;
+        COMBAT_DAMAGE_TYPE = 1u;
+        damage = (level == 3u) ? 64u : (level == 2u) ? 32u : 16u;
+    }
+    collision_check_monster_shot_collision(monster_slot, weapon_slot, damage);
+    if (!(unsigned char)COMBAT_COLLIDED) {
+        return;
+    }
+    core_handle_shot_blocked(14u);
+}
+
+void collision_check_monster_bomb_or_fire_collision(
+    unsigned int monster_slot, unsigned int weapon_slot)
+{
+    /* drain at collision_runtime.c:213-235. */
+    COMBAT_WEAPON_SLOT = (uint8_t)weapon_slot;
+    COMBAT_DAMAGE_TYPE = 32u;
+    COMBAT_DAMAGE_AMOUNT = 16u;
+    COMBAT_THRESHOLD_X = 14u;
+    const unsigned char state = (unsigned char)OBJ_STATE(weapon_slot);
+    if (state >= 0x20u) {
+        /* fall through to hitbox calc */
+    } else if (state == 0x13u) {
+        COMBAT_DAMAGE_TYPE = 8u;
+        COMBAT_DAMAGE_AMOUNT = 64u;
+        COMBAT_THRESHOLD_X = 24u;
+    } else {
+        return;
+    }
+    COMBAT_HITBOX_X =
+        (uint8_t)((unsigned char)OBJ_X(weapon_slot) + 8u);
+    COMBAT_HITBOX_Y =
+        (uint8_t)((unsigned char)OBJ_Y(weapon_slot) + 8u);
+    COMBAT_THRESHOLD_Y = (uint8_t)COMBAT_THRESHOLD_X;
+    if (!collision_do_objects_collide_with_thresholds()) {
+        return;
+    }
+    collision_handle_monster_weapon_collision(monster_slot, weapon_slot);
+    if ((unsigned char)MON_INVINCIBILITY(monster_slot) &
+        (unsigned char)COMBAT_DAMAGE_TYPE) {
+        return;
+    }
+    link_collision_begin_shove(monster_slot);
 }

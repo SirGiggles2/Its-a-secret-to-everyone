@@ -33,6 +33,69 @@ unsigned char collision_get_collidable_tile_still(unsigned int slot);
  * NES GetCollidingTileMoving. */
 unsigned char collision_get_colliding_tile_moving(unsigned int slot);
 
+/* Dispatch monster-vs-weapon collision response: gohma special path,
+ * direction-based parry for $0B/$0C, dirward-flip for $12/$13, deal
+ * damage. NES HandleMonsterWeaponCollision (collision_runtime.c:36-63). */
+void collision_handle_monster_weapon_collision(unsigned int monster_slot,
+                                               unsigned int weapon_slot);
+
+/* Bbox vs weapon collision check + dispatch handle. NES
+ * CheckMonsterWeaponCollision (collision_runtime.c:65-89). */
+void collision_check_monster_weapon_collision(unsigned int monster_slot,
+                                              unsigned int weapon_y_mid);
+
+/* Slender-weapon hitbox setup + check. NES
+ * CheckMonsterSlenderWeaponCollision2 (collision_runtime.c:91-105). */
+void collision_check_monster_slender_weapon_collision2(unsigned int monster_slot);
+
+/* Set damage points + threshold-Y, dispatch slender2.
+ * NES CheckMonsterSlenderWeaponCollision (collision_runtime.c:107-111). */
+void collision_check_monster_slender_weapon_collision(
+    unsigned int monster_slot, unsigned int damage_points);
+
+/* Direction-based parry vs shove dispatch. NES
+ * ParryOrShove (collision_runtime.c:113-123). */
+void collision_parry_or_shove(unsigned int monster_slot,
+                              unsigned int weapon_slot);
+
+/* Sword stab axis-dependent threshold + slender check + parry/shove.
+ * NES CheckMonsterStabbingCollision (collision_runtime.c:125-142). */
+void collision_check_monster_stabbing_collision(unsigned int monster_slot,
+                                                unsigned int damage_points);
+
+/* Sword-hit dispatch with sword-level damage table.
+ * NES CheckMonsterSwordCollision (collision_runtime.c:144-149). */
+void collision_check_monster_sword_collision(unsigned int monster_slot,
+                                             unsigned int weapon_slot);
+
+/* Generic shot collision: slender check + parry/shove (or special
+ * boomerang at slot $12 against vire $16 type).
+ * NES CheckMonsterShotCollision (collision_runtime.c:151-166). */
+void collision_check_monster_shot_collision(unsigned int monster_slot,
+                                            unsigned int weapon_slot,
+                                            unsigned int damage_points);
+
+/* Arrow + rod state machine: sparked => stab; flying => shot.
+ * NES CheckMonsterArrowOrRodCollision (collision_runtime.c:168-181). */
+void collision_check_monster_arrow_or_rod_collision(unsigned int monster_slot,
+                                                    unsigned int weapon_slot);
+
+/* Boomerang/food shot collision (axis hitbox setup).
+ * NES CheckMonsterBoomerangOrFoodCollision (collision_runtime.c:183-191). */
+void collision_check_monster_boomerang_or_food_collision(
+    unsigned int monster_slot, unsigned int weapon_slot);
+
+/* Sword-shot or magic-shot collision (sword level damage).
+ * NES CheckMonsterSwordShotOrMagicShotCollision
+ * (collision_runtime.c:193-211). */
+void collision_check_monster_sword_shot_or_magic_shot_collision(
+    unsigned int monster_slot, unsigned int weapon_slot);
+
+/* Bomb/fire collision with bomb fuse damage scaling.
+ * NES CheckMonsterBombOrFireCollision (collision_runtime.c:213-235). */
+void collision_check_monster_bomb_or_fire_collision(
+    unsigned int monster_slot, unsigned int weapon_slot);
+
 #ifdef __cplusplus
 }
 #endif
