@@ -26,8 +26,10 @@
 #include "scratch_state.h"     /* ZP_TMP0..ZP_TMPF */
 #include "object_state.h"      /* OBJ_TYPE */
 #include "combat_state.h"      /* MON_STATUS_FLAGS, MON_HIT_REACTION */
+#include "progress_state.h"    /* FRAME_COUNTER */
 #include "core/core_dispatch.h"      /* core_anim_set_sprite_desc_attrs */
-#include "world/sprite_dispatch.h"   /* sprite_cycle_cur_sprite_index */
+#include "world/sprite_dispatch.h"   /* sprite_cycle_cur_sprite_index,
+                                      * sprite_anim_fetch_obj_pos */
 
 /* --------------------------------------------------------------- */
 /* Zero-page scratch slot semantic aliases for the draw pipeline.   */
@@ -144,6 +146,57 @@ static const unsigned char k_obj_anim_attr_heap[228] = {
     0x03u, 0x03u, 0x03u, 0x03u, 0x03u, 0x03u, 0x03u, 0x03u,
     0x03u, 0x03u, 0x03u, 0x03u, 0x03u, 0x03u, 0x02u, 0x02u,
     0x01u, 0x01u, 0x02u, 0x03u
+};
+
+/* Anim_ItemFrameOffsets[37] (Z_01.asm:2320). Indexed by item slot;
+ * produces offset into k_anim_item_frame_tiles for first frame. */
+static const unsigned char k_anim_item_frame_offsets[37] = {
+    0x00u, 0x03u, 0x07u, 0x0Au, 0x0Bu, 0x0Cu, 0x0Du, 0x0Eu,
+    0x0Fu, 0x11u, 0x12u, 0x13u, 0x14u, 0x15u, 0x16u, 0x17u,
+    0x18u, 0x17u, 0x18u, 0x17u, 0x19u, 0x1Bu, 0x1Cu, 0x1Du,
+    0x1Eu, 0x1Fu, 0x20u, 0x21u, 0x1Cu, 0x22u, 0x22u, 0x26u,
+    0x27u, 0x28u, 0x29u, 0x2Bu, 0x2Eu
+};
+
+/* Anim_ItemFrameTiles[48] (Z_01.asm:2329). Per-item left tile. */
+static const unsigned char k_anim_item_frame_tiles[48] = {
+    0x20u, 0x82u, 0x3Cu, 0x34u, 0x70u, 0x72u, 0x74u, 0x28u,
+    0x86u, 0x3Cu, 0x2Au, 0x26u, 0x24u, 0x22u, 0x40u, 0x4Au,
+    0x8Au, 0x6Cu, 0x42u, 0x46u, 0x76u, 0x2Cu, 0x4Eu, 0x4Cu,
+    0x6Au, 0x50u, 0x52u, 0x66u, 0x32u, 0x2Eu, 0x68u, 0xF3u,
+    0x6Eu, 0xF2u, 0x36u, 0x38u, 0x3Au, 0x3Cu, 0x56u, 0x48u,
+    0x78u, 0x20u, 0x82u, 0x7Au, 0x7Cu, 0x30u, 0x64u, 0x62u
+};
+
+/* ItemIdToSlot[36] (Z_01.asm:1811). Maps item id -> item slot for
+ * AnimateItemObject. */
+static const unsigned char k_item_id_to_slot[36] = {
+    0x01u, 0x00u, 0x00u, 0x00u, 0x06u, 0x05u, 0x04u, 0x04u,
+    0x02u, 0x02u, 0x03u, 0x0Du, 0x09u, 0x0Cu, 0x1Bu, 0x1Cu,
+    0x08u, 0x0Au, 0x0Bu, 0x0Bu, 0x0Eu, 0x0Fu, 0x10u, 0x11u,
+    0x16u, 0x17u, 0x18u, 0x1Au, 0x1Fu, 0x1Du, 0x1Eu, 0x07u,
+    0x07u, 0x15u, 0x19u, 0x14u
+};
+
+/* ItemIdToDescriptor[36] (Z_01.asm:1835). High nibble = item type
+ * (0=individual, 1=amount, 2=grade, 3=error); low nibble = value. */
+static const unsigned char k_item_id_to_descriptor[36] = {
+    0x14u, 0x21u, 0x22u, 0x23u, 0x01u, 0x01u, 0x21u, 0x22u,
+    0x21u, 0x22u, 0x01u, 0x01u, 0x01u, 0x01u, 0x01u, 0x15u,
+    0x01u, 0x01u, 0x21u, 0x22u, 0x01u, 0x01u, 0x01u, 0x01u,
+    0x11u, 0x11u, 0x10u, 0x01u, 0x01u, 0x01u, 0x01u, 0x11u,
+    0x22u, 0x01u, 0x10u, 0x12u
+};
+
+/* ItemSlotToPaletteOffsetsOrValues[32] (Z_01.asm:1852). Per-slot
+ * sprite-attribute lookup: for most items the attribute value;
+ * for slots $00/$04/$02/$07/$0B it's an offset added to the item
+ * value in TMP4. */
+static const unsigned char k_item_slot_to_palette_offsets_or_values[32] = {
+    0xFFu, 0x01u, 0xFFu, 0x00u, 0x00u, 0x02u, 0x02u, 0x00u,
+    0x01u, 0x00u, 0x02u, 0x00u, 0x00u, 0x02u, 0x02u, 0x01u,
+    0x02u, 0x02u, 0x02u, 0x02u, 0x02u, 0x02u, 0x02u, 0x02u,
+    0x02u, 0x02u, 0x02u, 0x02u, 0x01u, 0x00u, 0x01u, 0x00u
 };
 
 /* SpriteOffsets[41] (Z_01.asm:2035). Indexed by CUR_SPRITE_INDEX
@@ -374,4 +427,170 @@ void draw_object_not_mirrored_with_frame(unsigned char frame,
                                          unsigned int slot)
 {
     draw_object_not_mirrored(frame, slot);
+}
+
+/* --------------------------------------------------------------- */
+/* Item-draw chain — Anim_WriteSpecificItemSprites + helpers.      */
+/* Z_01.asm:2399-2477 + Z_07.asm AnimateItemObject + DrawItemBySlot.*/
+/* --------------------------------------------------------------- */
+
+/* RAM($0052) = ProcessedNarrowObj, $0504 = StatusBarItemDrawingFlag
+ * (suppress narrow X-shift when set), $0657+slot = item value. */
+#define DRAW_PROCESSED_NARROW_OBJ      RAM(0x0052u)
+#define DRAW_STATUS_BAR_DRAW_FLAG      RAM(0x0504u)
+#define DRAW_INVENTORY_ITEM(slot)      RAM(0x0657u + (unsigned char)(slot))
+#define DRAW_ITEM_LIFETIME(slot)       RAM(0x03A8u + (unsigned char)(slot))
+
+/* Anim_WriteSpecificItemSprites (Z_01.asm:2399). Computes left/right
+ * tiles from item-frame tables, then dispatches narrow/wide/slim. */
+static void anim_write_specific_item_sprites(unsigned int slot,
+                                             unsigned int item_slot)
+{
+    DRAW_OBJ_INDEX = (uint8_t)slot;
+    DRAW_HAS_TWO_SIDES = 1u;
+    DRAW_X_SEPARATION = 8u;
+
+    unsigned char tile_idx = k_anim_item_frame_offsets[item_slot & 0x3Fu];
+    /* tile_idx + DRAW_MIRRORED ($0C); $0C is reused as "frame image"
+     * in this chain (item draws don't use the mirrored flag). */
+    tile_idx = (unsigned char)(tile_idx + (unsigned char)DRAW_MIRRORED);
+
+    const unsigned char left_tile =
+        k_anim_item_frame_tiles[tile_idx & 0x3Fu];
+    DRAW_LEFT_TILE = left_tile;
+    DRAW_RIGHT_TILE = (uint8_t)(left_tile + 2u);
+
+    /* Narrow / wide / slim dispatch by left tile range. */
+    if (left_tile == 0xF3u || left_tile < 0x20u || left_tile >= 0x62u) {
+        /* Narrow: half-width object. If status-bar flag clear,
+         * shift X by +4. */
+        if ((unsigned char)DRAW_STATUS_BAR_DRAW_FLAG == 0u) {
+            DRAW_X = (uint8_t)((unsigned char)DRAW_X + 4u);
+        }
+        DRAW_PROCESSED_NARROW_OBJ =
+            (uint8_t)((unsigned char)DRAW_PROCESSED_NARROW_OBJ + 1u);
+        DRAW_HAS_TWO_SIDES = 0u;
+        anim_write_sprite_pair(slot);
+        return;
+    }
+    if (left_tile < 0x6Cu) {
+        /* Slim wide: X separation = 7, mirrored draw. */
+        DRAW_X_SEPARATION = 7u;
+        anim_write_mirrored_sprite_pair(slot);
+        return;
+    }
+    if (left_tile < 0x7Cu) {
+        anim_write_mirrored_sprite_pair(slot);
+        return;
+    }
+    anim_write_horizontally_flippable_sprite_pair(slot);
+}
+
+/* Anim_WriteItemSprites (Z_01.asm:2365). Setup sprite offsets by
+ * cur sprite index, then dispatch. */
+static void anim_write_item_sprites(unsigned int slot,
+                                    unsigned int item_slot)
+{
+    DRAW_PROCESSED_NARROW_OBJ = 0u;
+    const unsigned char cur_idx = (unsigned char)DRAW_CUR_SPRITE_INDEX;
+    DRAW_LEFT_SPRITE_OFFSET = k_sprite_offsets[cur_idx & 0x3Fu];
+    DRAW_RIGHT_SPRITE_OFFSET =
+        k_sprite_offsets[(cur_idx + 1u) & 0x3Fu];
+    anim_write_specific_item_sprites(slot, item_slot);
+}
+
+/* Anim_WriteStaticItemSpritesWithAttributes (Z_01.asm:2338).
+ * Calls core_anim_set_sprite_desc_attrs with attrs (write TMP4/5),
+ * clears DRAW_FLIP_H + DRAW_MIRRORED, then anim_write_item_sprites. */
+static void anim_write_static_item_sprites_with_attributes(
+    unsigned char attrs, unsigned int slot, unsigned int item_slot)
+{
+    (void)core_anim_set_sprite_desc_attrs((unsigned int)attrs);
+    DRAW_FLIP_H = 0u;
+    DRAW_MIRRORED = 0u;
+    anim_write_item_sprites(slot, item_slot);
+}
+
+void draw_item_by_slot(unsigned int item_slot, unsigned int slot)
+{
+    /* drain Z_07.asm:2023-2090. */
+    const unsigned char idx = (unsigned char)(item_slot & 0x1Fu);
+    unsigned char attrs = k_item_slot_to_palette_offsets_or_values[idx];
+
+    /* Slots $16/$1A/$1B/$19 flash-cycle palette via FRAME_COUNTER. */
+    int flash =
+        (item_slot == 0x16u || item_slot == 0x1Au ||
+         item_slot == 0x1Bu || item_slot == 0x19u);
+
+    if (flash) {
+        /* attrs = (FRAME_COUNTER & $08) >> 3; +1 with carry-clear. */
+        attrs = (unsigned char)(((unsigned char)FRAME_COUNTER >> 3) & 0x01u);
+        attrs = (unsigned char)(attrs + 1u);
+        anim_write_static_item_sprites_with_attributes(
+            attrs, slot, item_slot);
+        return;
+    }
+
+    /* Slots $00/$04/$02/$07/$0B: add item value in TMP4 to attr offset.
+     * TMP4 is set by DrawItemInInventory or AnimateItemObject. */
+    int add_item_and_table =
+        (item_slot == 0x00u || item_slot == 0x04u ||
+         item_slot == 0x02u || item_slot == 0x07u ||
+         item_slot == 0x0Bu);
+
+    if (add_item_and_table) {
+        attrs = (unsigned char)(attrs + (unsigned char)DRAW_LEFT_ATTR);
+        /* Special case: item_slot=0 + attrs=2 => ItemFrameOffsets
+         * lookup uses item_slot=32 (red sword frame). */
+        if (item_slot == 0u && attrs == 0x02u) {
+            anim_write_static_item_sprites_with_attributes(
+                attrs, slot, 32u);
+            return;
+        }
+    }
+
+    anim_write_static_item_sprites_with_attributes(
+        attrs, slot, item_slot);
+}
+
+void draw_item_in_inventory(unsigned int item_slot, unsigned int slot)
+{
+    /* drain Z_07.asm:2011-2014. */
+    const unsigned char val = (unsigned char)DRAW_INVENTORY_ITEM(item_slot);
+    DRAW_LEFT_ATTR = val;
+    draw_item_by_slot(item_slot, slot);
+}
+
+void draw_animate_item_object(unsigned char item_id, unsigned int slot)
+{
+    /* drain Z_07.asm:1955-2003. */
+    const unsigned char timer = (unsigned char)DRAW_ITEM_LIFETIME(slot);
+    if (timer >= 0xF0u) {
+        /* Lifetime flash — skip draw on even ticks (LSR-with-carry
+         * 6502 idiom: `lsr; bcs continue / bcc skip`). */
+        if ((timer & 1u) == 0u) {
+            return;
+        }
+    }
+    sprite_anim_fetch_obj_pos(slot);
+
+    /* Map item id -> descriptor; $30 sentinel => value $FF. */
+    const unsigned char idx = (unsigned char)(item_id & 0x3Fu);
+    unsigned char desc;
+    if (idx >= 36u) {
+        desc = 0x01u;
+    } else {
+        desc = k_item_id_to_descriptor[idx];
+    }
+    unsigned char value;
+    if (desc == 0x30u) {
+        value = 0xFFu;
+    } else {
+        value = (unsigned char)(desc & 0x0Fu);
+    }
+    DRAW_LEFT_ATTR = value;
+
+    const unsigned char item_slot =
+        (idx < 36u) ? k_item_id_to_slot[idx] : 0x00u;
+    draw_item_by_slot((unsigned int)item_slot, slot);
 }

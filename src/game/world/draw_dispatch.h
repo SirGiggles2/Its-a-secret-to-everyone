@@ -44,6 +44,22 @@ void draw_object_mirrored_with_frame(unsigned char frame, unsigned int slot);
 /* DrawObjectNotMirroredWithFrame. */
 void draw_object_not_mirrored_with_frame(unsigned char frame, unsigned int slot);
 
+/* AnimateItemObject (Z_07.asm:1955). Reads item lifetime timer at
+ * RAM($03A8 + slot); skips draw if (timer >= $F0 && (timer & 1)==0)
+ * (early-flash). Else fetches obj pos to sprite descriptor, looks
+ * up item descriptor + slot, dispatches to draw_item_by_slot. */
+void draw_animate_item_object(unsigned char item_id, unsigned int slot);
+
+/* DrawItemBySlot (Z_07.asm:2023). Computes per-slot sprite attribute
+ * (with palette flash for item slots $16/$1A/$1B/$19, plus
+ * additive override for slots $00/$04/$02/$07/$0B), then writes
+ * static item sprites. */
+void draw_item_by_slot(unsigned int item_slot, unsigned int slot);
+
+/* DrawItemInInventory (Z_07.asm:2011). Reads item value from
+ * RAM($0657+slot) into TMP4, then DrawItemBySlot. */
+void draw_item_in_inventory(unsigned int item_slot, unsigned int slot);
+
 #ifdef __cplusplus
 }
 #endif
