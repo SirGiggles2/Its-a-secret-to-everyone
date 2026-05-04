@@ -889,3 +889,54 @@ void room_init_mode7_finish(void)
     room_write_and_enable_sprite0();
     core_begin_update_mode();
 }
+
+/* room_player_runtime.c:4-12. NES GetPlayerCoordsForDirection. */
+void room_player_get_coords_for_direction(unsigned int dir)
+{
+    if ((unsigned char)dir & 0x03u) {
+        WORLD_TMP0 = LINK_Y;
+        WORLD_TMP1 = LINK_X;
+    } else {
+        WORLD_TMP0 = LINK_X;
+        WORLD_TMP1 = LINK_Y;
+    }
+}
+
+/* room_player_runtime.c:14-22. NES IsDistanceSafeToSpawn. */
+unsigned int room_player_is_distance_safe_to_spawn(unsigned int slot)
+{
+    const unsigned char dx =
+        core_abs((unsigned char)(LINK_X - OBJ_X((unsigned char)slot)));
+    if (dx < 0x22u) {
+        const unsigned char dy =
+            core_abs((unsigned char)(LINK_Y - OBJ_Y((unsigned char)slot)));
+        if (dy < 0x22u)
+            return CARRY_SET;
+    }
+    return 0u;
+}
+
+/* room_player_runtime.c:24-26. NES SetMovingDirAndSwitchToPlayerSlot. */
+void room_player_set_moving_dir_and_switch_to_player_slot(unsigned int dir)
+{
+    COMBAT_PART_INDEX = (unsigned char)dir;
+}
+
+/* room_player_runtime.c:28-43. NES LinkModifyDirInDoorway. */
+void room_player_link_modify_dir_in_doorway(void)
+{
+    if (ROOM_IN_DOORWAY_FLAG == 0u)
+        return;
+    if (ROOM_INPUT_DIR == 0u)
+        return;
+    if (LINK_DIR & ROOM_INPUT_DIR) {
+        ROOM_INPUT_DIR = LINK_DIR;
+        return;
+    }
+    WORLD_TMP0 = (unsigned char)core_get_opposite_dir(LINK_DIR);
+    if (WORLD_TMP0 & ROOM_INPUT_DIR) {
+        ROOM_INPUT_DIR = WORLD_TMP0;
+        return;
+    }
+    ROOM_INPUT_DIR = LINK_DIR;
+}

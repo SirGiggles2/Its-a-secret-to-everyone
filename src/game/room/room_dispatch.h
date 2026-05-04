@@ -207,6 +207,12 @@ void room_update_mode11_death_sub9(void);           /* 147-151 */
 void room_start_filling_hearts(void);               /* 157-160 */
 void room_init_mode7_finish(void);                  /* 123-127 */
 
+/* Player-coord leaves — drains at room_player_runtime.c. */
+void room_player_get_coords_for_direction(unsigned int dir);
+unsigned int room_player_is_distance_safe_to_spawn(unsigned int slot);
+void room_player_set_moving_dir_and_switch_to_player_slot(unsigned int dir);
+void room_player_link_modify_dir_in_doorway(void);
+
 #ifdef __cplusplus
 }
 #endif
