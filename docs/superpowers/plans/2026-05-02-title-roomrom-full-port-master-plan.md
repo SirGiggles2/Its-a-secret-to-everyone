@@ -802,13 +802,22 @@ Gates:
 
 ### Task 4.2: Bombable Walls
 
-- [ ] Extract bombable wall metadata.
-- [ ] Add bomb explosion collision with secret wall tile.
-- [ ] Reveal cave/stairs.
-- [ ] Persist reveal flag.
-- [ ] Play reveal sound.
-- [ ] Prevent repeated reveal mutation.
-- [ ] Verify each bombable wall class.
+**Drain-aware header (Rule D1):**
+- **NES source**: `reference/aldonunez/Z_05.asm:SetDoorFlag` (line 2112), `Z_05.asm:TouchDoor_Bombable`, `Z_05.asm:CheckSecretTrigger_BlockDoor`, `Z_07.asm:MarkRoomVisited`, `Z_07.asm:BombHandler` (collision), `Z_05.asm:TriggerOpenDoor`
+- **Drained C**: `src/oracle/room/room_runtime.c:{84-89,91-100,157-160,162-164,209-213,232-236,294-299}` + `src/game/room/room_dispatch.c` native equivalents (commits `9da0057c..116d84a4`, drain MATCH)
+- **Coverage**: PARTIAL — state-mutation FULL (room flag bit 5 set/test, room visited mark, reveal trigger); bomb→tile collision detection NONE (greenfield); metadata extraction NONE (greenfield)
+- **Stance**: ADOPT for state-mutation substrate (already native in `room_dispatch.c`); GREENFIELD for bomb-collision detection and bombable-wall metadata extraction (no candidate drain — `tools/audit/drain_coverage.py` exit 0)
+
+**Substrate findings:** `tools/audit/drain_findings/phase_4_task_4_2_bombable_walls.md`
+
+- [ ] Add 7 missing `z07_*` wrappers (`set_door_flag`, `reset_door_flag`, `trigger_open_door`, `touch_door_bombable`, `touch_door_wall`, `check_secret_trigger_block_door`, `trigger_shutters`) per drain_findings file. Title.md sha must remain `56f1e2f7681562fc` (gates default OFF).
+- [ ] Extract bombable wall metadata via `tools/builder/extract_bombable_walls.py` (per-room tile coords + reveal-target room).
+- [ ] Add bomb explosion collision with secret wall tile (greenfield — extends `collision_dispatch.h`; new `collision_bomb_to_bombable_wall`).
+- [ ] Reveal cave/stairs — call existing native `room_set_door_flag` + tile-clear primitive.
+- [ ] Persist reveal flag — wire-up only via `room_set_door_flag` (bit 5 of room flag byte).
+- [ ] Play reveal sound — call existing native `enemy_play_secret_found_tune` (`src/game/enemies/enemy_dispatch.h:32`).
+- [ ] Prevent repeated reveal mutation — wire-up only via flag bit-test (already in `room_get_room_flags`).
+- [ ] Verify each bombable wall class — Gate 2 RAM trace + Gate 3 BizHawk probe per `feedback_one_big_probe`.
 
 ### Task 4.3: Burnable Bushes
 
