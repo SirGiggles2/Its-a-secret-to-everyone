@@ -74,6 +74,39 @@ python "%PROJ%\tools\verify_vram_budget.py"
 if errorlevel 1 ( echo FAIL: verify_vram_budget & exit /b 1 )
 
 rem ---------------------------------------------------------------------------
+rem SGDK + worktree gates (parity with root build.bat per debate roomrom-default-rule
+rem 2026-05-04). RoomRom uses the same SGDK submodule and adapter headers as
+rem Title.md, so the same gates must validate RoomRom builds.
+rem
+rem   check_sgdk_pin.py            — SGDK submodule SHA matches tools/sgdk_pin.json
+rem   check_adapter_boundary.py    — owned src/game/, src/frontend/ must not include SGDK public headers
+rem   check_raw_vdp.py             — owned code must not touch raw VDP registers
+rem   check_no_whatif.py           — no whatif refs in code (Rule WT-4)
+rem   check_data_manifest.py       — data/ MANIFEST.sha256 integrity (substrate parity)
+rem ---------------------------------------------------------------------------
+echo [SGDK gate] check_sgdk_pin.py
+python "%REPO%\tools\check_sgdk_pin.py"
+if errorlevel 1 ( echo FAIL: check_sgdk_pin & exit /b 1 )
+
+echo [SGDK gate] check_adapter_boundary.py
+python "%REPO%\tools\check_adapter_boundary.py"
+if errorlevel 1 ( echo FAIL: check_adapter_boundary & exit /b 1 )
+
+echo [SGDK gate] check_raw_vdp.py
+python "%REPO%\tools\check_raw_vdp.py"
+if errorlevel 1 ( echo FAIL: check_raw_vdp & exit /b 1 )
+
+echo [WT gate] check_no_whatif.py
+python "%REPO%\tools\gates\check_no_whatif.py"
+if errorlevel 1 ( echo FAIL: check_no_whatif & exit /b 1 )
+
+if exist "%REPO%\tools\check_data_manifest.py" (
+    echo [data gate] check_data_manifest.py
+    python "%REPO%\tools\check_data_manifest.py"
+    if errorlevel 1 ( echo FAIL: check_data_manifest ^(parity with Title build^) ^& exit /b 1 )
+)
+
+rem ---------------------------------------------------------------------------
 rem Compiler flags (match makefile.gen release config)
 rem ---------------------------------------------------------------------------
 rem Per debate 006 D3: define ROOMROM_BUILD so platform_abi.h selects the

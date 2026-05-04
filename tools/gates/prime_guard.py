@@ -123,6 +123,13 @@ def cmd_edit(paths: list[str], check_content: list[str]) -> tuple[int, list[str]
 def cmd_build() -> tuple[int, list[str]]:
     msgs: list[str] = []
     rc = 0
+    # Rule BT-1 banner — always emit on build-intent invocations so the
+    # operator (or Claude) reads "default = RoomRom" before any build runs.
+    msgs.append(
+        "NOTE [Rule BT-1]: active build target = RoomRom\\build.bat. "
+        "Root build.bat (Title.md) is gated and refuses without "
+        "TITLE_BUILD_APPROVED=1 — Phase 11-12 only, explicit user approval."
+    )
     if BUILD_BAT.exists():
         for ln in BUILD_BAT.read_text(encoding="utf-8", errors="ignore").splitlines():
             stripped = ln.strip().lower()

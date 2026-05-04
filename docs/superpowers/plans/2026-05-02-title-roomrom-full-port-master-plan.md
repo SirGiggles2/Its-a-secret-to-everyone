@@ -62,6 +62,7 @@
 
 Every implementation phase closes in this exact order:
 
+0. **Pick the right target per Rule BT-1.** For phases 2-10 the touched target is **RoomRom** — build with `cmd.exe /c ".\RoomRom\build.bat"`. Root `build.bat` (Title.md) is gated and refuses without `TITLE_BUILD_APPROVED=1`; only phases 11-12 invoke it, and only with explicit user approval per task. "Title.md build clean" MUST NOT be cited as evidence for a RoomRom phase.
 1. Build the touched target with `REQUIRE_GENERATED_ASSETS=1` (Task 1.11 strict gate).
 2. Run the focused probe set.
 3. Capture screenshot/state evidence; emit a parity-oracle-schema instance per probe (Task 2.8).

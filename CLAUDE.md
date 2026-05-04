@@ -86,6 +86,22 @@ Violations = duplicated implementations + silent drift. See memory:
 `feedback_drain_primary_nes_secondary`, `feedback_long_term_fix`,
 `feedback_check_dont_guess`, `feedback_source_first_then_nes`.
 
+## Build target (HARD — Rule BT-1)
+
+**99% of phase work targets RoomRom. Default build = `RoomRom\build.bat`.**
+
+Root `build.bat` (Title.md) is gated and refuses to run unless
+`TITLE_BUILD_APPROVED=1` is set. Title.md is the release/frontend harness
+— Phase 11 and Phase 12 only, and only with explicit user approval per
+task. Do NOT cite "Title.md build clean" as evidence for any phase before
+11; different ROM, different probes, different scope (Title-only checks
+like `phase_sequence.done` will fire and fail unrelated to RoomRom work).
+
+If a phase 2-10 task says "build and verify": that means `RoomRom\build.bat`.
+
+See master plan Rule BT-1 + memory `feedback_roomrom_default_target`,
+`feedback_check_worktree_first`, `project_active_scope_roomrom`.
+
 ## Build / verify
 
 - I build, I launch BizHawk, I screenshot. Never ask user to do those.

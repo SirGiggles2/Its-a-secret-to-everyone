@@ -1,6 +1,32 @@
 @echo off
 setlocal EnableExtensions
 
+rem ===========================================================================
+rem  HARD RULE BT-1 (master plan / debate roomrom-default-rule, 2026-05-04):
+rem  Root build.bat builds Title.md (release/frontend harness — Phase 11-12 only).
+rem  RoomRom phase work targets RoomRom\build.bat instead.
+rem
+rem  This script REFUSES to run unless TITLE_BUILD_APPROVED=1 is set,
+rem  to prevent accidental Title.md builds during RoomRom-phase work.
+rem  See docs\superpowers\plans\2026-05-02-title-roomrom-full-port-master-plan.md
+rem  Rule BT-1 + memory feedback_roomrom_default_target for full rationale.
+rem ===========================================================================
+if not defined TITLE_BUILD_APPROVED (
+    echo.
+    echo ===========================================================================
+    echo  ABORT: build.bat builds Title.md ^(GATED — Ph11-12 only per Rule BT-1^).
+    echo.
+    echo  Active build target for RoomRom phase work:  RoomRom\build.bat
+    echo.
+    echo  If you genuinely need a Title.md build:
+    echo      set TITLE_BUILD_APPROVED=1
+    echo      .\build.bat
+    echo  And document the reason in your commit body.
+    echo ===========================================================================
+    echo.
+    exit /b 1
+)
+
 rem ---------------------------------------------------------------------------
 rem REQUIRE_GENERATED_ASSETS — strict generated-only build gate (Task 1.11)
 rem
