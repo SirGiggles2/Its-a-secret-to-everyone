@@ -187,6 +187,19 @@ for `cavert_update_person_state_textbox` proper.
     + level-attr cache + more)
   - RunCrossRoomTasksAndBeginUpdateMode_PlayModesNoCellar
     (Z_07.asm:2780 — cross-room state plumbing)
+  - z_06 transfer_level_pattern_blocks (PPU VRAM DMA chain via
+    c_ppu_write_6/7 — needs Genesis-native render adapter primitive)
+
+  Phase 5 substrate landed (helpers RunCrossRoomTasks /
+  InitMode_EnterRoom will consume):
+  - room_has_compass / room_has_map / room_has_item_by_level
+  - room_update_triforce_position_marker
+  - room_setup_obj_room_bounds (k_obj_room_bounds[10] OW+UW baked)
+  - room_write_and_enable_sprite0 (k_sprite0_descriptor[4] baked)
+  - room_put_link_behind_background
+  - room_init_link_speed
+  - room_fill_play_area_attrs (k_palette_to_nt_attr[4] baked)
+  - room_reset_inv_obj_state
 
 ## Debate 007 (no-emulation MMC1) verdict applied 2026-05-03
 
