@@ -101,12 +101,49 @@ for `cavert_update_person_state_textbox` proper.
     port natively. core_set_shove_info_with0 (and 4 related core
     helpers) added to unblock partial fills.
 
-  Cutover gates introduced (11 total): NATIVE_CAVE, NATIVE_CAVE_DRAW,
+  Cutover gates introduced (19 total): NATIVE_CAVE, NATIVE_CAVE_DRAW,
   NATIVE_CAVE_PERSON, NATIVE_CAVE_FORMAT, NATIVE_WORLD, NATIVE_OBJECT,
   NATIVE_SPRITE, NATIVE_PROGRESS, NATIVE_TRAP, NATIVE_CORE,
-  NATIVE_ENEMY. All default OFF; Title.md byte-identical to pre-
-  cutover. RoomRom links native code unconditionally; SCENE_CAVE
+  NATIVE_ENEMY, NATIVE_COLLISION, NATIVE_ROOM, NATIVE_HUD,
+  NATIVE_WEAPON, NATIVE_TARGETING, NATIVE_COMBAT, NATIVE_UW_PERSON,
+  NATIVE_LINK_COLLISION. All default OFF; Title.md byte-identical to
+  pre-cutover. RoomRom links native code unconditionally; SCENE_CAVE
   harness verifies cave dispatch end-to-end.
+
+  Phase 4 update — added since prior summary:
+  - src/game/combat/collision_dispatch.{h,c} — 5 fns.
+  - src/game/room/room_dispatch.{h,c} — 12 fns
+    (get_room_flags, split_room_id, is_dark_room, silence_sound,
+     check_has_living_monsters, end_game_mode, hide_all_sprites,
+     get_unique_room_id, clear_room_history, reset_player_state,
+     mark_room_visited, go_to_next_mode, copy_column_to_tilebuf).
+  - src/game/hud/hud_dispatch.{h,c} — 6 fns.
+  - src/game/items/weapon_dispatch.{h,c} — 6 fns.
+  - src/game/combat/targeting_dispatch.{h,c} — 3 fns.
+  - src/game/combat/combat_dispatch.{h,c} — 3 fns.
+  - src/game/cave/uw_person_dispatch.{h,c} — 13 fns.
+  - src/game/combat/link_collision_dispatch.{h,c} — 5 fns
+    (link_be_harmed, harm_link, begin_shove,
+     check_link_collision, check_link_collision_preinit).
+
+  Surface progress (post-cook):
+  - world_runtime:    4/4   native
+  - object_runtime:   8/8   native
+  - sprite_runtime:   11/11 native
+  - progress_runtime: 14/14 native (curtain ported via room_copy_column_to_tilebuf)
+  - trap_runtime:     5/10  native (init_full, summon, check_init_whirlwind,
+                                    advance_teleport_idx, check_passive_tile)
+  - core_runtime:     50+ leaves native
+  - enemy_runtime:    19 helpers native; per-monster updaters deferred
+  - cave/uw_person:   13/14 native (full updaters need c_draw_object_*)
+  - combat/collision: 5/12 (do_objects_*, get_collidable_tile_*)
+                      7/12 deferred behind c_call_gohma_handle_weapon_collision
+  - combat/link_collision: 5/6 native
+  - combat/combat:    3/3 native
+  - combat/targeting: 3/3 native
+  - hud:              6/6 native
+  - items/weapon:     6/6 native
+  - room:             12 fns native
 
   20+ Gate 1 finding docs produced. Native code structure:
   - src/game/cave/cave_dispatch.{h,c}
