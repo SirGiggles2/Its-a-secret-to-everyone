@@ -1,14 +1,14 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-05-04T15:30:45.429722+00:00",
+  "generated_at": "2026-05-04T20:49:10.817199+00:00",
   "generated_by": "tools/audit/primedirective/prime_refresh.py",
   "plan": {
     "path": "docs/superpowers/plans/2026-05-02-title-roomrom-full-port-master-plan.md",
-    "sha256": "f129ba650b820d310f057c676a00319f121021db36ce405e2f5c515ece2a9151"
+    "sha256": "d41094cec9822a128deb3cec44a1a669a0aea68d419a8d2fa7ec011c195b341b"
   },
   "active": {
-    "phase_id": "5",
-    "phase_name": "Dungeon Core",
+    "phase_id": "2",
+    "phase_name": "RoomRom Graphics Registry And No-Clobber Foundation",
     "task_id": "?",
     "task_title": "",
     "worktree": {
@@ -16,7 +16,7 @@
       "branch": "main",
       "is_substrate_writer": true
     },
-    "next_concrete_action": "Identify next Phase 5 substrate function to nativize per Phase 4 summary deferred list"
+    "next_concrete_action": "Screenshot evidence: verify Link wall-stop in UW room 0x73"
   },
   "phases": [
     {
@@ -180,8 +180,27 @@
     {
       "id": "5",
       "name": "Dungeon Core",
-      "status": "active",
-      "tasks": [],
+      "status": "pending",
+      "tasks": [
+        {
+          "id": "5.2",
+          "name": "Dungeon Collision (NES-source-of-truth)",
+          "status": "in_progress",
+          "evidence": [
+            "extract_uw_collision.py: LayoutUWFloor pipeline in Python \u2014 2026-05-04T16:17:46.913103+00:00",
+            "gen_uw_collision_c.py: C arrays for 64 unique rooms \u2014 2026-05-04T16:17:46.913103+00:00",
+            "RoomRom/src/uw_collision_data.c: embedded 11264-byte grid \u2014 2026-05-04T16:17:46.913103+00:00",
+            "draw_placeholder fix: NES grid replaces all-walkable-1 \u2014 2026-05-04T16:17:46.913103+00:00",
+            "verify_uw_collision.py: parity checker tool \u2014 2026-05-04T16:17:46.913103+00:00",
+            "build clean: RoomRom compiles with uw_collision_data.o \u2014 2026-05-04T16:17:46.913103+00:00"
+          ],
+          "deferrals": [
+            "Full metatile classification (wall/water/hazard/stair) \u2014 deferred to T5.3",
+            "NES BizHawk parity captures vs generated grid \u2014 deferred, needs NES ROM",
+            "8-known-special-case probe set \u2014 deferred to phase gate"
+          ]
+        }
+      ],
       "evidence": [
         "build_REQUIRE_GENERATED_ASSETS|Task 5.1 dungeon_state.h committed, build OK ca0d753f. State model: NES addr mapping verified against Variables.inc."
       ],
@@ -530,12 +549,18 @@
       "gate_step": "PROBE_CYCLE_LIMIT_envelope",
       "reason": "Same deferral chain as Ph2/Ph3.",
       "recorded_at": "2026-05-04T15:10:02.904105+00:00"
+    },
+    {
+      "phase_id": "ph5.2",
+      "gate_step": "PROBE_CYCLE_LIMIT_envelope",
+      "reason": "collision lookup is const table read, no hot-path candidate, deferred per Ph2/3/4 precedent",
+      "recorded_at": "2026-05-04T20:49:10.880361+00:00"
     }
   ],
   "freshness": {
     "active_scope_md": {
       "path": "docs/audit/active_scope.md",
-      "sha256": "1786416d9c7a2e95cd6869a9105d390d26608f338e6b384c05d40883d2f100ea",
+      "sha256": "cbb38044acfe14ec5402b9a28f56b87a55c600779f94d024a8562f58e1991b46",
       "ok": true
     },
     "drain_coverage_json": {
@@ -543,11 +568,15 @@
       "sha256": "ddc03162c0c3da486d1860e9fb8278fcbe1d43cfbf40188f4e07ad1fc9c542bb",
       "ok": true
     },
-    "git_head": "ca0d753f5d5c93c7f8a514fe7c0c10f74914211a",
-    "dirty_paths_relevant": [],
+    "git_head": "8f8b78ac6c0c06bbd03b0a5b3889c457068b3c15",
+    "dirty_paths_relevant": [
+      "RoomRom/src/main.c",
+      "RoomRom/src/uw_room_render_roomrom.c",
+      "tools/probes/ph5_uw_t52_special_cases.lua"
+    ],
     "evidence_paths_present": true,
     "complete_phase_invariant_ok": true,
-    "last_refresh_at": "2026-05-04T15:30:45.468810+00:00",
+    "last_refresh_at": "2026-05-04T20:49:10.880344+00:00",
     "stale_reasons": []
   },
   "blockers": []
