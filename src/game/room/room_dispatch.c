@@ -566,3 +566,52 @@ void room_reset_inv_obj_state(void)
         RAM(0x00B9u + (unsigned char)i) = 0u;  /* ROOM_INV_OBJ_STATE */
     }
 }
+
+/* roomrt_level_masks[8] — power-of-2 single-bit masks. Local bake
+ * (mirrors progress_dispatch's k_level_masks). */
+static const unsigned char k_room_level_masks[8] = {
+    0x01u, 0x02u, 0x04u, 0x08u, 0x10u, 0x20u, 0x40u, 0x80u
+};
+
+static unsigned char room_has_item_by_level(unsigned char base_offset)
+{
+    /* drain at room_runtime.c:24-37. */
+    const unsigned char level = (unsigned char)CUR_LEVEL;
+    if (level == 0u) {
+        return 0u;
+    }
+    const unsigned char idx = (unsigned char)(level - 1u);
+    unsigned char offset = base_offset;
+    if (idx >= 8u) {
+        offset = (unsigned char)(offset + 2u);
+    }
+    const unsigned char bit_idx = (unsigned char)(idx & 7u);
+    return (unsigned char)(RAM(0x0657u + offset) &
+                           k_room_level_masks[bit_idx]);
+}
+
+unsigned char room_has_compass(void)
+{
+    /* drain at room_runtime.c:39-41. */
+    return room_has_item_by_level(16u);
+}
+
+unsigned char room_has_map(void)
+{
+    /* drain at room_runtime.c:43-45. */
+    return room_has_item_by_level(17u);
+}
+
+void room_update_triforce_position_marker(void)
+{
+    /* drain at Z_07.asm:1821-1834. */
+    if ((unsigned char)CUR_LEVEL == 0u) {
+        return;
+    }
+    /* SwitchBank(5) — Genesis no-op per debate 007. */
+    if (room_has_compass() == 0u) {
+        return;
+    }
+    progress_update_position_marker(
+        nes_ram[NES_SRAM_BASE + 0x0BAEu], 4u);
+}

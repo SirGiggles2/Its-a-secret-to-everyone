@@ -130,6 +130,18 @@ void room_init_mode3_sub1(void);
  * NES ResetInvObjState. drain at room_load_runtime.c:25-30. */
 void room_reset_inv_obj_state(void);
 
+/* if !INVENTORY_VALUE(offset+OFF[level]) return 0 else return 1.
+ * Helpers test compass-by-level (offset 16) / map-by-level
+ * (offset 17). NES HasCompass / HasMap.
+ * drain at room_runtime.c:24-45. */
+unsigned char room_has_compass(void);
+unsigned char room_has_map(void);
+
+/* If OW (CUR_LEVEL=0) or no compass, no-op. Else
+ * progress_update_position_marker(SRAM($0BAE), 4). NES
+ * UpdateTriforcePositionMarker. drain at Z_07.asm:1821-1834. */
+void room_update_triforce_position_marker(void);
+
 #ifdef __cplusplus
 }
 #endif
