@@ -142,19 +142,16 @@ for `cavert_update_person_state_textbox` proper.
   - world_runtime:    4/4   native
   - object_runtime:   8/8   native
   - sprite_runtime:   11/11 native
-  - progress_runtime: 14/14 native (curtain ported via room_copy_column_to_tilebuf)
-  - trap_runtime:     8/10  native (init_full, summon, check_init_whirlwind,
-                                    advance_teleport_idx, check_passive_tile,
-                                    draw_whirlwind, update_whirlwind_full,
-                                    update_rupee_stash_full)
+  - progress_runtime: 14/14 native
+  - trap_runtime:     9/10  native (only init_mode_b_enter_cave_bank5
+                                    blocked on c_init_mode_enter_room chain)
   - core_runtime:     50+ leaves native
-  - enemy_runtime:    19 helpers native; per-monster updaters deferred
-  - cave/uw_person:   14/14 native (full updaters need c_check_monster_collisions /
-                                     c_link_end_move_and_animate_bank1 /
-                                     c_update_person_state_textbox)
-  - combat/collision: 5/12 (do_objects_*, get_collidable_tile_*)
-                      7/12 deferred behind c_call_gohma_handle_weapon_collision
-  - combat/link_collision: 5/6 native
+  - enemy_runtime:    19 helpers + gohma_handle_weapon_collision native;
+                      per-monster updaters deferred
+  - cave/uw_person:   19/19 native (with 2 documented STAGE-1 stubs:
+                                    textbox arm + Link_EndMoveAndAnimate)
+  - combat/collision: 17/17 native (full battery — gohma branch resolved)
+  - combat/link_collision: 6/6 native (saturated)
   - combat/combat:    3/3 native
   - combat/targeting: 3/3 native
   - hud:              6/6 native
@@ -163,6 +160,19 @@ for `cavert_update_person_state_textbox` proper.
   - draw_dispatch:    full sprite-descriptor + item-draw pipeline native
                       (DrawObject* + AnimateItemObject + DrawItemBySlot /
                        DrawItemInInventory + Anim_WriteSpritePair family)
+
+  Remaining manifest blockers (all chained on heavy structural deps):
+  - z01_update_person_state_textbox (text-render pipeline in z_07)
+  - z01_try_take_item / _try_take_room_item / z01_take_item
+    (item runtime — MenuPalettesTransferBuf asm-bound)
+  - z01_init_mode_b_enter_cave_bank5 (mode-init chain:
+    c_init_mode_enter_room, c_link_end_move_and_animate,
+    c_run_cross_room_tasks_no_cellar)
+  - z07_patch_and_cue_level_palettes_transfer + chained users
+    (MenuPalettesTransferBuf)
+  - z07_update_mode3_unfurl (c_set_mmc1_control — MMC1 mapper)
+  - z07_update_mode2_load (c_turn_off_all_video, c_update_mode2_load_full)
+  - z07_update_hearts_and_rupees (c_switch_bank — MMC1 PRG)
 
   20+ Gate 1 finding docs produced. Native code structure:
   - src/game/cave/cave_dispatch.{h,c}
