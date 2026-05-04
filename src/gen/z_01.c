@@ -134,14 +134,6 @@ unsigned char z01_do_objects_collide(unsigned int threshold) {
     return colrt_do_objects_collide(threshold);
 }
 
-void z01_update_world_curtain_effect(void) {
-    progrt_update_world_curtain_effect();
-}
-
-void z01_update_world_curtain_effect_bank2(void) {
-    progrt_update_world_curtain_effect_bank2();
-}
-
 void z01_draw_whirlwind(unsigned int slot) {
     trprt_draw_whirlwind(slot);
 }
@@ -560,6 +552,22 @@ void z01_fetch_file_a_address_set(void) {
     progress_fetch_file_a_address_set();
 #else
     progrt_fetch_file_a_address_set();
+#endif
+}
+
+void z01_update_world_curtain_effect(void) {
+#ifdef NATIVE_PROGRESS
+    progress_update_world_curtain_effect();
+#else
+    progrt_update_world_curtain_effect();
+#endif
+}
+
+void z01_update_world_curtain_effect_bank2(void) {
+#ifdef NATIVE_PROGRESS
+    progress_update_world_curtain_effect_bank2();
+#else
+    progrt_update_world_curtain_effect_bank2();
 #endif
 }
 

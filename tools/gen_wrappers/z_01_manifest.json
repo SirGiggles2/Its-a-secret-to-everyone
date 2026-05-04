@@ -149,16 +149,6 @@
       "sig": "unsigned char (unsigned int threshold)"
     },
     {
-      "old": "z01_update_world_curtain_effect",
-      "new": "progrt_update_world_curtain_effect",
-      "sig": "void (void)"
-    },
-    {
-      "old": "z01_update_world_curtain_effect_bank2",
-      "new": "progrt_update_world_curtain_effect_bank2",
-      "sig": "void (void)"
-    },
-    {
       "old": "z01_draw_whirlwind",
       "new": "trprt_draw_whirlwind",
       "sig": "void (unsigned int slot)"

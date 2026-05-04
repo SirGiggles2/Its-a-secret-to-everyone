@@ -11,6 +11,7 @@
                                 * MODE_VALUE */
 #include "room_state.h"        /* ROOM_MAX_MONSTER_SLOT, ROOM_MONSTER_ALL_DEAD,
                                 * ROOM_OBJ_TYPE, ROOM_MODE_TIMER */
+#include "world_state.h"       /* TRANSFER_BUF_POS — included via combat below */
 #include "combat_state.h"      /* LINK_DAMAGE_DISABLE_FLAG, LINK_ACTION_TIMER */
 #include "link_state.h"        /* LINK_HALT_FLAG */
 
@@ -139,4 +140,46 @@ void room_go_to_next_mode(void)
     /* drain at room_mode_runtime.c:255-258. */
     MODE_VALUE = (uint8_t)((unsigned char)MODE_VALUE + 1u);
     (void)room_end_game_mode();
+}
+
+void room_copy_column_to_tilebuf(void)
+{
+    /* drain at room_transfer_runtime.c:6-32. NES CopyColumnToTilebuf.
+     * Reads PlayArea ($6530 + col*$16); writes 22 column tiles into
+     * the transfer-buffer at TRANSFER_BUF_POS. Stashes src + dst
+     * pointers in SAVEFILE_PTR_LO/HI for the next pass. */
+    #define ROOM_PLAY_AREA_BASE 0x6530u
+    #define ROOM_COL_STRIDE     0x16u
+
+    SAVEFILE_PTR_LO = 0x1Au;
+    SAVEFILE_PTR_HI = 0x65u;
+
+    const unsigned char col =
+        (unsigned char)((unsigned char)CUR_ROOM_FLAGS_PTR - 1u);
+    const unsigned char buf = (unsigned char)TRANSFER_BUF_POS;
+
+    RAM(0x0302u + buf) = 33u;             /* TRANSFER_BUF_BYTE(buf) */
+    RAM(0x0303u + buf) = col;
+
+    unsigned short src =
+        (unsigned short)(ROOM_PLAY_AREA_BASE +
+                         (unsigned short)col * ROOM_COL_STRIDE);
+
+    RAM(0x0304u + buf) = 0x96u;
+    RAM(0x031Bu + buf) = 0xFFu;
+
+    unsigned char dst = buf;
+    for (unsigned char i = 0u; i < 22u; ++i) {
+        RAM(0x0305u + dst) = nes_ram[src + i];
+        ++dst;
+    }
+    src = (unsigned short)(src + 22u);
+    dst = (unsigned char)(dst + 3u);
+    TRANSFER_BUF_POS = dst;
+
+    SAVEFILE_PTR_LO = (uint8_t)(src & 0xFFu);
+    SAVEFILE_PTR_HI = (uint8_t)((src >> 8) & 0xFFu);
+
+    #undef ROOM_PLAY_AREA_BASE
+    #undef ROOM_COL_STRIDE
 }

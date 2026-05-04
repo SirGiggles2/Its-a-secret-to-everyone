@@ -58,6 +58,12 @@ void room_mark_room_visited(void);
  * drain at room_mode_runtime.c:255-258. */
 void room_go_to_next_mode(void);
 
+/* Copy a 22-byte room column from PlayArea ($6530-base) into the
+ * transfer buffer at TRANSFER_BUF_POS, incrementing the buffer and
+ * stashing PPU dst + src ptrs. NES CopyColumnToTilebuf.
+ * drain at room_transfer_runtime.c:6-32. */
+void room_copy_column_to_tilebuf(void);
+
 #ifdef __cplusplus
 }
 #endif

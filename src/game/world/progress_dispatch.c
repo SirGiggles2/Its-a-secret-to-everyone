@@ -18,6 +18,7 @@
 #include "enemy_state.h"       /* LINK_X, LINK_Y, OBJ_X, OBJ_Y */
 #include "item_state.h"        /* ITEM_SFX_SECONDARY, SAVE_SLOT_INDEX */
 #include "room_state.h"        /* ROOM_TRANSFER_BUF_SELECT */
+#include "room/room_dispatch.h" /* room_copy_column_to_tilebuf */
 
 #define NES_SRAM_BASE 0x6000u
 
@@ -297,4 +298,35 @@ unsigned char progress_get_room_flag_uw_item_state(void)
     const unsigned short ptr =
         (unsigned short)(((unsigned short)ptr_hi << 8) | ptr_lo);
     return (unsigned char)(nes_ram[ptr + CUR_ROOM_ID] & 0x10u);
+}
+
+void progress_update_world_curtain_effect(void)
+{
+    /* drain at progress_runtime.c:104-117. NES UpdateWorldCurtainEffect.
+     * Walks 2 columns from $007C+ITEM_VALUE_SCRATCH (i.e. RAM($007C)
+     * + RAM($007D)), copies each into the transfer buffer, decrements
+     * the left col + increments the right col, resets curtain timer. */
+    if ((unsigned char)CURTAIN_TIMER) {
+        return;
+    }
+    ITEM_VALUE_SCRATCH = 1u;
+    do {
+        const unsigned char col_idx = (unsigned char)ITEM_VALUE_SCRATCH;
+        CUR_ROOM_FLAGS_PTR = RAM(0x007Cu + col_idx);
+        room_copy_column_to_tilebuf();
+        ITEM_VALUE_SCRATCH =
+            (uint8_t)((unsigned char)ITEM_VALUE_SCRATCH - 1u);
+    } while ((signed char)(unsigned char)ITEM_VALUE_SCRATCH >= 0);
+    CUR_ROOM_FLAGS_PTR = 0xFFu;
+    CURTAIN_TIMER = 5u;
+    CURTAIN_LEFT_COL =
+        (uint8_t)((unsigned char)CURTAIN_LEFT_COL - 1u);
+    CURTAIN_RIGHT_COL =
+        (uint8_t)((unsigned char)CURTAIN_RIGHT_COL + 1u);
+}
+
+void progress_update_world_curtain_effect_bank2(void)
+{
+    /* drain at progress_runtime.c:119-121. */
+    progress_update_world_curtain_effect();
 }

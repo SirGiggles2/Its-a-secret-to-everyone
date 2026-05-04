@@ -81,6 +81,18 @@ void progress_update_player_position_marker(void);
  * "items pointer" trailer. Mirrors NES FetchFileAAddressSet (Z_01.asm:3030). */
 void progress_fetch_file_a_address_set(void);
 
+/* If CURTAIN_TIMER == 0, advance one column-pair through the curtain
+ * effect: copy two columns, decrement CURTAIN_LEFT_COL, increment
+ * CURTAIN_RIGHT_COL, reset CURTAIN_TIMER=5. NES UpdateWorldCurtainEffect.
+ * drain at progress_runtime.c:104-117. */
+void progress_update_world_curtain_effect(void);
+
+/* Forward to progress_update_world_curtain_effect — separate symbol
+ * exists because the NES dispatch table calls it through a different
+ * bank entry. NES UpdateWorldCurtainEffect_Bank2.
+ * drain at progress_runtime.c:119-121. */
+void progress_update_world_curtain_effect_bank2(void);
+
 #ifdef __cplusplus
 }
 #endif
