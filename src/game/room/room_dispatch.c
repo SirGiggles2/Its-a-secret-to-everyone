@@ -657,3 +657,21 @@ void room_put_link_behind_background(void)
     RAM(0x024Au) = (uint8_t)(RAM(0x024Au) | 0x20u);
     RAM(0x024Eu) = (uint8_t)(RAM(0x024Eu) | 0x20u);
 }
+
+void room_init_link_speed(void)
+{
+    /* drain at room_load_runtime.c:69-81. */
+    unsigned char speed = 96u;
+    if ((unsigned char)CUR_LEVEL != 0u) {
+        RAM(0x03BCu) = speed;  /* ROOM_LINK_SPEED */
+        return;
+    }
+    const unsigned char tile = (unsigned char)RAM(0x049Eu);
+    if (tile == 0x74u || tile == 0x75u) {
+        speed = 48u;
+        if ((unsigned char)RAM(0x03BCu) != 48u) {
+            RAM(0x03A8u) = 0u;  /* ROOM_LINK_SPEED_FRAC */
+        }
+    }
+    RAM(0x03BCu) = speed;
+}

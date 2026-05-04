@@ -156,6 +156,11 @@ void room_write_and_enable_sprite0(void);
  * drain at room_load_runtime.c:20-23. */
 void room_put_link_behind_background(void);
 
+/* ROOM_LINK_SPEED = 96 default; UW always 96; OW slows to 48 on
+ * stair tiles ($74/$75) and resets fraction. NES InitLinkSpeed.
+ * drain at room_load_runtime.c:69-81. */
+void room_init_link_speed(void);
+
 #ifdef __cplusplus
 }
 #endif
