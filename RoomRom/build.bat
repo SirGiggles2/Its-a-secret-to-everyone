@@ -108,6 +108,10 @@ echo [data gate] check_roomrom_data_manifest.py
 python "%REPO%\tools\probes\check_roomrom_data_manifest.py"
 if errorlevel 1 ( echo FAIL: check_roomrom_data_manifest ^(Codex audit ACTION 2^) & exit /b 1 )
 
+echo [regen gate] check_generated_freshness.py
+python "%REPO%\tools\probes\check_generated_freshness.py"
+if errorlevel 1 ( echo FAIL: check_generated_freshness ^(Codex audit ACTION 3^) & exit /b 1 )
+
 rem ---------------------------------------------------------------------------
 rem Compiler flags (match makefile.gen release config)
 rem ---------------------------------------------------------------------------
