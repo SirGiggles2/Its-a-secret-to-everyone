@@ -8,6 +8,7 @@
 #include "roomrom_arrow.h"
 #include "roomrom_bomb.h"
 #include "roomrom_scene_load.h"
+#include "roomrom_palette_tick.h"
 #include "cave_dispatch.h"  /* debate 006 D2: native cave gamemode entry */
 
 /* Boots to overworld room 0x77.
@@ -127,6 +128,9 @@ static short          s_scroll_start_link_y = 0;
 static short          s_transition_link_x = 0;
 static short          s_transition_link_y = 0;
 
+/* Increments every frame; used by Phase 2.6.5 palette tick. */
+static u16 s_frame_counter = 0u;
+
 /* Map room metatile col 0..15 into one 32x32 staging slot. */
 static u8 plane_col_for_slot(u8 src_col, u8 slot_x)
 {
@@ -228,6 +232,8 @@ static void load_room(u8 room_id)
     render_room_into_slot(room_id, s_active_slot_x, s_active_row_base);
     anchor_active_slot();
     roomrom_sprites_load_palette();   /* PAL1 - reload after BG palette write */
+    /* Phase 2.6.5: reset toggle table on room load (empty at Phase 2). */
+    roomrom_palette_tick_init((const unsigned char *)0);
 }
 
 /* Phase 1: pick the live-NES item-atlas variant for the current scene+map.
@@ -410,6 +416,8 @@ int main(bool hardReset)
 
     while (TRUE) {
         SYS_doVBlankProcess();
+        s_frame_counter++;
+        roomrom_palette_tick_frame(s_frame_counter);
 
         /* S6.6 transition state machine. */
         if (s_scroll_state != SCROLL_NONE) {
