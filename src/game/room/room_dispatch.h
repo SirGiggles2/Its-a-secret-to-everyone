@@ -240,6 +240,32 @@ unsigned int room_player_is_distance_safe_to_spawn(unsigned int slot);
 void room_player_set_moving_dir_and_switch_to_player_slot(unsigned int dir);
 void room_player_link_modify_dir_in_doorway(void);
 
+/* Door / secret-trigger / touch leaves — drains at room_runtime.c. */
+void room_calc_open_doorway_mask(unsigned int attr, unsigned int dir_idx);
+void room_add_door_flags(void);
+void room_set_door_flag(unsigned int dir_idx);
+void room_reset_door_flag(unsigned int dir_idx);
+void room_set_entering_doorway(void);
+void room_save_kill_count_ow(unsigned int slot);
+void room_trigger_open_door(unsigned int val);
+void room_touch_door_wall(void);
+void room_touch_door_open(void);
+void room_wield_nothing(void);
+void room_mask_cur_ppu_mask_grayscale(void);
+void room_block_at_wall(void);
+unsigned int room_check_secret_trigger_none(void);
+unsigned int room_trigger_shutters(void);
+unsigned int room_return_false(void);
+unsigned int room_check_secret_trigger_all_dead(void);
+unsigned int room_check_secret_trigger_last_boss(void);
+unsigned int room_check_secret_trigger_money_or_life(void);
+unsigned int room_check_secret_trigger_block_door(void);
+unsigned int room_check_secret_trigger_ringleader(void);
+void room_touch_door_bombable(void);
+void room_block_until_time(void);
+unsigned int room_touch_door_false(void);
+void room_touch_door_shutter(void);
+
 #ifdef __cplusplus
 }
 #endif

@@ -1032,3 +1032,226 @@ void room_player_link_modify_dir_in_doorway(void)
     }
     ROOM_INPUT_DIR = LINK_DIR;
 }
+
+/* room_runtime.c:47-59. NES CalcOpenDoorwayMask. */
+void room_calc_open_doorway_mask(unsigned int attr, unsigned int dir_idx)
+{
+    unsigned char is_open;
+    if (attr < 4u) {
+        is_open = 1u;
+    } else {
+        const unsigned char flags = room_get_room_flags();
+        is_open = (flags & k_room_level_masks[dir_idx & 7u]) ? 1u : 0u;
+    }
+    unsigned char mask = ROOM_DOOR_MASK_ACC;
+    mask = (unsigned char)(((unsigned char)(mask << 1) | is_open) & 0x0Fu);
+    ROOM_DOOR_MASK_ACC = mask;
+}
+
+/* room_runtime.c:61-69. NES AddDoorFlags. */
+void room_add_door_flags(void)
+{
+    const unsigned char flags = room_get_room_flags();
+    for (signed char d = 3; d >= 0; d--) {
+        const unsigned char masked =
+            (unsigned char)(flags & k_room_level_masks[(unsigned char)d]);
+        if (masked)
+            CUR_OPENED_DOORS = (unsigned char)(CUR_OPENED_DOORS | masked);
+    }
+}
+
+/* room_runtime.c:84-89. NES SetDoorFlag. */
+void room_set_door_flag(unsigned int dir_idx)
+{
+    unsigned char flags = room_get_room_flags();
+    const unsigned short ptr =
+        (unsigned short)(((unsigned short)SAVEFILE_PTR_HI << 8) | SAVEFILE_PTR_LO);
+    flags = (unsigned char)(flags | k_room_level_masks[dir_idx & 7u]);
+    nes_ram[ptr + CUR_ROOM_ID] = flags;
+}
+
+/* room_runtime.c:91-100. NES ResetDoorFlag. */
+void room_reset_door_flag(unsigned int dir_idx)
+{
+    (void)room_get_room_flags();
+    const unsigned short ptr =
+        (unsigned short)(((unsigned short)SAVEFILE_PTR_HI << 8) | SAVEFILE_PTR_LO);
+    const unsigned char mask =
+        (unsigned char)(k_room_level_masks[dir_idx & 7u] ^ 0xFFu);
+    const unsigned char flags = nes_ram[ptr + CUR_ROOM_ID];
+    nes_ram[ptr + CUR_ROOM_ID] = (unsigned char)(flags & mask);
+}
+
+/* room_runtime.c:125-130. NES SetEnteringDoorway. */
+void room_set_entering_doorway(void)
+{
+    const unsigned char scroll_dir = LINK_DIR;  /* ROOM_SCROLL_DIR == LINK_DIR */
+    const unsigned char a = (unsigned char)((scroll_dir >> 1) & 0x05u);
+    const unsigned char b = (unsigned char)((scroll_dir << 1) & 0x0Au);
+    CUR_OPENED_DOORS = (unsigned char)(a | b);
+}
+
+/* room_runtime.c:132-155. NES SaveKillCountOW. */
+void room_save_kill_count_ow(unsigned int slot)
+{
+    const unsigned char flags = room_get_room_flags();
+    const unsigned char kill_count = (unsigned char)(flags & 7u);
+    WORLD_TMP2 = kill_count;
+    const unsigned short ptr =
+        (unsigned short)(((unsigned short)SAVEFILE_PTR_HI << 8) | SAVEFILE_PTR_LO);
+    const unsigned char cell =
+        (unsigned char)(nes_ram[ptr + (unsigned char)slot] & 0xF8u);
+    nes_ram[ptr + (unsigned char)slot] = cell;
+    const unsigned char cur_count = ROOM_OW_CUR_KILL_TOTAL;
+    const unsigned char max_count = ROOM_OW_KILL_COUNT;
+    unsigned char new_kill;
+    if (cur_count >= max_count) {
+        new_kill = 7u;
+    } else {
+        new_kill = (unsigned char)((cur_count & 7u) + kill_count);
+        if (new_kill >= 7u)
+            new_kill = 7u;
+    }
+    nes_ram[ptr + (unsigned char)slot] = (unsigned char)(cell | new_kill);
+}
+
+/* room_runtime.c:157-160. NES TriggerOpenDoor. */
+void room_trigger_open_door(unsigned int val)
+{
+    ROOM_OPEN_DOOR_ARG = (unsigned char)val;
+    ROOM_OPEN_DOOR_TIMER = 6u;
+}
+
+/* room_runtime.c:162-164. NES TouchDoorWall. */
+void room_touch_door_wall(void)
+{
+    ROOM_TOUCH_BLOCK_FLAG = 0xFFu;
+}
+
+/* room_runtime.c:166. NES TouchDoorOpen — empty body. */
+void room_touch_door_open(void) {}
+
+/* room_runtime.c:168. NES WieldNothing — empty body. */
+void room_wield_nothing(void) {}
+
+/* room_runtime.c:170-172. NES MaskCurPpuMaskGrayscale. */
+void room_mask_cur_ppu_mask_grayscale(void)
+{
+    CUR_INV_TILE = (unsigned char)(CUR_INV_TILE & 0xFEu);
+}
+
+/* room_runtime.c:174-176. NES BlockAtWall. */
+void room_block_at_wall(void)
+{
+    room_touch_door_wall();
+}
+
+/* room_runtime.c:178-180. NES CheckSecretTriggerNone. */
+unsigned int room_check_secret_trigger_none(void) { return 0u; }
+
+/* room_runtime.c:182-185. NES TriggerShutters. */
+unsigned int room_trigger_shutters(void)
+{
+    ROOM_SHUTTER_TRIGGERED = 1u;
+    return CARRY_SET;
+}
+
+/* room_runtime.c:187-189. NES ReturnFalse. */
+unsigned int room_return_false(void) { return 0u; }
+
+/* room_runtime.c:191-195. NES CheckSecretTriggerAllDead. */
+unsigned int room_check_secret_trigger_all_dead(void)
+{
+    if (ROOM_MONSTER_ALL_DEAD != 0u)
+        return room_trigger_shutters();
+    return 0u;
+}
+
+/* room_runtime.c:197-201. NES CheckSecretTriggerLastBoss. */
+unsigned int room_check_secret_trigger_last_boss(void)
+{
+    if (ROOM_BOSS_SECRET_FLAG == 0u)
+        return 0u;
+    return room_trigger_shutters();
+}
+
+/* room_runtime.c:203-207. NES CheckSecretTriggerMoneyOrLife. */
+unsigned int room_check_secret_trigger_money_or_life(void)
+{
+    if (ROOM_OBJ_TYPE(0) != 0u)
+        return 0u;
+    return room_trigger_shutters();
+}
+
+/* room_runtime.c:209-213. NES CheckSecretTriggerBlockDoor. */
+unsigned int room_check_secret_trigger_block_door(void)
+{
+    if (ROOM_BLOCK_SECRET_FLAG == 0u)
+        return 0u;
+    return room_trigger_shutters();
+}
+
+/* room_runtime.c:215-230. NES CheckSecretTriggerRingleader. */
+unsigned int room_check_secret_trigger_ringleader(void)
+{
+    const unsigned char first = ROOM_OBJ_TYPE(0);
+    if (first != 0u && first < 0x53u)
+        return 0u;
+    for (signed char i = (signed char)ROOM_MAX_MONSTER_SLOT; i >= 0; i--) {
+        const unsigned char slot = (unsigned char)i;
+        const unsigned char obj = ROOM_OBJ_TYPE(slot);
+        if (obj == 0u || obj >= 0x53u)
+            continue;
+        if (ROOM_OBJ_STUN_TIMER(slot) != 0u)
+            continue;
+        ROOM_OBJ_STUN_TIMER(slot) = 16u;
+    }
+    return CARRY_SET;
+}
+
+/* room_runtime.c:232-236. NES TouchDoorBombable. */
+void room_touch_door_bombable(void)
+{
+    if (ROOM_TOUCH_DOOR_BITS & CUR_OPENED_DOORS)
+        return;
+    room_touch_door_wall();
+}
+
+/* room_runtime.c:238-241. NES BlockUntilTime. */
+void room_block_until_time(void)
+{
+    if (CURTAIN_TIMER != 0u)
+        room_block_at_wall();
+}
+
+/* room_runtime.c:243-251. NES TouchDoorFalse. */
+unsigned int room_touch_door_false(void)
+{
+    const unsigned char timer = CURTAIN_TIMER;
+    if (timer == 1u)
+        return CARRY_SET;
+    if (timer == 0u)
+        CURTAIN_TIMER = 24u;
+    room_touch_door_wall();
+    return 0u;
+}
+
+/* room_runtime.c:253-269. NES TouchDoorShutter. */
+void room_touch_door_shutter(void)
+{
+    if (ROOM_OPEN_DOOR_TIMER != 0u) {
+        room_touch_door_wall();
+        return;
+    }
+    const unsigned char door_bits =
+        (unsigned char)(ROOM_TOUCH_DOOR_BITS & CUR_OPENED_DOORS);
+    if (!door_bits) {
+        room_touch_door_wall();
+        return;
+    }
+    if (door_bits & ROOM_SHUTTER_TOUCH_MASK) {
+        room_block_until_time();
+        return;
+    }
+    ROOM_SHUTTER_TOUCH_MASK = (unsigned char)(ROOM_SHUTTER_TOUCH_MASK | ROOM_TOUCH_DOOR_BITS);
+}
