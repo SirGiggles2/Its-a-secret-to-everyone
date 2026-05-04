@@ -60,11 +60,11 @@ typedef enum {
     LINK_DIR_RIGHT = 4
 } link_dir_t;
 
-/* TEST DEFAULTS: boot into OW room $77. Toggle Start for UW. */
-static scene_t       s_scene       = SCENE_OW;
+/* TEST DEFAULTS: boot into UW room $73 (L1 entrance, blob room). Toggle Start for OW. */
+static scene_t       s_scene       = SCENE_UW;
 static mode_t        s_mode        = MODE_WALK;
 static move_style_t  s_move_style  = MOVE_STYLE_NES;
-static u8 s_room_id = 0x77;   /* OW room $77 */
+static u8 s_room_id = 0x73;   /* UW L1 room $73 */
 static short s_link_x = 124;  /* center of playfield, nudged 4px left */
 static short s_link_y = 144;  /* center of UW playfield (y=56 HUD + 88) */
 static link_face_t s_link_face = LINK_FACE_DOWN;
@@ -437,7 +437,9 @@ int main(bool hardReset)
     }
     /* P5: scene-load coordinator handles variant selection + sprite CHR
      * upload.  combat redux is not a CHR-load concern, kept separate. */
-    roomrom_scene_load(ROOMROM_SCENE_OVERWORLD, current_redux_flag());
+    roomrom_scene_load(
+        (s_scene == SCENE_UW) ? ROOMROM_SCENE_UW_L1 : ROOMROM_SCENE_OVERWORLD,
+        current_redux_flag());
     roomrom_combat_set_redux(current_redux_flag());
     load_room(s_room_id);                  /* loads BG pal + sprite PAL1 */
     roomrom_sprites_spawn_link(s_link_x, s_link_y);

@@ -35,28 +35,13 @@ static unsigned char s_uw_walkable[16][11];
  * levels x 2 quests in RoomRom/data/uw_level*_*_manifest.json (same
  * 14 IDs every level).
  *
- * Locked-door / shutter art ($98..$A3): NES Z1 renders closed doors
- * with these tile IDs. door_type 0 (open) uses $74..$77 as walkable
- * threshold; door_type >= 1 (shut/walled/bombable/locked) places art
- * from the $98..$A3 family into the doorway NT cells. Blocking this
- * range means locked / walled / bombable / shutter doors all behave
- * as walls, while open doors still pass. */
+ * NES Z1 ObjectFirstUnwalkableTile = $78. All tile IDs >= $78 are
+ * non-walkable (wall, water, door-art, hazard). Open door art uses
+ * $74..$77 (< $78) so it passes. Blocked ranges verified against
+ * PRIMARY_CLASS_UW in tools/builder/extract_uw_collision.py. */
 static unsigned char uw_walkable_tile_id(unsigned char t)
 {
-    /* Walls. */
-    switch (t) {
-        case 0xB8u: case 0xBCu:
-        case 0xC0u: case 0xC4u: case 0xC8u: case 0xCCu:
-        case 0xD0u: case 0xD4u: case 0xD8u: case 0xDCu: case 0xDEu:
-        case 0xE0u:
-        case 0xF5u: case 0xF6u:
-            return 0u;
-        default:
-            break;
-    }
-    /* Locked / shutter / walled door art. */
-    if (t >= 0x98u && t <= 0xA3u) return 0u;
-    return 1u;
+    return (t < 0x78u) ? 1u : 0u;
 }
 
 unsigned char roomrom_uw_room_render_walkable_at(unsigned char col,
@@ -349,7 +334,15 @@ void roomrom_uw_room_render_fill_one_col_at(unsigned char room_id,
     if (idx >= 0) {
         blit_blob_one_metacol_at(idx, src_col & 0x0F, dst_col & 0x1F,
                                  dst_row_base);
+    } else {
+        /* Non-blob room: plane tiles left unchanged; populate s_uw_walkable
+         * from precomputed NES grid so collision is valid for all rooms. */
+        unsigned char mt_row;
+        unsigned char mc = src_col & 0x0Fu;
+        for (mt_row = 0u; mt_row < 11u; mt_row++) {
+            s_uw_walkable[dst_col][mt_row] =
+                uw_room_walkable(s_uw_level, s_uw_quest, room_id,
+                                 mc, mt_row);
+        }
     }
-    /* If room not found in blob, leave plane content unchanged (caller's
-     * responsibility to only request known rooms during scroll). */
 }
