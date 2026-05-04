@@ -34,6 +34,12 @@ void trap_check_init_whirlwind_and_begin_update(void);
  * drain at trap_runtime.c:88-110. */
 void trap_summon_whirlwind(void);
 
+/* Initialize a 4 or 6-trap cluster from TrapXs/TrapYs tables (count
+ * 4 normally, 6 if MON_TYPE(slot) == TRAP_OBJ_TYPE). Each new trap
+ * gets its slot derived from TRAP_BASE_SLOT. NES InitTrap_Full.
+ * drain at trap_runtime.c:4-17. */
+void trap_init_trap_full(unsigned int slot);
+
 #ifdef __cplusplus
 }
 #endif

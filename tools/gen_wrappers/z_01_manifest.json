@@ -229,11 +229,6 @@
       "sig": "void (void)"
     },
     {
-      "old": "z01_init_trap_full",
-      "new": "trprt_init_trap_full",
-      "sig": "void (unsigned int slot)"
-    },
-    {
       "old": "z01_draw_whirlwind",
       "new": "trprt_draw_whirlwind",
       "sig": "void (unsigned int slot)"

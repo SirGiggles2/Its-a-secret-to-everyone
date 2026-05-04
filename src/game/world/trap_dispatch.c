@@ -6,17 +6,31 @@
 
 #include "trap_dispatch.h"
 #include <stdint.h>
-#include "platform_abi.h"      /* RAM */
+#include "platform_abi.h"      /* RAM, OBJ */
 #include "trap_state.h"        /* TELEPORT_LEVEL_INDEX, TELEPORT_ACTIVE_FLAG,
-                                * WHIRLWIND_ACTIVE_FLAG, MODE_TIMER */
-#include "world_state.h"       /* LINK_DIR, LINK_Y, LINK_ACTION_TIMER */
+                                * WHIRLWIND_ACTIVE_FLAG, MODE_TIMER,
+                                * TRAP_OBJ_TYPE, TRAP_BASE_SLOT */
+#include "world_state.h"       /* LINK_DIR, LINK_Y, LINK_ACTION_TIMER,
+                                * WORLD_TMP0/_1 */
 #include "progress_state.h"    /* MODE_VALUE, SUBMODE_VALUE */
-#include "core/core_dispatch.h"     /* core_set_up_whirlwind */
+#include "object_state.h"      /* OBJ_X, OBJ_Y */
+#include "combat_state.h"      /* MON_TYPE, MON_STATUS_FLAGS */
+#include "core/core_dispatch.h"     /* core_set_up_whirlwind, core_init_one_simple_object */
 #include "enemies/enemy_dispatch.h" /* enemy_find_empty_monster_slot */
 
 /* TeleportYs — Z_01.asm:1226. Per-level teleport Y coords. */
 static const unsigned char k_teleport_ys[8] = {
     0x8Du, 0xADu, 0x8Du, 0x8Du, 0xADu, 0x8Du, 0xADu, 0x5Du
+};
+
+/* TrapXs — Z_01.asm:1297. */
+static const unsigned char k_trap_xs[6] = {
+    0x20u, 0x20u, 0xD0u, 0xD0u, 0x40u, 0xB0u
+};
+
+/* TrapYs — Z_01.asm:1301. */
+static const unsigned char k_trap_ys[6] = {
+    0x5Du, 0xBDu, 0x5Du, 0xBDu, 0x8Du, 0x8Du
 };
 
 /* LevelMasks — Z_01.asm. Used by SummonWhirlwind to gate teleport
@@ -95,4 +109,21 @@ void trap_summon_whirlwind(void)
     WHIRLWIND_ACTIVE_FLAG =
         (uint8_t)((unsigned char)WHIRLWIND_ACTIVE_FLAG + 1u);
     core_set_up_whirlwind(empty);
+}
+
+void trap_init_trap_full(unsigned int slot)
+{
+    /* drain at trap_runtime.c:4-17. */
+    WORLD_TMP1 = (uint8_t)MON_STATUS_FLAGS(slot);
+    WORLD_TMP0 = TRAP_OBJ_TYPE;
+    signed char count = ((unsigned char)MON_TYPE(slot) == TRAP_OBJ_TYPE) ? 5 : 3;
+    do {
+        const unsigned char ns =
+            (unsigned char)((unsigned char)count +
+                            (unsigned char)TRAP_BASE_SLOT);
+        OBJ_X(ns) = k_trap_xs[(unsigned char)count];
+        OBJ_Y(ns) = k_trap_ys[(unsigned char)count];
+        core_init_one_simple_object(ns);
+        --count;
+    } while (count >= 0);
 }

@@ -198,10 +198,6 @@ void z01_update_world_curtain_effect_bank2(void) {
     progrt_update_world_curtain_effect_bank2();
 }
 
-void z01_init_trap_full(unsigned int slot) {
-    trprt_init_trap_full(slot);
-}
-
 void z01_draw_whirlwind(unsigned int slot) {
     trprt_draw_whirlwind(slot);
 }
@@ -654,6 +650,14 @@ void z01_summon_whirlwind(void) {
     trap_summon_whirlwind();
 #else
     trprt_summon_whirlwind();
+#endif
+}
+
+void z01_init_trap_full(unsigned int slot) {
+#ifdef NATIVE_TRAP
+    trap_init_trap_full(slot);
+#else
+    trprt_init_trap_full(slot);
 #endif
 }
 
