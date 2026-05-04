@@ -30,10 +30,6 @@ void z01_init_underworld_person_do_nothing(void) {}
 #include "combat_runtime.h"
 #include "link_collision_runtime.h"
 
-void z01_reset_shove_info_and_inv_timer(unsigned int slot) {
-    corert_reset_shove_info_and_inv_timer(slot);
-}
-
 void z01_init_underworld_person_b(unsigned int slot) {
     uwrt_init_underworld_person_b(slot);
 }
@@ -699,6 +695,14 @@ void z01_copy_price_list_template(void) {
     core_copy_price_list_template();
 #else
     corert_copy_price_list_template();
+#endif
+}
+
+void z01_reset_shove_info_and_inv_timer(unsigned int slot) {
+#ifdef NATIVE_CORE
+    core_reset_shove_info_and_inv_timer(slot);
+#else
+    corert_reset_shove_info_and_inv_timer(slot);
 #endif
 }
 

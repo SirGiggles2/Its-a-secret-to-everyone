@@ -19,11 +19,6 @@
   ],
   "symbols": [
     {
-      "old": "z01_reset_shove_info_and_inv_timer",
-      "new": "corert_reset_shove_info_and_inv_timer",
-      "sig": "void (unsigned int slot)"
-    },
-    {
       "old": "z01_init_underworld_person_b",
       "new": "uwrt_init_underworld_person_b",
       "sig": "void (unsigned int slot)"
