@@ -4,6 +4,7 @@
 #include "roomrom_vram_map.h"
 #include "roomrom_bg_palette.h"
 #include "expanded_bg_chr.h"
+#include "uw_collision_data.h"
 
 extern const unsigned char rooms_dungeons[];
 
@@ -309,10 +310,12 @@ static void draw_placeholder(unsigned char room_id)
             write_tile_raw(col, row, t, 1);
         }
     }
-    /* Placeholder rooms: all metatiles walkable. */
+    /* Load precomputed NES collision grid for this room. */
     for (mt_row = 0; mt_row < 11; mt_row++)
         for (mt_col = 0; mt_col < 16; mt_col++)
-            s_uw_walkable[mt_col][mt_row] = 1u;
+            s_uw_walkable[mt_col][mt_row] =
+                uw_room_walkable(s_uw_level, s_uw_quest, room_id,
+                                 (unsigned char)mt_col, (unsigned char)mt_row);
     write_tile_raw(2, 1, 0x15, 0);
     write_tile_raw(3, 1, digit_tile(s_uw_level), 0);
     write_tile_raw(6, 1, 0x1B, 0);
