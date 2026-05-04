@@ -161,6 +161,12 @@ void room_put_link_behind_background(void);
  * drain at room_load_runtime.c:69-81. */
 void room_init_link_speed(void);
 
+/* Fill 48-byte ROOM_PALETTE_ATTR with outer-attr from SRAM($687E+room_id),
+ * then patch inner 5x5 region with inner-attr from SRAM($68FE+room_id),
+ * with low-nibble blend on row 4 (d3 >= 0x21). NES FillPlayAreaAttrs.
+ * drain at room_load_runtime.c:32-56. */
+void room_fill_play_area_attrs(unsigned int room_id);
+
 #ifdef __cplusplus
 }
 #endif

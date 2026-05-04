@@ -658,6 +658,38 @@ void room_put_link_behind_background(void)
     RAM(0x024Eu) = (uint8_t)(RAM(0x024Eu) | 0x20u);
 }
 
+/* roomld_palette_to_nt_attr[4] (room_load_runtime.c:7). */
+static const unsigned char k_palette_to_nt_attr[4] = {
+    0x00u, 0x55u, 0xAAu, 0xFFu
+};
+
+void room_fill_play_area_attrs(unsigned int room_id)
+{
+    /* drain at room_load_runtime.c:32-56. */
+    const unsigned char outer_sel =
+        (unsigned char)(nes_ram[NES_SRAM_BASE + 0x087Eu + room_id] & 0x03u);
+    const unsigned char outer_attr = k_palette_to_nt_attr[outer_sel];
+    for (unsigned char d3 = 0u; d3 < 48u; ++d3) {
+        RAM(0x0530u + d3) = outer_attr;
+    }
+    const unsigned char inner_sel =
+        (unsigned char)(nes_ram[NES_SRAM_BASE + 0x08FEu + room_id] & 0x03u);
+    const unsigned char inner_attr = k_palette_to_nt_attr[inner_sel];
+    for (unsigned char d3 = 9u; d3 < 0x27u; ++d3) {
+        const unsigned char mod = (unsigned char)(d3 & 0x07u);
+        if (mod == 0u || mod == 7u) {
+            continue;
+        }
+        if (d3 >= 0x21u) {
+            const unsigned char cur = (unsigned char)RAM(0x0530u + d3);
+            RAM(0x0530u + d3) =
+                (uint8_t)((inner_attr & 0x0Fu) | (cur & 0xF0u));
+        } else {
+            RAM(0x0530u + d3) = inner_attr;
+        }
+    }
+}
+
 void room_init_link_speed(void)
 {
     /* drain at room_load_runtime.c:69-81. */
