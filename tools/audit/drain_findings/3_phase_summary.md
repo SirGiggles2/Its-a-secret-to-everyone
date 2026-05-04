@@ -161,19 +161,26 @@ for `cavert_update_person_state_textbox` proper.
                       (DrawObject* + AnimateItemObject + DrawItemBySlot /
                        DrawItemInInventory + Anim_WriteSpritePair family)
 
-  Remaining manifest blockers (all chained on heavy structural deps):
-  - z01_update_person_state_textbox (text-render pipeline in z_07)
-  - z01_try_take_item / _try_take_room_item / z01_take_item
-    (item runtime — MenuPalettesTransferBuf asm-bound)
-  - z01_init_mode_b_enter_cave_bank5 (mode-init chain:
-    c_init_mode_enter_room, c_link_end_move_and_animate,
-    c_run_cross_room_tasks_no_cellar)
-  - z07_patch_and_cue_level_palettes_transfer + chained users
-    (MenuPalettesTransferBuf)
-  - z07_init_mode3_sub1 (chains to patch_and_cue)
-  - z07_update_mode2_load (drain c_copy_bank_to_window;
-    deferred per debate 007 — needs non-c_-prefixed bank-window
-    primitive or full z_06 native port)
+  Phase 4 manifest status: BOTH BANKS EMPTY (z_01 + z_07).
+  All previously manifest-routed symbols now native via NATIVE_*
+  cutover gates. 20 cutover gates active.
+
+  Documented STAGE-1 stubs (deferred substantial NES asm chains):
+  1. cave_link_end_move_and_draw_stub (in cave_update_person_state_textbox):
+     Link side-render during dialog text — Link sprite freezes
+     mid-animation. Pending Link_EndMoveAndDraw_Bank1 native port.
+  2. uw_person_link_end_move_stub (in update_grumble3): same chain
+     for grumble dialog. Pending same native port.
+  3. uw_person_state_textbox_stub (in full updaters): TODO swap to
+     cave_update_person_state_textbox now that it's native.
+  4. trap_init_mode_b_enter_cave_bank5: 4 nested stubs
+     (InitMode_EnterRoom, z05_reset_inv_obj_state,
+     Link_EndMoveAndAnimate, RunCrossRoomTasksAndBeginUpdateMode_
+     PlayModesNoCellar) — heavy room-reload + Link rendering chain.
+  5. room_update_mode2_load Q2 UW patches:
+     LevelInfoUWQ2Replacements{1..9} blob bake (~565 bytes)
+     pending — Q2 UW level palette patches non-functional under
+     NATIVE_ROOM (Title.md path keeps via asm).
 
 ## Debate 007 (no-emulation MMC1) verdict applied 2026-05-03
 
