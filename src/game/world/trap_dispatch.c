@@ -21,7 +21,8 @@
                                      * core_get_opposite_dir, core_reset_obj_metastate,
                                      * core_anim_set_sprite_desc_attrs,
                                      * core_destroy_whirlwind, core_destroy_monster,
-                                     * core_take_one_rupee, core_abs */
+                                     * core_take_one_rupee, core_abs,
+                                     * core_clear_ram0300_up_to */
 #include "enemies/enemy_dispatch.h" /* enemy_find_empty_monster_slot */
 #include "world/sprite_dispatch.h"  /* sprite_anim_advance_and_fetch,
                                      * sprite_anim_set_obj_hflip,
@@ -335,26 +336,35 @@ void trap_init_mode_b_enter_cave_bank5(void)
 {
     /* drain at trap_runtime.c:124-138. NES InitMode_B_EnterCave_Bank5.
      *
-     * STAGE-1 STUB for 4 heavy NES asm chains:
-     *   - InitMode_EnterRoom: room load init
-     *   - z05_reset_inv_obj_state: bank-5 inv obj reset
-     *   - Link_EndMoveAndAnimate: Link rendering pipeline
-     *   - RunCrossRoomTasksAndBeginUpdateMode_PlayModesNoCellar:
-     *     cross-room state plumbing
-     * All 4 deferred — native ports substantial. Title.md
-     * NATIVE_TRAP=off keeps full asm cellar-entry intact. RoomRom
-     * doesn't exercise cellar mode-B. */
+     * STAGE-2 partial port. NES InitMode_EnterRoom (z_05.asm:1564)
+     * decomposes to several native helpers we already have, plus
+     * heavy DrawSpritesBetweenRooms + level-block-attr-F caching
+     * which defer. Same for RunCrossRoomTasks + Link_EndMoveAndAnimate.
+     * Mode-B cellar entry under NATIVE_TRAP gets:
+     *   - native room_reset_player_state (LINK_ACTION_TIMER + halt clear)
+     *   - native core_clear_ram0300_up_to(5, 31)
+     *   - native room_reset_inv_obj_state
+     *   - Link teleport coords + cellar flag
+     * Skipped: DrawSpritesBetweenRooms, level-attr-F cache,
+     * Link_EndMoveAndAnimate, RunCrossRoomTasks. Title.md
+     * NATIVE_TRAP=off keeps full asm path intact. */
     const unsigned char submode = (unsigned char)SUBMODE_VALUE;
 
-    /* TODO Phase 4: native InitMode_EnterRoom port. */
-    /* TODO Phase 4: native z05_reset_inv_obj_state port. */
+    /* InitMode_EnterRoom partial: ResetPlayerState + ClearRam0300UpTo
+     * + ResetInvObjState. Skip DrawSpritesBetweenRooms + level-attr-F. */
+    room_reset_player_state();
+    core_clear_ram0300_up_to(5u, 31u);
+    RAM(0x0054u) = 0u;     /* door trigger info */
+    RAM(0x0055u) = 0u;
+    room_reset_inv_obj_state();
 
     LINK_X = 112u;
     LINK_Y = 0xDDu;
     LINK_DIR = 8u;
 
-    /* TODO Phase 4: native Link_EndMoveAndAnimate port. */
-    /* TODO Phase 4: native RunCrossRoomTasksAndBeginUpdateMode_PlayModesNoCellar
+    /* TODO Phase 5: native Link_EndMoveAndAnimate port (huge ladder
+     * /water/warp/animation chain in z_07.asm). */
+    /* TODO Phase 5: native RunCrossRoomTasksAndBeginUpdateMode_PlayModesNoCellar
      * port. */
 
     SUBMODE_VALUE = submode;

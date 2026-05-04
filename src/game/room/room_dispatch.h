@@ -126,6 +126,10 @@ void room_patch_and_cue_level_palettes_transfer(void);
  * InitMode3_Sub1. drain at room_mode_runtime.c:281-293. */
 void room_init_mode3_sub1(void);
 
+/* ROOM_INV_OBJ_ACTIVE = 0; ROOM_INV_OBJ_STATE[0..5] = 0.
+ * NES ResetInvObjState. drain at room_load_runtime.c:25-30. */
+void room_reset_inv_obj_state(void);
+
 #ifdef __cplusplus
 }
 #endif

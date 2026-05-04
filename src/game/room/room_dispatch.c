@@ -557,3 +557,12 @@ void room_init_mode3_sub1(void)
     }
     room_patch_and_cue_level_palettes_transfer();
 }
+
+void room_reset_inv_obj_state(void)
+{
+    /* drain at room_load_runtime.c:25-30. */
+    RAM(0x0064u) = 0u;                    /* ROOM_INV_OBJ_ACTIVE */
+    for (signed char i = 5; i >= 0; --i) {
+        RAM(0x00B9u + (unsigned char)i) = 0u;  /* ROOM_INV_OBJ_STATE */
+    }
+}
