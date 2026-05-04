@@ -40,6 +40,17 @@ disable-model-invocation: false
 
 5. **CITE** tracker fields by name when claiming progress. Never paraphrase.
 
+6. **EXECUTE** the next concrete action immediately. After emitting status, do not stop, do not ask, do not present options. Identify `active.next_concrete_action` (or, if it is generic like "Read status.md", derive the real next step from `phases[active].close_gate` first pending step combined with master-plan §"Current Next Action"). Then start that work in the same response — read the relevant files, run the relevant probes, write the relevant code, commit when done. The user invoking `/primedirective` is a request to advance the phase, not a request for a report. Status emission is a side effect; forward motion is the deliverable.
+
+   Stop conditions (only these):
+   - tracker BLOCKED (exit 2) or has entries in `blockers[]`
+   - hard-rule refusal triggered (SGDK / WT / D1 / whatif / GREENFIELD-on-drain)
+   - bug-detection branch fires (defer to /chuckle + /octo:debate)
+   - next action requires destructive op on shared state (push, force-push, branch delete, external publish)
+   - user interrupts
+
+   Otherwise: proceed without prompting. CLAUDE.md "Don't ask. Always pick the option with best long-term outcome / coding practice / efficiency / NES accuracy. Then execute" applies in full.
+
 ## Prime Directive (canonical)
 
 **NES Zelda 1 = behavioral spec. Genesis-native = implementation.**
