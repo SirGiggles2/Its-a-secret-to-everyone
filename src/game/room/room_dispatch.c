@@ -751,3 +751,141 @@ void room_setup_tile_object_ow(void)
     progress_reset_room_tile_obj_info();
     RAM(0x00B7u) = 0u;        /* ROOM_OBJECT_INIT_DONE */
 }
+
+/* --------------------------------------------------------------- */
+/* Mode-helper leaves — drain at room_mode_runtime.c.              */
+/* --------------------------------------------------------------- */
+
+void room_inc_submode(void)
+{
+    SUBMODE_VALUE = (uint8_t)((unsigned char)SUBMODE_VALUE + 1u);
+}
+
+void room_inc_2_submodes(void)
+{
+    SUBMODE_VALUE = (uint8_t)((unsigned char)SUBMODE_VALUE + 2u);
+}
+
+void room_init_mode_a_sub_a_go_to_mode4(void)
+{
+    /* room_mode_runtime.c:17-21. roomld_reset_inv_obj_state forwarder. */
+    room_reset_inv_obj_state();
+    SUBMODE_VALUE = 0u;
+    MODE_VALUE = 4u;
+}
+
+void room_init_mode4_go_to_sub0(void)
+{
+    /* room_mode_runtime.c:23-26. */
+    SUBMODE_VALUE = 0u;
+    RAM(0x056Eu) = 0u;  /* ROOM_SCROLL_STATE */
+}
+
+void room_update_mode11_death_sub6(void)
+{
+    /* room_mode_runtime.c:28-31. */
+    RAM(0x00FFu) = (uint8_t)((unsigned char)RAM(0x00FFu) & 0xFEu);
+    room_inc_submode();
+}
+
+void room_reset_vscroll_lo(void)
+{
+    /* room_mode_runtime.c:33-36. */
+    RAM(0x00E2u) = 0u;
+    room_inc_submode();
+}
+
+void room_select_transfer_buf(unsigned int val)
+{
+    /* room_mode_runtime.c:38-41. */
+    ROOM_TRANSFER_BUF_SELECT = (uint8_t)val;
+    room_inc_submode();
+}
+
+void room_select_transfer_buf_and_inc_state(unsigned int val)
+{
+    /* room_mode_runtime.c:43-46. */
+    ROOM_TRANSFER_BUF_SELECT = (uint8_t)val;
+    RAM(0x00E1u) =
+        (uint8_t)((unsigned char)RAM(0x00E1u) + 1u);  /* ROOM_STATE_INDEX */
+}
+
+void room_set_fade_cycle_and_advance_submode(unsigned int val)
+{
+    /* room_mode_runtime.c:65-68. */
+    RAM(0x051Cu) = (uint8_t)val;  /* WORLD_FADE_STEP */
+    room_inc_submode();
+}
+
+void room_switch_to_nt1(void)
+{
+    /* room_mode_runtime.c:129-131. */
+    RAM(0x005Fu) = 1u;  /* ROOM_NAMETABLE_SELECT */
+}
+
+void room_update_menu_common2(void)
+{
+    room_select_transfer_buf_and_inc_state(72u);
+}
+
+void room_update_menu_common3(void)
+{
+    room_select_transfer_buf_and_inc_state(74u);
+}
+
+void room_update_menu_common4(void)
+{
+    room_select_transfer_buf_and_inc_state(76u);
+}
+
+void room_update_menu5_ow(void)
+{
+    room_select_transfer_buf_and_inc_state(92u);
+}
+
+void room_init_mode9_transfer_attrs(void)
+{
+    room_select_transfer_buf(38u);
+}
+
+void room_update_mode11_death_set_timer_inc_submode(unsigned int val)
+{
+    /* room_mode_runtime.c:133-136. */
+    CURTAIN_TIMER = (uint8_t)val;
+    room_inc_submode();
+}
+
+void room_update_mode11_death_sub4(void)
+{
+    room_select_transfer_buf(98u);
+}
+
+void room_update_mode11_death_sub5(void)
+{
+    /* room_mode_runtime.c:142-145. */
+    RAM(0x00E3u) = 0u;  /* ROOM_SPRITE0_ENABLED */
+    room_select_transfer_buf(94u);
+}
+
+void room_update_mode11_death_sub9(void)
+{
+    /* room_mode_runtime.c:147-151. */
+    ROOM_TRANSFER_BUF_SELECT = 44u;
+    RAM(0x00E5u) = 15u;  /* ROOM_MENU_SCROLL_TIMER */
+    room_update_mode11_death_set_timer_inc_submode(24u);
+}
+
+void room_start_filling_hearts(void)
+{
+    /* room_mode_runtime.c:157-160. */
+    RAM(0x0064u) = 2u;  /* ROOM_INV_OBJ_ACTIVE */
+    room_inc_submode();
+}
+
+void room_init_mode7_finish(void)
+{
+    /* room_mode_runtime.c:123-127. */
+    CUR_ROOM_ID = (uint8_t)RAM(0x00ECu);  /* PREV_ROOM_ID */
+    room_write_and_enable_sprite0();
+    core_begin_update_mode();
+}

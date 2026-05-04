@@ -183,6 +183,30 @@ void room_end_prepare_mode(void);
  * drain at room_object_runtime.c:17-29. */
 void room_setup_tile_object_ow(void);
 
+/* Mode-helper leaves — small RAM-state ops used by NES dispatch
+ * tables. drain at room_mode_runtime.c. */
+void room_inc_submode(void);                        /* 8-10 */
+void room_inc_2_submodes(void);                     /* 12-15 */
+void room_init_mode4_go_to_sub0(void);              /* 23-26 */
+void room_reset_vscroll_lo(void);                   /* 33-36 */
+void room_select_transfer_buf(unsigned int val);    /* 38-41 */
+void room_select_transfer_buf_and_inc_state(unsigned int val); /* 43-46 */
+void room_set_fade_cycle_and_advance_submode(unsigned int val); /* 65-68 */
+void room_switch_to_nt1(void);                      /* 129-131 */
+void room_update_menu_common2(void);                /* 107-109 */
+void room_update_menu_common3(void);                /* 111-113 */
+void room_update_menu_common4(void);                /* 115-117 */
+void room_update_menu5_ow(void);                    /* 119-121 */
+void room_init_mode9_transfer_attrs(void);          /* 153-155 */
+void room_init_mode_a_sub_a_go_to_mode4(void);      /* 17-21 */
+void room_update_mode11_death_set_timer_inc_submode(unsigned int val);
+void room_update_mode11_death_sub4(void);           /* 138-140 */
+void room_update_mode11_death_sub5(void);           /* 142-145 */
+void room_update_mode11_death_sub6(void);           /* 28-31 */
+void room_update_mode11_death_sub9(void);           /* 147-151 */
+void room_start_filling_hearts(void);               /* 157-160 */
+void room_init_mode7_finish(void);                  /* 123-127 */
+
 #ifdef __cplusplus
 }
 #endif
