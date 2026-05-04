@@ -3,8 +3,15 @@
 #ifndef UW_COLLISION_DATA_H
 #define UW_COLLISION_DATA_H
 
-/* [unique_room_id][col][row] walkability (0=wall, 1=walkable).
- * col 0..15, row 0..10 in metatile coords. */
+/* 2-bit metatile classification per debate ph5-t52-precheck Q3 (Option B).
+ * Byte-per-cell storage (only low 2 bits used; upper 6 bits zero). */
+#define UW_CLASS_WALK    0u
+#define UW_CLASS_WALL    1u
+#define UW_CLASS_WATER   2u
+#define UW_CLASS_HAZARD  3u   /* reserved for 5.3 hazard floor work */
+
+/* [unique_room_id][col][row] metatile class (UW_CLASS_*).
+ * col 0..15, row 0..10 in metatile coords. Border cells = UW_CLASS_WALL. */
 extern const unsigned char uw_collision_grid[64][16][11];
 
 /* [set][room_id] unique_room_id (0..63).
@@ -18,14 +25,26 @@ static inline unsigned char uw_lba_d_set(unsigned char level, unsigned char ques
     return (unsigned char)(base + (quest == 2u ? 1u : 0u));
 }
 
-/* Walkable test: 1 if the metatile at (col, row) is walkable in the given room. */
-static inline unsigned char uw_room_walkable(
+/* Raw metatile class (UW_CLASS_*) at (col, row) in the given room.
+ * Use this for 5.3+ semantics (water/hazard/stair logic). */
+static inline unsigned char uw_room_metatile_class(
     unsigned char level, unsigned char quest,
     unsigned char room_id, unsigned char col, unsigned char row)
 {
     unsigned char set = uw_lba_d_set(level, quest);
     unsigned char uid = uw_lba_d[set][room_id];
     return uw_collision_grid[uid][col][row];
+}
+
+/* Walkable test: 1 if class == WALK. WATER/WALL/HAZARD all block Link by
+ * default; raft/conditional walkability is runtime game state, not stored
+ * in this table. */
+static inline unsigned char uw_room_walkable(
+    unsigned char level, unsigned char quest,
+    unsigned char room_id, unsigned char col, unsigned char row)
+{
+    return (unsigned char)(uw_room_metatile_class(level, quest, room_id,
+                                                  col, row) == UW_CLASS_WALK);
 }
 
 #endif /* UW_COLLISION_DATA_H */

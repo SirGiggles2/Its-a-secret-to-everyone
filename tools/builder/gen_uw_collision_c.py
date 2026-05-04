@@ -2,17 +2,19 @@
 """gen_uw_collision_c.py — emit RoomRom/src/uw_collision_data.c from NES room data.
 
 Generates two tables:
-  uw_collision_grid[64][16][11]  — walkability per unique_room_id (0=wall, 1=walkable)
+  uw_collision_grid[64][16][11]  — metatile class per unique_room_id
+                                   (0=WALK, 1=WALL, 2=WATER, 3=HAZARD reserved)
   uw_lba_d[4][128]               — unique_room_id (& 0x3F) per (set,room_id)
                                    set 0 = levels 1-6 Q1 (LevelBlockUW1Q1)
                                    set 1 = levels 1-6 Q2 (LevelBlockUW1Q2)
                                    set 2 = levels 7-9 Q1 (LevelBlockUW2Q1)
                                    set 3 = levels 7-9 Q2 (LevelBlockUW2Q2)
 
-Runtime lookup:
+Runtime lookup (header inlines):
   set = (level >= 7) ? 2 : 0;  if (quest == 2) set++;
   uid = uw_lba_d[set][room_id];
-  walkable = uw_collision_grid[uid][col][row];
+  cls = uw_collision_grid[uid][col][row];        // raw class
+  walk = (cls == UW_CLASS_WALK);                 // bool
 
 NES source:  reference/aldonunez/Z_05.asm:LayoutUWFloor
 Output:      RoomRom/src/uw_collision_data.c
@@ -70,7 +72,8 @@ def emit_c(grids: list, lba_d_sets: list) -> str:
         " * DO NOT EDIT. Regenerate with: python tools/builder/gen_uw_collision_c.py",
         " *",
         " * NES source: reference/aldonunez/Z_05.asm:LayoutUWFloor",
-        " * 64 unique room layouts x 16 cols x 11 rows. 0=wall, 1=walkable.",
+        " * 64 unique room layouts x 16 cols x 11 rows.",
+        " * Cell value = UW_CLASS_* enum (0=WALK, 1=WALL, 2=WATER, 3=HAZARD).",
         " */",
         "#include \"uw_collision_data.h\"",
         "",
@@ -107,8 +110,15 @@ def emit_h() -> str:
 #ifndef UW_COLLISION_DATA_H
 #define UW_COLLISION_DATA_H
 
-/* [unique_room_id][col][row] walkability (0=wall, 1=walkable).
- * col 0..15, row 0..10 in metatile coords. */
+/* 2-bit metatile classification per debate ph5-t52-precheck Q3 (Option B).
+ * Byte-per-cell storage (only low 2 bits used; upper 6 bits zero). */
+#define UW_CLASS_WALK    0u
+#define UW_CLASS_WALL    1u
+#define UW_CLASS_WATER   2u
+#define UW_CLASS_HAZARD  3u   /* reserved for 5.3 hazard floor work */
+
+/* [unique_room_id][col][row] metatile class (UW_CLASS_*).
+ * col 0..15, row 0..10 in metatile coords. Border cells = UW_CLASS_WALL. */
 extern const unsigned char uw_collision_grid[64][16][11];
 
 /* [set][room_id] unique_room_id (0..63).
@@ -122,14 +132,26 @@ static inline unsigned char uw_lba_d_set(unsigned char level, unsigned char ques
     return (unsigned char)(base + (quest == 2u ? 1u : 0u));
 }
 
-/* Walkable test: 1 if the metatile at (col, row) is walkable in the given room. */
-static inline unsigned char uw_room_walkable(
+/* Raw metatile class (UW_CLASS_*) at (col, row) in the given room.
+ * Use this for 5.3+ semantics (water/hazard/stair logic). */
+static inline unsigned char uw_room_metatile_class(
     unsigned char level, unsigned char quest,
     unsigned char room_id, unsigned char col, unsigned char row)
 {
     unsigned char set = uw_lba_d_set(level, quest);
     unsigned char uid = uw_lba_d[set][room_id];
     return uw_collision_grid[uid][col][row];
+}
+
+/* Walkable test: 1 if class == WALK. WATER/WALL/HAZARD all block Link by
+ * default; raft/conditional walkability is runtime game state, not stored
+ * in this table. */
+static inline unsigned char uw_room_walkable(
+    unsigned char level, unsigned char quest,
+    unsigned char room_id, unsigned char col, unsigned char row)
+{
+    return (unsigned char)(uw_room_metatile_class(level, quest, room_id,
+                                                  col, row) == UW_CLASS_WALK);
 }
 
 #endif /* UW_COLLISION_DATA_H */

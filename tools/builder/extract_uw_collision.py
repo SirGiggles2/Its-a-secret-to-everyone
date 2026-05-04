@@ -34,6 +34,42 @@ MANIFEST_JSON = REPO / "data" / "rooms" / "MANIFEST.json"
 PRIMARY_SQUARES_UW = [0xB0, 0x74, 0x94, 0xB4, 0x70, 0x68, 0xF4, 0x24]
 WALKABLE_THRESHOLD = 0x78
 
+# 2-bit metatile classification (debate ph5-t52-precheck Q3 GO Option B).
+# Class is stored 1 byte per cell in the output grid. uw_room_walkable()
+# masks: walkable iff class == CLASS_WALK.
+#
+# Primary tile -> class mapping derived from NES Z_07.asm:2099 WalkableTiles
+# list and Z_07.asm threshold tile $78 (ObjectFirstUnwalkableTile UW).
+# Stair tile $68 stays WALK so 5.5 stair-trigger fires on entry rather
+# than being blocked by collision.
+CLASS_WALK   = 0
+CLASS_WALL   = 1
+CLASS_WATER  = 2
+CLASS_HAZARD = 3   # reserved (no tile in PRIMARY_SQUARES_UW maps here yet;
+                   # populated by 5.3 / Ganon hazard floor work)
+
+PRIMARY_CLASS_UW = {
+    # Below NES threshold $78 (walkable per Z_07.asm:Walker_CheckTileCollision)
+    0x70: CLASS_WALK,    # floor
+    0x74: CLASS_WALK,    # floor variant
+    0x68: CLASS_WALK,    # stairs (walkable; 5.5 triggers on entry)
+    0x24: CLASS_WALK,    # low block / lift tile
+    # At/above threshold $78 (unwalkable)
+    0xB0: CLASS_WATER,   # water tile (rafts step here)
+    0xB4: CLASS_WATER,   # water variant
+    0x94: CLASS_WALL,    # wall variant
+    0xF4: CLASS_WALL,    # high wall / pillar
+}
+
+
+def tile_to_class(tile: int) -> int:
+    """Return class enum (0-3) for a primary-square tile value.
+
+    Default WALL for any tile not in PRIMARY_CLASS_UW (defensive — extractor
+    only ever passes PrimarySquaresUW values, so default should never fire).
+    """
+    return PRIMARY_CLASS_UW.get(tile, CLASS_WALL)
+
 # UW floor occupies 12 encoded columns × 7 encoded rows = 12×7 metatile interior
 # Total output grid: 16 wide × 11 tall (2 border cols on each side, 2 border rows top/bottom)
 GRID_COLS = 16
@@ -115,12 +151,14 @@ def build_room_grid(
     tables: dict,
     unique_room_id: int,
 ) -> list[list[int]]:
-    """Build a GRID_COLS × GRID_ROWS walkability grid (1=walkable, 0=wall).
+    """Build a GRID_COLS × GRID_ROWS classification grid.
 
-    Border cells are always wall. Interior 12×7 comes from RoomLayoutsUW + heaps.
+    Each cell is a 2-bit class enum: 0=WALK, 1=WALL, 2=WATER, 3=HAZARD.
+    Border cells are always WALL. Interior 12×7 from RoomLayoutsUW + heaps.
+    Walkable test: class == CLASS_WALK.
     """
-    # Initialize all cells as wall (0)
-    grid = [[0] * GRID_ROWS for _ in range(GRID_COLS)]
+    # Initialize all cells as WALL (border)
+    grid = [[CLASS_WALL] * GRID_ROWS for _ in range(GRID_COLS)]
 
     layout_off, _ = tables["RoomLayoutsUW"]
     layout_base = layout_off + unique_room_id * FLOOR_COLS
@@ -145,8 +183,7 @@ def build_room_grid(
         grid_col = FLOOR_COL_OFFSET + col_enc
         for row_enc, tile in enumerate(tile_rows):
             grid_row = FLOOR_ROW_OFFSET + row_enc
-            walkable = 1 if tile < WALKABLE_THRESHOLD else 0
-            grid[grid_col][grid_row] = walkable
+            grid[grid_col][grid_row] = tile_to_class(tile)
 
     return grid
 
@@ -225,31 +262,36 @@ def main() -> int:
     out_path.write_bytes(packed)
     print(f"Wrote {len(packed):,} bytes -> {out_path.relative_to(REPO)}")
 
-    # Sanity: border cells always wall; at least some walkable cells per quest
+    # Sanity: border cells always WALL; at least some WALK cells per quest
     errors = []
     for li, level_grids in enumerate(all_grids):
         for qi, quest_grids in enumerate(level_grids):
             for ri, room_grids in enumerate(quest_grids):
-                # Border cells must be wall
+                # Border cells must be CLASS_WALL
                 for col in range(GRID_COLS):
                     for row in [0, GRID_ROWS - 1]:
-                        if room_grids[col][row] != 0:
-                            errors.append(f"L{li+1}Q{qi+1}R{ri}: border cell ({col},{row})=1")
+                        if room_grids[col][row] != CLASS_WALL:
+                            errors.append(
+                                f"L{li+1}Q{qi+1}R{ri}: border ({col},{row}) "
+                                f"class={room_grids[col][row]} != WALL")
                 for row in range(GRID_ROWS):
                     for col in [0, GRID_COLS - 1]:
-                        if room_grids[col][row] != 0:
-                            errors.append(f"L{li+1}Q{qi+1}R{ri}: border cell ({col},{row})=1")
-            # At least 20% of interior cells walkable across all rooms in this quest
-            total = sum(
-                quest_grids[ri][c][r]
+                        if room_grids[col][row] != CLASS_WALL:
+                            errors.append(
+                                f"L{li+1}Q{qi+1}R{ri}: border ({col},{row}) "
+                                f"class={room_grids[col][row]} != WALL")
+            # At least 20% of interior cells WALK across all rooms in this quest
+            walk_total = sum(
+                1
                 for ri in range(128)
                 for c in range(FLOOR_COL_OFFSET, FLOOR_COL_OFFSET + FLOOR_COLS)
                 for r in range(FLOOR_ROW_OFFSET, FLOOR_ROW_OFFSET + FLOOR_ROWS)
+                if quest_grids[ri][c][r] == CLASS_WALK
             )
             interior = 128 * FLOOR_COLS * FLOOR_ROWS
-            pct = total / interior
+            pct = walk_total / interior
             if pct < 0.20:
-                errors.append(f"L{li+1}Q{qi+1}: only {pct:.1%} walkable — too few floor cells")
+                errors.append(f"L{li+1}Q{qi+1}: only {pct:.1%} WALK — too few floor cells")
     if errors:
         for e in errors[:10]:
             print(f"FAIL: {e}", file=sys.stderr)
