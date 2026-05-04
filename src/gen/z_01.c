@@ -30,26 +30,6 @@ void z01_init_underworld_person_do_nothing(void) {}
 #include "combat_runtime.h"
 #include "link_collision_runtime.h"
 
-void z01_update_grumble3(void) {
-    uwrt_update_grumble3();
-}
-
-void z01_update_uw_person_complex(unsigned int slot) {
-    uwrt_update_person_complex(slot);
-}
-
-void z01_update_uw_person_full(unsigned int slot) {
-    uwrt_update_person_full(slot);
-}
-
-void z01_update_grumble_full(unsigned int slot) {
-    uwrt_update_grumble_full(slot);
-}
-
-void z01_update_uw_person_life_or_money_full(unsigned int slot) {
-    uwrt_update_life_or_money_full(slot);
-}
-
 void z01_update_person_state_textbox(void) {
     cavert_update_person_state_textbox();
 }
@@ -1421,6 +1401,46 @@ void z01_person_draw_and_check_collisions(unsigned int slot) {
     uw_person_person_draw_and_check_collisions(slot);
 #else
     uwrt_person_draw_and_check_collisions(slot);
+#endif
+}
+
+void z01_update_grumble3(void) {
+#ifdef NATIVE_UW_PERSON
+    uw_person_update_grumble3();
+#else
+    uwrt_update_grumble3();
+#endif
+}
+
+void z01_update_uw_person_complex(unsigned int slot) {
+#ifdef NATIVE_UW_PERSON
+    uw_person_update_person_complex(slot);
+#else
+    uwrt_update_person_complex(slot);
+#endif
+}
+
+void z01_update_uw_person_full(unsigned int slot) {
+#ifdef NATIVE_UW_PERSON
+    uw_person_update_person_full(slot);
+#else
+    uwrt_update_person_full(slot);
+#endif
+}
+
+void z01_update_grumble_full(unsigned int slot) {
+#ifdef NATIVE_UW_PERSON
+    uw_person_update_grumble_full(slot);
+#else
+    uwrt_update_grumble_full(slot);
+#endif
+}
+
+void z01_update_uw_person_life_or_money_full(unsigned int slot) {
+#ifdef NATIVE_UW_PERSON
+    uw_person_update_life_or_money_full(slot);
+#else
+    uwrt_update_life_or_money_full(slot);
 #endif
 }
 

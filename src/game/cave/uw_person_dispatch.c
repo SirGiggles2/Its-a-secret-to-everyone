@@ -24,11 +24,13 @@
 #include "world/progress_dispatch.h" /* progress_set_room_flag_uw_item_state,
                                       * progress_get_room_flag_uw_item_state */
 #include "world/draw_dispatch.h"     /* draw_animate_item_object,
-                                      * draw_object_mirrored */
+                                      * draw_object_mirrored,
+                                      * draw_object_not_mirrored */
 #include "world/sprite_dispatch.h"   /* sprite_anim_fetch_obj_pos */
 #include "combat/link_collision_dispatch.h" /* link_collision_check_monster_collisions */
-#include "room_state.h"             /* ROOM_OBJ_STUN_TIMER */
+#include "room_state.h"             /* ROOM_OBJ_STUN_TIMER, ROOM_TRANSFER_BUF_SELECT */
 #include "enemy_state.h"            /* ENEMY_STATUE_PERSON_FIREBALLS */
+#include "progress_state.h"         /* FRAME_COUNTER, CUR_LEVEL */
 
 /* Z_01.asm UnderworldPersonTextSelectorsB[8]. drain at
  * uw_person_runtime.c:35. */
@@ -309,4 +311,121 @@ void uw_person_person_draw_and_check_collisions(unsigned int slot)
     uw_person_person_check_collisions(slot);
     sprite_anim_fetch_obj_pos(slot);
     draw_object_mirrored(0u, slot);
+}
+
+/* uwrt_complex_state_begin file-static helper.
+ * drain at uw_person_runtime.c:20-26. */
+static void uw_person_complex_state_begin(void)
+{
+    if ((unsigned char)CAVE_ROOM_TYPE == 0x4Fu) {
+        ROOM_TRANSFER_BUF_SELECT = 108u;
+    }
+    CAVE_DELAY_TIMER = 10u;
+    CAVE_PERSON_STATE =
+        (uint8_t)((unsigned char)CAVE_PERSON_STATE + 1u);
+}
+
+/* Textbox state arm — STAGE-1 STUB. Native textbox port pending. */
+static void uw_person_state_textbox_stub(void)
+{
+    /* TODO Phase 4: native cavert_update_person_state_textbox port.
+     * Currently stubbed: cave dialog visually silent under NATIVE_UW_PERSON
+     * for full updaters. Title.md path with NATIVE_UW_PERSON OFF still
+     * uses oracle drain (dialog renders correctly). */
+}
+
+/* Link_EndMoveAndAnimate_Bank1 — STAGE-1 STUB pending native NES
+ * Link rendering pipeline port (Z_07.asm Link_EndMoveAndAnimate
+ * chain — heavy). */
+static void uw_person_link_end_move_stub(void)
+{
+    /* TODO Phase 4: native Link_EndMoveAndAnimate_Bank1 port. */
+}
+
+void uw_person_update_grumble3(void)
+{
+    /* drain at uw_person_runtime.c:219-230. NES UpdateGrumble3. */
+    uw_person_link_end_move_stub();
+    if ((unsigned char)CAVE_DELAY_TIMER != 0u) {
+        return;
+    }
+    OBJ_STATE(15) = 0u;
+    RAM(0x065Du) = 0u;
+    OBJ_STATE(0) = 0u;
+    CAVE_ROOM_TYPE = 0u;
+}
+
+void uw_person_update_person_complex(unsigned int slot)
+{
+    /* drain at uw_person_runtime.c:232-249. NES UpdateUnderworldPerson_Complex. */
+    const unsigned char state = (unsigned char)CAVE_PERSON_STATE;
+    if (state != 4u || ((unsigned char)FRAME_COUNTER & 1u) == 0u) {
+        uw_person_person_draw_and_check_collisions(slot);
+        if ((unsigned char)CAVE_ROOM_TYPE == 0x4Fu) {
+            RAM(0x0083u) = 120u;
+            RAM(0x0097u) = 0x98u;
+            draw_animate_item_object(24u, 19u);
+        }
+    }
+    switch (state) {
+        case 0u: uw_person_complex_state_begin(); break;
+        case 1u: uw_person_state_textbox_stub(); break;
+        case 2u: uw_person_update_complex_state_sense_link(); break;
+        case 3u: core_cue_transfer_blank_person_wares(); break;
+        case 4u: core_uw_person_complex_state_delay_and_quit(); break;
+        default: break;
+    }
+}
+
+void uw_person_update_person_full(unsigned int slot)
+{
+    /* drain at uw_person_runtime.c:251-263. NES UpdateUnderworldPerson_Full. */
+    const unsigned char level = (unsigned char)CUR_LEVEL;
+    if (level < 3u || level == 5u || level == 7u) {
+        uw_person_update_person_complex(slot);
+        return;
+    }
+    uw_person_person_draw_and_check_collisions(slot);
+    switch ((unsigned char)CAVE_PERSON_STATE) {
+        case 0u: core_update_person_state_reset_char_offset(); break;
+        case 1u: uw_person_state_textbox_stub(); break;
+        case 2u: /* z01_update_person_state_do_nothing — no-op */ break;
+        default: break;
+    }
+}
+
+void uw_person_update_grumble_full(unsigned int slot)
+{
+    /* drain at uw_person_runtime.c:265-278. NES UpdateGrumble_Full. */
+    const unsigned char state = (unsigned char)CAVE_PERSON_STATE;
+    if (state != 3u || ((unsigned char)FRAME_COUNTER & 1u) == 0u) {
+        uw_person_person_check_collisions(slot);
+        sprite_anim_fetch_obj_pos(slot);
+        draw_object_not_mirrored(0u, slot);
+    }
+    switch (state) {
+        case 0u: uw_person_state_textbox_stub(); break;
+        case 1u: uw_person_update_grumble1(); break;
+        case 2u: core_cue_transfer_blank_person_wares(); break;
+        case 3u: uw_person_update_grumble3(); break;
+        default: break;
+    }
+}
+
+void uw_person_update_life_or_money_full(unsigned int slot)
+{
+    /* drain at uw_person_runtime.c:280-293. NES UpdateUnderworldPersonLifeOrMoney_Full. */
+    const unsigned char state = (unsigned char)CAVE_PERSON_STATE;
+    if (state != 4u || ((unsigned char)FRAME_COUNTER & 1u) == 0u) {
+        uw_person_person_draw_and_check_collisions(slot);
+        uw_person_draw_life_or_money_items();
+    }
+    switch (state) {
+        case 0u: uw_person_update_life_or_money_state_0(); break;
+        case 1u: uw_person_state_textbox_stub(); break;
+        case 2u: uw_person_update_life_or_money_state_2(); break;
+        case 3u: core_cue_transfer_blank_person_wares(); break;
+        case 4u: core_uw_person_complex_state_delay_and_quit(); break;
+        default: break;
+    }
 }

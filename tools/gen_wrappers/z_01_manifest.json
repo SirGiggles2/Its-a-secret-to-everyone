@@ -19,31 +19,6 @@
   ],
   "symbols": [
     {
-      "old": "z01_update_grumble3",
-      "new": "uwrt_update_grumble3",
-      "sig": "void (void)"
-    },
-    {
-      "old": "z01_update_uw_person_complex",
-      "new": "uwrt_update_person_complex",
-      "sig": "void (unsigned int slot)"
-    },
-    {
-      "old": "z01_update_uw_person_full",
-      "new": "uwrt_update_person_full",
-      "sig": "void (unsigned int slot)"
-    },
-    {
-      "old": "z01_update_grumble_full",
-      "new": "uwrt_update_grumble_full",
-      "sig": "void (unsigned int slot)"
-    },
-    {
-      "old": "z01_update_uw_person_life_or_money_full",
-      "new": "uwrt_update_life_or_money_full",
-      "sig": "void (unsigned int slot)"
-    },
-    {
       "old": "z01_update_person_state_textbox",
       "new": "cavert_update_person_state_textbox",
       "sig": "void (void)"

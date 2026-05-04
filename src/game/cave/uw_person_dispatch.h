@@ -101,6 +101,17 @@ void uw_person_person_check_collisions(unsigned int slot);
  * drain at uw_person_runtime.c:28-32. */
 void uw_person_person_draw_and_check_collisions(unsigned int slot);
 
+/* Top-level UW-person update dispatchers — state-machine drivers
+ * that consume CAVE_PERSON_STATE. Textbox state arms remain
+ * STAGE-1 stubs (no textbox = silent dialog) pending native
+ * update_person_state_textbox port. NES UpdateUnderworldPerson_Complex
+ * et al. drain at uw_person_runtime.c:232+. */
+void uw_person_update_person_complex(unsigned int slot);
+void uw_person_update_person_full(unsigned int slot);
+void uw_person_update_grumble_full(unsigned int slot);
+void uw_person_update_life_or_money_full(unsigned int slot);
+void uw_person_update_grumble3(void);
+
 #ifdef __cplusplus
 }
 #endif
