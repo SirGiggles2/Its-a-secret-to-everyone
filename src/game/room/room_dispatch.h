@@ -207,6 +207,33 @@ void room_update_mode11_death_sub9(void);           /* 147-151 */
 void room_start_filling_hearts(void);               /* 157-160 */
 void room_init_mode7_finish(void);                  /* 123-127 */
 
+/* ROOM_MENU_SCROLL_POS--. NES DecSubmenuScroll.
+ * drain at room_object_runtime.c:60-62. */
+void room_dec_submenu_scroll(void);
+
+/* Copy 32-byte row at ROOM_ROW_INDEX into transfer buffer.
+ * NES CopyRowToTilebuf. drain at room_transfer_runtime.c:34-60. */
+void room_copy_row_to_tilebuf(void);
+
+/* Cycle d3 in [0..8] up/down by ROOM_CYCLE_DIR.
+ * NES Cycle9InDirection. drain at room_transfer_runtime.c:62-76. */
+unsigned int room_cycle9_in_direction(unsigned int d3_in);
+
+/* Dispatch row vs column copy by ROOM_ROW_INDEX.
+ * NES CopyColumnOrRowToTilebuf. drain at room_transfer_runtime.c:78-90. */
+void room_copy_column_or_row_to_tilebuf(void);
+
+/* SAVEFILE_PTR := $6530. NES FetchTileMapAddr.
+ * drain at room_transfer_runtime.c:92-95. */
+void room_fetch_tile_map_addr(void);
+
+/* Reverse-copy 24 ROOM_PALETTE_ATTR bytes into transfer buf, head with
+ * PPU dst hi/lo. NES CopyPlayAreaAttrsHalf.
+ * drain at room_transfer_runtime.c:97-108. */
+void room_copy_play_area_attrs_half(unsigned int ppu_hi,
+                                    unsigned int ppu_lo,
+                                    unsigned int end_off);
+
 /* Player-coord leaves — drains at room_player_runtime.c. */
 void room_player_get_coords_for_direction(unsigned int dir);
 unsigned int room_player_is_distance_safe_to_spawn(unsigned int slot);

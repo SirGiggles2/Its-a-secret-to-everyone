@@ -890,6 +890,98 @@ void room_init_mode7_finish(void)
     core_begin_update_mode();
 }
 
+/* room_object_runtime.c:60-62. NES DecSubmenuScroll. */
+void room_dec_submenu_scroll(void)
+{
+    ROOM_MENU_SCROLL_POS = (unsigned char)(ROOM_MENU_SCROLL_POS - 1u);
+}
+
+/* room_transfer_runtime.c:34-60. NES CopyRowToTilebuf. */
+void room_copy_row_to_tilebuf(void)
+{
+    const unsigned char row = ROOM_ROW_INDEX;
+
+    unsigned short ptr = 0x6530u + row;
+    SAVEFILE_PTR_LO = (unsigned char)(ptr & 0xFFu);
+    SAVEFILE_PTR_HI = (unsigned char)((ptr >> 8) & 0xFFu);
+
+    unsigned short vram = 0x20E0u;
+    for (signed char r = (signed char)row; r >= 0; r--)
+        vram += 0x20u;
+    TRANSFER_BUF_BYTE(0) = (unsigned char)((vram >> 8) & 0xFFu);
+    RAM(0x0303u) = (unsigned char)(vram & 0xFFu);
+
+    RAM(0x0304u) = 32u;
+    RAM(0x0325u) = 0xFFu;
+
+    unsigned short s = 0x6530u + row;
+    for (unsigned char i = 0u; i < 32u; i++) {
+        RAM(0x0305u + i) = nes_ram[s];
+        s += 0x16u;
+    }
+
+    TRANSFER_BUF_POS = 35u;
+    SAVEFILE_PTR_LO = (unsigned char)(s & 0xFFu);
+    SAVEFILE_PTR_HI = (unsigned char)((s >> 8) & 0xFFu);
+}
+
+/* room_transfer_runtime.c:62-76. NES Cycle9InDirection. */
+unsigned int room_cycle9_in_direction(unsigned int d3_in)
+{
+    unsigned char d3 = (unsigned char)d3_in;
+    const unsigned char dir = (unsigned char)(ROOM_CYCLE_DIR & 0x03u);
+    if (dir == 0u)
+        return d3;
+    if (dir & 1u)
+        d3++;
+    else
+        d3--;
+    if (d3 == 0xFFu)
+        d3 = 8u;
+    else if (d3 == 9u)
+        d3 = 0u;
+    return d3;
+}
+
+/* room_transfer_runtime.c:78-90. NES CopyColumnOrRowToTilebuf. */
+void room_copy_column_or_row_to_tilebuf(void)
+{
+    const unsigned char row = ROOM_ROW_INDEX;
+    if (row < 0x16u) {
+        if (row == ROOM_LAST_ROW_INDEX)
+            return;
+        ROOM_LAST_ROW_INDEX = row;
+        room_copy_row_to_tilebuf();
+        return;
+    }
+    if (CUR_ROOM_FLAGS_PTR == 0u || CUR_ROOM_FLAGS_PTR >= 0x21u)
+        return;
+    room_copy_column_to_tilebuf();
+}
+
+/* room_transfer_runtime.c:92-95. NES FetchTileMapAddr. */
+void room_fetch_tile_map_addr(void)
+{
+    SAVEFILE_PTR_LO = 48u;
+    SAVEFILE_PTR_HI = 101u;
+}
+
+/* room_transfer_runtime.c:97-108. NES CopyPlayAreaAttrsHalf. */
+void room_copy_play_area_attrs_half(unsigned int ppu_hi,
+                                    unsigned int ppu_lo,
+                                    unsigned int end_off)
+{
+    unsigned char src = (unsigned char)end_off;
+    TRANSFER_BUF_BYTE(0) = (unsigned char)ppu_hi;
+    TRANSFER_BUF_BYTE(1) = (unsigned char)ppu_lo;
+    TRANSFER_BUF_BYTE(2) = 24u;
+    TRANSFER_BUF_BYTE(27) = 0xFFu;
+    for (unsigned char dst = 24u; dst > 0u; dst--) {
+        TRANSFER_BUF_BYTE((unsigned char)(2u + dst)) = ROOM_PALETTE_ATTR(src);
+        src--;
+    }
+}
+
 /* room_player_runtime.c:4-12. NES GetPlayerCoordsForDirection. */
 void room_player_get_coords_for_direction(unsigned int dir)
 {
