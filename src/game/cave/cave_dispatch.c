@@ -598,13 +598,20 @@ void cave_try_take_room_item(void)
     cave_try_take_item(slot);
 }
 
-/* STAGE-1 STUB: Link side-render during textbox. NES asm
- * Link_EndMoveAndDraw_Bank1 ports natively when the heavy NES Link
- * rendering pipeline lands. Currently no-op — Link sprite freezes
- * mid-animation while text scrolls. Acceptable degradation. */
+/* STAGE-2 partial port: Link side-render during textbox. NES asm
+ * Link_EndMoveAndDraw freezes anim timer + chains to
+ * Link_EndMoveAndAnimate (huge ladder/water/warp/draw chain).
+ * For textbox context Link is halted, so the move + warp logic is
+ * effectively no-op — only the draw matters. Native partial
+ * implementation: freeze anim, fetch sprite-descriptor pos,
+ * draw Link statically via native draw_dispatch. Full fidelity
+ * (ladder/water/warp/animation) deferred to phase 5
+ * Link_EndMoveAndAnimate native port. */
 static void cave_link_end_move_and_draw_stub(void)
 {
-    /* TODO Phase 4: native Link_EndMoveAndDraw_Bank1 port. */
+    OBJ_ANIM_TIMER(0) = 6u;
+    sprite_anim_fetch_obj_pos(0u);
+    draw_object_mirrored(0u, 0u);
 }
 
 void cave_update_person_state_textbox(void)

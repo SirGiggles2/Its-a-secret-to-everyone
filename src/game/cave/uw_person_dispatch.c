@@ -333,12 +333,16 @@ static inline void uw_person_state_textbox_stub(void)
     cave_update_person_state_textbox();
 }
 
-/* Link_EndMoveAndAnimate_Bank1 — STAGE-1 STUB pending native NES
- * Link rendering pipeline port (Z_07.asm Link_EndMoveAndAnimate
- * chain — heavy). */
+/* Link_EndMoveAndAnimate_Bank1 — STAGE-2 partial port. Same partial
+ * approach as cave's link_end_move_and_draw_stub: freeze anim,
+ * fetch sprite-descriptor pos, draw Link statically. Grumble dialog
+ * context = Link halted, no move/warp logic needed. Full
+ * Link_EndMoveAndAnimate fidelity deferred. */
 static void uw_person_link_end_move_stub(void)
 {
-    /* TODO Phase 4: native Link_EndMoveAndAnimate_Bank1 port. */
+    OBJ_ANIM_TIMER(0) = 6u;
+    sprite_anim_fetch_obj_pos(0u);
+    draw_object_mirrored(0u, 0u);
 }
 
 void uw_person_update_grumble3(void)
