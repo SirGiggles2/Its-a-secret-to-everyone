@@ -28,7 +28,9 @@
 #include "world/sprite_dispatch.h"      /* sprite_anim_fetch_obj_pos */
 #include "world/draw_dispatch.h"        /* draw_object_mirrored,
                                          * draw_object_not_mirrored */
-#include "core/core_dispatch.h"         /* core_cue_transfer_buf_and_advance_state */
+#include "core/core_dispatch.h"         /* core_cue_transfer_buf_and_advance_state,
+                                         * core_abs */
+#include "items/item_dispatch.h"        /* item_take_item */
 
 /* Cave-id of the currently active cave (0 = none active).
  *
@@ -545,4 +547,49 @@ void cave_draw_person(unsigned int slot)
     } else {
         draw_object_not_mirrored(0u, slot);
     }
+}
+
+void cave_try_take_item(unsigned int slot)
+{
+    /* drain at cave_runtime.c:356-378. */
+    if ((unsigned char)RAM(0x03A8u + slot) >= 0xF0u) {
+        return;
+    }
+    {
+        const unsigned char dy = (unsigned char)(
+            (unsigned char)RAM(0x0084u) + 3u - (unsigned char)OBJ_Y(slot));
+        if (core_abs((unsigned int)dy) >= 9u) {
+            return;
+        }
+    }
+    {
+        const unsigned char dx = (unsigned char)(
+            (unsigned char)RAM(0x0070u) - (unsigned char)OBJ_X(slot));
+        if (core_abs((unsigned int)dx) >= 9u) {
+            return;
+        }
+    }
+    OBJ_STATE(slot) = 0xFFu;
+    OBJ_Y(slot) = 0xFFu;
+    if (slot == CAVE_WARE_DRAW_SLOT) {
+        progress_set_room_flag_uw_item_state();
+    }
+    item_take_item((unsigned char)CAVE_TMP4);
+}
+
+void cave_try_take_room_item(void)
+{
+    /* drain at cave_runtime.c:380-393. */
+    const unsigned int slot = CAVE_WARE_DRAW_SLOT;
+    if (((unsigned char)CAVE_LINK_ACTION_TIMER & 0xC0u) == 0x40u) {
+        return;
+    }
+    if (progress_get_room_flag_uw_item_state() != 0u) {
+        return;
+    }
+    if ((unsigned char)OBJ_STATE(slot) & 0x80u) {
+        return;
+    }
+    CAVE_TMP4 = (uint8_t)OBJ_DIR(slot);
+    cave_try_take_item(slot);
 }

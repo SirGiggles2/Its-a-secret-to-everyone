@@ -202,6 +202,17 @@ void cave_write_prices_to_dynamic_transfer_buf(unsigned char price_char);
  * src/oracle/cave/cave_runtime.c:126. */
 void cave_write_prices_transfer_buf(void);
 
+/* If item slot has lifetime < $F0 and Link is within 9px (Y axis
+ * with +3 offset / X axis), mark slot collected and dispatch
+ * item_take_item. NES TryTakeItem.
+ * drain at cave_runtime.c:356-378. */
+void cave_try_take_item(unsigned int slot);
+
+/* Gate cave-room item pickup by action timer + room flag, then
+ * stash CAVE_TMP4 with the dir + dispatch try_take_item. NES
+ * TryTakeRoomItem. drain at cave_runtime.c:380-393. */
+void cave_try_take_room_item(void);
+
 #ifdef __cplusplus
 }
 #endif

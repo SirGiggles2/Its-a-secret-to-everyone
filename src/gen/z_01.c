@@ -34,14 +34,6 @@ void z01_update_person_state_textbox(void) {
     cavert_update_person_state_textbox();
 }
 
-void z01_try_take_item(unsigned int slot) {
-    cavert_try_take_item(slot);
-}
-
-void z01_try_take_room_item(void) {
-    cavert_try_take_room_item();
-}
-
 void z01_init_mode_b_enter_cave_bank5(void) {
     trprt_init_mode_b_enter_cave_bank5();
 }
@@ -1168,6 +1160,29 @@ void z01_take_item(unsigned char item_id) {
     item_take_item(item_id);
 #else
     itemrt_take_item(item_id);
+#endif
+}
+
+/* cave_try_take_item / cave_try_take_room_item under existing
+ * NATIVE_CAVE_PERSON gate — they're cave-person-state-machine
+ * dispatch arms. */
+#ifdef NATIVE_CAVE_PERSON
+/* cave_dispatch.h already included via NATIVE_CAVE block above. */
+#endif
+
+void z01_try_take_item(unsigned int slot) {
+#ifdef NATIVE_CAVE_PERSON
+    cave_try_take_item(slot);
+#else
+    cavert_try_take_item(slot);
+#endif
+}
+
+void z01_try_take_room_item(void) {
+#ifdef NATIVE_CAVE_PERSON
+    cave_try_take_room_item();
+#else
+    cavert_try_take_room_item();
 #endif
 }
 

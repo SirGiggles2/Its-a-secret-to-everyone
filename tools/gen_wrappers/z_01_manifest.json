@@ -24,16 +24,6 @@
       "sig": "void (void)"
     },
     {
-      "old": "z01_try_take_item",
-      "new": "cavert_try_take_item",
-      "sig": "void (unsigned int slot)"
-    },
-    {
-      "old": "z01_try_take_room_item",
-      "new": "cavert_try_take_room_item",
-      "sig": "void (void)"
-    },
-    {
       "old": "z01_init_mode_b_enter_cave_bank5",
       "new": "trprt_init_mode_b_enter_cave_bank5",
       "sig": "void (void)"
