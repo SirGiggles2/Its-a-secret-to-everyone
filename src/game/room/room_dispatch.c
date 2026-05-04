@@ -19,7 +19,9 @@
 #include "core/core_dispatch.h" /* core_get_opposite_dir,
                                   * core_compare_hearts_to_containers */
 #include "hud/hud_dispatch.h"   /* hud_world_change_rupees */
-#include "world/progress_dispatch.h" /* progress_update_world_curtain_effect */
+#include "world/progress_dispatch.h" /* progress_update_world_curtain_effect,
+                                      * progress_reset_room_tile_obj_info */
+#include "combat/collision_dispatch.h" /* collision_get_collidable_tile_still */
 #include "item_state.h"         /* LINK_PARTIAL_HEART, LINK_HEARTS, ITEM_SFX_PRIMARY,
                                  * SAVE_SLOT_INDEX */
 
@@ -706,4 +708,46 @@ void room_init_link_speed(void)
         }
     }
     RAM(0x03BCu) = speed;
+}
+
+void room_init_mode10(void)
+{
+    /* drain at room_object_runtime.c:7-15. */
+    (void)collision_get_collidable_tile_still(0u);
+    if ((unsigned char)RAM(0x049Eu) == 0x24u) {  /* ROOM_COLLIDABLE_TILE */
+        RAM(0x0619u) = 0u;                       /* ROOM_TRIFORCE_HOLD_FLAG */
+        RAM(0x0603u) = 8u;                       /* ROOM_SFX_AUX */
+        RAM(0x0412u) =
+            (uint8_t)((unsigned char)LINK_Y + 0x10u);  /* ROOM_PUSH_TIMER */
+    }
+    ROOM_MODE_TIMER = (uint8_t)((unsigned char)ROOM_MODE_TIMER + 1u);
+}
+
+void room_end_prepare_mode(void)
+{
+    /* drain at room_object_runtime.c:50-58. */
+    SUBMODE_VALUE = 0u;
+    ROOM_MODE_TIMER = 0u;
+    RAM(0x000Fu) = 0u;     /* COMBAT_PART_INDEX (ZP_TMPF) */
+    LINK_ACTION_TIMER = 0u;
+    RAM(0x00C0u) = 0u;     /* MON_SHOVE_DIR(0) */
+    RAM(0x00D3u) = 0u;     /* MON_SHOVE_TIMER(0) */
+    LINK_STUN_TIMER = 0u;
+}
+
+void room_setup_tile_object_ow(void)
+{
+    /* drain at room_object_runtime.c:17-29. */
+    unsigned char type;
+    if ((unsigned char)CUR_ROOM_ID == 0x3Fu ||
+        (unsigned char)CUR_ROOM_ID == 0x55u) {
+        type = 97u;
+    } else {
+        RAM(0x007Bu) = (unsigned char)RAM(0x052Cu);  /* X_SCRATCH = TILE_OBJ_1 */
+        RAM(0x008Fu) = (unsigned char)RAM(0x052Du);  /* Y_SCRATCH = TILE_OBJ_2 */
+        type = (unsigned char)RAM(0x052Bu);          /* TILE_OBJ_0 */
+    }
+    RAM(0x035Au) = type;     /* ROOM_OBJECT_SLOT_TYPE */
+    progress_reset_room_tile_obj_info();
+    RAM(0x00B7u) = 0u;        /* ROOM_OBJECT_INIT_DONE */
 }

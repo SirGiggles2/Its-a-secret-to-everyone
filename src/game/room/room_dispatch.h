@@ -167,6 +167,22 @@ void room_init_link_speed(void);
  * drain at room_load_runtime.c:32-56. */
 void room_fill_play_area_attrs(unsigned int room_id);
 
+/* Get tile-still under slot 0; if push-block tile ($24), clear
+ * triforce-hold + sfx-aux=8 + push-timer=LINK_Y+$10. Always
+ * advance ROOM_MODE_TIMER. NES InitMode10.
+ * drain at room_object_runtime.c:7-15. */
+void room_init_mode10(void);
+
+/* Reset all action-mode state for end-of-room: SUBMODE/timer/COMBAT
+ * /LINK_ACTION/MON_SHOVE/STUN. NES EndPrepareMode.
+ * drain at room_object_runtime.c:50-58. */
+void room_end_prepare_mode(void);
+
+/* Setup tile-object spawn type for OW. Special-case rooms $3F/$55
+ * use type 97; else copy from ROOM_TILE_OBJ_0/1/2.
+ * drain at room_object_runtime.c:17-29. */
+void room_setup_tile_object_ow(void);
+
 #ifdef __cplusplus
 }
 #endif
