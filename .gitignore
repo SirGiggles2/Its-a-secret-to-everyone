@@ -22,6 +22,9 @@ RoomRom/out/
 tools/file_select_test/out/
 tools/intro_test/out/
 
+# Phase 3+4 dispatcher probe — only baseline.json is tracked.
+build/probes/ph34/dispatchers.json
+
 # FS demo build artifacts
 tools/file_select_demo/out/
 
