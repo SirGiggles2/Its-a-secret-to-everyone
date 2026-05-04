@@ -64,6 +64,20 @@ void room_go_to_next_mode(void);
  * drain at room_transfer_runtime.c:6-32. */
 void room_copy_column_to_tilebuf(void);
 
+/* go_to_next_mode + RAM($0394)=0. NES GoToNextMode_ResetGridOffset.
+ * drain at room_mode_runtime.c:267-270. */
+void room_go_to_next_mode_reset_grid_offset(void);
+
+/* ITEM_SFX_SECONDARY=LevelSongIds[CUR_LEVEL]; go_to_next_mode;
+ * RAM($0394)=0. NES GoToNextMode_PlayLevelSong.
+ * drain at room_mode_runtime.c:260-265. */
+void room_go_to_next_mode_play_level_song(void);
+
+/* MODE_VALUE++; SUBMODE_VALUE=0; ROOM_MODE_TIMER=0; clear RAM($000F),
+ * LINK_ACTION_TIMER, RAM($00C0), RAM($00D3), LINK_STUN_TIMER. NES
+ * GoToNextMode_FromPlay. drain at room_mode_runtime.c:306-315. */
+void room_go_to_next_mode_from_play(void);
+
 #ifdef __cplusplus
 }
 #endif

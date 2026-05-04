@@ -3,13 +3,10 @@
   "includes": [],
   "symbols": [
     {"old": "z07_destroy_monster", "new": "corert_destroy_monster", "sig": "void (unsigned int slot)"},
-    {"old": "z07_go_to_next_mode_play_level_song", "new": "roommd_go_to_next_mode_play_level_song", "sig": "void (void)"},
-    {"old": "z07_go_to_next_mode_reset_grid_offset", "new": "roommd_go_to_next_mode_reset_grid_offset", "sig": "void (void)"},
     {"old": "z07_patch_and_cue_level_palettes_transfer", "new": "roommd_patch_and_cue_level_palettes_transfer", "sig": "void (void)"},
     {"old": "z07_init_mode3_sub1", "new": "roommd_init_mode3_sub1", "sig": "void (void)"},
     {"old": "z07_check_screen_edge", "new": "roomrt_check_screen_edge", "sig": "void (void)"},
     {"old": "z07_update_mode3_unfurl", "new": "roommd_update_mode3_unfurl", "sig": "void (void)"},
-    {"old": "z07_go_to_next_mode_from_play", "new": "roommd_go_to_next_mode_from_play", "sig": "void (void)"},
     {"old": "z07_update_mode2_load", "new": "roommd_update_mode2_load", "sig": "void (void)"},
     {"old": "z07_update_hearts_and_rupees", "new": "roommd_update_hearts_and_rupees", "sig": "void (void)"}
   ]

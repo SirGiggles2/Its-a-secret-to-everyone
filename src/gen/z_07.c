@@ -14,14 +14,6 @@ void z07_destroy_monster(unsigned int slot) {
     corert_destroy_monster(slot);
 }
 
-void z07_go_to_next_mode_play_level_song(void) {
-    roommd_go_to_next_mode_play_level_song();
-}
-
-void z07_go_to_next_mode_reset_grid_offset(void) {
-    roommd_go_to_next_mode_reset_grid_offset();
-}
-
 void z07_patch_and_cue_level_palettes_transfer(void) {
     roommd_patch_and_cue_level_palettes_transfer();
 }
@@ -36,10 +28,6 @@ void z07_check_screen_edge(void) {
 
 void z07_update_mode3_unfurl(void) {
     roommd_update_mode3_unfurl();
-}
-
-void z07_go_to_next_mode_from_play(void) {
-    roommd_go_to_next_mode_from_play();
 }
 
 void z07_update_mode2_load(void) {
@@ -393,6 +381,30 @@ void z07_go_to_next_mode(void) {
     room_go_to_next_mode();
 #else
     roommd_go_to_next_mode();
+#endif
+}
+
+void z07_go_to_next_mode_play_level_song(void) {
+#ifdef NATIVE_ROOM
+    room_go_to_next_mode_play_level_song();
+#else
+    roommd_go_to_next_mode_play_level_song();
+#endif
+}
+
+void z07_go_to_next_mode_reset_grid_offset(void) {
+#ifdef NATIVE_ROOM
+    room_go_to_next_mode_reset_grid_offset();
+#else
+    roommd_go_to_next_mode_reset_grid_offset();
+#endif
+}
+
+void z07_go_to_next_mode_from_play(void) {
+#ifdef NATIVE_ROOM
+    room_go_to_next_mode_from_play();
+#else
+    roommd_go_to_next_mode_from_play();
 #endif
 }
 

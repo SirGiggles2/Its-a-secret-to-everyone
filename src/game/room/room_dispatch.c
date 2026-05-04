@@ -12,8 +12,10 @@
 #include "room_state.h"        /* ROOM_MAX_MONSTER_SLOT, ROOM_MONSTER_ALL_DEAD,
                                 * ROOM_OBJ_TYPE, ROOM_MODE_TIMER */
 #include "world_state.h"       /* TRANSFER_BUF_POS — included via combat below */
-#include "combat_state.h"      /* LINK_DAMAGE_DISABLE_FLAG, LINK_ACTION_TIMER */
+#include "combat_state.h"      /* LINK_DAMAGE_DISABLE_FLAG, LINK_ACTION_TIMER,
+                                * LINK_STUN_TIMER */
 #include "link_state.h"        /* LINK_HALT_FLAG */
+#include "item_state.h"        /* ITEM_SFX_SECONDARY */
 
 #define NES_SRAM_BASE 0x6000u
 
@@ -182,4 +184,41 @@ void room_copy_column_to_tilebuf(void)
 
     #undef ROOM_PLAY_AREA_BASE
     #undef ROOM_COL_STRIDE
+}
+
+/* Z_07.asm LevelSongIds[10] (line 2977). */
+static const unsigned char k_level_song_ids[10] = {
+    0x01u, 0x40u, 0x40u, 0x40u, 0x40u,
+    0x40u, 0x40u, 0x40u, 0x40u, 0x20u
+};
+
+void room_go_to_next_mode_reset_grid_offset(void)
+{
+    /* drain at room_mode_runtime.c:267-270. */
+    room_go_to_next_mode();
+    RAM(0x0394u) = 0u;
+}
+
+void room_go_to_next_mode_play_level_song(void)
+{
+    /* drain at room_mode_runtime.c:260-265. */
+    const unsigned char level = (unsigned char)CUR_LEVEL;
+    /* drain reads LevelSongIds[level] unbounded; CUR_LEVEL is
+     * constrained to 0..9 by gameplay — table sized 10. */
+    ITEM_SFX_SECONDARY = k_level_song_ids[level];
+    room_go_to_next_mode();
+    RAM(0x0394u) = 0u;
+}
+
+void room_go_to_next_mode_from_play(void)
+{
+    /* drain at room_mode_runtime.c:306-315. */
+    MODE_VALUE = (uint8_t)((unsigned char)MODE_VALUE + 1u);
+    SUBMODE_VALUE = 0u;
+    ROOM_MODE_TIMER = 0u;
+    RAM(0x000Fu) = 0u;
+    LINK_ACTION_TIMER = 0u;
+    RAM(0x00C0u) = 0u;
+    RAM(0x00D3u) = 0u;
+    LINK_STUN_TIMER = 0u;
 }
