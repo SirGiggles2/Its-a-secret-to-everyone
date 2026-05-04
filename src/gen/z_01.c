@@ -30,14 +30,6 @@ void z01_init_underworld_person_do_nothing(void) {}
 #include "combat_runtime.h"
 #include "link_collision_runtime.h"
 
-void z01_init_underworld_person_c(unsigned int slot) {
-    uwrt_init_underworld_person_c(slot);
-}
-
-void z01_init_grumble_full(unsigned int slot) {
-    uwrt_init_grumble_full(slot);
-}
-
 void z01_init_rupee_stash_full(unsigned int slot) {
     uwrt_init_rupee_stash_full(slot);
 }
@@ -1341,5 +1333,21 @@ void z01_init_uw_person_life_or_money_full(unsigned int slot) {
     uw_person_init_life_or_money_full(slot);
 #else
     uwrt_init_life_or_money_full(slot);
+#endif
+}
+
+void z01_init_grumble_full(unsigned int slot) {
+#ifdef NATIVE_UW_PERSON
+    uw_person_init_grumble_full(slot);
+#else
+    uwrt_init_grumble_full(slot);
+#endif
+}
+
+void z01_init_underworld_person_c(unsigned int slot) {
+#ifdef NATIVE_UW_PERSON
+    uw_person_init_underworld_person_c(slot);
+#else
+    uwrt_init_underworld_person_c(slot);
 #endif
 }

@@ -13,6 +13,7 @@
 #include "object_state.h"      /* OBJ_STATE, OBJ_TILE_Y, OBJ_TYPE */
 #include "link_state.h"        /* LINK_MOVING_DIR */
 #include "item_state.h"        /* ITEM_SFX_PRIMARY */
+#include "room_state.h"        /* ROOM_SHUTTER_TRIGGERED */
 #include "core/core_dispatch.h"      /* core_cue_transfer_buf_and_advance_state,
                                       * core_set_up_common_cave_objects,
                                       * core_play_character_sfx,
@@ -34,6 +35,11 @@ static const unsigned char k_underworld_person_text_selectors_a[8] = {
 /* Z_01.asm TextboxLineAddrsLo[3]. */
 static const unsigned char k_uw_textbox_line_addrs_lo[3] = {
     0xC4u, 0xE4u, 0xA4u
+};
+
+/* Z_01.asm UnderworldPersonTextSelectorsC[4]. */
+static const unsigned char k_underworld_person_text_selectors_c[4] = {
+    0x44u, 0x46u, 0x48u, 0x4Au
 };
 
 /* z07_reset_moving_dir is `LINK_MOVING_DIR = 0` — inline to avoid the
@@ -126,4 +132,38 @@ void uw_person_init_life_or_money_full(unsigned int slot)
     CAVE_TEXT_SELECTOR = 54u;
     CAVE_TEXT_LINE_ADDR_LO = k_uw_textbox_line_addrs_lo[2];
     uw_person_destroy_if_taken(slot);
+}
+
+void uw_person_init_grumble_full(unsigned int slot)
+{
+    /* drain at uw_person_runtime.c:62-74. */
+    core_set_up_common_cave_objects(120u, slot, 0x80u);
+    CAVE_TEXT_SELECTOR = 36u;
+    CAVE_TEXT_LINE_ADDR_LO = k_uw_textbox_line_addrs_lo[2];
+    const unsigned char item_state = progress_get_room_flag_uw_item_state();
+    if (item_state == 0u) {
+        core_play_character_sfx();
+        return;
+    }
+    OBJ_STATE(0) = 0u;
+    CAVE_ROOM_TYPE = 0u;
+}
+
+void uw_person_init_underworld_person_c(unsigned int slot)
+{
+    /* drain at uw_person_runtime.c:45-60. */
+    core_set_up_common_cave_objects(120u, slot, 0x80u);
+    core_play_character_sfx();
+    const unsigned char obj_type = (unsigned char)OBJ_TYPE(slot);
+    const unsigned char idx = (unsigned char)(obj_type - 0x4Bu);
+    CAVE_TEXT_SELECTOR = k_underworld_person_text_selectors_c[idx & 3u];
+    if (obj_type != 0x4Bu) {
+        return;
+    }
+    if ((unsigned char)RAM(0x0671) != 0xFFu) {
+        return;
+    }
+    ROOM_SHUTTER_TRIGGERED = 1u;
+    OBJ_STATE(0) = 0u;
+    core_destroy_monster(slot);
 }

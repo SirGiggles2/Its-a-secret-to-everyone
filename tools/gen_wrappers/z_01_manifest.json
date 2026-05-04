@@ -19,16 +19,6 @@
   ],
   "symbols": [
     {
-      "old": "z01_init_underworld_person_c",
-      "new": "uwrt_init_underworld_person_c",
-      "sig": "void (unsigned int slot)"
-    },
-    {
-      "old": "z01_init_grumble_full",
-      "new": "uwrt_init_grumble_full",
-      "sig": "void (unsigned int slot)"
-    },
-    {
       "old": "z01_init_rupee_stash_full",
       "new": "uwrt_init_rupee_stash_full",
       "sig": "void (unsigned int slot)"

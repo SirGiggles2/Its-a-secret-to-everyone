@@ -57,6 +57,19 @@ void uw_person_init_underworld_person_a(unsigned int slot);
  * InitUnderworldPersonLifeOrMoney_Full. drain at uw_person_runtime.c:103-108. */
 void uw_person_init_life_or_money_full(unsigned int slot);
 
+/* Init grumble (full): set up cave objs, set CAVE_TEXT_SELECTOR=36,
+ * CAVE_TEXT_LINE_ADDR_LO=$A4. If room flag clear, play char sfx;
+ * else clear OBJ_STATE(0)+CAVE_ROOM_TYPE. NES InitGrumble_Full.
+ * drain at uw_person_runtime.c:62-74. */
+void uw_person_init_grumble_full(unsigned int slot);
+
+/* Init underworld-person variant C (boss room old man / triforce
+ * room). Sets up cave objs, plays char sfx, picks text selector C
+ * by obj type. If obj_type == 0x4B and triforce-pieces == $FF,
+ * trigger shutter + clear OBJ_STATE(0) + destroy monster. NES
+ * InitUnderworldPersonC. drain at uw_person_runtime.c:45-60. */
+void uw_person_init_underworld_person_c(unsigned int slot);
+
 #ifdef __cplusplus
 }
 #endif
