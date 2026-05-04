@@ -39,7 +39,9 @@
       "Read(//c/Users/Jake Diggity/.claude/plugins/cache//**)",
       "Read(//c/Users/Jake Diggity/.claude/plugins/**)",
       "Bash(rm \"C:/Users/Jake Diggity/Documents/GitHub/FINAL TRY-roomrom-s1/sgdk/.git\")",
-      "Bash(git -C \"C:/Users/Jake Diggity/Documents/GitHub/FINAL TRY-roomrom-s1\" status)"
+      "Bash(git -C \"C:/Users/Jake Diggity/Documents/GitHub/FINAL TRY-roomrom-s1\" status)",
+      "Bash(rm \"C:/Users/Jake Diggity/.claude/commands/whatnext.md\")",
+      "Bash(rtk ls *)"
     ]
   }
 }

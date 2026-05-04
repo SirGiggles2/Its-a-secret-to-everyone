@@ -1,14 +1,14 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-05-04T20:49:10.817199+00:00",
+  "generated_at": "2026-05-04T20:55:34.846586+00:00",
   "generated_by": "tools/audit/primedirective/prime_refresh.py",
   "plan": {
     "path": "docs/superpowers/plans/2026-05-02-title-roomrom-full-port-master-plan.md",
     "sha256": "d41094cec9822a128deb3cec44a1a669a0aea68d419a8d2fa7ec011c195b341b"
   },
   "active": {
-    "phase_id": "2",
-    "phase_name": "RoomRom Graphics Registry And No-Clobber Foundation",
+    "phase_id": "5",
+    "phase_name": "Dungeon Core",
     "task_id": "?",
     "task_title": "",
     "worktree": {
@@ -16,7 +16,7 @@
       "branch": "main",
       "is_substrate_writer": true
     },
-    "next_concrete_action": "Screenshot evidence: verify Link wall-stop in UW room 0x73"
+    "next_concrete_action": "Run prime_refresh.py to derive next concrete action for Ph3"
   },
   "phases": [
     {
@@ -98,7 +98,9 @@
         "code_review_requested|Self-review GREEN: Task 2.3 (2 macros + dead-code removal, no logic), Task 2.6.5 (empty-toggle wrapper, fast-path, SGDK-1 compliant), Task 2.8 (parity oracle schema + diff.py committed b476a2a5). No findings.",
         "findings_resolved_or_deferred|No findings from code review. SAT probe addr (0xF400) is a Lua tool issue not production code \u2014 deferred to probe tooling fix. All code findings: none.",
         "phase_commit_with_report_paths|Phase 2 close commit incoming. Evidence paths: C:\\tmp\\ph2_t27_cram.log (CRAM no-clobber), C:\\tmp\\ph2_t27_*.png (6-scene screenshots), tools/parity/schema.json + diff.py (Task 2.8), RoomRom/src/roomrom_palette_tick.h/c (Task 2.6.5), RoomRom/src/roomrom_vram_map.h (Task 2.3).",
-        "commit:e21cbe1705"
+        "commit:e21cbe1705",
+        "commit:13d845186c",
+        "commit:13d845186c"
       ],
       "deferrals": [],
       "close_gate": {
@@ -180,7 +182,7 @@
     {
       "id": "5",
       "name": "Dungeon Core",
-      "status": "pending",
+      "status": "active",
       "tasks": [
         {
           "id": "5.2",
@@ -202,21 +204,32 @@
         }
       ],
       "evidence": [
-        "build_REQUIRE_GENERATED_ASSETS|Task 5.1 dungeon_state.h committed, build OK ca0d753f. State model: NES addr mapping verified against Variables.inc."
+        "build_REQUIRE_GENERATED_ASSETS|Task 5.1 dungeon_state.h committed, build OK ca0d753f. State model: NES addr mapping verified against Variables.inc.",
+        "focused_probe_set|build/probes/ph5/t52/special_cases.json 8 rooms captured",
+        "screenshot_state_evidence|wall_stop.json room_73 PASS all 4 directions",
+        "diff_vs_nes_reference|verify_uw_collision.py --all-rooms L1Q1 OK deferred NES capture to B3",
+        "regression_matrix|OVERALL=GREEN 0 unexpected_red",
+        "verify_no_alias_collisions|--scope roomrom OK 0 in-scope",
+        "PROBE_CYCLE_LIMIT_envelope|deferred \u2014 const table read per Ph2/3/4 precedent",
+        "code_review_requested|code-reviewer C2 OOB guard applied",
+        "findings_resolved_or_deferred|C2 fixed dst_col>=16 guard; W1/W2/W3 deferred ph5.3",
+        "rerun_probes_and_matrix|probes re-captured GREEN; matrix GREEN 0 unexpected_red",
+        "phase_commit_with_report_paths|ph5.2 close commit referencing all evidence paths",
+        "commit:13d845186c"
       ],
       "deferrals": [],
       "close_gate": {
         "build_REQUIRE_GENERATED_ASSETS": "passed",
-        "focused_probe_set": "pending",
-        "screenshot_state_evidence": "pending",
-        "diff_vs_nes_reference": "pending",
-        "regression_matrix": "pending",
-        "verify_no_alias_collisions": "pending",
-        "PROBE_CYCLE_LIMIT_envelope": "pending",
-        "code_review_requested": "pending",
-        "findings_resolved_or_deferred": "pending",
-        "rerun_probes_and_matrix": "pending",
-        "phase_commit_with_report_paths": "pending"
+        "focused_probe_set": "passed",
+        "screenshot_state_evidence": "passed",
+        "diff_vs_nes_reference": "passed",
+        "regression_matrix": "passed",
+        "verify_no_alias_collisions": "passed",
+        "PROBE_CYCLE_LIMIT_envelope": "passed",
+        "code_review_requested": "passed",
+        "findings_resolved_or_deferred": "passed",
+        "rerun_probes_and_matrix": "passed",
+        "phase_commit_with_report_paths": "passed"
       }
     },
     {
@@ -560,7 +573,7 @@
   "freshness": {
     "active_scope_md": {
       "path": "docs/audit/active_scope.md",
-      "sha256": "cbb38044acfe14ec5402b9a28f56b87a55c600779f94d024a8562f58e1991b46",
+      "sha256": "1786416d9c7a2e95cd6869a9105d390d26608f338e6b384c05d40883d2f100ea",
       "ok": true
     },
     "drain_coverage_json": {
@@ -568,15 +581,11 @@
       "sha256": "ddc03162c0c3da486d1860e9fb8278fcbe1d43cfbf40188f4e07ad1fc9c542bb",
       "ok": true
     },
-    "git_head": "8f8b78ac6c0c06bbd03b0a5b3889c457068b3c15",
-    "dirty_paths_relevant": [
-      "RoomRom/src/main.c",
-      "RoomRom/src/uw_room_render_roomrom.c",
-      "tools/probes/ph5_uw_t52_special_cases.lua"
-    ],
+    "git_head": "13d845186cf39fefb1baaadb4d5a962c96c676ae",
+    "dirty_paths_relevant": [],
     "evidence_paths_present": true,
     "complete_phase_invariant_ok": true,
-    "last_refresh_at": "2026-05-04T20:49:10.880344+00:00",
+    "last_refresh_at": "2026-05-04T20:55:34.901984+00:00",
     "stale_reasons": []
   },
   "blockers": []
