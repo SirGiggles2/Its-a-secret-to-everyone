@@ -19,21 +19,6 @@
   ],
   "symbols": [
     {
-      "old": "z01_init_rupee_stash_full",
-      "new": "uwrt_init_rupee_stash_full",
-      "sig": "void (unsigned int slot)"
-    },
-    {
-      "old": "z01_update_uw_person_complex_state_sense_link",
-      "new": "uwrt_update_complex_state_sense_link",
-      "sig": "void (void)"
-    },
-    {
-      "old": "z01_update_uw_person_life_or_money_state_2",
-      "new": "uwrt_update_life_or_money_state_2",
-      "sig": "void (void)"
-    },
-    {
       "old": "z01_person_check_collisions",
       "new": "uwrt_person_check_collisions",
       "sig": "void (unsigned int slot)"

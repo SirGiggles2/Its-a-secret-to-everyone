@@ -70,6 +70,21 @@ void uw_person_init_grumble_full(unsigned int slot);
  * InitUnderworldPersonC. drain at uw_person_runtime.c:45-60. */
 void uw_person_init_underworld_person_c(unsigned int slot);
 
+/* Init rupee stash spawn (10 rupee monsters in fixed pattern).
+ * NES InitRupeeStash_Full. drain at uw_person_runtime.c:76-86. */
+void uw_person_init_rupee_stash_full(unsigned int slot);
+
+/* Underworld old-man bomb upgrade if Link aligned to (X=$78,Y=~$98)
+ * with >=100 rupees. Spends 100 rupees, gives +4 max bomb capacity.
+ * NES UpdateComplexState_SenseLink. drain at uw_person_runtime.c:145-163. */
+void uw_person_update_complex_state_sense_link(void);
+
+/* Take heart-or-rupee item: 50 rupees buys quarter-heart loss; the
+ * other slot deducts a heart container. NES
+ * UpdateUnderworldPersonLifeOrMoneyState_2. drain at
+ * uw_person_runtime.c:165-198. */
+void uw_person_update_life_or_money_state_2(void);
+
 #ifdef __cplusplus
 }
 #endif

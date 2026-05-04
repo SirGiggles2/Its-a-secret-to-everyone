@@ -30,18 +30,6 @@ void z01_init_underworld_person_do_nothing(void) {}
 #include "combat_runtime.h"
 #include "link_collision_runtime.h"
 
-void z01_init_rupee_stash_full(unsigned int slot) {
-    uwrt_init_rupee_stash_full(slot);
-}
-
-void z01_update_uw_person_complex_state_sense_link(void) {
-    uwrt_update_complex_state_sense_link();
-}
-
-void z01_update_uw_person_life_or_money_state_2(void) {
-    uwrt_update_life_or_money_state_2();
-}
-
 void z01_person_check_collisions(unsigned int slot) {
     uwrt_person_check_collisions(slot);
 }
@@ -1349,5 +1337,29 @@ void z01_init_underworld_person_c(unsigned int slot) {
     uw_person_init_underworld_person_c(slot);
 #else
     uwrt_init_underworld_person_c(slot);
+#endif
+}
+
+void z01_init_rupee_stash_full(unsigned int slot) {
+#ifdef NATIVE_UW_PERSON
+    uw_person_init_rupee_stash_full(slot);
+#else
+    uwrt_init_rupee_stash_full(slot);
+#endif
+}
+
+void z01_update_uw_person_complex_state_sense_link(void) {
+#ifdef NATIVE_UW_PERSON
+    uw_person_update_complex_state_sense_link();
+#else
+    uwrt_update_complex_state_sense_link();
+#endif
+}
+
+void z01_update_uw_person_life_or_money_state_2(void) {
+#ifdef NATIVE_UW_PERSON
+    uw_person_update_life_or_money_state_2();
+#else
+    uwrt_update_life_or_money_state_2();
 #endif
 }

@@ -14,10 +14,13 @@
 #include "link_state.h"        /* LINK_MOVING_DIR */
 #include "item_state.h"        /* ITEM_SFX_PRIMARY */
 #include "room_state.h"        /* ROOM_SHUTTER_TRIGGERED */
+#include "combat_state.h"      /* MON_STATUS_FLAGS, LINK_HEARTS, LINK_PARTIAL_HEART */
 #include "core/core_dispatch.h"      /* core_cue_transfer_buf_and_advance_state,
                                       * core_set_up_common_cave_objects,
                                       * core_play_character_sfx,
-                                      * core_destroy_monster */
+                                      * core_destroy_monster,
+                                      * core_init_one_simple_object,
+                                      * core_abs */
 #include "world/progress_dispatch.h" /* progress_set_room_flag_uw_item_state,
                                       * progress_get_room_flag_uw_item_state */
 
@@ -40,6 +43,21 @@ static const unsigned char k_uw_textbox_line_addrs_lo[3] = {
 /* Z_01.asm UnderworldPersonTextSelectorsC[4]. */
 static const unsigned char k_underworld_person_text_selectors_c[4] = {
     0x44u, 0x46u, 0x48u, 0x4Au
+};
+
+/* Z_01.asm RupeeStashXs[10] (1281). */
+static const unsigned char k_rupee_stash_xs[10] = {
+    0x78u, 0x70u, 0x80u, 0x60u, 0x70u, 0x80u, 0x90u, 0x70u, 0x80u, 0x78u
+};
+
+/* Z_01.asm RupeeStashYs[10] (1287). */
+static const unsigned char k_rupee_stash_ys[10] = {
+    0x70u, 0x80u, 0x80u, 0x90u, 0x90u, 0x90u, 0x90u, 0xA0u, 0xA0u, 0xB0u
+};
+
+/* Z_01.asm LifeOrMoneyItemXs[2] (687). */
+static const unsigned char k_life_or_money_item_xs[2] = {
+    0x58u, 0x98u
 };
 
 /* z07_reset_moving_dir is `LINK_MOVING_DIR = 0` — inline to avoid the
@@ -166,4 +184,86 @@ void uw_person_init_underworld_person_c(unsigned int slot)
     ROOM_SHUTTER_TRIGGERED = 1u;
     OBJ_STATE(0) = 0u;
     core_destroy_monster(slot);
+}
+
+void uw_person_init_rupee_stash_full(unsigned int slot)
+{
+    /* drain at uw_person_runtime.c:76-86. */
+    CAVE_TMP1 = (uint8_t)MON_STATUS_FLAGS(slot);
+    CAVE_TMP0 = 53u;
+    for (unsigned char i = 10u; i >= 1u; --i) {
+        core_init_one_simple_object(i);
+        OBJ_TILE_X(i) = k_rupee_stash_xs[i - 1u];
+        OBJ_TILE_Y(i) = k_rupee_stash_ys[i - 1u];
+    }
+}
+
+void uw_person_update_complex_state_sense_link(void)
+{
+    /* drain at uw_person_runtime.c:145-163. */
+    if ((unsigned char)CAVE_ROOM_TYPE != 0x4Fu) {
+        return;
+    }
+    if ((unsigned char)OBJ_TILE_X(0) != 0x78u) {
+        return;
+    }
+    const unsigned char ydiff =
+        (unsigned char)((unsigned char)OBJ_TILE_Y(0) - 0x98u);
+    if (core_abs((unsigned int)ydiff) >= 6u) {
+        return;
+    }
+    if ((unsigned char)LINK_RUPEES < 100u) {
+        return;
+    }
+    CAVE_DOOR_REPAIR_RUPEE_DELTA =
+        (uint8_t)(100u + (unsigned char)CAVE_DOOR_REPAIR_RUPEE_DELTA);
+    ROOM_SFX_MAIN = 8u;
+    const unsigned char max_bombs =
+        (unsigned char)((unsigned char)LINK_MAX_HEARTS + 4u);
+    LINK_MAX_HEARTS = max_bombs;
+    LINK_BOMB_COUNT = max_bombs;
+    uw_person_flag_item_taken_and_advance_state();
+}
+
+void uw_person_update_life_or_money_state_2(void)
+{
+    /* drain at uw_person_runtime.c:165-198. */
+    for (signed char i = 1; i >= 0; --i) {
+        if ((unsigned char)OBJ_TILE_X(0) !=
+            k_life_or_money_item_xs[(unsigned char)i]) {
+            continue;
+        }
+        const unsigned char ydiff =
+            (unsigned char)((unsigned char)OBJ_TILE_Y(0) - 0x98u);
+        if (core_abs((unsigned int)ydiff) >= 6u) {
+            continue;
+        }
+        if (i != 0) {
+            if ((unsigned char)LINK_RUPEES < 50u) {
+                return;
+            }
+            CAVE_DOOR_REPAIR_RUPEE_DELTA =
+                (uint8_t)(50u + (unsigned char)CAVE_DOOR_REPAIR_RUPEE_DELTA);
+        } else {
+            const unsigned char hearts = (unsigned char)LINK_HEARTS;
+            const unsigned char containers = (unsigned char)(hearts & 0xF0u);
+            if (containers >= 0x30u) {
+                const unsigned char new_cont =
+                    (unsigned char)(containers - 0x10u);
+                int partial = (int)(hearts & 0x0Fu) - 1;
+                CAVE_TMP0 = new_cont;
+                if (partial < 0) {
+                    partial = 0;
+                }
+                LINK_HEARTS = (uint8_t)(new_cont | (unsigned char)partial);
+            } else {
+                LINK_HEARTS = containers;
+                LINK_PARTIAL_HEART = 0u;
+            }
+        }
+        ROOM_SFX_MAIN = 8u;
+        ROOM_SHUTTER_TRIGGERED = 1u;
+        uw_person_flag_item_taken_and_advance_state();
+        return;
+    }
 }
