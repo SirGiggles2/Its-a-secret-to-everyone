@@ -24,6 +24,8 @@
 #include "combat/collision_dispatch.h" /* collision_get_collidable_tile_still */
 #include "item_state.h"         /* LINK_PARTIAL_HEART, LINK_HEARTS, ITEM_SFX_PRIMARY,
                                  * SAVE_SLOT_INDEX */
+#include "save_state.h"         /* CONTINUE_COUNT */
+#include "enemy_state.h"        /* SAVE_SLOT_QUEST */
 
 /* Genesis VDP native primitive — display enable/disable (Reg 1 bit 6).
  * Forward decl from src/sgdk_adapter/render_adapter.c. */
@@ -1254,4 +1256,180 @@ void room_touch_door_shutter(void)
         return;
     }
     ROOM_SHUTTER_TOUCH_MASK = (unsigned char)(ROOM_SHUTTER_TOUCH_MASK | ROOM_TOUCH_DOOR_BITS);
+}
+
+/* room_mode_runtime.c:48-56. NES CopyNextRowToTransferBuf.
+ * Returns ROOM_ROW_INDEX | CARRY_SET if more rows remain. */
+unsigned int room_copy_next_row_to_transfer_buf(void)
+{
+    room_copy_row_to_tilebuf();
+    ROOM_ROW_INDEX = (unsigned char)(ROOM_ROW_INDEX + 1u);
+    unsigned int result = ROOM_ROW_INDEX;
+    if (ROOM_ROW_INDEX < 0x16u)
+        result |= CARRY_SET;
+    return result;
+}
+
+/* room_mode_runtime.c:58-63. NES CopyNextRowAdvanceSubmode. */
+unsigned int room_copy_next_row_advance_submode(void)
+{
+    const unsigned int result = room_copy_next_row_to_transfer_buf();
+    if (!(result & CARRY_SET))
+        SUBMODE_VALUE = (unsigned char)(SUBMODE_VALUE + 1u);
+    return result;
+}
+
+/* room_mode_runtime.c:70-78. NES UpdateMode7Scroll_Sub2. */
+void room_update_mode7_scroll_sub2(void)
+{
+    SUBMODE_VALUE = (unsigned char)(SUBMODE_VALUE + 1u);
+    unsigned char frame = (unsigned char)(FRAME_COUNTER + 1u);
+    frame &= 0x03u;
+    if (CUR_LEVEL == 0u)
+        frame &= 0x01u;
+    ROOM_SCROLL_FRAME = frame;
+}
+
+/* room_mode_runtime.c:80-87. NES UpdateMode7Scroll_Sub7. */
+void room_update_mode7_scroll_sub7(void)
+{
+    SUBMODE_VALUE = 1u;
+    ROOM_MODE_TIMER = 0u;
+    ROOM_SCROLL_LOCK_FLAG = 0u;
+    ROOM_LEVEL_INDEX = 0u;
+    ROOM_SPRITE0_ENABLED = 0u;
+    MODE_VALUE = 4u;
+}
+
+/* room_mode_runtime.c:89-100. NES UpdateMode7Scroll_Sub6. */
+void room_update_mode7_scroll_sub6(void)
+{
+    if (CUR_LEVEL == 0u) {
+        room_update_mode7_scroll_sub7();
+        return;
+    }
+    if (room_is_dark_room(CUR_ROOM_ID) == 0u) {
+        room_update_mode7_scroll_sub7();
+        return;
+    }
+    ROOM_ROW_INDEX = 0u;
+    SUBMODE_VALUE = (unsigned char)(SUBMODE_VALUE + 1u);
+}
+
+/* room_mode_runtime.c:102-105. NES CueTransferPlayAreaAttrsHalfAndAdvance. */
+void room_cue_transfer_play_area_attrs_half_and_advance_submode(unsigned int ppu_hi,
+                                                                unsigned int ppu_lo,
+                                                                unsigned int end_off)
+{
+    room_copy_play_area_attrs_half(ppu_hi, ppu_lo, end_off);
+    SUBMODE_VALUE = (unsigned char)(SUBMODE_VALUE + 1u);
+}
+
+/* room_mode_runtime.c:162-164. NES InitModeB_Sub1. */
+void room_init_mode_b_sub1(void)
+{
+    room_select_transfer_buf(62u);
+}
+
+/* room_mode_runtime.c:166-172. NES UpdateMode12_EndLevel_Sub1. */
+void room_update_mode12_end_level_sub1(void)
+{
+    if (CURTAIN_TIMER == 0u) {
+        room_start_filling_hearts();
+        return;
+    }
+    ROOM_TRANSFER_BUF_SELECT = (unsigned char)(((CURTAIN_TIMER & 7u) < 4u) ? 24u : 120u);
+}
+
+/* room_mode_runtime.c:174-177. NES InitMode3_Sub2. */
+void room_init_mode3_sub2(void)
+{
+    room_fill_play_area_attrs(CUR_ROOM_ID);
+    room_select_transfer_buf(24u);
+}
+
+/* room_mode_runtime.c:179-181. NES InitMode3_Sub3. */
+void room_init_mode3_sub3(void)
+{
+    room_cue_transfer_play_area_attrs_half_and_advance_submode(35u, 0xD0u, 23u);
+}
+
+/* room_mode_runtime.c:183-185. NES InitMode3_Sub4. */
+void room_init_mode3_sub4(void)
+{
+    room_cue_transfer_play_area_attrs_half_and_advance_submode(35u, 0xE8u, 47u);
+}
+
+/* room_mode_runtime.c:187-189. NES InitMode3_Sub5. */
+void room_init_mode3_sub5(void)
+{
+    room_select_transfer_buf(14u);
+}
+
+/* room_mode_runtime.c:191-197. NES InitMode3_Sub6. */
+void room_init_mode3_sub6(void)
+{
+    if (CUR_LEVEL != 0u && !room_has_map()) {
+        room_inc_submode();
+        return;
+    }
+    room_select_transfer_buf(68u);
+}
+
+/* room_mode_runtime.c:199-206. NES InitMode3_Sub7. */
+void room_init_mode3_sub7(void)
+{
+    extern unsigned char LevelNumberTransferBuf[];
+    if (ROOM_LEVEL_NUMBER_VALUE == 0u) {
+        room_inc_submode();
+        return;
+    }
+    LevelNumberTransferBuf[9] = ROOM_LEVEL_NUMBER_VALUE;
+    room_select_transfer_buf(12u);
+}
+
+/* room_mode_runtime.c:208-214. NES InitModeA_Sub1. */
+void room_init_mode_a_sub1(void)
+{
+    if (CUR_LEVEL != 0u) {
+        room_inc_submode();
+        return;
+    }
+    room_patch_and_cue_level_palettes_transfer();
+}
+
+/* room_mode_runtime.c:216-225. NES UpdateMode11_Death_SubC. */
+void room_update_mode11_death_sub_c(void)
+{
+    if (MODE11_DEATH_TIMER != 0u) return;
+    (void)room_end_game_mode();
+    MODE_VALUE = 8u;
+    DEATH_FRAME_COUNTER = 64u;
+    const unsigned char slot = SAVE_SLOT_INDEX;
+    const unsigned char continue_count = CONTINUE_COUNT(slot);
+    if (continue_count != 0xFFu)
+        CONTINUE_COUNT(slot) = (unsigned char)(continue_count + 1u);
+}
+
+/* room_mode_runtime.c:227-235. NES UpdateMode11_Death_Sub2. */
+void room_update_mode11_death_sub2(void)
+{
+    const unsigned int result = room_copy_next_row_advance_submode();
+    if (result & CARRY_SET)
+        room_write_and_enable_sprite0();
+    unsigned char val = TRANSFER_BUF_BYTE(0);
+    val = (unsigned char)(val + 0x08u);
+    TRANSFER_BUF_BYTE(0) = val;
+}
+
+/* room_mode_runtime.c:237-245. NES EndGameMode12. */
+void room_end_game_mode12(void)
+{
+    const unsigned char result = room_end_game_mode();
+    ROOM_LEVEL_INDEX = result;
+    CUR_LEVEL = result;
+    MODE_VALUE = 2u;
+    ROOM_LINK_CELLAR_FLAG = 2u;
+    ROOM_SFX_MAIN = 0x80u;
+    CUR_INV_TILE = (unsigned char)(CUR_INV_TILE & 0xFEu);
 }

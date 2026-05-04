@@ -266,6 +266,28 @@ void room_block_until_time(void);
 unsigned int room_touch_door_false(void);
 void room_touch_door_shutter(void);
 
+/* Mode-7 scroll + mode-3 init + mode-11 death + mode-12 end-level
+ * leaves — drains at room_mode_runtime.c. */
+unsigned int room_copy_next_row_to_transfer_buf(void);
+unsigned int room_copy_next_row_advance_submode(void);
+void room_update_mode7_scroll_sub2(void);
+void room_update_mode7_scroll_sub6(void);
+void room_update_mode7_scroll_sub7(void);
+void room_cue_transfer_play_area_attrs_half_and_advance_submode(
+    unsigned int ppu_hi, unsigned int ppu_lo, unsigned int end_off);
+void room_init_mode_b_sub1(void);
+void room_update_mode12_end_level_sub1(void);
+void room_init_mode3_sub2(void);
+void room_init_mode3_sub3(void);
+void room_init_mode3_sub4(void);
+void room_init_mode3_sub5(void);
+void room_init_mode3_sub6(void);
+void room_init_mode3_sub7(void);
+void room_init_mode_a_sub1(void);
+void room_update_mode11_death_sub_c(void);
+void room_update_mode11_death_sub2(void);
+void room_end_game_mode12(void);
+
 #ifdef __cplusplus
 }
 #endif
