@@ -20,11 +20,14 @@
 #include "core/core_dispatch.h"     /* core_set_up_whirlwind, core_init_one_simple_object,
                                      * core_get_opposite_dir, core_reset_obj_metastate,
                                      * core_anim_set_sprite_desc_attrs,
-                                     * core_destroy_whirlwind */
+                                     * core_destroy_whirlwind, core_destroy_monster,
+                                     * core_take_one_rupee, core_abs */
 #include "enemies/enemy_dispatch.h" /* enemy_find_empty_monster_slot */
 #include "world/sprite_dispatch.h"  /* sprite_anim_advance_and_fetch,
-                                     * sprite_anim_set_obj_hflip */
-#include "world/draw_dispatch.h"    /* draw_object_not_mirrored_with_frame */
+                                     * sprite_anim_set_obj_hflip,
+                                     * sprite_anim_fetch_obj_pos */
+#include "world/draw_dispatch.h"    /* draw_object_not_mirrored_with_frame,
+                                     * draw_item_in_inventory */
 #include "world/progress_dispatch.h" /* progress_update_player_position_marker */
 #include "combat/link_collision_dispatch.h" /* link_collision_check_link_collision */
 #include "room/room_dispatch.h"     /* room_go_to_next_mode_from_play */
@@ -216,6 +219,23 @@ void trap_update_whirlwind_full(unsigned int slot)
         room_go_to_next_mode_from_play();
     }
     trap_draw_whirlwind(slot);
+}
+
+void trap_update_rupee_stash_full(unsigned int slot)
+{
+    /* drain at trap_runtime.c:112-122. */
+    const unsigned char dy =
+        (unsigned char)((unsigned char)LINK_Y - (unsigned char)OBJ_Y(slot));
+    const unsigned char dx =
+        (unsigned char)((unsigned char)LINK_X - (unsigned char)OBJ_X(slot));
+    if (core_abs((unsigned int)dy) < 9u && core_abs((unsigned int)dx) < 9u) {
+        core_take_one_rupee();
+        core_destroy_monster(slot);
+        RUPEE_STASH_FLAG = 0u;
+        return;
+    }
+    sprite_anim_fetch_obj_pos(slot);
+    draw_item_in_inventory(22u, 22u);
 }
 
 void trap_check_passive_tile_objects(void)

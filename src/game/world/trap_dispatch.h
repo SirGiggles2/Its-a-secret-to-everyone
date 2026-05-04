@@ -59,6 +59,12 @@ void trap_draw_whirlwind(unsigned int slot);
  * trap_runtime.c:26-67. */
 void trap_update_whirlwind_full(unsigned int slot);
 
+/* If Link is within 9px of slot, take 1 rupee + destroy monster +
+ * clear stash flag. Else fetch sprite-descriptor pos + draw rupee
+ * (item slot 22). NES UpdateRupeeStash_Full. drain at
+ * trap_runtime.c:112-122. */
+void trap_update_rupee_stash_full(unsigned int slot);
+
 #ifdef __cplusplus
 }
 #endif
