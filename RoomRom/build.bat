@@ -100,11 +100,9 @@ echo [WT gate] check_no_whatif.py
 python "%REPO%\tools\gates\check_no_whatif.py"
 if errorlevel 1 ( echo FAIL: check_no_whatif & exit /b 1 )
 
-if exist "%REPO%\tools\check_data_manifest.py" (
-    echo [data gate] check_data_manifest.py
-    python "%REPO%\tools\check_data_manifest.py"
-    if errorlevel 1 ( echo FAIL: check_data_manifest ^(parity with Title build^) ^& exit /b 1 )
-)
+echo [data gate] check_data_manifest.py
+python "%REPO%\tools\probes\check_data_manifest.py"
+if errorlevel 1 ( echo FAIL: check_data_manifest ^(parity with Title build^) & exit /b 1 )
 
 rem ---------------------------------------------------------------------------
 rem Compiler flags (match makefile.gen release config)
