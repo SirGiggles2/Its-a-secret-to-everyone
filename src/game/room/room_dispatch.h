@@ -78,6 +78,11 @@ void room_go_to_next_mode_play_level_song(void);
  * GoToNextMode_FromPlay. drain at room_mode_runtime.c:306-315. */
 void room_go_to_next_mode_from_play(void);
 
+/* If ROOM_INPUT_DIR is non-zero and Link is at the per-direction
+ * screen-edge bound, go to next mode. NES CheckScreenEdge.
+ * drain at room_runtime.c:301-322. */
+void room_check_screen_edge(void);
+
 #ifdef __cplusplus
 }
 #endif

@@ -8,7 +8,6 @@
 
 #include "core_runtime.h"
 #include "room_mode_runtime.h"
-#include "room_runtime.h"
 
 void z07_destroy_monster(unsigned int slot) {
     corert_destroy_monster(slot);
@@ -20,10 +19,6 @@ void z07_patch_and_cue_level_palettes_transfer(void) {
 
 void z07_init_mode3_sub1(void) {
     roommd_init_mode3_sub1();
-}
-
-void z07_check_screen_edge(void) {
-    roomrt_check_screen_edge();
 }
 
 void z07_update_mode3_unfurl(void) {
@@ -405,6 +400,15 @@ void z07_go_to_next_mode_from_play(void) {
     room_go_to_next_mode_from_play();
 #else
     roommd_go_to_next_mode_from_play();
+#endif
+}
+
+#include "room_runtime.h" /* roomrt_check_screen_edge OFF-branch */
+void z07_check_screen_edge(void) {
+#ifdef NATIVE_ROOM
+    room_check_screen_edge();
+#else
+    roomrt_check_screen_edge();
 #endif
 }
 

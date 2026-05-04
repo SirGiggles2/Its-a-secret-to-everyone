@@ -16,6 +16,7 @@
                                 * LINK_STUN_TIMER */
 #include "link_state.h"        /* LINK_HALT_FLAG */
 #include "item_state.h"        /* ITEM_SFX_SECONDARY */
+#include "core/core_dispatch.h" /* core_get_opposite_dir */
 
 #define NES_SRAM_BASE 0x6000u
 
@@ -221,4 +222,38 @@ void room_go_to_next_mode_from_play(void)
     RAM(0x00C0u) = 0u;
     RAM(0x00D3u) = 0u;
     LINK_STUN_TIMER = 0u;
+}
+
+/* roomrt_reverse_directions[4] (room_runtime.c:10). */
+static const unsigned char k_room_reverse_directions[4] = {
+    0x08u, 0x04u, 0x02u, 0x01u
+};
+
+/* roomrt_player_screen_edge_bounds[4] (room_runtime.c:11). */
+static const unsigned char k_room_player_screen_edge_bounds[4] = {
+    0x3Du, 0xDDu, 0x00u, 0xF0u
+};
+
+void room_check_screen_edge(void)
+{
+    /* drain at room_runtime.c:301-322. */
+    if ((unsigned char)ROOM_INPUT_DIR == 0u) {
+        return;
+    }
+    const unsigned int dir_info =
+        core_get_opposite_dir((unsigned int)(unsigned char)ROOM_INPUT_DIR);
+    const unsigned char dir_idx = (unsigned char)(dir_info >> 8);
+    const unsigned char single_dir =
+        k_room_reverse_directions[dir_idx & 3u];
+    const unsigned char coord =
+        ((single_dir & 0x0Cu) == 0u) ?
+            (unsigned char)LINK_X :
+            (unsigned char)LINK_Y;
+
+    if (coord != k_room_player_screen_edge_bounds[dir_idx & 3u]) {
+        return;
+    }
+
+    LINK_DIR = single_dir;
+    room_go_to_next_mode_from_play();
 }
