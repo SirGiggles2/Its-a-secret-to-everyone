@@ -256,16 +256,59 @@ static void upload_scene_chr(void)
 }
 
 /* S5 + S5.5 collision: returns 1 if Link's hotspot at the given pixel
- * position lands on a walkable metatile in the current room. Hotspot:
- * foot center (x+8, y+12) -> 16x16 metatile grid; playfield top at y=56.
- * Dispatches to OW or UW renderer based on s_scene. */
-static unsigned char link_walkable_at(short x, short y)
+ * position lands on a walkable metatile in the current room.
+ *
+ * NES Z_07.asm:2110 GetCollidingTileMoving / GetCollidableTile —
+ * single-point sample with direction-dependent leading-edge offset:
+ *   base Y = ObjY + $0B  (foot row)
+ *   base X = ObjX        (sprite left, top-left origin)
+ *   $04 offset:  RIGHT = +$10, DOWN = +$08, LEFT/UP/idle = -$08.
+ *   For vertical moves the offset adjusts Y; for horizontal it
+ *   adjusts X. NES boundary skips: don't adjust X if at frame edge
+ *   ($10 left / $F0 right); don't adjust Y down if foot already
+ *   past $DD.
+ *
+ * Vertical 2-cell extension at NES Z_07.asm:2225 (ADC #$16) is
+ * intentionally deferred — its semantic is at NES NT-cell granularity
+ * (8px) and does not map cleanly to RoomRom 16px metatile grid.
+ * Recorded as Phase 5 deferral; revisit if a parity probe surfaces a
+ * tall-wall divergence.
+ *
+ * Dispatches to OW or UW renderer based on s_scene. Playfield top at
+ * y=56 (HUD strip blocked). */
+static unsigned char link_walkable_at(short x, short y, link_dir_t dir)
 {
+    short base_x = x;                       /* sprite left, NES ObjX */
+    short base_y = (short)(y + 0x0B);       /* foot row, NES ObjY+$0B */
     short hot_x, hot_y;
     int col, row;
-    hot_x = (short)(x + 8);
-    hot_y = (short)(y + 12);
-    if (hot_y < 56) return 0u;          /* HUD strip: blocked */
+    short offset;
+
+    switch (dir) {
+        case LINK_DIR_RIGHT: offset = 0x10; break;
+        case LINK_DIR_DOWN:  offset = 0x08; break;
+        default:             offset = -8;   break;  /* LEFT, UP, NONE */
+    }
+
+    if (dir == LINK_DIR_DOWN || dir == LINK_DIR_UP) {
+        hot_x = (short)(base_x + 8);        /* foot center X */
+        if (dir == LINK_DIR_DOWN && base_y >= 0xDD) {
+            hot_y = base_y;                 /* NES @AsIsX clamp */
+        } else {
+            hot_y = (short)(base_y + offset);
+        }
+    } else {
+        hot_y = base_y;                     /* foot row */
+        if (dir == LINK_DIR_LEFT && base_x < 0x10) {
+            hot_x = base_x;                 /* NES @CheckLeftBoundary skip */
+        } else if (dir == LINK_DIR_RIGHT && base_x >= 0xF0) {
+            hot_x = base_x;                 /* NES right-boundary skip */
+        } else {
+            hot_x = (short)(base_x + offset);
+        }
+    }
+
+    if (hot_y < 56) return 0u;              /* HUD strip: blocked */
     col = (int)hot_x / 16;
     row = (int)(hot_y - 56) / 16;
     if (col < 0 || col > 15 || row < 0 || row > 10) return 1u;
@@ -697,11 +740,12 @@ int main(bool hardReset)
                 if (vx) {
                     short old_x = s_link_x;
                     u8    old_sub = s_link_subx;
+                    link_dir_t hdir = (vx > 0) ? LINK_DIR_RIGHT : LINK_DIR_LEFT;
                     int tmp = (int)s_link_subx + ((int)vx * 16)
                             + ((int)s_link_x << 8);
                     s_link_subx = (u8)(tmp & 0xFF);
                     s_link_x = (short)(tmp >> 8);
-                    if (!link_walkable_at(s_link_x, s_link_y)) {
+                    if (!link_walkable_at(s_link_x, s_link_y, hdir)) {
                         s_link_x = old_x;
                         s_link_subx = old_sub;
                     }
@@ -709,11 +753,12 @@ int main(bool hardReset)
                 if (vy) {
                     short old_y = s_link_y;
                     u8    old_sub = s_link_suby;
+                    link_dir_t vdir = (vy > 0) ? LINK_DIR_DOWN : LINK_DIR_UP;
                     int tmp = (int)s_link_suby + ((int)vy * 16)
                             + ((int)s_link_y << 8);
                     s_link_suby = (u8)(tmp & 0xFF);
                     s_link_y = (short)(tmp >> 8);
-                    if (!link_walkable_at(s_link_x, s_link_y)) {
+                    if (!link_walkable_at(s_link_x, s_link_y, vdir)) {
                         s_link_y = old_y;
                         s_link_suby = old_sub;
                     }
@@ -804,7 +849,7 @@ int main(bool hardReset)
                         case LINK_DIR_DOWN:  s_link_y += step_count; break;
                         default: break;
                     }
-                    if (!link_walkable_at(s_link_x, s_link_y)) {
+                    if (!link_walkable_at(s_link_x, s_link_y, s_link_dir)) {
                         s_link_x = old_x;
                         s_link_y = old_y;
                         /* Single-axis NES motion -> blocking just halts. */
