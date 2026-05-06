@@ -11,6 +11,7 @@
 #include "roomrom_palette_tick.h"
 #include "cave_dispatch.h"  /* debate 006 D2: native cave gamemode entry */
 #include "uw_door_state.h"
+#include "uw_walk_model.h"
 
 /* Boots to overworld room 0x77.
  *
@@ -66,8 +67,8 @@ static scene_t       s_scene       = SCENE_UW;
 static mode_t        s_mode        = MODE_WALK;
 static move_style_t  s_move_style  = MOVE_STYLE_NES;
 static u8 s_room_id = 0x73;   /* UW L1 room $73 */
-static short s_link_x = 124;  /* center of playfield, nudged 4px left */
-static short s_link_y = 144;  /* center of UW playfield (y=56 HUD + 88) */
+static short s_link_x = 120;  /* NES UW vertical doorway centerline ($78) */
+static short s_link_y = 133;  /* Genesis-rendered UW horizontal doorway centerline ($85) */
 static link_face_t s_link_face = LINK_FACE_DOWN;
 /* Ph5.3: key inventory for UW door gating. Start with 3 for dev testing. */
 static unsigned char s_link_keys = 3u;
@@ -84,8 +85,9 @@ typedef enum {
     B_ITEM_COUNT     = 6
 } b_item_t;
 static b_item_t s_b_item = B_ITEM_BOOMERANG;
-static link_dir_t  s_link_dir  = LINK_DIR_NONE;  /* current motion axis (NES-style) */
-static u8          s_link_grid_offset = 0u;      /* 0..7, pixels past last grid line */
+static link_dir_t  s_link_dir  = LINK_DIR_NONE;  /* NES ObjDir: last active axis */
+static unsigned char s_doorway_dir = UW_WALK_DOOR_NONE; /* active UW doorway */
+static signed char s_link_grid_offset = 0;       /* NES ObjGridOffset: -8..8 */
 static u8          s_link_pos_frac   = 0u;       /* NES single-axis sub-pixel */
 static u8          s_link_subx       = 0u;       /* ALTTP per-axis sub-pixel X */
 static u8          s_link_suby       = 0u;       /* ALTTP per-axis sub-pixel Y */
@@ -101,6 +103,7 @@ static u8          s_link_suby       = 0u;       /* ALTTP per-axis sub-pixel Y *
 #define ROOMROM_PLANE_TILES 64u
 #define ROOMROM_PLANE_PIXELS ((short)(ROOMROM_PLANE_TILES * 8u))
 #define ROOMROM_VERTICAL_STRIDE_TILES ROOMROM_ROOM_ROWS
+#define ROOMROM_PLAYFIELD_TOP_PX ((short)(ROOMROM_ROOM_FIRST_ROW * 8u))
 
 typedef enum {
     SCROLL_NONE    = 0,
@@ -202,8 +205,69 @@ static void render_room_into_slot(u8 room_id, u8 slot_x, u8 row_base)
 static u8          s_link_frame = 0u;
 static u8          s_link_anim_tick = 0u;
 #define LINK_ANIM_PERIOD 8u
-#define LINK_GRID_SIZE   8u
+#define LINK_GRID_SIZE   8
 #define LINK_QSPEED      0x60u   /* NES Z_05.asm InitLinkSpeed: $60 = 1.5 px/frame avg */
+
+static unsigned char link_nes_grid_at_limit(void)
+{
+    return (s_link_grid_offset == LINK_GRID_SIZE ||
+            s_link_grid_offset == -LINK_GRID_SIZE) ? 1u : 0u;
+}
+
+static unsigned char link_nes_add_qspeed(void)
+{
+    unsigned short sum = (unsigned short)s_link_pos_frac + LINK_QSPEED;
+    s_link_pos_frac = (u8)(sum & 0xFFu);
+    if (link_nes_grid_at_limit()) return 0u;
+    if (sum >= 0x100u) {
+        s_link_grid_offset++;
+        return 1u;
+    }
+    return 0u;
+}
+
+static unsigned char link_nes_sub_qspeed(void)
+{
+    int diff = (int)s_link_pos_frac - (int)LINK_QSPEED;
+    s_link_pos_frac = (u8)(diff & 0xFF);
+    if (link_nes_grid_at_limit()) return 0u;
+    if (diff < 0) {
+        s_link_grid_offset--;
+        return 1u;
+    }
+    return 0u;
+}
+
+static void link_nes_finish_grid_cell(void)
+{
+    if (link_nes_grid_at_limit()) {
+        s_link_grid_offset = 0;
+    }
+}
+
+static void link_nes_move_object(link_dir_t dir)
+{
+    unsigned char q;
+    for (q = 0u; q < 4u; q++) {
+        switch (dir) {
+            case LINK_DIR_RIGHT:
+                if (link_nes_add_qspeed()) s_link_x++;
+                break;
+            case LINK_DIR_DOWN:
+                if (link_nes_add_qspeed()) s_link_y++;
+                break;
+            case LINK_DIR_LEFT:
+                if (link_nes_sub_qspeed()) s_link_x--;
+                break;
+            case LINK_DIR_UP:
+                if (link_nes_sub_qspeed()) s_link_y--;
+                break;
+            default:
+                return;
+        }
+    }
+    link_nes_finish_grid_cell();
+}
 
 static void init_video(void)
 {
@@ -219,6 +283,7 @@ static void init_video(void)
 static void load_room(u8 room_id)
 {
     VDP_clearPlane(BG_A, TRUE);
+    s_doorway_dir = UW_WALK_DOOR_NONE;
     s_active_slot_x = 0u;
     s_active_row_base = 0u;
     s_active_scroll_x = 0;
@@ -264,27 +329,115 @@ static void upload_scene_chr(void)
     roomrom_hud_upload_chr();
 }
 
-/* S5 + S5.5 collision: returns 1 if Link's hotspot at the given pixel
- * position lands on a walkable metatile in the current room.
+static unsigned char input_mask_from_buttons(u16 input)
+{
+    unsigned char mask = 0u;
+    if (input & BUTTON_RIGHT) mask |= 0x01u;
+    if (input & BUTTON_LEFT)  mask |= 0x02u;
+    if (input & BUTTON_DOWN)  mask |= 0x04u;
+    if (input & BUTTON_UP)    mask |= 0x08u;
+    return mask;
+}
+
+static link_dir_t link_face_dir(void)
+{
+    switch (s_link_face) {
+        case LINK_FACE_RIGHT: return LINK_DIR_RIGHT;
+        case LINK_FACE_LEFT:  return LINK_DIR_LEFT;
+        case LINK_FACE_UP:    return LINK_DIR_UP;
+        case LINK_FACE_DOWN:  return LINK_DIR_DOWN;
+        default:              return LINK_DIR_DOWN;
+    }
+}
+
+static link_dir_t doorway_search_dir(link_dir_t dir)
+{
+    return (dir == LINK_DIR_NONE) ? link_face_dir() : dir;
+}
+
+static unsigned char uw_doorway_passable(link_dir_t dir, short x, short y)
+{
+    unsigned char door_dir;
+    unsigned char toward;
+
+    if (!uw_walk_find_doorway(s_doorway_dir, (unsigned char)doorway_search_dir(dir),
+                              x, y, &door_dir)) {
+        s_doorway_dir = UW_WALK_DOOR_NONE;
+        return 0u;
+    }
+    if (!uw_walk_door_axis_matches(door_dir, (unsigned char)dir)) return 0u;
+
+    toward = uw_walk_dir_for_door(door_dir);
+    if ((unsigned char)dir == toward &&
+        !uw_door_state_touch(door_dir, &s_link_keys)) {
+        return 0u;
+    }
+
+    s_doorway_dir = door_dir;
+    return 1u;
+}
+
+static unsigned char uw_doorway_adjust_nes_dir(u16 input, link_dir_t *dir)
+{
+    unsigned char door_dir;
+    unsigned char next_dir;
+
+    if (s_scene != SCENE_UW ||
+        !uw_walk_find_doorway(s_doorway_dir,
+                              (unsigned char)doorway_search_dir(*dir),
+                              s_link_x, s_link_y, &door_dir)) {
+        s_doorway_dir = UW_WALK_DOOR_NONE;
+        return 0u;
+    }
+
+    uw_walk_snap_to_doorway_axis(door_dir, &s_link_x, &s_link_y);
+    s_doorway_dir = door_dir;
+    next_dir = uw_walk_modify_dir_in_doorway(
+        door_dir, (unsigned char)doorway_search_dir(*dir),
+        input_mask_from_buttons(input));
+    if (next_dir == UW_WALK_DIR_NONE) {
+        *dir = LINK_DIR_NONE;
+    } else {
+        *dir = (link_dir_t)next_dir;
+    }
+    return 1u;
+}
+
+static void uw_doorway_adjust_velocity(s8 *vx, s8 *vy)
+{
+    unsigned char door_dir;
+    link_dir_t dir = LINK_DIR_NONE;
+
+    if (*vx > 0) dir = LINK_DIR_RIGHT;
+    else if (*vx < 0) dir = LINK_DIR_LEFT;
+    else if (*vy > 0) dir = LINK_DIR_DOWN;
+    else if (*vy < 0) dir = LINK_DIR_UP;
+
+    if (s_scene != SCENE_UW ||
+        !uw_walk_find_doorway(s_doorway_dir,
+                              (unsigned char)doorway_search_dir(dir),
+                              s_link_x, s_link_y, &door_dir)) {
+        s_doorway_dir = UW_WALK_DOOR_NONE;
+        return;
+    }
+
+    uw_walk_snap_to_doorway_axis(door_dir, &s_link_x, &s_link_y);
+    s_doorway_dir = door_dir;
+    if (door_dir == UW_WALK_DOOR_E || door_dir == UW_WALK_DOOR_W) {
+        *vy = 0;
+    } else {
+        *vx = 0;
+    }
+}
+
+/* S5 + S5.5 collision: returns 1 if Link's movement probe at the given
+ * pixel position lands on a walkable tile in the current room.
  *
- * NES Z_07.asm:2110 GetCollidingTileMoving / GetCollidableTile —
- * single-point sample with direction-dependent leading-edge offset:
- *   base Y = ObjY + $0B  (foot row)
- *   base X = ObjX        (sprite left, top-left origin)
- *   $04 offset:  RIGHT = +$10, DOWN = +$08, LEFT/UP/idle = -$08.
- *   For vertical moves the offset adjusts Y; for horizontal it
- *   adjusts X. NES boundary skips: don't adjust X if at frame edge
- *   ($10 left / $F0 right); don't adjust Y down if foot already
- *   past $DD.
+ * UW uses the NES GetCollidingTileMoving/GetCollidableTile sampler against
+ * the live 8px PlayAreaTiles-equivalent cache. Doorway-axis bypass still
+ * runs first so open NES door transitions keep their later Ph5.3 behavior.
  *
- * Vertical 2-cell extension at NES Z_07.asm:2225 (ADC #$16) is
- * intentionally deferred — its semantic is at NES NT-cell granularity
- * (8px) and does not map cleanly to RoomRom 16px metatile grid.
- * Recorded as Phase 5 deferral; revisit if a parity probe surfaces a
- * tall-wall divergence.
- *
- * Dispatches to OW or UW renderer based on s_scene. Playfield top at
- * y=56 (HUD strip blocked). */
+ * OW keeps the existing direction-dependent metatile probe. */
 static unsigned char link_walkable_at(short x, short y, link_dir_t dir)
 {
     short base_x = x;                       /* sprite left, NES ObjX */
@@ -293,6 +446,14 @@ static unsigned char link_walkable_at(short x, short y, link_dir_t dir)
     int col, row;
     short offset;
 
+    if (s_scene == SCENE_UW) {
+        uw_walk_probe_t probe;
+        if (uw_doorway_passable(dir, x, y)) return 1u;
+        uw_walk_collidable_probe((unsigned char)dir, x, y, &probe);
+        return uw_walk_tile_passable(&probe,
+                                     roomrom_uw_room_render_walkable_tile_at);
+    }
+
     switch (dir) {
         case LINK_DIR_RIGHT: offset = 0x10; break;
         case LINK_DIR_DOWN:  offset = 0x08; break;
@@ -300,7 +461,7 @@ static unsigned char link_walkable_at(short x, short y, link_dir_t dir)
     }
 
     if (dir == LINK_DIR_DOWN || dir == LINK_DIR_UP) {
-        hot_x = (short)(base_x + 8);        /* foot center X */
+        hot_x = base_x;                     /* NES takes ObjX as-is */
         if (dir == LINK_DIR_DOWN && base_y >= 0xDD) {
             hot_y = base_y;                 /* NES @AsIsX clamp */
         } else {
@@ -312,18 +473,19 @@ static unsigned char link_walkable_at(short x, short y, link_dir_t dir)
             hot_x = base_x;                 /* NES @CheckLeftBoundary skip */
         } else if (dir == LINK_DIR_RIGHT && base_x >= 0xF0) {
             hot_x = base_x;                 /* NES right-boundary skip */
+        } else if (dir == LINK_DIR_LEFT) {
+            hot_x = base_x;
+        } else if (dir == LINK_DIR_RIGHT) {
+            hot_x = (short)(base_x + offset);
         } else {
             hot_x = (short)(base_x + offset);
         }
     }
 
-    if (hot_y < 56) return 0u;              /* HUD strip: blocked */
+    if (hot_y < ROOMROM_PLAYFIELD_TOP_PX) return 0u;
     col = (int)hot_x / 16;
-    row = (int)(hot_y - 56) / 16;
+    row = (int)(hot_y - ROOMROM_PLAYFIELD_TOP_PX) / 16;
     if (col < 0 || col > 15 || row < 0 || row > 10) return 1u;
-    if (s_scene == SCENE_UW)
-        return roomrom_uw_room_render_walkable_at((unsigned char)col,
-                                                  (unsigned char)row);
     return roomrom_ow_room_render_walkable_at((unsigned char)col,
                                               (unsigned char)row);
 }
@@ -348,28 +510,56 @@ static void edge_load_or_clamp(void)
     short pre_x = s_link_x;
     short pre_y = s_link_y;
 
-    if (s_link_x < 0) {
+    if (s_link_x < UW_WALK_EDGE_WEST_X) {
         if (col > 0u && (s_scene != SCENE_UW ||
-                uw_door_state_touch(DOOR_DIR_W, &s_link_keys))) {
-            col--; s_link_x = 232; want = SCROLL_H_LEFT;
-        } else { s_link_x = 0; }
-    } else if (s_link_x > 240) {
+                uw_door_state_touch(UW_WALK_DOOR_W, &s_link_keys))) {
+            col--;
+            if (s_scene == SCENE_UW) {
+                uw_walk_arrival_position(UW_WALK_DOOR_W, &s_link_x, &s_link_y);
+                s_doorway_dir = UW_WALK_DOOR_W;
+            } else {
+                s_link_x = UW_WALK_EDGE_EAST_X;
+            }
+            want = SCROLL_H_LEFT;
+        } else { s_link_x = UW_WALK_EDGE_WEST_X; }
+    } else if (s_link_x > UW_WALK_EDGE_EAST_X) {
         if (col < 15u && (s_scene != SCENE_UW ||
-                uw_door_state_touch(DOOR_DIR_E, &s_link_keys))) {
-            col++; s_link_x = 8; want = SCROLL_H_RIGHT;
-        } else { s_link_x = 240; }
+                uw_door_state_touch(UW_WALK_DOOR_E, &s_link_keys))) {
+            col++;
+            if (s_scene == SCENE_UW) {
+                uw_walk_arrival_position(UW_WALK_DOOR_E, &s_link_x, &s_link_y);
+                s_doorway_dir = UW_WALK_DOOR_E;
+            } else {
+                s_link_x = UW_WALK_EDGE_WEST_X;
+            }
+            want = SCROLL_H_RIGHT;
+        } else { s_link_x = UW_WALK_EDGE_EAST_X; }
     }
 
-    if (s_link_y < 56) {
+    if (s_link_y < UW_WALK_EDGE_NORTH_Y) {
         if (row > 0u && (s_scene != SCENE_UW ||
-                uw_door_state_touch(DOOR_DIR_N, &s_link_keys))) {
-            row--; s_link_y = 200; want = SCROLL_V_UP;
-        } else { s_link_y = 56; }
-    } else if (s_link_y > 208) {
+                uw_door_state_touch(UW_WALK_DOOR_N, &s_link_keys))) {
+            row--;
+            if (s_scene == SCENE_UW) {
+                uw_walk_arrival_position(UW_WALK_DOOR_N, &s_link_x, &s_link_y);
+                s_doorway_dir = UW_WALK_DOOR_N;
+            } else {
+                s_link_y = UW_WALK_EDGE_SOUTH_Y;
+            }
+            want = SCROLL_V_UP;
+        } else { s_link_y = UW_WALK_EDGE_NORTH_Y; }
+    } else if (s_link_y > UW_WALK_EDGE_SOUTH_Y) {
         if (row < 7u && (s_scene != SCENE_UW ||
-                uw_door_state_touch(DOOR_DIR_S, &s_link_keys))) {
-            row++; s_link_y = 64; want = SCROLL_V_DOWN;
-        } else { s_link_y = 208; }
+                uw_door_state_touch(UW_WALK_DOOR_S, &s_link_keys))) {
+            row++;
+            if (s_scene == SCENE_UW) {
+                uw_walk_arrival_position(UW_WALK_DOOR_S, &s_link_x, &s_link_y);
+                s_doorway_dir = UW_WALK_DOOR_S;
+            } else {
+                s_link_y = UW_WALK_EDGE_NORTH_Y;
+            }
+            want = SCROLL_V_DOWN;
+        } else { s_link_y = UW_WALK_EDGE_SOUTH_Y; }
     }
 
     if (want != SCROLL_NONE) {
@@ -379,10 +569,10 @@ static void edge_load_or_clamp(void)
         /* Pre-edge screen pos clamped to playfield bounds, used as scroll
          * start. For H_RIGHT pre_x is just past 240 (clamp to 240); for
          * H_LEFT pre_x is just past 0 (clamp to 0). Y is unchanged. */
-        if (pre_x < 0)   pre_x = 0;
-        if (pre_x > 240) pre_x = 240;
-        if (pre_y < 56)  pre_y = 56;
-        if (pre_y > 208) pre_y = 208;
+        if (pre_x < UW_WALK_EDGE_WEST_X)  pre_x = UW_WALK_EDGE_WEST_X;
+        if (pre_x > UW_WALK_EDGE_EAST_X)  pre_x = UW_WALK_EDGE_EAST_X;
+        if (pre_y < UW_WALK_EDGE_NORTH_Y) pre_y = UW_WALK_EDGE_NORTH_Y;
+        if (pre_y > UW_WALK_EDGE_SOUTH_Y) pre_y = UW_WALK_EDGE_SOUTH_Y;
         s_scroll_start_link_x = pre_x;
         s_scroll_start_link_y = pre_y;
         s_scroll_state = want;
@@ -391,7 +581,7 @@ static void edge_load_or_clamp(void)
         s_link_pos_frac    = 0u;
         s_link_subx        = 0u;
         s_link_suby        = 0u;
-        s_link_grid_offset = 0u;
+        s_link_grid_offset = 0;
         s_link_anim_tick   = 0u;
 
         s_scroll_start_x = s_active_scroll_x;
@@ -573,7 +763,7 @@ int main(bool hardReset)
             s_link_pos_frac = 0u;
             s_link_subx = 0u;
             s_link_suby = 0u;
-            s_link_grid_offset = 0u;
+            s_link_grid_offset = 0;
             s_link_dir = LINK_DIR_NONE;
             continue;
         }
@@ -738,6 +928,7 @@ int main(bool hardReset)
 
                 if (dir_bits & 0x3u) vx = (dir_bits & 0x2u) ? (s8)-vel : vel;
                 if (dir_bits & 0xCu) vy = (dir_bits & 0x8u) ? (s8)-vel : vel;
+                uw_doorway_adjust_velocity(&vx, &vy);
 
                 /* Facing: keep current if compatible with motion; else pick
                  * H over V (matches general 4-frame sprite limitation). */
@@ -803,10 +994,10 @@ int main(bool hardReset)
              *    direction from current input (no diagonal). H over V on tie.
              * 2. If input released, stop instantly (even mid-grid). Walker_Move
              *    @ChooseObjDirOrInputDir: input=0 -> moving_dir=0.
-             * 3. If moving, run 4 quarter-steps. Each step adds QSpeed=$60 to
-             *    pos_frac; on 8-bit overflow, advance 1 px in active axis and
-             *    increment grid_offset. When grid_offset hits 8, wrap to 0
-             *    (next intersection -> direction can change next frame). */
+             * 3. At grid offset 0, check the next tile before movement.
+             * 4. If moving, run 4 quarter-steps. Right/down add QSpeed, left/up
+             *    subtract QSpeed. Carry/borrow advances 1 px and changes signed
+             *    ObjGridOffset until it reaches +8 or -8, then returns to 0. */
 
             u16 input = joy & (BUTTON_LEFT|BUTTON_RIGHT|BUTTON_UP|BUTTON_DOWN);
             u8 h_dir = (input & BUTTON_LEFT) ? 1u
@@ -814,74 +1005,66 @@ int main(bool hardReset)
             u8 v_dir = (input & BUTTON_UP)   ? 1u
                      : ((input & BUTTON_DOWN) ? 2u : 0u);
 
-            if (input == 0u) {
-                s_link_dir = LINK_DIR_NONE;
-                s_link_pos_frac = 0u;       /* reset frac on stop */
-            } else if (s_link_grid_offset == 0u) {
-                link_dir_t want;
+            {
+                link_dir_t input_dir = LINK_DIR_NONE;
+                link_dir_t moving_dir = LINK_DIR_NONE;
+
                 if (h_dir && v_dir) {
                     /* NES Link_ModifyDirAtGridPoint with 2 inputs: in OW,
                      * picks "last walkable" (h_dir last in bit-iteration).
                      * H over V matches OW behavior. */
-                    want = (h_dir == 1u) ? LINK_DIR_LEFT : LINK_DIR_RIGHT;
+                    input_dir = (h_dir == 1u) ? LINK_DIR_LEFT : LINK_DIR_RIGHT;
                 } else if (h_dir) {
-                    want = (h_dir == 1u) ? LINK_DIR_LEFT : LINK_DIR_RIGHT;
-                } else {
-                    want = (v_dir == 1u) ? LINK_DIR_UP : LINK_DIR_DOWN;
+                    input_dir = (h_dir == 1u) ? LINK_DIR_LEFT : LINK_DIR_RIGHT;
+                } else if (v_dir) {
+                    input_dir = (v_dir == 1u) ? LINK_DIR_UP : LINK_DIR_DOWN;
                 }
-                s_link_dir = want;
-            }
-            /* off-grid + input held: keep current direction (NES) */
 
-            if (s_link_dir != LINK_DIR_NONE) {
-                u8 step_count;
-                u8 q;
+                if (input != 0u) {
+                    if (s_link_grid_offset == 0 || s_link_dir == LINK_DIR_NONE) {
+                        s_link_dir = input_dir;
+                        moving_dir = input_dir;
+                    } else {
+                        moving_dir = s_link_dir;
+                    }
+                }
 
-                switch (s_link_dir) {
+                if (input != 0u) {
+                    link_dir_t doorway_dir = moving_dir;
+                    if (uw_doorway_adjust_nes_dir(input, &doorway_dir)) {
+                        moving_dir = doorway_dir;
+                        if (doorway_dir != LINK_DIR_NONE) {
+                            s_link_dir = doorway_dir;
+                        }
+                    }
+                }
+
+                if (moving_dir != LINK_DIR_NONE) {
+                    switch (moving_dir) {
                     case LINK_DIR_LEFT:  s_link_face = LINK_FACE_LEFT;  break;
                     case LINK_DIR_RIGHT: s_link_face = LINK_FACE_RIGHT; break;
                     case LINK_DIR_UP:    s_link_face = LINK_FACE_UP;    break;
                     case LINK_DIR_DOWN:  s_link_face = LINK_FACE_DOWN;  break;
                     default: break;
+                    }
                 }
-                if (++s_link_anim_tick >= LINK_ANIM_PERIOD) {
-                    s_link_frame ^= 1u;
+
+                if (moving_dir != LINK_DIR_NONE && s_link_grid_offset == 0) {
+                    if (!link_walkable_at(s_link_x, s_link_y, moving_dir)) {
+                        moving_dir = LINK_DIR_NONE;
+                    }
+                }
+
+                if (moving_dir != LINK_DIR_NONE) {
+                    if (++s_link_anim_tick >= LINK_ANIM_PERIOD) {
+                        s_link_frame ^= 1u;
+                        s_link_anim_tick = 0u;
+                    }
+                    link_nes_move_object(moving_dir);
+                } else {
+                    s_link_frame = 0u;
                     s_link_anim_tick = 0u;
                 }
-
-                /* 4 quarter-steps, each adds $60 to pos_frac; carry -> 1 px. */
-                step_count = 0u;
-                for (q = 0; q < 4u; q++) {
-                    unsigned short sum = (unsigned short)s_link_pos_frac + LINK_QSPEED;
-                    s_link_pos_frac = (u8)(sum & 0xFFu);
-                    if (sum >= 0x100u) {
-                        step_count++;
-                        s_link_grid_offset++;
-                        if (s_link_grid_offset >= LINK_GRID_SIZE) {
-                            s_link_grid_offset = 0u;
-                        }
-                    }
-                }
-
-                {
-                    short old_x = s_link_x, old_y = s_link_y;
-                    switch (s_link_dir) {
-                        case LINK_DIR_LEFT:  s_link_x -= step_count; break;
-                        case LINK_DIR_RIGHT: s_link_x += step_count; break;
-                        case LINK_DIR_UP:    s_link_y -= step_count; break;
-                        case LINK_DIR_DOWN:  s_link_y += step_count; break;
-                        default: break;
-                    }
-                    if (!link_walkable_at(s_link_x, s_link_y, s_link_dir)) {
-                        s_link_x = old_x;
-                        s_link_y = old_y;
-                        /* Single-axis NES motion -> blocking just halts. */
-                    }
-                }
-            } else {
-                s_link_frame = 0u;
-                s_link_anim_tick = 0u;
-                s_link_grid_offset = 0u;
             }
 
             edge_load_or_clamp();

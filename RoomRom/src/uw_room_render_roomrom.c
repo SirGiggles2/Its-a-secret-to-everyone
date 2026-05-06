@@ -31,21 +31,45 @@ static const unsigned char *s_cur_attr = (const unsigned char *)0;
  * Filled during blit_blob; queried by main loop. 16 cols x 11 rows. */
 static unsigned char s_uw_walkable[16][11];
 
-/* UW wall + locked-door classifier. Blob nt[] stores NES tile IDs
- * (sourced from CIRAM via probe_nes_uw_l1_floodwalk.lua), so we match
- * against NES tile IDs directly.
- *
- * Wall set: aggregated wall_tiles[] + border_fill_tile across all 9
- * levels x 2 quests in RoomRom/data/uw_level*_*_manifest.json (same
- * 14 IDs every level).
- *
- * NES Z1 ObjectFirstUnwalkableTile = $78. All tile IDs >= $78 are
- * non-walkable (wall, water, door-art, hazard). Open door art uses
- * $74..$77 (< $78) so it passes. Blocked ranges verified against
- * PRIMARY_CLASS_UW in tools/builder/extract_uw_collision.py. */
+/* NES collision samples the live UW play area at 8px tile granularity.
+ * Keep this beside the metatile grid so door patches and false-wall state
+ * affect both collision paths. */
+static unsigned char s_uw_tile_walkable[32][22];
+
+/* NES UW tile classifier. Captured blob nt[] stores NES tile IDs from the
+ * visible play area, and live NES PlayAreaTiles for room $73 match the
+ * direct 8x8 rendered tile threshold exactly: tile < $78 walks.
+ * ObjectFirstUnwalkableTile lives at NES RAM $034A. */
 static unsigned char uw_walkable_tile_id(unsigned char t)
 {
     return (t < 0x78u) ? 1u : 0u;
+}
+
+static void set_collision_metatile(unsigned char col,
+                                   unsigned char row,
+                                   unsigned char walk)
+{
+    unsigned char tile_col;
+    unsigned char tile_row;
+
+    if (col >= 16u || row >= 11u) return;
+    walk = walk ? 1u : 0u;
+    tile_col = (unsigned char)(col * 2u);
+    tile_row = (unsigned char)(row * 2u);
+    s_uw_walkable[col][row] = walk;
+    s_uw_tile_walkable[tile_col][tile_row] = walk;
+    s_uw_tile_walkable[(unsigned char)(tile_col + 1u)][tile_row] = walk;
+    s_uw_tile_walkable[tile_col][(unsigned char)(tile_row + 1u)] = walk;
+    s_uw_tile_walkable[(unsigned char)(tile_col + 1u)]
+                      [(unsigned char)(tile_row + 1u)] = walk;
+}
+
+static void set_walkable_metatile_only(unsigned char col,
+                                       unsigned char row,
+                                       unsigned char walk)
+{
+    if (col >= 16u || row >= 11u) return;
+    s_uw_walkable[col][row] = walk ? 1u : 0u;
 }
 
 unsigned char roomrom_uw_room_render_walkable_at(unsigned char col,
@@ -53,6 +77,13 @@ unsigned char roomrom_uw_room_render_walkable_at(unsigned char col,
 {
     if (col >= 16u || row >= 11u) return 0u;
     return s_uw_walkable[col][row];
+}
+
+unsigned char roomrom_uw_room_render_walkable_tile_at(unsigned char col,
+                                                      unsigned char row)
+{
+    if (col >= 32u || row >= 22u) return 0u;
+    return s_uw_tile_walkable[col][row];
 }
 
 void roomrom_uw_room_render_set_map(unsigned char map_id)
@@ -243,14 +274,16 @@ static void blit_blob(int idx)
             unsigned char nt_row = (unsigned char)(row + 8u);
             unsigned char pal = attr_palette_for(attr, col, nt_row);
             write_tile_raw(col, row, raw, pal);
+            s_uw_tile_walkable[col][row] = uw_walkable_tile_id(raw);
         }
     }
-    /* Build walkable grid: each metatile (mt_col, mt_row) classified by
-     * its TL plane tile (= nt[mt_row*2 * COLS + mt_col*2]). */
+    /* Legacy 16x11 summary only. Link collision samples s_uw_tile_walkable,
+     * which preserves NES 8x8 PlayAreaTiles behavior. */
     for (mt_row = 0; mt_row < 11; mt_row++) {
         for (mt_col = 0; mt_col < 16; mt_col++) {
-            unsigned char tl = nt[(mt_row * 2u) * ROOMROM_UW_BLOB_COLS + (mt_col * 2u)];
-            s_uw_walkable[mt_col][mt_row] = uw_walkable_tile_id(tl);
+            unsigned char tl =
+                nt[(mt_row * 2u) * ROOMROM_UW_BLOB_COLS + (mt_col * 2u)];
+            set_walkable_metatile_only(mt_col, mt_row, uw_walkable_tile_id(tl));
         }
     }
 }
@@ -279,13 +312,17 @@ static void blit_blob_one_metacol_at(int idx, unsigned char src_col,
         unsigned char pal1 = attr_palette_for(attr, src_p1, nt_row);
         write_tile_raw_at(dst_p0, row, dst_row_base, raw0, pal0);
         write_tile_raw_at(dst_p1, row, dst_row_base, raw1, pal1);
+        if (dst_col < 16u) {
+            s_uw_tile_walkable[dst_p0][row] = uw_walkable_tile_id(raw0);
+            s_uw_tile_walkable[dst_p1][row] = uw_walkable_tile_id(raw1);
+        }
     }
-    /* S5.5: populate walkable grid for this metatile col. Use TL plane
-     * tile of each metatile row. Indexed by dst_col (must be 0..15). */
+    /* Legacy 16x11 summary for diagnostics. */
     if (dst_col < 16u) {
         for (mt_row = 0; mt_row < 11u; mt_row++) {
-            unsigned char tl = nt[(mt_row * 2u) * ROOMROM_UW_BLOB_COLS + (src_col * 2u)];
-            s_uw_walkable[dst_col][mt_row] = uw_walkable_tile_id(tl);
+            unsigned char tl =
+                nt[(mt_row * 2u) * ROOMROM_UW_BLOB_COLS + (src_col * 2u)];
+            set_walkable_metatile_only(dst_col, mt_row, uw_walkable_tile_id(tl));
         }
     }
 }
@@ -303,11 +340,14 @@ static void draw_placeholder(unsigned char room_id)
         }
     }
     /* Load precomputed NES collision grid for this room. */
-    for (mt_row = 0; mt_row < 11; mt_row++)
-        for (mt_col = 0; mt_col < 16; mt_col++)
-            s_uw_walkable[mt_col][mt_row] =
+    for (mt_row = 0; mt_row < 11; mt_row++) {
+        for (mt_col = 0; mt_col < 16; mt_col++) {
+            unsigned char walk =
                 uw_room_walkable(s_uw_level, s_uw_quest, room_id,
                                  (unsigned char)mt_col, (unsigned char)mt_row);
+            set_collision_metatile(mt_col, mt_row, walk);
+        }
+    }
     write_tile_raw(2, 1, 0x15, 0);
     write_tile_raw(3, 1, digit_tile(s_uw_level), 0);
     write_tile_raw(6, 1, 0x1B, 0);
@@ -350,9 +390,10 @@ void roomrom_uw_room_render_fill_one_col_at(unsigned char room_id,
         unsigned char mc = src_col & 0x0Fu;
         if (dst_col >= 16u) return;
         for (mt_row = 0u; mt_row < 11u; mt_row++) {
-            s_uw_walkable[dst_col][mt_row] =
+            set_collision_metatile(
+                dst_col, mt_row,
                 uw_room_walkable(s_uw_level, s_uw_quest, room_id,
-                                 mc, mt_row);
+                                 mc, mt_row));
         }
     }
 }
@@ -363,13 +404,22 @@ void roomrom_uw_room_render_write_tile(unsigned char col, unsigned char row,
                                        unsigned char raw_tile, unsigned char pal)
 {
     write_tile_raw(col, row, raw_tile, pal);
+    if (col < 32u && row < 22u)
+        s_uw_tile_walkable[col][row] = uw_walkable_tile_id(raw_tile);
 }
 
 void roomrom_uw_room_render_set_walkable(unsigned char col, unsigned char row,
                                          unsigned char val)
 {
-    if (col >= 16u || row >= 11u) return;
-    s_uw_walkable[col][row] = val ? 1u : 0u;
+    set_walkable_metatile_only(col, row, val);
+}
+
+void roomrom_uw_room_render_set_walkable_tile(unsigned char col,
+                                              unsigned char row,
+                                              unsigned char val)
+{
+    if (col >= 32u || row >= 22u) return;
+    s_uw_tile_walkable[col][row] = val ? 1u : 0u;
 }
 
 /* Return AT palette for NT coordinates (col 0..31, row 8..29 in full NT space).

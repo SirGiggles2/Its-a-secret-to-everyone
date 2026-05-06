@@ -45,10 +45,13 @@ static const unsigned char s_open_patches[DOOR_DIR_COUNT][4][3] = {
     {{15u, 2u,  0x24u}, {16u, 2u,  0x24u}, {15u, 3u,  0x77u}, {16u, 3u,  0x75u}},
 };
 
-/* Critical walkability metatile (mt_col, mt_row) per direction.
- * Setting this cell marks the door threshold as walkable. */
-static const unsigned char s_walk_mt_col[DOOR_DIR_COUNT] = {14u, 1u, 8u, 8u};
-static const unsigned char s_walk_mt_row[DOOR_DIR_COUNT] = {5u,  5u, 9u, 1u};
+/* Legacy metatile diagnostics per direction. Real Link collision uses the
+ * exact 8px door tiles in s_open_patches below, plus doorway-axis bypass in
+ * main.c to match NES DoorwayDir behavior. */
+static const unsigned char s_walk_mt_col[DOOR_DIR_COUNT]  = {14u, 1u, 8u, 8u};
+static const unsigned char s_walk_mt_row[DOOR_DIR_COUNT]  = {5u,  5u, 9u, 1u};
+static const unsigned char s_walk_mt_col2[DOOR_DIR_COUNT] = {15u, 0u, 8u, 8u};
+static const unsigned char s_walk_mt_row2[DOOR_DIR_COUNT] = {5u,  5u, 10u, 0u};
 
 /* =========================================================================
  * Internal helpers
@@ -239,6 +242,8 @@ void uw_door_state_apply_walkability(void)
         }
         roomrom_uw_room_render_set_walkable(s_walk_mt_col[dir],
                                             s_walk_mt_row[dir], open);
+        roomrom_uw_room_render_set_walkable(s_walk_mt_col2[dir],
+                                            s_walk_mt_row2[dir], open);
     }
 }
 
