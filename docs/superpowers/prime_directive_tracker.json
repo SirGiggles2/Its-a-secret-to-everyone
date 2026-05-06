@@ -9,14 +9,14 @@
   "active": {
     "phase_id": "5",
     "phase_name": "Dungeon Core",
-    "task_id": "?",
-    "task_title": "",
+    "task_id": "5.5",
+    "task_title": "Dungeon Room Transitions (verification slice)",
     "worktree": {
       "path": "C:/Users/Jake Diggity/Documents/GitHub/FINAL TRY",
       "branch": "main",
       "is_substrate_writer": true
     },
-    "next_concrete_action": "Begin Task 5.5: door-aware UW edge transition rules. Verified L1 entry path opens dungeon navigation work."
+    "next_concrete_action": "Step 2: tools/uw_expected_doors_gen.py + emit RoomRom/data/uw_l1q1_expected_doors.{c,h}"
   },
   "phases": [
     {
@@ -261,6 +261,35 @@
             "Cave entry (selector \u2265 0x40 branch, Z_05.asm:7344-7356)",
             "NV-RAM persistence of rr_warp_save_state_t",
             "Title.md mode-$10 compatibility (Phase 11/12)"
+          ]
+        },
+        {
+          "id": "5.5",
+          "name": "Dungeon Room Transitions (verification slice)",
+          "status": "in_progress",
+          "verification_started_at": "2026-05-06",
+          "spec": "docs/superpowers/specs/2026-05-02-title-roomrom-full-port-master-plan.md (Task 5.5 section)",
+          "plan": "C:/Users/Jake Diggity/.claude/plans/great-load-it-into-sleepy-lantern.md",
+          "drain_header": {
+            "nes_source": "reference/aldonunez/Z_05.asm — LayOutDoors, TouchDoor* (jump table 3882-3890), CheckShutters (2133), SetDoorFlag (2112), ResetDoorFlag (2125), FindDoorAttrByDoorBit (4520)",
+            "drained_c": "NONE in scope (Phase 5 active scope = RoomRom/src/ only)",
+            "coverage": "NONE",
+            "stance": "GREENFIELD (continues 5.3 substrate line)"
+          },
+          "build_targets": [
+            "RoomRom.md (per-commit Gate A)",
+            "CombinedDebug.md (phase-close gate only; per-commit infeasible due to ~30-min Title→RoomRom→17-room traversal time; documented relaxation)"
+          ],
+          "ground_truth_dump": "build/probes/ph5/task_5_5/nes_ground_truth.md",
+          "evidence": [],
+          "deferrals": [
+            "Combat-driven shutter trigger (Phase 6; slice-1 = debug chord stub)",
+            "Bomb-driven BOMBABLE trigger (Phase 6; slice-1 = debug chord stub)",
+            "Stair/passage transitions (Phase 5.6)",
+            "L2-L9 expected-doors table expansion (data-only follow-up)",
+            "Boss-key sourcing logic (Phase 5.9)",
+            "NES-side parity probe Boot N for door state (separate ticket)",
+            "CombinedDebug per-commit gate (returns to per-commit dual-ROM in subsequent tasks)"
           ]
         }
       ],

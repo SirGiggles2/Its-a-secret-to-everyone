@@ -294,3 +294,31 @@ void uw_door_state_reset_persist(void)
         }
     }
 }
+
+unsigned char uw_door_state_false_timer(void)
+{
+    return s_false_timer;
+}
+
+unsigned char uw_door_state_current_level(void)
+{
+    return s_cur_level;
+}
+
+void uw_door_state_copy_persist_for_active_level(unsigned char *dst,
+                                                  unsigned short dst_size)
+{
+    unsigned short i;
+    unsigned char lvl_idx;
+    if (dst == 0 || dst_size == 0u) return;
+    if (s_cur_level == 0u || s_cur_level > 9u) {
+        for (i = 0u; i < dst_size; i++) dst[i] = 0u;
+        return;
+    }
+    lvl_idx = (unsigned char)(s_cur_level - 1u);
+    for (i = 0u; i < dst_size && i < 128u; i++) {
+        dst[i] = s_persist[lvl_idx][i];
+    }
+    /* Zero remainder if dst is larger than 128 (slice-1 probe block is 256 B). */
+    for (; i < dst_size; i++) dst[i] = 0u;
+}

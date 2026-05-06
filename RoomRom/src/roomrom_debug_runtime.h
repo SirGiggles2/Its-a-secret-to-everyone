@@ -1,6 +1,18 @@
 #ifndef ROOMROM_DEBUG_RUNTIME_H
 #define ROOMROM_DEBUG_RUNTIME_H
 
+/* RoomRom Debug RAM Map (P0-3 canonical table; both ROMs link these)
+ * ===================================================================
+ *   $FF7200..$FF7247   72 B   state mirror (warp+door state; tasks 5.4+5.5)
+ *   $FF7300..$FF731F   32 B   Gate D metadata probe (Task 5.4)
+ *   $FF7400..$FF76C3  708 B   OW raw-tile cache (Task 5.4)
+ *   $FF76D0..$FF77CF  256 B   UW door persistence table (Task 5.5)
+ *
+ * All offsets are within the 64KB Genesis 68K work RAM
+ * ($FF0000..$FFFFFF). Probes read via "68K RAM" BizHawk domain,
+ * subtract $FF0000 to get the domain offset.
+ */
+
 void roomrom_debug_enter(void);
 void roomrom_debug_tick(void);
 unsigned char roomrom_debug_get_scene(void);
@@ -61,11 +73,34 @@ unsigned char roomrom_debug_warp_unsupported_count(void);
  *   38   1     link_metatile_row (0..10, OW only)
  *   39   1     reserved
  *
- * Total: 40 bytes at 0xFF7200..0xFF7227.
+ * Task 5.5 extension (offsets 40..71, total 72 bytes):
+ *   40   1     uw_door_type[E]   (DOOR_TYPE_*)
+ *   41   1     uw_door_type[W]
+ *   42   1     uw_door_type[S]
+ *   43   1     uw_door_type[N]
+ *   44   1     uw_door_opened_mask (DOOR_BIT_E/W/S/N OR'd)
+ *   45   1     uw_door_false_timer (NES ObjTimer-equivalent, slice-1 mirror)
+ *   46   1     uw_door_has_shutters
+ *   47   1     uw_door_shutter_trigger_count (counts debug-chord fires)
+ *   48   1     s_link_keys (current count)
+ *   49   1     s_link_keys_pre_touch
+ *   50   1     s_link_keys_post_touch
+ *   51   1     last_touch_dir (DOOR_DIR_*; 0xFF if none yet)
+ *   52   1     last_touch_result (0=blocked, 1=passable, 0xFF=none)
+ *   53   1     last_touch_door_type
+ *   54..71   18  reserved (room id history ring + future fields)
  */
 #define ROOMROM_DEBUG_STATE_MIRROR_BASE  0x00FF7200UL
-#define ROOMROM_DEBUG_STATE_MIRROR_BYTES 40u
+#define ROOMROM_DEBUG_STATE_MIRROR_BYTES 72u
 
 void roomrom_debug_publish_state_mirror(void);
+
+/* Task 5.5: persistence-table dump block at $FF76D0 (256 B, one byte
+ * per UW room id; value = DOOR_BIT_* mask of opened doors).
+ * Published once per tick alongside the state mirror. */
+#define ROOMROM_DEBUG_UW_PERSIST_BASE  0x00FF76D0UL
+#define ROOMROM_DEBUG_UW_PERSIST_BYTES 256u
+
+void roomrom_debug_publish_uw_persist(void);
 
 #endif

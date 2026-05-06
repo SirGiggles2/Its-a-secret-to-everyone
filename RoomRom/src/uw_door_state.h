@@ -95,4 +95,12 @@ void uw_door_state_trigger_shutters(void);
 /* Clear all persisted state (call on game-reset / new-game). */
 void uw_door_state_reset_persist(void);
 
+/* Task 5.5 accessors for the state-mirror publisher. Read-only views
+ * of internal state needed by BizHawk Lua probes. */
+unsigned char uw_door_state_false_timer(void);
+unsigned char uw_door_state_current_level(void);
+/* Copy persistence row (128 bytes) for the active level into `dst`. */
+void uw_door_state_copy_persist_for_active_level(unsigned char *dst,
+                                                  unsigned short dst_size);
+
 #endif /* UW_DOOR_STATE_H */

@@ -104,6 +104,14 @@ static u8          s_link_suby       = 0u;       /* ALTTP per-axis sub-pixel Y *
  * spec rather than pretending it enforces both halves. */
 static u8          s_underground_exit_type = 0u;
 
+/* Task 5.5: per-touch latch for the state-mirror diff harness. */
+static unsigned char s_last_touch_dir       = 0xFFu;
+static unsigned char s_last_touch_result    = 0xFFu;
+static unsigned char s_last_touch_keys_pre  = 0u;
+static unsigned char s_last_touch_keys_post = 0u;
+static unsigned char s_last_touch_door_type = 0xFFu;
+static unsigned char s_uw_shutter_trigger_count = 0u;
+
 /* S6.6 transition state machine.
  * BG_A is a 64x64 tile staging plane split into four 32x32 screen slots.
  * The fixed HUD is drawn on Window, so BG_A can scroll as one plane in both
@@ -564,9 +572,45 @@ void roomrom_debug_publish_state_mirror(void)
     }
     p[39] = 0u;                                    /* reserved */
 
+    /* Task 5.5 extension: UW door state at offsets 40..71. */
+    if (s_scene == SCENE_UW) {
+        p[40] = uw_door_state_get_type(DOOR_DIR_E);
+        p[41] = uw_door_state_get_type(DOOR_DIR_W);
+        p[42] = uw_door_state_get_type(DOOR_DIR_S);
+        p[43] = uw_door_state_get_type(DOOR_DIR_N);
+        p[44] = uw_door_state_get_opened();
+        p[45] = uw_door_state_false_timer();
+        p[46] = uw_door_state_has_shutters();
+    } else {
+        p[40] = 0u; p[41] = 0u; p[42] = 0u; p[43] = 0u;
+        p[44] = 0u; p[45] = 0u; p[46] = 0u;
+    }
+    p[47] = s_uw_shutter_trigger_count;
+    p[48] = s_link_keys;
+    p[49] = s_last_touch_keys_pre;
+    p[50] = s_last_touch_keys_post;
+    p[51] = s_last_touch_dir;
+    p[52] = s_last_touch_result;
+    p[53] = s_last_touch_door_type;
+    {
+        unsigned char i;
+        for (i = 54u; i < 72u; i++) p[i] = 0u;  /* reserved */
+    }
+
     /* Task 5.4: also publish the 32x22 OW raw-tile cache to $FF7400 so
      * Lua probes can scan for warp tiles without per-cell calls. */
     roomrom_ow_room_render_publish_cache();
+
+    /* Task 5.5: publish UW persistence table at $FF76D0 (256 B). */
+    roomrom_debug_publish_uw_persist();
+}
+
+/* Task 5.5: copy active-level persistence row to probe block. */
+void roomrom_debug_publish_uw_persist(void)
+{
+    unsigned char *dst = (unsigned char *)ROOMROM_DEBUG_UW_PERSIST_BASE;
+    uw_door_state_copy_persist_for_active_level(dst,
+        (unsigned short)ROOMROM_DEBUG_UW_PERSIST_BYTES);
 }
 
 static void upload_scene_chr(void)
@@ -605,6 +649,21 @@ static link_dir_t doorway_search_dir(link_dir_t dir)
     return (dir == LINK_DIR_NONE) ? link_face_dir() : dir;
 }
 
+/* Task 5.5: latch wrapper around uw_door_state_touch so the state mirror
+ * captures pre/post key counts + result + door type for the diff harness. */
+static unsigned char link_door_touch_latched(unsigned char dir,
+                                             unsigned char *keys)
+{
+    unsigned char result;
+    s_last_touch_dir       = dir;
+    s_last_touch_keys_pre  = *keys;
+    s_last_touch_door_type = uw_door_state_get_type(dir);
+    result = uw_door_state_touch(dir, keys);
+    s_last_touch_keys_post = *keys;
+    s_last_touch_result    = result;
+    return result;
+}
+
 static unsigned char uw_doorway_passable(link_dir_t dir, short x, short y)
 {
     unsigned char door_dir;
@@ -619,7 +678,7 @@ static unsigned char uw_doorway_passable(link_dir_t dir, short x, short y)
 
     toward = uw_walk_dir_for_door(door_dir);
     if ((unsigned char)dir == toward &&
-        !uw_door_state_touch(door_dir, &s_link_keys)) {
+        !link_door_touch_latched(door_dir, &s_link_keys)) {
         return 0u;
     }
 
@@ -762,7 +821,7 @@ static void edge_load_or_clamp(void)
 
     if (s_link_x < UW_WALK_EDGE_WEST_X) {
         if (col > 0u && (s_scene != SCENE_UW ||
-                uw_door_state_touch(UW_WALK_DOOR_W, &s_link_keys))) {
+                link_door_touch_latched(UW_WALK_DOOR_W, &s_link_keys))) {
             col--;
             if (s_scene == SCENE_UW) {
                 uw_walk_arrival_position(UW_WALK_DOOR_W, &s_link_x, &s_link_y);
@@ -774,7 +833,7 @@ static void edge_load_or_clamp(void)
         } else { s_link_x = UW_WALK_EDGE_WEST_X; }
     } else if (s_link_x > UW_WALK_EDGE_EAST_X) {
         if (col < 15u && (s_scene != SCENE_UW ||
-                uw_door_state_touch(UW_WALK_DOOR_E, &s_link_keys))) {
+                link_door_touch_latched(UW_WALK_DOOR_E, &s_link_keys))) {
             col++;
             if (s_scene == SCENE_UW) {
                 uw_walk_arrival_position(UW_WALK_DOOR_E, &s_link_x, &s_link_y);
@@ -788,7 +847,7 @@ static void edge_load_or_clamp(void)
 
     if (s_link_y < UW_WALK_EDGE_NORTH_Y) {
         if (row > 0u && (s_scene != SCENE_UW ||
-                uw_door_state_touch(UW_WALK_DOOR_N, &s_link_keys))) {
+                link_door_touch_latched(UW_WALK_DOOR_N, &s_link_keys))) {
             row--;
             if (s_scene == SCENE_UW) {
                 uw_walk_arrival_position(UW_WALK_DOOR_N, &s_link_x, &s_link_y);
@@ -800,7 +859,7 @@ static void edge_load_or_clamp(void)
         } else { s_link_y = UW_WALK_EDGE_NORTH_Y; }
     } else if (s_link_y > UW_WALK_EDGE_SOUTH_Y) {
         if (row < 7u && (s_scene != SCENE_UW ||
-                uw_door_state_touch(UW_WALK_DOOR_S, &s_link_keys))) {
+                link_door_touch_latched(UW_WALK_DOOR_S, &s_link_keys))) {
             row++;
             if (s_scene == SCENE_UW) {
                 uw_walk_arrival_position(UW_WALK_DOOR_S, &s_link_x, &s_link_y);
@@ -1049,6 +1108,35 @@ void roomrom_debug_tick(void)
             s_link_suby = 0u;
             s_link_grid_offset = 0;
             s_link_dir = LINK_DIR_NONE;
+            return;
+        }
+
+        /* Task 5.5 debug stubs (UW only): exercise shutter / bombable
+         * door state without combat or bomb projectile.
+         *   A+B+C held + START edge-press → trigger all shutters in
+         *     current UW room (uw_door_state_trigger_shutters). No-op
+         *     outside UW or in rooms without shutters.
+         *   B+Z held + C edge-press → bomb stub: open BOMBABLE door in
+         *     Link's facing direction via uw_door_state_open_by_mask.
+         * Chords pre-empt other handlers; explicit returns skip cave/
+         * scene/variant toggles. */
+        if (s_scene == SCENE_UW && (pressed & BUTTON_START) &&
+            (joy & BUTTON_A) && (joy & BUTTON_B) && (joy & BUTTON_C)) {
+            uw_door_state_trigger_shutters();
+            if (s_uw_shutter_trigger_count < 0xFFu) s_uw_shutter_trigger_count++;
+            return;
+        }
+        if (s_scene == SCENE_UW && (pressed & BUTTON_C) &&
+            (joy & BUTTON_B) && (joy & BUTTON_Z)) {
+            unsigned char dir;
+            switch (s_link_face) {
+                case LINK_FACE_RIGHT: dir = DOOR_DIR_E; break;
+                case LINK_FACE_LEFT:  dir = DOOR_DIR_W; break;
+                case LINK_FACE_UP:    dir = DOOR_DIR_N; break;
+                case LINK_FACE_DOWN:  dir = DOOR_DIR_S; break;
+                default:              dir = DOOR_DIR_S; break;
+            }
+            uw_door_state_open_by_mask((unsigned char)DOOR_DIR_BIT(dir));
             return;
         }
 
