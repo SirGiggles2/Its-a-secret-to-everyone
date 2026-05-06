@@ -103,7 +103,14 @@ static unsigned char s_raw_tiles_stable = 0u;
 /* OW walkable NES tile IDs. Sourced from
  *   reference/aldonunez/Z_07.asm WalkableTiles ($8D,$91,$9C,$AC,$AD,$CC,$D2,$D5,$DF)
  * plus paths/sand/stairs/shore/redux variants observed in s_primary_squares
- * and s_secondary_squares_redux. */
+ * and s_secondary_squares_redux.
+ *
+ * Task 5.4 addition: $F3 (sand). NES OW $37 L1 entrance is metatile (7,4)
+ * sq=$0C with BG tiles [$F3,$24,$F3,$24] — secondary metatile whose
+ * tile_tl=$F3 is the renderer's primary_for_walk key. NES treats $F3 as
+ * walkable (it's the sand path tile); without this, Link is blocked
+ * before ever reaching the entrance. Verified against NES extraction
+ * of LevelBlockOW.dat + RoomLayoutsOW.dat. */
 static unsigned char ow_walkable_primary(unsigned char primary)
 {
     switch (primary) {
@@ -119,6 +126,7 @@ static unsigned char ow_walkable_primary(unsigned char primary)
         case 0xAC: case 0xAD:
         case 0xCC:
         case 0xD2: case 0xD5: case 0xDF:
+        case 0xF3:                          /* NES sand path (Z1 OW) */
             return 1u;
         default:
             return 0u;
@@ -287,10 +295,15 @@ static void write_tile_at(unsigned char src_tile_col, unsigned char src_tile_row
                             (unsigned short)(dst_row_base + dst_tile_row +
                                              ROOMROM_ROOM_FIRST_ROW),
                             tile_word(raw_tile, pal));
+    /* Cache key = SOURCE-room BG tile (0..31, 0..21), not plane dst col.
+     * Plane placement varies by scroll slot, but the warp coordinator
+     * checks tiles in the source-room coordinate space (link_x >> 3,
+     * (link_y - HUD) >> 3). Keying by src_tile_col makes the cache
+     * a logical room snapshot that is independent of slot 0 vs 1. */
     if (s_raw_tile_capture_active &&
-        dst_tile_col < ROOMROM_OW_RAW_TILE_COLS &&
-        dst_tile_row < ROOMROM_OW_RAW_TILE_ROWS) {
-        s_raw_tiles[dst_tile_col][dst_tile_row] = raw_tile;
+        src_tile_col < ROOMROM_OW_RAW_TILE_COLS &&
+        src_tile_row < ROOMROM_OW_RAW_TILE_ROWS) {
+        s_raw_tiles[src_tile_col][src_tile_row] = raw_tile;
     }
 }
 
@@ -432,6 +445,53 @@ unsigned char roomrom_ow_room_render_raw_tile_at(unsigned char tile_col,
 unsigned char roomrom_ow_room_render_is_stable(void)
 {
     return s_raw_tiles_stable;
+}
+
+/* Task 5.4: callers using fill_one_col_at for a full 16-column room
+ * paint (e.g. main.c::render_room_into_slot in load_room) bracket the
+ * loop with begin/mark to declare the cache stable on the active slot.
+ *
+ *   begin: clears cache + stable flag and turns capture on so each
+ *          fill_one_col_at populates the raw-tile cache.
+ *   mark:  turns capture off and asserts stable. */
+void roomrom_ow_room_render_begin_full_fill(void)
+{
+    s_raw_tiles_stable = 0u;
+    s_raw_tile_capture_active = 1u;
+}
+
+void roomrom_ow_room_render_mark_stable(void)
+{
+    s_raw_tile_capture_active = 0u;
+    s_raw_tiles_stable = 1u;
+}
+
+/* Task 5.4 cache export for BizHawk Lua probes.
+ * Layout @ $FF7400:
+ *   off 0..1: magic 'T','C'
+ *   off 2:    cols (32)
+ *   off 3:    rows (22)
+ *   off 4..:  raw tile bytes, column-major: cache[col*22 + row]
+ * Total: 4 + 704 = 708 bytes. */
+#define ROOMROM_OW_RAW_TILE_PROBE_BASE 0x00FF7400UL
+
+void roomrom_ow_room_render_publish_cache(void)
+{
+    volatile unsigned char *p =
+        (volatile unsigned char *)ROOMROM_OW_RAW_TILE_PROBE_BASE;
+    unsigned char col, row;
+
+    p[0] = 0x54u;  /* 'T' */
+    p[1] = 0x43u;  /* 'C' */
+    p[2] = (unsigned char)ROOMROM_OW_RAW_TILE_COLS;
+    p[3] = (unsigned char)ROOMROM_OW_RAW_TILE_ROWS;
+
+    for (col = 0; col < ROOMROM_OW_RAW_TILE_COLS; col++) {
+        for (row = 0; row < ROOMROM_OW_RAW_TILE_ROWS; row++) {
+            p[4u + (unsigned short)col * ROOMROM_OW_RAW_TILE_ROWS + row] =
+                s_raw_tiles[col][row];
+        }
+    }
 }
 
 /* Old monolithic body kept for reference until verified equivalent; now dead. */

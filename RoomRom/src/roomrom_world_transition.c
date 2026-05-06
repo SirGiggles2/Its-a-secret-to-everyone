@@ -133,21 +133,33 @@ static unsigned char detect_warp(unsigned char source_room_id,
         }
     }
 
-    /* Rule 4. */
-    if (((unsigned)link_y & 0x0Fu) != 0x0Du) {
+    /* Rule 4: NES uses ObjY & $0F == $0D, anchored to NES playfield top
+     * Y = $5D (93). RoomRom playfield top = ROOMROM_HUD_ROWS*8 = 56.
+     * Translating the alignment: foot_y = link_y + $0B must land on the
+     * bottom BG row of a metatile in playfield-relative space, which
+     * with PLAYFIELD_TOP_PX = 56 reduces to link_y & 0x0F == 0x05.
+     * Verified against NES OW $37 entrance at metatile (7,4) sq=$0C
+     * (BG tiles F3/24/F3/24): link_y=117 -> foot_y=128 -> playfield BG
+     * row 9 -> $24 tile_bl. NES equivalent ObjY=$9D=157 ($0D & $0F).
+     * Difference 157-117 = 40 = NES_top(93)-RoomRom_top(56)+3 sprite. */
+    if (((unsigned)link_y & 0x0Fu) != 0x05u) {
         return 0u;
     }
 
-    /* Rule 5: query raw-tile cache only if it is stable. Pixel->tile
-     * formula: col = link_x >> 3, row = (link_y - playfield_top) >> 3.
-     * Mirrors NES GetCollidableTileStill sampling at (ObjX, ObjY). */
+    /* Rule 5: query raw-tile cache only if it is stable. NES samples
+     * at foot center = (ObjX, ObjY + $0B); link_walkable_at uses the
+     * same offset, so the warp tile-id check matches the collision
+     * check Link's movement uses to step onto the entrance. */
     if (!roomrom_ow_room_render_is_stable()) {
         return 0u;
     }
-    if (link_y < ROOMROM_WARP_PLAYFIELD_TOP_PX) {
-        return 0u;
+    {
+        short foot_y = (short)(link_y + 0x0B);
+        if (foot_y < ROOMROM_WARP_PLAYFIELD_TOP_PX) {
+            return 0u;
+        }
+        y_in_play = (short)(foot_y - ROOMROM_WARP_PLAYFIELD_TOP_PX);
     }
-    y_in_play = (short)(link_y - ROOMROM_WARP_PLAYFIELD_TOP_PX);
     tile_col = (unsigned char)((link_x >> 3) & 0x1Fu);
     tile_row = (unsigned char)((y_in_play >> 3) & 0x1Fu);
     raw_tile = roomrom_ow_room_render_raw_tile_at(tile_col, tile_row);

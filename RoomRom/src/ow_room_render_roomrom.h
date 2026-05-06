@@ -39,6 +39,25 @@ unsigned char roomrom_ow_room_render_raw_tile_at(unsigned char tile_col,
  * raw_tile_at output for warp-tile detection. */
 unsigned char roomrom_ow_room_render_is_stable(void);
 
+/* Task 5.4: explicit bracket for callers using fill_one_col_at in a
+ * 16-column loop to paint the active slot (e.g. load_room). Wrap the
+ * loop:
+ *
+ *   roomrom_ow_room_render_begin_full_fill();
+ *   for (c = 0; c < 16; c++) roomrom_ow_room_render_fill_one_col_at(...);
+ *   roomrom_ow_room_render_mark_stable();
+ *
+ * Skipping the bracket leaves the cache unstable; callers that paint
+ * scroll-staging slots (where Link is NOT yet) must NOT mark stable. */
+void roomrom_ow_room_render_begin_full_fill(void);
+void roomrom_ow_room_render_mark_stable(void);
+
+/* Task 5.4: copy the 32x22 raw-tile cache to RAM probe block at
+ * 0xFF7400 ('TC' magic). Called by the debug-tick state-mirror
+ * publisher so BizHawk Lua can scan the cache for warp-tile positions
+ * without a per-cell accessor call. */
+void roomrom_ow_room_render_publish_cache(void);
+
 /* S6.5 scroll: render one metatile column of room_id at plane metatile
  * column dst_col (0..15). src_col selects the source room's col layout
  * (palette uses src position so attributes match the source room). Plane

@@ -1,0 +1,179 @@
+# Task 5.4 warp probe — log opened 2026-05-06 14:38:27
+# Mirror base = 0xFF7200, magic 'WP', layout per roomrom_debug_runtime.h
+# Gate D base = 0xFF7300, magic 'GD', layout per probes/metadata_probe.h
+# Drive input manually. Probe logs scene/room/warp transitions.
+--- Gate D — in-ROM metadata probe ---
+  [PASS] ow_meta_attr_b(0x37)                            actual=$0007 expected=$0007
+  [PASS] ow_meta_level_selector(0x37)                    actual=$0004 expected=$0004
+  [PASS] ow_meta_is_level_selector(0x04)                 actual=$0001 expected=$0001
+  [PASS] ow_meta_level_from_selector(0x04)               actual=$0001 expected=$0001
+  [PASS] levelinfo_start_room_for(1,1)  hi=ret lo=dest   actual=$0173 expected=$0173
+  [PASS] levelinfo_start_room_for(2,1)  hi=ret lo=dest_sentinel  actual=$00AA expected=$00AA
+  [PASS] ROOMROM_HUD_ROWS*8 (playfield top px)           actual=$0038 expected=$0038
+--- Gate D overall: PASS ---
+f=    1 UW rm=$73 ( 120, 133) face=0 dir=0 g=+0  foot=$00 mt=( 0, 0) walk_h=0 walk_N=0  warp=0 unsup=0  uw=L1Q1  stable=0  INITIAL
+  save: ver=1 src_rm=$00 uet=$00 (raw=$00) src=(0,0) face=0  dst=L0Q0 rm=$00 face=0
+f=  698 OW rm=$77 ( 120, 157) face=3 dir=4 g=+0  foot=$26 mt=( 7, 7) walk_h=1 walk_N=1  warp=0 unsup=0  uw=L0Q0  stable=1  SCENE UW -> OW | ROOM $73 -> $77 | UW_LVL_QST 1/1 -> 0/0 | FOOT $00->$26 (tile) | METATILE (0,0)->(7,7) walk_h=1 walk_N=1 | WALK_NORTH 0->1
+f=  870 OW rm=$78 ( 126, 157) face=3 dir=0 g=+0  foot=$26 mt=( 7, 7) walk_h=1 walk_N=1  warp=0 unsup=0  uw=L0Q0  stable=1  ROOM $77 -> $78
+f=  903 OW rm=$68 ( 126, 157) face=3 dir=0 g=+0  foot=$26 mt=( 7, 7) walk_h=1 walk_N=1  warp=0 unsup=0  uw=L0Q0  stable=1  ROOM $78 -> $68
+f=  916 OW rm=$58 ( 126, 157) face=3 dir=0 g=+0  foot=$26 mt=( 7, 7) walk_h=1 walk_N=1  warp=0 unsup=0  uw=L0Q0  stable=1  ROOM $68 -> $58
+f=  934 OW rm=$48 ( 126, 157) face=3 dir=0 g=+0  foot=$26 mt=( 7, 7) walk_h=1 walk_N=1  warp=0 unsup=0  uw=L0Q0  stable=1  ROOM $58 -> $48
+f=  968 OW rm=$38 ( 126, 157) face=3 dir=0 g=+0  foot=$26 mt=( 7, 7) walk_h=1 walk_N=1  warp=0 unsup=0  uw=L0Q0  stable=1  ROOM $48 -> $38
+f= 1006 OW rm=$38 ( 126, 155) face=1 dir=0 g=+0  foot=$26 mt=( 7, 6) walk_h=1 walk_N=1  warp=0 unsup=0  uw=L0Q0  stable=1  METATILE (7,7)->(7,6) walk_h=1 walk_N=1
+f= 1016 OW rm=$38 ( 126, 140) face=1 dir=0 g=+0  foot=$26 mt=( 7, 5) walk_h=1 walk_N=1  warp=0 unsup=0  uw=L0Q0  stable=1  METATILE (7,6)->(7,5) walk_h=1 walk_N=1
+f= 1033 OW rm=$38 ( 111, 129) face=2 dir=0 g=+0  foot=$76 mt=( 6, 5) walk_h=1 walk_N=0  warp=0 unsup=0  uw=L0Q0  stable=1  FOOT $26->$76 (tile) | METATILE (7,5)->(6,5) walk_h=1 walk_N=0 | WALK_NORTH 1->0
+f= 1044 OW rm=$38 (  95, 129) face=2 dir=0 g=+0  foot=$76 mt=( 5, 5) walk_h=1 walk_N=0  warp=0 unsup=0  uw=L0Q0  stable=1  METATILE (6,5)->(5,5) walk_h=1 walk_N=0
+f= 1055 OW rm=$38 (  78, 129) face=2 dir=0 g=+0  foot=$76 mt=( 4, 5) walk_h=1 walk_N=0  warp=0 unsup=0  uw=L0Q0  stable=1  METATILE (5,5)->(4,5) walk_h=1 walk_N=0
+f= 1065 OW rm=$38 (  63, 129) face=2 dir=0 g=+0  foot=$76 mt=( 3, 5) walk_h=1 walk_N=0  warp=0 unsup=0  uw=L0Q0  stable=1  METATILE (4,5)->(3,5) walk_h=1 walk_N=0
+f= 1086 OW rm=$38 (  47, 132) face=2 dir=0 g=+0  foot=$76 mt=( 2, 5) walk_h=1 walk_N=0  warp=0 unsup=0  uw=L0Q0  stable=1  METATILE (3,5)->(2,5) walk_h=1 walk_N=0
+f= 1097 OW rm=$38 (  31, 132) face=2 dir=0 g=+0  foot=$76 mt=( 1, 5) walk_h=1 walk_N=0  warp=0 unsup=0  uw=L0Q0  stable=1  METATILE (2,5)->(1,5) walk_h=1 walk_N=0
+f= 1111 OW rm=$38 (  15, 132) face=2 dir=0 g=+0  foot=$76 mt=( 0, 5) walk_h=1 walk_N=0  warp=0 unsup=0  uw=L0Q0  stable=1  METATILE (1,5)->(0,5) walk_h=1 walk_N=0
+f= 1127 OW rm=$38 ( 240, 132) face=2 dir=0 g=+0  foot=$00 mt=(15, 5) walk_h=1 walk_N=0  warp=0 unsup=0  uw=L0Q0  stable=0  FOOT $76->$00 (tile) | METATILE (0,5)->(15,5) walk_h=1 walk_N=0
+f= 1192 OW rm=$37 ( 238, 132) face=2 dir=0 g=+0  foot=$26 mt=(14, 5) walk_h=1 walk_N=0  warp=0 unsup=0  uw=L0Q0  stable=1  ROOM $38 -> $37 | FOOT $00->$26 (tile) | METATILE (15,5)->(14,5) walk_h=1 walk_N=0
+f= 1202 OW rm=$37 ( 223, 132) face=2 dir=0 g=+0  foot=$26 mt=(13, 5) walk_h=1 walk_N=1  warp=0 unsup=0  uw=L0Q0  stable=1  METATILE (14,5)->(13,5) walk_h=1 walk_N=1 | WALK_NORTH 0->1
+f= 1213 OW rm=$37 ( 207, 132) face=2 dir=0 g=+0  foot=$26 mt=(12, 5) walk_h=1 walk_N=1  warp=0 unsup=0  uw=L0Q0  stable=1  METATILE (13,5)->(12,5) walk_h=1 walk_N=1
+f= 1224 OW rm=$37 ( 190, 132) face=2 dir=0 g=+0  foot=$26 mt=(11, 5) walk_h=1 walk_N=0  warp=0 unsup=0  uw=L0Q0  stable=1  METATILE (12,5)->(11,5) walk_h=1 walk_N=0 | WALK_NORTH 1->0
+f= 1234 OW rm=$37 ( 175, 132) face=2 dir=0 g=+0  foot=$26 mt=(10, 5) walk_h=1 walk_N=1  warp=0 unsup=0  uw=L0Q0  stable=1  METATILE (11,5)->(10,5) walk_h=1 walk_N=1 | WALK_NORTH 0->1
+f= 1248 OW rm=$37 ( 159, 132) face=2 dir=0 g=+0  foot=$26 mt=( 9, 5) walk_h=1 walk_N=1  warp=0 unsup=0  uw=L0Q0  stable=1  METATILE (10,5)->(9,5) walk_h=1 walk_N=1
+f= 1278 OW rm=$37 ( 143, 133) face=2 dir=0 g=+0  foot=$26 mt=( 8, 5) walk_h=1 walk_N=1  warp=0 unsup=0  uw=L0Q0  stable=1  METATILE (9,5)->(8,5) walk_h=1 walk_N=1
+f= 1286 OW rm=$37 ( 135, 141) face=2 dir=0 g=+0  foot=$26 mt=( 8, 6) walk_h=1 walk_N=1  warp=0 unsup=0  uw=L0Q0  stable=1  METATILE (8,5)->(8,6) walk_h=1 walk_N=1
+f= 1294 OW rm=$37 ( 127, 149) face=2 dir=0 g=+0  foot=$26 mt=( 7, 6) walk_h=1 walk_N=1  warp=0 unsup=0  uw=L0Q0  stable=1  METATILE (8,6)->(7,6) walk_h=1 walk_N=1
+f= 1302 OW rm=$37 ( 119, 157) face=2 dir=0 g=+0  foot=$26 mt=( 7, 7) walk_h=1 walk_N=1  warp=0 unsup=0  uw=L0Q0  stable=1  METATILE (7,6)->(7,7) walk_h=1 walk_N=1
+f= 1310 OW rm=$37 ( 111, 165) face=2 dir=0 g=+0  foot=$26 mt=( 6, 7) walk_h=1 walk_N=1  warp=0 unsup=0  uw=L0Q0  stable=1  METATILE (7,7)->(6,7) walk_h=1 walk_N=1
+f= 1373 OW rm=$37 ( 110, 155) face=1 dir=2 g=-3  foot=$26 mt=( 6, 6) walk_h=1 walk_N=1  warp=0 unsup=0  uw=L0Q0  stable=1  METATILE (6,7)->(6,6) walk_h=1 walk_N=1
+f= 1385 OW rm=$37 ( 110, 139) face=1 dir=2 g=-3  foot=$26 mt=( 6, 5) walk_h=1 walk_N=1  warp=0 unsup=0  uw=L0Q0  stable=1  METATILE (6,6)->(6,5) walk_h=1 walk_N=1
+f= 1397 OW rm=$37 ( 110, 123) face=1 dir=2 g=-3  foot=$AF mt=( 6, 4) walk_h=1 walk_N=1  warp=0 unsup=0  uw=L0Q0  stable=1  FOOT $26->$AF (tile) | METATILE (6,5)->(6,4) walk_h=1 walk_N=1
+f= 1403 OW rm=$37 ( 110, 115) face=1 dir=2 g=-3  foot=$AE mt=( 6, 4) walk_h=1 walk_N=0  warp=0 unsup=0  uw=L0Q0  stable=1  FOOT $AF->$AE (tile) | WALK_NORTH 1->0
+f= 1442 OW rm=$37 ( 110, 118) face=0 dir=1 g=+0  foot=$AF mt=( 6, 4) walk_h=1 walk_N=1  warp=0 unsup=0  uw=L0Q0  stable=1  FOOT $AE->$AF (tile) | WALK_NORTH 0->1
+f= 1447 OW rm=$37 ( 110, 125) face=0 dir=1 g=+7  foot=$26 mt=( 6, 5) walk_h=1 walk_N=1  warp=0 unsup=0  uw=L0Q0  stable=1  FOOT $AF->$26 (tile) | METATILE (6,4)->(6,5) walk_h=1 walk_N=1
+f= 1465 OW rm=$37 ( 113, 134) face=3 dir=4 g=+3  foot=$26 mt=( 7, 5) walk_h=1 walk_N=1  warp=0 unsup=0  uw=L0Q0  stable=1  METATILE (6,5)->(7,5) walk_h=1 walk_N=1
+f= 1519 OW rm=$37 ( 110, 134) face=2 dir=3 g=+0  foot=$26 mt=( 6, 5) walk_h=1 walk_N=1  warp=0 unsup=0  uw=L0Q0  stable=1  METATILE (7,5)->(6,5) walk_h=1 walk_N=1
+f= 1527 OW rm=$37 ( 110, 123) face=1 dir=2 g=-3  foot=$AF mt=( 6, 4) walk_h=1 walk_N=1  warp=0 unsup=0  uw=L0Q0  stable=1  FOOT $26->$AF (tile) | METATILE (6,5)->(6,4) walk_h=1 walk_N=1
+f= 1533 OW rm=$37 ( 110, 115) face=1 dir=2 g=-3  foot=$AE mt=( 6, 4) walk_h=1 walk_N=0  warp=0 unsup=0  uw=L0Q0  stable=1  FOOT $AF->$AE (tile) | WALK_NORTH 1->0
+f= 1561 OW rm=$37 ( 112, 110) face=3 dir=4 g=+2  foot=$F3 mt=( 7, 4) walk_h=1 walk_N=0  warp=0 unsup=0  uw=L0Q0  stable=1  FOOT $AE->$F3 (tile) | METATILE (6,4)->(7,4) walk_h=1 walk_N=0
+f= 1588 OW rm=$37 ( 118, 117) face=0 dir=1 g=+7  foot=$24 mt=( 7, 4) walk_h=1 walk_N=1  warp=0 unsup=0  uw=L0Q0  stable=1  FOOT $F3->$24 (WARP_TILE) | WALK_NORTH 0->1
+f= 1594 OW rm=$37 ( 118, 125) face=0 dir=1 g=+7  foot=$26 mt=( 7, 5) walk_h=1 walk_N=1  warp=0 unsup=0  uw=L0Q0  stable=1  FOOT $24->$26 (tile) | METATILE (7,4)->(7,5) walk_h=1 walk_N=1
+f= 1609 OW rm=$37 ( 118, 141) face=0 dir=1 g=+7  foot=$26 mt=( 7, 6) walk_h=1 walk_N=1  warp=0 unsup=0  uw=L0Q0  stable=1  METATILE (7,5)->(7,6) walk_h=1 walk_N=1
+f= 1634 OW rm=$37 ( 110, 142) face=2 dir=3 g=+0  foot=$26 mt=( 6, 6) walk_h=1 walk_N=1  warp=0 unsup=0  uw=L0Q0  stable=1  METATILE (7,6)->(6,6) walk_h=1 walk_N=1
+f= 1636 OW rm=$37 ( 110, 139) face=1 dir=2 g=-3  foot=$26 mt=( 6, 5) walk_h=1 walk_N=1  warp=0 unsup=0  uw=L0Q0  stable=1  METATILE (6,6)->(6,5) walk_h=1 walk_N=1
+f= 1648 OW rm=$37 ( 110, 123) face=1 dir=2 g=-3  foot=$AF mt=( 6, 4) walk_h=1 walk_N=1  warp=0 unsup=0  uw=L0Q0  stable=1  FOOT $26->$AF (tile) | METATILE (6,5)->(6,4) walk_h=1 walk_N=1
+f= 1654 OW rm=$37 ( 110, 115) face=1 dir=2 g=-3  foot=$AE mt=( 6, 4) walk_h=1 walk_N=0  warp=0 unsup=0  uw=L0Q0  stable=1  FOOT $AF->$AE (tile) | WALK_NORTH 1->0
+f= 1682 OW rm=$37 ( 110, 118) face=0 dir=1 g=+0  foot=$AF mt=( 6, 4) walk_h=1 walk_N=1  warp=0 unsup=0  uw=L0Q0  stable=1  FOOT $AE->$AF (tile) | WALK_NORTH 0->1
+f= 1687 OW rm=$37 ( 110, 125) face=0 dir=1 g=+7  foot=$26 mt=( 6, 5) walk_h=1 walk_N=1  warp=0 unsup=0  uw=L0Q0  stable=1  FOOT $AF->$26 (tile) | METATILE (6,4)->(6,5) walk_h=1 walk_N=1
+f= 1699 OW rm=$37 ( 110, 141) face=0 dir=1 g=+7  foot=$26 mt=( 6, 6) walk_h=1 walk_N=1  warp=0 unsup=0  uw=L0Q0  stable=1  METATILE (6,5)->(6,6) walk_h=1 walk_N=1
+f= 1711 OW rm=$37 ( 110, 157) face=0 dir=1 g=+7  foot=$26 mt=( 6, 7) walk_h=1 walk_N=1  warp=0 unsup=0  uw=L0Q0  stable=1  METATILE (6,6)->(6,7) walk_h=1 walk_N=1
+f= 1723 OW rm=$37 ( 110, 173) face=0 dir=1 g=+7  foot=$26 mt=( 6, 8) walk_h=1 walk_N=1  warp=0 unsup=0  uw=L0Q0  stable=1  METATILE (6,7)->(6,8) walk_h=1 walk_N=1
+f= 1741 OW rm=$37 (  95, 182) face=2 dir=3 g=-7  foot=$26 mt=( 5, 8) walk_h=1 walk_N=1  warp=0 unsup=0  uw=L0Q0  stable=1  METATILE (6,8)->(5,8) walk_h=1 walk_N=1
+f= 1758 OW rm=$37 (  79, 182) face=2 dir=3 g=-7  foot=$26 mt=( 4, 8) walk_h=1 walk_N=1  warp=0 unsup=0  uw=L0Q0  stable=1  METATILE (5,8)->(4,8) walk_h=1 walk_N=1
+f= 1760 OW rm=$37 (  80, 182) face=3 dir=4 g=+2  foot=$26 mt=( 5, 8) walk_h=1 walk_N=1  warp=0 unsup=0  uw=L0Q0  stable=1  METATILE (4,8)->(5,8) walk_h=1 walk_N=1
+f= 1772 OW rm=$37 (  97, 182) face=3 dir=4 g=+3  foot=$26 mt=( 6, 8) walk_h=1 walk_N=1  warp=0 unsup=0  uw=L0Q0  stable=1  METATILE (5,8)->(6,8) walk_h=1 walk_N=1
+f= 1795 OW rm=$37 ( 110, 171) face=1 dir=2 g=-3  foot=$26 mt=( 6, 7) walk_h=1 walk_N=1  warp=0 unsup=0  uw=L0Q0  stable=1  METATILE (6,8)->(6,7) walk_h=1 walk_N=1
+f= 1807 OW rm=$37 ( 110, 155) face=1 dir=2 g=-3  foot=$26 mt=( 6, 6) walk_h=1 walk_N=1  warp=0 unsup=0  uw=L0Q0  stable=1  METATILE (6,7)->(6,6) walk_h=1 walk_N=1
+f= 1819 OW rm=$37 ( 110, 139) face=1 dir=2 g=-3  foot=$26 mt=( 6, 5) walk_h=1 walk_N=1  warp=0 unsup=0  uw=L0Q0  stable=1  METATILE (6,6)->(6,5) walk_h=1 walk_N=1
+f= 1831 OW rm=$37 ( 110, 123) face=1 dir=2 g=-3  foot=$AF mt=( 6, 4) walk_h=1 walk_N=1  warp=0 unsup=0  uw=L0Q0  stable=1  FOOT $26->$AF (tile) | METATILE (6,5)->(6,4) walk_h=1 walk_N=1
+f= 1837 OW rm=$37 ( 110, 115) face=1 dir=2 g=-3  foot=$AE mt=( 6, 4) walk_h=1 walk_N=0  warp=0 unsup=0  uw=L0Q0  stable=1  FOOT $AF->$AE (tile) | WALK_NORTH 1->0
+f= 1867 OW rm=$37 ( 112, 110) face=3 dir=4 g=+2  foot=$F3 mt=( 7, 4) walk_h=1 walk_N=0  warp=0 unsup=0  uw=L0Q0  stable=1  FOOT $AE->$F3 (tile) | METATILE (6,4)->(7,4) walk_h=1 walk_N=0
+f= 1921 OW rm=$37 ( 118, 117) face=0 dir=1 g=+7  foot=$24 mt=( 7, 4) walk_h=1 walk_N=1  warp=0 unsup=0  uw=L0Q0  stable=1  FOOT $F3->$24 (WARP_TILE) | WALK_NORTH 0->1
+f= 2001 OW rm=$37 ( 118, 125) face=0 dir=1 g=+7  foot=$26 mt=( 7, 5) walk_h=1 walk_N=1  warp=0 unsup=0  uw=L0Q0  stable=1  FOOT $24->$26 (tile) | METATILE (7,4)->(7,5) walk_h=1 walk_N=1
+f= 2045 OW rm=$37 ( 110, 126) face=2 dir=3 g=+0  foot=$26 mt=( 6, 5) walk_h=1 walk_N=1  warp=0 unsup=0  uw=L0Q0  stable=1  METATILE (7,5)->(6,5) walk_h=1 walk_N=1
+f= 2047 OW rm=$37 ( 110, 123) face=1 dir=2 g=-3  foot=$AF mt=( 6, 4) walk_h=1 walk_N=1  warp=0 unsup=0  uw=L0Q0  stable=1  FOOT $26->$AF (tile) | METATILE (6,5)->(6,4) walk_h=1 walk_N=1
+f= 2088 OW rm=$37 ( 110, 126) face=0 dir=1 g=+0  foot=$26 mt=( 6, 5) walk_h=1 walk_N=1  warp=0 unsup=0  uw=L0Q0  stable=1  FOOT $AF->$26 (tile) | METATILE (6,4)->(6,5) walk_h=1 walk_N=1
+f= 2107 OW rm=$37 ( 113, 134) face=3 dir=4 g=+3  foot=$26 mt=( 7, 5) walk_h=1 walk_N=1  warp=0 unsup=0  uw=L0Q0  stable=1  METATILE (6,5)->(7,5) walk_h=1 walk_N=1
+f= 2142 OW rm=$37 ( 118, 123) face=1 dir=2 g=-3  foot=$24 mt=( 7, 4) walk_h=1 walk_N=1  warp=0 unsup=0  uw=L0Q0  stable=1  FOOT $26->$24 (WARP_TILE) | METATILE (7,5)->(7,4) walk_h=1 walk_N=1
+f= 2173 OW rm=$37 ( 118, 115) face=1 dir=2 g=-3  foot=$F3 mt=( 7, 4) walk_h=1 walk_N=0  warp=0 unsup=0  uw=L0Q0  stable=1  FOOT $24->$F3 (tile) | WALK_NORTH 1->0
+f= 2201 OW rm=$37 ( 118, 118) face=0 dir=1 g=+0  foot=$24 mt=( 7, 4) walk_h=1 walk_N=1  warp=0 unsup=0  uw=L0Q0  stable=1  FOOT $F3->$24 (WARP_TILE) | WALK_NORTH 0->1
+f= 2206 OW rm=$37 ( 118, 125) face=0 dir=1 g=+7  foot=$26 mt=( 7, 5) walk_h=1 walk_N=1  warp=0 unsup=0  uw=L0Q0  stable=1  FOOT $24->$26 (tile) | METATILE (7,4)->(7,5) walk_h=1 walk_N=1
+f= 2218 OW rm=$37 ( 118, 141) face=0 dir=1 g=+7  foot=$26 mt=( 7, 6) walk_h=1 walk_N=1  warp=0 unsup=0  uw=L0Q0  stable=1  METATILE (7,5)->(7,6) walk_h=1 walk_N=1
+f= 2230 OW rm=$37 ( 118, 157) face=0 dir=1 g=+7  foot=$26 mt=( 7, 7) walk_h=1 walk_N=1  warp=0 unsup=0  uw=L0Q0  stable=1  METATILE (7,6)->(7,7) walk_h=1 walk_N=1
+f= 2242 OW rm=$37 ( 118, 173) face=0 dir=1 g=+7  foot=$26 mt=( 7, 8) walk_h=1 walk_N=1  warp=0 unsup=0  uw=L0Q0  stable=1  METATILE (7,7)->(7,8) walk_h=1 walk_N=1
+f= 2265 OW rm=$37 ( 129, 182) face=3 dir=4 g=+3  foot=$26 mt=( 8, 8) walk_h=1 walk_N=1  warp=0 unsup=0  uw=L0Q0  stable=1  METATILE (7,8)->(8,8) walk_h=1 walk_N=1
+f= 2277 OW rm=$37 ( 145, 182) face=3 dir=4 g=+3  foot=$26 mt=( 9, 8) walk_h=1 walk_N=1  warp=0 unsup=0  uw=L0Q0  stable=1  METATILE (8,8)->(9,8) walk_h=1 walk_N=1
+f= 2286 OW rm=$37 ( 142, 182) face=2 dir=3 g=+0  foot=$26 mt=( 8, 8) walk_h=1 walk_N=1  warp=0 unsup=0  uw=L0Q0  stable=1  METATILE (9,8)->(8,8) walk_h=1 walk_N=1
+f= 2297 OW rm=$37 ( 127, 182) face=2 dir=3 g=-7  foot=$26 mt=( 7, 8) walk_h=1 walk_N=1  warp=0 unsup=0  uw=L0Q0  stable=1  METATILE (8,8)->(7,8) walk_h=1 walk_N=1
+f= 2309 OW rm=$37 ( 111, 182) face=2 dir=3 g=-7  foot=$26 mt=( 6, 8) walk_h=1 walk_N=1  warp=0 unsup=0  uw=L0Q0  stable=1  METATILE (7,8)->(6,8) walk_h=1 walk_N=1
+f= 2318 OW rm=$37 ( 110, 171) face=1 dir=2 g=-3  foot=$26 mt=( 6, 7) walk_h=1 walk_N=1  warp=0 unsup=0  uw=L0Q0  stable=1  METATILE (6,8)->(6,7) walk_h=1 walk_N=1
+f= 2330 OW rm=$37 ( 110, 155) face=1 dir=2 g=-3  foot=$26 mt=( 6, 6) walk_h=1 walk_N=1  warp=0 unsup=0  uw=L0Q0  stable=1  METATILE (6,7)->(6,6) walk_h=1 walk_N=1
+f= 2342 OW rm=$37 ( 110, 139) face=1 dir=2 g=-3  foot=$26 mt=( 6, 5) walk_h=1 walk_N=1  warp=0 unsup=0  uw=L0Q0  stable=1  METATILE (6,6)->(6,5) walk_h=1 walk_N=1
+f= 2354 OW rm=$37 ( 110, 123) face=1 dir=2 g=-3  foot=$AF mt=( 6, 4) walk_h=1 walk_N=1  warp=0 unsup=0  uw=L0Q0  stable=1  FOOT $26->$AF (tile) | METATILE (6,5)->(6,4) walk_h=1 walk_N=1
+f= 2360 OW rm=$37 ( 110, 115) face=1 dir=2 g=-3  foot=$AE mt=( 6, 4) walk_h=1 walk_N=0  warp=0 unsup=0  uw=L0Q0  stable=1  FOOT $AF->$AE (tile) | WALK_NORTH 1->0
+f= 2377 OW rm=$37 ( 112, 110) face=3 dir=4 g=+2  foot=$F3 mt=( 7, 4) walk_h=1 walk_N=0  warp=0 unsup=0  uw=L0Q0  stable=1  FOOT $AE->$F3 (tile) | METATILE (6,4)->(7,4) walk_h=1 walk_N=0
+f= 2405 OW rm=$37 ( 118, 117) face=0 dir=1 g=+7  foot=$24 mt=( 7, 4) walk_h=1 walk_N=1  warp=0 unsup=0  uw=L0Q0  stable=1  FOOT $F3->$24 (WARP_TILE) | WALK_NORTH 0->1
+f= 2416 OW rm=$37 ( 118, 125) face=0 dir=1 g=+7  foot=$26 mt=( 7, 5) walk_h=1 walk_N=1  warp=0 unsup=0  uw=L0Q0  stable=1  FOOT $24->$26 (tile) | METATILE (7,4)->(7,5) walk_h=1 walk_N=1
+f= 2422 OW rm=$37 ( 118, 124) face=1 dir=2 g=-2  foot=$24 mt=( 7, 4) walk_h=1 walk_N=1  warp=0 unsup=0  uw=L0Q0  stable=1  FOOT $26->$24 (WARP_TILE) | METATILE (7,5)->(7,4) walk_h=1 walk_N=1
+f= 2428 OW rm=$37 ( 118, 115) face=1 dir=2 g=-3  foot=$F3 mt=( 7, 4) walk_h=1 walk_N=0  warp=0 unsup=0  uw=L0Q0  stable=1  FOOT $24->$F3 (tile) | WALK_NORTH 1->0
+f= 2457 OW rm=$37 ( 118, 118) face=0 dir=1 g=+0  foot=$24 mt=( 7, 4) walk_h=1 walk_N=1  warp=0 unsup=0  uw=L0Q0  stable=1  FOOT $F3->$24 (WARP_TILE) | WALK_NORTH 0->1
+f= 2462 OW rm=$37 ( 118, 125) face=0 dir=1 g=+7  foot=$26 mt=( 7, 5) walk_h=1 walk_N=1  warp=0 unsup=0  uw=L0Q0  stable=1  FOOT $24->$26 (tile) | METATILE (7,4)->(7,5) walk_h=1 walk_N=1
+f= 2477 OW rm=$37 ( 129, 134) face=3 dir=4 g=+3  foot=$26 mt=( 8, 5) walk_h=1 walk_N=1  warp=0 unsup=0  uw=L0Q0  stable=1  METATILE (7,5)->(8,5) walk_h=1 walk_N=1
+f= 2486 OW rm=$37 ( 134, 141) face=0 dir=1 g=+7  foot=$26 mt=( 8, 6) walk_h=1 walk_N=1  warp=0 unsup=0  uw=L0Q0  stable=1  METATILE (8,5)->(8,6) walk_h=1 walk_N=1
+f= 2498 OW rm=$37 ( 126, 150) face=2 dir=3 g=+0  foot=$26 mt=( 7, 6) walk_h=1 walk_N=1  warp=0 unsup=0  uw=L0Q0  stable=1  METATILE (8,6)->(7,6) walk_h=1 walk_N=1
+f= 2509 OW rm=$37 ( 111, 150) face=2 dir=3 g=-7  foot=$26 mt=( 6, 6) walk_h=1 walk_N=1  warp=0 unsup=0  uw=L0Q0  stable=1  METATILE (7,6)->(6,6) walk_h=1 walk_N=1
+f= 2518 OW rm=$37 ( 110, 139) face=1 dir=2 g=-3  foot=$26 mt=( 6, 5) walk_h=1 walk_N=1  warp=0 unsup=0  uw=L0Q0  stable=1  METATILE (6,6)->(6,5) walk_h=1 walk_N=1
+f= 2544 OW rm=$37 ( 110, 123) face=1 dir=2 g=-3  foot=$AF mt=( 6, 4) walk_h=1 walk_N=1  warp=0 unsup=0  uw=L0Q0  stable=1  FOOT $26->$AF (tile) | METATILE (6,5)->(6,4) walk_h=1 walk_N=1
+f= 2623 OW rm=$37 ( 111, 125) face=0 dir=0 g=+0  foot=$26 mt=( 6, 5) walk_h=1 walk_N=1  warp=0 unsup=0  uw=L0Q0  stable=1  FOOT $AF->$26 (tile) | METATILE (6,4)->(6,5) walk_h=1 walk_N=1
+f= 2634 OW rm=$37 ( 111, 141) face=0 dir=0 g=+0  foot=$26 mt=( 6, 6) walk_h=1 walk_N=1  warp=0 unsup=0  uw=L0Q0  stable=1  METATILE (6,5)->(6,6) walk_h=1 walk_N=1
+f= 2645 OW rm=$37 ( 111, 158) face=0 dir=0 g=+0  foot=$26 mt=( 6, 7) walk_h=1 walk_N=1  warp=0 unsup=0  uw=L0Q0  stable=1  METATILE (6,6)->(6,7) walk_h=1 walk_N=1
+f= 2655 OW rm=$37 ( 111, 173) face=0 dir=0 g=+0  foot=$26 mt=( 6, 8) walk_h=1 walk_N=1  warp=0 unsup=0  uw=L0Q0  stable=1  METATILE (6,7)->(6,8) walk_h=1 walk_N=1
+f= 2686 OW rm=$37 ( 113, 177) face=3 dir=0 g=+0  foot=$26 mt=( 7, 8) walk_h=1 walk_N=1  warp=0 unsup=0  uw=L0Q0  stable=1  METATILE (6,8)->(7,8) walk_h=1 walk_N=1
+f= 2716 OW rm=$37 ( 111, 177) face=2 dir=0 g=+0  foot=$26 mt=( 6, 8) walk_h=1 walk_N=1  warp=0 unsup=0  uw=L0Q0  stable=1  METATILE (7,8)->(6,8) walk_h=1 walk_N=1
+f= 2749 OW rm=$37 ( 110, 171) face=1 dir=0 g=+0  foot=$26 mt=( 6, 7) walk_h=1 walk_N=1  warp=0 unsup=0  uw=L0Q0  stable=1  METATILE (6,8)->(6,7) walk_h=1 walk_N=1
+f= 2759 OW rm=$37 ( 110, 156) face=1 dir=0 g=+0  foot=$26 mt=( 6, 6) walk_h=1 walk_N=1  warp=0 unsup=0  uw=L0Q0  stable=1  METATILE (6,7)->(6,6) walk_h=1 walk_N=1
+f= 2761 OW rm=$37 ( 112, 154) face=3 dir=0 g=+0  foot=$26 mt=( 7, 6) walk_h=1 walk_N=1  warp=0 unsup=0  uw=L0Q0  stable=1  METATILE (6,6)->(7,6) walk_h=1 walk_N=1
+f= 2793 OW rm=$37 ( 115, 140) face=2 dir=0 g=+0  foot=$26 mt=( 7, 5) walk_h=1 walk_N=1  warp=0 unsup=0  uw=L0Q0  stable=1  METATILE (7,6)->(7,5) walk_h=1 walk_N=1
+f= 2836 OW rm=$37 ( 114, 124) face=1 dir=2 g=-4  foot=$24 mt=( 7, 4) walk_h=1 walk_N=1  warp=0 unsup=0  uw=L0Q0  stable=1  FOOT $26->$24 (WARP_TILE) | METATILE (7,5)->(7,4) walk_h=1 walk_N=1
+f= 2842 OW rm=$37 ( 114, 116) face=1 dir=2 g=-4  foot=$F3 mt=( 7, 4) walk_h=1 walk_N=0  warp=0 unsup=0  uw=L0Q0  stable=1  FOOT $24->$F3 (tile) | WALK_NORTH 1->0
+f= 2871 OW rm=$37 ( 114, 117) face=0 dir=1 g=+5  foot=$24 mt=( 7, 4) walk_h=1 walk_N=1  warp=0 unsup=0  uw=L0Q0  stable=1  FOOT $F3->$24 (WARP_TILE) | WALK_NORTH 0->1
+f= 2877 OW rm=$37 ( 114, 126) face=0 dir=1 g=+6  foot=$26 mt=( 7, 5) walk_h=1 walk_N=1  warp=0 unsup=0  uw=L0Q0  stable=1  FOOT $24->$26 (tile) | METATILE (7,4)->(7,5) walk_h=1 walk_N=1
+f= 2889 OW rm=$37 ( 114, 142) face=0 dir=1 g=+6  foot=$26 mt=( 7, 6) walk_h=1 walk_N=1  warp=0 unsup=0  uw=L0Q0  stable=1  METATILE (7,5)->(7,6) walk_h=1 walk_N=1
+f= 2901 OW rm=$37 ( 114, 158) face=0 dir=1 g=+6  foot=$26 mt=( 7, 7) walk_h=1 walk_N=1  warp=0 unsup=0  uw=L0Q0  stable=1  METATILE (7,6)->(7,7) walk_h=1 walk_N=1
+f= 2936 OW rm=$37 ( 111, 160) face=2 dir=3 g=-3  foot=$26 mt=( 6, 7) walk_h=1 walk_N=1  warp=0 unsup=0  uw=L0Q0  stable=1  METATILE (7,7)->(6,7) walk_h=1 walk_N=1
+f= 2942 OW rm=$37 ( 106, 156) face=1 dir=2 g=-4  foot=$26 mt=( 6, 6) walk_h=1 walk_N=1  warp=0 unsup=0  uw=L0Q0  stable=1  METATILE (6,7)->(6,6) walk_h=1 walk_N=1
+f= 2954 OW rm=$37 ( 106, 140) face=1 dir=2 g=-4  foot=$26 mt=( 6, 5) walk_h=1 walk_N=1  warp=0 unsup=0  uw=L0Q0  stable=1  METATILE (6,6)->(6,5) walk_h=1 walk_N=1
+f= 2981 OW rm=$37 ( 106, 142) face=0 dir=1 g=+6  foot=$26 mt=( 6, 6) walk_h=1 walk_N=1  warp=0 unsup=0  uw=L0Q0  stable=1  METATILE (6,5)->(6,6) walk_h=1 walk_N=1
+f= 2993 OW rm=$37 ( 106, 158) face=0 dir=1 g=+6  foot=$26 mt=( 6, 7) walk_h=1 walk_N=1  warp=0 unsup=0  uw=L0Q0  stable=1  METATILE (6,6)->(6,7) walk_h=1 walk_N=1
+f= 3006 OW rm=$37 ( 106, 174) face=0 dir=0 g=+0  foot=$26 mt=( 6, 8) walk_h=1 walk_N=1  warp=0 unsup=0  uw=L0Q0  stable=1  METATILE (6,7)->(6,8) walk_h=1 walk_N=1
+f= 3017 OW rm=$37 ( 112, 180) face=3 dir=0 g=+0  foot=$26 mt=( 7, 8) walk_h=1 walk_N=1  warp=0 unsup=0  uw=L0Q0  stable=1  METATILE (6,8)->(7,8) walk_h=1 walk_N=1
+f= 3030 OW rm=$37 ( 127, 172) face=3 dir=0 g=+0  foot=$26 mt=( 7, 7) walk_h=1 walk_N=1  warp=0 unsup=0  uw=L0Q0  stable=1  METATILE (7,8)->(7,7) walk_h=1 walk_N=1
+f= 3031 OW rm=$37 ( 128, 171) face=3 dir=0 g=+0  foot=$26 mt=( 8, 7) walk_h=1 walk_N=1  warp=0 unsup=0  uw=L0Q0  stable=1  METATILE (7,7)->(8,7) walk_h=1 walk_N=1
+f= 3042 OW rm=$37 ( 130, 155) face=1 dir=0 g=+0  foot=$26 mt=( 8, 6) walk_h=1 walk_N=1  warp=0 unsup=0  uw=L0Q0  stable=1  METATILE (8,7)->(8,6) walk_h=1 walk_N=1
+f= 3052 OW rm=$37 ( 130, 140) face=1 dir=0 g=+0  foot=$26 mt=( 8, 5) walk_h=1 walk_N=1  warp=0 unsup=0  uw=L0Q0  stable=1  METATILE (8,6)->(8,5) walk_h=1 walk_N=1
+f= 3070 OW rm=$37 ( 145, 133) face=3 dir=0 g=+0  foot=$26 mt=( 9, 5) walk_h=1 walk_N=1  warp=0 unsup=0  uw=L0Q0  stable=1  METATILE (8,5)->(9,5) walk_h=1 walk_N=1
+f= 3080 OW rm=$37 ( 160, 133) face=3 dir=0 g=+0  foot=$26 mt=(10, 5) walk_h=1 walk_N=1  warp=0 unsup=0  uw=L0Q0  stable=1  METATILE (9,5)->(10,5) walk_h=1 walk_N=1
+f= 3092 OW rm=$37 ( 176, 133) face=3 dir=4 g=+3  foot=$26 mt=(11, 5) walk_h=1 walk_N=1  warp=0 unsup=0  uw=L0Q0  stable=1  METATILE (10,5)->(11,5) walk_h=1 walk_N=1
+f= 3104 OW rm=$37 ( 192, 133) face=3 dir=4 g=+3  foot=$26 mt=(12, 5) walk_h=1 walk_N=1  warp=0 unsup=0  uw=L0Q0  stable=1  METATILE (11,5)->(12,5) walk_h=1 walk_N=1
+f= 3116 OW rm=$37 ( 208, 133) face=3 dir=4 g=+3  foot=$26 mt=(13, 5) walk_h=1 walk_N=1  warp=0 unsup=0  uw=L0Q0  stable=1  METATILE (12,5)->(13,5) walk_h=1 walk_N=1
+f= 3128 OW rm=$37 ( 224, 133) face=3 dir=4 g=+3  foot=$26 mt=(14, 5) walk_h=1 walk_N=1  warp=0 unsup=0  uw=L0Q0  stable=1  METATILE (13,5)->(14,5) walk_h=1 walk_N=1
+f= 3140 OW rm=$37 ( 240, 133) face=3 dir=4 g=+3  foot=$77 mt=(15, 5) walk_h=1 walk_N=1  warp=0 unsup=0  uw=L0Q0  stable=1  FOOT $26->$77 (tile) | METATILE (14,5)->(15,5) walk_h=1 walk_N=1
+f= 3141 OW rm=$37 (   0, 133) face=3 dir=4 g=+0  foot=$00 mt=( 0, 5) walk_h=1 walk_N=1  warp=0 unsup=0  uw=L0Q0  stable=0  FOOT $77->$00 (tile) | METATILE (15,5)->(0,5) walk_h=1 walk_N=1
+f= 3206 OW rm=$38 (   0, 133) face=3 dir=4 g=+0  foot=$77 mt=( 0, 5) walk_h=1 walk_N=1  warp=0 unsup=0  uw=L0Q0  stable=1  ROOM $37 -> $38 | FOOT $00->$77 (tile)
+f= 3221 OW rm=$38 (  16, 133) face=3 dir=4 g=+0  foot=$77 mt=( 1, 5) walk_h=1 walk_N=1  warp=0 unsup=0  uw=L0Q0  stable=1  METATILE (0,5)->(1,5) walk_h=1 walk_N=1
+f= 3246 OW rm=$38 (  32, 133) face=3 dir=4 g=+0  foot=$77 mt=( 2, 5) walk_h=1 walk_N=1  warp=0 unsup=0  uw=L0Q0  stable=1  METATILE (1,5)->(2,5) walk_h=1 walk_N=1
+f= 3279 OW rm=$38 (  30, 133) face=2 dir=3 g=-2  foot=$77 mt=( 1, 5) walk_h=1 walk_N=1  warp=0 unsup=0  uw=L0Q0  stable=1  METATILE (2,5)->(1,5) walk_h=1 walk_N=1
+f= 3290 OW rm=$38 (  15, 133) face=2 dir=3 g=-1  foot=$77 mt=( 0, 5) walk_h=1 walk_N=1  warp=0 unsup=0  uw=L0Q0  stable=1  METATILE (1,5)->(0,5) walk_h=1 walk_N=1
+f= 3302 OW rm=$38 ( 240, 133) face=2 dir=3 g=+0  foot=$00 mt=(15, 5) walk_h=1 walk_N=1  warp=0 unsup=0  uw=L0Q0  stable=0  FOOT $77->$00 (tile) | METATILE (0,5)->(15,5) walk_h=1 walk_N=1
+f= 3367 OW rm=$37 ( 238, 133) face=2 dir=3 g=-2  foot=$26 mt=(14, 5) walk_h=1 walk_N=1  warp=0 unsup=0  uw=L0Q0  stable=1  ROOM $38 -> $37 | FOOT $00->$26 (tile) | METATILE (15,5)->(14,5) walk_h=1 walk_N=1
+f= 3378 OW rm=$37 ( 223, 133) face=2 dir=3 g=-1  foot=$26 mt=(13, 5) walk_h=1 walk_N=1  warp=0 unsup=0  uw=L0Q0  stable=1  METATILE (14,5)->(13,5) walk_h=1 walk_N=1
+f= 3390 OW rm=$37 ( 207, 133) face=2 dir=3 g=-1  foot=$26 mt=(12, 5) walk_h=1 walk_N=1  warp=0 unsup=0  uw=L0Q0  stable=1  METATILE (13,5)->(12,5) walk_h=1 walk_N=1
+f= 3402 OW rm=$37 ( 191, 133) face=2 dir=3 g=-1  foot=$26 mt=(11, 5) walk_h=1 walk_N=1  warp=0 unsup=0  uw=L0Q0  stable=1  METATILE (12,5)->(11,5) walk_h=1 walk_N=1
+f= 3414 OW rm=$37 ( 175, 133) face=2 dir=3 g=-1  foot=$26 mt=(10, 5) walk_h=1 walk_N=1  warp=0 unsup=0  uw=L0Q0  stable=1  METATILE (11,5)->(10,5) walk_h=1 walk_N=1
+f= 3426 OW rm=$37 ( 159, 133) face=2 dir=3 g=-1  foot=$26 mt=( 9, 5) walk_h=1 walk_N=1  warp=0 unsup=0  uw=L0Q0  stable=1  METATILE (10,5)->(9,5) walk_h=1 walk_N=1
+f= 3438 OW rm=$37 ( 143, 133) face=2 dir=3 g=-1  foot=$26 mt=( 8, 5) walk_h=1 walk_N=1  warp=0 unsup=0  uw=L0Q0  stable=1  METATILE (9,5)->(8,5) walk_h=1 walk_N=1
+f= 3450 OW rm=$37 ( 127, 133) face=2 dir=3 g=-1  foot=$26 mt=( 7, 5) walk_h=1 walk_N=1  warp=0 unsup=0  uw=L0Q0  stable=1  METATILE (8,5)->(7,5) walk_h=1 walk_N=1
+f= 3491 OW rm=$37 ( 112, 124) face=1 dir=2 g=-1  foot=$24 mt=( 7, 4) walk_h=1 walk_N=1  warp=0 unsup=0  uw=L0Q0  stable=1  FOOT $26->$24 (WARP_TILE) | METATILE (7,5)->(7,4) walk_h=1 walk_N=1
+--- WARP +0 frame ---
+f= 3496 OW rm=$37 ( 112, 117) face=1 dir=2 g=+0  foot=$24 mt=( 7, 4) walk_h=1 walk_N=1  warp=1 unsup=0  uw=L0Q0  stable=1
+  save: ver=1 src_rm=$37 uet=$24 (raw=$24) src=(112,117) face=1  dst=L1Q1 rm=$73 face=0
+f= 3496 OW rm=$37 ( 112, 117) face=1 dir=2 g=+0  foot=$24 mt=( 7, 4) walk_h=1 walk_N=1  warp=1 unsup=0  uw=L0Q0  stable=1  WARP_ACTIVE_EDGE
+--- WARP +1 frame ---
+f= 3496 OW rm=$37 ( 112, 117) face=1 dir=2 g=+0  foot=$24 mt=( 7, 4) walk_h=1 walk_N=1  warp=1 unsup=0  uw=L0Q0  stable=1
+  save: ver=1 src_rm=$37 uet=$24 (raw=$24) src=(112,117) face=1  dst=L1Q1 rm=$73 face=0
+--- WARP +2 frame ---
+f= 3496 OW rm=$37 ( 112, 117) face=1 dir=2 g=+0  foot=$24 mt=( 7, 4) walk_h=1 walk_N=1  warp=1 unsup=0  uw=L0Q0  stable=1
+  save: ver=1 src_rm=$37 uet=$24 (raw=$24) src=(112,117) face=1  dst=L1Q1 rm=$73 face=0
+--- WARP +3 frame ---
+f= 3496 OW rm=$37 ( 112, 117) face=1 dir=2 g=+0  foot=$24 mt=( 7, 4) walk_h=1 walk_N=1  warp=1 unsup=0  uw=L0Q0  stable=1
+  save: ver=1 src_rm=$37 uet=$24 (raw=$24) src=(112,117) face=1  dst=L1Q1 rm=$73 face=0
+--- WARP +4 frame ---
+f= 3496 OW rm=$37 ( 112, 117) face=1 dir=2 g=+0  foot=$24 mt=( 7, 4) walk_h=1 walk_N=1  warp=1 unsup=0  uw=L0Q0  stable=1
+  save: ver=1 src_rm=$37 uet=$24 (raw=$24) src=(112,117) face=1  dst=L1Q1 rm=$73 face=0
+f= 3497 UW rm=$73 ( 120, 133) face=0 dir=0 g=+0  foot=$00 mt=( 0, 0) walk_h=0 walk_N=0  warp=1 unsup=0  uw=L1Q1  stable=1  SCENE OW -> UW | ROOM $37 -> $73 | UW_LVL_QST 0/0 -> 1/1
+f= 3498 UW rm=$73 ( 120, 133) face=0 dir=0 g=+0  foot=$00 mt=( 0, 0) walk_h=0 walk_N=0  warp=0 unsup=0  uw=L1Q1  stable=1  WARP_DONE

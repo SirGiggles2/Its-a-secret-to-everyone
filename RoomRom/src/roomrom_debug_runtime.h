@@ -44,7 +44,7 @@ unsigned char roomrom_debug_warp_unsupported_count(void);
  *   18   1     ow_raw_tile_stable (0/1)
  *   19   1     link_pos_frac
  *   20   1     underground_exit_type (slice-1 stub: always 0)
- *   21   1     reserved
+ *   21   1     tile_under_link_foot (raw NES BG tile id; 0 if cache unstable)
  *   22   1     save.version
  *   23   1     save.source_room_id
  *   24   1     save.source_underground_entrance_tile (post-collapse)
@@ -54,14 +54,17 @@ unsigned char roomrom_debug_warp_unsupported_count(void);
  *   30   1     save.source_link_face
  *   31   1     save.dest_level
  *   32   1     save.dest_quest
- *   33   1     save.dest_room_id
- *   34   1     save.dest_link_face
- *   35   1     reserved
+ *   33   1     save.dest_room_id *   34   1     save.dest_link_face
+ *   35   1     walkable_at_link_metatile (s_walkable[col][row], 0/1)
+ *   36   1     link_walkable_north (collision probe result for dir UP)
+ *   37   1     link_metatile_col (0..15, OW only)
+ *   38   1     link_metatile_row (0..10, OW only)
+ *   39   1     reserved
  *
- * Total: 36 bytes at 0xFF7200..0xFF7223.
+ * Total: 40 bytes at 0xFF7200..0xFF7227.
  */
 #define ROOMROM_DEBUG_STATE_MIRROR_BASE  0x00FF7200UL
-#define ROOMROM_DEBUG_STATE_MIRROR_BYTES 36u
+#define ROOMROM_DEBUG_STATE_MIRROR_BYTES 40u
 
 void roomrom_debug_publish_state_mirror(void);
 

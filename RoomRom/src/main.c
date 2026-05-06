@@ -309,8 +309,15 @@ static void load_room(u8 room_id)
     } else {
         roomrom_ow_room_render_load_palette(room_id);
         roomrom_hud_draw(roomrom_ow_room_render_get_map(), room_id, 0u);
+        /* Task 5.4: bracket the OW slot paint so the raw-tile cache
+         * captures every column and ends marked stable. The warp
+         * coordinator's rule-5 entrance-tile check gates on this. */
+        roomrom_ow_room_render_begin_full_fill();
     }
     render_room_into_slot(room_id, s_active_slot_x, s_active_row_base);
+    if (s_scene == SCENE_OW) {
+        roomrom_ow_room_render_mark_stable();
+    }
     anchor_active_slot();
     roomrom_sprites_load_palette();   /* PAL1 - reload after BG palette write */
     /* Phase 2.6.5: reset toggle table on room load (empty at Phase 2). */
@@ -342,6 +349,7 @@ static unsigned char current_redux_flag(void)
 /* Forward decl: upload_scene_chr() is defined below the apply-outcome
  * function for historical layout reasons. */
 static void upload_scene_chr(void);
+static unsigned char link_walkable_at(short x, short y, link_dir_t dir);
 
 static void roomrom_state_reset_for_scene_switch(void)
 {
@@ -501,7 +509,21 @@ void roomrom_debug_publish_state_mirror(void)
     p[18] = roomrom_ow_room_render_is_stable();
     p[19] = s_link_pos_frac;
     p[20] = s_underground_exit_type;
-    p[21] = 0u;                                   /* reserved */
+    /* Tile under Link's foot — raw NES BG tile id from the OW raw-tile
+     * cache. NES GetCollidableTileStill samples at foot center =
+     * (ObjX, ObjY + $0B); link_walkable_at uses the same offset. */
+    if (s_scene == SCENE_OW && roomrom_ow_room_render_is_stable()) {
+        short foot_y = (short)(s_link_y + 0x0B);
+        if (foot_y >= ROOMROM_PLAYFIELD_TOP_PX) {
+            unsigned char fc = (unsigned char)((s_link_x >> 3) & 0x1Fu);
+            unsigned char fr = (unsigned char)(((foot_y - ROOMROM_PLAYFIELD_TOP_PX) >> 3) & 0x1Fu);
+            p[21] = roomrom_ow_room_render_raw_tile_at(fc, fr);
+        } else {
+            p[21] = 0u;
+        }
+    } else {
+        p[21] = 0u;
+    }
 
     p[22] = save->version;
     p[23] = save->source_room_id;
@@ -516,7 +538,35 @@ void roomrom_debug_publish_state_mirror(void)
     p[32] = save->dest_quest;
     p[33] = save->dest_room_id;
     p[34] = save->dest_link_face;
-    p[35] = 0u;                                   /* reserved */
+    /* Task 5.4 walkability diagnostic: metatile col/row + walkable
+     * lookup for the metatile under Link. OW only; UW writes zeros. */
+    if (s_scene == SCENE_OW && s_link_y >= ROOMROM_PLAYFIELD_TOP_PX) {
+        unsigned char mc = (unsigned char)((s_link_x >> 4) & 0x0Fu);
+        short fy = (short)(s_link_y + 0x0B - ROOMROM_PLAYFIELD_TOP_PX);
+        unsigned char mr = (fy < 0) ? 0u :
+                           (unsigned char)((fy >> 4) & 0x0Fu);
+        if (mr > 10u) mr = 10u;
+        p[35] = roomrom_ow_room_render_walkable_at(mc, mr);
+        p[37] = mc;
+        p[38] = mr;
+    } else {
+        p[35] = 0u;
+        p[37] = 0u;
+        p[38] = 0u;
+    }
+    /* Probe link_walkable_at for the UP direction so the user can see
+     * whether collision allows stepping onto a tile to the north
+     * (entrance approach is north-facing). Slice-1 only OW path. */
+    if (s_scene == SCENE_OW) {
+        p[36] = link_walkable_at(s_link_x, s_link_y, LINK_DIR_UP);
+    } else {
+        p[36] = 0u;
+    }
+    p[39] = 0u;                                    /* reserved */
+
+    /* Task 5.4: also publish the 32x22 OW raw-tile cache to $FF7400 so
+     * Lua probes can scan for warp tiles without per-cell calls. */
+    roomrom_ow_room_render_publish_cache();
 }
 
 static void upload_scene_chr(void)
@@ -799,6 +849,13 @@ static void edge_load_or_clamp(void)
         else
             roomrom_ow_room_render_load_palette(s_transition_target);
         roomrom_sprites_load_palette();
+        /* Task 5.4: bracket the OW staging-slot paint so the raw-tile
+         * cache captures the incoming room. mark_stable runs when the
+         * scroll completes (above), not here, so the warp coordinator
+         * does not fire mid-scroll while Link is still in the old room. */
+        if (s_scene == SCENE_OW) {
+            roomrom_ow_room_render_begin_full_fill();
+        }
         if (want == SCROLL_H_RIGHT || want == SCROLL_H_LEFT) {
             u8 target_slot_x = (u8)(s_active_slot_x ^ 1u);
             render_room_into_slot(s_transition_target,
@@ -935,6 +992,12 @@ void roomrom_debug_tick(void)
                 } else {
                     roomrom_ow_room_render_load_palette(s_room_id);
                     roomrom_hud_draw(roomrom_ow_room_render_get_map(), s_room_id, 0u);
+                    /* Task 5.4: scroll-staging populated the raw-tile
+                     * cache during edge_load_or_clamp. Cache was keyed
+                     * by src col so it now reflects the new active
+                     * room. Mark it stable so the warp coordinator's
+                     * rule-5 check can fire. */
+                    roomrom_ow_room_render_mark_stable();
                 }
                 roomrom_sprites_load_palette();
                 anchor_active_slot();
