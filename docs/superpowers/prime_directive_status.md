@@ -1,6 +1,6 @@
 # Prime Directive — Status
 
-_Generated 2026-05-06T17:08:48.589076+00:00 by `prime_refresh.py`._
+_Generated 2026-05-06T19:41:53.368603+00:00 by `prime_refresh.py`._
 
 **Phase:** 5 — Dungeon Core
 **Task:** ? — 
@@ -9,4 +9,4 @@ _Generated 2026-05-06T17:08:48.589076+00:00 by `prime_refresh.py`._
 
 **Gates:** 11 passed / 11 total
 
-**Next concrete action:** Run prime_refresh.py to derive next concrete action for Ph3
+**Next concrete action:** Begin Task 5.5: door-aware UW edge transition rules. Verified L1 entry path opens dungeon navigation work.

@@ -1,22 +1,22 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-05-06T17:08:48.589076+00:00",
+  "generated_at": "2026-05-06T19:41:53.368603+00:00",
   "generated_by": "tools/audit/primedirective/prime_refresh.py",
   "plan": {
     "path": "docs/superpowers/plans/2026-05-02-title-roomrom-full-port-master-plan.md",
-    "sha256": "03698d2e7c750c0f4313c87f2b12f803386b6d1141dcb7a8c9d606456e1fdaf8"
+    "sha256": "c6efac0d473399c93ec42141255aeb5b1227ba1e5c3087c0e6c55ffe2ba4a72f"
   },
   "active": {
     "phase_id": "5",
     "phase_name": "Dungeon Core",
-    "task_id": "5.4",
-    "task_title": "OW→UW Level 1 Entrance Bootstrap",
+    "task_id": "?",
+    "task_title": "",
     "worktree": {
       "path": "C:/Users/Jake Diggity/Documents/GitHub/FINAL TRY",
       "branch": "main",
       "is_substrate_writer": true
     },
-    "next_concrete_action": "Generate data/rooms/overworld_offsets.h + tools/levelinfo_start_rooms_gen.py outputs; verify standalone compile"
+    "next_concrete_action": "Begin Task 5.5: door-aware UW edge transition rules. Verified L1 entry path opens dungeon navigation work."
   },
   "phases": [
     {
@@ -221,7 +221,9 @@
         {
           "id": "5.4",
           "name": "OW\u2192UW Level 1 Entrance Bootstrap",
-          "status": "in_progress",
+          "status": "closed",
+          "closed_at": "2026-05-06",
+          "closed_by_commit": "a85e2e58",
           "spec": "docs/superpowers/specs/2026-05-06-roomrom-ow-to-uw-level1-transition-design.md",
           "plan": "C:/Users/Jake Diggity/.claude/plans/great-load-it-into-sleepy-lantern.md",
           "drain_header": {
@@ -231,11 +233,17 @@
             "stance": "GREENFIELD"
           },
           "build_targets": [
-            "RoomRom.md",
-            "CombinedDebug.md (ship product per user 2026-05-06; per-commit parity gate)"
+            "RoomRom.md (clean)",
+            "CombinedDebug.md (clean; ship product per user 2026-05-06; contract test PASS)"
           ],
           "evidence": [
-            "ph5.4 scaffold commit 6eff3ab9: warp coordinator + state machine + apply-outcome + reset contract; RoomRom.md builds clean."
+            "Scaffold commit 6eff3ab9: warp coordinator IDLE/PREPARE/ANIM/LOAD/RESUME/ABORT + apply-outcome + reset contract.",
+            "Parity commit f04054c4: CombinedDebug promoted to per-commit ship target; tools/combined_debug/build_combined_debug.py linked all task-5.4 modules.",
+            "Probe commit b3dc163a: passive state mirror at $FF7200 (40 bytes, 'WP' magic) + BizHawk Lua recorder.",
+            "Gate D commit e167afb9: in-ROM metadata probe at $FF7300 ('GD' magic), 7/7 PASS verified at boot.",
+            "Close commit a85e2e58: NES-grounded fixes (foot offset $0B, alignment $05 derived from PLAYFIELD_TOP=56 vs NES $5D, walkability $F3) + cache key (src col, not plane col) + scroll-stable mark.",
+            "User-driven probe: OW $37 link_y=117 foot=$24 -> coordinator fired -> save state src=(112,117) face=UP uet=$24 dest=L1Q1 room=$73 -> frame+1 UW $73 canonical spawn (120,133).",
+            "Probe artifacts: build/probes/ph5/task_5_4/probe_warp_l1_entrance.jsonl + .log"
           ],
           "deferrals": [
             "UW\u2192OW exit (UndergroundExitType writer)",
@@ -629,23 +637,26 @@
       "sha256": "3495ac8db43e505b1cc81ee33cc4178eecba73ff898b6f465af2a603e9b682ad",
       "ok": true
     },
-    "git_head": "c86d67712d1b65728fbef433bc676e51c3e44319",
+    "git_head": "a85e2e58f13256c5c2c3e6779f39fc06dda6501c",
     "dirty_paths_relevant": [
-      "RoomRom/src/main.c",
       "RoomRom/src/render_adapter_sgdk.c",
       "RoomRom/src/roomrom_hud.c",
       "RoomRom/src/roomrom_hud.h",
       "src/abi/platform_abi.h",
       "src/sgdk_adapter/render_adapter.c",
-      "tools/audit/drain_coverage.json",
-      "tools/builder/extract_uw_collision.py",
-      "RoomRom/src/roomrom_debug_runtime.h",
       "src/combined_debug/",
-      "tools/combined_debug/"
+      "tools/combined_debug/capture_combined_debug_room.lua",
+      "tools/combined_debug/capture_roomrom_boot.lua",
+      "tools/combined_debug/dump_cram_after_room.lua",
+      "tools/combined_debug/dump_vram_after_room.lua",
+      "tools/combined_debug/probe_a4_survival.lua",
+      "tools/combined_debug/probe_combined_debug_entry.lua",
+      "tools/combined_debug/test_combined_debug_contract.py",
+      "tools/combined_debug/test_roomrom_runtime_contract.py"
     ],
     "evidence_paths_present": true,
     "complete_phase_invariant_ok": true,
-    "last_refresh_at": "2026-05-06T17:08:48.647526+00:00",
+    "last_refresh_at": "2026-05-06T19:41:53.428084+00:00",
     "stale_reasons": []
   },
   "blockers": []
