@@ -238,11 +238,30 @@ The detector mirrors `CheckWarps` and the OW half of `HandleWarpOW`
    First slice supports both branches; only `$37` exercises the
    normal branch, but `$22` cost is one `cmp` and avoids a future
    special-case patch.
-4. **Y alignment.** `link_y & 0x0F == 0x0D`
+4. **Y alignment.** `link_y & 0x0F == 0x05`
    ([Z_05.asm:7241-7244](reference/aldonunez/Z_05.asm:7241)).
+   **Post-implementation amendment 2026-05-06**: NES uses `ObjY & $0F == $0D`
+   anchored to NES playfield top Y = `$5D` (93). RoomRom playfield top =
+   `ROOMROM_HUD_ROWS * 8 = 56`. The "$0D" alignment is the modular offset
+   that places Link's foot on the bottom BG row of a metatile (after NES
+   `GetCollidableTileStill` foot offset `+$0B`). Translating to RoomRom:
+   foot_y_rr = link_y + $0B; for foot to land on a metatile-bottom BG row
+   (offset 8..15 within a 16-px metatile in playfield-relative space),
+   `(foot_y_rr - 56) & 0x0F == 8` → `link_y & 0x0F == 0x05`. Verified on
+   NES OW $37 entrance: link_y=117 satisfies, sample at row 9 = $24.
 5. **Tile is a warp tile.** `roomrom_ow_room_render_raw_tile_at(col, row)`
    returns one of `$24`, `$88`, `$70`, `$71`, `$72`, `$73`
    ([Z_05.asm:7320-7327](reference/aldonunez/Z_05.asm:7320)).
+   **Pixel→tile mapping (post-implementation amendment 2026-05-06)**:
+   ```
+   col    = link_x >> 3                                              /* 0..31 */
+   foot_y = link_y + 0x0B                                            /* NES foot offset */
+   row    = (foot_y - ROOMROM_PLAYFIELD_TOP_PX) >> 3                 /* 0..21 */
+   ```
+   The `+$0B` is critical and was missing from the v1 spec. Without it
+   the sample is one BG row above Link's actual foot, causing the warp
+   coordinator to read the wrong tile. NES source: `Z_07.asm:2152-2157`
+   `GetCollidableTile` adds $0B to ObjY before tile sampling.
 6. **Selector resolves to a level.** `attr_b = roomrom_ow_meta_attr_b(room_id)`,
    `selector = attr_b & 0xFC`, `selector < 0x40`
    ([Z_05.asm:7339-7344](reference/aldonunez/Z_05.asm:7339)).

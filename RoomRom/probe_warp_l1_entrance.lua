@@ -147,6 +147,13 @@ local JSON_PATH   = "C:\\tmp\\probe_warp_l1_entrance.jsonl"
 -- frame. Used by Claude to read "what's the current state right now"
 -- without scanning the JSONL transition history.
 local STATE_PATH  = "C:\\tmp\\warp_probe_state.json"
+-- Gate B four-boot diff: the probe captures one snapshot at the first
+-- stable frame of UW gameplay reached by direct boot, and one at the
+-- first stable frame of UW gameplay post-warp. The Python diff harness
+-- (tools/gate_b_diff.py) compares the pair across two probe runs
+-- (RoomRom + CombinedDebug) for cross-target parity.
+local BOOT_D_PATH = "C:\\tmp\\boot_d_snapshot.json"
+local BOOT_W_PATH = "C:\\tmp\\boot_w_snapshot.json"
 local log_handle = io.open(LOG_PATH, "w")
 if not log_handle then
     print("ERROR: could not open log: " .. LOG_PATH)
@@ -205,12 +212,13 @@ log("# Drive input manually. Probe logs scene/room/warp transitions.")
 -- OW raw-tile cache exposed by C side at $FF7400, 32×22 = 704 bytes,
 -- column-major layout: cache[col*22 + row]. magic 'TC' at base.
 local CACHE_BASE_OFFSET = 0x7400
+local cache_dump_last_room = -1
 local function dump_cache_once_per_room(m)
     -- Scan only when ow_stable=1 and we haven't dumped this room yet.
     if m == nil or m.scene ~= 0 or m.ow_stable ~= 1 then return end
     local key = m.room_id
-    if dump_cache_once_per_room.last_room == key then return end
-    dump_cache_once_per_room.last_room = key
+    if cache_dump_last_room == key then return end
+    cache_dump_last_room = key
     if memory.read_u8(CACHE_BASE_OFFSET) ~= 0x54 or
        memory.read_u8(CACHE_BASE_OFFSET + 1) ~= 0x43 then
         jlog("cache_dump", { room_id = key, error = "no TC magic" })
@@ -234,7 +242,6 @@ local function dump_cache_once_per_room(m)
         warp_tiles = table.concat(warp_tiles, ","),
     })
 end
-dump_cache_once_per_room.last_room = -1
 
 -- Gate D: in-ROM metadata probe block at $FF7300.
 local GD_OFFSET = 0x7300
@@ -297,6 +304,43 @@ end
 
 local prev = nil
 local frames_since_warp = -1
+local boot_d_captured = false
+local boot_w_captured = false
+local frames_in_uw_post_warp = -1
+local has_seen_warp_active = false
+
+local function snapshot_to_json(m, label)
+    return json_encode_obj({
+        label = label,
+        frame = m.frame,
+        scene = scene_name(m.scene),
+        room_id = m.room_id,
+        link_x = m.link_x, link_y = m.link_y,
+        link_face = m.link_face, link_dir = m.link_dir,
+        link_grid = m.link_grid, link_frac = m.link_frac,
+        doorway = m.doorway,
+        foot_tile = m.foot_tile,
+        meta_col = m.meta_col, meta_row = m.meta_row,
+        walk_here = m.walk_here, walk_north = m.walk_north,
+        ow_stable = m.ow_stable,
+        warp_active = m.warp_act,
+        warp_unsupported_count = m.warp_unsup,
+        uw_level = m.uw_level, uw_quest = m.uw_quest,
+        save_dst_room_id = m.sv_dst_rm,
+        save_dst_level = m.sv_dst_lvl,
+        save_dst_quest = m.sv_dst_q,
+        save_uet = m.sv_uet,
+    })
+end
+
+local function write_snapshot(path, m, label)
+    local h = io.open(path, "w")
+    if h then
+        h:write(snapshot_to_json(m, label) .. "\n")
+        h:close()
+        log(string.format("--- snapshot %s -> %s ---", label, path))
+    end
+end
 
 local state_frame_counter = 0
 
@@ -399,6 +443,25 @@ while true do
                     prev.walk_north, m.walk_north))
             end
         end
+
+        -- Boot D snapshot: first frame where scene == UW and we have
+        -- never seen a warp fire. Captures the canonical direct-boot
+        -- UW $73 state for Gate B comparison.
+        if not boot_d_captured and m.scene == 1 and not has_seen_warp_active
+                and m.room_id == 0x73 and m.frame >= 1 then
+            write_snapshot(BOOT_D_PATH, m, "boot_d")
+            boot_d_captured = true
+        end
+        -- Boot W snapshot fires at the exact frame warp_active goes
+        -- 1 -> 0 (LOAD step just applied, RESUME pending). Captures
+        -- canonical UW spawn state pre-input — deterministic regardless
+        -- of how soon the user releases keys post-warp.
+        if prev ~= nil and prev.warp_act == 1 and m.warp_act == 0
+                and m.scene == 1 and not boot_w_captured then
+            write_snapshot(BOOT_W_PATH, m, "boot_w")
+            boot_w_captured = true
+        end
+        if m.warp_act == 1 then has_seen_warp_active = true end
 
         if frames_since_warp >= 0 and frames_since_warp <= 4 then
             log(string.format("--- WARP +%d frame ---", frames_since_warp))
