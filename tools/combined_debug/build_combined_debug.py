@@ -117,10 +117,11 @@ ROOMROM_C_SOURCES = [
     ("RoomRom/src/roomrom_bomb.c", "roomrom_bomb.o"),
     ("RoomRom/src/roomrom_bg_palette.c", "roomrom_bg_palette.o"),
     ("RoomRom/src/roomrom_scene_load.c", "roomrom_scene_load.o"),
-    # Task 5.4: warp coordinator + OW metadata accessor + level/quest table
+    # Task 5.4: warp coordinator + OW metadata accessor + level/quest table + Gate D probe
     ("RoomRom/src/ow_room_meta.c", "ow_room_meta.o"),
     ("RoomRom/src/roomrom_world_transition.c", "roomrom_world_transition.o"),
     ("RoomRom/data/levelinfo_start_rooms.c", "levelinfo_start_rooms.o"),
+    ("RoomRom/src/probes/metadata_probe.c", "metadata_probe.o"),
     ("RoomRom/src/roomrom_ow_palette.c", "roomrom_ow_palette.o"),
     ("src/state/palette_tick.c", "palette_tick.o"),
     ("RoomRom/src/roomrom_palette_tick.c", "roomrom_palette_tick.o"),

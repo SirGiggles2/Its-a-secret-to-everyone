@@ -150,12 +150,67 @@ end
 
 log(string.format("# Task 5.4 warp probe — log opened %s", os.date("%Y-%m-%d %H:%M:%S")))
 log("# Mirror base = 0xFF7200, magic 'WP', layout per roomrom_debug_runtime.h")
+log("# Gate D base = 0xFF7300, magic 'GD', layout per probes/metadata_probe.h")
 log("# Drive input manually. Probe logs scene/room/warp transitions.")
+
+-- Gate D: in-ROM metadata probe block at $FF7300.
+local GD_OFFSET = 0x7300
+local GD_LABELS = {
+    [0] = "ow_meta_attr_b(0x37)",
+    [1] = "ow_meta_level_selector(0x37)",
+    [2] = "ow_meta_is_level_selector(0x04)",
+    [3] = "ow_meta_level_from_selector(0x04)",
+    [4] = "levelinfo_start_room_for(1,1)  hi=ret lo=dest",
+    [5] = "levelinfo_start_room_for(2,1)  hi=ret lo=dest_sentinel",
+    [6] = "ROOMROM_HUD_ROWS*8 (playfield top px)",
+}
+
+local function read_gate_d()
+    if memory.read_u8(GD_OFFSET) ~= 0x47 or memory.read_u8(GD_OFFSET + 1) ~= 0x44 then
+        return nil
+    end
+    local count = memory.read_u8(GD_OFFSET + 2)
+    local results = {}
+    for i = 0, count - 1 do
+        local off = GD_OFFSET + 4 + i * 4
+        local actual   = memory.read_u8(off    ) * 256 + memory.read_u8(off + 1)
+        local expected = memory.read_u8(off + 2) * 256 + memory.read_u8(off + 3)
+        results[i] = {
+            actual = actual,
+            expected = expected,
+            pass = (actual == expected),
+            label = GD_LABELS[i] or string.format("check[%d]", i),
+        }
+    end
+    return results
+end
+
+local gate_d_logged = false
+local function log_gate_d_once()
+    if gate_d_logged then return end
+    local r = read_gate_d()
+    if r == nil then return end
+    log("--- Gate D — in-ROM metadata probe ---")
+    local all_pass = true
+    for i = 0, #r do
+        local row = r[i]
+        if row then
+            local tag = row.pass and "PASS" or "FAIL"
+            if not row.pass then all_pass = false end
+            log(string.format("  [%s] %-46s  actual=$%04X expected=$%04X",
+                tag, row.label, row.actual, row.expected))
+        end
+    end
+    log(string.format("--- Gate D overall: %s ---",
+        all_pass and "PASS" or "FAIL"))
+    gate_d_logged = true
+end
 
 local prev = nil
 local frames_since_warp = -1
 
 while true do
+    log_gate_d_once()
     local m = read_mirror()
     if m == nil then
         if prev ~= nil then

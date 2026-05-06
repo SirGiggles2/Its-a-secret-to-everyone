@@ -16,6 +16,7 @@
 #include "render_abi.h"
 #include "roomrom_main_state.h"  /* Task 5.4: warp-outcome apply boundary */
 #include "roomrom_world_transition.h"  /* Task 5.4: warp coordinator */
+#include "probes/metadata_probe.h"     /* Task 5.4: Gate D in-ROM probe */
 
 /* Boots to overworld room 0x77.
  *
@@ -852,6 +853,7 @@ void roomrom_debug_enter(void)
     roomrom_arrow_init();                  /* S7 v7: clear arrow slot */
     roomrom_bomb_init();                   /* S7 v8: clear bomb + explosion slots */
     roomrom_world_transition_init();       /* Task 5.4: warp coordinator */
+    roomrom_probe_metadata_run();          /* Task 5.4 Gate D: in-ROM probe */
 
     /* debate 006 D2 native cave smoke: prove cave_init / cave_tick /
      * cave_exit link cleanly into RoomRom + execute without crash.
