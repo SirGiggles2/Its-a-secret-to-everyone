@@ -466,6 +466,58 @@ unsigned char roomrom_debug_warp_unsupported_count(void)
     return roomrom_world_transition_unsupported_selector_count();
 }
 
+/* Task 5.4: state mirror for passive Lua probes. Called once per tick;
+ * publishes the gate-B field set into a fixed 36-byte RAM block at
+ * ROOMROM_DEBUG_STATE_MIRROR_BASE. */
+void roomrom_debug_publish_state_mirror(void)
+{
+    volatile unsigned char *p =
+        (volatile unsigned char *)ROOMROM_DEBUG_STATE_MIRROR_BASE;
+    const rr_warp_save_state_t *save = roomrom_world_transition_save_state();
+    unsigned char uw_level = (s_scene == SCENE_UW)
+        ? roomrom_uw_room_render_get_level() : 0u;
+    unsigned char uw_quest = (s_scene == SCENE_UW)
+        ? roomrom_uw_room_render_get_quest() : 0u;
+
+    p[0]  = 0x57u;                                /* 'W' */
+    p[1]  = 0x50u;                                /* 'P' */
+    p[2]  = (unsigned char)(s_frame_counter >> 8);
+    p[3]  = (unsigned char)(s_frame_counter);
+    p[4]  = (unsigned char)s_scene;
+    p[5]  = s_room_id;
+    p[6]  = (unsigned char)(((unsigned short)s_link_x) >> 8);
+    p[7]  = (unsigned char)((unsigned short)s_link_x);
+    p[8]  = (unsigned char)(((unsigned short)s_link_y) >> 8);
+    p[9]  = (unsigned char)((unsigned short)s_link_y);
+    p[10] = (unsigned char)s_link_face;
+    p[11] = (unsigned char)s_link_dir;
+    p[12] = (unsigned char)s_link_grid_offset;
+    p[13] = s_doorway_dir;
+    p[14] = roomrom_world_transition_is_active();
+    p[15] = roomrom_world_transition_unsupported_selector_count();
+    p[16] = uw_level;
+    p[17] = uw_quest;
+    p[18] = roomrom_ow_room_render_is_stable();
+    p[19] = s_link_pos_frac;
+    p[20] = s_underground_exit_type;
+    p[21] = 0u;                                   /* reserved */
+
+    p[22] = save->version;
+    p[23] = save->source_room_id;
+    p[24] = save->source_underground_entrance_tile;
+    p[25] = save->source_underground_entrance_tile_raw;
+    p[26] = (unsigned char)(((unsigned short)save->source_link_x) >> 8);
+    p[27] = (unsigned char)((unsigned short)save->source_link_x);
+    p[28] = (unsigned char)(((unsigned short)save->source_link_y) >> 8);
+    p[29] = (unsigned char)((unsigned short)save->source_link_y);
+    p[30] = save->source_link_face;
+    p[31] = save->dest_level;
+    p[32] = save->dest_quest;
+    p[33] = save->dest_room_id;
+    p[34] = save->dest_link_face;
+    p[35] = 0u;                                   /* reserved */
+}
+
 static void upload_scene_chr(void)
 {
     if (s_scene == SCENE_UW) {
@@ -1247,6 +1299,9 @@ void roomrom_debug_tick(void)
          * step runs synchronously inside the coordinator and the next
          * frame begins in the new scene. */
         roomrom_world_transition_tick();
+
+        /* Task 5.4: passive state mirror for BizHawk Lua probes. */
+        roomrom_debug_publish_state_mirror();
 }
 
 #ifndef ROOMROM_NO_STANDALONE_MAIN
