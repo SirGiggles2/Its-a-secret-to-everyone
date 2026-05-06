@@ -16,7 +16,7 @@
       "branch": "main",
       "is_substrate_writer": true
     },
-    "next_concrete_action": "Step 2: tools/uw_expected_doors_gen.py + emit RoomRom/data/uw_l1q1_expected_doors.{c,h}"
+    "next_concrete_action": "Resume Task 5.5 traversal: 10 rooms remaining. Launch RoomRom probe (probe_uw_l1_route.lua), drive Link through $22 $23 $33 $41 $42 $44 $45 $52 $72 $74. Then python tools/gate_5_5_door_route.py to verify Gate B+C zero diff."
   },
   "phases": [
     {
@@ -281,7 +281,11 @@
             "CombinedDebug.md (phase-close gate only; per-commit infeasible due to ~30-min Title→RoomRom→17-room traversal time; documented relaxation)"
           ],
           "ground_truth_dump": "build/probes/ph5/task_5_5/nes_ground_truth.md",
-          "evidence": [],
+          "evidence": [
+            "Scaffold commit dc2ae6a6: NES ground truth dump + generator + state-mirror extension to 72 B + persistence block at $FF76D0 + debug chord stubs (A+B+C+START shutter, B+Z+C bomb) + probe_uw_l1_route.lua + tools/gate_5_5_door_route.py harness; both ROMs build clean; CombinedDebug contract test PASS.",
+            "Partial traversal session 2026-05-06: 5/15 reachable rooms visited ($43, $53, $54, $63, $73). Gate B 5/5 PASS, Gate C 5/5 PASS for visited subset. KEY consume verified ($73 N: 3->2 keys; $63 S: 2->1 keys; re-touch on opened door = no double-spend). KEY persist verified ($73 N persisted_mask=8 on re-entry). BOMBABLE bomb-stub verified ($53 N initially blocked, opened via B+Z+C chord, opened_mask 7->15). Evidence: build/probes/ph5/task_5_5/uw_*.partial.{jsonl,json}.",
+            "Pending: 10 rooms ($22 $23 $33 $41 $42 $44 $45 $52 $72 $74) need traversal to complete Gate B coverage."
+          ],
           "deferrals": [
             "Combat-driven shutter trigger (Phase 6; slice-1 = debug chord stub)",
             "Bomb-driven BOMBABLE trigger (Phase 6; slice-1 = debug chord stub)",

@@ -1,0 +1,14 @@
+{"event":"probe_open","note":"Task 5.5 UW L1Q1 door-state probe; mirror $FF7200 / persist $FF76D0","ts":1778101154}
+{"door_E":0,"door_N":5,"door_S":0,"door_W":0,"event":"room_entry","frame":1,"has_shutters":0,"keys_at_entry":3,"opened_mask":7,"persisted_mask":0,"room_id":115,"uw_level":1,"uw_quest":1}
+{"dir":3,"door_type":5,"event":"touch","frame":17493,"keys_post":2,"keys_pre":3,"opened_mask_after":15,"result":1,"room_id":115}
+{"door_E":1,"door_N":0,"door_S":5,"door_W":1,"event":"room_entry","frame":17559,"has_shutters":0,"keys_at_entry":2,"opened_mask":8,"persisted_mask":0,"room_id":99,"uw_level":1,"uw_quest":1}
+{"dir":2,"door_type":5,"event":"touch","frame":17631,"keys_post":1,"keys_pre":2,"opened_mask_after":12,"result":1,"room_id":99}
+{"door_E":0,"door_N":5,"door_S":0,"door_W":0,"event":"room_entry","frame":17694,"has_shutters":0,"keys_at_entry":1,"opened_mask":15,"persisted_mask":8,"room_id":115,"uw_level":1,"uw_quest":1}
+{"dir":3,"door_type":5,"event":"touch","frame":17752,"keys_post":1,"keys_pre":1,"opened_mask_after":15,"result":1,"room_id":115}
+{"door_E":1,"door_N":0,"door_S":5,"door_W":1,"event":"room_entry","frame":17815,"has_shutters":0,"keys_at_entry":1,"opened_mask":12,"persisted_mask":4,"room_id":99,"uw_level":1,"uw_quest":1}
+{"door_E":0,"door_N":4,"door_S":0,"door_W":0,"event":"room_entry","frame":19205,"has_shutters":0,"keys_at_entry":1,"opened_mask":7,"persisted_mask":0,"room_id":83,"uw_level":1,"uw_quest":1}
+{"door_E":1,"door_N":4,"door_S":1,"door_W":0,"event":"room_entry","frame":19286,"has_shutters":0,"keys_at_entry":1,"opened_mask":2,"persisted_mask":0,"room_id":84,"uw_level":1,"uw_quest":1}
+{"door_E":0,"door_N":4,"door_S":0,"door_W":0,"event":"room_entry","frame":19306,"has_shutters":0,"keys_at_entry":1,"opened_mask":7,"persisted_mask":0,"room_id":83,"uw_level":1,"uw_quest":1}
+{"dir":3,"door_type":4,"event":"touch","frame":19729,"keys_post":1,"keys_pre":1,"opened_mask_after":7,"result":0,"room_id":83}
+{"dir":3,"door_type":4,"event":"touch","frame":20430,"keys_post":1,"keys_pre":1,"opened_mask_after":15,"result":1,"room_id":83}
+{"door_E":5,"door_N":0,"door_S":4,"door_W":0,"event":"room_entry","frame":20493,"has_shutters":0,"keys_at_entry":1,"opened_mask":10,"persisted_mask":0,"room_id":67,"uw_level":1,"uw_quest":1}
