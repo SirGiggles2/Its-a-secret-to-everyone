@@ -78,6 +78,28 @@ static unsigned char s_roomrom_map_id = ROOMROM_MAP_ORIGINAL;
  * 16 cols x 11 rows, 1 = walkable, 0 = blocking. */
 static unsigned char s_walkable[16][11];
 
+/* Task 5.4: raw NES BG tile id cache for the active 32x22 playfield.
+ *
+ * Populated as a side effect of fill_plane_a / fill_one_col_at. Cells are
+ * indexed [tile_col][tile_row] in NES BG tile units (not metatiles). The
+ * warp coordinator queries this through roomrom_ow_room_render_raw_tile_at
+ * after Link's foot pixel is mapped to (col, row).
+ *
+ * SLICE-1 SEMANTICS:
+ *   - "stable" = the cache reflects a complete fill_plane_a for the
+ *     currently rendered room AND no partial column writes have happened
+ *     since.
+ *   - Single-column writes (scroll seam) flip the stable flag off; the
+ *     coordinator must wait for the next full fill before checking warps.
+ *   - Tile mutations from secrets, bombed rocks, burnt bushes, pushed
+ *     blocks are NOT republished here. Those visual changes are out of
+ *     scope for slice 1; future ticket adds a publish hook.
+ */
+#define ROOMROM_OW_RAW_TILE_COLS  32u  /* 16 metatiles x 2 tiles per metatile */
+#define ROOMROM_OW_RAW_TILE_ROWS  22u  /* 11 metatiles x 2 tiles per metatile */
+static unsigned char s_raw_tiles[ROOMROM_OW_RAW_TILE_COLS][ROOMROM_OW_RAW_TILE_ROWS];
+static unsigned char s_raw_tiles_stable = 0u;
+
 /* OW walkable NES tile IDs. Sourced from
  *   reference/aldonunez/Z_07.asm WalkableTiles ($8D,$91,$9C,$AC,$AD,$CC,$D2,$D5,$DF)
  * plus paths/sand/stairs/shore/redux variants observed in s_primary_squares
@@ -243,6 +265,12 @@ static unsigned short tile_word(unsigned char raw_tile, unsigned char pal)
                             + (unsigned short)raw_tile);
 }
 
+/* Task 5.4: when set, write_tile_at also records the raw NES BG tile id
+ * into s_raw_tiles. fill_plane_a brackets a full-room render with this
+ * flag and sets s_raw_tiles_stable on completion. Single-column writers
+ * leave it off so partial fills don't poison the cache. */
+static unsigned char s_raw_tile_capture_active = 0u;
+
 /* Palette uses src tile coords (where the tile semantically lives in its
  * source room). Plane write uses dst tile coords (where the tile actually
  * lands on the BG plane — supports off-room rendering during scroll). */
@@ -259,6 +287,11 @@ static void write_tile_at(unsigned char src_tile_col, unsigned char src_tile_row
                             (unsigned short)(dst_row_base + dst_tile_row +
                                              ROOMROM_ROOM_FIRST_ROW),
                             tile_word(raw_tile, pal));
+    if (s_raw_tile_capture_active &&
+        dst_tile_col < ROOMROM_OW_RAW_TILE_COLS &&
+        dst_tile_row < ROOMROM_OW_RAW_TILE_ROWS) {
+        s_raw_tiles[dst_tile_col][dst_tile_row] = raw_tile;
+    }
 }
 
 static void write_square_at(unsigned char src_col, unsigned char dst_col,
@@ -367,6 +400,9 @@ void roomrom_ow_room_render_fill_one_col_at(unsigned char room_id,
                                             unsigned char dst_col,
                                             unsigned char dst_row_base)
 {
+    /* Single-column write: cache is no longer a coherent snapshot of
+     * one room; flip stability off until the next full fill_plane_a. */
+    s_raw_tiles_stable = 0u;
     render_one_metatile_col(room_id, src_col & 0x0F, dst_col & 0x1F,
                             dst_row_base);
 }
@@ -374,9 +410,28 @@ void roomrom_ow_room_render_fill_one_col_at(unsigned char room_id,
 void roomrom_ow_room_render_fill_plane_a(unsigned char room_id)
 {
     unsigned char col;
+    s_raw_tiles_stable = 0u;
+    s_raw_tile_capture_active = 1u;
     for (col = 0; col < 16; col++) {
         render_one_metatile_col(room_id, col, col, 0);
     }
+    s_raw_tile_capture_active = 0u;
+    s_raw_tiles_stable = 1u;
+}
+
+unsigned char roomrom_ow_room_render_raw_tile_at(unsigned char tile_col,
+                                                 unsigned char tile_row)
+{
+    if (tile_col >= ROOMROM_OW_RAW_TILE_COLS ||
+        tile_row >= ROOMROM_OW_RAW_TILE_ROWS) {
+        return 0u;
+    }
+    return s_raw_tiles[tile_col][tile_row];
+}
+
+unsigned char roomrom_ow_room_render_is_stable(void)
+{
+    return s_raw_tiles_stable;
 }
 
 /* Old monolithic body kept for reference until verified equivalent; now dead. */

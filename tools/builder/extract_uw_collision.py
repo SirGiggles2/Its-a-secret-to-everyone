@@ -40,7 +40,7 @@ WALKABLE_THRESHOLD = 0x78
 #
 # Primary tile -> class mapping derived from NES Z_07.asm:2099 WalkableTiles
 # list and Z_07.asm threshold tile $78 (ObjectFirstUnwalkableTile UW).
-# Stair tile $68 stays WALK so 5.5 stair-trigger fires on entry rather
+# Stair tile $68 stays WALK so 5.6 stair-trigger fires on entry rather
 # than being blocked by collision.
 CLASS_WALK   = 0
 CLASS_WALL   = 1
@@ -52,7 +52,7 @@ PRIMARY_CLASS_UW = {
     # Below NES threshold $78 (walkable per Z_07.asm:Walker_CheckTileCollision)
     0x70: CLASS_WALK,    # floor
     0x74: CLASS_WALK,    # floor variant
-    0x68: CLASS_WALK,    # stairs (walkable; 5.5 triggers on entry)
+    0x68: CLASS_WALK,    # stairs (walkable; 5.6 triggers on entry)
     0x24: CLASS_WALK,    # low block / lift tile
     # At/above threshold $78 (unwalkable)
     0xB0: CLASS_WATER,   # water tile (rafts step here)

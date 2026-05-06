@@ -952,7 +952,30 @@ Gates:
 - [ ] Persist opened locked/bombed doors.
 - [ ] Verify each door type.
 
-### Task 5.4: Dungeon Room Transitions
+### Task 5.4: OW→UW Level 1 Entrance Bootstrap
+
+- **NES source**: `reference/aldonunez/Z_05.asm:CheckWarps` (line 7213), `reference/aldonunez/Z_05.asm:HandleWarpOW` (line 7313)
+- **Drained C**: NONE (verified via `tools/audit/drain_coverage.py` 2026-05-06)
+- **Coverage**: NONE
+- **Stance**: GREENFIELD (no drain candidate)
+- **Spec**: `docs/superpowers/specs/2026-05-06-roomrom-ow-to-uw-level1-transition-design.md`
+
+- [ ] OW LevelBlock metadata accessor (`RoomRom/src/ow_room_meta.{c,h}`).
+- [ ] OW renderer raw-tile cache extension (32x22 NES BG tile ids).
+- [ ] Data-driven destination resolver (`RoomRom/data/levelinfo_start_rooms.{c,h}` generated from existing `uw_level{N}_quest{Q}_rooms.json`).
+- [ ] Warp coordinator state machine (`RoomRom/src/roomrom_world_transition.{c,h}`): IDLE → PREPARE → ANIM (0-frame slice-1 placeholder) → LOAD → RESUME → ABORT.
+- [ ] Atomic apply func in `main.c` (`roomrom_main_apply_warp_outcome`); inverts coordinator↔main coupling.
+- [ ] Closed scene-switch reset contract in `main.c`.
+- [ ] Audio silence stub matching NES `Tune1Request = 0` / `FluteTimer = 0` post-warp ([Z_05.asm:7290-7294](reference/aldonunez/Z_05.asm:7290)).
+- [ ] BizHawk probe `RoomRom/probe_warp_l1_entrance.lua` (Gate B + C).
+- [ ] In-ROM metadata probe under `ROOMROM_PROBE_METADATA` flag (Gate D).
+- [ ] CombinedDebug regression at phase-close (Title-side ABI intact).
+- [ ] Verify Boot W (warp-driven UW $73) vs Boot D (direct UW boot $73) zero-diff at first UW gameplay frame.
+- [ ] Commit as `roomrom: implement OW→UW level 1 entrance via warp state machine`.
+
+Deferred (logged as `phases[5].deferrals[]`): UW→OW exit, mode $10 visible semantics (stairs anim / palette mask / fade), Boot N NES-side parity probe, tile-mutation publish, real `SaveKillCount` body, L2-L9 manifest growth, Q2 entry, cave entry (selector ≥ 0x40), NV-RAM persistence of save state, Title.md mode-$10 compatibility.
+
+### Task 5.5: Dungeon Room Transitions
 
 - [ ] Replace all-open S4 edge logic in UW with door-aware transition rules.
 - [ ] Block walls.
@@ -963,7 +986,7 @@ Gates:
 - [ ] Render scroll/blank transition.
 - [ ] Verify Level 1 route.
 
-### Task 5.5: Stairs And Passages
+### Task 5.6: Stairs And Passages
 
 - [ ] Extract stair metadata.
 - [ ] Detect stair tile.
@@ -974,7 +997,7 @@ Gates:
 - [ ] Handle item cellar.
 - [ ] Verify each stair/passage type.
 
-### Task 5.6: Push Blocks
+### Task 5.7: Push Blocks
 
 - [ ] Extract push-block rooms.
 - [ ] Detect push direction.
@@ -985,7 +1008,7 @@ Gates:
 - [ ] Persist room state.
 - [ ] Verify all push-block cases.
 
-### Task 5.7: Dark Rooms
+### Task 5.8: Dark Rooms
 
 - [ ] Extract dark room flags.
 - [ ] Render dark mask.
@@ -995,7 +1018,7 @@ Gates:
 - [ ] Persist lit state as NES does.
 - [ ] Verify dark rooms in NES mode and option mode.
 
-### Task 5.8: Keys, Map, Compass, Triforce
+### Task 5.9: Keys, Map, Compass, Triforce
 
 - [ ] Implement key pickup.
 - [ ] Implement key counter.
@@ -1006,7 +1029,7 @@ Gates:
 - [ ] Implement triforce pickup transition.
 - [ ] Verify Level 1 completion flow.
 
-### Task 5.9: Dungeon Matrix Verification
+### Task 5.10: Dungeon Matrix Verification
 
 - [ ] Render every room in all 9 dungeons, both quests.
 - [ ] Verify tile layout.

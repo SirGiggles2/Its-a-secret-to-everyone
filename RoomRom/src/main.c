@@ -1,4 +1,5 @@
 #include <genesis.h>
+#include "roomrom_debug_runtime.h"
 #include "ow_room_render_roomrom.h"
 #include "uw_room_render_roomrom.h"
 #include "roomrom_hud.h"
@@ -12,6 +13,9 @@
 #include "cave_dispatch.h"  /* debate 006 D2: native cave gamemode entry */
 #include "uw_door_state.h"
 #include "uw_walk_model.h"
+#include "render_abi.h"
+#include "roomrom_main_state.h"  /* Task 5.4: warp-outcome apply boundary */
+#include "roomrom_world_transition.h"  /* Task 5.4: warp coordinator */
 
 /* Boots to overworld room 0x77.
  *
@@ -92,6 +96,13 @@ static u8          s_link_pos_frac   = 0u;       /* NES single-axis sub-pixel */
 static u8          s_link_subx       = 0u;       /* ALTTP per-axis sub-pixel X */
 static u8          s_link_suby       = 0u;       /* ALTTP per-axis sub-pixel Y */
 
+/* Task 5.4: NES `UndergroundExitType` analogue. Slice 1 wires this static
+ * into the warp coordinator's rule-1 precondition but never writes it —
+ * the writer is the deferred UW->OW exit slice. Until then the rule
+ * collapses to "grid_offset == 0", which slice-1 acknowledges in the
+ * spec rather than pretending it enforces both halves. */
+static u8          s_underground_exit_type = 0u;
+
 /* S6.6 transition state machine.
  * BG_A is a 64x64 tile staging plane split into four 32x32 screen slots.
  * The fixed HUD is drawn on Window, so BG_A can scroll as one plane in both
@@ -135,6 +146,7 @@ static short          s_transition_link_y = 0;
 
 /* Increments every frame; used by Phase 2.6.5 palette tick. */
 static u16 s_frame_counter = 0u;
+static u16 s_joy_prev = 0u;
 
 /* Map room metatile col 0..15 into one 32x32 staging slot. */
 static u8 plane_col_for_slot(u8 src_col, u8 slot_x)
@@ -274,6 +286,7 @@ static void init_video(void)
     VDP_setScreenWidth256();
     /* 64x64 plane: 2x2 room slots for H/V scroll staging. */
     VDP_setPlaneSize(64, 64, TRUE);
+    render_mode_set_v64();
     VDP_setWindowOnTop(ROOMROM_HUD_ROWS);
     /* HUD is fixed on Window; BG_A scrolls as one 2x2 staging plane. */
     VDP_setScrollingMode(HSCROLL_PLANE, VSCROLL_PLANE);
@@ -291,10 +304,10 @@ static void load_room(u8 room_id)
     /* HUD is on Window; BG_A only carries staged room playfields. */
     if (s_scene == SCENE_UW) {
         roomrom_uw_room_render_load_palette(room_id);
-        roomrom_hud_draw(roomrom_uw_room_render_get_map(), room_id);
+        roomrom_hud_draw(roomrom_uw_room_render_get_map(), room_id, 1u);
     } else {
         roomrom_ow_room_render_load_palette(room_id);
-        roomrom_hud_draw(roomrom_ow_room_render_get_map(), room_id);
+        roomrom_hud_draw(roomrom_ow_room_render_get_map(), room_id, 0u);
     }
     render_room_into_slot(room_id, s_active_slot_x, s_active_row_base);
     anchor_active_slot();
@@ -317,6 +330,140 @@ static unsigned char current_redux_flag(void)
     if (s_scene == SCENE_UW)
         return (unsigned char)(roomrom_uw_room_render_get_map() != 0u);
     return (unsigned char)(roomrom_ow_room_render_get_map() != 0u);
+}
+
+/* Task 5.4: closed scene-switch reset contract. Called by the warp
+ * coordinator's LOAD step through roomrom_main_apply_warp_outcome().
+ * Adding a field requires a spec amendment. Fields preserved across the
+ * switch (s_link_keys, s_b_item, s_frame_counter, s_joy_prev) are NOT
+ * reset here; s_link_face is overwritten by the apply outcome, not
+ * reset. */
+/* Forward decl: upload_scene_chr() is defined below the apply-outcome
+ * function for historical layout reasons. */
+static void upload_scene_chr(void);
+
+static void roomrom_state_reset_for_scene_switch(void)
+{
+    s_doorway_dir = UW_WALK_DOOR_NONE;
+    s_link_grid_offset = 0;
+    s_link_pos_frac = 0u;
+    s_link_subx = 0u;
+    s_link_suby = 0u;
+    s_link_dir = LINK_DIR_NONE;
+
+    s_scroll_state = SCROLL_NONE;
+    s_scroll_frame = 0u;
+    s_scroll_total_frames = SCROLL_TOTAL_FRAMES;
+    s_active_slot_x = 0u;
+    s_active_row_base = 0u;
+    s_transition_target = 0u;
+    s_transition_row_base = 0u;
+    s_active_scroll_x = 0;
+    s_active_scroll_y = 0;
+    s_scroll_start_x = 0;
+    s_scroll_start_y = 0;
+    s_scroll_target_x = 0;
+    s_scroll_target_y = 0;
+    s_scroll_start_link_x = 0;
+    s_scroll_start_link_y = 0;
+    s_transition_link_x = 0;
+    s_transition_link_y = 0;
+
+    s_link_anim_tick = 0u;
+    s_link_frame = 0u;
+
+    /* Combat: full re-init clears sword cooldown / projectile state.
+     * Scene bias re-applied in roomrom_main_apply_warp_outcome step 9. */
+    roomrom_combat_init();
+}
+
+/* Task 5.4: atomic warp outcome applier. Coordinator's LOAD step calls
+ * this once. Order matches the spec's Handoff section. */
+void roomrom_main_apply_warp_outcome(const rr_warp_outcome_t *out)
+{
+    if (out == 0) {
+        return;
+    }
+
+    /* Step 1. */
+    roomrom_state_reset_for_scene_switch();
+
+    /* Steps 2-6: direct state writes. */
+    s_scene = (scene_t)out->dest_scene;
+    if (s_scene == SCENE_UW) {
+        roomrom_uw_room_render_set_level(out->dest_level);
+        roomrom_uw_room_render_set_quest(out->dest_quest);
+    }
+    s_room_id = out->dest_room_id;
+    s_link_x = out->dest_link_x;
+    s_link_y = out->dest_link_y;
+    s_link_face = (link_face_t)out->dest_link_face;
+
+    /* Step 7: CHR upload through the scene-load coordinator. */
+    upload_scene_chr();
+    roomrom_scene_load(
+        (s_scene == SCENE_UW) ? ROOMROM_SCENE_UW_L1 : ROOMROM_SCENE_OVERWORLD,
+        out->dest_redux_flag);
+    roomrom_combat_set_redux(out->dest_redux_flag);
+
+    /* Step 8: existing room-load path (palette + plane + door state). */
+    load_room(s_room_id);
+
+    /* Step 9: combat scene bias single-call (reset already did combat_init). */
+    roomrom_combat_set_uw(s_scene == SCENE_UW);
+}
+
+/* Task 5.4: read-side accessors for the coordinator. Each is a one-line
+ * trampoline so the coordinator never dereferences main.c statics. */
+unsigned char roomrom_main_current_redux_flag(void)
+{
+    return current_redux_flag();
+}
+
+unsigned char roomrom_main_current_scene(void)
+{
+    return (unsigned char)s_scene;
+}
+
+unsigned char roomrom_main_current_room_id(void)
+{
+    return s_room_id;
+}
+
+short roomrom_main_current_link_x(void)
+{
+    return s_link_x;
+}
+
+short roomrom_main_current_link_y(void)
+{
+    return s_link_y;
+}
+
+signed char roomrom_main_current_link_grid_offset(void)
+{
+    return s_link_grid_offset;
+}
+
+unsigned char roomrom_main_current_link_face(void)
+{
+    return (unsigned char)s_link_face;
+}
+
+unsigned char roomrom_main_underground_exit_type(void)
+{
+    return s_underground_exit_type;
+}
+
+/* Task 5.4: warp-state probes exposed through roomrom_debug_runtime.h. */
+unsigned char roomrom_debug_warp_is_active(void)
+{
+    return roomrom_world_transition_is_active();
+}
+
+unsigned char roomrom_debug_warp_unsupported_count(void)
+{
+    return roomrom_world_transition_unsupported_selector_count();
 }
 
 static void upload_scene_chr(void)
@@ -630,12 +777,9 @@ static void edge_load_or_clamp(void)
     }
 }
 
-int main(bool hardReset)
+void roomrom_debug_enter(void)
 {
-    u16 joy_prev = 0;
-
-    (void)hardReset;
-
+    s_joy_prev = 0u;
     init_video();
     upload_scene_chr();
     {
@@ -655,6 +799,7 @@ int main(bool hardReset)
     roomrom_boomerang_init();              /* S7 v6: clear boomerang slot */
     roomrom_arrow_init();                  /* S7 v7: clear arrow slot */
     roomrom_bomb_init();                   /* S7 v8: clear bomb + explosion slots */
+    roomrom_world_transition_init();       /* Task 5.4: warp coordinator */
 
     /* debate 006 D2 native cave smoke: prove cave_init / cave_tick /
      * cave_exit link cleanly into RoomRom + execute without crash.
@@ -664,8 +809,30 @@ int main(bool hardReset)
     cave_init((cave_id_t)0x6A);
     cave_tick();
     cave_exit();
+}
 
-    while (TRUE) {
+unsigned char roomrom_debug_get_scene(void)
+{
+    return (unsigned char)s_scene;
+}
+
+unsigned char roomrom_debug_get_room_id(void)
+{
+    return s_room_id;
+}
+
+short roomrom_debug_get_link_x(void)
+{
+    return s_link_x;
+}
+
+short roomrom_debug_get_link_y(void)
+{
+    return s_link_y;
+}
+
+void roomrom_debug_tick(void)
+{
         SYS_doVBlankProcess();
         s_frame_counter++;
         roomrom_palette_tick_frame(s_frame_counter);
@@ -677,7 +844,7 @@ int main(bool hardReset)
             int den = (int)s_scroll_total_frames;
             short h_scroll;
             short v_scroll;
-            joy_prev = 0u;     /* swallow input across transition */
+            s_joy_prev = 0u;     /* swallow input across transition */
 
             h_scroll = (short)(s_scroll_start_x +
                 (((int)s_scroll_target_x - (int)s_scroll_start_x) * num) / den);
@@ -707,13 +874,13 @@ int main(bool hardReset)
                 s_link_y  = s_transition_link_y;
                 if (s_scene == SCENE_UW) {
                     roomrom_uw_room_render_load_palette(s_room_id);
-                    roomrom_hud_draw(roomrom_uw_room_render_get_map(), s_room_id);
+                    roomrom_hud_draw(roomrom_uw_room_render_get_map(), s_room_id, 1u);
                     uw_door_state_room_init(roomrom_uw_room_render_get_level(),
                                             roomrom_uw_room_render_get_quest(),
                                             s_room_id);
                 } else {
                     roomrom_ow_room_render_load_palette(s_room_id);
-                    roomrom_hud_draw(roomrom_ow_room_render_get_map(), s_room_id);
+                    roomrom_hud_draw(roomrom_ow_room_render_get_map(), s_room_id, 0u);
                 }
                 roomrom_sprites_load_palette();
                 anchor_active_slot();
@@ -721,7 +888,7 @@ int main(bool hardReset)
             } else {
                 s_scroll_frame++;
             }
-            continue;
+            return;
         }
 
         /* S7: tick combat (sword timer + draw/clear sword sprite slot 1).
@@ -736,8 +903,8 @@ int main(bool hardReset)
         roomrom_bomb_update();
 
         u16 joy = JOY_readJoypad(JOY_1);
-        u16 pressed = joy & ~joy_prev;
-        joy_prev = joy;
+        u16 pressed = joy & ~s_joy_prev;
+        s_joy_prev = joy;
 
         /* SCENE_CAVE harness: tick the native cave gamemode each frame.
          * Only the C+START exit chord is honored — all other input is
@@ -748,12 +915,12 @@ int main(bool hardReset)
                 cave_exit();
                 s_scene = SCENE_OW;
             }
-            continue;
+            return;
         }
 
         if (pressed & BUTTON_X) {
             s_mode = (s_mode == MODE_WALK) ? MODE_TELEPORT : MODE_WALK;
-            continue;
+            return;
         }
 
         if (pressed & BUTTON_Y) {
@@ -765,7 +932,7 @@ int main(bool hardReset)
             s_link_suby = 0u;
             s_link_grid_offset = 0;
             s_link_dir = LINK_DIR_NONE;
-            continue;
+            return;
         }
 
         /* C held + START press = SCENE_CAVE toggle. Detected before the
@@ -781,7 +948,7 @@ int main(bool hardReset)
                 cave_exit();
                 s_scene = SCENE_OW;
             }
-            continue;
+            return;
         }
 
         /* START edge-press = scene toggle. Z held + START = quest toggle
@@ -791,8 +958,6 @@ int main(bool hardReset)
             s_scene = (s_scene == SCENE_OW) ? SCENE_UW : SCENE_OW;
             s_room_id = (s_scene == SCENE_UW) ? 0x00 : 0x77;
             upload_scene_chr();
-            load_room(s_room_id);
-            roomrom_combat_set_uw(s_scene == SCENE_UW);
             /* P5: scene change uses coordinator to re-upload sprite CHR
              * with correct variant. combat redux kept separate. */
             roomrom_scene_load(
@@ -800,7 +965,9 @@ int main(bool hardReset)
                                       : ROOMROM_SCENE_OVERWORLD,
                 current_redux_flag());
             roomrom_combat_set_redux(current_redux_flag());
-            continue;
+            load_room(s_room_id);
+            roomrom_combat_set_uw(s_scene == SCENE_UW);
+            return;
         }
 
         if (pressed & BUTTON_C) {
@@ -812,7 +979,6 @@ int main(bool hardReset)
                 roomrom_ow_room_render_set_map(map_id ^ 1u);
             }
             upload_scene_chr();
-            load_room(s_room_id);
             /* P5: map toggle re-uploads sprite CHR via coordinator.
              * Combat keeps its existing redux flag (v11+ alt-swing). */
             roomrom_scene_load(
@@ -820,7 +986,8 @@ int main(bool hardReset)
                                       : ROOMROM_SCENE_OVERWORLD,
                 current_redux_flag());
             roomrom_combat_set_redux(current_redux_flag());
-            continue;
+            load_room(s_room_id);
+            return;
         }
 
         /* S7: A swings sword (NES-faithful single A-press). UW level cycle
@@ -883,7 +1050,7 @@ int main(bool hardReset)
                                              : ROOMROM_UW_QUEST_MIN;
             roomrom_uw_room_render_set_quest(q);
             load_room(s_room_id);
-            continue;
+            return;
         }
         /* Level cycle (was MODE-only) removed -- MODE is reserved hardware.
          * Reach a different level via teleport (X mode + DPAD) which warps
@@ -904,7 +1071,7 @@ int main(bool hardReset)
             else if ((pressed & BUTTON_RIGHT) && col < 15) col++;
             else if ((pressed & BUTTON_UP)    && row > 0)  row--;
             else if ((pressed & BUTTON_DOWN)  && row < 7)  row++;
-            else continue;
+            else return;
             s_room_id = (u8)((row << 4) | col);
             load_room(s_room_id);
         } else if (s_move_style == MOVE_STYLE_ALTTP) {
@@ -1073,7 +1240,25 @@ int main(bool hardReset)
                                               s_link_face, s_link_frame);
             }
         }
+
+        /* Task 5.4: warp coordinator runs AFTER movement settles. The
+         * tick is a no-op in non-OW scenes and when the OW raw-tile
+         * cache isn't stable (mid-scroll). When it fires, the apply
+         * step runs synchronously inside the coordinator and the next
+         * frame begins in the new scene. */
+        roomrom_world_transition_tick();
+}
+
+#ifndef ROOMROM_NO_STANDALONE_MAIN
+int main(bool hardReset)
+{
+    (void)hardReset;
+
+    roomrom_debug_enter();
+    while (TRUE) {
+        roomrom_debug_tick();
     }
 
     return 0;
 }
+#endif
