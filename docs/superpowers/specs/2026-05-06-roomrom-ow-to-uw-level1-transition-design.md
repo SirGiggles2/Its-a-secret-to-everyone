@@ -4,7 +4,9 @@
 **Status:** Approved design, pending implementation plan
 **Scope:** First real RoomRom overworld-to-underworld scene transition, limited to Level 1.
 **Phase / Task:** Ph5 Dungeon Core / Task 5.4 (registered in master plan; existing 5.4-5.9 renumbered to 5.5-5.10 to put entry before navigation)
-**Targets affected:** `RoomRom.md` (primary), `CombinedDebug.md` (regression gate).
+**Targets affected (PARITY — both built + verified per commit):**
+  - `RoomRom.md` — standalone gameplay harness (no Title boot).
+  - `CombinedDebug.md` — **final shipping product** = Title boot + RoomRom runtime exports. User decision 2026-05-06.
   `Title.md` is **out of scope** (Phase 11/12 only).
 
 ## Drain-Coverage Header (Rule D1)
@@ -64,11 +66,17 @@ small body of OW metadata accessors.
 
 ## Build-Target Coverage
 
-This task touches RoomRom runtime exports linked into both `RoomRom.md` and
-`CombinedDebug.md`. Anything new declared with file scope in `RoomRom/src/`
-that the coordinator publishes for testing must be exported through
+This task touches RoomRom runtime exports linked into both `RoomRom.md`
+and `CombinedDebug.md`. **Both ROMs are built and verified per commit.**
+Anything new declared with file scope in `RoomRom/src/` that the
+coordinator publishes for testing must be exported through
 `roomrom_debug_runtime.h` so `tools/combined_debug/build_combined_debug.py`
 sees the same ABI.
+
+CombinedDebug = Title boot + RoomRom runtime = the **final shipping
+product** per user 2026-05-06. Per-commit gate is parity-driven: warp
+behavior must be byte-for-byte equivalent between RoomRom standalone and
+CombinedDebug. ABI drift between the two = fail.
 
 `Title.md` is **not** built or modified by this task. Build target rule
 `BT-1` reserves Title.md for Phase 11+ with explicit user approval.
@@ -367,59 +375,64 @@ scene, room id, Link position, or rendering state.
 
 ## Verification — Parity Gates Per Rule D1
 
+All gates run on **both** RoomRom.md and CombinedDebug.md per commit.
+
 ### Gate A — Build cleanliness (every commit)
 
 1. `RoomRom\build.bat` clean.
 2. `set COMBINED_DEBUG_APPROVED=1 && CombinedDebug.bat` clean.
 3. `tools/combined_debug/probe_combined_debug_entry.lua` PASS at the
    PASS frame budget.
-4. `python tools/audit/drain_coverage.py` clean (no new orphans /
+4. `python tools/combined_debug/test_combined_debug_contract.py` PASS.
+5. `python tools/audit/drain_coverage.py` clean (no new orphans /
    phantoms / malformed headers).
 
-### Gate B — Per-RAM-cell oracle (phase-exit; per Rule D1)
+### Gate B — Per-RAM-cell oracle (every commit; per Rule D1)
 
-BizHawk Lua probe captures the full RoomRom state surface at room-load
-tick under three boots:
+BizHawk Lua probe captures the full warp/UW state surface at the first
+frame of UW gameplay post-warp under four boots:
 
-- **Boot W** — coordinator-driven warp from OW `$37` to UW `$73`.
-- **Boot D** — direct UW boot to room `$73` (existing baseline).
-- **Boot N** — NES Zelda 1 reference at the same logical tick (frame
-  after `EndPrepareMode` returns from mode `$10`).
+- **Boot W-RR** — RoomRom coordinator-driven warp from OW `$37` to UW `$73`.
+- **Boot D-RR** — RoomRom direct UW boot to room `$73`.
+- **Boot W-CD** — CombinedDebug coordinator-driven warp from OW `$37` to UW `$73`.
+- **Boot D-CD** — CombinedDebug direct UW boot to room `$73`.
 
-Diff fields:
+Diff field set (must diff zero across all four pairwise comparisons in
+the same target, AND across RoomRom↔CombinedDebug for matching boots):
 
-- `CurLevel`, `CurQuest`, `RoomId`
-- `ObjX`, `ObjY` (Link position)
-- `ObjGridOffset`, `ObjDir`
-- `s_doorway_dir`, all door-state bytes for room `$73`
-- Link OAM (face + frame + first 4 entries)
+- `s_room_id`, `s_link_x`, `s_link_y`, `s_link_face`
+- `s_link_dir`, `s_link_grid_offset`, `s_doorway_dir`
+- `roomrom_uw_room_render_get_level()`, `roomrom_uw_room_render_get_quest()`
+- All `uw_door_state` bytes for room `$73`
+- Link OAM (first 4 entries)
 - Plane A first row (Window vs BG_A boundary check)
-- All of CRAM (palette regression catch)
+- CRAM PAL0 + PAL2 (UW BG palette + sprite palette; field-mapped)
 
-Boot W vs Boot D must diff zero in the listed fields. Boot W vs Boot N
-must match the field-mapping table already used by Phase 5.3
-([RoomRom/tools/probe_uw_west_exit.py](RoomRom/tools/probe_uw_west_exit.py)
-mapping conventions) — additions in this task:
+Boot W-RR vs Boot D-RR = zero. Boot W-CD vs Boot D-CD = zero. Boot
+W-RR vs Boot W-CD = zero (parity invariant). Boot D-RR vs Boot D-CD =
+zero (existing baseline; this task must not regress it).
 
-- `UndergroundEntranceTile` (NES) ↔
-  `coordinator.save.source_underground_entrance_tile`.
-- `UndergroundExitType` (NES) ↔ `s_underground_exit_type` (RoomRom slice-1
-  static; expected 0 throughout slice 1).
+NES-side parity (Boot N) is **out of scope for slice 1**. Existing probes
+are Genesis-only; building a NES-side capture rig is a separate ticket
+logged in `phases[5].deferrals[]`.
 
-### Gate C — Per-scenario regression
+### Gate C — Per-scenario regression (every commit)
+
+Run on both RoomRom and CombinedDebug:
 
 1. Direct UW boot to room `$73` → walk full Phase 5.3 door / movement
    probe loop. PASS.
 2. OW boot to `$37` → walk warp probe → run the Phase 5.3 loop on the
    resulting scene. PASS, with the same diff budget.
-3. OW boot to `$37`, leave Link off the entrance tile, attempt warp
-   trigger every frame for 600 frames. Coordinator stays in `IDLE`,
-   scene stays OW, no plane corruption.
+3. OW boot to `$37`, leave Link off the entrance tile, walk one full
+   N→S→E→W→N loop without crossing the entrance tile. Coordinator stays
+   in `IDLE`, scene stays OW, no plane corruption.
+4. Mock-manifest test exercising rule 3a (room `$22` `& 0x07`) branch
+   via Gate D probe.
 
-### Gate D — Metadata sanity unit probe
+### Gate D — Metadata sanity unit probe (every commit, both ROMs)
 
-Embedded-in-ROM metadata probe (no BizHawk) that runs on boot under a
-build flag:
+Embedded-in-ROM metadata probe under build flag `ROOMROM_PROBE_METADATA=1`:
 
 - `roomrom_ow_meta_attr_b(0x37) == 0x07`
 - `roomrom_ow_meta_level_selector(0x37) == 0x04`
@@ -427,6 +440,9 @@ build flag:
 - `roomrom_ow_meta_level_from_selector(0x04) == 1`
 - `levelinfo_start_room_for(1, 1, &dest) == 1 && dest == 0x73`
 - `levelinfo_start_room_for(2, 1, &dest) == 0` (manifest miss)
+- `ROOMROM_PLAYFIELD_TOP_PX == 56`
+
+Probe writes pass/fail bytes at fixed RAM probe address; BizHawk Lua reads.
 
 ## Acceptance Criteria
 

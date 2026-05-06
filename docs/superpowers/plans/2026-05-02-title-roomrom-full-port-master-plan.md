@@ -959,6 +959,7 @@ Gates:
 - **Coverage**: NONE
 - **Stance**: GREENFIELD (no drain candidate)
 - **Spec**: `docs/superpowers/specs/2026-05-06-roomrom-ow-to-uw-level1-transition-design.md`
+- **Build targets**: `RoomRom.md` AND `CombinedDebug.md` (per-commit parity; CombinedDebug is the ship product per user 2026-05-06)
 
 - [ ] OW LevelBlock metadata accessor (`RoomRom/src/ow_room_meta.{c,h}`).
 - [ ] OW renderer raw-tile cache extension (32x22 NES BG tile ids).

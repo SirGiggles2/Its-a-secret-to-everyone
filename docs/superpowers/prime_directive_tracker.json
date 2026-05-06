@@ -230,7 +230,13 @@
             "coverage": "NONE",
             "stance": "GREENFIELD"
           },
-          "evidence": [],
+          "build_targets": [
+            "RoomRom.md",
+            "CombinedDebug.md (ship product per user 2026-05-06; per-commit parity gate)"
+          ],
+          "evidence": [
+            "ph5.4 scaffold commit 6eff3ab9: warp coordinator + state machine + apply-outcome + reset contract; RoomRom.md builds clean."
+          ],
           "deferrals": [
             "UW\u2192OW exit (UndergroundExitType writer)",
             "Mode $10 visible semantics (stairs anim, palette mask, fade)",
