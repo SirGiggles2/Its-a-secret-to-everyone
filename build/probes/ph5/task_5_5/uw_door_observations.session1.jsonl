@@ -1,0 +1,23 @@
+{"event":"probe_open","note":"Task 5.5 UW L1Q1 door-state probe; mirror $FF7200 / persist $FF76D0","ts":1778123729}
+{"door_E":0,"door_N":5,"door_S":0,"door_W":0,"event":"room_entry","frame":1,"has_shutters":0,"keys_at_entry":3,"opened_mask":7,"persisted_mask":0,"room_id":115,"uw_level":1,"uw_quest":1}
+{"dir":0,"door_type":0,"event":"touch","frame":369,"keys_post":3,"keys_pre":3,"opened_mask_after":7,"result":1,"room_id":115}
+{"door_E":1,"door_N":1,"door_S":1,"door_W":0,"event":"room_entry","frame":458,"has_shutters":0,"keys_at_entry":3,"opened_mask":2,"persisted_mask":0,"room_id":116,"uw_level":1,"uw_quest":1}
+{"dir":1,"door_type":0,"event":"touch","frame":486,"keys_post":3,"keys_pre":3,"opened_mask_after":2,"result":1,"room_id":116}
+{"door_E":0,"door_N":5,"door_S":0,"door_W":0,"event":"room_entry","frame":556,"has_shutters":0,"keys_at_entry":3,"opened_mask":7,"persisted_mask":0,"room_id":115,"uw_level":1,"uw_quest":1}
+{"door_E":0,"door_N":1,"door_S":1,"door_W":1,"event":"room_entry","frame":842,"has_shutters":0,"keys_at_entry":3,"opened_mask":1,"persisted_mask":0,"room_id":114,"uw_level":1,"uw_quest":1}
+{"dir":0,"door_type":0,"event":"touch","frame":859,"keys_post":3,"keys_pre":3,"opened_mask_after":1,"result":1,"room_id":114}
+{"door_E":0,"door_N":5,"door_S":0,"door_W":0,"event":"room_entry","frame":941,"has_shutters":0,"keys_at_entry":3,"opened_mask":7,"persisted_mask":0,"room_id":115,"uw_level":1,"uw_quest":1}
+{"dir":3,"door_type":5,"event":"touch","frame":1100,"keys_post":2,"keys_pre":3,"opened_mask_after":15,"result":1,"room_id":115}
+{"door_E":1,"door_N":0,"door_S":5,"door_W":1,"event":"room_entry","frame":1166,"has_shutters":0,"keys_at_entry":2,"opened_mask":8,"persisted_mask":0,"room_id":99,"uw_level":1,"uw_quest":1}
+{"door_E":0,"door_N":4,"door_S":0,"door_W":0,"event":"room_entry","frame":1446,"has_shutters":0,"keys_at_entry":2,"opened_mask":7,"persisted_mask":0,"room_id":83,"uw_level":1,"uw_quest":1}
+{"dir":0,"door_type":0,"event":"touch","frame":1589,"keys_post":2,"keys_pre":2,"opened_mask_after":7,"result":1,"room_id":83}
+{"door_E":1,"door_N":4,"door_S":1,"door_W":0,"event":"room_entry","frame":1654,"has_shutters":0,"keys_at_entry":2,"opened_mask":2,"persisted_mask":0,"room_id":84,"uw_level":1,"uw_quest":1}
+{"dir":1,"door_type":0,"event":"touch","frame":1673,"keys_post":2,"keys_pre":2,"opened_mask_after":2,"result":1,"room_id":84}
+{"door_E":0,"door_N":4,"door_S":0,"door_W":0,"event":"room_entry","frame":1749,"has_shutters":0,"keys_at_entry":2,"opened_mask":7,"persisted_mask":0,"room_id":83,"uw_level":1,"uw_quest":1}
+{"door_E":7,"door_N":5,"door_S":1,"door_W":1,"event":"room_entry","frame":1993,"has_shutters":1,"keys_at_entry":2,"opened_mask":0,"persisted_mask":0,"room_id":82,"uw_level":1,"uw_quest":1}
+{"dir":0,"door_type":7,"event":"touch","frame":2063,"keys_post":2,"keys_pre":2,"opened_mask_after":0,"result":0,"room_id":82}
+{"dir":3,"door_type":5,"event":"touch","frame":2282,"keys_post":1,"keys_pre":2,"opened_mask_after":8,"result":1,"room_id":82}
+{"door_E":0,"door_N":1,"door_S":5,"door_W":7,"event":"room_entry","frame":2358,"has_shutters":1,"keys_at_entry":1,"opened_mask":1,"persisted_mask":0,"room_id":66,"uw_level":1,"uw_quest":1}
+{"dir":0,"door_type":0,"event":"touch","frame":2865,"keys_post":1,"keys_pre":1,"opened_mask_after":1,"result":1,"room_id":66}
+{"door_E":5,"door_N":0,"door_S":4,"door_W":0,"event":"room_entry","frame":2930,"has_shutters":0,"keys_at_entry":1,"opened_mask":10,"persisted_mask":0,"room_id":67,"uw_level":1,"uw_quest":1}
+{"door_E":0,"door_N":1,"door_S":4,"door_W":5,"event":"room_entry","frame":3425,"has_shutters":0,"keys_at_entry":0,"opened_mask":1,"persisted_mask":0,"room_id":68,"uw_level":1,"uw_quest":1}

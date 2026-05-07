@@ -1,32 +1,31 @@
 {
   "jsonl": "C:\\tmp\\uw_door_observations.jsonl",
-  "events_total": 14,
+  "events_total": 100,
   "malformed_skipped": 0,
   "rooms_total": 17,
   "rooms_reachable": 15,
   "rooms_visited": [
-    67,
-    83,
-    84,
-    99,
-    115
-  ],
-  "rooms_missing": [
     34,
     35,
     51,
     65,
     66,
+    67,
     68,
     69,
     82,
+    83,
+    84,
+    99,
     114,
+    115,
     116
   ],
-  "gate_b_parity_passes": 5,
+  "rooms_missing": [],
+  "gate_b_parity_passes": 17,
   "gate_b_parity_fails": [],
   "gate_c_behavioral_fails": [],
-  "touches_total": 5,
-  "shutter_triggers_total": 0,
-  "overall_pass": false
+  "touches_total": 22,
+  "shutter_triggers_total": 2,
+  "overall_pass": true
 }
