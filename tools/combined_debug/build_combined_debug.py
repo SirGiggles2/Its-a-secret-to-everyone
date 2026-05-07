@@ -208,6 +208,18 @@ def main() -> int:
     print("[CombinedDebug] check_sgdk_pin.py")
     run([sys.executable, ROOT / "tools" / "check_sgdk_pin.py"])
 
+    # PR-1 CHR-FOUNDATION gates (per docs/superpowers/specs/2026-05-07-
+    # whole-chr-rollout-design.md). CombinedDebug is sole target;
+    # mirror the strict gates that RoomRom/build.bat already runs.
+    print("[CombinedDebug][CHR-1 gate] verify_item_chr_manifest.py --strict")
+    run([sys.executable, ROOT / "RoomRom" / "tools" / "verify_item_chr_manifest.py", "--strict"])
+
+    print("[CombinedDebug][CHR-1 gate] verify_vram_budget.py")
+    run([sys.executable, ROOT / "RoomRom" / "tools" / "verify_vram_budget.py"])
+
+    print("[CombinedDebug][CHR-1 gate] check_generated_freshness.py")
+    run([sys.executable, ROOT / "tools" / "probes" / "check_generated_freshness.py"])
+
     print("[1] Compiling sgdk/src/boot/rom_head.c...")
     run(gcc_prefix() + CFLAGS + include_args() + ["-c", SGDK / "src" / "boot" / "rom_head.c", "-o", OUT / "rom_head.o"], cwd=PROJ)
 

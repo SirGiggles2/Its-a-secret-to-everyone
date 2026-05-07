@@ -1,0 +1,567 @@
+{
+  "verdict": "BG_2x_REJECTED",
+  "uw_total_rooms": 636,
+  "uw_max_distinct_subpals_per_room": 4,
+  "uw_rooms_with_3plus": [
+    {
+      "map": 0,
+      "quest": 1,
+      "level": 1,
+      "room": "0x22",
+      "distinct": [
+        0,
+        1,
+        2
+      ]
+    },
+    {
+      "map": 0,
+      "quest": 1,
+      "level": 1,
+      "room": "0x23",
+      "distinct": [
+        0,
+        1,
+        2,
+        3
+      ]
+    },
+    {
+      "map": 0,
+      "quest": 1,
+      "level": 1,
+      "room": "0x33",
+      "distinct": [
+        0,
+        1,
+        2,
+        3
+      ]
+    },
+    {
+      "map": 0,
+      "quest": 1,
+      "level": 1,
+      "room": "0x35",
+      "distinct": [
+        0,
+        1,
+        2
+      ]
+    },
+    {
+      "map": 0,
+      "quest": 1,
+      "level": 1,
+      "room": "0x36",
+      "distinct": [
+        0,
+        1,
+        2
+      ]
+    },
+    {
+      "map": 0,
+      "quest": 1,
+      "level": 1,
+      "room": "0x41",
+      "distinct": [
+        0,
+        1,
+        2
+      ]
+    },
+    {
+      "map": 0,
+      "quest": 1,
+      "level": 1,
+      "room": "0x42",
+      "distinct": [
+        0,
+        1,
+        2
+      ]
+    },
+    {
+      "map": 0,
+      "quest": 1,
+      "level": 1,
+      "room": "0x43",
+      "distinct": [
+        0,
+        1,
+        2
+      ]
+    },
+    {
+      "map": 0,
+      "quest": 1,
+      "level": 1,
+      "room": "0x44",
+      "distinct": [
+        0,
+        1,
+        2
+      ]
+    },
+    {
+      "map": 0,
+      "quest": 1,
+      "level": 1,
+      "room": "0x45",
+      "distinct": [
+        0,
+        1,
+        2
+      ]
+    },
+    {
+      "map": 0,
+      "quest": 1,
+      "level": 1,
+      "room": "0x52",
+      "distinct": [
+        0,
+        1,
+        2
+      ]
+    },
+    {
+      "map": 0,
+      "quest": 1,
+      "level": 1,
+      "room": "0x53",
+      "distinct": [
+        0,
+        1,
+        2
+      ]
+    },
+    {
+      "map": 0,
+      "quest": 1,
+      "level": 1,
+      "room": "0x54",
+      "distinct": [
+        0,
+        1,
+        2
+      ]
+    },
+    {
+      "map": 0,
+      "quest": 1,
+      "level": 1,
+      "room": "0x63",
+      "distinct": [
+        0,
+        1,
+        2
+      ]
+    },
+    {
+      "map": 0,
+      "quest": 1,
+      "level": 1,
+      "room": "0x72",
+      "distinct": [
+        0,
+        1,
+        2
+      ]
+    },
+    {
+      "map": 0,
+      "quest": 1,
+      "level": 1,
+      "room": "0x73",
+      "distinct": [
+        0,
+        1,
+        2,
+        3
+      ]
+    },
+    {
+      "map": 0,
+      "quest": 1,
+      "level": 1,
+      "room": "0x74",
+      "distinct": [
+        0,
+        1,
+        2
+      ]
+    },
+    {
+      "map": 0,
+      "quest": 1,
+      "level": 2,
+      "room": "0x0D",
+      "distinct": [
+        0,
+        1,
+        2
+      ]
+    },
+    {
+      "map": 0,
+      "quest": 1,
+      "level": 2,
+      "room": "0x0E",
+      "distinct": [
+        0,
+        1,
+        2
+      ]
+    },
+    {
+      "map": 0,
+      "quest": 1,
+      "level": 2,
+      "room": "0x1E",
+      "distinct": [
+        0,
+        1,
+        2
+      ]
+    },
+    {
+      "map": 0,
+      "quest": 1,
+      "level": 2,
+      "room": "0x1F",
+      "distinct": [
+        0,
+        1,
+        2
+      ]
+    },
+    {
+      "map": 0,
+      "quest": 1,
+      "level": 2,
+      "room": "0x2E",
+      "distinct": [
+        0,
+        1,
+        2
+      ]
+    },
+    {
+      "map": 0,
+      "quest": 1,
+      "level": 2,
+      "room": "0x2F",
+      "distinct": [
+        0,
+        1,
+        2
+      ]
+    },
+    {
+      "map": 0,
+      "quest": 1,
+      "level": 2,
+      "room": "0x3E",
+      "distinct": [
+        0,
+        1,
+        2
+      ]
+    },
+    {
+      "map": 0,
+      "quest": 1,
+      "level": 2,
+      "room": "0x3F",
+      "distinct": [
+        0,
+        1,
+        2
+      ]
+    },
+    {
+      "map": 0,
+      "quest": 1,
+      "level": 2,
+      "room": "0x4E",
+      "distinct": [
+        0,
+        1,
+        2
+      ]
+    },
+    {
+      "map": 0,
+      "quest": 1,
+      "level": 2,
+      "room": "0x4F",
+      "distinct": [
+        0,
+        1,
+        2
+      ]
+    },
+    {
+      "map": 0,
+      "quest": 1,
+      "level": 2,
+      "room": "0x5E",
+      "distinct": [
+        0,
+        1,
+        2
+      ]
+    },
+    {
+      "map": 0,
+      "quest": 1,
+      "level": 2,
+      "room": "0x5F",
+      "distinct": [
+        0,
+        1,
+        2
+      ]
+    },
+    {
+      "map": 0,
+      "quest": 1,
+      "level": 2,
+      "room": "0x6C",
+      "distinct": [
+        0,
+        1,
+        2
+      ]
+    },
+    {
+      "map": 0,
+      "quest": 1,
+      "level": 2,
+      "room": "0x6D",
+      "distinct": [
+        0,
+        1,
+        2
+      ]
+    },
+    {
+      "map": 0,
+      "quest": 1,
+      "level": 2,
+      "room": "0x6E",
+      "distinct": [
+        0,
+        1,
+        2
+      ]
+    },
+    {
+      "map": 0,
+      "quest": 1,
+      "level": 2,
+      "room": "0x6F",
+      "distinct": [
+        0,
+        1,
+        2
+      ]
+    },
+    {
+      "map": 0,
+      "quest": 1,
+      "level": 2,
+      "room": "0x7D",
+      "distinct": [
+        0,
+        1,
+        2,
+        3
+      ]
+    },
+    {
+      "map": 0,
+      "quest": 1,
+      "level": 2,
+      "room": "0x7E",
+      "distinct": [
+        0,
+        1,
+        2
+      ]
+    },
+    {
+      "map": 0,
+      "quest": 1,
+      "level": 3,
+      "room": "0x2A",
+      "distinct": [
+        0,
+        1,
+        2
+      ]
+    },
+    {
+      "map": 0,
+      "quest": 1,
+      "level": 3,
+      "room": "0x2B",
+      "distinct": [
+        0,
+        1,
+        2
+      ]
+    },
+    {
+      "map": 0,
+      "quest": 1,
+      "level": 3,
+      "room": "0x3B",
+      "distinct": [
+        0,
+        1,
+        2
+      ]
+    },
+    {
+      "map": 0,
+      "quest": 1,
+      "level": 3,
+      "room": "0x3D",
+      "distinct": [
+        0,
+        1,
+        2
+      ]
+    },
+    {
+      "map": 0,
+      "quest": 1,
+      "level": 3,
+      "room": "0x49",
+      "distinct": [
+        0,
+        1,
+        2
+      ]
+    },
+    {
+      "map": 0,
+      "quest": 1,
+      "level": 3,
+      "room": "0x4A",
+      "distinct": [
+        0,
+        1,
+        2
+      ]
+    },
+    {
+      "map": 0,
+      "quest": 1,
+      "level": 3,
+      "room": "0x4B",
+      "distinct": [
+        0,
+        1,
+        2
+      ]
+    },
+    {
+      "map": 0,
+      "quest": 1,
+      "level": 3,
+      "room": "0x4C",
+      "distinct": [
+        0,
+        1,
+        2
+      ]
+    },
+    {
+      "map": 0,
+      "quest": 1,
+      "level": 3,
+      "room": "0x4D",
+      "distinct": [
+        0,
+        1,
+        2
+      ]
+    },
+    {
+      "map": 0,
+      "quest": 1,
+      "level": 3,
+      "room": "0x59",
+      "distinct": [
+        0,
+        1,
+        2
+      ]
+    },
+    {
+      "map": 0,
+      "quest": 1,
+      "level": 3,
+      "room": "0x5A",
+      "distinct": [
+        0,
+        1,
+        2
+      ]
+    },
+    {
+      "map": 0,
+      "quest": 1,
+      "level": 3,
+      "room": "0x5B",
+      "distinct": [
+        0,
+        1,
+        2
+      ]
+    },
+    {
+      "map": 0,
+      "quest": 1,
+      "level": 3,
+      "room": "0x5C",
+      "distinct": [
+        0,
+        1,
+        2
+      ]
+    },
+    {
+      "map": 0,
+      "quest": 1,
+      "level": 3,
+      "room": "0x5D",
+      "distinct": [
+        0,
+        1,
+        2
+      ]
+    },
+    {
+      "map": 0,
+      "quest": 1,
+      "level": 3,
+      "room": "0x69",
+      "distinct": [
+        0,
+        1,
+        2
+      ]
+    }
+  ],
+  "uw_rooms_with_3plus_count": 636,
+  "ow_total_rooms": 0,
+  "ow_max_distinct_subpals_per_room": 0,
+  "ow_rooms_with_3plus": [],
+  "ow_rooms_with_3plus_count": 0,
+  "decision_implication": "BG_2x rejected. Fallback: BG_3x (768 tiles, NPC scope cut) OR SPR-split + shared SCENE_OBJ transient (preserves BG_4x). Per-room remap table required if BG_3x chosen."
+}

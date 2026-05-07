@@ -1,0 +1,109 @@
+{
+  "obj_anim_attr_heap_found": false,
+  "obj_anim_attr_heap_subpal_distribution": null,
+  "obj_anim_attr_heap_bytes_count": 0,
+  "bank_recommendations": {
+    "Common (Link/sword body)": {
+      "default_subpal": 0,
+      "observed_range": [
+        0
+      ],
+      "prebias_factor": "1x (already in SPR_1x bank)",
+      "note": "Link sprite always sub-pal 0 per NES Anim_SetLinkObjAttr"
+    },
+    "ITEM (weapons + items)": {
+      "default_subpal": "varies",
+      "observed_range": [
+        0,
+        1,
+        2,
+        3
+      ],
+      "prebias_factor": "4x (already in items_chr_x4)",
+      "note": "Items cycle sub-pal via NES sub-pal selector in tile index"
+    },
+    "OWSP (OW enemies)": {
+      "default_subpal": 0,
+      "observed_range": [
+        0,
+        1
+      ],
+      "prebias_factor": "2x recommended (mostly 0, some Wizzrobe variants use 1)",
+      "note": "Octorok/Leever/Peahat sub-pal 0; Wizzrobe blue/red variants use 1"
+    },
+    "UWSP base (always-loaded UW)": {
+      "default_subpal": 0,
+      "observed_range": [
+        0,
+        1,
+        2
+      ],
+      "prebias_factor": "4x or per-(tile, subpal) keyed entries",
+      "note": "Keese/Zol/Gel base 0; Like-Like 1; Wallmaster 2"
+    },
+    "UWSP127/358/469 (per-level UW enemies)": {
+      "default_subpal": 0,
+      "observed_range": [
+        0,
+        1,
+        2,
+        3
+      ],
+      "prebias_factor": "4x (per Codex P0-2: ObjAnimAttrHeap uses sub-pal 0..3)",
+      "note": "ROM-staged transient bank, swap on UW level entry"
+    },
+    "UWSPBoss1257/3468/9 (per-level bosses)": {
+      "default_subpal": 2,
+      "observed_range": [
+        0,
+        2
+      ],
+      "prebias_factor": "2x recommended (sub-pal 0 + 2 only; Anim_Set...RedPaletteRow forces $02 for damage flash)",
+      "note": "Z_07.asm:5337 hardcodes attribute $02 for fire/damage flash"
+    },
+    "Effect/projectile (FX): fire, sword shot, magic shot, bomb cloud, fairy spark": {
+      "default_subpal": 2,
+      "observed_range": [
+        0,
+        1,
+        2,
+        3
+      ],
+      "prebias_factor": "4x (matches items_chr_x4 pattern; can colocate in extended ITEM atlas)",
+      "note": "DrawObjectWithType path; per-FX attribute varies"
+    },
+    "NPC (old man, fairy, merchant, sign)": {
+      "default_subpal": 0,
+      "observed_range": [
+        0,
+        1
+      ],
+      "prebias_factor": "2x (most NPCs sub-pal 0; merchant items use 1)",
+      "note": "Cave-dispatch loaded; OW/cave context-specific"
+    }
+  },
+  "scene_obj_bank_size_options": {
+    "1x_unified": {
+      "tile_count": 256,
+      "byte_count": 8192,
+      "comment": "1\u00d7 per active context; needs 4\u00d7 prebias if any source uses sub-pal 1+."
+    },
+    "4x_unified": {
+      "tile_count": 1024,
+      "byte_count": 32768,
+      "comment": "4\u00d7 prebias for full sub-pal coverage; 32 KB total per bank \u2014 likely too large."
+    },
+    "selective_4x_per_bank": {
+      "comment": "Each transient context picks its own prebias factor (1\u00d7/2\u00d7/4\u00d7) per recommendation table; SCENE_OBJ slot size = max factor \u00d7 max content. Likely 4\u00d7 \u00d7 256 = 32 KB worst case."
+    }
+  },
+  "key_findings": [
+    "BG_2x rejected (per audit_bg_subpal_refs.py); must keep BG_4x.",
+    "ITEM bank already 4\u00d7 \u2014 extend for triforce + FX.",
+    "Transient banks (UWSP per-level) need \u2265 2\u00d7 prebias; recommend 4\u00d7 to cover all observed sub-pal usage per Codex P0-2.",
+    "Boss banks 2\u00d7 sufficient (sub-pal 0 + 2 only).",
+    "NPC banks 2\u00d7 sufficient.",
+    "Shared SCENE_OBJ transient: budget for 4\u00d7 \u00d7 256 tiles = 32 KB bank if unified; OR per-context bank with content-driven prebias."
+  ],
+  "decision_input": "Per-context selective prebias yields tighter VRAM but more manifest entries. Unified 4\u00d7 simpler but 4\u00d7 larger. Recommend selective: enemy 4\u00d7, boss 2\u00d7, NPC 2\u00d7. Total transient VRAM: max(enemy_4x=8KB\u00d74=32KB?, boss_2x=8KB, npc_2x=4KB) \u2014 recheck once content sizes locked."
+}
