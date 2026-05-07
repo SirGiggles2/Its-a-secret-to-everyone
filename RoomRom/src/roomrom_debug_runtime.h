@@ -3,7 +3,7 @@
 
 /* RoomRom Debug RAM Map (P0-3 canonical table; both ROMs link these)
  * ===================================================================
- *   $FF7200..$FF7247   72 B   state mirror (warp+door state; tasks 5.4+5.5)
+ *   $FF7200..$FF724F   80 B   state mirror (warp+door+cellar; 5.4+5.5+5.6)
  *   $FF7300..$FF731F   32 B   Gate D metadata probe (Task 5.4)
  *   $FF7400..$FF76C3  708 B   OW raw-tile cache (Task 5.4)
  *   $FF76D0..$FF77CF  256 B   UW door persistence table (Task 5.5)
@@ -89,9 +89,16 @@ unsigned char roomrom_debug_warp_unsupported_count(void);
  *   52   1     last_touch_result (0=blocked, 1=passable, 0xFF=none)
  *   53   1     last_touch_door_type
  *   54..71   18  reserved (room id history ring + future fields)
+ *
+ * Task 5.6 extension (offsets 72..79, total 80 bytes):
+ *   72   1     uw_cellar_state (0=outside, 1=in_cellar; tracks current room)
+ *   73   1     uw_cellar_entry_count (debug)
+ *   74   1     uw_cellar_exit_count (debug)
+ *   75   1     uw_cellar_pending_exit (1 if next LOAD exits cellar)
+ *   76..79  4  reserved
  */
 #define ROOMROM_DEBUG_STATE_MIRROR_BASE  0x00FF7200UL
-#define ROOMROM_DEBUG_STATE_MIRROR_BYTES 72u
+#define ROOMROM_DEBUG_STATE_MIRROR_BYTES 80u
 
 void roomrom_debug_publish_state_mirror(void);
 

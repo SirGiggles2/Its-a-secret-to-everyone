@@ -18,6 +18,7 @@
 #include "ow_room_meta.h"
 #include "ow_room_render_roomrom.h"
 #include "uw_room_render_roomrom.h"
+#include "uw_cellar_meta.h"
 #include "../data/levelinfo_start_rooms.h"
 #include "roomrom_sprites.h"  /* LINK_FACE_* enum */
 
@@ -35,6 +36,13 @@
 static rr_warp_state_t       s_state;
 static rr_warp_save_state_t  s_save;
 static unsigned char         s_unsupported_selector_count;
+
+/* Task 5.6: latched flag set in IDLE on a UW-stair detect, consumed in
+ * LOAD to bump the right counter. 0 = OW warp / UW-stair entry,
+ * 1 = UW-stair cellar exit. */
+static unsigned char         s_pending_cellar_exit;
+static unsigned char         s_cellar_entry_count;
+static unsigned char         s_cellar_exit_count;
 
 
 static void clear_save_state(void)
@@ -56,7 +64,20 @@ void roomrom_world_transition_init(void)
 {
     s_state = RR_WARP_IDLE;
     s_unsupported_selector_count = 0u;
+    s_pending_cellar_exit = 0u;
+    s_cellar_entry_count = 0u;
+    s_cellar_exit_count = 0u;
     clear_save_state();
+}
+
+unsigned char roomrom_world_transition_cellar_entry_count(void)
+{
+    return s_cellar_entry_count;
+}
+
+unsigned char roomrom_world_transition_cellar_exit_count(void)
+{
+    return s_cellar_exit_count;
 }
 
 unsigned char roomrom_world_transition_is_active(void)
@@ -95,13 +116,24 @@ static unsigned char collapse_warp_tile(unsigned char raw)
     return raw;
 }
 
-/* Rules 1-8 from the spec. Returns 1 and populates `out` on hit. */
-static unsigned char detect_warp(unsigned char source_room_id,
-                                 short link_x, short link_y,
-                                 signed char grid_offset,
-                                 unsigned char underground_exit_type,
-                                 rr_warp_save_state_t *save_out,
-                                 rr_warp_outcome_t   *outcome_out)
+/* Shared rule helpers (P1-1): used by both OW + UW detect_warp branches.
+ * NES alignment + raw-tile sampling lives once. */
+static unsigned char y_in_playfield(short link_y, short *y_out)
+{
+    short foot_y = (short)(link_y + 0x0B);
+    if (foot_y < ROOMROM_WARP_PLAYFIELD_TOP_PX) return 0u;
+    *y_out = (short)(foot_y - ROOMROM_WARP_PLAYFIELD_TOP_PX);
+    return 1u;
+}
+
+/* OW detect_warp (rules 1-8 from Task 5.4 spec). Returns 1 + populates
+ * save+outcome on hit. */
+static unsigned char detect_warp_ow(unsigned char source_room_id,
+                                    short link_x, short link_y,
+                                    signed char grid_offset,
+                                    unsigned char underground_exit_type,
+                                    rr_warp_save_state_t *save_out,
+                                    rr_warp_outcome_t   *outcome_out)
 {
     unsigned char tile_col;
     unsigned char tile_row;
@@ -153,12 +185,8 @@ static unsigned char detect_warp(unsigned char source_room_id,
     if (!roomrom_ow_room_render_is_stable()) {
         return 0u;
     }
-    {
-        short foot_y = (short)(link_y + 0x0B);
-        if (foot_y < ROOMROM_WARP_PLAYFIELD_TOP_PX) {
-            return 0u;
-        }
-        y_in_play = (short)(foot_y - ROOMROM_WARP_PLAYFIELD_TOP_PX);
+    if (!y_in_playfield(link_y, &y_in_play)) {
+        return 0u;
     }
     tile_col = (unsigned char)((link_x >> 3) & 0x1Fu);
     tile_row = (unsigned char)((y_in_play >> 3) & 0x1Fu);
@@ -210,30 +238,136 @@ static unsigned char detect_warp(unsigned char source_room_id,
     return 1u;
 }
 
+/* UW detect_warp (Task 5.6 stair branch). Rules 0-7 per plan.
+ * NES source: Z_05.asm:CheckWarps UW branch lines 7253-7301. */
+static unsigned char detect_warp_uw(unsigned char source_room_id,
+                                    short link_x, short link_y,
+                                    signed char grid_offset,
+                                    unsigned char underground_exit_type,
+                                    rr_warp_save_state_t *save_out,
+                                    rr_warp_outcome_t   *outcome_out)
+{
+    unsigned char tile_col;
+    unsigned char tile_row;
+    unsigned char raw_tile;
+    unsigned char level;
+    unsigned char quest;
+    unsigned char dest_room = 0u;
+    unsigned char is_cellar_exit = 0u;
+    short y_in_play;
+
+    /* Rule 1. */
+    if (underground_exit_type != 0u) return 0u;
+    /* Rule 2. */
+    if (grid_offset != 0) return 0u;
+    /* Rule 3: UW alignment same as OW non-$22. */
+    if (((unsigned)link_x & 0x0Fu) != 0u) return 0u;
+    /* Rule 4: same y alignment as OW. */
+    if (((unsigned)link_y & 0x0Fu) != 0x05u) return 0u;
+    /* Rule 5: sample raw NES BG tile at foot center. */
+    if (!y_in_playfield(link_y, &y_in_play)) return 0u;
+    tile_col = (unsigned char)((link_x >> 3) & 0x1Fu);
+    tile_row = (unsigned char)((y_in_play >> 3) & 0x1Fu);
+    level = roomrom_uw_room_render_get_level();
+    quest = roomrom_uw_room_render_get_quest();
+    raw_tile = roomrom_uw_room_render_raw_tile_at_room(level, quest,
+                                                       source_room_id,
+                                                       tile_col, tile_row);
+    /* UW stair tiles are exactly $70..$73. $24/$88 are OW-only
+     * (NES line 7257-7260). */
+    if (raw_tile < 0x70u || raw_tile > 0x73u) return 0u;
+
+    /* Rule 6: cellar resolution. */
+    if (roomrom_uw_room_is_cellar(level, quest, source_room_id)) {
+        /* Cellar exit branch: dest = save state's source_room_id
+         * (P0-3, latched on entry, NOT looked up in pair table). */
+        if (save_out->source_room_id == 0u) {
+            /* No latched source — exit invalidated (e.g. NV-RAM
+             * deferral, fresh boot in cellar). Refuse. */
+            return 0u;
+        }
+        dest_room = save_out->source_room_id;
+        is_cellar_exit = 1u;
+    } else {
+        /* Cellar entry branch: source room → cellar via pair table. */
+        if (!roomrom_uw_cellar_for_source(level, quest, source_room_id,
+                                          &dest_room)) {
+            return 0u;
+        }
+    }
+
+    /* Rule 7: tile collapse $70..$73 → $70 (shared with OW rule 8). */
+    if (is_cellar_exit) {
+        /* Exit replays save state into outcome — leave latched
+         * source_* fields alone. dest_* updated to point back at the
+         * source room. */
+        save_out->dest_level = level;
+        save_out->dest_quest = quest;
+        save_out->dest_room_id = dest_room;
+        save_out->dest_link_face = ROOMROM_MAIN_LINK_FACE_DOWN;
+    } else {
+        /* Entry latches: source = current room, dest = cellar. */
+        save_out->version = 1u;
+        save_out->source_room_id = source_room_id;
+        save_out->source_underground_entrance_tile_raw = raw_tile;
+        save_out->source_underground_entrance_tile = collapse_warp_tile(raw_tile);
+        save_out->source_link_x = link_x;
+        save_out->source_link_y = link_y;
+        save_out->source_link_face = roomrom_main_current_link_face();
+        save_out->dest_level = level;
+        save_out->dest_quest = quest;
+        save_out->dest_room_id = dest_room;
+        save_out->dest_link_face = ROOMROM_MAIN_LINK_FACE_DOWN;
+    }
+
+    outcome_out->dest_scene = ROOMROM_MAIN_SCENE_UW;
+    outcome_out->dest_level = level;
+    outcome_out->dest_quest = quest;
+    outcome_out->dest_room_id = dest_room;
+    outcome_out->dest_link_x = ROOMROM_WARP_UW_SPAWN_X;
+    outcome_out->dest_link_y = ROOMROM_WARP_UW_SPAWN_Y;
+    outcome_out->dest_link_face = ROOMROM_MAIN_LINK_FACE_DOWN;
+    outcome_out->dest_redux_flag = roomrom_main_current_redux_flag();
+    return 1u;
+}
+
 void roomrom_world_transition_tick(void)
 {
     rr_warp_outcome_t outcome;
 
     switch (s_state) {
 
-    case RR_WARP_IDLE:
-        /* Rule 0: only fire OW-side detection in OW. */
-        if (roomrom_main_current_scene() != ROOMROM_MAIN_SCENE_OW) {
-            return;
+    case RR_WARP_IDLE: {
+        /* Rule 0: scene dispatch. OW → detect_warp_ow; UW → detect_warp_uw. */
+        unsigned char scene = roomrom_main_current_scene();
+        unsigned char hit = 0u;
+        if (scene == ROOMROM_MAIN_SCENE_OW) {
+            hit = detect_warp_ow(roomrom_main_current_room_id(),
+                                 roomrom_main_current_link_x(),
+                                 roomrom_main_current_link_y(),
+                                 roomrom_main_current_link_grid_offset(),
+                                 roomrom_main_underground_exit_type(),
+                                 &s_save,
+                                 &outcome);
+        } else if (scene == ROOMROM_MAIN_SCENE_UW) {
+            unsigned char rid_before = roomrom_main_current_room_id();
+            unsigned char level_now = roomrom_uw_room_render_get_level();
+            unsigned char quest_now = roomrom_uw_room_render_get_quest();
+            s_pending_cellar_exit =
+                roomrom_uw_room_is_cellar(level_now, quest_now, rid_before);
+            hit = detect_warp_uw(rid_before,
+                                 roomrom_main_current_link_x(),
+                                 roomrom_main_current_link_y(),
+                                 roomrom_main_current_link_grid_offset(),
+                                 roomrom_main_underground_exit_type(),
+                                 &s_save,
+                                 &outcome);
         }
-        if (detect_warp(roomrom_main_current_room_id(),
-                        roomrom_main_current_link_x(),
-                        roomrom_main_current_link_y(),
-                        roomrom_main_current_link_grid_offset(),
-                        roomrom_main_underground_exit_type(),
-                        &s_save,
-                        &outcome)) {
+        if (hit) {
             s_state = RR_WARP_PREPARE;
-            /* Stash outcome on the save state's dest fields; LOAD
-             * rebuilds the outcome from save+spawn consts so we don't
-             * carry a duplicate copy. */
         }
         return;
+    }
 
     case RR_WARP_PREPARE:
         /* Slice-1 PREPARE is a 0-frame placeholder: the save state was
@@ -261,6 +395,15 @@ void roomrom_world_transition_tick(void)
 
         roomrom_audio_silence_for_warp();
         roomrom_main_apply_warp_outcome(&outcome);
+        if (s_pending_cellar_exit) {
+            if (s_cellar_exit_count < 0xFFu) s_cellar_exit_count++;
+        } else if (roomrom_main_current_scene() == ROOMROM_MAIN_SCENE_UW &&
+                   roomrom_uw_room_is_cellar(s_save.dest_level,
+                                             s_save.dest_quest,
+                                             s_save.dest_room_id)) {
+            if (s_cellar_entry_count < 0xFFu) s_cellar_entry_count++;
+        }
+        s_pending_cellar_exit = 0u;
         s_state = RR_WARP_RESUME;
         return;
 

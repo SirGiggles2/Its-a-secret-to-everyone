@@ -124,6 +124,10 @@ ROOMROM_C_SOURCES = [
     ("RoomRom/src/probes/metadata_probe.c", "metadata_probe.o"),
     # Task 5.5: door-type expected table for L1Q1 verification
     ("RoomRom/data/uw_l1q1_expected_doors.c", "uw_l1q1_expected_doors.o"),
+    # Task 5.6: cellar pair table + accessor module + LevelInfo offsets
+    ("data/rooms/dungeons_offsets.c", "dungeons_offsets.o"),
+    ("RoomRom/data/uw_l1q1_cellar_pairs.c", "uw_l1q1_cellar_pairs.o"),
+    ("RoomRom/src/uw_cellar_meta.c", "uw_cellar_meta.o"),
     ("RoomRom/src/roomrom_ow_palette.c", "roomrom_ow_palette.o"),
     ("src/state/palette_tick.c", "palette_tick.o"),
     ("RoomRom/src/roomrom_palette_tick.c", "roomrom_palette_tick.o"),

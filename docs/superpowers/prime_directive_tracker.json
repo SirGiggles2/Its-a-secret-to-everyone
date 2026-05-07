@@ -9,14 +9,14 @@
   "active": {
     "phase_id": "5",
     "phase_name": "Dungeon Core",
-    "task_id": "?",
-    "task_title": "",
+    "task_id": "5.6",
+    "task_title": "Stairs and Passages (verification slice)",
     "worktree": {
       "path": "C:/Users/Jake Diggity/Documents/GitHub/FINAL TRY",
       "branch": "main",
       "is_substrate_writer": true
     },
-    "next_concrete_action": "Task 5.5 closed (Gate 5.5 PASS, 15/15 reachable rooms, all gates green). Begin Task 5.6: Stairs and Passages — extract stair metadata, detect stair tile, trigger stair entry, render passage/cellar."
+    "next_concrete_action": "Step 10: User-driven test — boot UW $73, walk to $22, step on stair $70..$73 cluster at metatile (8, 5), verify cellar entry to $7F + exit back to $22; mirror byte 72 toggles 0/1 across the cycle."
   },
   "phases": [
     {
@@ -303,6 +303,46 @@
             "Boss-key sourcing logic (Phase 5.9)",
             "NES-side parity probe Boot N for door state (separate ticket)",
             "CombinedDebug per-commit gate (returns to per-commit dual-ROM in subsequent tasks)"
+          ]
+        },
+        {
+          "id": "5.6",
+          "name": "Stairs and Passages (verification slice)",
+          "status": "in_progress",
+          "verification_started_at": "2026-05-07",
+          "spec": "docs/superpowers/plans/2026-05-02-title-roomrom-full-port-master-plan.md (Task 5.6 section)",
+          "plan": "C:/Users/Jake Diggity/.claude/plans/great-load-it-into-sleepy-lantern.md",
+          "drain_header": {
+            "nes_source": "reference/aldonunez/Z_05.asm:CheckWarps UW branch (line 7253-7301), SetTargetMode (7284); LevelInfo_CellarRoomIdArray (Variables.inc:340 = $6BB2; offset $0x10 in LevelInfo, 10-byte array)",
+            "drained_c": "NONE in scope",
+            "coverage": "NONE",
+            "stance": "GREENFIELD (continues 5.4-5.5 line)"
+          },
+          "build_targets": [
+            "RoomRom.md (per-commit)",
+            "CombinedDebug.md (per-commit; restored from 5.5 relaxation; slice scope ~3 min user testing)"
+          ],
+          "ground_truth_dump": "build/probes/ph5/task_5_6/nes_ground_truth.md",
+          "verified_pre_plan": {
+            "L1Q1_cellar_id": "$7F",
+            "L1Q1_cellar_source": "$22",
+            "L1Q1_AttrsA_7F": "$22",
+            "L1Q1_AttrsB_7F": "$22",
+            "stair_tile_cluster": "$22 BG (16-17, 10-11) = $70/$72/$71/$73",
+            "trigger_link_coords": "(128, 133)",
+            "L1Q1_cellar_blob_present": false,
+            "blob_gap_note": "g_uw_room_nt has (q=1,L=8,$7F) and (q=2,L=7,$7F) only; no (q=1,L=1,$7F). Slice-1 cellar render falls into draw_placeholder."
+          },
+          "evidence": [],
+          "deferrals": [
+            "Cellar blob extraction for L1Q1 $7F (substrate Phase 1 work; slice-1 ships placeholder cellar render)",
+            "Item cellar payload (Phase 6 combat/items)",
+            "Mode $10 visible semantics for stair animation (4 variants $02/$09/$0B/$0C; Task 5.4 deferral inherited)",
+            "L2-L9 cellar pair expansion (data-only generator extension)",
+            "Q2 cellar entries (manifest extension; Q2 quest selector still pending Task 5.4 deferral)",
+            "NV-RAM persistence of source_room_id across reset (Task 5.4 deferral inherited)",
+            "NES-side parity probe (Boot N) for stair state",
+            "Each stair/passage type coverage (master-plan bullet) — slice-1 covers L1's single cellar; multi-type verification needs L2-L9"
           ]
         }
       ],

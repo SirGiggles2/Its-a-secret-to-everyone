@@ -451,3 +451,27 @@ unsigned char roomrom_uw_room_render_palette_at(unsigned char nt_col,
     if (s_cur_attr == (const unsigned char *)0) return 0u;
     return attr_palette_for(s_cur_attr, nt_col, nt_row);
 }
+
+/* Task 5.6: explicit (level, quest, room) blob NT lookup. Independent of
+ * the cached s_uw_level/s_uw_quest so the warp coordinator can probe the
+ * current UW source room while the cellar dispatch hasn't yet applied. */
+unsigned char roomrom_uw_room_render_raw_tile_at_room(unsigned char level,
+                                                      unsigned char quest,
+                                                      unsigned char room_id,
+                                                      unsigned char col,
+                                                      unsigned char row)
+{
+    unsigned short i;
+    unsigned char want_map = (s_uw_map_id == ROOMROM_MAP_REDUX) ? 1u : 0u;
+    if (col >= ROOMROM_UW_BLOB_COLS) return 0u;
+    if (row >= ROOMROM_UW_BLOB_ROWS) return 0u;
+    for (i = 0; i < g_uw_room_count; i++) {
+        if (g_uw_room_index[i][0] == want_map &&
+            g_uw_room_index[i][1] == quest &&
+            g_uw_room_index[i][2] == level &&
+            g_uw_room_index[i][3] == room_id) {
+            return g_uw_room_nt[i][row * ROOMROM_UW_BLOB_COLS + col];
+        }
+    }
+    return 0u;
+}

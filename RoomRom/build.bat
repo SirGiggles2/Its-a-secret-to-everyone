@@ -305,6 +305,22 @@ echo [3] Compiling uw_l1q1_expected_doors.c (Task 5.5: door-type expected table)
 "%GCC%" %CFLAGS% %INCS% -c "%PROJ%\data\uw_l1q1_expected_doors.c" -o "%OUT%\uw_l1q1_expected_doors.o"
 if errorlevel 1 ( echo FAIL: uw_l1q1_expected_doors.c & exit /b 1 )
 
+echo [3] Regenerating uw_l1q1_cellar_pairs via tools/uw_cellar_pairs_gen.py (Task 5.6)...
+python "%REPO%\tools\uw_cellar_pairs_gen.py"
+if errorlevel 1 ( echo FAIL: uw_cellar_pairs_gen.py & exit /b 1 )
+
+echo [3] Compiling dungeons_offsets.c (Task 5.6: LevelInfo offsets)...
+"%GCC%" %CFLAGS% %INCS% -c "%REPO%\data\rooms\dungeons_offsets.c" -o "%OUT%\dungeons_offsets.o"
+if errorlevel 1 ( echo FAIL: dungeons_offsets.c & exit /b 1 )
+
+echo [3] Compiling uw_l1q1_cellar_pairs.c (Task 5.6: cellar pair table)...
+"%GCC%" %CFLAGS% %INCS% -c "%PROJ%\data\uw_l1q1_cellar_pairs.c" -o "%OUT%\uw_l1q1_cellar_pairs.o"
+if errorlevel 1 ( echo FAIL: uw_l1q1_cellar_pairs.c & exit /b 1 )
+
+echo [3] Compiling uw_cellar_meta.c (Task 5.6: cellar lookup helpers)...
+"%GCC%" %CFLAGS% %INCS% -c "%PROJ%\src\uw_cellar_meta.c" -o "%OUT%\uw_cellar_meta.o"
+if errorlevel 1 ( echo FAIL: uw_cellar_meta.c & exit /b 1 )
+
 echo [3] Compiling probes/metadata_probe.c (Task 5.4 Gate D: in-ROM probe)...
 "%GCC%" %CFLAGS% %INCS% -c "%PROJ%\src\probes\metadata_probe.c" -o "%OUT%\metadata_probe.o"
 if errorlevel 1 ( echo FAIL: probes/metadata_probe.c & exit /b 1 )
@@ -402,7 +418,7 @@ rem ---------------------------------------------------------------------------
 rem Step 4: Link
 rem ---------------------------------------------------------------------------
 echo [4] Linking...
-set "OBJS=%OUT%\nes_ram_init.o %OUT%\cave_dispatch.o %OUT%\world_dispatch.o %OUT%\object_dispatch.o %OUT%\sprite_dispatch.o %OUT%\progress_dispatch.o %OUT%\trap_dispatch.o %OUT%\core_dispatch.o %OUT%\enemy_dispatch.o %OUT%\collision_dispatch.o %OUT%\room_dispatch.o %OUT%\hud_dispatch.o %OUT%\weapon_dispatch.o %OUT%\targeting_dispatch.o %OUT%\combat_dispatch.o %OUT%\uw_person_dispatch.o %OUT%\link_collision_dispatch.o %OUT%\draw_dispatch.o %OUT%\item_dispatch.o %OUT%\main.o %OUT%\render_adapter_sgdk.o %OUT%\ow_room_render.o %OUT%\uw_room_render.o %OUT%\uw_room_blob.o %OUT%\uw_collision_data.o %OUT%\uw_walk_model.o %OUT%\uw_door_state.o %OUT%\roomrom_hud.o %OUT%\roomrom_sprites.o %OUT%\roomrom_combat.o %OUT%\roomrom_boomerang.o %OUT%\roomrom_arrow.o %OUT%\roomrom_bomb.o %OUT%\roomrom_bg_palette.o %OUT%\roomrom_ow_palette.o %OUT%\roomrom_scene_load.o %OUT%\ow_room_meta.o %OUT%\roomrom_world_transition.o %OUT%\levelinfo_start_rooms.o %OUT%\metadata_probe.o %OUT%\uw_l1q1_expected_doors.o %OUT%\palette_tick.o %OUT%\roomrom_palette_tick.o %OUT%\expanded_bg_chr.o %OUT%\atlas_items_chr_x4.o %OUT%\overworld.o %OUT%\overworld_bg.o %OUT%\dungeons.o %OUT%\underworld_bg.o %OUT%\redux_overworld.o %OUT%\redux_overworld_bg.o %OUT%\redux_uw_bg.o %OUT%\redux_hud_chr.o %OUT%\common.o %OUT%\palettes.o %OUT%\sprites.o"
+set "OBJS=%OUT%\nes_ram_init.o %OUT%\cave_dispatch.o %OUT%\world_dispatch.o %OUT%\object_dispatch.o %OUT%\sprite_dispatch.o %OUT%\progress_dispatch.o %OUT%\trap_dispatch.o %OUT%\core_dispatch.o %OUT%\enemy_dispatch.o %OUT%\collision_dispatch.o %OUT%\room_dispatch.o %OUT%\hud_dispatch.o %OUT%\weapon_dispatch.o %OUT%\targeting_dispatch.o %OUT%\combat_dispatch.o %OUT%\uw_person_dispatch.o %OUT%\link_collision_dispatch.o %OUT%\draw_dispatch.o %OUT%\item_dispatch.o %OUT%\main.o %OUT%\render_adapter_sgdk.o %OUT%\ow_room_render.o %OUT%\uw_room_render.o %OUT%\uw_room_blob.o %OUT%\uw_collision_data.o %OUT%\uw_walk_model.o %OUT%\uw_door_state.o %OUT%\roomrom_hud.o %OUT%\roomrom_sprites.o %OUT%\roomrom_combat.o %OUT%\roomrom_boomerang.o %OUT%\roomrom_arrow.o %OUT%\roomrom_bomb.o %OUT%\roomrom_bg_palette.o %OUT%\roomrom_ow_palette.o %OUT%\roomrom_scene_load.o %OUT%\ow_room_meta.o %OUT%\roomrom_world_transition.o %OUT%\levelinfo_start_rooms.o %OUT%\metadata_probe.o %OUT%\uw_l1q1_expected_doors.o %OUT%\dungeons_offsets.o %OUT%\uw_l1q1_cellar_pairs.o %OUT%\uw_cellar_meta.o %OUT%\palette_tick.o %OUT%\roomrom_palette_tick.o %OUT%\expanded_bg_chr.o %OUT%\atlas_items_chr_x4.o %OUT%\overworld.o %OUT%\overworld_bg.o %OUT%\dungeons.o %OUT%\underworld_bg.o %OUT%\redux_overworld.o %OUT%\redux_overworld_bg.o %OUT%\redux_uw_bg.o %OUT%\redux_hud_chr.o %OUT%\common.o %OUT%\palettes.o %OUT%\sprites.o"
 "%GCC%" -m68000 -B%TOOLBIN%\ -n -T "%SGDK%\md.ld" -nostdlib "%OUT%\sega.o" %OBJS% "%LIB%\libmd.a" "%LIB%\libgcc.a" -o "%OUT%\rom.out" -Wl,--gc-sections
 if errorlevel 1 ( echo FAIL: link & exit /b 1 )
 

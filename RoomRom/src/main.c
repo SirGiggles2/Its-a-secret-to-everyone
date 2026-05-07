@@ -16,6 +16,7 @@
 #include "render_abi.h"
 #include "roomrom_main_state.h"  /* Task 5.4: warp-outcome apply boundary */
 #include "roomrom_world_transition.h"  /* Task 5.4: warp coordinator */
+#include "uw_cellar_meta.h"             /* Task 5.6: cellar pair lookup */
 #include "probes/metadata_probe.h"     /* Task 5.4: Gate D in-ROM probe */
 
 /* Boots to overworld room 0x77.
@@ -76,7 +77,7 @@ static short s_link_x = 120;  /* NES UW vertical doorway centerline ($78) */
 static short s_link_y = 133;  /* Genesis-rendered UW horizontal doorway centerline ($85) */
 static link_face_t s_link_face = LINK_FACE_DOWN;
 /* Ph5.3: key inventory for UW door gating. Start with 3 for dev testing. */
-static unsigned char s_link_keys = 3u;
+static unsigned char s_link_keys = 99u;  /* Task 5.5 debug: full L1 traversal */
 
 /* S7 B-item slot (cycle with Z, fire with B). Order roughly matches
  * Z1 inventory grid: boomerang -> bombs -> arrow -> candle -> rod. */
@@ -597,6 +598,17 @@ void roomrom_debug_publish_state_mirror(void)
         for (i = 54u; i < 72u; i++) p[i] = 0u;  /* reserved */
     }
 
+    /* Task 5.6 extension: cellar state at offsets 72..79. */
+    if (s_scene == SCENE_UW) {
+        p[72] = roomrom_uw_room_is_cellar(uw_level, uw_quest, s_room_id);
+    } else {
+        p[72] = 0u;
+    }
+    p[73] = roomrom_world_transition_cellar_entry_count();
+    p[74] = roomrom_world_transition_cellar_exit_count();
+    p[75] = 0u;  /* pending exit reflected via room+save state already */
+    p[76] = 0u; p[77] = 0u; p[78] = 0u; p[79] = 0u;  /* reserved */
+
     /* Task 5.4: also publish the 32x22 OW raw-tile cache to $FF7400 so
      * Lua probes can scan for warp tiles without per-cell calls. */
     roomrom_ow_room_render_publish_cache();
@@ -703,6 +715,17 @@ static unsigned char uw_doorway_adjust_nes_dir(u16 input, link_dir_t *dir)
         return 0u;
     }
 
+    /* Task 5.5 fix: axis-match guard so Link doesn't get snapped to a
+     * perpendicular door's centerline when his coords happen to land
+     * inside that door's region. uw_doorway_passable already has this
+     * guard (returns 0 without clearing s_doorway_dir); same shape
+     * here. Without the guard, Link at (link_x in N-door-axis-range,
+     * link_y == V centerline) with motion LEFT/RIGHT teleports to the
+     * N-door X centerline. */
+    if (!uw_walk_door_axis_matches(door_dir, (unsigned char)*dir)) {
+        return 0u;
+    }
+
     uw_walk_snap_to_doorway_axis(door_dir, &s_link_x, &s_link_y);
     s_doorway_dir = door_dir;
     next_dir = uw_walk_modify_dir_in_doorway(
@@ -731,6 +754,11 @@ static void uw_doorway_adjust_velocity(s8 *vx, s8 *vy)
                               (unsigned char)doorway_search_dir(dir),
                               s_link_x, s_link_y, &door_dir)) {
         s_doorway_dir = UW_WALK_DOOR_NONE;
+        return;
+    }
+
+    /* Task 5.5 fix: axis-match guard (see uw_doorway_adjust_nes_dir). */
+    if (!uw_walk_door_axis_matches(door_dir, (unsigned char)dir)) {
         return;
     }
 

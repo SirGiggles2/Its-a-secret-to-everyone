@@ -41,6 +41,16 @@ unsigned char roomrom_uw_room_render_walkable_at(unsigned char col,
 unsigned char roomrom_uw_room_render_walkable_tile_at(unsigned char col,
                                                       unsigned char row);
 
+/* Task 5.6: read raw NES BG tile id from blob NT entry for a specific
+ * (level, room_id) lookup. Used by warp coordinator's UW-stair branch
+ * (rule 5: raw_tile ∈ {$70..$73}). Returns 0 if blob entry missing or
+ * out of bounds. col 0..31, row 0..21. */
+unsigned char roomrom_uw_room_render_raw_tile_at_room(unsigned char level,
+                                                      unsigned char quest,
+                                                      unsigned char room_id,
+                                                      unsigned char col,
+                                                      unsigned char row);
+
 /* Ph5.3 door-state layer: write tile, override walkability, query AT palette.
  * Call these AFTER fill_plane_a / fill_one_col_at (s_cur_attr must be set). */
 void roomrom_uw_room_render_write_tile(unsigned char col, unsigned char row,

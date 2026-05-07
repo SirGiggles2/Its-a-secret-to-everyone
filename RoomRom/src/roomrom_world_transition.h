@@ -60,6 +60,11 @@ const rr_warp_save_state_t *roomrom_world_transition_save_state(void);
  * looking like the warp silently broke. */
 unsigned char roomrom_world_transition_unsupported_selector_count(void);
 
+/* Task 5.6: cellar dispatch counters. Probes use these to verify a
+ * UW-stair fire produced cellar entry/exit. Reset to zero by init. */
+unsigned char roomrom_world_transition_cellar_entry_count(void);
+unsigned char roomrom_world_transition_cellar_exit_count(void);
+
 /* Slice-1 stub: NES `Tune1Request = 0` / `FluteTimer = 0` post-warp
  * silence ([Z_05.asm:7290-7294]). RoomRom has no high-level audio
  * driver wrapper; this is a no-op until the audio bridge lands.

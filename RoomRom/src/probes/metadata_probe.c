@@ -13,7 +13,9 @@
 
 #include "metadata_probe.h"
 #include "../ow_room_meta.h"
+#include "../uw_cellar_meta.h"
 #include "../../data/levelinfo_start_rooms.h"
+#include "../../data/uw_l1q1_cellar_pairs.h"
 #include "../ow_room_render_roomrom.h"  /* for ROOMROM_HUD_ROWS */
 
 static void put_u16_be(volatile unsigned char *p, unsigned short v)
@@ -88,4 +90,40 @@ void roomrom_probe_metadata_run(void)
     put_pair(block, 6,
              (unsigned short)(ROOMROM_HUD_ROWS * 8u),
              0x0038u);                          /* 56 */
+
+    /* Task 5.6 cellar-pair assertions. Slice-1: L1Q1 source $22 ↔
+     * cellar $7F (single pair). */
+    /* check[7]: uw_l1q1_cellar_pairs_count == 1 */
+    put_pair(block, 7,
+             (unsigned short)uw_l1q1_cellar_pairs_count,
+             0x0001u);
+
+    /* check[8]: roomrom_uw_cellar_for_source(1,1,$22,&dest)==1 && dest==$7F. */
+    dest = 0u;
+    {
+        unsigned char hit = roomrom_uw_cellar_for_source(1u, 1u, 0x22u, &dest);
+        put_pair(block, 8,
+                 (unsigned short)((hit << 8) | dest),
+                 0x017Fu);
+    }
+
+    /* check[9]: roomrom_uw_cellar_source_for_cellar(1,1,$7F,&dest)==1 &&
+     *           dest==$22. */
+    dest = 0u;
+    {
+        unsigned char hit = roomrom_uw_cellar_source_for_cellar(1u, 1u,
+                                                                0x7Fu, &dest);
+        put_pair(block, 9,
+                 (unsigned short)((hit << 8) | dest),
+                 0x0122u);
+    }
+
+    /* check[10]: roomrom_uw_room_is_cellar(1,1,$7F)==1, !is_cellar($22). */
+    {
+        unsigned char yes = roomrom_uw_room_is_cellar(1u, 1u, 0x7Fu);
+        unsigned char no  = roomrom_uw_room_is_cellar(1u, 1u, 0x22u);
+        put_pair(block, 10,
+                 (unsigned short)((yes << 8) | no),
+                 0x0100u);
+    }
 }
