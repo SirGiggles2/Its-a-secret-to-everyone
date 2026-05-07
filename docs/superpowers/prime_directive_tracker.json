@@ -9,14 +9,14 @@
   "active": {
     "phase_id": "5",
     "phase_name": "Dungeon Core",
-    "task_id": "5.8",
-    "task_title": "Dark Rooms (verification slice) — CLOSED",
+    "task_id": "5.9",
+    "task_title": "Keys/Map/Compass/Triforce (verification slice) — CLOSED",
     "worktree": {
       "path": "C:/Users/Jake Diggity/Documents/GitHub/FINAL TRY",
       "branch": "main",
       "is_substrate_writer": true
     },
-    "next_concrete_action": "Task 5.8 closed (Gate 5.8 PASS). Begin Task 5.9 (Keys, Map, Compass, Triforce) per master plan + plan v3."
+    "next_concrete_action": "Task 5.9 closed (Gate 5.9 PASS). Begin Task 5.10a (Dungeon Matrix Verification preflight aggregator) per plan v3."
   },
   "phases": [
     {
@@ -447,6 +447,54 @@
             "Full bridge to drained weprt_wield_candle for projectile/CHR (Phase 6 weapon work)",
             "NV-RAM persistence of lit state across reset (Task 5.4 inherited)",
             "RoomRom nes_ram expansion to enable runtime room_is_dark_room dispatch call (G1)"
+          ]
+        },
+        {
+          "id": "5.9",
+          "name": "Keys/Map/Compass/Triforce (verification slice)",
+          "status": "complete",
+          "verification_started_at": "2026-05-07",
+          "verification_closed_at": "2026-05-07",
+          "spec": "docs/superpowers/plans/2026-05-02-title-roomrom-full-port-master-plan.md (Task 5.9 section, line 1022-1031)",
+          "plan": "C:/Users/Jake Diggity/.claude/plans/great-load-it-into-sleepy-lantern.md",
+          "drain_header": {
+            "nes_source": "Z_05.asm:8169-8222 (item-room placement); Z_01.asm:4002-4020 (GetShortcutOrItemXYForRoom); Z_05.asm:7626-7634 (HasMap/HasCompass); Z_07.asm:747-748 (LevelMasks); Variables.inc:236 (Items=$657)",
+            "drained_c": "src/game/room/room_dispatch.c:597 room_has_compass; :603 room_has_map; src/game/items/item_dispatch.c:152 item_take_item (NOT called per G3+G5)",
+            "coverage": "PARTIAL — predicates safe; item_take_item NOT integration-safe (externs unlinked)",
+            "stance": "ADOPT (predicates via INVENTORY_VALUE) + EXTEND (RoomRom-local pickup wrapper) + STUB (triforce bypasses GAME_MODE=18)"
+          },
+          "build_targets": [
+            "RoomRom.md (per-commit)",
+            "CombinedDebug.md (per-commit, ship target)"
+          ],
+          "ground_truth_dump": "build/probes/ph5/task_5_9/nes_ground_truth.md",
+          "verified_pre_plan": {
+            "L1Q1_active_items": 35,
+            "L1Q1_total_items": 66,
+            "L1Q1_triforce_room": "0x36 at px(112,144)",
+            "INVENTORY_VALUE_layout": "$0657 + slot (in-bounds for RoomRom 2 KB nes_ram)",
+            "item_take_item_NOT_called": true,
+            "triforce_GAME_MODE_18_bypassed": true
+          },
+          "evidence": [
+            "ground_truth_dump|build/probes/ph5/task_5_9/nes_ground_truth.md",
+            "generator|tools/uw_item_rooms_gen.py emits 969 master rows (L1-L9 x Q1-Q2; L1Q1=66 with 35 active_at_spawn)",
+            "uw_item_rooms|RoomRom/data/uw_item_rooms.{c,h} master table",
+            "build_clean_dual_rom|RoomRom + CombinedDebug both clean",
+            "gate_5_9_PASS|build/probes/ph5/task_5_9/gate_5_9_report.json verdict=PASS, 1 item_pickup + 1 triforce_pickup events",
+            "auto_probe|RoomRom/probe_uw_inventory_auto.lua boot at $36 triforce coords; pickup fires tick 0; mirror byte 109 (taken) + 111 (triforce_active) confirmed",
+            "drain_stance|ADOPT predicates + EXTEND RoomRom-local pickup wrapper + STUB triforce (G5 bypass GAME_MODE=18)"
+          ],
+          "deferrals": [
+            "HUD live render (key count digit, map/compass indicator, mini-map) — slice-1 records inventory state; render deferred",
+            "Full Mode_EndLevel ($12) transition for triforce pickup (slice-1 = stub flag only)",
+            "G3: Full bridge to drained item_take_item — requires linking ItemIdToSlot/ItemIdToDescriptor/LevelMasks/SaveSlotToPaletteRowOffset/MenuPalettesTransferBuf externs into RoomRom",
+            "G4: NES RAM sync (CUR_LEVEL etc.) before any drain dispatch call",
+            "Item sprite spawn at item_x/item_y — slice-1 detects pickup via Link position only; sprite render deferred",
+            "Debug chord Y+Z+START for HUD-only inventory toggle — deferred (skipped slice-1 minimum)",
+            "Key counter HUD digit display (key counter logic done in 5.5; HUD render in 5.10b)",
+            "L2-L9 / Q2 user-test (data-only manifests; runtime needs Q2 selector)",
+            "Visited-room mini-map (5.10b)"
           ]
         }
       ],

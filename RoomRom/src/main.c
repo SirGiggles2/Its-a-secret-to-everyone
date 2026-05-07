@@ -20,6 +20,7 @@
 #include "uw_push_block_meta.h"         /* Task 5.7: push-block manifest */
 #include "roomrom_pushblock.h"           /* Task 5.7: push-block state machine */
 #include "uw_dark_meta.h"                /* Task 5.8: dark-room manifest */
+#include "uw_item_room_meta.h"           /* Task 5.9: item-room manifest + pickup */
 #include "probes/metadata_probe.h"     /* Task 5.4: Gate D in-ROM probe */
 
 /* Boots to overworld room 0x77.
@@ -71,10 +72,9 @@ typedef enum {
     LINK_DIR_RIGHT = 4
 } link_dir_t;
 
-/* TEST DEFAULTS: boot into UW room $73 (L1 entrance). Toggle Start
- * for OW. Task 5.8 verification ran with boot=$40 (dark room) since
- * none of the 17 reachable L1Q1 rooms are NES-dark; gate_5_8 PASS
- * recorded; default restored to $73 to preserve 5.5+5.7 routes. */
+/* TEST DEFAULTS: boot into UW room $73 (L1 entrance). 5.9 verified
+ * via boot=$36 at triforce coords (auto-probe + gate_5_9 PASS);
+ * default restored. */
 static scene_t       s_scene       = SCENE_UW;
 static mode_t        s_mode        = MODE_WALK;
 static move_style_t  s_move_style  = MOVE_STYLE_NES;
@@ -665,6 +665,27 @@ void roomrom_debug_publish_state_mirror(void)
     p[98] = roomrom_uw_dark_candle_used_count();
     p[99] = 0u; p[100] = 0u; p[101] = 0u; p[102] = 0u; p[103] = 0u;
 
+    /* Task 5.9 extension: inventory + item pickup at offsets 104..119. */
+    p[104] = s_link_keys;                                /* duplicate of 48 */
+    p[105] = roomrom_uw_item_inv_compass();
+    p[106] = roomrom_uw_item_inv_map();
+    p[107] = roomrom_uw_item_inv_triforce();
+    if (s_scene == SCENE_UW) {
+        struct uw_item_room_meta m;
+        if (roomrom_uw_item_for_room(uw_level, uw_quest, s_room_id, &m)) {
+            p[108] = m.item_id;
+        } else {
+            p[108] = 0u;
+        }
+    } else {
+        p[108] = 0u;
+    }
+    p[109] = roomrom_uw_item_taken(s_room_id);
+    p[110] = 0u;  /* visited count — slice-1 deferral */
+    p[111] = roomrom_uw_triforce_pickup_active();
+    p[112] = 0u; p[113] = 0u; p[114] = 0u; p[115] = 0u;
+    p[116] = 0u; p[117] = 0u; p[118] = 0u; p[119] = 0u;
+
     /* Task 5.4: also publish the 32x22 OW raw-tile cache to $FF7400 so
      * Lua probes can scan for warp tiles without per-cell calls. */
     roomrom_ow_room_render_publish_cache();
@@ -677,6 +698,9 @@ void roomrom_debug_publish_state_mirror(void)
 
     /* Task 5.8: publish dark-lit persistence at $FF7C00 (256 B). */
     roomrom_uw_dark_publish_persist();
+
+    /* Task 5.9: publish item-taken persistence at $FF7D00 (256 B). */
+    roomrom_uw_item_publish_persist();
 
     /* Task 5.5 debug: publish 32x22 UW BG-tile walkability cache to
      * $FF7800 so probes can diff vs expected per-room collision. */
@@ -1563,6 +1587,34 @@ void roomrom_debug_tick(void)
          * (so a coordinator-driven scene swap clears push state cleanly
          * via the room-change reset). Internally guards on UW + WALK. */
         roomrom_pushblock_tick();
+
+        /* Task 5.9: item pickup. Slice-1 — Link foot box-overlap with
+         * NES item position fires roomrom_uw_item_pickup. Active +
+         * not-yet-taken items only. Triforce flips s_triforce_pickup_active
+         * (slice-1 stub; full Mode_EndLevel deferred). */
+        if (s_scene == SCENE_UW &&
+            !roomrom_uw_item_taken(s_room_id)) {
+            struct uw_item_room_meta meta;
+            if (roomrom_uw_item_for_room(roomrom_uw_room_render_get_level(),
+                                         roomrom_uw_room_render_get_quest(),
+                                         s_room_id, &meta) &&
+                meta.active_at_spawn) {
+                /* NES item position is top-left of 16x16 sprite;
+                 * Link foot at (link_x, link_y + $0B) — accept any
+                 * 16x16 overlap. */
+                short ix = (short)meta.item_x;
+                short iy = (short)((short)meta.item_y +
+                                    ROOMROM_PLAYFIELD_TOP_PX);
+                short fx = s_link_x;
+                short fy = (short)(s_link_y + 0x0B);
+                if (fx >= ix - 8 && fx <= ix + 16 &&
+                    fy >= iy && fy <= iy + 16) {
+                    roomrom_uw_item_pickup(
+                        roomrom_uw_room_render_get_level(),
+                        s_room_id, meta.item_id);
+                }
+            }
+        }
 
         /* Task 5.4: passive state mirror for BizHawk Lua probes. */
         roomrom_debug_publish_state_mirror();

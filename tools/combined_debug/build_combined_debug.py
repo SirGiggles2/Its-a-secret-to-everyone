@@ -135,6 +135,9 @@ ROOMROM_C_SOURCES = [
     # Task 5.8: dark-room manifest + accessor + lit-state
     ("RoomRom/data/uw_dark_rooms.c", "uw_dark_rooms.o"),
     ("RoomRom/src/uw_dark_meta.c", "uw_dark_meta.o"),
+    # Task 5.9: item-room manifest + accessor + pickup wrapper
+    ("RoomRom/data/uw_item_rooms.c", "uw_item_rooms.o"),
+    ("RoomRom/src/uw_item_room_meta.c", "uw_item_room_meta.o"),
     ("RoomRom/src/roomrom_ow_palette.c", "roomrom_ow_palette.o"),
     ("src/state/palette_tick.c", "palette_tick.o"),
     ("RoomRom/src/roomrom_palette_tick.c", "roomrom_palette_tick.o"),

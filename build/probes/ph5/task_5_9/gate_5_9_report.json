@@ -1,0 +1,24 @@
+{
+  "verdict": "PASS",
+  "events_total": 3,
+  "pickup_events": 1,
+  "triforce_events": 1,
+  "compass_events": 0,
+  "map_events": 0,
+  "first_pickup": {
+    "compass": 0,
+    "event": "item_pickup",
+    "frame": 1,
+    "item_id": 27,
+    "map": 0,
+    "room_id": 54,
+    "triforce_active": 1
+  },
+  "first_triforce": {
+    "event": "triforce_pickup",
+    "frame": 1,
+    "room_id": 54
+  },
+  "slice_1_required": "\u22651 item_pickup + \u22651 triforce_pickup",
+  "jsonl_path": "C:\\tmp\\uw_inventory_observations.jsonl"
+}
