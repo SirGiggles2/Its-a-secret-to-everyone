@@ -9,14 +9,14 @@
   "active": {
     "phase_id": "5",
     "phase_name": "Dungeon Core",
-    "task_id": "5.9",
-    "task_title": "Keys/Map/Compass/Triforce (verification slice) — CLOSED",
+    "task_id": "5.10a",
+    "task_title": "Dungeon Matrix Verification (preflight) — CLOSED; Phase 5 ready to close with 5.10b deferral",
     "worktree": {
       "path": "C:/Users/Jake Diggity/Documents/GitHub/FINAL TRY",
       "branch": "main",
       "is_substrate_writer": true
     },
-    "next_concrete_action": "Task 5.9 closed (Gate 5.9 PASS). Begin Task 5.10a (Dungeon Matrix Verification preflight aggregator) per plan v3."
+    "next_concrete_action": "Phase 5 close: 5.10b deferred (full L1-L9 x Q1-Q2 user-test post-Phase-6). Begin Task 6.1 per master plan."
   },
   "phases": [
     {
@@ -495,6 +495,33 @@
             "Key counter HUD digit display (key counter logic done in 5.5; HUD render in 5.10b)",
             "L2-L9 / Q2 user-test (data-only manifests; runtime needs Q2 selector)",
             "Visited-room mini-map (5.10b)"
+          ]
+        },
+        {
+          "id": "5.10a",
+          "name": "Dungeon Matrix Verification (preflight aggregator)",
+          "status": "complete",
+          "verification_started_at": "2026-05-07",
+          "verification_closed_at": "2026-05-07",
+          "spec": "docs/superpowers/plans/2026-05-02-title-roomrom-full-port-master-plan.md (Task 5.10 section, line 1033-1042); slice = 5.10a preflight per plan v3 F3",
+          "plan": "C:/Users/Jake Diggity/.claude/plans/great-load-it-into-sleepy-lantern.md",
+          "drain_header": {
+            "nes_source": "Aggregator only — no new NES source",
+            "drained_c": "None directly",
+            "coverage": "NONE (harness-only)",
+            "stance": "GREENFIELD (data aggregator)"
+          },
+          "build_targets": ["RoomRom.md (manifests compiled)", "CombinedDebug.md (manifests compiled)"],
+          "evidence": [
+            "aggregator|tools/gate_5_10_dungeon_matrix.py verdict=PASS",
+            "manifests_ok|5/5 (doors, cellars, pushblocks, dark, items)",
+            "prior_gates|4/4 PASS (5.6, 5.7, 5.8, 5.9)",
+            "report|build/probes/ph5/task_5_10/gate_5_10_report.json"
+          ],
+          "deferrals": [
+            "5.10b: full L1-L9 x Q1-Q2 user-driven render + screenshot diff + walkability matrix. Requires Q2 quest selector + mature Phase 6 items/combat. Plans post-Phase-6.",
+            "Live cross-dungeon manifest replay — slice-1 only validates manifest parse + prior gate JSONL replay for L1Q1.",
+            "Master-plan acceptance 'render every room in all 9 dungeons both quests' formally tracked under 5.10b."
           ]
         }
       ],

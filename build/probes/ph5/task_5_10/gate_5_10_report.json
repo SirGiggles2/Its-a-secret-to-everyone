@@ -1,0 +1,74 @@
+{
+  "verdict": "PASS",
+  "scope": "Task 5.10a preflight; Task 5.10b (full multi-dungeon user-test) deferred per Phase 5 close.",
+  "manifests": [
+    {
+      "name": "doors",
+      "path": "RoomRom\\data\\uw_l1q1_expected_doors.c",
+      "rows": 17,
+      "ok": true
+    },
+    {
+      "name": "cellars",
+      "path": "RoomRom\\data\\uw_l1q1_cellar_pairs.c",
+      "rows": 1,
+      "ok": true
+    },
+    {
+      "name": "pushblocks",
+      "path": "RoomRom\\data\\uw_l1q1_pushblocks.c",
+      "rows": 8,
+      "ok": true
+    },
+    {
+      "name": "dark",
+      "path": "RoomRom\\data\\uw_dark_rooms.c",
+      "rows": 261,
+      "ok": true
+    },
+    {
+      "name": "items",
+      "path": "RoomRom\\data\\uw_item_rooms.c",
+      "rows": 969,
+      "ok": true
+    }
+  ],
+  "all_manifests_ok": true,
+  "prior_gates": [
+    {
+      "task": "task_5_4",
+      "found": false
+    },
+    {
+      "task": "task_5_5",
+      "found": false
+    },
+    {
+      "task": "task_5_6",
+      "found": true,
+      "verdict": "PASS",
+      "report_path": "build\\probes\\ph5\\task_5_6\\gate_5_6_report.json"
+    },
+    {
+      "task": "task_5_7",
+      "found": true,
+      "verdict": "PASS",
+      "report_path": "build\\probes\\ph5\\task_5_7\\gate_5_7_report.json"
+    },
+    {
+      "task": "task_5_8",
+      "found": true,
+      "verdict": "PASS",
+      "report_path": "build\\probes\\ph5\\task_5_8\\gate_5_8_report.json"
+    },
+    {
+      "task": "task_5_9",
+      "found": true,
+      "verdict": "PASS",
+      "report_path": "build\\probes\\ph5\\task_5_9\\gate_5_9_report.json"
+    }
+  ],
+  "prior_gates_pass": 4,
+  "prior_gates_found": 4,
+  "deferred_510b": "Full L1-L9 x Q1-Q2 user-driven render + screenshot diff + walkability matrix verification. Requires Q2 quest selector, mature Phase 6 items/combat. Plans post-Phase-6."
+}
