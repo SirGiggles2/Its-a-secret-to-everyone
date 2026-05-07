@@ -111,6 +111,15 @@ static u8          s_link_suby       = 0u;       /* ALTTP per-axis sub-pixel Y *
  * spec rather than pretending it enforces both halves. */
 static u8          s_underground_exit_type = 0u;
 
+/* Task 5.8/5.9 perf: per-room cache of expensive lookups. Refreshed
+ * in load_room on every room change. Per-tick reads are O(1) instead
+ * of full master-table linear scan (uw_dark_rooms 261 rows +
+ * uw_item_rooms 969 rows would otherwise burn ~80% of frame budget). */
+static u8          s_cur_room_is_dark   = 0u;
+static u8          s_cur_room_is_cellar = 0u;
+static u8          s_cur_room_has_item  = 0u;
+static struct uw_item_room_meta s_cur_room_item_meta;
+
 /* Task 5.5: per-touch latch for the state-mirror diff harness. */
 static unsigned char s_last_touch_dir       = 0xFFu;
 static unsigned char s_last_touch_result    = 0xFFu;
@@ -339,19 +348,35 @@ static void load_room(u8 room_id)
     roomrom_palette_tick_init((const unsigned char *)0);
     /* Ph5.3: init door state after room render (needs filled plane + attr cache). */
     if (s_scene == SCENE_UW) {
-        uw_door_state_room_init(roomrom_uw_room_render_get_level(),
-                                roomrom_uw_room_render_get_quest(),
-                                room_id);
-        /* Task 5.8: dark-room render override. After blob blit, if the
-         * room is NES-dark and the candle hasn't lit it yet, paint
-         * playfield BG_A black. HUD on WINDOW + collision cache stay
-         * intact. Candle reveal restores via load_room rerun. */
-        if (roomrom_uw_room_is_dark(roomrom_uw_room_render_get_level(),
-                                    roomrom_uw_room_render_get_quest(),
-                                    room_id) &&
-            !roomrom_uw_room_lit(room_id)) {
+        u8 lvl = roomrom_uw_room_render_get_level();
+        u8 q   = roomrom_uw_room_render_get_quest();
+        uw_door_state_room_init(lvl, q, room_id);
+        /* Task 5.8/5.9 perf: refresh per-room caches ONCE on room
+         * change (linear-scan cost amortized to load_room only). */
+        s_cur_room_is_dark   = roomrom_uw_room_is_dark(lvl, q, room_id);
+        s_cur_room_is_cellar = roomrom_uw_room_is_cellar(lvl, q, room_id);
+        s_cur_room_has_item  = roomrom_uw_item_for_room(
+                                   lvl, q, room_id, &s_cur_room_item_meta);
+        /* Task 5.8: dark-room render override. */
+        if (s_cur_room_is_dark && !roomrom_uw_room_lit(room_id)) {
             roomrom_uw_room_render_fill_plane_a_dark();
         }
+        /* Task 5.9.1: spawn room-item sprite if active + not taken. */
+        if (s_cur_room_has_item &&
+            s_cur_room_item_meta.active_at_spawn &&
+            !roomrom_uw_item_taken(room_id)) {
+            short ix = (short)s_cur_room_item_meta.item_x;
+            short iy = (short)((short)s_cur_room_item_meta.item_y +
+                                ROOMROM_PLAYFIELD_TOP_PX);
+            roomrom_sprites_set_room_item(ix, iy, 0u);
+        } else {
+            roomrom_sprites_clear_room_item();
+        }
+    } else {
+        s_cur_room_is_dark = 0u;
+        s_cur_room_is_cellar = 0u;
+        s_cur_room_has_item = 0u;
+        roomrom_sprites_clear_room_item();
     }
 }
 
@@ -631,11 +656,7 @@ void roomrom_debug_publish_state_mirror(void)
     }
 
     /* Task 5.6 extension: cellar state at offsets 72..79. */
-    if (s_scene == SCENE_UW) {
-        p[72] = roomrom_uw_room_is_cellar(uw_level, uw_quest, s_room_id);
-    } else {
-        p[72] = 0u;
-    }
+    p[72] = (s_scene == SCENE_UW) ? s_cur_room_is_cellar : 0u;
     p[73] = roomrom_world_transition_cellar_entry_count();
     p[74] = roomrom_world_transition_cellar_exit_count();
     p[75] = 0u;  /* pending exit reflected via room+save state already */
@@ -686,25 +707,19 @@ void roomrom_debug_publish_state_mirror(void)
     p[112] = 0u; p[113] = 0u; p[114] = 0u; p[115] = 0u;
     p[116] = 0u; p[117] = 0u; p[118] = 0u; p[119] = 0u;
 
-    /* Task 5.4: also publish the 32x22 OW raw-tile cache to $FF7400 so
-     * Lua probes can scan for warp tiles without per-cell calls. */
-    roomrom_ow_room_render_publish_cache();
-
-    /* Task 5.5: publish UW persistence table at $FF76D0 (256 B). */
-    roomrom_debug_publish_uw_persist();
-
-    /* Task 5.7: publish push-block persistence at $FF7B00 (256 B). */
-    roomrom_pushblock_publish_persist();
-
-    /* Task 5.8: publish dark-lit persistence at $FF7C00 (256 B). */
-    roomrom_uw_dark_publish_persist();
-
-    /* Task 5.9: publish item-taken persistence at $FF7D00 (256 B). */
-    roomrom_uw_item_publish_persist();
-
-    /* Task 5.5 debug: publish 32x22 UW BG-tile walkability cache to
-     * $FF7800 so probes can diff vs expected per-room collision. */
-    roomrom_uw_room_render_publish_walkable();
+    /* Perf: heavy persistence + cache publishes (~2400 byte volatile
+     * writes total) throttled to every 6 frames (10 Hz). Probes still
+     * see fresh data within ~100ms; eliminates ~85% of frame budget
+     * burned on debug RAM writes. The 120-byte $FF7200 mirror above
+     * stays per-frame so the live state surface is immediate. */
+    if ((s_frame_counter % 6u) == 0u) {
+        roomrom_ow_room_render_publish_cache();    /* 708 B (Task 5.4) */
+        roomrom_debug_publish_uw_persist();        /* 256 B (Task 5.5) */
+        roomrom_pushblock_publish_persist();       /* 256 B (Task 5.7) */
+        roomrom_uw_dark_publish_persist();         /* 256 B (Task 5.8) */
+        roomrom_uw_item_publish_persist();         /* 256 B (Task 5.9) */
+        roomrom_uw_room_render_publish_walkable(); /* 708 B (Task 5.5) */
+    }
 }
 
 /* Task 5.5: copy active-level persistence row to probe block. */
@@ -1351,20 +1366,17 @@ void roomrom_debug_tick(void)
                 }
                 break;
             case B_ITEM_CANDLE:
-                /* Task 5.8 minimal candle reveal hook (slice-1 F6
-                 * boundary): in UW + dark + !lit, light the room. NO
-                 * projectile / CHR draw (deferred to Phase 6 weapon
-                 * work via drained weprt_wield_candle bridge). */
-                if (s_scene == SCENE_UW &&
-                    roomrom_uw_room_is_dark(
-                        roomrom_uw_room_render_get_level(),
-                        roomrom_uw_room_render_get_quest(),
-                        s_room_id) &&
+                /* Task 5.8.1 candle fire — visible projectile via
+                 * arrow placeholder (full NES anim/red-pal deferred
+                 * to 5.8.2). Always fires (any scene/room).
+                 * Plus: dark-room reveal if applicable. */
+                if (!roomrom_arrow_active()) {
+                    roomrom_arrow_fire(s_link_face, s_link_x, s_link_y);
+                }
+                if (s_scene == SCENE_UW && s_cur_room_is_dark &&
                     !roomrom_uw_room_lit(s_room_id)) {
                     roomrom_uw_room_set_lit(s_room_id);
                     roomrom_uw_dark_note_candle_used();
-                    /* Re-render plane A from blob now that the room
-                     * is lit. */
                     load_room(s_room_id);
                 }
                 break;
@@ -1588,31 +1600,22 @@ void roomrom_debug_tick(void)
          * via the room-change reset). Internally guards on UW + WALK. */
         roomrom_pushblock_tick();
 
-        /* Task 5.9: item pickup. Slice-1 — Link foot box-overlap with
-         * NES item position fires roomrom_uw_item_pickup. Active +
-         * not-yet-taken items only. Triforce flips s_triforce_pickup_active
-         * (slice-1 stub; full Mode_EndLevel deferred). */
-        if (s_scene == SCENE_UW &&
+        /* Task 5.9: item pickup. Reads cached per-room meta (refreshed
+         * in load_room) — no per-tick 969-row scan. */
+        if (s_scene == SCENE_UW && s_cur_room_has_item &&
+            s_cur_room_item_meta.active_at_spawn &&
             !roomrom_uw_item_taken(s_room_id)) {
-            struct uw_item_room_meta meta;
-            if (roomrom_uw_item_for_room(roomrom_uw_room_render_get_level(),
-                                         roomrom_uw_room_render_get_quest(),
-                                         s_room_id, &meta) &&
-                meta.active_at_spawn) {
-                /* NES item position is top-left of 16x16 sprite;
-                 * Link foot at (link_x, link_y + $0B) — accept any
-                 * 16x16 overlap. */
-                short ix = (short)meta.item_x;
-                short iy = (short)((short)meta.item_y +
-                                    ROOMROM_PLAYFIELD_TOP_PX);
-                short fx = s_link_x;
-                short fy = (short)(s_link_y + 0x0B);
-                if (fx >= ix - 8 && fx <= ix + 16 &&
-                    fy >= iy && fy <= iy + 16) {
-                    roomrom_uw_item_pickup(
-                        roomrom_uw_room_render_get_level(),
-                        s_room_id, meta.item_id);
-                }
+            short ix = (short)s_cur_room_item_meta.item_x;
+            short iy = (short)((short)s_cur_room_item_meta.item_y +
+                                ROOMROM_PLAYFIELD_TOP_PX);
+            short fx = s_link_x;
+            short fy = (short)(s_link_y + 0x0B);
+            if (fx >= ix - 8 && fx <= ix + 16 &&
+                fy >= iy && fy <= iy + 16) {
+                roomrom_uw_item_pickup(
+                    roomrom_uw_room_render_get_level(),
+                    s_room_id, s_cur_room_item_meta.item_id);
+                roomrom_sprites_clear_room_item();
             }
         }
 

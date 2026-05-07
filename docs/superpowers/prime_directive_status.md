@@ -1,6 +1,6 @@
 # Prime Directive — Status
 
-_Generated 2026-05-07T01:51:39.471175+00:00 by `prime_refresh.py`._
+_Generated 2026-05-07T15:20:04.851466+00:00 by `prime_refresh.py`._
 
 **Phase:** 5 — Dungeon Core
 **Task:** ? — 
@@ -9,4 +9,4 @@ _Generated 2026-05-07T01:51:39.471175+00:00 by `prime_refresh.py`._
 
 **Gates:** 11 passed / 11 total
 
-**Next concrete action:** Resume Task 5.5 traversal: 10 rooms remaining. Launch RoomRom probe (probe_uw_l1_route.lua), drive Link through $22 $23 $33 $41 $42 $44 $45 $52 $72 $74. Then python tools/gate_5_5_door_route.py to verify Gate B+C zero diff.
+**Next concrete action:** Phase 5 close: 5.10b deferred (full L1-L9 x Q1-Q2 user-test post-Phase-6). Begin Task 6.1 per master plan.

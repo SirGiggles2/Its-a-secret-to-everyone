@@ -104,6 +104,13 @@ void roomrom_sprites_set_explosion(short x, short y, unsigned char timer,
                                    unsigned char sub_pal);
 void roomrom_sprites_clear_explosion(void);
 
+/* Task 5.9.1 room-item sprite (slot 7). Single 16x16 sprite at the
+ * room item's NES (item_x, item_y) position. Slice-1 placeholder tile
+ * = boomerang glyph (full triforce CHR extraction deferred); usable
+ * for any room-item kind as a "this is your pickup" marker. */
+void roomrom_sprites_set_room_item(short x, short y, unsigned char sub_pal);
+void roomrom_sprites_clear_room_item(void);
+
 /* Phase 1: select item-atlas variant (orig vs redux). Affects the next
  * call to roomrom_sprites_upload_chr (item CHR is variant-selected at
  * upload time). */

@@ -470,6 +470,33 @@ void roomrom_sprites_clear_boomerang(void)
     VDP_updateSprites(5, DMA);
 }
 
+/* Task 5.9.1 room-item sprite. Slot 7. Slice-1 placeholder uses the
+ * boomerang tile from items_chr_x4 atlas (CHR for triforce/etc. not
+ * yet extracted; see project_chr_extraction_items_blocker). */
+void roomrom_sprites_set_room_item(short x, short y, unsigned char sub_pal)
+{
+    unsigned short tile = (unsigned short)(ROOMROM_ITEM_TILE_BASE_PAL(sub_pal)
+                                            + ROOMROM_ITEM_TILE_BOOMERANG);
+    VDP_setSpriteFull(7,
+                      (s16)x,
+                      (s16)y,
+                      SPRITE_SIZE(1, 1),
+                      TILE_ATTR_FULL(PAL1, 1, 0, 0, tile),  /* priority=1 */
+                      8);
+    VDP_updateSprites(8, DMA);
+}
+
+void roomrom_sprites_clear_room_item(void)
+{
+    VDP_setSpriteFull(7,
+                      (s16)-32,
+                      (s16)-32,
+                      SPRITE_SIZE(1, 1),
+                      TILE_ATTR_FULL(PAL1, 0, 0, 0, BOOMERANG_VRAM_TILE),
+                      8);
+    VDP_updateSprites(8, DMA);
+}
+
 /* S7 v7 arrow (slot 4). Vertical 8x16 for UP/DOWN, horizontal 16x16
  * for LEFT/RIGHT (hflip on LEFT).
  * sub_pal selects which 4-copy bank to read (NES base attr = 0). */

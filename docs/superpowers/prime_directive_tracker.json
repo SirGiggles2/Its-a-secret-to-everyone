@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-05-07T05:57:38.853428+00:00",
+  "generated_at": "2026-05-07T15:20:04.851466+00:00",
   "generated_by": "tools/audit/primedirective/prime_refresh.py",
   "plan": {
     "path": "docs/superpowers/plans/2026-05-02-title-roomrom-full-port-master-plan.md",
@@ -9,8 +9,8 @@
   "active": {
     "phase_id": "5",
     "phase_name": "Dungeon Core",
-    "task_id": "5.10a",
-    "task_title": "Dungeon Matrix Verification (preflight) — CLOSED; Phase 5 ready to close with 5.10b deferral",
+    "task_id": "?",
+    "task_title": "",
     "worktree": {
       "path": "C:/Users/Jake Diggity/Documents/GitHub/FINAL TRY",
       "branch": "main",
@@ -438,7 +438,7 @@
             "build_clean_dual_rom|RoomRom + CombinedDebug both clean",
             "gate_5_8_PASS|build/probes/ph5/task_5_8/gate_5_8_report.json verdict=PASS, room $40 triple-verified (enter+lit+persist)",
             "auto_probe|RoomRom/probe_uw_dark_auto.lua scripted joypad: B (candle), X+Right (teleport $40->$41), X+Left (back to $40), persistence verified at frame 335",
-            "drain_stance|ADOPT-AT-GENERATOR + EXTEND-RUNTIME — generated table used at runtime; dispatch room_is_dark_room only safe on host (G1 OOB on RoomRom 2 KB nes_ram)"
+            "drain_stance|ADOPT-AT-GENERATOR + EXTEND-RUNTIME \u2014 generated table used at runtime; dispatch room_is_dark_room only safe on host (G1 OOB on RoomRom 2 KB nes_ram)"
           ],
           "deferrals": [
             "L2-L9 dark rooms user-test (slice-1 covers L1Q1 only; data-only for others)",
@@ -460,7 +460,7 @@
           "drain_header": {
             "nes_source": "Z_05.asm:8169-8222 (item-room placement); Z_01.asm:4002-4020 (GetShortcutOrItemXYForRoom); Z_05.asm:7626-7634 (HasMap/HasCompass); Z_07.asm:747-748 (LevelMasks); Variables.inc:236 (Items=$657)",
             "drained_c": "src/game/room/room_dispatch.c:597 room_has_compass; :603 room_has_map; src/game/items/item_dispatch.c:152 item_take_item (NOT called per G3+G5)",
-            "coverage": "PARTIAL — predicates safe; item_take_item NOT integration-safe (externs unlinked)",
+            "coverage": "PARTIAL \u2014 predicates safe; item_take_item NOT integration-safe (externs unlinked)",
             "stance": "ADOPT (predicates via INVENTORY_VALUE) + EXTEND (RoomRom-local pickup wrapper) + STUB (triforce bypasses GAME_MODE=18)"
           },
           "build_targets": [
@@ -486,12 +486,12 @@
             "drain_stance|ADOPT predicates + EXTEND RoomRom-local pickup wrapper + STUB triforce (G5 bypass GAME_MODE=18)"
           ],
           "deferrals": [
-            "HUD live render (key count digit, map/compass indicator, mini-map) — slice-1 records inventory state; render deferred",
+            "HUD live render (key count digit, map/compass indicator, mini-map) \u2014 slice-1 records inventory state; render deferred",
             "Full Mode_EndLevel ($12) transition for triforce pickup (slice-1 = stub flag only)",
-            "G3: Full bridge to drained item_take_item — requires linking ItemIdToSlot/ItemIdToDescriptor/LevelMasks/SaveSlotToPaletteRowOffset/MenuPalettesTransferBuf externs into RoomRom",
+            "G3: Full bridge to drained item_take_item \u2014 requires linking ItemIdToSlot/ItemIdToDescriptor/LevelMasks/SaveSlotToPaletteRowOffset/MenuPalettesTransferBuf externs into RoomRom",
             "G4: NES RAM sync (CUR_LEVEL etc.) before any drain dispatch call",
-            "Item sprite spawn at item_x/item_y — slice-1 detects pickup via Link position only; sprite render deferred",
-            "Debug chord Y+Z+START for HUD-only inventory toggle — deferred (skipped slice-1 minimum)",
+            "Item sprite spawn at item_x/item_y \u2014 slice-1 detects pickup via Link position only; sprite render deferred",
+            "Debug chord Y+Z+START for HUD-only inventory toggle \u2014 deferred (skipped slice-1 minimum)",
             "Key counter HUD digit display (key counter logic done in 5.5; HUD render in 5.10b)",
             "L2-L9 / Q2 user-test (data-only manifests; runtime needs Q2 selector)",
             "Visited-room mini-map (5.10b)"
@@ -506,12 +506,15 @@
           "spec": "docs/superpowers/plans/2026-05-02-title-roomrom-full-port-master-plan.md (Task 5.10 section, line 1033-1042); slice = 5.10a preflight per plan v3 F3",
           "plan": "C:/Users/Jake Diggity/.claude/plans/great-load-it-into-sleepy-lantern.md",
           "drain_header": {
-            "nes_source": "Aggregator only — no new NES source",
+            "nes_source": "Aggregator only \u2014 no new NES source",
             "drained_c": "None directly",
             "coverage": "NONE (harness-only)",
             "stance": "GREENFIELD (data aggregator)"
           },
-          "build_targets": ["RoomRom.md (manifests compiled)", "CombinedDebug.md (manifests compiled)"],
+          "build_targets": [
+            "RoomRom.md (manifests compiled)",
+            "CombinedDebug.md (manifests compiled)"
+          ],
           "evidence": [
             "aggregator|tools/gate_5_10_dungeon_matrix.py verdict=PASS",
             "manifests_ok|5/5 (doors, cellars, pushblocks, dark, items)",
@@ -520,7 +523,7 @@
           ],
           "deferrals": [
             "5.10b: full L1-L9 x Q1-Q2 user-driven render + screenshot diff + walkability matrix. Requires Q2 quest selector + mature Phase 6 items/combat. Plans post-Phase-6.",
-            "Live cross-dungeon manifest replay — slice-1 only validates manifest parse + prior gate JSONL replay for L1Q1.",
+            "Live cross-dungeon manifest replay \u2014 slice-1 only validates manifest parse + prior gate JSONL replay for L1Q1.",
             "Master-plan acceptance 'render every room in all 9 dungeons both quests' formally tracked under 5.10b."
           ]
         }
@@ -903,8 +906,9 @@
       "sha256": "3495ac8db43e505b1cc81ee33cc4178eecba73ff898b6f465af2a603e9b682ad",
       "ok": true
     },
-    "git_head": "e3481779859a16060901ac7b5312d18e67cde948",
+    "git_head": "5bad04da4834484f21bb0186b91b3059efefc541",
     "dirty_paths_relevant": [
+      "RoomRom/src/main.c",
       "RoomRom/src/render_adapter_sgdk.c",
       "RoomRom/src/roomrom_hud.c",
       "RoomRom/src/roomrom_hud.h",
@@ -922,7 +926,7 @@
     ],
     "evidence_paths_present": true,
     "complete_phase_invariant_ok": true,
-    "last_refresh_at": "2026-05-07T05:57:39.181641+00:00",
+    "last_refresh_at": "2026-05-07T15:20:04.908485+00:00",
     "stale_reasons": []
   },
   "blockers": []
