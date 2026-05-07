@@ -53,4 +53,15 @@ void roomrom_uw_room_render_set_walkable_tile(unsigned char col,
 unsigned char roomrom_uw_room_render_palette_at(unsigned char nt_col,
                                                 unsigned char nt_row);
 
+/* Task 5.5 debug: copy 32x22 BG-tile walkability cache to a fixed RAM
+ * block for probe inspection. Layout:
+ *   off 0,1: magic 'U','W'
+ *   off 2: cols=32
+ *   off 3: rows=22
+ *   off 4..707: column-major cache[col*22 + row], 1=walkable, 0=blocked. */
+#define ROOMROM_DEBUG_UW_WALKABLE_BASE  0x00FF7800UL
+#define ROOMROM_DEBUG_UW_WALKABLE_BYTES 708u
+
+void roomrom_uw_room_render_publish_walkable(void);
+
 #endif

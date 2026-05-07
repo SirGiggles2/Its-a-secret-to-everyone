@@ -312,18 +312,23 @@ static void blit_blob_one_metacol_at(int idx, unsigned char src_col,
         unsigned char pal1 = attr_palette_for(attr, src_p1, nt_row);
         write_tile_raw_at(dst_p0, row, dst_row_base, raw0, pal0);
         write_tile_raw_at(dst_p1, row, dst_row_base, raw1, pal1);
-        if (dst_col < 16u) {
-            s_uw_tile_walkable[dst_p0][row] = uw_walkable_tile_id(raw0);
-            s_uw_tile_walkable[dst_p1][row] = uw_walkable_tile_id(raw1);
-        }
+        /* Task 5.5 fix: BG-tile walkability cache is keyed on SOURCE
+         * col, not plane dst col. Link's collision probe samples via
+         * tile_col = link_x>>3 (0..31, source-room space) regardless
+         * of which plane slot the room is rendered into. Indexing by
+         * dst was broken: post-scroll-into-slot-1 the cache held the
+         * previous room's data for cols 0..31, blocking Link in the
+         * new room. Same architectural bug as Task 5.4's OW raw-tile
+         * cache. */
+        s_uw_tile_walkable[src_p0][row] = uw_walkable_tile_id(raw0);
+        s_uw_tile_walkable[src_p1][row] = uw_walkable_tile_id(raw1);
     }
-    /* Legacy 16x11 summary for diagnostics. */
-    if (dst_col < 16u) {
-        for (mt_row = 0; mt_row < 11u; mt_row++) {
-            unsigned char tl =
-                nt[(mt_row * 2u) * ROOMROM_UW_BLOB_COLS + (src_col * 2u)];
-            set_walkable_metatile_only(dst_col, mt_row, uw_walkable_tile_id(tl));
-        }
+    /* Legacy 16x11 metatile summary — also keyed by SOURCE col now so
+     * the metatile-grain query matches BG-grain in slot 1 scroll. */
+    for (mt_row = 0; mt_row < 11u; mt_row++) {
+        unsigned char tl =
+            nt[(mt_row * 2u) * ROOMROM_UW_BLOB_COLS + (src_col * 2u)];
+        set_walkable_metatile_only(src_col, mt_row, uw_walkable_tile_id(tl));
     }
 }
 
@@ -420,6 +425,22 @@ void roomrom_uw_room_render_set_walkable_tile(unsigned char col,
 {
     if (col >= 32u || row >= 22u) return;
     s_uw_tile_walkable[col][row] = val ? 1u : 0u;
+}
+
+void roomrom_uw_room_render_publish_walkable(void)
+{
+    volatile unsigned char *p =
+        (volatile unsigned char *)ROOMROM_DEBUG_UW_WALKABLE_BASE;
+    unsigned char col, row;
+    p[0] = 0x55u; /* 'U' */
+    p[1] = 0x57u; /* 'W' */
+    p[2] = 32u;
+    p[3] = 22u;
+    for (col = 0u; col < 32u; col++) {
+        for (row = 0u; row < 22u; row++) {
+            p[4u + (unsigned short)col * 22u + row] = s_uw_tile_walkable[col][row];
+        }
+    }
 }
 
 /* Return AT palette for NT coordinates (col 0..31, row 8..29 in full NT space).

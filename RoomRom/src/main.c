@@ -603,6 +603,10 @@ void roomrom_debug_publish_state_mirror(void)
 
     /* Task 5.5: publish UW persistence table at $FF76D0 (256 B). */
     roomrom_debug_publish_uw_persist();
+
+    /* Task 5.5 debug: publish 32x22 UW BG-tile walkability cache to
+     * $FF7800 so probes can diff vs expected per-room collision. */
+    roomrom_uw_room_render_publish_walkable();
 }
 
 /* Task 5.5: copy active-level persistence row to probe block. */

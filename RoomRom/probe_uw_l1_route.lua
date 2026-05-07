@@ -111,8 +111,45 @@ end
 local jsonl_path = "C:\\tmp\\uw_door_observations.jsonl"
 local progress_path = "C:\\tmp\\uw_route_progress.json"
 local state_path = "C:\\tmp\\uw_door_state.json"
+local walk_path = "C:\\tmp\\uw_walk_dump.json"
 
-local jsonl = io.open(jsonl_path, "w")
+-- Read 32x22 BG-tile walkability cache at $FF7800 (Task 5.5 publish).
+local UW_WALK_BASE = 0x7800
+local function dump_walkability_around(lcol, lrow)
+    if memory.read_u8(UW_WALK_BASE) ~= 0x55 or
+       memory.read_u8(UW_WALK_BASE + 1) ~= 0x57 then
+        return nil
+    end
+    local cells = {}
+    for c = 0, 31 do
+        cells[c] = {}
+        for r = 0, 21 do
+            cells[c][r] = memory.read_u8(UW_WALK_BASE + 4 + c * 22 + r)
+        end
+    end
+    return cells
+end
+
+local function write_walk_dump(lcol, lrow, cells)
+    local f = io.open(walk_path, "w")
+    if not f then return end
+    f:write('{"link_col":' .. lcol .. ',"link_row":' .. lrow .. ',"cells":[\n')
+    for r = 0, 21 do
+        f:write("  [")
+        for c = 0, 31 do
+            f:write(tostring(cells[c][r]))
+            if c < 31 then f:write(",") end
+        end
+        f:write("]")
+        if r < 21 then f:write(",") end
+        f:write("\n")
+    end
+    f:write("]}\n")
+    f:close()
+end
+
+-- Append mode so re-launches don't wipe prior session evidence.
+local jsonl = io.open(jsonl_path, "a")
 if not jsonl then
     print("ERROR: cannot open " .. jsonl_path); return
 end
@@ -181,6 +218,15 @@ while true do
                     persisted_mask_this_room = read_persist(m.room_id),
                 }) .. "\n")
                 h:close()
+            end
+            -- Also dump UW walkability cache to /c/tmp/uw_walk_dump.json
+            -- once per state cycle. Only meaningful when in UW.
+            if m.scene == 1 then
+                local foot_y = m.link_y + 0x0B
+                local lcol = math.floor(m.link_x / 8)
+                local lrow = math.floor((foot_y - 56) / 8)
+                local cells = dump_walkability_around(lcol, lrow)
+                if cells then write_walk_dump(lcol, lrow, cells) end
             end
             state_counter = 0
         end

@@ -234,16 +234,40 @@ void uw_door_state_apply_walkability(void)
     for (dir = 0u; dir < DOOR_DIR_COUNT; dir++) {
         unsigned char t = s_door_types[dir];
         unsigned char open;
+        unsigned char mt_col_a, mt_row_a, mt_col_b, mt_row_b;
 
         if (t == DOOR_TYPE_WALL) {
             open = 0u; /* wall always blocks regardless of opened mask */
         } else {
             open = (s_cur_opened & DOOR_DIR_BIT(dir)) ? 1u : 0u;
         }
-        roomrom_uw_room_render_set_walkable(s_walk_mt_col[dir],
-                                            s_walk_mt_row[dir], open);
-        roomrom_uw_room_render_set_walkable(s_walk_mt_col2[dir],
-                                            s_walk_mt_row2[dir], open);
+        mt_col_a = s_walk_mt_col[dir];
+        mt_row_a = s_walk_mt_row[dir];
+        mt_col_b = s_walk_mt_col2[dir];
+        mt_row_b = s_walk_mt_row2[dir];
+
+        roomrom_uw_room_render_set_walkable(mt_col_a, mt_row_a, open);
+        roomrom_uw_room_render_set_walkable(mt_col_b, mt_row_b, open);
+
+        /* Propagate to BG-tile-grain cache. UW Link collision reads via
+         * roomrom_uw_room_render_walkable_tile_at(); the metatile cache
+         * alone never reaches link_walkable_at. Each metatile covers a
+         * 2x2 BG block at (col*2, row*2). */
+        {
+            unsigned char dr, dc;
+            for (dr = 0u; dr < 2u; dr++) {
+                for (dc = 0u; dc < 2u; dc++) {
+                    roomrom_uw_room_render_set_walkable_tile(
+                        (unsigned char)(mt_col_a * 2u + dc),
+                        (unsigned char)(mt_row_a * 2u + dr),
+                        open);
+                    roomrom_uw_room_render_set_walkable_tile(
+                        (unsigned char)(mt_col_b * 2u + dc),
+                        (unsigned char)(mt_row_b * 2u + dr),
+                        open);
+                }
+            }
+        }
     }
 }
 
