@@ -21,6 +21,12 @@ void roomrom_uw_room_render_load_palette(unsigned char room_id);
 void roomrom_uw_room_render_upload_chr(void);
 void roomrom_uw_room_render_fill_plane_a(unsigned char room_id);
 
+/* Task 5.8: paint plane A play area cells (32x22) with a black-tile
+ * VDP word (tile $00 + PAL0). HUD on WINDOW is unaffected. Used by
+ * load_room when (is_dark && !lit). Walkability cache is left
+ * untouched so Link movement isn't altered visually-only. */
+void roomrom_uw_room_render_fill_plane_a_dark(void);
+
 /* S6.5 scroll: render one metatile col (2 plane cols) of room_id from blob
  * at plane metatile col dst_col. */
 void roomrom_uw_room_render_fill_one_col(unsigned char room_id,

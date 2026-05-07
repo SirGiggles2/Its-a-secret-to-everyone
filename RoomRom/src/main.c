@@ -19,6 +19,7 @@
 #include "uw_cellar_meta.h"             /* Task 5.6: cellar pair lookup */
 #include "uw_push_block_meta.h"         /* Task 5.7: push-block manifest */
 #include "roomrom_pushblock.h"           /* Task 5.7: push-block state machine */
+#include "uw_dark_meta.h"                /* Task 5.8: dark-room manifest */
 #include "probes/metadata_probe.h"     /* Task 5.4: Gate D in-ROM probe */
 
 /* Boots to overworld room 0x77.
@@ -70,17 +71,16 @@ typedef enum {
     LINK_DIR_RIGHT = 4
 } link_dir_t;
 
-/* TEST DEFAULTS: boot into UW room $73 (L1 entrance, blob room). Toggle Start for OW.
- * Task 5.6 slice-1 cellar verification ran with boot=$22 (128, 149) since the
- * normal traversal $73→$22 is gated by an unmovable block (block-pushing
- * deferred to Phase 6+). With slice-1 verified (gate_5_6 PASS), default
- * restored to $73 to preserve Phase 5.5 door-route loop default. */
+/* TEST DEFAULTS: boot into UW room $73 (L1 entrance). Toggle Start
+ * for OW. Task 5.8 verification ran with boot=$40 (dark room) since
+ * none of the 17 reachable L1Q1 rooms are NES-dark; gate_5_8 PASS
+ * recorded; default restored to $73 to preserve 5.5+5.7 routes. */
 static scene_t       s_scene       = SCENE_UW;
 static mode_t        s_mode        = MODE_WALK;
 static move_style_t  s_move_style  = MOVE_STYLE_NES;
-static u8 s_room_id = 0x73;   /* UW L1 room $73 */
-static short s_link_x = 120;  /* NES UW vertical doorway centerline ($78) */
-static short s_link_y = 133;  /* Genesis-rendered UW horizontal doorway centerline ($85) */
+static u8 s_room_id = 0x73;
+static short s_link_x = 120;
+static short s_link_y = 133;
 static link_face_t s_link_face = LINK_FACE_DOWN;
 /* Ph5.3: key inventory for UW door gating. Start with 3 for dev testing. */
 static unsigned char s_link_keys = 99u;  /* Task 5.5 debug: full L1 traversal */
@@ -342,6 +342,16 @@ static void load_room(u8 room_id)
         uw_door_state_room_init(roomrom_uw_room_render_get_level(),
                                 roomrom_uw_room_render_get_quest(),
                                 room_id);
+        /* Task 5.8: dark-room render override. After blob blit, if the
+         * room is NES-dark and the candle hasn't lit it yet, paint
+         * playfield BG_A black. HUD on WINDOW + collision cache stay
+         * intact. Candle reveal restores via load_room rerun. */
+        if (roomrom_uw_room_is_dark(roomrom_uw_room_render_get_level(),
+                                    roomrom_uw_room_render_get_quest(),
+                                    room_id) &&
+            !roomrom_uw_room_lit(room_id)) {
+            roomrom_uw_room_render_fill_plane_a_dark();
+        }
     }
 }
 
@@ -644,6 +654,17 @@ void roomrom_debug_publish_state_mirror(void)
     p[89] = 0u; p[90] = 0u; p[91] = 0u;  /* reserved */
     p[92] = 0u; p[93] = 0u; p[94] = 0u; p[95] = 0u;  /* reserved */
 
+    /* Task 5.8 extension: dark-room state at offsets 96..103. */
+    if (s_scene == SCENE_UW) {
+        p[96] = roomrom_uw_room_is_dark(uw_level, uw_quest, s_room_id);
+        p[97] = roomrom_uw_room_lit(s_room_id);
+    } else {
+        p[96] = 0u;
+        p[97] = 0u;
+    }
+    p[98] = roomrom_uw_dark_candle_used_count();
+    p[99] = 0u; p[100] = 0u; p[101] = 0u; p[102] = 0u; p[103] = 0u;
+
     /* Task 5.4: also publish the 32x22 OW raw-tile cache to $FF7400 so
      * Lua probes can scan for warp tiles without per-cell calls. */
     roomrom_ow_room_render_publish_cache();
@@ -653,6 +674,9 @@ void roomrom_debug_publish_state_mirror(void)
 
     /* Task 5.7: publish push-block persistence at $FF7B00 (256 B). */
     roomrom_pushblock_publish_persist();
+
+    /* Task 5.8: publish dark-lit persistence at $FF7C00 (256 B). */
+    roomrom_uw_dark_publish_persist();
 
     /* Task 5.5 debug: publish 32x22 UW BG-tile walkability cache to
      * $FF7800 so probes can diff vs expected per-room collision. */
@@ -1303,11 +1327,22 @@ void roomrom_debug_tick(void)
                 }
                 break;
             case B_ITEM_CANDLE:
-                /* v9 deferred: candle fire tiles ($28+ in pattern table 0
-                 * during candle wield) aren't in common_chr. Same
-                 * CHR-extraction limitation as horizontal sword + arrow.
-                 * Wire later once tools/extract_chr.py is extended to
-                 * pull on-demand-loaded item patterns. */
+                /* Task 5.8 minimal candle reveal hook (slice-1 F6
+                 * boundary): in UW + dark + !lit, light the room. NO
+                 * projectile / CHR draw (deferred to Phase 6 weapon
+                 * work via drained weprt_wield_candle bridge). */
+                if (s_scene == SCENE_UW &&
+                    roomrom_uw_room_is_dark(
+                        roomrom_uw_room_render_get_level(),
+                        roomrom_uw_room_render_get_quest(),
+                        s_room_id) &&
+                    !roomrom_uw_room_lit(s_room_id)) {
+                    roomrom_uw_room_set_lit(s_room_id);
+                    roomrom_uw_dark_note_candle_used();
+                    /* Re-render plane A from blob now that the room
+                     * is lit. */
+                    load_room(s_room_id);
+                }
                 break;
             case B_ITEM_ROD:
                 /* v10 deferred: rod uses UpdateSwordOrRod path with its

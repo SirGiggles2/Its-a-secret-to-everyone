@@ -86,14 +86,29 @@
 #define DUNGEON_LEVEL_NUMBER         RAM(0x6BB1)
 
 /* ---- LevelBlockAttrs cache ------------------------------------------------
- * LevelBlockAttrsByteF ($04CD): cached byte from LevelBlockAttrsF[room_id]
- * for the current room.  Set once on room entry (InitMode_EnterRoom).
- *   bit 4 = dark room (IsDarkRoom_Bank5 checks this)
- *   bit 3 = monsters spawn from screen edges
+ * LevelBlockAttrsByteF ($04CD per Variables.inc:135): cached byte from
+ * LevelBlockAttrsF[room_id] for the current room. Set once on room entry
+ * (InitMode_EnterRoom).
+ *
+ * F-byte bit-meaning is NOT the dark-room flag (Task 5.8 ground-truth
+ * 2026-05-07 corrected an earlier wrong comment).
+ *
+ * Authoritative dark-room predicate: `IsDarkRoom_Bank5` at
+ * reference/aldonunez/Z_05.asm:7795 reads `LevelBlockAttrsE, Y` &
+ * `$80` — bit 7 of the AttrsE TABLE (not the cached F-byte).
+ *
+ * AttrsE base in NES SRAM: `$6A7E` (Variables.inc:328); RoomRom-side
+ * SRAM-relative offset is `$0A7E + room_id`. The drained
+ * src/game/room/room_dispatch.c:75 `room_is_dark_room()` reads this
+ * exact location. NOTE: standalone RoomRom has only 2 KB nes_ram
+ * (RoomRom/src/boot/nes_ram_init.c:25), so $0A7E is OUT OF BOUNDS
+ * there — RoomRom must use the generated `uw_dark_rooms` master
+ * table at runtime; the dispatch fn is safe to call only on host
+ * environments with full NES SRAM mapped.
  */
 #define DUNGEON_ATTRS_BYTE_F         RAM(0x04CD)
-#define DUNGEON_ATTRS_F_DARK_ROOM    0x10u
-#define DUNGEON_ATTRS_F_EDGE_SPAWN   0x08u
+#define DUNGEON_ATTRS_E_BASE         0x0A7Eu
+#define DUNGEON_ATTRS_E_DARK_BIT     0x80u
 
 /* ---- Object / monster room state -----------------------------------------
  * Variables.inc:

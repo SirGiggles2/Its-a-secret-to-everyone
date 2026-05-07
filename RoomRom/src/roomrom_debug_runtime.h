@@ -3,12 +3,13 @@
 
 /* RoomRom Debug RAM Map (P0-3 canonical table; both ROMs link these)
  * ===================================================================
- *   $FF7200..$FF725F   96 B   state mirror (warp+door+cellar+pushblock)
+ *   $FF7200..$FF7267  104 B   state mirror (warp+door+cellar+push+dark)
  *   $FF7300..$FF732F   48 B   Gate D metadata probe (Task 5.4 + 5.6)
  *   $FF7400..$FF76C3  708 B   OW raw-tile cache (Task 5.4)
  *   $FF76D0..$FF77CF  256 B   UW door persistence table (Task 5.5)
  *   $FF7800..$FF7AC3  708 B   UW BG-tile walkability cache (Task 5.5)
  *   $FF7B00..$FF7BFF  256 B   Push-block persistence (Task 5.7)
+ *   $FF7C00..$FF7CFF  256 B   Dark-room candle-lit persistence (Task 5.8)
  *
  * All offsets are within the 64KB Genesis 68K work RAM
  * ($FF0000..$FFFFFF). Probes read via "68K RAM" BizHawk domain,
@@ -99,7 +100,7 @@ unsigned char roomrom_debug_warp_unsupported_count(void);
  *   75   1     uw_cellar_pending_exit (1 if next LOAD exits cellar)
  *   76..79  4  reserved
  *
- * Task 5.7 extension (offsets 80..95, total 96 bytes):
+ * Task 5.7 extension (offsets 80..95):
  *   80   1     pushblock_state_for_current_room (0=idle 1=pushed 2=secret)
  *   81   1     pushblock_active_dir ($08/$04/$02/$01 per BlockPushDirections)
  *   82   1     pushblock_active_timer (0..$10 in TIMING)
@@ -110,9 +111,15 @@ unsigned char roomrom_debug_warp_unsupported_count(void);
  *   87   1     pushblock_room_all_dead (gate state for probe; slice-1 = 1)
  *   88   1     pushblock_internal_state (0=IDLE 1=TIMING 2=MOVING 3=DONE)
  *   89..95  7  reserved
+ *
+ * Task 5.8 extension (offsets 96..103, total 104 bytes):
+ *   96   1     uw_room_is_dark (current room flag, 0/1)
+ *   97   1     uw_room_lit (current room flag, 0/1)
+ *   98   1     candle_used_count (debug)
+ *   99..103  5 reserved
  */
 #define ROOMROM_DEBUG_STATE_MIRROR_BASE  0x00FF7200UL
-#define ROOMROM_DEBUG_STATE_MIRROR_BYTES 96u
+#define ROOMROM_DEBUG_STATE_MIRROR_BYTES 104u
 
 void roomrom_debug_publish_state_mirror(void);
 

@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-05-07T05:18:44.301462+00:00",
+  "generated_at": "2026-05-07T05:57:38.853428+00:00",
   "generated_by": "tools/audit/primedirective/prime_refresh.py",
   "plan": {
     "path": "docs/superpowers/plans/2026-05-02-title-roomrom-full-port-master-plan.md",
@@ -9,14 +9,14 @@
   "active": {
     "phase_id": "5",
     "phase_name": "Dungeon Core",
-    "task_id": "5.7",
-    "task_title": "Push Blocks (verification slice) — CLOSED",
+    "task_id": "5.8",
+    "task_title": "Dark Rooms (verification slice) — CLOSED",
     "worktree": {
       "path": "C:/Users/Jake Diggity/Documents/GitHub/FINAL TRY",
       "branch": "main",
       "is_substrate_writer": true
     },
-    "next_concrete_action": "Task 5.7 closed (Gate 5.7 PASS). Begin Task 5.8 (Dark Rooms) per master plan: extract dark flags, render mask, candle/lit state."
+    "next_concrete_action": "Task 5.8 closed (Gate 5.8 PASS). Begin Task 5.9 (Keys, Map, Compass, Triforce) per master plan + plan v3."
   },
   "phases": [
     {
@@ -403,6 +403,51 @@
             "NES-side parity probe (Boot N) for push state",
             "Verify all push-block cases (master-plan bullet) \u2014 slice-1 covers $22 (required) + $42 (bonus); other 6 L1Q1 rooms ($36, $43, $45, $52, $63, $74) generated but not user-tested"
           ]
+        },
+        {
+          "id": "5.8",
+          "name": "Dark Rooms (verification slice)",
+          "status": "complete",
+          "verification_closed_at": "2026-05-07",
+          "verification_started_at": "2026-05-07",
+          "spec": "docs/superpowers/plans/2026-05-02-title-roomrom-full-port-master-plan.md (Task 5.8 section, line 1012-1020)",
+          "plan": "C:/Users/Jake Diggity/.claude/plans/great-load-it-into-sleepy-lantern.md",
+          "drain_header": {
+            "nes_source": "reference/aldonunez/Z_05.asm:IsDarkRoom_Bank5 (7795-7801); Z_07.asm:UsedCandle/WieldCandle (3522-3530); Variables.inc:328 (LevelBlockAttrsE = $6A7E)",
+            "drained_c": "src/game/room/room_dispatch.c:room_is_dark_room (line 75) \u2014 callable but reads $0A7E OOB on RoomRom 2 KB nes_ram (G1)",
+            "coverage": "PARTIAL \u2014 predicate via dispatch (gen-time only); render path + lit-state not in drain",
+            "stance": "ADOPT-AT-GENERATOR + EXTEND-RUNTIME"
+          },
+          "build_targets": [
+            "RoomRom.md (per-commit)",
+            "CombinedDebug.md (per-commit, ship target)"
+          ],
+          "ground_truth_dump": "build/probes/ph5/task_5_8/nes_ground_truth.md",
+          "verified_pre_plan": {
+            "AttrsE_dark_bit": "bit 7 ($80) of LevelBlockAttrsE per Z_05.asm:7795",
+            "L1Q1_dark_room_count": 18,
+            "L1Q1_reachable_dark": 0,
+            "test_path": "TELEPORT to dark room ($46 etc.) since none of 17 reachable L1Q1 rooms are dark",
+            "F4_fix_applied": "src/state/dungeon_state.h:88-96 corrected (AttrsE bit 7, not AttrsF bit 4)"
+          },
+          "evidence": [
+            "ground_truth_dump|build/probes/ph5/task_5_8/nes_ground_truth.md (Z_05.asm:7795 IsDarkRoom_Bank5 + AttrsE bit 7 verified)",
+            "F4_fix|src/state/dungeon_state.h:88-96 corrected (AttrsE bit 7, removed wrong AttrsF bit 4 macros)",
+            "generator|tools/uw_dark_rooms_gen.py emits master table 261 rows (L1-L9 x Q1-Q2). Cross-check matches drained room_is_dark_room semantics (host-only call site per G1)",
+            "uw_dark_rooms|RoomRom/data/uw_dark_rooms.{c,h} 261 rows; L1Q1=18 dark rooms",
+            "build_clean_dual_rom|RoomRom + CombinedDebug both clean",
+            "gate_5_8_PASS|build/probes/ph5/task_5_8/gate_5_8_report.json verdict=PASS, room $40 triple-verified (enter+lit+persist)",
+            "auto_probe|RoomRom/probe_uw_dark_auto.lua scripted joypad: B (candle), X+Right (teleport $40->$41), X+Left (back to $40), persistence verified at frame 335",
+            "drain_stance|ADOPT-AT-GENERATOR + EXTEND-RUNTIME — generated table used at runtime; dispatch room_is_dark_room only safe on host (G1 OOB on RoomRom 2 KB nes_ram)"
+          ],
+          "deferrals": [
+            "L2-L9 dark rooms user-test (slice-1 covers L1Q1 only; data-only for others)",
+            "Q2 dark rooms user-test (Q2 selector pending Task 5.4)",
+            "Sub-tile light radius around Link (slice-1 = full-room black; Phase 9 polish)",
+            "Full bridge to drained weprt_wield_candle for projectile/CHR (Phase 6 weapon work)",
+            "NV-RAM persistence of lit state across reset (Task 5.4 inherited)",
+            "RoomRom nes_ram expansion to enable runtime room_is_dark_room dispatch call (G1)"
+          ]
         }
       ],
       "evidence": [
@@ -783,7 +828,7 @@
       "sha256": "3495ac8db43e505b1cc81ee33cc4178eecba73ff898b6f465af2a603e9b682ad",
       "ok": true
     },
-    "git_head": "90e2fca01aed5b8083845ef77fed3ad232bd6a32",
+    "git_head": "e3481779859a16060901ac7b5312d18e67cde948",
     "dirty_paths_relevant": [
       "RoomRom/src/render_adapter_sgdk.c",
       "RoomRom/src/roomrom_hud.c",
@@ -802,7 +847,7 @@
     ],
     "evidence_paths_present": true,
     "complete_phase_invariant_ok": true,
-    "last_refresh_at": "2026-05-07T05:18:44.360478+00:00",
+    "last_refresh_at": "2026-05-07T05:57:39.181641+00:00",
     "stale_reasons": []
   },
   "blockers": []

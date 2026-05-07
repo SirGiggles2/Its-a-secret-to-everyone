@@ -1,0 +1,24 @@
+{
+  "verdict": "PASS",
+  "rooms_total_in_manifest": 261,
+  "rooms_l1q1_in_manifest": 18,
+  "events_total": 7,
+  "enter_events": 3,
+  "lit_events": 2,
+  "persist_events": 1,
+  "rooms_with_enter": [
+    64,
+    65
+  ],
+  "rooms_with_lit": [
+    64
+  ],
+  "rooms_with_persist": [
+    64
+  ],
+  "triple_pass_rooms": [
+    64
+  ],
+  "slice_1_required": "\u22651 room with enter + lit + persist",
+  "jsonl_path": "C:\\tmp\\uw_dark_observations.jsonl"
+}

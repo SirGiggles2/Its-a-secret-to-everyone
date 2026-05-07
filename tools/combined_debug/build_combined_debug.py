@@ -132,6 +132,9 @@ ROOMROM_C_SOURCES = [
     ("RoomRom/data/uw_l1q1_pushblocks.c", "uw_l1q1_pushblocks.o"),
     ("RoomRom/src/uw_push_block_meta.c", "uw_push_block_meta.o"),
     ("RoomRom/src/roomrom_pushblock.c", "roomrom_pushblock.o"),
+    # Task 5.8: dark-room manifest + accessor + lit-state
+    ("RoomRom/data/uw_dark_rooms.c", "uw_dark_rooms.o"),
+    ("RoomRom/src/uw_dark_meta.c", "uw_dark_meta.o"),
     ("RoomRom/src/roomrom_ow_palette.c", "roomrom_ow_palette.o"),
     ("src/state/palette_tick.c", "palette_tick.o"),
     ("RoomRom/src/roomrom_palette_tick.c", "roomrom_palette_tick.o"),

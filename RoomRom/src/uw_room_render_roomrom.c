@@ -376,6 +376,24 @@ void roomrom_uw_room_render_fill_plane_a(unsigned char room_id)
     }
 }
 
+/* Task 5.8: dark-room render. Paints all 32x22 playfield cells with
+ * VDP word 0x0000 (tile $00, PAL0). HUD on WINDOW plane is unaffected
+ * — a global PAL swap would have darkened HUD too (G2-fix justification).
+ * Walkability cache untouched: Link still walks the same cells; the
+ * visual is just black until candle-lit. */
+void roomrom_uw_room_render_fill_plane_a_dark(void)
+{
+    unsigned char col, row;
+    s_cur_attr = (const unsigned char *)0;
+    for (row = 0; row < ROOMROM_ROOM_ROWS; row++) {
+        for (col = 0; col < ROOMROM_ROOM_COLS; col++) {
+            render_set_plane_a_word(col,
+                (unsigned short)(row + ROOMROM_ROOM_FIRST_ROW),
+                0x0000u);
+        }
+    }
+}
+
 void roomrom_uw_room_render_fill_one_col(unsigned char room_id,
                                          unsigned char src_col,
                                          unsigned char dst_col)
