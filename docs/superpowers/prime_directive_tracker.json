@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-05-07T01:51:39.471175+00:00",
+  "generated_at": "2026-05-07T05:18:44.301462+00:00",
   "generated_by": "tools/audit/primedirective/prime_refresh.py",
   "plan": {
     "path": "docs/superpowers/plans/2026-05-02-title-roomrom-full-port-master-plan.md",
@@ -9,14 +9,14 @@
   "active": {
     "phase_id": "5",
     "phase_name": "Dungeon Core",
-    "task_id": "5.6",
-    "task_title": "Stairs and Passages (verification slice) — CLOSED",
+    "task_id": "5.7",
+    "task_title": "Push Blocks (verification slice) — CLOSED",
     "worktree": {
       "path": "C:/Users/Jake Diggity/Documents/GitHub/FINAL TRY",
       "branch": "main",
       "is_substrate_writer": true
     },
-    "next_concrete_action": "Task 5.6 closed (Gate 5.6 PASS). Begin Task 5.7 (Item Pickup) per master plan; substrate prereq = Phase 6 combat/items."
+    "next_concrete_action": "Task 5.7 closed (Gate 5.7 PASS). Begin Task 5.8 (Dark Rooms) per master plan: extract dark flags, render mask, candle/lit state."
   },
   "phases": [
     {
@@ -269,7 +269,7 @@
           "status": "closed",
           "closed_at": "2026-05-07",
           "verification_started_at": "2026-05-06",
-          "gate_5_5_result": "PASS — 15/15 reachable rooms, Gate B 17/17 door-type parity, Gate C 22/22 behavioral invariants, 2 shutter triggers verified",
+          "gate_5_5_result": "PASS \u2014 15/15 reachable rooms, Gate B 17/17 door-type parity, Gate C 22/22 behavioral invariants, 2 shutter triggers verified",
           "fixes_landed": [
             "uw_door_state_apply_walkability propagates open/blocked to BG-tile cache (was metatile-only; collision read BG-tile so override never reached Link)",
             "blit_blob_one_metacol_at keyed BG-tile walkability cache by SOURCE col not plane DST col (post-scroll slot-1 mismatch fixed; symmetric to Task 5.4 OW raw-tile cache fix)",
@@ -320,7 +320,7 @@
             "stance": "GREENFIELD (continues 5.4-5.5 line)"
           },
           "build_targets": [
-            "RoomRom.md (per-commit, clean checksum $A9F8 → $B632 → $A9F8)",
+            "RoomRom.md (per-commit, clean checksum $A9F8 \u2192 $B632 \u2192 $A9F8)",
             "CombinedDebug.md (per-commit, clean)"
           ],
           "ground_truth_dump": "build/probes/ph5/task_5_6/nes_ground_truth.md",
@@ -340,20 +340,68 @@
             "uw_l1q1_cellar_pairs|RoomRom/data/uw_l1q1_cellar_pairs.{c,h} 1 row (source=$22, cellar=$7F)",
             "build_clean_dual_rom|RoomRom/build.bat + CombinedDebug.bat both clean",
             "gate_5_6_PASS|build/probes/ph5/task_5_6/gate_5_6_report.json verdict=PASS, 1/1 pair, 2 entry events + 2 exit events",
-            "gate_d_metadata_probe|RoomRom/src/probes/metadata_probe.c extended 7→11 checks (cellar pair count, lookup, reverse, is_cellar)",
-            "user_driven_test|Step 10 cycle complete: $22 → $7F (entry) → $22 (exit), confirmed via mirror byte 72 toggle"
+            "gate_d_metadata_probe|RoomRom/src/probes/metadata_probe.c extended 7\u219211 checks (cellar pair count, lookup, reverse, is_cellar)",
+            "user_driven_test|Step 10 cycle complete: $22 \u2192 $7F (entry) \u2192 $22 (exit), confirmed via mirror byte 72 toggle"
           ],
           "deferrals": [
             "Cellar blob extraction for L1Q1 $7F (substrate Phase 1 work; slice-1 ships placeholder cellar render)",
-            "Block-pushing impl (Phase 6+) — natural traversal $73→$22 currently gated by an unmovable block; slice-1 verified via boot-default override",
-            "Cellar exit raw_tile gate inside cellars (slice-1 P0-2 escape: any aligned tile in a cellar exits; production NES rule restricts to specific stair tiles inside cellar — needs cellar BG extraction)",
+            "Block-pushing impl (Phase 6+) \u2014 natural traversal $73\u2192$22 currently gated by an unmovable block; slice-1 verified via boot-default override",
+            "Cellar exit raw_tile gate inside cellars (slice-1 P0-2 escape: any aligned tile in a cellar exits; production NES rule restricts to specific stair tiles inside cellar \u2014 needs cellar BG extraction)",
             "Item cellar payload (Phase 6 combat/items)",
             "Mode $10 visible semantics for stair animation (4 variants $02/$09/$0B/$0C; Task 5.4 deferral inherited)",
             "L2-L9 cellar pair expansion (data-only generator extension)",
             "Q2 cellar entries (manifest extension; Q2 quest selector still pending Task 5.4 deferral)",
             "NV-RAM persistence of source_room_id across reset (Task 5.4 deferral inherited)",
             "NES-side parity probe (Boot N) for stair state",
-            "Each stair/passage type coverage (master-plan bullet) — slice-1 covers L1's single cellar; multi-type verification needs L2-L9"
+            "Each stair/passage type coverage (master-plan bullet) \u2014 slice-1 covers L1's single cellar; multi-type verification needs L2-L9"
+          ]
+        },
+        {
+          "id": "5.7",
+          "name": "Push Blocks (verification slice)",
+          "status": "complete",
+          "verification_started_at": "2026-05-07",
+          "verification_closed_at": "2026-05-07",
+          "spec": "docs/superpowers/plans/2026-05-02-title-roomrom-full-port-master-plan.md (Task 5.7 section, line 1001-1010)",
+          "plan": "C:/Users/Jake Diggity/.claude/plans/great-load-it-into-sleepy-lantern.md",
+          "drain_header": {
+            "nes_source": "reference/aldonunez/Z_04.asm:UpdateBlock (618-746); Z_04.asm:BlockPushDirections (615-616); Z_05.asm:CheckSecretTriggerBlockStairs (2471); Z_05.asm:FindAndCreatePushBlockObject (5461-5514); Variables.inc:137 (BlockPushComplete = $4CF)",
+            "drained_c": "NONE in scope",
+            "coverage": "NONE",
+            "stance": "GREENFIELD (continues 5.4-5.5-5.6 line)"
+          },
+          "build_targets": [
+            "RoomRom.md (per-commit, clean checksum $BB12)",
+            "CombinedDebug.md (per-commit, clean)"
+          ],
+          "ground_truth_dump": "build/probes/ph5/task_5_7/nes_ground_truth.md",
+          "verified_pre_plan": {
+            "L1Q1_$22_block_coord": "metatile (6, 5) = BG (12, 10), first $B0 in BG row 10 of $22 NT (Z_05.asm:5461 algo)",
+            "BlockPushDirections": "$08=N $04=S $02=W $01=E (Z_04.asm:615-616)",
+            "BlockPushComplete_state_machine": "0=idle 1=pushed 2=secret-consumed (Z_05.asm:2471-2484)",
+            "push_timer_threshold": "$10 frames (Z_04.asm:692-695)",
+            "push_distance": "$10 px / 1 metatile (Z_04.asm:725-733)",
+            "RoomAllDead_gate": "Z_04.asm:630-631 \u2014 slice-1 stub returns 1 (no enemies in 5.x scope)"
+          },
+          "evidence": [
+            "ground_truth_dump|build/probes/ph5/task_5_7/nes_ground_truth.md",
+            "generator|tools/uw_pushblock_meta_gen.py emits 8 L1Q1 push-block rows; cross-check against blob NT $B0 row 10 scan",
+            "uw_l1q1_pushblocks|RoomRom/data/uw_l1q1_pushblocks.{c,h} 8 rooms ($22 $36 $42 $43 $45 $52 $63 $74)",
+            "build_clean_dual_rom|RoomRom/build.bat + CombinedDebug.bat both clean",
+            "gate_5_7_PASS|build/probes/ph5/task_5_7/gate_5_7_report.json verdict=PASS, 1/1 required ($22), bonus $42 also pushed by user; 2 timing + 2 moving + 2 done + 1 persist event",
+            "user_driven_test|Step 10 cycle complete: $73\u2192$22 traversal, push-block fired, collision opened, stair access confirmed; user verified animation deferral (sub-tile sprite render) not blocking",
+            "state_machine|roomrom_pushblock.c IDLE\u2192TIMING(16f)\u2192MOVING(16f)\u2192DONE per Z_04.asm:UpdateBlock; per-room persistence row at $FF7B00"
+          ],
+          "deferrals": [
+            "Sub-tile smooth animation of moving block (slice-1 snaps at MOVING-end; user verified visual deferral acceptable for slice-1)",
+            "L2-L9 push-block table expansion (data-only generator extension; ~12 more rooms)",
+            "Multi-block-per-room rooms ($35, multi-position layouts) \u2014 slice-1 ships single-block schema",
+            "Q2 push-block entries (Q2 quest selector still pending Task 5.4 deferral)",
+            "CheckSecretTriggerBlockDoor linkage (Z_05.asm:2463-2470) \u2014 pushing reveals hidden doors; no L1Q1 rooms in slice-1 use this trigger",
+            "RoomAllDead gate replacement when Phase 6 enemies land",
+            "NV-RAM persistence of push state across reset",
+            "NES-side parity probe (Boot N) for push state",
+            "Verify all push-block cases (master-plan bullet) \u2014 slice-1 covers $22 (required) + $42 (bonus); other 6 L1Q1 rooms ($36, $43, $45, $52, $63, $74) generated but not user-tested"
           ]
         }
       ],
@@ -735,7 +783,7 @@
       "sha256": "3495ac8db43e505b1cc81ee33cc4178eecba73ff898b6f465af2a603e9b682ad",
       "ok": true
     },
-    "git_head": "ca54d14fe7227cc2fab574dc84cb7c29ded97300",
+    "git_head": "90e2fca01aed5b8083845ef77fed3ad232bd6a32",
     "dirty_paths_relevant": [
       "RoomRom/src/render_adapter_sgdk.c",
       "RoomRom/src/roomrom_hud.c",
@@ -754,7 +802,7 @@
     ],
     "evidence_paths_present": true,
     "complete_phase_invariant_ok": true,
-    "last_refresh_at": "2026-05-07T01:51:39.537461+00:00",
+    "last_refresh_at": "2026-05-07T05:18:44.360478+00:00",
     "stale_reasons": []
   },
   "blockers": []

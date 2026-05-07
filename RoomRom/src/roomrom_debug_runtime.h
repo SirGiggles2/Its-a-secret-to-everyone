@@ -3,10 +3,12 @@
 
 /* RoomRom Debug RAM Map (P0-3 canonical table; both ROMs link these)
  * ===================================================================
- *   $FF7200..$FF724F   80 B   state mirror (warp+door+cellar; 5.4+5.5+5.6)
- *   $FF7300..$FF731F   32 B   Gate D metadata probe (Task 5.4)
+ *   $FF7200..$FF725F   96 B   state mirror (warp+door+cellar+pushblock)
+ *   $FF7300..$FF732F   48 B   Gate D metadata probe (Task 5.4 + 5.6)
  *   $FF7400..$FF76C3  708 B   OW raw-tile cache (Task 5.4)
  *   $FF76D0..$FF77CF  256 B   UW door persistence table (Task 5.5)
+ *   $FF7800..$FF7AC3  708 B   UW BG-tile walkability cache (Task 5.5)
+ *   $FF7B00..$FF7BFF  256 B   Push-block persistence (Task 5.7)
  *
  * All offsets are within the 64KB Genesis 68K work RAM
  * ($FF0000..$FFFFFF). Probes read via "68K RAM" BizHawk domain,
@@ -90,15 +92,27 @@ unsigned char roomrom_debug_warp_unsupported_count(void);
  *   53   1     last_touch_door_type
  *   54..71   18  reserved (room id history ring + future fields)
  *
- * Task 5.6 extension (offsets 72..79, total 80 bytes):
+ * Task 5.6 extension (offsets 72..79):
  *   72   1     uw_cellar_state (0=outside, 1=in_cellar; tracks current room)
  *   73   1     uw_cellar_entry_count (debug)
  *   74   1     uw_cellar_exit_count (debug)
  *   75   1     uw_cellar_pending_exit (1 if next LOAD exits cellar)
  *   76..79  4  reserved
+ *
+ * Task 5.7 extension (offsets 80..95, total 96 bytes):
+ *   80   1     pushblock_state_for_current_room (0=idle 1=pushed 2=secret)
+ *   81   1     pushblock_active_dir ($08/$04/$02/$01 per BlockPushDirections)
+ *   82   1     pushblock_active_timer (0..$10 in TIMING)
+ *   83   1     pushblock_active_offset (0..$10 in MOVING)
+ *   84   1     pushblock_active_block_col_mt
+ *   85   1     pushblock_active_block_row_mt
+ *   86   1     pushblock_complete_count (debug; total pushes)
+ *   87   1     pushblock_room_all_dead (gate state for probe; slice-1 = 1)
+ *   88   1     pushblock_internal_state (0=IDLE 1=TIMING 2=MOVING 3=DONE)
+ *   89..95  7  reserved
  */
 #define ROOMROM_DEBUG_STATE_MIRROR_BASE  0x00FF7200UL
-#define ROOMROM_DEBUG_STATE_MIRROR_BYTES 80u
+#define ROOMROM_DEBUG_STATE_MIRROR_BYTES 96u
 
 void roomrom_debug_publish_state_mirror(void);
 

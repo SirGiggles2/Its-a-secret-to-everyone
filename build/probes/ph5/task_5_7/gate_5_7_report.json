@@ -1,0 +1,110 @@
+{
+  "verdict": "PASS",
+  "rows_total": 8,
+  "rows_required": 1,
+  "rows_required_passed": 1,
+  "events_total": 8,
+  "timing_events": 2,
+  "moving_events": 2,
+  "done_events": 2,
+  "persist_events": 1,
+  "results": [
+    {
+      "level": 1,
+      "quest": 1,
+      "room_id": "0x22",
+      "col": 6,
+      "row": 5,
+      "required": true,
+      "timing_ok": true,
+      "moving_ok": true,
+      "done_ok": true,
+      "persist_ok": false
+    },
+    {
+      "level": 1,
+      "quest": 1,
+      "room_id": "0x36",
+      "col": 3,
+      "row": 5,
+      "required": false,
+      "timing_ok": false,
+      "moving_ok": false,
+      "done_ok": false,
+      "persist_ok": false
+    },
+    {
+      "level": 1,
+      "quest": 1,
+      "room_id": "0x42",
+      "col": 7,
+      "row": 5,
+      "required": false,
+      "timing_ok": true,
+      "moving_ok": true,
+      "done_ok": true,
+      "persist_ok": true
+    },
+    {
+      "level": 1,
+      "quest": 1,
+      "room_id": "0x43",
+      "col": 7,
+      "row": 5,
+      "required": false,
+      "timing_ok": false,
+      "moving_ok": false,
+      "done_ok": false,
+      "persist_ok": false
+    },
+    {
+      "level": 1,
+      "quest": 1,
+      "room_id": "0x45",
+      "col": 3,
+      "row": 5,
+      "required": false,
+      "timing_ok": false,
+      "moving_ok": false,
+      "done_ok": false,
+      "persist_ok": false
+    },
+    {
+      "level": 1,
+      "quest": 1,
+      "room_id": "0x52",
+      "col": 7,
+      "row": 5,
+      "required": false,
+      "timing_ok": false,
+      "moving_ok": false,
+      "done_ok": false,
+      "persist_ok": false
+    },
+    {
+      "level": 1,
+      "quest": 1,
+      "room_id": "0x63",
+      "col": 7,
+      "row": 5,
+      "required": false,
+      "timing_ok": false,
+      "moving_ok": false,
+      "done_ok": false,
+      "persist_ok": false
+    },
+    {
+      "level": 1,
+      "quest": 1,
+      "room_id": "0x74",
+      "col": 4,
+      "row": 5,
+      "required": false,
+      "timing_ok": false,
+      "moving_ok": false,
+      "done_ok": false,
+      "persist_ok": false
+    }
+  ],
+  "jsonl_path": "C:\\tmp\\uw_pushblock_observations.jsonl"
+}

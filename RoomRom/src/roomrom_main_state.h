@@ -71,4 +71,19 @@ unsigned char roomrom_main_current_link_face(void);
  * exit slice writes it. Coordinator's rule-1 precondition consumes this. */
 unsigned char roomrom_main_underground_exit_type(void);
 
+/* Read this-frame input dpad mask in NES `ObjInputDir` format:
+ *   bit 0 = RIGHT (E)
+ *   bit 1 = LEFT  (W)
+ *   bit 2 = DOWN  (S)
+ *   bit 3 = UP    (N)
+ * Used by Task 5.7 push-block state machine. */
+unsigned char roomrom_main_current_input_dir(void);
+
+/* Read this-frame mode (MODE_WALK / MODE_TELEPORT). Used by Task 5.7
+ * push-block state machine to bypass during TELEPORT. */
+unsigned char roomrom_main_current_mode(void);
+
+#define ROOMROM_MAIN_MODE_WALK     0u
+#define ROOMROM_MAIN_MODE_TELEPORT 1u
+
 #endif /* ROOMROM_MAIN_STATE_H */

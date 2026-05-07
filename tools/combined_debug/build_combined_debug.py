@@ -128,6 +128,10 @@ ROOMROM_C_SOURCES = [
     ("data/rooms/dungeons_offsets.c", "dungeons_offsets.o"),
     ("RoomRom/data/uw_l1q1_cellar_pairs.c", "uw_l1q1_cellar_pairs.o"),
     ("RoomRom/src/uw_cellar_meta.c", "uw_cellar_meta.o"),
+    # Task 5.7: push-block manifest + accessor + state machine
+    ("RoomRom/data/uw_l1q1_pushblocks.c", "uw_l1q1_pushblocks.o"),
+    ("RoomRom/src/uw_push_block_meta.c", "uw_push_block_meta.o"),
+    ("RoomRom/src/roomrom_pushblock.c", "roomrom_pushblock.o"),
     ("RoomRom/src/roomrom_ow_palette.c", "roomrom_ow_palette.o"),
     ("src/state/palette_tick.c", "palette_tick.o"),
     ("RoomRom/src/roomrom_palette_tick.c", "roomrom_palette_tick.o"),

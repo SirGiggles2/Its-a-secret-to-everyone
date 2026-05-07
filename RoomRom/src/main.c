@@ -17,6 +17,8 @@
 #include "roomrom_main_state.h"  /* Task 5.4: warp-outcome apply boundary */
 #include "roomrom_world_transition.h"  /* Task 5.4: warp coordinator */
 #include "uw_cellar_meta.h"             /* Task 5.6: cellar pair lookup */
+#include "uw_push_block_meta.h"         /* Task 5.7: push-block manifest */
+#include "roomrom_pushblock.h"           /* Task 5.7: push-block state machine */
 #include "probes/metadata_probe.h"     /* Task 5.4: Gate D in-ROM probe */
 
 /* Boots to overworld room 0x77.
@@ -477,6 +479,22 @@ unsigned char roomrom_main_underground_exit_type(void)
     return s_underground_exit_type;
 }
 
+/* Task 5.7: input dir + mode accessors for push-block state machine.
+ * Forward declared because input_mask_from_buttons() is defined below
+ * the warp-coordinator accessor block. */
+static unsigned char input_mask_from_buttons(u16 input);
+
+unsigned char roomrom_main_current_input_dir(void)
+{
+    return input_mask_from_buttons(s_joy_prev);
+}
+
+unsigned char roomrom_main_current_mode(void)
+{
+    return (s_mode == MODE_TELEPORT) ? ROOMROM_MAIN_MODE_TELEPORT
+                                      : ROOMROM_MAIN_MODE_WALK;
+}
+
 /* Task 5.4: warp-state probes exposed through roomrom_debug_runtime.h. */
 unsigned char roomrom_debug_warp_is_active(void)
 {
@@ -613,12 +631,28 @@ void roomrom_debug_publish_state_mirror(void)
     p[75] = 0u;  /* pending exit reflected via room+save state already */
     p[76] = 0u; p[77] = 0u; p[78] = 0u; p[79] = 0u;  /* reserved */
 
+    /* Task 5.7 extension: push-block state at offsets 80..95. */
+    p[80] = roomrom_pushblock_state_for_room(s_room_id);
+    p[81] = roomrom_pushblock_active_dir();
+    p[82] = roomrom_pushblock_active_timer();
+    p[83] = roomrom_pushblock_active_offset();
+    p[84] = roomrom_pushblock_active_block_col();
+    p[85] = roomrom_pushblock_active_block_row();
+    p[86] = roomrom_pushblock_complete_count();
+    p[87] = roomrom_pushblock_room_all_dead();
+    p[88] = (unsigned char)roomrom_pushblock_active_state();
+    p[89] = 0u; p[90] = 0u; p[91] = 0u;  /* reserved */
+    p[92] = 0u; p[93] = 0u; p[94] = 0u; p[95] = 0u;  /* reserved */
+
     /* Task 5.4: also publish the 32x22 OW raw-tile cache to $FF7400 so
      * Lua probes can scan for warp tiles without per-cell calls. */
     roomrom_ow_room_render_publish_cache();
 
     /* Task 5.5: publish UW persistence table at $FF76D0 (256 B). */
     roomrom_debug_publish_uw_persist();
+
+    /* Task 5.7: publish push-block persistence at $FF7B00 (256 B). */
+    roomrom_pushblock_publish_persist();
 
     /* Task 5.5 debug: publish 32x22 UW BG-tile walkability cache to
      * $FF7800 so probes can diff vs expected per-room collision. */
@@ -1005,6 +1039,7 @@ void roomrom_debug_enter(void)
     roomrom_arrow_init();                  /* S7 v7: clear arrow slot */
     roomrom_bomb_init();                   /* S7 v8: clear bomb + explosion slots */
     roomrom_world_transition_init();       /* Task 5.4: warp coordinator */
+    roomrom_pushblock_init();              /* Task 5.7: push-block state machine */
     roomrom_probe_metadata_run();          /* Task 5.4 Gate D: in-ROM probe */
 
     /* debate 006 D2 native cave smoke: prove cave_init / cave_tick /
@@ -1488,6 +1523,11 @@ void roomrom_debug_tick(void)
          * step runs synchronously inside the coordinator and the next
          * frame begins in the new scene. */
         roomrom_world_transition_tick();
+
+        /* Task 5.7: push-block state machine runs after world_transition
+         * (so a coordinator-driven scene swap clears push state cleanly
+         * via the room-change reset). Internally guards on UW + WALK. */
+        roomrom_pushblock_tick();
 
         /* Task 5.4: passive state mirror for BizHawk Lua probes. */
         roomrom_debug_publish_state_mirror();
