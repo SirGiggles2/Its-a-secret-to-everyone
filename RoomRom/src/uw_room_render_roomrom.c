@@ -344,12 +344,18 @@ static void draw_placeholder(unsigned char room_id)
             write_tile_raw(col, row, t, 1);
         }
     }
-    /* Load precomputed NES collision grid for this room. */
+    /* Load precomputed NES collision grid for this room. Slice-1 (Task
+     * 5.6 P0-2): cellars not yet in blob; uw_room_walkable returns 0
+     * for unknown rooms → Link gets locked in placeholder. Force all
+     * placeholder rooms walkable so the coordinator's stair-exit
+     * branch can fire. Real cellar rendering lands in a substrate
+     * Phase 1 follow-up (cellar blob extraction). */
     for (mt_row = 0; mt_row < 11; mt_row++) {
         for (mt_col = 0; mt_col < 16; mt_col++) {
             unsigned char walk =
                 uw_room_walkable(s_uw_level, s_uw_quest, room_id,
                                  (unsigned char)mt_col, (unsigned char)mt_row);
+            if (walk == 0u) walk = 1u;  /* placeholder: open floor */
             set_collision_metatile(mt_col, mt_row, walk);
         }
     }

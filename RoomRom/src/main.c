@@ -68,7 +68,11 @@ typedef enum {
     LINK_DIR_RIGHT = 4
 } link_dir_t;
 
-/* TEST DEFAULTS: boot into UW room $73 (L1 entrance, blob room). Toggle Start for OW. */
+/* TEST DEFAULTS: boot into UW room $73 (L1 entrance, blob room). Toggle Start for OW.
+ * Task 5.6 slice-1 cellar verification ran with boot=$22 (128, 149) since the
+ * normal traversal $73→$22 is gated by an unmovable block (block-pushing
+ * deferred to Phase 6+). With slice-1 verified (gate_5_6 PASS), default
+ * restored to $73 to preserve Phase 5.5 door-route loop default. */
 static scene_t       s_scene       = SCENE_UW;
 static mode_t        s_mode        = MODE_WALK;
 static move_style_t  s_move_style  = MOVE_STYLE_NES;

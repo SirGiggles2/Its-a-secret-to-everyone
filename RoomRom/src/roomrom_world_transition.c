@@ -274,8 +274,14 @@ static unsigned char detect_warp_uw(unsigned char source_room_id,
                                                        source_room_id,
                                                        tile_col, tile_row);
     /* UW stair tiles are exactly $70..$73. $24/$88 are OW-only
-     * (NES line 7257-7260). */
-    if (raw_tile < 0x70u || raw_tile > 0x73u) return 0u;
+     * (NES line 7257-7260). Slice-1 P0-2: cellar rooms have no blob
+     * entry yet (draw_placeholder fires) so raw_tile_at_room returns
+     * 0 — bypass rule 5 inside cellars (every aligned tile counts as
+     * an exit stair until cellar BG extraction lands; documented in
+     * task 5.6 deferrals). */
+    if (!roomrom_uw_room_is_cellar(level, quest, source_room_id)) {
+        if (raw_tile < 0x70u || raw_tile > 0x73u) return 0u;
+    }
 
     /* Rule 6: cellar resolution. */
     if (roomrom_uw_room_is_cellar(level, quest, source_room_id)) {
