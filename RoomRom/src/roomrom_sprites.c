@@ -509,25 +509,28 @@ void roomrom_sprites_set_arrow(short x, short y, link_face_t face,
                                                 + ROOMROM_ITEM_TILE_ARROW_HORZ);
     switch (face) {
     case LINK_FACE_UP:
+        /* 5.8.1 diag: priority bit set so projectile renders ABOVE
+         * BG_A door art (uses BG priority 0x8000). Codex H3
+         * confirmed. Applies to all weapon projectile sprites. */
         VDP_setSpriteFull(4, (s16)x, (s16)y, SPRITE_SIZE(1, 2),
-                          TILE_ATTR_FULL(PAL1,0, 0, 0, tile_vert),
+                          TILE_ATTR_FULL(PAL1, 1, 0, 0, tile_vert),
                           5);
         break;
     case LINK_FACE_DOWN:
         VDP_setSpriteFull(4, (s16)x, (s16)y, SPRITE_SIZE(1, 2),
-                          TILE_ATTR_FULL(PAL1,0, 1, 0, tile_vert),
+                          TILE_ATTR_FULL(PAL1, 1, 1, 0, tile_vert),
                           5);
         break;
     case LINK_FACE_LEFT:
         /* Phase 1: horizontal arrow ($86..$89) now sourced from live NES
          * item atlas. RIGHT renders as-is, LEFT mirrors via hflip. */
         VDP_setSpriteFull(4, (s16)x, (s16)y, SPRITE_SIZE(2, 2),
-                          TILE_ATTR_FULL(PAL1,0, 0, 1, tile_horz),
+                          TILE_ATTR_FULL(PAL1, 1, 0, 1, tile_horz),
                           5);
         break;
     case LINK_FACE_RIGHT:
         VDP_setSpriteFull(4, (s16)x, (s16)y, SPRITE_SIZE(2, 2),
-                          TILE_ATTR_FULL(PAL1,0, 0, 0, tile_horz),
+                          TILE_ATTR_FULL(PAL1, 1, 0, 0, tile_horz),
                           5);
         break;
     default:

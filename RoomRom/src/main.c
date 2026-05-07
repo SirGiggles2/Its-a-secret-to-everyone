@@ -21,6 +21,7 @@
 #include "roomrom_pushblock.h"           /* Task 5.7: push-block state machine */
 #include "uw_dark_meta.h"                /* Task 5.8: dark-room manifest */
 #include "uw_item_room_meta.h"           /* Task 5.9: item-room manifest + pickup */
+#include "roomrom_candle_fire.h"         /* Task 5.8.1: candle fire projectile */
 #include "probes/metadata_probe.h"     /* Task 5.4: Gate D in-ROM probe */
 
 /* Boots to overworld room 0x77.
@@ -1103,6 +1104,7 @@ void roomrom_debug_enter(void)
     roomrom_bomb_init();                   /* S7 v8: clear bomb + explosion slots */
     roomrom_world_transition_init();       /* Task 5.4: warp coordinator */
     roomrom_pushblock_init();              /* Task 5.7: push-block state machine */
+    roomrom_candle_fire_init();            /* Task 5.8.1: candle fire slot 8 */
     roomrom_probe_metadata_run();          /* Task 5.4 Gate D: in-ROM probe */
 
     /* debate 006 D2 native cave smoke: prove cave_init / cave_tick /
@@ -1211,6 +1213,8 @@ void roomrom_debug_tick(void)
         roomrom_arrow_update();
         /* S7 v8: tick bomb (slot 5) + explosion (slot 6). */
         roomrom_bomb_update();
+        /* Task 5.8.1: tick candle fire (slot 8). */
+        roomrom_candle_fire_update();
 
         u16 joy = JOY_readJoypad(JOY_1);
         u16 pressed = joy & ~s_joy_prev;
@@ -1366,13 +1370,12 @@ void roomrom_debug_tick(void)
                 }
                 break;
             case B_ITEM_CANDLE:
-                /* Task 5.8.1 candle fire — visible projectile via
-                 * arrow placeholder (full NES anim/red-pal deferred
-                 * to 5.8.2). Always fires (any scene/room).
-                 * Plus: dark-room reveal if applicable. */
-                if (!roomrom_arrow_active()) {
-                    roomrom_arrow_fire(s_link_face, s_link_x, s_link_y);
-                }
+                /* Task 5.8.1 candle fire — visible flame projectile
+                 * via dedicated module (slot 8, explosion-glyph
+                 * placeholder; full red-pal NES fire CHR + 4-frame
+                 * anim deferred to 5.8.2). Plus: dark-room reveal. */
+                roomrom_candle_fire_spawn(s_link_face,
+                                          s_link_x, s_link_y);
                 if (s_scene == SCENE_UW && s_cur_room_is_dark &&
                     !roomrom_uw_room_lit(s_room_id)) {
                     roomrom_uw_room_set_lit(s_room_id);

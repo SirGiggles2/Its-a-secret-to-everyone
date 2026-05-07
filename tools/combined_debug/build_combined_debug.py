@@ -138,6 +138,8 @@ ROOMROM_C_SOURCES = [
     # Task 5.9: item-room manifest + accessor + pickup wrapper
     ("RoomRom/data/uw_item_rooms.c", "uw_item_rooms.o"),
     ("RoomRom/src/uw_item_room_meta.c", "uw_item_room_meta.o"),
+    # Task 5.8.1: candle fire projectile (slot 8)
+    ("RoomRom/src/roomrom_candle_fire.c", "roomrom_candle_fire.o"),
     ("RoomRom/src/roomrom_ow_palette.c", "roomrom_ow_palette.o"),
     ("src/state/palette_tick.c", "palette_tick.o"),
     ("RoomRom/src/roomrom_palette_tick.c", "roomrom_palette_tick.o"),
