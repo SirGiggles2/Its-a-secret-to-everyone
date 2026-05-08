@@ -121,7 +121,7 @@ static void draw_fire(void)
                       (s16)s_x, (s16)s_y,
                       SPRITE_SIZE(2, 2),
                       TILE_ATTR_FULL(PAL1, 1, 0, hflip, tile),
-                      0);  /* terminate chain */
+                      9);  /* link to slot 9 (magic_shot) — chain end at 9 */
     VDP_updateSprites(9, DMA);
 }
 
