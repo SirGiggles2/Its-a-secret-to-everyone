@@ -1151,6 +1151,14 @@ void roomrom_debug_enter(void)
      * first scene_load enqueues into a clean state. */
     level_chr_swap_init();
     upload_scene_chr();
+    /* PR-4b regression fix: persistent sprite CHR (common 1025..1262 +
+     * Link walk 1263..1294 + attack 1295..1310) was orphaned when PR-4b
+     * split upload_chr; without it Link tile 1263 stays zero and Link is
+     * invisible. SCENE_OBJ slot 1069..1204 lives inside common range —
+     * scene_load enqueues a DMA that overwrites that window via
+     * level_chr_swap_tick on subsequent frames (last-writer wins). Link
+     * tiles 1263+ are outside SCENE_OBJ and survive. */
+    roomrom_sprites_upload_chr();
     {
         u32 blank[8] = {0,0,0,0,0,0,0,0};
         VDP_loadTileData(blank, 0, 1, CPU);

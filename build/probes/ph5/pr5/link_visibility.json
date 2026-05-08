@@ -1,0 +1,18 @@
+{
+  "ram_domain": "M68K BUS", "vram_domain": "VRAM",
+  "sentinel_seen": true,
+  "scene": 1, "room": 115, "link_x": 120, "link_y": 133,
+  "swap_state": 5, "swap_active_scene": 4, "swap_request_count": 1,
+  "link_tile_addr": "0x9DE0", "link_tile_first16": "00000111000011110020133300203333",
+  "sat": [
+    "slot0: y=261 size=0x05 link=1 tile=1263 pri=0 pal=1 x=248",
+    "slot1: y=96 size=0x01 link=2 tile=1311 pri=0 pal=1 x=96",
+    "slot2: y=96 size=0x00 link=3 tile=1311 pri=0 pal=2 x=96",
+    "slot3: y=96 size=0x00 link=4 tile=1317 pri=0 pal=1 x=96",
+    "slot4: y=96 size=0x01 link=5 tile=1325 pri=0 pal=1 x=96",
+    "slot5: y=96 size=0x00 link=6 tile=1331 pri=0 pal=1 x=96",
+    "slot6: y=96 size=0x04 link=0 tile=1332 pri=0 pal=1 x=96",
+    "slot7: y=96 size=0x00 link=8 tile=1317 pri=0 pal=1 x=96",
+    "slot8: y=96 size=0x04 link=9 tile=1368 pri=1 pal=1 x=96"
+  ]
+}
