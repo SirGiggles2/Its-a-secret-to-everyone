@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-05-07T18:45:31.632554+00:00",
+  "generated_at": "2026-05-08T05:24:05.004477+00:00",
   "generated_by": "tools/audit/primedirective/prime_refresh.py",
   "plan": {
     "path": "docs/superpowers/plans/2026-05-02-title-roomrom-full-port-master-plan.md",
@@ -893,6 +893,12 @@
       "gate_step": "PROBE_CYCLE_LIMIT_envelope",
       "reason": "collision lookup is const table read, no hot-path candidate, deferred per Ph2/3/4 precedent",
       "recorded_at": "2026-05-04T20:49:10.880361+00:00"
+    },
+    {
+      "phase_id": "5",
+      "gate_step": "chr_rollout_pr3_pr5",
+      "reason": "PR-3 (triforce + 4-frame candle fire), PR-4 (transient enemy CHR), PR-5 (boss CHR) per docs/superpowers/specs/2026-05-07-whole-chr-rollout-design.md require live NES BizHawk OAM capture during scripted L1Q1->boss->triforce + per-level enemy/boss traversal. Vanilla CommonSpritePatterns extraction shows tile $6E empty, contradicting spec; atlas_master cites $66 for triforce inventory icon, but world-drop sprite uses different bank. Without live NES OAM dispatch verification (sub_pal, mirror, frame cadence) and CHR bytes for tiles $9E/$CE which fall outside CommonSpritePatterns range, content cannot be NES-faithful. PR-2b CombinedDebug 64x32 + BG_B V staging fix landed (commit b4e08a4f). Next concrete unblock: scripted NES BizHawk traversal probe that auto-captures OAM at each item-room visit + boss death frame + cave entry.",
+      "recorded_at": "2026-05-08T05:24:05.044443+00:00"
     }
   ],
   "freshness": {
@@ -906,27 +912,11 @@
       "sha256": "3495ac8db43e505b1cc81ee33cc4178eecba73ff898b6f465af2a603e9b682ad",
       "ok": true
     },
-    "git_head": "4d36225df1f88d0bce95b7e57200a5bbba620209",
-    "dirty_paths_relevant": [
-      "RoomRom/src/render_adapter_sgdk.c",
-      "RoomRom/src/roomrom_hud.c",
-      "RoomRom/src/roomrom_hud.h",
-      "src/abi/platform_abi.h",
-      "src/sgdk_adapter/render_adapter.c",
-      "RoomRom/probe_candle_fire.lua",
-      "src/combined_debug/",
-      "tools/combined_debug/capture_combined_debug_room.lua",
-      "tools/combined_debug/capture_roomrom_boot.lua",
-      "tools/combined_debug/dump_cram_after_room.lua",
-      "tools/combined_debug/dump_vram_after_room.lua",
-      "tools/combined_debug/probe_a4_survival.lua",
-      "tools/combined_debug/probe_combined_debug_entry.lua",
-      "tools/combined_debug/test_combined_debug_contract.py",
-      "tools/combined_debug/test_roomrom_runtime_contract.py"
-    ],
+    "git_head": "b4e08a4f7efb95e96f57638a6c2e482cee10867c",
+    "dirty_paths_relevant": [],
     "evidence_paths_present": true,
     "complete_phase_invariant_ok": true,
-    "last_refresh_at": "2026-05-07T18:45:31.723188+00:00",
+    "last_refresh_at": "2026-05-08T05:24:05.044428+00:00",
     "stale_reasons": []
   },
   "blockers": []
