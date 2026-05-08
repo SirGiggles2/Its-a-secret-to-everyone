@@ -221,6 +221,98 @@
       "frame_subpal": 1,
       "nes_dispatch_note": "UpdateFire (Z_07.asm:4622) draws fire via DrawObjectWithType anim index $40 (uses $41 after INY) -> ObjAnimations[$41]=$08 -> ObjAnimFrameHeap[$08+frame] tile pairs ($5C/$5E, $9E/$A0, $44/$46, $CE/$D0). Each frame is 2 NES tiles side-by-side (left+2=right per DrawObjectWithAnimAndSpecificSprites). ObjAnimAttrHeap[$08+frame] sub_pal sequence = (2, 0, 0, 1). Animation: 4 frames @ 4 ticks each (LDA #$04 / Anim_AdvanceAnimCounter).",
       "sprite_size_override_reason": "Candle fire bypasses Anim_WriteItemSprites' Narrow/Wide tile-range dispatch. UpdateFire (Z_07.asm:4622) calls DrawObjectWithType (Z_01.asm:5011) which always uses 2 sprites side-by-side via DrawObjectWithAnimAndSpecificSprites: $07=1 (two sides), $0A=8 (8-pixel separation), right tile = ObjAnimFrameHeap[Y]+2. NES tile ranges that would normally classify as Narrow (e.g. $5C, $44) are rendered as 16x8 here regardless. Genesis SPRITE_SIZE(2,1) matches."
+    },
+    {
+      "name": "triforce_piece",
+      "item": "triforce_piece",
+      "direction_class": "static",
+      "nes_frame_tile": "0x6E",
+      "sprite_size": [
+        2,
+        1
+      ],
+      "tile_ids": [
+        "0x6E",
+        "0x70"
+      ],
+      "draw_rule": "wide_16x8",
+      "frame_index": 0,
+      "frame_subpal": 2,
+      "nes_dispatch_note": "Anim_ItemFrameTiles[$20]=$6E (item slot 26 'PowerTriangle / TriforcePiece'). Wide dispatch in Anim_WriteSpecificItemSprites (Z_01.asm:5279): $6E >= $62 -> @Wide, right tile = $6E + 2 = $70. Renders as 2 sprites side-by-side via $07=1, $0A=8."
+    },
+    {
+      "name": "magic_shot_v",
+      "item": "magic_shot",
+      "direction_class": "vertical",
+      "nes_frame_tile": "0x7A",
+      "sprite_size": [
+        2,
+        1
+      ],
+      "tile_ids": [
+        "0x7A",
+        "0x7C"
+      ],
+      "draw_rule": "wide_16x8",
+      "frame_index": 0,
+      "frame_subpal": 0,
+      "nes_dispatch_note": "Anim_ItemFrameTiles[$2B]=$7A, [$2C]=$7C (item slot $23, magic-rod projectile). Z_07 DrawSwordShotOrMagicShot @WriteMagicSprites (line 3492) sets Y=$23 -> Anim_WriteItemSprites. Both tiles >= $62 -> @Wide. Vertical frame uses $7A+$7C; horizontal frame uses $7C+$7E."
+    },
+    {
+      "name": "magic_shot_h",
+      "item": "magic_shot",
+      "direction_class": "horizontal",
+      "nes_frame_tile": "0x7C",
+      "sprite_size": [
+        2,
+        1
+      ],
+      "tile_ids": [
+        "0x7C",
+        "0x7E"
+      ],
+      "draw_rule": "wide_16x8",
+      "frame_index": 1,
+      "frame_subpal": 0,
+      "nes_dispatch_note": "Anim_ItemFrameTiles[$2B]=$7A, [$2C]=$7C (item slot $23, magic-rod projectile). Z_07 DrawSwordShotOrMagicShot @WriteMagicSprites (line 3492) sets Y=$23 -> Anim_WriteItemSprites. Both tiles >= $62 -> @Wide. Vertical frame uses $7A+$7C; horizontal frame uses $7C+$7E."
+    },
+    {
+      "name": "fairy_spark_f0",
+      "item": "fairy_spark",
+      "direction_class": "static",
+      "nes_frame_tile": "0x50",
+      "sprite_size": [
+        1,
+        2
+      ],
+      "tile_ids": [
+        "0x50",
+        "0x51"
+      ],
+      "draw_rule": "narrow_8x16",
+      "frame_index": 0,
+      "frame_subpal": 1,
+      "nes_dispatch_note": "Anim_ItemFrameTiles[$19]=$50, [$1A]=$52 (item slot $14 'FairyMoving'). DrawFairy (Z_04.asm:11508) toggles frame every 4 video frames (ASL / AND FrameCounter / LSR LSR -> $0C). Both tiles in [$20,$62) -> @Narrow dispatch (single 8x16 sprite per OAM entry, NES PPU 8x16 obj-size mode). Anim_SetSpriteDescriptorRedPaletteRow forces sub-pal row 1 (red).",
+      "sprite_size_override_reason": "NES uses 8x16 hardware sprites (PPU OAM obj size bit). Tile $50 is the top 8x8, tile $51 is the bottom 8x8 of one 8x16 hardware sprite (and $52/$53 likewise for frame 1). Anim_WriteSpecificItemSprites @Narrow (Z_01.asm:5288) emits a single OAM entry whose hardware height is 16 px. Genesis SPRITE_SIZE(1,2) matches NES visual output exactly. Identical pattern to the existing sword_vert / arrow_vert manifest entries."
+    },
+    {
+      "name": "fairy_spark_f1",
+      "item": "fairy_spark",
+      "direction_class": "static",
+      "nes_frame_tile": "0x52",
+      "sprite_size": [
+        1,
+        2
+      ],
+      "tile_ids": [
+        "0x52",
+        "0x53"
+      ],
+      "draw_rule": "narrow_8x16",
+      "frame_index": 1,
+      "frame_subpal": 1,
+      "nes_dispatch_note": "Anim_ItemFrameTiles[$19]=$50, [$1A]=$52 (item slot $14 'FairyMoving'). DrawFairy (Z_04.asm:11508) toggles frame every 4 video frames (ASL / AND FrameCounter / LSR LSR -> $0C). Both tiles in [$20,$62) -> @Narrow dispatch (single 8x16 sprite per OAM entry, NES PPU 8x16 obj-size mode). Anim_SetSpriteDescriptorRedPaletteRow forces sub-pal row 1 (red).",
+      "sprite_size_override_reason": "NES uses 8x16 hardware sprites (PPU OAM obj size bit). Tile $50 is the top 8x8, tile $51 is the bottom 8x8 of one 8x16 hardware sprite (and $52/$53 likewise for frame 1). Anim_WriteSpecificItemSprites @Narrow (Z_01.asm:5288) emits a single OAM entry whose hardware height is 16 px. Genesis SPRITE_SIZE(1,2) matches NES visual output exactly. Identical pattern to the existing sword_vert / arrow_vert manifest entries."
     }
   ],
   "variants": [
@@ -480,6 +572,62 @@
           "sha256": "c0bca0375bfad8bf640878f1739369cdb5b21756fda1d5015ed43821d8db9e31",
           "flat_pattern": false,
           "bytes": "0501010301000000FDFEFEFCFEFFFFFF"
+        },
+        "0x50": {
+          "ppu_addr": "0x0500",
+          "source": "common_sprite_live_chr",
+          "sha256": "0e50fe5e7b572a8da93b1d4c9b031d410850e6a8480a4c4ef592461521dc67ac",
+          "flat_pattern": false,
+          "bytes": "3854FFC7C76E4628442881B9B9523A54"
+        },
+        "0x52": {
+          "ppu_addr": "0x0520",
+          "source": "common_sprite_live_chr",
+          "sha256": "d7023bf09dd932da1a4ed2aceecf8f5f184360ca018753df412a764d44d71ae1",
+          "flat_pattern": false,
+          "bytes": "38547E4647EDC7AE442800387991BBD6"
+        },
+        "0x6E": {
+          "ppu_addr": "0x06E0",
+          "source": "common_sprite_live_chr",
+          "sha256": "c4de171a2cf57a9951f3f3e67f7c84e138566ec8c424b0c9cf08a3f4b7981f69",
+          "flat_pattern": false,
+          "bytes": "00000000000000000000000000000101"
+        },
+        "0x7A": {
+          "ppu_addr": "0x07A0",
+          "source": "uw_sprite_pattern_block_uwsp_live_chr",
+          "sha256": "bb230dcd8e1f58348060af3c9b880a65a438322adf4e955d6ffe94bf93c4561b",
+          "flat_pattern": false,
+          "bytes": "071F3F70408000000000000000071F3C"
+        },
+        "0x7C": {
+          "ppu_addr": "0x07C0",
+          "source": "uw_sprite_pattern_block_uwsp_live_chr",
+          "sha256": "d7432888452191873fe4540d5c717887bd37218ebee24bc6c5b5c0afed1b9820",
+          "flat_pattern": false,
+          "bytes": "000010080C0406060003018040602030"
+        },
+        "0x7E": {
+          "ppu_addr": "0x07E0",
+          "source": "uw_sprite_pattern_block_uwsp_live_chr",
+          "sha256": "fc73fe7a74abbc0689120eef0fc27151341b140c0625b833737b9ad1aee69a8e",
+          "flat_pattern": false,
+          "bytes": "20180C0E06070707000080C0C0E06060"
+        },
+        "0x51": {
+          "ppu_addr": "0x0510",
+          "source": "common_sprite_live_chr",
+          "sha256": "f627c4ca92c6d5439a6b7d3b0cf0f73943a255082bb29b7a9a82da6e97f0f65f",
+          "flat_pattern": false,
+          "bytes": "387C1204000000206CC62A3830202000"
+        },
+        "0x53": {
+          "ppu_addr": "0x0530",
+          "source": "common_sprite_live_chr",
+          "sha256": "af073b11bd06206e4b1685b585d333067132594b14e6ad50ecb350284efe6c3e",
+          "flat_pattern": false,
+          "bytes": "12391004000000204683283830202000"
         }
       }
     },
@@ -739,6 +887,62 @@
           "sha256": "c0bca0375bfad8bf640878f1739369cdb5b21756fda1d5015ed43821d8db9e31",
           "flat_pattern": false,
           "bytes": "0501010301000000FDFEFEFCFEFFFFFF"
+        },
+        "0x50": {
+          "ppu_addr": "0x0500",
+          "source": "common_sprite_live_chr",
+          "sha256": "0e50fe5e7b572a8da93b1d4c9b031d410850e6a8480a4c4ef592461521dc67ac",
+          "flat_pattern": false,
+          "bytes": "3854FFC7C76E4628442881B9B9523A54"
+        },
+        "0x52": {
+          "ppu_addr": "0x0520",
+          "source": "common_sprite_live_chr",
+          "sha256": "d7023bf09dd932da1a4ed2aceecf8f5f184360ca018753df412a764d44d71ae1",
+          "flat_pattern": false,
+          "bytes": "38547E4647EDC7AE442800387991BBD6"
+        },
+        "0x6E": {
+          "ppu_addr": "0x06E0",
+          "source": "common_sprite_live_chr",
+          "sha256": "c4de171a2cf57a9951f3f3e67f7c84e138566ec8c424b0c9cf08a3f4b7981f69",
+          "flat_pattern": false,
+          "bytes": "00000000000000000000000000000101"
+        },
+        "0x7A": {
+          "ppu_addr": "0x07A0",
+          "source": "uw_sprite_pattern_block_uwsp_live_chr",
+          "sha256": "bb230dcd8e1f58348060af3c9b880a65a438322adf4e955d6ffe94bf93c4561b",
+          "flat_pattern": false,
+          "bytes": "071F3F70408000000000000000071F3C"
+        },
+        "0x7C": {
+          "ppu_addr": "0x07C0",
+          "source": "uw_sprite_pattern_block_uwsp_live_chr",
+          "sha256": "d7432888452191873fe4540d5c717887bd37218ebee24bc6c5b5c0afed1b9820",
+          "flat_pattern": false,
+          "bytes": "000010080C0406060003018040602030"
+        },
+        "0x7E": {
+          "ppu_addr": "0x07E0",
+          "source": "uw_sprite_pattern_block_uwsp_live_chr",
+          "sha256": "fc73fe7a74abbc0689120eef0fc27151341b140c0625b833737b9ad1aee69a8e",
+          "flat_pattern": false,
+          "bytes": "20180C0E06070707000080C0C0E06060"
+        },
+        "0x51": {
+          "ppu_addr": "0x0510",
+          "source": "common_sprite_live_chr",
+          "sha256": "f627c4ca92c6d5439a6b7d3b0cf0f73943a255082bb29b7a9a82da6e97f0f65f",
+          "flat_pattern": false,
+          "bytes": "387C1204000000206CC62A3830202000"
+        },
+        "0x53": {
+          "ppu_addr": "0x0530",
+          "source": "common_sprite_live_chr",
+          "sha256": "af073b11bd06206e4b1685b585d333067132594b14e6ad50ecb350284efe6c3e",
+          "flat_pattern": false,
+          "bytes": "12391004000000204683283830202000"
         }
       }
     }

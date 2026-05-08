@@ -10,7 +10,7 @@
 -- Defaults to RoomRom/out/nes_chr_candle/.
 
 local OUT_DIR = (os.getenv and os.getenv("CODEX_NES_CHR_OUT")) or
-                "C:\\Users\\Jake Diggity\\Documents\\GitHub\\FINAL TRY\\RoomRom\\out\\nes_chr_candle"
+                "C:\\tmp\\nes_chr_dump_out"
 os.execute("mkdir \"" .. OUT_DIR .. "\" 2>nul")
 
 local CUR_LEVEL      = 0x0010
@@ -170,7 +170,22 @@ local function write_tile_bin(level, tile_id, bytes)
     end
 end
 
-local TILES = { 0x44, 0x46, 0x5C, 0x5E, 0x6E, 0x70, 0x9E, 0xA0, 0xCE, 0xD0 }
+-- Tiles needed for PR-3:
+--   triforce_piece:   $6E, $70                         (Anim_ItemFrameTiles[$20])
+--   sword_shot_v:     $20                              (slot $22 frame 0, NARROW)
+--   sword_shot_h:     $82, $84                         (slot $22 frame 1, WIDE)
+--   magic_shot_v:     $7A, $7C                         (slot $23 frame 0, WIDE)
+--   magic_shot_h:     $7C, $7E                         (slot $23 frame 1, WIDE)
+--   bomb_puff frames: $36, $38, $3A, $3C, $56, $48     (slots $1F/$20/$21 + ItemFrameTiles[$22..$27])
+--   fairy_spark:      $90, $92                         (FairyMoving sprites)
+--   candle_fire:      already shipped in PR-3a
+local TILES = {
+    0x20, 0x22, 0x34, 0x36, 0x38, 0x3A, 0x3C, 0x44, 0x46, 0x48,
+    0x4A, 0x4C, 0x4E, 0x56, 0x5C, 0x5E, 0x66, 0x68, 0x6A, 0x6C,
+    0x6E, 0x70, 0x72, 0x74, 0x76, 0x7A, 0x7C, 0x7E, 0x82, 0x84,
+    0x86, 0x88, 0x8A, 0x8C, 0x90, 0x92, 0x94, 0x96, 0x98, 0x9E,
+    0xA0, 0xCE, 0xD0
+}
 
 local results = {}
 local system_id = emu.getsystemid() or "?"
