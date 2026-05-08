@@ -55,3 +55,11 @@ void render_mode_set_v64(void)
 {
     VDP_setPlaneSize(64, 64, TRUE);
 }
+
+void render_mode_set_h64v32(void)
+{
+    /* PR-2: 64x32 plane mode. SGDK case 11 default puts BGB@$C000,
+     * Window@$D000, BGA@$E000, HScroll@$F000, SAT@$F400. Caller must
+     * override BGA/BGB addresses if a different layout is needed. */
+    VDP_setPlaneSize(64, 32, TRUE);
+}

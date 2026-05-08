@@ -86,6 +86,15 @@ void render_mode_set_v64(void)
     VDP_CTRL_WORD = 0x9011;
 }
 
+void render_mode_set_h64v32(void)
+{
+    /* VDP Reg 16 = $9001 (H64 x V32). RoomRom PR-2 64x32 plane mode:
+     * 64-wide stride (128 B/row) but 4 KB plane size, freeing 192 tiles
+     * vs V64. */
+    s_plane_row_stride_bytes = 128u;
+    VDP_CTRL_WORD = 0x9001;
+}
+
 void render_z80_bus_grab(void)
 {
     /* Hold Z80 bus so 68K has uncontended VRAM access. */

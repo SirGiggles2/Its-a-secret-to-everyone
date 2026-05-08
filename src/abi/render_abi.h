@@ -91,6 +91,10 @@ void render_plane_a_write_row(unsigned short row, const unsigned short *cells,
  *                             plane_base = $C000 (A) or $E000 (B).
  * render_mode_set_v32      -- set VDP Reg 16 to H32xV32 ($9000).
  * render_mode_set_v64      -- set VDP Reg 16 to H64xV64 ($9011).
+ * render_mode_set_h64v32   -- set VDP Reg 16 to H64xV32 ($9001).
+ *                             RoomRom PR-2 layout: 64-wide tilemap (128 B
+ *                             stride) but only 32 rows tall (4 KB plane,
+ *                             half of V64). Frees $A800-$BFFF for CHR.
  * render_z80_bus_grab      -- assert Z80 bus request; spin until ACKed.
  * render_z80_bus_release   -- release Z80 bus request.
  * render_irq_mask          -- raise SR IPL to 7 (mask all interrupts).
@@ -102,6 +106,7 @@ void render_plane_write_row(unsigned short plane_base, unsigned short row,
                             const unsigned short *cells, unsigned short count);
 void render_mode_set_v32(void);
 void render_mode_set_v64(void);
+void render_mode_set_h64v32(void);
 void render_z80_bus_grab(void);
 void render_z80_bus_release(void);
 void render_irq_mask(void);

@@ -137,8 +137,9 @@ static unsigned char s_uw_shutter_trigger_count = 0u;
 #define SCROLL_PX_PER_FRAME 4
 #define ROOMROM_SLOT_TILES 32u
 #define ROOMROM_SLOT_PIXELS ((short)(ROOMROM_SLOT_TILES * 8u))
-#define ROOMROM_PLANE_TILES 64u
-#define ROOMROM_PLANE_PIXELS ((short)(ROOMROM_PLANE_TILES * 8u))
+/* PR-2: 64x32 plane layout — BG_A holds active room (rows 7..28),
+ * BG_B is V scroll staging (also rows 7..28). BG_A H scroll uses two
+ * 32-col slots within the 64-wide plane. */
 #define ROOMROM_VERTICAL_STRIDE_TILES ROOMROM_ROOM_ROWS
 #define ROOMROM_PLAYFIELD_TOP_PX ((short)(ROOMROM_ROOM_FIRST_ROW * 8u))
 
@@ -157,12 +158,13 @@ static u8             s_active_slot_x   = 0u;     /* 0 = cols 0..31, 1 = cols 32
 static u8             s_active_row_base = 0u;     /* room base row in the 64-row plane */
 static u8             s_transition_target = 0u;
 static u8             s_transition_row_base = 0u;
-/* PR-2: V scroll staging — which plane currently holds the active room
- * (0=BG_A, 1=BG_B). PR-2a defaults to BG_A and never flips; PR-2b drives
- * V scroll transitions by rendering the incoming room into BG_B then
- * promoting it to active. */
-static u8             s_active_plane = 0u;
-static u8             s_transition_plane = 0u;
+/* PR-2b: BG_A is always the active plane; BG_B is V scroll staging only.
+ * Incoming room is rendered into BG_B at scroll start, both planes scroll
+ * independently (independent VSCROLL_PLANE), then on finalize we re-render
+ * the incoming room into BG_A and clear BG_B for the next staging cycle.
+ * s_scroll_v_offset = BG_B v_scroll - BG_A v_scroll, held constant across
+ * the animation. -176 for V_DOWN, +176 for V_UP. */
+static short          s_scroll_v_offset = 0;
 static short          s_active_scroll_x = 0;
 static short          s_active_scroll_y = 0;
 static short          s_scroll_start_x = 0;
@@ -189,28 +191,6 @@ static u8 plane_col_for_slot(u8 src_col, u8 slot_x)
 static short scroll_x_offset_for_slot(u8 slot)
 {
     return slot ? (short)-ROOMROM_SLOT_PIXELS : 0;
-}
-
-static short canonical_scroll_y_for_row_base(u8 row_base)
-{
-    return (short)((short)row_base * 8);
-}
-
-static short nearest_equivalent_scroll(short canonical, short near_value)
-{
-    int value = canonical;
-    while ((value - (int)near_value) > (ROOMROM_PLANE_PIXELS / 2))
-        value -= ROOMROM_PLANE_PIXELS;
-    while (((int)near_value - value) > (ROOMROM_PLANE_PIXELS / 2))
-        value += ROOMROM_PLANE_PIXELS;
-    return (short)value;
-}
-
-static u8 wrap_plane_row_base(short row_base)
-{
-    while (row_base < 0) row_base = (short)(row_base + ROOMROM_PLANE_TILES);
-    while (row_base >= ROOMROM_PLANE_TILES) row_base = (short)(row_base - ROOMROM_PLANE_TILES);
-    return (u8)row_base;
 }
 
 static u8 frames_for_scroll_delta(short delta)
@@ -316,23 +296,50 @@ static void link_nes_move_object(link_dir_t dir)
 static void init_video(void)
 {
     VDP_setScreenWidth256();
-    /* 64x64 plane: 2x2 room slots for H/V scroll staging. */
-    VDP_setPlaneSize(64, 64, TRUE);
-    render_mode_set_v64();
+    /* PR-2: 64x32 plane mode. BG_A holds current room (cols 0..31 active
+     * slot, cols 32..63 H staging slot). BG_B is V scroll staging only —
+     * incoming room rendered there during N/S transitions, copied back to
+     * BG_A on finalize. Frees 192 tiles ($A800-$BFFF) vs old 64x64 mode. */
+    render_mode_set_h64v32();
+    /* SGDK case 11 default: BGB@$C000, Window@$D000, BGA@$E000. Override
+     * so BGA matches PLANE_A_BASE=$C000 in render_adapter.c and BGB
+     * matches PLANE_B_BASE=$E000. Window stays at $D000 (case 11 default). */
+    VDP_setBGAAddress(0xC000u);
+    VDP_setBGBAddress(0xE000u);
     VDP_setWindowOnTop(ROOMROM_HUD_ROWS);
-    /* HUD is fixed on Window; BG_A scrolls as one 2x2 staging plane. */
+    /* Independent H/V scroll per plane so BG_B can stage V incoming. */
     VDP_setScrollingMode(HSCROLL_PLANE, VSCROLL_PLANE);
-    set_bg_scroll(0, 0);
+    VDP_setHorizontalScroll(BG_A, 0);
+    VDP_setVerticalScroll(BG_A, 0);
+    VDP_setHorizontalScroll(BG_B, 0);
+    VDP_setVerticalScroll(BG_B, 0);
 }
 
 static void load_room(u8 room_id)
 {
+    /* PR-2: 64x32 plane mode — clear both planes. BG_B is V scroll staging
+     * and must be blank when no scroll is active so its content does not
+     * leak through BG_A's transparent gaps. */
     VDP_clearPlane(BG_A, TRUE);
+    VDP_clearPlane(BG_B, TRUE);
     s_doorway_dir = UW_WALK_DOOR_NONE;
     s_active_slot_x = 0u;
+    /* PR-2: 32-row plane fits exactly one room (rows 7..28). row_base is
+     * always 0 — no V staging stack inside BG_A. */
     s_active_row_base = 0u;
     s_active_scroll_x = 0;
     s_active_scroll_y = 0;
+    /* Reset both planes' scroll registers. Subsequent renders go to BG_A
+     * via the default target_plane=0 setter. */
+    VDP_setHorizontalScroll(BG_A, 0);
+    VDP_setVerticalScroll(BG_A, 0);
+    VDP_setHorizontalScroll(BG_B, 0);
+    VDP_setVerticalScroll(BG_B, 0);
+    if (s_scene == SCENE_UW) {
+        roomrom_uw_room_render_set_target_plane(0u);
+    } else {
+        roomrom_ow_room_render_set_target_plane(0u);
+    }
     /* HUD is on Window; BG_A only carries staged room playfields. */
     if (s_scene == SCENE_UW) {
         roomrom_uw_room_render_load_palette(room_id);
@@ -1057,23 +1064,53 @@ static void edge_load_or_clamp(void)
         }
         if (want == SCROLL_H_RIGHT || want == SCROLL_H_LEFT) {
             u8 target_slot_x = (u8)(s_active_slot_x ^ 1u);
+            /* H scroll within BG_A: render incoming into the OTHER slot
+             * (cols 0..31 vs 32..63) and slide BG_A horizontally. */
             render_room_into_slot(s_transition_target,
                                   target_slot_x,
                                   s_active_row_base);
             s_scroll_target_x = scroll_x_offset_for_slot(target_slot_x);
         } else {
-            short target_base = (short)s_active_row_base;
-            if (want == SCROLL_V_UP)
-                target_base = (short)(target_base - ROOMROM_VERTICAL_STRIDE_TILES);
-            else
-                target_base = (short)(target_base + ROOMROM_VERTICAL_STRIDE_TILES);
-            s_transition_row_base = wrap_plane_row_base(target_base);
+            /* PR-2b V scroll: render incoming into BG_B at row_base=0, then
+             * slide BG_B in while BG_A scrolls out (independent v_scroll
+             * per plane). 32-row plane fits exactly one room so the legacy
+             * row_base wrap math is gone — incoming always lands at rows
+             * 7..28 of BG_B. */
+            s_transition_row_base = 0u;
+            if (s_scene == SCENE_UW) {
+                roomrom_uw_room_render_set_target_plane(1u);
+            } else {
+                roomrom_ow_room_render_set_target_plane(1u);
+            }
             render_room_into_slot(s_transition_target,
                                   s_active_slot_x,
-                                  s_transition_row_base);
-            s_scroll_target_y = nearest_equivalent_scroll(
-                canonical_scroll_y_for_row_base(s_transition_row_base),
-                s_active_scroll_y);
+                                  0u);
+            /* Reset target plane so any incidental writes during the
+             * scroll go to BG_A (active). */
+            if (s_scene == SCENE_UW) {
+                roomrom_uw_room_render_set_target_plane(0u);
+            } else {
+                roomrom_ow_room_render_set_target_plane(0u);
+            }
+            /* BG_A target: actively scrolls out. V_DOWN -> active scrolls
+             * down (v_scroll +176 = view shifts down = plane content moves
+             * up on screen, i.e. active room exits via top). V_UP mirrors. */
+            if (want == SCROLL_V_DOWN) {
+                s_scroll_target_y = (short)(s_active_scroll_y +
+                    (short)(ROOMROM_VERTICAL_STRIDE_TILES * 8));
+                /* BG_B starts -176 below BG_A (so its room is below the
+                 * screen at frame 0) and converges to BG_A's final scroll. */
+                s_scroll_v_offset = (short)-(ROOMROM_VERTICAL_STRIDE_TILES * 8);
+            } else { /* SCROLL_V_UP */
+                s_scroll_target_y = (short)(s_active_scroll_y -
+                    (short)(ROOMROM_VERTICAL_STRIDE_TILES * 8));
+                s_scroll_v_offset = (short)(ROOMROM_VERTICAL_STRIDE_TILES * 8);
+            }
+            /* Initialize BG_B's V scroll to the offset position so frame 0
+             * shows incoming-below (V_DOWN) or incoming-above (V_UP). */
+            VDP_setVerticalScroll(BG_B,
+                (short)(s_active_scroll_y + s_scroll_v_offset));
+            VDP_setHorizontalScroll(BG_B, s_active_scroll_x);
         }
         {
             short dx = (short)(s_scroll_target_x - s_scroll_start_x);
@@ -1163,6 +1200,15 @@ void roomrom_debug_tick(void)
             v_scroll = (short)(s_scroll_start_y +
                 (((int)s_scroll_target_y - (int)s_scroll_start_y) * num) / den);
             set_bg_scroll(h_scroll, v_scroll);
+            /* PR-2b: BG_B follows BG_A's V scroll with a fixed offset
+             * (-176 for V_DOWN, +176 for V_UP) so its incoming room
+             * starts off-screen and slides in as BG_A scrolls out. */
+            if (s_scroll_state == SCROLL_V_DOWN ||
+                s_scroll_state == SCROLL_V_UP) {
+                VDP_setVerticalScroll(BG_B,
+                    (short)(v_scroll + s_scroll_v_offset));
+                VDP_setHorizontalScroll(BG_B, h_scroll);
+            }
 
             /* NES Z1 UW: Link is drawn behind door tiles during the
              * scroll (Z_07.asm ShowLinkSpritesBehindHorizontalDoors).
@@ -1173,14 +1219,23 @@ void roomrom_debug_tick(void)
                                           s_link_face, 0u);
 
             if (s_scroll_frame >= s_scroll_total_frames - 1u) {
+                u8 was_v_scroll = (u8)(s_scroll_state == SCROLL_V_DOWN ||
+                                       s_scroll_state == SCROLL_V_UP);
                 if (s_scroll_state == SCROLL_H_RIGHT ||
                     s_scroll_state == SCROLL_H_LEFT) {
                     s_active_slot_x ^= 1u;
+                    s_active_scroll_x = s_scroll_target_x;
+                    s_active_scroll_y = s_scroll_target_y;
                 } else {
-                    s_active_row_base = s_transition_row_base;
+                    /* PR-2b V finalize: incoming room is fully visible
+                     * via BG_B at this point. Re-render it into BG_A
+                     * (active plane) so subsequent H scrolls and tile
+                     * mutations land in the right place. Then clear BG_B
+                     * and reset both planes to scroll 0. */
+                    s_active_row_base = 0u;
+                    s_active_scroll_x = 0;
+                    s_active_scroll_y = 0;
                 }
-                s_active_scroll_x = s_scroll_target_x;
-                s_active_scroll_y = s_scroll_target_y;
                 s_room_id = s_transition_target;
                 s_link_x  = s_transition_link_x;
                 s_link_y  = s_transition_link_y;
@@ -1201,7 +1256,29 @@ void roomrom_debug_tick(void)
                     roomrom_ow_room_render_mark_stable();
                 }
                 roomrom_sprites_load_palette();
-                anchor_active_slot();
+                if (was_v_scroll) {
+                    /* Re-render incoming into BG_A (target_plane=0 is
+                     * the default after the V scroll start sequence). */
+                    if (s_scene == SCENE_UW) {
+                        roomrom_uw_room_render_set_target_plane(0u);
+                    } else {
+                        roomrom_ow_room_render_set_target_plane(0u);
+                        roomrom_ow_room_render_begin_full_fill();
+                    }
+                    render_room_into_slot(s_room_id, s_active_slot_x, 0u);
+                    if (s_scene == SCENE_OW) {
+                        roomrom_ow_room_render_mark_stable();
+                    }
+                    /* Drop staged BG_B content, reset both planes to 0. */
+                    VDP_clearPlane(BG_B, TRUE);
+                    VDP_setHorizontalScroll(BG_B, 0);
+                    VDP_setVerticalScroll(BG_B, 0);
+                    VDP_setHorizontalScroll(BG_A, 0);
+                    VDP_setVerticalScroll(BG_A, 0);
+                    s_scroll_v_offset = 0;
+                } else {
+                    anchor_active_slot();
+                }
                 s_scroll_state = SCROLL_NONE;
             } else {
                 s_scroll_frame++;
