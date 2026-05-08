@@ -1099,13 +1099,22 @@ def _bias_byte(byte_val: int, sub_pal: int) -> int:
     return ((new_hi << 4) | new_lo) & 0xFF
 
 
-def _expand_row_x4(row: bytes) -> bytes:
-    """Concatenate 4 sub-pal copies of row: pal0||pal1||pal2||pal3.
+ITEM_SUBPAL_COUNT_GEN = 3   # NES Z1 sprite sub-pal usage audit 2026-05-08:
+                            # all in-game items consume sub-pal 0/1/2 only
+                            # (Link/sword/arrow=0, bomb/explosion=1, candle
+                            # frame 2 cluster=2). Sub-pal 3 unused — dropping
+                            # the 4th expansion frees ~56 ITEM tiles to fund
+                            # candle_fire/magic_shot/triforce 8x16 fixes.
 
-    Matches expand_sprite_chr.py::expand_row_to_x4.
+def _expand_row_x4(row: bytes) -> bytes:
+    """Concatenate N sub-pal copies of row: pal0||pal1||...||palN-1.
+
+    N = ITEM_SUBPAL_COUNT_GEN (currently 3). Name retains 'x4' suffix for
+    legacy compatibility with downstream identifiers, but the actual
+    expansion factor is governed by the constant above.
     """
     out = bytearray()
-    for s in range(4):
+    for s in range(ITEM_SUBPAL_COUNT_GEN):
         out.extend(_bias_byte(b, s) for b in row)
     return bytes(out)
 
@@ -1194,7 +1203,7 @@ def emit_items_chr_x4(item_manifest: dict, out_dir: Path) -> int:
         if len(blob) != per_pal_bytes:
             raise SystemExit(f"FU2: variant {i} blob size mismatch: {len(blob)} != {per_pal_bytes}")
 
-    x4_bytes = per_pal_bytes * 4
+    x4_bytes = per_pal_bytes * ITEM_SUBPAL_COUNT_GEN
     tile_count = per_pal_bytes // BYTES_PER_GEN_TILE
     variant_count = len(variants)
     variant_names = [str(v.get("rom_id", f"v{i}")) for i, v in enumerate(variants)]
@@ -1220,15 +1229,21 @@ def emit_items_chr_x4(item_manifest: dict, out_dir: Path) -> int:
     for item_def in item_defs:
         rule = str(item_def.get("draw_rule", ""))
         is_8x16_mirrored = rule.startswith("wide_16x16_mirrored_8x16")
+        is_pair_8x16 = rule == "wide_16x16_pair"
         bake_mirror = rule.startswith("mirrored_")
         name_ident = c_ident(str(item_def["name"]))
         tile_offsets.append((name_ident, running_tile))
         # 8x16-mirrored: 4 Genesis tiles per (top,bot) NES pair (LT, LB, RT, RB).
+        # 8x16-pair    : 4 Genesis tiles per item (LT, LB, RT, RB) directly
+        #                 from manifest tile_ids in column-major order (no
+        #                 mirror).
         # mirrored_*    : 2 Genesis tiles per NES tile (raw + hflip).
         # default        : 1 Genesis tile per NES tile.
         n_ids = len(item_def["tile_ids"])
         if is_8x16_mirrored:
             tiles_here = n_ids * 2  # 6 ids -> 12 tiles
+        elif is_pair_8x16:
+            tiles_here = n_ids       # 4 ids -> 4 tiles, exact mapping
         elif bake_mirror:
             tiles_here = n_ids * 2
         else:

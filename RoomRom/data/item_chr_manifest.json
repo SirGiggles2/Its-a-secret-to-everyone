@@ -160,17 +160,19 @@
       "nes_frame_tile": "0x5C",
       "sprite_size": [
         2,
-        1
+        2
       ],
       "tile_ids": [
         "0x5C",
-        "0x5E"
+        "0x5D",
+        "0x5E",
+        "0x5F"
       ],
-      "draw_rule": "wide_16x8",
+      "draw_rule": "wide_16x16_pair",
       "frame_index": 0,
       "frame_subpal": 2,
       "nes_dispatch_note": "UpdateFire (Z_07.asm:4622) draws fire via DrawObjectWithType anim index $40 (uses $41 after INY) -> ObjAnimations[$41]=$08 -> ObjAnimFrameHeap[$08+frame] tile pairs ($5C/$5E, $9E/$A0, $44/$46, $CE/$D0). Each frame is 2 NES tiles side-by-side (left+2=right per DrawObjectWithAnimAndSpecificSprites). ObjAnimAttrHeap[$08+frame] sub_pal sequence = (2, 0, 0, 1). Animation: 4 frames @ 4 ticks each (LDA #$04 / Anim_AdvanceAnimCounter).",
-      "sprite_size_override_reason": "Candle fire bypasses Anim_WriteItemSprites' Narrow/Wide tile-range dispatch. UpdateFire (Z_07.asm:4622) calls DrawObjectWithType (Z_01.asm:5011) which always uses 2 sprites side-by-side via DrawObjectWithAnimAndSpecificSprites: $07=1 (two sides), $0A=8 (8-pixel separation), right tile = ObjAnimFrameHeap[Y]+2. NES tile ranges that would normally classify as Narrow (e.g. $5C, $44) are rendered as 16x8 here regardless. Genesis SPRITE_SIZE(2,1) matches."
+      "sprite_size_override_reason": "NES PPU runs 8x16 sprite mode (PPUCTRL bit 5 = 1). @Wide_Slim draws 2 OAMs side-by-side, each 8x16 (paired tile $X+1 as bottom). Visible cluster = 2*8x16 = 16x16, NOT 16x8. Renderer uses SPRITE_SIZE(2,2) with column-major fetch order LT, LB, RT, RB. Live BizHawk capture in probe_nes_audit.lua confirmed bottom-half tile bytes for $5D/$5F/$9F/$A1/$45/$47/$CF/$D1/$7B/$7D/$7F/$6F/$71."
     },
     {
       "name": "candle_fire_f1",
@@ -179,17 +181,19 @@
       "nes_frame_tile": "0x9E",
       "sprite_size": [
         2,
-        1
+        2
       ],
       "tile_ids": [
         "0x9E",
-        "0xA0"
+        "0x9F",
+        "0xA0",
+        "0xA1"
       ],
-      "draw_rule": "wide_16x8",
+      "draw_rule": "wide_16x16_pair",
       "frame_index": 1,
       "frame_subpal": 0,
       "nes_dispatch_note": "UpdateFire (Z_07.asm:4622) draws fire via DrawObjectWithType anim index $40 (uses $41 after INY) -> ObjAnimations[$41]=$08 -> ObjAnimFrameHeap[$08+frame] tile pairs ($5C/$5E, $9E/$A0, $44/$46, $CE/$D0). Each frame is 2 NES tiles side-by-side (left+2=right per DrawObjectWithAnimAndSpecificSprites). ObjAnimAttrHeap[$08+frame] sub_pal sequence = (2, 0, 0, 1). Animation: 4 frames @ 4 ticks each (LDA #$04 / Anim_AdvanceAnimCounter).",
-      "sprite_size_override_reason": "Candle fire bypasses Anim_WriteItemSprites' Narrow/Wide tile-range dispatch. UpdateFire (Z_07.asm:4622) calls DrawObjectWithType (Z_01.asm:5011) which always uses 2 sprites side-by-side via DrawObjectWithAnimAndSpecificSprites: $07=1 (two sides), $0A=8 (8-pixel separation), right tile = ObjAnimFrameHeap[Y]+2. NES tile ranges that would normally classify as Narrow (e.g. $5C, $44) are rendered as 16x8 here regardless. Genesis SPRITE_SIZE(2,1) matches."
+      "sprite_size_override_reason": "NES PPU runs 8x16 sprite mode (PPUCTRL bit 5 = 1). @Wide_Slim draws 2 OAMs side-by-side, each 8x16 (paired tile $X+1 as bottom). Visible cluster = 2*8x16 = 16x16, NOT 16x8. Renderer uses SPRITE_SIZE(2,2) with column-major fetch order LT, LB, RT, RB. Live BizHawk capture in probe_nes_audit.lua confirmed bottom-half tile bytes for $5D/$5F/$9F/$A1/$45/$47/$CF/$D1/$7B/$7D/$7F/$6F/$71."
     },
     {
       "name": "candle_fire_f2",
@@ -198,17 +202,19 @@
       "nes_frame_tile": "0x44",
       "sprite_size": [
         2,
-        1
+        2
       ],
       "tile_ids": [
         "0x44",
-        "0x46"
+        "0x45",
+        "0x46",
+        "0x47"
       ],
-      "draw_rule": "wide_16x8",
+      "draw_rule": "wide_16x16_pair",
       "frame_index": 2,
       "frame_subpal": 0,
       "nes_dispatch_note": "UpdateFire (Z_07.asm:4622) draws fire via DrawObjectWithType anim index $40 (uses $41 after INY) -> ObjAnimations[$41]=$08 -> ObjAnimFrameHeap[$08+frame] tile pairs ($5C/$5E, $9E/$A0, $44/$46, $CE/$D0). Each frame is 2 NES tiles side-by-side (left+2=right per DrawObjectWithAnimAndSpecificSprites). ObjAnimAttrHeap[$08+frame] sub_pal sequence = (2, 0, 0, 1). Animation: 4 frames @ 4 ticks each (LDA #$04 / Anim_AdvanceAnimCounter).",
-      "sprite_size_override_reason": "Candle fire bypasses Anim_WriteItemSprites' Narrow/Wide tile-range dispatch. UpdateFire (Z_07.asm:4622) calls DrawObjectWithType (Z_01.asm:5011) which always uses 2 sprites side-by-side via DrawObjectWithAnimAndSpecificSprites: $07=1 (two sides), $0A=8 (8-pixel separation), right tile = ObjAnimFrameHeap[Y]+2. NES tile ranges that would normally classify as Narrow (e.g. $5C, $44) are rendered as 16x8 here regardless. Genesis SPRITE_SIZE(2,1) matches."
+      "sprite_size_override_reason": "NES PPU runs 8x16 sprite mode (PPUCTRL bit 5 = 1). @Wide_Slim draws 2 OAMs side-by-side, each 8x16 (paired tile $X+1 as bottom). Visible cluster = 2*8x16 = 16x16, NOT 16x8. Renderer uses SPRITE_SIZE(2,2) with column-major fetch order LT, LB, RT, RB. Live BizHawk capture in probe_nes_audit.lua confirmed bottom-half tile bytes for $5D/$5F/$9F/$A1/$45/$47/$CF/$D1/$7B/$7D/$7F/$6F/$71."
     },
     {
       "name": "candle_fire_f3",
@@ -217,17 +223,19 @@
       "nes_frame_tile": "0xCE",
       "sprite_size": [
         2,
-        1
+        2
       ],
       "tile_ids": [
         "0xCE",
-        "0xD0"
+        "0xCF",
+        "0xD0",
+        "0xD1"
       ],
-      "draw_rule": "wide_16x8",
+      "draw_rule": "wide_16x16_pair",
       "frame_index": 3,
       "frame_subpal": 1,
       "nes_dispatch_note": "UpdateFire (Z_07.asm:4622) draws fire via DrawObjectWithType anim index $40 (uses $41 after INY) -> ObjAnimations[$41]=$08 -> ObjAnimFrameHeap[$08+frame] tile pairs ($5C/$5E, $9E/$A0, $44/$46, $CE/$D0). Each frame is 2 NES tiles side-by-side (left+2=right per DrawObjectWithAnimAndSpecificSprites). ObjAnimAttrHeap[$08+frame] sub_pal sequence = (2, 0, 0, 1). Animation: 4 frames @ 4 ticks each (LDA #$04 / Anim_AdvanceAnimCounter).",
-      "sprite_size_override_reason": "Candle fire bypasses Anim_WriteItemSprites' Narrow/Wide tile-range dispatch. UpdateFire (Z_07.asm:4622) calls DrawObjectWithType (Z_01.asm:5011) which always uses 2 sprites side-by-side via DrawObjectWithAnimAndSpecificSprites: $07=1 (two sides), $0A=8 (8-pixel separation), right tile = ObjAnimFrameHeap[Y]+2. NES tile ranges that would normally classify as Narrow (e.g. $5C, $44) are rendered as 16x8 here regardless. Genesis SPRITE_SIZE(2,1) matches."
+      "sprite_size_override_reason": "NES PPU runs 8x16 sprite mode (PPUCTRL bit 5 = 1). @Wide_Slim draws 2 OAMs side-by-side, each 8x16 (paired tile $X+1 as bottom). Visible cluster = 2*8x16 = 16x16, NOT 16x8. Renderer uses SPRITE_SIZE(2,2) with column-major fetch order LT, LB, RT, RB. Live BizHawk capture in probe_nes_audit.lua confirmed bottom-half tile bytes for $5D/$5F/$9F/$A1/$45/$47/$CF/$D1/$7B/$7D/$7F/$6F/$71."
     },
     {
       "name": "triforce_piece",
@@ -236,16 +244,19 @@
       "nes_frame_tile": "0x6E",
       "sprite_size": [
         2,
-        1
+        2
       ],
       "tile_ids": [
         "0x6E",
-        "0x70"
+        "0x6F",
+        "0x70",
+        "0x71"
       ],
-      "draw_rule": "wide_16x8",
+      "draw_rule": "wide_16x16_pair",
       "frame_index": 0,
       "frame_subpal": 2,
-      "nes_dispatch_note": "Anim_ItemFrameTiles[$20]=$6E (item slot 26 'PowerTriangle / TriforcePiece'). Wide dispatch in Anim_WriteSpecificItemSprites (Z_01.asm:5279): $6E >= $62 -> @Wide, right tile = $6E + 2 = $70. Renders as 2 sprites side-by-side via $07=1, $0A=8."
+      "nes_dispatch_note": "Anim_ItemFrameTiles[$20]=$6E (item slot 26 'PowerTriangle / TriforcePiece'). Wide dispatch in Anim_WriteSpecificItemSprites (Z_01.asm:5279): $6E >= $62 -> @Wide, right tile = $6E + 2 = $70. Renders as 2 sprites side-by-side via $07=1, $0A=8.",
+      "sprite_size_override_reason": "NES PPU runs 8x16 sprite mode (PPUCTRL bit 5 = 1). @Wide_Slim draws 2 OAMs side-by-side, each 8x16 (paired tile $X+1 as bottom). Visible cluster = 2*8x16 = 16x16, NOT 16x8. Renderer uses SPRITE_SIZE(2,2) with column-major fetch order LT, LB, RT, RB. Live BizHawk capture in probe_nes_audit.lua confirmed bottom-half tile bytes for $5D/$5F/$9F/$A1/$45/$47/$CF/$D1/$7B/$7D/$7F/$6F/$71."
     },
     {
       "name": "magic_shot_v",
@@ -254,16 +265,19 @@
       "nes_frame_tile": "0x7A",
       "sprite_size": [
         2,
-        1
+        2
       ],
       "tile_ids": [
         "0x7A",
-        "0x7C"
+        "0x7B",
+        "0x7C",
+        "0x7D"
       ],
-      "draw_rule": "wide_16x8",
+      "draw_rule": "wide_16x16_pair",
       "frame_index": 0,
       "frame_subpal": 0,
-      "nes_dispatch_note": "Anim_ItemFrameTiles[$2B]=$7A, [$2C]=$7C (item slot $23, magic-rod projectile). Z_07 DrawSwordShotOrMagicShot @WriteMagicSprites (line 3492) sets Y=$23 -> Anim_WriteItemSprites. Both tiles >= $62 -> @Wide. Vertical frame uses $7A+$7C; horizontal frame uses $7C+$7E."
+      "nes_dispatch_note": "Anim_ItemFrameTiles[$2B]=$7A, [$2C]=$7C (item slot $23, magic-rod projectile). Z_07 DrawSwordShotOrMagicShot @WriteMagicSprites (line 3492) sets Y=$23 -> Anim_WriteItemSprites. Both tiles >= $62 -> @Wide. Vertical frame uses $7A+$7C; horizontal frame uses $7C+$7E.",
+      "sprite_size_override_reason": "NES PPU runs 8x16 sprite mode (PPUCTRL bit 5 = 1). @Wide_Slim draws 2 OAMs side-by-side, each 8x16 (paired tile $X+1 as bottom). Visible cluster = 2*8x16 = 16x16, NOT 16x8. Renderer uses SPRITE_SIZE(2,2) with column-major fetch order LT, LB, RT, RB. Live BizHawk capture in probe_nes_audit.lua confirmed bottom-half tile bytes for $5D/$5F/$9F/$A1/$45/$47/$CF/$D1/$7B/$7D/$7F/$6F/$71."
     },
     {
       "name": "magic_shot_h",
@@ -272,16 +286,19 @@
       "nes_frame_tile": "0x7C",
       "sprite_size": [
         2,
-        1
+        2
       ],
       "tile_ids": [
         "0x7C",
-        "0x7E"
+        "0x7D",
+        "0x7E",
+        "0x7F"
       ],
-      "draw_rule": "wide_16x8",
+      "draw_rule": "wide_16x16_pair",
       "frame_index": 1,
       "frame_subpal": 0,
-      "nes_dispatch_note": "Anim_ItemFrameTiles[$2B]=$7A, [$2C]=$7C (item slot $23, magic-rod projectile). Z_07 DrawSwordShotOrMagicShot @WriteMagicSprites (line 3492) sets Y=$23 -> Anim_WriteItemSprites. Both tiles >= $62 -> @Wide. Vertical frame uses $7A+$7C; horizontal frame uses $7C+$7E."
+      "nes_dispatch_note": "Anim_ItemFrameTiles[$2B]=$7A, [$2C]=$7C (item slot $23, magic-rod projectile). Z_07 DrawSwordShotOrMagicShot @WriteMagicSprites (line 3492) sets Y=$23 -> Anim_WriteItemSprites. Both tiles >= $62 -> @Wide. Vertical frame uses $7A+$7C; horizontal frame uses $7C+$7E.",
+      "sprite_size_override_reason": "NES PPU runs 8x16 sprite mode (PPUCTRL bit 5 = 1). @Wide_Slim draws 2 OAMs side-by-side, each 8x16 (paired tile $X+1 as bottom). Visible cluster = 2*8x16 = 16x16, NOT 16x8. Renderer uses SPRITE_SIZE(2,2) with column-major fetch order LT, LB, RT, RB. Live BizHawk capture in probe_nes_audit.lua confirmed bottom-half tile bytes for $5D/$5F/$9F/$A1/$45/$47/$CF/$D1/$7B/$7D/$7F/$6F/$71."
     },
     {
       "name": "fairy_spark_f0",
@@ -644,7 +661,7 @@
           "bytes": "AF9FFFFF7E3C00007060000000000000"
         },
         "0x71": {
-          "ppu_addr": "0x0071",
+          "ppu_addr": "0x0710",
           "source": "common_sprite_live_chr",
           "sha256": "44e0ee70a489d9ce30eeaaf257528d8d86b8f778240807cb7670d4c939a7688c",
           "flat_pattern": false,
@@ -663,6 +680,90 @@
           "sha256": "614b3086dd30ca59a7e131cd00b72dc04b44a045d1e967f410d8946f11e23af8",
           "flat_pattern": false,
           "bytes": "80092001200401068009200120040106"
+        },
+        "0x5D": {
+          "ppu_addr": "0x05D0",
+          "source": "common_sprite_live_chr",
+          "sha256": "cf597e9978167336a389878b2b4cbec28361c4af631b63809c7b549e07b0cfb1",
+          "flat_pattern": false,
+          "bytes": "72A0E9E5737338070D1F171F0F0F0300"
+        },
+        "0x5F": {
+          "ppu_addr": "0x05F0",
+          "source": "common_sprite_live_chr",
+          "sha256": "e231b878449e4171c94cc4f62510e9249ec2a852f947c48678f701412e653b78",
+          "flat_pattern": false,
+          "bytes": "BD5F0F46E6CC1CF040A0F0F8F8F0E000"
+        },
+        "0x9F": {
+          "ppu_addr": "0x09F0",
+          "source": "common_sprite_live_chr",
+          "sha256": "9768287fdbf9a3ae5a7af3c4723cdd94dc3da93de87c661915cc3529daa1be57",
+          "flat_pattern": false,
+          "bytes": "0F4E7E1800000000FFFE7E1800000000"
+        },
+        "0xA1": {
+          "ppu_addr": "0x0A10",
+          "source": "common_sprite_live_chr",
+          "sha256": "c3455d527c8b282f08974b3fb0dfcd8068b942107544622d879f48c0d7440cfc",
+          "flat_pattern": false,
+          "bytes": "FEFFFEFFFEFEFE00FDFCFDFCB5FD001E"
+        },
+        "0x45": {
+          "ppu_addr": "0x0450",
+          "source": "common_sprite_live_chr",
+          "sha256": "5121e10175618e441634bacae1744b5fa504f0556cadaed94559d7aee3aa740b",
+          "flat_pattern": false,
+          "bytes": "DBC3667E3C0000003C3C180000000000"
+        },
+        "0x47": {
+          "ppu_addr": "0x0470",
+          "source": "common_sprite_live_chr",
+          "sha256": "575d1b71612d736161de53722b203816572c764a0109d0dd70196d2850b105c9",
+          "flat_pattern": false,
+          "bytes": "41000000000000006041623C00000000"
+        },
+        "0xD1": {
+          "ppu_addr": "0x0D10",
+          "source": "common_sprite_live_chr",
+          "sha256": "28c344a312c1844d1d66c3442ede9b2dd64068ba16512e16868decef0652bee0",
+          "flat_pattern": false,
+          "bytes": "F0F0F8FCFCF810000000000000C00000"
+        },
+        "0x6F": {
+          "ppu_addr": "0x06F0",
+          "source": "common_sprite_live_chr",
+          "sha256": "a848ffe0db38fd21dc4fe5a5676be9f2fa36c5c42142bb324266d650faf53e3a",
+          "flat_pattern": false,
+          "bytes": "0000000000000000030307070F0F1F1F"
+        },
+        "0x7B": {
+          "ppu_addr": "0x07B0",
+          "source": "common_sprite_live_chr",
+          "sha256": "4f0d8f9f1e903f61a1a956508c9061b8dbd64a7f2ac2cc0075aafefc60b17994",
+          "flat_pattern": false,
+          "bytes": "00030F18200000006040000001070C10"
+        },
+        "0x7D": {
+          "ppu_addr": "0x07D0",
+          "source": "common_sprite_live_chr",
+          "sha256": "3a9ac48fd73576e75d202a453cc5bdf58721300db7f89184eb0cb6b7a2f14477",
+          "flat_pattern": false,
+          "bytes": "0606040C081000003020604080010300"
+        },
+        "0x7F": {
+          "ppu_addr": "0x07F0",
+          "source": "common_sprite_live_chr",
+          "sha256": "e3d91ab3854cdf6d59526c0ba765fb35084a4ee7e41a927ce8f37d3285f98eff",
+          "flat_pattern": false,
+          "bytes": "070707060E0C18206060E0C0C0800000"
+        },
+        "0xCF": {
+          "ppu_addr": "0x0CF0",
+          "source": "common_sprite_live_chr",
+          "sha256": "5f157e7c2b968cc2dbb080fb7bee9adea8a024f53b90141c85bce78c30ab5d2f",
+          "flat_pattern": false,
+          "bytes": "7F7F3F7FFF7F200000000000000F0000"
         }
       }
     },
@@ -987,7 +1088,7 @@
           "bytes": "AF9FFFFF7E3C00007060000000000000"
         },
         "0x71": {
-          "ppu_addr": "0x0071",
+          "ppu_addr": "0x0710",
           "source": "common_sprite_live_chr",
           "sha256": "44e0ee70a489d9ce30eeaaf257528d8d86b8f778240807cb7670d4c939a7688c",
           "flat_pattern": false,
@@ -1006,6 +1107,90 @@
           "sha256": "614b3086dd30ca59a7e131cd00b72dc04b44a045d1e967f410d8946f11e23af8",
           "flat_pattern": false,
           "bytes": "80092001200401068009200120040106"
+        },
+        "0x5D": {
+          "ppu_addr": "0x05D0",
+          "source": "common_sprite_live_chr",
+          "sha256": "cf597e9978167336a389878b2b4cbec28361c4af631b63809c7b549e07b0cfb1",
+          "flat_pattern": false,
+          "bytes": "72A0E9E5737338070D1F171F0F0F0300"
+        },
+        "0x5F": {
+          "ppu_addr": "0x05F0",
+          "source": "common_sprite_live_chr",
+          "sha256": "e231b878449e4171c94cc4f62510e9249ec2a852f947c48678f701412e653b78",
+          "flat_pattern": false,
+          "bytes": "BD5F0F46E6CC1CF040A0F0F8F8F0E000"
+        },
+        "0x9F": {
+          "ppu_addr": "0x09F0",
+          "source": "common_sprite_live_chr",
+          "sha256": "9768287fdbf9a3ae5a7af3c4723cdd94dc3da93de87c661915cc3529daa1be57",
+          "flat_pattern": false,
+          "bytes": "0F4E7E1800000000FFFE7E1800000000"
+        },
+        "0xA1": {
+          "ppu_addr": "0x0A10",
+          "source": "common_sprite_live_chr",
+          "sha256": "c3455d527c8b282f08974b3fb0dfcd8068b942107544622d879f48c0d7440cfc",
+          "flat_pattern": false,
+          "bytes": "FEFFFEFFFEFEFE00FDFCFDFCB5FD001E"
+        },
+        "0x45": {
+          "ppu_addr": "0x0450",
+          "source": "common_sprite_live_chr",
+          "sha256": "5121e10175618e441634bacae1744b5fa504f0556cadaed94559d7aee3aa740b",
+          "flat_pattern": false,
+          "bytes": "DBC3667E3C0000003C3C180000000000"
+        },
+        "0x47": {
+          "ppu_addr": "0x0470",
+          "source": "common_sprite_live_chr",
+          "sha256": "575d1b71612d736161de53722b203816572c764a0109d0dd70196d2850b105c9",
+          "flat_pattern": false,
+          "bytes": "41000000000000006041623C00000000"
+        },
+        "0xD1": {
+          "ppu_addr": "0x0D10",
+          "source": "common_sprite_live_chr",
+          "sha256": "28c344a312c1844d1d66c3442ede9b2dd64068ba16512e16868decef0652bee0",
+          "flat_pattern": false,
+          "bytes": "F0F0F8FCFCF810000000000000C00000"
+        },
+        "0x6F": {
+          "ppu_addr": "0x06F0",
+          "source": "common_sprite_live_chr",
+          "sha256": "a848ffe0db38fd21dc4fe5a5676be9f2fa36c5c42142bb324266d650faf53e3a",
+          "flat_pattern": false,
+          "bytes": "0000000000000000030307070F0F1F1F"
+        },
+        "0x7B": {
+          "ppu_addr": "0x07B0",
+          "source": "common_sprite_live_chr",
+          "sha256": "4f0d8f9f1e903f61a1a956508c9061b8dbd64a7f2ac2cc0075aafefc60b17994",
+          "flat_pattern": false,
+          "bytes": "00030F18200000006040000001070C10"
+        },
+        "0x7D": {
+          "ppu_addr": "0x07D0",
+          "source": "common_sprite_live_chr",
+          "sha256": "3a9ac48fd73576e75d202a453cc5bdf58721300db7f89184eb0cb6b7a2f14477",
+          "flat_pattern": false,
+          "bytes": "0606040C081000003020604080010300"
+        },
+        "0x7F": {
+          "ppu_addr": "0x07F0",
+          "source": "common_sprite_live_chr",
+          "sha256": "e3d91ab3854cdf6d59526c0ba765fb35084a4ee7e41a927ce8f37d3285f98eff",
+          "flat_pattern": false,
+          "bytes": "070707060E0C18206060E0C0C0800000"
+        },
+        "0xCF": {
+          "ppu_addr": "0x0CF0",
+          "source": "common_sprite_live_chr",
+          "sha256": "5f157e7c2b968cc2dbb080fb7bee9adea8a024f53b90141c85bce78c30ab5d2f",
+          "flat_pattern": false,
+          "bytes": "7F7F3F7FFF7F200000000000000F0000"
         }
       }
     }

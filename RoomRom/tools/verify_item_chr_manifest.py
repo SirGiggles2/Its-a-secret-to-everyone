@@ -110,6 +110,8 @@ def main() -> int:
         rule = str(item_def.get("draw_rule", ""))
         if rule.startswith("wide_16x16_mirrored_8x16"):
             per_input = 2  # 6 ids -> 12 tiles
+        elif rule == "wide_16x16_pair":
+            per_input = 1  # 4 ids -> 4 tiles (LT, LB, RT, RB)
         elif rule.startswith("mirrored_"):
             per_input = 2
         else:

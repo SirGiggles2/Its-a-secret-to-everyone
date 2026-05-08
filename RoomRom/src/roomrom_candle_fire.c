@@ -64,7 +64,7 @@ static void hide_slot(void)
 {
     VDP_setSpriteFull(CANDLE_FIRE_SLOT,
                       (s16)-32, (s16)-32,
-                      SPRITE_SIZE(2, 1),
+                      SPRITE_SIZE(2, 2),
                       TILE_ATTR_FULL(PAL1, 1, 0, 0,
                           (unsigned short)(ROOMROM_ITEM_TILE_BASE_PAL(0)
                               + ROOMROM_ITEM_TILE_CANDLE_FIRE_F0)),
@@ -114,7 +114,7 @@ static void draw_fire(void)
      * BG priority 0x8000). NES Z1 fire is foreground. */
     VDP_setSpriteFull(CANDLE_FIRE_SLOT,
                       (s16)s_x, (s16)s_y,
-                      SPRITE_SIZE(2, 1),
+                      SPRITE_SIZE(2, 2),
                       TILE_ATTR_FULL(PAL1, 1, 0, 0, tile),
                       9);
     VDP_updateSprites(9, DMA);

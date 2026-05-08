@@ -101,7 +101,11 @@
  * with VDP table region or any other VRAM consumer. */
 #define ROOMROM_ITEM_TILE_BASE          (ROOMROM_SPR_TILE_BASE + ROOMROM_SPR_TILE_COUNT_PER_PAL)
 #define ROOMROM_ITEM_TILE_COUNT_PER_PAL ROOMROM_ATLAS_ITEMS_X4_TILE_COUNT
-#define ROOMROM_ITEM_SUBPAL_COUNT       4u
+/* Sub-pal expansion factor. Was 4; reduced to 3 (drop unused sub-pal 3) on
+ * 2026-05-08 to fund candle_fire/magic_shot/triforce 8x16 mode fixes. NES
+ * Z1 sprite usage audit confirmed: items consume sub-pal 0 (Link), 1 (bomb/
+ * explosion), 2 (candle frame 2). None use sub-pal 3 in current scope. */
+#define ROOMROM_ITEM_SUBPAL_COUNT       3u
 #define ROOMROM_ITEM_TILE_BASE_PAL(s) \
     (ROOMROM_ITEM_TILE_BASE + (unsigned short)(s) * ROOMROM_ITEM_TILE_COUNT_PER_PAL)
 
