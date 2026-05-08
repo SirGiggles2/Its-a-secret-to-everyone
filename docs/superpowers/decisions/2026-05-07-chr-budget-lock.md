@@ -128,11 +128,37 @@ Decision approved by:
 
 1. ✅ Preflight audits run + locked.
 2. ✅ Decision artifact landed (this file).
-3. ⏳ Manifest v2 schema scaffold (`RoomRom/data/chr_atlas_master.json`).
-4. ⏳ gen_atlas.py data-driven refactor (byte-equal items_chr_x4
-   regression).
-5. ⏳ Drain debt note `tools/audit/drain_findings/g3_item_take_item_externs.md`.
-6. ⏳ verify_item_chr_manifest.py extension for v2 schema.
-7. ⏳ build_combined_debug.py adds gates.
-8. ⏳ CombinedDebug.bat clean + ph5.4-9 gates GREEN.
-9. ⏳ Commit `pr-1 chr-foundation: preflight + decision lock`.
+3. ✅ Manifest v2 schema scaffold (`RoomRom/data/chr_atlas_master.json`).
+4. ❌ gen_atlas.py data-driven refactor — **NOT NEEDED**.
+   Verified post-PR-1: gen_atlas.py at HEAD already reads
+   atlas_master.json + item_chr_manifest.json as data inputs.
+   Re-run `--phase p3a` produces byte-identical items_chr_x4
+   (modulo LF/CRLF line endings, content unchanged). Spec PR-1.5
+   slot SKIPPED.
+5. ✅ Drain debt note `tools/audit/drain_findings/g3_item_take_item_externs.md`.
+6. ⏳ verify_item_chr_manifest.py extension for v2 schema —
+   deferred (chr_atlas_master.json scaffold isn't validated yet;
+   land with PR-3 when first v2 entries appear).
+7. ✅ build_combined_debug.py adds gates.
+8. ✅ CombinedDebug.bat clean + ph5.4-9 gates GREEN.
+9. ✅ Commit `pr-1 chr-foundation: preflight + decision lock`
+   (e77d19ae).
+
+## PR-2 status: EMPTY by current decisions
+
+Spec PR-2 = "implement chosen budget WITHOUT new content".
+Per this decision lock:
+- BG_4x stays (BG_2x rejected by audit).
+- SPR_1x stays (LINK_STATIC split deferred until SCENE_OBJ
+  content forces it; no immediate need).
+
+PR-2 has nothing to implement. SKIPPED.
+
+## Updated PR sequence
+
+- PR-1 ✅ (e77d19ae)
+- PR-1.5 ❌ skipped (no refactor needed)
+- PR-2 ❌ skipped (no budget change needed)
+- **PR-3 NEXT**: ITEM_4x extension (triforce + 3-4 FX tiles).
+- PR-4: SCENE_OBJ transient design + enemy/NPC content.
+- PR-5: per-level boss content.
