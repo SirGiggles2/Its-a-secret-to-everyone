@@ -88,6 +88,11 @@ def parse_constants():
         fail(f"missing ROOMROM_ITEM_SUBPAL_COUNT in {VRAM_MAP_H}")
     consts["ROOMROM_ITEM_SUBPAL_COUNT"] = int(m.group(1))
 
+    # --- PR-5 BOSS bank (shares SCENE_OBJ slot inside SPR bank, NES parity
+    # per z_03.asm:91 -- boss rooms have no enemies). Verified at the C
+    # level via #define ROOMROM_BOSS_TILE_BASE = (SPR_TILE_BASE + 44u);
+    # no independent VRAM range to check here. ---
+
     return consts
 
 
@@ -173,6 +178,7 @@ def main():
         f"BG=tiles {bg_base}..{bg_base + bg_count - 1}  "
         f"SPR=tiles {spr_base}..{spr_base + spr_count - 1}  "
         f"ITEM=tiles {item_base}..{item_end_tile - 1}  "
+        f"BOSS=SCENE_OBJ-shared (NES parity)  "
         f"headroom={headroom_tiles} tiles before VDP tables"
     )
 

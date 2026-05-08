@@ -23,14 +23,14 @@
  *                                            intentionally 1x: every
  *                                            sprite in this bank only
  *                                            uses NES sprite sub-pal 0)
- *   tile 1337 .. 1337 + 4*31 - 1 = 1460     ITEM bank (item atlas:
+ *   tile 1337 .. 1337 + 4*49 - 1 = 1532     ITEM bank (item atlas:
  *                                            sword, beam, boomerang,
  *                                            arrow, bomb, explosion,
  *                                            sword_diag -- 4 sub-pal
- *                                            copies x 31 tiles, NES
+ *                                            copies x 49 tiles, NES
  *                                            DrawCloud/etc cite sub-pal
  *                                            1+ per tile)
- *   tile 1461 .. 1535                       reserved / future
+ *   tile 1533 .. 1535                       reserved / future (3 tiles)
  *   tile 1536+                              VDP plane / window / SAT / HScroll
  *                                            tables (post-PR-2b 64x32 layout
  *                                            allocates $C000+ for tables;
@@ -104,5 +104,21 @@
 #define ROOMROM_ITEM_SUBPAL_COUNT       4u
 #define ROOMROM_ITEM_TILE_BASE_PAL(s) \
     (ROOMROM_ITEM_TILE_BASE + (unsigned short)(s) * ROOMROM_ITEM_TILE_COUNT_PER_PAL)
+
+/* PR-5 CHR-BOSSES: per-level boss CHR. NES Z1 mirrors this exactly --
+ * z_03.asm:91 FetchPatternBlockUWBoss writes the boss bank into PPU
+ * $0C00, which is the same 4 KB sprite half as the per-level enemy bank
+ * at $09E0; on Genesis we reuse the SCENE_OBJ slot at
+ * (SPR_TILE_BASE + 44u) because boss rooms have no enemies (NES parity).
+ * Boss banks are 64 NES tiles, 1x sub-pal -- well under the 136-tile
+ * SCENE_OBJ slot capacity. Three banks dispatched by CurLevel per
+ * z_03.asm:24-34 BossPatternBlockSrcAddrs:
+ *   UWSPBoss1257 -> L1, L2, L5, L7   (Aquamentus / Dodongo)
+ *   UWSPBoss3468 -> L3, L4, L6, L8   (Manhandla / Gleeok / Digdogger / Gohma-style)
+ *   UWSPBoss9    -> L9               (Ganon)
+ */
+#define ROOMROM_BOSS_TILE_BASE          (ROOMROM_SPR_TILE_BASE + 44u)
+#define ROOMROM_BOSS_TILE_COUNT         64u
+#define ROOMROM_BOSS_SUBPAL_COUNT       1u
 
 #endif

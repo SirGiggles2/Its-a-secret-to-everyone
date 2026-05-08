@@ -538,7 +538,11 @@ SCENE_CONTRACTS = [
     (f"ROOMROM_SCENE_UW_L{n}", "enemies", "(ROOMROM_SPR_TILE_BASE + 44u)",   136)
     for n in range(1, 10)
 ] + [
-    (f"ROOMROM_SCENE_UW_L{n}", "bosses",  "(ROOMROM_SPR_TILE_BASE + 44u)",     0)  # Phase 4 wiring
+    # PR-5: 64 NES tiles per UWSPBoss bank, 1x sub-pal. Slot lives at
+    # ROOMROM_BOSS_TILE_BASE (= SCENE_OBJ slot, NES parity per
+    # z_03.asm:91 -- boss replaces enemies in same VRAM range, no
+    # boss-room enemies).
+    (f"ROOMROM_SCENE_UW_L{n}", "bosses",  "ROOMROM_BOSS_TILE_BASE",            64)
     for n in range(1, 10)
 ]
 
@@ -1273,6 +1277,22 @@ OWSP_BANK_FILE = ("OWSP", "PatternBlockOWSP.bin")
 OWSP_NES_TILE_COUNT = 114
 OWSP_BANK_BYTES = OWSP_NES_TILE_COUNT * BYTES_PER_GEN_TILE  # 3648
 
+# PR-5 CHR-BOSSES: per-level boss banks. Three NES UWSPBoss banks dispatched
+# by CurLevel per z_03.asm:24-34 BossPatternBlockSrcAddrs:
+#   UWSPBoss1257 -> L1, L2, L5, L7
+#   UWSPBoss3468 -> L3, L4, L6, L8
+#   UWSPBoss9    -> L9
+# Each bank is 1024 bytes raw NES = 64 NES tiles. 1x sub-pal (boss CRAM is
+# loaded per-boss; sub-pal index flows through OAM attr at render time).
+# Per-bank Genesis bytes = 64 * 32 = 2048 (64 tiles, no expansion).
+BOSS_NES_TILE_COUNT = 64
+BOSS_BANK_BYTES = BOSS_NES_TILE_COUNT * BYTES_PER_GEN_TILE  # 2048
+BOSS_BANK_FILES = [
+    ("UWSPBoss1257", "PatternBlockUWSPBoss1257.bin"),
+    ("UWSPBoss3468", "PatternBlockUWSPBoss3468.bin"),
+    ("UWSPBoss9",    "PatternBlockUWSPBoss9.bin"),
+]
+
 
 def _build_enemy_bank_blob(bank_path: Path) -> bytes:
     """Read an UWSP bank file, convert each NES tile to Genesis, then expand
@@ -1316,6 +1336,25 @@ def _build_owsp_blob(bank_path: Path) -> bytes:
         out.extend(nes_tile_to_genesis(nes_tile))
     if len(out) != OWSP_BANK_BYTES:
         raise SystemExit(f"PR-4c: OWSP bank size wrong: {len(out)}")
+    return bytes(out)
+
+
+def _build_boss_blob(bank_path: Path) -> bytes:
+    """PR-5: UWSPBoss single-sub-pal blob. NES → Genesis 4bpp at sub-pal 0
+    (no replication). 64 NES tiles → 2048 Genesis bytes."""
+    raw = bank_path.read_bytes()
+    expected = BOSS_NES_TILE_COUNT * BYTES_PER_NES_TILE
+    if len(raw) != expected:
+        raise SystemExit(
+            f"PR-5: {bank_path.name} unexpected size "
+            f"{len(raw)} (want {expected})")
+
+    out = bytearray()
+    for tid in range(BOSS_NES_TILE_COUNT):
+        nes_tile = raw[tid * BYTES_PER_NES_TILE : (tid + 1) * BYTES_PER_NES_TILE]
+        out.extend(nes_tile_to_genesis(nes_tile))
+    if len(out) != BOSS_BANK_BYTES:
+        raise SystemExit(f"PR-5: boss bank size wrong: {len(out)}")
     return bytes(out)
 
 
@@ -1410,6 +1449,76 @@ def emit_enemy_chr_x4(out_dir: Path) -> int:
 
 
 # ---------------------------------------------------------------------------
+# PR-5: boss_chr — per-level UWSPBoss banks (1257 / 3468 / 9)
+# ---------------------------------------------------------------------------
+
+def emit_boss_chr(out_dir: Path) -> int:
+    """Emit atlas/boss_chr.{c,h}. Returns per-bank byte count (2048).
+
+    Three NES UWSPBoss banks (1257/3468/9) covering all 9 UW levels per
+    z_03.asm:24-34 BossPatternBlockSrcAddrs. 64 NES tiles each, 1x sub-pal
+    (boss CRAM is loaded per-boss; sub-pal index flows through OAM attr).
+    Renderer offset rule: blob_off = 0 (single bank, no expansion).
+    """
+    blobs: List[Tuple[str, bytes]] = []
+    for sym, fname in BOSS_BANK_FILES:
+        path = PRG_ORIG_DIR / fname
+        if not path.exists():
+            raise SystemExit(f"PR-5: missing {path}")
+        blobs.append((sym, _build_boss_blob(path)))
+
+    guard = "ROOMROM_ATLAS_BOSS_CHR_H"
+    h_path = out_dir / "boss_chr.h"
+    c_path = out_dir / "boss_chr.c"
+
+    h_lines = [
+        BANNER,
+        "/* boss_chr: UW per-level transient boss banks (PR-5).",
+        " *",
+        " * Three NES UWSPBoss banks (1257/3468/9) covering all 9 UW levels",
+        " * per z_03.asm:24-34 BossPatternBlockSrcAddrs. Each bank holds 64",
+        " * NES sprite tiles, 1x sub-pal (boss CRAM is loaded per-boss via",
+        " * UpdatePalettes; sub-pal index flows through OAM attr).",
+        " *",
+        " * Per-bank Genesis bytes = 64 tiles * 32 = 2048.",
+        " *",
+        " * Consumed by RoomRom/src/atlas/level_chr_swap.c via parallel boss",
+        " * DMA state machine; resident at ROOMROM_BOSS_TILE_BASE.",
+        " */",
+        f"#ifndef {guard}",
+        f"#define {guard}",
+        "",
+        f"#define ROOMROM_ATLAS_BOSS_TILE_COUNT     {BOSS_NES_TILE_COUNT}u",
+        f"#define ROOMROM_ATLAS_BOSS_PER_BANK_BYTES {BOSS_BANK_BYTES}u",
+        "",
+    ]
+    for sym, _ in blobs:
+        h_lines.append(
+            f"extern const unsigned char roomrom_atlas_boss_{sym.lower()}"
+            f"[ROOMROM_ATLAS_BOSS_PER_BANK_BYTES];")
+    h_lines += ["", f"#endif /* {guard} */", ""]
+    write_lines(h_path, h_lines)
+
+    c_lines = [
+        BANNER,
+        '#include "atlas/boss_chr.h"',
+        "",
+    ]
+    for sym, blob in blobs:
+        c_lines += [
+            f"const unsigned char roomrom_atlas_boss_{sym.lower()}"
+            f"[ROOMROM_ATLAS_BOSS_PER_BANK_BYTES] = {{",
+        ]
+        c_lines.extend(format_blob(blob, "    "))
+        c_lines += ["};", ""]
+    write_lines(c_path, c_lines)
+
+    print(f"  boss_chr: 3 UWSPBoss banks x {BOSS_BANK_BYTES} bytes "
+          f"({BOSS_NES_TILE_COUNT} tiles each, 1x sub-pal)")
+    return BOSS_BANK_BYTES
+
+
+# ---------------------------------------------------------------------------
 # Main
 # ---------------------------------------------------------------------------
 
@@ -1496,10 +1605,10 @@ def phase_p3a(atlas: dict, item_manifest: dict, ts: TileSource) -> Dict[str, int
     cat_bytes["enemies"] = n
     print(f"  enemies_chr: {n} bytes per bank (PR-4b)")
 
-    # bosses_chr — TODO stub
-    n = emit_stub_category("bosses", atlas["categories"]["bosses"], OUT_DIR)
+    # bosses_chr — PR-5 real banks (3 UWSPBoss banks, 1x sub-pal)
+    n = emit_boss_chr(OUT_DIR)
     cat_bytes["bosses"] = n
-    print(f"  bosses_chr: stub (0 bytes, Phase 4)")
+    print(f"  bosses_chr: {n} bytes per bank (PR-5)")
 
     # bg_overworld_chr + bg_underworld_chr — BG handled by other modules
     emit_bg_chr_stubs(atlas, OUT_DIR)

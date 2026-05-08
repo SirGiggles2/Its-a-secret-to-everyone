@@ -150,6 +150,8 @@ ROOMROM_C_SOURCES = [
     ("RoomRom/src/atlas/level_chr_swap.c", "atlas_level_chr_swap.o"),
     # PR-4b: UWSP enemy CHR banks (3 banks, 4x sub-pal expanded).
     ("RoomRom/src/atlas/enemy_chr.c", "atlas_enemy_chr.o"),
+    # PR-5: UWSP boss CHR banks (3 banks, 1x sub-pal, SCENE_OBJ-shared).
+    ("RoomRom/src/atlas/boss_chr.c", "atlas_boss_chr.o"),
     ("data/rooms/overworld.c", "overworld.o"),
     ("data/chr/overworld_bg.c", "overworld_bg.o"),
     ("data/rooms/dungeons.c", "dungeons.o"),

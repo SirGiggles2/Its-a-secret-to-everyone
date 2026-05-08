@@ -440,65 +440,65 @@ const roomrom_vram_contract_t roomrom_vram_contract_uw_l9_enemies = {
 };
 
 const roomrom_vram_contract_t roomrom_vram_contract_uw_l1_bosses = {
-    /* tile_base  */ (ROOMROM_SPR_TILE_BASE + 44u),
-    /* tile_count */ 0u,
+    /* tile_base  */ ROOMROM_BOSS_TILE_BASE,
+    /* tile_count */ 64u,
     /* blob_offset */ 0u,
-    /* blob_bytes  */ 0u,
+    /* blob_bytes  */ 2048u,
 };
 
 const roomrom_vram_contract_t roomrom_vram_contract_uw_l2_bosses = {
-    /* tile_base  */ (ROOMROM_SPR_TILE_BASE + 44u),
-    /* tile_count */ 0u,
+    /* tile_base  */ ROOMROM_BOSS_TILE_BASE,
+    /* tile_count */ 64u,
     /* blob_offset */ 0u,
-    /* blob_bytes  */ 0u,
+    /* blob_bytes  */ 2048u,
 };
 
 const roomrom_vram_contract_t roomrom_vram_contract_uw_l3_bosses = {
-    /* tile_base  */ (ROOMROM_SPR_TILE_BASE + 44u),
-    /* tile_count */ 0u,
+    /* tile_base  */ ROOMROM_BOSS_TILE_BASE,
+    /* tile_count */ 64u,
     /* blob_offset */ 0u,
-    /* blob_bytes  */ 0u,
+    /* blob_bytes  */ 2048u,
 };
 
 const roomrom_vram_contract_t roomrom_vram_contract_uw_l4_bosses = {
-    /* tile_base  */ (ROOMROM_SPR_TILE_BASE + 44u),
-    /* tile_count */ 0u,
+    /* tile_base  */ ROOMROM_BOSS_TILE_BASE,
+    /* tile_count */ 64u,
     /* blob_offset */ 0u,
-    /* blob_bytes  */ 0u,
+    /* blob_bytes  */ 2048u,
 };
 
 const roomrom_vram_contract_t roomrom_vram_contract_uw_l5_bosses = {
-    /* tile_base  */ (ROOMROM_SPR_TILE_BASE + 44u),
-    /* tile_count */ 0u,
+    /* tile_base  */ ROOMROM_BOSS_TILE_BASE,
+    /* tile_count */ 64u,
     /* blob_offset */ 0u,
-    /* blob_bytes  */ 0u,
+    /* blob_bytes  */ 2048u,
 };
 
 const roomrom_vram_contract_t roomrom_vram_contract_uw_l6_bosses = {
-    /* tile_base  */ (ROOMROM_SPR_TILE_BASE + 44u),
-    /* tile_count */ 0u,
+    /* tile_base  */ ROOMROM_BOSS_TILE_BASE,
+    /* tile_count */ 64u,
     /* blob_offset */ 0u,
-    /* blob_bytes  */ 0u,
+    /* blob_bytes  */ 2048u,
 };
 
 const roomrom_vram_contract_t roomrom_vram_contract_uw_l7_bosses = {
-    /* tile_base  */ (ROOMROM_SPR_TILE_BASE + 44u),
-    /* tile_count */ 0u,
+    /* tile_base  */ ROOMROM_BOSS_TILE_BASE,
+    /* tile_count */ 64u,
     /* blob_offset */ 0u,
-    /* blob_bytes  */ 0u,
+    /* blob_bytes  */ 2048u,
 };
 
 const roomrom_vram_contract_t roomrom_vram_contract_uw_l8_bosses = {
-    /* tile_base  */ (ROOMROM_SPR_TILE_BASE + 44u),
-    /* tile_count */ 0u,
+    /* tile_base  */ ROOMROM_BOSS_TILE_BASE,
+    /* tile_count */ 64u,
     /* blob_offset */ 0u,
-    /* blob_bytes  */ 0u,
+    /* blob_bytes  */ 2048u,
 };
 
 const roomrom_vram_contract_t roomrom_vram_contract_uw_l9_bosses = {
-    /* tile_base  */ (ROOMROM_SPR_TILE_BASE + 44u),
-    /* tile_count */ 0u,
+    /* tile_base  */ ROOMROM_BOSS_TILE_BASE,
+    /* tile_count */ 64u,
     /* blob_offset */ 0u,
-    /* blob_bytes  */ 0u,
+    /* blob_bytes  */ 2048u,
 };
 

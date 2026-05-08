@@ -1,0 +1,18 @@
+{
+  "ram_domain": "M68K BUS",
+  "vram_domain": "VRAM",
+  "domains": "Z80 RAM|MD CART|SRAM|CRAM|VSRAM|VRAM|M68K BUS|Waterbox PageData",
+  "sentinel_seen": true,
+  "writeback_test": "0xAB->0x00",
+  "boss_tile_base": 1069,
+  "boss_tile_count": 64,
+  "boss_vram_addr": "0x85A0",
+  "fired_l1": true,
+  "fired_l3": true,
+  "snap_bytes": 2048,
+  "l1_hash": "0x35EA0BAF",
+  "l3_hash": "0xE1B3F2B8",
+  "diff_byte_count": 1615,
+  "l1_first16": "30000000030000000033022200333233","l3_first16": "00000000000000000000000000000000",
+  "pass": true
+}

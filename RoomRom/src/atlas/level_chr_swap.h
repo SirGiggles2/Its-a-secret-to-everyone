@@ -64,4 +64,27 @@ unsigned char level_chr_swap_is_ready(void);
 unsigned long level_chr_swap_total_bytes_dma(void);
 unsigned short level_chr_swap_request_count(void);
 
+/* PR-5 CHR-BOSSES: parallel state machine sharing the SCENE_OBJ slot
+ * (NES parity per z_03.asm:91 -- boss replaces enemies, no boss-room
+ * enemies). Per-level boss bank dispatch:
+ *   L1, L2, L5, L7 -> UWSPBoss1257
+ *   L3, L4, L6, L8 -> UWSPBoss3468
+ *   L9             -> UWSPBoss9
+ * On boss-room entry: level_chr_boss_request(scene). On boss-room exit
+ * (or warp out of UW level): level_chr_swap_request(scene) re-uploads
+ * enemies bank.
+ *
+ * Re-uses LEVEL_CHR_SWAP_state_t from above; behavior identical to
+ * enemy state machine but DMA source is the boss blob and tile_count
+ * is 64 instead of 136 (BLANK still clears the full slot per Codex P0-2,
+ * preventing stale-tail aliasing on the smaller bank). */
+void level_chr_boss_request(roomrom_scene_id_t scene);
+void level_chr_boss_tick(void);
+
+level_chr_swap_state_t level_chr_boss_state(void);
+roomrom_scene_id_t     level_chr_boss_active_scene(void);
+unsigned char          level_chr_boss_is_ready(void);
+unsigned long          level_chr_boss_total_bytes_dma(void);
+unsigned short         level_chr_boss_request_count(void);
+
 #endif /* ROOMROM_LEVEL_CHR_SWAP_H */

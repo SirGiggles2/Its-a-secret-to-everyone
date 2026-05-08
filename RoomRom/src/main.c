@@ -1210,8 +1210,27 @@ void roomrom_debug_tick(void)
         roomrom_palette_tick_frame(s_frame_counter);
         /* PR-4a: advance scene-bank DMA state machine. Runs after
          * SYS_doVBlankProcess so the SGDK DMA queue is drained before
-         * we issue our own ops. */
+         * we issue our own ops. PR-5: boss state machine ticks in
+         * parallel; the two share SCENE_OBJ slot but are naturally
+         * serialized by request ordering (boss requested only on
+         * boss-room entry, after enemy DMA has reached READY). */
+        /* PR-5 probe trigger: probe pokes a scene_id (1 byte) into
+         * $FF73FE; we enqueue a boss request and clear the cell. The
+         * matching ack byte at $FF73FF tracks how many requests we have
+         * fired (probe can read it to know the request landed). Used
+         * solely by tools/combined_debug/probe_boss_bank_dispatch.lua. */
+        {
+            volatile unsigned char *trig = (volatile unsigned char *)0x00FF73FEUL;
+            volatile unsigned char *ack  = (volatile unsigned char *)0x00FF73FFUL;
+            unsigned char req = *trig;
+            if (req != 0u) {
+                level_chr_boss_request((roomrom_scene_id_t)req);
+                *trig = 0u;
+                *ack = (unsigned char)(*ack + 1u);
+            }
+        }
         level_chr_swap_tick();
+        level_chr_boss_tick();
         if (s_scene == SCENE_UW) uw_door_state_tick();
 
         /* S6.6 transition state machine. */
