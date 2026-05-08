@@ -378,65 +378,65 @@ const roomrom_vram_contract_t roomrom_vram_contract_uw_l9_bg_uw = {
 
 const roomrom_vram_contract_t roomrom_vram_contract_uw_l1_enemies = {
     /* tile_base  */ (ROOMROM_SPR_TILE_BASE + 44u),
-    /* tile_count */ 0u,
+    /* tile_count */ 136u,
     /* blob_offset */ 0u,
-    /* blob_bytes  */ 0u,
+    /* blob_bytes  */ 4352u,
 };
 
 const roomrom_vram_contract_t roomrom_vram_contract_uw_l2_enemies = {
     /* tile_base  */ (ROOMROM_SPR_TILE_BASE + 44u),
-    /* tile_count */ 0u,
+    /* tile_count */ 136u,
     /* blob_offset */ 0u,
-    /* blob_bytes  */ 0u,
+    /* blob_bytes  */ 4352u,
 };
 
 const roomrom_vram_contract_t roomrom_vram_contract_uw_l3_enemies = {
     /* tile_base  */ (ROOMROM_SPR_TILE_BASE + 44u),
-    /* tile_count */ 0u,
+    /* tile_count */ 136u,
     /* blob_offset */ 0u,
-    /* blob_bytes  */ 0u,
+    /* blob_bytes  */ 4352u,
 };
 
 const roomrom_vram_contract_t roomrom_vram_contract_uw_l4_enemies = {
     /* tile_base  */ (ROOMROM_SPR_TILE_BASE + 44u),
-    /* tile_count */ 0u,
+    /* tile_count */ 136u,
     /* blob_offset */ 0u,
-    /* blob_bytes  */ 0u,
+    /* blob_bytes  */ 4352u,
 };
 
 const roomrom_vram_contract_t roomrom_vram_contract_uw_l5_enemies = {
     /* tile_base  */ (ROOMROM_SPR_TILE_BASE + 44u),
-    /* tile_count */ 0u,
+    /* tile_count */ 136u,
     /* blob_offset */ 0u,
-    /* blob_bytes  */ 0u,
+    /* blob_bytes  */ 4352u,
 };
 
 const roomrom_vram_contract_t roomrom_vram_contract_uw_l6_enemies = {
     /* tile_base  */ (ROOMROM_SPR_TILE_BASE + 44u),
-    /* tile_count */ 0u,
+    /* tile_count */ 136u,
     /* blob_offset */ 0u,
-    /* blob_bytes  */ 0u,
+    /* blob_bytes  */ 4352u,
 };
 
 const roomrom_vram_contract_t roomrom_vram_contract_uw_l7_enemies = {
     /* tile_base  */ (ROOMROM_SPR_TILE_BASE + 44u),
-    /* tile_count */ 0u,
+    /* tile_count */ 136u,
     /* blob_offset */ 0u,
-    /* blob_bytes  */ 0u,
+    /* blob_bytes  */ 4352u,
 };
 
 const roomrom_vram_contract_t roomrom_vram_contract_uw_l8_enemies = {
     /* tile_base  */ (ROOMROM_SPR_TILE_BASE + 44u),
-    /* tile_count */ 0u,
+    /* tile_count */ 136u,
     /* blob_offset */ 0u,
-    /* blob_bytes  */ 0u,
+    /* blob_bytes  */ 4352u,
 };
 
 const roomrom_vram_contract_t roomrom_vram_contract_uw_l9_enemies = {
     /* tile_base  */ (ROOMROM_SPR_TILE_BASE + 44u),
-    /* tile_count */ 0u,
+    /* tile_count */ 136u,
     /* blob_offset */ 0u,
-    /* blob_bytes  */ 0u,
+    /* blob_bytes  */ 4352u,
 };
 
 const roomrom_vram_contract_t roomrom_vram_contract_uw_l1_bosses = {

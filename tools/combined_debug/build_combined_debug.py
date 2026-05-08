@@ -148,6 +148,8 @@ ROOMROM_C_SOURCES = [
     # PR-4a: scene-bank scaffolding + DMA state machine.
     ("RoomRom/src/atlas/roomrom_scene_vram_contracts.c", "atlas_scene_vram_contracts.o"),
     ("RoomRom/src/atlas/level_chr_swap.c", "atlas_level_chr_swap.o"),
+    # PR-4b: UWSP enemy CHR banks (3 banks, 4x sub-pal expanded).
+    ("RoomRom/src/atlas/enemy_chr.c", "atlas_enemy_chr.o"),
     ("data/rooms/overworld.c", "overworld.o"),
     ("data/chr/overworld_bg.c", "overworld_bg.o"),
     ("data/rooms/dungeons.c", "dungeons.o"),

@@ -534,7 +534,8 @@ SCENE_CONTRACTS = [
     (f"ROOMROM_SCENE_UW_L{n}", "bg_uw",   "ROOMROM_BG_TILE_BASE_PAL(0)",       0)  # BG handled by bg_palette modules
     for n in range(1, 10)
 ] + [
-    (f"ROOMROM_SCENE_UW_L{n}", "enemies", "(ROOMROM_SPR_TILE_BASE + 44u)",     0)  # Phase 4 wiring
+    # PR-4b: 34 NES tiles x 4 sub-pal = 136 Genesis tiles per UWSP bank.
+    (f"ROOMROM_SCENE_UW_L{n}", "enemies", "(ROOMROM_SPR_TILE_BASE + 44u)",   136)
     for n in range(1, 10)
 ] + [
     (f"ROOMROM_SCENE_UW_L{n}", "bosses",  "(ROOMROM_SPR_TILE_BASE + 44u)",     0)  # Phase 4 wiring
@@ -612,7 +613,9 @@ def write_scene_vram_contracts_source(path: Path,
             continue
         seen.add(var)
         prefix = f"ROOMROM_ATLAS_{cat.upper()}"
-        blob_bytes = cat_bytes.get(cat, 0)
+        # tile_count == 0 → category not resident for this scene; force
+        # blob_bytes 0 so DMA state machine treats it as empty contract.
+        blob_bytes = cat_bytes.get(cat, 0) if tile_count > 0 else 0
         lines += [
             f"const roomrom_vram_contract_t {var} = {{",
             f"    /* tile_base  */ {tile_base_expr},",
@@ -1237,6 +1240,129 @@ def emit_items_chr_x4(item_manifest: dict, out_dir: Path) -> int:
 
 
 # ---------------------------------------------------------------------------
+# PR-4b: enemy_chr_x4 — UWSP transient banks (per-level swap)
+# ---------------------------------------------------------------------------
+# UW enemy banks live in PatternBlockUWSP{127,358,469}.bin. Each bank is
+# 544 NES bytes = 34 NES tiles. Levels share banks per z_03.asm:67-89:
+#   UWSP127 → L1, L2, L7
+#   UWSP358 → L3, L5, L8
+#   UWSP469 → L4, L6, L9
+#
+# Each bank is converted NES 2bpp → Genesis 4bpp (32 B/tile = 1088 B per
+# bank), then 4x sub-pal expansion (Codex P0-2: ObjAnimAttrHeap entries
+# use sub-pal 0..3, so VRAM must hold all four pre-biased copies).
+#
+# Per-bank Genesis bytes = 34 * 32 * 4 = 4352 (136 tiles).
+
+ENEMY_X4_TILE_COUNT_PER_PAL = 34   # NES tiles per UWSP bank
+ENEMY_X4_TILES = ENEMY_X4_TILE_COUNT_PER_PAL * 4   # 136 Genesis tiles after expansion
+ENEMY_X4_PER_BANK_BYTES = ENEMY_X4_TILES * BYTES_PER_GEN_TILE   # 4352
+
+ENEMY_BANK_FILES = [
+    ("UWSP127", "PatternBlockUWSP127.bin"),
+    ("UWSP358", "PatternBlockUWSP358.bin"),
+    ("UWSP469", "PatternBlockUWSP469.bin"),
+]
+
+
+def _build_enemy_bank_blob(bank_path: Path) -> bytes:
+    """Read an UWSP bank file, convert each NES tile to Genesis, then expand
+    4x sub-pal. Returns 4352-byte blob laid out pal0||pal1||pal2||pal3 in
+    32-byte tile rows (matches items_chr_x4 convention)."""
+    raw = bank_path.read_bytes()
+    if len(raw) != ENEMY_X4_TILE_COUNT_PER_PAL * BYTES_PER_NES_TILE:
+        raise SystemExit(
+            f"PR-4b: {bank_path.name} unexpected size "
+            f"{len(raw)} (want {ENEMY_X4_TILE_COUNT_PER_PAL * BYTES_PER_NES_TILE})")
+
+    # Step 1: NES → Genesis 4bpp (1088 bytes = 34 tiles).
+    base = bytearray()
+    for tid in range(ENEMY_X4_TILE_COUNT_PER_PAL):
+        nes_tile = raw[tid * BYTES_PER_NES_TILE : (tid + 1) * BYTES_PER_NES_TILE]
+        base.extend(nes_tile_to_genesis(nes_tile))
+
+    # Step 2: 4x sub-pal expansion (per row, like _expand_row_x4 but at
+    # tile-block granularity since the layout is 4 contiguous tile blocks).
+    out = bytearray()
+    for sub_pal in range(4):
+        out.extend(_bias_byte(b, sub_pal) for b in base)
+    if len(out) != ENEMY_X4_PER_BANK_BYTES:
+        raise SystemExit(f"PR-4b: enemy bank size wrong: {len(out)}")
+    return bytes(out)
+
+
+def emit_enemy_chr_x4(out_dir: Path) -> int:
+    """Emit atlas/enemy_chr.{c,h}. Returns per-bank byte count (4352).
+
+    Three constant arrays (UWSP127/358/469), each ENEMY_X4_PER_BANK_BYTES.
+    Layout matches items_chr_x4: pal0_bytes||pal1_bytes||pal2_bytes||pal3_bytes.
+    Renderer offset rule: blob_off = per_pal_bytes * sub_pal.
+    """
+    blobs: List[Tuple[str, bytes]] = []
+    for sym, fname in ENEMY_BANK_FILES:
+        path = PRG_ORIG_DIR / fname
+        if not path.exists():
+            raise SystemExit(f"PR-4b: missing {path}")
+        blobs.append((sym, _build_enemy_bank_blob(path)))
+
+    per_bank = ENEMY_X4_PER_BANK_BYTES
+    per_pal = per_bank // 4
+
+    guard = "ROOMROM_ATLAS_ENEMY_CHR_H"
+    h_path = out_dir / "enemy_chr.h"
+    c_path = out_dir / "enemy_chr.c"
+
+    h_lines = [
+        BANNER,
+        "/* enemy_chr: UW per-level transient enemy banks (PR-4b).",
+        " *",
+        " * Three NES UWSP banks (127/358/469) covering all 9 UW levels per",
+        " * z_03.asm:67-89 dispatch. Each bank holds 34 NES sprite tiles,",
+        " * 4x sub-pal expanded for Genesis VDP (sub-pal 0..3 contiguous).",
+        " *",
+        " * Byte layout per bank: pal0||pal1||pal2||pal3, 32-byte tile rows.",
+        " * Per-pal stride = 1088 bytes (34 Genesis tiles).",
+        " * Pixel bias rule: out = (in==0) ? 0 : (sub_pal*4 + in).",
+        " *",
+        " * Consumed by RoomRom/src/atlas/level_chr_swap.c via DMA state",
+        " * machine; resident at SCENE_OBJ tile_base = (SPR_BASE + 44).",
+        " */",
+        f"#ifndef {guard}",
+        f"#define {guard}",
+        "",
+        f"#define ROOMROM_ATLAS_ENEMY_TILE_COUNT_PER_PAL {ENEMY_X4_TILE_COUNT_PER_PAL}u",
+        f"#define ROOMROM_ATLAS_ENEMY_TILE_COUNT         {ENEMY_X4_TILES}u",
+        f"#define ROOMROM_ATLAS_ENEMY_PER_PAL_BYTES      {per_pal}u",
+        f"#define ROOMROM_ATLAS_ENEMY_PER_BANK_BYTES     {per_bank}u",
+        "",
+    ]
+    for sym, _ in blobs:
+        h_lines.append(
+            f"extern const unsigned char roomrom_atlas_enemy_{sym.lower()}"
+            f"[ROOMROM_ATLAS_ENEMY_PER_BANK_BYTES];")
+    h_lines += ["", f"#endif /* {guard} */", ""]
+    write_lines(h_path, h_lines)
+
+    c_lines = [
+        BANNER,
+        '#include "atlas/enemy_chr.h"',
+        "",
+    ]
+    for sym, blob in blobs:
+        c_lines += [
+            f"const unsigned char roomrom_atlas_enemy_{sym.lower()}"
+            f"[ROOMROM_ATLAS_ENEMY_PER_BANK_BYTES] = {{",
+        ]
+        c_lines.extend(format_blob(blob, "    "))
+        c_lines += ["};", ""]
+    write_lines(c_path, c_lines)
+
+    print(f"  enemy_chr: 3 banks x {per_bank} bytes "
+          f"({ENEMY_X4_TILES} tiles each, 4x sub-pal expanded)")
+    return per_bank
+
+
+# ---------------------------------------------------------------------------
 # Main
 # ---------------------------------------------------------------------------
 
@@ -1318,10 +1444,10 @@ def phase_p3a(atlas: dict, item_manifest: dict, ts: TileSource) -> Dict[str, int
     cat_bytes["fileselect"] = n
     print(f"  fileselect_chr: {n} bytes blob")
 
-    # enemies_chr — TODO stub
-    n = emit_stub_category("enemies", atlas["categories"]["enemies"], OUT_DIR)
+    # enemies_chr — PR-4b real banks (3 UWSP banks, 4x sub-pal expanded)
+    n = emit_enemy_chr_x4(OUT_DIR)
     cat_bytes["enemies"] = n
-    print(f"  enemies_chr: stub (0 bytes, Phase 4)")
+    print(f"  enemies_chr: {n} bytes per bank (PR-4b)")
 
     # bosses_chr — TODO stub
     n = emit_stub_category("bosses", atlas["categories"]["bosses"], OUT_DIR)

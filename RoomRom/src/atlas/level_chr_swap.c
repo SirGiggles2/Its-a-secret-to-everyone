@@ -12,10 +12,12 @@
  */
 #include <genesis.h>
 #include "level_chr_swap.h"
+#include "enemy_chr.h"
 #include "../roomrom_vram_map.h"
 
-/* Per-scene contract resolver. PR-4a wires the UW levels' enemy
- * contracts only; OW NPC / cave-dweller hooks land in PR-4b. */
+/* Per-scene contract resolver. PR-4b wires UW enemy banks via
+ * PatternBlockUWSP{127,358,469}. OW NPC / cave-dweller hooks land
+ * in PR-4c. */
 static const roomrom_vram_contract_t *contract_for_scene(roomrom_scene_id_t s)
 {
     switch (s) {
@@ -33,6 +35,31 @@ static const roomrom_vram_contract_t *contract_for_scene(roomrom_scene_id_t s)
     }
 }
 
+/* Per-scene CHR blob resolver. NES UW levels share three banks per
+ * z_03.asm:67-89 dispatch:
+ *   UWSP127 → L1, L2, L7
+ *   UWSP358 → L3, L5, L8
+ *   UWSP469 → L4, L6, L9 */
+static const unsigned char *enemy_blob_for_scene(roomrom_scene_id_t s)
+{
+    switch (s) {
+    case ROOMROM_SCENE_UW_L1:
+    case ROOMROM_SCENE_UW_L2:
+    case ROOMROM_SCENE_UW_L7:
+        return roomrom_atlas_enemy_uwsp127;
+    case ROOMROM_SCENE_UW_L3:
+    case ROOMROM_SCENE_UW_L5:
+    case ROOMROM_SCENE_UW_L8:
+        return roomrom_atlas_enemy_uwsp358;
+    case ROOMROM_SCENE_UW_L4:
+    case ROOMROM_SCENE_UW_L6:
+    case ROOMROM_SCENE_UW_L9:
+        return roomrom_atlas_enemy_uwsp469;
+    default:
+        return 0;
+    }
+}
+
 static level_chr_swap_state_t s_state = LEVEL_CHR_SWAP_IDLE;
 static roomrom_scene_id_t      s_target = ROOMROM_SCENE_BOOT;
 static roomrom_scene_id_t      s_active = ROOMROM_SCENE_BOOT;
@@ -40,15 +67,6 @@ static const roomrom_vram_contract_t *s_target_contract = 0;
 
 static unsigned long  s_total_bytes_dma = 0u;
 static unsigned short s_request_count = 0u;
-
-/* Half-bank split: PR-4 spec splits ENEMY+BOSS DMA across two VBlanks
- * (NTSC budget ~7790 B; ENEMY can hit 8 KB). Half = ceil(blob_bytes/2)
- * rounded to a 32-byte tile boundary. */
-static unsigned short half_bytes(unsigned short total)
-{
-    unsigned short half = (unsigned short)((total + 31u) >> 1);
-    return (unsigned short)((half + 31u) & (unsigned short)~31u);
-}
 
 void level_chr_swap_init(void)
 {
@@ -84,35 +102,55 @@ void level_chr_swap_tick(void)
 
     case LEVEL_CHR_SWAP_REQUESTED: {
         if (c == 0 || c->tile_count == 0u || c->blob_bytes == 0u) {
-            /* Empty contract: PR-4a state. Collapse to READY in one
-             * tick — no DMA work to do. */
+            /* Empty contract: collapse to READY in one tick. */
             s_active = s_target;
             s_state = LEVEL_CHR_SWAP_READY;
             return;
         }
-        /* PR-4b: BLANK = zero-fill the SCENE_OBJ tile range. Wired in
-         * 4b once we ship a zero buffer + DMA call. For 4a we still
-         * advance state so the probe can observe transitions. */
         s_state = LEVEL_CHR_SWAP_BLANK;
         return;
     }
 
     case LEVEL_CHR_SWAP_BLANK: {
-        /* PR-4b: first half of CHR DMA. */
+        /* Zero-fill the SCENE_OBJ tile range. Codex P0-2: prevents
+         * stale sub-pal aliases from showing during the half-DMA gap
+         * when bank shrinks. CPU fill (no DMA queue cost). */
+        if (c != 0 && c->tile_count > 0u) {
+            VDP_fillTileData(0u, c->tile_base, c->tile_count, FALSE);
+            s_total_bytes_dma += (unsigned long)c->tile_count * 32ul;
+        }
         s_state = LEVEL_CHR_SWAP_DMA_SCENE_A;
         return;
     }
 
     case LEVEL_CHR_SWAP_DMA_SCENE_A: {
-        /* PR-4b: second half of CHR DMA. */
-        if (c != 0) {
-            (void)half_bytes(c->blob_bytes); /* sized; impl in PR-4b. */
+        const unsigned char *blob = enemy_blob_for_scene(s_target);
+        if (c != 0 && blob != 0 && c->tile_count > 0u) {
+            unsigned short half_a = (unsigned short)(c->tile_count >> 1);
+            if (half_a > 0u) {
+                VDP_loadTileData((const u32 *)(blob + c->blob_offset),
+                                 c->tile_base, half_a, TRUE);
+                s_total_bytes_dma += (unsigned long)half_a * 32ul;
+            }
         }
         s_state = LEVEL_CHR_SWAP_DMA_SCENE_B;
         return;
     }
 
     case LEVEL_CHR_SWAP_DMA_SCENE_B: {
+        const unsigned char *blob = enemy_blob_for_scene(s_target);
+        if (c != 0 && blob != 0 && c->tile_count > 0u) {
+            unsigned short half_a = (unsigned short)(c->tile_count >> 1);
+            unsigned short half_b = (unsigned short)(c->tile_count - half_a);
+            if (half_b > 0u) {
+                unsigned long off = (unsigned long)c->blob_offset
+                                  + (unsigned long)half_a * 32ul;
+                VDP_loadTileData((const u32 *)(blob + off),
+                                 (unsigned short)(c->tile_base + half_a),
+                                 half_b, TRUE);
+                s_total_bytes_dma += (unsigned long)half_b * 32ul;
+            }
+        }
         s_active = s_target;
         s_state = LEVEL_CHR_SWAP_READY;
         return;
