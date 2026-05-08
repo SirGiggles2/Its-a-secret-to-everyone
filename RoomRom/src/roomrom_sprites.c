@@ -457,10 +457,15 @@ void roomrom_sprites_set_boomerang(short x, short y,
     unsigned short tile   = (unsigned short)(ROOMROM_ITEM_TILE_BASE_PAL(sub_pal)
                                              + ROOMROM_ITEM_TILE_BOOMERANG
                                              + (unsigned short)frame_n * 2u);
+    /* NES Z1 sprites in gameplay run with PPUCTRL bit 5 = 1 (8x16 mode).
+     * Live BizHawk capture (probe_nes_throw.lua, frame 280) confirms tile
+     * $36+$37 form one 8x16 OAM entry: $36 = upper 8x8 (rows 4-7 of cell),
+     * $37 = lower 8x8 (rows 0-3). Atlas idx 6/7 are adjacent in items_chr_x4
+     * so SPRITE_SIZE(1,2) consumes both via column-major fetch. */
     VDP_setSpriteFull(3,
                       (s16)x,
                       (s16)y,
-                      SPRITE_SIZE(1, 1),
+                      SPRITE_SIZE(1, 2),
                       TILE_ATTR_FULL(PAL1,0, vflip, hflip, tile),
                       4);
     VDP_updateSprites(5, DMA);
@@ -471,7 +476,7 @@ void roomrom_sprites_clear_boomerang(void)
     VDP_setSpriteFull(3,
                       (s16)-32,
                       (s16)-32,
-                      SPRITE_SIZE(1, 1),
+                      SPRITE_SIZE(1, 2),
                       TILE_ATTR_FULL(PAL1,0, 0, 0, BOOMERANG_VRAM_TILE),
                       4);
     VDP_updateSprites(5, DMA);
