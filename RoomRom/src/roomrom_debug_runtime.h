@@ -128,7 +128,13 @@ unsigned char roomrom_debug_warp_unsupported_count(void);
  *   109  1     s_item_taken[current_room]
  *   110  1     s_room_visited_count (5.10b deferral; slice-1 = 0)
  *   111  1     s_triforce_pickup_active duplicate (probe convenience)
- *   112..119  8 reserved
+ *
+ * PR-4a extension (offsets 112..119, Task 5.9 reserved bytes):
+ *   112  1     level_chr_swap_state (0=IDLE,1=REQUESTED,2=BLANK,
+ *                                    3=DMA_SCENE_A,4=DMA_SCENE_B,5=READY)
+ *   113  1     level_chr_swap_active_scene (roomrom_scene_id_t)
+ *   114  2     level_chr_swap_request_count (u16, BE)
+ *   116  4     level_chr_swap_total_bytes_dma (u32, BE)
  */
 #define ROOMROM_DEBUG_STATE_MIRROR_BASE  0x00FF7200UL
 #define ROOMROM_DEBUG_STATE_MIRROR_BYTES 120u

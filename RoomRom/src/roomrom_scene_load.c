@@ -1,6 +1,7 @@
 #include <genesis.h>
 #include "roomrom_scene_load.h"
 #include "roomrom_sprites.h"
+#include "atlas/level_chr_swap.h"
 /* roomrom_bg_palette.h included for future per-room BG palette loads;
  * not called at scene-load granularity yet (BG palette is per-room). */
 #include "roomrom_bg_palette.h"
@@ -9,6 +10,10 @@ void roomrom_scene_load(roomrom_scene_id_t scene_id, unsigned char variant)
 {
     /* Variant flows through to each category's redux flag. */
     roomrom_sprites_set_redux(variant);
+
+    /* PR-4a: enqueue scene-bank DMA. Empty contracts (PR-4a default)
+     * collapse REQUESTED → READY in one tick. PR-4b populates content. */
+    level_chr_swap_request(scene_id);
 
     switch (scene_id) {
     case ROOMROM_SCENE_OVERWORLD:

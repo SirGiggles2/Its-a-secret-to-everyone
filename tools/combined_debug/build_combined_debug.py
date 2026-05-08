@@ -145,6 +145,9 @@ ROOMROM_C_SOURCES = [
     ("RoomRom/src/roomrom_palette_tick.c", "roomrom_palette_tick.o"),
     ("RoomRom/src/expanded_bg_chr.c", "expanded_bg_chr.o"),
     ("RoomRom/src/atlas/items_chr_x4.c", "atlas_items_chr_x4.o"),
+    # PR-4a: scene-bank scaffolding + DMA state machine.
+    ("RoomRom/src/atlas/roomrom_scene_vram_contracts.c", "atlas_scene_vram_contracts.o"),
+    ("RoomRom/src/atlas/level_chr_swap.c", "atlas_level_chr_swap.o"),
     ("data/rooms/overworld.c", "overworld.o"),
     ("data/chr/overworld_bg.c", "overworld_bg.o"),
     ("data/rooms/dungeons.c", "dungeons.o"),

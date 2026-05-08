@@ -23,6 +23,7 @@
 #include "uw_item_room_meta.h"           /* Task 5.9: item-room manifest + pickup */
 #include "roomrom_candle_fire.h"         /* Task 5.8.1: candle fire projectile */
 #include "probes/metadata_probe.h"     /* Task 5.4: Gate D in-ROM probe */
+#include "atlas/level_chr_swap.h"        /* PR-4a: scene-bank DMA state machine */
 
 /* Boots to overworld room 0x77.
  *
@@ -726,8 +727,19 @@ void roomrom_debug_publish_state_mirror(void)
     p[109] = roomrom_uw_item_taken(s_room_id);
     p[110] = 0u;  /* visited count — slice-1 deferral */
     p[111] = roomrom_uw_triforce_pickup_active();
-    p[112] = 0u; p[113] = 0u; p[114] = 0u; p[115] = 0u;
-    p[116] = 0u; p[117] = 0u; p[118] = 0u; p[119] = 0u;
+    /* PR-4a CHR-TRANSIENT-SCENE state surface (probe-readable). */
+    {
+        unsigned short rc = level_chr_swap_request_count();
+        unsigned long  bd = level_chr_swap_total_bytes_dma();
+        p[112] = (unsigned char)level_chr_swap_state();
+        p[113] = (unsigned char)level_chr_swap_active_scene();
+        p[114] = (unsigned char)(rc >> 8);
+        p[115] = (unsigned char)(rc);
+        p[116] = (unsigned char)(bd >> 24);
+        p[117] = (unsigned char)(bd >> 16);
+        p[118] = (unsigned char)(bd >> 8);
+        p[119] = (unsigned char)(bd);
+    }
 
     /* Perf: heavy persistence + cache publishes (~2400 byte volatile
      * writes total) throttled to every 6 frames (10 Hz). Probes still
@@ -1135,6 +1147,9 @@ void roomrom_debug_enter(void)
 {
     s_joy_prev = 0u;
     init_video();
+    /* PR-4a: init scene-bank state machine BEFORE first scene_load so the
+     * first scene_load enqueues into a clean state. */
+    level_chr_swap_init();
     upload_scene_chr();
     {
         u32 blank[8] = {0,0,0,0,0,0,0,0};
@@ -1193,6 +1208,10 @@ void roomrom_debug_tick(void)
         SYS_doVBlankProcess();
         s_frame_counter++;
         roomrom_palette_tick_frame(s_frame_counter);
+        /* PR-4a: advance scene-bank DMA state machine. Runs after
+         * SYS_doVBlankProcess so the SGDK DMA queue is drained before
+         * we issue our own ops. */
+        level_chr_swap_tick();
         if (s_scene == SCENE_UW) uw_door_state_tick();
 
         /* S6.6 transition state machine. */

@@ -1,0 +1,15 @@
+{
+  "snapshots": [
+    {"name":"boot_t30","frame":30,"cd_state":0,"state":0,"state_name":"IDLE","scene":0,"scene_name":"BOOT","request_count":0,"total_bytes_dma":0,"room_id":0},
+    {"name":"pre_chord","frame":50,"cd_state":0,"state":0,"state_name":"IDLE","scene":0,"scene_name":"BOOT","request_count":0,"total_bytes_dma":0,"room_id":0},
+    {"name":"post_chord","frame":70,"cd_state":1,"state":0,"state_name":"IDLE","scene":0,"scene_name":"BOOT","request_count":0,"total_bytes_dma":0,"room_id":0},
+    {"name":"settle_t100","frame":100,"cd_state":1,"state":0,"state_name":"IDLE","scene":0,"scene_name":"BOOT","request_count":0,"total_bytes_dma":0,"room_id":0},
+    {"name":"steady_t150","frame":150,"cd_state":1,"state":5,"state_name":"READY","scene":4,"scene_name":"UW_L1","request_count":1,"total_bytes_dma":0,"room_id":115},
+    {"name":"pre_swap1","frame":199,"cd_state":1,"state":5,"state_name":"READY","scene":4,"scene_name":"UW_L1","request_count":1,"total_bytes_dma":0,"room_id":115},
+    {"name":"post_swap1","frame":205,"cd_state":1,"state":5,"state_name":"READY","scene":4,"scene_name":"UW_L1","request_count":1,"total_bytes_dma":0,"room_id":115},
+    {"name":"settle1_t215","frame":215,"cd_state":1,"state":5,"state_name":"READY","scene":4,"scene_name":"UW_L1","request_count":1,"total_bytes_dma":0,"room_id":115},
+    {"name":"post_swap2","frame":245,"cd_state":1,"state":5,"state_name":"READY","scene":4,"scene_name":"UW_L1","request_count":1,"total_bytes_dma":0,"room_id":115},
+    {"name":"post_swap3","frame":285,"cd_state":1,"state":5,"state_name":"READY","scene":4,"scene_name":"UW_L1","request_count":1,"total_bytes_dma":0,"room_id":115},
+    {"name":"steady_t320","frame":320,"cd_state":1,"state":5,"state_name":"READY","scene":4,"scene_name":"UW_L1","request_count":1,"total_bytes_dma":0,"room_id":115}
+  ]
+}
