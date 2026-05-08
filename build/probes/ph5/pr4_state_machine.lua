@@ -110,6 +110,40 @@ end
 
 client.screenshot(OUT_DIR .. "\\stable.png")
 
+-- PR-4b: dump VRAM tiles at SCENE_OBJ base = SPR_BASE + 44 = 1069.
+-- Enemies bank uploaded 4x sub-pal expanded: 136 tiles starting at 1069.
+-- Each tile = 32 Genesis bytes. Capture first tile (32 bytes) per sub-pal
+-- block to confirm non-zero content + sub-pal bias rule applied.
+local function vram_byte(addr)
+    return memory.read_u8(addr, "VRAM")
+end
+
+local function tile_hex(tile_idx)
+    local base = tile_idx * 32
+    local h = {}
+    for i = 0, 31 do
+        h[#h + 1] = string.format("%02X", vram_byte(base + i))
+    end
+    return table.concat(h)
+end
+
+-- Dump first tile of each sub-pal block within the SCENE_OBJ slot.
+-- pal0 = tile 1069, pal1 = 1069+34=1103, pal2 = 1137, pal3 = 1171.
+local SCENE_OBJ_BASE = 1069
+local PER_PAL_TILES  = 34
+local vram_dump = {
+    {name = "pal0_tile0", tile_idx = SCENE_OBJ_BASE + 0 * PER_PAL_TILES},
+    {name = "pal1_tile0", tile_idx = SCENE_OBJ_BASE + 1 * PER_PAL_TILES},
+    {name = "pal2_tile0", tile_idx = SCENE_OBJ_BASE + 2 * PER_PAL_TILES},
+    {name = "pal3_tile0", tile_idx = SCENE_OBJ_BASE + 3 * PER_PAL_TILES},
+    {name = "pal0_last",  tile_idx = SCENE_OBJ_BASE + 1 * PER_PAL_TILES - 1},
+}
+for _, e in ipairs(vram_dump) do
+    e.bytes = tile_hex(e.tile_idx)
+    print(string.format("[pr4] VRAM tile %4d (%-12s): %s",
+        e.tile_idx, e.name, e.bytes))
+end
+
 local rep = io.open(OUT_DIR .. "\\report.json", "w")
 if rep then
     rep:write("{\n  \"snapshots\": [\n")
@@ -123,6 +157,14 @@ if rep then
             s.scene, s.scene_name, s.request_count, s.total_bytes_dma,
             s.room_id,
             i == #snaps and "" or ","))
+    end
+    rep:write("  ],\n")
+    rep:write("  \"vram_dump\": [\n")
+    for i, e in ipairs(vram_dump) do
+        rep:write(string.format(
+            "    {\"name\":\"%s\",\"tile_idx\":%d,\"bytes\":\"%s\"}%s\n",
+            e.name, e.tile_idx, e.bytes,
+            i == #vram_dump and "" or ","))
     end
     rep:write("  ]\n}\n")
     rep:close()

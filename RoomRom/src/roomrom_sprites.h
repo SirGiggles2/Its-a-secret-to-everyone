@@ -27,7 +27,13 @@ typedef enum {
     LINK_FACE_RIGHT = 3
 } link_face_t;
 
-void roomrom_sprites_upload_chr(void);    /* one-shot at boot */
+void roomrom_sprites_upload_chr(void);    /* one-shot at boot (persistent + items) */
+/* PR-4 split: persistent CHR (common + Link walk/attack) covers tiles
+ * 1025..1310 — overlaps SCENE_OBJ at 1069..1204. Re-uploading on every
+ * scene change clobbers level_chr_swap output. Boot calls _persistent +
+ * _items; scene_load calls _items only. */
+void roomrom_sprites_upload_persistent_chr(void);
+void roomrom_sprites_upload_items_chr(void);
 void roomrom_sprites_load_palette(void);  /* call after every load_room() */
 void roomrom_sprites_spawn_link(short x, short y);
 void roomrom_sprites_set_link_pos(short x, short y);

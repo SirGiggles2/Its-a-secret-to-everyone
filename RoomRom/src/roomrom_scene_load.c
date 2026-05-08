@@ -26,10 +26,11 @@ void roomrom_scene_load(roomrom_scene_id_t scene_id, unsigned char variant)
     case ROOMROM_SCENE_UW_L7:
     case ROOMROM_SCENE_UW_L8:
     case ROOMROM_SCENE_UW_L9:
-        /* Active gameplay scenes: load Link sprites, items atlas (4x
-         * sub-pal), HUD. BG palette is per-room; loaded by the
-         * room-load path, not here. */
-        roomrom_sprites_upload_chr();
+        /* Active gameplay scenes: re-upload variant-dependent items
+         * atlas (4x sub-pal). Persistent CHR (common + Link walk/attack)
+         * stays at boot upload — re-uploading clobbers SCENE_OBJ region
+         * (1069..1204) populated by level_chr_swap. PR-4 fix. */
+        roomrom_sprites_upload_items_chr();
         break;
 
     case ROOMROM_SCENE_BOOT:

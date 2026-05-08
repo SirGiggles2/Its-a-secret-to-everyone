@@ -161,7 +161,7 @@ static void upload_pose(unsigned short vram_tile_base,
     }
 }
 
-void roomrom_sprites_upload_chr(void)
+void roomrom_sprites_upload_persistent_chr(void)
 {
     /* Phase 3: sprite bank is 1x (sub-pal 0 only). sprites_chr (OW
      * enemies) deferred -- not uploaded. Common gameplay sprite block
@@ -188,29 +188,36 @@ void roomrom_sprites_upload_chr(void)
                 &attack_poses[p]);
         }
     }
+}
 
+void roomrom_sprites_upload_items_chr(void)
+{
     /* FU3 (atlas pipeline): 4 sub-pal copies of the item atlas from the
      * atlas/items_chr_x4 blob (byte-identical to legacy expanded_sprite_chr
      * via gen_atlas.py FU2).  Blob layout: pal0_bytes||pal1_bytes||
      * pal2_bytes||pal3_bytes; per-pal stride =
      * ROOMROM_ATLAS_ITEMS_X4_PER_PAL_BYTES.
      *
-     * Link / sword body / common sprite tiles continue to upload to the
-     * 1x SPR bank above; only the item atlas gets the 4x treatment. */
-    {
-        unsigned short variant = s_item_chr_variant;
-        unsigned char  s;
-        for (s = 0; s < 4u; s++) {
-            unsigned short vram_tile = (unsigned short)ROOMROM_ITEM_TILE_BASE_PAL(s);
-            unsigned long  blob_off  = (unsigned long)(ROOMROM_ATLAS_ITEMS_X4_PER_PAL_BYTES)
-                                       * (unsigned long)s;
-            render_chr_upload(
-                (unsigned short)(vram_tile * 32u),
-                &roomrom_atlas_items_x4[variant][blob_off],
-                (unsigned short)ROOMROM_ATLAS_ITEMS_X4_PER_PAL_BYTES
-            );
-        }
+     * Items live at ROOMROM_ITEM_TILE_BASE (1337) — outside the SCENE_OBJ
+     * range (1069..1204), so safe to re-upload per scene_load. */
+    unsigned short variant = s_item_chr_variant;
+    unsigned char  s;
+    for (s = 0; s < 4u; s++) {
+        unsigned short vram_tile = (unsigned short)ROOMROM_ITEM_TILE_BASE_PAL(s);
+        unsigned long  blob_off  = (unsigned long)(ROOMROM_ATLAS_ITEMS_X4_PER_PAL_BYTES)
+                                   * (unsigned long)s;
+        render_chr_upload(
+            (unsigned short)(vram_tile * 32u),
+            &roomrom_atlas_items_x4[variant][blob_off],
+            (unsigned short)ROOMROM_ATLAS_ITEMS_X4_PER_PAL_BYTES
+        );
     }
+}
+
+void roomrom_sprites_upload_chr(void)
+{
+    roomrom_sprites_upload_persistent_chr();
+    roomrom_sprites_upload_items_chr();
 }
 
 void roomrom_sprites_load_palette(void)
