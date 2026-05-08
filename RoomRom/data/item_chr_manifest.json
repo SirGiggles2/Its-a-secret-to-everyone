@@ -269,11 +269,9 @@
       ],
       "tile_ids": [
         "0x7A",
-        "0x7B",
-        "0x7C",
-        "0x7D"
+        "0x7B"
       ],
-      "draw_rule": "wide_16x16_pair",
+      "draw_rule": "wide_16x16_mirrored_8x16_phase_cycle",
       "frame_index": 0,
       "frame_subpal": 0,
       "nes_dispatch_note": "Anim_ItemFrameTiles[$2B]=$7A, [$2C]=$7C (item slot $23, magic-rod projectile). Z_07 DrawSwordShotOrMagicShot @WriteMagicSprites (line 3492) sets Y=$23 -> Anim_WriteItemSprites. Both tiles >= $62 -> @Wide. Vertical frame uses $7A+$7C; horizontal frame uses $7C+$7E.",
