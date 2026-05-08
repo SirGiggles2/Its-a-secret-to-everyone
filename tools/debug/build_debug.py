@@ -142,6 +142,8 @@ ROOMROM_C_SOURCES = [
     ("RoomRom/src/roomrom_candle_fire.c", "roomrom_candle_fire.o"),
     ("RoomRom/src/roomrom_ow_palette.c", "roomrom_ow_palette.o"),
     ("src/state/palette_tick.c", "palette_tick.o"),
+    # Task 6.1: PlayerState[4] shape (Phase 13 multiplayer-ready by construction).
+    ("src/state/player_state.c", "player_state.o"),
     ("RoomRom/src/roomrom_palette_tick.c", "roomrom_palette_tick.o"),
     ("RoomRom/src/expanded_bg_chr.c", "expanded_bg_chr.o"),
     ("RoomRom/src/atlas/items_chr_x4.c", "atlas_items_chr_x4.o"),

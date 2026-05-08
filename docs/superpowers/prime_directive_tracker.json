@@ -1,14 +1,14 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-05-08T07:21:26.219745+00:00",
+  "generated_at": "2026-05-08T15:49:18.800891+00:00",
   "generated_by": "tools/audit/primedirective/prime_refresh.py",
   "plan": {
     "path": "docs/superpowers/plans/2026-05-02-title-roomrom-full-port-master-plan.md",
-    "sha256": "c6efac0d473399c93ec42141255aeb5b1227ba1e5c3087c0e6c55ffe2ba4a72f"
+    "sha256": "e100f0014d4d30cec790dfd6aa0e66ddee870f87f27e7911ac9cd91dfe5d64d4"
   },
   "active": {
-    "phase_id": "5",
-    "phase_name": "Dungeon Core",
+    "phase_id": "2",
+    "phase_name": "RoomRom Graphics Registry And No-Clobber Foundation",
     "task_id": "?",
     "task_title": "",
     "worktree": {
@@ -182,7 +182,7 @@
     {
       "id": "5",
       "name": "Dungeon Core",
-      "status": "active",
+      "status": "pending",
       "tasks": [
         {
           "id": "5.2",
@@ -664,7 +664,7 @@
     },
     {
       "id": "11",
-      "name": "Title.md Frontend Gap-Fill + Regression Lock",
+      "name": "Debug.md Frontend Gap-Fill + Regression Lock",
       "status": "pending",
       "tasks": [],
       "evidence": [],
@@ -904,39 +904,27 @@
   "freshness": {
     "active_scope_md": {
       "path": "docs/audit/active_scope.md",
-      "sha256": "1786416d9c7a2e95cd6869a9105d390d26608f338e6b384c05d40883d2f100ea",
+      "sha256": "cbb38044acfe14ec5402b9a28f56b87a55c600779f94d024a8562f58e1991b46",
       "ok": true
     },
     "drain_coverage_json": {
       "path": "tools/audit/drain_coverage.json",
-      "sha256": "3495ac8db43e505b1cc81ee33cc4178eecba73ff898b6f465af2a603e9b682ad",
+      "sha256": "3696501bc1314ea27f231c00bffb991afe01f9c6cad4db7c2b752a81e3188150",
       "ok": true
     },
-    "git_head": "6d12bbebedfd4c8ef8bef7d3f47ddd74bfed6aeb",
+    "git_head": "a6975dc536f7c872520a04dfd7f1afebb5bb93c9",
     "dirty_paths_relevant": [
-      "RoomRom/src/atlas/bg_overworld_chr.c",
-      "RoomRom/src/atlas/bg_overworld_chr.h",
-      "RoomRom/src/atlas/bg_underworld_chr.c",
-      "RoomRom/src/atlas/bg_underworld_chr.h",
-      "RoomRom/src/atlas/bosses_chr.c",
-      "RoomRom/src/atlas/bosses_chr.h",
-      "RoomRom/src/atlas/enemies_chr.c",
-      "RoomRom/src/atlas/enemies_chr.h",
-      "RoomRom/src/atlas/fileselect_chr.c",
-      "RoomRom/src/atlas/fileselect_chr.h",
-      "RoomRom/src/atlas/hud_chr.c",
-      "RoomRom/src/atlas/hud_chr.h",
-      "RoomRom/src/atlas/items_chr.h",
-      "RoomRom/src/atlas/link_chr.c",
-      "RoomRom/src/atlas/link_chr.h",
-      "RoomRom/src/atlas/npc_chr.c",
-      "RoomRom/src/atlas/npc_chr.h",
-      "RoomRom/src/atlas/roomrom_scene_vram_contracts.h",
-      "RoomRom/src/atlas/title_chr.h"
+      "RoomRom/src/main.c",
+      "src/state/link_state.h",
+      "tools/audit/drain_coverage.json",
+      "tools/debug/build_debug.py",
+      "src/state/player_state.c",
+      "src/state/player_state.h",
+      "src/state/render_budget.h"
     ],
     "evidence_paths_present": true,
     "complete_phase_invariant_ok": true,
-    "last_refresh_at": "2026-05-08T07:21:26.256609+00:00",
+    "last_refresh_at": "2026-05-08T15:49:18.853543+00:00",
     "stale_reasons": []
   },
   "blockers": []

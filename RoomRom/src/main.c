@@ -24,6 +24,7 @@
 #include "roomrom_candle_fire.h"         /* Task 5.8.1: candle fire projectile */
 #include "probes/metadata_probe.h"     /* Task 5.4: Gate D in-ROM probe */
 #include "atlas/level_chr_swap.h"        /* PR-4a: scene-bank DMA state machine */
+#include "player_state.h"                 /* Phase 6 Task 6.1: typed players[] */
 
 /* Boots to overworld room 0x77.
  *
@@ -81,9 +82,9 @@ static scene_t       s_scene       = SCENE_UW;
 static mode_t        s_mode        = MODE_WALK;
 static move_style_t  s_move_style  = MOVE_STYLE_NES;
 static u8 s_room_id = 0x73;
-static short s_link_x = 120;
-static short s_link_y = 133;
-static link_face_t s_link_face = LINK_FACE_DOWN;
+/* Phase 6 Task 6.1: Link position/facing now lives in `players[0]`.
+ * Boot defaults are seeded in `init_player_state()` below before any
+ * scene/render code runs. */
 /* Ph5.3: key inventory for UW door gating. Start with 3 for dev testing. */
 static unsigned char s_link_keys = 99u;  /* Task 5.5 debug: full L1 traversal */
 
@@ -276,16 +277,16 @@ static void link_nes_move_object(link_dir_t dir)
     for (q = 0u; q < 4u; q++) {
         switch (dir) {
             case LINK_DIR_RIGHT:
-                if (link_nes_add_qspeed()) s_link_x++;
+                if (link_nes_add_qspeed()) players[0].x++;
                 break;
             case LINK_DIR_DOWN:
-                if (link_nes_add_qspeed()) s_link_y++;
+                if (link_nes_add_qspeed()) players[0].y++;
                 break;
             case LINK_DIR_LEFT:
-                if (link_nes_sub_qspeed()) s_link_x--;
+                if (link_nes_sub_qspeed()) players[0].x--;
                 break;
             case LINK_DIR_UP:
-                if (link_nes_sub_qspeed()) s_link_y--;
+                if (link_nes_sub_qspeed()) players[0].y--;
                 break;
             default:
                 return;
@@ -417,7 +418,7 @@ static unsigned char current_redux_flag(void)
  * coordinator's LOAD step through roomrom_main_apply_warp_outcome().
  * Adding a field requires a spec amendment. Fields preserved across the
  * switch (s_link_keys, s_b_item, s_frame_counter, s_joy_prev) are NOT
- * reset here; s_link_face is overwritten by the apply outcome, not
+ * reset here; players[0].face is overwritten by the apply outcome, not
  * reset. */
 /* Forward decl: upload_scene_chr() is defined below the apply-outcome
  * function for historical layout reasons. */
@@ -477,9 +478,9 @@ void roomrom_main_apply_warp_outcome(const rr_warp_outcome_t *out)
         roomrom_uw_room_render_set_quest(out->dest_quest);
     }
     s_room_id = out->dest_room_id;
-    s_link_x = out->dest_link_x;
-    s_link_y = out->dest_link_y;
-    s_link_face = (link_face_t)out->dest_link_face;
+    players[0].x = out->dest_link_x;
+    players[0].y = out->dest_link_y;
+    players[0].face = (link_face_t)out->dest_link_face;
 
     /* Step 7: CHR upload through the scene-load coordinator. */
     upload_scene_chr();
@@ -514,12 +515,12 @@ unsigned char roomrom_main_current_room_id(void)
 
 short roomrom_main_current_link_x(void)
 {
-    return s_link_x;
+    return players[0].x;
 }
 
 short roomrom_main_current_link_y(void)
 {
-    return s_link_y;
+    return players[0].y;
 }
 
 signed char roomrom_main_current_link_grid_offset(void)
@@ -529,7 +530,7 @@ signed char roomrom_main_current_link_grid_offset(void)
 
 unsigned char roomrom_main_current_link_face(void)
 {
-    return (unsigned char)s_link_face;
+    return (unsigned char)players[0].face;
 }
 
 unsigned char roomrom_main_underground_exit_type(void)
@@ -583,11 +584,11 @@ void roomrom_debug_publish_state_mirror(void)
     p[3]  = (unsigned char)(s_frame_counter);
     p[4]  = (unsigned char)s_scene;
     p[5]  = s_room_id;
-    p[6]  = (unsigned char)(((unsigned short)s_link_x) >> 8);
-    p[7]  = (unsigned char)((unsigned short)s_link_x);
-    p[8]  = (unsigned char)(((unsigned short)s_link_y) >> 8);
-    p[9]  = (unsigned char)((unsigned short)s_link_y);
-    p[10] = (unsigned char)s_link_face;
+    p[6]  = (unsigned char)(((unsigned short)players[0].x) >> 8);
+    p[7]  = (unsigned char)((unsigned short)players[0].x);
+    p[8]  = (unsigned char)(((unsigned short)players[0].y) >> 8);
+    p[9]  = (unsigned char)((unsigned short)players[0].y);
+    p[10] = (unsigned char)players[0].face;
     p[11] = (unsigned char)s_link_dir;
     p[12] = (unsigned char)s_link_grid_offset;
     p[13] = s_doorway_dir;
@@ -602,9 +603,9 @@ void roomrom_debug_publish_state_mirror(void)
      * cache. NES GetCollidableTileStill samples at foot center =
      * (ObjX, ObjY + $0B); link_walkable_at uses the same offset. */
     if (s_scene == SCENE_OW && roomrom_ow_room_render_is_stable()) {
-        short foot_y = (short)(s_link_y + 0x0B);
+        short foot_y = (short)(players[0].y + 0x0B);
         if (foot_y >= ROOMROM_PLAYFIELD_TOP_PX) {
-            unsigned char fc = (unsigned char)((s_link_x >> 3) & 0x1Fu);
+            unsigned char fc = (unsigned char)((players[0].x >> 3) & 0x1Fu);
             unsigned char fr = (unsigned char)(((foot_y - ROOMROM_PLAYFIELD_TOP_PX) >> 3) & 0x1Fu);
             p[21] = roomrom_ow_room_render_raw_tile_at(fc, fr);
         } else {
@@ -629,9 +630,9 @@ void roomrom_debug_publish_state_mirror(void)
     p[34] = save->dest_link_face;
     /* Task 5.4 walkability diagnostic: metatile col/row + walkable
      * lookup for the metatile under Link. OW only; UW writes zeros. */
-    if (s_scene == SCENE_OW && s_link_y >= ROOMROM_PLAYFIELD_TOP_PX) {
-        unsigned char mc = (unsigned char)((s_link_x >> 4) & 0x0Fu);
-        short fy = (short)(s_link_y + 0x0B - ROOMROM_PLAYFIELD_TOP_PX);
+    if (s_scene == SCENE_OW && players[0].y >= ROOMROM_PLAYFIELD_TOP_PX) {
+        unsigned char mc = (unsigned char)((players[0].x >> 4) & 0x0Fu);
+        short fy = (short)(players[0].y + 0x0B - ROOMROM_PLAYFIELD_TOP_PX);
         unsigned char mr = (fy < 0) ? 0u :
                            (unsigned char)((fy >> 4) & 0x0Fu);
         if (mr > 10u) mr = 10u;
@@ -647,7 +648,7 @@ void roomrom_debug_publish_state_mirror(void)
      * whether collision allows stepping onto a tile to the north
      * (entrance approach is north-facing). Slice-1 only OW path. */
     if (s_scene == SCENE_OW) {
-        p[36] = link_walkable_at(s_link_x, s_link_y, LINK_DIR_UP);
+        p[36] = link_walkable_at(players[0].x, players[0].y, LINK_DIR_UP);
     } else {
         p[36] = 0u;
     }
@@ -786,7 +787,7 @@ static unsigned char input_mask_from_buttons(u16 input)
 
 static link_dir_t link_face_dir(void)
 {
-    switch (s_link_face) {
+    switch (players[0].face) {
         case LINK_FACE_RIGHT: return LINK_DIR_RIGHT;
         case LINK_FACE_LEFT:  return LINK_DIR_LEFT;
         case LINK_FACE_UP:    return LINK_DIR_UP;
@@ -845,7 +846,7 @@ static unsigned char uw_doorway_adjust_nes_dir(u16 input, link_dir_t *dir)
     if (s_scene != SCENE_UW ||
         !uw_walk_find_doorway(s_doorway_dir,
                               (unsigned char)doorway_search_dir(*dir),
-                              s_link_x, s_link_y, &door_dir)) {
+                              players[0].x, players[0].y, &door_dir)) {
         s_doorway_dir = UW_WALK_DOOR_NONE;
         return 0u;
     }
@@ -861,7 +862,7 @@ static unsigned char uw_doorway_adjust_nes_dir(u16 input, link_dir_t *dir)
         return 0u;
     }
 
-    uw_walk_snap_to_doorway_axis(door_dir, &s_link_x, &s_link_y);
+    uw_walk_snap_to_doorway_axis(door_dir, &players[0].x, &players[0].y);
     s_doorway_dir = door_dir;
     next_dir = uw_walk_modify_dir_in_doorway(
         door_dir, (unsigned char)doorway_search_dir(*dir),
@@ -887,7 +888,7 @@ static void uw_doorway_adjust_velocity(s8 *vx, s8 *vy)
     if (s_scene != SCENE_UW ||
         !uw_walk_find_doorway(s_doorway_dir,
                               (unsigned char)doorway_search_dir(dir),
-                              s_link_x, s_link_y, &door_dir)) {
+                              players[0].x, players[0].y, &door_dir)) {
         s_doorway_dir = UW_WALK_DOOR_NONE;
         return;
     }
@@ -897,7 +898,7 @@ static void uw_doorway_adjust_velocity(s8 *vx, s8 *vy)
         return;
     }
 
-    uw_walk_snap_to_doorway_axis(door_dir, &s_link_x, &s_link_y);
+    uw_walk_snap_to_doorway_axis(door_dir, &players[0].x, &players[0].y);
     s_doorway_dir = door_dir;
     if (door_dir == UW_WALK_DOOR_E || door_dir == UW_WALK_DOOR_W) {
         *vy = 0;
@@ -983,65 +984,65 @@ static void edge_load_or_clamp(void)
     if (s_scroll_state != SCROLL_NONE) return;
 
     /* Capture pre-edge position before clamping/snapping. */
-    short pre_x = s_link_x;
-    short pre_y = s_link_y;
+    short pre_x = players[0].x;
+    short pre_y = players[0].y;
 
-    if (s_link_x < UW_WALK_EDGE_WEST_X) {
+    if (players[0].x < UW_WALK_EDGE_WEST_X) {
         if (col > 0u && (s_scene != SCENE_UW ||
                 link_door_touch_latched(UW_WALK_DOOR_W, &s_link_keys))) {
             col--;
             if (s_scene == SCENE_UW) {
-                uw_walk_arrival_position(UW_WALK_DOOR_W, &s_link_x, &s_link_y);
+                uw_walk_arrival_position(UW_WALK_DOOR_W, &players[0].x, &players[0].y);
                 s_doorway_dir = UW_WALK_DOOR_W;
             } else {
-                s_link_x = UW_WALK_EDGE_EAST_X;
+                players[0].x = UW_WALK_EDGE_EAST_X;
             }
             want = SCROLL_H_LEFT;
-        } else { s_link_x = UW_WALK_EDGE_WEST_X; }
-    } else if (s_link_x > UW_WALK_EDGE_EAST_X) {
+        } else { players[0].x = UW_WALK_EDGE_WEST_X; }
+    } else if (players[0].x > UW_WALK_EDGE_EAST_X) {
         if (col < 15u && (s_scene != SCENE_UW ||
                 link_door_touch_latched(UW_WALK_DOOR_E, &s_link_keys))) {
             col++;
             if (s_scene == SCENE_UW) {
-                uw_walk_arrival_position(UW_WALK_DOOR_E, &s_link_x, &s_link_y);
+                uw_walk_arrival_position(UW_WALK_DOOR_E, &players[0].x, &players[0].y);
                 s_doorway_dir = UW_WALK_DOOR_E;
             } else {
-                s_link_x = UW_WALK_EDGE_WEST_X;
+                players[0].x = UW_WALK_EDGE_WEST_X;
             }
             want = SCROLL_H_RIGHT;
-        } else { s_link_x = UW_WALK_EDGE_EAST_X; }
+        } else { players[0].x = UW_WALK_EDGE_EAST_X; }
     }
 
-    if (s_link_y < UW_WALK_EDGE_NORTH_Y) {
+    if (players[0].y < UW_WALK_EDGE_NORTH_Y) {
         if (row > 0u && (s_scene != SCENE_UW ||
                 link_door_touch_latched(UW_WALK_DOOR_N, &s_link_keys))) {
             row--;
             if (s_scene == SCENE_UW) {
-                uw_walk_arrival_position(UW_WALK_DOOR_N, &s_link_x, &s_link_y);
+                uw_walk_arrival_position(UW_WALK_DOOR_N, &players[0].x, &players[0].y);
                 s_doorway_dir = UW_WALK_DOOR_N;
             } else {
-                s_link_y = UW_WALK_EDGE_SOUTH_Y;
+                players[0].y = UW_WALK_EDGE_SOUTH_Y;
             }
             want = SCROLL_V_UP;
-        } else { s_link_y = UW_WALK_EDGE_NORTH_Y; }
-    } else if (s_link_y > UW_WALK_EDGE_SOUTH_Y) {
+        } else { players[0].y = UW_WALK_EDGE_NORTH_Y; }
+    } else if (players[0].y > UW_WALK_EDGE_SOUTH_Y) {
         if (row < 7u && (s_scene != SCENE_UW ||
                 link_door_touch_latched(UW_WALK_DOOR_S, &s_link_keys))) {
             row++;
             if (s_scene == SCENE_UW) {
-                uw_walk_arrival_position(UW_WALK_DOOR_S, &s_link_x, &s_link_y);
+                uw_walk_arrival_position(UW_WALK_DOOR_S, &players[0].x, &players[0].y);
                 s_doorway_dir = UW_WALK_DOOR_S;
             } else {
-                s_link_y = UW_WALK_EDGE_NORTH_Y;
+                players[0].y = UW_WALK_EDGE_NORTH_Y;
             }
             want = SCROLL_V_DOWN;
-        } else { s_link_y = UW_WALK_EDGE_SOUTH_Y; }
+        } else { players[0].y = UW_WALK_EDGE_SOUTH_Y; }
     }
 
     if (want != SCROLL_NONE) {
         s_transition_target = (u8)((row << 4) | col);
-        s_transition_link_x = s_link_x;
-        s_transition_link_y = s_link_y;
+        s_transition_link_x = players[0].x;
+        s_transition_link_y = players[0].y;
         /* Pre-edge screen pos clamped to playfield bounds, used as scroll
          * start. For H_RIGHT pre_x is just past 240 (clamp to 240); for
          * H_LEFT pre_x is just past 0 (clamp to 0). Y is unchanged. */
@@ -1145,6 +1146,13 @@ static void edge_load_or_clamp(void)
 
 void roomrom_debug_enter(void)
 {
+    /* Phase 6 Task 6.1: seed `players[0]` with NES Z1 boot defaults
+     * before anything reads it. RoomRom always boots in 1-player mode;
+     * Phase 13 will populate `players[1..3]` after lobby selection. */
+    players[0].x    = 120;
+    players[0].y    = 133;
+    players[0].face = LINK_FACE_DOWN;
+
     s_joy_prev = 0u;
     init_video();
     /* PR-4a: init scene-bank state machine BEFORE first scene_load so the
@@ -1170,7 +1178,7 @@ void roomrom_debug_enter(void)
         current_redux_flag());
     roomrom_combat_set_redux(current_redux_flag());
     load_room(s_room_id);                  /* loads BG pal + sprite PAL1 */
-    roomrom_sprites_spawn_link(s_link_x, s_link_y);
+    roomrom_sprites_spawn_link(players[0].x, players[0].y);
     roomrom_combat_init();                 /* S7: clear sword sprite slot */
     roomrom_combat_set_uw(s_scene == SCENE_UW);  /* sword Y bias for UW */
     roomrom_boomerang_init();              /* S7 v6: clear boomerang slot */
@@ -1203,12 +1211,12 @@ unsigned char roomrom_debug_get_room_id(void)
 
 short roomrom_debug_get_link_x(void)
 {
-    return s_link_x;
+    return players[0].x;
 }
 
 short roomrom_debug_get_link_y(void)
 {
-    return s_link_y;
+    return players[0].y;
 }
 
 void roomrom_debug_tick(void)
@@ -1270,7 +1278,7 @@ void roomrom_debug_tick(void)
              * scroll duration, then snapping to the new-room entry
              * position on finalize. */
             roomrom_sprites_set_link_pose((short)-32, (short)-32,
-                                          s_link_face, 0u);
+                                          players[0].face, 0u);
 
             if (s_scroll_frame >= s_scroll_total_frames - 1u) {
                 u8 was_v_scroll = (u8)(s_scroll_state == SCROLL_V_DOWN ||
@@ -1291,8 +1299,8 @@ void roomrom_debug_tick(void)
                     s_active_scroll_y = 0;
                 }
                 s_room_id = s_transition_target;
-                s_link_x  = s_transition_link_x;
-                s_link_y  = s_transition_link_y;
+                players[0].x  = s_transition_link_x;
+                players[0].y  = s_transition_link_y;
                 if (s_scene == SCENE_UW) {
                     roomrom_uw_room_render_load_palette(s_room_id);
                     roomrom_hud_draw(roomrom_uw_room_render_get_map(), s_room_id, 1u);
@@ -1342,10 +1350,10 @@ void roomrom_debug_tick(void)
 
         /* S7: tick combat (sword timer + draw/clear sword sprite slot 1).
          * Runs every frame so the swing completes even in TELEPORT mode. */
-        roomrom_combat_update(s_link_x, s_link_y, s_link_face);
+        roomrom_combat_update(players[0].x, players[0].y, players[0].face);
         /* S7 v6: tick boomerang (slot 3). Independent of combat lock —
          * NES Z1 lets Link move while boomerang is in flight. */
-        roomrom_boomerang_update(s_link_x, s_link_y);
+        roomrom_boomerang_update(players[0].x, players[0].y);
         /* S7 v7: tick arrow (slot 4). Single-frame, flies straight. */
         roomrom_arrow_update();
         /* S7 v8: tick bomb (slot 5) + explosion (slot 6). */
@@ -1404,7 +1412,7 @@ void roomrom_debug_tick(void)
         if (s_scene == SCENE_UW && (pressed & BUTTON_C) &&
             (joy & BUTTON_B) && (joy & BUTTON_Z)) {
             unsigned char dir;
-            switch (s_link_face) {
+            switch (players[0].face) {
                 case LINK_FACE_RIGHT: dir = DOOR_DIR_E; break;
                 case LINK_FACE_LEFT:  dir = DOOR_DIR_W; break;
                 case LINK_FACE_UP:    dir = DOOR_DIR_N; break;
@@ -1474,7 +1482,7 @@ void roomrom_debug_tick(void)
          * moved to MODE button below. Movement is suppressed during the
          * swing so Link snaps to the swing pose for COMBAT_EXTEND_FRAMES. */
         if ((pressed & BUTTON_A) && !roomrom_combat_link_locked()) {
-            roomrom_combat_try_swing(s_link_face, s_link_x, s_link_y);
+            roomrom_combat_try_swing(players[0].face, players[0].x, players[0].y);
         }
 
         /* B-item slot:
@@ -1490,20 +1498,20 @@ void roomrom_debug_tick(void)
             switch (s_b_item) {
             case B_ITEM_BOOMERANG:
                 if (!roomrom_boomerang_active()) {
-                    roomrom_boomerang_throw(s_link_face,
-                                            s_link_x, s_link_y);
+                    roomrom_boomerang_throw(players[0].face,
+                                            players[0].x, players[0].y);
                 }
                 break;
             case B_ITEM_ARROW:
                 if (!roomrom_arrow_active()) {
-                    roomrom_arrow_fire(s_link_face,
-                                       s_link_x, s_link_y);
+                    roomrom_arrow_fire(players[0].face,
+                                       players[0].x, players[0].y);
                 }
                 break;
             case B_ITEM_BOMB:
                 if (!roomrom_bomb_active()) {
-                    roomrom_bomb_place(s_link_face,
-                                       s_link_x, s_link_y);
+                    roomrom_bomb_place(players[0].face,
+                                       players[0].x, players[0].y);
                 }
                 break;
             case B_ITEM_CANDLE:
@@ -1511,8 +1519,8 @@ void roomrom_debug_tick(void)
                  * via dedicated module (slot 8, explosion-glyph
                  * placeholder; full red-pal NES fire CHR + 4-frame
                  * anim deferred to 5.8.2). Plus: dark-room reveal. */
-                roomrom_candle_fire_spawn(s_link_face,
-                                          s_link_x, s_link_y);
+                roomrom_candle_fire_spawn(players[0].face,
+                                          players[0].x, players[0].y);
                 if (s_scene == SCENE_UW && s_cur_room_is_dark &&
                     !roomrom_uw_room_lit(s_room_id)) {
                     roomrom_uw_room_set_lit(s_room_id);
@@ -1586,10 +1594,10 @@ void roomrom_debug_tick(void)
 
                 /* Facing: keep current if compatible with motion; else pick
                  * H over V (matches general 4-frame sprite limitation). */
-                if      (vx > 0) s_link_face = LINK_FACE_RIGHT;
-                else if (vx < 0) s_link_face = LINK_FACE_LEFT;
-                else if (vy > 0) s_link_face = LINK_FACE_DOWN;
-                else if (vy < 0) s_link_face = LINK_FACE_UP;
+                if      (vx > 0) players[0].face = LINK_FACE_RIGHT;
+                else if (vx < 0) players[0].face = LINK_FACE_LEFT;
+                else if (vy > 0) players[0].face = LINK_FACE_DOWN;
+                else if (vy < 0) players[0].face = LINK_FACE_UP;
 
                 if (vx || vy) {
                     if (++s_link_anim_tick >= LINK_ANIM_PERIOD) {
@@ -1606,28 +1614,28 @@ void roomrom_debug_tick(void)
                  * subpixel = tmp & 0xFF; coord = tmp >> 8.
                  * Per-axis collision check after each step enables wall-slide. */
                 if (vx) {
-                    short old_x = s_link_x;
+                    short old_x = players[0].x;
                     u8    old_sub = s_link_subx;
                     link_dir_t hdir = (vx > 0) ? LINK_DIR_RIGHT : LINK_DIR_LEFT;
                     int tmp = (int)s_link_subx + ((int)vx * 16)
-                            + ((int)s_link_x << 8);
+                            + ((int)players[0].x << 8);
                     s_link_subx = (u8)(tmp & 0xFF);
-                    s_link_x = (short)(tmp >> 8);
-                    if (!link_walkable_at(s_link_x, s_link_y, hdir)) {
-                        s_link_x = old_x;
+                    players[0].x = (short)(tmp >> 8);
+                    if (!link_walkable_at(players[0].x, players[0].y, hdir)) {
+                        players[0].x = old_x;
                         s_link_subx = old_sub;
                     }
                 }
                 if (vy) {
-                    short old_y = s_link_y;
+                    short old_y = players[0].y;
                     u8    old_sub = s_link_suby;
                     link_dir_t vdir = (vy > 0) ? LINK_DIR_DOWN : LINK_DIR_UP;
                     int tmp = (int)s_link_suby + ((int)vy * 16)
-                            + ((int)s_link_y << 8);
+                            + ((int)players[0].y << 8);
                     s_link_suby = (u8)(tmp & 0xFF);
-                    s_link_y = (short)(tmp >> 8);
-                    if (!link_walkable_at(s_link_x, s_link_y, vdir)) {
-                        s_link_y = old_y;
+                    players[0].y = (short)(tmp >> 8);
+                    if (!link_walkable_at(players[0].x, players[0].y, vdir)) {
+                        players[0].y = old_y;
                         s_link_suby = old_sub;
                     }
                 }
@@ -1635,8 +1643,8 @@ void roomrom_debug_tick(void)
 
             edge_load_or_clamp();
             if (!roomrom_combat_link_locked()) {
-                roomrom_sprites_set_link_pose(s_link_x, s_link_y,
-                                              s_link_face, s_link_frame);
+                roomrom_sprites_set_link_pose(players[0].x, players[0].y,
+                                              players[0].face, s_link_frame);
             }
         } else {
             /* NES-faithful Link movement, ported from
@@ -1695,16 +1703,16 @@ void roomrom_debug_tick(void)
 
                 if (moving_dir != LINK_DIR_NONE) {
                     switch (moving_dir) {
-                    case LINK_DIR_LEFT:  s_link_face = LINK_FACE_LEFT;  break;
-                    case LINK_DIR_RIGHT: s_link_face = LINK_FACE_RIGHT; break;
-                    case LINK_DIR_UP:    s_link_face = LINK_FACE_UP;    break;
-                    case LINK_DIR_DOWN:  s_link_face = LINK_FACE_DOWN;  break;
+                    case LINK_DIR_LEFT:  players[0].face = LINK_FACE_LEFT;  break;
+                    case LINK_DIR_RIGHT: players[0].face = LINK_FACE_RIGHT; break;
+                    case LINK_DIR_UP:    players[0].face = LINK_FACE_UP;    break;
+                    case LINK_DIR_DOWN:  players[0].face = LINK_FACE_DOWN;  break;
                     default: break;
                     }
                 }
 
                 if (moving_dir != LINK_DIR_NONE && s_link_grid_offset == 0) {
-                    if (!link_walkable_at(s_link_x, s_link_y, moving_dir)) {
+                    if (!link_walkable_at(players[0].x, players[0].y, moving_dir)) {
                         moving_dir = LINK_DIR_NONE;
                     }
                 }
@@ -1723,8 +1731,8 @@ void roomrom_debug_tick(void)
 
             edge_load_or_clamp();
             if (!roomrom_combat_link_locked()) {
-                roomrom_sprites_set_link_pose(s_link_x, s_link_y,
-                                              s_link_face, s_link_frame);
+                roomrom_sprites_set_link_pose(players[0].x, players[0].y,
+                                              players[0].face, s_link_frame);
             }
         }
 
@@ -1748,8 +1756,8 @@ void roomrom_debug_tick(void)
             short ix = (short)s_cur_room_item_meta.item_x;
             short iy = (short)((short)s_cur_room_item_meta.item_y +
                                 ROOMROM_PLAYFIELD_TOP_PX);
-            short fx = s_link_x;
-            short fy = (short)(s_link_y + 0x0B);
+            short fx = players[0].x;
+            short fy = (short)(players[0].y + 0x0B);
             if (fx >= ix - 8 && fx <= ix + 16 &&
                 fy >= iy && fy <= iy + 16) {
                 roomrom_uw_item_pickup(
