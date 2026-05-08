@@ -54,8 +54,8 @@
 #define H_SWORD  1u
 #define ATLAS_SWORD_DISPATCH  { 1u, 1u, NES_NARROW }
 #define W_BOMB  1u
-#define H_BOMB  1u
-#define ATLAS_BOMB_DISPATCH  { 1u, 1u, NES_NARROW }
+#define H_BOMB  2u
+#define ATLAS_BOMB_DISPATCH  { 1u, 2u, NES_NARROW }
 #define W_ARROW  1u
 #define H_ARROW  1u
 #define ATLAS_ARROW_DISPATCH  { 1u, 1u, NES_NARROW }
@@ -138,8 +138,8 @@
 #define H_MAP2  1u
 #define ATLAS_MAP2_DISPATCH  { 1u, 1u, NES_NARROW }
 #define W_BOOMERANG3  1u
-#define H_BOOMERANG3  1u
-#define ATLAS_BOOMERANG3_DISPATCH  { 1u, 1u, NES_NARROW }
+#define H_BOOMERANG3  2u
+#define ATLAS_BOOMERANG3_DISPATCH  { 1u, 2u, NES_NARROW }
 #define W_SWORD_BEAM  1u
 #define H_SWORD_BEAM  1u
 #define ATLAS_SWORD_BEAM_DISPATCH  { 1u, 1u, NES_NARROW }

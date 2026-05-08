@@ -39,7 +39,12 @@
           "file": "Z_01.asm",
           "line": 5202,
           "label": "Anim_ItemFrameTiles+0x03"
-        }
+        },
+        "sprite_size_override": [
+          1,
+          2
+        ],
+        "sprite_size_override_reason": "NES PPU runs in 8x16 sprite mode (PPUCTRL bit 5 = 1) during gameplay; @Narrow refers to half-WIDTH not 8x8 height. Live BizHawk capture in probe_nes_throw.lua confirmed paired-tile rendering. Renderer uses SPRITE_SIZE(1,2). See feedback_nes_8x16_sprite_mode."
       },
       {
         "name": "arrow",
@@ -494,7 +499,12 @@
           "file": "Z_01.asm",
           "line": 5206,
           "label": "Anim_ItemFrameTiles+0x22"
-        }
+        },
+        "sprite_size_override": [
+          1,
+          2
+        ],
+        "sprite_size_override_reason": "NES PPU runs in 8x16 sprite mode (PPUCTRL bit 5 = 1) during gameplay; @Narrow refers to half-WIDTH not 8x8 height. Live BizHawk capture in probe_nes_throw.lua confirmed paired-tile rendering. Renderer uses SPRITE_SIZE(1,2). See feedback_nes_8x16_sprite_mode."
       },
       {
         "name": "sword_beam",

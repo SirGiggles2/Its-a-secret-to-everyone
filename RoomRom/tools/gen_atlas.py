@@ -691,12 +691,21 @@ def write_atlas_dispatch_header(path: Path) -> None:
 
 
 def emit_dispatch_defines(entries: List[dict]) -> List[str]:
-    """Emit W_<NAME>, H_<NAME>, and ATLAS_<NAME>_DISPATCH for each entry."""
+    """Emit W_<NAME>, H_<NAME>, and ATLAS_<NAME>_DISPATCH for each entry.
+
+    Per-entry `sprite_size_override: [w, h]` wins over dispatch_class lookup.
+    Use it for items where NES PPU 8x16 mode means @Narrow != 8x8 (e.g. bomb,
+    boomerang) — see live BizHawk capture in probe_nes_throw.lua.
+    """
     lines: List[str] = []
     for entry in entries:
         name = c_ident(entry["name"])
         dc = entry.get("dispatch_class", "Narrow")
-        w, h = DISPATCH_CLASS_TO_WH.get(dc, (1, 1))
+        override = entry.get("sprite_size_override")
+        if override and len(override) == 2:
+            w, h = int(override[0]), int(override[1])
+        else:
+            w, h = DISPATCH_CLASS_TO_WH.get(dc, (1, 1))
         nes_cls = DISPATCH_CLASS_TO_NES.get(dc, "NES_NARROW")
         lines += [
             f"#define W_{name}  {w}u",

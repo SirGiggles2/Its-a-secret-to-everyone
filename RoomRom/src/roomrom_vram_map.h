@@ -74,7 +74,7 @@
 #define ROOMROM_BG_TILE_COUNT_PER_PAL   256u
 #define ROOMROM_BG_SUBPAL_COUNT         4u
 #define ROOMROM_SPR_TILE_BASE           1025u   /* 1 + 4*256 */
-#define ROOMROM_SPR_TILE_COUNT_PER_PAL  312u
+#define ROOMROM_SPR_TILE_COUNT_PER_PAL  311u    /* common(238)+walk(32)+attack(16)=286 used, 25 slack; -1 vs prior 312 to make room for ITEM bank growth (boomerang/bomb 8x16 added tile $35) */
 #define ROOMROM_SPR_SUBPAL_COUNT        1u      /* intentionally 1x: items use the dedicated ITEM bank below for sub-pal 1+ variation; SPR-bank sprites (Link, sword body, common) only ever use NES sprite sub-pal 0 */
 
 #define ROOMROM_BG_TILE_BASE_PAL(s)  \

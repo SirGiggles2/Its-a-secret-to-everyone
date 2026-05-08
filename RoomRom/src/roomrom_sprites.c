@@ -12,12 +12,17 @@
 #include "atlas/items_chr.h"
 #include "atlas/atlas_dispatch.h"
 
-/* Compile-time dispatch size checks for items that have a direct 1:1
- * atlas entry with matching single-tile W/H (SPRITE_SIZE(1,1)):
- * BOMB   -> SPRITE_SIZE(1,1)  -> W_BOMB=1, H_BOMB=1   (NES_NARROW) */
-ATLAS_ASSERT_SIZE(BOMB, 1, 1);
-/* BOOMERANG -> SPRITE_SIZE(1,1) -> W_BOOMERANG=1, H_BOOMERANG=1 (NES_NARROW) */
-ATLAS_ASSERT_SIZE(BOOMERANG, 1, 1);
+/* Compile-time dispatch size checks. NES Z1 PPU runs in 8x16 sprite mode
+ * (PPUCTRL bit 5 = 1) during gameplay, so item sprites that use a single
+ * OAM entry render as 8x16 (paired tiles) — not 8x8.
+ * BOMB       -> SPRITE_SIZE(1,2): tiles $34 (top: fuse) + $35 (bottom: body)
+ * BOOMERANG3 -> SPRITE_SIZE(1,2): in-flight $36/$38/$3A/$3C paired with
+ *               $37/$39/$3B/$3D (top + bottom halves). 'BOOMERANG' (W=1,H=1)
+ *               is the static B-icon variant at tile $4C (separate atlas
+ *               entry). roomrom_sprites_set_boomerang renders the in-flight
+ *               BOOMERANG3 entry. */
+ATLAS_ASSERT_SIZE(BOMB, 1, 2);
+ATLAS_ASSERT_SIZE(BOOMERANG3, 1, 2);
 
 /* TODO(Phase 6 cleanup): add ATLAS_ASSERT_SIZE for sword_vert/horz,
  * arrow_vert/horz, explosion, sword_diag once items_chr.h gains multi-tile
@@ -565,8 +570,12 @@ void roomrom_sprites_clear_arrow(void)
 
 /* S7 v8 bomb (slot 5). NES Z1 DrawBomb (Z_07.asm:4869) -> DrawCloud ->
  * Anim_WriteItemSprites with item slot $01, frame 0 -> ItemFrameTiles[$03]
- * = $34. Tile $34 in [$20, $62) -> @Narrow path -> single 8x8 sprite.
- * sub_pal selects which 4-copy bank to read (NES DrawCloud sets Y=1). */
+ * = $34. Tile $34 in [$20, $62) -> @Narrow path. NES PPU runs 8x16 sprite
+ * mode in gameplay; OAM "tile $34" pairs $34 (top: fuse + bomb-cap) + $35
+ * (bottom: bomb body). Live BizHawk capture confirms both halves contain
+ * content (probe_nes_throw.lua frame 280). Atlas idx 20/21 are adjacent
+ * in items_chr_x4 post-manifest-update; SPRITE_SIZE(1,2) consumes both via
+ * column-major fetch. sub_pal selects 4-copy bank (NES DrawCloud sets Y=1). */
 void roomrom_sprites_set_bomb(short x, short y, unsigned char sub_pal)
 {
     unsigned short tile = (unsigned short)(ROOMROM_ITEM_TILE_BASE_PAL(sub_pal)
@@ -574,7 +583,7 @@ void roomrom_sprites_set_bomb(short x, short y, unsigned char sub_pal)
     VDP_setSpriteFull(5,
                       (s16)x,
                       (s16)y,
-                      SPRITE_SIZE(1, 1),
+                      SPRITE_SIZE(1, 2),
                       TILE_ATTR_FULL(PAL1,0, 0, 0, tile),
                       6);
     VDP_updateSprites(7, DMA);
@@ -585,7 +594,7 @@ void roomrom_sprites_clear_bomb(void)
     VDP_setSpriteFull(5,
                       (s16)-32,
                       (s16)-32,
-                      SPRITE_SIZE(1, 1),
+                      SPRITE_SIZE(1, 2),
                       TILE_ATTR_FULL(PAL1,0, 0, 0, BOMB_VRAM_TILE),
                       6);
     VDP_updateSprites(7, DMA);

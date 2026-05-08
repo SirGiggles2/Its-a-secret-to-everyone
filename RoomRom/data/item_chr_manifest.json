@@ -47,7 +47,7 @@
       "nes_frame_tile": "0x36",
       "sprite_size": [
         1,
-        1
+        2
       ],
       "tile_ids": [
         "0x36",
@@ -59,8 +59,9 @@
         "0x3C",
         "0x3D"
       ],
-      "draw_rule": "narrow_8x8_phase_cycle",
-      "nes_dispatch_note": "Anim_WriteSpecificItemSprites @Narrow (Z_01.asm:5288) draws single 8x8 sprite per frame at $36/$38/$3A. Genesis renderer reads tiles $36/$38/$3A (blob offsets 0,2,4); $37/$39/$3B-$3D over-extracted, harmless VRAM."
+      "draw_rule": "narrow_8x16_phase_cycle",
+      "nes_dispatch_note": "NES PPU 8x16 mode: each OAM entry tile $36/$38/$3A/$3C pairs with $37/$39/$3B/$3D as bottom half. Live BizHawk capture (probe_nes_throw.lua frame 280) confirmed: tile $36 has only rows 4-7 of curve; tile $37 has only rows 0-3 \u2014 combined 8x16 = full L-shape boomerang. Atlas idx 6/7, 8/9, 10/11, 12/13 are adjacent in items_chr_x4.",
+      "sprite_size_override_reason": "NES PPU runs in 8x16 sprite mode (PPUCTRL bit 5 = 1) during gameplay. verify_item_chr_manifest classify_nes_dispatch reads 'Narrow' as 8x8 (sprite_size [1,1]) but @Narrow refers to half-WIDTH not 8x8 height. Live BizHawk capture (probe_nes_throw.lua frame 280) shows OAM 'tile $X' renders both $X (top 8x8) + $X+1 (bottom 8x8) as one 8x16 sprite. Renderer must use SPRITE_SIZE(1,2). See Anim_WriteSpecificItemSprites @Narrow Z_01.asm:5288 + PPUCTRL setup."
     },
     {
       "name": "arrow_vert",
@@ -103,13 +104,15 @@
       "nes_frame_tile": "0x34",
       "sprite_size": [
         1,
-        1
+        2
       ],
       "tile_ids": [
-        "0x34"
+        "0x34",
+        "0x35"
       ],
-      "draw_rule": "narrow_8x8",
-      "nes_dispatch_note": "DrawBomb (Z_07.asm:4869) -> DrawCloud -> Anim_WriteItemSprites with item slot $01, frame 0 -> ItemFrameTiles[$03] = $34. Tile $34 in [$20,$62) -> @Narrow path (Z_01.asm:5288), single 8x8 sprite."
+      "draw_rule": "narrow_8x16",
+      "nes_dispatch_note": "DrawBomb (Z_07.asm:4869) -> DrawCloud -> Anim_WriteItemSprites with item slot $01, frame 0 -> ItemFrameTiles[$03] = $34. Tile $34 in [$20,$62) -> @Narrow path (Z_01.asm:5288), single 8x8 sprite.",
+      "sprite_size_override_reason": "NES PPU runs in 8x16 sprite mode (PPUCTRL bit 5 = 1) during gameplay. verify_item_chr_manifest classify_nes_dispatch reads 'Narrow' as 8x8 (sprite_size [1,1]) but @Narrow refers to half-WIDTH not 8x8 height. Live BizHawk capture (probe_nes_throw.lua frame 280) shows OAM 'tile $X' renders both $X (top 8x8) + $X+1 (bottom 8x8) as one 8x16 sprite. Renderer must use SPRITE_SIZE(1,2). See Anim_WriteSpecificItemSprites @Narrow Z_01.asm:5288 + PPUCTRL setup."
     },
     {
       "name": "explosion",
@@ -628,6 +631,13 @@
           "sha256": "af073b11bd06206e4b1685b585d333067132594b14e6ad50ecb350284efe6c3e",
           "flat_pattern": false,
           "bytes": "12391004000000204683283830202000"
+        },
+        "0x35": {
+          "ppu_addr": "0x0350",
+          "source": "common_sprite_live_chr",
+          "sha256": "c80f64145b9e3b242f4c5090c5ec6b08264351e741e74e64cb5ee767be77440e",
+          "flat_pattern": false,
+          "bytes": "AF9FFFFF7E3C00007060000000000000"
         }
       }
     },
@@ -943,6 +953,13 @@
           "sha256": "af073b11bd06206e4b1685b585d333067132594b14e6ad50ecb350284efe6c3e",
           "flat_pattern": false,
           "bytes": "12391004000000204683283830202000"
+        },
+        "0x35": {
+          "ppu_addr": "0x0350",
+          "source": "common_sprite_live_chr",
+          "sha256": "c80f64145b9e3b242f4c5090c5ec6b08264351e741e74e64cb5ee767be77440e",
+          "flat_pattern": false,
+          "bytes": "AF9FFFFF7E3C00007060000000000000"
         }
       }
     }

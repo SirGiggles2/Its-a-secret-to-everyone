@@ -4,7 +4,7 @@
  * gen_atlas.py FU2 items_blob_legacy mode.
  *
  * Byte layout per row: pal0_bytes || pal1_bytes || pal2_bytes || pal3_bytes
- * Per-pal stride = 1568 bytes (49 Genesis tiles).
+ * Per-pal stride = 1600 bytes (50 Genesis tiles).
  * Pixel bias rule: out = (in==0) ? 0 : (sub_pal*4 + in).
  * Byte-identical to expand_sprite_chr.py -> roomrom_item_chr_x4.
  */
@@ -12,9 +12,9 @@
 #define ROOMROM_ATLAS_ITEMS_X4_H
 
 #define ROOMROM_ATLAS_ITEMS_X4_VARIANT_COUNT    2u
-#define ROOMROM_ATLAS_ITEMS_X4_TILE_COUNT       49u
-#define ROOMROM_ATLAS_ITEMS_X4_PER_PAL_BYTES    1568u
-#define ROOMROM_ATLAS_ITEMS_X4_BYTES            6272u
+#define ROOMROM_ATLAS_ITEMS_X4_TILE_COUNT       50u
+#define ROOMROM_ATLAS_ITEMS_X4_PER_PAL_BYTES    1600u
+#define ROOMROM_ATLAS_ITEMS_X4_BYTES            6400u
 
 /* Tile-index constants: byte_offset = TILE_INDEX * 32
  * These supersede the legacy ROOMROM_ITEM_TILE_* constants from
@@ -25,17 +25,17 @@
 #define ROOMROM_ITEM_TILE_ARROW_VERT 14u
 #define ROOMROM_ITEM_TILE_ARROW_HORZ 16u
 #define ROOMROM_ITEM_TILE_BOMB 20u
-#define ROOMROM_ITEM_TILE_EXPLOSION 21u
-#define ROOMROM_ITEM_TILE_SWORD_DIAG 27u
-#define ROOMROM_ITEM_TILE_CANDLE_FIRE_F0 31u
-#define ROOMROM_ITEM_TILE_CANDLE_FIRE_F1 33u
-#define ROOMROM_ITEM_TILE_CANDLE_FIRE_F2 35u
-#define ROOMROM_ITEM_TILE_CANDLE_FIRE_F3 37u
-#define ROOMROM_ITEM_TILE_TRIFORCE_PIECE 39u
-#define ROOMROM_ITEM_TILE_MAGIC_SHOT_V 41u
-#define ROOMROM_ITEM_TILE_MAGIC_SHOT_H 43u
-#define ROOMROM_ITEM_TILE_FAIRY_SPARK_F0 45u
-#define ROOMROM_ITEM_TILE_FAIRY_SPARK_F1 47u
+#define ROOMROM_ITEM_TILE_EXPLOSION 22u
+#define ROOMROM_ITEM_TILE_SWORD_DIAG 28u
+#define ROOMROM_ITEM_TILE_CANDLE_FIRE_F0 32u
+#define ROOMROM_ITEM_TILE_CANDLE_FIRE_F1 34u
+#define ROOMROM_ITEM_TILE_CANDLE_FIRE_F2 36u
+#define ROOMROM_ITEM_TILE_CANDLE_FIRE_F3 38u
+#define ROOMROM_ITEM_TILE_TRIFORCE_PIECE 40u
+#define ROOMROM_ITEM_TILE_MAGIC_SHOT_V 42u
+#define ROOMROM_ITEM_TILE_MAGIC_SHOT_H 44u
+#define ROOMROM_ITEM_TILE_FAIRY_SPARK_F0 46u
+#define ROOMROM_ITEM_TILE_FAIRY_SPARK_F1 48u
 
 extern const unsigned char roomrom_atlas_items_x4
     [ROOMROM_ATLAS_ITEMS_X4_VARIANT_COUNT][ROOMROM_ATLAS_ITEMS_X4_BYTES];
