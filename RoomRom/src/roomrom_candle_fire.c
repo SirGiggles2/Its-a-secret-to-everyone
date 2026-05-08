@@ -1,21 +1,29 @@
-/* Task 5.8.1 candle fire — full 4-frame NES animation per Z_07.asm:4622.
+/* Task 5.8.1 candle fire — NES Z_07.asm:4622 UpdateFire.
  *
- * Frames cycle every 4 ticks (LDA #$04 / Anim_AdvanceAnimCounter).
- * Each frame is a 16x8 sprite (2 NES tiles side-by-side, left+2=right
- * per DrawObjectWithAnimAndSpecificSprites in Z_01.asm:5056).
+ * NES TRUTH (re-derived 2026-05-08 from Z_01/Z_07 disasm):
+ * - UpdateFire (Z_07.asm:4683) passes A=0 (frame=0) into DrawObjectWithType.
+ * - ObjAnimations[$41] = $08. DrawObjectWithAnim (Z_01.asm:5054):
+ *     Y = ObjAnimations[$41] + 0 = $08.
+ *     tile_left  = ObjAnimFrameHeap[$08]   = $5C
+ *     tile_right = ObjAnimFrameHeap[$08]+2 = $5E
+ *   Tiles are FIXED at $5C / $5E for every visible frame. The disasm's
+ *   ObjAnimFrameHeap[$09..$0B] = $9E/$44/$CE belong to OTHER objects, NOT
+ *   candle fire — earlier code mis-attributed those to per-frame fire art.
+ * - Anim_AdvanceAnimCounterAndSetObjPos (Z_07.asm:5116) decrements the
+ *   counter; on rollover (every 4 ticks given A=$04 caller arg), it XORs
+ *   ObjAnimFrame with 1, toggling 0/1.
+ * - Anim_SetObjHFlipForSpriteDescriptor (Z_07.asm:5084) stores
+ *   ObjAnimFrame into [0F]. Anim_WriteHorizontallyFlippableSpritePair flips
+ *   tile pair + sets hflip attr if [0F] != 0.
  *
- * Tile pairs (NES PPU sprite indices) and sub-pal selections come from
- * ObjAnimations[$41]=$08 -> ObjAnimFrameHeap[$08..$0B] / ObjAnimAttrHeap[$08..$0B]:
- *   frame 0: ($5C/$5E)  sub_pal 2
- *   frame 1: ($9E/$A0)  sub_pal 0
- *   frame 2: ($44/$46)  sub_pal 0
- *   frame 3: ($CE/$D0)  sub_pal 1
+ * Net visual: tile $5C/$5D + $5E/$5F (16x16 in PPU 8x16 mode), sub-pal 2
+ * (red — Anim_SetSpriteDescriptorRedPaletteRow), with HFLIP toggling every
+ * 4 ticks. Two-state shimmer, NOT four-distinct-tile cycle.
  *
- * NES CHR sources (canonical UW group 1257 — L1/L2/L5/L7):
- *   $5C/$5E, $44/$46    -> CommonSpritePatterns
- *   $9E/$A0             -> PatternBlockUWSP127
- *   $CE/$D0             -> PatternBlockUWSPBoss1257
- * Bytes baked into items_chr_x4.h via item_chr_manifest.json -> gen_atlas.py.
+ * Atlas tiles $5C/$5D/$5E/$5F = ROOMROM_ITEM_TILE_CANDLE_FIRE_F0 (4 tiles).
+ * Other "frame" entries in items_chr_x4.h (F1/F2/F3) are leftover atlas
+ * data for the misattributed tiles — harmless dead VRAM, removable in a
+ * future atlas refactor.
  */
 
 #include <genesis.h>
@@ -33,21 +41,12 @@
 #define CANDLE_FIRE_STAND_FRAMES  30   /* shorter so cycle visible */
 #define CANDLE_FIRE_SPEED_PX      1
 #define CANDLE_FIRE_SLOT          8
-#define CANDLE_FIRE_TICKS_PER_FRM 4    /* NES LDA #$04 */
-#define CANDLE_FIRE_FRAME_COUNT   4
+#define CANDLE_FIRE_TICKS_PER_FRM 4    /* NES LDA #$04 — anim_counter rollover */
+#define CANDLE_FIRE_FRAME_COUNT   2    /* NES toggles ObjAnimFrame 0/1 */
 
-/* Per-frame tile-base indices (left tile within items_chr_x4 atlas).
- * Right tile = left + 1 (gen_atlas concatenates tile_ids in order). */
-static const unsigned char k_frame_tile_base[CANDLE_FIRE_FRAME_COUNT] = {
-    ROOMROM_ITEM_TILE_CANDLE_FIRE_F0,
-    ROOMROM_ITEM_TILE_CANDLE_FIRE_F1,
-    ROOMROM_ITEM_TILE_CANDLE_FIRE_F2,
-    ROOMROM_ITEM_TILE_CANDLE_FIRE_F3,
-};
-/* ObjAnimAttrHeap[$08..$0B] sub-pal indices. */
-static const unsigned char k_frame_subpal[CANDLE_FIRE_FRAME_COUNT] = {
-    2u, 0u, 0u, 1u,
-};
+/* Single tile pair, sub-pal 2 (red). Frame index controls hflip only. */
+#define CANDLE_FIRE_TILE_BASE     ROOMROM_ITEM_TILE_CANDLE_FIRE_F0
+#define CANDLE_FIRE_SUBPAL        2u
 
 typedef enum {
     FIRE_IDLE = 0,
@@ -110,18 +109,12 @@ unsigned char roomrom_candle_fire_active(void)
 
 static void draw_fire(void)
 {
-    unsigned char frame = s_anim_frame;
-    unsigned char subpal = k_frame_subpal[frame];
-    unsigned short tile = (unsigned short)(ROOMROM_ITEM_TILE_BASE_PAL(subpal)
-                                            + k_frame_tile_base[frame]);
-    /* NES Z1 candle fire flips horizontally on every frame except 0:
-     * Anim_SetObjHFlipForSpriteDescriptor (Z_07.asm:5084) stores
-     * ObjAnimFrame[X] (= frame index 0..3) into $0F, then
-     * Anim_WriteHorizontallyFlippableSpritePair (Z_01.asm:5117) flips
-     * tile pair + sets hflip attr if $0F != 0. Genesis SPRITE_SIZE(2,2)
-     * with hflip=1 reverses tile fetch order + flips each tile, exactly
-     * matching the NES result. */
-    unsigned char hflip = (frame == 0u) ? 0u : 1u;
+    /* NES candle fire = single tile pair $5C/$5E (with $5D/$5F as 8x16
+     * bottoms), sub-pal 2 (red). ObjAnimFrame toggles 0/1 every 4 ticks
+     * → hflip toggles. */
+    unsigned char hflip = s_anim_frame & 1u;
+    unsigned short tile = (unsigned short)(ROOMROM_ITEM_TILE_BASE_PAL(CANDLE_FIRE_SUBPAL)
+                                            + CANDLE_FIRE_TILE_BASE);
     /* Priority bit set so flame renders ABOVE BG_A door art (which uses
      * BG priority 0x8000). NES Z1 fire is foreground. */
     VDP_setSpriteFull(CANDLE_FIRE_SLOT,
@@ -137,7 +130,7 @@ static void advance_anim(void)
     s_anim_tick++;
     if (s_anim_tick >= CANDLE_FIRE_TICKS_PER_FRM) {
         s_anim_tick = 0u;
-        s_anim_frame = (unsigned char)((s_anim_frame + 1u) & 0x03u);
+        s_anim_frame = (unsigned char)(s_anim_frame ^ 1u);  /* NES EOR #$01 toggle */
     }
 }
 
