@@ -197,17 +197,17 @@ void roomrom_sprites_upload_persistent_chr(void)
 
 void roomrom_sprites_upload_items_chr(void)
 {
-    /* FU3 (atlas pipeline): 4 sub-pal copies of the item atlas from the
-     * atlas/items_chr_x4 blob (byte-identical to legacy expanded_sprite_chr
-     * via gen_atlas.py FU2).  Blob layout: pal0_bytes||pal1_bytes||
-     * pal2_bytes||pal3_bytes; per-pal stride =
+    /* FU3 (atlas pipeline): N sub-pal copies of the item atlas from the
+     * atlas/items_chr_x4 blob. N = ROOMROM_ITEM_SUBPAL_COUNT (3 since
+     * 2026-05-08 sub-pal-3-drop unblock; was 4 prior). Blob layout:
+     * pal0_bytes||pal1_bytes||...||palN-1_bytes; per-pal stride =
      * ROOMROM_ATLAS_ITEMS_X4_PER_PAL_BYTES.
      *
-     * Items live at ROOMROM_ITEM_TILE_BASE (1337) — outside the SCENE_OBJ
+     * Items live at ROOMROM_ITEM_TILE_BASE — outside the SCENE_OBJ
      * range (1069..1204), so safe to re-upload per scene_load. */
     unsigned short variant = s_item_chr_variant;
     unsigned char  s;
-    for (s = 0; s < 4u; s++) {
+    for (s = 0; s < ROOMROM_ITEM_SUBPAL_COUNT; s++) {
         unsigned short vram_tile = (unsigned short)ROOMROM_ITEM_TILE_BASE_PAL(s);
         unsigned long  blob_off  = (unsigned long)(ROOMROM_ATLAS_ITEMS_X4_PER_PAL_BYTES)
                                    * (unsigned long)s;
@@ -298,6 +298,22 @@ void roomrom_sprites_spawn_link(short x, short y)
                       (s16)-32,
                       SPRITE_SIZE(2, 2),
                       TILE_ATTR_FULL(PAL1,0, 0, 0, EXPLOSION_VRAM_TILE),
+                      7);  /* link to slot 7 (room_item) — was 0 (terminator) */
+    /* Slot 7 = room_item placeholder, slot 8 = candle_fire. Both must be in
+     * the link chain or VDP skips them. Link 8 -> 0 terminates. */
+    VDP_setSpriteFull(7,
+                      (s16)-32,
+                      (s16)-32,
+                      SPRITE_SIZE(1, 1),
+                      TILE_ATTR_FULL(PAL1, 0, 0, 0, BOOMERANG_VRAM_TILE),
+                      8);
+    VDP_setSpriteFull(8,
+                      (s16)-32,
+                      (s16)-32,
+                      SPRITE_SIZE(2, 2),
+                      TILE_ATTR_FULL(PAL1, 1, 0, 0,
+                          (unsigned short)(ROOMROM_ITEM_TILE_BASE_PAL(0)
+                              + ROOMROM_ITEM_TILE_CANDLE_FIRE_F0)),
                       0);
     roomrom_sprites_set_link_pose(x, y, LINK_FACE_DOWN, 0u);
 }
@@ -641,8 +657,8 @@ void roomrom_sprites_set_explosion(short x, short y, unsigned char timer,
                       (s16)y,
                       SPRITE_SIZE(2, 2),
                       TILE_ATTR_FULL(PAL1,0, 0, 0, tile),
-                      0);
-    VDP_updateSprites(7, DMA);
+                      7);
+    VDP_updateSprites(9, DMA);
 }
 
 void roomrom_sprites_clear_explosion(void)
@@ -652,6 +668,6 @@ void roomrom_sprites_clear_explosion(void)
                       (s16)-32,
                       SPRITE_SIZE(2, 2),
                       TILE_ATTR_FULL(PAL1,0, 0, 0, EXPLOSION_VRAM_TILE),
-                      0);
-    VDP_updateSprites(7, DMA);
+                      7);  /* link to slot 7 — keeps slots 7/8 in chain */
+    VDP_updateSprites(9, DMA);
 }

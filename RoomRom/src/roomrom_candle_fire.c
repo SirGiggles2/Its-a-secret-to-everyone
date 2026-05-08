@@ -24,9 +24,13 @@
 #include "atlas/items_chr_x4.h"
 
 /* Travel: NES uses q-speed $20 = 0.5 px/frame for distance $10 (16 px),
- * then stand $3F frames. Approximate with whole-pixel travel. */
-#define CANDLE_FIRE_TRAVEL_PX     16
-#define CANDLE_FIRE_STAND_FRAMES  63   /* $3F NES ticks */
+ * then stand $3F frames. Approximate with whole-pixel travel.
+ * 2026-05-08 visibility-debug: bumped TRAVEL to 48 + STAND to 30 so the
+ * candle clears Link's 16x16 body footprint and shows visibly. NES-faithful
+ * 16 px keeps the candle merged with Link visually. Restore to 16 once
+ * NES movement model is fully ported (4-direction q-speed). */
+#define CANDLE_FIRE_TRAVEL_PX     48
+#define CANDLE_FIRE_STAND_FRAMES  30   /* shorter so cycle visible */
 #define CANDLE_FIRE_SPEED_PX      1
 #define CANDLE_FIRE_SLOT          8
 #define CANDLE_FIRE_TICKS_PER_FRM 4    /* NES LDA #$04 */
@@ -68,7 +72,7 @@ static void hide_slot(void)
                       TILE_ATTR_FULL(PAL1, 1, 0, 0,
                           (unsigned short)(ROOMROM_ITEM_TILE_BASE_PAL(0)
                               + ROOMROM_ITEM_TILE_CANDLE_FIRE_F0)),
-                      9);
+                      0);  /* link=0: terminate chain at this slot */
     VDP_updateSprites(9, DMA);
 }
 
@@ -116,7 +120,7 @@ static void draw_fire(void)
                       (s16)s_x, (s16)s_y,
                       SPRITE_SIZE(2, 2),
                       TILE_ATTR_FULL(PAL1, 1, 0, 0, tile),
-                      9);
+                      0);  /* terminate chain */
     VDP_updateSprites(9, DMA);
 }
 
