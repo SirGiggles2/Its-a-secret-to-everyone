@@ -25,13 +25,21 @@
 /* Z80 bus control registers. */
 #define Z80_BUSREQ_WORD (*(volatile unsigned short *)0x00A11100)
 
-/* VDP plane A nametable base for the current H32 video mode. Locked
- * at $C000 in our genesis_shell.asm boot path. The nametable entry
- * write address is computed as plane_base + (row * 64 + col) * 2. */
+/* VDP plane A nametable base for the native title / RoomRom layouts. */
 #define PLANE_A_BASE 0xC000u
 
 /* CRAM color words per palette. */
 #define CRAM_COLORS_PER_PAL 16u
+
+/* Active nametable row stride in bytes. Title runs H32/V32 (32 tiles per
+ * row = 64 bytes); RoomRom runs 64x64 (64 tiles per row = 128 bytes).
+ * CombinedDebug links one render ABI, so the stride has to follow the mode. */
+static unsigned short s_plane_row_stride_bytes = 64u;
+
+static void render_set_autoinc_word(void)
+{
+    VDP_CTRL_WORD = 0x8F02;
+}
 
 /* ---- IO primitives (moved in from intro_common.c, F4) ---- */
 
@@ -51,8 +59,8 @@ void render_vscroll_set(unsigned short value)
 void render_plane_write_row(unsigned short plane_base, unsigned short row,
                             const unsigned short *cells, unsigned short count)
 {
-    /* plane_base = $C000 (A) or $E000 (B). row = 0..31. stride = 64 bytes. */
-    unsigned short addr = (unsigned short)(plane_base + row * 64u);
+    /* plane_base = $C000 (A) or $E000 (B). */
+    unsigned short addr = (unsigned short)(plane_base + row * s_plane_row_stride_bytes);
     VDP_CTRL_LONG = 0x40000000UL
                   | ((unsigned long)(addr & 0x3FFFu) << 16)
                   | ((addr >> 14) & 0x0003u);
@@ -62,12 +70,14 @@ void render_plane_write_row(unsigned short plane_base, unsigned short row,
 void render_mode_set_v32(void)
 {
     /* VDP Reg 16 = $9000 (H32 x V32). Row stride = 64 bytes. */
+    s_plane_row_stride_bytes = 64u;
     VDP_CTRL_WORD = 0x9000;
 }
 
 void render_mode_set_v64(void)
 {
     /* VDP Reg 16 = $9011 (H64 x V64). Matches gameplay default. */
+    s_plane_row_stride_bytes = 128u;
     VDP_CTRL_WORD = 0x9011;
 }
 
@@ -171,22 +181,24 @@ void render_cram_fade_apply(unsigned char step, unsigned char total)
 
 /* CPU-based VRAM upload. Writes len bytes from src to VRAM[dst..dst+len-1].
  * Slower than DMA but reliable in display-off windows. */
-static void vram_dma_upload(unsigned long src, unsigned short dst,
+static void vram_dma_upload(const unsigned char *bytes, unsigned short dst,
                             unsigned short len)
 {
-    const unsigned short *p = (const unsigned short *)src;
-    unsigned short words = (unsigned short)(len >> 1);
-
-    /* Ensure auto-increment = 2 (word stride). */
-    VDP_CTRL_WORD = 0x8F02;
+    render_set_autoinc_word();
 
     /* Open VRAM write at dst. */
     unsigned long cmd = 0x40000000UL | ((unsigned long)(dst & 0x3FFFu) << 16)
                                      | ((dst >> 14) & 0x0003u);
     VDP_CTRL_LONG = cmd;
 
-    for (unsigned short i = 0; i < words; i++) {
-        VDP_DATA_WORD = p[i];
+    for (unsigned short i = 0; i + 1u < len; i = (unsigned short)(i + 2u)) {
+        unsigned short hi = bytes[i];
+        unsigned short lo = bytes[i + 1u];
+        VDP_DATA_WORD = (unsigned short)((hi << 8) | lo);
+    }
+
+    if ((len & 1u) != 0u) {
+        VDP_DATA_WORD = (unsigned short)((unsigned short)bytes[len - 1u] << 8);
     }
 }
 
@@ -195,7 +207,8 @@ static void vram_dma_upload(unsigned long src, unsigned short dst,
 void render_set_plane_a_word(unsigned short col, unsigned short row,
                              unsigned short word)
 {
-    unsigned short addr = (unsigned short)(PLANE_A_BASE + (row * 64u + col) * 2u);
+    unsigned short addr = (unsigned short)(PLANE_A_BASE +
+        row * s_plane_row_stride_bytes + col * 2u);
     VDP_CTRL_LONG = 0x40000000UL
                   | ((unsigned long)(addr & 0x3FFFu) << 16)
                   | ((addr >> 14) & 0x0003u);
@@ -204,21 +217,19 @@ void render_set_plane_a_word(unsigned short col, unsigned short row,
 
 void render_load_palette(unsigned short idx, const unsigned short *src)
 {
-    /* CRAM is byte-indexed but render_cram_upload writes contiguously
-     * starting at CRAM offset 0. F-phase replaces with SGDK PAL_setPalette
-     * which takes the slot index directly. */
-    (void)idx;
-    render_cram_upload(src, CRAM_COLORS_PER_PAL);
+    unsigned short count = CRAM_COLORS_PER_PAL;
+    render_cram_open_write((unsigned short)(idx * 16u));
+    while (count--) VDP_DATA_WORD = *src++;
 }
 
 void render_chr_upload(unsigned short vram_addr,
                        const unsigned char *src,
                        unsigned short byte_count)
 {
-    /* vram_dma_upload takes BYTE count as its len parameter and divides
-     * by 2 internally to compute the word count. Pass byte_count straight
-     * through; double-shift here would upload a quarter of the data. */
-    vram_dma_upload((unsigned long)src, vram_addr, byte_count);
+    /* vram_dma_upload takes BYTE count and byte-reads the source. Genesis
+     * ROM byte assets can legally link at odd addresses; word-reading them
+     * would address-error on 68000. */
+    vram_dma_upload(src, vram_addr, byte_count);
 }
 
 /* ---- Phase F3 raw streaming helpers ---- */
@@ -228,6 +239,7 @@ void render_chr_upload(unsigned short vram_addr,
  * (same formula intro_title.c used in its local vram_write_open). */
 void render_vram_open_write(unsigned short vram_addr)
 {
+    render_set_autoinc_word();
     VDP_CTRL_LONG = 0x40000000UL
                   | ((unsigned long)(vram_addr & 0x3FFFu) << 16)
                   | ((vram_addr >> 14) & 0x0003u);
@@ -251,6 +263,7 @@ void render_vram_write_words(const unsigned short *src, unsigned short count)
 void render_cram_open_write(unsigned short slot)
 {
     unsigned long addr = (unsigned long)slot * 2u;
+    render_set_autoinc_word();
     VDP_CTRL_LONG = 0xC0000000UL
                   | ((addr & 0x3FFFu) << 16)
                   | ((addr >> 14) & 0x0003u);
@@ -266,6 +279,7 @@ void render_cram_write_color(unsigned short slot, unsigned short value)
 /* Open CRAM at offset 0 and stream count color words. */
 void render_cram_upload(const unsigned short *src, unsigned short count)
 {
+    render_set_autoinc_word();
     VDP_CTRL_LONG = 0xC0000000UL;
     while (count--) VDP_DATA_WORD = *src++;
 }
@@ -277,6 +291,7 @@ void render_cram_upload(const unsigned short *src, unsigned short count)
 void render_vsram_open_write(unsigned short slot)
 {
     unsigned long addr = (unsigned long)slot * 2u;
+    render_set_autoinc_word();
     VDP_CTRL_LONG = 0x40000010UL
                   | ((addr & 0x3FFFu) << 16)
                   | ((addr >> 14) & 0x0003u);
@@ -297,11 +312,11 @@ void render_plane_fill(unsigned short plane_base, unsigned short fill_word,
     while (tile_count--) VDP_DATA_WORD = fill_word;
 }
 
-/* Write count cells into row of Plane A (base $C000, row stride = 64 bytes). */
+/* Write count cells into row of Plane A using the active mode stride. */
 void render_plane_a_write_row(unsigned short row, const unsigned short *cells,
                               unsigned short count)
 {
-    unsigned short addr = (unsigned short)(PLANE_A_BASE + row * 64u);
+    unsigned short addr = (unsigned short)(PLANE_A_BASE + row * s_plane_row_stride_bytes);
     render_vram_open_write(addr);
     while (count--) VDP_DATA_WORD = *cells++;
 }
@@ -315,6 +330,7 @@ void render_plane_a_write_row(unsigned short row, const unsigned short *cells,
 void render_cram_open_write_byte(unsigned short byte_addr)
 {
     unsigned long addr = (unsigned long)byte_addr;
+    render_set_autoinc_word();
     VDP_CTRL_LONG = 0xC0000000UL
                   | ((addr & 0x3FFFu) << 16)
                   | ((addr >> 14) & 0x0003u);

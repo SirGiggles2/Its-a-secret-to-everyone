@@ -1,0 +1,19 @@
+{
+  "verdict": "PASS",
+  "pairs_total": 1,
+  "pairs_passed": 1,
+  "entry_events_seen": 2,
+  "exit_events_seen": 2,
+  "events_total": 9,
+  "results": [
+    {
+      "level": 1,
+      "quest": 1,
+      "source": "0x22",
+      "cellar": "0x7F",
+      "entry_ok": true,
+      "exit_ok": true
+    }
+  ],
+  "jsonl_path": "C:\\tmp\\uw_stair_observations.jsonl"
+}

@@ -1,6 +1,6 @@
 # Prime Directive — Status
 
-_Generated 2026-05-07T15:20:04.851466+00:00 by `prime_refresh.py`._
+_Generated 2026-05-07T18:45:31.632554+00:00 by `prime_refresh.py`._
 
 **Phase:** 5 — Dungeon Core
 **Task:** ? — 

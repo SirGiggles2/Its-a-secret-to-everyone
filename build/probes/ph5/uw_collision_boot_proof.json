@@ -1,0 +1,11 @@
+{
+  "pass": true,
+  "room": 115,
+  "link_x": 124,
+  "link_y": 141,
+  "tile_addr": 2373,
+  "walkable_count": 478,
+  "blocked_count": 226,
+  "diff_count": 0,
+  "diff": []
+}

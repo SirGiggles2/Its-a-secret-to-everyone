@@ -42,3 +42,8 @@ void render_chr_upload(unsigned short vram_addr,
         VDP_loadTileData(buf, (u16)(tile + i), 1, CPU);
     }
 }
+
+void render_mode_set_v64(void)
+{
+    VDP_setPlaneSize(64, 64, TRUE);
+}

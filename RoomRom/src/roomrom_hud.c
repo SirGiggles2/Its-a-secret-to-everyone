@@ -40,6 +40,11 @@
 #define TILE_REDUX_HEART_OUTLINE 0x50u
 #define TILE_ORIGINAL_MAP_MARKER 0x51u
 #define TILE_REDUX_HEART_FILL    0x52u
+#define COMMON_BG_CHR_OFFSET     (112u * 32u)
+#define COMMON_MISC_CHR_OFFSET   (224u * 32u)
+#define COMMON_MISC_TILE_BASE    0xF2u
+#define REDUX_AUTOMAP_TILE_BASE  0x30u
+#define REDUX_AUTOMAP_TILE_COUNT 32u
 
 static unsigned char s_hud_pal[ROOMROM_HUD_ROWS][ROOMROM_ROOM_COLS];
 
@@ -117,7 +122,7 @@ static const unsigned char s_original_hud_macro[] = {
     0xFF
 };
 
-static const unsigned char s_redux_hud_macro[] = {
+static const unsigned char s_redux_ow_hud_macro[] = {
     0x23,0xC0,0x10,
     0x44,0x55,0x55,0x00,0x00,0xC0,0xFF,0x70,
     0x44,0x55,0x05,0x00,0x00,0xC0,0xAF,0x3A,
@@ -126,6 +131,23 @@ static const unsigned char s_redux_hud_macro[] = {
     0x20,0x96,0x08, 0x38,0x39,0x3A,0x3B,0x3C,0x3D,0x3E,0x3F,
     0x20,0xB6,0x08, 0x40,0x41,0x42,0x43,0x44,0x45,0x46,0x47,
     0x20,0xD6,0x08, 0x48,0x49,0x4A,0x4B,0x4C,0x4D,0x4E,0x4F,
+
+    0x20,0x63,0x12,
+    TILE_DASH,0x15,0x12,0x0F,0x0E,TILE_DASH,HUD_TILE_SPACE,HUD_TILE_SPACE,HUD_TILE_SPACE,HUD_TILE_SPACE,HUD_TILE_SPACE,HUD_TILE_SPACE,
+    0x69,0x0B,0x6B,0x69,0x0A,0x6B,
+    0x20,0xCF,0x06, 0x6E,0x6A,0x6D,0x6E,0x6A,0x6D,
+    0x20,0x8F,0xC2, 0x6C,
+    0x20,0x91,0xC2, 0x6C,
+    0x20,0x92,0xC2, 0x6C,
+    0x20,0x94,0xC2, 0x6C,
+    0x20,0x6B,0x84, 0xF7,0xF9,0x65,0x61,
+    0xFF
+};
+
+static const unsigned char s_redux_uw_hud_macro[] = {
+    0x23,0xC0,0x10,
+    0x44,0x55,0x55,0x00,0x00,0xC0,0xFF,0x70,
+    0x44,0x55,0x05,0x00,0x00,0xC0,0xAF,0x3A,
 
     0x20,0x63,0x12,
     TILE_DASH,0x15,0x12,0x0F,0x0E,TILE_DASH,HUD_TILE_SPACE,HUD_TILE_SPACE,HUD_TILE_SPACE,HUD_TILE_SPACE,HUD_TILE_SPACE,HUD_TILE_SPACE,
@@ -285,6 +307,51 @@ static void draw_original_map_marker(unsigned char room_id)
     draw_hud_tile(col, row, TILE_ORIGINAL_MAP_MARKER, 2);
 }
 
+static void upload_common_hud_tile(unsigned char subpal, unsigned char raw_tile)
+{
+    const unsigned char *src = common_chr_x4 + subpal * COMMON_CHR_PER_PAL_BYTES;
+    unsigned short dst = (unsigned short)(ROOMROM_BG_TILE_BASE_PAL(subpal)
+                                          + (unsigned short)raw_tile);
+
+    if (raw_tile < 0x70u) {
+        src += COMMON_BG_CHR_OFFSET + (unsigned short)raw_tile * 32u;
+    } else if (raw_tile >= COMMON_MISC_TILE_BASE) {
+        src += COMMON_MISC_CHR_OFFSET
+            + (unsigned short)(raw_tile - COMMON_MISC_TILE_BASE) * 32u;
+    } else {
+        return;
+    }
+
+    render_chr_upload((unsigned short)(dst * 32u), src, 32u);
+}
+
+static void upload_common_hud_tile_range(unsigned char subpal,
+                                         unsigned char first,
+                                         unsigned char last)
+{
+    unsigned char raw_tile;
+    for (raw_tile = first; raw_tile <= last; raw_tile++)
+        upload_common_hud_tile(subpal, raw_tile);
+}
+
+static void upload_common_hud_chr(unsigned char subpal)
+{
+    upload_common_hud_tile_range(subpal, 0x00u, 0x15u);
+    upload_common_hud_tile_range(subpal, 0x20u, 0x24u);
+    upload_common_hud_tile_range(subpal, 0x61u, 0x6Eu);
+    upload_common_hud_tile_range(subpal, 0xF7u, 0xF9u);
+}
+
+static void upload_redux_automap_chr(unsigned char subpal)
+{
+    unsigned short dst = (unsigned short)(ROOMROM_BG_TILE_BASE_PAL(subpal)
+                                          + REDUX_AUTOMAP_TILE_BASE);
+    render_chr_upload((unsigned short)(dst * 32u),
+                      redux_automap_chr_x4
+                        + subpal * REDUX_AUTOMAP_CHR_PER_PAL_BYTES,
+                      (unsigned short)(REDUX_AUTOMAP_TILE_COUNT * 32u));
+}
+
 void roomrom_hud_upload_chr(void)
 {
     /* Phase 3: write 4 sub-pal copies of the 3-tile custom HUD CHR into
@@ -292,6 +359,8 @@ void roomrom_hud_upload_chr(void)
     unsigned char buf[sizeof(s_hud_custom_chr)];
     unsigned char s, i;
     for (s = 0; s < 4; s++) {
+        upload_common_hud_chr(s);
+        upload_redux_automap_chr(s);
         for (i = 0; i < sizeof(s_hud_custom_chr); i++) {
             unsigned char b = s_hud_custom_chr[i];
             unsigned char hi = (b >> 4) & 0x0F;
@@ -307,13 +376,17 @@ void roomrom_hud_upload_chr(void)
     }
 }
 
-void roomrom_hud_draw(unsigned char hud_id, unsigned char room_id)
+void roomrom_hud_draw(unsigned char hud_id, unsigned char room_id,
+                      unsigned char is_underworld)
 {
+    const unsigned char *macro = s_original_hud_macro;
+    if (hud_id == ROOMROM_MAP_REDUX)
+        macro = is_underworld ? s_redux_uw_hud_macro : s_redux_ow_hud_macro;
+
     clear_hud_pal();
     clear_hud_window();
     clear_hud_b();
-    apply_transfer_macro((hud_id == ROOMROM_MAP_REDUX) ? s_redux_hud_macro
-                                                       : s_original_hud_macro);
+    apply_transfer_macro(macro);
     if (hud_id == ROOMROM_MAP_REDUX) {
         draw_status_counts();
         draw_hearts(hud_id);

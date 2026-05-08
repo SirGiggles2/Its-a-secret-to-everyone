@@ -20,7 +20,7 @@
  *    - Cost: one extra indirection per RAM access vs Title's A4 path
  *
  * Both variants expose identical `RAM(off)` / `OBJ(off, slot)` macros so
- * drained C in `src/oracle/<subsystem>/*_runtime.c` (and future native
+ * drained C in `src/oracle/<subsystem>/x_runtime.c` (and future native
  * code in `src/game/`) compiles unchanged for either target.
  *
  * No stdint.h (SGDK vendored toolchain ships no GCC builtin headers).

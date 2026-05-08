@@ -50,6 +50,13 @@ builds/*.o
 builds/*.lnk
 builds/*.exe
 builds/*.nes
+builds/CombinedDebug.md
+build/combined_debug_project/
+build/reports/
+build/generated/
+
+# Octo plugin scratch state
+.claude-octopus/
 
 # Backup/temp trees
 .pre-merge-backup/
