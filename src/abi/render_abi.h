@@ -21,6 +21,13 @@
 void render_set_plane_a_word(unsigned short col, unsigned short row,
                              unsigned short word);
 
+/* ---- Plane B tilemap write (PR-2: V scroll staging) ----
+ * Same word format as plane A. Plane B occupies VRAM $E000-$EFFF in
+ * RoomRom 64x32 layout (post PR-2). Used by V scroll transitions to
+ * stage the incoming room while plane A still shows the old room. */
+void render_set_plane_b_word(unsigned short col, unsigned short row,
+                             unsigned short word);
+
 /* ---- Palette load (full 16-color palette) ----
  * idx in [0, 3] selects which CRAM palette slot.
  * src points to 16 little-endian VDP color words (BGR-444 in CRAM order). */

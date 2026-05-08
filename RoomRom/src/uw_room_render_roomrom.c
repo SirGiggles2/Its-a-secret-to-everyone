@@ -221,6 +221,22 @@ static unsigned char uw_is_door_tile(unsigned char t)
     return 0u;
 }
 
+/* PR-2: target plane for nametable writes. 0=BG_A (default, current room),
+ * 1=BG_B (V scroll staging slot for incoming room). */
+static unsigned char s_target_plane = 0u;
+
+void roomrom_uw_room_render_set_target_plane(unsigned char plane)
+{
+    s_target_plane = plane ? 1u : 0u;
+}
+
+static void plane_write(unsigned short col, unsigned short row,
+                        unsigned short word)
+{
+    if (s_target_plane) render_set_plane_b_word(col, row, word);
+    else                render_set_plane_a_word(col, row, word);
+}
+
 static void write_tile_raw_at(unsigned char col, unsigned char row,
                            unsigned char dst_row_base,
                            unsigned char raw_tile, unsigned char pal)
@@ -231,8 +247,8 @@ static void write_tile_raw_at(unsigned char col, unsigned char row,
     unsigned short pri = uw_is_door_tile(raw_tile) ? 0x8000u : 0u;
     unsigned short word = (unsigned short)(pri |
         (ROOMROM_BG_TILE_BASE_PAL(pal & 0x03) + (unsigned short)raw_tile));
-    render_set_plane_a_word(col, (unsigned short)(dst_row_base + row +
-                                                  ROOMROM_ROOM_FIRST_ROW), word);
+    plane_write(col, (unsigned short)(dst_row_base + row +
+                                      ROOMROM_ROOM_FIRST_ROW), word);
 }
 
 static void write_tile_raw(unsigned char col, unsigned char row,
@@ -387,7 +403,7 @@ void roomrom_uw_room_render_fill_plane_a_dark(void)
     s_cur_attr = (const unsigned char *)0;
     for (row = 0; row < ROOMROM_ROOM_ROWS; row++) {
         for (col = 0; col < ROOMROM_ROOM_COLS; col++) {
-            render_set_plane_a_word(col,
+            plane_write(col,
                 (unsigned short)(row + ROOMROM_ROOM_FIRST_ROW),
                 0x0000u);
         }

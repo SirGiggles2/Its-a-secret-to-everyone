@@ -71,4 +71,9 @@ void roomrom_ow_room_render_fill_one_col_at(unsigned char room_id,
                                             unsigned char dst_col,
                                             unsigned char dst_row_base);
 
+/* PR-2 V scroll staging: select target plane for nametable writes.
+ * 0 = BG_A (default, current room slot). 1 = BG_B (incoming room
+ * staging during V scroll). Caller must reset to 0 after staging. */
+void roomrom_ow_room_render_set_target_plane(unsigned char plane);
+
 #endif

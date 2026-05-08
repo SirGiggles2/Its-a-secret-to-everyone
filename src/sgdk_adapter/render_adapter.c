@@ -28,6 +28,11 @@
 /* VDP plane A nametable base for the native title / RoomRom layouts. */
 #define PLANE_A_BASE 0xC000u
 
+/* VDP plane B nametable base — used by PR-2 V scroll staging.
+ * RoomRom 64x32 layout post PR-2: BGA @ $C000, Window @ $D000,
+ * BGB @ $E000. Title H32 layout sets BGB via reg 4 = $07 ($E000) too. */
+#define PLANE_B_BASE 0xE000u
+
 /* CRAM color words per palette. */
 #define CRAM_COLORS_PER_PAL 16u
 
@@ -208,6 +213,17 @@ void render_set_plane_a_word(unsigned short col, unsigned short row,
                              unsigned short word)
 {
     unsigned short addr = (unsigned short)(PLANE_A_BASE +
+        row * s_plane_row_stride_bytes + col * 2u);
+    VDP_CTRL_LONG = 0x40000000UL
+                  | ((unsigned long)(addr & 0x3FFFu) << 16)
+                  | ((addr >> 14) & 0x0003u);
+    VDP_DATA_WORD = word;
+}
+
+void render_set_plane_b_word(unsigned short col, unsigned short row,
+                             unsigned short word)
+{
+    unsigned short addr = (unsigned short)(PLANE_B_BASE +
         row * s_plane_row_stride_bytes + col * 2u);
     VDP_CTRL_LONG = 0x40000000UL
                   | ((unsigned long)(addr & 0x3FFFu) << 16)

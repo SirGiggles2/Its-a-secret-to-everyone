@@ -279,6 +279,16 @@ static unsigned short tile_word(unsigned char raw_tile, unsigned char pal)
  * leave it off so partial fills don't poison the cache. */
 static unsigned char s_raw_tile_capture_active = 0u;
 
+/* PR-2: target plane for nametable writes. 0=BG_A (default, current room),
+ * 1=BG_B (V scroll staging slot for incoming room). Caller toggles via
+ * roomrom_ow_room_render_set_target_plane before render_room_into_slot. */
+static unsigned char s_target_plane = 0u;
+
+void roomrom_ow_room_render_set_target_plane(unsigned char plane)
+{
+    s_target_plane = plane ? 1u : 0u;
+}
+
 /* Palette uses src tile coords (where the tile semantically lives in its
  * source room). Plane write uses dst tile coords (where the tile actually
  * lands on the BG plane — supports off-room rendering during scroll). */
@@ -291,10 +301,11 @@ static void write_tile_at(unsigned char src_tile_col, unsigned char src_tile_row
 {
     unsigned char pal = ow_tile_palette(src_tile_col, src_tile_row,
                                         outer_pal, inner_pal);
-    render_set_plane_a_word(dst_tile_col,
-                            (unsigned short)(dst_row_base + dst_tile_row +
-                                             ROOMROM_ROOM_FIRST_ROW),
-                            tile_word(raw_tile, pal));
+    unsigned short row_addr = (unsigned short)(dst_row_base + dst_tile_row +
+                                               ROOMROM_ROOM_FIRST_ROW);
+    unsigned short word = tile_word(raw_tile, pal);
+    if (s_target_plane) render_set_plane_b_word(dst_tile_col, row_addr, word);
+    else                render_set_plane_a_word(dst_tile_col, row_addr, word);
     /* Cache key = SOURCE-room BG tile (0..31, 0..21), not plane dst col.
      * Plane placement varies by scroll slot, but the warp coordinator
      * checks tiles in the source-room coordinate space (link_x >> 3,

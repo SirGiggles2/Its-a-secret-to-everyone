@@ -69,6 +69,11 @@ void roomrom_uw_room_render_set_walkable_tile(unsigned char col,
 unsigned char roomrom_uw_room_render_palette_at(unsigned char nt_col,
                                                 unsigned char nt_row);
 
+/* PR-2 V scroll staging: select target plane for nametable writes.
+ * 0 = BG_A (default, current room slot). 1 = BG_B (incoming room
+ * staging during V scroll). Caller must reset to 0 after staging. */
+void roomrom_uw_room_render_set_target_plane(unsigned char plane);
+
 /* Task 5.5 debug: copy 32x22 BG-tile walkability cache to a fixed RAM
  * block for probe inspection. Layout:
  *   off 0,1: magic 'U','W'

@@ -157,6 +157,12 @@ static u8             s_active_slot_x   = 0u;     /* 0 = cols 0..31, 1 = cols 32
 static u8             s_active_row_base = 0u;     /* room base row in the 64-row plane */
 static u8             s_transition_target = 0u;
 static u8             s_transition_row_base = 0u;
+/* PR-2: V scroll staging — which plane currently holds the active room
+ * (0=BG_A, 1=BG_B). PR-2a defaults to BG_A and never flips; PR-2b drives
+ * V scroll transitions by rendering the incoming room into BG_B then
+ * promoting it to active. */
+static u8             s_active_plane = 0u;
+static u8             s_transition_plane = 0u;
 static short          s_active_scroll_x = 0;
 static short          s_active_scroll_y = 0;
 static short          s_scroll_start_x = 0;

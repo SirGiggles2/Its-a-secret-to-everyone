@@ -12,6 +12,14 @@ void render_set_plane_a_word(unsigned short col, unsigned short row,
                      (unsigned short)(row & 0x3Fu));
 }
 
+void render_set_plane_b_word(unsigned short col, unsigned short row,
+                             unsigned short word)
+{
+    VDP_setTileMapXY(BG_B, word,
+                     (unsigned short)(col & 0x3Fu),
+                     (unsigned short)(row & 0x3Fu));
+}
+
 void render_load_palette(unsigned short idx, const unsigned short *src)
 {
     PAL_setColors((u16)(idx * 16), (const u16 *)src, 16, CPU);
