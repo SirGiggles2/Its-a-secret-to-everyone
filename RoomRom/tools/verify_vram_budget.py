@@ -4,18 +4,19 @@
 Reads constants from RoomRom/src/roomrom_vram_map.h and
 RoomRom/src/atlas/items_chr_x4.h.
 
-CRITICAL (PR-1 review 2026-05-07): RoomRom uses 64x64 plane mode
-(VDP_setPlaneSize(64,64,TRUE) in main.c:314). SGDK relocates VDP
-tables for 64x64 plane (vdp.c:509):
-  HScroll  = $A800 (tile 1344)
-  SAT      = $AC00 (tile 1376)
-  Window   = $B000 (tiles 1408-1535)
-  plane A  = $C000 (tile 1536)
-  plane B  = $E000 (tile 1792)
+CRITICAL (PR-2b 2026-05-08): RoomRom now uses 64x32 plane mode
+(render_mode_set_h64v32 in main.c init_video; VDP reg 16 = $9001).
+With BG_A address override -> $C000 and BG_B override -> $E000,
+SGDK case-11 layout places VDP tables at:
+  plane A  = $C000 (tile 1536)   4 KB
+  Window   = $D000 (tile 1664)   4 KB
+  plane B  = $E000 (tile 1792)   4 KB
+  HScroll  = $F000 (tile 1920)   1 KB
+  SAT      = $F400 (tile 1952)   640 B
+  free     = $F800-$FFFF         2 KB (unused, reserved for future)
 
-Conservative tile-data ceiling for 64x64 mode: $A800 = tile 1344.
-The default-mode constants below are kept for legacy comparison
-but MUST NOT be used as the active limit.
+Conservative tile-data ceiling for 64x32 mode: $C000 = tile 1536
+(+192 tiles vs 64x64 mode's $A800 limit).
 
 Exit code 0 = pass, 1 = fail.
 """
@@ -28,19 +29,20 @@ VRAM_MAP_H    = ROOT / "src" / "roomrom_vram_map.h"
 ITEM_CHR_H    = ROOT / "src" / "atlas" / "items_chr_x4.h"
 
 VDP_TABLES = {
-    # 64x64 plane layout (RoomRom main.c:314 sets VDP_setPlaneSize(64,64,TRUE)).
-    # SGDK's vdp.c:509 places tables here:
-    "h_scroll": (0xA800, 0xA800 + 0x0400),  # tile 1344..1375
-    "sat":      (0xAC00, 0xAC00 + 0x0280),  # tile 1376..1395
-    "window":   (0xB000, 0xB000 + 0x1000),  # tile 1408..1535
-    "plane_a":  (0xC000, 0xC000 + 0x2000),  # tile 1536..1791
-    "plane_b":  (0xE000, 0xE000 + 0x2000),  # tile 1792..2047
+    # 64x32 plane layout (PR-2b: render_mode_set_h64v32 + BGA/BGB overrides).
+    # SGDK case 11 default places tables here, with our BGA->$C000,
+    # BGB->$E000 overrides keeping plane addresses fixed:
+    "plane_a":  (0xC000, 0xC000 + 0x1000),  # tile 1536..1663 (4 KB)
+    "window":   (0xD000, 0xD000 + 0x1000),  # tile 1664..1791 (4 KB)
+    "plane_b":  (0xE000, 0xE000 + 0x1000),  # tile 1792..1919 (4 KB)
+    "h_scroll": (0xF000, 0xF000 + 0x0400),  # tile 1920..1951 (1 KB)
+    "sat":      (0xF400, 0xF400 + 0x0280),  # tile 1952..1971 (640 B)
 }
 
-# Conservative end-of-tile-data limit for 64x64 mode = $A800 (tile 1344).
+# Conservative end-of-tile-data limit for 64x32 mode = $C000 (tile 1536).
 # Anything beyond this overlaps VDP tables and gets clobbered each frame.
-TILE_DATA_LIMIT_BYTES = 0xA800
-TILE_DATA_LIMIT_TILES = TILE_DATA_LIMIT_BYTES // 32  # 1344
+TILE_DATA_LIMIT_BYTES = 0xC000
+TILE_DATA_LIMIT_TILES = TILE_DATA_LIMIT_BYTES // 32  # 1536
 
 
 def fail(msg):
@@ -125,7 +127,7 @@ def main():
 
     if spr_range[1] > TILE_DATA_LIMIT_BYTES:
         fail(f"SPR range end 0x{spr_range[1]:X} exceeds tile-data limit "
-             f"0x{TILE_DATA_LIMIT_BYTES:X} (=$A800 in 64x64 mode); tiles would clobber "
+             f"0x{TILE_DATA_LIMIT_BYTES:X} (=$C000 in 64x32 mode); tiles would clobber "
              f"VDP table region")
 
     for name, vdp_range in VDP_TABLES.items():
@@ -152,12 +154,12 @@ def main():
 
     if item_end_tile > TILE_DATA_LIMIT_TILES:
         fail(f"ITEM bank end tile {item_end_tile} exceeds VDP table region start "
-             f"tile {TILE_DATA_LIMIT_TILES} (=$A800 in 64x64 mode); ITEM bank would clobber "
+             f"tile {TILE_DATA_LIMIT_TILES} (=$C000 in 64x32 mode); ITEM bank would clobber "
              f"VDP table region")
 
     if item_range[1] > TILE_DATA_LIMIT_BYTES:
         fail(f"ITEM range end 0x{item_range[1]:X} exceeds tile-data limit "
-             f"0x{TILE_DATA_LIMIT_BYTES:X} (=$A800 in 64x64 mode); tiles would clobber "
+             f"0x{TILE_DATA_LIMIT_BYTES:X} (=$C000 in 64x32 mode); tiles would clobber "
              f"VDP table region")
 
     for name, vdp_range in VDP_TABLES.items():

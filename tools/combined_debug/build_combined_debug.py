@@ -214,17 +214,13 @@ def main() -> int:
     print("[CombinedDebug][CHR-1 gate] verify_item_chr_manifest.py --strict")
     run([sys.executable, ROOT / "RoomRom" / "tools" / "verify_item_chr_manifest.py", "--strict"])
 
-    # [CHR-1 gate] verify_vram_budget.py KNOWN-FAILING per Codex
-    # 2026-05-07: 64x64 plane mode places VDP tables at $A800/$AC00/
-    # $B000; ITEM bank end tile 1461 > tile 1344 limit; tiles in
-    # range $A800..$BFFF get clobbered each frame by HScroll/SAT/
-    # Window writes. Verifier disabled here pending VRAM relocation
-    # work (PR-2 redesigned). RoomRom standalone gates this too via
-    # RoomRom/build.bat — RoomRom is shelved per
-    # feedback_combined_debug_only.md so this single skip is the
-    # only build path. Re-enable once layout fixed.
-    print("[CombinedDebug][CHR-1 gate] verify_vram_budget.py SKIPPED "
-          "(known 64x64 collision; tracked in PR-2)")
+    # [CHR-1 gate] verify_vram_budget.py — re-enabled PR-2c 2026-05-08.
+    # PR-2b switched RoomRom to 64x32 plane mode (render_mode_set_h64v32
+    # + BGA/BGB address overrides), raising the tile-data ceiling from
+    # $A800 (1344 tiles) to $C000 (1536 tiles). ITEM bank end tile 1460
+    # now fits with 75-tile headroom.
+    print("[CombinedDebug][CHR-1 gate] verify_vram_budget.py")
+    run([sys.executable, ROOT / "RoomRom" / "tools" / "verify_vram_budget.py"])
 
     print("[CombinedDebug][CHR-1 gate] check_generated_freshness.py")
     run([sys.executable, ROOT / "tools" / "probes" / "check_generated_freshness.py"])

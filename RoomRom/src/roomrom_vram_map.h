@@ -32,18 +32,20 @@
  *                                            1+ per tile)
  *   tile 1461 .. 1535                       reserved / future
  *   tile 1536+                              VDP plane / window / SAT / HScroll
- *                                            tables (SGDK default layout
+ *                                            tables (post-PR-2b 64x32 layout
  *                                            allocates $C000+ for tables;
  *                                            1536 = $C000 / 32).
  *
- * VRAM table addresses (SGDK default, see sgdk/src/vdp.c:23-27):
- *   plane B  = $C000  (tiles 1536..1791 in 64x32 mode)
- *   window   = $D000  (tiles 1664..1791)
- *   plane A  = $E000  (tiles 1792..2047)
- *   hscroll  = $F000  (tiles 1920..1935)
- *   SAT      = $F400  (tiles 1952..1971)
+ * VRAM table addresses (PR-2b 64x32 mode, BGA/BGB overrides applied):
+ *   plane A  = $C000  (tiles 1536..1663, 4 KB)
+ *   window   = $D000  (tiles 1664..1791, 4 KB)
+ *   plane B  = $E000  (tiles 1792..1919, 4 KB) -- V scroll staging
+ *   hscroll  = $F000  (tiles 1920..1951, 1 KB)
+ *   SAT      = $F400  (tiles 1952..1971, 640 B)
+ *   free     = $F800-$FFFF                  (2 KB unused, future use)
  *
  * Tile bank ends at 1460 -- 75 tiles of headroom before the table region.
+ * (+192 tiles vs pre-PR-2 64x64 mode which capped at $A800 = 1344 tiles.)
  * Audit command:  python RoomRom/tools/audit_vram_tile_usage.py
  *
  * Notes:
