@@ -296,17 +296,25 @@ static void link_nes_move_object(link_dir_t dir)
 static void init_video(void)
 {
     VDP_setScreenWidth256();
-    /* PR-2: 64x32 plane mode. BG_A holds current room (cols 0..31 active
-     * slot, cols 32..63 H staging slot). BG_B is V scroll staging only —
-     * incoming room rendered there during N/S transitions, copied back to
-     * BG_A on finalize. Frees 192 tiles ($A800-$BFFF) vs old 64x64 mode. */
-    render_mode_set_h64v32();
-    /* SGDK case 11 default: BGB@$C000, Window@$D000, BGA@$E000. Override
-     * so BGA matches PLANE_A_BASE=$C000 in render_adapter.c and BGB
-     * matches PLANE_B_BASE=$E000. Window stays at $D000 (case 11 default). */
+    /* PR-2 (PR-2b fix): 64x32 plane mode. Use SGDK's VDP_setPlaneSize
+     * with setupVram=TRUE so SGDK's internal planeWidth/planeHeight/
+     * windowWidth caches AND VRAM table addresses get configured for
+     * case 11 defaults (BGB@$C000, Window@$D000, BGA@$E000, HScroll@
+     * $F000, SAT@$F400). render_mode_set_h64v32 is a no-go because the
+     * hand-rolled adapter doesn't update SGDK's cached state — Title's
+     * 64x64 cache values stick and SGDK plane writes (VDP_setTileMapXY,
+     * Window writes) land at wrong VRAM offsets. Then swap BGA/BGB so
+     * BG_A holds the active room (rows 7..28) and BG_B is V scroll
+     * staging during N/S transitions, copied back to BG_A on finalize.
+     * Frees 192 tiles vs old 64x64 mode. */
+    VDP_setPlaneSize(64, 32, TRUE);
     VDP_setBGAAddress(0xC000u);
     VDP_setBGBAddress(0xE000u);
     VDP_setWindowOnTop(ROOMROM_HUD_ROWS);
+    /* PR-2b fix: keep hand-rolled adapter's stride cache in sync with the
+     * 64-wide plane so render_plane_a_write_row / render_set_plane_*_word
+     * (if ever used) compute the right offsets. */
+    render_mode_set_h64v32();
     /* Independent H/V scroll per plane so BG_B can stage V incoming. */
     VDP_setScrollingMode(HSCROLL_PLANE, VSCROLL_PLANE);
     VDP_setHorizontalScroll(BG_A, 0);
