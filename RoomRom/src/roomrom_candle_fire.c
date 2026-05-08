@@ -114,12 +114,20 @@ static void draw_fire(void)
     unsigned char subpal = k_frame_subpal[frame];
     unsigned short tile = (unsigned short)(ROOMROM_ITEM_TILE_BASE_PAL(subpal)
                                             + k_frame_tile_base[frame]);
+    /* NES Z1 candle fire flips horizontally on every frame except 0:
+     * Anim_SetObjHFlipForSpriteDescriptor (Z_07.asm:5084) stores
+     * ObjAnimFrame[X] (= frame index 0..3) into $0F, then
+     * Anim_WriteHorizontallyFlippableSpritePair (Z_01.asm:5117) flips
+     * tile pair + sets hflip attr if $0F != 0. Genesis SPRITE_SIZE(2,2)
+     * with hflip=1 reverses tile fetch order + flips each tile, exactly
+     * matching the NES result. */
+    unsigned char hflip = (frame == 0u) ? 0u : 1u;
     /* Priority bit set so flame renders ABOVE BG_A door art (which uses
      * BG priority 0x8000). NES Z1 fire is foreground. */
     VDP_setSpriteFull(CANDLE_FIRE_SLOT,
                       (s16)s_x, (s16)s_y,
                       SPRITE_SIZE(2, 2),
-                      TILE_ATTR_FULL(PAL1, 1, 0, 0, tile),
+                      TILE_ATTR_FULL(PAL1, 1, 0, hflip, tile),
                       0);  /* terminate chain */
     VDP_updateSprites(9, DMA);
 }
