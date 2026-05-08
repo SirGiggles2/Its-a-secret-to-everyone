@@ -22,7 +22,7 @@ Usage:
 
 Workflow:
     1. Build RoomRom (cmd /c RoomRom\\build.bat).
-    2. Launch BizHawk with RoomRom\\out\\RoomRom.md and run
+    2. Launch BizHawk with RoomRom\\out\\Debug.md and run
        RoomRom\\tools\\probe_phase34_dispatchers.lua. Output:
        build\\probes\\ph34\\dispatchers.json.
     3. First run: this script with --bootstrap to record

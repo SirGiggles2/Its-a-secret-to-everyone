@@ -1,5 +1,5 @@
-local DEFAULT_OUT = "C:\\Users\\Jake Diggity\\Documents\\GitHub\\FINAL TRY\\build\\reports\\combined_debug\\a4_survival.json"
-local OUT_PATH = os.getenv("COMBINED_DEBUG_A4_REPORT") or DEFAULT_OUT
+local DEFAULT_OUT = "C:\\Users\\Jake Diggity\\Documents\\GitHub\\FINAL TRY\\build\\reports\\debug\\a4_survival.json"
+local OUT_PATH = os.getenv("DEBUG_A4_REPORT") or DEFAULT_OUT
 
 local function mkdir_for(path)
     local dir = path:match("^(.*)[/\\][^/\\]+$")

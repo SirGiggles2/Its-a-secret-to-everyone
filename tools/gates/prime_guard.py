@@ -3,7 +3,7 @@
 
 Intents:
   edit         — pre-edit check for high-risk paths (substrate, src/game, build.bat, src/frontend)
-  build        — pre-build check (no whatif emission, SGDK pin)
+  build        — pre-build check (banned-name absent, SGDK pin)
   close-phase  — phase-close gate runner; walks 11 steps, blocks on missing artifacts
 
 Exit codes:
@@ -101,7 +101,9 @@ def cmd_edit(paths: list[str], check_content: list[str]) -> tuple[int, list[str]
             msgs.append(f"BLOCK: substrate edit on non-main worktree (branch={branch}): {norm}  [WT-1]")
             rc = max(rc, 2)
         if "whatif" in norm.lower():
-            msgs.append(f"BLOCK: whatif path forbidden: {norm}  [WT-4]")
+            msgs.append(
+                f"BLOCK: banned legacy-alias filename forbidden: {norm}  [WT-4]"
+            )
             rc = max(rc, 2)
         if norm.startswith("src/game/") and not matches_any(norm, HIGH_RISK_PATHS[:0]):
             msgs.append(f"NOTE: src/game path requires D1 4-line header — see references/hard-rules.md")
@@ -135,10 +137,13 @@ def cmd_build() -> tuple[int, list[str]]:
             stripped = ln.strip().lower()
             if not stripped or stripped.startswith("rem ") or stripped.startswith("::") or stripped.startswith("echo "):
                 continue
-            if "check_no_whatif" in stripped:
+            if "check_banned_filename" in stripped or "check_no_whatif" in stripped:
                 continue
             if re.search(r"\bwhatif\b", stripped):
-                msgs.append(f"BLOCK: build.bat emits whatif (must be Title.*) [WT-4]: {ln.strip()[:80]}")
+                msgs.append(
+                    "BLOCK: build.bat emits banned legacy alias "
+                    f"(must be Title.*) [WT-4]: {ln.strip()[:80]}"
+                )
                 rc = 2
     return rc, msgs
 

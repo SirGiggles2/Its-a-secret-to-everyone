@@ -1,10 +1,60 @@
-# Title.md + RoomRom Full Zelda Port Master Implementation Plan
+# Debug.md Full Zelda Port Master Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement each phase task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Finish the full Sega Genesis Zelda port through a legally distributable builder that extracts assets from a user-supplied NES ROM.
 
-**Architecture:** Keep `Title.md` and `RoomRom.md` separate until the gameplay core is verified. Promote proven RoomRom systems into shared `src/game/` modules, keep frontend under `src/frontend/`, and make all generated Nintendo-derived assets reproducible from a user-supplied NES ROM through `tools/builder/`.
+---
+
+## Sole Build Target Amendment (2026-05-08, AUTHORITATIVE)
+
+**User pivot 2026-05-08:** There is exactly one ROM and one build script:
+
+| Target | Output | Build |
+|---|---|---|
+| `Debug.md` | `builds/Debug.md` | `Debug.bat` |
+
+`Debug.bat` wraps `tools/debug/build_debug.py`, links the SGDK boot, the
+Title A4 RAM ABI (intro / file select / story scroll), and the RoomRom
+runtime exports into one ROM. The A+B+C chord at `PHASE_TITLE_DISPLAY`
+drops directly into the RoomRom runtime, so all gameplay scenes are
+reachable without a separate harness ROM.
+
+**This amendment supersedes every reference below to:**
+
+- `whatif.*` (legacy alias retired 2026-05-02)
+- `Title.md` / `Title.lst` / `Title.elf` / `Title.o` (frontend-only ROM
+  retired 2026-05-08; the Title-side C lives on as link sources inside
+  `Debug.md`)
+- `RoomRom.md` (gameplay harness ROM retired 2026-05-08; gameplay sources
+  in `RoomRom/src/` are still authoritative and link into `Debug.md`)
+- `CombinedDebug.md` / `CombinedDebug.bat` / `combined_debug` (renamed
+  2026-05-08 to `Debug.md` / `Debug.bat` / `debug`)
+
+**Wherever the body of this plan says "RoomRom.md", "Title.md", or
+"CombinedDebug.md", read it as `Debug.md`. Wherever it says
+`RoomRom\build.bat`, `build.bat`, or `CombinedDebug.bat`, read it as
+`Debug.bat`. Wherever it says `tools/combined_debug/` or
+`src/combined_debug/`, read it as `tools/debug/` or `src/debug/`.**
+
+The banned-token regex lives in `tools/gates/check_banned_filename.py`.
+CI fails on any active-code reintroduction of the retired aliases.
+Historical evidence stays in `debates/`, `docs/archive/`,
+`docs/superpowers/specs/`, `docs/superpowers/plans/`,
+`docs/superpowers/decisions/`, and `docs/superpowers/captures/`.
+
+The dual-ROM substrate gate `tools/gates/check_substrate_dual_rom.py` is
+retired with the dual-ROM era — substrate edits are verified by a single
+clean `Debug.bat` build.
+
+---
+
+**Architecture:** Single ROM `Debug.md`. Title-path C (intro, story
+scroll, file select) and RoomRom gameplay both link into one binary; the
+A+B+C chord transfers control from the Title boot to the RoomRom runtime.
+Promote proven RoomRom systems into shared `src/game/` modules per
+master-plan Task 12.0. Keep all generated Nintendo-derived assets
+reproducible from a user-supplied NES ROM through `tools/builder/`.
 
 **Tech Stack:** SGDK/m68k GCC, BizHawk Lua probes, Python asset extractors/generators/verifiers, PowerShell/Batch build launchers, C gameplay/runtime modules, Genesis `.md` output.
 
@@ -30,15 +80,11 @@
 - [ ] **Rule SGDK-3 (Hand-Rolled VDP).** Default to SGDK API for all Genesis hardware. Raw VDP register writes outside boot/shim/adapter require: profiled hot path, ≥15% measured cycle/frame or bandwidth improvement, inline citation of the SGDK call replaced, entry in `docs/handrolled_vdp.md`, adapter unit-test coverage.
 - [ ] **Rule SGDK-4 (Audio Migration Trigger).** Custom driver is the default. XGM2 migration of any audio subsystem (or whole-driver flip) requires ADR approval, triggered by ANY 2 of the following firing within a rolling 90-day window: (a) `audio_tick` >10% frame budget, (b) parity-oracle song failure surviving 1 debug cycle, (c) driver footprint >8KB, (d) ≥3 unfixable `audio-parity` issues open >30d. Documented in `docs/audio_migration_trigger.md`.
 - [ ] **Rule SGDK-5 (Fork Policy).** Project owner is the sole decision-maker for forking SGDK. Qualifying conditions: security CVE (no upstream patch 14d), parity blocker (upstream rejected/stalled 30d), reproducibility break (upstream refuses fix), build-breaker (no upstream response 14d). Patch must be <200 LOC and touch no SGDK public ABI. Performance alone is not fork-worthy — hand-roll behind the adapter under Rule SGDK-3 instead. Fork lives at `vendor/sgdk-fork/` with `PATCHES/`; every release attempts clean rebase against upstream and auto-PRs un-fork on success.
-- [ ] **Rule WT-1 (Substrate Single-Writer).** Shared substrate (`src/sgdk_adapter/`, `src/abi/`, `src/state/`, `data/`, `src/audio_driver.asm`) is edited from `main` worktree only. RoomRom worktrees rebase on `main` to consume substrate changes. Single-writer invariant prevents semantically-valid divergent edits at runtime. Defense-in-depth: `tools/gates/check_substrate_dual_rom.py` runs on any commit touching substrate paths and must build BOTH `Title.md` and `RoomRom.md` clean.
+- [ ] **Rule WT-1 (Substrate Single-Writer).** Shared substrate (`src/sgdk_adapter/`, `src/abi/`, `src/state/`, `data/`, `src/audio_driver.asm`) is edited from `main` worktree only. RoomRom worktrees rebase on `main` to consume substrate changes. Single-writer invariant prevents semantically-valid divergent edits at runtime. Substrate edits are verified by a single clean `Debug.bat` build (the dual-ROM gate `tools/gates/check_substrate_dual_rom.py` is retired with the dual-ROM era, see Sole Build Target Amendment 2026-05-08).
 - [ ] **Rule WT-2 (Active Scope Pointer).** Before any edit, consult `docs/audit/active_scope.md` (or `.active_scope`) for the current phase's allowed paths. The pointer is auto-generated by `tools/audit/active_scope.py` on phase-close commit. Edits outside the active scope trigger pre-commit warnings (advisory, not blocking).
 - [ ] **Rule WT-3 (Frontend Boundary).** Code under `src/game/` and `RoomRom/src/` MUST NOT include headers under `src/frontend/`. Phase 12 promotion gate is hard-fail enforced by `tools/gates/check_frontend_boundary.py`. Shared types belong in `src/state/` or `src/abi/`, never in frontend.
-- [ ] **Rule WT-4 (No Whatif Emission).** `build.bat` MUST emit only `Title.md` / `Title.lst` / `Title.o` / `Title.elf`. Legacy `whatif.*` alias is dead per user hard rule (debate 004, 2026-05-02). Enforced by `tools/gates/check_no_whatif.py` (CI fail on any `whatif` reference outside `debates/` and `docs/archive/`).
-- [ ] **Rule BT-1 (RoomRom Is Default Target — HARD).** 99% of phase work targets **RoomRom**, not Title.md. Per user hard rule (2026-05-04, after Ph5 T5.2 mistake). Two ROMs, two build scripts, never confuse them:
-  - **RoomRom phases (2 through 12 implementation work):** build with `cmd.exe /c ".\RoomRom\build.bat"` only. RoomRom is the active gameplay scaffold; all UW / OW / Link / collision / item / enemy work lands here.
-  - **Title.md (root `./build.bat`):** release / frontend harness. NEVER built or edited without explicit user approval. Phase 11 (`Title.md Frontend Gap-Fill + Regression Lock`) and Phase 12 (`Promote RoomRom Core And Integrate Final ROM`) are the only phases that legitimately touch Title.md, and even then only with the user's go-ahead per task.
-  - **Decision rule:** when picking a build script, default to `RoomRom/build.bat`. If unsure, ASK before invoking root `build.bat`. Citing "Title.md build clean" as evidence for a RoomRom phase is a process violation — wastes build cycles, conflates probe scope, and the root build runs Title-only checks (e.g. `phase_sequence.done` intro probe) that fail unrelated to RoomRom changes.
-  - **Cross-reference:** memory `feedback_roomrom_default_target` + `feedback_check_worktree_first` + `project_active_scope_roomrom`.
+- [ ] **Rule WT-4 (Banned Legacy Build Aliases).** Per Sole Build Target Amendment 2026-05-08, `Debug.bat` MUST emit only `Debug.md` and its sidecar artifacts. The retired aliases `whatif.*`, `Title.md` / `Title.lst` / `Title.elf` / `Title.o`, `RoomRom.md`, `CombinedDebug.md` / `CombinedDebug.bat`, and `combined_debug` MUST NOT appear as a build target, output filename, staging copy, variable, identifier, comment, or active-doc reference. Enforced by `tools/gates/check_banned_filename.py`; CI fails on any active-code reintroduction outside the historical-allowlist directories.
+- [ ] **Rule BT-1 (Sole Build Target — HARD).** Per Sole Build Target Amendment 2026-05-08, **100% of phase work targets `Debug.md`**. The only build script is `Debug.bat`. The prior three-target world (`Title.md` / `RoomRom.md` / `CombinedDebug.md`) is dead; the original RoomRom-vs-Title decision rule no longer applies. The Title-side ABI (intro / story scroll / file select) and the RoomRom gameplay runtime are both linked into the same `Debug.md` ROM by `tools/debug/build_debug.py`; the A+B+C chord at `PHASE_TITLE_DISPLAY` enters the RoomRom runtime in-ROM. "Title.md build clean" is meaningless under the sole-target policy and MUST NOT be cited as evidence — only `Debug.md` evidence counts. Cross-reference: memory `feedback_combined_debug_only` (now upgraded to `Debug.md` sole target).
 - [ ] **Rule D1 (Drain-First / NES-Disasm-Second).** Drained C in `src/game/<subsystem>/*_runtime.c` is the **PRIMARY implementation evidence**. NES disassembly (`reference/aldonunez/*.asm`, `src/zelda_translated/*.asm`) is the **SECONDARY verification + final authority** — it wins ties when drain is wrong. Per debate 005 (2026-05-02). Every Task gets a 4-line drain-aware header before its body:
   ```markdown
   - **NES source**: <file>:<symbol> [, <file>:<symbol>...]
@@ -62,7 +108,7 @@
 
 Every implementation phase closes in this exact order:
 
-0. **Pick the right target per Rule BT-1.** For phases 2-10 the touched target is **RoomRom** — build with `cmd.exe /c ".\RoomRom\build.bat"`. Root `build.bat` (Title.md) is gated and refuses without `TITLE_BUILD_APPROVED=1`; only phases 11-12 invoke it, and only with explicit user approval per task. "Title.md build clean" MUST NOT be cited as evidence for a RoomRom phase.
+0. **Build the sole target per Rule BT-1.** Run `Debug.bat`. There is no other ROM and no other build script under the Sole Build Target Amendment 2026-05-08; the prior RoomRom-vs-Title decision is dead.
 1. Build the touched target with `REQUIRE_GENERATED_ASSETS=1` (Task 1.11 strict gate).
 2. Run the focused probe set.
 3. Capture screenshot/state evidence; emit a parity-oracle-schema instance per probe (Task 2.8).

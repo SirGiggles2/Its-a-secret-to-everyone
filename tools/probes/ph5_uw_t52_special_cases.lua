@@ -294,7 +294,7 @@ rooms[#rooms + 1] = snap_room("L1_0x74_uid00_water6")
 
 write_json(OUT_CASES, {
     schema  = "ph5_t52_special_cases_v1",
-    rom     = "RoomRom.md",
+    rom     = "Debug.md",
     level   = 1,
     quest   = 1,
     rooms   = rooms,
@@ -317,7 +317,7 @@ wall_stops[#wall_stops + 1] = wall_stop_test("LEFT",  "Left")
 
 write_json(OUT_WSTOP, {
     schema     = "ph5_t52_wall_stop_v1",
-    rom        = "RoomRom.md",
+    rom        = "Debug.md",
     room_id    = 0x73,
     level      = 1,
     quest      = 1,

@@ -81,7 +81,7 @@ local EDGE_TRACE_ROWS = 22
 local EDGE_TRACE_MAX_ENTRIES = 256
 
 local function read_listing_addr(symbol)
-    local f = io.open(repo_path("builds\\Title.lst"), "r")
+    local f = io.open(repo_path("builds\\Debug.lst"), "r")
     if not f then
         return nil
     end

@@ -148,7 +148,7 @@ end
 
 local payload = {
     schema = "ph34_dispatchers_v1",
-    rom = "RoomRom.md",
+    rom = "Debug.md",
     scenarios = scenarios,
 }
 

@@ -346,7 +346,7 @@ void trap_init_mode_b_enter_cave_bank5(void)
      *   - native room_reset_inv_obj_state
      *   - Link teleport coords + cellar flag
      * Skipped: DrawSpritesBetweenRooms, level-attr-F cache,
-     * Link_EndMoveAndAnimate, RunCrossRoomTasks. Title.md
+     * Link_EndMoveAndAnimate, RunCrossRoomTasks. Debug.md
      * NATIVE_TRAP=off keeps full asm path intact. */
     const unsigned char submode = (unsigned char)SUBMODE_VALUE;
 

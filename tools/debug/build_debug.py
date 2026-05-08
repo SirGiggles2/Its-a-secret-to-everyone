@@ -9,10 +9,10 @@ ROOT = Path(__file__).resolve().parents[2]
 SGDK = ROOT / "sgdk"
 TOOLBIN = ROOT / "build" / "toolchain" / "sgdk_bin" / "bin"
 LIB = SGDK / "lib"
-PROJ = ROOT / "build" / "combined_debug_project"
+PROJ = ROOT / "build" / "debug_project"
 OUT = PROJ / "out"
-ROM_RAW = OUT / "CombinedDebug_raw.md"
-ROM_OUT = ROOT / "builds" / "CombinedDebug.md"
+ROM_RAW = OUT / "Debug_raw.md"
+ROM_OUT = ROOT / "builds" / "Debug.md"
 
 GCC = TOOLBIN / "gcc.exe"
 OBJCOPY = TOOLBIN / "objcopy.exe"
@@ -37,7 +37,7 @@ CFLAGS = [
 INCS = [
     ROOT / "src",
     ROOT / "src" / "abi",
-    ROOT / "src" / "combined_debug",
+    ROOT / "src" / "debug",
     ROOT / "src" / "frontend",
     ROOT / "src" / "frontend" / "intro",
     ROOT / "src" / "sgdk_adapter",
@@ -212,24 +212,24 @@ def main() -> int:
     OUT.mkdir(parents=True, exist_ok=True)
     ROM_OUT.parent.mkdir(parents=True, exist_ok=True)
 
-    print("[CombinedDebug] check_sgdk_pin.py")
+    print("[Debug] check_sgdk_pin.py")
     run([sys.executable, ROOT / "tools" / "check_sgdk_pin.py"])
 
     # PR-1 CHR-FOUNDATION gates (per docs/superpowers/specs/2026-05-07-
-    # whole-chr-rollout-design.md). CombinedDebug is sole target;
-    # mirror the strict gates that RoomRom/build.bat already runs.
-    print("[CombinedDebug][CHR-1 gate] verify_item_chr_manifest.py --strict")
+    # whole-chr-rollout-design.md). Debug.md is sole target; mirror the
+    # strict gates the RoomRom dev harness used to run.
+    print("[Debug][CHR-1 gate] verify_item_chr_manifest.py --strict")
     run([sys.executable, ROOT / "RoomRom" / "tools" / "verify_item_chr_manifest.py", "--strict"])
 
     # [CHR-1 gate] verify_vram_budget.py — re-enabled PR-2c 2026-05-08.
-    # PR-2b switched RoomRom to 64x32 plane mode (render_mode_set_h64v32
+    # PR-2b switched the runtime to 64x32 plane mode (render_mode_set_h64v32
     # + BGA/BGB address overrides), raising the tile-data ceiling from
     # $A800 (1344 tiles) to $C000 (1536 tiles). ITEM bank end tile 1460
     # now fits with 75-tile headroom.
-    print("[CombinedDebug][CHR-1 gate] verify_vram_budget.py")
+    print("[Debug][CHR-1 gate] verify_vram_budget.py")
     run([sys.executable, ROOT / "RoomRom" / "tools" / "verify_vram_budget.py"])
 
-    print("[CombinedDebug][CHR-1 gate] check_generated_freshness.py")
+    print("[Debug][CHR-1 gate] check_generated_freshness.py")
     run([sys.executable, ROOT / "tools" / "probes" / "check_generated_freshness.py"])
 
     print("[1] Compiling sgdk/src/boot/rom_head.c...")
@@ -249,8 +249,8 @@ def main() -> int:
     )
 
     objects = [
-        compile_asm(ROOT / "src" / "combined_debug" / "a4_probe_asm.s", "a4_probe_asm.o", "src/combined_debug/a4_probe_asm.s"),
-        compile_c("src/combined_debug/a4_probe_main.c", "a4_probe_main.o"),
+        compile_asm(ROOT / "src" / "debug" / "a4_probe_asm.s", "a4_probe_asm.o", "src/debug/a4_probe_asm.s"),
+        compile_c("src/debug/a4_probe_main.c", "a4_probe_main.o"),
     ]
 
     for src, obj in TITLE_C_SOURCES:
@@ -275,14 +275,14 @@ def main() -> int:
             LIB / "libmd.a",
             LIB / "libgcc.a",
             "-o",
-            OUT / "CombinedDebug.out",
+            OUT / "Debug.out",
             "-Wl,--gc-sections",
         ],
         cwd=PROJ,
     )
 
     print("[5] objcopy ELF -> flat binary...")
-    run([OBJCOPY, "-O", "binary", OUT / "CombinedDebug.out", ROM_RAW], cwd=PROJ)
+    run([OBJCOPY, "-O", "binary", OUT / "Debug.out", ROM_RAW], cwd=PROJ)
 
     print("[5] fix_checksum...")
     run([sys.executable, ROOT / "tools" / "fix_checksum.py", ROM_RAW, ROM_OUT])
@@ -290,7 +290,7 @@ def main() -> int:
         ROM_RAW.unlink()
 
     print()
-    print(f"CombinedDebug built: {ROM_OUT}")
+    print(f"Debug built: {ROM_OUT}")
     return 0
 
 

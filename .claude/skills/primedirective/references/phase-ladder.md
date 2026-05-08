@@ -4,7 +4,7 @@ Source: `docs/superpowers/plans/2026-05-02-title-roomrom-full-port-master-plan.m
 
 | Phase | Name | One-line scope |
 |---|---|---|
-| 0 | Target Rename and Split | Establish `Title.md` + `RoomRom.md` separation; rename legacy targets. |
+| 0 | Target Rename and Split | Establish `Debug.md` sole-target boundary; retire all legacy aliases (whatif/Title/RoomRom/CombinedDebug). |
 | 1 | Legal Builder Foundation | `tools/builder/` skeleton; user-supplied NES ROM extraction pipeline. |
 | 1.5 | NES Reference Capture Harness | Deterministic NES capture into `build/generated/nes_reference/`; baseline parity oracle schema instances. |
 | 2 | RoomRom Graphics Registry + No-Clobber Foundation | Per-subsystem VRAM/CRAM ownership map; collision-free tile/palette allocation. |
@@ -16,8 +16,8 @@ Source: `docs/superpowers/plans/2026-05-02-title-roomrom-full-port-master-plan.m
 | 8 | Bosses | Per-boss runtime; framework first, then parallel agent per boss. |
 | 9 | HUD, Options, Save, Menus | Score/heart bar, item select, save/load, pause, options runtime. |
 | 10 | Audio Finalization | Driver pin or XGM2 migration per Rule SGDK-4 trigger. |
-| 11 | Title.md Frontend Gap-Fill + Regression Lock | Title intro/story/file-select polished; freeze regression matrix. |
-| 12 | Promote RoomRom Core, Integrate Final ROM | Promote proven systems → `src/game/`; assemble `Final.md`. |
+| 11 | Debug Frontend Gap-Fill + Regression Lock | Title intro/story/file-select polished inside `Debug.md`; freeze regression matrix. |
+| 12 | Promote Runtime Core, Integrate Release Build | Promote proven systems → `src/game/`; final release build is still `Debug.md` (sole target). |
 | 13 | Optional 4-Player Genesis Mode | `PlayerState[4]`, parallel input/render/state agents. |
 | 14 | Full Quest Completion | Second quest data + parity. |
 | 15 | Genesis-Specific Optimization | Hand-rolled VDP per Rule SGDK-3; cycle/bandwidth gates. |

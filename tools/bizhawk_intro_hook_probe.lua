@@ -21,7 +21,7 @@ for _, frame in ipairs(TARGETS) do
   TARGET_SET[frame] = true
 end
 
-local LIST_PATH = ROOT .. "builds/Title.lst"
+local LIST_PATH = ROOT .. "builds/Debug.lst"
 
 local function load_list_text(path)
   local fh = io.open(path, "r")

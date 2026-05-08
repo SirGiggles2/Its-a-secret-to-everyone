@@ -2,7 +2,7 @@
  *
  * Substrate per debate 004 Rule WT-1 (main worktree single-writer).
  * Pure C; no SGDK API calls. Both RoomRom gameplay (low-health,
- * boss-flash, hit-invuln) and Title.md frontend (intro item flash)
+ * boss-flash, hit-invuln) and Debug.md frontend (intro item flash)
  * register toggles and call palette_tick() from their per-frame
  * update.
  *

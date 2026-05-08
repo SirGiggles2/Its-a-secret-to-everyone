@@ -2,7 +2,7 @@ param()
 $ErrorActionPreference = 'Stop'
 $ROOT = (Resolve-Path "$PSScriptRoot\..").Path
 $EMU  = 'C:\Users\Jake Diggity\Documents\GitHub\VDP rebirth tools and asms\BizHawk-2.11-win-x64\EmuHawk.exe'
-$ROM  = Join-Path $ROOT 'builds\whatif.md'
+$ROM  = Join-Path $ROOT 'builds\Debug.md'
 $REPORT = Join-Path $ROOT 'builds\reports'
 $SUMMARY = Join-Path $REPORT 'regression_summary.txt'
 
@@ -10,11 +10,11 @@ if (-not (Test-Path $EMU)) { Write-Error "BizHawk not found: $EMU"; exit 1 }
 if (-not (Test-Path $ROM)) { Write-Error "ROM not found: $ROM"; exit 1 }
 
 # Probes read $env:CODEX_BIZHAWK_ROOT to resolve worktree paths for
-# whatif.lst landmark lookup and report output. Without this they fall
+# Debug.lst landmark lookup and report output. Without this they fall
 # back to the main tree and write reports in the wrong place.
 $env:CODEX_BIZHAWK_ROOT = $ROOT
 
-"WHAT IF Regression Suite"           | Set-Content $SUMMARY
+"Title Regression Suite"             | Set-Content $SUMMARY
 "Run:  $(Get-Date)"                  | Add-Content $SUMMARY
 "ROM:  $ROM"                         | Add-Content $SUMMARY
 "================================="  | Add-Content $SUMMARY

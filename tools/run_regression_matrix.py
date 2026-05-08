@@ -294,18 +294,14 @@ def discover_archived_report_probes() -> list[dict]:
 
 
 def _infer_target(probe_id: str) -> str:
-    """Infer which target ROM this probe belongs to from its scenario_id prefix."""
-    pid = probe_id.lower()
-    if any(pid.startswith(p) for p in ("title_", "intro_", "file_select_", "fs_")):
-        return "Title.md"
-    if any(pid.startswith(p) for p in (
-        "uw_", "ow_", "cave_", "boss_", "enemy_", "save_", "redux_",
-        "t34_", "t35_", "t36_", "t37_", "t38_", "room_",
-    )):
-        return "RoomRom.md"
-    if any(pid.startswith(p) for p in ("final_", "integration_", "multiplayer_")):
-        return "Final.md"
-    return "Unknown"
+    """Infer which target ROM this probe belongs to.
+
+    Sole Build Target Amendment 2026-05-08: there is exactly one ROM
+    (`Debug.md`). Every probe targets it; the prefix-based dispatch from
+    the dual-target era is retired. Function preserved (not deleted) so
+    callers that read `probe['target']` keep working.
+    """
+    return "Debug.md"
 
 
 # ---------------------------------------------------------------------------
@@ -360,28 +356,13 @@ def _sha256_file(path: Path, chunk: int = 1 << 20) -> str:
 
 def _find_current_rom(target: str) -> Optional[Path]:
     """
-    Try to locate the current build output ROM for a given target.
-    Checks common build output locations.
+    Locate the current build output ROM. Sole Build Target Amendment
+    2026-05-08: only `builds/Debug.md` is produced; legacy candidate
+    paths are retired with the dual-target era.
     """
-    candidates = []
-    if target == "Title.md":
-        candidates = [
-            REPO_ROOT / "out" / "title.md",
-            REPO_ROOT / "output" / "title.md",
-            REPO_ROOT / "build" / "title.md",
-        ]
-    elif target == "RoomRom.md":
-        candidates = [
-            REPO_ROOT / "RoomRom" / "out" / "RoomRom.md",
-            REPO_ROOT / "RoomRom" / "output" / "RoomRom.md",
-            REPO_ROOT / "out" / "RoomRom.md",
-        ]
-    elif target == "Final.md":
-        candidates = [
-            REPO_ROOT / "out" / "final.md",
-            REPO_ROOT / "output" / "final.md",
-        ]
-
+    candidates = [
+        REPO_ROOT / "builds" / "Debug.md",
+    ]
     for c in candidates:
         if c.exists():
             return c

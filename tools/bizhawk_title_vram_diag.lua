@@ -10,7 +10,7 @@
 local ROOT       = "C:/Users/Jake Diggity/Documents/GitHub/FINAL TRY/"
 local REPORT     = ROOT .. "builds/reports/bizhawk_title_vram_diag.txt"
 local SCREENSHOT = ROOT .. "builds/reports/screenshot_frame200.png"
-local LISTING    = ROOT .. "builds/Title.lst"
+local LISTING    = ROOT .. "builds/Debug.lst"
 local CAPTURE_FRAME = 200
 
 local lines = {}
@@ -77,7 +77,7 @@ local SYM = read_listing_addrs(LISTING)
 local function require_sym(name)
     local value = SYM[name]
     if not value then
-        error("title_vram_diag: symbol '" .. name .. "' missing from builds/Title.lst")
+        error("title_vram_diag: symbol '" .. name .. "' missing from builds/Debug.lst")
     end
     return value
 end

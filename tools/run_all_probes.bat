@@ -27,7 +27,7 @@ rem ============================================================================
 for %%I in ("%~dp0..") do set "ROOT=%%~fI"
 set "EMU=C:\Users\Jake Diggity\Documents\GitHub\VDP rebirth tools and asms\BizHawk-2.11-win-x64\EmuHawk.exe"
 set "BIZHAWK_DIR=C:\Users\Jake Diggity\Documents\GitHub\VDP rebirth tools and asms\BizHawk-2.11-win-x64"
-set "ROM=%ROOT%\builds\Title.md"
+set "ROM=%ROOT%\builds\Debug.md"
 set "REPORT_DIR=%ROOT%\builds\reports"
 set "SUMMARY=%REPORT_DIR%\regression_summary.txt"
 

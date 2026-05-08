@@ -514,7 +514,7 @@ VBlankISR:
     jsr     IsrNmi
     ; Stage 2b: C-runtime heartbeat. Confirms the gcc/ld/objcopy
     ; toolchain integration is live. Observable at &c_probe_counter
-    ; (address in whatif.lst — .bss region $FFC000+). void(void);
+    ; (address in Title.lst — .bss region $FFC000+). void(void);
     ; standard SysV m68k ABI clobbers D0/D1/A0/A1 and no NES regs.
     jsr     c_probe_tick
     ; Advance the native music player one tick (YM2612 + PSG writes).

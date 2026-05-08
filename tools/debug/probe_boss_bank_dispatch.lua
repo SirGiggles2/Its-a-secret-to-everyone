@@ -1,4 +1,4 @@
--- PR-5 verifier: boot CombinedDebug, drive boss bank dispatch via probe
+-- PR-5 verifier: boot Debug.md, drive boss bank dispatch via probe
 -- trigger byte at $FF73FE, capture VRAM at SCENE_OBJ slot for UW_L1
 -- (UWSPBoss1257) then UW_L3 (UWSPBoss3468), and assert the two banks
 -- differ at the byte level.
@@ -35,7 +35,7 @@ local function domain_exists(name)
     return false
 end
 
--- RAM domain selection (matches capture_combined_debug_room.lua)
+-- RAM domain selection (matches capture_debug_room.lua)
 local RAM_DOMAIN = "M68K BUS"
 local TRIG_ADDR  = 0x00FF73FE
 local ACK_ADDR   = 0x00FF73FF
@@ -67,10 +67,10 @@ local function ram_w8(addr, v)
     memory.write_u8(addr, v)
 end
 
--- Boot Title.md a bit so it's running.
+-- Boot Debug.md a bit so it's running.
 for _ = 1, 120 do emu.frameadvance() end
 
--- A+B+C chord 8 frames to enter RoomRom from CombinedDebug entry.
+-- A+B+C chord 8 frames to enter RoomRom runtime from Debug entry.
 for _ = 1, 8 do
     joypad.set({ ["P1 A"] = true, ["P1 B"] = true, ["P1 C"] = true })
     emu.frameadvance()

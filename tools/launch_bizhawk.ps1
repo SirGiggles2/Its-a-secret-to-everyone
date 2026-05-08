@@ -151,7 +151,7 @@ function New-BizHawkConfigOverride {
 }
 
 if ([string]::IsNullOrWhiteSpace($RomPath)) {
-    $RomPath = "builds\whatif.md"
+    $RomPath = "builds\Debug.md"
 }
 
 $env:CODEX_BIZHAWK_ROOT = $Root

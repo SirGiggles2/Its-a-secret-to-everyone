@@ -1,5 +1,5 @@
 local OUT_PATH = os.getenv("ROOM_CRAM_DUMP")
-    or "C:\\Users\\Jake Diggity\\Documents\\GitHub\\FINAL TRY\\build\\reports\\combined_debug\\room_cram.txt"
+    or "C:\\Users\\Jake Diggity\\Documents\\GitHub\\FINAL TRY\\build\\reports\\debug\\room_cram.txt"
 local USE_CHORD = os.getenv("ROOM_CRAM_USE_CHORD") == "1"
 
 local function mkdir_for(path)

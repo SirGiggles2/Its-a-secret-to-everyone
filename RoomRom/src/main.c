@@ -1226,7 +1226,7 @@ void roomrom_debug_tick(void)
          * $FF73FE; we enqueue a boss request and clear the cell. The
          * matching ack byte at $FF73FF tracks how many requests we have
          * fired (probe can read it to know the request landed). Used
-         * solely by tools/combined_debug/probe_boss_bank_dispatch.lua. */
+         * solely by tools/debug/probe_boss_bank_dispatch.lua. */
         {
             volatile unsigned char *trig = (volatile unsigned char *)0x00FF73FEUL;
             volatile unsigned char *ack  = (volatile unsigned char *)0x00FF73FFUL;

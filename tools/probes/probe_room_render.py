@@ -189,8 +189,8 @@ def build_debug_rom() -> Path:
         encoding="utf-8",
     )
 
-    # The ASM root object (builds/Title.o) is always the first positional arg.
-    asm_obj = REPO_ROOT / "builds" / "Title.o"
+    # The ASM root object (builds/Debug.out) is always the first positional arg.
+    asm_obj = REPO_ROOT / "builds" / "Debug.out"
     if not asm_obj.is_file():
         raise RuntimeError(
             f"{asm_obj} not found.\n"

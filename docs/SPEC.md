@@ -61,7 +61,7 @@ vasmm68k_mot -Fbin -m68000
   + src/genesis_shell.asm            (Genesis boot, VDP init, VBlank ISR)
   + src/nes_io.asm                   (NES hardware behavior shim)
         ↓
-builds/whatif_raw.md  →  fix_checksum.py  →  builds/whatif.md  (Genesis ROM)
+builds/Debug_raw.md  →  fix_checksum.py  →  builds/Debug.md  (Genesis ROM)
 ```
 
 ### Register Mapping (6502 → M68K)
@@ -540,7 +540,7 @@ All probes in `tools/`, run via `tools/run_all_probes.bat`.
 
 ### Shared Infrastructure
 
-- **`tools/probe_addresses.lua`** — reads `builds/whatif.lst` and exports symbol addresses (`LOOPFOREVER`, `EXC_BUS`, `EXC_ADDR`, `EXC_DEF`, `ISRRESET`, `RUNGAME`, `ISRNMI`). All probes `dofile()` this instead of hardcoding addresses (addresses shift every build as code grows).
+- **`tools/probe_addresses.lua`** — reads `builds/Debug.lst` and exports symbol addresses (`LOOPFOREVER`, `EXC_BUS`, `EXC_ADDR`, `EXC_DEF`, `ISRRESET`, `RUNGAME`, `ISRNMI`). All probes `dofile()` this instead of hardcoding addresses (addresses shift every build as code grows).
 
 | Probe script | Milestone | Report file |
 |---|---|---|
@@ -589,11 +589,11 @@ Must `pushd` into BizHawk directory before launch (DLL resolution):
 
 ```bat
 pushd "C:\Users\Jake Diggity\Documents\GitHub\VDP rebirth tools and asms\BizHawk-2.11-win-x64"
-EmuHawk.exe --lua=<absolute_path_to_probe.lua> <absolute_path_to_whatif.md>
+EmuHawk.exe --lua=<absolute_path_to_probe.lua> <absolute_path_to_Debug.md>
 popd
 ```
 
-ROM filename: `builds/whatif.md` (not `.bin`). No `--headless` flag.
+ROM filename: `builds/Debug.md` (not `.bin`). No `--headless` flag.
 
 ---
 

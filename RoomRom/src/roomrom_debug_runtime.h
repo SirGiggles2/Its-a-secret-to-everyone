@@ -24,8 +24,8 @@ unsigned char roomrom_debug_get_room_id(void);
 short roomrom_debug_get_link_x(void);
 short roomrom_debug_get_link_y(void);
 
-/* Task 5.4: warp coordinator state surface. Both RoomRom.md and
- * CombinedDebug.md link these exports; BizHawk Lua probes read them
+/* Task 5.4: warp coordinator state surface. Both Debug.md and
+ * Debug.md link these exports; BizHawk Lua probes read them
  * during Gate B/C verification. */
 unsigned char roomrom_debug_warp_is_active(void);
 unsigned char roomrom_debug_warp_unsupported_count(void);

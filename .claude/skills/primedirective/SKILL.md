@@ -44,7 +44,7 @@ disable-model-invocation: false
 
    Stop conditions (only these):
    - tracker BLOCKED (exit 2) or has entries in `blockers[]`
-   - hard-rule refusal triggered (SGDK / WT / D1 / whatif / GREENFIELD-on-drain)
+   - hard-rule refusal triggered (SGDK / WT / D1 / banned-name / GREENFIELD-on-drain)
    - bug-detection branch fires (defer to /chuckle + /octo:debate)
    - next action requires destructive op on shared state (push, force-push, branch delete, external publish)
    - user interrupts
@@ -80,7 +80,7 @@ When unclear: **dump NES ROM ground truth** (CHR / OAM / nametable / PALRAM / RA
 - **WT-1** Substrate single-writer: `src/sgdk_adapter/`, `src/abi/`, `src/state/`, `data/`, `src/audio_driver.asm` edited from `main` worktree ONLY. RoomRom worktrees rebase on `main`.
 - **WT-2** Active scope pointer: consult `docs/audit/active_scope.md` before any edit.
 - **WT-3** Frontend boundary: `src/game/` and `RoomRom/src/` MUST NOT include `src/frontend/` headers. Phase 12 promotion gate hard-fails.
-- **WT-4** No whatif emission: `build.bat` MUST emit only `Title.*`. `tools/gates/check_no_whatif.py` enforces.
+- **WT-4** Banned legacy build alias: builds emit `Title.*` / `RoomRom.*` / `CombinedDebug.*` exclusively. `tools/gates/check_banned_filename.py` enforces; reintroduction in active code paths is a CI hard-fail.
 
 ### D1 — drain-first, NES-disasm-second
 - Drained C in `src/game/<subsystem>/*_runtime.c` is **PRIMARY** implementation evidence.
@@ -113,14 +113,14 @@ Read `docs/superpowers/prime_directive_status.md` (rendered from tracker by `pri
 | `/primedirective` | FULL |
 | `/primedirective --brief` | BRIEF |
 | Keyword: "phase close / what's blocking / next task / what phase / close phase / prime directive / pd" | FULL |
-| First tool call in session matching `src/**`, `RoomRom/**`, `data/**`, `tools/builder/**`, `build.bat`, `Title.md`, `RoomRom.md`, `Final.md`, `docs/superpowers/plans/**` | BRIEF |
+| First tool call in session matching `src/**`, `RoomRom/**`, `data/**`, `tools/builder/**`, `tools/debug/**`, `Debug.bat`, `builds/Debug.md`, `docs/superpowers/plans/**` | BRIEF |
 | Conversation start | none unless first user message matches phase-relevant context |
 
 ## Refusals
 
 - **Refuse** to claim a phase complete or task done without a FRESH tracker (cite tracker fields by name).
 - **Refuse** to edit substrate paths from a non-`main` worktree.
-- **Refuse** to generate `whatif.*` output anywhere.
+- **Refuse** to emit, name, or reference the banned legacy build alias anywhere — build outputs, staging copies, identifiers, comments, or documentation.
 - **Refuse** `Stance: GREENFIELD` when drain coverage shows a candidate row.
 - **Refuse** to skip steps in the 11-step phase-close gate.
 - **Refuse** to read the entire 2171-line master plan inline; load only the active phase section + `references/phase-ladder.md` summary.
@@ -158,7 +158,7 @@ Load only when the question demands depth:
 - `references/phase-ladder.md` — 0..17 with one-line summaries + plan offsets.
 - `references/hard-rules.md` — SGDK-1..5, WT-1..4, D1 with rationales.
 - `references/phase-close-gate.md` — 11-step ordered checklist + artifact contracts.
-- `references/targets.md` — `Title.md` / `RoomRom.md` / `Final.md` / `tools/builder/` scope.
+- `references/targets.md` — sole target `Debug.md` + `tools/debug/` build pipeline + retired-alias list.
 
 ## Skill ↔ tools split
 

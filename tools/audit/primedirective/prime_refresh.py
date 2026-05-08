@@ -49,7 +49,7 @@ PHASE_NAMES = {
     "8": "Bosses",
     "9": "HUD, Options, Save, Menus",
     "10": "Audio Finalization",
-    "11": "Title.md Frontend Gap-Fill + Regression Lock",
+    "11": "Debug.md Frontend Gap-Fill + Regression Lock",
     "12": "Promote RoomRom Core And Integrate Final ROM",
     "13": "Optional 4-Player Genesis Mode",
     "14": "Full Quest Completion",

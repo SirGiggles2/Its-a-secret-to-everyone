@@ -19,7 +19,7 @@ typedef enum {
     COMBINED_STATE_ROOMROM = 1
 } combined_state_t;
 
-extern u32 combined_debug_get_a4(void);
+extern u32 debug_get_a4(void);
 
 static combined_state_t s_state;
 static u16 s_frame;
@@ -68,7 +68,7 @@ static void probe_fail(u16 stage)
 
 static void probe_check(u16 stage)
 {
-    s_last_a4 = combined_debug_get_a4();
+    s_last_a4 = debug_get_a4();
     if (s_last_a4 != A4_EXPECTED)
     {
         probe_fail(stage);
@@ -86,7 +86,7 @@ static void probe_check(u16 stage)
     probe_publish();
 }
 
-static void combined_debug_enter_title(void)
+static void debug_enter_title(void)
 {
     s_state = COMBINED_STATE_TITLE;
     s_prev_joy = 0u;
@@ -111,7 +111,7 @@ static void combined_debug_enter_title(void)
     intro_phase_step();
 }
 
-static void combined_debug_poll_title(void)
+static void debug_poll_title(void)
 {
     u16 joy;
     u16 was_chord;
@@ -137,18 +137,18 @@ static void combined_debug_poll_title(void)
     }
 }
 
-int combined_debug_main_after_a4(bool hardReset)
+int debug_main_after_a4(bool hardReset)
 {
     (void) hardReset;
 
     probe_check(1U);
-    combined_debug_enter_title();
+    debug_enter_title();
 
     while (TRUE)
     {
         if (s_state == COMBINED_STATE_TITLE)
         {
-            combined_debug_poll_title();
+            debug_poll_title();
         }
         else
         {

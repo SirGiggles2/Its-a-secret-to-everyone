@@ -15,7 +15,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 LUA = ROOT / "RoomRom" / "tools" / "uw_walk_reason_probe.lua"
-ROM_GEN = ROOT / "RoomRom" / "out" / "RoomRom.md"
+ROM_GEN = ROOT / "RoomRom" / "out" / "Debug.md"
 ELF_GEN = ROOT / "RoomRom" / "out" / "rom.out"
 NM = ROOT / "build" / "toolchain" / "sgdk_bin" / "bin" / "nm.exe"
 OUT_DIR = ROOT / "build" / "reports" / "uw_walk_reason" / "r73"

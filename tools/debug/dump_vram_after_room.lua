@@ -1,5 +1,5 @@
 local OUT_PATH = os.getenv("ROOM_VRAM_DUMP")
-    or "C:\\Users\\Jake Diggity\\Documents\\GitHub\\FINAL TRY\\build\\reports\\combined_debug\\room_vram.txt"
+    or "C:\\Users\\Jake Diggity\\Documents\\GitHub\\FINAL TRY\\build\\reports\\debug\\room_vram.txt"
 local USE_CHORD = os.getenv("ROOM_VRAM_USE_CHORD") == "1"
 local PRESS_C = os.getenv("ROOM_VRAM_PRESS_C") == "1"
 

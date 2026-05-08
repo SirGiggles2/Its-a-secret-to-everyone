@@ -1,5 +1,5 @@
-local DEFAULT_OUT = "C:\\Users\\Jake Diggity\\Documents\\GitHub\\FINAL TRY\\build\\reports\\combined_debug\\combined_entry.json"
-local OUT_PATH = os.getenv("COMBINED_DEBUG_ENTRY_REPORT") or DEFAULT_OUT
+local DEFAULT_OUT = "C:\\Users\\Jake Diggity\\Documents\\GitHub\\FINAL TRY\\build\\reports\\debug\\debug_entry.json"
+local OUT_PATH = os.getenv("DEBUG_ENTRY_REPORT") or DEFAULT_OUT
 
 local function mkdir_for(path)
     local dir = path:match("^(.*)[/\\][^/\\]+$")
@@ -58,7 +58,7 @@ local function write_report(status, detail)
     mkdir_for(OUT_PATH)
     local f = assert(io.open(OUT_PATH, "w"))
     f:write("{\n")
-    f:write('  "probe": "combined_debug_entry",\n')
+    f:write('  "probe": "debug_entry",\n')
     f:write('  "status": "' .. status .. '",\n')
     f:write('  "detail": "' .. tostring(detail or ""):gsub("\\", "\\\\"):gsub('"', '\\"') .. '",\n')
     f:write('  "domain": "' .. DOMAIN .. '",\n')

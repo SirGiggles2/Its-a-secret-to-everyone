@@ -50,8 +50,8 @@ builds/*.o
 builds/*.lnk
 builds/*.exe
 builds/*.nes
-builds/CombinedDebug.md
-build/combined_debug_project/
+builds/Debug.md
+build/debug_project/
 build/reports/
 build/generated/
 

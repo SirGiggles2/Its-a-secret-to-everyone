@@ -36,7 +36,7 @@ local function read_symbols_from_lst()
         InitObject = true, FindNextEdgeSpawnCell = true,
         MoveShot = true, GetCollidableTile = true,
     }
-    local lst = "C:\\Users\\Jake Diggity\\Documents\\GitHub\\FINAL TRY\\builds\\Title.lst"
+    local lst = "C:\\Users\\Jake Diggity\\Documents\\GitHub\\FINAL TRY\\builds\\Debug.lst"
     local addrs = {}
     local f = io.open(lst, "r")
     if not f then return addrs end

@@ -7,27 +7,43 @@ user-invocable: true
 
 # BizHawk Script Launcher
 
-Launch BizHawk with a Lua probe script and the current ROM build.
+Launch BizHawk with a Lua probe script and the sole ROM build.
+
+## HARD RULE: ROM file naming (Sole Build Target Amendment 2026-05-08)
+
+There is exactly one ROM target: **`Debug.md`**. The retired legacy aliases
+(`whatif.*`, `Title.md`, `RoomRom.md`, `CombinedDebug.md` — all retired)
+are banned in active code paths. The banned-token regex lives in
+`tools/gates/check_banned_filename.py` and CI fails on any reintroduction.
+
+| Source ROM        | Staged filename in `C:\tmp\` |
+|-------------------|------------------------------|
+| `builds\Debug.md` | `C:\tmp\Debug.md`            |
+
+Never invent generic aliases like `rom.md`, `staged.md`, `current.md`
+either — preserve the build-target name end-to-end so logs/tasklists
+still tell the truth about which ROM is loaded.
 
 ## Paths
 
 - BizHawk dir: `C:\Users\Jake Diggity\Documents\GitHub\VDP rebirth tools and asms\BizHawk-2.11-win-x64`
 - Executable : `EmuHawk.exe` inside that directory
 - Project root: `C:\Users\Jake Diggity\Documents\GitHub\FINAL TRY\`
-- Worktree ROM: usually at `<worktree>\builds\whatif.md` — use the worktree you're in, NOT the project root's builds dir
+- Build output: `<worktree>\builds\Debug.md` — use the worktree
+  you're in, NOT the project root's builds dir if you're in a worktree.
 
 ## CRITICAL path-format rule (learned the hard way)
 
 BizHawk's .NET `FileIOPermission.EmulateFileIOPermissionChecks` rejects certain path formats passed on the command line. Known failure cases:
 - Paths containing a dot-prefixed directory segment (e.g. `.claude`)
 - Paths containing spaces combined with `--lua=` argument parsing
-- Worktree paths like `C:\Users\Jake Diggity\Documents\GitHub\FINAL TRY\.claude\worktrees\magical-chatelet\builds\whatif.md` → throws `System.NotSupportedException: The given path's format is not supported` and BizHawk crashes on startup.
+- Worktree paths like `C:\Users\Jake Diggity\Documents\GitHub\FINAL TRY\.claude\worktrees\magical-chatelet\builds\Debug.md` → throws `System.NotSupportedException: The given path's format is not supported` and BizHawk crashes on startup.
 
-**Workaround that WORKS:** Copy the ROM and the Lua script into a short, space-free, dot-free directory such as `C:\tmp\` and launch from there.
+**Workaround that WORKS:** Copy the ROM and the Lua script into a short, space-free, dot-free directory such as `C:\tmp\` and launch from there. Keep the `Debug.md` filename — do NOT rename to any retired alias.
 
 ```bash
 mkdir -p /c/tmp
-cp "<worktree>/builds/whatif.md" /c/tmp/whatif.md
+cp "<worktree>/builds/Debug.md" /c/tmp/Debug.md
 cp "<path-to-lua>" /c/tmp/<script-name>.lua
 ```
 
@@ -38,13 +54,13 @@ Use PowerShell `Start-Process` with a COMMA-SEPARATED `-ArgumentList`. Each elem
 **With Lua script (the normal case):**
 
 ```bash
-powershell -Command "Start-Process -FilePath 'C:\Users\Jake Diggity\Documents\GitHub\VDP rebirth tools and asms\BizHawk-2.11-win-x64\EmuHawk.exe' -ArgumentList '--lua=C:\tmp\<script>.lua','C:\tmp\whatif.md' -WorkingDirectory 'C:\Users\Jake Diggity\Documents\GitHub\VDP rebirth tools and asms\BizHawk-2.11-win-x64'"
+powershell -Command "Start-Process -FilePath 'C:\Users\Jake Diggity\Documents\GitHub\VDP rebirth tools and asms\BizHawk-2.11-win-x64\EmuHawk.exe' -ArgumentList '--lua=C:\tmp\<script>.lua','C:\tmp\Debug.md' -WorkingDirectory 'C:\Users\Jake Diggity\Documents\GitHub\VDP rebirth tools and asms\BizHawk-2.11-win-x64'"
 ```
 
 **Without Lua script (ROM only):**
 
 ```bash
-powershell -Command "Start-Process -FilePath 'C:\Users\Jake Diggity\Documents\GitHub\VDP rebirth tools and asms\BizHawk-2.11-win-x64\EmuHawk.exe' -ArgumentList 'C:\tmp\whatif.md' -WorkingDirectory 'C:\Users\Jake Diggity\Documents\GitHub\VDP rebirth tools and asms\BizHawk-2.11-win-x64'"
+powershell -Command "Start-Process -FilePath 'C:\Users\Jake Diggity\Documents\GitHub\VDP rebirth tools and asms\BizHawk-2.11-win-x64\EmuHawk.exe' -ArgumentList 'C:\tmp\Debug.md' -WorkingDirectory 'C:\Users\Jake Diggity\Documents\GitHub\VDP rebirth tools and asms\BizHawk-2.11-win-x64'"
 ```
 
 ### What does NOT work (do not use any of these)
@@ -81,7 +97,7 @@ In this BizHawk version, prefer the 3-argument form `gui.text(x, y, text)`. The 
 
 ## Workflow summary
 
-1. Stage files: `cp "<worktree>/builds/whatif.md" /c/tmp/whatif.md` and copy the Lua script to `C:\tmp\<name>.lua`.
-2. Launch with the exact PowerShell command form above, using only `C:\tmp\` paths.
+1. Stage files: `cp "<worktree>/builds/Debug.md" /c/tmp/Debug.md` and copy the Lua script to `C:\tmp\<name>.lua`.
+2. Launch with the exact PowerShell command form above, using only `C:\tmp\` paths and the `Debug.md` filename.
 3. Verify with `tasklist | grep -i hawk`.
 4. Open `Tools → Lua Console` in BizHawk to view script output.

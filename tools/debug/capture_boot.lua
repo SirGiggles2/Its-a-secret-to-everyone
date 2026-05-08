@@ -1,6 +1,6 @@
-local OUT_PATH = os.getenv("ROOMROM_SCREENSHOT")
-    or "C:\\Users\\Jake Diggity\\Documents\\GitHub\\FINAL TRY\\build\\reports\\combined_debug\\roomrom_boot.png"
-local PRESS_C_AFTER_BOOT = os.getenv("ROOMROM_PRESS_C") == "1"
+local OUT_PATH = os.getenv("DEBUG_BOOT_SCREENSHOT")
+    or "C:\\Users\\Jake Diggity\\Documents\\GitHub\\FINAL TRY\\build\\reports\\debug\\boot.png"
+local PRESS_C_AFTER_BOOT = os.getenv("DEBUG_PRESS_C") == "1"
 
 local function mkdir_for(path)
     local dir = path:match("^(.*)[/\\][^/\\]+$")

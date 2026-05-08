@@ -47,7 +47,7 @@
 
 - **Substrate drift:** check `tools/gates/check_substrate_dual_rom.py`
 - **Frontend boundary:** check `tools/gates/check_frontend_boundary.py`
-- **Whatif legacy alias:** check `tools/gates/check_no_whatif.py`
+- **Banned legacy build alias:** check `tools/gates/check_banned_filename.py`
 - **Active scope pointer:** see `docs/audit/active_scope.md`
 - **Parity oracle:** placeholder — Phase 1.5 capture artifacts not yet populated (`build/generated/nes_reference/`)
 

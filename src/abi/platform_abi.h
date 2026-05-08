@@ -3,7 +3,7 @@
  *
  * Two ABI variants per debate 006 D3 (one header, build-time switch):
  *
- * 1. Title.md build (default, NO -DROOMROM_BUILD): A4-pinned `nes_ram`.
+ * 1. Debug.md build (default, NO -DROOMROM_BUILD): A4-pinned `nes_ram`.
  *    - `register volatile unsigned char *nes_ram asm("a4")` reserves A4 globally
  *    - `-ffixed-a4` flag tells gcc to never clobber it
  *    - Boot shell (`src/genesis_shell.asm` near line 354) loads
@@ -42,7 +42,7 @@ extern "C" {
  * RoomRom/src/boot/nes_ram_init.c BEFORE any drained code runs. */
 extern volatile unsigned char *nes_ram;
 #else
-/* Title.md variant: A4-register pinned. Boot shell loads A4 = $FF0000
+/* Debug.md variant: A4-register pinned. Boot shell loads A4 = $FF0000
  * before C entry; -ffixed-a4 flag prevents gcc from clobbering. */
 register volatile unsigned char *nes_ram asm("a4");
 #endif

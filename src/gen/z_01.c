@@ -35,12 +35,12 @@ void z01_init_underworld_person_do_nothing(void) {}
 /* ----------------------------------------------------------------------
  * Phase 3 cave cutover — debate 006 D3.
  *
- * z01_init_cave is the Title.md transpile-bridge entry point for cave
+ * z01_init_cave is the Debug.md transpile-bridge entry point for cave
  * gamemode init. Pre-cutover it forwarded straight to cavert_init_cave
  * (oracle drain in src/oracle/cave/, verified MATCH per Gate 1 finding
  * 3_2 / 3_2b). The Phase 3 plan migrates cave gameplay to native code in
- * src/game/cave/ behind NATIVE_CAVE so Title.md keeps shipping while the
- * native path bakes in RoomRom.md.
+ * src/game/cave/ behind NATIVE_CAVE so Debug.md keeps shipping while the
+ * native path bakes in Debug.md.
  *
  * Default: NATIVE_CAVE undefined → oracle path → byte-identical to
  * pre-cutover ROM.
@@ -80,7 +80,7 @@ void z01_init_cave(unsigned int slot) {
  *                               STAGE-1 stub: branch logic correct, draw
  *                               body deferred to Phase 4 native object_draw
  *                               port. Enabling visibly drops cave NPC sprite
- *                               until that lands — gated to keep Title.md
+ *                               until that lands — gated to keep Debug.md
  *                               default path correct. */
 void z01_draw_cave_person(unsigned int slot) {
 #ifdef NATIVE_CAVE_DRAW
@@ -208,9 +208,9 @@ void z01_write_prices_transfer_buf(void) {
  *
  * First port: world_get_object_middle. Independent gate from any
  * cave gate because world subsystem has no dependency on cave state.
- * Default OFF — Title.md uses oracle worldrt_get_object_middle (drain
+ * Default OFF — Debug.md uses oracle worldrt_get_object_middle (drain
  * MATCH per finding 4_1n_world_get_object_middle.md). When defined,
- * Title.md must compile + link src/game/world/world_dispatch.c (build.bat
+ * Debug.md must compile + link src/game/world/world_dispatch.c (build.bat
  * not yet wired for this — flipping the gate will fail link until
  * build.bat is updated). RoomRom links it unconditionally. */
 #ifdef NATIVE_WORLD

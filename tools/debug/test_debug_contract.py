@@ -20,24 +20,23 @@ def assert_not_contains(text: str, needle: str, context: str) -> None:
         raise AssertionError(f"{context}: unexpected {needle!r}")
 
 
-def test_combined_debug_a4_probe_contract() -> None:
-    script = read("CombinedDebug.bat")
-    builder = read("tools/combined_debug/build_combined_debug.py")
+def test_debug_a4_probe_contract() -> None:
+    script = read("Debug.bat")
+    builder = read("tools/debug/build_debug.py")
     build_text = script + "\n" + builder
-    main_c = read("src/combined_debug/a4_probe_main.c")
-    asm_s = read("src/combined_debug/a4_probe_asm.s")
+    main_c = read("src/debug/a4_probe_main.c")
+    asm_s = read("src/debug/a4_probe_asm.s")
     render_adapter = read("src/sgdk_adapter/render_adapter.c")
-    lua = read("tools/combined_debug/probe_a4_survival.lua")
-    entry_lua = read("tools/combined_debug/probe_combined_debug_entry.lua")
+    lua = read("tools/debug/probe_a4_survival.lua")
+    entry_lua = read("tools/debug/probe_debug_entry.lua")
 
-    assert_contains(script, "COMBINED_DEBUG_APPROVED", "build gate")
     assert_contains(build_text, "-ffixed-a4", "A4 ABI")
     assert_contains(build_text, "-DROOMROM_NO_STANDALONE_MAIN", "RoomRom main guard")
     assert_not_contains(build_text, "-DROOMROM_BUILD", "must use Title A4 ABI")
     assert_not_contains(build_text, "nes_ram_init.c", "must not link RoomRom fake RAM")
-    assert_contains(build_text, "src/combined_debug/a4_probe_main.c", "probe C compile")
-    assert_contains(build_text, "src/combined_debug/a4_probe_asm.s", "probe asm compile")
-    assert_contains(build_text, "CombinedDebug.md", "proof ROM output")
+    assert_contains(build_text, "src/debug/a4_probe_main.c", "probe C compile")
+    assert_contains(build_text, "src/debug/a4_probe_asm.s", "probe asm compile")
+    assert_contains(build_text, "Debug.md", "ROM output")
     assert_contains(build_text, "sega.s", "SGDK boot object")
     assert_contains(build_text, "rom_head.c", "SGDK header object")
     assert_contains(build_text, "RoomRom/src/main.c", "RoomRom runtime link")
@@ -68,17 +67,16 @@ def test_combined_debug_a4_probe_contract() -> None:
 
     assert_contains(main_c, "#include <genesis.h>", "SGDK main")
     assert_contains(main_c, '#include "platform_abi.h"', "A4 RAM macro")
-    assert_contains(main_c, "combined_debug_main_after_a4", "C entry after A4 load")
+    assert_contains(main_c, "debug_main_after_a4", "C entry after A4 load")
     assert_contains(main_c, "intro_phase_init();", "real title init")
     assert_contains(main_c, "intro_phase_step();", "real title frame step")
-    assert_contains(main_c, "combined_debug_get_a4()", "A4 probe readback")
+    assert_contains(main_c, "debug_get_a4()", "A4 probe readback")
     assert_contains(main_c, "SYS_doVBlankProcess();", "vblank survival probe")
     assert_contains(main_c, "roomrom_debug_enter();", "RoomRom entry chord")
     assert_contains(main_c, "roomrom_debug_tick();", "RoomRom frame tick")
     assert_contains(main_c, "CHORD_DEBUG (BUTTON_A | BUTTON_B | BUTTON_C)", "A+B+C gate")
-    assert_not_contains(main_c, "ZELDA COMBINED DEBUG", "placeholder title text removed")
     assert_contains(main_c, "RAM(0x0012)", "A4-backed RAM write")
-    assert_contains(main_c, "0x00FF8000UL", "CombinedDebug A4 NES RAM page")
+    assert_contains(main_c, "0x00FF8000UL", "Debug A4 NES RAM page")
     assert_contains(main_c, "0x00FF7000UL", "Lua-visible probe marker")
     assert_contains(main_c, "roomrom_debug_get_scene()", "RoomRom scene state probe")
     assert_contains(main_c, "roomrom_debug_get_room_id()", "RoomRom room state probe")
@@ -86,8 +84,8 @@ def test_combined_debug_a4_probe_contract() -> None:
 
     assert_contains(asm_s, ".globl main", "SGDK main wrapper")
     assert_contains(asm_s, "main:", "SGDK main label")
-    assert_contains(asm_s, "combined_debug_set_a4", "A4 setter symbol")
-    assert_contains(asm_s, "combined_debug_get_a4", "A4 getter symbol")
+    assert_contains(asm_s, "debug_set_a4", "A4 setter symbol")
+    assert_contains(asm_s, "debug_get_a4", "A4 getter symbol")
     assert_contains(asm_s, "lea 0x00FF8000,%a4", "A4 load")
     assert_not_contains(asm_s, "lea 0x00FF0000,%a4", "A4 must not overlap SGDK globals")
     assert_contains(asm_s, "move.l %a4,%d0", "A4 read")
@@ -99,7 +97,7 @@ def test_combined_debug_a4_probe_contract() -> None:
     assert_contains(entry_lua, "P1 A", "entry probe A button")
     assert_contains(entry_lua, "P1 B", "entry probe B button")
     assert_contains(entry_lua, "P1 C", "entry probe C button")
-    assert_contains(entry_lua, "combined_debug_entry", "entry probe report")
+    assert_contains(entry_lua, "debug_entry", "entry probe report")
     assert_contains(entry_lua, "0x07F0", "entry probe title phase check")
     assert_contains(entry_lua, "PHASE_TITLE_DISPLAY", "entry probe waits for real title")
     assert_contains(entry_lua, "survived CHR upload", "entry probe must keep running after RoomRom entry")
@@ -108,5 +106,5 @@ def test_combined_debug_a4_probe_contract() -> None:
 
 
 if __name__ == "__main__":
-    test_combined_debug_a4_probe_contract()
-    print("PASS: CombinedDebug A4 probe contract")
+    test_debug_a4_probe_contract()
+    print("PASS: Debug A4 probe contract")

@@ -2,7 +2,7 @@
 """Run the Phase 5.3 UW west-exit movement probe in BizHawk.
 
 The probe resolves RoomRom static symbols from the built ELF, generates a
-one-shot Lua probe, launches BizHawk against RoomRom.md, and fails unless
+one-shot Lua probe, launches BizHawk against Debug.md, and fails unless
 Link can leave L1 room $73 through the open west doorway into room $72.
 """
 from __future__ import annotations
@@ -20,7 +20,7 @@ ROOT = Path(__file__).resolve().parents[2]
 OUT_DIR = ROOT / "build" / "probes" / "ph5" / "t53"
 LUA_PATH = OUT_DIR / "uw_west_exit.generated.lua"
 JSON_PATH = OUT_DIR / "uw_west_exit.json"
-ROM_PATH = ROOT / "RoomRom" / "out" / "RoomRom.md"
+ROM_PATH = ROOT / "RoomRom" / "out" / "Debug.md"
 ELF_PATH = ROOT / "RoomRom" / "out" / "rom.out"
 
 

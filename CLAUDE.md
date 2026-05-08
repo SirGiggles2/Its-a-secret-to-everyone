@@ -23,16 +23,15 @@ RAM tables) to confirm ground truth before changing anything. See memory:
 ## Worktree rule (HARD)
 
 `git worktree list` BEFORE:
-- building any RoomRom ROM from a non-main worktree
-- copying any `RoomRom.md` into the BizHawk dir
+- building `Debug.md` from a non-main worktree
+- copying any `builds/Debug.md` ROM into the BizHawk dir
 - editing any file under `RoomRom/src/`, `RoomRom/data/`, or `RoomRom/tools/`
-- claiming what RoomRom code currently does
+- claiming what gameplay-runtime code currently does
 
-RoomRom S0–S2 work has been merged into `main` (tags `roomrom-s1-closed`,
-`roomrom-s2-closed`). The historical `FINAL TRY-roomrom-s1` worktree is
-gone. Active RoomRom edits land in `main` unless `git worktree list` shows
-a parallel branch with newer RoomRom commits — in that case, use that
-worktree to avoid trampling in-flight work. See memory:
+RoomRom S0–S2 work merged into `main` (tags `roomrom-s1-closed`,
+`roomrom-s2-closed`). Active edits land in `main` unless
+`git worktree list` shows a parallel branch with newer commits — in that
+case, use that worktree to avoid trampling in-flight work. See memory:
 `feedback_check_worktree_first`.
 
 ## Active scope pointer
@@ -46,17 +45,35 @@ scope trigger pre-commit warnings — advisory, not blocking.
 
 Shared substrate is `src/sgdk_adapter/`, `src/abi/`, `src/state/`, `data/`,
 `src/audio_driver.asm`. Substrate is edited from `main` worktree only.
-RoomRom worktrees rebase on main to consume substrate changes.
+Other worktrees rebase on main to consume substrate changes.
 Single-writer invariant prevents semantically-valid divergent edits at
-runtime. `tools/gates/check_substrate_dual_rom.py` builds BOTH ROMs after
-any substrate-touching commit (defense-in-depth).
+runtime. Sole-target world: substrate edits are verified by a single
+clean `Debug.bat` build (the dual-ROM gate is retired).
 
-## No whatif emission (HARD)
+## Sole build target — Debug.md (HARD)
 
-`build.bat` MUST emit only `Title.md` / `Title.lst` / `Title.o` /
-`Title.elf`. Legacy `whatif.*` alias is dead per user 2026-05-02.
-`tools/gates/check_no_whatif.py` greps active code paths and fails CI on
-any `whatif` reference outside `debates/` and `docs/archive/`.
+There is exactly one ROM: `builds/Debug.md`. One build script:
+`Debug.bat`. The legacy aliases listed below are permanently retired
+(user pivot 2026-05-08, replacing the 2026-05-02 alias-cleanup pass).
+No build target, output filename, staging copy, variable, identifier,
+comment, or active documentation may mention them:
+
+- whatif.* — retired 2026-05-02
+- the prior frontend-only ROM (.md / .lst / .elf / .o) — retired 2026-05-08
+- the prior gameplay-harness ROM and its build script — retired 2026-05-08
+- CombinedDebug.* / combined_debug — renamed to Debug.* on 2026-05-08
+
+Historical evidence stays in `debates/`, `docs/archive/`,
+`docs/superpowers/specs/`, `docs/superpowers/plans/`,
+`docs/superpowers/decisions/`, and `docs/superpowers/captures/`. The
+banned-token regex lives in `tools/gates/check_banned_filename.py`; CI
+hard-fails on any active-code reintroduction.
+
+The dual-ROM substrate gate is retired with the dual-ROM era. Title-side
+ABI (intro / file select / story scroll) is still linked into `Debug.md`
+via `tools/debug/build_debug.py` `TITLE_C_SOURCES`; that path keeps
+producing the boot frontend, just not as a separate ROM. The A+B+C chord
+at `PHASE_TITLE_DISPLAY` enters the gameplay runtime in-ROM.
 
 ## Drain coverage (HARD)
 
@@ -88,19 +105,13 @@ Violations = duplicated implementations + silent drift. See memory:
 
 ## Build target (HARD — Rule BT-1)
 
-**99% of phase work targets RoomRom. Default build = `RoomRom\build.bat`.**
+**100% of phase work targets `Debug.md`. Default (and only) build = `Debug.bat`.**
 
-Root `build.bat` (Title.md) is gated and refuses to run unless
-`TITLE_BUILD_APPROVED=1` is set. Title.md is the release/frontend harness
-— Phase 11 and Phase 12 only, and only with explicit user approval per
-task. Do NOT cite "Title.md build clean" as evidence for any phase before
-11; different ROM, different probes, different scope (Title-only checks
-like `phase_sequence.done` will fire and fail unrelated to RoomRom work).
-
-If a phase 2-10 task says "build and verify": that means `RoomRom\build.bat`.
-
-See master plan Rule BT-1 + memory `feedback_roomrom_default_target`,
-`feedback_check_worktree_first`, `project_active_scope_roomrom`.
+The prior dual-target world is retired. Root `build.bat` and
+`RoomRom\build.bat` are stub scripts that abort and point at `Debug.bat`.
+"Build and verify" means `Debug.bat`. See master plan Rule BT-1 (under
+the Sole Build Target Amendment 2026-05-08) + memory
+`feedback_combined_debug_only` (now upgraded to `Debug.md`).
 
 ## Build / verify
 

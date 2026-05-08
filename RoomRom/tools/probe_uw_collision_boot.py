@@ -17,7 +17,7 @@ from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[2]
-ROM = ROOT / "RoomRom" / "out" / "RoomRom.md"
+ROM = ROOT / "RoomRom" / "out" / "Debug.md"
 ELF = ROOT / "RoomRom" / "out" / "rom.out"
 NM = ROOT / "build" / "toolchain" / "sgdk_bin" / "bin" / "nm.exe"
 NES_JSON = ROOT / "RoomRom" / "out" / "nes_uw_level1_quest1_orig.json"

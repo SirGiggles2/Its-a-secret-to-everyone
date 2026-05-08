@@ -4,7 +4,7 @@
  *
  * Note: RoomRom has its own roomrom_hud.c for active HUD rendering;
  * this dispatch is the NES gameplay-tier formatter that fills the
- * NES OAM/transfer-buf mirror (used by Title.md). RoomRom may bind
+ * NES OAM/transfer-buf mirror (used by Debug.md). RoomRom may bind
  * these natively once UW dialog/HUD-update paths port.
  */
 

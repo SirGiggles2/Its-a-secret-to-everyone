@@ -146,7 +146,7 @@ typedef struct palette_toggle_t {
  *
  * Implementation lives in `src/state/palette_tick.c` (substrate, main
  * worktree per Rule WT-1). Both RoomRom (gameplay toggles: low-health,
- * boss flash, hit-invuln) and Title.md frontend (intro item flash) call
+ * boss flash, hit-invuln) and Debug.md frontend (intro item flash) call
  * palette_tick from their per-frame update; the runtime is pure C with
  * no SGDK dependencies, so it lands in substrate rather than gameplay-
  * side.

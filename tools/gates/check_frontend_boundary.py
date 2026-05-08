@@ -4,7 +4,7 @@
 Per debate 004 ask 5 + Phase 12 promotion gate.
 
 Scans owned gameplay code paths for any include of a frontend header. The
-shipping ROM (Title.md) calls into gameplay through a flat ABI; gameplay
+shipping ROM (Debug.md) calls into gameplay through a flat ABI; gameplay
 must never know that frontend exists.
 
 Scoped paths (gameplay-side):

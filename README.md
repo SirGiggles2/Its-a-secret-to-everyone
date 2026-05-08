@@ -37,7 +37,7 @@ FINAL TRY/
 │   ├── transpile_6502.py               ← 6502 → M68K transpiler
 │   ├── fix_checksum.py                 ← patches Genesis ROM header checksum
 │   ├── run_all_probes.bat              ← regression: runs all milestone probes in sequence
-│   ├── probe_addresses.lua             ← shared: reads whatif.lst, exports symbol addresses for all probes
+│   ├── probe_addresses.lua             ← shared: reads Debug.lst, exports symbol addresses for all probes
 │   ├── bizhawk_*_probe.lua             ← BizHawk Lua probe scripts (see SPEC.md § Probe Registry)
 │   └── run_bizhawk_*_probe.bat         ← launcher scripts for each probe
 │
@@ -46,10 +46,10 @@ FINAL TRY/
 │   └── sega2f_files/                   ← Genesis hardware reference material
 │
 ├── builds/
-│   ├── whatif.md                       ← latest built ROM (Genesis .md format)
-│   ├── whatif.lst                      ← assembly listing / symbol addresses
+│   ├── Debug.md                        ← Sole ROM (Genesis .md format) — Title boot + gameplay runtime in one binary
+│   ├── Debug.lst                       ← Assembly listing / symbol addresses (when emitted by build_debug.py)
 │   ├── reports/                        ← probe output
-│   └── archive/                        ← historical build snapshots
+│   └── archive/                        ← historical build snapshots (legacy alias-era ROMs)
 │
 └── docs/
     ├── SPEC.md                         ← full architecture, milestones, probes, risks

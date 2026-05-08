@@ -1,6 +1,6 @@
 /* nes_ram_init.c — RoomRom build only (D3 substrate per debate 006).
  *
- * Title.md uses A4-pinned `nes_ram` initialized by `genesis_shell.asm`
+ * Debug.md uses A4-pinned `nes_ram` initialized by `genesis_shell.asm`
  * boot at `lea ($FF0000).l, A4`. RoomRom uses SGDK's default A-register
  * convention with no A4 pin, so we allocate an in-RAM 2KB scratch image
  * and point `nes_ram` at it before any drained code (which uses the

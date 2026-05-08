@@ -1,6 +1,6 @@
-local OUT_PATH = os.getenv("COMBINED_DEBUG_SCREENSHOT")
-    or "C:\\Users\\Jake Diggity\\Documents\\GitHub\\FINAL TRY\\build\\reports\\combined_debug\\combined_room.png"
-local PRESS_C_AFTER_ENTRY = os.getenv("COMBINED_DEBUG_PRESS_C") == "1"
+local OUT_PATH = os.getenv("DEBUG_ROOM_SCREENSHOT")
+    or "C:\\Users\\Jake Diggity\\Documents\\GitHub\\FINAL TRY\\build\\reports\\debug\\debug_room.png"
+local PRESS_C_AFTER_ENTRY = os.getenv("DEBUG_PRESS_C") == "1"
 
 local function mkdir_for(path)
     local dir = path:match("^(.*)[/\\][^/\\]+$")
