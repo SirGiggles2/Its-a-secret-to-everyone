@@ -1439,10 +1439,11 @@ void roomrom_debug_tick(void)
             return;
         }
 
-        /* START edge-press = scene toggle. Z held + START = quest toggle
-         * (handled below). C held + START handled above. MODE button is
-         * reserved hardware-side, never bound. */
-        if ((pressed & BUTTON_START) && !(joy & BUTTON_Z) && !(joy & BUTTON_C)) {
+        /* MODE edge-press = scene toggle (was START 2026-04..2026-05-08).
+         * Frees START to behave like NES Start (pause/inventory/etc).
+         * Z held + START = quest toggle (handled below). C held + START
+         * handled above. */
+        if ((pressed & BUTTON_MODE) && !(joy & BUTTON_Z) && !(joy & BUTTON_C)) {
             s_scene = (s_scene == SCENE_OW) ? SCENE_UW : SCENE_OW;
             s_room_id = (s_scene == SCENE_UW) ? 0x00 : 0x77;
             upload_scene_chr();
