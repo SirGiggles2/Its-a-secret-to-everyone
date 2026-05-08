@@ -117,6 +117,15 @@ void roomrom_sprites_clear_explosion(void);
 void roomrom_sprites_set_room_item(short x, short y, unsigned char sub_pal);
 void roomrom_sprites_clear_room_item(void);
 
+/* Magic rod shot (slot 9). Vertical 8x16 (UP/DOWN) or horizontal 16x16
+ * (LEFT/RIGHT, hflip on LEFT). sub_pal: 0..2 (NES "flash" cycles 0..3
+ * via FrameCounter & 3; Genesis 3-pal atlas wraps to 0..2). Per NES
+ * UpdateSwordShotOrMagicShot (Z_07.asm:3437) item slot $23 — frame 0
+ * = tile $7A, frame 1 = tile $7C. */
+void roomrom_sprites_set_magic_shot(short x, short y, link_face_t face,
+                                    unsigned char sub_pal);
+void roomrom_sprites_clear_magic_shot(void);
+
 /* Phase 1: select item-atlas variant (orig vs redux). Affects the next
  * call to roomrom_sprites_upload_chr (item CHR is variant-selected at
  * upload time). */

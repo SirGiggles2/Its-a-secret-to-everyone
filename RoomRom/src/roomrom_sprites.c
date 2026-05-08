@@ -314,6 +314,16 @@ void roomrom_sprites_spawn_link(short x, short y)
                       TILE_ATTR_FULL(PAL1, 1, 0, 0,
                           (unsigned short)(ROOMROM_ITEM_TILE_BASE_PAL(0)
                               + ROOMROM_ITEM_TILE_CANDLE_FIRE_F0)),
+                      9);
+    /* Slot 9 = magic_shot (rod projectile). Vertical 8x16 default; switches
+     * to 16x16 horizontal at fire time per face. */
+    VDP_setSpriteFull(9,
+                      (s16)-32,
+                      (s16)-32,
+                      SPRITE_SIZE(1, 2),
+                      TILE_ATTR_FULL(PAL1, 1, 0, 0,
+                          (unsigned short)(ROOMROM_ITEM_TILE_BASE_PAL(0)
+                              + ROOMROM_ITEM_TILE_MAGIC_SHOT_V)),
                       0);
     roomrom_sprites_set_link_pose(x, y, LINK_FACE_DOWN, 0u);
 }
@@ -670,4 +680,50 @@ void roomrom_sprites_clear_explosion(void)
                       TILE_ATTR_FULL(PAL1,0, 0, 0, EXPLOSION_VRAM_TILE),
                       7);  /* link to slot 7 — keeps slots 7/8 in chain */
     VDP_updateSprites(9, DMA);
+}
+
+/* Magic rod shot — slot 9. NES UpdateSwordShotOrMagicShot (Z_07.asm:3437)
+ * picks tile $7A (vertical) or $7C (horizontal) from item slot $23.
+ * Vertical: 8x16 single tile pair ($7A/$7B). Horizontal: 16x16 wide
+ * flippable ($7C/$7D/$7E/$7F, hflip on LEFT). Sub-pal cycles per
+ * FrameCounter & 3 (NES "flash" effect). */
+void roomrom_sprites_set_magic_shot(short x, short y, link_face_t face,
+                                    unsigned char sub_pal)
+{
+    unsigned short tile_v = (unsigned short)(ROOMROM_ITEM_TILE_BASE_PAL(sub_pal)
+                                              + ROOMROM_ITEM_TILE_MAGIC_SHOT_V);
+    unsigned short tile_h = (unsigned short)(ROOMROM_ITEM_TILE_BASE_PAL(sub_pal)
+                                              + ROOMROM_ITEM_TILE_MAGIC_SHOT_H);
+    switch (face) {
+    case LINK_FACE_UP:
+        VDP_setSpriteFull(9, (s16)x, (s16)y, SPRITE_SIZE(1, 2),
+                          TILE_ATTR_FULL(PAL1, 1, 0, 0, tile_v), 0);
+        break;
+    case LINK_FACE_DOWN:
+        VDP_setSpriteFull(9, (s16)x, (s16)y, SPRITE_SIZE(1, 2),
+                          TILE_ATTR_FULL(PAL1, 1, 1, 0, tile_v), 0);
+        break;
+    case LINK_FACE_LEFT:
+        VDP_setSpriteFull(9, (s16)x, (s16)y, SPRITE_SIZE(2, 2),
+                          TILE_ATTR_FULL(PAL1, 1, 0, 1, tile_h), 0);
+        break;
+    case LINK_FACE_RIGHT:
+        VDP_setSpriteFull(9, (s16)x, (s16)y, SPRITE_SIZE(2, 2),
+                          TILE_ATTR_FULL(PAL1, 1, 0, 0, tile_h), 0);
+        break;
+    default:
+        VDP_setSpriteFull(9, (s16)-32, (s16)-32, SPRITE_SIZE(1, 2),
+                          TILE_ATTR_FULL(PAL1, 1, 0, 0, tile_v), 0);
+        break;
+    }
+    VDP_updateSprites(10, DMA);
+}
+
+void roomrom_sprites_clear_magic_shot(void)
+{
+    unsigned short tile = (unsigned short)(ROOMROM_ITEM_TILE_BASE_PAL(0)
+                                            + ROOMROM_ITEM_TILE_MAGIC_SHOT_V);
+    VDP_setSpriteFull(9, (s16)-32, (s16)-32, SPRITE_SIZE(1, 2),
+                      TILE_ATTR_FULL(PAL1, 0, 0, 0, tile), 0);
+    VDP_updateSprites(10, DMA);
 }

@@ -8,6 +8,7 @@
 #include "roomrom_boomerang.h"
 #include "roomrom_arrow.h"
 #include "roomrom_bomb.h"
+#include "roomrom_magic_shot.h"
 #include "roomrom_scene_load.h"
 #include "roomrom_palette_tick.h"
 #include "cave_dispatch.h"  /* debate 006 D2: native cave gamemode entry */
@@ -1187,6 +1188,7 @@ void roomrom_debug_enter(void)
     roomrom_world_transition_init();       /* Task 5.4: warp coordinator */
     roomrom_pushblock_init();              /* Task 5.7: push-block state machine */
     roomrom_candle_fire_init();            /* Task 5.8.1: candle fire slot 8 */
+    roomrom_magic_shot_init();             /* magic rod shot slot 9 */
     roomrom_probe_metadata_run();          /* Task 5.4 Gate D: in-ROM probe */
 
     /* debate 006 D2 native cave smoke: prove cave_init / cave_tick /
@@ -1360,6 +1362,8 @@ void roomrom_debug_tick(void)
         roomrom_bomb_update();
         /* Task 5.8.1: tick candle fire (slot 8). */
         roomrom_candle_fire_update();
+        /* Magic rod shot (slot 9). */
+        roomrom_magic_shot_update();
 
         u16 joy = JOY_readJoypad(JOY_1);
         u16 pressed = joy & ~s_joy_prev;
@@ -1530,9 +1534,15 @@ void roomrom_debug_tick(void)
                 }
                 break;
             case B_ITEM_ROD:
-                /* v10 deferred: rod uses UpdateSwordOrRod path with its
-                 * own tile data + magic shot ($1A magic shot tile). Same
-                 * blocker as candle. */
+                /* Wand-extending visual deferred. Magic shot projectile
+                 * fires immediately (skipping rod state machine). NES
+                 * UpdateSwordOrRod state 3 -> spawn shot at slot $0E.
+                 * Genesis: spawn at slot 9 directly, sub-pal flashes
+                 * 0..2 per FrameCounter. */
+                if (!roomrom_magic_shot_active()) {
+                    roomrom_magic_shot_fire(players[0].face,
+                                            players[0].x, players[0].y);
+                }
                 break;
             default:             break;
             }
