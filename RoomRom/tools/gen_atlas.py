@@ -1115,28 +1115,55 @@ def build_legacy_variant_blob(item_defs: List[dict],
     """Build the per-variant Genesis 4bpp blob that matches gen_item_chr_blob.py.
 
     item_defs are from item_chr_manifest.json (8-item legacy list).
-    Mirrored items (draw_rule.startswith('mirrored_')) emit raw+hflip per tile.
+    Draw rules:
+      - 'mirrored_*'                    : per NES tile -> raw + hflip (16x8)
+      - 'wide_16x16_mirrored_8x16_*'    : tile_ids interpreted as (top,bot)
+                                          pairs; per pair -> top, bot,
+                                          hflip(top), hflip(bot) (16x16)
+      - other                            : per NES tile -> raw only (8x8/8x16)
+
+    The 8x16 mirrored layout matches Genesis SGDK column-major fetch for
+    SPRITE_SIZE(2,2): pos0=col0row0=LT, pos1=col0row1=LB, pos2=col1row0=RT,
+    pos3=col1row1=RB. NES Z1 explosion uses this dispatch (Anim_Write
+    MirroredSpritePair under PPU 8x16 mode).
     """
     tiles = variant.get("tiles", {})
     out = bytearray()
     for item_def in item_defs:
         rule = str(item_def.get("draw_rule", ""))
+        is_8x16_mirrored = rule.startswith("wide_16x16_mirrored_8x16")
         bake_mirror = rule.startswith("mirrored_")
-        for tile_id in item_def["tile_ids"]:
-            tile_meta = tiles.get(tile_id)
+        tile_ids = item_def["tile_ids"]
+
+        def get_gen(tid: str) -> bytes:
+            tile_meta = tiles.get(tid)
             if tile_meta is None:
                 raise SystemExit(
-                    f"FU2: variant '{variant.get('rom_id')}' missing tile {tile_id}")
-            source = tile_meta.get("source")
-            if source == "guessed_common_chr":
-                raise SystemExit(f"FU2: tile {tile_id} still uses forbidden guessed_common_chr")
+                    f"FU2: variant '{variant.get('rom_id')}' missing tile {tid}")
+            if tile_meta.get("source") == "guessed_common_chr":
+                raise SystemExit(f"FU2: tile {tid} still uses forbidden guessed_common_chr")
             raw_nes = bytes.fromhex(tile_meta["bytes"])
             if len(raw_nes) != BYTES_PER_NES_TILE:
-                raise SystemExit(f"FU2: tile {tile_id} is not 16 bytes")
-            gen = nes_tile_to_genesis(raw_nes)
-            out.extend(gen)
-            if bake_mirror:
-                out.extend(hflip_genesis_tile(gen))
+                raise SystemExit(f"FU2: tile {tid} is not 16 bytes")
+            return nes_tile_to_genesis(raw_nes)
+
+        if is_8x16_mirrored:
+            if len(tile_ids) % 2 != 0:
+                raise SystemExit(
+                    f"FU2: {item_def['name']} draw_rule {rule} requires even tile_ids count")
+            for i in range(0, len(tile_ids), 2):
+                top = get_gen(tile_ids[i])
+                bot = get_gen(tile_ids[i+1])
+                out.extend(top)
+                out.extend(bot)
+                out.extend(hflip_genesis_tile(top))
+                out.extend(hflip_genesis_tile(bot))
+        else:
+            for tile_id in tile_ids:
+                gen = get_gen(tile_id)
+                out.extend(gen)
+                if bake_mirror:
+                    out.extend(hflip_genesis_tile(gen))
     return bytes(out)
 
 
@@ -1192,10 +1219,20 @@ def emit_items_chr_x4(item_manifest: dict, out_dir: Path) -> int:
     running_tile = 0
     for item_def in item_defs:
         rule = str(item_def.get("draw_rule", ""))
+        is_8x16_mirrored = rule.startswith("wide_16x16_mirrored_8x16")
         bake_mirror = rule.startswith("mirrored_")
         name_ident = c_ident(str(item_def["name"]))
         tile_offsets.append((name_ident, running_tile))
-        tiles_here = len(item_def["tile_ids"]) * (2 if bake_mirror else 1)
+        # 8x16-mirrored: 4 Genesis tiles per (top,bot) NES pair (LT, LB, RT, RB).
+        # mirrored_*    : 2 Genesis tiles per NES tile (raw + hflip).
+        # default        : 1 Genesis tile per NES tile.
+        n_ids = len(item_def["tile_ids"])
+        if is_8x16_mirrored:
+            tiles_here = n_ids * 2  # 6 ids -> 12 tiles
+        elif bake_mirror:
+            tiles_here = n_ids * 2
+        else:
+            tiles_here = n_ids
         running_tile += tiles_here
 
     h_lines = [

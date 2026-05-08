@@ -103,10 +103,17 @@ def main() -> int:
         tile_ids = item_def.get("tile_ids", [])
         if not tile_ids:
             fail(f"{name} has no tile_ids")
-        # Generator emits 2 Genesis tiles per declared NES tile for
-        # mirrored_* draw rules (raw + hflipped).
+        # Generator emits Genesis tiles per declared NES tile depending on
+        # draw_rule: mirrored_* -> raw + hflipped (2 per tile); 8x16 mirrored
+        # 16x16 (e.g. explosion) -> 4 per pair (LT, LB, RT, RB);
+        # default -> 1 per tile.
         rule = str(item_def.get("draw_rule", ""))
-        per_input = 2 if rule.startswith("mirrored_") else 1
+        if rule.startswith("wide_16x16_mirrored_8x16"):
+            per_input = 2  # 6 ids -> 12 tiles
+        elif rule.startswith("mirrored_"):
+            per_input = 2
+        else:
+            per_input = 1
         total_tiles += len(tile_ids) * per_input
 
         nes_frame_tile = item_def.get("nes_frame_tile")

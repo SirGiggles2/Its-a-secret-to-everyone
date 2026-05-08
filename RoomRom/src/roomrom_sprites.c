@@ -296,7 +296,7 @@ void roomrom_sprites_spawn_link(short x, short y)
     VDP_setSpriteFull(6,
                       (s16)-32,
                       (s16)-32,
-                      SPRITE_SIZE(2, 1),
+                      SPRITE_SIZE(2, 2),
                       TILE_ATTR_FULL(PAL1,0, 0, 0, EXPLOSION_VRAM_TILE),
                       0);
     roomrom_sprites_set_link_pose(x, y, LINK_FACE_DOWN, 0u);
@@ -603,23 +603,25 @@ void roomrom_sprites_clear_bomb(void)
 /* S7 v8 explosion (slot 6). NES Z1 cloud cluster uses item slot $01
  * frames 1-3 = ItemFrameTiles[$04..$06] = $70/$72/$74. Each tile in
  * [$6C, $7C) -> @Wide -> Anim_WriteMirroredSpritePair (Z_01.asm:5304):
- * 2 8x8 sprites side-by-side, right = left hflipped, total 16x8 per
- * frame. The CHR generator pre-bakes the hflipped right tile next to
- * each raw tile (mirrored_16x8 draw rule), so each NES frame occupies
- * 2 sequential Genesis tiles in the blob:
+ * 2 OAMs side-by-side, right = left hflipped. PPU 8x16 sprite mode
+ * (PPUCTRL bit 5 = 1) makes each OAM 8x16 (paired tile $7X with $7X+1
+ * as bottom). Visible cluster = 2*8x16 = 16x16 per frame.
  *
- *   blob[EXPLOSION_VRAM_TILE + 0..1]  = $70 + $70 hflipped (frame 0)
- *   blob[EXPLOSION_VRAM_TILE + 2..3]  = $72 + $72 hflipped (frame 1)
- *   blob[EXPLOSION_VRAM_TILE + 4..5]  = $74 + $74 hflipped (frame 2)
+ * Live BizHawk capture (probe_nes_explode.lua frame 335) confirms 4
+ * cluster positions × 2 OAMs each (hfl=0 + hfl=1). Atlas blob layout
+ * post-regen (wide_16x16_mirrored_8x16_phase_cycle draw_rule):
  *
- * SGDK SPRITE_SIZE(2, 1) renders the 16x8 cluster as one sprite by
- * picking up tile T (left) and T+1 (right). Cycle phase advances
- * every EXPLOSION_PHASE_FRAMES ticks of the bomb's explode timer
- * (NES cycles every ~2 frames between cluster positions; the
- * single-cluster Genesis impl uses a slower cadence so each frame
- * is visible). Frame 4 cluster is drawn 4 times at NES BombCloud
- * offsets (Z_07.asm:4924-4974); Genesis impl draws ONE cluster
- * centered on the bomb origin. */
+ *   blob[EXPLOSION + 0..3] = $70/$71/$70-hflip/$71-hflip  (frame 0)
+ *   blob[EXPLOSION + 4..7] = $72/$73/$72-hflip/$73-hflip  (frame 1)
+ *   blob[EXPLOSION + 8..11]= $74/$75/$74-hflip/$75-hflip  (frame 2)
+ *
+ * SGDK column-major SPRITE_SIZE(2,2) fetch order is LT, LB, RT, RB —
+ * matches the blob exactly. Cycle phase advances every
+ * EXPLOSION_PHASE_FRAMES ticks of the bomb explode timer.
+ *
+ * Genesis impl draws ONE 16x16 cluster centered on the bomb origin
+ * (NES draws 4 clusters at BombCloud offsets, Z_07.asm:4924-4974;
+ * 4-cluster parity is a separate enhancement). */
 #define EXPLOSION_PHASE_FRAMES 6u
 
 void roomrom_sprites_set_explosion(short x, short y, unsigned char timer,
@@ -633,11 +635,11 @@ void roomrom_sprites_set_explosion(short x, short y, unsigned char timer,
     unsigned char phase   = (unsigned char)((elapsed / EXPLOSION_PHASE_FRAMES) % 3u);
     unsigned short tile   = (unsigned short)(ROOMROM_ITEM_TILE_BASE_PAL(sub_pal)
                                              + ROOMROM_ITEM_TILE_EXPLOSION
-                                             + (unsigned short)phase * 2u);
+                                             + (unsigned short)phase * 4u);
     VDP_setSpriteFull(6,
                       (s16)x,
                       (s16)y,
-                      SPRITE_SIZE(2, 1),
+                      SPRITE_SIZE(2, 2),
                       TILE_ATTR_FULL(PAL1,0, 0, 0, tile),
                       0);
     VDP_updateSprites(7, DMA);
@@ -648,7 +650,7 @@ void roomrom_sprites_clear_explosion(void)
     VDP_setSpriteFull(6,
                       (s16)-32,
                       (s16)-32,
-                      SPRITE_SIZE(2, 1),
+                      SPRITE_SIZE(2, 2),
                       TILE_ATTR_FULL(PAL1,0, 0, 0, EXPLOSION_VRAM_TILE),
                       0);
     VDP_updateSprites(7, DMA);
