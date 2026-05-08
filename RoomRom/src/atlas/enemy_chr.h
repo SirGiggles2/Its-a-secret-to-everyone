@@ -19,10 +19,13 @@
 #define ROOMROM_ATLAS_ENEMY_TILE_COUNT         136u
 #define ROOMROM_ATLAS_ENEMY_PER_PAL_BYTES      1088u
 #define ROOMROM_ATLAS_ENEMY_PER_BANK_BYTES     4352u
+#define ROOMROM_ATLAS_ENEMY_OWSP_TILE_COUNT    114u
+#define ROOMROM_ATLAS_ENEMY_OWSP_BANK_BYTES    3648u
 
 extern const unsigned char roomrom_atlas_enemy_uwsp127[ROOMROM_ATLAS_ENEMY_PER_BANK_BYTES];
 extern const unsigned char roomrom_atlas_enemy_uwsp358[ROOMROM_ATLAS_ENEMY_PER_BANK_BYTES];
 extern const unsigned char roomrom_atlas_enemy_uwsp469[ROOMROM_ATLAS_ENEMY_PER_BANK_BYTES];
+extern const unsigned char roomrom_atlas_enemy_owsp[ROOMROM_ATLAS_ENEMY_OWSP_BANK_BYTES];
 
 #endif /* ROOMROM_ATLAS_ENEMY_CHR_H */
 

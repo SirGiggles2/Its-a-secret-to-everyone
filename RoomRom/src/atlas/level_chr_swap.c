@@ -39,7 +39,10 @@ static const roomrom_vram_contract_t *contract_for_scene(roomrom_scene_id_t s)
  * z_03.asm:67-89 dispatch:
  *   UWSP127 → L1, L2, L7
  *   UWSP358 → L3, L5, L8
- *   UWSP469 → L4, L6, L9 */
+ *   UWSP469 → L4, L6, L9
+ * PR-4c: OW NPC + cave-dweller bank = single OWSP block (z_03.asm:42),
+ * 1x sub-pal (sprites use NES sprite sub-pal 0..3 via per-OBJ ObjAttr,
+ * not via CHR replication). */
 static const unsigned char *enemy_blob_for_scene(roomrom_scene_id_t s)
 {
     switch (s) {
@@ -55,10 +58,17 @@ static const unsigned char *enemy_blob_for_scene(roomrom_scene_id_t s)
     case ROOMROM_SCENE_UW_L6:
     case ROOMROM_SCENE_UW_L9:
         return roomrom_atlas_enemy_uwsp469;
+    case ROOMROM_SCENE_OVERWORLD:
+        return roomrom_atlas_enemy_owsp;
     default:
         return 0;
     }
 }
+
+/* SCENE_OBJ slot is sized for the largest contract (4x UWSP = 136 tiles).
+ * BLANK clears the full slot before every DMA so smaller contracts (OW
+ * 114 tiles) don't leave stale tail bytes from the previous scene. */
+#define SCENE_OBJ_SLOT_TILES 136u
 
 static level_chr_swap_state_t s_state = LEVEL_CHR_SWAP_IDLE;
 static roomrom_scene_id_t      s_target = ROOMROM_SCENE_BOOT;
@@ -112,12 +122,14 @@ void level_chr_swap_tick(void)
     }
 
     case LEVEL_CHR_SWAP_BLANK: {
-        /* Zero-fill the SCENE_OBJ tile range. Codex P0-2: prevents
-         * stale sub-pal aliases from showing during the half-DMA gap
-         * when bank shrinks. CPU fill (no DMA queue cost). */
+        /* Zero-fill the FULL SCENE_OBJ slot, not just c->tile_count.
+         * Codex P0-2: prevents stale sub-pal aliases from showing during
+         * the half-DMA gap when bank shrinks (e.g. UW 136 → OW 114 leaves
+         * 22 stale tiles unless we BLANK the full slot). CPU fill (no
+         * DMA queue cost). */
         if (c != 0 && c->tile_count > 0u) {
-            VDP_fillTileData(0u, c->tile_base, c->tile_count, FALSE);
-            s_total_bytes_dma += (unsigned long)c->tile_count * 32ul;
+            VDP_fillTileData(0u, c->tile_base, SCENE_OBJ_SLOT_TILES, FALSE);
+            s_total_bytes_dma += (unsigned long)SCENE_OBJ_SLOT_TILES * 32ul;
         }
         s_state = LEVEL_CHR_SWAP_DMA_SCENE_A;
         return;

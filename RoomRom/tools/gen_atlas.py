@@ -519,7 +519,7 @@ SCENE_CONTRACTS = [
     ("ROOMROM_SCENE_OVERWORLD", "hud",     "ROOMROM_BG_TILE_BASE_PAL(0)",     22),
     ("ROOMROM_SCENE_OVERWORLD", "bg_ow",   "ROOMROM_BG_TILE_BASE_PAL(0)",      0),  # BG handled by bg_palette modules
     ("ROOMROM_SCENE_OVERWORLD", "npc",     "(ROOMROM_SPR_TILE_BASE + 32u)",   12),
-    ("ROOMROM_SCENE_OVERWORLD", "enemies", "(ROOMROM_SPR_TILE_BASE + 44u)",    0),  # Phase 4 wiring
+    ("ROOMROM_SCENE_OVERWORLD", "enemies", "(ROOMROM_SPR_TILE_BASE + 44u)",  114),  # PR-4c: OWSP 1x sub-pal (114 NES tiles)
     # Underworld levels 1-9
 ] + [
     (f"ROOMROM_SCENE_UW_L{n}", "link",    "ROOMROM_SPR_TILE_BASE",            32)
@@ -1264,6 +1264,15 @@ ENEMY_BANK_FILES = [
     ("UWSP469", "PatternBlockUWSP469.bin"),
 ]
 
+# PR-4c: OW NPC + cave-dweller bank. Single 1824-byte block in NES Z1
+# (z_03.asm:42 PatternBlockSrcAddrsOW). 114 NES tiles. 1x sub-pal (most
+# OW sprites use sub-pal 0; per-NPC sub-pal selection via ObjAttr at
+# render time, not CHR replication). Lands in SCENE_OBJ slot (cap 136
+# tiles), well under budget.
+OWSP_BANK_FILE = ("OWSP", "PatternBlockOWSP.bin")
+OWSP_NES_TILE_COUNT = 114
+OWSP_BANK_BYTES = OWSP_NES_TILE_COUNT * BYTES_PER_GEN_TILE  # 3648
+
 
 def _build_enemy_bank_blob(bank_path: Path) -> bytes:
     """Read an UWSP bank file, convert each NES tile to Genesis, then expand
@@ -1291,12 +1300,33 @@ def _build_enemy_bank_blob(bank_path: Path) -> bytes:
     return bytes(out)
 
 
+def _build_owsp_blob(bank_path: Path) -> bytes:
+    """PR-4c: OWSP single-sub-pal blob. NES → Genesis 4bpp at sub-pal 0
+    (no replication). 114 NES tiles → 3648 Genesis bytes."""
+    raw = bank_path.read_bytes()
+    expected = OWSP_NES_TILE_COUNT * BYTES_PER_NES_TILE
+    if len(raw) != expected:
+        raise SystemExit(
+            f"PR-4c: {bank_path.name} unexpected size "
+            f"{len(raw)} (want {expected})")
+
+    out = bytearray()
+    for tid in range(OWSP_NES_TILE_COUNT):
+        nes_tile = raw[tid * BYTES_PER_NES_TILE : (tid + 1) * BYTES_PER_NES_TILE]
+        out.extend(nes_tile_to_genesis(nes_tile))
+    if len(out) != OWSP_BANK_BYTES:
+        raise SystemExit(f"PR-4c: OWSP bank size wrong: {len(out)}")
+    return bytes(out)
+
+
 def emit_enemy_chr_x4(out_dir: Path) -> int:
     """Emit atlas/enemy_chr.{c,h}. Returns per-bank byte count (4352).
 
-    Three constant arrays (UWSP127/358/469), each ENEMY_X4_PER_BANK_BYTES.
-    Layout matches items_chr_x4: pal0_bytes||pal1_bytes||pal2_bytes||pal3_bytes.
-    Renderer offset rule: blob_off = per_pal_bytes * sub_pal.
+    Three UWSP banks (UWSP127/358/469), each ENEMY_X4_PER_BANK_BYTES,
+    4x sub-pal expanded. Layout: pal0||pal1||pal2||pal3.
+    Plus PR-4c OWSP single-sub-pal bank for OW + cave NPCs.
+    Renderer offset rule (UWSP): blob_off = per_pal_bytes * sub_pal.
+    Renderer offset rule (OWSP): blob_off = 0 (single bank, no expansion).
     """
     blobs: List[Tuple[str, bytes]] = []
     for sym, fname in ENEMY_BANK_FILES:
@@ -1304,6 +1334,11 @@ def emit_enemy_chr_x4(out_dir: Path) -> int:
         if not path.exists():
             raise SystemExit(f"PR-4b: missing {path}")
         blobs.append((sym, _build_enemy_bank_blob(path)))
+
+    owsp_path = PRG_ORIG_DIR / OWSP_BANK_FILE[1]
+    if not owsp_path.exists():
+        raise SystemExit(f"PR-4c: missing {owsp_path}")
+    owsp_blob = _build_owsp_blob(owsp_path)
 
     per_bank = ENEMY_X4_PER_BANK_BYTES
     per_pal = per_bank // 4
@@ -1334,12 +1369,17 @@ def emit_enemy_chr_x4(out_dir: Path) -> int:
         f"#define ROOMROM_ATLAS_ENEMY_TILE_COUNT         {ENEMY_X4_TILES}u",
         f"#define ROOMROM_ATLAS_ENEMY_PER_PAL_BYTES      {per_pal}u",
         f"#define ROOMROM_ATLAS_ENEMY_PER_BANK_BYTES     {per_bank}u",
+        f"#define ROOMROM_ATLAS_ENEMY_OWSP_TILE_COUNT    {OWSP_NES_TILE_COUNT}u",
+        f"#define ROOMROM_ATLAS_ENEMY_OWSP_BANK_BYTES    {OWSP_BANK_BYTES}u",
         "",
     ]
     for sym, _ in blobs:
         h_lines.append(
             f"extern const unsigned char roomrom_atlas_enemy_{sym.lower()}"
             f"[ROOMROM_ATLAS_ENEMY_PER_BANK_BYTES];")
+    h_lines.append(
+        "extern const unsigned char roomrom_atlas_enemy_owsp"
+        "[ROOMROM_ATLAS_ENEMY_OWSP_BANK_BYTES];")
     h_lines += ["", f"#endif /* {guard} */", ""]
     write_lines(h_path, h_lines)
 
@@ -1355,10 +1395,17 @@ def emit_enemy_chr_x4(out_dir: Path) -> int:
         ]
         c_lines.extend(format_blob(blob, "    "))
         c_lines += ["};", ""]
+    c_lines += [
+        "const unsigned char roomrom_atlas_enemy_owsp"
+        "[ROOMROM_ATLAS_ENEMY_OWSP_BANK_BYTES] = {",
+    ]
+    c_lines.extend(format_blob(owsp_blob, "    "))
+    c_lines += ["};", ""]
     write_lines(c_path, c_lines)
 
-    print(f"  enemy_chr: 3 banks x {per_bank} bytes "
-          f"({ENEMY_X4_TILES} tiles each, 4x sub-pal expanded)")
+    print(f"  enemy_chr: 3 UWSP banks x {per_bank} bytes "
+          f"({ENEMY_X4_TILES} tiles each, 4x sub-pal expanded) "
+          f"+ OWSP {OWSP_BANK_BYTES} bytes ({OWSP_NES_TILE_COUNT} tiles, 1x)")
     return per_bank
 
 

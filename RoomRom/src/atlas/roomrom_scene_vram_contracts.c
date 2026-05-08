@@ -119,9 +119,9 @@ const roomrom_vram_contract_t roomrom_vram_contract_overworld_npc = {
 
 const roomrom_vram_contract_t roomrom_vram_contract_overworld_enemies = {
     /* tile_base  */ (ROOMROM_SPR_TILE_BASE + 44u),
-    /* tile_count */ 0u,
+    /* tile_count */ 114u,
     /* blob_offset */ 0u,
-    /* blob_bytes  */ 0u,
+    /* blob_bytes  */ 4352u,
 };
 
 const roomrom_vram_contract_t roomrom_vram_contract_uw_l1_link = {
