@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-05-09T01:02:28.558453+00:00",
+  "generated_at": "2026-05-09T01:18:23.309010+00:00",
   "generated_by": "tools/audit/primedirective/prime_refresh.py",
   "plan": {
     "path": "docs/superpowers/plans/2026-05-02-title-roomrom-full-port-master-plan.md",
@@ -566,11 +566,12 @@
       "evidence": [
         "findings_resolved_or_deferred|(docs/audit/drain_findings/phase6_task_6_1.md through phase6_task_6_11.md - 11 task audits with deferrals + re-entry triggers)",
         "verify_no_alias_collisions|tools/audit/verify_no_alias_collisions.py",
-        "regression_matrix|builds/reports/regression_matrix.md"
+        "regression_matrix|builds/reports/regression_matrix.md",
+        "build_REQUIRE_GENERATED_ASSETS|builds/Debug.md (1.0M, clean Debug.bat 2026-05-08 post commit 2500c076)"
       ],
       "deferrals": [],
       "close_gate": {
-        "build_REQUIRE_GENERATED_ASSETS": "pending",
+        "build_REQUIRE_GENERATED_ASSETS": "passed",
         "focused_probe_set": "pending",
         "screenshot_state_evidence": "pending",
         "diff_vs_nes_reference": "pending",
@@ -917,13 +918,13 @@
       "sha256": "3696501bc1314ea27f231c00bffb991afe01f9c6cad4db7c2b752a81e3188150",
       "ok": true
     },
-    "git_head": "bc1b5696d984bce47b6b88ec70716653aa5ce74c",
+    "git_head": "2500c07622634c7d9a33fd4d31e4fa65e027648b",
     "dirty_paths_relevant": [
       "RoomRom/src/atlas/title_chr.c"
     ],
     "evidence_paths_present": true,
     "complete_phase_invariant_ok": true,
-    "last_refresh_at": "2026-05-09T01:02:28.595296+00:00",
+    "last_refresh_at": "2026-05-09T01:18:23.347833+00:00",
     "stale_reasons": []
   },
   "blockers": []
