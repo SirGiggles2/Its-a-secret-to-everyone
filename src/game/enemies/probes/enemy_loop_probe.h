@@ -103,6 +103,34 @@
  * (movement+collision walker checklist item). */
 #define ENEMY_LOOP_COLLISION_VIZ_BASE 0x00FF7FCCUL
 
+/* Step 19 damage block at $FF7FD8 (after collision-viz 10-byte block
+ * ending at $FF7FD5; pad 2 to 8-byte align). Captures the slot 1
+ * monster's damage-path cells. Probe init seeds a stationary sword in
+ * slot 13 (OBJ_STATE=2) at the slot 1 octorok's spawn coords + sets
+ * MON_HP(1) to a known value so the drained
+ * link_collision_check_monster_collisions chain can fire visible damage
+ * via collision_check_monster_sword_collision -> stabbing -> deal_damage.
+ *
+ * Layout (16 bytes):
+ *   [0]   = 'D' (0x44) magic
+ *   [1]   = 'M' (0x4D) magic
+ *   [2]   = MON_HP(1) seed (constant — written once in probe init)
+ *   [3]   = MON_HP(1) live
+ *   [4]   = MON_HIT_REACTION(1) live (16 set on damage)
+ *   [5]   = MON_SHOVE_DIR(1) live (top bit set on shove)
+ *   [6]   = MON_SHOVE_TIMER(1) live (64 set on damage)
+ *   [7]   = MON_METASTATE(1) live (16 set on death)
+ *   [8]   = MON_TYPE(1) live (clears to 0x60 when drop spawns)
+ *   [9]   = DEATH_FRAME_COUNTER live (32 set on death)
+ *   [10]  = ROOM_KILL_COUNT live (++ on each kill)
+ *   [11]  = OBJ_STATE(13) live (sword swing state, expect stays 2)
+ *   [12]  = COMBAT_HARM_FLAG live (++ on harm; from begin_shove)
+ *   [13..15] = reserved
+ *
+ * Block end = $FF7FE7. Used by step-19 probe to gate "damage+death+drop"
+ * walker checklist line. */
+#define ENEMY_LOOP_DAMAGE_VIZ_BASE 0x00FF7FD8UL
+
 #ifdef __cplusplus
 extern "C" {
 #endif

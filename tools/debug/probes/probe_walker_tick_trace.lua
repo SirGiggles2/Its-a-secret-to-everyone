@@ -34,6 +34,7 @@ local PRE_BASE  = 0x7F40     -- $FF7F40 (pre-tick snapshot)
 local MULTI_BASE = 0x7F80    -- $FF7F80 step-8 multi-slot block
 local SHOT_BASE = 0x7FA8     -- $FF7FA8 step-14 shot scan block
 local CV_BASE   = 0x7FCC     -- $FF7FCC step-17 collision-viz block
+local DM_BASE   = 0x7FD8     -- $FF7FD8 step-19 damage-viz block
 local PROBE_BASE = 0x7E00    -- $FF7E00 (init probe)
 local DOMAIN = "68K RAM"
 
@@ -64,6 +65,28 @@ local function coll_viz()
         magic_v = read_u8(CV_BASE, 1),
         mc      = read_u32_be(CV_BASE, 2),
         lc      = read_u32_be(CV_BASE, 6),
+    }
+end
+
+-- step 19 damage-viz reader. probe seeds slot 13 sword + MON_HP(1)=$08;
+-- with sword level 1 dmg=$10, the first damage tick drops HP < dmg ->
+-- combat_handle_monster_died fires. Gates check HP drop, kill count
+-- bump, metastate=16, type clear (drop spawn).
+local function dmg_viz()
+    return {
+        magic_d        = read_u8(DM_BASE, 0),
+        magic_m        = read_u8(DM_BASE, 1),
+        hp_seed        = read_u8(DM_BASE, 2),
+        hp_live        = read_u8(DM_BASE, 3),
+        hit_reaction   = read_u8(DM_BASE, 4),
+        shove_dir      = read_u8(DM_BASE, 5),
+        shove_timer    = read_u8(DM_BASE, 6),
+        metastate      = read_u8(DM_BASE, 7),
+        mon_type       = read_u8(DM_BASE, 8),
+        death_frame    = read_u8(DM_BASE, 9),
+        kill_count     = read_u8(DM_BASE, 10),
+        sword_state    = read_u8(DM_BASE, 11),
+        harm_flag      = read_u8(DM_BASE, 12),
     }
 end
 
@@ -161,6 +184,7 @@ local shot_max_active = 0                    -- step 14 peak ActiveMonsterShots
 local shot_max_found  = 0                    -- step 14 peak shot slot count
 local shot_first_seen = nil                  -- step 14 first sample with found > 0
 local cv_samples = {}                        -- step 17 collision-viz samples
+local dm_samples = {}                        -- step 19 damage-viz samples
 for i = 1, 31 do
     local s = snapshot()
     table.insert(samples, s)
@@ -169,6 +193,8 @@ for i = 1, 31 do
     table.insert(shot_samples, sh)
     -- step 17 collision-viz capture
     table.insert(cv_samples, coll_viz())
+    -- step 19 damage-viz capture
+    table.insert(dm_samples, dmg_viz())
     if sh.active > shot_max_active then shot_max_active = sh.active end
     if sh.found  > shot_max_found  then shot_max_found  = sh.found  end
     if shot_first_seen == nil and sh.found > 0 then shot_first_seen = i end
@@ -253,6 +279,35 @@ do
                     first_cv.mc, last_cv.mc, last_cv.mc - first_cv.mc))
     w(string.format("  link_collision_calls    first=%d last=%d delta=%d",
                     first_cv.lc, last_cv.lc, last_cv.lc - first_cv.lc))
+end
+
+w(string.rep("-", 60))
+
+-- step 19 damage-viz diagnostic dump.
+do
+    local first_dm = dm_samples[1]
+    local last_dm  = dm_samples[#dm_samples]
+    w("STEP 19 DAMAGE-VIZ -- $FF7FD8 (slot 1 octorok damage cells)")
+    w(string.format("  magic 'DM' = '%c%c'", first_dm.magic_d, first_dm.magic_m))
+    w(string.format("  hp_seed=$%02X first=$%02X last=$%02X",
+                    first_dm.hp_seed, first_dm.hp_live, last_dm.hp_live))
+    w(string.format("  hit_reaction first=$%02X last=$%02X",
+                    first_dm.hit_reaction, last_dm.hit_reaction))
+    w(string.format("  shove_dir/timer first=($%02X,$%02X) last=($%02X,$%02X)",
+                    first_dm.shove_dir, first_dm.shove_timer,
+                    last_dm.shove_dir, last_dm.shove_timer))
+    w(string.format("  metastate first=$%02X last=$%02X (16=death)",
+                    first_dm.metastate, last_dm.metastate))
+    w(string.format("  mon_type first=$%02X last=$%02X (0x60=drop)",
+                    first_dm.mon_type, last_dm.mon_type))
+    w(string.format("  death_frame first=$%02X last=$%02X (32=set on death)",
+                    first_dm.death_frame, last_dm.death_frame))
+    w(string.format("  kill_count first=%d last=%d",
+                    first_dm.kill_count, last_dm.kill_count))
+    w(string.format("  sword_state(13) first=$%02X last=$%02X (expect $02)",
+                    first_dm.sword_state, last_dm.sword_state))
+    w(string.format("  harm_flag first=$%02X last=$%02X",
+                    first_dm.harm_flag, last_dm.harm_flag))
 end
 
 w(string.rep("-", 60))
@@ -370,6 +425,23 @@ gate(last_cv.magic_c == 0x43 and last_cv.magic_v == 0x56,
 gate(last_cv.mc > first_cv.mc,
      string.format("G14 monster_collisions_calls grew across trace (%d -> %d)",
                    first_cv.mc, last_cv.mc))
+
+-- step 19 damage gates. Probe seeded MON_HP(1)=$08 + sword slot 13
+-- OBJ_STATE=2 at coincident coords. Sword level 1 dmg=$10. First hit
+-- routes through combat_handle_monster_died: HP unchanged in died path
+-- (NES asm doesn't decrement when hp<dmg), but ROOM_KILL_COUNT++,
+-- MON_METASTATE=16, DEATH_FRAME_COUNTER=32. Drop conversion needs
+-- death-anim metastate advance to $14 — observable as MON_TYPE=$60.
+local first_dm = dm_samples[1]
+local last_dm  = dm_samples[#dm_samples]
+gate(last_dm.magic_d == 0x44 and last_dm.magic_m == 0x4D,
+     "G15 damage-viz magic 'DM' present (publisher fired)")
+gate(last_dm.kill_count > 0,
+     string.format("G16 ROOM_KILL_COUNT bumped (death observed) %d -> %d",
+                   first_dm.kill_count, last_dm.kill_count))
+gate(last_dm.metastate == 16 or last_dm.mon_type == 0x60,
+     string.format("G17 death/drop state set (metastate=$%02X mon_type=$%02X)",
+                   last_dm.metastate, last_dm.mon_type))
 
 w(string.rep("-", 60))
 w(pass and ">>> WALKER TICK TRACE: PASS <<<"

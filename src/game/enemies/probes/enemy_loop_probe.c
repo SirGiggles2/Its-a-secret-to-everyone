@@ -20,10 +20,22 @@
 #include "../../../../RoomRom/src/roomrom_enemy_state.h"
 #include "object_state.h"   /* OBJ_STATE for step-3 forwarder check */
 #include "platform_abi.h"   /* RAM($034C) ActiveMonsterShots — step 14 */
+#include "combat_state.h"   /* MON_HP / MON_HIT_REACTION / MON_SHOVE_*
+                             * / MON_METASTATE / ROOM_KILL_COUNT
+                             * / COMBAT_HARM_FLAG / ITEM_SWORD_LEVEL
+                             * / OBJ_STATE / OBJ_X / OBJ_Y / OBJ_DIR
+                             * / LINK_DIR — step 19 damage probe */
+#include "link_state.h"     /* DEATH_FRAME_COUNTER — step 19 */
 
 /* Step 17: counters live in enemy_walker_bridge.c. Read-only here. */
 extern volatile unsigned long g_check_monster_collisions_calls;
 extern volatile unsigned long g_check_link_collision_calls;
+
+/* Step 19 damage probe — seed value for slot 1 octorok HP. Sword level 1
+ * deals $10 dmg per stab; pick $08 so the very first damage tick kills
+ * the octorok (MON_HP < dmg -> combat_handle_monster_died fires + drop
+ * conversion path can be observed within trace window). */
+#define STEP19_OCTOROCK_HP_SEED 0x08u
 
 static void put_u16_be(volatile unsigned char *p, unsigned short v)
 {
@@ -153,6 +165,37 @@ void enemy_loop_probe_run(void)
      * trace probe can capture animation cadence. */
     LINK_X = 0u;
     LINK_Y = 0u;
+
+    /* Step 19 — seed a stationary sword in slot 13 next to slot 1
+     * octorok and tee MON_HP(1) low so the drained
+     * link_collision_check_monster_collisions chain fires visible damage
+     * + death.
+     *
+     * Slot 13 is OUTSIDE the enemy_loop iterator (1..11), so nothing
+     * touches the cells we set here per-frame except the sword's own
+     * OBJ_STATE check inside collision_check_monster_sword_collision.
+     *
+     * collision_check_monster_sword_collision requires:
+     *   - ITEM_SWORD_LEVEL >= 1 (otherwise damage = sword_damage_points[0])
+     *   - OBJ_STATE(13) == 2 (sword in swing state)
+     *   - LINK_DIR drives bbox shape via dir & 0x0C check; non-zero =>
+     *     vertical-narrow (12x16), zero => horizontal (16x12)
+     *
+     * The bbox check then reads OBJ_X(13)/OBJ_Y(13) +6/+8 (or +8/+6
+     * depending on dir). With sword at (128,128) and slot 1 octorok at
+     * (128,128), both centers coincide and the threshold check passes
+     * trivially.
+     *
+     * MON_HP(1)=$08, sword damage=$10 (level 1) ⇒ HP < dmg ⇒ first hit
+     * routes through combat_handle_monster_died ⇒ ROOM_KILL_COUNT++,
+     * MON_METASTATE(1)=16, DEATH_FRAME_COUNTER=32. */
+    ITEM_SWORD_LEVEL = 1u;
+    LINK_DIR = 1u;
+    OBJ_STATE(13) = 2u;
+    OBJ_X(13)     = 0x80u;
+    OBJ_Y(13)     = 0x80u;
+    OBJ_DIR(13)   = 1u;
+    MON_HP(1)     = STEP19_OCTOROCK_HP_SEED;
 }
 
 /* Step 4 live-tick publisher. Called from end of enemy_loop_tick() so
@@ -210,6 +253,30 @@ static void publish_shot_scan(volatile unsigned char *base)
     }
 }
 
+/* Step 19 damage-viz publisher. See header comment at
+ * ENEMY_LOOP_DAMAGE_VIZ_BASE for the layout. Captures the slot 1
+ * octorok's damage-path cells per-frame so the lua reader can gate
+ * "first hit drops HP" / "death anim seen" / "drop spawn observed". */
+static void publish_damage_viz(volatile unsigned char *base)
+{
+    base[0]  = 0x44u;                                      /* 'D' */
+    base[1]  = 0x4Du;                                      /* 'M' */
+    base[2]  = STEP19_OCTOROCK_HP_SEED;
+    base[3]  = (unsigned char)MON_HP(1);
+    base[4]  = (unsigned char)MON_HIT_REACTION(1);
+    base[5]  = (unsigned char)MON_SHOVE_DIR(1);
+    base[6]  = (unsigned char)MON_SHOVE_TIMER(1);
+    base[7]  = (unsigned char)MON_METASTATE(1);
+    base[8]  = (unsigned char)MON_TYPE(1);
+    base[9]  = (unsigned char)DEATH_FRAME_COUNTER;
+    base[10] = (unsigned char)ROOM_KILL_COUNT;
+    base[11] = (unsigned char)OBJ_STATE(13);
+    base[12] = (unsigned char)COMBAT_HARM_FLAG;
+    base[13] = 0u;
+    base[14] = 0u;
+    base[15] = 0u;
+}
+
 /* Step 17 collision-viz publisher. Drops the live counter values from
  * c_check_monster_collisions / c_check_link_collision wrappers into the
  * collision-viz block. Counter > 0 + monotonic growth proves the call
@@ -241,6 +308,8 @@ void enemy_loop_probe_publish_live(void)
         (volatile unsigned char *)ENEMY_LOOP_SHOT_SCAN_BASE;
     volatile unsigned char *coll_viz =
         (volatile unsigned char *)ENEMY_LOOP_COLLISION_VIZ_BASE;
+    volatile unsigned char *dmg_viz =
+        (volatile unsigned char *)ENEMY_LOOP_DAMAGE_VIZ_BASE;
     static unsigned short frame_counter = 0u;
     frame_counter++;
 
@@ -254,6 +323,7 @@ void enemy_loop_probe_publish_live(void)
 
     publish_shot_scan(shot_scan);
     publish_collision_viz(coll_viz);
+    publish_damage_viz(dmg_viz);
 
     block[0]  = 0x54u;                                /* 'T' */
     block[1]  = 0x4Bu;                                /* 'K' */
