@@ -335,6 +335,267 @@ void c_update_burrower(unsigned int slot)
 }
 
 /* ----------------------------------------------------------------- *
+ * Phase 7 Task 7.6 step 3 — UpdateRedLeever bridge ($10).
+ *
+ * NES `Z_04.asm:2737-2961` UpdateRedLeever (~225 lines):
+ *   State 0:
+ *     - If RedLeeverLongTimer != 0 -> exit.
+ *     - If ActiveRedLeeverCount >= 2 -> exit.
+ *     - Face Link's direction.
+ *     - If Random+1[slot] >= $C0 -> ReverseObjDir (face away from Link).
+ *     - If facing vertically -> place at Link's X, Y offset $28/$D8,
+ *       sanitize Y = (sum & $F0) | $0D, gate on Y >= $5D.
+ *     - Else place horizontally at Link's Y (gate Y >= $5D), X +=
+ *       $28/$D8, AND $F8, gate |dx| < $30.
+ *     - GetCollidableTileStill < ObjectFirstUnwalkableTile required.
+ *     - INC ActiveRedLeeverCount, ObjAnimCounter=1, RedLeeverLongTimer=2,
+ *       RedLeever_CycleStateDrawAndCheckCollisions, ReverseObjDir.
+ *
+ *   Other states (CheckOtherStates):
+ *     - If state != 3 -> AnimateIfTime.
+ *     - State 3 + ObjShoveDir != 0 -> Obj_Shove + AnimateAndCheckCollisions.
+ *     - State 3 + (InvClock | ObjStunTimer) -> AnimateAndCheckCollisions.
+ *     - State 3 + GetCollidingTileMoving >= ObjectFirstUnwalkableTile or
+ *       BoundByRoom == 0 -> CycleState.
+ *     - Else MoveObject + grid-truncate + ObjTimer = $FF.
+ *     - AnimateIfTime: if ObjTimer != 0 -> AnimateAndCheckCollisions.
+ *     - Else -> CycleState (state++ mod 6, DEC count on wrap, table
+ *       lookup) -> AnimateAndCheckCollisions.
+ *
+ *   AnimateAndCheckCollisions: A = RedLeeverStateAnimTimes[state],
+ *   JMP Burrower_AnimateDrawAndCheckCollisions (shared with BlueLeever
+ *   path — uses ObjState/ObjType to gate frame + collision).
+ *
+ * Body lives entirely in this bridge. Uses already-drained helpers:
+ *   - core_reverse_obj_dir         (NES ReverseObjDir)
+ *   - collision_get_collidable_tile_still
+ *   - collision_get_colliding_tile_moving
+ *   - object_bound_by_room
+ *   - c_obj_shove, c_move_object
+ *   - sprite_anim_advance_and_fetch + draw_object_mirrored +
+ *     link_collision_check_monster_collisions (Burrower_AnimateDraw...)
+ *
+ * Stance: EXTEND. Bridge body.
+ */
+
+#include "world/object_dispatch.h"            /* object_bound_by_room */
+#include "combat/collision_dispatch.h"        /* collision_get_collidable_tile_still / _moving */
+#include "core/core_dispatch.h"               /* core_reverse_obj_dir */
+
+extern void          c_obj_shove(unsigned int slot);
+extern void          c_move_object(unsigned short slot);
+
+/* NES Variables.inc:160 ActiveRedLeeverCount := $510 */
+#define RED_LEEVER_LONG_TIMER         RAM(0x004D)   /* NES $4D */
+#define ACTIVE_RED_LEEVER_COUNT       RAM(0x0510)   /* NES $510 */
+#define OBJECT_FIRST_UNWALKABLE_TILE  RAM(0x034A)   /* NES $34A */
+#define OBJ_SHOVE_DIR                 0x00C0u       /* OBJ(_, slot) base */
+#define OBJ_TIMER_BASE                0x0028u       /* NES_OBJ_MOVE_TIMER */
+#define OBJ_GRID_OFFSET_BASE          0x0470u       /* NES_OBJ_GRID_OFFSET */
+
+/* NES Z_04.asm:2728-2735 RedLeeverStateQSpeeds / Times / AnimTimes. */
+static const unsigned char RedLeeverStateQSpeeds[6] = {
+    0x00u, 0x00u, 0x00u, 0x20u, 0x00u, 0x00u
+};
+static const unsigned char RedLeeverStateTimes[6] = {
+    0x00u, 0x10u, 0x08u, 0xFFu, 0x08u, 0x10u
+};
+static const unsigned char RedLeeverStateAnimTimes[6] = {
+    0x10u, 0x08u, 0x08u, 0x05u, 0x08u, 0x08u
+};
+
+/* Burrower_AnimateDrawAndCheckCollisions (NES Z_04.asm:2661) — shared
+ * post-cycle path. Mirrors second half of c_update_burrower above but
+ * parameterized on anim rollover so the RedLeever caller can pass its
+ * own table value. */
+static void burrower_animate_draw_and_check_collisions(
+    unsigned char anim_rollover_val,
+    unsigned int slot)
+{
+    unsigned char state;
+    unsigned char type;
+    unsigned char frame_for_draw;
+
+    sprite_anim_advance_and_fetch((unsigned int)anim_rollover_val, slot);
+
+    state = (unsigned char)ENEMY_STATE_TIMER(slot);
+    if (state == 0u) return;
+
+    type = (unsigned char)ENEMY_TYPE(slot);
+    if (type == 0x11u && state >= 2u && state < 5u) {
+        frame_for_draw = (unsigned char)ENEMY_DIR(slot);
+    } else {
+        frame_for_draw = (unsigned char)(((unsigned int)(state - 1u) << 1)
+                                          + (unsigned char)ENEMY_DRAW_FRAME(slot));
+    }
+    draw_object_mirrored(frame_for_draw, slot);
+
+    {
+        unsigned char do_collisions = 0u;
+        if (type == 0x11u) {
+            if (state == 2u || state == 4u) do_collisions = 1u;
+        }
+        if (!do_collisions && state == 3u) do_collisions = 1u;
+        if (!do_collisions) return;
+
+        link_collision_check_monster_collisions(slot);
+        if ((unsigned char)ENEMY_METASTATE(slot) == 0u) return;
+        if (type == 0x10u) {
+            ACTIVE_RED_LEEVER_COUNT = (unsigned char)(ACTIVE_RED_LEEVER_COUNT - 1u);
+        }
+    }
+}
+
+/* RedLeever_AnimateAndCheckCollisions (NES Z_04.asm:2958). */
+static void red_leever_animate_and_check_collisions(unsigned int slot)
+{
+    unsigned char state = (unsigned char)ENEMY_STATE_TIMER(slot);
+    burrower_animate_draw_and_check_collisions(
+        RedLeeverStateAnimTimes[state], slot);
+}
+
+/* RedLeever_CycleStateDrawAndCheckCollisions (NES Z_04.asm:2935). */
+static void red_leever_cycle_state_draw_and_check_collisions(unsigned int slot)
+{
+    unsigned char state = (unsigned char)ENEMY_STATE_TIMER(slot);
+    state = (unsigned char)(state + 1u);
+    if (state >= 6u) {
+        ACTIVE_RED_LEEVER_COUNT = (unsigned char)(ACTIVE_RED_LEEVER_COUNT - 1u);
+        state = 0u;
+    }
+    ENEMY_STATE_TIMER(slot) = state;
+    ENEMY_WALK_SPEED(slot)  = RedLeeverStateQSpeeds[state];
+    ENEMY_MOVE_TIMER(slot)  = RedLeeverStateTimes[state];
+    red_leever_animate_and_check_collisions(slot);
+}
+
+void enrt_update_red_leever(unsigned int slot)
+{
+    /* If state != 0 -> jump @CheckOtherStates. */
+    if ((unsigned char)ENEMY_STATE_TIMER(slot) != 0u) {
+        goto check_other_states;
+    }
+
+    /* State 0 — spawn-from-Link gate. */
+    if ((unsigned char)RED_LEEVER_LONG_TIMER != 0u) return;
+    if ((unsigned char)ACTIVE_RED_LEEVER_COUNT >= 2u) return;
+
+    /* Face Link's dir; randomly reverse to face Link. */
+    ENEMY_DIR(slot) = (unsigned char)ENEMY_DIR(0);
+    if ((unsigned char)ENEMY_RNG_B(slot) >= 0xC0u) {
+        core_reverse_obj_dir(slot);
+    }
+
+    /* Branch on vertical/horizontal facing. */
+    {
+        unsigned char dir = (unsigned char)ENEMY_DIR(slot);
+        if ((dir & 0x0Cu) != 0u) {
+            /* Vertical: place at Link's X, offset Y. */
+            unsigned char offset;
+            unsigned char y_sum;
+            ENEMY_X(slot) = (unsigned char)ENEMY_X(0);
+            offset = ((dir & 0x08u) != 0u) ? 0xD8u : 0x28u;
+            y_sum = (unsigned char)((unsigned char)ENEMY_Y(0) + offset);
+            y_sum = (unsigned char)((y_sum & 0xF0u) | 0x0Du);
+            ENEMY_Y(slot) = y_sum;
+            if (y_sum < 0x5Du) return;
+            /* fall through to @CheckSafeToSpawn */
+        } else {
+            /* Horizontal: place at Link's Y, offset X. */
+            unsigned char y_link = (unsigned char)ENEMY_Y(0);
+            unsigned char x_link;
+            unsigned char offset;
+            unsigned char x_new;
+            unsigned char a, b;
+
+            ENEMY_Y(slot) = y_link;
+            if (y_link < 0x5Du) return;
+
+            offset = ((dir & 0x02u) != 0u) ? 0xD8u : 0x28u;
+            x_link = (unsigned char)ENEMY_X(0);
+            x_new = (unsigned char)((x_link + offset) & 0xF8u);
+            ENEMY_X(slot) = x_new;
+
+            /* Compute |x_new - x_link| as distance gate. NES PHA/PLA
+             * swap pattern -> distance = max - min. */
+            if (x_new >= x_link) {
+                a = x_new;       /* $02 = larger */
+                b = x_link;      /* $01 = smaller */
+            } else {
+                a = x_link;
+                b = x_new;
+            }
+            /* NES @Subtract: A = $01 - $02 with carry pre-set; we
+             * computed |dx| = a - b directly. */
+            if ((unsigned char)(a - b) >= 0x30u) return;
+        }
+    }
+
+    /* @CheckSafeToSpawn — tile must be walkable. */
+    if (collision_get_collidable_tile_still(slot)
+        >= (unsigned char)OBJECT_FIRST_UNWALKABLE_TILE) {
+        return;
+    }
+    ACTIVE_RED_LEEVER_COUNT = (unsigned char)(ACTIVE_RED_LEEVER_COUNT + 1u);
+    ENEMY_ANIM_TIMER(slot)  = 1u;
+    /* NES: LDA #$01 / ASL -> A=$02 / STA RedLeeverLongTimer. */
+    RED_LEEVER_LONG_TIMER   = 2u;
+    red_leever_cycle_state_draw_and_check_collisions(slot);
+    core_reverse_obj_dir(slot);
+    return;
+
+check_other_states:
+    {
+        unsigned char state = (unsigned char)ENEMY_STATE_TIMER(slot);
+
+        /* If not state 3 -> @AnimateIfTime. */
+        if (state != 3u) goto animate_if_time;
+
+        /* State 3 — shove handling. */
+        if ((unsigned char)OBJ(OBJ_SHOVE_DIR, slot) != 0u) {
+            c_obj_shove(slot);
+            red_leever_animate_and_check_collisions(slot);
+            return;
+        }
+        /* @CheckStunned. */
+        if ((unsigned char)ENEMY_PAUSE_FLAG | (unsigned char)ENEMY_STUN_TIMER(slot)) {
+            red_leever_animate_and_check_collisions(slot);
+            return;
+        }
+        /* Tile-still + room-boundary gates. NES writes ObjDir to [$0F]
+         * (LINK_MOVING_DIR scratch) before GetCollidingTileMoving. */
+        RAM(NES_LINK_MOVING_DIR) = (unsigned char)ENEMY_DIR(slot);
+        if (collision_get_colliding_tile_moving(slot)
+            >= (unsigned char)OBJECT_FIRST_UNWALKABLE_TILE) {
+            red_leever_cycle_state_draw_and_check_collisions(slot);
+            return;
+        }
+        if (object_bound_by_room(slot) == 0u) {
+            red_leever_cycle_state_draw_and_check_collisions(slot);
+            return;
+        }
+        /* Move + grid-offset truncate + timer = $FF. */
+        c_move_object((unsigned short)slot);
+        {
+            unsigned char go = (unsigned char)OBJ(OBJ_GRID_OFFSET_BASE, slot);
+            unsigned char masked = (unsigned char)(go & 0x0Fu);
+            if (masked == 0u) {
+                OBJ(OBJ_GRID_OFFSET_BASE, slot) = 0u;
+            }
+        }
+        ENEMY_MOVE_TIMER(slot) = 0xFFu;
+        /* fall through to @AnimateIfTime */
+    }
+
+animate_if_time:
+    if ((unsigned char)ENEMY_MOVE_TIMER(slot) != 0u) {
+        red_leever_animate_and_check_collisions(slot);
+        return;
+    }
+    red_leever_cycle_state_draw_and_check_collisions(slot);
+}
+
+/* ----------------------------------------------------------------- *
  * Phase 7 Task 7.6 step 2 — UpdateBlueLeever bridge ($0F).
  *
  * NES `Z_04.asm:2599-2647` UpdateBlueLeever:

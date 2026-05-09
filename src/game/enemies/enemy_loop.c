@@ -105,6 +105,12 @@ extern void enrt_init_leever(unsigned int slot);
  * $A0, calls Wanderer_TargetPlayer, falls through to UpdateBurrower
  * (c_update_burrower already drained in enemy_jumper_bridge.c). */
 extern void enrt_update_blue_leever(unsigned int slot);
+/* 7.6 step 3 — RedLeever UPDATE bridge ($10). NES UpdateRedLeever
+ * @ Z_04.asm:2737 — state-0 spawn-from-Link gate (RedLeeverLongTimer
+ * + ActiveRedLeeverCount cap), state-3 shove/move/boundary cycle, fall
+ * through to RedLeever_Animate via Burrower_AnimateDrawAndCheckCollisions
+ * shared helper. Bridge body in enemy_jumper_bridge.c. */
+extern void enrt_update_red_leever(unsigned int slot);
 
 /* z07_reset_obj_state forwarder. enrt_octorock_common (same TU as the
  * init we wire below) calls this symbol. The drained body lives at
@@ -606,6 +612,15 @@ const enemy_update_fn enemy_update_fns[ENEMY_LOOP_TYPE_MAX] = {
      * enrt_wanderer_target_player (drained twin) + c_update_burrower
      * (already drained for $11 Zora UPDATE chain). */
     [0x0F] = enrt_update_blue_leever,       /* BlueLeever */
+    /* Task 7.6 step 3 — RedLeever UPDATE ($10). NES UpdateRedLeever
+     * @ Z_04.asm:2737-2961: state-0 spawn-from-Link with cap-2
+     * ActiveRedLeeverCount + RedLeeverLongTimer gate; state-3 shove
+     * then move/boundary cycle; fall-through to animate path that
+     * passes its own RedLeeverStateAnimTimes through the shared
+     * Burrower_AnimateDrawAndCheckCollisions helper. Bridge body in
+     * enemy_jumper_bridge.c (carries RedLeeverState* tables and the
+     * shared burrower-animate helper). */
+    [0x10] = enrt_update_red_leever,        /* RedLeever */
 };
 
 /* Internal: clear an enemy slot's scratch state per NES room-init
