@@ -4,6 +4,7 @@
 #include "render_abi.h"
 #include "roomrom_vram_map.h"
 #include "expanded_bg_chr.h"
+#include "inventory.h"
 /* P4c: atlas header included for named constant reference and future
  * ATLAS_ASSERT_SIZE hooks.
  *
@@ -36,6 +37,8 @@
 #define TILE_DASH       0x62u
 #define TILE_LOW_X      0x21u
 #define TILE_FULL_HEART 0xF2u
+#define TILE_HALF_HEART 0xF3u
+#define TILE_EMPTY_HEART 0xF4u
 #define TILE_GRAY_MAP   0xF5u
 #define TILE_REDUX_HEART_OUTLINE 0x50u
 #define TILE_ORIGINAL_MAP_MARKER 0x51u
@@ -273,31 +276,109 @@ static void apply_transfer_macro(const unsigned char *macro)
     }
 }
 
-static void draw_status_counts(void)
+/* Phase 6 Task 6.10.6 (Step A): live-read HUD count cell.
+ * NES Z_01.asm:2922 FormatDecimalCountByte format: 123 -> "123",
+ * 23 -> "X23", 3 -> "X3 ". Three cells at col, col+1, col+2: hundreds /
+ * tens / ones, with the 'X' (TILE_LOW_X) replacing the hundreds cell when
+ * value < 100, and a trailing space when value < 10 (single low digit
+ * shifted left into tens, ones blanked).
+ *
+ * NES is byte-wide (0..255) for each count. RoomRom widens rupees to
+ * 16-bit; clamp display to 999 so the 3-digit window stays legal. */
+static void draw_count_cell(unsigned short value, unsigned char col,
+                            unsigned char row, unsigned char pal)
 {
-    static const unsigned char rows[4] = {2,3,4,5};
+    unsigned short v = (value > 999u) ? 999u : value;
+    unsigned char hundreds = (unsigned char)(v / 100u);
+    unsigned char tens     = (unsigned char)((v / 10u) % 10u);
+    unsigned char ones     = (unsigned char)(v % 10u);
+    unsigned char tile_h, tile_t, tile_o;
+
+    if (hundreds != 0u) {
+        tile_h = hundreds;
+        tile_t = tens;
+        tile_o = ones;
+    } else if (tens != 0u) {
+        tile_h = TILE_LOW_X;
+        tile_t = tens;
+        tile_o = ones;
+    } else {
+        tile_h = TILE_LOW_X;
+        tile_t = ones;
+        tile_o = HUD_TILE_SPACE;
+    }
+    draw_hud_tile(col,                       row, tile_h, pal);
+    draw_hud_tile((unsigned char)(col + 1u), row, tile_t, pal);
+    draw_hud_tile((unsigned char)(col + 2u), row, tile_o, pal);
+}
+
+/* Phase 6 Task 6.11 (Step A): live heart row. NES splits hearts across
+ * NT rows 5 (top halves) and 6 (bottom halves) at cols 22..29 (8 hearts).
+ * RoomRom currently paints only HUD row 5 (= NT row 6) cols 22..24. Up
+ * to 3 hearts visible until the row-5 outline pass lands.
+ *
+ * NES tile $F2=full, $F3=half, $F4=empty. heart_values: hi=max, lo=cur.
+ * heart_partial: 0 -> empty, otherwise half (NES treats anything > 0 as
+ * a partial heart; full heart only when cur >= max + 1 effectively). */
+static void draw_hearts_row(unsigned char col, unsigned char row,
+                            unsigned char hud_id)
+{
+    unsigned char hv = g_inventory.heart_values;
+    unsigned char hp = g_inventory.heart_partial;
+    unsigned char max_h = heart_values_max(hv);
+    unsigned char cur_h = heart_values_cur(hv);
+    unsigned char visible = (max_h > 3u) ? 3u : max_h;
     unsigned char i;
-    for (i = 0; i < 4; i++) {
-        draw_hud_tile(12, rows[i], TILE_LOW_X, 0);
-        draw_hud_tile(13, rows[i], 0x00, 0);
-        draw_hud_tile(14, rows[i], HUD_TILE_SPACE, 0);
+
+    /* Bound for first-boot zero state — display 3 outline hearts so the
+     * HUD looks alive even before save-load wires heart_values. */
+    if (max_h == 0u) {
+        max_h = 3u;
+        cur_h = 3u;
+        visible = 3u;
+    }
+
+    for (i = 0; i < 3u; i++) {
+        unsigned char tile;
+        if (i >= visible) {
+            tile = HUD_TILE_SPACE;
+        } else if (i < cur_h) {
+            tile = TILE_FULL_HEART;
+        } else if (i == cur_h && hp > 0u) {
+            tile = TILE_HALF_HEART;
+        } else {
+            tile = TILE_EMPTY_HEART;
+        }
+        if (hud_id == ROOMROM_MAP_REDUX) {
+            /* Redux paints a soft outline on BG_B and the heart on Window. */
+            draw_hud_tile_b((unsigned char)(col + i), row,
+                            TILE_REDUX_HEART_OUTLINE, 0);
+            draw_hud_tile((unsigned char)(col + i), row, tile, 1);
+        } else {
+            draw_hud_tile((unsigned char)(col + i), row, tile, 1);
+        }
     }
 }
 
-static void draw_hearts(unsigned char hud_id)
+/* Redux 4-row count strip at cols 12..14, HUD rows 2..5 (rupee/key/-/bomb).
+ * Row 4 currently carries no NES analogue; show heart-count there for now. */
+static void draw_status_counts_redux(void)
 {
-    unsigned char col = (hud_id == ROOMROM_MAP_REDUX) ? 4u : 25u;
-    unsigned char i;
-    for (i = 0; i < 3; i++) {
-        if (hud_id == ROOMROM_MAP_REDUX) {
-            draw_hud_tile_b((unsigned char)(col + i), 5,
-                            TILE_REDUX_HEART_OUTLINE, 0);
-            draw_hud_tile((unsigned char)(col + i), 5,
-                          TILE_REDUX_HEART_FILL, 1);
-        } else {
-            draw_hud_tile((unsigned char)(col + i), 5, TILE_FULL_HEART, 1);
-        }
-    }
+    draw_count_cell(g_inventory.rupees,                      12u, 2u, 0u);
+    draw_count_cell((unsigned short)g_inventory.keys,        12u, 3u, 0u);
+    draw_count_cell((unsigned short)heart_values_cur(g_inventory.heart_values),
+                                                              12u, 4u, 0u);
+    draw_count_cell((unsigned short)g_inventory.bombs,       12u, 5u, 0u);
+}
+
+/* Original HUD count strip mirrors NES rows 3/5/6 = HUD rows 2/4/5. The
+ * static macro paints icon at col 11 + "X 0 " at cols 12..14. We overlay
+ * the live 3-digit count at cols 12..14, leaving the icon untouched. */
+static void draw_status_counts_original(void)
+{
+    draw_count_cell(g_inventory.rupees,                12u, 2u, 0u);
+    draw_count_cell((unsigned short)g_inventory.keys,  12u, 4u, 0u);
+    draw_count_cell((unsigned short)g_inventory.bombs, 12u, 5u, 0u);
 }
 
 static void draw_original_map_marker(unsigned char room_id)
@@ -376,6 +457,24 @@ void roomrom_hud_upload_chr(void)
     }
 }
 
+/* Phase 6 Task 6.10.6 (Step A): cached HUD identity so the per-frame
+ * dynamic refresh knows where to paint counts/hearts without re-running
+ * the static transfer macro. */
+static unsigned char s_hud_id_cached = 0xFFu;
+
+static void draw_hud_dynamic(unsigned char hud_id)
+{
+    if (hud_id == ROOMROM_MAP_REDUX) {
+        draw_status_counts_redux();
+        /* Redux heart row anchored at col 4 of HUD row 5 (top of display). */
+        draw_hearts_row(4u, 5u, hud_id);
+    } else {
+        draw_status_counts_original();
+        /* Original NES paints hearts at NT row 6 cols 22..24 = HUD row 5. */
+        draw_hearts_row(22u, 5u, hud_id);
+    }
+}
+
 void roomrom_hud_draw(unsigned char hud_id, unsigned char room_id,
                       unsigned char is_underworld)
 {
@@ -387,10 +486,21 @@ void roomrom_hud_draw(unsigned char hud_id, unsigned char room_id,
     clear_hud_window();
     clear_hud_b();
     apply_transfer_macro(macro);
-    if (hud_id == ROOMROM_MAP_REDUX) {
-        draw_status_counts();
-        draw_hearts(hud_id);
-    } else {
+    if (hud_id != ROOMROM_MAP_REDUX) {
         draw_original_map_marker(room_id);
     }
+    s_hud_id_cached = hud_id;
+    (void)is_underworld;
+    draw_hud_dynamic(hud_id);
+}
+
+/* Phase 6 Task 6.10.6 (Step A): per-frame live overlay. Repaints just
+ * the dynamic count/heart cells from g_inventory. Cheap (fewer than 20
+ * VDP_setTileMapXY calls) and keeps the rupee tick / damage path
+ * observable without re-running the full static macro. */
+void roomrom_hud_refresh_dynamic(void)
+{
+    if (s_hud_id_cached == 0xFFu)
+        return; /* HUD has not been drawn yet — nothing to refresh. */
+    draw_hud_dynamic(s_hud_id_cached);
 }

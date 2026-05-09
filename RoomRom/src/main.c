@@ -1382,6 +1382,10 @@ void roomrom_debug_tick(void)
             /* Task 6.10.10: RupeesToAdd/Sub rolling tick
              * (NES Z_01.asm:2812 World_ChangeRupees). */
             inventory_rupee_tick((unsigned char)s_frame_counter);
+            /* Task 6.10.6 Step A: live HUD overlay of count + heart
+             * cells from g_inventory. Cheap (~15 VDP writes); makes
+             * the rupee tick + future damage path observable. */
+            roomrom_hud_refresh_dynamic();
         }
 
         u16 joy = JOY_readJoypad(JOY_1);
