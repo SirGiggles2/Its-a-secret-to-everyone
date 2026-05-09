@@ -156,6 +156,21 @@ gate(anim_changed or draw_changed,
      string.format("G5 anim_timer OR draw_frame advanced (anim_changed=%s draw_changed=%s)",
                    tostring(anim_changed), tostring(draw_changed)))
 
+-- G6 (step 5 add): X or Y must change. With c_walker_move drained
+-- (composes object_bound_by_room + object_move_object), walking
+-- speed $20 = 1 pixel every 8 frames. Over 120 frames octorok at
+-- DIR=$02 (left) starting at X=$80 should land near X=$80 - 15.
+local x_changed = false
+local y_changed = false
+for i = 2, #samples do
+    if samples[i].x ~= samples[i-1].x then x_changed = true end
+    if samples[i].y ~= samples[i-1].y then y_changed = true end
+end
+gate(x_changed or y_changed,
+     string.format("G6 X OR Y advanced (x_changed=%s y_changed=%s; first=%d,%d last=%d,%d)",
+                   tostring(x_changed), tostring(y_changed),
+                   first.x, first.y, last.x, last.y))
+
 w(string.rep("-", 60))
 w(pass and ">>> WALKER TICK TRACE: PASS <<<"
         or ">>> WALKER TICK TRACE: FAIL <<<")
