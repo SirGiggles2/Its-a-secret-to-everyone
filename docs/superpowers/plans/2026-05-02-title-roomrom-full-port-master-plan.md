@@ -1299,15 +1299,18 @@ Deferred (logged as `phases[5].deferrals[]`): UW→OW exit, mode $10 visible sem
 
 ### Task 7.5: Special Enemy Family
 
-- [ ] Implement like-like.
-- [ ] Implement bubble.
-- [ ] Implement wallmaster.
-- [ ] Implement pols voice.
-- [ ] Implement gibdo if not walker.
-- [ ] Implement vire split behavior.
-- [ ] Implement shield consumption or rupee option.
-- [ ] Probe each special behavior.
-- [ ] Commit family.
+- [x] Implement like-like.                              <!-- step 2: enrt_update_like_like bridge ($17). -->
+- [x] Implement bubble.                                 <!-- confirm: enrt_update_bubble wired Task 7.4 step 6d ($2B/$2C/$2D). -->
+- [x] Implement wallmaster.                             <!-- step 4: enrt_update_wallmaster bridge ($27). -->
+- [x] Implement pols voice.                             <!-- step 3: enrt_update_pols_voice bridge ($16). -->
+- [x] Implement gibdo if not walker.                    <!-- gibdo INIT/UPDATE wired Task 7.4 steps 9 + 5: enrt_init_gibdo + enrt_update_gibdo. -->
+- [x] Implement vire split behavior.                    <!-- confirm: enrt_update_vire wired Task 7.3 step 7 ($12); on-death spawns 2x RedKeese via c_shoot(28). -->
+- [ ] Implement shield consumption or rupee option.     <!-- DEFERRED to Task 7.7 NPC family — $52 UnderworldPersonLifeOrMoney is UW persons drain, cross-family; rationale in tools/audit/drain_findings/phase7_task_7_5_close/family_close.md. -->
+- [ ] Probe each special behavior.                      <!-- pending — phase 7 close probe. -->
+- [x] Commit family.                                    <!-- step 8 family close. -->
+
+Task 7.5 audit doc: `tools/audit/drain_findings/phase7_task_7_5_close/family_close.md`.
+Net dispatch delta: INIT 37→40 wired (+3), UPDATE 45→48 wired (+3).
 
 ### Task 7.6: Aquatic / Terrain Family
 
