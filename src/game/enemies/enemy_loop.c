@@ -63,6 +63,8 @@ extern void enrt_update_flying_ghini(unsigned int slot);         /* 7.4 step 6a 
 extern void enrt_update_armos(unsigned int slot);                /* 7.4 step 6b */
 extern void enrt_update_gibdo(unsigned int slot);                /* 7.4 step 6d */
 extern void enrt_update_bubble(unsigned int slot);               /* 7.4 step 6d */
+extern void enrt_init_tektite(unsigned int slot);                /* 7.4 step 6e */
+extern void enrt_init_bubble(unsigned int slot);                 /* 7.4 step 6e */
 extern void core_reset_obj_metastate_and_timer(unsigned int slot); /* 7.4 step 2b ($11 INIT) */
 extern unsigned char core_reset_obj_state(unsigned int slot);
 
@@ -151,6 +153,25 @@ const enemy_init_fn enemy_init_fns[ENEMY_LOOP_TYPE_MAX] = {
      * src/oracle/enemies/enemy_walker_runtime.c:34
      * (enrt_init_slow_octorock_or_ghini). Reused here. */
     [0x21] = enrt_init_slow_octorock_or_ghini,   /* Ghini */
+    /* Task 7.4 step 6e — tektite + bubble INIT wires.
+     *
+     * NES Z_07.asm:5601 InitObject_JumpTable:
+     *   $0D BlueTektite -> InitTektite.
+     *   $0E RedTektite  -> InitTektite.
+     *   $2B BlueBubble  -> InitBubble.
+     *   $2C RedBubble   -> InitBubble.
+     *   $2D BlueBubble2 -> InitBubble.
+     *
+     * enrt_init_tektite (boss_runtime.c:119): RNG_B & 3 -> dir lookup +
+     *   MOVE_TIMER = dir << 2. TektiteStartingDirs lives in
+     *   enemy_jumper_bridge.c (already linked).
+     * enrt_init_bubble (walker_runtime.c:66): WALK_SPEED=64 + InitWalker
+     *   (link-relative dir seeding). */
+    [0x0D] = enrt_init_tektite,                  /* BlueTektite */
+    [0x0E] = enrt_init_tektite,                  /* RedTektite */
+    [0x2B] = enrt_init_bubble,                   /* BlueBubble */
+    [0x2C] = enrt_init_bubble,                   /* RedBubble */
+    [0x2D] = enrt_init_bubble,                   /* BlueBubble2 */
 };
 
 const enemy_update_fn enemy_update_fns[ENEMY_LOOP_TYPE_MAX] = {
@@ -306,6 +327,19 @@ const enemy_update_fn enemy_update_fns[ENEMY_LOOP_TYPE_MAX] = {
     [0x2C] = enrt_update_bubble,            /* RedBubble */
     [0x2D] = enrt_update_bubble,            /* BlueBubble2 */
     [0x30] = enrt_update_gibdo,             /* Gibdo */
+    /* Task 7.4 step 6e — tektite UPDATE rows.
+     *
+     * NES Z_07.asm:5295 UpdateObject_JumpTable rows:
+     *   $0D BlueTektite -> UpdateTektiteOrBoulder (Tektite branch).
+     *   $0E RedTektite  -> UpdateTektiteOrBoulder.
+     *
+     * Body drained at enemy_boss_runtime.c:126 (already wired for $20
+     * Boulder in step 2a). Type-keyed branches at enemy_boss_runtime.c:218
+     * ($20 boulder skips reversal-timer randomization) and :228
+     * ($0D blue-tektite skips the &$7F mask in the post-land timer
+     * randomization). */
+    [0x0D] = enrt_update_tektite_or_boulder, /* BlueTektite */
+    [0x0E] = enrt_update_tektite_or_boulder, /* RedTektite */
 };
 
 /* Internal: clear an enemy slot's scratch state per NES room-init
