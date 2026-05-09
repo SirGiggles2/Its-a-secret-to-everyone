@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-05-09T01:00:29.768471+00:00",
+  "generated_at": "2026-05-09T01:02:28.558453+00:00",
   "generated_by": "tools/audit/primedirective/prime_refresh.py",
   "plan": {
     "path": "docs/superpowers/plans/2026-05-02-title-roomrom-full-port-master-plan.md",
@@ -564,7 +564,9 @@
       "status": "active",
       "tasks": [],
       "evidence": [
-        "findings_resolved_or_deferred|(docs/audit/drain_findings/phase6_task_6_1.md through phase6_task_6_11.md - 11 task audits with deferrals + re-entry triggers)"
+        "findings_resolved_or_deferred|(docs/audit/drain_findings/phase6_task_6_1.md through phase6_task_6_11.md - 11 task audits with deferrals + re-entry triggers)",
+        "verify_no_alias_collisions|tools/audit/verify_no_alias_collisions.py",
+        "regression_matrix|builds/reports/regression_matrix.md"
       ],
       "deferrals": [],
       "close_gate": {
@@ -572,8 +574,8 @@
         "focused_probe_set": "pending",
         "screenshot_state_evidence": "pending",
         "diff_vs_nes_reference": "pending",
-        "regression_matrix": "pending",
-        "verify_no_alias_collisions": "pending",
+        "regression_matrix": "passed",
+        "verify_no_alias_collisions": "passed",
         "PROBE_CYCLE_LIMIT_envelope": "pending",
         "code_review_requested": "pending",
         "findings_resolved_or_deferred": "passed",
@@ -915,13 +917,13 @@
       "sha256": "3696501bc1314ea27f231c00bffb991afe01f9c6cad4db7c2b752a81e3188150",
       "ok": true
     },
-    "git_head": "6c64d08e36a7a07139f33ba8646483eab2ac6d42",
+    "git_head": "bc1b5696d984bce47b6b88ec70716653aa5ce74c",
     "dirty_paths_relevant": [
       "RoomRom/src/atlas/title_chr.c"
     ],
     "evidence_paths_present": true,
     "complete_phase_invariant_ok": true,
-    "last_refresh_at": "2026-05-09T01:00:29.808029+00:00",
+    "last_refresh_at": "2026-05-09T01:02:28.595296+00:00",
     "stale_reasons": []
   },
   "blockers": []
