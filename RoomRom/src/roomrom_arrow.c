@@ -7,9 +7,9 @@
  * picked up) OR if `InvRupees == 0` (each shot costs 1 rupee — NES Z1
  * checks `LDA InvRupees / BEQ` before spawn).
  *
- * RoomRom v6: gate spawn on those three checks; cost-decrement of
- * InvRupees deferred (status-bar tick animation lives in Task 6.10.10
- * — until then debiting causes desync with the absent rupee-tick HUD). */
+ * Phase 6 Task 6.10.10 (rupee tick) is now landed, so the 1-rupee cost
+ * is queued via inventory_rupee_debit; the HUD ticks down through
+ * inventory_rupee_tick on the every-other-frame cadence. */
 
 /* NES: UpdateRodOrArrow (Z_07.asm:4322) -> arrow item slot 2, base attr 0
  * (RDirectionToWeaponBaseAttribute = 0 for all dirs). */
@@ -40,6 +40,7 @@ void roomrom_arrow_fire(link_face_t face, short link_x, short link_y)
     if (g_inventory.bow == 0u) return;
     if (g_inventory.arrow == INV_ARROW_NONE) return;
     if (g_inventory.rupees == 0u) return;
+    inventory_rupee_debit(1u);   /* NES: 1-rupee cost per arrow */
     s_state = ARROW_FLYING;
     s_face  = face;
     /* Spawn at Link's center, offset 8 px in facing direction. */

@@ -46,3 +46,45 @@ inventory_t g_inventory = {
     .world_flags      = 0u,
     .selected_b_item  = 0u,
 };
+
+/* NES Z_01.asm:2812 World_ChangeRupees:
+ *   FrameCounter LSR -> carry: every-other-frame gate.
+ *   if RupeesToAdd > 0: DEC RupeesToAdd, INC InvRupees, queue tune.
+ *   if RupeesToSubtract > 0: DEC RupeesToSubtract, DEC InvRupees, queue tune.
+ *
+ * RoomRom diverges in two places:
+ *   - InvRupees is 16-bit (master plan 6.10.10 widening); cap at
+ *     INV_RUPEE_CAP (999) — NES displays max 255 but the wider field
+ *     accommodates future treasure-route economy.
+ *   - Tune queueing skipped — the audio-driver hookup for HUD-tick tunes
+ *     lives in Phase 6.10.11 (status-bar transfer buf already pulls the
+ *     count, just the SFX side is deferred). */
+void inventory_rupee_tick(unsigned char frame_counter)
+{
+    if ((frame_counter & 1u) != 0u) return;   /* every other frame */
+
+    if (g_inventory.rupees_to_add != 0u) {
+        if (g_inventory.rupees < INV_RUPEE_CAP) {
+            g_inventory.rupees++;
+        }
+        g_inventory.rupees_to_add--;
+    }
+    if (g_inventory.rupees_to_sub != 0u) {
+        if (g_inventory.rupees != 0u) {
+            g_inventory.rupees--;
+        }
+        g_inventory.rupees_to_sub--;
+    }
+}
+
+void inventory_rupee_credit(unsigned char count)
+{
+    unsigned short total = (unsigned short)(g_inventory.rupees_to_add + count);
+    g_inventory.rupees_to_add = (total > 0xFFu) ? 0xFFu : (unsigned char)total;
+}
+
+void inventory_rupee_debit(unsigned char count)
+{
+    unsigned short total = (unsigned short)(g_inventory.rupees_to_sub + count);
+    g_inventory.rupees_to_sub = (total > 0xFFu) ? 0xFFu : (unsigned char)total;
+}

@@ -25,6 +25,7 @@
 #include "roomrom_candle_fire.h"         /* Task 5.8.1: candle fire projectile */
 #include "roomrom_pause.h"               /* Task 6.10.1: Paused flag */
 #include "roomrom_link_damage.h"         /* Task 6.11.1: HeartValues damage */
+#include "inventory.h"                   /* Task 6.10.10: rupee tick */
 #include "probes/metadata_probe.h"     /* Task 5.4: Gate D in-ROM probe */
 #include "atlas/level_chr_swap.h"        /* PR-4a: scene-bank DMA state machine */
 #include "player_state.h"                 /* Phase 6 Task 6.1: typed players[] */
@@ -1378,6 +1379,9 @@ void roomrom_debug_tick(void)
             /* Task 6.11.3: ObjInvincibilityTimer 2-frame countdown
              * (NES Z_07.asm:5756 DecrementInvincibilityTimer). */
             roomrom_link_damage_tick((unsigned char)s_frame_counter);
+            /* Task 6.10.10: RupeesToAdd/Sub rolling tick
+             * (NES Z_01.asm:2812 World_ChangeRupees). */
+            inventory_rupee_tick((unsigned char)s_frame_counter);
         }
 
         u16 joy = JOY_readJoypad(JOY_1);

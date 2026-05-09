@@ -176,4 +176,16 @@ static inline unsigned char heart_values_pack(unsigned char max_h, unsigned char
  * boot path. */
 extern inventory_t g_inventory;
 
+/* Task 6.10.10 RupeesToAdd/Sub tick — NES Z_01.asm:2812 World_ChangeRupees.
+ * Every 2 frames: -1 RupeesToAdd → +1 rupees (tune $10 played in NES,
+ * deferred until status-bar transfer buffer + tune dispatch land). Same
+ * pattern for RupeesToSubtract. Caps at INV_RUPEE_CAP. */
+#define INV_RUPEE_CAP 999u
+
+void inventory_rupee_tick(unsigned char frame_counter);
+
+/* Convenience: queue rupees to credit/debit through the rolling tick. */
+void inventory_rupee_credit(unsigned char count);
+void inventory_rupee_debit(unsigned char count);
+
 #endif /* ROOMROM_INVENTORY_H */
