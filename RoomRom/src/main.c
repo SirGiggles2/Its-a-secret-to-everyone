@@ -24,6 +24,7 @@
 #include "uw_item_room_meta.h"           /* Task 5.9: item-room manifest + pickup */
 #include "roomrom_candle_fire.h"         /* Task 5.8.1: candle fire projectile */
 #include "roomrom_pause.h"               /* Task 6.10.1: Paused flag */
+#include "roomrom_link_damage.h"         /* Task 6.11.1: HeartValues damage */
 #include "probes/metadata_probe.h"     /* Task 5.4: Gate D in-ROM probe */
 #include "atlas/level_chr_swap.h"        /* PR-4a: scene-bank DMA state machine */
 #include "player_state.h"                 /* Phase 6 Task 6.1: typed players[] */
@@ -1189,6 +1190,7 @@ void roomrom_debug_enter(void)
     roomrom_boomerang_init();              /* S7 v6: clear boomerang slot */
     roomrom_arrow_init();                  /* S7 v7: clear arrow slot */
     roomrom_bomb_init();                   /* S7 v8: clear bomb + explosion slots */
+    roomrom_link_damage_init();            /* Task 6.11.1: clear invincibility timer */
     roomrom_world_transition_init();       /* Task 5.4: warp coordinator */
     roomrom_pushblock_init();              /* Task 5.7: push-block state machine */
     roomrom_candle_fire_init();            /* Task 5.8.1: candle fire slot 8 */
@@ -1373,6 +1375,9 @@ void roomrom_debug_tick(void)
             roomrom_candle_fire_update();
             /* Magic rod shot (slot 9). */
             roomrom_magic_shot_update();
+            /* Task 6.11.3: ObjInvincibilityTimer 2-frame countdown
+             * (NES Z_07.asm:5756 DecrementInvincibilityTimer). */
+            roomrom_link_damage_tick((unsigned char)s_frame_counter);
         }
 
         u16 joy = JOY_readJoypad(JOY_1);

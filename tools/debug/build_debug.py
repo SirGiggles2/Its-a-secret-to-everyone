@@ -149,6 +149,8 @@ ROOMROM_C_SOURCES = [
     ("RoomRom/src/inventory.c", "inventory.o"),
     # Task 6.10.1: Paused flag (NES $E0).
     ("RoomRom/src/roomrom_pause.c", "roomrom_pause.o"),
+    # Task 6.11.1/6.11.3: HeartValues damage path + ObjInvincibilityTimer.
+    ("RoomRom/src/roomrom_link_damage.c", "roomrom_link_damage.o"),
     ("RoomRom/src/roomrom_palette_tick.c", "roomrom_palette_tick.o"),
     ("RoomRom/src/expanded_bg_chr.c", "expanded_bg_chr.o"),
     ("RoomRom/src/atlas/items_chr_x4.c", "atlas_items_chr_x4.o"),
