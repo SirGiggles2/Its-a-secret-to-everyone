@@ -26,11 +26,18 @@
 #include "probes/enemy_loop_probe.h"      /* step 4 live-tick publish */
 
 /* Forward decls — defined in src/oracle/enemies/enemy_walker_runtime.c
- * (init), src/game/enemies/enemy_walker_bridge.c (step-6 native octorock),
+ * (init), src/oracle/enemies/enemy_wanderer_runtime.c (goriya update),
+ * src/game/enemies/enemy_walker_bridge.c (step-6 native octorock),
  * and src/game/core/core_dispatch.c (reset). All linked into Debug.md
  * per build_debug.py ROOMROM_C_SOURCES + step-6 unblock stubs. */
 extern void enrt_init_slow_octorock_or_ghini(unsigned int slot);
+extern void enrt_init_walker(unsigned int slot);                 /* step 7 */
+extern void enrt_init_darknut(unsigned int slot);                /* step 7 */
+extern void enrt_init_fast_octorock(unsigned int slot);          /* step 7 */
 extern void enrt_update_octorock(unsigned int slot);  /* step 6 native */
+extern void enrt_update_moblin(unsigned int slot);               /* step 7 */
+extern void enrt_update_goriya(unsigned int slot);               /* step 7 */
+extern void enrt_update_stalfos(unsigned int slot);              /* step 7 */
 extern unsigned char core_reset_obj_state(unsigned int slot);
 
 /* z07_reset_obj_state forwarder. enrt_octorock_common (same TU as the
@@ -49,28 +56,64 @@ unsigned char z07_reset_obj_state(unsigned int slot)
  * NULL. Tasks 7.3-7.7 fan out by adding rows here without otherwise
  * modifying the file. */
 const enemy_init_fn enemy_init_fns[ENEMY_LOOP_TYPE_MAX] = {
-    [0x07] = enrt_init_slow_octorock_or_ghini,
-    /* RedSlowOctorock — NES InitObject_JumpTable[$07] @ Z_07.asm:5601.
-     * Body: enrt_octorock_common(slot, 32) → enrt_init_walker(slot).
-     * Sets WALK_SPEED=$20, MOVE_TIMER=(slot+1)<<4, OBJ_STATE=0,
-     * DRAW_FRAME=0, ANIM_TIMER=6, then computes DIR from LINK_X/LINK_Y
-     * vs OBJ_X/OBJ_Y (h_dir or v_dir, whichever has larger diff). */
+    /* NES InitObject_JumpTable @ Z_07.asm:5601.
+     * $01-$06 = InitWalker (Lynel/Moblin/Goriya families).
+     * $07/$09 = InitSlowOctorockOrGhini (sets WALK_SPEED=$20).
+     * $08/$0A = InitFastOctorock (sets WALK_SPEED=$30).
+     * $0B/$0C = InitDarknut (INVINCIBILITY $F6 + WALK_SPEED $20/$28).
+     * $2A     = InitWalker (Stalfos).
+     *
+     * RedSlowOctorock body: enrt_octorock_common(slot, 32) →
+     * enrt_init_walker(slot) — sets WALK_SPEED, MOVE_TIMER=(slot+1)<<4,
+     * OBJ_STATE=0, DRAW_FRAME=0, ANIM_TIMER=6, then computes DIR from
+     * LINK_X/LINK_Y vs OBJ_X/OBJ_Y (h_dir or v_dir, whichever has
+     * larger diff). */
+    [0x01] = enrt_init_walker,                 /* BlueLynel */
+    [0x02] = enrt_init_walker,                 /* RedLynel */
+    [0x03] = enrt_init_walker,                 /* BlueMoblin */
+    [0x04] = enrt_init_walker,                 /* RedMoblin */
+    [0x05] = enrt_init_walker,                 /* BlueGoriya */
+    [0x06] = enrt_init_walker,                 /* RedGoriya */
+    [0x07] = enrt_init_slow_octorock_or_ghini, /* RedSlowOctorock */
+    [0x08] = enrt_init_fast_octorock,          /* RedFastOctorock */
+    [0x09] = enrt_init_slow_octorock_or_ghini, /* BlueSlowOctorock */
+    [0x0A] = enrt_init_fast_octorock,          /* BlueFastOctorock */
+    [0x0B] = enrt_init_darknut,                /* BlueDarknut */
+    [0x0C] = enrt_init_darknut,                /* RedDarknut */
+    [0x2A] = enrt_init_walker,                 /* Stalfos */
 };
 
 const enemy_update_fn enemy_update_fns[ENEMY_LOOP_TYPE_MAX] = {
-    /* Step 6 — semantic fix: $07 = RedSlowOctorock per NES
-     * UpdateObject_JumpTable (Z_04.asm). Step 4/5 stubbed this row to
-     * enrt_update_rope (which is actually the $29 handler — the leever-
-     * style speed-ramp is rope-only). Step 6 swaps in the native
-     * UpdateOctorock drain in src/game/enemies/enemy_walker_bridge.c
-     * (NES Z_04.asm:2966): wanderer_target_player + qspeed compute +
-     * inlined _TryShooting (no-op via stubbed c_shoot_if_wanted) +
-     * dir-based draw + collision check.
+    /* NES UpdateObject_JumpTable @ Z_04.asm:5295.
+     * $03/$04 = UpdateMoblin (turn rate $A0 + Wanderer + _TryShoot $5B).
+     * $05/$06 = UpdateGoriya (Wanderer + boomerang $5C try).
+     * $07-$0A = UpdateOctorock (this file, native, step 6).
+     * $2A     = UpdateStalfos (Wanderer + animate-and-draw + sword $57).
      *
-     * Future rows ($03/$04 moblin, $05/$06 goriya, $0B/$0C darknut,
-     * $1F stalfos, $29 rope) wire in successor steps once each
-     * family-specific drain primitives are linked. */
-    [0x07] = enrt_update_octorock,
+     * Step 6 fixed $07 = RedSlowOctorock semantically (was reusing
+     * enrt_update_rope which is actually $29). Step 7 wires the rest of
+     * the walker family using already-drained UPDATE bodies in
+     * src/oracle/enemies/{enemy_walker,enemy_wanderer}_runtime.c.
+     *
+     * NOTE: enrt_update_moblin is intentionally bare in the drain
+     * (no anim/draw/collision tail) — NES UpdateMoblin tail-jumps to
+     * _TryShooting which returns directly to the dispatch caller. The
+     * NES dispatcher (UpdateObject) handles post-call animate/draw
+     * centrally. Our enemy_loop_tick does not yet have a central
+     * post-dispatch animate/draw, so moblin walks but does not draw
+     * sprites until that hook lands (step 8 / next task).
+     *
+     * Future rows ($01/$02 lynel, $0B/$0C darknut, $29 rope) need new
+     * drain bodies (no _runtime.c entry yet) and will land in step 8+. */
+    [0x03] = enrt_update_moblin,    /* BlueMoblin (drained, anim/draw deferred) */
+    [0x04] = enrt_update_moblin,    /* RedMoblin */
+    [0x05] = enrt_update_goriya,    /* BlueGoriya (drained, full body) */
+    [0x06] = enrt_update_goriya,    /* RedGoriya */
+    [0x07] = enrt_update_octorock,  /* RedSlowOctorock (step 6 native) */
+    [0x08] = enrt_update_octorock,  /* RedFastOctorock — color/qspeed branch in body */
+    [0x09] = enrt_update_octorock,  /* BlueSlowOctorock */
+    [0x0A] = enrt_update_octorock,  /* BlueFastOctorock */
+    [0x2A] = enrt_update_stalfos,   /* Stalfos (drained, full body) */
 };
 
 /* Internal: clear an enemy slot's scratch state per NES InitObject

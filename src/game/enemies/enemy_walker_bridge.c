@@ -165,6 +165,25 @@ void z07_anim_advance_and_fetch(unsigned int val, unsigned int slot)
     sprite_anim_advance_and_fetch(val, slot);
 }
 
+void z07_anim_set_obj_hflip(unsigned int slot)
+{
+    /* Step 7: forwarder for enrt_animate_and_draw_common_object below.
+     * Mirrors src/gen/z_07.c NATIVE_SPRITE branch — that file is not
+     * linked into Debug.md so we route directly. */
+    sprite_anim_set_obj_hflip(slot);
+}
+
+void enrt_animate_and_draw_common_object(unsigned int val, unsigned int slot)
+{
+    /* Step 7: native composition matching src/oracle/enemies/enemy_runtime.c.
+     * Inlined here instead of linking enemy_runtime.c (avoids dragging in
+     * legacy_bridge.h chain). Used by enrt_update_stalfos (and bubble/
+     * standing fire / etc when those families wire later). */
+    z07_anim_advance_and_fetch(val, slot);
+    z07_anim_set_obj_hflip(slot);
+    c_draw_object_not_mirrored_with_frame(0u, slot);
+}
+
 unsigned char z01_anim_set_sprite_desc_attrs(unsigned int val)
 {
     return core_anim_set_sprite_desc_attrs(val);
