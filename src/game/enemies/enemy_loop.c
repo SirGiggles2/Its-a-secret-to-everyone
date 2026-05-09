@@ -79,6 +79,13 @@ extern void trap_init_trap_full(unsigned int slot);
  *                       enemy_walker_runtime.c:146). */
 extern void enrt_update_guard_fire(unsigned int slot);
 extern void enrt_update_standing_fire(unsigned int slot);
+/* 7.4 step 10 — Aquamentus boss INIT + UPDATE.
+ *   $3D Aquamentus -> enrt_init_aquamentus + enrt_update_aquamentus
+ *                     (drained at enemy_boss_runtime.c:102/108).
+ *   c_aquamentus_{move,shoot,draw} native bodies in enemy_boss_bridge.c.
+ *   draw_write_boss_sprite primitive drained into draw_dispatch.c. */
+extern void enrt_init_aquamentus(unsigned int slot);
+extern void enrt_update_aquamentus(unsigned int slot);
 extern void core_reset_obj_metastate_and_timer(unsigned int slot); /* 7.4 step 2b ($11 INIT) */
 extern unsigned char core_reset_obj_state(unsigned int slot);
 
@@ -228,6 +235,14 @@ const enemy_init_fn enemy_init_fns[ENEMY_LOOP_TYPE_MAX] = {
      * gibdos enter the walker init seed (DIR/MOVE_TIMER/anim defaults)
      * before the dispatch table picks up update side. */
     [0x30] = enrt_init_walker,                   /* Gibdo */
+    /* Task 7.4 step 10 — Aquamentus INIT.
+     *
+     * NES Z_07.asm:5601 InitObject_JumpTable row $3D Aquamentus ->
+     * SwitchBank #$01 + JMP InitAquamentus @ Z_04.asm region (sets
+     * INVINCIBILITY=$E2, SFX_BOSS_CRY=16, X=$B0, Y=$80). Drained at
+     * enemy_boss_runtime.c:102. Primitives self-contained — only writes
+     * 4 RAM cells, no callouts. */
+    [0x3D] = enrt_init_aquamentus,               /* Aquamentus */
 };
 
 const enemy_update_fn enemy_update_fns[ENEMY_LOOP_TYPE_MAX] = {
@@ -442,6 +457,19 @@ const enemy_update_fn enemy_update_fns[ENEMY_LOOP_TYPE_MAX] = {
      * (z07_animate_object_walking forwarder added in step 8). */
     [0x3F] = enrt_update_guard_fire,        /* GuardFire (native EXTEND drain) */
     [0x40] = enrt_update_standing_fire,     /* StandingFire (oracle drain) */
+    /* Task 7.4 step 10 — Aquamentus UPDATE.
+     *
+     * NES Z_07.asm:5295 UpdateObject_JumpTable row $3D Aquamentus ->
+     * UpdateAquamentus (Z_04.asm:5594-5607). Drained at
+     * enemy_boss_runtime.c:108 — composes c_aquamentus_{move,shoot,draw}
+     * + c_check_monster_collisions + enrt_play_boss_hit_cry_if_needed.
+     *
+     * Native bridge bodies for c_aquamentus_{move,shoot,draw} added in
+     * enemy_boss_bridge.c (per-line translation of Z_04.asm:5612/5684/5764).
+     * draw_write_boss_sprite primitive (WriteBossSprite + Anim_EndWriteSprite
+     * fused) lives in draw_dispatch.c. ENEMY_PAUSE_FLAG gate handled inside
+     * enrt_update_aquamentus drain body. */
+    [0x3D] = enrt_update_aquamentus,        /* Aquamentus */
 };
 
 /* Internal: clear an enemy slot's scratch state per NES room-init

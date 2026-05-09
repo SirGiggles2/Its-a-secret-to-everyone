@@ -561,6 +561,26 @@ void draw_item_in_inventory(unsigned int item_slot, unsigned int slot)
     draw_item_by_slot(item_slot, slot);
 }
 
+void draw_write_boss_sprite(unsigned char tile, unsigned char x,
+                            unsigned char y, unsigned char attr)
+{
+    /* WriteBossSprite (Z_04.asm:5844):
+     *     PHA / LDY RollingSpriteIndex / LDA SpriteOffsets,Y / TAY
+     *     PLA / STA Sprites+1,Y / LDA $00 / STA Sprites+3,Y / LDA $01
+     *     JMP Anim_EndWriteSprite
+     * Anim_EndWriteSprite (Z_01.asm:5393):
+     *     STA Sprites,Y / LDA $03 / STA Sprites+2,Y / JMP CycleCurSpriteIndex
+     *
+     * Net: write y/tile/attr/x to the rolling OAM record + cycle cursor. */
+    const unsigned char cur_idx = (unsigned char)DRAW_CUR_SPRITE_INDEX;
+    const unsigned char off = k_sprite_offsets[cur_idx & 0x3Fu];
+    DRAW_OAM_TILE(off) = tile;
+    DRAW_OAM_X(off)    = x;
+    DRAW_OAM_Y(off)    = y;
+    DRAW_OAM_ATTR(off) = attr;
+    sprite_cycle_cur_sprite_index();
+}
+
 void draw_animate_item_object(unsigned char item_id, unsigned int slot)
 {
     /* drain Z_07.asm:1955-2003. */

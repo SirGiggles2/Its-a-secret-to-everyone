@@ -68,6 +68,13 @@ void draw_arrow(unsigned int slot);
  * dispatch when OBJ_TYPE in $57/$58/$59 (player or monster sword/magic). */
 void draw_sword_shot_or_magic_shot(unsigned int slot);
 
+/* WriteBossSprite (Z_04.asm:5844) tail-calls Anim_EndWriteSprite
+ * (Z_01.asm:5393). Composed: writes 4 OAM bytes (y/tile/attr/x) at the
+ * rolling sprite cursor + cycles cursor. Used by per-boss draw bodies
+ * (Aquamentus / Dodongo / Ganon). Phase 7 Task 7.4 step 10. */
+void draw_write_boss_sprite(unsigned char tile, unsigned char x,
+                            unsigned char y, unsigned char attr);
+
 #ifdef __cplusplus
 }
 #endif
