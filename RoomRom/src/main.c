@@ -29,6 +29,7 @@
 #include "probes/metadata_probe.h"     /* Task 5.4: Gate D in-ROM probe */
 #include "atlas/level_chr_swap.h"        /* PR-4a: scene-bank DMA state machine */
 #include "player_state.h"                 /* Phase 6 Task 6.1: typed players[] */
+#include "enemy_loop.h"                   /* Phase 7 Task 7.2 step 2 (WT-5) */
 
 /* Boots to overworld room 0x77.
  *
@@ -501,6 +502,11 @@ void roomrom_main_apply_warp_outcome(const rr_warp_outcome_t *out)
 
     /* Step 9: combat scene bias single-call (reset already did combat_init). */
     roomrom_combat_set_uw(s_scene == SCENE_UW);
+
+    /* Phase 7 Task 7.2 step 2: clear enemy slots + (Task 7.7) dispatch
+     * per-room ObjList init. Stub returns NULL until 7.7 lands the
+     * template_id table; force-spawn hook fires from probe Lua. */
+    enemy_loop_room_init(s_room_id, (unsigned char)s_scene);
 }
 
 /* Task 5.4: read-side accessors for the coordinator. Each is a one-line
@@ -1196,6 +1202,7 @@ void roomrom_debug_enter(void)
     roomrom_pushblock_init();              /* Task 5.7: push-block state machine */
     roomrom_candle_fire_init();            /* Task 5.8.1: candle fire slot 8 */
     roomrom_magic_shot_init();             /* magic rod shot slot 9 */
+    enemy_loop_room_init(s_room_id, (unsigned char)s_scene);  /* Phase 7 Task 7.2 */
     roomrom_probe_metadata_run();          /* Task 5.4 Gate D: in-ROM probe */
 
     /* debate 006 D2 native cave smoke: prove cave_init / cave_tick /
@@ -1386,6 +1393,12 @@ void roomrom_debug_tick(void)
              * cells from g_inventory. Cheap (~15 VDP writes); makes
              * the rupee tick + future damage path observable. */
             roomrom_hud_refresh_dynamic();
+
+            /* Phase 7 Task 7.2 step 2 (debate verdict Q2=c): drained
+             * walker family ticks ONLY inside scroll-stable + non-paused
+             * branch. Mirrors NES IsSprite0CheckActive gate at
+             * Z_07.asm:496. NULL slots in the dispatch tables = no-op. */
+            enemy_loop_tick();
         }
 
         u16 joy = JOY_readJoypad(JOY_1);

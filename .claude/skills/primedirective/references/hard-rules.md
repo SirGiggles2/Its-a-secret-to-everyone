@@ -58,6 +58,20 @@ Code under `src/game/` and `RoomRom/src/` MUST NOT include headers under `src/fr
 ## WT-4 — Banned legacy build alias
 Builds emit `Debug.md` exclusively (Sole Build Target Amendment 2026-05-08). The Phase-0 legacy alias `whatif.*` and the dual-target era aliases `Title.md` / `RoomRom.md` / `CombinedDebug.*` are permanently retired (user hard rule, debate 004 2026-05-02; sole-target pivot 2026-05-08). No build target, output filename, staging copy, variable, identifier, comment, or active documentation reference may reintroduce any of them. Enforced by `tools/gates/check_banned_filename.py` (CI fail on any banned-token hit outside `debates/`, `docs/archive/`, and the historical `docs/superpowers/{specs,plans,decisions,captures}/` trees).
 
+## WT-5 — RoomRom freeze (HARD, user 2026-05-09)
+**No new files under `RoomRom/src/` or `RoomRom/data/`.** New gameplay code lands in `src/game/<subsystem>/` and links into `Debug.md` via `tools/debug/build_debug.py`. Existing `RoomRom/src/main.c` and `RoomRom/src/roomrom_*.c` files may receive minimal integration patches (one-liner glue calls) but the active development surface is `src/game/`.
+
+**Why:** User directive 2026-05-07 (reinforced 2026-05-09): "DO NOT WORK ON ROOMROM EVER AGAIN. WE ARE ON DEBUG." `RoomRom.md` standalone is shelved; `Debug.md` ships everything (Title boot + native gameplay runtime). Continuing to grow `RoomRom/src/` deepens the scaffold instead of migrating it.
+
+**How to apply:**
+1. New `*.c` / `*.h` for a subsystem -> `src/game/<subsystem>/`. Drained subsystems already have a folder (cave/combat/enemies/hud/items/room/world/core).
+2. New data tables -> `src/game/<subsystem>/` next to the consumer, or `data/` (substrate, main-only writer per WT-1).
+3. Editing existing `RoomRom/src/main.c` for glue is allowed; creating a new `RoomRom/src/roomrom_<feature>.c` is forbidden.
+4. `tools/debug/build_debug.py` `ROOMROM_C_SOURCES` adds for new files MUST be `src/game/...` paths, not `RoomRom/src/...`.
+5. `active_scope.md` listing `RoomRom/src/` for the active phase is overridden by this rule until the scope pointer is regenerated.
+
+Refuse to create new files under `RoomRom/src/` or `RoomRom/data/`. When asked, propose `src/game/<subsystem>/` instead.
+
 ## D1 — Drain-first / NES-disasm-second
 Drained C in `src/game/<subsystem>/*_runtime.c` is the **PRIMARY implementation evidence**. NES disassembly (`reference/aldonunez/*.asm`, `src/zelda_translated/*.asm`) is the **SECONDARY verification + final authority** — it wins ties when drain is wrong.
 

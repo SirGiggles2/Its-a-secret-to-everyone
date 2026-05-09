@@ -163,6 +163,10 @@ ROOMROM_C_SOURCES = [
     ("src/oracle/enemies/enemy_common_runtime.c", "oracle_enemy_common.o"),
     ("src/oracle/enemies/enemy_wanderer_runtime.c", "oracle_enemy_wanderer.o"),
     ("src/oracle/enemies/enemy_walker_runtime.c", "oracle_enemy_walker.o"),
+    # Task 7.2 step 2: enemy slot iterator + dispatch + ObjLists port (WT-5
+    # promotion — gameplay code under src/game/, not RoomRom/).
+    ("src/game/enemies/enemy_loop.c", "game_enemy_loop.o"),
+    ("src/game/enemies/obj_lists.c", "game_enemy_obj_lists.o"),
     ("RoomRom/src/expanded_bg_chr.c", "expanded_bg_chr.o"),
     ("RoomRom/src/atlas/items_chr_x4.c", "atlas_items_chr_x4.o"),
     # PR-4a: scene-bank scaffolding + DMA state machine.
