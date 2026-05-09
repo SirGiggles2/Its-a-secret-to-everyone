@@ -219,6 +219,13 @@ ROOMROM_C_SOURCES = [
     # z07_find_empty_monster_slot native body. Wires $1F BoulderSet +
     # $20 Boulder dispatch rows.
     ("src/game/enemies/enemy_jumper_bridge.c", "game_enemy_jumper_bridge.o"),
+    # Phase 7 Task 7.5 step 2 — special-enemy UPDATE bridge.
+    # Native enrt_update_like_like body (NES Z_04.asm:6818) — the top-level
+    # UPDATE state machines for $16 PolsVoice / $17 LikeLike / $27
+    # Wallmaster are not directly drained, only their helpers are; this
+    # bridge carries the per-line NES translation (same model as
+    # enemy_boss_bridge.c for Aquamentus / Vire).
+    ("src/game/enemies/enemy_special_bridge.c", "game_enemy_special_bridge.o"),
     ("src/game/enemies/probes/enemy_loop_probe.c", "game_enemy_loop_probe.o"),
     ("RoomRom/src/expanded_bg_chr.c", "expanded_bg_chr.o"),
     ("RoomRom/src/atlas/items_chr_x4.c", "atlas_items_chr_x4.o"),

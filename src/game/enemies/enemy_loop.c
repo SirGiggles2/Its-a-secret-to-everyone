@@ -88,6 +88,9 @@ extern void enrt_init_aquamentus(unsigned int slot);
 extern void enrt_update_aquamentus(unsigned int slot);
 extern void core_reset_obj_metastate_and_timer(unsigned int slot); /* 7.4 step 2b ($11 INIT) */
 extern unsigned char core_reset_obj_state(unsigned int slot);
+/* 7.5 step 2 — special-enemy UPDATE bridge bodies (enemy_special_bridge.c).
+ *   $17 LikeLike -> enrt_update_like_like (NES Z_04.asm:6818). */
+extern void enrt_update_like_like(unsigned int slot);
 
 /* z07_reset_obj_state forwarder. enrt_octorock_common (same TU as the
  * init we wire below) calls this symbol. The drained body lives at
@@ -497,6 +500,28 @@ const enemy_update_fn enemy_update_fns[ENEMY_LOOP_TYPE_MAX] = {
      * fused) lives in draw_dispatch.c. ENEMY_PAUSE_FLAG gate handled inside
      * enrt_update_aquamentus drain body. */
     [0x3D] = enrt_update_aquamentus,        /* Aquamentus */
+    /* Task 7.5 step 2 — special-enemy UPDATE: $17 LikeLike.
+     *
+     * NES Z_07.asm:5295 UpdateObject_JumpTable row $17 LikeLike ->
+     * UpdateLikeLike @ Z_04.asm:6818. Top-level state machine not
+     * directly drained; native bridge body in enemy_special_bridge.c
+     * carries per-line NES translation. Composes z04_update_common_wanderer
+     * (already drained in enemy_boss_bridge.c) + z07_anim_fetch_obj_pos +
+     * draw_object_mirrored_with_frame + draw_object_mirrored_over_link
+     * (new public API in draw_dispatch.c step 2) + c_check_monster_collisions
+     * + enemy_hide_sprites_over_link.
+     *
+     * Two paths driven by ObjCaptureTimer (= ENEMY_TURN_TIMER alias at
+     * $042C):
+     *   - 0: free-roam wander + 4-frame anim + capture-detect
+     *        post-collision; if capture fired, seed monster X/Y =
+     *        Link X/Y, clear Link's timer/metastate/shove, reset
+     *        monster anim, INC LinkParalyzed.
+     *   - != 0: animate up to frame 3, INC capture timer, drop magic
+     *           shield at >= $60, draw mirrored OVER Link (sprites
+     *           $10/$11), check death; on death (metastate != 0)
+     *           clear LinkParalyzed + hide over-Link sprites. */
+    [0x17] = enrt_update_like_like,         /* LikeLike */
 };
 
 /* Internal: clear an enemy slot's scratch state per NES room-init

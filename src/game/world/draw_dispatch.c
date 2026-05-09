@@ -429,6 +429,23 @@ void draw_object_not_mirrored_with_frame(unsigned char frame,
     draw_object_not_mirrored(frame, slot);
 }
 
+/* DrawObjectMirroredOverLink (Z_04.asm:763). Same shape as
+ * DrawObjectMirrored, but bypasses the rolling sprite cursor and
+ * hardcodes LeftSpriteOffset=$40 / RightSpriteOffset=$44 — sprites
+ * $10 and $11 in the OAM mirror. Like-Like uses this when capturing
+ * Link so its body draws on top of him. anim_idx = ObjType+1 (matches
+ * DrawObjectWithType branch). */
+void draw_object_mirrored_over_link(unsigned char frame, unsigned int slot)
+{
+    DRAW_MIRRORED = 1u;
+    DRAW_ANIM_INDEX = (uint8_t)((unsigned char)OBJ_TYPE(slot) + 1u);
+    DRAW_FRAME = frame;
+    DRAW_OBJ_INDEX = (uint8_t)slot;
+    DRAW_LEFT_SPRITE_OFFSET = 0x40u;
+    DRAW_RIGHT_SPRITE_OFFSET = 0x44u;
+    draw_object_with_anim_and_specific_sprites(slot);
+}
+
 /* --------------------------------------------------------------- */
 /* Item-draw chain — Anim_WriteSpecificItemSprites + helpers.      */
 /* Z_01.asm:2399-2477 + Z_07.asm AnimateItemObject + DrawItemBySlot.*/
