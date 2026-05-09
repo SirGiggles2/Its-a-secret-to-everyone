@@ -41,6 +41,7 @@ extern void enrt_update_stalfos(unsigned int slot);              /* step 7 */
 extern void enrt_update_darknut(unsigned int slot);              /* step 11 */
 extern void enrt_update_monster_shot(unsigned int slot);         /* step 12 */
 extern void enrt_update_fireball(unsigned int slot);             /* step 12 */
+extern void update_meta_object(unsigned int slot);               /* step 20 */
 extern unsigned char core_reset_obj_state(unsigned int slot);
 
 /* z07_reset_obj_state forwarder. enrt_octorock_common (same TU as the
@@ -220,10 +221,37 @@ void enemy_loop_tick(void)
      * killed the slot. */
     enemy_loop_probe_publish_pre();
 
+    /* Step 20 DecTimers prepass. NES IsrNmi @UpdateTimers /
+     * @LoopTimer (z_07.asm:1604-1616) decrements ObjTimer ($0028..)
+     * for every slot every VBlank. Walker direction-decision logic
+     * (enemy_walker_runtime.c:107) and update_meta_object spark/cloud
+     * progression both gate on ObjTimer == 0. Without a tick the
+     * walker never picks a new direction and the spawning-cloud /
+     * death-spark animation never advances. This prepass is the
+     * native equivalent of the VBlank dec loop. */
+    for (slot = ENEMY_LOOP_SLOT_FIRST; slot <= ENEMY_LOOP_SLOT_LAST; ++slot) {
+        if (ENEMY_MOVE_TIMER(slot) != 0u) {
+            ENEMY_MOVE_TIMER(slot) = (unsigned char)(ENEMY_MOVE_TIMER(slot) - 1u);
+        }
+        if (ENEMY_STUN_TIMER(slot) != 0u) {
+            ENEMY_STUN_TIMER(slot) = (unsigned char)(ENEMY_STUN_TIMER(slot) - 1u);
+        }
+    }
+
     for (slot = ENEMY_LOOP_SLOT_FIRST; slot <= ENEMY_LOOP_SLOT_LAST; ++slot) {
         unsigned char t;
         enemy_update_fn fn;
         if (ENEMY_ALIVE_FLAG(slot) == 0u) continue;
+        /* Step 20 metastate gate. NES UpdateObject (Z_07.asm:5275) checks
+         * ObjMetastate before falling through to the per-type body — when
+         * non-zero, control diverts to UpdateMetaObject which animates the
+         * death-spark / spawning-cloud and (on completion) converts the
+         * slot to a $60 dropped-item via SetUpDroppedItem. Drained as
+         * update_meta_object() in enemy_walker_bridge.c. */
+        if (ENEMY_METASTATE(slot) != 0u) {
+            update_meta_object(slot);
+            continue;
+        }
         t = (unsigned char)ENEMY_TYPE(slot);
         if (t >= ENEMY_LOOP_TYPE_MAX) continue;
         fn = enemy_update_fns[t];

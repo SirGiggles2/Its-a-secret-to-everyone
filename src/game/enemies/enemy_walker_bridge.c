@@ -38,6 +38,8 @@
 #include "world/sprite_dispatch.h"
 #include "world/object_dispatch.h"   /* object_bound_by_room, object_move_object */
 #include "core/core_dispatch.h"      /* core_get_opposite_dir, core_reset_moving_dir */
+#include "combat_state.h"            /* ROOM_KILL_COUNT (step 20 drop conv) */
+#include "room_state.h"              /* ROOM_OW_CUR_KILL_TOTAL ($034F NES RoomKillCount) */
 #include "platform_abi.h"            /* RAM, OBJ, NES_OBJ_DIR, NES_SHOT_COLLISION_FLAG */
 #include "roomrom_enemy_state.h"     /* ENEMY_* macros (re-export of state/enemy_state.h) */
 
@@ -729,4 +731,184 @@ draw_octorock:
 
     /* Step 10 — CheckMonsterCollisions. */
     link_collision_check_monster_collisions(slot);
+}
+
+/* ---------------------------------------------------------------------------
+ * Phase 7 Task 7.2 step 20 — UpdateMetaObject (NES Z_07.asm:5403).
+ *
+ * Drain Rule D1: NES asm SECONDARY (no drained C candidate exists for
+ * UpdateMetaObject / AnimateAndDrawMetaObject / UpdateMetaObjectEnd).
+ * Stance: ADOPT — transcribe the NES body verbatim, with two scoped
+ * stubs:
+ *
+ *   - Anim_FetchObjPosForSpriteDescriptor + DrawCloud + Anim_WriteItemSprites:
+ *     skipped (OAM router not wired; visible sparkle/cloud not observable
+ *     this phase). Timer + metastate cells still update identically, so
+ *     the metastate-progression timing matches NES.
+ *
+ *   - SetUpDroppedItem (Z_04.asm:11103): skipped. Drop-item id lookup +
+ *     fairy-on-$10-kills + help-drop branch defer to a follow-up task
+ *     (item subsystem hookup). Step 20 only verifies the OUTER drop
+ *     conversion (ENEMY_TYPE -> $60) is observable; the dropped item's
+ *     actual identity is not yet visible without the OAM router anyway.
+ *
+ * NES variable map:
+ *   ObjTimer            = OBJ($0028, slot)  =  ENEMY_MOVE_TIMER
+ *   ObjMetastate        = OBJ($0405, slot)  =  ENEMY_METASTATE
+ *   ObjType             = OBJ($03A8, slot)  =  ENEMY_TYPE  (NES_OBJ_TYPE)
+ *   ObjAttr             = OBJ($04BF, slot)
+ *   ObjUninitialized    = OBJ($0492, slot)  ←  semantic conflict: in NES
+ *                                              this is the "needs init"
+ *                                              flag; in our code the
+ *                                              same offset is named
+ *                                              ENEMY_ALIVE_FLAG and uses
+ *                                              the OPPOSITE polarity
+ *                                              (1=alive, 0=empty). We
+ *                                              keep ENEMY_ALIVE_FLAG=1
+ *                                              for converted drops so
+ *                                              the slot keeps ticking;
+ *                                              dropped-item init that
+ *                                              normally relies on the
+ *                                              uninit flag is deferred
+ *                                              with SetUpDroppedItem.
+ *   Item_ObjMonsterType = OBJ($0412, slot)  ←  same offset as ENEMY_PUSH_TIMER;
+ *                                              NES Z1 reuses the cell for
+ *                                              dropped-item slots.
+ *   WorldKillCycle      = RAM($052A)         (0..9 wrap)
+ *   RoomKillCount       = RAM($0627)         = ROOM_KILL_COUNT
+ *   NoDropMonsterTypes (single-byte branches): $5D (RupeeStash),
+ *                                              $14 (ChildGel),
+ *                                              $1C (RedKeese).
+ */
+
+/* NES Item_ObjMonsterType ($0412) aliases ENEMY_PUSH_TIMER. */
+#define META_ITEM_MONSTER_TYPE(slot)   OBJ(0x0412, (slot))
+#define META_OBJ_ATTR(slot)            OBJ(0x04BF, (slot))
+#define META_WORLD_KILL_CYCLE          RAM(0x052A)
+
+void update_meta_object(unsigned int slot)
+{
+    unsigned char ms = (unsigned char)ENEMY_METASTATE(slot);
+
+    /* AnimateAndDrawMetaObject (NES Z_07.asm:4977) — draw stub, timer
+     * + metastate logic verbatim.
+     *
+     * if metastate >= $10: spark path
+     *   if (metastate & $0F) == 0: skip draw, ALWAYS reset timer + INC
+     *     metastate (the @AnimateSpark BEQ @IncMetastate branch).
+     *   else: draw spark (skipped), then check timer:
+     *     if ObjTimer != 0: exit
+     *     else: reset ObjTimer=6, INC metastate
+     * else (metastate < $10): cloud path. Metastate's lower nibble is
+     *   the cloud frame (0..3). Draw cloud (skipped). Same timer check.
+     */
+    if (ms >= 0x10u) {
+        unsigned char nibble = (unsigned char)(ms & 0x0Fu);
+        if (nibble == 0u) {
+            /* @AnimateSpark BEQ @IncMetastate — immediate INC, no
+             * draw, no timer-zero gate. */
+            ENEMY_MOVE_TIMER(slot) = 0x06u;
+            ENEMY_METASTATE(slot) = (unsigned char)(ms + 1u);
+            ms = (unsigned char)(ms + 1u);
+        } else {
+            /* Spark frame draw skipped (OAM router not wired). */
+            if (ENEMY_MOVE_TIMER(slot) != 0u) {
+                /* Timer still ticking — return without further work.
+                 * Outer UpdateMetaObject post-call check below would
+                 * see the unchanged metastate and still test it for
+                 * end-state, so we fall through. */
+            } else {
+                ENEMY_MOVE_TIMER(slot) = 0x06u;
+                ENEMY_METASTATE(slot) = (unsigned char)(ms + 1u);
+                ms = (unsigned char)(ms + 1u);
+            }
+        }
+    } else {
+        /* Spawning-cloud path. Cloud frame draw skipped. */
+        if (ENEMY_MOVE_TIMER(slot) != 0u) {
+            /* Same fall-through as spark path. */
+        } else {
+            ENEMY_MOVE_TIMER(slot) = 0x06u;
+            ENEMY_METASTATE(slot) = (unsigned char)(ms + 1u);
+            ms = (unsigned char)(ms + 1u);
+        }
+    }
+
+    /* UpdateMetaObject post-call — check end metastate ($04 or $14).
+     * NES Z_07.asm:5407-5410:
+     *   LDA ObjMetastate, X
+     *   AND #$0F
+     *   CMP #$04
+     *   BCS UpdateMetaObjectEnd
+     */
+    if ((unsigned char)(ms & 0x0Fu) < 0x04u) return;
+
+    /* UpdateMetaObjectEnd (NES Z_07.asm:5414).
+     *
+     *   LDA ObjMetastate, X
+     *   AND #$10
+     *   BEQ @Reset            ; metastate $04 — done with cloud, reset
+     *
+     * Otherwise metastate is $14 (death-spark complete) — convert the
+     * slot into a dropped item.
+     */
+    if ((unsigned char)(ms & 0x10u) == 0u) {
+        /* @Reset: metastate $04 — reset metastate so slot is ready to
+         * tick autonomously. (Cloud-end path; spawning monster.) */
+        ENEMY_METASTATE(slot) = 0u;
+        return;
+    }
+
+    /* Metastate $14 — drop conversion path.
+     *
+     * Copy ObjType to Item_ObjMonsterType so SetUpDroppedItem can
+     * compute the drop. Three monster types (RupeeStash $5D,
+     * ChildGel $14, RedKeese $1C) skip the world-kill-cycle bump
+     * and let SetUpDroppedItem handle them.
+     */
+    {
+        unsigned char obj_type = (unsigned char)ENEMY_TYPE(slot);
+        unsigned char skip_kill_cycle = 0u;
+
+        META_ITEM_MONSTER_TYPE(slot) = obj_type;
+
+        if (obj_type == 0x5Du || obj_type == 0x14u || obj_type == 0x1Cu) {
+            skip_kill_cycle = 1u;
+        }
+
+        if (skip_kill_cycle == 0u) {
+            unsigned char cycle = (unsigned char)META_WORLD_KILL_CYCLE;
+            cycle = (unsigned char)(cycle + 1u);
+            if (cycle == 0x0Au) cycle = 0u;
+            META_WORLD_KILL_CYCLE = cycle;
+
+            /* Skip RoomKillCount bump for Zora ($11). NES UpdateMetaObjectEnd
+             * (Z_07.asm:5453) writes RoomKillCount at $034F, NOT
+             * WorldKillCount at $0627. The two are different counters —
+             * combat_handle_monster_died (combat_dispatch.c:30) handles
+             * the WorldKillCount bump separately. */
+            if (obj_type != 0x11u) {
+                ROOM_OW_CUR_KILL_TOTAL =
+                    (unsigned char)(ROOM_OW_CUR_KILL_TOTAL + 1u);
+            }
+        }
+
+        /* @DropItem: convert slot to dropped-item type ($60). */
+        ENEMY_TYPE(slot) = 0x60u;
+        /* ENEMY_ALIVE_FLAG ($0492) double-duty as ObjUninitialized:
+         * leave it set — slot stays ALIVE so the iterator picks it up
+         * next frame (and would re-init it via the dropped-item INIT
+         * row once that's wired). */
+        ENEMY_ALIVE_FLAG(slot) = 1u;
+        META_OBJ_ATTR(slot)    = 0x81u;
+
+        /* SetUpDroppedItem (Z_04.asm:11103) — drop-item id lookup +
+         * fairy-on-$10-kills + help-drop randomization. Deferred to a
+         * follow-up task (item subsystem hookup). The outer drop
+         * conversion is what step 20 verifies. */
+        /* TODO: native_set_up_dropped_item(slot); */
+    }
+
+    /* @Reset path always runs after drop conversion. */
+    ENEMY_METASTATE(slot) = 0u;
 }

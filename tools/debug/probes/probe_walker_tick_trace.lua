@@ -87,6 +87,7 @@ local function dmg_viz()
         kill_count     = read_u8(DM_BASE, 10),
         sword_state    = read_u8(DM_BASE, 11),
         harm_flag      = read_u8(DM_BASE, 12),
+        room_kill_total = read_u8(DM_BASE, 13),  -- step 20: NES RoomKillCount $034F
     }
 end
 
@@ -331,10 +332,13 @@ local alive_held = true
 local type_held  = true
 for _, s in ipairs(samples) do
     if s.alive ~= 1 then alive_held = false end
-    if s.type_ ~= 0x07 then type_held = false end
+    -- step 20: slot 1 is sword-killed on frame 1 by the damage probe
+    -- seed and converted to dropped-item type $60 by update_meta_object.
+    -- Accept either octorok ($07) or dropped item ($60).
+    if s.type_ ~= 0x07 and s.type_ ~= 0x60 then type_held = false end
 end
 gate(alive_held, "G3 ENEMY_ALIVE_FLAG(1) stays 1 across trace")
-gate(type_held,  "G4 ENEMY_TYPE(1) stays $07 across trace")
+gate(type_held,  "G4 ENEMY_TYPE(1) stays $07 or $60 (drop conv) across trace")
 
 -- G5: anim_timer or draw_frame must change at least once across samples.
 -- Both are written by sprite_anim_advance_and_fetch chain inside
@@ -349,20 +353,18 @@ gate(anim_changed or draw_changed,
      string.format("G5 anim_timer OR draw_frame advanced (anim_changed=%s draw_changed=%s)",
                    tostring(anim_changed), tostring(draw_changed)))
 
--- G6 (step 5 add): X or Y must change. With c_walker_move drained
--- (composes object_bound_by_room + object_move_object), walking
--- speed $20 = 1 pixel every 8 frames. Over 120 frames octorok at
--- DIR=$02 (left) starting at X=$80 should land near X=$80 - 15.
-local x_changed = false
-local y_changed = false
-for i = 2, #samples do
-    if samples[i].x ~= samples[i-1].x then x_changed = true end
-    if samples[i].y ~= samples[i-1].y then y_changed = true end
-end
-gate(x_changed or y_changed,
-     string.format("G6 X OR Y advanced (x_changed=%s y_changed=%s; first=%d,%d last=%d,%d)",
-                   tostring(x_changed), tostring(y_changed),
-                   first.x, first.y, last.x, last.y))
+-- G6 (step 5 add, step 20 relaxed): X or Y must change. Slot 1
+-- octorok is sword-killed on frame 1 by the damage probe seed and
+-- converted to dropped-item $60 — it never moves under its own power.
+-- Use slot 2 moblin instead (not sword-seeded). G12 already covers
+-- darknut motion; this gate now covers walker dispatch on a non-killed
+-- slot.
+local s2 = multi_samples[2]  -- slot 2 moblin
+local m_first = s2[1]
+local m_last  = s2[#s2]
+gate(m_first.x ~= m_last.x or m_first.y ~= m_last.y,
+     string.format("G6 slot 2 moblin X or Y advanced (first=%d,%d last=%d,%d)",
+                   m_first.x, m_first.y, m_last.x, m_last.y))
 
 -- step 8 gates: G7-G10 verify each step-7 wired slot stays alive +
 -- preserves type across the trace window. Build crash would have
@@ -442,6 +444,23 @@ gate(last_dm.kill_count > 0,
 gate(last_dm.metastate == 16 or last_dm.mon_type == 0x60,
      string.format("G17 death/drop state set (metastate=$%02X mon_type=$%02X)",
                    last_dm.metastate, last_dm.mon_type))
+
+-- step 20 drop conversion. update_meta_object dispatched via enemy_loop
+-- metastate gate. After 20 ticks (4 * 5 metastate frames) MON_TYPE
+-- transitions $07 -> $60 and MON_METASTATE resets to $00. ENEMY_ALIVE
+-- stays 1 so iterator keeps polling the slot.
+gate(last_dm.mon_type == 0x60,
+     string.format("G18 drop conversion fired (mon_type $07 -> $%02X expect $60)",
+                   last_dm.mon_type))
+gate(last_dm.metastate == 0,
+     string.format("G19 metastate reset post-drop (last=$%02X expect $00)",
+                   last_dm.metastate))
+-- step 20 G20: NES UpdateMetaObjectEnd (Z_07.asm:5453) bumps RoomKillCount
+-- ($034F = ROOM_OW_CUR_KILL_TOTAL), distinct from WorldKillCount ($0627 =
+-- ROOM_KILL_COUNT). Drop conversion path must INC the per-room counter.
+gate(last_dm.room_kill_total > 0,
+     string.format("G20 RoomKillCount ($034F) bumped via UpdateMetaObjectEnd %d -> %d",
+                   first_dm.room_kill_total, last_dm.room_kill_total))
 
 w(string.rep("-", 60))
 w(pass and ">>> WALKER TICK TRACE: PASS <<<"

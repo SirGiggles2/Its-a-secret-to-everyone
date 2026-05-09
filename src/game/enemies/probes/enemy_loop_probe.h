@@ -125,7 +125,8 @@
  *   [10]  = ROOM_KILL_COUNT live (++ on each kill)
  *   [11]  = OBJ_STATE(13) live (sword swing state, expect stays 2)
  *   [12]  = COMBAT_HARM_FLAG live (++ on harm; from begin_shove)
- *   [13..15] = reserved
+ *   [13]  = ROOM_OW_CUR_KILL_TOTAL ($034F NES RoomKillCount, step 20)
+ *   [14..15] = reserved
  *
  * Block end = $FF7FE7. Used by step-19 probe to gate "damage+death+drop"
  * walker checklist line. */

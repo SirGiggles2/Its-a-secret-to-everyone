@@ -26,6 +26,7 @@
                              * / OBJ_STATE / OBJ_X / OBJ_Y / OBJ_DIR
                              * / LINK_DIR — step 19 damage probe */
 #include "link_state.h"     /* DEATH_FRAME_COUNTER — step 19 */
+#include "room_state.h"     /* ROOM_OW_CUR_KILL_TOTAL — step 20 (NES RoomKillCount $034F) */
 
 /* Step 17: counters live in enemy_walker_bridge.c. Read-only here. */
 extern volatile unsigned long g_check_monster_collisions_calls;
@@ -272,7 +273,7 @@ static void publish_damage_viz(volatile unsigned char *base)
     base[10] = (unsigned char)ROOM_KILL_COUNT;
     base[11] = (unsigned char)OBJ_STATE(13);
     base[12] = (unsigned char)COMBAT_HARM_FLAG;
-    base[13] = 0u;
+    base[13] = (unsigned char)ROOM_OW_CUR_KILL_TOTAL;  /* step 20: NES RoomKillCount $034F */
     base[14] = 0u;
     base[15] = 0u;
 }
