@@ -243,6 +243,16 @@ const enemy_init_fn enemy_init_fns[ENEMY_LOOP_TYPE_MAX] = {
      * enemy_boss_runtime.c:102. Primitives self-contained — only writes
      * 4 RAM cells, no callouts. */
     [0x3D] = enrt_init_aquamentus,               /* Aquamentus */
+    /* Task 7.4 step 11 — projectile-family INIT close.
+     *
+     * NES Z_07.asm:5601 InitObject_JumpTable rows:
+     *   $11 Zora  -> ResetObjMetastateAndTimer (already drained as
+     *                core_reset_obj_metastate_and_timer; extern'd
+     *                since 7.4 step 2b for use by other rows).
+     *   $21 Ghini -> InitSlowOctorockOrGhini (already extern'd +
+     *                wired for $07/$09; reused here per NES table). */
+    [0x11] = core_reset_obj_metastate_and_timer, /* Zora */
+    [0x21] = enrt_init_slow_octorock_or_ghini,   /* Ghini */
 };
 
 const enemy_update_fn enemy_update_fns[ENEMY_LOOP_TYPE_MAX] = {
