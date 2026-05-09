@@ -45,6 +45,9 @@ extern void update_meta_object(unsigned int slot);               /* step 20 */
 extern void enrt_init_blue_keese(unsigned int slot);             /* step 3 */
 extern void enrt_init_red_or_black_keese(unsigned int slot);     /* step 3 */
 extern void enrt_update_keese(unsigned int slot);                /* step 3 */
+extern void enrt_init_gel(unsigned int slot);                    /* step 4 */
+extern void enrt_update_zol(unsigned int slot);                  /* step 4 */
+extern void enrt_update_gel(unsigned int slot);                  /* step 4 */
 extern unsigned char core_reset_obj_state(unsigned int slot);
 
 /* z07_reset_obj_state forwarder. enrt_octorock_common (same TU as the
@@ -92,14 +95,15 @@ const enemy_init_fn enemy_init_fns[ENEMY_LOOP_TYPE_MAX] = {
     [0x1B] = enrt_init_blue_keese,             /* BlueKeese */
     [0x1C] = enrt_init_red_or_black_keese,     /* RedKeese */
     [0x1D] = enrt_init_red_or_black_keese,     /* BlackKeese */
-    /* Task 7.3 step 3+ pending (still NULL — bridge plumbing pending
-     * per audit doc tools/audit/drain_findings/phase7_task_7_3_step2/
-     * unresolved_primitives.md):
-     *   $13 Zol      → InitWalker            (needs c_update_zol_state,
-     *                                          c_zol_check_collisions)
-     *   $14 RedZol   → InitWalker            (alias of $13)
-     *   $15 Gel      → InitGel               (needs c_gel_move,
-     *                                          c_gel_check_collisions)
+    /* Task 7.3 step 4 — zol/gel family INIT wired. NES InitObject_JumpTable
+     * @ Z_07.asm:5601: $13/$14 = InitWalker (Zol/RedZol — bare walker init,
+     * no special body); $15 = InitGel (sets STATE_TIMER=2 then InitWalker).
+     * Bodies drained at enemy_walker_runtime.c:42 (InitWalker) and :92
+     * (InitGel). */
+    [0x13] = enrt_init_walker,                 /* Zol */
+    [0x14] = enrt_init_walker,                 /* RedZol */
+    [0x15] = enrt_init_gel,                    /* Gel */
+    /* Task 7.3 step 4+ pending (still NULL):
      *   $1A Peahat   → InitPeahat            (UPDATE drain pending)
      *   $28 Rope     → InitRope              (walker primitives drained;
      *                                          dispatch row lands step 5)
@@ -148,13 +152,21 @@ const enemy_update_fn enemy_update_fns[ENEMY_LOOP_TYPE_MAX] = {
     [0x1B] = enrt_update_keese,     /* BlueKeese */
     [0x1C] = enrt_update_keese,     /* RedKeese */
     [0x1D] = enrt_update_keese,     /* BlackKeese */
-    /* Task 7.3 step 4+ pending UPDATE rows:
+    /* Task 7.3 step 4 — zol/gel family UPDATE wired (NES Z_04.asm:5295).
+     * NES UpdateObject_JumpTable: $13 = UpdateZol; $14 RedZol uses
+     * UpdateGel (alias); $15 = UpdateGel. Bodies drained at
+     * enemy_walker_runtime.c:156/163. Primitives resolved by
+     * src/game/enemies/enemy_common_bridge.c (c_update_zol_state,
+     * c_zol_check_collisions, c_gel_move, c_gel_check_collisions, plus
+     * native c_shoot_limited drain for Zol state-2 split path). */
+    [0x13] = enrt_update_zol,       /* Zol */
+    [0x14] = enrt_update_gel,       /* RedZol — NES alias to UpdateGel */
+    [0x15] = enrt_update_gel,       /* Gel */
+    /* Task 7.3 step 5+ pending UPDATE rows:
      *   $12 UpdateVire           — boss_runtime.c link pending
-     *   $13 UpdateZol            — needs c_update_zol_state plumbing
-     *   $14 UpdateGel (RedZol)   — needs c_gel_move plumbing
-     *   $15 UpdateGel            — needs c_gel_move plumbing
      *   $1A UpdatePeahat         — drain pending
-     *   $28 UpdateRope           — needs c_walker_move plumbing
+     *   $28 UpdateRope           — walker primitives drained Task 7.2
+     *                              step 18 — single dispatch row (step 5)
      */
 
     /* Step 12: shot UPDATE rows (Z_07.asm:5379-5388 dispatch).

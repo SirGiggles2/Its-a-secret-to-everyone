@@ -192,6 +192,12 @@ ROOMROM_C_SOURCES = [
     # c_draw_object_mirrored_with_frame, with Flyer_Chase + Flyer_Wander
     # native drains from NES Z_04.asm:11707/11844.
     ("src/game/enemies/enemy_flyer_bridge.c", "game_enemy_flyer_bridge.o"),
+    # Task 7.3 step 4: zol/gel UPDATE primitives bridge — forwarders to
+    # already-drained enemy_common_runtime.c twins
+    # (c_update_zol_state/c_zol_check_collisions/c_gel_move/
+    # c_gel_check_collisions) + native c_shoot_limited drain
+    # (NES Z_04.asm:11369). Wires $13 Zol / $14 RedZol / $15 Gel rows.
+    ("src/game/enemies/enemy_common_bridge.c", "game_enemy_common_bridge.o"),
     ("src/game/enemies/probes/enemy_loop_probe.c", "game_enemy_loop_probe.o"),
     ("RoomRom/src/expanded_bg_chr.c", "expanded_bg_chr.o"),
     ("RoomRom/src/atlas/items_chr_x4.c", "atlas_items_chr_x4.o"),
