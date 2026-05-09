@@ -213,21 +213,71 @@ void c_obj_shove(unsigned int slot)
 
 unsigned int c_shoot_if_wanted(unsigned int shot_type, unsigned int slot)
 {
-    /* NES ShootIfWanted: spawns a shot object (rock/arrow/sword-shot/
-     * boomerang/fireball) for monster, returns CARRY_SET|shot_slot on
-     * success, 0 on fail.
+    /* NES Z_04.asm:11351 _ShootIfWanted + Z_07.asm:5795 FindEmptyMonsterSlot
+     * + Z_07.asm:5782 SetTypeAndClearObject + Z_01.asm:4026 DestroyObject_WRAM.
+     * Phase 7 Task 7.2 step 9 — projectile hook native drain.
+     * Stance: REPLACE (was step 6 stub).
      *
-     * Step 6 stub: always returns 0 (carry-clear = shot failed). This
-     * lets enrt_try_shooting + enrt_walker_set_input_dir... fall through
-     * the failure path without crashing, so octorok / moblin / stalfos /
-     * goriya walk normally but never spawn projectiles.
+     * NES sequence:
+     *   1. If ObjWantsToShoot == 0 -> return C=0.
+     *   2. FindEmptyMonsterSlot: scan Y=$0B downto $01 for ObjType==0.
+     *      None found -> return C=0.
+     *   3. If shot_type >= $53 (true projectile, not melee):
+     *        if ActiveMonsterShots >= 4 -> return C=0.
+     *        else INC ActiveMonsterShots.
+     *   4. SetTypeAndClearObject(shot_type, empty): writes ObjType[empty];
+     *      DestroyObject_WRAM zeroes ShoveDir/ShoveDist/Timer/State/
+     *      InvincibilityTimer + sets Uninitialized=$FF + Metastate=$01.
+     *   5. ObjState[empty] = $10, ObjTimer[empty] = 0,
+     *      Dir/X/Y[empty] = Dir/X/Y[shooter].
+     *   6. Return C=1, Y=empty.
      *
-     * TODO step 7: native projectile spawn (Phase 7 Task 7.2 master plan
-     * "projectile hook"). Will need shot_object_init dispatch + free-slot
-     * search across slots $0B..$0E. */
-    (void)shot_type;
-    (void)slot;
-    return 0u;
+     * This-project convention:
+     *   - empty slot == ENEMY_TYPE(s)==0 AND ENEMY_ALIVE_FLAG(s)==0.
+     *   - ENEMY_ALIVE_FLAG=1 marks the slot occupied.
+     *   - Shot UPDATE rows ($53 flying rock etc) must be wired in
+     *     enemy_update_fns[] separately for the shot to do anything;
+     *     until then it'll spawn but stand still — visible regression
+     *     surface for the next step. */
+
+    if (ENEMY_PUSH_TIMER(slot) == 0u) return 0u;
+
+    unsigned int empty = 0u;
+    {
+        unsigned int y = 0x0Bu;
+        for (;;) {
+            if (ENEMY_TYPE(y) == 0u) { empty = y; break; }
+            if (y == 0x01u) break;
+            y--;
+        }
+    }
+    if (empty == 0u) return 0u;
+
+    if (shot_type >= 0x53u) {
+        if (ENEMY_SHOT_COUNT >= 0x04u) return 0u;
+        ENEMY_SHOT_COUNT = (unsigned char)(ENEMY_SHOT_COUNT + 1u);
+    }
+
+    /* SetTypeAndClearObject + DestroyObject_WRAM compositional clear.
+     * Mirrors clear_slot_scratch() in enemy_loop.c but written out so
+     * the trampoline match to NES sequence is auditable. */
+    ENEMY_TYPE(empty)              = (unsigned char)shot_type;
+    ENEMY_OBJ_SHOVE_DIR(empty)     = 0u;
+    OBJ(0x00D3u, empty)            = 0u;  /* ObjShoveDistance */
+    ENEMY_MOVE_TIMER(empty)        = 0u;  /* ObjTimer ($0028) */
+    ENEMY_STATE_TIMER(empty)       = 0u;  /* ObjState ($00AC) */
+    ENEMY_HIT_REACTION(empty)      = 0u;  /* ObjInvincibilityTimer ($04F0) */
+    ENEMY_METASTATE(empty)         = 0x01u;
+    ENEMY_ALIVE_FLAG(empty)        = 1u;  /* slot now occupied */
+
+    /* Shoot block: state $10 = "shot active", copy dir/x/y from shooter. */
+    ENEMY_STATE_TIMER(empty) = 0x10u;
+    ENEMY_MOVE_TIMER(empty)  = 0u;
+    ENEMY_DIR(empty)         = (unsigned char)ENEMY_DIR(slot);
+    ENEMY_X(empty)           = (unsigned char)ENEMY_X(slot);
+    ENEMY_Y(empty)           = (unsigned char)ENEMY_Y(slot);
+
+    return CARRY_SET | empty;
 }
 
 /* -------- Step 6: native enrt_update_octorock -------- */
