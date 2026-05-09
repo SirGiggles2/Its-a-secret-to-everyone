@@ -164,6 +164,11 @@ ROOMROM_C_SOURCES = [
     ("src/oracle/enemies/enemy_common_runtime.c", "oracle_enemy_common.o"),
     ("src/oracle/enemies/enemy_wanderer_runtime.c", "oracle_enemy_wanderer.o"),
     ("src/oracle/enemies/enemy_walker_runtime.c", "oracle_enemy_walker.o"),
+    # Task 7.2 step 12: shot UPDATE rows ($53/$54/$57-$5A monster shots,
+    # $55/$56 fireballs). enemy_projectile_runtime.c carries
+    # enrt_update_monster_shot / enrt_update_fireball / enrt_destroy_monster_shot
+    # + L_DrawShot fall-through.
+    ("src/oracle/enemies/enemy_projectile_runtime.c", "oracle_enemy_projectile.o"),
     # Task 7.2 step 2: enemy slot iterator + dispatch + ObjLists port (WT-5
     # promotion — gameplay code under src/game/, not RoomRom/).
     ("src/game/enemies/enemy_loop.c", "game_enemy_loop.o"),
@@ -174,6 +179,9 @@ ROOMROM_C_SOURCES = [
     # into UPDATE table below; --gc-sections retains only what enrt_update_*
     # transitively reaches.
     ("src/game/enemies/enemy_walker_bridge.c", "game_enemy_walker_bridge.o"),
+    # Step 12: shot UPDATE primitives bridge (forwarders for c_move_object,
+    # z01_bound_by_room, z07_destroy_monster, etc — same model as walker_bridge).
+    ("src/game/enemies/enemy_projectile_bridge.c", "game_enemy_projectile_bridge.o"),
     ("src/game/enemies/probes/enemy_loop_probe.c", "game_enemy_loop_probe.o"),
     ("RoomRom/src/expanded_bg_chr.c", "expanded_bg_chr.o"),
     ("RoomRom/src/atlas/items_chr_x4.c", "atlas_items_chr_x4.o"),

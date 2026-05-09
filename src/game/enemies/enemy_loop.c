@@ -39,6 +39,8 @@ extern void enrt_update_moblin(unsigned int slot);               /* step 7 */
 extern void enrt_update_goriya(unsigned int slot);               /* step 7 */
 extern void enrt_update_stalfos(unsigned int slot);              /* step 7 */
 extern void enrt_update_darknut(unsigned int slot);              /* step 11 */
+extern void enrt_update_monster_shot(unsigned int slot);         /* step 12 */
+extern void enrt_update_fireball(unsigned int slot);             /* step 12 */
 extern unsigned char core_reset_obj_state(unsigned int slot);
 
 /* z07_reset_obj_state forwarder. enrt_octorock_common (same TU as the
@@ -117,6 +119,23 @@ const enemy_update_fn enemy_update_fns[ENEMY_LOOP_TYPE_MAX] = {
     [0x0B] = enrt_update_darknut,   /* BlueDarknut (step 11 native drain) */
     [0x0C] = enrt_update_darknut,   /* RedDarknut */
     [0x2A] = enrt_update_stalfos,   /* Stalfos (drained, full body) */
+
+    /* Step 12: shot UPDATE rows (Z_07.asm:5379-5388 dispatch).
+     * NES UpdateMonsterShot (Z_04.asm:820) covers $53/$54 flying-rocks +
+     * $57/$58/$59/$5A sword/magic/boomerang shots.
+     * NES UpdateFireball (Z_04.asm offsets) covers $55/$56 fireballs.
+     * Step 12 also fixed drain bug — enrt_update_monster_shot now falls
+     * through to enrt_draw_shot (NES L_DrawShot label).
+     * UpdateMonsterArrow ($5B) + UpdateArrowOrBoomerang ($5C) have
+     * separate NES bodies — NOT yet drained, rows left NULL. */
+    [0x53] = enrt_update_monster_shot,  /* FlyingRock (octorok shot) */
+    [0x54] = enrt_update_monster_shot,  /* (alt rock) */
+    [0x55] = enrt_update_fireball,      /* Fireball */
+    [0x56] = enrt_update_fireball,      /* Fireball2 */
+    [0x57] = enrt_update_monster_shot,  /* SwordShot */
+    [0x58] = enrt_update_monster_shot,  /* MagicShot */
+    [0x59] = enrt_update_monster_shot,  /* (shot variant) */
+    [0x5A] = enrt_update_monster_shot,  /* (shot variant) */
 };
 
 /* Internal: clear an enemy slot's scratch state per NES room-init

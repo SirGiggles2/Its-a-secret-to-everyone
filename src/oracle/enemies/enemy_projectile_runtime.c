@@ -260,8 +260,13 @@ void enrt_update_monster_shot(unsigned int slot) {
     /* Move, then check for Link collision. */
     c_move_object((unsigned short)slot);
     enrt_check_shot_link_collision(slot);
-    if (ENEMY_COLLISION_FLAG != 0)
+    if (ENEMY_COLLISION_FLAG != 0) {
         enrt_destroy_monster_shot(slot);
+        return;
+    }
+    /* Step 12: NES UpdateMonsterShot falls through to L_DrawShot
+     * (Z_04.asm:860). Prior drain returned here; matches NES now. */
+    enrt_draw_shot(slot);
 }
 
 /* Fireball_MoveOneAxis — load q-speed and position fraction, run a
