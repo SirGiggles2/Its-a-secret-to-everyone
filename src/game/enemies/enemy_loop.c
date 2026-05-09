@@ -100,6 +100,11 @@ extern void enrt_update_wallmaster(unsigned int slot);
  * Body drained at src/oracle/enemies/enemy_walker_runtime.c:37
  * (RedLeeverLongTimer=5 + z07_reset_obj_metastate_and_timer). */
 extern void enrt_init_leever(unsigned int slot);
+/* 7.6 step 2 — BlueLeever UPDATE bridge ($0F). NES UpdateBlueLeever
+ * @ Z_04.asm:2599 — sets ObjTurnRate ($041F = ENEMY_AIR_SPEED) to
+ * $A0, calls Wanderer_TargetPlayer, falls through to UpdateBurrower
+ * (c_update_burrower already drained in enemy_jumper_bridge.c). */
+extern void enrt_update_blue_leever(unsigned int slot);
 
 /* z07_reset_obj_state forwarder. enrt_octorock_common (same TU as the
  * init we wire below) calls this symbol. The drained body lives at
@@ -594,6 +599,13 @@ const enemy_update_fn enemy_update_fns[ENEMY_LOOP_TYPE_MAX] = {
      *       cursor, look up SpriteOffsets[idx], patch $9C->$AC keese-
      *       tile fixup on closed-hand frame. */
     [0x27] = enrt_update_wallmaster,        /* Wallmaster */
+    /* Task 7.6 step 2 — BlueLeever UPDATE ($0F). NES UpdateBlueLeever
+     * @ Z_04.asm:2599-2647: ObjTurnRate=$A0 (ENEMY_AIR_SPEED=$A0) +
+     * Wanderer_TargetPlayer + UpdateBurrower fall-through. Bridge body
+     * at enemy_jumper_bridge.c:enrt_update_blue_leever — composes
+     * enrt_wanderer_target_player (drained twin) + c_update_burrower
+     * (already drained for $11 Zora UPDATE chain). */
+    [0x0F] = enrt_update_blue_leever,       /* BlueLeever */
 };
 
 /* Internal: clear an enemy slot's scratch state per NES room-init

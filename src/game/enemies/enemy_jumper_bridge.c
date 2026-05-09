@@ -333,3 +333,28 @@ void c_update_burrower(unsigned int slot)
         }
     }
 }
+
+/* ----------------------------------------------------------------- *
+ * Phase 7 Task 7.6 step 2 — UpdateBlueLeever bridge ($0F).
+ *
+ * NES `Z_04.asm:2599-2647` UpdateBlueLeever:
+ *   LDA #$A0                       ; turn rate
+ *   STA ObjTurnRate, X             ; $041F+slot = ENEMY_AIR_SPEED
+ *   JSR Wanderer_TargetPlayer      ; turn-toward-Link AI
+ *   ; fall through to UpdateBurrower (this file: c_update_burrower)
+ *
+ * Wanderer_TargetPlayer drained at
+ *   src/oracle/enemies/enemy_wanderer_runtime.c:63 (enrt_wanderer_target_player).
+ * UpdateBurrower drained natively above (c_update_burrower).
+ *
+ * Stance: EXTEND. Three-line bridge body — single AIR_SPEED seed +
+ * two drained-twin calls.
+ */
+extern void enrt_wanderer_target_player(unsigned int slot);
+
+void enrt_update_blue_leever(unsigned int slot)
+{
+    ENEMY_AIR_SPEED(slot) = 0xA0u;
+    enrt_wanderer_target_player(slot);
+    c_update_burrower(slot);
+}
