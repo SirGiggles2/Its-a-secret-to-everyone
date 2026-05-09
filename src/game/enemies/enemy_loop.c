@@ -61,6 +61,8 @@ extern void enrt_update_zora(unsigned int slot);                 /* 7.4 step 2b 
 extern void enrt_update_ghini(unsigned int slot);                /* 7.4 step 3 */
 extern void enrt_update_flying_ghini(unsigned int slot);         /* 7.4 step 6a */
 extern void enrt_update_armos(unsigned int slot);                /* 7.4 step 6b */
+extern void enrt_update_gibdo(unsigned int slot);                /* 7.4 step 6d */
+extern void enrt_update_bubble(unsigned int slot);               /* 7.4 step 6d */
 extern void core_reset_obj_metastate_and_timer(unsigned int slot); /* 7.4 step 2b ($11 INIT) */
 extern unsigned char core_reset_obj_state(unsigned int slot);
 
@@ -281,6 +283,29 @@ const enemy_update_fn enemy_update_fns[ENEMY_LOOP_TYPE_MAX] = {
      * INIT row $1E + $22 still deferred — InitArmosOrFlyingGhini reaches
      * ChangeTileObjTiles + secret-armos table not yet drained. */
     [0x1E] = enrt_update_armos,             /* Armos */
+    /* Task 7.4 step 6d — bubble + gibdo UPDATE wires.
+     *
+     * NES Z_07.asm:5295 UpdateObject_JumpTable rows:
+     *   $2B BlueBubble  -> UpdateBubble (Z_04.asm:bubble entry).
+     *   $2C RedBubble   -> UpdateBubble.
+     *   $2D BlueBubble2 -> UpdateBubble.
+     *   $30 Gibdo       -> UpdateGibdo (Z_04.asm:7012 region).
+     *
+     * Both drained: enemy_walker_runtime.c:14 (bubble) and
+     * enemy_common_runtime.c:22 (gibdo). All composed primitives
+     * already linked into Debug.md:
+     *   - wanderer_update_common / enrt_update_common_wanderer
+     *     (enemy_wanderer_runtime.c — already used by ghini/moblin).
+     *   - z01_anim_set_sprite_desc_attrs / enrt_animate_and_draw_common_object
+     *     (enemy_walker_bridge.c:182/195/206).
+     *   - z01_check_link_collision (enemy_projectile_bridge.c:53).
+     *   - c_check_monster_collisions (link_collision_dispatch.c).
+     *   - c_draw_object_not_mirrored_with_frame (draw_dispatch.c).
+     *   - z07_anim_set_obj_hflip (enemy_walker_bridge.c:187). */
+    [0x2B] = enrt_update_bubble,            /* BlueBubble */
+    [0x2C] = enrt_update_bubble,            /* RedBubble */
+    [0x2D] = enrt_update_bubble,            /* BlueBubble2 */
+    [0x30] = enrt_update_gibdo,             /* Gibdo */
 };
 
 /* Internal: clear an enemy slot's scratch state per NES room-init
