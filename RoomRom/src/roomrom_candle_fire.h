@@ -22,4 +22,10 @@ void roomrom_candle_fire_spawn(link_face_t face, short link_x, short link_y);
 void roomrom_candle_fire_update(void);
 unsigned char roomrom_candle_fire_active(void);
 
+/* NES Z_01.asm:3967 UsedCandle: per-room flag, blocks 2nd blue-candle
+ * spawn. Reset on room transition (load_room). Red candle ignores. */
+unsigned char roomrom_candle_fire_used_this_room(void);
+void          roomrom_candle_fire_mark_used(void);
+void          roomrom_candle_fire_room_reset(void);
+
 #endif

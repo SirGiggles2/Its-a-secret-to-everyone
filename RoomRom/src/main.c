@@ -404,6 +404,9 @@ static void load_room(u8 room_id)
         s_cur_room_has_item = 0u;
         roomrom_sprites_clear_room_item();
     }
+    /* NES Z_01.asm:3967 UsedCandle clears on room transition — blue candle
+     * regains its 1-shot per new room. Red candle ignores the flag. */
+    roomrom_candle_fire_room_reset();
 }
 
 /* Phase 1: pick the live-NES item-atlas variant for the current scene+map.

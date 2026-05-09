@@ -1,5 +1,15 @@
 #include "roomrom_arrow.h"
 #include "roomrom_sprites.h"
+#include "inventory.h"
+
+/* NES Z_05.asm:2945 WieldArrow / Z_07.asm UpdateRodOrArrow: refuse if
+ * `Bow == 0` (InvBow ownership) OR if `InvArrow == 0` (no arrow tier
+ * picked up) OR if `InvRupees == 0` (each shot costs 1 rupee — NES Z1
+ * checks `LDA InvRupees / BEQ` before spawn).
+ *
+ * RoomRom v6: gate spawn on those three checks; cost-decrement of
+ * InvRupees deferred (status-bar tick animation lives in Task 6.10.10
+ * — until then debiting causes desync with the absent rupee-tick HUD). */
 
 /* NES: UpdateRodOrArrow (Z_07.asm:4322) -> arrow item slot 2, base attr 0
  * (RDirectionToWeaponBaseAttribute = 0 for all dirs). */
@@ -27,6 +37,9 @@ void roomrom_arrow_init(void)
 void roomrom_arrow_fire(link_face_t face, short link_x, short link_y)
 {
     if (s_state != ARROW_IDLE) return;
+    if (g_inventory.bow == 0u) return;
+    if (g_inventory.arrow == INV_ARROW_NONE) return;
+    if (g_inventory.rupees == 0u) return;
     s_state = ARROW_FLYING;
     s_face  = face;
     /* Spawn at Link's center, offset 8 px in facing direction. */

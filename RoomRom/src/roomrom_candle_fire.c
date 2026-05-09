@@ -30,6 +30,7 @@
 #include "roomrom_candle_fire.h"
 #include "roomrom_vram_map.h"
 #include "atlas/items_chr_x4.h"
+#include "inventory.h"
 
 /* Travel: NES uses q-speed $20 = 0.5 px/frame for distance $10 (16 px),
  * then stand $3F frames. Approximate with whole-pixel travel.
@@ -63,6 +64,13 @@ static unsigned char s_stand_timer     = 0u;
 static unsigned char s_anim_tick       = 0u;
 static unsigned char s_anim_frame      = 0u;
 
+/* NES UsedCandle ($0506 in NES RAM map): blue candle 1-shot per room. */
+static unsigned char s_used_candle = 0u;
+
+unsigned char roomrom_candle_fire_used_this_room(void) { return s_used_candle; }
+void          roomrom_candle_fire_mark_used(void)      { s_used_candle = 1u; }
+void          roomrom_candle_fire_room_reset(void)     { s_used_candle = 0u; }
+
 static void hide_slot(void)
 {
     VDP_setSpriteFull(CANDLE_FIRE_SLOT,
@@ -83,9 +91,16 @@ void roomrom_candle_fire_init(void)
     hide_slot();
 }
 
+/* NES Z_01.asm:3958 WieldCandle: refuse if Link doesn't own a candle
+ * (`InvCandle == 0`) or, for the blue candle (tier 1), if `UsedCandle`
+ * is already set this room. Red candle (tier 2) ignores UsedCandle. */
 void roomrom_candle_fire_spawn(link_face_t face, short link_x, short link_y)
 {
     if (s_state != FIRE_IDLE) return;
+    if (g_inventory.candle == INV_CANDLE_NONE) return;
+    if (g_inventory.candle == INV_CANDLE_BLUE
+        && roomrom_candle_fire_used_this_room()) return;
+    roomrom_candle_fire_mark_used();
     s_state = FIRE_FLYING;
     s_face  = face;
     s_x     = link_x;
