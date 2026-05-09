@@ -1,8 +1,13 @@
 #include "roomrom_boomerang.h"
 #include "roomrom_sprites.h"
+#include "inventory.h"
 
 /* NES: DrawBoomerangAndCheckCollision (Z_07.asm:3437) -> base attr 0
- * (RDirectionToWeaponBaseAttribute = 0 for all dirs). */
+ * (RDirectionToWeaponBaseAttribute = 0 for all dirs).
+ *
+ * NES Z_05.asm WieldBoomerang: ownership = items bit ITEMS_BIT_BOOMERANG
+ * ($0656 bit 2). Tier upgrade (wood→magic) also lives in items bitfield;
+ * boomerang range/speed parity deferred until tier-aware atlas lands. */
 #define ROOMROM_BOOMERANG_SUBPAL 0u
 
 /* See roomrom_boomerang.h for NES disasm references. */
@@ -39,6 +44,7 @@ void roomrom_boomerang_init(void)
 void roomrom_boomerang_throw(link_face_t face, short link_x, short link_y)
 {
     if (s_state != BOOMERANG_IDLE) return;
+    if ((g_inventory.items & ITEMS_BIT_BOOMERANG) == 0u) return;
     s_state = BOOMERANG_OUT;
     s_frame = 0u;
     s_phase_idx = 0u;

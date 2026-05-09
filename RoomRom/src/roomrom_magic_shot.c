@@ -1,5 +1,6 @@
 #include "roomrom_magic_shot.h"
 #include "roomrom_sprites.h"
+#include "inventory.h"
 
 /* Magic rod shot — projectile fired when B-item = ROD pressed.
  *
@@ -7,7 +8,10 @@
  * via Anim_ItemFrameTiles[$2B] = $7A (vertical) / $2B+1 = $7C (horizontal).
  * "Flash" effect: sprite attr = (FrameCounter & 3) | base_attr_for_dir.
  * Genesis impl cycles sub-pal 0..2 (atlas dropped sub-pal 3 in 4→3 unblock
- * 2026-05-08; NES sub-pal 3 wraps to 0). */
+ * 2026-05-08; NES sub-pal 3 wraps to 0).
+ *
+ * NES Z_05.asm WieldRod / Z_07.asm UpdateRodOrArrow: ownership = items
+ * bit ITEMS_BIT_WAND ($0656 bit 1). No rupee cost (rod is free vs arrow). */
 
 #define MAGIC_SHOT_SPEED_PX     3
 #define MAGIC_SHOT_BOUND_X_MIN  ((short)(-16))
@@ -33,6 +37,7 @@ void roomrom_magic_shot_init(void)
 void roomrom_magic_shot_fire(link_face_t face, short link_x, short link_y)
 {
     if (s_state != MAGIC_SHOT_IDLE) return;
+    if ((g_inventory.items & ITEMS_BIT_WAND) == 0u) return;
     s_state = MAGIC_SHOT_FLYING;
     s_face  = face;
     s_x = link_x;
