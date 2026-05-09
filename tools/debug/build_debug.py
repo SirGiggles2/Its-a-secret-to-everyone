@@ -152,6 +152,8 @@ ROOMROM_C_SOURCES = [
     # Task 6.11.1/6.11.3: HeartValues damage path + ObjInvincibilityTimer.
     ("RoomRom/src/roomrom_link_damage.c", "roomrom_link_damage.o"),
     ("RoomRom/src/roomrom_palette_tick.c", "roomrom_palette_tick.o"),
+    # Task 7.1: enemy framework (RNG byte-for-byte port of @ScrambleRandom).
+    ("RoomRom/src/roomrom_rng.c", "roomrom_rng.o"),
     ("RoomRom/src/expanded_bg_chr.c", "expanded_bg_chr.o"),
     ("RoomRom/src/atlas/items_chr_x4.c", "atlas_items_chr_x4.o"),
     # PR-4a: scene-bank scaffolding + DMA state machine.
