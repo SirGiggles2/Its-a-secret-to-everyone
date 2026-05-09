@@ -66,6 +66,12 @@ extern void enrt_update_bubble(unsigned int slot);               /* 7.4 step 6d 
 extern void enrt_init_tektite(unsigned int slot);                /* 7.4 step 6e */
 extern void enrt_init_bubble(unsigned int slot);                 /* 7.4 step 6e */
 extern void enrt_init_armos_or_flying_ghini(unsigned int slot);  /* 7.4 step 6c */
+/* 7.4 step 7 — whirlwind + trap UPDATE + INIT (trap_dispatch.c).
+ * Native drains already linked into Debug.md; just need externs +
+ * dispatch rows. NES SwitchBank #$01 collapses to no-op on Genesis. */
+extern void trap_update_whirlwind_full(unsigned int slot);
+extern void trap_update_trap_full(unsigned int slot);
+extern void trap_init_trap_full(unsigned int slot);
 extern void core_reset_obj_metastate_and_timer(unsigned int slot); /* 7.4 step 2b ($11 INIT) */
 extern unsigned char core_reset_obj_state(unsigned int slot);
 
@@ -194,6 +200,19 @@ const enemy_init_fn enemy_init_fns[ENEMY_LOOP_TYPE_MAX] = {
      * UPDATE rows ($1E from 6b, $22 from 6a). */
     [0x1E] = enrt_init_armos_or_flying_ghini,    /* Armos */
     [0x22] = enrt_init_armos_or_flying_ghini,    /* FlyingGhini */
+    /* Task 7.4 step 7 — trap INIT wires.
+     *
+     * NES Z_07.asm:5601 InitObject_JumpTable rows:
+     *   $49 Trap -> InitTrap (Z_07.asm:5712 -> InitTrap_Full Z_01.asm).
+     *   $4A Trap -> InitTrap.
+     *   $2E Whirlwind -> DoNothing (no init body — NULL).
+     *
+     * Native body trap_init_trap_full @ src/game/world/trap_dispatch.c
+     * (drained from src/oracle/world/trap_runtime.c:4). Spawns a
+     * 4 / 6-trap cluster from TrapXs/TrapYs into TRAP_BASE_SLOT+i.
+     * Composes core_init_one_simple_object (already drained). */
+    [0x49] = trap_init_trap_full,                /* Trap */
+    [0x4A] = trap_init_trap_full,                /* Trap (alt) */
 };
 
 const enemy_update_fn enemy_update_fns[ENEMY_LOOP_TYPE_MAX] = {
@@ -362,6 +381,32 @@ const enemy_update_fn enemy_update_fns[ENEMY_LOOP_TYPE_MAX] = {
      * randomization). */
     [0x0D] = enrt_update_tektite_or_boulder, /* BlueTektite */
     [0x0E] = enrt_update_tektite_or_boulder, /* RedTektite */
+    /* Task 7.4 step 7 — whirlwind + trap UPDATE wires.
+     *
+     * NES Z_07.asm:5295 UpdateObject_JumpTable rows:
+     *   $2E Whirlwind -> UpdateWhirlwind (SwitchBank #$01 + JMP
+     *                    UpdateWhirlwind_Full Z_01.asm:1765).
+     *   $49 Trap      -> UpdateTrap (SwitchBank #$01 + JMP
+     *                    UpdateTrap_Full Z_01.asm:2434).
+     *   $4A Trap      -> UpdateTrap.
+     *
+     * Native bodies already drained + linked via
+     * src/game/world/trap_dispatch.c (trap_update_whirlwind_full /
+     * trap_update_trap_full). All composed primitives resolved:
+     *   - core_set_up_whirlwind, core_destroy_whirlwind,
+     *     core_init_one_simple_object, core_get_opposite_dir,
+     *     core_anim_set_sprite_desc_attrs (core_dispatch.c).
+     *   - link_collision_check_link_collision (link_collision_dispatch.c).
+     *   - sprite_anim_advance_and_fetch / sprite_anim_set_obj_hflip
+     *     / sprite_anim_fetch_obj_pos (sprite_dispatch.c).
+     *   - draw_object_not_mirrored_with_frame (draw_dispatch.c).
+     *   - room_go_to_next_mode_from_play (room_dispatch.c).
+     *   - uw_person_person_draw_and_check_collisions (uw_person_dispatch.c).
+     *
+     * SwitchBank #$01 collapses to no-op (single linear address space). */
+    [0x2E] = trap_update_whirlwind_full,    /* Whirlwind */
+    [0x49] = trap_update_trap_full,         /* Trap */
+    [0x4A] = trap_update_trap_full,         /* Trap (alt) */
 };
 
 /* Internal: clear an enemy slot's scratch state per NES room-init
