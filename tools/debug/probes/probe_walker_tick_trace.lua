@@ -32,6 +32,7 @@
 local TICK_BASE = 0x7F00     -- $FF7F00 in 68K RAM domain (post-tick)
 local PRE_BASE  = 0x7F40     -- $FF7F40 (pre-tick snapshot)
 local MULTI_BASE = 0x7F80    -- $FF7F80 step-8 multi-slot block
+local SHOT_BASE = 0x7FA8     -- $FF7FA8 step-14 shot scan block
 local PROBE_BASE = 0x7E00    -- $FF7E00 (init probe)
 local DOMAIN = "68K RAM"
 
@@ -109,12 +110,44 @@ local function multi_slot(probe_idx)
     }
 end
 
--- 5) Sample 13 snapshots over 120 frames (every 10 frames).
+-- step 14 shot-scan reader.
+local function shot_scan()
+    local b = {
+        magic_s   = read_u8(SHOT_BASE, 0),
+        magic_h   = read_u8(SHOT_BASE, 1),
+        active    = read_u8(SHOT_BASE, 2),
+        found     = read_u8(SHOT_BASE, 3),
+        entries   = {},
+    }
+    for i = 0, 7 do
+        local e = {
+            slot = read_u8(SHOT_BASE, 4 + i*4 + 0),
+            type_= read_u8(SHOT_BASE, 4 + i*4 + 1),
+            x    = read_u8(SHOT_BASE, 4 + i*4 + 2),
+            y    = read_u8(SHOT_BASE, 4 + i*4 + 3),
+        }
+        table.insert(b.entries, e)
+    end
+    return b
+end
+
+-- 5) Sample 31 snapshots over 600 frames (step 14: longer to give
+-- octorok a window to actually shoot via c_shoot_if_wanted).
 local samples = {}
 local multi_samples = {{}, {}, {}, {}, {}}  -- per-slot (1..5) sample lists
-for i = 1, 13 do
+local shot_samples = {}                      -- step 14
+local shot_max_active = 0                    -- step 14 peak ActiveMonsterShots
+local shot_max_found  = 0                    -- step 14 peak shot slot count
+local shot_first_seen = nil                  -- step 14 first sample with found > 0
+for i = 1, 31 do
     local s = snapshot()
     table.insert(samples, s)
+    -- step 14 shot capture every iteration
+    local sh = shot_scan()
+    table.insert(shot_samples, sh)
+    if sh.active > shot_max_active then shot_max_active = sh.active end
+    if sh.found  > shot_max_found  then shot_max_found  = sh.found  end
+    if shot_first_seen == nil and sh.found > 0 then shot_first_seen = i end
     local pre_type = read_u8(PRE_BASE, 5)
     local pre_alive = read_u8(PRE_BASE, 4)
     local raw_350 = read_u8(PRE_BASE, 16)
@@ -133,8 +166,8 @@ for i = 1, 13 do
     for slot_idx = 1, 5 do
         table.insert(multi_samples[slot_idx], multi_slot(slot_idx - 1))
     end
-    if i < 13 then
-        for _ = 1, 10 do emu.frameadvance() end
+    if i < 31 then
+        for _ = 1, 20 do emu.frameadvance() end
     end
 end
 
@@ -153,6 +186,35 @@ for slot_idx = 1, 5 do
         first.anim_t, last.anim_t,
         first.draw_f, last.draw_f,
         first.walk_spd, last.walk_spd))
+end
+
+w(string.rep("-", 60))
+
+-- step 14 shot-scan diagnostic dump (NOT a PASS gate — observation only).
+-- If shot_max_active > 0 OR shot_max_found > 0, the shot UPDATE rows
+-- ($53/$57 etc) are firing live. If both 0, octorok never reached
+-- ObjWantsToShoot=1 in this trace window. Either way: data, not failure.
+do
+    local first_shot = shot_samples[1]
+    local last_shot  = shot_samples[#shot_samples]
+    w("STEP 14 SHOT SCAN -- $FF7FA8 (ActiveMonsterShots + slots 1..15 typed $53..$5C)")
+    w(string.format("  magic 'SH' = '%c%c'", first_shot.magic_s, first_shot.magic_h))
+    w(string.format("  ActiveMonsterShots first=%d last=%d peak=%d",
+                    first_shot.active, last_shot.active, shot_max_active))
+    w(string.format("  shot slots found first=%d last=%d peak=%d",
+                    first_shot.found, last_shot.found, shot_max_found))
+    if shot_first_seen ~= nil then
+        w(string.format("  first shot observed at sample idx=%d (~frame %d)",
+                        shot_first_seen, (shot_first_seen-1)*20))
+        for _, e in ipairs(shot_samples[shot_first_seen].entries) do
+            if e.type_ ~= 0 then
+                w(string.format("    slot %2d type=$%02X xy=(%3d,%3d)",
+                                e.slot, e.type_, e.x, e.y))
+            end
+        end
+    else
+        w("  no shot slots observed across trace window (octorok never shot)")
+    end
 end
 
 w(string.rep("-", 60))

@@ -19,6 +19,7 @@
 #include "../enemy_loop.h"
 #include "../../../../RoomRom/src/roomrom_enemy_state.h"
 #include "object_state.h"   /* OBJ_STATE for step-3 forwarder check */
+#include "platform_abi.h"   /* RAM($034C) ActiveMonsterShots — step 14 */
 
 static void put_u16_be(volatile unsigned char *p, unsigned short v)
 {
@@ -175,12 +176,44 @@ static void publish_multi_slot(volatile unsigned char *base,
     p[7] = (unsigned char)ENEMY_WALK_SPEED(slot);
 }
 
+/* Step 14 shot scanner. Walks slots 1..15, records first 8 with
+ * ENEMY_TYPE in $53..$5C (any shot/arrow/boomerang). Publishes
+ * ActiveMonsterShots ($034C) so probe can verify decrement after
+ * shot dies. */
+static void publish_shot_scan(volatile unsigned char *base)
+{
+    base[0] = 0x53u;                                          /* 'S' */
+    base[1] = 0x48u;                                          /* 'H' */
+    base[2] = (unsigned char)RAM(0x034Cu);                    /* ActiveMonsterShots */
+
+    unsigned int found = 0u;
+    for (unsigned int slot = 1u; slot < 16u && found < 8u; slot++) {
+        const unsigned char t = (unsigned char)ENEMY_TYPE(slot);
+        if (t >= 0x53u && t <= 0x5Cu) {
+            volatile unsigned char *e = &base[4u + found * 4u];
+            e[0] = (unsigned char)slot;
+            e[1] = t;
+            e[2] = (unsigned char)ENEMY_X(slot);
+            e[3] = (unsigned char)ENEMY_Y(slot);
+            found++;
+        }
+    }
+    base[3] = (unsigned char)found;
+    /* Zero unused slots so a shrinking found_count is visible. */
+    for (unsigned int i = found; i < 8u; i++) {
+        volatile unsigned char *e = &base[4u + i * 4u];
+        e[0] = 0u; e[1] = 0u; e[2] = 0u; e[3] = 0u;
+    }
+}
+
 void enemy_loop_probe_publish_live(void)
 {
     volatile unsigned char *block =
         (volatile unsigned char *)ENEMY_LOOP_TICK_PROBE_BASE;
     volatile unsigned char *multi =
         (volatile unsigned char *)ENEMY_LOOP_MULTI_SLOT_BASE;
+    volatile unsigned char *shot_scan =
+        (volatile unsigned char *)ENEMY_LOOP_SHOT_SCAN_BASE;
     static unsigned short frame_counter = 0u;
     frame_counter++;
 
@@ -191,6 +224,8 @@ void enemy_loop_probe_publish_live(void)
     publish_multi_slot(multi, 2u, 3u);
     publish_multi_slot(multi, 3u, 4u);
     publish_multi_slot(multi, 4u, 5u);
+
+    publish_shot_scan(shot_scan);
 
     block[0]  = 0x54u;                                /* 'T' */
     block[1]  = 0x4Bu;                                /* 'K' */

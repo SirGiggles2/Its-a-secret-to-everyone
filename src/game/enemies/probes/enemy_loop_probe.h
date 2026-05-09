@@ -72,6 +72,21 @@
  * tick + move without crashing. */
 #define ENEMY_LOOP_MULTI_SLOT_BASE 0x00FF7F80UL
 
+/* Step 14 shot-scan block at $FF7FA8 (after multi-slot 5*8=40 bytes
+ * ending at $FF7FA7). Scans slots 1..15 every frame for any ENEMY_TYPE
+ * in $53..$5C (shot/arrow/boomerang). Records first 8 hits.
+ * Layout:
+ *   [0]   = 'S' (0x53) magic
+ *   [1]   = 'H' (0x48) magic
+ *   [2]   = ActiveMonsterShots ($034C)
+ *   [3]   = scan_count (number of shot slots found, 0..8)
+ *   [4..] = up to 8 entries x 4 bytes: [slot, type, x, y]
+ * Total = 4 + 32 = 36 bytes. Block end = $FF7FCB.
+ *
+ * Used by step-14 probe extension to verify shot UPDATE rows fire on
+ * dynamically-spawned shot slots. */
+#define ENEMY_LOOP_SHOT_SCAN_BASE 0x00FF7FA8UL
+
 #ifdef __cplusplus
 extern "C" {
 #endif
