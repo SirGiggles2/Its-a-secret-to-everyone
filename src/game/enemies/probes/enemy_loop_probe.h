@@ -55,7 +55,7 @@
  * first tick wiped it. */
 #define ENEMY_LOOP_TICK_PRE_PROBE_BASE 0x00FF7F40UL
 
-/* Step 8 multi-slot block at $FF7F80. 4 slots * 8 bytes = 32 bytes.
+/* Step 8 multi-slot block at $FF7F80. 5 slots * 8 bytes = 40 bytes.
  * Per-slot layout (offset = (slot_idx-1) * 8 within block):
  *   [0] = ENEMY_ALIVE_FLAG
  *   [1] = ENEMY_TYPE
@@ -66,9 +66,10 @@
  *   [6] = ENEMY_DRAW_FRAME
  *   [7] = ENEMY_WALK_SPEED
  *
- * Slot 1=octorock $07 (existing), 2=moblin $03, 3=goriya $05, 4=stalfos $2A.
- * Used by step-8 multi-slot trace to verify dispatch[$03/$05/$2A] tick
- * without crashing. */
+ * Slot 1=octorock $07, 2=moblin $03, 3=goriya $05, 4=stalfos $2A,
+ *      5=darknut $0B (step 11).
+ * Used by step-8/11 multi-slot trace to verify walker dispatch rows
+ * tick + move without crashing. */
 #define ENEMY_LOOP_MULTI_SLOT_BASE 0x00FF7F80UL
 
 #ifdef __cplusplus

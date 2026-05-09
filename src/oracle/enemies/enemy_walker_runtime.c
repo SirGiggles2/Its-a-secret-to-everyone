@@ -253,6 +253,45 @@ void enrt_update_stalfos(unsigned int slot) {
     enrt_try_shooting(0x20, 0x57u, slot);
 }
 
+/* Phase 7 Task 7.2 step 11 — drain NES UpdateDarknut (Z_04.asm:6474).
+ *
+ *   LDA #$80                                     ; turn rate $80
+ *   JSR UpdateCommonWanderer
+ *   JSR CheckMonsterCollisions
+ *   LDA #$00 / STA ObjStunTimer,X                ; never stunned
+ *   LDA #$08 / JSR Anim_AdvanceAnimCounterAndSetObjPosForSpriteDescriptor
+ *   ; A=0 on return; reload ObjDir and derive frame
+ *   LDA ObjDir,X / CMP #$02 / BNE :+ / INC $0F   ; hflip if facing left
+ *   LSR / LSR                                    ; 2 up, 1 down, 0 horizontal
+ *   LDY ObjAnimFrame,X / BEQ :+
+ *     CLC / ADC #$03                             ; frame 1 = base + 3
+ *     LDY ObjDir,X / CPY #$08 / BNE :+ / INC $0F ; hflip if facing up + frame=1
+ *   JSR DrawObjectNotMirrored / RTS
+ *
+ * Custom frame derivation forbids reusing enrt_animate_and_draw_common_object
+ * (which always passes frame=0 to the draw call). */
+void enrt_update_darknut(unsigned int slot) {
+    enrt_update_common_wanderer(0x80u, slot);
+    c_check_monster_collisions(slot);
+    ENEMY_STUN_TIMER(slot) = 0u;
+    z07_anim_advance_and_fetch(8u, slot);
+
+    unsigned char dir = (unsigned char)ENEMY_DIR(slot);
+
+    if (dir == 0x02u)
+        RAM(0x000F) = (unsigned char)(RAM(0x000F) + 1u);
+
+    unsigned char frame = (unsigned char)(dir >> 2);
+
+    if (ENEMY_DRAW_FRAME(slot) != 0u) {
+        frame = (unsigned char)(frame + 3u);
+        if (dir == 0x08u)
+            RAM(0x000F) = (unsigned char)(RAM(0x000F) + 1u);
+    }
+
+    c_draw_object_not_mirrored_with_frame((unsigned int)frame, slot);
+}
+
 void enrt_draw_ghini_and_check_collisions(unsigned int slot) {
     unsigned char frame = z07_anim_fetch_obj_pos(slot);
     RAM(0x000D) = frame;

@@ -61,10 +61,13 @@ void enemy_loop_probe_run(void)
 
     /* Step 8 — seed slots 2/3/4 with moblin/goriya/stalfos to verify
      * step-7 dispatch rows tick. Spread X positions so collision
-     * heuristics don't pin them. */
+     * heuristics don't pin them.
+     * Step 11 — extend with slot 5 = $0B BlueDarknut to verify the new
+     * native enrt_update_darknut UPDATE row. */
     enemy_loop_force_spawn_typed(2u, 0x03u, 0x40u, 0x60u, 0u); /* BlueMoblin */
     enemy_loop_force_spawn_typed(3u, 0x05u, 0x40u, 0xA0u, 0u); /* BlueGoriya */
     enemy_loop_force_spawn_typed(4u, 0x2Au, 0xC0u, 0x60u, 0u); /* Stalfos */
+    enemy_loop_force_spawn_typed(5u, 0x0Bu, 0xC0u, 0xA0u, 0u); /* BlueDarknut */
 
     alive_after = enemy_loop_alive_count();
 
@@ -77,9 +80,9 @@ void enemy_loop_probe_run(void)
     /* check[0]: alive_count was 0 after room_init (all slots cleared). */
     put_pair(block, 0, (unsigned short)alive_before, 0x0000u);
 
-    /* check[1]: alive_count is 4 after step-8 force_spawn (octorok +
-     * moblin + goriya + stalfos). */
-    put_pair(block, 1, (unsigned short)alive_after, 0x0004u);
+    /* check[1]: alive_count is 5 after step-11 force_spawn (octorok +
+     * moblin + goriya + stalfos + darknut). */
+    put_pair(block, 1, (unsigned short)alive_after, 0x0005u);
 
     /* check[2]: ENEMY_TYPE(1) == 0x07 (RedSlowOctorock). */
     put_pair(block, 2, (unsigned short)ENEMY_TYPE(1), 0x0007u);
@@ -182,11 +185,12 @@ void enemy_loop_probe_publish_live(void)
     frame_counter++;
 
     /* Step 8 multi-slot block. Slot 1 octorok ($07) + 2 moblin ($03) +
-     * 3 goriya ($05) + 4 stalfos ($2A). */
+     * 3 goriya ($05) + 4 stalfos ($2A) + 5 darknut ($0B, step 11). */
     publish_multi_slot(multi, 0u, 1u);
     publish_multi_slot(multi, 1u, 2u);
     publish_multi_slot(multi, 2u, 3u);
     publish_multi_slot(multi, 3u, 4u);
+    publish_multi_slot(multi, 4u, 5u);
 
     block[0]  = 0x54u;                                /* 'T' */
     block[1]  = 0x4Bu;                                /* 'K' */

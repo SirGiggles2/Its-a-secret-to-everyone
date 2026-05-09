@@ -38,6 +38,7 @@ extern void enrt_update_octorock(unsigned int slot);  /* step 6 native */
 extern void enrt_update_moblin(unsigned int slot);               /* step 7 */
 extern void enrt_update_goriya(unsigned int slot);               /* step 7 */
 extern void enrt_update_stalfos(unsigned int slot);              /* step 7 */
+extern void enrt_update_darknut(unsigned int slot);              /* step 11 */
 extern unsigned char core_reset_obj_state(unsigned int slot);
 
 /* z07_reset_obj_state forwarder. enrt_octorock_common (same TU as the
@@ -113,6 +114,8 @@ const enemy_update_fn enemy_update_fns[ENEMY_LOOP_TYPE_MAX] = {
     [0x08] = enrt_update_octorock,  /* RedFastOctorock — color/qspeed branch in body */
     [0x09] = enrt_update_octorock,  /* BlueSlowOctorock */
     [0x0A] = enrt_update_octorock,  /* BlueFastOctorock */
+    [0x0B] = enrt_update_darknut,   /* BlueDarknut (step 11 native drain) */
+    [0x0C] = enrt_update_darknut,   /* RedDarknut */
     [0x2A] = enrt_update_stalfos,   /* Stalfos (drained, full body) */
 };
 

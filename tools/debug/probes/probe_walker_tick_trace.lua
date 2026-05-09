@@ -94,7 +94,7 @@ local init_e = read_u8(PROBE_BASE, 0)
 local init_l = read_u8(PROBE_BASE, 1)
 w(string.format("init probe magic = '%c%c' (expect 'EL')", init_e, init_l))
 
--- step 8 multi-slot reader. probe_idx 0..3 = slots 1..4.
+-- step 8 multi-slot reader. probe_idx 0..4 = slots 1..5 (step 11: +darknut).
 local function multi_slot(probe_idx)
     local off = probe_idx * 8
     return {
@@ -111,7 +111,7 @@ end
 
 -- 5) Sample 13 snapshots over 120 frames (every 10 frames).
 local samples = {}
-local multi_samples = {{}, {}, {}, {}}  -- per-slot (1..4) sample lists
+local multi_samples = {{}, {}, {}, {}, {}}  -- per-slot (1..5) sample lists
 for i = 1, 13 do
     local s = snapshot()
     table.insert(samples, s)
@@ -130,7 +130,7 @@ for i = 1, 13 do
         s.anim_t, s.draw_f, s.move_t, s.state_t, s.walk_spd,
         s.link_x, s.link_y))
     -- step 8 multi-slot capture (every 10 frames same as slot 1)
-    for slot_idx = 1, 4 do
+    for slot_idx = 1, 5 do
         table.insert(multi_samples[slot_idx], multi_slot(slot_idx - 1))
     end
     if i < 13 then
@@ -138,11 +138,11 @@ for i = 1, 13 do
     end
 end
 
--- step 8 multi-slot trace dump
+-- step 8/11 multi-slot trace dump
 w(string.rep("-", 60))
-w("STEP 8 MULTI-SLOT TRACE -- $FF7F80 (slots 1-4)")
-w("slot 1=octorock $07, 2=moblin $03, 3=goriya $05, 4=stalfos $2A")
-for slot_idx = 1, 4 do
+w("STEP 8/11 MULTI-SLOT TRACE -- $FF7F80 (slots 1-5)")
+w("slot 1=octorock $07, 2=moblin $03, 3=goriya $05, 4=stalfos $2A, 5=darknut $0B")
+for slot_idx = 1, 5 do
     local first = multi_samples[slot_idx][1]
     local last  = multi_samples[slot_idx][#multi_samples[slot_idx]]
     w(string.format(
@@ -243,6 +243,23 @@ for slot_idx = 2, 4 do
 end
 gate(any_extra_advanced,
      "G10 at least one of slots 2/3/4 advanced anim/draw (goriya or stalfos ticking)")
+
+-- step 11 darknut gates: G11 alive+type held, G12 darknut moved (X or Y).
+multi_gate(5, 0x0B, "G11")  -- BlueDarknut alive + type held
+
+local darknut_moved = false
+do
+    local sl = multi_samples[5]
+    for i = 2, #sl do
+        if sl[i].x ~= sl[i-1].x then darknut_moved = true end
+        if sl[i].y ~= sl[i-1].y then darknut_moved = true end
+    end
+end
+gate(darknut_moved,
+     string.format("G12 darknut (slot 5) X or Y advanced over trace; first=(%d,%d) last=(%d,%d)",
+                   multi_samples[5][1].x, multi_samples[5][1].y,
+                   multi_samples[5][#multi_samples[5]].x,
+                   multi_samples[5][#multi_samples[5]].y))
 
 w(string.rep("-", 60))
 w(pass and ">>> WALKER TICK TRACE: PASS <<<"

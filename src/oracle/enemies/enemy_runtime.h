@@ -18,6 +18,7 @@ void enrt_update_zol(unsigned int slot);
 void enrt_update_gel(unsigned int slot);
 void enrt_update_zora(unsigned int slot);
 void enrt_update_stalfos(unsigned int slot);
+void enrt_update_darknut(unsigned int slot);
 void enrt_update_ghini(unsigned int slot);
 void enrt_update_moblin(unsigned int slot);
 void enrt_update_gibdo(unsigned int slot);
