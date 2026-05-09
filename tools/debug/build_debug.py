@@ -154,6 +154,15 @@ ROOMROM_C_SOURCES = [
     ("RoomRom/src/roomrom_palette_tick.c", "roomrom_palette_tick.o"),
     # Task 7.1: enemy framework (RNG byte-for-byte port of @ScrambleRandom).
     ("RoomRom/src/roomrom_rng.c", "roomrom_rng.o"),
+    # Task 7.2: walker-family drain (octorok / moblin / stalfos / goriya /
+    # darknut / rope / gel). enemy_walker_runtime.c carries init+update for
+    # walker types; enemy_wanderer_runtime.c is the perpendicular-turn
+    # helper; enemy_common_runtime.c is the shared zol/gel update; c_wanderer.c
+    # is the c_walker_move primitive.
+    ("src/oracle/enemies/c_wanderer.c", "oracle_c_wanderer.o"),
+    ("src/oracle/enemies/enemy_common_runtime.c", "oracle_enemy_common.o"),
+    ("src/oracle/enemies/enemy_wanderer_runtime.c", "oracle_enemy_wanderer.o"),
+    ("src/oracle/enemies/enemy_walker_runtime.c", "oracle_enemy_walker.o"),
     ("RoomRom/src/expanded_bg_chr.c", "expanded_bg_chr.o"),
     ("RoomRom/src/atlas/items_chr_x4.c", "atlas_items_chr_x4.o"),
     # PR-4a: scene-bank scaffolding + DMA state machine.
