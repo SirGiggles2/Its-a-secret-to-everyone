@@ -33,10 +33,11 @@
  */
 
 #include "combat/link_collision_dispatch.h"
+#include "combat/collision_dispatch.h"   /* collision_get_colliding_tile_moving */
 #include "world/draw_dispatch.h"
 #include "world/sprite_dispatch.h"
 #include "world/object_dispatch.h"   /* object_bound_by_room, object_move_object */
-#include "core/core_dispatch.h"      /* core_get_opposite_dir */
+#include "core/core_dispatch.h"      /* core_get_opposite_dir, core_reset_moving_dir */
 #include "platform_abi.h"            /* RAM, OBJ, NES_OBJ_DIR, NES_SHOT_COLLISION_FLAG */
 #include "roomrom_enemy_state.h"     /* ENEMY_* macros (re-export of state/enemy_state.h) */
 
@@ -198,17 +199,179 @@ unsigned char z01_abs(unsigned int val)
 
 /* -------- Step 6: walker family unblock stubs -------- */
 
+/* Helper: NES EnsureObjectAligned (Z_07.asm:2086). Snap X/Y to the
+ * 8-pixel grid when GridOffset is 0; Y also gets +5 vertical offset
+ * (NES uses ObjY = (Y & $F8) | 5 for top-left alignment). */
+static void shove_ensure_object_aligned(unsigned int slot)
+{
+    if (OBJ(NES_OBJ_GRID_OFFSET, slot) != 0u)
+        return;
+    OBJ(NES_OBJ_X, slot) = (unsigned char)(OBJ(NES_OBJ_X, slot) & 0xF8u);
+    OBJ(NES_OBJ_Y, slot) =
+        (unsigned char)((OBJ(NES_OBJ_Y, slot) & 0xF8u) | 0x05u);
+}
+
+/* Helper: NES CheckPersonBlocking (Z_01.asm:3108). Reads Link's Y;
+ * if Link is high in room (Y < $8E) AND moving up (bit 3 of dir set),
+ * zero $0F via core_reset_moving_dir to signal blocked. Otherwise
+ * leave $0F alone. */
+static void shove_check_person_blocking(void)
+{
+    /* NES uses absolute ObjY (slot 0 = Link). */
+    if (OBJ(NES_OBJ_Y, 0u) >= 0x8Eu)
+        return;                           /* Link too low; not blocking */
+    if ((RAM(NES_LINK_MOVING_DIR) & 0x08u) == 0u)
+        return;                           /* not moving up */
+    (void)core_reset_moving_dir();        /* clears $0F */
+}
+
 void c_obj_shove(unsigned int slot)
 {
-    /* NES Obj_Shove (Z_07.asm:305): applies knockback in ObjShoveDir
-     * direction, decrements ObjPushTimer, clears ObjShoveDir on done.
+    /* NES Obj_Shove (Z_07.asm:2274). Phase 7 Task 7.2 step 16 native
+     * drain. Stance: REPLACE (was step-6 stub).
      *
-     * Step 6 stub: clear ObjShoveDir so callers don't loop forever.
-     * No combat damage is wired in Phase 7 Task 7.2 yet, so this branch
-     * never fires in the current probe scope (verified step 5 trace).
-     * When combat lands (Phase 7 Task 7.4 damage hook), drain
-     * Obj_Shove natively here. */
-    OBJ(NES_OBJ_SHOVE_DIR, slot) = 0u;
+     * Two phases:
+     *   - Init phase (high bit of ObjShoveDir set): clear high bit,
+     *     pick perpendicular policy from ObjDir vs new shove dir.
+     *   - Move phase: try to walk up to 4 pixels in shove direction,
+     *     respecting GridOffset alignment, tile collision, room edges,
+     *     person blocking. Decrements ObjShoveDistance per pixel; on
+     *     any block cause, ResetShoveInfo (clears dir + dist).
+     *
+     * NES $0F = LINK_MOVING_DIR scratch (z07_get_colliding_tile_moving
+     * reads it as the direction byte). $03 = pixel counter (4..0).
+     * $02 = +1/-1 delta for the moved axis.
+     */
+
+    unsigned char shove_dir = (unsigned char)OBJ(NES_OBJ_SHOVE_DIR, slot);
+
+    /* ASL on shove_dir: bit-7 was the "init" flag. */
+    if ((shove_dir & 0x80u) != 0u) {
+        /* @InitPhase — clear high bit, then check perpendicular. */
+        unsigned char dir_low = (unsigned char)(shove_dir & 0x7Fu);
+        OBJ(NES_OBJ_SHOVE_DIR, slot) = dir_low;
+
+        unsigned char obj_dir = (unsigned char)ENEMY_DIR(slot);
+        if (obj_dir < 0x03u) {
+            /* @FacingHorizontally: shove_dir & $0C nonzero -> perpendicular */
+            if ((dir_low & 0x0Cu) == 0u)
+                return;                  /* horizontal shove + horizontal facing -> OK */
+        } else {
+            /* facing vertical: shove_dir & $03 nonzero -> perpendicular */
+            if ((dir_low & 0x03u) == 0u)
+                return;                  /* vertical shove + vertical facing -> OK */
+        }
+
+        /* @CheckPerpendicularShove */
+        if (OBJ(NES_OBJ_GRID_OFFSET, slot) == 0u)
+            return;                      /* aligned -> allow it */
+        if (slot != 0u) {
+            /* not Link -> ResetShoveInfo */
+            OBJ(NES_OBJ_SHOVE_DIR, slot)  = 0u;
+            OBJ(NES_OBJ_SHOVE_DIST_BASE, slot) = 0u;
+            return;
+        }
+        /* Link: bounce shove backward (opposite of facing). NES uses
+         * absolute addresses ObjDir + ObjShoveDir (slot 0). */
+        {
+            unsigned int packed = core_get_opposite_dir((unsigned int)ENEMY_DIR(0u));
+            OBJ(NES_OBJ_SHOVE_DIR_BASE, 0u) = (unsigned char)(packed & 0xFFu);
+        }
+        return;
+    }
+
+    /* @MoveIfNotDone */
+    if (OBJ(NES_OBJ_SHOVE_DIST_BASE, slot) == 0u) {
+        /* ResetShoveInfo (no distance left). */
+        OBJ(NES_OBJ_SHOVE_DIR, slot)       = 0u;
+        OBJ(NES_OBJ_SHOVE_DIST_BASE, slot) = 0u;
+        return;
+    }
+
+    /* ShoveMoveMin: 4-pixel move loop. */
+    for (unsigned int counter = 0u; counter < 4u; counter++) {
+        /* @LoopShovePixel */
+        unsigned char grid_off = (unsigned char)OBJ(NES_OBJ_GRID_OFFSET, slot);
+        if (grid_off == 0u) {
+            shove_ensure_object_aligned(slot);
+            unsigned char dir = (unsigned char)(OBJ(NES_OBJ_SHOVE_DIR, slot) & 0x0Fu);
+            RAM(NES_LINK_MOVING_DIR) = dir;
+            unsigned char tile = collision_get_colliding_tile_moving(slot);
+            if (tile >= RAM(0x034Au)) {
+                /* ObjectFirstUnwalkableTile -> blocked. */
+                OBJ(NES_OBJ_SHOVE_DIR, slot)       = 0u;
+                OBJ(NES_OBJ_SHOVE_DIST_BASE, slot) = 0u;
+                return;
+            }
+        }
+
+        /* @CheckBoundary */
+        {
+            unsigned char dir = (unsigned char)(OBJ(NES_OBJ_SHOVE_DIR, slot) & 0x0Fu);
+            unsigned char post = object_bound_by_room_with_dir(dir, slot);
+            if (post == 0u) {
+                OBJ(NES_OBJ_SHOVE_DIR, slot)       = 0u;
+                OBJ(NES_OBJ_SHOVE_DIST_BASE, slot) = 0u;
+                return;
+            }
+        }
+
+        /* Person-blocking gate: only fires if slot 1's type is the
+         * grumble moblin ($36) OR a person ($4B..$52). */
+        {
+            unsigned char t1 = (unsigned char)ENEMY_TYPE(1u);
+            int is_person = (t1 == 0x36u) ||
+                            ((t1 >= 0x4Bu) && (t1 < 0x53u));
+            if (is_person) {
+                shove_check_person_blocking();
+                if (RAM(NES_LINK_MOVING_DIR) == 0u) {
+                    OBJ(NES_OBJ_SHOVE_DIR, slot)       = 0u;
+                    OBJ(NES_OBJ_SHOVE_DIST_BASE, slot) = 0u;
+                    return;
+                }
+            }
+        }
+
+        /* @ChooseSpeed: $02 = +1 if dir bit-0 (right) or bit-2 (down) set,
+         * else -1. NES uses (ShoveDir & $05) as the "positive" mask. */
+        unsigned char delta;
+        {
+            unsigned char dir = (unsigned char)OBJ(NES_OBJ_SHOVE_DIR, slot);
+            delta = ((dir & 0x05u) != 0u) ? 0x01u : 0xFFu;
+        }
+
+        /* Decrement remaining distance. */
+        OBJ(NES_OBJ_SHOVE_DIST_BASE, slot) =
+            (unsigned char)(OBJ(NES_OBJ_SHOVE_DIST_BASE, slot) - 1u);
+
+        /* Advance grid offset by delta; wrap to 0 on multiple of $10
+         * (or 8 for Link). */
+        {
+            unsigned char new_off =
+                (unsigned char)(OBJ(NES_OBJ_GRID_OFFSET, slot) + delta);
+            unsigned char masked  = (unsigned char)(new_off & 0x0Fu);
+            if (masked == 0u) {
+                OBJ(NES_OBJ_GRID_OFFSET, slot) = 0u;
+            } else if (slot == 0u && (masked & 0x07u) == 0u) {
+                OBJ(NES_OBJ_GRID_OFFSET, slot) = 0u;
+            } else {
+                OBJ(NES_OBJ_GRID_OFFSET, slot) = new_off;
+            }
+        }
+
+        /* @ApplySpeed: horizontal bits 0-1 of ShoveDir set -> bump X,
+         * else bump Y. */
+        {
+            unsigned char dir = (unsigned char)OBJ(NES_OBJ_SHOVE_DIR, slot);
+            if ((dir & 0x03u) != 0u) {
+                OBJ(NES_OBJ_X, slot) =
+                    (unsigned char)(OBJ(NES_OBJ_X, slot) + delta);
+            } else {
+                OBJ(NES_OBJ_Y, slot) =
+                    (unsigned char)(OBJ(NES_OBJ_Y, slot) + delta);
+            }
+        }
+    }
 }
 
 unsigned int c_shoot_if_wanted(unsigned int shot_type, unsigned int slot)
