@@ -1274,16 +1274,16 @@ Deferred (logged as `phases[5].deferrals[]`): UW→OW exit, mode $10 visible sem
 - [x] Probe damage/death/drop. (steps 16, 19, 20: `Obj_Shove` drain + damage observable 17/17 PASS + UpdateMetaObject drop conversion 20/20 PASS)
 - [x] Commit family. (close commit, this commit — see `docs/audit/drain_findings/phase7_task_7_2.md` Close summary)
 
-### Task 7.3: Flyer / Jumper Family
+### Task 7.3: Flyer / Jumper Family — CLOSED 2026-05-09
 
-- [ ] Implement keese.
-- [ ] Implement peahat.
-- [ ] Implement vire.
-- [ ] Implement gel.
-- [ ] Implement zol split.
-- [ ] Implement rope rush if grouped here.
-- [ ] Probe each behavior.
-- [ ] Commit family.
+- [x] Implement keese. (step 3: $1B/$1C/$1D wired through `enrt_init_blue_keese` + `enrt_init_red_or_black_keese` + `enrt_update_keese`; flyer-bridge primitives `Directions8` / `c_move_flyer` / `c_reset_shove_info` / `c_control_keese_flight` / `c_draw_object_mirrored_with_frame` drained or forwarded)
+- [x] Implement peahat. (step 6: native `UpdatePeahat` drain landed in `enemy_flyer_runtime.c::enrt_update_peahat`, $1A wired)
+- [x] Implement vire. (step 7: linked `oracle_enemy_boss.o`, bridged 6 vire primitives in new `src/game/enemies/enemy_boss_bridge.c`, $12 wired through `enrt_init_walker` + `enrt_update_vire`)
+- [x] Implement gel. (step 4: $15 wired through `enrt_init_gel` + `enrt_update_gel`; `c_gel_move` / `c_gel_check_collisions` bridge bodies in `enemy_walker_bridge.c`)
+- [x] Implement zol split. (step 4: $13 / $14 RedZol wired through `enrt_init_walker` + `enrt_update_zol` / `enrt_update_gel`; `c_update_zol_state` / `c_zol_check_collisions` bridge bodies in `enemy_walker_bridge.c`)
+- [x] Implement rope rush if grouped here. (step 5: $28 wired through `enrt_init_rope` + `enrt_update_rope`; walker primitives already drained Task 7.2)
+- [x] Probe each behavior. (step 8: `probe_family73_dispatch.lua` 8/8 PASS — see `tools/audit/drain_findings/phase7_task_7_3_step8/multi_slot_dispatch_verify.md`)
+- [x] Commit family. (close commit, this commit — see `docs/audit/drain_findings/phase7_task_7_3.md` Close summary)
 
 ### Task 7.4: Projectile Enemy Family
 
