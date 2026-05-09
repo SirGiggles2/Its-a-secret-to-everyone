@@ -72,6 +72,13 @@ extern void enrt_init_armos_or_flying_ghini(unsigned int slot);  /* 7.4 step 6c 
 extern void trap_update_whirlwind_full(unsigned int slot);
 extern void trap_update_trap_full(unsigned int slot);
 extern void trap_init_trap_full(unsigned int slot);
+/* 7.4 step 8 — fire-shooter UPDATE rows.
+ *   $3F GuardFire    -> enrt_update_guard_fire (native NES Z_04.asm:9684
+ *                       drain in enemy_walker_bridge.c).
+ *   $40 StandingFire -> enrt_update_standing_fire (already drained at
+ *                       enemy_walker_runtime.c:146). */
+extern void enrt_update_guard_fire(unsigned int slot);
+extern void enrt_update_standing_fire(unsigned int slot);
 extern void core_reset_obj_metastate_and_timer(unsigned int slot); /* 7.4 step 2b ($11 INIT) */
 extern unsigned char core_reset_obj_state(unsigned int slot);
 
@@ -407,6 +414,26 @@ const enemy_update_fn enemy_update_fns[ENEMY_LOOP_TYPE_MAX] = {
     [0x2E] = trap_update_whirlwind_full,    /* Whirlwind */
     [0x49] = trap_update_trap_full,         /* Trap */
     [0x4A] = trap_update_trap_full,         /* Trap (alt) */
+    /* Task 7.4 step 8 — fire-shooter UPDATE wires.
+     *
+     * NES Z_07.asm:5295 UpdateObject_JumpTable rows:
+     *   $3F GuardFire    -> UpdateGuardFire (Z_04.asm:9684).
+     *   $40 StandingFire -> UpdateStandingFire (Z_04.asm:257).
+     *
+     * UpdateGuardFire body (6 instructions): rate-6 animate-and-draw
+     * + monster collisions + DeadDummy convert on kill (metastate
+     * non-zero). Native drain in enemy_walker_bridge.c
+     * (enrt_update_guard_fire). No INIT row — both default to bare
+     * scratch init (NES Z_07.asm:5601 rows $3F/$40 not in the
+     * InitObject_JumpTable's specialized list).
+     *
+     * UpdateStandingFire body: c_check_link_collision + palette=2 +
+     * DIR=8 + animate-walking + (FRAME_FLAGS=0 if type != $40) +
+     * draw_not_mirrored. Drain at enemy_walker_runtime.c:146.
+     * Primitives all linked via walker_bridge / projectile_bridge
+     * (z07_animate_object_walking forwarder added in step 8). */
+    [0x3F] = enrt_update_guard_fire,        /* GuardFire (native EXTEND drain) */
+    [0x40] = enrt_update_standing_fire,     /* StandingFire (oracle drain) */
 };
 
 /* Internal: clear an enemy slot's scratch state per NES room-init

@@ -84,3 +84,13 @@ unsigned char z07_anim_fetch_obj_pos(unsigned int slot)
 {
     return sprite_anim_fetch_obj_pos(slot);
 }
+
+/* Phase 7 Task 7.4 step 8 — z07_animate_object_walking forwarder.
+ * NES Z_07.asm:6657 c_animate_object_walking (legacy bank shim) just
+ * called z07_animate_object_walking. The native body lives at
+ * src/game/world/sprite_dispatch.c:115 (sprite_animate_object_walking).
+ * Used by enrt_update_standing_fire ($40 GuardFire / $41 StandingFire). */
+void z07_animate_object_walking(unsigned int slot)
+{
+    sprite_animate_object_walking(slot);
+}

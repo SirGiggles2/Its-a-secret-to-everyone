@@ -1141,3 +1141,25 @@ FinishInit:
     /* Armos terminal: draw + check collisions. */
     armos_draw_and_check_collisions(slot);
 }
+
+/* Phase 7 Task 7.4 step 8 — UpdateGuardFire (NES Z_04.asm:9684).
+ *
+ * Drain Rule D1 EXTEND. No oracle drain candidate for UpdateGuardFire
+ * in src/oracle/. NES body is 6 instructions:
+ *   LDA #$06 / JSR AnimateAndDrawCommonObject
+ *   JSR CheckMonsterCollisions
+ *   LDA ObjMetastate, X / BEQ exit
+ *   LDA #$5D / STA ObjType, X
+ *   RTS
+ *
+ * Animation rate = 6 (slower than standing-fire which uses
+ * z07_animate_object_walking). On kill (metastate != 0), convert
+ * to $5D dead dummy. Used for $3F GuardFire dispatch row. */
+void enrt_update_guard_fire(unsigned int slot)
+{
+    enrt_animate_and_draw_common_object(6u, slot);
+    c_check_monster_collisions(slot);
+    if ((unsigned char)ENEMY_METASTATE(slot) != 0u) {
+        ENEMY_TYPE(slot) = 0x5Du;       /* DeadDummy. */
+    }
+}
