@@ -50,6 +50,8 @@ extern void enrt_update_zol(unsigned int slot);                  /* step 4 */
 extern void enrt_update_gel(unsigned int slot);                  /* step 4 */
 extern void enrt_init_rope(unsigned int slot);                   /* step 5 */
 extern void enrt_update_rope(unsigned int slot);                 /* step 5 */
+extern void enrt_init_peahat(unsigned int slot);                 /* step 6 */
+extern void enrt_update_peahat(unsigned int slot);               /* step 6 */
 extern unsigned char core_reset_obj_state(unsigned int slot);
 
 /* z07_reset_obj_state forwarder. enrt_octorock_common (same TU as the
@@ -109,8 +111,11 @@ const enemy_init_fn enemy_init_fns[ENEMY_LOOP_TYPE_MAX] = {
      * $28 = InitRope). Body drained at enemy_walker_runtime.c:71 — sets
      * CHARGE_SPEED=$10 (or $40 for second-quest) then InitWalker. */
     [0x28] = enrt_init_rope,                   /* Rope */
-    /* Task 7.3 step 5+ pending (still NULL):
-     *   $1A Peahat   → InitPeahat            (UPDATE drain pending)
+    /* Task 7.3 step 6 — peahat INIT (NES Z_07.asm:5601 $1A = InitPeahat).
+     * Body drained at enemy_flyer_runtime.c:100 — z07_reset_obj_metastate
+     * + DIR=$08 (down) + EndInitFlyer. */
+    [0x1A] = enrt_init_peahat,                 /* Peahat */
+    /* Task 7.3 step 6+ pending (still NULL):
      *   $12 Vire     → boss_runtime.c link pending
      */
 };
@@ -173,9 +178,13 @@ const enemy_update_fn enemy_update_fns[ENEMY_LOOP_TYPE_MAX] = {
      * z07_anim_advance_and_fetch, z01_anim_set_sprite_desc_attrs, z01_abs)
      * already resolved by enemy_walker_bridge.c (Task 7.2 step 4..18). */
     [0x28] = enrt_update_rope,      /* Rope */
-    /* Task 7.3 step 6+ pending UPDATE rows:
+    /* Task 7.3 step 6 — peahat UPDATE (NES Z_04.asm:4014 UpdatePeahat).
+     * Native drain in enemy_flyer_bridge.c — composes c_obj_shove,
+     * c_control_peahat_flight (state-1 = enrt_flyer_peahat_decide_state,
+     * other states share keese rows), c_move_flyer, draw + collisions. */
+    [0x1A] = enrt_update_peahat,    /* Peahat */
+    /* Task 7.3 step 7+ pending UPDATE rows:
      *   $12 UpdateVire           — boss_runtime.c link pending
-     *   $1A UpdatePeahat         — drain pending
      */
 
     /* Step 12: shot UPDATE rows (Z_07.asm:5379-5388 dispatch).

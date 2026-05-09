@@ -35,22 +35,33 @@
 #include "platform_abi.h"               /* RAM, OBJ */
 #include "enemy_state.h"                /* ENEMY_*, LINK_X/Y aliases */
 #include "world/draw_dispatch.h"        /* draw_object_mirrored_with_frame */
+#include "core/core_dispatch.h"         /* core_reset_obj_metastate_and_timer */
 
 /* Drained leaves in src/oracle/enemies/enemy_flyer_runtime.c. */
 extern void enrt_move_flyer(unsigned int slot);
 extern void enrt_flyer_speed_up(unsigned int slot);
 extern void enrt_flyer_slow_down(unsigned int slot);
 extern void enrt_flyer_keese_decide_state(unsigned int slot);
+extern void enrt_flyer_peahat_decide_state(unsigned int slot);   /* step 6 */
 extern void enrt_flyer_delay(unsigned int slot);
+extern void enrt_end_init_flyer(unsigned int slot);              /* step 6 */
 
-/* z04_*: c_shims.asm xrefs that forward to transpiled NES bodies in
- * z_04.asm. Debug.md does not link the transpiled bank, so these
- * symbols must resolve via native equivalents. All three NES bodies
- * already have drained C twins, but the oracle TU calls the z04_*
- * names — re-export the drained bodies under those names here. */
+/* Step 6 cross-bridge primitives (all walker_bridge / projectile_bridge). */
+extern void c_obj_shove(unsigned int slot);
+extern void c_check_link_collision(unsigned int slot);
+extern void c_check_monster_collisions(unsigned int slot);
+extern unsigned char z07_anim_fetch_obj_pos(unsigned int slot);
+
+/* z04_* / z07_*: c_shims.asm xrefs that forward to transpiled NES bodies.
+ * Debug.md does not link the transpiled bank, so these symbols must
+ * resolve via native equivalents. The drained C twins are
+ * enrt_*-prefixed; re-export them under the z*_* names the oracle TU
+ * calls. */
 void z04_flyer_set_flying_state(unsigned int val, unsigned int slot);
 void z04_flyer_compare_max_speed(unsigned char speed, unsigned int slot);
 void z04_flyer_set_state_and_turns(unsigned int state, unsigned int slot);
+void z04_end_init_flyer(unsigned int slot);
+void z07_reset_obj_metastate_and_timer(unsigned int slot);
 
 /* NES Z_04.asm:11540 Directions8. 8-way unit-direction table.
  * Indexed 0..7 by Flyer_Chase / Flyer_Wander turn logic. Bit layout
@@ -94,6 +105,22 @@ void z04_flyer_set_state_and_turns(unsigned int state, unsigned int slot)
 {
     ENEMY_AI_STATE(slot)   = (unsigned char)state;
     ENEMY_TURN_TIMER(slot) = 6u;
+}
+
+/* NES EndInitFlyer (Z_04.asm body) — drained twin enrt_end_init_flyer
+ * (flyer_runtime.c:112). One-line re-export under the z04_* name the
+ * oracle TU's enrt_init_peahat (flyer_runtime.c:103) calls. */
+void z04_end_init_flyer(unsigned int slot)
+{
+    enrt_end_init_flyer(slot);
+}
+
+/* NES Z_07.asm:7524 ResetObjMetastateAndTimer — drained twin
+ * core_reset_obj_metastate_and_timer (core_dispatch.c:455). One-line
+ * re-export for the c_shims xref name. */
+void z07_reset_obj_metastate_and_timer(unsigned int slot)
+{
+    core_reset_obj_metastate_and_timer(slot);
 }
 
 void c_reset_shove_info(unsigned int slot)
@@ -279,5 +306,72 @@ void c_control_keese_flight(unsigned int slot)
     case 4u: enrt_flyer_slow_down(slot);         break;
     case 5u: enrt_flyer_delay(slot);             break;
     default: break;
+    }
+}
+
+/* NES Z_04.asm:4054 ControlPeahatFlight. Identical 6-row dispatch shape
+ * as ControlKeeseFlight; only state 1 differs (PeahatDecideState vs
+ * KeeseDecideState — see enrt_flyer_peahat_decide_state in
+ * enemy_flyer_runtime.c:88, decision thresholds shifted up to RNG_A
+ * (vs RNG_B for keese) with $B0/$20 cutoffs vs $A0/$20). */
+void c_control_peahat_flight(unsigned int slot)
+{
+    const unsigned char state = (unsigned char)ENEMY_AI_STATE(slot);
+    switch (state) {
+    case 0u: enrt_flyer_speed_up(slot);           break;
+    case 1u: enrt_flyer_peahat_decide_state(slot); break;
+    case 2u: flyer_chase(slot);                   break;
+    case 3u: flyer_wander(slot);                  break;
+    case 4u: enrt_flyer_slow_down(slot);          break;
+    case 5u: enrt_flyer_delay(slot);              break;
+    default: break;
+    }
+}
+
+/* NES Z_04.asm:4014 UpdatePeahat. Phase 7 Task 7.3 step 6 native drain.
+ * Stance: ADOPT — verbatim transcription of NES body, composing
+ * already-drained primitives.
+ *
+ * NES sequence:
+ *   1. If ObjShoveDir != 0 -> Obj_Shove, then DrawAndCheckCollisions.
+ *   2. Else if InvClock | ObjStunTimer != 0 -> DrawAndCheckCollisions.
+ *   3. Else ControlPeahatFlight + MoveFlyer.
+ *   4. DrawAndCheckCollisions:
+ *        Anim_FetchObjPosForSpriteDescriptor.
+ *        frame = Flyer_ObjDistTraveled & 1.
+ *        DrawObjectMirrored.
+ *        if Flyer_ObjFlyingState == 5 -> CheckMonsterCollisions
+ *        else                            CheckLinkCollision.
+ *
+ * Cell-mapping notes:
+ *   - InvClock == ENEMY_PAUSE_FLAG ($066C). NES drains use this name.
+ *   - ObjStunTimer == ENEMY_STUN_TIMER ($003D).
+ *   - Flyer_ObjDistTraveled lives at $0437 in NES; this codebase aliases
+ *     the same cell as ENEMY_FLAP_PHASE. Frame selection reads bit 0 to
+ *     match NES "every other frame" animation. Note: drained
+ *     enrt_move_flyer (flyer_runtime.c:175) does NOT increment $0437,
+ *     so frame currently latches to 0. Same gap exists for keese; full
+ *     fix is a future drain of NES MoveFlyer's @End block (INC
+ *     Flyer_ObjDistTraveled + JSR BoundFlyer). Out of step 6 scope. */
+void enrt_update_peahat(unsigned int slot)
+{
+    if ((unsigned char)ENEMY_OBJ_SHOVE_DIR(slot) != 0u) {
+        c_obj_shove(slot);
+    } else if ((((unsigned char)ENEMY_PAUSE_FLAG)
+              | (unsigned char)ENEMY_STUN_TIMER(slot)) == 0u) {
+        c_control_peahat_flight(slot);
+        c_move_flyer(slot);
+    }
+
+    /* DrawAndCheckCollisions tail. */
+    (void)z07_anim_fetch_obj_pos(slot);
+    {
+        const unsigned int frame = (unsigned int)(ENEMY_FLAP_PHASE(slot) & 1u);
+        c_draw_object_mirrored_with_frame(frame, slot);
+    }
+    if ((unsigned char)ENEMY_AI_STATE(slot) == 5u) {
+        c_check_monster_collisions(slot);
+    } else {
+        c_check_link_collision(slot);
     }
 }
