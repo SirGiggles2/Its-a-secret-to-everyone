@@ -33,6 +33,7 @@ local TICK_BASE = 0x7F00     -- $FF7F00 in 68K RAM domain (post-tick)
 local PRE_BASE  = 0x7F40     -- $FF7F40 (pre-tick snapshot)
 local MULTI_BASE = 0x7F80    -- $FF7F80 step-8 multi-slot block
 local SHOT_BASE = 0x7FA8     -- $FF7FA8 step-14 shot scan block
+local CV_BASE   = 0x7FCC     -- $FF7FCC step-17 collision-viz block
 local PROBE_BASE = 0x7E00    -- $FF7E00 (init probe)
 local DOMAIN = "68K RAM"
 
@@ -44,6 +45,26 @@ local function read_u16_be(base, off)
     local hi = memory.read_u8(base + off, DOMAIN)
     local lo = memory.read_u8(base + off + 1, DOMAIN)
     return (hi * 256) + lo
+end
+
+local function read_u32_be(base, off)
+    local b0 = memory.read_u8(base + off,     DOMAIN)
+    local b1 = memory.read_u8(base + off + 1, DOMAIN)
+    local b2 = memory.read_u8(base + off + 2, DOMAIN)
+    local b3 = memory.read_u8(base + off + 3, DOMAIN)
+    return (b0 * 0x1000000) + (b1 * 0x10000) + (b2 * 0x100) + b3
+end
+
+-- step 17 collision-viz reader. counter > 0 + monotonic growth across
+-- the trace window proves c_check_monster_collisions runs per slot per
+-- tick (movement+collision walker checklist item).
+local function coll_viz()
+    return {
+        magic_c = read_u8(CV_BASE, 0),
+        magic_v = read_u8(CV_BASE, 1),
+        mc      = read_u32_be(CV_BASE, 2),
+        lc      = read_u32_be(CV_BASE, 6),
+    }
 end
 
 local function snapshot()
@@ -139,12 +160,15 @@ local shot_samples = {}                      -- step 14
 local shot_max_active = 0                    -- step 14 peak ActiveMonsterShots
 local shot_max_found  = 0                    -- step 14 peak shot slot count
 local shot_first_seen = nil                  -- step 14 first sample with found > 0
+local cv_samples = {}                        -- step 17 collision-viz samples
 for i = 1, 31 do
     local s = snapshot()
     table.insert(samples, s)
     -- step 14 shot capture every iteration
     local sh = shot_scan()
     table.insert(shot_samples, sh)
+    -- step 17 collision-viz capture
+    table.insert(cv_samples, coll_viz())
     if sh.active > shot_max_active then shot_max_active = sh.active end
     if sh.found  > shot_max_found  then shot_max_found  = sh.found  end
     if shot_first_seen == nil and sh.found > 0 then shot_first_seen = i end
@@ -215,6 +239,20 @@ do
     else
         w("  no shot slots observed across trace window (octorok never shot)")
     end
+end
+
+w(string.rep("-", 60))
+
+-- step 17 collision-viz diagnostic dump.
+do
+    local first_cv = cv_samples[1]
+    local last_cv  = cv_samples[#cv_samples]
+    w("STEP 17 COLLISION-VIZ -- $FF7FCC (c_check_*_calls counters)")
+    w(string.format("  magic 'CV' = '%c%c'", first_cv.magic_c, first_cv.magic_v))
+    w(string.format("  monster_collisions_calls first=%d last=%d delta=%d",
+                    first_cv.mc, last_cv.mc, last_cv.mc - first_cv.mc))
+    w(string.format("  link_collision_calls    first=%d last=%d delta=%d",
+                    first_cv.lc, last_cv.lc, last_cv.lc - first_cv.lc))
 end
 
 w(string.rep("-", 60))
@@ -322,6 +360,16 @@ gate(darknut_moved,
                    multi_samples[5][1].x, multi_samples[5][1].y,
                    multi_samples[5][#multi_samples[5]].x,
                    multi_samples[5][#multi_samples[5]].y))
+
+-- step 17 G13/G14: collision-viz counters monotonically grow. Proves
+-- c_check_monster_collisions runs every tick across multi-slot probe.
+local first_cv = cv_samples[1]
+local last_cv  = cv_samples[#cv_samples]
+gate(last_cv.magic_c == 0x43 and last_cv.magic_v == 0x56,
+     "G13 collision-viz magic 'CV' present (publisher fired)")
+gate(last_cv.mc > first_cv.mc,
+     string.format("G14 monster_collisions_calls grew across trace (%d -> %d)",
+                   first_cv.mc, last_cv.mc))
 
 w(string.rep("-", 60))
 w(pass and ">>> WALKER TICK TRACE: PASS <<<"

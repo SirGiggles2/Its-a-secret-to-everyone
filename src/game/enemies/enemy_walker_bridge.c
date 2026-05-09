@@ -141,13 +141,23 @@ void c_walker_move(unsigned int slot)
     object_move_object((unsigned short)slot);
 }
 
+/* Step 17 collision-viz counters. Public so probe can read them.
+ * - check_monster_collisions_calls: total times c_check_monster_collisions
+ *   was invoked since boot (across all slots, all ticks).
+ * - check_link_collision_calls: total times c_check_link_collision
+ *   was invoked since boot. */
+volatile unsigned long g_check_monster_collisions_calls = 0u;
+volatile unsigned long g_check_link_collision_calls    = 0u;
+
 void c_check_monster_collisions(unsigned int slot)
 {
+    g_check_monster_collisions_calls++;
     link_collision_check_monster_collisions(slot);
 }
 
 void c_check_link_collision(unsigned int slot)
 {
+    g_check_link_collision_calls++;
     link_collision_check_link_collision(slot);
 }
 

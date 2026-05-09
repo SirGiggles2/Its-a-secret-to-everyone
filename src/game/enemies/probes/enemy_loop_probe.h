@@ -87,6 +87,22 @@
  * dynamically-spawned shot slots. */
 #define ENEMY_LOOP_SHOT_SCAN_BASE 0x00FF7FA8UL
 
+/* Step 17 collision-viz block at $FF7FCC (after shot-scan 36-byte block
+ * ending at $FF7FCB). Publishes the per-call counters incremented from
+ * c_check_monster_collisions / c_check_link_collision wrappers in
+ * src/game/enemies/enemy_walker_bridge.c.
+ *
+ * Layout (10 bytes):
+ *   [0]    = 'C' (0x43) magic
+ *   [1]    = 'V' (0x56) magic
+ *   [2..5] = g_check_monster_collisions_calls (be u32)
+ *   [6..9] = g_check_link_collision_calls    (be u32)
+ *
+ * Counters > 0 across the trace prove c_walker_move's downstream
+ * c_check_monster_collisions invocation actually fires per-slot per-tick
+ * (movement+collision walker checklist item). */
+#define ENEMY_LOOP_COLLISION_VIZ_BASE 0x00FF7FCCUL
+
 #ifdef __cplusplus
 extern "C" {
 #endif

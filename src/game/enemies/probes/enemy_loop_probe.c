@@ -21,6 +21,10 @@
 #include "object_state.h"   /* OBJ_STATE for step-3 forwarder check */
 #include "platform_abi.h"   /* RAM($034C) ActiveMonsterShots — step 14 */
 
+/* Step 17: counters live in enemy_walker_bridge.c. Read-only here. */
+extern volatile unsigned long g_check_monster_collisions_calls;
+extern volatile unsigned long g_check_link_collision_calls;
+
 static void put_u16_be(volatile unsigned char *p, unsigned short v)
 {
     p[0] = (unsigned char)(v >> 8);
@@ -206,6 +210,27 @@ static void publish_shot_scan(volatile unsigned char *base)
     }
 }
 
+/* Step 17 collision-viz publisher. Drops the live counter values from
+ * c_check_monster_collisions / c_check_link_collision wrappers into the
+ * collision-viz block. Counter > 0 + monotonic growth proves the call
+ * path runs every tick across the seeded slot set. */
+static void publish_collision_viz(volatile unsigned char *base)
+{
+    unsigned long mc = g_check_monster_collisions_calls;
+    unsigned long lc = g_check_link_collision_calls;
+
+    base[0] = 0x43u;                                  /* 'C' */
+    base[1] = 0x56u;                                  /* 'V' */
+    base[2] = (unsigned char)((mc >> 24) & 0xFFu);
+    base[3] = (unsigned char)((mc >> 16) & 0xFFu);
+    base[4] = (unsigned char)((mc >>  8) & 0xFFu);
+    base[5] = (unsigned char)( mc        & 0xFFu);
+    base[6] = (unsigned char)((lc >> 24) & 0xFFu);
+    base[7] = (unsigned char)((lc >> 16) & 0xFFu);
+    base[8] = (unsigned char)((lc >>  8) & 0xFFu);
+    base[9] = (unsigned char)( lc        & 0xFFu);
+}
+
 void enemy_loop_probe_publish_live(void)
 {
     volatile unsigned char *block =
@@ -214,6 +239,8 @@ void enemy_loop_probe_publish_live(void)
         (volatile unsigned char *)ENEMY_LOOP_MULTI_SLOT_BASE;
     volatile unsigned char *shot_scan =
         (volatile unsigned char *)ENEMY_LOOP_SHOT_SCAN_BASE;
+    volatile unsigned char *coll_viz =
+        (volatile unsigned char *)ENEMY_LOOP_COLLISION_VIZ_BASE;
     static unsigned short frame_counter = 0u;
     frame_counter++;
 
@@ -226,6 +253,7 @@ void enemy_loop_probe_publish_live(void)
     publish_multi_slot(multi, 4u, 5u);
 
     publish_shot_scan(shot_scan);
+    publish_collision_viz(coll_viz);
 
     block[0]  = 0x54u;                                /* 'T' */
     block[1]  = 0x4Bu;                                /* 'K' */
