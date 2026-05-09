@@ -23,6 +23,7 @@
 #include "uw_dark_meta.h"                /* Task 5.8: dark-room manifest */
 #include "uw_item_room_meta.h"           /* Task 5.9: item-room manifest + pickup */
 #include "roomrom_candle_fire.h"         /* Task 5.8.1: candle fire projectile */
+#include "roomrom_pause.h"               /* Task 6.10.1: Paused flag */
 #include "probes/metadata_probe.h"     /* Task 5.4: Gate D in-ROM probe */
 #include "atlas/level_chr_swap.h"        /* PR-4a: scene-bank DMA state machine */
 #include "player_state.h"                 /* Phase 6 Task 6.1: typed players[] */
@@ -1350,20 +1351,26 @@ void roomrom_debug_tick(void)
             return;
         }
 
-        /* S7: tick combat (sword timer + draw/clear sword sprite slot 1).
-         * Runs every frame so the swing completes even in TELEPORT mode. */
-        roomrom_combat_update(players[0].x, players[0].y, players[0].face);
-        /* S7 v6: tick boomerang (slot 3). Independent of combat lock —
-         * NES Z1 lets Link move while boomerang is in flight. */
-        roomrom_boomerang_update(players[0].x, players[0].y);
-        /* S7 v7: tick arrow (slot 4). Single-frame, flies straight. */
-        roomrom_arrow_update();
-        /* S7 v8: tick bomb (slot 5) + explosion (slot 6). */
-        roomrom_bomb_update();
-        /* Task 5.8.1: tick candle fire (slot 8). */
-        roomrom_candle_fire_update();
-        /* Magic rod shot (slot 9). */
-        roomrom_magic_shot_update();
+        /* Task 6.10.2: NES Z_07.asm:472 gates per-frame gameplay update on
+         * `Paused != 0`. Mirror that here — projectile/combat ticks freeze
+         * while paused (voluntary or involuntary). Cave + scroll handling
+         * already returned above; only the in-room update path is gated. */
+        if (!roomrom_pause_is_active()) {
+            /* S7: tick combat (sword timer + draw/clear sword sprite slot 1).
+             * Runs every frame so the swing completes even in TELEPORT mode. */
+            roomrom_combat_update(players[0].x, players[0].y, players[0].face);
+            /* S7 v6: tick boomerang (slot 3). Independent of combat lock —
+             * NES Z1 lets Link move while boomerang is in flight. */
+            roomrom_boomerang_update(players[0].x, players[0].y);
+            /* S7 v7: tick arrow (slot 4). Single-frame, flies straight. */
+            roomrom_arrow_update();
+            /* S7 v8: tick bomb (slot 5) + explosion (slot 6). */
+            roomrom_bomb_update();
+            /* Task 5.8.1: tick candle fire (slot 8). */
+            roomrom_candle_fire_update();
+            /* Magic rod shot (slot 9). */
+            roomrom_magic_shot_update();
+        }
 
         u16 joy = JOY_readJoypad(JOY_1);
         u16 pressed = joy & ~s_joy_prev;
@@ -1556,6 +1563,17 @@ void roomrom_debug_tick(void)
                                              : ROOMROM_UW_QUEST_MIN;
             roomrom_uw_room_render_set_quest(q);
             load_room(s_room_id);
+            return;
+        }
+
+        /* Task 6.10.1: bare START edge-press = NES Select-equivalent.
+         * Toggles voluntary pause when no other button is held. All
+         * START-with-modifier handlers already returned above, so a
+         * bare START reaches here only when no chord matched. */
+        if ((pressed & BUTTON_START) &&
+            !(joy & (BUTTON_A | BUTTON_B | BUTTON_C |
+                     BUTTON_X | BUTTON_Y | BUTTON_Z | BUTTON_MODE))) {
+            roomrom_pause_toggle_voluntary();
             return;
         }
         /* Level cycle (was MODE-only) removed -- MODE is reserved hardware.

@@ -147,6 +147,8 @@ ROOMROM_C_SOURCES = [
     ("src/state/player_state.c", "player_state.o"),
     # Task 6.10.4: inventory_t struct mirroring NES Variables.inc cells.
     ("RoomRom/src/inventory.c", "inventory.o"),
+    # Task 6.10.1: Paused flag (NES $E0).
+    ("RoomRom/src/roomrom_pause.c", "roomrom_pause.o"),
     ("RoomRom/src/roomrom_palette_tick.c", "roomrom_palette_tick.o"),
     ("RoomRom/src/expanded_bg_chr.c", "expanded_bg_chr.o"),
     ("RoomRom/src/atlas/items_chr_x4.c", "atlas_items_chr_x4.o"),
