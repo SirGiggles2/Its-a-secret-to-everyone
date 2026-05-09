@@ -220,6 +220,14 @@ const enemy_init_fn enemy_init_fns[ENEMY_LOOP_TYPE_MAX] = {
      * Composes core_init_one_simple_object (already drained). */
     [0x49] = trap_init_trap_full,                /* Trap */
     [0x4A] = trap_init_trap_full,                /* Trap (alt) */
+    /* Task 7.4 step 9 — gibdo INIT pair-close.
+     *
+     * NES Z_07.asm:5601 InitObject_JumpTable row $30 Gibdo -> InitWalker
+     * (bare walker init). $30 UPDATE was wired in step 6d
+     * (enrt_update_gibdo); this row closes the pair so freshly-spawned
+     * gibdos enter the walker init seed (DIR/MOVE_TIMER/anim defaults)
+     * before the dispatch table picks up update side. */
+    [0x30] = enrt_init_walker,                   /* Gibdo */
 };
 
 const enemy_update_fn enemy_update_fns[ENEMY_LOOP_TYPE_MAX] = {
