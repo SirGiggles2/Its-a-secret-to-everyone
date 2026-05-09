@@ -253,6 +253,23 @@ const enemy_init_fn enemy_init_fns[ENEMY_LOOP_TYPE_MAX] = {
      *                wired for $07/$09; reused here per NES table). */
     [0x11] = core_reset_obj_metastate_and_timer, /* Zora */
     [0x21] = enrt_init_slow_octorock_or_ghini,   /* Ghini */
+    /* Task 7.5 step 1 — special-enemy INIT wins.
+     *
+     * NES Z_07.asm:5601 InitObject_JumpTable rows:
+     *   $16 PolsVoice  -> InitWalker (bare walker init seed; full
+     *                     pols-voice spawn state set by UpdatePolsVoice
+     *                     state-1 path).
+     *   $17 LikeLike   -> InitWalker (bare walker init seed; like-like
+     *                     state machine driven entirely by UpdateLikeLike).
+     *   $27 Wallmaster -> ResetObjMetastateAndTimer (state machine
+     *                     entered from State 0; UPDATE drives the rest).
+     *
+     * All three INIT bodies are already drained + extern'd above
+     * (enrt_init_walker for $16/$17, core_reset_obj_metastate_and_timer
+     * for $27). Stance: ADOPT — single-row table-deltas, no bridges. */
+    [0x16] = enrt_init_walker,                   /* PolsVoice */
+    [0x17] = enrt_init_walker,                   /* LikeLike */
+    [0x27] = core_reset_obj_metastate_and_timer, /* Wallmaster */
 };
 
 const enemy_update_fn enemy_update_fns[ENEMY_LOOP_TYPE_MAX] = {
