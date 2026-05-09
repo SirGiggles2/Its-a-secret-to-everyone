@@ -116,15 +116,26 @@ const enemy_update_fn enemy_update_fns[ENEMY_LOOP_TYPE_MAX] = {
     [0x2A] = enrt_update_stalfos,   /* Stalfos (drained, full body) */
 };
 
-/* Internal: clear an enemy slot's scratch state per NES InitObject
- * preamble (Z_07.asm:5466-5563). Mirrors the LDA #0 / STA scratch
- * sequence the NES does BEFORE dispatching JumpTable[ObjType,X]. */
+/* Internal: clear an enemy slot's scratch state per NES room-init
+ * (Z_05.asm:1684-1699 — the per-slot init loop run for slots $B..1
+ * BEFORE InitObject_JumpTable[ObjType,X]).
+ *
+ * Step 10 finding: prior implementation zeroed WALK_SPEED / ANIM_TIMER
+ * / METASTATE — wrong vs NES, which seeds defaults:
+ *   ObjQSpeedFrac = $20  (Z_05.asm:1696 — DEFAULT speed)
+ *   ObjAnimCounter = 1   (Z_05.asm:1694 — INC from 0)
+ *   ObjMetastate   = 1   (Z_05.asm:1695 — INC from 0; "first cloud state")
+ * Octorok/Darknut init wrappers explicitly override WALK_SPEED so they
+ * are unaffected. Bare-InitWalker types ($01-$06,$2A) inherit the $20
+ * default — that's what unblocks goriya/stalfos walking (their UPDATE
+ * bodies don't re-seed WALK_SPEED; first quest stalfos UPDATE BEQs out
+ * past the @SetSpeed branch entirely). */
 static void clear_slot_scratch(unsigned int slot)
 {
     ENEMY_DIR(slot)            = 0u;
-    ENEMY_STATE_TIMER(slot)    = (unsigned char)slot;
+    ENEMY_STATE_TIMER(slot)    = 0u;
     ENEMY_LIFE(slot)           = 0u;
-    ENEMY_METASTATE(slot)      = 0u;
+    ENEMY_METASTATE(slot)      = 1u;          /* NES default: first cloud state */
     ENEMY_PUSH_TIMER(slot)     = 0u;
     ENEMY_AIR_SPEED(slot)      = 0u;
     ENEMY_TURN_TIMER(slot)     = 0u;
@@ -136,12 +147,16 @@ static void clear_slot_scratch(unsigned int slot)
     ENEMY_INVINCIBILITY(slot)  = 0u;
     ENEMY_HIT_REACTION(slot)   = 0u;
     ENEMY_DRAW_FRAME(slot)     = 0u;
-    ENEMY_WALK_SPEED(slot)     = 0u;
-    ENEMY_ANIM_TIMER(slot)     = 0u;
+    ENEMY_WALK_SPEED(slot)     = 0x20u;       /* NES Z_05.asm:1696 default */
+    ENEMY_ANIM_TIMER(slot)     = 1u;          /* NES default INC from 0 */
     ENEMY_PUSH_DIR_SCRATCH(slot) = 0u;
     ENEMY_FLAP_PHASE(slot)     = 0u;
     ENEMY_FLYER_X_FINE(slot)   = 0u;
-    ENEMY_ALIVE_FLAG(slot)     = 1u;  /* mark slot occupied */
+    ENEMY_STUN_TIMER(slot)     = 0u;          /* Z_05.asm:1693 ObjStunTimer */
+    ENEMY_OBJ_SHOVE_DIR(slot)  = 0u;          /* ResetShoveInfo */
+    OBJ(0x00D3u, slot)         = 0u;          /* ObjShoveDistance */
+    ENEMY_MOVE_TIMER(slot)     = (unsigned char)slot;  /* InitObject preamble */
+    ENEMY_ALIVE_FLAG(slot)     = 1u;          /* mark slot occupied */
 }
 
 void enemy_loop_room_init(unsigned char room_id, unsigned char scene_id)
