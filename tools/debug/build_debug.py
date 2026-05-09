@@ -169,6 +169,11 @@ ROOMROM_C_SOURCES = [
     # enrt_update_monster_shot / enrt_update_fireball / enrt_destroy_monster_shot
     # + L_DrawShot fall-through.
     ("src/oracle/enemies/enemy_projectile_runtime.c", "oracle_enemy_projectile.o"),
+    # Task 7.3 step 1: flyer/jumper-family drain (keese, peahat). Drain Rule
+    # D1 ADOPT — enemy_flyer_runtime.c carries enrt_init_peahat +
+    # enrt_update_keese. --gc-sections strips until dispatch rows wire
+    # them in step 2+.
+    ("src/oracle/enemies/enemy_flyer_runtime.c", "oracle_enemy_flyer.o"),
     # Task 7.2 step 2: enemy slot iterator + dispatch + ObjLists port (WT-5
     # promotion — gameplay code under src/game/, not RoomRom/).
     ("src/game/enemies/enemy_loop.c", "game_enemy_loop.o"),
