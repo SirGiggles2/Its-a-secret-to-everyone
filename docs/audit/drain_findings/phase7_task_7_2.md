@@ -9,7 +9,9 @@
 
 **Step 2 (commit ca2aae13):** 10/10 PASS — iterator + cell-write framework only.
 
-**Step 3 (this commit):** 14/14 PASS — INIT dispatch row $07 wired. Probe pre-pins LINK_X=LINK_Y=$80 so the enrt_init_walker DIR computation is deterministic, then verifies all cells written by enrt_octorock_common (WALK_SPEED, MOVE_TIMER, ANIM_TIMER, OBJ_STATE) plus enrt_init_walker (DIR). Result: `docs/audit/drain_findings/phase7_task_7_2_step3_probe.txt`.
+**Step 3 (commit ca2aae13):** 14/14 PASS — INIT dispatch row $07 wired. Probe pre-pins LINK_X=LINK_Y=$80 so the enrt_init_walker DIR computation is deterministic, then verifies all cells written by enrt_octorock_common (WALK_SPEED, MOVE_TIMER, ANIM_TIMER, OBJ_STATE) plus enrt_init_walker (DIR). Result: `docs/audit/drain_findings/phase7_task_7_2_step3_probe.txt`.
+
+**Step 4 (this commit):** 14/14 PASS retained. Walker UPDATE primitives bridge added (`src/game/enemies/enemy_walker_bridge.c`), UPDATE row `enemy_update_fns[$07] = enrt_update_rope` populated. Per debate `2026-05-09-phase7-task-7-2-walker-update/synthesis.md` (Option C). Bridge forwards 6 of 7 walker `c_*`/`z*_` primitives to already-drained native bodies (`link_collision_dispatch.c`, `draw_dispatch.c`, `sprite_dispatch.c`, `core_dispatch.c`); `c_walker_move` is a labeled PLACEHOLDER stub awaiting Walker_Move drain (z_07.asm:3763, ~80 lines, step 5). UPDATE table is populated but not yet ticked — `enemy_loop_tick` not wired into main loop yet; INIT probe behavior unchanged. Result: `docs/audit/drain_findings/phase7_task_7_2_step4_probe.txt`.
 
 Probe MMIO: `$FF7E00` (`ENEMY_LOOP_PROBE_BASE`); reader `tools/debug/probes/probe_walker_parity.lua` writes `/c/tmp/probe_walker_parity.txt`.
 
@@ -50,7 +52,7 @@ Wiring even one walker entry (`enemy_init_fns[0x07] = enrt_init_slow_octorock_or
 
 | Behavior | NES anchor | Why deferred | Re-entry trigger |
 | --- | --- | --- | --- |
-| Walker family dispatch (slow/fast octorock, gel, rope, leever) | `Z_07.asm:5601` InitObject_JumpTable + UpdateObject branches | Needs c_walker_move + z01_check_link_collision shim plumbing | Task 7.3 |
+| Walker family dispatch (slow/fast octorock, gel, rope, leever) | `Z_07.asm:5601` InitObject_JumpTable + UpdateObject branches | Step 4 wires UPDATE row $07 with stubbed Walker_Move; native drain pending | Task 7.2 step 5 |
 | Wanderer family dispatch (zora, peahat, traps) | `Z_07.asm` UpdateWandererCommon | Same shim plumbing | Task 7.4 |
 | Flyer / jumper / charger families | NES per-family Init/Update | Per-family drain link | Task 7.5-7.7 |
 | Real spawn data (NES ObjListAddrs.inc + ObjLists.inc port) | `reference/aldonunez/dat/ObjLists.inc` | Step 2 uses test seed only | Task 7.8 |
@@ -62,7 +64,7 @@ Wiring even one walker entry (`enemy_init_fns[0x07] = enrt_init_slow_octorock_or
 
 - `src/game/enemies/probes/enemy_loop_probe.{h,c}` — in-ROM verifier; publishes 10 (actual,expected) u16 pairs at `$FF7E00` after `enemy_loop_room_init` + `enemy_loop_force_spawn_slow_octorock`.
 - `tools/debug/probes/probe_walker_parity.lua` — BizHawk Lua reader; writes results to `/c/tmp/probe_walker_parity.txt`.
-- Result evidence: `/c/tmp/probe_walker_parity.txt` (10/10 PASS, run 2026-05-09 commit ca2aae13).
+- Result evidence: `docs/audit/drain_findings/phase7_task_7_2_step4_probe.txt` (14/14 PASS, run 2026-05-09 step 4 commit).
 
 ## Gate
 

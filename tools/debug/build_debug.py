@@ -168,6 +168,12 @@ ROOMROM_C_SOURCES = [
     # promotion — gameplay code under src/game/, not RoomRom/).
     ("src/game/enemies/enemy_loop.c", "game_enemy_loop.o"),
     ("src/game/enemies/obj_lists.c", "game_enemy_obj_lists.o"),
+    # Task 7.2 step 4: walker UPDATE primitives bridge — forwarders to
+    # already-drained native bodies (link_collision/draw/sprite/core) +
+    # Walker_Move stub. Per debate 2026-05-09 verdict (Option C). Wired
+    # into UPDATE table below; --gc-sections retains only what enrt_update_*
+    # transitively reaches.
+    ("src/game/enemies/enemy_walker_bridge.c", "game_enemy_walker_bridge.o"),
     ("src/game/enemies/probes/enemy_loop_probe.c", "game_enemy_loop_probe.o"),
     ("RoomRom/src/expanded_bg_chr.c", "expanded_bg_chr.o"),
     ("RoomRom/src/atlas/items_chr_x4.c", "atlas_items_chr_x4.o"),

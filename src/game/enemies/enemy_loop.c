@@ -28,6 +28,7 @@
  * and src/game/core/core_dispatch.c respectively. Both objects are
  * already linked into Debug.md per build_debug.py ROOMROM_C_SOURCES. */
 extern void enrt_init_slow_octorock_or_ghini(unsigned int slot);
+extern void enrt_update_rope(unsigned int slot);  /* walker UPDATE row $07 */
 extern unsigned char core_reset_obj_state(unsigned int slot);
 
 /* z07_reset_obj_state forwarder. enrt_octorock_common (same TU as the
@@ -55,11 +56,17 @@ const enemy_init_fn enemy_init_fns[ENEMY_LOOP_TYPE_MAX] = {
 };
 
 const enemy_update_fn enemy_update_fns[ENEMY_LOOP_TYPE_MAX] = {
-    /* Update side stays NULL until Task 7.3 lands c_walker_move +
-     * z07_anim_advance_and_fetch + c_check_monster_collisions
-     * primitives. Octorok init alone is observable via the cell-write
-     * probe; live tick comes with update wiring. */
-    0
+    /* Step 4 (debate 2026-05-09 verdict, Option C) wires UPDATE row
+     * $07. enrt_update_rope is the walker UPDATE handler for Octorok /
+     * Moblin / Stalfos / Goriya / Darknut / Rope variants — per NES
+     * ObjectActions table the Red Slow Octorock ($07) update slot
+     * resolves to the rope/octorock walker tick body. Primitives
+     * (c_walker_move stub + c_check_monster_collisions +
+     * c_draw_object_not_mirrored_with_frame + z07_anim_advance_and_fetch
+     * + z01_anim_set_sprite_desc_attrs + z01_abs) supplied by
+     * src/game/enemies/enemy_walker_bridge.c. Walker_Move drain pending
+     * — animation / palette / collision / draw run; movement frozen. */
+    [0x07] = enrt_update_rope,
 };
 
 /* Internal: clear an enemy slot's scratch state per NES InitObject
