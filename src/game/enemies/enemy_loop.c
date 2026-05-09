@@ -95,6 +95,11 @@ extern unsigned char core_reset_obj_state(unsigned int slot);
 extern void enrt_update_like_like(unsigned int slot);
 extern void enrt_update_pols_voice(unsigned int slot);
 extern void enrt_update_wallmaster(unsigned int slot);
+/* 7.6 step 1 — leever INIT ($0F BlueLeever / $10 RedLeever).
+ * NES Z_07.asm:5617 InitObject_JumpTable rows $0F/$10 -> InitLeever.
+ * Body drained at src/oracle/enemies/enemy_walker_runtime.c:37
+ * (RedLeeverLongTimer=5 + z07_reset_obj_metastate_and_timer). */
+extern void enrt_init_leever(unsigned int slot);
 
 /* z07_reset_obj_state forwarder. enrt_octorock_common (same TU as the
  * init we wire below) calls this symbol. The drained body lives at
@@ -277,6 +282,13 @@ const enemy_init_fn enemy_init_fns[ENEMY_LOOP_TYPE_MAX] = {
     [0x16] = enrt_init_walker,                   /* PolsVoice */
     [0x17] = enrt_init_walker,                   /* LikeLike */
     [0x27] = core_reset_obj_metastate_and_timer, /* Wallmaster */
+    /* Task 7.6 step 1 — leever INIT pair (NES Z_07.asm:5617 rows $0F/$10
+     * both -> InitLeever). Body drained at enemy_walker_runtime.c:37 —
+     * sets RedLeeverLongTimer=5 then z07_reset_obj_metastate_and_timer.
+     * Body-shared between BlueLeever and RedLeever per NES asm. ADOPT
+     * stance — drained twin reused, no bridge edits. */
+    [0x0F] = enrt_init_leever,                   /* BlueLeever */
+    [0x10] = enrt_init_leever,                   /* RedLeever */
 };
 
 const enemy_update_fn enemy_update_fns[ENEMY_LOOP_TYPE_MAX] = {
