@@ -55,6 +55,7 @@
 #define NES_OBJ_SHOVE_DIR    0x00C0
 
 extern void enrt_wanderer_target_player(unsigned int slot);
+extern void enrt_update_goriya(unsigned int slot);     /* 7.4 step 6b ($1E armos) */
 
 /* Forward decl — defined after c_obj_shove block in this file (step 18). */
 void c_walker_check_tile_collision(unsigned int slot);
@@ -911,4 +912,88 @@ void update_meta_object(unsigned int slot)
 
     /* @Reset path always runs after drop conversion. */
     ENEMY_METASTATE(slot) = 0u;
+}
+
+/* NES Z_04.asm:3332 DrawArmosAndCheckCollisions. Phase 7 Task 7.4
+ * step 6b helper. Stance: ADOPT — verbatim transcription of NES body.
+ *
+ * NES sequence:
+ *   Anim_FetchObjPosForSpriteDescriptor.
+ *   if ObjDir == $08 (up):  frame_base = 1.
+ *   else                  : frame_base = 0  (the NES code skips the LDA #$01
+ *                                            via BNE; carry path uses frame_base 0
+ *                                            but adds ObjAnimFrame, which is the
+ *                                            "down/front" base).
+ *
+ *   Note: NES code has a subtle "default" — when ObjDir != $08 it falls
+ *   through with whatever A held (initialized to $00). The visible
+ *   behavior is: facing-up uses frame 1+ObjAnimFrame ("back"), other
+ *   facings use frame 0+ObjAnimFrame ("front"). DrawObjectNotMirrored
+ *   handles horizontal flip at the dispatch backend.
+ *
+ *   DrawObjectNotMirrored(frame).
+ *   if ObjTimer != 0: jmp CheckLinkCollision (only — fading-in armos
+ *                     don't take weapon damage yet).
+ *   else:             CheckMonsterCollisions.
+ *                     if ObjMetastate != 0: ObjType = $5D (DeadDummy).
+ */
+static void armos_draw_and_check_collisions(unsigned int slot)
+{
+    (void)sprite_anim_advance_and_fetch(0u, slot);
+
+    {
+        unsigned char frame_base = ((unsigned char)ENEMY_DIR(slot) == 0x08u) ? 1u : 0u;
+        unsigned char frame = (unsigned char)(frame_base + (unsigned char)ENEMY_DRAW_FRAME(slot));
+        draw_object_not_mirrored_with_frame(frame, slot);
+    }
+
+    if ((unsigned char)ENEMY_MOVE_TIMER(slot) != 0u) {
+        link_collision_check_link_collision(slot);
+        return;
+    }
+    link_collision_check_monster_collisions(slot);
+    if ((unsigned char)ENEMY_METASTATE(slot) != 0u) {
+        ENEMY_TYPE(slot) = 0x5Du;     /* DeadDummy */
+    }
+}
+
+/* NES Z_04.asm:3302 UpdateArmos. Phase 7 Task 7.4 step 6b native drain.
+ * Stance: ADOPT — verbatim transcription.
+ *
+ * NES sequence:
+ *   1. UpdateGoriya (already drained: enrt_update_goriya). Note armos
+ *      shares goriya AI but UpdateGoriya special-cases type $1E to skip
+ *      the shoot-delay early-out (enemy_wanderer_runtime.c:176).
+ *   2. If ObjShoveDir != 0: jmp DrawArmosAndCheckCollisions.
+ *   3. Decrement ObjAnimCounter; if non-zero: jmp DrawArmosAndCheckCollisions.
+ *   4. ObjAnimCounter = $06.  ObjAnimFrame ^= $02  (advance to next pose pair).
+ *   5. fall through to DrawArmosAndCheckCollisions.
+ *
+ * Cell map:
+ *   ObjShoveDir    = ENEMY_OBJ_SHOVE_DIR ($00C0).
+ *   ObjAnimCounter = ENEMY_ANIM_TIMER ($03B5 / aliased).
+ *   ObjAnimFrame   = ENEMY_DRAW_FRAME ($03E4).
+ */
+void enrt_update_armos(unsigned int slot)
+{
+    enrt_update_goriya(slot);
+
+    if ((unsigned char)OBJ(NES_OBJ_SHOVE_DIR, slot) != 0u) {
+        armos_draw_and_check_collisions(slot);
+        return;
+    }
+
+    {
+        unsigned char anim = (unsigned char)(ENEMY_ANIM_TIMER(slot) - 1u);
+        ENEMY_ANIM_TIMER(slot) = anim;
+        if (anim != 0u) {
+            armos_draw_and_check_collisions(slot);
+            return;
+        }
+    }
+
+    ENEMY_ANIM_TIMER(slot) = 0x06u;
+    ENEMY_DRAW_FRAME(slot) =
+        (unsigned char)((unsigned char)ENEMY_DRAW_FRAME(slot) ^ 0x02u);
+    armos_draw_and_check_collisions(slot);
 }

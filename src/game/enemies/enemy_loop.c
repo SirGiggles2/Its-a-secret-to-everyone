@@ -60,6 +60,7 @@ extern void enrt_update_tektite_or_boulder(unsigned int slot);   /* 7.4 step 2a 
 extern void enrt_update_zora(unsigned int slot);                 /* 7.4 step 2b */
 extern void enrt_update_ghini(unsigned int slot);                /* 7.4 step 3 */
 extern void enrt_update_flying_ghini(unsigned int slot);         /* 7.4 step 6a */
+extern void enrt_update_armos(unsigned int slot);                /* 7.4 step 6b */
 extern void core_reset_obj_metastate_and_timer(unsigned int slot); /* 7.4 step 2b ($11 INIT) */
 extern unsigned char core_reset_obj_state(unsigned int slot);
 
@@ -270,6 +271,16 @@ const enemy_update_fn enemy_update_fns[ENEMY_LOOP_TYPE_MAX] = {
      * own native drains (c_change_tile_obj_tiles only resolves via
      * c_shims.asm bank, not linked into Debug.md). */
     [0x22] = enrt_update_flying_ghini,      /* FlyingGhini */
+    /* Task 7.4 step 6b — $1E Armos UPDATE (NES Z_04.asm:3302 UpdateArmos).
+     * Native drain in enemy_walker_bridge.c — composes enrt_update_goriya
+     * (already drained, type-$1E specialization at wanderer_runtime.c:176)
+     * + ObjShoveDir / ObjAnimCounter gates + DrawArmosAndCheckCollisions
+     * (sprite_anim_advance_and_fetch + dir-keyed frame select +
+     * link/monster collision tail with $5D dead-dummy convert on death).
+     *
+     * INIT row $1E + $22 still deferred — InitArmosOrFlyingGhini reaches
+     * ChangeTileObjTiles + secret-armos table not yet drained. */
+    [0x1E] = enrt_update_armos,             /* Armos */
 };
 
 /* Internal: clear an enemy slot's scratch state per NES room-init
