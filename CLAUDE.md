@@ -20,12 +20,29 @@ RAM tables) to confirm ground truth before changing anything. See memory:
 `feedback_check_dont_guess`, `feedback_long_term_fix`,
 `feedback_full_native_rewrite`.
 
+## RoomRom freeze (HARD — WT-5, user 2026-05-09)
+
+**NEVER add new files under `RoomRom/src/`, `RoomRom/data/`, or
+`RoomRom/tools/`.** RoomRom is the frozen scaffold + debug-tick host.
+All new gameplay code lives under `src/game/<subsystem>/` and links
+into `builds/Debug.md` via `tools/debug/build_debug.py`.
+
+Existing RoomRom files MAY be edited only when absolutely required
+(e.g. one `#include` + call-site line in `RoomRom/src/main.c` to
+invoke a probe living in `src/game/`). When in doubt, file goes in
+`src/game/<subsystem>/`. Probes go in
+`src/game/<subsystem>/probes/*.{c,h}`.
+
+User directive verbatim: "PREVENT YOURSELF FROM EVER WORKING ON
+ROOMROM EVER AGAIN... PORT TODAYS WORK TO DEBUG.md". See memory:
+`feedback_no_new_roomrom_files`.
+
 ## Worktree rule (HARD)
 
 `git worktree list` BEFORE:
 - building `Debug.md` from a non-main worktree
 - copying any `builds/Debug.md` ROM into the BizHawk dir
-- editing any file under `RoomRom/src/`, `RoomRom/data/`, or `RoomRom/tools/`
+- editing any existing file under `RoomRom/src/`, `RoomRom/data/`, or `RoomRom/tools/` (and per WT-5 above, NEVER add new files there)
 - claiming what gameplay-runtime code currently does
 
 RoomRom S0–S2 work merged into `main` (tags `roomrom-s1-closed`,
