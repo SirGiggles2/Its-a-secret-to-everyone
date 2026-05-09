@@ -60,6 +60,14 @@ void draw_item_by_slot(unsigned int item_slot, unsigned int slot);
  * RAM($0657+slot) into TMP4, then DrawItemBySlot. */
 void draw_item_in_inventory(unsigned int item_slot, unsigned int slot);
 
+/* DrawArrow (Z_07.asm:3908) + OffsetAndDrawArrow + L_DrawArrowOrBoomerang.
+ * Used by enrt_draw_shot dispatch when OBJ_TYPE == $5B. */
+void draw_arrow(unsigned int slot);
+
+/* DrawSwordShotOrMagicShot (Z_07.asm:3437). Used by enrt_draw_shot
+ * dispatch when OBJ_TYPE in $57/$58/$59 (player or monster sword/magic). */
+void draw_sword_shot_or_magic_shot(unsigned int slot);
+
 #ifdef __cplusplus
 }
 #endif

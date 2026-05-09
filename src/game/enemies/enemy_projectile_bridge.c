@@ -9,7 +9,7 @@
 #include "combat/collision_dispatch.h"      /* collision_get_colliding_tile_moving */
 #include "combat/link_collision_dispatch.h" /* link_collision_check_link_collision */
 #include "combat/targeting_dispatch.h"      /* targeting_* */
-#include "world/draw_dispatch.h"            /* draw_object_not_mirrored */
+#include "world/draw_dispatch.h"            /* draw_object_not_mirrored, draw_arrow, draw_sword_shot_or_magic_shot */
 #include "world/object_dispatch.h"          /* object_bound_by_room, object_move_object */
 #include "world/sprite_dispatch.h"          /* sprite_anim_fetch_obj_pos */
 
@@ -28,19 +28,16 @@ void c_draw_object_not_mirrored(unsigned int slot)
 
 void c_draw_arrow(unsigned int slot)
 {
-    /* Step 12 STUB: NES DrawArrow lives in zelda_translated/Z_01.asm
-     * (not linked into Debug.md). Drain target for next step.
-     * For step 12 verification, arrows ($5B) aren't shot by octorok
-     * ($53) so this branch never fires. */
-    (void)slot;
+    /* Step 13: native drain in src/game/world/draw_dispatch.c
+     * (NES Z_07.asm:3908). */
+    draw_arrow(slot);
 }
 
 void c_draw_sword_shot_or_magic_shot(unsigned int slot)
 {
-    /* Step 12 STUB: same rationale as c_draw_arrow above. Sword/magic
-     * shots ($57-$59) aren't shot by octorok ($53) so this never fires
-     * during the step-12 multi-slot probe. */
-    (void)slot;
+    /* Step 13: native drain in src/game/world/draw_dispatch.c
+     * (NES Z_07.asm:3437). */
+    draw_sword_shot_or_magic_shot(slot);
 }
 
 unsigned char z01_bound_by_room(unsigned int slot)

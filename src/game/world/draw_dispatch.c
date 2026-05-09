@@ -594,3 +594,107 @@ void draw_animate_item_object(unsigned char item_id, unsigned int slot)
         (idx < 36u) ? k_item_id_to_slot[idx] : 0x00u;
     draw_item_by_slot((unsigned int)item_slot, slot);
 }
+
+/* --------------------------------------------------------------- */
+/* Weapon draw — DrawArrow + DrawSwordShotOrMagicShot.             */
+/* Z_07.asm:3437 / 3908 / 3795-3811 / 4293-4320.                   */
+/* Phase 7 Task 7.2 step 13 — replaces enemy_projectile_bridge.c   */
+/* stubs c_draw_arrow + c_draw_sword_shot_or_magic_shot.           */
+/* --------------------------------------------------------------- */
+
+/* RDirectionToWeaponFrame (Z_07.asm:3795). Indexed by reverse-dir
+ * Y order: up, down, left, right. */
+static const unsigned char k_r_dir_to_weapon_frame[4] = {
+    0x00u, 0x00u, 0x01u, 0x01u
+};
+
+/* RDirectionToWeaponBaseAttribute (Z_07.asm:3804). Same order. */
+static const unsigned char k_r_dir_to_weapon_base_attr[4] = {
+    0x00u, 0x80u, 0x00u, 0x00u
+};
+
+/* RDirectionToOffsetsX (Z_07.asm:3807). */
+static const unsigned char k_r_dir_to_offsets_x[4] = {
+    0xFCu, 0xFCu, 0x00u, 0x00u
+};
+
+/* RDirectionToOffsetsY (Z_07.asm:3810). */
+static const unsigned char k_r_dir_to_offsets_y[4] = {
+    0x00u, 0x00u, 0x03u, 0x03u
+};
+
+void draw_sword_shot_or_magic_shot(unsigned int slot)
+{
+    /* drain Z_07.asm:3437. */
+    sprite_anim_fetch_obj_pos(slot);
+
+    const unsigned char dir = (unsigned char)OBJ_DIR(slot);
+    if ((dir & 0x03u) != 0u) {
+        DRAW_Y = (uint8_t)((unsigned char)DRAW_Y + 3u);
+    }
+
+    const unsigned int opp = core_get_opposite_dir((unsigned int)dir);
+    const unsigned char y_idx = (unsigned char)((opp >> 8) & 0xFFu);
+
+    const unsigned char attrs =
+        (unsigned char)((unsigned char)FRAME_COUNTER & 0x03u) |
+        k_r_dir_to_weapon_base_attr[y_idx & 0x03u];
+    (void)core_anim_set_sprite_desc_attrs((unsigned int)attrs);
+
+    DRAW_FRAME = k_r_dir_to_weapon_frame[y_idx & 0x03u];
+
+    if (y_idx == 2u) {
+        DRAW_FLIP_H = (uint8_t)((unsigned char)DRAW_FLIP_H + 1u);
+    }
+
+    unsigned int item_slot;
+    if (slot >= 0x0Du) {
+        const unsigned char st = (unsigned char)OBJ_STATE(slot);
+        item_slot = ((st & 0x80u) != 0u) ? 0x23u : 0x22u;
+    } else {
+        const unsigned char ot = (unsigned char)OBJ_TYPE(slot);
+        item_slot = (ot == 0x57u) ? 0x22u : 0x23u;
+    }
+    anim_write_item_sprites(slot, item_slot);
+}
+
+void draw_arrow(unsigned int slot)
+{
+    /* drain Z_07.asm:3908 + OffsetAndDrawArrow + L_DrawArrowOrBoomerang. */
+    DRAW_FLIP_H = 0u;
+    if ((unsigned char)OBJ_DIR(slot) == 0x02u) {
+        DRAW_FLIP_H = (uint8_t)((unsigned char)DRAW_FLIP_H + 1u);
+    }
+
+    const unsigned int opp =
+        core_get_opposite_dir((unsigned int)OBJ_DIR(slot));
+    const unsigned char y_idx = (unsigned char)((opp >> 8) & 0xFFu);
+
+    DRAW_FRAME = k_r_dir_to_weapon_frame[y_idx & 0x03u];
+    unsigned char attr = k_r_dir_to_weapon_base_attr[y_idx & 0x03u];
+
+    if (slot < 0x0Du && (unsigned char)OBJ_TYPE(slot) == 0x5Bu) {
+        attr = (unsigned char)(attr + 2u);
+    } else {
+        const unsigned char inv_arrow = (unsigned char)RAM(0x0659u);
+        attr = (unsigned char)(attr + inv_arrow - 1u);
+    }
+    DRAW_LEFT_ATTR = attr;
+    DRAW_RIGHT_ATTR = attr;
+
+    /* OffsetAndDrawArrow + L_DrawArrowOrBoomerang inlined.
+     * X = ObjX + RDirectionToOffsetsX[Y]; Y = ObjY + RDirectionToOffsetsY[Y]. */
+    DRAW_X = (uint8_t)((unsigned char)OBJ_X(slot) +
+                       k_r_dir_to_offsets_x[y_idx & 0x03u]);
+    DRAW_Y = (uint8_t)((unsigned char)OBJ_Y(slot) +
+                       k_r_dir_to_offsets_y[y_idx & 0x03u]);
+
+    /* If state high nibble == $20 (spark), use palette row 1. */
+    const unsigned char state_hi =
+        (unsigned char)((unsigned char)OBJ_STATE(slot) & 0xF0u);
+    if (state_hi == 0x20u) {
+        (void)core_anim_set_sprite_desc_attrs(1u);
+    }
+
+    anim_write_item_sprites(slot, 0x02u);  /* arrow item slot */
+}
