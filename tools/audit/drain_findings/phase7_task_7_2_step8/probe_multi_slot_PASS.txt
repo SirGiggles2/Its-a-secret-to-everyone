@@ -1,0 +1,38 @@
+============================================================
+WALKER TICK TRACE -- $FF7F00 live block
+------------------------------------------------------------
+init probe magic = 'EL' (expect 'EL')
+[t+  0] f=   19 alive=1/1 type(pre/post/raw/lua)=$07/$07/$07/$07 x=$80 y=$80 dir=$08 anim= 5 draw=$03 move=$20 state=$00 spd=$00 link=($00,$00)
+[t+ 10] f=   24 alive=1/1 type(pre/post/raw/lua)=$07/$07/$07/$07 x=$80 y=$80 dir=$08 anim= 6 draw=$00 move=$20 state=$00 spd=$00 link=($00,$00)
+[t+ 20] f=   28 alive=1/1 type(pre/post/raw/lua)=$07/$07/$07/$07 x=$80 y=$80 dir=$08 anim= 2 draw=$00 move=$20 state=$00 spd=$00 link=($00,$00)
+[t+ 30] f=   33 alive=1/1 type(pre/post/raw/lua)=$07/$07/$07/$07 x=$80 y=$80 dir=$08 anim= 3 draw=$03 move=$20 state=$00 spd=$20 link=($00,$00)
+[t+ 40] f=   37 alive=1/1 type(pre/post/raw/lua)=$07/$07/$07/$07 x=$80 y=$7F dir=$08 anim= 5 draw=$00 move=$20 state=$00 spd=$00 link=($00,$00)
+[t+ 50] f=   42 alive=1/1 type(pre/post/raw/lua)=$07/$07/$07/$07 x=$80 y=$7F dir=$08 anim= 6 draw=$03 move=$20 state=$00 spd=$00 link=($00,$00)
+[t+ 60] f=   47 alive=1/1 type(pre/post/raw/lua)=$07/$07/$07/$07 x=$80 y=$7F dir=$08 anim= 1 draw=$03 move=$20 state=$00 spd=$00 link=($00,$00)
+[t+ 70] f=   51 alive=1/1 type(pre/post/raw/lua)=$07/$07/$07/$07 x=$80 y=$7F dir=$08 anim= 3 draw=$00 move=$20 state=$00 spd=$00 link=($00,$00)
+[t+ 80] f=   56 alive=1/1 type(pre/post/raw/lua)=$07/$07/$07/$07 x=$80 y=$7F dir=$08 anim= 4 draw=$03 move=$20 state=$00 spd=$00 link=($00,$00)
+[t+ 90] f=   60 alive=1/1 type(pre/post/raw/lua)=$07/$07/$07/$07 x=$80 y=$7F dir=$08 anim= 6 draw=$00 move=$20 state=$00 spd=$00 link=($00,$00)
+[t+100] f=   65 alive=1/1 type(pre/post/raw/lua)=$07/$07/$07/$07 x=$80 y=$7F dir=$08 anim= 1 draw=$00 move=$20 state=$00 spd=$00 link=($00,$00)
+[t+110] f=   70 alive=1/1 type(pre/post/raw/lua)=$07/$07/$07/$07 x=$80 y=$7F dir=$08 anim= 2 draw=$03 move=$20 state=$00 spd=$00 link=($00,$00)
+[t+120] f=   74 alive=1/1 type(pre/post/raw/lua)=$07/$07/$07/$07 x=$80 y=$7F dir=$08 anim= 4 draw=$00 move=$20 state=$00 spd=$00 link=($00,$00)
+------------------------------------------------------------
+STEP 8 MULTI-SLOT TRACE -- $FF7F80 (slots 1-4)
+slot 1=octorock $07, 2=moblin $03, 3=goriya $05, 4=stalfos $2A
+  slot 1 type=$07 alive 1->1 xy=(128,128)->(128,127) dir=$08->$08 anim=5->4 draw=$03->$00 spd=$00->$00
+  slot 2 type=$03 alive 1->1 xy=(64,96)->(63,96) dir=$02->$02 anim=0->0 draw=$00->$00 spd=$00->$00
+  slot 3 type=$05 alive 1->1 xy=(64,160)->(64,160) dir=$02->$02 anim=0->0 draw=$00->$00 spd=$00->$00
+  slot 4 type=$2A alive 1->1 xy=(192,96)->(192,96) dir=$04->$04 anim=237->182 draw=$00->$00 spd=$00->$00
+------------------------------------------------------------
+  PASS  G1 magic 'TK' (publisher fired)
+  PASS  G2 frame_counter advanced (19 -> 74)
+  PASS  G3 ENEMY_ALIVE_FLAG(1) stays 1 across trace
+  PASS  G4 ENEMY_TYPE(1) stays $07 across trace
+  PASS  G5 anim_timer OR draw_frame advanced (anim_changed=true draw_changed=true)
+  PASS  G6 X OR Y advanced (x_changed=false y_changed=true; first=128,128 last=128,127)
+  PASS  G7 slot 2 type=$03 alive+type held
+  PASS  G8 slot 3 type=$05 alive+type held
+  PASS  G9 slot 4 type=$2A alive+type held
+  PASS  G10 at least one of slots 2/3/4 advanced anim/draw (goriya or stalfos ticking)
+------------------------------------------------------------
+>>> WALKER TICK TRACE: PASS <<<
+============================================================

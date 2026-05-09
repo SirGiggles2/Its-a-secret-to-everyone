@@ -59,6 +59,13 @@ void enemy_loop_probe_run(void)
      * sequencing parity. */
     enemy_loop_force_spawn_slow_octorock(1u, 0x80u, 0x80u, 0u);
 
+    /* Step 8 — seed slots 2/3/4 with moblin/goriya/stalfos to verify
+     * step-7 dispatch rows tick. Spread X positions so collision
+     * heuristics don't pin them. */
+    enemy_loop_force_spawn_typed(2u, 0x03u, 0x40u, 0x60u, 0u); /* BlueMoblin */
+    enemy_loop_force_spawn_typed(3u, 0x05u, 0x40u, 0xA0u, 0u); /* BlueGoriya */
+    enemy_loop_force_spawn_typed(4u, 0x2Au, 0xC0u, 0x60u, 0u); /* Stalfos */
+
     alive_after = enemy_loop_alive_count();
 
     /* Header. */
@@ -70,8 +77,9 @@ void enemy_loop_probe_run(void)
     /* check[0]: alive_count was 0 after room_init (all slots cleared). */
     put_pair(block, 0, (unsigned short)alive_before, 0x0000u);
 
-    /* check[1]: alive_count is 1 after force_spawn. */
-    put_pair(block, 1, (unsigned short)alive_after, 0x0001u);
+    /* check[1]: alive_count is 4 after step-8 force_spawn (octorok +
+     * moblin + goriya + stalfos). */
+    put_pair(block, 1, (unsigned short)alive_after, 0x0004u);
 
     /* check[2]: ENEMY_TYPE(1) == 0x07 (RedSlowOctorock). */
     put_pair(block, 2, (unsigned short)ENEMY_TYPE(1), 0x0007u);
@@ -102,8 +110,9 @@ void enemy_loop_probe_run(void)
      * direct macro read). */
     put_pair(block, 8, (unsigned short)enemy_loop_get_type(1u), 0x0007u);
 
-    /* check[9]: enemy_loop_get_type(2) == 0 (slot 2 still empty). */
-    put_pair(block, 9, (unsigned short)enemy_loop_get_type(2u), 0x0000u);
+    /* check[9]: enemy_loop_get_type(2) == 0x03 (BlueMoblin seeded
+     * step 8). Pre-step-8 expected 0 (slot empty). */
+    put_pair(block, 9, (unsigned short)enemy_loop_get_type(2u), 0x0003u);
 
     /* Step-3 INIT-side checks. enrt_octorock_common(slot, 32) writes
      * these cells before delegating to enrt_init_walker. All four prove
@@ -143,12 +152,41 @@ void enemy_loop_probe_run(void)
  * chain (enrt_update_rope -> walker primitives) actually executes
  * even though no sprite is visible (oam_router NES OAM mirror -> SAT
  * router not yet built; tracked separately). */
+/* Step 8 multi-slot publisher. Same call-site as the slot-1 publisher
+ * (end of enemy_loop_tick), publishes 4 slots * 8 bytes at $FF7F80 so
+ * step-8 probe can verify $03/$05/$2A dispatch rows actually tick.
+ *
+ * Static helper kept private — only the caller below uses it. */
+static void publish_multi_slot(volatile unsigned char *base,
+                               unsigned int probe_idx,
+                               unsigned int slot)
+{
+    volatile unsigned char *p = &base[probe_idx * 8u];
+    p[0] = (unsigned char)ENEMY_ALIVE_FLAG(slot);
+    p[1] = (unsigned char)ENEMY_TYPE(slot);
+    p[2] = (unsigned char)ENEMY_X(slot);
+    p[3] = (unsigned char)ENEMY_Y(slot);
+    p[4] = (unsigned char)ENEMY_DIR(slot);
+    p[5] = (unsigned char)ENEMY_ANIM_TIMER(slot);
+    p[6] = (unsigned char)ENEMY_DRAW_FRAME(slot);
+    p[7] = (unsigned char)ENEMY_WALK_SPEED(slot);
+}
+
 void enemy_loop_probe_publish_live(void)
 {
     volatile unsigned char *block =
         (volatile unsigned char *)ENEMY_LOOP_TICK_PROBE_BASE;
+    volatile unsigned char *multi =
+        (volatile unsigned char *)ENEMY_LOOP_MULTI_SLOT_BASE;
     static unsigned short frame_counter = 0u;
     frame_counter++;
+
+    /* Step 8 multi-slot block. Slot 1 octorok ($07) + 2 moblin ($03) +
+     * 3 goriya ($05) + 4 stalfos ($2A). */
+    publish_multi_slot(multi, 0u, 1u);
+    publish_multi_slot(multi, 1u, 2u);
+    publish_multi_slot(multi, 2u, 3u);
+    publish_multi_slot(multi, 3u, 4u);
 
     block[0]  = 0x54u;                                /* 'T' */
     block[1]  = 0x4Bu;                                /* 'K' */

@@ -210,16 +210,30 @@ void enemy_loop_force_spawn_slow_octorock(unsigned int slot,
      * Step 2 writes state cells only (no enrt_init_ call yet — see
      * file-level comment). Probe verifies iterator + type lookup +
      * force_spawn cell writes. Task 7.3 wires walker init + ticks. */
+    enemy_loop_force_spawn_typed(slot, 0x07u, x, y, dir);
+}
+
+void enemy_loop_force_spawn_typed(unsigned int slot,
+                                  unsigned char enemy_type,
+                                  unsigned char x,
+                                  unsigned char y,
+                                  unsigned char dir)
+{
+    /* Step 8 generic seed. Probe-side hook used to verify step-7
+     * dispatch rows ($03/$04 moblin, $05/$06 goriya, $2A stalfos)
+     * actually tick without crashing. Same shape as the octorok
+     * seed: clear scratch, set type/x/y/dir, dispatch init row. */
     enemy_init_fn fn;
     if (slot < ENEMY_LOOP_SLOT_FIRST || slot > ENEMY_LOOP_SLOT_LAST) return;
+    if (enemy_type >= ENEMY_LOOP_TYPE_MAX) return;
 
-    ENEMY_TYPE(slot) = 0x07u;   /* RedSlowOctorock — NES InitObject_JumpTable[$07] */
+    ENEMY_TYPE(slot) = enemy_type;
     ENEMY_X(slot) = x;
     ENEMY_Y(slot) = y;
     clear_slot_scratch(slot);
     ENEMY_DIR(slot) = dir;
 
-    fn = enemy_init_fns[0x07u];
+    fn = enemy_init_fns[enemy_type];
     if (fn != 0) fn(slot);
 }
 

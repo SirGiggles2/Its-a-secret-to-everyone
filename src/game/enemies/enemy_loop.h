@@ -64,6 +64,15 @@ void enemy_loop_force_spawn_slow_octorock(unsigned int slot,
                                           unsigned char y,
                                           unsigned char dir);
 
+/* Step 8 generic seed: spawn ANY enemy type. Used by multi-slot probe
+ * to seed moblin/goriya/stalfos in slots 2/3/4 alongside the slot-1
+ * octorok and verify step-7 dispatch rows actually tick. */
+void enemy_loop_force_spawn_typed(unsigned int slot,
+                                  unsigned char enemy_type,
+                                  unsigned char x,
+                                  unsigned char y,
+                                  unsigned char dir);
+
 /* Diagnostic accessors for the slot iterator (used by probes). */
 unsigned int  enemy_loop_alive_count(void);
 unsigned char enemy_loop_get_type(unsigned int slot);

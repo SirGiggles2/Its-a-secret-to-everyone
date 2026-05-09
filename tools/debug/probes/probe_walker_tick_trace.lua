@@ -31,6 +31,7 @@
 
 local TICK_BASE = 0x7F00     -- $FF7F00 in 68K RAM domain (post-tick)
 local PRE_BASE  = 0x7F40     -- $FF7F40 (pre-tick snapshot)
+local MULTI_BASE = 0x7F80    -- $FF7F80 step-8 multi-slot block
 local PROBE_BASE = 0x7E00    -- $FF7E00 (init probe)
 local DOMAIN = "68K RAM"
 
@@ -93,8 +94,24 @@ local init_e = read_u8(PROBE_BASE, 0)
 local init_l = read_u8(PROBE_BASE, 1)
 w(string.format("init probe magic = '%c%c' (expect 'EL')", init_e, init_l))
 
+-- step 8 multi-slot reader. probe_idx 0..3 = slots 1..4.
+local function multi_slot(probe_idx)
+    local off = probe_idx * 8
+    return {
+        alive    = read_u8(MULTI_BASE, off + 0),
+        type_    = read_u8(MULTI_BASE, off + 1),
+        x        = read_u8(MULTI_BASE, off + 2),
+        y        = read_u8(MULTI_BASE, off + 3),
+        dir      = read_u8(MULTI_BASE, off + 4),
+        anim_t   = read_u8(MULTI_BASE, off + 5),
+        draw_f   = read_u8(MULTI_BASE, off + 6),
+        walk_spd = read_u8(MULTI_BASE, off + 7),
+    }
+end
+
 -- 5) Sample 13 snapshots over 120 frames (every 10 frames).
 local samples = {}
+local multi_samples = {{}, {}, {}, {}}  -- per-slot (1..4) sample lists
 for i = 1, 13 do
     local s = snapshot()
     table.insert(samples, s)
@@ -112,9 +129,30 @@ for i = 1, 13 do
         s.x, s.y, s.dir,
         s.anim_t, s.draw_f, s.move_t, s.state_t, s.walk_spd,
         s.link_x, s.link_y))
+    -- step 8 multi-slot capture (every 10 frames same as slot 1)
+    for slot_idx = 1, 4 do
+        table.insert(multi_samples[slot_idx], multi_slot(slot_idx - 1))
+    end
     if i < 13 then
         for _ = 1, 10 do emu.frameadvance() end
     end
+end
+
+-- step 8 multi-slot trace dump
+w(string.rep("-", 60))
+w("STEP 8 MULTI-SLOT TRACE -- $FF7F80 (slots 1-4)")
+w("slot 1=octorock $07, 2=moblin $03, 3=goriya $05, 4=stalfos $2A")
+for slot_idx = 1, 4 do
+    local first = multi_samples[slot_idx][1]
+    local last  = multi_samples[slot_idx][#multi_samples[slot_idx]]
+    w(string.format(
+        "  slot %d type=$%02X alive %d->%d xy=(%d,%d)->(%d,%d) dir=$%02X->$%02X anim=%d->%d draw=$%02X->$%02X spd=$%02X->$%02X",
+        slot_idx, first.type_, first.alive, last.alive,
+        first.x, first.y, last.x, last.y,
+        first.dir, last.dir,
+        first.anim_t, last.anim_t,
+        first.draw_f, last.draw_f,
+        first.walk_spd, last.walk_spd))
 end
 
 w(string.rep("-", 60))
@@ -170,6 +208,41 @@ gate(x_changed or y_changed,
      string.format("G6 X OR Y advanced (x_changed=%s y_changed=%s; first=%d,%d last=%d,%d)",
                    tostring(x_changed), tostring(y_changed),
                    first.x, first.y, last.x, last.y))
+
+-- step 8 gates: G7-G10 verify each step-7 wired slot stays alive +
+-- preserves type across the trace window. Build crash would have
+-- failed link; this checks runtime crash (slot type cleared, alive
+-- flag dropped, etc).
+local function multi_gate(slot_idx, expected_type, gate_name)
+    local sl = multi_samples[slot_idx]
+    local alive_held = true
+    local type_held = true
+    for _, ms in ipairs(sl) do
+        if ms.alive ~= 1 then alive_held = false end
+        if ms.type_ ~= expected_type then type_held = false end
+    end
+    gate(alive_held and type_held,
+         string.format("%s slot %d type=$%02X alive+type held",
+                       gate_name, slot_idx, expected_type))
+end
+multi_gate(2, 0x03, "G7")  -- moblin
+multi_gate(3, 0x05, "G8")  -- goriya
+multi_gate(4, 0x2A, "G9")  -- stalfos
+
+-- G10: at least one of slots 2/3/4 advanced anim_timer or draw_frame
+-- (proves the dispatch chain ran the body, not just init). Moblin
+-- expected NOT to advance (bare drain, no anim/draw); goriya/stalfos
+-- expected to advance.
+local any_extra_advanced = false
+for slot_idx = 2, 4 do
+    local sl = multi_samples[slot_idx]
+    for i = 2, #sl do
+        if sl[i].anim_t ~= sl[i-1].anim_t then any_extra_advanced = true end
+        if sl[i].draw_f ~= sl[i-1].draw_f then any_extra_advanced = true end
+    end
+end
+gate(any_extra_advanced,
+     "G10 at least one of slots 2/3/4 advanced anim/draw (goriya or stalfos ticking)")
 
 w(string.rep("-", 60))
 w(pass and ">>> WALKER TICK TRACE: PASS <<<"
