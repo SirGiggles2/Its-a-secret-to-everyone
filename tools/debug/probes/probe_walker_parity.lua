@@ -1,13 +1,19 @@
--- Phase 7 Task 7.2 step 2 — enemy slot iterator + force_spawn verifier.
+-- Phase 7 Task 7.2 step 3 — enemy slot iterator + INIT dispatch verifier.
+--
+-- Step 3 wires enemy_init_fns[$07] = enrt_init_slow_octorock_or_ghini
+-- + a z07_reset_obj_state forwarder. Probe pre-pins LINK position so
+-- enrt_init_walker DIR computation is deterministic, then verifies all
+-- post-init cells (WALK_SPEED, MOVE_TIMER, ANIM_TIMER, OBJ_STATE) plus
+-- the original step-2 cell-write checks.
 --
 -- Reads ENEMY_LOOP_PROBE_BASE = $FF7E00 = 68K RAM offset 0x7E00 and
--- prints (actual, expected) for each of the 10 checks. Saves a screenshot
+-- prints (actual, expected) for each of the 14 checks. Saves a screenshot
 -- after the verifier writes results so the screen state at probe-time is
 -- captured.
 --
 -- Block layout (must match src/game/enemies/probes/enemy_loop_probe.h):
 --   [0..1] = 'E','L'
---   [2]    = check_count (10)
+--   [2]    = check_count (14)
 --   [3]    = reserved
 --   [4..]  = check_count * 4 bytes (actual_be_u16 || expected_be_u16)
 
@@ -25,16 +31,20 @@ local function read_u16_be(off)
 end
 
 local CHECK_NAMES = {
-    [0] = "alive_before_spawn (=0)",
-    [1] = "alive_after_spawn (=1)",
-    [2] = "ENEMY_TYPE(1) (=$07)",
-    [3] = "ENEMY_X(1) (=$80)",
-    [4] = "ENEMY_Y(1) (=$80)",
-    [5] = "ENEMY_DIR(1) (=$00)",
-    [6] = "ENEMY_STATE_TIMER(1) (=$01)",
-    [7] = "ENEMY_ALIVE_FLAG(1) (=1)",
-    [8] = "enemy_loop_get_type(1) (=$07)",
-    [9] = "enemy_loop_get_type(2) (=0)",
+    [0]  = "alive_before_spawn (=0)",
+    [1]  = "alive_after_spawn (=1)",
+    [2]  = "ENEMY_TYPE(1) (=$07)",
+    [3]  = "ENEMY_X(1) (=$80)",
+    [4]  = "ENEMY_Y(1) (=$80)",
+    [5]  = "ENEMY_DIR(1) (=$02 post-init)",
+    [6]  = "ENEMY_STATE_TIMER(1) (=$00 — same cell as OBJ_STATE, zeroed by z07_reset_obj_state)",
+    [7]  = "ENEMY_ALIVE_FLAG(1) (=1)",
+    [8]  = "enemy_loop_get_type(1) (=$07)",
+    [9]  = "enemy_loop_get_type(2) (=0)",
+    [10] = "ENEMY_WALK_SPEED(1) (=$20)",
+    [11] = "ENEMY_MOVE_TIMER(1) (=$20)",
+    [12] = "ENEMY_ANIM_TIMER(1) (=$06)",
+    [13] = "OBJ_STATE(1) (=0 via z07_reset_obj_state forwarder)",
 }
 
 local function format_u16(v)
@@ -58,7 +68,7 @@ local function probe_once()
     w(string.format("ENEMY_LOOP probe @ $FF%04X", 0x7E00))
     w(string.format("  magic = '%c%c' (expect 'EL') raw=0x%02X 0x%02X",
                     magic_e, magic_l, magic_e, magic_l))
-    w(string.format("  count = %d (expect 10)", count))
+    w(string.format("  count = %d (expect 14)", count))
     w(string.rep("-", 60))
 
     if magic_e ~= 0x45 or magic_l ~= 0x4C then
@@ -67,7 +77,7 @@ local function probe_once()
         return false, 0, 0
     end
 
-    if count ~= 10 then
+    if count ~= 14 then
         w("FAIL: check count mismatch.")
         if f then f:close() end
         return false, 0, 0

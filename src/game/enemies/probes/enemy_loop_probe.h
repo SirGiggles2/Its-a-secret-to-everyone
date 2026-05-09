@@ -22,7 +22,7 @@
  */
 
 #define ENEMY_LOOP_PROBE_BASE   0x00FF7E00UL
-#define ENEMY_LOOP_PROBE_COUNT  10u
+#define ENEMY_LOOP_PROBE_COUNT  14u
 
 #ifdef __cplusplus
 extern "C" {

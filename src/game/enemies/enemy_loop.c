@@ -1,20 +1,18 @@
-/* Phase 7 Task 7.2 step 2 — enemy slot iterator + type dispatch shell.
+/* Phase 7 Task 7.2 step 3 — wire first init dispatch row (slow octorok / ghini).
  *
  * Drain Rule D1 stance: EXTEND. Function-pointer tables are the dispatch
  * shape (verbatim NES InitObject_JumpTable at Z_07.asm:5601). Tasks 7.3-7.7
  * fill rows one family at a time, paired with the shim plumbing each
- * family needs. Step 2 ships the SHELL — every row is NULL.
+ * family needs.
  *
- * Why all-NULL right now:
- *   Walker-family drain (commit b5026c1a) compiles cleanly but its
- *   bodies call into c_walker_move / c_shoot_if_wanted / z01_abs /
- *   z07_anim_* / enrt_animate_and_draw_common_object / 30+ other
- *   primitives that are NOT yet linked into Debug.md. Wiring even one
- *   walker entry retains those objects past --gc-sections and the link
- *   fails with undefined references. Per Drain Rule D1 we don't stub
- *   shims (would silently no-op the drained behavior); we wait for
- *   real impl per family. Step 2 deliverable = iterator + clear/spawn
- *   state machine + dispatch shape.
+ * Step 3 wires INIT only for ENEMY_TYPE 0x07 (RedSlowOctorock / Ghini).
+ * Update-side dispatch is still NULL — enrt_update_rope and friends call
+ * c_walker_move / z07_anim_advance_and_fetch / c_check_monster_collisions
+ * which are not yet linked into Debug.md. Update wiring lands in Task 7.3
+ * paired with native drain or shim plumbing for those primitives. Per
+ * Drain Rule D1 we route z07_reset_obj_state to the already-linked
+ * core_reset_obj_state body in src/game/core/core_dispatch.c (drain at
+ * src/core/core_runtime.c:327). Forwarder is one line, not a stub.
  *
  * Hard rule WT-5 (RoomRom freeze, 2026-05-09): this file lives at
  * src/game/enemies/ instead of RoomRom/src/. ENEMY_* macros are still
@@ -26,17 +24,41 @@
 #include "roomrom_enemy_state.h"          /* still in RoomRom/src/ pre-WT-5 */
 #include "platform_abi.h"
 
-/* Function-pointer tables. NULL = family not drained / not in Phase 7
- * step 2 scope. Tasks 7.3-7.7 fill rows + add shim sources to
- * tools/debug/build_debug.py without modifying this file. */
+/* Forward decls — defined in src/oracle/enemies/enemy_walker_runtime.c
+ * and src/game/core/core_dispatch.c respectively. Both objects are
+ * already linked into Debug.md per build_debug.py ROOMROM_C_SOURCES. */
+extern void enrt_init_slow_octorock_or_ghini(unsigned int slot);
+extern unsigned char core_reset_obj_state(unsigned int slot);
+
+/* z07_reset_obj_state forwarder. enrt_octorock_common (same TU as the
+ * init we wire below) calls this symbol. The drained body lives at
+ * src/core/core_runtime.c:327 and was promoted into the native core
+ * dispatch as core_reset_obj_state — call it directly. Avoids dragging
+ * in src/gen/z_07.c (which would also pull room_runtime + core_runtime
+ * + collision_runtime + their state header chains). Per --gc-sections
+ * + -ffunction-sections, only this single forwarder is retained. */
+unsigned char z07_reset_obj_state(unsigned int slot)
+{
+    return core_reset_obj_state(slot);
+}
+
+/* Function-pointer tables. Designated initializers leave unset rows at
+ * NULL. Tasks 7.3-7.7 fan out by adding rows here without otherwise
+ * modifying the file. */
 const enemy_init_fn enemy_init_fns[ENEMY_LOOP_TYPE_MAX] = {
-    /* All slots NULL until Task 7.3 wires walker shims. NES
-     * InitObject_JumpTable shape preserved by the array length. */
-    0
+    [0x07] = enrt_init_slow_octorock_or_ghini,
+    /* RedSlowOctorock — NES InitObject_JumpTable[$07] @ Z_07.asm:5601.
+     * Body: enrt_octorock_common(slot, 32) → enrt_init_walker(slot).
+     * Sets WALK_SPEED=$20, MOVE_TIMER=(slot+1)<<4, OBJ_STATE=0,
+     * DRAW_FRAME=0, ANIM_TIMER=6, then computes DIR from LINK_X/LINK_Y
+     * vs OBJ_X/OBJ_Y (h_dir or v_dir, whichever has larger diff). */
 };
 
 const enemy_update_fn enemy_update_fns[ENEMY_LOOP_TYPE_MAX] = {
-    /* All slots NULL until Task 7.3 wires walker shims. */
+    /* Update side stays NULL until Task 7.3 lands c_walker_move +
+     * z07_anim_advance_and_fetch + c_check_monster_collisions
+     * primitives. Octorok init alone is observable via the cell-write
+     * probe; live tick comes with update wiring. */
     0
 };
 
