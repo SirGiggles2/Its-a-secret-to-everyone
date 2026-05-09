@@ -172,12 +172,13 @@ void enemy_loop_probe_publish_pre(void)
 {
     volatile unsigned char *block =
         (volatile unsigned char *)ENEMY_LOOP_TICK_PRE_PROBE_BASE;
-    /* Raw absolute pointer to the byte ENEMY_TYPE(1) should map to —
-     * $FF0000 base + $0350 offset. Bypasses the A4-pinned `nes_ram`
-     * register binding so we can disambiguate "TYPE got cleared" vs
-     * "A4 wandered off". */
+    /* Raw absolute pointer to the byte ENEMY_TYPE(1) maps to.
+     * Debug.md A4 = $FF8000 (set by src/debug/a4_probe_asm.s entry).
+     * NES OBJ_TYPE+1 offset = $034F + 1 = $0350 → physical $FF8350.
+     * Bypasses the A4-pinned `nes_ram` register binding to confirm the
+     * macro path and the absolute path agree. */
     volatile unsigned char *raw_type1 =
-        (volatile unsigned char *)0x00FF0350UL;
+        (volatile unsigned char *)0x00FF8350UL;
     static unsigned short pre_counter = 0u;
     pre_counter++;
 

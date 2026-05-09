@@ -101,8 +101,10 @@ for i = 1, 13 do
     local pre_type = read_u8(PRE_BASE, 5)
     local pre_alive = read_u8(PRE_BASE, 4)
     local raw_350 = read_u8(PRE_BASE, 16)
-    -- Direct read of $FF0350 from Lua (bypasses publisher entirely).
-    local raw_350_lua = memory.read_u8(0x0350, "68K RAM")
+    -- Direct read of $FF8350 from Lua (bypasses publisher entirely).
+    -- Debug.md A4 = $FF8000 (per src/debug/a4_probe_asm.s); NES $0350
+    -- maps to physical $FF8350 in the 68K RAM domain.
+    local raw_350_lua = memory.read_u8(0x8350, "68K RAM")
     w(string.format(
         "[t+%3d] f=%5d alive=%d/%d type(pre/post/raw/lua)=$%02X/$%02X/$%02X/$%02X x=$%02X y=$%02X dir=$%02X anim=%2d draw=$%02X move=$%02X state=$%02X spd=$%02X link=($%02X,$%02X)",
         (i-1)*10, s.frame, pre_alive, s.alive,

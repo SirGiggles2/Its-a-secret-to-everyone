@@ -81,22 +81,28 @@ ANIM_TIMER, flips DRAW_FRAME) + `z01_anim_set_sprite_desc_attrs` +
 `c_draw_object_not_mirrored_with_frame` (no oam_router yet — visual
 gap separately tracked) + `c_check_monster_collisions`.
 
-## Open observation (deferred — not blocking)
+## Open observation (RESOLVED 2026-05-09)
 
-Trace shows `type(pre/post/raw/lua)=$07/$07/$00/$00`. C-side macro
-reads (via A4-pinned `nes_ram` register) report $07; the absolute
-pointer reads at `$FF0350` (both probe-side `*(volatile unsigned char *)
-0x00FF0350UL` and BizHawk Lua `memory.read_u8(0x0350, "68K RAM")`)
-report $00.
+Trace originally showed `type(pre/post/raw/lua)=$07/$07/$00/$00`.
+C-side macro reads via A4-pinned `nes_ram` reported $07; absolute reads
+at `$FF0350` reported $00.
 
-Implication: `nes_ram` (A4) is NOT pinned at `$FF0000` in the Debug.md
-build despite `src/genesis_shell.asm:34` setting it there. The cell that
-backs `ENEMY_TYPE(1)` lives somewhere else in 68K RAM (possibly a BSS
-array — the `ROOMROM_BUILD`-gated `roomrom_nes_ram[0x800]` from
-`RoomRom/src/boot/nes_ram_init.c`, even though Debug.md doesn't define
-`ROOMROM_BUILD`).
+Root cause: Debug.md does NOT link `src/genesis_shell.asm` (which would
+set A4 = $FF0000). The Debug.md entry point is `src/debug/a4_probe_asm.s
+main:` which executes `lea 0x00FF8000,%a4`. The expected base is
+asserted in `src/debug/a4_probe_main.c:10` (`A4_EXPECTED 0x00FF8000UL`)
+and gated by `tools/debug/test_debug_contract.py:79,89`.
 
-Not blocking step 4 — game logic uses the macro, which is consistent.
-But probes that read raw `$FF0350` (or any other A4-relative cell) are
-reading garbage. Worth a follow-up audit of where `nes_ram` actually
-points in Debug.md before any future absolute-address probe.
+Why $FF8000 and not $FF0000: SGDK runtime owns the lower half of work
+RAM ($FF0000-$FF7FFF — BSS, system globals, stack guard). NES work-RAM
+mirror is placed in the upper half. `tools/debug/build_debug.py` uses
+SGDK `md.ld`; the lower-RAM BSS is the SGDK contract.
+
+The cell that backs `ENEMY_TYPE(1)` therefore lives at $FF8350, not
+$FF0350. Probe + Lua reads now point at $FF8350 (commit follows this
+update). Debug.md NES_RAM contract documented in `src/abi/platform_abi.h`
+header doc (corrected from stale $FF0000 reference).
+
+Future probes / oam_router / any absolute-address access in Debug.md
+must use $FF8000 + nes_offset, not $FF0000 + nes_offset. NES OAM mirror
+at $0200 lives at $FF8200.

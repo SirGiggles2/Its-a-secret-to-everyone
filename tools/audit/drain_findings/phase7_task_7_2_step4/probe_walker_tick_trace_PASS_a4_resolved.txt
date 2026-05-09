@@ -1,0 +1,26 @@
+============================================================
+WALKER TICK TRACE -- $FF7F00 live block
+------------------------------------------------------------
+init probe magic = 'EL' (expect 'EL')
+[t+  0] f=   19 alive=1/1 type(pre/post/raw/lua)=$07/$07/$07/$07 x=$80 y=$80 dir=$02 anim= 7 draw=$00 move=$20 state=$00 spd=$20 link=($00,$00)
+[t+ 10] f=   24 alive=1/1 type(pre/post/raw/lua)=$07/$07/$07/$07 x=$80 y=$80 dir=$02 anim= 2 draw=$00 move=$20 state=$00 spd=$20 link=($00,$00)
+[t+ 20] f=   29 alive=1/1 type(pre/post/raw/lua)=$07/$07/$07/$07 x=$80 y=$80 dir=$02 anim= 7 draw=$01 move=$20 state=$00 spd=$20 link=($00,$00)
+[t+ 30] f=   33 alive=1/1 type(pre/post/raw/lua)=$07/$07/$07/$07 x=$80 y=$80 dir=$02 anim= 3 draw=$01 move=$20 state=$00 spd=$20 link=($00,$00)
+[t+ 40] f=   38 alive=1/1 type(pre/post/raw/lua)=$07/$07/$07/$07 x=$80 y=$80 dir=$02 anim= 8 draw=$00 move=$20 state=$00 spd=$20 link=($00,$00)
+[t+ 50] f=   42 alive=1/1 type(pre/post/raw/lua)=$07/$07/$07/$07 x=$80 y=$80 dir=$02 anim= 4 draw=$00 move=$20 state=$00 spd=$20 link=($00,$00)
+[t+ 60] f=   47 alive=1/1 type(pre/post/raw/lua)=$07/$07/$07/$07 x=$80 y=$80 dir=$02 anim= 9 draw=$01 move=$20 state=$00 spd=$20 link=($00,$00)
+[t+ 70] f=   52 alive=1/1 type(pre/post/raw/lua)=$07/$07/$07/$07 x=$80 y=$80 dir=$02 anim= 4 draw=$01 move=$20 state=$00 spd=$20 link=($00,$00)
+[t+ 80] f=   56 alive=1/1 type(pre/post/raw/lua)=$07/$07/$07/$07 x=$80 y=$80 dir=$02 anim=10 draw=$00 move=$20 state=$00 spd=$20 link=($00,$00)
+[t+ 90] f=   61 alive=1/1 type(pre/post/raw/lua)=$07/$07/$07/$07 x=$80 y=$80 dir=$02 anim= 5 draw=$00 move=$20 state=$00 spd=$20 link=($00,$00)
+[t+100] f=   66 alive=1/1 type(pre/post/raw/lua)=$07/$07/$07/$07 x=$80 y=$80 dir=$02 anim=10 draw=$01 move=$20 state=$00 spd=$20 link=($00,$00)
+[t+110] f=   70 alive=1/1 type(pre/post/raw/lua)=$07/$07/$07/$07 x=$80 y=$80 dir=$02 anim= 6 draw=$01 move=$20 state=$00 spd=$20 link=($00,$00)
+[t+120] f=   75 alive=1/1 type(pre/post/raw/lua)=$07/$07/$07/$07 x=$80 y=$80 dir=$02 anim= 1 draw=$01 move=$20 state=$00 spd=$20 link=($00,$00)
+------------------------------------------------------------
+  PASS  G1 magic 'TK' (publisher fired)
+  PASS  G2 frame_counter advanced (19 -> 75)
+  PASS  G3 ENEMY_ALIVE_FLAG(1) stays 1 across trace
+  PASS  G4 ENEMY_TYPE(1) stays $07 across trace
+  PASS  G5 anim_timer OR draw_frame advanced (anim_changed=true draw_changed=true)
+------------------------------------------------------------
+>>> WALKER TICK TRACE: PASS <<<
+============================================================

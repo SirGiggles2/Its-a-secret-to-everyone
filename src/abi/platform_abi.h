@@ -6,10 +6,19 @@
  * 1. Debug.md build (default, NO -DROOMROM_BUILD): A4-pinned `nes_ram`.
  *    - `register volatile unsigned char *nes_ram asm("a4")` reserves A4 globally
  *    - `-ffixed-a4` flag tells gcc to never clobber it
- *    - Boot shell (`src/genesis_shell.asm` near line 354) loads
- *      `lea (NES_RAM_BASE).l, A4` (= $FF0000) before any C runs
+ *    - Boot shell `src/debug/a4_probe_asm.s` (entry point `main:`) loads
+ *      `lea 0x00FF8000,%a4` before jumping to debug_main_after_a4().
+ *      This is the Debug.md NES RAM base — NOT $FF0000. The lower
+ *      $FF0000-$FF7FFF region is reserved for SGDK runtime (BSS,
+ *      stack guard, system globals). NES work-RAM mirror lives at
+ *      $FF8000-$FF87FF. `tools/debug/test_debug_contract.py` enforces
+ *      this constant in both the asm and `a4_probe_main.c:10`.
+ *      (Title.md path uses `src/genesis_shell.asm` with A4 = $FF0000;
+ *      that boot is NOT linked into Debug.md.)
  *    - Net effect: `nes_ram[offset]` compiles to `move.b (off,A4)` —
  *      the same addressing mode the transpiled asm uses. Zero perf cost.
+ *      Probes that need to read raw absolute RAM cells must use
+ *      $FF8000+offset, not $FF0000+offset.
  *
  * 2. RoomRom build (`-DROOMROM_BUILD`): regular global pointer.
  *    - `extern volatile unsigned char *nes_ram` — no register binding
