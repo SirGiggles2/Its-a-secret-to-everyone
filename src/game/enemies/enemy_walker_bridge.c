@@ -38,6 +38,7 @@
 #include "world/object_dispatch.h"   /* object_bound_by_room, object_move_object */
 #include "core/core_dispatch.h"      /* core_get_opposite_dir */
 #include "platform_abi.h"            /* RAM, OBJ, NES_OBJ_DIR, NES_SHOT_COLLISION_FLAG */
+#include "roomrom_enemy_state.h"     /* ENEMY_* macros (re-export of state/enemy_state.h) */
 
 /* NES non-Link offsets (cell-level; OBJ macro adds slot index).
  * ObjStunTimer  = $003D  (per-slot)
@@ -174,4 +175,170 @@ unsigned char z01_abs(unsigned int val)
     /* NES Abs at z_01.asm. Sign-test on bit 7. */
     unsigned char v = (unsigned char)val;
     return (v < 0x80u) ? v : (unsigned char)(0u - (unsigned int)v);
+}
+
+/* -------- Step 6: walker family unblock stubs -------- */
+
+void c_obj_shove(unsigned int slot)
+{
+    /* NES Obj_Shove (Z_07.asm:305): applies knockback in ObjShoveDir
+     * direction, decrements ObjPushTimer, clears ObjShoveDir on done.
+     *
+     * Step 6 stub: clear ObjShoveDir so callers don't loop forever.
+     * No combat damage is wired in Phase 7 Task 7.2 yet, so this branch
+     * never fires in the current probe scope (verified step 5 trace).
+     * When combat lands (Phase 7 Task 7.4 damage hook), drain
+     * Obj_Shove natively here. */
+    OBJ(NES_OBJ_SHOVE_DIR, slot) = 0u;
+}
+
+unsigned int c_shoot_if_wanted(unsigned int shot_type, unsigned int slot)
+{
+    /* NES ShootIfWanted: spawns a shot object (rock/arrow/sword-shot/
+     * boomerang/fireball) for monster, returns CARRY_SET|shot_slot on
+     * success, 0 on fail.
+     *
+     * Step 6 stub: always returns 0 (carry-clear = shot failed). This
+     * lets enrt_try_shooting + enrt_walker_set_input_dir... fall through
+     * the failure path without crashing, so octorok / moblin / stalfos /
+     * goriya walk normally but never spawn projectiles.
+     *
+     * TODO step 7: native projectile spawn (Phase 7 Task 7.2 master plan
+     * "projectile hook"). Will need shot_object_init dispatch + free-slot
+     * search across slots $0B..$0E. */
+    (void)shot_type;
+    (void)slot;
+    return 0u;
+}
+
+/* -------- Step 6: native enrt_update_octorock -------- */
+
+void enrt_update_octorock(unsigned int slot)
+{
+    /* NES UpdateOctorock (Z_04.asm:2966). Phase 7 Task 7.2 step 6.
+     * Native composition over drained primitives. Stance: EXTEND.
+     *
+     * Replaces the earlier $07 dispatch row that reused enrt_update_rope
+     * (semantically wrong — rope is type $29; enrt_update_rope's leever-
+     * style speed-ramp is rope-only behavior). Octorok shape is simpler:
+     * walker move + shoot-rock try + dir-based frame select.
+     *
+     * Steps:
+     *   1. Turn rate (ENEMY_AIR_SPEED): blue ($09+) = $A0, red = $70.
+     *   2. enrt_wanderer_target_player — runs c_walker_move + targeting.
+     *   3. qspeed: $20 if slow ($07/$09), else $40 (fast $08/$0A).
+     *   4. _TryShooting flying rock $53. Inlined from enrt_try_shooting
+     *      (which is `static` in enemy_walker_runtime.c). With the
+     *      step-6 c_shoot_if_wanted stub returning 0, this always lands
+     *      in the failure path: ENEMY_WALK_SPEED = qspeed, no shot.
+     *   5. sprite_anim_fetch_obj_pos — primes draw scratch + clears
+     *      ENEMY_FRAME_FLAGS (ZP_TMPF / $000F).
+     *   6. dir-based frame_offset: UP=1, DOWN=2, LEFT=0, RIGHT=0+hflip.
+     *   7. anim counter DEC; on 0 reload to 6 + toggle DRAW_FRAME ^ 3.
+     *   8. final_frame = dir_offset + DRAW_FRAME.
+     *   9. Draw mirrored if dir & $0C, else not mirrored.
+     *  10. CheckMonsterCollisions.
+     */
+
+    /* Step 1 — Turn rate. */
+    ENEMY_AIR_SPEED(slot) =
+        (ENEMY_TYPE(slot) >= 0x09u) ? 0xA0u : 0x70u;
+
+    /* Step 2 — Wanderer chain. */
+    enrt_wanderer_target_player(slot);
+
+    /* Step 3 — qspeed by color. */
+    unsigned char qspeed;
+    {
+        unsigned char t = ENEMY_TYPE(slot);
+        qspeed = (t == 0x07u || t == 0x09u) ? 0x20u : 0x40u;
+    }
+
+    /* Step 4 — Inlined _TryShooting flying rock $53. Mirror of static
+     * enrt_try_shooting in src/oracle/enemies/enemy_walker_runtime.c. */
+    {
+        unsigned char new_timer;
+        if (ENEMY_HIT_REACTION(slot) != 0u) {
+            new_timer = 0u;
+        } else {
+            unsigned char cur = OBJ(0x0451u, slot);     /* ObjShootTimer */
+            if (cur != 0u) {
+                new_timer = (unsigned char)(cur - 1u);
+            } else if (OBJ(0x0412u, slot) == 0u) {      /* ObjWantsToShoot */
+                ENEMY_WALK_SPEED(slot) = qspeed;
+                goto draw_octorock;
+            } else {
+                new_timer = 0x30u;
+            }
+        }
+        OBJ(0x0451u, slot) = new_timer;
+        if (new_timer == 0u) {
+            ENEMY_WALK_SPEED(slot) = qspeed;
+            goto draw_octorock;
+        }
+        if (new_timer != 0x10u) {
+            ENEMY_WALK_SPEED(slot) = 0u;
+            goto draw_octorock;
+        }
+        if ((ENEMY_PAUSE_FLAG | ENEMY_STUN_TIMER(slot)) != 0u) {
+            ENEMY_WALK_SPEED(slot) = 0u;
+            goto draw_octorock;
+        }
+        unsigned int result = c_shoot_if_wanted(0x53u, slot);
+        if ((result & CARRY_SET) == 0u) {
+            ENEMY_WALK_SPEED(slot) = qspeed;
+            goto draw_octorock;
+        }
+        ENEMY_MOVE_TIMER(slot) = 0x80u;
+        OBJ(0x0437u, slot) = (unsigned char)(OBJ(0x0437u, slot) - 1u);
+        OBJ(0x0412u, slot) = 0u;
+        ENEMY_WALK_SPEED(slot) = 0u;
+    }
+
+draw_octorock:
+    /* Step 5 — Anim_FetchObjPosForSpriteDescriptor. */
+    (void)sprite_anim_fetch_obj_pos(slot);
+
+    /* Step 6 — Direction-based frame offset. */
+    unsigned char dir_offset;
+    {
+        unsigned char dir = ENEMY_DIR(slot);
+        if ((dir & 0x0Cu) != 0u) {
+            /* Vertical: UP=$08 -> 1, DOWN=$04 -> 2. */
+            dir_offset = (dir == 0x08u) ? 1u : 2u;
+        } else {
+            /* Horizontal: LEFT/RIGHT both use offset 0; RIGHT also
+             * sets hflip via ENEMY_FRAME_FLAGS (NES INC $0F). */
+            dir_offset = 0u;
+            if (dir == 0x01u) {
+                ENEMY_FRAME_FLAGS =
+                    (unsigned char)(ENEMY_FRAME_FLAGS + 1u);
+            }
+        }
+    }
+
+    /* Step 7 — Animate counter. */
+    {
+        unsigned char ctr = (unsigned char)(ENEMY_ANIM_TIMER(slot) - 1u);
+        if (ctr == 0u) {
+            ctr = 0x06u;
+            ENEMY_DRAW_FRAME(slot) =
+                (unsigned char)(ENEMY_DRAW_FRAME(slot) ^ 0x03u);
+        }
+        ENEMY_ANIM_TIMER(slot) = ctr;
+    }
+
+    /* Step 8 — final = dir_offset + DRAW_FRAME. */
+    unsigned char final_frame =
+        (unsigned char)(dir_offset + ENEMY_DRAW_FRAME(slot));
+
+    /* Step 9 — Draw mirrored vs not. */
+    if ((ENEMY_DIR(slot) & 0x0Cu) != 0u) {
+        draw_object_mirrored_with_frame(final_frame, slot);
+    } else {
+        draw_object_not_mirrored_with_frame(final_frame, slot);
+    }
+
+    /* Step 10 — CheckMonsterCollisions. */
+    link_collision_check_monster_collisions(slot);
 }

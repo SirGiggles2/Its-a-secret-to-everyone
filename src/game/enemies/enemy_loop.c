@@ -26,10 +26,11 @@
 #include "probes/enemy_loop_probe.h"      /* step 4 live-tick publish */
 
 /* Forward decls — defined in src/oracle/enemies/enemy_walker_runtime.c
- * and src/game/core/core_dispatch.c respectively. Both objects are
- * already linked into Debug.md per build_debug.py ROOMROM_C_SOURCES. */
+ * (init), src/game/enemies/enemy_walker_bridge.c (step-6 native octorock),
+ * and src/game/core/core_dispatch.c (reset). All linked into Debug.md
+ * per build_debug.py ROOMROM_C_SOURCES + step-6 unblock stubs. */
 extern void enrt_init_slow_octorock_or_ghini(unsigned int slot);
-extern void enrt_update_rope(unsigned int slot);  /* walker UPDATE row $07 */
+extern void enrt_update_octorock(unsigned int slot);  /* step 6 native */
 extern unsigned char core_reset_obj_state(unsigned int slot);
 
 /* z07_reset_obj_state forwarder. enrt_octorock_common (same TU as the
@@ -57,17 +58,19 @@ const enemy_init_fn enemy_init_fns[ENEMY_LOOP_TYPE_MAX] = {
 };
 
 const enemy_update_fn enemy_update_fns[ENEMY_LOOP_TYPE_MAX] = {
-    /* Step 4 (debate 2026-05-09 verdict, Option C) wires UPDATE row
-     * $07. enrt_update_rope is the walker UPDATE handler for Octorok /
-     * Moblin / Stalfos / Goriya / Darknut / Rope variants — per NES
-     * ObjectActions table the Red Slow Octorock ($07) update slot
-     * resolves to the rope/octorock walker tick body. Primitives
-     * (c_walker_move stub + c_check_monster_collisions +
-     * c_draw_object_not_mirrored_with_frame + z07_anim_advance_and_fetch
-     * + z01_anim_set_sprite_desc_attrs + z01_abs) supplied by
-     * src/game/enemies/enemy_walker_bridge.c. Walker_Move drain pending
-     * — animation / palette / collision / draw run; movement frozen. */
-    [0x07] = enrt_update_rope,
+    /* Step 6 — semantic fix: $07 = RedSlowOctorock per NES
+     * UpdateObject_JumpTable (Z_04.asm). Step 4/5 stubbed this row to
+     * enrt_update_rope (which is actually the $29 handler — the leever-
+     * style speed-ramp is rope-only). Step 6 swaps in the native
+     * UpdateOctorock drain in src/game/enemies/enemy_walker_bridge.c
+     * (NES Z_04.asm:2966): wanderer_target_player + qspeed compute +
+     * inlined _TryShooting (no-op via stubbed c_shoot_if_wanted) +
+     * dir-based draw + collision check.
+     *
+     * Future rows ($03/$04 moblin, $05/$06 goriya, $0B/$0C darknut,
+     * $1F stalfos, $29 rope) wire in successor steps once each
+     * family-specific drain primitives are linked. */
+    [0x07] = enrt_update_octorock,
 };
 
 /* Internal: clear an enemy slot's scratch state per NES InitObject
