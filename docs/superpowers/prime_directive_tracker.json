@@ -1,14 +1,14 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-05-09T03:01:47.333852+00:00",
+  "generated_at": "2026-05-09T03:03:27.780121+00:00",
   "generated_by": "tools/audit/primedirective/prime_refresh.py",
   "plan": {
     "path": "docs/superpowers/plans/2026-05-02-title-roomrom-full-port-master-plan.md",
-    "sha256": "e100f0014d4d30cec790dfd6aa0e66ddee870f87f27e7911ac9cd91dfe5d64d4"
+    "sha256": "bfcbd3ffb52cff5bb42092d424ac3928d4cafed42b3c24bd2a6b1da24556bd77"
   },
   "active": {
-    "phase_id": "6",
-    "phase_name": "Link, Inventory, Items, And Combat",
+    "phase_id": "7",
+    "phase_name": "Enemies By Behavior Family",
     "task_id": "?",
     "task_title": "",
     "worktree": {
@@ -85,7 +85,7 @@
     {
       "id": "2",
       "name": "RoomRom Graphics Registry And No-Clobber Foundation",
-      "status": "complete",
+      "status": "active",
       "tasks": [],
       "evidence": [
         "focused_probe_set|build/probes/ph2/items/FINDINGS.md",
@@ -561,7 +561,7 @@
     {
       "id": "6",
       "name": "Link, Inventory, Items, And Combat",
-      "status": "complete",
+      "status": "pending",
       "tasks": [],
       "evidence": [
         "findings_resolved_or_deferred|(docs/audit/drain_findings/phase6_task_6_1.md through phase6_task_6_11.md - 11 task audits with deferrals + re-entry triggers)",
@@ -595,7 +595,7 @@
     {
       "id": "7",
       "name": "Enemies By Behavior Family",
-      "status": "pending",
+      "status": "active",
       "tasks": [],
       "evidence": [],
       "deferrals": [],
@@ -924,7 +924,7 @@
   "freshness": {
     "active_scope_md": {
       "path": "docs/audit/active_scope.md",
-      "sha256": "ce267a5ae318f181b2dc04819c053ecfc3c23b0804d21ba8aae63b36ec20c0c8",
+      "sha256": "10a34644f19bce4dc669ef5119e2be3d156ba7cde6349e6e974bd013bf31db9c",
       "ok": true
     },
     "drain_coverage_json": {
@@ -932,13 +932,13 @@
       "sha256": "3696501bc1314ea27f231c00bffb991afe01f9c6cad4db7c2b752a81e3188150",
       "ok": true
     },
-    "git_head": "4298877f6a5809701214a799ce3c5c3d0803893c",
+    "git_head": "d185fbb33d7abd1d508af3347f5a234a9efaafb5",
     "dirty_paths_relevant": [
       "RoomRom/src/atlas/title_chr.c"
     ],
     "evidence_paths_present": true,
     "complete_phase_invariant_ok": true,
-    "last_refresh_at": "2026-05-09T03:01:47.380993+00:00",
+    "last_refresh_at": "2026-05-09T03:03:27.822893+00:00",
     "stale_reasons": []
   },
   "blockers": []

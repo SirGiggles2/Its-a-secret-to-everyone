@@ -2227,17 +2227,15 @@ Deferred (logged as `phases[5].deferrals[]`): UW→OW exit, mode $10 visible sem
 
 ## Current Next Action
 
-**Active phase: Phase 2 — RoomRom Graphics Registry.** Tier-1 substrate work has shipped (debate 003 SGDK guardrails + debate 004 mergeability tools). Phase 1.5 captures + Task 1.11 strict-mode green are non-blocking parallel workstreams.
+**Active phase: Phase 7 — Enemies By Behavior Family.** Phases 2-6 closed. Phase 6 close commit `d185fbb3` (2026-05-09) shipped Link damage path (apply, invincibility tick, BeginShove math), HUD live-read scaffolding (Step A), 16-bit rupee tick + RupeesToAdd/Sub rolling, and 11 task-level audit docs with deferrals + re-entry triggers.
 
-- [x] Tier-1 gate, partial-but-unblocking close:
-  - [x] Task 0.6 Worktree Merge Protocol committed (`f30b806f`).
-  - [~] Phase 1.5 NES Reference Capture Harness — code shipped + ROM hash locked + dry-run fixed (`e9101890`); 46 scenario input scripts pending as parallel workstream (does not block Phase 2).
-  - [~] Task 1.11 Strict Generated-Only Build Gate — implementation committed (`f27447cc`); strict-mode RED expected until Phase 1.10 close (by design per build.bat comment).
-  - [x] Task 2.0 State Contract Audit committed (`d59ee68e`); verifier `--scope` flag for per-phase enforcement (`f18f661b`); scratch_state.h migration resolved 47% of cross-subsystem aliases (`96c64da3`).
-- [x] Debate 003 SGDK guardrails landed (`35d35bd9`): Rules SGDK-1..5, build-time gates, audit doc.
-- [x] Debate 004 mergeability tools landed (`78c2ecb1`): Rules WT-1..4, 5 tools (no-whatif / frontend-boundary / substrate-dual-rom / active-scope / merge-readiness), state_contract Owner Worktree column.
-- [ ] **Phase 2 RoomRom Graphics Registry — ACTIVE.** Tasks 2.2-2.7 in RoomRom/src/* (Task 2.1 dirty-sprite reconcile already done via atlas P3-P6 + FU1-FU4 commits in main).
-- [ ] Phase 3 Overworld Caves follows with Task 2.8 parity oracle in close gate.
+- [x] Phase 2 RoomRom Graphics Registry — closed (commit `13d845186c`).
+- [x] Phase 3 Overworld Caves — closed (commit `1b39833c77`).
+- [x] Phase 4 Overworld Secrets / Traversal / State — closed (commit `1b39833c77`).
+- [x] Phase 5 Dungeon Core — closed; sub-task slices 5.4-5.10a all PASS; 5.10b deferred (full L1-L9 × Q1-Q2 user-test) post-Phase-6 / pending Q2 quest selector.
+- [x] Phase 6 Link / Inventory / Items / Combat — closed (commit `d185fbb3`).
+- [ ] **Phase 7 Enemies By Behavior Family — ACTIVE.** Begin Task 7.1 per master plan; unblocks deferred Phase 6 hooks (6.10.5 items bitfield writers, 6.11.2 enemy→Link damage dispatch, BeginShove caller wiring).
+- [ ] Phase 6 deferrals carried forward: 6.10.6 Step B StatusBarTransferBuf path, 6.10.11 audio dispatch (BLOCKED on MIDI-FS integration per memory `project_midi_fs_integration.md`).
 - [ ] Keep this master plan updated only when phase order changes; do not turn it into a scratch log.
 
 ## Self-Review
