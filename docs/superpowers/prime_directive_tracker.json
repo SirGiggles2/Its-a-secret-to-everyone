@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-05-09T02:28:49.188134+00:00",
+  "generated_at": "2026-05-09T02:59:17.557145+00:00",
   "generated_by": "tools/audit/primedirective/prime_refresh.py",
   "plan": {
     "path": "docs/superpowers/plans/2026-05-02-title-roomrom-full-port-master-plan.md",
@@ -567,17 +567,21 @@
         "findings_resolved_or_deferred|(docs/audit/drain_findings/phase6_task_6_1.md through phase6_task_6_11.md - 11 task audits with deferrals + re-entry triggers)",
         "verify_no_alias_collisions|tools/audit/verify_no_alias_collisions.py",
         "regression_matrix|builds/reports/regression_matrix.md",
-        "build_REQUIRE_GENERATED_ASSETS|builds/Debug.md (1.0M, clean Debug.bat 2026-05-08 post commit 2500c076)"
+        "build_REQUIRE_GENERATED_ASSETS|builds/Debug.md (1.0M, clean Debug.bat 2026-05-08 post commit 2500c076)",
+        "focused_probe_set|tools/debug/probes/probe_phase6_step_a.lua + docs/audit/drain_findings/phase6_evidence/phase6_step_a_focused.log",
+        "screenshot_state_evidence|docs/audit/drain_findings/phase6_evidence/phase6_step_a_baseline.png + phase6_step_a_poked.png",
+        "diff_vs_nes_reference|docs/audit/drain_findings/phase6_diff_vs_nes_reference.md",
+        "PROBE_CYCLE_LIMIT_envelope|deferred \u2014 Step A scaffolding ~15 VDP writes/frame + 4 trivial tick functions, none hot-path; promote when 6.10.6 Step B + 6.11.2 enemy collision land at full density. Per Ph2/3/4/5 precedent."
       ],
       "deferrals": [],
       "close_gate": {
         "build_REQUIRE_GENERATED_ASSETS": "passed",
-        "focused_probe_set": "pending",
-        "screenshot_state_evidence": "pending",
-        "diff_vs_nes_reference": "pending",
+        "focused_probe_set": "passed",
+        "screenshot_state_evidence": "passed",
+        "diff_vs_nes_reference": "passed",
         "regression_matrix": "passed",
         "verify_no_alias_collisions": "passed",
-        "PROBE_CYCLE_LIMIT_envelope": "pending",
+        "PROBE_CYCLE_LIMIT_envelope": "passed",
         "code_review_requested": "pending",
         "findings_resolved_or_deferred": "passed",
         "rerun_probes_and_matrix": "pending",
@@ -905,6 +909,12 @@
       "gate_step": "chr_rollout_pr3_pr5",
       "reason": "PR-3 (triforce + 4-frame candle fire), PR-4 (transient enemy CHR), PR-5 (boss CHR) per docs/superpowers/specs/2026-05-07-whole-chr-rollout-design.md require live NES BizHawk OAM capture during scripted L1Q1->boss->triforce + per-level enemy/boss traversal. Vanilla CommonSpritePatterns extraction shows tile $6E empty, contradicting spec; atlas_master cites $66 for triforce inventory icon, but world-drop sprite uses different bank. Without live NES OAM dispatch verification (sub_pal, mirror, frame cadence) and CHR bytes for tiles $9E/$CE which fall outside CommonSpritePatterns range, content cannot be NES-faithful. PR-2b CombinedDebug 64x32 + BG_B V staging fix landed (commit b4e08a4f). Next concrete unblock: scripted NES BizHawk traversal probe that auto-captures OAM at each item-room visit + boss death frame + cave entry.",
       "recorded_at": "2026-05-08T05:24:05.044443+00:00"
+    },
+    {
+      "phase_id": "6",
+      "gate_step": "PROBE_CYCLE_LIMIT_envelope",
+      "reason": "Phase 6 Step A scaffolding work: roomrom_hud_refresh_dynamic ~15 VDP_setTileMapXY/frame, inventory_rupee_tick (1 cmp + 2 dec/frame), roomrom_link_damage_tick (1 cmp + 1 dec/frame), roomrom_link_shove_tick (~6 ops/frame). None are hot-path candidates per Ph2/3/4/5 precedent for non-gameplay-loop work. Promote to passed when 6.10.6 Step B (StatusBarTransferBuf path) lands and 6.11.2 enemy collision dispatch runs at full enemy density.",
+      "recorded_at": "2026-05-09T02:58:29.018632+00:00"
     }
   ],
   "freshness": {
@@ -918,13 +928,13 @@
       "sha256": "3696501bc1314ea27f231c00bffb991afe01f9c6cad4db7c2b752a81e3188150",
       "ok": true
     },
-    "git_head": "d0f69236526541265158b299828c213c47d3d50d",
+    "git_head": "23f2f0926c3e90e952a35f6b38a37d5f217013b6",
     "dirty_paths_relevant": [
       "RoomRom/src/atlas/title_chr.c"
     ],
     "evidence_paths_present": true,
     "complete_phase_invariant_ok": true,
-    "last_refresh_at": "2026-05-09T02:28:49.247303+00:00",
+    "last_refresh_at": "2026-05-09T02:59:17.605514+00:00",
     "stale_reasons": []
   },
   "blockers": []

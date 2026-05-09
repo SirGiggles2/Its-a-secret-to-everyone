@@ -1,19 +1,15 @@
 # Prime Directive — Status
 
-_Generated 2026-05-09T02:28:49.188134+00:00 by `prime_refresh.py`._
+_Generated 2026-05-09T02:59:17.557145+00:00 by `prime_refresh.py`._
 
 **Phase:** 6 — Link, Inventory, Items, And Combat
 **Task:** ? — 
 **Worktree:** `main` at `C:/Users/Jake Diggity/Documents/GitHub/FINAL TRY`
 **Substrate writer:** True
 
-**Gates:** 4 passed / 11 total
+**Gates:** 8 passed / 11 total
 
 **Pending gate steps:**
-- focused_probe_set
-- screenshot_state_evidence
-- diff_vs_nes_reference
-- PROBE_CYCLE_LIMIT_envelope
 - code_review_requested
 - rerun_probes_and_matrix
 - phase_commit_with_report_paths
