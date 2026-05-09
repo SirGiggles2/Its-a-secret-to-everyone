@@ -48,6 +48,8 @@ extern void enrt_update_keese(unsigned int slot);                /* step 3 */
 extern void enrt_init_gel(unsigned int slot);                    /* step 4 */
 extern void enrt_update_zol(unsigned int slot);                  /* step 4 */
 extern void enrt_update_gel(unsigned int slot);                  /* step 4 */
+extern void enrt_init_rope(unsigned int slot);                   /* step 5 */
+extern void enrt_update_rope(unsigned int slot);                 /* step 5 */
 extern unsigned char core_reset_obj_state(unsigned int slot);
 
 /* z07_reset_obj_state forwarder. enrt_octorock_common (same TU as the
@@ -103,10 +105,12 @@ const enemy_init_fn enemy_init_fns[ENEMY_LOOP_TYPE_MAX] = {
     [0x13] = enrt_init_walker,                 /* Zol */
     [0x14] = enrt_init_walker,                 /* RedZol */
     [0x15] = enrt_init_gel,                    /* Gel */
-    /* Task 7.3 step 4+ pending (still NULL):
+    /* Task 7.3 step 5 — rope INIT (NES Z_07.asm:5601 InitObject_JumpTable
+     * $28 = InitRope). Body drained at enemy_walker_runtime.c:71 — sets
+     * CHARGE_SPEED=$10 (or $40 for second-quest) then InitWalker. */
+    [0x28] = enrt_init_rope,                   /* Rope */
+    /* Task 7.3 step 5+ pending (still NULL):
      *   $1A Peahat   → InitPeahat            (UPDATE drain pending)
-     *   $28 Rope     → InitRope              (walker primitives drained;
-     *                                          dispatch row lands step 5)
      *   $12 Vire     → boss_runtime.c link pending
      */
 };
@@ -162,11 +166,16 @@ const enemy_update_fn enemy_update_fns[ENEMY_LOOP_TYPE_MAX] = {
     [0x13] = enrt_update_zol,       /* Zol */
     [0x14] = enrt_update_gel,       /* RedZol — NES alias to UpdateGel */
     [0x15] = enrt_update_gel,       /* Gel */
-    /* Task 7.3 step 5+ pending UPDATE rows:
+    /* Task 7.3 step 5 — rope UPDATE (NES Z_04.asm:5295 $28 = UpdateRope).
+     * Body drained at enemy_walker_runtime.c:97 — full leever-style
+     * speed-ramp + dir-switch behavior. All primitives (c_walker_move,
+     * c_draw_object_not_mirrored_with_frame, c_check_monster_collisions,
+     * z07_anim_advance_and_fetch, z01_anim_set_sprite_desc_attrs, z01_abs)
+     * already resolved by enemy_walker_bridge.c (Task 7.2 step 4..18). */
+    [0x28] = enrt_update_rope,      /* Rope */
+    /* Task 7.3 step 6+ pending UPDATE rows:
      *   $12 UpdateVire           — boss_runtime.c link pending
      *   $1A UpdatePeahat         — drain pending
-     *   $28 UpdateRope           — walker primitives drained Task 7.2
-     *                              step 18 — single dispatch row (step 5)
      */
 
     /* Step 12: shot UPDATE rows (Z_07.asm:5379-5388 dispatch).
