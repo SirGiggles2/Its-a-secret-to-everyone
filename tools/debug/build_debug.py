@@ -187,6 +187,11 @@ ROOMROM_C_SOURCES = [
     # Step 12: shot UPDATE primitives bridge (forwarders for c_move_object,
     # z01_bound_by_room, z07_destroy_monster, etc — same model as walker_bridge).
     ("src/game/enemies/enemy_projectile_bridge.c", "game_enemy_projectile_bridge.o"),
+    # Task 7.3 step 3: flyer UPDATE primitives bridge — Directions8 +
+    # c_move_flyer/c_control_keese_flight/c_reset_shove_info/
+    # c_draw_object_mirrored_with_frame, with Flyer_Chase + Flyer_Wander
+    # native drains from NES Z_04.asm:11707/11844.
+    ("src/game/enemies/enemy_flyer_bridge.c", "game_enemy_flyer_bridge.o"),
     ("src/game/enemies/probes/enemy_loop_probe.c", "game_enemy_loop_probe.o"),
     ("RoomRom/src/expanded_bg_chr.c", "expanded_bg_chr.o"),
     ("RoomRom/src/atlas/items_chr_x4.c", "atlas_items_chr_x4.o"),

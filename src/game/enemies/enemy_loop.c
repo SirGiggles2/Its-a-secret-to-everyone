@@ -42,6 +42,9 @@ extern void enrt_update_darknut(unsigned int slot);              /* step 11 */
 extern void enrt_update_monster_shot(unsigned int slot);         /* step 12 */
 extern void enrt_update_fireball(unsigned int slot);             /* step 12 */
 extern void update_meta_object(unsigned int slot);               /* step 20 */
+extern void enrt_init_blue_keese(unsigned int slot);             /* step 3 */
+extern void enrt_init_red_or_black_keese(unsigned int slot);     /* step 3 */
+extern void enrt_update_keese(unsigned int slot);                /* step 3 */
 extern unsigned char core_reset_obj_state(unsigned int slot);
 
 /* z07_reset_obj_state forwarder. enrt_octorock_common (same TU as the
@@ -85,24 +88,21 @@ const enemy_init_fn enemy_init_fns[ENEMY_LOOP_TYPE_MAX] = {
     [0x0B] = enrt_init_darknut,                /* BlueDarknut */
     [0x0C] = enrt_init_darknut,                /* RedDarknut */
     [0x2A] = enrt_init_walker,                 /* Stalfos */
-    /* Task 7.3 step 2 audit (NOT wired — dispatch NULL until step 3+).
-     * Per Task 7.2 step 2 precedent, wiring even one row retains
-     * oracle_enemy_{flyer,walker}.o past --gc-sections and pulls
-     * unresolved primitives. Step 3+ bridges these one family at a time.
-     *
-     * Pending wires (NES Z_07.asm:5601 InitObject_JumpTable):
+    /* Task 7.3 step 3 — keese family INIT wired (NES Z_07.asm:5601). */
+    [0x1B] = enrt_init_blue_keese,             /* BlueKeese */
+    [0x1C] = enrt_init_red_or_black_keese,     /* RedKeese */
+    [0x1D] = enrt_init_red_or_black_keese,     /* BlackKeese */
+    /* Task 7.3 step 3+ pending (still NULL — bridge plumbing pending
+     * per audit doc tools/audit/drain_findings/phase7_task_7_3_step2/
+     * unresolved_primitives.md):
      *   $13 Zol      → InitWalker            (needs c_update_zol_state,
-     *                                          c_zol_check_collisions,
-     *                                          c_draw_object_mirrored_with_frame)
+     *                                          c_zol_check_collisions)
      *   $14 RedZol   → InitWalker            (alias of $13)
      *   $15 Gel      → InitGel               (needs c_gel_move,
      *                                          c_gel_check_collisions)
      *   $1A Peahat   → InitPeahat            (UPDATE drain pending)
-     *   $1B BlueKeese→ InitBlueKeese         (needs Directions8)
-     *   $1C RedKeese → InitRedOrBlackKeese
-     *   $1D BlackKeese→InitRedOrBlackKeese
-     *   $28 Rope     → InitRope              (needs c_walker_move,
-     *                                          c_walker_check_collisions)
+     *   $28 Rope     → InitRope              (walker primitives drained;
+     *                                          dispatch row lands step 5)
      *   $12 Vire     → boss_runtime.c link pending
      */
 };
@@ -140,17 +140,20 @@ const enemy_update_fn enemy_update_fns[ENEMY_LOOP_TYPE_MAX] = {
     [0x0B] = enrt_update_darknut,   /* BlueDarknut (step 11 native drain) */
     [0x0C] = enrt_update_darknut,   /* RedDarknut */
     [0x2A] = enrt_update_stalfos,   /* Stalfos (drained, full body) */
-    /* Task 7.3 step 2 audit (NOT wired — see init table comment for the
-     * unresolved-primitive list). UPDATE side dispatch (NES
-     * Z_07.asm:5295 UpdateObject_JumpTable):
+    /* Task 7.3 step 3 — keese family UPDATE wired (NES Z_04.asm:5295
+     * UpdateObject_JumpTable). enrt_update_keese consumes flyer
+     * primitives now resolved by src/game/enemies/enemy_flyer_bridge.c
+     * (Directions8, c_move_flyer, c_control_keese_flight,
+     * c_reset_shove_info, c_draw_object_mirrored_with_frame). */
+    [0x1B] = enrt_update_keese,     /* BlueKeese */
+    [0x1C] = enrt_update_keese,     /* RedKeese */
+    [0x1D] = enrt_update_keese,     /* BlackKeese */
+    /* Task 7.3 step 4+ pending UPDATE rows:
      *   $12 UpdateVire           — boss_runtime.c link pending
      *   $13 UpdateZol            — needs c_update_zol_state plumbing
      *   $14 UpdateGel (RedZol)   — needs c_gel_move plumbing
      *   $15 UpdateGel            — needs c_gel_move plumbing
      *   $1A UpdatePeahat         — drain pending
-     *   $1B/$1C/$1D UpdateKeese  — needs c_control_keese_flight,
-     *                              c_move_flyer, c_reset_shove_info,
-     *                              c_draw_object_mirrored_with_frame
      *   $28 UpdateRope           — needs c_walker_move plumbing
      */
 
