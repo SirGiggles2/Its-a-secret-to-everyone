@@ -80,6 +80,22 @@ unsigned char z07_get_colliding_tile_moving(unsigned int slot)
     return collision_get_colliding_tile_moving(slot);
 }
 
+/* Phase 7 Task 7.5 step 3 — z07_get_collidable_tile + _still forwarders.
+ * Pulled in by enrt_pols_voice_get_colliding_tile / _is_square_walkable
+ * (enemy_boss_runtime.c:494/514) once $16 PolsVoice UPDATE is wired.
+ * Native bodies drained at collision_get_collidable_tile{,_still} in
+ * src/game/combat/collision_dispatch.c. */
+unsigned char z07_get_collidable_tile(unsigned int hotspot_offset,
+                                      unsigned int slot)
+{
+    return collision_get_collidable_tile(hotspot_offset, slot);
+}
+
+unsigned char z07_get_collidable_tile_still(unsigned int slot)
+{
+    return collision_get_collidable_tile_still(slot);
+}
+
 unsigned char z07_anim_fetch_obj_pos(unsigned int slot)
 {
     return sprite_anim_fetch_obj_pos(slot);

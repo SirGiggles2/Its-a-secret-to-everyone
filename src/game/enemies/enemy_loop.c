@@ -89,8 +89,10 @@ extern void enrt_update_aquamentus(unsigned int slot);
 extern void core_reset_obj_metastate_and_timer(unsigned int slot); /* 7.4 step 2b ($11 INIT) */
 extern unsigned char core_reset_obj_state(unsigned int slot);
 /* 7.5 step 2 — special-enemy UPDATE bridge bodies (enemy_special_bridge.c).
- *   $17 LikeLike -> enrt_update_like_like (NES Z_04.asm:6818). */
+ *   $17 LikeLike   -> enrt_update_like_like   (NES Z_04.asm:6818).
+ *   $16 PolsVoice  -> enrt_update_pols_voice  (NES Z_04.asm:6533, step 3). */
 extern void enrt_update_like_like(unsigned int slot);
+extern void enrt_update_pols_voice(unsigned int slot);
 
 /* z07_reset_obj_state forwarder. enrt_octorock_common (same TU as the
  * init we wire below) calls this symbol. The drained body lives at
@@ -522,6 +524,29 @@ const enemy_update_fn enemy_update_fns[ENEMY_LOOP_TYPE_MAX] = {
      *           $10/$11), check death; on death (metastate != 0)
      *           clear LinkParalyzed + hide over-Link sprites. */
     [0x17] = enrt_update_like_like,         /* LikeLike */
+    /* 7.5 step 3 — $16 PolsVoice UPDATE wired.
+     * NES Z_04.asm:6533 UpdatePolsVoice. Native bridge body in
+     * enemy_special_bridge.c. Two-state walker/jumper. Composes
+     * enrt_pols_voice_move_x + enrt_pols_voice_is_square_walkable
+     * (already drained in enemy_boss_runtime.c) + z07_anim_advance_and_fetch
+     * + draw_object_mirrored_with_frame + c_check_monster_collisions.
+     *
+     *   State 0 (walking): decrement ObjRemDistance, ADC walk-speed-Y
+     *                       per-direction, walkability probe; on tile
+     *                       $B0 or $F4..$FF -> set state 1; on other
+     *                       block -> flip dir (horizontal: EOR $03 +
+     *                       2x MoveX; vertical: EOR $0C).
+     *
+     *   State 1 (jumping): vertical accel $38 frac + carry whole, ObjY
+     *                       += whole; on speed-positive AND ObjY >=
+     *                       TargetY -> state 0, randomize dir
+     *                       ($01/$02/$04/$08) + distance ($31/$71),
+     *                       grid-snap X/Y.
+     *
+     *   Pre-pass guards: InvClock or ObjStunTimer, OR odd FrameCounter
+     *                    -> draw + collisions only.
+     *   Tail: AdvanceAnim($08), DrawObjectMirrored, mask=$FE, collisions. */
+    [0x16] = enrt_update_pols_voice,        /* PolsVoice */
 };
 
 /* Internal: clear an enemy slot's scratch state per NES room-init
