@@ -1262,17 +1262,17 @@ Deferred (logged as `phases[5].deferrals[]`): UW→OW exit, mode $10 visible sem
 - [ ] Add `tools/parity/enemy_diff.py` consuming Task 2.8 schema.
 - [ ] Commit as `enemy: framework + rng header + parity matrix`. No Task 7.2 begins until this commit lands.
 
-### Task 7.2: Walker Family
+### Task 7.2: Walker Family — CLOSED 2026-05-09
 
-- [ ] Implement octorok.
-- [ ] Implement moblin.
-- [ ] Implement stalfos.
-- [ ] Implement goriya walking.
-- [ ] Implement darknut base walking if non-boss.
-- [ ] Add projectile hook where needed.
-- [ ] Probe movement and collision.
-- [ ] Probe damage/death/drop.
-- [ ] Commit family.
+- [x] Implement octorok. (steps 5–6: Walker_Move + UpdateOctorock drain — `enemy_walker_runtime.c`)
+- [x] Implement moblin. (step 7: dispatch row $03/$04 wired)
+- [x] Implement stalfos. (step 7: dispatch row $2A wired, drained body via Walker_Move)
+- [x] Implement goriya walking. (step 7: dispatch rows $05/$06 wired through `enrt_update_goriya`)
+- [x] Implement darknut base walking if non-boss. (step 11: native `enrt_update_darknut`, $0B/$0C UPDATE)
+- [x] Add projectile hook where needed. (steps 9, 12, 13: `c_shoot_if_wanted` + shot UPDATE rows + `DrawArrow` / `DrawSwordShotOrMagicShot` native)
+- [x] Probe movement and collision. (steps 5, 8, 18: octorok-walks probe, multi-slot $03/$05/$2A dispatch, native `Walker_CheckTileCollision`)
+- [x] Probe damage/death/drop. (steps 16, 19, 20: `Obj_Shove` drain + damage observable 17/17 PASS + UpdateMetaObject drop conversion 20/20 PASS)
+- [x] Commit family. (close commit, this commit — see `docs/audit/drain_findings/phase7_task_7_2.md` Close summary)
 
 ### Task 7.3: Flyer / Jumper Family
 

@@ -72,3 +72,57 @@ Wiring even one walker entry (`enemy_init_fns[0x07] = enrt_init_slow_octorock_or
 - Gate 1 (per-function diff): N/A for step 2 (iterator framework only; per-family diff comes with 7.3+).
 - Gate 2 (per-RAM-cell trace): cell layout verified via in-ROM probe (10/10 PASS); per-frame trace deferred to phase exit per task scope.
 - Gate 3 (per-scenario oracle): deferred to milestone tag.
+
+## Close summary — Task 7.2 (steps 5-20)
+
+Task 7.2 closes 2026-05-09. Walker checklist 9/9 lines closed (8 functional + commit family). 16 incremental commits since step 4 framework drop. Per-step audits at `tools/audit/drain_findings/phase7_task_7_2_step{5..20}/`.
+
+| Step | Commit | NES anchor | Drained C / Bridge | Probe verdict |
+| ---- | ------ | ---------- | ------------------ | ------------- |
+| 5  | eb4ce213 | `Z_07.asm:3763 Walker_Move`              | `enemy_walker_bridge.c::c_walker_move` (native body)                                | octorok walks frame-to-frame |
+| 6  | 48e31ba7 | `Z_07.asm UpdateOctorock`                | `enemy_walker_runtime.c::enrt_update_octorock` (drained, wired)                     | walker family unblocked |
+| 7  | 7ea55d88 | `Z_07.asm:5601 InitObject_JumpTable`     | `enemy_loop.c` dispatch rows $03/$04/$05/$06/$2A populated                          | family fan-out viable |
+| 8  | 8efe385a | NES per-slot UPDATE                      | probe seeds slots 1..4 (octorock/moblin/goriya/stalfos)                             | 4-slot dispatch verified |
+| 9  | 57308e7c | `Z_07.asm c_shoot_if_wanted`             | `enemy_projectile_bridge.c::c_shoot_if_wanted` (drained)                            | projectile hook live |
+| 10 | 33fc2dc2 | NES InitObject preamble (WALK_SPEED $20) | room-init defaults landed                                                            | room reset cell parity |
+| 11 | 18300592 | `Z_07.asm UpdateDarknut`                 | `enemy_walker_runtime.c::enrt_update_darknut` (drained, $0B/$0C UPDATE wired)       | darknut walks |
+| 12 | afe74a86 | `Z_07.asm L_DrawShot`                    | shot UPDATE rows + L_DrawShot fall-through fix                                      | shot draw stable |
+| 13 | 0510b280 | `Z_07.asm DrawArrow / DrawSwordShotOrMagicShot` | native draw bodies in `enemy_projectile_bridge.c`                              | shot frames render |
+| 14 | dfb22258 | shot-scan loop                           | shot-scan probe extension                                                            | scan loop verified |
+| 16 | 398b6d35 | `Z_07.asm Obj_Shove`                     | native `obj_shove` drain (combat hook unblock)                                       | shove path live |
+| 17 | 5c161a00 | `Walker_CheckTileCollision`              | viz counters + probe block layout                                                    | collision visible |
+| 18 | 83178075 | `Walker_CheckTileCollision` body         | native drain in `enemy_walker_bridge.c`                                              | tile collision NES-parity |
+| 19 | ac27934c | `Z_07.asm` damage path                   | observable end-to-end (17/17 PASS)                                                   | damage pipeline G1..G17 PASS |
+| 20 | 4a827d80 | `Z_07.asm:5403 UpdateMetaObject` + `:4977 AnimateAndDrawMetaObject` + `:5414 UpdateMetaObjectEnd` + `:1604 IsrNmi DecTimers` | `enemy_walker_bridge.c::update_meta_object` + DecTimers prepass + drop conversion | 20/20 PASS — drop $07→$60, RoomKillCount bumped, metastate reset |
+
+### Coverage
+
+PARTIAL → ADOPT. Walker family init + update + collision + damage + drop conversion all NES-parity verified. Deferred to subsequent tasks (and intentionally not gated by Task 7.2 close):
+
+- spark / cloud OAM draw (router pending — Task 7.7 cosmetic)
+- `SetUpDroppedItem` drop-id table (item-subsystem task)
+- per-frame parity oracle vs NES capture (Phase 7 exit Gate 2)
+- per-scenario oracle room-load → spawn → death (Phase 7 milestone Gate 3)
+
+### Family scope
+
+| Type | Hex | Init | Update | Verified |
+| ---- | --- | ---- | ------ | -------- |
+| Lynel red/blue   | $01/$02 | `enrt_init_walker` | `enrt_update_octorock`-class | dispatch wired |
+| Moblin red/blue  | $03/$04 | `enrt_init_walker` | walker UPDATE                | step 8 multi-slot |
+| Goriya blue/red  | $05/$06 | `enrt_init_walker` | `enrt_update_goriya`         | step 8 multi-slot |
+| Octorok slow/fast| $07/$08 | `enrt_init_slow_octorock_or_ghini` | `enrt_update_octorock`            | step 5/6 octorok walks |
+| Darknut blue/red | $0B/$0C | `enrt_init_walker` | `enrt_update_darknut`        | step 11 darknut UPDATE |
+| Stalfos          | $2A     | `enrt_init_walker` | walker UPDATE                | step 8 multi-slot |
+
+### Build verification
+
+`Debug.bat` clean per-step through commit `4a827d80`. Banned-token gate green. Active scope = `src/game/enemies/**` + RoomRom main-include line per WT-5 (no new RoomRom files). No substrate edits (Q5 of step-2 debate verdict held).
+
+### Phase 7 close-gate progress
+
+- focused_probe_set: ✅ (`enemy_loop_probe` 20-byte trace, slot 1..5 multi-type dispatch)
+- diff_vs_nes_reference: ✅ per-RAM-cell trace 20/20 PASS at step 20 vs `Z_07.asm:5403/4977/5414/1604` ground truth
+- screenshot_state_evidence: deferred until Task 7.3+ adds non-walker family probes
+
+Re-entry triggers for follow-on tasks land in 7.3 onwards.
