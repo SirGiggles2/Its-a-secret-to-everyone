@@ -23,6 +23,7 @@
 #include "enemy_loop.h"
 #include "roomrom_enemy_state.h"          /* still in RoomRom/src/ pre-WT-5 */
 #include "platform_abi.h"
+#include "probes/enemy_loop_probe.h"      /* step 4 live-tick publish */
 
 /* Forward decls — defined in src/oracle/enemies/enemy_walker_runtime.c
  * and src/game/core/core_dispatch.c respectively. Both objects are
@@ -130,6 +131,12 @@ void enemy_loop_tick(void)
      * not yet wired). Q2=(c) gating done by caller — this function is
      * ONLY called inside the scroll-stable + non-paused branch of the
      * gameplay tick. */
+    /* Step 4 pre-tick snapshot — captures slot state BEFORE the
+     * dispatch loop runs. Used to localize where TYPE clears: if pre
+     * still shows $07 but post is $00, the dispatch / update body
+     * killed the slot. */
+    enemy_loop_probe_publish_pre();
+
     for (slot = ENEMY_LOOP_SLOT_FIRST; slot <= ENEMY_LOOP_SLOT_LAST; ++slot) {
         unsigned char t;
         enemy_update_fn fn;
@@ -139,6 +146,10 @@ void enemy_loop_tick(void)
         fn = enemy_update_fns[t];
         if (fn != 0) fn(slot);
     }
+
+    /* Step 4 live-tick publish — last so block reflects post-tick
+     * cells. Lua reads $FF7F00 to confirm UPDATE chain ran. */
+    enemy_loop_probe_publish_live();
 }
 
 void enemy_loop_force_spawn_slow_octorock(unsigned int slot,

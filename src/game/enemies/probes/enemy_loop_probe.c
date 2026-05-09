@@ -125,4 +125,80 @@ void enemy_loop_probe_run(void)
      * dispatched to core_reset_obj_state and zeroed the cell. Proves
      * the forwarder linked + the drained body executed. */
     put_pair(block, 13, (unsigned short)OBJ_STATE(1), 0x0000u);
+
+    /* Step 4 hand-off: move LINK far from the octorok before the
+     * gameplay tick takes over. With both at $80,$80 the per-frame
+     * c_check_monster_collisions call inside enrt_update_rope sees a
+     * collision every tick — the NES collision body clears
+     * ENEMY_TYPE(slot), the dispatch finds enemy_update_fns[0] = NULL,
+     * and the slot freezes. Park LINK at $00,$00 (off-camera corner;
+     * gameplay tick is debug-spawn idle so position is harmless) so the
+     * trace probe can capture animation cadence. */
+    LINK_X = 0u;
+    LINK_Y = 0u;
+}
+
+/* Step 4 live-tick publisher. Called from end of enemy_loop_tick() so
+ * Lua can sample slot 1 cell evolution per frame. Proves the UPDATE
+ * chain (enrt_update_rope -> walker primitives) actually executes
+ * even though no sprite is visible (oam_router NES OAM mirror -> SAT
+ * router not yet built; tracked separately). */
+void enemy_loop_probe_publish_live(void)
+{
+    volatile unsigned char *block =
+        (volatile unsigned char *)ENEMY_LOOP_TICK_PROBE_BASE;
+    static unsigned short frame_counter = 0u;
+    frame_counter++;
+
+    block[0]  = 0x54u;                                /* 'T' */
+    block[1]  = 0x4Bu;                                /* 'K' */
+    block[2]  = (unsigned char)(frame_counter >> 8);
+    block[3]  = (unsigned char)(frame_counter & 0xFFu);
+    block[4]  = (unsigned char)ENEMY_ALIVE_FLAG(1);
+    block[5]  = (unsigned char)ENEMY_TYPE(1);
+    block[6]  = (unsigned char)ENEMY_X(1);
+    block[7]  = (unsigned char)ENEMY_Y(1);
+    block[8]  = (unsigned char)ENEMY_DIR(1);
+    block[9]  = (unsigned char)ENEMY_ANIM_TIMER(1);
+    block[10] = (unsigned char)ENEMY_DRAW_FRAME(1);
+    block[11] = (unsigned char)ENEMY_MOVE_TIMER(1);
+    block[12] = (unsigned char)ENEMY_STATE_TIMER(1);
+    block[13] = (unsigned char)ENEMY_WALK_SPEED(1);
+    block[14] = (unsigned char)LINK_X;
+    block[15] = (unsigned char)LINK_Y;
+}
+
+void enemy_loop_probe_publish_pre(void)
+{
+    volatile unsigned char *block =
+        (volatile unsigned char *)ENEMY_LOOP_TICK_PRE_PROBE_BASE;
+    /* Raw absolute pointer to the byte ENEMY_TYPE(1) should map to —
+     * $FF0000 base + $0350 offset. Bypasses the A4-pinned `nes_ram`
+     * register binding so we can disambiguate "TYPE got cleared" vs
+     * "A4 wandered off". */
+    volatile unsigned char *raw_type1 =
+        (volatile unsigned char *)0x00FF0350UL;
+    static unsigned short pre_counter = 0u;
+    pre_counter++;
+
+    block[0]  = 0x50u;                                /* 'P' */
+    block[1]  = 0x52u;                                /* 'R' */
+    block[2]  = (unsigned char)(pre_counter >> 8);
+    block[3]  = (unsigned char)(pre_counter & 0xFFu);
+    block[4]  = (unsigned char)ENEMY_ALIVE_FLAG(1);
+    block[5]  = (unsigned char)ENEMY_TYPE(1);
+    block[6]  = (unsigned char)ENEMY_X(1);
+    block[7]  = (unsigned char)ENEMY_Y(1);
+    block[8]  = (unsigned char)ENEMY_DIR(1);
+    block[9]  = (unsigned char)ENEMY_ANIM_TIMER(1);
+    block[10] = (unsigned char)ENEMY_DRAW_FRAME(1);
+    block[11] = (unsigned char)ENEMY_MOVE_TIMER(1);
+    block[12] = (unsigned char)ENEMY_STATE_TIMER(1);
+    block[13] = (unsigned char)ENEMY_WALK_SPEED(1);
+    block[14] = (unsigned char)LINK_X;
+    block[15] = (unsigned char)LINK_Y;
+    /* [16] raw byte at $FF0350 (what ENEMY_TYPE(1) should read).
+     * If raw == $07 but block[5] (ENEMY_TYPE via A4) == $00, A4 is
+     * broken. If both $00, the cell genuinely got cleared. */
+    block[16] = *raw_type1;
 }

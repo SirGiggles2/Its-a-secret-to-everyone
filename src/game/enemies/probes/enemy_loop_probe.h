@@ -24,11 +24,44 @@
 #define ENEMY_LOOP_PROBE_BASE   0x00FF7E00UL
 #define ENEMY_LOOP_PROBE_COUNT  14u
 
+/* Step 4 live-tick block. Published every frame at end of
+ * enemy_loop_tick() so probe_walker_tick_trace.lua can sample slot 1
+ * cell evolution and prove the UPDATE chain is firing per frame even
+ * when no sprite is visible (oam_router gap separately tracked).
+ *
+ * Layout @ ENEMY_LOOP_TICK_PROBE_BASE = 0xFF7F00:
+ *   [0]  = 'T' (0x54) magic
+ *   [1]  = 'K' (0x4B) magic
+ *   [2..3] = frame_counter (be u16, increments per tick call)
+ *   [4]  = ENEMY_ALIVE_FLAG(1)
+ *   [5]  = ENEMY_TYPE(1)
+ *   [6]  = ENEMY_X(1)
+ *   [7]  = ENEMY_Y(1)
+ *   [8]  = ENEMY_DIR(1)
+ *   [9]  = ENEMY_ANIM_TIMER(1)
+ *   [10] = ENEMY_DRAW_FRAME(1)
+ *   [11] = ENEMY_MOVE_TIMER(1)
+ *   [12] = ENEMY_STATE_TIMER(1)
+ *   [13] = ENEMY_WALK_SPEED(1)
+ *   [14] = LINK_X (slot 0)
+ *   [15] = LINK_Y (slot 0)
+ */
+#define ENEMY_LOOP_TICK_PROBE_BASE 0x00FF7F00UL
+
+/* Step 4 pre-tick block at $FF7F40 — same byte layout as live block but
+ * published BEFORE the slot iterator runs each frame. If pre-tick TYPE
+ * is $07 but post-tick TYPE is $00, the dispatch / update body zeroed
+ * the cell. If pre-tick is already $00, something between init and the
+ * first tick wiped it. */
+#define ENEMY_LOOP_TICK_PRE_PROBE_BASE 0x00FF7F40UL
+
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 void enemy_loop_probe_run(void);
+void enemy_loop_probe_publish_live(void);
+void enemy_loop_probe_publish_pre(void);
 
 #ifdef __cplusplus
 }

@@ -1204,17 +1204,25 @@ void roomrom_debug_enter(void)
     roomrom_candle_fire_init();            /* Task 5.8.1: candle fire slot 8 */
     roomrom_magic_shot_init();             /* magic rod shot slot 9 */
     enemy_loop_room_init(s_room_id, (unsigned char)s_scene);  /* Phase 7 Task 7.2 */
-    enemy_loop_probe_run();                /* Phase 7 Task 7.2 step 2 in-ROM probe */
     roomrom_probe_metadata_run();          /* Task 5.4 Gate D: in-ROM probe */
 
     /* debate 006 D2 native cave smoke: prove cave_init / cave_tick /
      * cave_exit link cleanly into RoomRom + execute without crash.
      * No visible effect yet (cave_tick is a stub); future commits add
      * SCENE_CAVE dispatch + render. cave_id 0x6A = first valid cave
-     * room type per NES Z_01.asm:80. */
+     * room type per NES Z_01.asm:80.
+     *
+     * Phase 7 Task 7.2 step 4 ordering rule (root-cause fix 2026-05-09):
+     * NES aliases CaveRoomType and ObjType+1 at $0350 — see
+     * src/state/cave_state.h:83 + src/abi/platform_abi.h:80. cave_exit()
+     * writes $0350=0 which clobbers ENEMY_TYPE(1). Cave smoke MUST run
+     * BEFORE enemy_loop_probe_run so the probe seed survives into the
+     * per-frame tick window. */
     cave_init((cave_id_t)0x6A);
     cave_tick();
     cave_exit();
+
+    enemy_loop_probe_run();                /* Phase 7 Task 7.2 step 2 in-ROM probe — last init op so seed survives */
 }
 
 unsigned char roomrom_debug_get_scene(void)
