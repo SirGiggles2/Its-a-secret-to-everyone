@@ -184,6 +184,11 @@ ROOMROM_C_SOURCES = [
     # only enrt_update_vire transitive callees; aquamentus/jumper/gleeok/
     # dodongo/manhandla/lamnola bodies stay stripped until their rows wire.
     ("src/oracle/enemies/enemy_boss_runtime.c", "oracle_enemy_boss.o"),
+    # Task 7.5 step 4: Wallmaster scratch/draw helpers. Drained
+    # enrt_wallmaster_calc_start_position +
+    # enrt_wallmaster_put_sprite{,s}_behind_bg_if_needed live here. Pulled
+    # in by enemy_special_bridge.c's enrt_update_wallmaster ($27 UPDATE).
+    ("src/oracle/enemies/enemy_wallmaster_runtime.c", "oracle_enemy_wallmaster.o"),
     # Task 7.2 step 2: enemy slot iterator + dispatch + ObjLists port (WT-5
     # promotion — gameplay code under src/game/, not RoomRom/).
     ("src/game/enemies/enemy_loop.c", "game_enemy_loop.o"),

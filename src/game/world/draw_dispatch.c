@@ -200,8 +200,12 @@ static const unsigned char k_item_slot_to_palette_offsets_or_values[32] = {
 };
 
 /* SpriteOffsets[41] (Z_01.asm:2035). Indexed by CUR_SPRITE_INDEX
- * ($0341); produces left+right OAM byte offsets. */
-static const unsigned char k_sprite_offsets[41] = {
+ * ($0341); produces left+right OAM byte offsets.
+ *
+ * Externally visible via draw_sprite_offset_at() so the wallmaster
+ * bridge can patch left/right tile bytes after DrawObjectNotMirrored
+ * (Z_04.asm:4356-4383, the "fix Keese-tile bug" path). */
+const unsigned char k_sprite_offsets[41] = {
     0x60u, 0xBCu, 0x64u, 0xB8u, 0x68u, 0xB4u, 0x6Cu, 0xB0u,
     0x70u, 0xCCu, 0x74u, 0xC8u, 0x78u, 0xC4u, 0x7Cu, 0xC0u,
     0x80u, 0xDCu, 0x84u, 0xD8u, 0x88u, 0xD4u, 0x8Cu, 0xD0u,
@@ -438,6 +442,20 @@ void draw_object_not_mirrored_with_frame(unsigned char frame,
 void draw_object_mirrored_over_link(unsigned char frame, unsigned int slot)
 {
     DRAW_MIRRORED = 1u;
+    DRAW_ANIM_INDEX = (uint8_t)((unsigned char)OBJ_TYPE(slot) + 1u);
+    DRAW_FRAME = frame;
+    DRAW_OBJ_INDEX = (uint8_t)slot;
+    DRAW_LEFT_SPRITE_OFFSET = 0x40u;
+    DRAW_RIGHT_SPRITE_OFFSET = 0x44u;
+    draw_object_with_anim_and_specific_sprites(slot);
+}
+
+/* DrawObjectNotMirroredOverLink (Z_04.asm:756). Same as the mirrored
+ * variant above but DRAW_MIRRORED=0 — used by Wallmaster when drawing
+ * its hand on top of captured Link (the hand is asymmetric). */
+void draw_object_not_mirrored_over_link(unsigned char frame, unsigned int slot)
+{
+    DRAW_MIRRORED = 0u;
     DRAW_ANIM_INDEX = (uint8_t)((unsigned char)OBJ_TYPE(slot) + 1u);
     DRAW_FRAME = frame;
     DRAW_OBJ_INDEX = (uint8_t)slot;

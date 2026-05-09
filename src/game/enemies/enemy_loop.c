@@ -90,9 +90,11 @@ extern void core_reset_obj_metastate_and_timer(unsigned int slot); /* 7.4 step 2
 extern unsigned char core_reset_obj_state(unsigned int slot);
 /* 7.5 step 2 — special-enemy UPDATE bridge bodies (enemy_special_bridge.c).
  *   $17 LikeLike   -> enrt_update_like_like   (NES Z_04.asm:6818).
- *   $16 PolsVoice  -> enrt_update_pols_voice  (NES Z_04.asm:6533, step 3). */
+ *   $16 PolsVoice  -> enrt_update_pols_voice  (NES Z_04.asm:6533, step 3).
+ *   $27 Wallmaster -> enrt_update_wallmaster  (NES Z_04.asm:4121, step 4). */
 extern void enrt_update_like_like(unsigned int slot);
 extern void enrt_update_pols_voice(unsigned int slot);
+extern void enrt_update_wallmaster(unsigned int slot);
 
 /* z07_reset_obj_state forwarder. enrt_octorock_common (same TU as the
  * init we wire below) calls this symbol. The drained body lives at
@@ -547,6 +549,39 @@ const enemy_update_fn enemy_update_fns[ENEMY_LOOP_TYPE_MAX] = {
      *                    -> draw + collisions only.
      *   Tail: AdvanceAnim($08), DrawObjectMirrored, mask=$FE, collisions. */
     [0x16] = enrt_update_pols_voice,        /* PolsVoice */
+
+    /* 7.5 step 4: $27 Wallmaster UPDATE. NES UpdateWallmaster
+     * (Z_04.asm:4121). Native bridge body in enemy_special_bridge.c
+     * carries per-line NES translation. State machine:
+     *
+     *   State 0 (idle): gated on Link's ObjState[0]==$40 + ObjTimer+1==0
+     *                   + Link standing in a wall trigger zone (X in
+     *                   {$20,$D0} for side walls, Y in {$5D,$BD} for
+     *                   top/bottom). Calls drained
+     *                   enrt_wallmaster_calc_start_position to compute
+     *                   emergence offset + initial X/Y; seeds dir from
+     *                   k_wallmaster_dirs_and_attrs[ObjStep], timer1=$60
+     *                   / qspeed=$18 / animcount=$08, INC ObjState.
+     *
+     *   State 1 (walking): each frame, if shoved -> Obj_Shove; else if
+     *                      magic clock or stun, draw only; else
+     *                      MoveObject in current dir; on grid alignment
+     *                      ($10/$F0), advance step + dir + tiles
+     *                      crossed; on 7th tile end-of-trip: if
+     *                      ObjCaptureTimer != 0 -> HideSpritesOverLink +
+     *                      GameMode=3 + reset Link/IsUpdatingMode/
+     *                      GameSubmode; either way ObjState[slot]=0
+     *                      and exit (return to wall).
+     *
+     *   Draw + collisions tail:
+     *     - If captured: reposition Link onto monster, force frame=1
+     *       hand-closed, draw OverLink, patch sprites at hardcoded
+     *       OAM offsets $40/$44.
+     *     - Else: CheckMonsterCollisions (may set capture); save sprite
+     *       cursor, PrepareToDraw + DrawObjectNotMirrored, restore
+     *       cursor, look up SpriteOffsets[idx], patch $9C->$AC keese-
+     *       tile fixup on closed-hand frame. */
+    [0x27] = enrt_update_wallmaster,        /* Wallmaster */
 };
 
 /* Internal: clear an enemy slot's scratch state per NES room-init

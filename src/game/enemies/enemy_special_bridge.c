@@ -22,7 +22,11 @@
 #include "platform_abi.h"               /* RAM, OBJ */
 #include "enemy_state.h"                /* ENEMY_*, slot 0 = Link */
 #include "world/draw_dispatch.h"        /* draw_object_mirrored_with_frame,
-                                         * draw_object_mirrored_over_link */
+                                         * draw_object_mirrored_over_link,
+                                         * draw_object_not_mirrored_with_frame,
+                                         * draw_object_not_mirrored_over_link,
+                                         * k_sprite_offsets */
+#include "world/sprite_dispatch.h"      /* sprite_show_link_sprites_behind_horizontal_doors */
 #include "enemies/enemy_dispatch.h"     /* enemy_hide_sprites_over_link */
 
 /* NES RAM cell aliases not yet in enemy_state.h. */
@@ -67,15 +71,92 @@ static const unsigned char k_pols_voice_directions[4] = {
     0x01u, 0x02u, 0x04u, 0x08u
 };
 
+/* Wallmaster RAM cell aliases (NES ObjVars.inc + Variables.inc). */
+#define WM_OBJ_STATE(slot)              OBJ(0x00ACu, (slot))  /* ObjState */
+#define WM_OBJ_SHOVE_DIR(slot)          OBJ(0x00C0u, (slot))  /* ObjShoveDir */
+#define WM_OBJ_INPUT_DIR                RAM(0x03F8u)          /* ObjInputDir, slot 0 (Link) */
+#define WM_OBJ_TIMER_SLOT1              RAM(0x0029u)          /* ObjTimer + 1 (slot 1) */
+#define WM_INV_CLOCK                    RAM(0x066Cu)          /* InvClock */
+#define WM_OBJ_STUN_TIMER(slot)         OBJ(0x003Du, (slot))  /* ObjStunTimer */
+#define WM_OBJ_GRID_OFFSET(slot)        OBJ(0x0394u, (slot))  /* ObjGridOffset */
+#define WM_OBJ_QSPEED_FRAC(slot)        OBJ(0x03BCu, (slot))  /* ObjQSpeedFrac */
+#define WM_OBJ_ANIM_COUNTER(slot)       OBJ(0x03D0u, (slot))  /* ObjAnimCounter */
+#define WM_OBJ_ANIM_FRAME(slot)         OBJ(0x03E4u, (slot))  /* ObjAnimFrame */
+#define WM_OBJ_STEP(slot)               OBJ(0x0412u, (slot))  /* Wallmaster_ObjStep */
+#define WM_OBJ_TILES_CROSSED(slot)      OBJ(0x041Fu, (slot))  /* Wallmaster_ObjTilesCrossed (alias of ENEMY_AIR_SPEED) */
+#define WM_OBJ_CAPTURE_TIMER(slot)      OBJ(0x042Cu, (slot))  /* ObjCaptureTimer */
+#define WM_ROLLING_SPRITE_INDEX         RAM(0x0341u)          /* RollingSpriteIndex */
+#define WM_GAME_MODE                    RAM(0x0012u)          /* GameMode */
+#define WM_GAME_SUBMODE                 RAM(0x0013u)          /* GameSubmode */
+#define WM_IS_UPDATING_MODE             RAM(0x0011u)          /* IsUpdatingMode */
+#define WM_SPRITES(off)                 RAM(0x0200u + (unsigned char)(off))
+#define WM_SCRATCH_INSTR_AXIS           RAM(0x0002u)          /* [02] axis decrease bit */
+#define WM_SCRATCH_LINK_MINOR           RAM(0x0000u)          /* [00] Link's minor coord */
+#define WM_SCRATCH_LINK_MAJOR           RAM(0x0001u)          /* [01] Link's major coord */
+#define WM_SCRATCH_INIT_MINOR_COORD     RAM(0x0004u)          /* [04] init minor coord */
+#define WM_SCRATCH_PATCH_LEFT_OFFSET    RAM(0x0000u)          /* [00] left sprite OAM off (PatchSprites) */
+#define WM_SCRATCH_PATCH_RIGHT_OFFSET   RAM(0x0001u)          /* [01] right sprite OAM off (PatchSprites) */
+
+/* Wallmaster tables (verbatim from NES Z_04.asm:4099-4119).
+ *
+ * The four DirsAndAttrs tables are stored CONTIGUOUSLY in NES asm:
+ * Left at $0..$F, Right at $10..$1F, Top at $20..$2F, Bottom at
+ * $30..$3F. The lookup at line 4230 / 4292 / 4421 always indexes
+ * `WallmasterDirsAndAttrsLeft, Y` with Y = ObjStep ranging 0..63 to
+ * reach all four wall blocks. We mirror that layout in a single 64-
+ * entry table indexed by ObjStep. */
+static const unsigned char k_wallmaster_dirs_and_attrs[64] = {
+    /* Left ($00-$0F): NES Z_04.asm:4099 */
+    0x01u, 0x01u, 0x08u, 0x08u, 0x08u, 0x02u, 0x02u, 0x02u,
+    0xC1u, 0xC1u, 0xC4u, 0xC4u, 0xC4u, 0xC2u, 0xC2u, 0xC2u,
+    /* Right ($10-$1F): NES Z_04.asm:4103 */
+    0x42u, 0x42u, 0x48u, 0x48u, 0x48u, 0x41u, 0x41u, 0x41u,
+    0x82u, 0x82u, 0x84u, 0x84u, 0x84u, 0x81u, 0x81u, 0x81u,
+    /* Top ($20-$2F): NES Z_04.asm:4107 */
+    0xC4u, 0xC4u, 0xC2u, 0xC2u, 0xC2u, 0xC8u, 0xC8u, 0xC8u,
+    0x84u, 0x84u, 0x81u, 0x81u, 0x81u, 0x88u, 0x88u, 0x88u,
+    /* Bottom ($30-$3F): NES Z_04.asm:4111 */
+    0x48u, 0x48u, 0x42u, 0x42u, 0x42u, 0x44u, 0x44u, 0x44u,
+    0x08u, 0x08u, 0x01u, 0x01u, 0x01u, 0x04u, 0x04u, 0x04u,
+};
+static const unsigned char k_wallmaster_initial_xs[2] = { 0x00u, 0xF0u };
+static const unsigned char k_wallmaster_initial_ys[2] = { 0x3Du, 0xDDu };
+
 /* Drained primitives (enemy_walker_bridge / enemy_boss_bridge / projectile). */
 extern void z04_update_common_wanderer(unsigned int turn_rate, unsigned int slot);
 extern void c_check_monster_collisions(unsigned int slot);
+extern void c_obj_shove(unsigned int slot);
+extern void c_move_object(unsigned short slot);
 extern unsigned char z07_anim_fetch_obj_pos(unsigned int slot);
 extern void z07_anim_advance_and_fetch(unsigned int val, unsigned int slot);
 
 /* Drained PolsVoice helpers (enemy_boss_runtime.c). */
 extern void enrt_pols_voice_move_x(unsigned int slot);
 extern unsigned int enrt_pols_voice_is_square_walkable(unsigned int slot);
+
+/* Drained Wallmaster helpers (enemy_wallmaster_runtime.c +
+ * enemy_boss_runtime.c). */
+extern void enrt_wallmaster_prepare_to_draw(unsigned int slot);
+extern unsigned int enrt_wallmaster_calc_start_position(unsigned int instr_offset,
+                                                        unsigned int init_major_min,
+                                                        unsigned int slot);
+extern void enrt_wallmaster_put_sprites_behind_bg_if_needed(void);
+
+/* Link_EndMoveAndAnimate_Bank4 -- huge ladder/water/warp/draw chain in
+ * NES Z_07.asm:4360. STAGE-1 stub; same model as
+ * trap_init_mode_b_enter_cave_bank5 (trap_dispatch.h:75-86). The
+ * Wallmaster captured-Link draw path repositions Link to the monster's
+ * coords + would normally retick Link's anim/draw before drawing the
+ * hand on top. Native port deferred per Phase 5 TODO; the visual
+ * fallback is the prior frame of Link's sprite, which still draws via
+ * the regular Link update + the hand sprite still covers him via
+ * DrawObjectNotMirroredOverLink. */
+static void wm_link_end_move_and_animate_bank4_stub(void)
+{
+    /* TODO Phase 5: native Link_EndMoveAndAnimate port (huge ladder /
+     * water / warp / draw chain). Deferred — Wallmaster captured-Link
+     * draw path uses prior Link frame instead. */
+}
 
 /* CARRY_SET sentinel matches enrt_*_runtime.c. */
 #ifndef CARRY_SET
@@ -362,4 +443,249 @@ draw_and_check:
     POLS_INVINCIBILITY_MASK(slot) = 0xFEu;
     c_check_monster_collisions(slot);
     (void)dir_idx;
+}
+
+/*--------------------------------------------------------------------
+ * UpdateWallmaster (drained from Z_04.asm:4121)
+ *
+ * Two-state machine driven by ObjState:
+ *
+ *   State 0 - idle inside wall. Gated on Link's metastate ($40 = stunned),
+ *             Link's frame timer slot 1 (=0), and Link standing in the
+ *             trigger zone next to one of the four walls. If gating
+ *             passes, calls Wallmaster_CalcStartPosition (drained) to
+ *             compute the emergence offset + initial X/Y, sets up
+ *             initial dir from the dirs-and-attrs table indexed by
+ *             ObjStep (the byte CalcStartPosition wrote), seeds
+ *             timer1=$60 / qspeed=$18 / animcount=$08, zeroes
+ *             grid offset / tiles crossed / anim frame, then INC
+ *             ObjState to enter state 1.
+ *
+ *   State 1 - walking along wall toward Link. Each frame:
+ *             - If shoved (ObjShoveDir != 0), Obj_Shove + draw + collisions.
+ *             - Otherwise, if magic clock or stun, draw + collisions.
+ *             - Otherwise, MoveObject in current dir; on hitting grid
+ *               alignment ($10 / $F0 inner-frac), advance ObjStep,
+ *               re-fetch dir from table, increment tiles-crossed; on
+ *               7th tile, end of trip:
+ *                 - If Link uncaptured: ObjState[slot]=0 + RTS.
+ *                 - If Link captured: HideSpritesOverLink, GameMode=3,
+ *                   ObjState[Link]=0, IsUpdatingMode=0, GameSubmode=0,
+ *                   ObjState[slot]=0, RTS (mode 3 = unfurl reset).
+ *             - Otherwise fall through to draw + collisions.
+ *
+ *   Draw + collisions:
+ *     - If Link captured (ObjCaptureTimer != 0), draw with captured Link
+ *       (reposition Link onto monster, force frame=1 hand-closed, draw
+ *       OverLink + patch sprite priority + apply $9C->$AC tile fixup
+ *       using hardcoded sprite offsets $40/$44).
+ *     - Otherwise: CheckMonsterCollisions; if collision captured Link,
+ *       seed Link's metastate=$40 + clear shove dir; then save sprite
+ *       cursor, PrepareToDraw (advances anim + sets attrs), draw
+ *       NotMirrored, restore cursor, look up SpriteOffsets[idx], apply
+ *       $9C keese-tile patch on the closed-hand frame.
+ *
+ * Trigger-zone gates (NES Z_04.asm:4144-4202):
+ *   - LeftRight: Link X in {$20, $D0}. Out-of-corridor (X<$29 || X>=$C8
+ *     and Y<$6D || Y>=$B5) early-exits.
+ *   - TopBottom: Link Y in {$5D, $BD}.
+ *
+ * Carry-from-CMP: NES `LDA WallmasterDirsAndAttrsLeft, Y` with Y running
+ * 0..63 reaches Right ($10..$1F), Top ($20..$2F), Bottom ($30..$3F)
+ * because the four blocks are stored CONTIGUOUSLY. The native port
+ * mirrors that with one 64-byte table.
+ *
+ * Link_EndMoveAndAnimate_Bank4 is a STAGE-1 stub (see
+ * wm_link_end_move_and_animate_bank4_stub above). The captured-Link
+ * draw path repositions Link onto the monster but does NOT retick
+ * Link's animation; visually Link freezes at the prior frame while
+ * the hand sprite covers him via DrawObjectNotMirroredOverLink.
+ *------------------------------------------------------------------*/
+void enrt_update_wallmaster(unsigned int slot)
+{
+    unsigned char link_x;
+    unsigned char link_y;
+    unsigned int idx;
+    unsigned char step;
+    unsigned char attrs_dirs;
+    unsigned char saved_sprite_idx;
+    unsigned char left_off;
+    unsigned char right_off;
+    unsigned char anim_frame;
+
+    if ((unsigned char)WM_OBJ_STATE(slot) != 0u) {
+        goto state1;
+    }
+
+    /* State 0: idle gating. */
+    if ((unsigned char)WM_OBJ_TIMER_SLOT1 != 0u) {
+        return;
+    }
+    if ((unsigned char)WM_OBJ_STATE(0u) != 0x40u) {
+        return;
+    }
+
+    link_x = (unsigned char)ENEMY_X(0u);
+    link_y = (unsigned char)ENEMY_Y(0u);
+
+    /* Out-of-corridor early-exit:
+     *   if (link_x < $29 || link_x >= $C8) and (link_y < $6D || link_y >= $B5) -> exit.
+     * NES uses fall-through structure: BCC :+ / CMP $C8 / BCC @CheckLeftAndRight,
+     * so X in [$29..$C7] forces the LeftRight check; X outside falls through
+     * to the Y range gate which exits if Y<$6D or Y>=$B5.
+     */
+    if (link_x < 0x29u || link_x >= 0xC8u) {
+        if (link_y < 0x6Du || link_y >= 0xB5u) {
+            return;
+        }
+    }
+
+    /* @CheckLeftAndRight: Link X must equal $20 or $D0 to trigger side wall. */
+    if (link_x == 0x20u || link_x == 0xD0u) {
+        /* Link at side wall. */
+        WM_SCRATCH_LINK_MINOR  = link_y;   /* [00] minor = Link Y */
+        WM_SCRATCH_LINK_MAJOR  = link_x;   /* [01] major = Link X */
+        WM_SCRATCH_INSTR_AXIS  = 0x08u;    /* [02] decreasing dir = up */
+        idx = enrt_wallmaster_calc_start_position(0x00u, 0x20u, slot);
+        ENEMY_Y(slot) = (uint8_t)WM_SCRATCH_INIT_MINOR_COORD;
+        ENEMY_X(slot) = k_wallmaster_initial_xs[idx & 1u];
+    } else {
+        /* @CheckTopAndBottom: Link Y must equal $5D or $BD. */
+        if (link_y != 0x5Du && link_y != 0xBDu) {
+            return;
+        }
+        WM_SCRATCH_LINK_MINOR  = link_x;   /* [00] minor = Link X */
+        WM_SCRATCH_LINK_MAJOR  = link_y;   /* [01] major = Link Y */
+        WM_SCRATCH_INSTR_AXIS  = 0x02u;    /* [02] decreasing dir = left */
+        idx = enrt_wallmaster_calc_start_position(0x20u, 0x5Du, slot);
+        ENEMY_Y(slot) = k_wallmaster_initial_ys[idx & 1u];
+        ENEMY_X(slot) = (uint8_t)WM_SCRATCH_INIT_MINOR_COORD;
+    }
+
+    /* @SetUpToEmerge: shared tail. ObjStep was set by CalcStartPosition. */
+    step = (unsigned char)WM_OBJ_STEP(slot);
+    ENEMY_DIR(slot) = (uint8_t)(k_wallmaster_dirs_and_attrs[step & 0x3Fu]
+                                & 0x0Fu);
+    WM_OBJ_TIMER_SLOT1            = 0x60u;
+    WM_OBJ_QSPEED_FRAC(slot)      = 0x18u;
+    WM_OBJ_ANIM_COUNTER(slot)     = 0x08u;
+    WM_OBJ_GRID_OFFSET(slot)      = 0u;
+    WM_OBJ_TILES_CROSSED(slot)    = 0u;
+    WM_OBJ_ANIM_FRAME(slot)       = 0u;
+    WM_OBJ_STATE(slot) =
+        (uint8_t)((unsigned char)WM_OBJ_STATE(slot) + 1u);
+    return;
+
+state1:
+    /* L_Wallmaster_State1. */
+    if ((unsigned char)WM_OBJ_SHOVE_DIR(slot) != 0u) {
+        c_obj_shove(slot);
+        goto draw_and_check_collisions;
+    }
+
+    /* @CheckStunned: magic clock OR stun -> draw + collisions only. */
+    if (((unsigned char)WM_INV_CLOCK
+         | (unsigned char)WM_OBJ_STUN_TIMER(slot)) != 0u) {
+        goto draw_and_check_collisions;
+    }
+
+    /* Move along wall. NES stores ObjDir into [$0F] (LINK_MOVING_DIR
+     * scratch read by collision_get_colliding_tile_moving inside
+     * MoveObject). object_move_object reads the dir from the slot's
+     * cell directly; populate $0F for the collision probe path. */
+    RAM(0x000Fu) = (uint8_t)ENEMY_DIR(slot);
+    c_move_object((unsigned short)slot);
+
+    {
+        unsigned char grid = (unsigned char)WM_OBJ_GRID_OFFSET(slot);
+        if (grid != 0x10u && grid != 0xF0u) {
+            goto draw_and_check_collisions;
+        }
+    }
+    /* Square-aligned: truncate offset, advance step + dir, count tile. */
+    WM_OBJ_GRID_OFFSET(slot) = 0u;
+    WM_OBJ_STEP(slot) =
+        (uint8_t)((unsigned char)WM_OBJ_STEP(slot) + 1u);
+    step = (unsigned char)WM_OBJ_STEP(slot);
+    ENEMY_DIR(slot) = (uint8_t)(k_wallmaster_dirs_and_attrs[step & 0x3Fu]
+                                & 0x0Fu);
+    WM_OBJ_TILES_CROSSED(slot) =
+        (uint8_t)((unsigned char)WM_OBJ_TILES_CROSSED(slot) + 1u);
+    if ((unsigned char)WM_OBJ_TILES_CROSSED(slot) < 0x07u) {
+        goto draw_and_check_collisions;
+    }
+
+    /* End-of-trip (>= 7 tiles). */
+    if ((unsigned char)WM_OBJ_CAPTURE_TIMER(slot) != 0u) {
+        /* Link captured: hide sprites, force unfurl mode, reset Link/sub. */
+        enemy_hide_sprites_over_link();
+        WM_GAME_MODE        = 0x03u;
+        WM_OBJ_STATE(0u)    = 0u;
+        WM_IS_UPDATING_MODE = 0u;
+        WM_GAME_SUBMODE     = 0u;
+    }
+    /* Both branches end with ObjState[slot]=0 + return. */
+    WM_OBJ_STATE(slot) = 0u;
+    return;
+
+draw_and_check_collisions:
+    if ((unsigned char)WM_OBJ_CAPTURE_TIMER(slot) != 0u) {
+        goto draw_with_captured_link;
+    }
+    c_check_monster_collisions(slot);
+    /* Post-collision: if Link just got captured, halt him + clear shove. */
+    if ((unsigned char)WM_OBJ_CAPTURE_TIMER(slot) != 0u) {
+        WM_OBJ_STATE(0u)     = 0x40u;
+        WM_OBJ_SHOVE_DIR(0u) = 0u;
+    }
+
+    /* Save sprite cursor (NES PHA), draw, restore (PLA TAY). */
+    saved_sprite_idx = (unsigned char)WM_ROLLING_SPRITE_INDEX;
+    enrt_wallmaster_prepare_to_draw(slot);
+    anim_frame = (unsigned char)WM_OBJ_ANIM_FRAME(slot);
+    draw_object_not_mirrored_with_frame(anim_frame, slot);
+
+    /* SpriteOffsets[saved_sprite_idx] / [+1] -> [00] / [01]. */
+    left_off  = k_sprite_offsets[saved_sprite_idx & 0x3Fu];
+    right_off = k_sprite_offsets[(unsigned char)(saved_sprite_idx + 1u) & 0x3Fu];
+
+patch_sprites:
+    WM_SCRATCH_PATCH_LEFT_OFFSET  = left_off;
+    WM_SCRATCH_PATCH_RIGHT_OFFSET = right_off;
+    enrt_wallmaster_put_sprites_behind_bg_if_needed();
+
+    /* Frame 0 = open hand: nothing to patch, exit. Frame 1 = closed hand:
+     * its $9C/$9D left tile is the Keese; substitute $AC. The left/right
+     * pair may be swapped on horizontal flip — find the slot whose tile
+     * byte equals $9C and patch only that one. */
+    anim_frame = (unsigned char)WM_OBJ_ANIM_FRAME(slot);
+    if (anim_frame == 0u) {
+        return;
+    }
+    {
+        unsigned char left_tile_off  = (unsigned char)(left_off + 1u);
+        unsigned char right_tile_off = (unsigned char)(right_off + 1u);
+        if ((unsigned char)WM_SPRITES(left_tile_off) == 0x9Cu) {
+            WM_SPRITES(left_tile_off) = 0xACu;
+        } else {
+            WM_SPRITES(right_tile_off) = 0xACu;
+        }
+    }
+    return;
+
+draw_with_captured_link:
+    /* Reposition Link onto monster, retick (stub), draw hand on top. */
+    ENEMY_X(0u) = (uint8_t)ENEMY_X(slot);
+    ENEMY_Y(0u) = (uint8_t)ENEMY_Y(slot);
+    wm_link_end_move_and_animate_bank4_stub();
+    sprite_show_link_sprites_behind_horizontal_doors();
+    enrt_wallmaster_prepare_to_draw(slot);
+    WM_OBJ_ANIM_FRAME(slot) = 0x01u;        /* force closed hand */
+    draw_object_not_mirrored_over_link(0x01u, slot);
+    /* Hardcoded over-Link sprite slots $10/$11 -> OAM offsets $40/$44. */
+    left_off  = 0x40u;
+    right_off = 0x44u;
+    /* Reuse PatchSprites for the priority/keese fixup. */
+    (void)attrs_dirs;
+    goto patch_sprites;
 }

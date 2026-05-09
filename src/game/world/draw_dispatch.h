@@ -73,6 +73,18 @@ void draw_sword_shot_or_magic_shot(unsigned int slot);
  * (OAM sprites $10 / $11). Used by Like-Like capture path. */
 void draw_object_mirrored_over_link(unsigned char frame, unsigned int slot);
 
+/* DrawObjectNotMirroredOverLink (Z_04.asm:756). DRAW_MIRRORED=0
+ * variant of the above; used by Wallmaster's captured-Link draw branch
+ * (the hand sprite is asymmetric so it can't share its left and right
+ * tiles). */
+void draw_object_not_mirrored_over_link(unsigned char frame, unsigned int slot);
+
+/* SpriteOffsets[41] (Z_01.asm:2035). Indexed by RollingSpriteIndex
+ * ($0341); produces left/right OAM byte offsets. Public so per-family
+ * sprite-patch fixups (Wallmaster Keese-tile bug) can resolve the
+ * post-draw OAM positions. */
+extern const unsigned char k_sprite_offsets[41];
+
 /* WriteBossSprite (Z_04.asm:5844) tail-calls Anim_EndWriteSprite
  * (Z_01.asm:5393). Composed: writes 4 OAM bytes (y/tile/attr/x) at the
  * rolling sprite cursor + cycles cursor. Used by per-boss draw bodies
