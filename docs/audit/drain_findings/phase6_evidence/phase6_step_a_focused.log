@@ -1,0 +1,6 @@
+== Phase 6 Step A focused probe ==
+frame=303
+baseline: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 33 00 00 00 00 00 08 00 00 
+baseline_shot=C:\tmp\phase6_step_a_baseline.png
+poked   : 00 08 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 2A 03 54 80 00 00 00 00 08 00 00 
+poked_shot=C:\tmp\phase6_step_a_poked.png
