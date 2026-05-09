@@ -103,6 +103,10 @@ ROOMROM_C_SOURCES = [
     ("src/game/cave/uw_person_dispatch.c", "uw_person_dispatch.o"),
     ("src/game/combat/link_collision_dispatch.c", "link_collision_dispatch.o"),
     ("src/game/world/draw_dispatch.c", "draw_dispatch.o"),
+    # Phase 7 Task 7.4 step 6c — native ChangeTileObjTiles drain. Shared
+    # play-area dynamic-tile editing primitives consumed by armos secret
+    # reveals, push-block secrets, bombable walls, burning brush.
+    ("src/game/world/dyn_tile_dispatch.c", "dyn_tile_dispatch.o"),
     ("src/game/items/item_dispatch.c", "item_dispatch.o"),
     ("RoomRom/src/main.c", "roomrom_main.o"),
     ("RoomRom/src/ow_room_render_roomrom.c", "ow_room_render.o"),

@@ -65,6 +65,7 @@ extern void enrt_update_gibdo(unsigned int slot);                /* 7.4 step 6d 
 extern void enrt_update_bubble(unsigned int slot);               /* 7.4 step 6d */
 extern void enrt_init_tektite(unsigned int slot);                /* 7.4 step 6e */
 extern void enrt_init_bubble(unsigned int slot);                 /* 7.4 step 6e */
+extern void enrt_init_armos_or_flying_ghini(unsigned int slot);  /* 7.4 step 6c */
 extern void core_reset_obj_metastate_and_timer(unsigned int slot); /* 7.4 step 2b ($11 INIT) */
 extern unsigned char core_reset_obj_state(unsigned int slot);
 
@@ -172,6 +173,27 @@ const enemy_init_fn enemy_init_fns[ENEMY_LOOP_TYPE_MAX] = {
     [0x2B] = enrt_init_bubble,                   /* BlueBubble */
     [0x2C] = enrt_init_bubble,                   /* RedBubble */
     [0x2D] = enrt_init_bubble,                   /* BlueBubble2 */
+    /* Task 7.4 step 6c — armos + flying-ghini INIT wires (closes step 6).
+     *
+     * NES Z_07.asm:5601 InitObject_JumpTable:
+     *   $1E Armos       -> InitArmosOrFlyingGhini (armos branch).
+     *   $22 FlyingGhini -> InitArmosOrFlyingGhini (flying-ghini branch).
+     *
+     * Native body lives at src/game/enemies/enemy_walker_bridge.c
+     * (enrt_init_armos_or_flying_ghini). Composes:
+     *   - SecretArmosRoomIds + SecretArmosXs scan (7-entry table).
+     *   - dyn_tile_change_tile_obj_tiles (src/game/world/dyn_tile_dispatch.c —
+     *     native ChangeTileObjTiles drain unblocking step 6c).
+     *   - progress_get_room_flag_uw_item_state (already drained).
+     *   - enemy_play_secret_found_tune (already drained).
+     *   - enrt_end_init_flyer (already drained, $22 path).
+     *   - core_reset_obj_metastate_and_timer (already drained, $22 path).
+     *   - armos_draw_and_check_collisions (enemy_walker_bridge.c, $1E path).
+     *
+     * Closes Task 7.4 step 6 family: $1E + $22 INIT now wired alongside
+     * UPDATE rows ($1E from 6b, $22 from 6a). */
+    [0x1E] = enrt_init_armos_or_flying_ghini,    /* Armos */
+    [0x22] = enrt_init_armos_or_flying_ghini,    /* FlyingGhini */
 };
 
 const enemy_update_fn enemy_update_fns[ENEMY_LOOP_TYPE_MAX] = {

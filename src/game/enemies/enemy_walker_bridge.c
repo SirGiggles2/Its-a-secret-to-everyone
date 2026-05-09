@@ -37,7 +37,11 @@
 #include "world/draw_dispatch.h"
 #include "world/sprite_dispatch.h"
 #include "world/object_dispatch.h"   /* object_bound_by_room, object_move_object */
-#include "core/core_dispatch.h"      /* core_get_opposite_dir, core_reset_moving_dir */
+#include "world/dyn_tile_dispatch.h" /* dyn_tile_change_tile_obj_tiles (step 6c) */
+#include "core/core_dispatch.h"      /* core_get_opposite_dir, core_reset_moving_dir,
+                                        core_reset_obj_metastate_and_timer */
+#include "enemies/enemy_dispatch.h"  /* enemy_play_secret_found_tune (step 6c) */
+#include "world/progress_dispatch.h" /* progress_get_room_flag_uw_item_state (step 6c) */
 #include "combat_state.h"            /* ROOM_KILL_COUNT (step 20 drop conv) */
 #include "room_state.h"              /* ROOM_OW_CUR_KILL_TOTAL ($034F NES RoomKillCount) */
 #include "platform_abi.h"            /* RAM, OBJ, NES_OBJ_DIR, NES_SHOT_COLLISION_FLAG */
@@ -56,6 +60,8 @@
 
 extern void enrt_wanderer_target_player(unsigned int slot);
 extern void enrt_update_goriya(unsigned int slot);     /* 7.4 step 6b ($1E armos) */
+extern void enrt_draw_ghini_and_check_collisions(unsigned int slot); /* 7.4 step 6c ($22 ghini fade) */
+extern void enrt_end_init_flyer(unsigned int slot);    /* 7.4 step 6c (ghini terminal init) */
 
 /* Forward decl — defined after c_obj_shove block in this file (step 18). */
 void c_walker_check_tile_collision(unsigned int slot);
@@ -995,5 +1001,143 @@ void enrt_update_armos(unsigned int slot)
     ENEMY_ANIM_TIMER(slot) = 0x06u;
     ENEMY_DRAW_FRAME(slot) =
         (unsigned char)((unsigned char)ENEMY_DRAW_FRAME(slot) ^ 0x02u);
+    armos_draw_and_check_collisions(slot);
+}
+
+/* NES Z_04.asm:3144 SecretArmosRoomIds (7 bytes). */
+static const unsigned char k_secret_armos_room_ids[7] = {
+    0x24u, 0x0Bu, 0x1Cu, 0x22u, 0x34u, 0x3Du, 0x4Eu
+};
+
+/* NES Z_04.asm:3147 SecretArmosXs (7 bytes). */
+static const unsigned char k_secret_armos_xs[7] = {
+    0xE0u, 0xB0u, 0xB0u, 0x30u, 0x40u, 0x90u, 0xA0u
+};
+
+/* NES Z_04.asm:3150 InitArmosOrFlyingGhini. Phase 7 Task 7.4 step 6c
+ * native drain. Stance: EXTEND — no oracle drain in src/oracle/enemies/.
+ *
+ * Sequence (NES asm summary):
+ *   1. ObjUninitialized = ObjTimer (gate-flag for fade-in path).
+ *   2. If ObjTimer != 0: jmp @FinishInit.
+ *   3. If ObjType == $22 (FlyingGhini): jmp @FinishInit.
+ *   4. Else (Armos $1E): scan SecretArmosRoomIds[6..0]:
+ *        if RoomId match && ObjX match && ObjY == $80:
+ *          if Y == 0: special bracelet path
+ *            ObjY[19] = $80, ObjX[19] = ObjX, ObjState[19] = 0
+ *            RoomItemId ($98+19 = $00AB) = $14 (PowerBracelet)
+ *            if !room_flag_uw_item_state: PlaySecretFoundTune
+ *            jmp @UseFloorTile (tile = $26)
+ *          else: jmp @UseChosenTile (tile = $70 stairs)
+ *        no match: tile = $26 floor.
+ *      @UseChosenTile: if tile == $70: PlaySecretFoundTune.
+ *      ReturnToBank4 = 1; ChangeTileObjTiles(tile, slot).
+ *      ObjGridOffset[slot] = 3.
+ *      ObjQSpeedFrac[slot] = $20 if RNG_A < $80 else $60.
+ *   5. @FinishInit:
+ *      ObjInputDir = $04, ObjDir = $04 (down).
+ *      If ObjTimer & 1: skip draw (return without drawing this frame).
+ *      Else if ObjType == $22: jmp L_EndInitFlyingGhini.
+ *      Else: DrawArmosAndCheckCollisions; return.
+ *   6. L_EndInitFlyingGhini:
+ *      DrawGhiniAndCheckCollisions.
+ *      If ObjUninitialized != 0: return (still fading).
+ *      ResetObjMetastateAndTimer; EndInitFlyer.
+ */
+void enrt_init_armos_or_flying_ghini(unsigned int slot)
+{
+    /* Step 1: latch ObjTimer into ObjUninitialized (= ENEMY_ALIVE_FLAG). */
+    const unsigned char timer = (unsigned char)ENEMY_MOVE_TIMER(slot);
+    ENEMY_ALIVE_FLAG(slot) = timer;
+
+    /* Step 2: still fading in -> skip to @FinishInit. */
+    if (timer != 0u) {
+        goto FinishInit;
+    }
+
+    {
+        const unsigned char obj_type = (unsigned char)ENEMY_TYPE(slot);
+
+        /* Step 3: FlyingGhini after fade -> skip armos secret logic. */
+        if (obj_type == 0x22u) {
+            goto FinishInit;
+        }
+
+        /* Step 4: Armos secret-room scan. */
+        unsigned char chosen_tile = 0x70u;        /* default: stairs. */
+        unsigned char matched = 0u;
+
+        const unsigned char room_id = (unsigned char)RAM(NES_CUR_ROOM_ID);
+        const unsigned char obj_x = (unsigned char)ENEMY_X(slot);
+        const unsigned char obj_y = (unsigned char)ENEMY_Y(slot);
+
+        signed char y = 6;
+        while (y >= 0) {
+            if (k_secret_armos_room_ids[y] == room_id &&
+                k_secret_armos_xs[y] == obj_x &&
+                obj_y == 0x80u) {
+                matched = 1u;
+                if (y == 0) {
+                    /* Bracelet path: stage room item slot 19. */
+                    ENEMY_Y(19u)            = 0x80u;
+                    ENEMY_X(19u)            = obj_x;
+                    ENEMY_STATE_TIMER(19u)  = 0u;       /* ObjState[19] = 0. */
+                    OBJ(NES_OBJ_FLAG_BASE, 19u) = 0x14u;/* RoomItemId = PowerBracelet. */
+                    if (progress_get_room_flag_uw_item_state() == 0u) {
+                        enemy_play_secret_found_tune();
+                    }
+                    chosen_tile = 0x26u;                /* @UseFloorTile. */
+                }
+                /* y > 0 falls through with chosen_tile = $70 (stairs). */
+                break;
+            }
+            y = (signed char)(y - 1);
+        }
+        if (!matched) {
+            chosen_tile = 0x26u;                        /* @UseFloorTile. */
+        }
+
+        /* @UseChosenTile: PlaySecretFoundTune if stairs. */
+        if (chosen_tile == 0x70u) {
+            enemy_play_secret_found_tune();
+        }
+
+        /* INC ReturnToBank4 — flag for ChangeTileObjTiles. */
+        RAM(0x00F7u) = (uint8_t)(RAM(0x00F7u) + 1u);
+        dyn_tile_change_tile_obj_tiles(chosen_tile, slot);
+
+        /* ObjGridOffset = 3 (square-grid alignment compensation). */
+        OBJ(NES_OBJ_GRID_OFFSET, slot) = 0x03u;
+
+        /* Q-speed: $20 if RNG_A < $80 else $60. */
+        ENEMY_WALK_SPEED(slot) =
+            ((unsigned char)ENEMY_RNG_A(slot) < 0x80u) ? 0x20u : 0x60u;
+    }
+
+FinishInit:
+    /* Facing + input dirs = down ($04). */
+    ENEMY_PUSH_DIR_SCRATCH(slot) = 0x04u;       /* ObjInputDir. */
+    ENEMY_DIR(slot)              = 0x04u;
+
+    /* Every other frame: skip drawing (LSR + BCS in NES). */
+    {
+        const unsigned char tmr = (unsigned char)ENEMY_MOVE_TIMER(slot);
+        if ((tmr & 1u) != 0u) {
+            return;                              /* Carry set -> skip draw. */
+        }
+    }
+
+    if ((unsigned char)ENEMY_TYPE(slot) == 0x22u) {
+        /* L_EndInitFlyingGhini. */
+        enrt_draw_ghini_and_check_collisions(slot);
+        if ((unsigned char)ENEMY_ALIVE_FLAG(slot) != 0u) {
+            return;                              /* still fading. */
+        }
+        core_reset_obj_metastate_and_timer(slot);
+        enrt_end_init_flyer(slot);
+        return;
+    }
+
+    /* Armos terminal: draw + check collisions. */
     armos_draw_and_check_collisions(slot);
 }
