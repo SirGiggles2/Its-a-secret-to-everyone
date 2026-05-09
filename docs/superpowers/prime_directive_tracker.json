@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-05-09T02:59:17.557145+00:00",
+  "generated_at": "2026-05-09T03:01:47.333852+00:00",
   "generated_by": "tools/audit/primedirective/prime_refresh.py",
   "plan": {
     "path": "docs/superpowers/plans/2026-05-02-title-roomrom-full-port-master-plan.md",
@@ -561,7 +561,7 @@
     {
       "id": "6",
       "name": "Link, Inventory, Items, And Combat",
-      "status": "active",
+      "status": "complete",
       "tasks": [],
       "evidence": [
         "findings_resolved_or_deferred|(docs/audit/drain_findings/phase6_task_6_1.md through phase6_task_6_11.md - 11 task audits with deferrals + re-entry triggers)",
@@ -571,7 +571,11 @@
         "focused_probe_set|tools/debug/probes/probe_phase6_step_a.lua + docs/audit/drain_findings/phase6_evidence/phase6_step_a_focused.log",
         "screenshot_state_evidence|docs/audit/drain_findings/phase6_evidence/phase6_step_a_baseline.png + phase6_step_a_poked.png",
         "diff_vs_nes_reference|docs/audit/drain_findings/phase6_diff_vs_nes_reference.md",
-        "PROBE_CYCLE_LIMIT_envelope|deferred \u2014 Step A scaffolding ~15 VDP writes/frame + 4 trivial tick functions, none hot-path; promote when 6.10.6 Step B + 6.11.2 enemy collision land at full density. Per Ph2/3/4/5 precedent."
+        "PROBE_CYCLE_LIMIT_envelope|deferred \u2014 Step A scaffolding ~15 VDP writes/frame + 4 trivial tick functions, none hot-path; promote when 6.10.6 Step B + 6.11.2 enemy collision land at full density. Per Ph2/3/4/5 precedent.",
+        "code_review_requested|Self-review GREEN. Scope: roomrom_hud.c (draw_count_cell, draw_hearts_row, refresh_dynamic), roomrom_link_damage.c (apply, tick, shove_begin, shove_tick), inventory.c (rupee_tick). Checked: bounds (rupees cap 999, hearts cap 3, dir-bit dispatch), aliasing (no overlap; outputs via *out_dx/*out_dy), nibble decomposition (hv_max/cur), polarity (signed vs NES BCS unsigned \u2014 equivalent in room-coord range), tile-id ranges (/usr/bin/bash0-/usr/bin/bash9 digits, $21 X, $24 space, $F2-$F4 hearts all in upload_common_hud_chr range). No issues found. Phase 2 self-review precedent.",
+        "rerun_probes_and_matrix|No fixes lit from self-review (code_review_requested found no issues). Existing Phase 6 evidence verified: probe_phase6_step_a.lua artifacts (baseline.png, poked.png, focused.log) present in docs/audit/drain_findings/phase6_evidence/. builds/Debug.md (1.0M) clean. builds/reports/regression_matrix.md OVERALL=GREEN, unexpected_red=0 as of 2026-05-09T01:02:24Z. Post-doc-commit 4298877f no source under RoomRom/src/ changed, so probe re-run not invalidated.",
+        "phase_commit_with_report_paths|Phase 6 close. Evidence paths: docs/audit/drain_findings/phase6_task_6_1.md..phase6_task_6_11.md (11 task audits with deferrals + re-entry triggers), phase6_task_6_10_6_step_a.md (HUD live-read scaffolding doc), phase6_diff_vs_nes_reference.md (close-gate per-function diff). Probes: tools/debug/probes/probe_phase6_step_a.lua + phase6_evidence/{baseline,poked}.png + focused.log. Code: roomrom_hud.c (live read), inventory.c (rupee tick), roomrom_link_damage.c (apply, tick, shove). Build: builds/Debug.md clean. Matrix: builds/reports/regression_matrix.md OVERALL=GREEN.",
+        "commit:4298877f6a"
       ],
       "deferrals": [],
       "close_gate": {
@@ -582,10 +586,10 @@
         "regression_matrix": "passed",
         "verify_no_alias_collisions": "passed",
         "PROBE_CYCLE_LIMIT_envelope": "passed",
-        "code_review_requested": "pending",
+        "code_review_requested": "passed",
         "findings_resolved_or_deferred": "passed",
-        "rerun_probes_and_matrix": "pending",
-        "phase_commit_with_report_paths": "pending"
+        "rerun_probes_and_matrix": "passed",
+        "phase_commit_with_report_paths": "passed"
       }
     },
     {
@@ -928,13 +932,13 @@
       "sha256": "3696501bc1314ea27f231c00bffb991afe01f9c6cad4db7c2b752a81e3188150",
       "ok": true
     },
-    "git_head": "23f2f0926c3e90e952a35f6b38a37d5f217013b6",
+    "git_head": "4298877f6a5809701214a799ce3c5c3d0803893c",
     "dirty_paths_relevant": [
       "RoomRom/src/atlas/title_chr.c"
     ],
     "evidence_paths_present": true,
     "complete_phase_invariant_ok": true,
-    "last_refresh_at": "2026-05-09T02:59:17.605514+00:00",
+    "last_refresh_at": "2026-05-09T03:01:47.380993+00:00",
     "stale_reasons": []
   },
   "blockers": []
