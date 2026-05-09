@@ -210,6 +210,11 @@ ROOMROM_C_SOURCES = [
     # enemy_common_runtime / enemy_wanderer_runtime / enemy_runtime / boss
     # runtime + sprite_dispatch back-end. Wires $12 Vire UPDATE row.
     ("src/game/enemies/enemy_boss_bridge.c", "game_enemy_boss_bridge.o"),
+    # Phase 7 Task 7.4 step 2a — jumper/projectile bridge.
+    # TektiteStartingDirs data drain + c_bound_flyer forwarder +
+    # z07_find_empty_monster_slot native body. Wires $1F BoulderSet +
+    # $20 Boulder dispatch rows.
+    ("src/game/enemies/enemy_jumper_bridge.c", "game_enemy_jumper_bridge.o"),
     ("src/game/enemies/probes/enemy_loop_probe.c", "game_enemy_loop_probe.o"),
     ("RoomRom/src/expanded_bg_chr.c", "expanded_bg_chr.o"),
     ("RoomRom/src/atlas/items_chr_x4.c", "atlas_items_chr_x4.o"),

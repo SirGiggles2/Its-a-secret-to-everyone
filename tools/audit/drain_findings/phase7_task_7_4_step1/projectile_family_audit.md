@@ -86,6 +86,10 @@ Mirror of Task 7.3 step 3..N family-by-family bridge cadence:
 1. **Step 2 — wire ready rows** ($11 Zora UPDATE / $1F BoulderSet
    INIT+UPDATE / $20 Boulder INIT+UPDATE). All drains exist + all
    primitives resolved; should be a single dispatch row commit.
+   *(Updated step 2a: investigation showed `c_update_burrower` chain is
+   not yet linked. Split into:
+   - 2a: $1F + $20 only + jumper_bridge — DONE
+   - 2b: drain UpdateBurrower chain + wire $11 Zora.)*
 2. **Step 3 — drain UpdateGhini** (Z_04.asm) → wire $21.
 3. **Step 4 — drain UpdateMonsterArrow** ($5B; small) +
    `UpdateArrowOrBoomerang` ($5C; small) → wire shot rows.

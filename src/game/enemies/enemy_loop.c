@@ -53,6 +53,10 @@ extern void enrt_update_rope(unsigned int slot);                 /* step 5 */
 extern void enrt_init_peahat(unsigned int slot);                 /* step 6 */
 extern void enrt_update_peahat(unsigned int slot);               /* step 6 */
 extern void enrt_update_vire(unsigned int slot);                 /* step 7 */
+extern void enrt_init_boulder(unsigned int slot);                /* 7.4 step 2a */
+extern void enrt_init_boulder_set(unsigned int slot);            /* 7.4 step 2a */
+extern void enrt_update_boulder_set(unsigned int slot);          /* 7.4 step 2a */
+extern void enrt_update_tektite_or_boulder(unsigned int slot);   /* 7.4 step 2a */
 extern unsigned char core_reset_obj_state(unsigned int slot);
 
 /* z07_reset_obj_state forwarder. enrt_octorock_common (same TU as the
@@ -121,6 +125,15 @@ const enemy_init_fn enemy_init_fns[ENEMY_LOOP_TYPE_MAX] = {
      * vire-specific drain needed). enrt_init_walker drained at
      * enemy_walker_runtime.c:42. */
     [0x12] = enrt_init_walker,                 /* Vire */
+    /* Task 7.4 step 2a — projectile-family carrier INIT rows (boulder
+     * subset). NES Z_07.asm:5601 InitObject_JumpTable:
+     *   $1F = InitBoulderSet (rock spawner) — drained at
+     *         enemy_projectile_runtime.c:40.
+     *   $20 = InitBoulder (rock projectile) — drained at
+     *         enemy_projectile_runtime.c:35.
+     * $11 Zora deferred to step 2b — needs UpdateBurrower drain chain. */
+    [0x1F] = enrt_init_boulder_set,            /* BoulderSet (statue spawner) */
+    [0x20] = enrt_init_boulder,                /* Boulder (rock projectile) */
 };
 
 const enemy_update_fn enemy_update_fns[ENEMY_LOOP_TYPE_MAX] = {
@@ -210,6 +223,14 @@ const enemy_update_fn enemy_update_fns[ENEMY_LOOP_TYPE_MAX] = {
     [0x58] = enrt_update_monster_shot,  /* MagicShot */
     [0x59] = enrt_update_monster_shot,  /* (shot variant) */
     [0x5A] = enrt_update_monster_shot,  /* (shot variant) */
+    /* Task 7.4 step 2a — projectile-family carrier UPDATE rows (boulder
+     * subset). NES Z_07.asm:5295 UpdateObject_JumpTable:
+     *   $1F = UpdateBoulderSet  - enemy_projectile_runtime.c:98
+     *   $20 = UpdateTektiteOrBoulder (Boulder branch)
+     *                            - enemy_boss_runtime.c:126
+     * $11 Zora deferred to step 2b — needs UpdateBurrower drain chain. */
+    [0x1F] = enrt_update_boulder_set,       /* BoulderSet */
+    [0x20] = enrt_update_tektite_or_boulder,/* Boulder */
 };
 
 /* Internal: clear an enemy slot's scratch state per NES room-init
@@ -328,6 +349,12 @@ void enemy_loop_tick(void)
         t = (unsigned char)ENEMY_TYPE(slot);
         if (t >= ENEMY_LOOP_TYPE_MAX) continue;
         fn = enemy_update_fns[t];
+        /* Task 7.4 step 2a — write CurObjIndex per-slot. NES UpdateObject
+         * uses the X register implicitly; drained C primitives that call
+         * c_turn_towards_player8 / c_shoot / enrt_shoot read
+         * ENEMY_THROWER_SLOT ($0340 = NES CurObjIndex) instead. Closes
+         * Task 7.3 known gap (vire split spawn slot computation). */
+        ENEMY_THROWER_SLOT = (unsigned char)slot;
         if (fn != 0) fn(slot);
     }
 

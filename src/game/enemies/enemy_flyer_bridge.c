@@ -285,6 +285,67 @@ static void flyer_wander(unsigned int slot)
     ENEMY_DIR(slot) = Directions8[idx];
 }
 
+/* NES Z_04.asm:11724 TurnTowardsPlayer8 (parameterless form).
+ * Phase 7 Task 7.4 step 2a — boulder UPDATE (boss_runtime.c:152) +
+ * manhandla calls call this with no slot arg, using NES CurObjIndex
+ * (X reg) implicitly. We mirror the same algorithm flyer_chase uses
+ * (lines 190-251) but sourced off ENEMY_THROWER_SLOT ($0340 = NES
+ * CurObjIndex), which enemy_loop_tick now writes per-slot before
+ * dispatch. Stance: EXTEND. */
+void c_turn_towards_player8(void)
+{
+    const unsigned int slot = (unsigned int)ENEMY_THROWER_SLOT;
+    unsigned char target = 0u;
+    {
+        unsigned char lx = (unsigned char)RAM(0x0061u);
+        unsigned char ox = (unsigned char)ENEMY_X(slot);
+        if (lx > ox) {
+            target = 1u;
+        } else if (lx < ox) {
+            target = 2u;
+        }
+    }
+    {
+        unsigned char ly = (unsigned char)RAM(0x0062u);
+        unsigned char oy = (unsigned char)ENEMY_Y(slot);
+        if (ly != oy) {
+            unsigned char vbits = (ly < oy) ? 0x08u : 0x04u;
+            target = (unsigned char)(target | vbits);
+        }
+    }
+
+    const unsigned int idx = (unsigned int)flyer_get_obj_dir8_index(slot);
+
+    {
+        unsigned int y = (idx + 1u) & 7u;
+        for (int n = 0; n < 3; ++n) {
+            if (Directions8[y] == target) {
+                return;
+            }
+            y = (y - 1u) & 7u;
+        }
+    }
+
+    {
+        unsigned int y = (idx + 7u) & 7u;
+        for (int n = 0; n < 3; ++n) {
+            const unsigned char dir = Directions8[y];
+            if ((dir & target) != 0u) {
+                if ((unsigned int)(dir | target) < 7u) {
+                    ENEMY_DIR(slot) = dir;
+                    return;
+                }
+            }
+            y = (y + 1u) & 7u;
+        }
+    }
+
+    {
+        const unsigned int chosen = (idx + 1u) & 7u;
+        ENEMY_DIR(slot) = Directions8[chosen];
+    }
+}
+
 /* NES Z_04.asm:1201 ControlKeeseFlight. 6-row jump table:
  *   0: Flyer_SpeedUp           (drained: enrt_flyer_speed_up)
  *   1: Flyer_KeeseDecideState  (drained: enrt_flyer_keese_decide_state)
