@@ -57,6 +57,8 @@ extern void enrt_init_boulder(unsigned int slot);                /* 7.4 step 2a 
 extern void enrt_init_boulder_set(unsigned int slot);            /* 7.4 step 2a */
 extern void enrt_update_boulder_set(unsigned int slot);          /* 7.4 step 2a */
 extern void enrt_update_tektite_or_boulder(unsigned int slot);   /* 7.4 step 2a */
+extern void enrt_update_zora(unsigned int slot);                 /* 7.4 step 2b */
+extern void core_reset_obj_metastate_and_timer(unsigned int slot); /* 7.4 step 2b ($11 INIT) */
 extern unsigned char core_reset_obj_state(unsigned int slot);
 
 /* z07_reset_obj_state forwarder. enrt_octorock_common (same TU as the
@@ -134,6 +136,11 @@ const enemy_init_fn enemy_init_fns[ENEMY_LOOP_TYPE_MAX] = {
      * $11 Zora deferred to step 2b — needs UpdateBurrower drain chain. */
     [0x1F] = enrt_init_boulder_set,            /* BoulderSet (statue spawner) */
     [0x20] = enrt_init_boulder,                /* Boulder (rock projectile) */
+    /* Task 7.4 step 2b — $11 Zora INIT. NES InitObject_JumpTable @
+     * Z_07.asm:5601 row $11 = ResetObjMetastateAndTimer. Body drained
+     * at src/game/core/core_dispatch.c:455 (one-line: ENEMY_MOVE_TIMER=0
+     * + core_reset_obj_metastate). */
+    [0x11] = core_reset_obj_metastate_and_timer, /* Zora */
 };
 
 const enemy_update_fn enemy_update_fns[ENEMY_LOOP_TYPE_MAX] = {
@@ -231,6 +238,11 @@ const enemy_update_fn enemy_update_fns[ENEMY_LOOP_TYPE_MAX] = {
      * $11 Zora deferred to step 2b — needs UpdateBurrower drain chain. */
     [0x1F] = enrt_update_boulder_set,       /* BoulderSet */
     [0x20] = enrt_update_tektite_or_boulder,/* Boulder */
+    /* Task 7.4 step 2b — $11 Zora UPDATE. NES UpdateObject_JumpTable @
+     * Z_04.asm:5295 row $11 = UpdateZora (Z_04.asm:1920). Drain at
+     * src/oracle/enemies/enemy_walker_runtime.c:174. Native
+     * c_update_burrower body in enemy_jumper_bridge.c (step 2b). */
+    [0x11] = enrt_update_zora,              /* Zora */
 };
 
 /* Internal: clear an enemy slot's scratch state per NES room-init

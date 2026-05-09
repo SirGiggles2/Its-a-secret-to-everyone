@@ -37,6 +37,9 @@
 #include "platform_abi.h"             /* RAM, OBJ, NES_OBJ_TYPE */
 #include "enemy_state.h"              /* ENEMY_NEXT_SHOT_SLOT, ENEMY_FRAME_FLAGS */
 #include "room_state.h"               /* ROOM_BOUNDS */
+#include "world/draw_dispatch.h"      /* draw_object_mirrored */
+#include "world/sprite_dispatch.h"    /* sprite_anim_advance_and_fetch */
+#include "combat/link_collision_dispatch.h" /* link_collision_check_monster_collisions */
 
 /* Drained twin in src/oracle/enemies/enemy_flyer_runtime.c:205. */
 extern void enrt_bound_flyer(unsigned int slot);
@@ -214,4 +217,119 @@ void c_reverse_obj_dir8(unsigned int slot)
     }
     /* moldorm $41 branch (DeferBounce) intentionally omitted — wire when
      * needed for moldorm dispatch. */
+}
+
+/* ----------------------------------------------------------------- *
+ * Phase 7 Task 7.4 step 2b — UpdateBurrower native drain chain.
+ *
+ * NES sources:
+ *   Z_04.asm:2603 UpdateBurrower
+ *   Z_04.asm:2661 Burrower_AnimateDrawAndCheckCollisions
+ *   Z_04.asm:2590 BlueLeeverStateQSpeeds  ($08 $0A $10 $20 $10 $0A)
+ *   Z_04.asm:2593 BlueLeeverStateTimes    ($80 $20 $0F $FF $10 $60)
+ *   Z_04.asm:2596 BlueLeeverStateAnimTimes($10 $0B $01 $05 $01 $0B)
+ *
+ * Body-shared across $0F BlueLeever / $10 RedLeever / $11 Zora. Wired
+ * here for $11 Zora UPDATE (enrt_update_zora -> c_update_burrower).
+ * Other types use it indirectly via UpdateBlueLeever/UpdateRedLeever,
+ * not yet wired.
+ *
+ * RAM cell mapping (NES Variables.inc + state/enemy_state.h):
+ *   ObjTimer            ($0028) -> ENEMY_MOVE_TIMER
+ *   ObjState            ($00AC) -> ENEMY_STATE_TIMER  (NB: name-misleading)
+ *   ObjY (slot)         ($0084) -> ENEMY_Y(slot)
+ *   ObjY (no idx)       ($0084) -> ENEMY_Y(0) (player Y)
+ *   ObjDir              ($0098) -> ENEMY_DIR
+ *   ObjType             ($034F) -> ENEMY_TYPE
+ *   ObjQSpeedFrac       ($03BC) -> ENEMY_WALK_SPEED
+ *   ObjAnimFrame        ($03E4) -> ENEMY_DRAW_FRAME
+ *   ObjMetastate        ($0405) -> ENEMY_METASTATE
+ *   ActiveRedLeeverCount($0510) -> RAM(0x0510)
+ *
+ * Composes already-linked native primitives:
+ *   sprite_anim_advance_and_fetch         -> sprite_dispatch.c:105
+ *   draw_object_mirrored                  -> draw_dispatch.c:404
+ *   link_collision_check_monster_collisions -> link_collision_dispatch.c:263
+ *
+ * Stance: ADOPT (translation of NES asm verbatim).
+ */
+
+static const unsigned char BlueLeeverStateQSpeeds[6] = {
+    0x08u, 0x0Au, 0x10u, 0x20u, 0x10u, 0x0Au
+};
+static const unsigned char BlueLeeverStateTimes[6] = {
+    0x80u, 0x20u, 0x0Fu, 0xFFu, 0x10u, 0x60u
+};
+static const unsigned char BlueLeeverStateAnimTimes[6] = {
+    0x10u, 0x0Bu, 0x01u, 0x05u, 0x01u, 0x0Bu
+};
+
+void c_update_burrower(unsigned int slot)
+{
+    unsigned char state;
+    unsigned char anim_rollover_val;
+    unsigned char type;
+    unsigned char frame_for_draw;
+
+    /* @CycleState gate — when ObjTimer is non-zero, skip cycling and go
+     * straight to @Animate. NES BNE @Animate. */
+    if ((unsigned char)ENEMY_MOVE_TIMER(slot) == 0u) {
+        type = (unsigned char)ENEMY_TYPE(slot);
+        /* Zora state-1 special: pick front (2) / back (3) frame index
+         * by comparing zora-Y to player-Y. NES stores result in ObjDir. */
+        if (type == 0x11u && (unsigned char)ENEMY_STATE_TIMER(slot) == 1u) {
+            unsigned char frame_idx = 3u;             /* default = back */
+            if ((unsigned char)ENEMY_Y(slot) < (unsigned char)ENEMY_Y(0)) {
+                frame_idx = 2u;                       /* front */
+            }
+            ENEMY_DIR(slot) = frame_idx;
+        }
+        /* Cycle state mod 6, seed speed + timer for new state. */
+        state = (unsigned char)((unsigned char)ENEMY_STATE_TIMER(slot) + 1u);
+        if (state >= 6u) state = 0u;
+        ENEMY_STATE_TIMER(slot) = state;
+        ENEMY_WALK_SPEED(slot)  = BlueLeeverStateQSpeeds[state];
+        ENEMY_MOVE_TIMER(slot)  = BlueLeeverStateTimes[state];
+    }
+
+    /* @Animate: A := BlueLeeverStateAnimTimes[state], JSR Anim_Adv... */
+    state = (unsigned char)ENEMY_STATE_TIMER(slot);
+    anim_rollover_val = BlueLeeverStateAnimTimes[state];
+    sprite_anim_advance_and_fetch((unsigned int)anim_rollover_val, slot);
+
+    /* Re-load state (NES LDA ObjState, X / BEQ @Exit). */
+    state = (unsigned char)ENEMY_STATE_TIMER(slot);
+    if (state == 0u) return;
+
+    type = (unsigned char)ENEMY_TYPE(slot);
+    /* Zora state 2..4: frame index lives in ObjDir (set in state-1 above). */
+    if (type == 0x11u && state >= 2u && state < 5u) {
+        frame_for_draw = (unsigned char)ENEMY_DIR(slot);
+    } else {
+        /* @CalcFrameImage: A = ((state - 1) * 2) + ObjAnimFrame. */
+        frame_for_draw = (unsigned char)(((unsigned int)(state - 1u) << 1)
+                                          + (unsigned char)ENEMY_DRAW_FRAME(slot));
+    }
+    draw_object_mirrored(frame_for_draw, slot);
+
+    /* Collision gating:
+     *   non-zora: collisions only if state == 3
+     *   zora: collisions if state in {2, 3, 4}
+     */
+    {
+        unsigned char do_collisions = 0u;
+        if (type == 0x11u) {
+            if (state == 2u || state == 4u) do_collisions = 1u;
+        }
+        if (!do_collisions && state == 3u) do_collisions = 1u;
+        if (!do_collisions) return;
+
+        link_collision_check_monster_collisions(slot);
+        if ((unsigned char)ENEMY_METASTATE(slot) == 0u) return;
+        /* Dying — DEC ActiveRedLeeverCount only when type is RedLeever ($10). */
+        if (type == 0x10u) {
+            unsigned char rlc = (unsigned char)RAM(0x0510);
+            RAM(0x0510) = (unsigned char)(rlc - 1u);
+        }
+    }
 }
