@@ -54,6 +54,7 @@ INCS = [
     ROOT / "src" / "game" / "hud",
     ROOT / "src" / "game" / "items",
     ROOT / "src" / "oracle" / "room",
+    ROOT / "src" / "core",
     SGDK / "inc",
     SGDK / "res",
 ]
@@ -174,6 +175,11 @@ ROOMROM_C_SOURCES = [
     # enrt_update_keese. --gc-sections strips until dispatch rows wire
     # them in step 2+.
     ("src/oracle/enemies/enemy_flyer_runtime.c", "oracle_enemy_flyer.o"),
+    # Task 7.3 step 7: boss-family runtime TU. enrt_update_vire chain
+    # ($12 Vire) lives here. --gc-sections + -ffunction-sections retains
+    # only enrt_update_vire transitive callees; aquamentus/jumper/gleeok/
+    # dodongo/manhandla/lamnola bodies stay stripped until their rows wire.
+    ("src/oracle/enemies/enemy_boss_runtime.c", "oracle_enemy_boss.o"),
     # Task 7.2 step 2: enemy slot iterator + dispatch + ObjLists port (WT-5
     # promotion — gameplay code under src/game/, not RoomRom/).
     ("src/game/enemies/enemy_loop.c", "game_enemy_loop.o"),
@@ -198,6 +204,12 @@ ROOMROM_C_SOURCES = [
     # c_gel_check_collisions) + native c_shoot_limited drain
     # (NES Z_04.asm:11369). Wires $13 Zol / $14 RedZol / $15 Gel rows.
     ("src/game/enemies/enemy_common_bridge.c", "game_enemy_common_bridge.o"),
+    # Task 7.3 step 7: vire UPDATE primitives bridge — c_gel_move_splitting,
+    # z04_update_common_wanderer, c_anim_advance_and_fetch,
+    # c_find_empty_monster_slot, c_shoot. Forwarders to drained twins in
+    # enemy_common_runtime / enemy_wanderer_runtime / enemy_runtime / boss
+    # runtime + sprite_dispatch back-end. Wires $12 Vire UPDATE row.
+    ("src/game/enemies/enemy_boss_bridge.c", "game_enemy_boss_bridge.o"),
     ("src/game/enemies/probes/enemy_loop_probe.c", "game_enemy_loop_probe.o"),
     ("RoomRom/src/expanded_bg_chr.c", "expanded_bg_chr.o"),
     ("RoomRom/src/atlas/items_chr_x4.c", "atlas_items_chr_x4.o"),

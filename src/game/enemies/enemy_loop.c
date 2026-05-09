@@ -52,6 +52,7 @@ extern void enrt_init_rope(unsigned int slot);                   /* step 5 */
 extern void enrt_update_rope(unsigned int slot);                 /* step 5 */
 extern void enrt_init_peahat(unsigned int slot);                 /* step 6 */
 extern void enrt_update_peahat(unsigned int slot);               /* step 6 */
+extern void enrt_update_vire(unsigned int slot);                 /* step 7 */
 extern unsigned char core_reset_obj_state(unsigned int slot);
 
 /* z07_reset_obj_state forwarder. enrt_octorock_common (same TU as the
@@ -115,9 +116,11 @@ const enemy_init_fn enemy_init_fns[ENEMY_LOOP_TYPE_MAX] = {
      * Body drained at enemy_flyer_runtime.c:100 — z07_reset_obj_metastate
      * + DIR=$08 (down) + EndInitFlyer. */
     [0x1A] = enrt_init_peahat,                 /* Peahat */
-    /* Task 7.3 step 6+ pending (still NULL):
-     *   $12 Vire     → boss_runtime.c link pending
-     */
+    /* Task 7.3 step 7 — vire INIT (NES Z_07.asm:5601 InitObject_JumpTable
+     * index $12 = InitWalker — vire shares the bare walker init body, no
+     * vire-specific drain needed). enrt_init_walker drained at
+     * enemy_walker_runtime.c:42. */
+    [0x12] = enrt_init_walker,                 /* Vire */
 };
 
 const enemy_update_fn enemy_update_fns[ENEMY_LOOP_TYPE_MAX] = {
@@ -183,9 +186,13 @@ const enemy_update_fn enemy_update_fns[ENEMY_LOOP_TYPE_MAX] = {
      * c_control_peahat_flight (state-1 = enrt_flyer_peahat_decide_state,
      * other states share keese rows), c_move_flyer, draw + collisions. */
     [0x1A] = enrt_update_peahat,    /* Peahat */
-    /* Task 7.3 step 7+ pending UPDATE rows:
-     *   $12 UpdateVire           — boss_runtime.c link pending
-     */
+    /* Task 7.3 step 7 — vire UPDATE wired (NES Z_04.asm:5295 $12 UpdateVire).
+     * Drained body at enemy_boss_runtime.c:339 — composes
+     * enrt_update_vire_state (state machine + jump-offset table +
+     * c_gel_move_splitting + z04_update_common_wanderer),
+     * enrt_check_vire_collisions, enrt_draw_vire, plus shoot/destroy
+     * primitives. Bridge primitives carried in enemy_boss_bridge.c. */
+    [0x12] = enrt_update_vire,      /* Vire */
 
     /* Step 12: shot UPDATE rows (Z_07.asm:5379-5388 dispatch).
      * NES UpdateMonsterShot (Z_04.asm:820) covers $53/$54 flying-rocks +
