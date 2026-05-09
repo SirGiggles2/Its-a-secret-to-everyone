@@ -43,8 +43,10 @@ extern void enrt_flyer_speed_up(unsigned int slot);
 extern void enrt_flyer_slow_down(unsigned int slot);
 extern void enrt_flyer_keese_decide_state(unsigned int slot);
 extern void enrt_flyer_peahat_decide_state(unsigned int slot);   /* step 6 */
+extern void enrt_flyer_ghini_decide_state(unsigned int slot);    /* 7.4 step 6a */
 extern void enrt_flyer_delay(unsigned int slot);
 extern void enrt_end_init_flyer(unsigned int slot);              /* step 6 */
+extern void enrt_draw_ghini_and_check_collisions(unsigned int slot); /* walker_runtime */
 
 /* Step 6 cross-bridge primitives (all walker_bridge / projectile_bridge). */
 extern void c_obj_shove(unsigned int slot);
@@ -435,4 +437,45 @@ void enrt_update_peahat(unsigned int slot)
     } else {
         c_check_link_collision(slot);
     }
+}
+
+/* NES Z_04.asm:3984 ControlFlyingGhiniFlight. 6-row jump table.
+ * Identical shape to ControlKeeseFlight / ControlPeahatFlight; state-1
+ * decision swaps in Flyer_GhiniDecideState (RNG_A thresholds $A0/$08
+ * vs keese RNG_B $A0/$20 vs peahat RNG_A $B0/$20). */
+void c_control_flying_ghini_flight(unsigned int slot)
+{
+    const unsigned char state = (unsigned char)ENEMY_AI_STATE(slot);
+    switch (state) {
+    case 0u: enrt_flyer_speed_up(slot);            break;
+    case 1u: enrt_flyer_ghini_decide_state(slot);  break;
+    case 2u: flyer_chase(slot);                    break;
+    case 3u: flyer_wander(slot);                   break;
+    case 4u: enrt_flyer_slow_down(slot);           break;
+    case 5u: enrt_flyer_delay(slot);               break;
+    default: break;
+    }
+}
+
+/* NES Z_04.asm:3967 UpdateFlyingGhini. Phase 7 Task 7.4 step 6a native
+ * drain. Stance: ADOPT — verbatim transcription.
+ *
+ * NES sequence:
+ *   1. If InvClock == 0: ControlFlyingGhiniFlight + MoveFlyer.
+ *   2. Anim_FetchObjPosForSpriteDescriptor.
+ *   3. (LDA Flyer_ObjDistTraveled & 1 — value computed but immediately
+ *      clobbered by DrawGhini's own JSR Anim_FetchObjPos; preserved as
+ *      no-op for parity with NES asm flow.)
+ *   4. JMP DrawGhiniAndCheckCollisions.
+ *
+ * InvClock == ENEMY_PAUSE_FLAG ($066C). DrawGhiniAndCheckCollisions
+ * drained at walker_runtime.c:295 — handles Anim_FetchObjPos + dir-based
+ * frame select + check_link_collision. */
+void enrt_update_flying_ghini(unsigned int slot)
+{
+    if ((unsigned char)ENEMY_PAUSE_FLAG == 0u) {
+        c_control_flying_ghini_flight(slot);
+        c_move_flyer(slot);
+    }
+    enrt_draw_ghini_and_check_collisions(slot);
 }

@@ -59,6 +59,7 @@ extern void enrt_update_boulder_set(unsigned int slot);          /* 7.4 step 2a 
 extern void enrt_update_tektite_or_boulder(unsigned int slot);   /* 7.4 step 2a */
 extern void enrt_update_zora(unsigned int slot);                 /* 7.4 step 2b */
 extern void enrt_update_ghini(unsigned int slot);                /* 7.4 step 3 */
+extern void enrt_update_flying_ghini(unsigned int slot);         /* 7.4 step 6a */
 extern void core_reset_obj_metastate_and_timer(unsigned int slot); /* 7.4 step 2b ($11 INIT) */
 extern unsigned char core_reset_obj_state(unsigned int slot);
 
@@ -256,6 +257,19 @@ const enemy_update_fn enemy_update_fns[ENEMY_LOOP_TYPE_MAX] = {
      * c_check_monster_collisions, plus per-slot loop killing $22 flying
      * ghini when ghini dies. All primitives already linked. */
     [0x21] = enrt_update_ghini,             /* Ghini */
+    /* Task 7.4 step 6a — $22 FlyingGhini UPDATE (NES Z_04.asm:3967
+     * UpdateFlyingGhini). Native drain in enemy_flyer_bridge.c —
+     * composes c_control_flying_ghini_flight (6-row dispatch with
+     * enrt_flyer_ghini_decide_state at state-1, flyer_chase/wander
+     * shared with keese/peahat), c_move_flyer, and the existing
+     * enrt_draw_ghini_and_check_collisions tail (walker_runtime.c:295).
+     *
+     * INIT row deferred to step 6b — InitArmosOrFlyingGhini body is
+     * shared with $1E armos and reaches into ChangeTileObjTiles +
+     * SecretArmosRoomIds + GetRoomFlagUWItemState which require their
+     * own native drains (c_change_tile_obj_tiles only resolves via
+     * c_shims.asm bank, not linked into Debug.md). */
+    [0x22] = enrt_update_flying_ghini,      /* FlyingGhini */
 };
 
 /* Internal: clear an enemy slot's scratch state per NES room-init
