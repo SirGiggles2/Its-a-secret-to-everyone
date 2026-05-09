@@ -54,6 +54,9 @@
 
 extern void enrt_wanderer_target_player(unsigned int slot);
 
+/* Forward decl — defined after c_obj_shove block in this file (step 18). */
+void c_walker_check_tile_collision(unsigned int slot);
+
 void c_walker_move(unsigned int slot)
 {
     /* NES Walker_Move (Z_07.asm:2555). Non-Link path only — slot 0
@@ -133,8 +136,10 @@ void c_walker_move(unsigned int slot)
      * re-reads $0F. */
     (void)object_bound_by_room(slot);
 
-    /* Step 6 — Walker_CheckTileCollision (DEFERRED). Without it,
-     * octoroks pass through every tile but still respect room edges. */
+    /* Step 6 — Walker_CheckTileCollision (step 18 native). NES path
+     * BoundByRoom -> Walker_CheckTileCollision -> MoveObject. Non-Link
+     * branch only — walker UPDATE rows always pass slot >= 1. */
+    c_walker_check_tile_collision(slot);
 
     /* Step 7 — MoveObject. Reads NES_OBJ_DIR, advances X/Y for the
      * matching axis bit. */
@@ -382,6 +387,147 @@ void c_obj_shove(unsigned int slot)
             }
         }
     }
+}
+
+/* -------- Step 18: native c_walker_check_tile_collision -------- */
+
+/* Helper: Walker_GetNextAltDir (Z_07.asm:3027). 4-step jump table.
+ * NES sequence is `LDA $0E; INC $0E; TableJump(A)` so the dispatched
+ * step uses the OLD $0E. EndLoop resets $0E = 0 explicitly.
+ *  step 0 -> RandomObjPerpendicularDir
+ *  step 1 -> MovingOppositeDir
+ *  step 2 -> ReverseObjDir (also rewrites ObjDir + $0F)
+ *  step 3 -> EndLoop (returns 0; $0E reset to 0)
+ */
+static unsigned char walker_get_next_alt_dir(unsigned int slot)
+{
+    static const unsigned char k_reverse_dirs[4] = {
+        0x08u, 0x04u, 0x02u, 0x01u
+    };
+
+    unsigned char step = (unsigned char)RAM(NES_SHOT_COLLISION_FLAG); /* $0E */
+    RAM(NES_SHOT_COLLISION_FLAG) = (unsigned char)(step + 1u);
+
+    switch (step & 0x03u) {
+    case 0u: {
+        /* RandomObjPerpendicularDir (Z_07.asm:3037).
+         * Y = (Random[slot] high bit set) ? 0 : 1
+         * If ObjDir & $0C (V-facing) -> Y += 2 -> table picks H dir.
+         * Else -> table picks V dir. Result is always perpendicular
+         * to current facing axis. NES Random table base = $0018. */
+        unsigned char r = (unsigned char)RAM(0x0018u + slot);
+        unsigned char y = ((r & 0x80u) != 0u) ? 0u : 1u;
+        if ((ENEMY_DIR(slot) & 0x0Cu) != 0u) {
+            y = (unsigned char)(y + 2u);
+        }
+        return k_reverse_dirs[y & 0x03u];
+    }
+    case 1u: {
+        /* MovingOppositeDir (Z_07.asm:3053).
+         *   if ($0F & $0A) != 0  -> $0F >> 1
+         *   else                 -> $0F << 1 (8-bit truncated)
+         * $0A = bits {DOWN, RIGHT}; $05 = bits {UP, LEFT}. So shifting
+         * right when on the "increasing" axis flips to the matching
+         * decreasing direction (and vice versa). */
+        unsigned char dir = (unsigned char)RAM(NES_LINK_MOVING_DIR);
+        if ((dir & 0x0Au) != 0u) {
+            return (unsigned char)(dir >> 1);
+        }
+        return (unsigned char)((dir << 1) & 0xFFu);
+    }
+    case 2u: {
+        /* ReverseObjDir (Z_07.asm:3067):
+         *   ObjDir = opposite(ObjDir); $0F = ObjDir; return A. */
+        unsigned int packed =
+            core_get_opposite_dir((unsigned int)ENEMY_DIR(slot));
+        unsigned char opp = (unsigned char)(packed & 0xFFu);
+        ENEMY_DIR(slot)          = opp;
+        RAM(NES_LINK_MOVING_DIR) = opp;
+        return opp;
+    }
+    default: {
+        /* EndLoop (Z_07.asm:3077). $0E = 0; return 0. */
+        RAM(NES_SHOT_COLLISION_FLAG) = 0u;
+        return 0u;
+    }
+    }
+}
+
+void c_walker_check_tile_collision(unsigned int slot)
+{
+    /* NES Walker_CheckTileCollision (Z_07.asm:2815). Phase 7 Task 7.2
+     * step 18. Stance: REPLACE the prior c_walker_move TODO comment
+     * that deferred this primitive.
+     *
+     * Drained scope: non-Link branch only. Walker UPDATE rows always
+     * pass slot >= 1, so the X==0 Link branch (DoorwayDir read,
+     * GameMode==5 ladder check, screen-edge handler,
+     * GoToNextModeFromPlay) is not reachable from this call site and
+     * is intentionally omitted.
+     *
+     * The Reverse branch (gated on ObjAttr bit $10) is omitted as
+     * dead code — NES asm comment Z_07.asm:2862 records "$10 is not
+     * used in the object attribute array at 07:FAEF". The table
+     * never sets it, so Reverse never fires.
+     *
+     * NES $0E = SHOT_COLLISION_FLAG ($000E) = alt-dir loop step.
+     * NES $0F = LINK_MOVING_DIR    ($000F) = moving direction scratch.
+     */
+
+    /* Room-tile-registry guard. NES sets ObjectFirstUnwalkableTile
+     * ($034A) during room init (Z_04.asm RoomInit_LoadObjectAttrs).
+     * Phase 7 Task 7.2 has not wired room init yet, so $034A reads
+     * as 0. Without it the unwalkable test (tile < 0 = false) tags
+     * every tile as blocked, the alt-dir loop runs to step 2
+     * (ReverseObjDir) which overwrites ENEMY_DIR(slot), and movement
+     * collapses (probe G6/G12 regress on (192,160) etc).
+     *
+     * Skip the body when the registry isn't live. This is forward-
+     * compatible: when room init lands and writes $034A, the gate
+     * auto-clears and the drained body activates without any further
+     * wiring. */
+    if ((unsigned char)RAM(0x034Au) == 0u) return;
+
+    /* @CheckGridOffset (X != 0 path): grid offset != 0 -> return. */
+    if (OBJ(NES_OBJ_GRID_OFFSET, slot) != 0u) return;
+
+    /* Reset alt-dir step ($0E = 0). */
+    RAM(NES_SHOT_COLLISION_FLAG) = 0u;
+
+    /* If $0F (moving dir) == 0, set from input dir + drop into
+     * the TryNextDir loop. Else fall through to CheckTiles. */
+    unsigned char moving_dir = (unsigned char)RAM(NES_LINK_MOVING_DIR);
+    if (moving_dir == 0u) {
+        moving_dir = (unsigned char)OBJ(NES_OBJ_INPUT_DIR, slot);
+        RAM(NES_LINK_MOVING_DIR) = moving_dir;
+        unsigned char alt = walker_get_next_alt_dir(slot);
+        RAM(NES_LINK_MOVING_DIR) = alt;
+        if (RAM(NES_SHOT_COLLISION_FLAG) == 0u) return;
+        /* fall through into CheckTiles loop */
+    }
+
+    /* CheckTiles loop. */
+    for (unsigned int guard = 0u; guard < 8u; guard++) {
+        unsigned char tile = collision_get_colliding_tile_moving(slot);
+        if (tile < (unsigned char)RAM(0x034Au)) {
+            /* GoWalkableDir non-Link path -> CheckBoundary (Z_07.asm:3005).
+             * BoundByRoom returns post-test dir; non-zero -> store as
+             * facing dir and return. Zero -> TryNextDir loop. */
+            unsigned char dir = (unsigned char)RAM(NES_LINK_MOVING_DIR);
+            unsigned char post = object_bound_by_room_with_dir(dir, slot);
+            if (post != 0u) {
+                ENEMY_DIR(slot) = post;
+                return;
+            }
+        }
+        /* Unwalkable OR boundary failed -> next alt dir. */
+        unsigned char alt = walker_get_next_alt_dir(slot);
+        RAM(NES_LINK_MOVING_DIR) = alt;
+        if (RAM(NES_SHOT_COLLISION_FLAG) == 0u) return;
+    }
+    /* guard exit: NES loop bounded by $0E reaching 4. The 8-iter
+     * cap above is a belt-and-braces native guard — should never
+     * fire because EndLoop returns 0 + clears $0E by step 4. */
 }
 
 unsigned int c_shoot_if_wanted(unsigned int shot_type, unsigned int slot)
