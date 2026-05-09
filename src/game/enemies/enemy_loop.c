@@ -85,6 +85,26 @@ const enemy_init_fn enemy_init_fns[ENEMY_LOOP_TYPE_MAX] = {
     [0x0B] = enrt_init_darknut,                /* BlueDarknut */
     [0x0C] = enrt_init_darknut,                /* RedDarknut */
     [0x2A] = enrt_init_walker,                 /* Stalfos */
+    /* Task 7.3 step 2 audit (NOT wired — dispatch NULL until step 3+).
+     * Per Task 7.2 step 2 precedent, wiring even one row retains
+     * oracle_enemy_{flyer,walker}.o past --gc-sections and pulls
+     * unresolved primitives. Step 3+ bridges these one family at a time.
+     *
+     * Pending wires (NES Z_07.asm:5601 InitObject_JumpTable):
+     *   $13 Zol      → InitWalker            (needs c_update_zol_state,
+     *                                          c_zol_check_collisions,
+     *                                          c_draw_object_mirrored_with_frame)
+     *   $14 RedZol   → InitWalker            (alias of $13)
+     *   $15 Gel      → InitGel               (needs c_gel_move,
+     *                                          c_gel_check_collisions)
+     *   $1A Peahat   → InitPeahat            (UPDATE drain pending)
+     *   $1B BlueKeese→ InitBlueKeese         (needs Directions8)
+     *   $1C RedKeese → InitRedOrBlackKeese
+     *   $1D BlackKeese→InitRedOrBlackKeese
+     *   $28 Rope     → InitRope              (needs c_walker_move,
+     *                                          c_walker_check_collisions)
+     *   $12 Vire     → boss_runtime.c link pending
+     */
 };
 
 const enemy_update_fn enemy_update_fns[ENEMY_LOOP_TYPE_MAX] = {
@@ -120,6 +140,19 @@ const enemy_update_fn enemy_update_fns[ENEMY_LOOP_TYPE_MAX] = {
     [0x0B] = enrt_update_darknut,   /* BlueDarknut (step 11 native drain) */
     [0x0C] = enrt_update_darknut,   /* RedDarknut */
     [0x2A] = enrt_update_stalfos,   /* Stalfos (drained, full body) */
+    /* Task 7.3 step 2 audit (NOT wired — see init table comment for the
+     * unresolved-primitive list). UPDATE side dispatch (NES
+     * Z_07.asm:5295 UpdateObject_JumpTable):
+     *   $12 UpdateVire           — boss_runtime.c link pending
+     *   $13 UpdateZol            — needs c_update_zol_state plumbing
+     *   $14 UpdateGel (RedZol)   — needs c_gel_move plumbing
+     *   $15 UpdateGel            — needs c_gel_move plumbing
+     *   $1A UpdatePeahat         — drain pending
+     *   $1B/$1C/$1D UpdateKeese  — needs c_control_keese_flight,
+     *                              c_move_flyer, c_reset_shove_info,
+     *                              c_draw_object_mirrored_with_frame
+     *   $28 UpdateRope           — needs c_walker_move plumbing
+     */
 
     /* Step 12: shot UPDATE rows (Z_07.asm:5379-5388 dispatch).
      * NES UpdateMonsterShot (Z_04.asm:820) covers $53/$54 flying-rocks +
