@@ -1314,12 +1314,15 @@ Net dispatch delta: INIT 37→40 wired (+3), UPDATE 45→48 wired (+3).
 
 ### Task 7.6: Aquatic / Terrain Family
 
-- [ ] Implement zora.
-- [ ] Implement tektite.
-- [ ] Implement leevers.
-- [ ] Implement water/terrain constraints.
-- [ ] Probe each terrain behavior.
-- [ ] Commit family.
+- [x] Implement zora.                                   <!-- $11 INIT (core_reset_obj_metastate_and_timer Task 7.4 step 11) + UPDATE (enrt_update_zora Task 7.4 step 2b) wired. -->
+- [x] Implement tektite.                                <!-- $0D/$0E INIT (enrt_init_tektite Task 7.4 step 6e) + UPDATE (enrt_update_tektite_or_boulder Task 7.4 step 2a) wired. -->
+- [x] Implement leevers.                                <!-- step 1: $0F/$10 INIT (enrt_init_leever); step 2: $0F UPDATE (enrt_update_blue_leever); step 3: $10 UPDATE (enrt_update_red_leever). -->
+- [x] Implement water/terrain constraints.              <!-- subsumed by object_bound_by_room + collision_get_{collidable_tile_still,colliding_tile_moving} vs ObjectFirstUnwalkableTile + c_update_burrower state-3 boundary check + c_bound_flyer Y-cell wrap. No per-special override needed. -->
+- [ ] Probe each terrain behavior.                      <!-- pending — phase 7 close probe. -->
+- [x] Commit family.                                    <!-- step 4 family close. -->
+
+Task 7.6 audit doc: `tools/audit/drain_findings/phase7_task_7_6_close/family_close.md`.
+Net dispatch delta: INIT 40→42 wired (+2), UPDATE 48→50 wired (+2).
 
 ### Task 7.7: Enemy Room Matrix
 
