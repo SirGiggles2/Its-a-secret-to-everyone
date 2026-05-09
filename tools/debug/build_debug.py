@@ -48,6 +48,7 @@ INCS = [
     ROOT / "src" / "game" / "world",
     ROOT / "src" / "game" / "core",
     ROOT / "src" / "game" / "enemies",
+    ROOT / "src" / "game" / "enemies" / "probes",
     ROOT / "src" / "game" / "combat",
     ROOT / "src" / "game" / "room",
     ROOT / "src" / "game" / "hud",
@@ -167,6 +168,7 @@ ROOMROM_C_SOURCES = [
     # promotion — gameplay code under src/game/, not RoomRom/).
     ("src/game/enemies/enemy_loop.c", "game_enemy_loop.o"),
     ("src/game/enemies/obj_lists.c", "game_enemy_obj_lists.o"),
+    ("src/game/enemies/probes/enemy_loop_probe.c", "game_enemy_loop_probe.o"),
     ("RoomRom/src/expanded_bg_chr.c", "expanded_bg_chr.o"),
     ("RoomRom/src/atlas/items_chr_x4.c", "atlas_items_chr_x4.o"),
     # PR-4a: scene-bank scaffolding + DMA state machine.

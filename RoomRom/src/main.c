@@ -30,6 +30,7 @@
 #include "atlas/level_chr_swap.h"        /* PR-4a: scene-bank DMA state machine */
 #include "player_state.h"                 /* Phase 6 Task 6.1: typed players[] */
 #include "enemy_loop.h"                   /* Phase 7 Task 7.2 step 2 (WT-5) */
+#include "enemy_loop_probe.h"             /* Phase 7 Task 7.2 step 2 probe */
 
 /* Boots to overworld room 0x77.
  *
@@ -1203,6 +1204,7 @@ void roomrom_debug_enter(void)
     roomrom_candle_fire_init();            /* Task 5.8.1: candle fire slot 8 */
     roomrom_magic_shot_init();             /* magic rod shot slot 9 */
     enemy_loop_room_init(s_room_id, (unsigned char)s_scene);  /* Phase 7 Task 7.2 */
+    enemy_loop_probe_run();                /* Phase 7 Task 7.2 step 2 in-ROM probe */
     roomrom_probe_metadata_run();          /* Task 5.4 Gate D: in-ROM probe */
 
     /* debate 006 D2 native cave smoke: prove cave_init / cave_tick /
