@@ -132,6 +132,30 @@
  * walker checklist line. */
 #define ENEMY_LOOP_DAMAGE_VIZ_BASE 0x00FF7FD8UL
 
+/* Phase 7 Task 7.3 step 8 — flyer/jumper/zol/gel/rope/vire family-73
+ * multi-slot block at $FF7E40 (free between probe-pairs block ending
+ * $FF7E3B and tick block at $FF7F00). 6 slots * 8 bytes + 4 header.
+ *
+ * Layout (52 bytes):
+ *   [0]   = 'F' (0x46) magic
+ *   [1]   = 'M' (0x4D) magic
+ *   [2]   = (reserved)
+ *   [3]   = (reserved)
+ *   [4..] = 6 entries x 8 bytes (per-slot):
+ *     [0] ALIVE_FLAG  [1] TYPE        [2] X       [3] Y
+ *     [4] DIR         [5] ANIM_TIMER  [6] MOVE_TIMER  [7] FLAP_PHASE
+ *
+ * Slot mapping (by entry index):
+ *   entry 0 -> slot  6 = $13 Zol
+ *   entry 1 -> slot  7 = $15 Gel
+ *   entry 2 -> slot  8 = $1A Peahat
+ *   entry 3 -> slot  9 = $1B BlueKeese
+ *   entry 4 -> slot 10 = $28 Rope
+ *   entry 5 -> slot 11 = $12 Vire
+ *
+ * Used by step-8 family-functional probe to gate 6 wired UPDATE rows. */
+#define ENEMY_LOOP_FAMILY73_BASE 0x00FF7E40UL
+
 #ifdef __cplusplus
 extern "C" {
 #endif

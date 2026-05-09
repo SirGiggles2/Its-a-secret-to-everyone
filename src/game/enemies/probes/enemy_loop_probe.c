@@ -87,6 +87,17 @@ void enemy_loop_probe_run(void)
     enemy_loop_force_spawn_typed(4u, 0x2Au, 0xC0u, 0x60u, 0u); /* Stalfos */
     enemy_loop_force_spawn_typed(5u, 0x0Bu, 0xC0u, 0xA0u, 0u); /* BlueDarknut */
 
+    /* Step 8 (Task 7.3) — seed slots 6..11 with the 6 flyer/jumper-family
+     * UPDATE rows wired in steps 3-7. Spread across the play-field so
+     * collision heuristics don't pin them. Pre-seeded DIR=$01 to satisfy
+     * walker-derived rows that use ENEMY_DIR for movement. */
+    enemy_loop_force_spawn_typed( 6u, 0x13u, 0x30u, 0x30u, 0x01u); /* Zol     */
+    enemy_loop_force_spawn_typed( 7u, 0x15u, 0x30u, 0x70u, 0x01u); /* Gel     */
+    enemy_loop_force_spawn_typed( 8u, 0x1Au, 0x30u, 0xB0u, 0x08u); /* Peahat  */
+    enemy_loop_force_spawn_typed( 9u, 0x1Bu, 0xD0u, 0x30u, 0x05u); /* Keese   */
+    enemy_loop_force_spawn_typed(10u, 0x28u, 0xD0u, 0x70u, 0x01u); /* Rope    */
+    enemy_loop_force_spawn_typed(11u, 0x12u, 0xD0u, 0xB0u, 0x01u); /* Vire    */
+
     alive_after = enemy_loop_alive_count();
 
     /* Header. */
@@ -224,6 +235,30 @@ static void publish_multi_slot(volatile unsigned char *base,
     p[7] = (unsigned char)ENEMY_WALK_SPEED(slot);
 }
 
+/* Phase 7 Task 7.3 step 8 — family-73 publisher. Drops slot 6..11
+ * snapshots into the FAMILY73 block so the step-8 lua probe can gate
+ * each newly-wired UPDATE row (zol/gel/peahat/keese/rope/vire). */
+static void publish_family73(volatile unsigned char *base)
+{
+    static const unsigned char fam73_slots[6] = { 6u, 7u, 8u, 9u, 10u, 11u };
+    base[0] = 0x46u;                                  /* 'F' */
+    base[1] = 0x4Du;                                  /* 'M' */
+    base[2] = 0u;
+    base[3] = 0u;
+    for (unsigned int i = 0u; i < 6u; i++) {
+        const unsigned int slot = fam73_slots[i];
+        volatile unsigned char *p = &base[4u + i * 8u];
+        p[0] = (unsigned char)ENEMY_ALIVE_FLAG(slot);
+        p[1] = (unsigned char)ENEMY_TYPE(slot);
+        p[2] = (unsigned char)ENEMY_X(slot);
+        p[3] = (unsigned char)ENEMY_Y(slot);
+        p[4] = (unsigned char)ENEMY_DIR(slot);
+        p[5] = (unsigned char)ENEMY_ANIM_TIMER(slot);
+        p[6] = (unsigned char)ENEMY_MOVE_TIMER(slot);
+        p[7] = (unsigned char)ENEMY_FLAP_PHASE(slot);
+    }
+}
+
 /* Step 14 shot scanner. Walks slots 1..15, records first 8 with
  * ENEMY_TYPE in $53..$5C (any shot/arrow/boomerang). Publishes
  * ActiveMonsterShots ($034C) so probe can verify decrement after
@@ -311,6 +346,8 @@ void enemy_loop_probe_publish_live(void)
         (volatile unsigned char *)ENEMY_LOOP_COLLISION_VIZ_BASE;
     volatile unsigned char *dmg_viz =
         (volatile unsigned char *)ENEMY_LOOP_DAMAGE_VIZ_BASE;
+    volatile unsigned char *fam73 =
+        (volatile unsigned char *)ENEMY_LOOP_FAMILY73_BASE;
     static unsigned short frame_counter = 0u;
     frame_counter++;
 
@@ -325,6 +362,7 @@ void enemy_loop_probe_publish_live(void)
     publish_shot_scan(shot_scan);
     publish_collision_viz(coll_viz);
     publish_damage_viz(dmg_viz);
+    publish_family73(fam73);
 
     block[0]  = 0x54u;                                /* 'T' */
     block[1]  = 0x4Bu;                                /* 'K' */
