@@ -58,6 +58,7 @@ extern void enrt_init_boulder_set(unsigned int slot);            /* 7.4 step 2a 
 extern void enrt_update_boulder_set(unsigned int slot);          /* 7.4 step 2a */
 extern void enrt_update_tektite_or_boulder(unsigned int slot);   /* 7.4 step 2a */
 extern void enrt_update_zora(unsigned int slot);                 /* 7.4 step 2b */
+extern void enrt_update_ghini(unsigned int slot);                /* 7.4 step 3 */
 extern void core_reset_obj_metastate_and_timer(unsigned int slot); /* 7.4 step 2b ($11 INIT) */
 extern unsigned char core_reset_obj_state(unsigned int slot);
 
@@ -141,6 +142,11 @@ const enemy_init_fn enemy_init_fns[ENEMY_LOOP_TYPE_MAX] = {
      * at src/game/core/core_dispatch.c:455 (one-line: ENEMY_MOVE_TIMER=0
      * + core_reset_obj_metastate). */
     [0x11] = core_reset_obj_metastate_and_timer, /* Zora */
+    /* Task 7.4 step 3 — $21 Ghini INIT shares InitSlowOctorockOrGhini
+     * (NES Z_07.asm:5601 row $21). Body drained at
+     * src/oracle/enemies/enemy_walker_runtime.c:34
+     * (enrt_init_slow_octorock_or_ghini). Reused here. */
+    [0x21] = enrt_init_slow_octorock_or_ghini,   /* Ghini */
 };
 
 const enemy_update_fn enemy_update_fns[ENEMY_LOOP_TYPE_MAX] = {
@@ -243,6 +249,13 @@ const enemy_update_fn enemy_update_fns[ENEMY_LOOP_TYPE_MAX] = {
      * src/oracle/enemies/enemy_walker_runtime.c:174. Native
      * c_update_burrower body in enemy_jumper_bridge.c (step 2b). */
     [0x11] = enrt_update_zora,              /* Zora */
+    /* Task 7.4 step 3 — $21 Ghini UPDATE (NES Z_07.asm:5295 row $21 =
+     * UpdateGhini @ Z_04.asm:3067). Drain at
+     * src/oracle/enemies/enemy_walker_runtime.c:313 — composes
+     * enrt_update_common_wanderer($FF), enrt_draw_ghini_and_check_collisions,
+     * c_check_monster_collisions, plus per-slot loop killing $22 flying
+     * ghini when ghini dies. All primitives already linked. */
+    [0x21] = enrt_update_ghini,             /* Ghini */
 };
 
 /* Internal: clear an enemy slot's scratch state per NES room-init
