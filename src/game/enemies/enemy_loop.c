@@ -89,6 +89,14 @@ extern void enrt_update_standing_fire(unsigned int slot);
  *   draw_write_boss_sprite primitive drained into draw_dispatch.c. */
 extern void enrt_init_aquamentus(unsigned int slot);
 extern void enrt_update_aquamentus(unsigned int slot);
+/* Phase 8 Task 8.3 — Dodongo INIT + UPDATE.
+ *   $31/$32 Dodongo -> enrt_init_dodongo + boss_dodongo_update
+ *                     (native bridge in src/game/enemies/bosses/boss_dodongo.c).
+ *   Bridge composes drained primitives (collisions / bomb-hit / draw /
+ *   stunned / bloated_sub_die / bloated_sub_end) with native State0_Move +
+ *   Bloated_Sub_Wait + state/bloated dispatchers. */
+#include "bosses/boss_dodongo.h"
+extern void enrt_init_dodongo(unsigned int slot);
 extern void core_reset_obj_metastate_and_timer(unsigned int slot); /* 7.4 step 2b ($11 INIT) */
 extern unsigned char core_reset_obj_state(unsigned int slot);
 /* 7.5 step 2 — special-enemy UPDATE bridge bodies (enemy_special_bridge.c).
@@ -269,6 +277,12 @@ const enemy_init_fn enemy_init_fns[ENEMY_LOOP_TYPE_MAX] = {
      * enemy_boss_runtime.c:102. Primitives self-contained — only writes
      * 4 RAM cells, no callouts. */
     [0x3D] = enrt_init_aquamentus,               /* Aquamentus */
+    /* Phase 8 Task 8.3 — Dodongo INIT pair (NES Z_07.asm:5601 rows
+     * $31/$32 -> SwitchBank #$01 + JMP InitDodongo @ Z_04.asm:4893).
+     * Drained at enemy_dodongo_runtime.c:21 — sets ENEMY_SFX_BOSS_CRY=32
+     * + ENEMY_DIR via RNG_A < $80. */
+    [0x31] = enrt_init_dodongo,                  /* Dodongo */
+    [0x32] = enrt_init_dodongo,                  /* Dodongo (alt) */
     /* Task 7.4 step 11 — projectile-family INIT close.
      *
      * NES Z_07.asm:5601 InitObject_JumpTable rows:
@@ -530,6 +544,15 @@ const enemy_update_fn enemy_update_fns[ENEMY_LOOP_TYPE_MAX] = {
      * fused) lives in draw_dispatch.c. ENEMY_PAUSE_FLAG gate handled inside
      * enrt_update_aquamentus drain body. */
     [0x3D] = enrt_update_aquamentus,        /* Aquamentus */
+    /* Phase 8 Task 8.3 — Dodongo UPDATE pair (NES Z_04.asm:5856
+     * UpdateDodongo). Native bridge body in
+     * src/game/enemies/bosses/boss_dodongo.c composes drained
+     * primitives (collisions / bomb-hit / draw / stunned /
+     * bloated_sub_die / bloated_sub_end) with native State0_Move +
+     * Bloated_Sub_Wait + dispatchers. Two NES rows ($31/$32) fan to
+     * the same UpdateDodongo entry — preserved verbatim. */
+    [0x31] = boss_dodongo_update,           /* Dodongo */
+    [0x32] = boss_dodongo_update,           /* Dodongo (alt) */
     /* Task 7.5 step 2 — special-enemy UPDATE: $17 LikeLike.
      *
      * NES Z_07.asm:5295 UpdateObject_JumpTable row $17 LikeLike ->

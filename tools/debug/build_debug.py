@@ -184,6 +184,12 @@ ROOMROM_C_SOURCES = [
     # only enrt_update_vire transitive callees; aquamentus/jumper/gleeok/
     # dodongo/manhandla/lamnola bodies stay stripped until their rows wire.
     ("src/oracle/enemies/enemy_boss_runtime.c", "oracle_enemy_boss.o"),
+    # Phase 8 Task 8.3: Dodongo drained primitives. enrt_init_dodongo +
+    # enrt_dodongo_check_collisions / _check_bomb_hit / _draw +
+    # enrt_update_dodongo_state2_stunned + enrt_update_dodongo_state1_bloated_sub_die
+    # + enrt_update_dodongo_bloated_sub_end live here. Native bridge body
+    # for UpdateDodongo composes them in src/game/enemies/bosses/boss_dodongo.c.
+    ("src/oracle/enemies/enemy_dodongo_runtime.c", "oracle_enemy_dodongo.o"),
     # Task 7.5 step 4: Wallmaster scratch/draw helpers. Drained
     # enrt_wallmaster_calc_start_position +
     # enrt_wallmaster_put_sprite{,s}_behind_bg_if_needed live here. Pulled
@@ -236,6 +242,13 @@ ROOMROM_C_SOURCES = [
     # Per-boss INIT/UPDATE bodies live in enemy_boss_bridge.c +
     # enemy_boss_runtime.c; this TU only carries the framework shell.
     ("src/game/enemies/bosses/boss_framework.c", "game_enemy_boss_framework.o"),
+    # Phase 8 Task 8.3 — Dodongo bridge body. UpdateDodongo native umbrella
+    # (Z_04.asm:5856) plus native State0_Move + State1_Bloated dispatcher +
+    # Sub_Wait that the drain doesn't carry. Forwards c_get_object_middle /
+    # c_check_monster_sword_collision / z07_update_dead_dummy /
+    # z04_update_dodongo_bloated_sub_end to the dispatcher entry points
+    # already in the link.
+    ("src/game/enemies/bosses/boss_dodongo.c", "game_enemy_boss_dodongo.o"),
     ("src/game/enemies/probes/enemy_loop_probe.c", "game_enemy_loop_probe.o"),
     ("RoomRom/src/expanded_bg_chr.c", "expanded_bg_chr.o"),
     ("RoomRom/src/atlas/items_chr_x4.c", "atlas_items_chr_x4.o"),
