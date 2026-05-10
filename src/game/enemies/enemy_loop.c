@@ -179,6 +179,23 @@ extern void enrt_init_lamnola(unsigned int slot);
 extern void enrt_update_lamnola(unsigned int slot);
 extern void enrt_init_moldorm(unsigned int slot);
 extern void enrt_update_moldorm(unsigned int slot);
+/* Phase 8 Task 8.10 — Ganon ($3E).
+ *   $3E Ganon -> enrt_init_ganon + enrt_update_ganon
+ *                (drained at enemy_ganon_runtime.c — full umbrella +
+ *                ScenePhase0/1/2 + Ganon_Dying + DrawBody + DrawAshes +
+ *                DrawCloud + DrawBurst + SetUpBurstRays + CheckCollisions
+ *                + AppendPaletteRowTransferRecord_{Brown,Blue,Triforce}).
+ *                PARTIAL stance — composes already-drained
+ *                enrt_ganon_{randomize_location,activate_room_item,
+ *                get_cur_cloud_*}, enrt_play_boss_hit_cry_if_needed,
+ *                enrt_play_boss_death_cry, enrt_update_candle, plus
+ *                core_reset_obj_metastate_and_timer / shove + collision
+ *                primitives. STUBS for BlueWizzrobe family
+ *                (TurnSometimesAndMoveAndCheckTile, Move) and PlaySample;
+ *                slot ticks but Ganon stays stationary until Z_07
+ *                wizzrobe drain lands. */
+extern void enrt_init_ganon(unsigned int slot);
+extern void enrt_update_ganon(unsigned int slot);
 extern void core_reset_obj_metastate_and_timer(unsigned int slot); /* 7.4 step 2b ($11 INIT) */
 extern unsigned char core_reset_obj_state(unsigned int slot);
 /* 7.5 step 2 — special-enemy UPDATE bridge bodies (enemy_special_bridge.c).
@@ -417,6 +434,7 @@ const enemy_init_fn enemy_init_fns[ENEMY_LOOP_TYPE_MAX] = {
      * consumed verbatim, no bridge layer required. */
     [0x3A] = enrt_init_lamnola,                  /* Lamnola1 */
     [0x3B] = enrt_init_lamnola,                  /* Lamnola2 */
+    [0x3E] = enrt_init_ganon,                    /* Ganon */
     [0x41] = enrt_init_moldorm,                  /* Moldorm */
     /* Task 7.4 step 11 — projectile-family INIT close.
      *
@@ -760,6 +778,7 @@ const enemy_update_fn enemy_update_fns[ENEMY_LOOP_TYPE_MAX] = {
      * enemy_moldorm_runtime.c:170. ADOPT stance. */
     [0x3A] = enrt_update_lamnola,           /* Lamnola1 */
     [0x3B] = enrt_update_lamnola,           /* Lamnola2 */
+    [0x3E] = enrt_update_ganon,             /* Ganon */
     [0x41] = enrt_update_moldorm,           /* Moldorm */
     /* Task 7.5 step 2 — special-enemy UPDATE: $17 LikeLike.
      *

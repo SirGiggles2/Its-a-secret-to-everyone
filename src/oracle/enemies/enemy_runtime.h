@@ -76,6 +76,8 @@ void enrt_lamnola_update_head(unsigned int slot);
 void enrt_lamnola_move(unsigned int slot);
 void enrt_init_moldorm(unsigned int slot);
 void enrt_update_moldorm(unsigned int slot);
+void enrt_init_ganon(unsigned int slot);
+void enrt_update_ganon(unsigned int slot);
 void enrt_update_vire(unsigned int slot);
 void enrt_update_vire_state(unsigned int slot);
 void enrt_check_vire_collisions(unsigned int slot);

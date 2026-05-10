@@ -316,6 +316,25 @@ ROOMROM_C_SOURCES = [
     # z07_set_shove_info_with0 — first dispatch wiring that exposes these
     # transitive callees. EXTEND stance.
     ("src/game/enemies/enemy_lamnola_bridge.c", "game_enemy_lamnola_bridge.o"),
+    # Phase 8 Task 8.10 — Ganon ($3E) drain. enrt_init_ganon (Z_04.asm:9599)
+    # + enrt_update_ganon umbrella (Z_04.asm:10321) + ScenePhase0/1/2 +
+    # Ganon_Dying + DrawBody + DrawAshes + DrawCloud + DrawBurst +
+    # SetUpBurstRays + CheckCollisions +
+    # AppendPaletteRowTransferRecord_{Brown,Blue,Triforce}. Composes
+    # already-drained enrt_ganon_{randomize_location,activate_room_item,
+    # get_cur_cloud_*}, enrt_play_boss_{hit_cry_if_needed,death_cry},
+    # enrt_update_candle, c_draw_object_{,not_}mirrored_with_frame,
+    # c_anim_write_sprite, c_shoot_fireball, c_reset_obj_metastate,
+    # core_reset_{obj_metastate_and_timer,shove_info_and_inv_timer},
+    # colrt_check_monster_{sword,arrow_or_rod}_collision,
+    # lcrt_check_link_collision_preinit, sprrt_anim_fetch_obj_pos.
+    # PARTIAL stance — wizzrobe family motion stubbed (deferred to Phase 8
+    # Task 8.11+); slot still ticks + scene phase machine evaluated.
+    ("src/oracle/enemies/enemy_ganon_runtime.c", "oracle_enemy_ganon.o"),
+    # Phase 8 Task 8.10 — Ganon shim bridge. Resolves GanonStartXs +
+    # z01_* + sprrt_/lcrt_/colrt_ undefined refs surfaced by wiring
+    # $3E into the enemy_loop dispatch table.
+    ("src/game/enemies/enemy_ganon_bridge.c", "game_enemy_ganon_bridge.o"),
     ("src/game/enemies/probes/enemy_loop_probe.c", "game_enemy_loop_probe.o"),
     ("RoomRom/src/expanded_bg_chr.c", "expanded_bg_chr.o"),
     ("RoomRom/src/atlas/items_chr_x4.c", "atlas_items_chr_x4.o"),
