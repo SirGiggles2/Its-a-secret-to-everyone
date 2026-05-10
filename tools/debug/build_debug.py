@@ -231,6 +231,11 @@ ROOMROM_C_SOURCES = [
     # bridge carries the per-line NES translation (same model as
     # enemy_boss_bridge.c for Aquamentus / Vire).
     ("src/game/enemies/enemy_special_bridge.c", "game_enemy_special_bridge.o"),
+    # Phase 8 Task 8.1 — Boss Framework. Native CreateRoomObjects body
+    # (Z_05.asm:8154-8250) wires the room-item slot 19 reward path.
+    # Per-boss INIT/UPDATE bodies live in enemy_boss_bridge.c +
+    # enemy_boss_runtime.c; this TU only carries the framework shell.
+    ("src/game/enemies/bosses/boss_framework.c", "game_enemy_boss_framework.o"),
     ("src/game/enemies/probes/enemy_loop_probe.c", "game_enemy_loop_probe.o"),
     ("RoomRom/src/expanded_bg_chr.c", "expanded_bg_chr.o"),
     ("RoomRom/src/atlas/items_chr_x4.c", "atlas_items_chr_x4.o"),
