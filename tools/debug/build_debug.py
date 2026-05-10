@@ -53,6 +53,8 @@ INCS = [
     ROOT / "src" / "game" / "room",
     ROOT / "src" / "game" / "hud",
     ROOT / "src" / "game" / "items",
+    ROOT / "src" / "game" / "options",
+    ROOT / "src" / "game" / "options" / "probes",
     ROOT / "src" / "oracle" / "room",
     ROOT / "src" / "core",
     SGDK / "inc",
@@ -335,6 +337,11 @@ ROOMROM_C_SOURCES = [
     # z01_* + sprrt_/lcrt_/colrt_ undefined refs surfaced by wiring
     # $3E into the enemy_loop dispatch table.
     ("src/game/enemies/enemy_ganon_bridge.c", "game_enemy_ganon_bridge.o"),
+    # Phase 9 Task 9.1 — Redux options runtime. GREENFIELD per debate
+    # 004; sanctioned new build under src/game/options/. Subsystem is
+    # gameplay-mutable (sound on/off, difficulty); UI lands in 9.3.
+    ("src/game/options/options_runtime.c", "game_options_runtime.o"),
+    ("src/game/options/probes/options_probe.c", "game_options_probe.o"),
     ("src/game/enemies/probes/enemy_loop_probe.c", "game_enemy_loop_probe.o"),
     ("RoomRom/src/expanded_bg_chr.c", "expanded_bg_chr.o"),
     ("RoomRom/src/atlas/items_chr_x4.c", "atlas_items_chr_x4.o"),

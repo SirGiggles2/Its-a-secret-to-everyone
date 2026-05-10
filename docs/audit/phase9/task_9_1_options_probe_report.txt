@@ -1,0 +1,21 @@
+Phase 9 Task 9.1 Options runtime probe
+=====================================
+
+magic     = $4F $50 (expect 'O'=$4F 'P'=$50)
+version   = 1 (expect 1)
+total     = 10
+passes    = 10
+
+  [0] defaults_validate                PASS
+  [1] bool_set_get_roundtrip           PASS
+  [2] enum_clamp_invalid               PASS
+  [3] start_hearts_clamp_low           PASS
+  [4] start_hearts_clamp_high          PASS
+  [5] serialize_apply_roundtrip        PASS
+  [6] apply_rejects_bad_magic          PASS
+  [7] apply_rejects_bad_checksum       PASS
+  [8] version_after_init               PASS
+  [9] reserved_zero_after_defaults     PASS
+
+frame_counter at $FF7202..03 = 70
+VERDICT: all 10 options runtime tests passed; ROM still ticking.
