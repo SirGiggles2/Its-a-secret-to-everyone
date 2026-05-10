@@ -1,0 +1,17 @@
+Phase 9 Task 9.4 Option consumer probe
+======================================
+
+magic     = $43 $4E (expect 'C'=$43 'N'=$4E)
+version   = 1 (expect 1)
+total     = 5 (expect 5)
+passes    = 5 (expect 5)
+bits      = $1F (expect $1F)
+
+  bit0  defaults_apply_yields_3_hearts_8_bombs   PASS
+  bit1  start_hearts_7_yields_0x77               PASS
+  bit2  bomb_upgrade_plus4_yields_12             PASS
+  bit3  bomb_upgrade_plus8_yields_16             PASS
+  bit4  start_hearts_16_clamps_to_15             PASS
+
+frame_counter at $FF7202..03 = 158
+VERDICT: all 5 consumer wire-up tests passed; ROM still ticking.

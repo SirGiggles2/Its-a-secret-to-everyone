@@ -33,6 +33,9 @@
 #include "enemy_loop_probe.h"             /* Phase 7 Task 7.2 step 2 probe */
 #include "options_probe.h"                /* Phase 9 Task 9.1 in-ROM tests */
 #include "options_persistence_probe.h"    /* Phase 9 Task 9.2 SRAM tests */
+#include "options_persistence.h"          /* Phase 9 Task 9.4 load-or-default */
+#include "options_consumer.h"             /* Phase 9 Task 9.4 game-start hook */
+#include "options_consumer_probe.h"       /* Phase 9 Task 9.4 consumer tests */
 
 /* Boots to overworld room 0x77.
  *
@@ -1181,6 +1184,14 @@ static void edge_load_or_clamp(void)
 
 void roomrom_debug_enter(void)
 {
+    /* Phase 9 Task 9.4 — load options from SRAM (or defaults) and apply
+     * game-start option-driven seeds (start hearts, bomb cap) BEFORE
+     * any inventory reader runs. The static `g_inventory` initializer
+     * already seeds the NES vanilla profile; this layer overwrites
+     * heart_values + max_bombs per the active OptionsState. */
+    options_persistence_load_or_default();
+    options_consumer_apply_inventory_at_start();
+
     /* Phase 6 Task 6.1: seed `players[0]` with NES Z1 boot defaults
      * before anything reads it. RoomRom always boots in 1-player mode;
      * Phase 13 will populate `players[1..3]` after lobby selection. */
@@ -1247,6 +1258,7 @@ void roomrom_debug_enter(void)
     }
     options_probe_run();                   /* Phase 9 Task 9.1 — pure CPU-side. */
     options_persistence_probe_run();       /* Phase 9 Task 9.2 — SRAM I/O. */
+    options_consumer_probe_run();          /* Phase 9 Task 9.4 — consumer wiring. */
 }
 
 unsigned char roomrom_debug_get_scene(void)

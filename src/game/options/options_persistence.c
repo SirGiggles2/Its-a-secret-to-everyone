@@ -35,17 +35,25 @@ unsigned char options_persistence_load_or_default(void)
 {
     unsigned char buf[OPTIONS_STATE_SIZE];
 
+    /* Always seed runtime defaults first so a blank or corrupt SRAM
+     * cell still leaves g_options in a valid (vanilla) state. Without
+     * this, options_get() returns garbage from .bss zero-fill, and
+     * downstream consumers like options_consumer_apply_inventory_at_start
+     * would set heart_values=0x00 -> 0 hearts. */
+    options_runtime_init();
+
     sram_options_io_read(buf, OPTIONS_STATE_SIZE);
 
     if (options_persistence_image_is_blank(buf, OPTIONS_STATE_SIZE) != 0u) {
-        /* Uninitialized SRAM. Keep defaults. Caller can commit() later
-         * to seed real bytes; we do not auto-write here so a fresh
-         * boot remains observable in the persistence probe. */
+        /* Uninitialized SRAM. Defaults already loaded above. Caller can
+         * commit() later to seed real bytes; we do not auto-write here
+         * so a fresh boot remains observable in the persistence probe. */
         return 0u;
     }
 
     if (options_runtime_apply(buf, OPTIONS_STATE_SIZE) == 0u) {
-        /* Bad magic / version / checksum / range. Keep defaults. */
+        /* Bad magic / version / checksum / range. Defaults survive from
+         * options_runtime_init above. */
         return 0u;
     }
 

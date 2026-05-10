@@ -346,9 +346,11 @@ ROOMROM_C_SOURCES = [
     # gameplay-mutable (sound on/off, difficulty); UI lands in 9.3.
     ("src/game/options/options_runtime.c", "game_options_runtime.o"),
     ("src/game/options/options_persistence.c", "game_options_persistence.o"),
+    ("src/game/options/options_consumer.c", "game_options_consumer.o"),
     ("src/sgdk_adapter/sram_options_io.c", "sram_options_io.o"),
     ("src/game/options/probes/options_probe.c", "game_options_probe.o"),
     ("src/game/options/probes/options_persistence_probe.c", "game_options_persistence_probe.o"),
+    ("src/game/options/probes/options_consumer_probe.c", "game_options_consumer_probe.o"),
     ("src/game/enemies/probes/enemy_loop_probe.c", "game_enemy_loop_probe.o"),
     ("RoomRom/src/expanded_bg_chr.c", "expanded_bg_chr.o"),
     ("RoomRom/src/atlas/items_chr_x4.c", "atlas_items_chr_x4.o"),
