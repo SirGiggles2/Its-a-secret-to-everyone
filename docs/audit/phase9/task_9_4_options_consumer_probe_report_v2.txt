@@ -1,0 +1,31 @@
+Phase 9 Task 9.4 Option consumer probe (v2 14-getter coverage)
+==============================================================
+
+magic     = $43 $4E (expect 'C'=$43 'N'=$4E)
+version   = 2 (expect 2)
+total     = 19 (expect 19)
+passes    = 19 (expect 19)
+mask      = $07FFFF (expect $07FFFF)
+
+  bit0  defaults_apply_yields_3_hearts_8_bombs   PASS
+  bit1  start_hearts_7_yields_0x77               PASS
+  bit2  bomb_upgrade_plus4_yields_12             PASS
+  bit3  bomb_upgrade_plus8_yields_16             PASS
+  bit4  start_hearts_16_clamps_to_15             PASS
+  bit5  getter_low_health_warning                PASS
+  bit6  getter_automap                           PASS
+  bit7  getter_dungeon_colors                    PASS
+  bit8  getter_visible_secrets                   PASS
+  bit9  getter_diagonal_sword                    PASS
+  bit10 getter_no_reduced_flashing               PASS
+  bit11 getter_ab_swap                           PASS
+  bit12 getter_auto_collect_drops                PASS
+  bit13 getter_sword_style_beam_always           PASS
+  bit14 getter_like_like_no_eat                  PASS
+  bit15 getter_bomb_upgrade_plus8                PASS
+  bit16 getter_lost_woods_relaxed                PASS
+  bit17 getter_dark_room_bright                  PASS
+  bit18 getter_start_hearts_5                    PASS
+
+frame_counter at $FF7202..03 = 157
+VERDICT: all 19 consumer tests passed; ROM still ticking.

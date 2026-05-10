@@ -13,9 +13,11 @@ static void stamp_magic(void)
     unsigned int i;
     PROBE[0] = 'C';
     PROBE[1] = 'N';
-    PROBE[2] = 0x01u;
+    PROBE[2] = 0x02u;  /* version 2 — 14-getter coverage */
     for (i = 3u; i < 16u; ++i) PROBE[i] = 0u;
 }
+
+/* --- Group A: apply_inventory_at_start behavior tests --------------- */
 
 static unsigned char test_defaults_3_hearts_8_bombs(void)
 {
@@ -60,6 +62,128 @@ static unsigned char test_start_hearts_16_clamps_to_15(void)
     return (g_inventory.heart_values == 0xFFu) ? 1u : 0u;
 }
 
+/* --- Group B: per-getter accessor coverage -------------------------- */
+
+static unsigned char test_getter_low_health_warning(void)
+{
+    options_runtime_init();
+    options_set((unsigned int)OPTION_ID_LOW_HEALTH_WARNING, 1u);
+    return (options_consumer_get_low_health_warning() == 1u) ? 1u : 0u;
+}
+
+static unsigned char test_getter_automap(void)
+{
+    options_runtime_init();
+    options_set((unsigned int)OPTION_ID_AUTOMAP, 1u);
+    return (options_consumer_get_automap() == 1u) ? 1u : 0u;
+}
+
+static unsigned char test_getter_dungeon_colors(void)
+{
+    options_runtime_init();
+    options_set((unsigned int)OPTION_ID_DUNGEON_COLORS, 1u);
+    return (options_consumer_get_dungeon_colors() == 1u) ? 1u : 0u;
+}
+
+static unsigned char test_getter_visible_secrets(void)
+{
+    options_runtime_init();
+    options_set((unsigned int)OPTION_ID_VISIBLE_SECRETS, 1u);
+    return (options_consumer_get_visible_secrets() == 1u) ? 1u : 0u;
+}
+
+static unsigned char test_getter_diagonal_sword(void)
+{
+    options_runtime_init();
+    options_set((unsigned int)OPTION_ID_DIAGONAL_SWORD, 1u);
+    return (options_consumer_get_diagonal_sword() == 1u) ? 1u : 0u;
+}
+
+static unsigned char test_getter_no_reduced_flashing(void)
+{
+    options_runtime_init();
+    options_set((unsigned int)OPTION_ID_NO_REDUCED_FLASHING, 1u);
+    return (options_consumer_get_no_reduced_flashing() == 1u) ? 1u : 0u;
+}
+
+static unsigned char test_getter_ab_swap(void)
+{
+    options_runtime_init();
+    options_set((unsigned int)OPTION_ID_AB_SWAP, 1u);
+    return (options_consumer_get_ab_swap() == 1u) ? 1u : 0u;
+}
+
+static unsigned char test_getter_auto_collect_drops(void)
+{
+    options_runtime_init();
+    options_set((unsigned int)OPTION_ID_AUTO_COLLECT_DROPS, 1u);
+    return (options_consumer_get_auto_collect_drops() == 1u) ? 1u : 0u;
+}
+
+static unsigned char test_getter_sword_style_beam_always(void)
+{
+    options_runtime_init();
+    options_set((unsigned int)OPTION_ID_SWORD_STYLE,
+                OPTIONS_SWORD_BEAM_ALWAYS);
+    return (options_consumer_get_sword_style()
+            == OPTIONS_SWORD_BEAM_ALWAYS) ? 1u : 0u;
+}
+
+static unsigned char test_getter_like_like_no_eat(void)
+{
+    options_runtime_init();
+    options_set((unsigned int)OPTION_ID_LIKE_LIKE_BEHAVIOR,
+                OPTIONS_LIKELIKE_NO_EAT);
+    return (options_consumer_get_like_like_behavior()
+            == OPTIONS_LIKELIKE_NO_EAT) ? 1u : 0u;
+}
+
+static unsigned char test_getter_bomb_upgrade_plus8(void)
+{
+    options_runtime_init();
+    options_set((unsigned int)OPTION_ID_BOMB_UPGRADE,
+                OPTIONS_BOMBUPG_PLUS8);
+    return (options_consumer_get_bomb_upgrade()
+            == OPTIONS_BOMBUPG_PLUS8) ? 1u : 0u;
+}
+
+static unsigned char test_getter_lost_woods_relaxed(void)
+{
+    options_runtime_init();
+    options_set((unsigned int)OPTION_ID_LOST_WOODS,
+                OPTIONS_LWOODS_RELAXED);
+    return (options_consumer_get_lost_woods()
+            == OPTIONS_LWOODS_RELAXED) ? 1u : 0u;
+}
+
+static unsigned char test_getter_dark_room_bright(void)
+{
+    options_runtime_init();
+    options_set((unsigned int)OPTION_ID_DARK_ROOM_LIGHT,
+                OPTIONS_DARK_BRIGHT);
+    return (options_consumer_get_dark_room_light()
+            == OPTIONS_DARK_BRIGHT) ? 1u : 0u;
+}
+
+static unsigned char test_getter_start_hearts_5(void)
+{
+    options_runtime_init();
+    options_set((unsigned int)OPTION_ID_START_HEARTS, 5u);
+    /* 5 is in range [3..15], passes through clamp unchanged. */
+    return (options_consumer_get_start_hearts() == 5u) ? 1u : 0u;
+}
+
+/* --- Driver --------------------------------------------------------- */
+
+static void mark(unsigned int bit_idx, unsigned char *passes_io,
+                 unsigned char bits[3])
+{
+    if (bit_idx < 8u)        bits[0] |= (unsigned char)(1u << bit_idx);
+    else if (bit_idx < 16u)  bits[1] |= (unsigned char)(1u << (bit_idx - 8u));
+    else                     bits[2] |= (unsigned char)(1u << (bit_idx - 16u));
+    ++(*passes_io);
+}
+
 void options_consumer_probe_run(void)
 {
     /* Snapshot mutable state — tests poke g_options via options_set and
@@ -70,21 +194,40 @@ void options_consumer_probe_run(void)
     unsigned char saved_heart_partial = g_inventory.heart_partial;
     unsigned char saved_max_bombs     = g_inventory.max_bombs;
 
-    unsigned char bits = 0u;
+    unsigned char bits[3] = { 0u, 0u, 0u };
     unsigned char passes = 0u;
-    unsigned char total = 5u;
+    unsigned char total  = 19u;
 
     stamp_magic();
 
-    if (test_defaults_3_hearts_8_bombs())          { bits |= 0x01u; ++passes; }
-    if (test_start_hearts_7())                     { bits |= 0x02u; ++passes; }
-    if (test_bomb_upgrade_plus4())                 { bits |= 0x04u; ++passes; }
-    if (test_bomb_upgrade_plus8())                 { bits |= 0x08u; ++passes; }
-    if (test_start_hearts_16_clamps_to_15())       { bits |= 0x10u; ++passes; }
+    /* Group A: apply_inventory_at_start (5 tests, bits 0..4). */
+    if (test_defaults_3_hearts_8_bombs())          mark(0u,  &passes, bits);
+    if (test_start_hearts_7())                     mark(1u,  &passes, bits);
+    if (test_bomb_upgrade_plus4())                 mark(2u,  &passes, bits);
+    if (test_bomb_upgrade_plus8())                 mark(3u,  &passes, bits);
+    if (test_start_hearts_16_clamps_to_15())       mark(4u,  &passes, bits);
+
+    /* Group B: per-getter coverage (14 tests, bits 5..18). */
+    if (test_getter_low_health_warning())          mark(5u,  &passes, bits);
+    if (test_getter_automap())                     mark(6u,  &passes, bits);
+    if (test_getter_dungeon_colors())              mark(7u,  &passes, bits);
+    if (test_getter_visible_secrets())             mark(8u,  &passes, bits);
+    if (test_getter_diagonal_sword())              mark(9u,  &passes, bits);
+    if (test_getter_no_reduced_flashing())         mark(10u, &passes, bits);
+    if (test_getter_ab_swap())                     mark(11u, &passes, bits);
+    if (test_getter_auto_collect_drops())          mark(12u, &passes, bits);
+    if (test_getter_sword_style_beam_always())     mark(13u, &passes, bits);
+    if (test_getter_like_like_no_eat())            mark(14u, &passes, bits);
+    if (test_getter_bomb_upgrade_plus8())          mark(15u, &passes, bits);
+    if (test_getter_lost_woods_relaxed())          mark(16u, &passes, bits);
+    if (test_getter_dark_room_bright())            mark(17u, &passes, bits);
+    if (test_getter_start_hearts_5())              mark(18u, &passes, bits);
 
     PROBE[3] = total;
     PROBE[4] = passes;
-    PROBE[5] = bits;
+    PROBE[5] = bits[0];
+    PROBE[6] = bits[1];
+    PROBE[7] = bits[2];
 
     /* Restore mutated state. options_runtime_init resets g_options to
      * defaults; the live game-start path in roomrom_debug_enter ran
