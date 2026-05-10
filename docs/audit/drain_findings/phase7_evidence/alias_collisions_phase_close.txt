@@ -1,0 +1,124 @@
+Scoped mode: scope={enemy}; 76 in-scope (hard fail), 36 out-of-scope (info only).
+
+--- FAIL: in-scope alias collisions (76 collision(s)) ---
+Offset    Kind  Name A                                    Location A                      Name B                                    Location B
+----------------------------------------------------------------------------------------------------------------------------------------------------------------
+0x0010    RAM   ENEMY_DARK_ROOM_FLAG                      enemy_state.h:125               ITEM_LEVEL_RAW                            item_state.h:9
+0x0010    RAM   ENEMY_DARK_ROOM_FLAG                      enemy_state.h:125               CUR_LEVEL                                 progress_state.h:18
+0x0010    RAM   ENEMY_DARK_ROOM_FLAG                      enemy_state.h:125               PROG_CUR_LEVEL                            progress_state.h:42
+0x0015    RAM   ENEMY_CUR_SPRITE_ATTR_ROW                 enemy_state.h:133               FRAME_COUNTER                             progress_state.h:19
+0x0028    OBJ   ENEMY_MOVE_TIMER                          enemy_state.h:17                OBJ_MOVE_TIMER                            world_state.h:89
+0x003D    OBJ   MON_STUN_TIMER                            combat_state.h:53               ENEMY_STUN_TIMER                          enemy_state.h:18
+0x0059    RAM   ENEMY_NEXT_SHOT_SLOT                      enemy_state.h:127               LINK_ROOM_SCRATCH                         link_state.h:123
+0x0070    RAM   ENEMY_PLAYER_OBJ_X                        enemy_state.h:83                LINK_X                                    world_state.h:65
+0x0070    OBJ   OBJ_X                                     combat_state.h:43               ENEMY_X                                   enemy_state.h:13
+0x0071    RAM   ENEMY_GLEEOK_BASE_X                       enemy_state.h:104               FRONTEND_NAME_CURSOR_X                    frontend_state.h:11
+0x0084    RAM   ENEMY_PLAYER_OBJ_Y                        enemy_state.h:84                LINK_Y                                    world_state.h:66
+0x0084    OBJ   OBJ_Y                                     combat_state.h:44               ENEMY_Y                                   enemy_state.h:14
+0x0085    RAM   ENEMY_GLEEOK_BASE_Y                       enemy_state.h:105               FRONTEND_NAME_CURSOR_Y                    frontend_state.h:12
+0x0098    OBJ   OBJ_DIR                                   combat_state.h:42               ENEMY_DIR                                 enemy_state.h:10
+0x00AC    OBJ   OBJ_STATE                                 combat_state.h:41               ENEMY_STATE_TIMER                         enemy_state.h:11
+0x00C0    OBJ   ENEMY_JUMPER_SHOVE                        enemy_state.h:92                ENEMY_OBJ_SHOVE_DIR                       enemy_state.h:106
+0x00C0    OBJ   MON_SHOVE_DIR                             combat_state.h:54               ENEMY_JUMPER_SHOVE                        enemy_state.h:92
+0x00C0    OBJ   MON_SHOVE_DIR                             combat_state.h:54               ENEMY_OBJ_SHOVE_DIR                       enemy_state.h:106
+0x00EB    RAM   ENEMY_CANDLE_ROOM_ID                      enemy_state.h:53                ROOM_CUR_ROOM_ID                          room_state.h:72
+0x00EB    RAM   ENEMY_CANDLE_ROOM_ID                      enemy_state.h:53                CUR_ROOM_ID                               world_state.h:68
+0x0340    RAM   ENEMY_THROWER_SLOT                        enemy_state.h:126               ROOM_MAX_MONSTER_SLOT                     room_state.h:34
+0x0340    RAM   ENEMY_THROWER_SLOT                        enemy_state.h:126               TRAP_BASE_SLOT                            trap_state.h:25
+0x034F    OBJ   MON_TYPE                                  combat_state.h:48               ENEMY_TYPE                                enemy_state.h:19
+0x0380    OBJ   ENEMY_BOSS_HP_PHASE                       enemy_state.h:135               TRAP_RETURN_COORD                         trap_state.h:28
+0x0380    OBJ   ENEMY_GOHMA_SHOOT_TIMER                   enemy_state.h:114               ENEMY_BOSS_HP_PHASE                       enemy_state.h:135
+0x0380    OBJ   ENEMY_GOHMA_SHOOT_TIMER                   enemy_state.h:114               TRAP_RETURN_COORD                         trap_state.h:28
+0x03BC    OBJ   ENEMY_WALK_SPEED                          enemy_state.h:38                OBJ_QSPD_FRAC                             world_state.h:85
+0x03D0    OBJ   OBJ_ANIM_TIMER                            combat_state.h:46               ENEMY_ANIM_TIMER                          enemy_state.h:39
+0x0405    OBJ   MON_METASTATE                             combat_state.h:52               ENEMY_METASTATE                           enemy_state.h:20
+0x0412    OBJ   ENEMY_FLYER_SPEED_FRAC                    enemy_state.h:22                ENEMY_JUMPER_VSPEED_HI                    enemy_state.h:90
+0x0412    OBJ   ENEMY_FLYER_SPEED_FRAC                    enemy_state.h:22                ENEMY_GOHMA_DIST_TRAVELED                 enemy_state.h:108
+0x0412    OBJ   ENEMY_JUMPER_VSPEED_HI                    enemy_state.h:90                ENEMY_GOHMA_DIST_TRAVELED                 enemy_state.h:108
+0x0412    OBJ   ENEMY_PUSH_TIMER                          enemy_state.h:21                ENEMY_FLYER_SPEED_FRAC                    enemy_state.h:22
+0x0412    OBJ   ENEMY_PUSH_TIMER                          enemy_state.h:21                ENEMY_JUMPER_VSPEED_HI                    enemy_state.h:90
+0x0412    OBJ   ENEMY_PUSH_TIMER                          enemy_state.h:21                ENEMY_GOHMA_DIST_TRAVELED                 enemy_state.h:108
+0x0418    RAM   ENEMY_GLEEOK_HEAD_TIMER                   enemy_state.h:72                FRONTEND_DEMO_LINE_ATTR_HI                frontend_state.h:16
+0x041F    OBJ   ENEMY_AIR_SPEED                           enemy_state.h:23                ENEMY_JUMPER_VSPEED_LO                    enemy_state.h:91
+0x041F    OBJ   ENEMY_AIR_SPEED                           enemy_state.h:23                ENEMY_GOHMA_MOVE_ACCUM                    enemy_state.h:115
+0x041F    OBJ   ENEMY_JUMPER_VSPEED_LO                    enemy_state.h:91                ENEMY_GOHMA_MOVE_ACCUM                    enemy_state.h:115
+0x042C    OBJ   ENEMY_TURN_TIMER                          enemy_state.h:24                ENEMY_GOHMA_NEXT_OPEN_EYE                 enemy_state.h:110
+0x042C    OBJ   MON_BOUNCE_TURNS                          combat_state.h:58               ENEMY_TURN_TIMER                          enemy_state.h:24
+0x042C    OBJ   MON_BOUNCE_TURNS                          combat_state.h:58               ENEMY_GOHMA_NEXT_OPEN_EYE                 enemy_state.h:110
+0x0444    OBJ   ENEMY_AI_STATE                            enemy_state.h:26                ENEMY_JUMPER_TARGET_Y                     enemy_state.h:88
+0x0444    OBJ   ENEMY_AI_STATE                            enemy_state.h:26                ENEMY_GOHMA_OPEN_EYE_TIMER                enemy_state.h:109
+0x0444    OBJ   ENEMY_JUMPER_TARGET_Y                     enemy_state.h:88                ENEMY_GOHMA_OPEN_EYE_TIMER                enemy_state.h:109
+0x0451    OBJ   ENEMY_JUMPER_REVERSALS                    enemy_state.h:89                ENEMY_GOHMA_GO_STRAIGHT                   enemy_state.h:107
+0x0451    OBJ   ENEMY_MANHANDLA_FRAME_ACCUM               enemy_state.h:78                ENEMY_JUMPER_REVERSALS                    enemy_state.h:89
+0x0451    OBJ   ENEMY_MANHANDLA_FRAME_ACCUM               enemy_state.h:78                ENEMY_GOHMA_GO_STRAIGHT                   enemy_state.h:107
+0x045E    OBJ   ENEMY_BLOATED_TIMER                       enemy_state.h:27                ENEMY_GOHMA_SPRINTS                       enemy_state.h:111
+0x046B    OBJ   ENEMY_FLYER_X_FINE                        enemy_state.h:28                ENEMY_GOHMA_EYE_FRAME                     enemy_state.h:112
+0x046B    OBJ   MON_SUBSTATE                              combat_state.h:57               ENEMY_FLYER_X_FINE                        enemy_state.h:28
+0x046B    OBJ   MON_SUBSTATE                              combat_state.h:57               ENEMY_GOHMA_EYE_FRAME                     enemy_state.h:112
+0x0478    OBJ   ENEMY_BOUNCE_FLAGS                        enemy_state.h:29                ENEMY_FLYER_Y_FINE                        enemy_state.h:30
+0x0478    OBJ   ENEMY_BOUNCE_FLAGS                        enemy_state.h:29                ENEMY_MANHANDLA_FRAME_ATTR                enemy_state.h:79
+0x0478    OBJ   ENEMY_BOUNCE_FLAGS                        enemy_state.h:29                ENEMY_GOHMA_CLOSED_EYE_CNTR               enemy_state.h:113
+0x0478    OBJ   ENEMY_FLYER_Y_FINE                        enemy_state.h:30                ENEMY_MANHANDLA_FRAME_ATTR                enemy_state.h:79
+0x0478    OBJ   ENEMY_FLYER_Y_FINE                        enemy_state.h:30                ENEMY_GOHMA_CLOSED_EYE_CNTR               enemy_state.h:113
+0x0478    OBJ   ENEMY_MANHANDLA_FRAME_ATTR                enemy_state.h:79                ENEMY_GOHMA_CLOSED_EYE_CNTR               enemy_state.h:113
+0x0485    OBJ   MON_HP                                    combat_state.h:56               ENEMY_CHARGE_SPEED                        enemy_state.h:31
+0x04B2    OBJ   MON_INVINCIBILITY                         combat_state.h:50               ENEMY_INVINCIBILITY                       enemy_state.h:33
+0x04CD    RAM   DUNGEON_ATTRS_BYTE_F                      dungeon_state.h:109             ENEMY_SECRET_KIND                         enemy_state.h:136
+0x04E6    RAM   ENEMY_LAMNOLA_SPEED                       enemy_state.h:80                ENEMY_GLEEOK_WRITHE_CNTR                  enemy_state.h:99
+0x04F0    OBJ   MON_HIT_REACTION                          combat_state.h:51               ENEMY_HIT_REACTION                        enemy_state.h:35
+0x0506    RAM   ENEMY_FREEZE_FLAG                         enemy_state.h:55                ITEM_FREEZE_FLAG                          item_state.h:13
+0x051C    RAM   ENEMY_CANDLE_FADE_TRIGGER                 enemy_state.h:50                WORLD_FADE_STEP                           world_state.h:72
+0x051E    RAM   DUNGEON_BRIGHTENING_ROOM                  dungeon_state.h:145             ENEMY_CANDLE_FADE_PHASE                   enemy_state.h:51
+0x051F    RAM   ENEMY_CANDLE_STATE                        enemy_state.h:52                ROOM_SCROLL_STATE                         room_state.h:38
+0x052E    RAM   ENEMY_BUBBLE_STATUS                       enemy_state.h:60                ROOM_SWORD_BLOCKED_FLAG                   room_state.h:39
+0x0602    RAM   ENEMY_SFX_SECRET                          enemy_state.h:45                ITEM_SFX_PRIMARY                          item_state.h:16
+0x0602    RAM   ENEMY_SFX_SECRET                          enemy_state.h:45                DEATH_FRAME_COUNTER                       link_state.h:126
+0x0602    RAM   ENEMY_SFX_SECRET                          enemy_state.h:45                WORLD_SECRET_SFX                          world_state.h:74
+0x0603    RAM   ENEMY_SFX_BOSS_CRY_FLAGS                  enemy_state.h:47                ROOM_SFX_AUX                              room_state.h:47
+0x0604    RAM   CAVE_TEXT_TICK_SFX                        cave_state.h:119                ENEMY_SFX_PARRY                           enemy_state.h:48
+0x0604    RAM   ENEMY_SFX_PARRY                           enemy_state.h:48                ROOM_SFX_MAIN                             room_state.h:46
+0x0604    RAM   SFX_COMBAT                                combat_state.h:39               ENEMY_SFX_PARRY                           enemy_state.h:48
+0x066C    RAM   ENEMY_PAUSE_FLAG                          enemy_state.h:54                LINK_HALT_FLAG                            link_state.h:124
+
+--- INFO: out-of-scope alias collisions (deferred per state_contract.md) (36 collision(s)) ---
+Offset    Kind  Name A                                    Location A                      Name B                                    Location B
+----------------------------------------------------------------------------------------------------------------------------------------------------------------
+0x000F    RAM   LINK_MOVING_DIR                           link_state.h:122                ZP_TMPF                                   scratch_state.h:50
+0x0010    RAM   CUR_LEVEL                                 progress_state.h:18             PROG_CUR_LEVEL                            progress_state.h:42
+0x0010    RAM   ITEM_LEVEL_RAW                            item_state.h:9                  CUR_LEVEL                                 progress_state.h:18
+0x0010    RAM   ITEM_LEVEL_RAW                            item_state.h:9                  PROG_CUR_LEVEL                            progress_state.h:42
+0x0011    RAM   ROOM_MODE_TIMER                           room_state.h:11                 MODE_TIMER                                trap_state.h:18
+0x0012    RAM   GAME_MODE                                 item_state.h:10                 MODE_VALUE                                progress_state.h:20
+0x0053    RAM   DUNGEON_DOORWAY_DIR                       dungeon_state.h:137             ROOM_IN_DOORWAY_FLAG                      room_state.h:25
+0x005A    RAM   DUNGEON_UNDERGROUND_EXIT                  dungeon_state.h:138             ROOM_LINK_CELLAR_FLAG                     room_state.h:24
+0x005A    RAM   DUNGEON_UNDERGROUND_EXIT                  dungeon_state.h:138             LINK_CELLAR_FLAG                          trap_state.h:17
+0x005A    RAM   ROOM_LINK_CELLAR_FLAG                     room_state.h:24                 LINK_CELLAR_FLAG                          trap_state.h:17
+0x00AC    RAM   CAVE_LINK_ACTION_TIMER                    cave_state.h:102                LINK_ACTION_TIMER                         combat_state.h:26
+0x00E0    RAM   ROOM_PARTIAL_HEART_FILL_DONE              room_state.h:63                 ROOM_PAUSED_FLAG                          room_state.h:66
+0x00E8    RAM   CUR_ROOM_FLAGS_PTR                        progress_state.h:22             ROOM_TILE_XFER_COL                        room_state.h:70
+0x00E9    RAM   ROOM_ROW_INDEX                            room_state.h:15                 ROOM_TILE_XFER_ROW                        room_state.h:71
+0x00EB    RAM   ROOM_CUR_ROOM_ID                          room_state.h:72                 CUR_ROOM_ID                               world_state.h:68
+0x00FE    RAM   CUR_INV_TILE                              progress_state.h:34             ROOM_PPU_MASK_SHADOW                      room_state.h:73
+0x0301    RAM   ROOM_TILE_XFER_BUF_IDX                    room_state.h:74                 TRANSFER_BUF_POS                          world_state.h:77
+0x0340    RAM   ROOM_MAX_MONSTER_SLOT                     room_state.h:34                 TRAP_BASE_SLOT                            trap_state.h:25
+0x034E    RAM   DUNGEON_ROOM_OBJ_COUNT                    dungeon_state.h:119             ROOM_OW_KILL_COUNT                        room_state.h:32
+0x034E    RAM   DUNGEON_ROOM_OBJ_COUNT                    dungeon_state.h:119             RUPEE_STASH_FLAG                          trap_state.h:24
+0x034E    RAM   ROOM_OW_KILL_COUNT                        room_state.h:32                 RUPEE_STASH_FLAG                          trap_state.h:24
+0x03F8    RAM   ROOM_INPUT_DIR                            room_state.h:55                 PASSIVE_OBJ_FLAG                          trap_state.h:26
+0x0415    RAM   CAVE_TEXT_SELECTOR                        cave_state.h:107                FRONTEND_SCROLL_SCREEN_COUNT              frontend_state.h:14
+0x0421    RAM   CAVE_ACTIVE_WARE_INDEX                    cave_state.h:109                FRONTEND_NAME_CHAR_OFFSET                 frontend_state.h:22
+0x04BF    OBJ   MON_STATUS_FLAGS                          combat_state.h:49               OBJ_STATUS_FLAGS                          world_state.h:86
+0x0522    RAM   PLAYER_MARKER_DISABLE                     progress_state.h:28             TELEPORT_ACTIVE_FLAG                      trap_state.h:13
+0x0602    RAM   DEATH_FRAME_COUNTER                       link_state.h:126                WORLD_SECRET_SFX                          world_state.h:74
+0x0602    RAM   ITEM_SFX_PRIMARY                          item_state.h:16                 DEATH_FRAME_COUNTER                       link_state.h:126
+0x0602    RAM   ITEM_SFX_PRIMARY                          item_state.h:16                 WORLD_SECRET_SFX                          world_state.h:74
+0x0604    RAM   CAVE_TEXT_TICK_SFX                        cave_state.h:119                SFX_COMBAT                                combat_state.h:39
+0x0604    RAM   CAVE_TEXT_TICK_SFX                        cave_state.h:119                ROOM_SFX_MAIN                             room_state.h:46
+0x0604    RAM   SFX_COMBAT                                combat_state.h:39               ROOM_SFX_MAIN                             room_state.h:46
+0x0627    RAM   ROOM_KILL_COUNT                           combat_state.h:35               DUNGEON_WORLD_KILL_COUNT                  dungeon_state.h:58
+0x0659    RAM   ITEM_ARROW_OR_ROD_LEVEL                   combat_state.h:61               LINK_ARROW_OR_ROD_LEVEL                   item_state.h:22
+0x0666    RAM   CAVE_ROOM_SCRIPT_STATE                    cave_state.h:126                INV_LETTER                                cave_state.h:127
+0x6BB1    RAM   DUNGEON_LEVEL_NUMBER                      dungeon_state.h:86              ROOM_LEVEL_NUMBER_VALUE                   room_state.h:67
+
+FAIL: 76 in-scope collision(s) must be resolved.
+  Each NES RAM byte gets exactly one canonical struct field name. See docs/audit/state_contract.md.
