@@ -5,8 +5,10 @@
 #include "platform_abi.h"
 #include "world_state.h"     /* TRANSFER_BUF_BYTE */
 #include "combat_state.h"    /* LINK_HEARTS, LINK_PARTIAL_HEART */
-#include "cave_state.h"      /* LINK_RUPEES */
+#include "cave_state.h"      /* LINK_RUPEES, CAVE_DOOR_REPAIR_RUPEE_DELTA */
 #include "item_state.h"      /* LINK_BOMB_COUNT */
+#include "room_state.h"      /* ROOM_TRANSFER_BUF_SELECT, ROOM_SFX_MAIN */
+#include "progress_state.h"  /* FRAME_COUNTER */
 
 #define PROBE  ((volatile unsigned char *)HUD_FORMAT_PROBE_BASE)
 
@@ -20,7 +22,7 @@ static void stamp_magic(void)
     unsigned int i;
     PROBE[0] = 'H';
     PROBE[1] = 'F';
-    PROBE[2] = 0x02u;  /* v2 — heart row + decimal counters */
+    PROBE[2] = 0x03u;  /* v3 — adds animated rupee tick */
     for (i = 3u; i < 16u; ++i) PROBE[i] = 0u;
 }
 
@@ -310,10 +312,95 @@ static unsigned char test_master_key_dash(void)
          && buf_at(33u) == TILE_SPC) ? 1u : 0u;
 }
 
+/* ---- Group C: animated rupee tick ---------------------------------- *
+ * hud_world_change_rupees() drains hud_runtime.c:95-122. Five gates:
+ *   (1) ROOM_TRANSFER_BUF_SELECT != 0 → return.
+ *   (2) TRANSFER_BUF_BYTE(0) bit 7 clear → return.
+ *   (3) FRAME_COUNTER & 1 → return after inventory edge writes.
+ *   (4) RAM($067D) != 0 → decrement, ++LINK_RUPEES, sfx=16.
+ *   (5) CAVE_DOOR_REPAIR_RUPEE_DELTA != 0 → decrement, --LINK_RUPEES, sfx=16.
+ * Final hud_format_status_bar_text() rewrites buf, so tests check state
+ * cells (RAM) rather than buf contents.
+ */
+
+static void anim_setup(unsigned char rupees_to_add, signed char delta,
+                       unsigned char rupees, unsigned char fc,
+                       unsigned char buf_select, unsigned char buf0_bit7)
+{
+    LINK_RUPEES = rupees;
+    LINK_HEARTS = 0x33u;            /* avoid heart-tile traps */
+    LINK_PARTIAL_HEART = 0u;
+    LINK_BOMB_COUNT = 0u;
+    RAM(0x066Eu) = 0u;              /* keys */
+    RAM(0x0664u) = 0u;              /* master_key */
+    RAM(0x067Du) = rupees_to_add;
+    CAVE_DOOR_REPAIR_RUPEE_DELTA = delta;
+    FRAME_COUNTER = fc;
+    ROOM_TRANSFER_BUF_SELECT = buf_select;
+    ROOM_SFX_MAIN = 0u;
+    if (buf0_bit7) {
+        TRANSFER_BUF_BYTE(0) = 0xA0u;  /* arbitrary, bit 7 set */
+    } else {
+        TRANSFER_BUF_BYTE(0) = 0x20u;  /* clear */
+    }
+}
+
+static unsigned char test_anim_buf_select_skip(void)
+{
+    /* BUF_SELECT=1: function returns immediately; $067D unchanged. */
+    anim_setup(5u, 0, 10u, 0u, /*buf_select=*/1u, /*bit7=*/1u);
+    hud_world_change_rupees();
+    const unsigned char ok = (RAM(0x067Du) == 5u
+                           && (unsigned char)LINK_RUPEES == 10u
+                           && ROOM_SFX_MAIN == 0u) ? 1u : 0u;
+    ROOM_TRANSFER_BUF_SELECT = 0u;
+    return ok;
+}
+
+static unsigned char test_anim_high_bit_clear_skip(void)
+{
+    /* TRANSFER_BUF_BYTE(0) bit 7 clear: return; $067D unchanged. */
+    anim_setup(5u, 0, 10u, 0u, /*buf_select=*/0u, /*bit7=*/0u);
+    hud_world_change_rupees();
+    return (RAM(0x067Du) == 5u
+         && (unsigned char)LINK_RUPEES == 10u
+         && ROOM_SFX_MAIN == 0u) ? 1u : 0u;
+}
+
+static unsigned char test_anim_odd_frame_skip(void)
+{
+    /* FRAME_COUNTER odd → return after inventory edge checks. */
+    anim_setup(5u, 0, 10u, 1u, /*buf_select=*/0u, /*bit7=*/1u);
+    hud_world_change_rupees();
+    return (RAM(0x067Du) == 5u
+         && (unsigned char)LINK_RUPEES == 10u
+         && ROOM_SFX_MAIN == 0u) ? 1u : 0u;
+}
+
+static unsigned char test_anim_credit_tick(void)
+{
+    /* $067D=5, RUPEES=10, delta=0 → $067D=4, RUPEES=11, sfx=16. */
+    anim_setup(5u, 0, 10u, 0u, /*buf_select=*/0u, /*bit7=*/1u);
+    hud_world_change_rupees();
+    return (RAM(0x067Du) == 4u
+         && (unsigned char)LINK_RUPEES == 11u
+         && ROOM_SFX_MAIN == 16u) ? 1u : 0u;
+}
+
+static unsigned char test_anim_debit_tick(void)
+{
+    /* $067D=0, delta=3, RUPEES=10 → delta=2, RUPEES=9, sfx=16. */
+    anim_setup(0u, 3, 10u, 0u, /*buf_select=*/0u, /*bit7=*/1u);
+    hud_world_change_rupees();
+    return ((signed char)CAVE_DOOR_REPAIR_RUPEE_DELTA == 2
+         && (unsigned char)LINK_RUPEES == 9u
+         && ROOM_SFX_MAIN == 16u) ? 1u : 0u;
+}
+
 /* ---- Driver -------------------------------------------------------- */
 
 static void mark(unsigned int bit_idx, unsigned char *passes_io,
-                 unsigned char bits[2])
+                 unsigned char bits[3])
 {
     const unsigned int byte_idx = bit_idx >> 3;
     const unsigned int bit_in_byte = bit_idx & 7u;
@@ -330,10 +417,15 @@ void hud_format_probe_run(void)
     const unsigned char saved_bombs      = (unsigned char)LINK_BOMB_COUNT;
     const unsigned char saved_keys       = (unsigned char)RAM(0x066Eu);
     const unsigned char saved_master_key = (unsigned char)RAM(0x0664u);
+    const unsigned char saved_rta        = (unsigned char)RAM(0x067Du);
+    const signed char   saved_delta      = (signed char)CAVE_DOOR_REPAIR_RUPEE_DELTA;
+    const unsigned char saved_buf_sel    = (unsigned char)ROOM_TRANSFER_BUF_SELECT;
+    const unsigned char saved_fc         = (unsigned char)FRAME_COUNTER;
+    const unsigned char saved_sfx        = (unsigned char)ROOM_SFX_MAIN;
 
-    unsigned char bits[2] = { 0u, 0u };
+    unsigned char bits[3] = { 0u, 0u, 0u };
     unsigned char passes = 0u;
-    const unsigned char total = 15u;
+    const unsigned char total = 20u;
 
     stamp_magic();
 
@@ -356,10 +448,18 @@ void hud_format_probe_run(void)
     if (test_keys_5_no_mkey())                     mark(13u, &passes, bits);
     if (test_master_key_dash())                    mark(14u, &passes, bits);
 
+    /* Group C — animated rupee tick */
+    if (test_anim_buf_select_skip())               mark(15u, &passes, bits);
+    if (test_anim_high_bit_clear_skip())           mark(16u, &passes, bits);
+    if (test_anim_odd_frame_skip())                mark(17u, &passes, bits);
+    if (test_anim_credit_tick())                   mark(18u, &passes, bits);
+    if (test_anim_debit_tick())                    mark(19u, &passes, bits);
+
     PROBE[3] = total;
     PROBE[4] = passes;
     PROBE[5] = bits[0];
     PROBE[6] = bits[1];
+    PROBE[7] = bits[2];
 
     /* Restore live cells so subsequent gameplay sees the real state. */
     LINK_HEARTS = saved_hearts;
@@ -368,4 +468,9 @@ void hud_format_probe_run(void)
     LINK_BOMB_COUNT = saved_bombs;
     RAM(0x066Eu) = saved_keys;
     RAM(0x0664u) = saved_master_key;
+    RAM(0x067Du) = saved_rta;
+    CAVE_DOOR_REPAIR_RUPEE_DELTA = saved_delta;
+    ROOM_TRANSFER_BUF_SELECT = saved_buf_sel;
+    FRAME_COUNTER = saved_fc;
+    ROOM_SFX_MAIN = saved_sfx;
 }

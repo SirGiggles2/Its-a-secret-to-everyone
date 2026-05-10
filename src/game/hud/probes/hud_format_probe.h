@@ -3,18 +3,20 @@
  * Probe RAM contract ($FF7EC0..$FF7ECF):
  *   [0]   = 'H' (0x48) magic
  *   [1]   = 'F' (0x46) magic
- *   [2]   = version (2 — adds rupee/bomb/key decimal coverage)
- *   [3]   = total tests run (15)
+ *   [2]   = version (3 — adds animated rupee-tick coverage)
+ *   [3]   = total tests run (20)
  *   [4]   = passes
  *   [5]   = bits  0..7  (1 = pass)
- *   [6]   = bits  8..14
- *   [7..15] reserved
+ *   [6]   = bits  8..15
+ *   [7]   = bits  16..19
+ *   [8..15] reserved
  *
  * Tests verify the drained `hud_format_status_bar_text` (src/game/hud/
  * hud_dispatch.c) against hand-traced expected byte sequences over the
  * 41-byte transfer buffer at RAM($0302..$032A). This locks the status
  * bar format contract that any native Genesis-side HUD renderer (Task
- * 9.5 bullets 1-4) must consume unchanged.
+ * 9.5 bullets 1-4) must consume unchanged. Group C exercises the
+ * animated-tick state machine in `hud_world_change_rupees`.
  *
  * Bit map (Group A — heart row, 8 tests):
  *   bit0: template_loaded (header words + terminator)
@@ -34,6 +36,13 @@
  *   bit12: bombs_99       buf[37..39] = [$21, 9, 9]
  *   bit13: keys_5_no_mkey buf[31..33] = [$21, 5, $24], master_key=0
  *   bit14: master_key_dash buf[31..33] = [$21, 10, $24], master_key!=0
+ *
+ * Bit map (Group C — animated rupee tick, 5 tests):
+ *   bit15: anim_buf_select_skip    ROOM_TRANSFER_BUF_SELECT!=0 → no state change
+ *   bit16: anim_high_bit_clear_skip TRANSFER_BUF_BYTE(0)&$80==0 → no state change
+ *   bit17: anim_odd_frame_skip     FRAME_COUNTER&1 → no state change
+ *   bit18: anim_credit_tick        $067D=5,RUPEES=10,FC=0 → $067D=4,RUPEES=11,sfx=16
+ *   bit19: anim_debit_tick         $067D=0,$067E=3,RUPEES=10 → $067E=2,RUPEES=9,sfx=16
  */
 
 #ifndef SRC_GAME_HUD_PROBES_HUD_FORMAT_PROBE_H

@@ -19,22 +19,24 @@ the heart-row formatter against hand-traced expected byte sequences.
 
 | Probe artifact | Result |
 |---|---|
-| `task_9_5_hud_format_probe_report_v1.txt` | passes=8/8, bits=$FF, fc=155 |
+| `task_9_5_hud_format_probe_report_v1.txt` | passes=8/8 (heart row), bits=$FF, fc=155 |
+| `task_9_5_hud_format_probe_report_v2.txt` | passes=15/15 (+ rupee/bomb/key/master-key), mask=$7FFF, fc=154 |
+| `task_9_5_hud_format_probe_report_v3.txt` | passes=20/20 (+ anim rupee tick gates 1-5), mask=$FFFFF, fc=154 |
 
 Format coverage matrix:
 
 | Bullet | Format chain | Probe coverage | Render |
 |---|---|---|---|
 | Render hearts | `hud_format_hearts_in_text_buf` | v1 — 7 heart shapes + degenerate | RoomRom (frozen) |
-| Render rupees | `hud_format_decimal_count_byte_in_text_buf(LINK_RUPEES, 27)` | TODO — extend probe v2 | RoomRom (frozen) |
-| Render bombs | same path with offset 39 | TODO — extend probe v2 | RoomRom (frozen) |
-| Render keys | conditional master-key dash + same path with offset 33 | TODO — extend probe v2 | RoomRom (frozen) |
+| Render rupees | `hud_format_decimal_count_byte_in_text_buf(LINK_RUPEES, 27)` | v2 — 0/42/255 | RoomRom (frozen) |
+| Render bombs | same path with offset 39 | v2 — 8/99 | RoomRom (frozen) |
+| Render keys | conditional master-key dash + same path with offset 33 | v2 — 5 + master-key dash | RoomRom (frozen) |
 | Render B/A item | `RoomRom/src/roomrom_hud.c` `s_b_item` token | none — RoomRom-internal | RoomRom (frozen) |
 | Render OW map | atlas tile `TILE_GRAY_MAP` block | none — RoomRom-internal | RoomRom (frozen) |
 | Render dungeon map | redux automap (`redux_hud_chr.c`) | none — RoomRom-internal | RoomRom (frozen) |
 | Render triforce | `roomrom_hud_draw` triforce tile | none — RoomRom-internal | RoomRom (frozen) |
 | Add HUD style option | `OPTION_ID_HUD_STYLE` (not yet defined) | n/a | needs option scaffolding |
-| Verify static + animated | format probe + screenshot gate | partial — heart row only | needs render port |
+| Verify static + animated | format probe + screenshot gate | v3 — static (15) + animated rupee tick (5 gates: buf-select / high-bit / odd-frame / credit / debit) | needs render port |
 
 ## Render-side blocker
 
