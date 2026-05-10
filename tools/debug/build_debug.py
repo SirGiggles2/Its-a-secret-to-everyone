@@ -85,6 +85,10 @@ TITLE_C_SOURCES = [
     ("data/intro/intro_blink_chr.c", "intro_blink_chr.o"),
     ("data/intro/intro_combined_palette.c", "intro_combined_palette.o"),
     ("data/intro/intro_treasures_tilemap.c", "intro_treasures_tilemap.o"),
+    # Phase 9 Task 9.3 — File Select OPTIONS submenu (compile-only; FS
+    # frontend wire-up into Debug.md gameplay path is a follow-up task).
+    ("src/frontend/fs/fs_options.c", "fs_options.o"),
+    ("src/frontend/fs/fs_options_render.c", "fs_options_render.o"),
 ]
 
 ROOMROM_C_SOURCES = [

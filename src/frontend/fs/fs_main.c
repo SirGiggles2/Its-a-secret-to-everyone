@@ -6,6 +6,7 @@
 #include "fs_render.h"
 #include "fs_phase.h"
 #include "fs_input.h"
+#include "fs_options.h"
 #include "render_abi.h"
 
 /* Music driver hooks — proof ROM links music_stub.c (no-op);
@@ -87,6 +88,7 @@ static void fs_init(void) {
     /* 5. Phase + input init (v2). */
     fs_input_init();
     fs_phase_init();
+    fs_options_probe_init();   /* Phase 9 Task 9.3 — OPTIONS submenu. */
 
     /* 6. Music: silent on FS per NES original; call site preserved. */
     music_play(SONG_FS_BIT);
@@ -97,7 +99,17 @@ static void fs_init(void) {
 #define FS_ROW_OPTIONS  6u
 
 static void fs_input_dispatch(uint8_t edge) {
+    if (s_fs_phase == FS_OPTIONS) {
+        fs_options_step(edge);
+        return;
+    }
     if (s_fs_phase != FS_NAV) return;
+    /* A on OPTIONS row -> enter submenu. */
+    if (s_fs_cursor == FS_ROW_OPTIONS && (edge & FS_BTN_A)) {
+        s_fs_phase = FS_OPTIONS;
+        fs_options_enter();
+        return;
+    }
     if ((edge & FS_BTN_UP) && s_fs_cursor > 0u) {
         s_fs_cursor--;
         fs_render_cursor(s_fs_cursor);
