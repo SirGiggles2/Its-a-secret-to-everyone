@@ -196,6 +196,13 @@ ROOMROM_C_SOURCES = [
     # _move / _draw live here. Callee shims in
     # src/game/enemies/bosses/boss_manhandla.c.
     ("src/oracle/enemies/enemy_manhandla_runtime.c", "oracle_enemy_manhandla.o"),
+    # Phase 8 Task 8.5: Gleeok drained segment-mgmt primitives.
+    # enrt_init_gleeok_head + enrt_update_gleeok +
+    # enrt_gleeok_check_collisions / _store_ref_seg_distance /
+    # _set_segment_x/y / _contract_segment_x/y/segment / _dec_head_timer /
+    # _ignore_segment live here. Native InitGleeok + UpdateGleeokHead +
+    # 8 c_gleeok_* primitives in src/game/enemies/bosses/boss_gleeok.c.
+    ("src/oracle/enemies/enemy_gleeok_runtime.c", "oracle_enemy_gleeok.o"),
     # Task 7.5 step 4: Wallmaster scratch/draw helpers. Drained
     # enrt_wallmaster_calc_start_position +
     # enrt_wallmaster_put_sprite{,s}_behind_bg_if_needed live here. Pulled
@@ -261,6 +268,13 @@ ROOMROM_C_SOURCES = [
     # points (enemy_play_boss_*_cry, draw_object_mirrored) for the
     # drained enemy_manhandla_runtime.c body.
     ("src/game/enemies/bosses/boss_manhandla.c", "game_enemy_boss_manhandla.o"),
+    # Phase 8 Task 8.5 — Gleeok native bridge. Carries InitGleeok
+    # (Z_04.asm:7649) + UpdateGleeokHead (Z_04.asm:8527) + 8 c_gleeok_*
+    # primitives (draw_body, fetch_neck_addrs, move_neck, move_head,
+    # calc_segment_limits, stretch_neck, draw_head_and_check_collisions,
+    # draw_segment_and_check_collisions). Drained per-segment helpers
+    # consumed verbatim from enemy_gleeok_runtime.c.
+    ("src/game/enemies/bosses/boss_gleeok.c", "game_enemy_boss_gleeok.o"),
     ("src/game/enemies/probes/enemy_loop_probe.c", "game_enemy_loop_probe.o"),
     ("RoomRom/src/expanded_bg_chr.c", "expanded_bg_chr.o"),
     ("RoomRom/src/atlas/items_chr_x4.c", "atlas_items_chr_x4.o"),

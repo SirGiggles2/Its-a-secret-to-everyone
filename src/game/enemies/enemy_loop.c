@@ -105,6 +105,19 @@ extern void enrt_init_dodongo(unsigned int slot);
 #include "bosses/boss_manhandla.h"
 extern void enrt_init_manhandla(unsigned int slot);
 extern void enrt_update_manhandla(unsigned int slot);
+/* Phase 8 Task 8.5 — Gleeok INIT + UPDATE ($42-$46).
+ *   $42-$45 Gleeok 1-4-neck -> boss_gleeok_init (native InitGleeok body
+ *                              at Z_04.asm:7649) + enrt_update_gleeok
+ *                              (drained at enemy_gleeok_runtime.c).
+ *   $46 GleeokHead         -> enrt_init_gleeok_head (drained) +
+ *                              boss_gleeok_update_head (native body
+ *                              at Z_04.asm:8527).
+ *   8 c_gleeok_* primitives + native InitGleeok + UpdateGleeokHead live
+ *   in src/game/enemies/bosses/boss_gleeok.c (EXTEND stance — drained
+ *   per-segment helpers consumed verbatim). */
+#include "bosses/boss_gleeok.h"
+extern void enrt_init_gleeok_head(unsigned int slot);
+extern void enrt_update_gleeok(unsigned int slot);
 extern void core_reset_obj_metastate_and_timer(unsigned int slot); /* 7.4 step 2b ($11 INIT) */
 extern unsigned char core_reset_obj_state(unsigned int slot);
 /* 7.5 step 2 — special-enemy UPDATE bridge bodies (enemy_special_bridge.c).
@@ -297,6 +310,19 @@ const enemy_init_fn enemy_init_fns[ENEMY_LOOP_TYPE_MAX] = {
      * SFX_BOSS_CRY=64, picks random Directions8 dir, fans X/Y/Speed/
      * FrameAttr offsets per-segment. ADOPT — drain consumed verbatim. */
     [0x3C] = enrt_init_manhandla,                /* Manhandla */
+    /* Phase 8 Task 8.5 — Gleeok INIT rows ($42-$46).
+     * NES Z_07.asm:5601 InitObject_JumpTable rows $42/$43/$44/$45 ->
+     * SwitchBank #$01 + JMP InitGleeok @ Z_04.asm:7649. Native body in
+     * src/game/enemies/bosses/boss_gleeok.c (boss_gleeok_init) — seeds
+     * 4 necks * 6 segments per Gleeok_NeckXs/Ys, head info, body anim
+     * frame; per-line port of NES InitGleeok.
+     * Row $46 GleeokHead -> enrt_init_gleeok_head (drained at
+     * enemy_gleeok_runtime.c) — neck terminal flying head spawn. */
+    [0x42] = boss_gleeok_init,                   /* Gleeok 1-neck */
+    [0x43] = boss_gleeok_init,                   /* Gleeok 2-neck */
+    [0x44] = boss_gleeok_init,                   /* Gleeok 3-neck */
+    [0x45] = boss_gleeok_init,                   /* Gleeok 4-neck */
+    [0x46] = enrt_init_gleeok_head,              /* GleeokHead (flying) */
     /* Task 7.4 step 11 — projectile-family INIT close.
      *
      * NES Z_07.asm:5601 InitObject_JumpTable rows:
@@ -576,6 +602,22 @@ const enemy_update_fn enemy_update_fns[ENEMY_LOOP_TYPE_MAX] = {
      * c_turn_randomly_dir8 / c_play_boss_*_cry / c_draw_object_mirrored
      * live in src/game/enemies/bosses/boss_manhandla.c. ADOPT stance. */
     [0x3C] = enrt_update_manhandla,         /* Manhandla */
+    /* Phase 8 Task 8.5 — Gleeok UPDATE rows ($42-$46).
+     *   $42-$45 Gleeok 1-4 neck -> enrt_update_gleeok (drained at
+     *                              enemy_gleeok_runtime.c — full 4-neck
+     *                              dispatch over c_gleeok_fetch_neck_addrs /
+     *                              move_neck / draw_segment_and_check_collisions /
+     *                              calc_segment_limits / stretch_neck and
+     *                              gleeok_check_collisions / dec_head_timer).
+     *   $46 GleeokHead          -> boss_gleeok_update_head (native body
+     *                              at Z_04.asm:8527 — flying-head 5-state
+     *                              dispatch including z04_init_blue_keese,
+     *                              c_control_keese_flight reuse). */
+    [0x42] = enrt_update_gleeok,            /* Gleeok 1-neck */
+    [0x43] = enrt_update_gleeok,            /* Gleeok 2-neck */
+    [0x44] = enrt_update_gleeok,            /* Gleeok 3-neck */
+    [0x45] = enrt_update_gleeok,            /* Gleeok 4-neck */
+    [0x46] = boss_gleeok_update_head,       /* GleeokHead (flying) */
     /* Task 7.5 step 2 — special-enemy UPDATE: $17 LikeLike.
      *
      * NES Z_07.asm:5295 UpdateObject_JumpTable row $17 LikeLike ->
