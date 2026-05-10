@@ -275,6 +275,12 @@ ROOMROM_C_SOURCES = [
     # draw_segment_and_check_collisions). Drained per-segment helpers
     # consumed verbatim from enemy_gleeok_runtime.c.
     ("src/game/enemies/bosses/boss_gleeok.c", "game_enemy_boss_gleeok.o"),
+    # Phase 8 Task 8.7 — Gohma callee shims. Resolves c_gohma_animate_and_draw
+    # (Z_04.asm:8392) + c_gohma_check_collisions (Z_04.asm:8453) for the
+    # drained enrt_update_gohma body in enemy_boss_runtime.c. Composes
+    # sprite_anim_* + draw_object_*_with_frame + enrt_gohma_set_sprite_attributes
+    # + c_check_monster_collisions — all already linked.
+    ("src/game/enemies/bosses/boss_gohma.c", "game_enemy_boss_gohma.o"),
     ("src/game/enemies/probes/enemy_loop_probe.c", "game_enemy_loop_probe.o"),
     ("RoomRom/src/expanded_bg_chr.c", "expanded_bg_chr.o"),
     ("RoomRom/src/atlas/items_chr_x4.c", "atlas_items_chr_x4.o"),

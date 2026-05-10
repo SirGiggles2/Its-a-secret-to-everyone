@@ -135,6 +135,17 @@ extern void enrt_update_gleeok(unsigned int slot);
 extern void enrt_init_digdogger1(unsigned int slot);
 extern void enrt_init_digdogger2(unsigned int slot);
 extern void enrt_update_digdogger(unsigned int slot);
+/* Phase 8 Task 8.7 — Gohma INIT + UPDATE.
+ *   $33 BlueGohma / $34 RedGohma -> enrt_init_gohma (Z_04.asm:7814) +
+ *                                    enrt_update_gohma (Z_04.asm:8207).
+ *   Both drained in enemy_boss_runtime.c. Shims c_reverse_obj_dir8 +
+ *   c_shoot_fireball + c_gohma_animate_and_draw + c_gohma_check_collisions
+ *   already linked via c_shims.asm. Arrow-only damage gate lives in
+ *   Gohma_HandleWeaponCollision (Z_01.asm) reachable through the asm
+ *   collision shim. No bridge .c needed. */
+#include "bosses/boss_gohma.h"
+extern void enrt_init_gohma(unsigned int slot);
+extern void enrt_update_gohma(unsigned int slot);
 extern void core_reset_obj_metastate_and_timer(unsigned int slot); /* 7.4 step 2b ($11 INIT) */
 extern unsigned char core_reset_obj_state(unsigned int slot);
 /* 7.5 step 2 — special-enemy UPDATE bridge bodies (enemy_special_bridge.c).
@@ -347,6 +358,13 @@ const enemy_init_fn enemy_init_fns[ENEMY_LOOP_TYPE_MAX] = {
      * enrt_init_digdogger1 inside the drained make_children helper. */
     [0x38] = enrt_init_digdogger1,               /* Digdogger1 */
     [0x39] = enrt_init_digdogger2,               /* Digdogger2 (2nd quest) */
+    /* Phase 8 Task 8.7 — Gohma INIT pair (NES Z_07.asm:5653/5654 rows
+     * $33/$34 -> InitGohma @ Z_04.asm:7814). Drained at
+     * enemy_boss_runtime.c:426 — sfx $20 + INVINCIBILITY=$FB +
+     * BOSS_HP_PHASE++ (aliases SHOOT_TIMER=1) + X=$80 / Y=$70 +
+     * ResetObjMetastateAndTimer. ADOPT stance. */
+    [0x33] = enrt_init_gohma,                    /* Blue Gohma */
+    [0x34] = enrt_init_gohma,                    /* Red Gohma */
     /* Task 7.4 step 11 — projectile-family INIT close.
      *
      * NES Z_07.asm:5601 InitObject_JumpTable rows:
@@ -653,6 +671,17 @@ const enemy_update_fn enemy_update_fns[ENEMY_LOOP_TYPE_MAX] = {
     [0x18] = enrt_update_digdogger,         /* LittleDigdogger (child) */
     [0x38] = enrt_update_digdogger,         /* Digdogger1 (big) */
     [0x39] = enrt_update_digdogger,         /* Digdogger2 (big, 2nd quest) */
+    /* Phase 8 Task 8.7 — Gohma UPDATE pair (NES Z_07.asm:5347/5348 rows
+     * $33/$34 -> UpdateGohma @ Z_04.asm:8207). Drained at
+     * enemy_boss_runtime.c:774 — full body: random-direction pick +
+     * 1/2-pixel movement accumulator + 0x20-pixel sprint reverse +
+     * eye state machine (open / half-open / closed cycle, 0xC0|RNG
+     * reload) + shoot timer rollover spawning fireball type 86, then
+     * tail-calls c_gohma_animate_and_draw + c_gohma_check_collisions
+     * (asm shims; Gohma_HandleWeaponCollision in Z_01.asm gates
+     * arrow-only damage by eye state == 3). ADOPT stance. */
+    [0x33] = enrt_update_gohma,             /* Blue Gohma */
+    [0x34] = enrt_update_gohma,             /* Red Gohma */
     /* Task 7.5 step 2 — special-enemy UPDATE: $17 LikeLike.
      *
      * NES Z_07.asm:5295 UpdateObject_JumpTable row $17 LikeLike ->
