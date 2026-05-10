@@ -56,6 +56,7 @@ INCS = [
     ROOT / "src" / "game" / "items",
     ROOT / "src" / "game" / "options",
     ROOT / "src" / "game" / "options" / "probes",
+    ROOT / "src" / "state" / "probes",
     ROOT / "src" / "oracle" / "room",
     ROOT / "src" / "core",
     SGDK / "inc",
@@ -356,6 +357,9 @@ ROOMROM_C_SOURCES = [
     # formatter (hud_format_status_bar_text) against hand-traced expected
     # byte sequences. Locks the contract any native HUD renderer consumes.
     ("src/game/hud/probes/hud_format_probe.c", "game_hud_format_probe.o"),
+    # Phase 9 Task 9.7 — save slot serializer + round-trip probe.
+    ("src/state/save_serializer.c", "state_save_serializer.o"),
+    ("src/state/probes/save_serializer_probe.c", "state_save_serializer_probe.o"),
     ("src/game/enemies/probes/enemy_loop_probe.c", "game_enemy_loop_probe.o"),
     ("RoomRom/src/expanded_bg_chr.c", "expanded_bg_chr.o"),
     ("RoomRom/src/atlas/items_chr_x4.c", "atlas_items_chr_x4.o"),

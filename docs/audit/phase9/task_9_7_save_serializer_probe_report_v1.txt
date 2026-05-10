@@ -1,0 +1,17 @@
+Phase 9 Task 9.7 save serializer probe (v1: round-trip + validate gates)
+========================================================================
+
+magic     = $53 $56 (expect 'S'=$53 'V'=$56)
+version   = 1 (expect 1)
+total     = 5 (expect 5)
+passes    = 5 (expect 5)
+mask      = $1F (expect $1F)
+
+  bit0  round_trip                     PASS
+  bit1  magic_validate                 PASS
+  bit2  bad_magic_rejected             PASS
+  bit3  bad_checksum_rejected          PASS
+  bit4  cross_slot_isolation           PASS
+
+frame_counter at $FF7202..03 = 153
+VERDICT: all 5 save-serializer tests passed; ROM still ticking.
