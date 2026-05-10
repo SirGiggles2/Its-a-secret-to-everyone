@@ -497,10 +497,34 @@ void roomrom_hud_draw(unsigned char hud_id, unsigned char room_id,
 /* Phase 6 Task 6.10.6 (Step A): per-frame live overlay. Repaints just
  * the dynamic count/heart cells from g_inventory. Cheap (fewer than 20
  * VDP_setTileMapXY calls) and keeps the rupee tick / damage path
- * observable without re-running the full static macro. */
+ * observable without re-running the full static macro.
+ *
+ * SAT DMA Lag Fix Plan D (debate 2026-05-09): dirty-gate via inventory
+ * snapshot. ~99% of ticks have unchanged inventory; skipping the redraw
+ * saves ~15 active-display VDP_setTileMapXY writes per skipped frame. */
+static inventory_t s_hud_inv_snapshot;
+static unsigned char s_hud_inv_snapshot_valid = 0u;
+
+static unsigned char hud_inv_changed(void)
+{
+    /* SGDK libmd has no memcmp; inline byte-wise compare. */
+    const unsigned char *a = (const unsigned char *)&g_inventory;
+    const unsigned char *b = (const unsigned char *)&s_hud_inv_snapshot;
+    unsigned short i;
+    for (i = 0u; i < (unsigned short)sizeof(inventory_t); i++) {
+        if (a[i] != b[i]) return 1u;
+    }
+    return 0u;
+}
+
 void roomrom_hud_refresh_dynamic(void)
 {
     if (s_hud_id_cached == 0xFFu)
         return; /* HUD has not been drawn yet — nothing to refresh. */
+    if (s_hud_inv_snapshot_valid && !hud_inv_changed()) {
+        return; /* Inventory unchanged — skip the VDP traffic. */
+    }
     draw_hud_dynamic(s_hud_id_cached);
+    s_hud_inv_snapshot = g_inventory;
+    s_hud_inv_snapshot_valid = 1u;
 }

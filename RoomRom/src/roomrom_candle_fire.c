@@ -80,7 +80,6 @@ static void hide_slot(void)
                           (unsigned short)(ROOMROM_ITEM_TILE_BASE_PAL(0)
                               + ROOMROM_ITEM_TILE_CANDLE_FIRE_F0)),
                       0);  /* link=0: terminate chain at this slot */
-    VDP_updateSprites(9, DMA);
 }
 
 void roomrom_candle_fire_init(void)
@@ -137,7 +136,6 @@ static void draw_fire(void)
                       SPRITE_SIZE(2, 2),
                       TILE_ATTR_FULL(PAL1, 1, 0, hflip, tile),
                       9);  /* link to slot 9 (magic_shot) — chain end at 9 */
-    VDP_updateSprites(9, DMA);
 }
 
 static void advance_anim(void)

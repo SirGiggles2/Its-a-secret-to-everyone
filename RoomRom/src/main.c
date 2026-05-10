@@ -1835,6 +1835,13 @@ void roomrom_debug_tick(void)
             }
         }
 
+        /* SAT DMA Lag Fix (debate 2026-05-09): single end-of-tick SAT
+         * DMA via DMA_QUEUE. SYS_doVBlankProcess flushes the queue inside
+         * the VBlank window. NES Z1 model: one OAM DMA per VBlank.
+         * Slots 0..9 cover Link/sword/beam/boomerang/arrow/bomb/explosion/
+         * room_item/candle_fire/magic_shot — count = 10. */
+        VDP_updateSprites(10, DMA_QUEUE);
+
         /* Task 5.4: passive state mirror for BizHawk Lua probes. */
         roomrom_debug_publish_state_mirror();
 }

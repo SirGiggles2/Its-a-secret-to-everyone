@@ -244,7 +244,6 @@ void roomrom_sprites_set_link_pose(short x, short y,
                       SPRITE_SIZE(2, 2),
                       TILE_ATTR_FULL(PAL1,0, 0, 0, tile),
                       1);
-    VDP_updateSprites(2, DMA);
 }
 
 void roomrom_sprites_set_link_attack_pose(short x, short y, link_face_t face)
@@ -257,7 +256,6 @@ void roomrom_sprites_set_link_attack_pose(short x, short y, link_face_t face)
                       SPRITE_SIZE(2, 2),
                       TILE_ATTR_FULL(PAL1,0, 0, 0, tile),
                       1);
-    VDP_updateSprites(2, DMA);
 }
 
 void roomrom_sprites_spawn_link(short x, short y)
@@ -344,7 +342,6 @@ void roomrom_sprites_set_sword_vertical(short x, short y, unsigned char vflip,
                       SPRITE_SIZE(1, 2),
                       TILE_ATTR_FULL(PAL1,0, vflip, 0, tile),
                       2);
-    VDP_updateSprites(3, DMA);
 }
 
 void roomrom_sprites_set_sword_horizontal(short x, short y, unsigned char hflip,
@@ -358,7 +355,6 @@ void roomrom_sprites_set_sword_horizontal(short x, short y, unsigned char hflip,
                       SPRITE_SIZE(2, 2),
                       TILE_ATTR_FULL(PAL1,0, 0, hflip, tile),
                       2);
-    VDP_updateSprites(3, DMA);
 }
 
 void roomrom_sprites_clear_sword(void)
@@ -369,7 +365,6 @@ void roomrom_sprites_clear_sword(void)
                       SPRITE_SIZE(1, 2),
                       TILE_ATTR_FULL(PAL1,0, 0, 0, SWORD_VERT_VRAM_TILE),
                       2);
-    VDP_updateSprites(3, DMA);
 }
 
 /* Redux ALttP-style diagonal sword. Per NES Anim_WriteItemSprites,
@@ -388,7 +383,6 @@ void roomrom_sprites_set_sword_diagonal(short x, short y,
                       SPRITE_SIZE(1, 2),
                       TILE_ATTR_FULL(PAL1,0, vflip, hflip, tile),
                       2);
-    VDP_updateSprites(3, DMA);
 }
 
 /* S7 v5 sword beam (slot 2). NES Z1 sword shot draws via the same
@@ -444,7 +438,6 @@ void roomrom_sprites_set_beam(short x, short y, link_face_t face)
                                          SWORD_HORZ_VRAM_TILE),
                           3);
     }
-    VDP_updateSprites(4, DMA);
 }
 
 void roomrom_sprites_clear_beam(void)
@@ -455,7 +448,6 @@ void roomrom_sprites_clear_beam(void)
                       SPRITE_SIZE(1, 1),
                       TILE_ATTR_FULL(PAL2,0, 0, 0, SWORD_VERT_VRAM_TILE),
                       3);
-    VDP_updateSprites(4, DMA);
 }
 
 /* S7 v6 boomerang (slot 3). NES Z1 draws boomerang as a SINGLE 8x8
@@ -499,7 +491,6 @@ void roomrom_sprites_set_boomerang(short x, short y,
                       SPRITE_SIZE(1, 2),
                       TILE_ATTR_FULL(PAL1,0, vflip, hflip, tile),
                       4);
-    VDP_updateSprites(5, DMA);
 }
 
 void roomrom_sprites_clear_boomerang(void)
@@ -510,7 +501,6 @@ void roomrom_sprites_clear_boomerang(void)
                       SPRITE_SIZE(1, 2),
                       TILE_ATTR_FULL(PAL1,0, 0, 0, BOOMERANG_VRAM_TILE),
                       4);
-    VDP_updateSprites(5, DMA);
 }
 
 /* Task 5.9.1 room-item sprite. Slot 7. Slice-1 placeholder uses the
@@ -526,7 +516,6 @@ void roomrom_sprites_set_room_item(short x, short y, unsigned char sub_pal)
                       SPRITE_SIZE(1, 1),
                       TILE_ATTR_FULL(PAL1, 1, 0, 0, tile),  /* priority=1 */
                       8);
-    VDP_updateSprites(8, DMA);
 }
 
 void roomrom_sprites_clear_room_item(void)
@@ -537,7 +526,6 @@ void roomrom_sprites_clear_room_item(void)
                       SPRITE_SIZE(1, 1),
                       TILE_ATTR_FULL(PAL1, 0, 0, 0, BOOMERANG_VRAM_TILE),
                       8);
-    VDP_updateSprites(8, DMA);
 }
 
 /* S7 v7 arrow (slot 4). Vertical 8x16 for UP/DOWN, horizontal 16x16
@@ -580,7 +568,6 @@ void roomrom_sprites_set_arrow(short x, short y, link_face_t face,
         roomrom_sprites_clear_arrow();
         return;
     }
-    VDP_updateSprites(5, DMA);
 }
 
 void roomrom_sprites_clear_arrow(void)
@@ -591,7 +578,6 @@ void roomrom_sprites_clear_arrow(void)
                       SPRITE_SIZE(1, 2),
                       TILE_ATTR_FULL(PAL1,0, 0, 0, ARROW_VERT_VRAM_TILE),
                       5);
-    VDP_updateSprites(7, DMA);
 }
 
 /* S7 v8 bomb (slot 5). NES Z1 DrawBomb (Z_07.asm:4869) -> DrawCloud ->
@@ -612,7 +598,6 @@ void roomrom_sprites_set_bomb(short x, short y, unsigned char sub_pal)
                       SPRITE_SIZE(1, 2),
                       TILE_ATTR_FULL(PAL1,0, 0, 0, tile),
                       6);
-    VDP_updateSprites(7, DMA);
 }
 
 void roomrom_sprites_clear_bomb(void)
@@ -623,7 +608,6 @@ void roomrom_sprites_clear_bomb(void)
                       SPRITE_SIZE(1, 2),
                       TILE_ATTR_FULL(PAL1,0, 0, 0, BOMB_VRAM_TILE),
                       6);
-    VDP_updateSprites(7, DMA);
 }
 
 /* S7 v8 explosion (slot 6). NES Z1 cloud cluster uses item slot $01
@@ -668,7 +652,6 @@ void roomrom_sprites_set_explosion(short x, short y, unsigned char timer,
                       SPRITE_SIZE(2, 2),
                       TILE_ATTR_FULL(PAL1,0, 0, 0, tile),
                       7);
-    VDP_updateSprites(9, DMA);
 }
 
 void roomrom_sprites_clear_explosion(void)
@@ -679,7 +662,6 @@ void roomrom_sprites_clear_explosion(void)
                       SPRITE_SIZE(2, 2),
                       TILE_ATTR_FULL(PAL1,0, 0, 0, EXPLOSION_VRAM_TILE),
                       7);  /* link to slot 7 — keeps slots 7/8 in chain */
-    VDP_updateSprites(9, DMA);
 }
 
 /* Magic rod shot — slot 9. NES UpdateSwordShotOrMagicShot (Z_07.asm:3437)
@@ -719,7 +701,6 @@ void roomrom_sprites_set_magic_shot(short x, short y, link_face_t face,
                           TILE_ATTR_FULL(PAL1, 1, 0, 0, tile_v), 0);
         break;
     }
-    VDP_updateSprites(10, DMA);
 }
 
 void roomrom_sprites_clear_magic_shot(void)
@@ -728,5 +709,4 @@ void roomrom_sprites_clear_magic_shot(void)
                                             + ROOMROM_ITEM_TILE_MAGIC_SHOT_V);
     VDP_setSpriteFull(9, (s16)-32, (s16)-32, SPRITE_SIZE(2, 2),
                       TILE_ATTR_FULL(PAL1, 0, 0, 0, tile), 0);
-    VDP_updateSprites(10, DMA);
 }
