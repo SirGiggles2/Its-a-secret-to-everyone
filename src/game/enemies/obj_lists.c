@@ -42,6 +42,11 @@
 #include "platform_abi.h"
 #include "enemy_state.h"
 #include "dungeon_state.h"
+#include "progress_state.h"   /* CUR_LEVEL */
+
+/* Step 2 — IsSafeToSpawn dependency (NES Z_05.asm:2009 GetCollidableTileStill).
+ * Already drained at src/game/combat/collision_dispatch.c:161. */
+extern unsigned char collision_get_collidable_tile_still(unsigned int slot);
 
 /* NES ObjLists.dat — 201 bytes, 30 ObjList templates concatenated. */
 const unsigned char z1_obj_lists[ENEMY_OBJLISTS_LEN] = {
@@ -171,4 +176,141 @@ unsigned char enemy_room_load_objects(unsigned char room_id)
     /* Step 8 — RoomObjTemplateType = first template. */
     DUNGEON_ROOM_TEMPLATE_TYPE = (unsigned char)OBJ(NES_OBJ_TYPE, 1u);
     return 1u;
+}
+
+/* Phase 7 Task 7.7 step 2 — AssignObjSpawnPositions verbatim port.
+ *
+ * NES source: reference/aldonunez/Z_05.asm:1885-1996.
+ * Drained C:  NONE (room-init spawn-coord assignment not drained).
+ * Coverage:   NONE
+ * Stance:     GREENFIELD (legal — drain_coverage.json has no candidate row).
+ *
+ * Per-direction spawn lists (from Z_05.asm:1431-1445), 9 entries each.
+ * Each byte packs (col<<4)|row in nibbles → ObjX = col*16, ObjY = (row<<4)|$0D.
+ *
+ * NES bit-scan @ 1906-1911: ObjDir is 1-of {$01,$02,$04,$08} (R/L/D/U) —
+ * Y = bit-position of LSB → 0..3 indexes spawn list.
+ */
+static const unsigned char spawn_pos_list_0[9] = {
+    0x55u, 0xB5u, 0x78u, 0x98u, 0x7Au, 0x9Au, 0x6Cu, 0xACu, 0x8Du
+};
+static const unsigned char spawn_pos_list_1[9] = {
+    0x82u, 0x63u, 0xA3u, 0x75u, 0x95u, 0x77u, 0x97u, 0x5Au, 0xBAu
+};
+static const unsigned char spawn_pos_list_2[9] = {
+    0xA3u, 0x75u, 0xB5u, 0x96u, 0x87u, 0x99u, 0x7Au, 0xBAu, 0xACu
+};
+static const unsigned char spawn_pos_list_3[9] = {
+    0x63u, 0x55u, 0x95u, 0x76u, 0x88u, 0x79u, 0x5Au, 0x9Au, 0x6Cu
+};
+static const unsigned char *const spawn_pos_lists[4] = {
+    spawn_pos_list_0, spawn_pos_list_1, spawn_pos_list_2, spawn_pos_list_3,
+};
+
+/* NES CellarKeeseXs @ Z_05.asm:1876-1880. */
+static const unsigned char cellar_keese_xs[4] = { 0x20u, 0x60u, 0x90u, 0xD0u };
+static const unsigned char cellar_keese_ys[4] = { 0x9Du, 0x5Du, 0x7Du, 0x9Du };
+
+static unsigned char abs_diff_u8(unsigned char a, unsigned char b)
+{
+    return (a >= b) ? (unsigned char)(a - b) : (unsigned char)(b - a);
+}
+
+/* NES Z_05.asm:2006 IsSafeToSpawn — returns 1 if unsafe, 0 if safe. */
+static unsigned char is_safe_to_spawn(unsigned int slot)
+{
+    (void)collision_get_collidable_tile_still(slot);
+    unsigned char tile  = (unsigned char)ENEMY_COLLIDED_TILE(slot);
+    unsigned char floor = (unsigned char)ENEMY_DUNGEON_TILE_FLOOR;
+    if (tile >= floor) return 1u;
+    unsigned char dx = abs_diff_u8((unsigned char)OBJ(NES_OBJ_X, 0u),
+                                   (unsigned char)OBJ(NES_OBJ_X, slot));
+    if (dx >= 0x22u) return 0u;
+    unsigned char dy = abs_diff_u8((unsigned char)OBJ(NES_OBJ_Y, 0u),
+                                   (unsigned char)OBJ(NES_OBJ_Y, slot));
+    if (dy < 0x22u) return 1u;
+    return 0u;
+}
+
+/* NES bit-scan: ObjDir = $01/$02/$04/$08 → idx = 0/1/2/3. */
+static unsigned char dir_to_spawn_list_index(unsigned char dir)
+{
+    unsigned char idx = 0u;
+    while (idx < 3u && (dir & 0x01u) == 0u) {
+        dir = (unsigned char)(dir >> 1);
+        ++idx;
+    }
+    return idx;
+}
+
+void enemy_assign_spawn_positions(unsigned char room_id, unsigned char template_id)
+{
+    /* Y holds the running cycle index — first set to RoomObjCount per
+     * NES line 1886 (governs cellar Y-pick when we skip the main loop). */
+    unsigned char y_cycle = (unsigned char)DUNGEON_ROOM_OBJ_COUNT;
+    unsigned char skip_main = 0u;
+
+    /* NES line 1890-1893: skip if template == 0 or Zelda ($37). */
+    if (template_id == 0u || template_id == 0x37u) skip_main = 1u;
+
+    /* NES line 1896-1900: OW edge-spawn skip via LBA_F bit 3.
+     * Underworld (CurLevel != 0) bypasses this gate. */
+    if (!skip_main && (unsigned char)CUR_LEVEL == 0u) {
+        if ((DUNGEON_LBA_F(room_id) & 0x08u) != 0u) skip_main = 1u;
+    }
+
+    /* NES line 1902-1903: redundant count==0 gate (already covered above). */
+    if (!skip_main && (unsigned char)DUNGEON_ROOM_OBJ_COUNT == 0u) skip_main = 1u;
+
+    if (!skip_main) {
+        unsigned char list_idx = dir_to_spawn_list_index((unsigned char)OBJ(NES_OBJ_DIR, 0u));
+        const unsigned char *list = spawn_pos_lists[list_idx];
+        unsigned char y = (unsigned char)DUNGEON_SPAWN_CYCLE;
+        unsigned int x;
+        for (x = 1u; x < 0x0Au; ) {
+            unsigned char b = list[y];
+            OBJ(NES_OBJ_X, x) = (unsigned char)((b & 0x0Fu) << 4);
+            OBJ(NES_OBJ_Y, x) = (unsigned char)((b & 0xF0u) | 0x0Du);
+            unsigned char unsafe = is_safe_to_spawn(x);
+            if (!unsafe) {
+                ++x;
+            }
+            ++y;
+            if (y >= 9u) y = 0u;
+        }
+        DUNGEON_SPAWN_CYCLE = y;
+        y_cycle = y;
+    }
+
+    /* NES @AssignSpecialPositions @ Z_05.asm:1946. */
+    unsigned char game_mode = nes_ram[0x0012u];
+    if (game_mode == 0x09u) {
+        /* Cellar — 4 blue keese. NES bug-feature: cellar_keese_ys[Y]
+         * uses Y-cycle-index, NOT loop X. When mode 9 hits via the
+         * step-1 (template=count=0) override, y_cycle = 0, so all 4
+         * keese share Y = $9D. */
+        unsigned char y_idx_clamped = (y_cycle < 4u) ? y_cycle : 0u;
+        int xx;
+        for (xx = 3; xx >= 0; --xx) {
+            OBJ(NES_OBJ_TYPE, (unsigned int)(xx + 1)) = 0x1Bu;
+            OBJ(NES_OBJ_X,    (unsigned int)(xx + 1)) = cellar_keese_xs[xx];
+            OBJ(NES_OBJ_Y,    (unsigned int)(xx + 1)) = cellar_keese_ys[y_idx_clamped];
+        }
+        DUNGEON_ROOM_OBJ_COUNT = 4u;
+        return;
+    }
+
+    /* NES @CheckCaves @ Z_05.asm:1964 — modes $0B/$0C inject cave
+     * dweller into slot 1. CurLevel == 0 (OW caves) only. */
+    if (game_mode == 0x0Bu || game_mode == 0x0Cu) {
+        unsigned int xx;
+        for (xx = 1u; xx <= 8u; ++xx) {
+            OBJ(NES_OBJ_TYPE, xx) = 0u;
+        }
+        unsigned char lba_b = (unsigned char)(DUNGEON_LBA_B(room_id) & 0xFCu);
+        /* SBC #$40 → wraparound subtraction on u8. */
+        unsigned char cave_idx = (unsigned char)((lba_b - 0x40u) >> 2);
+        OBJ(NES_OBJ_TYPE, 1u) = (unsigned char)(0x6Au + cave_idx);
+        DUNGEON_ROOM_OBJ_COUNT = 1u;
+    }
 }

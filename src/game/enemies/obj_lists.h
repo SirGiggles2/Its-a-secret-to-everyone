@@ -49,6 +49,16 @@ const unsigned char *obj_list_for_template(unsigned char template_id);
  * step 2; ModifyObjCountByHistory{OW,UW} deferred to step 3. */
 unsigned char enemy_room_load_objects(unsigned char room_id);
 
+/* Phase 7 Task 7.7 step 2 — NES Z_05.asm:1885-1996 AssignObjSpawnPositions
+ * verbatim port. Walks SpawnPosListAddrs[ObjDir] in 9-entry cycles to
+ * assign ObjX/ObjY for slots 1..9, calling IsSafeToSpawn to skip
+ * unwalkable / Link-adjacent positions. Mode 9 cellar -> 4 blue keese
+ * via CellarKeeseXs/Ys; modes $B/$C cave -> cave-dweller in slot 1.
+ * Caller passes room_id (for LBA_F edge-spawn check) + template_id
+ * (RoomObjTemplateType, NES $02 alias). */
+void enemy_assign_spawn_positions(unsigned char room_id,
+                                  unsigned char template_id);
+
 #ifdef __cplusplus
 }
 #endif

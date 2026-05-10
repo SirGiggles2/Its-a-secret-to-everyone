@@ -25,6 +25,7 @@
 #include "platform_abi.h"
 #include "probes/enemy_loop_probe.h"      /* step 4 live-tick publish */
 #include "obj_lists.h"                    /* 7.7 step 1 room matrix loader */
+#include "dungeon_state.h"                /* 7.7 step 2 DUNGEON_ROOM_* */
 
 /* Forward decls — defined in src/oracle/enemies/enemy_walker_runtime.c
  * (init), src/oracle/enemies/enemy_wanderer_runtime.c (goriya update),
@@ -678,19 +679,22 @@ void enemy_loop_room_init(unsigned char room_id, unsigned char scene_id)
         ENEMY_Y(slot) = 0u;
     }
 
-    /* Phase 7 Task 7.7 step 1 — wire NES InitMode_EnterRoom monster-list
-     * parser. enemy_room_load_objects fills ObjType[1..count] from
-     * LevelBlockAttrs C/D + LevelInfo_FoeCounts (NES Z_05.asm:1700-1820).
-     * scene_id is informational only here — the loader reads dungeon
-     * substrate cells already populated by roomld_init_mode2_sub0. After
-     * the load, dispatch enemy_init_fns[ENEMY_TYPE(slot)] for each
-     * occupied slot per NES Z_05.asm:1818 init-fan-out.
-     *
-     * Step 2 deferral: spawn coords still come from default ENEMY_X/Y =
-     * 0 here (slot clear loop above). AssignObjSpawnPositions lands in
-     * Task 7.7 step 2 commit. */
+    /* Phase 7 Task 7.7 step 1+2 — wire NES InitMode_EnterRoom monster-list
+     * parser + AssignObjSpawnPositions.
+     *   step 1: enemy_room_load_objects fills ObjType[1..count] from
+     *           LevelBlockAttrs C/D + LevelInfo_FoeCounts (Z_05.asm:1700-1820).
+     *   step 2: enemy_assign_spawn_positions walks SpawnPosListAddrs[ObjDir]
+     *           with IsSafeToSpawn + cellar/cave overrides (Z_05.asm:1885-1996).
+     * After spawn assignment, dispatch enemy_init_fns[ENEMY_TYPE(slot)]
+     * for each occupied slot per NES init-fan-out at Z_05.asm:1818.
+     * Cave dweller / cellar keese paths run inside step 2 even when
+     * step 1 returns 0 — handle those by re-checking template type
+     * after spawn-pos call. */
     (void)scene_id;
-    if (enemy_room_load_objects(room_id) == 0u) {
+    unsigned char loaded = enemy_room_load_objects(room_id);
+    unsigned char tmpl   = (unsigned char)DUNGEON_ROOM_TEMPLATE_TYPE;
+    enemy_assign_spawn_positions(room_id, tmpl);
+    if (loaded == 0u && DUNGEON_ROOM_OBJ_COUNT == 0u) {
         return;
     }
     for (slot = ENEMY_LOOP_SLOT_FIRST; slot <= ENEMY_LOOP_SLOT_LAST; ++slot) {
