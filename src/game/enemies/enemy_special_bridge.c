@@ -28,6 +28,8 @@
                                          * k_sprite_offsets */
 #include "world/sprite_dispatch.h"      /* sprite_show_link_sprites_behind_horizontal_doors */
 #include "enemies/enemy_dispatch.h"     /* enemy_hide_sprites_over_link */
+#include "../options/options_consumer.h" /* options_consumer_get_like_like_behavior */
+#include "../options/options_state.h"    /* OPTIONS_LIKELIKE_VANILLA */
 
 /* NES RAM cell aliases not yet in enemy_state.h. */
 #define LIKELIKE_CAPTURE_TIMER(slot)    OBJ(0x042Cu, (slot))  /* ObjCaptureTimer */
@@ -216,7 +218,16 @@ void enrt_update_like_like(unsigned int slot)
         LIKELIKE_CAPTURE_TIMER(slot) =
             (uint8_t)((unsigned char)LIKELIKE_CAPTURE_TIMER(slot) + 1u);
         if ((unsigned char)LIKELIKE_CAPTURE_TIMER(slot) >= 0x60u) {
-            INV_MAGIC_SHIELD = 0u;
+            /* Phase 9 Task 9.4 LIKE_LIKE_BEHAVIOR consumer.
+             * VANILLA (NES Z_04.asm:6818 path) eats magic shield once
+             * the capture timer exceeds $60. Redux NO_EAT skips that
+             * write — the bite-flash still cycles, but the shield
+             * survives. Capture-timer lock at $C0 stays unconditional
+             * to match the lock semantics from the NES routine. */
+            if (options_consumer_get_like_like_behavior()
+                == OPTIONS_LIKELIKE_VANILLA) {
+                INV_MAGIC_SHIELD = 0u;
+            }
             LIKELIKE_CAPTURE_TIMER(slot) = 0xC0u;
         }
         /* @DrawAfterCapture: */
