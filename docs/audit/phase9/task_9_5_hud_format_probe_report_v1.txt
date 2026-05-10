@@ -1,0 +1,20 @@
+Phase 9 Task 9.5 HUD format probe (heart-row contract)
+======================================================
+
+magic     = $48 $46 (expect 'H'=$48 'F'=$46)
+version   = 1 (expect 1)
+total     = 8 (expect 8)
+passes    = 8 (expect 8)
+bits      = $FF (expect $FF)
+
+  bit0  template_loaded                          PASS
+  bit1  hearts_3_full                            PASS
+  bit2  hearts_3_max_1_cur                       PASS
+  bit3  hearts_8_max_3_cur_high_partial          PASS
+  bit4  hearts_8_max_3_cur_low_partial           PASS
+  bit5  hearts_15_full                           PASS
+  bit6  hearts_zero                              PASS
+  bit7  hearts_7_full                            PASS
+
+frame_counter at $FF7202..03 = 155
+VERDICT: all 8 HUD-format tests passed; ROM still ticking.

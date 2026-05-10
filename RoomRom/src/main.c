@@ -36,6 +36,7 @@
 #include "options_persistence.h"          /* Phase 9 Task 9.4 load-or-default */
 #include "options_consumer.h"             /* Phase 9 Task 9.4 game-start hook */
 #include "options_consumer_probe.h"       /* Phase 9 Task 9.4 consumer tests */
+#include "hud_format_probe.h"             /* Phase 9 Task 9.5 HUD format tests */
 
 /* Boots to overworld room 0x77.
  *
@@ -1259,6 +1260,7 @@ void roomrom_debug_enter(void)
     options_probe_run();                   /* Phase 9 Task 9.1 — pure CPU-side. */
     options_persistence_probe_run();       /* Phase 9 Task 9.2 — SRAM I/O. */
     options_consumer_probe_run();          /* Phase 9 Task 9.4 — consumer wiring. */
+    hud_format_probe_run();                /* Phase 9 Task 9.5 — HUD format contract. */
 }
 
 unsigned char roomrom_debug_get_scene(void)

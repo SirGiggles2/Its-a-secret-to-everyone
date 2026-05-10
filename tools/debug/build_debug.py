@@ -52,6 +52,7 @@ INCS = [
     ROOT / "src" / "game" / "combat",
     ROOT / "src" / "game" / "room",
     ROOT / "src" / "game" / "hud",
+    ROOT / "src" / "game" / "hud" / "probes",
     ROOT / "src" / "game" / "items",
     ROOT / "src" / "game" / "options",
     ROOT / "src" / "game" / "options" / "probes",
@@ -351,6 +352,10 @@ ROOMROM_C_SOURCES = [
     ("src/game/options/probes/options_probe.c", "game_options_probe.o"),
     ("src/game/options/probes/options_persistence_probe.c", "game_options_persistence_probe.o"),
     ("src/game/options/probes/options_consumer_probe.c", "game_options_consumer_probe.o"),
+    # Phase 9 Task 9.5 — HUD format probe. Verifies drained heart-row
+    # formatter (hud_format_status_bar_text) against hand-traced expected
+    # byte sequences. Locks the contract any native HUD renderer consumes.
+    ("src/game/hud/probes/hud_format_probe.c", "game_hud_format_probe.o"),
     ("src/game/enemies/probes/enemy_loop_probe.c", "game_enemy_loop_probe.o"),
     ("RoomRom/src/expanded_bg_chr.c", "expanded_bg_chr.o"),
     ("RoomRom/src/atlas/items_chr_x4.c", "atlas_items_chr_x4.o"),
