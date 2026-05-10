@@ -63,7 +63,10 @@ end
 -- 1) Idle to settle title.
 for _ = 1, 180 do emu.frameadvance() end
 
--- 2) A+B+C chord enters roomrom_debug_enter (force_spawn slots 1..11).
+-- 2) Arm the heavy enemy-loop stress probe, then A+B+C enters
+-- roomrom_debug_enter (force_spawn slots 1..11).
+memory.write_u8(0x73FC, 0x45, "68K RAM") -- 'E'
+memory.write_u8(0x73FD, 0x50, "68K RAM") -- 'P'
 local chord = {["P1 A"] = true, ["P1 B"] = true, ["P1 C"] = true}
 for _ = 1, 30 do
     joypad.set(chord)

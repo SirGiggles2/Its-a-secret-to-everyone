@@ -581,17 +581,25 @@ unsigned char roomrom_debug_warp_unsupported_count(void)
 
 /* Task 5.4: state mirror for passive Lua probes. Called once per tick;
  * publishes the gate-B field set into a fixed 36-byte RAM block at
- * ROOMROM_DEBUG_STATE_MIRROR_BASE. */
+ * ROOMROM_DEBUG_STATE_MIRROR_BASE.
+ *
+ * Perf split (2026-05-09): always-on minimum (12 B) covers FPS / scene /
+ * room / link xy / face — what every probe needs to lock in. Heavy work
+ * (offsets 12..119 + the every-6f persistence/cache blocks) is gated on
+ * the enemy-loop probe arm magic at $FF73FC..$FF73FD. Default gameplay path
+ * = 12 volatile writes; armed probes get the full 120 B + secondary blocks.
+ * Restores VBlank budget
+ * lost to ~30 getter calls and 108 extra volatile writes per frame. */
 void roomrom_debug_publish_state_mirror(void)
 {
     volatile unsigned char *p =
         (volatile unsigned char *)ROOMROM_DEBUG_STATE_MIRROR_BASE;
-    const rr_warp_save_state_t *save = roomrom_world_transition_save_state();
-    unsigned char uw_level = (s_scene == SCENE_UW)
-        ? roomrom_uw_room_render_get_level() : 0u;
-    unsigned char uw_quest = (s_scene == SCENE_UW)
-        ? roomrom_uw_room_render_get_quest() : 0u;
+    const rr_warp_save_state_t *save;
+    unsigned char uw_level;
+    unsigned char uw_quest;
 
+    /* Always-on minimum. FPS / scene-toggle / link-trace probes only need
+     * these 12 bytes; cost is one cache-line worth of volatile writes. */
     p[0]  = 0x57u;                                /* 'W' */
     p[1]  = 0x50u;                                /* 'P' */
     p[2]  = (unsigned char)(s_frame_counter >> 8);
@@ -604,6 +612,17 @@ void roomrom_debug_publish_state_mirror(void)
     p[9]  = (unsigned char)((unsigned short)players[0].y);
     p[10] = (unsigned char)players[0].face;
     p[11] = (unsigned char)s_link_dir;
+
+    if (!enemy_loop_probe_is_armed()) {
+        return;
+    }
+
+    save = roomrom_world_transition_save_state();
+    uw_level = (s_scene == SCENE_UW)
+        ? roomrom_uw_room_render_get_level() : 0u;
+    uw_quest = (s_scene == SCENE_UW)
+        ? roomrom_uw_room_render_get_quest() : 0u;
+
     p[12] = (unsigned char)s_link_grid_offset;
     p[13] = s_doorway_dir;
     p[14] = roomrom_world_transition_is_active();
@@ -1215,14 +1234,15 @@ void roomrom_debug_enter(void)
      * Phase 7 Task 7.2 step 4 ordering rule (root-cause fix 2026-05-09):
      * NES aliases CaveRoomType and ObjType+1 at $0350 — see
      * src/state/cave_state.h:83 + src/abi/platform_abi.h:80. cave_exit()
-     * writes $0350=0 which clobbers ENEMY_TYPE(1). Cave smoke MUST run
-     * BEFORE enemy_loop_probe_run so the probe seed survives into the
-     * per-frame tick window. */
+     * writes $0350=0, so any explicitly armed enemy-loop probe must run
+     * after the cave smoke. */
     cave_init((cave_id_t)0x6A);
     cave_tick();
     cave_exit();
 
-    enemy_loop_probe_run();                /* Phase 7 Task 7.2 step 2 in-ROM probe — last init op so seed survives */
+    if (enemy_loop_probe_is_armed()) {
+        enemy_loop_probe_run();            /* Heavy 11-slot in-ROM stress probe. */
+    }
 }
 
 unsigned char roomrom_debug_get_scene(void)
@@ -1379,35 +1399,15 @@ void roomrom_debug_tick(void)
          * while paused (voluntary or involuntary). Cave + scroll handling
          * already returned above; only the in-room update path is gated. */
         if (!roomrom_pause_is_active()) {
-            /* S7: tick combat (sword timer + draw/clear sword sprite slot 1).
-             * Runs every frame so the swing completes even in TELEPORT mode. */
             roomrom_combat_update(players[0].x, players[0].y, players[0].face);
-            /* S7 v6: tick boomerang (slot 3). Independent of combat lock —
-             * NES Z1 lets Link move while boomerang is in flight. */
             roomrom_boomerang_update(players[0].x, players[0].y);
-            /* S7 v7: tick arrow (slot 4). Single-frame, flies straight. */
             roomrom_arrow_update();
-            /* S7 v8: tick bomb (slot 5) + explosion (slot 6). */
             roomrom_bomb_update();
-            /* Task 5.8.1: tick candle fire (slot 8). */
             roomrom_candle_fire_update();
-            /* Magic rod shot (slot 9). */
             roomrom_magic_shot_update();
-            /* Task 6.11.3: ObjInvincibilityTimer 2-frame countdown
-             * (NES Z_07.asm:5756 DecrementInvincibilityTimer). */
             roomrom_link_damage_tick((unsigned char)s_frame_counter);
-            /* Task 6.10.10: RupeesToAdd/Sub rolling tick
-             * (NES Z_01.asm:2812 World_ChangeRupees). */
             inventory_rupee_tick((unsigned char)s_frame_counter);
-            /* Task 6.10.6 Step A: live HUD overlay of count + heart
-             * cells from g_inventory. Cheap (~15 VDP writes); makes
-             * the rupee tick + future damage path observable. */
             roomrom_hud_refresh_dynamic();
-
-            /* Phase 7 Task 7.2 step 2 (debate verdict Q2=c): drained
-             * walker family ticks ONLY inside scroll-stable + non-paused
-             * branch. Mirrors NES IsSprite0CheckActive gate at
-             * Z_07.asm:496. NULL slots in the dispatch tables = no-op. */
             enemy_loop_tick();
         }
 
@@ -1842,7 +1842,10 @@ void roomrom_debug_tick(void)
          * room_item/candle_fire/magic_shot — count = 10. */
         VDP_updateSprites(10, DMA_QUEUE);
 
-        /* Task 5.4: passive state mirror for BizHawk Lua probes. */
+        /* Task 5.4: passive state mirror for BizHawk Lua probes. The
+         * minimum 12 B (header/frame/scene/room/link xy/face) always
+         * publishes; heavy state is gated on the probe arm magic inside
+         * publish_state_mirror itself. */
         roomrom_debug_publish_state_mirror();
 }
 

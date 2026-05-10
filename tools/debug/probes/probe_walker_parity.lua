@@ -109,7 +109,8 @@ end
 
 -- Boot path: title screen polls JOY_1 for the A+B+C debug chord
 -- (src/debug/a4_probe_main.c:15 CHORD_DEBUG). Rising edge fires
--- roomrom_debug_enter() which clears slots, runs enemy_loop_probe_run().
+-- roomrom_debug_enter() which clears slots and runs enemy_loop_probe_run()
+-- only when this script arms the heavy probe with "EP" at $FF73FC.
 --
 -- Sequence: advance idle to settle title, then hold A+B+C for several
 -- frames so the rising-edge detector triggers, then advance to let
@@ -120,7 +121,9 @@ for _ = 1, 180 do
     emu.frameadvance()
 end
 
--- 2) Hold the A+B+C chord. BizHawk Genesis joypad keys.
+-- 2) Arm the heavy enemy-loop stress probe, then hold A+B+C.
+memory.write_u8(0x73FC, 0x45, "68K RAM") -- 'E'
+memory.write_u8(0x73FD, 0x50, "68K RAM") -- 'P'
 local chord = {["P1 A"] = true, ["P1 B"] = true, ["P1 C"] = true}
 for _ = 1, 30 do
     joypad.set(chord)

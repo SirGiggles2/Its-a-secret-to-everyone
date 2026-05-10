@@ -156,10 +156,19 @@
  * Used by step-8 family-functional probe to gate 6 wired UPDATE rows. */
 #define ENEMY_LOOP_FAMILY73_BASE 0x00FF7E40UL
 
+/* Opt-in control for the heavy in-ROM enemy stress probe. Normal debug
+ * gameplay must not run enemy_loop_probe_run(), because that force-spawns
+ * an 11-slot stress harness and makes A+B+C debug mode crawl. Probe Lua
+ * scripts that need the harness write "EP" here before entering RoomRom. */
+#define ENEMY_LOOP_PROBE_CONTROL_BASE 0x00FF73FCUL
+#define ENEMY_LOOP_PROBE_ARM0         0x45u  /* 'E' */
+#define ENEMY_LOOP_PROBE_ARM1         0x50u  /* 'P' */
+
 #ifdef __cplusplus
 extern "C" {
 #endif
 
+unsigned char enemy_loop_probe_is_armed(void);
 void enemy_loop_probe_run(void);
 void enemy_loop_probe_publish_live(void);
 void enemy_loop_probe_publish_pre(void);

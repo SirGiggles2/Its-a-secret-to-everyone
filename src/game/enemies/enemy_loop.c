@@ -815,11 +815,9 @@ void enemy_loop_tick(void)
      * not yet wired). Q2=(c) gating done by caller — this function is
      * ONLY called inside the scroll-stable + non-paused branch of the
      * gameplay tick. */
-    /* Step 4 pre-tick snapshot — captures slot state BEFORE the
-     * dispatch loop runs. Used to localize where TYPE clears: if pre
-     * still shows $07 but post is $00, the dispatch / update body
-     * killed the slot. */
-    enemy_loop_probe_publish_pre();
+    if (enemy_loop_probe_is_armed()) {
+        enemy_loop_probe_publish_pre();
+    }
 
     /* Step 20 DecTimers prepass. NES IsrNmi @UpdateTimers /
      * @LoopTimer (z_07.asm:1604-1616) decrements ObjTimer ($0028..)
@@ -864,9 +862,9 @@ void enemy_loop_tick(void)
         if (fn != 0) fn(slot);
     }
 
-    /* Step 4 live-tick publish — last so block reflects post-tick
-     * cells. Lua reads $FF7F00 to confirm UPDATE chain ran. */
-    enemy_loop_probe_publish_live();
+    if (enemy_loop_probe_is_armed()) {
+        enemy_loop_probe_publish_live();
+    }
 }
 
 void enemy_loop_force_spawn_slow_octorock(unsigned int slot,
