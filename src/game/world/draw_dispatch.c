@@ -30,6 +30,7 @@
 #include "core/core_dispatch.h"      /* core_anim_set_sprite_desc_attrs */
 #include "world/sprite_dispatch.h"   /* sprite_cycle_cur_sprite_index,
                                       * sprite_anim_fetch_obj_pos */
+#include "../options/options_consumer.h"  /* options_consumer_get_no_reduced_flashing */
 
 /* --------------------------------------------------------------- */
 /* Zero-page scratch slot semantic aliases for the draw pipeline.   */
@@ -558,9 +559,18 @@ void draw_item_by_slot(unsigned int item_slot, unsigned int slot)
          item_slot == 0x1Bu || item_slot == 0x19u);
 
     if (flash) {
-        /* attrs = (FRAME_COUNTER & $08) >> 3; +1 with carry-clear. */
-        attrs = (unsigned char)(((unsigned char)FRAME_COUNTER >> 3) & 0x01u);
-        attrs = (unsigned char)(attrs + 1u);
+        /* Phase 9 Task 9.4 NO_REDUCED_FLASHING consumer.
+         * Default (option off): NES per-8-frame palette cycle —
+         *   attrs = (FRAME_COUNTER & $08) >> 3; +1 with carry-clear.
+         * Photosensitive guard (option on): freeze attrs at 1 so the
+         * palette no longer toggles. Static appearance instead of
+         * 7.5 Hz strobe — keeps the item visible without strobing. */
+        if (options_consumer_get_no_reduced_flashing()) {
+            attrs = 1u;
+        } else {
+            attrs = (unsigned char)(((unsigned char)FRAME_COUNTER >> 3) & 0x01u);
+            attrs = (unsigned char)(attrs + 1u);
+        }
         anim_write_static_item_sprites_with_attributes(
             attrs, slot, item_slot);
         return;
@@ -622,8 +632,13 @@ void draw_animate_item_object(unsigned char item_id, unsigned int slot)
     const unsigned char timer = (unsigned char)DRAW_ITEM_LIFETIME(slot);
     if (timer >= 0xF0u) {
         /* Lifetime flash — skip draw on even ticks (LSR-with-carry
-         * 6502 idiom: `lsr; bcs continue / bcc skip`). */
-        if ((timer & 1u) == 0u) {
+         * 6502 idiom: `lsr; bcs continue / bcc skip`).
+         * Phase 9 Task 9.4 NO_REDUCED_FLASHING consumer: photosensitive
+         * guard always draws (no 30 Hz strobe near despawn). The item
+         * still despawns at lifetime 0; only the strobe warning is
+         * suppressed. */
+        if (!options_consumer_get_no_reduced_flashing()
+            && (timer & 1u) == 0u) {
             return;
         }
     }
