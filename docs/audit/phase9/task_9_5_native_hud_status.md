@@ -22,6 +22,7 @@ the heart-row formatter against hand-traced expected byte sequences.
 | `task_9_5_hud_format_probe_report_v1.txt` | passes=8/8 (heart row), bits=$FF, fc=155 |
 | `task_9_5_hud_format_probe_report_v2.txt` | passes=15/15 (+ rupee/bomb/key/master-key), mask=$7FFF, fc=154 |
 | `task_9_5_hud_format_probe_report_v3.txt` | passes=20/20 (+ anim rupee tick gates 1-5), mask=$FFFFF, fc=154 |
+| `task_9_5_hud_format_probe_report_v4.txt` | passes=22/22 (+ inv-edge $067D/$067E clears), mask=$3FFFFF, fc=154 |
 
 Format coverage matrix:
 

@@ -1,4 +1,4 @@
--- Phase 9 Task 9.5 — HUD format probe verifier (v3: + animated rupee tick).
+-- Phase 9 Task 9.5 — HUD format probe verifier (v4: + inventory-edge writes).
 local OUT = os.getenv("CODEX_PROBE_OUT") or "C:/tmp"
 local PROBE_BASE = 0x7EC0   -- $FF7EC0 -> 68K RAM offset
 
@@ -45,6 +45,8 @@ local test_names = {
     [17] = "anim_odd_frame_skip",
     [18] = "anim_credit_tick",
     [19] = "anim_debit_tick",
+    [20] = "anim_zero_clears_delta",
+    [21] = "anim_max_clears_rta",
 }
 
 local fc_hi = memory.read_u8(0x7202, "68K RAM")
@@ -53,31 +55,31 @@ local frame_counter = fc_hi * 256 + fc_lo
 
 client.screenshot(OUT .. "/hud_format_probe.png")
 
-local EXPECT_MASK = 0xFFFFF   -- bits 0..19 set
+local EXPECT_MASK = 0x3FFFFF   -- bits 0..21 set
 
 local f = io.open(OUT .. "/hud_format_probe_report.txt", "w")
-f:write("Phase 9 Task 9.5 HUD format probe (v3: heart row + decimals + anim tick)\n")
-f:write("=========================================================================\n\n")
+f:write("Phase 9 Task 9.5 HUD format probe (v4: heart row + decimals + anim tick + inv-edge)\n")
+f:write("====================================================================================\n\n")
 f:write(string.format("magic     = $%02X $%02X (expect 'H'=$48 'F'=$46)\n", magic0, magic1))
-f:write(string.format("version   = %d (expect 3)\n", ver))
-f:write(string.format("total     = %d (expect 20)\n", total))
-f:write(string.format("passes    = %d (expect 20)\n", passes))
-f:write(string.format("mask      = $%05X (expect $%05X)\n\n", mask, EXPECT_MASK))
-for i = 0, 19 do
+f:write(string.format("version   = %d (expect 4)\n", ver))
+f:write(string.format("total     = %d (expect 22)\n", total))
+f:write(string.format("passes    = %d (expect 22)\n", passes))
+f:write(string.format("mask      = $%06X (expect $%06X)\n\n", mask, EXPECT_MASK))
+for i = 0, 21 do
     local pass = (mask & (1 << i)) ~= 0
     f:write(string.format("  bit%-2d %-40s %s\n", i, test_names[i],
         pass and "PASS" or "FAIL"))
 end
 f:write(string.format("\nframe_counter at $FF7202..03 = %d\n", frame_counter))
 
-if magic0 == 0x48 and magic1 == 0x46 and ver == 3 and total == 20
-   and passes == 20 and mask == EXPECT_MASK and frame_counter > 0 then
-    f:write("VERDICT: all 20 HUD-format tests passed; ROM still ticking.\n")
+if magic0 == 0x48 and magic1 == 0x46 and ver == 4 and total == 22
+   and passes == 22 and mask == EXPECT_MASK and frame_counter > 0 then
+    f:write("VERDICT: all 22 HUD-format tests passed; ROM still ticking.\n")
 else
     f:write("VERDICT: HUD format probe regressed.\n")
 end
 f:close()
 
-print(string.format("HUD-FMT probe: passes=%d/%d mask=$%05X fc=%d",
+print(string.format("HUD-FMT probe: passes=%d/%d mask=$%06X fc=%d",
     passes, total, mask, frame_counter))
 client.exit()

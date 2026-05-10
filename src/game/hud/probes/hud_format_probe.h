@@ -3,12 +3,12 @@
  * Probe RAM contract ($FF7EC0..$FF7ECF):
  *   [0]   = 'H' (0x48) magic
  *   [1]   = 'F' (0x46) magic
- *   [2]   = version (3 — adds animated rupee-tick coverage)
- *   [3]   = total tests run (20)
+ *   [2]   = version (4 — adds rupee inventory-edge coverage)
+ *   [3]   = total tests run (22)
  *   [4]   = passes
  *   [5]   = bits  0..7  (1 = pass)
  *   [6]   = bits  8..15
- *   [7]   = bits  16..19
+ *   [7]   = bits  16..21
  *   [8..15] reserved
  *
  * Tests verify the drained `hud_format_status_bar_text` (src/game/hud/
@@ -43,6 +43,10 @@
  *   bit17: anim_odd_frame_skip     FRAME_COUNTER&1 → no state change
  *   bit18: anim_credit_tick        $067D=5,RUPEES=10,FC=0 → $067D=4,RUPEES=11,sfx=16
  *   bit19: anim_debit_tick         $067D=0,$067E=3,RUPEES=10 → $067E=2,RUPEES=9,sfx=16
+ *
+ * Bit map (Group D — rupee inventory-edge writes, 2 tests):
+ *   bit20: anim_zero_clears_delta  RUPEES=0 → INVENTORY_VALUE(39)=0 (clears $067E)
+ *   bit21: anim_max_clears_rta     RUPEES=$FF → INVENTORY_VALUE(38)=0 (clears $067D)
  */
 
 #ifndef SRC_GAME_HUD_PROBES_HUD_FORMAT_PROBE_H

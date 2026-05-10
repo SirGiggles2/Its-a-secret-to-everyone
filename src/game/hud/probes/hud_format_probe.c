@@ -22,7 +22,7 @@ static void stamp_magic(void)
     unsigned int i;
     PROBE[0] = 'H';
     PROBE[1] = 'F';
-    PROBE[2] = 0x03u;  /* v3 — adds animated rupee tick */
+    PROBE[2] = 0x04u;  /* v4 — adds inventory-edge writes */
     for (i = 3u; i < 16u; ++i) PROBE[i] = 0u;
 }
 
@@ -397,6 +397,32 @@ static unsigned char test_anim_debit_tick(void)
          && ROOM_SFX_MAIN == 16u) ? 1u : 0u;
 }
 
+/* ---- Group D: rupee inventory-edge writes -------------------------- *
+ * INVENTORY_VALUE(slot)=RAM(0x0657+slot). slot 38=$067D (=rta),
+ * slot 39=$067E (=delta). FC odd gates out the credit/debit branches
+ * so only the edge clears fire.
+ */
+
+static unsigned char test_anim_zero_clears_delta(void)
+{
+    /* RUPEES=0, delta=5: edge clears delta. FC odd → return after edge. */
+    anim_setup(/*rta=*/0u, /*delta=*/5, /*rupees=*/0u, /*fc=*/1u,
+               /*buf_select=*/0u, /*bit7=*/1u);
+    hud_world_change_rupees();
+    return ((signed char)CAVE_DOOR_REPAIR_RUPEE_DELTA == 0
+         && (unsigned char)LINK_RUPEES == 0u) ? 1u : 0u;
+}
+
+static unsigned char test_anim_max_clears_rta(void)
+{
+    /* RUPEES=$FF, $067D=5: edge clears $067D. FC odd → return after edge. */
+    anim_setup(/*rta=*/5u, /*delta=*/0, /*rupees=*/0xFFu, /*fc=*/1u,
+               /*buf_select=*/0u, /*bit7=*/1u);
+    hud_world_change_rupees();
+    return (RAM(0x067Du) == 0u
+         && (unsigned char)LINK_RUPEES == 0xFFu) ? 1u : 0u;
+}
+
 /* ---- Driver -------------------------------------------------------- */
 
 static void mark(unsigned int bit_idx, unsigned char *passes_io,
@@ -425,7 +451,7 @@ void hud_format_probe_run(void)
 
     unsigned char bits[3] = { 0u, 0u, 0u };
     unsigned char passes = 0u;
-    const unsigned char total = 20u;
+    const unsigned char total = 22u;
 
     stamp_magic();
 
@@ -454,6 +480,10 @@ void hud_format_probe_run(void)
     if (test_anim_odd_frame_skip())                mark(17u, &passes, bits);
     if (test_anim_credit_tick())                   mark(18u, &passes, bits);
     if (test_anim_debit_tick())                    mark(19u, &passes, bits);
+
+    /* Group D — rupee inventory-edge writes */
+    if (test_anim_zero_clears_delta())             mark(20u, &passes, bits);
+    if (test_anim_max_clears_rta())                mark(21u, &passes, bits);
 
     PROBE[3] = total;
     PROBE[4] = passes;

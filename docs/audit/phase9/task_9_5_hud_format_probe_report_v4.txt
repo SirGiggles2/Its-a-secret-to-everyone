@@ -1,0 +1,34 @@
+Phase 9 Task 9.5 HUD format probe (v4: heart row + decimals + anim tick + inv-edge)
+====================================================================================
+
+magic     = $48 $46 (expect 'H'=$48 'F'=$46)
+version   = 4 (expect 4)
+total     = 22 (expect 22)
+passes    = 22 (expect 22)
+mask      = $3FFFFF (expect $3FFFFF)
+
+  bit0  template_loaded                          PASS
+  bit1  hearts_3_full                            PASS
+  bit2  hearts_3_max_1_cur                       PASS
+  bit3  hearts_8_max_3_cur_high_partial          PASS
+  bit4  hearts_8_max_3_cur_low_partial           PASS
+  bit5  hearts_15_full                           PASS
+  bit6  hearts_zero                              PASS
+  bit7  hearts_7_full                            PASS
+  bit8  rupees_42                                PASS
+  bit9  rupees_0                                 PASS
+  bit10 rupees_255                               PASS
+  bit11 bombs_8                                  PASS
+  bit12 bombs_99                                 PASS
+  bit13 keys_5_no_mkey                           PASS
+  bit14 master_key_dash                          PASS
+  bit15 anim_buf_select_skip                     PASS
+  bit16 anim_high_bit_clear_skip                 PASS
+  bit17 anim_odd_frame_skip                      PASS
+  bit18 anim_credit_tick                         PASS
+  bit19 anim_debit_tick                          PASS
+  bit20 anim_zero_clears_delta                   PASS
+  bit21 anim_max_clears_rta                      PASS
+
+frame_counter at $FF7202..03 = 154
+VERDICT: all 22 HUD-format tests passed; ROM still ticking.
