@@ -42,11 +42,17 @@
 #include "platform_abi.h"
 #include "enemy_state.h"
 #include "dungeon_state.h"
-#include "progress_state.h"   /* CUR_LEVEL */
+#include "progress_state.h"   /* CUR_LEVEL, SAVEFILE_PTR_LO/HI */
+#include "room_state.h"       /* ROOM_HISTORY */
 
 /* Step 2 — IsSafeToSpawn dependency (NES Z_05.asm:2009 GetCollidableTileStill).
  * Already drained at src/game/combat/collision_dispatch.c:161. */
 extern unsigned char collision_get_collidable_tile_still(unsigned int slot);
+
+/* Step 3 — GetRoomFlags drained at src/game/room/room_dispatch.c:50.
+ * Returns current room's flag byte from SRAM, also stashes ptr in
+ * SAVEFILE_PTR_LO/HI (zp $00/$01 alias) for follow-up writes. */
+extern unsigned char room_get_room_flags(void);
 
 /* NES ObjLists.dat — 201 bytes, 30 ObjList templates concatenated. */
 const unsigned char z1_obj_lists[ENEMY_OBJLISTS_LEN] = {
@@ -108,12 +114,111 @@ const unsigned char *obj_list_for_room(unsigned char room_id,
     return (const unsigned char *)0;
 }
 
+/* Phase 7 Task 7.7 step 3 — ModifyObjCountByHistoryOW.
+ *
+ * NES source: reference/aldonunez/Z_05.asm:3534-3580.
+ * Drained C:  NONE.  Stance: GREENFIELD.
+ *
+ * If room is in RoomHistory[0..5]: subtract kill-count (flags & 7) from
+ * spawn count, or reset both to 0 when kill-count == 7.
+ *
+ * If room is NOT in history but kill-count == 7 (stale fully-cleared
+ * marker), zero the kill-count bits in the SRAM flag byte. The NES
+ * original writes via ($00),Y with Y=$FF — port writes to the same
+ * cell room_get_room_flags read (SAVEFILE_PTR + room).
+ */
+static void modify_count_by_history_ow(unsigned char room_id,
+                                       unsigned char *template_io,
+                                       unsigned char *count_io)
+{
+    unsigned char in_history = 0u;
+    signed char y;
+    for (y = 5; y >= 0; --y) {
+        if ((unsigned char)ROOM_HISTORY((unsigned char)y) == room_id) {
+            in_history = 1u;
+            break;
+        }
+    }
+    unsigned char flags = room_get_room_flags();
+    unsigned char kc = (unsigned char)(flags & 0x07u);
+    if (!in_history) {
+        if (kc == 7u) {
+            unsigned int ptr = (unsigned int)(unsigned char)SAVEFILE_PTR_LO
+                             | ((unsigned int)(unsigned char)SAVEFILE_PTR_HI << 8);
+            nes_ram[ptr + room_id] = (unsigned char)(flags & 0xF8u);
+        }
+        return;
+    }
+    if (kc == 0u) return;
+    if (kc == 7u) {
+        *template_io = 0u;
+        *count_io = 0u;
+        return;
+    }
+    if (*count_io >= kc) {
+        *count_io = (unsigned char)(*count_io - kc);
+    } else {
+        *template_io = 0u;
+        *count_io = 0u;
+    }
+}
+
+/* Phase 7 Task 7.7 step 3 — ModifyObjCountByHistoryUW.
+ *
+ * NES source: reference/aldonunez/Z_05.asm:3982-4034.
+ * Drained C:  NONE.  Stance: GREENFIELD.
+ *
+ * UW kill-tracking uses LevelKillCounts[room] (per-room byte at $0560+room)
+ * and flag-byte bits 6-7 ($C0 = "all defeated"). Recurring-foe template
+ * IDs ($00-$31, $3A, $3B, $49+) replenish on re-entry; non-recurring
+ * (bosses, items, NPCs) stay cleared.
+ */
+static void modify_count_by_history_uw(unsigned char room_id,
+                                       unsigned char *template_io,
+                                       unsigned char *count_io)
+{
+    unsigned char in_history = 0u;
+    signed char y;
+    for (y = 5; y >= 0; --y) {
+        if ((unsigned char)ROOM_HISTORY((unsigned char)y) == room_id) {
+            in_history = 1u;
+            break;
+        }
+    }
+    if (!in_history) {
+        unsigned char flags = room_get_room_flags();
+        if ((flags & 0xC0u) == 0xC0u) {
+            unsigned char tid = *template_io;
+            unsigned char recurring = 0u;
+            if (tid < 0x32u) recurring = 1u;
+            else if (tid == 0x3Au || tid == 0x3Bu) recurring = 1u;
+            else if (tid >= 0x49u) recurring = 1u;
+            if (!recurring) {
+                *template_io = 0u;
+                *count_io = 0u;
+                return;
+            }
+            /* Recurring: clear all-defeated bits + zero kill-counts. */
+            unsigned int ptr = (unsigned int)(unsigned char)SAVEFILE_PTR_LO
+                             | ((unsigned int)(unsigned char)SAVEFILE_PTR_HI << 8);
+            nes_ram[ptr + room_id] = (unsigned char)(flags & 0x3Fu);
+            RAM(0x0560u + room_id) = 0u;
+            return;
+        }
+        /* Not-all-defeated path falls through to subtract LevelKillCounts. */
+    }
+    /* @CalcObjCount — subtract LevelKillCounts[room]. */
+    unsigned char lkc = (unsigned char)RAM(0x0560u + room_id);
+    if (*count_io >= lkc) {
+        *count_io = (unsigned char)(*count_io - lkc);
+    } else {
+        *template_io = 0u;
+        *count_io = 0u;
+    }
+}
+
 /* NES Z_05.asm:1700-1820 verbatim port of the monster-list parse + ObjType
  * fill. Returns 1 if any objects were loaded, 0 if room is empty.
- *
- * Per-step deferrals:
- *   - ModifyObjCountByHistory{OW,UW} (step 3)        — no-op stub here.
- *   - AssignObjSpawnPositions (step 2)               — caller's responsibility.
  *
  * Cellar (mode 9) override IS applied here per NES — those rooms get 0
  * monster-list-id but AssignObjSpawnPositions injects 4 blue keese.
@@ -135,9 +240,16 @@ unsigned char enemy_room_load_objects(unsigned char room_id)
         count = 1u;
     }
 
-    /* Step 3 deferred: ModifyObjCountByHistory{OW,UW} (NES Z_05.asm:1740-1746).
-     * For step 1 we treat every room as pristine first-entry. */
-    /* TODO step 3: history modify hook here. */
+    /* Phase 7 Task 7.7 step 3 — ModifyObjCountByHistory{OW,UW}.
+     * NES Z_05.asm:1740-1746 dispatches by CurLevel. Adjusts count
+     * + template_id based on RoomHistory + per-room kill flags so
+     * re-entry to a partially / fully cleared room spawns the
+     * surviving subset (or zero monsters). */
+    if ((unsigned char)CUR_LEVEL == 0u) {
+        modify_count_by_history_ow(room_id, &template_id, &count);
+    } else {
+        modify_count_by_history_uw(room_id, &template_id, &count);
+    }
 
     /* NES Z_05.asm:1750 — mode 9 cellar override. nes_ram is the
      * a4-register substrate base from src/abi/platform_abi.h. */
