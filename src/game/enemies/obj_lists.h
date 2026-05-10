@@ -36,6 +36,19 @@ extern const unsigned char z1_obj_lists[ENEMY_OBJLISTS_LEN];
 const unsigned char *obj_list_for_room(unsigned char room_id,
                                        unsigned char scene_id);
 
+/* Phase 7 Task 7.7 step 1 — Returns pointer to ObjList[N] entry for
+ * template_id when template_id >= $62, else NULL. Indexes via
+ * obj_list_offsets[template_id - $62]. */
+const unsigned char *obj_list_for_template(unsigned char template_id);
+
+/* Phase 7 Task 7.7 step 1 — NES Z_05.asm:1700-1820 monster-list parse.
+ * Reads LBA_C[room_id]/LBA_D[room_id], parses template_id + count,
+ * applies boss override + cellar override, fills ObjType[1..count],
+ * writes RoomObjCount + RoomObjTemplateType. Returns 1 if any objects
+ * loaded, 0 if room is empty. AssignObjSpawnPositions deferred to
+ * step 2; ModifyObjCountByHistory{OW,UW} deferred to step 3. */
+unsigned char enemy_room_load_objects(unsigned char room_id);
+
 #ifdef __cplusplus
 }
 #endif

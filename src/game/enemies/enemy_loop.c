@@ -24,6 +24,7 @@
 #include "roomrom_enemy_state.h"          /* still in RoomRom/src/ pre-WT-5 */
 #include "platform_abi.h"
 #include "probes/enemy_loop_probe.h"      /* step 4 live-tick publish */
+#include "obj_lists.h"                    /* 7.7 step 1 room matrix loader */
 
 /* Forward decls — defined in src/oracle/enemies/enemy_walker_runtime.c
  * (init), src/oracle/enemies/enemy_wanderer_runtime.c (goriya update),
@@ -677,19 +678,32 @@ void enemy_loop_room_init(unsigned char room_id, unsigned char scene_id)
         ENEMY_Y(slot) = 0u;
     }
 
-    /* Phase 7 step 2: room->template lookup deferred to Task 7.7.
-     * For first probe (Q4=c) the test hook
-     * enemy_loop_force_spawn_slow_octorock() fires from probe Lua to
-     * seed slot 1 deterministically. Once the per-room ObjList
-     * template_id table lands, this function will:
-     *   1. lookup template_id = room_obj_template[scene_id][room_id]
-     *   2. ptr = obj_list_for_template(template_id)
-     *   3. for slot in 1..count: ENEMY_TYPE[slot] = ptr[slot-1]
-     *   4. AssignObjSpawnPositions (NES Z_05.asm:1818)
-     *   5. dispatch enemy_init_fns[ENEMY_TYPE[slot]]
-     */
-    (void)room_id;
+    /* Phase 7 Task 7.7 step 1 — wire NES InitMode_EnterRoom monster-list
+     * parser. enemy_room_load_objects fills ObjType[1..count] from
+     * LevelBlockAttrs C/D + LevelInfo_FoeCounts (NES Z_05.asm:1700-1820).
+     * scene_id is informational only here — the loader reads dungeon
+     * substrate cells already populated by roomld_init_mode2_sub0. After
+     * the load, dispatch enemy_init_fns[ENEMY_TYPE(slot)] for each
+     * occupied slot per NES Z_05.asm:1818 init-fan-out.
+     *
+     * Step 2 deferral: spawn coords still come from default ENEMY_X/Y =
+     * 0 here (slot clear loop above). AssignObjSpawnPositions lands in
+     * Task 7.7 step 2 commit. */
     (void)scene_id;
+    if (enemy_room_load_objects(room_id) == 0u) {
+        return;
+    }
+    for (slot = ENEMY_LOOP_SLOT_FIRST; slot <= ENEMY_LOOP_SLOT_LAST; ++slot) {
+        unsigned char t = ENEMY_TYPE(slot);
+        enemy_init_fn fn;
+        if (t == 0u) continue;
+        if (t >= ENEMY_LOOP_TYPE_MAX) continue;
+        fn = enemy_init_fns[t];
+        if (fn != (enemy_init_fn)0) {
+            fn(slot);
+        }
+        ENEMY_ALIVE_FLAG(slot) = 1u;
+    }
 }
 
 void enemy_loop_tick(void)
