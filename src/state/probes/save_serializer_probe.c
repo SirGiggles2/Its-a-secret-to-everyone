@@ -55,10 +55,10 @@ static unsigned char test_magic_validate(void)
 
 static unsigned char test_bad_magic_rejected(void)
 {
+    unsigned short base = (unsigned short)(2u * SAVE_SLOT_STRIDE);
     seed_inventory(0x30u);
     if (!save_slot_serialize(2u)) return 0u;
-    /* base = 2 * 43 = 86 */
-    SAVE_BYTE((unsigned short)(2u * SAVE_SLOT_BYTE_SIZE)) = 0x00u;
+    SAVE_BYTE(base) = 0x00u;
     return (save_slot_validate(2u) == 0u) ? 1u : 0u;
 }
 
@@ -77,16 +77,16 @@ static unsigned char test_bad_checksum_rejected(void)
 
 static unsigned char test_cross_slot_isolation(void)
 {
-    unsigned short slot1_base = (unsigned short)(1u * SAVE_SLOT_BYTE_SIZE);
+    unsigned short slot1_base = SAVE_SLOT_STRIDE;
     unsigned char i;
-    /* Write a known sentinel pattern across slot-1's 43 bytes. */
-    for (i = 0u; i < SAVE_SLOT_BYTE_SIZE; ++i) {
+    /* Write a sentinel pattern across slot-1's payload region. */
+    for (i = 0u; i < SAVE_SLOT_PAYLOAD_BYTES; ++i) {
         SAVE_BYTE(slot1_base + i) = (unsigned char)(0xC0u + i);
     }
     /* Serialize slot 0 — must NOT touch slot 1 region. */
     seed_inventory(0x50u);
     if (!save_slot_serialize(0u)) return 0u;
-    for (i = 0u; i < SAVE_SLOT_BYTE_SIZE; ++i) {
+    for (i = 0u; i < SAVE_SLOT_PAYLOAD_BYTES; ++i) {
         if (SAVE_BYTE(slot1_base + i) != (unsigned char)(0xC0u + i)) {
             return 0u;
         }
@@ -104,18 +104,29 @@ static void mark(unsigned char bit, unsigned char *passes,
 void save_serializer_probe_run(void)
 {
     unsigned char saved_inv[SAVE_INVENTORY_BYTES];
-    unsigned char saved_sram[SAVE_SLOT_COUNT * SAVE_SLOT_BYTE_SIZE];
+    /* Snapshot only the bytes we actually write: per-slot payload (43)
+     * + slot-1 sentinel region used by cross_slot_isolation. Bounded
+     * stack alloc — keep under SGDK probe budget. */
+    unsigned char saved_payload[SAVE_SLOT_COUNT][SAVE_SLOT_PAYLOAD_BYTES];
+    unsigned char saved_slot1_sentinel[SAVE_SLOT_PAYLOAD_BYTES];
+    unsigned char slot;
     unsigned char i;
     unsigned char bits = 0u;
     unsigned char passes = 0u;
     const unsigned char total = 5u;
 
-    /* Snapshot live inventory + the SRAM region we will smash. */
+    /* Snapshot live inventory + per-slot payload regions + slot-1 sentinel. */
     for (i = 0u; i < SAVE_INVENTORY_BYTES; ++i) {
         saved_inv[i] = RAM((unsigned short)(SAVE_INVENTORY_RAM_BASE + i));
     }
-    for (i = 0u; i < (SAVE_SLOT_COUNT * SAVE_SLOT_BYTE_SIZE); ++i) {
-        saved_sram[i] = SAVE_BYTE(i);
+    for (slot = 0u; slot < SAVE_SLOT_COUNT; ++slot) {
+        unsigned short base = (unsigned short)(slot * SAVE_SLOT_STRIDE);
+        for (i = 0u; i < SAVE_SLOT_PAYLOAD_BYTES; ++i) {
+            saved_payload[slot][i] = SAVE_BYTE(base + i);
+        }
+    }
+    for (i = 0u; i < SAVE_SLOT_PAYLOAD_BYTES; ++i) {
+        saved_slot1_sentinel[i] = SAVE_BYTE(SAVE_SLOT_STRIDE + i);
     }
 
     stamp_magic();
@@ -134,7 +145,13 @@ void save_serializer_probe_run(void)
     for (i = 0u; i < SAVE_INVENTORY_BYTES; ++i) {
         RAM((unsigned short)(SAVE_INVENTORY_RAM_BASE + i)) = saved_inv[i];
     }
-    for (i = 0u; i < (SAVE_SLOT_COUNT * SAVE_SLOT_BYTE_SIZE); ++i) {
-        SAVE_BYTE(i) = saved_sram[i];
+    for (slot = 0u; slot < SAVE_SLOT_COUNT; ++slot) {
+        unsigned short base = (unsigned short)(slot * SAVE_SLOT_STRIDE);
+        for (i = 0u; i < SAVE_SLOT_PAYLOAD_BYTES; ++i) {
+            SAVE_BYTE(base + i) = saved_payload[slot][i];
+        }
+    }
+    for (i = 0u; i < SAVE_SLOT_PAYLOAD_BYTES; ++i) {
+        SAVE_BYTE(SAVE_SLOT_STRIDE + i) = saved_slot1_sentinel[i];
     }
 }

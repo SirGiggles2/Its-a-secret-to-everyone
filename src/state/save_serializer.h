@@ -5,7 +5,7 @@
  * mode transitions and (with the sgdk_adapter SRAM IO layer wired in
  * 9.7 follow-ups) across power cycles.
  *
- * Per-slot layout (43 bytes):
+ * Per-slot layout (43 bytes inside a 682-byte abi-aligned slot):
  *   [0]    magic_lo       0x5A
  *   [1]    magic_hi       0xA5
  *   [2..41] inventory[40] mirror of RAM(0x0657..0x067E) — covers
@@ -13,10 +13,14 @@
  *                         LINK_BOMB_COUNT, keys, master_key, all
  *                         INVENTORY_VALUE entries.
  *   [42]   checksum       XOR of bytes 0..41
+ *   [43..681] reserved    headroom for future NES profile expansion
+ *                         (deaths, name, quest number, etc.).
  *
- * Slot bases at SRAM(0x00 + slot*43); slot 0 occupies $6000..$602A,
- * slot 1 $602B..$6055, slot 2 $6056..$6080. Slot 3 is reserved
- * (Phase 13 multiplayer headroom).
+ * Slot stride = 682 bytes (SRAM_SAVE_SLOT_BYTES from src/abi/sram_abi.h)
+ * so save_persistence can hand one slot to sram_save_load/store without
+ * overlap. Slot bases at SRAM(slot*682); slot 0 = $6000..$6299,
+ * slot 1 = $629A..$6533, slot 2 = $6534..$67CD. The 8KB cart SRAM
+ * ($000..$7FF) holds all three.
  *
  * Magic + checksum bracket the slot so a fresh / corrupt SRAM region
  * is rejected cleanly and the caller can fall through to "new game".
@@ -36,7 +40,12 @@ extern "C" {
 #endif
 
 #define SAVE_SLOT_COUNT          3u
-#define SAVE_SLOT_BYTE_SIZE     43u
+/* SAVE_SLOT_PAYLOAD_BYTES = magic(2) + inventory(40) + checksum(1).
+ * SAVE_SLOT_STRIDE = abi-aligned per-slot byte stride (= 682, matches
+ * SRAM_SAVE_SLOT_BYTES in src/abi/sram_abi.h). */
+#define SAVE_SLOT_PAYLOAD_BYTES 43u
+#define SAVE_SLOT_STRIDE       682u
+#define SAVE_SLOT_BYTE_SIZE    SAVE_SLOT_PAYLOAD_BYTES
 #define SAVE_INVENTORY_BYTES    40u
 #define SAVE_INVENTORY_RAM_BASE 0x0657u
 #define SAVE_MAGIC_LO          0x5Au

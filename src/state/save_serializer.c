@@ -15,7 +15,7 @@
 
 static unsigned short slot_base(unsigned char slot_idx)
 {
-    return (unsigned short)((unsigned short)slot_idx * SAVE_SLOT_BYTE_SIZE);
+    return (unsigned short)((unsigned short)slot_idx * SAVE_SLOT_STRIDE);
 }
 
 unsigned char save_slot_compute_checksum(unsigned char slot_idx)
