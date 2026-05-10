@@ -1431,6 +1431,27 @@ void roomrom_debug_tick(void)
         u16 pressed = joy & ~s_joy_prev;
         s_joy_prev = joy;
 
+        /* Phase 9 Task 9.4 — OPTION_ID_AB_SWAP: swap A and B button bits
+         * after edge-detect so the entire downstream input dispatch sees
+         * a single consistent button-mapping. s_joy_prev keeps raw bits
+         * so direction-mask helpers (input_mask_from_buttons) remain
+         * unaffected; only A/B-using sites in this function pick up the
+         * swap. Toggling the option mid-session may cause one transient
+         * frame of edge-detect skew, accepted as the simplest impl. */
+        if (options_consumer_get_ab_swap()) {
+            u16 ab_mask = (u16)(BUTTON_A | BUTTON_B);
+            u16 joy_ab = (u16)(joy & ab_mask);
+            u16 pressed_ab = (u16)(pressed & ab_mask);
+            u16 joy_ab_swap = 0u;
+            u16 pressed_ab_swap = 0u;
+            if (joy_ab & BUTTON_A) joy_ab_swap |= (u16)BUTTON_B;
+            if (joy_ab & BUTTON_B) joy_ab_swap |= (u16)BUTTON_A;
+            if (pressed_ab & BUTTON_A) pressed_ab_swap |= (u16)BUTTON_B;
+            if (pressed_ab & BUTTON_B) pressed_ab_swap |= (u16)BUTTON_A;
+            joy = (u16)((joy & ~ab_mask) | joy_ab_swap);
+            pressed = (u16)((pressed & ~ab_mask) | pressed_ab_swap);
+        }
+
         /* SCENE_CAVE harness: tick the native cave gamemode each frame.
          * Only the C+START exit chord is honored — all other input is
          * swallowed so the chord toggle behavior stays unambiguous. */

@@ -2,6 +2,9 @@
 #include "roomrom_combat.h"
 #include "roomrom_sprites.h"
 #include "roomrom_bg_palette.h"
+#include "inventory.h"
+#include "options_consumer.h"
+#include "options_state.h"
 
 /* RoomRom S7 v4 combat — sword swing.
  *
@@ -320,6 +323,29 @@ static void update_beam(void)
     roomrom_sprites_set_beam(s_beam_x, s_beam_y, s_beam_face);
 }
 
+/* Phase 9 Task 9.4 OPTION_ID_SWORD_STYLE gate.
+ *
+ * VANILLA      : NES Z1 behavior — beam spawns only when hearts == max.
+ * STAB_ONLY    : never spawn beam (melee only).
+ * BEAM_ALWAYS  : always spawn beam regardless of HP (Redux easy-mode).
+ *
+ * The pre-9.4 implementation always spawned the beam (the
+ * "RoomRom approximates Z1's full HP check" comment below); this
+ * function replaces that approximation with the option-driven gate. */
+static unsigned char sword_style_allows_beam(void)
+{
+    unsigned char style = options_consumer_get_sword_style();
+    if (style == OPTIONS_SWORD_STAB_ONLY)   return 0u;
+    if (style == OPTIONS_SWORD_BEAM_ALWAYS) return 1u;
+    /* VANILLA: full HP gate. */
+    {
+        unsigned char hv = g_inventory.heart_values;
+        unsigned char cur = heart_values_cur(hv);
+        unsigned char max = heart_values_max(hv);
+        return (cur == max && g_inventory.heart_partial == 0u) ? 1u : 0u;
+    }
+}
+
 /* Spawn the beam at the sword TIP for the current facing. Earlier
  * versions reused the state-2 sword sprite offset (which is the sword
  * sprite top-left, not the blade tip). The dedicated beam_spawn_x/y
@@ -385,7 +411,8 @@ void roomrom_combat_update(short link_x, short link_y, link_face_t face)
             break;
         }
 
-        if (s_frame == REDUX_BEAM_SPAWN && !s_beam_active) {
+        if (s_frame == REDUX_BEAM_SPAWN && !s_beam_active &&
+            sword_style_allows_beam()) {
             spawn_beam(link_x, link_y);
         }
         update_beam();
@@ -441,9 +468,11 @@ void roomrom_combat_update(short link_x, short link_y, link_face_t face)
         }
     }
 
-    /* Spawn beam at start of state 3 (frame 13). RoomRom approximates
-     * Z1's "full HP" check by always spawning (no HP system yet). */
-    if (s_frame == BEAM_FRAME_SPAWN && !s_beam_active) {
+    /* Spawn beam at start of state 3 (frame 13). 9.4 wires
+     * sword_style_allows_beam: VANILLA -> hearts==max gate, STAB_ONLY
+     * -> never, BEAM_ALWAYS -> unconditional. */
+    if (s_frame == BEAM_FRAME_SPAWN && !s_beam_active &&
+        sword_style_allows_beam()) {
         spawn_beam(link_x, link_y);
     }
     update_beam();
