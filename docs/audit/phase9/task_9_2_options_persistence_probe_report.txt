@@ -1,0 +1,19 @@
+Phase 9 Task 9.2 Options SRAM persistence probe
+================================================
+
+magic     = $50 $53 (expect 'P'=$50 'S'=$53)
+version   = 1 (expect 1)
+total     = 8
+passes    = 8
+
+  [0] blank_detector_zeros               PASS
+  [1] blank_detector_ffs                 PASS
+  [2] blank_detector_mixed_returns_0     PASS
+  [3] commit_then_load_roundtrip         PASS
+  [4] commit_preserves_outside_region    PASS
+  [5] load_with_blank_returns_zero       PASS
+  [6] load_with_corrupt_returns_zero     PASS
+  [7] load_with_valid_returns_one        PASS
+
+frame_counter at $FF7202..03 = 159
+VERDICT: all 8 SRAM persistence tests passed; ROM still ticking.

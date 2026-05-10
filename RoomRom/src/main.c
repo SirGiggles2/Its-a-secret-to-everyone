@@ -32,6 +32,7 @@
 #include "enemy_loop.h"                   /* Phase 7 Task 7.2 step 2 (WT-5) */
 #include "enemy_loop_probe.h"             /* Phase 7 Task 7.2 step 2 probe */
 #include "options_probe.h"                /* Phase 9 Task 9.1 in-ROM tests */
+#include "options_persistence_probe.h"    /* Phase 9 Task 9.2 SRAM tests */
 
 /* Boots to overworld room 0x77.
  *
@@ -1245,6 +1246,7 @@ void roomrom_debug_enter(void)
         enemy_loop_probe_run();            /* Heavy 11-slot in-ROM stress probe. */
     }
     options_probe_run();                   /* Phase 9 Task 9.1 — pure CPU-side. */
+    options_persistence_probe_run();       /* Phase 9 Task 9.2 — SRAM I/O. */
 }
 
 unsigned char roomrom_debug_get_scene(void)
