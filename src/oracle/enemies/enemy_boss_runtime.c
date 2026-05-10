@@ -3,6 +3,7 @@
 #include "combat_state.h"
 #include "room_state.h"
 #include "sprite_state.h"
+#include "dungeon_state.h"
 #include "enemy_gleeok_runtime.h"
 #include "enemy_dodongo_runtime.h"
 #include "enemy_manhandla_runtime.h"
@@ -469,6 +470,230 @@ void enrt_init_digdogger2(unsigned int slot) {
     enrt_init_digdogger1(slot);
     ENEMY_TYPE(slot) = 56;
     ENEMY_DIGDOGGER_COUNT = 1;
+}
+
+/* Digdogger UpdateDigdogger drain — NES Z_04.asm:5265.
+ *
+ * Per-slot RAM mapping (ObjVars.inc:45-51 + Variables.inc:151/167):
+ *   $41F SpeedFrac     -> ENEMY_AIR_SPEED(slot)
+ *   $42C SpeedWhole    -> ENEMY_TURN_TIMER(slot)
+ *   $437 TargetFrac    -> ENEMY_FLAP_PHASE(slot)
+ *   $444 TargetWhole   -> ENEMY_DIGDOGGER_TARGET_SPEED_WHOLE(slot)
+ *   $45E SpeedFlag     -> ENEMY_DIGDOGGER_SPEED_FLAG(slot)  (0=accel,1=decel)
+ *   $46B IsChild       -> ENEMY_DIGDOGGER_IS_CHILD(slot)
+ *   $478 CurPart       -> ENEMY_DIGDOGGER_CUR_PART(slot)
+ *   $507 ChildCount    -> ENEMY_DIGDOGGER_COUNT
+ *   $51B UsedFlute     -> ENEMY_USED_FLUTE
+ */
+
+static const unsigned char kDigdoggerCornerOffsetsX[4] = { 0x00, 0x10, 0x00, 0xF0 };
+static const unsigned char kDigdoggerCornerOffsetsY[4] = { 0x00, 0x10, 0xF0, 0x10 };
+static const unsigned char kDigdoggerSpriteOffsetsX[4] = { 0x00, 0x10, 0x00, 0x10 };
+static const unsigned char kDigdoggerSpriteOffsetsY[4] = { 0x00, 0x00, 0x10, 0x10 };
+static const unsigned char kDigdoggerSpriteAttrs[4]    = { 0x03, 0x03, 0x83, 0x83 };
+
+static void enrt_digdogger_set_target_speed(unsigned char frac, unsigned int slot) {
+    ENEMY_FLAP_PHASE(slot) = frac;
+    ENEMY_DIGDOGGER_TARGET_SPEED_WHOLE(slot) = 0;
+    if (ENEMY_DIGDOGGER_IS_CHILD(slot) != 0)
+        ENEMY_DIGDOGGER_TARGET_SPEED_WHOLE(slot) = 1;
+}
+
+static void enrt_digdogger_change_speed(unsigned int slot) {
+    unsigned char flag = ENEMY_DIGDOGGER_SPEED_FLAG(slot);
+    if (flag == 0) {
+        /* SpeedUp: 16-bit increment toward target. */
+        unsigned char frac = (unsigned char)(ENEMY_AIR_SPEED(slot) + 1u);
+        ENEMY_AIR_SPEED(slot) = frac;
+        if (frac == 0)
+            ENEMY_TURN_TIMER(slot) = (unsigned char)(ENEMY_TURN_TIMER(slot) + 1u);
+        if (ENEMY_AIR_SPEED(slot) != ENEMY_FLAP_PHASE(slot))
+            return;
+        if (ENEMY_TURN_TIMER(slot) != ENEMY_DIGDOGGER_TARGET_SPEED_WHOLE(slot))
+            return;
+        ENEMY_DIGDOGGER_SPEED_FLAG(slot) = (unsigned char)(flag + 1u);
+        enrt_digdogger_set_target_speed(0x40u, slot);
+        return;
+    }
+    /* SlowDown: 16-bit decrement toward target. */
+    {
+        unsigned char frac = (unsigned char)(ENEMY_AIR_SPEED(slot) - 1u);
+        ENEMY_AIR_SPEED(slot) = frac;
+        if (frac == 0xFFu)
+            ENEMY_TURN_TIMER(slot) = (unsigned char)(ENEMY_TURN_TIMER(slot) - 1u);
+        if (ENEMY_AIR_SPEED(slot) != ENEMY_FLAP_PHASE(slot))
+            return;
+        if (ENEMY_TURN_TIMER(slot) != ENEMY_DIGDOGGER_TARGET_SPEED_WHOLE(slot))
+            return;
+        ENEMY_DIGDOGGER_SPEED_FLAG(slot) = (unsigned char)(flag - 1u);
+        enrt_digdogger_set_target_speed(0x80u, slot);
+    }
+}
+
+/* Manhandla-shape fractional move: SA=$0412, SH/SL = SpeedWhole/SpeedFrac. */
+static void enrt_digdogger_move(unsigned int slot) {
+    unsigned int speed_sum;
+    unsigned char step;
+    unsigned char dir;
+
+    speed_sum = (unsigned int)ENEMY_PUSH_TIMER(slot)
+              + ((unsigned int)ENEMY_AIR_SPEED(slot) & 0xE0u);
+    ENEMY_PUSH_TIMER(slot) = (unsigned char)speed_sum;
+    step = (unsigned char)(ENEMY_TURN_TIMER(slot) + (unsigned char)(speed_sum >> 8));
+
+    dir = (unsigned char)ENEMY_DIR(slot);
+    if (dir & 0x01u) ENEMY_X(slot) = (unsigned char)(ENEMY_X(slot) + step);
+    if (dir & 0x02u) ENEMY_X(slot) = (unsigned char)(ENEMY_X(slot) - step);
+    if (dir & 0x04u) ENEMY_Y(slot) = (unsigned char)(ENEMY_Y(slot) + step);
+    if (dir & 0x08u) ENEMY_Y(slot) = (unsigned char)(ENEMY_Y(slot) - step);
+
+    (void)z07_anim_fetch_obj_pos(slot);
+}
+
+static void enrt_digdogger_draw(unsigned int slot) {
+    z07_anim_advance_and_fetch(6u, slot);
+    if (ENEMY_DIGDOGGER_IS_CHILD(slot) != 0) {
+        /* Little path: AnimSetSpriteDescriptorLevelPaletteRow + DrawObjectMirrored(frame=ObjAnimFrame). */
+        enrt_anim_set_sprite_desc_level_palette_row();
+        c_draw_object_mirrored(slot);
+        return;
+    }
+    /* Big path: 4 parts at +0/+10 / +00/+10 with horizontal-flip mask = i&1. */
+    {
+        unsigned int i;
+        for (i = 0; i < 4u; ++i) {
+            ENEMY_SCRATCH_X = (unsigned char)(ENEMY_X(slot) + kDigdoggerSpriteOffsetsX[i]);
+            ENEMY_SCRATCH_Y = (unsigned char)(ENEMY_Y(slot) + kDigdoggerSpriteOffsetsY[i]);
+            (void)z01_anim_set_sprite_desc_attrs(kDigdoggerSpriteAttrs[i]);
+            ENEMY_FRAME_FLAGS = (unsigned char)(i & 1u);
+            c_draw_object_not_mirrored(slot);
+        }
+    }
+}
+
+/* L_Digdogger_DrawAsLittle: temporarily becomes IsChild=1 + type $18 to draw a
+ * single small sprite shifted +8/+8 from the parent's coords. */
+static void enrt_digdogger_draw_as_little(unsigned int slot) {
+    unsigned char saved_x = (unsigned char)ENEMY_X(slot);
+    unsigned char saved_y = (unsigned char)ENEMY_Y(slot);
+    unsigned char saved_child = ENEMY_DIGDOGGER_IS_CHILD(slot);
+    unsigned char saved_type = (unsigned char)ENEMY_TYPE(slot);
+
+    ENEMY_X(slot) = (unsigned char)(saved_x + 0x08u);
+    ENEMY_Y(slot) = (unsigned char)(saved_y + 0x08u);
+    ENEMY_TYPE(slot) = 0x18u;
+    ENEMY_DIGDOGGER_IS_CHILD(slot) = 1u;
+    enrt_digdogger_draw(slot);
+    ENEMY_TYPE(slot) = saved_type;
+    ENEMY_DIGDOGGER_IS_CHILD(slot) = saved_child;
+    ENEMY_Y(slot) = saved_y;
+    ENEMY_X(slot) = saved_x;
+}
+
+/* CheckBigDigdoggerCollisions + Digdogger_Draw + L_Digdogger_DrawAsLittle
+ * fall-through chain. NES asm 5301..5390. */
+static void enrt_digdogger_check_big_collisions_and_draw(unsigned int slot) {
+    unsigned char saved_x = (unsigned char)ENEMY_X(slot);
+    unsigned char saved_y = (unsigned char)ENEMY_Y(slot);
+    unsigned int part;
+
+    ENEMY_DIGDOGGER_CUR_PART(slot) = 0;
+    for (part = 0; part < 4u; ++part) {
+        unsigned char idx = ENEMY_DIGDOGGER_CUR_PART(slot);
+        ENEMY_X(slot) = (unsigned char)(saved_x + kDigdoggerCornerOffsetsX[idx]);
+        ENEMY_Y(slot) = (unsigned char)(saved_y + kDigdoggerCornerOffsetsY[idx]);
+        c_bound_flyer(slot);
+        c_check_monster_collisions(slot);
+        ENEMY_DIGDOGGER_CUR_PART(slot) = (unsigned char)(idx + 1u);
+    }
+    ENEMY_Y(slot) = saved_y;
+    ENEMY_X(slot) = saved_x;
+    enrt_digdogger_draw(slot);
+    enrt_digdogger_draw_as_little(slot);
+}
+
+/* MakeChildren: spawns ENEMY_DIGDOGGER_COUNT children (type $18, IsChild=1)
+ * via enrt_init_digdogger1, then PlayBossDeathCry, kills the parent, falls
+ * through to draw_as_little. */
+static void enrt_digdogger_make_children(unsigned int slot) {
+    unsigned char count = ENEMY_DIGDOGGER_COUNT;
+    unsigned char child_slot;
+
+    ENEMY_USED_FLUTE = (unsigned char)(ENEMY_USED_FLUTE - 1u);
+    DUNGEON_ROOM_OBJ_COUNT = count;
+    /* NES @LoopMakeChild uses ObjX+1/ObjY+1 (slot 1) hardcoded — the big
+     * digdogger always lives at slot 1 per Z1 boss-spawn convention. */
+    child_slot = (unsigned char)slot;
+    while (count != 0) {
+        child_slot = (unsigned char)(child_slot + 1u);
+        enrt_init_digdogger1((unsigned int)child_slot);
+        ENEMY_TYPE((unsigned int)child_slot) = 0x18u;
+        ENEMY_DIGDOGGER_TARGET_SPEED_WHOLE((unsigned int)child_slot) =
+            (unsigned char)(ENEMY_DIGDOGGER_TARGET_SPEED_WHOLE((unsigned int)child_slot) + 1u);
+        ENEMY_DIGDOGGER_IS_CHILD((unsigned int)child_slot) = 1u;
+        ENEMY_DIGDOGGER_SPEED_FLAG((unsigned int)child_slot) = 0;
+        ENEMY_X((unsigned int)child_slot) = (unsigned char)ENEMY_X(1u);
+        ENEMY_Y((unsigned int)child_slot) = (unsigned char)ENEMY_Y(1u);
+        --count;
+    }
+    c_play_boss_death_cry();
+    ENEMY_TYPE(slot) = 0;
+    enrt_digdogger_draw_as_little(slot);
+}
+
+void enrt_update_digdogger(unsigned int slot) {
+    /* Magic-clock or stunned -> straight to draw + collisions. */
+    if (ENEMY_PAUSE_FLAG != 0 || ENEMY_STUN_TIMER(slot) != 0)
+        goto draw_and_check;
+
+    if (ENEMY_USED_FLUTE != 0) {
+        /* L_Digdogger_AfterFlute: Y = UsedFlute. DEY; BNE @SplitUp. */
+        if (ENEMY_USED_FLUTE != 1u) {
+            /* @SplitUp (UsedFlute == 2). */
+            if (ENEMY_MOVE_TIMER(slot) == 0) {
+                enrt_digdogger_make_children(slot);
+                return;
+            }
+            if ((ENEMY_MOVE_TIMER(slot) & 0x07u) == 0) {
+                unsigned char new_child =
+                    (unsigned char)(ENEMY_DIGDOGGER_IS_CHILD(slot) ^ 1u);
+                ENEMY_DIGDOGGER_IS_CHILD(slot) = new_child;
+                if (new_child == 0) {
+                    enrt_digdogger_check_big_collisions_and_draw(slot);
+                    return;
+                }
+            }
+            enrt_digdogger_draw_as_little(slot);
+            return;
+        }
+        /* UsedFlute == 1. */
+        if (ENEMY_DIGDOGGER_IS_CHILD(slot) != 0)
+            goto turn;
+        ENEMY_MOVE_TIMER(slot) = 0x40u;
+        ENEMY_USED_FLUTE = (unsigned char)(ENEMY_USED_FLUTE + 1u);
+        enrt_digdogger_check_big_collisions_and_draw(slot);
+        return;
+    }
+
+turn:
+    enrt_digdogger_change_speed(slot);
+    if (ENEMY_MOVE_TIMER(slot) == 0) {
+        ENEMY_MOVE_TIMER(slot) = 0x10u;
+        if (ENEMY_RNG_A(slot) >= 0x80u)
+            c_turn_towards_player8();
+        else
+            c_turn_randomly_dir8(slot);
+    }
+    enrt_digdogger_move(slot);
+
+draw_and_check:
+    if (ENEMY_DIGDOGGER_IS_CHILD(slot) != 0) {
+        c_bound_flyer(slot);
+        c_check_monster_collisions(slot);
+        enrt_digdogger_draw(slot);
+        return;
+    }
+    enrt_digdogger_check_big_collisions_and_draw(slot);
 }
 
 void enrt_play_boss_death_cry_if_needed(unsigned int slot) {

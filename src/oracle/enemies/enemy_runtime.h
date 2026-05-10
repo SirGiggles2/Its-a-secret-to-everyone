@@ -118,6 +118,7 @@ unsigned int enrt_extract_hit_point_value(unsigned int val);
 unsigned char enrt_is_dark_room_bank4(unsigned int room_idx);
 void enrt_init_digdogger1(unsigned int slot);
 void enrt_init_digdogger2(unsigned int slot);
+void enrt_update_digdogger(unsigned int slot);
 void enrt_update_dodongo_state1_bloated_sub_die(unsigned int slot);
 void enrt_hide_sprites_over_link(void);
 void enrt_play_secret_found_tune(void);

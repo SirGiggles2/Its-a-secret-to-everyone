@@ -118,6 +118,23 @@ extern void enrt_update_manhandla(unsigned int slot);
 #include "bosses/boss_gleeok.h"
 extern void enrt_init_gleeok_head(unsigned int slot);
 extern void enrt_update_gleeok(unsigned int slot);
+/* Phase 8 Task 8.6 — Digdogger INIT + UPDATE.
+ *   $38 Digdogger1 / $39 Digdogger2 -> enrt_init_digdogger1/2 (drained
+ *                                       at enemy_boss_runtime.c).
+ *   $18 LittleDigdogger / $38 / $39 -> enrt_update_digdogger (drained at
+ *                                       enemy_boss_runtime.c). Header
+ *                                       documenting Rule D1 stance lives
+ *                                       in src/game/enemies/bosses/boss_digdogger.h.
+ *   No bridge .c — all callees (turn_towards_player8 / turn_randomly_dir8 /
+ *   bound_flyer / check_monster_collisions / play_boss_death_cry /
+ *   draw_object_mirrored / draw_object_not_mirrored / anim_advance_fetch /
+ *   anim_fetch_obj_pos / anim_set_sprite_desc_attrs /
+ *   anim_set_sprite_desc_level_palette_row) already resolved by existing
+ *   bridges (boss_manhandla, flyer / jumper / projectile / common). */
+#include "bosses/boss_digdogger.h"
+extern void enrt_init_digdogger1(unsigned int slot);
+extern void enrt_init_digdogger2(unsigned int slot);
+extern void enrt_update_digdogger(unsigned int slot);
 extern void core_reset_obj_metastate_and_timer(unsigned int slot); /* 7.4 step 2b ($11 INIT) */
 extern unsigned char core_reset_obj_state(unsigned int slot);
 /* 7.5 step 2 — special-enemy UPDATE bridge bodies (enemy_special_bridge.c).
@@ -323,6 +340,13 @@ const enemy_init_fn enemy_init_fns[ENEMY_LOOP_TYPE_MAX] = {
     [0x44] = boss_gleeok_init,                   /* Gleeok 3-neck */
     [0x45] = boss_gleeok_init,                   /* Gleeok 4-neck */
     [0x46] = enrt_init_gleeok_head,              /* GleeokHead (flying) */
+    /* Phase 8 Task 8.6 — Digdogger INIT pair (NES Z_07.asm:5658/5659 rows
+     * $38/$39 -> InitDigdogger1/InitDigdogger2 @ Z_04.asm:4860+). Drained
+     * at enemy_boss_runtime.c:458/468 (already shipped pre-task). $18
+     * LittleDigdogger has no init row — children spawn dynamically via
+     * enrt_init_digdogger1 inside the drained make_children helper. */
+    [0x38] = enrt_init_digdogger1,               /* Digdogger1 */
+    [0x39] = enrt_init_digdogger2,               /* Digdogger2 (2nd quest) */
     /* Task 7.4 step 11 — projectile-family INIT close.
      *
      * NES Z_07.asm:5601 InitObject_JumpTable rows:
@@ -618,6 +642,17 @@ const enemy_update_fn enemy_update_fns[ENEMY_LOOP_TYPE_MAX] = {
     [0x44] = enrt_update_gleeok,            /* Gleeok 3-neck */
     [0x45] = enrt_update_gleeok,            /* Gleeok 4-neck */
     [0x46] = boss_gleeok_update_head,       /* GleeokHead (flying) */
+    /* Phase 8 Task 8.6 — Digdogger UPDATE rows (NES Z_07.asm:5320/5352/5353
+     * rows $18/$38/$39 -> UpdateDigdogger @ Z_04.asm:5265). Drained at
+     * enemy_boss_runtime.c:enrt_update_digdogger — full body including
+     * magic-clock/stun gate, flute states 1+2 (turn vs split-up vs
+     * make-children), 4-corner CheckBigDigdoggerCollisions loop, big +
+     * little draw, Digdogger_ChangeSpeed/Move/Draw helpers.
+     * $18 child rows trampoline through the same drain since IsChild
+     * gating drives the big-vs-little branches. ADOPT stance. */
+    [0x18] = enrt_update_digdogger,         /* LittleDigdogger (child) */
+    [0x38] = enrt_update_digdogger,         /* Digdogger1 (big) */
+    [0x39] = enrt_update_digdogger,         /* Digdogger2 (big, 2nd quest) */
     /* Task 7.5 step 2 — special-enemy UPDATE: $17 LikeLike.
      *
      * NES Z_07.asm:5295 UpdateObject_JumpTable row $17 LikeLike ->

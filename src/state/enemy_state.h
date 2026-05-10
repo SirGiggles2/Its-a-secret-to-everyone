@@ -135,5 +135,17 @@
 #define ENEMY_BOSS_HP_PHASE(slot)       OBJ(0x0380, (slot))
 #define ENEMY_SECRET_KIND               RAM(0x04CD)
 #define ENEMY_DIGDOGGER_COUNT           RAM(0x0507)
+#define ENEMY_USED_FLUTE                RAM(0x051B)
+
+/* Digdogger per-slot vars (Z_04.asm ObjVars.inc:45-51).
+ *   $41F speed-frac aliases ENEMY_AIR_SPEED
+ *   $42C speed-whole aliases ENEMY_TURN_TIMER
+ *   $437 target-frac aliases ENEMY_FLAP_PHASE
+ *   $444 target-whole / $45E speed-flag / $46B is-child / $478 cur-part
+ *        — fresh slot offsets dedicated to digdogger. */
+#define ENEMY_DIGDOGGER_TARGET_SPEED_WHOLE(slot) OBJ(0x0444, (slot))
+#define ENEMY_DIGDOGGER_SPEED_FLAG(slot)         OBJ(0x045E, (slot))
+#define ENEMY_DIGDOGGER_IS_CHILD(slot)           OBJ(0x046B, (slot))
+#define ENEMY_DIGDOGGER_CUR_PART(slot)           OBJ(0x0478, (slot))
 
 #endif
