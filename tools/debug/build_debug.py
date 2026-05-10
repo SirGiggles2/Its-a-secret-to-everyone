@@ -190,6 +190,12 @@ ROOMROM_C_SOURCES = [
     # + enrt_update_dodongo_bloated_sub_end live here. Native bridge body
     # for UpdateDodongo composes them in src/game/enemies/bosses/boss_dodongo.c.
     ("src/oracle/enemies/enemy_dodongo_runtime.c", "oracle_enemy_dodongo.o"),
+    # Phase 8 Task 8.4: Manhandla drained primitives. enrt_init_manhandla +
+    # enrt_update_manhandla (full UpdateManhandla body) +
+    # enrt_manhandla_set_all_segments_direction / _check_collisions /
+    # _move / _draw live here. Callee shims in
+    # src/game/enemies/bosses/boss_manhandla.c.
+    ("src/oracle/enemies/enemy_manhandla_runtime.c", "oracle_enemy_manhandla.o"),
     # Task 7.5 step 4: Wallmaster scratch/draw helpers. Drained
     # enrt_wallmaster_calc_start_position +
     # enrt_wallmaster_put_sprite{,s}_behind_bg_if_needed live here. Pulled
@@ -249,6 +255,12 @@ ROOMROM_C_SOURCES = [
     # z04_update_dodongo_bloated_sub_end to the dispatcher entry points
     # already in the link.
     ("src/game/enemies/bosses/boss_dodongo.c", "game_enemy_boss_dodongo.o"),
+    # Phase 8 Task 8.4 — Manhandla callee shims. Resolves
+    # c_turn_randomly_dir8 / c_play_boss_hit_cry_if_needed /
+    # c_play_boss_death_cry / c_draw_object_mirrored to dispatcher entry
+    # points (enemy_play_boss_*_cry, draw_object_mirrored) for the
+    # drained enemy_manhandla_runtime.c body.
+    ("src/game/enemies/bosses/boss_manhandla.c", "game_enemy_boss_manhandla.o"),
     ("src/game/enemies/probes/enemy_loop_probe.c", "game_enemy_loop_probe.o"),
     ("RoomRom/src/expanded_bg_chr.c", "expanded_bg_chr.o"),
     ("RoomRom/src/atlas/items_chr_x4.c", "atlas_items_chr_x4.o"),

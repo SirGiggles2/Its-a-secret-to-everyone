@@ -97,6 +97,14 @@ extern void enrt_update_aquamentus(unsigned int slot);
  *   Bloated_Sub_Wait + state/bloated dispatchers. */
 #include "bosses/boss_dodongo.h"
 extern void enrt_init_dodongo(unsigned int slot);
+/* Phase 8 Task 8.4 — Manhandla INIT + UPDATE.
+ *   $3C Manhandla -> enrt_init_manhandla + enrt_update_manhandla
+ *                    (drained at enemy_manhandla_runtime.c:20/44).
+ *   Callee shims (c_turn_randomly_dir8 / c_play_boss_*_cry /
+ *   c_draw_object_mirrored) live in src/game/enemies/bosses/boss_manhandla.c. */
+#include "bosses/boss_manhandla.h"
+extern void enrt_init_manhandla(unsigned int slot);
+extern void enrt_update_manhandla(unsigned int slot);
 extern void core_reset_obj_metastate_and_timer(unsigned int slot); /* 7.4 step 2b ($11 INIT) */
 extern unsigned char core_reset_obj_state(unsigned int slot);
 /* 7.5 step 2 — special-enemy UPDATE bridge bodies (enemy_special_bridge.c).
@@ -283,6 +291,12 @@ const enemy_init_fn enemy_init_fns[ENEMY_LOOP_TYPE_MAX] = {
      * + ENEMY_DIR via RNG_A < $80. */
     [0x31] = enrt_init_dodongo,                  /* Dodongo */
     [0x32] = enrt_init_dodongo,                  /* Dodongo (alt) */
+    /* Phase 8 Task 8.4 — Manhandla INIT (NES Z_07.asm:5601 row $3C ->
+     * SwitchBank #$01 + JMP InitManhandla @ Z_04.asm:7747). Drained at
+     * enemy_manhandla_runtime.c:20 — seeds 5-segment row at $0099+, sets
+     * SFX_BOSS_CRY=64, picks random Directions8 dir, fans X/Y/Speed/
+     * FrameAttr offsets per-segment. ADOPT — drain consumed verbatim. */
+    [0x3C] = enrt_init_manhandla,                /* Manhandla */
     /* Task 7.4 step 11 — projectile-family INIT close.
      *
      * NES Z_07.asm:5601 InitObject_JumpTable rows:
@@ -553,6 +567,15 @@ const enemy_update_fn enemy_update_fns[ENEMY_LOOP_TYPE_MAX] = {
      * the same UpdateDodongo entry — preserved verbatim. */
     [0x31] = boss_dodongo_update,           /* Dodongo */
     [0x32] = boss_dodongo_update,           /* Dodongo (alt) */
+    /* Phase 8 Task 8.4 — Manhandla UPDATE (NES Z_07.asm:5295 row $3C ->
+     * SwitchBank #$01 + JMP UpdateManhandla @ Z_04.asm:7842). Drained at
+     * enemy_manhandla_runtime.c:44 — full UpdateManhandla including the
+     * 5-segment loop, Manhandla_BounceDir / Manhandla_SegmentJustDied,
+     * TurnTowardsPlayer8 vs TurnRandomlyDir8 pick, $56 fireball spawn
+     * gate, and mirrored vs not-mirrored draw fork. Callee shims for
+     * c_turn_randomly_dir8 / c_play_boss_*_cry / c_draw_object_mirrored
+     * live in src/game/enemies/bosses/boss_manhandla.c. ADOPT stance. */
+    [0x3C] = enrt_update_manhandla,         /* Manhandla */
     /* Task 7.5 step 2 — special-enemy UPDATE: $17 LikeLike.
      *
      * NES Z_07.asm:5295 UpdateObject_JumpTable row $17 LikeLike ->
