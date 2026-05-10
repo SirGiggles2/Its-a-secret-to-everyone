@@ -1,0 +1,22 @@
+============================================================
+ENEMY_LOOP probe @ $FF7E00
+  magic = 'EL' (expect 'EL') raw=0x45 0x4C
+  count = 14 (expect 14)
+------------------------------------------------------------
+  PASS [0] alive_before_spawn (=0)  actual=$0000 (0)  expected=$0000 (0)
+  FAIL [1] alive_after_spawn (=1)  actual=$000B (11)  expected=$0005 (5)
+  PASS [2] ENEMY_TYPE(1) (=$07)  actual=$0007 (7)  expected=$0007 (7)
+  PASS [3] ENEMY_X(1) (=$80)  actual=$0080 (128)  expected=$0080 (128)
+  PASS [4] ENEMY_Y(1) (=$80)  actual=$0080 (128)  expected=$0080 (128)
+  FAIL [5] ENEMY_DIR(1) (=$02 post-init)  actual=$0001 (1)  expected=$0002 (2)
+  PASS [6] ENEMY_STATE_TIMER(1) (=$00 — same cell as OBJ_STATE, zeroed by z07_reset_obj_state)  actual=$0000 (0)  expected=$0000 (0)
+  PASS [7] ENEMY_ALIVE_FLAG(1) (=1)  actual=$0001 (1)  expected=$0001 (1)
+  PASS [8] enemy_loop_get_type(1) (=$07)  actual=$0007 (7)  expected=$0007 (7)
+  PASS [9] enemy_loop_get_type(2) (=0)  actual=$0003 (3)  expected=$0003 (3)
+  PASS [10] ENEMY_WALK_SPEED(1) (=$20)  actual=$0020 (32)  expected=$0020 (32)
+  PASS [11] ENEMY_MOVE_TIMER(1) (=$20)  actual=$0020 (32)  expected=$0020 (32)
+  PASS [12] ENEMY_ANIM_TIMER(1) (=$06)  actual=$0006 (6)  expected=$0006 (6)
+  PASS [13] OBJ_STATE(1) (=0 via z07_reset_obj_state forwarder)  actual=$0000 (0)  expected=$0000 (0)
+------------------------------------------------------------
+RESULT: 12/14 passed
+============================================================
