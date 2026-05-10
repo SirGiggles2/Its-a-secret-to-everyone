@@ -26,6 +26,7 @@
 #include "probes/enemy_loop_probe.h"      /* step 4 live-tick publish */
 #include "obj_lists.h"                    /* 7.7 step 1 room matrix loader */
 #include "dungeon_state.h"                /* 7.7 step 2 DUNGEON_ROOM_* */
+#include "bosses/boss_framework.h"        /* 8.1 step 3 room-item slot 19 */
 
 /* Forward decls — defined in src/oracle/enemies/enemy_walker_runtime.c
  * (init), src/oracle/enemies/enemy_wanderer_runtime.c (goriya update),
@@ -694,6 +695,15 @@ void enemy_loop_room_init(unsigned char room_id, unsigned char scene_id)
     unsigned char loaded = enemy_room_load_objects(room_id);
     unsigned char tmpl   = (unsigned char)DUNGEON_ROOM_TEMPLATE_TYPE;
     enemy_assign_spawn_positions(room_id, tmpl);
+
+    /* Phase 8 Task 8.1 step 3 — room-item slot 19 reward setup.
+     * NES InitMode_EnterRoom (Z_05.asm:1700-1820) tail-calls
+     * CreateRoomObjects (Z_05.asm:8154) AFTER monster placement,
+     * which writes the heart-container / triforce-piece / per-room
+     * L-block reward into ObjType[$13] / ObjState[$13]. Done as a
+     * native body in src/game/enemies/bosses/boss_framework.c. */
+    boss_framework_room_init(room_id);
+
     if (loaded == 0u && DUNGEON_ROOM_OBJ_COUNT == 0u) {
         return;
     }

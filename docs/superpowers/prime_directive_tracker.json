@@ -1,14 +1,14 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-05-10T01:49:52.089587+00:00",
+  "generated_at": "2026-05-10T01:54:49.079920+00:00",
   "generated_by": "tools/audit/primedirective/prime_refresh.py",
   "plan": {
     "path": "docs/superpowers/plans/2026-05-02-title-roomrom-full-port-master-plan.md",
     "sha256": "b660bf9e86a4de08fa8118a54a80af884505ea510e8e8a3e3f8deffb1b624d2b"
   },
   "active": {
-    "phase_id": "7",
-    "phase_name": "Enemies By Behavior Family",
+    "phase_id": "8",
+    "phase_name": "Bosses",
     "task_id": "?",
     "task_title": "",
     "worktree": {
@@ -16,7 +16,7 @@
       "branch": "main",
       "is_substrate_writer": true
     },
-    "next_concrete_action": "Phase 5 close: 5.10b deferred (full L1-L9 x Q1-Q2 user-test post-Phase-6). Begin Task 6.1 per master plan."
+    "next_concrete_action": "Phase 8 Task 8.1 Boss Framework: scaffold src/game/enemies/bosses/ + src/state/boss_state.h substrate; drain entry: python tools/audit/drain_coverage.py --phase 8"
   },
   "phases": [
     {
@@ -561,7 +561,7 @@
     {
       "id": "6",
       "name": "Link, Inventory, Items, And Combat",
-      "status": "pending",
+      "status": "complete",
       "tasks": [],
       "evidence": [
         "findings_resolved_or_deferred|(docs/audit/drain_findings/phase6_task_6_1.md through phase6_task_6_11.md - 11 task audits with deferrals + re-entry triggers)",
@@ -607,27 +607,29 @@
         "findings_resolved_or_deferred|No code findings from self-review. State contract collisions (76) deferred to Phase 12 promotion gate. PROBE_CYCLE_LIMIT envelope deferred.",
         "rerun_probes_and_matrix|No fixes lit (review GREEN). Probes already re-run during step 2 capture. Regression matrix re-run 01:46:14Z.",
         "PROBE_CYCLE_LIMIT_envelope|deferred \u2014 see deferrals[]",
-        "diff_vs_nes_reference|deferred \u2014 see deferrals[]"
+        "diff_vs_nes_reference|deferred \u2014 see deferrals[]",
+        "phase_commit_with_report_paths|a04e2314 gameplay: complete enemy families | docs/audit/drain_findings/phase7_close_report.md",
+        "commit:a04e2314b3"
       ],
       "deferrals": [],
       "close_gate": {
-        "build_REQUIRE_GENERATED_ASSETS": "passed",
-        "focused_probe_set": "passed",
-        "screenshot_state_evidence": "passed",
-        "diff_vs_nes_reference": "passed",
-        "regression_matrix": "passed",
-        "verify_no_alias_collisions": "passed",
-        "PROBE_CYCLE_LIMIT_envelope": "passed",
-        "code_review_requested": "passed",
-        "findings_resolved_or_deferred": "passed",
-        "rerun_probes_and_matrix": "passed",
+        "build_REQUIRE_GENERATED_ASSETS": "pending",
+        "focused_probe_set": "pending",
+        "screenshot_state_evidence": "pending",
+        "diff_vs_nes_reference": "pending",
+        "regression_matrix": "pending",
+        "verify_no_alias_collisions": "pending",
+        "PROBE_CYCLE_LIMIT_envelope": "pending",
+        "code_review_requested": "pending",
+        "findings_resolved_or_deferred": "pending",
+        "rerun_probes_and_matrix": "pending",
         "phase_commit_with_report_paths": "pending"
       }
     },
     {
       "id": "8",
       "name": "Bosses",
-      "status": "pending",
+      "status": "active",
       "tasks": [],
       "evidence": [],
       "deferrals": [],
@@ -947,7 +949,7 @@
   "freshness": {
     "active_scope_md": {
       "path": "docs/audit/active_scope.md",
-      "sha256": "10a34644f19bce4dc669ef5119e2be3d156ba7cde6349e6e974bd013bf31db9c",
+      "sha256": "87fbeadbe9bf2d1cbdbff7b8f70f7c28cc6e6f6c4437320a6ff09e195d5a15b0",
       "ok": true
     },
     "drain_coverage_json": {
@@ -955,13 +957,14 @@
       "sha256": "faa0ff54119e2a6d0dc12b6df0bd45f44b0d15010bc5a9f26177b64df164bc5b",
       "ok": true
     },
-    "git_head": "e47a34807112b41c79d27b36c6eb42cdd9125ffc",
+    "git_head": "a04e2314b3f6d3e0425753a0a85e108d53015bcd",
     "dirty_paths_relevant": [
-      "RoomRom/src/atlas/title_chr.c"
+      "RoomRom/src/atlas/title_chr.c",
+      "tools/audit/active_scope.py"
     ],
     "evidence_paths_present": true,
     "complete_phase_invariant_ok": true,
-    "last_refresh_at": "2026-05-10T01:49:52.140214+00:00",
+    "last_refresh_at": "2026-05-10T01:54:49.128821+00:00",
     "stale_reasons": []
   },
   "blockers": []

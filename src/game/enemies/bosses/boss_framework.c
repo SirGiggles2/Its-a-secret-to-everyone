@@ -18,12 +18,8 @@
 #include "boss_state.h"
 #include "dungeon_state.h"
 #include "world_dispatch.h"
+#include "world/progress_dispatch.h"      /* progress_get_room_flag_uw_item_state */
 #include "platform_abi.h"
-
-/* Z_05.asm:8166 GetRoomFlagUWItemState — already shimmed via the
- * legacy bridge.  Returns non-zero when the player has already taken
- * this room's item this save. */
-extern unsigned char z01_get_room_flag_uw_item_state(void);
 
 void boss_framework_room_init(unsigned char room_id)
 {
@@ -61,7 +57,7 @@ void boss_framework_room_init(unsigned char room_id)
     }
 
     /* UW path. Z_05.asm:8166 — if room flag says already taken, skip. */
-    if (z01_get_room_flag_uw_item_state() != 0u) {
+    if (progress_get_room_flag_uw_item_state() != 0u) {
         BOSS_ROOM_ITEM_STATE = 0xFFu;
         return;
     }
