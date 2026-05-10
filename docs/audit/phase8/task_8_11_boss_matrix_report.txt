@@ -1,0 +1,29 @@
+Phase 8 Task 8.11 Boss Matrix sweep
+===================================
+
+post-enter frame_counter = 41
+final frame_counter      = 896
+
+Tested 19 boss types:
+
+$31 dodongo      alive=0 type=$31 x=128 y=255 state= 0 hp=  0 fc=86 delta=45
+$32 dodongo_alt  alive=0 type=$32 x=128 y=255 state= 0 hp=  0 fc=131 delta=45
+$33 blue_gohma   alive=0 type=$33 x=128 y=255 state= 0 hp=  0 fc=176 delta=45
+$34 red_gohma    alive=0 type=$34 x=128 y=255 state= 0 hp=  0 fc=221 delta=45
+$38 digdogger1   alive=0 type=$38 x=128 y=255 state= 0 hp=  0 fc=266 delta=45
+$39 digdogger2   alive=0 type=$39 x=128 y=255 state= 0 hp=  0 fc=311 delta=45
+$3A lamnola1     alive=0 type=$3A x=128 y=255 state= 0 hp=  0 fc=356 delta=45
+$3B lamnola2     alive=0 type=$3B x=128 y=255 state= 0 hp=  0 fc=401 delta=45
+$3C manhandla    alive=0 type=$3C x=128 y=255 state= 0 hp=  0 fc=446 delta=45
+$3D aquamentus   alive=0 type=$3D x=128 y=255 state= 0 hp=  0 fc=491 delta=45
+$3E ganon        alive=0 type=$3E x=128 y=255 state= 0 hp=  0 fc=536 delta=45
+$41 moldorm      alive=0 type=$41 x=128 y=255 state= 0 hp=  0 fc=581 delta=45
+$42 gleeok1      alive=0 type=$42 x=128 y=255 state= 0 hp=  0 fc=626 delta=45
+$43 gleeok2      alive=0 type=$43 x=128 y=255 state= 0 hp=  0 fc=671 delta=45
+$44 gleeok3      alive=0 type=$44 x=128 y=255 state= 0 hp=  0 fc=716 delta=45
+$45 gleeok4      alive=0 type=$45 x=128 y=255 state= 0 hp=  0 fc=761 delta=45
+$46 gleeok_head  alive=0 type=$46 x=128 y=255 state= 0 hp=  0 fc=806 delta=45
+$47 patra1       alive=0 type=$47 x=128 y=255 state= 0 hp=  0 fc=851 delta=45
+$48 patra2       alive=0 type=$48 x=128 y=255 state= 0 hp=  0 fc=896 delta=45
+
+VERDICT: all boss types dispatched without stalling the runtime.
