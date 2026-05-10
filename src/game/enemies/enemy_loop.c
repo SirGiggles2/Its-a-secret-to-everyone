@@ -146,6 +146,21 @@ extern void enrt_update_digdogger(unsigned int slot);
 #include "bosses/boss_gohma.h"
 extern void enrt_init_gohma(unsigned int slot);
 extern void enrt_update_gohma(unsigned int slot);
+/* Phase 8 Task 8.8 — Patra INIT + UPDATE.
+ *   $47 Patra1 / $48 Patra2 -> enrt_init_patra (Z_04.asm:9552) +
+ *                              boss_patra_update orchestrator
+ *                              (Z_04.asm:10070, bridge composes drained
+ *                              flyer primitives + control_patra_flight
+ *                              over states 0..3 with 2/3 routed through
+ *                              c_control_keese_flight).
+ *   $25 PatraChild1 / $26 PatraChild2 -> enrt_update_patra_child
+ *                                        (Z_04.asm:10164). INIT for $25/$26
+ *                                        is a no-op — patra children are
+ *                                        seeded inside enrt_init_patra's
+ *                                        slot-2..9 loop, not via the JT. */
+#include "bosses/boss_patra.h"
+extern void enrt_init_patra(unsigned int slot);
+extern void enrt_update_patra_child(unsigned int slot);
 extern void core_reset_obj_metastate_and_timer(unsigned int slot); /* 7.4 step 2b ($11 INIT) */
 extern unsigned char core_reset_obj_state(unsigned int slot);
 /* 7.5 step 2 — special-enemy UPDATE bridge bodies (enemy_special_bridge.c).
@@ -365,6 +380,15 @@ const enemy_init_fn enemy_init_fns[ENEMY_LOOP_TYPE_MAX] = {
      * ResetObjMetastateAndTimer. ADOPT stance. */
     [0x33] = enrt_init_gohma,                    /* Blue Gohma */
     [0x34] = enrt_init_gohma,                    /* Red Gohma */
+    /* Phase 8 Task 8.8 — Patra INIT pair (NES Z_07.asm rows $47/$48 ->
+     * InitPatra @ Z_04.asm:9552). Drained at enemy_patra_runtime.c —
+     * INVINCIBILITY=$FE + X=$80/Y=$70/Dir=$08 + Flyer_ObjSpeed=$1F +
+     * FlyingMaxSpeedFrac=$40 + roar SFX + ObjTimer+1=$FF + slot 2..9
+     * child seeding (type $25 for Patra1, $26 for Patra2). $25/$26
+     * children have no INIT row — they're spawned by enrt_init_patra
+     * itself. ADOPT stance. */
+    [0x47] = enrt_init_patra,                    /* Patra1 */
+    [0x48] = enrt_init_patra,                    /* Patra2 */
     /* Task 7.4 step 11 — projectile-family INIT close.
      *
      * NES Z_07.asm:5601 InitObject_JumpTable rows:
@@ -682,6 +706,22 @@ const enemy_update_fn enemy_update_fns[ENEMY_LOOP_TYPE_MAX] = {
      * arrow-only damage by eye state == 3). ADOPT stance. */
     [0x33] = enrt_update_gohma,             /* Blue Gohma */
     [0x34] = enrt_update_gohma,             /* Red Gohma */
+    /* Phase 8 Task 8.8 — Patra UPDATE rows (NES Z_07.asm rows $25/$26/$47/$48).
+     *   $47/$48 Patra1/Patra2 -> boss_patra_update (bridge orchestrator,
+     *                            calls enrt_flyer_speed_up /
+     *                            enrt_flyer_patra_decide_state /
+     *                            c_control_keese_flight (states 2/3) +
+     *                            c_move_flyer + enrt_animate_and_draw_common_object(2)
+     *                            + child-loop + TryChangeManeuver flip).
+     *   $25/$26 PatraChild1/PatraChild2 -> enrt_update_patra_child
+     *                                      (drained — State 0 staged spawn
+     *                                      off slot-2 child's angle, State 1
+     *                                      orbit + draw + collision + dead-dummy
+     *                                      transition). ADOPT stance. */
+    [0x47] = boss_patra_update,             /* Patra1 */
+    [0x48] = boss_patra_update,             /* Patra2 */
+    [0x25] = enrt_update_patra_child,       /* PatraChild1 */
+    [0x26] = enrt_update_patra_child,       /* PatraChild2 */
     /* Task 7.5 step 2 — special-enemy UPDATE: $17 LikeLike.
      *
      * NES Z_07.asm:5295 UpdateObject_JumpTable row $17 LikeLike ->

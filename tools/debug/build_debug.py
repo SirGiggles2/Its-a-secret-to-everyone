@@ -281,6 +281,20 @@ ROOMROM_C_SOURCES = [
     # sprite_anim_* + draw_object_*_with_frame + enrt_gohma_set_sprite_attributes
     # + c_check_monster_collisions — all already linked.
     ("src/game/enemies/bosses/boss_gohma.c", "game_enemy_boss_gohma.o"),
+    # Phase 8 Task 8.8 — Patra drain. Carries kPatraSines /
+    # kPatraChildStartAngles / kPatraChild1{Cosine,Sine}Bits /
+    # kPatraChild2Bits + ShiftMultiply / DecreaseObjectAngle /
+    # RotateObjectLocation helpers + enrt_init_patra (Z_04.asm:9552) +
+    # enrt_update_patra_child (Z_04.asm:10164 — State 0 staged spawn +
+    # State 1 orbit/draw/collision/dead-dummy). All math local to TU.
+    ("src/oracle/enemies/enemy_patra_runtime.c", "oracle_enemy_patra.o"),
+    # Phase 8 Task 8.8 — Patra bridge. boss_patra_update orchestrator
+    # (NES UpdatePatra @ Z_04.asm:10070 + ControlPatraFlight @ 10124).
+    # Composes enrt_flyer_speed_up + enrt_flyer_patra_decide_state +
+    # c_control_keese_flight (states 2/3 reuse keese-head Chase/Wander) +
+    # c_move_flyer + enrt_animate_and_draw_common_object(2) + child-loop
+    # + TryChangeManeuver flip. ADOPT stance.
+    ("src/game/enemies/bosses/boss_patra.c", "game_enemy_boss_patra.o"),
     ("src/game/enemies/probes/enemy_loop_probe.c", "game_enemy_loop_probe.o"),
     ("RoomRom/src/expanded_bg_chr.c", "expanded_bg_chr.o"),
     ("RoomRom/src/atlas/items_chr_x4.c", "atlas_items_chr_x4.o"),

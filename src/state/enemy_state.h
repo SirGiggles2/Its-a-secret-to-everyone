@@ -148,4 +148,26 @@
 #define ENEMY_DIGDOGGER_IS_CHILD(slot)           OBJ(0x046B, (slot))
 #define ENEMY_DIGDOGGER_CUR_PART(slot)           OBJ(0x0478, (slot))
 
+/* Patra per-slot vars (Z_07.asm Variables.inc).
+ *   $0029 ObjTimer+1 — NES quirk: maneuver-change timer is stored at the
+ *                     slot+1 position via the LDA ObjTimer+1, X trick.
+ *   $0380 ObjAngleFrac
+ *   $0394 ObjAngleWhole
+ *   $03BC ObjQSpeedFrac (aliases ENEMY_WALK_SPEED — fine, Patra has no walker)
+ *   $0412 ObjXFrac (aliases ENEMY_PUSH_TIMER / ENEMY_FLYER_SPEED_FRAC)
+ *   $041F ObjYFrac (aliases ENEMY_AIR_SPEED)
+ *   $045E Patra_ObjManeuverIndex (aliases ENEMY_BLOATED_TIMER)
+ *   $046B Flyer_ObjOffsetX (aliases ENEMY_FLYER_X_FINE)
+ *   $0478 Flyer_ObjOffsetY (aliases ENEMY_FLYER_Y_FINE)
+ *   $04D1 FlyingMaxSpeedFrac (single global, ENEMY_MAX_AIR_SPEED) */
+#define ENEMY_OBJ_TIMER_HI(slot)             OBJ(0x0029, (slot))
+#define ENEMY_OBJ_ANGLE_FRAC(slot)           OBJ(0x0380, (slot))
+#define ENEMY_OBJ_ANGLE_WHOLE(slot)          OBJ(0x0394, (slot))
+#define ENEMY_OBJ_QSPEED_FRAC(slot)          OBJ(0x03BC, (slot))   /* aliases ENEMY_WALK_SPEED */
+#define ENEMY_OBJ_X_FRAC(slot)               OBJ(0x0412, (slot))   /* aliases ENEMY_PUSH_TIMER */
+#define ENEMY_OBJ_Y_FRAC(slot)               OBJ(0x041F, (slot))   /* aliases ENEMY_AIR_SPEED */
+#define ENEMY_PATRA_MANEUVER_INDEX(slot)     OBJ(0x045E, (slot))   /* aliases ENEMY_BLOATED_TIMER */
+#define ENEMY_FLYER_OFFSET_X(slot)           OBJ(0x046B, (slot))   /* aliases ENEMY_FLYER_X_FINE */
+#define ENEMY_FLYER_OFFSET_Y(slot)           OBJ(0x0478, (slot))   /* aliases ENEMY_FLYER_Y_FINE */
+
 #endif
