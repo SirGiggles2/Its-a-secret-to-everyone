@@ -5,6 +5,8 @@
 #include "platform_abi.h"
 #include "world_state.h"     /* TRANSFER_BUF_BYTE */
 #include "combat_state.h"    /* LINK_HEARTS, LINK_PARTIAL_HEART */
+#include "cave_state.h"      /* LINK_RUPEES */
+#include "item_state.h"      /* LINK_BOMB_COUNT */
 
 #define PROBE  ((volatile unsigned char *)HUD_FORMAT_PROBE_BASE)
 
@@ -18,7 +20,7 @@ static void stamp_magic(void)
     unsigned int i;
     PROBE[0] = 'H';
     PROBE[1] = 'F';
-    PROBE[2] = 0x01u;
+    PROBE[2] = 0x02u;  /* v2 — heart row + decimal counters */
     for (i = 3u; i < 16u; ++i) PROBE[i] = 0u;
 }
 
@@ -41,6 +43,20 @@ static void format_with(unsigned char hearts, unsigned char partial)
     LINK_PARTIAL_HEART = partial;
     /* hud_format_status_bar_text re-reads LINK_HEARTS / LINK_PARTIAL_HEART
      * into RAM(0x000E/000F) before formatting. */
+    hud_format_status_bar_text();
+}
+
+/* Format the full status bar with controlled rupee/bomb/key/master_key
+ * cells. heart cells held at $33/0 so they don't dominate failures. */
+static void format_with_counters(unsigned char rupees, unsigned char bombs,
+                                  unsigned char keys, unsigned char master_key)
+{
+    LINK_HEARTS = 0x33u;
+    LINK_PARTIAL_HEART = 0u;
+    LINK_RUPEES = rupees;
+    LINK_BOMB_COUNT = bombs;
+    RAM(0x066Eu) = keys;
+    RAM(0x0664u) = master_key;
     hud_format_status_bar_text();
 }
 
@@ -199,42 +215,157 @@ static unsigned char test_hearts_7_full(void)
     return (buf_eq(3u, row1, 8u) && buf_eq(14u, row2, 8u)) ? 1u : 0u;
 }
 
+/* ---- Group B: decimal counter formatters --------------------------- *
+ * Rupee/bomb/key cells live at template offsets 25..27, 37..39, 31..33.
+ * cave_format_decimal_byte produces 3 BCD digits in RAM(1..3) (hi..lo).
+ * format_decimal_count_byte then:
+ *   - replaces $24 (space) hundreds digit with $21 (placeholder tile);
+ *   - if tens is space, calls core_format_char_doublet(units) which
+ *     writes RAM(2) = units, RAM(3) = $24.
+ * copy_triplet_to_text_buf writes buf[off]=RAM(3), buf[off-1]=RAM(2),
+ * buf[off-2]=RAM(1).
+ */
+
+#define TILE_PLACE 0x21u    /* leading-zero placeholder */
+#define TILE_DASH  0x0Au    /* master-key indicator (NES tile $0A) */
+
+static unsigned char buf_at(unsigned char off)
+{
+    return (unsigned char)TRANSFER_BUF_BYTE(off);
+}
+
+static unsigned char test_rupees_42(void)
+{
+    /* val=42: hundreds=0->$21, tens=4, units=2.
+     * buf[25..27] = [$21, 4, 2]. */
+    format_with_counters(42u, 0u, 0u, 0u);
+    return (buf_at(25u) == TILE_PLACE
+         && buf_at(26u) == 4u
+         && buf_at(27u) == 2u) ? 1u : 0u;
+}
+
+static unsigned char test_rupees_0(void)
+{
+    /* val=0: hundreds=0->$21, tens=0->$24 (doublet), units=0->$24.
+     * After doublet RAM(2)=units(0), RAM(3)=$24.
+     * buf[25..27] = [$21, 0, $24]. */
+    format_with_counters(0u, 0u, 0u, 0u);
+    return (buf_at(25u) == TILE_PLACE
+         && buf_at(26u) == 0u
+         && buf_at(27u) == TILE_SPC) ? 1u : 0u;
+}
+
+static unsigned char test_rupees_255(void)
+{
+    /* val=255: hundreds=2 (no replace), tens=5, units=5.
+     * buf[25..27] = [2, 5, 5]. */
+    format_with_counters(255u, 0u, 0u, 0u);
+    return (buf_at(25u) == 2u
+         && buf_at(26u) == 5u
+         && buf_at(27u) == 5u) ? 1u : 0u;
+}
+
+static unsigned char test_bombs_8(void)
+{
+    /* val=8: hundreds=0->$21, tens=0->doublet, units=8.
+     * After doublet RAM(2)=8, RAM(3)=$24.
+     * buf[37..39] = [$21, 8, $24]. */
+    format_with_counters(0u, 8u, 0u, 0u);
+    return (buf_at(37u) == TILE_PLACE
+         && buf_at(38u) == 8u
+         && buf_at(39u) == TILE_SPC) ? 1u : 0u;
+}
+
+static unsigned char test_bombs_99(void)
+{
+    /* val=99: hundreds=0->$21, tens=9, units=9.
+     * buf[37..39] = [$21, 9, 9]. */
+    format_with_counters(0u, 99u, 0u, 0u);
+    return (buf_at(37u) == TILE_PLACE
+         && buf_at(38u) == 9u
+         && buf_at(39u) == 9u) ? 1u : 0u;
+}
+
+static unsigned char test_keys_5_no_mkey(void)
+{
+    /* master_key=0 path: format keys=5 like a normal decimal.
+     * val=5: hundreds=$21, tens=$24->doublet -> RAM(2)=5, RAM(3)=$24.
+     * buf[31..33] = [$21, 5, $24]. */
+    format_with_counters(0u, 0u, 5u, 0u);
+    return (buf_at(31u) == TILE_PLACE
+         && buf_at(32u) == 5u
+         && buf_at(33u) == TILE_SPC) ? 1u : 0u;
+}
+
+static unsigned char test_master_key_dash(void)
+{
+    /* master_key!=0: explicit triplet.
+     *   RAM(0) = 33; RAM(1) = 33 (=$21);
+     *   core_format_char_doublet(10) -> RAM(2)=10, RAM(3)=$24.
+     *   copy_triplet writes buf[33]=$24, buf[32]=10, buf[31]=$21.
+     * keys cell ignored when master_key set. */
+    format_with_counters(0u, 0u, 0u, 1u);
+    return (buf_at(31u) == TILE_PLACE
+         && buf_at(32u) == TILE_DASH
+         && buf_at(33u) == TILE_SPC) ? 1u : 0u;
+}
+
 /* ---- Driver -------------------------------------------------------- */
 
 static void mark(unsigned int bit_idx, unsigned char *passes_io,
-                 unsigned char *bits)
+                 unsigned char bits[2])
 {
-    *bits |= (unsigned char)(1u << bit_idx);
+    const unsigned int byte_idx = bit_idx >> 3;
+    const unsigned int bit_in_byte = bit_idx & 7u;
+    bits[byte_idx] |= (unsigned char)(1u << bit_in_byte);
     ++(*passes_io);
 }
 
 void hud_format_probe_run(void)
 {
-    /* Snapshot heart cells — tests overwrite them. */
-    const unsigned char saved_hearts  = (unsigned char)LINK_HEARTS;
-    const unsigned char saved_partial = (unsigned char)LINK_PARTIAL_HEART;
+    /* Snapshot mutable cells — tests overwrite them. */
+    const unsigned char saved_hearts     = (unsigned char)LINK_HEARTS;
+    const unsigned char saved_partial    = (unsigned char)LINK_PARTIAL_HEART;
+    const unsigned char saved_rupees     = (unsigned char)LINK_RUPEES;
+    const unsigned char saved_bombs      = (unsigned char)LINK_BOMB_COUNT;
+    const unsigned char saved_keys       = (unsigned char)RAM(0x066Eu);
+    const unsigned char saved_master_key = (unsigned char)RAM(0x0664u);
 
-    unsigned char bits   = 0u;
+    unsigned char bits[2] = { 0u, 0u };
     unsigned char passes = 0u;
-    const unsigned char total = 8u;
+    const unsigned char total = 15u;
 
     stamp_magic();
 
-    if (test_template_loaded())                    mark(0u, &passes, &bits);
-    if (test_hearts_3_full())                      mark(1u, &passes, &bits);
-    if (test_hearts_3_max_1_cur())                 mark(2u, &passes, &bits);
-    if (test_hearts_8_max_3_cur_high_partial())    mark(3u, &passes, &bits);
-    if (test_hearts_8_max_3_cur_low_partial())     mark(4u, &passes, &bits);
-    if (test_hearts_15_full())                     mark(5u, &passes, &bits);
-    if (test_hearts_zero())                        mark(6u, &passes, &bits);
-    if (test_hearts_7_full())                      mark(7u, &passes, &bits);
+    /* Group A — heart row */
+    if (test_template_loaded())                    mark(0u, &passes, bits);
+    if (test_hearts_3_full())                      mark(1u, &passes, bits);
+    if (test_hearts_3_max_1_cur())                 mark(2u, &passes, bits);
+    if (test_hearts_8_max_3_cur_high_partial())    mark(3u, &passes, bits);
+    if (test_hearts_8_max_3_cur_low_partial())     mark(4u, &passes, bits);
+    if (test_hearts_15_full())                     mark(5u, &passes, bits);
+    if (test_hearts_zero())                        mark(6u, &passes, bits);
+    if (test_hearts_7_full())                      mark(7u, &passes, bits);
+
+    /* Group B — decimal counters */
+    if (test_rupees_42())                          mark(8u, &passes, bits);
+    if (test_rupees_0())                           mark(9u, &passes, bits);
+    if (test_rupees_255())                         mark(10u, &passes, bits);
+    if (test_bombs_8())                            mark(11u, &passes, bits);
+    if (test_bombs_99())                           mark(12u, &passes, bits);
+    if (test_keys_5_no_mkey())                     mark(13u, &passes, bits);
+    if (test_master_key_dash())                    mark(14u, &passes, bits);
 
     PROBE[3] = total;
     PROBE[4] = passes;
-    PROBE[5] = bits;
+    PROBE[5] = bits[0];
+    PROBE[6] = bits[1];
 
-    /* Restore live heart cells so subsequent gameplay sees the real
-     * inventory state, not the last test value. */
+    /* Restore live cells so subsequent gameplay sees the real state. */
     LINK_HEARTS = saved_hearts;
     LINK_PARTIAL_HEART = saved_partial;
+    LINK_RUPEES = saved_rupees;
+    LINK_BOMB_COUNT = saved_bombs;
+    RAM(0x066Eu) = saved_keys;
+    RAM(0x0664u) = saved_master_key;
 }

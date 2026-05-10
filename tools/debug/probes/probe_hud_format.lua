@@ -1,4 +1,4 @@
--- Phase 9 Task 9.5 — HUD format probe verifier (heart-row contract).
+-- Phase 9 Task 9.5 — HUD format probe verifier (v2: heart row + decimal counters).
 local OUT = os.getenv("CODEX_PROBE_OUT") or "C:/tmp"
 local PROBE_BASE = 0x7EC0   -- $FF7EC0 -> 68K RAM offset
 
@@ -19,17 +19,26 @@ local magic1 = r(1)
 local ver    = r(2)
 local total  = r(3)
 local passes = r(4)
-local bits   = r(5)
+local b0     = r(5)
+local b1     = r(6)
+local mask   = b0 | (b1 << 8)
 
 local test_names = {
-    [0] = "template_loaded",
-    [1] = "hearts_3_full",
-    [2] = "hearts_3_max_1_cur",
-    [3] = "hearts_8_max_3_cur_high_partial",
-    [4] = "hearts_8_max_3_cur_low_partial",
-    [5] = "hearts_15_full",
-    [6] = "hearts_zero",
-    [7] = "hearts_7_full",
+    [0]  = "template_loaded",
+    [1]  = "hearts_3_full",
+    [2]  = "hearts_3_max_1_cur",
+    [3]  = "hearts_8_max_3_cur_high_partial",
+    [4]  = "hearts_8_max_3_cur_low_partial",
+    [5]  = "hearts_15_full",
+    [6]  = "hearts_zero",
+    [7]  = "hearts_7_full",
+    [8]  = "rupees_42",
+    [9]  = "rupees_0",
+    [10] = "rupees_255",
+    [11] = "bombs_8",
+    [12] = "bombs_99",
+    [13] = "keys_5_no_mkey",
+    [14] = "master_key_dash",
 }
 
 local fc_hi = memory.read_u8(0x7202, "68K RAM")
@@ -38,31 +47,31 @@ local frame_counter = fc_hi * 256 + fc_lo
 
 client.screenshot(OUT .. "/hud_format_probe.png")
 
-local EXPECT_BITS = 0xFF
+local EXPECT_MASK = 0x7FFF   -- bits 0..14 set
 
 local f = io.open(OUT .. "/hud_format_probe_report.txt", "w")
-f:write("Phase 9 Task 9.5 HUD format probe (heart-row contract)\n")
-f:write("======================================================\n\n")
+f:write("Phase 9 Task 9.5 HUD format probe (v2: heart row + decimal counters)\n")
+f:write("====================================================================\n\n")
 f:write(string.format("magic     = $%02X $%02X (expect 'H'=$48 'F'=$46)\n", magic0, magic1))
-f:write(string.format("version   = %d (expect 1)\n", ver))
-f:write(string.format("total     = %d (expect 8)\n", total))
-f:write(string.format("passes    = %d (expect 8)\n", passes))
-f:write(string.format("bits      = $%02X (expect $%02X)\n\n", bits, EXPECT_BITS))
-for i = 0, 7 do
-    local pass = (bits & (1 << i)) ~= 0
+f:write(string.format("version   = %d (expect 2)\n", ver))
+f:write(string.format("total     = %d (expect 15)\n", total))
+f:write(string.format("passes    = %d (expect 15)\n", passes))
+f:write(string.format("mask      = $%04X (expect $%04X)\n\n", mask, EXPECT_MASK))
+for i = 0, 14 do
+    local pass = (mask & (1 << i)) ~= 0
     f:write(string.format("  bit%-2d %-40s %s\n", i, test_names[i],
         pass and "PASS" or "FAIL"))
 end
 f:write(string.format("\nframe_counter at $FF7202..03 = %d\n", frame_counter))
 
-if magic0 == 0x48 and magic1 == 0x46 and ver == 1 and total == 8
-   and passes == 8 and bits == EXPECT_BITS and frame_counter > 0 then
-    f:write("VERDICT: all 8 HUD-format tests passed; ROM still ticking.\n")
+if magic0 == 0x48 and magic1 == 0x46 and ver == 2 and total == 15
+   and passes == 15 and mask == EXPECT_MASK and frame_counter > 0 then
+    f:write("VERDICT: all 15 HUD-format tests passed; ROM still ticking.\n")
 else
     f:write("VERDICT: HUD format probe regressed.\n")
 end
 f:close()
 
-print(string.format("HUD-FMT probe: passes=%d/%d bits=$%02X fc=%d",
-    passes, total, bits, frame_counter))
+print(string.format("HUD-FMT probe: passes=%d/%d mask=$%04X fc=%d",
+    passes, total, mask, frame_counter))
 client.exit()
