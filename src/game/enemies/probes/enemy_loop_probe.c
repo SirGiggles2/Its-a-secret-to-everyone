@@ -61,7 +61,23 @@ void enemy_loop_probe_run(void)
 
     /* Stage 1 — start clean. enemy_loop_room_init was called from
      * roomrom_debug_enter just before this probe; verify it cleared
-     * slot state. */
+     * slot state.
+     *
+     * Phase 7 Task 7.7 step 1 (2026-05-10): enemy_loop_room_init now
+     * also runs the NES room matrix loader, which can populate slots
+     * 1..N from LBA_C/D + LevelInfo_FoeCounts when those substrate
+     * cells are non-zero. Re-clear all slots here so the probe's
+     * deterministic force-spawn checks remain valid regardless of
+     * boot-time substrate state. */
+    {
+        unsigned int slot;
+        for (slot = ENEMY_LOOP_SLOT_FIRST; slot <= ENEMY_LOOP_SLOT_LAST; ++slot) {
+            ENEMY_TYPE(slot) = 0u;
+            ENEMY_ALIVE_FLAG(slot) = 0u;
+            ENEMY_X(slot) = 0u;
+            ENEMY_Y(slot) = 0u;
+        }
+    }
     alive_before = enemy_loop_alive_count();
 
     /* Stage 2 — pin LINK position so the wired enrt_init_walker DIR
