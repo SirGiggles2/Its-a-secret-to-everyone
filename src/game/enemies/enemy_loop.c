@@ -161,6 +161,24 @@ extern void enrt_update_gohma(unsigned int slot);
 #include "bosses/boss_patra.h"
 extern void enrt_init_patra(unsigned int slot);
 extern void enrt_update_patra_child(unsigned int slot);
+/* Phase 8 Task 8.9 — Moldorm + Lamnola.
+ *   $3A Lamnola1 / $3B Lamnola2 -> enrt_init_lamnola + enrt_update_lamnola
+ *                                   (drained at enemy_lamnola_runtime.c).
+ *   $41 Moldorm   -> enrt_init_moldorm + enrt_update_moldorm
+ *                    (drained at enemy_moldorm_runtime.c — full
+ *                    InitMoldorm + UpdateMoldorm + ControlMoldormFlight
+ *                    + Moldorm_{Chase,Wander,ChangeFlyingState,
+ *                    PropagateDirs}; head-only flight on slots 5/$A,
+ *                    body segments tail-swap into $5D dead-dummy on
+ *                    metastate). ADOPT stance — drain primitives reused
+ *                    via c_flyer_chase / c_flyer_wander / c_move_flyer /
+ *                    c_anim_write_sprite / c_check_monster_collisions /
+ *                    enrt_check_boss_hit_reaction /
+ *                    enrt_flyer_moldorm_decide_state. */
+extern void enrt_init_lamnola(unsigned int slot);
+extern void enrt_update_lamnola(unsigned int slot);
+extern void enrt_init_moldorm(unsigned int slot);
+extern void enrt_update_moldorm(unsigned int slot);
 extern void core_reset_obj_metastate_and_timer(unsigned int slot); /* 7.4 step 2b ($11 INIT) */
 extern unsigned char core_reset_obj_state(unsigned int slot);
 /* 7.5 step 2 — special-enemy UPDATE bridge bodies (enemy_special_bridge.c).
@@ -389,6 +407,17 @@ const enemy_init_fn enemy_init_fns[ENEMY_LOOP_TYPE_MAX] = {
      * itself. ADOPT stance. */
     [0x47] = enrt_init_patra,                    /* Patra1 */
     [0x48] = enrt_init_patra,                    /* Patra2 */
+    /* Phase 8 Task 8.9 — Lamnola + Moldorm INIT rows.
+     * NES Z_07.asm:5601 InitObject_JumpTable rows:
+     *   $3A Lamnola1 -> InitLamnola (Z_04.asm:9502).
+     *   $3B Lamnola2 -> InitLamnola (Z_04.asm:9502).
+     *   $41 Moldorm  -> InitMoldorm (Z_04.asm:4763).
+     * Drained body for Lamnola at enemy_lamnola_runtime.c:14;
+     * Moldorm at enemy_moldorm_runtime.c:128. ADOPT stance — drain
+     * consumed verbatim, no bridge layer required. */
+    [0x3A] = enrt_init_lamnola,                  /* Lamnola1 */
+    [0x3B] = enrt_init_lamnola,                  /* Lamnola2 */
+    [0x41] = enrt_init_moldorm,                  /* Moldorm */
     /* Task 7.4 step 11 — projectile-family INIT close.
      *
      * NES Z_07.asm:5601 InitObject_JumpTable rows:
@@ -722,6 +751,16 @@ const enemy_update_fn enemy_update_fns[ENEMY_LOOP_TYPE_MAX] = {
     [0x48] = boss_patra_update,             /* Patra2 */
     [0x25] = enrt_update_patra_child,       /* PatraChild1 */
     [0x26] = enrt_update_patra_child,       /* PatraChild2 */
+    /* Phase 8 Task 8.9 — Lamnola + Moldorm UPDATE rows.
+     * NES Z_04.asm:5295 UpdateObject_JumpTable rows:
+     *   $3A Lamnola1 -> UpdateLamnola (Z_04.asm:9699).
+     *   $3B Lamnola2 -> UpdateLamnola.
+     *   $41 Moldorm  -> UpdateMoldorm (Z_04.asm:4907).
+     * Bodies drained at enemy_lamnola_runtime.c:44 and
+     * enemy_moldorm_runtime.c:170. ADOPT stance. */
+    [0x3A] = enrt_update_lamnola,           /* Lamnola1 */
+    [0x3B] = enrt_update_lamnola,           /* Lamnola2 */
+    [0x41] = enrt_update_moldorm,           /* Moldorm */
     /* Task 7.5 step 2 — special-enemy UPDATE: $17 LikeLike.
      *
      * NES Z_07.asm:5295 UpdateObject_JumpTable row $17 LikeLike ->

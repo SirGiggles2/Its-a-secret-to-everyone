@@ -372,6 +372,13 @@ void c_control_keese_flight(unsigned int slot)
     }
 }
 
+/* Phase 8 Task 8.9 — expose Flyer_Chase / Flyer_Wander to other bridges.
+ * NES Moldorm_Chase / Moldorm_Wander (Z_04.asm:5008/5054) call Flyer_Chase /
+ * Flyer_Wander directly without going through the keese state table.
+ * Same body, different caller. */
+void c_flyer_chase(unsigned int slot)  { flyer_chase(slot); }
+void c_flyer_wander(unsigned int slot) { flyer_wander(slot); }
+
 /* NES Z_04.asm:4054 ControlPeahatFlight. Identical 6-row dispatch shape
  * as ControlKeeseFlight; only state 1 differs (PeahatDecideState vs
  * KeeseDecideState — see enrt_flyer_peahat_decide_state in

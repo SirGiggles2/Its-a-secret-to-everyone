@@ -295,6 +295,27 @@ ROOMROM_C_SOURCES = [
     # c_move_flyer + enrt_animate_and_draw_common_object(2) + child-loop
     # + TryChangeManeuver flip. ADOPT stance.
     ("src/game/enemies/bosses/boss_patra.c", "game_enemy_boss_patra.o"),
+    # Phase 8 Task 8.9 — Lamnola drain. enrt_init_lamnola (Z_04.asm:9502)
+    # + enrt_update_lamnola (Z_04.asm:9699) + enrt_lamnola_update_head +
+    # enrt_lamnola_move. Composes c_anim_write_sprite,
+    # c_check_monster_collisions, c_reset_shove_info, c_reset_obj_metastate,
+    # c_get_opposite_dir, c_bound_by_room, c_get_colliding_tile_moving.
+    # ADOPT stance.
+    ("src/oracle/enemies/enemy_lamnola_runtime.c", "oracle_enemy_lamnola.o"),
+    # Phase 8 Task 8.9 — Moldorm drain. enrt_init_moldorm (Z_04.asm:4763)
+    # + enrt_update_moldorm (Z_04.asm:4907) + ControlMoldormFlight JT +
+    # Moldorm_{Chase,Wander,ChangeFlyingState,PropagateDirs}. Composes
+    # already-drained primitives (c_flyer_chase, c_flyer_wander,
+    # c_move_flyer, c_check_monster_collisions, c_anim_write_sprite,
+    # c_reset_obj_metastate, enrt_check_boss_hit_reaction,
+    # enrt_flyer_moldorm_decide_state). ADOPT stance.
+    ("src/oracle/enemies/enemy_moldorm_runtime.c", "oracle_enemy_moldorm.o"),
+    # Phase 8 Task 8.9 — Lamnola+Moldorm shim bridge. Native shims for
+    # c_anim_write_sprite (stub) / c_get_opposite_dir / c_bound_by_room /
+    # c_get_colliding_tile_moving / z04_play_boss_death_cry_if_needed /
+    # z07_set_shove_info_with0 — first dispatch wiring that exposes these
+    # transitive callees. EXTEND stance.
+    ("src/game/enemies/enemy_lamnola_bridge.c", "game_enemy_lamnola_bridge.o"),
     ("src/game/enemies/probes/enemy_loop_probe.c", "game_enemy_loop_probe.o"),
     ("RoomRom/src/expanded_bg_chr.c", "expanded_bg_chr.o"),
     ("RoomRom/src/atlas/items_chr_x4.c", "atlas_items_chr_x4.o"),

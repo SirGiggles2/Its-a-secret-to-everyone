@@ -170,4 +170,18 @@
 #define ENEMY_FLYER_OFFSET_X(slot)           OBJ(0x046B, (slot))   /* aliases ENEMY_FLYER_X_FINE */
 #define ENEMY_FLYER_OFFSET_Y(slot)           OBJ(0x0478, (slot))   /* aliases ENEMY_FLYER_Y_FINE */
 
+/* Moldorm per-slot vars (NES Z_04.asm/ObjVars.inc).
+ *   $0380 Moldorm_ObjOldDir(slot)    aliases ENEMY_OBJ_ANGLE_FRAC /
+ *                                    ENEMY_BOSS_HP_PHASE / ENEMY_GOHMA_SHOOT_TIMER
+ *   $03BC Moldorm_ObjBounceDir(slot) aliases ENEMY_WALK_SPEED /
+ *                                    ENEMY_OBJ_QSPEED_FRAC
+ *   $0485 ObjHP(slot)                aliases ENEMY_CHARGE_SPEED
+ *   $04BF ObjAttr(slot)              fresh — boss attribute byte
+ *   $034E RoomObjCount               global (single byte) */
+#define ENEMY_MOLDORM_OLD_DIR(slot)         OBJ(0x0380, (slot))
+#define ENEMY_MOLDORM_BOUNCE_DIR(slot)      OBJ(0x03BC, (slot))
+#define ENEMY_HP(slot)                      OBJ(0x0485, (slot))
+#define ENEMY_ATTR(slot)                    OBJ(0x04BF, (slot))
+#define ENEMY_ROOM_OBJ_COUNT                RAM(0x034E)
+
 #endif
