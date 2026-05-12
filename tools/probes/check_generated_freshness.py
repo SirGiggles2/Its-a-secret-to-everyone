@@ -31,6 +31,18 @@ from pathlib import Path
 REPO_ROOT = Path(__file__).resolve().parents[2]
 SENTINELS_PATH = REPO_ROOT / "RoomRom" / "data" / "regen_sentinels.json"
 
+TEXT_HASH_SUFFIXES = frozenset({
+    ".asm",
+    ".c",
+    ".h",
+    ".json",
+    ".md",
+    ".py",
+    ".txt",
+    ".yaml",
+    ".yml",
+})
+
 # Each spec: name, script (one .py), inputs (list of paths or glob patterns
 # rooted at REPO_ROOT), outputs (list of paths or globs).
 GEN_SPECS: list[dict] = [
@@ -120,8 +132,16 @@ GEN_SPECS: list[dict] = [
 ]
 
 
+def normalize_text_line_endings(data: bytes) -> bytes:
+    return data.replace(b"\r\n", b"\n").replace(b"\r", b"\n")
+
+
 def hash_file(path: Path) -> str:
     h = hashlib.sha256()
+    if path.suffix.lower() in TEXT_HASH_SUFFIXES:
+        h.update(normalize_text_line_endings(path.read_bytes()))
+        return h.hexdigest()
+
     with path.open("rb") as f:
         for chunk in iter(lambda: f.read(65536), b""):
             h.update(chunk)
