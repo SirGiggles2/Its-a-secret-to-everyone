@@ -76,12 +76,6 @@ static const unsigned short s_blank_row[32] = {
     0x0024, 0x0024, 0x0024, 0x0024, 0x0024, 0x0024, 0x0024, 0x0024
 };
 
-/* Zero row: 32 cells of tile $0000 for sprite-table clear and plane B fill. */
-static const unsigned short s_zero_row[32] = {
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
-};
-
 /* Persistent state across intro_story_step(). All initialized to 0 (BSS);
  * non-zero initial values are written by intro_story_load() to keep the
  * linker .data section empty (linker script has no .data). */

@@ -149,7 +149,6 @@ void enrt_update_gleeok(unsigned int slot) {
  * L_Gleeok_UDiv4) with D0 = signed reference distance.
  *------------------------------------------------------------------*/
 void enrt_gleeok_store_ref_seg_distance(unsigned int signed_ref_dist) {
-    unsigned int axis;
     unsigned int seg;
     unsigned char abs_dist;
     int i;

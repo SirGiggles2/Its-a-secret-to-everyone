@@ -62,6 +62,7 @@
 
 #include "enemy_runtime_private.h"
 #include "platform_abi.h"
+#include "core/core_dispatch.h"
 #include "../combat/collision_runtime.h"
 #include "../combat/link_collision_runtime.h"
 #include "../world/sprite_runtime.h"
@@ -84,8 +85,6 @@ static void play_sample(unsigned char sample_id)
 }
 
 /* ---------- NES static tables (verbatim bytes) ---------- */
-
-static const unsigned char GanonStartXsLocal[2] = { 0x30u, 0xB0u };
 
 static const unsigned char GanonBurstDirs[8] = {
     0x01u, 0x02u, 0x04u, 0x05u, 0x06u, 0x08u, 0x09u, 0x0Au

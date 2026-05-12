@@ -3,6 +3,7 @@
 
 #include "platform_abi.h"
 #include "enemy_state.h"
+#include "room_state.h"
 
 /* Phase 8 Task 8.1 — Boss Framework state model.
  *
@@ -82,12 +83,9 @@
  *   $00 = active (visible, ready to take)
  *   $FF = deactivated (already taken, or "none")
  * Z_05.asm:8157 stores 0; Z_05.asm:8181/8195/8249 decrements (->$FF).
- * The `0x98 + 19 = 0xAB` collision with RoomItemId is intentional NES
- * — both refer to the same byte under different names (CommonVars.inc
- * `ObjRoomItemId := $98`). The aliases below preserve that relationship.
- * Use BOSS_ROOM_ITEM_STATE for boolean active/inactive checks; use
- * BOSS_ROOM_ITEM_ID for type-code reads. */
-#define BOSS_ROOM_ITEM_STATE         OBJ(0x0098u, BOSS_ROOM_ITEM_SLOT)
+ * Uses the canonical ObjState alias from enemy_state.h:
+ * 0x00AC + 19 = 0x00BF. Keep separate from RoomItemId ($00AB). */
+#define BOSS_ROOM_ITEM_STATE         ENEMY_STATE_TIMER(BOSS_ROOM_ITEM_SLOT)
 
 /* ObjType[19] / ObjX[19] / ObjY[19] — room-item coords. Set by
  * CreateRoomObjects @StoreLocation (Z_05.asm:8208-8210). */
@@ -100,16 +98,16 @@
  * Z_07.asm:5453 on every monster death; consumed by the secret-trigger
  * @ModifyObjCountByHistoryUW path (Z_05.asm:4042) and the "foes for
  * item" secret (BOSS_SECRET_TRIGGER_FOES_ITEM). */
-#define BOSS_ROOM_KILL_COUNT         RAM(0x034Fu)
+#define BOSS_ROOM_KILL_COUNT         ROOM_OW_CUR_KILL_TOTAL
 
 /* CurLevel — 0 = OW, 1..9 = UW level number. Used by CreateRoomObjects
  * Z_05.asm:8161 to branch into the OW heart-container path vs the
  * UW per-room-item path. Mirror of CUR_LEVEL in progress_state.h
  * (defined here as alias for clarity within the boss-framework body). */
-#define BOSS_CUR_LEVEL               RAM(0x0010u)
+#define BOSS_CUR_LEVEL               CUR_LEVEL
 
 /* GameMode — Z_05.asm:8240 gates OW heart-container spawn on mode 5
  * (Mode_PlayCellar / play). */
-#define BOSS_GAMEMODE                RAM(0x0012u)
+#define BOSS_GAMEMODE                MODE_VALUE
 
 #endif /* BOSS_STATE_H */
