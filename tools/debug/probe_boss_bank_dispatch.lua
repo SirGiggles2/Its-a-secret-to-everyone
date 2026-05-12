@@ -153,10 +153,11 @@ local diff = diff_count(snap_l1, snap_l3)
 
 mkdir_for(OUT_PATH)
 local f = assert(io.open(OUT_PATH, "w"))
--- Diagnostic: write+read self-check on M68K BUS. Some cores expose
--- M68K BUS as read-only mirror; only RAM domains accept writes.
-ram_w8(0x73F0, 0xAB)
-local readback = ram_r8(0x73F0)
+-- Diagnostic: write+read self-check using the selected RAM-domain address
+-- space. M68K BUS needs full $FFxxxx addresses; 68K RAM needs offsets.
+local WRITEBACK_ADDR = CTRL_ADDR - 8
+ram_w8(WRITEBACK_ADDR, 0xAB)
+local readback = ram_r8(WRITEBACK_ADDR)
 local domains = table.concat(memory.getmemorydomainlist(), "|")
 
 f:write(string.format([[{
