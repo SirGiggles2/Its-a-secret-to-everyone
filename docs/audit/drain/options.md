@@ -6,23 +6,23 @@
 
 | File | Function | Line | Calls _ppu_/_apu_ shim? |
 |------|----------|------|------|
-| `src/game/options/options_runtime.c` | `bool_bit_for_id` | 66 | no |
+| `src/game/options/options_runtime.c` | `bool_bit_for_id` | 67 | no |
 | `src/game/options/options_runtime.c` | `compute_checksum` | 19 | no |
 | `src/game/options/options_runtime.c` | `load_defaults_into` | 31 | no |
-| `src/game/options/options_runtime.c` | `migrate_image` | 210 | no |
-| `src/game/options/options_runtime.c` | `options_get` | 117 | no |
-| `src/game/options/options_runtime.c` | `options_get_version` | 181 | no |
-| `src/game/options/options_runtime.c` | `options_runtime_apply` | 225 | no |
-| `src/game/options/options_runtime.c` | `options_runtime_init` | 61 | no |
-| `src/game/options/options_runtime.c` | `options_runtime_peek` | 286 | no |
-| `src/game/options/options_runtime.c` | `options_runtime_serialize` | 266 | no |
-| `src/game/options/options_runtime.c` | `options_runtime_validate` | 186 | no |
-| `src/game/options/options_runtime.c` | `options_set` | 142 | no |
+| `src/game/options/options_runtime.c` | `migrate_image` | 216 | no |
+| `src/game/options/options_runtime.c` | `options_get` | 118 | no |
+| `src/game/options/options_runtime.c` | `options_get_version` | 186 | no |
+| `src/game/options/options_runtime.c` | `options_runtime_apply` | 231 | no |
+| `src/game/options/options_runtime.c` | `options_runtime_init` | 62 | no |
+| `src/game/options/options_runtime.c` | `options_runtime_peek` | 293 | no |
+| `src/game/options/options_runtime.c` | `options_runtime_serialize` | 273 | no |
+| `src/game/options/options_runtime.c` | `options_runtime_validate` | 191 | no |
+| `src/game/options/options_runtime.c` | `options_set` | 144 | no |
 | `src/game/options/options_runtime.c` | `read_be_u16` | 6 | no |
-| `src/game/options/options_runtime.c` | `read_bool_bit` | 100 | no |
-| `src/game/options/options_runtime.c` | `recheck_after_write` | 136 | no |
+| `src/game/options/options_runtime.c` | `read_bool_bit` | 101 | no |
+| `src/game/options/options_runtime.c` | `recheck_after_write` | 138 | no |
 | `src/game/options/options_runtime.c` | `write_be_u16` | 13 | no |
-| `src/game/options/options_runtime.c` | `write_bool_bit` | 106 | no |
+| `src/game/options/options_runtime.c` | `write_bool_bit` | 107 | no |
 
 ## Master plan tasks claiming this subsystem
 
