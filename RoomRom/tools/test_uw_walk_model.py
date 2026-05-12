@@ -16,7 +16,7 @@ ROOT = Path(__file__).resolve().parents[2]
 SRC = ROOT / "RoomRom" / "src"
 HEADER = SRC / "uw_walk_model.h"
 IMPL = SRC / "uw_walk_model.c"
-BUILD = ROOT / "RoomRom" / "build.bat"
+BUILD = ROOT / "tools" / "debug" / "build_debug.py"
 MAIN = SRC / "main.c"
 
 
@@ -85,9 +85,9 @@ def main() -> int:
                "UW collision uses NES tile passability")
     must_match(main_c, r"if \(s_scene == SCENE_UW\)[\s\S]*?roomrom_uw_room_render_walkable_tile_at",
                "UW collision samples 8px tile grid")
-    must_match(main_c, r"static short s_link_x = 120;",
+    must_match(main_c, r"players\[0\]\.x\s*=\s*120;",
                "UW boot X starts on NES doorway grid center")
-    must_match(main_c, r"static short s_link_y = 133;",
+    must_match(main_c, r"players\[0\]\.y\s*=\s*133;",
                "UW boot Y starts on NES doorway centerline")
     must_match(main_c, r"static signed char\s+s_link_grid_offset",
                "NES movement keeps signed ObjGridOffset")
@@ -99,9 +99,9 @@ def main() -> int:
         must_match(main_c, rf"\b{symbol}\b", symbol)
     must_match(main_c,
                r"if \(moving_dir != LINK_DIR_NONE && s_link_grid_offset == 0\)[\s\S]*?"
-               r"link_walkable_at\(s_link_x, s_link_y, moving_dir\)",
+               r"link_walkable_at\(players\[0\]\.x, players\[0\]\.y, moving_dir\)",
                "NES tile collision is checked before movement at grid points")
-    if re.search(r"switch \(s_link_dir\)[\s\S]*?link_walkable_at\(s_link_x, s_link_y, s_link_dir\)",
+    if re.search(r"switch \(s_link_dir\)[\s\S]*?link_walkable_at\(players\[0\]\.x, players\[0\]\.y, s_link_dir\)",
                  main_c):
         raise AssertionError("NES branch still checks UW walkability after moving")
     if re.search(r"if \(s_scene == SCENE_UW\)[\s\S]*?hot_x = \(short\)\(x \+ 8\)",

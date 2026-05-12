@@ -5,6 +5,9 @@ from pathlib import Path
 REPO = Path(__file__).resolve().parents[2]
 TOOL = REPO / "tools" / "extract_intro_assets.py"
 
+if str(REPO) not in sys.path:
+    sys.path.insert(0, str(REPO))
+
 def test_tool_runs_with_help():
     result = subprocess.run([sys.executable, str(TOOL), "--help"],
                             stdin=subprocess.DEVNULL,
@@ -132,7 +135,7 @@ def test_emit_produces_story_tilemap(tmp_path):
     assert "intro_story_tilemap_rows" in tm
     assert tm.count("0x") >= 64
 
-def test_emit_produces_showcase_tilemap(tmp_path):
+def test_emit_produces_treasures_tilemap(tmp_path):
     import subprocess, sys
     result = subprocess.run([
         sys.executable, str(TOOL),
@@ -148,7 +151,7 @@ def test_emit_produces_showcase_tilemap(tmp_path):
        stdout=subprocess.PIPE, stderr=subprocess.PIPE,
        text=True)
     assert result.returncode == 0, result.stderr
-    tm = (tmp_path / "intro_showcase_tilemap.c").read_text()
-    assert "const unsigned short intro_showcase_tilemap" in tm
-    assert "intro_showcase_tilemap_rows" in tm
+    tm = (tmp_path / "intro_treasures_tilemap.c").read_text()
+    assert "const unsigned short intro_treasures_tilemap" in tm
+    assert "intro_treasures_tilemap_rows" in tm
     assert tm.count("0x") >= 64
