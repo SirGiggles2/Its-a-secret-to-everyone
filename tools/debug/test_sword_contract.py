@@ -66,16 +66,20 @@ def test_swing_lock_is_active() -> None:
     need(c, "if (s_state != COMBAT_IDLE) return;", "re-swing lock")
 
 
-def test_hp_gated_beam_deferral_is_documented() -> None:
-    """Beam should only spawn at full HP (NES UpdateSwordShotOrMagicShot
-    HP check). RoomRom has no HP system yet (Task 6.11). The deferral
-    must be documented in source comments so the gate point is obvious
-    when 6.11 lands."""
+def test_hp_gated_beam_is_wired() -> None:
+    """Beam should only spawn at full HP in vanilla mode (NES
+    UpdateSwordShotOrMagicShot HP check). Redux option modes may
+    explicitly disable or always allow the beam."""
     c = read("RoomRom/src/roomrom_combat.c")
-    need(c, "no HP system", "HP-gate deferral note")
+    need(c, "options_consumer_get_sword_style()", "sword style option gate")
+    need(c, "OPTIONS_SWORD_STAB_ONLY", "stab-only beam suppression")
+    need(c, "OPTIONS_SWORD_BEAM_ALWAYS", "always-beam option")
+    need(c, "heart_values_cur(hv)", "current HP read")
+    need(c, "heart_values_max(hv)", "max HP read")
+    need(c, "cur == max && g_inventory.heart_partial == 0u", "full HP gate")
     finding = read("docs/audit/drain_findings/phase6_task_6_3.md")
-    need(finding, "Beam spawn gated on full HP", "deferral row in finding doc")
-    need(finding, "Task 6.11", "deferral re-entry pointer")
+    need(finding, "Beam spawn gated on full HP", "HP gate row in finding doc")
+    need(finding, "options_consumer_get_sword_style", "option gate documented")
 
 
 if __name__ == "__main__":
@@ -84,5 +88,5 @@ if __name__ == "__main__":
     test_beam_bounds_despawn()
     test_beam_palette_flash_cycles_4()
     test_swing_lock_is_active()
-    test_hp_gated_beam_deferral_is_documented()
+    test_hp_gated_beam_is_wired()
     print("PASS: Phase 6 Task 6.3 sword contract")

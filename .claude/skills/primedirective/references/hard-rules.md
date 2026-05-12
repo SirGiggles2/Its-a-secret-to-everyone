@@ -61,7 +61,7 @@ Builds emit `Debug.md` exclusively (Sole Build Target Amendment 2026-05-08). The
 ## WT-5 — RoomRom freeze (HARD, user 2026-05-09)
 **No new files under `RoomRom/src/` or `RoomRom/data/`.** New gameplay code lands in `src/game/<subsystem>/` and links into `Debug.md` via `tools/debug/build_debug.py`. Existing `RoomRom/src/main.c` and `RoomRom/src/roomrom_*.c` files may receive minimal integration patches (one-liner glue calls) but the active development surface is `src/game/`.
 
-**Why:** User directive 2026-05-07 (reinforced 2026-05-09): "DO NOT WORK ON ROOMROM EVER AGAIN. WE ARE ON DEBUG." `RoomRom.md` standalone is shelved; `Debug.md` ships everything (Title boot + native gameplay runtime). Continuing to grow `RoomRom/src/` deepens the scaffold instead of migrating it.
+**Why:** User directive 2026-05-07 (reinforced 2026-05-09): "DO NOT WORK ON ROOMROM EVER AGAIN. WE ARE ON DEBUG." The standalone RoomRom ROM alias is retired; `Debug.md` ships everything (title boot + native gameplay runtime). Continuing to grow `RoomRom/src/` deepens the scaffold instead of migrating it.
 
 **How to apply:**
 1. New `*.c` / `*.h` for a subsystem -> `src/game/<subsystem>/`. Drained subsystems already have a folder (cave/combat/enemies/hud/items/room/world/core).

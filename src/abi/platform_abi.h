@@ -13,8 +13,8 @@
  *      stack guard, system globals). NES work-RAM mirror lives at
  *      $FF8000-$FF87FF. `tools/debug/test_debug_contract.py` enforces
  *      this constant in both the asm and `a4_probe_main.c:10`.
- *      (Title.md path uses `src/genesis_shell.asm` with A4 = $FF0000;
- *      that boot is NOT linked into Debug.md.)
+ *      (The retired pre-Debug title boot used `src/genesis_shell.asm`
+ *      with A4 = $FF0000; that boot is NOT linked into Debug.md.)
  *    - Net effect: `nes_ram[offset]` compiles to `move.b (off,A4)` —
  *      the same addressing mode the transpiled asm uses. Zero perf cost.
  *      Probes that need to read raw absolute RAM cells must use
@@ -26,7 +26,7 @@
  *      `static unsigned char roomrom_nes_ram[0x800]` and sets pointer
  *      BEFORE any drained code runs
  *    - SGDK-friendly: A4 not reserved, no `-ffixed-a4` collision
- *    - Cost: one extra indirection per RAM access vs Title's A4 path
+ *    - Cost: one extra indirection per RAM access vs the retired A4 boot path
  *
  * Both variants expose identical `RAM(off)` / `OBJ(off, slot)` macros so
  * drained C in `src/oracle/<subsystem>/x_runtime.c` (and future native
