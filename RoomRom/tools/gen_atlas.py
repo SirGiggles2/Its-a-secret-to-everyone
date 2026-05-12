@@ -1290,7 +1290,8 @@ def emit_items_chr_x4(item_manifest: dict, out_dir: Path) -> int:
         f'#include "atlas/items_chr_x4.h"',
         "",
         f"const unsigned char roomrom_atlas_items_x4",
-        f"    [{prefix}_VARIANT_COUNT][{prefix}_BYTES] = {{",
+        f"    [{prefix}_VARIANT_COUNT][{prefix}_BYTES]",
+        f"    __attribute__((aligned(4))) = {{",
     ]
     for variant_name, x4_blob in zip(variant_names, x4_blobs):
         c_lines.append(f"    {{ /* {variant_name} */")

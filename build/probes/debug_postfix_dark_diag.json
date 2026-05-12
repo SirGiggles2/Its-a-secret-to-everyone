@@ -1,0 +1,8 @@
+{
+  "probe": "debug_postfix_dark_diag",
+  "status": "PASS",
+  "detail": "boot room=$73 dark=0 lit=0 used=0 slot8=96,96; after-teleport room=$21 dark=1 lit=0 used=0 slot8=96,96; after-Z-1 room=$21 dark=1 lit=0 used=0 slot8=96,96; after-B-1 room=$21 dark=1 lit=0 used=0 slot8=96,96; after-Z-2 room=$21 dark=1 lit=0 used=0 slot8=96,96; after-B-2 room=$21 dark=1 lit=0 used=0 slot8=96,96; after-Z-3 room=$21 dark=1 lit=0 used=0 slot8=96,96; after-B-3 room=$21 dark=1 lit=0 used=0 slot8=96,96; after-Z-4 room=$21 dark=1 lit=0 used=0 slot8=96,96; after-B-4 room=$21 dark=1 lit=0 used=0 slot8=96,96; after-Z-5 room=$21 dark=1 lit=0 used=0 slot8=96,96; after-B-5 room=$21 dark=1 lit=0 used=0 slot8=96,96; after-Z-6 room=$21 dark=1 lit=0 used=0 slot8=96,96; after-B-6 room=$21 dark=1 lit=0 used=0 slot8=96,96",
+  "domain": "M68K BUS",
+  "room_id": 33,
+  "frame": 1070
+}

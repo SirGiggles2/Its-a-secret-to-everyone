@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-05-10T06:47:10.183458+00:00",
+  "generated_at": "2026-05-12T02:31:04.561896+00:00",
   "generated_by": "tools/audit/primedirective/prime_refresh.py",
   "plan": {
     "path": "docs/superpowers/plans/2026-05-02-title-roomrom-full-port-master-plan.md",
@@ -13,8 +13,8 @@
     "task_title": "",
     "worktree": {
       "path": "C:/Users/Jake Diggity/Documents/GitHub/FINAL TRY",
-      "branch": "main",
-      "is_substrate_writer": true
+      "branch": "codex/investigate-rom-lag",
+      "is_substrate_writer": false
     },
     "next_concrete_action": "Phase 8 Task 8.1 Boss Framework: scaffold src/game/enemies/bosses/ + src/state/boss_state.h substrate; drain entry: python tools/audit/drain_coverage.py --phase 8"
   },
@@ -954,15 +954,82 @@
     },
     "drain_coverage_json": {
       "path": "tools/audit/drain_coverage.json",
-      "sha256": "bc79e8e820c8fa05d3763bd411a8c004ae2d0beb71c6aa3d4f53604a8185ce26",
+      "sha256": "a936ad57151c49a9e9d0f3bcc6a112561215bed5a7f5a47f4577e15ac67cae39",
       "ok": true
     },
-    "git_head": "63d41adae744a4555fa778c7ccf557ff0e1bfcde",
-    "dirty_paths_relevant": [],
+    "git_head": "b2174a147270f8847f965ef9a11d77557a00161e",
+    "dirty_paths_relevant": [
+      "RoomRom/data/regen_sentinels.json",
+      "RoomRom/data/uw_dark_rooms.c",
+      "RoomRom/data/uw_dark_rooms.h",
+      "RoomRom/data/uw_item_rooms.c",
+      "RoomRom/data/uw_item_rooms.h",
+      "RoomRom/data/uw_l1q1_cellar_pairs.c",
+      "RoomRom/data/uw_l1q1_cellar_pairs.h",
+      "RoomRom/data/uw_l1q1_pushblocks.c",
+      "RoomRom/data/uw_l1q1_pushblocks.h",
+      "RoomRom/src/atlas/items_chr_x4.c",
+      "RoomRom/src/expanded_bg_chr.c",
+      "RoomRom/src/inventory.c",
+      "RoomRom/src/inventory.h",
+      "RoomRom/src/main.c",
+      "RoomRom/src/ow_room_render_roomrom.c",
+      "RoomRom/src/ow_room_render_roomrom.h",
+      "RoomRom/src/render_adapter_sgdk.c",
+      "RoomRom/src/roomrom_arrow.c",
+      "RoomRom/src/roomrom_bomb.c",
+      "RoomRom/src/roomrom_boomerang.c",
+      "RoomRom/src/roomrom_candle_fire.c",
+      "RoomRom/src/roomrom_combat.c",
+      "RoomRom/src/roomrom_debug_runtime.h",
+      "RoomRom/src/roomrom_hud.c",
+      "RoomRom/src/roomrom_link_damage.c",
+      "RoomRom/src/roomrom_magic_shot.c",
+      "RoomRom/src/roomrom_pushblock.c",
+      "RoomRom/src/roomrom_pushblock.h",
+      "RoomRom/src/roomrom_sprites.c",
+      "RoomRom/src/roomrom_sprites.h",
+      "RoomRom/src/roomrom_vram_map.h",
+      "RoomRom/src/roomrom_world_transition.c",
+      "RoomRom/src/uw_cellar_meta.c",
+      "RoomRom/src/uw_dark_meta.c",
+      "RoomRom/src/uw_item_room_meta.c",
+      "RoomRom/src/uw_push_block_meta.c",
+      "RoomRom/src/uw_room_blob.c",
+      "RoomRom/src/uw_room_blob.h",
+      "RoomRom/src/uw_room_render_roomrom.c",
+      "RoomRom/tools/expand_bg_chr.py",
+      "RoomRom/tools/gen_atlas.py",
+      "RoomRom/tools/gen_uw_blob.py",
+      "src/debug/probes/fps_armed_no_enemies.lua",
+      "src/debug/probes/fps_armed_stress.lua",
+      "src/debug/probes/fps_unarm_after_spawn.lua",
+      "src/game/enemies/probes/enemy_loop_probe.c",
+      "src/game/enemies/probes/enemy_loop_probe.h",
+      "src/game/options/options_consumer.c",
+      "tools/audit/drain_coverage.json",
+      "tools/debug/probe_boss_bank_dispatch.lua",
+      "tools/debug/probes/probe_family73_dispatch.lua",
+      "tools/debug/probes/probe_walker_parity.lua",
+      "tools/debug/probes/probe_walker_tick_trace.lua",
+      "tools/uw_cellar_pairs_gen.py",
+      "tools/uw_dark_rooms_gen.py",
+      "tools/uw_item_rooms_gen.py",
+      "tools/uw_pushblock_meta_gen.py",
+      "src/sgdk_adapter/sram_save_io.h",
+      "tools/audit/debug_perf_safe_wins.py",
+      "tools/debug/test_transition_contract.py"
+    ],
     "evidence_paths_present": true,
     "complete_phase_invariant_ok": true,
-    "last_refresh_at": "2026-05-10T06:47:10.220843+00:00",
+    "last_refresh_at": "2026-05-12T02:31:04.642707+00:00",
     "stale_reasons": []
   },
-  "blockers": []
+  "blockers": [
+    {
+      "kind": "worktree",
+      "description": "Substrate edit on non-main worktree: src/sgdk_adapter/sram_save_io.h (WT-1)",
+      "path": "src/sgdk_adapter/sram_save_io.h"
+    }
+  ]
 }

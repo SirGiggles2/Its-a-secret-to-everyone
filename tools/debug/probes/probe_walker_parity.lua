@@ -110,7 +110,7 @@ end
 -- Boot path: title screen polls JOY_1 for the A+B+C debug chord
 -- (src/debug/a4_probe_main.c:15 CHORD_DEBUG). Rising edge fires
 -- roomrom_debug_enter() which clears slots and runs enemy_loop_probe_run()
--- only when this script arms the heavy probe with "EP" at $FF73FC.
+-- only when this script arms the heavy probe with "RP" at $FF73F8.
 --
 -- Sequence: advance idle to settle title, then hold A+B+C for several
 -- frames so the rising-edge detector triggers, then advance to let
@@ -122,8 +122,9 @@ for _ = 1, 180 do
 end
 
 -- 2) Arm the heavy enemy-loop stress probe, then hold A+B+C.
-memory.write_u8(0x73FC, 0x45, "68K RAM") -- 'E'
-memory.write_u8(0x73FD, 0x50, "68K RAM") -- 'P'
+memory.write_u8(0x73F8, 0x52, "68K RAM") -- 'R'
+memory.write_u8(0x73F9, 0x50, "68K RAM") -- 'P'
+memory.write_u8(0x73FA, 0x03, "68K RAM") -- heavy mirror + enemy stress
 local chord = {["P1 A"] = true, ["P1 B"] = true, ["P1 C"] = true}
 for _ = 1, 30 do
     joypad.set(chord)

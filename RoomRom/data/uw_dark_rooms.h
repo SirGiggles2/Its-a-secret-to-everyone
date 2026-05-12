@@ -26,5 +26,6 @@ struct uw_dark_room_meta {
 
 extern const struct uw_dark_room_meta uw_dark_rooms[];
 extern const unsigned short uw_dark_rooms_count;
+extern const unsigned char uw_dark_room_lookup[10][3][128];
 
 #endif /* ROOMROM_UW_DARK_ROOMS_H */

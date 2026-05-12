@@ -48,8 +48,13 @@ void options_persistence_probe_run(void)
 {
     volatile unsigned char *block =
         (volatile unsigned char *)OPTIONS_PERSISTENCE_PROBE_BASE;
+    unsigned char saved_options[OPTIONS_STATE_SIZE];
+    unsigned char saved_sentinel[SENTINEL_LEN];
     unsigned int i;
     unsigned int passes = 0u;
+
+    sram_options_io_read(saved_options, OPTIONS_STATE_SIZE);
+    sram_options_io_read_at(SENTINEL_OFFSET, saved_sentinel, SENTINEL_LEN);
 
     block[0] = 0x50u; /* 'P' */
     block[1] = 0x53u; /* 'S' */
@@ -66,6 +71,9 @@ void options_persistence_probe_run(void)
     block[13] = 0u;
     block[14] = 0u;
     block[15] = 0u;
+
+    sram_options_io_write(saved_options, OPTIONS_STATE_SIZE);
+    sram_options_io_write_at(SENTINEL_OFFSET, saved_sentinel, SENTINEL_LEN);
 }
 
 static unsigned char test_blank_detector_zeros(void)

@@ -164,6 +164,12 @@
 #define ENEMY_LOOP_PROBE_ARM0         0x45u  /* 'E' */
 #define ENEMY_LOOP_PROBE_ARM1         0x50u  /* 'P' */
 
+#define DEBUG_PROBE_CONTROL_BASE      0x00FF73F8UL
+#define DEBUG_PROBE_ARM0              0x52u  /* 'R' */
+#define DEBUG_PROBE_ARM1              0x50u  /* 'P' */
+#define DEBUG_PROBE_FLAGS_OFF         2u
+#define DEBUG_PROBE_ENEMY_STRESS      0x02u
+
 #ifdef __cplusplus
 extern "C" {
 #endif

@@ -17,19 +17,19 @@
     {
       "name": "pushblocks",
       "path": "RoomRom\\data\\uw_l1q1_pushblocks.c",
-      "rows": 8,
+      "rows": 38,
       "ok": true
     },
     {
       "name": "dark",
       "path": "RoomRom\\data\\uw_dark_rooms.c",
-      "rows": 261,
+      "rows": 291,
       "ok": true
     },
     {
       "name": "items",
       "path": "RoomRom\\data\\uw_item_rooms.c",
-      "rows": 969,
+      "rows": 999,
       "ok": true
     }
   ],

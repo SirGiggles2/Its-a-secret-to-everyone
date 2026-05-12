@@ -36,9 +36,9 @@
 #define FS_OPTIONS_PROBE_BASE  0x00FF7EA0UL
 
 /* Total navigable rows in the OPTIONS submenu.
- * 14 OptionId values (8 bool + 5 enum + 1 numeric) + SAVE row. */
-#define FS_OPTIONS_ROW_COUNT   15u
-#define FS_OPTIONS_SAVE_ROW    14u
+ * 15 OptionId values (8 bool + 6 enum + 1 numeric) + SAVE row. */
+#define FS_OPTIONS_ROW_COUNT   16u
+#define FS_OPTIONS_SAVE_ROW    15u
 
 #ifdef __cplusplus
 extern "C" {

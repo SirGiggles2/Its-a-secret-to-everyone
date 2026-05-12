@@ -37,16 +37,19 @@ end
 
 -- RAM domain selection (matches capture_debug_room.lua)
 local RAM_DOMAIN = "M68K BUS"
+local CTRL_ADDR  = 0x00FF73F8
 local TRIG_ADDR  = 0x00FF73FE
 local ACK_ADDR   = 0x00FF73FF
 local SENTINEL_BASE = 0x00FF7000
 if domain_exists("68K RAM") then
     RAM_DOMAIN = "68K RAM"
+    CTRL_ADDR = 0x73F8
     TRIG_ADDR = 0x73FE
     ACK_ADDR  = 0x73FF
     SENTINEL_BASE = 0x7000
 elseif domain_exists("M68K RAM") then
     RAM_DOMAIN = "M68K RAM"
+    CTRL_ADDR = 0x73F8
     TRIG_ADDR = 0x73FE
     ACK_ADDR  = 0x73FF
     SENTINEL_BASE = 0x7000
@@ -87,6 +90,10 @@ for _ = 1, 600 do
     end
 end
 for _ = 1, 60 do emu.frameadvance() end
+
+ram_w8(CTRL_ADDR + 0, 0x52) -- 'R'
+ram_w8(CTRL_ADDR + 1, 0x50) -- 'P'
+ram_w8(CTRL_ADDR + 2, 0x04) -- boss-bank trigger
 
 local function fire_boss(scene_id)
     local ack_before = ram_r8(ACK_ADDR)

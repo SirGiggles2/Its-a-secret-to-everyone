@@ -244,6 +244,7 @@ static unsigned char detect_warp_uw(unsigned char source_room_id,
                                     short link_x, short link_y,
                                     signed char grid_offset,
                                     unsigned char underground_exit_type,
+                                    unsigned char source_is_cellar,
                                     rr_warp_save_state_t *save_out,
                                     rr_warp_outcome_t   *outcome_out)
 {
@@ -270,21 +271,24 @@ static unsigned char detect_warp_uw(unsigned char source_room_id,
     tile_row = (unsigned char)((y_in_play >> 3) & 0x1Fu);
     level = roomrom_uw_room_render_get_level();
     quest = roomrom_uw_room_render_get_quest();
-    raw_tile = roomrom_uw_room_render_raw_tile_at_room(level, quest,
-                                                       source_room_id,
-                                                       tile_col, tile_row);
+    raw_tile = 0u;
+    if (!source_is_cellar) {
+        raw_tile = roomrom_uw_room_render_raw_tile_at_room(level, quest,
+                                                           source_room_id,
+                                                           tile_col, tile_row);
+    }
     /* UW stair tiles are exactly $70..$73. $24/$88 are OW-only
      * (NES line 7257-7260). Slice-1 P0-2: cellar rooms have no blob
      * entry yet (draw_placeholder fires) so raw_tile_at_room returns
      * 0 — bypass rule 5 inside cellars (every aligned tile counts as
      * an exit stair until cellar BG extraction lands; documented in
      * task 5.6 deferrals). */
-    if (!roomrom_uw_room_is_cellar(level, quest, source_room_id)) {
+    if (!source_is_cellar) {
         if (raw_tile < 0x70u || raw_tile > 0x73u) return 0u;
     }
 
     /* Rule 6: cellar resolution. */
-    if (roomrom_uw_room_is_cellar(level, quest, source_room_id)) {
+    if (source_is_cellar) {
         /* Cellar exit branch: dest = save state's source_room_id
          * (P0-3, latched on entry, NOT looked up in pair table). */
         if (save_out->source_room_id == 0u) {
@@ -366,6 +370,7 @@ void roomrom_world_transition_tick(void)
                                  roomrom_main_current_link_y(),
                                  roomrom_main_current_link_grid_offset(),
                                  roomrom_main_underground_exit_type(),
+                                 s_pending_cellar_exit,
                                  &s_save,
                                  &outcome);
         }
@@ -430,4 +435,3 @@ void roomrom_world_transition_tick(void)
         return;
     }
 }
-

@@ -32,14 +32,13 @@
  *                                            1+ per tile)
  *   tile 1533 .. 1535                       reserved / future (3 tiles)
  *   tile 1536+                              VDP plane / window / SAT / HScroll
- *                                            tables (post-PR-2b 64x32 layout
+ *                                            tables (post-PR-2c 64x64 layout
  *                                            allocates $C000+ for tables;
  *                                            1536 = $C000 / 32).
  *
- * VRAM table addresses (PR-2b 64x32 mode, BGA/BGB overrides applied):
- *   plane A  = $C000  (tiles 1536..1663, 4 KB)
- *   window   = $D000  (tiles 1664..1791, 4 KB)
- *   plane B  = $E000  (tiles 1792..1919, 4 KB) -- V scroll staging
+ * VRAM table addresses (PR-2c 64x64 mode, shared BGA/BGB):
+ *   plane A/B= $C000  (tiles 1536..1791, 8 KB)
+ *   window   = $E000  (tiles 1792..1919, 4 KB)
  *   hscroll  = $F000  (tiles 1920..1951, 1 KB)
  *   SAT      = $F400  (tiles 1952..1971, 640 B)
  *   free     = $F800-$FFFF                  (2 KB unused, future use)
@@ -108,6 +107,13 @@
 #define ROOMROM_ITEM_SUBPAL_COUNT       3u
 #define ROOMROM_ITEM_TILE_BASE_PAL(s) \
     (ROOMROM_ITEM_TILE_BASE + (unsigned short)(s) * ROOMROM_ITEM_TILE_COUNT_PER_PAL)
+
+/* Screen-fixed black sprite underlay behind the Window HUD. The Window plane
+ * treats color 0 as transparent, so vertical room scrolls need this opaque
+ * layer to keep the HUD background black without changing room CHR. */
+#define ROOMROM_HUD_BACKDROP_TILE_BASE \
+    (ROOMROM_ITEM_TILE_BASE + ROOMROM_ITEM_SUBPAL_COUNT * ROOMROM_ITEM_TILE_COUNT_PER_PAL)
+#define ROOMROM_HUD_BACKDROP_TILE_COUNT 8u
 
 /* PR-5 CHR-BOSSES: per-level boss CHR. NES Z1 mirrors this exactly --
  * z_03.asm:91 FetchPatternBlockUWBoss writes the boss bank into PPU

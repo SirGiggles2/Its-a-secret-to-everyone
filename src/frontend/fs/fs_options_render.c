@@ -94,7 +94,8 @@ static const char *const ROW_LABELS[FS_OPTIONS_SAVE_ROW + 1u] = {
     "START HP",        /* 11 START_HEARTS        numeric*/
     "LOSTWOODS",       /* 12 LOST_WOODS          enum   */
     "DARK ROOM",       /* 13 DARK_ROOM_LIGHT     enum   */
-    "SAVE"             /* 14 SAVE row                    */
+    "ROOM SCROLL",     /* 14 ROOM_SCROLL         enum   */
+    "SAVE"             /* 15 SAVE row                    */
 };
 
 static const char *bool_value_str(unsigned char v) { return (v != 0u) ? "ON" : "OFF"; }
@@ -139,6 +140,11 @@ static const char *dark_value_str(unsigned char v)
     }
 }
 
+static const char *scroll_value_str(unsigned char v)
+{
+    return (v == OPTIONS_SCROLL_CLASSIC) ? "CLASSIC" : "SMOOTH";
+}
+
 /* Format START HEARTS numeric as decimal "NN". */
 static void format_decimal_2(unsigned char value, char out[3])
 {
@@ -172,6 +178,7 @@ static const char *value_string_for_row(uint8_t row, char numbuf[3])
         return numbuf;
     case OPTION_ID_LOST_WOODS:        return lwoods_value_str(v);
     case OPTION_ID_DARK_ROOM_LIGHT:   return dark_value_str(v);
+    case OPTION_ID_ROOM_SCROLL:       return scroll_value_str(v);
     default: return "";
     }
 }

@@ -1,0 +1,13 @@
+{
+  "probe": "debug_postfix_soak",
+  "status": "PASS",
+  "detail": "five-minute fixed-window scripted soak held frame count and default probes stayed off",
+  "domain": "M68K BUS",
+  "emu_frames": 18000,
+  "game_frames": 18000,
+  "start_frame": 218,
+  "stop_frame": 18218,
+  "room_min": 115,
+  "room_max": 115,
+  "stress_nonzero_samples": 0
+}

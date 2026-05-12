@@ -26,10 +26,7 @@
  * future atlas refactor.
  */
 
-#include <genesis.h>
 #include "roomrom_candle_fire.h"
-#include "roomrom_vram_map.h"
-#include "atlas/items_chr_x4.h"
 #include "inventory.h"
 
 /* Travel: NES uses q-speed $20 = 0.5 px/frame for distance $10 (16 px),
@@ -41,12 +38,10 @@
 #define CANDLE_FIRE_TRAVEL_PX     48
 #define CANDLE_FIRE_STAND_FRAMES  30   /* shorter so cycle visible */
 #define CANDLE_FIRE_SPEED_PX      1
-#define CANDLE_FIRE_SLOT          8
 #define CANDLE_FIRE_TICKS_PER_FRM 4    /* NES LDA #$04 — anim_counter rollover */
 #define CANDLE_FIRE_FRAME_COUNT   2    /* NES toggles ObjAnimFrame 0/1 */
 
 /* Single tile pair, sub-pal 2 (red). Frame index controls hflip only. */
-#define CANDLE_FIRE_TILE_BASE     ROOMROM_ITEM_TILE_CANDLE_FIRE_F0
 #define CANDLE_FIRE_SUBPAL        2u
 
 typedef enum {
@@ -73,13 +68,7 @@ void          roomrom_candle_fire_room_reset(void)     { s_used_candle = 0u; }
 
 static void hide_slot(void)
 {
-    VDP_setSpriteFull(CANDLE_FIRE_SLOT,
-                      (s16)-32, (s16)-32,
-                      SPRITE_SIZE(2, 2),
-                      TILE_ATTR_FULL(PAL1, 1, 0, 0,
-                          (unsigned short)(ROOMROM_ITEM_TILE_BASE_PAL(0)
-                              + ROOMROM_ITEM_TILE_CANDLE_FIRE_F0)),
-                      0);  /* link=0: terminate chain at this slot */
+    roomrom_sprites_clear_candle_fire();
 }
 
 void roomrom_candle_fire_init(void)
@@ -127,15 +116,9 @@ static void draw_fire(void)
      * bottoms), sub-pal 2 (red). ObjAnimFrame toggles 0/1 every 4 ticks
      * → hflip toggles. */
     unsigned char hflip = s_anim_frame & 1u;
-    unsigned short tile = (unsigned short)(ROOMROM_ITEM_TILE_BASE_PAL(CANDLE_FIRE_SUBPAL)
-                                            + CANDLE_FIRE_TILE_BASE);
     /* Priority bit set so flame renders ABOVE BG_A door art (which uses
      * BG priority 0x8000). NES Z1 fire is foreground. */
-    VDP_setSpriteFull(CANDLE_FIRE_SLOT,
-                      (s16)s_x, (s16)s_y,
-                      SPRITE_SIZE(2, 2),
-                      TILE_ATTR_FULL(PAL1, 1, 0, hflip, tile),
-                      9);  /* link to slot 9 (magic_shot) — chain end at 9 */
+    roomrom_sprites_set_candle_fire(s_x, s_y, hflip, CANDLE_FIRE_SUBPAL);
 }
 
 static void advance_anim(void)

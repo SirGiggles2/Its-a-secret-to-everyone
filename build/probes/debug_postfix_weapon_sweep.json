@@ -1,0 +1,9 @@
+{
+  "probe": "debug_postfix_weapon_sweep",
+  "status": "PASS",
+  "detail": "sword active; beam active; sword cleared; beam cleared; boomerang active; boomerang cleared; arrow active; arrow cleared; bomb fuse active; bomb explosion active; bomb cleared; explosion cleared; candle fire active; candle fire cleared; magic shot active; magic shot cleared",
+  "domain": "M68K BUS",
+  "baseline_all_weapon_slots_off": true,
+  "room_id": 115,
+  "frame": 620
+}

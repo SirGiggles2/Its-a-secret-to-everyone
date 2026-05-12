@@ -143,6 +143,7 @@ struct uw_item_room_meta {
 
 extern const struct uw_item_room_meta uw_item_rooms[];
 extern const unsigned short uw_item_rooms_count;
+extern const unsigned short uw_item_room_lookup[10][3][128];
 
 /* NES item ids relevant to slice-1. */
 #define UW_ITEM_ID_COMPASS    0x10u
@@ -175,6 +176,26 @@ const unsigned short uw_item_rooms_count =
 """
 
 
+def emit_item_lookup(rows: list[dict]) -> str:
+    table = [[[0 for _ in range(128)] for _ in range(3)] for _ in range(10)]
+    for idx, r in enumerate(rows):
+        table[r["level"]][r["quest"]][r["room_id"]] = idx + 1
+
+    out = ["", "const unsigned short uw_item_room_lookup[10][3][128] = {"]
+    for level in range(10):
+        out.append("    {")
+        for quest in range(3):
+            out.append("        {")
+            vals = table[level][quest]
+            for i in range(0, 128, 8):
+                out.append("            " + ", ".join(f"{v}u" for v in vals[i:i + 8]) + ",")
+            out.append("        },")
+        out.append("    },")
+    out.append("};")
+    out.append("")
+    return "\n".join(out)
+
+
 def main() -> int:
     if not DUNGEONS_C.exists():
         sys.exit(f"missing {DUNGEONS_C}")
@@ -201,7 +222,8 @@ def main() -> int:
             f"  /* L{r['level']}Q{r['quest']} R${r['room_id']:02X} */"
         )
     OUT_H.write_text(HEADER, encoding="utf-8")
-    OUT_C.write_text(C_PROLOGUE + "\n".join(body_lines) + "\n" + C_EPILOGUE,
+    OUT_C.write_text(C_PROLOGUE + "\n".join(body_lines) + "\n" + C_EPILOGUE
+                     + emit_item_lookup(rows),
                      encoding="utf-8")
     print(f"wrote {OUT_H.relative_to(REPO)}")
     print(f"wrote {OUT_C.relative_to(REPO)}  ({len(rows)} rows)")

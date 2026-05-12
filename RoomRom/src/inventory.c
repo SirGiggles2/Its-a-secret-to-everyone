@@ -47,6 +47,20 @@ inventory_t g_inventory = {
     .selected_b_item  = 0u,
 };
 
+static unsigned char s_inventory_hud_dirty = 1u;
+
+void inventory_hud_mark_dirty(void)
+{
+    s_inventory_hud_dirty = 1u;
+}
+
+unsigned char inventory_hud_consume_dirty(void)
+{
+    unsigned char dirty = s_inventory_hud_dirty;
+    s_inventory_hud_dirty = 0u;
+    return dirty;
+}
+
 /* NES Z_01.asm:2812 World_ChangeRupees:
  *   FrameCounter LSR -> carry: every-other-frame gate.
  *   if RupeesToAdd > 0: DEC RupeesToAdd, INC InvRupees, queue tune.
@@ -66,12 +80,14 @@ void inventory_rupee_tick(unsigned char frame_counter)
     if (g_inventory.rupees_to_add != 0u) {
         if (g_inventory.rupees < INV_RUPEE_CAP) {
             g_inventory.rupees++;
+            inventory_hud_mark_dirty();
         }
         g_inventory.rupees_to_add--;
     }
     if (g_inventory.rupees_to_sub != 0u) {
         if (g_inventory.rupees != 0u) {
             g_inventory.rupees--;
+            inventory_hud_mark_dirty();
         }
         g_inventory.rupees_to_sub--;
     }

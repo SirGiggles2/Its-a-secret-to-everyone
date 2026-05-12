@@ -1,0 +1,13 @@
+{
+  "probe": "debug_perf_stress_arm",
+  "status": "PASS",
+  "detail": "explicit RP heavy+enemy-stress arm still runs the stress harness",
+  "domain": "M68K BUS",
+  "a4_state": 1,
+  "a4_scene": 1,
+  "room_id": 115,
+  "control": [82,80,3],
+  "stress_probe_bytes": [69,76,14,0,0,0,0,0],
+  "obj_types_1_to_11": [96,3,5,42,11,19,21,26,27,40,18],
+  "stress_signature": true
+}

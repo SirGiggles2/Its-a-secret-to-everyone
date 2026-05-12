@@ -62,7 +62,6 @@ unsigned char roomrom_arrow_active(void)
 void roomrom_arrow_update(void)
 {
     if (s_state == ARROW_IDLE) {
-        roomrom_sprites_clear_arrow();
         return;
     }
     switch (s_face) {

@@ -83,6 +83,7 @@ unsigned char roomrom_link_damage_apply(unsigned char dmg_hi,
             g_inventory.heart_values =
                 (unsigned char)(g_inventory.heart_values & 0xF0u);
             g_inventory.heart_partial = 0u;
+            inventory_hud_mark_dirty();
             return 1u;
         }
         full--;
@@ -100,6 +101,7 @@ unsigned char roomrom_link_damage_apply(unsigned char dmg_hi,
             g_inventory.heart_values =
                 (unsigned char)(g_inventory.heart_values & 0xF0u);
             g_inventory.heart_partial = 0u;
+            inventory_hud_mark_dirty();
             return 1u;
         }
         full = (unsigned char)(full - dmg_hi);
@@ -108,6 +110,7 @@ unsigned char roomrom_link_damage_apply(unsigned char dmg_hi,
     }
 
     s_invincibility_timer = ROOMROM_INVINCIBILITY_INITIAL;
+    inventory_hud_mark_dirty();
     return 0u;
 }
 

@@ -158,6 +158,9 @@ struct uw_cellar_pair {
 
 extern const struct uw_cellar_pair uw_l1q1_cellar_pairs[];
 extern const unsigned char uw_l1q1_cellar_pairs_count;
+extern const unsigned char uw_cellar_for_source_lookup[10][3][128];
+extern const unsigned char uw_cellar_source_for_cellar_lookup[10][3][128];
+extern const unsigned char uw_room_is_cellar_lookup[10][3][128];
 
 /* Lookup helpers — implemented in uw_cellar_meta.c. */
 
@@ -183,6 +186,41 @@ const unsigned char uw_l1q1_cellar_pairs_count =
 """
 
 
+def emit_lookup_array(name: str, table: list[list[list[int]]]) -> str:
+    out = ["", f"const unsigned char {name}[10][3][128] = {{"]
+    for level in range(10):
+        out.append("    {")
+        for quest in range(3):
+            out.append("        {")
+            vals = table[level][quest]
+            for i in range(0, 128, 16):
+                out.append("            " + ", ".join(f"0x{v:02X}u" for v in vals[i:i + 16]) + ",")
+            out.append("        },")
+        out.append("    },")
+    out.append("};")
+    out.append("")
+    return "\n".join(out)
+
+
+def emit_cellar_lookups(rows: list[dict]) -> str:
+    source_to_cellar = [[[0xFF for _ in range(128)] for _ in range(3)] for _ in range(10)]
+    cellar_to_source = [[[0xFF for _ in range(128)] for _ in range(3)] for _ in range(10)]
+    is_cellar = [[[0 for _ in range(128)] for _ in range(3)] for _ in range(10)]
+    for r in rows:
+        level = r["level"]
+        quest = r["quest"]
+        source = r["source"]
+        cellar = r["cellar"]
+        source_to_cellar[level][quest][source] = cellar
+        cellar_to_source[level][quest][cellar] = source
+        is_cellar[level][quest][cellar] = 1
+    return (
+        emit_lookup_array("uw_cellar_for_source_lookup", source_to_cellar)
+        + emit_lookup_array("uw_cellar_source_for_cellar_lookup", cellar_to_source)
+        + emit_lookup_array("uw_room_is_cellar_lookup", is_cellar)
+    )
+
+
 def main() -> int:
     if not DUNGEONS_C.exists():
         sys.exit(f"missing {DUNGEONS_C}")
@@ -198,7 +236,8 @@ def main() -> int:
             f"  /* L{r['level']}Q{r['quest']} */"
         )
     OUT_H.write_text(HEADER_TEMPLATE, encoding="utf-8")
-    OUT_C.write_text(C_PROLOGUE + "\n".join(body_lines) + "\n" + C_EPILOGUE,
+    OUT_C.write_text(C_PROLOGUE + "\n".join(body_lines) + "\n" + C_EPILOGUE
+                     + emit_cellar_lookups(rows),
                      encoding="utf-8")
     print(f"wrote {OUT_H.relative_to(REPO)}")
     print(f"wrote {OUT_C.relative_to(REPO)}  ({len(rows)} row{'s' if len(rows) != 1 else ''})")

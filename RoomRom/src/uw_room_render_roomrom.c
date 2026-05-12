@@ -1,3 +1,4 @@
+#include <genesis.h>
 #include "uw_room_render_roomrom.h"
 #include "uw_room_blob.h"
 #include "render_abi.h"
@@ -18,6 +19,13 @@ extern const unsigned char rooms_dungeons[];
 #define COMMON_MISC_TILE_COUNT   14u
 #define COMMON_BG_CHR_OFFSET     (112u * 32u)
 #define COMMON_MISC_CHR_OFFSET   (224u * 32u)
+#define ROOMROM_SHARED_PLANE_BASE 0xC000u
+#define ROOMROM_SHARED_PLANE_COLS 64u
+#define UW_DOOR_PRIORITY_CACHE_SLOTS 2u
+#define UW_DOOR_PRIORITY_CACHE_MAX   128u
+#define UW_DOOR_PRIORITY_CACHE_NONE  0xFFu
+#define VDP_DATA_WORD_UW (*(volatile unsigned short *)VDP_DATA_PORT)
+#define VDP_CTRL_LONG_UW (*(volatile unsigned long *)VDP_CTRL_PORT)
 
 static unsigned char s_uw_map_id = ROOMROM_MAP_ORIGINAL;
 static unsigned char s_uw_level  = 1u;
@@ -35,6 +43,20 @@ static unsigned char s_uw_walkable[16][11];
  * Keep this beside the metatile grid so door patches and false-wall state
  * affect both collision paths. */
 static unsigned char s_uw_tile_walkable[32][22];
+
+/* Vertical scroll priority patching only needs known door-art cells. Caching
+ * them as each room is rendered avoids scanning the full live nametable during
+ * transition setup/finalize. */
+static unsigned char s_door_priority_cache_valid[UW_DOOR_PRIORITY_CACHE_SLOTS];
+static unsigned char s_door_priority_cache_slot_x[UW_DOOR_PRIORITY_CACHE_SLOTS];
+static unsigned char s_door_priority_cache_row_base[UW_DOOR_PRIORITY_CACHE_SLOTS];
+static unsigned char s_door_priority_cache_count[UW_DOOR_PRIORITY_CACHE_SLOTS];
+static unsigned char s_door_priority_cache_col[UW_DOOR_PRIORITY_CACHE_SLOTS]
+                                                 [UW_DOOR_PRIORITY_CACHE_MAX];
+static unsigned char s_door_priority_cache_row[UW_DOOR_PRIORITY_CACHE_SLOTS]
+                                                 [UW_DOOR_PRIORITY_CACHE_MAX];
+static unsigned char s_door_priority_cache_build = UW_DOOR_PRIORITY_CACHE_NONE;
+static unsigned char s_door_priority_cache_next = 0u;
 
 /* NES UW tile classifier. Captured blob nt[] stores NES tile IDs from the
  * visible play area, and live NES PlayAreaTiles for room $73 match the
@@ -123,18 +145,22 @@ unsigned char roomrom_uw_room_render_get_quest(void)
 
 static int find_blob_entry(unsigned char level, unsigned char room_id)
 {
-    unsigned short i;
     unsigned char want_map = (s_uw_map_id == ROOMROM_MAP_REDUX) ? 1u : 0u;
-    unsigned char want_quest = s_uw_quest;
-    for (i = 0; i < g_uw_room_count; i++) {
-        if (g_uw_room_index[i][0] == want_map &&
-            g_uw_room_index[i][1] == want_quest &&
-            g_uw_room_index[i][2] == level &&
-            g_uw_room_index[i][3] == room_id) {
-            return (int)i;
-        }
-    }
-    return -1;
+    unsigned short idx_plus_one;
+    if (s_uw_quest >= 3u || level >= 10u || room_id >= 128u) return -1;
+    idx_plus_one = g_uw_room_lookup[want_map][s_uw_quest][level][room_id];
+    return (idx_plus_one == 0u) ? -1 : (int)(idx_plus_one - 1u);
+}
+
+static int find_blob_entry_explicit(unsigned char level,
+                                    unsigned char quest,
+                                    unsigned char room_id)
+{
+    unsigned char want_map = (s_uw_map_id == ROOMROM_MAP_REDUX) ? 1u : 0u;
+    unsigned short idx_plus_one;
+    if (quest >= 3u || level >= 10u || room_id >= 128u) return -1;
+    idx_plus_one = g_uw_room_lookup[want_map][quest][level][room_id];
+    return (idx_plus_one == 0u) ? -1 : (int)(idx_plus_one - 1u);
 }
 
 static void load_palette_from_blob(int idx)
@@ -221,6 +247,68 @@ static unsigned char uw_is_door_tile(unsigned char t)
     return 0u;
 }
 
+static unsigned char door_priority_cache_find(unsigned char slot_x,
+                                              unsigned char row_base)
+{
+    unsigned char i;
+    for (i = 0u; i < UW_DOOR_PRIORITY_CACHE_SLOTS; i++) {
+        if (s_door_priority_cache_valid[i] &&
+            s_door_priority_cache_slot_x[i] == slot_x &&
+            s_door_priority_cache_row_base[i] == row_base) {
+            return i;
+        }
+    }
+    return UW_DOOR_PRIORITY_CACHE_NONE;
+}
+
+static unsigned char door_priority_cache_alloc(unsigned char slot_x,
+                                               unsigned char row_base)
+{
+    unsigned char idx = door_priority_cache_find(slot_x, row_base);
+    if (idx == UW_DOOR_PRIORITY_CACHE_NONE) {
+        unsigned char i;
+        for (i = 0u; i < UW_DOOR_PRIORITY_CACHE_SLOTS; i++) {
+            if (!s_door_priority_cache_valid[i]) {
+                idx = i;
+                break;
+            }
+        }
+    }
+    if (idx == UW_DOOR_PRIORITY_CACHE_NONE) {
+        idx = s_door_priority_cache_next;
+        s_door_priority_cache_next++;
+        if (s_door_priority_cache_next >= UW_DOOR_PRIORITY_CACHE_SLOTS)
+            s_door_priority_cache_next = 0u;
+    }
+
+    s_door_priority_cache_valid[idx] = 1u;
+    s_door_priority_cache_slot_x[idx] = slot_x ? 1u : 0u;
+    s_door_priority_cache_row_base[idx] = row_base;
+    s_door_priority_cache_count[idx] = 0u;
+    return idx;
+}
+
+static void door_priority_cache_begin(unsigned char dst_col,
+                                      unsigned char row_base)
+{
+    unsigned char slot_x = (dst_col >= 16u) ? 1u : 0u;
+    s_door_priority_cache_build =
+        door_priority_cache_alloc(slot_x, row_base);
+}
+
+static void door_priority_cache_record(unsigned char plane_col,
+                                       unsigned char row)
+{
+    unsigned char idx = s_door_priority_cache_build;
+    unsigned char count;
+    if (idx == UW_DOOR_PRIORITY_CACHE_NONE) return;
+    count = s_door_priority_cache_count[idx];
+    if (count >= UW_DOOR_PRIORITY_CACHE_MAX) return;
+    s_door_priority_cache_col[idx][count] = plane_col;
+    s_door_priority_cache_row[idx][count] = row;
+    s_door_priority_cache_count[idx] = (unsigned char)(count + 1u);
+}
+
 /* PR-2: target plane for nametable writes. 0=BG_A (default, current room),
  * 1=BG_B (V scroll staging slot for incoming room). */
 static unsigned char s_target_plane = 0u;
@@ -230,11 +318,38 @@ void roomrom_uw_room_render_set_target_plane(unsigned char plane)
     s_target_plane = plane ? 1u : 0u;
 }
 
+static unsigned short wrapped_plane_row(unsigned short row)
+{
+    return (unsigned short)(row & (ROOMROM_PLANE_ROWS - 1u));
+}
+
 static void plane_write(unsigned short col, unsigned short row,
                         unsigned short word)
 {
     if (s_target_plane) render_set_plane_b_word(col, row, word);
     else                render_set_plane_a_word(col, row, word);
+}
+
+static unsigned short shared_plane_addr(unsigned short col, unsigned short row)
+{
+    return (unsigned short)(ROOMROM_SHARED_PLANE_BASE +
+        ((((row & (ROOMROM_PLANE_ROWS - 1u)) * ROOMROM_SHARED_PLANE_COLS) +
+          (col & (ROOMROM_SHARED_PLANE_COLS - 1u))) << 1));
+}
+
+static unsigned short plane_read_live_word(unsigned short col,
+                                           unsigned short row)
+{
+    unsigned short addr = shared_plane_addr(col, row);
+    VDP_setAutoInc(2);
+    VDP_CTRL_LONG_UW = VDP_READ_VRAM_ADDR(addr);
+    return VDP_DATA_WORD_UW;
+}
+
+static void plane_write_live_word(unsigned short col, unsigned short row,
+                                  unsigned short word)
+{
+    plane_write(col, row, word);
 }
 
 static void write_tile_raw_at(unsigned char col, unsigned char row,
@@ -247,8 +362,9 @@ static void write_tile_raw_at(unsigned char col, unsigned char row,
     unsigned short pri = uw_is_door_tile(raw_tile) ? 0x8000u : 0u;
     unsigned short word = (unsigned short)(pri |
         (ROOMROM_BG_TILE_BASE_PAL(pal & 0x03) + (unsigned short)raw_tile));
-    plane_write(col, (unsigned short)(dst_row_base + row +
-                                      ROOMROM_ROOM_FIRST_ROW), word);
+    plane_write(col, wrapped_plane_row(
+                    (unsigned short)(dst_row_base + row +
+                                     ROOMROM_ROOM_FIRST_ROW)), word);
 }
 
 static void write_tile_raw(unsigned char col, unsigned char row,
@@ -328,6 +444,8 @@ static void blit_blob_one_metacol_at(int idx, unsigned char src_col,
         unsigned char pal1 = attr_palette_for(attr, src_p1, nt_row);
         write_tile_raw_at(dst_p0, row, dst_row_base, raw0, pal0);
         write_tile_raw_at(dst_p1, row, dst_row_base, raw1, pal1);
+        if (uw_is_door_tile(raw0)) door_priority_cache_record(dst_p0, row);
+        if (uw_is_door_tile(raw1)) door_priority_cache_record(dst_p1, row);
         /* Task 5.5 fix: BG-tile walkability cache is keyed on SOURCE
          * col, not plane dst col. Link's collision probe samples via
          * tile_col = link_x>>3 (0..31, source-room space) regardless
@@ -422,23 +540,74 @@ void roomrom_uw_room_render_fill_one_col_at(unsigned char room_id,
                                             unsigned char dst_col,
                                             unsigned char dst_row_base)
 {
+    unsigned char src = (unsigned char)(src_col & 0x0Fu);
+    unsigned char dst = (unsigned char)(dst_col & 0x1Fu);
     int idx = find_blob_entry(s_uw_level, room_id);
+    if (src == 0u) {
+        door_priority_cache_begin(dst, dst_row_base);
+    }
     if (idx >= 0) {
-        blit_blob_one_metacol_at(idx, src_col & 0x0F, dst_col & 0x1F,
-                                 dst_row_base);
+        blit_blob_one_metacol_at(idx, src, dst, dst_row_base);
     } else {
         /* Non-blob room: plane tiles left unchanged; populate s_uw_walkable
          * from precomputed NES grid so collision is valid for all rooms.
          * Guard dst_col: s_uw_walkable is sized [16][11] for the active slot
          * only; slot-1 prefetch (dst_col 16-31) is out-of-bounds — skip. */
         unsigned char mt_row;
-        unsigned char mc = src_col & 0x0Fu;
-        if (dst_col >= 16u) return;
-        for (mt_row = 0u; mt_row < 11u; mt_row++) {
-            set_collision_metatile(
-                dst_col, mt_row,
-                uw_room_walkable(s_uw_level, s_uw_quest, room_id,
-                                 mc, mt_row));
+        if (dst < 16u) {
+            for (mt_row = 0u; mt_row < 11u; mt_row++) {
+                set_collision_metatile(
+                    dst, mt_row,
+                    uw_room_walkable(s_uw_level, s_uw_quest, room_id,
+                                     src, mt_row));
+            }
+        }
+    }
+    if (src == 15u) {
+        s_door_priority_cache_build = UW_DOOR_PRIORITY_CACHE_NONE;
+    }
+}
+
+void roomrom_uw_room_render_set_live_door_priority(unsigned char slot_x,
+                                                   unsigned char row_base,
+                                                   unsigned char enabled)
+{
+    unsigned char idx = door_priority_cache_find(slot_x ? 1u : 0u, row_base);
+    unsigned char i;
+    unsigned short col_base = slot_x ? ROOMROM_ROOM_COLS : 0u;
+    unsigned short pri_mask = enabled ? 0x8000u : 0u;
+
+    if (idx != UW_DOOR_PRIORITY_CACHE_NONE) {
+        unsigned char count = s_door_priority_cache_count[idx];
+        for (i = 0u; i < count; i++) {
+            unsigned short plane_col = s_door_priority_cache_col[idx][i];
+            unsigned short plane_row = wrapped_plane_row(
+                (unsigned short)(row_base + s_door_priority_cache_row[idx][i] +
+                                 ROOMROM_ROOM_FIRST_ROW));
+            unsigned short word = plane_read_live_word(plane_col, plane_row);
+            unsigned short tile = (unsigned short)(word & 0x07FFu);
+            unsigned char raw = (unsigned char)((tile - ROOMROM_BG_TILE_BASE) & 0x00FFu);
+            if (!uw_is_door_tile(raw))
+                continue;
+            word = (unsigned short)((word & 0x7FFFu) | pri_mask);
+            plane_write_live_word(plane_col, plane_row, word);
+        }
+        return;
+    }
+
+    for (i = 0u; i < ROOMROM_ROOM_ROWS; i++) {
+        unsigned char col;
+        unsigned short plane_row = wrapped_plane_row(
+            (unsigned short)(row_base + i + ROOMROM_ROOM_FIRST_ROW));
+        for (col = 0u; col < ROOMROM_ROOM_COLS; col++) {
+            unsigned short plane_col = (unsigned short)(col_base + col);
+            unsigned short word = plane_read_live_word(plane_col, plane_row);
+            unsigned short tile = (unsigned short)(word & 0x07FFu);
+            unsigned char raw = (unsigned char)((tile - ROOMROM_BG_TILE_BASE) & 0x00FFu);
+            if (!uw_is_door_tile(raw))
+                continue;
+            word = (unsigned short)((word & 0x7FFFu) | pri_mask);
+            plane_write_live_word(plane_col, plane_row, word);
         }
     }
 }
@@ -501,17 +670,10 @@ unsigned char roomrom_uw_room_render_raw_tile_at_room(unsigned char level,
                                                       unsigned char col,
                                                       unsigned char row)
 {
-    unsigned short i;
-    unsigned char want_map = (s_uw_map_id == ROOMROM_MAP_REDUX) ? 1u : 0u;
+    int idx;
     if (col >= ROOMROM_UW_BLOB_COLS) return 0u;
     if (row >= ROOMROM_UW_BLOB_ROWS) return 0u;
-    for (i = 0; i < g_uw_room_count; i++) {
-        if (g_uw_room_index[i][0] == want_map &&
-            g_uw_room_index[i][1] == quest &&
-            g_uw_room_index[i][2] == level &&
-            g_uw_room_index[i][3] == room_id) {
-            return g_uw_room_nt[i][row * ROOMROM_UW_BLOB_COLS + col];
-        }
-    }
-    return 0u;
+    idx = find_blob_entry_explicit(level, quest, room_id);
+    if (idx < 0) return 0u;
+    return g_uw_room_nt[idx][row * ROOMROM_UW_BLOB_COLS + col];
 }

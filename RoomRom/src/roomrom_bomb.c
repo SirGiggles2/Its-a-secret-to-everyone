@@ -36,6 +36,7 @@ void roomrom_bomb_place(link_face_t face, short link_x, short link_y)
      * slot only). */
     if (g_inventory.bombs == 0u) return;
     g_inventory.bombs--;
+    inventory_hud_mark_dirty();
     s_state = BOMB_FUSE;
     s_timer = BOMB_FUSE_FRAMES;
     s_x = link_x;
@@ -57,20 +58,17 @@ void roomrom_bomb_update(void)
 {
     switch (s_state) {
     case BOMB_IDLE:
-        roomrom_sprites_clear_bomb();
-        roomrom_sprites_clear_explosion();
         return;
     case BOMB_FUSE:
         roomrom_sprites_set_bomb(s_x, s_y, ROOMROM_BOMB_SUBPAL);
-        roomrom_sprites_clear_explosion();
         if (s_timer > 0u) s_timer--;
         if (s_timer == 0u) {
             s_state = BOMB_EXPLODE;
             s_timer = BOMB_EXPLODE_FRAMES;
+            roomrom_sprites_clear_bomb();
         }
         return;
     case BOMB_EXPLODE:
-        roomrom_sprites_clear_bomb();
         roomrom_sprites_set_explosion(s_x, s_y, s_timer, ROOMROM_BOMB_SUBPAL);
         if (s_timer > 0u) s_timer--;
         if (s_timer == 0u) {

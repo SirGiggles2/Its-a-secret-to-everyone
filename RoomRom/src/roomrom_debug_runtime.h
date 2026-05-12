@@ -139,6 +139,14 @@ unsigned char roomrom_debug_warp_unsupported_count(void);
 #define ROOMROM_DEBUG_STATE_MIRROR_BASE  0x00FF7200UL
 #define ROOMROM_DEBUG_STATE_MIRROR_BYTES 120u
 
+#define ROOMROM_DEBUG_PROBE_CONTROL_BASE 0x00FF73F8UL
+#define ROOMROM_DEBUG_PROBE_ARM0         0x52u  /* 'R' */
+#define ROOMROM_DEBUG_PROBE_ARM1         0x50u  /* 'P' */
+#define ROOMROM_DEBUG_PROBE_FLAGS_OFF    2u
+#define ROOMROM_DEBUG_PROBE_HEAVY_MIRROR 0x01u
+#define ROOMROM_DEBUG_PROBE_ENEMY_STRESS 0x02u
+#define ROOMROM_DEBUG_PROBE_BOSS_TRIGGER 0x04u
+
 void roomrom_debug_publish_state_mirror(void);
 
 /* Task 5.5: persistence-table dump block at $FF76D0 (256 B, one byte

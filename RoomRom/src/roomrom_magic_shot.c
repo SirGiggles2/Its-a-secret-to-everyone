@@ -60,7 +60,6 @@ unsigned char roomrom_magic_shot_active(void)
 void roomrom_magic_shot_update(void)
 {
     if (s_state == MAGIC_SHOT_IDLE) {
-        roomrom_sprites_clear_magic_shot();
         return;
     }
     switch (s_face) {

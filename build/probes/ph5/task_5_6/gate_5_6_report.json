@@ -2,9 +2,9 @@
   "verdict": "PASS",
   "pairs_total": 1,
   "pairs_passed": 1,
-  "entry_events_seen": 2,
+  "entry_events_seen": 3,
   "exit_events_seen": 2,
-  "events_total": 9,
+  "events_total": 11,
   "results": [
     {
       "level": 1,

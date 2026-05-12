@@ -35,6 +35,7 @@ void roomrom_sprites_upload_chr(void);    /* one-shot at boot (persistent + item
 void roomrom_sprites_upload_persistent_chr(void);
 void roomrom_sprites_upload_items_chr(void);
 void roomrom_sprites_load_palette(void);  /* call after every load_room() */
+void roomrom_sprites_invalidate_cache(void);
 void roomrom_sprites_spawn_link(short x, short y);
 void roomrom_sprites_set_link_pos(short x, short y);
 void roomrom_sprites_set_link_pose(short x, short y,
@@ -116,6 +117,13 @@ void roomrom_sprites_clear_explosion(void);
  * for any room-item kind as a "this is your pickup" marker. */
 void roomrom_sprites_set_room_item(short x, short y, unsigned char sub_pal);
 void roomrom_sprites_clear_room_item(void);
+
+/* Candle fire (slot 8). Owned here so gameplay code does not write SAT
+ * entries directly outside the sprite module. */
+void roomrom_sprites_set_candle_fire(short x, short y,
+                                     unsigned char hflip,
+                                     unsigned char sub_pal);
+void roomrom_sprites_clear_candle_fire(void);
 
 /* Magic rod shot (slot 9). Vertical 8x16 (UP/DOWN) or horizontal 16x16
  * (LEFT/RIGHT, hflip on LEFT). sub_pal: 0..2 (NES "flash" cycles 0..3

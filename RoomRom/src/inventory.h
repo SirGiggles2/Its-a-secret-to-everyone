@@ -175,6 +175,8 @@ static inline unsigned char heart_values_pack(unsigned char max_h, unsigned char
  * PlayerState. Until then, RoomRom keeps a singleton for the 1-player
  * boot path. */
 extern inventory_t g_inventory;
+void inventory_hud_mark_dirty(void);
+unsigned char inventory_hud_consume_dirty(void);
 
 /* Task 6.10.10 RupeesToAdd/Sub tick — NES Z_01.asm:2812 World_ChangeRupees.
  * Every 2 frames: -1 RupeesToAdd → +1 rupees (tune $10 played in NES,

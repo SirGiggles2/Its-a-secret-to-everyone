@@ -167,9 +167,12 @@ static const unsigned char s_redux_uw_hud_macro[] = {
 static unsigned short hud_word(unsigned char raw_tile, unsigned char pal)
 {
     /* Phase 4: HUD = NES BG content. Sub-pal selector lives in tile index
-     * (pixel-biased copy in the BG bank); Gen pal-slot bits stay 0. */
-    return (unsigned short)(ROOMROM_BG_TILE_BASE_PAL(pal & 0x03)
-                            + (unsigned short)raw_tile);
+     * (pixel-biased copy in the BG bank); Gen pal-slot bits stay 0.  The
+     * Window plane still treats pixel 0 as transparent, so HUD glyphs must
+     * sit above the sprite-backed black underlay during vertical scrolls. */
+    unsigned short tile = (unsigned short)(ROOMROM_BG_TILE_BASE_PAL(pal & 0x03)
+                                           + (unsigned short)raw_tile);
+    return TILE_ATTR_FULL(PAL0, 1, 0, 0, tile);
 }
 
 static void draw_hud_tile(unsigned char col, unsigned char row,
@@ -183,9 +186,13 @@ static void draw_hud_tile(unsigned char col, unsigned char row,
 static void draw_hud_tile_b(unsigned char col, unsigned char row,
                             unsigned char raw_tile, unsigned char pal)
 {
-    if (col >= ROOMROM_ROOM_COLS || row >= ROOMROM_HUD_ROWS)
-        return;
-    VDP_setTileMapXY(BG_B, hud_word(raw_tile, pal), col, row);
+    (void)col;
+    (void)row;
+    (void)raw_tile;
+    (void)pal;
+    /* PR-2c: BG_B shares BG_A's $C000 scroll surface. HUD lives on WINDOW;
+     * writing BG_B HUD shadows would erase wrapped room rows after vertical
+     * scrolls. */
 }
 
 static void draw_hud_tile_attr(unsigned char col, unsigned char row,
@@ -205,7 +212,8 @@ static void clear_hud_pal(void)
 
 static void clear_hud_b(void)
 {
-    VDP_clearTileMapRect(BG_B, 0, 0, ROOMROM_ROOM_COLS, ROOMROM_HUD_ROWS);
+    /* PR-2c: BG_B mirrors BG_A at $C000, so this must not clear rows 0..6.
+     * Those rows are live bottom-room rows after an upward vertical scroll. */
 }
 
 static void clear_hud_window(void)
@@ -492,6 +500,7 @@ void roomrom_hud_draw(unsigned char hud_id, unsigned char room_id,
     s_hud_id_cached = hud_id;
     (void)is_underworld;
     draw_hud_dynamic(hud_id);
+    (void)inventory_hud_consume_dirty();
 }
 
 /* Phase 6 Task 6.10.6 (Step A): per-frame live overlay. Repaints just
@@ -502,29 +511,12 @@ void roomrom_hud_draw(unsigned char hud_id, unsigned char room_id,
  * SAT DMA Lag Fix Plan D (debate 2026-05-09): dirty-gate via inventory
  * snapshot. ~99% of ticks have unchanged inventory; skipping the redraw
  * saves ~15 active-display VDP_setTileMapXY writes per skipped frame. */
-static inventory_t s_hud_inv_snapshot;
-static unsigned char s_hud_inv_snapshot_valid = 0u;
-
-static unsigned char hud_inv_changed(void)
-{
-    /* SGDK libmd has no memcmp; inline byte-wise compare. */
-    const unsigned char *a = (const unsigned char *)&g_inventory;
-    const unsigned char *b = (const unsigned char *)&s_hud_inv_snapshot;
-    unsigned short i;
-    for (i = 0u; i < (unsigned short)sizeof(inventory_t); i++) {
-        if (a[i] != b[i]) return 1u;
-    }
-    return 0u;
-}
-
 void roomrom_hud_refresh_dynamic(void)
 {
     if (s_hud_id_cached == 0xFFu)
         return; /* HUD has not been drawn yet — nothing to refresh. */
-    if (s_hud_inv_snapshot_valid && !hud_inv_changed()) {
+    if (!inventory_hud_consume_dirty()) {
         return; /* Inventory unchanged — skip the VDP traffic. */
     }
     draw_hud_dynamic(s_hud_id_cached);
-    s_hud_inv_snapshot = g_inventory;
-    s_hud_inv_snapshot_valid = 1u;
 }

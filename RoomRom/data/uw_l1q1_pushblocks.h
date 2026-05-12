@@ -34,5 +34,6 @@ struct uw_pushblock_meta {
 
 extern const struct uw_pushblock_meta uw_l1q1_pushblocks[];
 extern const unsigned char uw_l1q1_pushblocks_count;
+extern const unsigned char uw_pushblock_lookup[10][3][128];
 
 #endif /* ROOMROM_UW_L1Q1_PUSHBLOCKS_H */

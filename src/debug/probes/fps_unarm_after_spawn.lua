@@ -26,8 +26,9 @@ end
 
 press({}, STAGE1_FRAMES)
 
-memory.write_u8(0x73FC, 0x45, "68K RAM") -- 'E'
-memory.write_u8(0x73FD, 0x50, "68K RAM") -- 'P'
+memory.write_u8(0x73F8, 0x52, "68K RAM") -- 'R'
+memory.write_u8(0x73F9, 0x50, "68K RAM") -- 'P'
+memory.write_u8(0x73FA, 0x03, "68K RAM") -- heavy mirror + enemy stress
 
 press({A=true, B=true, C=true}, CHORD_FRAMES)
 press({}, SETTLE_FRAMES)
@@ -39,14 +40,14 @@ for slot = 0, 11 do
     if a ~= 0 then alive_before = alive_before + 1 end
 end
 
--- UN-arm: clear ENEMY_LOOP_PROBE_CONTROL_BASE byte 0.
+-- UN-arm: clear shared probe control byte 0.
 -- enemy_loop_probe_is_armed() now returns 0, so:
 --   - enemy_loop_probe_publish_pre() skipped
 --   - enemy_loop_probe_publish_live() skipped
 --   - roomrom_debug_publish_state_mirror heavy block skipped
 -- But enemies stay alive, so per-slot enemy_update_fns dispatch
 -- keeps walking 11 slots.
-memory.write_u8(0x73FC, 0x00, "68K RAM")
+memory.write_u8(0x73F8, 0x00, "68K RAM")
 
 -- Settle a few frames so the new gating takes effect.
 for _ = 1, 30 do emu.frameadvance() end
@@ -59,8 +60,9 @@ if game < 0 then game = game + 65536 end
 local ratio = SAMPLE_FRAMES / math.max(game, 1)
 local fps = 60.0 / ratio
 
-local arm0 = memory.read_u8(0x73FC, "68K RAM")
-local arm1 = memory.read_u8(0x73FD, "68K RAM")
+local arm0 = memory.read_u8(0x73F8, "68K RAM")
+local arm1 = memory.read_u8(0x73F9, "68K RAM")
+local flags = memory.read_u8(0x73FA, "68K RAM")
 
 local alive_after = 0
 for slot = 0, 11 do
@@ -79,7 +81,7 @@ f:write(string.format("Sample window: %d emu frames\n", SAMPLE_FRAMES))
 f:write(string.format("Game frames advanced: %d\n", game))
 f:write(string.format("Avg emu/game ratio: %.3f\n", ratio))
 f:write(string.format("Effective fps: %.2f (target 60.00)\n", fps))
-f:write(string.format("Arm bytes during sample: %02X %02X (expect 00 50)\n", arm0, arm1))
+f:write(string.format("Arm bytes during sample: %02X %02X flags=%02X (expect 00 50 / 03)\n", arm0, arm1, flags))
 if ratio > 1.5 then
     f:write("\nVERDICT: LAG remains -> dispatch / something else.\n")
 elseif ratio > 1.1 then

@@ -1,0 +1,7 @@
+{
+  "probe": "debug_hud_cram",
+  "status": "PASS",
+  "detail": "PAL0 CRAM after debug boot",
+  "domain": "M68K BUS",
+  "pal0_cram": [0,3822,2184,3680,0,78,1198,2766,0,1600,2176,3264,0,3680,2176,3264]
+}

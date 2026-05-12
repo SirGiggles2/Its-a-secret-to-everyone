@@ -1,0 +1,15 @@
+{
+  "probe": "debug_hud_opaque",
+  "status": "PASS",
+  "detail": "start=$73 mid_room=$73 first_scroll=68 v=-176 boot_nonzero=73 mid_nonzero=73 chr=ok reasons=none",
+  "domain": "M68K BUS",
+  "start_room": 115,
+  "mid_room": 115,
+  "first_scroll_frame": 68,
+  "mid_vscroll": -176,
+  "boot_window_nonzero": 73,
+  "mid_window_nonzero": 73,
+  "backdrop_first_slot": 10,
+  "backdrop_last_slot": 57,
+  "backdrop_tile": 1522
+}

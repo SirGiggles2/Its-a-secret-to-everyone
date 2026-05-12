@@ -289,6 +289,11 @@ void roomrom_ow_room_render_set_target_plane(unsigned char plane)
     s_target_plane = plane ? 1u : 0u;
 }
 
+static unsigned short wrapped_plane_row(unsigned short row)
+{
+    return (unsigned short)(row & (ROOMROM_PLANE_ROWS - 1u));
+}
+
 /* Palette uses src tile coords (where the tile semantically lives in its
  * source room). Plane write uses dst tile coords (where the tile actually
  * lands on the BG plane — supports off-room rendering during scroll). */
@@ -301,8 +306,8 @@ static void write_tile_at(unsigned char src_tile_col, unsigned char src_tile_row
 {
     unsigned char pal = ow_tile_palette(src_tile_col, src_tile_row,
                                         outer_pal, inner_pal);
-    unsigned short row_addr = (unsigned short)(dst_row_base + dst_tile_row +
-                                               ROOMROM_ROOM_FIRST_ROW);
+    unsigned short row_addr = wrapped_plane_row(
+        (unsigned short)(dst_row_base + dst_tile_row + ROOMROM_ROOM_FIRST_ROW));
     unsigned short word = tile_word(raw_tile, pal);
     if (s_target_plane) render_set_plane_b_word(dst_tile_col, row_addr, word);
     else                render_set_plane_a_word(dst_tile_col, row_addr, word);

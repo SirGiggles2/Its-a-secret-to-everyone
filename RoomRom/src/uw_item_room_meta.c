@@ -8,6 +8,7 @@
  */
 
 #include "uw_item_room_meta.h"
+#include "inventory.h"
 #include "../data/uw_item_rooms.h"
 
 /* INVENTORY_VALUE() lives in src/state/item_state.h, but pulling that
@@ -28,17 +29,13 @@ unsigned char roomrom_uw_item_for_room(unsigned char level,
                                        unsigned char room_id,
                                        struct uw_item_room_meta *out)
 {
-    unsigned short i;
+    unsigned short idx_plus_one;
     if (out == 0) return 0u;
-    for (i = 0u; i < uw_item_rooms_count; i++) {
-        if (uw_item_rooms[i].level == level &&
-            uw_item_rooms[i].quest == quest &&
-            uw_item_rooms[i].room_id == room_id) {
-            *out = uw_item_rooms[i];
-            return 1u;
-        }
-    }
-    return 0u;
+    if (level >= 10u || quest >= 3u || room_id >= 128u) return 0u;
+    idx_plus_one = uw_item_room_lookup[level][quest][room_id];
+    if (idx_plus_one == 0u) return 0u;
+    *out = uw_item_rooms[(unsigned short)(idx_plus_one - 1u)];
+    return 1u;
 }
 
 unsigned char roomrom_uw_item_taken(unsigned char room_id)
@@ -86,6 +83,7 @@ unsigned char roomrom_uw_item_pickup(unsigned char level,
         break;
     }
     s_item_taken[room_id] = 1u;
+    inventory_hud_mark_dirty();
     return 1u;
 }
 

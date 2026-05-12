@@ -1,0 +1,8 @@
+{
+  "probe": "debug_transition_pingpong",
+  "status": "PASS",
+  "detail": "up A_to_B $73->$63 first=67 commit=100 span=34 commit_active=0 commit_stage=0 max=170 outgoing_nonzero=0; down B_to_A $63->$73 first=11 commit=44 span=34 commit_active=0 commit_stage=0 max=170 outgoing_nonzero=0",
+  "domain": "M68K BUS",
+  "final_room": 115,
+  "frame": 403
+}

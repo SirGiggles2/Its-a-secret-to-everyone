@@ -70,6 +70,11 @@ static unsigned char   s_pb_state_per_room[256];
 
 /* Latched copy of last-tick room id so we detect room changes. */
 static unsigned char   s_pb_last_seen_room = 0xFFu;
+static unsigned char   s_pb_cached_room = 0xFFu;
+static unsigned char   s_pb_cached_level = 0u;
+static unsigned char   s_pb_cached_quest = 0u;
+static unsigned char   s_pb_cached_has_meta = 0u;
+static roomrom_pushblock_meta_t s_pb_cached_meta;
 
 /* RoomAllDead gate (Z_04.asm:630-631). Slice-1 stub — RoomRom has
  * no enemies in 5.x scope. Phase 6 enemy work replaces this. */
@@ -92,6 +97,10 @@ void roomrom_pushblock_init(void)
     s_pb_active_room = 0xFFu;
     s_pb_complete_count = 0u;
     s_pb_last_seen_room = 0xFFu;
+    s_pb_cached_room = 0xFFu;
+    s_pb_cached_level = 0u;
+    s_pb_cached_quest = 0u;
+    s_pb_cached_has_meta = 0u;
     for (i = 0u; i < 256u; i++) s_pb_state_per_room[i] = 0u;
 }
 
@@ -220,13 +229,39 @@ static void reset_to_idle(void)
     s_pb_dir_bit = 0u;
 }
 
+static void cache_room_meta(unsigned char level,
+                            unsigned char quest,
+                            unsigned char room_id)
+{
+    s_pb_cached_level = level;
+    s_pb_cached_quest = quest;
+    s_pb_cached_room = room_id;
+    s_pb_cached_has_meta = roomrom_pushblock_for_room(level, quest, room_id,
+                                                      &s_pb_cached_meta);
+}
+
+void roomrom_pushblock_room_load(unsigned char level,
+                                 unsigned char quest,
+                                 unsigned char room_id)
+{
+    reset_to_idle();
+    s_pb_active_room = 0xFFu;
+    s_pb_last_seen_room = room_id;
+    cache_room_meta(level, quest, room_id);
+
+    if (s_pb_cached_has_meta != 0u && s_pb_state_per_room[room_id] >= 1u) {
+        paint_metatile(s_pb_cached_meta.block_col_mt,
+                       s_pb_cached_meta.block_row_mt,
+                       PB_TILE_FLOOR_TL, PB_TILE_FLOOR_TR,
+                       PB_TILE_FLOOR_BL, PB_TILE_FLOOR_BR, 1u);
+    }
+}
+
 void roomrom_pushblock_tick(void)
 {
     unsigned char scene = roomrom_main_current_scene();
     unsigned char mode  = roomrom_main_current_mode();
     unsigned char room_id;
-    unsigned char level;
-    unsigned char quest;
     roomrom_pushblock_meta_t meta;
     short link_x, link_y;
     short blk_x, blk_y;
@@ -245,36 +280,32 @@ void roomrom_pushblock_tick(void)
         reset_to_idle();
         s_pb_active_room = 0xFFu;
         s_pb_last_seen_room = room_id;
+        cache_room_meta(roomrom_uw_room_render_get_level(),
+                        roomrom_uw_room_render_get_quest(),
+                        room_id);
     }
 
     /* If this room's persistent state is DONE, mirror collision into
      * the live walkability caches each tick (room render path resets
      * caches on scene reload, so persistence has to re-apply). */
     if (s_pb_state_per_room[room_id] >= 1u) {
-        /* Re-apply the destination-block / source-floor swap. */
-        if (roomrom_pushblock_for_room(roomrom_uw_room_render_get_level(),
-                                       roomrom_uw_room_render_get_quest(),
-                                       room_id, &meta)) {
-            /* Direction stored with high nibble of persistence byte? Slice-1
-             * uses a single-bit "any dir" assumption: dest = src+1 in N
-             * direction (north-side-of-room exit). Real per-room direction
-             * is a Phase 5.7 follow-up; here we just clear the source
-             * collision so Link can walk through. */
-            paint_metatile(meta.block_col_mt, meta.block_row_mt,
-                           PB_TILE_FLOOR_TL, PB_TILE_FLOOR_TR,
-                           PB_TILE_FLOOR_BL, PB_TILE_FLOOR_BR, 1u);
-        }
         return;
     }
 
     /* No persistent done — run live state machine. */
-    if (!roomrom_pushblock_for_room(roomrom_uw_room_render_get_level(),
-                                    roomrom_uw_room_render_get_quest(),
-                                    room_id, &meta)) {
+    if (s_pb_cached_room != room_id ||
+        s_pb_cached_level != roomrom_uw_room_render_get_level() ||
+        s_pb_cached_quest != roomrom_uw_room_render_get_quest()) {
+        cache_room_meta(roomrom_uw_room_render_get_level(),
+                        roomrom_uw_room_render_get_quest(),
+                        room_id);
+    }
+    if (s_pb_cached_has_meta == 0u) {
         reset_to_idle();
         s_pb_active_room = 0xFFu;
         return;
     }
+    meta = s_pb_cached_meta;
 
     if (!roomrom_pushblock_room_all_dead()) {
         reset_to_idle();

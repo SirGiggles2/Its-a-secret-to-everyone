@@ -23,6 +23,9 @@
 #define ROOMROM_PUSHBLOCK_H
 
 void roomrom_pushblock_init(void);
+void roomrom_pushblock_room_load(unsigned char level,
+                                 unsigned char quest,
+                                 unsigned char room_id);
 void roomrom_pushblock_tick(void);
 
 /* Mirror surface (used by main.c publish and probe). */

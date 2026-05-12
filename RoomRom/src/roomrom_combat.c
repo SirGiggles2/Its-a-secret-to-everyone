@@ -288,7 +288,6 @@ static unsigned char compute_state(unsigned char frame)
 static void update_beam(void)
 {
     if (!s_beam_active) {
-        roomrom_sprites_clear_beam();
         return;
     }
 
@@ -368,7 +367,6 @@ void roomrom_combat_update(short link_x, short link_y, link_face_t face)
     (void)face;
 
     if (s_state == COMBAT_IDLE) {
-        roomrom_sprites_clear_sword();
         update_beam();
         return;
     }

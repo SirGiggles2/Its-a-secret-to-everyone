@@ -40,10 +40,17 @@ extern volatile unsigned long g_check_link_collision_calls;
 
 unsigned char enemy_loop_probe_is_armed(void)
 {
-    volatile unsigned char *ctrl =
+    volatile unsigned char *legacy =
         (volatile unsigned char *)ENEMY_LOOP_PROBE_CONTROL_BASE;
-    return (ctrl[0] == ENEMY_LOOP_PROBE_ARM0 &&
-            ctrl[1] == ENEMY_LOOP_PROBE_ARM1) ? 1u : 0u;
+    volatile unsigned char *ctrl =
+        (volatile unsigned char *)DEBUG_PROBE_CONTROL_BASE;
+    if (ctrl[0] == DEBUG_PROBE_ARM0 &&
+        ctrl[1] == DEBUG_PROBE_ARM1 &&
+        (ctrl[DEBUG_PROBE_FLAGS_OFF] & DEBUG_PROBE_ENEMY_STRESS) != 0u) {
+        return 1u;
+    }
+    return (legacy[0] == ENEMY_LOOP_PROBE_ARM0 &&
+            legacy[1] == ENEMY_LOOP_PROBE_ARM1) ? 1u : 0u;
 }
 
 static void put_u16_be(volatile unsigned char *p, unsigned short v)

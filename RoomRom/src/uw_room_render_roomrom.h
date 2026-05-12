@@ -37,6 +37,14 @@ void roomrom_uw_room_render_fill_one_col_at(unsigned char room_id,
                                             unsigned char dst_col,
                                             unsigned char dst_row_base);
 
+/* Vertical scroll HUD fix: door-art cells are high-priority BG tiles during
+ * normal gameplay so Link can pass behind arches. While a vertical room slide
+ * is active Link is hidden and the fixed HUD underlay must cover those cells.
+ * Toggle only live nametable words whose raw tile ID is known door art. */
+void roomrom_uw_room_render_set_live_door_priority(unsigned char slot_x,
+                                                   unsigned char row_base,
+                                                   unsigned char enabled);
+
 /* S5.5 collision: returns non-zero if metatile (col, row) of the current
  * UW room is walkable. col 0..15, row 0..10. Out-of-bounds = 0. */
 unsigned char roomrom_uw_room_render_walkable_at(unsigned char col,

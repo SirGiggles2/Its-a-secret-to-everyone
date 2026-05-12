@@ -100,7 +100,7 @@ def expand_to_x4(data):
 
 
 def emit_array(f, name, data):
-    f.write(f"const unsigned char {name}_x4[{len(data)}] = {{\n")
+    f.write(f"const unsigned char {name}_x4[{len(data)}] __attribute__((aligned(4))) = {{\n")
     cols = 16
     for i in range(0, len(data), cols):
         chunk = data[i:i + cols]

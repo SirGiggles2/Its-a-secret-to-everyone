@@ -19,15 +19,8 @@ unsigned char roomrom_uw_room_is_dark(unsigned char level,
                                       unsigned char quest,
                                       unsigned char room_id)
 {
-    unsigned short i;
-    for (i = 0u; i < uw_dark_rooms_count; i++) {
-        if (uw_dark_rooms[i].level == level &&
-            uw_dark_rooms[i].quest == quest &&
-            uw_dark_rooms[i].room_id == room_id) {
-            return 1u;
-        }
-    }
-    return 0u;
+    if (level >= 10u || quest >= 3u || room_id >= 128u) return 0u;
+    return uw_dark_room_lookup[level][quest][room_id] ? 1u : 0u;
 }
 
 unsigned char roomrom_uw_room_lit(unsigned char room_id)

@@ -48,7 +48,8 @@ extern "C" {
 
 #define OPTIONS_VERSION_NONE    0x00u  /* uninitialized — triggers migrate */
 #define OPTIONS_VERSION_V1      0x01u  /* initial schema */
-#define OPTIONS_VERSION_CURRENT OPTIONS_VERSION_V1
+#define OPTIONS_VERSION_V2      0x02u  /* room_scroll option */
+#define OPTIONS_VERSION_CURRENT OPTIONS_VERSION_V2
 
 #define OPTIONS_STATE_SIZE      32u
 
@@ -69,7 +70,8 @@ typedef enum {
     OPTION_ID_START_HEARTS       = 11,  /* numeric (3..16) */
     OPTION_ID_LOST_WOODS         = 12,  /* enum */
     OPTION_ID_DARK_ROOM_LIGHT    = 13,  /* enum */
-    OPTION_ID_COUNT              = 14
+    OPTION_ID_ROOM_SCROLL        = 14,  /* enum */
+    OPTION_ID_COUNT              = 15
 } OptionId;
 
 /* Bitfield bit indices inside `bool_bits` u16. */
@@ -110,6 +112,11 @@ typedef enum {
 #define OPTIONS_DARK_BRIGHT        2u
 #define OPTIONS_DARK_COUNT         3u
 
+/* room_scroll enum. */
+#define OPTIONS_SCROLL_SMOOTH      0u  /* default - Genesis-native 32 frames */
+#define OPTIONS_SCROLL_CLASSIC     1u  /* original debug cadence - 64 frames */
+#define OPTIONS_SCROLL_COUNT       2u
+
 /* start_hearts numeric — clamp range. */
 #define OPTIONS_START_HEARTS_MIN   3u
 #define OPTIONS_START_HEARTS_MAX   16u
@@ -127,7 +134,8 @@ typedef struct OptionsState {
     unsigned char start_hearts;   /* off 8    */
     unsigned char lost_woods;     /* off 9    */
     unsigned char dark_room;      /* off 10   */
-    unsigned char reserved[19];   /* off 11..29 */
+    unsigned char room_scroll;    /* off 11   */
+    unsigned char reserved[18];   /* off 12..29 */
     unsigned char checksum[2];    /* off 30..31 (be u16) */
 } OptionsState;
 

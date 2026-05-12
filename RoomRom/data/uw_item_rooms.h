@@ -29,6 +29,7 @@ struct uw_item_room_meta {
 
 extern const struct uw_item_room_meta uw_item_rooms[];
 extern const unsigned short uw_item_rooms_count;
+extern const unsigned short uw_item_room_lookup[10][3][128];
 
 /* NES item ids relevant to slice-1. */
 #define UW_ITEM_ID_COMPASS    0x10u

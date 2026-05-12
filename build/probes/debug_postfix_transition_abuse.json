@@ -1,0 +1,8 @@
+{
+  "probe": "debug_postfix_transition_abuse",
+  "status": "FAIL",
+  "detail": "teleport target $21 landed in $42; dark-before-candle BG_B staging playfield not clear: 288; dark-before-candle dark expected 1 got 0; dark-after-candle BG_B staging playfield not clear: 288; dark-after-candle dark expected 1 got 0; dark room did not become lit after candle; teleport target $22 landed in $32; cellar-source-pushblock BG_A playfield looks too empty: 0; cellar-source-pushblock BG_B staging playfield not clear: 288; teleport target $7F landed in $59; cellar-room BG_B staging playfield not clear: 288; cellar-room cellar expected 1 got 0; teleport target $74 landed in $66; pushblock-room-74 BG_A playfield looks too empty: 0; pushblock-room-74 BG_B staging playfield not clear: 288; teleport target $73 landed in $64; return-debug-room BG_A playfield looks too empty: 0; return-debug-room BG_B staging playfield not clear: 288; map-toggle-reload BG_A playfield looks too empty: 0; map-toggle-reload BG_B staging playfield not clear: 288 | dark-before-candle room=$21 dark=0 lit=0 cellar=0 push=0 c000=704 d000=0 e000=288; dark-after-candle room=$21 dark=0 lit=0 cellar=0 push=0 c000=704 d000=0 e000=288; candle-light-path=not-lit; cellar-source-pushblock room=$22 dark=0 lit=0 cellar=0 push=0 c000=0 d000=0 e000=288; cellar-room room=$7F dark=0 lit=0 cellar=0 push=0 c000=0 d000=0 e000=288; pushblock-room-74 room=$74 dark=1 lit=0 cellar=0 push=0 c000=0 d000=0 e000=288; return-debug-room room=$73 dark=0 lit=0 cellar=0 push=0 c000=0 d000=0 e000=288; map-toggle-reload room=$64 dark=0 lit=0 cellar=0 push=0 c000=0 d000=0 e000=288",
+  "domain": "M68K BUS",
+  "room_id": 100,
+  "frame": 1396
+}

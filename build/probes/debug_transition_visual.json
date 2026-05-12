@@ -1,0 +1,7 @@
+{
+  "probe": "debug_transition_visual",
+  "status": "PASS",
+  "detail": "room $73->$63 first=68 commit=100 shots=12",
+  "domain": "M68K BUS",
+  "out_dir": ".\\transition_visual"
+}

@@ -12,17 +12,13 @@ unsigned char roomrom_uw_cellar_for_source(unsigned char level,
                                            unsigned char room_id,
                                            unsigned char *out_cellar)
 {
-    unsigned char i;
+    unsigned char cellar;
     if (out_cellar == 0) return 0u;
-    for (i = 0u; i < uw_l1q1_cellar_pairs_count; i++) {
-        if (uw_l1q1_cellar_pairs[i].level == level &&
-            uw_l1q1_cellar_pairs[i].quest == quest &&
-            uw_l1q1_cellar_pairs[i].source_room_id == room_id) {
-            *out_cellar = uw_l1q1_cellar_pairs[i].cellar_room_id;
-            return 1u;
-        }
-    }
-    return 0u;
+    if (level >= 10u || quest >= 3u || room_id >= 128u) return 0u;
+    cellar = uw_cellar_for_source_lookup[level][quest][room_id];
+    if (cellar == 0xFFu) return 0u;
+    *out_cellar = cellar;
+    return 1u;
 }
 
 unsigned char roomrom_uw_cellar_source_for_cellar(unsigned char level,
@@ -30,30 +26,19 @@ unsigned char roomrom_uw_cellar_source_for_cellar(unsigned char level,
                                                   unsigned char cellar_id,
                                                   unsigned char *out_source)
 {
-    unsigned char i;
+    unsigned char source;
     if (out_source == 0) return 0u;
-    for (i = 0u; i < uw_l1q1_cellar_pairs_count; i++) {
-        if (uw_l1q1_cellar_pairs[i].level == level &&
-            uw_l1q1_cellar_pairs[i].quest == quest &&
-            uw_l1q1_cellar_pairs[i].cellar_room_id == cellar_id) {
-            *out_source = uw_l1q1_cellar_pairs[i].source_room_id;
-            return 1u;
-        }
-    }
-    return 0u;
+    if (level >= 10u || quest >= 3u || cellar_id >= 128u) return 0u;
+    source = uw_cellar_source_for_cellar_lookup[level][quest][cellar_id];
+    if (source == 0xFFu) return 0u;
+    *out_source = source;
+    return 1u;
 }
 
 unsigned char roomrom_uw_room_is_cellar(unsigned char level,
                                         unsigned char quest,
                                         unsigned char room_id)
 {
-    unsigned char i;
-    for (i = 0u; i < uw_l1q1_cellar_pairs_count; i++) {
-        if (uw_l1q1_cellar_pairs[i].level == level &&
-            uw_l1q1_cellar_pairs[i].quest == quest &&
-            uw_l1q1_cellar_pairs[i].cellar_room_id == room_id) {
-            return 1u;
-        }
-    }
-    return 0u;
+    if (level >= 10u || quest >= 3u || room_id >= 128u) return 0u;
+    return uw_room_is_cellar_lookup[level][quest][room_id] ? 1u : 0u;
 }

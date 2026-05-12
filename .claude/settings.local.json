@@ -41,7 +41,11 @@
       "Bash(rm \"C:/Users/Jake Diggity/Documents/GitHub/FINAL TRY-roomrom-s1/sgdk/.git\")",
       "Bash(git -C \"C:/Users/Jake Diggity/Documents/GitHub/FINAL TRY-roomrom-s1\" status)",
       "Bash(rm \"C:/Users/Jake Diggity/.claude/commands/whatnext.md\")",
-      "Bash(rtk ls *)"
+      "Bash(rtk ls *)",
+      "Bash(cp \"builds/Debug.md\" /c/tmp/Debug.md)",
+      "Bash(rm -f /c/tmp/bm_probe/*)",
+      "Read(//c/tmp/**)",
+      "Bash(taskkill //F //IM EmuHawk.exe)"
     ]
   }
 }

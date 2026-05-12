@@ -111,6 +111,7 @@ struct uw_dark_room_meta {
 
 extern const struct uw_dark_room_meta uw_dark_rooms[];
 extern const unsigned short uw_dark_rooms_count;
+extern const unsigned char uw_dark_room_lookup[10][3][128];
 
 #endif /* ROOMROM_UW_DARK_ROOMS_H */
 """
@@ -130,6 +131,26 @@ const unsigned short uw_dark_rooms_count =
     (unsigned short)(sizeof(uw_dark_rooms) /
                      sizeof(uw_dark_rooms[0]));
 """
+
+
+def emit_dark_lookup(rows: list[dict]) -> str:
+    table = [[[0 for _ in range(128)] for _ in range(3)] for _ in range(10)]
+    for r in rows:
+        table[r["level"]][r["quest"]][r["room_id"]] = 1
+
+    out = ["", "const unsigned char uw_dark_room_lookup[10][3][128] = {"]
+    for level in range(10):
+        out.append("    {")
+        for quest in range(3):
+            out.append("        {")
+            vals = table[level][quest]
+            for i in range(0, 128, 16):
+                out.append("            " + ", ".join(f"{v}u" for v in vals[i:i + 16]) + ",")
+            out.append("        },")
+        out.append("    },")
+    out.append("};")
+    out.append("")
+    return "\n".join(out)
 
 
 def main() -> int:
@@ -157,7 +178,8 @@ def main() -> int:
             f"  /* L{r['level']}Q{r['quest']} R${r['room_id']:02X} */"
         )
     OUT_H.write_text(HEADER, encoding="utf-8")
-    OUT_C.write_text(C_PROLOGUE + "\n".join(body_lines) + "\n" + C_EPILOGUE,
+    OUT_C.write_text(C_PROLOGUE + "\n".join(body_lines) + "\n" + C_EPILOGUE
+                     + emit_dark_lookup(rows),
                      encoding="utf-8")
     print(f"wrote {OUT_H.relative_to(REPO)}")
     print(f"wrote {OUT_C.relative_to(REPO)}  ({len(rows)} rows)")

@@ -36,6 +36,7 @@ void options_consumer_apply_inventory_at_start(void)
     g_inventory.heart_partial = 0u;
 
     g_inventory.max_bombs = bomb_cap_for_upgrade(bomb_upg);
+    inventory_hud_mark_dirty();
 }
 
 /* --- Bool getters --------------------------------------------------- */
@@ -105,6 +106,11 @@ unsigned char options_consumer_get_lost_woods(void)
 unsigned char options_consumer_get_dark_room_light(void)
 {
     return options_get((unsigned int)OPTION_ID_DARK_ROOM_LIGHT);
+}
+
+unsigned char options_consumer_get_room_scroll(void)
+{
+    return options_get((unsigned int)OPTION_ID_ROOM_SCROLL);
 }
 
 /* --- Numeric ------------------------------------------------------- */

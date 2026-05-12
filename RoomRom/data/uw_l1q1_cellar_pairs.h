@@ -23,6 +23,9 @@ struct uw_cellar_pair {
 
 extern const struct uw_cellar_pair uw_l1q1_cellar_pairs[];
 extern const unsigned char uw_l1q1_cellar_pairs_count;
+extern const unsigned char uw_cellar_for_source_lookup[10][3][128];
+extern const unsigned char uw_cellar_source_for_cellar_lookup[10][3][128];
+extern const unsigned char uw_room_is_cellar_lookup[10][3][128];
 
 /* Lookup helpers — implemented in uw_cellar_meta.c. */
 

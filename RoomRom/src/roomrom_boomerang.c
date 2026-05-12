@@ -71,7 +71,6 @@ static void advance_phase(void)
 void roomrom_boomerang_update(short link_x, short link_y)
 {
     if (s_state == BOOMERANG_IDLE) {
-        roomrom_sprites_clear_boomerang();
         return;
     }
 

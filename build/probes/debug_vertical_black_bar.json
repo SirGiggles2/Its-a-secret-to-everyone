@@ -1,0 +1,17 @@
+{
+  "probe": "debug_vertical_black_bar",
+  "status": "PASS",
+  "detail": "vertical room $73->$63 v=-176 visible_rows=[49,50,51,52,53,54,55,56,57,58,59,60,61,62,63,0,1,2,3,4,5] counts=[32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32] zero=0; canonical_ok=true detail=ok v=0 visible_rows=[7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27] counts=[32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32] zero=0",
+  "domain": "M68K BUS",
+  "start_room": 115,
+  "scrolled_room": 99,
+  "scrolled_vscroll": -176,
+  "scrolled_visible_rows": [49,50,51,52,53,54,55,56,57,58,59,60,61,62,63,0,1,2,3,4,5],
+  "scrolled_visible_counts": [32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32],
+  "scrolled_zero_visible_rows": 0,
+  "canonical_ok": "true",
+  "canonical_vscroll": 0,
+  "canonical_visible_rows": [7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27],
+  "canonical_visible_counts": [32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32],
+  "canonical_zero_visible_rows": 0
+}

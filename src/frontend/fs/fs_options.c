@@ -57,6 +57,7 @@ static unsigned char enum_count_for_row(uint8_t row)
     case OPTION_ID_BOMB_UPGRADE:       return OPTIONS_BOMBUPG_COUNT;
     case OPTION_ID_LOST_WOODS:         return OPTIONS_LWOODS_COUNT;
     case OPTION_ID_DARK_ROOM_LIGHT:    return OPTIONS_DARK_COUNT;
+    case OPTION_ID_ROOM_SCROLL:        return OPTIONS_SCROLL_COUNT;
     default: return 0u;
     }
 }

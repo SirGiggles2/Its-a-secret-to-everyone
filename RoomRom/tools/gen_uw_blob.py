@@ -65,6 +65,29 @@ def emit_c(entries: list[dict], out_path: Path) -> None:
     n = len(entries)
     lines.append(f"const unsigned short g_uw_room_count = {n}u;")
     lines.append("")
+    lookup = [[[[0 for _ in range(128)] for _ in range(10)] for _ in range(3)] for _ in range(2)]
+    for idx, e in enumerate(entries):
+        mid = e["map_id"]
+        q = e["quest"]
+        lvl = e["level"]
+        rid = e["room_id"]
+        if mid < 2 and q < 3 and lvl < 10 and rid < 128:
+            lookup[mid][q][lvl][rid] = idx + 1
+    lines.append("const unsigned short g_uw_room_lookup[2][3][10][128] = {")
+    for mid in range(2):
+        lines.append("    {")
+        for q in range(3):
+            lines.append("        {")
+            for lvl in range(10):
+                lines.append("            {")
+                vals = lookup[mid][q][lvl]
+                for i in range(0, 128, 8):
+                    lines.append("                " + ", ".join(f"{v}u" for v in vals[i:i + 8]) + ",")
+                lines.append("            },")
+            lines.append("        },")
+        lines.append("    },")
+    lines.append("};")
+    lines.append("")
     lines.append(f"const unsigned char g_uw_room_index[{max(n,1)}][4] = {{")
     for e in entries:
         mid = e["map_id"]

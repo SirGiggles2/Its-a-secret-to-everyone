@@ -88,6 +88,13 @@ def parse_constants():
         fail(f"missing ROOMROM_ITEM_SUBPAL_COUNT in {VRAM_MAP_H}")
     consts["ROOMROM_ITEM_SUBPAL_COUNT"] = int(m.group(1))
 
+    # HUD backdrop tile count is a literal numeric define. Its base is the
+    # first free tile after the ITEM bank.
+    m = re.search(r"#define\s+ROOMROM_HUD_BACKDROP_TILE_COUNT\s+(\d+)u?", text_map)
+    if not m:
+        fail(f"missing ROOMROM_HUD_BACKDROP_TILE_COUNT in {VRAM_MAP_H}")
+    consts["ROOMROM_HUD_BACKDROP_TILE_COUNT"] = int(m.group(1))
+
     # --- PR-5 BOSS bank (shares SCENE_OBJ slot inside SPR bank, NES parity
     # per z_03.asm:91 -- boss rooms have no enemies). Verified at the C
     # level via #define ROOMROM_BOSS_TILE_BASE = (SPR_TILE_BASE + 44u);
@@ -114,10 +121,13 @@ def main():
     bg_base   = c["ROOMROM_BG_TILE_BASE"]
     spr_base  = c["ROOMROM_SPR_TILE_BASE"]
     item_base = c["ROOMROM_ITEM_TILE_BASE"]
+    hud_base = item_base + item_count
+    hud_count = c["ROOMROM_HUD_BACKDROP_TILE_COUNT"]
 
     bg_range   = tile_range_bytes(bg_base,   bg_count)
     spr_range  = tile_range_bytes(spr_base,  spr_count)
     item_range = tile_range_bytes(item_base, item_count)
+    hud_range  = tile_range_bytes(hud_base,  hud_count)
 
     # --- BG/SPR existing checks (unchanged) ---
 
@@ -171,13 +181,34 @@ def main():
         if overlaps(item_range, vdp_range):
             fail(f"ITEM range {item_range} collides with VDP {name} {vdp_range}")
 
+    # --- HUD backdrop bank checks ---
+
+    hud_end_tile = hud_base + hud_count
+    if item_end_tile > hud_base:
+        fail(f"ITEM bank end tile {item_end_tile} > HUD backdrop start tile {hud_base} "
+             "(ITEM and HUD backdrop banks overlap)")
+
+    for label, rng in (("BG", bg_range), ("SPR", spr_range), ("ITEM", item_range)):
+        if overlaps(rng, hud_range):
+            fail(f"{label} range {rng} overlaps HUD backdrop range {hud_range}")
+
+    if hud_end_tile > TILE_DATA_LIMIT_TILES:
+        fail(f"HUD backdrop end tile {hud_end_tile} exceeds VDP table region start "
+             f"tile {TILE_DATA_LIMIT_TILES} (=$C000 in 64x32 mode); backdrop tiles would clobber "
+             f"VDP table region")
+
+    for name, vdp_range in VDP_TABLES.items():
+        if overlaps(hud_range, vdp_range):
+            fail(f"HUD backdrop range {hud_range} collides with VDP {name} {vdp_range}")
+
     # --- Success summary ---
-    headroom_tiles = TILE_DATA_LIMIT_TILES - item_end_tile
+    headroom_tiles = TILE_DATA_LIMIT_TILES - hud_end_tile
     print(
         f"verify_vram_budget: OK  "
         f"BG=tiles {bg_base}..{bg_base + bg_count - 1}  "
         f"SPR=tiles {spr_base}..{spr_base + spr_count - 1}  "
         f"ITEM=tiles {item_base}..{item_end_tile - 1}  "
+        f"HUD_BACKDROP=tiles {hud_base}..{hud_end_tile - 1}  "
         f"BOSS=SCENE_OBJ-shared (NES parity)  "
         f"headroom={headroom_tiles} tiles before VDP tables"
     )

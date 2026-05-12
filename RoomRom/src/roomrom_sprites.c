@@ -62,6 +62,20 @@ extern const unsigned char common_chr[7616];
 #define ATTACK_POSE_COUNT       4u
 #define ATTACK_VRAM_TILE        (LINK_VRAM_TILE + LINK_POSE_COUNT * LINK_TILES_PER_POSE)
 
+/* Fixed black HUD underlay. The Window plane's color 0 is transparent, so
+ * it needs a screen-fixed opaque layer behind it while BG_A/B scroll. Use
+ * the 14-tile VRAM headroom immediately after the item bank; eight black
+ * tiles are enough for a 16x32 sprite strip. */
+#define ROOMROM_HUD_BACKDROP_TILE ROOMROM_HUD_BACKDROP_TILE_BASE
+#define ROOMROM_HUD_BACKDROP_FIRST_SLOT 10u
+#define ROOMROM_HUD_BACKDROP_SPRITE_COUNT 48u
+#define ROOMROM_HUD_BACKDROP_LAST_SLOT \
+    (ROOMROM_HUD_BACKDROP_FIRST_SLOT + ROOMROM_HUD_BACKDROP_SPRITE_COUNT - 1u)
+
+#if (ROOMROM_HUD_BACKDROP_TILE + ROOMROM_HUD_BACKDROP_TILE_COUNT) > 1536u
+#error "HUD backdrop tiles overlap VDP table region"
+#endif
+
 /* Phase 1: item atlas tiles live in their own contiguous block starting
  * after Link attack poses. Tile offsets come from atlas/items_chr_x4.h
  * (ROOMROM_ITEM_TILE_*). Replaces the old guessed common_chr-sourced
@@ -114,6 +128,119 @@ static const link_pose_def_t attack_poses[ATTACK_POSE_COUNT] = {
  * upload time by roomrom_sprites_upload_chr to pick the correct slice
  * of roomrom_atlas_items_x4[][]. */
 static unsigned char s_item_chr_variant = 0u;  /* ROOMROM_ITEM_VARIANT_ORIG */
+
+#define ROOMROM_SPRITE_CACHE_COUNT \
+    (ROOMROM_HUD_BACKDROP_FIRST_SLOT + ROOMROM_HUD_BACKDROP_SPRITE_COUNT)
+
+typedef struct {
+    s16 x;
+    s16 y;
+    u16 size;
+    u16 attr;
+    u16 link;
+    unsigned char valid;
+} roomrom_sprite_cache_t;
+
+static roomrom_sprite_cache_t s_sprite_cache[ROOMROM_SPRITE_CACHE_COUNT];
+
+static const unsigned char k_hud_backdrop_chr[
+    ROOMROM_HUD_BACKDROP_TILE_COUNT * 32u] = {
+    0x44,0x44,0x44,0x44, 0x44,0x44,0x44,0x44,
+    0x44,0x44,0x44,0x44, 0x44,0x44,0x44,0x44,
+    0x44,0x44,0x44,0x44, 0x44,0x44,0x44,0x44,
+    0x44,0x44,0x44,0x44, 0x44,0x44,0x44,0x44,
+
+    0x44,0x44,0x44,0x44, 0x44,0x44,0x44,0x44,
+    0x44,0x44,0x44,0x44, 0x44,0x44,0x44,0x44,
+    0x44,0x44,0x44,0x44, 0x44,0x44,0x44,0x44,
+    0x44,0x44,0x44,0x44, 0x44,0x44,0x44,0x44,
+
+    0x44,0x44,0x44,0x44, 0x44,0x44,0x44,0x44,
+    0x44,0x44,0x44,0x44, 0x44,0x44,0x44,0x44,
+    0x44,0x44,0x44,0x44, 0x44,0x44,0x44,0x44,
+    0x44,0x44,0x44,0x44, 0x44,0x44,0x44,0x44,
+
+    0x44,0x44,0x44,0x44, 0x44,0x44,0x44,0x44,
+    0x44,0x44,0x44,0x44, 0x44,0x44,0x44,0x44,
+    0x44,0x44,0x44,0x44, 0x44,0x44,0x44,0x44,
+    0x44,0x44,0x44,0x44, 0x44,0x44,0x44,0x44,
+
+    0x44,0x44,0x44,0x44, 0x44,0x44,0x44,0x44,
+    0x44,0x44,0x44,0x44, 0x44,0x44,0x44,0x44,
+    0x44,0x44,0x44,0x44, 0x44,0x44,0x44,0x44,
+    0x44,0x44,0x44,0x44, 0x44,0x44,0x44,0x44,
+
+    0x44,0x44,0x44,0x44, 0x44,0x44,0x44,0x44,
+    0x44,0x44,0x44,0x44, 0x44,0x44,0x44,0x44,
+    0x44,0x44,0x44,0x44, 0x44,0x44,0x44,0x44,
+    0x44,0x44,0x44,0x44, 0x44,0x44,0x44,0x44,
+
+    0x44,0x44,0x44,0x44, 0x44,0x44,0x44,0x44,
+    0x44,0x44,0x44,0x44, 0x44,0x44,0x44,0x44,
+    0x44,0x44,0x44,0x44, 0x44,0x44,0x44,0x44,
+    0x44,0x44,0x44,0x44, 0x44,0x44,0x44,0x44,
+
+    0x44,0x44,0x44,0x44, 0x44,0x44,0x44,0x44,
+    0x44,0x44,0x44,0x44, 0x44,0x44,0x44,0x44,
+    0x44,0x44,0x44,0x44, 0x44,0x44,0x44,0x44,
+    0x44,0x44,0x44,0x44, 0x44,0x44,0x44,0x44,
+};
+
+void roomrom_sprites_invalidate_cache(void)
+{
+    unsigned char i;
+    for (i = 0u; i < ROOMROM_SPRITE_CACHE_COUNT; i++) {
+        s_sprite_cache[i].valid = 0u;
+    }
+}
+
+static void roomrom_sprites_set_full_cached(u16 slot, s16 x, s16 y,
+                                            u16 size, u16 attr, u16 link)
+{
+    roomrom_sprite_cache_t *c;
+    if (slot < ROOMROM_SPRITE_CACHE_COUNT) {
+        c = &s_sprite_cache[slot];
+        if (c->valid != 0u &&
+            c->x == x && c->y == y &&
+            c->size == size && c->attr == attr && c->link == link) {
+            return;
+        }
+        c->x = x;
+        c->y = y;
+        c->size = size;
+        c->attr = attr;
+        c->link = link;
+        c->valid = 1u;
+    }
+    VDP_setSpriteFull(slot, x, y, size, attr, link);
+}
+
+#define VDP_setSpriteFull roomrom_sprites_set_full_cached
+
+static void roomrom_sprites_set_hud_backdrop(void)
+{
+    const u16 attr = TILE_ATTR_FULL(PAL0, 0, 0, 0, ROOMROM_HUD_BACKDROP_TILE);
+    u16 slot = ROOMROM_HUD_BACKDROP_FIRST_SLOT;
+    u16 x;
+
+    for (x = 0u; x < 256u; x = (u16)(x + 16u)) {
+        VDP_setSpriteFull(slot, (s16)x, (s16)0, SPRITE_SIZE(2, 4),
+                          attr, (u16)(slot + 1u));
+        slot++;
+    }
+    for (x = 0u; x < 256u; x = (u16)(x + 16u)) {
+        VDP_setSpriteFull(slot, (s16)x, (s16)32, SPRITE_SIZE(2, 2),
+                          attr, (u16)(slot + 1u));
+        slot++;
+    }
+    for (x = 0u; x < 256u; x = (u16)(x + 16u)) {
+        u16 link = (slot == ROOMROM_HUD_BACKDROP_LAST_SLOT) ? 0u
+                                                            : (u16)(slot + 1u);
+        VDP_setSpriteFull(slot, (s16)x, (s16)48, SPRITE_SIZE(2, 1),
+                          attr, link);
+        slot++;
+    }
+}
 
 void roomrom_sprites_set_redux(unsigned char redux)
 {
@@ -193,6 +320,10 @@ void roomrom_sprites_upload_persistent_chr(void)
                 &attack_poses[p]);
         }
     }
+
+    render_chr_upload((unsigned short)(ROOMROM_HUD_BACKDROP_TILE * 32u),
+                      k_hud_backdrop_chr,
+                      (unsigned short)sizeof(k_hud_backdrop_chr));
 }
 
 void roomrom_sprites_upload_items_chr(void)
@@ -261,6 +392,7 @@ void roomrom_sprites_set_link_attack_pose(short x, short y, link_face_t face)
 void roomrom_sprites_spawn_link(short x, short y)
 {
     /* SAT chain: 0 (Link) -> 1 (sword) -> 2 (beam) -> 3 (boomerang) -> end. */
+    roomrom_sprites_invalidate_cache();
     VDP_setSpriteFull(1,
                       (s16)-32,
                       (s16)-32,
@@ -322,8 +454,10 @@ void roomrom_sprites_spawn_link(short x, short y)
                       TILE_ATTR_FULL(PAL1, 1, 0, 0,
                           (unsigned short)(ROOMROM_ITEM_TILE_BASE_PAL(0)
                               + ROOMROM_ITEM_TILE_MAGIC_SHOT_V)),
-                      0);
+                      ROOMROM_HUD_BACKDROP_FIRST_SLOT);
+    roomrom_sprites_set_hud_backdrop();
     roomrom_sprites_set_link_pose(x, y, LINK_FACE_DOWN, 0u);
+    VDP_updateSprites(ROOMROM_SPRITE_CACHE_COUNT, DMA_QUEUE);
 }
 
 void roomrom_sprites_set_link_pos(short x, short y)
@@ -528,6 +662,30 @@ void roomrom_sprites_clear_room_item(void)
                       8);
 }
 
+void roomrom_sprites_set_candle_fire(short x, short y,
+                                     unsigned char hflip,
+                                     unsigned char sub_pal)
+{
+    unsigned short tile = (unsigned short)(ROOMROM_ITEM_TILE_BASE_PAL(sub_pal)
+                                            + ROOMROM_ITEM_TILE_CANDLE_FIRE_F0);
+    VDP_setSpriteFull(8,
+                      (s16)x, (s16)y,
+                      SPRITE_SIZE(2, 2),
+                      TILE_ATTR_FULL(PAL1, 1, 0, hflip, tile),
+                      9);
+}
+
+void roomrom_sprites_clear_candle_fire(void)
+{
+    unsigned short tile = (unsigned short)(ROOMROM_ITEM_TILE_BASE_PAL(0)
+                                            + ROOMROM_ITEM_TILE_CANDLE_FIRE_F0);
+    VDP_setSpriteFull(8,
+                      (s16)-32, (s16)-32,
+                      SPRITE_SIZE(2, 2),
+                      TILE_ATTR_FULL(PAL1, 1, 0, 0, tile),
+                      9);
+}
+
 /* S7 v7 arrow (slot 4). Vertical 8x16 for UP/DOWN, horizontal 16x16
  * for LEFT/RIGHT (hflip on LEFT).
  * sub_pal selects which 4-copy bank to read (NES base attr = 0). */
@@ -682,23 +840,28 @@ void roomrom_sprites_set_magic_shot(short x, short y, link_face_t face,
     switch (face) {
     case LINK_FACE_UP:
         VDP_setSpriteFull(9, (s16)x, (s16)y, SPRITE_SIZE(2, 2),
-                          TILE_ATTR_FULL(PAL1, 1, 0, 0, tile_v), 0);
+                          TILE_ATTR_FULL(PAL1, 1, 0, 0, tile_v),
+                          ROOMROM_HUD_BACKDROP_FIRST_SLOT);
         break;
     case LINK_FACE_DOWN:
         VDP_setSpriteFull(9, (s16)x, (s16)y, SPRITE_SIZE(2, 2),
-                          TILE_ATTR_FULL(PAL1, 1, 1, 0, tile_v), 0);
+                          TILE_ATTR_FULL(PAL1, 1, 1, 0, tile_v),
+                          ROOMROM_HUD_BACKDROP_FIRST_SLOT);
         break;
     case LINK_FACE_LEFT:
         VDP_setSpriteFull(9, (s16)x, (s16)y, SPRITE_SIZE(2, 2),
-                          TILE_ATTR_FULL(PAL1, 1, 0, 1, tile_h), 0);
+                          TILE_ATTR_FULL(PAL1, 1, 0, 1, tile_h),
+                          ROOMROM_HUD_BACKDROP_FIRST_SLOT);
         break;
     case LINK_FACE_RIGHT:
         VDP_setSpriteFull(9, (s16)x, (s16)y, SPRITE_SIZE(2, 2),
-                          TILE_ATTR_FULL(PAL1, 1, 0, 0, tile_h), 0);
+                          TILE_ATTR_FULL(PAL1, 1, 0, 0, tile_h),
+                          ROOMROM_HUD_BACKDROP_FIRST_SLOT);
         break;
     default:
         VDP_setSpriteFull(9, (s16)-32, (s16)-32, SPRITE_SIZE(2, 2),
-                          TILE_ATTR_FULL(PAL1, 1, 0, 0, tile_v), 0);
+                          TILE_ATTR_FULL(PAL1, 1, 0, 0, tile_v),
+                          ROOMROM_HUD_BACKDROP_FIRST_SLOT);
         break;
     }
 }
@@ -708,5 +871,6 @@ void roomrom_sprites_clear_magic_shot(void)
     unsigned short tile = (unsigned short)(ROOMROM_ITEM_TILE_BASE_PAL(0)
                                             + ROOMROM_ITEM_TILE_MAGIC_SHOT_V);
     VDP_setSpriteFull(9, (s16)-32, (s16)-32, SPRITE_SIZE(2, 2),
-                      TILE_ATTR_FULL(PAL1, 0, 0, 0, tile), 0);
+                      TILE_ATTR_FULL(PAL1, 0, 0, 0, tile),
+                      ROOMROM_HUD_BACKDROP_FIRST_SLOT);
 }
