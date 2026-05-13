@@ -30,6 +30,7 @@ Exit: 0 if byte-match passes; 1 on mismatch or missing files.
 from __future__ import annotations
 
 import argparse
+import ctypes
 import hashlib
 import json
 import os
@@ -54,6 +55,15 @@ ORIG_ROM_NAME = "Legend of Zelda, The (USA).nes"
 # 112 tiles * 16 bytes/tile = 1792 bytes.
 COMMON_SPRITE_PPU_ADDR = 0x0000
 COMMON_SPRITE_BYTE_LEN = 1792  # 112 NES tiles
+
+
+def short_path(path: Path) -> str:
+    raw = str(path.resolve())
+    if os.name != "nt":
+        return raw
+    buf = ctypes.create_unicode_buffer(32768)
+    n = ctypes.windll.kernel32.GetShortPathNameW(raw, buf, len(buf))
+    return buf.value if n else raw
 
 
 def sha256_hex(data: bytes) -> str:
@@ -119,12 +129,13 @@ def launch_bizhawk_probe(rom_path: Path) -> bool:
     env["CODEX_BIZHAWK_ROOT"] = str(bizhawk)
 
     cmd = [
-        "cmd.exe", "/c",
-        f'cd /d "{bizhawk}" && EmuHawk.exe --lua="probe_atlas_chr_live.lua" --rom="{rom_path}"'
+        short_path(bizhawk / "EmuHawk.exe"),
+        f"--lua={short_path(probe_copy)}",
+        short_path(rom_path),
     ]
     print(f"  Launching BizHawk: {' '.join(cmd)}")
     try:
-        subprocess.Popen(cmd, env=env, shell=False)
+        subprocess.Popen(cmd, cwd=short_path(bizhawk), env=env, shell=False)
         return True
     except Exception as e:
         print(f"  BizHawk launch failed: {e}")

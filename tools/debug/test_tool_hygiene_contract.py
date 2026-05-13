@@ -192,6 +192,18 @@ def test_uw_walkability_overlay_uses_current_debug_launcher_and_symbols() -> Non
          "UW overlay launcher must resolve players[0] instead of retired link globals")
 
 
+def test_verify_chr_live_launches_lua_and_rom_positionally() -> None:
+    src = read("RoomRom/tools/verify_chr_live.py")
+    reject(src, "--rom=",
+           "CHR live verifier must pass the ROM as a BizHawk positional argument")
+    need(src, "short_path",
+         "CHR live verifier must use short paths for BizHawk CLI")
+    need(src, 'f"--lua={short_path(probe_copy)}"',
+         "CHR live verifier must pass the Lua script with --lua")
+    need(src, "short_path(rom_path)",
+         "CHR live verifier must pass the ROM too")
+
+
 if __name__ == "__main__":
     test_uw_walk_contract_checks_debug_build_source_list()
     test_intro_asset_tests_are_directly_runnable()
@@ -204,4 +216,5 @@ if __name__ == "__main__":
     test_ph5_t52_probe_uses_current_debug_game_and_symbols()
     test_roomrom_generation_gates_do_not_name_retired_build()
     test_uw_walkability_overlay_uses_current_debug_launcher_and_symbols()
+    test_verify_chr_live_launches_lua_and_rom_positionally()
     print("PASS: Tool hygiene contract")
