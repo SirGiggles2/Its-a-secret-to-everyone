@@ -204,6 +204,21 @@ def test_verify_chr_live_launches_lua_and_rom_positionally() -> None:
          "CHR live verifier must pass the ROM too")
 
 
+def test_retired_room_render_probe_fails_closed() -> None:
+    src = read("tools/probes/probe_room_render.py")
+    reject(src, "Title_ow_debug",
+           "retired OW room probe must not emit legacy Title probe ROMs")
+    reject(src, "OW_DEBUG_ENTRY",
+           "retired OW room probe must not try to compile removed debug entry code")
+    reject(src, 'REPO_ROOT / "builds" / "Debug.out"',
+           "retired OW room probe must not link against nonexistent builds/Debug.out")
+    need(src, "retired", "retired OW room probe must fail closed with a clear reason")
+    need(src, "tools/room_checklist.py",
+         "retired OW room probe must point to current room capture tooling")
+    need(src, "tools/compare_room77_parity.py",
+         "retired OW room probe must point to current parity comparator")
+
+
 if __name__ == "__main__":
     test_uw_walk_contract_checks_debug_build_source_list()
     test_intro_asset_tests_are_directly_runnable()
@@ -217,4 +232,5 @@ if __name__ == "__main__":
     test_roomrom_generation_gates_do_not_name_retired_build()
     test_uw_walkability_overlay_uses_current_debug_launcher_and_symbols()
     test_verify_chr_live_launches_lua_and_rom_positionally()
+    test_retired_room_render_probe_fails_closed()
     print("PASS: Tool hygiene contract")
