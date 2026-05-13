@@ -22,8 +22,8 @@
 #include "../data/levelinfo_start_rooms.h"
 #include "roomrom_sprites.h"  /* LINK_FACE_* enum */
 
-/* Canonical UW Level 1 entrance spawn — matches the direct-boot
- * defaults in main.c (s_link_x = 120, s_link_y = 133). */
+/* Canonical UW Level 1 entrance spawn — matches the debug-entry
+ * defaults in main.c (players[0].x = 120, players[0].y = 133). */
 #define ROOMROM_WARP_UW_SPAWN_X  120
 #define ROOMROM_WARP_UW_SPAWN_Y  133
 

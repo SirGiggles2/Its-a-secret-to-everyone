@@ -10,16 +10,9 @@
 --
 -- Also captures 4-direction wall-stop in room $73 (the canonical test room).
 --
--- Symbol addresses resolved from RoomRom/out/rom.out via nm (ELF VMA 0xe0ff0000).
--- BizHawk "68K RAM" domain: offset = ELF VMA - 0xe0ff0000.
--- NOTE: s_scene moved .bss→.data (now init=1) so layout shifted vs prior build.
---   s_link_y     0x000A  (s16 BE)
---   s_link_x     0x000C  (s16 BE)
---   s_room_id    0x000E  (u8)
---   s_scene      0x0010  (u32 BE, OW=0 UW=1)
---   s_uw_level   0x0015  (u8)
---   s_link_dir   0x0880  (u32 BE, NONE=0 DOWN=1 UP=2 LEFT=3 RIGHT=4)
---   s_uw_walkable 0x0941 (u8[16*11=176], indexed [col*11+row])
+-- Symbol offsets are passed by tools/probes/run_ph5_uw_t52_special_cases.py.
+-- The launcher resolves build/debug_project/out/Debug.out and boots this Lua
+-- together with builds/Debug.md.
 --
 -- Output: build/probes/ph5/t52/special_cases.json
 -- Compared by: python tools/parity/verify_uw_collision.py --probe build/probes/ph5/t52/special_cases.json
@@ -27,42 +20,72 @@
 -- Wall-stop: build/probes/ph5/t52/wall_stop.json
 -- Pass criterion: stable_x=true, stable_y=true in all 4 directions.
 
-local OUT_CASES  = "C:\\Users\\Jake Diggity\\Documents\\GitHub\\FINAL TRY\\build\\probes\\ph5\\t52\\special_cases.json"
-local OUT_WSTOP  = "C:\\Users\\Jake Diggity\\Documents\\GitHub\\FINAL TRY\\build\\probes\\ph5\\t52\\wall_stop.json"
+local OUT_CASES = os.getenv("CODEX_T52_OUT_CASES") or "build/probes/ph5/t52/special_cases.json"
+local OUT_WSTOP = os.getenv("CODEX_T52_OUT_WSTOP") or "build/probes/ph5/t52/wall_stop.json"
 
-local RAM = "68K RAM"
--- Fallback: try "68K RAM", then default bus.
+local function parse_env_hex(name, value)
+    if value == nil or value == "" then
+        error("[ph5_t52] missing environment variable " .. name)
+    end
+    local n = tonumber(value) or tonumber((value:gsub("^0x", "")), 16)
+    if n == nil then
+        error("[ph5_t52] invalid environment variable " .. name .. "=" .. tostring(value))
+    end
+    return n
+end
+
+local function domain_exists(name)
+    for _, domain in ipairs(memory.getmemorydomainlist()) do
+        if domain == name then return true end
+    end
+    return false
+end
+
+local RAM = "M68K BUS"
+local RAM_OFFSET = 0x00FF0000
+local PROBE_BASE = 0x00FF7000
+local TITLE_PHASE_ADDR = 0x00FF8000 + 0x07F0
+if domain_exists("68K RAM") then
+    RAM = "68K RAM"
+    RAM_OFFSET = 0
+    PROBE_BASE = 0x7000
+    TITLE_PHASE_ADDR = 0x8000 + 0x07F0
+elseif domain_exists("M68K RAM") then
+    RAM = "M68K RAM"
+    RAM_OFFSET = 0
+    PROBE_BASE = 0x7000
+    TITLE_PHASE_ADDR = 0x8000 + 0x07F0
+end
+
+local function addr(off)
+    return RAM_OFFSET + off
+end
 local function r8(off)
-    local v = memory.read_u8(off, RAM)
-    if v == nil then v = memory.read_u8(0xFF0000 + off) or 0 end
+    local v = memory.read_u8(addr(off), RAM)
     return v or 0
 end
 local function r16s(off)
-    local v = memory.read_s16_be(off, RAM)
-    if v == nil then v = memory.read_s16_be(0xFF0000 + off) or 0 end
+    local v = memory.read_s16_be(addr(off), RAM)
     return v or 0
 end
 local function r32(off)
-    local v = memory.read_u32_be(off, RAM)
-    if v == nil then v = memory.read_u32_be(0xFF0000 + off) or 0 end
+    local v = memory.read_u32_be(addr(off), RAM)
     return v or 0
 end
-local function w8(off, val)
-    local ok = memory.write_u8(off, val, RAM)
-    if not ok then memory.write_u8(0xFF0000 + off, val) end
-end
 local function w16(off, val)
-    local ok = memory.write_u16_be(off, val, RAM)
-    if not ok then memory.write_u16_be(0xFF0000 + off, val) end
+    memory.write_u16_be(addr(off), val, RAM)
+end
+local function w32(off, val)
+    memory.write_u32_be(addr(off), val, RAM)
 end
 
-local SYM_LINK_Y     = 0x000A
-local SYM_LINK_X     = 0x000C
-local SYM_ROOM_ID    = 0x000E
-local SYM_SCENE      = 0x0010   -- u32 BE (moved .bss→.data)
-local SYM_UW_LEVEL   = 0x0015
-local SYM_LINK_DIR   = 0x0880
-local SYM_WALKABLE   = 0x0941   -- u8[16][11]
+local SYM_LINK_X   = parse_env_hex("CODEX_T52_LINK_X", os.getenv("CODEX_T52_LINK_X"))
+local SYM_LINK_Y   = parse_env_hex("CODEX_T52_LINK_Y", os.getenv("CODEX_T52_LINK_Y"))
+local SYM_ROOM_ID  = parse_env_hex("CODEX_T52_ROOM_ID", os.getenv("CODEX_T52_ROOM_ID"))
+local SYM_SCENE    = parse_env_hex("CODEX_T52_SCENE", os.getenv("CODEX_T52_SCENE"))
+local SYM_UW_LEVEL = parse_env_hex("CODEX_T52_UW_LEVEL", os.getenv("CODEX_T52_UW_LEVEL"))
+local SYM_LINK_DIR = parse_env_hex("CODEX_T52_LINK_DIR", os.getenv("CODEX_T52_LINK_DIR"))
+local SYM_WALKABLE = parse_env_hex("CODEX_T52_WALKABLE", os.getenv("CODEX_T52_WALKABLE"))
 
 local LINK_SPAWN_X   = 124
 local LINK_SPAWN_Y   = 144
@@ -85,6 +108,44 @@ local function hold(btn, n)
     local p = { [btn] = true, ["P1 " .. btn] = true }
     adv(n, p)
     adv(4, {})
+end
+
+local function probe_r8(off)
+    local v = memory.read_u8(PROBE_BASE + off, RAM)
+    return v or 0
+end
+
+local function title_phase()
+    local v = memory.read_u8(TITLE_PHASE_ADDR, RAM)
+    return v or 0
+end
+
+local function enter_debug_room()
+    if probe_r8(13) == 1 then return true end
+    local magic = false
+    for _ = 1, 120 do
+        emu.frameadvance()
+        if probe_r8(0) == 0xA4 and probe_r8(1) == 0x4A then
+            magic = true
+            break
+        end
+    end
+    if not magic then return false, "probe_magic_failed" end
+    for _ = 1, 60 do
+        if title_phase() == 1 then break end
+        emu.frameadvance()
+    end
+    if title_phase() ~= 1 then return false, "title_phase_failed" end
+    for _ = 1, 8 do
+        joypad.set({ ["P1 A"] = true, ["P1 B"] = true, ["P1 C"] = true }, 1)
+        emu.frameadvance()
+    end
+    joypad.set({}, 1)
+    for _ = 1, 180 do
+        emu.frameadvance()
+        if probe_r8(13) == 1 then return true, "ok" end
+    end
+    return false, "debug_entry_failed"
 end
 
 -- Read s_uw_walkable grid as flat 176-byte array (col-major: index = col*11+row).
@@ -144,9 +205,7 @@ end
 local function reset_link_pos()
     w16(SYM_LINK_X, LINK_SPAWN_X)
     w16(SYM_LINK_Y, LINK_SPAWN_Y)
-    w8(SYM_LINK_DIR, 0)    -- LINK_DIR_NONE (low byte of u32 LE BE?)
-    -- s_link_dir is u32 BE; set all bytes to 0 (LINK_DIR_NONE=0)
-    memory.write_u32_be(SYM_LINK_DIR, 0, RAM)
+    w32(SYM_LINK_DIR, 0)
     adv(4, {})
 end
 
@@ -237,9 +296,13 @@ end
 -- Main sequence
 -- ===========================================================================
 
--- 1. Boot wait: skip BIOS/init.
---    ROM boots directly into UW room $73 (L1 blob room).
-adv(120, {})
+-- 1. Enter Debug gameplay from the title with A+B+C.
+local entered, entry_reason = enter_debug_room()
+if not entered then
+    print("[ph5_t52] ERROR: " .. tostring(entry_reason))
+    client.exit()
+end
+adv(16, {})
 
 -- Verify we are in UW scene.
 if r32(SYM_SCENE) ~= 1 then

@@ -20,6 +20,11 @@ def reject(text: str, needle: str, label: str) -> None:
         raise AssertionError(f"{label}: unexpected {needle!r}")
 
 
+def need_file(path: str, label: str) -> None:
+    if not (ROOT / path).is_file():
+        raise AssertionError(f"{label}: missing {path}")
+
+
 def test_uw_walk_contract_checks_debug_build_source_list() -> None:
     test_src = read("RoomRom/tools/test_uw_walk_model.py")
     need(test_src, 'ROOT / "tools" / "debug" / "build_debug.py"',
@@ -104,6 +109,55 @@ def test_regression_matrix_uses_timezone_aware_utc() -> None:
          "regression matrix timestamps must use timezone-aware UTC")
 
 
+def test_ph5_t52_probe_uses_current_debug_game_and_symbols() -> None:
+    need_file("tools/probes/run_ph5_uw_t52_special_cases.py",
+              "T52 probe must have a launcher that passes Lua and ROM together")
+
+    lua = read("tools/probes/ph5_uw_t52_special_cases.lua")
+    launcher = read("tools/probes/run_ph5_uw_t52_special_cases.py")
+
+    reject(lua, "RoomRom/out/rom.out",
+           "T52 probe must not document retired RoomRom symbol output")
+    reject(lua, "s_link_x",
+           "T52 probe must not depend on retired s_link_x")
+    reject(lua, "s_link_y",
+           "T52 probe must not depend on retired s_link_y")
+    need(lua, 'os.getenv("CODEX_T52_LINK_X")',
+         "T52 probe must receive current players[0].x from launcher")
+    need(lua, 'os.getenv("CODEX_T52_LINK_Y")',
+         "T52 probe must receive current players[0].y from launcher")
+    need(lua, '"P1 A"', "T52 probe must press A+B+C to enter debug gameplay")
+    need(lua, '"P1 B"', "T52 probe must press A+B+C to enter debug gameplay")
+    need(lua, '"P1 C"', "T52 probe must press A+B+C to enter debug gameplay")
+    need(lua, "0xA4", "T52 probe must wait for probe magic before input")
+    need(lua, "0x07F0", "T52 probe must wait for title display phase")
+
+    need(launcher, 'ROOT / "builds" / "Debug.md"',
+         "T52 launcher must target builds/Debug.md")
+    need(launcher, 'ROOT / "build" / "debug_project" / "out" / "Debug.out"',
+         "T52 launcher must resolve current Debug.out symbols")
+    need(launcher, 'f"--lua={short_path(LUA)}"',
+         "T52 launcher must pass the Lua script")
+    need(launcher, "short_path(ROM)",
+         "T52 launcher must pass the Debug ROM too")
+    need(launcher, '"players"',
+         "T52 launcher must resolve players[0] instead of retired link globals")
+    need(launcher, '"CODEX_T52_LINK_X"',
+         "T52 launcher must export players[0].x")
+    need(launcher, '"CODEX_T52_LINK_Y"',
+         "T52 launcher must export players[0].y")
+
+
+def test_roomrom_generation_gates_do_not_name_retired_build() -> None:
+    for rel in (
+        "tools/probes/check_roomrom_data_manifest.py",
+        "tools/probes/check_generated_freshness.py",
+    ):
+        src = read(rel)
+        reject(src, "RoomRom/build.bat",
+               f"{rel} must not point users at the retired RoomRom build")
+
+
 if __name__ == "__main__":
     test_uw_walk_contract_checks_debug_build_source_list()
     test_intro_asset_tests_are_directly_runnable()
@@ -113,4 +167,6 @@ if __name__ == "__main__":
     test_human_input_recorder_launcher_loads_script_and_game()
     test_human_input_recorder_default_is_timestamped()
     test_regression_matrix_uses_timezone_aware_utc()
+    test_ph5_t52_probe_uses_current_debug_game_and_symbols()
+    test_roomrom_generation_gates_do_not_name_retired_build()
     print("PASS: Tool hygiene contract")

@@ -22,6 +22,11 @@ def need(text: str, needle: str, label: str) -> None:
         raise AssertionError(f"{label}: missing {needle!r}")
 
 
+def reject(text: str, needle: str, label: str) -> None:
+    if needle in text:
+        raise AssertionError(f"{label}: unexpected {needle!r}")
+
+
 def test_link_qspeed_matches_nes() -> None:
     """NES Z_05.asm:7092 InitLinkSpeed -> ObjQSpeedFrac = $60 default."""
     main_c = read("RoomRom/src/main.c")
@@ -57,9 +62,18 @@ def test_typed_player_state_is_used() -> None:
         raise AssertionError("legacy s_link_face global must be migrated to players[0].face")
 
 
+def test_roomrom_source_comments_do_not_name_retired_link_globals() -> None:
+    world_transition = read("RoomRom/src/roomrom_world_transition.c")
+    reject(world_transition, "s_link_x",
+           "world transition comments must use players[0].x")
+    reject(world_transition, "s_link_y",
+           "world transition comments must use players[0].y")
+
+
 if __name__ == "__main__":
     test_link_qspeed_matches_nes()
     test_link_grid_matches_nes()
     test_qspeed_4x_apply_per_frame()
     test_typed_player_state_is_used()
+    test_roomrom_source_comments_do_not_name_retired_link_globals()
     print("PASS: Phase 6 Task 6.2 movement contract")

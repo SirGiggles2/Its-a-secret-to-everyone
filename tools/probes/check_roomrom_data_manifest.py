@@ -11,7 +11,7 @@ Usage:
     python tools/probes/check_roomrom_data_manifest.py            # verify
     python tools/probes/check_roomrom_data_manifest.py --gen      # write manifest
 
-Wired into RoomRom/build.bat Step 0 alongside check_data_manifest.py.
+Run from the current Debug build/tooling path when RoomRom data changes.
 """
 
 from __future__ import annotations

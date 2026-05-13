@@ -17,7 +17,7 @@ Usage:
     python tools/probes/check_generated_freshness.py --gen      # write sentinels
     python tools/probes/check_generated_freshness.py --gen --only uw_collision
 
-Wired into RoomRom/build.bat Step 0.
+Wired into tools/debug/build_debug.py as part of the Debug build.
 """
 
 from __future__ import annotations
