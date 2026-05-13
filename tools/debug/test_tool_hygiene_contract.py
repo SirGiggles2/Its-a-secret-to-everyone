@@ -96,6 +96,14 @@ def test_human_input_recorder_default_is_timestamped() -> None:
     need(src, "input_%Y%m%d_%H%M%S.jsonl", "direct Lua recorder must not overwrite input.jsonl")
 
 
+def test_regression_matrix_uses_timezone_aware_utc() -> None:
+    src = read("tools/run_regression_matrix.py")
+    reject(src, "datetime.datetime.utcnow()",
+           "regression matrix must avoid deprecated naive UTC timestamps")
+    need(src, "datetime.UTC",
+         "regression matrix timestamps must use timezone-aware UTC")
+
+
 if __name__ == "__main__":
     test_uw_walk_contract_checks_debug_build_source_list()
     test_intro_asset_tests_are_directly_runnable()
@@ -104,4 +112,5 @@ if __name__ == "__main__":
     test_uw_debug_lua_enters_debug_gameplay_before_sampling()
     test_human_input_recorder_launcher_loads_script_and_game()
     test_human_input_recorder_default_is_timestamped()
+    test_regression_matrix_uses_timezone_aware_utc()
     print("PASS: Tool hygiene contract")

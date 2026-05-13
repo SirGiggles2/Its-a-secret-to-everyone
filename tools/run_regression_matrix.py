@@ -829,7 +829,7 @@ def main() -> int:
     )
     args = parser.parse_args()
 
-    timestamp = datetime.datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ")
+    timestamp = datetime.datetime.now(datetime.UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
 
     # ── Discover all probes ───────────────────────────────────────────────────
     all_probes: list[dict] = []
