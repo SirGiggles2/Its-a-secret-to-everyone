@@ -12,9 +12,40 @@ local TILE = 8
 local SAMPLE = 4
 local NES_PLAY_AREA = 0x6530
 local NES_THRESHOLD = 0x034A
-local GEN_TILE_WALKABLE_ADDR = 0x0945 -- AUTO-UPDATED from rom.out
-local GEN_LINK_X_ADDR = 0x000E        -- AUTO-UPDATED from rom.out
-local GEN_LINK_Y_ADDR = 0x000C        -- AUTO-UPDATED from rom.out
+
+local function parse_env_hex(value, fallback)
+  if value == nil or value == "" then return fallback end
+  return tonumber(value) or tonumber((value:gsub("^0x", "")), 16) or fallback
+end
+
+local GEN_TILE_WALKABLE_ADDR = parse_env_hex(os.getenv("CODEX_UW_OVERLAY_TILE_WALKABLE"), 0)
+local GEN_LINK_X_ADDR = parse_env_hex(os.getenv("CODEX_UW_OVERLAY_LINK_X"), 0)
+local GEN_LINK_Y_ADDR = parse_env_hex(os.getenv("CODEX_UW_OVERLAY_LINK_Y"), 0)
+
+local function domain_exists(name)
+  for _, domain in ipairs(memory.getmemorydomainlist()) do
+    if domain == name then return true end
+  end
+  return false
+end
+
+local GEN_RAM_DOMAIN = "M68K BUS"
+local GEN_ADDR_BASE = 0x00FF0000
+if domain_exists("68K RAM") then
+  GEN_RAM_DOMAIN = "68K RAM"
+  GEN_ADDR_BASE = 0
+elseif domain_exists("M68K RAM") then
+  GEN_RAM_DOMAIN = "M68K RAM"
+  GEN_ADDR_BASE = 0
+end
+
+local function gen_u8(addr)
+  return memory.read_u8(GEN_ADDR_BASE + addr, GEN_RAM_DOMAIN) or 0
+end
+
+local function gen_s16(addr)
+  return memory.read_s16_be(GEN_ADDR_BASE + addr, GEN_RAM_DOMAIN)
+end
 
 local ok_system, system_id = pcall(emu.getsystemid)
 if ok_system and system_id ~= "NES" then
@@ -56,7 +87,7 @@ local function tile_walkable(col, row)
   if GEN_TILE_WALKABLE_ADDR == 0 then
     return false
   end
-  return (memory.read_u8(GEN_TILE_WALKABLE_ADDR + col * 22 + row, "68K RAM") or 0) ~= 0
+  return gen_u8(GEN_TILE_WALKABLE_ADDR + col * 22 + row) ~= 0
 end
 
 local function door_passable(door_dir)
@@ -164,8 +195,8 @@ end
 local function read_link_pos()
   if ok_system and system_id ~= "NES" then
     if GEN_LINK_X_ADDR == 0 or GEN_LINK_Y_ADDR == 0 then return nil, nil end
-    local x = memory.read_s16_be(GEN_LINK_X_ADDR, "68K RAM")
-    local y = memory.read_s16_be(GEN_LINK_Y_ADDR, "68K RAM")
+    local x = gen_s16(GEN_LINK_X_ADDR)
+    local y = gen_s16(GEN_LINK_Y_ADDR)
     return x, y
   end
   return nil, nil

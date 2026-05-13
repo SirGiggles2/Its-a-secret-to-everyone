@@ -28,6 +28,7 @@ def test_bizhawk_ram_tools_normalize_sgdk_nm_symbols() -> None:
         "RoomRom/tools/probe_uw_collision_boot.py",
         "RoomRom/tools/probe_uw_west_exit.py",
         "RoomRom/tools/run_uw_walk_reason_probe.py",
+        "RoomRom/tools/launch_uw_walkability_overlay.py",
         "tools/probes/run_ph5_uw_t52_special_cases.py",
     ):
         module = load_module(rel)

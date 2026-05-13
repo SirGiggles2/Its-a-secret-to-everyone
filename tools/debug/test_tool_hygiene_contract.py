@@ -158,6 +158,40 @@ def test_roomrom_generation_gates_do_not_name_retired_build() -> None:
                f"{rel} must not point users at the retired RoomRom build")
 
 
+def test_uw_walkability_overlay_uses_current_debug_launcher_and_symbols() -> None:
+    need_file("RoomRom/tools/launch_uw_walkability_overlay.py",
+              "UW overlay must have a launcher that passes Lua and ROM together")
+
+    lua = read("RoomRom/tools/uw_walkability_overlay.lua")
+    launcher = read("RoomRom/tools/launch_uw_walkability_overlay.py")
+
+    reject(lua, "rom.out",
+           "UW overlay must not depend on retired symbol output")
+    reject(lua, "GEN_TILE_WALKABLE_ADDR = 0x",
+           "UW overlay must not hard-code stale walkability address")
+    reject(lua, "GEN_LINK_X_ADDR = 0x",
+           "UW overlay must not hard-code stale player x address")
+    reject(lua, "GEN_LINK_Y_ADDR = 0x",
+           "UW overlay must not hard-code stale player y address")
+    need(lua, 'os.getenv("CODEX_UW_OVERLAY_TILE_WALKABLE")',
+         "UW overlay must receive current walkability symbol")
+    need(lua, 'os.getenv("CODEX_UW_OVERLAY_LINK_X")',
+         "UW overlay must receive current players[0].x")
+    need(lua, 'os.getenv("CODEX_UW_OVERLAY_LINK_Y")',
+         "UW overlay must receive current players[0].y")
+
+    need(launcher, 'ROOT / "builds" / "Debug.md"',
+         "UW overlay launcher must target builds/Debug.md")
+    need(launcher, 'ROOT / "build" / "debug_project" / "out" / "Debug.out"',
+         "UW overlay launcher must resolve current Debug.out symbols")
+    need(launcher, 'f"--lua={short_path(LUA)}"',
+         "UW overlay launcher must pass the Lua script")
+    need(launcher, "short_path(ROM)",
+         "UW overlay launcher must pass the Debug ROM too")
+    need(launcher, '"players"',
+         "UW overlay launcher must resolve players[0] instead of retired link globals")
+
+
 if __name__ == "__main__":
     test_uw_walk_contract_checks_debug_build_source_list()
     test_intro_asset_tests_are_directly_runnable()
@@ -169,4 +203,5 @@ if __name__ == "__main__":
     test_regression_matrix_uses_timezone_aware_utc()
     test_ph5_t52_probe_uses_current_debug_game_and_symbols()
     test_roomrom_generation_gates_do_not_name_retired_build()
+    test_uw_walkability_overlay_uses_current_debug_launcher_and_symbols()
     print("PASS: Tool hygiene contract")
