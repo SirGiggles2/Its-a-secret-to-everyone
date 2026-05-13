@@ -11,8 +11,8 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 LUA = ROOT / "RoomRom" / "tools" / "uw_live_walk_debug.lua"
-ROM = ROOT / "RoomRom" / "out" / "Debug.md"
-ELF = ROOT / "RoomRom" / "out" / "rom.out"
+ROM = ROOT / "builds" / "Debug.md"
+ELF = ROOT / "build" / "debug_project" / "out" / "Debug.out"
 NM = ROOT / "build" / "toolchain" / "sgdk_bin" / "bin" / "nm.exe"
 OUT = ROOT / "build" / "reports" / "uw_live_walk_debug" / "latest.json"
 
@@ -22,16 +22,19 @@ SYMBOL_ENV = {
     "s_cur_opened": "CODEX_UW_LIVE_CUR_OPENED",
     "s_room_id": "CODEX_UW_LIVE_ROOM_ID",
     "s_scene": "CODEX_UW_LIVE_SCENE",
-    "s_link_x": "CODEX_UW_LIVE_LINK_X",
-    "s_link_y": "CODEX_UW_LIVE_LINK_Y",
     "s_link_dir": "CODEX_UW_LIVE_LINK_DIR",
-    "s_link_face": "CODEX_UW_LIVE_LINK_FACE",
     "s_link_keys": "CODEX_UW_LIVE_LINK_KEYS",
     "s_link_grid_offset": "CODEX_UW_LIVE_GRID_OFFSET",
     "s_link_pos_frac": "CODEX_UW_LIVE_POS_FRAC",
     "s_doorway_dir": "CODEX_UW_LIVE_DOORWAY_DIR",
     "s_scroll_state": "CODEX_UW_LIVE_SCROLL_STATE",
     "s_scroll_frame": "CODEX_UW_LIVE_SCROLL_FRAME",
+}
+
+PLAYER_OFFSETS = {
+    "CODEX_UW_LIVE_LINK_X": 0,
+    "CODEX_UW_LIVE_LINK_Y": 2,
+    "CODEX_UW_LIVE_LINK_FACE": 7,
 }
 
 
@@ -42,6 +45,10 @@ def short_path(path: Path) -> str:
     buf = ctypes.create_unicode_buffer(32768)
     n = ctypes.windll.kernel32.GetShortPathNameW(raw, buf, len(buf))
     return buf.value if n else raw
+
+
+def ram_offset(addr: int) -> int:
+    return addr & 0xFFFF
 
 
 def find_bizhawk() -> Path:
@@ -68,12 +75,12 @@ def resolve_symbols() -> dict[str, int]:
         capture_output=True,
         text=True,
     )
-    wanted = set(SYMBOL_ENV)
+    wanted = set(SYMBOL_ENV) | {"players"}
     out: dict[str, int] = {}
     for line in result.stdout.splitlines():
         parts = line.split()
         if len(parts) == 3 and parts[2] in wanted:
-            out[parts[2]] = int(parts[0], 16) & 0xFFFF
+            out[parts[2]] = ram_offset(int(parts[0], 16))
     missing = sorted(wanted - out.keys())
     if missing:
         raise RuntimeError(f"missing symbols: {missing}")
@@ -94,14 +101,16 @@ def main() -> int:
     if not LUA.is_file():
         raise FileNotFoundError(LUA)
     if not ROM.is_file() or not ELF.is_file():
-        raise FileNotFoundError("missing RoomRom build output; run RoomRom/build.bat")
+        raise FileNotFoundError("missing Debug build output; run Debug.bat")
 
     OUT.parent.mkdir(parents=True, exist_ok=True)
     env = os.environ.copy()
     env["CODEX_UW_LIVE_OUT_JSON"] = str(OUT)
     symbols = resolve_symbols()
     for symbol, env_name in SYMBOL_ENV.items():
-        env[env_name] = str(symbols[symbol])
+        env[env_name] = str(ram_offset(symbols[symbol]))
+    for env_name, offset in PLAYER_OFFSETS.items():
+        env[env_name] = str(ram_offset(symbols["players"] + offset))
 
     emu = find_bizhawk()
     stop_bizhawk()

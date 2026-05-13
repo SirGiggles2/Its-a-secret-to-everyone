@@ -15,8 +15,8 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 LUA = ROOT / "RoomRom" / "tools" / "uw_walk_reason_probe.lua"
-ROM_GEN = ROOT / "RoomRom" / "out" / "Debug.md"
-ELF_GEN = ROOT / "RoomRom" / "out" / "rom.out"
+ROM_GEN = ROOT / "builds" / "Debug.md"
+ELF_GEN = ROOT / "build" / "debug_project" / "out" / "Debug.out"
 NM = ROOT / "build" / "toolchain" / "sgdk_bin" / "bin" / "nm.exe"
 OUT_DIR = ROOT / "build" / "reports" / "uw_walk_reason" / "r73"
 
@@ -24,8 +24,7 @@ SYMBOLS = (
     "s_uw_tile_walkable",
     "s_uw_walkable",
     "s_room_id",
-    "s_link_x",
-    "s_link_y",
+    "players",
 )
 
 
@@ -36,6 +35,10 @@ def short_path(path: Path) -> str:
     buf = ctypes.create_unicode_buffer(32768)
     n = ctypes.windll.kernel32.GetShortPathNameW(raw, buf, len(buf))
     return buf.value if n else raw
+
+
+def ram_offset(addr: int) -> int:
+    return addr & 0xFFFF
 
 
 def find_bizhawk() -> Path:
@@ -64,7 +67,6 @@ def find_nes_rom() -> Path:
         ROOT / "Legend of Zelda, The (USA).nes",
         ROOT / "Zelda1-Redux" / "Legend of Zelda, The (USA).nes",
         Path(r"C:\Users\Jake Diggity\Documents\GitHub\VDP rebirth tools and asms\BizHawk-2.11-win-x64\zelda.nes"),
-        Path(r"C:\Users\Jake Diggity\Documents\GitHub\VDP rebirth tools and asms\WHAT IF\Legend of Zelda, The (USA).nes"),
     ])
     for c in candidates:
         if c.is_file():
@@ -74,7 +76,7 @@ def find_nes_rom() -> Path:
 
 def resolve_gen_symbols() -> dict[str, int]:
     if not ELF_GEN.is_file():
-        raise FileNotFoundError(f"missing {ELF_GEN}; run RoomRom/build.bat")
+        raise FileNotFoundError(f"missing {ELF_GEN}; run Debug.bat")
     result = subprocess.run(
         [str(NM), "-n", str(ELF_GEN)],
         cwd=ROOT,
@@ -87,7 +89,7 @@ def resolve_gen_symbols() -> dict[str, int]:
     for line in result.stdout.splitlines():
         parts = line.split()
         if len(parts) == 3 and parts[2] in want:
-            found[parts[2]] = int(parts[0], 16) & 0xFFFF
+            found[parts[2]] = ram_offset(int(parts[0], 16))
     missing = want - found.keys()
     if missing:
         raise RuntimeError(f"missing Genesis symbols: {sorted(missing)}")
@@ -115,11 +117,11 @@ def run_probe(system: str, rom: Path, out_json: Path, timeout: int) -> dict:
     env["CODEX_UW_REASON_ROOM"] = str(0x73)
     if system == "genesis":
         symbols = resolve_gen_symbols()
-        env["CODEX_GEN_TILE_WALKABLE"] = str(symbols["s_uw_tile_walkable"])
-        env["CODEX_GEN_WALKABLE"] = str(symbols["s_uw_walkable"])
-        env["CODEX_GEN_ROOM_ID"] = str(symbols["s_room_id"])
-        env["CODEX_GEN_LINK_X"] = str(symbols["s_link_x"])
-        env["CODEX_GEN_LINK_Y"] = str(symbols["s_link_y"])
+        env["CODEX_GEN_TILE_WALKABLE"] = str(ram_offset(symbols["s_uw_tile_walkable"]))
+        env["CODEX_GEN_WALKABLE"] = str(ram_offset(symbols["s_uw_walkable"]))
+        env["CODEX_GEN_ROOM_ID"] = str(ram_offset(symbols["s_room_id"]))
+        env["CODEX_GEN_LINK_X"] = str(ram_offset(symbols["players"] + 0))
+        env["CODEX_GEN_LINK_Y"] = str(ram_offset(symbols["players"] + 2))
 
     stop_bizhawk()
     args = [short_path(emu), f"--lua={short_path(LUA)}", short_path(rom)]
@@ -293,7 +295,7 @@ def main(argv: list[str]) -> int:
     if not LUA.is_file():
         raise FileNotFoundError(LUA)
     if not ROM_GEN.is_file():
-        raise FileNotFoundError(f"missing {ROM_GEN}; run RoomRom/build.bat")
+        raise FileNotFoundError(f"missing {ROM_GEN}; run Debug.bat")
 
     nes_rom = find_nes_rom()
     OUT_DIR.mkdir(parents=True, exist_ok=True)

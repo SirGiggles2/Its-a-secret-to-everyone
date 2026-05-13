@@ -23,6 +23,28 @@ local GEN_WALKABLE = getenv_hex("CODEX_GEN_WALKABLE", 0)
 local GEN_ROOM_ID = getenv_hex("CODEX_GEN_ROOM_ID", 0)
 local GEN_LINK_X = getenv_hex("CODEX_GEN_LINK_X", 0)
 local GEN_LINK_Y = getenv_hex("CODEX_GEN_LINK_Y", 0)
+local function domain_exists(name)
+  for _, domain in ipairs(memory.getmemorydomainlist()) do
+    if domain == name then return true end
+  end
+  return false
+end
+
+local GEN_RAM_DOMAIN = "M68K BUS"
+local GEN_ADDR_BASE = 0x00FF0000
+local GEN_PROBE_BASE = 0x00FF7000
+local GEN_TITLE_PHASE = 0x00FF8000 + 0x07F0
+if domain_exists("68K RAM") then
+  GEN_RAM_DOMAIN = "68K RAM"
+  GEN_ADDR_BASE = 0
+  GEN_PROBE_BASE = 0x7000
+  GEN_TITLE_PHASE = 0x8000 + 0x07F0
+elseif domain_exists("M68K RAM") then
+  GEN_RAM_DOMAIN = "M68K RAM"
+  GEN_ADDR_BASE = 0
+  GEN_PROBE_BASE = 0x7000
+  GEN_TITLE_PHASE = 0x8000 + 0x07F0
+end
 
 local NES_PLAY_AREA = 0x6530
 local NES_THRESHOLD = 0x034A
@@ -105,7 +127,9 @@ end
 
 local function nes_u8(addr) return domain_read_u8("System Bus", addr & 0xFFFF) end
 local function nes_w8(addr, val) domain_write_u8("System Bus", addr & 0xFFFF, val) end
-local function gen_u8(addr) return domain_read_u8("68K RAM", addr) end
+local function gen_u8(addr) return domain_read_u8(GEN_RAM_DOMAIN, GEN_ADDR_BASE + addr) end
+local function gen_probe_u8(off) return domain_read_u8(GEN_RAM_DOMAIN, GEN_PROBE_BASE + off) end
+local function gen_title_phase() return domain_read_u8(GEN_RAM_DOMAIN, GEN_TITLE_PHASE) end
 
 local function gen_s16(addr)
   local hi = gen_u8(addr)
@@ -298,8 +322,31 @@ local function prepare_nes()
 end
 
 local function prepare_gen()
-  for _ = 1, 180 do emu.frameadvance() end
-  return true, "ok"
+  if gen_probe_u8(13) == 1 then return true, "ok" end
+  local magic = false
+  for _ = 1, 120 do
+    emu.frameadvance()
+    if gen_probe_u8(0) == 0xA4 and gen_probe_u8(1) == 0x4A then
+      magic = true
+      break
+    end
+  end
+  if not magic then return false, "probe_magic_failed" end
+  for _ = 1, 60 do
+    if gen_title_phase() == 1 then break end
+    emu.frameadvance()
+  end
+  if gen_title_phase() ~= 1 then return false, "title_phase_failed" end
+  for _ = 1, 8 do
+    joypad.set({ ["P1 A"] = true, ["P1 B"] = true, ["P1 C"] = true }, 1)
+    emu.frameadvance()
+  end
+  joypad.set({}, 1)
+  for _ = 1, 180 do
+    emu.frameadvance()
+    if gen_probe_u8(13) == 1 then return true, "ok" end
+  end
+  return false, "debug_entry_failed"
 end
 
 local function nes_tile_at(col, row)

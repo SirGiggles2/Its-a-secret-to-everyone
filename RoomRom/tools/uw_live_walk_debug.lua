@@ -30,6 +30,26 @@ local ADDR = {
   scroll_frame = getenv_num("CODEX_UW_LIVE_SCROLL_FRAME", 0),
 }
 
+local PROBE_BASE = 0x7000
+local TITLE_PHASE_ADDR = 0x8000 + 0x07F0
+
+local function domain_exists(name)
+  for _, domain in ipairs(memory.getmemorydomainlist()) do
+    if domain == name then return true end
+  end
+  return false
+end
+
+local RAM_DOMAIN = "M68K BUS"
+local RAM_ADDR_BASE = 0x00FF0000
+if domain_exists("68K RAM") then
+  RAM_DOMAIN = "68K RAM"
+  RAM_ADDR_BASE = 0
+elseif domain_exists("M68K RAM") then
+  RAM_DOMAIN = "M68K RAM"
+  RAM_ADDR_BASE = 0
+end
+
 local TOP = 0x38
 local DOWN_ASIS_Y = 0xD5
 local X_BIAS = 0
@@ -61,7 +81,7 @@ local DIR_NAME = { [0] = "none", [1] = "down", [2] = "up", [3] = "left", [4] = "
 
 local function u8(addr)
   if addr == 0 then return 0 end
-  return memory.read_u8(addr, "68K RAM") or 0
+  return memory.read_u8(RAM_ADDR_BASE + addr, RAM_DOMAIN) or 0
 end
 
 local function s8_from_u8(v)
@@ -393,6 +413,36 @@ local function draw_overlay(s)
   end
   draw_sample_marks(s)
 end
+
+local function enter_debug_room()
+  if u8(PROBE_BASE + 13) == 1 then return true end
+  local magic = false
+  for _ = 1, 120 do
+    emu.frameadvance()
+    if u8(PROBE_BASE + 0) == 0xA4 and u8(PROBE_BASE + 1) == 0x4A then
+      magic = true
+      break
+    end
+  end
+  if not magic then return false end
+  for _ = 1, 60 do
+    if u8(TITLE_PHASE_ADDR) == 1 then break end
+    emu.frameadvance()
+  end
+  if u8(TITLE_PHASE_ADDR) ~= 1 then return false end
+  for _ = 1, 8 do
+    joypad.set({ ["P1 A"] = true, ["P1 B"] = true, ["P1 C"] = true }, 1)
+    emu.frameadvance()
+  end
+  joypad.set({}, 1)
+  for _ = 1, 180 do
+    emu.frameadvance()
+    if u8(PROBE_BASE + 13) == 1 then return true end
+  end
+  return false
+end
+
+enter_debug_room()
 
 while true do
   local s = current_snapshot()

@@ -17,8 +17,8 @@ from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[2]
-ROM = ROOT / "RoomRom" / "out" / "Debug.md"
-ELF = ROOT / "RoomRom" / "out" / "rom.out"
+ROM = ROOT / "builds" / "Debug.md"
+ELF = ROOT / "build" / "debug_project" / "out" / "Debug.out"
 NM = ROOT / "build" / "toolchain" / "sgdk_bin" / "bin" / "nm.exe"
 NES_JSON = ROOT / "RoomRom" / "out" / "nes_uw_level1_quest1_orig.json"
 EMU = (ROOT.parent / "VDP rebirth tools and asms" /
@@ -74,11 +74,15 @@ def short_path(path: Path) -> str:
     return buf.value
 
 
+def ram_offset(addr: int) -> int:
+    return addr & 0xFFFF
+
+
 def symbol_offsets() -> dict[str, int]:
     output = subprocess.check_output([str(NM), "-n", str(ELF)],
                                      text=True, encoding="utf-8",
                                      errors="replace")
-    want = {"s_uw_tile_walkable", "s_link_x", "s_link_y", "s_room_id"}
+    want = {"s_uw_tile_walkable", "players", "s_room_id"}
     found: dict[str, int] = {}
     for line in output.splitlines():
         m = re.match(r"([0-9a-fA-F]+)\s+\S\s+(\S+)$", line.strip())
@@ -87,7 +91,7 @@ def symbol_offsets() -> dict[str, int]:
         addr = int(m.group(1), 16)
         name = m.group(2)
         if name in want:
-            found[name] = addr & 0xFFFF
+            found[name] = ram_offset(addr)
     missing = want - found.keys()
     if missing:
         raise RuntimeError(f"missing symbols: {sorted(missing)}")
@@ -133,21 +137,79 @@ def write_lua(symbols: dict[str, int], mask: list[list[int]]) -> None:
     LUA.write_text(f"""local OUT = "{report}"
 local SCREENSHOT = "{screenshot}"
 local TILE_ADDR = 0x{symbols['s_uw_tile_walkable']:04X}
-local LINK_X_ADDR = 0x{symbols['s_link_x']:04X}
-local LINK_Y_ADDR = 0x{symbols['s_link_y']:04X}
+local LINK_X_ADDR = 0x{symbols['players'] + 0:04X}
+local LINK_Y_ADDR = 0x{symbols['players'] + 2:04X}
 local ROOM_ADDR = 0x{symbols['s_room_id']:04X}
 local EXPECTED = {lua_bool_grid(mask)}
+local PROBE_BASE = 0x7000
+local TITLE_PHASE_ADDR = 0x8000 + 0x07F0
+
+local function domain_exists(name)
+  for _, domain in ipairs(memory.getmemorydomainlist()) do
+    if domain == name then return true end
+  end
+  return false
+end
+
+local RAM = "M68K BUS"
+local RAM_OFFSET = 0x00FF0000
+if domain_exists("68K RAM") then
+  RAM = "68K RAM"
+  RAM_OFFSET = 0
+elseif domain_exists("M68K RAM") then
+  RAM = "M68K RAM"
+  RAM_OFFSET = 0
+end
 
 local function read_u8(addr)
-  return memory.read_u8(addr, "68K RAM") or 0
+  return memory.read_u8(RAM_OFFSET + addr, RAM) or 0
 end
 
 local function read_s16(addr)
-  return memory.read_s16_be(addr, "68K RAM") or 0
+  return memory.read_s16_be(RAM_OFFSET + addr, RAM) or 0
 end
 
-for _ = 1, 180 do
-  emu.frameadvance()
+local function enter_debug_room()
+  if read_u8(PROBE_BASE + 13) == 1 then return true end
+  local magic = false
+  for _ = 1, 120 do
+    emu.frameadvance()
+    if read_u8(PROBE_BASE + 0) == 0xA4 and read_u8(PROBE_BASE + 1) == 0x4A then
+      magic = true
+      break
+    end
+  end
+  if not magic then return false end
+  for _ = 1, 60 do
+    if read_u8(TITLE_PHASE_ADDR) == 1 then break end
+    emu.frameadvance()
+  end
+  if read_u8(TITLE_PHASE_ADDR) ~= 1 then return false end
+  for _ = 1, 8 do
+    joypad.set({{ ["P1 A"] = true, ["P1 B"] = true, ["P1 C"] = true }}, 1)
+    emu.frameadvance()
+  end
+  joypad.set({{}}, 1)
+  for _ = 1, 180 do
+    emu.frameadvance()
+    if read_u8(PROBE_BASE + 13) == 1 then return true end
+  end
+  return false
+end
+
+local entry_ok = enter_debug_room()
+
+if not entry_ok then
+  local f = assert(io.open(OUT, "w"))
+  f:write('{{\\n')
+  f:write('  "pass": false,\\n')
+  f:write('  "error": "debug_entry_failed",\\n')
+  f:write('  "room": ', read_u8(ROOM_ADDR), ',\\n')
+  f:write('  "link_x": ', read_s16(LINK_X_ADDR), ',\\n')
+  f:write('  "link_y": ', read_s16(LINK_Y_ADDR), '\\n')
+  f:write('}}\\n')
+  f:close()
+  client.exit()
 end
 
 local diff = {{}}
