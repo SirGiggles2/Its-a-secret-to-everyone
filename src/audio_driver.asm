@@ -1,4 +1,9 @@
-    include "data/music_blob.inc"
+; Phase 12.2 audio link: inlined music_blob.inc constants (auto-generated
+; by extract_audio.py; manually mirrored here to avoid gas MRI include
+; resolution issues with paths containing spaces. Keep these in sync
+; with src/data/music_blob.inc whenever extract_audio.py regenerates.)
+MUSIC_BLOB_NES_BASE equ $8D60
+MUSIC_BLOB_SIZE     equ 2757
 
 ;==============================================================================
 ; audio_driver.asm — YM2612 + PSG driver for NES APU emulation
@@ -81,9 +86,9 @@ NES_YM_K5_TRI   equ 68803
 ym_write1:
     move.w  SR,-(SP)                ; save caller's SR
     ori.w   #$0600,SR               ; mask HINT (level 4) + its below
-.wait:
+.wait_ym1:
     tst.b   (YM_ADDR1).l            ; bit 7 = busy flag
-    bmi.s   .wait
+    bmi.s   .wait_ym1
     move.b  D0,(YM_ADDR1).l         ; write register address
     nop                              ; address setup delay
     nop
@@ -137,13 +142,13 @@ nes_to_ym_freq:
     moveq   #5,D4                   ; starting block (K was pre-shifted by 5)
 .norm:
     cmp.w   #2047,D5
-    bls.s   .done                   ; F_num fits in 11 bits
+    bls.s   .done_freq              ; F_num fits in 11 bits
     lsr.w   #1,D5                   ; halve F_num
     addq.b  #1,D4                   ; increment block
     cmp.b   #7,D4
     bhi.s   .clamp                  ; block overflow → clamp
     bra.s   .norm
-.done:
+.done_freq:
     ; D5.w = F_num (0–2047), D4.b = block (0–7)
     move.b  D4,D2
     lsl.b   #3,D2                   ; block << 3
@@ -821,7 +826,7 @@ prep_phrase:
 tick_sq1:
     subq.b  #1,(m_sq1_cnt).l
     bne     tick_sq0                     ; no new note
-.read:
+.read_sq1:
     move.l  (m_script_ptr).l,A0
     moveq   #0,D1
     move.b  (m_sq1_off).l,D1
@@ -851,7 +856,7 @@ tick_sq1:
     bra     music_silence
 .play_again:
     bsr     play_next_phrase_no_tick
-    bra.s   .read
+    bra.s   .read_sq1
 
 ;----------------------------------------------------------------------
 ; play_next_phrase_no_tick — variant that ends with rts (via prep_phrase
@@ -1319,9 +1324,9 @@ NoiseLengthsTbl:
 ;----------------------------------------------------------------------
 PsgDrumTable:
     dc.b    $E7, $00, $00, $00         ; 0: rest (handled by early-out)
-    dc.b    $E4, $E0, 48,  $00         ; 1: hi-hat  — white NF=00, ~5 frames
-    dc.b    $E5, $FF, 14,  $00         ; 2: snare   — white NF=01, ~18 frames
-    dc.b    $E4, $E0, 48,  $00         ; 3: hi-hat alt
+    dc.b    $E4, $E0, $30, $00         ; 1: hi-hat  - white NF=00, ~5 frames (48 dec)
+    dc.b    $E5, $FF, $0E, $00         ; 2: snare   - white NF=01, ~18 frames (14 dec)
+    dc.b    $E4, $E0, $30, $00         ; 3: hi-hat alt (48 dec)
     even
 
 ;==============================================================================
@@ -1329,7 +1334,7 @@ PsgDrumTable:
 ; Pulled verbatim from PRG bank 0 at NES $8D60.
 ;==============================================================================
 MusicBlob:
-    incbin  "data/music_blob.dat"
+    incbin  "src/data/music_blob.dat"
     even
 
 ; DMC samples now ship as 14 kHz PCM C arrays in data/audio/sfx_pcm.c

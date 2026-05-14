@@ -418,16 +418,24 @@ def compile_c(src: str, obj_name: str) -> Path:
     return obj_path
 
 
-def compile_asm(src: Path, obj_name: str, label: str) -> Path:
+def compile_asm(src: Path, obj_name: str, label: str, mri: bool = False) -> Path:
     obj_path = OUT / obj_name
     print(f"[3] Compiling {label}...")
+    asm_flags = "-Wa,--register-prefix-optional,--bitwise-or"
+    # Phase 12.2 audio link: MRI mode required for vasm-dialect audio_driver.asm.
+    # gas `incbin` resolves relative to cwd, so MRI compiles run from ROOT
+    # (project root) instead of PROJ (build dir) so `incbin "src/data/..."`
+    # finds the music_blob.dat blob.
+    cwd = ROOT if mri else PROJ
+    if mri:
+        asm_flags += ",--mri"
     run(
         gcc_prefix()
-        + ["-x", "assembler-with-cpp", "-Wa,--register-prefix-optional,--bitwise-or"]
+        + ["-x", "assembler-with-cpp", asm_flags]
         + CFLAGS
         + include_args()
         + ["-c", src, "-o", obj_path],
-        cwd=PROJ,
+        cwd=cwd,
     )
     return obj_path
 
@@ -480,6 +488,10 @@ def main() -> int:
     objects = [
         compile_asm(ROOT / "src" / "debug" / "a4_probe_asm.s", "a4_probe_asm.o", "src/debug/a4_probe_asm.s"),
         compile_c("src/debug/a4_probe_main.c", "a4_probe_main.o"),
+        # Phase 12.2 audio link: audio_driver.asm vasm -> gas MRI mode
+        # translation per docs/audit/audio_link_engineering_plan.md.
+        # Provides music_play / music_tick / change_song / tick_sq1 etc.
+        compile_asm(ROOT / "src" / "audio_driver.asm", "audio_driver.o", "src/audio_driver.asm", mri=True),
     ]
 
     for src, obj in TITLE_C_SOURCES:
