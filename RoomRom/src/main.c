@@ -10,7 +10,7 @@
 #include "../../src/game/items/bomb.h"           /* Phase 12.2 promoted */
 #include "../../src/game/items/magic_shot.h"     /* Phase 12.2 promoted */
 #include "../../src/game/world/scene_load.h"  /* Phase 12.2 promoted */
-#include "roomrom_palette_tick.h"
+#include "../../src/game/world/palette_tick_runtime.h"  /* Phase 12.2 promoted */
 #include "cave_dispatch.h"  /* debate 006 D2: native cave gamemode entry */
 #include "../../src/game/dungeon/door_state.h"  /* Phase 12.2 promoted */
 #include "../../src/game/dungeon/walk_model.h"  /* Phase 12.2 promoted */

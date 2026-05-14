@@ -175,7 +175,7 @@ ROOMROM_C_SOURCES = [
     # Phase 12.2 family 4: link_damage promoted to src/game/combat/.
     # combat_runtime not yet promoted (SGDK-1 violation: includes <genesis.h>).
     ("src/game/combat/link_damage.c", "combat_link_damage.o"),
-    ("RoomRom/src/roomrom_palette_tick.c", "roomrom_palette_tick.o"),
+    ("src/game/world/palette_tick_runtime.c", "world_palette_tick_runtime.o"),  # Phase 12.2 promoted (renamed to avoid clash with src/state/palette_tick.c)
     # Task 7.1: enemy framework (RNG byte-for-byte port of @ScrambleRandom).
     # Phase 12.2: RNG state promoted to src/state/rng_state.c.
     ("src/state/rng_state.c", "rng_state.o"),
