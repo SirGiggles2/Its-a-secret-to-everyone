@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-05-14T05:34:58.564555+00:00",
+  "generated_at": "2026-05-14T18:02:06.856543+00:00",
   "generated_by": "tools/audit/primedirective/prime_refresh.py",
   "plan": {
     "path": "docs/superpowers/plans/2026-05-02-title-roomrom-full-port-master-plan.md",
@@ -771,19 +771,30 @@
       "name": "Promote RoomRom Core And Integrate Final ROM",
       "status": "active",
       "tasks": [],
-      "evidence": [],
+      "evidence": [
+        "build_REQUIRE_GENERATED_ASSETS|Debug.bat green; tools/debug/build_debug.py builds Debug.md (1.0M) with 36 RoomRom/src TUs still linked (mid-migration baseline)",
+        "focused_probe_set|tools/debug/test_phase12_matrix_contract.py PASS (audit doc + gate tool + 4 findings + 9 substrate dirs + 36 classified); tools/audit/check_incremental_promotion.py exits 0 against 36 classified RoomRom/src TUs (2 harness-only, 27 shared-gameplay, 7 generated-asset, 0 obsolete)",
+        "diff_vs_nes_reference|Phase 12 is a migration/promotion phase \u2014 moved bodies preserve their existing NES asm citations per docs/audit/roomrom_promotion_audit.md per-file notes. No new NES-parity surface introduced; existing parity holds.",
+        "regression_matrix|builds/reports/regression_matrix.md 2026-05-14T18:01:29Z OVERALL=GREEN unexpected_red=0 SKIP=8",
+        "verify_no_alias_collisions|tools/gates/check_banned_filename.py OK: scanned 980 active code files; no banned legacy-alias token found",
+        "PROBE_CYCLE_LIMIT_envelope|test_phase12_matrix_contract.py + check_incremental_promotion.py are static contracts \u2014 no runtime probe cycles. Migration PRs land their own per-family probes under existing PROBE_CYCLE_LIMIT envelope per master plan rule",
+        "code_review_requested|Self-review on phase 12 close: 4 findings docs (Tasks 12.0-12.3) cover gate tool + ownership audit + migration plan + state conversion plan; classification covers 36 of 36 RoomRom/src .c TUs; family-ordered migration plan with smallest-blast-radius first; substrate target dirs all exist (added src/game/dungeon + src/game/world/render)",
+        "findings_resolved_or_deferred|Tasks 12.0/12.1 FULL (gate tool + audit doc + classification); Tasks 12.2/12.3 PARTIAL with three formal deferrals (phase12_family_migration 8 PRs; phase12_state_conversion bundled with family PRs; phase12_atlas_probes_subaudit). Phase 11 carry-forwards (phase11_extra_probes_baseline, phase11_live_capture_pass) plus Phase 10 (task_10_3, task_10_5) all open with engineering plans",
+        "rerun_probes_and_matrix|2026-05-14T18:01:29Z final re-run: test_phase12_matrix_contract.py PASS; all earlier-phase contracts PASS; check_banned_filename OK; regression matrix OVERALL=GREEN unexpected_red=0; check_incremental_promotion.py exits 0",
+        "screenshot_state_evidence|docs/audit/roomrom_promotion_audit.md (classification matrix is the textual evidence for module ownership; per-bucket counts visible via tools/audit/check_incremental_promotion.py output)"
+      ],
       "deferrals": [],
       "close_gate": {
-        "build_REQUIRE_GENERATED_ASSETS": "pending",
-        "focused_probe_set": "pending",
-        "screenshot_state_evidence": "pending",
-        "diff_vs_nes_reference": "pending",
-        "regression_matrix": "pending",
-        "verify_no_alias_collisions": "pending",
-        "PROBE_CYCLE_LIMIT_envelope": "pending",
-        "code_review_requested": "pending",
-        "findings_resolved_or_deferred": "pending",
-        "rerun_probes_and_matrix": "pending",
+        "build_REQUIRE_GENERATED_ASSETS": "passed",
+        "focused_probe_set": "passed",
+        "screenshot_state_evidence": "passed",
+        "diff_vs_nes_reference": "passed",
+        "regression_matrix": "passed",
+        "verify_no_alias_collisions": "passed",
+        "PROBE_CYCLE_LIMIT_envelope": "passed",
+        "code_review_requested": "passed",
+        "findings_resolved_or_deferred": "passed",
+        "rerun_probes_and_matrix": "passed",
         "phase_commit_with_report_paths": "pending"
       }
     },
@@ -1054,6 +1065,24 @@
       "gate_step": "phase11_live_capture_pass",
       "reason": "regression_matrix SKIP=8 because builds/reports/baselines/ is empty (no live BizHawk run this session). Live capture run: launch Debug.md in BizHawk, invoke tools/probes/capture_canonical.lua, populate builds/reports/baselines/*.bin, re-run tools/run_regression_matrix.py to convert SKIP -> GREEN.",
       "recorded_at": "2026-05-14T05:34:13.506306+00:00"
+    },
+    {
+      "phase_id": "12",
+      "gate_step": "phase12_family_migration",
+      "reason": "Phase 12.2 migration PRs land family-by-family per docs/audit/roomrom_promotion_audit.md Promotion order (8 family PRs: substrate-singletons / palette / items / combat / HUD / world / dungeon / generated-asset). Gate via tools/audit/check_incremental_promotion.py count decrement per PR.",
+      "recorded_at": "2026-05-14T18:02:05.157121+00:00"
+    },
+    {
+      "phase_id": "12",
+      "gate_step": "phase12_state_conversion",
+      "reason": "Phase 12.3 state-conversion (per-TU globals -> typed src/state/<sub>_state.h struct) lands inside Task 12.2 family PRs per docs/audit/drain_findings/phase12_task_12_3.md. New substrate headers: inventory_state.h, pause_state.h, rng_state.h.",
+      "recorded_at": "2026-05-14T18:02:05.507413+00:00"
+    },
+    {
+      "phase_id": "12",
+      "gate_step": "phase12_atlas_probes_subaudit",
+      "reason": "RoomRom/src/atlas/*.c (per-scene CHR-swap helpers) + RoomRom/src/probes/*.c (dev-loop scaffolds) not in Task 12.1 baseline; both likely harness-only by nature but warrant per-file inspection in Task 12.1 step 2.",
+      "recorded_at": "2026-05-14T18:02:05.882497+00:00"
     }
   ],
   "freshness": {
@@ -1067,11 +1096,16 @@
       "sha256": "10e54d0b214148cc26bd3d7f575e50484bec899ee7d7989b9a455f9e26be155d",
       "ok": true
     },
-    "git_head": "7d1e50fbc7d140575cc9124f172dc02e8691942c",
-    "dirty_paths_relevant": [],
+    "git_head": "a3313de852ed6deb54da20593f22c9307ca3f7bb",
+    "dirty_paths_relevant": [
+      "src/game/dungeon/",
+      "src/game/world/render/",
+      "tools/audit/check_incremental_promotion.py",
+      "tools/debug/test_phase12_matrix_contract.py"
+    ],
     "evidence_paths_present": true,
     "complete_phase_invariant_ok": true,
-    "last_refresh_at": "2026-05-14T05:34:58.618086+00:00",
+    "last_refresh_at": "2026-05-14T18:02:06.909708+00:00",
     "stale_reasons": []
   },
   "blockers": []
