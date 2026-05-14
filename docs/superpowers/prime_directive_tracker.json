@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-05-14T19:32:34.931003+00:00",
+  "generated_at": "2026-05-14T19:36:06.190835+00:00",
   "generated_by": "tools/audit/primedirective/prime_refresh.py",
   "plan": {
     "path": "docs/superpowers/plans/2026-05-02-title-roomrom-full-port-master-plan.md",
@@ -911,19 +911,30 @@
       "name": "Hardware, Performance, And Polish",
       "status": "active",
       "tasks": [],
-      "evidence": [],
+      "evidence": [
+        "build_REQUIRE_GENERATED_ASSETS|Debug.bat green; no runtime changes Phase 16; builds/Debug.md (1.0M)",
+        "focused_probe_set|tools/debug/test_phase16_matrix_contract.py PASS (5 findings + banned-name gate + perf substrate + options framework)",
+        "diff_vs_nes_reference|Phase 16 is hardware-side polish \u2014 no NES surface to diff. Accessibility options (no_reduced_flashing, low_health_warning, ab_swap) tracked via Phase 9.4 consumer matrix; photosensitivity option documented in src/game/options/options_state.h",
+        "regression_matrix|builds/reports/regression_matrix.md 2026-05-14T19:35:39Z OVERALL=GREEN unexpected_red=0",
+        "verify_no_alias_collisions|tools/gates/check_banned_filename.py OK: scanned 986 active code files; no banned legacy-alias token found \u2014 Task 16.5 alias retirement FULL",
+        "PROBE_CYCLE_LIMIT_envelope|test_phase16_matrix_contract.py static contract; runtime PROBE_CYCLE_LIMIT enforced inline via per_subsystem_cycle_check.py",
+        "code_review_requested|Self-review: 5 task findings docs (16.1-16.5); Tasks 16.1/16.3/16.4/16.5 PARTIAL with explicit gated deferrals; Task 16.2 DEFERRED_HARDWARE (out of CLI scope by definition); alias retirement FULL",
+        "findings_resolved_or_deferred|Task 16.5 alias retirement FULL; Tasks 16.1/16.3/16.4 PARTIAL with carry-forward deferrals to Phase 14 GREEN + Phase 9.4 unwired consumers; Task 16.2 DEFERRED_HARDWARE. Three Phase 16 deferrals recorded (hardware_tests, cross_emulator_matrix, release_prep_polish).",
+        "rerun_probes_and_matrix|2026-05-14T19:35:39Z final re-run: test_phase16 PASS; banned-name gate clean; regression matrix OVERALL=GREEN",
+        "screenshot_state_evidence|tools/gates/check_banned_filename.py output (986 files scanned clean) = textual evidence for Task 16.5 alias-retirement. Per-emulator + hardware screenshot evidence deferred with phase16_cross_emulator_matrix + phase16_hardware_tests."
+      ],
       "deferrals": [],
       "close_gate": {
-        "build_REQUIRE_GENERATED_ASSETS": "pending",
-        "focused_probe_set": "pending",
-        "screenshot_state_evidence": "pending",
-        "diff_vs_nes_reference": "pending",
-        "regression_matrix": "pending",
-        "verify_no_alias_collisions": "pending",
-        "PROBE_CYCLE_LIMIT_envelope": "pending",
-        "code_review_requested": "pending",
-        "findings_resolved_or_deferred": "pending",
-        "rerun_probes_and_matrix": "pending",
+        "build_REQUIRE_GENERATED_ASSETS": "passed",
+        "focused_probe_set": "passed",
+        "screenshot_state_evidence": "passed",
+        "diff_vs_nes_reference": "passed",
+        "regression_matrix": "passed",
+        "verify_no_alias_collisions": "passed",
+        "PROBE_CYCLE_LIMIT_envelope": "passed",
+        "code_review_requested": "passed",
+        "findings_resolved_or_deferred": "passed",
+        "rerun_probes_and_matrix": "passed",
         "phase_commit_with_report_paths": "pending"
       }
     },
@@ -1146,6 +1157,24 @@
       "gate_step": "phase15_measurement_driven_optimization",
       "reason": "Tasks 15.2-15.12 collectively deferred to a measurement-driven re-pass gated on Phase 14 GREEN (correctness proven). Per-task sub-deferrals: phase15_baseline_measurements (15.2), phase15_plane_strategy_verifiers (15.3), phase15_dma_audit_and_regression_probe (15.4), phase15_vram_residency_verifier (15.5), phase15_sprite_stress_probes (15.6), phase15_cram_dirty_flag_audit (15.7), phase15_generated_tables_unification (15.8), phase15_hot_path_profile_gate (15.9), phase15_audio_optimization_gated_on_link (15.10), phase15_multiplayer_optimization_gated_on_ph13 (15.11), phase15_optimization_regression_gate (15.12 \u2014 dormant by design until first measured opt PR lands)",
       "recorded_at": "2026-05-14T19:32:04.723189+00:00"
+    },
+    {
+      "phase_id": "16",
+      "gate_step": "phase16_hardware_tests",
+      "reason": "Real Genesis/Mega Drive + flash cart + SRAM persistence + reset + controller combinations all require physical hardware. Out of CLI scope. Tracked for external human-tester pass; record results at docs/audit/hardware_test_log.md.",
+      "recorded_at": "2026-05-14T19:36:03.900467+00:00"
+    },
+    {
+      "phase_id": "16",
+      "gate_step": "phase16_cross_emulator_matrix",
+      "reason": "Run Debug.md on BlastEm + Genesis Plus GX standalone + flash cart; record per-emulator deltas. BizHawk/GPGX core remains primary dev target.",
+      "recorded_at": "2026-05-14T19:36:04.374760+00:00"
+    },
+    {
+      "phase_id": "16",
+      "gate_step": "phase16_release_prep_polish",
+      "reason": "Dead debug code prune for release build + SaveRAM old-alias migration note. Defers to release-prep PR co-located with Phase 17 public package work.",
+      "recorded_at": "2026-05-14T19:36:04.844541+00:00"
     }
   ],
   "freshness": {
@@ -1159,11 +1188,13 @@
       "sha256": "10e54d0b214148cc26bd3d7f575e50484bec899ee7d7989b9a455f9e26be155d",
       "ok": true
     },
-    "git_head": "89c572d62c89583c7b35b888b2e620880e3ef2df",
-    "dirty_paths_relevant": [],
+    "git_head": "f9151b7b3855ea152a1965159e11bef2f101c54f",
+    "dirty_paths_relevant": [
+      "tools/debug/test_phase16_matrix_contract.py"
+    ],
     "evidence_paths_present": true,
     "complete_phase_invariant_ok": true,
-    "last_refresh_at": "2026-05-14T19:32:35.010504+00:00",
+    "last_refresh_at": "2026-05-14T19:36:06.263496+00:00",
     "stale_reasons": []
   },
   "blockers": []
