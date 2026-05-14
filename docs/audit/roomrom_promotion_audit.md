@@ -168,6 +168,20 @@ roomrom_sprites.c, uw_room_render_roomrom.c. Tracked under
 Family 7 dungeon COMPLETE (6 TUs migrated; count 18 → 12).
 `uw_room_render_roomrom.c` blocked separately on SGDK-1.
 
+| File (was)                              | New path                          | Family | Migration commit |
+|-----------------------------------------|-----------------------------------|--------|------------------|
+| `RoomRom/src/ow_room_meta.c`            | `src/game/world/ow_meta.c`        | world  | pending          |
+| `RoomRom/src/ow_room_meta.h`            | `src/game/world/ow_meta.h`        | world  | pending          |
+| `RoomRom/src/roomrom_pushblock.c`       | `src/game/world/pushblock.c`      | world  | pending          |
+| `RoomRom/src/roomrom_pushblock.h`       | `src/game/world/pushblock.h`      | world  | pending          |
+| `RoomRom/src/roomrom_world_transition.c`| `src/game/world/transition.c`     | world  | pending          |
+| `RoomRom/src/roomrom_world_transition.h`| `src/game/world/transition.h`     | world  | pending          |
+
+Family 6 world PARTIAL (3 of 6 SGDK-1-clean TUs migrated; count 12 → 9).
+Remaining clean (roomrom_bg_palette / roomrom_ow_palette /
+roomrom_scene_load) plus SGDK-1-blocked (roomrom_sprites /
+ow_room_render_roomrom / uw_room_render_roomrom) deferred.
+
 ## Status
 
 ACTIVE — Task 12.1 baseline classification landed; Task 12.2 family

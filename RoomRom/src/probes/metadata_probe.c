@@ -12,7 +12,7 @@
  */
 
 #include "metadata_probe.h"
-#include "../ow_room_meta.h"
+#include "../../../src/game/world/ow_meta.h"  /* Phase 12.2 promoted */
 #include "../../../src/game/dungeon/cellar_meta.h"  /* Phase 12.2 promoted */
 #include "../../data/levelinfo_start_rooms.h"
 #include "../../data/uw_l1q1_cellar_pairs.h"

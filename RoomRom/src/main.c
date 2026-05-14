@@ -16,10 +16,10 @@
 #include "../../src/game/dungeon/walk_model.h"  /* Phase 12.2 promoted */
 #include "render_abi.h"
 #include "roomrom_main_state.h"  /* Task 5.4: warp-outcome apply boundary */
-#include "roomrom_world_transition.h"  /* Task 5.4: warp coordinator */
+#include "../../src/game/world/transition.h"  /* Task 5.4 warp coord (Phase 12.2 promoted) */
 #include "../../src/game/dungeon/cellar_meta.h"      /* Phase 12.2 promoted */
 #include "../../src/game/dungeon/push_block_meta.h"  /* Phase 12.2 promoted */
-#include "roomrom_pushblock.h"           /* Task 5.7: push-block state machine */
+#include "../../src/game/world/pushblock.h"  /* Task 5.7 (Phase 12.2 promoted) */
 #include "../../src/game/dungeon/dark_meta.h"        /* Phase 12.2 promoted */
 #include "../../src/game/dungeon/item_room_meta.h"   /* Phase 12.2 promoted */
 #include "../../src/game/items/candle_fire.h"   /* Task 5.8.1 candle fire (Phase 12.2 promoted) */

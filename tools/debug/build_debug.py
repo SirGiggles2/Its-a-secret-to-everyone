@@ -134,8 +134,9 @@ ROOMROM_C_SOURCES = [
     ("RoomRom/src/roomrom_bg_palette.c", "roomrom_bg_palette.o"),
     ("RoomRom/src/roomrom_scene_load.c", "roomrom_scene_load.o"),
     # Task 5.4: warp coordinator + OW metadata accessor + level/quest table + Gate D probe
-    ("RoomRom/src/ow_room_meta.c", "ow_room_meta.o"),
-    ("RoomRom/src/roomrom_world_transition.c", "roomrom_world_transition.o"),
+    # Phase 12.2 family 6 partial: SGDK-1-clean world TUs promoted.
+    ("src/game/world/ow_meta.c",    "world_ow_meta.o"),
+    ("src/game/world/transition.c", "world_transition.o"),
     ("RoomRom/data/levelinfo_start_rooms.c", "levelinfo_start_rooms.o"),
     ("RoomRom/src/probes/metadata_probe.c", "metadata_probe.o"),
     # Task 5.5: door-type expected table for L1Q1 verification
@@ -147,7 +148,7 @@ ROOMROM_C_SOURCES = [
     # Task 5.7: push-block manifest + accessor + state machine
     ("RoomRom/data/uw_l1q1_pushblocks.c", "uw_l1q1_pushblocks.o"),
     ("src/game/dungeon/push_block_meta.c", "dungeon_push_block_meta.o"),  # Phase 12.2 promoted
-    ("RoomRom/src/roomrom_pushblock.c", "roomrom_pushblock.o"),
+    ("src/game/world/pushblock.c", "world_pushblock.o"),  # Phase 12.2 promoted
     # Task 5.8: dark-room manifest + accessor + lit-state
     ("RoomRom/data/uw_dark_rooms.c", "uw_dark_rooms.o"),
     ("src/game/dungeon/dark_meta.c", "dungeon_dark_meta.o"),  # Phase 12.2 promoted

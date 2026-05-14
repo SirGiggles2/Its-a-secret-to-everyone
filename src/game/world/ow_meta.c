@@ -7,8 +7,8 @@
  * CheckWarps / HandleWarpOW). NES disasm is the final authority.
  */
 
-#include "ow_room_meta.h"
-#include "../../data/rooms/overworld_offsets.h"
+#include "ow_meta.h"
+#include "../../../data/rooms/overworld_offsets.h"
 
 extern const unsigned char rooms_overworld[];
 
