@@ -1,7 +1,7 @@
 #include <genesis.h>
 #include "roomrom_combat.h"
 #include "roomrom_sprites.h"
-#include "roomrom_bg_palette.h"
+#include "../../src/game/world/bg_palette.h"  /* Phase 12.2 promoted */
 #include "../../src/state/inventory.h"
 #include "options_consumer.h"
 #include "options_state.h"

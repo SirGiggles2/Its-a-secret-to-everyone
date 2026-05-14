@@ -1,8 +1,8 @@
 #include "ow_room_render_roomrom.h"
 #include "render_abi.h"
 #include "roomrom_vram_map.h"
-#include "roomrom_bg_palette.h"
-#include "roomrom_ow_palette.h"
+#include "../../src/game/world/bg_palette.h"  /* Phase 12.2 promoted */
+#include "../../src/game/world/ow_palette.h"  /* Phase 12.2 promoted */
 #include "expanded_bg_chr.h"
 
 extern const unsigned char rooms_overworld[];

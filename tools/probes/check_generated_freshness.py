@@ -89,8 +89,9 @@ GEN_SPECS: list[dict] = [
             "data/misc/palettes.c",
         ],
         "outputs": [
-            "RoomRom/src/roomrom_ow_palette.c",
-            "RoomRom/src/roomrom_ow_palette.h",
+            # Phase 12.2: bg_palette_blob output promoted to src/game/world/.
+            "src/game/world/ow_palette.c",
+            "src/game/world/ow_palette.h",
         ],
     },
     {

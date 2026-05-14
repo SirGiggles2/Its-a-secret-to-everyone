@@ -1,4 +1,4 @@
-#include "roomrom_bg_palette.h"
+#include "bg_palette.h"
 #include "render_abi.h"
 
 /* Reuse the existing misc_palettes NES-color-index -> Gen-CRAM-word LUT.

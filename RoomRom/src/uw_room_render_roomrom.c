@@ -3,7 +3,7 @@
 #include "uw_room_blob.h"
 #include "render_abi.h"
 #include "roomrom_vram_map.h"
-#include "roomrom_bg_palette.h"
+#include "../../src/game/world/bg_palette.h"  /* Phase 12.2 promoted */
 #include "expanded_bg_chr.h"
 #include "uw_collision_data.h"
 

@@ -4,7 +4,7 @@
 #include "atlas/level_chr_swap.h"
 /* roomrom_bg_palette.h included for future per-room BG palette loads;
  * not called at scene-load granularity yet (BG palette is per-room). */
-#include "roomrom_bg_palette.h"
+#include "../../src/game/world/bg_palette.h"  /* Phase 12.2 promoted */
 
 void roomrom_scene_load(roomrom_scene_id_t scene_id, unsigned char variant)
 {

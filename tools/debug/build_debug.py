@@ -131,7 +131,7 @@ ROOMROM_C_SOURCES = [
     ("src/game/items/boomerang.c", "items_boomerang.o"),
     ("src/game/items/arrow.c",     "items_arrow.o"),
     ("src/game/items/bomb.c",      "items_bomb.o"),
-    ("RoomRom/src/roomrom_bg_palette.c", "roomrom_bg_palette.o"),
+    ("src/game/world/bg_palette.c", "world_bg_palette.o"),  # Phase 12.2 promoted
     ("RoomRom/src/roomrom_scene_load.c", "roomrom_scene_load.o"),
     # Task 5.4: warp coordinator + OW metadata accessor + level/quest table + Gate D probe
     # Phase 12.2 family 6 partial: SGDK-1-clean world TUs promoted.
@@ -159,7 +159,7 @@ ROOMROM_C_SOURCES = [
     # Phase 12.2 family 3: items promoted to src/game/items/.
     ("src/game/items/candle_fire.c", "items_candle_fire.o"),
     ("src/game/items/magic_shot.c",  "items_magic_shot.o"),
-    ("RoomRom/src/roomrom_ow_palette.c", "roomrom_ow_palette.o"),
+    ("src/game/world/ow_palette.c", "world_ow_palette.o"),  # Phase 12.2 promoted
     ("src/state/palette_tick.c", "palette_tick.o"),
     # Task 6.1: PlayerState[4] shape (Phase 13 multiplayer-ready by construction).
     ("src/state/player_state.c", "player_state.o"),

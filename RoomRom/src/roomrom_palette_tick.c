@@ -1,5 +1,5 @@
 #include "roomrom_palette_tick.h"
-#include "roomrom_bg_palette.h"
+#include "../../src/game/world/bg_palette.h"  /* Phase 12.2 promoted */
 #include "palette_state.h"
 
 static palette_tick_state_t s_tick;
