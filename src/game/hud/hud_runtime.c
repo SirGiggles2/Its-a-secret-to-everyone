@@ -1,10 +1,11 @@
-#include <genesis.h>
-#include "roomrom_hud.h"
-#include "ow_room_render_roomrom.h"
+/* Phase 12.2 SGDK-1 cleanup: route VDP_setTileMapXY/VDP_clearTileMapRect
+ * through render_set_window_word / render_clear_window_rect adapter. */
+#include "hud_runtime.h"
+#include "../../../RoomRom/src/ow_room_render_roomrom.h"
 #include "render_abi.h"
-#include "roomrom_vram_map.h"
-#include "expanded_bg_chr.h"
-#include "../../src/state/inventory.h"
+#include "../../../RoomRom/src/roomrom_vram_map.h"
+#include "../../../RoomRom/src/expanded_bg_chr.h"
+#include "../../state/inventory.h"
 /* P4c: atlas header included for named constant reference and future
  * ATLAS_ASSERT_SIZE hooks.
  *
@@ -172,7 +173,10 @@ static unsigned short hud_word(unsigned char raw_tile, unsigned char pal)
      * sit above the sprite-backed black underlay during vertical scrolls. */
     unsigned short tile = (unsigned short)(ROOMROM_BG_TILE_BASE_PAL(pal & 0x03)
                                            + (unsigned short)raw_tile);
-    return TILE_ATTR_FULL(PAL0, 1, 0, 0, tile);
+    /* Phase 12.2 SGDK-1 cleanup: inline TILE_ATTR_FULL(PAL0, 1, 0, 0, tile).
+     * Format: priority<<15 | palette<<13 | vflip<<12 | hflip<<11 | tile_index.
+     * PAL0=0, priority=1 -> 0x8000; vflip=hflip=0. */
+    return (unsigned short)(0x8000u | tile);
 }
 
 static void draw_hud_tile(unsigned char col, unsigned char row,
@@ -180,7 +184,7 @@ static void draw_hud_tile(unsigned char col, unsigned char row,
 {
     if (col >= ROOMROM_ROOM_COLS || row >= ROOMROM_HUD_ROWS)
         return;
-    VDP_setTileMapXY(WINDOW, hud_word(raw_tile, pal), col, row);
+    render_set_window_word(col, row, hud_word(raw_tile, pal));
 }
 
 static void draw_hud_tile_b(unsigned char col, unsigned char row,
@@ -218,7 +222,7 @@ static void clear_hud_b(void)
 
 static void clear_hud_window(void)
 {
-    VDP_clearTileMapRect(WINDOW, 0, 0, ROOMROM_ROOM_COLS, ROOMROM_HUD_ROWS);
+    render_clear_window_rect(0, 0, ROOMROM_ROOM_COLS, ROOMROM_HUD_ROWS);
 }
 
 static void apply_attr_byte(unsigned char attr_offset, unsigned char attr)

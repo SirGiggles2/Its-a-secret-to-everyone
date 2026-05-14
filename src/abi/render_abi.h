@@ -70,6 +70,14 @@ void render_cram_subrange_upload(unsigned short start_slot,
                                  const unsigned short *src,
                                  unsigned short count);
 
+/* Phase 12.2 SGDK-1 cleanup: Window-plane HUD writes. Wraps SGDK
+ * VDP_setTileMapXY(WINDOW, ...) / VDP_clearTileMapRect(WINDOW, ...).
+ * Used by src/game/hud/ which is SGDK-1-forbidden from direct calls. */
+void render_set_window_word(unsigned short col, unsigned short row,
+                            unsigned short word);
+void render_clear_window_rect(unsigned short col, unsigned short row,
+                              unsigned short w, unsigned short h);
+
 /* ---- VSRAM write (F3: title cutover) ----
  *
  * render_vsram_open_write -- set VSRAM write cursor to byte-offset slot*2.

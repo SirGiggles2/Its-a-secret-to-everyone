@@ -2,7 +2,7 @@
 #include "roomrom_debug_runtime.h"
 #include "ow_room_render_roomrom.h"
 #include "uw_room_render_roomrom.h"
-#include "roomrom_hud.h"
+#include "../../src/game/hud/hud_runtime.h"  /* Phase 12.2 promoted */
 #include "roomrom_sprites.h"
 #include "../../src/game/combat/combat_runtime.h"  /* Phase 12.2 promoted */
 #include "../../src/game/items/boomerang.h"      /* Phase 12.2 promoted */

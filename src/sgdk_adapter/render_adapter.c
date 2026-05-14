@@ -17,6 +17,11 @@
 
 #include "render_adapter.h"
 
+/* Phase 12.2 SGDK-1 cleanup: adapter MAY include <genesis.h>; only
+ * src/game/ + src/frontend/ are forbidden from direct SGDK. Used by
+ * the Window-plane HUD wrappers below. */
+#include <genesis.h>
+
 /* VDP MMIO addresses used by all helpers below. */
 #define VDP_DATA_WORD (*(volatile unsigned short *)0x00C00000)
 #define VDP_CTRL_WORD (*(volatile unsigned short *)0x00C00004)
@@ -318,6 +323,23 @@ void render_cram_subrange_upload(unsigned short start_slot,
 {
     render_cram_open_write(start_slot);
     while (count--) VDP_DATA_WORD = *src++;
+}
+
+/* Phase 12.2 SGDK-1 cleanup: Window plane HUD wrappers.
+ *
+ * RoomRom HUD lives on the Window plane (NES status-bar parity at top
+ * of screen). Underlying SGDK call: VDP_setTileMapXY(WINDOW, ...).
+ * Adapter routes here so src/game/hud/ can drop <genesis.h>. */
+void render_set_window_word(unsigned short col, unsigned short row,
+                            unsigned short word)
+{
+    VDP_setTileMapXY(WINDOW, word, col, row);
+}
+
+void render_clear_window_rect(unsigned short col, unsigned short row,
+                              unsigned short w, unsigned short h)
+{
+    VDP_clearTileMapRect(WINDOW, col, row, w, h);
 }
 
 /* Open VSRAM write cursor at byte-offset slot*2.

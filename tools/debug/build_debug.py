@@ -118,7 +118,7 @@ ROOMROM_C_SOURCES = [
     ("src/game/items/item_dispatch.c", "item_dispatch.o"),
     ("RoomRom/src/main.c", "roomrom_main.o"),
     ("RoomRom/src/ow_room_render_roomrom.c", "ow_room_render.o"),
-    ("RoomRom/src/roomrom_hud.c", "roomrom_hud.o"),
+    ("src/game/hud/hud_runtime.c", "hud_runtime.o"),  # Phase 12.2 promoted (SGDK-1 clean)
     ("RoomRom/src/uw_room_render_roomrom.c", "uw_room_render.o"),
     ("RoomRom/src/uw_room_blob.c", "uw_room_blob.o"),
     ("RoomRom/src/uw_collision_data.c", "uw_collision_data.o"),
