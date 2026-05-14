@@ -132,7 +132,7 @@ ROOMROM_C_SOURCES = [
     ("src/game/items/arrow.c",     "items_arrow.o"),
     ("src/game/items/bomb.c",      "items_bomb.o"),
     ("src/game/world/bg_palette.c", "world_bg_palette.o"),  # Phase 12.2 promoted
-    ("RoomRom/src/roomrom_scene_load.c", "roomrom_scene_load.o"),
+    ("src/game/world/scene_load.c", "world_scene_load.o"),  # Phase 12.2 promoted
     # Task 5.4: warp coordinator + OW metadata accessor + level/quest table + Gate D probe
     # Phase 12.2 family 6 partial: SGDK-1-clean world TUs promoted.
     ("src/game/world/ow_meta.c",    "world_ow_meta.o"),

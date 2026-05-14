@@ -1,10 +1,8 @@
-#include <genesis.h>
-#include "roomrom_scene_load.h"
-#include "roomrom_sprites.h"
-#include "atlas/level_chr_swap.h"
-/* roomrom_bg_palette.h included for future per-room BG palette loads;
- * not called at scene-load granularity yet (BG palette is per-room). */
-#include "../../src/game/world/bg_palette.h"  /* Phase 12.2 promoted */
+/* Phase 12.2 SGDK-1 cleanup: dropped unused <genesis.h>. */
+#include "scene_load.h"
+#include "../../../RoomRom/src/roomrom_sprites.h"
+#include "../../../RoomRom/src/atlas/level_chr_swap.h"
+#include "bg_palette.h"  /* Phase 12.2 promoted */
 
 void roomrom_scene_load(roomrom_scene_id_t scene_id, unsigned char variant)
 {
