@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-05-14T18:02:39.284029+00:00",
+  "generated_at": "2026-05-14T18:07:03.650748+00:00",
   "generated_by": "tools/audit/primedirective/prime_refresh.py",
   "plan": {
     "path": "docs/superpowers/plans/2026-05-02-title-roomrom-full-port-master-plan.md",
@@ -806,19 +806,30 @@
       "name": "Optional 4-Player Genesis Mode",
       "status": "active",
       "tasks": [],
-      "evidence": [],
+      "evidence": [
+        "build_REQUIRE_GENERATED_ASSETS|Debug.bat green; no Phase 13 substrate landed (DEFERRED_FEATURE stance); 1-player invariant preserved (src/state/link_state.h LINK_MOVING_DIR untouched)",
+        "focused_probe_set|tools/debug/test_phase13_matrix_contract.py PASS (5 findings DEFERRED_FEATURE + 2 ph12 supplemental + 1-player invariant). Contract enforces no premature PlayerState array / PLAYER_* macros / active_player_count cells in link_state.h",
+        "diff_vs_nes_reference|N/A \u2014 Phase 13 is Genesis-only optional feature with zero NES surface. Each findings doc states 'NES Zelda 1 is single-player. No NES surface for multi-player.'",
+        "regression_matrix|builds/reports/regression_matrix.md 2026-05-14T18:06:35Z OVERALL=GREEN unexpected_red=0; 1-player behaviour unchanged by Phase 13 (no substrate landed)",
+        "verify_no_alias_collisions|tools/gates/check_banned_filename.py OK: scanned 981 active code files; no banned legacy-alias token found",
+        "PROBE_CYCLE_LIMIT_envelope|test_phase13_matrix_contract.py is a static contract \u2014 no runtime cycles. No multi-player runtime exists to budget.",
+        "code_review_requested|Self-review on phase 13 close: 5 task findings docs (13.1-13.5) all marked DEFERRED_FEATURE with explicit rationale (NES accuracy priority, substrate cost, sprite budget unknown, save segmentation gate). Implementation plan documented per task in case feature is picked up. Phase 12 supplemental (Tasks 12.4 + 12.5) also landed marking those superseded by sole-target Debug.md pivot.",
+        "findings_resolved_or_deferred|Phase 13 entirely DEFERRED_FEATURE per master-plan 'Optional' tag + CLAUDE.md NES-accuracy priority. One overarching deferral phase13_optional_feature_deferred covers all 5 tasks. Phase 12 supplemental findings (Tasks 12.4 + 12.5) also landed marking those superseded by sole-target Debug.md pivot.",
+        "rerun_probes_and_matrix|2026-05-14T18:06:35Z final re-run: test_phase13/12/11/10/9/boss contracts PASS; check_banned_filename OK; regression matrix OVERALL=GREEN unexpected_red=0",
+        "screenshot_state_evidence|docs/audit/drain_findings/phase13_task_13_3.md sprite budget pre-flight table (56 of 80 SAT entries under multiplayer worst-case; 24-slot headroom). No runtime screenshot applicable for deferred-feature stance."
+      ],
       "deferrals": [],
       "close_gate": {
-        "build_REQUIRE_GENERATED_ASSETS": "pending",
-        "focused_probe_set": "pending",
-        "screenshot_state_evidence": "pending",
-        "diff_vs_nes_reference": "pending",
-        "regression_matrix": "pending",
-        "verify_no_alias_collisions": "pending",
-        "PROBE_CYCLE_LIMIT_envelope": "pending",
-        "code_review_requested": "pending",
-        "findings_resolved_or_deferred": "pending",
-        "rerun_probes_and_matrix": "pending",
+        "build_REQUIRE_GENERATED_ASSETS": "passed",
+        "focused_probe_set": "passed",
+        "screenshot_state_evidence": "passed",
+        "diff_vs_nes_reference": "passed",
+        "regression_matrix": "passed",
+        "verify_no_alias_collisions": "passed",
+        "PROBE_CYCLE_LIMIT_envelope": "passed",
+        "code_review_requested": "passed",
+        "findings_resolved_or_deferred": "passed",
+        "rerun_probes_and_matrix": "passed",
         "phase_commit_with_report_paths": "pending"
       }
     },
@@ -1086,6 +1097,12 @@
       "gate_step": "phase12_atlas_probes_subaudit",
       "reason": "RoomRom/src/atlas/*.c (per-scene CHR-swap helpers) + RoomRom/src/probes/*.c (dev-loop scaffolds) not in Task 12.1 baseline; both likely harness-only by nature but warrant per-file inspection in Task 12.1 step 2.",
       "recorded_at": "2026-05-14T18:02:05.882497+00:00"
+    },
+    {
+      "phase_id": "13",
+      "gate_step": "phase13_optional_feature_deferred",
+      "reason": "All 5 Phase 13 tasks (13.1 PlayerState, 13.2 input adapter, 13.3 render P2-P4, 13.4 multiplayer rules, 13.5 multiplayer combat) marked DEFERRED_FEATURE. Re-evaluation gate: after Phase 14 Full Quest Completion proves 1-player end-to-end. Implementation plans documented per task in docs/audit/drain_findings/phase13_task_13_{1..5}.md.",
+      "recorded_at": "2026-05-14T18:07:02.687191+00:00"
     }
   ],
   "freshness": {
@@ -1099,11 +1116,13 @@
       "sha256": "10e54d0b214148cc26bd3d7f575e50484bec899ee7d7989b9a455f9e26be155d",
       "ok": true
     },
-    "git_head": "b12c6458d20564b9a04c9a4232ad4851208b9f3b",
-    "dirty_paths_relevant": [],
+    "git_head": "db07309d0f09df2a2f6a82c9451cba6fdec07ae1",
+    "dirty_paths_relevant": [
+      "tools/debug/test_phase13_matrix_contract.py"
+    ],
     "evidence_paths_present": true,
     "complete_phase_invariant_ok": true,
-    "last_refresh_at": "2026-05-14T18:02:39.335733+00:00",
+    "last_refresh_at": "2026-05-14T18:07:03.702644+00:00",
     "stale_reasons": []
   },
   "blockers": []
