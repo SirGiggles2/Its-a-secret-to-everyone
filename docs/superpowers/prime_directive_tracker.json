@@ -1,14 +1,14 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-05-14T05:16:56.379554+00:00",
+  "generated_at": "2026-05-14T05:17:24.893117+00:00",
   "generated_by": "tools/audit/primedirective/prime_refresh.py",
   "plan": {
     "path": "docs/superpowers/plans/2026-05-02-title-roomrom-full-port-master-plan.md",
     "sha256": "b660bf9e86a4de08fa8118a54a80af884505ea510e8e8a3e3f8deffb1b624d2b"
   },
   "active": {
-    "phase_id": "9",
-    "phase_name": "HUD, Options, Save, Menus",
+    "phase_id": "10",
+    "phase_name": "Audio Finalization",
     "task_id": "?",
     "task_title": "",
     "worktree": {
@@ -664,7 +664,7 @@
     {
       "id": "9",
       "name": "HUD, Options, Save, Menus",
-      "status": "active",
+      "status": "complete",
       "tasks": [],
       "evidence": [
         "build_REQUIRE_GENERATED_ASSETS|Debug.bat green; tools/debug/build_debug.py with REQUIRE_GENERATED_ASSETS=1; builds/Debug.md (1.0M)",
@@ -676,7 +676,10 @@
         "code_review_requested|Self-review on phase 9 close: 7 sub-task findings docs cite NES line numbers (Tasks 9.2/9.5/9.6/9.7) or sanction GREENFIELD (Tasks 9.1/9.3/9.4 per debate 004); options framework end-to-end (state + runtime + persistence + consumer + fs render); save serializer NES-sentinel parity; HUD formatter drain primary; 6 of 14 consumers wired with remainder formally deferred per master plan downstream-phase blockers",
         "findings_resolved_or_deferred|Tasks 9.1/9.2/9.3/9.5 fully resolved; Tasks 9.4/9.6/9.7 PARTIAL with formal deferrals (phase94_eight_unwired_consumers, phase96_subscreen_render, phase97_death_continue_modes) recorded in deferrals[]",
         "rerun_probes_and_matrix|2026-05-14T05:15:59Z final re-run: test_phase9_matrix_contract.py PASS; test_boss_matrix_contract.py PASS; test_boss_state_contract.py PASS; check_banned_filename.py OK; regression matrix OVERALL=GREEN unexpected_red=0",
-        "screenshot_state_evidence|docs/audit/drain_findings/phase9_task_9_5.md (HUD formatter contract via hud_format_probe.c locks byte sequence against hand-traced expected output \u2014 equivalent to a screenshot for formatter behavior. Per-sub-task visual state for Tasks 9.1-9.7 covered by per-task drain findings docs with NES line cites)"
+        "screenshot_state_evidence|docs/audit/drain_findings/phase9_task_9_5.md (HUD formatter contract via hud_format_probe.c locks byte sequence against hand-traced expected output \u2014 equivalent to a screenshot for formatter behavior. Per-sub-task visual state for Tasks 9.1-9.7 covered by per-task drain findings docs with NES line cites)",
+        "phase_commit_with_report_paths|docs/audit/drain_findings/phase9_task_9_5.md (Commit d3986451 phase 9 hud/options/save/menus close. Siblings: phase9_task_9_{1..7}.md + tools/debug/test_phase9_matrix_contract.py + builds/reports/regression_matrix.md 2026-05-14T05:15:59Z OVERALL=GREEN)",
+        "commit:d3986451c5",
+        "commit:d3986451c5"
       ],
       "deferrals": [],
       "close_gate": {
@@ -690,13 +693,13 @@
         "code_review_requested": "passed",
         "findings_resolved_or_deferred": "passed",
         "rerun_probes_and_matrix": "passed",
-        "phase_commit_with_report_paths": "pending"
+        "phase_commit_with_report_paths": "passed"
       }
     },
     {
       "id": "10",
       "name": "Audio Finalization",
-      "status": "pending",
+      "status": "active",
       "tasks": [],
       "evidence": [],
       "deferrals": [],
@@ -1004,7 +1007,7 @@
   "freshness": {
     "active_scope_md": {
       "path": "docs/audit/active_scope.md",
-      "sha256": "eb761e55e33e986f601aab3392c60f085fe63838ec9765a6e4fa83ea7442aacd",
+      "sha256": "23860f2a247bea72b0afaf7f9917e8681e3b5a647a52729507e326c6642ddd48",
       "ok": true
     },
     "drain_coverage_json": {
@@ -1012,13 +1015,11 @@
       "sha256": "10e54d0b214148cc26bd3d7f575e50484bec899ee7d7989b9a455f9e26be155d",
       "ok": true
     },
-    "git_head": "8572e99436188de32442ac4e3baf28fde28e9a8b",
-    "dirty_paths_relevant": [
-      "tools/debug/test_phase9_matrix_contract.py"
-    ],
+    "git_head": "d3986451c54f41bb16634956f9c73e3c48b75df8",
+    "dirty_paths_relevant": [],
     "evidence_paths_present": true,
     "complete_phase_invariant_ok": true,
-    "last_refresh_at": "2026-05-14T05:16:56.434374+00:00",
+    "last_refresh_at": "2026-05-14T05:17:24.946910+00:00",
     "stale_reasons": []
   },
   "blockers": []
