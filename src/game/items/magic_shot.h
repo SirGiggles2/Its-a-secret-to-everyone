@@ -17,7 +17,7 @@
  * Wand-extending visual (rod sprite at Link's hand) deferred.
  */
 
-#include "roomrom_sprites.h"
+#include "../../src/game/world/render/sprite_render.h"
 
 void roomrom_magic_shot_init(void);
 void roomrom_magic_shot_fire(link_face_t face, short link_x, short link_y);

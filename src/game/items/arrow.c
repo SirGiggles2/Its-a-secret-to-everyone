@@ -1,5 +1,5 @@
 #include "arrow.h"
-#include "../../../RoomRom/src/roomrom_sprites.h"
+#include "../world/render/sprite_render.h"
 #include "../../state/inventory.h"
 
 /* NES Z_05.asm:2945 WieldArrow / Z_07.asm UpdateRodOrArrow: refuse if

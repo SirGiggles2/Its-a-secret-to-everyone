@@ -338,6 +338,25 @@ unsigned short render_vram_read_word(unsigned short vram_addr)
     return VDP_DATA_WORD;
 }
 
+/* Phase 12.2 SGDK-1 cleanup: sprite SAT slot wrapper. */
+void render_set_sprite_full(unsigned short slot,
+                            signed short   x,
+                            signed short   y,
+                            unsigned short size,
+                            unsigned short attr,
+                            unsigned short link)
+{
+    VDP_setSpriteFull((u16)slot, (s16)x, (s16)y,
+                      (u8)size, (u16)attr, (u8)link);
+}
+
+/* Phase 12.2 SGDK-1 cleanup: SAT upload for `count` first slots,
+ * via SGDK DMA queue. Wraps VDP_updateSprites(count, DMA_QUEUE). */
+void render_update_sprites(unsigned short count)
+{
+    VDP_updateSprites((u16)count, DMA_QUEUE);
+}
+
 /* Phase 12.2 SGDK-1 cleanup: Window plane HUD wrappers.
  *
  * RoomRom HUD lives on the Window plane (NES status-bar parity at top

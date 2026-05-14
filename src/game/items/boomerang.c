@@ -1,5 +1,5 @@
 #include "boomerang.h"
-#include "../../../RoomRom/src/roomrom_sprites.h"
+#include "../world/render/sprite_render.h"
 #include "../../state/inventory.h"
 
 /* NES: DrawBoomerangAndCheckCollision (Z_07.asm:3437) -> base attr 0

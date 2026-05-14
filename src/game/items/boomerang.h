@@ -26,7 +26,7 @@
  *   - SAT slot 3 (after sword=1, beam=2).
  */
 
-#include "roomrom_sprites.h"
+#include "../../src/game/world/render/sprite_render.h"
 
 void roomrom_boomerang_init(void);
 void roomrom_boomerang_throw(link_face_t face, short link_x, short link_y);

@@ -15,7 +15,7 @@
 #ifndef ROOMROM_CANDLE_FIRE_H
 #define ROOMROM_CANDLE_FIRE_H
 
-#include "roomrom_sprites.h"
+#include "../../src/game/world/render/sprite_render.h"
 
 void roomrom_candle_fire_init(void);
 void roomrom_candle_fire_spawn(link_face_t face, short link_x, short link_y);

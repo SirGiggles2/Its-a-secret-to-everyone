@@ -12,7 +12,7 @@
  * animation cycle (single frame). Despawns when off-screen.
  */
 
-#include "roomrom_sprites.h"
+#include "../../src/game/world/render/sprite_render.h"
 
 void roomrom_arrow_init(void);
 void roomrom_arrow_fire(link_face_t face, short link_x, short link_y);

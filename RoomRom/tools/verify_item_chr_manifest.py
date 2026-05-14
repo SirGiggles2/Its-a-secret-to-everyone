@@ -19,7 +19,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 MANIFEST = ROOT / "RoomRom" / "data" / "item_chr_manifest.json"
 HEADER = ROOT / "RoomRom" / "src" / "atlas" / "items_chr_x4.h"
-SOURCE = ROOT / "RoomRom" / "src" / "roomrom_sprites.c"
+SOURCE = ROOT / "src" / "game" / "world" / "render" / "sprite_render.c"  # Phase 12.2 promoted
 
 REQUIRED_DEFS = {
     "sword_vert",

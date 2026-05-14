@@ -1,7 +1,7 @@
 /* Phase 12.2 SGDK-1 cleanup: dropped <genesis.h>; route PAL_setColors
  * through render_cram_subrange_upload(). */
 #include "combat_runtime.h"
-#include "../../../RoomRom/src/roomrom_sprites.h"
+#include "../world/render/sprite_render.h"
 #include "../world/bg_palette.h"  /* Phase 12.2 promoted */
 #include "../../state/inventory.h"
 #include "../options/options_consumer.h"

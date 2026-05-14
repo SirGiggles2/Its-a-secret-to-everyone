@@ -27,7 +27,7 @@
  *   horizontal (LEFT/RIGHT in states 2-4) = $82
  */
 
-#include "roomrom_sprites.h"
+#include "../../src/game/world/render/sprite_render.h"
 
 void roomrom_combat_init(void);
 void roomrom_combat_try_swing(link_face_t face, short link_x, short link_y);

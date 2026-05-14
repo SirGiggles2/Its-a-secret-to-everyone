@@ -16,7 +16,7 @@
  * RoomRom v8 simplification: 60-frame fuse, 24-frame explosion.
  */
 
-#include "roomrom_sprites.h"
+#include "../../src/game/world/render/sprite_render.h"
 
 void roomrom_bomb_init(void);
 void roomrom_bomb_place(link_face_t face, short link_x, short link_y);

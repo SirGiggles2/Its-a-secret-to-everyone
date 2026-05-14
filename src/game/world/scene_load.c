@@ -1,6 +1,6 @@
 /* Phase 12.2 SGDK-1 cleanup: dropped unused <genesis.h>. */
 #include "scene_load.h"
-#include "../../../RoomRom/src/roomrom_sprites.h"
+#include "../world/render/sprite_render.h"
 #include "../../../RoomRom/src/atlas/level_chr_swap.h"
 #include "bg_palette.h"  /* Phase 12.2 promoted */
 

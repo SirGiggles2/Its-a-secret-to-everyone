@@ -1,5 +1,5 @@
 #include "bomb.h"
-#include "../../../RoomRom/src/roomrom_sprites.h"
+#include "../world/render/sprite_render.h"
 #include "../../state/inventory.h"
 
 /* NES: DrawCloud (Z_07.asm:4912) sets sprite attr Y=1 -> sub-pal 1 (blue). */

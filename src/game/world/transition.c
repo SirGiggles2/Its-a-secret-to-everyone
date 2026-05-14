@@ -20,7 +20,7 @@
 #include "../dungeon/uw_render.h"  /* Phase 12.2 promoted */
 #include "../dungeon/cellar_meta.h"  /* Phase 12.2 promoted */
 #include "../../../RoomRom/data/levelinfo_start_rooms.h"
-#include "../../../RoomRom/src/roomrom_sprites.h"  /* LINK_FACE_* enum */
+#include "../world/render/sprite_render.h"  /* LINK_FACE_* enum */
 
 /* Canonical UW Level 1 entrance spawn — matches the debug-entry
  * defaults in main.c (players[0].x = 120, players[0].y = 133). */

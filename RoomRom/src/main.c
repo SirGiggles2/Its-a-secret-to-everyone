@@ -3,7 +3,7 @@
 #include "../../src/game/world/render/ow_render.h"  /* Phase 12.2 promoted */
 #include "../../src/game/dungeon/uw_render.h"        /* Phase 12.2 promoted */
 #include "../../src/game/hud/hud_runtime.h"  /* Phase 12.2 promoted */
-#include "roomrom_sprites.h"
+#include "../../src/game/world/render/sprite_render.h"
 #include "../../src/game/combat/combat_runtime.h"  /* Phase 12.2 promoted */
 #include "../../src/game/items/boomerang.h"      /* Phase 12.2 promoted */
 #include "../../src/game/items/arrow.h"          /* Phase 12.2 promoted */

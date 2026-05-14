@@ -83,6 +83,41 @@ void render_clear_window_rect(unsigned short col, unsigned short row,
  * VDP_CTRL_LONG read-control formula + VDP_DATA_WORD fetch. */
 unsigned short render_vram_read_word(unsigned short vram_addr);
 
+/* Phase 12.2 SGDK-1 cleanup: sprite SAT slot write. Wraps SGDK
+ * VDP_setSpriteFull. slot 0..79; x/y are screen-space coords;
+ * size is SPRITE_SIZE-encoded width/height nibble; attr is the
+ * VDP sprite attribute word (priority<<15 | palette<<13 |
+ * vflip<<12 | hflip<<11 | tile_index); link is the SAT next-slot
+ * link byte. */
+void render_set_sprite_full(unsigned short slot,
+                            signed short   x,
+                            signed short   y,
+                            unsigned short size,
+                            unsigned short attr,
+                            unsigned short link);
+
+/* Phase 12.2 SGDK-1 cleanup: trigger SAT DMA upload for first `count`
+ * sprite slots. Wraps VDP_updateSprites(count, DMA_QUEUE). */
+void render_update_sprites(unsigned short count);
+
+/* Phase 12.2 SGDK-1 cleanup: portable replacements for SGDK
+ * SPRITE_SIZE / TILE_ATTR_FULL / PAL0..PAL3 macros so src/game/
+ * TUs do not need <genesis.h>. Bit-math identical to SGDK. */
+#define RENDER_PAL0 0u
+#define RENDER_PAL1 1u
+#define RENDER_PAL2 2u
+#define RENDER_PAL3 3u
+#define RENDER_SPRITE_SIZE(w, h) \
+    ((unsigned short)((((w)-1) << 2) | ((h)-1)))
+#define RENDER_TILE_ATTR_FULL(pal, prio, vflip, hflip, tile) \
+    ((unsigned short)( \
+        ((prio) ? 0x8000u : 0u) | \
+        (((unsigned short)(pal) & 0x3u) << 13) | \
+        ((vflip) ? 0x1000u : 0u) | \
+        ((hflip) ? 0x0800u : 0u) | \
+        ((unsigned short)(tile) & 0x07FFu) \
+    ))
+
 /* ---- VSRAM write (F3: title cutover) ----
  *
  * render_vsram_open_write -- set VSRAM write cursor to byte-offset slot*2.

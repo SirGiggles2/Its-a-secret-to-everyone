@@ -125,7 +125,7 @@ ROOMROM_C_SOURCES = [
     # Phase 12.2 family 7: dungeon meta promoted to src/game/dungeon/.
     ("src/game/dungeon/walk_model.c",  "dungeon_walk_model.o"),
     ("src/game/dungeon/door_state.c",  "dungeon_door_state.o"),
-    ("RoomRom/src/roomrom_sprites.c", "roomrom_sprites.o"),
+    ("src/game/world/render/sprite_render.c", "world_sprite_render.o"),  # Phase 12.2 promoted (SGDK-1 clean)
     ("src/game/combat/combat_runtime.c", "combat_runtime.o"),  # Phase 12.2 promoted (SGDK-1 cleanup)
     # Phase 12.2 family 3: items promoted to src/game/items/.
     ("src/game/items/boomerang.c", "items_boomerang.o"),
