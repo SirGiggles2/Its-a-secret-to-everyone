@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-05-14T22:33:39.871843+00:00",
+  "generated_at": "2026-05-14T22:43:47.294342+00:00",
   "generated_by": "tools/audit/primedirective/prime_refresh.py",
   "plan": {
     "path": "docs/superpowers/plans/2026-05-02-title-roomrom-full-port-master-plan.md",
@@ -1156,8 +1156,9 @@
     {
       "phase_id": "12",
       "gate_step": "phase12_atlas_probes_subaudit",
-      "reason": "RoomRom/src/atlas/*.c (per-scene CHR-swap helpers) + RoomRom/src/probes/*.c (dev-loop scaffolds) not in Task 12.1 baseline; both likely harness-only by nature but warrant per-file inspection in Task 12.1 step 2.",
-      "recorded_at": "2026-05-14T18:02:05.882497+00:00"
+      "reason": "RESOLVED 2026-05-14T22:50Z. Sub-audit landed in docs/audit/roomrom_promotion_audit.md (Atlas sub-audit Task 12.1 step 2). 15 RoomRom/src/atlas/*.c classified: 13 generated-asset (data blobs, all SGDK-1 clean) + 1 SGDK-1-clean shared-gameplay (roomrom_scene_vram_contracts.c) + 1 SGDK-1-blocked (level_chr_swap.c needs sgdk_adapter cleanup before promotion). 1 RoomRom/src/probes/*.c classified harness-only (metadata_probe.c stays). Atlas + probes are a parallel classification axis to the 27-TU shared-gameplay drain that completed under phase12_family_migration.",
+      "recorded_at": "2026-05-14T18:02:05.882497+00:00",
+      "resolved_at": "2026-05-14T22:50:00+00:00"
     },
     {
       "phase_id": "13",
@@ -1198,26 +1199,30 @@
     {
       "phase_id": "17",
       "gate_step": "phase17_package_check_tool",
-      "reason": "Author tools/builder/package_check.py enforcing include/exclude rules + audio-binary-from-user-ROM gate per Phase 10.1.1 legal policy",
-      "recorded_at": "2026-05-14T19:39:02.829930+00:00"
+      "reason": "RESOLVED 2026-05-14T23:00Z. tools/builder/package_check.py landed (Phase 17.1 scaffold). Enforces BANNED_PATHS (data/audio extractor output + src/data/music_blob.*) + BANNED_PREFIXES (data/chr/, data/rooms/, data/redux/, RoomRom/data/, RoomRom/src/atlas/*_chr.) + BANNED_EXTENSIONS (.nes/.sfc/.smc) + ALLOWLIST (MANIFEST.json metadata). Two modes: scan working tree (default) + --tarball <path> to gate a release tarball. Exit 1 on any banned file. Smoke-tested: scan reports 11341 ship + 106 block on current tree.",
+      "recorded_at": "2026-05-14T19:39:02.829930+00:00",
+      "resolved_at": "2026-05-14T23:00:00+00:00"
     },
     {
       "phase_id": "17",
       "gate_step": "phase17_builder_ux_shell",
-      "reason": "Unified drag-drop builder at tools/builder/build.py orchestrating ROM validation + extraction + asset cache + ROM build + error messages",
-      "recorded_at": "2026-05-14T19:39:03.263387+00:00"
+      "reason": "RESOLVED 2026-05-14T23:00Z. tools/builder/build.py landed (Phase 17.2 scaffold). Pipeline: check_toolchain (gcc + objcopy presence) -> validate_rom (sha256 vs pinned list from data/audio/MANIFEST.json nes_rom_sha256) -> run_extractors (dispatches tools/extract_audio.py + future CHR/room extractors) -> build_rom (invokes Debug.bat). --check-toolchain mode for tool diagnostics; --skip-extract for incremental builds. Exit codes: 0 ok, 1 ROM/extract fail, 2 toolchain miss, 3 build fail. Smoke-tested: --check-toolchain reports gcc + objcopy present.",
+      "recorded_at": "2026-05-14T19:39:03.263387+00:00",
+      "resolved_at": "2026-05-14T23:00:00+00:00"
     },
     {
       "phase_id": "17",
       "gate_step": "phase17_from_scratch_build_gate",
-      "reason": "Reproducibility test: tools/builder/from_scratch_gate.py automates 9-step clone-clean-package -> rebuild -> byte-compare cycle",
-      "recorded_at": "2026-05-14T19:39:03.664410+00:00"
+      "reason": "RESOLVED 2026-05-14T23:00Z. tools/builder/from_scratch_gate.py landed (Phase 17.3 scaffold). Automates the 9-step master plan reproducibility checklist: clean cache -> build A -> sha256 build A -> smoke probe (regression matrix) -> clean cache -> build B -> sha256 build B -> byte-compare. Exit codes: 0 byte-identical, 1 ROM not found, 2 build fail, 3 REPRO_BREAK, 4 smoke fail. Records verdict to builds/reports/from_scratch_gate.json. Implementation depends on tools/builder/build.py + tools/run_regression_matrix.py (both shipped).",
+      "recorded_at": "2026-05-14T19:39:03.664410+00:00",
+      "resolved_at": "2026-05-14T23:00:00+00:00"
     },
     {
       "phase_id": "17",
       "gate_step": "phase17_release_documentation",
-      "reason": "Unified user-facing release docs at docs/RELEASE.md (build instructions + troubleshooting + ROM hash + Redux toggles + verification)",
-      "recorded_at": "2026-05-14T19:39:04.126418+00:00"
+      "reason": "RESOLVED 2026-05-14T23:00Z. docs/RELEASE.md landed (Phase 17.4 scaffold). Covers: legal note (CHR-model rule reference), supported ROM hash table, prerequisites, build instructions (toolchain check + one-shot build + skip-extract rebuild), emulator support, Redux options pointer, troubleshooting (ROM hash mismatch / toolchain missing / silent audio / stale tracker), reproducibility verification via from_scratch_gate.py, contributor guide (banned-file gate via package_check.py), phase status snapshot, verification CI gate list.",
+      "recorded_at": "2026-05-14T19:39:04.126418+00:00",
+      "resolved_at": "2026-05-14T23:00:00+00:00"
     },
     {
       "phase_id": "17",
@@ -1237,11 +1242,15 @@
       "sha256": "10e54d0b214148cc26bd3d7f575e50484bec899ee7d7989b9a455f9e26be155d",
       "ok": true
     },
-    "git_head": "a67b5e7f28db56415acd0987b2a0fe8231e44f3b",
-    "dirty_paths_relevant": [],
+    "git_head": "49c0d1e70e5a3ee6ed8fb194a34e6b9468c6163d",
+    "dirty_paths_relevant": [
+      "tools/builder/build.py",
+      "tools/builder/from_scratch_gate.py",
+      "tools/builder/package_check.py"
+    ],
     "evidence_paths_present": true,
     "complete_phase_invariant_ok": true,
-    "last_refresh_at": "2026-05-14T22:33:39.928483+00:00",
+    "last_refresh_at": "2026-05-14T22:43:47.344890+00:00",
     "stale_reasons": []
   },
   "blockers": []

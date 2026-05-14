@@ -65,9 +65,42 @@ obsolete-debug.
 
 ## RoomRom/src/atlas/*.c (CHR atlas) + RoomRom/src/probes/*.c
 
-Not in this audit pass — atlas is harness-adjacent (per-scene CHR
-swap helpers); probes are RoomRom dev-loop scaffolds. Both land as
-follow-up classification in Task 12.1 step 2.
+**Atlas sub-audit (Task 12.1 step 2) — 2026-05-14 update:**
+
+`RoomRom/src/atlas/*.c` (15 TUs total):
+
+| File                              | Bucket          | Target                                  | SGDK-1 |
+|-----------------------------------|-----------------|-----------------------------------------|--------|
+| `bg_overworld_chr.c`              | generated-asset | `data/chr/atlas/bg_overworld_chr.c`     | clean  |
+| `bg_underworld_chr.c`             | generated-asset | `data/chr/atlas/bg_underworld_chr.c`    | clean  |
+| `boss_chr.c` (38 KB)              | generated-asset | `data/chr/atlas/boss_chr.c`             | clean  |
+| `bosses_chr.c`                    | generated-asset | `data/chr/atlas/bosses_chr.c`           | clean  |
+| `enemies_chr.c`                   | generated-asset | `data/chr/atlas/enemies_chr.c`          | clean  |
+| `enemy_chr.c` (102 KB)            | generated-asset | `data/chr/atlas/enemy_chr.c`            | clean  |
+| `fileselect_chr.c`                | generated-asset | `data/chr/atlas/fileselect_chr.c`       | clean  |
+| `hud_chr.c`                       | generated-asset | `data/chr/atlas/hud_chr.c`              | clean  |
+| `items_chr.c`                     | generated-asset | `data/chr/atlas/items_chr.c`            | clean  |
+| `items_chr_x4.c` (86 KB)          | generated-asset | `data/chr/atlas/items_chr_x4.c`         | clean  |
+| `link_chr.c`                      | generated-asset | `data/chr/atlas/link_chr.c`             | clean  |
+| `npc_chr.c`                       | generated-asset | `data/chr/atlas/npc_chr.c`              | clean  |
+| `title_chr.c`                     | generated-asset | `data/chr/atlas/title_chr.c`            | clean  |
+| `roomrom_scene_vram_contracts.c`  | shared-gameplay | `src/game/world/render/scene_vram_contracts.c` | clean  |
+| `level_chr_swap.c`                | shared-gameplay | `src/game/world/render/level_chr_swap.c` | BLOCKED (includes `<genesis.h>`) |
+
+Counts: 13 generated-asset + 1 SGDK-1-clean shared-gameplay + 1
+SGDK-1-blocked shared-gameplay.
+
+`RoomRom/src/probes/*.c` (1 TU):
+
+| File                | Bucket        | Notes |
+|---------------------|---------------|-------|
+| `metadata_probe.c`  | harness-only  | RoomRom dev-loop scaffold; stays in `RoomRom/src/probes/`. |
+
+Counts: 1 harness-only.
+
+These sub-buckets do NOT affect the 27-TU shared-gameplay promotion
+count that was tracked under `phase12_family_migration` (now RESOLVED).
+Atlas + probes are a parallel classification axis.
 
 ## RoomRom/data/*.c (6 TUs)
 
