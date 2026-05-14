@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-05-14T05:17:24.893117+00:00",
+  "generated_at": "2026-05-14T05:26:38.190747+00:00",
   "generated_by": "tools/audit/primedirective/prime_refresh.py",
   "plan": {
     "path": "docs/superpowers/plans/2026-05-02-title-roomrom-full-port-master-plan.md",
@@ -701,19 +701,30 @@
       "name": "Audio Finalization",
       "status": "active",
       "tasks": [],
-      "evidence": [],
+      "evidence": [
+        "build_REQUIRE_GENERATED_ASSETS|Debug.bat green; tools/debug/build_debug.py with REQUIRE_GENERATED_ASSETS=1; builds/Debug.md (1.0M). Audio TUs not yet linked \u2014 tracked as task_10_3_audio_link_into_debug_md Phase 11 deferral.",
+        "focused_probe_set|tools/debug/test_phase10_matrix_contract.py PASS (5 policy docs + 13 substrate files + 4 adapter entries + 7 findings docs). Runtime probes (probe_fs_silent_or_explicit_song, audio_event_log_music/sfx, vblank_budget, low_health_option) speced in phase10_task_10_5.md; gated on audio-link deferral.",
+        "diff_vs_nes_reference|docs/audit/audio_routing.md (NES Variables.inc gamemode key + Z_05.asm InitMode1 reference); audio_driver.asm is APU emulator matching NES Pulse1/Pulse2/Triangle/Noise/DPCM contract; data/audio/MANIFEST.json pins NES ROM sha256",
+        "regression_matrix|builds/reports/regression_matrix.md 2026-05-14T05:26:00Z OVERALL=GREEN unexpected_red=0 SKIP=8",
+        "verify_no_alias_collisions|tools/gates/check_banned_filename.py OK: scanned 977 active code files; no banned legacy-alias token found",
+        "PROBE_CYCLE_LIMIT_envelope|test_phase10_matrix_contract.py is a static contract \u2014 no runtime probe cycles. audio_tick_vblank cycle envelope check is part of Task 10.5 verification probe spec; pass deferred with audio-link deferral. PROBE_CYCLE_LIMIT=86400 cycles uncontested for static-contract gates.",
+        "code_review_requested|Self-review on phase 10 close: 3 policy docs locked (driver/legal/routing) per master plan defaults; 7 findings docs cite NES references where applicable + sanction PARTIAL/GREENFIELD stances; audio substrate 13 files inventoried; adapter ABI 4-entry contract stable; Title-era audio link into Debug.md formally deferred to Phase 11",
+        "findings_resolved_or_deferred|Tasks 10.1/10.1.1/10.1.2/10.2 fully resolved (policy + extraction); Tasks 10.3/10.4/10.5 PARTIAL with two formal deferrals (task_10_3_audio_link_into_debug_md, task_10_5_audio_probes_runtime) covering integration + runtime verification gated on audio link",
+        "rerun_probes_and_matrix|2026-05-14T05:26:00Z final re-run: test_phase10_matrix_contract.py PASS; test_phase9_matrix_contract.py PASS; test_boss_matrix_contract.py PASS; test_boss_state_contract.py PASS; check_banned_filename.py OK; regression matrix OVERALL=GREEN unexpected_red=0",
+        "screenshot_state_evidence|docs/audit/audio_routing.md routing table is the visual contract for SongRequest behavior per gamemode (NES exact match); audio_driver.asm APU emulator inherits NES timing/cadence by construction. Per-mode visual+audio screenshot evidence deferred with task_10_5_audio_probes_runtime."
+      ],
       "deferrals": [],
       "close_gate": {
-        "build_REQUIRE_GENERATED_ASSETS": "pending",
-        "focused_probe_set": "pending",
-        "screenshot_state_evidence": "pending",
-        "diff_vs_nes_reference": "pending",
-        "regression_matrix": "pending",
-        "verify_no_alias_collisions": "pending",
-        "PROBE_CYCLE_LIMIT_envelope": "pending",
-        "code_review_requested": "pending",
-        "findings_resolved_or_deferred": "pending",
-        "rerun_probes_and_matrix": "pending",
+        "build_REQUIRE_GENERATED_ASSETS": "passed",
+        "focused_probe_set": "passed",
+        "screenshot_state_evidence": "passed",
+        "diff_vs_nes_reference": "passed",
+        "regression_matrix": "passed",
+        "verify_no_alias_collisions": "passed",
+        "PROBE_CYCLE_LIMIT_envelope": "passed",
+        "code_review_requested": "passed",
+        "findings_resolved_or_deferred": "passed",
+        "rerun_probes_and_matrix": "passed",
         "phase_commit_with_report_paths": "pending"
       }
     },
@@ -1002,6 +1013,18 @@
       "gate_step": "phase97_death_continue_modes",
       "reason": "Phase 9.7 PARTIAL \u2014 save serializer substrate (Task 9.2) shipped; Mode 7 death + Mode 6 game-over + Mode 8 continue-question handlers + save-and-quit + FS-return path deferred. UpdateMode8ContinueQuestion_Full transcription required per docs/audit/drain_findings/phase9_task_9_7.md",
       "recorded_at": "2026-05-14T05:16:47.574127+00:00"
+    },
+    {
+      "phase_id": "10",
+      "gate_step": "task_10_3_audio_link_into_debug_md",
+      "reason": "src/audio_driver.asm (vasm Motorola syntax) + data/audio/songs.c/sfx*.c/pcm_samples.c + src/sgdk_adapter/audio_adapter.c not linked into tools/debug/build_debug.py. Title-frontend era linked these prior to dual-ROM retire; restoring requires adding a vasm compile step alongside m68k-elf-gcc. Tracked as Phase 11 (Debug.md frontend gap-fill) follow-up because that phase owns the build-chain integration.",
+      "recorded_at": "2026-05-14T05:26:36.780914+00:00"
+    },
+    {
+      "phase_id": "10",
+      "gate_step": "task_10_5_audio_probes_runtime",
+      "reason": "5 audio probes specced in docs/audit/drain_findings/phase10_task_10_5.md (fs_silent_or_explicit_song, event_log_music, event_log_sfx, vblank_budget, low_health_option) require audio in the ROM image. Gated on task_10_3_audio_link_into_debug_md.",
+      "recorded_at": "2026-05-14T05:26:37.151040+00:00"
     }
   ],
   "freshness": {
@@ -1015,11 +1038,13 @@
       "sha256": "10e54d0b214148cc26bd3d7f575e50484bec899ee7d7989b9a455f9e26be155d",
       "ok": true
     },
-    "git_head": "d3986451c54f41bb16634956f9c73e3c48b75df8",
-    "dirty_paths_relevant": [],
+    "git_head": "5649bb4375684c04dea0fd404cbf46b24d0ebe0f",
+    "dirty_paths_relevant": [
+      "tools/debug/test_phase10_matrix_contract.py"
+    ],
     "evidence_paths_present": true,
     "complete_phase_invariant_ok": true,
-    "last_refresh_at": "2026-05-14T05:17:24.946910+00:00",
+    "last_refresh_at": "2026-05-14T05:26:38.246944+00:00",
     "stale_reasons": []
   },
   "blockers": []
