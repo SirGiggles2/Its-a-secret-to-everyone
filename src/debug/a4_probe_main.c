@@ -137,12 +137,27 @@ static void debug_poll_title(void)
     }
 }
 
+extern void audio_vblank_hook_install(void);
+extern void music_play(unsigned char song_bitmap);
+
 int debug_main_after_a4(bool hardReset)
 {
     (void) hardReset;
 
+    /* Phase 10.3 audio link, VBlank tick slice: register music_tick
+     * as VBlank callback so the audio driver advances notes once per
+     * frame. Must run before any music_play() request. */
+    audio_vblank_hook_install();
+
     probe_check(1U);
     debug_enter_title();
+
+    /* Phase 10.3 audio link, per-event music_play slice (title song).
+     * NES Z1 title song = bit 7 set on SongRequest ($80). Memory
+     * project_midi_substrate_works confirms the driver plays when
+     * poked with $80. With the VBlank hook installed above, the driver
+     * advances notes each frame. */
+    music_play(0x80);
 
     while (TRUE)
     {

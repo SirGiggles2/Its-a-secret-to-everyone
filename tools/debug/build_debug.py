@@ -65,6 +65,8 @@ INCS = [
 
 TITLE_C_SOURCES = [
     ("src/sgdk_adapter/render_adapter.c", "render_adapter.o"),
+    # Phase 10.3 audio link, VBlank tick slice.
+    ("src/sgdk_adapter/audio_vblank_hook.c", "audio_vblank_hook.o"),
     ("src/frontend/intro/intro_phase.c", "intro_phase.o"),
     ("src/frontend/intro/intro_title.c", "intro_title.o"),
     ("src/frontend/intro/intro_story.c", "intro_story.o"),

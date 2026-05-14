@@ -588,6 +588,11 @@ dmc_len_sel         equ DMC_BASE+$0E    ; byte: shadow of last $4013 write
 ; rate to XGM's fixed 14 kHz, padded to 256-byte boundaries, emitted as
 ; aligned C arrays in data/audio/sfx_pcm.c.
 ;==============================================================================
+; Phase 10.3 audio link: DMC_SAMPLE_COUNT was xref'd from sfx_pcm.h
+; (extern const u8). gas MRI can't resolve that as an 8-bit immediate
+; (truncation error). Inline the value here; keep in sync with
+; data/audio/sfx_pcm.h SFX_PCM_COUNT.
+DMC_SAMPLE_COUNT equ 7
     xref    audio_sfx_play
 dmc_trigger:
     tst.b   D0
