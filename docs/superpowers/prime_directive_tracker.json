@@ -1,14 +1,14 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-05-14T19:36:06.190835+00:00",
+  "generated_at": "2026-05-14T19:39:05.849174+00:00",
   "generated_by": "tools/audit/primedirective/prime_refresh.py",
   "plan": {
     "path": "docs/superpowers/plans/2026-05-02-title-roomrom-full-port-master-plan.md",
     "sha256": "b660bf9e86a4de08fa8118a54a80af884505ea510e8e8a3e3f8deffb1b624d2b"
   },
   "active": {
-    "phase_id": "16",
-    "phase_name": "Hardware, Performance, And Polish",
+    "phase_id": "17",
+    "phase_name": "Public Builder Release",
     "task_id": "?",
     "task_title": "",
     "worktree": {
@@ -909,7 +909,7 @@
     {
       "id": "16",
       "name": "Hardware, Performance, And Polish",
-      "status": "active",
+      "status": "complete",
       "tasks": [],
       "evidence": [
         "build_REQUIRE_GENERATED_ASSETS|Debug.bat green; no runtime changes Phase 16; builds/Debug.md (1.0M)",
@@ -921,7 +921,10 @@
         "code_review_requested|Self-review: 5 task findings docs (16.1-16.5); Tasks 16.1/16.3/16.4/16.5 PARTIAL with explicit gated deferrals; Task 16.2 DEFERRED_HARDWARE (out of CLI scope by definition); alias retirement FULL",
         "findings_resolved_or_deferred|Task 16.5 alias retirement FULL; Tasks 16.1/16.3/16.4 PARTIAL with carry-forward deferrals to Phase 14 GREEN + Phase 9.4 unwired consumers; Task 16.2 DEFERRED_HARDWARE. Three Phase 16 deferrals recorded (hardware_tests, cross_emulator_matrix, release_prep_polish).",
         "rerun_probes_and_matrix|2026-05-14T19:35:39Z final re-run: test_phase16 PASS; banned-name gate clean; regression matrix OVERALL=GREEN",
-        "screenshot_state_evidence|tools/gates/check_banned_filename.py output (986 files scanned clean) = textual evidence for Task 16.5 alias-retirement. Per-emulator + hardware screenshot evidence deferred with phase16_cross_emulator_matrix + phase16_hardware_tests."
+        "screenshot_state_evidence|tools/gates/check_banned_filename.py output (986 files scanned clean) = textual evidence for Task 16.5 alias-retirement. Per-emulator + hardware screenshot evidence deferred with phase16_cross_emulator_matrix + phase16_hardware_tests.",
+        "phase_commit_with_report_paths|docs/audit/drain_findings/phase16_task_16_5.md (Commit 0017e21f phase 16 hardware/performance/polish close. Siblings: phase16_task_16_{1..5}.md + tools/debug/test_phase16_matrix_contract.py + builds/reports/regression_matrix.md 2026-05-14T19:35:39Z OVERALL=GREEN)",
+        "commit:0017e21f15",
+        "commit:0017e21f15"
       ],
       "deferrals": [],
       "close_gate": {
@@ -935,27 +938,38 @@
         "code_review_requested": "passed",
         "findings_resolved_or_deferred": "passed",
         "rerun_probes_and_matrix": "passed",
-        "phase_commit_with_report_paths": "pending"
+        "phase_commit_with_report_paths": "passed"
       }
     },
     {
       "id": "17",
       "name": "Public Builder Release",
-      "status": "pending",
+      "status": "active",
       "tasks": [],
-      "evidence": [],
+      "evidence": [
+        "build_REQUIRE_GENERATED_ASSETS|Debug.bat green; builds/Debug.md (1.0M); no runtime changes Phase 17",
+        "focused_probe_set|tools/debug/test_phase17_matrix_contract.py PASS (5 findings + ROM hash pin + legal policy inheritance + master plan + README)",
+        "diff_vs_nes_reference|Phase 17 is release packaging \u2014 no NES surface to diff. ROM hash pin at data/audio/MANIFEST.json nes_rom_sha256 enforces user-ROM source-of-truth identity across builds. Legal policy inherited from Phase 10.1.1 (CHR-model rule).",
+        "regression_matrix|builds/reports/regression_matrix.md 2026-05-14T19:38:35Z OVERALL=GREEN unexpected_red=0",
+        "verify_no_alias_collisions|tools/gates/check_banned_filename.py OK: scanned 987 active code files; no banned legacy-alias token found",
+        "PROBE_CYCLE_LIMIT_envelope|test_phase17_matrix_contract.py static contract; no runtime cycles",
+        "code_review_requested|Self-review: 5 task findings docs (17.1-17.5); 17.1/17.2/17.4 PARTIAL; 17.3/17.5 DEFERRED_RELEASE (terminal release gates require Phase 14 GREEN + Phase 16 hardware tests). All terminal-release deferrals tied to specific upstream gates",
+        "findings_resolved_or_deferred|Tasks 17.1/17.2/17.4 PARTIAL with explicit follow-up deferrals (phase17_package_check_tool, phase17_builder_ux_shell, phase17_release_documentation); Tasks 17.3/17.5 DEFERRED_RELEASE under phase17_from_scratch_build_gate + phase17_final_release_gate. All gated on upstream Phase 14 GREEN + Phase 16 hardware smoke",
+        "rerun_probes_and_matrix|2026-05-14T19:38:35Z final re-run: test_phase17 PASS; banned-name gate clean; regression matrix OVERALL=GREEN",
+        "screenshot_state_evidence|data/audio/MANIFEST.json nes_rom_sha256 pin + per-extractor MANIFEST.json files provide cryptographic evidence for ROM-input identity across builds; visual release-artifact evidence deferred with phase17_final_release_gate."
+      ],
       "deferrals": [],
       "close_gate": {
-        "build_REQUIRE_GENERATED_ASSETS": "pending",
-        "focused_probe_set": "pending",
-        "screenshot_state_evidence": "pending",
-        "diff_vs_nes_reference": "pending",
-        "regression_matrix": "pending",
-        "verify_no_alias_collisions": "pending",
-        "PROBE_CYCLE_LIMIT_envelope": "pending",
-        "code_review_requested": "pending",
-        "findings_resolved_or_deferred": "pending",
-        "rerun_probes_and_matrix": "pending",
+        "build_REQUIRE_GENERATED_ASSETS": "passed",
+        "focused_probe_set": "passed",
+        "screenshot_state_evidence": "passed",
+        "diff_vs_nes_reference": "passed",
+        "regression_matrix": "passed",
+        "verify_no_alias_collisions": "passed",
+        "PROBE_CYCLE_LIMIT_envelope": "passed",
+        "code_review_requested": "passed",
+        "findings_resolved_or_deferred": "passed",
+        "rerun_probes_and_matrix": "passed",
         "phase_commit_with_report_paths": "pending"
       }
     }
@@ -1175,12 +1189,42 @@
       "gate_step": "phase16_release_prep_polish",
       "reason": "Dead debug code prune for release build + SaveRAM old-alias migration note. Defers to release-prep PR co-located with Phase 17 public package work.",
       "recorded_at": "2026-05-14T19:36:04.844541+00:00"
+    },
+    {
+      "phase_id": "17",
+      "gate_step": "phase17_package_check_tool",
+      "reason": "Author tools/builder/package_check.py enforcing include/exclude rules + audio-binary-from-user-ROM gate per Phase 10.1.1 legal policy",
+      "recorded_at": "2026-05-14T19:39:02.829930+00:00"
+    },
+    {
+      "phase_id": "17",
+      "gate_step": "phase17_builder_ux_shell",
+      "reason": "Unified drag-drop builder at tools/builder/build.py orchestrating ROM validation + extraction + asset cache + ROM build + error messages",
+      "recorded_at": "2026-05-14T19:39:03.263387+00:00"
+    },
+    {
+      "phase_id": "17",
+      "gate_step": "phase17_from_scratch_build_gate",
+      "reason": "Reproducibility test: tools/builder/from_scratch_gate.py automates 9-step clone-clean-package -> rebuild -> byte-compare cycle",
+      "recorded_at": "2026-05-14T19:39:03.664410+00:00"
+    },
+    {
+      "phase_id": "17",
+      "gate_step": "phase17_release_documentation",
+      "reason": "Unified user-facing release docs at docs/RELEASE.md (build instructions + troubleshooting + ROM hash + Redux toggles + verification)",
+      "recorded_at": "2026-05-14T19:39:04.126418+00:00"
+    },
+    {
+      "phase_id": "17",
+      "gate_step": "phase17_final_release_gate",
+      "reason": "Terminal release-tag orchestration; fires only after phase14_dungeon_harness_population + phase16_hardware_tests + 17.1/17.2/17.3/17.4 all GREEN",
+      "recorded_at": "2026-05-14T19:39:04.584778+00:00"
     }
   ],
   "freshness": {
     "active_scope_md": {
       "path": "docs/audit/active_scope.md",
-      "sha256": "304b13826c0ee768144a50ca0dd68c5ac3203b031277f0eb8ab07e0ddbec4746",
+      "sha256": "62eed23ddd1709bf04b3c3f4bcc8f1f9d65fc8e518c1417dfb63d8d275ce00bf",
       "ok": true
     },
     "drain_coverage_json": {
@@ -1188,13 +1232,13 @@
       "sha256": "10e54d0b214148cc26bd3d7f575e50484bec899ee7d7989b9a455f9e26be155d",
       "ok": true
     },
-    "git_head": "f9151b7b3855ea152a1965159e11bef2f101c54f",
+    "git_head": "0017e21f15341381f1c6efce4595b15b21d24207",
     "dirty_paths_relevant": [
-      "tools/debug/test_phase16_matrix_contract.py"
+      "tools/debug/test_phase17_matrix_contract.py"
     ],
     "evidence_paths_present": true,
     "complete_phase_invariant_ok": true,
-    "last_refresh_at": "2026-05-14T19:36:06.263496+00:00",
+    "last_refresh_at": "2026-05-14T19:39:05.914652+00:00",
     "stale_reasons": []
   },
   "blockers": []
