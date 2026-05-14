@@ -1,0 +1,29 @@
+{
+  "schema_version": 1,
+  "description": "Phase 14.0 Dungeon Harness manifest. One row per (level, quest) pair = 18 total rows. Each row pins a BizHawk save state hash + seeded RNG + per-dungeon Lua probe so the harness reproduces deterministically across runs. Save states + probes land per-dungeon as Phase 14.0 implementation PRs; this manifest is the schema + slot-skeleton.",
+  "nes_rom_sha256": null,
+  "rom_target": "Debug.md",
+  "save_state_dir": "tools/dungeon_harness/save_states/",
+  "probe_dir": "tools/dungeon_harness/probes/",
+  "rows": [
+    { "level": 1, "quest": 1, "label": "L1Q1 Eagle",     "save_state": "L1Q1.State", "save_state_sha256": null, "rng_seed": null, "probe": "dungeon_1_q1.lua", "boss": "Aquamentus",  "reward": "TriforcePiece(1)" },
+    { "level": 2, "quest": 1, "label": "L2Q1 Moon",      "save_state": "L2Q1.State", "save_state_sha256": null, "rng_seed": null, "probe": "dungeon_2_q1.lua", "boss": "Dodongo",     "reward": "TriforcePiece(2)" },
+    { "level": 3, "quest": 1, "label": "L3Q1 Manji",     "save_state": "L3Q1.State", "save_state_sha256": null, "rng_seed": null, "probe": "dungeon_3_q1.lua", "boss": "Manhandla",   "reward": "TriforcePiece(3)" },
+    { "level": 4, "quest": 1, "label": "L4Q1 Snake",     "save_state": "L4Q1.State", "save_state_sha256": null, "rng_seed": null, "probe": "dungeon_4_q1.lua", "boss": "Gleeok 1",    "reward": "TriforcePiece(4)" },
+    { "level": 5, "quest": 1, "label": "L5Q1 Lizard",    "save_state": "L5Q1.State", "save_state_sha256": null, "rng_seed": null, "probe": "dungeon_5_q1.lua", "boss": "Digdogger",   "reward": "TriforcePiece(5)" },
+    { "level": 6, "quest": 1, "label": "L6Q1 Dragon",    "save_state": "L6Q1.State", "save_state_sha256": null, "rng_seed": null, "probe": "dungeon_6_q1.lua", "boss": "Gohma Red",   "reward": "TriforcePiece(6)" },
+    { "level": 7, "quest": 1, "label": "L7Q1 Demon",     "save_state": "L7Q1.State", "save_state_sha256": null, "rng_seed": null, "probe": "dungeon_7_q1.lua", "boss": "Aquamentus",  "reward": "TriforcePiece(7)" },
+    { "level": 8, "quest": 1, "label": "L8Q1 Lion",      "save_state": "L8Q1.State", "save_state_sha256": null, "rng_seed": null, "probe": "dungeon_8_q1.lua", "boss": "Gohma Blue",  "reward": "TriforcePiece(8)" },
+    { "level": 9, "quest": 1, "label": "L9Q1 Death Mtn", "save_state": "L9Q1.State", "save_state_sha256": null, "rng_seed": null, "probe": "dungeon_9_q1.lua", "boss": "Ganon",       "reward": "ZeldaRescue" },
+
+    { "level": 1, "quest": 2, "label": "L1Q2", "save_state": "L1Q2.State", "save_state_sha256": null, "rng_seed": null, "probe": "dungeon_1_q2.lua", "boss": "Gleeok 2",    "reward": "TriforcePiece(1)" },
+    { "level": 2, "quest": 2, "label": "L2Q2", "save_state": "L2Q2.State", "save_state_sha256": null, "rng_seed": null, "probe": "dungeon_2_q2.lua", "boss": "Dodongo x3",  "reward": "TriforcePiece(2)" },
+    { "level": 3, "quest": 2, "label": "L3Q2", "save_state": "L3Q2.State", "save_state_sha256": null, "rng_seed": null, "probe": "dungeon_3_q2.lua", "boss": "Manhandla",   "reward": "TriforcePiece(3)" },
+    { "level": 4, "quest": 2, "label": "L4Q2", "save_state": "L4Q2.State", "save_state_sha256": null, "rng_seed": null, "probe": "dungeon_4_q2.lua", "boss": "Gleeok 1",    "reward": "TriforcePiece(4)" },
+    { "level": 5, "quest": 2, "label": "L5Q2", "save_state": "L5Q2.State", "save_state_sha256": null, "rng_seed": null, "probe": "dungeon_5_q2.lua", "boss": "Digdogger",   "reward": "TriforcePiece(5)" },
+    { "level": 6, "quest": 2, "label": "L6Q2", "save_state": "L6Q2.State", "save_state_sha256": null, "rng_seed": null, "probe": "dungeon_6_q2.lua", "boss": "Gohma Red",   "reward": "TriforcePiece(6)" },
+    { "level": 7, "quest": 2, "label": "L7Q2", "save_state": "L7Q2.State", "save_state_sha256": null, "rng_seed": null, "probe": "dungeon_7_q2.lua", "boss": "Patra",       "reward": "TriforcePiece(7)" },
+    { "level": 8, "quest": 2, "label": "L8Q2", "save_state": "L8Q2.State", "save_state_sha256": null, "rng_seed": null, "probe": "dungeon_8_q2.lua", "boss": "Gleeok 4",    "reward": "TriforcePiece(8)" },
+    { "level": 9, "quest": 2, "label": "L9Q2", "save_state": "L9Q2.State", "save_state_sha256": null, "rng_seed": null, "probe": "dungeon_9_q2.lua", "boss": "Ganon",       "reward": "ZeldaRescue" }
+  ]
+}
