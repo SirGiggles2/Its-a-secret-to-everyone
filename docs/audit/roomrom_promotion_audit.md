@@ -150,6 +150,24 @@ render_adapter_sgdk.c, roomrom_hud.c, roomrom_scene_load.c,
 roomrom_sprites.c, uw_room_render_roomrom.c. Tracked under
 `phase12_sgdk1_cleanup_before_promotion`.
 
+| File (was)                          | New path                              | Family   | Migration commit |
+|-------------------------------------|---------------------------------------|----------|------------------|
+| `RoomRom/src/uw_cellar_meta.c`      | `src/game/dungeon/cellar_meta.c`      | dungeon  | pending          |
+| `RoomRom/src/uw_cellar_meta.h`      | `src/game/dungeon/cellar_meta.h`      | dungeon  | pending          |
+| `RoomRom/src/uw_dark_meta.c`        | `src/game/dungeon/dark_meta.c`        | dungeon  | pending          |
+| `RoomRom/src/uw_dark_meta.h`        | `src/game/dungeon/dark_meta.h`        | dungeon  | pending          |
+| `RoomRom/src/uw_door_state.c`       | `src/game/dungeon/door_state.c`       | dungeon  | pending          |
+| `RoomRom/src/uw_door_state.h`       | `src/game/dungeon/door_state.h`       | dungeon  | pending          |
+| `RoomRom/src/uw_item_room_meta.c`   | `src/game/dungeon/item_room_meta.c`   | dungeon  | pending          |
+| `RoomRom/src/uw_item_room_meta.h`   | `src/game/dungeon/item_room_meta.h`   | dungeon  | pending          |
+| `RoomRom/src/uw_push_block_meta.c`  | `src/game/dungeon/push_block_meta.c`  | dungeon  | pending          |
+| `RoomRom/src/uw_push_block_meta.h`  | `src/game/dungeon/push_block_meta.h`  | dungeon  | pending          |
+| `RoomRom/src/uw_walk_model.c`       | `src/game/dungeon/walk_model.c`       | dungeon  | pending          |
+| `RoomRom/src/uw_walk_model.h`       | `src/game/dungeon/walk_model.h`       | dungeon  | pending          |
+
+Family 7 dungeon COMPLETE (6 TUs migrated; count 18 → 12).
+`uw_room_render_roomrom.c` blocked separately on SGDK-1.
+
 ## Status
 
 ACTIVE — Task 12.1 baseline classification landed; Task 12.2 family

@@ -4,8 +4,8 @@
  * Slice-1 (Task 5.6) reads from generated uw_l1q1_cellar_pairs table.
  */
 
-#include "uw_cellar_meta.h"
-#include "../data/uw_l1q1_cellar_pairs.h"
+#include "cellar_meta.h"
+#include "../../../RoomRom/data/uw_l1q1_cellar_pairs.h"
 
 unsigned char roomrom_uw_cellar_for_source(unsigned char level,
                                            unsigned char quest,

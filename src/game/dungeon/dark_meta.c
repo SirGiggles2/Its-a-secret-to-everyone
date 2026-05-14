@@ -9,8 +9,8 @@
  * nes_ram (G1).
  */
 
-#include "uw_dark_meta.h"
-#include "../data/uw_dark_rooms.h"
+#include "dark_meta.h"
+#include "../../../RoomRom/data/uw_dark_rooms.h"
 
 static unsigned char s_room_lit[256];
 static unsigned char s_candle_used_count;

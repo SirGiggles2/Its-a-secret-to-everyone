@@ -1,4 +1,4 @@
-#include "uw_walk_model.h"
+#include "walk_model.h"
 
 #define UW_INPUT_RIGHT 0x01u
 #define UW_INPUT_LEFT  0x02u

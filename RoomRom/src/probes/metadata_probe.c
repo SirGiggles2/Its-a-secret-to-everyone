@@ -13,7 +13,7 @@
 
 #include "metadata_probe.h"
 #include "../ow_room_meta.h"
-#include "../uw_cellar_meta.h"
+#include "../../../src/game/dungeon/cellar_meta.h"  /* Phase 12.2 promoted */
 #include "../../data/levelinfo_start_rooms.h"
 #include "../../data/uw_l1q1_cellar_pairs.h"
 #include "../ow_room_render_roomrom.h"  /* for ROOMROM_HUD_ROWS */

@@ -18,7 +18,7 @@
 #include "ow_room_meta.h"
 #include "ow_room_render_roomrom.h"
 #include "uw_room_render_roomrom.h"
-#include "uw_cellar_meta.h"
+#include "../../src/game/dungeon/cellar_meta.h"  /* Phase 12.2 promoted */
 #include "../data/levelinfo_start_rooms.h"
 #include "roomrom_sprites.h"  /* LINK_FACE_* enum */
 

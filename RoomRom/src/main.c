@@ -12,16 +12,16 @@
 #include "roomrom_scene_load.h"
 #include "roomrom_palette_tick.h"
 #include "cave_dispatch.h"  /* debate 006 D2: native cave gamemode entry */
-#include "uw_door_state.h"
-#include "uw_walk_model.h"
+#include "../../src/game/dungeon/door_state.h"  /* Phase 12.2 promoted */
+#include "../../src/game/dungeon/walk_model.h"  /* Phase 12.2 promoted */
 #include "render_abi.h"
 #include "roomrom_main_state.h"  /* Task 5.4: warp-outcome apply boundary */
 #include "roomrom_world_transition.h"  /* Task 5.4: warp coordinator */
-#include "uw_cellar_meta.h"             /* Task 5.6: cellar pair lookup */
-#include "uw_push_block_meta.h"         /* Task 5.7: push-block manifest */
+#include "../../src/game/dungeon/cellar_meta.h"      /* Phase 12.2 promoted */
+#include "../../src/game/dungeon/push_block_meta.h"  /* Phase 12.2 promoted */
 #include "roomrom_pushblock.h"           /* Task 5.7: push-block state machine */
-#include "uw_dark_meta.h"                /* Task 5.8: dark-room manifest */
-#include "uw_item_room_meta.h"           /* Task 5.9: item-room manifest + pickup */
+#include "../../src/game/dungeon/dark_meta.h"        /* Phase 12.2 promoted */
+#include "../../src/game/dungeon/item_room_meta.h"   /* Phase 12.2 promoted */
 #include "../../src/game/items/candle_fire.h"   /* Task 5.8.1 candle fire (Phase 12.2 promoted) */
 #include "../../src/state/pause_state.h"  /* Task 6.10.1: Paused flag (Phase 12.2 promoted) */
 #include "../../src/game/combat/link_damage.h"   /* Task 6.11.1 (Phase 12.2 promoted) */

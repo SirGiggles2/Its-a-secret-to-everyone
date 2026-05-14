@@ -7,9 +7,9 @@
  *   STUB   — Triforce wrapper bypasses GAME_MODE=18 transition (G5).
  */
 
-#include "uw_item_room_meta.h"
-#include "../../src/state/inventory.h"
-#include "../data/uw_item_rooms.h"
+#include "item_room_meta.h"
+#include "../../state/inventory.h"
+#include "../../../RoomRom/data/uw_item_rooms.h"
 
 /* INVENTORY_VALUE() lives in src/state/item_state.h, but pulling that
  * header drags ABI plumbing. Slice-1 reproduces the macro contract

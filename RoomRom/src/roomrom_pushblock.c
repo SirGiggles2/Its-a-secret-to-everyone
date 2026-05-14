@@ -15,7 +15,7 @@
 
 #include "roomrom_pushblock.h"
 #include "roomrom_main_state.h"
-#include "uw_push_block_meta.h"
+#include "../../src/game/dungeon/push_block_meta.h"  /* Phase 12.2 promoted */
 #include "uw_room_render_roomrom.h"
 #include "ow_room_render_roomrom.h"  /* ROOMROM_HUD_ROWS */
 

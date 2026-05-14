@@ -8,8 +8,8 @@
  * Stance:      GREENFIELD (drain_coverage.py reports 0 candidates in scope)
  */
 
-#include "uw_door_state.h"
-#include "uw_room_render_roomrom.h"
+#include "door_state.h"
+#include "../../../RoomRom/src/uw_room_render_roomrom.h"
 
 extern const unsigned char rooms_dungeons[];
 

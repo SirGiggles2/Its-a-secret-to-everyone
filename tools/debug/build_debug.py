@@ -122,8 +122,9 @@ ROOMROM_C_SOURCES = [
     ("RoomRom/src/uw_room_render_roomrom.c", "uw_room_render.o"),
     ("RoomRom/src/uw_room_blob.c", "uw_room_blob.o"),
     ("RoomRom/src/uw_collision_data.c", "uw_collision_data.o"),
-    ("RoomRom/src/uw_walk_model.c", "uw_walk_model.o"),
-    ("RoomRom/src/uw_door_state.c", "uw_door_state.o"),
+    # Phase 12.2 family 7: dungeon meta promoted to src/game/dungeon/.
+    ("src/game/dungeon/walk_model.c",  "dungeon_walk_model.o"),
+    ("src/game/dungeon/door_state.c",  "dungeon_door_state.o"),
     ("RoomRom/src/roomrom_sprites.c", "roomrom_sprites.o"),
     ("RoomRom/src/roomrom_combat.c", "roomrom_combat.o"),
     # Phase 12.2 family 3: items promoted to src/game/items/.
@@ -142,17 +143,17 @@ ROOMROM_C_SOURCES = [
     # Task 5.6: cellar pair table + accessor module + LevelInfo offsets
     ("data/rooms/dungeons_offsets.c", "dungeons_offsets.o"),
     ("RoomRom/data/uw_l1q1_cellar_pairs.c", "uw_l1q1_cellar_pairs.o"),
-    ("RoomRom/src/uw_cellar_meta.c", "uw_cellar_meta.o"),
+    ("src/game/dungeon/cellar_meta.c", "dungeon_cellar_meta.o"),  # Phase 12.2 promoted
     # Task 5.7: push-block manifest + accessor + state machine
     ("RoomRom/data/uw_l1q1_pushblocks.c", "uw_l1q1_pushblocks.o"),
-    ("RoomRom/src/uw_push_block_meta.c", "uw_push_block_meta.o"),
+    ("src/game/dungeon/push_block_meta.c", "dungeon_push_block_meta.o"),  # Phase 12.2 promoted
     ("RoomRom/src/roomrom_pushblock.c", "roomrom_pushblock.o"),
     # Task 5.8: dark-room manifest + accessor + lit-state
     ("RoomRom/data/uw_dark_rooms.c", "uw_dark_rooms.o"),
-    ("RoomRom/src/uw_dark_meta.c", "uw_dark_meta.o"),
+    ("src/game/dungeon/dark_meta.c", "dungeon_dark_meta.o"),  # Phase 12.2 promoted
     # Task 5.9: item-room manifest + accessor + pickup wrapper
     ("RoomRom/data/uw_item_rooms.c", "uw_item_rooms.o"),
-    ("RoomRom/src/uw_item_room_meta.c", "uw_item_room_meta.o"),
+    ("src/game/dungeon/item_room_meta.c", "dungeon_item_room_meta.o"),  # Phase 12.2 promoted
     # Task 5.8.1: candle fire projectile (slot 8)
     # Phase 12.2 family 3: items promoted to src/game/items/.
     ("src/game/items/candle_fire.c", "items_candle_fire.o"),

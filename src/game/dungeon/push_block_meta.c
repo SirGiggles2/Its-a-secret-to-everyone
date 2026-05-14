@@ -4,8 +4,8 @@
  *                Z_04.asm:618-746 (UpdateBlock state machine)
  */
 
-#include "uw_push_block_meta.h"
-#include "../data/uw_l1q1_pushblocks.h"
+#include "push_block_meta.h"
+#include "../../../RoomRom/data/uw_l1q1_pushblocks.h"
 
 unsigned char roomrom_pushblock_for_room(unsigned char level,
                                          unsigned char quest,
