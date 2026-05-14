@@ -135,6 +135,21 @@ Family 2 palette DEFERRED — `src/state/palette_tick.c` already exists
 from Phase 9; palette family migration needs a focused PR that resolves
 the merge cleanly.
 
+| File (was)                          | New path                          | Family  | Migration commit |
+|-------------------------------------|-----------------------------------|---------|------------------|
+| `RoomRom/src/roomrom_link_damage.c` | `src/game/combat/link_damage.c`   | combat  | pending          |
+| `RoomRom/src/roomrom_link_damage.h` | `src/game/combat/link_damage.h`   | combat  | pending          |
+
+Family 4 combat PARTIAL (1 of 2 TUs migrated; count 19 → 18).
+
+`roomrom_combat.c` BLOCKED on SGDK-1 violation (includes `<genesis.h>`
+directly). Per rule "src/game/ MUST NOT include `<genesis.h>` or write
+VDP registers directly", combat_runtime needs sgdk_adapter routing
+before promotion. Same blocker on 5 other TUs: main.c,
+render_adapter_sgdk.c, roomrom_hud.c, roomrom_scene_load.c,
+roomrom_sprites.c, uw_room_render_roomrom.c. Tracked under
+`phase12_sgdk1_cleanup_before_promotion`.
+
 ## Status
 
 ACTIVE — Task 12.1 baseline classification landed; Task 12.2 family

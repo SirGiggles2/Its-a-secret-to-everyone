@@ -1,5 +1,5 @@
-#include "roomrom_link_damage.h"
-#include "../../src/state/inventory.h"
+#include "link_damage.h"
+#include "../../state/inventory.h"
 
 /* ObjInvincibilityTimer mirror — Link is slot 0. NES Z_07.asm:5757 reads
  * `ObjInvincibilityTimer, X` with X=0; we hold a single byte. */

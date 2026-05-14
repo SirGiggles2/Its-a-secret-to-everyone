@@ -24,7 +24,7 @@
 #include "uw_item_room_meta.h"           /* Task 5.9: item-room manifest + pickup */
 #include "../../src/game/items/candle_fire.h"   /* Task 5.8.1 candle fire (Phase 12.2 promoted) */
 #include "../../src/state/pause_state.h"  /* Task 6.10.1: Paused flag (Phase 12.2 promoted) */
-#include "roomrom_link_damage.h"         /* Task 6.11.1: HeartValues damage */
+#include "../../src/game/combat/link_damage.h"   /* Task 6.11.1 (Phase 12.2 promoted) */
 #include "../../src/state/inventory.h"                   /* Task 6.10.10: rupee tick */
 #include "probes/metadata_probe.h"     /* Task 5.4: Gate D in-ROM probe */
 #include "atlas/level_chr_swap.h"        /* PR-4a: scene-bank DMA state machine */

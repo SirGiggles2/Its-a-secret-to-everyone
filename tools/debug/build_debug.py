@@ -170,7 +170,9 @@ ROOMROM_C_SOURCES = [
     # Phase 12.2: pause state promoted to src/state/pause_state.c.
     ("src/state/pause_state.c", "pause_state.o"),
     # Task 6.11.1/6.11.3: HeartValues damage path + ObjInvincibilityTimer.
-    ("RoomRom/src/roomrom_link_damage.c", "roomrom_link_damage.o"),
+    # Phase 12.2 family 4: link_damage promoted to src/game/combat/.
+    # combat_runtime not yet promoted (SGDK-1 violation: includes <genesis.h>).
+    ("src/game/combat/link_damage.c", "combat_link_damage.o"),
     ("RoomRom/src/roomrom_palette_tick.c", "roomrom_palette_tick.o"),
     # Task 7.1: enemy framework (RNG byte-for-byte port of @ScrambleRandom).
     # Phase 12.2: RNG state promoted to src/state/rng_state.c.
