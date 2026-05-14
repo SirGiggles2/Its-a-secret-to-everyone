@@ -1,14 +1,14 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-05-14T18:02:06.856543+00:00",
+  "generated_at": "2026-05-14T18:02:39.284029+00:00",
   "generated_by": "tools/audit/primedirective/prime_refresh.py",
   "plan": {
     "path": "docs/superpowers/plans/2026-05-02-title-roomrom-full-port-master-plan.md",
     "sha256": "b660bf9e86a4de08fa8118a54a80af884505ea510e8e8a3e3f8deffb1b624d2b"
   },
   "active": {
-    "phase_id": "12",
-    "phase_name": "Promote RoomRom Core And Integrate Final ROM",
+    "phase_id": "13",
+    "phase_name": "Optional 4-Player Genesis Mode",
     "task_id": "?",
     "task_title": "",
     "worktree": {
@@ -769,7 +769,7 @@
     {
       "id": "12",
       "name": "Promote RoomRom Core And Integrate Final ROM",
-      "status": "active",
+      "status": "complete",
       "tasks": [],
       "evidence": [
         "build_REQUIRE_GENERATED_ASSETS|Debug.bat green; tools/debug/build_debug.py builds Debug.md (1.0M) with 36 RoomRom/src TUs still linked (mid-migration baseline)",
@@ -781,7 +781,10 @@
         "code_review_requested|Self-review on phase 12 close: 4 findings docs (Tasks 12.0-12.3) cover gate tool + ownership audit + migration plan + state conversion plan; classification covers 36 of 36 RoomRom/src .c TUs; family-ordered migration plan with smallest-blast-radius first; substrate target dirs all exist (added src/game/dungeon + src/game/world/render)",
         "findings_resolved_or_deferred|Tasks 12.0/12.1 FULL (gate tool + audit doc + classification); Tasks 12.2/12.3 PARTIAL with three formal deferrals (phase12_family_migration 8 PRs; phase12_state_conversion bundled with family PRs; phase12_atlas_probes_subaudit). Phase 11 carry-forwards (phase11_extra_probes_baseline, phase11_live_capture_pass) plus Phase 10 (task_10_3, task_10_5) all open with engineering plans",
         "rerun_probes_and_matrix|2026-05-14T18:01:29Z final re-run: test_phase12_matrix_contract.py PASS; all earlier-phase contracts PASS; check_banned_filename OK; regression matrix OVERALL=GREEN unexpected_red=0; check_incremental_promotion.py exits 0",
-        "screenshot_state_evidence|docs/audit/roomrom_promotion_audit.md (classification matrix is the textual evidence for module ownership; per-bucket counts visible via tools/audit/check_incremental_promotion.py output)"
+        "screenshot_state_evidence|docs/audit/roomrom_promotion_audit.md (classification matrix is the textual evidence for module ownership; per-bucket counts visible via tools/audit/check_incremental_promotion.py output)",
+        "phase_commit_with_report_paths|docs/audit/drain_findings/phase12_task_12_0.md (Commit b12c6458 phase 12 roomrom drain close. Siblings: phase12_task_12_{0..3}.md + docs/audit/roomrom_promotion_audit.md + tools/audit/check_incremental_promotion.py + tools/debug/test_phase12_matrix_contract.py + builds/reports/regression_matrix.md 2026-05-14T18:01:29Z OVERALL=GREEN)",
+        "commit:b12c6458d2",
+        "commit:b12c6458d2"
       ],
       "deferrals": [],
       "close_gate": {
@@ -795,13 +798,13 @@
         "code_review_requested": "passed",
         "findings_resolved_or_deferred": "passed",
         "rerun_probes_and_matrix": "passed",
-        "phase_commit_with_report_paths": "pending"
+        "phase_commit_with_report_paths": "passed"
       }
     },
     {
       "id": "13",
       "name": "Optional 4-Player Genesis Mode",
-      "status": "pending",
+      "status": "active",
       "tasks": [],
       "evidence": [],
       "deferrals": [],
@@ -1088,7 +1091,7 @@
   "freshness": {
     "active_scope_md": {
       "path": "docs/audit/active_scope.md",
-      "sha256": "602a7b1471c339fc32e12df8c11bb8849612b592d34bf5c68f5f6f6bb5831b76",
+      "sha256": "0e395814c21d595f7e38c949b9effc53f3a010a1f4717df4fd9dfe476d3fadcf",
       "ok": true
     },
     "drain_coverage_json": {
@@ -1096,16 +1099,11 @@
       "sha256": "10e54d0b214148cc26bd3d7f575e50484bec899ee7d7989b9a455f9e26be155d",
       "ok": true
     },
-    "git_head": "a3313de852ed6deb54da20593f22c9307ca3f7bb",
-    "dirty_paths_relevant": [
-      "src/game/dungeon/",
-      "src/game/world/render/",
-      "tools/audit/check_incremental_promotion.py",
-      "tools/debug/test_phase12_matrix_contract.py"
-    ],
+    "git_head": "b12c6458d20564b9a04c9a4232ad4851208b9f3b",
+    "dirty_paths_relevant": [],
     "evidence_paths_present": true,
     "complete_phase_invariant_ok": true,
-    "last_refresh_at": "2026-05-14T18:02:06.909708+00:00",
+    "last_refresh_at": "2026-05-14T18:02:39.335733+00:00",
     "stale_reasons": []
   },
   "blockers": []
