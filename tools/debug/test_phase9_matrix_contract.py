@@ -116,11 +116,12 @@ def test_consumer_call_sites_present() -> None:
 
     Coverage matrix per docs/audit/drain_findings/phase9_task_9_4.md.
     """
+    # Paths post-Phase-12.2 RoomRom drain: combat moved to src/game/combat/.
     sites = [
         ("RoomRom/src/main.c",                        "options_consumer_apply_inventory_at_start"),
         ("RoomRom/src/main.c",                        "options_consumer_get_room_scroll"),
         ("RoomRom/src/main.c",                        "options_consumer_get_ab_swap"),
-        ("RoomRom/src/roomrom_combat.c",              "options_consumer_get_sword_style"),
+        ("src/game/combat/combat_runtime.c",          "options_consumer_get_sword_style"),
         ("src/game/enemies/enemy_special_bridge.c",   "options_consumer_get_like_like_behavior"),
         ("src/game/world/draw_dispatch.c",            "options_consumer_get_no_reduced_flashing"),
     ]
