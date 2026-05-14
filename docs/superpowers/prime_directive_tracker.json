@@ -1,14 +1,14 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-05-14T05:26:38.190747+00:00",
+  "generated_at": "2026-05-14T05:27:08.674207+00:00",
   "generated_by": "tools/audit/primedirective/prime_refresh.py",
   "plan": {
     "path": "docs/superpowers/plans/2026-05-02-title-roomrom-full-port-master-plan.md",
     "sha256": "b660bf9e86a4de08fa8118a54a80af884505ea510e8e8a3e3f8deffb1b624d2b"
   },
   "active": {
-    "phase_id": "10",
-    "phase_name": "Audio Finalization",
+    "phase_id": "11",
+    "phase_name": "Debug.md Frontend Gap-Fill + Regression Lock",
     "task_id": "?",
     "task_title": "",
     "worktree": {
@@ -699,7 +699,7 @@
     {
       "id": "10",
       "name": "Audio Finalization",
-      "status": "active",
+      "status": "complete",
       "tasks": [],
       "evidence": [
         "build_REQUIRE_GENERATED_ASSETS|Debug.bat green; tools/debug/build_debug.py with REQUIRE_GENERATED_ASSETS=1; builds/Debug.md (1.0M). Audio TUs not yet linked \u2014 tracked as task_10_3_audio_link_into_debug_md Phase 11 deferral.",
@@ -711,7 +711,10 @@
         "code_review_requested|Self-review on phase 10 close: 3 policy docs locked (driver/legal/routing) per master plan defaults; 7 findings docs cite NES references where applicable + sanction PARTIAL/GREENFIELD stances; audio substrate 13 files inventoried; adapter ABI 4-entry contract stable; Title-era audio link into Debug.md formally deferred to Phase 11",
         "findings_resolved_or_deferred|Tasks 10.1/10.1.1/10.1.2/10.2 fully resolved (policy + extraction); Tasks 10.3/10.4/10.5 PARTIAL with two formal deferrals (task_10_3_audio_link_into_debug_md, task_10_5_audio_probes_runtime) covering integration + runtime verification gated on audio link",
         "rerun_probes_and_matrix|2026-05-14T05:26:00Z final re-run: test_phase10_matrix_contract.py PASS; test_phase9_matrix_contract.py PASS; test_boss_matrix_contract.py PASS; test_boss_state_contract.py PASS; check_banned_filename.py OK; regression matrix OVERALL=GREEN unexpected_red=0",
-        "screenshot_state_evidence|docs/audit/audio_routing.md routing table is the visual contract for SongRequest behavior per gamemode (NES exact match); audio_driver.asm APU emulator inherits NES timing/cadence by construction. Per-mode visual+audio screenshot evidence deferred with task_10_5_audio_probes_runtime."
+        "screenshot_state_evidence|docs/audit/audio_routing.md routing table is the visual contract for SongRequest behavior per gamemode (NES exact match); audio_driver.asm APU emulator inherits NES timing/cadence by construction. Per-mode visual+audio screenshot evidence deferred with task_10_5_audio_probes_runtime.",
+        "phase_commit_with_report_paths|docs/audit/drain_findings/phase10_task_10_1.md (Commit 3b5ac5f8 phase 10 audio finalization close. Siblings: phase10_task_10_{1,1_1,1_2,2,3,4,5}.md + docs/audit/audio_{driver_decision,legal_policy,routing}.md + tools/debug/test_phase10_matrix_contract.py + builds/reports/regression_matrix.md 2026-05-14T05:26:00Z OVERALL=GREEN)",
+        "commit:3b5ac5f801",
+        "commit:3b5ac5f801"
       ],
       "deferrals": [],
       "close_gate": {
@@ -725,13 +728,13 @@
         "code_review_requested": "passed",
         "findings_resolved_or_deferred": "passed",
         "rerun_probes_and_matrix": "passed",
-        "phase_commit_with_report_paths": "pending"
+        "phase_commit_with_report_paths": "passed"
       }
     },
     {
       "id": "11",
       "name": "Debug.md Frontend Gap-Fill + Regression Lock",
-      "status": "pending",
+      "status": "active",
       "tasks": [],
       "evidence": [],
       "deferrals": [],
@@ -1030,7 +1033,7 @@
   "freshness": {
     "active_scope_md": {
       "path": "docs/audit/active_scope.md",
-      "sha256": "23860f2a247bea72b0afaf7f9917e8681e3b5a647a52729507e326c6642ddd48",
+      "sha256": "5e8edda26e17cc1ee80b7ff2953328942820ee9dc80d7ec09a41b35cbadde807",
       "ok": true
     },
     "drain_coverage_json": {
@@ -1038,13 +1041,11 @@
       "sha256": "10e54d0b214148cc26bd3d7f575e50484bec899ee7d7989b9a455f9e26be155d",
       "ok": true
     },
-    "git_head": "5649bb4375684c04dea0fd404cbf46b24d0ebe0f",
-    "dirty_paths_relevant": [
-      "tools/debug/test_phase10_matrix_contract.py"
-    ],
+    "git_head": "3b5ac5f80150bba980f69d9890934ac9ac1384d5",
+    "dirty_paths_relevant": [],
     "evidence_paths_present": true,
     "complete_phase_invariant_ok": true,
-    "last_refresh_at": "2026-05-14T05:26:38.246944+00:00",
+    "last_refresh_at": "2026-05-14T05:27:08.732403+00:00",
     "stale_reasons": []
   },
   "blockers": []
