@@ -1,15 +1,12 @@
 # Prime Directive — Status
 
-_Generated 2026-05-14T19:39:05.849174+00:00 by `prime_refresh.py`._
+_Generated 2026-05-14T19:39:25.874598+00:00 by `prime_refresh.py`._
 
 **Phase:** 17 — Public Builder Release
 **Task:** ? — 
 **Worktree:** `main` at `C:/Users/Jake Diggity/Documents/GitHub/FINAL TRY`
 **Substrate writer:** True
 
-**Gates:** 10 passed / 11 total
-
-**Pending gate steps:**
-- phase_commit_with_report_paths
+**Gates:** 11 passed / 11 total
 
 **Next concrete action:** Phase 8 Task 8.1 Boss Framework: scaffold src/game/enemies/bosses/ + src/state/boss_state.h substrate; drain entry: python tools/audit/drain_coverage.py --phase 8
