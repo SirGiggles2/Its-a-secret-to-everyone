@@ -2,7 +2,7 @@
 #include "roomrom_combat.h"
 #include "roomrom_sprites.h"
 #include "roomrom_bg_palette.h"
-#include "inventory.h"
+#include "../../src/state/inventory.h"
 #include "options_consumer.h"
 #include "options_state.h"
 

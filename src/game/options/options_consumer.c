@@ -3,7 +3,7 @@
 #include "options_consumer.h"
 #include "options_runtime.h"
 #include "options_state.h"
-#include "../../../RoomRom/src/inventory.h"
+#include "../../state/inventory.h"
 
 static unsigned char clamp_start_hearts_to_nibble(unsigned char v)
 {

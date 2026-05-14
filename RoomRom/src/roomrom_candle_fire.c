@@ -27,7 +27,7 @@
  */
 
 #include "roomrom_candle_fire.h"
-#include "inventory.h"
+#include "../../src/state/inventory.h"
 
 /* Travel: NES uses q-speed $20 = 0.5 px/frame for distance $10 (16 px),
  * then stand $3F frames. Approximate with whole-pixel travel.

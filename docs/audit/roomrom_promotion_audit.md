@@ -102,9 +102,24 @@ Family order (smallest blast radius first):
    push_block_meta) → `src/game/dungeon/`.
 8. **generated-asset** (7 TUs incl. redux_*) → `data/<sub>/`.
 
+## Migrated (Phase 12.2 history)
+
+| File (was)                  | New path                                  | Family                  | Migration commit |
+|-----------------------------|-------------------------------------------|-------------------------|------------------|
+| `RoomRom/src/inventory.c`   | `src/state/inventory.c`                    | substrate-singletons    | pending          |
+| `RoomRom/src/inventory.h`   | `src/state/inventory.h`                    | substrate-singletons    | pending          |
+| `RoomRom/src/roomrom_pause.c` | `src/state/pause_state.c`                | substrate-singletons    | pending          |
+| `RoomRom/src/roomrom_pause.h` | `src/state/pause_state.h`                | substrate-singletons    | pending          |
+| `RoomRom/src/roomrom_rng.c` | `src/state/rng_state.c`                    | substrate-singletons    | pending          |
+| `RoomRom/src/roomrom_rng.h` | `src/state/rng_state.h`                    | substrate-singletons    | pending          |
+
+Family 1 substrate-singletons COMPLETE (3 TUs migrated;
+`check_incremental_promotion.py` shared-gameplay count: 27 → 24).
+
 ## Status
 
-CLOSE — Task 12.1 baseline classification landed. 36 of 36
-`RoomRom/src/*.c` TUs classified. Family-grouped migration order
-specified. Tooling for `check_incremental_promotion.py` ships
-alongside this doc as Task 12.0 deliverable.
+ACTIVE — Task 12.1 baseline classification landed; Task 12.2 family
+migration in progress. 33 of 36 `RoomRom/src/*.c` TUs remain on disk
+(3 migrated this commit). Family-grouped migration order continues
+per § Promotion order; tooling enforced by
+`check_incremental_promotion.py`.

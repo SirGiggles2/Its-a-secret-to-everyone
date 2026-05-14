@@ -1,4 +1,4 @@
-#include "roomrom_pause.h"
+#include "pause_state.h"
 
 /* Phase 6 Task 6.10.1 — Paused flag storage.
  *

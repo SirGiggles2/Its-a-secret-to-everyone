@@ -4,7 +4,7 @@
 #include "../options_runtime.h"
 #include "../options_state.h"
 #include "../options_consumer.h"
-#include "../../../../RoomRom/src/inventory.h"
+#include "../../../state/inventory.h"
 
 #define PROBE  ((volatile unsigned char *)OPTIONS_CONSUMER_PROBE_BASE)
 

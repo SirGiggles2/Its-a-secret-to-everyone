@@ -10,7 +10,7 @@
  * Then ROR carry through the 13 bytes Random[0..12].
  */
 
-#include "roomrom_rng.h"
+#include "rng_state.h"
 
 void rng_seed(unsigned short seed)
 {

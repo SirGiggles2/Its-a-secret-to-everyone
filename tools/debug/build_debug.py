@@ -160,14 +160,19 @@ ROOMROM_C_SOURCES = [
     # Task 6.1: PlayerState[4] shape (Phase 13 multiplayer-ready by construction).
     ("src/state/player_state.c", "player_state.o"),
     # Task 6.10.4: inventory_t struct mirroring NES Variables.inc cells.
-    ("RoomRom/src/inventory.c", "inventory.o"),
+    # Phase 12.2 family migration: substrate-singletons promoted to src/state/.
+    # RoomRom/src/inventory.c -> src/state/inventory.c; consumer includes
+    # point at the new path directly (no shim header in RoomRom).
+    ("src/state/inventory.c", "inventory.o"),
     # Task 6.10.1: Paused flag (NES $E0).
-    ("RoomRom/src/roomrom_pause.c", "roomrom_pause.o"),
+    # Phase 12.2: pause state promoted to src/state/pause_state.c.
+    ("src/state/pause_state.c", "pause_state.o"),
     # Task 6.11.1/6.11.3: HeartValues damage path + ObjInvincibilityTimer.
     ("RoomRom/src/roomrom_link_damage.c", "roomrom_link_damage.o"),
     ("RoomRom/src/roomrom_palette_tick.c", "roomrom_palette_tick.o"),
     # Task 7.1: enemy framework (RNG byte-for-byte port of @ScrambleRandom).
-    ("RoomRom/src/roomrom_rng.c", "roomrom_rng.o"),
+    # Phase 12.2: RNG state promoted to src/state/rng_state.c.
+    ("src/state/rng_state.c", "rng_state.o"),
     # Task 7.2: walker-family drain (octorok / moblin / stalfos / goriya /
     # darknut / rope / gel). enemy_walker_runtime.c carries init+update for
     # walker types; enemy_wanderer_runtime.c is the perpendicular-turn

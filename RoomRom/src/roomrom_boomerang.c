@@ -1,6 +1,6 @@
 #include "roomrom_boomerang.h"
 #include "roomrom_sprites.h"
-#include "inventory.h"
+#include "../../src/state/inventory.h"
 
 /* NES: DrawBoomerangAndCheckCollision (Z_07.asm:3437) -> base attr 0
  * (RDirectionToWeaponBaseAttribute = 0 for all dirs).

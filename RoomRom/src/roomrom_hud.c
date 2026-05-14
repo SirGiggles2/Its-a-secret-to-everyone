@@ -4,7 +4,7 @@
 #include "render_abi.h"
 #include "roomrom_vram_map.h"
 #include "expanded_bg_chr.h"
-#include "inventory.h"
+#include "../../src/state/inventory.h"
 /* P4c: atlas header included for named constant reference and future
  * ATLAS_ASSERT_SIZE hooks.
  *

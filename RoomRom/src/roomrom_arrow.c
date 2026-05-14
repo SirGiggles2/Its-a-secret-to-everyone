@@ -1,6 +1,6 @@
 #include "roomrom_arrow.h"
 #include "roomrom_sprites.h"
-#include "inventory.h"
+#include "../../src/state/inventory.h"
 
 /* NES Z_05.asm:2945 WieldArrow / Z_07.asm UpdateRodOrArrow: refuse if
  * `Bow == 0` (InvBow ownership) OR if `InvArrow == 0` (no arrow tier

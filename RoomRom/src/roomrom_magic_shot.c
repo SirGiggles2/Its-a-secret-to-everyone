@@ -1,6 +1,6 @@
 #include "roomrom_magic_shot.h"
 #include "roomrom_sprites.h"
-#include "inventory.h"
+#include "../../src/state/inventory.h"
 
 /* Magic rod shot — projectile fired when B-item = ROD pressed.
  *

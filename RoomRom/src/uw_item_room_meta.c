@@ -8,7 +8,7 @@
  */
 
 #include "uw_item_room_meta.h"
-#include "inventory.h"
+#include "../../src/state/inventory.h"
 #include "../data/uw_item_rooms.h"
 
 /* INVENTORY_VALUE() lives in src/state/item_state.h, but pulling that
