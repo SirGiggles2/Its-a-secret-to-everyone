@@ -1,14 +1,14 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-05-14T18:07:03.650748+00:00",
+  "generated_at": "2026-05-14T18:07:29.010542+00:00",
   "generated_by": "tools/audit/primedirective/prime_refresh.py",
   "plan": {
     "path": "docs/superpowers/plans/2026-05-02-title-roomrom-full-port-master-plan.md",
     "sha256": "b660bf9e86a4de08fa8118a54a80af884505ea510e8e8a3e3f8deffb1b624d2b"
   },
   "active": {
-    "phase_id": "13",
-    "phase_name": "Optional 4-Player Genesis Mode",
+    "phase_id": "14",
+    "phase_name": "Full Quest Completion",
     "task_id": "?",
     "task_title": "",
     "worktree": {
@@ -804,7 +804,7 @@
     {
       "id": "13",
       "name": "Optional 4-Player Genesis Mode",
-      "status": "active",
+      "status": "complete",
       "tasks": [],
       "evidence": [
         "build_REQUIRE_GENERATED_ASSETS|Debug.bat green; no Phase 13 substrate landed (DEFERRED_FEATURE stance); 1-player invariant preserved (src/state/link_state.h LINK_MOVING_DIR untouched)",
@@ -816,7 +816,10 @@
         "code_review_requested|Self-review on phase 13 close: 5 task findings docs (13.1-13.5) all marked DEFERRED_FEATURE with explicit rationale (NES accuracy priority, substrate cost, sprite budget unknown, save segmentation gate). Implementation plan documented per task in case feature is picked up. Phase 12 supplemental (Tasks 12.4 + 12.5) also landed marking those superseded by sole-target Debug.md pivot.",
         "findings_resolved_or_deferred|Phase 13 entirely DEFERRED_FEATURE per master-plan 'Optional' tag + CLAUDE.md NES-accuracy priority. One overarching deferral phase13_optional_feature_deferred covers all 5 tasks. Phase 12 supplemental findings (Tasks 12.4 + 12.5) also landed marking those superseded by sole-target Debug.md pivot.",
         "rerun_probes_and_matrix|2026-05-14T18:06:35Z final re-run: test_phase13/12/11/10/9/boss contracts PASS; check_banned_filename OK; regression matrix OVERALL=GREEN unexpected_red=0",
-        "screenshot_state_evidence|docs/audit/drain_findings/phase13_task_13_3.md sprite budget pre-flight table (56 of 80 SAT entries under multiplayer worst-case; 24-slot headroom). No runtime screenshot applicable for deferred-feature stance."
+        "screenshot_state_evidence|docs/audit/drain_findings/phase13_task_13_3.md sprite budget pre-flight table (56 of 80 SAT entries under multiplayer worst-case; 24-slot headroom). No runtime screenshot applicable for deferred-feature stance.",
+        "phase_commit_with_report_paths|docs/audit/drain_findings/phase13_task_13_1.md (Commit de93998d phase 13 optional 4-player + ph12 supplemental close. Siblings: phase13_task_13_{1..5}.md + phase12_task_12_{4,5}.md + tools/debug/test_phase13_matrix_contract.py + builds/reports/regression_matrix.md 2026-05-14T18:06:35Z OVERALL=GREEN)",
+        "commit:de93998d43",
+        "commit:de93998d43"
       ],
       "deferrals": [],
       "close_gate": {
@@ -830,13 +833,13 @@
         "code_review_requested": "passed",
         "findings_resolved_or_deferred": "passed",
         "rerun_probes_and_matrix": "passed",
-        "phase_commit_with_report_paths": "pending"
+        "phase_commit_with_report_paths": "passed"
       }
     },
     {
       "id": "14",
       "name": "Full Quest Completion",
-      "status": "pending",
+      "status": "active",
       "tasks": [],
       "evidence": [],
       "deferrals": [],
@@ -1108,7 +1111,7 @@
   "freshness": {
     "active_scope_md": {
       "path": "docs/audit/active_scope.md",
-      "sha256": "0e395814c21d595f7e38c949b9effc53f3a010a1f4717df4fd9dfe476d3fadcf",
+      "sha256": "32f674683edffa5d9964368276e3f49e7e0c0d23bd4fc91f92b7443d761e275c",
       "ok": true
     },
     "drain_coverage_json": {
@@ -1116,13 +1119,11 @@
       "sha256": "10e54d0b214148cc26bd3d7f575e50484bec899ee7d7989b9a455f9e26be155d",
       "ok": true
     },
-    "git_head": "db07309d0f09df2a2f6a82c9451cba6fdec07ae1",
-    "dirty_paths_relevant": [
-      "tools/debug/test_phase13_matrix_contract.py"
-    ],
+    "git_head": "de93998d431d5bbefac6c836b5026c023489e943",
+    "dirty_paths_relevant": [],
     "evidence_paths_present": true,
     "complete_phase_invariant_ok": true,
-    "last_refresh_at": "2026-05-14T18:07:03.702644+00:00",
+    "last_refresh_at": "2026-05-14T18:07:29.065074+00:00",
     "stale_reasons": []
   },
   "blockers": []
