@@ -325,6 +325,19 @@ void render_cram_subrange_upload(unsigned short start_slot,
     while (count--) VDP_DATA_WORD = *src++;
 }
 
+/* Phase 12.2 SGDK-1 cleanup: VRAM word read at vram_addr.
+ * Control word format for VRAM read: 0x00000000 | (addr[13:0] << 16) |
+ * addr[15:14]. Used by uw_render plane_read_live_word for autoinc-2
+ * VRAM scanning. */
+unsigned short render_vram_read_word(unsigned short vram_addr)
+{
+    render_set_autoinc_word();
+    VDP_CTRL_LONG = 0x00000000UL
+                  | ((unsigned long)(vram_addr & 0x3FFFu) << 16)
+                  | ((unsigned long)(vram_addr >> 14) & 0x0003u);
+    return VDP_DATA_WORD;
+}
+
 /* Phase 12.2 SGDK-1 cleanup: Window plane HUD wrappers.
  *
  * RoomRom HUD lives on the Window plane (NES status-bar parity at top

@@ -1,7 +1,7 @@
 /* Phase 12.2 SGDK-1 cleanup: route VDP_setTileMapXY/VDP_clearTileMapRect
  * through render_set_window_word / render_clear_window_rect adapter. */
 #include "hud_runtime.h"
-#include "../../../RoomRom/src/ow_room_render_roomrom.h"
+#include "../world/render/ow_render.h"  /* Phase 12.2 promoted */
 #include "render_abi.h"
 #include "../../../RoomRom/src/roomrom_vram_map.h"
 #include "../../../RoomRom/src/expanded_bg_chr.h"

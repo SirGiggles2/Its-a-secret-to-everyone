@@ -78,6 +78,11 @@ void render_set_window_word(unsigned short col, unsigned short row,
 void render_clear_window_rect(unsigned short col, unsigned short row,
                               unsigned short w, unsigned short h);
 
+/* Phase 12.2 SGDK-1 cleanup: VRAM word read. Used by src/game/dungeon/
+ * uw_render for plane-readback during scroll diffs. Wraps the
+ * VDP_CTRL_LONG read-control formula + VDP_DATA_WORD fetch. */
+unsigned short render_vram_read_word(unsigned short vram_addr);
+
 /* ---- VSRAM write (F3: title cutover) ----
  *
  * render_vsram_open_write -- set VSRAM write cursor to byte-offset slot*2.

@@ -16,8 +16,8 @@
 #include "transition.h"
 #include "../../../RoomRom/src/roomrom_main_state.h"
 #include "ow_meta.h"
-#include "../../../RoomRom/src/ow_room_render_roomrom.h"
-#include "../../../RoomRom/src/uw_room_render_roomrom.h"
+#include "render/ow_render.h"     /* Phase 12.2 promoted */
+#include "../dungeon/uw_render.h"  /* Phase 12.2 promoted */
 #include "../dungeon/cellar_meta.h"  /* Phase 12.2 promoted */
 #include "../../../RoomRom/data/levelinfo_start_rooms.h"
 #include "../../../RoomRom/src/roomrom_sprites.h"  /* LINK_FACE_* enum */

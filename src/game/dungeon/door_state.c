@@ -9,7 +9,7 @@
  */
 
 #include "door_state.h"
-#include "../../../RoomRom/src/uw_room_render_roomrom.h"
+#include "uw_render.h"  /* Phase 12.2 promoted */
 
 extern const unsigned char rooms_dungeons[];
 

@@ -16,8 +16,8 @@
 #include "pushblock.h"
 #include "../../../RoomRom/src/roomrom_main_state.h"
 #include "../dungeon/push_block_meta.h"  /* Phase 12.2 promoted */
-#include "../../../RoomRom/src/uw_room_render_roomrom.h"
-#include "../../../RoomRom/src/ow_room_render_roomrom.h"  /* ROOMROM_HUD_ROWS */
+#include "../dungeon/uw_render.h"      /* Phase 12.2 promoted */
+#include "render/ow_render.h"          /* ROOMROM_HUD_ROWS - Phase 12.2 promoted */
 
 /* NES BlockPushDirections layout (Z_04.asm:615-616).
  *   idx 0 = $08 (UP / N)    -- Link below, pushing up

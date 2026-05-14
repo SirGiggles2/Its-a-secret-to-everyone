@@ -1,7 +1,7 @@
 #ifndef ROOMROM_UW_ROOM_RENDER_H
 #define ROOMROM_UW_ROOM_RENDER_H
 
-#include "ow_room_render_roomrom.h"
+#include "../world/render/ow_render.h"  /* Phase 12.2 promoted */
 
 #define ROOMROM_UW_LEVEL_MIN 1u
 #define ROOMROM_UW_LEVEL_MAX 9u

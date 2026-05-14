@@ -1,11 +1,12 @@
-#include <genesis.h>
-#include "uw_room_render_roomrom.h"
-#include "uw_room_blob.h"
+/* Phase 12.2 SGDK-1 cleanup: dropped <genesis.h>; route VRAM-read
+ * via render_vram_read_word adapter. */
+#include "uw_render.h"
+#include "../../../RoomRom/src/uw_room_blob.h"
 #include "render_abi.h"
-#include "roomrom_vram_map.h"
-#include "../../src/game/world/bg_palette.h"  /* Phase 12.2 promoted */
-#include "expanded_bg_chr.h"
-#include "uw_collision_data.h"
+#include "../../../RoomRom/src/roomrom_vram_map.h"
+#include "../world/bg_palette.h"  /* Phase 12.2 promoted */
+#include "../../../RoomRom/src/expanded_bg_chr.h"
+#include "../../../RoomRom/src/uw_collision_data.h"
 
 extern const unsigned char rooms_dungeons[];
 
@@ -24,8 +25,8 @@ extern const unsigned char rooms_dungeons[];
 #define UW_DOOR_PRIORITY_CACHE_SLOTS 2u
 #define UW_DOOR_PRIORITY_CACHE_MAX   128u
 #define UW_DOOR_PRIORITY_CACHE_NONE  0xFFu
-#define VDP_DATA_WORD_UW (*(volatile unsigned short *)VDP_DATA_PORT)
-#define VDP_CTRL_LONG_UW (*(volatile unsigned long *)VDP_CTRL_PORT)
+/* Phase 12.2 SGDK-1 cleanup: local VDP MMIO macros dropped; VRAM
+ * reads now go through render_vram_read_word adapter. */
 
 static unsigned char s_uw_map_id = ROOMROM_MAP_ORIGINAL;
 static unsigned char s_uw_level  = 1u;
@@ -341,9 +342,7 @@ static unsigned short plane_read_live_word(unsigned short col,
                                            unsigned short row)
 {
     unsigned short addr = shared_plane_addr(col, row);
-    VDP_setAutoInc(2);
-    VDP_CTRL_LONG_UW = VDP_READ_VRAM_ADDR(addr);
-    return VDP_DATA_WORD_UW;
+    return render_vram_read_word(addr);
 }
 
 static void plane_write_live_word(unsigned short col, unsigned short row,

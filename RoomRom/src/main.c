@@ -1,7 +1,7 @@
 #include <genesis.h>
 #include "roomrom_debug_runtime.h"
-#include "ow_room_render_roomrom.h"
-#include "uw_room_render_roomrom.h"
+#include "../../src/game/world/render/ow_render.h"  /* Phase 12.2 promoted */
+#include "../../src/game/dungeon/uw_render.h"        /* Phase 12.2 promoted */
 #include "../../src/game/hud/hud_runtime.h"  /* Phase 12.2 promoted */
 #include "roomrom_sprites.h"
 #include "../../src/game/combat/combat_runtime.h"  /* Phase 12.2 promoted */
