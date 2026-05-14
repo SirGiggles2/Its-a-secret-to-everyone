@@ -309,6 +309,17 @@ void render_cram_upload(const unsigned short *src, unsigned short count)
     while (count--) VDP_DATA_WORD = *src++;
 }
 
+/* Open CRAM at start_slot and stream count color words.
+ * Phase 12.2 SGDK-1 cleanup: subrange palette load wrapper used by
+ * combat sword-beam color-cycle (PAL2[0..3] swap per frame). */
+void render_cram_subrange_upload(unsigned short start_slot,
+                                 const unsigned short *src,
+                                 unsigned short count)
+{
+    render_cram_open_write(start_slot);
+    while (count--) VDP_DATA_WORD = *src++;
+}
+
 /* Open VSRAM write cursor at byte-offset slot*2.
  * Control word: 0x40000010 for slot 0; general form uses the same
  * slot*2 formula as CRAM but with VSRAM CD bits (0x40000010 base).

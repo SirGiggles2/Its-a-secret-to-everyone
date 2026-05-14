@@ -126,7 +126,7 @@ ROOMROM_C_SOURCES = [
     ("src/game/dungeon/walk_model.c",  "dungeon_walk_model.o"),
     ("src/game/dungeon/door_state.c",  "dungeon_door_state.o"),
     ("RoomRom/src/roomrom_sprites.c", "roomrom_sprites.o"),
-    ("RoomRom/src/roomrom_combat.c", "roomrom_combat.o"),
+    ("src/game/combat/combat_runtime.c", "combat_runtime.o"),  # Phase 12.2 promoted (SGDK-1 cleanup)
     # Phase 12.2 family 3: items promoted to src/game/items/.
     ("src/game/items/boomerang.c", "items_boomerang.o"),
     ("src/game/items/arrow.c",     "items_arrow.o"),

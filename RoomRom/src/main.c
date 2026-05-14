@@ -4,7 +4,7 @@
 #include "uw_room_render_roomrom.h"
 #include "roomrom_hud.h"
 #include "roomrom_sprites.h"
-#include "roomrom_combat.h"
+#include "../../src/game/combat/combat_runtime.h"  /* Phase 12.2 promoted */
 #include "../../src/game/items/boomerang.h"      /* Phase 12.2 promoted */
 #include "../../src/game/items/arrow.h"          /* Phase 12.2 promoted */
 #include "../../src/game/items/bomb.h"           /* Phase 12.2 promoted */

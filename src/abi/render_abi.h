@@ -63,6 +63,13 @@ void render_cram_open_write(unsigned short slot);
 void render_cram_write_color(unsigned short slot, unsigned short value);
 void render_cram_upload(const unsigned short *src, unsigned short count);
 
+/* Phase 12.2 SGDK-1 cleanup: load count colors starting at CRAM
+ * start_slot (palette-color index 0..63). Used for sub-palette swaps
+ * without rewriting the full 16-color palette. */
+void render_cram_subrange_upload(unsigned short start_slot,
+                                 const unsigned short *src,
+                                 unsigned short count);
+
 /* ---- VSRAM write (F3: title cutover) ----
  *
  * render_vsram_open_write -- set VSRAM write cursor to byte-offset slot*2.

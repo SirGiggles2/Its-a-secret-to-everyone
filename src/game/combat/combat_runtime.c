@@ -1,10 +1,12 @@
-#include <genesis.h>
-#include "roomrom_combat.h"
-#include "roomrom_sprites.h"
-#include "../../src/game/world/bg_palette.h"  /* Phase 12.2 promoted */
-#include "../../src/state/inventory.h"
-#include "options_consumer.h"
-#include "options_state.h"
+/* Phase 12.2 SGDK-1 cleanup: dropped <genesis.h>; route PAL_setColors
+ * through render_cram_subrange_upload(). */
+#include "combat_runtime.h"
+#include "../../../RoomRom/src/roomrom_sprites.h"
+#include "../world/bg_palette.h"  /* Phase 12.2 promoted */
+#include "../../state/inventory.h"
+#include "../options/options_consumer.h"
+#include "../options/options_state.h"
+#include "render_abi.h"
 
 /* RoomRom S7 v4 combat — sword swing.
  *
@@ -315,7 +317,7 @@ static void update_beam(void)
         const unsigned short *subpal = roomrom_bg_palette_get_sprite_subpal_cram(
             s_beam_palette_phase);
         if (subpal != (const unsigned short *)0) {
-            PAL_setColors(2u * 16u, subpal, 4u, CPU);
+            render_cram_subrange_upload(2u * 16u, subpal, 4u);
         }
         s_beam_palette_phase = (unsigned char)((s_beam_palette_phase + 1u) & 0x3u);
     }
