@@ -1,14 +1,14 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-05-14T04:00:06.324392+00:00",
+  "generated_at": "2026-05-14T04:01:56.940107+00:00",
   "generated_by": "tools/audit/primedirective/prime_refresh.py",
   "plan": {
     "path": "docs/superpowers/plans/2026-05-02-title-roomrom-full-port-master-plan.md",
     "sha256": "b660bf9e86a4de08fa8118a54a80af884505ea510e8e8a3e3f8deffb1b624d2b"
   },
   "active": {
-    "phase_id": "8",
-    "phase_name": "Bosses",
+    "phase_id": "9",
+    "phase_name": "HUD, Options, Save, Menus",
     "task_id": "?",
     "task_title": "",
     "worktree": {
@@ -629,7 +629,7 @@
     {
       "id": "8",
       "name": "Bosses",
-      "status": "active",
+      "status": "complete",
       "tasks": [],
       "evidence": [
         "build_REQUIRE_GENERATED_ASSETS|Debug.bat green; tools/debug/build_debug.py with REQUIRE_GENERATED_ASSETS=1; builds/Debug.md (1.0M)",
@@ -641,7 +641,10 @@
         "code_review_requested|Self-review on phase 8 close: all 22 boss rows wired; 10 drain findings docs cite NES line numbers; contract test enforces matrix integrity; no banned-filename collisions; Ganon wizzrobe-family stubs explicitly flagged as deferrals_resolved",
         "findings_resolved_or_deferred|All findings either resolved (Tasks 8.1-8.9 + 8.11) or formally deferred (Task 8.10 \u2014 ganon_wizzrobe_movement + ganon_play_sample tracked in deferrals[])",
         "rerun_probes_and_matrix|2026-05-14T03:59:46Z final re-run: test_boss_matrix_contract.py PASS; test_boss_state_contract.py PASS; regression matrix OVERALL=GREEN unexpected_red=0",
-        "screenshot_state_evidence|Static contract task \u2014 screenshot not applicable for dispatch-table verification. boss_matrix coverage = symbol-resolution proof via test_boss_matrix_contract.py. Per-boss visual state covered by Tasks 8.1-8.10 evidence in docs/audit/drain_findings/phase8_task_8_{1..10}.md (per-NES-line transcription) + probe_boss_bank_dispatch.lua VRAM snapshot diff for boss CHR banks."
+        "screenshot_state_evidence|Static contract task \u2014 screenshot not applicable for dispatch-table verification. boss_matrix coverage = symbol-resolution proof via test_boss_matrix_contract.py. Per-boss visual state covered by Tasks 8.1-8.10 evidence in docs/audit/drain_findings/phase8_task_8_{1..10}.md (per-NES-line transcription) + probe_boss_bank_dispatch.lua VRAM snapshot diff for boss CHR banks.",
+        "phase_commit_with_report_paths|Commit 94ee0fc0 (phase 8 bosses close: drain findings + matrix contract). Report paths: docs/audit/drain_findings/phase8_task_8_{1..11}.md, tools/debug/test_boss_matrix_contract.py, builds/reports/regression_matrix.md 2026-05-14T03:59:46Z OVERALL=GREEN.",
+        "commit:94ee0fc035",
+        "commit:94ee0fc035"
       ],
       "deferrals": [],
       "close_gate": {
@@ -655,13 +658,13 @@
         "code_review_requested": "passed",
         "findings_resolved_or_deferred": "passed",
         "rerun_probes_and_matrix": "passed",
-        "phase_commit_with_report_paths": "pending"
+        "phase_commit_with_report_paths": "passed"
       }
     },
     {
       "id": "9",
       "name": "HUD, Options, Save, Menus",
-      "status": "pending",
+      "status": "active",
       "tasks": [],
       "evidence": [],
       "deferrals": [],
@@ -972,7 +975,7 @@
   "freshness": {
     "active_scope_md": {
       "path": "docs/audit/active_scope.md",
-      "sha256": "87fbeadbe9bf2d1cbdbff7b8f70f7c28cc6e6f6c4437320a6ff09e195d5a15b0",
+      "sha256": "eb761e55e33e986f601aab3392c60f085fe63838ec9765a6e4fa83ea7442aacd",
       "ok": true
     },
     "drain_coverage_json": {
@@ -980,14 +983,11 @@
       "sha256": "10e54d0b214148cc26bd3d7f575e50484bec899ee7d7989b9a455f9e26be155d",
       "ok": true
     },
-    "git_head": "be45ed4e7908c4716198621aa8ee91cc51dfe31f",
-    "dirty_paths_relevant": [
-      "tools/audit/drain_coverage.json",
-      "tools/debug/test_boss_matrix_contract.py"
-    ],
+    "git_head": "94ee0fc0359baa91ac246aaf1beb3c58006e0082",
+    "dirty_paths_relevant": [],
     "evidence_paths_present": true,
     "complete_phase_invariant_ok": true,
-    "last_refresh_at": "2026-05-14T04:00:06.396075+00:00",
+    "last_refresh_at": "2026-05-14T04:01:57.013879+00:00",
     "stale_reasons": []
   },
   "blockers": []
