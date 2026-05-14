@@ -5,10 +5,10 @@
 #include "roomrom_hud.h"
 #include "roomrom_sprites.h"
 #include "roomrom_combat.h"
-#include "roomrom_boomerang.h"
-#include "roomrom_arrow.h"
-#include "roomrom_bomb.h"
-#include "roomrom_magic_shot.h"
+#include "../../src/game/items/boomerang.h"      /* Phase 12.2 promoted */
+#include "../../src/game/items/arrow.h"          /* Phase 12.2 promoted */
+#include "../../src/game/items/bomb.h"           /* Phase 12.2 promoted */
+#include "../../src/game/items/magic_shot.h"     /* Phase 12.2 promoted */
 #include "roomrom_scene_load.h"
 #include "roomrom_palette_tick.h"
 #include "cave_dispatch.h"  /* debate 006 D2: native cave gamemode entry */
@@ -22,7 +22,7 @@
 #include "roomrom_pushblock.h"           /* Task 5.7: push-block state machine */
 #include "uw_dark_meta.h"                /* Task 5.8: dark-room manifest */
 #include "uw_item_room_meta.h"           /* Task 5.9: item-room manifest + pickup */
-#include "roomrom_candle_fire.h"         /* Task 5.8.1: candle fire projectile */
+#include "../../src/game/items/candle_fire.h"   /* Task 5.8.1 candle fire (Phase 12.2 promoted) */
 #include "../../src/state/pause_state.h"  /* Task 6.10.1: Paused flag (Phase 12.2 promoted) */
 #include "roomrom_link_damage.h"         /* Task 6.11.1: HeartValues damage */
 #include "../../src/state/inventory.h"                   /* Task 6.10.10: rupee tick */

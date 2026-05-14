@@ -116,6 +116,25 @@ Family order (smallest blast radius first):
 Family 1 substrate-singletons COMPLETE (3 TUs migrated;
 `check_incremental_promotion.py` shared-gameplay count: 27 → 24).
 
+| File (was)                          | New path                          | Family | Migration commit |
+|-------------------------------------|-----------------------------------|--------|------------------|
+| `RoomRom/src/roomrom_arrow.c`       | `src/game/items/arrow.c`          | items  | pending          |
+| `RoomRom/src/roomrom_arrow.h`       | `src/game/items/arrow.h`          | items  | pending          |
+| `RoomRom/src/roomrom_bomb.c`        | `src/game/items/bomb.c`           | items  | pending          |
+| `RoomRom/src/roomrom_bomb.h`        | `src/game/items/bomb.h`           | items  | pending          |
+| `RoomRom/src/roomrom_boomerang.c`   | `src/game/items/boomerang.c`      | items  | pending          |
+| `RoomRom/src/roomrom_boomerang.h`   | `src/game/items/boomerang.h`      | items  | pending          |
+| `RoomRom/src/roomrom_candle_fire.c` | `src/game/items/candle_fire.c`    | items  | pending          |
+| `RoomRom/src/roomrom_candle_fire.h` | `src/game/items/candle_fire.h`    | items  | pending          |
+| `RoomRom/src/roomrom_magic_shot.c`  | `src/game/items/magic_shot.c`     | items  | pending          |
+| `RoomRom/src/roomrom_magic_shot.h`  | `src/game/items/magic_shot.h`     | items  | pending          |
+
+Family 3 items COMPLETE (5 TUs migrated; count 24 → 19).
+
+Family 2 palette DEFERRED — `src/state/palette_tick.c` already exists
+from Phase 9; palette family migration needs a focused PR that resolves
+the merge cleanly.
+
 ## Status
 
 ACTIVE — Task 12.1 baseline classification landed; Task 12.2 family

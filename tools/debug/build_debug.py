@@ -126,9 +126,10 @@ ROOMROM_C_SOURCES = [
     ("RoomRom/src/uw_door_state.c", "uw_door_state.o"),
     ("RoomRom/src/roomrom_sprites.c", "roomrom_sprites.o"),
     ("RoomRom/src/roomrom_combat.c", "roomrom_combat.o"),
-    ("RoomRom/src/roomrom_boomerang.c", "roomrom_boomerang.o"),
-    ("RoomRom/src/roomrom_arrow.c", "roomrom_arrow.o"),
-    ("RoomRom/src/roomrom_bomb.c", "roomrom_bomb.o"),
+    # Phase 12.2 family 3: items promoted to src/game/items/.
+    ("src/game/items/boomerang.c", "items_boomerang.o"),
+    ("src/game/items/arrow.c",     "items_arrow.o"),
+    ("src/game/items/bomb.c",      "items_bomb.o"),
     ("RoomRom/src/roomrom_bg_palette.c", "roomrom_bg_palette.o"),
     ("RoomRom/src/roomrom_scene_load.c", "roomrom_scene_load.o"),
     # Task 5.4: warp coordinator + OW metadata accessor + level/quest table + Gate D probe
@@ -153,8 +154,9 @@ ROOMROM_C_SOURCES = [
     ("RoomRom/data/uw_item_rooms.c", "uw_item_rooms.o"),
     ("RoomRom/src/uw_item_room_meta.c", "uw_item_room_meta.o"),
     # Task 5.8.1: candle fire projectile (slot 8)
-    ("RoomRom/src/roomrom_candle_fire.c", "roomrom_candle_fire.o"),
-    ("RoomRom/src/roomrom_magic_shot.c", "roomrom_magic_shot.o"),
+    # Phase 12.2 family 3: items promoted to src/game/items/.
+    ("src/game/items/candle_fire.c", "items_candle_fire.o"),
+    ("src/game/items/magic_shot.c",  "items_magic_shot.o"),
     ("RoomRom/src/roomrom_ow_palette.c", "roomrom_ow_palette.o"),
     ("src/state/palette_tick.c", "palette_tick.o"),
     # Task 6.1: PlayerState[4] shape (Phase 13 multiplayer-ready by construction).
