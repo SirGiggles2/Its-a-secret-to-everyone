@@ -1563,6 +1563,15 @@ void roomrom_debug_tick(void)
             roomrom_magic_shot_update();
             roomrom_link_damage_tick((unsigned char)s_frame_counter);
             inventory_rupee_tick((unsigned char)s_frame_counter);
+            /* Phase 7 substrate fix 2026-05-15 — clear NES OAM mirror
+             * + reset RollingSpriteIndex AT FRAME START. NES Z1 NMI
+             * resets RollingSpriteIndex per frame; without that
+             * reset, sprite writes accumulate across frames + the
+             * cumulative OAM eats SAT slot budget after 1-2 frames.
+             * Each enemy then renders as the LEFT half only (right
+             * halves bumped beyond SAT slot 79 by stale records).
+             * Clear-before-draw mirrors the NES NMI sentinel pass. */
+            enemy_render_reset_oam();
             roomrom_hud_refresh_dynamic();
             enemy_loop_tick();
             /* Phase 9.7 — gameplay-mode dispatcher tick. Routes
