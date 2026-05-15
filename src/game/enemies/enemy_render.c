@@ -141,42 +141,45 @@ void enemy_render_reset_oam(void)
 
 #define ROOMROM_SPR_TILE_BASE   1025u
 
-/* NES Z1 sprite CHR layout in our Genesis VRAM (per sprite_render.c
- * comment + atlas/enemy_chr.h):
- *   NES tile $00..$6F = CommonSpritePatterns (112 tiles) at SPR_BASE
- *                      = Genesis tile 1025..1136 (loaded by
- *                      roomrom_sprites_upload_chr at boot).
- *   NES tile $70..$E1 = per-room transient sprite bank (OWSP for
- *                      overworld, UWSP127/358/469 for underworld).
- *                      Loaded into SCENE_OBJ slot at tile_base =
- *                      SPR_BASE + 44 = Genesis tile 1069. Bank holds
- *                      up to 136 tiles (UW 4x sub-pal, OW 1x). NES
- *                      bank tile 0 = Genesis tile 1069.
- *   NES tile $E2..$FF = unused by Z1 sprite render in standard rooms.
+/* NES Z1 sprite CHR layout in our Genesis VRAM:
  *
- * Atlas tile manifest dispatch (UW level -> bank) lives in
- * RoomRom/src/atlas/level_chr_swap.c. UW sub-pal indexing
- * (Genesis tile = 1069 + sub_pal*34 + bank_tile) is required when
- * the NES OAM attr byte selects a non-zero sub-pal. Initial pass
- * uses sub-pal 0 only; refined sub-pal multiplier lands in a
- * follow-up commit. */
+ * Per reference/aldonunez/Z_03.asm:44 PatternBlockPpuAddrs:
+ *   $1700 = BG block dest PPU addr  (BG sprites)
+ *   $08E0 = SPRITE block dest PPU addr  (OWSP/UWSP banks)
+ *
+ * So OWSP/UWSP bank file BYTE 0 -> NES PPU byte $08E0 = PPU tile $8E.
+ * NES OAM tile id $XX in 8x16 mode -> top 8x8 at PPU byte ($XX*$10 + bit 0).
+ *
+ * Genesis VRAM:
+ *   NES PPU tile $00..$8D (CommonSpritePatterns + headroom, 142 tiles)
+ *     -> SPR_BASE + nes_tile = Genesis 1025+nes_tile.
+ *   NES PPU tile $8E..$FF (transient sprite bank, OWSP up to 114 tiles,
+ *     UWSP up to 34 tiles x 4 sub-pal copies)
+ *     -> SCENE_OBJ tile_base + (nes_tile - $8E)
+ *     = Genesis 1069 + bank_tile.
+ *
+ * UW path adds sub_pal*34 offset to select the correct 4x copy.
+ *
+ * Pre-2026-05-15 bug: used $70 instead of $8E as the bank base,
+ * landing every enemy tile 30 tiles too low in VRAM -> rendered
+ * unrelated atlas data as Tektite (diagonal slash instead of spider). */
 #define ROOMROM_SCENE_OBJ_TILE_BASE  1069u
-#define NES_COMMON_SPRITE_LAST       0x6Fu
+#define NES_OWSP_BANK_FIRST          0x8Eu   /* PPU $08E0 / $10 */
 #define UWSP_TILES_PER_SUBPAL        34u
 #define NES_CUR_LEVEL_CELL           0x0010u
 
 static inline unsigned short translate_tile(unsigned char nes_tile,
                                             unsigned char nes_attrs)
 {
-    if (nes_tile <= NES_COMMON_SPRITE_LAST) {
+    if (nes_tile < NES_OWSP_BANK_FIRST) {
+        /* Common sprite pattern block at SPR_BASE 1:1. */
         return (unsigned short)(ROOMROM_SPR_TILE_BASE + (unsigned short)nes_tile);
     }
-    /* Per-room transient bank: NES tile $70+k -> SCENE_OBJ slot tile k. */
-    unsigned char bank_tile = (unsigned char)(nes_tile - 0x70u);
+    /* Per-room transient bank: NES tile $8E+k -> SCENE_OBJ tile k. */
+    unsigned char bank_tile = (unsigned char)(nes_tile - NES_OWSP_BANK_FIRST);
 
     /* OW (CurLevel == 0) uses OWSP single-copy bank: tile k -> 1069+k.
-     * UW uses UWSP 4x bank: sub-pal N tile k -> 1069 + N*34 + k.
-     * Sub-pal from NES attr bits 1-0. */
+     * UW uses UWSP 4x bank: sub-pal N tile k -> 1069 + N*34 + k. */
     unsigned char cur_level = nes_ram[NES_CUR_LEVEL_CELL];
     if (cur_level == 0u) {
         return (unsigned short)(ROOMROM_SCENE_OBJ_TILE_BASE + bank_tile);
