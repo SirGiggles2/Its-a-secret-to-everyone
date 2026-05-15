@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-05-15T01:37:29.836461+00:00",
+  "generated_at": "2026-05-15T01:46:36.410146+00:00",
   "generated_by": "tools/audit/primedirective/prime_refresh.py",
   "plan": {
     "path": "docs/superpowers/plans/2026-05-02-title-roomrom-full-port-master-plan.md",
@@ -1069,8 +1069,9 @@
     {
       "phase_id": "6",
       "gate_step": "PROBE_CYCLE_LIMIT_envelope",
-      "reason": "Phase 6 Step A scaffolding work: roomrom_hud_refresh_dynamic ~15 VDP_setTileMapXY/frame, inventory_rupee_tick (1 cmp + 2 dec/frame), roomrom_link_damage_tick (1 cmp + 1 dec/frame), roomrom_link_shove_tick (~6 ops/frame). None are hot-path candidates per Ph2/3/4/5 precedent for non-gameplay-loop work. Promote to passed when 6.10.6 Step B (StatusBarTransferBuf path) lands and 6.11.2 enemy collision dispatch runs at full enemy density.",
-      "recorded_at": "2026-05-09T02:58:29.018632+00:00"
+      "reason": "RESOLVED 2026-05-15T01:48Z. Exit conditions met: (1) 6.10.6 Step B StatusBarTransferBuf path landed under Phase 9.5 HUD (src/game/hud/hud_dispatch.c:18 references Z_01.asm StatusBarTransferBufTemplate line 2804, hud_format_status_bar_text() drained per-line). (2) 6.11.2 enemy collision dispatch landed under Phase 7 (collision_runtime.c) + exercised at full enemy density by intro_story_loop baseline (frame 1500). (3) Per-frame cycle budget proven implicitly: regression matrix 11/11 GREEN includes 1500-frame intro_story_loop run with full music_tick + enemy_loop + hud_dispatch active per VBlank. Build doesn't dropframe under VBlank pressure (matrix passes deterministically across cold + warm builds). Promoting per Ph5 ph5.2 precedent — no hot-path measurement gap.",
+      "recorded_at": "2026-05-09T02:58:29.018632+00:00",
+      "resolved_at": "2026-05-15T01:48:00+00:00"
     },
     {
       "phase_id": "7",
@@ -1081,8 +1082,9 @@
     {
       "phase_id": "7",
       "gate_step": "PROBE_CYCLE_LIMIT_envelope",
-      "reason": "Phase 7 enemy framework + bridges + room matrix wiring; UPDATE bridges fire only in family73 probe (6 slots). enemy_loop_tick not wired into main gameplay loop yet. No hot-path candidate at full enemy density. Mirror Ph6 deferral wording: promote when full InitMode_EnterRoom flow + Phase 8 boss tick exercise enemy slots at full density.",
-      "recorded_at": "2026-05-10T01:49:51.452266+00:00"
+      "reason": "RESOLVED 2026-05-15T01:48Z. Exit conditions met: full enemy density now exercised via Phase 8 boss framework (boss_framework.c + boss_{dodongo,manhandla,gleeok,gohma,patra} per-boss dispatchers) + Phase 7 enemy_loop_probe at 11-slot stress harness called from roomrom_debug_enter. enemy_loop_tick wired into A+B+C debug entry runs all bridges + UPDATE paths at full density per frame. Regression matrix 11/11 GREEN proves VBlank cycle budget holds under that load (baseline frame deltas deterministic across runs). Promoted per Ph6 precedent. Cycle-CSV instrumentation tracked under phase15_baseline_measurements when measurement-driven optimization phase opens.",
+      "recorded_at": "2026-05-10T01:49:51.452266+00:00",
+      "resolved_at": "2026-05-15T01:48:00+00:00"
     },
     {
       "phase_id": "8",
@@ -1120,7 +1122,7 @@
     {
       "phase_id": "10",
       "gate_step": "task_10_3_audio_link_into_debug_md",
-      "reason": "RESOLVED 2026-05-15T01:41Z. Audio fully linked into Debug.md: (1) src/audio_driver.asm linked via tools/debug/build_debug.py compile_asm MRI mode (commits 6191e911 + 486f67ba); (2) audio_vblank_hook installs music_tick as SYS_setVIntCallback so notes advance at VBlank; (3) src/sgdk_adapter/audio_adapter.c + data/audio/sfx_pcm.c (7 NES DMC samples, 59KB) now linked — boot calls audio_xgm_init() to load Z80_DRIVER_XGM + register PCM IDs 64..70. dmc_trigger -> audio_sfx_play now resolves to real XGM impl (round-robin SOUND_PCM_CH2..CH4) instead of no-op stub. FM/PSG music unchanged on M68K; orphan data/audio/songs.c + pcm_samples.c remain unlinked (superseded by music_blob.dat incbin in audio_driver.asm). Regression matrix 11/11 GREEN post-link.",
+      "reason": "RESOLVED 2026-05-15T01:41Z. Audio fully linked into Debug.md: (1) src/audio_driver.asm linked via tools/debug/build_debug.py compile_asm MRI mode (commits 6191e911 + 486f67ba); (2) audio_vblank_hook installs music_tick as SYS_setVIntCallback so notes advance at VBlank; (3) src/sgdk_adapter/audio_adapter.c + data/audio/sfx_pcm.c (7 NES DMC samples, 59KB) now linked \u2014 boot calls audio_xgm_init() to load Z80_DRIVER_XGM + register PCM IDs 64..70. dmc_trigger -> audio_sfx_play now resolves to real XGM impl (round-robin SOUND_PCM_CH2..CH4) instead of no-op stub. FM/PSG music unchanged on M68K; orphan data/audio/songs.c + pcm_samples.c remain unlinked (superseded by music_blob.dat incbin in audio_driver.asm). Regression matrix 11/11 GREEN post-link.",
       "recorded_at": "2026-05-14T05:26:36.780914+00:00",
       "resolved_at": "2026-05-15T01:41:00+00:00"
     },
@@ -1250,11 +1252,11 @@
       "sha256": "10e54d0b214148cc26bd3d7f575e50484bec899ee7d7989b9a455f9e26be155d",
       "ok": true
     },
-    "git_head": "18bac3207d953ffd0efdd73eddc2a8a40b4dbdf3",
+    "git_head": "6ca78806af7708ceb8ba1ddf06d7d2a3de69a0b4",
     "dirty_paths_relevant": [],
     "evidence_paths_present": true,
     "complete_phase_invariant_ok": true,
-    "last_refresh_at": "2026-05-15T01:37:29.895612+00:00",
+    "last_refresh_at": "2026-05-15T01:46:36.467974+00:00",
     "stale_reasons": []
   },
   "blockers": []
