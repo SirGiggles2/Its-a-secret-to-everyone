@@ -91,13 +91,15 @@ typedef enum {
     LINK_DIR_RIGHT = 4
 } link_dir_t;
 
-/* TEST DEFAULTS: boot into UW room $73 (L1 entrance). 5.9 verified
- * via boot=$36 at triforce coords (auto-probe + gate_5_9 PASS);
- * default restored. */
-static scene_t       s_scene       = SCENE_UW;
+/* TEST DEFAULTS: boot into overworld room $77 (NES start screen,
+ * Level 1 cave entrance just south). Press MODE for OW<->UW toggle,
+ * C+START for cave enter, etc. — see button map in comment block
+ * around line 50. Prior boot was SCENE_UW $73 (L1 entrance); switched
+ * 2026-05-15 so debug-enter shows the real game starting screen. */
+static scene_t       s_scene       = SCENE_OW;
 static mode_t        s_mode        = MODE_WALK;
 static move_style_t  s_move_style  = MOVE_STYLE_NES;
-static u8 s_room_id = 0x73;
+static u8 s_room_id = 0x77;
 /* Phase 6 Task 6.1: Link position/facing now lives in `players[0]`.
  * Boot defaults are seeded in `init_player_state()` below before any
  * scene/render code runs. */
@@ -1551,26 +1553,6 @@ void roomrom_debug_tick(void)
         u16 joy = JOY_readJoypad(JOY_1);
         u16 pressed = joy & ~s_joy_prev;
         s_joy_prev = joy;
-
-        /* Phase 9.7 demo chord — bump GameMode to exercise native
-         * Mode 8/11/12 bodies on demand. Y-edge cycles 0->8->11->12->0.
-         * Each transition resets GameSubmode + ObjTimer so the mode's
-         * Sub0 fires fresh. */
-        if (pressed & BUTTON_Y) {
-            volatile u8 *game_mode    = (volatile u8 *)0x00FF0012UL;
-            volatile u8 *game_submode = (volatile u8 *)0x00FF0013UL;
-            volatile u8 *obj_timer_0  = (volatile u8 *)0x00FF0030UL;
-            u8 next = *game_mode;
-            switch (next) {
-                case 0x00u: next = 0x08u; break;
-                case 0x08u: next = 0x11u; break;
-                case 0x11u: next = 0x12u; break;
-                default:    next = 0x00u; break;
-            }
-            *game_mode    = next;
-            *game_submode = 0u;
-            *obj_timer_0  = 0u;
-        }
 
         /* Phase 9 Task 9.4 — OPTION_ID_AB_SWAP: swap A and B button bits
          * after edge-detect so the entire downstream input dispatch sees
