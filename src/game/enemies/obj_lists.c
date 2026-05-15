@@ -366,29 +366,71 @@ void enemy_assign_spawn_positions(unsigned char room_id, unsigned char template_
     if (template_id == 0u || template_id == 0x37u) skip_main = 1u;
 
     /* NES line 1896-1900: OW edge-spawn skip via LBA_F bit 3.
-     * Underworld (CurLevel != 0) bypasses this gate. */
+     * Underworld (CurLevel != 0) bypasses this gate.
+     *
+     * Substrate gap 2026-05-15: NES Z1 lets the per-slot UpdateObject
+     * path (Z_07.asm:5244 LDA ObjUninitialized) call FindNextEdgeSpawnCell
+     * (Z_05.asm:3406) each frame until a walkable edge cell is found.
+     * Our $0492 cell is repurposed as ENEMY_ALIVE_FLAG with opposite
+     * polarity, so the NES uninitialized-loop never fires. Pending the
+     * full FindNextEdgeSpawnCell drain we fall through to the main spawn
+     * loop with list_idx forced to 0 below — enemies land at spawn_pos_list_0
+     * coords (NES "Link came from above" default). Visible parity is
+     * approximate: positions match the up-scroll spawn case rather than
+     * the actual approach direction. Full edge-spawn port = follow-up. */
+    unsigned char edge_spawn_substitute = 0u;
     if (!skip_main && (unsigned char)CUR_LEVEL == 0u) {
-        if ((DUNGEON_LBA_F(room_id) & 0x08u) != 0u) skip_main = 1u;
+        if ((DUNGEON_LBA_F(room_id) & 0x08u) != 0u) {
+            edge_spawn_substitute = 1u;
+        }
     }
 
     /* NES line 1902-1903: redundant count==0 gate (already covered above). */
     if (!skip_main && (unsigned char)DUNGEON_ROOM_OBJ_COUNT == 0u) skip_main = 1u;
 
     if (!skip_main) {
-        unsigned char list_idx = dir_to_spawn_list_index((unsigned char)OBJ(NES_OBJ_DIR, 0u));
+        unsigned char list_idx = edge_spawn_substitute
+            ? 0u   /* edge-spawn substitute: force "Link from above" list. */
+            : dir_to_spawn_list_index((unsigned char)OBJ(NES_OBJ_DIR, 0u));
         const unsigned char *list = spawn_pos_lists[list_idx];
         unsigned char y = (unsigned char)DUNGEON_SPAWN_CYCLE;
         unsigned int x;
-        for (x = 1u; x < 0x0Au; ) {
-            unsigned char b = list[y];
-            OBJ(NES_OBJ_X, x) = (unsigned char)((b & 0x0Fu) << 4);
-            OBJ(NES_OBJ_Y, x) = (unsigned char)((b & 0xF0u) | 0x0Du);
-            unsigned char unsafe = is_safe_to_spawn(x);
-            if (!unsafe) {
-                ++x;
+        if (edge_spawn_substitute) {
+            /* Edge-spawn substitute path: bypass is_safe_to_spawn (which
+             * depends on collision grid that may not match OW rooms
+             * during the substrate-gap window) and walk the spawn list
+             * sequentially. Each slot gets a distinct (col, row) so
+             * enemies don't pile on one tile. */
+            for (x = 1u; x <= DUNGEON_ROOM_OBJ_COUNT && x < 0x0Au; ++x) {
+                unsigned char b = list[y];
+                OBJ(NES_OBJ_X, x) = (unsigned char)((b & 0x0Fu) << 4);
+                OBJ(NES_OBJ_Y, x) = (unsigned char)((b & 0xF0u) | 0x0Du);
+                ++y;
+                if (y >= 9u) y = 0u;
             }
-            ++y;
-            if (y >= 9u) y = 0u;
+        } else {
+            unsigned int iter_cap = 0u;
+            for (x = 1u; x < 0x0Au; ) {
+                unsigned char b = list[y];
+                OBJ(NES_OBJ_X, x) = (unsigned char)((b & 0x0Fu) << 4);
+                OBJ(NES_OBJ_Y, x) = (unsigned char)((b & 0xF0u) | 0x0Du);
+                unsigned char unsafe = is_safe_to_spawn(x);
+                if (!unsafe) {
+                    ++x;
+                }
+                ++y;
+                if (y >= 9u) y = 0u;
+                /* Defense: cap retries so a mis-loaded room tile map
+                 * can't spin forever. NES Z1 doesn't need this because
+                 * is_safe_to_spawn varies via Link motion; in our debug
+                 * harness Link sits at a fixed pos at room-enter. */
+                if (++iter_cap >= 90u) {
+                    ++x;
+                    ++y;
+                    if (y >= 9u) y = 0u;
+                    iter_cap = 0u;
+                }
+            }
         }
         DUNGEON_SPAWN_CYCLE = y;
         y_cycle = y;

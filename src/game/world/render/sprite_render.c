@@ -241,8 +241,15 @@ static void roomrom_sprites_set_hud_backdrop(void)
         slot++;
     }
     for (x = 0u; x < 256u; x = (unsigned short)(x + 16u)) {
-        unsigned short link = (slot == ROOMROM_HUD_BACKDROP_LAST_SLOT) ? 0u
-                                                            : (unsigned short)(slot + 1u);
+        /* Phase 7 substrate fix 2026-05-15: HUD backdrop chain no longer
+         * terminates at slot 57 with link=0. Instead it forwards to slot
+         * 58 so enemy_render_sweep_oam_to_sat()'s SAT writes at slots
+         * 58-79 (22 enemy sprite slots) participate in the visible
+         * sprite chain. Without this, enemy SAT writes go to inactive
+         * slots and are never scanned by the VDP. */
+        unsigned short link = (slot == ROOMROM_HUD_BACKDROP_LAST_SLOT)
+                                  ? 58u
+                                  : (unsigned short)(slot + 1u);
         VDP_setSpriteFull(slot, (signed short)x, (signed short)48, RENDER_SPRITE_SIZE(2, 1),
                           attr, link);
         slot++;

@@ -124,9 +124,15 @@ void enemy_render_reset_oam(void)
  * works as default; refined per-bank coloring lands later.
  */
 
-#define ENEMY_SAT_SLOT_FIRST    32u
-#define ENEMY_SAT_SLOT_LAST     71u   /* 40 SAT slots for 40 NES OAM sprites */
-#define ENEMY_TOTAL_OAM_SPRITES 40u
+/* SAT slot allocation 2026-05-15:
+ *   0-9   = Link + sword + items (existing roomrom_sprites)
+ *   10-57 = HUD backdrop strip (48 sprites)
+ *   58-79 = enemy render bridge (22 slots for NES OAM sprites)
+ * HUD backdrop slot 57 forwards link to 58 (sprite_render.c) so enemy
+ * sprite chain stays in the visible scan path. */
+#define ENEMY_SAT_SLOT_FIRST    58u
+#define ENEMY_SAT_SLOT_LAST     79u
+#define ENEMY_TOTAL_OAM_SPRITES 22u
 #define NES_HUD_Y_OFFSET        32u   /* HUD on Window plane covers top 4 rows */
 
 #define ROOMROM_SPR_TILE_BASE   1025u
