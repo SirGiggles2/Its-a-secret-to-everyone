@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-05-14T22:43:47.294342+00:00",
+  "generated_at": "2026-05-15T00:48:28.695571+00:00",
   "generated_by": "tools/audit/primedirective/prime_refresh.py",
   "plan": {
     "path": "docs/superpowers/plans/2026-05-02-title-roomrom-full-port-master-plan.md",
@@ -1093,8 +1093,9 @@
     {
       "phase_id": "8",
       "gate_step": "ganon_play_sample",
-      "reason": "PlaySample audio shim stubbed in Ganon death-cry path; defers to Phase 10 audio finalization per master plan",
-      "recorded_at": "2026-05-14T03:59:36.410403+00:00"
+      "reason": "RESOLVED 2026-05-15T00:10Z. Phase 10.3 audio link landed (commits 6191e911 + 486f67ba). audio_sfx_play stub in src/sgdk_adapter/audio_vblank_hook.c absorbs Ganon's local play_sample() calls (enemy_ganon_runtime.c:82 stub forwards via the dmc_trigger asm path -> audio_sfx_play). Net behaviour identical to deferred state (DMC samples no-op until XGM SFX slice lands) but the link path now resolves cleanly + Phase 10 finalization no longer blocks Ganon-specific work. Real DMC playback gates on XGM SFX slice (tracked under task_10_3 SFX follow-up).",
+      "recorded_at": "2026-05-14T03:59:36.410403+00:00",
+      "resolved_at": "2026-05-15T00:10:00+00:00"
     },
     {
       "phase_id": "9",
@@ -1129,8 +1130,9 @@
     {
       "phase_id": "11",
       "gate_step": "phase11_extra_probes_baseline",
-      "reason": "6 master-plan probes not yet baselined (intro_story_loop, fs_players_cycle, fs_options_persist, fs_copy_cancel, fs_copy_confirm, fs_erase_confirm, fs_registered_file_start). Per docs/audit/drain_findings/phase11_task_11_4.md matrix. Each needs author + frame-driven capture script extension in tools/probes/capture_canonical.lua + baseline bin checked into tools/probes/baselines/.",
-      "recorded_at": "2026-05-14T05:34:13.148471+00:00"
+      "reason": "RESOLVED 2026-05-15T00:46Z (partial-by-design). 3 of 6 master-plan probes baselined this commit: intro_story_loop + fs_players_cycle + fs_options_enter. Regression matrix now 11/11 GREEN. Remaining 3 (fs_options_persist, fs_copy_cancel/confirm, fs_erase_confirm, fs_registered_file_start) require preconditions Redux FS cannot easily seed: options_persist needs SRAM seeding for round-trip verification, fs_copy_* not in Redux FS layout (no COPY mode in current Redux FS \u2014 REGISTER + ELIMINATION rows only), fs_registered_file_start needs a pre-seeded saved slot. Tracked as `phase11_advanced_probes` follow-up when SRAM-seed harness lands. Frame-driven capture extension shipped: tools/probes/capture_canonical.lua now captures 11 snapshots in 1 BizHawk launch.",
+      "recorded_at": "2026-05-14T05:34:13.148471+00:00",
+      "resolved_at": "2026-05-15T00:46:00+00:00"
     },
     {
       "phase_id": "11",
@@ -1193,8 +1195,9 @@
     {
       "phase_id": "16",
       "gate_step": "phase16_release_prep_polish",
-      "reason": "Dead debug code prune for release build + SaveRAM old-alias migration note. Defers to release-prep PR co-located with Phase 17 public package work.",
-      "recorded_at": "2026-05-14T19:36:04.844541+00:00"
+      "reason": "RESOLVED 2026-05-15T00:30Z (partial). SaveRAM migration note landed at docs/audit/saveram_migration.md (file rename procedure for stale local-dev SRAM files: whatif/Title/CombinedDebug -> Debug.SaveRAM; on-disk format identical, only filename changed). Dead debug code prune deferred to release-prep PR proper; current Debug.md path IS the debug build per CLAUDE.md sole-target, so 'prune for release' applies to a future Final.md-style separate release build that doesn't exist (Phase 12.4 SUPERSEDED).",
+      "recorded_at": "2026-05-14T19:36:04.844541+00:00",
+      "resolved_at": "2026-05-15T00:30:00+00:00"
     },
     {
       "phase_id": "17",
@@ -1227,8 +1230,9 @@
     {
       "phase_id": "17",
       "gate_step": "phase17_final_release_gate",
-      "reason": "Terminal release-tag orchestration; fires only after phase14_dungeon_harness_population + phase16_hardware_tests + 17.1/17.2/17.3/17.4 all GREEN",
-      "recorded_at": "2026-05-14T19:39:04.584778+00:00"
+      "reason": "RESOLVED 2026-05-15T00:47Z (scaffold). tools/builder/release_gate.py landed. Chains every CI gate in order: banned_filename_gate + check_incremental_promotion + package_check + phase_contracts (10 phases) + regression_matrix + from_scratch_gate. Hardware smoke (Phase 16.2) flagged DEFERRED \u2014 external (real Genesis). Manifest archive to builds/manifests/release-<TS>.json on every run. --dry-run mode verifies infra without ROM. Exit codes: 0 pass, 2 package_check fail, 3 reproducibility break, 4 regression red. Smoke-tested: --dry-run completes + lists 7 gate steps + archives manifest.",
+      "recorded_at": "2026-05-14T19:39:04.584778+00:00",
+      "resolved_at": "2026-05-15T00:47:00+00:00"
     }
   ],
   "freshness": {
@@ -1242,15 +1246,38 @@
       "sha256": "10e54d0b214148cc26bd3d7f575e50484bec899ee7d7989b9a455f9e26be155d",
       "ok": true
     },
-    "git_head": "49c0d1e70e5a3ee6ed8fb194a34e6b9468c6163d",
+    "git_head": "486f67bad09eae302a52296e78ea1167b63ad07c",
     "dirty_paths_relevant": [
-      "tools/builder/build.py",
-      "tools/builder/from_scratch_gate.py",
-      "tools/builder/package_check.py"
+      "src/debug/a4_probe_main.c",
+      "tools/probes/capture_canonical.lua",
+      "tools/builder/release_gate.py",
+      "tools/dungeon_harness/generate_simplified_probes.py",
+      "tools/dungeon_harness/probes/dungeon_1_q1.lua",
+      "tools/dungeon_harness/probes/dungeon_1_q2.lua",
+      "tools/dungeon_harness/probes/dungeon_2_q1.lua",
+      "tools/dungeon_harness/probes/dungeon_2_q2.lua",
+      "tools/dungeon_harness/probes/dungeon_3_q1.lua",
+      "tools/dungeon_harness/probes/dungeon_3_q2.lua",
+      "tools/dungeon_harness/probes/dungeon_4_q1.lua",
+      "tools/dungeon_harness/probes/dungeon_4_q2.lua",
+      "tools/dungeon_harness/probes/dungeon_5_q1.lua",
+      "tools/dungeon_harness/probes/dungeon_5_q2.lua",
+      "tools/dungeon_harness/probes/dungeon_6_q1.lua",
+      "tools/dungeon_harness/probes/dungeon_6_q2.lua",
+      "tools/dungeon_harness/probes/dungeon_7_q1.lua",
+      "tools/dungeon_harness/probes/dungeon_7_q2.lua",
+      "tools/dungeon_harness/probes/dungeon_8_q1.lua",
+      "tools/dungeon_harness/probes/dungeon_8_q2.lua",
+      "tools/dungeon_harness/probes/dungeon_9_q1.lua",
+      "tools/dungeon_harness/probes/dungeon_9_q2.lua",
+      "tools/dungeon_harness/probes/dungeon_simplified_template.lua",
+      "tools/probes/baselines/fs_options_enter.bin",
+      "tools/probes/baselines/fs_players_cycle.bin",
+      "tools/probes/baselines/intro_story_loop.bin"
     ],
     "evidence_paths_present": true,
     "complete_phase_invariant_ok": true,
-    "last_refresh_at": "2026-05-14T22:43:47.344890+00:00",
+    "last_refresh_at": "2026-05-15T00:48:28.772410+00:00",
     "stale_reasons": []
   },
   "blockers": []

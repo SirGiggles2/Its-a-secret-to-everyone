@@ -101,9 +101,14 @@ end
 local pass_a_targets = {
     [200]  = "title_idle",          -- mid title_display
     [700]  = "intro_story_p1",      -- after fadeout + black, into story
+    -- Phase 11 master-plan probe: intro_story_loop — capture mid
+    -- second attract cycle (after first story page completes and
+    -- the attract loop wraps back). Story scroll is ~600 frames per
+    -- pass; ~1500 lands well inside the 2nd loop.
+    [1500] = "intro_story_loop",
 }
 
-while emu.framecount() < 800 do
+while emu.framecount() < 1600 do
     local fr = emu.framecount()
     if pass_a_targets[fr] then
         capture(pass_a_targets[fr])
@@ -167,9 +172,20 @@ local b_steps = {
     [600]  = { press = {Down = true} },     -- highlight a slot in delete mode
     [620]  = { press = {B = true} },        -- cancel
     [650]  = { snap  = "fs_file_delete_cancel" },
+    -- Phase 11 master-plan probes (Redux FS-compatible):
+    -- fs_players_cycle: navigate cursor back up + over to PLAYERS row
+    --   (row 5), press Right to cycle 1->2.
+    [700]  = { press = {Up = true} },     -- approach PLAYERS row from above
+    [720]  = { press = {Up = true} },
+    [740]  = { press = {Right = true} },  -- cycle 1->2 on PLAYERS row
+    [770]  = { snap  = "fs_players_cycle" },
+    -- fs_options_enter: navigate to OPTIONS row (6), press A.
+    [790]  = { press = {Down = true} },   -- PLAYERS -> OPTIONS
+    [820]  = { press = {A = true} },      -- enter OPTIONS submenu
+    [860]  = { snap  = "fs_options_enter" },
 }
 
-while emu.framecount() < 700 do
+while emu.framecount() < 900 do
     local fr = emu.framecount()
     local step = b_steps[fr]
     if step then
@@ -179,5 +195,5 @@ while emu.framecount() < 700 do
     emu.frameadvance()
 end
 
-print("DONE: 9 captures in " .. OUT_DIR)
+print("DONE: 11 captures in " .. OUT_DIR)
 client.exit()

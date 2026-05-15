@@ -134,6 +134,13 @@ static void debug_poll_title(void)
         s_state = COMBINED_STATE_ROOMROM;
         probe_publish();
         roomrom_debug_enter();
+        /* Phase 10.3 audio per-event wiring (gameplay-mode entry).
+         * Boot lands in SCENE_UW per RoomRom/src/main.c:96
+         * (s_scene = SCENE_UW). Per docs/audit/audio_routing.md, UW
+         * = per-level dungeon song. Boot-room defaults to L1Q1; play
+         * the L1Q1 dungeon song. Real per-level dispatch lands when
+         * roomrom_debug_enter exposes its level/quest selection. */
+        music_play(0x40);  /* NES Z1 SongRequest bit 6 = dungeon song */
     }
 }
 
