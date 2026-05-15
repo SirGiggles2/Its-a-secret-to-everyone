@@ -30,11 +30,10 @@
 #include "combat/collision_dispatch.h" /* collision_get_colliding_tile_moving */
 #include "../../oracle/enemies/enemy_runtime.h" /* enrt_play_boss_death_cry_if_needed */
 
-void c_anim_write_sprite(unsigned int tile, unsigned int slot)
-{
-    (void)tile;
-    (void)slot;
-}
+/* c_anim_write_sprite moved to src/game/enemies/enemy_render.c 2026-05-15.
+ * Real implementation: drained Anim_WriteSprite (Z_01.asm:5365) writes
+ * NES OAM mirror $0200..$02FF. enemy_render_sweep_oam_to_sat() pushes
+ * mirror to Genesis SAT slots 32-71 once per tick. */
 
 unsigned char c_get_opposite_dir(unsigned char dir)
 {

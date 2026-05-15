@@ -42,6 +42,7 @@
 #include "save_serializer_probe.h"        /* Phase 9 Task 9.7 save serializer tests */
 #include "../../src/game/world/mode_dispatch.h"  /* Phase 9.7 gameplay-mode dispatcher */
 #include "../../src/game/world/level_info_install.h"  /* substrate: install $687E..$6C7D LBA + LevelInfo */
+#include "../../src/game/enemies/enemy_render.h"      /* Phase 7: NES OAM -> Genesis SAT bridge */
 
 /* Boots to overworld room 0x77.
  *
@@ -1389,6 +1390,7 @@ void roomrom_debug_enter(void)
     roomrom_pushblock_init();              /* Task 5.7: push-block state machine */
     roomrom_candle_fire_init();            /* Task 5.8.1: candle fire slot 8 */
     roomrom_magic_shot_init();             /* magic rod shot slot 9 */
+    enemy_render_reset_oam();              /* Phase 7: clear NES OAM mirror */
     enemy_loop_room_init(s_room_id, (unsigned char)s_scene);  /* Phase 7 Task 7.2 */
     roomrom_probe_metadata_run();          /* Task 5.4 Gate D: in-ROM probe */
 
@@ -1569,6 +1571,12 @@ void roomrom_debug_tick(void)
              * cases are no-op stubs; the wired modes run their state
              * machines verbatim from NES Z_07.asm:1608+. */
             mode_dispatch_update();
+            /* Phase 7 substrate fix 2026-05-15 — sweep NES OAM mirror
+             * ($0200..$02FF, populated by enemy UPDATE bridges that
+             * call c_anim_write_sprite) into Genesis SAT slots 32-71.
+             * Without this, enemy LOGIC ticks correctly but enemy
+             * SPRITES produce zero pixels. */
+            enemy_render_sweep_oam_to_sat();
         }
 
         u16 joy = JOY_readJoypad(JOY_1);
