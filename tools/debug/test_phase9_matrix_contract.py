@@ -111,6 +111,26 @@ def test_fs_options_linked() -> None:
     need(build, "src/frontend/fs/fs_options_render.c", "fs options render TU")
 
 
+def test_mode_dispatch_linked() -> None:
+    """Phase 9.7 native mode dispatcher + Mode 8 body."""
+    build = read("tools/debug/build_debug.py")
+    need(build, "src/game/world/mode_continue_question.c",
+                "Mode 8 ContinueQuestion TU")
+    need(build, "src/game/world/mode_dispatch.c",
+                "Gameplay mode dispatcher TU")
+    body = read("src/game/world/mode_continue_question.c")
+    for needle in (
+        "mode8_continue_question_update",  # public entry
+        "k_mode8_selection_to_mode",       # NES table verbatim
+        "k_mode8_flash_transfer_record",   # NES table verbatim
+        "0x03u, 0x0Du, 0x00u",             # selection->mode values
+    ):
+        need(body, needle, "Mode 8 body")
+    disp = read("src/game/world/mode_dispatch.c")
+    need(disp, "mode8_continue_question_update();",
+              "Mode 8 wired into dispatcher")
+
+
 def test_consumer_call_sites_present() -> None:
     """Verify the 6 wired option consumers reach their drained call sites.
 
@@ -142,8 +162,9 @@ if __name__ == "__main__":
     test_save_sentinels_match_nes()
     test_hud_dispatch_linked()
     test_fs_options_linked()
+    test_mode_dispatch_linked()
     test_consumer_call_sites_present()
     print(
         "PASS: Phase 9 matrix contract "
-        "(7 drain findings + options + save + hud + fs_options + 6 consumer sites)"
+        "(7 drain findings + options + save + hud + fs_options + Mode 8 + dispatcher + 6 consumer sites)"
     )
