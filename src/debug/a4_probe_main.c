@@ -145,6 +145,7 @@ static void debug_poll_title(void)
 }
 
 extern void audio_vblank_hook_install(void);
+extern void audio_xgm_init(void);
 extern void music_play(unsigned char song_bitmap);
 
 int debug_main_after_a4(bool hardReset)
@@ -155,6 +156,13 @@ int debug_main_after_a4(bool hardReset)
      * as VBlank callback so the audio driver advances notes once per
      * frame. Must run before any music_play() request. */
     audio_vblank_hook_install();
+
+    /* Phase 10.3 audio link, XGM SFX path: load XGM Z80 driver and
+     * register the 7 NES DMC samples (IDs 64..70) for SFX playback.
+     * audio_driver.asm@dmc_trigger calls audio_sfx_play -> XGM
+     * sample channels. FM/PSG music continues on M68K via music_tick
+     * (XGM Z80 driver only owns sample channels by default). */
+    audio_xgm_init();
 
     probe_check(1U);
     debug_enter_title();

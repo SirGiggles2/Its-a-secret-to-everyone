@@ -59,14 +59,17 @@ INCS = [
     ROOT / "src" / "state" / "probes",
     ROOT / "src" / "oracle" / "room",
     ROOT / "src" / "core",
+    ROOT / "data" / "audio",
     SGDK / "inc",
     SGDK / "res",
 ]
 
 TITLE_C_SOURCES = [
     ("src/sgdk_adapter/render_adapter.c", "render_adapter.o"),
-    # Phase 10.3 audio link, VBlank tick slice.
+    # Phase 10.3 audio link, VBlank tick slice + XGM SFX path.
     ("src/sgdk_adapter/audio_vblank_hook.c", "audio_vblank_hook.o"),
+    ("src/sgdk_adapter/audio_adapter.c",    "audio_adapter.o"),
+    ("data/audio/sfx_pcm.c",                "sfx_pcm.o"),
     ("src/frontend/intro/intro_phase.c", "intro_phase.o"),
     ("src/frontend/intro/intro_title.c", "intro_title.o"),
     ("src/frontend/intro/intro_story.c", "intro_story.o"),

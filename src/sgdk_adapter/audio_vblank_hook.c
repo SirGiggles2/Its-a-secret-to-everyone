@@ -27,19 +27,6 @@ void audio_vblank_hook_install(void)
     SYS_setVIntCallback(audio_vblank_hook);
 }
 
-/* Phase 10.3 audio link: SFX stub.
- *
- * audio_driver.asm@dmc_trigger calls audio_sfx_play (real impl in
- * src/sgdk_adapter/audio_adapter.c pulls XGM Z80 machinery +
- * extracted sfx_pcm.c PCM data; XGM not yet linked into Debug.md).
- * Stub no-op so the link resolves. DMC_SAMPLE_COUNT moved into
- * audio_driver.asm as an `equ` constant (gas MRI truncates xref
- * symbols to 8-bit relocation, which fails when the symbol lives
- * in .bss; an `equ` becomes an absolute constant baked into the
- * cmp.b immediate, which is what the driver expects).
- */
-void audio_sfx_play(unsigned char sfx)
-{
-    (void)sfx;
-    /* no-op until XGM SFX slice lands */
-}
+/* Phase 10.3 audio link: SFX stub retired 2026-05-15 — real impl
+ * provided by src/sgdk_adapter/audio_adapter.c::audio_sfx_play
+ * (now linked into Debug.md alongside data/audio/sfx_pcm.c). */

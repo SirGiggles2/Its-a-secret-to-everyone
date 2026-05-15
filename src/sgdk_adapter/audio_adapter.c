@@ -10,9 +10,9 @@
 
 #include "audio_adapter.h"
 #include "sfx_pcm.h"
-#include "z80_ctrl.h"
-#include "sound.h"
-#include "xgm.h"
+#include <z80_ctrl.h>
+#include <snd/sound.h>
+#include <snd/xgm.h>
 
 extern void music_play(unsigned char song_bitmap);
 extern void music_tick(void);
