@@ -34,7 +34,12 @@ void roomrom_bg_palette_load_palram_full(const unsigned char *palram32)
 {
     /* PAL0 <- NES BG palram bytes ($3F00..$3F0F).
      * PAL1 <- NES SPR palram bytes ($3F10..$3F1F).
-     * PAL2/PAL3 untouched (caller-managed). */
+     * PAL3 <- NES SPR sub-pal 2 colors at indices 1..3 (Phase 7 enemy
+     *         visibility fix 2026-05-15). Lets OWSP atlas tiles
+     *         (biased to indices 1..3) render with sub-pal 2 colors
+     *         (red enemies) when routed to PAL3 instead of PAL1
+     *         (which gives sub-pal 0 = items palette = yellow/gold).
+     * PAL2 untouched (caller-managed for items). */
     unsigned char i;
     load_slot16(0, palram32 + 0);
     load_slot16(1, palram32 + 16);
@@ -45,6 +50,14 @@ void roomrom_bg_palette_load_palram_full(const unsigned char *palram32)
             roomrom_bg_palette_nes_to_cram(palram32[16 + i]);
     }
     s_sprite_palram_loaded = 1u;
+
+    /* Build PAL3 = {0, sp2[0], sp2[1], sp2[2], 0..0}. NES sprite sub-pal
+     * 2 lives at palram32[$19..$1B] = palram32[25..27]. */
+    unsigned short pal3[16] = {0};
+    pal3[1] = roomrom_bg_palette_nes_to_cram(palram32[16 + 9]);
+    pal3[2] = roomrom_bg_palette_nes_to_cram(palram32[16 + 10]);
+    pal3[3] = roomrom_bg_palette_nes_to_cram(palram32[16 + 11]);
+    render_load_palette(3u, pal3);
 }
 
 const unsigned short *roomrom_bg_palette_get_sprite_subpal_cram(

@@ -209,8 +209,19 @@ static inline unsigned short translate_attrs(unsigned char nes_attrs,
     /* NES bit 5 = "behind BG" = priority LOW. Genesis bit = priority HIGH
      * (above plane A). Invert: NES prio=0 -> Genesis prio=1 (above). */
 
+    /* OW (CurLevel == 0): atlas is single-sub-pal-0-biased, so PAL1
+     * renders all OWSP enemies in items palette colors (yellow/gold).
+     * Route to PAL3 instead, which holds NES sub-pal 2 colors (red)
+     * loaded by roomrom_bg_palette_load_palram_full. Tektite + Octorok
+     * + Leever + most OW enemies use sub-pal 2 in NES Z1.
+     * UW (CurLevel != 0): atlas is 4x-replicated, each tile copy biased
+     * to its sub-pal slot in PAL1 — use PAL1 + sub_pal*34 tile offset
+     * (handled in translate_tile). */
+    unsigned char cur_level = nes_ram[NES_CUR_LEVEL_CELL];
+    unsigned short pal_bank = (cur_level == 0u) ? 3u : 1u;
+
     unsigned short sat = (unsigned short)(tile_id & 0x07FFu);
-    sat |= (unsigned short)(1u << 13);                      /* PAL1 */
+    sat |= (unsigned short)(pal_bank << 13);
     sat |= (unsigned short)((v_flip  & 0x01u) << 12);
     sat |= (unsigned short)((h_flip  & 0x01u) << 11);
     sat |= (unsigned short)((prio    & 0x01u) << 15);
