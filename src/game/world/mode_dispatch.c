@@ -16,6 +16,7 @@
 #include "mode_dispatch.h"
 #include "mode_continue_question.h"
 #include "mode_death.h"
+#include "mode_endlevel.h"
 #include "platform_abi.h"
 
 /* NES Variables.inc GameMode := $12. */
@@ -57,7 +58,7 @@ void mode_dispatch_update(void)
     case 0x0F: mode_stub(); break;  /* Mode F Elimination */
     case 0x10: mode_stub(); break;  /* Mode 10 Stairs */
     case 0x11: mode11_death_update(); break;  /* Phase 9.7 native (commit pending) */
-    case 0x12: mode_stub(); break;  /* Mode 12 EndLevel (focused-PR) */
+    case 0x12: mode12_endlevel_update(); break;  /* Phase 9.7 native */
     case 0x13: mode_stub(); break;  /* Mode 13 WinGame */
     default:   mode_stub(); break;
     }
