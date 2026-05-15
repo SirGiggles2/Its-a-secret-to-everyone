@@ -37,4 +37,10 @@ void anim_write_sprite_drained(unsigned int tile, unsigned int slot);
 void enemy_render_sweep_oam_to_sat(void);
 void enemy_render_reset_oam(void);
 
+/* 2026-05-15 native renderer. Reads per-slot latched sprite state
+ * (populated by anim_write_sprite_drained), emits <= 11 Genesis SAT
+ * entries per frame. ~50 → ~11 SAT writes per frame on busy rooms. */
+void enemy_render_native_sweep(void);
+void enemy_render_native_reset(void);
+
 #endif

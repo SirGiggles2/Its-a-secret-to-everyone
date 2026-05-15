@@ -15,8 +15,18 @@ local function find_addr(name)
     return nil
 end
 
-local frame_counter_addr = find_addr("s_frame_counter")  -- expected $00FFxxxx
-if not frame_counter_addr then frame_counter_addr = 0x00FF00C8 end
+local function find_addr_clean(name)
+    local fh = io.open(NM_PATH, "r")
+    for line in fh:lines() do
+        line = line:gsub("\r", "")
+        local a, _, n = line:match("^(%x+)%s+(%S)%s+(.+)$")
+        if n == name then fh:close(); return tonumber(a, 16) & 0xFFFFFF end
+    end
+    fh:close()
+    return nil
+end
+local frame_counter_addr = find_addr_clean("s_frame_counter")
+if not frame_counter_addr then frame_counter_addr = 0x00FF0104 end
 local fc_offset = frame_counter_addr - 0xFF0000   -- offset within 68K RAM domain
 print(string.format("s_frame_counter @ M68K $%06X  (68K RAM offset $%04X)",
     frame_counter_addr, fc_offset))

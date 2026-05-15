@@ -1614,12 +1614,15 @@ void roomrom_debug_tick(void)
              * cases are no-op stubs; the wired modes run their state
              * machines verbatim from NES Z_07.asm:1608+. */
             mode_dispatch_update();
-            /* Phase 7 substrate fix 2026-05-15 — sweep NES OAM mirror
-             * ($0200..$02FF, populated by enemy UPDATE bridges that
-             * call c_anim_write_sprite) into Genesis SAT slots 32-71.
-             * Without this, enemy LOGIC ticks correctly but enemy
-             * SPRITES produce zero pixels. */
-            enemy_render_sweep_oam_to_sat();
+            /* 2026-05-15 perf: switched from enemy_render_sweep_oam_to_sat
+             * (iterated 64 NES OAM entries → up to ~50 SAT writes/frame,
+             * costing ~30% frame budget) to enemy_render_native_sweep
+             * (iterates 11 alive ENEMY_LOOP slots → up to 11 SAT writes).
+             * anim_write_sprite_drained latches per-slot tile/attrs/x/y
+             * into a side-channel cache; native sweep emits 1 SAT entry
+             * per alive enemy from the cache. NES OAM scatter still
+             * happens for downstream compat but is no longer consumed. */
+            enemy_render_native_sweep();
         }
 
         u16 joy = JOY_readJoypad(JOY_1);

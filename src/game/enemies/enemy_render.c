@@ -18,6 +18,8 @@
 #include "platform_abi.h"
 #include "render_abi.h"
 #include "world/render/sprite_slots.h"
+#include "enemy_loop.h"   /* ENEMY_LOOP_SLOT_FIRST/LAST */
+#include "enemy_state.h"  /* ENEMY_X, ENEMY_Y, ENEMY_ALIVE_FLAG, ENEMY_THROWER_SLOT */
 
 /* NES RAM cells — see reference/aldonunez/Variables.inc. */
 #define NES_SPRITES_BASE        0x0200u   /* OAM mirror, 64 sprites x 4 bytes */
@@ -50,6 +52,28 @@ static inline void cycle_cur_sprite_index(void)
     RAM(NES_ROLLING_SPR_INDEX) = r;
 }
 
+/* 2026-05-15 native renderer cache: latched per-slot sprite state.
+ * anim_write_sprite_drained writes here in addition to NES OAM mirror.
+ * enemy_render_native_sweep() reads here (1 SAT write per alive slot)
+ * instead of iterating 64 NES OAM entries (~50 SAT writes/frame). */
+static unsigned char s_enemy_tile [ENEMY_LOOP_SLOT_LAST + 1u];
+static unsigned char s_enemy_attrs[ENEMY_LOOP_SLOT_LAST + 1u];
+static unsigned char s_enemy_x    [ENEMY_LOOP_SLOT_LAST + 1u];
+static unsigned char s_enemy_y    [ENEMY_LOOP_SLOT_LAST + 1u];
+static unsigned char s_enemy_seen [ENEMY_LOOP_SLOT_LAST + 1u];
+
+void enemy_render_native_reset(void)
+{
+    unsigned char i;
+    for (i = 0u; i <= ENEMY_LOOP_SLOT_LAST; ++i) {
+        s_enemy_tile[i]  = 0u;
+        s_enemy_attrs[i] = 0u;
+        s_enemy_x[i]     = 0u;
+        s_enemy_y[i]     = 0xF0u;  /* hidden until first anim_write */
+        s_enemy_seen[i]  = 0u;
+    }
+}
+
 void anim_write_sprite_drained(unsigned int tile, unsigned int slot)
 {
     /* Z_01.asm:5367-5371 — invincibility flash. */
@@ -57,6 +81,24 @@ void anim_write_sprite_drained(unsigned int tile, unsigned int slot)
     if (ENEMY_RENDER_INV_TIMER(slot) != 0u) {
         attrs = (unsigned char)(RAM(NES_FRAME_COUNTER) & 0x03u);
         RAM(NES_SCRATCH_03) = attrs;
+    }
+
+    /* 2026-05-15 native cache: latch per-slot tile/attrs/x/y so the
+     * native sweep can emit 1 Genesis SAT entry per alive enemy
+     * without iterating NES OAM. Use ENEMY_THROWER_SLOT (NES
+     * CurObjIndex) which enemy_loop_tick sets to the active slot
+     * before dispatching the update fn. Only latch the FIRST tile
+     * write per frame per slot (FrameCounter-aware reset elsewhere).
+     * Bounded write to avoid OOB if THROWER_SLOT > LAST. */
+    {
+        unsigned char cur_slot = ENEMY_THROWER_SLOT;
+        if (cur_slot <= ENEMY_LOOP_SLOT_LAST && s_enemy_seen[cur_slot] == 0u) {
+            s_enemy_tile[cur_slot]  = (unsigned char)tile;
+            s_enemy_attrs[cur_slot] = attrs;
+            s_enemy_x[cur_slot]     = ENEMY_RENDER_OBJ_X(slot);
+            s_enemy_y[cur_slot]     = ENEMY_RENDER_OBJ_Y(slot);
+            s_enemy_seen[cur_slot]  = 1u;
+        }
     }
 
     /* Z_01.asm:5373-5375 — pick OAM byte offset via SpriteOffsets. */
@@ -303,5 +345,65 @@ void enemy_render_sweep_oam_to_sat(void)
         render_set_sprite_inline((unsigned short)sat_slot,
                                  (signed short)-32, (signed short)-32,
                                  RENDER_SPRITE_SIZE(1, 1), 0u, 0u);
+    }
+}
+
+/* 2026-05-15 Genesis-native enemy renderer.
+ *
+ * Replaces the per-frame iteration of 64 NES OAM entries (each
+ * producing one Genesis SAT write) with a slot-keyed loop over the
+ * up-to-11 alive enemies. Cost dropped from ~50 SAT writes/frame
+ * to <= 11. Tile + attrs are latched into s_enemy_* by
+ * anim_write_sprite_drained during enemy update; this function reads
+ * the latch directly and emits one Genesis SIZE(1,2) SAT entry per
+ * alive enemy. The OAM scatter still happens (cheap) for compat with
+ * other consumers; enemy_render_sweep_oam_to_sat is retained for
+ * fallback but no longer called from the gameplay tick. */
+void enemy_render_native_sweep(void)
+{
+    unsigned int slot;
+    unsigned int sat_slot = ROOMROM_SPRITE_SLOT_ENEMY_FIRST;
+
+    /* Phase 1 diagnostic: increment sentinel at NES $07FE per frame
+     * so probe can verify this fn fires. */
+    nes_ram[0x07FEu] = (unsigned char)(nes_ram[0x07FEu] + 1u);
+
+    for (slot = ENEMY_LOOP_SLOT_FIRST; slot <= ENEMY_LOOP_SLOT_LAST; ++slot) {
+        if (ENEMY_ALIVE_FLAG(slot) == 0u) continue;
+        if (s_enemy_seen[slot] == 0u)     continue;
+        if (sat_slot > ENEMY_RENDER_SLOT_LAST) break;
+
+        unsigned char tile  = s_enemy_tile[slot];
+        unsigned char attrs = s_enemy_attrs[slot];
+        unsigned char x     = s_enemy_x[slot];
+        unsigned char y     = s_enemy_y[slot];
+
+        if (y == 0xF0u) continue;
+
+        unsigned short tile_id   = translate_tile(tile, attrs);
+        unsigned short sat_attrs = translate_attrs(attrs, tile_id);
+        unsigned short size      = RENDER_SPRITE_SIZE(1, 2);
+
+        unsigned char link = (sat_slot < ENEMY_RENDER_SLOT_LAST)
+                                 ? (unsigned char)(sat_slot + 1u) : 0u;
+        render_set_sprite_inline((unsigned short)sat_slot,
+                                 (signed short)x, (signed short)y,
+                                 size, sat_attrs, link);
+        ++sat_slot;
+    }
+
+    /* Terminator: hide remaining SAT slots via chain break (link=0). */
+    if (sat_slot <= ENEMY_RENDER_SLOT_LAST) {
+        render_set_sprite_inline((unsigned short)sat_slot,
+                                 (signed short)-32, (signed short)-32,
+                                 RENDER_SPRITE_SIZE(1, 1), 0u, 0u);
+    }
+
+    /* Clear seen-flags for next frame; tile/attrs/x/y stay latched. */
+    {
+        unsigned char i;
+        for (i = 0u; i <= ENEMY_LOOP_SLOT_LAST; ++i) {
+            s_enemy_seen[i] = 0u;
+        }
     }
 }
