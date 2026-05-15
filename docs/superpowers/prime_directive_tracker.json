@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-05-15T01:01:53.395659+00:00",
+  "generated_at": "2026-05-15T01:37:29.836461+00:00",
   "generated_by": "tools/audit/primedirective/prime_refresh.py",
   "plan": {
     "path": "docs/superpowers/plans/2026-05-02-title-roomrom-full-port-master-plan.md",
@@ -1112,15 +1112,16 @@
     {
       "phase_id": "9",
       "gate_step": "phase97_death_continue_modes",
-      "reason": "RESOLVED 2026-05-15T01:36Z (Modes 8 + 11 + 12 all native). (1) src/game/world/mode_continue_question.c verbatim NES Z_05.asm:2207-2306 UpdateMode8ContinueQuestion_Full: ASL GameSubmode dispatch, DrawCursor, ActivateOption (Start->ORA $80 + ObjTimer+1=$40), Select cycle (0->1->2->0), AnimateSelection (every-4-frame NT-attr flash via DynTileBuf), HandleActivated (heart-restore + GameMode set per Mode8SelectionToMode + Retry IncrementsIsUpdatingMode). 5 NES static tables ported verbatim. (2) src/game/world/mode_death.c (commit 9faa413e) verbatim NES Z_05.asm:2521-2704 UpdateMode11Death_Full: 13 sub-state machine Sub0..SubC. Sub0 init, Sub1-Sub6 swirl ObjectAttr cycling, Sub7 AnimateWorldFading, Sub8 Link_EndMoveAndAnimate, Sub9 sprite0 latch, SubA pause, SubB save-status, SubC -> Mode 8 ContinueQuestion. (3) src/game/world/mode_endlevel.c verbatim NES Z_05.asm:5534-5606 UpdateMode12EndLevel_Full: 5 sub-state machine. Sub0 delay (ObjTimer=$30), Sub1 palette flash ($18 <-> $78 every 4 frames + seed World_IsFillingHearts=2), Sub2 UpdateHeartsAndRupees wait, Sub3 UpdateWorldCurtainEffect + ObjX[12]<$11 column-reaches-middle, Sub4 HideAllSprites + clear PPUCTRL bit 2 + EndGameMode12. Stubs deferred for not-yet-drained NES helpers (ChooseAttrSourceAndDestForSubmode, AnimateWorldFading, Link_EndMoveAndAnimate, HideObjectSprites, DrawLinkLiftingItem, UpdateHeartsAndRupees, UpdateWorldCurtainEffect, HideAllSprites, EndGameMode12) — bodies port in focused follow-up tasks. All three wired into mode_dispatch.c (cases 0x08, 0x11, 0x12).",
+      "reason": "RESOLVED 2026-05-15T01:36Z (Modes 8 + 11 + 12 all native). (1) src/game/world/mode_continue_question.c verbatim NES Z_05.asm:2207-2306 UpdateMode8ContinueQuestion_Full: ASL GameSubmode dispatch, DrawCursor, ActivateOption (Start->ORA $80 + ObjTimer+1=$40), Select cycle (0->1->2->0), AnimateSelection (every-4-frame NT-attr flash via DynTileBuf), HandleActivated (heart-restore + GameMode set per Mode8SelectionToMode + Retry IncrementsIsUpdatingMode). 5 NES static tables ported verbatim. (2) src/game/world/mode_death.c (commit 9faa413e) verbatim NES Z_05.asm:2521-2704 UpdateMode11Death_Full: 13 sub-state machine Sub0..SubC. Sub0 init, Sub1-Sub6 swirl ObjectAttr cycling, Sub7 AnimateWorldFading, Sub8 Link_EndMoveAndAnimate, Sub9 sprite0 latch, SubA pause, SubB save-status, SubC -> Mode 8 ContinueQuestion. (3) src/game/world/mode_endlevel.c verbatim NES Z_05.asm:5534-5606 UpdateMode12EndLevel_Full: 5 sub-state machine. Sub0 delay (ObjTimer=$30), Sub1 palette flash ($18 <-> $78 every 4 frames + seed World_IsFillingHearts=2), Sub2 UpdateHeartsAndRupees wait, Sub3 UpdateWorldCurtainEffect + ObjX[12]<$11 column-reaches-middle, Sub4 HideAllSprites + clear PPUCTRL bit 2 + EndGameMode12. Stubs deferred for not-yet-drained NES helpers (ChooseAttrSourceAndDestForSubmode, AnimateWorldFading, Link_EndMoveAndAnimate, HideObjectSprites, DrawLinkLiftingItem, UpdateHeartsAndRupees, UpdateWorldCurtainEffect, HideAllSprites, EndGameMode12) \u2014 bodies port in focused follow-up tasks. All three wired into mode_dispatch.c (cases 0x08, 0x11, 0x12).",
       "recorded_at": "2026-05-14T05:16:47.574127+00:00",
       "resolved_at": "2026-05-15T01:30:00+00:00"
     },
     {
       "phase_id": "10",
       "gate_step": "task_10_3_audio_link_into_debug_md",
-      "reason": "src/audio_driver.asm (vasm Motorola syntax) + data/audio/songs.c/sfx*.c/pcm_samples.c + src/sgdk_adapter/audio_adapter.c not linked into tools/debug/build_debug.py. Title-frontend era linked these prior to dual-ROM retire; restoring requires adding a vasm compile step alongside m68k-elf-gcc. Tracked as Phase 11 (Debug.md frontend gap-fill) follow-up because that phase owns the build-chain integration.",
-      "recorded_at": "2026-05-14T05:26:36.780914+00:00"
+      "reason": "RESOLVED 2026-05-15T01:41Z. Audio fully linked into Debug.md: (1) src/audio_driver.asm linked via tools/debug/build_debug.py compile_asm MRI mode (commits 6191e911 + 486f67ba); (2) audio_vblank_hook installs music_tick as SYS_setVIntCallback so notes advance at VBlank; (3) src/sgdk_adapter/audio_adapter.c + data/audio/sfx_pcm.c (7 NES DMC samples, 59KB) now linked — boot calls audio_xgm_init() to load Z80_DRIVER_XGM + register PCM IDs 64..70. dmc_trigger -> audio_sfx_play now resolves to real XGM impl (round-robin SOUND_PCM_CH2..CH4) instead of no-op stub. FM/PSG music unchanged on M68K; orphan data/audio/songs.c + pcm_samples.c remain unlinked (superseded by music_blob.dat incbin in audio_driver.asm). Regression matrix 11/11 GREEN post-link.",
+      "recorded_at": "2026-05-14T05:26:36.780914+00:00",
+      "resolved_at": "2026-05-15T01:41:00+00:00"
     },
     {
       "phase_id": "10",
@@ -1248,15 +1249,11 @@
       "sha256": "10e54d0b214148cc26bd3d7f575e50484bec899ee7d7989b9a455f9e26be155d",
       "ok": true
     },
-    "git_head": "2adb0e505b0d6aadfcc9c6bbff7438b309a53192",
-    "dirty_paths_relevant": [
-      "tools/debug/build_debug.py",
-      "src/game/world/mode_continue_question.c",
-      "src/game/world/mode_continue_question.h"
-    ],
+    "git_head": "18bac3207d953ffd0efdd73eddc2a8a40b4dbdf3",
+    "dirty_paths_relevant": [],
     "evidence_paths_present": true,
     "complete_phase_invariant_ok": true,
-    "last_refresh_at": "2026-05-15T01:01:53.456959+00:00",
+    "last_refresh_at": "2026-05-15T01:37:29.895612+00:00",
     "stale_reasons": []
   },
   "blockers": []
