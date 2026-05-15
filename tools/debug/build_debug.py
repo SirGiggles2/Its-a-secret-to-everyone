@@ -129,6 +129,8 @@ ROOMROM_C_SOURCES = [
     ("src/game/world/level_info_install.c",     "level_info_install.o"),
     # Phase 7 enemy render bridge — NES OAM mirror -> Genesis SAT sweep.
     ("src/game/enemies/enemy_render.c",         "enemy_render.o"),
+    # Phase 7 substrate — ROOM_BOUNDS setup (drained roomld_setup_obj_room_bounds).
+    ("src/oracle/room/room_load_runtime.c",     "room_load_runtime.o"),
     ("src/game/items/item_dispatch.c", "item_dispatch.o"),
     ("RoomRom/src/main.c", "roomrom_main.o"),
     ("src/game/world/render/ow_render.c", "world_ow_render.o"),  # Phase 12.2 promoted

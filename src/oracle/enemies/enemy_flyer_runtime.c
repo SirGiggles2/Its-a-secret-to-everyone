@@ -203,11 +203,19 @@ void enrt_move_flyer(unsigned int slot) {
 }
 
 void enrt_bound_flyer(unsigned int slot) {
+    /* Drain Rule D1 (NES asm wins ties): per Z_04.asm:11649 BoundFlyer
+     * the post-bounds check is `LDA $0F; BNE Exit` — NOT BLOCKED ($0F
+     * != 0) exits without reversing direction. BLOCKED ($0F == 0)
+     * falls through to ReverseObjDir8. Original drained code had the
+     * sense inverted (returned on blocked, reversed on not-blocked)
+     * which caused Tektites/jumpers to reverse direction every frame
+     * even in open rooms — they stayed pinned because consecutive
+     * reversals cancelled motion. Fix 2026-05-15. */
     ENEMY_FRAME_FLAGS = ENEMY_DIR(slot);
     c_bound_direction_horizontally(slot);
     if (ENEMY_TYPE(slot) != 0x20)
         c_bound_direction_vertically(slot);
-    if (ENEMY_FRAME_FLAGS == 0)
+    if (ENEMY_FRAME_FLAGS != 0)
         return;
     c_reverse_obj_dir8(slot);
 }
