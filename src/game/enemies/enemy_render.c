@@ -130,6 +130,15 @@ void enemy_render_reset_oam(void)
 #if ROOMROM_SPRITE_SLOT_LAST_H32 > 63u
 #  error "H32 mode supports only 64 hardware SAT slots."
 #endif
+
+/* 2026-05-15 perf-finding: sweep + render_set_sprite_full chain costs
+ * ~30% of frame budget when 11 enemies are alive. Capping the write
+ * count did NOT recover proportionally; the per-call cost is irreducible
+ * at this layer. Long-term fix = Genesis-native enemy renderer that
+ * reads ENEMY_X/Y/TYPE/DRAW_FRAME directly and writes 1 SAT entry per
+ * alive enemy (planned next commit). For now, sweep iterates the full
+ * H32 enemy slot range. */
+#define ENEMY_RENDER_SLOT_LAST ROOMROM_SPRITE_SLOT_LAST_H32
 /* NES Z1 OAM mirror is 64 sprites x 4 bytes = 256 bytes at $0200..$02FF.
  * Drained Anim_WriteSprite (Z_01.asm:5365) writes via SpriteOffsets[] —
  * scattered offsets like $60, $BC, $64, $B8 not linear. Sweep must
@@ -238,7 +247,10 @@ void enemy_render_sweep_oam_to_sat(void)
     unsigned int i;
     unsigned int sat_slot = ROOMROM_SPRITE_SLOT_ENEMY_FIRST;
 
-    for (i = 0u; i < NES_OAM_SLOT_COUNT; ++i) {
+    /* 2026-05-15 perf: NES Z1's SpriteOffsets table (k_sprite_offsets)
+     * scatters Anim_WriteSprite writes across byte offsets $60..$FC =
+     * OAM slot 24..63. Slots 0..23 are NEVER populated. Skip them. */
+    for (i = 24u; i < NES_OAM_SLOT_COUNT; ++i) {
         unsigned short base = (unsigned short)(NES_SPRITES_BASE + i * 4u);
         unsigned char y     = RAM(base + 0u);
         unsigned char tile  = RAM(base + 1u);
@@ -272,11 +284,11 @@ void enemy_render_sweep_oam_to_sat(void)
         signed short gy = (signed short)y;
         signed short gx = (signed short)x;
 
-        unsigned char link = (sat_slot < ROOMROM_SPRITE_SLOT_LAST_H32)
+        unsigned char link = (sat_slot < ENEMY_RENDER_SLOT_LAST)
                                  ? (unsigned char)(sat_slot + 1u) : 0u;
         render_set_sprite_full((unsigned short)sat_slot, gx, gy, size, sat_attrs, link);
         ++sat_slot;
-        if (sat_slot > ROOMROM_SPRITE_SLOT_LAST_H32) break;
+        if (sat_slot > ENEMY_RENDER_SLOT_LAST) break;
     }
 
     /* 2026-05-15 perf fix: drop the up-to-54-slot pad loop. Write a
@@ -286,7 +298,7 @@ void enemy_render_sweep_oam_to_sat(void)
      * ignored regardless of their stale contents. Saves up to ~50
      * render_set_sprite_full calls per frame in sparse rooms (~3-5%
      * of frame budget on Tektite room). */
-    if (sat_slot <= ROOMROM_SPRITE_SLOT_LAST_H32) {
+    if (sat_slot <= ENEMY_RENDER_SLOT_LAST) {
         render_set_sprite_full((unsigned short)sat_slot, (signed short)-32,
                                (signed short)-32, RENDER_SPRITE_SIZE(1, 1),
                                0u, 0u);

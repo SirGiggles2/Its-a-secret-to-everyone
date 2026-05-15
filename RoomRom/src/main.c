@@ -1333,13 +1333,16 @@ static void edge_load_or_clamp(void)
                 roomrom_uw_room_render_set_live_door_priority(
                     s_active_slot_x, s_transition_row_base, 0u);
             }
-            /* HUD underlay sprite strip retired 2026-05-15: BG_A tile 0
-             * (PAL0 color 0 = black) is the only source of HUD opacity.
-             * V-scroll exposes both the active row base and the incoming
-             * staging row base simultaneously; clear both so neither end
-             * leaves a one-frame transparent HUD gap. */
-            clear_hud_underlay_for_row_base(s_active_row_base);
-            clear_hud_underlay_for_row_base(s_transition_row_base);
+            /* DELIBERATELY DO NOT CALL clear_hud_underlay_for_row_base
+             * during v-scroll staging. The transition room render writes
+             * to plane rows that include the active row_base's HUD
+             * underlay zone (e.g. V_UP target_row_base=42 stages the new
+             * room at plane rows 49..63 + 0..6 wrapping). Clearing
+             * rows 0..6 here would erase the transition room's top 7
+             * tile rows, producing a black bar mid-scroll between
+             * source and destination rooms. The scroll-completion
+             * underlay clear at line ~1539 handles final-state opacity
+             * after view stabilizes. */
         }
         scroll_init_fixed_point_steps();
     }
