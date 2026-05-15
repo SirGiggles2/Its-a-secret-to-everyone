@@ -100,6 +100,36 @@ void render_set_sprite_full(unsigned short slot,
  * sprite slots. Wraps VDP_updateSprites(count, DMA_QUEUE). */
 void render_update_sprites(unsigned short count);
 
+/* 2026-05-15 perf: inline SAT cache writer. PC histogram showed ~30%
+ * of frame in the render_set_sprite_full + VDP_setSpriteFull function
+ * chain when 11 enemies were alive (54 SAT writes/frame). Inlining the
+ * 5 struct-field writes directly bypasses two layers of function call
+ * overhead per write. SGDK's vdpSpriteCache[] layout is 8 bytes per
+ * entry, exposed here without pulling <genesis.h> into src/game/. */
+typedef struct {
+    signed short   y;          /* offset 0; on-VDP y = y + 0x80         */
+    unsigned char  size;       /* offset 2; SPRITE_SIZE-encoded nibble  */
+    unsigned char  link;       /* offset 3; next-SAT-slot link byte     */
+    unsigned short attribut;   /* offset 4; prio/pal/flip/tile word     */
+    signed short   x;          /* offset 6; on-VDP x = x + 0x80         */
+} render_sprite_entry_t;
+extern render_sprite_entry_t *const g_render_sat_cache;
+
+static inline void render_set_sprite_inline(unsigned short slot,
+                                            signed short  x,
+                                            signed short  y,
+                                            unsigned short size,
+                                            unsigned short attr,
+                                            unsigned char link)
+{
+    render_sprite_entry_t *e = &g_render_sat_cache[slot];
+    e->y        = (signed short)(y + 0x80);
+    e->size     = (unsigned char)size;
+    e->link     = link;
+    e->attribut = attr;
+    e->x        = (signed short)(x + 0x80);
+}
+
 /* Phase 12.2 SGDK-1 cleanup: portable replacements for SGDK
  * SPRITE_SIZE / TILE_ATTR_FULL / PAL0..PAL3 macros so src/game/
  * TUs do not need <genesis.h>. Bit-math identical to SGDK. */

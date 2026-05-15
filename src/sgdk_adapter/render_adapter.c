@@ -350,6 +350,15 @@ void render_set_sprite_full(unsigned short slot,
                       (u8)size, (u16)attr, (u8)link);
 }
 
+/* 2026-05-15 perf: expose SGDK's CPU-side SAT cache as a render_abi
+ * typed pointer. src/game/ can write SAT entries inline via
+ * render_set_sprite_inline() (declared in render_abi.h) without
+ * pulling <genesis.h>. SGDK's VDPSprite struct (sgdk/inc/vdp_spr.h)
+ * is 8 bytes — matches render_sprite_entry_t exactly: s16 y,
+ * u8 size, u8 link, u16 attribut, s16 x. */
+render_sprite_entry_t *const g_render_sat_cache =
+    (render_sprite_entry_t *)vdpSpriteCache;
+
 /* Phase 12.2 SGDK-1 cleanup: SAT upload for `count` first slots,
  * via SGDK DMA queue. Wraps VDP_updateSprites(count, DMA_QUEUE). */
 void render_update_sprites(unsigned short count)

@@ -286,7 +286,8 @@ void enemy_render_sweep_oam_to_sat(void)
 
         unsigned char link = (sat_slot < ENEMY_RENDER_SLOT_LAST)
                                  ? (unsigned char)(sat_slot + 1u) : 0u;
-        render_set_sprite_full((unsigned short)sat_slot, gx, gy, size, sat_attrs, link);
+        render_set_sprite_inline((unsigned short)sat_slot, gx, gy,
+                                 size, sat_attrs, link);
         ++sat_slot;
         if (sat_slot > ENEMY_RENDER_SLOT_LAST) break;
     }
@@ -299,8 +300,8 @@ void enemy_render_sweep_oam_to_sat(void)
      * render_set_sprite_full calls per frame in sparse rooms (~3-5%
      * of frame budget on Tektite room). */
     if (sat_slot <= ENEMY_RENDER_SLOT_LAST) {
-        render_set_sprite_full((unsigned short)sat_slot, (signed short)-32,
-                               (signed short)-32, RENDER_SPRITE_SIZE(1, 1),
-                               0u, 0u);
+        render_set_sprite_inline((unsigned short)sat_slot,
+                                 (signed short)-32, (signed short)-32,
+                                 RENDER_SPRITE_SIZE(1, 1), 0u, 0u);
     }
 }
