@@ -96,19 +96,34 @@ def test_shared_bg_b_is_not_used_for_hud_shadow() -> None:
 
 
 def test_window_hud_has_fixed_opaque_backdrop() -> None:
-    """Window tile color 0 is transparent on Genesis. A fixed low-priority
-    black sprite underlay plus high-priority Window HUD tiles keeps the HUD
-    black while the shared room surface scrolls underneath."""
+    """Window tile color 0 is transparent on Genesis. 2026-05-15: the
+    sprite-strip HUD backdrop was retired. Opacity now comes from BG_A
+    tile 0 (PAL0 color 0) via clear_hud_underlay_for_row_base(). H32 SAT
+    is gameplay-only: 0..9 Link/items, 10..63 enemy bridge, per
+    src/game/world/render/sprite_slots.h."""
     hud_c = read("RoomRom/src/roomrom_hud.c")
-    sprites_c = read("RoomRom/src/roomrom_sprites.c")
+    main_c = read("RoomRom/src/main.c")
+    sprites_c = read("src/game/world/render/sprite_render.c")
+    slots_h = read("src/game/world/render/sprite_slots.h")
+
     need(hud_c, "TILE_ATTR_FULL(PAL0, 1, 0, 0,", "high-priority Window HUD tiles")
-    need(sprites_c, "ROOMROM_HUD_BACKDROP_FIRST_SLOT", "HUD backdrop SAT slot range")
-    need(sprites_c, "ROOMROM_HUD_BACKDROP_SPRITE_COUNT 48u", "HUD backdrop sprite cover")
-    need(sprites_c, "ROOMROM_HUD_BACKDROP_TILE", "dedicated black backdrop tile")
-    need(sprites_c, "roomrom_sprites_set_hud_backdrop", "HUD backdrop SAT writer")
-    need(sprites_c, "VDP_updateSprites(ROOMROM_SPRITE_CACHE_COUNT",
-         "one-time HUD backdrop SAT upload")
-    need(sprites_c, "ROOMROM_HUD_BACKDROP_FIRST_SLOT", "magic-shot chain keeps HUD backdrop")
+
+    # Slot contract single source of truth.
+    need(slots_h, "ROOMROM_SPRITE_SLOT_ENEMY_FIRST     10u", "enemy-first slot constant")
+    need(slots_h, "ROOMROM_SPRITE_SLOT_LAST_H32        63u", "H32 SAT last slot")
+    need(slots_h, "ROOMROM_SPRITE_UPLOAD_COUNT_H32     64u", "H32 upload count")
+
+    # HUD-backdrop sprite-strip symbols must be fully retired.
+    reject(sprites_c, "ROOMROM_HUD_BACKDROP_FIRST_SLOT", "retired HUD backdrop slot ref")
+    reject(sprites_c, "roomrom_sprites_set_hud_backdrop", "retired HUD backdrop writer")
+    reject(sprites_c, "k_hud_backdrop_chr", "retired HUD backdrop CHR blob")
+
+    # BG_A tile-0 underlay path is wired and full-H32 SAT upload runs.
+    need(main_c, "clear_hud_underlay_for_row_base", "BG_A HUD underlay primitive")
+    need(sprites_c, "render_update_sprites(ROOMROM_SPRITE_UPLOAD_COUNT_H32",
+         "H32 SAT 64-slot upload")
+    need(sprites_c, "ROOMROM_SPRITE_SLOT_ENEMY_FIRST",
+         "magic-shot/projectile chain links into enemy-first slot")
 
 
 def test_vertical_scroll_suppresses_door_priority_under_hud() -> None:

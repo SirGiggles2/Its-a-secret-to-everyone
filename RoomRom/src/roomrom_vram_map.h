@@ -108,12 +108,10 @@
 #define ROOMROM_ITEM_TILE_BASE_PAL(s) \
     (ROOMROM_ITEM_TILE_BASE + (unsigned short)(s) * ROOMROM_ITEM_TILE_COUNT_PER_PAL)
 
-/* Screen-fixed black sprite underlay behind the Window HUD. The Window plane
- * treats color 0 as transparent, so vertical room scrolls need this opaque
- * layer to keep the HUD background black without changing room CHR. */
-#define ROOMROM_HUD_BACKDROP_TILE_BASE \
-    (ROOMROM_ITEM_TILE_BASE + ROOMROM_ITEM_SUBPAL_COUNT * ROOMROM_ITEM_TILE_COUNT_PER_PAL)
-#define ROOMROM_HUD_BACKDROP_TILE_COUNT 8u
+/* HUD backdrop sprite-strip retired 2026-05-15. Opaque black HUD underlay
+ * now comes from BG_A tile 0 (PAL0 color 0), driven by
+ * clear_hud_underlay_for_row_base() in RoomRom/src/main.c. The 8 tiles
+ * previously reserved here are freed back into post-item-bank headroom. */
 
 /* PR-5 CHR-BOSSES: per-level boss CHR. NES Z1 mirrors this exactly --
  * z_03.asm:91 FetchPatternBlockUWBoss writes the boss bank into PPU

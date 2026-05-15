@@ -3,6 +3,7 @@
  * use portable RENDER_* macros from render_abi.h. */
 #include "sprite_render.h"
 #include "render_abi.h"
+#include "sprite_slots.h"
 #include "../../../../RoomRom/src/roomrom_vram_map.h"
 /* FU3+FU4: renderer reads from atlas/items_chr_x4 (byte-identical to
  * legacy expanded_sprite_chr via FU2).  ROOMROM_ITEM_TILE_* tile-index
@@ -64,31 +65,10 @@ extern const unsigned char common_chr[7616];
 #define ATTACK_POSE_COUNT       4u
 #define ATTACK_VRAM_TILE        (LINK_VRAM_TILE + LINK_POSE_COUNT * LINK_TILES_PER_POSE)
 
-/* Fixed black HUD underlay. The Window plane's color 0 is transparent, so
- * it needs a screen-fixed opaque layer behind it while BG_A/B scroll. Use
- * the 14-tile VRAM headroom immediately after the item bank; eight black
- * tiles are enough for a 16x32 sprite strip. */
-#define ROOMROM_HUD_BACKDROP_TILE ROOMROM_HUD_BACKDROP_TILE_BASE
-#define ROOMROM_HUD_BACKDROP_FIRST_SLOT 10u
-/* H32 SAT fits 64 hardware sprites. Pre-2026-05-15 layout used
- * 48 HUD-backdrop sprites (16 cols x 3 rows) which left only slots
- * 58..63 for enemies — enemy SAT writes at slots 64+ landed in
- * unused VRAM and never got evaluated by VDP.
- *
- * Compact layout:
- *   Row 0 (y=0..31):  16 sprites of SIZE(2, 4) = 16x32 each
- *                     (kept 16x wide because 8-tile budget caps the
- *                     sprite to 2 tiles wide x 4 tall = 8 tiles).
- *   Row 32 (y=32..47): 8 sprites of SIZE(4, 2) = 32x16 each (8 tiles).
- *   Row 48 (y=48..55): 8 sprites of SIZE(4, 1) = 32x8 each (4 tiles).
- * Total: 16 + 8 + 8 = 32 sprites. */
-#define ROOMROM_HUD_BACKDROP_SPRITE_COUNT 32u
-#define ROOMROM_HUD_BACKDROP_LAST_SLOT \
-    (ROOMROM_HUD_BACKDROP_FIRST_SLOT + ROOMROM_HUD_BACKDROP_SPRITE_COUNT - 1u)
-
-#if (ROOMROM_HUD_BACKDROP_TILE + ROOMROM_HUD_BACKDROP_TILE_COUNT) > 1536u
-#error "HUD backdrop tiles overlap VDP table region"
-#endif
+/* HUD backdrop sprite strip retired 2026-05-15. H32 SAT is gameplay-only;
+ * opaque black HUD underlay comes from BG_A tile 0 (PAL0 color 0) via
+ * clear_hud_underlay_for_row_base() in RoomRom/src/main.c. Slot contract
+ * lives in sprite_slots.h: 0..9 gameplay, 10..63 enemy bridge. */
 
 /* Phase 1: item atlas tiles live in their own contiguous block starting
  * after Link attack poses. Tile offsets come from atlas/items_chr_x4.h
@@ -143,8 +123,9 @@ static const link_pose_def_t attack_poses[ATTACK_POSE_COUNT] = {
  * of roomrom_atlas_items_x4[][]. */
 static unsigned char s_item_chr_variant = 0u;  /* ROOMROM_ITEM_VARIANT_ORIG */
 
-#define ROOMROM_SPRITE_CACHE_COUNT \
-    (ROOMROM_HUD_BACKDROP_FIRST_SLOT + ROOMROM_HUD_BACKDROP_SPRITE_COUNT)
+/* Cache only covers gameplay slots 0..9. Enemy slots 10..63 are written
+ * directly via render_abi (enemy_render.c) without per-slot caching. */
+#define ROOMROM_SPRITE_CACHE_COUNT (ROOMROM_SPRITE_SLOT_GAMEPLAY_LAST + 1u)
 
 typedef struct {
     signed short x;
@@ -156,49 +137,6 @@ typedef struct {
 } roomrom_sprite_cache_t;
 
 static roomrom_sprite_cache_t s_sprite_cache[ROOMROM_SPRITE_CACHE_COUNT];
-
-static const unsigned char k_hud_backdrop_chr[
-    ROOMROM_HUD_BACKDROP_TILE_COUNT * 32u] = {
-    0x44,0x44,0x44,0x44, 0x44,0x44,0x44,0x44,
-    0x44,0x44,0x44,0x44, 0x44,0x44,0x44,0x44,
-    0x44,0x44,0x44,0x44, 0x44,0x44,0x44,0x44,
-    0x44,0x44,0x44,0x44, 0x44,0x44,0x44,0x44,
-
-    0x44,0x44,0x44,0x44, 0x44,0x44,0x44,0x44,
-    0x44,0x44,0x44,0x44, 0x44,0x44,0x44,0x44,
-    0x44,0x44,0x44,0x44, 0x44,0x44,0x44,0x44,
-    0x44,0x44,0x44,0x44, 0x44,0x44,0x44,0x44,
-
-    0x44,0x44,0x44,0x44, 0x44,0x44,0x44,0x44,
-    0x44,0x44,0x44,0x44, 0x44,0x44,0x44,0x44,
-    0x44,0x44,0x44,0x44, 0x44,0x44,0x44,0x44,
-    0x44,0x44,0x44,0x44, 0x44,0x44,0x44,0x44,
-
-    0x44,0x44,0x44,0x44, 0x44,0x44,0x44,0x44,
-    0x44,0x44,0x44,0x44, 0x44,0x44,0x44,0x44,
-    0x44,0x44,0x44,0x44, 0x44,0x44,0x44,0x44,
-    0x44,0x44,0x44,0x44, 0x44,0x44,0x44,0x44,
-
-    0x44,0x44,0x44,0x44, 0x44,0x44,0x44,0x44,
-    0x44,0x44,0x44,0x44, 0x44,0x44,0x44,0x44,
-    0x44,0x44,0x44,0x44, 0x44,0x44,0x44,0x44,
-    0x44,0x44,0x44,0x44, 0x44,0x44,0x44,0x44,
-
-    0x44,0x44,0x44,0x44, 0x44,0x44,0x44,0x44,
-    0x44,0x44,0x44,0x44, 0x44,0x44,0x44,0x44,
-    0x44,0x44,0x44,0x44, 0x44,0x44,0x44,0x44,
-    0x44,0x44,0x44,0x44, 0x44,0x44,0x44,0x44,
-
-    0x44,0x44,0x44,0x44, 0x44,0x44,0x44,0x44,
-    0x44,0x44,0x44,0x44, 0x44,0x44,0x44,0x44,
-    0x44,0x44,0x44,0x44, 0x44,0x44,0x44,0x44,
-    0x44,0x44,0x44,0x44, 0x44,0x44,0x44,0x44,
-
-    0x44,0x44,0x44,0x44, 0x44,0x44,0x44,0x44,
-    0x44,0x44,0x44,0x44, 0x44,0x44,0x44,0x44,
-    0x44,0x44,0x44,0x44, 0x44,0x44,0x44,0x44,
-    0x44,0x44,0x44,0x44, 0x44,0x44,0x44,0x44,
-};
 
 void roomrom_sprites_invalidate_cache(void)
 {
@@ -235,37 +173,6 @@ static void roomrom_sprites_set_full_cached(unsigned short slot,
 }
 
 #define VDP_setSpriteFull roomrom_sprites_set_full_cached
-
-static void roomrom_sprites_set_hud_backdrop(void)
-{
-    const unsigned short attr = RENDER_TILE_ATTR_FULL(RENDER_PAL0, 0, 0, 0, ROOMROM_HUD_BACKDROP_TILE);
-    unsigned short slot = ROOMROM_HUD_BACKDROP_FIRST_SLOT;
-    unsigned short x;
-
-    /* H32 SAT layout (64 hardware sprite slots total).
-     * Row 0 keeps 16 cols of SIZE(2, 4) because the 8-tile backdrop
-     * budget caps sprite width at 2 tiles (8 tiles = 2 cols x 4 rows).
-     * Rows 32 + 48 use 32-wide sprites (SIZE(4, 2) + SIZE(4, 1)) which
-     * fit within 8 tiles. Total 32 sprites covering 256x56 area. */
-    for (x = 0u; x < 256u; x = (unsigned short)(x + 16u)) {
-        VDP_setSpriteFull(slot, (signed short)x, (signed short)0, RENDER_SPRITE_SIZE(2, 4),
-                          attr, (unsigned short)(slot + 1u));
-        slot++;
-    }
-    for (x = 0u; x < 256u; x = (unsigned short)(x + 32u)) {
-        VDP_setSpriteFull(slot, (signed short)x, (signed short)32, RENDER_SPRITE_SIZE(4, 2),
-                          attr, (unsigned short)(slot + 1u));
-        slot++;
-    }
-    for (x = 0u; x < 256u; x = (unsigned short)(x + 32u)) {
-        unsigned short link = (slot == ROOMROM_HUD_BACKDROP_LAST_SLOT)
-                                  ? 42u   /* enemy chain start in H32 layout */
-                                  : (unsigned short)(slot + 1u);
-        VDP_setSpriteFull(slot, (signed short)x, (signed short)48, RENDER_SPRITE_SIZE(4, 1),
-                          attr, link);
-        slot++;
-    }
-}
 
 void roomrom_sprites_set_redux(unsigned char redux)
 {
@@ -346,9 +253,6 @@ void roomrom_sprites_upload_persistent_chr(void)
         }
     }
 
-    render_chr_upload((unsigned short)(ROOMROM_HUD_BACKDROP_TILE * 32u),
-                      k_hud_backdrop_chr,
-                      (unsigned short)sizeof(k_hud_backdrop_chr));
 }
 
 void roomrom_sprites_upload_items_chr(void)
@@ -479,10 +383,9 @@ void roomrom_sprites_spawn_link(short x, short y)
                       RENDER_TILE_ATTR_FULL(RENDER_PAL1, 1, 0, 0,
                           (unsigned short)(ROOMROM_ITEM_TILE_BASE_PAL(0)
                               + ROOMROM_ITEM_TILE_MAGIC_SHOT_V)),
-                      ROOMROM_HUD_BACKDROP_FIRST_SLOT);
-    roomrom_sprites_set_hud_backdrop();
+                      ROOMROM_SPRITE_SLOT_ENEMY_FIRST);
     roomrom_sprites_set_link_pose(x, y, LINK_FACE_DOWN, 0u);
-    render_update_sprites(ROOMROM_SPRITE_CACHE_COUNT);
+    render_update_sprites(ROOMROM_SPRITE_UPLOAD_COUNT_H32);
 }
 
 void roomrom_sprites_set_link_pos(short x, short y)
@@ -866,27 +769,27 @@ void roomrom_sprites_set_magic_shot(short x, short y, link_face_t face,
     case LINK_FACE_UP:
         VDP_setSpriteFull(9, (signed short)x, (signed short)y, RENDER_SPRITE_SIZE(2, 2),
                           RENDER_TILE_ATTR_FULL(RENDER_PAL1, 1, 0, 0, tile_v),
-                          ROOMROM_HUD_BACKDROP_FIRST_SLOT);
+                          ROOMROM_SPRITE_SLOT_ENEMY_FIRST);
         break;
     case LINK_FACE_DOWN:
         VDP_setSpriteFull(9, (signed short)x, (signed short)y, RENDER_SPRITE_SIZE(2, 2),
                           RENDER_TILE_ATTR_FULL(RENDER_PAL1, 1, 1, 0, tile_v),
-                          ROOMROM_HUD_BACKDROP_FIRST_SLOT);
+                          ROOMROM_SPRITE_SLOT_ENEMY_FIRST);
         break;
     case LINK_FACE_LEFT:
         VDP_setSpriteFull(9, (signed short)x, (signed short)y, RENDER_SPRITE_SIZE(2, 2),
                           RENDER_TILE_ATTR_FULL(RENDER_PAL1, 1, 0, 1, tile_h),
-                          ROOMROM_HUD_BACKDROP_FIRST_SLOT);
+                          ROOMROM_SPRITE_SLOT_ENEMY_FIRST);
         break;
     case LINK_FACE_RIGHT:
         VDP_setSpriteFull(9, (signed short)x, (signed short)y, RENDER_SPRITE_SIZE(2, 2),
                           RENDER_TILE_ATTR_FULL(RENDER_PAL1, 1, 0, 0, tile_h),
-                          ROOMROM_HUD_BACKDROP_FIRST_SLOT);
+                          ROOMROM_SPRITE_SLOT_ENEMY_FIRST);
         break;
     default:
         VDP_setSpriteFull(9, (signed short)-32, (signed short)-32, RENDER_SPRITE_SIZE(2, 2),
                           RENDER_TILE_ATTR_FULL(RENDER_PAL1, 1, 0, 0, tile_v),
-                          ROOMROM_HUD_BACKDROP_FIRST_SLOT);
+                          ROOMROM_SPRITE_SLOT_ENEMY_FIRST);
         break;
     }
 }
@@ -897,5 +800,5 @@ void roomrom_sprites_clear_magic_shot(void)
                                             + ROOMROM_ITEM_TILE_MAGIC_SHOT_V);
     VDP_setSpriteFull(9, (signed short)-32, (signed short)-32, RENDER_SPRITE_SIZE(2, 2),
                       RENDER_TILE_ATTR_FULL(RENDER_PAL1, 0, 0, 0, tile),
-                      ROOMROM_HUD_BACKDROP_FIRST_SLOT);
+                      ROOMROM_SPRITE_SLOT_ENEMY_FIRST);
 }

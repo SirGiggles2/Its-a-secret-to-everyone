@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-05-14T03:58:50+00:00",
+  "generated_at": "2026-05-15T15:06:59+00:00",
   "rows": [
     {
       "nes_file": "reference/aldonunez/Z_01.asm",
@@ -147,8 +147,8 @@
     }
   ],
   "malformed_headers": [],
-  "drained_function_count": 17,
+  "drained_function_count": 53,
   "nes_file_count": 16,
-  "orphan_count": 17,
+  "orphan_count": 53,
   "phantom_count": 0
 }

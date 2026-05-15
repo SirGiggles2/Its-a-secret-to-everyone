@@ -1317,6 +1317,13 @@ static void edge_load_or_clamp(void)
                 roomrom_uw_room_render_set_live_door_priority(
                     s_active_slot_x, s_transition_row_base, 0u);
             }
+            /* HUD underlay sprite strip retired 2026-05-15: BG_A tile 0
+             * (PAL0 color 0 = black) is the only source of HUD opacity.
+             * V-scroll exposes both the active row base and the incoming
+             * staging row base simultaneously; clear both so neither end
+             * leaves a one-frame transparent HUD gap. */
+            clear_hud_underlay_for_row_base(s_active_row_base);
+            clear_hud_underlay_for_row_base(s_transition_row_base);
         }
         scroll_init_fixed_point_steps();
     }
@@ -1629,6 +1636,10 @@ void roomrom_debug_tick(void)
             if ((pressed & BUTTON_START) && (joy & BUTTON_C)) {
                 cave_exit();
                 s_scene = SCENE_OW;
+                /* HUD underlay retired 2026-05-15: cave_exit does not
+                 * re-enter load_room, so the staged HUD underlay must
+                 * be re-asserted explicitly here. */
+                clear_hud_underlay_for_row_base(s_active_row_base);
             }
             return;
         }
@@ -1692,6 +1703,10 @@ void roomrom_debug_tick(void)
                 cave_exit();
                 s_scene = SCENE_OW;
             }
+            /* HUD underlay retired 2026-05-15: cave_init/cave_exit do not
+             * pass through load_room, so re-assert the BG_A underlay so
+             * the HUD plane keeps its opaque backing through the toggle. */
+            clear_hud_underlay_for_row_base(s_active_row_base);
             return;
         }
 

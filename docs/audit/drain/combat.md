@@ -6,35 +6,18 @@
 
 | File | Function | Line | Calls _ppu_/_apu_ shim? |
 |------|----------|------|------|
-| `src/game/combat/collision_runtime.c` | `colrt_check_monster_arrow_or_rod_collision` | 167 | no |
-| `src/game/combat/collision_runtime.c` | `colrt_check_monster_bomb_or_fire_collision` | 212 | no |
-| `src/game/combat/collision_runtime.c` | `colrt_check_monster_boomerang_or_food_collision` | 182 | no |
-| `src/game/combat/collision_runtime.c` | `colrt_check_monster_shot_collision` | 150 | no |
-| `src/game/combat/collision_runtime.c` | `colrt_check_monster_slender_weapon_collision` | 106 | no |
-| `src/game/combat/collision_runtime.c` | `colrt_check_monster_slender_weapon_collision2` | 90 | no |
-| `src/game/combat/collision_runtime.c` | `colrt_check_monster_stabbing_collision` | 124 | no |
-| `src/game/combat/collision_runtime.c` | `colrt_check_monster_sword_collision` | 143 | no |
-| `src/game/combat/collision_runtime.c` | `colrt_check_monster_sword_shot_or_magic_shot_collision` | 192 | no |
-| `src/game/combat/collision_runtime.c` | `colrt_check_monster_weapon_collision` | 64 | no |
-| `src/game/combat/collision_runtime.c` | `colrt_do_objects_collide` | 29 | no |
-| `src/game/combat/collision_runtime.c` | `colrt_do_objects_collide_with_thresholds` | 7 | no |
-| `src/game/combat/collision_runtime.c` | `colrt_get_collidable_tile` | 236 | no |
-| `src/game/combat/collision_runtime.c` | `colrt_get_collidable_tile_still` | 309 | no |
-| `src/game/combat/collision_runtime.c` | `colrt_get_colliding_tile_moving` | 314 | no |
-| `src/game/combat/collision_runtime.c` | `colrt_handle_monster_weapon_collision` | 35 | no |
-| `src/game/combat/collision_runtime.c` | `colrt_parry_or_shove` | 112 | no |
-| `src/game/combat/combat_runtime.c` | `cobrt_deal_damage` | 24 | no |
-| `src/game/combat/combat_runtime.c` | `cobrt_handle_monster_died` | 11 | no |
-| `src/game/combat/combat_runtime.c` | `cobrt_play_parry_sound_for_damage_type` | 3 | no |
-| `src/game/combat/link_collision_runtime.c` | `lcrt_begin_shove` | 129 | no |
-| `src/game/combat/link_collision_runtime.c` | `lcrt_check_link_collision` | 88 | no |
-| `src/game/combat/link_collision_runtime.c` | `lcrt_check_link_collision_preinit` | 59 | no |
-| `src/game/combat/link_collision_runtime.c` | `lcrt_check_monster_collisions` | 99 | no |
-| `src/game/combat/link_collision_runtime.c` | `lcrt_harm_link` | 47 | no |
-| `src/game/combat/link_collision_runtime.c` | `lcrt_link_be_harmed` | 5 | no |
-| `src/game/combat/targeting_runtime.c` | `targrt_calc_diagonal_speed_index` | 31 | no |
-| `src/game/combat/targeting_runtime.c` | `targrt_get_directions_and_distances_to_target` | 20 | no |
-| `src/game/combat/targeting_runtime.c` | `targrt_get_one_direction_and_distance_to_target` | 2 | no |
+| `src/game/combat/combat_runtime.c` | `compute_state` | 178 | no |
+| `src/game/combat/combat_runtime.c` | `recompute_y_bias` | 86 | no |
+| `src/game/combat/combat_runtime.c` | `roomrom_combat_init` | 155 | no |
+| `src/game/combat/combat_runtime.c` | `roomrom_combat_link_locked` | 173 | no |
+| `src/game/combat/combat_runtime.c` | `roomrom_combat_set_redux` | 81 | no |
+| `src/game/combat/combat_runtime.c` | `roomrom_combat_set_uw` | 73 | no |
+| `src/game/combat/combat_runtime.c` | `roomrom_combat_try_swing` | 164 | no |
+| `src/game/combat/combat_runtime.c` | `roomrom_combat_update` | 252 | no |
+| `src/game/combat/combat_runtime.c` | `spawn_beam` | 241 | no |
+| `src/game/combat/combat_runtime.c` | `sword_style_allows_beam` | 226 | no |
+| `src/game/combat/combat_runtime.c` | `sword_subpal_for_items` | 58 | no |
+| `src/game/combat/combat_runtime.c` | `update_beam` | 193 | no |
 
 ## Master plan tasks claiming this subsystem
 

@@ -15,12 +15,9 @@
  */
 
 #include "enemy_render.h"
-#include <genesis.h>
-/* SGDK memory_base.h #defines RAM; undef before platform_abi.h reintroduces. */
-#ifdef RAM
-#  undef RAM
-#endif
 #include "platform_abi.h"
+#include "render_abi.h"
+#include "world/render/sprite_slots.h"
 
 /* NES RAM cells — see reference/aldonunez/Variables.inc. */
 #define NES_SPRITES_BASE        0x0200u   /* OAM mirror, 64 sprites x 4 bytes */
@@ -124,22 +121,14 @@ void enemy_render_reset_oam(void)
  * works as default; refined per-bank coloring lands later.
  */
 
-/* SAT slot allocation 2026-05-15 (H32 mode, 64 hardware slots total):
- *   0-9   = Link + sword + items (existing roomrom_sprites)
- *   10-41 = HUD backdrop strip (32 sprites)
- *   42-63 = enemy render bridge (22 slots for NES OAM sprites)
- *
- * H32 hardware sprite list = 64 slots. Slots 64+ are not evaluated by
- * VDP regardless of VDP_updateSprites count. Pre-2026-05-15 layout
- * used HUD backdrop 48 sprites + enemy 58..79 — enemy SAT writes at
- * slots 64+ silently dropped, producing "half sprite" rendering for
- * the 2 enemies whose right halves landed beyond slot 63. */
-#define ENEMY_SAT_SLOT_FIRST    42u
-#define ENEMY_SAT_SLOT_LAST     63u
-
-#if ENEMY_SAT_SLOT_LAST > 63u
-#  error "H32 mode supports only 64 hardware SAT slots. Enemy SAT range \
-must end at or before slot 63 or sprites silently drop."
+/* SAT slot allocation 2026-05-15 post-HUD-backdrop-retirement
+ * (H32 mode, 64 hardware slots total):
+ *   0..9   = Link + sword + items + projectiles (sprite_render.c)
+ *   10..63 = enemy render bridge (54 slots for NES OAM sprites)
+ * Slots 64+ are not evaluated by VDP in H32 mode. Slot contract lives
+ * in sprite_slots.h; never hard-code 10 / 63 here. */
+#if ROOMROM_SPRITE_SLOT_LAST_H32 > 63u
+#  error "H32 mode supports only 64 hardware SAT slots."
 #endif
 /* NES Z1 OAM mirror is 64 sprites x 4 bytes = 256 bytes at $0200..$02FF.
  * Drained Anim_WriteSprite (Z_01.asm:5365) writes via SpriteOffsets[] —
@@ -247,7 +236,7 @@ void enemy_render_sweep_oam_to_sat(void)
     nes_ram[0x07FEu] = (unsigned char)(nes_ram[0x07FEu] + 1u);
 
     unsigned int i;
-    unsigned int sat_slot = ENEMY_SAT_SLOT_FIRST;
+    unsigned int sat_slot = ROOMROM_SPRITE_SLOT_ENEMY_FIRST;
 
     for (i = 0u; i < NES_OAM_SLOT_COUNT; ++i) {
         unsigned short base = (unsigned short)(NES_SPRITES_BASE + i * 4u);
@@ -271,7 +260,7 @@ void enemy_render_sweep_oam_to_sat(void)
         /* NES Z1 uses 8x16 sprite mode (PPUCTRL bit 5 = 1). Each NES
          * sprite = 2 vertically-stacked CHR tiles. Genesis SPRITE_SIZE
          * (1, 2) = 1 column wide, 2 rows tall = 8x16. */
-        unsigned short size = SPRITE_SIZE(1, 2);
+        unsigned short size = RENDER_SPRITE_SIZE(1, 2);
 
         /* NES OAM Y is absolute screen row (below NES HUD). Genesis
          * VDP screen is same coordinate system; SGDK applies its own
@@ -283,19 +272,19 @@ void enemy_render_sweep_oam_to_sat(void)
         signed short gy = (signed short)y;
         signed short gx = (signed short)x;
 
-        unsigned char link = (sat_slot < ENEMY_SAT_SLOT_LAST)
+        unsigned char link = (sat_slot < ROOMROM_SPRITE_SLOT_LAST_H32)
                                  ? (unsigned char)(sat_slot + 1u) : 0u;
-        VDP_setSpriteFull((u16)sat_slot, gx, gy, size, sat_attrs, link);
+        render_set_sprite_full((unsigned short)sat_slot, gx, gy, size, sat_attrs, link);
         ++sat_slot;
-        if (sat_slot > ENEMY_SAT_SLOT_LAST) break;
+        if (sat_slot > ROOMROM_SPRITE_SLOT_LAST_H32) break;
     }
 
     /* Pad remaining SAT slots to off-screen so stale entries clear. */
-    for (; sat_slot <= ENEMY_SAT_SLOT_LAST; ++sat_slot) {
-        unsigned char link = (sat_slot < ENEMY_SAT_SLOT_LAST)
+    for (; sat_slot <= ROOMROM_SPRITE_SLOT_LAST_H32; ++sat_slot) {
+        unsigned char link = (sat_slot < ROOMROM_SPRITE_SLOT_LAST_H32)
                                  ? (unsigned char)(sat_slot + 1u) : 0u;
-        VDP_setSpriteFull((u16)sat_slot, (signed short)-32,
-                          (signed short)-32, SPRITE_SIZE(1, 1),
+        render_set_sprite_full((unsigned short)sat_slot, (signed short)-32,
+                          (signed short)-32, RENDER_SPRITE_SIZE(1, 1),
                           0u, link);
     }
 
