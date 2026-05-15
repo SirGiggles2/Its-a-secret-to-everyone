@@ -125,6 +125,8 @@ ROOMROM_C_SOURCES = [
     ("src/game/world/mode_death.c",             "world_mode_death.o"),
     ("src/game/world/mode_endlevel.c",          "world_mode_endlevel.o"),
     ("src/game/world/mode_dispatch.c",          "world_mode_dispatch.o"),
+    # Substrate fix 2026-05-15 — install NES SRAM LBA + LevelInfo at boot.
+    ("src/game/world/level_info_install.c",     "level_info_install.o"),
     ("src/game/items/item_dispatch.c", "item_dispatch.o"),
     ("RoomRom/src/main.c", "roomrom_main.o"),
     ("src/game/world/render/ow_render.c", "world_ow_render.o"),  # Phase 12.2 promoted

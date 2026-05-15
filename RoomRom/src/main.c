@@ -41,6 +41,7 @@
 #include "hud_format_probe.h"             /* Phase 9 Task 9.5 HUD format tests */
 #include "save_serializer_probe.h"        /* Phase 9 Task 9.7 save serializer tests */
 #include "../../src/game/world/mode_dispatch.h"  /* Phase 9.7 gameplay-mode dispatcher */
+#include "../../src/game/world/level_info_install.h"  /* substrate: install $687E..$6C7D LBA + LevelInfo */
 
 /* Boots to overworld room 0x77.
  *
@@ -1363,6 +1364,19 @@ void roomrom_debug_enter(void)
         (s_scene == SCENE_UW) ? ROOMROM_SCENE_UW_L1 : ROOMROM_SCENE_OVERWORLD,
         current_redux_flag());
     roomrom_combat_set_redux(current_redux_flag());
+    /* Substrate fix 2026-05-15 — install LevelBlockAttrs + LevelInfo
+     * into NES SRAM at $687E..$6C7D BEFORE load_room +
+     * enemy_loop_room_init read them. Without this, LBA_C/D + FoeCounts
+     * are zero and no enemies spawn anywhere. CurLevel ($0010) drives
+     * UW vs OW dispatch in enemy_room_load_objects + cave/dungeon code,
+     * so seed it here too (0=OW, 1=UW L1). */
+    if (s_scene == SCENE_UW) {
+        nes_ram[0x0010u] = 1u;  /* CurLevel = 1 (UW L1) */
+        level_info_install_uw(1u, 1u);
+    } else {
+        nes_ram[0x0010u] = 0u;  /* CurLevel = 0 (OW) */
+        level_info_install_ow();
+    }
     load_room(s_room_id);                  /* loads BG pal + sprite PAL1 */
     roomrom_sprites_spawn_link(players[0].x, players[0].y);
     roomrom_combat_init();                 /* S7: clear sword sprite slot */
@@ -1520,6 +1534,13 @@ void roomrom_debug_tick(void)
                 } else {
                     anchor_active_slot();
                 }
+                /* Substrate fix 2026-05-15 — spawn fresh enemies on room
+                 * scroll. NES Z1 fires AssignObjSpawnPositions on every
+                 * room enter (mode 4); we mirror that here so adjacent
+                 * OW/UW rooms populate enemy slots when Link scrolls in.
+                 * Without this, ObjType[1..count] stays zero across
+                 * room transitions and the world appears empty. */
+                enemy_loop_room_init(s_room_id, (unsigned char)s_scene);
                 s_scroll_state = SCROLL_NONE;
             } else {
                 s_scroll_frame++;
@@ -1664,8 +1685,24 @@ void roomrom_debug_tick(void)
                                       : ROOMROM_SCENE_OVERWORLD,
                 current_redux_flag());
             roomrom_combat_set_redux(current_redux_flag());
+            /* Substrate fix 2026-05-15 — refresh LevelBlockAttrs +
+             * LevelInfo for the new scene so enemy_room_load_objects
+             * (called via load_room->enemy_loop_room_init below) sees
+             * the correct level's tables. */
+            if (s_scene == SCENE_UW) {
+                nes_ram[0x0010u] = 1u;
+                level_info_install_uw(1u, 1u);
+            } else {
+                nes_ram[0x0010u] = 0u;
+                level_info_install_ow();
+            }
             load_room(s_room_id);
             roomrom_combat_set_uw(s_scene == SCENE_UW);
+            /* Substrate fix 2026-05-15 — spawn enemies on scene toggle.
+             * level_info_install_* above seeded LBA tables; this fires
+             * enemy_room_load_objects so ObjType[1..count] populates
+             * for the new scene's first room. */
+            enemy_loop_room_init(s_room_id, (unsigned char)s_scene);
             /* Phase 10.3 audio per-event wiring: scene-toggle entry
              * fires music_play per docs/audit/audio_routing.md table.
              * UW = $40 dungeon song; OW = $20 overworld song.
