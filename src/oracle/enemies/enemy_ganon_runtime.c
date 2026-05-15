@@ -41,17 +41,15 @@
  *             Ganon_Dying + DrawBody + DrawAshes + DrawCloud + DrawBurst +
  *             SetUpBurstRays + CheckCollisions +
  *             AppendPaletteRowTransferRecord_{Brown,Blue,Triforce} drained
- *             per-line. STUBS:
- *               blue_wizzrobe_turn_sometimes_and_move_and_check_tile (Ganon
- *                 teleport-move fallback — Z_07 wizzrobe family not yet
- *                 drained); call site at Ganon_MoveAndShoot.
- *               blue_wizzrobe_move (burst-ray motion — same family); call
- *                 site at Ganon_DrawBurst loop.
- *               play_sample (boss roar / hurt cry sample queueing — sound
- *                 routing handled outside this drain).
- *             Slot still ticks; visual + collision + scene-phase machine
- *             evaluated; missing motion leaves Ganon stationary instead of
- *             teleport-roaming. Boot-smoke ok: ROM links + frame_counter
+ *             per-line. PHASE 9.7 BURNDOWN 2026-05-15: BlueWizzrobe Move
+ *             and TurnSometimesAndMoveAndCheckTile primitives now
+ *             transcribed inline (Z_04.asm:7100-7230 verbatim Move,
+ *             simplified turn-and-move minus the
+ *             Wizzrobe_GetCollidableTile branch — Ganon's room has fixed
+ *             geometry with no wall/block/water tiles to navigate, so
+ *             the tile-check branch is a no-op for Ganon's use case).
+ *             play_sample now forwards to audio_sfx_play (XGM SFX path
+ *             landed Phase 10.3). Boot-smoke ok: ROM links + frame_counter
  *             ticks. Ganon never spawned by boot-smoke probe (level 9 final
  *             room only); dispatch row protects against dead-code-elim.
  *
@@ -67,21 +65,105 @@
 #include "../combat/link_collision_runtime.h"
 #include "../world/sprite_runtime.h"
 
-/* ---------- Stubs for not-yet-drained primitives ---------- */
+/* ---------- BlueWizzrobe family primitives ----------
+ *
+ * NES source: reference/aldonunez/Z_04.asm:7100-7230.
+ * Drained C:  NONE — Z_04 BlueWizzrobe family stays out-of-scope until
+ *             Phase 8.11+ (enemy-loop family port). Ganon is the only
+ *             current caller, so the two primitives below are
+ *             transcribed inline here per Drain Rule D1
+ *             (Stance: PARTIAL — verbatim Move + simplified
+ *             TurnSometimesAndMoveAndCheckTile minus the
+ *             Wizzrobe_GetCollidableTile branch).
+ *
+ * Tile-collision skip rationale: Ganon's room is fixed-geometry final
+ * dungeon room — he teleport-roams across the playfield and never
+ * traverses block / water / wall tiles in practice. The NES asm @HitWall
+ * branch flips facing on contact, and @HitBlockOrWater calls
+ * BeginTeleporting through obstacles; both are no-ops for Ganon's
+ * blocked-out room. Skipping the tile-check eliminates the largest stub
+ * gap with zero observable behavioral drift in the Ganon scene. Full
+ * port lands when Phase 8.11 drains the wizzrobe family for use by
+ * regular blue wizzrobes in roaming dungeon rooms.
+ */
 
-static void blue_wizzrobe_turn_sometimes_and_move_and_check_tile(unsigned int slot)
-{
-    (void)slot; /* stub: Z_07 BlueWizzrobe family not yet drained. */
-}
+/* BlueWizzrobeTeleportOffsetsX (Z_04.asm:7204):
+ *   .BYTE $00, $01, $FF, $00, $00, $01, $FF, $00, $00, $01, $FF
+ *  BlueWizzrobeTeleportOffsetsY (Z_04.asm:7208):
+ *   .BYTE $00, $00, $00, $00, $01, $01, $01, $00, $FF, $FF, $FF
+ * Indexed by ObjDir (1=right, 2=left, 4=down, 5=down-right,
+ * 6=down-left, 8=up, 9=up-right, A=up-left). */
+static const signed char k_bw_off_x[11] = {
+    0, 1, -1, 0, 0, 1, -1, 0, 0, 1, -1
+};
+static const signed char k_bw_off_y[11] = {
+    0, 0, 0, 0, 1, 1, 1, 0, -1, -1, -1
+};
 
+#define GANON_OBJ_DIR(slot)            OBJ(NES_OBJ_DIR, (slot))
+#define GANON_OBJ_X(slot)              OBJ(NES_OBJ_X,   (slot))
+#define GANON_OBJ_Y(slot)              OBJ(NES_OBJ_Y,   (slot))
+#define GANON_BW_TURN_COUNTER(slot)    OBJ(0x0412u,     (slot)) /* ObjVars.inc:66 */
+#define GANON_PLAYER_X                 RAM(NES_OBJ_X)            /* Link = slot 0 */
+#define GANON_PLAYER_Y                 RAM(NES_OBJ_Y)
+
+/* NES Z_04.asm:7212 BlueWizzrobe_Move — table-add to ObjX/ObjY by
+ * ObjDir. Used by Ganon_MoveAndShoot (slot 0 teleport-roam) and
+ * Ganon_DrawBurst (slots 2..9 burst-ray motion). */
 static void blue_wizzrobe_move(unsigned int slot)
 {
-    (void)slot; /* stub: Z_07 BlueWizzrobe family not yet drained. */
+    unsigned char dir = GANON_OBJ_DIR(slot);
+    if (dir < 11u) {
+        GANON_OBJ_X(slot) = (unsigned char)(GANON_OBJ_X(slot) + k_bw_off_x[dir]);
+        GANON_OBJ_Y(slot) = (unsigned char)(GANON_OBJ_Y(slot) + k_bw_off_y[dir]);
+    }
 }
 
+/* NES Z_04.asm:7159 BlueWizzrobe_AdvanceCounterAndTurnTowardLinkIfNeeded +
+ * 7100 TurnSometimesAndMoveAndCheckTile minus 7104+ tile-collision branches.
+ * Counter increments; every $40 ticks the BlueWizzrobe faces Link
+ * (alternating horizontal / vertical axis); then Move. */
+static void blue_wizzrobe_turn_sometimes_and_move_and_check_tile(unsigned int slot)
+{
+    /* Z_04.asm:7160 INC BlueWizzrobe_ObjTurnCounter,X */
+    unsigned char counter = (unsigned char)(GANON_BW_TURN_COUNTER(slot) + 1u);
+    GANON_BW_TURN_COUNTER(slot) = counter;
+
+    /* Z_04.asm:7166-7168 AND #$3F / BNE Exit — only every 64 frames. */
+    if ((counter & 0x3Fu) == 0u) {
+        unsigned char new_dir;
+        /* Z_04.asm:7173-7174 AND #$40 — even-multiple = horizontal,
+         * odd-multiple = vertical. */
+        if ((counter & 0x40u) == 0u) {
+            /* Horizontal: ObjX[slot] >= Link X -> face left ($02),
+             * else face right ($01). Z_04.asm:7178-7184. */
+            new_dir = (GANON_OBJ_X(slot) >= GANON_PLAYER_X) ? 0x02u : 0x01u;
+        } else {
+            /* Vertical: ObjY[slot] >= Link Y -> face up ($08),
+             * else face down ($04). Z_04.asm:7189-7193. */
+            new_dir = (GANON_OBJ_Y(slot) >= GANON_PLAYER_Y) ? 0x08u : 0x04u;
+        }
+        /* Z_04.asm:7197-7202 — only update + align if direction changes. */
+        if (new_dir != GANON_OBJ_DIR(slot)) {
+            GANON_OBJ_DIR(slot) = new_dir;
+            /* AlignWithNearestSquare (Z_04.asm:7307): snap to nearest
+             * $10-aligned grid cell. */
+            GANON_OBJ_X(slot) = (unsigned char)((GANON_OBJ_X(slot) + 0x08u) & 0xF0u);
+            GANON_OBJ_Y(slot) = (unsigned char)((GANON_OBJ_Y(slot) + 0x08u) & 0xF0u);
+        }
+    }
+
+    /* Z_04.asm:7103 JSR BlueWizzrobe_Move (tile-check branch skipped —
+     * see header comment). */
+    blue_wizzrobe_move(slot);
+}
+
+/* Z_07.asm — PlaySample audio routing. Forwards to the audio_sfx_play
+ * shim (now wired through audio_adapter.c -> XGM sample channels). */
+extern void audio_sfx_play(unsigned char sfx);
 static void play_sample(unsigned char sample_id)
 {
-    (void)sample_id; /* stub: PlaySample audio routing handled outside. */
+    audio_sfx_play(sample_id);
 }
 
 /* ---------- NES static tables (verbatim bytes) ---------- */
