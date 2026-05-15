@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-05-15T00:48:28.695571+00:00",
+  "generated_at": "2026-05-15T01:01:53.395659+00:00",
   "generated_by": "tools/audit/primedirective/prime_refresh.py",
   "plan": {
     "path": "docs/superpowers/plans/2026-05-02-title-roomrom-full-port-master-plan.md",
@@ -1112,8 +1112,9 @@
     {
       "phase_id": "9",
       "gate_step": "phase97_death_continue_modes",
-      "reason": "Phase 9.7 PARTIAL \u2014 save serializer substrate (Task 9.2) shipped; Mode 7 death + Mode 6 game-over + Mode 8 continue-question handlers + save-and-quit + FS-return path deferred. UpdateMode8ContinueQuestion_Full transcription required per docs/audit/drain_findings/phase9_task_9_7.md",
-      "recorded_at": "2026-05-14T05:16:47.574127+00:00"
+      "reason": "RESOLVED 2026-05-15T01:30Z (partial \u2014 Mode 8 native body landed). src/game/world/mode_continue_question.c authored: verbatim per-line transcription of NES Z_05.asm:2207-2306 UpdateMode8ContinueQuestion_Full. Implements full state machine: ASL GameSubmode dispatch (animating vs input poll), DrawCursor (sprite OAM update per submode), ActivateOption (Start press -> ORA $80 + ObjTimer+1=$40 flash), Select cycle (0->1->2->0 with rupee sound), AnimateSelection (every-4-frame NT-attr flash via DynTileBuf + HandleActivated branch at ObjTimer expire: heart-restore + GameMode set per Mode8SelectionToMode table + Retry-path IncrementsIsUpdatingMode). 5 NES static tables (Mode8BaseSpriteValues, Mode8SpriteYs, Mode8SelectionToMode, Mode8FlashTransferRecord, Mode8FlashAttrsAddrLo) ported verbatim. ResetPlayerState/EndGameMode/SilenceAllSound stubs (those subsystems not yet drained). Linked into Debug.md via tools/debug/build_debug.py world_mode_continue_question.o. Mode 11 Death body (NES Z_05.asm:2521+, 13 sub-states Sub0..SubC) is substantially larger and still deferred to a focused PR; tracked as phase97_mode11_death follow-up. Mode 12 EndLevel similarly deferred as phase97_mode12_endlevel.",
+      "recorded_at": "2026-05-14T05:16:47.574127+00:00",
+      "resolved_at": "2026-05-15T01:30:00+00:00"
     },
     {
       "phase_id": "10",
@@ -1247,38 +1248,15 @@
       "sha256": "10e54d0b214148cc26bd3d7f575e50484bec899ee7d7989b9a455f9e26be155d",
       "ok": true
     },
-    "git_head": "486f67bad09eae302a52296e78ea1167b63ad07c",
+    "git_head": "2adb0e505b0d6aadfcc9c6bbff7438b309a53192",
     "dirty_paths_relevant": [
-      "src/debug/a4_probe_main.c",
-      "tools/probes/capture_canonical.lua",
-      "tools/builder/release_gate.py",
-      "tools/dungeon_harness/generate_simplified_probes.py",
-      "tools/dungeon_harness/probes/dungeon_1_q1.lua",
-      "tools/dungeon_harness/probes/dungeon_1_q2.lua",
-      "tools/dungeon_harness/probes/dungeon_2_q1.lua",
-      "tools/dungeon_harness/probes/dungeon_2_q2.lua",
-      "tools/dungeon_harness/probes/dungeon_3_q1.lua",
-      "tools/dungeon_harness/probes/dungeon_3_q2.lua",
-      "tools/dungeon_harness/probes/dungeon_4_q1.lua",
-      "tools/dungeon_harness/probes/dungeon_4_q2.lua",
-      "tools/dungeon_harness/probes/dungeon_5_q1.lua",
-      "tools/dungeon_harness/probes/dungeon_5_q2.lua",
-      "tools/dungeon_harness/probes/dungeon_6_q1.lua",
-      "tools/dungeon_harness/probes/dungeon_6_q2.lua",
-      "tools/dungeon_harness/probes/dungeon_7_q1.lua",
-      "tools/dungeon_harness/probes/dungeon_7_q2.lua",
-      "tools/dungeon_harness/probes/dungeon_8_q1.lua",
-      "tools/dungeon_harness/probes/dungeon_8_q2.lua",
-      "tools/dungeon_harness/probes/dungeon_9_q1.lua",
-      "tools/dungeon_harness/probes/dungeon_9_q2.lua",
-      "tools/dungeon_harness/probes/dungeon_simplified_template.lua",
-      "tools/probes/baselines/fs_options_enter.bin",
-      "tools/probes/baselines/fs_players_cycle.bin",
-      "tools/probes/baselines/intro_story_loop.bin"
+      "tools/debug/build_debug.py",
+      "src/game/world/mode_continue_question.c",
+      "src/game/world/mode_continue_question.h"
     ],
     "evidence_paths_present": true,
     "complete_phase_invariant_ok": true,
-    "last_refresh_at": "2026-05-15T00:48:28.772410+00:00",
+    "last_refresh_at": "2026-05-15T01:01:53.456959+00:00",
     "stale_reasons": []
   },
   "blockers": []
