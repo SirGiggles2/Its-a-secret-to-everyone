@@ -132,17 +132,45 @@ void enemy_render_reset_oam(void)
  * sprite chain stays in the visible scan path. */
 #define ENEMY_SAT_SLOT_FIRST    58u
 #define ENEMY_SAT_SLOT_LAST     79u
-#define ENEMY_TOTAL_OAM_SPRITES 22u
+/* NES Z1 OAM mirror is 64 sprites x 4 bytes = 256 bytes at $0200..$02FF.
+ * Drained Anim_WriteSprite (Z_01.asm:5365) writes via SpriteOffsets[] —
+ * scattered offsets like $60, $BC, $64, $B8 not linear. Sweep must
+ * iterate all 64 OAM slots so the scattered writes land in SAT. */
+#define NES_OAM_SLOT_COUNT      64u
 #define NES_HUD_Y_OFFSET        32u   /* HUD on Window plane covers top 4 rows */
 
 #define ROOMROM_SPR_TILE_BASE   1025u
 
+/* NES Z1 sprite CHR layout in our Genesis VRAM (per sprite_render.c
+ * comment + atlas/enemy_chr.h):
+ *   NES tile $00..$6F = CommonSpritePatterns (112 tiles) at SPR_BASE
+ *                      = Genesis tile 1025..1136 (loaded by
+ *                      roomrom_sprites_upload_chr at boot).
+ *   NES tile $70..$E1 = per-room transient sprite bank (OWSP for
+ *                      overworld, UWSP127/358/469 for underworld).
+ *                      Loaded into SCENE_OBJ slot at tile_base =
+ *                      SPR_BASE + 44 = Genesis tile 1069. Bank holds
+ *                      up to 136 tiles (UW 4x sub-pal, OW 1x). NES
+ *                      bank tile 0 = Genesis tile 1069.
+ *   NES tile $E2..$FF = unused by Z1 sprite render in standard rooms.
+ *
+ * Atlas tile manifest dispatch (UW level -> bank) lives in
+ * RoomRom/src/atlas/level_chr_swap.c. UW sub-pal indexing
+ * (Genesis tile = 1069 + sub_pal*34 + bank_tile) is required when
+ * the NES OAM attr byte selects a non-zero sub-pal. Initial pass
+ * uses sub-pal 0 only; refined sub-pal multiplier lands in a
+ * follow-up commit. */
+#define ROOMROM_SCENE_OBJ_TILE_BASE  1069u
+#define NES_COMMON_SPRITE_LAST       0x6Fu
+
 static inline unsigned short translate_tile(unsigned char nes_tile)
 {
-    /* Identity offset from SPR_BASE. NES tile $00 -> Genesis tile 1025.
-     * Out-of-range NES tiles (e.g. $C0-$FF, unused by Z1 sprites)
-     * clamp to first tile to keep VDP happy. */
-    return (unsigned short)(ROOMROM_SPR_TILE_BASE + (unsigned short)nes_tile);
+    if (nes_tile <= NES_COMMON_SPRITE_LAST) {
+        return (unsigned short)(ROOMROM_SPR_TILE_BASE + (unsigned short)nes_tile);
+    }
+    /* Per-room transient bank: NES tile $70+k -> SCENE_OBJ slot tile k. */
+    unsigned char bank_tile = (unsigned char)(nes_tile - 0x70u);
+    return (unsigned short)(ROOMROM_SCENE_OBJ_TILE_BASE + (unsigned short)bank_tile);
 }
 
 static inline unsigned short translate_attrs(unsigned char nes_attrs,
@@ -165,26 +193,27 @@ static inline unsigned short translate_attrs(unsigned char nes_attrs,
 
 void enemy_render_sweep_oam_to_sat(void)
 {
+    /* Phase 1 diagnostic: increment sentinel at NES $07FE per frame
+     * so probe can verify this fn fires. */
+    nes_ram[0x07FEu] = (unsigned char)(nes_ram[0x07FEu] + 1u);
+
     unsigned int i;
     unsigned int sat_slot = ENEMY_SAT_SLOT_FIRST;
 
-    for (i = 0u; i < ENEMY_TOTAL_OAM_SPRITES; ++i) {
+    for (i = 0u; i < NES_OAM_SLOT_COUNT; ++i) {
         unsigned short base = (unsigned short)(NES_SPRITES_BASE + i * 4u);
         unsigned char y     = RAM(base + 0u);
         unsigned char tile  = RAM(base + 1u);
         unsigned char attrs = RAM(base + 2u);
         unsigned char x     = RAM(base + 3u);
 
-        /* Y == $F0 or $00 with all-zero record = hidden slot per NES OAM
-         * convention. Skip — write off-screen to ensure stale-clear. */
+        /* All-zero record = unused OAM slot. Skip without consuming a
+         * SAT slot. (NES Z1 leaves untouched OAM bytes at 0.) */
         if (y == 0u && tile == 0u && attrs == 0u && x == 0u) {
-            VDP_setSpriteFull((u16)sat_slot, (signed short)-32,
-                              (signed short)-32, SPRITE_SIZE(1, 1),
-                              0u,
-                              (sat_slot < ENEMY_SAT_SLOT_LAST)
-                                  ? (unsigned char)(sat_slot + 1u) : 0u);
-            ++sat_slot;
-            if (sat_slot > ENEMY_SAT_SLOT_LAST) break;
+            continue;
+        }
+        /* Y == $F0 = NES hide-sprite convention. Skip. */
+        if (y == 0xF0u) {
             continue;
         }
 
@@ -195,12 +224,14 @@ void enemy_render_sweep_oam_to_sat(void)
          * (1, 2) = 1 column wide, 2 rows tall = 8x16. */
         unsigned short size = SPRITE_SIZE(1, 2);
 
-        /* HUD offset: NES has 32-px HUD strip at top; our HUD is on
-         * Window plane covering same region. Sprite Y on Genesis SAT
-         * is measured from VDP top (Y=128 = playfield top). NES OAM Y
-         * is play-area-relative. Genesis convention: VDP_setSprite y
-         * arg is screen-relative with built-in +128 offset by SGDK. */
-        signed short gy = (signed short)((short)y + NES_HUD_Y_OFFSET);
+        /* NES OAM Y is absolute screen row (below NES HUD). Genesis
+         * VDP screen is same coordinate system; SGDK applies its own
+         * +128 offset internally on VDP_setSprite. NES OAM has the
+         * standard +1 quirk (sprite Y is top - 1), so pass y as-is.
+         * The HUD on Window plane covers rows 0..31 like the NES HUD
+         * — no extra offset needed since NES OAM Y already accounts
+         * for HUD region. */
+        signed short gy = (signed short)y;
         signed short gx = (signed short)x;
 
         unsigned char link = (sat_slot < ENEMY_SAT_SLOT_LAST)
@@ -218,4 +249,5 @@ void enemy_render_sweep_oam_to_sat(void)
                           (signed short)-32, SPRITE_SIZE(1, 1),
                           0u, link);
     }
+
 }
