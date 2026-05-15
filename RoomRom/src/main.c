@@ -40,6 +40,7 @@
 #include "options_consumer_probe.h"       /* Phase 9 Task 9.4 consumer tests */
 #include "hud_format_probe.h"             /* Phase 9 Task 9.5 HUD format tests */
 #include "save_serializer_probe.h"        /* Phase 9 Task 9.7 save serializer tests */
+#include "../../src/game/world/mode_dispatch.h"  /* Phase 9.7 gameplay-mode dispatcher */
 
 /* Boots to overworld room 0x77.
  *
@@ -1539,11 +1540,37 @@ void roomrom_debug_tick(void)
             inventory_rupee_tick((unsigned char)s_frame_counter);
             roomrom_hud_refresh_dynamic();
             enemy_loop_tick();
+            /* Phase 9.7 — gameplay-mode dispatcher tick. Routes
+             * GameMode ($FF0012) to Mode 5 Play / Mode 8 ContinueQuestion
+             * / Mode 11 Death / Mode 12 EndLevel native bodies. Most
+             * cases are no-op stubs; the wired modes run their state
+             * machines verbatim from NES Z_07.asm:1608+. */
+            mode_dispatch_update();
         }
 
         u16 joy = JOY_readJoypad(JOY_1);
         u16 pressed = joy & ~s_joy_prev;
         s_joy_prev = joy;
+
+        /* Phase 9.7 demo chord — bump GameMode to exercise native
+         * Mode 8/11/12 bodies on demand. Y-edge cycles 0->8->11->12->0.
+         * Each transition resets GameSubmode + ObjTimer so the mode's
+         * Sub0 fires fresh. */
+        if (pressed & BUTTON_Y) {
+            volatile u8 *game_mode    = (volatile u8 *)0x00FF0012UL;
+            volatile u8 *game_submode = (volatile u8 *)0x00FF0013UL;
+            volatile u8 *obj_timer_0  = (volatile u8 *)0x00FF0030UL;
+            u8 next = *game_mode;
+            switch (next) {
+                case 0x00u: next = 0x08u; break;
+                case 0x08u: next = 0x11u; break;
+                case 0x11u: next = 0x12u; break;
+                default:    next = 0x00u; break;
+            }
+            *game_mode    = next;
+            *game_submode = 0u;
+            *obj_timer_0  = 0u;
+        }
 
         /* Phase 9 Task 9.4 — OPTION_ID_AB_SWAP: swap A and B button bits
          * after edge-detect so the entire downstream input dispatch sees
