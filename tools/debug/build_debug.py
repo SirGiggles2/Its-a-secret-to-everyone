@@ -117,9 +117,10 @@ ROOMROM_C_SOURCES = [
     # play-area dynamic-tile editing primitives consumed by armos secret
     # reveals, push-block secrets, bombable walls, burning brush.
     ("src/game/world/dyn_tile_dispatch.c", "dyn_tile_dispatch.o"),
-    # Phase 9.7 — Mode 8 ContinueQuestion native + gameplay-mode dispatcher.
+    # Phase 9.7 — Mode 8 ContinueQuestion + Mode 11 Death native + dispatcher.
     ("src/game/world/mode_continue_question.c", "world_mode_continue_question.o"),
-    ("src/game/world/mode_dispatch.c", "world_mode_dispatch.o"),
+    ("src/game/world/mode_death.c",             "world_mode_death.o"),
+    ("src/game/world/mode_dispatch.c",          "world_mode_dispatch.o"),
     ("src/game/items/item_dispatch.c", "item_dispatch.o"),
     ("RoomRom/src/main.c", "roomrom_main.o"),
     ("src/game/world/render/ow_render.c", "world_ow_render.o"),  # Phase 12.2 promoted
