@@ -124,14 +124,23 @@ void enemy_render_reset_oam(void)
  * works as default; refined per-bank coloring lands later.
  */
 
-/* SAT slot allocation 2026-05-15:
+/* SAT slot allocation 2026-05-15 (H32 mode, 64 hardware slots total):
  *   0-9   = Link + sword + items (existing roomrom_sprites)
- *   10-57 = HUD backdrop strip (48 sprites)
- *   58-79 = enemy render bridge (22 slots for NES OAM sprites)
- * HUD backdrop slot 57 forwards link to 58 (sprite_render.c) so enemy
- * sprite chain stays in the visible scan path. */
-#define ENEMY_SAT_SLOT_FIRST    58u
-#define ENEMY_SAT_SLOT_LAST     79u
+ *   10-41 = HUD backdrop strip (32 sprites)
+ *   42-63 = enemy render bridge (22 slots for NES OAM sprites)
+ *
+ * H32 hardware sprite list = 64 slots. Slots 64+ are not evaluated by
+ * VDP regardless of VDP_updateSprites count. Pre-2026-05-15 layout
+ * used HUD backdrop 48 sprites + enemy 58..79 — enemy SAT writes at
+ * slots 64+ silently dropped, producing "half sprite" rendering for
+ * the 2 enemies whose right halves landed beyond slot 63. */
+#define ENEMY_SAT_SLOT_FIRST    42u
+#define ENEMY_SAT_SLOT_LAST     63u
+
+#if ENEMY_SAT_SLOT_LAST > 63u
+#  error "H32 mode supports only 64 hardware SAT slots. Enemy SAT range \
+must end at or before slot 63 or sprites silently drop."
+#endif
 /* NES Z1 OAM mirror is 64 sprites x 4 bytes = 256 bytes at $0200..$02FF.
  * Drained Anim_WriteSprite (Z_01.asm:5365) writes via SpriteOffsets[] —
  * scattered offsets like $60, $BC, $64, $B8 not linear. Sweep must

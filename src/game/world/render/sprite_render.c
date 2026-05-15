@@ -70,7 +70,19 @@ extern const unsigned char common_chr[7616];
  * tiles are enough for a 16x32 sprite strip. */
 #define ROOMROM_HUD_BACKDROP_TILE ROOMROM_HUD_BACKDROP_TILE_BASE
 #define ROOMROM_HUD_BACKDROP_FIRST_SLOT 10u
-#define ROOMROM_HUD_BACKDROP_SPRITE_COUNT 48u
+/* H32 SAT fits 64 hardware sprites. Pre-2026-05-15 layout used
+ * 48 HUD-backdrop sprites (16 cols x 3 rows) which left only slots
+ * 58..63 for enemies — enemy SAT writes at slots 64+ landed in
+ * unused VRAM and never got evaluated by VDP.
+ *
+ * Compact layout:
+ *   Row 0 (y=0..31):  16 sprites of SIZE(2, 4) = 16x32 each
+ *                     (kept 16x wide because 8-tile budget caps the
+ *                     sprite to 2 tiles wide x 4 tall = 8 tiles).
+ *   Row 32 (y=32..47): 8 sprites of SIZE(4, 2) = 32x16 each (8 tiles).
+ *   Row 48 (y=48..55): 8 sprites of SIZE(4, 1) = 32x8 each (4 tiles).
+ * Total: 16 + 8 + 8 = 32 sprites. */
+#define ROOMROM_HUD_BACKDROP_SPRITE_COUNT 32u
 #define ROOMROM_HUD_BACKDROP_LAST_SLOT \
     (ROOMROM_HUD_BACKDROP_FIRST_SLOT + ROOMROM_HUD_BACKDROP_SPRITE_COUNT - 1u)
 
@@ -230,27 +242,26 @@ static void roomrom_sprites_set_hud_backdrop(void)
     unsigned short slot = ROOMROM_HUD_BACKDROP_FIRST_SLOT;
     unsigned short x;
 
+    /* H32 SAT layout (64 hardware sprite slots total).
+     * Row 0 keeps 16 cols of SIZE(2, 4) because the 8-tile backdrop
+     * budget caps sprite width at 2 tiles (8 tiles = 2 cols x 4 rows).
+     * Rows 32 + 48 use 32-wide sprites (SIZE(4, 2) + SIZE(4, 1)) which
+     * fit within 8 tiles. Total 32 sprites covering 256x56 area. */
     for (x = 0u; x < 256u; x = (unsigned short)(x + 16u)) {
         VDP_setSpriteFull(slot, (signed short)x, (signed short)0, RENDER_SPRITE_SIZE(2, 4),
                           attr, (unsigned short)(slot + 1u));
         slot++;
     }
-    for (x = 0u; x < 256u; x = (unsigned short)(x + 16u)) {
-        VDP_setSpriteFull(slot, (signed short)x, (signed short)32, RENDER_SPRITE_SIZE(2, 2),
+    for (x = 0u; x < 256u; x = (unsigned short)(x + 32u)) {
+        VDP_setSpriteFull(slot, (signed short)x, (signed short)32, RENDER_SPRITE_SIZE(4, 2),
                           attr, (unsigned short)(slot + 1u));
         slot++;
     }
-    for (x = 0u; x < 256u; x = (unsigned short)(x + 16u)) {
-        /* Phase 7 substrate fix 2026-05-15: HUD backdrop chain no longer
-         * terminates at slot 57 with link=0. Instead it forwards to slot
-         * 58 so enemy_render_sweep_oam_to_sat()'s SAT writes at slots
-         * 58-79 (22 enemy sprite slots) participate in the visible
-         * sprite chain. Without this, enemy SAT writes go to inactive
-         * slots and are never scanned by the VDP. */
+    for (x = 0u; x < 256u; x = (unsigned short)(x + 32u)) {
         unsigned short link = (slot == ROOMROM_HUD_BACKDROP_LAST_SLOT)
-                                  ? 58u
+                                  ? 42u   /* enemy chain start in H32 layout */
                                   : (unsigned short)(slot + 1u);
-        VDP_setSpriteFull(slot, (signed short)x, (signed short)48, RENDER_SPRITE_SIZE(2, 1),
+        VDP_setSpriteFull(slot, (signed short)x, (signed short)48, RENDER_SPRITE_SIZE(4, 1),
                           attr, link);
         slot++;
     }

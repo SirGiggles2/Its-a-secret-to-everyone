@@ -2071,13 +2071,13 @@ void roomrom_debug_tick(void)
         /* SAT DMA Lag Fix (debate 2026-05-09): single end-of-tick SAT
          * DMA via DMA_QUEUE. SYS_doVBlankProcess flushes the queue inside
          * the VBlank window. NES Z1 model: one OAM DMA per VBlank.
-         * Slot layout (post Phase 7 substrate fix 2026-05-15):
+         * Slot layout (H32 mode, 64 hardware SAT slots):
          *   0..9   = Link + sword + beam + boomerang + arrow + bomb +
          *            explosion + room_item + candle_fire + magic_shot.
-         *   10..57 = HUD backdrop strip (sprite_render.c).
-         *   58..79 = enemy_render bridge (NES OAM mirror sweep).
-         * Push all 80 slots so the enemy chain reaches VDP. */
-        VDP_updateSprites(80, DMA_QUEUE);
+         *   10..33 = HUD backdrop strip (sprite_render.c, 24 sprites).
+         *   34..63 = enemy_render bridge (NES OAM mirror sweep, 30 slots).
+         * Push all 64 H32 hardware slots. Slots 64+ don't exist in H32. */
+        VDP_updateSprites(64, DMA_QUEUE);
 
         /* Task 5.4: passive state mirror for BizHawk Lua probes. The
          * minimum 12 B (header/frame/scene/room/link xy/face) always
