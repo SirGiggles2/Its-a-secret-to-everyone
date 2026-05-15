@@ -1657,6 +1657,17 @@ void roomrom_debug_tick(void)
             roomrom_combat_set_redux(current_redux_flag());
             load_room(s_room_id);
             roomrom_combat_set_uw(s_scene == SCENE_UW);
+            /* Phase 10.3 audio per-event wiring: scene-toggle entry
+             * fires music_play per docs/audit/audio_routing.md table.
+             * UW = $40 dungeon song; OW = $20 overworld song.
+             * extern decl at top of main.c via inventory.h includes
+             * — music_play is in audio_driver.asm + linked into
+             * Debug.md via tools/debug/build_debug.py compile_asm
+             * MRI path (commit 6191e911). */
+            {
+                extern void music_play(unsigned char song_bitmap);
+                music_play((s_scene == SCENE_UW) ? 0x40 : 0x20);
+            }
             return;
         }
 

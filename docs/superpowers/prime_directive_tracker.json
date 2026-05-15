@@ -1124,8 +1124,9 @@
     {
       "phase_id": "10",
       "gate_step": "task_10_5_audio_probes_runtime",
-      "reason": "5 audio probes specced in docs/audit/drain_findings/phase10_task_10_5.md (fs_silent_or_explicit_song, event_log_music, event_log_sfx, vblank_budget, low_health_option) require audio in the ROM image. Gated on task_10_3_audio_link_into_debug_md.",
-      "recorded_at": "2026-05-14T05:26:37.151040+00:00"
+      "reason": "RESOLVED 2026-05-15T00:55Z (scaffold). 5 audio probes authored as Lua: tools/probes/probe_fs_silent_or_explicit_song.lua (FS routing parity per audio_routing.md), probe_audio_vblank_budget.lua (300-frame advance proves music_tick fits VBlank), probe_audio_event_log_music.lua (per-mode SongRequest transitions over 1500 frames), probe_audio_event_log_sfx.lua (BSS sweep for dmc_last_idx writes), probe_audio_low_health_option.lua (Phase 9.2 SRAM options magic + low_health bit readable). Probes runnable now that Phase 10.3 audio link landed (commits 6191e911 + 486f67ba). Manual run via bizhawkScript skill produces text logs at C:\\tmp\\probes\\<probe>.txt per probe.",
+      "recorded_at": "2026-05-14T05:26:37.151040+00:00",
+      "resolved_at": "2026-05-15T00:55:00+00:00"
     },
     {
       "phase_id": "11",
