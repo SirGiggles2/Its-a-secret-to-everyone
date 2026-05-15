@@ -1087,8 +1087,9 @@
     {
       "phase_id": "8",
       "gate_step": "ganon_wizzrobe_movement",
-      "reason": "BlueWizzrobe-family movement primitives (TurnSometimesAndMoveAndCheckTile + Move) stubbed in enrt_update_ganon; Ganon ticks but stays stationary until Phase 7 wizzrobe drain lands. Tracked in docs/audit/drain_findings/phase8_task_8_10.md Deferrals section.",
-      "recorded_at": "2026-05-14T03:59:32.013395+00:00"
+      "reason": "RESOLVED 2026-05-15T01:46Z. BlueWizzrobe Move + TurnSometimesAndMoveAndCheckTile primitives transcribed inline in src/oracle/enemies/enemy_ganon_runtime.c per Z_04.asm:7100-7230 verbatim. (1) blue_wizzrobe_move: 11-byte teleport offset tables indexed by ObjDir (right/left/down/down-right/down-left/up/up-right/up-left). (2) blue_wizzrobe_turn_sometimes_and_move_and_check_tile: counter increment + every-64-frames turn-toward-link (alternating axis) + AlignWithNearestSquare grid snap + Move. Wizzrobe_GetCollidableTile branches skipped (Ganon's room is fixed geometry; @HitWall + @HitBlockOrWater never fire in practice). (3) play_sample now forwards to audio_sfx_play (XGM SFX path landed Phase 10.3). Ganon teleport-roams + burst-rays sail visibly instead of stationary. Full Z_04 wizzrobe family drain remains deferred to Phase 8.11+ when regular wizzrobes in roaming rooms need the tile-check branch.",
+      "recorded_at": "2026-05-14T03:59:32.013395+00:00",
+      "resolved_at": "2026-05-15T01:46:00+00:00"
     },
     {
       "phase_id": "8",
