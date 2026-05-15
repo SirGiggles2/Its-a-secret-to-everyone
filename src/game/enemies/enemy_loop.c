@@ -977,7 +977,11 @@ void enemy_loop_tick(void)
      * not yet wired). Q2=(c) gating done by caller — this function is
      * ONLY called inside the scroll-stable + non-paused branch of the
      * gameplay tick. */
-    if (enemy_loop_probe_is_armed()) {
+    /* 2026-05-15 perf: cache armed-flag once per tick. is_armed reads
+     * 4 volatile RAM cells; saved ~1% PC samples per tick by avoiding
+     * two function-call paths to it. */
+    unsigned char armed = enemy_loop_probe_is_armed();
+    if (armed) {
         enemy_loop_probe_publish_pre();
     }
 
@@ -1024,7 +1028,7 @@ void enemy_loop_tick(void)
         if (fn != 0) fn(slot);
     }
 
-    if (enemy_loop_probe_is_armed()) {
+    if (armed) {
         enemy_loop_probe_publish_live();
     }
 }

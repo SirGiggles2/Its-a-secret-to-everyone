@@ -43,4 +43,9 @@ void enemy_render_reset_oam(void);
 void enemy_render_native_sweep(void);
 void enemy_render_native_reset(void);
 
+/* Published by enemy_render_native_sweep: highest SAT slot index that
+ * received a write this frame, + 1 (i.e. the DMA count). Lets the
+ * gameplay tick DMA only the slots in use instead of all 64. */
+extern unsigned char g_enemy_render_last_sat_slot;
+
 #endif

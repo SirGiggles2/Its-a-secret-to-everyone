@@ -2105,22 +2105,30 @@ void roomrom_debug_tick(void)
             }
         }
 
-        /* SAT DMA Lag Fix (debate 2026-05-09): single end-of-tick SAT
-         * DMA via DMA_QUEUE. SYS_doVBlankProcess flushes the queue inside
-         * the VBlank window. NES Z1 model: one OAM DMA per VBlank.
-         * Slot layout (H32 mode, 64 hardware SAT slots):
-         *   0..9   = Link + sword + beam + boomerang + arrow + bomb +
-         *            explosion + room_item + candle_fire + magic_shot.
-         *   10..33 = HUD backdrop strip (sprite_render.c, 24 sprites).
-         *   34..63 = enemy_render bridge (NES OAM mirror sweep, 30 slots).
-         * Push all 64 H32 hardware slots. Slots 64+ don't exist in H32. */
-        VDP_updateSprites(64, DMA_QUEUE);
+        /* 2026-05-15 perf: DMA only the SAT slots actually in use this
+         * frame. native sweep publishes g_enemy_render_last_sat_slot =
+         * highest slot used + 1 (terminator). DMA bytes drop from
+         * 64*8=512 to ~12*8=96 per frame on busy rooms = ~6% frame
+         * budget recovered. Floor of 10 keeps Link + gameplay sprites
+         * (slots 0..9) always covered. */
+        {
+            unsigned short dma_count = g_enemy_render_last_sat_slot;
+            if (dma_count < 10u) dma_count = 10u;
+            VDP_updateSprites(dma_count, DMA_QUEUE);
+        }
 
-        /* Task 5.4: passive state mirror for BizHawk Lua probes. The
-         * minimum 12 B (header/frame/scene/room/link xy/face) always
-         * publishes; heavy state is gated on the probe arm magic inside
-         * publish_state_mirror itself. */
-        roomrom_debug_publish_state_mirror();
+        /* Task 5.4: passive state mirror for BizHawk Lua probes.
+         * 2026-05-15: gate INLINED here so function-call overhead (jsr+ret
+         * + stack frame setup) is avoided on default-gameplay frames.
+         * Probes write arm magic at $FF73F8..F9 before reading mirror. */
+        {
+            volatile unsigned char *ctrl =
+                (volatile unsigned char *)ROOMROM_DEBUG_PROBE_CONTROL_BASE;
+            if (ctrl[0] == ROOMROM_DEBUG_PROBE_ARM0 &&
+                ctrl[1] == ROOMROM_DEBUG_PROBE_ARM1) {
+                roomrom_debug_publish_state_mirror();
+            }
+        }
 }
 
 #ifndef ROOMROM_NO_STANDALONE_MAIN

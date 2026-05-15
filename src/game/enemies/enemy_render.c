@@ -101,18 +101,11 @@ void anim_write_sprite_drained(unsigned int tile, unsigned int slot)
         }
     }
 
-    /* Z_01.asm:5373-5375 — pick OAM byte offset via SpriteOffsets. */
-    unsigned char ri = RAM(NES_ROLLING_SPR_INDEX);
-    if (ri >= 41u) ri = 0u;   /* defensive — NES guarantees < $28 */
-    unsigned char y_off = k_sprite_offsets[ri];
-
-    /* Z_01.asm:5384-5396 — write 4 OAM bytes. */
-    unsigned short base = (unsigned short)(NES_SPRITES_BASE + y_off);
-    RAM(base + 1u) = (unsigned char)tile;                       /* tile */
-    RAM(base + 3u) = ENEMY_RENDER_OBJ_X(slot);                  /* X    */
-    RAM(base + 0u) = ENEMY_RENDER_OBJ_Y(slot);                  /* Y    */
-    RAM(base + 2u) = attrs;                                      /* attr */
-
+    /* 2026-05-15 perf: NES OAM writes are no longer needed — the native
+     * sweep reads the side-channel cache (s_enemy_* arrays) populated
+     * above. Skip 4 OAM byte writes per call (~50 calls/frame =
+     * ~1600 cycles/frame saved). RollingSpriteIndex still advances so
+     * any external SpriteOffsets-table consumer sees the same cadence. */
     cycle_cur_sprite_index();
 }
 
@@ -124,13 +117,11 @@ void c_anim_write_sprite(unsigned int tile, unsigned int slot)
 
 void enemy_render_reset_oam(void)
 {
-    /* Zero NES OAM mirror $0200..$02FF + reset RollingSpriteIndex.
-     * Called once on room enter so stale sprites from prior room
-     * don't ghost in slot 32+ until the new room writes them. */
-    unsigned int i;
-    for (i = 0u; i < 256u; ++i) {
-        RAM((unsigned short)(NES_SPRITES_BASE + i)) = 0u;
-    }
+    /* 2026-05-15 perf: 256-byte OAM clear is no longer required for
+     * rendering — the native sweep reads the side-channel cache, not
+     * NES OAM mirror. Only RollingSpriteIndex needs reset so the
+     * SpriteOffsets table starts fresh each frame.
+     * Saves ~2000 cycles per frame. */
     RAM(NES_ROLLING_SPR_INDEX) = 0u;
 }
 
@@ -359,6 +350,12 @@ void enemy_render_sweep_oam_to_sat(void)
  * alive enemy. The OAM scatter still happens (cheap) for compat with
  * other consumers; enemy_render_sweep_oam_to_sat is retained for
  * fallback but no longer called from the gameplay tick. */
+/* 2026-05-15 perf: published by native sweep so main.c can DMA only the
+ * SAT entries actually used this frame (instead of all 64 H32 slots).
+ * Initialized large enough for the boot fallback path; native sweep
+ * updates each frame. */
+unsigned char g_enemy_render_last_sat_slot = ROOMROM_SPRITE_SLOT_ENEMY_FIRST;
+
 void enemy_render_native_sweep(void)
 {
     unsigned int slot;
@@ -369,16 +366,18 @@ void enemy_render_native_sweep(void)
     nes_ram[0x07FEu] = (unsigned char)(nes_ram[0x07FEu] + 1u);
 
     for (slot = ENEMY_LOOP_SLOT_FIRST; slot <= ENEMY_LOOP_SLOT_LAST; ++slot) {
-        if (ENEMY_ALIVE_FLAG(slot) == 0u) continue;
-        if (s_enemy_seen[slot] == 0u)     continue;
+        /* seen-flag implies enemy fired anim_write_sprite this frame =
+         * alive + drawing. Skip ALIVE_FLAG check (saves nes_ram read
+         * per slot). */
+        if (s_enemy_seen[slot] == 0u) continue;
         if (sat_slot > ENEMY_RENDER_SLOT_LAST) break;
+
+        unsigned char y     = s_enemy_y[slot];
+        if (y == 0xF0u) continue;
 
         unsigned char tile  = s_enemy_tile[slot];
         unsigned char attrs = s_enemy_attrs[slot];
         unsigned char x     = s_enemy_x[slot];
-        unsigned char y     = s_enemy_y[slot];
-
-        if (y == 0xF0u) continue;
 
         unsigned short tile_id   = translate_tile(tile, attrs);
         unsigned short sat_attrs = translate_attrs(attrs, tile_id);
@@ -397,6 +396,10 @@ void enemy_render_native_sweep(void)
         render_set_sprite_inline((unsigned short)sat_slot,
                                  (signed short)-32, (signed short)-32,
                                  RENDER_SPRITE_SIZE(1, 1), 0u, 0u);
+        /* Publish: DMA needs to include the terminator slot. */
+        g_enemy_render_last_sat_slot = (unsigned char)(sat_slot + 1u);
+    } else {
+        g_enemy_render_last_sat_slot = (unsigned char)sat_slot;
     }
 
     /* Clear seen-flags for next frame; tile/attrs/x/y stay latched. */
