@@ -124,6 +124,36 @@ void enrt_init_tektite(unsigned int slot) {
     ENEMY_MOVE_TIMER(slot) = (unsigned char)(dir << 2);
 }
 
+/* Drained @SetUpJump helper — matches NES Z_04.asm:2305 @SetUpJump.
+ * Reversal-flip, target_y compute, vspeed reset. Fires when:
+ *   (a) state-0 -> state-1 transition (initial jump start), OR
+ *   (b) state-1 + bound-flyer-blocked (corner reversal).
+ * NOT every frame — that would clobber vspeed accumulation. */
+static void enrt_tektite_setup_jump(unsigned int slot) {
+    unsigned char dir;
+    unsigned char kind;
+    if (ENEMY_JUMPER_REVERSALS(slot) >= 2) {
+        ENEMY_DIR(slot) ^= 0x03;
+        ENEMY_JUMPER_REVERSALS(slot) = 0;
+    }
+    enrt_jumper_point_boulder_downward(slot);
+    dir = ENEMY_DIR(slot);
+    ENEMY_JUMPER_TARGET_Y(slot) =
+        (unsigned char)(ENEMY_Y(slot) + enrt_jumper_y_offsets[dir]);
+    kind = enrt_jumper_get_kind(slot);
+    ENEMY_JUMPER_VSPEED_HI(slot) =
+        (unsigned char)enrt_jumper_start_speeds_hi[kind];
+    enrt_jumper_reset_vspeed_frac(slot);
+}
+
+/* Drain Rule D1: NES wins ties. Restructure 2026-05-15.
+ * NES Z_04.asm:2251 UpdateTektiteOrBoulder splits state-0 vs state-1
+ * paths cleanly with a single @SetUpJump label entered from two
+ * places. Prior drained version flattened the control flow and ran
+ * @SetUpJump UNCONDITIONALLY each frame in state-1, resetting
+ * vspeed_hi every frame — Tektites couldn't accumulate gravity, never
+ * landed, never advanced to state-0-with-new-timer. Fix mirrors NES
+ * flow per-line. */
 void enrt_update_tektite_or_boulder(unsigned int slot) {
     unsigned char dir;
     unsigned char obj_type;
@@ -138,101 +168,87 @@ void enrt_update_tektite_or_boulder(unsigned int slot) {
         enrt_jumper_animate_and_check_collisions(slot);
         return;
     }
-
     if ((ENEMY_PAUSE_FLAG | ENEMY_STUN_TIMER(slot)) != 0) {
         enrt_jumper_animate_and_check_collisions(slot);
         return;
     }
 
-    if (ENEMY_STATE_TIMER(slot) == 0) {
-        if (ENEMY_MOVE_TIMER(slot) != 0) {
+    /* @State1: ObjState != 0 -> already jumping. */
+    if (ENEMY_STATE_TIMER(slot) != 0) {
+        c_bound_flyer(slot);
+        if (ENEMY_JUMPER_BLOCKED_FLAG == 0) {
+            /* Blocked at boundary: increment reversal count + restart jump. */
+            ENEMY_JUMPER_REVERSALS(slot)++;
+            enrt_tektite_setup_jump(slot);
+            enrt_jumper_animate_and_check_collisions(slot);
+            return;
+        }
+        /* Not blocked: physics. */
+        enrt_jumper_point_boulder_downward(slot);
+        ENEMY_JUMPER_REVERSALS(slot) = 0;
+        kind = enrt_jumper_get_kind(slot);
+        accel_idx =
+            (unsigned char)(enrt_jumper_y_accel_base_offsets[kind] + ENEMY_DIR(slot));
+        enrt_jumper_move_y(enrt_jumper_y_accelerations[accel_idx], 2, slot);
+
+        x_step = -1;
+        if ((ENEMY_DIR(slot) & 0x02) == 0)
+            x_step = 1;
+        ENEMY_X(slot) = (unsigned char)(ENEMY_X(slot) + x_step);
+
+        if ((signed char)ENEMY_JUMPER_VSPEED_HI(slot) < 0) {
+            /* Going up — keep animating. */
             enrt_jumper_animate_and_check_collisions(slot);
             return;
         }
 
-        c_turn_towards_player8();
-        dir = ENEMY_DIR(slot);
-        if ((dir & 0x03) == 0) {
-            horiz_dir = 2;
-            if (LINK_X < ENEMY_X(slot))
-                horiz_dir = 1;
-            ENEMY_DIR(slot) = (unsigned char)(dir | horiz_dir);
+        abs_dist = z01_abs(
+            (unsigned char)(ENEMY_Y(slot) - ENEMY_JUMPER_TARGET_Y(slot)));
+        if (abs_dist >= 3) {
+            /* Still mid-air. */
+            enrt_jumper_animate_and_check_collisions(slot);
+            return;
         }
 
-        ENEMY_STATE_TIMER(slot)++;
+        /* Target reached. Reset state, queue new timer. */
+        (void)z07_reset_obj_state(slot);
+        obj_type = ENEMY_TYPE(slot);
+        if (obj_type == 0x20) {
+            ENEMY_MOVE_TIMER(slot) = 0;
+            enrt_jumper_animate_and_check_collisions(slot);
+            return;
+        }
+        timer = (unsigned char)(ENEMY_RNG_B(slot) + 0x10);
+        if (timer < 0x20)
+            timer = (unsigned char)(timer - 0x40);
+        if (obj_type != 0x0D) {
+            timer &= 0x7F;
+            if (ENEMY_RNG_B(slot) >= 0xA0)
+                timer &= 0x0F;
+        }
+        ENEMY_MOVE_TIMER(slot) = timer;
+        enrt_jumper_animate_and_check_collisions(slot);
+        return;
     }
 
-    if (ENEMY_JUMPER_REVERSALS(slot) >= 2) {
-        ENEMY_DIR(slot) ^= 0x03;
-        ENEMY_JUMPER_REVERSALS(slot) = 0;
+    /* @State0: ObjState == 0 -> on ground. */
+    if (ENEMY_MOVE_TIMER(slot) != 0) {
+        /* Timer counting down — just animate. */
+        enrt_jumper_animate_and_check_collisions(slot);
+        return;
     }
 
-    enrt_jumper_point_boulder_downward(slot);
+    /* Timer expired — time to jump. Turn toward Link. */
+    c_turn_towards_player8();
     dir = ENEMY_DIR(slot);
-    ENEMY_JUMPER_TARGET_Y(slot) = (unsigned char)(ENEMY_Y(slot) + enrt_jumper_y_offsets[dir]);
-    kind = enrt_jumper_get_kind(slot);
-    ENEMY_JUMPER_VSPEED_HI(slot) = (unsigned char)enrt_jumper_start_speeds_hi[kind];
-    enrt_jumper_reset_vspeed_frac(slot);
-
-    if (ENEMY_STATE_TIMER(slot) == 0) {
-        enrt_jumper_animate_and_check_collisions(slot);
-        return;
+    if ((dir & 0x03) == 0) {
+        horiz_dir = 2;
+        if (LINK_X < ENEMY_X(slot))
+            horiz_dir = 1;
+        ENEMY_DIR(slot) = (unsigned char)(dir | horiz_dir);
     }
-
-    c_bound_flyer(slot);
-    if (ENEMY_JUMPER_BLOCKED_FLAG == 0) {
-        ENEMY_JUMPER_REVERSALS(slot)++;
-        enrt_jumper_point_boulder_downward(slot);
-        dir = ENEMY_DIR(slot);
-        ENEMY_JUMPER_TARGET_Y(slot) = (unsigned char)(ENEMY_Y(slot) + enrt_jumper_y_offsets[dir]);
-        kind = enrt_jumper_get_kind(slot);
-        ENEMY_JUMPER_VSPEED_HI(slot) = (unsigned char)enrt_jumper_start_speeds_hi[kind];
-        enrt_jumper_reset_vspeed_frac(slot);
-        enrt_jumper_animate_and_check_collisions(slot);
-        return;
-    }
-
-    enrt_jumper_point_boulder_downward(slot);
-    ENEMY_JUMPER_REVERSALS(slot) = 0;
-    kind = enrt_jumper_get_kind(slot);
-    accel_idx = (unsigned char)(enrt_jumper_y_accel_base_offsets[kind] + ENEMY_DIR(slot));
-    enrt_jumper_move_y(enrt_jumper_y_accelerations[accel_idx], 2, slot);
-
-    x_step = -1;
-    if ((ENEMY_DIR(slot) & 0x02) == 0)
-        x_step = 1;
-    ENEMY_X(slot) = (unsigned char)(ENEMY_X(slot) + x_step);
-
-    if ((signed char)ENEMY_JUMPER_VSPEED_HI(slot) < 0) {
-        enrt_jumper_animate_and_check_collisions(slot);
-        return;
-    }
-
-    abs_dist = z01_abs((unsigned char)(ENEMY_Y(slot) - ENEMY_JUMPER_TARGET_Y(slot)));
-    if (abs_dist >= 3) {
-        enrt_jumper_animate_and_check_collisions(slot);
-        return;
-    }
-
-    (void)z07_reset_obj_state(slot);
-    obj_type = ENEMY_TYPE(slot);
-    if (obj_type == 0x20) {
-        ENEMY_MOVE_TIMER(slot) = 0;
-        enrt_jumper_animate_and_check_collisions(slot);
-        return;
-    }
-
-    timer = (unsigned char)(ENEMY_RNG_B(slot) + 0x10);
-    if (timer < 0x20)
-        timer = (unsigned char)(timer - 0x40);
-
-    if (obj_type != 0x0D) {
-        timer &= 0x7F;
-        if (ENEMY_RNG_B(slot) >= 0xA0)
-            timer &= 0x0F;
-    }
-
-    ENEMY_MOVE_TIMER(slot) = timer;
+    ENEMY_STATE_TIMER(slot)++;    /* state 0 -> 1 */
+    enrt_tektite_setup_jump(slot);
     enrt_jumper_animate_and_check_collisions(slot);
 }
 
