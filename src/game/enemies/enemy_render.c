@@ -162,21 +162,47 @@ void enemy_render_reset_oam(void)
  * follow-up commit. */
 #define ROOMROM_SCENE_OBJ_TILE_BASE  1069u
 #define NES_COMMON_SPRITE_LAST       0x6Fu
+#define UWSP_TILES_PER_SUBPAL        34u
+#define NES_CUR_LEVEL_CELL           0x0010u
 
-static inline unsigned short translate_tile(unsigned char nes_tile)
+static inline unsigned short translate_tile(unsigned char nes_tile,
+                                            unsigned char nes_attrs)
 {
     if (nes_tile <= NES_COMMON_SPRITE_LAST) {
         return (unsigned short)(ROOMROM_SPR_TILE_BASE + (unsigned short)nes_tile);
     }
     /* Per-room transient bank: NES tile $70+k -> SCENE_OBJ slot tile k. */
     unsigned char bank_tile = (unsigned char)(nes_tile - 0x70u);
-    return (unsigned short)(ROOMROM_SCENE_OBJ_TILE_BASE + (unsigned short)bank_tile);
+
+    /* OW (CurLevel == 0) uses OWSP single-copy bank: tile k -> 1069+k.
+     * UW uses UWSP 4x bank: sub-pal N tile k -> 1069 + N*34 + k.
+     * Sub-pal from NES attr bits 1-0. */
+    unsigned char cur_level = nes_ram[NES_CUR_LEVEL_CELL];
+    if (cur_level == 0u) {
+        return (unsigned short)(ROOMROM_SCENE_OBJ_TILE_BASE + bank_tile);
+    }
+    unsigned char sub_pal = (unsigned char)(nes_attrs & 0x03u);
+    unsigned short sub_off =
+        (unsigned short)sub_pal * (unsigned short)UWSP_TILES_PER_SUBPAL;
+    return (unsigned short)(ROOMROM_SCENE_OBJ_TILE_BASE + sub_off + bank_tile);
 }
 
 static inline unsigned short translate_attrs(unsigned char nes_attrs,
                                              unsigned short tile_id)
 {
-    unsigned char sub_pal = (unsigned char)(nes_attrs & 0x03u);
+    /* Genesis sprite palette = PAL1 always. NES PALRAM $3F10..$3F1F
+     * (full 16-color sprite palette, 4 sub-pal x 4 colors) is loaded
+     * into Genesis CRAM PAL1 by roomrom_bg_palette_load_palram_full
+     * (src/game/world/bg_palette.c:33).
+     *
+     * NES sub-pal selection is NOT done via Genesis palette bank.
+     * Instead, the atlas pixel data is pre-biased so each tile copy
+     * uses CRAM indices for its sub-pal slot:
+     *   OWSP: 1 copy per tile, sub-pal 0 bias (colors 1..3 of PAL1)
+     *   UWSP: 4 copies per tile, sub-pal 0..3 bias (colors 1..15 of PAL1)
+     * translate_tile() picks the correct copy via sub_pal*34 offset.
+     *
+     * So translate_attrs always selects PAL1 + maps flip + priority. */
     unsigned char h_flip  = (unsigned char)((nes_attrs >> 6) & 0x01u);
     unsigned char v_flip  = (unsigned char)((nes_attrs >> 7) & 0x01u);
     unsigned char prio    = (unsigned char)((nes_attrs >> 5) & 0x01u) ^ 0x01u;
@@ -184,7 +210,7 @@ static inline unsigned short translate_attrs(unsigned char nes_attrs,
      * (above plane A). Invert: NES prio=0 -> Genesis prio=1 (above). */
 
     unsigned short sat = (unsigned short)(tile_id & 0x07FFu);
-    sat |= (unsigned short)((sub_pal & 0x03u) << 13);
+    sat |= (unsigned short)(1u << 13);                      /* PAL1 */
     sat |= (unsigned short)((v_flip  & 0x01u) << 12);
     sat |= (unsigned short)((h_flip  & 0x01u) << 11);
     sat |= (unsigned short)((prio    & 0x01u) << 15);
@@ -217,7 +243,7 @@ void enemy_render_sweep_oam_to_sat(void)
             continue;
         }
 
-        unsigned short tile_id    = translate_tile(tile);
+        unsigned short tile_id    = translate_tile(tile, attrs);
         unsigned short sat_attrs  = translate_attrs(attrs, tile_id);
         /* NES Z1 uses 8x16 sprite mode (PPUCTRL bit 5 = 1). Each NES
          * sprite = 2 vertically-stacked CHR tiles. Genesis SPRITE_SIZE
