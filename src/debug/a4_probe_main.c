@@ -148,6 +148,12 @@ extern void audio_vblank_hook_install(void);
 extern void audio_xgm_init(void);
 extern void music_play(unsigned char song_bitmap);
 
+/* 2026-05-15 perf fix: per-frame probe_check(4U) was unconditional,
+ * eating ~7-12% of frame budget on accessor calls + 20 byte writes.
+ * Gate behind enemy_loop_probe_is_armed() so default gameplay skips
+ * the heartbeat. Probes that need it write the arm magic first. */
+extern unsigned char enemy_loop_probe_is_armed(void);
+
 int debug_main_after_a4(bool hardReset)
 {
     (void) hardReset;
@@ -184,7 +190,10 @@ int debug_main_after_a4(bool hardReset)
         {
             roomrom_debug_tick();
             ++s_frame;
-            probe_check(4U);
+            if (enemy_loop_probe_is_armed())
+            {
+                probe_check(4U);
+            }
         }
     }
 

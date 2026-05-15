@@ -279,13 +279,16 @@ void enemy_render_sweep_oam_to_sat(void)
         if (sat_slot > ROOMROM_SPRITE_SLOT_LAST_H32) break;
     }
 
-    /* Pad remaining SAT slots to off-screen so stale entries clear. */
-    for (; sat_slot <= ROOMROM_SPRITE_SLOT_LAST_H32; ++sat_slot) {
-        unsigned char link = (sat_slot < ROOMROM_SPRITE_SLOT_LAST_H32)
-                                 ? (unsigned char)(sat_slot + 1u) : 0u;
+    /* 2026-05-15 perf fix: drop the up-to-54-slot pad loop. Write a
+     * single terminator at the next slot with link=0, hiding it off-
+     * screen. Genesis VDP sprite processing walks the link chain from
+     * slot 0; once link=0 it stops scanning. Trailing SAT slots are
+     * ignored regardless of their stale contents. Saves up to ~50
+     * render_set_sprite_full calls per frame in sparse rooms (~3-5%
+     * of frame budget on Tektite room). */
+    if (sat_slot <= ROOMROM_SPRITE_SLOT_LAST_H32) {
         render_set_sprite_full((unsigned short)sat_slot, (signed short)-32,
-                          (signed short)-32, RENDER_SPRITE_SIZE(1, 1),
-                          0u, link);
+                               (signed short)-32, RENDER_SPRITE_SIZE(1, 1),
+                               0u, 0u);
     }
-
 }

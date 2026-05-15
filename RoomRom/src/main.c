@@ -760,8 +760,24 @@ void roomrom_debug_publish_state_mirror(void)
     unsigned char uw_level;
     unsigned char uw_quest;
 
-    /* Always-on minimum. FPS / scene-toggle / link-trace probes only need
-     * these 12 bytes; cost is one cache-line worth of volatile writes. */
+    /* 2026-05-15 perf fix: gate the entire state mirror behind probe
+     * arm. PC histogram showed publish_state_mirror at 5.31% of frame
+     * samples on default gameplay despite probe being un-armed —
+     * function call setup + volatile semantics + accessor reads add up.
+     * Default play skips entirely. Probes write arm magic before
+     * reading the mirror. */
+    {
+        volatile unsigned char *ctrl =
+            (volatile unsigned char *)ROOMROM_DEBUG_PROBE_CONTROL_BASE;
+        if (ctrl[0] != ROOMROM_DEBUG_PROBE_ARM0 ||
+            ctrl[1] != ROOMROM_DEBUG_PROBE_ARM1) {
+            return;
+        }
+    }
+
+    /* Always-on minimum (when armed). FPS / scene-toggle / link-trace
+     * probes only need these 12 bytes; cost is one cache-line worth of
+     * volatile writes. */
     p[0]  = 0x57u;                                /* 'W' */
     p[1]  = 0x50u;                                /* 'P' */
     p[2]  = (unsigned char)(s_frame_counter >> 8);
