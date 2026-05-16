@@ -1800,11 +1800,22 @@ void roomrom_debug_tick(void)
                     (void)cave_init(cid);
                     s_scene = SCENE_CAVE;
                     /* Position Link at bottom-center of cave room
-                     * (NES Z1 cave entry pos). Visible BG change is
-                     * placeholder — full cave-room render in v6b. */
+                     * (NES Z1 cave entry pos). */
                     players[0].x = 120u;
                     players[0].y = 192u;
                     players[0].face = LINK_FACE_UP;
+                    /* T0.2 — minimal cave-scene visual: clear plane A
+                     * (rows 0..ROOMROM_PLANE_ROWS, full width) so the
+                     * screen no longer shows the OW tiles Link warped
+                     * from. Sprite slot 0 (Link) continues to render on
+                     * top, so the scene transition is visually obvious.
+                     * Full procedural cave BG (brick walls + dirt floor
+                     * + cave-person sprite) is a follow-up task — needs
+                     * NES InitCaveRoom nametable port (Z_07.asm mode $0B
+                     * dispatch + cave CHR upload). */
+                    VDP_clearTileMapRect(BG_A, 0u, 0u,
+                                         (u16)ROOMROM_SLOT_TILES,
+                                         (u16)ROOMROM_PLANE_ROWS);
                     return;
                 }
             }
@@ -1920,6 +1931,18 @@ void roomrom_debug_tick(void)
             if ((pressed & BUTTON_START) && (joy & BUTTON_C)) {
                 cave_exit();
                 s_scene = SCENE_OW;
+                /* T0.2 — restore Link OFF the cave-entry tile (16 px
+                 * south, facing down) so cave_entrance_check sees floor
+                 * next tick instead of re-firing $24 immediately. NES
+                 * behavior matches: exiting a cave lands Link below the
+                 * entrance, facing south. */
+                players[0].x    = s_cave_return_x;
+                players[0].y    = (unsigned char)(s_cave_return_y + 16u);
+                players[0].face = LINK_FACE_DOWN;
+                /* T0.2 — repaint OW plane so the post-cave-exit screen
+                 * shows the source room instead of the cave-clear plane. */
+                roomrom_ow_room_render_fill_plane_a(s_room_id);
+                roomrom_ow_room_render_publish_play_area_tiles();
                 /* HUD underlay retired 2026-05-15: cave_exit does not
                  * re-enter load_room, so the staged HUD underlay must
                  * be re-asserted explicitly here. */
@@ -1983,9 +2006,19 @@ void roomrom_debug_tick(void)
             if (s_scene == SCENE_OW) {
                 (void)cave_init((cave_id_t)0x6A);
                 s_scene = SCENE_CAVE;
+                /* T0.2 — visual scene change: clear plane A so the OW
+                 * tiles don't bleed through under the cave sprite layer.
+                 * Full cave BG follow-up task. */
+                VDP_clearTileMapRect(BG_A, 0u, 0u,
+                                     (u16)ROOMROM_SLOT_TILES,
+                                     (u16)ROOMROM_PLANE_ROWS);
             } else if (s_scene == SCENE_CAVE) {
                 cave_exit();
                 s_scene = SCENE_OW;
+                /* T0.2 — leaving cave: republish OW tiles on plane A
+                 * via the existing full-room fill path. */
+                roomrom_ow_room_render_fill_plane_a(s_room_id);
+                roomrom_ow_room_render_publish_play_area_tiles();
             }
             /* HUD underlay retired 2026-05-15: cave_init/cave_exit do not
              * pass through load_room, so re-assert the BG_A underlay so
