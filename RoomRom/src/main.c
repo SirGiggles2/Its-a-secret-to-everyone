@@ -1492,6 +1492,39 @@ void roomrom_debug_tick(void)
          * increment here in roomrom_debug_tick (the per-frame body)
          * so all consumers see a normal 0..$FF cycling counter. */
         nes_ram[0x0015u] = (unsigned char)(nes_ram[0x0015u] + 1u);
+
+        /* Phase 7 root-cause fix #2 2026-05-16 — port NES Z_07.asm:468
+         * @UpdateTimers from the NES NMI handler. Per-frame decrement
+         * of every non-zero byte in NES $26..$3C (StunCycle through
+         * FluteTimer, including DoorTimer $27, ObjTimer $28..$33 for
+         * 12 slots, ObjTimer+1 $29..$34 hi-bytes, ObjStunTimer $3D..
+         * (StunCycle gates the extra range) so enemy state machines
+         * tick + transitions fire. Without this loop NES Z1 timers
+         * froze: enemies stuck in animation phase 0, doors stuck open,
+         * stun never released, flute timer perma-locked.
+         *
+         * StunCycle ($26) wraps every 9 frames; on wrap, extends the
+         * loop range up to $4E (ChaseLongTimer + others) per NES asm.
+         *
+         * Skip MenuState / Paused gate (debug-mode always ticks). */
+        {
+            unsigned char loop_end;
+            unsigned char x;
+            unsigned char stun = nes_ram[0x0026u];
+            stun = (unsigned char)(stun - 1u);
+            nes_ram[0x0026u] = stun;
+            if ((signed char)stun >= 0) {
+                loop_end = 0x3Cu;  /* short loop $3C..$27 */
+            } else {
+                nes_ram[0x0026u] = 0x09u;  /* reset stun cycle */
+                loop_end = 0x4Eu;  /* extended loop $4E..$27 */
+            }
+            for (x = loop_end; x > 0x26u; --x) {
+                unsigned char v = nes_ram[x];
+                if (v != 0u) nes_ram[x] = (unsigned char)(v - 1u);
+            }
+        }
+
         roomrom_palette_tick_frame(s_frame_counter);
         /* PR-4a: advance scene-bank DMA state machine. Runs after
          * SYS_doVBlankProcess so the SGDK DMA queue is drained before
