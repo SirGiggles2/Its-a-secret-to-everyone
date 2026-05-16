@@ -1380,6 +1380,20 @@ void roomrom_debug_enter(void)
      * scramble-chain has bits to propagate. */
     rng_seed(0xACE1u);
 
+    /* Phase 7 root-cause fix #5 2026-05-16 — clear the a4_probe debug
+     * sentinel at NES $0012 (= GameMode). a4_probe_main.c:79 stamps
+     * RAM(0x0012) = $CD as a sentinel after A4-register verification;
+     * the probe never cleans it up. roomrom_debug_enter never wrote
+     * GameMode either, so $0012 stayed at $CD and mode_dispatch_update
+     * (src/game/world/mode_dispatch.c:42) fell through to default ->
+     * mode_stub() every frame -> no Mode-5 Play body fired -> Link
+     * input + transition logic never ran.
+     *
+     * Set GameMode = 5 (Mode 5 Play) per NES Z_07.asm:1613
+     * UpdateMode_JumpTable. GameSubmode = 0 to enter sub-state 0. */
+    nes_ram[0x0012u] = 0x05u;
+    nes_ram[0x0013u] = 0x00u;
+
     s_joy_prev = 0u;
     init_video();
     /* PR-4a: init scene-bank state machine BEFORE first scene_load so the
@@ -1674,11 +1688,20 @@ void roomrom_debug_tick(void)
             enemy_render_reset_oam();
             roomrom_hud_refresh_dynamic();
             enemy_loop_tick();
-            /* Phase 9.7 — gameplay-mode dispatcher tick. Routes
-             * GameMode ($FF0012) to Mode 5 Play / Mode 8 ContinueQuestion
-             * / Mode 11 Death / Mode 12 EndLevel native bodies. Most
-             * cases are no-op stubs; the wired modes run their state
-             * machines verbatim from NES Z_07.asm:1608+. */
+            /* Phase 7 root-cause fix #5b 2026-05-16 — restore GameMode
+             * ($0012) before dispatch. a4_probe_main.c probe_check
+             * stamps RAM($0012)=$CD as an A4-readback sentinel each
+             * frame after roomrom_debug_tick returns; the next frame's
+             * mode_dispatch_update would see $CD -> default no-op
+             * branch -> Mode 5 Play body never fires. Restore Mode 5
+             * (Play) before dispatch consumes the cell. probe_check
+             * sentinel write still verifies A4 readback per
+             * tools/debug/test_debug_contract.py contract; gameplay
+             * just normalizes the cell before use. */
+            if (nes_ram[0x0012u] == 0xCDu) {
+                nes_ram[0x0012u] = 0x05u;
+                nes_ram[0x0013u] = 0x00u;
+            }
             mode_dispatch_update();
             /* 2026-05-15 perf: switched from enemy_render_sweep_oam_to_sat
              * (iterated 64 NES OAM entries → up to ~50 SAT writes/frame,
