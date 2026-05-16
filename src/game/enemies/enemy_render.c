@@ -379,6 +379,36 @@ void enemy_render_sweep_oam_to_sat(void)
  * updates each frame. */
 unsigned char g_enemy_render_last_sat_slot = ROOMROM_SPRITE_SLOT_ENEMY_FIRST;
 
+/* Phase B 2026-05-15 — per-ENEMY_TYPE size lookup. NES Z1 enemy types
+ * are 1-byte ($00..$7F); table indexed by ENEMY_TYPE(slot). Default =
+ * SIZE(2,2) (16x16) covers the vast majority. Overrides land here for
+ * enemies whose visual width exceeds 16px (Aquamentus 24x16, etc.).
+ *
+ * Wider enemies (Gleeok body 32x32, Patra body w/ satellites) are
+ * handled by Phase F+G per-segment / sub-cache paths, not this table.
+ *
+ * Source for type IDs: src/game/enemies/enemy_loop.c per-type comments
+ * + reference/aldonunez/Z_05.asm (Variables.inc enum). */
+#define ENEMY_TYPE_SIZE_TABLE_LEN 0x80u
+
+static const unsigned char k_enemy_type_size[ENEMY_TYPE_SIZE_TABLE_LEN] = {
+    /* Aquamentus boss ($3D, Z_04.asm + boss_aquamentus): 24x16 wide
+     * mouth + flanks. SIZE(3,2) renders 3 columns x 2 rows = 6 tiles
+     * column-major from base tile $XX..$XX+5. */
+    [0x3Du] = ((3u - 1u) << 2) | (2u - 1u),
+    /* All other slots zero-initialized = sentinel "use default". */
+};
+
+static inline unsigned short enemy_type_to_size(unsigned char enemy_type)
+{
+    /* Default: SIZE(2,2). Encoding: (w-1)<<2 | (h-1) per RENDER_SPRITE_SIZE. */
+    if (enemy_type < ENEMY_TYPE_SIZE_TABLE_LEN) {
+        unsigned char e = k_enemy_type_size[enemy_type];
+        if (e != 0u) return (unsigned short)e;
+    }
+    return RENDER_SPRITE_SIZE(2, 2);
+}
+
 void enemy_render_native_sweep(void)
 {
     unsigned int slot;
@@ -404,16 +434,14 @@ void enemy_render_native_sweep(void)
 
         unsigned short tile_id   = translate_tile(tile, attrs);
         unsigned short sat_attrs = translate_attrs(attrs, tile_id);
-        /* Phase A 2026-05-15: SIZE(2,2) 16x16 covers the NES Z1 8x16-mode
-         * OAM pair group. NES OAM pair = ($XX, $XX+1 left half) + ($XX+2,
-         * $XX+3 right half). Genesis SIZE(2,2) at base $XX renders 4
-         * contiguous tiles column-major: ($XX,$XX+1) col0 + ($XX+2,$XX+3)
-         * col1 = exact NES pair. roomrom_sprites_upload_persistent_chr
-         * preserves consecutive VRAM ordering for the COMMON block.
-         * x-offset: NES left-half OAM x = visual left edge of full
-         * 16x16 enemy = Genesis SAT x. No offset adjustment.
-         * Wide enemies (Aquamentus 24x16) handled by Phase B size table. */
-        unsigned short size      = RENDER_SPRITE_SIZE(2, 2);
+        /* Phase A: SIZE(2,2) 16x16 covers NES Z1 8x16-mode OAM pair
+         * group. NES OAM pair = ($XX,$XX+1 left half) + ($XX+2,$XX+3
+         * right half). Genesis SIZE(2,2) at base $XX renders 4 contiguous
+         * tiles column-major = exact NES pair.
+         * Phase B 2026-05-15: per-ENEMY_TYPE size override via lookup
+         * table. Aquamentus $3D = SIZE(3,2) 24x16 mouth+flanks. Default
+         * stays SIZE(2,2). Per-tile h_flip lands later (Phase E). */
+        unsigned short size      = enemy_type_to_size(ENEMY_TYPE(slot));
 
         unsigned char link = (sat_slot < ENEMY_RENDER_SLOT_LAST)
                                  ? (unsigned char)(sat_slot + 1u) : 0u;
