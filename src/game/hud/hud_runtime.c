@@ -33,6 +33,7 @@
  *   2. Add ATLAS_ASSERT_SIZE-equivalent BG-tile checks (need a new
  *      ATLAS_ASSERT_BG_TILE macro for tile-map rather than sprite use). */
 #include "atlas/hud_chr.h"
+#include "hud_dispatch.h"   /* T2.3: hud_format_status_bar_text mirror */
 
 #define HUD_TILE_SPACE  0x24u
 #define TILE_DASH       0x62u
@@ -604,4 +605,11 @@ void roomrom_hud_refresh_dynamic(void)
         return; /* Inventory unchanged — skip the VDP traffic. */
     }
     draw_hud_dynamic(s_hud_id_cached);
+    /* T2.3 (6.10.6 Step B): mirror to NES TRANSFER_BUF via
+     * hud_format_status_bar_text. NES source: Z_07 WriteHearts /
+     * Z_01 StatusBarTransferBufTemplate (asm:2804). Drained at
+     * hud_dispatch.c:102. Native VDP path is primary; this mirror
+     * keeps NES-native consumers (transpiled z_01 paths, NES asm
+     * tooling) reading current LINK_HEARTS / LINK_RUPEES / bombs. */
+    hud_format_status_bar_text();
 }
