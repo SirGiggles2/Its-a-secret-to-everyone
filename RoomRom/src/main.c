@@ -1687,6 +1687,24 @@ void roomrom_debug_tick(void)
              * Clear-before-draw mirrors the NES NMI sentinel pass. */
             enemy_render_reset_oam();
             roomrom_hud_refresh_dynamic();
+            /* Phase 7 root-cause fix #6 2026-05-16 — sync C-side
+             * players[0] and s_room_id into NES_RAM cells before
+             * gameplay tick. NES Z1 native code reads these cells
+             * directly; without the sync collision detection thinks
+             * Link is at (0,0), enemy AI sees RoomId=0 (overworld
+             * starting room) regardless of where the player is, and
+             * room-specific behaviors all key off wrong room.
+             *
+             * NES Variables.inc: ObjX[0]=$0070, ObjY[0]=$0084 (Link
+             * is slot 0 in the per-slot arrays), RoomId=$00EB.
+             * CurLevel ($0010) and Link face ($008C ObjDir[0]) are
+             * already seeded by roomrom_debug_enter; refresh here
+             * each frame in case they get out-of-sync with the C
+             * source-of-truth. */
+            nes_ram[0x0070u] = (unsigned char)players[0].x;
+            nes_ram[0x0084u] = (unsigned char)players[0].y;
+            nes_ram[0x00EBu] = s_room_id;
+
             enemy_loop_tick();
             /* Phase 7 root-cause fix #5b 2026-05-16 — restore GameMode
              * ($0012) before dispatch. a4_probe_main.c probe_check
