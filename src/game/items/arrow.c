@@ -2,6 +2,8 @@
 #include "../world/render/sprite_render.h"
 #include "../../state/inventory.h"
 
+extern void audio_sfx_play(unsigned char sfx);
+
 /* NES Z_05.asm:2945 WieldArrow / Z_07.asm UpdateRodOrArrow: refuse if
  * `Bow == 0` (InvBow ownership) OR if `InvArrow == 0` (no arrow tier
  * picked up) OR if `InvRupees == 0` (each shot costs 1 rupee — NES Z1
@@ -41,6 +43,9 @@ void roomrom_arrow_fire(link_face_t face, short link_x, short link_y)
     if (g_inventory.arrow == INV_ARROW_NONE) return;
     if (g_inventory.rupees == 0u) return;
     inventory_rupee_debit(1u);   /* NES: 1-rupee cost per arrow */
+    /* NES Z_05.asm:2964-2965 LDA #$02 / JSR PlayEffect = arrow/boomerang
+     * (bit 1 in NES bitmap; DMC sample 2 in our 1-based mapping). */
+    audio_sfx_play(2u);
     s_state = ARROW_FLYING;
     s_face  = face;
     /* Spawn at Link's center, offset 8 px in facing direction. */

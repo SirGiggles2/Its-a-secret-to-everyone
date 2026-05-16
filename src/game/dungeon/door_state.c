@@ -209,6 +209,8 @@ void uw_door_state_tick(void)
     uw_door_state_apply_walkability();
 }
 
+extern void audio_sfx_play(unsigned char sfx);
+
 void uw_door_state_open_by_mask(unsigned char dir_mask)
 {
     unsigned char dir;
@@ -224,7 +226,12 @@ void uw_door_state_open_by_mask(unsigned char dir_mask)
         uw_door_state_patch_open_tiles(dir);
         any_new = 1u;
     }
-    if (any_new) uw_door_state_apply_walkability();
+    if (any_new) {
+        uw_door_state_apply_walkability();
+        /* NES Z_05.asm:5222-5223 LDA #$04 / JSR PlaySample = door sfx
+         * (DMC sample 3 in our 1-based mapping; bit 2 in NES bitmap). */
+        audio_sfx_play(3u);
+    }
 }
 
 void uw_door_state_apply_walkability(void)

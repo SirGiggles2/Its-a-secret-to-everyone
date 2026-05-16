@@ -1,6 +1,8 @@
 #include "link_damage.h"
 #include "../../state/inventory.h"
 
+extern void audio_sfx_play(unsigned char sfx);
+
 /* ObjInvincibilityTimer mirror — Link is slot 0. NES Z_07.asm:5757 reads
  * `ObjInvincibilityTimer, X` with X=0; we hold a single byte. */
 static unsigned char s_invincibility_timer = 0u;
@@ -68,6 +70,10 @@ unsigned char roomrom_link_damage_apply(unsigned char dmg_hi,
 {
     if (s_invincibility_timer != 0u) return 0u;     /* already invincible */
     if (g_inventory.clock != 0u) return 0u;         /* clock freezes harm */
+
+    /* NES Z_01.asm:5695-5696 Link_BeHarmed:
+     *   LDA #$08 / JSR PlaySample = hurt sfx (bit 3 -> DMC sample 4). */
+    audio_sfx_play(4u);
 
     apply_ring_divide(&dmg_hi, &dmg_lo);
 

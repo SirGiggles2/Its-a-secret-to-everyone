@@ -2,6 +2,8 @@
 #include "../world/render/sprite_render.h"
 #include "../../state/inventory.h"
 
+extern void audio_sfx_play(unsigned char sfx);
+
 /* NES: DrawBoomerangAndCheckCollision (Z_07.asm:3437) -> base attr 0
  * (RDirectionToWeaponBaseAttribute = 0 for all dirs).
  *
@@ -52,6 +54,9 @@ void roomrom_boomerang_throw(link_face_t face, short link_x, short link_y)
     s_face = face;
     s_x = link_x;
     s_y = link_y;
+    /* NES Z_05.asm:2964-2965 LDA #$02 / JSR PlayEffect = boomerang/arrow
+     * sound (bit 1 in NES bitmap; DMC sample 2 in our 1-based mapping). */
+    audio_sfx_play(2u);
 }
 
 unsigned char roomrom_boomerang_active(void)

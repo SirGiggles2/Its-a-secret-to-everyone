@@ -2,6 +2,8 @@
 #include "../world/render/sprite_render.h"
 #include "../../state/inventory.h"
 
+extern void audio_sfx_play(unsigned char sfx);
+
 /* NES: DrawCloud (Z_07.asm:4912) sets sprite attr Y=1 -> sub-pal 1 (blue). */
 #define ROOMROM_BOMB_SUBPAL 1u
 
@@ -66,6 +68,9 @@ void roomrom_bomb_update(void)
             s_state = BOMB_EXPLODE;
             s_timer = BOMB_EXPLODE_FRAMES;
             roomrom_sprites_clear_bomb();
+            /* Bomb detonation — reuse DMC sample 3 (door/explosion family,
+             * same low-bass thump on NES APU DMC sample bank). */
+            audio_sfx_play(3u);
         }
         return;
     case BOMB_EXPLODE:

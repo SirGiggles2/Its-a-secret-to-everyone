@@ -255,6 +255,8 @@ void roomrom_combat_init(void)
     roomrom_sprites_clear_beam();
 }
 
+extern void audio_sfx_play(unsigned char sfx);
+
 void roomrom_combat_try_swing(link_face_t face, short link_x, short link_y)
 {
     (void)link_x; (void)link_y;
@@ -262,6 +264,7 @@ void roomrom_combat_try_swing(link_face_t face, short link_x, short link_y)
     s_state = COMBAT_ACTIVE;
     s_frame = 0u;
     s_face  = face;
+    audio_sfx_play(1u);
 }
 
 unsigned char roomrom_combat_link_locked(void)
