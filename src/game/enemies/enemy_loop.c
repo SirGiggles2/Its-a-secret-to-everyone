@@ -27,6 +27,37 @@
 #include "obj_lists.h"                    /* 7.7 step 1 room matrix loader */
 #include "dungeon_state.h"                /* 7.7 step 2 DUNGEON_ROOM_* */
 #include "bosses/boss_framework.h"        /* 8.1 step 3 room-item slot 19 */
+#include "combat_state.h"                 /* MON_HP for HP init */
+
+/* NES Z_07.asm:5227 ObjectTypeToHpPairs — packed HP, 2 per byte.
+ * Indexed by ObjType/2. Even-type uses high nibble (AND #$F0); odd-type
+ * uses low nibble shifted to high (ASL #4). NES ExtractHitPointValue
+ * at Z_04.asm:11035 produces an HP byte in the upper nibble form
+ * (hearts * 16). combat_deal_damage compares raw byte against damage
+ * (sword L1 = $10). Without this seed every spawned monster starts at
+ * MON_HP=0 and dies/won't-die unpredictably. */
+static const unsigned char k_object_hp_pairs[38] = {
+    0x06, 0x43, 0x25, 0x31, 0x12, 0x24, 0x81, 0x14,
+    0x22, 0x42, 0x00, 0xA9, 0x8F, 0x20, 0x00, 0x3F,
+    0xF9, 0xFA, 0x46, 0x62, 0x11, 0x2F, 0xFF, 0xFF,
+    0x7F, 0xF6, 0x2F, 0xFF, 0xFF, 0x22, 0x46, 0xF1,
+    0xF2, 0xAA, 0xAA, 0xFB, 0xBF, 0xF0
+};
+
+static void native_init_obj_hp(unsigned int slot, unsigned char type)
+{
+    const unsigned char pair_index = (unsigned char)(type >> 1);
+    if (pair_index >= (unsigned char)sizeof(k_object_hp_pairs)) {
+        MON_HP(slot) = 0u;
+        return;
+    }
+    const unsigned char packed = k_object_hp_pairs[pair_index];
+    if ((type & 1u) != 0u) {
+        MON_HP(slot) = (unsigned char)((packed & 0x0Fu) << 4);
+    } else {
+        MON_HP(slot) = (unsigned char)(packed & 0xF0u);
+    }
+}
 
 /* Forward decls — defined in src/oracle/enemies/enemy_walker_runtime.c
  * (init), src/oracle/enemies/enemy_wanderer_runtime.c (goriya update),
@@ -962,6 +993,7 @@ void enemy_loop_room_init(unsigned char room_id, unsigned char scene_id)
         enemy_init_fn fn;
         if (t == 0u) continue;
         if (t >= ENEMY_LOOP_TYPE_MAX) continue;
+        native_init_obj_hp(slot, t);  /* NES Z_07.asm:5576 @FetchAttrs */
         fn = enemy_init_fns[t];
         if (fn != (enemy_init_fn)0) {
             fn(slot);
@@ -1067,6 +1099,7 @@ void enemy_loop_force_spawn_typed(unsigned int slot,
     ENEMY_Y(slot) = y;
     clear_slot_scratch(slot);
     ENEMY_DIR(slot) = dir;
+    native_init_obj_hp(slot, enemy_type);  /* NES Z_07.asm:5576 @FetchAttrs */
 
     fn = enemy_init_fns[enemy_type];
     if (fn != 0) fn(slot);
