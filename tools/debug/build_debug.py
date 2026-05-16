@@ -56,6 +56,7 @@ INCS = [
     ROOT / "src" / "game" / "items",
     ROOT / "src" / "game" / "options",
     ROOT / "src" / "game" / "options" / "probes",
+    ROOT / "src" / "game" / "audio",
     ROOT / "src" / "state" / "probes",
     ROOT / "src" / "oracle" / "room",
     ROOT / "src" / "core",
@@ -130,6 +131,9 @@ ROOMROM_C_SOURCES = [
     # Plan v5a Tier-1 bridge 2026-05-16 — sync C-side state into NES RAM
     # mirror cells ($00FA/$00FB input, $066F/$0670 hearts, $008C face).
     ("src/state/nes_ram_sync.c",                "nes_ram_sync.o"),
+    # Plan v5b Tier-5 T5.5 2026-05-16 — audio dispatcher: gamemode+scene
+    # tuple change -> single music_play() per docs/audit/audio_routing.md.
+    ("src/game/audio/audio_dispatch.c",         "audio_dispatch.o"),
     # Phase 7 enemy render bridge — NES OAM mirror -> Genesis SAT sweep.
     ("src/game/enemies/enemy_render.c",         "enemy_render.o"),
     # Phase 7 substrate — ROOM_BOUNDS setup (drained roomld_setup_obj_room_bounds).

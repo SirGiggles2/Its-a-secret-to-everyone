@@ -28,6 +28,7 @@
 #include "../../src/game/combat/link_damage.h"   /* Task 6.11.1 (Phase 12.2 promoted) */
 #include "../../src/state/inventory.h"                   /* Task 6.10.10: rupee tick */
 #include "../../src/state/nes_ram_sync.h"                /* Plan v5a Tier-1: $FA/$FB/$66F/$670/$008C */
+#include "../../src/game/audio/audio_dispatch.h"         /* Plan v5b Tier-5 T5.5: gamemode+scene music dispatcher */
 #include "probes/metadata_probe.h"     /* Task 5.4: Gate D in-ROM probe */
 #include "atlas/level_chr_swap.h"        /* PR-4a: scene-bank DMA state machine */
 #include "player_state.h"                 /* Phase 6 Task 6.1: typed players[] */
@@ -1487,6 +1488,11 @@ void roomrom_debug_enter(void)
 
     /* Plan v5a T3.1 — debug_enter complete, gameplay loop owns mode now. */
     s_in_gameplay = 1u;
+
+    /* Plan v5b T5.5 — force dispatcher to re-fire on the next tick;
+     * debug_enter may have changed scene/room without going through
+     * audio_dispatch_tick. */
+    audio_dispatch_reset();
 }
 
 unsigned char roomrom_debug_get_scene(void)
@@ -1721,6 +1727,13 @@ void roomrom_debug_tick(void)
              * any future NES HUD-readout consumer sees live values. */
             nes_ram_sync_inventory_hearts();
             nes_ram_sync_link_face();
+
+            /* Plan v5b Tier-5 T5.5 — audio dispatcher: gamemode+scene
+             * tuple change -> single music_play() per audio_routing.md.
+             * Edge-fires only; same-tuple frames are silent. Per-tick
+             * cost: 3 byte compares. Idempotent: re-entry safe via
+             * audio_dispatch_reset() in roomrom_debug_enter. */
+            audio_dispatch_tick((unsigned char)s_scene, s_room_id);
 
             enemy_loop_tick();
             /* Phase 7 root-cause fix #5b 2026-05-16 — restore GameMode
