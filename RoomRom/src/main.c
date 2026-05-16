@@ -12,6 +12,8 @@
 #include "../../src/game/world/scene_load.h"  /* Phase 12.2 promoted */
 #include "../../src/game/world/palette_tick_runtime.h"  /* Phase 12.2 promoted */
 #include "cave_dispatch.h"  /* debate 006 D2: native cave gamemode entry */
+#include "../../src/game/cave/cave_entrance.h"  /* Tier 0 cave-entrance detect */
+#include "../../src/game/combat/collision_dispatch.h"  /* Tier 0 tile-under-Link lookup */
 #include "../../src/game/dungeon/door_state.h"  /* Phase 12.2 promoted */
 #include "../../src/game/dungeon/walk_model.h"  /* Phase 12.2 promoted */
 #include "render_abi.h"
@@ -216,6 +218,13 @@ static short          s_transition_link_y = 0;
 /* Increments every frame; used by Phase 2.6.5 palette tick. */
 static u16 s_frame_counter = 0u;
 static u16 s_joy_prev = 0u;
+
+/* Tier 0 (plan v6) cave return-state: save OW room+pos on cave entry
+ * so cave exit returns Link to the entrance tile. */
+static u8  s_cave_return_room = 0x77u;
+static u8  s_cave_return_face = LINK_FACE_DOWN;
+static u8  s_cave_return_x    = 120u;
+static u8  s_cave_return_y    = 133u;
 
 /* Map room metatile col 0..15 into one 32x32 staging slot. */
 static u8 plane_col_for_slot(u8 src_col, u8 slot_x)
@@ -1734,6 +1743,35 @@ void roomrom_debug_tick(void)
             nes_ram[0x0084u] = (unsigned char)players[0].y;
             nes_ram[0x00EBu] = s_room_id;
 
+            /* Tier 0 (plan v6) cave-entrance detection. Only fires in
+             * SCENE_OW. Looks up tile under Link via existing collision
+             * primitive (collision_get_collidable_tile_still slot 0 =
+             * Link). NES Z_05.asm:7320-7327 entrance tile set: $24
+             * armos warp, $88 rock-pile, $70-$73 stairs. On positive
+             * hit: save OW return state, transition to SCENE_CAVE,
+             * call cave_init. cave_exit (existing C+START chord)
+             * restores OW + return position. */
+            if (s_scene == SCENE_OW) {
+                unsigned char standing_tile =
+                    collision_get_collidable_tile_still(0u);
+                cave_id_t cid = cave_entrance_check(standing_tile);
+                if (cid != (cave_id_t)0) {
+                    s_cave_return_room = s_room_id;
+                    s_cave_return_face = players[0].face;
+                    s_cave_return_x    = (unsigned char)players[0].x;
+                    s_cave_return_y    = (unsigned char)players[0].y;
+                    (void)cave_init(cid);
+                    s_scene = SCENE_CAVE;
+                    /* Position Link at bottom-center of cave room
+                     * (NES Z1 cave entry pos). Visible BG change is
+                     * placeholder — full cave-room render in v6b. */
+                    players[0].x = 120u;
+                    players[0].y = 192u;
+                    players[0].face = LINK_FACE_UP;
+                    return;
+                }
+            }
+
             /* Plan v5a T1.2 + T1.3 — refresh heart cells + Link face
              * each tick. ObjDir[0] was seeded once at debug-enter, but
              * goes stale on any C-side face change; AI chase targets
@@ -1750,7 +1788,18 @@ void roomrom_debug_tick(void)
              * audio_dispatch_reset() in roomrom_debug_enter. */
             audio_dispatch_tick((unsigned char)s_scene, s_room_id);
 
-            enemy_loop_tick();
+            /* Tier 0 (plan v6) pause gate: when g_paused != OFF, skip
+             * gameplay tick (enemy AI + collision + Link state machine).
+             * NES Z_07.asm:472 Paused dispatch matches: gameplay update
+             * skipped, status-mode draw still runs (HUD redraw below
+             * stays active). Bare-START toggle at line 2052 flips the
+             * flag; potion-drink involuntary pause cleared by
+             * HeartPartial fill (Phase 6.10 deferral). Without this gate
+             * enemy AI keeps running while player thinks game is paused
+             * = death-while-paused bug. */
+            if (!roomrom_pause_is_active()) {
+                enemy_loop_tick();
+            }
             /* Phase 7 root-cause fix #5b 2026-05-16 — restore GameMode
              * ($0012) before dispatch. a4_probe_main.c probe_check
              * stamps RAM($0012)=$CD as an A4-readback sentinel each
@@ -1905,7 +1954,22 @@ void roomrom_debug_tick(void)
          * handled above. */
         if ((pressed & BUTTON_MODE) && !(joy & BUTTON_Z) && !(joy & BUTTON_C)) {
             s_scene = (s_scene == SCENE_OW) ? SCENE_UW : SCENE_OW;
-            s_room_id = (s_scene == SCENE_UW) ? 0x00 : 0x77;
+            /* UW first room from NES LevelInfo_StartRoomId ($6BAD) seeded
+             * by level_info_install_uw below. Bootstrap default = $73
+             * (NES Z1 L1 Q1 StartRoomId) so first toggle paints a real
+             * room even if the table-install race ever returns zeros. */
+            if (s_scene == SCENE_UW) {
+                level_info_install_uw(1u, 1u);
+                s_room_id = nes_ram[0x6BADu];
+                if (s_room_id == 0u) s_room_id = 0x73u;
+                /* Spawn Link at the south doorway of the entrance room
+                 * (NES InitMode3_Sub2 entry: ObjX=$78, ObjY=$DD). */
+                players[0].x = 0x78;
+                players[0].y = 0xDD;
+                players[0].face = LINK_FACE_UP;
+            } else {
+                s_room_id = 0x77;
+            }
             upload_scene_chr();
             /* P5: scene change uses coordinator to re-upload sprite CHR
              * with correct variant. combat redux kept separate. */
@@ -2052,6 +2116,15 @@ void roomrom_debug_tick(void)
             roomrom_pause_toggle_voluntary();
             return;
         }
+
+        /* Tier 0 (plan v6) pause gate: when paused, swallow all
+         * gameplay input (D-pad + combat buttons). START already
+         * handled above + un-pauses. Other chord handlers (mode/
+         * teleport/movestyle) skipped while paused. */
+        if (roomrom_pause_is_active()) {
+            return;
+        }
+
         /* Level cycle (was MODE-only) removed -- MODE is reserved hardware.
          * Reach a different level via teleport (X mode + DPAD) which warps
          * across the 16x8 room grid. */
