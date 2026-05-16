@@ -52,6 +52,12 @@
 
 static unsigned char s_hud_pal[ROOMROM_HUD_ROWS][ROOMROM_ROOM_COLS];
 
+/* Phase 6 Task 6.10.6 (Step A): cached HUD identity so the per-frame
+ * dynamic refresh knows where to paint counts/hearts without re-running
+ * the static transfer macro. Forward-declared here so T6.5 marker
+ * refresh (defined above roomrom_hud_draw) can read it. */
+static unsigned char s_hud_id_cached = 0xFFu;
+
 static const unsigned char s_hud_custom_chr[96] = {
     0x01,0x10,0x01,0x10,
     0x10,0x01,0x10,0x01,
@@ -400,6 +406,56 @@ static void draw_original_map_marker(unsigned char room_id)
     draw_hud_tile(col, row, TILE_ORIGINAL_MAP_MARKER, 2);
 }
 
+/* Plan v5c T6.5 — per-tick mini-map marker refresh + palette flash.
+ *
+ * NES source: reference/aldonunez/Z_01.asm:4095-4146 — marker rendered
+ * as sprite tile $3E with palette flash every 16 frames
+ * (FrameCounter & $1F vs $10).
+ *
+ * Genesis port: marker lives as BG tile $51 (TILE_ORIGINAL_MAP_MARKER,
+ * uploaded via s_hud_custom_chr middle 32B block). No SAT slot
+ * allocated; flash via palette alternation (pal 2 bright / pal 1 dim).
+ * Dirty-gate skips redundant VDP writes when room + flash phase stable.
+ *
+ * UW path uses redux automap (tile bank $30..$4F) and skips this fn. */
+static unsigned char s_last_marker_room  = 0xFFu;
+static unsigned char s_last_marker_phase = 0xFFu;
+
+void roomrom_hud_refresh_marker(unsigned char room_id,
+                                unsigned char is_underworld,
+                                unsigned char frame_counter)
+{
+    unsigned char phase;
+    unsigned char col;
+    unsigned char row;
+    unsigned char pal;
+
+    if (s_hud_id_cached == 0xFFu)
+        return;
+    if (s_hud_id_cached == ROOMROM_MAP_REDUX)
+        return;
+    if (is_underworld)
+        return;
+
+    phase = (unsigned char)(((frame_counter & 0x1Fu) < 0x10u) ? 1u : 0u);
+    if (room_id == s_last_marker_room && phase == s_last_marker_phase)
+        return;
+
+    if (s_last_marker_room != 0xFFu && s_last_marker_room != room_id) {
+        unsigned char old_col = (unsigned char)(2u + ((s_last_marker_room & 0x0Fu) >> 1));
+        unsigned char old_row = (unsigned char)(2u + ((s_last_marker_room >> 4) >> 1));
+        draw_hud_tile(old_col, old_row, TILE_GRAY_MAP, 0);
+    }
+
+    col = (unsigned char)(2u + ((room_id & 0x0Fu) >> 1));
+    row = (unsigned char)(2u + ((room_id >> 4) >> 1));
+    pal = (unsigned char)(phase ? 2u : 1u);
+    draw_hud_tile(col, row, TILE_ORIGINAL_MAP_MARKER, pal);
+
+    s_last_marker_room  = room_id;
+    s_last_marker_phase = phase;
+}
+
 static void upload_common_hud_tile(unsigned char subpal, unsigned char raw_tile)
 {
     const unsigned char *src = common_chr_x4 + subpal * COMMON_CHR_PER_PAL_BYTES;
@@ -469,11 +525,6 @@ void roomrom_hud_upload_chr(void)
     }
 }
 
-/* Phase 6 Task 6.10.6 (Step A): cached HUD identity so the per-frame
- * dynamic refresh knows where to paint counts/hearts without re-running
- * the static transfer macro. */
-static unsigned char s_hud_id_cached = 0xFFu;
-
 static void draw_hud_dynamic(unsigned char hud_id)
 {
     if (hud_id == ROOMROM_MAP_REDUX) {
@@ -501,6 +552,10 @@ void roomrom_hud_draw(unsigned char hud_id, unsigned char room_id,
     if (hud_id != ROOMROM_MAP_REDUX) {
         draw_original_map_marker(room_id);
     }
+    /* T6.5: full HUD redraw invalidates marker cache so refresh
+     * repaints with current flash phase next tick. */
+    s_last_marker_room  = 0xFFu;
+    s_last_marker_phase = 0xFFu;
     s_hud_id_cached = hud_id;
     (void)is_underworld;
     draw_hud_dynamic(hud_id);

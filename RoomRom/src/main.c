@@ -1702,6 +1702,12 @@ void roomrom_debug_tick(void)
              * Clear-before-draw mirrors the NES NMI sentinel pass. */
             enemy_render_reset_oam();
             roomrom_hud_refresh_dynamic();
+            /* Plan v5c T6.5 — mini-map position marker flash + room
+             * change refresh. Per NES Z_01.asm:4095-4146 the marker
+             * flashes every 16 frames keyed on FrameCounter ($0015). */
+            roomrom_hud_refresh_marker(s_room_id,
+                                       (unsigned char)(s_scene == SCENE_UW),
+                                       nes_ram[0x0015u]);
             /* Phase 7 root-cause fix #6 2026-05-16 — sync C-side
              * players[0] and s_room_id into NES_RAM cells before
              * gameplay tick. NES Z1 native code reads these cells
