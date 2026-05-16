@@ -330,14 +330,14 @@ static void draw_count_cell(unsigned short value, unsigned char col,
     draw_hud_tile((unsigned char)(col + 2u), row, tile_o, pal);
 }
 
-/* Phase 6 Task 6.11 (Step A): live heart row. NES splits hearts across
- * NT rows 5 (top halves) and 6 (bottom halves) at cols 22..29 (8 hearts).
- * RoomRom currently paints only HUD row 5 (= NT row 6) cols 22..24. Up
- * to 3 hearts visible until the row-5 outline pass lands.
+/* Phase 6 Task 6.11 (Step A): live heart row. NES paints up to 16
+ * hearts across NT row 5 (hearts 9..16, overflow) and row 6
+ * (hearts 1..8). Cols 22..29 = 8 slots per row. Single 8x8 tile per
+ * heart (NES $F2 full / $F3 half / $F4 empty).
  *
- * NES tile $F2=full, $F3=half, $F4=empty. heart_values: hi=max, lo=cur.
- * heart_partial: 0 -> empty, otherwise half (NES treats anything > 0 as
- * a partial heart; full heart only when cur >= max + 1 effectively). */
+ * heart_values: hi=max, lo=cur. heart_partial: 0 -> empty, nonzero ->
+ * half. NES Z1 max heart cap = $0F (16). Probe shows $99 (9 max / 9
+ * cur) — without the expansion below this clamped at 3 visible. */
 static void draw_hearts_row(unsigned char col, unsigned char row,
                             unsigned char hud_id)
 {
@@ -345,20 +345,19 @@ static void draw_hearts_row(unsigned char col, unsigned char row,
     unsigned char hp = g_inventory.heart_partial;
     unsigned char max_h = heart_values_max(hv);
     unsigned char cur_h = heart_values_cur(hv);
-    unsigned char visible = (max_h > 3u) ? 3u : max_h;
     unsigned char i;
 
-    /* Bound for first-boot zero state — display 3 outline hearts so the
-     * HUD looks alive even before save-load wires heart_values. */
     if (max_h == 0u) {
         max_h = 3u;
         cur_h = 3u;
-        visible = 3u;
     }
+    if (max_h > 16u) max_h = 16u;
+    if (cur_h > max_h) cur_h = max_h;
 
-    for (i = 0; i < 3u; i++) {
+    /* Bottom row: hearts 1..8 (cols col..col+7). */
+    for (i = 0; i < 8u; i++) {
         unsigned char tile;
-        if (i >= visible) {
+        if (i >= max_h) {
             tile = HUD_TILE_SPACE;
         } else if (i < cur_h) {
             tile = TILE_FULL_HEART;
@@ -368,12 +367,39 @@ static void draw_hearts_row(unsigned char col, unsigned char row,
             tile = TILE_EMPTY_HEART;
         }
         if (hud_id == ROOMROM_MAP_REDUX) {
-            /* Redux paints a soft outline on BG_B and the heart on Window. */
             draw_hud_tile_b((unsigned char)(col + i), row,
                             TILE_REDUX_HEART_OUTLINE, 0);
             draw_hud_tile((unsigned char)(col + i), row, tile, 1);
         } else {
             draw_hud_tile((unsigned char)(col + i), row, tile, 1);
+        }
+    }
+
+    /* Top row: hearts 9..16 if max > 8. row - 1 = NES NT row 5. */
+    if (row == 0u || max_h <= 8u) {
+        return;
+    }
+    for (i = 0; i < 8u; i++) {
+        unsigned char hi = (unsigned char)(i + 8u);
+        unsigned char tile;
+        if (hi >= max_h) {
+            tile = HUD_TILE_SPACE;
+        } else if (hi < cur_h) {
+            tile = TILE_FULL_HEART;
+        } else if (hi == cur_h && hp > 0u) {
+            tile = TILE_HALF_HEART;
+        } else {
+            tile = TILE_EMPTY_HEART;
+        }
+        if (hud_id == ROOMROM_MAP_REDUX) {
+            draw_hud_tile_b((unsigned char)(col + i),
+                            (unsigned char)(row - 1u),
+                            TILE_REDUX_HEART_OUTLINE, 0);
+            draw_hud_tile((unsigned char)(col + i),
+                          (unsigned char)(row - 1u), tile, 1);
+        } else {
+            draw_hud_tile((unsigned char)(col + i),
+                          (unsigned char)(row - 1u), tile, 1);
         }
     }
 }
