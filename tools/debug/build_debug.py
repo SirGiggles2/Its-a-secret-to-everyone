@@ -139,6 +139,14 @@ ROOMROM_C_SOURCES = [
     # Phase 7 substrate — ROOM_BOUNDS setup (drained roomld_setup_obj_room_bounds).
     ("src/oracle/room/room_load_runtime.c",     "room_load_runtime.o"),
     ("src/game/items/item_dispatch.c", "item_dispatch.o"),
+    # Plan v5c — dropped-item ($60) slot UPDATE port (NES UpdateItem @
+    # Z_04.asm:11236). Wires enemy_update_fns[0x60] so drops decay +
+    # Link bbox pickup triggers item_take_item().
+    ("src/game/items/item_object.c",   "items_item_object.o"),
+    # Plan v5c — asm-bound tables (ItemIdToSlot/ItemIdToDescriptor +
+    # MenuPalettesTransferBuf/SaveSlotToPaletteRowOffset) needed once
+    # item_take_item() becomes reachable (item_object_update calls it).
+    ("src/game/items/item_tables.c",   "items_item_tables.o"),
     ("RoomRom/src/main.c", "roomrom_main.o"),
     ("src/game/world/render/ow_render.c", "world_ow_render.o"),  # Phase 12.2 promoted
     ("src/game/hud/hud_runtime.c", "hud_runtime.o"),  # Phase 12.2 promoted (SGDK-1 clean)

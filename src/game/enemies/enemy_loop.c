@@ -28,6 +28,7 @@
 #include "dungeon_state.h"                /* 7.7 step 2 DUNGEON_ROOM_* */
 #include "bosses/boss_framework.h"        /* 8.1 step 3 room-item slot 19 */
 #include "combat_state.h"                 /* MON_HP for HP init */
+#include "../items/item_object.h"         /* Plan v5c $60 UpdateItem */
 
 /* NES Z_07.asm:5227 ObjectTypeToHpPairs — packed HP, 2 per byte.
  * Indexed by ObjType/2. Even-type uses high nibble (AND #$F0); odd-type
@@ -905,6 +906,17 @@ const enemy_update_fn enemy_update_fns[ENEMY_LOOP_TYPE_MAX] = {
      * enemy_jumper_bridge.c (carries RedLeeverState* tables and the
      * shared burrower-animate helper). */
     [0x10] = enrt_update_red_leever,        /* RedLeever */
+    /* Plan v5c — dropped-item ($60) UPDATE. NES UpdateItem @ Z_04.asm:11236.
+     * After SetUpDroppedItem converts a dead-monster slot into a $60
+     * dropped item (lifetime $FF, item id at $00AC), this row ticks the
+     * lifetime + checks Link bbox 9x9 for pickup. On hit it calls
+     * item_take_item(id) and clears the slot (DestroyMonster_Bank4).
+     *
+     * Greenfield port (no _runtime.c candidate). Stance: EXTEND — single
+     * table row + native body in src/game/items/item_object.c. Without
+     * this row the type-$60 slot tick is a no-op: drops appear but
+     * never decay and never get picked up. */
+    [0x60] = item_object_update,            /* DroppedItem */
 };
 
 /* Internal: clear an enemy slot's scratch state per NES room-init
