@@ -2245,6 +2245,12 @@ Plan v5a (2026-05-16) closed Tier 1 / 2 / 3:
 
 Adversarial review (Codex/Gemini/Sonnet/Opus 4-way debate, `~/.claude/plans/put-this-into-your-virtual-wall.md`) deferred Mode 5 Play port indefinitely — collision engine + controller adapter prereqs unmet. Next critical path: v5b (Tier 2 polish + Tier 5 audio gap-fill) — `T2.2` Bait drop, `T5.1` cave/boss/death music_play wiring, `T5.2` SFX call-sites, `T2.3-T2.7` HUD transfer-buf + Mode 8 flash + Mode 11 prompt+palette + heart anim, `T5.5` audio dispatcher. Mode 5 Play, dispatcher modes 3/4/6/7/9/A/B/C/10/13, hardware verification, manual L1-L9×Q1-Q2 user test all DEFERRED.
 
+**Plan v6 Tier 0 added 2026-05-16** after user reported "never been able to enter caves, never able to use any pause functions" — both flagged as `complete` in tracker but functionally broken in live play.
+- **T0.2 pause-menu functional gate SHIPPED + live-verified** (`build/probes/cave_pause_smoke.lua` PASS). `roomrom_debug_tick` gates `enemy_loop_tick()` + input dispatch on `roomrom_pause_is_active()`. Bare-START toggle NES-faithful (silent freeze + resume).
+- **T0.1 cave-entrance detection SHIPPED structurally** (`src/game/cave/cave_entrance.{c,h}` — NES Z_05.asm:7320 HandleWarpOW port: $24/$88/$70-$73 entrance tile range). Live probe-fail: `collision_get_collidable_tile_still(0)` returns $00 = OW PlayAreaTiles[$06A0+] not populated by current scene_load. Code correct per NES asm; awaiting upstream tile-data infra.
+- **T2.1 boss death drop suppression SHIPPED** (`src/game/enemies/enemy_walker_bridge.c` k_boss_no_drop_types[12]: Dodongo/Gohma/Aquamentus/Gleeok/Patra/Ganon). NES Z1 parity — boss kills skip drop-table.
+- **T0.4 OW PlayAreaTiles population — DEFERRED** as multi-session infra gap; unblocks T0.1 cave-entry verify.
+
 - [x] Phase 2 RoomRom Graphics Registry — closed (commit `13d845186c`).
 - [x] Phase 3 Overworld Caves — closed (commit `1b39833c77`).
 - [x] Phase 4 Overworld Secrets / Traversal / State — closed (commit `1b39833c77`).

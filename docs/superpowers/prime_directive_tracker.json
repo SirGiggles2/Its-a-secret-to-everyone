@@ -1,10 +1,10 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-05-16T10:12:51.199952+00:00",
+  "generated_at": "2026-05-16T16:15:59.144754+00:00",
   "generated_by": "tools/audit/primedirective/prime_refresh.py",
   "plan": {
     "path": "docs/superpowers/plans/2026-05-02-title-roomrom-full-port-master-plan.md",
-    "sha256": "1558586b68e6cbac136d88135604954e19f6cf9d77b972088e265c470d63a7af"
+    "sha256": "1f57c07b23732140ca4f9f8e5e77390de9e5a309e841999d32e8a42ac11ba939"
   },
   "active": {
     "phase_id": "17",
@@ -1066,6 +1066,20 @@
       "stance": "REPLACE",
       "regression_matrix_run": null,
       "recorded_at": "2026-05-16T09:46:04.414472+00:00"
+    },
+    {
+      "target_phase_id": "Plan v5c T6.3 + UW smoke GREEN",
+      "reason": "Triforce pickup writes InvTriforce + g_inventory mirror + triggers Mode 12 EndLevel; UW smoke probe verified OW/UW/cave scene-toggles GREEN at 60fps. Regression matrix 11/11 GREEN.",
+      "stance": "REPLACE",
+      "regression_matrix_run": null,
+      "recorded_at": "2026-05-16T15:47:08.639896+00:00"
+    },
+    {
+      "target_phase_id": "Phase 7 NES NMI Sync Restore",
+      "reason": "FrameCounter+UpdateTimers+ScrambleRandom+rng_seed+GameMode_restore+LinkXY_sync+RoomId_sync (commits c4be4dca..HEAD 2026-05-16)",
+      "stance": "REPLACE",
+      "regression_matrix_run": null,
+      "recorded_at": "2026-05-16T15:51:55.325842+00:00"
     }
   ],
   "deferrals": [
@@ -1337,14 +1351,16 @@
     },
     "drain_coverage_json": {
       "path": "tools/audit/drain_coverage.json",
-      "sha256": "811cbc5f3eba8e20e414ab2be1dd0092f063b7d5cbdf97d010669005416bbb75",
+      "sha256": "7de3f1eb69a7c7c536eaee351d11fcaea228d633dba2904d7755fa3a4a733c53",
       "ok": true
     },
-    "git_head": "ae630f93d59a2efbb401ed3dd114674debeb001b",
-    "dirty_paths_relevant": [],
+    "git_head": "33e914dd9440b85aabb35230b18734a87194e6dc",
+    "dirty_paths_relevant": [
+      "tools/every_30min_up_enter.log"
+    ],
     "evidence_paths_present": true,
     "complete_phase_invariant_ok": true,
-    "last_refresh_at": "2026-05-16T10:12:51.237670+00:00",
+    "last_refresh_at": "2026-05-16T16:15:59.206244+00:00",
     "stale_reasons": []
   },
   "blockers": []
