@@ -52,25 +52,31 @@ static inline void cycle_cur_sprite_index(void)
     RAM(NES_ROLLING_SPR_INDEX) = r;
 }
 
-/* 2026-05-15 native renderer cache: latched per-slot sprite state.
- * anim_write_sprite_drained writes here in addition to NES OAM mirror.
- * enemy_render_native_sweep() reads here (1 SAT write per alive slot)
- * instead of iterating 64 NES OAM entries (~50 SAT writes/frame). */
-static unsigned char s_enemy_tile [ENEMY_LOOP_SLOT_LAST + 1u];
-static unsigned char s_enemy_attrs[ENEMY_LOOP_SLOT_LAST + 1u];
-static unsigned char s_enemy_x    [ENEMY_LOOP_SLOT_LAST + 1u];
-static unsigned char s_enemy_y    [ENEMY_LOOP_SLOT_LAST + 1u];
-static unsigned char s_enemy_seen [ENEMY_LOOP_SLOT_LAST + 1u];
+/* Phase E 2026-05-15: multi-latch cache. Each ENEMY_LOOP slot can
+ * accumulate up to N tiles per frame (multi-tile bosses like Aquamentus
+ * write 3-6 tiles, walkers write 1-2). Native sweep emits one Genesis
+ * SAT entry per latched tile @ SIZE(1,2) 8x16 (1:1 NES OAM mapping).
+ * Worst case: 11 slots * 4 entries = 44 SAT writes/frame, well under
+ * H32's 64-slot hardware budget. Per-tile h_flip preserved (each entry
+ * stores its own attrs byte) — fixes spec gap #5. */
+#define ENEMY_RENDER_MAX_PER_SLOT  4u
+
+typedef struct {
+    unsigned char tile;
+    unsigned char attrs;
+    unsigned char x;
+    unsigned char y;
+} enemy_render_entry_t;
+
+static enemy_render_entry_t
+    s_enemy_entries[ENEMY_LOOP_SLOT_LAST + 1u][ENEMY_RENDER_MAX_PER_SLOT];
+static unsigned char s_enemy_count[ENEMY_LOOP_SLOT_LAST + 1u];
 
 void enemy_render_native_reset(void)
 {
     unsigned char i;
     for (i = 0u; i <= ENEMY_LOOP_SLOT_LAST; ++i) {
-        s_enemy_tile[i]  = 0u;
-        s_enemy_attrs[i] = 0u;
-        s_enemy_x[i]     = 0u;
-        s_enemy_y[i]     = 0xF0u;  /* hidden until first anim_write */
-        s_enemy_seen[i]  = 0u;
+        s_enemy_count[i] = 0u;
     }
 }
 
@@ -84,21 +90,23 @@ void anim_write_sprite_drained(unsigned int tile, unsigned int slot)
      * consumer reads it. */
     unsigned char attrs = RAM(NES_SCRATCH_03);
 
-    /* 2026-05-15 native cache: latch per-slot tile/attrs/x/y so the
-     * native sweep can emit 1 Genesis SAT entry per alive enemy
-     * without iterating NES OAM. Use ENEMY_THROWER_SLOT (NES
-     * CurObjIndex) which enemy_loop_tick sets to the active slot
-     * before dispatching the update fn. Only latch the FIRST tile
-     * write per frame per slot (FrameCounter-aware reset elsewhere).
-     * Bounded write to avoid OOB if THROWER_SLOT > LAST. */
+    /* Phase E 2026-05-15 — multi-latch append: each anim_write call
+     * adds one entry to the slot's cache (capped at MAX_PER_SLOT).
+     * Used by oracle drained enemies (moldorm, lamnola, ganon) which
+     * call this directly via c_anim_write_sprite. Per-tile h_flip
+     * preserved because each entry stores its own attrs byte. */
     {
         unsigned char cur_slot = ENEMY_THROWER_SLOT;
-        if (cur_slot <= ENEMY_LOOP_SLOT_LAST && s_enemy_seen[cur_slot] == 0u) {
-            s_enemy_tile[cur_slot]  = (unsigned char)tile;
-            s_enemy_attrs[cur_slot] = attrs;
-            s_enemy_x[cur_slot]     = ENEMY_RENDER_OBJ_X(slot);
-            s_enemy_y[cur_slot]     = ENEMY_RENDER_OBJ_Y(slot);
-            s_enemy_seen[cur_slot]  = 1u;
+        if (cur_slot <= ENEMY_LOOP_SLOT_LAST) {
+            unsigned char n = s_enemy_count[cur_slot];
+            if (n < ENEMY_RENDER_MAX_PER_SLOT) {
+                enemy_render_entry_t *e = &s_enemy_entries[cur_slot][n];
+                e->tile  = (unsigned char)tile;
+                e->attrs = attrs;
+                e->x     = ENEMY_RENDER_OBJ_X(slot);
+                e->y     = ENEMY_RENDER_OBJ_Y(slot);
+                s_enemy_count[cur_slot] = (unsigned char)(n + 1u);
+            }
         }
     }
 
@@ -116,26 +124,34 @@ void c_anim_write_sprite(unsigned int tile, unsigned int slot)
     anim_write_sprite_drained(tile, slot);
 }
 
-/* Phase A 2026-05-15 cache feeder. Called from native draw_dispatch.c
- * anim_write_sprite_pair_not_flashing on the LEFT-half iteration so
- * natively-dispatched enemies populate s_enemy_* the same way the
- * drain-shim path (anim_write_sprite_drained via c_anim_write_sprite)
- * does for oracle enemies. ENEMY_THROWER_SLOT mirrors NES CurObjIndex
- * which enemy_loop_tick sets before dispatching the per-slot update
- * fn — same key both paths. Single-latch: first writer per slot per
- * frame wins; subsequent calls drop. */
+/* Phase A/E cache feeder. Called from native draw_dispatch.c
+ * anim_write_sprite_pair_not_flashing on EACH iteration (LEFT + RIGHT
+ * halves) so natively-dispatched enemies populate s_enemy_entries the
+ * same way the drain-shim path (anim_write_sprite_drained via
+ * c_anim_write_sprite) does for oracle enemies. ENEMY_THROWER_SLOT
+ * mirrors NES CurObjIndex which enemy_loop_tick sets before dispatching
+ * the per-slot update fn — same key both paths.
+ *
+ * Phase E 2026-05-15: append entry to multi-latch cache (cap 4 per
+ * slot). Per-tile h_flip preserved: each entry stores its own attrs.
+ * Function name kept as _pair_left for ABI stability — it now publishes
+ * BOTH halves via separate calls. */
 void enemy_render_publish_pair_left(unsigned char tile,
                                     unsigned char attrs,
                                     unsigned char x,
                                     unsigned char y)
 {
     unsigned char cur_slot = ENEMY_THROWER_SLOT;
-    if (cur_slot <= ENEMY_LOOP_SLOT_LAST && s_enemy_seen[cur_slot] == 0u) {
-        s_enemy_tile[cur_slot]  = tile;
-        s_enemy_attrs[cur_slot] = attrs;
-        s_enemy_x[cur_slot]     = x;
-        s_enemy_y[cur_slot]     = y;
-        s_enemy_seen[cur_slot]  = 1u;
+    if (cur_slot <= ENEMY_LOOP_SLOT_LAST) {
+        unsigned char n = s_enemy_count[cur_slot];
+        if (n < ENEMY_RENDER_MAX_PER_SLOT) {
+            enemy_render_entry_t *e = &s_enemy_entries[cur_slot][n];
+            e->tile  = tile;
+            e->attrs = attrs;
+            e->x     = x;
+            e->y     = y;
+            s_enemy_count[cur_slot] = (unsigned char)(n + 1u);
+        }
     }
 }
 
@@ -177,11 +193,14 @@ void enemy_render_publish_meta(unsigned int slot)
         tile = k_meta_cloud_tiles[frame];
     }
 
-    s_enemy_tile[slot]  = tile;
-    s_enemy_attrs[slot] = ENEMY_RENDER_META_ATTRS;
-    s_enemy_x[slot]     = (unsigned char)ENEMY_RENDER_OBJ_X(slot);
-    s_enemy_y[slot]     = (unsigned char)ENEMY_RENDER_OBJ_Y(slot);
-    s_enemy_seen[slot]  = 1u;
+    /* Phase E: meta sprite replaces all enemy entries this frame
+     * (1 sprite, not multi-tile body). Reset count + write entry[0]. */
+    enemy_render_entry_t *e = &s_enemy_entries[slot][0];
+    e->tile  = tile;
+    e->attrs = ENEMY_RENDER_META_ATTRS;
+    e->x     = (unsigned char)ENEMY_RENDER_OBJ_X(slot);
+    e->y     = (unsigned char)ENEMY_RENDER_OBJ_Y(slot);
+    s_enemy_count[slot] = 1u;
 }
 
 void enemy_render_reset_oam(void)
@@ -465,48 +484,47 @@ void enemy_render_native_sweep(void)
     nes_ram[0x07FEu] = (unsigned char)(nes_ram[0x07FEu] + 1u);
 
     for (slot = ENEMY_LOOP_SLOT_FIRST; slot <= ENEMY_LOOP_SLOT_LAST; ++slot) {
-        /* seen-flag implies enemy fired anim_write_sprite this frame =
-         * alive + drawing. Skip ALIVE_FLAG check (saves nes_ram read
-         * per slot). */
-        if (s_enemy_seen[slot] == 0u) continue;
+        unsigned char n = s_enemy_count[slot];
+        unsigned char ei;
+        if (n == 0u) continue;
         if (sat_slot > ENEMY_RENDER_SLOT_LAST) break;
 
-        unsigned char y     = s_enemy_y[slot];
-        if (y == 0xF0u) continue;
+        /* Phase C live hit-flash: compute once per slot since flash
+         * affects all latched entries equally. Sub-pal bits 1..0 of
+         * attrs override with FrameCounter & 0x03 if ObjInvincibility
+         * Timer ($04F0+slot) is non-zero. NES Z_01.asm:5367-5371 logic,
+         * applied at sweep-time instead of latch-time so the palette
+         * cycles every frame regardless of when the enemy last drew. */
+        unsigned char inv_active = (ENEMY_RENDER_INV_TIMER(slot) != 0u);
+        unsigned char fc_pal = (unsigned char)(RAM(NES_FRAME_COUNTER) & 0x03u);
 
-        unsigned char tile  = s_enemy_tile[slot];
-        unsigned char attrs = s_enemy_attrs[slot];
-        unsigned char x     = s_enemy_x[slot];
+        for (ei = 0u; ei < n; ++ei) {
+            enemy_render_entry_t *e = &s_enemy_entries[slot][ei];
+            unsigned char y = e->y;
+            if (y == 0xF0u) continue;
+            if (sat_slot > ENEMY_RENDER_SLOT_LAST) break;
 
-        /* Phase C 2026-05-15: live hit-flash. If the enemy is in its
-         * post-hit invincibility window (NES ObjInvincibilityTimer
-         * $04F0+slot, mirrored as ENEMY_HIT_REACTION), override the
-         * palette bits 1..0 of attrs with FrameCounter & 0x03 so the
-         * palette cycles every frame instead of freezing on the value
-         * captured at last cache latch. NES Z_01.asm:5367-5371 logic,
-         * applied at sweep-time instead of latch-time. */
-        unsigned char render_attrs = attrs;
-        if (ENEMY_RENDER_INV_TIMER(slot) != 0u) {
-            render_attrs = (unsigned char)((render_attrs & 0xFCu) |
-                            (RAM(NES_FRAME_COUNTER) & 0x03u));
+            unsigned char render_attrs = e->attrs;
+            if (inv_active) {
+                render_attrs = (unsigned char)((render_attrs & 0xFCu) | fc_pal);
+            }
+            unsigned short tile_id   = translate_tile(e->tile, render_attrs);
+            unsigned short sat_attrs = translate_attrs(render_attrs, tile_id);
+            /* Phase E: each cache entry = one NES OAM (8x16). Render
+             * as Genesis SIZE(1,2) for exact 1:1 mapping. Per-tile
+             * h_flip preserved because each entry's attrs byte was
+             * captured separately. Wide enemies (Aquamentus 24x16)
+             * render as N entries (3 OAM = 3 SIZE(1,2) at successive
+             * x positions), no special-case needed. */
+            unsigned short size = RENDER_SPRITE_SIZE(1, 2);
+
+            unsigned char link = (sat_slot < ENEMY_RENDER_SLOT_LAST)
+                                     ? (unsigned char)(sat_slot + 1u) : 0u;
+            render_set_sprite_inline((unsigned short)sat_slot,
+                                     (signed short)e->x, (signed short)y,
+                                     size, sat_attrs, link);
+            ++sat_slot;
         }
-        unsigned short tile_id   = translate_tile(tile, render_attrs);
-        unsigned short sat_attrs = translate_attrs(render_attrs, tile_id);
-        /* Phase A: SIZE(2,2) 16x16 covers NES Z1 8x16-mode OAM pair
-         * group. NES OAM pair = ($XX,$XX+1 left half) + ($XX+2,$XX+3
-         * right half). Genesis SIZE(2,2) at base $XX renders 4 contiguous
-         * tiles column-major = exact NES pair.
-         * Phase B 2026-05-15: per-ENEMY_TYPE size override via lookup
-         * table. Aquamentus $3D = SIZE(3,2) 24x16 mouth+flanks. Default
-         * stays SIZE(2,2). Per-tile h_flip lands later (Phase E). */
-        unsigned short size      = enemy_type_to_size(ENEMY_TYPE(slot));
-
-        unsigned char link = (sat_slot < ENEMY_RENDER_SLOT_LAST)
-                                 ? (unsigned char)(sat_slot + 1u) : 0u;
-        render_set_sprite_inline((unsigned short)sat_slot,
-                                 (signed short)x, (signed short)y,
-                                 size, sat_attrs, link);
-        ++sat_slot;
     }
 
     /* Terminator: hide remaining SAT slots via chain break (link=0). */
@@ -520,11 +538,12 @@ void enemy_render_native_sweep(void)
         g_enemy_render_last_sat_slot = (unsigned char)sat_slot;
     }
 
-    /* Clear seen-flags for next frame; tile/attrs/x/y stay latched. */
+    /* Clear per-slot entry counts for next frame; entries arrays stay
+     * populated (overwritten as new anim_write calls append). */
     {
         unsigned char i;
         for (i = 0u; i <= ENEMY_LOOP_SLOT_LAST; ++i) {
-            s_enemy_seen[i] = 0u;
+            s_enemy_count[i] = 0u;
         }
     }
 }

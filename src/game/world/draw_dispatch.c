@@ -255,15 +255,14 @@ static void anim_write_sprite_pair_not_flashing(void)
             (unsigned char)RAM(0x0004u + d3); /* TMP4/5 */
         DRAW_OAM_ATTR(off) = attr;
 
-        /* Phase A 2026-05-15 cache feeder. Native draw_dispatch path
-         * writes OAM directly above; the enemy renderer cache is
-         * normally fed by anim_write_sprite_drained (oracle-only).
-         * Publish the LEFT half (d3==0) so natively-dispatched enemies
-         * render via enemy_render_native_sweep. Single-latch: matches
-         * cache semantics inside anim_write_sprite_drained. */
-        if (d3 == 0u) {
-            enemy_render_publish_pair_left(tile, attr, x, y);
-        }
+        /* Phase A/E cache feeder. Native draw_dispatch path writes OAM
+         * directly above; the enemy renderer cache is normally fed by
+         * anim_write_sprite_drained (oracle-only). Publish BOTH halves
+         * (LEFT d3=0 + RIGHT d3=1) into the multi-latch cache so
+         * natively-dispatched enemies render via enemy_render_native_sweep
+         * with full 1:1 NES OAM mapping. Per-tile h_flip preserved via
+         * per-entry attrs storage. */
+        enemy_render_publish_pair_left(tile, attr, x, y);
 
         off = (unsigned char)DRAW_RIGHT_SPRITE_OFFSET;
 
