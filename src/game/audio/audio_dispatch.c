@@ -23,16 +23,25 @@ extern void music_play(unsigned char song_bitmap);
 #define SCENE_UW    1u
 #define SCENE_CAVE  2u
 
-/* GameMode IDs from NES Z_07. */
-#define GM_DEMO              0x00u
-#define GM_FILE_SELECT       0x01u
-#define GM_REGISTER_NAME     0x02u
-#define GM_ELIMINATION       0x03u
-#define GM_LOAD_LEVEL        0x04u
-#define GM_PLAY              0x05u
-#define GM_GAME_OVER         0x06u
-#define GM_DYING             0x07u
-#define GM_CONTINUE_QUESTION 0x08u
+/* GameMode IDs per NES Z_07.asm:1613 UpdateMode_JumpTable (HEX indices).
+ * Mode names "Mode 10/11/12/13" in NES asm are HEX, not decimal. */
+#define GM_DEMO              0x00u  /* UpdateMode0Demo */
+#define GM_FILE_SELECT       0x01u  /* UpdateMode1Menu */
+#define GM_LOAD              0x02u  /* UpdateMode2Load */
+#define GM_UNFURL            0x03u  /* UpdateMode3Unfurl */
+#define GM_ENTER             0x04u  /* UpdateMode4and6EnterLeave */
+#define GM_PLAY              0x05u  /* UpdateMode5Play */
+#define GM_LEAVE             0x06u  /* UpdateMode4and6EnterLeave */
+#define GM_SCROLL            0x07u  /* UpdateMode7Scroll */
+#define GM_CONTINUE_QUESTION 0x08u  /* UpdateMode8ContinueQuestion */
+/* $09..$0C = UpdateMode5Play variants */
+#define GM_SAVE              0x0Du  /* UpdateModeDSave */
+#define GM_REGISTER          0x0Eu  /* UpdateModeERegister */
+#define GM_ELIMINATION       0x0Fu  /* UpdateModeFElimination */
+#define GM_STAIRS            0x10u  /* UpdateMode10Stairs */
+#define GM_DEATH             0x11u  /* UpdateMode11Death — fires own dirge */
+#define GM_END_LEVEL         0x12u  /* UpdateMode12EndLevel */
+#define GM_WIN_GAME          0x13u  /* UpdateMode13WinGame */
 
 /* Song bitmap IDs (audio_driver.asm change_song). */
 #define SONG_TITLE      0x80u
@@ -57,13 +66,19 @@ static unsigned char resolve_song(unsigned char gm, unsigned char scene)
         return SONG_TITLE;
 
     case GM_FILE_SELECT:
-    case GM_REGISTER_NAME:
+    case GM_REGISTER:
     case GM_ELIMINATION:
     case GM_CONTINUE_QUESTION:
+    case GM_SAVE:
         return SONG_SILENCE;
 
-    case GM_LOAD_LEVEL:
-        /* Transient — keep last song through the load. */
+    case GM_LOAD:
+    case GM_UNFURL:
+    case GM_ENTER:
+    case GM_LEAVE:
+    case GM_SCROLL:
+    case GM_STAIRS:
+        /* Transient — keep last song through the transition. */
         return s_last_song;
 
     case GM_PLAY:
@@ -71,13 +86,15 @@ static unsigned char resolve_song(unsigned char gm, unsigned char scene)
         if (scene == SCENE_CAVE) return SONG_UW;  /* placeholder: cave shares UW bank until ripped */
         return SONG_OW;
 
-    case GM_GAME_OVER:
-    case GM_DYING:
-        /* Death dirge — audio_driver.asm has no dedicated game-over
-         * phrase yet; play Zelda fanfare ($06) for now so the
-         * transition is audible. Real death dirge is a song-blob
-         * ripping follow-up. */
-        return SONG_ZELDA;
+    case GM_DEATH:
+        /* Mode 11 Death fires its own death-tune ($80 Tune1Request) at
+         * Sub1 and Game Over music ($40 Tune1Request) at SubC. Don't
+         * double-fire here — return last so dispatcher stays quiet. */
+        return s_last_song;
+
+    case GM_END_LEVEL:
+    case GM_WIN_GAME:
+        return SONG_ENDING;
 
     default:
         /* Unknown gamemode → no change. */

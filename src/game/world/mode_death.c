@@ -32,6 +32,7 @@
  */
 
 #include "platform_abi.h"
+#include "world_dispatch.h"  /* world_animate_world_fading (drained) */
 
 /* NES RAM cells. */
 #define MODE11_GAME_SUBMODE         RAM(0x0013u)
@@ -77,7 +78,16 @@ static void mode11_choose_attr_source(unsigned char a, unsigned char y, unsigned
 static void mode11_copy_play_area_attrs_half(void) { /* stub */ }
 static unsigned char mode11_copy_next_row_to_buf(void) { return 1u; /* stub: claim done */ }
 static void mode11_write_and_enable_sprite0(void) { /* stub */ }
-static unsigned char mode11_animate_world_fading(void) { return 1u; /* stub: claim done */ }
+/* Plan v5b T2.6 — wire real drain. Drain returns 0=done, 1=continuing;
+ * caller's `done` variable expects 1=done so invert. Drain advances
+ * NES FadeCycle ($051C) + ObjTimer+12 ($0034) + queues PALRAM writes
+ * to TRANSFER_BUF. Substrate TRANSFER_BUF→CRAM bridge for $3F08
+ * background palette writes is the remaining piece; without it, state
+ * machine still advances correctly but Genesis CRAM stays unchanged. */
+static unsigned char mode11_animate_world_fading(void)
+{
+    return (unsigned char)(world_animate_world_fading() == 0u);
+}
 static void mode11_link_end_move_and_animate(void) { /* stub */ }
 static void mode11_end_game_mode(void)
 {
