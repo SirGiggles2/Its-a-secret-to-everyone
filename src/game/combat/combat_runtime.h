@@ -46,4 +46,16 @@ void roomrom_combat_set_uw(unsigned char in_uw);
  * combat state machine. Currently a no-op flag — reserved for v11+. */
 void roomrom_combat_set_redux(unsigned char redux);
 
+/* Plan v5 sword/enemy collision sync. NES weapon slot 13 holds the
+ * sword; collision_check_monster_sword_collision tests OBJ_STATE(13)
+ * == 2 (= state 2 = full extend). Expose the current swing pose so
+ * nes_ram_sync_sword can publish the NES-side weapon slot each tick.
+ *
+ * roomrom_combat_get_swing_state: 0 = idle, 2 = full extend (NES
+ * state 2; the only state collision engine considers "active"). */
+unsigned char roomrom_combat_get_swing_state(void);
+short         roomrom_combat_get_swing_x(void);
+short         roomrom_combat_get_swing_y(void);
+link_face_t   roomrom_combat_get_swing_face(void);
+
 #endif

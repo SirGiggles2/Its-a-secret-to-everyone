@@ -61,6 +61,17 @@ static combat_state_t s_state    = COMBAT_IDLE;
 static unsigned char  s_frame    = 0u;   /* 0..COMBAT_TOTAL_FRAMES-1 */
 static link_face_t    s_face     = LINK_FACE_DOWN;
 
+/* Latched per-frame sword pose for nes_ram_sync_sword (Plan v5). */
+static unsigned char  s_pub_state = 0u;
+static short          s_pub_x     = 0;
+static short          s_pub_y     = 0;
+static link_face_t    s_pub_face  = LINK_FACE_DOWN;
+
+unsigned char roomrom_combat_get_swing_state(void) { return s_pub_state; }
+short         roomrom_combat_get_swing_x(void)     { return s_pub_x; }
+short         roomrom_combat_get_swing_y(void)     { return s_pub_y; }
+link_face_t   roomrom_combat_get_swing_face(void)  { return s_pub_face; }
+
 /* S7 v5 sword beam (Z_07.asm UpdateSwordShotOrMagicShot, MakeSwordShot
  * at Z_07:4581). Beam spawns at sword state 3 transition (frame 13 of
  * 16). Travels at q-speed $C0 = 3 px/frame in facing direction.
@@ -372,6 +383,7 @@ void roomrom_combat_update(short link_x, short link_y, link_face_t face)
     (void)face;
 
     if (s_state == COMBAT_IDLE) {
+        s_pub_state = 0u;
         update_beam();
         return;
     }
@@ -420,10 +432,16 @@ void roomrom_combat_update(short link_x, short link_y, link_face_t face)
         }
         update_beam();
 
+        s_pub_state = 2u;
+        s_pub_x     = sx;
+        s_pub_y     = sy;
+        s_pub_face  = s_face;
+
         s_frame++;
         if (s_frame >= REDUX_TOTAL_FRAMES) {
             s_state = COMBAT_IDLE;
             s_frame = 0u;
+            s_pub_state = 0u;
             roomrom_sprites_clear_sword();
         }
         return;
@@ -480,10 +498,24 @@ void roomrom_combat_update(short link_x, short link_y, link_face_t face)
     }
     update_beam();
 
+    /* NES weapon slot 13: only state 2 (full extend) registers hits.
+     * Publish position for the full state-2 window; other states leave
+     * pub_state at 0 so collision_check_monster_sword_collision bails
+     * the same way as NES (OBJ_STATE != 2 early-return). */
+    if (st == 2u) {
+        s_pub_state = 2u;
+        s_pub_x     = sx;
+        s_pub_y     = sy;
+        s_pub_face  = s_face;
+    } else {
+        s_pub_state = 0u;
+    }
+
     s_frame++;
     if (s_frame >= COMBAT_TOTAL_FRAMES) {
         s_state = COMBAT_IDLE;
         s_frame = 0u;
+        s_pub_state = 0u;
         roomrom_sprites_clear_sword();
     }
 }

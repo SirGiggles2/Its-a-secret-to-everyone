@@ -58,8 +58,38 @@ void nes_ram_sync_inventory_hearts(void);
 
 /* T1.3 — refresh ObjDir[0] from the canonical C-side face. AI chase
  * targets read this cell each tick; today's seed-once-at-debug-enter
- * goes stale on any C-side face change. */
+ * goes stale on any C-side face change.
+ *
+ * 2026-05-16 bug fix: address was $008C (= ObjY[slot 8], a wrong cell)
+ * and value was the raw link_face_t enum (0..3) — both wrong. ObjDir[0]
+ * is at $0098 and the cell holds the NES dir BITMAP ($01=R/$02=L/
+ * $04=D/$08=U). Without that fix collision_check_link_collision_preinit
+ * always read OR(LinkDir, MonsterDir) == MonsterDir → broken parry, AI
+ * chased a Link who appeared to face nowhere. */
 void nes_ram_sync_link_face(void);
+
+/* Plan v5 — publish sword swing pose into NES weapon slot 13. The
+ * collision battery's only "is the sword swinging?" test is
+ *   OBJ_STATE(13) == 2
+ * (see collision_check_monster_sword_collision in
+ * src/game/combat/collision_dispatch.c). Until this sync existed the
+ * cell was always 0 and the sword phantom-stabbed nothing.
+ *
+ * Writes per tick:
+ *   nes_ram[$0098 + 13]  = sword NES dir bitmap (mirrors Link's facing)
+ *   nes_ram[$00AC + 13]  = swing state (0 idle / 2 full-extend)
+ *   nes_ram[$0070 + 13]  = sword X
+ *   nes_ram[$0084 + 13]  = sword Y
+ *
+ * Idle frames clear OBJ_STATE(13) to 0. */
+void nes_ram_sync_sword(void);
+
+/* Plan v5 — seed ITEM_SWORD_LEVEL ($0657 ITEMS_BY_LEVEL[0]) to wood-
+ * sword tier on gameplay enter. Without a non-zero value the damage
+ * table k_sword_damage_points[level-1] indexes out-of-range / picks 0.
+ * RoomRom currently has no inventory pickup UI so the level is seeded
+ * directly. */
+void nes_ram_seed_sword_level(unsigned char level);
 
 #ifdef __cplusplus
 }

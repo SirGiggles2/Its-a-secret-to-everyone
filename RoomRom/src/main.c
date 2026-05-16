@@ -1489,6 +1489,14 @@ void roomrom_debug_enter(void)
     /* Plan v5a T3.1 — debug_enter complete, gameplay loop owns mode now. */
     s_in_gameplay = 1u;
 
+    /* Plan v5 — seed ITEM_SWORD_LEVEL=1 (wood sword) so the damage
+     * lookup k_sword_damage_points[level-1] returns $10 (16 dmg per
+     * stab) instead of 0. Without this the sword sync above writes
+     * OBJ_STATE(13)=2 each swing but combat_deal_damage rolls 0 dmg,
+     * leaving every enemy unkillable. RoomRom has no inventory UI
+     * yet so the level is seeded directly into the NES cell. */
+    nes_ram_seed_sword_level(1u);
+
     /* Plan v5b T5.5 — force dispatcher to re-fire on the next tick;
      * debug_enter may have changed scene/room without going through
      * audio_dispatch_tick. */
@@ -1733,6 +1741,7 @@ void roomrom_debug_tick(void)
              * any future NES HUD-readout consumer sees live values. */
             nes_ram_sync_inventory_hearts();
             nes_ram_sync_link_face();
+            nes_ram_sync_sword();
 
             /* Plan v5b Tier-5 T5.5 — audio dispatcher: gamemode+scene
              * tuple change -> single music_play() per audio_routing.md.

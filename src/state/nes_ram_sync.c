@@ -5,6 +5,7 @@
 #include "inventory.h"             /* g_inventory */
 #include "player_state.h"          /* players[0] */
 #include "joy.h"                   /* SGDK BUTTON_* */
+#include "../game/combat/combat_runtime.h"  /* roomrom_combat_get_swing_* */
 
 /* NES Z_07 ReadInputs bit layout (Variables.inc ButtonsPressed=$FA,
  * ButtonsDown=$FB). */
@@ -27,7 +28,21 @@
 #define NES_RAM_BUTTONS_DOWN      0x00FAu
 #define NES_RAM_HEART_VALUES      0x066Fu
 #define NES_RAM_HEART_PARTIAL     0x0670u
-#define NES_RAM_OBJDIR_LINK       0x008Cu
+/* NES Variables.inc:80 ObjDir := $0098. ObjDir[0] = Link facing
+ * bitmap: $01=R, $02=L, $04=D, $08=U. The earlier sync wrote $008C
+ * which is ObjY[slot 8] — a wrong cell that left ObjDir[0] always
+ * zero, so collision_check_link_collision_preinit's parry direction
+ * test and AI chase-targets all read a dead 0. */
+#define NES_RAM_OBJDIR_LINK       0x0098u
+
+/* link_face_t (sprite_render.h): DOWN=0, UP=1, LEFT=2, RIGHT=3.
+ * NES bitmap: $01=R, $02=L, $04=D, $08=U. */
+static const unsigned char k_face_to_nes_dir[4] = {
+    0x04u,  /* DOWN  */
+    0x08u,  /* UP    */
+    0x02u,  /* LEFT  */
+    0x01u   /* RIGHT */
+};
 
 static unsigned char sgdk_to_nes_buttons(u16 joy)
 {
@@ -62,5 +77,44 @@ void nes_ram_sync_inventory_hearts(void)
 
 void nes_ram_sync_link_face(void)
 {
-    nes_ram[NES_RAM_OBJDIR_LINK] = (unsigned char)players[0].face;
+    unsigned char idx = (unsigned char)players[0].face;
+    if (idx > 3u) idx = 0u;
+    nes_ram[NES_RAM_OBJDIR_LINK] = k_face_to_nes_dir[idx];
+}
+
+/* NES Variables.inc cell bases.
+ *   ObjX    := $0070  (per-slot X, 12 slots + weapons)
+ *   ObjY    := $0084
+ *   ObjDir  := $0098
+ *   ObjState:= $00AC
+ * Sword weapon slot = 13 (NES SwordSlot/RodSlot). */
+#define NES_OBJ_X_BASE      0x0070u
+#define NES_OBJ_Y_BASE      0x0084u
+#define NES_OBJ_DIR_BASE    0x0098u
+#define NES_OBJ_STATE_BASE  0x00ACu
+#define NES_SWORD_SLOT      13u
+#define NES_ITEM_SWORD_LEVEL 0x0657u
+
+void nes_ram_sync_sword(void)
+{
+    unsigned char st  = roomrom_combat_get_swing_state();
+    if (st == 0u) {
+        nes_ram[NES_OBJ_STATE_BASE + NES_SWORD_SLOT] = 0u;
+        return;
+    }
+    {
+        unsigned char fi = (unsigned char)roomrom_combat_get_swing_face();
+        if (fi > 3u) fi = 0u;
+        nes_ram[NES_OBJ_DIR_BASE   + NES_SWORD_SLOT] = k_face_to_nes_dir[fi];
+    }
+    nes_ram[NES_OBJ_X_BASE     + NES_SWORD_SLOT] =
+        (unsigned char)roomrom_combat_get_swing_x();
+    nes_ram[NES_OBJ_Y_BASE     + NES_SWORD_SLOT] =
+        (unsigned char)roomrom_combat_get_swing_y();
+    nes_ram[NES_OBJ_STATE_BASE + NES_SWORD_SLOT] = st;
+}
+
+void nes_ram_seed_sword_level(unsigned char level)
+{
+    nes_ram[NES_ITEM_SWORD_LEVEL] = level;
 }
