@@ -14,6 +14,11 @@
 #include "core/core_dispatch.h"  /* core_play_parry_tune, core_update_dead_dummy,
                                   * core_reset_shove_info_and_inv_timer */
 
+/* Plan v5b T5.2 — enemy hit / death SFX. SFX IDs registered in
+ * data/audio/MANIFEST.json: 1=swordsword, 2=arrowboom, 3=bombdoor,
+ * 4=linkhurt, 5=enemyhit, 6=enemykill, 7=itempickup. */
+extern void audio_sfx_play(unsigned char sfx);
+
 void combat_play_parry_sound_for_damage_type(void)
 {
     /* drain at combat_runtime.c:4-10. */
@@ -27,6 +32,7 @@ void combat_play_parry_sound_for_damage_type(void)
 void combat_handle_monster_died(unsigned int slot)
 {
     /* drain at combat_runtime.c:12-23. */
+    audio_sfx_play(6u);  /* enemy death */
     ROOM_KILL_COUNT = (uint8_t)((unsigned char)ROOM_KILL_COUNT + 1u);
     if ((unsigned char)ROOM_CHAIN_KILL_COUNT < 0x0Au) {
         ROOM_CHAIN_KILL_COUNT =
@@ -46,6 +52,7 @@ void combat_deal_damage(unsigned int slot)
 {
     /* drain at combat_runtime.c:25-40. */
     SFX_COMBAT = 2u;
+    audio_sfx_play(5u);  /* enemy hit */
     const unsigned char damage = (unsigned char)COMBAT_DAMAGE_AMOUNT;
     const unsigned char hp = (unsigned char)MON_HP(slot);
     if (hp < damage) {
