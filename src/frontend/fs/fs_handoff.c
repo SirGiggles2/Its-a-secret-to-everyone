@@ -33,16 +33,42 @@ void fs_handoff_to_transpiled(uint8_t slot) {
      * unreliable, so the trampoline takes no args and reads from RAM. */
     nes_ram[0x0016] = slot;
 
-    /* InitMode1_Sub6 (Z_02.asm:2526) runs @FindActiveSlot which loops while
-     * IsSaveSlotActive[Y] == 0, scanning $0633+. With fresh RAM (all zero)
-     * the loop runs off-array, INCing CurSaveSlot to a garbage value and
-     * eventually catching a stray non-zero byte -- but in practice we observe
-     * the init chain stalling at GameSubmode=06 with display off. Mark slot 0
-     * active so @FindActiveSlot exits cleanly on the first iteration with
-     * CurSaveSlot=0 and the rest of Sub6 (LDA #$00 STA GameSubmode INC
-     * IsUpdatingMode) runs. SRAM read isn't wired yet; v6.full SRAM lands
-     * the real per-slot detection. */
-    nes_ram[0x0633] = 0x01;   /* IsSaveSlotActive[0] = 1 */
+    /* InitMode1_Full pre-Sub6 chain (Z_02.asm:2122 jump table):
+     *   Sub0 = UpdateMode0Demo_Sub1  -- for each slot: if file-B uncommitted,
+     *          CopyFileBToFileA (NUKES IsSaveSlotActive); else @CheckFileA
+     *          which validates markers + checksum, calls FormatFileA on
+     *          mismatch (ALSO NUKES IsSaveSlotActive).
+     *   Sub1..5 = tile transfers.
+     *   Sub6 = @FindActiveSlot loop -- hangs if IsSaveSlotActive[0..2]==0.
+     *
+     * Seeding IsSaveSlotActive[0]=1 alone is insufficient: Sub0 overwrites
+     * it back to zero via CopyFileBToFileA (fresh-RAM file-B passes
+     * all-zero checksum match). Then Sub6 hangs with display off
+     * (VRamForceBlankGate=1).
+     *
+     * Fix: seed enough SRAM that Sub0 takes the no-write @NextSlot path
+     * for every slot:
+     *   IsSaveFileBCommitted[Y]=$01  -> skip CopyFileBToFileA branch
+     *   SaveFileOpenMarkers[Y]=$5A   -> markers valid
+     *   SaveFileCloseMarkers[Y]=$A5  -> markers valid
+     *   FileAChecksums[Y*2..Y*2+1]=0 -> already true in fresh RAM
+     *                                    (CalculateFileAChecksum on zero
+     *                                    file = 0; 0==0)
+     *
+     * With these seeds, Sub0 runs all three slots @NextSlot, advances
+     * GameSubmode normally. Sub1..5 tile-transfer. Sub6 finds
+     * IsSaveSlotActive[0]=1 first iteration, exits with CurSaveSlot=0.
+     */
+    {
+        uint8_t y;
+        for (y = 0; y < 3; ++y) {
+            nes_ram[0x0633 + y] = (y == 0) ? 0x01 : 0x00;  /* IsSaveSlotActive */
+            nes_ram[0x651E + y] = 0x5A;                     /* SaveFileOpenMarkers */
+            nes_ram[0x6521 + y] = 0xA5;                     /* SaveFileCloseMarkers */
+            nes_ram[0x652A + y] = 0x01;                     /* IsSaveFileBCommitted */
+        }
+        /* FileAChecksums[0..5] = 0 already (fresh RAM) -> checksum match. */
+    }
 
     /* Trampoline restores V64 + Window 8, sets vblank_mode=1, jumps to
      * LoopForever. Does not return. */
