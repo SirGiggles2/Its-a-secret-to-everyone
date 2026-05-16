@@ -48,4 +48,19 @@ void enemy_render_native_reset(void);
  * gameplay tick DMA only the slots in use instead of all 64. */
 extern unsigned char g_enemy_render_last_sat_slot;
 
+/* Phase A 2026-05-15 cache feeder for native draw_dispatch.c path.
+ * anim_write_sprite_pair_not_flashing writes OAM mirror directly via
+ * DRAW_OAM_TILE/Y/X/ATTR macros and bypasses anim_write_sprite_drained
+ * (which is the drain-shim path used by oracle/enemies/*_runtime.c).
+ * Without this hook, natively-dispatched enemies (tektite, octorok,
+ * leever, etc.) leave the s_enemy_* cache empty and render nothing
+ * via enemy_render_native_sweep. Call from the LEFT-half iteration of
+ * the writer with the just-emitted tile/attrs/x/y. Single-latch
+ * semantics: first call per ENEMY_THROWER_SLOT per frame wins; later
+ * calls are dropped (Phase E will replace with multi-latch). */
+void enemy_render_publish_pair_left(unsigned char tile,
+                                    unsigned char attrs,
+                                    unsigned char x,
+                                    unsigned char y);
+
 #endif

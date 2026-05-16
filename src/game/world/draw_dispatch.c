@@ -31,6 +31,7 @@
 #include "world/sprite_dispatch.h"   /* sprite_cycle_cur_sprite_index,
                                       * sprite_anim_fetch_obj_pos */
 #include "../options/options_consumer.h"  /* options_consumer_get_no_reduced_flashing */
+#include "../enemies/enemy_render.h"      /* Phase A: enemy_render_publish_pair_left */
 
 /* --------------------------------------------------------------- */
 /* Zero-page scratch slot semantic aliases for the draw pipeline.   */
@@ -253,6 +254,16 @@ static void anim_write_sprite_pair_not_flashing(void)
         const unsigned char attr =
             (unsigned char)RAM(0x0004u + d3); /* TMP4/5 */
         DRAW_OAM_ATTR(off) = attr;
+
+        /* Phase A 2026-05-15 cache feeder. Native draw_dispatch path
+         * writes OAM directly above; the enemy renderer cache is
+         * normally fed by anim_write_sprite_drained (oracle-only).
+         * Publish the LEFT half (d3==0) so natively-dispatched enemies
+         * render via enemy_render_native_sweep. Single-latch: matches
+         * cache semantics inside anim_write_sprite_drained. */
+        if (d3 == 0u) {
+            enemy_render_publish_pair_left(tile, attr, x, y);
+        }
 
         off = (unsigned char)DRAW_RIGHT_SPRITE_OFFSET;
 

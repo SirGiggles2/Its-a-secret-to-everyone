@@ -115,6 +115,29 @@ void c_anim_write_sprite(unsigned int tile, unsigned int slot)
     anim_write_sprite_drained(tile, slot);
 }
 
+/* Phase A 2026-05-15 cache feeder. Called from native draw_dispatch.c
+ * anim_write_sprite_pair_not_flashing on the LEFT-half iteration so
+ * natively-dispatched enemies populate s_enemy_* the same way the
+ * drain-shim path (anim_write_sprite_drained via c_anim_write_sprite)
+ * does for oracle enemies. ENEMY_THROWER_SLOT mirrors NES CurObjIndex
+ * which enemy_loop_tick sets before dispatching the per-slot update
+ * fn — same key both paths. Single-latch: first writer per slot per
+ * frame wins; subsequent calls drop. */
+void enemy_render_publish_pair_left(unsigned char tile,
+                                    unsigned char attrs,
+                                    unsigned char x,
+                                    unsigned char y)
+{
+    unsigned char cur_slot = ENEMY_THROWER_SLOT;
+    if (cur_slot <= ENEMY_LOOP_SLOT_LAST && s_enemy_seen[cur_slot] == 0u) {
+        s_enemy_tile[cur_slot]  = tile;
+        s_enemy_attrs[cur_slot] = attrs;
+        s_enemy_x[cur_slot]     = x;
+        s_enemy_y[cur_slot]     = y;
+        s_enemy_seen[cur_slot]  = 1u;
+    }
+}
+
 void enemy_render_reset_oam(void)
 {
     /* 2026-05-15 perf: 256-byte OAM clear is no longer required for
@@ -381,7 +404,16 @@ void enemy_render_native_sweep(void)
 
         unsigned short tile_id   = translate_tile(tile, attrs);
         unsigned short sat_attrs = translate_attrs(attrs, tile_id);
-        unsigned short size      = RENDER_SPRITE_SIZE(1, 2);
+        /* Phase A 2026-05-15: SIZE(2,2) 16x16 covers the NES Z1 8x16-mode
+         * OAM pair group. NES OAM pair = ($XX, $XX+1 left half) + ($XX+2,
+         * $XX+3 right half). Genesis SIZE(2,2) at base $XX renders 4
+         * contiguous tiles column-major: ($XX,$XX+1) col0 + ($XX+2,$XX+3)
+         * col1 = exact NES pair. roomrom_sprites_upload_persistent_chr
+         * preserves consecutive VRAM ordering for the COMMON block.
+         * x-offset: NES left-half OAM x = visual left edge of full
+         * 16x16 enemy = Genesis SAT x. No offset adjustment.
+         * Wide enemies (Aquamentus 24x16) handled by Phase B size table. */
+        unsigned short size      = RENDER_SPRITE_SIZE(2, 2);
 
         unsigned char link = (sat_slot < ENEMY_RENDER_SLOT_LAST)
                                  ? (unsigned char)(sat_slot + 1u) : 0u;
