@@ -4,6 +4,7 @@
 #include "../bg_palette.h"  /* Phase 12.2 promoted */
 #include "../ow_palette.h"  /* Phase 12.2 promoted */
 #include "../../../../RoomRom/src/expanded_bg_chr.h"
+#include "platform_abi.h"  /* nes_ram, NES_PLAY_AREA_BASE, NES_TILE_COL_STRIDE */
 
 extern const unsigned char rooms_overworld[];
 extern const unsigned char rooms_overworld_redux[];
@@ -506,6 +507,30 @@ void roomrom_ow_room_render_publish_cache(void)
         for (row = 0; row < ROOMROM_OW_RAW_TILE_ROWS; row++) {
             p[4u + (unsigned short)col * ROOMROM_OW_RAW_TILE_ROWS + row] =
                 s_raw_tiles[col][row];
+        }
+    }
+}
+
+/* T0.1 cave entry: mirror raw-tile cache into nes_ram PlayAreaTiles.
+ *
+ * NES Z_07.asm PlayAreaTiles ($6530, NES SRAM). Column-major layout:
+ *   col 0 = $6530..$6545 (22 rows)
+ *   col c = $6530 + c*$16 + row
+ *
+ * collision_get_collidable_tile_still (drain GetCollidableTile) reads
+ * nes_ram[col_addr + row_idx]; without this publisher, that memory is
+ * always zero so HandleWarpOW never sees cave/stairs tiles ($24/$88/
+ * $70..$73). After this runs, cave_entrance_check fires correctly when
+ * Link stands on an entrance tile. */
+void roomrom_ow_room_render_publish_play_area_tiles(void)
+{
+    unsigned char col, row;
+    for (col = 0; col < ROOMROM_OW_RAW_TILE_COLS; col++) {
+        unsigned short col_addr =
+            (unsigned short)(NES_PLAY_AREA_BASE +
+                             (unsigned short)col * NES_TILE_COL_STRIDE);
+        for (row = 0; row < ROOMROM_OW_RAW_TILE_ROWS; row++) {
+            nes_ram[col_addr + row] = s_raw_tiles[col][row];
         }
     }
 }

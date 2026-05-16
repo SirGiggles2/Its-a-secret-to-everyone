@@ -532,6 +532,10 @@ static void load_room(u8 room_id)
     render_room_into_slot(room_id, s_active_slot_x, s_active_row_base);
     if (s_scene == SCENE_OW) {
         roomrom_ow_room_render_mark_stable();
+        /* T0.1: publish raw-tile cache into NES PlayAreaTiles so the
+         * collision drain (collision_get_collidable_tile_still) sees
+         * real tile IDs. Unblocks HandleWarpOW cave/stairs entry. */
+        roomrom_ow_room_render_publish_play_area_tiles();
     }
     clear_hud_underlay_for_row_base(s_active_row_base);
     anchor_active_slot();
@@ -1382,9 +1386,17 @@ void roomrom_debug_enter(void)
 
     /* Phase 6 Task 6.1: seed `players[0]` with NES Z1 boot defaults
      * before anything reads it. RoomRom always boots in 1-player mode;
-     * Phase 13 will populate `players[1..3]` after lobby selection. */
-    players[0].x    = 120;
-    players[0].y    = 133;
+     * Phase 13 will populate `players[1..3]` after lobby selection.
+     *
+     * T0.1 verify 2026-05-16 — spawn Link directly on cave-entry tile
+     * $24 in room $77 (col=8/9 row=3). NES Z_05.asm:7313 HandleWarpOW
+     * fires SCENE_CAVE when collision_get_collidable_tile_still returns
+     * $24/$70-$73/$88. Without standing on entry tile from boot, the
+     * collision drain never sees a cave tile and the warp never fires.
+     * Tile→pixel: col 8 → linkX in [$40..$47], row 3 → linkY in
+     * [$4D..$54]. ($44, $50) lands dead center of the entry pad. */
+    players[0].x    = 0x44;
+    players[0].y    = 0x50;
     players[0].face = LINK_FACE_DOWN;
 
     /* Phase 7 root-cause fix #4 2026-05-16 — seed NES Random[$18..$24]
@@ -1682,6 +1694,9 @@ void roomrom_debug_tick(void)
                      * room. Mark it stable so the warp coordinator's
                      * rule-5 check can fire. */
                     roomrom_ow_room_render_mark_stable();
+                    /* T0.1: republish PlayAreaTiles after scroll so the
+                     * collision drain sees the new active room's tiles. */
+                    roomrom_ow_room_render_publish_play_area_tiles();
                 }
                 roomrom_sprites_load_palette();
                 clear_hud_underlay_for_row_base(s_active_row_base);
@@ -2013,6 +2028,14 @@ void roomrom_debug_tick(void)
                 nes_ram[0x07E3u] = (unsigned char)players[0].y;
             } else {
                 s_room_id = 0x77;
+                /* T0.1 verify: spawn Link on cave-entry tile $24 at
+                 * cache col=8/9 row=3 (visible in room $77 north).
+                 * Tile→pixel: col 8 → linkX in [$40..$47], row 3 →
+                 * linkY satisfies (linkY+$0B-$40)/8==3 → linkY=$4D..$54.
+                 * Use ($44, $50) to land dead center of the entry pad. */
+                players[0].x = 0x44;
+                players[0].y = 0x50;
+                players[0].face = LINK_FACE_DOWN;
                 nes_ram[0x07E0u] = 0xBBu;
             }
             /* SENTINEL — values RIGHT BEFORE upload_scene_chr */

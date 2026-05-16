@@ -59,6 +59,15 @@ void roomrom_ow_room_render_mark_stable(void);
  * without a per-cell accessor call. */
 void roomrom_ow_room_render_publish_cache(void);
 
+/* T0.1 cave entry: mirror the 32x22 raw-tile cache into nes_ram
+ * PlayAreaTiles ($6530 + col*0x16 + row). Required so the existing
+ * GetCollidableTile drain (collision_get_collidable_tile_still) returns
+ * real tile IDs instead of zeros; without this, HandleWarpOW (which
+ * gates on tile == $24/$88/$70-$73 for cave/stairs entry) never fires
+ * and the player cannot enter caves. Call AFTER mark_stable when the
+ * cache reflects the active slot. */
+void roomrom_ow_room_render_publish_play_area_tiles(void);
+
 /* S6.5 scroll: render one metatile column of room_id at plane metatile
  * column dst_col (0..15). src_col selects the source room's col layout
  * (palette uses src position so attributes match the source room). Plane
