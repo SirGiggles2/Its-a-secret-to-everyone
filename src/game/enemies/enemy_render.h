@@ -80,4 +80,19 @@ void enemy_render_publish_pair_left(unsigned char tile,
  * indirection isn't yet wired in the cache path. */
 void enemy_render_publish_meta(unsigned int slot);
 
+/* Phase G 2026-05-15 — Gleeok per-segment sub-cache.
+ * NES Z1 Gleeok writes OAM bytes directly via OAM_BYTE() bypassing
+ * both anim_write_sprite_drained AND anim_write_sprite_pair_not_flashing.
+ * Body = 2x3 = 6 sprites; heads = 4; neck segments = up to 24 (4 necks
+ * x 6 segments). Total worst case 34 sprites, exceeding the 4-entry
+ * per-slot cap of the enemy cache. Use a flat sub-cache (capacity 20
+ * per spec design) emitted after the enemy cache during the sweep.
+ *
+ * Call from gleeok_anim_write_specific_sprite (boss_gleeok.c:422)
+ * after the OAM bytes are written. tile/x/y/attrs match the OAM bytes. */
+void enemy_render_publish_gleeok(unsigned char tile,
+                                 unsigned char attrs,
+                                 unsigned char x,
+                                 unsigned char y);
+
 #endif

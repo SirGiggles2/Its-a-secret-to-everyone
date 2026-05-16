@@ -28,6 +28,7 @@
 #include "object_state.h"             /* OBJ_*  */
 #include "core/core_dispatch.h"       /* core_write_blank_priority_sprites,
                                          core_reset_obj_metastate */
+#include "../enemy_render.h"          /* Phase G: enemy_render_publish_gleeok */
 #include "world/draw_dispatch.h"      /* k_sprite_offsets */
 #include "world/sprite_dispatch.h"    /* sprite_cycle_cur_sprite_index */
 
@@ -424,13 +425,17 @@ static void gleeok_anim_write_specific_sprite(unsigned char tile,
                                               unsigned char sprite_off,
                                               unsigned char attrs)
 {
+    unsigned char gx = (unsigned char)OBJ(NES_OBJ_X, slot);
+    unsigned char gy = (unsigned char)OBJ(NES_OBJ_Y, slot);
     OAM_BYTE((unsigned int)(sprite_off + 1u)) = tile;
-    OAM_BYTE((unsigned int)(sprite_off + 3u)) =
-        (unsigned char)OBJ(NES_OBJ_X, slot);
-    OAM_BYTE((unsigned int)sprite_off) =
-        (unsigned char)OBJ(NES_OBJ_Y, slot);
+    OAM_BYTE((unsigned int)(sprite_off + 3u)) = gx;
+    OAM_BYTE((unsigned int)sprite_off) = gy;
     OAM_BYTE((unsigned int)(sprite_off + 2u)) = attrs;
     sprite_cycle_cur_sprite_index();
+    /* Phase G: publish to Gleeok sub-cache so the native sweep emits
+     * a SAT entry. The OAM mirror write above stays for compat with
+     * any consumer that still reads NES OAM. */
+    enemy_render_publish_gleeok(tile, attrs, gx, gy);
 }
 
 static void gleeok_anim_write_level_palette_sprite(unsigned char tile,
@@ -526,35 +531,36 @@ void c_gleeok_draw_body(void)
                 const unsigned char off = k_sprite_offsets[rsi & 0x3Fu];
 
                 /* Y = $57 + row * $10. */
-                OAM_BYTE((unsigned int)off) =
-                    (unsigned char)((row << 4) + 0x57u);
+                unsigned char gy = (unsigned char)((row << 4) + 0x57u);
+                OAM_BYTE((unsigned int)off) = gy;
 
                 /* Tile = k_body_tiles0[tile_idx & 5]. The NES asm
                  * indexes by X register which counts up unbounded
                  * starting from base offset {6,0,6,12}; reads only
                  * 6 entries per the table. Wrap modulo 6. */
-                OAM_BYTE((unsigned int)(off + 1u)) =
-                    k_body_tiles0[tile_idx % 6u];
+                unsigned char body_tile = k_body_tiles0[tile_idx % 6u];
+                OAM_BYTE((unsigned int)(off + 1u)) = body_tile;
 
                 /* Attribute: invincibility-cycled palette or row 3. */
-                {
-                    unsigned char attrs;
-                    if ((unsigned char)ENEMY_HIT_REACTION(5) != 0u) {
-                        /* Cycled palette via [00..03] truncated. */
-                        attrs = (unsigned char)
-                            (ENEMY_CUR_SPRITE_ATTR_ROW & 0x03u);
-                    } else {
-                        attrs = 0x03u;
-                    }
-                    OAM_BYTE((unsigned int)(off + 2u)) = attrs;
+                unsigned char attrs;
+                if ((unsigned char)ENEMY_HIT_REACTION(5) != 0u) {
+                    /* Cycled palette via [00..03] truncated. */
+                    attrs = (unsigned char)
+                        (ENEMY_CUR_SPRITE_ATTR_ROW & 0x03u);
+                } else {
+                    attrs = 0x03u;
                 }
+                OAM_BYTE((unsigned int)(off + 2u)) = attrs;
 
                 /* X = $74 + col * 8. */
-                OAM_BYTE((unsigned int)(off + 3u)) =
-                    (unsigned char)((col << 3) + 0x74u);
+                unsigned char gx = (unsigned char)((col << 3) + 0x74u);
+                OAM_BYTE((unsigned int)(off + 3u)) = gx;
 
                 tile_idx = (unsigned char)(tile_idx + 1u);
                 sprite_cycle_cur_sprite_index();
+
+                /* Phase G: publish body sprite to Gleeok sub-cache. */
+                enemy_render_publish_gleeok(body_tile, attrs, gx, gy);
             }
         }
     }

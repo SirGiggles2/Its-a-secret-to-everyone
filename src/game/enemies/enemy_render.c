@@ -72,12 +72,36 @@ static enemy_render_entry_t
     s_enemy_entries[ENEMY_LOOP_SLOT_LAST + 1u][ENEMY_RENDER_MAX_PER_SLOT];
 static unsigned char s_enemy_count[ENEMY_LOOP_SLOT_LAST + 1u];
 
+/* Phase G 2026-05-15 — Gleeok sub-cache. Flat array of up to 20 entries
+ * (per spec). Body 6 + heads 4 + first 4 segments per neck (4*4=16) =
+ * 26 max; cap at 20 = body + 4 heads + first 4 segments per neck up
+ * to 10. Beyond cap = priority-drop (NES does the same on hardware
+ * via per-scanline limit). */
+#define ENEMY_RENDER_GLEEOK_MAX  20u
+static enemy_render_entry_t s_gleeok_entries[ENEMY_RENDER_GLEEOK_MAX];
+static unsigned char s_gleeok_count;
+
 void enemy_render_native_reset(void)
 {
     unsigned char i;
     for (i = 0u; i <= ENEMY_LOOP_SLOT_LAST; ++i) {
         s_enemy_count[i] = 0u;
     }
+    s_gleeok_count = 0u;
+}
+
+void enemy_render_publish_gleeok(unsigned char tile,
+                                 unsigned char attrs,
+                                 unsigned char x,
+                                 unsigned char y)
+{
+    if (s_gleeok_count >= ENEMY_RENDER_GLEEOK_MAX) return;
+    enemy_render_entry_t *e = &s_gleeok_entries[s_gleeok_count];
+    e->tile  = tile;
+    e->attrs = attrs;
+    e->x     = x;
+    e->y     = y;
+    s_gleeok_count = (unsigned char)(s_gleeok_count + 1u);
 }
 
 void anim_write_sprite_drained(unsigned int tile, unsigned int slot)
@@ -527,6 +551,30 @@ void enemy_render_native_sweep(void)
         }
     }
 
+    /* Phase G 2026-05-15 — Gleeok sub-cache emission. Body / heads /
+     * segments published via enemy_render_publish_gleeok land here.
+     * Drained in flat order (body first, then heads, then segments
+     * per the NES draw call ordering). Skip if no Gleeok entries.
+     * Cap honored by publisher (drops over 20). */
+    {
+        unsigned char gi;
+        for (gi = 0u; gi < s_gleeok_count; ++gi) {
+            if (sat_slot > ENEMY_RENDER_SLOT_LAST) break;
+            enemy_render_entry_t *e = &s_gleeok_entries[gi];
+            if (e->y == 0xF0u) continue;
+
+            unsigned short tile_id   = translate_tile(e->tile, e->attrs);
+            unsigned short sat_attrs = translate_attrs(e->attrs, tile_id);
+            unsigned short size      = RENDER_SPRITE_SIZE(1, 2);
+            unsigned char  link      = (sat_slot < ENEMY_RENDER_SLOT_LAST)
+                                          ? (unsigned char)(sat_slot + 1u) : 0u;
+            render_set_sprite_inline((unsigned short)sat_slot,
+                                     (signed short)e->x, (signed short)e->y,
+                                     size, sat_attrs, link);
+            ++sat_slot;
+        }
+    }
+
     /* Terminator: hide remaining SAT slots via chain break (link=0). */
     if (sat_slot <= ENEMY_RENDER_SLOT_LAST) {
         render_set_sprite_inline((unsigned short)sat_slot,
@@ -545,5 +593,6 @@ void enemy_render_native_sweep(void)
         for (i = 0u; i <= ENEMY_LOOP_SLOT_LAST; ++i) {
             s_enemy_count[i] = 0u;
         }
+        s_gleeok_count = 0u;
     }
 }
