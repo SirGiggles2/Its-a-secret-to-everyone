@@ -6,28 +6,29 @@
 
 | File | Function | Line | Calls _ppu_/_apu_ shim? |
 |------|----------|------|------|
-| `src/game/hud/hud_runtime.c` | `apply_attr_byte` | 188 | no |
-| `src/game/hud/hud_runtime.c` | `apply_transfer_macro` | 212 | no |
-| `src/game/hud/hud_runtime.c` | `clear_hud_b` | 178 | no |
-| `src/game/hud/hud_runtime.c` | `clear_hud_pal` | 169 | no |
-| `src/game/hud/hud_runtime.c` | `clear_hud_window` | 183 | no |
-| `src/game/hud/hud_runtime.c` | `draw_count_cell` | 251 | no |
-| `src/game/hud/hud_runtime.c` | `draw_hearts_row` | 279 | no |
-| `src/game/hud/hud_runtime.c` | `draw_hud_dynamic` | 415 | no |
-| `src/game/hud/hud_runtime.c` | `draw_hud_tile` | 145 | no |
-| `src/game/hud/hud_runtime.c` | `draw_hud_tile_attr` | 163 | no |
-| `src/game/hud/hud_runtime.c` | `draw_hud_tile_b` | 153 | no |
-| `src/game/hud/hud_runtime.c` | `draw_original_map_marker` | 337 | no |
-| `src/game/hud/hud_runtime.c` | `draw_status_counts_original` | 329 | no |
-| `src/game/hud/hud_runtime.c` | `draw_status_counts_redux` | 319 | no |
-| `src/game/hud/hud_runtime.c` | `hud_word` | 136 | no |
-| `src/game/hud/hud_runtime.c` | `roomrom_hud_draw` | 428 | no |
-| `src/game/hud/hud_runtime.c` | `roomrom_hud_refresh_dynamic` | 448 | no |
-| `src/game/hud/hud_runtime.c` | `roomrom_hud_upload_chr` | 389 | no |
-| `src/game/hud/hud_runtime.c` | `upload_common_hud_chr` | 371 | no |
-| `src/game/hud/hud_runtime.c` | `upload_common_hud_tile` | 344 | no |
-| `src/game/hud/hud_runtime.c` | `upload_common_hud_tile_range` | 362 | no |
-| `src/game/hud/hud_runtime.c` | `upload_redux_automap_chr` | 379 | no |
+| `src/game/hud/hud_runtime.c` | `apply_attr_byte` | 191 | no |
+| `src/game/hud/hud_runtime.c` | `apply_transfer_macro` | 215 | no |
+| `src/game/hud/hud_runtime.c` | `clear_hud_b` | 181 | no |
+| `src/game/hud/hud_runtime.c` | `clear_hud_pal` | 172 | no |
+| `src/game/hud/hud_runtime.c` | `clear_hud_window` | 186 | no |
+| `src/game/hud/hud_runtime.c` | `draw_count_cell` | 254 | no |
+| `src/game/hud/hud_runtime.c` | `draw_hearts_row` | 282 | no |
+| `src/game/hud/hud_runtime.c` | `draw_hud_dynamic` | 454 | no |
+| `src/game/hud/hud_runtime.c` | `draw_hud_tile` | 148 | no |
+| `src/game/hud/hud_runtime.c` | `draw_hud_tile_attr` | 166 | no |
+| `src/game/hud/hud_runtime.c` | `draw_hud_tile_b` | 156 | no |
+| `src/game/hud/hud_runtime.c` | `draw_original_map_marker` | 340 | no |
+| `src/game/hud/hud_runtime.c` | `draw_status_counts_original` | 332 | no |
+| `src/game/hud/hud_runtime.c` | `draw_status_counts_redux` | 322 | no |
+| `src/game/hud/hud_runtime.c` | `hud_word` | 139 | no |
+| `src/game/hud/hud_runtime.c` | `roomrom_hud_draw` | 467 | no |
+| `src/game/hud/hud_runtime.c` | `roomrom_hud_refresh_dynamic` | 490 | no |
+| `src/game/hud/hud_runtime.c` | `roomrom_hud_refresh_marker` | 351 | no |
+| `src/game/hud/hud_runtime.c` | `roomrom_hud_upload_chr` | 431 | no |
+| `src/game/hud/hud_runtime.c` | `upload_common_hud_chr` | 413 | no |
+| `src/game/hud/hud_runtime.c` | `upload_common_hud_tile` | 386 | no |
+| `src/game/hud/hud_runtime.c` | `upload_common_hud_tile_range` | 404 | no |
+| `src/game/hud/hud_runtime.c` | `upload_redux_automap_chr` | 421 | no |
 
 ## Master plan tasks claiming this subsystem
 

@@ -6,18 +6,22 @@
 
 | File | Function | Line | Calls _ppu_/_apu_ shim? |
 |------|----------|------|------|
-| `src/game/combat/combat_runtime.c` | `compute_state` | 178 | no |
-| `src/game/combat/combat_runtime.c` | `recompute_y_bias` | 86 | no |
-| `src/game/combat/combat_runtime.c` | `roomrom_combat_init` | 155 | no |
-| `src/game/combat/combat_runtime.c` | `roomrom_combat_link_locked` | 173 | no |
-| `src/game/combat/combat_runtime.c` | `roomrom_combat_set_redux` | 81 | no |
-| `src/game/combat/combat_runtime.c` | `roomrom_combat_set_uw` | 73 | no |
-| `src/game/combat/combat_runtime.c` | `roomrom_combat_try_swing` | 164 | no |
-| `src/game/combat/combat_runtime.c` | `roomrom_combat_update` | 252 | no |
-| `src/game/combat/combat_runtime.c` | `spawn_beam` | 241 | no |
-| `src/game/combat/combat_runtime.c` | `sword_style_allows_beam` | 226 | no |
-| `src/game/combat/combat_runtime.c` | `sword_subpal_for_items` | 58 | no |
-| `src/game/combat/combat_runtime.c` | `update_beam` | 193 | no |
+| `src/game/combat/combat_runtime.c` | `compute_state` | 192 | no |
+| `src/game/combat/combat_runtime.c` | `recompute_y_bias` | 97 | no |
+| `src/game/combat/combat_runtime.c` | `roomrom_combat_get_swing_face` | 40 | no |
+| `src/game/combat/combat_runtime.c` | `roomrom_combat_get_swing_state` | 36 | no |
+| `src/game/combat/combat_runtime.c` | `roomrom_combat_get_swing_x` | 38 | no |
+| `src/game/combat/combat_runtime.c` | `roomrom_combat_get_swing_y` | 39 | no |
+| `src/game/combat/combat_runtime.c` | `roomrom_combat_init` | 166 | no |
+| `src/game/combat/combat_runtime.c` | `roomrom_combat_link_locked` | 187 | no |
+| `src/game/combat/combat_runtime.c` | `roomrom_combat_set_redux` | 92 | no |
+| `src/game/combat/combat_runtime.c` | `roomrom_combat_set_uw` | 84 | no |
+| `src/game/combat/combat_runtime.c` | `roomrom_combat_try_swing` | 177 | no |
+| `src/game/combat/combat_runtime.c` | `roomrom_combat_update` | 266 | no |
+| `src/game/combat/combat_runtime.c` | `spawn_beam` | 255 | no |
+| `src/game/combat/combat_runtime.c` | `sword_style_allows_beam` | 240 | no |
+| `src/game/combat/combat_runtime.c` | `sword_subpal_for_items` | 69 | no |
+| `src/game/combat/combat_runtime.c` | `update_beam` | 207 | no |
 
 ## Master plan tasks claiming this subsystem
 

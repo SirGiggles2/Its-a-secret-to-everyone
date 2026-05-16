@@ -92,7 +92,10 @@ local key_cells = {
     {0x004A, "ChaseLongTimer"},
     {0x0070, "Link X (ObjX[0])"},
     {0x0084, "Link Y (ObjY[0])"},
-    {0x008C, "Link face (ObjDir[0])"},        -- Plan v5a T1.3
+    {0x0098, "Link face (ObjDir[0])"},        -- Plan v5a T1.3 (corrected addr)
+    {0x00A5, "Link weapon-slot 13 dir"},      -- Plan v5 sword sync ($98+13)
+    {0x00B9, "Link weapon-slot 13 state"},    -- Plan v5 sword sync ($AC+13)
+    {0x0657, "ITEM_SWORD_LEVEL"},             -- Plan v5 (seeded =1)
     {0x00AC, "Link State (ObjState[0])"},
     {0x00BC, "Link Hearts? (ObjHP)"},
     {0x00EB, "RoomId"},

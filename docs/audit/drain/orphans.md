@@ -8,6 +8,10 @@
 |------|----------|-----------|
 | `src/game/combat/combat_runtime.c` | `compute_state` | combat |
 | `src/game/combat/combat_runtime.c` | `recompute_y_bias` | combat |
+| `src/game/combat/combat_runtime.c` | `roomrom_combat_get_swing_face` | combat |
+| `src/game/combat/combat_runtime.c` | `roomrom_combat_get_swing_state` | combat |
+| `src/game/combat/combat_runtime.c` | `roomrom_combat_get_swing_x` | combat |
+| `src/game/combat/combat_runtime.c` | `roomrom_combat_get_swing_y` | combat |
 | `src/game/combat/combat_runtime.c` | `roomrom_combat_init` | combat |
 | `src/game/combat/combat_runtime.c` | `roomrom_combat_link_locked` | combat |
 | `src/game/combat/combat_runtime.c` | `roomrom_combat_set_redux` | combat |
@@ -35,6 +39,7 @@
 | `src/game/hud/hud_runtime.c` | `hud_word` | hud |
 | `src/game/hud/hud_runtime.c` | `roomrom_hud_draw` | hud |
 | `src/game/hud/hud_runtime.c` | `roomrom_hud_refresh_dynamic` | hud |
+| `src/game/hud/hud_runtime.c` | `roomrom_hud_refresh_marker` | hud |
 | `src/game/hud/hud_runtime.c` | `roomrom_hud_upload_chr` | hud |
 | `src/game/hud/hud_runtime.c` | `upload_common_hud_chr` | hud |
 | `src/game/hud/hud_runtime.c` | `upload_common_hud_tile` | hud |

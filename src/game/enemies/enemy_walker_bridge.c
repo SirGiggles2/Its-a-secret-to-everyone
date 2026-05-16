@@ -793,6 +793,143 @@ draw_octorock:
 #define META_ITEM_MONSTER_TYPE(slot)   OBJ(0x0412, (slot))
 #define META_OBJ_ATTR(slot)            OBJ(0x04BF, (slot))
 #define META_WORLD_KILL_CYCLE          RAM(0x052A)
+/* NES Item_ObjItemLifetime ($03A8): per-slot countdown for dropped item. */
+#define META_ITEM_LIFETIME(slot)       OBJ(0x03A8, (slot))
+/* NES Item_ObjItemId aliases OBJ_STATE ($00AC). */
+#define META_ITEM_ID(slot)             OBJ(0x00AC, (slot))
+/* NES help-drop runaway counters at ZP $50/$51. */
+#define META_HELP_DROP_COUNT           RAM(0x0050)
+#define META_HELP_DROP_VALUE           RAM(0x0051)
+/* NES WorldKillCount at $0627 — fairy-on-$10-kills gate. */
+#define META_WORLD_KILL_COUNT          RAM(0x0627)
+
+/* NES drop tables (reference/aldonunez/Z_04.asm:11042-11101).
+ * Extracted to src/data/drop_tables.inc; mirrored here as C const arrays
+ * so SetUpDroppedItem can run without ASM linkage. */
+static const unsigned char k_no_drop_types[7] = {
+    0x5Du, 0x14u, 0x15u, 0x1Bu, 0x1Cu, 0x1Du, 0x17u
+};
+static const unsigned char k_drop_set0_types[6] = {
+    0x07u, 0x08u, 0x0Eu, 0x04u, 0x0Fu, 0x23u
+};
+static const unsigned char k_drop_set1_types[9] = {
+    0x21u, 0x22u, 0x0Du, 0x10u, 0x13u, 0x28u, 0x2Au, 0x27u, 0x16u
+};
+static const unsigned char k_drop_set2_types[9] = {
+    0x09u, 0x0Au, 0x03u, 0x01u, 0x12u, 0x06u, 0x0Bu, 0x24u, 0x30u
+};
+static const unsigned char k_drop_set_base_offsets[4] = {
+    0x00u, 0x0Au, 0x14u, 0x1Eu
+};
+static const unsigned char k_drop_rates[4] = {
+    0x50u, 0x98u, 0x68u, 0x68u
+};
+static const unsigned char k_drop_item_table[40] = {
+    0x22u, 0x18u, 0x22u, 0x18u, 0x23u, 0x18u, 0x22u, 0x22u,
+    0x18u, 0x18u, 0x0Fu, 0x18u, 0x22u, 0x18u, 0x0Fu, 0x22u,
+    0x21u, 0x18u, 0x18u, 0x18u, 0x22u, 0x00u, 0x18u, 0x21u,
+    0x18u, 0x22u, 0x00u, 0x18u, 0x00u, 0x22u, 0x22u, 0x22u,
+    0x23u, 0x18u, 0x22u, 0x23u, 0x22u, 0x22u, 0x22u, 0x18u
+};
+
+/* DestroyMonster_Bank4 (NES Z_04.asm:11327) — clear slot completely.
+ * NES sets ObjType=0, SetShoveInfoWith0, ObjTimer=0, ObjState=0,
+ * ObjInvincibilityTimer=0, ObjUninitialized=$FF, ObjMetastate=1.
+ * Our codebase ALIVE_FLAG semantics inverse of NES uninit: 0=dead/free. */
+static void native_destroy_monster(unsigned int slot)
+{
+    ENEMY_TYPE(slot)         = 0u;
+    ENEMY_MOVE_TIMER(slot)   = 0u;
+    OBJ_STATE(slot)          = 0u;
+    ENEMY_INVINCIBILITY(slot) = 0u;
+    ENEMY_ALIVE_FLAG(slot)   = 0u;
+    ENEMY_METASTATE(slot)    = 0u;
+}
+
+/* SetUpDroppedItem (NES Z_04.asm:11103) — drop-item id lookup + fairy gate +
+ * help-drop randomization. Stance: ADOPT. Skips SetUpFairyObject (deferred).
+ *
+ * Returns 1 if drop committed (slot converted to live $60 item), 0 if
+ * slot was destroyed (no drop). */
+static unsigned char native_set_up_dropped_item(unsigned int slot)
+{
+    unsigned char row = 0u;
+    unsigned char monster_type = (unsigned char)META_ITEM_MONSTER_TYPE(slot);
+    unsigned char item_id;
+    unsigned char i;
+
+    /* @FindNoDropType — destroy if type is in no-drop list. */
+    for (i = 0u; i < 7u; ++i) {
+        if (monster_type == k_no_drop_types[i]) {
+            native_destroy_monster(slot);
+            return 0u;
+        }
+    }
+
+    /* @FindDrop0Type — row 0. */
+    {
+        unsigned char found = 0u;
+        for (i = 0u; i < 6u; ++i) {
+            if (monster_type == k_drop_set0_types[i]) { found = 1u; break; }
+        }
+        if (!found) {
+            row = 1u;
+            for (i = 0u; i < 9u; ++i) {
+                if (monster_type == k_drop_set1_types[i]) { found = 1u; break; }
+            }
+        }
+        if (!found) {
+            row = 2u;
+            for (i = 0u; i < 9u; ++i) {
+                if (monster_type == k_drop_set2_types[i]) { found = 1u; break; }
+            }
+        }
+        if (!found) row = 3u;
+    }
+
+    /* @Found — slot 1 + (Stalfos $2A or Gibdo $30) destroys (already has room item). */
+    if (slot == 1u && (monster_type == 0x2Au || monster_type == 0x30u)) {
+        native_destroy_monster(slot);
+        return 0u;
+    }
+
+    /* @LookUpItem — base offset + WorldKillCycle = drop item id. */
+    {
+        unsigned char base   = k_drop_set_base_offsets[row];
+        unsigned char cycle  = (unsigned char)META_WORLD_KILL_CYCLE;
+        unsigned char idx    = (unsigned char)(base + cycle);
+        if (idx >= 40u) idx = (unsigned char)(idx % 40u);
+        item_id = k_drop_item_table[idx];
+    }
+
+    /* Fairy-on-$10-kills gate. */
+    if ((unsigned char)META_WORLD_KILL_COUNT == 0x10u) {
+        item_id = 0x23u;
+        META_HELP_DROP_COUNT = 0u;
+        META_HELP_DROP_VALUE = 0u;
+    } else if ((unsigned char)META_HELP_DROP_COUNT < 0x0Au) {
+        /* @RandomlyCancel — Random[slot] >= rate cancels drop. */
+        unsigned char rnd = (unsigned char)ENEMY_RNG_A(slot);
+        if (rnd >= k_drop_rates[row]) {
+            native_destroy_monster(slot);
+            return 0u;
+        }
+    } else {
+        /* Help-drop runaway — guaranteed item, type from HelpDropValue. */
+        if ((unsigned char)META_HELP_DROP_VALUE == 0u) {
+            item_id = 0x0Fu;  /* 5 rupees */
+        } else {
+            item_id = 0x00u;  /* bomb */
+        }
+        META_HELP_DROP_COUNT = 0u;
+        META_HELP_DROP_VALUE = 0u;
+    }
+
+    /* @Commit — store lifetime + id. SetUpFairyObject (item_id==$23) deferred. */
+    META_ITEM_LIFETIME(slot) = 0xFFu;
+    META_ITEM_ID(slot)       = item_id;
+    return 1u;
+}
 
 void update_meta_object(unsigned int slot)
 {
@@ -935,20 +1072,16 @@ void update_meta_object(unsigned int slot)
             }
         }
 
-        /* @DropItem: convert slot to dropped-item type ($60). */
-        ENEMY_TYPE(slot) = 0x60u;
-        /* ENEMY_ALIVE_FLAG ($0492) double-duty as ObjUninitialized:
-         * leave it set — slot stays ALIVE so the iterator picks it up
-         * next frame (and would re-init it via the dropped-item INIT
-         * row once that's wired). */
+        /* @DropItem: convert slot to dropped-item type ($60), then run
+         * SetUpDroppedItem to pick the item id (or destroy if no drop). */
+        ENEMY_TYPE(slot)       = 0x60u;
         ENEMY_ALIVE_FLAG(slot) = 1u;
         META_OBJ_ATTR(slot)    = 0x81u;
 
-        /* SetUpDroppedItem (Z_04.asm:11103) — drop-item id lookup +
-         * fairy-on-$10-kills + help-drop randomization. Deferred to a
-         * follow-up task (item subsystem hookup). The outer drop
-         * conversion is what step 20 verifies. */
-        /* TODO: native_set_up_dropped_item(slot); */
+        /* SetUpDroppedItem (Z_04.asm:11103). Returns 0 if slot was
+         * destroyed (no-drop type or random cancel) — fall through to
+         * @Reset which is a no-op for cleared slots. */
+        (void)native_set_up_dropped_item(slot);
     }
 
     /* @Reset path always runs after drop conversion. */
