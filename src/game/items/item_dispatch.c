@@ -17,6 +17,10 @@
 #include "room/room_dispatch.h"      /* room_end_game_mode,
                                       * room_patch_and_cue_level_palettes_transfer */
 
+/* T5.2 Plan v5b — item pickup SFX. ID 7 = itempickup per
+ * data/audio/MANIFEST.json (commit b25d549c). */
+extern void audio_sfx_play(unsigned char sfx);
+
 /* Asm-bound data tables. NOT shims (no z01_/z07_/c_ prefix).
  * Native code reads/writes same backing memory transpile-asm uses. */
 extern const unsigned char ItemIdToSlot[];
@@ -156,6 +160,9 @@ void item_take_item(unsigned char item_id)
     if (item_id == 0x0Eu) {
         ITEM_SFX_PRIMARY = 2u;
     }
+    /* T5.2: real audio output via XGM SFX path. NES set ItemSFXPrimary
+     * for the asm tune dispatcher; we fire the DMC sample now. */
+    audio_sfx_play(7u);
     if ((unsigned char)GAME_MODE != 5u) {
         ITEM_FREEZE_FLAG = 0x80u;
         ITEM_SFX_SECONDARY = 8u;
