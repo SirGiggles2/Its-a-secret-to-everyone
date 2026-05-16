@@ -1,6 +1,7 @@
 #include <genesis.h>
 #include "roomrom_debug_runtime.h"
 #include "../../src/game/world/render/ow_render.h"  /* Phase 12.2 promoted */
+#include "../../src/game/world/render/cave_palette.h"  /* Tier 0 #42 cave palette */
 #include "../../src/game/dungeon/uw_render.h"        /* Phase 12.2 promoted */
 #include "../../src/game/hud/hud_runtime.h"  /* Phase 12.2 promoted */
 #include "../../src/game/world/render/sprite_render.h"
@@ -1817,6 +1818,7 @@ void roomrom_debug_tick(void)
                      * the layout is correct. */
                     roomrom_ow_room_render_fill_plane_a((unsigned char)cid);
                     roomrom_ow_room_render_publish_play_area_tiles();
+                    cave_palette_apply();
                     return;
                 }
             }
@@ -1944,6 +1946,9 @@ void roomrom_debug_tick(void)
                  * shows the source room instead of the cave-clear plane. */
                 roomrom_ow_room_render_fill_plane_a(s_room_id);
                 roomrom_ow_room_render_publish_play_area_tiles();
+                /* #42 — restore OW PAL0 subpal 2+3 (cave_palette_apply
+                 * overwrote them on entry). */
+                roomrom_ow_room_render_load_palette(s_room_id);
                 /* HUD underlay retired 2026-05-15: cave_exit does not
                  * re-enter load_room, so the staged HUD underlay must
                  * be re-asserted explicitly here. */
@@ -2012,6 +2017,7 @@ void roomrom_debug_tick(void)
                  * indices per Z_05.asm:1543 InitMode_EnterRoom). */
                 roomrom_ow_room_render_fill_plane_a((unsigned char)cid_toggle);
                 roomrom_ow_room_render_publish_play_area_tiles();
+                cave_palette_apply();
             } else if (s_scene == SCENE_CAVE) {
                 cave_exit();
                 s_scene = SCENE_OW;
@@ -2019,6 +2025,7 @@ void roomrom_debug_tick(void)
                  * via the existing full-room fill path. */
                 roomrom_ow_room_render_fill_plane_a(s_room_id);
                 roomrom_ow_room_render_publish_play_area_tiles();
+                roomrom_ow_room_render_load_palette(s_room_id);
             }
             /* HUD underlay retired 2026-05-15: cave_init/cave_exit do not
              * pass through load_room, so re-assert the BG_A underlay so
