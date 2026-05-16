@@ -1371,6 +1371,15 @@ void roomrom_debug_enter(void)
     players[0].y    = 133;
     players[0].face = LINK_FACE_DOWN;
 
+    /* Phase 7 root-cause fix #4 2026-05-16 — seed NES Random[$18..$24]
+     * at boot. NES Z_07.asm @ScrambleRandom is bit 1 EOR + ROR-chain.
+     * Cold-start zero array preserves zero through scramble forever
+     * (b0=$00&$02=0, b1=$00&$02=0, carry=0, ROR 0s = 0s). NES Z1 hides
+     * this by relying on stale prior-game RAM at boot; on Genesis with
+     * cold zero, RNG never starts. Seed with non-zero pattern so the
+     * scramble-chain has bits to propagate. */
+    rng_seed(0xACE1u);
+
     s_joy_prev = 0u;
     init_video();
     /* PR-4a: init scene-bank state machine BEFORE first scene_load so the
