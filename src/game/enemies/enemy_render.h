@@ -63,4 +63,21 @@ void enemy_render_publish_pair_left(unsigned char tile,
                                     unsigned char x,
                                     unsigned char y);
 
+/* Phase D 2026-05-15 — death-spark + spawn-cloud frame publisher.
+ * NES Z_07.asm:4977 AnimateAndDrawMetaObject draws the spark or cloud
+ * sprite per frame during dying / spawning sequences. The drained
+ * update_meta_object body (enemy_walker_bridge.c:796) skips the draw
+ * call for now; this publisher fills the s_enemy_* cache so the
+ * Genesis-native sweep emits a SAT entry for the spark/cloud frame.
+ *
+ * Reads ENEMY_METASTATE(slot):
+ *   ms < $10: spawning-cloud path. Frame = ms & $03 -> cloud tile.
+ *   ms >= $10: death-spark path. Frame = (ms - $10) & $03 -> spark tile.
+ *
+ * Frame tile maps come from NES Z1 sprite tile IDs (bomb-cloud = item
+ * slot 1, death-spark = item slot $24). Approximate via direct tile
+ * IDs $60..$66 (cloud) / $66..$6C (spark) since Anim_WriteItemSprites
+ * indirection isn't yet wired in the cache path. */
+void enemy_render_publish_meta(unsigned int slot);
+
 #endif

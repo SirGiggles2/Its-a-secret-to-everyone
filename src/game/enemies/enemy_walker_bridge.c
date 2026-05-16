@@ -46,6 +46,7 @@
 #include "room_state.h"              /* ROOM_OW_CUR_KILL_TOTAL ($034F NES RoomKillCount) */
 #include "platform_abi.h"            /* RAM, OBJ, NES_OBJ_DIR, NES_SHOT_COLLISION_FLAG */
 #include "roomrom_enemy_state.h"     /* ENEMY_* macros (re-export of state/enemy_state.h) */
+#include "enemy_render.h"            /* Phase D: enemy_render_publish_meta */
 
 /* NES non-Link offsets (cell-level; OBJ macro adds slot index).
  * ObjStunTimer  = $003D  (per-slot)
@@ -818,7 +819,10 @@ void update_meta_object(unsigned int slot)
             ENEMY_METASTATE(slot) = (unsigned char)(ms + 1u);
             ms = (unsigned char)(ms + 1u);
         } else {
-            /* Spark frame draw skipped (OAM router not wired). */
+            /* Phase D 2026-05-15: publish spark frame to native cache so
+             * the dying-enemy spark sprite is visible. NES Z_07.asm:5001
+             * @AnimateSpark draws via Anim_WriteItemSprites Y=$24. */
+            enemy_render_publish_meta(slot);
             if (ENEMY_MOVE_TIMER(slot) != 0u) {
                 /* Timer still ticking — return without further work.
                  * Outer UpdateMetaObject post-call check below would
@@ -831,7 +835,10 @@ void update_meta_object(unsigned int slot)
             }
         }
     } else {
-        /* Spawning-cloud path. Cloud frame draw skipped. */
+        /* Phase D 2026-05-15: publish cloud frame to native cache so the
+         * spawning-enemy cloud puff is visible. NES Z_07.asm:4912
+         * DrawCloud writes via Anim_WriteItemSprites Y=$01. */
+        enemy_render_publish_meta(slot);
         if (ENEMY_MOVE_TIMER(slot) != 0u) {
             /* Same fall-through as spark path. */
         } else {

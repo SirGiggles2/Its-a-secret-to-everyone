@@ -139,6 +139,51 @@ void enemy_render_publish_pair_left(unsigned char tile,
     }
 }
 
+/* Phase D 2026-05-15 — meta-object (spark / cloud) frame publisher.
+ * Reads ENEMY_METASTATE(slot), picks a frame tile from the cloud or
+ * spark table, and overwrites the slot's cache entry so the native
+ * sweep emits a SAT entry at the meta sprite's coordinates.
+ *
+ * Tile tables: 4-frame cycles from NES Z1 sprite CHR. Cloud uses the
+ * bomb-cloud item tiles ($60..$66, even-only since 8x16 mode pairs);
+ * spark uses death-sparkle tiles ($66..$6C). Approximate vs the NES
+ * Anim_WriteItemSprites indirection — the cache path doesn't go
+ * through item-slot resolution yet. Phase 8/F+G can refine.
+ *
+ * attrs: NES DrawCloud writes [04]/[05] = 1 (palette 1, blue). Use
+ * sub-pal 1 = bits 1..0 of attrs = 0x01.
+ *
+ * Position: ENEMY_X(slot) / ENEMY_Y(slot) (the slot's last logical
+ * position, suitable until the slot recycles). */
+#define ENEMY_RENDER_META_CLOUD_TILE_BASE 0x60u
+#define ENEMY_RENDER_META_SPARK_TILE_BASE 0x66u
+static const unsigned char k_meta_cloud_tiles[4] = { 0x60u, 0x62u, 0x64u, 0x66u };
+static const unsigned char k_meta_spark_tiles[4] = { 0x66u, 0x68u, 0x6Au, 0x6Cu };
+#define ENEMY_RENDER_META_ATTRS  0x01u  /* sub-pal 1, no flip, no priority */
+
+void enemy_render_publish_meta(unsigned int slot)
+{
+    if (slot > (unsigned int)ENEMY_LOOP_SLOT_LAST) return;
+    unsigned char ms = (unsigned char)ENEMY_METASTATE(slot);
+    if (ms == 0u) return;
+
+    unsigned char frame;
+    unsigned char tile;
+    if (ms >= 0x10u) {
+        frame = (unsigned char)((ms - 0x10u) & 0x03u);
+        tile = k_meta_spark_tiles[frame];
+    } else {
+        frame = (unsigned char)(ms & 0x03u);
+        tile = k_meta_cloud_tiles[frame];
+    }
+
+    s_enemy_tile[slot]  = tile;
+    s_enemy_attrs[slot] = ENEMY_RENDER_META_ATTRS;
+    s_enemy_x[slot]     = (unsigned char)ENEMY_RENDER_OBJ_X(slot);
+    s_enemy_y[slot]     = (unsigned char)ENEMY_RENDER_OBJ_Y(slot);
+    s_enemy_seen[slot]  = 1u;
+}
+
 void enemy_render_reset_oam(void)
 {
     /* 2026-05-15 perf: 256-byte OAM clear is no longer required for
