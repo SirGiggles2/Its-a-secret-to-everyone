@@ -27,6 +27,7 @@
 #include "../../src/state/pause_state.h"  /* Task 6.10.1: Paused flag (Phase 12.2 promoted) */
 #include "../../src/game/combat/link_damage.h"   /* Task 6.11.1 (Phase 12.2 promoted) */
 #include "../../src/state/inventory.h"                   /* Task 6.10.10: rupee tick */
+#include "../../src/state/nes_ram_sync.h"                /* Plan v5a Tier-1: $FA/$FB/$66F/$670/$008C */
 #include "probes/metadata_probe.h"     /* Task 5.4: Gate D in-ROM probe */
 #include "atlas/level_chr_swap.h"        /* PR-4a: scene-bank DMA state machine */
 #include "player_state.h"                 /* Phase 6 Task 6.1: typed players[] */
@@ -106,6 +107,11 @@ static scene_t       s_scene       = SCENE_OW;
 static mode_t        s_mode        = MODE_WALK;
 static move_style_t  s_move_style  = MOVE_STYLE_NES;
 static u8 s_room_id = 0x77;
+/* Plan v5a T3.1 — gameplay-active flag. Set true at end of
+ * roomrom_debug_enter; gates the a4_probe GameMode-sentinel restore
+ * (RAM($0012)==$CD -> Mode 5) so future Modes 3/4 Unfurl/Enter don't
+ * get force-snapped to Play mid-transition. */
+static u8 s_in_gameplay = 0u;
 /* Phase 6 Task 6.1: Link position/facing now lives in `players[0]`.
  * Boot defaults are seeded in `init_player_state()` below before any
  * scene/render code runs. */
@@ -1478,6 +1484,9 @@ void roomrom_debug_enter(void)
     if (saved_options_len == OPTIONS_STATE_SIZE) {
         (void)options_runtime_apply(saved_options, OPTIONS_STATE_SIZE);
     }
+
+    /* Plan v5a T3.1 — debug_enter complete, gameplay loop owns mode now. */
+    s_in_gameplay = 1u;
 }
 
 unsigned char roomrom_debug_get_scene(void)
@@ -1705,6 +1714,14 @@ void roomrom_debug_tick(void)
             nes_ram[0x0084u] = (unsigned char)players[0].y;
             nes_ram[0x00EBu] = s_room_id;
 
+            /* Plan v5a T1.2 + T1.3 — refresh heart cells + Link face
+             * each tick. ObjDir[0] was seeded once at debug-enter, but
+             * goes stale on any C-side face change; AI chase targets
+             * read this cell every frame. Hearts mirror inventory so
+             * any future NES HUD-readout consumer sees live values. */
+            nes_ram_sync_inventory_hearts();
+            nes_ram_sync_link_face();
+
             enemy_loop_tick();
             /* Phase 7 root-cause fix #5b 2026-05-16 — restore GameMode
              * ($0012) before dispatch. a4_probe_main.c probe_check
@@ -1716,7 +1733,12 @@ void roomrom_debug_tick(void)
              * sentinel write still verifies A4 readback per
              * tools/debug/test_debug_contract.py contract; gameplay
              * just normalizes the cell before use. */
-            if (nes_ram[0x0012u] == 0xCDu) {
+            /* Plan v5a T3.1 — gate sentinel restore behind
+             * s_in_gameplay. Future Mode 3/4 (Unfurl/Enter) ports
+             * would otherwise see $CD->$05 force-snap mid-transition.
+             * Restore only when debug_enter has handed off to the
+             * gameplay loop. */
+            if (s_in_gameplay && nes_ram[0x0012u] == 0xCDu) {
                 nes_ram[0x0012u] = 0x05u;
                 nes_ram[0x0013u] = 0x00u;
             }
@@ -1756,6 +1778,16 @@ void roomrom_debug_tick(void)
             joy = (u16)((joy & ~ab_mask) | joy_ab_swap);
             pressed = (u16)((pressed & ~ab_mask) | pressed_ab_swap);
         }
+
+        /* Plan v5a T1.1 — mirror post-swap joypad bits into NES
+         * $00F8 (ButtonsPressed, edge) / $00FA (ButtonsDown, held).
+         * Offsets per Variables.inc:74-75 + z_07.asm:124-125 (plan v5
+         * listed $FA/$FB; drain wins per CLAUDE.md). Post-AB-swap so
+         * downstream NES native consumers see the same A/B contract
+         * the C side just acted on. `pressed` derived from the
+         * original s_joy_prev above (already overwritten with `joy`)
+         * and re-swapped with `joy` if AB swap is active. */
+        nes_ram_sync_input(joy, pressed);
 
         /* SCENE_CAVE harness: tick the native cave gamemode each frame.
          * Only the C+START exit chord is honored — all other input is

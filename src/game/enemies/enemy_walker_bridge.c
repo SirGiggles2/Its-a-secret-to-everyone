@@ -884,6 +884,34 @@ void update_meta_object(unsigned int slot)
         unsigned char obj_type = (unsigned char)ENEMY_TYPE(slot);
         unsigned char skip_kill_cycle = 0u;
 
+        /* Plan v5a T2.1 — boss death drop suppression. Bosses do not
+         * drop items on death (NES Z1 drop tables don't index by boss
+         * type — falls through to no-drop). Skip the drop-conv path
+         * entirely: leave slot dead, no item spawn.
+         *
+         * Boss ObjType IDs per reference/aldonunez/Z_07.asm:5601+
+         * InitObject_JumpTable:
+         *   $31/$32  Dodongo
+         *   $33/$34  Gohma
+         *   $38/$39  Digdogger
+         *   $3C      Manhandla
+         *   $3D      Aquamentus
+         *   $3E      Ganon
+         *   $41      Moldorm
+         *   $42/$43/$44/$45/$46  Gleeok (1-4 heads + detached head)
+         *   $47/$48  Patra
+         */
+        if ((obj_type >= 0x31u && obj_type <= 0x34u) ||
+            (obj_type == 0x38u || obj_type == 0x39u) ||
+            (obj_type >= 0x3Cu && obj_type <= 0x3Eu) ||
+            (obj_type == 0x41u) ||
+            (obj_type >= 0x42u && obj_type <= 0x48u)) {
+            /* Mark slot fully dead — no drop conversion, no respawn. */
+            ENEMY_ALIVE_FLAG(slot) = 0u;
+            ENEMY_METASTATE(slot)  = 0u;
+            return;
+        }
+
         META_ITEM_MONSTER_TYPE(slot) = obj_type;
 
         if (obj_type == 0x5Du || obj_type == 0x14u || obj_type == 0x1Cu) {

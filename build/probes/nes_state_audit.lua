@@ -35,6 +35,13 @@ idle(180)
 local s_before = snapshot()
 press({Down=true}, 30)
 press({Right=true}, 30)
+-- Plan v5a T1.4: capture mid-press snapshot so $FB ButtonsDown is
+-- non-zero (held bits live only while joypad is held; edge bits in $FA
+-- live for exactly one frame each press transition). Hold the chord
+-- briefly and snapshot before idling clears the press.
+joypad.set({A=true, Down=true}, 1); emu.frameadvance()
+joypad.set({A=true, Down=true}, 1); emu.frameadvance()
+local s_pressed = snapshot()
 idle(180)
 local s_after = snapshot()
 
@@ -85,21 +92,27 @@ local key_cells = {
     {0x004A, "ChaseLongTimer"},
     {0x0070, "Link X (ObjX[0])"},
     {0x0084, "Link Y (ObjY[0])"},
+    {0x008C, "Link face (ObjDir[0])"},        -- Plan v5a T1.3
     {0x00AC, "Link State (ObjState[0])"},
     {0x00BC, "Link Hearts? (ObjHP)"},
     {0x00EB, "RoomId"},
+    {0x00F8, "ButtonsPressed (edge)"},        -- Plan v5a T1.1 (was $FA, corrected)
+    {0x00FA, "ButtonsDown (held)"},           -- Plan v5a T1.1 (was $FB, corrected)
     {0x0341, "RollingSpriteIndex"},
     {0x052A, "WorldKillCycle"},
     {0x0660, "InvClock"},
+    {0x066F, "HeartValues (hi=max,lo=cur)"},  -- Plan v5a T1.2
+    {0x0670, "HeartPartial"},                  -- Plan v5a T1.2
     {0x07FE, "(probe sentinel)"},
     {0x07F0, "TitlePhase"},
 }
 for _, kc in ipairs(key_cells) do
     local before = s_before[kc[1]] or 0
+    local pressed = s_pressed[kc[1]] or 0
     local after = s_after[kc[1]] or 0
-    local changed = (before ~= after) and "ADVANCING" or "STUCK"
-    f:write(string.format("  $%04X %-22s  %02X -> %02X  %s\n",
-        kc[1], kc[2], before, after, changed))
+    local changed = ((before ~= after) or (before ~= pressed)) and "ADVANCING" or "STUCK"
+    f:write(string.format("  $%04X %-26s  pre=%02X  hold=%02X  post=%02X  %s\n",
+        kc[1], kc[2], before, pressed, after, changed))
 end
 
 client.screenshot(OUTDIR .. "after.png")

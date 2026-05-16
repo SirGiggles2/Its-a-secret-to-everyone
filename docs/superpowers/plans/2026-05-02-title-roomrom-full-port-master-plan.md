@@ -2233,7 +2233,17 @@ Net dispatch delta: INIT 40→42 wired (+2), UPDATE 48→50 wired (+2).
 
 ## Current Next Action
 
-**Active phase: Phase 17 — Public Builder Release.** Phases 2-16 closed. Phase 7 close commit chain `477d11a8..6091f23d` (2026-05-15/16) shipped the 8-phase enemy visual restore (design spec `docs/superpowers/specs/2026-05-15-enemy-visual-restore-design.md`) — cache feeder for native dispatch (Phase A), per-ENEMY_TYPE size table (Phase B), live hit-flash refresh (Phase C), spark/cloud meta publish (Phase D), multi-latch up to 4 entries per slot (Phase E), Patra coverage via existing slots (Phase F no-op), Gleeok per-segment sub-cache (Phase G), gates GREEN (Phase H). Live BizHawk smoke confirms 11 alive enemies render through the Genesis-native sweep with 16+ SAT entries on screen.
+**Active phase: Phase 7+17 closed; out-of-phase NES NMI sync + Tier-1 bridge in flight (Plan v5a).** All 18 phases (0-17) marked `complete`. 2026-05-15/16 shipped 7 NES-NMI structural fixes (commits `c4be4dca..2cc8b170`: FrameCounter, UpdateTimers, ScrambleRandom, rng_seed, GameMode-restore, Link X/Y sync, RoomId sync) + 8 Phase-7 enemy visual restore commits (`477d11a8..6091f23d`).
+
+Plan v5a (2026-05-16) closed Tier 1 / 2 / 3:
+- T1.1 controller adapter — SGDK joypad → NES `$00F8` ButtonsPressed (edge) + `$00FA` ButtonsDown (held); offsets per `reference/aldonunez/Variables.inc:74-75` and `src/zelda_translated/z_07.asm:124-125` (plan v5 mis-listed as `$FA/$FB`, corrected per CLAUDE.md D1 drain-primary rule).
+- T1.2 inventory heart sync → NES `$066F` HeartValues / `$0670` HeartPartial.
+- T1.3 face refresh → NES `$008C` ObjDir[0] per tick (no longer seed-once-at-debug-enter).
+- T1.4 extended `build/probes/nes_state_audit.lua` — captures pre/hold/post; verifies $FA ADVANCING under D-pad, $008C ADVANCING under face change, $066F mirror stable.
+- T3.1 GameMode-`$05` restore gated behind new `s_in_gameplay` flag in `RoomRom/src/main.c` (prevents Modes 3/4/Unfurl regression class).
+- T2.1 boss drop suppression in `src/game/enemies/enemy_walker_bridge.c` metastate `$14`: ObjType `$31-$34`/`$38-$39`/`$3C-$3E`/`$41`/`$42-$48` per `Z_07.asm:5601+ InitObject_JumpTable` skip drop-conv entirely. Pre-Tier-2 regression gate: `probe_walker_parity.lua` 12/14 (2 fails pre-existing on INITIAL spawn, not death-drop), `probe_family73_dispatch.lua` 8/8 PASS.
+
+Adversarial review (Codex/Gemini/Sonnet/Opus 4-way debate, `~/.claude/plans/put-this-into-your-virtual-wall.md`) deferred Mode 5 Play port indefinitely — collision engine + controller adapter prereqs unmet. Next critical path: v5b (Tier 2 polish + Tier 5 audio gap-fill) — `T2.2` Bait drop, `T5.1` cave/boss/death music_play wiring, `T5.2` SFX call-sites, `T2.3-T2.7` HUD transfer-buf + Mode 8 flash + Mode 11 prompt+palette + heart anim, `T5.5` audio dispatcher. Mode 5 Play, dispatcher modes 3/4/6/7/9/A/B/C/10/13, hardware verification, manual L1-L9×Q1-Q2 user test all DEFERRED.
 
 - [x] Phase 2 RoomRom Graphics Registry — closed (commit `13d845186c`).
 - [x] Phase 3 Overworld Caves — closed (commit `1b39833c77`).
