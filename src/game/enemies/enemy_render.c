@@ -76,12 +76,13 @@ void enemy_render_native_reset(void)
 
 void anim_write_sprite_drained(unsigned int tile, unsigned int slot)
 {
-    /* Z_01.asm:5367-5371 — invincibility flash. */
+    /* Phase C 2026-05-15: drop latch-time invincibility flash. The
+     * native sweep applies hit-flash LIVE per frame so the palette
+     * cycles every VBlank regardless of when the enemy last drew.
+     * NES Z_01.asm:5367-5371 stays for compat — the OAM byte we
+     * write below still reflects the latched state if any external
+     * consumer reads it. */
     unsigned char attrs = RAM(NES_SCRATCH_03);
-    if (ENEMY_RENDER_INV_TIMER(slot) != 0u) {
-        attrs = (unsigned char)(RAM(NES_FRAME_COUNTER) & 0x03u);
-        RAM(NES_SCRATCH_03) = attrs;
-    }
 
     /* 2026-05-15 native cache: latch per-slot tile/attrs/x/y so the
      * native sweep can emit 1 Genesis SAT entry per alive enemy
@@ -432,8 +433,20 @@ void enemy_render_native_sweep(void)
         unsigned char attrs = s_enemy_attrs[slot];
         unsigned char x     = s_enemy_x[slot];
 
-        unsigned short tile_id   = translate_tile(tile, attrs);
-        unsigned short sat_attrs = translate_attrs(attrs, tile_id);
+        /* Phase C 2026-05-15: live hit-flash. If the enemy is in its
+         * post-hit invincibility window (NES ObjInvincibilityTimer
+         * $04F0+slot, mirrored as ENEMY_HIT_REACTION), override the
+         * palette bits 1..0 of attrs with FrameCounter & 0x03 so the
+         * palette cycles every frame instead of freezing on the value
+         * captured at last cache latch. NES Z_01.asm:5367-5371 logic,
+         * applied at sweep-time instead of latch-time. */
+        unsigned char render_attrs = attrs;
+        if (ENEMY_RENDER_INV_TIMER(slot) != 0u) {
+            render_attrs = (unsigned char)((render_attrs & 0xFCu) |
+                            (RAM(NES_FRAME_COUNTER) & 0x03u));
+        }
+        unsigned short tile_id   = translate_tile(tile, render_attrs);
+        unsigned short sat_attrs = translate_attrs(render_attrs, tile_id);
         /* Phase A: SIZE(2,2) 16x16 covers NES Z1 8x16-mode OAM pair
          * group. NES OAM pair = ($XX,$XX+1 left half) + ($XX+2,$XX+3
          * right half). Genesis SIZE(2,2) at base $XX renders 4 contiguous
