@@ -608,10 +608,18 @@ dmc_trigger:
 
 ;==============================================================================
 ; music_play — request a song change
-; Input: D0.b = song bitmap
+; Input: byte arg on stack (GCC m68k ABI). Low byte of 32-bit slot at 7(SP).
+;
+; Was D0.b. C callers compiled `music_play(0x80)` as `pea #$80; jsr music_play`
+; which pushes the immediate to stack WITHOUT loading D0 — music_play then
+; stored garbage D0 to m_song_req. audio_dispatch_tick worked by accident
+; because GCC emitted `moveb d2,d0; movel d0,sp@-` for variable args. Read
+; from stack to match the documented GCC m68k convention used elsewhere
+; (see dmc_trigger:603 "GCC m68k ABI: arg in stack").
 ;==============================================================================
     xdef    music_play
 music_play:
+    move.b  7(SP),D0
     move.b  D0,(m_song_req).l
     rts
 
