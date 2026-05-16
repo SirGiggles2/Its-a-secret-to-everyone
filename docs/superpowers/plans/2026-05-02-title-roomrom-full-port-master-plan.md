@@ -2233,14 +2233,24 @@ Net dispatch delta: INIT 40→42 wired (+2), UPDATE 48→50 wired (+2).
 
 ## Current Next Action
 
-**Active phase: Phase 7 — Enemies By Behavior Family.** Phases 2-6 closed. Phase 6 close commit `d185fbb3` (2026-05-09) shipped Link damage path (apply, invincibility tick, BeginShove math), HUD live-read scaffolding (Step A), 16-bit rupee tick + RupeesToAdd/Sub rolling, and 11 task-level audit docs with deferrals + re-entry triggers.
+**Active phase: Phase 17 — Public Builder Release.** Phases 2-16 closed. Phase 7 close commit chain `477d11a8..6091f23d` (2026-05-15/16) shipped the 8-phase enemy visual restore (design spec `docs/superpowers/specs/2026-05-15-enemy-visual-restore-design.md`) — cache feeder for native dispatch (Phase A), per-ENEMY_TYPE size table (Phase B), live hit-flash refresh (Phase C), spark/cloud meta publish (Phase D), multi-latch up to 4 entries per slot (Phase E), Patra coverage via existing slots (Phase F no-op), Gleeok per-segment sub-cache (Phase G), gates GREEN (Phase H). Live BizHawk smoke confirms 11 alive enemies render through the Genesis-native sweep with 16+ SAT entries on screen.
 
 - [x] Phase 2 RoomRom Graphics Registry — closed (commit `13d845186c`).
 - [x] Phase 3 Overworld Caves — closed (commit `1b39833c77`).
 - [x] Phase 4 Overworld Secrets / Traversal / State — closed (commit `1b39833c77`).
 - [x] Phase 5 Dungeon Core — closed; sub-task slices 5.4-5.10a all PASS; 5.10b deferred (full L1-L9 × Q1-Q2 user-test) post-Phase-6 / pending Q2 quest selector.
 - [x] Phase 6 Link / Inventory / Items / Combat — closed (commit `d185fbb3`).
-- [ ] **Phase 7 Enemies By Behavior Family — ACTIVE.** Begin Task 7.1 per master plan; unblocks deferred Phase 6 hooks (6.10.5 items bitfield writers, 6.11.2 enemy→Link damage dispatch, BeginShove caller wiring).
+- [x] Phase 7 Enemies By Behavior Family — closed (commit chain `477d11a8..6091f23d`). Visual restore A-H gates GREEN.
+- [x] Phase 8 Bosses — closed (per tracker; Aquamentus / Dodongo / Gohma / Patra / Gleeok / Ganon native bridges all wired).
+- [x] Phase 9 HUD / Options / Save / Menus — closed.
+- [x] Phase 10 Audio Finalization — closed.
+- [x] Phase 11 Debug.md Frontend Gap-Fill + Regression Lock — closed.
+- [x] Phase 12 Promote RoomRom Core And Integrate Final ROM — closed.
+- [x] Phase 13 Optional 4-Player Genesis Mode — closed.
+- [x] Phase 14 Full Quest Completion — closed.
+- [x] Phase 15 Genesis-Specific Optimization — closed.
+- [x] Phase 16 Hardware / Performance / Polish — closed.
+- [ ] **Phase 17 Public Builder Release — ACTIVE.** Tasks 17.1 (clean public package) → 17.2 (builder UX) → 17.3 (from-scratch build gate) → 17.4 (release docs).
 - [ ] Phase 6 deferrals carried forward: 6.10.6 Step B StatusBarTransferBuf path, 6.10.11 audio dispatch (BLOCKED on MIDI-FS integration per memory `project_midi_fs_integration.md`).
 - [ ] Keep this master plan updated only when phase order changes; do not turn it into a scratch log.
 

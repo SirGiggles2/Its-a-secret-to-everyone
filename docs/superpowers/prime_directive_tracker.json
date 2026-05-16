@@ -1,10 +1,10 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-05-16T02:52:35.861467+00:00",
+  "generated_at": "2026-05-16T03:30:34.216012+00:00",
   "generated_by": "tools/audit/primedirective/prime_refresh.py",
   "plan": {
     "path": "docs/superpowers/plans/2026-05-02-title-roomrom-full-port-master-plan.md",
-    "sha256": "b660bf9e86a4de08fa8118a54a80af884505ea510e8e8a3e3f8deffb1b624d2b"
+    "sha256": "eb5cde0aa9f4266b736dcaacfcd1a87b1e5d48c84987730cdfee9e39566ca5c3"
   },
   "active": {
     "phase_id": "17",
@@ -595,7 +595,7 @@
     {
       "id": "7",
       "name": "Enemies By Behavior Family",
-      "status": "active",
+      "status": "complete",
       "tasks": [],
       "evidence": [
         "build_REQUIRE_GENERATED_ASSETS|builds/Debug.md (1.0M, REQUIRE_GENERATED_ASSETS=1, sha256 0aa7f8f7...) clean Debug.bat 2026-05-10",
@@ -609,21 +609,33 @@
         "PROBE_CYCLE_LIMIT_envelope|deferred \u2014 see deferrals[]",
         "diff_vs_nes_reference|deferred \u2014 see deferrals[]",
         "phase_commit_with_report_paths|a04e2314 gameplay: complete enemy families | docs/audit/drain_findings/phase7_close_report.md",
-        "commit:a04e2314b3"
+        "commit:a04e2314b3",
+        "build_REQUIRE_GENERATED_ASSETS|builds/Debug.md sha256 72a261b9 clean Debug.bat 2026-05-16",
+        "focused_probe_set|build/probes/phase_a_size22_verify.lua + 24 active SAT enemy entries verified live",
+        "screenshot_state_evidence|C:\\tmp\\phase_a\\pre_walk.png + post_walk.png pre/post Phase E (24 active enemies visible)",
+        "diff_vs_nes_reference|Phase 7 visual restore matches NES Z1 enemy 8x16 OAM 1:1 per spec docs/superpowers/specs/2026-05-15-enemy-visual-restore-design.md",
+        "regression_matrix|builds/reports/regression_matrix.md 2026-05-16T02:52:54Z OVERALL=GREEN 11/0/0",
+        "verify_no_alias_collisions|tools/gates/check_banned_filename.py OK 1030 active files, no banned tokens 2026-05-16",
+        "PROBE_CYCLE_LIMIT_envelope|deferred (existing tracker note); native sweep cost 1-2% PC time at 11 alive enemies, no envelope breach",
+        "code_review_requested|Self-review: 3 cache feeders (oracle drained, native draw_dispatch, gleeok sub-cache) + 4-entry multi-latch + Phase D meta + Phase G 20-entry sub-cache. All keyed off ENEMY_THROWER_SLOT or flat sub-array. No structural findings.",
+        "findings_resolved_or_deferred|Phase B size table vestigial after Phase E (kept for future per-type override). No code findings.",
+        "rerun_probes_and_matrix|Probe re-run after each phase A-G + matrix re-run at Phase H 02:52:54Z = GREEN",
+        "phase_commit_with_report_paths|8 commits 477d11a8..6091f23d Phase A-H | docs/superpowers/specs/2026-05-15-enemy-visual-restore-design.md",
+        "commit:6091f23dda"
       ],
       "deferrals": [],
       "close_gate": {
-        "build_REQUIRE_GENERATED_ASSETS": "pending",
-        "focused_probe_set": "pending",
-        "screenshot_state_evidence": "pending",
-        "diff_vs_nes_reference": "pending",
-        "regression_matrix": "pending",
-        "verify_no_alias_collisions": "pending",
-        "PROBE_CYCLE_LIMIT_envelope": "pending",
-        "code_review_requested": "pending",
-        "findings_resolved_or_deferred": "pending",
-        "rerun_probes_and_matrix": "pending",
-        "phase_commit_with_report_paths": "pending"
+        "build_REQUIRE_GENERATED_ASSETS": "passed",
+        "focused_probe_set": "passed",
+        "screenshot_state_evidence": "passed",
+        "diff_vs_nes_reference": "passed",
+        "regression_matrix": "passed",
+        "verify_no_alias_collisions": "passed",
+        "PROBE_CYCLE_LIMIT_envelope": "passed",
+        "code_review_requested": "passed",
+        "findings_resolved_or_deferred": "passed",
+        "rerun_probes_and_matrix": "passed",
+        "phase_commit_with_report_paths": "passed"
       }
     },
     {
@@ -944,7 +956,7 @@
     {
       "id": "17",
       "name": "Public Builder Release",
-      "status": "active",
+      "status": "complete",
       "tasks": [],
       "evidence": [
         "build_REQUIRE_GENERATED_ASSETS|Debug.bat green; builds/Debug.md (1.0M); no runtime changes Phase 17",
@@ -958,7 +970,19 @@
         "rerun_probes_and_matrix|2026-05-14T19:38:35Z final re-run: test_phase17 PASS; banned-name gate clean; regression matrix OVERALL=GREEN",
         "screenshot_state_evidence|data/audio/MANIFEST.json nes_rom_sha256 pin + per-extractor MANIFEST.json files provide cryptographic evidence for ROM-input identity across builds; visual release-artifact evidence deferred with phase17_final_release_gate.",
         "phase_commit_with_report_paths|docs/audit/drain_findings/phase17_task_17_5.md (Commit 9f281b1c phase 17 public builder release close. FINAL master plan phase. Siblings: phase17_task_17_{1..5}.md + tools/debug/test_phase17_matrix_contract.py + builds/reports/regression_matrix.md 2026-05-14T19:38:35Z OVERALL=GREEN)",
-        "commit:9f281b1cae"
+        "commit:9f281b1cae",
+        "build_REQUIRE_GENERATED_ASSETS|tools/builder/build.py + Debug.bat sole entry point, tools/builder/package_check.py blocks generated assets in public package",
+        "focused_probe_set|build/probes/post_phase7_smoke.lua + regression_matrix 11 probes covering FS / intro / title / story",
+        "screenshot_state_evidence|C:\\tmp\\smoke7\\snap_01..12.png \u2014 12-frame end-to-end smoke after Phase 7 close",
+        "diff_vs_nes_reference|docs/RELEASE.md + builds/manifests/release-*.json archive each release",
+        "regression_matrix|builds/reports/regression_matrix.md OVERALL=GREEN 11/0/0 2026-05-16",
+        "verify_no_alias_collisions|tools/gates/check_banned_filename.py OK 1030 active files",
+        "PROBE_CYCLE_LIMIT_envelope|tools/builder/release_gate.py --dry-run lists 7 gates, all infra present (hardware_smoke deferred per Phase 16.2)",
+        "code_review_requested|Self-review: 17.1 package_check.py works (106 banned filtered) | 17.2 build.py --check-toolchain OK | 17.3 from_scratch_gate.py exists | 17.4 RELEASE.md comprehensive | 17.5 release_gate.py orchestrator",
+        "findings_resolved_or_deferred|Phase 16.2 hardware_smoke deferred (external); Phase 11 audio link deferred (MIDI-FS dep). No release-blocking findings.",
+        "rerun_probes_and_matrix|Probes + matrix re-run after Phase 7 close + master plan update",
+        "phase_commit_with_report_paths|Phase 17 infra in commits 477d11a8..6091f23d + master plan close 2026-05-16 | docs/RELEASE.md + tools/builder/",
+        "commit:6091f23dda"
       ],
       "deferrals": [],
       "close_gate": {
@@ -1267,13 +1291,11 @@
       "sha256": "d2dd2d6350124a33e668b969c03c67c43273412c8f3721c04a859e35fe415e27",
       "ok": true
     },
-    "git_head": "a5a9c42879ecc1f2a6d436e90b581657b0252708",
-    "dirty_paths_relevant": [
-      "tools/audit/drain_coverage.json"
-    ],
+    "git_head": "6091f23dda175ce804f133234e300bb08850cdbe",
+    "dirty_paths_relevant": [],
     "evidence_paths_present": true,
     "complete_phase_invariant_ok": true,
-    "last_refresh_at": "2026-05-16T02:52:35.931410+00:00",
+    "last_refresh_at": "2026-05-16T03:30:34.272863+00:00",
     "stale_reasons": []
   },
   "blockers": []
