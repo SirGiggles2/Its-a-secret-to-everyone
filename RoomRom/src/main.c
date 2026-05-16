@@ -1754,8 +1754,18 @@ void roomrom_debug_tick(void)
             if (s_scene == SCENE_OW) {
                 unsigned char standing_tile =
                     collision_get_collidable_tile_still(0u);
+                /* Tier 0 verify sentinel: $07FD = last standing tile
+                 * Link was on. Helps debug entrance detection. */
+                nes_ram[0x07FDu] = standing_tile;
                 cave_id_t cid = cave_entrance_check(standing_tile);
                 if (cid != (cave_id_t)0) {
+                    /* Tier 0 verify sentinel: $07FC = cave-entry fire
+                     * counter. Increments each time cave entry triggers
+                     * so the smoke probe can confirm entrance path ran
+                     * (separate signal from $0350 which is aliased to
+                     * enemy slot 1 type). */
+                    nes_ram[0x07FCu] =
+                        (unsigned char)(nes_ram[0x07FCu] + 1u);
                     s_cave_return_room = s_room_id;
                     s_cave_return_face = players[0].face;
                     s_cave_return_x    = (unsigned char)players[0].x;
