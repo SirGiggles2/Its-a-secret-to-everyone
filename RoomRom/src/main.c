@@ -15,6 +15,7 @@
 #include "../../src/game/dungeon/door_state.h"  /* Phase 12.2 promoted */
 #include "../../src/game/dungeon/walk_model.h"  /* Phase 12.2 promoted */
 #include "render_abi.h"
+#include "../../src/state/rng_state.h"  /* Phase 7 NMI fix: per-frame rng_next() */
 #include "roomrom_main_state.h"  /* Task 5.4: warp-outcome apply boundary */
 #include "../../src/game/world/transition.h"  /* Task 5.4 warp coord (Phase 12.2 promoted) */
 #include "../../src/game/dungeon/cellar_meta.h"      /* Phase 12.2 promoted */
@@ -1524,6 +1525,17 @@ void roomrom_debug_tick(void)
                 if (v != 0u) nes_ram[x] = (unsigned char)(v - 1u);
             }
         }
+
+        /* Phase 7 root-cause fix #3 2026-05-16 — port NES Z_07.asm:499
+         * @ScrambleRandom from the NES NMI handler. The drained gameplay
+         * loop never advanced NES Random[$18..$24], so every drop-table
+         * roll, AI direction roll, item-spawn coin flip pulled the same
+         * value forever. Symptom: identical drops every kill, enemy AI
+         * directionality biased / locked.
+         *
+         * Discard return value — NES NMI scramble runs unconditionally
+         * regardless of whether anyone reads the result. Same effect. */
+        (void)rng_next();
 
         roomrom_palette_tick_frame(s_frame_counter);
         /* PR-4a: advance scene-bank DMA state machine. Runs after
