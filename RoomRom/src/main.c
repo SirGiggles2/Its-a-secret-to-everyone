@@ -1804,18 +1804,19 @@ void roomrom_debug_tick(void)
                     players[0].x = 120u;
                     players[0].y = 192u;
                     players[0].face = LINK_FACE_UP;
-                    /* T0.2 — minimal cave-scene visual: clear plane A
-                     * (rows 0..ROOMROM_PLANE_ROWS, full width) so the
-                     * screen no longer shows the OW tiles Link warped
-                     * from. Sprite slot 0 (Link) continues to render on
-                     * top, so the scene transition is visually obvious.
-                     * Full procedural cave BG (brick walls + dirt floor
-                     * + cave-person sprite) is a follow-up task — needs
-                     * NES InitCaveRoom nametable port (Z_07.asm mode $0B
-                     * dispatch + cave CHR upload). */
-                    VDP_clearTileMapRect(BG_A, 0u, 0u,
-                                         (u16)ROOMROM_SLOT_TILES,
-                                         (u16)ROOMROM_PLANE_ROWS);
+                    /* T0.3 — cave BG via OW renderer.
+                     * NES caves $6A..$7C are OW-room indices in the OW
+                     * room table; entering cave mode on NES just sets
+                     * RoomId=cid then calls InitMode_EnterRoom which
+                     * paints columns normally (Z_05.asm:1543). Paint
+                     * the cave room here so plane A shows the cave
+                     * layout instead of a black void. Cave palette
+                     * swap (Z_06.asm:714 CaveBgPaletteRowsTransferBuf)
+                     * is a follow-up — without it the OW palette
+                     * makes cave tiles look brighter than NES, but
+                     * the layout is correct. */
+                    roomrom_ow_room_render_fill_plane_a((unsigned char)cid);
+                    roomrom_ow_room_render_publish_play_area_tiles();
                     return;
                 }
             }
@@ -2004,14 +2005,13 @@ void roomrom_debug_tick(void)
          * for the harness. */
         if ((pressed & BUTTON_START) && (joy & BUTTON_C)) {
             if (s_scene == SCENE_OW) {
-                (void)cave_init((cave_id_t)0x6A);
+                const cave_id_t cid_toggle = (cave_id_t)0x6A;
+                (void)cave_init(cid_toggle);
                 s_scene = SCENE_CAVE;
-                /* T0.2 — visual scene change: clear plane A so the OW
-                 * tiles don't bleed through under the cave sprite layer.
-                 * Full cave BG follow-up task. */
-                VDP_clearTileMapRect(BG_A, 0u, 0u,
-                                     (u16)ROOMROM_SLOT_TILES,
-                                     (u16)ROOMROM_PLANE_ROWS);
+                /* T0.3 — cave BG via OW renderer ($6A..$7C are OW-room
+                 * indices per Z_05.asm:1543 InitMode_EnterRoom). */
+                roomrom_ow_room_render_fill_plane_a((unsigned char)cid_toggle);
+                roomrom_ow_room_render_publish_play_area_tiles();
             } else if (s_scene == SCENE_CAVE) {
                 cave_exit();
                 s_scene = SCENE_OW;
