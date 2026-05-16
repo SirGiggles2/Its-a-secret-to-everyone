@@ -70,11 +70,17 @@ unsigned char roomrom_uw_item_pickup(unsigned char level,
         INVENTORY_VALUE(UW_INV_SLOT_MAP) |= mask;
         break;
     case UW_ITEM_ID_TRIFORCE:
-        /* G5: bypass item_take_item GAME_MODE=18 transition.
-         * Slice-1 also defers writing the InvTriforce byte until
-         * the actual NES slot id is confirmed via item_take_item
-         * bridge (G3). Just flip the slice-1 stub flag. */
+        /* Plan v5c T6.3 — proper triforce pickup.
+         * UW_INV_SLOT_TRIFORCE=19 in uw_item_rooms.h maps to slot
+         * $0657+19=$066A (map_l9) which is wrong; InvTriforce
+         * actually lives at NES $0671. Write directly to that cell
+         * + g_inventory.triforce mirror, then trigger Mode 12
+         * EndLevel (mode_dispatch.c:61 dispatches it). */
+        RAM(0x0671u) |= mask;
+        g_inventory.triforce |= mask;
         s_triforce_pickup_active = 1u;
+        GAME_MODE                = 0x12u;
+        RAM(0x0013u)             = 0x00u;   /* Sub0 entry */
         break;
     default:
         /* Other item ids: slice-1 records pickup but does not write

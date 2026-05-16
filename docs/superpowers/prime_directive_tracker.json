@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-05-16T10:02:55.431970+00:00",
+  "generated_at": "2026-05-16T10:12:51.199952+00:00",
   "generated_by": "tools/audit/primedirective/prime_refresh.py",
   "plan": {
     "path": "docs/superpowers/plans/2026-05-02-title-roomrom-full-port-master-plan.md",
@@ -1340,14 +1340,11 @@
       "sha256": "811cbc5f3eba8e20e414ab2be1dd0092f063b7d5cbdf97d010669005416bbb75",
       "ok": true
     },
-    "git_head": "5c8992dfb10db9e9c7789f1c63a6724053d0fe50",
-    "dirty_paths_relevant": [
-      "src/frontend/fs/fs_main.c",
-      "src/frontend/fs/probes/"
-    ],
+    "git_head": "ae630f93d59a2efbb401ed3dd114674debeb001b",
+    "dirty_paths_relevant": [],
     "evidence_paths_present": true,
     "complete_phase_invariant_ok": true,
-    "last_refresh_at": "2026-05-16T10:02:55.470553+00:00",
+    "last_refresh_at": "2026-05-16T10:12:51.237670+00:00",
     "stale_reasons": []
   },
   "blockers": []
