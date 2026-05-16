@@ -43,10 +43,20 @@ extern void music_play(unsigned char song_bitmap);
 #define GM_END_LEVEL         0x12u  /* UpdateMode12EndLevel */
 #define GM_WIN_GAME          0x13u  /* UpdateMode13WinGame */
 
-/* Song bitmap IDs (audio_driver.asm change_song). */
+/* Song bitmap IDs — match audio_driver.asm change_song dispatch (line 692+)
+ * AND NES Z_07.asm LevelSongIds (line 1725):
+ *   LevelSongIds[0] = $01  → OW (overworld) — first_ow path phrase $08
+ *   LevelSongIds[1..8] = $40 → UW (dungeon) — first_uw path phrase $0F
+ *   LevelSongIds[9] = $20  → L9 death-mountain (driver: single-phrase bit-6)
+ *   $80 → title/demo (multi-phrase)
+ *   $10 → ending (multi-phrase)
+ *   $06 → zelda boss-kill fanfare (phrase $24)
+ * Previous SONG_OW=$20 was a transcription bug — driver routed it to the
+ * single-phrase bit-6 sample instead of the OW multi-phrase song. */
 #define SONG_TITLE      0x80u
 #define SONG_UW         0x40u
-#define SONG_OW         0x20u
+#define SONG_OW         0x01u
+#define SONG_LEVEL9     0x20u
 #define SONG_ENDING     0x10u
 #define SONG_ZELDA      0x06u   /* boss-kill / triforce reveal fanfare */
 #define SONG_SILENCE    0x00u

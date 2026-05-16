@@ -1442,11 +1442,14 @@ void roomrom_debug_enter(void)
      * so seed it here too (0=OW, 1=UW L1). */
     if (s_scene == SCENE_UW) {
         nes_ram[0x0010u] = 1u;  /* CurLevel = 1 (UW L1) */
-        level_info_install_uw(1u, 1u);
     } else {
         nes_ram[0x0010u] = 0u;  /* CurLevel = 0 (OW) */
-        level_info_install_ow();
     }
+    /* CRASH FIX 2026-05-16 — level_info_install_* REMOVED. They write
+     * nes_ram[$687E..$6C7D] OOB of the 2KB A4 mirror at $FF8000-$FF87FF,
+     * corrupting SGDK heap. Long-term: properly extend mirror or add a
+     * dedicated SRAM-range buffer. NES Z1 enemy_room_load_objects reads
+     * are returning garbage from OOB memory until then. */
     load_room(s_room_id);                  /* loads BG pal + sprite PAL1 */
     roomrom_sprites_spawn_link(players[0].x, players[0].y);
     roomrom_combat_init();                 /* S7: clear sword sprite slot */
@@ -1534,6 +1537,13 @@ short roomrom_debug_get_link_y(void)
 
 void roomrom_debug_tick(void)
 {
+        /* DEBUG SENTINEL — capture players[0]+s_room_id at TOP-of-tick
+         * BEFORE any per-frame work. If post-Mode values ($78,$DD,$73)
+         * are preserved here but reverted by line 1745 sync, the writer
+         * lives inside this function. */
+        nes_ram[0x07F5u] = (unsigned char)players[0].x;
+        nes_ram[0x07F6u] = (unsigned char)players[0].y;
+        nes_ram[0x07F7u] = s_room_id;
         SYS_doVBlankProcess();
         s_frame_counter++;
         /* Phase 7 root-cause fix 2026-05-16 — port NES Z_07.asm:519
@@ -1741,6 +1751,8 @@ void roomrom_debug_tick(void)
              * source-of-truth. */
             nes_ram[0x0070u] = (unsigned char)players[0].x;
             nes_ram[0x0084u] = (unsigned char)players[0].y;
+            /* SENTINEL $07F9 = s_room_id at tick-start sync (each tick) */
+            nes_ram[0x07F9u] = s_room_id;
             nes_ram[0x00EBu] = s_room_id;
 
             /* Tier 0 (plan v6) cave-entrance detection. Only fires in
@@ -1844,6 +1856,15 @@ void roomrom_debug_tick(void)
         u16 joy = JOY_readJoypad(JOY_1);
         u16 pressed = joy & ~s_joy_prev;
         s_joy_prev = joy;
+        /* DEBUG SENTINEL — publish raw joy + pressed bits into NES RAM
+         * sentinel cells $07F0..$07F3 so probes can verify SGDK polling
+         * captures 6-button (Mode/X/Y/Z) bits. Latched (not edge-only). */
+        nes_ram[0x07F0u] = (unsigned char)(joy & 0xFFu);
+        nes_ram[0x07F1u] = (unsigned char)((joy >> 8) & 0xFFu);
+        if (pressed) {
+            nes_ram[0x07F2u] = (unsigned char)(pressed & 0xFFu);
+            nes_ram[0x07F3u] = (unsigned char)((pressed >> 8) & 0xFFu);
+        }
 
         /* Phase 9 Task 9.4 — OPTION_ID_AB_SWAP: swap A and B button bits
          * after edge-detect so the entire downstream input dispatch sees
@@ -1963,59 +1984,85 @@ void roomrom_debug_tick(void)
          * Z held + START = quest toggle (handled below). C held + START
          * handled above. */
         if ((pressed & BUTTON_MODE) && !(joy & BUTTON_Z) && !(joy & BUTTON_C)) {
+            /* DEBUG SENTINEL — count how many times the Mode handler enters. */
+            nes_ram[0x07F4u] = (unsigned char)(nes_ram[0x07F4u] + 1u);
             s_scene = (s_scene == SCENE_OW) ? SCENE_UW : SCENE_OW;
+            /* SENTINEL $07E8 = s_scene IMMEDIATELY AFTER toggle */
+            nes_ram[0x07E8u] = (unsigned char)s_scene;
             /* UW first room from NES LevelInfo_StartRoomId ($6BAD) seeded
              * by level_info_install_uw below. Bootstrap default = $73
              * (NES Z1 L1 Q1 StartRoomId) so first toggle paints a real
              * room even if the table-install race ever returns zeros. */
             if (s_scene == SCENE_UW) {
-                level_info_install_uw(1u, 1u);
-                s_room_id = nes_ram[0x6BADu];
-                if (s_room_id == 0u) s_room_id = 0x73u;
+                /* CRASH FIX 2026-05-16 — level_info_install_uw writes
+                 * nes_ram[$687E..$6C7D] but the A4 mirror only covers
+                 * $FF8000-$FF87FF (2KB). OOB writes corrupt SGDK heap
+                 * after upload_scene_chr allocates. Hardcode L1Q1
+                 * StartRoomId ($73) until SRAM mirror is properly
+                 * extended (separate sram buffer or expanded mirror). */
+                s_room_id = 0x73u;
                 /* Spawn Link at the south doorway of the entrance room
                  * (NES InitMode3_Sub2 entry: ObjX=$78, ObjY=$DD). */
                 players[0].x = 0x78;
                 players[0].y = 0xDD;
                 players[0].face = LINK_FACE_UP;
+                /* SENTINEL — proves UW first-block executed */
+                nes_ram[0x07E0u] = 0xAAu;
+                nes_ram[0x07E1u] = (unsigned char)s_room_id;
+                nes_ram[0x07E2u] = (unsigned char)players[0].x;
+                nes_ram[0x07E3u] = (unsigned char)players[0].y;
             } else {
                 s_room_id = 0x77;
+                nes_ram[0x07E0u] = 0xBBu;
             }
+            /* SENTINEL — values RIGHT BEFORE upload_scene_chr */
+            nes_ram[0x07E4u] = (unsigned char)s_room_id;
+            nes_ram[0x07E5u] = (unsigned char)players[0].x;
             upload_scene_chr();
+            /* SENTINEL — values AFTER upload_scene_chr */
+            nes_ram[0x07E6u] = (unsigned char)s_room_id;
+            nes_ram[0x07E7u] = (unsigned char)players[0].x;
             /* P5: scene change uses coordinator to re-upload sprite CHR
              * with correct variant. combat redux kept separate. */
             roomrom_scene_load(
                 (s_scene == SCENE_UW) ? ROOMROM_SCENE_UW_L1
                                       : ROOMROM_SCENE_OVERWORLD,
                 current_redux_flag());
+            /* SENTINEL after scene_load */
+            nes_ram[0x07EAu] = (unsigned char)s_room_id;
             roomrom_combat_set_redux(current_redux_flag());
-            /* Substrate fix 2026-05-15 — refresh LevelBlockAttrs +
-             * LevelInfo for the new scene so enemy_room_load_objects
-             * (called via load_room->enemy_loop_room_init below) sees
-             * the correct level's tables. */
+            /* SENTINEL after combat_set_redux */
+            nes_ram[0x07EBu] = (unsigned char)s_room_id;
+            /* SENTINEL $07E9 = s_scene at second block (should match $07E8) */
+            nes_ram[0x07E9u] = (unsigned char)s_scene;
+            /* CurLevel cell ($0010) stays within mirror so safe to set;
+             * level_info_install_* calls REMOVED (OOB writes — see
+             * CRASH FIX 2026-05-16 above). */
             if (s_scene == SCENE_UW) {
                 nes_ram[0x0010u] = 1u;
-                level_info_install_uw(1u, 1u);
             } else {
                 nes_ram[0x0010u] = 0u;
-                level_info_install_ow();
             }
-            load_room(s_room_id);
+            /* SENTINEL DISTINCT values to detect overwrite vs no-write */
+            nes_ram[0x07ECu] = 0xC1u;  /* before load_room marker */
+            /* load_room(s_room_id);    DISABLED for debug — testing hang */
+            nes_ram[0x07EDu] = 0xC2u;  /* after load_room marker */
+            nes_ram[0x07EFu] = (unsigned char)s_room_id;
             roomrom_combat_set_uw(s_scene == SCENE_UW);
-            /* Substrate fix 2026-05-15 — spawn enemies on scene toggle.
-             * level_info_install_* above seeded LBA tables; this fires
-             * enemy_room_load_objects so ObjType[1..count] populates
-             * for the new scene's first room. */
             enemy_loop_room_init(s_room_id, (unsigned char)s_scene);
+            nes_ram[0x07EEu] = 0xC3u;  /* after enemy_loop_room_init marker */
             /* Phase 10.3 audio per-event wiring: scene-toggle entry
              * fires music_play per docs/audit/audio_routing.md table.
-             * UW = $40 dungeon song; OW = $20 overworld song.
+             * UW = $40 dungeon song; OW = $01 overworld song
+             * (per NES Z_07.asm LevelSongIds[0]=$01; driver maps $01
+             * → first_ow path phrase $08).
              * extern decl at top of main.c via inventory.h includes
              * — music_play is in audio_driver.asm + linked into
              * Debug.md via tools/debug/build_debug.py compile_asm
              * MRI path (commit 6191e911). */
             {
                 extern void music_play(unsigned char song_bitmap);
-                music_play((s_scene == SCENE_UW) ? 0x40 : 0x20);
+                music_play((s_scene == SCENE_UW) ? 0x40 : 0x01);
             }
             return;
         }
