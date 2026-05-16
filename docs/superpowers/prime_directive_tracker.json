@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-05-16T02:09:58.798526+00:00",
+  "generated_at": "2026-05-16T02:52:35.861467+00:00",
   "generated_by": "tools/audit/primedirective/prime_refresh.py",
   "plan": {
     "path": "docs/superpowers/plans/2026-05-02-title-roomrom-full-port-master-plan.md",
@@ -986,7 +986,15 @@
     ],
     "requires_tracker_note": true
   },
-  "out_of_phase_tasks": [],
+  "out_of_phase_tasks": [
+    {
+      "target_phase_id": "Phase 7 Enemy Visual Restore",
+      "reason": "Visible enemy bodies, hit-flash, spark/cloud, multi-tile bosses, Gleeok body+heads",
+      "stance": "REPLACE",
+      "regression_matrix_run": null,
+      "recorded_at": "2026-05-16T02:52:35.931430+00:00"
+    }
+  ],
   "deferrals": [
     {
       "phase_id": "2",
@@ -1256,14 +1264,16 @@
     },
     "drain_coverage_json": {
       "path": "tools/audit/drain_coverage.json",
-      "sha256": "37348e7d9339ff1422d87339ed5f9edc49f1d9ef198deb565f8ecdba3fec1b73",
+      "sha256": "d2dd2d6350124a33e668b969c03c67c43273412c8f3721c04a859e35fe415e27",
       "ok": true
     },
-    "git_head": "ee5739f74e8b3f3bec70477540d4113fc5996025",
-    "dirty_paths_relevant": [],
+    "git_head": "a5a9c42879ecc1f2a6d436e90b581657b0252708",
+    "dirty_paths_relevant": [
+      "tools/audit/drain_coverage.json"
+    ],
     "evidence_paths_present": true,
     "complete_phase_invariant_ok": true,
-    "last_refresh_at": "2026-05-16T02:09:58.871058+00:00",
+    "last_refresh_at": "2026-05-16T02:52:35.931410+00:00",
     "stale_reasons": []
   },
   "blockers": []
