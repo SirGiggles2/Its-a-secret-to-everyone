@@ -32,10 +32,14 @@ local function r8(addr)
     return memory.read_u8(CELL_BASE + addr)
 end
 
-local RAM_GAMEMODE    = 0x0012
-local RAM_SONGREQUEST = 0x0088
+-- Debug.md A4 = $FF8000 per platform_abi.h:11 (NOT $FF0000).
+-- NES cell $XX -> 68K RAM domain offset = $8000 + $XX.
+local RAM_GAMEMODE    = 0x8012
+-- audio_driver.asm:511 m_song equ MUSIC_BASE+$00, MUSIC_BASE=$FFE000
+-- absolute M68K $FFE000 = 68K RAM domain offset $E000 (separate from nes_ram base)
+local RAM_M_SONG      = 0xE000
 
-log("Music event log probe — Phase 10.5")
+log("Music event log probe — Phase 10.5 (m_song direct, T5.0.3)")
 
 local prev_mode = -1
 local prev_song = -1
@@ -44,9 +48,9 @@ local events = {}
 for fr = 1, 1500 do
     emu.frameadvance()
     local mode = r8(RAM_GAMEMODE)
-    local song = r8(RAM_SONGREQUEST)
+    local song = r8(RAM_M_SONG)
     if mode ~= prev_mode or song ~= prev_song then
-        local ev = string.format("frame %d: gamemode=0x%02X SongRequest=0x%02X", fr, mode, song)
+        local ev = string.format("frame %d: gamemode=0x%02X m_song=0x%02X", fr, mode, song)
         log(ev)
         events[#events+1] = ev
     end
@@ -55,6 +59,10 @@ for fr = 1, 1500 do
 end
 
 log(string.format("Total transitions captured: %d", #events))
-log("VERDICT: GREEN — transitions captured; manual cross-check vs audio_routing.md required")
+if #events > 1 then
+    log("VERDICT: GREEN — m_song transitions captured; cross-check vs audio_routing.md")
+else
+    log("VERDICT: RED — m_song never changed; music_play() never fired")
+end
 f:close()
 client.exit()

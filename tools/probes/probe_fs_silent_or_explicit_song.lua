@@ -32,14 +32,13 @@ local function r8(addr)
     return memory.read_u8(CELL_BASE + addr)
 end
 
+-- Debug.md A4 = $FF8000 per platform_abi.h:11. NES cell -> +$8000.
 -- NES Variables.inc:
---   gamemode      := $12   (M68K $FF0012)
---   SongRequest   := $88   (M68K $FF0088, mirror via audio_driver.asm m_song)
--- audio_driver.asm stores m_song in BSS; SongRequest write is at the
--- entry to music_play. We poll SongRequest indirectly via the m_song
--- alias at the driver's BSS location.
-local RAM_GAMEMODE      = 0x0012
-local RAM_SONGREQUEST   = 0x0088  -- mirror
+--   gamemode      := $12   (M68K $FF8012, 68K RAM offset $8012)
+-- audio_driver.asm:
+--   m_song equ MUSIC_BASE+$00, MUSIC_BASE=$FFE000 -> 68K RAM offset $E000
+local RAM_GAMEMODE      = 0x8012
+local RAM_SONGREQUEST   = 0xE000  -- m_song direct (absolute, no +$8000)
 
 os.execute('if not exist "C:\\tmp\\probes" mkdir "C:\\tmp\\probes"')
 

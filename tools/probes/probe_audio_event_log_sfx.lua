@@ -28,38 +28,33 @@ local function r8(addr)
     return memory.read_u8(CELL_BASE + addr)
 end
 
--- dmc_last_idx lives at the audio_driver.asm BSS .l absolute label.
--- Approximate location: ~$FFE000 region. Without the .o symbol map
--- handy, sweep a small window for known-zero baseline + look for
--- non-zero writes.
-local DMC_SWEEP_BASE = 0xE000
-local DMC_SWEEP_SIZE = 0x200
+-- audio_driver.asm:572 dmc_last_idx equ DMC_BASE+$01, DMC_BASE=$FFE100
+-- absolute M68K $FFE101 = 68K RAM domain offset $E101
+local RAM_DMC_LAST_IDX = 0xE101
 
-log("SFX event log probe — Phase 10.5")
+log("SFX event log probe — Phase 10.5 (dmc_last_idx direct, T5.0.2)")
 
-local prev = {}
-for off = 0, DMC_SWEEP_SIZE - 1 do
-    prev[off] = r8(DMC_SWEEP_BASE + off)
-end
+local prev = r8(RAM_DMC_LAST_IDX)
+log(string.format("frame 0 baseline: dmc_last_idx=0x%02X", prev))
 
 local sfx_events = {}
 for fr = 1, 1500 do
     emu.frameadvance()
-    if fr % 60 == 0 then
-        for off = 0, DMC_SWEEP_SIZE - 1 do
-            local cur = r8(DMC_SWEEP_BASE + off)
-            if cur ~= prev[off] and cur >= 1 and cur <= 7 then
-                local ev = string.format("frame %d: BSS+0x%X 0x%02X -> 0x%02X (likely dmc_last_idx)",
-                    fr, off, prev[off], cur)
-                log(ev)
-                sfx_events[#sfx_events+1] = ev
-            end
-            prev[off] = cur
-        end
+    local cur = r8(RAM_DMC_LAST_IDX)
+    if cur ~= prev then
+        local ev = string.format("frame %d: dmc_last_idx 0x%02X -> 0x%02X (SFX #%d)",
+            fr, prev, cur, cur)
+        log(ev)
+        sfx_events[#sfx_events+1] = ev
+        prev = cur
     end
 end
 
-log(string.format("SFX cell-changes detected: %d", #sfx_events))
-log("VERDICT: GREEN — sweep complete; manual identification of dmc_last_idx address required")
+log(string.format("SFX triggers detected: %d", #sfx_events))
+if #sfx_events > 0 then
+    log("VERDICT: GREEN — dmc_last_idx writes observed")
+else
+    log("VERDICT: RED — dmc_last_idx never written; no SFX path fired (expected — boot park at $0C, no combat)")
+end
 f:close()
 client.exit()

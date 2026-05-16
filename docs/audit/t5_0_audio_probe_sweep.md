@@ -4,46 +4,97 @@
 **ROM:** `builds/Debug.md` (post cave-palette swap commit)
 **Source plan:** `~/.claude/plans/put-this-into-your-virtual-wall.md` v5a step 2
 
-## Per-probe results
+## Per-probe results (initial pre-fix sweep)
 
 | # | Probe | Verdict | Notes |
 |---|-------|---------|-------|
-| 1 | `probe_audio_vblank_budget.lua`     | **GREEN**   | 300/300 frames completed @ ~59.94 fps; `music_tick` fits VBlank budget |
-| 2 | `probe_audio_event_log_music.lua`   | **PARTIAL** | gamemode=0x00 at frame 1 → 0x0C at frame 13 → static. SongRequest=0x00 the entire 1500-frame walk. No `music_play()` ever fires via `nes_ram[$88]` mirror. |
-| 3 | `probe_audio_event_log_sfx.lua`     | **PARTIAL** | 68 BSS cell changes detected in $E000..$E1FF sweep — likely music-driver channel state (SQ1/SQ2/NOISE update bytes), NOT `dmc_last_idx`. Probe sweep noisy; need driver `.l` symbol address to disambiguate. |
-| 4 | `probe_audio_low_health_option.lua` | **PARTIAL** | SRAM uninitialised (magic=0x0000 instead of 'OP'). Accessor surface healthy; needs a save write to verify bit-decode. |
-| 5 | `probe_fs_silent_or_explicit_song.lua` | **RED**  | gamemode never reaches FS ($01) within 500 frames after pressing Start; stays at 0x0C. SongRequest=0x00 throughout. |
+| 1 | `probe_audio_vblank_budget.lua`     | **GREEN**   | 300/300 frames @ ~59.94 fps; `music_tick` fits VBlank budget |
+| 2 | `probe_audio_event_log_music.lua`   | **PARTIAL** | gamemode reported 0x0C (probe BSS-read garbage — superseded). SongRequest=0x00 the entire 1500-frame walk. |
+| 3 | `probe_audio_event_log_sfx.lua`     | **PARTIAL** | 68 BSS cell changes in $E000..$E1FF sweep. Probe sweep noisy. |
+| 4 | `probe_audio_low_health_option.lua` | **PARTIAL** | SRAM uninitialised (magic=0x0000 instead of 'OP'). |
+| 5 | `probe_fs_silent_or_explicit_song.lua` | **RED**  | gamemode never reaches FS ($01) within 500 frames after pressing Start. |
 
-## Diagnostic findings
+## Addendum 2026-05-16 — ROOT CAUSE FOUND (commit 24d7be11)
 
-1. **Gamemode is stuck at $0C** across both passive (probe 2) and Start-press (probe 5) walks. NES Z1 mode $0C is in the UpdateMode5Play variant range ($09..$0C per `src/game/audio/audio_dispatch.c:37`) — the autoenter or NES-shim boot path is parking gamemode there instead of advancing the normal Demo($00) → FileSelect($01) → Play($05) chain.
+The PARTIAL/RED results above were symptoms of a single ABI bug, not multiple subsystem failures.
 
-2. **Audio dispatcher never fires** because:
-   - `audio_dispatch_tick()` is only called from `roomrom_debug_tick` (`RoomRom/src/main.c:1840`), which runs after `roomrom_debug_enter`.
-   - Probes 2/5 do not press the A+B+C+Start debug-enter chord, so `audio_dispatch_tick` never executes.
-   - Even if it did, `resolve_song()` has no case for gm=$0C — it falls through `default:` returning `s_last_song` (sentinel $FF), suppressing `music_play()`.
+### Root cause: `music_play` calling convention mismatch
 
-3. **Title song trigger at boot (`a4_probe_main.c:181`) is NOT visible in the SongRequest mirror.** Either:
-   - the call uses driver BSS `m_song` and never mirrors to `nes_ram[$88]`, OR
-   - the call is wired but executes before BizHawk's RAM probe can read it (unlikely — probe samples per-frame).
+`src/audio_driver.asm:614 music_play` was declared with NES asm convention
+(`D0.b = song bitmap`) but called from C (`src/debug/a4_probe_main.c:181
+music_play(0x80)`). GCC m68k compiled the constant-arg call as:
 
-4. **SFX probe sweep proves the driver BSS is alive** (channel-state bytes mutate every ~60 frames matching driver tick). Music infrastructure works; the dispatch path is what's silent.
+```
+pea     #$80      ; push immediate to stack
+jsr     music_play
+```
 
-## Decision per plan v5a step 2
+`pea` does NOT load D0 — only pushes the immediate to the stack. The asm
+`music_play` then stored whatever D0 contained (the prior C function's
+return value) to `m_song_req`.
 
-> "Outcome decides scope: if all GREEN → audio is fine, skip T5.1-T5.4. If RED → fix only the failing call-sites."
+`audio_dispatch_tick`'s call worked by accident because GCC's pattern for
+variable args is `moveb d2,d0; movel d0,sp@-` — D0 gets loaded
+incidentally before the push.
 
-**Not all GREEN.** Scope T5.1 + T5.2 + T5.5 (+ T5.3 + T5.4 subsets) remain valid for v5b session.
+### Evidence — pre-fix trace (`probe_audio_deep_trace_v2.lua`)
 
-**Pre-T5.1 architectural fix needed first** (added to plan):
+```
+fr= 39 gm=CD m_song=00 m_req=00 m_phrase=00    ← probe_check sentinel hits = main loop entered
+fr= 50 gm=CD m_song=00 m_req=01 m_phrase=00    ← music_play(0x80) stored D0=$01 (=intro_phase_step return) instead of $80
+fr= 51 gm=CD m_song=01 m_req=00 m_phrase=09    ← change_song.first_ow → play_next_phrase.next_ow
+```
 
-- **T5.0.1** — Investigate why gamemode parks at $0C instead of advancing through normal Demo/FS/Play chain. Likely the debug-enter substrate or `a4_probe_main.c` boot path forces this. Resolve before any T5.1 dispatch wiring — otherwise the dispatcher will continue to no-op.
-- **T5.0.2** — Find `dmc_last_idx` `.l` absolute symbol address from linker map. Update `probe_audio_event_log_sfx.lua` to read that single cell, eliminating sweep noise.
-- **T5.0.3** — Decide: mirror `m_song` writes to `nes_ram[$88]` so audio routing decisions are observable via the standard NES cell, OR update probes to read driver BSS via map-derived address.
+m_song NEVER becomes $80. The title song never reaches the driver.
+
+### Evidence — post-fix trace (same probe)
+
+```
+fr= 50 gm=CD m_song=00 m_req=80 m_phrase=00    ← music_play(0x80) correctly writes $80
+fr= 51 gm=CD m_song=80 m_req=00 m_phrase=1A    ← change_song.first_demo (m_phrase=$19) → next_demo ($1A)
+fr= 52+ gm=CD m_song=80 m_req=00 m_phrase=1A   ← driver looping title song phrases
+```
+
+### Fix
+
+```asm
+music_play:
+    move.b  7(SP),D0                  ; arg byte at SP+4+3 (big-endian m68k stack)
+    move.b  D0,(m_song_req).l
+    rts
+```
+
+Matches the documented GCC m68k convention used by `dmc_trigger:603`
+("GCC m68k ABI: arg in stack").
+
+## Re-sweep findings (post-fix, commit 24d7be11)
+
+| # | Probe | Verdict | Notes |
+|---|-------|---------|-------|
+| 1 | `probe_audio_vblank_budget.lua`         | **GREEN**   | 300/300 frames @ 59.94 fps, `music_tick` fits VBlank |
+| 2 | `probe_audio_event_log_music.lua`       | **GREEN**   | 3 transitions captured; `m_song=$80` from frame 51 onwards |
+| 3 | `probe_audio_event_log_sfx.lua`         | **RED-expected** | dmc_last_idx never written in 1500 frames. Boot parks at gm=$CD (probe_check sentinel); no combat → no SFX path fires. Verifies the cell isn't spuriously written. Real SFX coverage needs chord-gated debug entry + scripted combat probe. |
+| 4 | `probe_audio_low_health_option.lua`     | **PARTIAL** | SRAM uninitialised in debug ROM (pre-existing structural; not music_play-related) |
+| 5 | `probe_fs_silent_or_explicit_song.lua`  | **RED**     | gamemode never reaches FS ($01) — debug harness bypasses FS path (probe_check writes $CD sentinel, then debug_enter_title direct entry). Structural to debug ROM, not routing bug. Real FS routing parity test needs non-debug ROM or FS-entry chord. |
+
+Post-fix evidence summary:
+- music_play(0x80) correctly writes $80 to m_song_req.
+- change_song.first_demo path activates (m_phrase=$19 → next_demo $1A).
+- Driver loops title song phrases stable from frame 52+.
+- VBlank budget unaffected (no perf regression).
+
+## Diagnostic findings — SUPERSEDED
+
+The "gamemode stuck at $0C" finding was probe BSS-read garbage. After
+audit, the gm cell ($FF8012) reads $CD once `probe_check(1)` runs at fr 39
+as a sentinel — A4-readback verification, not a real game-mode value. The
+"audio dispatcher never fires" finding holds — `audio_dispatch_tick` is
+chord-gated and probes don't press the chord — but the underlying boot
+title song now works through the direct `music_play(0x80)` call.
 
 ## Coverage / Stance (D1)
 
-- **NES source**: reference/aldonunez/Z_07.asm (multiple SongRequest writers)
-- **Drained C** : src/game/audio/audio_dispatch.c (Plan v5b T5.5)
-- **Coverage**  : NONE (audio dispatch logic exists; boot path doesn't reach it)
-- **Stance**    : EXTEND — diagnostic record (no code change in T5.0 itself; T5.0.1-T5.0.3 fixes drop in v5b)
+- **NES source**: reference/aldonunez/Z_07.asm (multiple SongRequest writers) + audio_driver.asm calling convention
+- **Drained C** : src/audio_driver.asm music_play (asm sole writer) + src/game/audio/audio_dispatch.c (gamemode dispatch)
+- **Coverage**  : FULL after fix (music_play correctly stores arg byte; title song reaches driver at boot)
+- **Stance**    : EXTEND — diagnostic record + ABI fix landed commit 24d7be11
