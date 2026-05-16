@@ -61,15 +61,16 @@ snapshots[#snapshots+1] = snap("T+0 post-debug-enter")
 -- Phase E — 480 frames of sword swinging + d-pad waggle.
 -- Period 30: A=swing, 60: dpad-right, 90: A=swing, etc.
 -- Capture snapshot every 60 frames.
+-- BizHawk Genesis button names: CamelCase {Right=true} not {RIGHT=true}.
 for block=1,8 do
     for f=1,60 do
         local btn = {}
         if (f % 8) == 0 then btn.A = true end  -- swing sword
         local phase = ((block * 60 + f) % 32)
-        if phase < 8 then btn.RIGHT = true
-        elseif phase < 16 then btn.DOWN = true
-        elseif phase < 24 then btn.LEFT = true
-        else btn.UP = true end
+        if phase < 8 then btn.Right = true
+        elseif phase < 16 then btn.Down = true
+        elseif phase < 24 then btn.Left = true
+        else btn.Up = true end
         joypad.set(btn, 1)
         emu.frameadvance()
     end
