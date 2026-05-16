@@ -1480,6 +1480,18 @@ void roomrom_debug_tick(void)
 {
         SYS_doVBlankProcess();
         s_frame_counter++;
+        /* Phase 7 root-cause fix 2026-05-16 — port NES Z_07.asm:519
+         * `INC FrameCounter` from the NES NMI handler. The drained
+         * gameplay loop never advanced NES $0015, so every NES Z1
+         * timing path that reads FrameCounter (sprite anim cadence,
+         * hit-flash palette cycle, drop-RNG seed, cave-person draw
+         * gate at Z_03.asm:328+, FrameCounter & 0x03 enemy palette,
+         * &c.) saw a perma-zero value. Symptom: enemies render with
+         * frozen palette, drop tables never roll, animation frames
+         * lock to first frame, hit-flash invisible. Mirror the NMI
+         * increment here in roomrom_debug_tick (the per-frame body)
+         * so all consumers see a normal 0..$FF cycling counter. */
+        nes_ram[0x0015u] = (unsigned char)(nes_ram[0x0015u] + 1u);
         roomrom_palette_tick_frame(s_frame_counter);
         /* PR-4a: advance scene-bank DMA state machine. Runs after
          * SYS_doVBlankProcess so the SGDK DMA queue is drained before
