@@ -57,7 +57,8 @@ log(string.format("frame %d title: gamemode=0x%02X SongRequest=0x%02X",
     emu.framecount(), title_mode, title_song))
 
 -- Phase 2: press Start to advance to FS.
-joypad.set({["P1 Start"] = true})
+-- Genplus-gx Genesis button name is "Start" (CamelCase), NOT "P1 Start".
+joypad.set({Start = true})
 emu.frameadvance()
 joypad.set({})
 

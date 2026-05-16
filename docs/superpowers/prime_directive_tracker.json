@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-05-16T09:15:38.170069+00:00",
+  "generated_at": "2026-05-16T09:46:04.374928+00:00",
   "generated_by": "tools/audit/primedirective/prime_refresh.py",
   "plan": {
     "path": "docs/superpowers/plans/2026-05-02-title-roomrom-full-port-master-plan.md",
@@ -1059,6 +1059,13 @@
       "stance": "REPLACE",
       "regression_matrix_run": null,
       "recorded_at": "2026-05-16T08:30:06.812256+00:00"
+    },
+    {
+      "target_phase_id": "Phase 8 Task 8.11 Boss Matrix",
+      "reason": "all 19 boss types dispatched without runtime stall; matrix sweep GREEN @ 60fps; probe: tools/debug/probes/probe_boss_matrix.lua",
+      "stance": "REPLACE",
+      "regression_matrix_run": null,
+      "recorded_at": "2026-05-16T09:46:04.414472+00:00"
     }
   ],
   "deferrals": [
@@ -1330,18 +1337,17 @@
     },
     "drain_coverage_json": {
       "path": "tools/audit/drain_coverage.json",
-      "sha256": "6a5741211eb4612c5183dfaee52129c626112f2857b925851aa689d85509e5a4",
+      "sha256": "811cbc5f3eba8e20e414ab2be1dd0092f063b7d5cbdf97d010669005416bbb75",
       "ok": true
     },
-    "git_head": "b2cb594ed027244b04ab18b16016721bd44931a3",
+    "git_head": "94fa5bd2ce88fe6ed9818ad942e3481b69c04cc8",
     "dirty_paths_relevant": [
-      "src/game/enemies/probes/probe_gameplay_smoke.lua",
       "tools/audit/drain_coverage.json",
-      "src/game/enemies/probes/probe_scroll_transition.lua"
+      "tools/every_30min_up_enter.log"
     ],
     "evidence_paths_present": true,
     "complete_phase_invariant_ok": true,
-    "last_refresh_at": "2026-05-16T09:15:38.208080+00:00",
+    "last_refresh_at": "2026-05-16T09:46:04.414455+00:00",
     "stale_reasons": []
   },
   "blockers": []
