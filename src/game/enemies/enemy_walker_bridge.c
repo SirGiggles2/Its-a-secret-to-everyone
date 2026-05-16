@@ -809,6 +809,26 @@ draw_octorock:
 static const unsigned char k_no_drop_types[7] = {
     0x5Du, 0x14u, 0x15u, 0x1Bu, 0x1Cu, 0x1Du, 0x17u
 };
+
+/* Plan v6 T2.1 — boss death drop suppression. NES Z1 bosses skip the
+ * drop-table roll on death; only mini-bosses and dungeon enemies drop.
+ * Phase 6.11 close-report deferral: "Boss death drop suppression —
+ * Boss infra absent (Phase 8)". Phase 8 has shipped boss types; this
+ * adds the suppression check the master plan flagged.
+ *
+ * NES type IDs per src/game/enemies/enemy_loop.c comments + NES
+ * Z_04.asm:7649+ InitGleeok / Z_04.asm:9552 InitPatra / Z_04.asm
+ * Dodongo+Gohma+Aquamentus+Ganon dispatch rows. */
+static const unsigned char k_boss_no_drop_types[] = {
+    0x31u, 0x32u,           /* Dodongo (Red/Blue) */
+    0x33u, 0x34u,           /* Gohma (Blue/Red) */
+    0x3Du,                  /* Aquamentus */
+    0x42u, 0x43u, 0x44u, 0x45u, /* Gleeok 1/2/3/4 heads */
+    0x47u, 0x48u,           /* Patra1 / Patra2 */
+    0x4Du,                  /* Ganon */
+};
+#define BOSS_NO_DROP_COUNT \
+    (sizeof(k_boss_no_drop_types) / sizeof(k_boss_no_drop_types[0]))
 static const unsigned char k_drop_set0_types[6] = {
     0x07u, 0x08u, 0x0Eu, 0x04u, 0x0Fu, 0x23u
 };
@@ -861,6 +881,17 @@ static unsigned char native_set_up_dropped_item(unsigned int slot)
     /* @FindNoDropType — destroy if type is in no-drop list. */
     for (i = 0u; i < 7u; ++i) {
         if (monster_type == k_no_drop_types[i]) {
+            native_destroy_monster(slot);
+            return 0u;
+        }
+    }
+
+    /* Plan v6 T2.1 — boss-type drop suppression (Phase 6.11 deferral).
+     * Boss kills do not roll drop-table; the slot is destroyed without
+     * spawning an item. Matches NES Z1 boss-death behavior (boss-room
+     * exit transitions to Mode 12 EndLevel without drop). */
+    for (i = 0u; i < (unsigned char)BOSS_NO_DROP_COUNT; ++i) {
+        if (monster_type == k_boss_no_drop_types[i]) {
             native_destroy_monster(slot);
             return 0u;
         }
