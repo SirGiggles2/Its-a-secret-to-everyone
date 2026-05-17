@@ -197,8 +197,19 @@ void enemy_render_publish_pair_left(unsigned char tile,
  * position, suitable until the slot recycles). */
 #define ENEMY_RENDER_META_CLOUD_TILE_BASE 0x60u
 #define ENEMY_RENDER_META_SPARK_TILE_BASE 0x66u
-static const unsigned char k_meta_cloud_tiles[4] = { 0x60u, 0x62u, 0x64u, 0x66u };
-static const unsigned char k_meta_spark_tiles[4] = { 0x66u, 0x68u, 0x6Au, 0x6Cu };
+/* NES DrawCloud (Z_07.asm:4912) routes through Anim_WriteItemSprites
+ * with item slot $01 (Bomb). Anim_ItemFrameOffsets[$01]=$03, so the
+ * frame tiles read k_anim_item_frame_tiles[$03..$06] = $34, $70, $72, $74.
+ *   - frame 0 ($34): bomb body (used during fuse; not for cloud)
+ *   - frame 1 ($70): cloud puff frame 1
+ *   - frame 2 ($72): cloud puff frame 2
+ *   - frame 3 ($74): cloud puff frame 3
+ *
+ * NES DrawSpark uses item slot $24, Anim_ItemFrameOffsets[$24]=$2E,
+ * tiles k_anim_item_frame_tiles[$2E..$2F] = $64, $62. Spark alternates
+ * frame 0=$64 / frame 1=$62 (low bit toggled per metastate). */
+static const unsigned char k_meta_cloud_tiles[4] = { 0x34u, 0x70u, 0x72u, 0x74u };
+static const unsigned char k_meta_spark_tiles[4] = { 0x64u, 0x62u, 0x64u, 0x62u };
 #define ENEMY_RENDER_META_ATTRS  0x01u  /* sub-pal 1, no flip, no priority */
 
 void enemy_render_publish_meta(unsigned int slot)
