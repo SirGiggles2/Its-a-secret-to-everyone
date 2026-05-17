@@ -14,6 +14,10 @@
 #include "progress_state.h"    /* SUBMODE_VALUE, PROG_ITEMS_BY_LEVEL */
 #include "combat_state.h"      /* LINK_HEARTS */
 
+/* T5.2 plan v5b — DMC SFX dispatch from core tune writers. NES bitmap
+ * → sample index per src/nes_io.asm:2547 DMC_SAMPLE_LOOKUP. */
+extern void audio_sfx_play(unsigned char sfx);
+
 void core_unhalt_link(void)
 {
     /* drain at core_runtime.c:56-58. NES UnhaltLink (Z_01.asm:100):
@@ -264,12 +268,14 @@ void core_play_key_taken_tune(void)
     /* drain at core_runtime.c:13-16. */
     DEATH_FRAME_COUNTER = 0u;
     RAM(0x0604u) = 8u;  /* ROOM_SFX_MAIN */
+    audio_sfx_play(4u);  /* bitmap $08 = sample 4 (key/door taken jingle) */
 }
 
 void core_play_parry_tune(void)
 {
     /* drain at core_runtime.c:237-239. */
     RAM(0x0604u) = 1u;  /* ROOM_SFX_MAIN */
+    audio_sfx_play(1u);  /* bitmap $01 = sample 1 (sword parry / clank) */
 }
 
 unsigned char core_silence_all_sound(void)

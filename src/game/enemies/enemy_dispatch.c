@@ -13,6 +13,21 @@
 #include "world/progress_dispatch.h"  /* progress_get_room_flag_uw_item_state */
 #include "combat/combat_dispatch.h"   /* combat_deal_damage */
 
+/* T5.2 plan v5b — DMC SFX dispatch from enemy tune writers. NES asm
+ * audio driver consumed SampleRequest ($0600) bitmap and triggered the
+ * indexed DMC sample. Our XGM-backed audio_sfx_play takes 1..7 = direct
+ * sample index. NES bitmap → sample index per DMC_SAMPLE_LOOKUP
+ * (src/nes_io.asm:2547):
+ *   $01 (bit 0) → sample 1
+ *   $02 (bit 1) → sample 2  (boss hit/death roar)
+ *   $04 (bit 2) → sample 3  (secret revealed / door unlock)
+ *   $08 (bit 3) → sample 4  (Link hurt)
+ *   $10 (bit 4) → sample 5  (Aquamentus/Gleeok/Ganon roar)
+ *   $20 (bit 5) → sample 6  (Dodongo/Gohma roar)
+ *   $40 (bit 6) → sample 7  (Digdogger/Manhandla/Patra roar)
+ */
+extern void audio_sfx_play(unsigned char sfx);
+
 unsigned int enemy_find_empty_monster_slot(void)
 {
     /* drain at enemy_runtime.c:12-20. NES FindEmptyMonsterSlot.
@@ -37,6 +52,7 @@ void enemy_play_secret_found_tune(void)
 {
     /* drain at enemy_common_runtime.c:9-11. */
     ENEMY_SFX_SECRET = 4u;
+    audio_sfx_play(3u);  /* bitmap $04 = sample 3 (secret revealed) */
 }
 
 void enemy_play_boss_death_cry(void)
@@ -44,12 +60,14 @@ void enemy_play_boss_death_cry(void)
     /* drain at enemy_common_runtime.c:13-16. */
     ENEMY_SFX_BOSS_CRY = 2u;
     ENEMY_SFX_BOSS_CRY_FLAGS = 0x80u;
+    audio_sfx_play(2u);  /* bitmap $02 = sample 2 (boss death roar) */
 }
 
 void enemy_gohma_play_parry_tune(void)
 {
     /* drain at enemy_common_runtime.c:18-20. */
     ENEMY_SFX_PARRY = 1u;
+    audio_sfx_play(1u);  /* bitmap $01 = sample 1 (gohma parry) */
 }
 
 /* NES Z_01.asm ReverseDirections (line 3003): $08 $04 $02 $01.
@@ -119,6 +137,7 @@ void enemy_init_aquamentus(unsigned int slot)
     /* drain at enemy_boss_runtime.c:102-107. */
     ENEMY_INVINCIBILITY(slot) = 0xE2u;
     ENEMY_SFX_BOSS_CRY = 16u;
+    audio_sfx_play(5u);  /* bitmap $10 = sample 5 (Aquamentus roar) */
     ENEMY_X(slot) = 0xB0u;
     ENEMY_Y(slot) = 0x80u;
 }
@@ -159,6 +178,7 @@ void enemy_play_boss_hit_cry_if_needed(unsigned int slot)
     /* drain at enemy_boss_runtime.c:374-377. */
     if (ENEMY_HIT_REACTION(slot) == 0x10u) {
         ENEMY_SFX_BOSS_CRY = 2u;
+        audio_sfx_play(2u);  /* bitmap $02 = sample 2 (boss hit roar) */
     }
 }
 
