@@ -39,6 +39,15 @@ void roomrom_cave_room_render_fill_plane_a(unsigned char cave_id);
 unsigned char roomrom_ow_room_render_walkable_at(unsigned char col,
                                                  unsigned char row);
 
+/* T6 OW collision (NES tile-granularity): returns non-zero if the
+ * BG TILE at (tile_col, tile_row) is walkable per NES Z1
+ * GetCollidableTile WalkableTiles list. tile_col 0..31, tile_row 0..21.
+ * Out-of-bounds = 0. Used by link_walkable_at to match NES sub-metatile
+ * collision (the metatile-granularity walkable map blocks legal paths
+ * like the $67->$57 north exit gap). */
+unsigned char roomrom_ow_room_render_walkable_tile_at(unsigned char tile_col,
+                                                      unsigned char tile_row);
+
 /* Task 5.4: raw NES BG tile id for the active 32x22 playfield, populated
  * during fill_plane_a. tile_col 0..31, tile_row 0..21. Out-of-bounds = 0.
  *

@@ -141,6 +141,46 @@ unsigned char roomrom_ow_room_render_walkable_at(unsigned char col,
     return s_walkable[col][row];
 }
 
+/* NES Z1 OW BG-tile-id walkable check. Mirrors GetCollidableTile +
+ * WalkableTiles list, plus path/sand additions seen in renderer
+ * (primary_squares + secondary_squares cover lake/road/sand/forest-edge
+ * tiles that NES accepts as walkable substrate). */
+static unsigned char nes_ow_walkable_tile(unsigned char tile)
+{
+    switch (tile) {
+        /* NES Z_07.asm WalkableTiles ($8D,$91,$9C,$AC,$AD,$CC,$D2,$D5,$DF) */
+        case 0x8D: case 0x91: case 0x9C:
+        case 0xAC: case 0xAD:
+        case 0xCC:
+        case 0xD2: case 0xD5: case 0xDF:
+        /* Path/sand sub-tiles produced by primary_squares ($26 + neighbors,
+         * sand $74-$77, $F3 path, $24 sand corner). */
+        case 0x03: case 0x04:
+        case 0x24: case 0x25: case 0x26: case 0x27:
+        case 0x54: case 0x55: case 0x56: case 0x57:
+        case 0x58: case 0x59: case 0x5A: case 0x5B:
+        case 0x5C: case 0x5D: case 0x5E: case 0x5F:
+        case 0x6F: case 0x70: case 0x71:
+        case 0x74: case 0x75: case 0x76: case 0x77:
+        case 0x84: case 0x85: case 0x86: case 0x87:
+        case 0xF3:
+            return 1u;
+        default:
+            return 0u;
+    }
+}
+
+unsigned char roomrom_ow_room_render_walkable_tile_at(unsigned char tile_col,
+                                                      unsigned char tile_row)
+{
+    if (tile_col >= ROOMROM_OW_RAW_TILE_COLS ||
+        tile_row >= ROOMROM_OW_RAW_TILE_ROWS) {
+        return 0u;
+    }
+    if (!s_raw_tiles_stable) return s_walkable[tile_col >> 1u][tile_row >> 1u];
+    return nes_ow_walkable_tile(s_raw_tiles[tile_col][tile_row]);
+}
+
 static const unsigned char s_secondary_squares_redux[64] = {
     0x24,0x24,0x24,0x24,0x6F,0x6F,0x6F,0x6F,
     0xF3,0xF3,0xF3,0xF3,0xFA,0xFA,0xFA,0xFA,

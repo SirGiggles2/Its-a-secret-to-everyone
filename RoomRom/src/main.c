@@ -1194,11 +1194,18 @@ static unsigned char link_walkable_at(short x, short y, link_dir_t dir)
     }
 
     if (hot_y < ROOMROM_PLAYFIELD_TOP_PX) return 0u;
-    col = (int)hot_x / 16;
-    row = (int)(hot_y - ROOMROM_PLAYFIELD_TOP_PX) / 16;
-    if (col < 0 || col > 15 || row < 0 || row > 10) return 1u;
-    return roomrom_ow_room_render_walkable_at((unsigned char)col,
-                                              (unsigned char)row);
+    /* T6 NES-faithful: sample at 8x8 BG-tile granularity instead of
+     * 16x16 metatile. NES GetCollidableTile uses the actual BG tile id
+     * at hot point; metatile-granularity blocked legal exits like the
+     * $67 north gap where row-1 metatile is tree+path mixed (top-left
+     * tile is tree, top-right is path — Link's hot lands on path). */
+    {
+        int tc = (int)hot_x / 8;
+        int tr = (int)(hot_y - ROOMROM_PLAYFIELD_TOP_PX) / 8;
+        if (tc < 0 || tc > 31 || tr < 0 || tr > 21) return 1u;
+        return roomrom_ow_room_render_walkable_tile_at(
+            (unsigned char)tc, (unsigned char)tr);
+    }
 }
 
 /* S4: edge-triggered room transition. Both OW and UW use the same 16x8 grid
@@ -1455,14 +1462,17 @@ void roomrom_debug_enter(void)
      * so seed it here too (0=OW, 1=UW L1). */
     if (s_scene == SCENE_UW) {
         nes_ram[0x0010u] = 1u;  /* CurLevel = 1 (UW L1) */
+        level_info_install_uw(1u, 1u);
     } else {
         nes_ram[0x0010u] = 0u;  /* CurLevel = 0 (OW) */
+        level_info_install_ow();
     }
-    /* CRASH FIX 2026-05-16 — level_info_install_* REMOVED. They write
-     * nes_ram[$687E..$6C7D] OOB of the 2KB A4 mirror at $FF8000-$FF87FF,
-     * corrupting SGDK heap. Long-term: properly extend mirror or add a
-     * dedicated SRAM-range buffer. NES Z1 enemy_room_load_objects reads
-     * are returning garbage from OOB memory until then. */
+    /* 2026-05-17 — level_info_install_* RESTORED. Prior "CRASH FIX"
+     * removal was overcautious: A4=$FF8000 is in SGDK heap free-pool
+     * (BSS ends $FF1C90, MEMORY_HIGH=$FFF600, boot allocs ~10KB low).
+     * Mirror writes $FF867E..$FF8C7D land in unallocated heap until
+     * heap grows past $FF8000. Empirical test follows. If heap collision
+     * surfaces, cap MEMORY_HIGH to $FF8000 (only fix needed). */
     load_room(s_room_id);                  /* loads BG pal + sprite PAL1 */
     roomrom_sprites_spawn_link(players[0].x, players[0].y);
     roomrom_combat_init();                 /* S7: clear sword sprite slot */
@@ -2062,12 +2072,10 @@ void roomrom_debug_tick(void)
              * (NES Z1 L1 Q1 StartRoomId) so first toggle paints a real
              * room even if the table-install race ever returns zeros. */
             if (s_scene == SCENE_UW) {
-                /* CRASH FIX 2026-05-16 — level_info_install_uw writes
-                 * nes_ram[$687E..$6C7D] but the A4 mirror only covers
-                 * $FF8000-$FF87FF (2KB). OOB writes corrupt SGDK heap
-                 * after upload_scene_chr allocates. Hardcode L1Q1
-                 * StartRoomId ($73) until SRAM mirror is properly
-                 * extended (separate sram buffer or expanded mirror). */
+                /* 2026-05-17 — bootstrap default $73 (NES Z1 L1 Q1
+                 * StartRoomId). level_info_install_uw below populates
+                 * the SRAM tables; subsequent toggles can read the
+                 * actual StartRoomId at $6BAD if needed. */
                 s_room_id = 0x73u;
                 /* Spawn Link at the south doorway of the entrance room
                  * (NES InitMode3_Sub2 entry: ObjX=$78, ObjY=$DD). */
@@ -2111,17 +2119,18 @@ void roomrom_debug_tick(void)
             nes_ram[0x07EBu] = (unsigned char)s_room_id;
             /* SENTINEL $07E9 = s_scene at second block (should match $07E8) */
             nes_ram[0x07E9u] = (unsigned char)s_scene;
-            /* CurLevel cell ($0010) stays within mirror so safe to set;
-             * level_info_install_* calls REMOVED (OOB writes — see
-             * CRASH FIX 2026-05-16 above). */
+            /* 2026-05-17 — level_info_install_* RESTORED; mirror writes
+             * to $FF867E..$FF8C7D land in SGDK heap free-pool. */
             if (s_scene == SCENE_UW) {
                 nes_ram[0x0010u] = 1u;
+                level_info_install_uw(1u, 1u);
             } else {
                 nes_ram[0x0010u] = 0u;
+                level_info_install_ow();
             }
             /* SENTINEL DISTINCT values to detect overwrite vs no-write */
             nes_ram[0x07ECu] = 0xC1u;  /* before load_room marker */
-            /* load_room(s_room_id);    DISABLED for debug — testing hang */
+            load_room(s_room_id);
             nes_ram[0x07EDu] = 0xC2u;  /* after load_room marker */
             nes_ram[0x07EFu] = (unsigned char)s_room_id;
             roomrom_combat_set_uw(s_scene == SCENE_UW);
@@ -2280,6 +2289,10 @@ void roomrom_debug_tick(void)
             else return;
             s_room_id = (u8)((row << 4) | col);
             load_room(s_room_id);
+            /* 2026-05-17 — teleport now spawns enemies for the destination
+             * room (mirrors scroll path at line ~1727). Without this, jumping
+             * rooms via debug teleport leaves ObjType[] empty. */
+            enemy_loop_room_init(s_room_id, (unsigned char)s_scene);
         } else if (s_move_style == MOVE_STYLE_ALTTP) {
             /* ALTTP-style 8-direction movement, ported from
              * github.com/snesrev/zelda3 src/player.c Link_HandleVelocity
