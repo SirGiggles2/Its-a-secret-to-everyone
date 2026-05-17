@@ -296,13 +296,21 @@ void roomrom_sprites_load_palette(void)
 void roomrom_sprites_set_link_pose(short x, short y,
                                    link_face_t face, unsigned char frame)
 {
+    roomrom_sprites_set_link_pose_pal(x, y, face, frame, RENDER_PAL1);
+}
+
+void roomrom_sprites_set_link_pose_pal(short x, short y,
+                                       link_face_t face, unsigned char frame,
+                                       unsigned char pal_index)
+{
     unsigned short pose_idx = (unsigned short)face * 2u + (unsigned short)frame;
     unsigned short tile = LINK_VRAM_TILE + pose_idx * LINK_TILES_PER_POSE;
+    if (pal_index > 3u) pal_index = RENDER_PAL1;
     VDP_setSpriteFull(0,
                       (signed short)x,
                       (signed short)y,
                       RENDER_SPRITE_SIZE(2, 2),
-                      RENDER_TILE_ATTR_FULL(RENDER_PAL1,0, 0, 0, tile),
+                      RENDER_TILE_ATTR_FULL(pal_index, 0, 0, 0, tile),
                       1);
 }
 

@@ -41,6 +41,14 @@ void roomrom_sprites_set_link_pos(short x, short y);
 void roomrom_sprites_set_link_pose(short x, short y,
                                    link_face_t face, unsigned char frame);
 
+/* Pose with explicit palette index (RENDER_PAL0..PAL3). Used by the
+ * invincibility-flash path: when LINK_STUN_TIMER > 0, caller cycles
+ * pal_index across (FrameCounter & $03) so Link visually flickers
+ * through 4 palettes. Default rendering uses PAL1. */
+void roomrom_sprites_set_link_pose_pal(short x, short y,
+                                       link_face_t face, unsigned char frame,
+                                       unsigned char pal_index);
+
 /* S7 v4 combat. */
 void roomrom_sprites_set_link_attack_pose(short x, short y, link_face_t face);
 

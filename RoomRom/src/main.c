@@ -1751,6 +1751,16 @@ void roomrom_debug_tick(void)
             roomrom_candle_fire_update();
             roomrom_magic_shot_update();
             roomrom_link_damage_tick((unsigned char)s_frame_counter);
+            /* Decrement LINK_STUN_TIMER ($04F0) on even frames per NES
+             * Z_07.asm:5756 DecrementInvincibilityTimer. NES drained
+             * link_collision_link_be_harmed sets this cell to 24 on hit;
+             * without per-frame decrement, Link stays permanently
+             * invincible after first hit and damage path skips all
+             * subsequent collisions. */
+            if (nes_ram[0x04F0u] != 0u &&
+                ((unsigned char)s_frame_counter & 1u) == 0u) {
+                nes_ram[0x04F0u]--;
+            }
             inventory_rupee_tick((unsigned char)s_frame_counter);
             /* Phase 7 substrate fix 2026-05-15 — clear NES OAM mirror
              * + reset RollingSpriteIndex AT FRAME START. NES Z1 NMI
@@ -2374,8 +2384,22 @@ void roomrom_debug_tick(void)
 
             edge_load_or_clamp();
             if (!roomrom_combat_link_locked()) {
-                roomrom_sprites_set_link_pose(players[0].x, players[0].y,
-                                              players[0].face, s_link_frame);
+                /* Invincibility palette flash: when LINK_STUN_TIMER > 0,
+                 * cycle Link's sprite palette index across PAL0..PAL3
+                 * keyed on FrameCounter & $03. NES Z_01.asm:5367-5371
+                 * applies sub-palette XOR; on Genesis we cycle the
+                 * sprite palette bank (PAL1 normal). */
+                unsigned char stun = nes_ram[0x04F0u];
+                if (stun != 0u) {
+                    unsigned char pal = (unsigned char)
+                        (((unsigned char)s_frame_counter) & 0x03u);
+                    roomrom_sprites_set_link_pose_pal(players[0].x, players[0].y,
+                                                      players[0].face,
+                                                      s_link_frame, pal);
+                } else {
+                    roomrom_sprites_set_link_pose(players[0].x, players[0].y,
+                                                  players[0].face, s_link_frame);
+                }
             }
         } else {
             /* NES-faithful Link movement, ported from
@@ -2448,6 +2472,34 @@ void roomrom_debug_tick(void)
                     }
                 }
 
+                /* Link knockback shove — NES Z1 Obj_Shove runs every frame
+                 * for slot 0 reading ObjShoveDir ($00C0) + ObjShoveDistance
+                 * ($00D3). link_collision_link_be_harmed (drained NES path)
+                 * sets these on monster contact. While shove is active,
+                 * player input is suppressed (NES stun semantics) and
+                 * Link is shifted in the shove direction. */
+                {
+                    extern void c_obj_shove(unsigned int slot);
+                    unsigned char shove_dir = nes_ram[0x00C0u];
+                    if (shove_dir != 0u) {
+                        /* Mirror C-side players[0] into nes_ram so
+                         * c_obj_shove starts from the live position. */
+                        nes_ram[0x0070u] = (unsigned char)players[0].x;
+                        nes_ram[0x0084u] = (unsigned char)players[0].y;
+                        c_obj_shove(0u);
+                        players[0].x = (short)nes_ram[0x0070u];
+                        players[0].y = (short)nes_ram[0x0084u];
+                        /* Suppress player input movement while shoved. */
+                        moving_dir = LINK_DIR_NONE;
+                    } else if (nes_ram[0x04F0u] != 0u) {
+                        /* Stun timer non-zero but shove finished: keep
+                         * Link locked out from movement for the rest of
+                         * the invincibility window (NES Z_01.asm:5708
+                         * LINK_STUN_TIMER gates Link_Move). */
+                        moving_dir = LINK_DIR_NONE;
+                    }
+                }
+
                 if (moving_dir != LINK_DIR_NONE) {
                     if (++s_link_anim_tick >= LINK_ANIM_PERIOD) {
                         s_link_frame ^= 1u;
@@ -2462,8 +2514,22 @@ void roomrom_debug_tick(void)
 
             edge_load_or_clamp();
             if (!roomrom_combat_link_locked()) {
-                roomrom_sprites_set_link_pose(players[0].x, players[0].y,
-                                              players[0].face, s_link_frame);
+                /* Invincibility palette flash: when LINK_STUN_TIMER > 0,
+                 * cycle Link's sprite palette index across PAL0..PAL3
+                 * keyed on FrameCounter & $03. NES Z_01.asm:5367-5371
+                 * applies sub-palette XOR; on Genesis we cycle the
+                 * sprite palette bank (PAL1 normal). */
+                unsigned char stun = nes_ram[0x04F0u];
+                if (stun != 0u) {
+                    unsigned char pal = (unsigned char)
+                        (((unsigned char)s_frame_counter) & 0x03u);
+                    roomrom_sprites_set_link_pose_pal(players[0].x, players[0].y,
+                                                      players[0].face,
+                                                      s_link_frame, pal);
+                } else {
+                    roomrom_sprites_set_link_pose(players[0].x, players[0].y,
+                                                  players[0].face, s_link_frame);
+                }
             }
         }
 
