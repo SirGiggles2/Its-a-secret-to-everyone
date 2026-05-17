@@ -1027,6 +1027,18 @@ void enemy_loop_room_init(unsigned char room_id, unsigned char scene_id)
             fn(slot);
         }
         ENEMY_ALIVE_FLAG(slot) = 1u;
+
+        /* NES spawn cloud animation (Z_07.asm:5549-5562 @NormalSpawn).
+         * Monsters with type < $53 (excluding Armos $1E and Flying Ghini
+         * $22) spawn with a 3-frame cloud animation before becoming
+         * active. NES sets ObjTimer = slot_index (staggered start) and
+         * relies on metastate=$01 default to drive UpdateMetaObject for
+         * the first ~slot+18 frames. Without this, enemies appear
+         * instantly on room entry. */
+        if (t < 0x53u && t != 0x1Eu && t != 0x22u) {
+            ENEMY_METASTATE(slot) = 0x01u;
+            ENEMY_MOVE_TIMER(slot) = (unsigned char)slot;
+        }
     }
 }
 
