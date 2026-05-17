@@ -357,6 +357,27 @@ static unsigned char dir_to_spawn_list_index(unsigned char dir)
 
 void enemy_assign_spawn_positions(unsigned char room_id, unsigned char template_id)
 {
+    /* NES Z1 sets ObjectFirstUnwalkableTile ($034A) per scene at room
+     * load. Reader cells: NES Z_04.asm:845, :1537, :2866, ..., used by
+     * IsSafeToSpawn (Z_05.asm:2013) to decide if a tile blocks spawn.
+     *
+     * Our port never wrote $034A so it defaulted to 0 → every tile
+     * compared >= 0 → marked unsafe → iter_cap workaround scrambled
+     * spawn positions.
+     *
+     * Per NES Z1 OW: walkable tiles include sand $26, paths $D9..$DF,
+     * walkable rocks $C8..$CB; unwalkable starts at tree $C0 ranges OR
+     * higher. NES default for OW = $C0 (most BG decorations >= $C0 are
+     * solid). For UW dungeons NES uses $A0-ish.
+     *
+     * Set per scene before spawn loop. UW value is approximate pending
+     * per-level FoeCounts/LevelInfo wire. */
+    if ((unsigned char)CUR_LEVEL == 0u) {
+        ENEMY_DUNGEON_TILE_FLOOR = 0xC0u;  /* OW: trees + walls solid above $C0 */
+    } else {
+        ENEMY_DUNGEON_TILE_FLOOR = 0xA0u;  /* UW: dungeon walls solid above $A0 */
+    }
+
     /* Y holds the running cycle index — first set to RoomObjCount per
      * NES line 1886 (governs cellar Y-pick when we skip the main loop). */
     unsigned char y_cycle = (unsigned char)DUNGEON_ROOM_OBJ_COUNT;
@@ -389,9 +410,16 @@ void enemy_assign_spawn_positions(unsigned char room_id, unsigned char template_
     if (!skip_main && (unsigned char)DUNGEON_ROOM_OBJ_COUNT == 0u) skip_main = 1u;
 
     if (!skip_main) {
+        /* NES Z_05.asm:1906 reads `LDA ObjDir` (Variables.inc:51:
+         * ObjDir := $98), i.e. nes_ram[$0098] = Link's facing direction.
+         * Earlier code used OBJ(NES_OBJ_DIR, 0u) which resolves to
+         * nes_ram[$000F] — the ZP_TMPF scratch dir cell, NOT Link's
+         * ObjDir array. Scratch usually held a stale value, so the
+         * spawn-list index was effectively random.
+         * Read the right cell ($0098 = Link's slot-0 ObjDir). */
         unsigned char list_idx = edge_spawn_substitute
             ? 0u   /* edge-spawn substitute: force "Link from above" list. */
-            : dir_to_spawn_list_index((unsigned char)OBJ(NES_OBJ_DIR, 0u));
+            : dir_to_spawn_list_index((unsigned char)nes_ram[0x0098u]);
         const unsigned char *list = spawn_pos_lists[list_idx];
         unsigned char y = (unsigned char)DUNGEON_SPAWN_CYCLE;
         unsigned int x;

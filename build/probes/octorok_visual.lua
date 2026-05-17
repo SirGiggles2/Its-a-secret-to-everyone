@@ -35,6 +35,8 @@ local function dump(label)
 end
 
 dump("Just scrolled into $67")
+f:write(string.format("\nnes_ram[$98] (Link ObjDir) = $%02X\n", R(0x8098)))
+f:write(string.format("nes_ram[$0F] (scratch dir) = $%02X\n", R(0x800F)))
 
 -- Wait 60f, dump movement state again
 idle(60)
