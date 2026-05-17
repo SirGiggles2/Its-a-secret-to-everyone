@@ -1390,16 +1390,15 @@ void roomrom_debug_enter(void)
      * before anything reads it. RoomRom always boots in 1-player mode;
      * Phase 13 will populate `players[1..3]` after lobby selection.
      *
-     * T0.1 verify 2026-05-16 — spawn Link directly on cave-entry tile
-     * $24 in room $77 (col=8/9 row=3). NES Z_05.asm:7313 HandleWarpOW
-     * fires SCENE_CAVE when collision_get_collidable_tile_still returns
-     * $24/$70-$73/$88. Without standing on entry tile from boot, the
-     * collision drain never sees a cave tile and the warp never fires.
-     * Tile→pixel: col 8 → linkX in [$40..$47], row 3 → linkY in
-     * [$4D..$54]. ($44, $50) lands dead center of the entry pad. */
-    players[0].x    = 0x44;
-    players[0].y    = 0x50;
-    players[0].face = LINK_FACE_DOWN;
+     * NES Z1 vanilla start position in room $77 is (X=$78, Y=$8D),
+     * south of (and facing) the start-cave entrance. Spawning AT the
+     * entrance tile ($24 at col 8/9 row 3) auto-fires cave_entrance_check
+     * on frame 0 and traps Link in the cave with no OW input available.
+     * Tier-0 cave-entry test path should be exercised explicitly via
+     * walking onto the tile, not by booting onto it. */
+    players[0].x    = 0x78;
+    players[0].y    = 0x8D;
+    players[0].face = LINK_FACE_UP;
 
     /* Phase 7 root-cause fix #4 2026-05-16 — seed NES Random[$18..$24]
      * at boot. NES Z_07.asm @ScrambleRandom is bit 1 EOR + ROR-chain.
