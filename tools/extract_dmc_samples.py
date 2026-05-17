@@ -222,19 +222,32 @@ def main(argv: list[str]) -> int:
         pcm_blob.extend(resampled_u8.tobytes())
 
         # XGM-rate resample (independent rate from the legacy HINT path).
+        #
+        # Format: SGDK XGM driver expects 8-bit SIGNED two's-complement PCM
+        # at 14 kHz, silence = 0x00. Verified from sgdk/bin/xgm.txt:7
+        # ("8 bits signed at 14 Khz") and Z80 mixer drv_xgm.s80:405-409
+        # ("ADD (HL); JP PO,.ok" — signed-overflow check on each add,
+        # clamps to $7F/$80 via "LD A,C; ADC $FF"). Earlier builds emitted
+        # 8-bit unsigned $80-centered; XGM read silence ($80) as signed
+        # -128 = max negative DC bias = harsh clipping + offset hum.
+        #
+        # Conversion: `centered` is float in range ~-64..+63 (7-bit DAC
+        # delta-decoded, biased to zero). Scale x2 to fill 8-bit signed
+        # range -128..+127, clamp, cast to int8.
         xgm_frac = Fraction(XGM_PCM_HZ, int(round(rate_hz))).limit_denominator(1000)
         xgm_up, xgm_down = xgm_frac.numerator, xgm_frac.denominator
         xgm_resampled_f = resample_poly(centered, xgm_up, xgm_down)
-        xgm_u7 = np.clip(np.round(xgm_resampled_f + 64.0), 0, 127).astype(np.uint8)
-        xgm_u8 = ((xgm_u7.astype(np.uint16) << 1) & 0xFF).astype(np.uint8)
-        # XGM requires sample length to be a multiple of 256; pad with $80
-        # (silence in 8-bit unsigned $80-centered). SGDK auto-aligns the
-        # address; we control length here so the C array is the right shape.
-        pad_target = ((len(xgm_u8) + 255) // 256) * 256
-        if pad_target > len(xgm_u8):
-            pad_bytes = np.full(pad_target - len(xgm_u8), 0x80, dtype=np.uint8)
-            xgm_u8 = np.concatenate([xgm_u8, pad_bytes])
-        xgm_samples.append(xgm_u8.tobytes())
+        xgm_s8 = np.clip(np.round(xgm_resampled_f * 2.0), -128, 127).astype(np.int8)
+        # XGM requires sample length to be a multiple of 256; pad with 0
+        # (signed silence). SGDK auto-aligns the address; we control
+        # length here so the C array is the right shape.
+        pad_target = ((len(xgm_s8) + 255) // 256) * 256
+        if pad_target > len(xgm_s8):
+            pad_bytes = np.zeros(pad_target - len(xgm_s8), dtype=np.int8)
+            xgm_s8 = np.concatenate([xgm_s8, pad_bytes])
+        # XGM_setPCM takes const u8*, but the byte values are interpreted
+        # signed by the Z80 mixer. tobytes() preserves the bit pattern.
+        xgm_samples.append(xgm_s8.tobytes())
 
         wav_path = wav_dir / f"{i+1:02d}_{name}.wav"
         write_wav(wav_path, decoded, rate_hz)
@@ -243,8 +256,8 @@ def main(argv: list[str]) -> int:
               f"(PRG ${prg_off:05X})  {length} B delta / "
               f"{len(decoded)} B pcm @ {rate_hz:.0f} Hz -> "
               f"HINT {len(resampled_u8)} B @ {GENESIS_HINT_HZ} Hz "
-              f"({up}/{down}); XGM {len(xgm_u8)} B @ {XGM_PCM_HZ} Hz "
-              f"({xgm_up}/{xgm_down})")
+              f"({up}/{down}); XGM {len(xgm_s8)} B @ {XGM_PCM_HZ} Hz "
+              f"({xgm_up}/{xgm_down}) [signed]")
 
     # align blobs to even byte for M68K rept loads
     if len(blob) & 1:
@@ -392,7 +405,9 @@ def emit_xgm_bank(worktree: Path, xgm_samples: list[bytes]) -> None:
     h_lines.append(" *")
     h_lines.append(" * Seven NES DMC samples ripped from the stock ROM, decoded and bandlimited")
     h_lines.append(f" * to {XGM_PCM_HZ} Hz for the SGDK XGM (Doppler) driver. Format is 8-bit")
-    h_lines.append(" * unsigned, $80-centered, length padded to 256-byte boundary with $80 silence.")
+    h_lines.append(" * SIGNED two's-complement, 0x00 = silence, length padded to 256-byte")
+    h_lines.append(" * boundary with 0x00 silence. (Stored as u8 because XGM_setPCM takes u8*,")
+    h_lines.append(" * but the Z80 mixer interprets each byte as int8 — see drv_xgm.s80:405.)")
     h_lines.append(" *")
     h_lines.append(f" * Sample IDs start at {XGM_SFX_ID_BASE} (XGM reserves 1..63 for music).")
     h_lines.append(" */")

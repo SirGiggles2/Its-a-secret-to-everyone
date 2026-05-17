@@ -3,7 +3,9 @@
  *
  * Seven NES DMC samples ripped from the stock ROM, decoded and bandlimited
  * to 14000 Hz for the SGDK XGM (Doppler) driver. Format is 8-bit
- * unsigned, $80-centered, length padded to 256-byte boundary with $80 silence.
+ * SIGNED two's-complement, 0x00 = silence, length padded to 256-byte
+ * boundary with 0x00 silence. (Stored as u8 because XGM_setPCM takes u8*,
+ * but the Z80 mixer interprets each byte as int8 — see drv_xgm.s80:405.)
  *
  * Sample IDs start at 64 (XGM reserves 1..63 for music).
  */
