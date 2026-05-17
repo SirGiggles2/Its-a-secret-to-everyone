@@ -47,6 +47,7 @@
 #include "platform_abi.h"            /* RAM, OBJ, NES_OBJ_DIR, NES_SHOT_COLLISION_FLAG */
 #include "roomrom_enemy_state.h"     /* ENEMY_* macros (re-export of state/enemy_state.h) */
 #include "enemy_render.h"            /* Phase D: enemy_render_publish_meta */
+#include "enemy_loop.h"              /* enemy_init_fn, ENEMY_LOOP_TYPE_MAX */
 
 /* NES non-Link offsets (cell-level; OBJ macro adds slot index).
  * ObjStunTimer  = $003D  (per-slot)
@@ -605,6 +606,22 @@ unsigned int c_shoot_if_wanted(unsigned int shot_type, unsigned int slot)
     ENEMY_DIR(empty)         = (unsigned char)ENEMY_DIR(slot);
     ENEMY_X(empty)           = (unsigned char)ENEMY_X(slot);
     ENEMY_Y(empty)           = (unsigned char)ENEMY_Y(slot);
+
+    /* Dispatch the per-type INIT fn for the new shot slot. NES
+     * SetTypeAndClearObject (Z_07.asm:5782) does this implicitly — the
+     * type-specific init lands ObjQSpeed (= ENEMY_WALK_SPEED) so the
+     * shot's UpdateMonsterShot → c_move_object actually advances each
+     * frame. Without this call, ObjQSpeed stays 0 and the shot is
+     * spawned with state=$10 but never moves (visible bug: octorok
+     * "shoots" but rock sits where it spawned). NES dispatch table is
+     * the same `InitObject_JumpTable` used by enemy_loop_room_init. */
+    {
+        extern const enemy_init_fn enemy_init_fns[ENEMY_LOOP_TYPE_MAX];
+        if (shot_type < ENEMY_LOOP_TYPE_MAX) {
+            enemy_init_fn init_fn = enemy_init_fns[shot_type];
+            if (init_fn != (enemy_init_fn)0) init_fn(empty);
+        }
+    }
 
     return CARRY_SET | empty;
 }

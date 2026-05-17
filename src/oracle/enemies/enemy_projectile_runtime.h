@@ -8,6 +8,7 @@ extern "C" {
 #endif
 
 void enrt_init_monster_shot(unsigned int slot);
+void enrt_init_monster_shot_unknown54(unsigned int slot);
 void enrt_init_boulder(unsigned int slot);
 void enrt_init_boulder_set(unsigned int slot);
 void enrt_destroy_monster_shot(unsigned int slot);

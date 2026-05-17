@@ -27,9 +27,19 @@ static const unsigned char enrt_fireball_qspeeds_y[] = {
     0x70
 };
 
+extern void core_reset_obj_metastate(unsigned int slot);
+
 void enrt_init_monster_shot(unsigned int slot) {
     ENEMY_WALK_SPEED(slot) = 0xC0;
-    z07_reset_obj_metastate(slot);
+    core_reset_obj_metastate(slot);
+}
+
+/* NES Z_04.asm:200 _InitMonsterShot_Unknown54 — QSpeed $E0 variant
+ * (3.5 px/frame, faster than the base $C0 flying rock). NES dispatch
+ * table @ Z_07.asm:5686 maps type $54 to this entry. */
+void enrt_init_monster_shot_unknown54(unsigned int slot) {
+    ENEMY_WALK_SPEED(slot) = 0xE0;
+    core_reset_obj_metastate(slot);
 }
 
 void enrt_init_boulder(unsigned int slot) {

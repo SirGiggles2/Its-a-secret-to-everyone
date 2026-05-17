@@ -90,6 +90,8 @@ extern void enrt_update_peahat(unsigned int slot);               /* step 6 */
 extern void enrt_update_vire(unsigned int slot);                 /* step 7 */
 extern void enrt_init_boulder(unsigned int slot);                /* 7.4 step 2a */
 extern void enrt_init_boulder_set(unsigned int slot);            /* 7.4 step 2a */
+extern void enrt_init_monster_shot(unsigned int slot);           /* 2026-05-17 */
+extern void enrt_init_monster_shot_unknown54(unsigned int slot); /* 2026-05-17 */
 extern void enrt_update_boulder_set(unsigned int slot);          /* 7.4 step 2a */
 extern void enrt_update_tektite_or_boulder(unsigned int slot);   /* 7.4 step 2a */
 extern void enrt_update_zora(unsigned int slot);                 /* 7.4 step 2b */
@@ -329,6 +331,20 @@ const enemy_init_fn enemy_init_fns[ENEMY_LOOP_TYPE_MAX] = {
      * $11 Zora deferred to step 2b — needs UpdateBurrower drain chain. */
     [0x1F] = enrt_init_boulder_set,            /* BoulderSet (statue spawner) */
     [0x20] = enrt_init_boulder,                /* Boulder (rock projectile) */
+    /* 2026-05-17 — monster-shot INIT wires. NES Z_07.asm:5685-5692
+     * InitObject_JumpTable rows $53..$5A. c_shoot_if_wanted spawns a
+     * shot slot but only sets type/dir/x/y/state; without per-type init
+     * here, ObjQSpeed stays 0 and the shot never moves. Sets QSpeed=$C0
+     * (3 px/frame) for the standard rock variants; $54 (boomerang-style
+     * variant) uses $E0. Drains at enemy_projectile_runtime.c:30/37. */
+    [0x53] = enrt_init_monster_shot,             /* FlyingRock (octorok) */
+    [0x54] = enrt_init_monster_shot_unknown54,   /* Unknown54 variant */
+    [0x55] = enrt_init_monster_shot,             /* MonsterShot 0x55 */
+    [0x56] = enrt_init_monster_shot,             /* MonsterShot 0x56 */
+    [0x57] = enrt_init_monster_shot,             /* SwordShot */
+    [0x58] = enrt_init_monster_shot,             /* MagicShot */
+    [0x59] = enrt_init_monster_shot,             /* MagicShot variant */
+    [0x5A] = enrt_init_monster_shot,             /* MonsterShot 0x5A */
     /* Task 7.4 step 2b — $11 Zora INIT. NES InitObject_JumpTable @
      * Z_07.asm:5601 row $11 = ResetObjMetastateAndTimer. Body drained
      * at src/game/core/core_dispatch.c:455 (one-line: ENEMY_MOVE_TIMER=0
