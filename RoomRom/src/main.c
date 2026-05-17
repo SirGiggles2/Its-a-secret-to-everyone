@@ -1831,13 +1831,6 @@ void roomrom_debug_tick(void)
             nes_ram_sync_link_face();
             nes_ram_sync_sword();
 
-            /* Plan v5b Tier-5 T5.5 — audio dispatcher: gamemode+scene
-             * tuple change -> single music_play() per audio_routing.md.
-             * Edge-fires only; same-tuple frames are silent. Per-tick
-             * cost: 3 byte compares. Idempotent: re-entry safe via
-             * audio_dispatch_reset() in roomrom_debug_enter. */
-            audio_dispatch_tick((unsigned char)s_scene, s_room_id);
-
             /* Tier 0 (plan v6) pause gate: when g_paused != OFF, skip
              * gameplay tick (enemy AI + collision + Link state machine).
              * NES Z_07.asm:472 Paused dispatch matches: gameplay update
@@ -1869,6 +1862,15 @@ void roomrom_debug_tick(void)
                 nes_ram[0x0012u] = 0x05u;
                 nes_ram[0x0013u] = 0x00u;
             }
+            /* Plan v5b Tier-5 T5.5 — audio dispatcher: gamemode+scene
+             * tuple change -> single music_play() per audio_routing.md.
+             * Edge-fires only; same-tuple frames are silent. Per-tick
+             * cost: 3 byte compares. Idempotent: re-entry safe via
+             * audio_dispatch_reset() in roomrom_debug_enter. MUST run
+             * AFTER GameMode-$CD restore — otherwise audio sees raw
+             * a4_probe sentinel ($CD) every frame, falls to default
+             * branch, never resolves to gameplay song. */
+            audio_dispatch_tick((unsigned char)s_scene, s_room_id);
             mode_dispatch_update();
             /* 2026-05-15 perf: switched from enemy_render_sweep_oam_to_sat
              * (iterated 64 NES OAM entries → up to ~50 SAT writes/frame,
