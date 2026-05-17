@@ -32,6 +32,7 @@
 #include "../../src/state/inventory.h"                   /* Task 6.10.10: rupee tick */
 #include "../../src/state/nes_ram_sync.h"                /* Plan v5a Tier-1: $FA/$FB/$66F/$670/$008C */
 #include "../../src/game/audio/audio_dispatch.h"         /* Plan v5b Tier-5 T5.5: gamemode+scene music dispatcher */
+#include "../../src/game/world/transfer_buf_drain.h"     /* Plan v5b: TRANSFER_BUF -> CRAM bridge (unblocks Mode 11 palette cycle) */
 #include "probes/metadata_probe.h"     /* Task 5.4: Gate D in-ROM probe */
 #include "atlas/level_chr_swap.h"        /* PR-4a: scene-bank DMA state machine */
 #include "player_state.h"                 /* Phase 6 Task 6.1: typed players[] */
@@ -1878,6 +1879,16 @@ void roomrom_debug_tick(void)
              * per alive enemy from the cache. NES OAM scatter still
              * happens for downstream compat but is no longer consumed. */
             enemy_render_native_sweep();
+
+            /* Plan v5b — drain TRANSFER_BUF after all gameplay writers
+             * have committed. world_animate_world_fading, Mode 11 dead-
+             * Link palette cue, room column-attr writes all stage
+             * records into nes_ram[$0301..]; without this drain the
+             * records land in a dead buffer and Genesis CRAM never
+             * updates. Bounded walk; $3F (palette) entries forward to
+             * render_cram_write_color, $20-$2F (nametable) entries are
+             * skipped pending plane bridge. */
+            transfer_buf_drain();
         }
 
         u16 joy = JOY_readJoypad(JOY_1);
