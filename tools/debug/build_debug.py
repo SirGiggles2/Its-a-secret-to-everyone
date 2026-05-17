@@ -151,6 +151,8 @@ ROOMROM_C_SOURCES = [
     ("RoomRom/src/main.c", "roomrom_main.o"),
     ("src/game/world/render/ow_render.c", "world_ow_render.o"),  # Phase 12.2 promoted
     ("src/game/hud/hud_runtime.c", "hud_runtime.o"),  # Phase 12.2 promoted (SGDK-1 clean)
+    # Plan v5b T2.7 2026-05-16 — heart-container 3-frame scale-up anim.
+    ("src/game/hud/heart_container_anim.c", "heart_container_anim.o"),
     ("src/game/dungeon/uw_render.c", "dungeon_uw_render.o"),  # Phase 12.2 promoted
     ("RoomRom/src/uw_room_blob.c", "uw_room_blob.o"),
     ("RoomRom/src/uw_collision_data.c", "uw_collision_data.o"),

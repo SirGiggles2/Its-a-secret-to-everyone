@@ -1,4 +1,5 @@
 #include "inventory.h"
+#include "../game/hud/heart_container_anim.h"
 
 /* Phase 6 Task 6.10.4 — singleton inventory storage.
  *
@@ -103,4 +104,38 @@ void inventory_rupee_debit(unsigned char count)
 {
     unsigned short total = (unsigned short)(g_inventory.rupees_to_sub + count);
     g_inventory.rupees_to_sub = (total > 0xFFu) ? 0xFFu : (unsigned char)total;
+}
+
+/* Plan v5b T2.7 — NES @TakeHeartContainer parity + native scale-up anim.
+ *
+ * NES Z_01.asm:4538:
+ *   LDA Items, Y        ; Y = $18 heart-container slot, value packs max/cur
+ *   CMP #$F0            ; if already at max-hearts (max nibble = $F),
+ *   BCS Exit            ;   return.
+ *   ADC #$11            ; else add 1-max + 1-current (carry was clear from CMP).
+ *   JMP SetItemValue    ; store back to Items[Y].
+ *
+ * RoomRom equivalent: heart_values packs max in hi nibble, cur in lo
+ * nibble; cap max at $0F (HEART_CONTAINERS_MAX). The CMP-with-$F0
+ * gate means once max == $0F no further heart containers are added. */
+unsigned char inventory_add_heart_container(void)
+{
+    unsigned char hv = g_inventory.heart_values;
+    unsigned char max_h = heart_values_max(hv);
+    unsigned char cur_h = heart_values_cur(hv);
+
+    if (max_h >= HEART_CONTAINERS_MAX) {
+        return 0u;
+    }
+    max_h++;
+    if (cur_h < HEART_CONTAINERS_MAX) {
+        cur_h++;
+    }
+    g_inventory.heart_values = heart_values_pack(max_h, cur_h);
+    inventory_hud_mark_dirty();
+
+    /* New container occupies slot (max_h - 1). draw_hearts_row uses
+     * 0..7 = bottom row, 8..15 = top row. */
+    hud_heart_container_anim_start((unsigned char)(max_h - 1u));
+    return 1u;
 }

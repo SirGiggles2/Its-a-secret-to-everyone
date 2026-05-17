@@ -34,6 +34,7 @@
  *      ATLAS_ASSERT_BG_TILE macro for tile-map rather than sprite use). */
 #include "atlas/hud_chr.h"
 #include "hud_dispatch.h"   /* T2.3: hud_format_status_bar_text mirror */
+#include "heart_container_anim.h"   /* T2.7: 3-frame scale-up on pickup */
 
 #define HUD_TILE_SPACE  0x24u
 #define TILE_DASH       0x62u
@@ -379,6 +380,8 @@ static void draw_hearts_row(unsigned char col, unsigned char row,
         } else {
             tile = TILE_EMPTY_HEART;
         }
+        /* T2.7: scale-up override for newly-added heart container slot. */
+        tile = hud_heart_container_anim_override_tile(i, tile);
         if (hud_id == ROOMROM_MAP_REDUX) {
             draw_hud_tile_b((unsigned char)(col + i), row,
                             TILE_REDUX_HEART_OUTLINE, 0);
@@ -404,6 +407,8 @@ static void draw_hearts_row(unsigned char col, unsigned char row,
         } else {
             tile = TILE_EMPTY_HEART;
         }
+        /* T2.7: scale-up override for newly-added heart container slot. */
+        tile = hud_heart_container_anim_override_tile(hi, tile);
         if (hud_id == ROOMROM_MAP_REDUX) {
             draw_hud_tile_b((unsigned char)(col + i),
                             (unsigned char)(row - 1u),
@@ -613,8 +618,18 @@ void roomrom_hud_refresh_dynamic(void)
 {
     if (s_hud_id_cached == 0xFFu)
         return; /* HUD has not been drawn yet — nothing to refresh. */
-    if (!inventory_hud_consume_dirty()) {
-        return; /* Inventory unchanged — skip the VDP traffic. */
+    /* T2.7: advance scale-up animation each vblank, regardless of
+     * inventory-dirty state. The animation forces a redraw below so
+     * the new tile makes it to VRAM. */
+    hud_heart_container_anim_tick();
+    unsigned char anim_active = hud_heart_container_anim_active();
+    if (!anim_active && !inventory_hud_consume_dirty()) {
+        return; /* Inventory unchanged + no anim — skip the VDP traffic. */
+    }
+    if (anim_active) {
+        /* Consume any pending dirty so the next post-anim tick still
+         * has a clean dirty bit for normal inventory changes. */
+        (void)inventory_hud_consume_dirty();
     }
     draw_hud_dynamic(s_hud_id_cached);
     /* T2.3 (6.10.6 Step B): mirror to NES TRANSFER_BUF via

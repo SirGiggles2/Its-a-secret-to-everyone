@@ -190,4 +190,11 @@ void inventory_rupee_tick(unsigned char frame_counter);
 void inventory_rupee_credit(unsigned char count);
 void inventory_rupee_debit(unsigned char count);
 
+/* Plan v5b T2.7 — heart-container pickup. Mirrors NES Z_01.asm:4538
+ * @TakeHeartContainer: max += 1 + cur += 1, capped at $0F (16). Kicks
+ * the 3-frame scale-up anim on the newly visible slot and marks HUD
+ * dirty so the next refresh paints it. Returns 1 if a heart container
+ * was actually added (max wasn't already at cap), 0 otherwise. */
+unsigned char inventory_add_heart_container(void);
+
 #endif /* ROOMROM_INVENTORY_H */

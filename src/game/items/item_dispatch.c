@@ -16,6 +16,7 @@
                                       * core_take_hearts_no_sound */
 #include "room/room_dispatch.h"      /* room_end_game_mode,
                                       * room_patch_and_cue_level_palettes_transfer */
+#include "../../state/inventory.h"   /* T2.7: inventory_add_heart_container */
 
 /* T5.2 Plan v5b — item pickup SFX. ID 7 = itempickup per
  * data/audio/MANIFEST.json (commit b25d549c). */
@@ -118,6 +119,10 @@ static void item_check_class1(unsigned char item_slot, unsigned char item_class)
         }
         core_set_item_value((unsigned int)(unsigned char)(cur + 0x11u),
                             (unsigned int)item_slot);
+        /* T2.7: native scale-up anim on the newly visible heart slot.
+         * Mirrors the NES RAM write above into g_inventory and kicks
+         * the 3-frame fade-in (EMPTY -> HALF -> FULL) over ~500ms. */
+        (void)inventory_add_heart_container();
         return;
     }
     if (item_slot == 0x1Cu) {
