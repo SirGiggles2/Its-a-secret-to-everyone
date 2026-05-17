@@ -607,6 +607,22 @@ unsigned int c_shoot_if_wanted(unsigned int shot_type, unsigned int slot)
     ENEMY_X(empty)           = (unsigned char)ENEMY_X(slot);
     ENEMY_Y(empty)           = (unsigned char)ENEMY_Y(slot);
 
+    /* NES InitObject step (Z_07.asm:5566-5567 + ObjectTypeToAttributes
+     * @ Z_07.asm:5213): ObjAttr[slot] = ObjectTypeToAttributes[type].
+     * Without this, draw_object_with_anim_and_specific_sprites's
+     * half-width branch (status & 0x02) never fires, and the rock $53
+     * renders as 2 sprites (16x16) instead of NES-correct 1 sprite (8x16).
+     * NES table for shot types $53..$5C:
+     *   $53..$57 = $E3 (custom collision + half-width + reverse-on-hit)
+     *   $58..$5C = $E1 (no half-width — sword/magic shot/arrow are 16x16)
+     */
+    {
+        unsigned char attr;
+        if (shot_type <= 0x57u) attr = 0xE3u;
+        else                    attr = 0xE1u;
+        OBJ(0x04BFu, empty) = attr;
+    }
+
     /* Dispatch the per-type INIT fn for the new shot slot. NES
      * SetTypeAndClearObject (Z_07.asm:5782) does this implicitly — the
      * type-specific init lands ObjQSpeed (= ENEMY_WALK_SPEED) so the
