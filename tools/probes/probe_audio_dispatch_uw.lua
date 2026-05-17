@@ -48,9 +48,10 @@ local boot_song = r8(RAM_M_SONG)
 local boot_mode = r8(RAM_GAMEMODE)
 log(string.format("boot: gamemode=0x%02X m_song=0x%02X", boot_mode, boot_song))
 
--- Hold A+B+C chord for 8 frames; release 4 (per ph5_uw_t52 pattern).
+-- Hold A+B+C chord for 8 frames; release 4. Bare keys for genplus-gx
+-- (NOT "P1 A" prefixed names — those fail with InvalidCastException).
 for _ = 1, 8 do
-    joypad.set({ ["P1 A"] = true, ["P1 B"] = true, ["P1 C"] = true }, 1)
+    joypad.set({A = true, B = true, C = true}, 1)
     emu.frameadvance()
 end
 joypad.set({}, 1)
@@ -64,13 +65,25 @@ local post_song = r8(RAM_M_SONG)
 local post_mode = r8(RAM_GAMEMODE)
 log(string.format("post-chord: gamemode=0x%02X m_song=0x%02X", post_mode, post_song))
 
+-- Reorder verification: dispatcher MUST resolve a song after $CD->$05
+-- restore. Default RoomRom boot = SCENE_OW so debug-enter from cold
+-- boot resolves SONG_OW ($01). SONG_UW ($40) only if scene already UW.
+-- Either outcome proves audio_dispatch_tick ran post-restore. Failure
+-- = $00 (silence — restore never happened / dispatcher never ran) or
+-- $80 (title song persisted — dispatcher saw GM_DEMO still).
 local verdict
-if post_song == 0x40 then
-    verdict = "GREEN — audio_dispatch fired SONG_UW ($40) after debug-enter"
+if post_mode ~= 0x05 then
+    verdict = string.format("RED — gamemode never restored (post=0x%02X)", post_mode)
+elseif post_song == 0x40 then
+    verdict = "GREEN — audio_dispatch fired SONG_UW ($40) post-restore"
+elseif post_song == 0x01 then
+    verdict = "GREEN — audio_dispatch fired SONG_OW ($01) post-restore (default scene)"
 elseif post_song == 0x80 then
-    verdict = "RED — title song still playing; UW dispatch never fired"
+    verdict = "RED — title song persisted; dispatcher saw stale GM_DEMO (reorder bug)"
+elseif post_song == 0x00 then
+    verdict = "RED — silence; dispatcher never fired"
 else
-    verdict = string.format("RED — unexpected m_song 0x%02X", post_song)
+    verdict = string.format("YELLOW — unexpected m_song 0x%02X (dispatcher fired)", post_song)
 end
 log("VERDICT: " .. verdict)
 f:close()
