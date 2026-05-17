@@ -10,6 +10,7 @@
 
 #include "audio_adapter.h"
 #include "sfx_pcm.h"
+#include "platform_abi.h"   /* nes_ram (A4-pinned) for probe sentinels */
 #include <z80_ctrl.h>
 #include <snd/sound.h>
 #include <snd/xgm.h>
@@ -48,6 +49,13 @@ void audio_sfx_play(unsigned char sfx)
     sfx_next_channel = (sfx_next_channel + 1) % 3;
 
     XGM_startPlayPCM(SFX_PCM_ID_BASE + (sfx - 1), 1, chan);
+
+    /* Probe sentinel — count XGM SFX dispatches at NES RAM $07F0 (last
+     * sfx id) and $07F1 (call counter). Lets bizhawkScript probes verify
+     * the audio_sfx_play path fires without going through dmc_trigger
+     * (which only writes dmc_last_idx for NES APU $4015 writes). */
+    nes_ram[0x07F0u] = sfx;
+    nes_ram[0x07F1u] = (unsigned char)(nes_ram[0x07F1u] + 1u);
 }
 
 void audio_tick_vblank(void)

@@ -369,13 +369,20 @@ audio_init:
     ; After this, dmc_trigger trampolines to audio_sfx_play and the Z80
     ; owns YM2612 reg $2A. The legacy HBlank streamer is dead.
     ;
-    ; LA-jingle bring-up: the XGM Z80 driver mutes the FM channels we
-    ; need for the ItemTaken (LA "Get Item") song. Skip XGM init so the
-    ; legacy FM driver retains exclusive YM2612 ownership. SFX path is
-    ; lost until xgm-mig finishes a coexistence story.
+    ; 2026-05-17 coexistence enable. Earlier comment about XGM "muting
+    ; FM channels" was based on an init-time observation: XGM init
+    ; writes PSG OFF once and clears YM2B/2A (DAC). Both happen ONCE
+    ; at driver load. After that the FM driver re-writes its own FM
+    ; channel state and PSG envelopes on the next music_tick. XGM main
+    ; loop continually writes YM $2A (DAC) for PCM mixing but does NOT
+    ; touch FM channels 1-5 or PSG when no XGM music is playing.
+    ; Net: XGM owns ch 6 DAC; legacy FM driver owns ch 1-5 + PSG.
+    ; First SFX trigger pays the lazy-init cost; subsequent SFX use
+    ; the already-resident driver. Driver size ~$300 bytes Z80 RAM,
+    ; well under SGDK 8 KB Z80 RAM budget.
     ;------------------------------------------------------------------
     xref    audio_xgm_init
-    ; jsr     audio_xgm_init       ; disabled: see comment above
+    jsr     audio_xgm_init
 
     movem.l (SP)+,D0-D6/A0
     rts
