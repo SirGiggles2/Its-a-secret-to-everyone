@@ -93,7 +93,12 @@ static unsigned char resolve_song(unsigned char gm, unsigned char scene)
 
     case GM_PLAY:
         if (scene == SCENE_UW)   return SONG_UW;
-        if (scene == SCENE_CAVE) return SONG_UW;  /* placeholder: cave shares UW bank until ripped */
+        /* NES Z_01 InitCave does NOT STA SongRequest — caves let the
+         * prior OW track keep playing (verified Z_01.asm:69+, no
+         * SongRequest writer in the cave-entry path). Force SONG_OW
+         * so caves entered after Demo/FS transitions get the right
+         * track even if s_last_song drifted to silence. */
+        if (scene == SCENE_CAVE) return SONG_OW;
         return SONG_OW;
 
     case GM_DEATH:
