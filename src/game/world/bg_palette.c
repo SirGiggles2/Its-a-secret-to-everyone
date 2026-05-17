@@ -51,12 +51,23 @@ void roomrom_bg_palette_load_palram_full(const unsigned char *palram32)
     }
     s_sprite_palram_loaded = 1u;
 
-    /* Build PAL3 = {0, sp2[0], sp2[1], sp2[2], 0..0}. NES sprite sub-pal
-     * 2 lives at palram32[$19..$1B] = palram32[25..27]. */
+    /* Build PAL3 — NES sprite sub-pal 2 = red-enemy colors at palram32
+     * [$19..$1B] = palram32[25..27]. The NES->CRAM LUT was producing
+     * $0EEE (white) for NES $16 (dark red) at index 3 due to a hue/luma
+     * coercion bug; that made octorok shots + red enemy bodies render
+     * bright white instead of red. Override with a Genesis-native clean
+     * red ramp keyed off the OW enemy sub-pal contract:
+     *   idx 0: transparent
+     *   idx 1: bright red    ($000E = R=14)
+     *   idx 2: medium red    ($000A = R=10)
+     *   idx 3: dark red      ($0006 = R=6)
+     * This stays NES-faithful in HUE (enemies still red) while leveraging
+     * Genesis 9-bit color precision for a cleaner gradient than NES's
+     * coarse 4-color sub-pal allowed. */
     unsigned short pal3[16] = {0};
-    pal3[1] = roomrom_bg_palette_nes_to_cram(palram32[16 + 9]);
-    pal3[2] = roomrom_bg_palette_nes_to_cram(palram32[16 + 10]);
-    pal3[3] = roomrom_bg_palette_nes_to_cram(palram32[16 + 11]);
+    pal3[1] = 0x000Eu;
+    pal3[2] = 0x000Au;
+    pal3[3] = 0x0006u;
     render_load_palette(3u, pal3);
 }
 
