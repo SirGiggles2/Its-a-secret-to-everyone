@@ -41,7 +41,11 @@
 #define MODE11_OBJ_X                RAM(0x0070u)  /* Link's X = slot 0 */
 #define MODE11_OBJ_Y                RAM(0x0084u)  /* Link's Y = slot 0 */
 #define MODE11_OBJ_DIR              RAM(0x00C4u)  /* Link's dir = slot 0 */
-#define MODE11_TILE_BUF_SELECTOR    RAM(0x00B0u)  /* TileBufSelector — Z_07.asm */
+/* Variables.inc:5 `TileBufSelector := $14`. Prior $00B0 was wrong —
+ * static-selector writes never reached the asm-side or C-side drain.
+ * Fixed 2026-05-16 alongside plan v5b TRANSFER_BUF->CRAM bridge so
+ * Sub9's dead-Link palette cue actually lands in Genesis CRAM. */
+#define MODE11_TILE_BUF_SELECTOR    RAM(0x0014u)
 #define MODE11_TUNE0_REQUEST        RAM(0x0089u)
 #define MODE11_TUNE1_REQUEST        RAM(0x008Bu)
 #define MODE11_IS_SPRITE0_CHECK     RAM(0x00ECu)  /* IsSprite0CheckActive */
