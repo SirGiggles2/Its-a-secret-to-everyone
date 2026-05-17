@@ -258,12 +258,17 @@ void enrt_update_monster_shot(unsigned int slot) {
                     return;
                 }
             }
-        } else {
-            /* Standard shots: clip to room boundary, destroy if blocked. */
-            if (z01_bound_by_room(slot) == 0) {
-                enrt_destroy_monster_shot(slot);
-                return;
-            }
+            /* Fall through to @CheckBoundary per NES Z_04.asm:846-851 —
+             * after the tile-collide check, flying-rock branch JOINS
+             * the boundary check. Prior drain made @CheckBoundary
+             * exclusive to the else branch, so flying rocks never
+             * despawned when crossing room edges (visible bug: shots
+             * persisted off-screen forever, eating projectile slots). */
+        }
+        /* @CheckBoundary — NES Z_04.asm:847. No shots cross room edges. */
+        if (z01_bound_by_room(slot) == 0) {
+            enrt_destroy_monster_shot(slot);
+            return;
         }
     }
 
