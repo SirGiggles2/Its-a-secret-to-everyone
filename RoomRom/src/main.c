@@ -1805,18 +1805,16 @@ void roomrom_debug_tick(void)
                     players[0].x = 120u;
                     players[0].y = 192u;
                     players[0].face = LINK_FACE_UP;
-                    /* T0.3 — cave BG via OW renderer.
-                     * NES caves $6A..$7C are OW-room indices in the OW
-                     * room table; entering cave mode on NES just sets
-                     * RoomId=cid then calls InitMode_EnterRoom which
-                     * paints columns normally (Z_05.asm:1543). Paint
-                     * the cave room here so plane A shows the cave
-                     * layout instead of a black void. Cave palette
-                     * swap (Z_06.asm:714 CaveBgPaletteRowsTransferBuf)
-                     * is a follow-up — without it the OW palette
-                     * makes cave tiles look brighter than NES, but
-                     * the layout is correct. */
-                    roomrom_ow_room_render_fill_plane_a((unsigned char)cid);
+                    /* Task #44 (closes T0.3 follow-up) — native NES cave
+                     * column override. Was previously calling the OW
+                     * renderer with room_id=cid which painted whatever
+                     * OW room $6A/$6B/etc. looks like (lake/road tiles).
+                     * NES Z_05.asm InitModeB pipeline overrides the OW
+                     * column directory with RoomLayoutOWCave0/1; that
+                     * override now lives in roomrom_cave_room_render_*
+                     * with palette pattern sourced from OW room $44 per
+                     * Z_05.asm:6628. */
+                    roomrom_cave_room_render_fill_plane_a((unsigned char)cid);
                     roomrom_ow_room_render_publish_play_area_tiles();
                     cave_palette_apply();
                     return;
@@ -2013,9 +2011,12 @@ void roomrom_debug_tick(void)
                 const cave_id_t cid_toggle = (cave_id_t)0x6A;
                 (void)cave_init(cid_toggle);
                 s_scene = SCENE_CAVE;
-                /* T0.3 — cave BG via OW renderer ($6A..$7C are OW-room
-                 * indices per Z_05.asm:1543 InitMode_EnterRoom). */
-                roomrom_ow_room_render_fill_plane_a((unsigned char)cid_toggle);
+                /* Task #44 — native NES cave column override (matches
+                 * natural cave-entry path at line ~1817). Was previously
+                 * painting OW room $6A tiles (lake/road); now uses
+                 * RoomLayoutOWCave0/1 + OW room $44 palette per
+                 * Z_05.asm:6628 InitModeB pipeline. */
+                roomrom_cave_room_render_fill_plane_a((unsigned char)cid_toggle);
                 roomrom_ow_room_render_publish_play_area_tiles();
                 cave_palette_apply();
             } else if (s_scene == SCENE_CAVE) {

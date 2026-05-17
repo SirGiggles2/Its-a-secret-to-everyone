@@ -350,11 +350,18 @@ static void write_square_at(unsigned char src_col, unsigned char dst_col,
  * metatile column `dst_col`. `src_col` selects which column of the
  * source room (so palette/attribute logic uses src coords). Updates
  * s_walkable[dst_col] for collision queries. Plane writes wrap at 32
- * plane cols via SGDK's setTileMapXY. */
+ * plane cols via SGDK's setTileMapXY.
+ *
+ * If `col_dirs_override` is non-NULL it replaces the OW unique-id
+ * lookup (caves use this to substitute RoomLayoutOWCave0/1 — Z_05.asm
+ * LayoutCaveAndAvanceSubmode @ 6020). Palette pattern still comes from
+ * `room_id`'s OW attrs (NES uses room $44 for caves per Z_05.asm:6628
+ * "An OW room that has the same NT attributes as a cave."). */
 static void render_one_metatile_col(unsigned char room_id,
                                     unsigned char src_col,
                                     unsigned char dst_col,
-                                    unsigned char dst_row_base)
+                                    unsigned char dst_row_base,
+                                    const unsigned char *col_dirs_override)
 {
     const unsigned char *rooms = roomrom_rooms();
     const unsigned short *heap_offsets = roomrom_heap_offsets();
@@ -362,8 +369,9 @@ static void render_one_metatile_col(unsigned char room_id,
     unsigned char outer_pal = rooms[OW_ATTRS_A_OFFSET + room_id] & 0x03;
     unsigned char inner_pal = rooms[OW_ATTRS_B_OFFSET + room_id] & 0x03;
     unsigned char unique_id = rooms[OW_ATTRS_D_OFFSET + room_id] & 0x7F;
-    const unsigned char *col_dirs = &rooms[OW_LAYOUTS_OFFSET +
-                                            (unsigned short)unique_id * 16];
+    const unsigned char *col_dirs = col_dirs_override
+        ? col_dirs_override
+        : &rooms[OW_LAYOUTS_OFFSET + (unsigned short)unique_id * 16];
     unsigned char desc        = col_dirs[src_col];
     unsigned char heap_idx    = (desc >> 4) & 0x0F;
     unsigned char col_in_heap = desc & 0x0F;
@@ -434,7 +442,7 @@ void roomrom_ow_room_render_fill_one_col_at(unsigned char room_id,
      * one room; flip stability off until the next full fill_plane_a. */
     s_raw_tiles_stable = 0u;
     render_one_metatile_col(room_id, src_col & 0x0F, dst_col & 0x1F,
-                            dst_row_base);
+                            dst_row_base, (const unsigned char *)0);
 }
 
 void roomrom_ow_room_render_fill_plane_a(unsigned char room_id)
@@ -443,7 +451,55 @@ void roomrom_ow_room_render_fill_plane_a(unsigned char room_id)
     s_raw_tiles_stable = 0u;
     s_raw_tile_capture_active = 1u;
     for (col = 0; col < 16; col++) {
-        render_one_metatile_col(room_id, col, col, 0);
+        render_one_metatile_col(room_id, col, col, 0, (const unsigned char *)0);
+    }
+    s_raw_tile_capture_active = 0u;
+    s_raw_tiles_stable = 1u;
+}
+
+/* NES cave column-desc tables (Z_05.asm RoomLayoutOWCave0/1 @ 4198/4202).
+ *
+ * Each byte is a column descriptor that indexes ColumnHeapOW (the same
+ * heap OW rooms use): high nibble = heap_idx, low nibble = col_in_heap.
+ *
+ *   Cave0 (regular cave  — Z_05.asm LayoutCaveAndAvanceSubmode X=0):
+ *     boundary | floor wall | floor wall | door | door | floor | boundary
+ *   Cave1 (shortcut cave — Z_05.asm LayoutShortcutAndAdvanceSubmode X=2):
+ *     same with stairs/secret variations
+ *
+ * Palette pattern comes from OW room $44 ("An OW room that has the same
+ * NT attributes as a cave." — Z_05.asm:6628 FillPlayAreaAttrs). */
+static const unsigned char k_cave_layout_regular[16] = {
+    0x00u, 0x00u, 0x95u, 0x95u, 0x95u, 0x95u, 0x95u, 0xC2u,
+    0xC2u, 0x95u, 0x95u, 0x95u, 0x95u, 0x95u, 0x00u, 0x00u
+};
+
+static const unsigned char k_cave_layout_shortcut[16] = {
+    0x00u, 0x00u, 0x95u, 0x95u, 0x95u, 0xF8u, 0x95u, 0xC2u,
+    0xF8u, 0x95u, 0x95u, 0xF8u, 0x95u, 0x95u, 0x00u, 0x00u
+};
+
+/* Cave palette source room: NES uses OW room $44 attrs for cave NT
+ * pattern (Z_05.asm:6628). */
+#define CAVE_PALETTE_ROOM_ID 0x44u
+
+/* Cave-id $7B+ = shortcut cave (NES Z_05.asm CheckCaveEdge / cave
+ * indexing). All other valid cave-ids ($6A..$7A) use the regular
+ * layout. cave_id=0 (no active cave) defaults to regular. */
+static const unsigned char *cave_layout_for(unsigned char cave_id)
+{
+    if (cave_id >= 0x7Bu) return k_cave_layout_shortcut;
+    return k_cave_layout_regular;
+}
+
+void roomrom_cave_room_render_fill_plane_a(unsigned char cave_id)
+{
+    const unsigned char *layout = cave_layout_for(cave_id);
+    unsigned char col;
+    s_raw_tiles_stable = 0u;
+    s_raw_tile_capture_active = 1u;
+    for (col = 0; col < 16; col++) {
+        render_one_metatile_col(CAVE_PALETTE_ROOM_ID, col, col, 0, layout);
     }
     s_raw_tile_capture_active = 0u;
     s_raw_tiles_stable = 1u;

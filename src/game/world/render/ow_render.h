@@ -15,6 +15,25 @@ void roomrom_ow_room_render_load_palette(unsigned char room_id);
 void roomrom_ow_room_render_upload_chr(void);
 void roomrom_ow_room_render_fill_plane_a(unsigned char room_id);
 
+/* Task #44 — NES cave-interior render (Z_05.asm InitModeB cave-room paint).
+ *
+ * Caves are NOT OW rooms; the NES Mode B InitModeB pipeline calls
+ * LayoutCaveAndAvanceSubmode (Z_05.asm:6020) which overrides the OW
+ * column-directory pointer with RoomLayoutOWCave0 (regular) or
+ * RoomLayoutOWCave1 (shortcut). Palette pattern still comes from OW
+ * room $44 (Z_05.asm:6628 InitModeB_Sub5_FillTileAttrsAndTransferTopHalf
+ * comment "An OW room that has the same NT attributes as a cave.").
+ *
+ * Before this entry point existed, SCENE_CAVE rendered OW room cave_id
+ * directly (lake/road tiles visible inside cave). This function plumbs
+ * the cave column override + correct attrs source so the cave interior
+ * matches NES Z1. cave_id determines regular vs shortcut layout:
+ *   0x6A..0x7A → regular cave (k_cave_layout_regular)
+ *   0x7B+     → shortcut cave (k_cave_layout_shortcut)
+ *
+ * Same raw-tile cache + stable-flag semantics as fill_plane_a. */
+void roomrom_cave_room_render_fill_plane_a(unsigned char cave_id);
+
 /* S5 collision: returns non-zero if the metatile at (col, row) in the
  * current OW room is walkable. col 0..15, row 0..10. Out-of-bounds = 0. */
 unsigned char roomrom_ow_room_render_walkable_at(unsigned char col,
