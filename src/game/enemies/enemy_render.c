@@ -364,16 +364,34 @@ static inline unsigned short translate_attrs(unsigned char nes_attrs,
     /* NES bit 5 = "behind BG" = priority LOW. Genesis bit = priority HIGH
      * (above plane A). Invert: NES prio=0 -> Genesis prio=1 (above). */
 
-    /* OW (CurLevel == 0): atlas is single-sub-pal-0-biased, so PAL1
-     * renders all OWSP enemies in items palette colors (yellow/gold).
-     * Route to PAL3 instead, which holds NES sub-pal 2 colors (red)
-     * loaded by roomrom_bg_palette_load_palram_full. Tektite + Octorok
-     * + Leever + most OW enemies use sub-pal 2 in NES Z1.
+    /* OW (CurLevel == 0): atlas is single-sub-pal-0-biased. PAL1 holds
+     * the full 16-color NES sprite palram, so colors at indices 0..3
+     * map to NES sub-pal 0 colors ($29 light-green, $27 orange-tan,
+     * $17 dark-brown — used for rock shots, Link's tunic).
+     * PAL3 holds NES sub-pal 2 colors ($16 brown-red, $27 orange-tan,
+     * $30 white — used for RedOctorok, Tektite, Leever, most red enemies).
+     *
+     * Per-tile attr bits 0..1 select NES sub-pal. Route accordingly:
+     *   attr sub-pal 0 -> PAL1 (sub-pal 0 colors at PAL1[0..3])
+     *   attr sub-pal 1 -> PAL3 (sub-pal 1 unmapped; fallback to red ramp
+     *                    since OW rarely uses sub-pal 1 for sprites)
+     *   attr sub-pal 2 -> PAL3 (red enemies)
+     *   attr sub-pal 3 -> PAL3 (sub-pal 3 unmapped; fallback)
+     *
+     * Pre-2026-05-17 bug: hardcoded PAL3 for all OW sprites; shots
+     * (attr=$00) rendered with red-enemy colors instead of brown/tan.
+     *
      * UW (CurLevel != 0): atlas is 4x-replicated, each tile copy biased
      * to its sub-pal slot in PAL1 — use PAL1 + sub_pal*34 tile offset
      * (handled in translate_tile). */
     unsigned char cur_level = nes_ram[NES_CUR_LEVEL_CELL];
-    unsigned short pal_bank = (cur_level == 0u) ? 3u : 1u;
+    unsigned short pal_bank;
+    if (cur_level == 0u) {
+        unsigned char sub_pal = (unsigned char)(nes_attrs & 0x03u);
+        pal_bank = (sub_pal == 0u) ? 1u : 3u;
+    } else {
+        pal_bank = 1u;
+    }
 
     unsigned short sat = (unsigned short)(tile_id & 0x07FFu);
     sat |= (unsigned short)(pal_bank << 13);
