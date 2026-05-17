@@ -69,7 +69,20 @@ void nes_ram_sync_input(u16 held, u16 edge_pressed)
     nes_ram[NES_RAM_BUTTONS_DOWN]    = sgdk_to_nes_buttons(held);
 }
 
+/* Per-frame sync: nes_ram is canonical for drained combat
+ * (link_collision_link_be_harmed writes LINK_HEARTS = RAM($066F) directly).
+ * Pull back into g_inventory so Genesis-side readers (HUD, options) see
+ * current values. Prior direction (g_inventory -> nes_ram) silently
+ * overwrote combat damage every frame; hearts never decremented under
+ * enemy contact. Seed the nes_ram side once at gameplay start via
+ * nes_ram_seed_inventory_hearts(). */
 void nes_ram_sync_inventory_hearts(void)
+{
+    g_inventory.heart_values  = nes_ram[NES_RAM_HEART_VALUES];
+    g_inventory.heart_partial = nes_ram[NES_RAM_HEART_PARTIAL];
+}
+
+void nes_ram_seed_inventory_hearts(void)
 {
     nes_ram[NES_RAM_HEART_VALUES]  = g_inventory.heart_values;
     nes_ram[NES_RAM_HEART_PARTIAL] = g_inventory.heart_partial;

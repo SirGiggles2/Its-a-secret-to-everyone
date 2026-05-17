@@ -53,8 +53,23 @@ extern "C" {
  */
 void nes_ram_sync_input(u16 held, u16 edge_pressed);
 
-/* T1.2 — mirror inventory hearts into NES HUD-readable cells. */
+/* T1.2 — pull live heart cells from nes_ram[$066F/$0670] back into
+ * g_inventory. nes_ram is the canonical store under drained combat
+ * (link_collision_link_be_harmed writes LINK_HEARTS = RAM($066F) on
+ * enemy contact); g_inventory is the Genesis-side cache the HUD and
+ * options reader consume. The prior direction (g_inventory -> nes_ram)
+ * stomped combat's per-frame heart decrement and Link never took
+ * damage. Seed the nes_ram side once at gameplay enter via
+ * nes_ram_seed_inventory_hearts() so the first per-frame pull doesn't
+ * read 0. */
 void nes_ram_sync_inventory_hearts(void);
+
+/* Plan v5b — one-shot push of g_inventory hearts into nes_ram[$066F/
+ * $0670] at gameplay enter, after options_consumer_apply_inventory_at_
+ * start() has populated g_inventory from SRAM. Mirrors the pattern of
+ * nes_ram_seed_sword_level: substrate is canonical, Genesis-side state
+ * seeds it once and then reads back. */
+void nes_ram_seed_inventory_hearts(void);
 
 /* T1.3 — refresh ObjDir[0] from the canonical C-side face. AI chase
  * targets read this cell each tick; today's seed-once-at-debug-enter

@@ -1532,6 +1532,13 @@ void roomrom_debug_enter(void)
      * yet so the level is seeded directly into the NES cell. */
     nes_ram_seed_sword_level(1u);
 
+    /* Plan v5b — seed nes_ram[$066F/$0670] hearts from g_inventory ONCE
+     * here. Per-frame sync flipped to pull-direction so combat's
+     * be_harmed writes to RAM($066F) survive; without this seed the
+     * first frame would pull a 0 back into g_inventory and the HUD
+     * would show empty hearts until the next combat write. */
+    nes_ram_seed_inventory_hearts();
+
     /* Plan v5b T5.5 — force dispatcher to re-fire on the next tick;
      * debug_enter may have changed scene/room without going through
      * audio_dispatch_tick. */
