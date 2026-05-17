@@ -29,7 +29,7 @@ CFLAGS = [
     "-ffunction-sections",
     "-fdata-sections",
     "-fms-extensions",
-    "-Os",
+    "-O3",
     "-fomit-frame-pointer",
     "-ffixed-a4",
 ]

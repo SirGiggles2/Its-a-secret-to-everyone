@@ -231,29 +231,41 @@ static void draw_object_with_type(unsigned char frame, unsigned int slot,
 /* --------------------------------------------------------------- */
 /* Anim_WriteSpritePairNotFlashing (Z_01.asm:2284).                 */
 /* Writes 2 sprites to OAM mirror at $0200..$02FF.                  */
+/*                                                                  */
+/* 2026-05-17 perf: enemy slots (DRAW_OBJ_INDEX in 1..11) skip the  */
+/* 4 OAM byte writes per sprite — enemy_render_native_sweep reads   */
+/* the side-channel cache populated by enemy_render_publish_pair_   */
+/* left, and no other gameplay-tick consumer reads NES OAM mirror   */
+/* $0200..$02FF for enemy slots. Slot 0 (Link) still writes because */
+/* sprite_dispatch.c:152 / sprite_runtime.c:56 read OAM slot 18+19  */
+/* for the show-Link-behind-horizontal-doors logic; those slots are */
+/* populated by Link's draw path. Saves ~8 RAM writes × 11 enemies  */
+/* × ~12 cyc = ~1000 cyc/frame on busy rooms.                       */
 /* --------------------------------------------------------------- */
 static void anim_write_sprite_pair_not_flashing(void)
 {
     unsigned char off = (unsigned char)DRAW_LEFT_SPRITE_OFFSET;
     unsigned char d3  = 0u;     /* loop counter (left=0, right=1) */
+    const unsigned char obj_idx_initial = (unsigned char)DRAW_OBJ_INDEX;
+    const unsigned char write_oam = (obj_idx_initial == 0u);
 
     do {
         const unsigned char tile =
             (unsigned char)RAM(0x0002u + d3); /* TMP2/3 */
-        DRAW_OAM_TILE(off) = tile;
-
         const unsigned char y = (unsigned char)DRAW_Y;
-        DRAW_OAM_Y(off) = y;
-
         unsigned char x = (unsigned char)DRAW_X;
-        DRAW_OAM_X(off) = x;
-
         const unsigned char xsep = (unsigned char)DRAW_X_SEPARATION;
-        DRAW_X = (uint8_t)(x + xsep);   /* TMP0 += xsep for next sprite */
-
         const unsigned char attr =
             (unsigned char)RAM(0x0004u + d3); /* TMP4/5 */
-        DRAW_OAM_ATTR(off) = attr;
+
+        if (write_oam) {
+            DRAW_OAM_TILE(off) = tile;
+            DRAW_OAM_Y(off)    = y;
+            DRAW_OAM_X(off)    = x;
+            DRAW_OAM_ATTR(off) = attr;
+        }
+
+        DRAW_X = (uint8_t)(x + xsep);   /* TMP0 += xsep for next sprite */
 
         /* Phase A/E cache feeder. Native draw_dispatch path writes OAM
          * directly above; the enemy renderer cache is normally fed by
@@ -266,7 +278,7 @@ static void anim_write_sprite_pair_not_flashing(void)
 
         off = (unsigned char)DRAW_RIGHT_SPRITE_OFFSET;
 
-        if ((unsigned char)DRAW_OBJ_INDEX != 0u) {
+        if (obj_idx_initial != 0u) {
             sprite_cycle_cur_sprite_index();
         }
 
