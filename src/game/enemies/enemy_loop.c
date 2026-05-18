@@ -117,6 +117,7 @@ extern void uw_person_init_life_or_money_full(unsigned int slot);
 extern void uw_person_init_grumble_full(unsigned int slot);
 extern void uw_person_init_rupee_stash_full(unsigned int slot);
 extern void trap_update_rupee_stash_full(unsigned int slot);
+extern void z07_update_dead_dummy(unsigned int slot);
 
 /* NES Z_01.asm:1000 InitUnderworldPerson_Full dispatches by CurLevel.
  * Table from Z_01.asm:1007 InitUnderworldPerson_Full_JumpTable:
@@ -637,6 +638,7 @@ const enemy_update_fn enemy_update_fns[ENEMY_LOOP_TYPE_MAX] = {
      * TextboxCharTransferRecTemplate + PersonTextAddrs[] data ports
      * (cave_dispatch.c + src/data/person_text_data.c). */
     [0x35] = trap_update_rupee_stash_full,   /* RupeeStash NES Z_01.asm:2584 */
+    [0x5D] = z07_update_dead_dummy,          /* DeadDummy NES Z_07.asm:5389 */
     [0x36] = uw_person_update_grumble_full,
     [0x4B] = uw_person_update_person_full,
     [0x4C] = uw_person_update_person_full,
