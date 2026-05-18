@@ -1036,27 +1036,29 @@ void enemy_loop_room_init(unsigned char room_id, unsigned char scene_id)
         if (t == 0u) continue;
         if (t >= ENEMY_LOOP_TYPE_MAX) continue;
         native_init_obj_hp(slot, t);  /* NES Z_07.asm:5576 @FetchAttrs */
-        fn = enemy_init_fns[t];
-        if (fn != (enemy_init_fn)0) {
-            fn(slot);
-        }
-        ENEMY_ALIVE_FLAG(slot) = 1u;
 
-        /* NES spawn cloud (Z_05.asm:1695 InitMode_EnterRoom):
-         * metastate=$01 -> UpdateMetaObject animates cloud frames over
-         * ~slot+18 frames. Sub-pal 1 biased cloud CHR at VRAM 1300+
-         * (k_cloud_chr_subpal1 in enemy_render.c) renders white/blue
-         * puff via META_ATTR_MARKER route.
+        /* NES order (Z_07.asm:5546-5600):
+         *   1. @NormalSpawn preamble — for cloud monsters (type < $53,
+         *      excl $1E/$22), ObjTimer = slot_index.
+         *   2. @FetchAttrs — ObjAttr from table (handled by
+         *      c_shoot_if_wanted path elsewhere).
+         *   3. TableJump InitObject_JumpTable[type] — type-specific init
+         *      (e.g. InitSlowOctorock sets ObjTimer = (slot+1)<<4 = $20).
          *
-         * Scroll-glitch guard at top of this function prevents re-init
-         * from replaying cloud on screen-wrap.
-         *
-         * ObjTimer = slot_index per NES @NormalSpawn (Z_07.asm:5553)
-         * staggers cloud-end timing per slot. */
+         * Cloud monsters' ObjTimer is set by preamble FIRST, then
+         * overwritten by type-init. Octorock + Tektite specifically
+         * override to ($slot+1)*$10 for longer spawn-cloud duration.
+         * Non-overriding walkers (BlueLynel etc.) keep preamble value. */
         if (t < 0x53u && t != 0x1Eu && t != 0x22u) {
             ENEMY_METASTATE(slot)  = 0x01u;
             ENEMY_MOVE_TIMER(slot) = (unsigned char)slot;
         }
+
+        fn = enemy_init_fns[t];
+        if (fn != (enemy_init_fn)0) {
+            fn(slot);  /* may overwrite ENEMY_MOVE_TIMER */
+        }
+        ENEMY_ALIVE_FLAG(slot) = 1u;
     }
 }
 
@@ -1086,20 +1088,18 @@ void enemy_loop_tick(void)
     {
         /* NES DecrementInvincibilityTimer (Z_07.asm:5756) — every 2 frames
          * (FrameCounter bit 0 == 0), decrement ObjInvincibilityTimer for
-         * each slot. Called from @LoopObject (Z_07.asm:1919) once per slot
-         * per frame. Without this, enemy hit-reaction stays at $10 after
-         * Link body-collide, causing permanent palette flash + immunity. */
+         * each slot. Called from @LoopObject (Z_07.asm:1919) once per slot.
+         *
+         * ObjTimer ($0028+slot) + ObjStunTimer ($003D+slot) are ALREADY
+         * decremented by main.c NES @UpdateTimers port (RoomRom/src/main.c
+         * line ~1606 loops $27..$3C/$4E). Don't double-dec here. */
         unsigned char dec_inv = ((unsigned char)RAM(0x0015u) & 1u) == 0u;
-        for (slot = ENEMY_LOOP_SLOT_FIRST; slot <= ENEMY_LOOP_SLOT_LAST; ++slot) {
-            if (ENEMY_MOVE_TIMER(slot) != 0u) {
-                ENEMY_MOVE_TIMER(slot) = (unsigned char)(ENEMY_MOVE_TIMER(slot) - 1u);
-            }
-            if (ENEMY_STUN_TIMER(slot) != 0u) {
-                ENEMY_STUN_TIMER(slot) = (unsigned char)(ENEMY_STUN_TIMER(slot) - 1u);
-            }
-            if (dec_inv && ENEMY_HIT_REACTION(slot) != 0u) {
-                ENEMY_HIT_REACTION(slot) =
-                    (unsigned char)(ENEMY_HIT_REACTION(slot) - 1u);
+        if (dec_inv) {
+            for (slot = ENEMY_LOOP_SLOT_FIRST; slot <= ENEMY_LOOP_SLOT_LAST; ++slot) {
+                if (ENEMY_HIT_REACTION(slot) != 0u) {
+                    ENEMY_HIT_REACTION(slot) =
+                        (unsigned char)(ENEMY_HIT_REACTION(slot) - 1u);
+                }
             }
         }
     }

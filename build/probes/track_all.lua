@@ -50,11 +50,13 @@ while true do
       local meta = R(0x8405 + s)
       local tm   = R(0x8028 + s)
       local st   = R(0x80AC + s)
-      local inv = R(0x84F0 + s)   -- ObjInvincibilityTimer
-      local hit = R(0x83BC + s)   -- ObjHitReaction or QSpeed (multipurpose)
-      local hp  = R(0x8485 + s)   -- ObjHP
-      slot_str = slot_str .. string.format(" s%d:t$%02X X$%02X Y$%02X d$%02X st$%02X m$%02X tm$%02X inv$%02X hp$%02X",
-        s, t, R(0x8070+s), R(0x8084+s), R(0x8098+s), st, meta, tm, inv, hp)
+      slot_str = slot_str .. string.format(" s%d:t$%02X X$%02X Y$%02X d$%02X qspd$%02X frac$%02X grid$%02X mvTm$%02X meta$%02X shTm$%02X wTSh$%02X hit$%02X inDir$%02X",
+        s, t,
+        R(0x8070+s), R(0x8084+s), R(0x8098+s),
+        R(0x83BC+s), R(0x83A8+s), R(0x8394+s),
+        R(0x8028+s), R(0x8405+s),
+        R(0x8451+s), R(0x8412+s), R(0x84F0+s),
+        R(0x83F8+s))
     end
   end
 

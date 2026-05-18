@@ -7,7 +7,7 @@ for _, d in ipairs(memory.getmemorydomainlist()) do
   if d == "68K RAM" then IS_GEN = true; break end
 end
 
-local RAM_DOM = IS_GEN and "68K RAM" or "RAM"
+local RAM_DOM = IS_GEN and "68K RAM" or "WRAM"
 local function R(o) return memory.read_u8(o, RAM_DOM) end
 local function W(o,v) memory.write_u8(o, v, RAM_DOM) end
 local function idle(n) for _=1,n do emu.frameadvance() end end
@@ -40,17 +40,17 @@ local f = io.open(out_path, "w")
 f:write(string.format("=== %s sub-pixel trace slot 1, 60 frames ===\n", IS_GEN and "Genesis" or "NES"))
 f:write("frame | X Y dir qspd posfrac gridoff\n")
 
-local X = IS_GEN and 0x8070 or 0x0070
-local Y = IS_GEN and 0x8084 or 0x0084
-local DIR = IS_GEN and 0x8098 or 0x0098
-local QSPD = IS_GEN and 0x83BC or 0x03BC
-local FRAC = IS_GEN and 0x83A8 or 0x03A8
-local GRID = IS_GEN and 0x8394 or 0x0394
+local BASE = IS_GEN and 0x8000 or 0x0000
 local SLOT = 1
+local function S(off) return R(BASE + off + SLOT) end
+local function G(off) return R(BASE + off) end  -- global
 
-for fr=0,59 do
-  f:write(string.format("f%2d | X$%02X Y$%02X dir$%02X qspd$%02X frac$%02X grid$%02X\n",
-    fr, R(X+SLOT), R(Y+SLOT), R(DIR+SLOT), R(QSPD+SLOT), R(FRAC+SLOT), R(GRID+SLOT)))
+for fr=0,119 do
+  f:write(string.format("f%3d | X$%02X Y$%02X d$%02X qspd$%02X frac$%02X grid$%02X mvTm$%02X stTm$%02X meta$%02X shTm$%02X wTSh$%02X bnc$%02X hit$%02X inDir$%02X\n",
+    fr,
+    S(0x70), S(0x84), S(0x98), S(0x3BC), S(0x3A8), S(0x394),
+    S(0x28), S(0x3D), S(0x405), S(0x451), S(0x412), S(0x478), S(0x4F0),
+    S(0x3F8)))
   emu.frameadvance()
 end
 f:close()
