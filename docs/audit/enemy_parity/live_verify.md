@@ -48,28 +48,50 @@ mirrored byte-for-byte by Genesis post-fix Red Lynel / Red Moblin
 
 **Fix VERIFIED LIVE. Both ROMs match.**
 
-## B5.1 — $5B/$5C UPDATE wires
+## B5.1 — $5B/$5C UPDATE wires + boomerang state machine
 
 ### Static evidence
 - Pre-fix: arrows/boomerangs spawn but `enemy_update_fns[0x5B]` and
   `[0x5C]` rows were NULL → slot ticks no-op.
 - Post-fix: `enrt_update_monster_arrow` (q-speed=$80 + delegate to
   `enrt_update_monster_shot`) wired at $5B.
-  `enrt_update_arrow_or_boomerang` wired at $5C.
+  `enrt_update_arrow_or_boomerang` full state machine drain at $5C.
 
-### Live evidence (indirect)
-Blue Lynel ($01) on Genesis with my fix:
-- Frame 119: SHT=$12, WTS=$01 (mid shoot cycle, decrementing).
-- Frame 235: SHT=$00 (cycle complete).
-- Frame 236: SHT=$30 (new cycle, WTS=$01).
+### Live evidence — $5C boomerang state machine
 
-The shoot cycle running to $10 means `c_shoot_if_wanted` fires →
-spawns shot in empty slot. Post-fix the shot slot now ticks via
-`enrt_update_monster_arrow` instead of no-op. Drop-in change; no
-behavior delta on the shooter, only on the shot.
+Probe: `build/probes/audit_boomerang_gen.lua`. Spawned $05 BlueGoriya
+via FX arm at (X=$80, Y=$78). Watched 600 frames. Goriya threw 4
+boomerangs into slot 11.
 
-Direct probe of $5B arrow slot post-spawn deferred — would require
-multi-slot capture extended to slots 2-11. Not done this session.
+State machine progression observed (boomerang #2, frame 79-160):
+
+| Frame | State | Y    | ML  | Notes                              |
+|---    |---    |---   |---  |---                                 |
+| 79    | $10   | $7B  | $51 | Spawn at Goriya, range=$51         |
+| 84    | $10   | $88  | $51 | Flying down toward Link            |
+| 89    | $10   | $94  | $51 |                                    |
+| 94    | $10   | $A1  | $51 |                                    |
+| 99    | $30   | $AD  | $08 | Range hit → slow-down state        |
+| ...   | $40   | $8B-$83 | $20 | Return: Y decreasing back to Goriya |
+| 160   | destroyed | reached thrower (Y dist < 2)        |
+
+Drain commit `bafdf355` verified:
+- State $10 range-limit check (|ObjGridOffset| >= ObjMovingLimit) →
+  transition to $30. ✓
+- State $30 → $40 transition. ✓
+- State $40 return: z01_get_directions_and_distances_to_target
+  computed dirs; boomerang moved at BoomerangQSpeedFracs[4] diagonal
+  back toward Goriya at thrower slot 1 (Y=$79). ✓
+- Destroy on reach. ✓
+
+**Boomerang return-to-thrower behavior matches NES UpdateArrowOrBoomerang
+state machine.**
+
+### Live evidence — $5B (indirect)
+Blue Lynel ($01) on Genesis: shoot cycle runs to $10, c_shoot_if_wanted
+fires → arrow spawns in empty slot which now ticks via
+`enrt_update_monster_arrow`. Direct $5B slot probe not separately
+captured.
 
 ## B6.1 — Aquamentus death cry + shove reset
 
