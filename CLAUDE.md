@@ -8,6 +8,46 @@ secondary verification. Tight topology beats perfect context.
 
 ---
 
+## RULE ZERO — NEVER GUESS. EVER.
+
+**NEVER. GUESS.** Not tile IDs. Not palette indices. Not VRAM offsets.
+Not OAM attrs. Not heap entries. Not RAM cells. Not addresses. Not
+counts. Not timing. Not values. Not anything. EVER.
+
+Before ANY hypothesis becomes code:
+
+1. **CAPTURE NES LIVE.** Probe BizHawk against real NES Z1 ROM. Dump
+   OAM / PALRAM / PPU / RAM at the EXACT moment the behavior happens.
+2. **CAPTURE GENESIS LIVE.** Same scene, same moment, same probe shape.
+3. **COMPARE BYTES.** Hex diff. Not visual diff. Not "looks right".
+   Byte-identical or document the divergence.
+4. **THEN, AND ONLY THEN,** propose a fix.
+
+Guess history that wasted hours:
+- Guessed rock tile = $98 from heap math. Real NES tile = $9E (INY +1
+  in DrawObjectWithType). Should have captured NES OAM first.
+- Guessed cloud tile table = $60/$62/$64/$66. Real NES = $34/$70/$72/$74
+  from Anim_ItemFrameOffsets[$01]. Should have probed NES mid-cloud first.
+- Guessed cloud uses @Wide path (tile + tile+2). Real NES = @Mirrored
+  (tile + same tile + h_flip) because DrawCloud `STA $0C` clobbers
+  DRAW_MIRRORED. Should have probed NES OAM pair values first.
+- Guessed cloud renders correctly with PAL3 (sub-pal 2 colors). Real
+  NES cloud uses sub-pal 1 (white/blue) which Genesis atlas has NO
+  bias for. Should have probed NES PALRAM first.
+
+**Cost of guessing: every time. Cost of capturing first: minutes.**
+
+If a probe is needed and doesn't exist, WRITE the probe. Run the probe.
+Read the output. Then code.
+
+When in doubt: **probe. capture. diff. then code.** Never the reverse.
+
+This rule overrides "Don't ask. Always pick the option with best
+long-term outcome ... Then execute." A probe IS the execution. Skipping
+the probe is NOT executing — it's guessing.
+
+---
+
 ## Operating model
 
 - **You decide.** When the invariants below answer the question, just
