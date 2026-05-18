@@ -59,6 +59,7 @@ extern void music_play(unsigned char song_bitmap);
 #define SONG_LEVEL9     0x20u
 #define SONG_ENDING     0x10u
 #define SONG_ZELDA      0x06u   /* boss-kill / triforce reveal fanfare */
+#define SONG_END_LEVEL  0x04u   /* NES InitMode12 SongRequest = $04 — distinct from $10 ending */
 #define SONG_SILENCE    0x00u
 
 /* Last-published tuple. Initialized to sentinel so first tick fires. */
@@ -108,6 +109,11 @@ static unsigned char resolve_song(unsigned char gm, unsigned char scene)
         return s_last_song;
 
     case GM_END_LEVEL:
+        /* NES Z_05.asm:5516 InitMode12 writes SongRequest = $04 — the
+         * "End Level" tune (single-phrase, change_song bitloop path
+         * @audio_driver.asm:748 -> phrase 3). Distinct from the
+         * multi-phrase $10 Ending. */
+        return SONG_END_LEVEL;
     case GM_WIN_GAME:
         return SONG_ENDING;
 
