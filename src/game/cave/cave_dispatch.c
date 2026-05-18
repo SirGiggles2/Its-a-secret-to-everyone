@@ -51,31 +51,72 @@ static cave_id_t g_active_cave = 0;
 #define CAVE_ID_MIN 0x6Au
 #define CAVE_ID_MAX 0x7Cu
 
+/* Native port of NES InitCaveContinue (Z_01.asm:105-170). Loads text
+ * selector from OverworldPersonTextSelectors[cave_idx], 3 ware items
+ * + prices from LevelBlockAttrsE (NES SRAM $6A7E + cave_idx*3), and
+ * derives CAVE_FLAGS top-bits from text-selector + ware bytes.
+ *
+ * Inlined to keep cave_init self-contained — cavert_init_cave in
+ * src/oracle/cave/cave_runtime.c is not in Debug.md link set, and its
+ * z01_set_up_common_cave_objects dependency cascades into the
+ * unlinked src/gen/z_01.c TU.
+ *
+ * NES Z_01.asm:53 OverworldPersonTextSelectors (20 bytes). */
+static const unsigned char k_overworld_person_text_selectors[20] = {
+    0x40u, 0x60u, 0x42u, 0x42u, 0x04u, 0x06u, 0x48u, 0x0Au,
+    0x4Cu, 0x0Eu, 0xD0u, 0xD2u, 0xD2u, 0xDCu, 0xDCu, 0xDEu,
+    0xDEu, 0x62u, 0x62u, 0x62u
+};
+
+#define NES_SRAM_LBA_E_BASE  0x6A7Eu     /* LevelBlockAttrsE (Variables.inc:331) */
+#define NES_SRAM_LBA_E_PRICE 0x6ABAu     /* LBA_E + 60 (prices region) */
+
 int cave_init(cave_id_t cave_id)
 {
     if (cave_id < CAVE_ID_MIN || cave_id > CAVE_ID_MAX) {
         return -1;
     }
 
-    /* Write through RAM-backed accessors. NES InitCaveContinue
-     * (Z_01.asm:105) does `cave_idx = cave_id - $6A` then loads tables;
-     * we set the cave_id in RAM($0350) so downstream cave_draw_*,
-     * cave_update_* (and any drain-side code reading via CAVE_ROOM_TYPE
-     * macro) see the same byte.
-     *
-     * OverworldPerson table loads (text selector / line addr / ware
-     * inventory) are deferred — those need a Phase 4 cross-subsystem
-     * data port from src/data/person_text.inc into a native const table.
-     * Stage-1 leaves text/ware state zeroed; cave appears empty until
-     * the table port lands. */
     cave_room_type_set(cave_id);          /* RAM($0350) */
     CAVE_PERSON_STATE      = 0u;          /* RAM($00AD) */
-    cave_flags_set(0u);                   /* RAM($0413) */
-    CAVE_TEXT_SELECTOR     = 0u;          /* RAM($0415) */
     CAVE_TEXT_CHAR_INDEX   = 0u;          /* RAM($0416) */
     CAVE_DELAY_TIMER       = 0u;          /* RAM($0029) */
     CAVE_LINK_ACTION_TIMER = 0u;          /* RAM($00AC) */
     CAVE_LINK_INPUT_FLAGS  = 0u;          /* RAM($00F8) */
+
+    /* NES InitCaveContinue (Z_01.asm:105-170) port:
+     * 1) cave_idx = cave_id - $6A.
+     * 2) sel = OverworldPersonTextSelectors[cave_idx].
+     *    CAVE_TEXT_SELECTOR = sel & $3F; tmp_flags = sel & $C0.
+     * 3) For 3 wares (i=0..2):
+     *      ware = LBA_E[cave_idx*3 + i];
+     *      CaveItemIds[i] = ware;        (RAM $0422+i)
+     *      ware_flags[i]  = ware & $C0;  (RAM $00..$02 scratch)
+     *      CavePrices[i]  = LBA_E[cave_idx*3 + i + 60];  (RAM $0430+i)
+     * 4) CAVE_FLAGS = (tmp_flags>>6) | ware_flags[0] | (ware_flags[2]>>4) | (ware_flags[1]>>2). */
+    {
+        unsigned char cave_idx = (unsigned char)(cave_id - 0x6Au);
+        unsigned char sel = k_overworld_person_text_selectors[cave_idx];
+        CAVE_TEXT_SELECTOR = (unsigned char)(sel & 0x3Fu);
+        unsigned char tmp_flags_top = (unsigned char)(sel & 0xC0u);
+
+        unsigned char ware_off = (unsigned char)(cave_idx * 3u);
+        unsigned char ware_flag_0 = 0u, ware_flag_1 = 0u, ware_flag_2 = 0u;
+        for (unsigned char i = 0u; i < 3u; ++i) {
+            unsigned char ware  = nes_ram[NES_SRAM_LBA_E_BASE + ware_off + i];
+            unsigned char price = nes_ram[NES_SRAM_LBA_E_PRICE + ware_off + i];
+            RAM(0x0422u + i) = ware;                   /* CaveItemIds */
+            RAM(0x0430u + i) = price;                  /* CavePrices */
+            if (i == 0u) ware_flag_0 = (unsigned char)(ware & 0xC0u);
+            if (i == 1u) ware_flag_1 = (unsigned char)(ware & 0xC0u);
+            if (i == 2u) ware_flag_2 = (unsigned char)(ware & 0xC0u);
+        }
+        unsigned char cave_flags = (unsigned char)((tmp_flags_top >> 6) |
+                                                   ware_flag_0          |
+                                                   (ware_flag_2 >> 4)   |
+                                                   (ware_flag_1 >> 2));
+        cave_flags_set(cave_flags);
+    }
 
     g_active_cave = cave_id;
     return 0;
