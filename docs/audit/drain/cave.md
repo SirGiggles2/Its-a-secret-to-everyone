@@ -6,60 +6,48 @@
 
 | File | Function | Line | Calls _ppu_/_apu_ shim? |
 |------|----------|------|------|
-| `src/game/cave/cave_runtime.c` | `cavert_clear_prices_cave_flag` | 69 | no |
-| `src/game/cave/cave_runtime.c` | `cavert_draw_cave_items` | 198 | no |
-| `src/game/cave/cave_runtime.c` | `cavert_draw_cave_person` | 190 | no |
-| `src/game/cave/cave_runtime.c` | `cavert_format_decimal_byte` | 79 | no |
-| `src/game/cave/cave_runtime.c` | `cavert_init_cave` | 175 | no |
-| `src/game/cave/cave_runtime.c` | `cavert_init_cave_continue` | 6 | no |
-| `src/game/cave/cave_runtime.c` | `cavert_prepend_sign_to_price` | 55 | no |
-| `src/game/cave/cave_runtime.c` | `cavert_swap_space_and_sign` | 60 | no |
-| `src/game/cave/cave_runtime.c` | `cavert_try_take_item` | 355 | no |
-| `src/game/cave/cave_runtime.c` | `cavert_try_take_room_item` | 379 | no |
-| `src/game/cave/cave_runtime.c` | `cavert_update_cave_person` | 325 | no |
-| `src/game/cave/cave_runtime.c` | `cavert_update_hint_or_money_game` | 284 | no |
-| `src/game/cave/cave_runtime.c` | `cavert_update_person_state_delay_then_hide` | 73 | no |
-| `src/game/cave/cave_runtime.c` | `cavert_update_person_state_textbox` | 130 | no |
-| `src/game/cave/cave_runtime.c` | `cavert_update_talk_shop_or_door_charge` | 227 | no |
-| `src/game/cave/cave_runtime.c` | `cavert_update_transfer_prices` | 219 | no |
-| `src/game/cave/cave_runtime.c` | `cavert_write_prices_to_dynamic_transfer_buf` | 95 | no |
-| `src/game/cave/cave_runtime.c` | `cavert_write_prices_transfer_buf` | 125 | no |
-| `src/game/cave/uw_person_runtime.c` | `uwrt_check_person_blocking` | 115 | no |
-| `src/game/cave/uw_person_runtime.c` | `uwrt_compare_hearts_to_containers` | 11 | no |
-| `src/game/cave/uw_person_runtime.c` | `uwrt_complex_state_begin` | 19 | no |
-| `src/game/cave/uw_person_runtime.c` | `uwrt_draw_life_or_money_items` | 209 | no |
-| `src/game/cave/uw_person_runtime.c` | `uwrt_init_grumble_full` | 61 | no |
-| `src/game/cave/uw_person_runtime.c` | `uwrt_init_life_or_money_full` | 102 | no |
-| `src/game/cave/uw_person_runtime.c` | `uwrt_init_rupee_stash_full` | 75 | no |
-| `src/game/cave/uw_person_runtime.c` | `uwrt_init_underworld_person_a` | 132 | no |
-| `src/game/cave/uw_person_runtime.c` | `uwrt_init_underworld_person_b` | 33 | no |
-| `src/game/cave/uw_person_runtime.c` | `uwrt_init_underworld_person_c` | 44 | no |
-| `src/game/cave/uw_person_runtime.c` | `uwrt_person_check_collisions` | 199 | no |
-| `src/game/cave/uw_person_runtime.c` | `uwrt_person_draw_and_check_collisions` | 27 | no |
-| `src/game/cave/uw_person_runtime.c` | `uwrt_person_flag_item_taken_and_advance_state` | 109 | no |
-| `src/game/cave/uw_person_runtime.c` | `uwrt_underworld_person_destroy_if_taken` | 92 | no |
-| `src/game/cave/uw_person_runtime.c` | `uwrt_update_complex_state_sense_link` | 144 | no |
-| `src/game/cave/uw_person_runtime.c` | `uwrt_update_grumble1` | 123 | no |
-| `src/game/cave/uw_person_runtime.c` | `uwrt_update_grumble3` | 218 | no |
-| `src/game/cave/uw_person_runtime.c` | `uwrt_update_grumble_full` | 264 | no |
-| `src/game/cave/uw_person_runtime.c` | `uwrt_update_life_or_money_full` | 279 | no |
-| `src/game/cave/uw_person_runtime.c` | `uwrt_update_life_or_money_state_0` | 87 | no |
-| `src/game/cave/uw_person_runtime.c` | `uwrt_update_life_or_money_state_2` | 164 | no |
-| `src/game/cave/uw_person_runtime.c` | `uwrt_update_person_complex` | 231 | no |
-| `src/game/cave/uw_person_runtime.c` | `uwrt_update_person_full` | 250 | no |
+| `src/oracle/cave/cave_runtime.c` | `cavert_clear_prices_cave_flag` | 69 | no |
+| `src/oracle/cave/cave_runtime.c` | `cavert_draw_cave_items` | 198 | no |
+| `src/oracle/cave/cave_runtime.c` | `cavert_draw_cave_person` | 190 | no |
+| `src/oracle/cave/cave_runtime.c` | `cavert_format_decimal_byte` | 79 | no |
+| `src/oracle/cave/cave_runtime.c` | `cavert_init_cave` | 175 | no |
+| `src/oracle/cave/cave_runtime.c` | `cavert_init_cave_continue` | 6 | no |
+| `src/oracle/cave/cave_runtime.c` | `cavert_prepend_sign_to_price` | 55 | no |
+| `src/oracle/cave/cave_runtime.c` | `cavert_swap_space_and_sign` | 60 | no |
+| `src/oracle/cave/cave_runtime.c` | `cavert_try_take_item` | 355 | no |
+| `src/oracle/cave/cave_runtime.c` | `cavert_try_take_room_item` | 379 | no |
+| `src/oracle/cave/cave_runtime.c` | `cavert_update_cave_person` | 325 | no |
+| `src/oracle/cave/cave_runtime.c` | `cavert_update_hint_or_money_game` | 284 | no |
+| `src/oracle/cave/cave_runtime.c` | `cavert_update_person_state_delay_then_hide` | 73 | no |
+| `src/oracle/cave/cave_runtime.c` | `cavert_update_person_state_textbox` | 130 | no |
+| `src/oracle/cave/cave_runtime.c` | `cavert_update_talk_shop_or_door_charge` | 227 | no |
+| `src/oracle/cave/cave_runtime.c` | `cavert_update_transfer_prices` | 219 | no |
+| `src/oracle/cave/cave_runtime.c` | `cavert_write_prices_to_dynamic_transfer_buf` | 95 | no |
+| `src/oracle/cave/cave_runtime.c` | `cavert_write_prices_transfer_buf` | 125 | no |
+| `src/oracle/cave/uw_person_runtime.c` | `uwrt_check_person_blocking` | 115 | no |
+| `src/oracle/cave/uw_person_runtime.c` | `uwrt_compare_hearts_to_containers` | 11 | no |
+| `src/oracle/cave/uw_person_runtime.c` | `uwrt_complex_state_begin` | 19 | no |
+| `src/oracle/cave/uw_person_runtime.c` | `uwrt_draw_life_or_money_items` | 209 | no |
+| `src/oracle/cave/uw_person_runtime.c` | `uwrt_init_grumble_full` | 61 | no |
+| `src/oracle/cave/uw_person_runtime.c` | `uwrt_init_life_or_money_full` | 102 | no |
+| `src/oracle/cave/uw_person_runtime.c` | `uwrt_init_rupee_stash_full` | 75 | no |
+| `src/oracle/cave/uw_person_runtime.c` | `uwrt_init_underworld_person_a` | 132 | no |
+| `src/oracle/cave/uw_person_runtime.c` | `uwrt_init_underworld_person_b` | 33 | no |
+| `src/oracle/cave/uw_person_runtime.c` | `uwrt_init_underworld_person_c` | 44 | no |
+| `src/oracle/cave/uw_person_runtime.c` | `uwrt_person_check_collisions` | 199 | no |
+| `src/oracle/cave/uw_person_runtime.c` | `uwrt_person_draw_and_check_collisions` | 27 | no |
+| `src/oracle/cave/uw_person_runtime.c` | `uwrt_person_flag_item_taken_and_advance_state` | 109 | no |
+| `src/oracle/cave/uw_person_runtime.c` | `uwrt_underworld_person_destroy_if_taken` | 92 | no |
+| `src/oracle/cave/uw_person_runtime.c` | `uwrt_update_complex_state_sense_link` | 144 | no |
+| `src/oracle/cave/uw_person_runtime.c` | `uwrt_update_grumble1` | 123 | no |
+| `src/oracle/cave/uw_person_runtime.c` | `uwrt_update_grumble3` | 218 | no |
+| `src/oracle/cave/uw_person_runtime.c` | `uwrt_update_grumble_full` | 264 | no |
+| `src/oracle/cave/uw_person_runtime.c` | `uwrt_update_life_or_money_full` | 279 | no |
+| `src/oracle/cave/uw_person_runtime.c` | `uwrt_update_life_or_money_state_0` | 87 | no |
+| `src/oracle/cave/uw_person_runtime.c` | `uwrt_update_life_or_money_state_2` | 164 | no |
+| `src/oracle/cave/uw_person_runtime.c` | `uwrt_update_person_complex` | 231 | no |
+| `src/oracle/cave/uw_person_runtime.c` | `uwrt_update_person_full` | 250 | no |
 
 ## Master plan tasks claiming this subsystem
 
-| Task | Name | NES source | Coverage | Stance |
-|------|------|-----------|----------|--------|
-| 3.2 | Cave Gamemode Dispatch | `reference/aldonunez/Z_01.asm:GameMode_Cave` | PARTIAL | ADOPT |
-| 3.3 | Cave Entrance Detection | `reference/aldonunez/Z_01.asm:CheckCaveEntry` | PARTIAL | EXTEND |
-| 3.3 | Cave Entrance Detection | `Z_02.asm:OW_TileCollision` | PARTIAL | EXTEND |
-| 3.4 | Render Cave Interior | `reference/aldonunez/Z_01.asm:DrawCave` | PARTIAL | EXTEND |
-| 3.5 | Cave Text Box | `reference/aldonunez/Z_01.asm:CaveText_*` | PARTIAL | EXTEND |
-| 3.5 | Cave Text Box | `Z_05.asm:Text_RenderChar` | PARTIAL | EXTEND |
-| 3.6 | Item Grant Caves | `reference/aldonunez/Z_01.asm:CaveItemGrant` | PARTIAL | ADOPT |
-| 3.6 | Item Grant Caves | `Z_07.asm:Inventory_Mutate` | PARTIAL | ADOPT |
-| 3.7 | Shop Caves | `reference/aldonunez/Z_01.asm:Shop_Tick` | FULL | ADOPT |
-| 3.8 | Gambling / Money-Making Game | `reference/aldonunez/Z_01.asm:MoneyGame_Tick` | FULL | ADOPT |
-| 3.9 | Cave Exit + Palette Restore | `reference/aldonunez/Z_01.asm:ExitCave` | PARTIAL | EXTEND |
+(none — possibly all drained code in this subsystem is orphaned from the plan)

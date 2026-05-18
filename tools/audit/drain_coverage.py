@@ -5,6 +5,7 @@ Per debate 005 RULE D1.
 
 Scans:
   - src/game/**/*_runtime.c                     drained C corpus (primary impl)
+  - src/oracle/**/*_runtime.c                   drained C corpus (oracle subtree)
   - reference/aldonunez/*.asm                   NES disasm spec (final authority)
   - src/zelda_translated/*.asm                  transpiled NES code still living
   - docs/superpowers/plans/*master-plan*.md     master plan task headers
@@ -30,6 +31,7 @@ from pathlib import Path
 
 REPO = Path(__file__).resolve().parents[2]
 GAME_ROOT = REPO / "src" / "game"
+ORACLE_ROOT = REPO / "src" / "oracle"
 NES_REFERENCE = REPO / "reference" / "aldonunez"
 NES_TRANSLATED = REPO / "src" / "zelda_translated"
 MASTER_PLAN = REPO / "docs" / "superpowers" / "plans" / "2026-05-02-title-roomrom-full-port-master-plan.md"
@@ -59,19 +61,25 @@ HEADER_RE = re.compile(
 LEGAL_COVERAGE = {"FULL", "PARTIAL", "STALE", "NONE"}
 LEGAL_STANCE   = {"ADOPT", "EXTEND", "REPLACE", "GREENFIELD"}
 
-# Subsystem inferred from src/game/<subsystem>/...
+# Subsystem inferred from src/game/<subsystem>/... or src/oracle/<subsystem>/...
 def subsystem_of(path: Path) -> str:
-    try:
-        rel = path.relative_to(GAME_ROOT).parts
-        return rel[0] if rel else "unknown"
-    except ValueError:
-        return "external"
+    for root in (GAME_ROOT, ORACLE_ROOT):
+        try:
+            rel = path.relative_to(root).parts
+            return rel[0] if rel else "unknown"
+        except ValueError:
+            continue
+    return "external"
 
 
 def scan_drained_functions() -> list[dict]:
     """Return list of {file, subsystem, function, line, calls_ppu_shim}."""
     out = []
-    for p in sorted(GAME_ROOT.rglob("*_runtime.c")):
+    runtime_files = sorted(
+        list(GAME_ROOT.rglob("*_runtime.c")) +
+        list(ORACLE_ROOT.rglob("*_runtime.c"))
+    )
+    for p in runtime_files:
         try:
             text = p.read_text(encoding="utf-8", errors="replace")
         except OSError:

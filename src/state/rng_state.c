@@ -14,17 +14,17 @@
 
 void rng_seed(unsigned short seed)
 {
-    unsigned char lo = (unsigned char)(seed & 0xFF);
-    unsigned char hi = (unsigned char)((seed >> 8) & 0xFF);
     unsigned char i;
-    /* NES seed pattern from tools/bizhawk_t38_enemy_nes_capture.lua:501
-     * is just incrementing bytes; we sprinkle the 16-bit seed across the
-     * 13-byte array so any nonzero seed scrambles uniquely. */
+    /* NES ClearRam seed (Z_05.asm:7411-7431): zeroes $00..$EF then
+     * explicitly stores #$40 at Random ($0018). Random[1..12] stays $00.
+     * @ScrambleRandom (Z_07.asm:499) propagates the $40 bit through the
+     * ROR-chain on subsequent frames. To get bytewise RNG parity with
+     * NES BizHawk we MUST seed the same way — anything else (e.g.
+     * 0xACE1-derived pattern) diverges on frame 0.
+     * 'seed' argument retained for caller compat but ignored. */
+    (void)seed;
     for (i = 0; i < RNG_RANDOM_LEN; i++) {
-        unsigned char v = (i & 1) ? hi : lo;
-        v ^= (unsigned char)(i * 0x53u);
-        if (v == 0) v = 0x40 + i;  /* avoid all-zero state */
-        RAM(RNG_RANDOM_BASE + i) = v;
+        RAM(RNG_RANDOM_BASE + i) = (i == 0u) ? 0x40u : 0x00u;
     }
 }
 

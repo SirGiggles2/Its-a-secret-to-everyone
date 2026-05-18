@@ -6,22 +6,57 @@
 
 | File | Function | Line | Calls _ppu_/_apu_ shim? |
 |------|----------|------|------|
-| `src/game/combat/combat_runtime.c` | `compute_state` | 192 | no |
-| `src/game/combat/combat_runtime.c` | `recompute_y_bias` | 97 | no |
-| `src/game/combat/combat_runtime.c` | `roomrom_combat_get_swing_face` | 40 | no |
-| `src/game/combat/combat_runtime.c` | `roomrom_combat_get_swing_state` | 36 | no |
-| `src/game/combat/combat_runtime.c` | `roomrom_combat_get_swing_x` | 38 | no |
-| `src/game/combat/combat_runtime.c` | `roomrom_combat_get_swing_y` | 39 | no |
-| `src/game/combat/combat_runtime.c` | `roomrom_combat_init` | 166 | no |
-| `src/game/combat/combat_runtime.c` | `roomrom_combat_link_locked` | 187 | no |
-| `src/game/combat/combat_runtime.c` | `roomrom_combat_set_redux` | 92 | no |
-| `src/game/combat/combat_runtime.c` | `roomrom_combat_set_uw` | 84 | no |
-| `src/game/combat/combat_runtime.c` | `roomrom_combat_try_swing` | 177 | no |
-| `src/game/combat/combat_runtime.c` | `roomrom_combat_update` | 266 | no |
-| `src/game/combat/combat_runtime.c` | `spawn_beam` | 255 | no |
-| `src/game/combat/combat_runtime.c` | `sword_style_allows_beam` | 240 | no |
-| `src/game/combat/combat_runtime.c` | `sword_subpal_for_items` | 69 | no |
-| `src/game/combat/combat_runtime.c` | `update_beam` | 207 | no |
+| `src/game/combat/combat_runtime.c` | `compute_state` | 212 | no |
+| `src/game/combat/combat_runtime.c` | `recompute_y_bias` | 110 | no |
+| `src/game/combat/combat_runtime.c` | `roomrom_combat_cancel_beam` | 62 | no |
+| `src/game/combat/combat_runtime.c` | `roomrom_combat_get_beam_active` | 57 | no |
+| `src/game/combat/combat_runtime.c` | `roomrom_combat_get_beam_face` | 61 | no |
+| `src/game/combat/combat_runtime.c` | `roomrom_combat_get_beam_x` | 59 | no |
+| `src/game/combat/combat_runtime.c` | `roomrom_combat_get_beam_y` | 60 | no |
+| `src/game/combat/combat_runtime.c` | `roomrom_combat_get_swing_face` | 41 | no |
+| `src/game/combat/combat_runtime.c` | `roomrom_combat_get_swing_state` | 37 | no |
+| `src/game/combat/combat_runtime.c` | `roomrom_combat_get_swing_x` | 39 | no |
+| `src/game/combat/combat_runtime.c` | `roomrom_combat_get_swing_y` | 40 | no |
+| `src/game/combat/combat_runtime.c` | `roomrom_combat_init` | 179 | no |
+| `src/game/combat/combat_runtime.c` | `roomrom_combat_link_locked` | 207 | no |
+| `src/game/combat/combat_runtime.c` | `roomrom_combat_set_redux` | 105 | no |
+| `src/game/combat/combat_runtime.c` | `roomrom_combat_set_uw` | 97 | no |
+| `src/game/combat/combat_runtime.c` | `roomrom_combat_try_swing` | 196 | no |
+| `src/game/combat/combat_runtime.c` | `roomrom_combat_update` | 286 | no |
+| `src/game/combat/combat_runtime.c` | `spawn_beam` | 275 | no |
+| `src/game/combat/combat_runtime.c` | `sword_blocked_by_bubble` | 190 | no |
+| `src/game/combat/combat_runtime.c` | `sword_style_allows_beam` | 260 | no |
+| `src/game/combat/combat_runtime.c` | `sword_subpal_for_items` | 82 | no |
+| `src/game/combat/combat_runtime.c` | `update_beam` | 227 | no |
+| `src/oracle/combat/collision_runtime.c` | `colrt_check_monster_arrow_or_rod_collision` | 167 | no |
+| `src/oracle/combat/collision_runtime.c` | `colrt_check_monster_bomb_or_fire_collision` | 212 | no |
+| `src/oracle/combat/collision_runtime.c` | `colrt_check_monster_boomerang_or_food_collision` | 182 | no |
+| `src/oracle/combat/collision_runtime.c` | `colrt_check_monster_shot_collision` | 150 | no |
+| `src/oracle/combat/collision_runtime.c` | `colrt_check_monster_slender_weapon_collision` | 106 | no |
+| `src/oracle/combat/collision_runtime.c` | `colrt_check_monster_slender_weapon_collision2` | 90 | no |
+| `src/oracle/combat/collision_runtime.c` | `colrt_check_monster_stabbing_collision` | 124 | no |
+| `src/oracle/combat/collision_runtime.c` | `colrt_check_monster_sword_collision` | 143 | no |
+| `src/oracle/combat/collision_runtime.c` | `colrt_check_monster_sword_shot_or_magic_shot_collision` | 192 | no |
+| `src/oracle/combat/collision_runtime.c` | `colrt_check_monster_weapon_collision` | 64 | no |
+| `src/oracle/combat/collision_runtime.c` | `colrt_do_objects_collide` | 29 | no |
+| `src/oracle/combat/collision_runtime.c` | `colrt_do_objects_collide_with_thresholds` | 7 | no |
+| `src/oracle/combat/collision_runtime.c` | `colrt_get_collidable_tile` | 236 | no |
+| `src/oracle/combat/collision_runtime.c` | `colrt_get_collidable_tile_still` | 309 | no |
+| `src/oracle/combat/collision_runtime.c` | `colrt_get_colliding_tile_moving` | 314 | no |
+| `src/oracle/combat/collision_runtime.c` | `colrt_handle_monster_weapon_collision` | 35 | no |
+| `src/oracle/combat/collision_runtime.c` | `colrt_parry_or_shove` | 112 | no |
+| `src/oracle/combat/combat_runtime.c` | `cobrt_deal_damage` | 24 | no |
+| `src/oracle/combat/combat_runtime.c` | `cobrt_handle_monster_died` | 11 | no |
+| `src/oracle/combat/combat_runtime.c` | `cobrt_play_parry_sound_for_damage_type` | 3 | no |
+| `src/oracle/combat/link_collision_runtime.c` | `lcrt_begin_shove` | 129 | no |
+| `src/oracle/combat/link_collision_runtime.c` | `lcrt_check_link_collision` | 88 | no |
+| `src/oracle/combat/link_collision_runtime.c` | `lcrt_check_link_collision_preinit` | 59 | no |
+| `src/oracle/combat/link_collision_runtime.c` | `lcrt_check_monster_collisions` | 99 | no |
+| `src/oracle/combat/link_collision_runtime.c` | `lcrt_harm_link` | 47 | no |
+| `src/oracle/combat/link_collision_runtime.c` | `lcrt_link_be_harmed` | 5 | no |
+| `src/oracle/combat/targeting_runtime.c` | `targrt_calc_diagonal_speed_index` | 31 | no |
+| `src/oracle/combat/targeting_runtime.c` | `targrt_get_directions_and_distances_to_target` | 20 | no |
+| `src/oracle/combat/targeting_runtime.c` | `targrt_get_one_direction_and_distance_to_target` | 2 | no |
 
 ## Master plan tasks claiming this subsystem
 
