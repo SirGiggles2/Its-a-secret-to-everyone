@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-05-18T05:31:55.000312+00:00",
+  "generated_at": "2026-05-18T18:45:43.275499+00:00",
   "generated_by": "tools/audit/primedirective/prime_refresh.py",
   "plan": {
     "path": "docs/superpowers/plans/2026-05-02-title-roomrom-full-port-master-plan.md",
@@ -1379,13 +1379,12 @@
     },
     "drain_coverage_json": {
       "path": "tools/audit/drain_coverage.json",
-      "sha256": "7de3f1eb69a7c7c536eaee351d11fcaea228d633dba2904d7755fa3a4a733c53",
+      "sha256": "a94799cb7acf3409a5acb7b7d27a05b4c0fadf9d46245c75415658d672010a88",
       "ok": true
     },
-    "git_head": "39a8bff7a9aa6c2f8e1b6caaf6d477f3869a0792",
+    "git_head": "45d3d21113c8970945a8c5bb8b21826ea539322c",
     "dirty_paths_relevant": [
       "RoomRom/src/main.c",
-      "src/game/combat/combat_runtime.c",
       "src/game/combat/combat_runtime.h",
       "src/game/options/options_consumer.c",
       "src/game/world/render/sprite_render.c",
@@ -1402,7 +1401,7 @@
     ],
     "evidence_paths_present": true,
     "complete_phase_invariant_ok": true,
-    "last_refresh_at": "2026-05-18T05:31:55.056422+00:00",
+    "last_refresh_at": "2026-05-18T18:45:43.370927+00:00",
     "stale_reasons": []
   },
   "blockers": []
