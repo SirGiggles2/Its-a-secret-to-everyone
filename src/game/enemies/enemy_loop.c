@@ -60,6 +60,39 @@ static void native_init_obj_hp(unsigned int slot, unsigned char type)
     }
 }
 
+/* NES Z_07.asm:5213 ObjectTypeToAttributes — 95 bytes, indexed by
+ * ObjType. NES InitObject @FetchAttrs (Z_07.asm:5566-5567):
+ *   LDA ObjectTypeToAttributes,Y / STA ObjAttr,X
+ * Sets ObjAttr at init so @LoopObject (Z_07.asm:1932-1940) can gate the
+ * post-update draw + collision wrapper:
+ *   - bit 0 = self-collide-and-draw (skip wrapper entirely)
+ *   - bit 2 = self-draw (skip wrapper draw, still call collision)
+ *
+ * Pre-2026-05-18 the Genesis port never seeded this — ObjAttr stayed at
+ * $00 for every walker, so today's @LoopObject draw-wrapper port fires
+ * for octorok/stalfos/darknut (which already self-draw) → double-draw +
+ * double-collide. Fix: port @FetchAttrs to all init paths. */
+static const unsigned char k_object_type_attrs[95] = {
+    0xFF, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x05,
+    0x05, 0x05, 0x05, 0x81, 0x81, 0x81, 0x81, 0x01,
+    0x01, 0x81, 0x01, 0x01, 0x43, 0x43, 0x81, 0x81,
+    0x81, 0x81, 0x01, 0x81, 0x81, 0x81, 0x01, 0x81,
+    0x81, 0x81, 0x81, 0x81, 0x81, 0xC3, 0xC3, 0x89,
+    0x89, 0x81, 0x81, 0x89, 0x89, 0x89, 0x89, 0x83,
+    0x81, 0x89, 0x89, 0xC9, 0xC9, 0x81, 0x81, 0x81,
+    0xA9, 0xA9, 0x41, 0x41, 0x89, 0x89, 0x81, 0x81,
+    0x81, 0xC1, 0xC1, 0xC1, 0xC1, 0xC1, 0x81, 0x81,
+    0x81, 0xA1, 0xA1, 0x81, 0x81, 0x81, 0x81, 0x81,
+    0x81, 0x81, 0x81, 0xE3, 0xE3, 0xE3, 0xE3, 0xE3,
+    0xE1, 0xE1, 0xE1, 0xE1, 0xE1, 0x81, 0x81
+};
+
+static void native_init_obj_attr(unsigned int slot, unsigned char type)
+{
+    if (type >= (unsigned char)sizeof(k_object_type_attrs)) return;
+    RAM(0x04BFu + slot) = k_object_type_attrs[type];
+}
+
 /* Forward decls — defined in src/oracle/enemies/enemy_walker_runtime.c
  * (init), src/oracle/enemies/enemy_wanderer_runtime.c (goriya update),
  * src/game/enemies/enemy_walker_bridge.c (step-6 native octorock),
@@ -978,9 +1011,19 @@ static void clear_slot_scratch(unsigned int slot)
     ENEMY_ALIVE_FLAG(slot)     = 1u;          /* mark slot occupied */
 }
 
+/* enemy_fix probe arm-hook suppression flag. Set by enemy_loop_arm_fix_probe
+ * to skip the next room_init pass (otherwise natural-spawn rolls clobber
+ * the force-spawned probe target). */
+static unsigned char s_fix_arm_suppress_room_init = 0u;
+
 void enemy_loop_room_init(unsigned char room_id, unsigned char scene_id)
 {
     unsigned int slot;
+    /* enemy_fix arm hook: bail this room_init pass exactly once. */
+    if (s_fix_arm_suppress_room_init) {
+        s_fix_arm_suppress_room_init = 0u;
+        return;
+    }
     /* Scroll-glitch guard: track last (room_id, scene_id). Probe
      * build/probes/track_all.lua captured Link X-wrap $00->$F0 that
      * re-triggers room_init without room_id change, smashing enemy
@@ -1035,7 +1078,8 @@ void enemy_loop_room_init(unsigned char room_id, unsigned char scene_id)
         enemy_init_fn fn;
         if (t == 0u) continue;
         if (t >= ENEMY_LOOP_TYPE_MAX) continue;
-        native_init_obj_hp(slot, t);  /* NES Z_07.asm:5576 @FetchAttrs */
+        native_init_obj_hp(slot, t);    /* NES Z_07.asm:5576 HP nibble */
+        native_init_obj_attr(slot, t);  /* NES Z_07.asm:5566 @FetchAttrs */
 
         /* NES order (Z_07.asm:5546-5600):
          *   1. @NormalSpawn preamble — for cloud monsters (type < $53,
@@ -1062,9 +1106,98 @@ void enemy_loop_room_init(unsigned char room_id, unsigned char scene_id)
     }
 }
 
+/* Forward decl for arm hook (defined later in this file). */
+void enemy_loop_force_spawn_typed(unsigned int slot,
+                                  unsigned char enemy_type,
+                                  unsigned char x,
+                                  unsigned char y,
+                                  unsigned char dir);
+
+/* enemy_fix arm hook. Probe Lua writes 'FX' magic + 7 param bytes at
+ * NES $77D0..$77D8 (Genesis $FF77D0..$FF77D8). On first tick after the
+ * write, this consumes the magic, pins determinism cells (FrameCounter,
+ * ChaseTarget toggle, Random[0..2]), writes RoomId + UnwalkableTile per
+ * habitat, clears FoeCounts (suppresses natural spawn rolls), clears
+ * all enemy slots, then force-spawns the requested type into the
+ * requested slot. Subsequent ticks run normally.
+ *
+ *   $77D0 = 'F' (0x46)        magic byte 0
+ *   $77D1 = 'X' (0x58)        magic byte 1
+ *   $77D2 = type              enemy type ($01..$5C)
+ *   $77D3 = x                 spawn X
+ *   $77D4 = y                 spawn Y
+ *   $77D5 = dir               spawn dir
+ *   $77D6 = slot              spawn slot (1..11)
+ *   $77D7 = habitat           0 = OW, 1 = UW
+ *   $77D8 = room_id           test room (e.g. $77 for OW, $70 for UW)
+ *
+ * Plan: docs/superpowers/plans (enemy_fix v2) Step 0. */
+static void enemy_loop_arm_fix_probe(void)
+{
+    /* Magic block at ABSOLUTE $FF77D0 (matches the existing
+     * enemy_loop_probe arm at $FF73F8). NOT relative to A4 — Debug.md
+     * pins A4 at $FF8000, so RAM(0x77D0) would write $FFFF7D0 which is
+     * outside 68K work RAM. Probe Lua writes domain "68K RAM" offset
+     * 0x77D0 = physical $FF77D0. */
+    volatile unsigned char *arm = (volatile unsigned char *)0x00FF77D0UL;
+
+    unsigned char m0 = arm[0];
+    unsigned char m1 = arm[1];
+    if (m0 != 0x46u || m1 != 0x58u) return;  /* not 'F','X' */
+
+    unsigned char type    = arm[2];
+    unsigned char x       = arm[3];
+    unsigned char y       = arm[4];
+    unsigned char dir     = arm[5];
+    unsigned char slot    = arm[6];
+    unsigned char habitat = arm[7];
+    unsigned char room    = arm[8];
+
+    /* Pin determinism cells. */
+    RAM(0x0015u) = 0u;        /* FrameCounter */
+    RAM(0x0060u) = 1u;        /* ChaseTarget toggle (Z_07.asm:1873) */
+    RAM(0x0018u) = 0u;        /* Random[0] */
+    RAM(0x0019u) = 1u;        /* Random[1] */
+    RAM(0x001Au) = 2u;        /* Random[2] */
+    RAM(0x00EBu) = room;      /* RoomId */
+    RAM(0x004Au) = 8u;        /* ChaseLongTimer (non-zero suppresses toggle) */
+
+    /* Habitat: OW=$89 (per ObjectRoomBoundsOW[4]), UW=$78. */
+    RAM(0x034Au) = (habitat == 0u) ? 0x89u : 0x78u;
+
+    /* Clear FoeCounts so natural spawn rolls suppressed. */
+    RAM(0x6BA2u) = 0u;
+    RAM(0x6BA3u) = 0u;
+    RAM(0x6BA4u) = 0u;
+    RAM(0x6BA5u) = 0u;
+
+    /* Clear all enemy slots. */
+    {
+        unsigned int s;
+        for (s = ENEMY_LOOP_SLOT_FIRST; s <= ENEMY_LOOP_SLOT_LAST; ++s) {
+            ENEMY_TYPE(s) = 0u;
+            ENEMY_ALIVE_FLAG(s) = 0u;
+        }
+    }
+
+    /* Force-spawn target type into target slot. */
+    if (slot >= ENEMY_LOOP_SLOT_FIRST && slot <= ENEMY_LOOP_SLOT_LAST) {
+        enemy_loop_force_spawn_typed(slot, type, x, y, dir);
+    }
+
+    /* Suppress next room_init pass so the spawn isn't clobbered. */
+    s_fix_arm_suppress_room_init = 1u;
+
+    /* Clear magic so the hook fires exactly once per probe. */
+    arm[0] = 0u;
+    arm[1] = 0u;
+}
+
 void enemy_loop_tick(void)
 {
     unsigned int slot;
+    /* enemy_fix arm-hook: check magic + consume on first call only. */
+    enemy_loop_arm_fix_probe();
     /* Q3=(b): function-pointer table dispatch. NULL = no-op (family
      * not yet wired). Q2=(c) gating done by caller — this function is
      * ONLY called inside the scroll-stable + non-paused branch of the
@@ -1225,7 +1358,8 @@ void enemy_loop_force_spawn_typed(unsigned int slot,
     ENEMY_Y(slot) = y;
     clear_slot_scratch(slot);
     ENEMY_DIR(slot) = dir;
-    native_init_obj_hp(slot, enemy_type);  /* NES Z_07.asm:5576 @FetchAttrs */
+    native_init_obj_hp(slot, enemy_type);    /* NES Z_07.asm:5576 HP nibble */
+    native_init_obj_attr(slot, enemy_type);  /* NES Z_07.asm:5566 @FetchAttrs */
 
     fn = enemy_init_fns[enemy_type];
     if (fn != 0) fn(slot);
