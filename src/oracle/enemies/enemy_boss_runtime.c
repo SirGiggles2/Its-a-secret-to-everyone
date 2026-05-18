@@ -115,6 +115,12 @@ void enrt_update_aquamentus(unsigned int slot) {
     c_aquamentus_draw(slot);
     c_check_monster_collisions(slot);
     enrt_play_boss_hit_cry_if_needed(slot);
+    /* NES Z_04.asm:5605 CheckBossHitReaction tail. PlayBossHitCryIfNeeded
+     * falls through to PlayBossDeathCryIfNeeded + ResetShoveInfo. Without
+     * these Aquamentus skips death cry on kill + shove state persists
+     * after collision. */
+    enrt_play_boss_death_cry_if_needed(slot);
+    c_reset_shove_info(slot);
 }
 
 void enrt_init_tektite(unsigned int slot) {
