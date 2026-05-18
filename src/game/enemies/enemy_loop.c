@@ -1077,6 +1077,39 @@ void enemy_loop_tick(void)
         enemy_loop_probe_publish_pre();
     }
 
+    /* NES @CheckChaseTarget (Z_07.asm:1855-1914). Sets ChaseTargetX/Y
+     * per frame from Link's ObjX/Y; periodically flips to mirror
+     * (across-room) coords so walkers chase TOWARD Link instead of
+     * away. ChaseLongTimer ($4A) gates the flip; main.c NMI port
+     * already decrements it (in $27..$4E range).
+     *
+     * Probe build/probes/walker_init_{nes,gen}.lua captured Genesis
+     * ChaseX/Y stuck at $00/$00 -> InitWalker chose wrong direction
+     * (chase-away from origin instead of from mirror-Link).
+     *
+     * NES Random+1 is at $0019 -- main.c NMI port @ScrambleRandom
+     * cycles $18..$24 each frame. */
+    {
+        unsigned char chase_other = (unsigned char)RAM(0x0060u);
+        if (chase_other == 0u) {
+            RAM(0x0061u) = (unsigned char)RAM(0x0070u);  /* Chase X = Link X */
+            RAM(0x0062u) = (unsigned char)RAM(0x0084u);  /* Chase Y = Link Y */
+        }
+        if ((unsigned char)RAM(0x004Au) == 0u) {  /* ChaseLongTimer expired */
+            RAM(0x004Au) = (unsigned char)((unsigned char)RAM(0x0019u) & 0x07u);
+            chase_other = (unsigned char)(chase_other ^ 0x01u);
+            RAM(0x0060u) = chase_other;
+            if (chase_other != 0u) {
+                /* Mirror swap: only if ChaseX still matches Link's X
+                 * (Link hasn't moved this frame -- NES idle gate). */
+                if ((unsigned char)RAM(0x0061u) == (unsigned char)RAM(0x0070u)) {
+                    RAM(0x0061u) = (unsigned char)(RAM(0x0061u) ^ 0xFFu);
+                    RAM(0x0062u) = (unsigned char)(RAM(0x0062u) ^ 0xFFu);
+                }
+            }
+        }
+    }
+
     /* Step 20 DecTimers prepass. NES IsrNmi @UpdateTimers /
      * @LoopTimer (z_07.asm:1604-1616) decrements ObjTimer ($0028..)
      * for every slot every VBlank. Walker direction-decision logic
