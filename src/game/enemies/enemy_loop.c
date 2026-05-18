@@ -1162,23 +1162,24 @@ void enemy_loop_tick(void)
         ENEMY_THROWER_SLOT = (unsigned char)slot;
         if (fn != 0) fn(slot);
 
-        /* NES @LoopObject post-update collision call (Z_07.asm:1928-1945).
-         * After UpdateObject returns, NES runs CheckMonsterCollisions for
-         * each slot unless:
-         *   - ObjMetastate != 0 (cloud/spark animating)
-         *   - ObjAttr bit 0 set (type checks own collisions)
+        /* NES @LoopObject post-update wrapper (Z_07.asm:1928-1945).
+         * After UpdateObject returns, NES runs:
+         *   if metastate == 0 && (ObjAttr & 0x01) == 0:
+         *     if (ObjAttr & 0x04) == 0: AnimateAndDrawObjectWalking
+         *     CheckMonsterCollisions
          *
-         * Our drained C never called this for regular walkers (octorok,
-         * tektite etc.); only boss/flyer/jumper bridges did. Without
-         * collision call, Link can't take damage from monster body
-         * contact and weapons can't hit monsters.
-         *
-         * Probe build/probes/track_all.lua confirmed Link HP=$00 stays
-         * after octorok bump. */
+         * Moblin/Goriya/Lynel have attr $00 — wrapper does BOTH draw and
+         * collide. Without it, Moblin walks invisibly and Link can't
+         * touch-damage. Octorok/Stalfos have bit 0 set, skip wrapper. */
         if (ENEMY_METASTATE(slot) == 0u) {
             unsigned char attr = (unsigned char)RAM(0x04BFu + slot);
             if ((attr & 0x01u) == 0u) {
-                /* extern declared in enemy_walker_bridge.c */
+                if ((attr & 0x04u) == 0u) {
+                    extern void z07_animate_object_walking(unsigned int slot);
+                    extern void c_draw_object_not_mirrored_with_frame(unsigned int frame, unsigned int slot);
+                    z07_animate_object_walking(slot);
+                    c_draw_object_not_mirrored_with_frame(0u, slot);
+                }
                 extern void c_check_monster_collisions(unsigned int slot);
                 c_check_monster_collisions(slot);
             }
