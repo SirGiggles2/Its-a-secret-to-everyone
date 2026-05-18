@@ -188,6 +188,26 @@ void enrt_update_zora(unsigned int slot) {
 static void enrt_try_shooting(unsigned char qspeed_fail, unsigned char shot_type, unsigned int slot) {
     unsigned char new_timer;
 
+    /* NES Z_04.asm:1975 _TryShooting prelude — color/type-keyed rng gate
+     * for non-blue walkers. Blue Lynel ($01), Blue Moblin ($03), Blue Slow
+     * Octorock ($09), Blue Fast Octorock ($0A) skip the gate and always
+     * enter the shoot-decision body. Red types ($02/$04/$07/$08) only
+     * enter when ShootTimer != 0 (mid-cycle) OR Random+slot >= $F8.
+     * Without this gate red walkers attempt to start a shoot cycle on
+     * every wants-to-shoot frame, ~32x more often than NES. */
+    {
+        unsigned char type      = (unsigned char)ENEMY_TYPE(slot);
+        unsigned char cur_timer = OBJ(0x0451, slot);
+        unsigned char is_blue   = (type == 0x01u || type == 0x03u
+                                || type == 0x09u || type == 0x0Au);
+        if (!is_blue && cur_timer == 0u) {
+            if (ENEMY_RNG_A(slot) < 0xF8u) {
+                ENEMY_WALK_SPEED(slot) = qspeed_fail;
+                return;
+            }
+        }
+    }
+
     if (ENEMY_HIT_REACTION(slot) != 0) {
         new_timer = 0;
     } else {
