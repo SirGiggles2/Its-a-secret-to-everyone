@@ -981,6 +981,20 @@ static void clear_slot_scratch(unsigned int slot)
 void enemy_loop_room_init(unsigned char room_id, unsigned char scene_id)
 {
     unsigned int slot;
+    /* Scroll-glitch guard: track last (room_id, scene_id). Probe
+     * build/probes/track_all.lua captured Link X-wrap $00->$F0 that
+     * re-triggers room_init without room_id change, smashing enemy
+     * slot types + replaying spawn-cloud. Skip whole init on repeat. */
+    static unsigned char s_last_room_id  = 0xFFu;
+    static unsigned char s_last_scene_id = 0xFFu;
+    unsigned char same_room = (s_last_room_id == room_id &&
+                               s_last_scene_id == scene_id);
+    s_last_room_id  = room_id;
+    s_last_scene_id = scene_id;
+    if (same_room) {
+        return;
+    }
+
     /* Clear all enemy slots on room load. */
     for (slot = ENEMY_LOOP_SLOT_FIRST; slot <= ENEMY_LOOP_SLOT_LAST; ++slot) {
         ENEMY_TYPE(slot) = 0u;        /* type 0 = DoNothing = empty */
@@ -1028,21 +1042,19 @@ void enemy_loop_room_init(unsigned char room_id, unsigned char scene_id)
         }
         ENEMY_ALIVE_FLAG(slot) = 1u;
 
-        /* NES spawn cloud DISABLED until scroll-transition fix lands.
-         * Probe build/probes/track_all.lua captured Link X wrap $00->$F0
-         * (room-edge scroll glitch) triggering enemy_loop_room_init
-         * re-fire without room_id change, which re-set metastate=$01 on
-         * all slots and replayed cloud anim repeatedly. Visually:
-         * enemies "move strangely" - clouds re-appear, slot types shift
-         * via re-load, etc.
+        /* NES spawn cloud (Z_05.asm:1695 InitMode_EnterRoom):
+         * metastate=$01 -> UpdateMetaObject animates cloud frames over
+         * ~slot+18 frames. Sub-pal 1 biased cloud CHR at VRAM 1300+
+         * (k_cloud_chr_subpal1 in enemy_render.c) renders white/blue
+         * puff via META_ATTR_MARKER route.
          *
-         * Fix path: detect real vs scroll-wrap transitions before calling
-         * room_init. Until then, suppress metastate=$01 setup so cloud
-         * only fires on deliberate scene_load (probe-driven debug).
+         * Scroll-glitch guard at top of this function prevents re-init
+         * from replaying cloud on screen-wrap.
          *
-         * ObjTimer = slot_index kept (NES InitObject @NormalSpawn parity,
-         * Z_07.asm:5553-5562 - staggered active-update start). */
+         * ObjTimer = slot_index per NES @NormalSpawn (Z_07.asm:5553)
+         * staggers cloud-end timing per slot. */
         if (t < 0x53u && t != 0x1Eu && t != 0x22u) {
+            ENEMY_METASTATE(slot)  = 0x01u;
             ENEMY_MOVE_TIMER(slot) = (unsigned char)slot;
         }
     }
