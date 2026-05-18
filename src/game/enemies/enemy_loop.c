@@ -1028,19 +1028,21 @@ void enemy_loop_room_init(unsigned char room_id, unsigned char scene_id)
         }
         ENEMY_ALIVE_FLAG(slot) = 1u;
 
-        /* NES spawn cloud (Z_05.asm:1695 InitMode_EnterRoom per-slot
-         * loop): `INC ObjMetastate` sets metastate=$01 -> UpdateMetaObject
-         * animates cloud frames 1/2/3 over ~slot+18 frames.
-         * Genesis sub-pal 1 biased cloud CHR lives at VRAM tile 1300+
-         * (see k_cloud_chr_subpal1 in enemy_render.c); publish_meta
-         * routes meta entries through META_ATTR_MARKER so cloud renders
-         * with NES-correct sub-pal 1 colors (dark-blue / light-blue /
-         * white) via PAL1[5/6/7].
+        /* NES spawn cloud DISABLED until scroll-transition fix lands.
+         * Probe build/probes/track_all.lua captured Link X wrap $00->$F0
+         * (room-edge scroll glitch) triggering enemy_loop_room_init
+         * re-fire without room_id change, which re-set metastate=$01 on
+         * all slots and replayed cloud anim repeatedly. Visually:
+         * enemies "move strangely" - clouds re-appear, slot types shift
+         * via re-load, etc.
          *
-         * ObjTimer = slot_index per NES InitObject @NormalSpawn
-         * (Z_07.asm:5553-5562) staggers cloud-end timing per slot. */
+         * Fix path: detect real vs scroll-wrap transitions before calling
+         * room_init. Until then, suppress metastate=$01 setup so cloud
+         * only fires on deliberate scene_load (probe-driven debug).
+         *
+         * ObjTimer = slot_index kept (NES InitObject @NormalSpawn parity,
+         * Z_07.asm:5553-5562 - staggered active-update start). */
         if (t < 0x53u && t != 0x1Eu && t != 0x22u) {
-            ENEMY_METASTATE(slot)  = 0x01u;
             ENEMY_MOVE_TIMER(slot) = (unsigned char)slot;
         }
     }
