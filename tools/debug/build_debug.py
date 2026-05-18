@@ -357,6 +357,9 @@ ROOMROM_C_SOURCES = [
     # c_get_opposite_dir, c_bound_by_room, c_get_colliding_tile_moving.
     # ADOPT stance.
     ("src/oracle/enemies/enemy_lamnola_runtime.c", "oracle_enemy_lamnola.o"),
+    # PersonText data — 38 cave/UW NPC text blobs + addr table.
+    # NES Z_01.asm:50 PersonText. Unblocks UW NPC dispatch ($36/$4B-$52).
+    ("src/data/person_text_data.c", "person_text_data.o"),
     # enemy_fix Wave 5 — Wizzrobe family drain. UpdateBlueWizzrobe
     # (Z_04.asm:7034) + UpdateRedWizzrobe (Z_04.asm:7474) + shared
     # primitives. GREENFIELD stance. Wires $23/$24 dispatch rows.

@@ -107,6 +107,9 @@ extern void enrt_update_moblin(unsigned int slot);               /* step 7 */
 extern void enrt_update_lynel(unsigned int slot);                /* enemy_fix Wave 2 */
 extern void enrt_update_blue_wizzrobe(unsigned int slot);        /* enemy_fix Wave 5 */
 extern void enrt_update_red_wizzrobe(unsigned int slot);         /* enemy_fix Wave 5 */
+extern void uw_person_update_person_full(unsigned int slot);
+extern void uw_person_update_grumble_full(unsigned int slot);
+extern void uw_person_update_life_or_money_full(unsigned int slot);
 extern void enrt_update_goriya(unsigned int slot);               /* step 7 */
 extern void enrt_update_stalfos(unsigned int slot);              /* step 7 */
 extern void enrt_update_darknut(unsigned int slot);              /* step 11 */
@@ -582,11 +585,21 @@ const enemy_update_fn enemy_update_fns[ENEMY_LOOP_TYPE_MAX] = {
     [0x02] = enrt_update_lynel,     /* BlueLynel */
     [0x23] = enrt_update_blue_wizzrobe,  /* BlueWizzrobe — Z_04.asm:7034 */
     [0x24] = enrt_update_red_wizzrobe,   /* RedWizzrobe  — Z_04.asm:7474 */
-    /* UW NPC dispatch ($36 Grumble, $4B-$52 UnderworldPerson) deferred
-     * pending PersonTextAddrs[] + PersonText00..37 data port. See
-     * memory project_uw_npc_dispatch_gap.md. TextboxCharTransferRec
-     * Template symbol is now defined in cave_dispatch.c (this session),
-     * but text content port is the next prerequisite. */
+    /* UW NPC dispatch — NES Z_07.asm:5371-5378 UpdateObject_JumpTable
+     * rows $4B..$50, $52 = UpdateUnderworldPerson; $51 =
+     * UpdateUnderworldPersonLifeOrMoney; $36 = UpdateGrumble.
+     * Bodies live at src/game/cave/uw_person_dispatch.c. Unblocked by
+     * TextboxCharTransferRecTemplate + PersonTextAddrs[] data ports
+     * (cave_dispatch.c + src/data/person_text_data.c). */
+    [0x36] = uw_person_update_grumble_full,
+    [0x4B] = uw_person_update_person_full,
+    [0x4C] = uw_person_update_person_full,
+    [0x4D] = uw_person_update_person_full,
+    [0x4E] = uw_person_update_person_full,
+    [0x4F] = uw_person_update_person_full,
+    [0x50] = uw_person_update_person_full,
+    [0x51] = uw_person_update_life_or_money_full,
+    [0x52] = uw_person_update_person_full,
     [0x03] = enrt_update_moblin,    /* BlueMoblin */
     [0x04] = enrt_update_moblin,    /* RedMoblin */
     [0x05] = enrt_update_goriya,    /* BlueGoriya (drained, full body) */
