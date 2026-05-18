@@ -119,6 +119,7 @@ extern void uw_person_init_rupee_stash_full(unsigned int slot);
 extern void trap_update_rupee_stash_full(unsigned int slot);
 extern void z07_update_dead_dummy(unsigned int slot);
 extern void core_init_flute_secret(unsigned int slot);
+extern void core_reset_obj_metastate(unsigned int slot);
 
 /* NES Z_01.asm:1000 InitUnderworldPerson_Full dispatches by CurLevel.
  * Table from Z_01.asm:1007 InitUnderworldPerson_Full_JumpTable:
@@ -411,6 +412,9 @@ const enemy_init_fn enemy_init_fns[ENEMY_LOOP_TYPE_MAX] = {
     [0x58] = enrt_init_monster_shot,             /* MagicShot */
     [0x59] = enrt_init_monster_shot,             /* MagicShot variant */
     [0x5A] = enrt_init_monster_shot,             /* MonsterShot 0x5A */
+    [0x5B] = enrt_init_monster_shot,             /* MonsterArrow */
+    [0x5C] = enrt_init_monster_shot_unknown54,   /* Arrow-or-Boomerang */
+    [0x5D] = core_reset_obj_metastate,           /* DeadDummy NES Z_07.asm:5693 */
     /* Task 7.4 step 2b — $11 Zora INIT. NES InitObject_JumpTable @
      * Z_07.asm:5601 row $11 = ResetObjMetastateAndTimer. Body drained
      * at src/game/core/core_dispatch.c:455 (one-line: ENEMY_MOVE_TIMER=0
