@@ -238,13 +238,159 @@ void enrt_update_monster_arrow(unsigned int slot) {
     enrt_update_monster_shot(slot);
 }
 
-/* UpdateArrowOrBoomerang (NES Z_07.asm:3813) entry point for $5C
- * (goriya boomerang). Same stopgap. Boomerangs in NES have separate
- * @AnimateBoomerang + return-to-thrower state machine; that's
- * deferred. For now, $5C ticks as a slow shot which hurts Link on
- * touch — enough for collisions to fire. */
+/* BoomerangQSpeedFracsX (NES Z_07.asm:3791). */
+static const unsigned char k_boomerang_qspeed_x[9] = {
+    0x80, 0x78, 0x70, 0x68, 0x60, 0x4C, 0x36, 0x20, 0x00
+};
+/* BoomerangQSpeedFracsY (NES Z_07.asm:3787). */
+static const unsigned char k_boomerang_qspeed_y[9] = {
+    0x00, 0x20, 0x36, 0x4C, 0x60, 0x68, 0x70, 0x78, 0x80
+};
+
+/* UpdateArrowOrBoomerang (NES Z_07.asm:3813) — full state-machine
+ * drain for $5C goriya boomerang. State byte high nibble encodes:
+ *   $00 = inactive (return without doing anything)
+ *   $10 = flying out from thrower (use enrt_update_monster_shot tick)
+ *   $20 = sparking (on collision/block) — decrement timer, then $40
+ *   $30 = slowing down (qspeed=$40, count ObjMovingLimit, then $40)
+ *   $40 = returning slow toward thrower
+ *   $50 = returning fast toward thrower
+ *
+ * Monster boomerangs ($5C) have ObjRefId (NES $042C+slot) pointing to
+ * the thrower slot (the goriya). State transitions follow NES exactly
+ * for the return-to-thrower path; on reach (dist < 2) the boomerang
+ * destroys itself + resets thrower state (NES @CatchBoomerang gives
+ * thrower a $30/$50/$70 idle timer based on Random).
+ *
+ * Tile collision / boundary handling: delegated to
+ * enrt_update_monster_shot path. State entry done here. */
 void enrt_update_arrow_or_boomerang(unsigned int slot) {
-    enrt_update_monster_shot(slot);
+    unsigned char state    = (unsigned char)ENEMY_STATE_TIMER(slot);
+    unsigned char state_hi = (unsigned char)(state & 0xF0u);
+
+    /* @State == 0 → inactive. NES BEQ L1F49F_Exit. */
+    if (state == 0u) return;
+
+    /* State $10 → fly out. Move via enrt_update_monster_shot then
+     * check boomerang range limit. NES Z_07.asm:3881-3905 reads
+     * |ObjGridOffset| and compares to ObjMovingLimit; on reach,
+     * transitions state $20 + sets ObjMovingLimit=$10 + anim=3
+     * (HandleArrowOrBoomerangBlocked path advances to $30). */
+    if (state_hi == 0x10u) {
+        enrt_update_monster_shot(slot);
+        /* If destroyed (type cleared), bail. */
+        if ((unsigned char)ENEMY_TYPE(slot) != 0x5Cu) return;
+        /* Range check. |GridOffset| >= ObjMovingLimit → blocked path. */
+        {
+            unsigned char grid = OBJ(NES_OBJ_GRID_OFFSET, slot);
+            unsigned char abs_grid = (grid & 0x80u) ? (unsigned char)(0u - grid) : grid;
+            unsigned char limit = OBJ(0x0380u, slot);
+            if (abs_grid >= limit) {
+                /* NES HandleArrowOrBoomerangBlocked: anim_counter=3,
+                 * state += $10 → $30. ObjMovingLimit reset to $10. */
+                OBJ(0x0380u, slot)      = 0x10u;
+                ENEMY_DRAW_FRAME(slot)  = 3u;
+                ENEMY_STATE_TIMER(slot) = 0x30u;
+            }
+        }
+        return;
+    }
+
+    /* State $20 → spark. Decrement anim counter; on 0 advance state
+     * (to $40 for boomerang, deactivate for arrow). NES Z_07.asm:3958. */
+    if (state_hi == 0x20u) {
+        /* Set sub-state $28 (preserve animation flag). */
+        ENEMY_STATE_TIMER(slot) = 0x28u;
+        if (ENEMY_DRAW_FRAME(slot) != 0u) {
+            ENEMY_DRAW_FRAME(slot) =
+                (unsigned char)(ENEMY_DRAW_FRAME(slot) - 1u);
+        } else {
+            /* Anim counter hit 0 → transition state $40 + handle blocked. */
+            ENEMY_STATE_TIMER(slot) = 0x40u;
+            ENEMY_DRAW_FRAME(slot)  = 3u;       /* NES @HandleBlocked sets to 3 */
+            ENEMY_STATE_TIMER(slot) =
+                (unsigned char)(ENEMY_STATE_TIMER(slot) + 0x10u);  /* → $50 */
+        }
+        return;
+    }
+
+    /* State $30 → slow down. NES Z_07.asm:4052-4099. */
+    if (state_hi == 0x30u) {
+        OBJ(NES_OBJ_GRID_OFFSET, slot) = 0u;
+        ENEMY_WALK_SPEED(slot) = 0x40u;        /* qspeed = 1 px/frame */
+        /* Edge-guard: facing-left + X<2 → state $40 to avoid wrap. */
+        if (((unsigned char)ENEMY_DIR(slot) & 0x02u) != 0u
+            && (unsigned char)ENEMY_X(slot) < 0x02u) {
+            ENEMY_STATE_TIMER(slot) = 0x40u;
+            OBJ(0x0380u, slot) = 0x20u;        /* ObjMovingLimit reset */
+            return;
+        }
+        RAM(NES_OBJ_DIR) = (unsigned char)ENEMY_DIR(slot);
+        c_move_object((unsigned short)slot);
+        /* ObjMovingLimit decrement; on 0 → state $40. */
+        {
+            unsigned char ml = OBJ(0x0380u, slot);
+            ml = (unsigned char)(ml - 1u);
+            OBJ(0x0380u, slot) = ml;
+            if (ml == 0u) {
+                ENEMY_STATE_TIMER(slot) = 0x40u;
+                OBJ(0x0380u, slot)      = 0x20u;
+            }
+        }
+        return;
+    }
+
+    /* State $40/$50 → return to thrower. NES Z_07.asm:4101-4180.
+     * Monster boomerang reads ObjRefId for thrower slot. */
+    {
+        unsigned char thrower_slot = OBJ(0x042Cu, slot);  /* ObjRefId */
+        OBJ(NES_OBJ_GRID_OFFSET, slot) = 0u;
+
+        z01_get_directions_and_distances_to_target(thrower_slot, slot);
+
+        /* RAM[$00] = #axes where distance <= 8. If == 2, reached. */
+        if (RAM(0x0000u) == 0x02u) {
+            /* Reached thrower. Reset ObjMovingLimit + handle catch. */
+            OBJ(0x0380u, slot) = 0u;
+            /* Monster catch path (NES @CatchBoomerang). Set thrower
+             * idle timer based on Random+slot. */
+            {
+                unsigned char rng = (unsigned char)ENEMY_RNG_A(slot);
+                unsigned char timer;
+                if (rng < 0x30u)      timer = 0x30u;
+                else if (rng < 0x70u) timer = 0x50u;
+                else                  timer = 0x70u;
+                OBJ(0x0028u, thrower_slot) = timer;    /* ObjTimer */
+                OBJ(0x00ACu, thrower_slot) = 0u;        /* ObjState idle */
+            }
+            enrt_destroy_counted_monster_shot(slot);
+            return;
+        }
+
+        /* @MoveTowardThrower (NES Z_07.asm:4182). Diagonal speed index
+         * 4 (equal X/Y); BoomerangQSpeedFracs tables. */
+        {
+            unsigned char vdir = (unsigned char)RAM(0x000Au);  /* vertical dir from target probe */
+            unsigned char hdir = (unsigned char)RAM(0x000Bu);  /* horizontal dir */
+            /* Vertical move. */
+            ENEMY_WALK_SPEED(slot) = k_boomerang_qspeed_y[4];
+            RAM(NES_OBJ_DIR)       = vdir;
+            ENEMY_DIR(slot)        = vdir;
+            c_move_object((unsigned short)slot);
+            /* Horizontal move. */
+            ENEMY_WALK_SPEED(slot) = k_boomerang_qspeed_x[4];
+            RAM(NES_OBJ_DIR)       = hdir;
+            ENEMY_DIR(slot)        = hdir;
+            c_move_object((unsigned short)slot);
+        }
+
+        /* Check Link collision on returning boomerang (NES line 4235). */
+        enrt_check_shot_link_collision(slot);
+        if (ENEMY_COLLISION_FLAG != 0u) {
+            ENEMY_DRAW_FRAME(slot) = 3u;
+            ENEMY_STATE_TIMER(slot) = 0x20u;     /* spark on hit */
+        }
+    }
 }
 
 void enrt_update_monster_shot(unsigned int slot) {
