@@ -22,6 +22,8 @@ void enrt_draw_shot(unsigned int slot);
 void enrt_bounce_shot(unsigned int slot);
 void enrt_check_shot_link_collision(unsigned int slot);
 void enrt_update_monster_shot(unsigned int slot);
+void enrt_update_monster_arrow(unsigned int slot);
+void enrt_update_arrow_or_boomerang(unsigned int slot);
 unsigned char enrt_fireball_move_one_axis(unsigned char qspeed, unsigned char pos_frac, unsigned int slot);
 void enrt_update_fireball(unsigned int slot);
 

@@ -143,6 +143,8 @@ extern void enrt_update_stalfos(unsigned int slot);              /* step 7 */
 extern void enrt_update_darknut(unsigned int slot);              /* step 11 */
 extern void enrt_update_monster_shot(unsigned int slot);         /* step 12 */
 extern void enrt_update_fireball(unsigned int slot);             /* step 12 */
+extern void enrt_update_monster_arrow(unsigned int slot);        /* B5 audit 2026-05-18 */
+extern void enrt_update_arrow_or_boomerang(unsigned int slot);   /* B5 audit 2026-05-18 */
 extern void update_meta_object(unsigned int slot);               /* step 20 */
 extern void enrt_init_blue_keese(unsigned int slot);             /* step 3 */
 extern void enrt_init_red_or_black_keese(unsigned int slot);     /* step 3 */
@@ -719,6 +721,18 @@ const enemy_update_fn enemy_update_fns[ENEMY_LOOP_TYPE_MAX] = {
     [0x58] = enrt_update_monster_shot,  /* MagicShot */
     [0x59] = enrt_update_monster_shot,  /* (shot variant) */
     [0x5A] = enrt_update_monster_shot,  /* (shot variant) */
+    /* 2026-05-18 — enemy parity audit B5: close $5B/$5C UPDATE NULL gap.
+     * NES UpdateMonsterArrow (Z_04.asm:2102) does ObjQSpeedFrac=$80 +
+     * timer/state pre-pass + UpdateArrowOrBoomerang base body.
+     * NES UpdateArrowOrBoomerang (Z_07.asm:3813) is full bounce/spark
+     * state machine. Full drain deferred; enrt_update_monster_arrow
+     * seeds q-speed=$80 then enters enrt_update_monster_shot (which
+     * handles tile collision + Link collision + move + L_DrawShot —
+     * $5B draws via DrawArrow). enrt_update_arrow_or_boomerang is a
+     * thin alias for $5C. Without these rows arrows/boomerangs spawn
+     * but never tick. */
+    [0x5B] = enrt_update_monster_arrow,       /* MonsterArrow */
+    [0x5C] = enrt_update_arrow_or_boomerang,  /* ArrowOrBoomerang */
     /* Task 7.4 step 2a — projectile-family carrier UPDATE rows (boulder
      * subset). NES Z_07.asm:5295 UpdateObject_JumpTable:
      *   $1F = UpdateBoulderSet  - enemy_projectile_runtime.c:98

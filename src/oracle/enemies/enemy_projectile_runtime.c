@@ -226,6 +226,27 @@ void enrt_check_shot_link_collision(unsigned int slot) {
  * arrows, sword shots, magic shots, boomerangs). State byte high nibble
  * encodes phase: $1x = active, anything else = bouncing.
  */
+/* UpdateMonsterArrow (NES Z_04.asm:2102) per-frame body. Stopgap drain
+ * (full UpdateArrowOrBoomerang state machine at Z_07.asm:3813 deferred).
+ * Mirror the q-speed=$80 seed (2 px/frame) and fall through to
+ * enrt_update_monster_shot which handles tile collision + Link
+ * collision + draw via L_DrawShot ($5B draws via DrawArrow). The
+ * arrow-spark/bounce state branches ($20/$30 paths) are omitted
+ * pending full drain. */
+void enrt_update_monster_arrow(unsigned int slot) {
+    ENEMY_WALK_SPEED(slot) = 0x80u;
+    enrt_update_monster_shot(slot);
+}
+
+/* UpdateArrowOrBoomerang (NES Z_07.asm:3813) entry point for $5C
+ * (goriya boomerang). Same stopgap. Boomerangs in NES have separate
+ * @AnimateBoomerang + return-to-thrower state machine; that's
+ * deferred. For now, $5C ticks as a slow shot which hurts Link on
+ * touch — enough for collisions to fire. */
+void enrt_update_arrow_or_boomerang(unsigned int slot) {
+    enrt_update_monster_shot(slot);
+}
+
 void enrt_update_monster_shot(unsigned int slot) {
     /* Sync transient direction byte with this object's facing. */
     ENEMY_FRAME_FLAGS = ENEMY_DIR(slot);
