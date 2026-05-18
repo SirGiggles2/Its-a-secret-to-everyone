@@ -228,19 +228,17 @@ void enemy_render_publish_meta(unsigned int slot)
         tile = k_meta_cloud_tiles[frame];
     }
 
-    /* NES Anim_WriteSpecificItemSprites @Wide path (Z_01.asm:5266-5278):
-     * cloud/spark tile $70+ is >= $62 -> wide draw = 2 sprites (left tile
-     * + tile+2 right). Without the second entry the cloud renders as a
-     * sliver instead of NES-correct 16x16 puff. Same fix shape as the
-     * octorock attack ObjAttr=$E3 — pick wide vs narrow per tile value.
+    /* NES DrawCloud (Z_07.asm:4912) writes the frame param to $0C with
+     * `STA $0C`. RAM $0C is DRAW_MIRRORED. For frames 1..3 the cloud
+     * tile lookup hits Anim_WriteSpecificItemSprites @Wide branch, which
+     * checks DrawMirrored and routes to Anim_WriteMirroredSpritePair —
+     * right tile = LEFT tile (same), right attr ^= h_flip ($40). Result:
+     * 16x16 cloud puff drawn as left half + horizontally-flipped same
+     * tile. Spark uses item slot $24, hits same wide+mirrored path.
      *
-     * Cloud frame 0 ($34) is the bomb body (not used for spawn cloud
-     * since metastate=$01..$03 only hits frames $70/$72/$74), but still
-     * needs wide. Spark tiles $64/$62 are in [$20, $62)/[$62] boundary —
-     * $62 falls in the BCS @Wide branch ($62 >= $62), but $64 also wide
-     * since $64 >= $62. NES treats both as wide.
-     *
-     * Tile + tile+2 with 8-pixel X separation = NES wide draw. */
+     * Prior render used tile_R = tile_L + 2 (NES @Flip path, only used
+     * when DrawMirrored == 0 — cloud frame 0 = bomb body $34). Spawn
+     * cloud frames 1..3 must mirror. */
     unsigned char x = (unsigned char)ENEMY_RENDER_OBJ_X(slot);
     unsigned char y = (unsigned char)ENEMY_RENDER_OBJ_Y(slot);
 
@@ -251,8 +249,8 @@ void enemy_render_publish_meta(unsigned int slot)
     eL->y     = y;
 
     enemy_render_entry_t *eR = &s_enemy_entries[slot][1];
-    eR->tile  = (unsigned char)(tile + 2u);
-    eR->attrs = ENEMY_RENDER_META_ATTRS;
+    eR->tile  = tile;                                   /* same tile */
+    eR->attrs = (unsigned char)(ENEMY_RENDER_META_ATTRS ^ 0x40u); /* h-flip */
     eR->x     = (unsigned char)(x + 8u);
     eR->y     = y;
 
