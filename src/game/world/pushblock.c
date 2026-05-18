@@ -18,6 +18,7 @@
 #include "../dungeon/push_block_meta.h"  /* Phase 12.2 promoted */
 #include "../dungeon/uw_render.h"      /* Phase 12.2 promoted */
 #include "render/ow_render.h"          /* ROOMROM_HUD_ROWS - Phase 12.2 promoted */
+#include "platform_abi.h"              /* RAM macro for $034D RoomAllDead */
 
 /* NES BlockPushDirections layout (Z_04.asm:615-616).
  *   idx 0 = $08 (UP / N)    -- Link below, pushing up
@@ -76,11 +77,22 @@ static unsigned char   s_pb_cached_quest = 0u;
 static unsigned char   s_pb_cached_has_meta = 0u;
 static roomrom_pushblock_meta_t s_pb_cached_meta;
 
-/* RoomAllDead gate (Z_04.asm:630-631). Slice-1 stub — RoomRom has
- * no enemies in 5.x scope. Phase 6 enemy work replaces this. */
+/* RoomAllDead gate (Z_04.asm:630-631, Z_05.asm:2406+2413).
+ *
+ * NES RoomAllDead := $034D. Init by enemy_loop_room_init to the foe
+ * count for the room; INC'd by KillObject when last enemy dies.
+ * Z_04.asm:630 obj-push-block path checks this cell to gate the block-
+ * pushable state. CheckSecretTriggerAllDead (Z_05.asm:2410) and shutter
+ * unlock also read it.
+ *
+ * Pre-2026-05-18 returned constant 1u — push-blocks were always
+ * pushable. NES behavior: blocks lock until room cleared.
+ *
+ * Genesis cell ROOM_MONSTER_ALL_DEAD ($034D) is already maintained by
+ * enemy_loop kill path. Read the live cell. /enemy_fix Wave 3.4. */
 unsigned char roomrom_pushblock_room_all_dead(void)
 {
-    return 1u;
+    return (unsigned char)RAM(0x034Du);
 }
 
 void roomrom_pushblock_init(void)
