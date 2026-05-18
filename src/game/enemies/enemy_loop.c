@@ -110,6 +110,7 @@ extern void enrt_update_red_wizzrobe(unsigned int slot);         /* enemy_fix Wa
 extern void uw_person_update_person_full(unsigned int slot);
 extern void uw_person_update_grumble_full(unsigned int slot);
 extern void uw_person_update_life_or_money_full(unsigned int slot);
+extern void trap_update_rupee_stash_full(unsigned int slot);
 extern void enrt_update_goriya(unsigned int slot);               /* step 7 */
 extern void enrt_update_stalfos(unsigned int slot);              /* step 7 */
 extern void enrt_update_darknut(unsigned int slot);              /* step 11 */
@@ -591,6 +592,7 @@ const enemy_update_fn enemy_update_fns[ENEMY_LOOP_TYPE_MAX] = {
      * Bodies live at src/game/cave/uw_person_dispatch.c. Unblocked by
      * TextboxCharTransferRecTemplate + PersonTextAddrs[] data ports
      * (cave_dispatch.c + src/data/person_text_data.c). */
+    [0x35] = trap_update_rupee_stash_full,   /* RupeeStash NES Z_01.asm:2584 */
     [0x36] = uw_person_update_grumble_full,
     [0x4B] = uw_person_update_person_full,
     [0x4C] = uw_person_update_person_full,
