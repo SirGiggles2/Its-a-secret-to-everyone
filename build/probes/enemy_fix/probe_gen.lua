@@ -6,10 +6,29 @@
 -- Single BizHawk launch per full sweep. Per memory feedback_one_big_probe.
 
 -- ============================ Config ===============================
-local TYPES = { {0x07, 0x80, 0x80, 0x02, 1, 0, 0x77} }
+-- Wave 1 batch: 9 wrapper-handled + neighbors for regression check.
 -- Per-row: { type, x, y, dir, slot, habitat, room_id }
--- Edit TYPES for full sweep. Smoke gate: just $07 Octorok at (80,80,dir=2 left).
-local FRAMES_PER_TYPE = 240
+-- Final sweep: post-fix verification across all in-scope enemy types.
+-- Each entry: { type, x, y, dir, slot, habitat, room_id }
+local TYPES = {
+  {0x01, 0x80, 0x80, 0x02, 1, 0, 0x77},  -- Red Lynel (NEW UPDATE port)
+  {0x02, 0x80, 0x80, 0x02, 1, 0, 0x77},  -- Blue Lynel
+  {0x03, 0x80, 0x80, 0x02, 1, 0, 0x77},  -- Blue Moblin (wrapper draw)
+  {0x04, 0x80, 0x80, 0x02, 1, 0, 0x77},  -- Red Moblin
+  {0x05, 0x80, 0x80, 0x02, 1, 0, 0x77},  -- Red Goriya
+  {0x06, 0x80, 0x80, 0x02, 1, 0, 0x77},  -- Blue Goriya
+  {0x07, 0x80, 0x80, 0x02, 1, 0, 0x77},  -- Slow Octorok (attr $05)
+  {0x0B, 0x80, 0x80, 0x02, 1, 0, 0x77},  -- Blue Darknut (attr $81)
+  {0x11, 0x80, 0x80, 0x04, 1, 0, 0x77},  -- Zora
+  {0x17, 0x80, 0x80, 0x02, 1, 1, 0x70},  -- LikeLike (UW)
+  {0x1E, 0x80, 0x80, 0x02, 1, 0, 0x77},  -- Armos (attr $C3)
+  {0x22, 0x80, 0x80, 0x02, 1, 0, 0x77},  -- Flying Ghini (attr $81)
+  {0x27, 0x80, 0x80, 0x04, 1, 1, 0x70},  -- Wallmaster (UW)
+  {0x2A, 0x80, 0x80, 0x02, 1, 0, 0x77},  -- Stalfos
+  {0x2B, 0x80, 0x80, 0x02, 1, 1, 0x70},  -- BlueBubble (UW)
+  {0x3D, 0x80, 0x80, 0x02, 1, 1, 0x70},  -- Aquamentus (boss)
+}
+local FRAMES_PER_TYPE = 120
 local OUT_PATH = "C:/tmp/efx_gen_sweep.txt"
 
 -- ============================ Helpers ==============================
