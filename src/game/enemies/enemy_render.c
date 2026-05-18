@@ -228,14 +228,35 @@ void enemy_render_publish_meta(unsigned int slot)
         tile = k_meta_cloud_tiles[frame];
     }
 
-    /* Phase E: meta sprite replaces all enemy entries this frame
-     * (1 sprite, not multi-tile body). Reset count + write entry[0]. */
-    enemy_render_entry_t *e = &s_enemy_entries[slot][0];
-    e->tile  = tile;
-    e->attrs = ENEMY_RENDER_META_ATTRS;
-    e->x     = (unsigned char)ENEMY_RENDER_OBJ_X(slot);
-    e->y     = (unsigned char)ENEMY_RENDER_OBJ_Y(slot);
-    s_enemy_count[slot] = 1u;
+    /* NES Anim_WriteSpecificItemSprites @Wide path (Z_01.asm:5266-5278):
+     * cloud/spark tile $70+ is >= $62 -> wide draw = 2 sprites (left tile
+     * + tile+2 right). Without the second entry the cloud renders as a
+     * sliver instead of NES-correct 16x16 puff. Same fix shape as the
+     * octorock attack ObjAttr=$E3 — pick wide vs narrow per tile value.
+     *
+     * Cloud frame 0 ($34) is the bomb body (not used for spawn cloud
+     * since metastate=$01..$03 only hits frames $70/$72/$74), but still
+     * needs wide. Spark tiles $64/$62 are in [$20, $62)/[$62] boundary —
+     * $62 falls in the BCS @Wide branch ($62 >= $62), but $64 also wide
+     * since $64 >= $62. NES treats both as wide.
+     *
+     * Tile + tile+2 with 8-pixel X separation = NES wide draw. */
+    unsigned char x = (unsigned char)ENEMY_RENDER_OBJ_X(slot);
+    unsigned char y = (unsigned char)ENEMY_RENDER_OBJ_Y(slot);
+
+    enemy_render_entry_t *eL = &s_enemy_entries[slot][0];
+    eL->tile  = tile;
+    eL->attrs = ENEMY_RENDER_META_ATTRS;
+    eL->x     = x;
+    eL->y     = y;
+
+    enemy_render_entry_t *eR = &s_enemy_entries[slot][1];
+    eR->tile  = (unsigned char)(tile + 2u);
+    eR->attrs = ENEMY_RENDER_META_ATTRS;
+    eR->x     = (unsigned char)(x + 8u);
+    eR->y     = y;
+
+    s_enemy_count[slot] = 2u;
 }
 
 void enemy_render_reset_oam(void)
