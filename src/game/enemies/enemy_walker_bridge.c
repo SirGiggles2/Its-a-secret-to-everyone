@@ -690,9 +690,29 @@ void enrt_update_octorock(unsigned int slot)
     }
 
     /* Step 4 — Inlined _TryShooting flying rock $53. Mirror of static
-     * enrt_try_shooting in src/oracle/enemies/enemy_walker_runtime.c. */
+     * enrt_try_shooting in src/oracle/enemies/enemy_walker_runtime.c.
+     *
+     * 2026-05-18 — port NES _TryShooting (Z_04.asm:1975-1994) rng gate.
+     * Blue Lynel ($01), Blue Moblin ($03), Blue Slow Octorock ($09),
+     * Blue Fast Octorock ($0A) skip the gate. Red types ($02/$04/$07/$08)
+     * gate on ShootTimer != 0 OR Random+slot >= $F8. Matches the
+     * enrt_try_shooting fix landed for Moblin/Lynel/Stalfos in commit
+     * 52f4f03c — extended here to Red Slow Octorock ($07) and Red Fast
+     * Octorock ($08) which use this inline body. */
     {
         unsigned char new_timer;
+        {
+            unsigned char type      = (unsigned char)ENEMY_TYPE(slot);
+            unsigned char cur_timer = OBJ(0x0451u, slot);
+            unsigned char is_blue   = (type == 0x01u || type == 0x03u
+                                    || type == 0x09u || type == 0x0Au);
+            if (!is_blue && cur_timer == 0u) {
+                if ((unsigned char)ENEMY_RNG_A(slot) < 0xF8u) {
+                    ENEMY_WALK_SPEED(slot) = qspeed;
+                    goto draw_octorock;
+                }
+            }
+        }
         if (ENEMY_HIT_REACTION(slot) != 0u) {
             new_timer = 0u;
         } else {
