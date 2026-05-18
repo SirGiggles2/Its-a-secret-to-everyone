@@ -64,6 +64,7 @@ extern void enrt_wanderer_target_player(unsigned int slot);
 extern void enrt_update_goriya(unsigned int slot);     /* 7.4 step 6b ($1E armos) */
 extern void enrt_draw_ghini_and_check_collisions(unsigned int slot); /* 7.4 step 6c ($22 ghini fade) */
 extern void enrt_end_init_flyer(unsigned int slot);    /* 7.4 step 6c (ghini terminal init) */
+extern void c_obj_shove(unsigned int slot);            /* knockback applier */
 
 /* Forward decl — defined after c_obj_shove block in this file (step 18). */
 void c_walker_check_tile_collision(unsigned int slot);
@@ -98,12 +99,15 @@ void c_walker_move(unsigned int slot)
      * to prevent objects from straddling two axes per frame.
      */
 
-    /* Step 1 — Obj_Shove gate (deferred). */
+    /* Step 1 — Obj_Shove gate. NES Walker_Move (Z_07.asm:2555) checks
+     * ObjShoveDir; if non-zero, jumps to Obj_Shove (Z_07.asm:2730)
+     * which advances the slot $20 px along the shove direction over
+     * ObjShoveDistance frames. Wired 2026-05-18 — c_obj_shove drained
+     * at c_shims.asm:4447 + linked. Without this, knockback frames
+     * collapsed to no-op and walkers kept moving through hit-react. */
     if (OBJ(NES_OBJ_SHOVE_DIR, slot) != 0u) {
-        /* TODO step 6: native Obj_Shove. Until then, ignore the shove
-         * so movement still ticks (worst case: octorok keeps walking
-         * during what would have been a knockback frame — visually
-         * benign with no combat wired). */
+        c_obj_shove(slot);
+        return;
     }
 
     /* Step 2 — CheckStunned (non-Link path). */
