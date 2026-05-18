@@ -1069,12 +1069,24 @@ void enemy_loop_tick(void)
      * walker never picks a new direction and the spawning-cloud /
      * death-spark animation never advances. This prepass is the
      * native equivalent of the VBlank dec loop. */
-    for (slot = ENEMY_LOOP_SLOT_FIRST; slot <= ENEMY_LOOP_SLOT_LAST; ++slot) {
-        if (ENEMY_MOVE_TIMER(slot) != 0u) {
-            ENEMY_MOVE_TIMER(slot) = (unsigned char)(ENEMY_MOVE_TIMER(slot) - 1u);
-        }
-        if (ENEMY_STUN_TIMER(slot) != 0u) {
-            ENEMY_STUN_TIMER(slot) = (unsigned char)(ENEMY_STUN_TIMER(slot) - 1u);
+    {
+        /* NES DecrementInvincibilityTimer (Z_07.asm:5756) — every 2 frames
+         * (FrameCounter bit 0 == 0), decrement ObjInvincibilityTimer for
+         * each slot. Called from @LoopObject (Z_07.asm:1919) once per slot
+         * per frame. Without this, enemy hit-reaction stays at $10 after
+         * Link body-collide, causing permanent palette flash + immunity. */
+        unsigned char dec_inv = ((unsigned char)RAM(0x0015u) & 1u) == 0u;
+        for (slot = ENEMY_LOOP_SLOT_FIRST; slot <= ENEMY_LOOP_SLOT_LAST; ++slot) {
+            if (ENEMY_MOVE_TIMER(slot) != 0u) {
+                ENEMY_MOVE_TIMER(slot) = (unsigned char)(ENEMY_MOVE_TIMER(slot) - 1u);
+            }
+            if (ENEMY_STUN_TIMER(slot) != 0u) {
+                ENEMY_STUN_TIMER(slot) = (unsigned char)(ENEMY_STUN_TIMER(slot) - 1u);
+            }
+            if (dec_inv && ENEMY_HIT_REACTION(slot) != 0u) {
+                ENEMY_HIT_REACTION(slot) =
+                    (unsigned char)(ENEMY_HIT_REACTION(slot) - 1u);
+            }
         }
     }
 
