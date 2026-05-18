@@ -110,7 +110,31 @@ extern void enrt_update_red_wizzrobe(unsigned int slot);         /* enemy_fix Wa
 extern void uw_person_update_person_full(unsigned int slot);
 extern void uw_person_update_grumble_full(unsigned int slot);
 extern void uw_person_update_life_or_money_full(unsigned int slot);
+extern void uw_person_init_underworld_person_a(unsigned int slot);
+extern void uw_person_init_underworld_person_b(unsigned int slot);
+extern void uw_person_init_underworld_person_c(unsigned int slot);
+extern void uw_person_init_life_or_money_full(unsigned int slot);
+extern void uw_person_init_grumble_full(unsigned int slot);
+extern void uw_person_init_rupee_stash_full(unsigned int slot);
 extern void trap_update_rupee_stash_full(unsigned int slot);
+
+/* NES Z_01.asm:1000 InitUnderworldPerson_Full dispatches by CurLevel.
+ * Table from Z_01.asm:1007 InitUnderworldPerson_Full_JumpTable:
+ *   L0=DoNothing, L1/L2/L5/L7=A, L3/L4/L6/L8=B, L9=C. */
+static void uw_person_init_dispatch_by_level(unsigned int slot)
+{
+    unsigned char level = (unsigned char)RAM(0x0010u);  /* CUR_LEVEL */
+    switch (level) {
+    case 1: case 2: case 5: case 7:
+        uw_person_init_underworld_person_a(slot); break;
+    case 3: case 4: case 6: case 8:
+        uw_person_init_underworld_person_b(slot); break;
+    case 9:
+        uw_person_init_underworld_person_c(slot); break;
+    default:
+        break;
+    }
+}
 extern void enrt_update_goriya(unsigned int slot);               /* step 7 */
 extern void enrt_update_stalfos(unsigned int slot);              /* step 7 */
 extern void enrt_update_darknut(unsigned int slot);              /* step 11 */
@@ -435,6 +459,18 @@ const enemy_init_fn enemy_init_fns[ENEMY_LOOP_TYPE_MAX] = {
      * UPDATE rows ($1E from 6b, $22 from 6a). */
     [0x1E] = enrt_init_armos_or_flying_ghini,    /* Armos */
     [0x22] = enrt_init_armos_or_flying_ghini,    /* FlyingGhini */
+    /* UW NPC INIT rows — NES Z_07.asm:5655-5684 InitObject_JumpTable.
+     * Bodies at src/game/cave/uw_person_dispatch.c. */
+    [0x35] = uw_person_init_rupee_stash_full,    /* RupeeStash */
+    [0x36] = uw_person_init_grumble_full,        /* Grumble */
+    [0x4B] = uw_person_init_dispatch_by_level,   /* UnderworldPerson */
+    [0x4C] = uw_person_init_dispatch_by_level,
+    [0x4D] = uw_person_init_dispatch_by_level,
+    [0x4E] = uw_person_init_dispatch_by_level,
+    [0x4F] = uw_person_init_dispatch_by_level,
+    [0x50] = uw_person_init_dispatch_by_level,
+    [0x51] = uw_person_init_life_or_money_full,  /* LifeOrMoneyDoor */
+    [0x52] = uw_person_init_dispatch_by_level,
     /* Task 7.4 step 7 — trap INIT wires.
      *
      * NES Z_07.asm:5601 InitObject_JumpTable rows:
