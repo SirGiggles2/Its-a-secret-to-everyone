@@ -459,6 +459,14 @@ const enemy_init_fn enemy_init_fns[ENEMY_LOOP_TYPE_MAX] = {
      * UPDATE rows ($1E from 6b, $22 from 6a). */
     [0x1E] = enrt_init_armos_or_flying_ghini,    /* Armos */
     [0x22] = enrt_init_armos_or_flying_ghini,    /* FlyingGhini */
+    /* Additional INIT wires per NES Z_07.asm:5620 row $18 = InitWalker
+     * (Digdogger child uses walker init). NES rows $23/$24 = ResetObj
+     * MetastateAndTimer; same for $25/$26 PatraChild + $27 Wallmaster. */
+    [0x18] = enrt_init_walker,                   /* DigdoggerChild */
+    [0x23] = core_reset_obj_metastate_and_timer, /* BlueWizzrobe init */
+    [0x24] = core_reset_obj_metastate_and_timer, /* RedWizzrobe init */
+    [0x25] = core_reset_obj_metastate_and_timer, /* PatraChild1 init */
+    [0x26] = core_reset_obj_metastate_and_timer, /* PatraChild2 init */
     /* UW NPC INIT rows — NES Z_07.asm:5655-5684 InitObject_JumpTable.
      * Bodies at src/game/cave/uw_person_dispatch.c. */
     [0x35] = uw_person_init_rupee_stash_full,    /* RupeeStash */
