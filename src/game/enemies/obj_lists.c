@@ -357,25 +357,23 @@ static unsigned char dir_to_spawn_list_index(unsigned char dir)
 
 void enemy_assign_spawn_positions(unsigned char room_id, unsigned char template_id)
 {
-    /* NES Z1 sets ObjectFirstUnwalkableTile ($034A) per scene at room
-     * load. Reader cells: NES Z_04.asm:845, :1537, :2866, ..., used by
-     * IsSafeToSpawn (Z_05.asm:2013) to decide if a tile blocks spawn.
+    /* NES SetupObjRoomBounds (Z_05.asm:6409) writes 5 bytes per scene
+     * from ObjectRoomBoundsOW/UW into RoomBoundLeft/Right/Up/Down +
+     * ObjectFirstUnwalkableTile.
      *
-     * Our port never wrote $034A so it defaulted to 0 → every tile
-     * compared >= 0 → marked unsafe → iter_cap workaround scrambled
-     * spawn positions.
+     *   ObjectRoomBoundsOW: $11 $E0 $4E $CD $89
+     *   ObjectRoomBoundsUW: $21 $D0 $5E $BD $78
      *
-     * Per NES Z1 OW: walkable tiles include sand $26, paths $D9..$DF,
-     * walkable rocks $C8..$CB; unwalkable starts at tree $C0 ranges OR
-     * higher. NES default for OW = $C0 (most BG decorations >= $C0 are
-     * solid). For UW dungeons NES uses $A0-ish.
-     *
-     * Set per scene before spawn loop. UW value is approximate pending
-     * per-level FoeCounts/LevelInfo wire. */
+     * OW FirstUnwalkableTile = $89 (NES truth, verified by
+     * build/probes/nes_spawn_67_exact.lua dump at room $67).
+     * UW = $78. Our prior $C0/$A0 was wrong — caused IsSafeToSpawn to
+     * accept too many tiles (e.g. cliffs / water at $89..$BF count as
+     * walkable when they should block), shifting spawn positions and
+     * letting projectiles fly through unwalkable tiles. */
     if ((unsigned char)CUR_LEVEL == 0u) {
-        ENEMY_DUNGEON_TILE_FLOOR = 0xC0u;  /* OW: trees + walls solid above $C0 */
+        ENEMY_DUNGEON_TILE_FLOOR = 0x89u;  /* OW per NES ObjectRoomBoundsOW[4] */
     } else {
-        ENEMY_DUNGEON_TILE_FLOOR = 0xA0u;  /* UW: dungeon walls solid above $A0 */
+        ENEMY_DUNGEON_TILE_FLOOR = 0x78u;  /* UW per NES ObjectRoomBoundsUW[4] */
     }
 
     /* Y holds the running cycle index — first set to RoomObjCount per
