@@ -1028,24 +1028,19 @@ void enemy_loop_room_init(unsigned char room_id, unsigned char scene_id)
         }
         ENEMY_ALIVE_FLAG(slot) = 1u;
 
-        /* NES spawn cloud DEFERRED. NES Z_05.asm:1695 sets metastate=$01
-         * on room entry; UpdateMetaObject draws cloud frames $70/$72/$74
-         * with NES sub-pal 1 (white/light-blue/dark-blue per Z1 OW sprite
-         * PALRAM). Genesis common SPR bank is 1x biased to sub-pal 0
-         * (light-green/orange-tan/dark-brown via PAL1[1..3]) so any
-         * publish_meta routes cloud through wrong colors -- renders
-         * as brown/tan blob instead of white/blue puff.
+        /* NES spawn cloud (Z_05.asm:1695 InitMode_EnterRoom per-slot
+         * loop): `INC ObjMetastate` sets metastate=$01 -> UpdateMetaObject
+         * animates cloud frames 1/2/3 over ~slot+18 frames.
+         * Genesis sub-pal 1 biased cloud CHR lives at VRAM tile 1300+
+         * (see k_cloud_chr_subpal1 in enemy_render.c); publish_meta
+         * routes meta entries through META_ATTR_MARKER so cloud renders
+         * with NES-correct sub-pal 1 colors (dark-blue / light-blue /
+         * white) via PAL1[5/6/7].
          *
-         * Correct fix needs sub-pal 1 biased copies of tiles $70/$72/$74
-         * at free VRAM slots (1205-1311 free between SCENE_OBJ_LAST and
-         * ITEM_TILE_BASE) + publish_meta routing to biased slots + PAL3
-         * load of NES sub-pal 1 colors into idx 5..7. ~50 LOC + tile-copy
-         * helper. Punt until spawn-cloud visual polish prioritized.
-         *
-         * For now: enemies spawn instantly (no cloud, no delay).
-         * ObjTimer = slot_index per NES @NormalSpawn (staggered move-
-         * start) is harmless and matches NES timing for active update. */
+         * ObjTimer = slot_index per NES InitObject @NormalSpawn
+         * (Z_07.asm:5553-5562) staggers cloud-end timing per slot. */
         if (t < 0x53u && t != 0x1Eu && t != 0x22u) {
+            ENEMY_METASTATE(slot)  = 0x01u;
             ENEMY_MOVE_TIMER(slot) = (unsigned char)slot;
         }
     }

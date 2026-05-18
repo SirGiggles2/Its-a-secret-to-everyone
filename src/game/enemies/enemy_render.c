@@ -212,45 +212,117 @@ static const unsigned char k_meta_cloud_tiles[4] = { 0x34u, 0x70u, 0x72u, 0x74u 
 static const unsigned char k_meta_spark_tiles[4] = { 0x64u, 0x62u, 0x64u, 0x62u };
 #define ENEMY_RENDER_META_ATTRS  0x01u  /* sub-pal 1, no flip, no priority */
 
+/* Sub-pal 1 biased cloud CHR for spawn anim. NES PT0 cloud tiles
+ * $70-$75 (6 tiles, 96 NES 2bpp bytes -> 192 Genesis 4bpp bytes)
+ * re-biased pixels 1->5, 2->6, 3->7 so they index PAL1[5/6/7] = NES
+ * sub-pal 1 colors (dark-blue $02 / light-blue $22 / white $30).
+ *
+ * Source: build/probes/nes_cloud_tiles.lua dump at NES Z1 room $67
+ * spawn moment (~102f post-scroll). NES OAM attr=$01 confirmed.
+ *
+ * Common SPR bank is 1x sub-pal 0 biased so cloud tiles in common
+ * range render with brown/tan colors (wrong). These biased copies
+ * live in free VRAM 1300..1305 (between SCENE_OBJ_LAST=1205 and
+ * ITEM_TILE_BASE=1312).
+ *
+ * NES OAM tile $70 = stacked PT0 $70+$71 (8x16 mode). Cloud frames:
+ *   meta-state $01 -> OAM tile $70 -> Genesis VRAM tile 1300 (+1)
+ *   meta-state $02 -> OAM tile $72 -> Genesis VRAM tile 1302 (+1)
+ *   meta-state $03 -> OAM tile $74 -> Genesis VRAM tile 1304 (+1)
+ *
+ * Routed via META_ATTR_MARKER bit (NES attr bit 4 is unused) so
+ * translate_tile can detect meta entries and emit raw Genesis tile
+ * index instead of going through common-bank translation. */
+#define ENEMY_RENDER_META_VRAM_TILE 1300u
+#define META_ATTR_MARKER            0x10u
+static const unsigned char k_cloud_chr_subpal1[6 * 32] = {
+    /* NES tile $70 -> Genesis VRAM 1300 */
+    0x00u, 0x00u, 0x07u, 0x77u, 0x00u, 0x00u, 0x77u, 0x77u,
+    0x00u, 0x77u, 0x77u, 0x77u, 0x07u, 0x77u, 0x67u, 0x77u,
+    0x07u, 0x76u, 0x77u, 0x77u, 0x07u, 0x76u, 0x77u, 0x77u,
+    0x77u, 0x76u, 0x77u, 0x77u, 0x77u, 0x77u, 0x67u, 0x77u,
+    /* NES tile $71 -> Genesis VRAM 1301 */
+    0x77u, 0x77u, 0x77u, 0x77u, 0x77u, 0x77u, 0x77u, 0x77u,
+    0x07u, 0x77u, 0x77u, 0x77u, 0x07u, 0x67u, 0x76u, 0x77u,
+    0x00u, 0x67u, 0x76u, 0x67u, 0x00u, 0x67u, 0x77u, 0x66u,
+    0x00u, 0x06u, 0x77u, 0x77u, 0x00u, 0x00u, 0x77u, 0x70u,
+    /* NES tile $72 -> Genesis VRAM 1302 */
+    0x00u, 0x00u, 0x00u, 0x77u, 0x00u, 0x00u, 0x77u, 0x70u,
+    0x00u, 0x70u, 0x70u, 0x67u, 0x00u, 0x70u, 0x00u, 0x77u,
+    0x00u, 0x07u, 0x00u, 0x07u, 0x00u, 0x77u, 0x00u, 0x00u,
+    0x07u, 0x77u, 0x07u, 0x70u, 0x70u, 0x07u, 0x07u, 0x00u,
+    /* NES tile $73 -> Genesis VRAM 1303 */
+    0x76u, 0x70u, 0x70u, 0x00u, 0x06u, 0x70u, 0x70u, 0x67u,
+    0x00u, 0x70u, 0x00u, 0x77u, 0x07u, 0x70u, 0x70u, 0x77u,
+    0x00u, 0x77u, 0x00u, 0x07u, 0x00u, 0x07u, 0x70u, 0x00u,
+    0x00u, 0x07u, 0x07u, 0x77u, 0x00u, 0x00u, 0x70u, 0x70u,
+    /* NES tile $74 -> Genesis VRAM 1304 */
+    0x00u, 0x00u, 0x00u, 0x70u, 0x00u, 0x00u, 0x00u, 0x00u,
+    0x00u, 0x00u, 0x70u, 0x00u, 0x00u, 0x70u, 0x00u, 0x00u,
+    0x00u, 0x00u, 0x00u, 0x77u, 0x00u, 0x07u, 0x00u, 0x00u,
+    0x00u, 0x70u, 0x00u, 0x00u, 0x00u, 0x00u, 0x70u, 0x70u,
+    /* NES tile $75 -> Genesis VRAM 1305 */
+    0x70u, 0x00u, 0x00u, 0x00u, 0x00u, 0x00u, 0x70u, 0x07u,
+    0x00u, 0x70u, 0x00u, 0x00u, 0x00u, 0x00u, 0x00u, 0x07u,
+    0x00u, 0x70u, 0x00u, 0x00u, 0x00u, 0x00u, 0x07u, 0x00u,
+    0x00u, 0x00u, 0x00u, 0x07u, 0x00u, 0x00u, 0x07u, 0x70u,
+};
+static unsigned char s_cloud_chr_uploaded = 0u;
+
+static void cloud_chr_ensure_uploaded(void)
+{
+    if (s_cloud_chr_uploaded) return;
+    render_chr_upload((unsigned short)(ENEMY_RENDER_META_VRAM_TILE * 32u),
+                      k_cloud_chr_subpal1,
+                      (unsigned short)sizeof(k_cloud_chr_subpal1));
+    s_cloud_chr_uploaded = 1u;
+}
+
 void enemy_render_publish_meta(unsigned int slot)
 {
     if (slot > (unsigned int)ENEMY_LOOP_SLOT_LAST) return;
     unsigned char ms = (unsigned char)ENEMY_METASTATE(slot);
     if (ms == 0u) return;
 
-    unsigned char frame;
-    unsigned char tile;
+    /* Ensure sub-pal 1 biased cloud CHR is in VRAM. Idempotent. */
+    cloud_chr_ensure_uploaded();
+
+    /* Map metastate -> Genesis VRAM tile offset within biased cloud bank.
+     * Cloud frame 1 (ms=$01) = NES OAM tile $70 = stacked PT0 $70+$71
+     * = Genesis VRAM 1300+1301 = offset 0 (Genesis SIZE(1,2) fetches
+     * tile_base + tile_base+1 vertically).
+     * Cloud frame 2 (ms=$02) = $72+$73 = Genesis 1302+1303 = offset 2.
+     * Cloud frame 3 (ms=$03) = $74+$75 = Genesis 1304+1305 = offset 4. */
+    unsigned char gen_tile_offset;
     if (ms >= 0x10u) {
-        frame = (unsigned char)((ms - 0x10u) & 0x03u);
-        tile = k_meta_spark_tiles[frame];
+        /* Death-spark — TODO: needs separate sub-pal 1 biased CHR for
+         * NES item slot $24 (death-spark tiles $62/$64). For now reuse
+         * cloud frame 3 ($74) so spark renders with cloud-puff colors.
+         * Wrong tile pattern but right palette - cosmetic vs invisible. */
+        gen_tile_offset = 4u;
     } else {
-        frame = (unsigned char)(ms & 0x03u);
-        tile = k_meta_cloud_tiles[frame];
+        unsigned char frame = (unsigned char)(ms & 0x03u);
+        if (frame == 0u || frame == 1u) gen_tile_offset = 0u;  /* $70 */
+        else if (frame == 2u)           gen_tile_offset = 2u;  /* $72 */
+        else                            gen_tile_offset = 4u;  /* $74 ($03) */
     }
 
-    /* NES DrawCloud (Z_07.asm:4912) writes the frame param to $0C with
-     * `STA $0C`. RAM $0C is DRAW_MIRRORED. For frames 1..3 the cloud
-     * tile lookup hits Anim_WriteSpecificItemSprites @Wide branch, which
-     * checks DrawMirrored and routes to Anim_WriteMirroredSpritePair —
-     * right tile = LEFT tile (same), right attr ^= h_flip ($40). Result:
-     * 16x16 cloud puff drawn as left half + horizontally-flipped same
-     * tile. Spark uses item slot $24, hits same wide+mirrored path.
-     *
-     * Prior render used tile_R = tile_L + 2 (NES @Flip path, only used
-     * when DrawMirrored == 0 — cloud frame 0 = bomb body $34). Spawn
-     * cloud frames 1..3 must mirror. */
+    /* NES DrawCloud (Z_07.asm:4912) writes frame param to $0C clobbering
+     * DRAW_MIRRORED, so cloud frames 1-3 hit Anim_WriteMirroredSpritePair
+     * (right tile = left, h_flip on right). Emit 2 entries with marker
+     * bit so translate_tile uses ENEMY_RENDER_META_VRAM_TILE base. */
     unsigned char x = (unsigned char)ENEMY_RENDER_OBJ_X(slot);
     unsigned char y = (unsigned char)ENEMY_RENDER_OBJ_Y(slot);
 
     enemy_render_entry_t *eL = &s_enemy_entries[slot][0];
-    eL->tile  = tile;
-    eL->attrs = ENEMY_RENDER_META_ATTRS;
+    eL->tile  = gen_tile_offset;
+    eL->attrs = META_ATTR_MARKER;                       /* sub-pal 0 -> PAL1, marker */
     eL->x     = x;
     eL->y     = y;
 
     enemy_render_entry_t *eR = &s_enemy_entries[slot][1];
-    eR->tile  = tile;                                   /* same tile */
-    eR->attrs = (unsigned char)(ENEMY_RENDER_META_ATTRS ^ 0x40u); /* h-flip */
+    eR->tile  = gen_tile_offset;                        /* same tile (mirrored) */
+    eR->attrs = (unsigned char)(META_ATTR_MARKER | 0x40u);  /* + h-flip */
     eR->x     = (unsigned char)(x + 8u);
     eR->y     = y;
 
@@ -353,6 +425,13 @@ void enemy_render_reset_oam(void)
 static inline unsigned short translate_tile(unsigned char nes_tile,
                                             unsigned char nes_attrs)
 {
+    /* Meta-cloud marker: nes_attrs bit 4 (unused in real NES OAM) flags
+     * tile field as direct Genesis VRAM offset from ENEMY_RENDER_META_VRAM_TILE.
+     * publish_meta uses this for sub-pal 1 biased cloud tiles. */
+    if (nes_attrs & META_ATTR_MARKER) {
+        return (unsigned short)(ENEMY_RENDER_META_VRAM_TILE +
+                                (unsigned short)nes_tile);
+    }
     if (nes_tile < NES_OWSP_BANK_FIRST) {
         /* Common sprite pattern block at SPR_BASE 1:1. */
         return (unsigned short)(ROOMROM_SPR_TILE_BASE + (unsigned short)nes_tile);

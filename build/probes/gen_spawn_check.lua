@@ -10,24 +10,30 @@ idle(60)
 for i=1,30 do joypad.set({A=true,B=true,C=true}, 1); emu.frameadvance() end
 W(0x73F8, 0x52); W(0x73F9, 0x50); W(0x73FA, 0x00)
 idle(60)
-for i=1,200 do joypad.set({Up=true}, 1); emu.frameadvance() end
+-- Walk Up until ROOM_ID changes to $67, then capture. ROOM_ID = $7205.
+local entered = false
+for i=1,400 do
+  joypad.set({Up=true}, 1)
+  emu.frameadvance()
+  if R(0x7205) == 0x67 then entered = true; break end
+end
 joypad.set({}, 1)
 
 local f = io.open("C:\\tmp\\gen_spawn_check.txt", "w")
 
--- Capture frame-by-frame for 60 frames after scroll
+-- Capture frame-by-frame for 60 frames after scroll. METASTATE = $0405.
 for fr=0,59 do
   emu.frameadvance()
   local line = string.format("f%2d:", fr)
   for s=1,11 do
     local t = R(0x834F + s)
     if t ~= 0 then
-      line = line .. string.format(" s%d:t$%02X m$%02X tm$%02X X$%02X Y$%02X",
-        s, t, R(0x80AC+s), R(0x8028+s), R(0x8070+s), R(0x8084+s))
+      line = line .. string.format(" s%d:t$%02X st$%02X meta$%02X tm$%02X X$%02X Y$%02X",
+        s, t, R(0x80AC+s), R(0x8405+s), R(0x8028+s), R(0x8070+s), R(0x8084+s))
     end
   end
   f:write(line .. "\n")
-  if fr == 10 or fr == 30 or fr == 50 then
+  if fr == 0 or fr == 10 or fr == 30 then
     client.screenshot(string.format("C:\\tmp\\gen_spawn_%02d.png", fr))
   end
 end
