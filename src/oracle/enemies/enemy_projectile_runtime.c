@@ -226,15 +226,37 @@ void enrt_check_shot_link_collision(unsigned int slot) {
  * arrows, sword shots, magic shots, boomerangs). State byte high nibble
  * encodes phase: $1x = active, anything else = bouncing.
  */
-/* UpdateMonsterArrow (NES Z_04.asm:2102) per-frame body. Stopgap drain
- * (full UpdateArrowOrBoomerang state machine at Z_07.asm:3813 deferred).
- * Mirror the q-speed=$80 seed (2 px/frame) and fall through to
- * enrt_update_monster_shot which handles tile collision + Link
- * collision + draw via L_DrawShot ($5B draws via DrawArrow). The
- * arrow-spark/bounce state branches ($20/$30 paths) are omitted
- * pending full drain. */
+/* UpdateMonsterArrow (NES Z_04.asm:2102) per-frame body.
+ * Sequence:
+ *   1. ObjQSpeedFrac = $80 (2 px/frame).
+ *   2. If ObjTimer != 0: draw + check shooter alive (shooter gone →
+ *      reset timer so arrow flies next frame). NES @CheckShooter path.
+ *   3. Else: dispatch through state machine. State $1x/$2x → delegate
+ *      to enrt_update_monster_shot which moves + Link-collides + draws.
+ *      enrt_check_shot_link_collision (called inside) sets state $30 +
+ *      bounce dir on shield hit. State $30 → enrt_bounce_shot ticks
+ *      bounce counter + destroys at $20.
+ *   4. Arrow state $20 spark deactivation handled via NES @Deactivate
+ *      path — not yet drained; arrows transitioning to $20 would
+ *      bounce-handle until counter saturates instead of destroying
+ *      immediately. Visible diff: spark frame missing, destruction
+ *      via bounce-counter saturation instead of anim-countdown.
+ */
 void enrt_update_monster_arrow(unsigned int slot) {
     ENEMY_WALK_SPEED(slot) = 0x80u;
+
+    /* @CheckShooter: if ObjTimer != 0, arrow held by shooter. Only
+     * draw + check if shooter is alive. If shooter dead (ObjType==0),
+     * reset arrow timer so it flies next frame. */
+    if (ENEMY_MOVE_TIMER(slot) != 0u) {
+        unsigned char shooter_slot = OBJ(0x042Cu, slot);   /* ObjRefId */
+        if (OBJ(NES_OBJ_TYPE, shooter_slot) == 0u) {
+            ENEMY_MOVE_TIMER(slot) = 0u;
+        }
+        enrt_draw_shot(slot);
+        return;
+    }
+
     enrt_update_monster_shot(slot);
 }
 
