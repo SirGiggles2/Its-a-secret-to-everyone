@@ -6,6 +6,7 @@
 #include "../../state/inventory.h"
 #include "../options/options_consumer.h"
 #include "../options/options_state.h"
+#include "platform_abi.h"
 #include "render_abi.h"
 
 /* RoomRom S7 v4 combat — sword swing.
@@ -94,25 +95,37 @@ static short          s_beam_y             = 0;
  * (FrameCounter & 3)). */
 static unsigned char  s_beam_palette_phase = 0u;
 
-/* Y bias applied to sword + beam to match NES Z_07.asm:3320 — in OW
+unsigned char roomrom_combat_get_beam_active(void) { return s_beam_active; }
+short         roomrom_combat_get_beam_x(void)      { return s_beam_x; }
+short         roomrom_combat_get_beam_y(void)      { return s_beam_y; }
+link_face_t   roomrom_combat_get_beam_face(void)   { return s_beam_face; }
+
+void roomrom_combat_cancel_beam(void)
+{
+    s_beam_active = 0u;
+    s_beam_palette_phase = 0u;
+    roomrom_sprites_clear_beam();
+}
+
+/* Y bias applied to sword visuals to match NES Z_07.asm:3320 -- in OW
  * (CurLevel == 0), Link is drawn 2 px DOWN from ObjY (INC $01 twice),
  * but the sword is NOT shifted. To replicate that visual relationship
  * on Genesis (where Link is drawn at link_y directly with no shift),
- * bias the sword/beam UP by 2 in OW; in UW (CurLevel != 0) NES draws
+ * bias the sword UP by 2 in OW; in UW (CurLevel != 0) NES draws
  * neither shifted, so bias = 0. Default OW (-2). */
 static short s_uw_y_bias = -2;
 
-/* Beam tip-offset table (from sword tip into open space). Indexed by
- * face. Beam spawns at link + this offset, then travels in facing
- * direction. Tuned to align with sword's state-2 tip + a small forward
- * extension. */
+/* NES PlaceWeapon seeds sword-shot object coordinates 16 px from Link in
+ * the firing axis. The first update moves it by 3 px before the visible
+ * draw, yielding the live-NES +/-19 capture. Renderer-only item draw
+ * offsets are applied in roomrom_sprites_set_beam(). */
 static const signed char beam_spawn_x[4] = {
     /* DOWN UP LEFT RIGHT */
-     +4,  +4, -16, +16
+      0,   0, -16, +16
 };
 static const signed char beam_spawn_y[4] = {
     /* DOWN UP LEFT RIGHT */
-    +24, -16,  +4,  +4
+    +16, -16,   0,   0
 };
 
 /* RoomRom currently boots with wood sword (Items=1). NES
@@ -150,7 +163,7 @@ void roomrom_combat_set_redux(unsigned char redux)
     recompute_y_bias();
 }
 
-/* Compute sword/beam Y bias.
+/* Compute sword visual Y bias.
  *
  * Vanilla Z1 (Z_07.asm:3320): in OW (CurLevel==0), Link is drawn +2 px
  * down via INC $01 twice; sword draw doesn't get this shift, so visual
@@ -268,10 +281,23 @@ void roomrom_combat_init(void)
 
 extern void audio_sfx_play(unsigned char sfx);
 
+/* NES Z_05.asm:6889-6891 Link_HandleInput sword-block gate:
+ *   LDA SwordBlockedLongTimer ($4C)
+ *   ORA SwordBlocked          ($52E)
+ *   BNE :+        ; skip WieldSword if either non-zero
+ * BlueBubble2 ($2D) set SwordBlocked = $type - $2C on touch (enemy_walker_
+ * runtime.c:34). BlueBubble2_DropEffect ($1158) sets SwordBlockedLongTimer.
+ * Without this gate Link swings through bubble-flash with sword intact. */
+static unsigned char sword_blocked_by_bubble(void)
+{
+    return (unsigned char)(RAM(0x004Cu) | RAM(0x052Eu));
+}
+
 void roomrom_combat_try_swing(link_face_t face, short link_x, short link_y)
 {
     (void)link_x; (void)link_y;
     if (s_state != COMBAT_IDLE) return;
+    if (sword_blocked_by_bubble() != 0u) return;
     s_state = COMBAT_ACTIVE;
     s_frame = 0u;
     s_face  = face;
@@ -352,26 +378,25 @@ static unsigned char sword_style_allows_beam(void)
     unsigned char style = options_consumer_get_sword_style();
     if (style == OPTIONS_SWORD_STAB_ONLY)   return 0u;
     if (style == OPTIONS_SWORD_BEAM_ALWAYS) return 1u;
-    /* VANILLA: full HP gate. */
+    /* VANILLA: NES MakeSwordShot full-HP gate: HeartValues high nibble
+     * equals low nibble, and HeartPartial is at least half-full. */
     {
         unsigned char hv = g_inventory.heart_values;
         unsigned char cur = heart_values_cur(hv);
         unsigned char max = heart_values_max(hv);
-        return (cur == max && g_inventory.heart_partial == 0u) ? 1u : 0u;
+        return (cur == max && g_inventory.heart_partial >= 0x80u) ? 1u : 0u;
     }
 }
 
-/* Spawn the beam at the sword TIP for the current facing. Earlier
- * versions reused the state-2 sword sprite offset (which is the sword
- * sprite top-left, not the blade tip). The dedicated beam_spawn_x/y
- * table places the beam at the actual blade tip + a small forward
- * gap so the beam looks like it pops off the sword. */
+/* Spawn the beam at NES sword-shot object coordinates. Object coords are
+ * also mirrored into NES RAM for collision; sprite draw offsets are kept
+ * renderer-local to match DrawSwordShotOrMagicShot. */
 static void spawn_beam(short link_x, short link_y)
 {
     unsigned char face_idx = (unsigned char)s_face;
     s_beam_face          = s_face;
     s_beam_x             = (short)(link_x + beam_spawn_x[face_idx]);
-    s_beam_y             = (short)(link_y + beam_spawn_y[face_idx] + s_uw_y_bias);
+    s_beam_y             = (short)(link_y + beam_spawn_y[face_idx]);
     s_beam_palette_phase = 0u;
     s_beam_active        = 1u;
 }
