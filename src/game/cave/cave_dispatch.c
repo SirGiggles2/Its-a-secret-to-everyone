@@ -33,8 +33,22 @@
 #include "items/item_dispatch.h"        /* item_take_item */
 
 /* Asm-bound data tables (no banned prefix). */
-extern const unsigned char TextboxCharTransferRecTemplate[];
 extern const unsigned char PersonTextAddrs[];
+
+/* NES Z_01.asm:559 TextboxCharTransferRecTemplate — 5-byte VRAM
+ * transfer record template used by the textbox char-streamer to
+ * stamp a single character tile into nametable. Per NES asm:
+ *   $21       VRAM addr hi byte (nametable $2100 + offset)
+ *   $A4       VRAM addr lo byte (textbox line 0 start)
+ *   $01       record length (one byte)
+ *   $24       default char (space = $24)
+ *   $FF       terminator
+ * Char byte at offset 3 is overwritten per-frame with the streamed
+ * character. Offset 1 (lo addr) is overwritten per-line from
+ * TextboxLineAddrsLo. */
+const unsigned char TextboxCharTransferRecTemplate[5] = {
+    0x21u, 0xA4u, 0x01u, 0x24u, 0xFFu
+};
 
 /* Cave-id of the currently active cave (0 = none active).
  *

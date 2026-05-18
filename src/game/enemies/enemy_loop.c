@@ -582,6 +582,11 @@ const enemy_update_fn enemy_update_fns[ENEMY_LOOP_TYPE_MAX] = {
     [0x02] = enrt_update_lynel,     /* BlueLynel */
     [0x23] = enrt_update_blue_wizzrobe,  /* BlueWizzrobe — Z_04.asm:7034 */
     [0x24] = enrt_update_red_wizzrobe,   /* RedWizzrobe  — Z_04.asm:7474 */
+    /* UW NPC dispatch ($36 Grumble, $4B-$52 UnderworldPerson) deferred
+     * pending PersonTextAddrs[] + PersonText00..37 data port. See
+     * memory project_uw_npc_dispatch_gap.md. TextboxCharTransferRec
+     * Template symbol is now defined in cave_dispatch.c (this session),
+     * but text content port is the next prerequisite. */
     [0x03] = enrt_update_moblin,    /* BlueMoblin */
     [0x04] = enrt_update_moblin,    /* RedMoblin */
     [0x05] = enrt_update_goriya,    /* BlueGoriya (drained, full body) */
