@@ -357,6 +357,10 @@ ROOMROM_C_SOURCES = [
     # c_get_opposite_dir, c_bound_by_room, c_get_colliding_tile_moving.
     # ADOPT stance.
     ("src/oracle/enemies/enemy_lamnola_runtime.c", "oracle_enemy_lamnola.o"),
+    # enemy_fix Wave 5 — Wizzrobe family drain. UpdateBlueWizzrobe
+    # (Z_04.asm:7034) + UpdateRedWizzrobe (Z_04.asm:7474) + shared
+    # primitives. GREENFIELD stance. Wires $23/$24 dispatch rows.
+    ("src/oracle/enemies/enemy_wizzrobe_runtime.c", "oracle_enemy_wizzrobe.o"),
     # Phase 8 Task 8.9 — Moldorm drain. enrt_init_moldorm (Z_04.asm:4763)
     # + enrt_update_moldorm (Z_04.asm:4907) + ControlMoldormFlight JT +
     # Moldorm_{Chase,Wander,ChangeFlyingState,PropagateDirs}. Composes
