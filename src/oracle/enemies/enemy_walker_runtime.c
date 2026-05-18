@@ -237,6 +237,14 @@ void enrt_update_moblin(unsigned int slot) {
     enrt_try_shooting(0x20, 0x5Bu, slot);
 }
 
+/* NES Z_04.asm:1965 UpdateLynel — falls into Goriya update body, then
+ * shoots a sword-shot ($57) at qspeed $20. Mirrors UpdateMoblin but
+ * with Goriya AI + sword projectile instead of arrow ($5B). */
+void enrt_update_lynel(unsigned int slot) {
+    enrt_update_goriya(slot);
+    enrt_try_shooting(0x20, 0x57u, slot);
+}
+
 void enrt_update_stalfos(unsigned int slot) {
     enrt_update_common_wanderer(0x80u, slot);
     c_check_monster_collisions(slot);

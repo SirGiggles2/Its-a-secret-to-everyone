@@ -104,6 +104,7 @@ extern void enrt_init_darknut(unsigned int slot);                /* step 7 */
 extern void enrt_init_fast_octorock(unsigned int slot);          /* step 7 */
 extern void enrt_update_octorock(unsigned int slot);  /* step 6 native */
 extern void enrt_update_moblin(unsigned int slot);               /* step 7 */
+extern void enrt_update_lynel(unsigned int slot);                /* enemy_fix Wave 2 */
 extern void enrt_update_goriya(unsigned int slot);               /* step 7 */
 extern void enrt_update_stalfos(unsigned int slot);              /* step 7 */
 extern void enrt_update_darknut(unsigned int slot);              /* step 11 */
@@ -575,7 +576,9 @@ const enemy_update_fn enemy_update_fns[ENEMY_LOOP_TYPE_MAX] = {
      *
      * Future rows ($01/$02 lynel, $0B/$0C darknut, $29 rope) need new
      * drain bodies (no _runtime.c entry yet) and will land in step 8+. */
-    [0x03] = enrt_update_moblin,    /* BlueMoblin (drained, anim/draw deferred) */
+    [0x01] = enrt_update_lynel,     /* RedLynel — Goriya AI + sword shot $57 */
+    [0x02] = enrt_update_lynel,     /* BlueLynel */
+    [0x03] = enrt_update_moblin,    /* BlueMoblin */
     [0x04] = enrt_update_moblin,    /* RedMoblin */
     [0x05] = enrt_update_goriya,    /* BlueGoriya (drained, full body) */
     [0x06] = enrt_update_goriya,    /* RedGoriya */

@@ -21,6 +21,7 @@ void enrt_update_stalfos(unsigned int slot);
 void enrt_update_darknut(unsigned int slot);
 void enrt_update_ghini(unsigned int slot);
 void enrt_update_moblin(unsigned int slot);
+void enrt_update_lynel(unsigned int slot);
 void enrt_update_gibdo(unsigned int slot);
 void enrt_update_aquamentus(unsigned int slot);
 void enrt_draw_ghini_and_check_collisions(unsigned int slot);
