@@ -12,12 +12,13 @@ joypad.set({},1)
 for _=1,200 do if R(0x8350) ~= 0 then break end; emu.frameadvance() end
 
 local f = io.open("C:/tmp/subpix_gen.txt", "w")
-f:write("=== Genesis sub-pixel trace slot 1, 60 frames ===\n")
-f:write("frame | X Y dir qspd posfrac gridoff\n")
-for fr=0,59 do
-  f:write(string.format("f%2d | X$%02X Y$%02X d$%02X qspd$%02X frac$%02X grid$%02X shTm$%02X wTSh$%02X mvTm$%02X stTm$%02X bnc$%02X hit$%02X\n",
+f:write("=== Genesis sub-pixel trace slot 1, 120 frames ===\n")
+f:write("frame | X Y d qspd frac grid shTm wTSh mvTm stTm bnc hit inDir\n")
+for fr=0,119 do
+  f:write(string.format("f%3d | X$%02X Y$%02X d$%02X qspd$%02X frac$%02X grid$%02X shTm$%02X wTSh$%02X mvTm$%02X stTm$%02X bnc$%02X hit$%02X inDir$%02X\n",
     fr, R(0x8071), R(0x8085), R(0x8099), R(0x83BD), R(0x83A9), R(0x8395),
-    R(0x8452), R(0x8413), R(0x8029), R(0x803E), R(0x8479), R(0x84F1)))
+    R(0x8452), R(0x8413), R(0x8029), R(0x803E), R(0x8479), R(0x84F1),
+    R(0x83F9)))
   emu.frameadvance()
 end
 f:close()

@@ -15,7 +15,7 @@ local f = io.open("C:/tmp/subpix_gen.txt", "w")
 f:write("=== Genesis full-state slot 1, 120 frames ===\n")
 f:write("frame | X Y d qspd frac grid mvTm stTm meta shTm wTSh bnc hit inDir\n")
 local SLOT = 1
-for fr=0,119 do
+for fr=0,239 do
   f:write(string.format("f%3d | X$%02X Y$%02X d$%02X qspd$%02X frac$%02X grid$%02X mvTm$%02X stTm$%02X meta$%02X shTm$%02X wTSh$%02X bnc$%02X hit$%02X inDir$%02X\n",
     fr,
     R(0x8070+SLOT), R(0x8084+SLOT), R(0x8098+SLOT),

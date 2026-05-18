@@ -1161,6 +1161,28 @@ void enemy_loop_tick(void)
          * Task 7.3 known gap (vire split spawn slot computation). */
         ENEMY_THROWER_SLOT = (unsigned char)slot;
         if (fn != 0) fn(slot);
+
+        /* NES @LoopObject post-update collision call (Z_07.asm:1928-1945).
+         * After UpdateObject returns, NES runs CheckMonsterCollisions for
+         * each slot unless:
+         *   - ObjMetastate != 0 (cloud/spark animating)
+         *   - ObjAttr bit 0 set (type checks own collisions)
+         *
+         * Our drained C never called this for regular walkers (octorok,
+         * tektite etc.); only boss/flyer/jumper bridges did. Without
+         * collision call, Link can't take damage from monster body
+         * contact and weapons can't hit monsters.
+         *
+         * Probe build/probes/track_all.lua confirmed Link HP=$00 stays
+         * after octorok bump. */
+        if (ENEMY_METASTATE(slot) == 0u) {
+            unsigned char attr = (unsigned char)RAM(0x04BFu + slot);
+            if ((attr & 0x01u) == 0u) {
+                /* extern declared in enemy_walker_bridge.c */
+                extern void c_check_monster_collisions(unsigned int slot);
+                c_check_monster_collisions(slot);
+            }
+        }
     }
 
     if (armed) {
