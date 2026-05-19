@@ -194,6 +194,24 @@ def main():
 
     # --- Success summary ---
     headroom_tiles = TILE_DATA_LIMIT_TILES - item_end_tile
+    # Phase J.2 (2026-05-18 doc-only): BG bank reserves 1024 tiles for
+    # legacy 4x layout (still used by redux UW per uw_render.c branch)
+    # but Phase J sparse atlas only fills ~532 tiles. Slots
+    # BG_BASE+sparse_size .. SPR_BASE-1 = ~492 tile FREE ZONE within
+    # the reserved BG region. Reachable for new content via direct
+    # tile-id reference (no LUT mapping needed — addressed by absolute
+    # VRAM tile index). Surfacing as "bg_free_zone" for visibility.
+    try:
+        sparse_h = ROOT / "src" / "bg_sparse_chr.h"
+        sparse_text = sparse_h.read_text(encoding="utf-8")
+        m = re.search(r"#define\s+BG_SPARSE_TILE_COUNT\s+(\d+)u?", sparse_text)
+        bg_sparse_count = int(m.group(1)) if m else 0
+        bg_free_zone = bg_count - bg_sparse_count if bg_sparse_count > 0 else 0
+    except Exception:
+        bg_free_zone = 0
+    free_zone_suffix = (
+        f"  bg_free_zone={bg_free_zone} tiles (sparse atlas leaves "
+        f"BG slots free for direct-tile-id content)" if bg_free_zone > 0 else "")
     print(
         f"verify_vram_budget: OK  "
         f"BG=tiles {bg_base}..{bg_base + bg_count - 1}  "
@@ -202,6 +220,7 @@ def main():
         f"BOSS=SCENE_OBJ-shared (NES parity)  "
         f"HUD_BACKDROP=retired (+8 tiles freed)  "
         f"headroom={headroom_tiles} tiles before VDP tables"
+        f"{free_zone_suffix}"
     )
 
 
