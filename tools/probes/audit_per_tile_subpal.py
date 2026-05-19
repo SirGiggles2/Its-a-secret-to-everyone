@@ -70,42 +70,33 @@ def uw_quad_subpal(attr_byte, quad_pos):
 
 
 def collect_uw_per_tile_subpals(rooms):
-    """Returns dict {tile_id: set(sub_pals)}."""
+    """Returns dict {tile_id: set(sub_pals)}.
+
+    Uses the EXACT attr formula from src/game/dungeon/uw_render.c:380-392:
+        at_idx = ((nt_row >> 2) << 3) | (nt_col >> 2)   -- 8 quads/row, 8 rows
+        shift  = (((nt_row >> 1) & 1) << 2) | (((nt_col >> 1) & 1) << 1)
+        sub_pal = (attr[at_idx] >> shift) & 0x03
+
+    UW room nt is 22 cols × 32 rows. Cell index = row * 32 + col.
+    Cells render starting at nt_row = row + 8 (HUD occupies 0..7).
+    """
     out = defaultdict(set)
-    # UW room: 22 cols x 32 rows of cells. Quad grid: 11 quad cols x 16
-    # quad rows? Actually AT is 8x8 quad grid per audit (64 bytes).
-    # Each attr byte covers a 2x2 cell group. With 22x32 cells, we have
-    # 11 quad cols x 16 quad rows = 176 quads — but attr is 64 bytes.
-    # Per audit_bg_subpal_refs: 4 quads per byte, 64 bytes -> 256 quads,
-    # covering 16x16 quad grid = 32x32 cells. Hmm doesn't match 22x32.
-    #
-    # Pragmatic: derive quad index from cell (col, row): each attr byte
-    # is for a 4-cell group (2x2). With 22 cols, 11 quad columns. 32
-    # rows -> 16 quad rows. 11*16 = 176 quads. But attr_bytes = 64.
-    #
-    # Approximation: bias toward 8x8 quad grid (NES default), iterate
-    # cells, derive quad from (col // 2, row // 2) modulo 8x8 (clamp).
-    QUAD_COLS = 8
-    QUAD_ROWS = 8
-    QUADS_PER_ROW = 8
     for room_idx, nt, attr in rooms:
         for row in range(32):
             for col in range(22):
-                tile_id = nt[row * 32 + col] if (row * 32 + col) < len(nt) else 0
-                # Approximate quad lookup; cells map to 8x8 quad grid via
-                # (col // (22 // 8), row // (32 // 8)) ≈ (col // 2, row // 4).
-                q_col = min(col // 2, QUAD_COLS - 1)
-                q_row = min(row // 4, QUAD_ROWS - 1)
-                quad_idx = q_row * QUADS_PER_ROW + q_col
-                if quad_idx >= len(attr):
+                nt_offset = row * 32 + col
+                if nt_offset >= len(nt):
                     continue
-                attr_byte = attr[quad_idx]
-                # Each byte has 4 quads (TL/TR/BL/BR). Pick pos based on
-                # (col % 2, row % 2)... approximate.
-                sub_quad_col = col % 2
-                sub_quad_row = (row // 2) % 2
-                pos = sub_quad_row * 2 + sub_quad_col
-                sub_pal = uw_quad_subpal(attr_byte, pos)
+                tile_id = nt[nt_offset]
+                # Match uw_render.c::attr_palette_for() exactly:
+                nt_row = row + 8
+                nt_col = col
+                at_idx = ((nt_row >> 2) << 3) | (nt_col >> 2)
+                if at_idx >= len(attr):
+                    continue
+                attr_byte = attr[at_idx & 0x3F]
+                shift = (((nt_row >> 1) & 1) << 2) | (((nt_col >> 1) & 1) << 1)
+                sub_pal = (attr_byte >> shift) & 0x03
                 out[tile_id].add(sub_pal)
     return out
 
@@ -173,6 +164,25 @@ def main():
         print(f"  tile 0x{tile_id:02X}: {sps}")
     if len(multi_subpal_tiles) > 20:
         print(f"  ... and {len(multi_subpal_tiles) - 20} more")
+
+    # Phase J truncation analysis: max NES tile ID used.
+    max_tile_id = max(per_tile_uw.keys())
+    print(f"\nTruncation analysis (UW BG only):")
+    print(f"  max NES tile ID used: 0x{max_tile_id:02X} ({max_tile_id})")
+    print(f"  current 4x bank: 256 tiles/subpal x 4 = 1024 tiles")
+    print(f"  truncated bank: {max_tile_id+1} tiles/subpal x 4 = {(max_tile_id+1)*4} tiles")
+    print(f"  truncation savings: {1024 - (max_tile_id+1)*4} tiles")
+
+    # Per-sub-pal max tile ID (smarter truncation):
+    max_per_subpal = {0: -1, 1: -1, 2: -1, 3: -1}
+    for tile_id, sps in per_tile_uw.items():
+        for sp in sps:
+            if tile_id > max_per_subpal[sp]:
+                max_per_subpal[sp] = tile_id
+    total_per_subpal_truncated = sum(max + 1 for max in max_per_subpal.values() if max >= 0)
+    print(f"  per-sub-pal max tile IDs: {[f'pal{k}=0x{v:02X}' for k,v in max_per_subpal.items()]}")
+    print(f"  per-sub-pal-truncated bank: {total_per_subpal_truncated} tiles")
+    print(f"  per-sub-pal truncation savings: {1024 - total_per_subpal_truncated} tiles")
 
     return 0
 
