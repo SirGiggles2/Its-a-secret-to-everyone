@@ -436,71 +436,46 @@ static inline unsigned short translate_tile(unsigned char nes_tile,
         /* Common sprite pattern block at SPR_BASE 1:1. */
         return (unsigned short)(ROOMROM_SPR_TILE_BASE + (unsigned short)nes_tile);
     }
-    /* Per-room transient bank: NES tile $8E+k -> SCENE_OBJ tile k. */
+    /* Per-room transient bank: NES tile $8E+k -> SCENE_OBJ tile k.
+     *
+     * Phase F (2026-05-18): UWSP banks collapsed from 4 sub-pal copies to
+     * 1 sub-pal-0 copy. Both OW (OWSP) and UW (UWSP127/358/469) now use
+     * the same single-copy resolution: tile k -> SCENE_OBJ_BASE + k. Sub-
+     * pal selection routes via Genesis OAM pal field in translate_attrs
+     * (PAL1/PAL2/PAL3 = NES SPR sub-pals 0/1/2 per
+     * src/game/world/bg_palette.h CRAM target). */
     unsigned char bank_tile = (unsigned char)(nes_tile - NES_OWSP_BANK_FIRST);
-
-    /* OW (CurLevel == 0) uses OWSP single-copy bank: tile k -> 1069+k.
-     * UW uses UWSP 4x bank: sub-pal N tile k -> 1069 + N*34 + k. */
-    unsigned char cur_level = nes_ram[NES_CUR_LEVEL_CELL];
-    if (cur_level == 0u) {
-        return (unsigned short)(ROOMROM_SCENE_OBJ_TILE_BASE + bank_tile);
-    }
-    unsigned char sub_pal = (unsigned char)(nes_attrs & 0x03u);
-    unsigned short sub_off =
-        (unsigned short)sub_pal * (unsigned short)UWSP_TILES_PER_SUBPAL;
-    return (unsigned short)(ROOMROM_SCENE_OBJ_TILE_BASE + sub_off + bank_tile);
+    (void)nes_attrs;  /* sub_pal no longer needed for tile resolution */
+    return (unsigned short)(ROOMROM_SCENE_OBJ_TILE_BASE + bank_tile);
 }
 
 static inline unsigned short translate_attrs(unsigned char nes_attrs,
                                              unsigned short tile_id)
 {
-    /* Genesis sprite palette = PAL1 always. NES PALRAM $3F10..$3F1F
-     * (full 16-color sprite palette, 4 sub-pal x 4 colors) is loaded
-     * into Genesis CRAM PAL1 by roomrom_bg_palette_load_palram_full
-     * (src/game/world/bg_palette.c:33).
+    /* Phase F (2026-05-18): unified per-attr palette routing for OW and
+     * UW. After Phase B+F, both OWSP and UWSP atlases are single-copy
+     * (sub-pal-0 pixel encoding). CRAM target (bg_palette.h):
+     *   PAL1[0..3] = NES SPR sub-pal 0 (Link, common, OWSP base)
+     *   PAL2[0..3] = NES SPR sub-pal 1 (cloud sprite, some UW enemies)
+     *   PAL3[0..3] = NES SPR sub-pal 2 (red enemies, OWSP red ramp,
+     *                                   candle FX, magic shot)
      *
-     * NES sub-pal selection is NOT done via Genesis palette bank.
-     * Instead, the atlas pixel data is pre-biased so each tile copy
-     * uses CRAM indices for its sub-pal slot:
-     *   OWSP: 1 copy per tile, sub-pal 0 bias (colors 1..3 of PAL1)
-     *   UWSP: 4 copies per tile, sub-pal 0..3 bias (colors 1..15 of PAL1)
-     * translate_tile() picks the correct copy via sub_pal*34 offset.
+     * NES attr bits 0..1 select sub-pal -> route to PAL1/PAL2/PAL3.
+     * Sub-pal 3 (rare, mostly unused) clamps to sub-pal 2 (PAL3).
      *
-     * So translate_attrs always selects PAL1 + maps flip + priority. */
-    unsigned char h_flip  = (unsigned char)((nes_attrs >> 6) & 0x01u);
-    unsigned char v_flip  = (unsigned char)((nes_attrs >> 7) & 0x01u);
-    unsigned char prio    = (unsigned char)((nes_attrs >> 5) & 0x01u) ^ 0x01u;
+     * Pre-Phase-F behavior:
+     *   OW: sub_pal 0 -> PAL1, all others -> PAL3 (sub-pal 1 was
+     *       unmapped, fell back to red ramp).
+     *   UW: always PAL1 with sub_pal*34 tile-offset replication.
+     * Unification recovers correct sub-pal 1 colors in both contexts. */
+    unsigned char h_flip   = (unsigned char)((nes_attrs >> 6) & 0x01u);
+    unsigned char v_flip   = (unsigned char)((nes_attrs >> 7) & 0x01u);
+    unsigned char prio     = (unsigned char)((nes_attrs >> 5) & 0x01u) ^ 0x01u;
     /* NES bit 5 = "behind BG" = priority LOW. Genesis bit = priority HIGH
      * (above plane A). Invert: NES prio=0 -> Genesis prio=1 (above). */
-
-    /* OW (CurLevel == 0): atlas is single-sub-pal-0-biased. PAL1 holds
-     * the full 16-color NES sprite palram, so colors at indices 0..3
-     * map to NES sub-pal 0 colors ($29 light-green, $27 orange-tan,
-     * $17 dark-brown — used for rock shots, Link's tunic).
-     * PAL3 holds NES sub-pal 2 colors ($16 brown-red, $27 orange-tan,
-     * $30 white — used for RedOctorok, Tektite, Leever, most red enemies).
-     *
-     * Per-tile attr bits 0..1 select NES sub-pal. Route accordingly:
-     *   attr sub-pal 0 -> PAL1 (sub-pal 0 colors at PAL1[0..3])
-     *   attr sub-pal 1 -> PAL3 (sub-pal 1 unmapped; fallback to red ramp
-     *                    since OW rarely uses sub-pal 1 for sprites)
-     *   attr sub-pal 2 -> PAL3 (red enemies)
-     *   attr sub-pal 3 -> PAL3 (sub-pal 3 unmapped; fallback)
-     *
-     * Pre-2026-05-17 bug: hardcoded PAL3 for all OW sprites; shots
-     * (attr=$00) rendered with red-enemy colors instead of brown/tan.
-     *
-     * UW (CurLevel != 0): atlas is 4x-replicated, each tile copy biased
-     * to its sub-pal slot in PAL1 — use PAL1 + sub_pal*34 tile offset
-     * (handled in translate_tile). */
-    unsigned char cur_level = nes_ram[NES_CUR_LEVEL_CELL];
-    unsigned short pal_bank;
-    if (cur_level == 0u) {
-        unsigned char sub_pal = (unsigned char)(nes_attrs & 0x03u);
-        pal_bank = (sub_pal == 0u) ? 1u : 3u;
-    } else {
-        pal_bank = 1u;
-    }
+    unsigned char sub_pal  = (unsigned char)(nes_attrs & 0x03u);
+    unsigned char clamped  = (unsigned char)((sub_pal > 2u) ? 2u : sub_pal);
+    unsigned short pal_bank = (unsigned short)(1u + clamped);  /* 1, 2, or 3 */
 
     unsigned short sat = (unsigned short)(tile_id & 0x07FFu);
     sat |= (unsigned short)(pal_bank << 13);

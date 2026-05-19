@@ -1325,8 +1325,14 @@ def emit_items_chr_x4(item_manifest: dict, out_dir: Path) -> int:
 # Per-bank Genesis bytes = 34 * 32 * 4 = 4352 (136 tiles).
 
 ENEMY_X4_TILE_COUNT_PER_PAL = 34   # NES tiles per UWSP bank
-ENEMY_X4_TILES = ENEMY_X4_TILE_COUNT_PER_PAL * 4   # 136 Genesis tiles after expansion
-ENEMY_X4_PER_BANK_BYTES = ENEMY_X4_TILES * BYTES_PER_GEN_TILE   # 4352
+# Phase F (2026-05-18): UWSP banks collapse from 4 sub-pal copies (4x pixel-
+# bias) to 1 sub-pal-0 copy. NES SPR sub-pal selection routes via Genesis
+# OAM pal field (PAL1/PAL2/PAL3 per src/game/world/bg_palette.h CRAM target).
+# Pre-Phase-F: ENEMY_X4_TILES = 34*4 = 136, ENEMY_X4_PER_BANK_BYTES = 4352.
+# Post-Phase-F: 34 tiles / 1088 bytes per bank. Saves 102 tiles per active
+# bank (3 banks total; one resident at a time).
+ENEMY_X4_TILES = ENEMY_X4_TILE_COUNT_PER_PAL          # 34 Genesis tiles (1x)
+ENEMY_X4_PER_BANK_BYTES = ENEMY_X4_TILES * BYTES_PER_GEN_TILE   # 1088
 
 ENEMY_BANK_FILES = [
     ("UWSP127", "PatternBlockUWSP127.bin"),
@@ -1361,26 +1367,25 @@ BOSS_BANK_FILES = [
 
 
 def _build_enemy_bank_blob(bank_path: Path) -> bytes:
-    """Read an UWSP bank file, convert each NES tile to Genesis, then expand
-    4x sub-pal. Returns 4352-byte blob laid out pal0||pal1||pal2||pal3 in
-    32-byte tile rows (matches items_chr_x4 convention)."""
+    """Read an UWSP bank file, convert each NES tile to Genesis. Returns
+    1088-byte blob (34 tiles x 32 bytes) — single sub-pal-0 copy.
+
+    Phase F (2026-05-18): dropped the 4x sub-pal pixel-bias expansion. NES
+    SPR sub-pal selection now routes via Genesis OAM pal field in
+    enemy_render.c::translate_attrs (PAL1/PAL2/PAL3 = sub-pals 0/1/2 per
+    src/game/world/bg_palette.h CRAM target). Pre-Phase-F: 4352 bytes.
+    """
     raw = bank_path.read_bytes()
     if len(raw) != ENEMY_X4_TILE_COUNT_PER_PAL * BYTES_PER_NES_TILE:
         raise SystemExit(
             f"PR-4b: {bank_path.name} unexpected size "
             f"{len(raw)} (want {ENEMY_X4_TILE_COUNT_PER_PAL * BYTES_PER_NES_TILE})")
 
-    # Step 1: NES → Genesis 4bpp (1088 bytes = 34 tiles).
-    base = bytearray()
+    # NES → Genesis 4bpp (1088 bytes = 34 tiles, sub-pal-0 encoded).
+    out = bytearray()
     for tid in range(ENEMY_X4_TILE_COUNT_PER_PAL):
         nes_tile = raw[tid * BYTES_PER_NES_TILE : (tid + 1) * BYTES_PER_NES_TILE]
-        base.extend(nes_tile_to_genesis(nes_tile))
-
-    # Step 2: 4x sub-pal expansion (per row, like _expand_row_x4 but at
-    # tile-block granularity since the layout is 4 contiguous tile blocks).
-    out = bytearray()
-    for sub_pal in range(4):
-        out.extend(_bias_byte(b, sub_pal) for b in base)
+        out.extend(nes_tile_to_genesis(nes_tile))
     if len(out) != ENEMY_X4_PER_BANK_BYTES:
         raise SystemExit(f"PR-4b: enemy bank size wrong: {len(out)}")
     return bytes(out)
@@ -1425,13 +1430,14 @@ def _build_boss_blob(bank_path: Path) -> bytes:
 
 
 def emit_enemy_chr_x4(out_dir: Path) -> int:
-    """Emit atlas/enemy_chr.{c,h}. Returns per-bank byte count (4352).
+    """Emit atlas/enemy_chr.{c,h}. Returns per-bank byte count (1088 post-F).
 
-    Three UWSP banks (UWSP127/358/469), each ENEMY_X4_PER_BANK_BYTES,
-    4x sub-pal expanded. Layout: pal0||pal1||pal2||pal3.
+    Three UWSP banks (UWSP127/358/469), each ENEMY_X4_PER_BANK_BYTES.
+    Phase F (2026-05-18): single sub-pal-0 copy per bank (was 4x pixel-bias).
     Plus PR-4c OWSP single-sub-pal bank for OW + cave NPCs.
-    Renderer offset rule (UWSP): blob_off = per_pal_bytes * sub_pal.
-    Renderer offset rule (OWSP): blob_off = 0 (single bank, no expansion).
+    Renderer offset rule (UWSP + OWSP): blob_off = 0 (single copy each).
+    Sub-pal selection routes via Genesis OAM pal field in
+    enemy_render.c::translate_attrs.
     """
     blobs: List[Tuple[str, bytes]] = []
     for sym, fname in ENEMY_BANK_FILES:
@@ -1446,7 +1452,7 @@ def emit_enemy_chr_x4(out_dir: Path) -> int:
     owsp_blob = _build_owsp_blob(owsp_path)
 
     per_bank = ENEMY_X4_PER_BANK_BYTES
-    per_pal = per_bank // 4
+    per_pal = per_bank  # Phase F: single copy, per_pal == per_bank
 
     guard = "ROOMROM_ATLAS_ENEMY_CHR_H"
     h_path = out_dir / "enemy_chr.h"
@@ -1457,12 +1463,13 @@ def emit_enemy_chr_x4(out_dir: Path) -> int:
         "/* enemy_chr: UW per-level transient enemy banks (PR-4b).",
         " *",
         " * Three NES UWSP banks (127/358/469) covering all 9 UW levels per",
-        " * z_03.asm:67-89 dispatch. Each bank holds 34 NES sprite tiles,",
-        " * 4x sub-pal expanded for Genesis VDP (sub-pal 0..3 contiguous).",
+        " * z_03.asm:67-89 dispatch. Each bank holds 34 NES sprite tiles.",
         " *",
-        " * Byte layout per bank: pal0||pal1||pal2||pal3, 32-byte tile rows.",
-        " * Per-pal stride = 1088 bytes (34 Genesis tiles).",
-        " * Pixel bias rule: out = (in==0) ? 0 : (sub_pal*4 + in).",
+        " * Phase F (2026-05-18 VRAM cleanup): single sub-pal-0 copy per",
+        " * bank (was 4x pixel-bias). Pre-Phase-F: 4352 B/bank with rule",
+        " * out = (in==0) ? 0 : (sub_pal*4 + in). Post: 1088 B/bank, sub-",
+        " * pal routes via Genesis OAM pal field in",
+        " * src/game/enemies/enemy_render.c::translate_attrs.",
         " *",
         " * Consumed by RoomRom/src/atlas/level_chr_swap.c via DMA state",
         " * machine; resident at SCENE_OBJ tile_base = (SPR_BASE + 44).",
@@ -1509,7 +1516,7 @@ def emit_enemy_chr_x4(out_dir: Path) -> int:
     write_lines(c_path, c_lines)
 
     print(f"  enemy_chr: 3 UWSP banks x {per_bank} bytes "
-          f"({ENEMY_X4_TILES} tiles each, 4x sub-pal expanded) "
+          f"({ENEMY_X4_TILES} tiles each, 1x sub-pal sub-pal-0 encoded) "
           f"+ OWSP {OWSP_BANK_BYTES} bytes ({OWSP_NES_TILE_COUNT} tiles, 1x)")
     return per_bank
 

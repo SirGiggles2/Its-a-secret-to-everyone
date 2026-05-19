@@ -2,12 +2,13 @@
 /* enemy_chr: UW per-level transient enemy banks (PR-4b).
  *
  * Three NES UWSP banks (127/358/469) covering all 9 UW levels per
- * z_03.asm:67-89 dispatch. Each bank holds 34 NES sprite tiles,
- * 4x sub-pal expanded for Genesis VDP (sub-pal 0..3 contiguous).
+ * z_03.asm:67-89 dispatch. Each bank holds 34 NES sprite tiles.
  *
- * Byte layout per bank: pal0||pal1||pal2||pal3, 32-byte tile rows.
- * Per-pal stride = 1088 bytes (34 Genesis tiles).
- * Pixel bias rule: out = (in==0) ? 0 : (sub_pal*4 + in).
+ * Phase F (2026-05-18 VRAM cleanup): single sub-pal-0 copy per
+ * bank (was 4x pixel-bias). Pre-Phase-F: 4352 B/bank with rule
+ * out = (in==0) ? 0 : (sub_pal*4 + in). Post: 1088 B/bank, sub-
+ * pal routes via Genesis OAM pal field in
+ * src/game/enemies/enemy_render.c::translate_attrs.
  *
  * Consumed by RoomRom/src/atlas/level_chr_swap.c via DMA state
  * machine; resident at SCENE_OBJ tile_base = (SPR_BASE + 44).
@@ -16,9 +17,9 @@
 #define ROOMROM_ATLAS_ENEMY_CHR_H
 
 #define ROOMROM_ATLAS_ENEMY_TILE_COUNT_PER_PAL 34u
-#define ROOMROM_ATLAS_ENEMY_TILE_COUNT         136u
+#define ROOMROM_ATLAS_ENEMY_TILE_COUNT         34u
 #define ROOMROM_ATLAS_ENEMY_PER_PAL_BYTES      1088u
-#define ROOMROM_ATLAS_ENEMY_PER_BANK_BYTES     4352u
+#define ROOMROM_ATLAS_ENEMY_PER_BANK_BYTES     1088u
 #define ROOMROM_ATLAS_ENEMY_OWSP_TILE_COUNT    114u
 #define ROOMROM_ATLAS_ENEMY_OWSP_BANK_BYTES    3648u
 
