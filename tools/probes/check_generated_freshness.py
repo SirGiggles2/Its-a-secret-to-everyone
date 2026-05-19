@@ -131,6 +131,23 @@ GEN_SPECS: list[dict] = [
         ],
     },
     {
+        "name": "bg_sparse",
+        "script": "RoomRom/tools/gen_bg_sparse.py",
+        "inputs": [
+            "data/chr/common.c",
+            "data/chr/overworld_bg.c",
+            "data/chr/underworld_bg.c",
+            "RoomRom/src/redux_overworld_bg.c",
+            "tools/probes/audit_per_tile_subpal.py",
+            "RoomRom/src/uw_room_blob.c",
+            "data/rooms/overworld.c",
+        ],
+        "outputs": [
+            "RoomRom/src/bg_sparse_chr.c",
+            "RoomRom/src/bg_sparse_chr.h",
+        ],
+    },
+    {
         "name": "sprite_catalog",
         "script": "tools/atlas/gen_sprite_catalog.py",
         "inputs": [
