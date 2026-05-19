@@ -46,9 +46,15 @@ static const unsigned char *resolve_static_buffer(unsigned char selector,
 }
 
 /* Process a single $3F palette record at byte offset `payload_off`
- * within whichever source the caller is walking. The actual byte
- * reads are done through a callback to avoid coupling the parser to
- * one storage form. */
+ * within whichever source the caller is walking.
+ *
+ * Phase R (2026-05-18 perf polish): batch contiguous CRAM writes via
+ * render_cram_subrange_upload when no slot wrap occurs. Previous impl
+ * looped render_cram_write_color per color (one 2-byte CRAM word per
+ * call); during dead-Link palette fade or item-pickup flash storms
+ * this added up to 96 calls per frame. Batched path = 1 subrange
+ * upload for the whole record. Slot wrap (rare; only when slot_base +
+ * count > 32) falls back to per-color path. */
 static void emit_palette_record(unsigned char lo,
                                 unsigned char count,
                                 const unsigned char *src,
@@ -56,15 +62,35 @@ static void emit_palette_record(unsigned char lo,
                                 unsigned char src_end)
 {
     unsigned char slot_base = (unsigned char)(lo & 0x1Fu);
-    unsigned char i;
-    for (i = 0u; i < count; i++) {
-        if ((unsigned char)(src_off + i) >= src_end) {
-            break;                         /* truncated payload */
+    /* Cap count to the bytes actually available in source. */
+    unsigned char src_avail = (unsigned char)((src_off < src_end)
+                                              ? (src_end - src_off) : 0u);
+    if (count > src_avail) count = src_avail;
+    if (count == 0u) return;
+
+    /* Fast path: no slot wrap. Convert NES->CRAM into local buffer,
+     * subrange-upload once. CRAM has 64 slots (4 PALs x 16); but
+     * NES palram only addresses lower 32 slots ($00..$1F). */
+    if ((unsigned short)slot_base + (unsigned short)count <= 32u) {
+        unsigned short cram_buf[64];  /* upper bound = NES record max */
+        unsigned char i;
+        for (i = 0u; i < count; i++) {
+            cram_buf[i] = roomrom_bg_palette_nes_to_cram(src[src_off + i]);
         }
-        unsigned char nes_color = src[src_off + i];
-        unsigned short cram = roomrom_bg_palette_nes_to_cram(nes_color);
-        unsigned short slot = (unsigned short)((slot_base + i) & 0x1Fu);
-        render_cram_write_color(slot, cram);
+        render_cram_subrange_upload((unsigned short)slot_base, cram_buf, count);
+        return;
+    }
+
+    /* Fallback: slot wrap requires per-slot writes (subrange would
+     * stride past CRAM end). Rare in NES Z1 records. */
+    {
+        unsigned char i;
+        for (i = 0u; i < count; i++) {
+            unsigned char nes_color = src[src_off + i];
+            unsigned short cram = roomrom_bg_palette_nes_to_cram(nes_color);
+            unsigned short slot = (unsigned short)((slot_base + i) & 0x1Fu);
+            render_cram_write_color(slot, cram);
+        }
     }
 }
 
@@ -122,20 +148,19 @@ static void drain_dynamic_buffer(void)
             count = 64u;
         }
         if (hi == 0x3Fu) {
-            unsigned char slot_base = (unsigned char)(lo & 0x1Fu);
+            /* Phase R: copy payload from TRANSFER_BUF macro into local
+             * buffer so emit_palette_record can batch via subrange
+             * upload. Avoids duplicating the slot-wrap fallback. */
+            unsigned char payload[64];
             unsigned char i;
-            for (i = 0u; i < count; i++) {
-                if ((unsigned char)(pos + 3u + i) >= end) {
-                    break;
-                }
-                unsigned char nes_color =
-                    (unsigned char)TRANSFER_BUF_BYTE(pos + 3u + i);
-                unsigned short cram =
-                    roomrom_bg_palette_nes_to_cram(nes_color);
-                unsigned short slot =
-                    (unsigned short)((slot_base + i) & 0x1Fu);
-                render_cram_write_color(slot, cram);
+            unsigned char copy_len = count;
+            unsigned char avail = (unsigned char)((pos + 3u < end)
+                                                   ? (end - pos - 3u) : 0u);
+            if (copy_len > avail) copy_len = avail;
+            for (i = 0u; i < copy_len; i++) {
+                payload[i] = (unsigned char)TRANSFER_BUF_BYTE(pos + 3u + i);
             }
+            emit_palette_record(lo, copy_len, payload, 0u, copy_len);
         }
         pos = (unsigned char)(pos + 3u + count);
     }
