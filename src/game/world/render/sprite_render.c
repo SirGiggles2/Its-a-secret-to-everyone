@@ -648,8 +648,33 @@ void roomrom_sprites_set_room_item(short x, short y,
                           8);
         return;
     }
-    /* Placeholder fallback (heart container / big key / ring / etc — CHR
-     * extraction pending). */
+    /* Phase K continuation #2 (2026-05-18): heart container / big key /
+     * book / raft / ladder. NES item slot IDs per Anim_ItemFrameTiles
+     * (Z_01.asm:5201-5207). All narrow_8x16 dispatch with sub-pal 0. */
+    {
+        unsigned short tile_offset = 0xFFFFu;  /* sentinel = use placeholder */
+        switch (item_id) {
+        case 0x14u: tile_offset = ROOMROM_ITEM_TILE_HEART_CONTAINER; break;
+        case 0x18u: tile_offset = ROOMROM_ITEM_TILE_BIG_KEY;         break;
+        case 0x0Bu: tile_offset = ROOMROM_ITEM_TILE_BOOK_OF_MAGIC;   break;
+        case 0x0Au: tile_offset = ROOMROM_ITEM_TILE_RAFT;            break;
+        case 0x0Du: tile_offset = ROOMROM_ITEM_TILE_LADDER;          break;
+        default:    tile_offset = 0xFFFFu;                            break;
+        }
+        if (tile_offset != 0xFFFFu) {
+            unsigned short tile = (unsigned short)(ROOMROM_ITEM_TILE_BASE_PAL(0u)
+                                                    + tile_offset);
+            VDP_setSpriteFull(ROOMROM_SPRITE_SLOT_ROOM_ITEM,
+                              (signed short)x,
+                              (signed short)y,
+                              RENDER_SPRITE_SIZE(1, 2),
+                              RENDER_TILE_ATTR_FULL(ROOMROM_SUBPAL_PAL(0u),
+                                                    1, 0, 0, tile),
+                              8);
+            return;
+        }
+    }
+    /* Placeholder fallback (ring / other unmapped item_ids). */
     {
         unsigned short tile = (unsigned short)(ROOMROM_ITEM_TILE_BASE_PAL(sub_pal)
                                                 + ROOMROM_ITEM_TILE_BOOMERANG);
