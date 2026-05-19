@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "generated_by": "tools/atlas/gen_sprite_catalog.py",
-  "verifier_output": "verify_vram_budget: OK  BG=tiles 1..532  SPR=tiles 533..819  ITEM=tiles 820..903  BOSS=SCENE_OBJ-shared (NES parity)  HUD_BACKDROP=retired (+8 tiles freed)  headroom=632 tiles before VDP tables",
+  "verifier_output": "verify_vram_budget: OK  BG=tiles 1..532  SPR=tiles 533..819  ITEM=tiles 820..917  BOSS=SCENE_OBJ-shared (NES parity)  HUD_BACKDROP=retired (+8 tiles freed)  headroom=618 tiles before VDP tables",
   "vram_map": {
     "BG_TILE_BASE": 1,
     "BG_TILE_COUNT_PER_PAL": 532,
@@ -46,13 +46,13 @@
     },
     "ITEM": {
       "tile_base": 820,
-      "tiles_resident": 84,
+      "tiles_resident": 98,
       "tile_range": [
         820,
-        903
+        917
       ],
       "subpal_count": 1,
-      "bytes_resident": 896,
+      "bytes_resident": 1045,
       "source": "RoomRom/data/item_chr_manifest.json + RoomRom/tools/gen_atlas.py",
       "replication": "1x (Phase B collapsed from 3x on 2026-05-18)"
     },
@@ -389,6 +389,111 @@
       "tile_ids": [
         "0x2C",
         "0x2D"
+      ],
+      "sprite_size": [
+        1,
+        2
+      ],
+      "draw_rule": "narrow_8x16"
+    },
+    {
+      "name": "ring",
+      "item": "ring",
+      "direction_class": "static",
+      "nes_frame_tile": "0x76",
+      "tile_ids": [
+        "0x76",
+        "0x77"
+      ],
+      "sprite_size": [
+        1,
+        2
+      ],
+      "draw_rule": "narrow_8x16"
+    },
+    {
+      "name": "magic_key",
+      "item": "magic_key",
+      "direction_class": "static",
+      "nes_frame_tile": "0x4E",
+      "tile_ids": [
+        "0x4E",
+        "0x4F"
+      ],
+      "sprite_size": [
+        1,
+        2
+      ],
+      "draw_rule": "narrow_8x16"
+    },
+    {
+      "name": "bracelet",
+      "item": "bracelet",
+      "direction_class": "static",
+      "nes_frame_tile": "0x4C",
+      "tile_ids": [
+        "0x4C",
+        "0x4D"
+      ],
+      "sprite_size": [
+        1,
+        2
+      ],
+      "draw_rule": "narrow_8x16"
+    },
+    {
+      "name": "bow",
+      "item": "bow",
+      "direction_class": "static",
+      "nes_frame_tile": "0x2A",
+      "tile_ids": [
+        "0x2A",
+        "0x2B"
+      ],
+      "sprite_size": [
+        1,
+        2
+      ],
+      "draw_rule": "narrow_8x16"
+    },
+    {
+      "name": "recorder",
+      "item": "recorder",
+      "direction_class": "static",
+      "nes_frame_tile": "0x22",
+      "tile_ids": [
+        "0x22",
+        "0x23"
+      ],
+      "sprite_size": [
+        1,
+        2
+      ],
+      "draw_rule": "narrow_8x16"
+    },
+    {
+      "name": "food",
+      "item": "food",
+      "direction_class": "static",
+      "nes_frame_tile": "0x40",
+      "tile_ids": [
+        "0x40",
+        "0x41"
+      ],
+      "sprite_size": [
+        1,
+        2
+      ],
+      "draw_rule": "narrow_8x16"
+    },
+    {
+      "name": "potion",
+      "item": "potion",
+      "direction_class": "static",
+      "nes_frame_tile": "0x4A",
+      "tile_ids": [
+        "0x4A",
+        "0x4B"
       ],
       "sprite_size": [
         1,
