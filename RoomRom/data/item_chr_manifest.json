@@ -238,6 +238,32 @@
       "sprite_size_override_reason": "NES PPU runs 8x16 sprite mode (PPUCTRL bit 5 = 1). @Wide_Slim draws 2 OAMs side-by-side, each 8x16 (paired tile $X+1 as bottom). Visible cluster = 2*8x16 = 16x16, NOT 16x8. Renderer uses SPRITE_SIZE(2,2) with column-major fetch order LT, LB, RT, RB. Live BizHawk capture in probe_nes_audit.lua confirmed bottom-half tile bytes for $5D/$5F/$9F/$A1/$45/$47/$CF/$D1/$7B/$7D/$7F/$6F/$71."
     },
     {
+      "name": "compass",
+      "item": "compass",
+      "direction_class": "static",
+      "nes_frame_tile": "0x2E",
+      "sprite_size": [1, 2],
+      "tile_ids": ["0x2E", "0x2F"],
+      "draw_rule": "narrow_8x16",
+      "frame_index": 0,
+      "frame_subpal": 0,
+      "nes_dispatch_note": "Phase K (2026-05-18): UW pickup compass. NES item slot 0x10 / UW_ITEM_ID_COMPASS. Anim_ItemFrameTiles[$10]=$2E (Narrow dispatch, single 8x16 OAM tile $2E top + $2F bottom). CHR from reference/aldonunez/dat/CommonSpritePatterns.dat tile 0x2E.",
+      "sprite_size_override_reason": "NES PPU 8x16 sprite mode (PPUCTRL bit 5 = 1 during gameplay): Anim_WriteSpecificItemSprites @Narrow (Z_01.asm:5288) emits ONE OAM whose hardware height is 16px (tile $2E top + $2F bottom). Genesis SPRITE_SIZE(1,2) matches NES visual output. The strict verifier's [1,1] = NES tile-count per OAM entry; renderer uses pixel dimensions."
+    },
+    {
+      "name": "map",
+      "item": "map",
+      "direction_class": "static",
+      "nes_frame_tile": "0x32",
+      "sprite_size": [1, 2],
+      "tile_ids": ["0x32", "0x33"],
+      "draw_rule": "narrow_8x16",
+      "frame_index": 0,
+      "frame_subpal": 0,
+      "nes_dispatch_note": "Phase K (2026-05-18): UW pickup map. NES item slot 0x11 / UW_ITEM_ID_MAP. Anim_ItemFrameTiles[$11]=$32 (Narrow dispatch). CHR from reference/aldonunez/dat/CommonSpritePatterns.dat tile 0x32.",
+      "sprite_size_override_reason": "NES PPU 8x16 mode: tile $32 top + $33 bottom = single 16-pixel-tall OAM via Z_01.asm:5288 @Narrow path. Genesis SPRITE_SIZE(1,2) preserves NES visual."
+    },
+    {
       "name": "triforce_piece",
       "item": "triforce_piece",
       "direction_class": "static",
@@ -762,6 +788,34 @@
           "sha256": "d909d8621f27189d4fd165f1c8a4e47ec7483bd3c998ade40c08bdb028727049",
           "flat_pattern": false,
           "bytes": "1C10000000000F0F1F1F0F0F1F1F0000"
+        },
+        "0x2E": {
+          "ppu_addr": "0x02E0",
+          "source": "reference_aldonunez_CommonSpritePatterns_dat",
+          "sha256": "phase_k_2026_05_18",
+          "flat_pattern": false,
+          "bytes": "0442A1C1C1018708387CC68282FEF810"
+        },
+        "0x2F": {
+          "ppu_addr": "0x02F0",
+          "source": "reference_aldonunez_CommonSpritePatterns_dat",
+          "sha256": "phase_k_2026_05_18",
+          "flat_pattern": false,
+          "bytes": "08080848080808081010107070307010"
+        },
+        "0x32": {
+          "ppu_addr": "0x0320",
+          "source": "reference_aldonunez_CommonSpritePatterns_dat",
+          "sha256": "phase_k_2026_05_18",
+          "flat_pattern": false,
+          "bytes": "103070A0C0C0C0C0183C7EF5FBFBFBFB"
+        },
+        "0x33": {
+          "ppu_addr": "0x0330",
+          "source": "reference_aldonunez_CommonSpritePatterns_dat",
+          "sha256": "phase_k_2026_05_18",
+          "flat_pattern": false,
+          "bytes": "C0C0C0A010000000FBFBFBFBF57E3C18"
         }
       }
     },
@@ -1189,6 +1243,34 @@
           "sha256": "d909d8621f27189d4fd165f1c8a4e47ec7483bd3c998ade40c08bdb028727049",
           "flat_pattern": false,
           "bytes": "1C10000000000F0F1F1F0F0F1F1F0000"
+        },
+        "0x2E": {
+          "ppu_addr": "0x02E0",
+          "source": "reference_aldonunez_CommonSpritePatterns_dat",
+          "sha256": "phase_k_2026_05_18",
+          "flat_pattern": false,
+          "bytes": "0442A1C1C1018708387CC68282FEF810"
+        },
+        "0x2F": {
+          "ppu_addr": "0x02F0",
+          "source": "reference_aldonunez_CommonSpritePatterns_dat",
+          "sha256": "phase_k_2026_05_18",
+          "flat_pattern": false,
+          "bytes": "08080848080808081010107070307010"
+        },
+        "0x32": {
+          "ppu_addr": "0x0320",
+          "source": "reference_aldonunez_CommonSpritePatterns_dat",
+          "sha256": "phase_k_2026_05_18",
+          "flat_pattern": false,
+          "bytes": "103070A0C0C0C0C0183C7EF5FBFBFBFB"
+        },
+        "0x33": {
+          "ppu_addr": "0x0330",
+          "source": "reference_aldonunez_CommonSpritePatterns_dat",
+          "sha256": "phase_k_2026_05_18",
+          "flat_pattern": false,
+          "bytes": "C0C0C0A010000000FBFBFBFBF57E3C18"
         }
       }
     }

@@ -620,7 +620,36 @@ void roomrom_sprites_set_room_item(short x, short y,
                           8);
         return;
     }
-    /* Placeholder fallback (compass / map / heart container / etc). */
+    /* Phase K continuation (2026-05-18): compass + map extracted CHR.
+     * NES item_id 0x10 (UW_ITEM_ID_COMPASS) -> ROOMROM_ITEM_TILE_COMPASS
+     *               (1x2 narrow_8x16, sub-pal 0).
+     * NES item_id 0x11 (UW_ITEM_ID_MAP)     -> ROOMROM_ITEM_TILE_MAP. */
+    if (item_id == 0x10u) {
+        unsigned short tile = (unsigned short)(ROOMROM_ITEM_TILE_BASE_PAL(0u)
+                                                + ROOMROM_ITEM_TILE_COMPASS);
+        VDP_setSpriteFull(ROOMROM_SPRITE_SLOT_ROOM_ITEM,
+                          (signed short)x,
+                          (signed short)y,
+                          RENDER_SPRITE_SIZE(1, 2),
+                          RENDER_TILE_ATTR_FULL(ROOMROM_SUBPAL_PAL(0u),
+                                                1, 0, 0, tile),
+                          8);
+        return;
+    }
+    if (item_id == 0x11u) {
+        unsigned short tile = (unsigned short)(ROOMROM_ITEM_TILE_BASE_PAL(0u)
+                                                + ROOMROM_ITEM_TILE_MAP);
+        VDP_setSpriteFull(ROOMROM_SPRITE_SLOT_ROOM_ITEM,
+                          (signed short)x,
+                          (signed short)y,
+                          RENDER_SPRITE_SIZE(1, 2),
+                          RENDER_TILE_ATTR_FULL(ROOMROM_SUBPAL_PAL(0u),
+                                                1, 0, 0, tile),
+                          8);
+        return;
+    }
+    /* Placeholder fallback (heart container / big key / ring / etc — CHR
+     * extraction pending). */
     {
         unsigned short tile = (unsigned short)(ROOMROM_ITEM_TILE_BASE_PAL(sub_pal)
                                                 + ROOMROM_ITEM_TILE_BOOMERANG);
