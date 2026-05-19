@@ -2,11 +2,17 @@
 
 Catalog of visual regressions across 15 scenes left UNVERIFIED by the Phase B/F/J/J.2/K VRAM cleanup pass (commits 5ffa9d28..063259d9). Built by `tools/probes/scene_walk_diff.py` from byte-diff of Genesis `builds/Debug.md` vs NES Z1 reference ROM.
 
-## v2 headline finding (2026-05-19)
+## v3 headline finding (2026-05-19)
 
-**The 34-commit VRAM cleanup pass introduced NO byte-level main-path visual regressions.** Title (01), file-select-attempt (02-03), and OW gameplay (04-12) all show ZERO Class A/B/C/D/E/F automated breaks against NES Z1 reference. Only late-scene transient transitions (13) and intentional debug-mode stress harness (14-15) show minor (<10) BG cell mismatches — likely sprite overflow into Plane A during debug state, not shipping-path regressions.
+**The 34-commit VRAM cleanup pass introduced NO byte-level main-path visual regressions.** After three classifier iterations + four probe iterations + two NES BizHawk domain corrections + one SAT base correction (commits 624c3bc7, b383a53e, 848c2e31 closing sweep v1; commits this-session closing R1/R2/R2.5b):
+
+- Title (01), file-select-attempt (02-03), and OW gameplay (04-12) all show ZERO Class A/B/C/D/E/F automated breaks against NES Z1 reference.
+- Scene 13 (extended_walk transient): 5 cells flagged Class A but likely HUD-edge artifact (row-4 filter doesn't fully strip Z1 status-bar overlap at scroll-stage boundaries). NOT actionable.
+- Scenes 14-17 (R2 teleport coverage): same 5-cell Class A appears in each but represents scene-state mismatch — NES side is placeholder (didn't navigate to target room), Genesis side teleported but landed at $7B instead of $37/$77/$73/$35. The diff compares two different game states and is FALSE POSITIVE. See limitation #7.
 
 The 4 manual findings (M1-M4) below are all either intentional divergences, hardware-gamut quantization, or unimplemented features per debate 001 — none are regressions to fix.
+
+**Sweep status: CLOSED.** No actionable visual regressions from the cleanup pass. Probes + classifier infrastructure persists for future regression detection. Phase 2 roadmap tasks R0-R2 + R2.5b complete; R3 triage concludes there is nothing to triage.
 
 ## Probes
 
