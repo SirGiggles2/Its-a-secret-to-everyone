@@ -64,20 +64,38 @@
 /* tile 0 is always blank (transparent fallback for any plane). */
 #define ROOMROM_BLANK_TILE              0u
 
-/* Per-sub-pal stride is 256 because NES BG addresses tiles by 8-bit NES
- * tile ID. OW renderer uploads common BG (112) + OW BG (130) + common
- * misc (14) = 256 distinct NES tile slots; redux automap (32) and secrets
- * (12) get patched into existing slots, not appended. HUD custom tiles
- * (3) likewise live at NES IDs $50..$52 (shared bank). */
+/* BG bank — Phase J (2026-05-18): sparse atlas replaces 4x pixel-bias
+ * replication. Only (tile_id, sub_pal) combos USED by UW + OW rooms +
+ * HUD are emitted. Universal LUT `bg_sparse_tile_lut[256][4]` maps NES
+ * (tile_id, sub_pal) -> sparse-atlas slot. Slot N at VRAM tile
+ * (ROOMROM_BG_TILE_BASE + N). Renderer (ow/uw/hud) uses
+ * roomrom_bg_sparse_tile_word(raw, pal) helper.
+ *
+ * Phase J Step 3: bank actual size = BG_SPARSE_TILE_COUNT (~357 tiles).
+ * Tile slots from BG_BASE + BG_SPARSE_TILE_COUNT up to SPR_BASE are
+ * FREE (Phase J.2 follow-up may shift SPR/ITEM/SCENE_OBJ banks down to
+ * claim the gap as headroom). For now the gap is documented free VRAM
+ * available for new content without touching the verifier ceiling.
+ *
+ * Legacy ROOMROM_BG_TILE_COUNT_PER_PAL kept at 256 (NES tile ID range)
+ * for any consumer that needs the NES domain count. ROOMROM_BG_SUBPAL_COUNT
+ * kept at 4 for the same reason. Macro ROOMROM_BG_TILE_BASE_PAL(s) now
+ * returns BG_TILE_BASE regardless of s (legacy contracts compile; new
+ * code uses the LUT helper). */
 #define ROOMROM_BG_TILE_BASE            1u
-#define ROOMROM_BG_TILE_COUNT_PER_PAL   256u
-#define ROOMROM_BG_SUBPAL_COUNT         4u
+#define ROOMROM_BG_TILE_COUNT_PER_PAL   256u    /* NES tile ID domain (unchanged) */
+#define ROOMROM_BG_SUBPAL_COUNT         4u      /* NES sub-pal domain (unchanged) */
 #define ROOMROM_SPR_TILE_BASE           1025u   /* 1 + 4*256 */
 #define ROOMROM_SPR_TILE_COUNT_PER_PAL  287u    /* common(238)+walk(32)+attack(16)=286 used, 1 slack. Reduced from 312 (-25 tiles) to make ITEM bank fit at 56 tiles/sub-pal x4 = 224 tiles after 8x16 mode parity work (bomb +1 tile, explosion +6 tiles for 16x16 mirrored). Post-Phase-B (2026-05-18): ITEM bank shrank to 70 tiles single-copy, leaving 140 headroom tiles (1382..1521) for future SPR expansion without VDP table relocation. */
 #define ROOMROM_SPR_SUBPAL_COUNT        1u      /* SPR bank stays 1x (sub-pal 0 only) physically. Phase D unblock (2026-05-18): future sprites needing sub-pal 1/2 can use this bank at 1x VRAM cost — Genesis OAM pal field selects PAL2/PAL3 (loaded with NES SPR sub-pal 1/2 colors by roomrom_bg_palette_load_palram_full per src/game/world/bg_palette.h CRAM target). Helper: ROOMROM_SUBPAL_PAL(s) in sprite_render.c maps sub_pal 0/1/2 -> PAL1/PAL2/PAL3 for any sprite renderer. No new tile copies required. */
 
+/* Phase J (2026-05-18): macro neutralized — sparse atlas has no per-
+ * sub-pal stride. All sub-pals collapse to BG_TILE_BASE; the actual
+ * VRAM tile is selected via bg_sparse_tile_lut[raw_tile][sub_pal] +
+ * BG_TILE_BASE. Existing call sites compile unchanged; new code uses
+ * roomrom_bg_sparse_tile_word() helper. */
 #define ROOMROM_BG_TILE_BASE_PAL(s)  \
-    (ROOMROM_BG_TILE_BASE  + (unsigned short)(s) * ROOMROM_BG_TILE_COUNT_PER_PAL)
+    (ROOMROM_BG_TILE_BASE + 0u * (unsigned short)(s))
 #define ROOMROM_SPR_TILE_BASE_PAL(s) \
     (ROOMROM_SPR_TILE_BASE + (unsigned short)(s) * ROOMROM_SPR_TILE_COUNT_PER_PAL)
 /* HUD tiles live in the BG bank (same NES BG content, same sub-pal stride). */

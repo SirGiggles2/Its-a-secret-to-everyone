@@ -184,6 +184,41 @@ def main():
         for tid, sps in d.items():
             combined[tid].update(sps)
 
+    # Force-include HUD tile IDs (Phase J §36.1 MF2: HUD rows 0..6 not
+    # covered by room nametable audit). HUD lives on Window plane but
+    # references same BG tile bank. Sourced from src/game/hud/hud_runtime.c
+    # constants (TILE_*) + StatusBarTransferBufTemplate digits/letters.
+    # Sub-pals 0, 1, 2 cover all HUD palette contexts (white/yellow/red).
+    HUD_FORCE_TILES = (
+        # Digits 0..9 (score, rupee count, key count, bomb count)
+        0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09,
+        # Letters used in StatusBarTransferBufTemplate
+        0x0E, 0x0F, 0x12, 0x15,
+        # Inventory glyphs + heart pieces
+        0x21,           # TILE_LOW_X
+        0x24,           # HUD_TILE_SPACE (also walkable sand BG; already covered)
+        0x50, 0x51, 0x52,  # TILE_REDUX_HEART_OUTLINE / _MAP_MARKER / _HEART_FILL
+        0x62,           # TILE_DASH
+        0xF2, 0xF3, 0xF4, 0xF5,  # full/half/empty heart, gray map
+    )
+    for tid in HUD_FORCE_TILES:
+        combined[tid].update([0, 1, 2])  # HUD pal context varies (white/yellow/red)
+
+    # Force-include redux automap tile range (0x30..0x4F, 32 tiles) for HUD
+    # automap rendering. Sub-pals 0,1,2 cover the gray/blue/red room state.
+    # Original hud_runtime.c::upload_redux_automap_chr handled this via
+    # per-pal 4x legacy upload; sparse atlas absorbs it.
+    for tid in range(0x30, 0x50):
+        combined[tid].update([0, 1, 2])
+
+    # Force-include common_chr BG range used by hud_upload_chr legacy path
+    # (NES tiles 0x00..0x15 + 0x20..0x24 + 0x61..0x6E + 0xF7..0xF9 per
+    # hud_runtime.c::upload_common_hud_chr). Most already in audit; this
+    # is belt-and-suspenders for tiles HUD references but rooms don't.
+    for tid in list(range(0x00, 0x16)) + list(range(0x20, 0x25)) \
+             + list(range(0x61, 0x6F)) + list(range(0xF7, 0xFA)):
+        combined[tid].update([0, 1, 2])
+
     # Emit per-variant blobs against COMBINED usage (so LUT is universal)
     orig_ow_blob, orig_ow_lut = emit_sparse_blob(
         combined, common_chr, overworld_bg_chr, "orig_ow")

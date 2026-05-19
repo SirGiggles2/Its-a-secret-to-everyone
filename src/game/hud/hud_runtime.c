@@ -5,6 +5,7 @@
 #include "render_abi.h"
 #include "../../../RoomRom/src/roomrom_vram_map.h"
 #include "../../../RoomRom/src/expanded_bg_chr.h"
+#include "../../../RoomRom/src/bg_sparse_chr.h"  /* Phase J: sparse atlas + LUT */
 #include "../../state/inventory.h"
 /* P4c: atlas header included for named constant reference and future
  * ATLAS_ASSERT_SIZE hooks.
@@ -187,12 +188,14 @@ static const unsigned char s_redux_uw_hud_macro[] = {
 
 static unsigned short hud_word(unsigned char raw_tile, unsigned char pal)
 {
-    /* Phase 4: HUD = NES BG content. Sub-pal selector lives in tile index
-     * (pixel-biased copy in the BG bank); Gen pal-slot bits stay 0.  The
-     * Window plane still treats pixel 0 as transparent, so HUD glyphs must
-     * sit above the sprite-backed black underlay during vertical scrolls. */
-    unsigned short tile = (unsigned short)(ROOMROM_BG_TILE_BASE_PAL(pal & 0x03)
-                                           + (unsigned short)raw_tile);
+    /* Phase J (2026-05-18): sparse atlas LUT lookup. HUD tiles are
+     * force-included in gen_bg_sparse.py per §36.1 MF2 (HUD rows not
+     * covered by room nametable audit). Sentinel 0xFFFF (combo not
+     * force-included) -> tile 0 blank fallback. */
+    unsigned short slot = bg_sparse_tile_lut[raw_tile][pal & 0x03u];
+    unsigned short tile = (slot == 0xFFFFu)
+        ? ROOMROM_BLANK_TILE
+        : (unsigned short)(ROOMROM_BG_TILE_BASE + slot);
     /* Phase 12.2 SGDK-1 cleanup: inline TILE_ATTR_FULL(PAL0, 1, 0, 0, tile).
      * Format: priority<<15 | palette<<13 | vflip<<12 | hflip<<11 | tile_index.
      * PAL0=0, priority=1 -> 0x8000; vflip=hflip=0. */
@@ -547,26 +550,25 @@ static void upload_redux_automap_chr(unsigned char subpal)
 
 void roomrom_hud_upload_chr(void)
 {
-    /* Phase 3: write 4 sub-pal copies of the 3-tile custom HUD CHR into
-     * the BG bank. Bias rule per nibble: out = (in==0) ? 0 : (s*4 + in). */
-    unsigned char buf[sizeof(s_hud_custom_chr)];
-    unsigned char s, i;
-    for (s = 0; s < 4; s++) {
-        upload_common_hud_chr(s);
-        upload_redux_automap_chr(s);
-        for (i = 0; i < sizeof(s_hud_custom_chr); i++) {
-            unsigned char b = s_hud_custom_chr[i];
-            unsigned char hi = (b >> 4) & 0x0F;
-            unsigned char lo = b & 0x0F;
-            unsigned char ho = (hi == 0) ? 0 : (s * 4 + hi);
-            unsigned char lz = (lo == 0) ? 0 : (s * 4 + lo);
-            buf[i] = (unsigned char)((ho << 4) | lz);
-        }
-        render_chr_upload(
-            (unsigned short)((ROOMROM_BG_TILE_BASE_PAL(s) + TILE_REDUX_HEART_OUTLINE) * 32u),
-            buf,
-            (unsigned short)sizeof(s_hud_custom_chr));
-    }
+    /* Phase J (2026-05-18): HUD content (digits, glyphs, hearts, map
+     * marker, redux automap) is now force-included in bg_sparse_chr at
+     * sub-pals 0/1/2 (see gen_bg_sparse.py HUD_FORCE_TILES + redux
+     * automap range). The sparse upload performed by
+     * roomrom_ow_room_render_upload_chr / roomrom_uw_room_render_upload_chr
+     * covers all HUD tiles via the universal sparse layout.
+     *
+     * Custom HUD CHR (TILE_REDUX_HEART_OUTLINE/_MAP_MARKER/_HEART_FILL =
+     * NES IDs 0x50/0x51/0x52) is also in HUD_FORCE_TILES; sparse atlas
+     * carries them.
+     *
+     * Pre-Phase-J this function uploaded 4x sub-pal copies of HUD CHR
+     * via legacy bank stride. Post-Phase-J: no-op. Kept for API stability
+     * (single caller at RoomRom/src/main.c:1009; renaming would require
+     * touching that file too). */
+    (void)0;
+    /* Suppress unused-symbol warnings for legacy helpers. */
+    (void)upload_common_hud_chr;
+    (void)upload_redux_automap_chr;
 }
 
 static void draw_hud_dynamic(unsigned char hud_id)

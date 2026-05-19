@@ -4,6 +4,7 @@
 #include "../bg_palette.h"  /* Phase 12.2 promoted */
 #include "../ow_palette.h"  /* Phase 12.2 promoted */
 #include "../../../../RoomRom/src/expanded_bg_chr.h"
+#include "../../../../RoomRom/src/bg_sparse_chr.h"  /* Phase J: sparse atlas + LUT */
 #include "platform_abi.h"  /* nes_ram, NES_PLAY_AREA_BASE, NES_TILE_COL_STRIDE */
 
 extern const unsigned char rooms_overworld[];
@@ -244,42 +245,17 @@ static unsigned char normalize_primary_tile(unsigned char raw)
 
 void roomrom_ow_room_render_upload_chr(void)
 {
-    /* Phase 3: 4 sub-pal banks. Each NES BG section is uploaded 4 times,
-     * once per Gen PAL0 sub-pal slot, from the corresponding pixel-biased
-     * copy in the *_x4 expanded array. NES tile T sub-pal s lives at Gen
-     * VRAM tile ROOMROM_BG_TILE_BASE_PAL(s) + T. */
-    unsigned char s;
+    /* Phase J (2026-05-18): single sparse upload replaces 4x legacy bank.
+     * bg_sparse_chr_orig_ow / bg_sparse_chr_redux_ow are pre-bias-encoded
+     * flat tile arrays (one Genesis tile per used (tile_id, sub_pal)
+     * combo). Slot allocation is universal across variants — only the
+     * tile content differs. Renderer's tile_word() uses bg_sparse_tile_lut
+     * to map NES (tile_id, sub_pal) -> slot. */
     const unsigned char redux = (s_roomrom_map_id == ROOMROM_MAP_REDUX);
-    const unsigned char *ow_x4 = redux ? redux_overworld_bg_chr_x4
-                                       : overworld_bg_chr_x4;
-    const unsigned short ow_per_pal_bytes = redux
-        ? REDUX_OVERWORLD_BG_CHR_PER_PAL_BYTES
-        : OVERWORLD_BG_CHR_PER_PAL_BYTES;
-    for (s = 0; s < 4; s++) {
-        unsigned short bank_tile = ROOMROM_BG_TILE_BASE_PAL(s);
-        /* common BG section (NES tiles 0..0x6F) */
-        render_chr_upload((unsigned short)(bank_tile * 32u),
-                          common_chr_x4 + s * COMMON_CHR_PER_PAL_BYTES + COMMON_BG_CHR_OFFSET,
-                          (unsigned short)(COMMON_BG_TILE_COUNT * 32u));
-        /* redux automap (NES tiles starting at 0x30) */
-        render_chr_upload((unsigned short)((bank_tile + 0x30u) * 32u),
-                          redux_automap_chr_x4 + s * REDUX_AUTOMAP_CHR_PER_PAL_BYTES,
-                          (unsigned short)(REDUX_AUTOMAP_TILE_COUNT * 32u));
-        if (redux) {
-            /* redux secrets (NES tiles starting at 0x54) */
-            render_chr_upload((unsigned short)((bank_tile + 0x54u) * 32u),
-                              redux_overworld_secret_chr_x4 + s * REDUX_OVERWORLD_SECRET_CHR_PER_PAL_BYTES,
-                              (unsigned short)(12u * 32u));
-        }
-        /* OW BG section (NES tiles 0x70..0xF1) */
-        render_chr_upload((unsigned short)((bank_tile + COMMON_BG_TILE_COUNT) * 32u),
-                          ow_x4 + s * ow_per_pal_bytes,
-                          (unsigned short)(OW_BG_TILE_COUNT * 32u));
-        /* common misc (NES tiles 0xF2..0xFF) */
-        render_chr_upload((unsigned short)((bank_tile + COMMON_BG_TILE_COUNT + OW_BG_TILE_COUNT) * 32u),
-                          common_chr_x4 + s * COMMON_CHR_PER_PAL_BYTES + COMMON_MISC_CHR_OFFSET,
-                          (unsigned short)(COMMON_MISC_TILE_COUNT * 32u));
-    }
+    const unsigned char *blob = redux ? bg_sparse_chr_redux_ow
+                                      : bg_sparse_chr_orig_ow;
+    render_chr_upload((unsigned short)(ROOMROM_BG_TILE_BASE * 32u),
+                      blob, BG_SPARSE_BLOB_BYTES);
 }
 
 static unsigned char ow_tile_palette(unsigned char tile_col, unsigned char tile_row,
@@ -308,10 +284,16 @@ static unsigned char ow_tile_palette(unsigned char tile_col, unsigned char tile_
 
 static unsigned short tile_word(unsigned char raw_tile, unsigned char pal)
 {
-    /* Phase 4: NES sub-pal selector lives in the tile index (pixel-biased
-     * sub-pal copy); Gen pal-slot bits stay 0 (PAL0 owns NES BG). */
-    return (unsigned short)(ROOMROM_BG_TILE_BASE_PAL(pal & 0x03)
-                            + (unsigned short)raw_tile);
+    /* Phase J (2026-05-18): sparse atlas LUT lookup. Pre-Phase-J this
+     * used ROOMROM_BG_TILE_BASE_PAL(pal) + raw_tile (4x bank stride).
+     * Post-J: universal LUT maps NES (tile_id, sub_pal) -> sparse slot.
+     * Sentinel 0xFFFF (unused combo) -> tile 0 blank fallback per §36.1
+     * MF3 (observability hook deferred to Phase Q telemetry probe). */
+    unsigned short slot = bg_sparse_tile_lut[raw_tile][pal & 0x03u];
+    if (slot == 0xFFFFu) {
+        return ROOMROM_BLANK_TILE;
+    }
+    return (unsigned short)(ROOMROM_BG_TILE_BASE + slot);
 }
 
 /* Task 5.4: when set, write_tile_at also records the raw NES BG tile id

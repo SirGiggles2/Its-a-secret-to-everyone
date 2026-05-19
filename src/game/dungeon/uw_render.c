@@ -6,6 +6,7 @@
 #include "../../../RoomRom/src/roomrom_vram_map.h"
 #include "../world/bg_palette.h"  /* Phase 12.2 promoted */
 #include "../../../RoomRom/src/expanded_bg_chr.h"
+#include "../../../RoomRom/src/bg_sparse_chr.h"  /* Phase J: sparse atlas + LUT */
 #include "../../../RoomRom/src/uw_collision_data.h"
 
 extern const unsigned char rooms_dungeons[];
@@ -196,31 +197,24 @@ void roomrom_uw_room_render_load_palette(unsigned char room_id)
 
 void roomrom_uw_room_render_upload_chr(void)
 {
-    /* Phase 3: 4 sub-pal banks. NES tile T sub-pal s lives at Gen VRAM
-     * tile ROOMROM_BG_TILE_BASE_PAL(s) + T. */
+    /* Phase J (2026-05-18) — orig UW uses sparse atlas; redux UW (live
+     * PPU dump, 256 tiles x 4 sub-pal = 1024 tiles) stays on legacy 4x
+     * path. The renderer's write_tile_raw_at() branches on s_uw_map_id
+     * to pick the matching lookup formula. */
     unsigned char s;
     if (s_uw_map_id == ROOMROM_MAP_REDUX) {
-        /* Redux UW: 256-tile live PPU dump uploaded into each sub-pal bank. */
         for (s = 0; s < 4; s++) {
-            unsigned short bank_tile = ROOMROM_BG_TILE_BASE_PAL(s);
+            unsigned short bank_tile = (unsigned short)(ROOMROM_BG_TILE_BASE
+                + (unsigned short)s * ROOMROM_BG_TILE_COUNT_PER_PAL);
             render_chr_upload((unsigned short)(bank_tile * 32u),
                               redux_uw_bg_chr_x4 + s * REDUX_UW_BG_CHR_PER_PAL_BYTES,
                               (unsigned short)(256u * 32u));
         }
         return;
     }
-    for (s = 0; s < 4; s++) {
-        unsigned short bank_tile = ROOMROM_BG_TILE_BASE_PAL(s);
-        render_chr_upload((unsigned short)(bank_tile * 32u),
-                          common_chr_x4 + s * COMMON_CHR_PER_PAL_BYTES + COMMON_BG_CHR_OFFSET,
-                          (unsigned short)(COMMON_BG_TILE_COUNT * 32u));
-        render_chr_upload((unsigned short)((bank_tile + COMMON_BG_TILE_COUNT) * 32u),
-                          underworld_bg_chr_x4 + s * UNDERWORLD_BG_CHR_PER_PAL_BYTES,
-                          (unsigned short)(UW_BG_TILE_COUNT * 32u));
-        render_chr_upload((unsigned short)((bank_tile + COMMON_BG_TILE_COUNT + UW_BG_TILE_COUNT) * 32u),
-                          common_chr_x4 + s * COMMON_CHR_PER_PAL_BYTES + COMMON_MISC_CHR_OFFSET,
-                          (unsigned short)(COMMON_MISC_TILE_COUNT * 32u));
-    }
+    /* Phase J sparse single upload — orig UW only. */
+    render_chr_upload((unsigned short)(ROOMROM_BG_TILE_BASE * 32u),
+                      bg_sparse_chr_orig_uw, BG_SPARSE_BLOB_BYTES);
 }
 
 /* Stub renderer.
@@ -358,9 +352,21 @@ static void write_tile_raw_at(unsigned char col, unsigned char row,
     /* Phase 4: NES sub-pal selector lives in the tile index (pixel-biased
      * sub-pal copy); Gen pal-slot bits stay 0 (PAL0 owns NES BG).
      * Priority bit (0x8000) preserved for door art. */
+    /* Phase J (2026-05-18): orig UW uses sparse atlas LUT; redux UW
+     * stays on legacy 4x bank formula (live PPU dump, no sparse coverage). */
     unsigned short pri = uw_is_door_tile(raw_tile) ? 0x8000u : 0u;
-    unsigned short word = (unsigned short)(pri |
-        (ROOMROM_BG_TILE_BASE_PAL(pal & 0x03) + (unsigned short)raw_tile));
+    unsigned short tile_index;
+    if (s_uw_map_id == ROOMROM_MAP_REDUX) {
+        tile_index = (unsigned short)((ROOMROM_BG_TILE_BASE
+            + (unsigned short)(pal & 0x03u) * ROOMROM_BG_TILE_COUNT_PER_PAL)
+            + (unsigned short)raw_tile);
+    } else {
+        unsigned short slot = bg_sparse_tile_lut[raw_tile][pal & 0x03u];
+        tile_index = (slot == 0xFFFFu)
+            ? ROOMROM_BLANK_TILE
+            : (unsigned short)(ROOMROM_BG_TILE_BASE + slot);
+    }
+    unsigned short word = (unsigned short)(pri | tile_index);
     plane_write(col, wrapped_plane_row(
                     (unsigned short)(dst_row_base + row +
                                      ROOMROM_ROOM_FIRST_ROW)), word);
