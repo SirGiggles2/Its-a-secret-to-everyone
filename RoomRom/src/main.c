@@ -567,7 +567,8 @@ static void load_room(u8 room_id)
             short ix = (short)s_cur_room_item_meta.item_x;
             short iy = (short)((short)s_cur_room_item_meta.item_y +
                                 ROOMROM_PLAYFIELD_TOP_PX);
-            roomrom_sprites_set_room_item(ix, iy, 0u);
+            roomrom_sprites_set_room_item(ix, iy,
+                                          s_cur_room_item_meta.item_id, 0u);
         } else {
             roomrom_sprites_clear_room_item();
         }

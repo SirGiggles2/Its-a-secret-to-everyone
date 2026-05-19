@@ -596,17 +596,42 @@ void roomrom_sprites_clear_boomerang(void)
 /* Task 5.9.1 room-item sprite. Slot 7. Slice-1 placeholder uses the
  * boomerang tile from items_chr_x4 atlas (CHR for triforce/etc. not
  * yet extracted; see project_chr_extraction_items_blocker). */
-void roomrom_sprites_set_room_item(short x, short y, unsigned char sub_pal)
+/* Phase K (2026-05-18): item_id -> tile dispatch. Triforce uses
+ * extracted CHR (TRIFORCE_PIECE, 2x2 wide, sub-pal 2); other UW item
+ * kinds (compass 0x10, map 0x11, heart container, big key, ring, etc)
+ * fall back to boomerang glyph placeholder until their CHR is
+ * extracted + added to item_chr_manifest.json. */
+void roomrom_sprites_set_room_item(short x, short y,
+                                   unsigned char item_id,
+                                   unsigned char sub_pal)
 {
-    unsigned short tile = (unsigned short)(ROOMROM_ITEM_TILE_BASE_PAL(sub_pal)
-                                            + ROOMROM_ITEM_TILE_BOOMERANG);
-    VDP_setSpriteFull(ROOMROM_SPRITE_SLOT_ROOM_ITEM,
-                      (signed short)x,
-                      (signed short)y,
-                      RENDER_SPRITE_SIZE(1, 1),
-                      RENDER_TILE_ATTR_FULL(ROOMROM_SUBPAL_PAL(sub_pal),
-                                            1, 0, 0, tile),  /* priority=1 */
-                      8);
+    /* UW_ITEM_ID_TRIFORCE = 0x1B per RoomRom/data/uw_item_rooms.h.
+     * Triforce piece renders as 2x2 (wide_16x16_pair: 4 tiles
+     * LT/LB/RT/RB in column-major), sub-pal 2 (gold/yellow). */
+    if (item_id == 0x1Bu) {
+        unsigned short tile = (unsigned short)(ROOMROM_ITEM_TILE_BASE_PAL(2u)
+                                                + ROOMROM_ITEM_TILE_TRIFORCE_PIECE);
+        VDP_setSpriteFull(ROOMROM_SPRITE_SLOT_ROOM_ITEM,
+                          (signed short)x,
+                          (signed short)y,
+                          RENDER_SPRITE_SIZE(2, 2),
+                          RENDER_TILE_ATTR_FULL(ROOMROM_SUBPAL_PAL(2u),
+                                                1, 0, 0, tile),
+                          8);
+        return;
+    }
+    /* Placeholder fallback (compass / map / heart container / etc). */
+    {
+        unsigned short tile = (unsigned short)(ROOMROM_ITEM_TILE_BASE_PAL(sub_pal)
+                                                + ROOMROM_ITEM_TILE_BOOMERANG);
+        VDP_setSpriteFull(ROOMROM_SPRITE_SLOT_ROOM_ITEM,
+                          (signed short)x,
+                          (signed short)y,
+                          RENDER_SPRITE_SIZE(1, 1),
+                          RENDER_TILE_ATTR_FULL(ROOMROM_SUBPAL_PAL(sub_pal),
+                                                1, 0, 0, tile),
+                          8);
+    }
 }
 
 void roomrom_sprites_clear_room_item(void)

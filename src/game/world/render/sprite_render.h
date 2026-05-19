@@ -127,11 +127,19 @@ void roomrom_sprites_set_explosion(short x, short y, unsigned char timer,
                                    unsigned char sub_pal);
 void roomrom_sprites_clear_explosion(void);
 
-/* Task 5.9.1 room-item sprite (slot 7). Single 16x16 sprite at the
- * room item's NES (item_x, item_y) position. Slice-1 placeholder tile
- * = boomerang glyph (full triforce CHR extraction deferred); usable
- * for any room-item kind as a "this is your pickup" marker. */
-void roomrom_sprites_set_room_item(short x, short y, unsigned char sub_pal);
+/* Task 5.9.1 room-item sprite (slot 7). Renders the room-pickup item
+ * at the NES (item_x, item_y) position.
+ *
+ * Phase K (2026-05-18): item_id-aware dispatch. Triforce (NES item_id
+ * 0x1B = UW_ITEM_ID_TRIFORCE) uses the extracted TRIFORCE_PIECE tile
+ * (2x2 wide, sub-pal 2). Other item_ids (compass, map, heart container,
+ * etc) fall back to boomerang glyph placeholder until their CHR is
+ * extracted in a follow-up sub-project.
+ *
+ * sub_pal: NES sub-palette (typically 0 for room items). */
+void roomrom_sprites_set_room_item(short x, short y,
+                                   unsigned char item_id,
+                                   unsigned char sub_pal);
 void roomrom_sprites_clear_room_item(void);
 
 /* Candle fire (slot 8). Owned here so gameplay code does not write SAT
