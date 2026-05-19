@@ -415,9 +415,9 @@ ROOMROM_C_SOURCES = [
     ("src/state/save_serializer.c", "state_save_serializer.o"),
     ("src/state/probes/save_serializer_probe.c", "state_save_serializer_probe.o"),
     ("src/game/enemies/probes/enemy_loop_probe.c", "game_enemy_loop_probe.o"),
-    ("RoomRom/src/expanded_bg_chr.c", "expanded_bg_chr.o"),
-    # Phase J Step 2 (2026-05-18): sparse BG atlas + universal tile-id LUT.
-    # Data emitted alongside legacy expanded_bg_chr; renderer switch is Step 3.
+    # Phase J.2 (2026-05-18): legacy expanded_bg_chr.c retired. All
+    # consumers (ow/uw/hud renderer + redux UW upload) migrated to
+    # bg_sparse_chr + universal LUT. Saves ~120 KB ROM.
     ("RoomRom/src/bg_sparse_chr.c", "bg_sparse_chr.o"),
     ("RoomRom/src/atlas/items_chr_x4.c", "atlas_items_chr_x4.o"),
     # PR-4a: scene-bank scaffolding + DMA state machine.

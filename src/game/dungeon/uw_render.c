@@ -5,7 +5,6 @@
 #include "render_abi.h"
 #include "../../../RoomRom/src/roomrom_vram_map.h"
 #include "../world/bg_palette.h"  /* Phase 12.2 promoted */
-#include "../../../RoomRom/src/expanded_bg_chr.h"
 #include "../../../RoomRom/src/bg_sparse_chr.h"  /* Phase J: sparse atlas + LUT */
 #include "../../../RoomRom/src/uw_collision_data.h"
 

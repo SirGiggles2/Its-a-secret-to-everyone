@@ -4,7 +4,6 @@
 #include "../world/render/ow_render.h"  /* Phase 12.2 promoted */
 #include "render_abi.h"
 #include "../../../RoomRom/src/roomrom_vram_map.h"
-#include "../../../RoomRom/src/expanded_bg_chr.h"
 #include "../../../RoomRom/src/bg_sparse_chr.h"  /* Phase J: sparse atlas + LUT */
 #include "../../state/inventory.h"
 /* P4c: atlas header included for named constant reference and future
@@ -503,50 +502,12 @@ void roomrom_hud_refresh_marker(unsigned char room_id,
     s_last_marker_phase = phase;
 }
 
-static void upload_common_hud_tile(unsigned char subpal, unsigned char raw_tile)
-{
-    const unsigned char *src = common_chr_x4 + subpal * COMMON_CHR_PER_PAL_BYTES;
-    unsigned short dst = (unsigned short)(ROOMROM_BG_TILE_BASE_PAL(subpal)
-                                          + (unsigned short)raw_tile);
-
-    if (raw_tile < 0x70u) {
-        src += COMMON_BG_CHR_OFFSET + (unsigned short)raw_tile * 32u;
-    } else if (raw_tile >= COMMON_MISC_TILE_BASE) {
-        src += COMMON_MISC_CHR_OFFSET
-            + (unsigned short)(raw_tile - COMMON_MISC_TILE_BASE) * 32u;
-    } else {
-        return;
-    }
-
-    render_chr_upload((unsigned short)(dst * 32u), src, 32u);
-}
-
-static void upload_common_hud_tile_range(unsigned char subpal,
-                                         unsigned char first,
-                                         unsigned char last)
-{
-    unsigned char raw_tile;
-    for (raw_tile = first; raw_tile <= last; raw_tile++)
-        upload_common_hud_tile(subpal, raw_tile);
-}
-
-static void upload_common_hud_chr(unsigned char subpal)
-{
-    upload_common_hud_tile_range(subpal, 0x00u, 0x15u);
-    upload_common_hud_tile_range(subpal, 0x20u, 0x24u);
-    upload_common_hud_tile_range(subpal, 0x61u, 0x6Eu);
-    upload_common_hud_tile_range(subpal, 0xF7u, 0xF9u);
-}
-
-static void upload_redux_automap_chr(unsigned char subpal)
-{
-    unsigned short dst = (unsigned short)(ROOMROM_BG_TILE_BASE_PAL(subpal)
-                                          + REDUX_AUTOMAP_TILE_BASE);
-    render_chr_upload((unsigned short)(dst * 32u),
-                      redux_automap_chr_x4
-                        + subpal * REDUX_AUTOMAP_CHR_PER_PAL_BYTES,
-                      (unsigned short)(REDUX_AUTOMAP_TILE_COUNT * 32u));
-}
+/* Phase J.2 (2026-05-18): upload_common_hud_tile / _range / _chr +
+ * upload_redux_automap_chr deleted. All HUD CHR content is now
+ * force-included in bg_sparse_chr (per gen_bg_sparse.py HUD_FORCE_TILES
+ * + redux automap range 0x30..0x4F + common HUD ranges 0x00..0x15 +
+ * 0x20..0x24 + 0x61..0x6E + 0xF7..0xF9). Legacy expanded_bg_chr_x4
+ * arrays no longer in tree. */
 
 void roomrom_hud_upload_chr(void)
 {
@@ -566,9 +527,6 @@ void roomrom_hud_upload_chr(void)
      * (single caller at RoomRom/src/main.c:1009; renaming would require
      * touching that file too). */
     (void)0;
-    /* Suppress unused-symbol warnings for legacy helpers. */
-    (void)upload_common_hud_chr;
-    (void)upload_redux_automap_chr;
 }
 
 static void draw_hud_dynamic(unsigned char hud_id)

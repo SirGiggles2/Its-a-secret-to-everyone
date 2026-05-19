@@ -3,7 +3,6 @@
 #include "../../../../RoomRom/src/roomrom_vram_map.h"
 #include "../bg_palette.h"  /* Phase 12.2 promoted */
 #include "../ow_palette.h"  /* Phase 12.2 promoted */
-#include "../../../../RoomRom/src/expanded_bg_chr.h"
 #include "../../../../RoomRom/src/bg_sparse_chr.h"  /* Phase J: sparse atlas + LUT */
 #include "platform_abi.h"  /* nes_ram, NES_PLAY_AREA_BASE, NES_TILE_COL_STRIDE */
 

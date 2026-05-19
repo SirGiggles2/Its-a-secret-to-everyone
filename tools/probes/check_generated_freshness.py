@@ -116,20 +116,9 @@ GEN_SPECS: list[dict] = [
             "RoomRom/src/redux_uw_bg.c",
         ],
     },
-    {
-        "name": "expand_bg_chr",
-        "script": "RoomRom/tools/expand_bg_chr.py",
-        "inputs": [
-            "data/chr/common.c",
-            "data/chr/overworld_bg.c",
-            "data/chr/underworld_bg.c",
-            "RoomRom/src/redux_overworld_bg.c",  # itself generated; expand runs after redux
-        ],
-        "outputs": [
-            "RoomRom/src/expanded_bg_chr.c",
-            "RoomRom/src/expanded_bg_chr.h",
-        ],
-    },
+    # Phase J.2 (2026-05-18): expand_bg_chr.py retired. Legacy
+    # expanded_bg_chr.{c,h} deleted; all consumers migrated to sparse
+    # atlas (RoomRom/tools/gen_bg_sparse.py).
     {
         "name": "bg_sparse",
         "script": "RoomRom/tools/gen_bg_sparse.py",
