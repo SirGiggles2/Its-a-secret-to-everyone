@@ -288,7 +288,14 @@ def emit_markdown(tickets: list[tuple[str, list[dict]]], gen_root: pathlib.Path,
     out.append("5. **Room locked at $77 across all gameplay scenes.** Genesis port's "
                "OW navigation worked (Link XY changed) but room boundaries did not "
                "trigger reload to neighbors. Either intentional dev-loop confinement "
-               "(memory `project_roomrom_debug_teleport`) or a transition regression.\n\n")
+               "(memory `project_roomrom_debug_teleport`) or a transition regression.\n")
+    out.append("6. **Automated Class A may be false positive.** Genesis screenshots "
+               "show complete OW rendering — no visually missing tiles. The 46 'blank' "
+               "cells per scene likely render via Window plane (not captured in v1) or "
+               "via SGDK shadow paths the probe does not inspect. Verify each Class A "
+               "ticket visually against the matching PNG before acting; if the named "
+               "(tile_id, sub_pal) renders correctly on Genesis, close the ticket as "
+               "false-positive instead of regenerating the sparse LUT.\n\n")
     out.append("## Manual visual findings (from screenshot inspection)\n\n")
     out.append("These breaks are visible to the eye comparing PNG captures side-by-side; "
                "they may or may not show up in the automated byte-diff below.\n\n")

@@ -28,6 +28,7 @@ Catalog of visual regressions across 15 scenes left UNVERIFIED by the Phase B/F/
 3. **CRAM/PALRAM routing is heuristic.** Without consulting `subpal_routing.h` at runtime, palette comparison uses a placeholder mapping. Class F detection is gated to >=70% mismatch to avoid noise; real palette-level regressions need v2 with proper sub-pal route table.
 4. **Genesis port Start-button does not open inventory.** Pressed Start mid-gameplay on Genesis kept Link walking; on NES it opened inventory. Likely a genuine missing wire-up — `09_inventory_open` should be a P0 ticket investigated separately.
 5. **Room locked at $77 across all gameplay scenes.** Genesis port's OW navigation worked (Link XY changed) but room boundaries did not trigger reload to neighbors. Either intentional dev-loop confinement (memory `project_roomrom_debug_teleport`) or a transition regression.
+6. **Automated Class A may be false positive.** Genesis screenshots show complete OW rendering — no visually missing tiles. The 46 'blank' cells per scene likely render via Window plane (not captured in v1) or via SGDK shadow paths the probe does not inspect. Verify each Class A ticket visually against the matching PNG before acting; if the named (tile_id, sub_pal) renders correctly on Genesis, close the ticket as false-positive instead of regenerating the sparse LUT.
 
 ## Manual visual findings (from screenshot inspection)
 
