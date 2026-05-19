@@ -15,6 +15,18 @@
 #include "../../../../RoomRom/src/atlas/items_chr.h"
 #include "../../../../RoomRom/src/atlas/atlas_dispatch.h"
 
+/* Phase B (2026-05-18 VRAM cleanup): map NES sprite sub-pal (0..2) to
+ * Genesis OAM pal field per src/game/world/bg_palette.h CRAM target:
+ * sub-pal 0 -> PAL1, sub-pal 1 -> PAL2, sub-pal 2 -> PAL3. Sub-pal 3
+ * (rare; static census only) clamps to sub-pal 2 — same as the existing
+ * 3-copy ITEM atlas which already drops sub-pal 3 (2026-05-08 8x16 fix).
+ *
+ * Replaces the ITEM bank's tile-offset-based palette selection
+ * (ROOMROM_ITEM_TILE_BASE_PAL(sub_pal) for x3 replication) with per-
+ * sprite OAM pal selection. ITEM atlas drops from 210 tiles to 70. */
+#define ROOMROM_SUBPAL_PAL(s) \
+    ((unsigned char)(RENDER_PAL1 + ((s) > 2u ? 2u : (unsigned char)(s))))
+
 /* Compile-time dispatch size checks. NES Z1 PPU runs in 8x16 sprite mode
  * (PPUCTRL bit 5 = 1) during gameplay, so item sprites that use a single
  * OAM entry render as 8x16 (paired tiles) — not 8x8.
@@ -340,7 +352,7 @@ void roomrom_sprites_spawn_link(short x, short y)
                       (signed short)-32,
                       (signed short)-32,
                       RENDER_SPRITE_SIZE(1, 2),
-                      RENDER_TILE_ATTR_FULL(RENDER_PAL2,0, 0, 0, SWORD_VERT_VRAM_TILE),
+                      RENDER_TILE_ATTR_FULL(RENDER_PAL1, 0, 0, 0, SWORD_VERT_VRAM_TILE),
                       3);
     VDP_setSpriteFull(3,
                       (signed short)-32,
@@ -410,7 +422,8 @@ void roomrom_sprites_set_sword_vertical(short x, short y, unsigned char vflip,
                       (signed short)x,
                       (signed short)y,
                       RENDER_SPRITE_SIZE(1, 2),
-                      RENDER_TILE_ATTR_FULL(RENDER_PAL1,0, vflip, 0, tile),
+                      RENDER_TILE_ATTR_FULL(ROOMROM_SUBPAL_PAL(sub_pal),
+                                            0, vflip, 0, tile),
                       2);
 }
 
@@ -423,7 +436,8 @@ void roomrom_sprites_set_sword_horizontal(short x, short y, unsigned char hflip,
                       (signed short)x,
                       (signed short)y,
                       RENDER_SPRITE_SIZE(2, 2),
-                      RENDER_TILE_ATTR_FULL(RENDER_PAL1,0, 0, hflip, tile),
+                      RENDER_TILE_ATTR_FULL(ROOMROM_SUBPAL_PAL(sub_pal),
+                                            0, 0, hflip, tile),
                       2);
 }
 
@@ -451,7 +465,8 @@ void roomrom_sprites_set_sword_diagonal(short x, short y,
                       (signed short)x,
                       (signed short)y,
                       RENDER_SPRITE_SIZE(1, 2),
-                      RENDER_TILE_ATTR_FULL(RENDER_PAL1,0, vflip, hflip, tile),
+                      RENDER_TILE_ATTR_FULL(ROOMROM_SUBPAL_PAL(sub_pal),
+                                            0, vflip, hflip, tile),
                       2);
 }
 
@@ -479,7 +494,8 @@ void roomrom_sprites_set_sword_diagonal(short x, short y,
  * Horizontal beam = RENDER_SPRITE_SIZE(2, 2), matching the two NES 8x16
  * OAM entries. NES DrawSwordShotOrMagicShot draws vertical object coords
  * at X+4/Y and horizontal object coords at X/Y+3. */
-void roomrom_sprites_set_beam(short x, short y, link_face_t face)
+void roomrom_sprites_set_beam(short x, short y, link_face_t face,
+                              unsigned char pal_index)
 {
     unsigned char vertical = (unsigned char)((face == LINK_FACE_UP
                                            || face == LINK_FACE_DOWN)
@@ -488,16 +504,21 @@ void roomrom_sprites_set_beam(short x, short y, link_face_t face)
     unsigned char hflip = (unsigned char)((face == LINK_FACE_LEFT) ? 1u : 0u);
     short draw_x = x;
     short draw_y = y;
-    /* Beam uses RENDER_PAL2 (dedicated flash bank). roomrom_combat update_beam
-     * rewrites RENDER_PAL2[0..3] each frame with a different NES sprite sub-
-     * palette to imitate Z1's color flash (Z_07.asm:3459). */
+    /* Phase B: pal_index ∈ {RENDER_PAL1, RENDER_PAL2, RENDER_PAL3} cycles
+     * per frame from update_beam to reproduce NES Z_07.asm:3459 color
+     * flash via OAM pal selection (PAL1=sub-pal 0, PAL2=sub-pal 1,
+     * PAL3=sub-pal 2). Beam tile = sword tile (common.c, pixel values
+     * 1..3 sub-pal-0 encoding); each PAL holds the corresponding NES
+     * SPR sub-pal colors at indices [0..3], so the same tile pixels
+     * resolve to different colors per frame. */
+    if (pal_index > RENDER_PAL3) pal_index = RENDER_PAL1;
     if (vertical) {
         draw_x = (short)(x + 4);
         VDP_setSpriteFull(2,
                           (signed short)draw_x,
                           (signed short)draw_y,
                           RENDER_SPRITE_SIZE(1, 2),
-                          RENDER_TILE_ATTR_FULL(RENDER_PAL2,0, vflip, hflip,
+                          RENDER_TILE_ATTR_FULL(pal_index, 0, vflip, hflip,
                                          SWORD_VERT_VRAM_TILE),
                           3);
     } else {
@@ -506,7 +527,7 @@ void roomrom_sprites_set_beam(short x, short y, link_face_t face)
                           (signed short)draw_x,
                           (signed short)draw_y,
                           RENDER_SPRITE_SIZE(2, 2),
-                          RENDER_TILE_ATTR_FULL(RENDER_PAL2,0, vflip, hflip,
+                          RENDER_TILE_ATTR_FULL(pal_index, 0, vflip, hflip,
                                          SWORD_HORZ_VRAM_TILE),
                           3);
     }
@@ -518,7 +539,7 @@ void roomrom_sprites_clear_beam(void)
                       (signed short)-32,
                       (signed short)-32,
                       RENDER_SPRITE_SIZE(1, 2),
-                      RENDER_TILE_ATTR_FULL(RENDER_PAL2,0, 0, 0, SWORD_VERT_VRAM_TILE),
+                      RENDER_TILE_ATTR_FULL(RENDER_PAL1, 0, 0, 0, SWORD_VERT_VRAM_TILE),
                       3);
 }
 
@@ -561,7 +582,8 @@ void roomrom_sprites_set_boomerang(short x, short y,
                       (signed short)x,
                       (signed short)y,
                       RENDER_SPRITE_SIZE(1, 2),
-                      RENDER_TILE_ATTR_FULL(RENDER_PAL1,0, vflip, hflip, tile),
+                      RENDER_TILE_ATTR_FULL(ROOMROM_SUBPAL_PAL(sub_pal),
+                                            0, vflip, hflip, tile),
                       4);
 }
 
@@ -586,7 +608,8 @@ void roomrom_sprites_set_room_item(short x, short y, unsigned char sub_pal)
                       (signed short)x,
                       (signed short)y,
                       RENDER_SPRITE_SIZE(1, 1),
-                      RENDER_TILE_ATTR_FULL(RENDER_PAL1, 1, 0, 0, tile),  /* priority=1 */
+                      RENDER_TILE_ATTR_FULL(ROOMROM_SUBPAL_PAL(sub_pal),
+                                            1, 0, 0, tile),  /* priority=1 */
                       8);
 }
 
@@ -609,7 +632,8 @@ void roomrom_sprites_set_candle_fire(short x, short y,
     VDP_setSpriteFull(8,
                       (signed short)x, (signed short)y,
                       RENDER_SPRITE_SIZE(2, 2),
-                      RENDER_TILE_ATTR_FULL(RENDER_PAL1, 1, 0, hflip, tile),
+                      RENDER_TILE_ATTR_FULL(ROOMROM_SUBPAL_PAL(sub_pal),
+                                            1, 0, hflip, tile),
                       9);
 }
 
@@ -640,24 +664,28 @@ void roomrom_sprites_set_arrow(short x, short y, link_face_t face,
          * BG_A door art (uses BG priority 0x8000). Codex H3
          * confirmed. Applies to all weapon projectile sprites. */
         VDP_setSpriteFull(4, (signed short)x, (signed short)y, RENDER_SPRITE_SIZE(1, 2),
-                          RENDER_TILE_ATTR_FULL(RENDER_PAL1, 1, 0, 0, tile_vert),
+                          RENDER_TILE_ATTR_FULL(ROOMROM_SUBPAL_PAL(sub_pal),
+                                                1, 0, 0, tile_vert),
                           5);
         break;
     case LINK_FACE_DOWN:
         VDP_setSpriteFull(4, (signed short)x, (signed short)y, RENDER_SPRITE_SIZE(1, 2),
-                          RENDER_TILE_ATTR_FULL(RENDER_PAL1, 1, 1, 0, tile_vert),
+                          RENDER_TILE_ATTR_FULL(ROOMROM_SUBPAL_PAL(sub_pal),
+                                                1, 1, 0, tile_vert),
                           5);
         break;
     case LINK_FACE_LEFT:
         /* Phase 1: horizontal arrow ($86..$89) now sourced from live NES
          * item atlas. RIGHT renders as-is, LEFT mirrors via hflip. */
         VDP_setSpriteFull(4, (signed short)x, (signed short)y, RENDER_SPRITE_SIZE(2, 2),
-                          RENDER_TILE_ATTR_FULL(RENDER_PAL1, 1, 0, 1, tile_horz),
+                          RENDER_TILE_ATTR_FULL(ROOMROM_SUBPAL_PAL(sub_pal),
+                                                1, 0, 1, tile_horz),
                           5);
         break;
     case LINK_FACE_RIGHT:
         VDP_setSpriteFull(4, (signed short)x, (signed short)y, RENDER_SPRITE_SIZE(2, 2),
-                          RENDER_TILE_ATTR_FULL(RENDER_PAL1, 1, 0, 0, tile_horz),
+                          RENDER_TILE_ATTR_FULL(ROOMROM_SUBPAL_PAL(sub_pal),
+                                                1, 0, 0, tile_horz),
                           5);
         break;
     default:
@@ -692,7 +720,8 @@ void roomrom_sprites_set_bomb(short x, short y, unsigned char sub_pal)
                       (signed short)x,
                       (signed short)y,
                       RENDER_SPRITE_SIZE(1, 2),
-                      RENDER_TILE_ATTR_FULL(RENDER_PAL1,0, 0, 0, tile),
+                      RENDER_TILE_ATTR_FULL(ROOMROM_SUBPAL_PAL(sub_pal),
+                                            0, 0, 0, tile),
                       6);
 }
 
@@ -746,7 +775,8 @@ void roomrom_sprites_set_explosion(short x, short y, unsigned char timer,
                       (signed short)x,
                       (signed short)y,
                       RENDER_SPRITE_SIZE(2, 2),
-                      RENDER_TILE_ATTR_FULL(RENDER_PAL1,0, 0, 0, tile),
+                      RENDER_TILE_ATTR_FULL(ROOMROM_SUBPAL_PAL(sub_pal),
+                                            0, 0, 0, tile),
                       7);
 }
 
@@ -778,22 +808,26 @@ void roomrom_sprites_set_magic_shot(short x, short y, link_face_t face,
     switch (face) {
     case LINK_FACE_UP:
         VDP_setSpriteFull(9, (signed short)x, (signed short)y, RENDER_SPRITE_SIZE(2, 2),
-                          RENDER_TILE_ATTR_FULL(RENDER_PAL1, 1, 0, 0, tile_v),
+                          RENDER_TILE_ATTR_FULL(ROOMROM_SUBPAL_PAL(sub_pal),
+                                                1, 0, 0, tile_v),
                           ROOMROM_SPRITE_SLOT_ENEMY_FIRST);
         break;
     case LINK_FACE_DOWN:
         VDP_setSpriteFull(9, (signed short)x, (signed short)y, RENDER_SPRITE_SIZE(2, 2),
-                          RENDER_TILE_ATTR_FULL(RENDER_PAL1, 1, 1, 0, tile_v),
+                          RENDER_TILE_ATTR_FULL(ROOMROM_SUBPAL_PAL(sub_pal),
+                                                1, 1, 0, tile_v),
                           ROOMROM_SPRITE_SLOT_ENEMY_FIRST);
         break;
     case LINK_FACE_LEFT:
         VDP_setSpriteFull(9, (signed short)x, (signed short)y, RENDER_SPRITE_SIZE(2, 2),
-                          RENDER_TILE_ATTR_FULL(RENDER_PAL1, 1, 0, 1, tile_h),
+                          RENDER_TILE_ATTR_FULL(ROOMROM_SUBPAL_PAL(sub_pal),
+                                                1, 0, 1, tile_h),
                           ROOMROM_SPRITE_SLOT_ENEMY_FIRST);
         break;
     case LINK_FACE_RIGHT:
         VDP_setSpriteFull(9, (signed short)x, (signed short)y, RENDER_SPRITE_SIZE(2, 2),
-                          RENDER_TILE_ATTR_FULL(RENDER_PAL1, 1, 0, 0, tile_h),
+                          RENDER_TILE_ATTR_FULL(ROOMROM_SUBPAL_PAL(sub_pal),
+                                                1, 0, 0, tile_h),
                           ROOMROM_SPRITE_SLOT_ENEMY_FIRST);
         break;
     default:

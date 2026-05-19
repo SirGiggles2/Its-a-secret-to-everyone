@@ -14,7 +14,7 @@
 #define ROOMROM_ATLAS_ITEMS_X4_VARIANT_COUNT    2u
 #define ROOMROM_ATLAS_ITEMS_X4_TILE_COUNT       70u
 #define ROOMROM_ATLAS_ITEMS_X4_PER_PAL_BYTES    2240u
-#define ROOMROM_ATLAS_ITEMS_X4_BYTES            6720u
+#define ROOMROM_ATLAS_ITEMS_X4_BYTES            2240u
 
 /* Tile-index constants: byte_offset = TILE_INDEX * 32
  * These supersede the legacy ROOMROM_ITEM_TILE_* constants from

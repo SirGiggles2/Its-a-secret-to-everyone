@@ -100,13 +100,18 @@
  * with VDP table region or any other VRAM consumer. */
 #define ROOMROM_ITEM_TILE_BASE          (ROOMROM_SPR_TILE_BASE + ROOMROM_SPR_TILE_COUNT_PER_PAL)
 #define ROOMROM_ITEM_TILE_COUNT_PER_PAL ROOMROM_ATLAS_ITEMS_X4_TILE_COUNT
-/* Sub-pal expansion factor. Was 4; reduced to 3 (drop unused sub-pal 3) on
- * 2026-05-08 to fund candle_fire/magic_shot/triforce 8x16 mode fixes. NES
- * Z1 sprite usage audit confirmed: items consume sub-pal 0 (Link), 1 (bomb/
- * explosion), 2 (candle frame 2). None use sub-pal 3 in current scope. */
-#define ROOMROM_ITEM_SUBPAL_COUNT       3u
-#define ROOMROM_ITEM_TILE_BASE_PAL(s) \
-    (ROOMROM_ITEM_TILE_BASE + (unsigned short)(s) * ROOMROM_ITEM_TILE_COUNT_PER_PAL)
+/* Sub-pal expansion factor. History:
+ *   4 (PR-3 baseline)
+ *   3 on 2026-05-08 (drop sub-pal 3 unused, fund 8x16 fixes)
+ *   1 on 2026-05-18 Phase B (drop pixel-bias replication entirely; sub-pal
+ *     now routes via Genesis OAM pal field PAL1/PAL2/PAL3 per
+ *     src/game/world/bg_palette.h CRAM target). Frees 140 tiles / 4480 B. */
+#define ROOMROM_ITEM_SUBPAL_COUNT       1u
+/* Phase B: macro neutralized. All sub-pal copies collapsed to one; returns
+ * ROOMROM_ITEM_TILE_BASE regardless of s. Existing call sites pass sub_pal
+ * harmlessly; the renderer now selects sub-pal via OAM pal arg (see
+ * ROOMROM_SUBPAL_PAL in src/game/world/render/sprite_render.c). */
+#define ROOMROM_ITEM_TILE_BASE_PAL(s)   (ROOMROM_ITEM_TILE_BASE + 0u * (unsigned short)(s))
 
 /* HUD backdrop sprite-strip retired 2026-05-15. Opaque black HUD underlay
  * now comes from BG_A tile 0 (PAL0 color 0), driven by

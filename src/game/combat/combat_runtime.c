@@ -347,21 +347,28 @@ static void update_beam(void)
         return;
     }
 
-    /* NES color flash: each frame, swap the 4 sprite-palette colors
-     * the beam renders with. PAL2[0..3] gets sprite sub-palette N
-     * where N = (frame & 3). Reproduces Z_07.asm:3459's
-     *   ATTR = base | (FrameCounter & 3)
-     * on Genesis (sprite palette index isn't a single attr bit on
-     * Genesis — bank-switch via CRAM rewrite instead). */
+    /* NES color flash (Z_07.asm:3459 ATTR = base | FrameCounter & 3):
+     * Genesis pal-cycle reproduction. Each frame the beam sprite's OAM
+     * pal field rotates through RENDER_PAL1/PAL2/PAL3, which hold NES
+     * SPR sub-pals 0/1/2 at indices [0..3] (loaded by
+     * roomrom_bg_palette_load_palram_full). Beam tile pixel values 1..3
+     * therefore sample sub-pal 0/1/2 colors per frame. NES cycled 4
+     * sub-pals; we cycle 3 because sub-pal 3 was dropped (2026-05-08
+     * 8x16 fix) — same 3-pal sequence the static items_chr atlas
+     * supports.
+     *
+     * Phase-B migration (2026-05-18): previously this path called
+     * render_cram_subrange_upload(2u * 16u, subpal, 4u) to rewrite
+     * PAL2[0..3] each frame. That blocked PAL2 from holding sub-pal 1
+     * colors permanently (needed by bomb/explosion). Pal-cycle costs 0
+     * CRAM writes per frame. */
     {
-        const unsigned short *subpal = roomrom_bg_palette_get_sprite_subpal_cram(
-            s_beam_palette_phase);
-        if (subpal != (const unsigned short *)0) {
-            render_cram_subrange_upload(2u * 16u, subpal, 4u);
-        }
-        s_beam_palette_phase = (unsigned char)((s_beam_palette_phase + 1u) & 0x3u);
+        unsigned char pal_index =
+            (unsigned char)(RENDER_PAL1 + s_beam_palette_phase);
+        s_beam_palette_phase =
+            (unsigned char)((s_beam_palette_phase + 1u) % 3u);
+        roomrom_sprites_set_beam(s_beam_x, s_beam_y, s_beam_face, pal_index);
     }
-    roomrom_sprites_set_beam(s_beam_x, s_beam_y, s_beam_face);
 }
 
 /* Phase 9 Task 9.4 OPTION_ID_SWORD_STYLE gate.

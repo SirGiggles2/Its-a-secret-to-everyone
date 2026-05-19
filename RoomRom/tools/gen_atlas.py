@@ -1099,19 +1099,23 @@ def _bias_byte(byte_val: int, sub_pal: int) -> int:
     return ((new_hi << 4) | new_lo) & 0xFF
 
 
-ITEM_SUBPAL_COUNT_GEN = 3   # NES Z1 sprite sub-pal usage audit 2026-05-08:
-                            # all in-game items consume sub-pal 0/1/2 only
-                            # (Link/sword/arrow=0, bomb/explosion=1, candle
-                            # frame 2 cluster=2). Sub-pal 3 unused — dropping
-                            # the 4th expansion frees ~56 ITEM tiles to fund
-                            # candle_fire/magic_shot/triforce 8x16 fixes.
+ITEM_SUBPAL_COUNT_GEN = 1   # Phase B (2026-05-18 VRAM cleanup): collapsed from
+                            # 3 to 1. Sub-pal selection now routes via Genesis
+                            # OAM pal field (PAL1/PAL2/PAL3 = NES SPR sub-pals
+                            # 0/1/2) instead of tile-offset pixel-bias. See
+                            # src/game/world/bg_palette.h for CRAM target.
+                            # Pre-cleanup history (kept for archive): the
+                            # constant was reduced from 4 to 3 on 2026-05-08
+                            # to drop unused sub-pal 3 and fund 8x16 fixes;
+                            # 2026-05-18 drop to 1 frees the remaining
+                            # 140 tiles (4480 bytes) of pixel-bias replication.
 
 def _expand_row_x4(row: bytes) -> bytes:
     """Concatenate N sub-pal copies of row: pal0||pal1||...||palN-1.
 
-    N = ITEM_SUBPAL_COUNT_GEN (currently 3). Name retains 'x4' suffix for
-    legacy compatibility with downstream identifiers, but the actual
-    expansion factor is governed by the constant above.
+    N = ITEM_SUBPAL_COUNT_GEN. Now 1 by default (single sub-pal-0-encoded
+    copy); kept multi-copy for legacy archive paths if ever needed. Name
+    retains 'x4' suffix for downstream identifier compatibility.
     """
     out = bytearray()
     for s in range(ITEM_SUBPAL_COUNT_GEN):

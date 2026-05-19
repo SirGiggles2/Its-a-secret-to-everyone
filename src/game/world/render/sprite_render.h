@@ -85,8 +85,15 @@ void roomrom_sprites_set_sword_diagonal(short x, short y,
  * flip exactly. Vertical beam = single 8x16 (matches NES @Narrow path
  * for tile $20 in 8x16 sprite mode). Horizontal beam is 16x16: two NES
  * 8x16 OAM entries side by side, with draw offsets applied from object
- * coordinates in the renderer. */
-void roomrom_sprites_set_beam(short x, short y, link_face_t face);
+ * coordinates in the renderer.
+ *
+ * Phase B (2026-05-18 VRAM cleanup): pal_index cycles RENDER_PAL1/PAL2/
+ * PAL3 across frames so the beam color flashes through NES SPR sub-pals
+ * 0..2 via OAM pal field. Previous scheme rewrote PAL2[0..3] per frame
+ * via CRAM subrange upload, which blocked PAL2 from holding sub-pal 1
+ * colors permanently (needed for bomb/explosion routing). */
+void roomrom_sprites_set_beam(short x, short y, link_face_t face,
+                              unsigned char pal_index);
 void roomrom_sprites_clear_beam(void);
 
 /* S7 v6 boomerang (slot 3). 8-phase rotation cycle from
