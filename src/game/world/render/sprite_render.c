@@ -932,3 +932,27 @@ void roomrom_sprites_clear_magic_shot(void)
                       RENDER_TILE_ATTR_FULL(RENDER_PAL1, 0, 0, 0, tile),
                       ROOMROM_SPRITE_SLOT_ENEMY_FIRST);
 }
+
+
+/* Phase P (2026-05-18) fairy spark renderer.
+ * NES Z_04.asm:11508 DrawFairy — 2-frame flicker (F0/F1) every 4
+ * vblanks. Fairy sprite is sub-pal 1 (NES forced attribute).
+ * Caller picks SAT slot from enemy bridge range; frame from per-fairy
+ * state machine OR global FrameCounter & 0x04. */
+void roomrom_sprites_set_fairy_spark(unsigned char slot,
+                                     short x, short y,
+                                     unsigned char frame_index,
+                                     unsigned char link_to)
+{
+    unsigned short tile_offset = (frame_index & 1u)
+        ? (unsigned short)ROOMROM_ITEM_TILE_FAIRY_SPARK_F1
+        : (unsigned short)ROOMROM_ITEM_TILE_FAIRY_SPARK_F0;
+    unsigned short tile = (unsigned short)(ROOMROM_ITEM_TILE_BASE_PAL(1u)
+                                            + tile_offset);
+    VDP_setSpriteFull(slot,
+                      (signed short)x, (signed short)y,
+                      RENDER_SPRITE_SIZE(1, 2),
+                      RENDER_TILE_ATTR_FULL(ROOMROM_SUBPAL_PAL(1u),
+                                            1, 0, 0, tile),
+                      link_to);
+}

@@ -168,4 +168,17 @@ void roomrom_sprites_clear_magic_shot(void);
  * upload time). */
 void roomrom_sprites_set_redux(unsigned char redux);
 
+/* Phase P (2026-05-18) fairy spark — generic API; caller picks slot.
+ * NES Z_04.asm:11508 DrawFairy cadence: frame toggles every 4 vblanks
+ * via FrameCounter ASL & 0x04 >> 2. Manifest carries F0/F1 tile entries
+ * (tile $50/$51 frame 0, tile $52/$53 frame 1; sub-pal 1 forced).
+ *
+ * slot: SAT slot in the enemy bridge range (>= ROOMROM_SPRITE_SLOT_ENEMY_FIRST).
+ * frame_index: 0 or 1 (mod 2).
+ * link_to: next SAT slot in chain (per sprite link rules). */
+void roomrom_sprites_set_fairy_spark(unsigned char slot,
+                                     short x, short y,
+                                     unsigned char frame_index,
+                                     unsigned char link_to);
+
 #endif
