@@ -534,8 +534,9 @@ SCENE_CONTRACTS = [
     (f"ROOMROM_SCENE_UW_L{n}", "bg_uw",   "ROOMROM_BG_TILE_BASE_PAL(0)",       0)  # BG handled by bg_palette modules
     for n in range(1, 10)
 ] + [
-    # PR-4b: 34 NES tiles x 4 sub-pal = 136 Genesis tiles per UWSP bank.
-    (f"ROOMROM_SCENE_UW_L{n}", "enemies", "(ROOMROM_SPR_TILE_BASE + 44u)",   136)
+    # Phase F (2026-05-18): UWSP 4x->1x. 34 NES tiles, single sub-pal copy.
+    # blob_bytes auto-derives from cat_bytes["enemies"] = ENEMY_X4_PER_BANK_BYTES = 1088.
+    (f"ROOMROM_SCENE_UW_L{n}", "enemies", "(ROOMROM_SPR_TILE_BASE + 44u)",   34)
     for n in range(1, 10)
 ] + [
     # PR-5: 64 NES tiles per UWSPBoss bank, 1x sub-pal. Slot lives at

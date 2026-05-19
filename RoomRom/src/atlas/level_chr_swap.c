@@ -66,10 +66,14 @@ static const unsigned char *enemy_blob_for_scene(roomrom_scene_id_t s)
     }
 }
 
-/* SCENE_OBJ slot is sized for the largest contract (4x UWSP = 136 tiles).
- * BLANK clears the full slot before every DMA so smaller contracts (OW
- * 114 tiles) don't leave stale tail bytes from the previous scene. */
-#define SCENE_OBJ_SLOT_TILES 136u
+/* SCENE_OBJ slot sized for the largest active contract.
+ * Post-Phase-F (2026-05-18): UWSP 34, OWSP 114, BOSS 64. Max = 114
+ * (OWSP NPC/cave-dweller bank). Phase M (2026-05-18) shrunk from
+ * 136 (legacy 4x UWSP) to 114; recovers 22 tiles back to common_chr
+ * range within the SPR bank.
+ * BLANK clears full slot before every DMA so smaller contracts
+ * (UWSP 34, BOSS 64) don't leave stale tail bytes from prior scene. */
+#define SCENE_OBJ_SLOT_TILES 114u
 
 static level_chr_swap_state_t s_state = LEVEL_CHR_SWAP_IDLE;
 static roomrom_scene_id_t      s_target = ROOMROM_SCENE_BOOT;
