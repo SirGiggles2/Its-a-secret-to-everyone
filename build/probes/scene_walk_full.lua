@@ -18,14 +18,43 @@ local OUT = os.getenv("CODEX_BIZHAWK_ROOT") or "C:\\tmp"
 local ROOT = OUT .. "/scene_walk_gen"
 os.execute('mkdir "' .. ROOT:gsub("/","\\") .. '" 2>nul')
 
+-- Discover Genesis memory domains + try to read VDP reg 5 for SAT base.
+-- Writes _domains.txt so the diff classifier (or human triage) can verify
+-- the probe ran against the expected domain set.
+do
+  local f = io.open(ROOT .. "/_domains.txt", "w")
+  f:write("BizHawk Genesis memory domains discovered at probe start:\n")
+  local vdp_dom = nil
+  for _, d in ipairs(memory.getmemorydomainlist()) do
+    f:write("  " .. d .. "\n")
+    if d == "VDP" or d == "vdp_regs" or d == "VDP Regs" then vdp_dom = d end
+  end
+  if vdp_dom then
+    f:write("\nVDP regs (domain '" .. vdp_dom .. "'):\n")
+    for r = 0, 23 do
+      local v = memory.read_u8(r, vdp_dom)
+      f:write(string.format("  reg %02d = $%02X\n", r, v))
+    end
+    local reg5 = memory.read_u8(5, vdp_dom)
+    local computed_sat = (reg5 % 0x80) * 0x200  -- (reg5 & 0x7F) << 9 — H32 mode strips bit 0
+    f:write(string.format("\ncomputed SAT base from reg5 = $%04X\n", computed_sat))
+  else
+    f:write("\n(no VDP-regs domain exposed; using hardcoded SAT_BASE)\n")
+  end
+  f:close()
+end
+
 local PLANE_A_BASE   = 0xC000
 local PLANE_A_SIZE   = 2048
 local PLANE_B_BASE   = 0xE000
 local PLANE_B_SIZE   = 2048
--- SGDK debug build relocates SAT via VDP_setSpriteListAddress;
--- per src/debug/probes/sat_dma_lag_verify.lua:42 the live address is $F800.
--- render_adapter.c:158 comment ($FC00) is from a prior layout.
-local SAT_BASE       = 0xF800
+-- SAT base set at runtime by RoomRom/src/main.c:489
+--   VDP_setSpriteListAddress(0xF400u)  -- post-PR-2 Option F layout.
+-- We don't trust the hardcode: derive from VDP reg 5 at probe time.
+-- VDP reg 5 = (SAT_base >> 9) & 0x7F. Reg state is in "S68K BUS" or
+-- BizHawk genplus core's "VDP" domain offset 5 (last-written reg).
+-- Fallback to 0xF400 if reg read returns unreasonable value.
+local SAT_BASE       = 0xF400
 local SAT_SIZE       = 640
 local VRAM_TILE_BASE = 0x0000
 local VRAM_TILE_SIZE = 0x72C0
