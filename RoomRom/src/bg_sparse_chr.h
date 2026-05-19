@@ -8,16 +8,17 @@
  * Each variant's blob is bias-encoded (out=(in==0)?0:(s*4+in)) so the
  * tile renders correctly via PAL0 pixel-bias when looked up at its slot.
  *
- * NOTE Phase J Step 2: data emitted; legacy expanded_bg_chr.{c,h} also
- * in tree. Renderer switch is Step 3 (not this commit). Atlas + LUT
- * are ready but not yet wired. */
+ * Phase J.2 (2026-05-18): 4 variants — orig+redux x OW+UW. Redux UW
+ * uses unified_source mode (redux_uw_bg_chr is a flat 256-tile bank
+ * that replaces the entire BG bank, common+scene+misc included). */
 
 #define BG_SPARSE_TILE_COUNT      532u
 #define BG_SPARSE_BLOB_BYTES      17024u
 
-extern const unsigned char  bg_sparse_chr_orig_ow [17024];
-extern const unsigned char  bg_sparse_chr_orig_uw [17024];
-extern const unsigned char  bg_sparse_chr_redux_ow[17024];
+extern const unsigned char  bg_sparse_chr_orig_ow  [17024];
+extern const unsigned char  bg_sparse_chr_orig_uw  [17024];
+extern const unsigned char  bg_sparse_chr_redux_ow [17024];
+extern const unsigned char  bg_sparse_chr_redux_uw [17024];
 extern const unsigned short bg_sparse_tile_lut[256][4];
 
 #endif /* ROOMROM_BG_SPARSE_CHR_H */

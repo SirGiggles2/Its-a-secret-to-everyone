@@ -138,8 +138,10 @@ def main():
 
     # --- BG/SPR existing checks (unchanged) ---
 
-    # SPR base must be >= the address the BG bank reserves at full sub-pal expansion.
-    bg_reserve = c["ROOMROM_BG_TILE_BASE"] + 4 * c["ROOMROM_BG_TILE_COUNT_PER_PAL"]
+    # SPR base must be >= the address the BG bank reserves. Phase J.2:
+    # sparse bank uses SUBPAL_COUNT=1 + TILE_COUNT_PER_PAL=BG_SPARSE_TILE_COUNT.
+    # Pre-J this hardcoded 4x sub-pal expansion; now reads actual SUBPAL_COUNT.
+    bg_reserve = c["ROOMROM_BG_TILE_BASE"] + c["ROOMROM_BG_SUBPAL_COUNT"] * c["ROOMROM_BG_TILE_COUNT_PER_PAL"]
     if c["ROOMROM_SPR_TILE_BASE"] < bg_reserve:
         fail(f"SPR base {spr_base} < BG reserve {bg_reserve} "
              "(BG bank could collide with SPR after future sub-pal expansion)")

@@ -108,8 +108,15 @@ def bias_byte(b, sub_pal):
     return ((hi_out & 0x0F) << 4) | (lo_out & 0x0F)
 
 
-def get_nes_tile_bytes(tile_id, common_chr, scene_bg_chr):
-    """Return 32 raw NES bytes for a given NES BG tile_id, picking source per range."""
+def get_nes_tile_bytes(tile_id, common_chr, scene_bg_chr, unified_source=False):
+    """Return 32 raw bytes for a given NES BG tile_id, picking source per range.
+
+    unified_source=True: redux UW path - scene_bg_chr is a flat 256-tile
+    bank (8192 B) that REPLACES the entire BG bank. Look up tile_id
+    directly in scene_bg_chr without splitting into common/scene/misc."""
+    if unified_source:
+        off = tile_id * BYTES_PER_TILE
+        return scene_bg_chr[off:off + BYTES_PER_TILE]
     if tile_id < COMMON_BG_END:
         # 0x00..0x6F from common_chr BG section
         off = tile_id * BYTES_PER_TILE
@@ -123,15 +130,20 @@ def get_nes_tile_bytes(tile_id, common_chr, scene_bg_chr):
     return scene_bg_chr[off:off + BYTES_PER_TILE]
 
 
-def emit_sparse_blob(per_tile_usage, common_chr, scene_bg_chr, name_for_log):
+def emit_sparse_blob(per_tile_usage, common_chr, scene_bg_chr, name_for_log,
+                     unified_source=False):
     """Returns (flat_bytes, lut_256x4). LUT[tile_id][sub_pal] = slot_index
-    (0..N-1) into the flat tile array; 0xFFFF sentinel if combo unused."""
+    (0..N-1) into the flat tile array; 0xFFFF sentinel if combo unused.
+
+    unified_source=True (Phase J.2 redux UW path): scene_bg_chr is a
+    flat 256-tile bank that REPLACES the entire BG bank (common +
+    scene + misc all from same source)."""
     lut = [[0xFFFF] * 4 for _ in range(256)]
     flat = bytearray()
     slot = 0
     for tile_id in sorted(per_tile_usage.keys()):
         for sub_pal in sorted(per_tile_usage[tile_id]):
-            raw = get_nes_tile_bytes(tile_id, common_chr, scene_bg_chr)
+            raw = get_nes_tile_bytes(tile_id, common_chr, scene_bg_chr, unified_source)
             if len(raw) != BYTES_PER_TILE:
                 fail(f"{name_for_log}: tile 0x{tile_id:02X} short: {len(raw)} B")
             for b in raw:
@@ -171,6 +183,13 @@ def main():
     underworld_bg_chr = load_source("data/chr/underworld_bg.c", "underworld_bg_chr")
     redux_overworld_bg_chr = load_source(
         "RoomRom/src/redux_overworld_bg.c", "redux_overworld_bg_chr")
+    # Phase J.2 (2026-05-18): redux UW source for 4th sparse variant.
+    # redux_uw_bg_chr is 8192 bytes = 256 NES tiles already Genesis 4bpp.
+    # But our get_nes_tile_bytes expects RAW NES 2bpp (16 bytes per tile).
+    # For redux UW, source IS Genesis 4bpp already; sparse emit treats it
+    # differently — extract as-if-NES (pixel values 0..3 in the 4bpp
+    # nibbles for sub-pal 0 already) and apply bias to other sub-pals.
+    redux_uw_bg_chr = load_source("RoomRom/src/redux_uw_bg.c", "redux_uw_bg_chr")
 
     # Run audits (deterministic per Phase J §36.1 MF4)
     uw_rooms = parse_uw_blob()
@@ -226,17 +245,24 @@ def main():
         combined, common_chr, underworld_bg_chr, "orig_uw")
     redux_ow_blob, redux_ow_lut = emit_sparse_blob(
         combined, common_chr, redux_overworld_bg_chr, "redux_ow")
+    # Phase J.2 (2026-05-18): 4th variant for redux UW. Same combined
+    # tile-usage manifest -> universal LUT. Source bytes from
+    # redux_uw_bg_chr replace underworld_bg_chr in the scene-BG range
+    # (0x70..0xF1); common_chr stays for 0x00..0x6F + 0xF2..0xFF.
+    redux_uw_blob, redux_uw_lut = emit_sparse_blob(
+        combined, common_chr, redux_uw_bg_chr, "redux_uw",
+        unified_source=True)
 
-    # All three LUTs should be IDENTICAL (slot allocation is variant-invariant)
-    assert orig_ow_lut == orig_uw_lut == redux_ow_lut, \
-        "LUT divergence — variant-invariant slot allocation expected"
+    # All four LUTs should be IDENTICAL (slot allocation is variant-invariant)
+    assert orig_ow_lut == orig_uw_lut == redux_ow_lut == redux_uw_lut, \
+        "LUT divergence - variant-invariant slot allocation expected"
 
     n_tiles = sum(len(s) for s in combined.values())
     bytes_per_variant = n_tiles * BYTES_PER_TILE
     print(f"  combined unique (tile_id, sub_pal) combos: {n_tiles}")
     print(f"  per-variant blob: {bytes_per_variant} bytes ({n_tiles} tiles)")
-    print(f"  ROM total: 3 variants x {bytes_per_variant} B + 1 LUT (256x4x2 = 2048 B) "
-          f"= {3 * bytes_per_variant + 2048} bytes")
+    print(f"  ROM total: 4 variants x {bytes_per_variant} B + 1 LUT (256x4x2 = 2048 B) "
+          f"= {4 * bytes_per_variant + 2048} bytes")
     legacy_bytes = 3 * 7616 * 4 + 4 * 4160 * 4 + 1024 * 4  # rough estimate
     print(f"  (legacy x4 estimated: ~{legacy_bytes // 1024} KB)")
 
@@ -251,15 +277,16 @@ def main():
                 " * Each variant's blob is bias-encoded (out=(in==0)?0:(s*4+in)) so the\n"
                 " * tile renders correctly via PAL0 pixel-bias when looked up at its slot.\n"
                 " *\n"
-                " * NOTE Phase J Step 2: data emitted; legacy expanded_bg_chr.{c,h} also\n"
-                " * in tree. Renderer switch is Step 3 (not this commit). Atlas + LUT\n"
-                " * are ready but not yet wired. */\n\n")
+                " * Phase J.2 (2026-05-18): 4 variants — orig+redux x OW+UW. Redux UW\n"
+                " * uses unified_source mode (redux_uw_bg_chr is a flat 256-tile bank\n"
+                " * that replaces the entire BG bank, common+scene+misc included). */\n\n")
         f.write(f"#define BG_SPARSE_TILE_COUNT      {n_tiles}u\n")
         f.write(f"#define BG_SPARSE_BLOB_BYTES      {bytes_per_variant}u\n")
         f.write("\n")
-        f.write(f"extern const unsigned char  bg_sparse_chr_orig_ow [{bytes_per_variant}];\n")
-        f.write(f"extern const unsigned char  bg_sparse_chr_orig_uw [{bytes_per_variant}];\n")
-        f.write(f"extern const unsigned char  bg_sparse_chr_redux_ow[{bytes_per_variant}];\n")
+        f.write(f"extern const unsigned char  bg_sparse_chr_orig_ow  [{bytes_per_variant}];\n")
+        f.write(f"extern const unsigned char  bg_sparse_chr_orig_uw  [{bytes_per_variant}];\n")
+        f.write(f"extern const unsigned char  bg_sparse_chr_redux_ow [{bytes_per_variant}];\n")
+        f.write(f"extern const unsigned char  bg_sparse_chr_redux_uw [{bytes_per_variant}];\n")
         f.write("extern const unsigned short bg_sparse_tile_lut[256][4];\n")
         f.write("\n#endif /* ROOMROM_BG_SPARSE_CHR_H */\n")
 
@@ -267,9 +294,10 @@ def main():
     with OUT_C.open("w", encoding="utf-8") as f:
         f.write("/* Auto-generated by RoomRom/tools/gen_bg_sparse.py. Do not edit. */\n")
         f.write('#include "bg_sparse_chr.h"\n\n')
-        emit_c_array(f, "bg_sparse_chr_orig_ow", orig_ow_blob)
-        emit_c_array(f, "bg_sparse_chr_orig_uw", orig_uw_blob)
+        emit_c_array(f, "bg_sparse_chr_orig_ow",  orig_ow_blob)
+        emit_c_array(f, "bg_sparse_chr_orig_uw",  orig_uw_blob)
         emit_c_array(f, "bg_sparse_chr_redux_ow", redux_ow_blob)
+        emit_c_array(f, "bg_sparse_chr_redux_uw", redux_uw_blob)
         emit_lut(f, "bg_sparse_tile_lut", orig_ow_lut)
 
     print(f"wrote {OUT_H.relative_to(ROOT)}")
