@@ -23,6 +23,8 @@ CHR_ATLAS_MASTER = REPO / "RoomRom" / "data" / "chr_atlas_master.json"
 ITEM_MANIFEST = REPO / "RoomRom" / "data" / "item_chr_manifest.json"
 ATLAS_DIR = REPO / "RoomRom" / "src" / "atlas"
 VERIFY_SCRIPT = REPO / "RoomRom" / "tools" / "verify_vram_budget.py"
+SPRITE_SLOTS_H = REPO / "src" / "game" / "world" / "render" / "sprite_slots.h"
+SPRITE_RENDER_C = REPO / "src" / "game" / "world" / "render" / "sprite_render.c"
 
 OUT_CATALOG_MD = REPO / "docs" / "atlas" / "sprite_catalog.md"
 OUT_VRAM_MAP_MD = REPO / "docs" / "atlas" / "vram_map.md"
@@ -88,6 +90,25 @@ def load_chr_atlas_master() -> dict:
     if not CHR_ATLAS_MASTER.exists():
         return {}
     return json.loads(CHR_ATLAS_MASTER.read_text(encoding="utf-8"))
+
+
+# Static OAM-slot ownership table. Single source of truth: defined by
+# sprite_slots.h naming + sprite_render.c per-slot set/clear function
+# pairs. This catalog stays in sync via the per-slot doc string below.
+OAM_SLOT_TABLE = [
+    # (slot_name_macro, slot_idx, owner_subsys, set_fn, clear_fn, tile_source, dispatch, sub_pal_usage, render_priority, chain_link_to)
+    ("ROOMROM_SPRITE_SLOT_LINK",        0, "Link runtime",   "roomrom_sprites_set_link_pose / _pal",    "(implicit; spawn_link off-screen init)", "common.c (LINK_VRAM_TILE + 4 tiles/pose)", "2x2", "0 only (Link's tunic; PAL1)",                                "above-BG via OAM",          "ROOMROM_SPRITE_SLOT_SWORD"),
+    ("ROOMROM_SPRITE_SLOT_SWORD",       1, "combat_runtime", "roomrom_sprites_set_sword_vertical/horizontal/diagonal", "roomrom_sprites_clear_sword", "items_chr_x4 SWORD_VERT/SWORD_HORZ/SWORD_DIAG", "1x2 / 2x2 / 1x2", "0/1/2 (wood/white/magic; via ROOMROM_SUBPAL_PAL)", "above-BG", "ROOMROM_SPRITE_SLOT_BEAM"),
+    ("ROOMROM_SPRITE_SLOT_BEAM",        2, "combat_runtime", "roomrom_sprites_set_beam(pal_index)",     "roomrom_sprites_clear_beam",                "common.c SWORD_VERT_VRAM_TILE / SWORD_HORZ_VRAM_TILE", "1x2 / 2x2", "pal-cycle PAL1/PAL2/PAL3 per frame (Z_07.asm:3459 flash)", "above-BG", "ROOMROM_SPRITE_SLOT_BOOMERANG"),
+    ("ROOMROM_SPRITE_SLOT_BOOMERANG",   3, "items_runtime",  "roomrom_sprites_set_boomerang",           "roomrom_sprites_clear_boomerang",           "items_chr_x4 BOOMERANG (8-phase cycle)",        "1x2",        "0 (NES base attr = 0; ROOMROM_SUBPAL_PAL)", "above-BG", "ROOMROM_SPRITE_SLOT_ARROW"),
+    ("ROOMROM_SPRITE_SLOT_ARROW",       4, "items_runtime",  "roomrom_sprites_set_arrow",               "roomrom_sprites_clear_arrow",               "items_chr_x4 ARROW_VERT/ARROW_HORZ",            "1x2 / 2x2",  "0 (NES base attr = 0)",                     "above-BG (priority=1)",  "ROOMROM_SPRITE_SLOT_BOMB"),
+    ("ROOMROM_SPRITE_SLOT_BOMB",        5, "items_runtime",  "roomrom_sprites_set_bomb",                "roomrom_sprites_clear_bomb",                "items_chr_x4 BOMB (tile $34/$35 paired)",       "1x2",        "1 (NES DrawCloud Y=1)",                     "above-BG",                "ROOMROM_SPRITE_SLOT_EXPLOSION"),
+    ("ROOMROM_SPRITE_SLOT_EXPLOSION",   6, "items_runtime",  "roomrom_sprites_set_explosion(timer)",    "roomrom_sprites_clear_explosion",           "items_chr_x4 EXPLOSION (3-phase cloud)",        "2x2",        "1 (NES DrawCloud Y=1)",                     "above-BG",                "ROOMROM_SPRITE_SLOT_ROOM_ITEM"),
+    ("ROOMROM_SPRITE_SLOT_ROOM_ITEM",   7, "world/items",    "roomrom_sprites_set_room_item",           "roomrom_sprites_clear_room_item",           "items_chr_x4 BOOMERANG (PLACEHOLDER — triforce/key/map extraction = Phase K)", "1x1", "0 (default)", "above-BG (priority=1)", "ROOMROM_SPRITE_SLOT_CANDLE_FIRE"),
+    ("ROOMROM_SPRITE_SLOT_CANDLE_FIRE", 8, "items_runtime",  "roomrom_sprites_set_candle_fire",         "roomrom_sprites_clear_candle_fire",         "items_chr_x4 CANDLE_FIRE_F0 (F1-F3 = Phase P)", "2x2",        "2 (sub-pal 2; PAL3)",                       "above-BG (priority=1)",  "ROOMROM_SPRITE_SLOT_MAGIC_SHOT"),
+    ("ROOMROM_SPRITE_SLOT_MAGIC_SHOT",  9, "items_runtime",  "roomrom_sprites_set_magic_shot",          "roomrom_sprites_clear_magic_shot",          "items_chr_x4 MAGIC_SHOT_V/H",                   "2x2",        "0..2 (cycles per FrameCounter)",            "above-BG (priority=1)",  "ROOMROM_SPRITE_SLOT_ENEMY_FIRST"),
+    ("ROOMROM_SPRITE_SLOT_ENEMY_FIRST", 10, "enemy_render",  "enemy_render_sweep_oam_to_sat",           "(per-enemy alive flag)",                    "OWSP (114) / UWSP (34) / BOSS (64) — SCENE_OBJ slot", "variable", "0/1/2 routed via translate_attrs", "per-NES attr bit 5", "(chain terminates at enemy sweep)"),
+]
 
 
 def build_catalog(vram, atlases, items, master) -> dict:
@@ -217,6 +238,46 @@ def emit_catalog_md(catalog: dict) -> str:
         for key, val in b.items():
             lines.append(f"- **{key}**: `{val}`")
         lines.append("")
+
+    # OAM slot ownership table (Phase X+: per-slot per-line clarity)
+    lines.append("## OAM slot ownership (slots 0..10+)")
+    lines.append("")
+    lines.append("Genesis SAT has 80 slots in H32 mode. Slots 0..9 are gameplay-owned (player + items + projectiles); slots 10..63 are the enemy bridge. Each slot has exactly ONE owner. Constants in `src/game/world/render/sprite_slots.h`.")
+    lines.append("")
+    lines.append("| Slot # | Name | Owner | Set fn | Clear fn | Tile source | Dispatch | Sub-pal | Priority | Chain link → |")
+    lines.append("|---:|---|---|---|---|---|---|---|---|---|")
+    for (name, idx, owner, set_fn, clear_fn, tile_src, dispatch, subpal, prio, chain) in OAM_SLOT_TABLE:
+        lines.append(
+            f"| {idx} | `{name}` | {owner} | `{set_fn}` | `{clear_fn}` | "
+            f"{tile_src} | {dispatch} | {subpal} | {prio} | `{chain}` |"
+        )
+    lines.append("")
+
+    # Per-tile mapping (ITEM atlas from manifest)
+    lines.append("## Per-tile mapping (ITEM atlas)")
+    lines.append("")
+    lines.append("Each named item tile has a stable Genesis VRAM tile offset (relative to `ROOMROM_ITEM_TILE_BASE`). NES source is recorded for parity.")
+    lines.append("")
+    lines.append("| Genesis tile offset | NES tile ID | Renderer entry | NES asm reference |")
+    lines.append("|---:|---|---|---|")
+    # Pull ROOMROM_ITEM_TILE_* constants from items_chr_x4.h
+    items_h = parse_atlas_h(ATLAS_DIR / "items_chr_x4.h")
+    tile_consts = sorted([(k, v) for k, v in items_h.items() if k.startswith("ROOMROM_ITEM_TILE_") and k != "ROOMROM_ITEM_TILE_BASE" and k != "ROOMROM_ITEM_TILE_COUNT_PER_PAL"], key=lambda kv: kv[1])
+    # Build a quick lookup from manifest by NES frame tile
+    manifest_by_nes = {}
+    for d in catalog["items"]:
+        nes = d.get("nes_frame_tile")
+        if nes:
+            manifest_by_nes[nes.lower()] = d
+    for tile_const, offset in tile_consts:
+        # Find a manifest match (best-effort by short name match)
+        short = tile_const.replace("ROOMROM_ITEM_TILE_", "").lower()
+        manifest_entry = next((d for d in catalog["items"] if d["name"].lower().startswith(short.split("_")[0])), None)
+        nes_tile = manifest_entry["nes_frame_tile"] if manifest_entry else "—"
+        renderer = "roomrom_sprites_set_" + ("sword" if "sword" in short else short.split("_")[0])
+        nes_ref = "see RoomRom/data/item_chr_manifest.json"
+        lines.append(f"| {offset} | {nes_tile} | `{renderer}` | {nes_ref} |")
+    lines.append("")
 
     # Items
     lines.append("## ITEM bank inventory")

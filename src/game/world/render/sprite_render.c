@@ -314,7 +314,7 @@ void roomrom_sprites_set_link_pose_pal(short x, short y,
     unsigned short pose_idx = (unsigned short)face * 2u + (unsigned short)frame;
     unsigned short tile = LINK_VRAM_TILE + pose_idx * LINK_TILES_PER_POSE;
     if (pal_index > 3u) pal_index = RENDER_PAL1;
-    VDP_setSpriteFull(0,
+    VDP_setSpriteFull(ROOMROM_SPRITE_SLOT_LINK,
                       (signed short)x,
                       (signed short)y,
                       RENDER_SPRITE_SIZE(2, 2),
@@ -326,7 +326,7 @@ void roomrom_sprites_set_link_attack_pose(short x, short y, link_face_t face)
 {
     unsigned short pose_idx = (unsigned short)face;
     unsigned short tile = ATTACK_VRAM_TILE + pose_idx * LINK_TILES_PER_POSE;
-    VDP_setSpriteFull(0,
+    VDP_setSpriteFull(ROOMROM_SPRITE_SLOT_LINK,
                       (signed short)x,
                       (signed short)y,
                       RENDER_SPRITE_SIZE(2, 2),
@@ -338,37 +338,37 @@ void roomrom_sprites_spawn_link(short x, short y)
 {
     /* SAT chain: 0 (Link) -> 1 (sword) -> 2 (beam) -> 3 (boomerang) -> end. */
     roomrom_sprites_invalidate_cache();
-    VDP_setSpriteFull(1,
+    VDP_setSpriteFull(ROOMROM_SPRITE_SLOT_SWORD,
                       (signed short)-32,
                       (signed short)-32,
                       RENDER_SPRITE_SIZE(1, 2),
                       RENDER_TILE_ATTR_FULL(RENDER_PAL1,0, 0, 0, SWORD_VERT_VRAM_TILE),
                       2);
-    VDP_setSpriteFull(2,
+    VDP_setSpriteFull(ROOMROM_SPRITE_SLOT_BEAM,
                       (signed short)-32,
                       (signed short)-32,
                       RENDER_SPRITE_SIZE(1, 2),
                       RENDER_TILE_ATTR_FULL(RENDER_PAL1, 0, 0, 0, SWORD_VERT_VRAM_TILE),
                       3);
-    VDP_setSpriteFull(3,
+    VDP_setSpriteFull(ROOMROM_SPRITE_SLOT_BOOMERANG,
                       (signed short)-32,
                       (signed short)-32,
                       RENDER_SPRITE_SIZE(1, 1),
                       RENDER_TILE_ATTR_FULL(RENDER_PAL1,0, 0, 0, BOOMERANG_VRAM_TILE),
                       4);
-    VDP_setSpriteFull(4,
+    VDP_setSpriteFull(ROOMROM_SPRITE_SLOT_ARROW,
                       (signed short)-32,
                       (signed short)-32,
                       RENDER_SPRITE_SIZE(1, 2),
                       RENDER_TILE_ATTR_FULL(RENDER_PAL1,0, 0, 0, ARROW_VERT_VRAM_TILE),
                       5);
-    VDP_setSpriteFull(5,
+    VDP_setSpriteFull(ROOMROM_SPRITE_SLOT_BOMB,
                       (signed short)-32,
                       (signed short)-32,
                       RENDER_SPRITE_SIZE(1, 1),
                       RENDER_TILE_ATTR_FULL(RENDER_PAL1,0, 0, 0, BOMB_VRAM_TILE),
                       6);
-    VDP_setSpriteFull(6,
+    VDP_setSpriteFull(ROOMROM_SPRITE_SLOT_EXPLOSION,
                       (signed short)-32,
                       (signed short)-32,
                       RENDER_SPRITE_SIZE(2, 2),
@@ -376,13 +376,13 @@ void roomrom_sprites_spawn_link(short x, short y)
                       7);  /* link to slot 7 (room_item) — was 0 (terminator) */
     /* Slot 7 = room_item placeholder, slot 8 = candle_fire. Both must be in
      * the link chain or VDP skips them. Link 8 -> 0 terminates. */
-    VDP_setSpriteFull(7,
+    VDP_setSpriteFull(ROOMROM_SPRITE_SLOT_ROOM_ITEM,
                       (signed short)-32,
                       (signed short)-32,
                       RENDER_SPRITE_SIZE(1, 1),
                       RENDER_TILE_ATTR_FULL(RENDER_PAL1, 0, 0, 0, BOOMERANG_VRAM_TILE),
                       8);
-    VDP_setSpriteFull(8,
+    VDP_setSpriteFull(ROOMROM_SPRITE_SLOT_CANDLE_FIRE,
                       (signed short)-32,
                       (signed short)-32,
                       RENDER_SPRITE_SIZE(2, 2),
@@ -392,7 +392,7 @@ void roomrom_sprites_spawn_link(short x, short y)
                       9);
     /* Slot 9 = magic_shot (rod projectile). Always 16x16 — vertical is
      * mirrored 8x16 ($7A + hflip), horizontal is wide flippable ($7C-$7F). */
-    VDP_setSpriteFull(9,
+    VDP_setSpriteFull(ROOMROM_SPRITE_SLOT_MAGIC_SHOT,
                       (signed short)-32,
                       (signed short)-32,
                       RENDER_SPRITE_SIZE(2, 2),
@@ -414,7 +414,7 @@ void roomrom_sprites_set_sword_vertical(short x, short y, unsigned char vflip,
 {
     unsigned short tile = (unsigned short)(ROOMROM_ITEM_TILE_BASE_PAL(sub_pal)
                                            + ROOMROM_ITEM_TILE_SWORD_VERT);
-    VDP_setSpriteFull(1,
+    VDP_setSpriteFull(ROOMROM_SPRITE_SLOT_SWORD,
                       (signed short)x,
                       (signed short)y,
                       RENDER_SPRITE_SIZE(1, 2),
@@ -428,7 +428,7 @@ void roomrom_sprites_set_sword_horizontal(short x, short y, unsigned char hflip,
 {
     unsigned short tile = (unsigned short)(ROOMROM_ITEM_TILE_BASE_PAL(sub_pal)
                                            + ROOMROM_ITEM_TILE_SWORD_HORZ);
-    VDP_setSpriteFull(1,
+    VDP_setSpriteFull(ROOMROM_SPRITE_SLOT_SWORD,
                       (signed short)x,
                       (signed short)y,
                       RENDER_SPRITE_SIZE(2, 2),
@@ -439,7 +439,7 @@ void roomrom_sprites_set_sword_horizontal(short x, short y, unsigned char hflip,
 
 void roomrom_sprites_clear_sword(void)
 {
-    VDP_setSpriteFull(1,
+    VDP_setSpriteFull(ROOMROM_SPRITE_SLOT_SWORD,
                       (signed short)-32,
                       (signed short)-32,
                       RENDER_SPRITE_SIZE(1, 2),
@@ -457,7 +457,7 @@ void roomrom_sprites_set_sword_diagonal(short x, short y,
 {
     unsigned short tile = (unsigned short)(ROOMROM_ITEM_TILE_BASE_PAL(sub_pal)
                                            + ROOMROM_ITEM_TILE_SWORD_DIAG);
-    VDP_setSpriteFull(1,
+    VDP_setSpriteFull(ROOMROM_SPRITE_SLOT_SWORD,
                       (signed short)x,
                       (signed short)y,
                       RENDER_SPRITE_SIZE(1, 2),
@@ -510,7 +510,7 @@ void roomrom_sprites_set_beam(short x, short y, link_face_t face,
     if (pal_index > RENDER_PAL3) pal_index = RENDER_PAL1;
     if (vertical) {
         draw_x = (short)(x + 4);
-        VDP_setSpriteFull(2,
+        VDP_setSpriteFull(ROOMROM_SPRITE_SLOT_BEAM,
                           (signed short)draw_x,
                           (signed short)draw_y,
                           RENDER_SPRITE_SIZE(1, 2),
@@ -519,7 +519,7 @@ void roomrom_sprites_set_beam(short x, short y, link_face_t face,
                           3);
     } else {
         draw_y = (short)(y + 3);
-        VDP_setSpriteFull(2,
+        VDP_setSpriteFull(ROOMROM_SPRITE_SLOT_BEAM,
                           (signed short)draw_x,
                           (signed short)draw_y,
                           RENDER_SPRITE_SIZE(2, 2),
@@ -531,7 +531,7 @@ void roomrom_sprites_set_beam(short x, short y, link_face_t face,
 
 void roomrom_sprites_clear_beam(void)
 {
-    VDP_setSpriteFull(2,
+    VDP_setSpriteFull(ROOMROM_SPRITE_SLOT_BEAM,
                       (signed short)-32,
                       (signed short)-32,
                       RENDER_SPRITE_SIZE(1, 2),
@@ -574,7 +574,7 @@ void roomrom_sprites_set_boomerang(short x, short y,
      * $36+$37 form one 8x16 OAM entry: $36 = upper 8x8 (rows 4-7 of cell),
      * $37 = lower 8x8 (rows 0-3). Atlas idx 6/7 are adjacent in items_chr_x4
      * so RENDER_SPRITE_SIZE(1,2) consumes both via column-major fetch. */
-    VDP_setSpriteFull(3,
+    VDP_setSpriteFull(ROOMROM_SPRITE_SLOT_BOOMERANG,
                       (signed short)x,
                       (signed short)y,
                       RENDER_SPRITE_SIZE(1, 2),
@@ -585,7 +585,7 @@ void roomrom_sprites_set_boomerang(short x, short y,
 
 void roomrom_sprites_clear_boomerang(void)
 {
-    VDP_setSpriteFull(3,
+    VDP_setSpriteFull(ROOMROM_SPRITE_SLOT_BOOMERANG,
                       (signed short)-32,
                       (signed short)-32,
                       RENDER_SPRITE_SIZE(1, 2),
@@ -600,7 +600,7 @@ void roomrom_sprites_set_room_item(short x, short y, unsigned char sub_pal)
 {
     unsigned short tile = (unsigned short)(ROOMROM_ITEM_TILE_BASE_PAL(sub_pal)
                                             + ROOMROM_ITEM_TILE_BOOMERANG);
-    VDP_setSpriteFull(7,
+    VDP_setSpriteFull(ROOMROM_SPRITE_SLOT_ROOM_ITEM,
                       (signed short)x,
                       (signed short)y,
                       RENDER_SPRITE_SIZE(1, 1),
@@ -611,7 +611,7 @@ void roomrom_sprites_set_room_item(short x, short y, unsigned char sub_pal)
 
 void roomrom_sprites_clear_room_item(void)
 {
-    VDP_setSpriteFull(7,
+    VDP_setSpriteFull(ROOMROM_SPRITE_SLOT_ROOM_ITEM,
                       (signed short)-32,
                       (signed short)-32,
                       RENDER_SPRITE_SIZE(1, 1),
@@ -625,7 +625,7 @@ void roomrom_sprites_set_candle_fire(short x, short y,
 {
     unsigned short tile = (unsigned short)(ROOMROM_ITEM_TILE_BASE_PAL(sub_pal)
                                             + ROOMROM_ITEM_TILE_CANDLE_FIRE_F0);
-    VDP_setSpriteFull(8,
+    VDP_setSpriteFull(ROOMROM_SPRITE_SLOT_CANDLE_FIRE,
                       (signed short)x, (signed short)y,
                       RENDER_SPRITE_SIZE(2, 2),
                       RENDER_TILE_ATTR_FULL(ROOMROM_SUBPAL_PAL(sub_pal),
@@ -637,7 +637,7 @@ void roomrom_sprites_clear_candle_fire(void)
 {
     unsigned short tile = (unsigned short)(ROOMROM_ITEM_TILE_BASE_PAL(0)
                                             + ROOMROM_ITEM_TILE_CANDLE_FIRE_F0);
-    VDP_setSpriteFull(8,
+    VDP_setSpriteFull(ROOMROM_SPRITE_SLOT_CANDLE_FIRE,
                       (signed short)-32, (signed short)-32,
                       RENDER_SPRITE_SIZE(2, 2),
                       RENDER_TILE_ATTR_FULL(RENDER_PAL1, 1, 0, 0, tile),
@@ -659,13 +659,13 @@ void roomrom_sprites_set_arrow(short x, short y, link_face_t face,
         /* 5.8.1 diag: priority bit set so projectile renders ABOVE
          * BG_A door art (uses BG priority 0x8000). Codex H3
          * confirmed. Applies to all weapon projectile sprites. */
-        VDP_setSpriteFull(4, (signed short)x, (signed short)y, RENDER_SPRITE_SIZE(1, 2),
+        VDP_setSpriteFull(ROOMROM_SPRITE_SLOT_ARROW, (signed short)x, (signed short)y, RENDER_SPRITE_SIZE(1, 2),
                           RENDER_TILE_ATTR_FULL(ROOMROM_SUBPAL_PAL(sub_pal),
                                                 1, 0, 0, tile_vert),
                           5);
         break;
     case LINK_FACE_DOWN:
-        VDP_setSpriteFull(4, (signed short)x, (signed short)y, RENDER_SPRITE_SIZE(1, 2),
+        VDP_setSpriteFull(ROOMROM_SPRITE_SLOT_ARROW, (signed short)x, (signed short)y, RENDER_SPRITE_SIZE(1, 2),
                           RENDER_TILE_ATTR_FULL(ROOMROM_SUBPAL_PAL(sub_pal),
                                                 1, 1, 0, tile_vert),
                           5);
@@ -673,13 +673,13 @@ void roomrom_sprites_set_arrow(short x, short y, link_face_t face,
     case LINK_FACE_LEFT:
         /* Phase 1: horizontal arrow ($86..$89) now sourced from live NES
          * item atlas. RIGHT renders as-is, LEFT mirrors via hflip. */
-        VDP_setSpriteFull(4, (signed short)x, (signed short)y, RENDER_SPRITE_SIZE(2, 2),
+        VDP_setSpriteFull(ROOMROM_SPRITE_SLOT_ARROW, (signed short)x, (signed short)y, RENDER_SPRITE_SIZE(2, 2),
                           RENDER_TILE_ATTR_FULL(ROOMROM_SUBPAL_PAL(sub_pal),
                                                 1, 0, 1, tile_horz),
                           5);
         break;
     case LINK_FACE_RIGHT:
-        VDP_setSpriteFull(4, (signed short)x, (signed short)y, RENDER_SPRITE_SIZE(2, 2),
+        VDP_setSpriteFull(ROOMROM_SPRITE_SLOT_ARROW, (signed short)x, (signed short)y, RENDER_SPRITE_SIZE(2, 2),
                           RENDER_TILE_ATTR_FULL(ROOMROM_SUBPAL_PAL(sub_pal),
                                                 1, 0, 0, tile_horz),
                           5);
@@ -692,7 +692,7 @@ void roomrom_sprites_set_arrow(short x, short y, link_face_t face,
 
 void roomrom_sprites_clear_arrow(void)
 {
-    VDP_setSpriteFull(4,
+    VDP_setSpriteFull(ROOMROM_SPRITE_SLOT_ARROW,
                       (signed short)-32,
                       (signed short)-32,
                       RENDER_SPRITE_SIZE(1, 2),
@@ -712,7 +712,7 @@ void roomrom_sprites_set_bomb(short x, short y, unsigned char sub_pal)
 {
     unsigned short tile = (unsigned short)(ROOMROM_ITEM_TILE_BASE_PAL(sub_pal)
                                            + ROOMROM_ITEM_TILE_BOMB);
-    VDP_setSpriteFull(5,
+    VDP_setSpriteFull(ROOMROM_SPRITE_SLOT_BOMB,
                       (signed short)x,
                       (signed short)y,
                       RENDER_SPRITE_SIZE(1, 2),
@@ -723,7 +723,7 @@ void roomrom_sprites_set_bomb(short x, short y, unsigned char sub_pal)
 
 void roomrom_sprites_clear_bomb(void)
 {
-    VDP_setSpriteFull(5,
+    VDP_setSpriteFull(ROOMROM_SPRITE_SLOT_BOMB,
                       (signed short)-32,
                       (signed short)-32,
                       RENDER_SPRITE_SIZE(1, 2),
@@ -767,7 +767,7 @@ void roomrom_sprites_set_explosion(short x, short y, unsigned char timer,
     unsigned short tile   = (unsigned short)(ROOMROM_ITEM_TILE_BASE_PAL(sub_pal)
                                              + ROOMROM_ITEM_TILE_EXPLOSION
                                              + (unsigned short)phase * 4u);
-    VDP_setSpriteFull(6,
+    VDP_setSpriteFull(ROOMROM_SPRITE_SLOT_EXPLOSION,
                       (signed short)x,
                       (signed short)y,
                       RENDER_SPRITE_SIZE(2, 2),
@@ -778,7 +778,7 @@ void roomrom_sprites_set_explosion(short x, short y, unsigned char timer,
 
 void roomrom_sprites_clear_explosion(void)
 {
-    VDP_setSpriteFull(6,
+    VDP_setSpriteFull(ROOMROM_SPRITE_SLOT_EXPLOSION,
                       (signed short)-32,
                       (signed short)-32,
                       RENDER_SPRITE_SIZE(2, 2),
@@ -803,31 +803,31 @@ void roomrom_sprites_set_magic_shot(short x, short y, link_face_t face,
                                               + ROOMROM_ITEM_TILE_MAGIC_SHOT_H);
     switch (face) {
     case LINK_FACE_UP:
-        VDP_setSpriteFull(9, (signed short)x, (signed short)y, RENDER_SPRITE_SIZE(2, 2),
+        VDP_setSpriteFull(ROOMROM_SPRITE_SLOT_MAGIC_SHOT, (signed short)x, (signed short)y, RENDER_SPRITE_SIZE(2, 2),
                           RENDER_TILE_ATTR_FULL(ROOMROM_SUBPAL_PAL(sub_pal),
                                                 1, 0, 0, tile_v),
                           ROOMROM_SPRITE_SLOT_ENEMY_FIRST);
         break;
     case LINK_FACE_DOWN:
-        VDP_setSpriteFull(9, (signed short)x, (signed short)y, RENDER_SPRITE_SIZE(2, 2),
+        VDP_setSpriteFull(ROOMROM_SPRITE_SLOT_MAGIC_SHOT, (signed short)x, (signed short)y, RENDER_SPRITE_SIZE(2, 2),
                           RENDER_TILE_ATTR_FULL(ROOMROM_SUBPAL_PAL(sub_pal),
                                                 1, 1, 0, tile_v),
                           ROOMROM_SPRITE_SLOT_ENEMY_FIRST);
         break;
     case LINK_FACE_LEFT:
-        VDP_setSpriteFull(9, (signed short)x, (signed short)y, RENDER_SPRITE_SIZE(2, 2),
+        VDP_setSpriteFull(ROOMROM_SPRITE_SLOT_MAGIC_SHOT, (signed short)x, (signed short)y, RENDER_SPRITE_SIZE(2, 2),
                           RENDER_TILE_ATTR_FULL(ROOMROM_SUBPAL_PAL(sub_pal),
                                                 1, 0, 1, tile_h),
                           ROOMROM_SPRITE_SLOT_ENEMY_FIRST);
         break;
     case LINK_FACE_RIGHT:
-        VDP_setSpriteFull(9, (signed short)x, (signed short)y, RENDER_SPRITE_SIZE(2, 2),
+        VDP_setSpriteFull(ROOMROM_SPRITE_SLOT_MAGIC_SHOT, (signed short)x, (signed short)y, RENDER_SPRITE_SIZE(2, 2),
                           RENDER_TILE_ATTR_FULL(ROOMROM_SUBPAL_PAL(sub_pal),
                                                 1, 0, 0, tile_h),
                           ROOMROM_SPRITE_SLOT_ENEMY_FIRST);
         break;
     default:
-        VDP_setSpriteFull(9, (signed short)-32, (signed short)-32, RENDER_SPRITE_SIZE(2, 2),
+        VDP_setSpriteFull(ROOMROM_SPRITE_SLOT_MAGIC_SHOT, (signed short)-32, (signed short)-32, RENDER_SPRITE_SIZE(2, 2),
                           RENDER_TILE_ATTR_FULL(RENDER_PAL1, 1, 0, 0, tile_v),
                           ROOMROM_SPRITE_SLOT_ENEMY_FIRST);
         break;
@@ -838,7 +838,7 @@ void roomrom_sprites_clear_magic_shot(void)
 {
     unsigned short tile = (unsigned short)(ROOMROM_ITEM_TILE_BASE_PAL(0)
                                             + ROOMROM_ITEM_TILE_MAGIC_SHOT_V);
-    VDP_setSpriteFull(9, (signed short)-32, (signed short)-32, RENDER_SPRITE_SIZE(2, 2),
+    VDP_setSpriteFull(ROOMROM_SPRITE_SLOT_MAGIC_SHOT, (signed short)-32, (signed short)-32, RENDER_SPRITE_SIZE(2, 2),
                       RENDER_TILE_ATTR_FULL(RENDER_PAL1, 0, 0, 0, tile),
                       ROOMROM_SPRITE_SLOT_ENEMY_FIRST);
 }

@@ -69,6 +69,48 @@ Genesis has 4 CRAM palettes × 16 colors = 64 slots. Layout post-Phase-B/F:
 - **source**: `data/chr/OWSP.bin`
 - **replication**: `1x (always; NPCs use sub-pal 0/1 via OAM pal field)`
 
+## OAM slot ownership (slots 0..10+)
+
+Genesis SAT has 80 slots in H32 mode. Slots 0..9 are gameplay-owned (player + items + projectiles); slots 10..63 are the enemy bridge. Each slot has exactly ONE owner. Constants in `src/game/world/render/sprite_slots.h`.
+
+| Slot # | Name | Owner | Set fn | Clear fn | Tile source | Dispatch | Sub-pal | Priority | Chain link → |
+|---:|---|---|---|---|---|---|---|---|---|
+| 0 | `ROOMROM_SPRITE_SLOT_LINK` | Link runtime | `roomrom_sprites_set_link_pose / _pal` | `(implicit; spawn_link off-screen init)` | common.c (LINK_VRAM_TILE + 4 tiles/pose) | 2x2 | 0 only (Link's tunic; PAL1) | above-BG via OAM | `ROOMROM_SPRITE_SLOT_SWORD` |
+| 1 | `ROOMROM_SPRITE_SLOT_SWORD` | combat_runtime | `roomrom_sprites_set_sword_vertical/horizontal/diagonal` | `roomrom_sprites_clear_sword` | items_chr_x4 SWORD_VERT/SWORD_HORZ/SWORD_DIAG | 1x2 / 2x2 / 1x2 | 0/1/2 (wood/white/magic; via ROOMROM_SUBPAL_PAL) | above-BG | `ROOMROM_SPRITE_SLOT_BEAM` |
+| 2 | `ROOMROM_SPRITE_SLOT_BEAM` | combat_runtime | `roomrom_sprites_set_beam(pal_index)` | `roomrom_sprites_clear_beam` | common.c SWORD_VERT_VRAM_TILE / SWORD_HORZ_VRAM_TILE | 1x2 / 2x2 | pal-cycle PAL1/PAL2/PAL3 per frame (Z_07.asm:3459 flash) | above-BG | `ROOMROM_SPRITE_SLOT_BOOMERANG` |
+| 3 | `ROOMROM_SPRITE_SLOT_BOOMERANG` | items_runtime | `roomrom_sprites_set_boomerang` | `roomrom_sprites_clear_boomerang` | items_chr_x4 BOOMERANG (8-phase cycle) | 1x2 | 0 (NES base attr = 0; ROOMROM_SUBPAL_PAL) | above-BG | `ROOMROM_SPRITE_SLOT_ARROW` |
+| 4 | `ROOMROM_SPRITE_SLOT_ARROW` | items_runtime | `roomrom_sprites_set_arrow` | `roomrom_sprites_clear_arrow` | items_chr_x4 ARROW_VERT/ARROW_HORZ | 1x2 / 2x2 | 0 (NES base attr = 0) | above-BG (priority=1) | `ROOMROM_SPRITE_SLOT_BOMB` |
+| 5 | `ROOMROM_SPRITE_SLOT_BOMB` | items_runtime | `roomrom_sprites_set_bomb` | `roomrom_sprites_clear_bomb` | items_chr_x4 BOMB (tile $34/$35 paired) | 1x2 | 1 (NES DrawCloud Y=1) | above-BG | `ROOMROM_SPRITE_SLOT_EXPLOSION` |
+| 6 | `ROOMROM_SPRITE_SLOT_EXPLOSION` | items_runtime | `roomrom_sprites_set_explosion(timer)` | `roomrom_sprites_clear_explosion` | items_chr_x4 EXPLOSION (3-phase cloud) | 2x2 | 1 (NES DrawCloud Y=1) | above-BG | `ROOMROM_SPRITE_SLOT_ROOM_ITEM` |
+| 7 | `ROOMROM_SPRITE_SLOT_ROOM_ITEM` | world/items | `roomrom_sprites_set_room_item` | `roomrom_sprites_clear_room_item` | items_chr_x4 BOOMERANG (PLACEHOLDER — triforce/key/map extraction = Phase K) | 1x1 | 0 (default) | above-BG (priority=1) | `ROOMROM_SPRITE_SLOT_CANDLE_FIRE` |
+| 8 | `ROOMROM_SPRITE_SLOT_CANDLE_FIRE` | items_runtime | `roomrom_sprites_set_candle_fire` | `roomrom_sprites_clear_candle_fire` | items_chr_x4 CANDLE_FIRE_F0 (F1-F3 = Phase P) | 2x2 | 2 (sub-pal 2; PAL3) | above-BG (priority=1) | `ROOMROM_SPRITE_SLOT_MAGIC_SHOT` |
+| 9 | `ROOMROM_SPRITE_SLOT_MAGIC_SHOT` | items_runtime | `roomrom_sprites_set_magic_shot` | `roomrom_sprites_clear_magic_shot` | items_chr_x4 MAGIC_SHOT_V/H | 2x2 | 0..2 (cycles per FrameCounter) | above-BG (priority=1) | `ROOMROM_SPRITE_SLOT_ENEMY_FIRST` |
+| 10 | `ROOMROM_SPRITE_SLOT_ENEMY_FIRST` | enemy_render | `enemy_render_sweep_oam_to_sat` | `(per-enemy alive flag)` | OWSP (114) / UWSP (34) / BOSS (64) — SCENE_OBJ slot | variable | 0/1/2 routed via translate_attrs | per-NES attr bit 5 | `(chain terminates at enemy sweep)` |
+
+## Per-tile mapping (ITEM atlas)
+
+Each named item tile has a stable Genesis VRAM tile offset (relative to `ROOMROM_ITEM_TILE_BASE`). NES source is recorded for parity.
+
+| Genesis tile offset | NES tile ID | Renderer entry | NES asm reference |
+|---:|---|---|---|
+| 0 | 0x20 | `roomrom_sprites_set_sword` | see RoomRom/data/item_chr_manifest.json |
+| 2 | 0x20 | `roomrom_sprites_set_sword` | see RoomRom/data/item_chr_manifest.json |
+| 6 | 0x36 | `roomrom_sprites_set_boomerang` | see RoomRom/data/item_chr_manifest.json |
+| 14 | 0x28 | `roomrom_sprites_set_arrow` | see RoomRom/data/item_chr_manifest.json |
+| 16 | 0x28 | `roomrom_sprites_set_arrow` | see RoomRom/data/item_chr_manifest.json |
+| 20 | 0x34 | `roomrom_sprites_set_bomb` | see RoomRom/data/item_chr_manifest.json |
+| 22 | 0x70 | `roomrom_sprites_set_explosion` | see RoomRom/data/item_chr_manifest.json |
+| 34 | 0x20 | `roomrom_sprites_set_sword` | see RoomRom/data/item_chr_manifest.json |
+| 38 | 0x5C | `roomrom_sprites_set_candle` | see RoomRom/data/item_chr_manifest.json |
+| 42 | 0x5C | `roomrom_sprites_set_candle` | see RoomRom/data/item_chr_manifest.json |
+| 46 | 0x5C | `roomrom_sprites_set_candle` | see RoomRom/data/item_chr_manifest.json |
+| 50 | 0x5C | `roomrom_sprites_set_candle` | see RoomRom/data/item_chr_manifest.json |
+| 54 | 0x6E | `roomrom_sprites_set_triforce` | see RoomRom/data/item_chr_manifest.json |
+| 58 | 0x7A | `roomrom_sprites_set_magic` | see RoomRom/data/item_chr_manifest.json |
+| 62 | 0x7A | `roomrom_sprites_set_magic` | see RoomRom/data/item_chr_manifest.json |
+| 66 | 0x50 | `roomrom_sprites_set_fairy` | see RoomRom/data/item_chr_manifest.json |
+| 68 | 0x50 | `roomrom_sprites_set_fairy` | see RoomRom/data/item_chr_manifest.json |
+
 ## ITEM bank inventory
 
 Atlas defined by `RoomRom/data/item_chr_manifest.json`; emitted via `RoomRom/tools/gen_atlas.py`. Tile indices are 0-based offsets within the ITEM bank (add `ROOMROM_ITEM_TILE_BASE` for absolute VRAM tile).
