@@ -1,0 +1,5502 @@
+{
+  "schema_version": 1,
+  "source": "bg_sparse_tile_lut from RoomRom/src/bg_sparse_chr.c + item_chr_manifest.json",
+  "bg_in_scope_count": 532,
+  "bg_out_of_scope_count": 492,
+  "manifest_item_count": 31,
+  "bg_in_scope": [
+    {
+      "tile_id": 0,
+      "sub_pal": 0,
+      "slot": 0
+    },
+    {
+      "tile_id": 0,
+      "sub_pal": 1,
+      "slot": 1
+    },
+    {
+      "tile_id": 0,
+      "sub_pal": 2,
+      "slot": 2
+    },
+    {
+      "tile_id": 1,
+      "sub_pal": 0,
+      "slot": 3
+    },
+    {
+      "tile_id": 1,
+      "sub_pal": 1,
+      "slot": 4
+    },
+    {
+      "tile_id": 1,
+      "sub_pal": 2,
+      "slot": 5
+    },
+    {
+      "tile_id": 2,
+      "sub_pal": 0,
+      "slot": 6
+    },
+    {
+      "tile_id": 2,
+      "sub_pal": 1,
+      "slot": 7
+    },
+    {
+      "tile_id": 2,
+      "sub_pal": 2,
+      "slot": 8
+    },
+    {
+      "tile_id": 3,
+      "sub_pal": 0,
+      "slot": 9
+    },
+    {
+      "tile_id": 3,
+      "sub_pal": 1,
+      "slot": 10
+    },
+    {
+      "tile_id": 3,
+      "sub_pal": 2,
+      "slot": 11
+    },
+    {
+      "tile_id": 4,
+      "sub_pal": 0,
+      "slot": 12
+    },
+    {
+      "tile_id": 4,
+      "sub_pal": 1,
+      "slot": 13
+    },
+    {
+      "tile_id": 4,
+      "sub_pal": 2,
+      "slot": 14
+    },
+    {
+      "tile_id": 5,
+      "sub_pal": 0,
+      "slot": 15
+    },
+    {
+      "tile_id": 5,
+      "sub_pal": 1,
+      "slot": 16
+    },
+    {
+      "tile_id": 5,
+      "sub_pal": 2,
+      "slot": 17
+    },
+    {
+      "tile_id": 6,
+      "sub_pal": 0,
+      "slot": 18
+    },
+    {
+      "tile_id": 6,
+      "sub_pal": 1,
+      "slot": 19
+    },
+    {
+      "tile_id": 6,
+      "sub_pal": 2,
+      "slot": 20
+    },
+    {
+      "tile_id": 7,
+      "sub_pal": 0,
+      "slot": 21
+    },
+    {
+      "tile_id": 7,
+      "sub_pal": 1,
+      "slot": 22
+    },
+    {
+      "tile_id": 7,
+      "sub_pal": 2,
+      "slot": 23
+    },
+    {
+      "tile_id": 8,
+      "sub_pal": 0,
+      "slot": 24
+    },
+    {
+      "tile_id": 8,
+      "sub_pal": 1,
+      "slot": 25
+    },
+    {
+      "tile_id": 8,
+      "sub_pal": 2,
+      "slot": 26
+    },
+    {
+      "tile_id": 9,
+      "sub_pal": 0,
+      "slot": 27
+    },
+    {
+      "tile_id": 9,
+      "sub_pal": 1,
+      "slot": 28
+    },
+    {
+      "tile_id": 9,
+      "sub_pal": 2,
+      "slot": 29
+    },
+    {
+      "tile_id": 10,
+      "sub_pal": 0,
+      "slot": 30
+    },
+    {
+      "tile_id": 10,
+      "sub_pal": 1,
+      "slot": 31
+    },
+    {
+      "tile_id": 10,
+      "sub_pal": 2,
+      "slot": 32
+    },
+    {
+      "tile_id": 11,
+      "sub_pal": 0,
+      "slot": 33
+    },
+    {
+      "tile_id": 11,
+      "sub_pal": 1,
+      "slot": 34
+    },
+    {
+      "tile_id": 11,
+      "sub_pal": 2,
+      "slot": 35
+    },
+    {
+      "tile_id": 12,
+      "sub_pal": 0,
+      "slot": 36
+    },
+    {
+      "tile_id": 12,
+      "sub_pal": 1,
+      "slot": 37
+    },
+    {
+      "tile_id": 12,
+      "sub_pal": 2,
+      "slot": 38
+    },
+    {
+      "tile_id": 13,
+      "sub_pal": 0,
+      "slot": 39
+    },
+    {
+      "tile_id": 13,
+      "sub_pal": 1,
+      "slot": 40
+    },
+    {
+      "tile_id": 13,
+      "sub_pal": 2,
+      "slot": 41
+    },
+    {
+      "tile_id": 14,
+      "sub_pal": 0,
+      "slot": 42
+    },
+    {
+      "tile_id": 14,
+      "sub_pal": 1,
+      "slot": 43
+    },
+    {
+      "tile_id": 14,
+      "sub_pal": 2,
+      "slot": 44
+    },
+    {
+      "tile_id": 15,
+      "sub_pal": 0,
+      "slot": 45
+    },
+    {
+      "tile_id": 15,
+      "sub_pal": 1,
+      "slot": 46
+    },
+    {
+      "tile_id": 15,
+      "sub_pal": 2,
+      "slot": 47
+    },
+    {
+      "tile_id": 16,
+      "sub_pal": 0,
+      "slot": 48
+    },
+    {
+      "tile_id": 16,
+      "sub_pal": 1,
+      "slot": 49
+    },
+    {
+      "tile_id": 16,
+      "sub_pal": 2,
+      "slot": 50
+    },
+    {
+      "tile_id": 17,
+      "sub_pal": 0,
+      "slot": 51
+    },
+    {
+      "tile_id": 17,
+      "sub_pal": 1,
+      "slot": 52
+    },
+    {
+      "tile_id": 17,
+      "sub_pal": 2,
+      "slot": 53
+    },
+    {
+      "tile_id": 18,
+      "sub_pal": 0,
+      "slot": 54
+    },
+    {
+      "tile_id": 18,
+      "sub_pal": 1,
+      "slot": 55
+    },
+    {
+      "tile_id": 18,
+      "sub_pal": 2,
+      "slot": 56
+    },
+    {
+      "tile_id": 19,
+      "sub_pal": 0,
+      "slot": 57
+    },
+    {
+      "tile_id": 19,
+      "sub_pal": 1,
+      "slot": 58
+    },
+    {
+      "tile_id": 19,
+      "sub_pal": 2,
+      "slot": 59
+    },
+    {
+      "tile_id": 20,
+      "sub_pal": 0,
+      "slot": 60
+    },
+    {
+      "tile_id": 20,
+      "sub_pal": 1,
+      "slot": 61
+    },
+    {
+      "tile_id": 20,
+      "sub_pal": 2,
+      "slot": 62
+    },
+    {
+      "tile_id": 21,
+      "sub_pal": 0,
+      "slot": 63
+    },
+    {
+      "tile_id": 21,
+      "sub_pal": 1,
+      "slot": 64
+    },
+    {
+      "tile_id": 21,
+      "sub_pal": 2,
+      "slot": 65
+    },
+    {
+      "tile_id": 32,
+      "sub_pal": 0,
+      "slot": 66
+    },
+    {
+      "tile_id": 32,
+      "sub_pal": 1,
+      "slot": 67
+    },
+    {
+      "tile_id": 32,
+      "sub_pal": 2,
+      "slot": 68
+    },
+    {
+      "tile_id": 33,
+      "sub_pal": 0,
+      "slot": 69
+    },
+    {
+      "tile_id": 33,
+      "sub_pal": 1,
+      "slot": 70
+    },
+    {
+      "tile_id": 33,
+      "sub_pal": 2,
+      "slot": 71
+    },
+    {
+      "tile_id": 34,
+      "sub_pal": 0,
+      "slot": 72
+    },
+    {
+      "tile_id": 34,
+      "sub_pal": 1,
+      "slot": 73
+    },
+    {
+      "tile_id": 34,
+      "sub_pal": 2,
+      "slot": 74
+    },
+    {
+      "tile_id": 35,
+      "sub_pal": 0,
+      "slot": 75
+    },
+    {
+      "tile_id": 35,
+      "sub_pal": 1,
+      "slot": 76
+    },
+    {
+      "tile_id": 35,
+      "sub_pal": 2,
+      "slot": 77
+    },
+    {
+      "tile_id": 36,
+      "sub_pal": 0,
+      "slot": 78
+    },
+    {
+      "tile_id": 36,
+      "sub_pal": 1,
+      "slot": 79
+    },
+    {
+      "tile_id": 36,
+      "sub_pal": 2,
+      "slot": 80
+    },
+    {
+      "tile_id": 36,
+      "sub_pal": 3,
+      "slot": 81
+    },
+    {
+      "tile_id": 38,
+      "sub_pal": 0,
+      "slot": 82
+    },
+    {
+      "tile_id": 38,
+      "sub_pal": 2,
+      "slot": 83
+    },
+    {
+      "tile_id": 38,
+      "sub_pal": 3,
+      "slot": 84
+    },
+    {
+      "tile_id": 48,
+      "sub_pal": 0,
+      "slot": 85
+    },
+    {
+      "tile_id": 48,
+      "sub_pal": 1,
+      "slot": 86
+    },
+    {
+      "tile_id": 48,
+      "sub_pal": 2,
+      "slot": 87
+    },
+    {
+      "tile_id": 49,
+      "sub_pal": 0,
+      "slot": 88
+    },
+    {
+      "tile_id": 49,
+      "sub_pal": 1,
+      "slot": 89
+    },
+    {
+      "tile_id": 49,
+      "sub_pal": 2,
+      "slot": 90
+    },
+    {
+      "tile_id": 50,
+      "sub_pal": 0,
+      "slot": 91
+    },
+    {
+      "tile_id": 50,
+      "sub_pal": 1,
+      "slot": 92
+    },
+    {
+      "tile_id": 50,
+      "sub_pal": 2,
+      "slot": 93
+    },
+    {
+      "tile_id": 51,
+      "sub_pal": 0,
+      "slot": 94
+    },
+    {
+      "tile_id": 51,
+      "sub_pal": 1,
+      "slot": 95
+    },
+    {
+      "tile_id": 51,
+      "sub_pal": 2,
+      "slot": 96
+    },
+    {
+      "tile_id": 52,
+      "sub_pal": 0,
+      "slot": 97
+    },
+    {
+      "tile_id": 52,
+      "sub_pal": 1,
+      "slot": 98
+    },
+    {
+      "tile_id": 52,
+      "sub_pal": 2,
+      "slot": 99
+    },
+    {
+      "tile_id": 53,
+      "sub_pal": 0,
+      "slot": 100
+    },
+    {
+      "tile_id": 53,
+      "sub_pal": 1,
+      "slot": 101
+    },
+    {
+      "tile_id": 53,
+      "sub_pal": 2,
+      "slot": 102
+    },
+    {
+      "tile_id": 54,
+      "sub_pal": 0,
+      "slot": 103
+    },
+    {
+      "tile_id": 54,
+      "sub_pal": 1,
+      "slot": 104
+    },
+    {
+      "tile_id": 54,
+      "sub_pal": 2,
+      "slot": 105
+    },
+    {
+      "tile_id": 55,
+      "sub_pal": 0,
+      "slot": 106
+    },
+    {
+      "tile_id": 55,
+      "sub_pal": 1,
+      "slot": 107
+    },
+    {
+      "tile_id": 55,
+      "sub_pal": 2,
+      "slot": 108
+    },
+    {
+      "tile_id": 56,
+      "sub_pal": 0,
+      "slot": 109
+    },
+    {
+      "tile_id": 56,
+      "sub_pal": 1,
+      "slot": 110
+    },
+    {
+      "tile_id": 56,
+      "sub_pal": 2,
+      "slot": 111
+    },
+    {
+      "tile_id": 57,
+      "sub_pal": 0,
+      "slot": 112
+    },
+    {
+      "tile_id": 57,
+      "sub_pal": 1,
+      "slot": 113
+    },
+    {
+      "tile_id": 57,
+      "sub_pal": 2,
+      "slot": 114
+    },
+    {
+      "tile_id": 58,
+      "sub_pal": 0,
+      "slot": 115
+    },
+    {
+      "tile_id": 58,
+      "sub_pal": 1,
+      "slot": 116
+    },
+    {
+      "tile_id": 58,
+      "sub_pal": 2,
+      "slot": 117
+    },
+    {
+      "tile_id": 59,
+      "sub_pal": 0,
+      "slot": 118
+    },
+    {
+      "tile_id": 59,
+      "sub_pal": 1,
+      "slot": 119
+    },
+    {
+      "tile_id": 59,
+      "sub_pal": 2,
+      "slot": 120
+    },
+    {
+      "tile_id": 60,
+      "sub_pal": 0,
+      "slot": 121
+    },
+    {
+      "tile_id": 60,
+      "sub_pal": 1,
+      "slot": 122
+    },
+    {
+      "tile_id": 60,
+      "sub_pal": 2,
+      "slot": 123
+    },
+    {
+      "tile_id": 61,
+      "sub_pal": 0,
+      "slot": 124
+    },
+    {
+      "tile_id": 61,
+      "sub_pal": 1,
+      "slot": 125
+    },
+    {
+      "tile_id": 61,
+      "sub_pal": 2,
+      "slot": 126
+    },
+    {
+      "tile_id": 62,
+      "sub_pal": 0,
+      "slot": 127
+    },
+    {
+      "tile_id": 62,
+      "sub_pal": 1,
+      "slot": 128
+    },
+    {
+      "tile_id": 62,
+      "sub_pal": 2,
+      "slot": 129
+    },
+    {
+      "tile_id": 63,
+      "sub_pal": 0,
+      "slot": 130
+    },
+    {
+      "tile_id": 63,
+      "sub_pal": 1,
+      "slot": 131
+    },
+    {
+      "tile_id": 63,
+      "sub_pal": 2,
+      "slot": 132
+    },
+    {
+      "tile_id": 64,
+      "sub_pal": 0,
+      "slot": 133
+    },
+    {
+      "tile_id": 64,
+      "sub_pal": 1,
+      "slot": 134
+    },
+    {
+      "tile_id": 64,
+      "sub_pal": 2,
+      "slot": 135
+    },
+    {
+      "tile_id": 65,
+      "sub_pal": 0,
+      "slot": 136
+    },
+    {
+      "tile_id": 65,
+      "sub_pal": 1,
+      "slot": 137
+    },
+    {
+      "tile_id": 65,
+      "sub_pal": 2,
+      "slot": 138
+    },
+    {
+      "tile_id": 66,
+      "sub_pal": 0,
+      "slot": 139
+    },
+    {
+      "tile_id": 66,
+      "sub_pal": 1,
+      "slot": 140
+    },
+    {
+      "tile_id": 66,
+      "sub_pal": 2,
+      "slot": 141
+    },
+    {
+      "tile_id": 67,
+      "sub_pal": 0,
+      "slot": 142
+    },
+    {
+      "tile_id": 67,
+      "sub_pal": 1,
+      "slot": 143
+    },
+    {
+      "tile_id": 67,
+      "sub_pal": 2,
+      "slot": 144
+    },
+    {
+      "tile_id": 68,
+      "sub_pal": 0,
+      "slot": 145
+    },
+    {
+      "tile_id": 68,
+      "sub_pal": 1,
+      "slot": 146
+    },
+    {
+      "tile_id": 68,
+      "sub_pal": 2,
+      "slot": 147
+    },
+    {
+      "tile_id": 69,
+      "sub_pal": 0,
+      "slot": 148
+    },
+    {
+      "tile_id": 69,
+      "sub_pal": 1,
+      "slot": 149
+    },
+    {
+      "tile_id": 69,
+      "sub_pal": 2,
+      "slot": 150
+    },
+    {
+      "tile_id": 70,
+      "sub_pal": 0,
+      "slot": 151
+    },
+    {
+      "tile_id": 70,
+      "sub_pal": 1,
+      "slot": 152
+    },
+    {
+      "tile_id": 70,
+      "sub_pal": 2,
+      "slot": 153
+    },
+    {
+      "tile_id": 71,
+      "sub_pal": 0,
+      "slot": 154
+    },
+    {
+      "tile_id": 71,
+      "sub_pal": 1,
+      "slot": 155
+    },
+    {
+      "tile_id": 71,
+      "sub_pal": 2,
+      "slot": 156
+    },
+    {
+      "tile_id": 72,
+      "sub_pal": 0,
+      "slot": 157
+    },
+    {
+      "tile_id": 72,
+      "sub_pal": 1,
+      "slot": 158
+    },
+    {
+      "tile_id": 72,
+      "sub_pal": 2,
+      "slot": 159
+    },
+    {
+      "tile_id": 73,
+      "sub_pal": 0,
+      "slot": 160
+    },
+    {
+      "tile_id": 73,
+      "sub_pal": 1,
+      "slot": 161
+    },
+    {
+      "tile_id": 73,
+      "sub_pal": 2,
+      "slot": 162
+    },
+    {
+      "tile_id": 74,
+      "sub_pal": 0,
+      "slot": 163
+    },
+    {
+      "tile_id": 74,
+      "sub_pal": 1,
+      "slot": 164
+    },
+    {
+      "tile_id": 74,
+      "sub_pal": 2,
+      "slot": 165
+    },
+    {
+      "tile_id": 75,
+      "sub_pal": 0,
+      "slot": 166
+    },
+    {
+      "tile_id": 75,
+      "sub_pal": 1,
+      "slot": 167
+    },
+    {
+      "tile_id": 75,
+      "sub_pal": 2,
+      "slot": 168
+    },
+    {
+      "tile_id": 76,
+      "sub_pal": 0,
+      "slot": 169
+    },
+    {
+      "tile_id": 76,
+      "sub_pal": 1,
+      "slot": 170
+    },
+    {
+      "tile_id": 76,
+      "sub_pal": 2,
+      "slot": 171
+    },
+    {
+      "tile_id": 77,
+      "sub_pal": 0,
+      "slot": 172
+    },
+    {
+      "tile_id": 77,
+      "sub_pal": 1,
+      "slot": 173
+    },
+    {
+      "tile_id": 77,
+      "sub_pal": 2,
+      "slot": 174
+    },
+    {
+      "tile_id": 78,
+      "sub_pal": 0,
+      "slot": 175
+    },
+    {
+      "tile_id": 78,
+      "sub_pal": 1,
+      "slot": 176
+    },
+    {
+      "tile_id": 78,
+      "sub_pal": 2,
+      "slot": 177
+    },
+    {
+      "tile_id": 79,
+      "sub_pal": 0,
+      "slot": 178
+    },
+    {
+      "tile_id": 79,
+      "sub_pal": 1,
+      "slot": 179
+    },
+    {
+      "tile_id": 79,
+      "sub_pal": 2,
+      "slot": 180
+    },
+    {
+      "tile_id": 80,
+      "sub_pal": 0,
+      "slot": 181
+    },
+    {
+      "tile_id": 80,
+      "sub_pal": 1,
+      "slot": 182
+    },
+    {
+      "tile_id": 80,
+      "sub_pal": 2,
+      "slot": 183
+    },
+    {
+      "tile_id": 81,
+      "sub_pal": 0,
+      "slot": 184
+    },
+    {
+      "tile_id": 81,
+      "sub_pal": 1,
+      "slot": 185
+    },
+    {
+      "tile_id": 81,
+      "sub_pal": 2,
+      "slot": 186
+    },
+    {
+      "tile_id": 82,
+      "sub_pal": 0,
+      "slot": 187
+    },
+    {
+      "tile_id": 82,
+      "sub_pal": 1,
+      "slot": 188
+    },
+    {
+      "tile_id": 82,
+      "sub_pal": 2,
+      "slot": 189
+    },
+    {
+      "tile_id": 88,
+      "sub_pal": 2,
+      "slot": 190
+    },
+    {
+      "tile_id": 89,
+      "sub_pal": 2,
+      "slot": 191
+    },
+    {
+      "tile_id": 90,
+      "sub_pal": 2,
+      "slot": 192
+    },
+    {
+      "tile_id": 91,
+      "sub_pal": 2,
+      "slot": 193
+    },
+    {
+      "tile_id": 92,
+      "sub_pal": 2,
+      "slot": 194
+    },
+    {
+      "tile_id": 93,
+      "sub_pal": 2,
+      "slot": 195
+    },
+    {
+      "tile_id": 97,
+      "sub_pal": 0,
+      "slot": 196
+    },
+    {
+      "tile_id": 97,
+      "sub_pal": 1,
+      "slot": 197
+    },
+    {
+      "tile_id": 97,
+      "sub_pal": 2,
+      "slot": 198
+    },
+    {
+      "tile_id": 98,
+      "sub_pal": 0,
+      "slot": 199
+    },
+    {
+      "tile_id": 98,
+      "sub_pal": 1,
+      "slot": 200
+    },
+    {
+      "tile_id": 98,
+      "sub_pal": 2,
+      "slot": 201
+    },
+    {
+      "tile_id": 99,
+      "sub_pal": 0,
+      "slot": 202
+    },
+    {
+      "tile_id": 99,
+      "sub_pal": 1,
+      "slot": 203
+    },
+    {
+      "tile_id": 99,
+      "sub_pal": 2,
+      "slot": 204
+    },
+    {
+      "tile_id": 100,
+      "sub_pal": 0,
+      "slot": 205
+    },
+    {
+      "tile_id": 100,
+      "sub_pal": 1,
+      "slot": 206
+    },
+    {
+      "tile_id": 100,
+      "sub_pal": 2,
+      "slot": 207
+    },
+    {
+      "tile_id": 101,
+      "sub_pal": 0,
+      "slot": 208
+    },
+    {
+      "tile_id": 101,
+      "sub_pal": 1,
+      "slot": 209
+    },
+    {
+      "tile_id": 101,
+      "sub_pal": 2,
+      "slot": 210
+    },
+    {
+      "tile_id": 102,
+      "sub_pal": 0,
+      "slot": 211
+    },
+    {
+      "tile_id": 102,
+      "sub_pal": 1,
+      "slot": 212
+    },
+    {
+      "tile_id": 102,
+      "sub_pal": 2,
+      "slot": 213
+    },
+    {
+      "tile_id": 103,
+      "sub_pal": 0,
+      "slot": 214
+    },
+    {
+      "tile_id": 103,
+      "sub_pal": 1,
+      "slot": 215
+    },
+    {
+      "tile_id": 103,
+      "sub_pal": 2,
+      "slot": 216
+    },
+    {
+      "tile_id": 104,
+      "sub_pal": 0,
+      "slot": 217
+    },
+    {
+      "tile_id": 104,
+      "sub_pal": 1,
+      "slot": 218
+    },
+    {
+      "tile_id": 104,
+      "sub_pal": 2,
+      "slot": 219
+    },
+    {
+      "tile_id": 104,
+      "sub_pal": 3,
+      "slot": 220
+    },
+    {
+      "tile_id": 105,
+      "sub_pal": 0,
+      "slot": 221
+    },
+    {
+      "tile_id": 105,
+      "sub_pal": 1,
+      "slot": 222
+    },
+    {
+      "tile_id": 105,
+      "sub_pal": 2,
+      "slot": 223
+    },
+    {
+      "tile_id": 106,
+      "sub_pal": 0,
+      "slot": 224
+    },
+    {
+      "tile_id": 106,
+      "sub_pal": 1,
+      "slot": 225
+    },
+    {
+      "tile_id": 106,
+      "sub_pal": 2,
+      "slot": 226
+    },
+    {
+      "tile_id": 107,
+      "sub_pal": 0,
+      "slot": 227
+    },
+    {
+      "tile_id": 107,
+      "sub_pal": 1,
+      "slot": 228
+    },
+    {
+      "tile_id": 107,
+      "sub_pal": 2,
+      "slot": 229
+    },
+    {
+      "tile_id": 108,
+      "sub_pal": 0,
+      "slot": 230
+    },
+    {
+      "tile_id": 108,
+      "sub_pal": 1,
+      "slot": 231
+    },
+    {
+      "tile_id": 108,
+      "sub_pal": 2,
+      "slot": 232
+    },
+    {
+      "tile_id": 109,
+      "sub_pal": 0,
+      "slot": 233
+    },
+    {
+      "tile_id": 109,
+      "sub_pal": 1,
+      "slot": 234
+    },
+    {
+      "tile_id": 109,
+      "sub_pal": 2,
+      "slot": 235
+    },
+    {
+      "tile_id": 110,
+      "sub_pal": 0,
+      "slot": 236
+    },
+    {
+      "tile_id": 110,
+      "sub_pal": 1,
+      "slot": 237
+    },
+    {
+      "tile_id": 110,
+      "sub_pal": 2,
+      "slot": 238
+    },
+    {
+      "tile_id": 112,
+      "sub_pal": 2,
+      "slot": 239
+    },
+    {
+      "tile_id": 113,
+      "sub_pal": 2,
+      "slot": 240
+    },
+    {
+      "tile_id": 114,
+      "sub_pal": 2,
+      "slot": 241
+    },
+    {
+      "tile_id": 115,
+      "sub_pal": 2,
+      "slot": 242
+    },
+    {
+      "tile_id": 116,
+      "sub_pal": 0,
+      "slot": 243
+    },
+    {
+      "tile_id": 116,
+      "sub_pal": 2,
+      "slot": 244
+    },
+    {
+      "tile_id": 116,
+      "sub_pal": 3,
+      "slot": 245
+    },
+    {
+      "tile_id": 117,
+      "sub_pal": 0,
+      "slot": 246
+    },
+    {
+      "tile_id": 117,
+      "sub_pal": 2,
+      "slot": 247
+    },
+    {
+      "tile_id": 117,
+      "sub_pal": 3,
+      "slot": 248
+    },
+    {
+      "tile_id": 118,
+      "sub_pal": 2,
+      "slot": 249
+    },
+    {
+      "tile_id": 118,
+      "sub_pal": 3,
+      "slot": 250
+    },
+    {
+      "tile_id": 119,
+      "sub_pal": 2,
+      "slot": 251
+    },
+    {
+      "tile_id": 119,
+      "sub_pal": 3,
+      "slot": 252
+    },
+    {
+      "tile_id": 120,
+      "sub_pal": 2,
+      "slot": 253
+    },
+    {
+      "tile_id": 120,
+      "sub_pal": 3,
+      "slot": 254
+    },
+    {
+      "tile_id": 121,
+      "sub_pal": 2,
+      "slot": 255
+    },
+    {
+      "tile_id": 121,
+      "sub_pal": 3,
+      "slot": 256
+    },
+    {
+      "tile_id": 122,
+      "sub_pal": 2,
+      "slot": 257
+    },
+    {
+      "tile_id": 122,
+      "sub_pal": 3,
+      "slot": 258
+    },
+    {
+      "tile_id": 123,
+      "sub_pal": 2,
+      "slot": 259
+    },
+    {
+      "tile_id": 123,
+      "sub_pal": 3,
+      "slot": 260
+    },
+    {
+      "tile_id": 124,
+      "sub_pal": 2,
+      "slot": 261
+    },
+    {
+      "tile_id": 124,
+      "sub_pal": 3,
+      "slot": 262
+    },
+    {
+      "tile_id": 125,
+      "sub_pal": 2,
+      "slot": 263
+    },
+    {
+      "tile_id": 125,
+      "sub_pal": 3,
+      "slot": 264
+    },
+    {
+      "tile_id": 126,
+      "sub_pal": 2,
+      "slot": 265
+    },
+    {
+      "tile_id": 126,
+      "sub_pal": 3,
+      "slot": 266
+    },
+    {
+      "tile_id": 127,
+      "sub_pal": 2,
+      "slot": 267
+    },
+    {
+      "tile_id": 127,
+      "sub_pal": 3,
+      "slot": 268
+    },
+    {
+      "tile_id": 128,
+      "sub_pal": 2,
+      "slot": 269
+    },
+    {
+      "tile_id": 128,
+      "sub_pal": 3,
+      "slot": 270
+    },
+    {
+      "tile_id": 129,
+      "sub_pal": 2,
+      "slot": 271
+    },
+    {
+      "tile_id": 129,
+      "sub_pal": 3,
+      "slot": 272
+    },
+    {
+      "tile_id": 130,
+      "sub_pal": 2,
+      "slot": 273
+    },
+    {
+      "tile_id": 130,
+      "sub_pal": 3,
+      "slot": 274
+    },
+    {
+      "tile_id": 131,
+      "sub_pal": 2,
+      "slot": 275
+    },
+    {
+      "tile_id": 131,
+      "sub_pal": 3,
+      "slot": 276
+    },
+    {
+      "tile_id": 132,
+      "sub_pal": 2,
+      "slot": 277
+    },
+    {
+      "tile_id": 132,
+      "sub_pal": 3,
+      "slot": 278
+    },
+    {
+      "tile_id": 133,
+      "sub_pal": 2,
+      "slot": 279
+    },
+    {
+      "tile_id": 133,
+      "sub_pal": 3,
+      "slot": 280
+    },
+    {
+      "tile_id": 134,
+      "sub_pal": 2,
+      "slot": 281
+    },
+    {
+      "tile_id": 134,
+      "sub_pal": 3,
+      "slot": 282
+    },
+    {
+      "tile_id": 135,
+      "sub_pal": 3,
+      "slot": 283
+    },
+    {
+      "tile_id": 136,
+      "sub_pal": 3,
+      "slot": 284
+    },
+    {
+      "tile_id": 137,
+      "sub_pal": 3,
+      "slot": 285
+    },
+    {
+      "tile_id": 138,
+      "sub_pal": 3,
+      "slot": 286
+    },
+    {
+      "tile_id": 139,
+      "sub_pal": 3,
+      "slot": 287
+    },
+    {
+      "tile_id": 140,
+      "sub_pal": 3,
+      "slot": 288
+    },
+    {
+      "tile_id": 141,
+      "sub_pal": 2,
+      "slot": 289
+    },
+    {
+      "tile_id": 141,
+      "sub_pal": 3,
+      "slot": 290
+    },
+    {
+      "tile_id": 142,
+      "sub_pal": 2,
+      "slot": 291
+    },
+    {
+      "tile_id": 142,
+      "sub_pal": 3,
+      "slot": 292
+    },
+    {
+      "tile_id": 143,
+      "sub_pal": 2,
+      "slot": 293
+    },
+    {
+      "tile_id": 143,
+      "sub_pal": 3,
+      "slot": 294
+    },
+    {
+      "tile_id": 144,
+      "sub_pal": 2,
+      "slot": 295
+    },
+    {
+      "tile_id": 144,
+      "sub_pal": 3,
+      "slot": 296
+    },
+    {
+      "tile_id": 145,
+      "sub_pal": 2,
+      "slot": 297
+    },
+    {
+      "tile_id": 145,
+      "sub_pal": 3,
+      "slot": 298
+    },
+    {
+      "tile_id": 146,
+      "sub_pal": 2,
+      "slot": 299
+    },
+    {
+      "tile_id": 146,
+      "sub_pal": 3,
+      "slot": 300
+    },
+    {
+      "tile_id": 147,
+      "sub_pal": 2,
+      "slot": 301
+    },
+    {
+      "tile_id": 147,
+      "sub_pal": 3,
+      "slot": 302
+    },
+    {
+      "tile_id": 148,
+      "sub_pal": 2,
+      "slot": 303
+    },
+    {
+      "tile_id": 148,
+      "sub_pal": 3,
+      "slot": 304
+    },
+    {
+      "tile_id": 149,
+      "sub_pal": 2,
+      "slot": 305
+    },
+    {
+      "tile_id": 149,
+      "sub_pal": 3,
+      "slot": 306
+    },
+    {
+      "tile_id": 150,
+      "sub_pal": 2,
+      "slot": 307
+    },
+    {
+      "tile_id": 150,
+      "sub_pal": 3,
+      "slot": 308
+    },
+    {
+      "tile_id": 151,
+      "sub_pal": 2,
+      "slot": 309
+    },
+    {
+      "tile_id": 151,
+      "sub_pal": 3,
+      "slot": 310
+    },
+    {
+      "tile_id": 152,
+      "sub_pal": 2,
+      "slot": 311
+    },
+    {
+      "tile_id": 152,
+      "sub_pal": 3,
+      "slot": 312
+    },
+    {
+      "tile_id": 153,
+      "sub_pal": 2,
+      "slot": 313
+    },
+    {
+      "tile_id": 154,
+      "sub_pal": 0,
+      "slot": 314
+    },
+    {
+      "tile_id": 154,
+      "sub_pal": 2,
+      "slot": 315
+    },
+    {
+      "tile_id": 154,
+      "sub_pal": 3,
+      "slot": 316
+    },
+    {
+      "tile_id": 155,
+      "sub_pal": 0,
+      "slot": 317
+    },
+    {
+      "tile_id": 155,
+      "sub_pal": 2,
+      "slot": 318
+    },
+    {
+      "tile_id": 155,
+      "sub_pal": 3,
+      "slot": 319
+    },
+    {
+      "tile_id": 156,
+      "sub_pal": 0,
+      "slot": 320
+    },
+    {
+      "tile_id": 156,
+      "sub_pal": 2,
+      "slot": 321
+    },
+    {
+      "tile_id": 156,
+      "sub_pal": 3,
+      "slot": 322
+    },
+    {
+      "tile_id": 157,
+      "sub_pal": 0,
+      "slot": 323
+    },
+    {
+      "tile_id": 157,
+      "sub_pal": 2,
+      "slot": 324
+    },
+    {
+      "tile_id": 157,
+      "sub_pal": 3,
+      "slot": 325
+    },
+    {
+      "tile_id": 158,
+      "sub_pal": 0,
+      "slot": 326
+    },
+    {
+      "tile_id": 158,
+      "sub_pal": 2,
+      "slot": 327
+    },
+    {
+      "tile_id": 158,
+      "sub_pal": 3,
+      "slot": 328
+    },
+    {
+      "tile_id": 159,
+      "sub_pal": 0,
+      "slot": 329
+    },
+    {
+      "tile_id": 159,
+      "sub_pal": 2,
+      "slot": 330
+    },
+    {
+      "tile_id": 159,
+      "sub_pal": 3,
+      "slot": 331
+    },
+    {
+      "tile_id": 160,
+      "sub_pal": 0,
+      "slot": 332
+    },
+    {
+      "tile_id": 160,
+      "sub_pal": 2,
+      "slot": 333
+    },
+    {
+      "tile_id": 160,
+      "sub_pal": 3,
+      "slot": 334
+    },
+    {
+      "tile_id": 161,
+      "sub_pal": 0,
+      "slot": 335
+    },
+    {
+      "tile_id": 161,
+      "sub_pal": 2,
+      "slot": 336
+    },
+    {
+      "tile_id": 161,
+      "sub_pal": 3,
+      "slot": 337
+    },
+    {
+      "tile_id": 162,
+      "sub_pal": 0,
+      "slot": 338
+    },
+    {
+      "tile_id": 162,
+      "sub_pal": 2,
+      "slot": 339
+    },
+    {
+      "tile_id": 162,
+      "sub_pal": 3,
+      "slot": 340
+    },
+    {
+      "tile_id": 163,
+      "sub_pal": 0,
+      "slot": 341
+    },
+    {
+      "tile_id": 163,
+      "sub_pal": 2,
+      "slot": 342
+    },
+    {
+      "tile_id": 163,
+      "sub_pal": 3,
+      "slot": 343
+    },
+    {
+      "tile_id": 164,
+      "sub_pal": 0,
+      "slot": 344
+    },
+    {
+      "tile_id": 164,
+      "sub_pal": 2,
+      "slot": 345
+    },
+    {
+      "tile_id": 164,
+      "sub_pal": 3,
+      "slot": 346
+    },
+    {
+      "tile_id": 165,
+      "sub_pal": 0,
+      "slot": 347
+    },
+    {
+      "tile_id": 165,
+      "sub_pal": 2,
+      "slot": 348
+    },
+    {
+      "tile_id": 165,
+      "sub_pal": 3,
+      "slot": 349
+    },
+    {
+      "tile_id": 166,
+      "sub_pal": 0,
+      "slot": 350
+    },
+    {
+      "tile_id": 166,
+      "sub_pal": 2,
+      "slot": 351
+    },
+    {
+      "tile_id": 166,
+      "sub_pal": 3,
+      "slot": 352
+    },
+    {
+      "tile_id": 167,
+      "sub_pal": 0,
+      "slot": 353
+    },
+    {
+      "tile_id": 167,
+      "sub_pal": 2,
+      "slot": 354
+    },
+    {
+      "tile_id": 167,
+      "sub_pal": 3,
+      "slot": 355
+    },
+    {
+      "tile_id": 168,
+      "sub_pal": 0,
+      "slot": 356
+    },
+    {
+      "tile_id": 168,
+      "sub_pal": 2,
+      "slot": 357
+    },
+    {
+      "tile_id": 168,
+      "sub_pal": 3,
+      "slot": 358
+    },
+    {
+      "tile_id": 169,
+      "sub_pal": 0,
+      "slot": 359
+    },
+    {
+      "tile_id": 169,
+      "sub_pal": 2,
+      "slot": 360
+    },
+    {
+      "tile_id": 169,
+      "sub_pal": 3,
+      "slot": 361
+    },
+    {
+      "tile_id": 170,
+      "sub_pal": 2,
+      "slot": 362
+    },
+    {
+      "tile_id": 170,
+      "sub_pal": 3,
+      "slot": 363
+    },
+    {
+      "tile_id": 171,
+      "sub_pal": 2,
+      "slot": 364
+    },
+    {
+      "tile_id": 171,
+      "sub_pal": 3,
+      "slot": 365
+    },
+    {
+      "tile_id": 172,
+      "sub_pal": 2,
+      "slot": 366
+    },
+    {
+      "tile_id": 172,
+      "sub_pal": 3,
+      "slot": 367
+    },
+    {
+      "tile_id": 173,
+      "sub_pal": 2,
+      "slot": 368
+    },
+    {
+      "tile_id": 173,
+      "sub_pal": 3,
+      "slot": 369
+    },
+    {
+      "tile_id": 174,
+      "sub_pal": 2,
+      "slot": 370
+    },
+    {
+      "tile_id": 174,
+      "sub_pal": 3,
+      "slot": 371
+    },
+    {
+      "tile_id": 175,
+      "sub_pal": 2,
+      "slot": 372
+    },
+    {
+      "tile_id": 175,
+      "sub_pal": 3,
+      "slot": 373
+    },
+    {
+      "tile_id": 176,
+      "sub_pal": 2,
+      "slot": 374
+    },
+    {
+      "tile_id": 176,
+      "sub_pal": 3,
+      "slot": 375
+    },
+    {
+      "tile_id": 177,
+      "sub_pal": 2,
+      "slot": 376
+    },
+    {
+      "tile_id": 177,
+      "sub_pal": 3,
+      "slot": 377
+    },
+    {
+      "tile_id": 178,
+      "sub_pal": 2,
+      "slot": 378
+    },
+    {
+      "tile_id": 178,
+      "sub_pal": 3,
+      "slot": 379
+    },
+    {
+      "tile_id": 179,
+      "sub_pal": 2,
+      "slot": 380
+    },
+    {
+      "tile_id": 179,
+      "sub_pal": 3,
+      "slot": 381
+    },
+    {
+      "tile_id": 180,
+      "sub_pal": 2,
+      "slot": 382
+    },
+    {
+      "tile_id": 180,
+      "sub_pal": 3,
+      "slot": 383
+    },
+    {
+      "tile_id": 181,
+      "sub_pal": 2,
+      "slot": 384
+    },
+    {
+      "tile_id": 181,
+      "sub_pal": 3,
+      "slot": 385
+    },
+    {
+      "tile_id": 182,
+      "sub_pal": 2,
+      "slot": 386
+    },
+    {
+      "tile_id": 182,
+      "sub_pal": 3,
+      "slot": 387
+    },
+    {
+      "tile_id": 183,
+      "sub_pal": 2,
+      "slot": 388
+    },
+    {
+      "tile_id": 183,
+      "sub_pal": 3,
+      "slot": 389
+    },
+    {
+      "tile_id": 184,
+      "sub_pal": 2,
+      "slot": 390
+    },
+    {
+      "tile_id": 184,
+      "sub_pal": 3,
+      "slot": 391
+    },
+    {
+      "tile_id": 185,
+      "sub_pal": 2,
+      "slot": 392
+    },
+    {
+      "tile_id": 185,
+      "sub_pal": 3,
+      "slot": 393
+    },
+    {
+      "tile_id": 186,
+      "sub_pal": 2,
+      "slot": 394
+    },
+    {
+      "tile_id": 186,
+      "sub_pal": 3,
+      "slot": 395
+    },
+    {
+      "tile_id": 187,
+      "sub_pal": 2,
+      "slot": 396
+    },
+    {
+      "tile_id": 187,
+      "sub_pal": 3,
+      "slot": 397
+    },
+    {
+      "tile_id": 188,
+      "sub_pal": 0,
+      "slot": 398
+    },
+    {
+      "tile_id": 188,
+      "sub_pal": 2,
+      "slot": 399
+    },
+    {
+      "tile_id": 189,
+      "sub_pal": 0,
+      "slot": 400
+    },
+    {
+      "tile_id": 189,
+      "sub_pal": 2,
+      "slot": 401
+    },
+    {
+      "tile_id": 190,
+      "sub_pal": 0,
+      "slot": 402
+    },
+    {
+      "tile_id": 191,
+      "sub_pal": 0,
+      "slot": 403
+    },
+    {
+      "tile_id": 192,
+      "sub_pal": 0,
+      "slot": 404
+    },
+    {
+      "tile_id": 192,
+      "sub_pal": 2,
+      "slot": 405
+    },
+    {
+      "tile_id": 192,
+      "sub_pal": 3,
+      "slot": 406
+    },
+    {
+      "tile_id": 193,
+      "sub_pal": 0,
+      "slot": 407
+    },
+    {
+      "tile_id": 193,
+      "sub_pal": 2,
+      "slot": 408
+    },
+    {
+      "tile_id": 193,
+      "sub_pal": 3,
+      "slot": 409
+    },
+    {
+      "tile_id": 194,
+      "sub_pal": 0,
+      "slot": 410
+    },
+    {
+      "tile_id": 194,
+      "sub_pal": 2,
+      "slot": 411
+    },
+    {
+      "tile_id": 194,
+      "sub_pal": 3,
+      "slot": 412
+    },
+    {
+      "tile_id": 195,
+      "sub_pal": 0,
+      "slot": 413
+    },
+    {
+      "tile_id": 195,
+      "sub_pal": 2,
+      "slot": 414
+    },
+    {
+      "tile_id": 195,
+      "sub_pal": 3,
+      "slot": 415
+    },
+    {
+      "tile_id": 196,
+      "sub_pal": 0,
+      "slot": 416
+    },
+    {
+      "tile_id": 196,
+      "sub_pal": 2,
+      "slot": 417
+    },
+    {
+      "tile_id": 196,
+      "sub_pal": 3,
+      "slot": 418
+    },
+    {
+      "tile_id": 197,
+      "sub_pal": 0,
+      "slot": 419
+    },
+    {
+      "tile_id": 197,
+      "sub_pal": 2,
+      "slot": 420
+    },
+    {
+      "tile_id": 197,
+      "sub_pal": 3,
+      "slot": 421
+    },
+    {
+      "tile_id": 198,
+      "sub_pal": 0,
+      "slot": 422
+    },
+    {
+      "tile_id": 198,
+      "sub_pal": 2,
+      "slot": 423
+    },
+    {
+      "tile_id": 198,
+      "sub_pal": 3,
+      "slot": 424
+    },
+    {
+      "tile_id": 199,
+      "sub_pal": 0,
+      "slot": 425
+    },
+    {
+      "tile_id": 199,
+      "sub_pal": 2,
+      "slot": 426
+    },
+    {
+      "tile_id": 199,
+      "sub_pal": 3,
+      "slot": 427
+    },
+    {
+      "tile_id": 200,
+      "sub_pal": 2,
+      "slot": 428
+    },
+    {
+      "tile_id": 200,
+      "sub_pal": 3,
+      "slot": 429
+    },
+    {
+      "tile_id": 201,
+      "sub_pal": 2,
+      "slot": 430
+    },
+    {
+      "tile_id": 201,
+      "sub_pal": 3,
+      "slot": 431
+    },
+    {
+      "tile_id": 202,
+      "sub_pal": 2,
+      "slot": 432
+    },
+    {
+      "tile_id": 202,
+      "sub_pal": 3,
+      "slot": 433
+    },
+    {
+      "tile_id": 203,
+      "sub_pal": 2,
+      "slot": 434
+    },
+    {
+      "tile_id": 203,
+      "sub_pal": 3,
+      "slot": 435
+    },
+    {
+      "tile_id": 204,
+      "sub_pal": 0,
+      "slot": 436
+    },
+    {
+      "tile_id": 204,
+      "sub_pal": 2,
+      "slot": 437
+    },
+    {
+      "tile_id": 204,
+      "sub_pal": 3,
+      "slot": 438
+    },
+    {
+      "tile_id": 205,
+      "sub_pal": 0,
+      "slot": 439
+    },
+    {
+      "tile_id": 205,
+      "sub_pal": 2,
+      "slot": 440
+    },
+    {
+      "tile_id": 205,
+      "sub_pal": 3,
+      "slot": 441
+    },
+    {
+      "tile_id": 206,
+      "sub_pal": 0,
+      "slot": 442
+    },
+    {
+      "tile_id": 206,
+      "sub_pal": 2,
+      "slot": 443
+    },
+    {
+      "tile_id": 206,
+      "sub_pal": 3,
+      "slot": 444
+    },
+    {
+      "tile_id": 207,
+      "sub_pal": 0,
+      "slot": 445
+    },
+    {
+      "tile_id": 207,
+      "sub_pal": 2,
+      "slot": 446
+    },
+    {
+      "tile_id": 207,
+      "sub_pal": 3,
+      "slot": 447
+    },
+    {
+      "tile_id": 208,
+      "sub_pal": 0,
+      "slot": 448
+    },
+    {
+      "tile_id": 208,
+      "sub_pal": 2,
+      "slot": 449
+    },
+    {
+      "tile_id": 208,
+      "sub_pal": 3,
+      "slot": 450
+    },
+    {
+      "tile_id": 209,
+      "sub_pal": 0,
+      "slot": 451
+    },
+    {
+      "tile_id": 209,
+      "sub_pal": 2,
+      "slot": 452
+    },
+    {
+      "tile_id": 209,
+      "sub_pal": 3,
+      "slot": 453
+    },
+    {
+      "tile_id": 210,
+      "sub_pal": 0,
+      "slot": 454
+    },
+    {
+      "tile_id": 210,
+      "sub_pal": 2,
+      "slot": 455
+    },
+    {
+      "tile_id": 210,
+      "sub_pal": 3,
+      "slot": 456
+    },
+    {
+      "tile_id": 211,
+      "sub_pal": 0,
+      "slot": 457
+    },
+    {
+      "tile_id": 211,
+      "sub_pal": 2,
+      "slot": 458
+    },
+    {
+      "tile_id": 211,
+      "sub_pal": 3,
+      "slot": 459
+    },
+    {
+      "tile_id": 212,
+      "sub_pal": 0,
+      "slot": 460
+    },
+    {
+      "tile_id": 212,
+      "sub_pal": 2,
+      "slot": 461
+    },
+    {
+      "tile_id": 212,
+      "sub_pal": 3,
+      "slot": 462
+    },
+    {
+      "tile_id": 213,
+      "sub_pal": 0,
+      "slot": 463
+    },
+    {
+      "tile_id": 213,
+      "sub_pal": 2,
+      "slot": 464
+    },
+    {
+      "tile_id": 213,
+      "sub_pal": 3,
+      "slot": 465
+    },
+    {
+      "tile_id": 214,
+      "sub_pal": 0,
+      "slot": 466
+    },
+    {
+      "tile_id": 214,
+      "sub_pal": 2,
+      "slot": 467
+    },
+    {
+      "tile_id": 214,
+      "sub_pal": 3,
+      "slot": 468
+    },
+    {
+      "tile_id": 215,
+      "sub_pal": 0,
+      "slot": 469
+    },
+    {
+      "tile_id": 215,
+      "sub_pal": 2,
+      "slot": 470
+    },
+    {
+      "tile_id": 215,
+      "sub_pal": 3,
+      "slot": 471
+    },
+    {
+      "tile_id": 216,
+      "sub_pal": 0,
+      "slot": 472
+    },
+    {
+      "tile_id": 216,
+      "sub_pal": 2,
+      "slot": 473
+    },
+    {
+      "tile_id": 216,
+      "sub_pal": 3,
+      "slot": 474
+    },
+    {
+      "tile_id": 217,
+      "sub_pal": 0,
+      "slot": 475
+    },
+    {
+      "tile_id": 217,
+      "sub_pal": 2,
+      "slot": 476
+    },
+    {
+      "tile_id": 217,
+      "sub_pal": 3,
+      "slot": 477
+    },
+    {
+      "tile_id": 218,
+      "sub_pal": 0,
+      "slot": 478
+    },
+    {
+      "tile_id": 218,
+      "sub_pal": 2,
+      "slot": 479
+    },
+    {
+      "tile_id": 218,
+      "sub_pal": 3,
+      "slot": 480
+    },
+    {
+      "tile_id": 219,
+      "sub_pal": 0,
+      "slot": 481
+    },
+    {
+      "tile_id": 219,
+      "sub_pal": 2,
+      "slot": 482
+    },
+    {
+      "tile_id": 219,
+      "sub_pal": 3,
+      "slot": 483
+    },
+    {
+      "tile_id": 220,
+      "sub_pal": 0,
+      "slot": 484
+    },
+    {
+      "tile_id": 220,
+      "sub_pal": 2,
+      "slot": 485
+    },
+    {
+      "tile_id": 220,
+      "sub_pal": 3,
+      "slot": 486
+    },
+    {
+      "tile_id": 221,
+      "sub_pal": 0,
+      "slot": 487
+    },
+    {
+      "tile_id": 221,
+      "sub_pal": 2,
+      "slot": 488
+    },
+    {
+      "tile_id": 221,
+      "sub_pal": 3,
+      "slot": 489
+    },
+    {
+      "tile_id": 222,
+      "sub_pal": 0,
+      "slot": 490
+    },
+    {
+      "tile_id": 222,
+      "sub_pal": 2,
+      "slot": 491
+    },
+    {
+      "tile_id": 222,
+      "sub_pal": 3,
+      "slot": 492
+    },
+    {
+      "tile_id": 223,
+      "sub_pal": 0,
+      "slot": 493
+    },
+    {
+      "tile_id": 223,
+      "sub_pal": 2,
+      "slot": 494
+    },
+    {
+      "tile_id": 223,
+      "sub_pal": 3,
+      "slot": 495
+    },
+    {
+      "tile_id": 224,
+      "sub_pal": 0,
+      "slot": 496
+    },
+    {
+      "tile_id": 224,
+      "sub_pal": 2,
+      "slot": 497
+    },
+    {
+      "tile_id": 224,
+      "sub_pal": 3,
+      "slot": 498
+    },
+    {
+      "tile_id": 225,
+      "sub_pal": 0,
+      "slot": 499
+    },
+    {
+      "tile_id": 225,
+      "sub_pal": 2,
+      "slot": 500
+    },
+    {
+      "tile_id": 225,
+      "sub_pal": 3,
+      "slot": 501
+    },
+    {
+      "tile_id": 226,
+      "sub_pal": 0,
+      "slot": 502
+    },
+    {
+      "tile_id": 226,
+      "sub_pal": 2,
+      "slot": 503
+    },
+    {
+      "tile_id": 226,
+      "sub_pal": 3,
+      "slot": 504
+    },
+    {
+      "tile_id": 227,
+      "sub_pal": 0,
+      "slot": 505
+    },
+    {
+      "tile_id": 227,
+      "sub_pal": 2,
+      "slot": 506
+    },
+    {
+      "tile_id": 227,
+      "sub_pal": 3,
+      "slot": 507
+    },
+    {
+      "tile_id": 242,
+      "sub_pal": 0,
+      "slot": 508
+    },
+    {
+      "tile_id": 242,
+      "sub_pal": 1,
+      "slot": 509
+    },
+    {
+      "tile_id": 242,
+      "sub_pal": 2,
+      "slot": 510
+    },
+    {
+      "tile_id": 243,
+      "sub_pal": 0,
+      "slot": 511
+    },
+    {
+      "tile_id": 243,
+      "sub_pal": 1,
+      "slot": 512
+    },
+    {
+      "tile_id": 243,
+      "sub_pal": 2,
+      "slot": 513
+    },
+    {
+      "tile_id": 243,
+      "sub_pal": 3,
+      "slot": 514
+    },
+    {
+      "tile_id": 244,
+      "sub_pal": 0,
+      "slot": 515
+    },
+    {
+      "tile_id": 244,
+      "sub_pal": 1,
+      "slot": 516
+    },
+    {
+      "tile_id": 244,
+      "sub_pal": 2,
+      "slot": 517
+    },
+    {
+      "tile_id": 244,
+      "sub_pal": 3,
+      "slot": 518
+    },
+    {
+      "tile_id": 245,
+      "sub_pal": 0,
+      "slot": 519
+    },
+    {
+      "tile_id": 245,
+      "sub_pal": 1,
+      "slot": 520
+    },
+    {
+      "tile_id": 245,
+      "sub_pal": 2,
+      "slot": 521
+    },
+    {
+      "tile_id": 246,
+      "sub_pal": 2,
+      "slot": 522
+    },
+    {
+      "tile_id": 247,
+      "sub_pal": 0,
+      "slot": 523
+    },
+    {
+      "tile_id": 247,
+      "sub_pal": 1,
+      "slot": 524
+    },
+    {
+      "tile_id": 247,
+      "sub_pal": 2,
+      "slot": 525
+    },
+    {
+      "tile_id": 248,
+      "sub_pal": 0,
+      "slot": 526
+    },
+    {
+      "tile_id": 248,
+      "sub_pal": 1,
+      "slot": 527
+    },
+    {
+      "tile_id": 248,
+      "sub_pal": 2,
+      "slot": 528
+    },
+    {
+      "tile_id": 249,
+      "sub_pal": 0,
+      "slot": 529
+    },
+    {
+      "tile_id": 249,
+      "sub_pal": 1,
+      "slot": 530
+    },
+    {
+      "tile_id": 249,
+      "sub_pal": 2,
+      "slot": 531
+    }
+  ],
+  "bg_out_of_scope": [
+    {
+      "tile_id": 0,
+      "sub_pal": 3,
+      "slot": 65535
+    },
+    {
+      "tile_id": 1,
+      "sub_pal": 3,
+      "slot": 65535
+    },
+    {
+      "tile_id": 2,
+      "sub_pal": 3,
+      "slot": 65535
+    },
+    {
+      "tile_id": 3,
+      "sub_pal": 3,
+      "slot": 65535
+    },
+    {
+      "tile_id": 4,
+      "sub_pal": 3,
+      "slot": 65535
+    },
+    {
+      "tile_id": 5,
+      "sub_pal": 3,
+      "slot": 65535
+    },
+    {
+      "tile_id": 6,
+      "sub_pal": 3,
+      "slot": 65535
+    },
+    {
+      "tile_id": 7,
+      "sub_pal": 3,
+      "slot": 65535
+    },
+    {
+      "tile_id": 8,
+      "sub_pal": 3,
+      "slot": 65535
+    },
+    {
+      "tile_id": 9,
+      "sub_pal": 3,
+      "slot": 65535
+    },
+    {
+      "tile_id": 10,
+      "sub_pal": 3,
+      "slot": 65535
+    },
+    {
+      "tile_id": 11,
+      "sub_pal": 3,
+      "slot": 65535
+    },
+    {
+      "tile_id": 12,
+      "sub_pal": 3,
+      "slot": 65535
+    },
+    {
+      "tile_id": 13,
+      "sub_pal": 3,
+      "slot": 65535
+    },
+    {
+      "tile_id": 14,
+      "sub_pal": 3,
+      "slot": 65535
+    },
+    {
+      "tile_id": 15,
+      "sub_pal": 3,
+      "slot": 65535
+    },
+    {
+      "tile_id": 16,
+      "sub_pal": 3,
+      "slot": 65535
+    },
+    {
+      "tile_id": 17,
+      "sub_pal": 3,
+      "slot": 65535
+    },
+    {
+      "tile_id": 18,
+      "sub_pal": 3,
+      "slot": 65535
+    },
+    {
+      "tile_id": 19,
+      "sub_pal": 3,
+      "slot": 65535
+    },
+    {
+      "tile_id": 20,
+      "sub_pal": 3,
+      "slot": 65535
+    },
+    {
+      "tile_id": 21,
+      "sub_pal": 3,
+      "slot": 65535
+    },
+    {
+      "tile_id": 22,
+      "sub_pal": 0,
+      "slot": 65535
+    },
+    {
+      "tile_id": 22,
+      "sub_pal": 1,
+      "slot": 65535
+    },
+    {
+      "tile_id": 22,
+      "sub_pal": 2,
+      "slot": 65535
+    },
+    {
+      "tile_id": 22,
+      "sub_pal": 3,
+      "slot": 65535
+    },
+    {
+      "tile_id": 23,
+      "sub_pal": 0,
+      "slot": 65535
+    },
+    {
+      "tile_id": 23,
+      "sub_pal": 1,
+      "slot": 65535
+    },
+    {
+      "tile_id": 23,
+      "sub_pal": 2,
+      "slot": 65535
+    },
+    {
+      "tile_id": 23,
+      "sub_pal": 3,
+      "slot": 65535
+    },
+    {
+      "tile_id": 24,
+      "sub_pal": 0,
+      "slot": 65535
+    },
+    {
+      "tile_id": 24,
+      "sub_pal": 1,
+      "slot": 65535
+    },
+    {
+      "tile_id": 24,
+      "sub_pal": 2,
+      "slot": 65535
+    },
+    {
+      "tile_id": 24,
+      "sub_pal": 3,
+      "slot": 65535
+    },
+    {
+      "tile_id": 25,
+      "sub_pal": 0,
+      "slot": 65535
+    },
+    {
+      "tile_id": 25,
+      "sub_pal": 1,
+      "slot": 65535
+    },
+    {
+      "tile_id": 25,
+      "sub_pal": 2,
+      "slot": 65535
+    },
+    {
+      "tile_id": 25,
+      "sub_pal": 3,
+      "slot": 65535
+    },
+    {
+      "tile_id": 26,
+      "sub_pal": 0,
+      "slot": 65535
+    },
+    {
+      "tile_id": 26,
+      "sub_pal": 1,
+      "slot": 65535
+    },
+    {
+      "tile_id": 26,
+      "sub_pal": 2,
+      "slot": 65535
+    },
+    {
+      "tile_id": 26,
+      "sub_pal": 3,
+      "slot": 65535
+    },
+    {
+      "tile_id": 27,
+      "sub_pal": 0,
+      "slot": 65535
+    },
+    {
+      "tile_id": 27,
+      "sub_pal": 1,
+      "slot": 65535
+    },
+    {
+      "tile_id": 27,
+      "sub_pal": 2,
+      "slot": 65535
+    },
+    {
+      "tile_id": 27,
+      "sub_pal": 3,
+      "slot": 65535
+    },
+    {
+      "tile_id": 28,
+      "sub_pal": 0,
+      "slot": 65535
+    },
+    {
+      "tile_id": 28,
+      "sub_pal": 1,
+      "slot": 65535
+    },
+    {
+      "tile_id": 28,
+      "sub_pal": 2,
+      "slot": 65535
+    },
+    {
+      "tile_id": 28,
+      "sub_pal": 3,
+      "slot": 65535
+    },
+    {
+      "tile_id": 29,
+      "sub_pal": 0,
+      "slot": 65535
+    },
+    {
+      "tile_id": 29,
+      "sub_pal": 1,
+      "slot": 65535
+    },
+    {
+      "tile_id": 29,
+      "sub_pal": 2,
+      "slot": 65535
+    },
+    {
+      "tile_id": 29,
+      "sub_pal": 3,
+      "slot": 65535
+    },
+    {
+      "tile_id": 30,
+      "sub_pal": 0,
+      "slot": 65535
+    },
+    {
+      "tile_id": 30,
+      "sub_pal": 1,
+      "slot": 65535
+    },
+    {
+      "tile_id": 30,
+      "sub_pal": 2,
+      "slot": 65535
+    },
+    {
+      "tile_id": 30,
+      "sub_pal": 3,
+      "slot": 65535
+    },
+    {
+      "tile_id": 31,
+      "sub_pal": 0,
+      "slot": 65535
+    },
+    {
+      "tile_id": 31,
+      "sub_pal": 1,
+      "slot": 65535
+    },
+    {
+      "tile_id": 31,
+      "sub_pal": 2,
+      "slot": 65535
+    },
+    {
+      "tile_id": 31,
+      "sub_pal": 3,
+      "slot": 65535
+    },
+    {
+      "tile_id": 32,
+      "sub_pal": 3,
+      "slot": 65535
+    },
+    {
+      "tile_id": 33,
+      "sub_pal": 3,
+      "slot": 65535
+    },
+    {
+      "tile_id": 34,
+      "sub_pal": 3,
+      "slot": 65535
+    },
+    {
+      "tile_id": 35,
+      "sub_pal": 3,
+      "slot": 65535
+    },
+    {
+      "tile_id": 37,
+      "sub_pal": 0,
+      "slot": 65535
+    },
+    {
+      "tile_id": 37,
+      "sub_pal": 1,
+      "slot": 65535
+    },
+    {
+      "tile_id": 37,
+      "sub_pal": 2,
+      "slot": 65535
+    },
+    {
+      "tile_id": 37,
+      "sub_pal": 3,
+      "slot": 65535
+    },
+    {
+      "tile_id": 38,
+      "sub_pal": 1,
+      "slot": 65535
+    },
+    {
+      "tile_id": 39,
+      "sub_pal": 0,
+      "slot": 65535
+    },
+    {
+      "tile_id": 39,
+      "sub_pal": 1,
+      "slot": 65535
+    },
+    {
+      "tile_id": 39,
+      "sub_pal": 2,
+      "slot": 65535
+    },
+    {
+      "tile_id": 39,
+      "sub_pal": 3,
+      "slot": 65535
+    },
+    {
+      "tile_id": 40,
+      "sub_pal": 0,
+      "slot": 65535
+    },
+    {
+      "tile_id": 40,
+      "sub_pal": 1,
+      "slot": 65535
+    },
+    {
+      "tile_id": 40,
+      "sub_pal": 2,
+      "slot": 65535
+    },
+    {
+      "tile_id": 40,
+      "sub_pal": 3,
+      "slot": 65535
+    },
+    {
+      "tile_id": 41,
+      "sub_pal": 0,
+      "slot": 65535
+    },
+    {
+      "tile_id": 41,
+      "sub_pal": 1,
+      "slot": 65535
+    },
+    {
+      "tile_id": 41,
+      "sub_pal": 2,
+      "slot": 65535
+    },
+    {
+      "tile_id": 41,
+      "sub_pal": 3,
+      "slot": 65535
+    },
+    {
+      "tile_id": 42,
+      "sub_pal": 0,
+      "slot": 65535
+    },
+    {
+      "tile_id": 42,
+      "sub_pal": 1,
+      "slot": 65535
+    },
+    {
+      "tile_id": 42,
+      "sub_pal": 2,
+      "slot": 65535
+    },
+    {
+      "tile_id": 42,
+      "sub_pal": 3,
+      "slot": 65535
+    },
+    {
+      "tile_id": 43,
+      "sub_pal": 0,
+      "slot": 65535
+    },
+    {
+      "tile_id": 43,
+      "sub_pal": 1,
+      "slot": 65535
+    },
+    {
+      "tile_id": 43,
+      "sub_pal": 2,
+      "slot": 65535
+    },
+    {
+      "tile_id": 43,
+      "sub_pal": 3,
+      "slot": 65535
+    },
+    {
+      "tile_id": 44,
+      "sub_pal": 0,
+      "slot": 65535
+    },
+    {
+      "tile_id": 44,
+      "sub_pal": 1,
+      "slot": 65535
+    },
+    {
+      "tile_id": 44,
+      "sub_pal": 2,
+      "slot": 65535
+    },
+    {
+      "tile_id": 44,
+      "sub_pal": 3,
+      "slot": 65535
+    },
+    {
+      "tile_id": 45,
+      "sub_pal": 0,
+      "slot": 65535
+    },
+    {
+      "tile_id": 45,
+      "sub_pal": 1,
+      "slot": 65535
+    },
+    {
+      "tile_id": 45,
+      "sub_pal": 2,
+      "slot": 65535
+    },
+    {
+      "tile_id": 45,
+      "sub_pal": 3,
+      "slot": 65535
+    },
+    {
+      "tile_id": 46,
+      "sub_pal": 0,
+      "slot": 65535
+    },
+    {
+      "tile_id": 46,
+      "sub_pal": 1,
+      "slot": 65535
+    },
+    {
+      "tile_id": 46,
+      "sub_pal": 2,
+      "slot": 65535
+    },
+    {
+      "tile_id": 46,
+      "sub_pal": 3,
+      "slot": 65535
+    },
+    {
+      "tile_id": 47,
+      "sub_pal": 0,
+      "slot": 65535
+    },
+    {
+      "tile_id": 47,
+      "sub_pal": 1,
+      "slot": 65535
+    },
+    {
+      "tile_id": 47,
+      "sub_pal": 2,
+      "slot": 65535
+    },
+    {
+      "tile_id": 47,
+      "sub_pal": 3,
+      "slot": 65535
+    },
+    {
+      "tile_id": 48,
+      "sub_pal": 3,
+      "slot": 65535
+    },
+    {
+      "tile_id": 49,
+      "sub_pal": 3,
+      "slot": 65535
+    },
+    {
+      "tile_id": 50,
+      "sub_pal": 3,
+      "slot": 65535
+    },
+    {
+      "tile_id": 51,
+      "sub_pal": 3,
+      "slot": 65535
+    },
+    {
+      "tile_id": 52,
+      "sub_pal": 3,
+      "slot": 65535
+    },
+    {
+      "tile_id": 53,
+      "sub_pal": 3,
+      "slot": 65535
+    },
+    {
+      "tile_id": 54,
+      "sub_pal": 3,
+      "slot": 65535
+    },
+    {
+      "tile_id": 55,
+      "sub_pal": 3,
+      "slot": 65535
+    },
+    {
+      "tile_id": 56,
+      "sub_pal": 3,
+      "slot": 65535
+    },
+    {
+      "tile_id": 57,
+      "sub_pal": 3,
+      "slot": 65535
+    },
+    {
+      "tile_id": 58,
+      "sub_pal": 3,
+      "slot": 65535
+    },
+    {
+      "tile_id": 59,
+      "sub_pal": 3,
+      "slot": 65535
+    },
+    {
+      "tile_id": 60,
+      "sub_pal": 3,
+      "slot": 65535
+    },
+    {
+      "tile_id": 61,
+      "sub_pal": 3,
+      "slot": 65535
+    },
+    {
+      "tile_id": 62,
+      "sub_pal": 3,
+      "slot": 65535
+    },
+    {
+      "tile_id": 63,
+      "sub_pal": 3,
+      "slot": 65535
+    },
+    {
+      "tile_id": 64,
+      "sub_pal": 3,
+      "slot": 65535
+    },
+    {
+      "tile_id": 65,
+      "sub_pal": 3,
+      "slot": 65535
+    },
+    {
+      "tile_id": 66,
+      "sub_pal": 3,
+      "slot": 65535
+    },
+    {
+      "tile_id": 67,
+      "sub_pal": 3,
+      "slot": 65535
+    },
+    {
+      "tile_id": 68,
+      "sub_pal": 3,
+      "slot": 65535
+    },
+    {
+      "tile_id": 69,
+      "sub_pal": 3,
+      "slot": 65535
+    },
+    {
+      "tile_id": 70,
+      "sub_pal": 3,
+      "slot": 65535
+    },
+    {
+      "tile_id": 71,
+      "sub_pal": 3,
+      "slot": 65535
+    },
+    {
+      "tile_id": 72,
+      "sub_pal": 3,
+      "slot": 65535
+    },
+    {
+      "tile_id": 73,
+      "sub_pal": 3,
+      "slot": 65535
+    },
+    {
+      "tile_id": 74,
+      "sub_pal": 3,
+      "slot": 65535
+    },
+    {
+      "tile_id": 75,
+      "sub_pal": 3,
+      "slot": 65535
+    },
+    {
+      "tile_id": 76,
+      "sub_pal": 3,
+      "slot": 65535
+    },
+    {
+      "tile_id": 77,
+      "sub_pal": 3,
+      "slot": 65535
+    },
+    {
+      "tile_id": 78,
+      "sub_pal": 3,
+      "slot": 65535
+    },
+    {
+      "tile_id": 79,
+      "sub_pal": 3,
+      "slot": 65535
+    },
+    {
+      "tile_id": 80,
+      "sub_pal": 3,
+      "slot": 65535
+    },
+    {
+      "tile_id": 81,
+      "sub_pal": 3,
+      "slot": 65535
+    },
+    {
+      "tile_id": 82,
+      "sub_pal": 3,
+      "slot": 65535
+    },
+    {
+      "tile_id": 83,
+      "sub_pal": 0,
+      "slot": 65535
+    },
+    {
+      "tile_id": 83,
+      "sub_pal": 1,
+      "slot": 65535
+    },
+    {
+      "tile_id": 83,
+      "sub_pal": 2,
+      "slot": 65535
+    },
+    {
+      "tile_id": 83,
+      "sub_pal": 3,
+      "slot": 65535
+    },
+    {
+      "tile_id": 84,
+      "sub_pal": 0,
+      "slot": 65535
+    },
+    {
+      "tile_id": 84,
+      "sub_pal": 1,
+      "slot": 65535
+    },
+    {
+      "tile_id": 84,
+      "sub_pal": 2,
+      "slot": 65535
+    },
+    {
+      "tile_id": 84,
+      "sub_pal": 3,
+      "slot": 65535
+    },
+    {
+      "tile_id": 85,
+      "sub_pal": 0,
+      "slot": 65535
+    },
+    {
+      "tile_id": 85,
+      "sub_pal": 1,
+      "slot": 65535
+    },
+    {
+      "tile_id": 85,
+      "sub_pal": 2,
+      "slot": 65535
+    },
+    {
+      "tile_id": 85,
+      "sub_pal": 3,
+      "slot": 65535
+    },
+    {
+      "tile_id": 86,
+      "sub_pal": 0,
+      "slot": 65535
+    },
+    {
+      "tile_id": 86,
+      "sub_pal": 1,
+      "slot": 65535
+    },
+    {
+      "tile_id": 86,
+      "sub_pal": 2,
+      "slot": 65535
+    },
+    {
+      "tile_id": 86,
+      "sub_pal": 3,
+      "slot": 65535
+    },
+    {
+      "tile_id": 87,
+      "sub_pal": 0,
+      "slot": 65535
+    },
+    {
+      "tile_id": 87,
+      "sub_pal": 1,
+      "slot": 65535
+    },
+    {
+      "tile_id": 87,
+      "sub_pal": 2,
+      "slot": 65535
+    },
+    {
+      "tile_id": 87,
+      "sub_pal": 3,
+      "slot": 65535
+    },
+    {
+      "tile_id": 88,
+      "sub_pal": 0,
+      "slot": 65535
+    },
+    {
+      "tile_id": 88,
+      "sub_pal": 1,
+      "slot": 65535
+    },
+    {
+      "tile_id": 88,
+      "sub_pal": 3,
+      "slot": 65535
+    },
+    {
+      "tile_id": 89,
+      "sub_pal": 0,
+      "slot": 65535
+    },
+    {
+      "tile_id": 89,
+      "sub_pal": 1,
+      "slot": 65535
+    },
+    {
+      "tile_id": 89,
+      "sub_pal": 3,
+      "slot": 65535
+    },
+    {
+      "tile_id": 90,
+      "sub_pal": 0,
+      "slot": 65535
+    },
+    {
+      "tile_id": 90,
+      "sub_pal": 1,
+      "slot": 65535
+    },
+    {
+      "tile_id": 90,
+      "sub_pal": 3,
+      "slot": 65535
+    },
+    {
+      "tile_id": 91,
+      "sub_pal": 0,
+      "slot": 65535
+    },
+    {
+      "tile_id": 91,
+      "sub_pal": 1,
+      "slot": 65535
+    },
+    {
+      "tile_id": 91,
+      "sub_pal": 3,
+      "slot": 65535
+    },
+    {
+      "tile_id": 92,
+      "sub_pal": 0,
+      "slot": 65535
+    },
+    {
+      "tile_id": 92,
+      "sub_pal": 1,
+      "slot": 65535
+    },
+    {
+      "tile_id": 92,
+      "sub_pal": 3,
+      "slot": 65535
+    },
+    {
+      "tile_id": 93,
+      "sub_pal": 0,
+      "slot": 65535
+    },
+    {
+      "tile_id": 93,
+      "sub_pal": 1,
+      "slot": 65535
+    },
+    {
+      "tile_id": 93,
+      "sub_pal": 3,
+      "slot": 65535
+    },
+    {
+      "tile_id": 94,
+      "sub_pal": 0,
+      "slot": 65535
+    },
+    {
+      "tile_id": 94,
+      "sub_pal": 1,
+      "slot": 65535
+    },
+    {
+      "tile_id": 94,
+      "sub_pal": 2,
+      "slot": 65535
+    },
+    {
+      "tile_id": 94,
+      "sub_pal": 3,
+      "slot": 65535
+    },
+    {
+      "tile_id": 95,
+      "sub_pal": 0,
+      "slot": 65535
+    },
+    {
+      "tile_id": 95,
+      "sub_pal": 1,
+      "slot": 65535
+    },
+    {
+      "tile_id": 95,
+      "sub_pal": 2,
+      "slot": 65535
+    },
+    {
+      "tile_id": 95,
+      "sub_pal": 3,
+      "slot": 65535
+    },
+    {
+      "tile_id": 96,
+      "sub_pal": 0,
+      "slot": 65535
+    },
+    {
+      "tile_id": 96,
+      "sub_pal": 1,
+      "slot": 65535
+    },
+    {
+      "tile_id": 96,
+      "sub_pal": 2,
+      "slot": 65535
+    },
+    {
+      "tile_id": 96,
+      "sub_pal": 3,
+      "slot": 65535
+    },
+    {
+      "tile_id": 97,
+      "sub_pal": 3,
+      "slot": 65535
+    },
+    {
+      "tile_id": 98,
+      "sub_pal": 3,
+      "slot": 65535
+    },
+    {
+      "tile_id": 99,
+      "sub_pal": 3,
+      "slot": 65535
+    },
+    {
+      "tile_id": 100,
+      "sub_pal": 3,
+      "slot": 65535
+    },
+    {
+      "tile_id": 101,
+      "sub_pal": 3,
+      "slot": 65535
+    },
+    {
+      "tile_id": 102,
+      "sub_pal": 3,
+      "slot": 65535
+    },
+    {
+      "tile_id": 103,
+      "sub_pal": 3,
+      "slot": 65535
+    },
+    {
+      "tile_id": 105,
+      "sub_pal": 3,
+      "slot": 65535
+    },
+    {
+      "tile_id": 106,
+      "sub_pal": 3,
+      "slot": 65535
+    },
+    {
+      "tile_id": 107,
+      "sub_pal": 3,
+      "slot": 65535
+    },
+    {
+      "tile_id": 108,
+      "sub_pal": 3,
+      "slot": 65535
+    },
+    {
+      "tile_id": 109,
+      "sub_pal": 3,
+      "slot": 65535
+    },
+    {
+      "tile_id": 110,
+      "sub_pal": 3,
+      "slot": 65535
+    },
+    {
+      "tile_id": 111,
+      "sub_pal": 0,
+      "slot": 65535
+    },
+    {
+      "tile_id": 111,
+      "sub_pal": 1,
+      "slot": 65535
+    },
+    {
+      "tile_id": 111,
+      "sub_pal": 2,
+      "slot": 65535
+    },
+    {
+      "tile_id": 111,
+      "sub_pal": 3,
+      "slot": 65535
+    },
+    {
+      "tile_id": 112,
+      "sub_pal": 0,
+      "slot": 65535
+    },
+    {
+      "tile_id": 112,
+      "sub_pal": 1,
+      "slot": 65535
+    },
+    {
+      "tile_id": 112,
+      "sub_pal": 3,
+      "slot": 65535
+    },
+    {
+      "tile_id": 113,
+      "sub_pal": 0,
+      "slot": 65535
+    },
+    {
+      "tile_id": 113,
+      "sub_pal": 1,
+      "slot": 65535
+    },
+    {
+      "tile_id": 113,
+      "sub_pal": 3,
+      "slot": 65535
+    },
+    {
+      "tile_id": 114,
+      "sub_pal": 0,
+      "slot": 65535
+    },
+    {
+      "tile_id": 114,
+      "sub_pal": 1,
+      "slot": 65535
+    },
+    {
+      "tile_id": 114,
+      "sub_pal": 3,
+      "slot": 65535
+    },
+    {
+      "tile_id": 115,
+      "sub_pal": 0,
+      "slot": 65535
+    },
+    {
+      "tile_id": 115,
+      "sub_pal": 1,
+      "slot": 65535
+    },
+    {
+      "tile_id": 115,
+      "sub_pal": 3,
+      "slot": 65535
+    },
+    {
+      "tile_id": 116,
+      "sub_pal": 1,
+      "slot": 65535
+    },
+    {
+      "tile_id": 117,
+      "sub_pal": 1,
+      "slot": 65535
+    },
+    {
+      "tile_id": 118,
+      "sub_pal": 0,
+      "slot": 65535
+    },
+    {
+      "tile_id": 118,
+      "sub_pal": 1,
+      "slot": 65535
+    },
+    {
+      "tile_id": 119,
+      "sub_pal": 0,
+      "slot": 65535
+    },
+    {
+      "tile_id": 119,
+      "sub_pal": 1,
+      "slot": 65535
+    },
+    {
+      "tile_id": 120,
+      "sub_pal": 0,
+      "slot": 65535
+    },
+    {
+      "tile_id": 120,
+      "sub_pal": 1,
+      "slot": 65535
+    },
+    {
+      "tile_id": 121,
+      "sub_pal": 0,
+      "slot": 65535
+    },
+    {
+      "tile_id": 121,
+      "sub_pal": 1,
+      "slot": 65535
+    },
+    {
+      "tile_id": 122,
+      "sub_pal": 0,
+      "slot": 65535
+    },
+    {
+      "tile_id": 122,
+      "sub_pal": 1,
+      "slot": 65535
+    },
+    {
+      "tile_id": 123,
+      "sub_pal": 0,
+      "slot": 65535
+    },
+    {
+      "tile_id": 123,
+      "sub_pal": 1,
+      "slot": 65535
+    },
+    {
+      "tile_id": 124,
+      "sub_pal": 0,
+      "slot": 65535
+    },
+    {
+      "tile_id": 124,
+      "sub_pal": 1,
+      "slot": 65535
+    },
+    {
+      "tile_id": 125,
+      "sub_pal": 0,
+      "slot": 65535
+    },
+    {
+      "tile_id": 125,
+      "sub_pal": 1,
+      "slot": 65535
+    },
+    {
+      "tile_id": 126,
+      "sub_pal": 0,
+      "slot": 65535
+    },
+    {
+      "tile_id": 126,
+      "sub_pal": 1,
+      "slot": 65535
+    },
+    {
+      "tile_id": 127,
+      "sub_pal": 0,
+      "slot": 65535
+    },
+    {
+      "tile_id": 127,
+      "sub_pal": 1,
+      "slot": 65535
+    },
+    {
+      "tile_id": 128,
+      "sub_pal": 0,
+      "slot": 65535
+    },
+    {
+      "tile_id": 128,
+      "sub_pal": 1,
+      "slot": 65535
+    },
+    {
+      "tile_id": 129,
+      "sub_pal": 0,
+      "slot": 65535
+    },
+    {
+      "tile_id": 129,
+      "sub_pal": 1,
+      "slot": 65535
+    },
+    {
+      "tile_id": 130,
+      "sub_pal": 0,
+      "slot": 65535
+    },
+    {
+      "tile_id": 130,
+      "sub_pal": 1,
+      "slot": 65535
+    },
+    {
+      "tile_id": 131,
+      "sub_pal": 0,
+      "slot": 65535
+    },
+    {
+      "tile_id": 131,
+      "sub_pal": 1,
+      "slot": 65535
+    },
+    {
+      "tile_id": 132,
+      "sub_pal": 0,
+      "slot": 65535
+    },
+    {
+      "tile_id": 132,
+      "sub_pal": 1,
+      "slot": 65535
+    },
+    {
+      "tile_id": 133,
+      "sub_pal": 0,
+      "slot": 65535
+    },
+    {
+      "tile_id": 133,
+      "sub_pal": 1,
+      "slot": 65535
+    },
+    {
+      "tile_id": 134,
+      "sub_pal": 0,
+      "slot": 65535
+    },
+    {
+      "tile_id": 134,
+      "sub_pal": 1,
+      "slot": 65535
+    },
+    {
+      "tile_id": 135,
+      "sub_pal": 0,
+      "slot": 65535
+    },
+    {
+      "tile_id": 135,
+      "sub_pal": 1,
+      "slot": 65535
+    },
+    {
+      "tile_id": 135,
+      "sub_pal": 2,
+      "slot": 65535
+    },
+    {
+      "tile_id": 136,
+      "sub_pal": 0,
+      "slot": 65535
+    },
+    {
+      "tile_id": 136,
+      "sub_pal": 1,
+      "slot": 65535
+    },
+    {
+      "tile_id": 136,
+      "sub_pal": 2,
+      "slot": 65535
+    },
+    {
+      "tile_id": 137,
+      "sub_pal": 0,
+      "slot": 65535
+    },
+    {
+      "tile_id": 137,
+      "sub_pal": 1,
+      "slot": 65535
+    },
+    {
+      "tile_id": 137,
+      "sub_pal": 2,
+      "slot": 65535
+    },
+    {
+      "tile_id": 138,
+      "sub_pal": 0,
+      "slot": 65535
+    },
+    {
+      "tile_id": 138,
+      "sub_pal": 1,
+      "slot": 65535
+    },
+    {
+      "tile_id": 138,
+      "sub_pal": 2,
+      "slot": 65535
+    },
+    {
+      "tile_id": 139,
+      "sub_pal": 0,
+      "slot": 65535
+    },
+    {
+      "tile_id": 139,
+      "sub_pal": 1,
+      "slot": 65535
+    },
+    {
+      "tile_id": 139,
+      "sub_pal": 2,
+      "slot": 65535
+    },
+    {
+      "tile_id": 140,
+      "sub_pal": 0,
+      "slot": 65535
+    },
+    {
+      "tile_id": 140,
+      "sub_pal": 1,
+      "slot": 65535
+    },
+    {
+      "tile_id": 140,
+      "sub_pal": 2,
+      "slot": 65535
+    },
+    {
+      "tile_id": 141,
+      "sub_pal": 0,
+      "slot": 65535
+    },
+    {
+      "tile_id": 141,
+      "sub_pal": 1,
+      "slot": 65535
+    },
+    {
+      "tile_id": 142,
+      "sub_pal": 0,
+      "slot": 65535
+    },
+    {
+      "tile_id": 142,
+      "sub_pal": 1,
+      "slot": 65535
+    },
+    {
+      "tile_id": 143,
+      "sub_pal": 0,
+      "slot": 65535
+    },
+    {
+      "tile_id": 143,
+      "sub_pal": 1,
+      "slot": 65535
+    },
+    {
+      "tile_id": 144,
+      "sub_pal": 0,
+      "slot": 65535
+    },
+    {
+      "tile_id": 144,
+      "sub_pal": 1,
+      "slot": 65535
+    },
+    {
+      "tile_id": 145,
+      "sub_pal": 0,
+      "slot": 65535
+    },
+    {
+      "tile_id": 145,
+      "sub_pal": 1,
+      "slot": 65535
+    },
+    {
+      "tile_id": 146,
+      "sub_pal": 0,
+      "slot": 65535
+    },
+    {
+      "tile_id": 146,
+      "sub_pal": 1,
+      "slot": 65535
+    },
+    {
+      "tile_id": 147,
+      "sub_pal": 0,
+      "slot": 65535
+    },
+    {
+      "tile_id": 147,
+      "sub_pal": 1,
+      "slot": 65535
+    },
+    {
+      "tile_id": 148,
+      "sub_pal": 0,
+      "slot": 65535
+    },
+    {
+      "tile_id": 148,
+      "sub_pal": 1,
+      "slot": 65535
+    },
+    {
+      "tile_id": 149,
+      "sub_pal": 0,
+      "slot": 65535
+    },
+    {
+      "tile_id": 149,
+      "sub_pal": 1,
+      "slot": 65535
+    },
+    {
+      "tile_id": 150,
+      "sub_pal": 0,
+      "slot": 65535
+    },
+    {
+      "tile_id": 150,
+      "sub_pal": 1,
+      "slot": 65535
+    },
+    {
+      "tile_id": 151,
+      "sub_pal": 0,
+      "slot": 65535
+    },
+    {
+      "tile_id": 151,
+      "sub_pal": 1,
+      "slot": 65535
+    },
+    {
+      "tile_id": 152,
+      "sub_pal": 0,
+      "slot": 65535
+    },
+    {
+      "tile_id": 152,
+      "sub_pal": 1,
+      "slot": 65535
+    },
+    {
+      "tile_id": 153,
+      "sub_pal": 0,
+      "slot": 65535
+    },
+    {
+      "tile_id": 153,
+      "sub_pal": 1,
+      "slot": 65535
+    },
+    {
+      "tile_id": 153,
+      "sub_pal": 3,
+      "slot": 65535
+    },
+    {
+      "tile_id": 154,
+      "sub_pal": 1,
+      "slot": 65535
+    },
+    {
+      "tile_id": 155,
+      "sub_pal": 1,
+      "slot": 65535
+    },
+    {
+      "tile_id": 156,
+      "sub_pal": 1,
+      "slot": 65535
+    },
+    {
+      "tile_id": 157,
+      "sub_pal": 1,
+      "slot": 65535
+    },
+    {
+      "tile_id": 158,
+      "sub_pal": 1,
+      "slot": 65535
+    },
+    {
+      "tile_id": 159,
+      "sub_pal": 1,
+      "slot": 65535
+    },
+    {
+      "tile_id": 160,
+      "sub_pal": 1,
+      "slot": 65535
+    },
+    {
+      "tile_id": 161,
+      "sub_pal": 1,
+      "slot": 65535
+    },
+    {
+      "tile_id": 162,
+      "sub_pal": 1,
+      "slot": 65535
+    },
+    {
+      "tile_id": 163,
+      "sub_pal": 1,
+      "slot": 65535
+    },
+    {
+      "tile_id": 164,
+      "sub_pal": 1,
+      "slot": 65535
+    },
+    {
+      "tile_id": 165,
+      "sub_pal": 1,
+      "slot": 65535
+    },
+    {
+      "tile_id": 166,
+      "sub_pal": 1,
+      "slot": 65535
+    },
+    {
+      "tile_id": 167,
+      "sub_pal": 1,
+      "slot": 65535
+    },
+    {
+      "tile_id": 168,
+      "sub_pal": 1,
+      "slot": 65535
+    },
+    {
+      "tile_id": 169,
+      "sub_pal": 1,
+      "slot": 65535
+    },
+    {
+      "tile_id": 170,
+      "sub_pal": 0,
+      "slot": 65535
+    },
+    {
+      "tile_id": 170,
+      "sub_pal": 1,
+      "slot": 65535
+    },
+    {
+      "tile_id": 171,
+      "sub_pal": 0,
+      "slot": 65535
+    },
+    {
+      "tile_id": 171,
+      "sub_pal": 1,
+      "slot": 65535
+    },
+    {
+      "tile_id": 172,
+      "sub_pal": 0,
+      "slot": 65535
+    },
+    {
+      "tile_id": 172,
+      "sub_pal": 1,
+      "slot": 65535
+    },
+    {
+      "tile_id": 173,
+      "sub_pal": 0,
+      "slot": 65535
+    },
+    {
+      "tile_id": 173,
+      "sub_pal": 1,
+      "slot": 65535
+    },
+    {
+      "tile_id": 174,
+      "sub_pal": 0,
+      "slot": 65535
+    },
+    {
+      "tile_id": 174,
+      "sub_pal": 1,
+      "slot": 65535
+    },
+    {
+      "tile_id": 175,
+      "sub_pal": 0,
+      "slot": 65535
+    },
+    {
+      "tile_id": 175,
+      "sub_pal": 1,
+      "slot": 65535
+    },
+    {
+      "tile_id": 176,
+      "sub_pal": 0,
+      "slot": 65535
+    },
+    {
+      "tile_id": 176,
+      "sub_pal": 1,
+      "slot": 65535
+    },
+    {
+      "tile_id": 177,
+      "sub_pal": 0,
+      "slot": 65535
+    },
+    {
+      "tile_id": 177,
+      "sub_pal": 1,
+      "slot": 65535
+    },
+    {
+      "tile_id": 178,
+      "sub_pal": 0,
+      "slot": 65535
+    },
+    {
+      "tile_id": 178,
+      "sub_pal": 1,
+      "slot": 65535
+    },
+    {
+      "tile_id": 179,
+      "sub_pal": 0,
+      "slot": 65535
+    },
+    {
+      "tile_id": 179,
+      "sub_pal": 1,
+      "slot": 65535
+    },
+    {
+      "tile_id": 180,
+      "sub_pal": 0,
+      "slot": 65535
+    },
+    {
+      "tile_id": 180,
+      "sub_pal": 1,
+      "slot": 65535
+    },
+    {
+      "tile_id": 181,
+      "sub_pal": 0,
+      "slot": 65535
+    },
+    {
+      "tile_id": 181,
+      "sub_pal": 1,
+      "slot": 65535
+    },
+    {
+      "tile_id": 182,
+      "sub_pal": 0,
+      "slot": 65535
+    },
+    {
+      "tile_id": 182,
+      "sub_pal": 1,
+      "slot": 65535
+    },
+    {
+      "tile_id": 183,
+      "sub_pal": 0,
+      "slot": 65535
+    },
+    {
+      "tile_id": 183,
+      "sub_pal": 1,
+      "slot": 65535
+    },
+    {
+      "tile_id": 184,
+      "sub_pal": 0,
+      "slot": 65535
+    },
+    {
+      "tile_id": 184,
+      "sub_pal": 1,
+      "slot": 65535
+    },
+    {
+      "tile_id": 185,
+      "sub_pal": 0,
+      "slot": 65535
+    },
+    {
+      "tile_id": 185,
+      "sub_pal": 1,
+      "slot": 65535
+    },
+    {
+      "tile_id": 186,
+      "sub_pal": 0,
+      "slot": 65535
+    },
+    {
+      "tile_id": 186,
+      "sub_pal": 1,
+      "slot": 65535
+    },
+    {
+      "tile_id": 187,
+      "sub_pal": 0,
+      "slot": 65535
+    },
+    {
+      "tile_id": 187,
+      "sub_pal": 1,
+      "slot": 65535
+    },
+    {
+      "tile_id": 188,
+      "sub_pal": 1,
+      "slot": 65535
+    },
+    {
+      "tile_id": 188,
+      "sub_pal": 3,
+      "slot": 65535
+    },
+    {
+      "tile_id": 189,
+      "sub_pal": 1,
+      "slot": 65535
+    },
+    {
+      "tile_id": 189,
+      "sub_pal": 3,
+      "slot": 65535
+    },
+    {
+      "tile_id": 190,
+      "sub_pal": 1,
+      "slot": 65535
+    },
+    {
+      "tile_id": 190,
+      "sub_pal": 2,
+      "slot": 65535
+    },
+    {
+      "tile_id": 190,
+      "sub_pal": 3,
+      "slot": 65535
+    },
+    {
+      "tile_id": 191,
+      "sub_pal": 1,
+      "slot": 65535
+    },
+    {
+      "tile_id": 191,
+      "sub_pal": 2,
+      "slot": 65535
+    },
+    {
+      "tile_id": 191,
+      "sub_pal": 3,
+      "slot": 65535
+    },
+    {
+      "tile_id": 192,
+      "sub_pal": 1,
+      "slot": 65535
+    },
+    {
+      "tile_id": 193,
+      "sub_pal": 1,
+      "slot": 65535
+    },
+    {
+      "tile_id": 194,
+      "sub_pal": 1,
+      "slot": 65535
+    },
+    {
+      "tile_id": 195,
+      "sub_pal": 1,
+      "slot": 65535
+    },
+    {
+      "tile_id": 196,
+      "sub_pal": 1,
+      "slot": 65535
+    },
+    {
+      "tile_id": 197,
+      "sub_pal": 1,
+      "slot": 65535
+    },
+    {
+      "tile_id": 198,
+      "sub_pal": 1,
+      "slot": 65535
+    },
+    {
+      "tile_id": 199,
+      "sub_pal": 1,
+      "slot": 65535
+    },
+    {
+      "tile_id": 200,
+      "sub_pal": 0,
+      "slot": 65535
+    },
+    {
+      "tile_id": 200,
+      "sub_pal": 1,
+      "slot": 65535
+    },
+    {
+      "tile_id": 201,
+      "sub_pal": 0,
+      "slot": 65535
+    },
+    {
+      "tile_id": 201,
+      "sub_pal": 1,
+      "slot": 65535
+    },
+    {
+      "tile_id": 202,
+      "sub_pal": 0,
+      "slot": 65535
+    },
+    {
+      "tile_id": 202,
+      "sub_pal": 1,
+      "slot": 65535
+    },
+    {
+      "tile_id": 203,
+      "sub_pal": 0,
+      "slot": 65535
+    },
+    {
+      "tile_id": 203,
+      "sub_pal": 1,
+      "slot": 65535
+    },
+    {
+      "tile_id": 204,
+      "sub_pal": 1,
+      "slot": 65535
+    },
+    {
+      "tile_id": 205,
+      "sub_pal": 1,
+      "slot": 65535
+    },
+    {
+      "tile_id": 206,
+      "sub_pal": 1,
+      "slot": 65535
+    },
+    {
+      "tile_id": 207,
+      "sub_pal": 1,
+      "slot": 65535
+    },
+    {
+      "tile_id": 208,
+      "sub_pal": 1,
+      "slot": 65535
+    },
+    {
+      "tile_id": 209,
+      "sub_pal": 1,
+      "slot": 65535
+    },
+    {
+      "tile_id": 210,
+      "sub_pal": 1,
+      "slot": 65535
+    },
+    {
+      "tile_id": 211,
+      "sub_pal": 1,
+      "slot": 65535
+    },
+    {
+      "tile_id": 212,
+      "sub_pal": 1,
+      "slot": 65535
+    },
+    {
+      "tile_id": 213,
+      "sub_pal": 1,
+      "slot": 65535
+    },
+    {
+      "tile_id": 214,
+      "sub_pal": 1,
+      "slot": 65535
+    },
+    {
+      "tile_id": 215,
+      "sub_pal": 1,
+      "slot": 65535
+    },
+    {
+      "tile_id": 216,
+      "sub_pal": 1,
+      "slot": 65535
+    },
+    {
+      "tile_id": 217,
+      "sub_pal": 1,
+      "slot": 65535
+    },
+    {
+      "tile_id": 218,
+      "sub_pal": 1,
+      "slot": 65535
+    },
+    {
+      "tile_id": 219,
+      "sub_pal": 1,
+      "slot": 65535
+    },
+    {
+      "tile_id": 220,
+      "sub_pal": 1,
+      "slot": 65535
+    },
+    {
+      "tile_id": 221,
+      "sub_pal": 1,
+      "slot": 65535
+    },
+    {
+      "tile_id": 222,
+      "sub_pal": 1,
+      "slot": 65535
+    },
+    {
+      "tile_id": 223,
+      "sub_pal": 1,
+      "slot": 65535
+    },
+    {
+      "tile_id": 224,
+      "sub_pal": 1,
+      "slot": 65535
+    },
+    {
+      "tile_id": 225,
+      "sub_pal": 1,
+      "slot": 65535
+    },
+    {
+      "tile_id": 226,
+      "sub_pal": 1,
+      "slot": 65535
+    },
+    {
+      "tile_id": 227,
+      "sub_pal": 1,
+      "slot": 65535
+    },
+    {
+      "tile_id": 228,
+      "sub_pal": 0,
+      "slot": 65535
+    },
+    {
+      "tile_id": 228,
+      "sub_pal": 1,
+      "slot": 65535
+    },
+    {
+      "tile_id": 228,
+      "sub_pal": 2,
+      "slot": 65535
+    },
+    {
+      "tile_id": 228,
+      "sub_pal": 3,
+      "slot": 65535
+    },
+    {
+      "tile_id": 229,
+      "sub_pal": 0,
+      "slot": 65535
+    },
+    {
+      "tile_id": 229,
+      "sub_pal": 1,
+      "slot": 65535
+    },
+    {
+      "tile_id": 229,
+      "sub_pal": 2,
+      "slot": 65535
+    },
+    {
+      "tile_id": 229,
+      "sub_pal": 3,
+      "slot": 65535
+    },
+    {
+      "tile_id": 230,
+      "sub_pal": 0,
+      "slot": 65535
+    },
+    {
+      "tile_id": 230,
+      "sub_pal": 1,
+      "slot": 65535
+    },
+    {
+      "tile_id": 230,
+      "sub_pal": 2,
+      "slot": 65535
+    },
+    {
+      "tile_id": 230,
+      "sub_pal": 3,
+      "slot": 65535
+    },
+    {
+      "tile_id": 231,
+      "sub_pal": 0,
+      "slot": 65535
+    },
+    {
+      "tile_id": 231,
+      "sub_pal": 1,
+      "slot": 65535
+    },
+    {
+      "tile_id": 231,
+      "sub_pal": 2,
+      "slot": 65535
+    },
+    {
+      "tile_id": 231,
+      "sub_pal": 3,
+      "slot": 65535
+    },
+    {
+      "tile_id": 232,
+      "sub_pal": 0,
+      "slot": 65535
+    },
+    {
+      "tile_id": 232,
+      "sub_pal": 1,
+      "slot": 65535
+    },
+    {
+      "tile_id": 232,
+      "sub_pal": 2,
+      "slot": 65535
+    },
+    {
+      "tile_id": 232,
+      "sub_pal": 3,
+      "slot": 65535
+    },
+    {
+      "tile_id": 233,
+      "sub_pal": 0,
+      "slot": 65535
+    },
+    {
+      "tile_id": 233,
+      "sub_pal": 1,
+      "slot": 65535
+    },
+    {
+      "tile_id": 233,
+      "sub_pal": 2,
+      "slot": 65535
+    },
+    {
+      "tile_id": 233,
+      "sub_pal": 3,
+      "slot": 65535
+    },
+    {
+      "tile_id": 234,
+      "sub_pal": 0,
+      "slot": 65535
+    },
+    {
+      "tile_id": 234,
+      "sub_pal": 1,
+      "slot": 65535
+    },
+    {
+      "tile_id": 234,
+      "sub_pal": 2,
+      "slot": 65535
+    },
+    {
+      "tile_id": 234,
+      "sub_pal": 3,
+      "slot": 65535
+    },
+    {
+      "tile_id": 235,
+      "sub_pal": 0,
+      "slot": 65535
+    },
+    {
+      "tile_id": 235,
+      "sub_pal": 1,
+      "slot": 65535
+    },
+    {
+      "tile_id": 235,
+      "sub_pal": 2,
+      "slot": 65535
+    },
+    {
+      "tile_id": 235,
+      "sub_pal": 3,
+      "slot": 65535
+    },
+    {
+      "tile_id": 236,
+      "sub_pal": 0,
+      "slot": 65535
+    },
+    {
+      "tile_id": 236,
+      "sub_pal": 1,
+      "slot": 65535
+    },
+    {
+      "tile_id": 236,
+      "sub_pal": 2,
+      "slot": 65535
+    },
+    {
+      "tile_id": 236,
+      "sub_pal": 3,
+      "slot": 65535
+    },
+    {
+      "tile_id": 237,
+      "sub_pal": 0,
+      "slot": 65535
+    },
+    {
+      "tile_id": 237,
+      "sub_pal": 1,
+      "slot": 65535
+    },
+    {
+      "tile_id": 237,
+      "sub_pal": 2,
+      "slot": 65535
+    },
+    {
+      "tile_id": 237,
+      "sub_pal": 3,
+      "slot": 65535
+    },
+    {
+      "tile_id": 238,
+      "sub_pal": 0,
+      "slot": 65535
+    },
+    {
+      "tile_id": 238,
+      "sub_pal": 1,
+      "slot": 65535
+    },
+    {
+      "tile_id": 238,
+      "sub_pal": 2,
+      "slot": 65535
+    },
+    {
+      "tile_id": 238,
+      "sub_pal": 3,
+      "slot": 65535
+    },
+    {
+      "tile_id": 239,
+      "sub_pal": 0,
+      "slot": 65535
+    },
+    {
+      "tile_id": 239,
+      "sub_pal": 1,
+      "slot": 65535
+    },
+    {
+      "tile_id": 239,
+      "sub_pal": 2,
+      "slot": 65535
+    },
+    {
+      "tile_id": 239,
+      "sub_pal": 3,
+      "slot": 65535
+    },
+    {
+      "tile_id": 240,
+      "sub_pal": 0,
+      "slot": 65535
+    },
+    {
+      "tile_id": 240,
+      "sub_pal": 1,
+      "slot": 65535
+    },
+    {
+      "tile_id": 240,
+      "sub_pal": 2,
+      "slot": 65535
+    },
+    {
+      "tile_id": 240,
+      "sub_pal": 3,
+      "slot": 65535
+    },
+    {
+      "tile_id": 241,
+      "sub_pal": 0,
+      "slot": 65535
+    },
+    {
+      "tile_id": 241,
+      "sub_pal": 1,
+      "slot": 65535
+    },
+    {
+      "tile_id": 241,
+      "sub_pal": 2,
+      "slot": 65535
+    },
+    {
+      "tile_id": 241,
+      "sub_pal": 3,
+      "slot": 65535
+    },
+    {
+      "tile_id": 242,
+      "sub_pal": 3,
+      "slot": 65535
+    },
+    {
+      "tile_id": 245,
+      "sub_pal": 3,
+      "slot": 65535
+    },
+    {
+      "tile_id": 246,
+      "sub_pal": 0,
+      "slot": 65535
+    },
+    {
+      "tile_id": 246,
+      "sub_pal": 1,
+      "slot": 65535
+    },
+    {
+      "tile_id": 246,
+      "sub_pal": 3,
+      "slot": 65535
+    },
+    {
+      "tile_id": 247,
+      "sub_pal": 3,
+      "slot": 65535
+    },
+    {
+      "tile_id": 248,
+      "sub_pal": 3,
+      "slot": 65535
+    },
+    {
+      "tile_id": 249,
+      "sub_pal": 3,
+      "slot": 65535
+    },
+    {
+      "tile_id": 250,
+      "sub_pal": 0,
+      "slot": 65535
+    },
+    {
+      "tile_id": 250,
+      "sub_pal": 1,
+      "slot": 65535
+    },
+    {
+      "tile_id": 250,
+      "sub_pal": 2,
+      "slot": 65535
+    },
+    {
+      "tile_id": 250,
+      "sub_pal": 3,
+      "slot": 65535
+    },
+    {
+      "tile_id": 251,
+      "sub_pal": 0,
+      "slot": 65535
+    },
+    {
+      "tile_id": 251,
+      "sub_pal": 1,
+      "slot": 65535
+    },
+    {
+      "tile_id": 251,
+      "sub_pal": 2,
+      "slot": 65535
+    },
+    {
+      "tile_id": 251,
+      "sub_pal": 3,
+      "slot": 65535
+    },
+    {
+      "tile_id": 252,
+      "sub_pal": 0,
+      "slot": 65535
+    },
+    {
+      "tile_id": 252,
+      "sub_pal": 1,
+      "slot": 65535
+    },
+    {
+      "tile_id": 252,
+      "sub_pal": 2,
+      "slot": 65535
+    },
+    {
+      "tile_id": 252,
+      "sub_pal": 3,
+      "slot": 65535
+    },
+    {
+      "tile_id": 253,
+      "sub_pal": 0,
+      "slot": 65535
+    },
+    {
+      "tile_id": 253,
+      "sub_pal": 1,
+      "slot": 65535
+    },
+    {
+      "tile_id": 253,
+      "sub_pal": 2,
+      "slot": 65535
+    },
+    {
+      "tile_id": 253,
+      "sub_pal": 3,
+      "slot": 65535
+    },
+    {
+      "tile_id": 254,
+      "sub_pal": 0,
+      "slot": 65535
+    },
+    {
+      "tile_id": 254,
+      "sub_pal": 1,
+      "slot": 65535
+    },
+    {
+      "tile_id": 254,
+      "sub_pal": 2,
+      "slot": 65535
+    },
+    {
+      "tile_id": 254,
+      "sub_pal": 3,
+      "slot": 65535
+    },
+    {
+      "tile_id": 255,
+      "sub_pal": 0,
+      "slot": 65535
+    },
+    {
+      "tile_id": 255,
+      "sub_pal": 1,
+      "slot": 65535
+    },
+    {
+      "tile_id": 255,
+      "sub_pal": 2,
+      "slot": 65535
+    },
+    {
+      "tile_id": 255,
+      "sub_pal": 3,
+      "slot": 65535
+    }
+  ],
+  "manifest_items": [
+    {
+      "name": "sword_vert",
+      "tile_ids": [
+        "0x20",
+        "0x21"
+      ],
+      "sprite_size": [
+        1,
+        2
+      ]
+    },
+    {
+      "name": "sword_horz",
+      "tile_ids": [
+        "0x82",
+        "0x83",
+        "0x84",
+        "0x85"
+      ],
+      "sprite_size": [
+        2,
+        2
+      ]
+    },
+    {
+      "name": "boomerang",
+      "tile_ids": [
+        "0x36",
+        "0x37",
+        "0x38",
+        "0x39",
+        "0x3A",
+        "0x3B",
+        "0x3C",
+        "0x3D"
+      ],
+      "sprite_size": [
+        1,
+        2
+      ]
+    },
+    {
+      "name": "arrow_vert",
+      "tile_ids": [
+        "0x28",
+        "0x29"
+      ],
+      "sprite_size": [
+        1,
+        2
+      ]
+    },
+    {
+      "name": "arrow_horz",
+      "tile_ids": [
+        "0x86",
+        "0x87",
+        "0x88",
+        "0x89"
+      ],
+      "sprite_size": [
+        2,
+        2
+      ]
+    },
+    {
+      "name": "bomb",
+      "tile_ids": [
+        "0x34",
+        "0x35"
+      ],
+      "sprite_size": [
+        1,
+        2
+      ]
+    },
+    {
+      "name": "explosion",
+      "tile_ids": [
+        "0x70",
+        "0x71",
+        "0x72",
+        "0x73",
+        "0x74",
+        "0x75"
+      ],
+      "sprite_size": [
+        2,
+        2
+      ]
+    },
+    {
+      "name": "sword_diag",
+      "tile_ids": [
+        "0x48",
+        "0x49",
+        "0x4A",
+        "0x4B"
+      ],
+      "sprite_size": [
+        2,
+        2
+      ]
+    },
+    {
+      "name": "candle_fire_f0",
+      "tile_ids": [
+        "0x5C",
+        "0x5D",
+        "0x5E",
+        "0x5F"
+      ],
+      "sprite_size": [
+        2,
+        2
+      ]
+    },
+    {
+      "name": "candle_fire_f1",
+      "tile_ids": [
+        "0x9E",
+        "0x9F",
+        "0xA0",
+        "0xA1"
+      ],
+      "sprite_size": [
+        2,
+        2
+      ]
+    },
+    {
+      "name": "candle_fire_f2",
+      "tile_ids": [
+        "0x44",
+        "0x45",
+        "0x46",
+        "0x47"
+      ],
+      "sprite_size": [
+        2,
+        2
+      ]
+    },
+    {
+      "name": "candle_fire_f3",
+      "tile_ids": [
+        "0xCE",
+        "0xCF",
+        "0xD0",
+        "0xD1"
+      ],
+      "sprite_size": [
+        2,
+        2
+      ]
+    },
+    {
+      "name": "compass",
+      "tile_ids": [
+        "0x2E",
+        "0x2F"
+      ],
+      "sprite_size": [
+        1,
+        2
+      ]
+    },
+    {
+      "name": "map",
+      "tile_ids": [
+        "0x32",
+        "0x33"
+      ],
+      "sprite_size": [
+        1,
+        2
+      ]
+    },
+    {
+      "name": "heart_container",
+      "tile_ids": [
+        "0x50",
+        "0x51"
+      ],
+      "sprite_size": [
+        1,
+        2
+      ]
+    },
+    {
+      "name": "big_key",
+      "tile_ids": [
+        "0x68",
+        "0x69"
+      ],
+      "sprite_size": [
+        1,
+        2
+      ]
+    },
+    {
+      "name": "book_of_magic",
+      "tile_ids": [
+        "0x46",
+        "0x47"
+      ],
+      "sprite_size": [
+        1,
+        2
+      ]
+    },
+    {
+      "name": "raft",
+      "tile_ids": [
+        "0x42",
+        "0x43"
+      ],
+      "sprite_size": [
+        1,
+        2
+      ]
+    },
+    {
+      "name": "ladder",
+      "tile_ids": [
+        "0x2C",
+        "0x2D"
+      ],
+      "sprite_size": [
+        1,
+        2
+      ]
+    },
+    {
+      "name": "ring",
+      "tile_ids": [
+        "0x76",
+        "0x77"
+      ],
+      "sprite_size": [
+        1,
+        2
+      ]
+    },
+    {
+      "name": "magic_key",
+      "tile_ids": [
+        "0x4E",
+        "0x4F"
+      ],
+      "sprite_size": [
+        1,
+        2
+      ]
+    },
+    {
+      "name": "bracelet",
+      "tile_ids": [
+        "0x4C",
+        "0x4D"
+      ],
+      "sprite_size": [
+        1,
+        2
+      ]
+    },
+    {
+      "name": "bow",
+      "tile_ids": [
+        "0x2A",
+        "0x2B"
+      ],
+      "sprite_size": [
+        1,
+        2
+      ]
+    },
+    {
+      "name": "recorder",
+      "tile_ids": [
+        "0x22",
+        "0x23"
+      ],
+      "sprite_size": [
+        1,
+        2
+      ]
+    },
+    {
+      "name": "food",
+      "tile_ids": [
+        "0x40",
+        "0x41"
+      ],
+      "sprite_size": [
+        1,
+        2
+      ]
+    },
+    {
+      "name": "potion",
+      "tile_ids": [
+        "0x4A",
+        "0x4B"
+      ],
+      "sprite_size": [
+        1,
+        2
+      ]
+    },
+    {
+      "name": "triforce_piece",
+      "tile_ids": [
+        "0x6E",
+        "0x6F",
+        "0x70",
+        "0x71"
+      ],
+      "sprite_size": [
+        2,
+        2
+      ]
+    },
+    {
+      "name": "magic_shot_v",
+      "tile_ids": [
+        "0x7A",
+        "0x7B"
+      ],
+      "sprite_size": [
+        2,
+        2
+      ]
+    },
+    {
+      "name": "magic_shot_h",
+      "tile_ids": [
+        "0x7C",
+        "0x7D",
+        "0x7E",
+        "0x7F"
+      ],
+      "sprite_size": [
+        2,
+        2
+      ]
+    },
+    {
+      "name": "fairy_spark_f0",
+      "tile_ids": [
+        "0xF0",
+        "0xF1"
+      ],
+      "sprite_size": [
+        1,
+        2
+      ]
+    },
+    {
+      "name": "fairy_spark_f1",
+      "tile_ids": [
+        "0xF2",
+        "0xF3"
+      ],
+      "sprite_size": [
+        1,
+        2
+      ]
+    }
+  ]
+}
