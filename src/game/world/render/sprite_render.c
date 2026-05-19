@@ -15,17 +15,13 @@
 #include "../../../../RoomRom/src/atlas/items_chr.h"
 #include "../../../../RoomRom/src/atlas/atlas_dispatch.h"
 
-/* Phase B (2026-05-18 VRAM cleanup): map NES sprite sub-pal (0..2) to
- * Genesis OAM pal field per src/game/world/bg_palette.h CRAM target:
- * sub-pal 0 -> PAL1, sub-pal 1 -> PAL2, sub-pal 2 -> PAL3. Sub-pal 3
- * (rare; static census only) clamps to sub-pal 2 — same as the existing
- * 3-copy ITEM atlas which already drops sub-pal 3 (2026-05-08 8x16 fix).
- *
- * Replaces the ITEM bank's tile-offset-based palette selection
- * (ROOMROM_ITEM_TILE_BASE_PAL(sub_pal) for x3 replication) with per-
- * sprite OAM pal selection. ITEM atlas drops from 210 tiles to 70. */
-#define ROOMROM_SUBPAL_PAL(s) \
-    ((unsigned char)(RENDER_PAL1 + ((s) > 2u ? 2u : (unsigned char)(s))))
+/* Phase AA (2026-05-18 cleanup org): sub-pal routing moved to the
+ * shared API in src/game/world/render/subpal_routing.h. The
+ * ROOMROM_SUBPAL_PAL macro is preserved as a wrapper for source-diff
+ * minimization in call sites; new code should call
+ * roomrom_spr_subpal_to_pal() directly. */
+#include "subpal_routing.h"
+#define ROOMROM_SUBPAL_PAL(s) roomrom_spr_subpal_to_pal((unsigned char)(s))
 
 /* Compile-time dispatch size checks. NES Z1 PPU runs in 8x16 sprite mode
  * (PPUCTRL bit 5 = 1) during gameplay, so item sprites that use a single

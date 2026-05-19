@@ -18,6 +18,7 @@
 #include "platform_abi.h"
 #include "render_abi.h"
 #include "world/render/sprite_slots.h"
+#include "world/render/subpal_routing.h"  /* Phase AA centralized sub-pal -> OAM pal API */
 #include "enemy_loop.h"   /* ENEMY_LOOP_SLOT_FIRST/LAST */
 #include "enemy_state.h"  /* ENEMY_X, ENEMY_Y, ENEMY_ALIVE_FLAG, ENEMY_THROWER_SLOT */
 
@@ -473,9 +474,10 @@ static inline unsigned short translate_attrs(unsigned char nes_attrs,
     unsigned char prio     = (unsigned char)((nes_attrs >> 5) & 0x01u) ^ 0x01u;
     /* NES bit 5 = "behind BG" = priority LOW. Genesis bit = priority HIGH
      * (above plane A). Invert: NES prio=0 -> Genesis prio=1 (above). */
+    /* Phase AA (2026-05-18 cleanup org): sub-pal routing centralized in
+     * src/game/world/render/subpal_routing.h. */
     unsigned char sub_pal  = (unsigned char)(nes_attrs & 0x03u);
-    unsigned char clamped  = (unsigned char)((sub_pal > 2u) ? 2u : sub_pal);
-    unsigned short pal_bank = (unsigned short)(1u + clamped);  /* 1, 2, or 3 */
+    unsigned short pal_bank = (unsigned short)roomrom_spr_subpal_to_pal(sub_pal);
 
     unsigned short sat = (unsigned short)(tile_id & 0x07FFu);
     sat |= (unsigned short)(pal_bank << 13);
