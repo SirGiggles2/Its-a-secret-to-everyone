@@ -286,4 +286,29 @@ void render_cram_fade_apply(unsigned char step, unsigned char total);
  *   calls this; no c_-prefixed shim. */
 void render_bank_window_load(unsigned char bank);
 
+/* ---- Phase Q v2 (2026-05-19): DMA byte-count telemetry ----
+ *
+ * Per-frame accumulator for VRAM + CRAM upload bytes. Set by every
+ * render_chr_upload / render_cram_upload / render_cram_subrange_upload
+ * call (and the raw stream helpers if used in a loop). Probe code
+ * calls render_dma_stats_frame_end() at the per-frame boundary
+ * (immediately after SYS_doVBlankProcess) to roll the current-frame
+ * count into the peak tracker and reset to 0.
+ *
+ * total_uploads = lifetime call count across all upload primitives.
+ * peak_frame_bytes records the max-bytes-in-one-frame since reset.
+ * current_frame_bytes is the running tally for the in-progress frame.
+ *
+ * VBlank ceiling per SGDK dma.h ≈ 7790 B (Z80-pause-aware budget).
+ * peak_frame_bytes > 7790 indicates VBlank overflow risk. */
+typedef struct {
+    unsigned long current_frame_bytes;
+    unsigned long peak_frame_bytes;
+    unsigned long total_uploads;
+} render_dma_stats_t;
+
+void render_dma_stats_get(render_dma_stats_t *out);
+void render_dma_stats_reset(void);   /* zero peak + total + current */
+void render_dma_stats_frame_end(void); /* roll current into peak, reset current */
+
 #endif /* RENDER_ABI_H */

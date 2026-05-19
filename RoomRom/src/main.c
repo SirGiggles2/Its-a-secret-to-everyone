@@ -1576,6 +1576,10 @@ void roomrom_debug_tick(void)
         nes_ram[0x07F6u] = (unsigned char)players[0].y;
         nes_ram[0x07F7u] = s_room_id;
         SYS_doVBlankProcess();
+        /* Phase Q v2: roll per-frame DMA byte tally into peak tracker
+         * and reset accumulator for next frame. Probes read peak via
+         * render_dma_stats_get(). */
+        render_dma_stats_frame_end();
         s_frame_counter++;
         /* Phase 7 root-cause fix 2026-05-16 — port NES Z_07.asm:519
          * `INC FrameCounter` from the NES NMI handler. The drained

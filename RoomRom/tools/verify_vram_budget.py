@@ -44,9 +44,18 @@ VDP_TABLES = {
     # src/state/vram_map_state.h. Deferred to a future cleanup phase.
     "plane_ab": (0xC000, 0xC000 + 0x1000),  # SHARED A+B 4 KB
     "window":   (0xE000, 0xE000 + 0x1000),  # tile 1792..1919 (4 KB)
-    "h_scroll": (0xF000, 0xF000 + 0x0400),  # tile 1920..1951 (1 KB)
+    "h_scroll": (0xF000, 0xF000 + 0x0400),  # tile 1920..1951 (1 KB allocated)
     "sat":      (0xF400, 0xF400 + 0x0280),  # tile 1952..1971 (640 B)
 }
+
+# Phase L (2026-05-19): HScroll mode = HSCROLL_PLANE per RoomRom/src/main.c
+# init_video uses SGDK default. HSCROLL_PLANE encoding writes ONE 32-bit
+# entry at byte 0 of the table = 4 bytes used out of 1024 allocated.
+# Remaining 1020 B (~31 tiles) is unused scratch — adjacent to SAT,
+# not addressable as contiguous tile data without rebasing HScroll
+# elsewhere. Documented as available SAT-extension headroom.
+HSCROLL_TABLE_USED_BYTES = 4
+HSCROLL_TABLE_FREE_BYTES = 1024 - HSCROLL_TABLE_USED_BYTES
 
 # Conservative end-of-tile-data limit. Planes A+B sit at $C000 (shared);
 # anything past that overlaps and gets clobbered each frame. $D000-$DFFF
@@ -223,6 +232,15 @@ def main():
         f"HUD_BACKDROP=retired (+8 tiles freed)  "
         f"headroom={headroom_tiles} tiles before VDP tables"
         f"{free_zone_suffix}"
+    )
+    # Phase L (2026-05-19): surface HScroll table unused-byte count
+    # for observability. HSCROLL_PLANE writes 4 B of 1024 B allocated;
+    # 1020 B available as SAT extension scratch (not addressable as
+    # tile data — adjacent to SAT not contiguous with BG/SPR/ITEM).
+    print(
+        f"  hscroll_table_unused={HSCROLL_TABLE_FREE_BYTES} bytes "
+        f"(HSCROLL_PLANE mode uses 4 B of 1 KB allocated; available as "
+        f"SAT-extension scratch only)"
     )
 
 

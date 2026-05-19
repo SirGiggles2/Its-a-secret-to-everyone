@@ -82,6 +82,12 @@ static const roomrom_vram_contract_t *s_target_contract = 0;
 
 static unsigned long  s_total_bytes_dma = 0u;
 static unsigned short s_request_count = 0u;
+/* Phase M cont. (2026-05-19): track high-water tile count we've ever
+ * blanked into the SCENE_OBJ slot. BLANK fills max(last_used, current)
+ * so a steady-state UWSP→UWSP swap only zeros 34 tiles instead of the
+ * full 114-tile slot, recovering ~2560 B of CPU-fill work per swap.
+ * Tail (last_used..max_capacity) stays zero across same-size swaps. */
+static unsigned short s_last_used_tiles = 0u;
 
 /* PR-5 boss state machine — declared up here so level_chr_swap_init()
  * can reset both at once. Definitions of *_for_scene helpers + the
@@ -93,6 +99,11 @@ static const roomrom_vram_contract_t *s_boss_target_contract = 0;
 
 static unsigned long  s_boss_total_bytes_dma = 0u;
 static unsigned short s_boss_request_count = 0u;
+/* Phase M cont. (2026-05-19): per-boss-state-machine high-water tracker
+ * for the same BLANK shrink optimization. Boss banks are typically
+ * smaller (64 tiles vs OWSP 114) so this state machine benefits from
+ * targeted BLANK instead of always-full-slot fill. */
+static unsigned short s_boss_last_used_tiles = 0u;
 
 void level_chr_swap_init(void)
 {
@@ -102,6 +113,7 @@ void level_chr_swap_init(void)
     s_target_contract = 0;
     s_total_bytes_dma = 0u;
     s_request_count = 0u;
+    s_last_used_tiles = 0u;
 
     /* PR-5: boss state machine shares the SCENE_OBJ slot. */
     s_boss_state = LEVEL_CHR_SWAP_IDLE;
@@ -110,6 +122,7 @@ void level_chr_swap_init(void)
     s_boss_target_contract = 0;
     s_boss_total_bytes_dma = 0u;
     s_boss_request_count = 0u;
+    s_boss_last_used_tiles = 0u;
 }
 
 void level_chr_swap_request(roomrom_scene_id_t scene)
@@ -146,14 +159,20 @@ void level_chr_swap_tick(void)
     }
 
     case LEVEL_CHR_SWAP_BLANK: {
-        /* Zero-fill the FULL SCENE_OBJ slot, not just c->tile_count.
-         * Codex P0-2: prevents stale sub-pal aliases from showing during
-         * the half-DMA gap when bank shrinks (e.g. UW 136 → OW 114 leaves
-         * 22 stale tiles unless we BLANK the full slot). CPU fill (no
-         * DMA queue cost). */
+        /* Phase M cont. (2026-05-19): BLANK only max(last_used,
+         * current). Codex P0-2 originally cleared full 114-tile slot
+         * to guard against sub-pal aliasing tail; post-Phase-F UWSP is
+         * 1x (no aliasing) so safe to scope BLANK to actual content.
+         * High-water tracker s_last_used_tiles ensures we still clear
+         * stale tail when shrinking from a larger prior scene. */
         if (c != 0 && c->tile_count > 0u) {
-            VDP_fillTileData(0u, c->tile_base, SCENE_OBJ_SLOT_TILES, FALSE);
-            s_total_bytes_dma += (unsigned long)SCENE_OBJ_SLOT_TILES * 32ul;
+            unsigned short blank_tiles =
+                (c->tile_count > s_last_used_tiles)
+                    ? c->tile_count
+                    : s_last_used_tiles;
+            VDP_fillTileData(0u, c->tile_base, blank_tiles, FALSE);
+            s_total_bytes_dma += (unsigned long)blank_tiles * 32ul;
+            s_last_used_tiles = c->tile_count;
         }
         s_state = LEVEL_CHR_SWAP_DMA_SCENE_A;
         return;
@@ -291,12 +310,18 @@ void level_chr_boss_tick(void)
     }
 
     case LEVEL_CHR_SWAP_BLANK: {
-        /* Clear FULL SCENE_OBJ slot to avoid stale-tail aliasing when
-         * the smaller boss bank (64 tiles) lands on top of the larger
-         * enemy bank (136 tiles) -- Codex P0-2. */
+        /* Phase M cont. (2026-05-19): BLANK shrink optimization. Same
+         * high-water tracker as enemy state machine — boss banks (64
+         * tiles) follow enemy banks (typically 34); shrinking to
+         * actual c->tile_count saves ~50 tile fill per boss entry. */
         if (c != 0 && c->tile_count > 0u) {
-            VDP_fillTileData(0u, c->tile_base, SCENE_OBJ_SLOT_TILES, FALSE);
-            s_boss_total_bytes_dma += (unsigned long)SCENE_OBJ_SLOT_TILES * 32ul;
+            unsigned short blank_tiles =
+                (c->tile_count > s_boss_last_used_tiles)
+                    ? c->tile_count
+                    : s_boss_last_used_tiles;
+            VDP_fillTileData(0u, c->tile_base, blank_tiles, FALSE);
+            s_boss_total_bytes_dma += (unsigned long)blank_tiles * 32ul;
+            s_boss_last_used_tiles = c->tile_count;
         }
         s_boss_state = LEVEL_CHR_SWAP_DMA_SCENE_A;
         return;

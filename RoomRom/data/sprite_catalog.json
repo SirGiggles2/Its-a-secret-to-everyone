@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "generated_by": "tools/atlas/gen_sprite_catalog.py",
-  "verifier_output": "verify_vram_budget: OK  BG=tiles 1..532  SPR=tiles 533..819  ITEM=tiles 820..917  BOSS=SCENE_OBJ-shared (NES parity)  HUD_BACKDROP=retired (+8 tiles freed)  headroom=618 tiles before VDP tables",
+  "verifier_output": "verify_vram_budget: OK  BG=tiles 1..532  SPR=tiles 533..819  ITEM=tiles 820..917  BOSS=SCENE_OBJ-shared (NES parity)  HUD_BACKDROP=retired (+8 tiles freed)  headroom=618 tiles before VDP tables\n  hscroll_table_unused=1020 bytes (HSCROLL_PLANE mode uses 4 B of 1 KB allocated; available as SAT-extension scratch only)",
   "vram_map": {
     "BG_TILE_BASE": 1,
     "BG_TILE_COUNT_PER_PAL": 532,

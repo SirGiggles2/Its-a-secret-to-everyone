@@ -38,6 +38,19 @@
  * BGB @ $E000. Title H32 layout sets BGB via reg 4 = $07 ($E000) too. */
 #define PLANE_B_BASE 0xE000u
 
+/* Phase Q v2 (2026-05-19): DMA byte-count telemetry storage. Defined
+ * up here so the static inline accumulator helper is visible to every
+ * upload primitive below. Public getters at end of file. */
+static unsigned long s_dma_current_frame_bytes = 0UL;
+static unsigned long s_dma_peak_frame_bytes = 0UL;
+static unsigned long s_dma_total_uploads = 0UL;
+
+static inline void dma_stats_record(unsigned long bytes)
+{
+    s_dma_current_frame_bytes += bytes;
+    s_dma_total_uploads++;
+}
+
 /* CRAM color words per palette. */
 #define CRAM_COLORS_PER_PAL 16u
 
@@ -260,6 +273,7 @@ void render_chr_upload(unsigned short vram_addr,
      * ROM byte assets can legally link at odd addresses; word-reading them
      * would address-error on 68000. */
     vram_dma_upload(src, vram_addr, byte_count);
+    dma_stats_record((unsigned long)byte_count);
 }
 
 /* ---- Phase F3 raw streaming helpers ---- */
@@ -309,9 +323,11 @@ void render_cram_write_color(unsigned short slot, unsigned short value)
 /* Open CRAM at offset 0 and stream count color words. */
 void render_cram_upload(const unsigned short *src, unsigned short count)
 {
+    unsigned long bytes = (unsigned long)count * 2UL;
     render_set_autoinc_word();
     VDP_CTRL_LONG = 0xC0000000UL;
     while (count--) VDP_DATA_WORD = *src++;
+    dma_stats_record(bytes);
 }
 
 /* Open CRAM at start_slot and stream count color words.
@@ -321,8 +337,10 @@ void render_cram_subrange_upload(unsigned short start_slot,
                                  const unsigned short *src,
                                  unsigned short count)
 {
+    unsigned long bytes = (unsigned long)count * 2UL;
     render_cram_open_write(start_slot);
     while (count--) VDP_DATA_WORD = *src++;
+    dma_stats_record(bytes);
 }
 
 /* Phase 12.2 SGDK-1 cleanup: VRAM word read at vram_addr.
@@ -480,4 +498,29 @@ extern void c_copy_bank_to_window(unsigned int bank);
 void render_bank_window_load(unsigned char bank)
 {
     c_copy_bank_to_window((unsigned int)bank);
+}
+
+/* Phase Q v2 public getters (storage + dma_stats_record helper at top
+ * of file so every upload primitive sees the inline accumulator). */
+void render_dma_stats_get(render_dma_stats_t *out)
+{
+    if (!out) return;
+    out->current_frame_bytes = s_dma_current_frame_bytes;
+    out->peak_frame_bytes    = s_dma_peak_frame_bytes;
+    out->total_uploads       = s_dma_total_uploads;
+}
+
+void render_dma_stats_reset(void)
+{
+    s_dma_current_frame_bytes = 0UL;
+    s_dma_peak_frame_bytes    = 0UL;
+    s_dma_total_uploads       = 0UL;
+}
+
+void render_dma_stats_frame_end(void)
+{
+    if (s_dma_current_frame_bytes > s_dma_peak_frame_bytes) {
+        s_dma_peak_frame_bytes = s_dma_current_frame_bytes;
+    }
+    s_dma_current_frame_bytes = 0UL;
 }
