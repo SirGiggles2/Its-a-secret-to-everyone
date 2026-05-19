@@ -80,23 +80,33 @@ candle_fire wired and live (4-frame cycle in `candle_fire.c::advance_anim`).
 fairy_spark renderer scaffold present (`roomrom_sprites_set_fairy_spark`);
 caller not yet wired (fairy enemy code not ported).
 
-## Known data issues (deferred)
+## Known data issues
 
-### K-MF1: heart_container + fairy_spark tile 0x50/0x51 collision
-Manifest stores CommonSpritePatterns version of tile 0x50/0x51 (heart
-container art). DemoSpritePatterns version (fairy art) is DIFFERENT
-bytes:
+### K-MF1: heart_container + fairy_spark tile 0x50/0x51 collision — **RESOLVED 2026-05-19**
 
+Manifest previously stored CommonSpritePatterns version of tile
+0x50/0x51 (heart container art); fairy_spark item_def referenced
+the same atlas key, so fairy renderer would have emitted heart
+container CHR instead of fairy CHR.
+
+**Fix shipped:** introduced synthetic atlas keys `0xF0`/`0xF1`/`0xF2`/
+`0xF3` per variant, populated from `DemoSpritePatterns.dat[0x50..0x53]`
+(fairy F0/F1 top/bottom bytes). fairy_spark_f0/f1 `item_def.tile_ids`
+now point to these distinct atlas slots. Atlas regen confirms
+`ROOMROM_ITEM_TILE_FAIRY_SPARK_F0` at offset 94 (separate from
+`ROOMROM_ITEM_TILE_HEART_CONTAINER` at offset 58).
+
+Verified bytes (DemoSpritePatterns source):
 ```
-manifest [0x50]: 38 54 FF C7 C7 6E 46 28 44 28 81 B9 B9 52 3A 54  (heart container)
-demo     [0x50]: 07 7E FE FC FC FC F8 F8 00 00 00 00 00 00 00 00  (fairy)
+fairy F0 top [0x50]: 07 7E FE FC FC FC F8 F8 00 00 00 00 00 00 00 00
+fairy F0 bot [0x51]: F8 F0 F0 E0 00 00 00 00 00 00 00 00 00 00 00 00
+fairy F1 top [0x52]: C0 70 78 38 3C 1C 1E 0F 00 00 00 00 00 00 00 00
+fairy F1 bot [0x53]: 0F 0F 07 07 07 03 01 00 00 00 00 00 00 00 00 00
 ```
 
-If `roomrom_sprites_set_fairy_spark` is wired into a live caller, it
-will render heart container art instead of fairy art. Fix: extract
-fairy_spark_f0/f1 from DemoSpritePatterns into separate atlas slots
-(distinct from heart_container tile IDs) before fairy renderer goes
-live. Tracked here, not blocking — fairy enemy code currently absent.
+Each new tile entry carries `atlas_alias_for_nes_tile` + `atlas_alias_note`
+fields documenting that the synthetic key resolves to a NES tile in
+the DemoSpritePatterns bank.
 
 ### Magic rod animation (NES static — no fix required)
 NES Z1 does not animate the magic rod (single static frame per

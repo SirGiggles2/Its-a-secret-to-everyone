@@ -160,8 +160,8 @@ Atlas defined by `RoomRom/data/item_chr_manifest.json`; emitted via `RoomRom/too
 | `triforce_piece` | triforce_piece | static | 0x6E | `0x6E 0x6F 0x70 0x71` | 2×2 | wide_16x16_pair |
 | `magic_shot_v` | magic_shot | vertical | 0x7A | `0x7A 0x7B` | 2×2 | wide_16x16_mirrored_8x16_phase_cycle |
 | `magic_shot_h` | magic_shot | horizontal | 0x7C | `0x7C 0x7D 0x7E 0x7F` | 2×2 | wide_16x16_pair |
-| `fairy_spark_f0` | fairy_spark | static | 0x50 | `0x50 0x51` | 1×2 | narrow_8x16 |
-| `fairy_spark_f1` | fairy_spark | static | 0x52 | `0x52 0x53` | 1×2 | narrow_8x16 |
+| `fairy_spark_f0` | fairy_spark | static | 0x50 | `0xF0 0xF1` | 1×2 | narrow_8x16 |
+| `fairy_spark_f1` | fairy_spark | static | 0x52 | `0xF2 0xF3` | 1×2 | narrow_8x16 |
 
 ## Cleanup state (as of 2026-05-18)
 

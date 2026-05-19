@@ -490,9 +490,10 @@
         2
       ],
       "tile_ids": [
-        "0x50",
-        "0x51"
+        "0xF0",
+        "0xF1"
       ],
+      "atlas_alias_note": "K-MF1 fix (2026-05-19): NES tile_id 0x50/0x51 in DemoSpritePatterns bank collides with heart_container 0x50/0x51 in CommonSpritePatterns bank (different pixel bytes, same NES tile index). Atlas uses synthetic keys 0xF0/0xF1 -> DemoSpritePatterns[0x50/0x51] to keep both items resolvable. Source bytes verified via reference/aldonunez/dat/DemoSpritePatterns.dat.",
       "draw_rule": "narrow_8x16",
       "frame_index": 0,
       "frame_subpal": 1,
@@ -509,9 +510,10 @@
         2
       ],
       "tile_ids": [
-        "0x52",
-        "0x53"
+        "0xF2",
+        "0xF3"
       ],
+      "atlas_alias_note": "K-MF1 fix (2026-05-19): atlas-local keys 0xF2/0xF3 -> DemoSpritePatterns[0x52/0x53]. See fairy_spark_f0 note.",
       "draw_rule": "narrow_8x16",
       "frame_index": 1,
       "frame_subpal": 1,
@@ -1126,6 +1128,42 @@
           "sha256": "phase_k_2026_05_18",
           "flat_pattern": false,
           "bytes": "0000000000000000FFFF515757115757"
+        },
+        "0xF0": {
+          "ppu_addr": "0x0500",
+          "source": "reference_aldonunez_DemoSpritePatterns_dat",
+          "sha256": "7cbee880deb137228e52a656cba78e59eee72383e4257a8934151913b710db09",
+          "flat_pattern": false,
+          "atlas_alias_for_nes_tile": "0x50",
+          "atlas_alias_note": "K-MF1 (2026-05-19): synthetic atlas key. NES tile 0x50 in DemoSpritePatterns bank (fairy F0 top). Distinct from heart_container CommonSpritePatterns[0x50].",
+          "bytes": "077EFEFCFCFCF8F80000000000000000"
+        },
+        "0xF1": {
+          "ppu_addr": "0x0510",
+          "source": "reference_aldonunez_DemoSpritePatterns_dat",
+          "sha256": "88c14c698ad5fa0f521bfb820262339fac9802b2db2fe8f483730de19a2147ff",
+          "flat_pattern": false,
+          "atlas_alias_for_nes_tile": "0x51",
+          "atlas_alias_note": "K-MF1: NES tile 0x51 in DemoSpritePatterns (fairy F0 bottom).",
+          "bytes": "F8F0F0E0000000000000000000000000"
+        },
+        "0xF2": {
+          "ppu_addr": "0x0520",
+          "source": "reference_aldonunez_DemoSpritePatterns_dat",
+          "sha256": "7786f0d4363ac1ab6efc33117eb93c54bea1289bdbd64b816ccf7c27b6a7f55e",
+          "flat_pattern": false,
+          "atlas_alias_for_nes_tile": "0x52",
+          "atlas_alias_note": "K-MF1: NES tile 0x52 in DemoSpritePatterns (fairy F1 top).",
+          "bytes": "C07078383C1C1E0F0000000000000000"
+        },
+        "0xF3": {
+          "ppu_addr": "0x0530",
+          "source": "reference_aldonunez_DemoSpritePatterns_dat",
+          "sha256": "fe3115d8f32a99792627f78f6461b2daaabc13fa67aebeae2b71748a95b7d81c",
+          "flat_pattern": false,
+          "atlas_alias_for_nes_tile": "0x53",
+          "atlas_alias_note": "K-MF1: NES tile 0x53 in DemoSpritePatterns (fairy F1 bottom).",
+          "bytes": "0F0F0707070301000000000000000000"
         }
       }
     },
@@ -1735,6 +1773,42 @@
           "sha256": "phase_k_2026_05_18",
           "flat_pattern": false,
           "bytes": "0000000000000000FFFF515757115757"
+        },
+        "0xF0": {
+          "ppu_addr": "0x0500",
+          "source": "reference_aldonunez_DemoSpritePatterns_dat",
+          "sha256": "7cbee880deb137228e52a656cba78e59eee72383e4257a8934151913b710db09",
+          "flat_pattern": false,
+          "atlas_alias_for_nes_tile": "0x50",
+          "atlas_alias_note": "K-MF1 (2026-05-19): synthetic atlas key. NES tile 0x50 in DemoSpritePatterns bank (fairy F0 top). Distinct from heart_container CommonSpritePatterns[0x50].",
+          "bytes": "077EFEFCFCFCF8F80000000000000000"
+        },
+        "0xF1": {
+          "ppu_addr": "0x0510",
+          "source": "reference_aldonunez_DemoSpritePatterns_dat",
+          "sha256": "88c14c698ad5fa0f521bfb820262339fac9802b2db2fe8f483730de19a2147ff",
+          "flat_pattern": false,
+          "atlas_alias_for_nes_tile": "0x51",
+          "atlas_alias_note": "K-MF1: NES tile 0x51 in DemoSpritePatterns (fairy F0 bottom).",
+          "bytes": "F8F0F0E0000000000000000000000000"
+        },
+        "0xF2": {
+          "ppu_addr": "0x0520",
+          "source": "reference_aldonunez_DemoSpritePatterns_dat",
+          "sha256": "7786f0d4363ac1ab6efc33117eb93c54bea1289bdbd64b816ccf7c27b6a7f55e",
+          "flat_pattern": false,
+          "atlas_alias_for_nes_tile": "0x52",
+          "atlas_alias_note": "K-MF1: NES tile 0x52 in DemoSpritePatterns (fairy F1 top).",
+          "bytes": "C07078383C1C1E0F0000000000000000"
+        },
+        "0xF3": {
+          "ppu_addr": "0x0530",
+          "source": "reference_aldonunez_DemoSpritePatterns_dat",
+          "sha256": "fe3115d8f32a99792627f78f6461b2daaabc13fa67aebeae2b71748a95b7d81c",
+          "flat_pattern": false,
+          "atlas_alias_for_nes_tile": "0x53",
+          "atlas_alias_note": "K-MF1: NES tile 0x53 in DemoSpritePatterns (fairy F1 bottom).",
+          "bytes": "0F0F0707070301000000000000000000"
         }
       }
     }

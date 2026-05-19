@@ -556,8 +556,8 @@
       "direction_class": "static",
       "nes_frame_tile": "0x50",
       "tile_ids": [
-        "0x50",
-        "0x51"
+        "0xF0",
+        "0xF1"
       ],
       "sprite_size": [
         1,
@@ -571,8 +571,8 @@
       "direction_class": "static",
       "nes_frame_tile": "0x52",
       "tile_ids": [
-        "0x52",
-        "0x53"
+        "0xF2",
+        "0xF3"
       ],
       "sprite_size": [
         1,
