@@ -29,18 +29,29 @@ VRAM_MAP_H    = ROOT / "src" / "roomrom_vram_map.h"
 ITEM_CHR_H    = ROOT / "src" / "atlas" / "items_chr_x4.h"
 
 VDP_TABLES = {
-    # 64x32 plane layout (PR-2b: render_mode_set_h64v32 + BGA/BGB overrides).
-    # SGDK case 11 default places tables here, with our BGA->$C000,
-    # BGB->$E000 overrides keeping plane addresses fixed:
-    "plane_a":  (0xC000, 0xC000 + 0x1000),  # tile 1536..1663 (4 KB)
-    "window":   (0xD000, 0xD000 + 0x1000),  # tile 1664..1791 (4 KB)
-    "plane_b":  (0xE000, 0xE000 + 0x1000),  # tile 1792..1919 (4 KB)
+    # Actual VRAM table layout per RoomRom/src/main.c init_video (read live
+    # 2026-05-18 Phase E.0 verifier alignment). PR-2c chose to SHARE planes
+    # A+B at $C000 (BG_B mirrors BG_A during scrolls to avoid color-0 leak
+    # through to the other plane). Window is at $E000, NOT $D000 as a prior
+    # version of this dict claimed.
+    #
+    # Region $D000-$DFFF is FREE (4 KB / 128 tiles) — would yield headroom
+    # if planes A+B were relocated there and TILE_DATA_LIMIT raised to
+    # $D000. That relocation requires updating ROOMROM_PLANE_SHARED_BASE
+    # (RoomRom/src/render_adapter_sgdk.c), PLANE_A_BASE
+    # (src/sgdk_adapter/render_adapter.c), the init_video VDP_setBG[AB]
+    # Address calls, and the _Static_assert in
+    # src/state/vram_map_state.h. Deferred to a future cleanup phase.
+    "plane_ab": (0xC000, 0xC000 + 0x1000),  # SHARED A+B 4 KB
+    "window":   (0xE000, 0xE000 + 0x1000),  # tile 1792..1919 (4 KB)
     "h_scroll": (0xF000, 0xF000 + 0x0400),  # tile 1920..1951 (1 KB)
     "sat":      (0xF400, 0xF400 + 0x0280),  # tile 1952..1971 (640 B)
 }
 
-# Conservative end-of-tile-data limit for 64x32 mode = $C000 (tile 1536).
-# Anything beyond this overlaps VDP tables and gets clobbered each frame.
+# Conservative end-of-tile-data limit. Planes A+B sit at $C000 (shared);
+# anything past that overlaps and gets clobbered each frame. $D000-$DFFF
+# is free but unreachable as contiguous tile data without relocating
+# planes (see VDP_TABLES note above).
 TILE_DATA_LIMIT_BYTES = 0xC000
 TILE_DATA_LIMIT_TILES = TILE_DATA_LIMIT_BYTES // 32  # 1536
 
