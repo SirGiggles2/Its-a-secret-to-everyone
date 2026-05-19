@@ -35,6 +35,7 @@ The 4 manual findings (M1-M4) below are all either intentional divergences, hard
 4. **Genesis port Start-button does not open inventory.** Pressed Start mid-gameplay on Genesis kept Link walking; on NES it opened inventory. Likely a genuine missing wire-up — `09_inventory_open` should be a P0 ticket investigated separately.
 5. **Room locked at $77 across all gameplay scenes.** Genesis port's OW navigation worked (Link XY changed) but room boundaries did not trigger reload to neighbors. Either intentional dev-loop confinement (memory `project_roomrom_debug_teleport`) or a transition regression.
 6. **v1 RETRACTED:** v1 classifier surfaced 14 Class A breaks @ 46 cells each. Root cause: v1 NES probe read nametable via `PPU Bus` domain which returns open-bus when not actively rendering — every byte came back as $F2 sentinel. Same issue affected PALRAM (PPU-Bus read returned all $F2). v2 probe uses dedicated NES BizHawk domains: CIRAM for nametable, PALRAM for palette, CHR for pattern tables, WRAM for main RAM. Domains discovered + logged to `scene_walk_nes/_domains.txt`.
+7. **R2 MODE_TELEPORT partially works.** v3 probe added scenes 14-17 to reach OW $37 (L1 entrance), UW $77 (entry), UW $73 (combat), UW $35 (boss Aquamentus) via the X-button teleport API (main.c:2003-2004, 2304-2314). Actual result: Genesis landed at $7B (not $37) for scene 14 and remained there for scenes 15-17 — START scene toggle and subsequent teleports did not navigate further. Likely causes: (a) tap-helper's 1-frame press doesn't register as edge-press in MODE_TELEPORT (main.c uses `pressed = curr & ~prev`), (b) Link mid-sword-state from scene 12 strips D-pad input (main.c:2300-2302 `roomrom_combat_link_locked`), (c) state-mirror at $7205 reads stale value. Scenes 14-17 captures are valid byte-data but for room $7B, not their named targets. NES side is placeholder per G4 (save-state recording deferred). Real R2 closure requires either save-state load on Genesis side (mirrors NES approach) or fixing the tap-helper edge-detect timing.
 
 ## Manual visual findings (from screenshot inspection)
 
@@ -73,7 +74,7 @@ These breaks are visible to the eye comparing PNG captures side-by-side; they ma
 
 ---
 
-## Summary — 3 breaks across 15 scenes
+## Summary — 5 breaks across 17 scenes
 
 | Scene | Breaks | Classes |
 |---|---|---|
@@ -90,8 +91,10 @@ These breaks are visible to the eye comparing PNG captures side-by-side; they ma
 | 11_inventory_close | 0 | (clean) |
 | 12_sword_swing | 0 | (clean) |
 | 13_extended_walk | 1 | A |
-| 14_stress_harness | 1 | A |
-| 15_stress_harness_settle | 1 | A |
+| 14_ow_l1_entrance | 1 | A |
+| 15_uw1_entry | 1 | A |
+| 16_uw1_combat | 1 | A |
+| 17_uw1_boss_aquamentus | 1 | A |
 
 ---
 
@@ -180,26 +183,52 @@ _No breaks detected._
 
 ---
 
-## 14_stress_harness
+## 14_ow_l1_entrance
 
-**Captures:** [gen](C:\tmp\scene_walk_gen\14_stress_harness/) [nes](C:\tmp\scene_walk_nes\14_stress_harness/)
+**Captures:** [gen](C:\tmp\scene_walk_gen\14_ow_l1_entrance/) [nes](C:\tmp\scene_walk_nes\14_ow_l1_entrance/)
 
 ### Break 1 — Class A
 
-- **Diff:** 9 BG cells blank on Genesis where NES has tile (playfield only, HUD rows excluded). Top combos: ($01, sub0)x3, ($04, sub0)x2, ($02, sub0)x1, ($FF, sub0)x1, ($88, sub0)x1, ($20, sub0)x1
+- **Diff:** 5 BG cells blank on Genesis where NES has tile (playfield only, HUD rows excluded). Top combos: ($9D, sub0)x1, ($01, sub0)x1, ($FF, sub0)x1, ($88, sub0)x1, ($20, sub0)x1
 - **Fix site:** `tools/probes/audit_per_tile_subpal.py — add (tile_id, sub_pal) combos above to force-include + regen sparse LUT`
 - **Estimated cost:** 30 min per cluster
 - **Priority:** P1
 
 ---
 
-## 15_stress_harness_settle
+## 15_uw1_entry
 
-**Captures:** [gen](C:\tmp\scene_walk_gen\15_stress_harness_settle/) [nes](C:\tmp\scene_walk_nes\15_stress_harness_settle/)
+**Captures:** [gen](C:\tmp\scene_walk_gen\15_uw1_entry/) [nes](C:\tmp\scene_walk_nes\15_uw1_entry/)
 
 ### Break 1 — Class A
 
-- **Diff:** 9 BG cells blank on Genesis where NES has tile (playfield only, HUD rows excluded). Top combos: ($01, sub0)x3, ($04, sub0)x2, ($02, sub0)x1, ($FF, sub0)x1, ($88, sub0)x1, ($20, sub0)x1
+- **Diff:** 5 BG cells blank on Genesis where NES has tile (playfield only, HUD rows excluded). Top combos: ($9D, sub0)x1, ($01, sub0)x1, ($FF, sub0)x1, ($88, sub0)x1, ($20, sub0)x1
+- **Fix site:** `tools/probes/audit_per_tile_subpal.py — add (tile_id, sub_pal) combos above to force-include + regen sparse LUT`
+- **Estimated cost:** 30 min per cluster
+- **Priority:** P1
+
+---
+
+## 16_uw1_combat
+
+**Captures:** [gen](C:\tmp\scene_walk_gen\16_uw1_combat/) [nes](C:\tmp\scene_walk_nes\16_uw1_combat/)
+
+### Break 1 — Class A
+
+- **Diff:** 5 BG cells blank on Genesis where NES has tile (playfield only, HUD rows excluded). Top combos: ($9D, sub0)x1, ($01, sub0)x1, ($FF, sub0)x1, ($88, sub0)x1, ($20, sub0)x1
+- **Fix site:** `tools/probes/audit_per_tile_subpal.py — add (tile_id, sub_pal) combos above to force-include + regen sparse LUT`
+- **Estimated cost:** 30 min per cluster
+- **Priority:** P1
+
+---
+
+## 17_uw1_boss_aquamentus
+
+**Captures:** [gen](C:\tmp\scene_walk_gen\17_uw1_boss_aquamentus/) [nes](C:\tmp\scene_walk_nes\17_uw1_boss_aquamentus/)
+
+### Break 1 — Class A
+
+- **Diff:** 5 BG cells blank on Genesis where NES has tile (playfield only, HUD rows excluded). Top combos: ($9D, sub0)x1, ($01, sub0)x1, ($FF, sub0)x1, ($88, sub0)x1, ($20, sub0)x1
 - **Fix site:** `tools/probes/audit_per_tile_subpal.py — add (tile_id, sub_pal) combos above to force-include + regen sparse LUT`
 - **Estimated cost:** 30 min per cluster
 - **Priority:** P1

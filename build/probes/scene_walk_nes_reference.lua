@@ -144,17 +144,33 @@ press({Down=true}, 300); idle(60)
 press({Right=true}, 300); idle(60)
 capture("13_extended_walk")
 
--- 14: stress_harness — no harness on NES; capture current state for diff
--- (NES has no debug stress harness; this captures equivalent frame budget
--- so the diff column at this label simply documents the divergence)
-idle(180)
-capture("14_stress_harness")
+-- ============================================================
+-- R2 coverage extension placeholders
+-- ============================================================
+-- NES side cannot mirror Genesis MODE_TELEPORT; reaching L1 entrance /
+-- UW1 / Aquamentus requires either (a) save-state load (deferred per
+-- G4) or (b) ~5 min of brittle joypad-driven navigation. v1 captures
+-- the current OW state at each new label as a placeholder so the diff
+-- classifier surfaces scene-state-mismatch tickets the human can
+-- triage. Replace with savestate.load(...) once states are recorded.
 
--- 15: stress_harness_settle
-idle(600)
-capture("15_stress_harness_settle")
+-- 14: ow_l1_entrance — Genesis teleports to OW $37; NES still at OW spawn
+idle(120)
+capture("14_ow_l1_entrance")
 
-gui.text(8, 8, "scene_walk_nes done")
+-- 15: uw1_entry — Genesis toggles scene to UW; NES has no equivalent
+idle(120)
+capture("15_uw1_entry")
+
+-- 16: uw1_combat — placeholder
+idle(120)
+capture("16_uw1_combat")
+
+-- 17: uw1_boss_aquamentus — placeholder
+idle(120)
+capture("17_uw1_boss_aquamentus")
+
+gui.text(8, 8, "scene_walk_nes v3 done")
 idle(30)
-print("scene_walk_nes_reference: done")
+print("scene_walk_nes_reference v3: done")
 client.exit()

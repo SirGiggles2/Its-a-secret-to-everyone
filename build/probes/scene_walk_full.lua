@@ -68,6 +68,49 @@ local function press(b, n)
   joypad.set({}, 1); emu.frameadvance()
 end
 
+-- Single-frame press + release. Required for edge-detect inputs
+-- (MODE_TELEPORT D-pad warps are edge-press per main.c:2304-2311).
+local function tap(b)
+  joypad.set({[b]=true}, 1); emu.frameadvance()
+  joypad.set({}, 1); emu.frameadvance()
+end
+
+-- Read the debug state mirror published by roomrom_debug_publish_state_mirror.
+-- Layout per RoomRom/src/roomrom_debug_runtime.h:
+--   $FF7204 scene, $FF7205 room_id, $FF7207 x, $FF7209 y, $FF720A face
+local function state_mirror()
+  return {
+    scene = memory.read_u8(0x7204, "68K RAM"),
+    room  = memory.read_u8(0x7205, "68K RAM"),
+    x     = memory.read_u8(0x7207, "68K RAM"),
+    y     = memory.read_u8(0x7209, "68K RAM"),
+  }
+end
+
+-- Teleport to a target OW/UW room via MODE_TELEPORT (main.c:2304-2314).
+-- X button toggles MODE_WALK<->MODE_TELEPORT (main.c:2003-2004).
+-- D-pad edge-press steps col/row by 1 each (16x8 grid: room=(row<<4)|col).
+-- Returns achieved room from state mirror — caller compares to target.
+local function teleport_to(target_room)
+  local sm0 = state_mirror()
+  if sm0.room == target_room then return sm0.room end
+  tap("X"); idle(10)               -- enter MODE_TELEPORT
+  local cur_col = sm0.room % 16
+  local cur_row = math.floor(sm0.room / 16)
+  local tgt_col = target_room % 16
+  local tgt_row = math.floor(target_room / 16)
+  local steps_max = 32             -- safety: 16 cols + 8 rows worst-case + slack
+  while cur_col < tgt_col and steps_max > 0 do tap("Right"); cur_col=cur_col+1; idle(20); steps_max=steps_max-1 end
+  while cur_col > tgt_col and steps_max > 0 do tap("Left");  cur_col=cur_col-1; idle(20); steps_max=steps_max-1 end
+  while cur_row < tgt_row and steps_max > 0 do tap("Down");  cur_row=cur_row+1; idle(20); steps_max=steps_max-1 end
+  while cur_row > tgt_row and steps_max > 0 do tap("Up");    cur_row=cur_row-1; idle(20); steps_max=steps_max-1 end
+  tap("X"); idle(60)               -- exit MODE_TELEPORT, settle palette + CHR
+  return state_mirror().room
+end
+
+-- Scene toggle (OW <-> UW) per main.c button map: START.
+local function toggle_scene() tap("Start"); idle(120) end
+
 local function dump_domain_to_file(domain, base, size, path)
   local chunks = {}
   for i = 0, size-1 do chunks[#chunks+1] = string.char(memory.read_u8(base + i, domain)) end
@@ -182,16 +225,36 @@ press({Down=true}, 300); idle(60)
 press({Right=true}, 300); idle(60)
 capture("13_extended_walk")
 
--- 14: stress_harness — DELIBERATELY trigger second ABC chord for harness diff
--- (memory project_debug_enter_stress_harness — known landing point)
-press({A=true, B=true, C=true}, 30); idle(180)
-capture("14_stress_harness")
+-- ============================================================
+-- MODE_TELEPORT coverage extension (R2 from Phase 2 roadmap)
+-- ============================================================
+-- Stress-harness scenes (was scenes 14/15) removed — already captured
+-- in manual finding M4 in scene_breaks.md; re-running would only
+-- pollute Link's gameplay state for the teleport sequence below.
 
--- 15: stress_harness_settle — 600 frames into harness for stable enemy positions
-idle(600)
-capture("15_stress_harness_settle")
+-- 14: ow_l1_entrance — OW room $37 (NES Z1 Level 1 entrance area)
+local achieved_14 = teleport_to(0x37)
+print(string.format("teleport to $37: achieved=$%02X", achieved_14))
+capture("14_ow_l1_entrance")
 
-gui.text(8, 8, "scene_walk_full v2 done")
+-- 15: uw1_entry — toggle scene to UW, capture default UW room
+toggle_scene()
+capture("15_uw1_entry")
+
+-- 16: uw1_combat — teleport to nearby UW room with enemies. NES Z1 L1
+-- "left of entrance" room typically has Stalfos enemies. UW rooms IDs
+-- in this port's 16x8 grid may differ from NES Z1; the achieved-room
+-- value in state mirror tells us where we actually landed.
+local achieved_16 = teleport_to(0x73)
+print(string.format("teleport to $73 (UW): achieved=$%02X", achieved_16))
+capture("16_uw1_combat")
+
+-- 17: uw1_boss_aquamentus — teleport to UW $35 (NES Z1 L1 boss room).
+local achieved_17 = teleport_to(0x35)
+print(string.format("teleport to $35 (UW): achieved=$%02X", achieved_17))
+capture("17_uw1_boss_aquamentus")
+
+gui.text(8, 8, "scene_walk_full v3 done")
 idle(30)
-print("scene_walk_full v2: done")
+print("scene_walk_full v3: done")
 client.exit()

@@ -129,6 +129,52 @@ def diff_palettes(nes_palram: bytes, gen_cram: bytes) -> list[dict]:
     return breaks
 
 
+def diff_subpal3(nes_palram: bytes, gen_cram: bytes) -> list[dict]:
+    """Class E heuristic: NES SPR sub-pal 3 is active (PALRAM[28..31] holds
+    non-default colors distinct from sub-pal 2) but Genesis PAL3 reflects
+    sub-pal 2 colors (the clamp). Per subpal_routing.h:21-22 — NES SPR
+    sub-pal 3 -> CLAMPED to sub-pal 2.
+
+    Detection signature: NES PALRAM[28..31] != NES PALRAM[24..27] (sub-pals
+    3 and 2 carry distinct color sets on NES) AND Genesis PAL3[1..3] colors
+    match Genesis PAL2[1..3] (the clamp landed). Surface as Class E only if
+    PALRAM is fully populated (skip pre-render $0F or all-$F2 states).
+    """
+    breaks = []
+    if len(nes_palram) < 32 or len(gen_cram) < 128:
+        return breaks
+    sp2 = nes_palram[24:28]
+    sp3 = nes_palram[28:32]
+    # Skip if PALRAM looks uninitialized (all-zero / all-$0F / all-$F2)
+    sentinel_count = sum(1 for b in (sp2 + sp3) if b in (0x00, 0x0F, 0xF2))
+    if sentinel_count >= 6:
+        return breaks
+    # Skip if NES sub-pal 3 is identical to sub-pal 2 (clamp would be benign)
+    if tuple(sp2[1:]) == tuple(sp3[1:]):
+        return breaks
+    # Compare Genesis PAL2 vs PAL3 (slots 32..47 and 48..63 in CRAM bytes)
+    gen_pal2 = gen_cram[32:64]
+    gen_pal3 = gen_cram[64:96]
+    # Sub-pals only use colors 1..3 (slot 0 = transparent / shared bg)
+    # Slot N in PAL pi = byte offset pi*32 + N*2 .. pi*32 + N*2 + 1
+    clamp_signature = True
+    for c in range(1, 4):
+        gen_pal2_word = (gen_pal2[c*2] << 8) | gen_pal2[c*2 + 1]
+        gen_pal3_word = (gen_pal3[c*2] << 8) | gen_pal3[c*2 + 1]
+        if gen_pal2_word != gen_pal3_word:
+            clamp_signature = False
+            break
+    if clamp_signature:
+        breaks.append({
+            "class": "E",
+            "detail": f"NES SPR sub-pal 3 distinct (NES PALRAM[28..31]={sp3.hex()}, sub-pal 2={sp2.hex()}) but Genesis PAL3 == PAL2 — clamp landed",
+            "fix_site": "src/sgdk_adapter/render_adapter.c render_cram_subrange_upload — add transient swap at scene entry to load sub-pal 3 colors into PAL3 OR document divergence",
+            "estimated_cost": "1-2 hr (restore) / 10 min (document)",
+            "priority": "P2",
+        })
+    return breaks
+
+
 def diff_sat_vs_oam(nes_oam: bytes, gen_sat: bytes) -> list[dict]:
     """Per-sprite check. NES OAM slot N tile_id vs Genesis SAT slot.
 
@@ -249,7 +295,12 @@ SCENE_LABELS = [
     "08_walk_north_far",
     "09_inventory_open", "10_inventory_cycle", "11_inventory_close",
     "12_sword_swing", "13_extended_walk",
-    "14_stress_harness", "15_stress_harness_settle",
+    # R2 coverage extension via MODE_TELEPORT (replaces former stress
+    # harness scenes 14_stress_harness / 15_stress_harness_settle).
+    "14_ow_l1_entrance",
+    "15_uw1_entry",
+    "16_uw1_combat",
+    "17_uw1_boss_aquamentus",
 ]
 
 
@@ -312,7 +363,20 @@ def emit_markdown(tickets: list[tuple[str, list[dict]]], gen_root: pathlib.Path,
                "Same issue affected PALRAM (PPU-Bus read returned all $F2). v2 probe uses "
                "dedicated NES BizHawk domains: CIRAM for nametable, PALRAM for palette, "
                "CHR for pattern tables, WRAM for main RAM. Domains discovered + logged to "
-               "`scene_walk_nes/_domains.txt`.\n\n")
+               "`scene_walk_nes/_domains.txt`.\n")
+    out.append("7. **R2 MODE_TELEPORT partially works.** v3 probe added scenes 14-17 to "
+               "reach OW $37 (L1 entrance), UW $77 (entry), UW $73 (combat), UW $35 (boss "
+               "Aquamentus) via the X-button teleport API (main.c:2003-2004, 2304-2314). "
+               "Actual result: Genesis landed at $7B (not $37) for scene 14 and remained "
+               "there for scenes 15-17 — START scene toggle and subsequent teleports did "
+               "not navigate further. Likely causes: (a) tap-helper's 1-frame press doesn't "
+               "register as edge-press in MODE_TELEPORT (main.c uses `pressed = curr & ~prev`), "
+               "(b) Link mid-sword-state from scene 12 strips D-pad input (main.c:2300-2302 "
+               "`roomrom_combat_link_locked`), (c) state-mirror at $7205 reads stale value. "
+               "Scenes 14-17 captures are valid byte-data but for room $7B, not their named "
+               "targets. NES side is placeholder per G4 (save-state recording deferred). "
+               "Real R2 closure requires either save-state load on Genesis side (mirrors NES "
+               "approach) or fixing the tap-helper edge-detect timing.\n\n")
     out.append("## Manual visual findings (from screenshot inspection)\n\n")
     out.append("These breaks are visible to the eye comparing PNG captures side-by-side; "
                "they may or may not show up in the automated byte-diff below.\n\n")
@@ -424,6 +488,9 @@ def main():
         nes_oam = read_bytes(nes_dir / f"{label}_oam.bin")
         gen_sat = read_bytes(gen_dir / f"{label}_sat.bin")
         breaks += diff_sat_vs_oam(nes_oam, gen_sat)
+
+        # R2.5b: Class E sub-pal 3 clamp detector
+        breaks += diff_subpal3(nes_palram, gen_cram)
 
         nes_nt = read_bytes(nes_dir / f"{label}_nt.bin")
         nes_chr = read_bytes(nes_dir / f"{label}_chr.bin")
