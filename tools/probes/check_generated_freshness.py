@@ -130,6 +130,28 @@ GEN_SPECS: list[dict] = [
             "RoomRom/src/expanded_bg_chr.h",
         ],
     },
+    {
+        "name": "sprite_catalog",
+        "script": "tools/atlas/gen_sprite_catalog.py",
+        "inputs": [
+            "RoomRom/src/roomrom_vram_map.h",
+            "RoomRom/data/chr_atlas_master.json",
+            "RoomRom/data/item_chr_manifest.json",
+            "RoomRom/src/atlas/items_chr_x4.h",
+            "RoomRom/src/atlas/enemy_chr.h",
+            "RoomRom/src/atlas/link_chr.h",
+            "RoomRom/src/atlas/hud_chr.h",
+            "RoomRom/src/atlas/npc_chr.h",
+            "RoomRom/src/atlas/title_chr.h",
+            "RoomRom/src/atlas/fileselect_chr.h",
+            "RoomRom/src/atlas/boss_chr.h",
+        ],
+        "outputs": [
+            "docs/atlas/sprite_catalog.md",
+            "docs/atlas/vram_map.md",
+            "RoomRom/data/sprite_catalog.json",
+        ],
+    },
 ]
 
 
