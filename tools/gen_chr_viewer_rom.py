@@ -108,6 +108,17 @@ class Assembler:
         self.emit(opcode, 0x00)  # placeholder offset
         self.fixups.append((len(self.code) - 1, name, "rel"))
 
+    # ---- Indexed / additional ----
+    def sta_abs_y(self, a): self.emit(0x99, a & 0xFF, (a >> 8) & 0xFF)
+    def lda_abs_y(self, a): self.emit(0xB9, a & 0xFF, (a >> 8) & 0xFF)
+    def adc_zp(self, a):    self.emit(0x65, a)
+    def sbc_zp(self, a):    self.emit(0xE5, a)
+    def eor_imm(self, v):   self.emit(0x49, v)
+    def asl_a(self):        self.emit(0x0A)
+    def lsr_a(self):        self.emit(0x4A)
+    def ror_a(self):        self.emit(0x6A)
+    def rol_a(self):        self.emit(0x2A)
+
     # ---- Implicit ----
     def sei(self): self.emit(0x78)
     def cld(self): self.emit(0xD8)
@@ -151,11 +162,17 @@ class Assembler:
 # ---------------------------------------------------------------------------
 
 # RAM locations
-RAM_BANK     = 0x10   # probe pokes desired CHR bank here
-RAM_SUBPAL   = 0x11   # probe pokes desired sub-pal here
+RAM_BANK     = 0x10   # desired CHR bank (incremented by A button or probe poke)
+RAM_SUBPAL   = 0x11   # desired sub-pal (incremented by B button or probe poke)
 RAM_LAST_BANK   = 0x12  # last applied bank (for change detection)
 RAM_LAST_SUBPAL = 0x13  # last applied sub-pal
 RAM_FRAME    = 0x14   # frame counter (probe reads for sync)
+RAM_SPRPAGE  = 0x15   # sprite-tile page (0..3: shows tiles $00-$3F/$40-$7F/$80-$BF/$C0-$FF)
+RAM_8X16     = 0x16   # PPUCTRL bit 5: 0 = 8x8 sprites, 1 = 8x16 sprite pairs
+RAM_LAST_SPRPAGE = 0x17
+RAM_LAST_8X16    = 0x18
+RAM_JOY_CURR = 0x20   # current frame joypad state (A=bit7..Right=bit0)
+RAM_JOY_PREV = 0x21   # last frame joypad state (for edge detect)
 
 # Constants
 PPUCTRL   = 0x2000
@@ -284,6 +301,87 @@ def build_prg() -> bytes:
     # Increment frame counter
     a.inc_zp(RAM_FRAME)
 
+    # Save previous joypad state (for edge detect later)
+    a.lda_zp(RAM_JOY_CURR)
+    a.sta_zp(RAM_JOY_PREV)
+
+    # Read NES joypad: strobe high then low, then 8 shifts
+    a.lda_imm(0x01); a.sta_abs(0x4016)
+    a.lda_imm(0x00); a.sta_abs(0x4016)
+    # Loop: 8 reads, each shifts result bit into $20 from LSB.
+    # After 8 iterations, $20 holds: bit 7 = A, bit 6 = B, bit 5 = Select,
+    # bit 4 = Start, bit 3 = Up, bit 2 = Down, bit 1 = Left, bit 0 = Right.
+    a.ldx_imm(0x08)
+    a.label("joy_read_loop")
+    a.lda_abs(0x4016)
+    a.and_imm(0x01)
+    # carry := LSB of A (the button bit)
+    # opcode 0x4A = LSR A (shifts A right; bit 0 -> carry)
+    a.emit(0x4A)
+    # rotate carry into $20 from LSB (rotate left)
+    a.emit(0x26, RAM_JOY_CURR)   # ROL zp $20
+    a.dex()
+    a.bne_label("joy_read_loop")
+
+    # Edge detect A button: curr_A=1 AND prev_A=0 -> increment bank
+    a.lda_zp(RAM_JOY_CURR)
+    a.and_imm(0x80)              # A button mask
+    a.beq_label("after_a")       # A not held this frame
+    a.lda_zp(RAM_JOY_PREV)
+    a.and_imm(0x80)
+    a.bne_label("after_a")       # A also held last frame -> not edge
+    # A edge press: increment $10, wrap mod NUM_BANKS
+    a.inc_zp(RAM_BANK)
+    a.lda_zp(RAM_BANK)
+    a.cmp_imm(NUM_BANKS)
+    a.bne_label("after_a")
+    a.lda_imm(0x00)
+    a.sta_zp(RAM_BANK)
+    a.label("after_a")
+
+    # Edge detect B button: same pattern, increment $11 mod 4
+    a.lda_zp(RAM_JOY_CURR)
+    a.and_imm(0x40)              # B button mask
+    a.beq_label("after_b")
+    a.lda_zp(RAM_JOY_PREV)
+    a.and_imm(0x40)
+    a.bne_label("after_b")
+    a.inc_zp(RAM_SUBPAL)
+    a.lda_zp(RAM_SUBPAL)
+    a.cmp_imm(0x04)
+    a.bne_label("after_b")
+    a.lda_imm(0x00)
+    a.sta_zp(RAM_SUBPAL)
+    a.label("after_b")
+
+    # Select button (bit 5) = toggle 8x16 sprite mode
+    a.lda_zp(RAM_JOY_CURR)
+    a.and_imm(0x20)
+    a.beq_label("after_select")
+    a.lda_zp(RAM_JOY_PREV)
+    a.and_imm(0x20)
+    a.bne_label("after_select")
+    # toggle $16
+    a.lda_zp(RAM_8X16)
+    a.emit(0x49, 0x01)           # EOR #$01
+    a.sta_zp(RAM_8X16)
+    a.label("after_select")
+
+    # Start button (bit 4) = cycle sprite page (0..3, shows $00-3F .. $C0-FF)
+    a.lda_zp(RAM_JOY_CURR)
+    a.and_imm(0x10)
+    a.beq_label("after_start")
+    a.lda_zp(RAM_JOY_PREV)
+    a.and_imm(0x10)
+    a.bne_label("after_start")
+    a.inc_zp(RAM_SPRPAGE)
+    a.lda_zp(RAM_SPRPAGE)
+    a.cmp_imm(0x04)
+    a.bne_label("after_start")
+    a.lda_imm(0x00)
+    a.sta_zp(RAM_SPRPAGE)
+    a.label("after_start")
+
     # Check if bank changed: if $10 != $12 then update
     a.lda_zp(RAM_BANK)
     a.cmp_zp(RAM_LAST_BANK)
@@ -295,7 +393,7 @@ def build_prg() -> bytes:
     # Check sub-pal change: if $11 != $13 then rebuild attr table
     a.lda_zp(RAM_SUBPAL)
     a.cmp_zp(RAM_LAST_SUBPAL)
-    a.beq_label("nmi_done")
+    a.beq_label("nmi_oam")
     a.sta_zp(RAM_LAST_SUBPAL)
     # Compute attr byte: sub_pal & 3, replicate to 2 bits × 4 quads.
     # byte = (sp<<6) | (sp<<4) | (sp<<2) | sp
@@ -319,11 +417,79 @@ def build_prg() -> bytes:
     a.lda_imm(0x00); a.sta_abs(PPUADDR); a.sta_abs(PPUADDR)
     a.sta_abs(0x2005); a.sta_abs(0x2005)
 
+    # ALWAYS path: rebuild OAM + update PPUCTRL + OAM DMA. Runs whether
+    # or not sub_pal changed.
+    a.label("nmi_oam")
+    a.jsr_abs(0xC300)          # build_oam at $C300
+
+    # Update PPUCTRL: NMI on (bit 7) + BG@$1000 (bit 4) + 8x16 if $16 (bit 5).
+    a.lda_zp(RAM_8X16)
+    a.beq_label("ppuctrl_8x8")
+    a.lda_imm(0x90 | 0x20)     # NMI + BG@$1000 + 8x16 sprites
+    a.bne_label("ppuctrl_set") # unconditional (Z=0 from prior LDA #$B0)
+    a.label("ppuctrl_8x8")
+    a.lda_imm(0x90)
+    a.label("ppuctrl_set")
+    a.sta_abs(PPUCTRL)
+
+    # OAM DMA: $02 -> $4014 transfers $0200-$02FF to PPU OAM (stalls 513 cyc)
+    a.lda_imm(0x02)
+    a.sta_abs(0x4014)
+
     a.label("nmi_done")
     a.pla(); a.tay()
     a.pla(); a.tax()
     a.pla()
     a.rti()
+
+    # ============ build_oam subroutine at $C300 ============
+    # Pad to $C300
+    while a.pc() < 0xC300:
+        a.nop()
+    a.label("build_oam")
+    # For each slot 0..63 fill 4 OAM bytes at $0200 + slot*4:
+    #   Y (byte 0): row position = $60 + (slot >> 3) * 16
+    #   tile (byte 1): page*64 + slot
+    #   attr (byte 2): sub_pal & 0x03
+    #   X (byte 3): col position = (slot & 7) * 16
+    # Use $22 (temp) to stash page*64 once before loop.
+    a.lda_zp(RAM_SPRPAGE)
+    a.asl_a(); a.asl_a(); a.asl_a()
+    a.asl_a(); a.asl_a(); a.asl_a()   # *64
+    a.sta_zp(0x22)
+    a.ldx_imm(0x00)                   # X = slot
+    a.ldy_imm(0x00)                   # Y = OAM offset (slot * 4)
+    a.label("oam_loop")
+    # Byte 0 (Y position): $80 + (slot >> 3) * 16 (below BG tile grid at rows 0-15)
+    a.txa()
+    a.and_imm(0xF8)                   # mask upper 5 bits = (slot >> 3) << 3
+    a.asl_a()                         # << 1 -> total << 1 = (slot >> 3) * 16
+    a.clc()
+    a.adc_imm(0x80)                   # + $80 base y (row 16 = below BG region)
+    a.sta_abs_y(0x0200)               # OAM[slot*4 + 0]
+    a.iny()
+    # Byte 1 (tile): page*64 + slot = $22 + X
+    a.txa()
+    a.clc()
+    a.adc_zp(0x22)
+    a.sta_abs_y(0x0200)               # OAM[slot*4 + 1]
+    a.iny()
+    # Byte 2 (attr): sub_pal & 3
+    a.lda_zp(RAM_SUBPAL)
+    a.and_imm(0x03)
+    a.sta_abs_y(0x0200)               # OAM[slot*4 + 2]
+    a.iny()
+    # Byte 3 (X): (slot & 7) * 16
+    a.txa()
+    a.and_imm(0x07)
+    a.asl_a(); a.asl_a(); a.asl_a(); a.asl_a()  # * 16
+    a.sta_abs_y(0x0200)               # OAM[slot*4 + 3]
+    a.iny()
+    # next slot
+    a.inx()
+    a.cpx_imm(0x40)                   # 64 sprites
+    a.bne_label("oam_loop")
+    a.rts()
 
     # ============ IRQ handler ============
     a.label("irq")
@@ -369,14 +535,15 @@ def build_prg() -> bytes:
         prg[0x0500 + i] = v
 
     # Insert nametable table at CPU $C600-$C9BF = PRG $0600-$09BF (960 bytes).
-    # Layout: 16-wide × 16-tall tile grid (256 tiles) in top-left, rest = $00.
+    # Layout: 16-wide × 16-tall BG tile-id grid (tiles $00-$FF) in top-left,
+    # rest filled with tile $FF (force-blanked in CHR — see build_chr_page).
     for row in range(30):
         for col in range(32):
             cell = row * 32 + col
             if row < 16 and col < 16:
                 tile_id = (row * 16) + col
             else:
-                tile_id = 0x00
+                tile_id = 0xFF  # guaranteed-blank (force-zeroed in CHR pages)
             prg[0x0600 + cell] = tile_id
 
     # Set vectors at $FFFA-$FFFF = PRG offset $3FFA-$3FFF (end of 16 KB PRG).
@@ -406,6 +573,10 @@ def build_chr_page(spr_blocks: list[tuple[bytes, int]],
                    bg_blocks: list[tuple[bytes, int]]) -> bytes:
     """8 KB page. Each block = (data_bytes, ppu_addr_offset_into_8kb).
     spr_blocks land at $0000-$0FFF region; bg_blocks at $1000-$1FFF.
+
+    Post-pack: tile $FF in BG bank is forced to all-zero (16 bytes of $00)
+    so the nametable can use tile $FF as a guaranteed-blank fill,
+    keeping BG/SPR display regions visually separate.
     """
     page = bytearray(8192)
     for data, off in spr_blocks + bg_blocks:
@@ -413,6 +584,10 @@ def build_chr_page(spr_blocks: list[tuple[bytes, int]],
         if end > 8192:
             raise ValueError(f"block at ${off:04X} + {len(data)} > 8 KB")
         page[off:end] = data
+    # Force BG tile $FF (PPU $1FF0..$1FFF) to all-zero pixels
+    page[0x1FF0:0x2000] = b"\x00" * 16
+    # Force SPR tile $FF (PPU $0FF0..$0FFF) to all-zero pixels (matches BG)
+    page[0x0FF0:0x1000] = b"\x00" * 16
     return bytes(page)
 
 

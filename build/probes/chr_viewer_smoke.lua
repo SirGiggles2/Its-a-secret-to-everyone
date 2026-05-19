@@ -32,6 +32,20 @@ do
   local f = io.open(DIR .. "/palram.bin", "wb"); f:write(table.concat(chunks)); f:close()
 end
 
+-- Dump OAM (256 B)
+do
+  local chunks = {}
+  for i = 0, 255 do chunks[#chunks+1] = string.char(memory.read_u8(i, "OAM")) end
+  local f = io.open(DIR .. "/oam.bin", "wb"); f:write(table.concat(chunks)); f:close()
+end
+
+-- Dump shadow OAM at System Bus $0200-$02FF
+do
+  local chunks = {}
+  for i = 0, 255 do chunks[#chunks+1] = string.char(memory.read_u8(0x200 + i, "System Bus")) end
+  local f = io.open(DIR .. "/shadow_oam.bin", "wb"); f:write(table.concat(chunks)); f:close()
+end
+
 -- State diagnostic — try multiple domains to find main NES CPU RAM
 local f = io.open(DIR .. "/state.txt", "w")
 f:write(string.format("frame=%d\n", emu.framecount()))
