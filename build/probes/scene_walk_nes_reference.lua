@@ -9,7 +9,15 @@ local OUT = os.getenv("CODEX_BIZHAWK_ROOT") or "C:\\tmp"
 local ROOT = OUT .. "/scene_walk_nes"
 os.execute('mkdir "' .. ROOT:gsub("/","\\") .. '" 2>nul')
 
-local function R(off) return memory.read_u8(off, "RAM") end
+-- Discover NES memory domains and write to log so probe rerunners can verify.
+do
+  local f = io.open(ROOT .. "/_domains.txt", "w")
+  f:write("BizHawk NES memory domains discovered at probe start:\n")
+  for _, d in ipairs(memory.getmemorydomainlist()) do f:write("  " .. d .. "\n") end
+  f:close()
+end
+
+local function R(off) return memory.read_u8(off, "WRAM") end
 local function idle(n) for _=1,n do emu.frameadvance() end end
 local function press(b, n)
   for _=1,n do joypad.set(b, 1); emu.frameadvance() end
@@ -33,10 +41,12 @@ local function write_state_txt(path, label)
   f:write(string.format("Hearts=$%02X partial=$%02X Containers=$%02X Rupees=$%02X\n",
       R(0x066F), R(0x0670), R(0x066E), R(0x066D)))
   f:write("\n--- PALRAM (32 B, BG 16 + SPR 16) ---\n")
+  -- BizHawk NES core: PALRAM domain holds the actual palette; PPU Bus reads
+  -- at $3F00-$3F1F return open-bus when not in active render. Use PALRAM.
   f:write("BG :")
-  for i = 0, 15 do f:write(string.format(" %02X", memory.read_u8(0x3F00 + i, "PPU Bus"))) end
+  for i = 0, 15 do f:write(string.format(" %02X", memory.read_u8(i, "PALRAM"))) end
   f:write("\nSPR:")
-  for i = 0, 15 do f:write(string.format(" %02X", memory.read_u8(0x3F10 + i, "PPU Bus"))) end
+  for i = 0, 15 do f:write(string.format(" %02X", memory.read_u8(0x10 + i, "PALRAM"))) end
   f:write("\n\n--- OAM slot 0..15 ---\n")
   for s = 0, 15 do
     local b = s*4
@@ -56,18 +66,19 @@ local function capture(label)
   client.screenshot(dir .. "/" .. label .. ".png")
   write_state_txt(dir .. "/" .. label .. "_state.txt", label)
   dump_domain("OAM",     0x0000, 256,   dir .. "/" .. label .. "_oam.bin")
-  -- PALRAM via PPU Bus $3F00-$3F1F (mirror at $3F20+ has same)
+  -- PALRAM via dedicated domain (PPU Bus returns open-bus outside render)
   do
     local chunks = {}
-    for i = 0, 31 do chunks[#chunks+1] = string.char(memory.read_u8(0x3F00 + i, "PPU Bus")) end
+    for i = 0, 31 do chunks[#chunks+1] = string.char(memory.read_u8(i, "PALRAM")) end
     local f = io.open(dir .. "/" .. label .. "_palram.bin", "wb"); f:write(table.concat(chunks)); f:close()
   end
-  -- Nametables $2000-$2FFF (4 KB = 2 nametables + attribute tables)
-  dump_domain("PPU Bus", 0x2000, 4096,  dir .. "/" .. label .. "_nt.bin")
-  -- Pattern tables $0000-$1FFF (8 KB)
-  dump_domain("PPU Bus", 0x0000, 8192,  dir .. "/" .. label .. "_chr.bin")
-  -- 2 KB main RAM
-  dump_domain("RAM",     0x0000, 2048,  dir .. "/" .. label .. "_ram.bin")
+  -- Nametables via CIRAM domain (2 KB = 2 nametables, mirrored to 4 KB).
+  -- PPU Bus read at $2000-$2FFF returns open-bus when not in active render.
+  dump_domain("CIRAM",   0x0000, 2048,  dir .. "/" .. label .. "_nt.bin")
+  -- Pattern tables via CHR domain (live PPU pattern view, post-bank-swap)
+  dump_domain("CHR",     0x0000, 8192,  dir .. "/" .. label .. "_chr.bin")
+  -- 2 KB main RAM via WRAM domain
+  dump_domain("WRAM",    0x0000, 2048,  dir .. "/" .. label .. "_ram.bin")
   print(string.format("captured %-36s frame=%d gamemode=$%02X room=$%02X",
       label, emu.framecount(), R(0x0012), R(0x00EB)))
 end
