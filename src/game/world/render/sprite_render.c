@@ -646,10 +646,21 @@ void roomrom_sprites_clear_room_item(void)
 
 void roomrom_sprites_set_candle_fire(short x, short y,
                                      unsigned char hflip,
-                                     unsigned char sub_pal)
+                                     unsigned char sub_pal,
+                                     unsigned char frame_index)
 {
+    /* Phase P (2026-05-18): frame_index 0..3 -> F0/F1/F2/F3 manifest
+     * entries. Caller advances per-instance timer (candle_fire.c
+     * s_anim_frame). Pre-Phase-P hardcoded F0 (no animation). */
+    unsigned short frame_offset;
+    switch (frame_index & 0x03u) {
+    case 1u:  frame_offset = ROOMROM_ITEM_TILE_CANDLE_FIRE_F1; break;
+    case 2u:  frame_offset = ROOMROM_ITEM_TILE_CANDLE_FIRE_F2; break;
+    case 3u:  frame_offset = ROOMROM_ITEM_TILE_CANDLE_FIRE_F3; break;
+    default:  frame_offset = ROOMROM_ITEM_TILE_CANDLE_FIRE_F0; break;
+    }
     unsigned short tile = (unsigned short)(ROOMROM_ITEM_TILE_BASE_PAL(sub_pal)
-                                            + ROOMROM_ITEM_TILE_CANDLE_FIRE_F0);
+                                            + frame_offset);
     VDP_setSpriteFull(ROOMROM_SPRITE_SLOT_CANDLE_FIRE,
                       (signed short)x, (signed short)y,
                       RENDER_SPRITE_SIZE(2, 2),

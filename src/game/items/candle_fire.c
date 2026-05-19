@@ -112,13 +112,16 @@ unsigned char roomrom_candle_fire_active(void)
 
 static void draw_fire(void)
 {
-    /* NES candle fire = single tile pair $5C/$5E (with $5D/$5F as 8x16
-     * bottoms), sub-pal 2 (red). ObjAnimFrame toggles 0/1 every 4 ticks
-     * → hflip toggles. */
+    /* Phase P (2026-05-18): cycle through 4-frame animation set
+     * (F0/F1/F2/F3) per NES Z_07.asm:4622 UpdateFire ObjAnimFrameHeap
+     * cadence. Pre-Phase-P toggled only hflip on a 2-frame counter
+     * (s_anim_frame & 1u). Now s_anim_frame is 0..3; frame_index drives
+     * F0..F3 tile selection AND hflip (bit 0). */
     unsigned char hflip = s_anim_frame & 1u;
     /* Priority bit set so flame renders ABOVE BG_A door art (which uses
      * BG priority 0x8000). NES Z1 fire is foreground. */
-    roomrom_sprites_set_candle_fire(s_x, s_y, hflip, CANDLE_FIRE_SUBPAL);
+    roomrom_sprites_set_candle_fire(s_x, s_y, hflip, CANDLE_FIRE_SUBPAL,
+                                    s_anim_frame & 0x03u);
 }
 
 static void advance_anim(void)
@@ -126,7 +129,8 @@ static void advance_anim(void)
     s_anim_tick++;
     if (s_anim_tick >= CANDLE_FIRE_TICKS_PER_FRM) {
         s_anim_tick = 0u;
-        s_anim_frame = (unsigned char)(s_anim_frame ^ 1u);  /* NES EOR #$01 toggle */
+        /* Phase P: 4-frame cycle (was 2-frame XOR toggle). */
+        s_anim_frame = (unsigned char)((s_anim_frame + 1u) & 0x03u);
     }
 }
 

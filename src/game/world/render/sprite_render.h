@@ -143,10 +143,15 @@ void roomrom_sprites_set_room_item(short x, short y,
 void roomrom_sprites_clear_room_item(void);
 
 /* Candle fire (slot 8). Owned here so gameplay code does not write SAT
- * entries directly outside the sprite module. */
+ * entries directly outside the sprite module.
+ *
+ * Phase P (2026-05-18): frame_index 0..3 selects animation frame
+ * (F0/F1/F2/F3). Manifest carries all 4 entries per NES Z_07.asm:4622
+ * UpdateFire cadence. Caller advances frame from per-instance timer. */
 void roomrom_sprites_set_candle_fire(short x, short y,
                                      unsigned char hflip,
-                                     unsigned char sub_pal);
+                                     unsigned char sub_pal,
+                                     unsigned char frame_index);
 void roomrom_sprites_clear_candle_fire(void);
 
 /* Magic rod shot (slot 9). Vertical 8x16 (UP/DOWN) or horizontal 16x16
