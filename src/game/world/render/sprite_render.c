@@ -659,6 +659,14 @@ void roomrom_sprites_set_room_item(short x, short y,
         case 0x0Bu: tile_offset = ROOMROM_ITEM_TILE_BOOK_OF_MAGIC;   break;
         case 0x0Au: tile_offset = ROOMROM_ITEM_TILE_RAFT;            break;
         case 0x0Du: tile_offset = ROOMROM_ITEM_TILE_LADDER;          break;
+        /* Phase K continuation #3 (2026-05-18): full UW pickup set. */
+        case 0x0Cu: tile_offset = ROOMROM_ITEM_TILE_RING;            break;
+        case 0x0Eu: tile_offset = ROOMROM_ITEM_TILE_MAGIC_KEY;       break;
+        case 0x0Fu: tile_offset = ROOMROM_ITEM_TILE_BRACELET;        break;
+        case 0x04u: tile_offset = ROOMROM_ITEM_TILE_BOW;             break;
+        case 0x06u: tile_offset = ROOMROM_ITEM_TILE_RECORDER;        break;
+        case 0x07u: tile_offset = ROOMROM_ITEM_TILE_FOOD;            break;
+        case 0x08u: tile_offset = ROOMROM_ITEM_TILE_POTION;          break;
         default:    tile_offset = 0xFFFFu;                            break;
         }
         if (tile_offset != 0xFFFFu) {
