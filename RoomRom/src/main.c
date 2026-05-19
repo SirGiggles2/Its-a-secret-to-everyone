@@ -1868,6 +1868,7 @@ void roomrom_debug_tick(void)
              * = death-while-paused bug. */
             if (!roomrom_pause_is_active()) {
                 enemy_loop_tick();
+                nes_ram_reconcile_sword_beam_collision();
             }
             /* Phase 7 root-cause fix #5b 2026-05-16 — restore GameMode
              * ($0012) before dispatch. a4_probe_main.c probe_check

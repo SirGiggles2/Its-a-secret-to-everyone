@@ -31,7 +31,7 @@ while true do
   local link_inv = R(0x84F0)   -- InvincibilityTimer
   local link_shv = R(0x80D3)   -- ShoveDistance
 
-  local room    = R(0x7205)
+  local room    = R(0x80EB)
   local scene   = R(0x07EE)    -- scene sentinel slot if any
   local mode    = R(0x8012)    -- GameMode
   local fcnt    = R(0x8015)    -- FrameCounter

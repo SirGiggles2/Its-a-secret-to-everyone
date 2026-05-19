@@ -31,9 +31,10 @@ void options_consumer_apply_inventory_at_start(void)
     unsigned char bomb_upg = options_get((unsigned int)OPTION_ID_BOMB_UPGRADE);
     unsigned char clamped = clamp_start_hearts_to_nibble(hearts);
 
-    /* Boot profile: max = clamped, current = max (full heart bar). */
+    /* Boot profile: max = clamped, current = max (full heart bar).
+     * NES full health has HeartPartial >= $80; new files use $FF. */
     g_inventory.heart_values = heart_values_pack(clamped, clamped);
-    g_inventory.heart_partial = 0u;
+    g_inventory.heart_partial = 0xFFu;
 
     g_inventory.max_bombs = bomb_cap_for_upgrade(bomb_upg);
     inventory_hud_mark_dirty();

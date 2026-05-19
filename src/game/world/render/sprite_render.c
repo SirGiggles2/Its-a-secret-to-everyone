@@ -339,7 +339,7 @@ void roomrom_sprites_spawn_link(short x, short y)
     VDP_setSpriteFull(2,
                       (signed short)-32,
                       (signed short)-32,
-                      RENDER_SPRITE_SIZE(1, 1),
+                      RENDER_SPRITE_SIZE(1, 2),
                       RENDER_TILE_ATTR_FULL(RENDER_PAL2,0, 0, 0, SWORD_VERT_VRAM_TILE),
                       3);
     VDP_setSpriteFull(3,
@@ -458,11 +458,11 @@ void roomrom_sprites_set_sword_diagonal(short x, short y,
 /* S7 v5 sword beam (slot 2). NES Z1 sword shot draws via the same
  * Anim_WriteItemSprites path as the held sword (Z_07.asm:3437):
  *   - Vertical (UP/DOWN, RDirectionToWeaponFrame=0): tile $20, falls
- *     into @Narrow path → single 8x8 sprite. Base attr from
+ *     into @Narrow path → single 8x16 sprite. Base attr from
  *     RDirectionToWeaponBaseAttribute: UP=$00, DOWN=$80 (vflip).
  *   - Horizontal (LEFT/RIGHT, frame=1): tile $82, falls into @Wide /
- *     HorizontallyFlippableSpritePair → 2 8x8 sprites side-by-side
- *     (NES tiles $82 + $84). Base attr 0 for both; LEFT direction
+ *     HorizontallyFlippableSpritePair -> 2 8x16 sprites side-by-side
+ *     (NES tiles $82/$83 + $84/$85). Base attr 0 for both; LEFT direction
  *     sets [0F]=1 in DrawSwordShotOrMagicShot:3471 to hflip the pair.
  *
  * Per Z_07.asm:3459 the per-frame attribute is
@@ -475,12 +475,10 @@ void roomrom_sprites_set_sword_diagonal(short x, short y,
  * approximation, which introduced an orientation flicker not present
  * on NES.
  *
- * Vertical beam = RENDER_SPRITE_SIZE(1, 1) (8x8, NES-faithful single tile).
- * Horizontal beam keeps RENDER_SPRITE_SIZE(2, 2): in column-major SGDK
- * iteration the top row of the sword_horz blob is NES tiles $82+$84
- * (the exact pair NES draws), and the bottom row holds the unused
- * sword_horz tiles $83+$85 — visually close enough until the CHR
- * blob is reshaped to a 16x8 layout. */
+ * Vertical beam = RENDER_SPRITE_SIZE(1, 2) (8x16, NES-faithful narrow sprite).
+ * Horizontal beam = RENDER_SPRITE_SIZE(2, 2), matching the two NES 8x16
+ * OAM entries. NES DrawSwordShotOrMagicShot draws vertical object coords
+ * at X+4/Y and horizontal object coords at X/Y+3. */
 void roomrom_sprites_set_beam(short x, short y, link_face_t face)
 {
     unsigned char vertical = (unsigned char)((face == LINK_FACE_UP
@@ -488,21 +486,25 @@ void roomrom_sprites_set_beam(short x, short y, link_face_t face)
                                           ? 1u : 0u);
     unsigned char vflip = (unsigned char)((face == LINK_FACE_DOWN) ? 1u : 0u);
     unsigned char hflip = (unsigned char)((face == LINK_FACE_LEFT) ? 1u : 0u);
+    short draw_x = x;
+    short draw_y = y;
     /* Beam uses RENDER_PAL2 (dedicated flash bank). roomrom_combat update_beam
      * rewrites RENDER_PAL2[0..3] each frame with a different NES sprite sub-
      * palette to imitate Z1's color flash (Z_07.asm:3459). */
     if (vertical) {
+        draw_x = (short)(x + 4);
         VDP_setSpriteFull(2,
-                          (signed short)x,
-                          (signed short)y,
-                          RENDER_SPRITE_SIZE(1, 1),
+                          (signed short)draw_x,
+                          (signed short)draw_y,
+                          RENDER_SPRITE_SIZE(1, 2),
                           RENDER_TILE_ATTR_FULL(RENDER_PAL2,0, vflip, hflip,
                                          SWORD_VERT_VRAM_TILE),
                           3);
     } else {
+        draw_y = (short)(y + 3);
         VDP_setSpriteFull(2,
-                          (signed short)x,
-                          (signed short)y,
+                          (signed short)draw_x,
+                          (signed short)draw_y,
                           RENDER_SPRITE_SIZE(2, 2),
                           RENDER_TILE_ATTR_FULL(RENDER_PAL2,0, vflip, hflip,
                                          SWORD_HORZ_VRAM_TILE),
@@ -515,7 +517,7 @@ void roomrom_sprites_clear_beam(void)
     VDP_setSpriteFull(2,
                       (signed short)-32,
                       (signed short)-32,
-                      RENDER_SPRITE_SIZE(1, 1),
+                      RENDER_SPRITE_SIZE(1, 2),
                       RENDER_TILE_ATTR_FULL(RENDER_PAL2,0, 0, 0, SWORD_VERT_VRAM_TILE),
                       3);
 }

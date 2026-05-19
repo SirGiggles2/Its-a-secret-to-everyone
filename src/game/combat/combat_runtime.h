@@ -34,9 +34,9 @@ void roomrom_combat_try_swing(link_face_t face, short link_x, short link_y);
 void roomrom_combat_update(short link_x, short link_y, link_face_t face);
 unsigned char roomrom_combat_link_locked(void);
 
-/* Apply a -2 px Y bias to sword + beam when Link is in a dungeon
- * (NES Z1 dungeons render sword/beam 2 px higher than overworld due
- * to a different sprite Y baseline). 0 = OW (no bias), 1 = UW. */
+/* Recompute sword visual Y bias for overworld vs. dungeon sprite baselines.
+ * The beam keeps NES object coordinates; only renderer-local draw offsets
+ * are applied for it. 0 = OW, 1 = UW. */
 void roomrom_combat_set_uw(unsigned char in_uw);
 
 /* Redux mode toggle (per docs/audit/redux_touchpoints.md, diagonal
@@ -57,5 +57,15 @@ unsigned char roomrom_combat_get_swing_state(void);
 short         roomrom_combat_get_swing_x(void);
 short         roomrom_combat_get_swing_y(void);
 link_face_t   roomrom_combat_get_swing_face(void);
+
+/* Sword beam native state. The Genesis-side beam owns sprite motion, while
+ * nes_ram_sync_sword publishes it into NES weapon slot 14 so the drained
+ * enemy collision path can apply damage through the original sword-shot
+ * handler. */
+unsigned char roomrom_combat_get_beam_active(void);
+short         roomrom_combat_get_beam_x(void);
+short         roomrom_combat_get_beam_y(void);
+link_face_t   roomrom_combat_get_beam_face(void);
+void roomrom_combat_cancel_beam(void);
 
 #endif

@@ -83,21 +83,32 @@ void nes_ram_seed_inventory_hearts(void);
  * chased a Link who appeared to face nowhere. */
 void nes_ram_sync_link_face(void);
 
-/* Plan v5 — publish sword swing pose into NES weapon slot 13. The
+/* Plan v5 — publish sword swing pose into NES weapon slot 13 and the
+ * Genesis-native sword beam into NES weapon slot 14. The
  * collision battery's only "is the sword swinging?" test is
  *   OBJ_STATE(13) == 2
+ * and sword-shot enemy collision already checks slot 14 as an active
+ * projectile when OBJ_STATE(14) == $10.
  * (see collision_check_monster_sword_collision in
  * src/game/combat/collision_dispatch.c). Until this sync existed the
- * cell was always 0 and the sword phantom-stabbed nothing.
+ * cells were always 0 and sword/beam phantom-stabbed nothing.
  *
  * Writes per tick:
  *   nes_ram[$0098 + 13]  = sword NES dir bitmap (mirrors Link's facing)
  *   nes_ram[$00AC + 13]  = swing state (0 idle / 2 full-extend)
  *   nes_ram[$0070 + 13]  = sword X
  *   nes_ram[$0084 + 13]  = sword Y
+ *   nes_ram[$034F + 14]  = sword-shot ObjType clear ($00, like live NES)
+ *   nes_ram[$00AC + 14]  = sword-shot active state $10
+ *   nes_ram[$0098/$0070/$0084 + 14] = beam dir/X/Y
  *
- * Idle frames clear OBJ_STATE(13) to 0. */
+ * Idle/inactive frames clear the corresponding weapon slots. */
 void nes_ram_sync_sword(void);
+
+/* Slot 14 collision mutates OBJ_STATE(14) away from $10 during
+ * enemy_loop_tick(). Reconcile immediately afterward so the native beam
+ * vanishes and damages only once, matching the NES sword-shot path. */
+void nes_ram_reconcile_sword_beam_collision(void);
 
 /* Plan v5 — seed ITEM_SWORD_LEVEL ($0657 ITEMS_BY_LEVEL[0]) to wood-
  * sword tier on gameplay enter. Without a non-zero value the damage

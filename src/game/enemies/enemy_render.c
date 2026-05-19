@@ -634,6 +634,7 @@ void enemy_render_native_sweep(void)
      * so probe can verify this fn fires. */
     nes_ram[0x07FEu] = (unsigned char)(nes_ram[0x07FEu] + 1u);
 
+
     for (slot = ENEMY_LOOP_SLOT_FIRST; slot <= ENEMY_LOOP_SLOT_LAST; ++slot) {
         unsigned char n = s_enemy_count[slot];
         unsigned char ei;

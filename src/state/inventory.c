@@ -5,7 +5,7 @@
  *
  * Boot defaults match the NES Z1 fresh-save profile:
  *   - 3 heart containers, 3 current full hearts (heart_values = 0x33).
- *   - HeartPartial empty.
+ *   - HeartPartial full enough for NES MakeSwordShot ($80+).
  *   - 0 rupees, 0 keys, 0 bombs (NES MaxBombs default = 8).
  *   - No items, no bow/wand/boomerang/etc.
  *
@@ -36,7 +36,7 @@ inventory_t g_inventory = {
     .rupees           = 0u,
     .keys             = 0u,
     .heart_values     = 0x33u,         /* 3 max / 3 current */
-    .heart_partial    = 0u,
+    .heart_partial    = 0xFFu,
     .triforce         = 0u,
     .boomerang_wood   = 0u,
     .boomerang_magic  = 0u,

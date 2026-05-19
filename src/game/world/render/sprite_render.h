@@ -82,9 +82,10 @@ void roomrom_sprites_set_sword_diagonal(short x, short y,
  * Earlier Genesis impl approximated the palette flash by cycling
  * vflip+hflip each frame; that creates a visible orientation flicker
  * not present on NES. Drop the flicker and apply the NES per-direction
- * flip exactly. Vertical beam = single 8x8 (matches NES @Narrow path
- * for tile $20). Horizontal beam keeps 16x16 because top row of the
- * sword_horz blob contains NES tiles $82+$84 in column-major order. */
+ * flip exactly. Vertical beam = single 8x16 (matches NES @Narrow path
+ * for tile $20 in 8x16 sprite mode). Horizontal beam is 16x16: two NES
+ * 8x16 OAM entries side by side, with draw offsets applied from object
+ * coordinates in the renderer. */
 void roomrom_sprites_set_beam(short x, short y, link_face_t face);
 void roomrom_sprites_clear_beam(void);
 
