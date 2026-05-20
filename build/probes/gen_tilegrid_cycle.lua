@@ -40,9 +40,26 @@ for bank = 0, 7 do
         poke(0xFF07E2, page)
         poke(0xFF07E3, mode)
         poke(0xFF07E4, 0xAA)
-        idle(4)
+        -- Wait for scene to ack the poke (flag clears to 0 after upload).
+        local timeout = 120
+        while read(0xFF07E4) ~= 0 and timeout > 0 do
+          emu.frameadvance()
+          timeout = timeout - 1
+        end
+        idle(4)  -- final settle after ack
         local name = string.format("bank%d_sub%d_page%d_8x16%d", bank, sub_pal, page, mode)
         client.screenshot(DIR .. "/" .. name .. ".png")
+        -- Byte capture: VRAM tile data $0000-$72C0 (29 KB covers all BG + SPR
+        -- + ITEM + SCENE_OBJ tile slots).
+        local vram = {}
+        for i = 0, 0x72BF do vram[#vram+1] = string.char(memory.read_u8(i, "VRAM")) end
+        local f = io.open(DIR .. "/" .. name .. ".vram.bin", "wb")
+        f:write(table.concat(vram)); f:close()
+        -- CRAM 128 B per state
+        local cram = {}
+        for i = 0, 127 do cram[#cram+1] = string.char(memory.read_u8(i, "CRAM")) end
+        f = io.open(DIR .. "/" .. name .. ".cram.bin", "wb")
+        f:write(table.concat(cram)); f:close()
       end
     end
   end

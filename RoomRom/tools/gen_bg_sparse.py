@@ -51,15 +51,20 @@ OUT_H = ROOMROM / "src" / "bg_sparse_chr.h"
 
 BYTES_PER_TILE = 32
 
-# Source array byte offsets for NES tile ranges (per ow_render.c upload).
-# common_chr structure (7616 B = 238 tiles):
-#   tiles 0x00..0x6F  -> common_chr bytes 0..3583 (BG section, 112 tiles)
-#   tiles 0x70..0xDF  -> common_chr 3584..7167 (sprite section, 112 tiles)
-#   tiles 0xF2..0xFF  -> common_chr 7168..7615 (misc section, 14 tiles)
+# Source array byte offsets for NES tile ranges (per extract_chr.py:551-554).
+# common_chr structure (7616 B = 238 tiles) — layout is SPR + BG + Misc:
+#   bytes    0..3583  = SPR section  (112 tiles, NES tile ids $70..$DF SPR-side)
+#   bytes 3584..7167  = BG section   (112 tiles, NES tile ids $00..$6F BG-side)
+#   bytes 7168..7615  = Misc section (14 tiles,  NES tile ids $F2..$FF)
 # overworld_bg_chr / underworld_bg_chr / redux_overworld_bg_chr:
 #   tiles 0x70..0xF1  -> bytes (tile_id - 0x70) * 32 (130 tiles, 4160 B)
-COMMON_BG_END  = 0x70      # tiles below this come from common_chr at tile_id*32
+COMMON_BG_END  = 0x70      # tiles below this come from common_chr BG section
 COMMON_MISC_START = 0xF2   # tiles >= this come from common_chr misc section
+COMMON_BG_BYTE_OFFSET   = 3584   # BG section starts at byte 3584 in common_chr
+                                  # (after 112-tile SPR section = 3584 B).
+                                  # See data/chr/common.c layout from
+                                  # tools/extract_chr.py:554 — common_data =
+                                  # common_sp_data + common_bg_data + common_misc_data.
 COMMON_MISC_BYTE_OFFSET = 7168
 SCENE_BG_START = 0x70
 SCENE_BG_END   = 0xF2      # exclusive: 0x70..0xF1 = scene-specific
@@ -118,8 +123,8 @@ def get_nes_tile_bytes(tile_id, common_chr, scene_bg_chr, unified_source=False):
         off = tile_id * BYTES_PER_TILE
         return scene_bg_chr[off:off + BYTES_PER_TILE]
     if tile_id < COMMON_BG_END:
-        # 0x00..0x6F from common_chr BG section
-        off = tile_id * BYTES_PER_TILE
+        # 0x00..0x6F from common_chr BG section (after 112-tile SPR prefix)
+        off = COMMON_BG_BYTE_OFFSET + tile_id * BYTES_PER_TILE
         return common_chr[off:off + BYTES_PER_TILE]
     if tile_id >= COMMON_MISC_START:
         # 0xF2..0xFF from common_chr misc section

@@ -212,10 +212,17 @@ void render_cram_fade_apply(unsigned char step, unsigned char total)
 /* ---- Internal DMA / CRAM helpers (were extern'd from intro_common.c) ---- */
 
 /* CPU-based VRAM upload. Writes len bytes from src to VRAM[dst..dst+len-1].
- * Slower than DMA but reliable in display-off windows. */
+ * Slower than DMA. Interrupts MUST be masked during the loop — VBlank/NMI
+ * handler doing its own VDP_CTRL writes mid-stream would clobber our
+ * auto-increment address register, scattering ~2 KB of bytes to wrong
+ * VRAM slots. Observed via atlas byte-audit: bank-swap of 17024-byte BG
+ * sparse blob left a 2304-byte hole at slots 436..507 every first swap
+ * because the VBlank handler interrupted us. Mask IPL to 7 for the loop. */
 static void vram_dma_upload(const unsigned char *bytes, unsigned short dst,
                             unsigned short len)
 {
+    SYS_disableInts();
+
     render_set_autoinc_word();
 
     /* Open VRAM write at dst. */
@@ -232,6 +239,8 @@ static void vram_dma_upload(const unsigned char *bytes, unsigned short dst,
     if ((len & 1u) != 0u) {
         VDP_DATA_WORD = (unsigned short)((unsigned short)bytes[len - 1u] << 8);
     }
+
+    SYS_enableInts();
 }
 
 /* ---- Phase D public API ---- */
