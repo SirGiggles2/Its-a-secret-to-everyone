@@ -422,14 +422,32 @@ def build_prg() -> bytes:
     a.label("nmi_oam")
     a.jsr_abs(0xC300)          # build_oam at $C300
 
-    # Update PPUCTRL: NMI on (bit 7) + BG@$1000 (bit 4) + 8x16 if $16 (bit 5).
-    a.lda_zp(RAM_8X16)
-    a.beq_label("ppuctrl_8x8")
-    a.lda_imm(0x90 | 0x20)     # NMI + BG@$1000 + 8x16 sprites
-    a.bne_label("ppuctrl_set") # unconditional (Z=0 from prior LDA #$B0)
-    a.label("ppuctrl_8x8")
-    a.lda_imm(0x90)
-    a.label("ppuctrl_set")
+    # Update PPUCTRL: NMI on (bit 7) + BG pattern table (bit 4 per view page)
+    # + 8x16 if $16 (bit 5).
+    #
+    # V2 (2026-05-19): RAM_SPRPAGE ($15) repurposed as VIEW_PAGE 0..3 to mirror
+    # Genesis universal-graphics scene:
+    #   page 0 (BG view)  -> PPUCTRL bit 4 = 1, BG fetches from $1000-$1FFF
+    #                        (NES BG pattern table tiles $00..$FF)
+    #   page 1 (SPR view) -> PPUCTRL bit 4 = 0, BG fetches from $0000-$0FFF
+    #                        (NES SPR pattern table tiles $00..$FF — same
+    #                         tile_ids, different source data)
+    #   page 2 (ITEM)     -> defer, render same as page 0 (V4 PNG diff skips
+    #                        ITEM/Misc pages since byte audit covers those)
+    #   page 3 (Misc)     -> defer, same as page 0
+    #
+    # Base PPUCTRL = $80 (NMI on). OR in bit 4 (BG@$1000) only when page != 1.
+    a.lda_imm(0x80)             # base: NMI on
+    a.ldx_zp(RAM_SPRPAGE)       # X = view page
+    a.cpx_imm(0x01)
+    a.beq_label("ppuctrl_skip_bgbit")
+    a.ora_imm(0x10)             # set bit 4 (BG@$1000)
+    a.label("ppuctrl_skip_bgbit")
+    # OR 8x16 sprite bit if $16 set
+    a.ldx_zp(RAM_8X16)
+    a.beq_label("ppuctrl_skip_8x16")
+    a.ora_imm(0x20)
+    a.label("ppuctrl_skip_8x16")
     a.sta_abs(PPUCTRL)
 
     # OAM DMA: $02 -> $4014 transfers $0200-$02FF to PPU OAM (stalls 513 cyc)
