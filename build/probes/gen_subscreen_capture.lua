@@ -65,6 +65,13 @@ for addr = 0xF400, 0xF67F do
 end
 f:close()
 
+-- Dump full VRAM ($0000-$FFFF) for cross-side tile-byte comparison.
+f = io.open(OUT .. "/vram_full.bin", "wb")
+for addr = 0x0000, 0xFFFF do
+  f:write(string.char(memory.read_u8(addr, "VRAM")))
+end
+f:close()
+
 -- VDP regs via "VDP" domain offsets 0..23 (BizHawk Genplus exposes
 -- last-written register state)
 f = io.open(OUT .. "/vdp_regs.txt", "w")

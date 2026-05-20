@@ -29,4 +29,12 @@ unsigned char inventory_subscreen_is_active(void);
 /* Query: scroll-out finished (gameplay should resume + room reload). */
 unsigned char inventory_subscreen_scrolled_out(void);
 
+/* Phase 8: NES HUD B-item slot. Look up Genesis VRAM tile for given
+ * cursor slot 0..8. Returns 0xFFFF if slot is unmapped (e.g. raft/ring
+ * not extracted). Caller emits SAT entry at HUD B-box position. */
+unsigned short inventory_get_vram_tile_for_slot(unsigned char cursor_slot);
+
+/* Genesis PAL register (0..3) per NES sub_pal for inventory slot. */
+unsigned char inventory_get_pal_for_slot(unsigned char cursor_slot);
+
 #endif /* INVENTORY_RENDER_H */

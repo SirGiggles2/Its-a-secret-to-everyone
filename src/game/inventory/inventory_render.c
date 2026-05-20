@@ -192,6 +192,18 @@ unsigned char inventory_subscreen_is_active(void)
     return s_active;
 }
 
+unsigned short inventory_get_vram_tile_for_slot(unsigned char cursor_slot)
+{
+    if (cursor_slot >= INV_SLOT_COUNT) return INV_TILE_MISSING;
+    return k_inv_slot_to_vram_tile[cursor_slot];
+}
+
+unsigned char inventory_get_pal_for_slot(unsigned char cursor_slot)
+{
+    if (cursor_slot >= INV_SLOT_COUNT) return RENDER_PAL1;
+    return k_inv_slot_to_pal[cursor_slot];
+}
+
 /* Resolve a NES tile_id to its Genesis VRAM tile via sparse LUT.
  * Returns BLANK_TILE if not in atlas. */
 static unsigned short tile_for(unsigned char nes_tile, unsigned char sub_pal)

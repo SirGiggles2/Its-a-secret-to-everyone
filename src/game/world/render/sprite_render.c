@@ -399,6 +399,19 @@ void roomrom_sprites_spawn_link(short x, short y)
                       RENDER_TILE_ATTR_FULL(RENDER_PAL1, 1, 0, 0,
                           (unsigned short)(ROOMROM_ITEM_TILE_BASE_PAL(0)
                               + ROOMROM_ITEM_TILE_MAGIC_SHOT_V)),
+                      ROOMROM_SPRITE_SLOT_HUD_B_ITEM);
+    /* Slot 10: HUD B-item LEFT. Slot 11: RIGHT hflipped. Both linked. */
+    VDP_setSpriteFull(ROOMROM_SPRITE_SLOT_HUD_B_ITEM,
+                      (signed short)-32,
+                      (signed short)-32,
+                      RENDER_SPRITE_SIZE(1, 2),
+                      RENDER_TILE_ATTR_FULL(RENDER_PAL1, 1, 0, 0, 0),
+                      ROOMROM_SPRITE_SLOT_HUD_B_ITEM_R);
+    VDP_setSpriteFull(ROOMROM_SPRITE_SLOT_HUD_B_ITEM_R,
+                      (signed short)-32,
+                      (signed short)-32,
+                      RENDER_SPRITE_SIZE(1, 2),
+                      RENDER_TILE_ATTR_FULL(RENDER_PAL1, 1, 0, 1, 0),
                       ROOMROM_SPRITE_SLOT_ENEMY_FIRST);
     roomrom_sprites_set_link_pose(x, y, LINK_FACE_DOWN, 0u);
     render_update_sprites(ROOMROM_SPRITE_UPLOAD_COUNT_H32);
@@ -904,30 +917,30 @@ void roomrom_sprites_set_magic_shot(short x, short y, link_face_t face,
         VDP_setSpriteFull(ROOMROM_SPRITE_SLOT_MAGIC_SHOT, (signed short)x, (signed short)y, RENDER_SPRITE_SIZE(2, 2),
                           RENDER_TILE_ATTR_FULL(ROOMROM_SUBPAL_PAL(sub_pal),
                                                 1, 0, 0, tile_v),
-                          ROOMROM_SPRITE_SLOT_ENEMY_FIRST);
+                          ROOMROM_SPRITE_SLOT_HUD_B_ITEM);
         break;
     case LINK_FACE_DOWN:
         VDP_setSpriteFull(ROOMROM_SPRITE_SLOT_MAGIC_SHOT, (signed short)x, (signed short)y, RENDER_SPRITE_SIZE(2, 2),
                           RENDER_TILE_ATTR_FULL(ROOMROM_SUBPAL_PAL(sub_pal),
                                                 1, 1, 0, tile_v),
-                          ROOMROM_SPRITE_SLOT_ENEMY_FIRST);
+                          ROOMROM_SPRITE_SLOT_HUD_B_ITEM);
         break;
     case LINK_FACE_LEFT:
         VDP_setSpriteFull(ROOMROM_SPRITE_SLOT_MAGIC_SHOT, (signed short)x, (signed short)y, RENDER_SPRITE_SIZE(2, 2),
                           RENDER_TILE_ATTR_FULL(ROOMROM_SUBPAL_PAL(sub_pal),
                                                 1, 0, 1, tile_h),
-                          ROOMROM_SPRITE_SLOT_ENEMY_FIRST);
+                          ROOMROM_SPRITE_SLOT_HUD_B_ITEM);
         break;
     case LINK_FACE_RIGHT:
         VDP_setSpriteFull(ROOMROM_SPRITE_SLOT_MAGIC_SHOT, (signed short)x, (signed short)y, RENDER_SPRITE_SIZE(2, 2),
                           RENDER_TILE_ATTR_FULL(ROOMROM_SUBPAL_PAL(sub_pal),
                                                 1, 0, 0, tile_h),
-                          ROOMROM_SPRITE_SLOT_ENEMY_FIRST);
+                          ROOMROM_SPRITE_SLOT_HUD_B_ITEM);
         break;
     default:
         VDP_setSpriteFull(ROOMROM_SPRITE_SLOT_MAGIC_SHOT, (signed short)-32, (signed short)-32, RENDER_SPRITE_SIZE(2, 2),
                           RENDER_TILE_ATTR_FULL(RENDER_PAL1, 1, 0, 0, tile_v),
-                          ROOMROM_SPRITE_SLOT_ENEMY_FIRST);
+                          ROOMROM_SPRITE_SLOT_HUD_B_ITEM);
         break;
     }
 }
@@ -938,7 +951,7 @@ void roomrom_sprites_clear_magic_shot(void)
                                             + ROOMROM_ITEM_TILE_MAGIC_SHOT_V);
     VDP_setSpriteFull(ROOMROM_SPRITE_SLOT_MAGIC_SHOT, (signed short)-32, (signed short)-32, RENDER_SPRITE_SIZE(2, 2),
                       RENDER_TILE_ATTR_FULL(RENDER_PAL1, 0, 0, 0, tile),
-                      ROOMROM_SPRITE_SLOT_ENEMY_FIRST);
+                      ROOMROM_SPRITE_SLOT_HUD_B_ITEM);
 }
 
 

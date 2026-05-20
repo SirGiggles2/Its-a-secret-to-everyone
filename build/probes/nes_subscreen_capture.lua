@@ -154,6 +154,24 @@ for addr = 0x0000, 0x07FF do
 end
 f:close()
 
+-- Dump CHR (8 KB) via "CHR" domain — BizHawk Z1 MMC1 exposes the
+-- currently-banked 8 KB CHR via this domain.
+f = io.open(OUT .. "/chr.bin", "wb")
+for addr = 0x0000, 0x1FFF do
+  f:write(string.char(memory.read_u8(addr, "CHR")))
+end
+f:close()
+
+-- Also dump all NES domains for reference
+local doms = memory.getmemorydomainlist()
+local dom_log = io.open(OUT .. "/domains.txt", "w")
+dom_log:write("Available memory domains:\n")
+for _, d in ipairs(doms) do
+  local size = memory.getmemorydomainsize(d)
+  dom_log:write(string.format("  %s: %d bytes\n", d, size))
+end
+dom_log:close()
+
 -- State log
 f = io.open(OUT .. "/state.txt", "w")
 f:write(string.format("Room $%02X\n", room_pre))

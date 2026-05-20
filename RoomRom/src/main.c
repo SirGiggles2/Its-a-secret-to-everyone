@@ -5,6 +5,7 @@
 #include "../../src/game/dungeon/uw_render.h"        /* Phase 12.2 promoted */
 #include "../../src/game/hud/hud_runtime.h"  /* Phase 12.2 promoted */
 #include "../../src/game/world/render/sprite_render.h"
+#include "../../src/game/world/render/sprite_slots.h"  /* Phase 8 W0c HUD slot 10 */
 #include "../../src/game/combat/combat_runtime.h"  /* Phase 12.2 promoted */
 #include "../../src/game/items/boomerang.h"      /* Phase 12.2 promoted */
 #include "../../src/game/items/arrow.h"          /* Phase 12.2 promoted */
@@ -157,6 +158,40 @@ void roomrom_set_b_item_from_inv_cursor(unsigned char cursor_slot)
 {
     if (cursor_slot >= 9u) return;
     s_b_item = (b_item_t)k_inv_cursor_to_b_item[cursor_slot];
+}
+
+/* Phase 8 W0c (2026-05-20): per-frame HUD B-item icon update.
+ * Uses SGDK VDP_setSpriteFull cached path (VBlank-safe DMA).
+ * SGDK adds +128 to (x, y) internally, pass NES pixel coords directly. */
+static void roomrom_hud_b_item_update(void)
+{
+    unsigned char slot = g_inventory.selected_b_item;
+    unsigned short vram = inventory_get_vram_tile_for_slot(slot);
+    s16 px_x, px_y;
+    unsigned short attr;
+    if (vram == 0xFFFFu) {
+        px_x = (s16)-32;
+        px_y = (s16)-32;
+        attr = 0;
+    } else {
+        /* NES OAM evidence: HUD B-item at NES X=$80 Y=$1F tile pal=1.
+         * SGDK display formula: SAT-128 = pixel. NES Y=$1F=31 displays
+         * at scanline 32 (Y+1). Genesis HUD area starts at pixel 16
+         * (8-line top-crop offset between NES PPU and Genesis VDP). */
+        px_x = (s16)0x80;
+        px_y = (s16)(0x1Fu - 7u);   /* -8 top-crop + 1 user nudge = -7 */
+        unsigned char pal = inventory_get_pal_for_slot(slot);
+        attr = RENDER_TILE_ATTR_FULL(pal, 1, 0, 0, vram);
+    }
+    VDP_setSpriteFull(ROOMROM_SPRITE_SLOT_HUD_B_ITEM, px_x, px_y,
+        RENDER_SPRITE_SIZE(1, 2), attr, ROOMROM_SPRITE_SLOT_HUD_B_ITEM_R);
+
+    /* HUD A-item (sword). Per NES OAM probe slot 49: Y=$1F X=$98 tile=$20
+     * pal=2 hflip=1. NES sword tile $20 -> Genesis VRAM SPR_BASE+$20=565. */
+    unsigned short sword_vram = (unsigned short)(ROOMROM_SPR_TILE_BASE + 0x20u);
+    unsigned short sword_attr = RENDER_TILE_ATTR_FULL(RENDER_PAL3, 1, 0, 1, sword_vram);
+    VDP_setSpriteFull(ROOMROM_SPRITE_SLOT_HUD_B_ITEM_R, (s16)0x98, (s16)(0x1Fu - 7u),
+        RENDER_SPRITE_SIZE(1, 2), sword_attr, ROOMROM_SPRITE_SLOT_ENEMY_FIRST);
 }
 static link_dir_t  s_link_dir  = LINK_DIR_NONE;  /* NES ObjDir: last active axis */
 static unsigned char s_doorway_dir = UW_WALK_DOOR_NONE; /* active UW doorway */
@@ -2628,9 +2663,13 @@ void roomrom_debug_tick(void)
          * 64*8=512 to ~12*8=96 per frame on busy rooms = ~6% frame
          * budget recovered. Floor of 10 keeps Link + gameplay sprites
          * (slots 0..9) always covered. */
+        /* HUD B-item icon per-frame update (slot 10). */
+        roomrom_hud_b_item_update();
+
         {
             unsigned short dma_count = g_enemy_render_last_sat_slot;
-            if (dma_count < 10u) dma_count = 10u;
+            /* Floor 12: slots 0..9 + slot 10/11 HUD_B_ITEM pair. */
+            if (dma_count < 12u) dma_count = 12u;
             VDP_updateSprites(dma_count, DMA_QUEUE);
         }
 

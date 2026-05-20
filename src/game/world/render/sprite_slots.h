@@ -40,11 +40,13 @@
 #define ROOMROM_SPRITE_SLOT_ROOM_ITEM       7u  /* Room-pickup item (triforce / key / map) */
 #define ROOMROM_SPRITE_SLOT_CANDLE_FIRE     8u  /* Candle flame FX */
 #define ROOMROM_SPRITE_SLOT_MAGIC_SHOT      9u  /* Magic rod projectile */
+#define ROOMROM_SPRITE_SLOT_HUD_B_ITEM     10u  /* HUD B-item LEFT half */
+#define ROOMROM_SPRITE_SLOT_HUD_B_ITEM_R   11u  /* HUD B-item RIGHT half (hflip) */
 
 /* --- Chain / range bounds --- */
 #define ROOMROM_SPRITE_SLOT_LINK_FIRST       ROOMROM_SPRITE_SLOT_LINK
-#define ROOMROM_SPRITE_SLOT_GAMEPLAY_LAST    ROOMROM_SPRITE_SLOT_MAGIC_SHOT
-#define ROOMROM_SPRITE_SLOT_ENEMY_FIRST     10u
+#define ROOMROM_SPRITE_SLOT_GAMEPLAY_LAST    ROOMROM_SPRITE_SLOT_HUD_B_ITEM_R
+#define ROOMROM_SPRITE_SLOT_ENEMY_FIRST     12u
 #define ROOMROM_SPRITE_SLOT_LAST_H32        63u
 #define ROOMROM_SPRITE_UPLOAD_COUNT_H32     64u
 
