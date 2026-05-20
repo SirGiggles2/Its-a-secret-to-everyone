@@ -28,6 +28,7 @@
 #include "../../src/game/dungeon/item_room_meta.h"   /* Phase 12.2 promoted */
 #include "../../src/game/items/candle_fire.h"   /* Task 5.8.1 candle fire (Phase 12.2 promoted) */
 #include "../../src/state/pause_state.h"  /* Task 6.10.1: Paused flag (Phase 12.2 promoted) */
+#include "../../src/game/inventory/inventory_render.h"  /* P6.2: pause subscreen */
 #include "../../src/game/combat/link_damage.h"   /* Task 6.11.1 (Phase 12.2 promoted) */
 #include "../../src/state/inventory.h"                   /* Task 6.10.10: rupee tick */
 #include "../../src/state/nes_ram_sync.h"                /* Plan v5a Tier-1: $FA/$FB/$66F/$670/$008C */
@@ -2278,7 +2279,17 @@ void roomrom_debug_tick(void)
         if ((pressed & BUTTON_START) &&
             !(joy & (BUTTON_A | BUTTON_B | BUTTON_C |
                      BUTTON_X | BUTTON_Y | BUTTON_Z | BUTTON_MODE))) {
+            unsigned char was_paused = roomrom_pause_is_active();
             roomrom_pause_toggle_voluntary();
+            /* P6.2 (2026-05-19): bare-START transition hooks inventory
+             * subscreen enter/exit. NES Z1 renders inventory on pause;
+             * our subscreen renderer paints Plane A on enter, leaves
+             * it static; exit defers re-paint to room renderer. */
+            if (!was_paused && roomrom_pause_is_active()) {
+                inventory_subscreen_enter();
+            } else if (was_paused && !roomrom_pause_is_active()) {
+                inventory_subscreen_exit();
+            }
             return;
         }
 
