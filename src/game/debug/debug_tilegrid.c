@@ -236,33 +236,52 @@ static unsigned char joy_read3(void) {
     return base;
 }
 
-/* Fill plane A with the 16x16 BG tile-id grid for the current sub_pal.
- * Cell (row*32 + col) for row<16, col<16 = sparse-LUT-resolved tile slot
- * for NES tile_id (row*16 + col) at s_subpal. Outside the grid = tile 1000
- * (unallocated headroom slot, all-zero pixels = backdrop = black). */
+/* Universal graphics grid: page-dispatch covering every Genesis atlas
+ * surface in fixed-position 16x16 grids. Each (page, row, col) cell maps
+ * to a deterministic NES origin tile so the NES test ROM (V2) can mirror
+ * the layout for cell-by-cell PNG diff. Pages cycle via Start button.
+ *
+ * Page 0 (BG_VIEW)       — NES BG tile_ids $00..$FF, sub_pal-routed via LUT.
+ * Page 1 (SPR_VIEW)      — NES SPR tile_ids $00..$FF, mapped to Genesis
+ *                          SPR_TILE_BASE + tile_id.
+ * Page 2 (ITEM_LINK_VIEW)— ITEM atlas (98 tiles, rows 0-5) + Link walk
+ *                          poses (rows 6-7) + attack poses (row 8).
+ * Page 3 (MISC_VIEW)     — Common Misc + SCENE_OBJ overlay tiles + bank
+ *                          state indicator.
+ */
 #define BLANK_TILE 1000u
-static void redraw_bg(void) {
+
+/* VRAM tile bases (must match sprite_render.c constants):
+ *   COMMON (sprites_chr) = SPR_TILE_BASE        = 533
+ *   LINK walk poses      = 533 + 238            = 771
+ *   LINK attack poses    = 771 + 32             = 803
+ *   ITEM atlas           = 803 + 16             = 819
+ *   SCENE_OBJ overlay    = 577 (= SPR_TILE_BASE + 44, overlaps Common SPR) */
+#define UG_SPR_TILE_BASE    533u
+#define UG_LINK_VRAM_TILE   (UG_SPR_TILE_BASE + 238u)        /* 771 */
+#define UG_ATTACK_VRAM_TILE (UG_LINK_VRAM_TILE + 32u)        /* 803 */
+#define UG_ITEM_VRAM_TILE   (UG_ATTACK_VRAM_TILE + 16u)      /* 819 */
+#define UG_SCENE_OBJ_BASE   577u
+
+static void plane_clear(void) {
     /* Fill BOTH planes with blank-headroom tile. Plane A pixel 0 is
      * transparent and reveals Plane B underneath; if Plane B still holds
      * title art the screen looks tiled. Clear both. */
     unsigned short blank_attr = RENDER_TILE_ATTR_FULL(RENDER_PAL0, 0, 0, 0, BLANK_TILE);
     render_plane_fill(PLANE_A_BASE, blank_attr, 32u * 32u);
-    render_plane_fill(0xE000u,      blank_attr, 32u * 32u);  /* Plane B */
+    render_plane_fill(0xE000u,      blank_attr, 32u * 32u);
 
-    /* Reset scroll registers — title may have left VSRAM/HSCROLL non-zero
-     * so our "row 0" lands mid-screen. VSRAM slot 0 = plane-A vertical;
-     * HSCROLL table at $FC00 (or wherever VDP reg 13 points) holds plane
-     * horizontal scroll. Write 0 to both to anchor at top-left. */
-    /* VSRAM write to slot 0 (plane A vscroll = 0): */
+    /* Reset scroll registers. */
     *((volatile unsigned long *)0xC00004) = 0x40000010UL;
     *((volatile unsigned short *)0xC00000) = 0x0000;
-    /* VSRAM slot 2 (plane B vscroll = 0): */
     *((volatile unsigned long *)0xC00004) = 0x40020010UL;
     *((volatile unsigned short *)0xC00000) = 0x0000;
-    /* HSCROLL table base $FC00, first long = plane A + plane B hscroll = 0: */
-    *((volatile unsigned long *)0xC00004) = 0x7C000003UL;  /* VRAM write $FC00 */
+    *((volatile unsigned long *)0xC00004) = 0x7C000003UL;
     *((volatile unsigned long *)0xC00000) = 0x00000000UL;
+}
 
+/* Page 0: 16x16 BG sparse grid via LUT, rows 0..15 cols 0..15. */
+static void redraw_page_bg(void) {
     unsigned short row, col;
     unsigned short cells[16];
     for (row = 0; row < 16u; row++) {
@@ -273,15 +292,133 @@ static void redraw_bg(void) {
             if (slot == 0xFFFFu) {
                 attr = RENDER_TILE_ATTR_FULL(RENDER_PAL0, 0, 0, 0, BLANK_TILE);
             } else {
-                /* sparse_lut returns SLOT INDEX (0-based into atlas). Real
-                 * VRAM tile = ROOMROM_BG_TILE_BASE (1) + slot. Per ow_render.c:295
-                 * tile_word: return (ROOMROM_BG_TILE_BASE + slot). */
                 unsigned short vram_tile = (unsigned short)(1u + slot);
                 attr = RENDER_TILE_ATTR_FULL(RENDER_PAL0, 0, 0, 0, vram_tile);
             }
             cells[col] = attr;
         }
         render_plane_a_write_row(row, cells, 16u);
+    }
+}
+
+/* Page 1: 16x16 SPR atlas grid (Genesis sprite slot SPR_TILE_BASE + N).
+ * Cell (r, c) shows NES sprite tile_id (r*16 + c) which is loaded at
+ * Genesis VRAM slot 533 + tile_id. SCENE_OBJ overlay overrides slots
+ * 577..577+N when bank != 0; that's WHAT WE WANT — visual confirmation
+ * the overlay landed. PAL1 = NES SPR sub-pal 0 (Link/sword/common).
+ * sub_pal cycle selects PAL1 / PAL2 / PAL3 for SPR sub-pals 0/1/2. */
+static void redraw_page_spr(void) {
+    unsigned short row, col;
+    unsigned short cells[16];
+    /* Genesis SPR sub-pals route via OAM pal field; for plane A display,
+     * we mimic by picking PAL1 + sub_pal (PAL2 = SPR sub-pal 1, PAL3 =
+     * SPR sub-pal 2). sub_pal=3 not used (PR-3 collapsed to 3 sub-pals). */
+    unsigned char pal = (unsigned char)(RENDER_PAL1 +
+                                        ((s_subpal < 3u) ? s_subpal : 2u));
+    for (row = 0; row < 16u; row++) {
+        for (col = 0; col < 16u; col++) {
+            unsigned short tile_id = (unsigned short)(row * 16u + col);
+            unsigned short vram_tile = (unsigned short)(UG_SPR_TILE_BASE + tile_id);
+            cells[col] = RENDER_TILE_ATTR_FULL(pal, 0, 0, 0, vram_tile);
+        }
+        render_plane_a_write_row(row, cells, 16u);
+    }
+}
+
+/* Page 2: ITEM atlas (98 tiles, rows 0-6 partial 16-wide) +
+ * Link walk poses (32 tiles, rows 7-8) + attack poses (16 tiles, row 9).
+ * NES side will mirror this layout via packing ITEM/Link tiles into PRG
+ * CHR-page region. */
+static void redraw_page_item_link(void) {
+    unsigned short row, col;
+    unsigned short cells[16];
+
+    /* Rows 0..5: ITEM atlas tiles 0..95 (96 of 98 tiles). */
+    unsigned char pal_item = (unsigned char)(RENDER_PAL1 +
+                                             ((s_subpal < 3u) ? s_subpal : 2u));
+    for (row = 0; row < 6u; row++) {
+        for (col = 0; col < 16u; col++) {
+            unsigned short item_idx = (unsigned short)(row * 16u + col);
+            unsigned short vram_tile = (unsigned short)(UG_ITEM_VRAM_TILE + item_idx);
+            cells[col] = RENDER_TILE_ATTR_FULL(pal_item, 0, 0, 0, vram_tile);
+        }
+        render_plane_a_write_row(row, cells, 16u);
+    }
+    /* Row 6: last 2 ITEM tiles 96..97 + 14 blank. */
+    for (col = 0; col < 16u; col++) {
+        unsigned short item_idx = (unsigned short)(96u + col);
+        if (item_idx < 98u) {
+            unsigned short vram_tile = (unsigned short)(UG_ITEM_VRAM_TILE + item_idx);
+            cells[col] = RENDER_TILE_ATTR_FULL(pal_item, 0, 0, 0, vram_tile);
+        } else {
+            cells[col] = RENDER_TILE_ATTR_FULL(RENDER_PAL0, 0, 0, 0, BLANK_TILE);
+        }
+    }
+    render_plane_a_write_row(6u, cells, 16u);
+
+    /* Rows 7..8: Link walk poses (32 tiles, 16 per row). */
+    for (row = 7u; row < 9u; row++) {
+        for (col = 0; col < 16u; col++) {
+            unsigned short pose_idx = (unsigned short)((row - 7u) * 16u + col);
+            unsigned short vram_tile = (unsigned short)(UG_LINK_VRAM_TILE + pose_idx);
+            cells[col] = RENDER_TILE_ATTR_FULL(pal_item, 0, 0, 0, vram_tile);
+        }
+        render_plane_a_write_row(row, cells, 16u);
+    }
+
+    /* Row 9: Link attack poses (16 tiles). */
+    for (col = 0; col < 16u; col++) {
+        unsigned short vram_tile = (unsigned short)(UG_ATTACK_VRAM_TILE + col);
+        cells[col] = RENDER_TILE_ATTR_FULL(pal_item, 0, 0, 0, vram_tile);
+    }
+    render_plane_a_write_row(9u, cells, 16u);
+}
+
+/* Page 3: SCENE_OBJ overlay tiles + Common Misc.
+ * Rows 0..3: SCENE_OBJ slots 0..63 (64 tiles in 16x4) — Genesis VRAM tile
+ *   UG_SCENE_OBJ_BASE + slot.
+ * Row 4: Common Misc (14 tiles + 2 blank). NES Common Misc = common_chr
+ *   bytes 7168.., loaded in Genesis VRAM slots 533+224..533+237 (= 757..770). */
+static void redraw_page_misc(void) {
+    unsigned short row, col;
+    unsigned short cells[16];
+
+    unsigned char pal_spr = (unsigned char)(RENDER_PAL1 +
+                                            ((s_subpal < 3u) ? s_subpal : 2u));
+    /* Rows 0..3: SCENE_OBJ tiles. */
+    for (row = 0; row < 4u; row++) {
+        for (col = 0; col < 16u; col++) {
+            unsigned short slot = (unsigned short)(row * 16u + col);
+            unsigned short vram_tile = (unsigned short)(UG_SCENE_OBJ_BASE + slot);
+            cells[col] = RENDER_TILE_ATTR_FULL(pal_spr, 0, 0, 0, vram_tile);
+        }
+        render_plane_a_write_row(row, cells, 16u);
+    }
+
+    /* Row 4: Common Misc tiles (14 of 16 cells). */
+    for (col = 0; col < 16u; col++) {
+        if (col < 14u) {
+            /* Genesis VRAM slot for Common Misc tile N = COMMON_VRAM_TILE_BASE
+             * + 224 + N (224 = SPR section 112 + BG section 112). */
+            unsigned short vram_tile = (unsigned short)(UG_SPR_TILE_BASE + 224u + col);
+            cells[col] = RENDER_TILE_ATTR_FULL(RENDER_PAL0, 0, 0, 0, vram_tile);
+        } else {
+            cells[col] = RENDER_TILE_ATTR_FULL(RENDER_PAL0, 0, 0, 0, BLANK_TILE);
+        }
+    }
+    render_plane_a_write_row(4u, cells, 16u);
+}
+
+/* Dispatcher: pick page renderer per s_sprite_page (renamed to s_view_page
+ * in semantics — Start button cycles 0..3 already wired). */
+static void redraw_bg(void) {
+    plane_clear();
+    switch (s_sprite_page) {
+        case 0u: redraw_page_bg();        break;
+        case 1u: redraw_page_spr();       break;
+        case 2u: redraw_page_item_link(); break;
+        case 3u: redraw_page_misc();      break;
+        default: redraw_page_bg();        break;
     }
 }
 
@@ -294,35 +431,17 @@ static void redraw_bg(void) {
 #define SAT_VRAM_BASE 0xF800u
 
 static void redraw_sat(void) {
-    /* Direct VRAM SAT write bypassing SGDK SAT cache + DMA queue. The
-     * native intro context doesn't run SGDK VBlank handler so the queue
-     * is never drained — sprites set via render_set_sprite_full never
-     * land. Direct VDP writes are synchronous + immediately visible. */
+    /* V1 (2026-05-19): clear all sprites. Universal-graphics scene draws
+     * every atlas via Plane A grid; SAT sprites would overlap the Plane A
+     * cells at row 16+ (y=128+ pixels). Clear ensures PNG diff vs NES side
+     * is pure Plane A content with no SAT interference. */
     unsigned char slot;
     render_vram_open_write(SAT_VRAM_BASE);
     for (slot = 0u; slot < 80u; slot++) {
-        if (slot < 64u) {
-            /* Genesis sprite atlas tile_base = 533. NES sprite tile_id N
-             * -> Genesis VRAM tile slot 533 + N. */
-            unsigned short tile = (unsigned short)(533u + s_sprite_page * 64u + slot);
-            unsigned short y = (unsigned short)(0x80u + ((slot >> 3) * 16u) + 0x80u);
-            unsigned short x = (unsigned short)((slot & 7u) * 16u + 0x80u);
-            unsigned short size_link = (s_8x16 ? RENDER_SPRITE_SIZE(1, 2)
-                                                : RENDER_SPRITE_SIZE(1, 1)) << 8;
-            size_link |= (slot < 63u) ? (slot + 1u) : 0u;
-            unsigned short attr = RENDER_TILE_ATTR_FULL(RENDER_PAL1 + s_subpal,
-                                                        0, 0, 0, tile);
-            *((volatile unsigned short *)0xC00000) = y;
-            *((volatile unsigned short *)0xC00000) = size_link;
-            *((volatile unsigned short *)0xC00000) = attr;
-            *((volatile unsigned short *)0xC00000) = x;
-        } else {
-            /* Clear leftover title sprites in slots 64..79. */
-            *((volatile unsigned short *)0xC00000) = 0x0000;
-            *((volatile unsigned short *)0xC00000) = 0x0000;
-            *((volatile unsigned short *)0xC00000) = 0x0000;
-            *((volatile unsigned short *)0xC00000) = 0x0000;
-        }
+        *((volatile unsigned short *)0xC00000) = 0x0000;   /* y = 0 = off-screen */
+        *((volatile unsigned short *)0xC00000) = 0x0000;   /* size + link = 0 terminator */
+        *((volatile unsigned short *)0xC00000) = 0x0000;   /* attr */
+        *((volatile unsigned short *)0xC00000) = 0x0000;   /* x */
     }
 }
 
