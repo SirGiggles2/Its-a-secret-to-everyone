@@ -36,12 +36,19 @@ def state_name(bank, sub_pal, page, mode):
 
 def pixel_diff(img_a: Image.Image, img_b: Image.Image,
                x0: int, y0: int, w: int, h: int) -> int:
-    """Count pixels differing between img_a and img_b in [x0..x0+w, y0..y0+h]."""
+    """Count pixels differing between img_a and img_b in [x0..x0+w, y0..y0+h].
+    Clamps to image bounds; out-of-range pixels are skipped (not counted as diff)."""
     pa = img_a.load()
     pb = img_b.load()
+    wa, ha = img_a.size
+    wb, hb = img_b.size
     diff = 0
     for y in range(y0, y0 + h):
+        if y >= ha or y >= hb:
+            break
         for x in range(x0, x0 + w):
+            if x >= wa or x >= wb:
+                break
             if pa[x, y] != pb[x, y]:
                 diff += 1
     return diff

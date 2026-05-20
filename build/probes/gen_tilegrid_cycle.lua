@@ -19,12 +19,9 @@ local function read(addr) return memory.read_u8(addr, "M68K BUS") end
 -- Boot wait for title display
 idle(240)
 
--- Press MODE button (6-button extended bit). Try multiple button-name
--- styles since BizHawk gen+ core may vary.
-for fr = 1, 24 do
-  joypad.set({Mode=true, MODE=true, ["P1 Mode"]=true}, 1)
-  emu.frameadvance()
-end
+-- Trigger debug scene via C+Start chord (3-button safe).
+joypad.set({C=true, Start=true}, 1)
+for fr = 1, 8 do emu.frameadvance() end
 joypad.set({}, 1)
 idle(60)
 
@@ -43,13 +40,7 @@ for bank = 0, 7 do
         poke(0xFF07E2, page)
         poke(0xFF07E3, mode)
         poke(0xFF07E4, 0xAA)
-        -- Wait up to 60 frames for scene to ack (flag returns to 0).
-        local waited = 0
-        while read(0xFF07E4) == 0xAA and waited < 60 do
-          emu.frameadvance()
-          waited = waited + 1
-        end
-        idle(2)  -- extra settle
+        idle(4)
         local name = string.format("bank%d_sub%d_page%d_8x16%d", bank, sub_pal, page, mode)
         client.screenshot(DIR .. "/" .. name .. ".png")
       end

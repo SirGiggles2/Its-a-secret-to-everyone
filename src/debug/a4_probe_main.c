@@ -133,12 +133,22 @@ static void debug_poll_title(void)
     was_chord = (u16)(s_prev_joy & CHORD_DEBUG);
     is_chord = (u16)(joy & CHORD_DEBUG);
 
-    /* MODE button edge-press -> debug tile-grid scene (never returns). */
-    if ((joy & BUTTON_MODE) && !(s_prev_joy & BUTTON_MODE))
+    /* C+START chord edge-press -> debug tile-grid scene (never returns).
+     * Both buttons are 3-button readable so works in BizHawk default
+     * controller config without needing 6-button mode. MODE button also
+     * triggers (held as alt for 6-button pads). */
     {
-        s_prev_joy = joy;
-        debug_tilegrid_main();
-        /* unreachable */
+        unsigned short trig_mask = BUTTON_MODE;
+        unsigned short cs_chord  = BUTTON_C | BUTTON_START;
+        unsigned char  cs_now    = ((joy & cs_chord) == cs_chord) ? 1 : 0;
+        unsigned char  cs_prev   = ((s_prev_joy & cs_chord) == cs_chord) ? 1 : 0;
+        unsigned char  mode_edge = ((joy & trig_mask) && !(s_prev_joy & trig_mask)) ? 1 : 0;
+        if ((cs_now && !cs_prev) || mode_edge)
+        {
+            s_prev_joy = joy;
+            debug_tilegrid_main();
+            /* unreachable */
+        }
     }
     s_prev_joy = joy;
 
