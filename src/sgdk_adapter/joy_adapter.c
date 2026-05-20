@@ -86,3 +86,32 @@ unsigned char joy_state(unsigned char port)
     /* Port 1 (player 2): stub. Phase F wires SGDK JOY_readJoypad(JOY2). */
     return 0;
 }
+
+/* Full 16-bit SGDK read for port 0 — needed for 6-button MODE/X/Y/Z bits.
+ * Returns SGDK BUTTON_* bitmask (BUTTON_MODE = 0x0800).
+ *
+ * Root cause from systematic debugging 2026-05-19: SGDK's JOY_readJoypad
+ * returns the internal joyState[] array which is normally refreshed by
+ * JOY_update() called from SGDK's VBlank handler. The native intro_main
+ * frontend uses its own wait_vblank() (spin on $00FF0FF8) and bypasses
+ * SGDK's VBlank chain, so joyState[] is never refreshed and reads return
+ * 0 (or stale data). Gameplay context runs SGDK VBlank so MODE works
+ * there but title context does not.
+ *
+ * Fix: call JOY_update() inline before JOY_readJoypad to force a fresh
+ * poll. JOY_init() runs once lazily for peripheral detection. */
+extern unsigned short JOY_readJoypad(unsigned short joy);
+extern void JOY_init(void);
+extern void JOY_update(void);
+#define JOY_1 0x0000u
+
+unsigned short joy_read_full(void)
+{
+    static unsigned char inited = 0u;
+    if (!inited) {
+        JOY_init();
+        inited = 1u;
+    }
+    JOY_update();
+    return JOY_readJoypad(JOY_1);
+}

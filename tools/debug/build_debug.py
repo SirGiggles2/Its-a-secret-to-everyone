@@ -97,6 +97,8 @@ TITLE_C_SOURCES = [
     # frontend wire-up into Debug.md gameplay path is a follow-up task).
     ("src/frontend/fs/fs_options.c", "fs_options.o"),
     ("src/frontend/fs/fs_options_render.c", "fs_options_render.o"),
+    # 2026-05-19 — title-MODE-button debug tile-grid scene for atlas audit.
+    ("src/game/debug/debug_tilegrid.c", "debug_tilegrid.o"),
 ]
 
 ROOMROM_C_SOURCES = [

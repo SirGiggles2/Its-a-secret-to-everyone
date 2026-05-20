@@ -181,7 +181,7 @@ PPUSTATUS = 0x2002
 PPUADDR   = 0x2006
 PPUDATA   = 0x2007
 
-NUM_BANKS = 9
+NUM_BANKS = 8
 
 
 def build_prg() -> bytes:
@@ -665,11 +665,10 @@ def build_chr() -> list[bytes]:
         spr_blocks=[(common_spr, OFF_COMMON_SPR), (uw_sp, OFF_SCENE_SPR), (boss9, OFF_BOSS_SPR)],
         bg_blocks=[(common_bg, OFF_COMMON_BG), (uw_bg, OFF_SCENE_BG), (common_misc, OFF_COMMON_MISC)],
     ))
-    # Page 8: Title demo
-    pages.append(build_chr_page(
-        spr_blocks=[(common_spr, OFF_COMMON_SPR), (demo_sp, OFF_SCENE_SPR)],
-        bg_blocks=[(common_bg, OFF_COMMON_BG), (demo_bg, OFF_SCENE_BG), (common_misc, OFF_COMMON_MISC)],
-    ))
+    # Demo bank dropped 2026-05-19 — Genesis port doesn't extract Demo
+    # CHR (title screen is Genesis-native, not Z1 Demo art per memory
+    # project_title_screen_goal). Both ROMs cycle banks 0..7 for parity.
+    _ = demo_bg; _ = demo_sp  # suppress unused-variable warning
     return pages
 
 

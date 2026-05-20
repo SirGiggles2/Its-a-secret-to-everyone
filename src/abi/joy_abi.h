@@ -43,4 +43,22 @@ unsigned char joy_read(void);
  * Port 1 (player 2) is a stub in this adapter; Phase F wires SGDK JOY. */
 unsigned char joy_state(unsigned char port);
 
+/* Full 16-bit SGDK joy state for port 0 (player 1). Wraps
+ * JOY_readJoypad(JOY_1). Bit layout matches sgdk/inc/joy.h BUTTON_*:
+ *   bit  0  BUTTON_UP
+ *   bit  1  BUTTON_DOWN
+ *   bit  2  BUTTON_LEFT
+ *   bit  3  BUTTON_RIGHT
+ *   bit  4  BUTTON_A
+ *   bit  5  BUTTON_B
+ *   bit  6  BUTTON_C
+ *   bit  7  BUTTON_START
+ *   bit  8  BUTTON_Z   (6-button only)
+ *   bit  9  BUTTON_Y   (6-button only)
+ *   bit 10  BUTTON_X   (6-button only)
+ *   bit 11  BUTTON_MODE (6-button only)
+ * Use when 6-button bits (X/Y/Z/MODE) are needed — joy_read()
+ * 3-button protocol returns only the lower 8 bits. */
+unsigned short joy_read_full(void);
+
 #endif /* JOY_ABI_H */

@@ -14,6 +14,11 @@
 #define PASS_FRAME_LIMIT 180U
 #define CHORD_DEBUG (BUTTON_A | BUTTON_B | BUTTON_C)
 
+/* 2026-05-19 — MODE button at title enters debug tile-grid scene for
+ * atlas byte-diff against the custom NES test ROM. Pattern mirrors
+ * CHORD_DEBUG handling below; press is edge-triggered. */
+#include "../game/debug/debug_tilegrid.h"
+
 typedef enum {
     COMBINED_STATE_TITLE = 0,
     COMBINED_STATE_ROOMROM = 1
@@ -127,6 +132,14 @@ static void debug_poll_title(void)
     joy = JOY_readJoypad(JOY_1);
     was_chord = (u16)(s_prev_joy & CHORD_DEBUG);
     is_chord = (u16)(joy & CHORD_DEBUG);
+
+    /* MODE button edge-press -> debug tile-grid scene (never returns). */
+    if ((joy & BUTTON_MODE) && !(s_prev_joy & BUTTON_MODE))
+    {
+        s_prev_joy = joy;
+        debug_tilegrid_main();
+        /* unreachable */
+    }
     s_prev_joy = joy;
 
     if (is_chord == CHORD_DEBUG && was_chord != CHORD_DEBUG)

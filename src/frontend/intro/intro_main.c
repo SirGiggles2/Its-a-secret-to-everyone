@@ -18,12 +18,18 @@
 #include "intro_phase.h"
 #include "intro_handoff.h"
 #include "render_abi.h"
+#include "joy_abi.h"
+#include "../../game/debug/debug_tilegrid.h"
+
+/* SGDK BUTTON_MODE bit constant (per sgdk/inc/joy.h:64). */
+#define BUTTON_MODE 0x0800u
 
 #define S_INTRO_FRAME_COUNTER (*(volatile unsigned long *)0x00FF0FF8)
 
 #define CTRL1_DATA  (*(volatile unsigned char *)0x00A10003)
 
 #define BTN_START   0x20
+#define BTN_A       0x10
 
 extern void music_play(unsigned char song_bitmap);
 
