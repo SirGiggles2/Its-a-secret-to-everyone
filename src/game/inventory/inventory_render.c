@@ -19,7 +19,30 @@
 #include "../../abi/render_abi.h"
 #include "../../../RoomRom/src/bg_sparse_chr.h"
 #include "../../../RoomRom/src/roomrom_vram_map.h"
+#include "../../../RoomRom/src/atlas/items_chr_x4.h"
 #include "../../state/inventory.h"
+
+/* Genesis VRAM tile for item N: ITEM_VRAM_TILE_BASE + ROOMROM_ITEM_TILE_<X>.
+ * ITEM_VRAM_TILE_BASE = ATTACK_VRAM_TILE + 16. ATTACK = LINK + 32. LINK = SPR_BASE+238.
+ * = 533 + 238 + 32 + 16 = 819. */
+#define ITEM_VRAM_TILE_BASE 819u
+/* SAT VRAM base, gameplay context per PR-2 Option F. */
+#define SAT_VRAM_BASE_GAMEPLAY 0xF400u
+
+/* Helper: pack a SAT entry word block and write to a SAT slot via direct
+ * VRAM. Y/x are 9-bit per Genesis VDP spec; size_link packs SIZE<<8 | next. */
+static void sat_write(unsigned char slot, unsigned short y,
+                      unsigned short size, unsigned char link,
+                      unsigned short attr, unsigned short x)
+{
+    unsigned short addr = (unsigned short)(SAT_VRAM_BASE_GAMEPLAY + slot * 8u);
+    render_vram_open_write(addr);
+    *((volatile unsigned short *)0xC00000) = y;
+    *((volatile unsigned short *)0xC00000) =
+        (unsigned short)((size << 8) | link);
+    *((volatile unsigned short *)0xC00000) = attr;
+    *((volatile unsigned short *)0xC00000) = x;
+}
 
 #define PLANE_A_BASE      0xC000u
 #define BLANK_TILE        1000u
@@ -95,31 +118,115 @@ static void write_text(unsigned short row, unsigned short col,
     render_plane_a_write_row(row, full, 32u);
 }
 
+/* Draw an owned item sprite. Writes ONE SAT entry at the given pixel
+ * position with the item tile_id. SIZE(1,2) = 8x16 to match NES OAM 8x16
+ * mode for item icons. */
+static unsigned char s_next_sat_slot;
+
+static void draw_item_icon(unsigned char tile_offset, unsigned short y, unsigned short x)
+{
+    unsigned short vram_tile = (unsigned short)(ITEM_VRAM_TILE_BASE + tile_offset);
+    unsigned short attr = RENDER_TILE_ATTR_FULL(RENDER_PAL1, 0, 0, 0, vram_tile);
+    unsigned char link = (unsigned char)(s_next_sat_slot + 1u);
+    sat_write(s_next_sat_slot, y, RENDER_SPRITE_SIZE(1, 2), link, attr, x);
+    ++s_next_sat_slot;
+}
+
+/* Draw a 2x2 (16x16) item icon — for items rendered with sprite_size=(2,2)
+ * like sword_horz, explosion, etc. */
+static void draw_item_icon_2x2(unsigned char tile_offset, unsigned short y, unsigned short x)
+{
+    unsigned short vram_tile = (unsigned short)(ITEM_VRAM_TILE_BASE + tile_offset);
+    unsigned short attr = RENDER_TILE_ATTR_FULL(RENDER_PAL1, 0, 0, 0, vram_tile);
+    unsigned char link = (unsigned char)(s_next_sat_slot + 1u);
+    sat_write(s_next_sat_slot, y, RENDER_SPRITE_SIZE(2, 2), link, attr, x);
+    ++s_next_sat_slot;
+}
+
 void inventory_subscreen_enter(void)
 {
-    /* Fill Plane A with blank tile (PAL0 backdrop = black). */
+    /* Fill BOTH planes with blank tile (PAL0 backdrop = black). Plane A
+     * is 64x32 in gameplay context (PR-2 Option F H32 mode per
+     * src/abi/render_abi.h:17), so fill 64*32 = 2048 cells, not 1024.
+     * Plane B similar size. */
     unsigned short blank_attr = RENDER_TILE_ATTR_FULL(SUBSCREEN_SUBPAL, 0, 0, 0,
                                                       BLANK_TILE);
-    render_plane_fill(PLANE_A_BASE, blank_attr, 32u * 32u);
+    render_plane_fill(PLANE_A_BASE, blank_attr, 64u * 32u);
+    render_plane_fill(0xE000u,      blank_attr, 64u * 32u);  /* Plane B */
 
-    /* V1 minimal layout — NES Z1 inventory subscreen text. */
-    write_text(3u,  3u, "INVENTORY");
-    write_text(5u,  3u, "USE B BUTTON FOR THIS");
-    write_text(7u,  3u, "B  A  ");
+    /* Reset Plane A vscroll (VSRAM slot 0) + Plane B vscroll (slot 2) so
+     * row 0 of each plane lands at screen top. Gameplay may have left
+     * non-zero VSRAM. */
+    *((volatile unsigned long *)0xC00004) = 0x40000010UL;
+    *((volatile unsigned short *)0xC00000) = 0x0000;
+    *((volatile unsigned long *)0xC00004) = 0x40020010UL;
+    *((volatile unsigned short *)0xC00000) = 0x0000;
+    /* HSCROLL table base — gameplay leaves Plane A scrolled; reset. */
+    *((volatile unsigned long *)0xC00004) = 0x7C000003UL;
+    *((volatile unsigned long *)0xC00000) = 0x00000000UL;
 
-    /* Item slot grid — 4 rows x 7 cols labels.
-     * NES Z1 actual slot positions are pixel-based; we approximate via
-     * even-cell grid for V1 readability. */
-    write_text(9u,  3u, "PASSIVE ITEMS");
-    write_text(11u, 3u, "BOW  BOOM CAND ARRW BMRG WAND BAIT");
-    write_text(13u, 3u, "RAFT BOOK RING LADD KEY  BRAC LETR");
+    /* Section headers (BG text — uses sparse atlas alphabet from P6.2b). */
+    write_text(2u,  10u, "INVENTORY");
+    write_text(4u,  6u, "USE B BUTTON FOR THIS");
+    write_text(13u, 10u, "TRIFORCE");
 
-    write_text(15u, 3u, "TRIFORCE");
-    /* Triforce piece labels — 8 pieces */
-    write_text(17u, 3u, "1 2 3 4 5 6 7 8");
+    /* Item sprites — sub-pal 1 (sprite palette). Position layout: V1
+     * uses fixed pixel coords approximating NES Z1 inventory grid.
+     * Genesis SAT Y = pixel-y (no +128 offset since direct VRAM SAT writes
+     * encode raw screen coords; per debug_tilegrid.c style we use
+     * y_raw + $80 convention matching SGDK VDP_setSprite). */
+    s_next_sat_slot = 0u;
 
-    write_text(19u, 3u, "RUPEES KEYS BOMBS");
-    write_text(21u, 3u, "HEARTS");
+    /* B-item row at y=$50 (~10 rows down). 8 item slots. */
+    unsigned short b_row_y = 0x80u + 0x40u;  /* SGDK +$80 + 64 = $C0 */
+    if (g_inventory.boomerang_wood)
+        draw_item_icon(ROOMROM_ITEM_TILE_BOOMERANG, b_row_y, 0x40u);
+    if (g_inventory.bombs)
+        draw_item_icon(ROOMROM_ITEM_TILE_BOMB, b_row_y, 0x50u);
+    if (g_inventory.bow)
+        draw_item_icon(ROOMROM_ITEM_TILE_BOW, b_row_y, 0x60u);
+    if (g_inventory.candle)
+        draw_item_icon(ROOMROM_ITEM_TILE_CANDLE_FIRE_F0, b_row_y, 0x70u);
+    if (g_inventory.items & ITEMS_BIT_WAND)
+        draw_item_icon(ROOMROM_ITEM_TILE_SWORD_VERT, b_row_y, 0x80u);  /* wand icon */
+    if (g_inventory.items & ITEMS_BIT_FLUTE)
+        draw_item_icon(ROOMROM_ITEM_TILE_RECORDER, b_row_y, 0x90u);
+    if (g_inventory.food)
+        draw_item_icon(ROOMROM_ITEM_TILE_FOOD, b_row_y, 0xA0u);
+    if (g_inventory.potion)
+        draw_item_icon(ROOMROM_ITEM_TILE_POTION, b_row_y, 0xB0u);
+
+    /* Passive items row at y=$80. */
+    unsigned short p_row_y = 0x80u + 0x70u;
+    if (g_inventory.raft)
+        draw_item_icon(ROOMROM_ITEM_TILE_RAFT, p_row_y, 0x40u);
+    if (g_inventory.book)
+        draw_item_icon(ROOMROM_ITEM_TILE_BOOK_OF_MAGIC, p_row_y, 0x50u);
+    if (g_inventory.ring)
+        draw_item_icon(ROOMROM_ITEM_TILE_RING, p_row_y, 0x60u);
+    if (g_inventory.ladder)
+        draw_item_icon(ROOMROM_ITEM_TILE_LADDER, p_row_y, 0x70u);
+    if (g_inventory.magic_key)
+        draw_item_icon(ROOMROM_ITEM_TILE_MAGIC_KEY, p_row_y, 0x80u);
+    if (g_inventory.bracelet)
+        draw_item_icon(ROOMROM_ITEM_TILE_BRACELET, p_row_y, 0x90u);
+    /* Letter — uses Z1 paper-icon (no dedicated tile in atlas yet); skip
+     * if no tile constant. */
+
+    /* Triforce pieces at y=$B0 — 8 squares, one per dungeon owned. */
+    unsigned short t_row_y = 0x80u + 0xB0u;
+    unsigned char piece;
+    for (piece = 0; piece < 8u; ++piece) {
+        if (g_inventory.triforce & (1u << piece)) {
+            draw_item_icon(ROOMROM_ITEM_TILE_TRIFORCE_PIECE,
+                           t_row_y, (unsigned short)(0x40u + piece * 0x14u));
+        }
+    }
+
+    /* SAT terminator — link=0 hides remaining slots. */
+    if (s_next_sat_slot < 79u) {
+        sat_write(s_next_sat_slot, 0, RENDER_SPRITE_SIZE(1, 1), 0, 0, 0);
+    }
 
     s_active = 1u;
 }

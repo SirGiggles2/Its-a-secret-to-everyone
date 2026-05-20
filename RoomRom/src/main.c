@@ -2289,6 +2289,10 @@ void roomrom_debug_tick(void)
                 inventory_subscreen_enter();
             } else if (was_paused && !roomrom_pause_is_active()) {
                 inventory_subscreen_exit();
+                /* P6.7 unpause: re-render current room since subscreen
+                 * overwrote Plane A. load_room repaints palette + plane
+                 * tiles for s_room_id, returning to gameplay view. */
+                load_room(s_room_id);
             }
             return;
         }
