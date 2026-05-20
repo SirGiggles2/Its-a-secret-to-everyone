@@ -2288,11 +2288,15 @@ void roomrom_debug_tick(void)
             if (!was_paused && roomrom_pause_is_active()) {
                 inventory_subscreen_enter();
             } else if (was_paused && !roomrom_pause_is_active()) {
+                /* P6.3 scroll-out: start the animation. load_room
+                 * deferred until scroll completes — main.c poll loop
+                 * picks up the scrolled_out signal next frame. */
                 inventory_subscreen_exit();
-                /* P6.7 unpause: re-render current room since subscreen
-                 * overwrote Plane A. load_room repaints palette + plane
-                 * tiles for s_room_id, returning to gameplay view. */
-                load_room(s_room_id);
+                /* Re-set paused active so the input handler keeps
+                 * calling subscreen_tick during scroll-out frames.
+                 * The toggle above turned pause OFF; we restore it
+                 * here so input path still calls tick. */
+                roomrom_pause_toggle_voluntary();
             }
             return;
         }
@@ -2306,9 +2310,22 @@ void roomrom_debug_tick(void)
          * for cursor + B-item selection. D-pad moves cursor over B-item
          * row; A selects. Joy byte (lo 8 bits) matches SGDK BUTTON_*
          * layout: UP=$01 DOWN=$02 LEFT=$04 RIGHT=$08 B=$10 C=$20 A=$40
-         * START=$80. */
+         * START=$80.
+         *
+         * P6.3 (2026-05-19): if subscreen scroll-out just completed,
+         * clear pause flag + reload room. Otherwise tick the subscreen
+         * (drives scroll state machine + input). */
         if (roomrom_pause_is_active()) {
+            if (inventory_subscreen_scrolled_out()) {
+                /* Should not happen — paused but scroll-out done. Defensive. */
+            }
             inventory_subscreen_tick((unsigned char)(joy & 0x00FFu));
+            if (inventory_subscreen_scrolled_out()) {
+                /* Scroll-out animation just finished — drop pause flag,
+                 * reload room to restore gameplay BG. */
+                roomrom_pause_toggle_voluntary();
+                load_room(s_room_id);
+            }
             return;
         }
 

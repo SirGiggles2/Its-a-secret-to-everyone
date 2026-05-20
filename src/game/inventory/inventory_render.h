@@ -26,4 +26,7 @@ void inventory_subscreen_tick(unsigned char joy_state);
 /* Query: is the subscreen currently being displayed? */
 unsigned char inventory_subscreen_is_active(void);
 
+/* Query: scroll-out finished (gameplay should resume + room reload). */
+unsigned char inventory_subscreen_scrolled_out(void);
+
 #endif /* INVENTORY_RENDER_H */

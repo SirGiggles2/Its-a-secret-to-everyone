@@ -56,8 +56,23 @@ static unsigned char s_cursor_slot = 0u;
 static unsigned char s_prev_joy    = 0u;
 static unsigned char s_cursor_sat  = 0u;
 
+/* P6.3 scroll state machine. NES Z_05.asm:152+ UpdateMenuCommon scrolls
+ * over ~22 frames. We replicate via row-by-row replacement: each tick
+ * writes one row of inventory tilemap to plane A. */
+typedef enum {
+    SCROLL_IDLE   = 0,
+    SCROLL_IN     = 1,   /* writing inventory rows 0..N */
+    SCROLL_ACTIVE = 2,   /* subscreen fully visible */
+    SCROLL_OUT    = 3    /* clearing inventory rows N..0 */
+} scroll_state_t;
+static scroll_state_t s_scroll_state = SCROLL_IDLE;
+static unsigned char  s_scroll_row   = 0u;
+#define SCROLL_TOTAL_ROWS 28u
+
 static void draw_cursor(void);   /* forward decl */
 static unsigned char b_item_owned(unsigned char slot);  /* forward decl */
+static void draw_item_sprites(void);   /* forward decl */
+static void write_inventory_row(unsigned short row);   /* forward decl */
 
 unsigned char inventory_subscreen_is_active(void)
 {
@@ -152,42 +167,36 @@ static void draw_item_icon_2x2(unsigned char tile_offset, unsigned short y, unsi
     ++s_next_sat_slot;
 }
 
-void inventory_subscreen_enter(void)
+/* Write ONE row of inventory tilemap to Plane A row N. Called row-by-row
+ * by the scroll-in tick state machine (P6.3). Row content per layout:
+ *   row 2  = "INVENTORY" header
+ *   row 4  = "USE B BUTTON FOR THIS"
+ *   row 13 = "TRIFORCE"
+ *   other  = blank (item sprites overlay these rows after scroll completes) */
+static void write_inventory_row(unsigned short row)
 {
-    /* Fill BOTH planes with blank tile (PAL0 backdrop = black). Plane A
-     * is 64x32 in gameplay context (PR-2 Option F H32 mode per
-     * src/abi/render_abi.h:17), so fill 64*32 = 2048 cells, not 1024.
-     * Plane B similar size. */
+    /* Default: blank row. */
+    unsigned short cells[32];
+    unsigned short i;
     unsigned short blank_attr = RENDER_TILE_ATTR_FULL(SUBSCREEN_SUBPAL, 0, 0, 0,
                                                       BLANK_TILE);
-    render_plane_fill(PLANE_A_BASE, blank_attr, 64u * 32u);
-    render_plane_fill(0xE000u,      blank_attr, 64u * 32u);  /* Plane B */
+    for (i = 0; i < 32u; ++i) cells[i] = blank_attr;
+    render_plane_a_write_row(row, cells, 32u);
 
-    /* Reset Plane A vscroll (VSRAM slot 0) + Plane B vscroll (slot 2) so
-     * row 0 of each plane lands at screen top. Gameplay may have left
-     * non-zero VSRAM. */
-    *((volatile unsigned long *)0xC00004) = 0x40000010UL;
-    *((volatile unsigned short *)0xC00000) = 0x0000;
-    *((volatile unsigned long *)0xC00004) = 0x40020010UL;
-    *((volatile unsigned short *)0xC00000) = 0x0000;
-    /* HSCROLL table base — gameplay leaves Plane A scrolled; reset. */
-    *((volatile unsigned long *)0xC00004) = 0x7C000003UL;
-    *((volatile unsigned long *)0xC00000) = 0x00000000UL;
+    /* Now overlay text on specific rows. */
+    if (row == 2u)  write_text(2u,  10u, "INVENTORY");
+    if (row == 4u)  write_text(4u,  6u,  "USE B BUTTON FOR THIS");
+    if (row == 13u) write_text(13u, 10u, "TRIFORCE");
+}
 
-    /* Section headers (BG text — uses sparse atlas alphabet from P6.2b). */
-    write_text(2u,  10u, "INVENTORY");
-    write_text(4u,  6u, "USE B BUTTON FOR THIS");
-    write_text(13u, 10u, "TRIFORCE");
-
-    /* Item sprites — sub-pal 1 (sprite palette). Position layout: V1
-     * uses fixed pixel coords approximating NES Z1 inventory grid.
-     * Genesis SAT Y = pixel-y (no +128 offset since direct VRAM SAT writes
-     * encode raw screen coords; per debug_tilegrid.c style we use
-     * y_raw + $80 convention matching SGDK VDP_setSprite). */
+/* Draw all item icon sprites at their fixed positions. Called once when
+ * scroll-in completes. */
+static void draw_item_sprites(void)
+{
     s_next_sat_slot = 0u;
 
-    /* B-item row at y=$50 (~10 rows down). 8 item slots. */
-    unsigned short b_row_y = 0x80u + 0x40u;  /* SGDK +$80 + 64 = $C0 */
+    /* B-item row at y=$50. */
+    unsigned short b_row_y = 0x80u + 0x40u;
     if (g_inventory.boomerang_wood)
         draw_item_icon(ROOMROM_ITEM_TILE_BOOMERANG, b_row_y, 0x40u);
     if (g_inventory.bombs)
@@ -197,7 +206,7 @@ void inventory_subscreen_enter(void)
     if (g_inventory.candle)
         draw_item_icon(ROOMROM_ITEM_TILE_CANDLE_FIRE_F0, b_row_y, 0x70u);
     if (g_inventory.items & ITEMS_BIT_WAND)
-        draw_item_icon(ROOMROM_ITEM_TILE_SWORD_VERT, b_row_y, 0x80u);  /* wand icon */
+        draw_item_icon(ROOMROM_ITEM_TILE_SWORD_VERT, b_row_y, 0x80u);
     if (g_inventory.items & ITEMS_BIT_FLUTE)
         draw_item_icon(ROOMROM_ITEM_TILE_RECORDER, b_row_y, 0x90u);
     if (g_inventory.food)
@@ -205,7 +214,6 @@ void inventory_subscreen_enter(void)
     if (g_inventory.potion)
         draw_item_icon(ROOMROM_ITEM_TILE_POTION, b_row_y, 0xB0u);
 
-    /* Passive items row at y=$80. */
     unsigned short p_row_y = 0x80u + 0x70u;
     if (g_inventory.raft)
         draw_item_icon(ROOMROM_ITEM_TILE_RAFT, p_row_y, 0x40u);
@@ -219,10 +227,7 @@ void inventory_subscreen_enter(void)
         draw_item_icon(ROOMROM_ITEM_TILE_MAGIC_KEY, p_row_y, 0x80u);
     if (g_inventory.bracelet)
         draw_item_icon(ROOMROM_ITEM_TILE_BRACELET, p_row_y, 0x90u);
-    /* Letter — uses Z1 paper-icon (no dedicated tile in atlas yet); skip
-     * if no tile constant. */
 
-    /* Triforce pieces at y=$B0 — 8 squares, one per dungeon owned. */
     unsigned short t_row_y = 0x80u + 0xB0u;
     unsigned char piece;
     for (piece = 0; piece < 8u; ++piece) {
@@ -232,12 +237,43 @@ void inventory_subscreen_enter(void)
         }
     }
 
-    /* P6.5: cursor takes next SAT slot in the link chain, then terminates. */
-    s_active = 1u;
-    s_cursor_slot = 0u;
-    s_prev_joy = 0u;
     s_cursor_sat = s_next_sat_slot;
     draw_cursor();
+}
+
+void inventory_subscreen_enter(void)
+{
+    /* Reset HSCROLL — gameplay leaves Plane A scrolled. VSRAM left
+     * alone for now; row-by-row scroll-in mechanism replaces gameplay
+     * rows from top down. */
+    *((volatile unsigned long *)0xC00004) = 0x7C000003UL;
+    *((volatile unsigned long *)0xC00000) = 0x00000000UL;
+
+    /* Hide all sprites during scroll-in (so frozen gameplay sprites
+     * don't render over partially-built subscreen). */
+    {
+        unsigned char i;
+        unsigned short sat_addr = SAT_VRAM_BASE_GAMEPLAY;
+        render_vram_open_write(sat_addr);
+        for (i = 0; i < 80u; ++i) {
+            *((volatile unsigned short *)0xC00000) = 0x0000;
+            *((volatile unsigned short *)0xC00000) = 0x0000;
+            *((volatile unsigned short *)0xC00000) = 0x0000;
+            *((volatile unsigned short *)0xC00000) = 0x0000;
+        }
+    }
+
+    /* Also clear Plane B (gameplay sometimes uses it for room staging). */
+    unsigned short blank_attr = RENDER_TILE_ATTR_FULL(SUBSCREEN_SUBPAL, 0, 0, 0,
+                                                      BLANK_TILE);
+    render_plane_fill(0xE000u, blank_attr, 64u * 32u);
+
+    /* Start scroll-in state machine — tick will write rows progressively. */
+    s_active       = 1u;
+    s_scroll_state = SCROLL_IN;
+    s_scroll_row   = 0u;
+    s_prev_joy     = 0u;
+    s_cursor_slot  = 0u;
 }
 
 /* P6.5 cursor + selection. */
@@ -271,16 +307,72 @@ static void draw_cursor(void)
 
 void inventory_subscreen_exit(void)
 {
-    s_active = 0u;
-    /* Room renderer will re-paint Plane A on next room-load cycle.
-     * Until then, leaving subscreen content visible is fine — RoomRom
-     * main.c calls roomrom_*_room_render_load on scene transitions OR
-     * we can flag a redraw here. For V1, depend on natural redraw. */
+    /* Trigger scroll-out — tick clears rows N..0 over ~28 frames. */
+    s_scroll_state = SCROLL_OUT;
+    s_scroll_row   = SCROLL_TOTAL_ROWS;  /* clear from bottom up */
+    /* s_active stays 1 until scroll completes; tick deactivates + signals
+     * main.c to call load_room. */
+}
+
+/* Query: is scroll-out done (so main.c knows to call load_room)? */
+unsigned char inventory_subscreen_scrolled_out(void)
+{
+    return (s_scroll_state == SCROLL_IDLE && s_active == 0u);
 }
 
 void inventory_subscreen_tick(unsigned char joy_state)
 {
     if (!s_active) return;
+
+    /* P6.3 scroll state machine. */
+    if (s_scroll_state == SCROLL_IN) {
+        /* Write next inventory row each frame; advance until all 28 rows
+         * are written. ~2 rows/frame for snappy feel (NES does ~1.3
+         * rows/frame over 22 frames). */
+        write_inventory_row(s_scroll_row);
+        ++s_scroll_row;
+        if (s_scroll_row < SCROLL_TOTAL_ROWS) {
+            write_inventory_row(s_scroll_row);
+            ++s_scroll_row;
+        }
+        if (s_scroll_row >= SCROLL_TOTAL_ROWS) {
+            s_scroll_state = SCROLL_ACTIVE;
+            draw_item_sprites();  /* sprites visible once BG done */
+        }
+        return;
+    }
+
+    if (s_scroll_state == SCROLL_OUT) {
+        /* Clear rows from bottom up — gameplay rolls back into view. */
+        if (s_scroll_row > 0u) {
+            --s_scroll_row;
+            unsigned short cells[32];
+            unsigned short i;
+            unsigned short blank = RENDER_TILE_ATTR_FULL(SUBSCREEN_SUBPAL, 0, 0, 0,
+                                                         BLANK_TILE);
+            for (i = 0; i < 32u; ++i) cells[i] = blank;
+            render_plane_a_write_row(s_scroll_row, cells, 32u);
+            if (s_scroll_row > 0u) {
+                --s_scroll_row;
+                render_plane_a_write_row(s_scroll_row, cells, 32u);
+            }
+        }
+        if (s_scroll_row == 0u) {
+            s_scroll_state = SCROLL_IDLE;
+            s_active = 0u;
+            /* Hide cursor sprite. */
+            unsigned short sat_addr = (unsigned short)(SAT_VRAM_BASE_GAMEPLAY +
+                                                       s_cursor_sat * 8u);
+            render_vram_open_write(sat_addr);
+            *((volatile unsigned short *)0xC00000) = 0x0000;
+            *((volatile unsigned short *)0xC00000) = 0x0000;
+            *((volatile unsigned short *)0xC00000) = 0x0000;
+            *((volatile unsigned short *)0xC00000) = 0x0000;
+        }
+        return;
+    }
+
+    /* SCROLL_ACTIVE — accept input. */
 
     /* Joy bits per SGDK joy.h: UP=$01 DOWN=$02 LEFT=$04 RIGHT=$08
      * B=$10 C=$20 A=$40 START=$80. */
