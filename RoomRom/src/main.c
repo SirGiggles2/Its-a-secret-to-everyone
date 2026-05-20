@@ -192,6 +192,10 @@ static void roomrom_hud_b_item_update(void)
     unsigned short sword_attr = RENDER_TILE_ATTR_FULL(RENDER_PAL3, 1, 0, 1, sword_vram);
     VDP_setSpriteFull(ROOMROM_SPRITE_SLOT_HUD_B_ITEM_R, (s16)0x98, (s16)(0x1Fu - 7u),
         RENDER_SPRITE_SIZE(1, 2), sword_attr, ROOMROM_SPRITE_SLOT_ENEMY_FIRST);
+    /* Phase 8 W0c safeguard: invalidate sprite cache so beam / weapon slots
+     * downstream of HUD always re-write fresh SAT next frame (prevents
+     * cache-stale direction reverts after HUD overlay activates). */
+    roomrom_sprites_invalidate_cache();
 }
 static link_dir_t  s_link_dir  = LINK_DIR_NONE;  /* NES ObjDir: last active axis */
 static unsigned char s_doorway_dir = UW_WALK_DOOR_NONE; /* active UW doorway */

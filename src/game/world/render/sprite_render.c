@@ -80,9 +80,24 @@ extern const unsigned char common_chr[7616];
 
 /* Phase 1: item atlas tiles live in their own contiguous block starting
  * after Link attack poses. Tile offsets come from atlas/items_chr_x4.h
- * (ROOMROM_ITEM_TILE_*). Replaces the old guessed common_chr-sourced
- * literals at $82..$89 / $36..$3D / etc. */
-#define ITEM_VRAM_TILE          (ATTACK_VRAM_TILE + ATTACK_POSE_COUNT * LINK_TILES_PER_POSE)
+ * (ROOMROM_ITEM_TILE_*).
+ *
+ * Phase 8 W0c fix 2026-05-20: align with canonical ROOMROM_ITEM_TILE_BASE
+ * (= SPR_TILE_BASE + SPR_TILE_COUNT_PER_PAL = 533 + 287 = 820). Previous
+ * hand-math (771 + 32 + 16 = 819) was off by 1 vs the 287-tile SPR bank
+ * size (which includes 1 slack tile). Sword vert top byte-diff probe
+ * confirmed slot 819 = blank, slot 820 = actual sword vert top. */
+#define ITEM_VRAM_TILE          ROOMROM_ITEM_TILE_BASE_PAL(0)
+
+/* Compile-time guard: VRAM bases must match canonical roomrom_vram_map.h
+ * layout. Off-by-one here = blank-tile beam / weapon sprites (regressed
+ * 2026-05-20 by hand-math drift). DO NOT redefine ITEM_VRAM_TILE without
+ * updating this assertion. */
+#ifdef __STDC_VERSION__
+_Static_assert(ITEM_VRAM_TILE == ROOMROM_ITEM_TILE_BASE_PAL(0),
+               "ITEM_VRAM_TILE must equal canonical ROOMROM_ITEM_TILE_BASE_PAL(0). "
+               "Hand-computed math drifts; always derive from roomrom_vram_map.h.");
+#endif
 
 #define SWORD_VERT_VRAM_TILE    (ITEM_VRAM_TILE + ROOMROM_ITEM_TILE_SWORD_VERT)
 #define SWORD_HORZ_VRAM_TILE    (ITEM_VRAM_TILE + ROOMROM_ITEM_TILE_SWORD_HORZ)
