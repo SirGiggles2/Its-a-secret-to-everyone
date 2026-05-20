@@ -21,6 +21,7 @@
 #include "world/render/subpal_routing.h"  /* Phase AA centralized sub-pal -> OAM pal API */
 #include "enemy_loop.h"   /* ENEMY_LOOP_SLOT_FIRST/LAST */
 #include "enemy_state.h"  /* ENEMY_X, ENEMY_Y, ENEMY_ALIVE_FLAG, ENEMY_THROWER_SLOT */
+#include "../../../RoomRom/src/roomrom_vram_map.h"  /* canonical ROOMROM_SPR_TILE_BASE */
 
 /* NES RAM cells — see reference/aldonunez/Variables.inc. */
 #define NES_SPRITES_BASE        0x0200u   /* OAM mirror, 64 sprites x 4 bytes */
@@ -394,7 +395,12 @@ void enemy_render_reset_oam(void)
 #define NES_OAM_SLOT_COUNT      64u
 #define NES_HUD_Y_OFFSET        32u   /* HUD on Window plane covers top 4 rows */
 
-#define ROOMROM_SPR_TILE_BASE   1025u
+/* SPR_TILE_BASE canonical value comes from roomrom_vram_map.h
+ * (= 533u post-Phase-J.2 cleanup 2026-05-18). Was 1025u pre-cleanup
+ * (1 + 4*256 4x sub-pal stride). Local re-#define removed: was causing
+ * enemies (octorok/tektite/moblin/etc) to render INVISIBLE because SAT
+ * wrote tile_ids 1025+N into empty VRAM region — VRAM atlas now ends
+ * at slot ~1100. Use canonical macro from roomrom_vram_map.h. */
 
 /* NES Z1 sprite CHR layout in our Genesis VRAM:
  *
@@ -418,7 +424,9 @@ void enemy_render_reset_oam(void)
  * Pre-2026-05-15 bug: used $70 instead of $8E as the bank base,
  * landing every enemy tile 30 tiles too low in VRAM -> rendered
  * unrelated atlas data as Tektite (diagonal slash instead of spider). */
-#define ROOMROM_SCENE_OBJ_TILE_BASE  1069u
+/* SCENE_OBJ overlay tile_base = SPR_BASE + 44 (post-Phase-J.2 = 577u).
+ * Was 1069u (= 1025 + 44) pre-cleanup. Derived from canonical SPR base. */
+#define ROOMROM_SCENE_OBJ_TILE_BASE  (ROOMROM_SPR_TILE_BASE + 44u)
 #define NES_OWSP_BANK_FIRST          0x8Eu   /* PPU $08E0 / $10 */
 #define UWSP_TILES_PER_SUBPAL        34u
 #define NES_CUR_LEVEL_CELL           0x0010u
