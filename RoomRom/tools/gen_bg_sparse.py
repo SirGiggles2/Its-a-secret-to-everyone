@@ -253,6 +253,17 @@ def main():
         combined[tid].update([0])
     # Letters $20..$23 = W X Y Z (already in HUD legacy range above for
     # sub-pals 0/1/2; harmless double-include for sub_pal 0).
+    #
+    # L4 (Phase 7 v2 2026-05-20): also include sub_pal 1 (red text) for
+    # NES "INVENTORY" / "USE B BUTTON FOR THIS" + digits 0-9 (HUD-style)
+    # and sub_pal 3 (brown/yellow) for "TRIFORCE" label.
+    for tid in range(0x00, 0x24):  # digits + A..V
+        combined[tid].update([1, 3])
+    # Sprite tile $1E (small white square) — L3 cursor placeholder. NES
+    # cursor sprite uses SPRITE pattern table so this isn't strictly a BG
+    # sparse atlas concern, but route through PAL0 via sub_pal 1 if any
+    # BG-side render of $1E happens.
+    combined[0x1E].update([1, 2])
 
     # Emit per-variant blobs against COMBINED usage (so LUT is universal)
     orig_ow_blob, orig_ow_lut = emit_sparse_blob(

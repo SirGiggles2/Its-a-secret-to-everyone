@@ -12,13 +12,13 @@
  * uses unified_source mode (redux_uw_bg_chr is a flat 256-tile bank
  * that replaces the entire BG bank, common+scene+misc included). */
 
-#define BG_SPARSE_TILE_COUNT      542u
-#define BG_SPARSE_BLOB_BYTES      17344u
+#define BG_SPARSE_TILE_COUNT      589u
+#define BG_SPARSE_BLOB_BYTES      18848u
 
-extern const unsigned char  bg_sparse_chr_orig_ow  [17344];
-extern const unsigned char  bg_sparse_chr_orig_uw  [17344];
-extern const unsigned char  bg_sparse_chr_redux_ow [17344];
-extern const unsigned char  bg_sparse_chr_redux_uw [17344];
+extern const unsigned char  bg_sparse_chr_orig_ow  [18848];
+extern const unsigned char  bg_sparse_chr_orig_uw  [18848];
+extern const unsigned char  bg_sparse_chr_redux_ow [18848];
+extern const unsigned char  bg_sparse_chr_redux_uw [18848];
 extern const unsigned short bg_sparse_tile_lut[256][4];
 
 #endif /* ROOMROM_BG_SPARSE_CHR_H */

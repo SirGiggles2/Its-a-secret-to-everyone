@@ -15,6 +15,7 @@
  * VRAM = ROOMROM_BG_TILE_BASE + slot.
  */
 #include "inventory_render.h"
+#include "inventory_palette.h"
 #include "../../abi/platform_abi.h"
 #include "../../abi/render_abi.h"
 #include "../../../RoomRom/src/bg_sparse_chr.h"
@@ -115,31 +116,44 @@ static unsigned char ascii_to_tile(char c)
     return 0x24u;  /* default to blank */
 }
 
-/* Write a string to Plane A row starting at col. String must fit in
- * cells_buf (up to 32 cells). */
-static void write_text(unsigned short row, unsigned short col,
-                       const char *str)
+/* Write a string to Plane A row starting at col using NES BG sub-pal index.
+ *
+ * Per Phase F pixel-bias rule: tile pixels are biased so values N..N+3
+ * route through PAL0 to NES sub-pal N colors. So attr pal_field = 0
+ * always; the SUB-PAL selection happens at TILE LOOKUP time via
+ * bg_sparse_tile_lut[tile_id][sub_pal_idx] which returns the biased
+ * VRAM slot for that (tile, sub-pal) combo.
+ *
+ * sub_pal=0 -> NES BG sub-pal 0 ($30 white / $00 gray / $12 blue defaults)
+ * sub_pal=1 -> NES BG sub-pal 1 ($16 red / $27 orange / $36 peach)
+ * sub_pal=2 -> NES BG sub-pal 2 ($1A green / $37 yellow / $12 blue)
+ * sub_pal=3 -> NES BG sub-pal 3 ($17 brown / $37 yellow / $12 blue) */
+static void write_text_pal(unsigned short row, unsigned short col,
+                           const char *str, unsigned char sub_pal)
 {
     unsigned short cells[32];
     unsigned short n = 0u;
     while (str[n] != '\0' && (col + n) < 32u && n < 32u) {
         unsigned char tid = ascii_to_tile(str[n]);
-        cells[n] = RENDER_TILE_ATTR_FULL(SUBSCREEN_SUBPAL, 0, 0, 0,
-                                         tile_for(tid, SUBSCREEN_SUBPAL));
+        cells[n] = RENDER_TILE_ATTR_FULL(0u, 0, 0, 0,
+                                         tile_for(tid, sub_pal));
         ++n;
     }
-    /* Genesis VRAM write to plane A cell (row, col) for n cells. We use
-     * render_plane_a_write_row which writes from col=0. To write at an
-     * offset, build a full-row buffer with leading blanks. */
     unsigned short full[32];
     unsigned short i;
-    unsigned short blank_attr = RENDER_TILE_ATTR_FULL(SUBSCREEN_SUBPAL, 0, 0, 0,
-                                                      BLANK_TILE);
+    unsigned short blank_attr = RENDER_TILE_ATTR_FULL(0u, 0, 0, 0, BLANK_TILE);
     for (i = 0; i < 32u; ++i) full[i] = blank_attr;
     for (i = 0; i < n; ++i) {
         if ((col + i) < 32u) full[col + i] = cells[i];
     }
     render_plane_a_write_row(row, full, 32u);
+}
+
+/* Backwards-compat shim — default PAL0. */
+static void write_text(unsigned short row, unsigned short col,
+                       const char *str)
+{
+    write_text_pal(row, col, str, SUBSCREEN_SUBPAL);
 }
 
 /* Draw an owned item sprite. Writes ONE SAT entry at the given pixel
@@ -183,57 +197,137 @@ static void write_inventory_row(unsigned short row)
     for (i = 0; i < 32u; ++i) cells[i] = blank_attr;
     render_plane_a_write_row(row, cells, 32u);
 
-    /* Now overlay text on specific rows. */
-    if (row == 2u)  write_text(2u,  10u, "INVENTORY");
-    if (row == 4u)  write_text(4u,  6u,  "USE B BUTTON FOR THIS");
-    if (row == 13u) write_text(13u, 10u, "TRIFORCE");
+    /* L4 (Phase 7 v2): route text to NES-correct palettes.
+     * NES "INVENTORY" + "USE B BUTTON FOR THIS" = BG PAL1 (red).
+     * NES "TRIFORCE" = BG PAL3 (brown/yellow). */
+    if (row == 2u)  write_text_pal(2u,  10u, "INVENTORY", 1u);
+    if (row == 4u)  write_text_pal(4u,  6u,  "USE B BUTTON FOR THIS", 1u);
+    if (row == 13u) write_text_pal(13u, 10u, "TRIFORCE", 3u);
 }
 
-/* Draw all item icon sprites at their fixed positions. Called once when
- * scroll-in completes. */
+/* L2 (Phase 7 v2): NES SubmenuItemXs table from Z_05.asm:7803.
+ * Indexed by item slot $00..$0F. Slot logic per DrawSubmenuItems:
+ *   slot 0..4 -> Y=$36 (selectable B-item row 1)
+ *   slot 5..8, $0F -> Y=$46 (selectable B-item row 2)
+ *   slot 9..$0F (excl $10/$11) -> Y=$1E (unselectable passive row)
+ *   slot $10 (compass) -> X=$2C Y=$9E
+ *   slot $11 (map)     -> X=$2C Y=$76
+ *
+ * Genesis SAT offset: NES OAM Y -> SAT Y = OAM_Y + 0x81 (Y+1 NES quirk +
+ * Genesis +128). X = OAM_X + 0x80.
+ */
+static const unsigned char k_submenu_item_xs[16] = {
+    0x80u, 0x98u, 0xACu, 0xB4u, 0xC8u,  /* slots 0..4 */
+    0x80u, 0x98u, 0xB0u, 0xC8u,         /* slots 5..8 */
+    0x80u, 0x94u, 0xA0u, 0xB0u, 0xC0u, 0xCCu, 0xB0u   /* slots 9..$0F */
+};
+
+/* Slot Y per range. Returns NES OAM Y; caller adds 0x81 for SAT. */
+static unsigned char slot_to_nes_y(unsigned char slot)
+{
+    if (slot < 5u)  return 0x36u;
+    if (slot == 0x0Fu) return 0x46u;
+    if (slot < 9u)  return 0x46u;
+    if (slot < 0x10u) return 0x1Eu;
+    return 0x1Eu;  /* fallback */
+}
+
+/* Map inventory slot index -> ROOMROM_ITEM_TILE_* + ownership check.
+ * Returns 1 if owned, 0 if not (skip draw). Tile_id written to *tile_out. */
+static unsigned char slot_to_item(unsigned char slot, unsigned char *tile_out)
+{
+    switch (slot) {
+        case 0x00:  /* boomerang (wood + magic share same tile in current atlas) */
+            if (!g_inventory.boomerang_wood && !g_inventory.boomerang_magic) return 0u;
+            *tile_out = ROOMROM_ITEM_TILE_BOOMERANG; return 1u;
+        case 0x01:  /* bombs */
+            if (g_inventory.bombs == 0u) return 0u;
+            *tile_out = ROOMROM_ITEM_TILE_BOMB; return 1u;
+        case 0x02:  /* bow */
+            if (!g_inventory.bow) return 0u;
+            *tile_out = ROOMROM_ITEM_TILE_BOW; return 1u;
+        case 0x03:  /* candle */
+            if (g_inventory.candle == 0u) return 0u;
+            *tile_out = ROOMROM_ITEM_TILE_CANDLE_FIRE_F0; return 1u;
+        case 0x04:  /* recorder (whistle) */
+            if (!(g_inventory.items & ITEMS_BIT_FLUTE)) return 0u;
+            *tile_out = ROOMROM_ITEM_TILE_RECORDER; return 1u;
+        case 0x05:  /* food */
+            if (!g_inventory.food) return 0u;
+            *tile_out = ROOMROM_ITEM_TILE_FOOD; return 1u;
+        case 0x06:  /* potion */
+            if (g_inventory.potion == 0u) return 0u;
+            *tile_out = ROOMROM_ITEM_TILE_POTION; return 1u;
+        case 0x07:  /* magic rod / wand — no dedicated tile in atlas, use vert sword as placeholder */
+            if (!(g_inventory.items & ITEMS_BIT_WAND)) return 0u;
+            *tile_out = ROOMROM_ITEM_TILE_SWORD_VERT; return 1u;
+        case 0x08:  /* raft */
+            if (!g_inventory.raft) return 0u;
+            *tile_out = ROOMROM_ITEM_TILE_RAFT; return 1u;
+        case 0x09:  /* book of magic */
+            if (!g_inventory.book) return 0u;
+            *tile_out = ROOMROM_ITEM_TILE_BOOK_OF_MAGIC; return 1u;
+        case 0x0A:  /* ring */
+            if (g_inventory.ring == 0u) return 0u;
+            *tile_out = ROOMROM_ITEM_TILE_RING; return 1u;
+        case 0x0B:  /* ladder */
+            if (!g_inventory.ladder) return 0u;
+            *tile_out = ROOMROM_ITEM_TILE_LADDER; return 1u;
+        case 0x0C:  /* magic key */
+            if (!g_inventory.magic_key) return 0u;
+            *tile_out = ROOMROM_ITEM_TILE_MAGIC_KEY; return 1u;
+        case 0x0D:  /* bracelet */
+            if (!g_inventory.bracelet) return 0u;
+            *tile_out = ROOMROM_ITEM_TILE_BRACELET; return 1u;
+        case 0x0E:  /* letter — no dedicated tile, placeholder with book glyph */
+            if (!g_inventory.letter) return 0u;
+            *tile_out = ROOMROM_ITEM_TILE_BOOK_OF_MAGIC; return 1u;
+        case 0x0F:  /* potion (letter overlap — NES special-cases this) */
+            if (g_inventory.potion == 0u) return 0u;
+            *tile_out = ROOMROM_ITEM_TILE_POTION; return 1u;
+        default:
+            return 0u;
+    }
+}
+
+/* Draw all item icon sprites at NES-exact positions per Z_05.asm:7803+ +
+ * Z_07.asm:868 DrawItemInInventory. */
 static void draw_item_sprites(void)
 {
     s_next_sat_slot = 0u;
 
-    /* B-item row at y=$50. */
-    unsigned short b_row_y = 0x80u + 0x40u;
-    if (g_inventory.boomerang_wood)
-        draw_item_icon(ROOMROM_ITEM_TILE_BOOMERANG, b_row_y, 0x40u);
-    if (g_inventory.bombs)
-        draw_item_icon(ROOMROM_ITEM_TILE_BOMB, b_row_y, 0x50u);
-    if (g_inventory.bow)
-        draw_item_icon(ROOMROM_ITEM_TILE_BOW, b_row_y, 0x60u);
-    if (g_inventory.candle)
-        draw_item_icon(ROOMROM_ITEM_TILE_CANDLE_FIRE_F0, b_row_y, 0x70u);
-    if (g_inventory.items & ITEMS_BIT_WAND)
-        draw_item_icon(ROOMROM_ITEM_TILE_SWORD_VERT, b_row_y, 0x80u);
-    if (g_inventory.items & ITEMS_BIT_FLUTE)
-        draw_item_icon(ROOMROM_ITEM_TILE_RECORDER, b_row_y, 0x90u);
-    if (g_inventory.food)
-        draw_item_icon(ROOMROM_ITEM_TILE_FOOD, b_row_y, 0xA0u);
-    if (g_inventory.potion)
-        draw_item_icon(ROOMROM_ITEM_TILE_POTION, b_row_y, 0xB0u);
+    unsigned char slot;
+    for (slot = 0u; slot < 0x10u; ++slot) {
+        unsigned char tile;
+        if (!slot_to_item(slot, &tile)) continue;
+        unsigned short nes_x = k_submenu_item_xs[slot];
+        unsigned char  nes_y = slot_to_nes_y(slot);
+        /* Genesis SAT: +128 X, +0x81 Y (NES +1 sprite quirk + Gen offset). */
+        unsigned short sat_x = (unsigned short)(nes_x + 0x80u);
+        unsigned short sat_y = (unsigned short)(nes_y + 0x81u);
+        draw_item_icon(tile, sat_y, sat_x);
+    }
 
-    unsigned short p_row_y = 0x80u + 0x70u;
-    if (g_inventory.raft)
-        draw_item_icon(ROOMROM_ITEM_TILE_RAFT, p_row_y, 0x40u);
-    if (g_inventory.book)
-        draw_item_icon(ROOMROM_ITEM_TILE_BOOK_OF_MAGIC, p_row_y, 0x50u);
-    if (g_inventory.ring)
-        draw_item_icon(ROOMROM_ITEM_TILE_RING, p_row_y, 0x60u);
-    if (g_inventory.ladder)
-        draw_item_icon(ROOMROM_ITEM_TILE_LADDER, p_row_y, 0x70u);
-    if (g_inventory.magic_key)
-        draw_item_icon(ROOMROM_ITEM_TILE_MAGIC_KEY, p_row_y, 0x80u);
-    if (g_inventory.bracelet)
-        draw_item_icon(ROOMROM_ITEM_TILE_BRACELET, p_row_y, 0x90u);
+    /* Compass slot $10: X=$2C Y=$9E (NES); SAT: +128 +0x81. */
+    if (g_inventory.compass_q1 != 0u || g_inventory.compass_l9 != 0u) {
+        draw_item_icon(ROOMROM_ITEM_TILE_COMPASS,
+            (unsigned short)(0x9Eu + 0x81u), (unsigned short)(0x2Cu + 0x80u));
+    }
+    /* Map slot $11: X=$2C Y=$76. */
+    if (g_inventory.map_q1 != 0u || g_inventory.map_l9 != 0u) {
+        draw_item_icon(ROOMROM_ITEM_TILE_MAP,
+            (unsigned short)(0x76u + 0x81u), (unsigned short)(0x2Cu + 0x80u));
+    }
 
-    unsigned short t_row_y = 0x80u + 0xB0u;
+    /* Triforce pieces row — keep V1 layout for now (L7 task). Y just below
+     * NES TRIFORCE label position ~row 13-14 in cell terms. */
+    unsigned short t_row_y = (unsigned short)(0xBDu + 0x81u);
     unsigned char piece;
     for (piece = 0; piece < 8u; ++piece) {
         if (g_inventory.triforce & (1u << piece)) {
             draw_item_icon(ROOMROM_ITEM_TILE_TRIFORCE_PIECE,
-                           t_row_y, (unsigned short)(0x40u + piece * 0x14u));
+                t_row_y,
+                (unsigned short)(0x50u + 0x80u + piece * 0x10u));
         }
     }
 
@@ -243,6 +337,10 @@ static void draw_item_sprites(void)
 
 void inventory_subscreen_enter(void)
 {
+    /* L4 (Phase 7 v2): swap CRAM to NES subscreen palette before any
+     * BG/sprite write so first rendered frame is correctly colored. */
+    inventory_palette_load_subscreen();
+
     /* Reset HSCROLL — gameplay leaves Plane A scrolled. VSRAM left
      * alone for now; row-by-row scroll-in mechanism replaces gameplay
      * rows from top down. */
@@ -292,17 +390,41 @@ static unsigned char b_item_owned(unsigned char slot)
     }
 }
 
+/* L3 (Phase 7 v2): NES SubmenuCursorXs from Z_05.asm:7909.
+ * Indexed by selectable B-item slot 0..8 (cursor only moves over slots
+ * with B-mappable items). */
+static const unsigned char k_submenu_cursor_xs[9] = {
+    0x80u, 0x98u, 0xB0u, 0xB0u, 0xC8u,
+    0x80u, 0x98u, 0xB0u, 0xC8u
+};
+
+/* Genesis VRAM slot for NES sprite tile $1E (small white square).
+ * NES SPR tile_id $1E lives in Common SPR pattern table; Genesis port
+ * maps via ROOMROM_SPR_TILE_BASE (533) + nes_tile. */
+#define CURSOR_NES_TILE_ID  0x1Eu
+#define CURSOR_VRAM_TILE    (ROOMROM_SPR_TILE_BASE + CURSOR_NES_TILE_ID)
+
+/* Frame counter for flash animation. Phase 7 v2 L3: cursor PAL alternates
+ * every 8 frames per Z_05.asm:7942 (AND #$08, LSR x3, ADC #$01). */
+static unsigned short s_cursor_frame = 0u;
+
 static void draw_cursor(void)
 {
-    /* B-item row Y matches inventory_subscreen_enter b_row_y. Cursor sits
-     * directly under selected slot at y + 16. Use compass tile (small
-     * round shape) in PAL1 as placeholder arrow indicator. */
-    unsigned short y = 0x80u + 0x50u;  /* one row below B-item icons */
-    unsigned short x = (unsigned short)(0x40u + s_cursor_slot * 0x10u);
-    unsigned short vram_tile = (unsigned short)(ITEM_VRAM_TILE_BASE +
-                                                ROOMROM_ITEM_TILE_COMPASS);
-    unsigned short attr = RENDER_TILE_ATTR_FULL(RENDER_PAL1, 0, 0, 0, vram_tile);
-    sat_write(s_cursor_sat, y, RENDER_SPRITE_SIZE(1, 2), 0u, attr, x);
+    /* Cursor row Y: B-item slot row 1 = $36, row 2 = $46. For LITE V1,
+     * route cursor onto B-item row 1 (slot < 5) or row 2 (slot >= 5). */
+    unsigned char  nes_y = (s_cursor_slot < 5u) ? 0x36u : 0x46u;
+    unsigned short sat_y = (unsigned short)(nes_y + 0x81u);
+    unsigned char  nes_x = k_submenu_cursor_xs[s_cursor_slot % 9u];
+    unsigned short sat_x = (unsigned short)(nes_x + 0x80u);
+
+    /* Flash palette: NES toggles PAL5/PAL6 (sprite sub-pals 1/2) per
+     * FrameCounter bit 3 -> shift to bit 0 + add 1. Genesis SPR PAL2/PAL3. */
+    unsigned char  pal = (unsigned char)(((s_cursor_frame >> 3) & 1u) ?
+                                          RENDER_PAL3 : RENDER_PAL2);
+    unsigned short attr = RENDER_TILE_ATTR_FULL(pal, 0, 0, 0, CURSOR_VRAM_TILE);
+    sat_write(s_cursor_sat, sat_y, RENDER_SPRITE_SIZE(1, 1), 0u, attr, sat_x);
+
+    ++s_cursor_frame;
 }
 
 void inventory_subscreen_exit(void)
@@ -360,14 +482,20 @@ void inventory_subscreen_tick(unsigned char joy_state)
         if (s_scroll_row == 0u) {
             s_scroll_state = SCROLL_IDLE;
             s_active = 0u;
-            /* Hide cursor sprite. */
-            unsigned short sat_addr = (unsigned short)(SAT_VRAM_BASE_GAMEPLAY +
-                                                       s_cursor_sat * 8u);
-            render_vram_open_write(sat_addr);
-            *((volatile unsigned short *)0xC00000) = 0x0000;
-            *((volatile unsigned short *)0xC00000) = 0x0000;
-            *((volatile unsigned short *)0xC00000) = 0x0000;
-            *((volatile unsigned short *)0xC00000) = 0x0000;
+            /* L5 (Phase 7 v2 Sonnet missing-task): clear ALL inventory SAT
+             * slots — not just cursor. Stale item-sprite link chain causes
+             * one-frame ghost sprites on unpause. Zero all 80 SAT slots so
+             * next gameplay frame's SAT writes start from clean state. */
+            {
+                unsigned char i;
+                render_vram_open_write(SAT_VRAM_BASE_GAMEPLAY);
+                for (i = 0; i < 80u; ++i) {
+                    *((volatile unsigned short *)0xC00000) = 0x0000;
+                    *((volatile unsigned short *)0xC00000) = 0x0000;
+                    *((volatile unsigned short *)0xC00000) = 0x0000;
+                    *((volatile unsigned short *)0xC00000) = 0x0000;
+                }
+            }
         }
         return;
     }
