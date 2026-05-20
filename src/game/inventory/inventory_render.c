@@ -16,6 +16,7 @@
  */
 #include "inventory_render.h"
 #include "inventory_palette.h"
+#include "inventory_tilemap.h"
 #include "../../abi/platform_abi.h"
 #include "../../abi/render_abi.h"
 #include "../../../RoomRom/src/bg_sparse_chr.h"
@@ -181,28 +182,51 @@ static void draw_item_icon_2x2(unsigned char tile_offset, unsigned short y, unsi
     ++s_next_sat_slot;
 }
 
-/* Write ONE row of inventory tilemap to Plane A row N. Called row-by-row
- * by the scroll-in tick state machine (P6.3). Row content per layout:
- *   row 2  = "INVENTORY" header
- *   row 4  = "USE B BUTTON FOR THIS"
- *   row 13 = "TRIFORCE"
- *   other  = blank (item sprites overlay these rows after scroll completes) */
-static void write_inventory_row(unsigned short row)
+/* V2.1 (2026-05-20): write a row using the captured NES subscreen
+ * nametable (CIRAM page 1). NES VScroll=$41 = 65 px = ~8 NES NT rows,
+ * so Gen plane row 0 = NES NT row 8. Map: nes_row = gen_row + 8.
+ *
+ * Per-tile sub_pal routing (based on NES PALRAM during active subscreen):
+ *   letters/digits ($00-$23) on NES NT rows 12, 18, 19 = sub_pal 1 (red)
+ *     row 29 "TRIFORCE" label = sub_pal 3 (brown/yellow)
+ *   box frame ($69-$6E) = sub_pal 0 (default white/blue)
+ *   triforce triangle ($E7-$F1, $F5) = sub_pal 3 (brown/yellow)
+ *   all blank ($24) = sub_pal 0 */
+static unsigned char tile_subpal(unsigned short nes_row, unsigned char tid)
 {
-    /* Default: blank row. */
+    if (nes_row == 12u && tid >= 0x0Au && tid <= 0x23u) return 1u;  /* INVENTORY */
+    if (nes_row == 18u && tid <= 0x23u) return 1u;  /* USE B BUTTON */
+    if (nes_row == 19u && tid <= 0x23u) return 1u;  /* FOR THIS */
+    if (nes_row == 29u && tid <= 0x23u) return 3u;  /* TRIFORCE label */
+    if (tid == 0xE7u || tid == 0xE8u || tid == 0xEBu || tid == 0xECu ||
+        tid == 0xEDu || tid == 0xEEu || tid == 0xEFu || tid == 0xF0u ||
+        tid == 0xF1u || tid == 0xF5u)
+        return 3u;
+    return 0u;
+}
+
+/* NES VScroll offset for subscreen ACTIVE state. */
+#define NES_VSCROLL_NES_ROW_OFFSET  8u
+
+static void write_inventory_row(unsigned short gen_row)
+{
     unsigned short cells[32];
     unsigned short i;
-    unsigned short blank_attr = RENDER_TILE_ATTR_FULL(SUBSCREEN_SUBPAL, 0, 0, 0,
-                                                      BLANK_TILE);
-    for (i = 0; i < 32u; ++i) cells[i] = blank_attr;
-    render_plane_a_write_row(row, cells, 32u);
-
-    /* L4 (Phase 7 v2): route text to NES-correct palettes.
-     * NES "INVENTORY" + "USE B BUTTON FOR THIS" = BG PAL1 (red).
-     * NES "TRIFORCE" = BG PAL3 (brown/yellow). */
-    if (row == 2u)  write_text_pal(2u,  10u, "INVENTORY", 1u);
-    if (row == 4u)  write_text_pal(4u,  6u,  "USE B BUTTON FOR THIS", 1u);
-    if (row == 13u) write_text_pal(13u, 10u, "TRIFORCE", 3u);
+    /* Gen row 0 = NES NT row 8 (VScroll=$41 offset). */
+    unsigned short nes_row = (unsigned short)(gen_row + NES_VSCROLL_NES_ROW_OFFSET);
+    if (nes_row >= 30u) {
+        unsigned short blank_attr = RENDER_TILE_ATTR_FULL(0u, 0, 0, 0, BLANK_TILE);
+        for (i = 0; i < 32u; ++i) cells[i] = blank_attr;
+        render_plane_a_write_row(gen_row, cells, 32u);
+        return;
+    }
+    for (i = 0; i < 32u; ++i) {
+        unsigned char tid = k_inventory_tilemap[nes_row][i];
+        unsigned char sp  = tile_subpal(nes_row, tid);
+        unsigned short vram = tile_for(tid, sp);
+        cells[i] = RENDER_TILE_ATTR_FULL(0u, 0, 0, 0, vram);
+    }
+    render_plane_a_write_row(gen_row, cells, 32u);
 }
 
 /* L2 (Phase 7 v2): NES SubmenuItemXs table from Z_05.asm:7803.

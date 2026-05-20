@@ -131,10 +131,12 @@ for off = 0, 31 do
 end
 f:close()
 
--- Dump Nametable $2000-$27FF (2048 B = NT0 + NT1)
+-- Dump Nametable via CIRAM domain (PPU Bus reads need pre-buffer prime,
+-- return $F2 open-bus garbage otherwise). CIRAM = 2 KB physical, mapped
+-- to nametable address space per mirroring config.
 f = io.open(OUT .. "/nametable.bin", "wb")
-for addr = 0x2000, 0x27FF do
-  f:write(string.char(P(addr)))
+for off = 0, 0x7FF do
+  f:write(string.char(memory.read_u8(off, "CIRAM (nametables)")))
 end
 f:close()
 

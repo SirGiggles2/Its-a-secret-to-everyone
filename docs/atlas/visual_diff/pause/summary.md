@@ -2,11 +2,11 @@
 
 ## Counts
 - Total grid cells: 896 (28 rows x 32 cols)
-- Diff cells: 376 (42.0%)
-- Total diff pixels: 9344
+- Diff cells: 409 (45.6%)
+- Total diff pixels: 10661
 
 ## L1.5 gate
-VISUAL-APPROX target — accept quantization-class noise
+PIXEL-EXACT IMPOSSIBLE — L1.5 says scrap; accept visual fixes only
 
 ## Artifacts
 - `docs/atlas/visual_diff/pause/pixel_diff.png` — RGB delta saturate

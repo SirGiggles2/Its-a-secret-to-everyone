@@ -170,6 +170,7 @@ ROOMROM_C_SOURCES = [
     ("src/game/items/debug_unlock_all.c", "items_debug_unlock_all.o"),  # P6.1
     ("src/game/inventory/inventory_render.c", "inventory_render.o"),    # P6.2
     ("src/game/inventory/inventory_palette.c", "inventory_palette.o"),  # L4 Phase 7 v2 CRAM swap
+    ("src/game/inventory/inventory_tilemap.c", "inventory_tilemap.o"),  # V2.1 NES subscreen NT blob
     ("src/game/world/bg_palette.c", "world_bg_palette.o"),  # Phase 12.2 promoted
     ("src/game/world/transfer_buf_drain.c", "world_transfer_buf_drain.o"),  # Plan v5b TRANSFER_BUF -> CRAM bridge
     ("src/game/world/render/cave_palette.c", "world_cave_palette.o"),  # Tier 0 #42 cave palette swap

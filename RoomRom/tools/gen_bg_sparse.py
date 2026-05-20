@@ -264,6 +264,16 @@ def main():
     # sparse atlas concern, but route through PAL0 via sub_pal 1 if any
     # BG-side render of $1E happens.
     combined[0x1E].update([1, 2])
+    #
+    # V2.1 (2026-05-20): NES subscreen BG tilemap captured tiles. Box frame
+    # ($69-$6E), triforce triangle ($E7-$F1, $F5). NES sub-pals per active
+    # subscreen PALRAM: box frame = sub_pal 0 (white/blue), triangle =
+    # sub_pal 3 (brown/yellow). Force-include at sub_pal 0 (default routing)
+    # plus 3 for the brown/yellow tile variants.
+    for tid in (0x69, 0x6A, 0x6B, 0x6C, 0x6D, 0x6E):
+        combined[tid].update([0])
+    for tid in (0xE7, 0xE8, 0xEB, 0xEC, 0xED, 0xEE, 0xEF, 0xF0, 0xF1, 0xF5):
+        combined[tid].update([0, 3])
 
     # Emit per-variant blobs against COMBINED usage (so LUT is universal)
     orig_ow_blob, orig_ow_lut = emit_sparse_blob(
