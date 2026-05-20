@@ -243,6 +243,17 @@ def main():
              + list(range(0x61, 0x6F)) + list(range(0xF7, 0xFA)):
         combined[tid].update([0, 1, 2])
 
+    # P6.2b (2026-05-19): Force-include full A..Z alphabet at $0A..$23 for
+    # pause inventory subscreen text labels. Most alphabet tiles aren't
+    # used by NES Z1 OW/UW rooms (only specific labels like "LIFE", numbers,
+    # dungeon names) so sparse LUT excludes them. Inventory subscreen needs
+    # to spell "INVENTORY", "USE B BUTTON FOR THIS", item names, etc — needs
+    # ALL letters in atlas under sub-pal 0.
+    for tid in range(0x0A, 0x24):  # A..V continues through to $23 ('V')
+        combined[tid].update([0])
+    # Letters $20..$23 = W X Y Z (already in HUD legacy range above for
+    # sub-pals 0/1/2; harmless double-include for sub_pal 0).
+
     # Emit per-variant blobs against COMBINED usage (so LUT is universal)
     orig_ow_blob, orig_ow_lut = emit_sparse_blob(
         combined, common_chr, overworld_bg_chr, "orig_ow")
