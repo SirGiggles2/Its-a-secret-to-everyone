@@ -16,7 +16,10 @@
 #include "audio_dispatch.h"
 #include "platform_abi.h"          /* A4-pinned nes_ram pointer */
 
-extern void music_play(unsigned char song_bitmap);
+/* Route through the SGDK adapter so SONG_OW can branch into the XGM Z80
+ * driver (VGM playback) while other songs continue down the legacy 68k
+ * FM path. See src/sgdk_adapter/audio_adapter.c::audio_music_play. */
+extern void audio_music_play(unsigned char song_bitmap);
 
 /* Scene constants — must mirror RoomRom/src/main.c scene_t. */
 #define SCENE_OW    0u
@@ -134,7 +137,7 @@ void audio_dispatch_tick(unsigned char scene, unsigned char room_id)
 
     unsigned char song = resolve_song(gm, scene);
     if (song != s_last_song && song != TUPLE_SENTINEL) {
-        music_play(song);
+        audio_music_play(song);
         s_last_song = song;
     }
     s_last_gm    = gm;

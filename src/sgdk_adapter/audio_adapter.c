@@ -11,6 +11,7 @@
 #include "audio_adapter.h"
 #include "sfx_pcm.h"
 #include "platform_abi.h"   /* nes_ram (A4-pinned) for probe sentinels */
+#include "../../data/audio_music/ow_theme_vgm.h"
 #include <z80_ctrl.h>
 #include <snd/sound.h>
 #include <snd/xgm.h>
@@ -20,6 +21,17 @@ extern void music_tick(void);
 
 static u8 xgm_initialized = 0;
 static u8 sfx_next_channel = 0;  /* round-robin index 0..2 → CH2..CH4 */
+
+/* XGM-driver song ownership flag, shared with src/audio_driver.asm's
+ * music_tick (label `xgm_owns_chip` at MUSIC_BASE+$2C = $FFE02C).
+ * Writing this from C is sufficient — the asm gate reads the same byte.
+ * When 1, the XGM Z80 driver is playing a VGM/XGM song (currently the
+ * OW theme blob) and owns FM ch1-5 + PSG. The legacy 68k FM driver MUST
+ * NOT tick while this is set, or its tick_sq1 writes will race the
+ * Z80's chip accesses. Cleared when XGM_stopPlay hands ownership back. */
+static volatile u8 * const xgm_owns_chip_ptr = (volatile u8 *)0x00FFE02CUL;
+
+#define SONG_OW_BITMAP  0x01u
 
 void audio_xgm_init(void)
 {
@@ -37,6 +49,23 @@ void audio_xgm_init(void)
 
 void audio_music_play(unsigned char song)
 {
+    /* XGM Z80 driver natively accepts VGM blobs (per sgdk/inc/z80_ctrl.h:144
+     * Z80_DRIVER_XGM doxygen). Overworld theme is supplied as a VGM file
+     * embedded at data/audio_music/ow_theme_vgm.c and dispatched here. */
+    if (song == SONG_OW_BITMAP) {
+        if (!xgm_initialized) audio_xgm_init();
+        if (!*xgm_owns_chip_ptr) {
+            *xgm_owns_chip_ptr = 1;       /* gate legacy music_tick BEFORE Z80 starts */
+            XGM_startPlay(ow_theme_vgm);
+        }
+        return;
+    }
+
+    /* Non-OW song: hand chip ownership back to legacy FM driver. */
+    if (*xgm_owns_chip_ptr) {
+        XGM_stopPlay();
+        *xgm_owns_chip_ptr = 0;
+    }
     music_play(song);
 }
 
@@ -60,5 +89,10 @@ void audio_sfx_play(unsigned char sfx)
 
 void audio_tick_vblank(void)
 {
+    /* music_tick itself gates on xgm_owns_chip (set above). The check
+     * here is redundant but cheap and makes intent explicit at the call
+     * site; the asm gate is the source of truth and covers genesis_shell
+     * VBlankISR's direct music_tick callers too. */
+    if (*xgm_owns_chip_ptr) return;
     music_tick();
 }

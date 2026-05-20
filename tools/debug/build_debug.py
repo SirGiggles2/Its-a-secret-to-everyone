@@ -61,6 +61,7 @@ INCS = [
     ROOT / "src" / "oracle" / "room",
     ROOT / "src" / "core",
     ROOT / "data" / "audio",
+    ROOT / "data" / "audio_music",
     SGDK / "inc",
     SGDK / "res",
 ]
@@ -71,6 +72,10 @@ TITLE_C_SOURCES = [
     ("src/sgdk_adapter/audio_vblank_hook.c", "audio_vblank_hook.o"),
     ("src/sgdk_adapter/audio_adapter.c",    "audio_adapter.o"),
     ("data/audio/sfx_pcm.c",                "sfx_pcm.o"),
+    # Overworld theme: VGM blob dispatched through XGM Z80 driver
+    # (SGDK Z80_DRIVER_XGM natively plays VGM input — sgdk/inc/z80_ctrl.h:144).
+    # Wired via src/sgdk_adapter/audio_adapter.c::audio_music_play(SONG_OW=$01).
+    ("data/audio_music/ow_theme_vgm.c",     "ow_theme_vgm.o"),
     ("src/frontend/intro/intro_phase.c", "intro_phase.o"),
     ("src/frontend/intro/intro_title.c", "intro_title.o"),
     ("src/frontend/intro/intro_story.c", "intro_story.o"),

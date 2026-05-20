@@ -569,6 +569,13 @@ m_sfx_ctrl_raw      equ MUSIC_BASE+$2A  ; byte: last $400E byte
 ; Owner clears it; ASM only ever writes 1.
 m_song_loop_pending equ MUSIC_BASE+$2B  ; byte: 1 = song just looped
 
+; XGM-owns-chip flag. Set to 1 by audio_adapter.c::audio_music_play when
+; the SGDK XGM Z80 driver begins playing a VGM/XGM song (currently the
+; overworld theme blob). music_tick checks this and bails immediately
+; so the 68k legacy FM driver cannot race the Z80's chip writes. Cleared
+; when audio_music_play stops the XGM song to hand FM ownership back.
+xgm_owns_chip       equ MUSIC_BASE+$2C  ; byte: 1 = XGM Z80 driver owns FM/PSG
+
 ;----------------------------------------------------------------------
 ; DMC NES-register shadows. The XGM Z80 driver owns playback now; the
 ; only state we keep on the 68K side is what nes_io.asm needs to
@@ -632,9 +639,16 @@ music_play:
 
 ;==============================================================================
 ; music_tick — DriveSong equivalent.  Call once per VBlank.
+;
+; Gated by `xgm_owns_chip` (defined below): when the SGDK XGM Z80 driver
+; is playing a VGM/XGM song, it owns FM ch1-5 + PSG and a legacy 68k tick
+; would race its writes. Callers from genesis_shell.asm VBlankISR and the
+; SGDK VInt hook both hit this entry, so the gate covers every path.
 ;==============================================================================
     xdef    music_tick
 music_tick:
+    tst.b   (xgm_owns_chip).l
+    bne     .xgm_owned_skip
     movem.l D0-D7/A0-A2,-(SP)
     ;------------------------------------------------------------------
     ; Phase E polish: FM music path restored.  DMC streams independently
@@ -694,6 +708,11 @@ music_tick:
     ; SFX dispatch lives on the SGDK XGM Z80 driver now (Z80 mixes PCM
     ; on its own clock); no per-VBlank DMC drain or scaffold poll here.
     movem.l (SP)+,D0-D7/A0-A2
+    rts
+.xgm_owned_skip:
+    ; XGM Z80 driver is playing music (OW VGM blob). Skip legacy tick
+    ; entirely so the 68k cannot race FM/PSG writes. No registers pushed
+    ; on this path, so a bare rts suffices.
     rts
 
 ;==============================================================================

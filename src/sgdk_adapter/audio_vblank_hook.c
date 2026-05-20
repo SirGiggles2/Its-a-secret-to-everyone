@@ -13,12 +13,14 @@
  */
 
 #include <genesis.h>
-
-extern void music_tick(void);
+#include "../abi/audio_abi.h"
 
 static void audio_vblank_hook(void)
 {
-    music_tick();
+    /* Route through audio_adapter.c so the XGM-owns-chip flag can gate
+     * the legacy music_tick. Direct music_tick() call here would race
+     * the XGM Z80 driver when the OW VGM is playing. */
+    audio_tick_vblank();
 }
 
 /* Public entry called once from boot. Idempotent. */
