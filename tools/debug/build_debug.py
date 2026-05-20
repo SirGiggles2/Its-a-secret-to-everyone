@@ -167,6 +167,7 @@ ROOMROM_C_SOURCES = [
     ("src/game/items/boomerang.c", "items_boomerang.o"),
     ("src/game/items/arrow.c",     "items_arrow.o"),
     ("src/game/items/bomb.c",      "items_bomb.o"),
+    ("src/game/items/debug_unlock_all.c", "items_debug_unlock_all.o"),  # P6.1
     ("src/game/world/bg_palette.c", "world_bg_palette.o"),  # Phase 12.2 promoted
     ("src/game/world/transfer_buf_drain.c", "world_transfer_buf_drain.o"),  # Plan v5b TRANSFER_BUF -> CRAM bridge
     ("src/game/world/render/cave_palette.c", "world_cave_palette.o"),  # Tier 0 #42 cave palette swap

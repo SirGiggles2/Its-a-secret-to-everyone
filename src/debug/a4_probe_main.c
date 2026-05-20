@@ -18,6 +18,7 @@
  * atlas byte-diff against the custom NES test ROM. Pattern mirrors
  * CHORD_DEBUG handling below; press is edge-triggered. */
 #include "../game/debug/debug_tilegrid.h"
+#include "../game/items/debug_unlock_all.h"  /* P6.1 */
 
 typedef enum {
     COMBINED_STATE_TITLE = 0,
@@ -157,6 +158,14 @@ static void debug_poll_title(void)
         s_state = COMBINED_STATE_ROOMROM;
         probe_publish();
         roomrom_debug_enter();
+
+        /* P6.1 (2026-05-19): Debug.md gameplay-entry unlocks every item
+         * so the inventory subscreen renders a fully-populated view
+         * without playing through Z1 to collect items. Must run AFTER
+         * roomrom_debug_enter() because that init writes Items bitfield
+         * + HeartValues default values that would otherwise overwrite us.
+         * Release builds (when they exist) should NOT call this. */
+        debug_unlock_all_items();
         /* Phase 10.3 audio per-event wiring (gameplay-mode entry).
          * Boot lands in SCENE_UW per RoomRom/src/main.c:96
          * (s_scene = SCENE_UW). Per docs/audit/audio_routing.md, UW
