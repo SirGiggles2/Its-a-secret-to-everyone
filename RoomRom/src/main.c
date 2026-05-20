@@ -136,6 +136,28 @@ typedef enum {
     B_ITEM_COUNT     = 6
 } b_item_t;
 static b_item_t s_b_item = B_ITEM_BOOMERANG;
+
+/* Phase 8 W0 (2026-05-20): inventory subscreen A-press setter. NES cursor
+ * slot 0..8 (per SubmenuCursorXs Z_05.asm:7909) maps to s_b_item enum:
+ *   cursor 0 boomerang -> B_ITEM_BOOMERANG
+ *   cursor 1 bombs     -> B_ITEM_BOMB
+ *   cursor 2 arrow     -> B_ITEM_ARROW
+ *   cursor 3 bow       -> B_ITEM_NONE (WieldNothing in NES)
+ *   cursor 4 candle    -> B_ITEM_CANDLE
+ *   cursor 5 recorder  -> B_ITEM_NONE (W6 deferred)
+ *   cursor 6 food      -> B_ITEM_NONE (W7 deferred)
+ *   cursor 7 potion    -> B_ITEM_NONE (consumed on select, not B-use)
+ *   cursor 8 wand      -> B_ITEM_ROD */
+static const unsigned char k_inv_cursor_to_b_item[9] = {
+    B_ITEM_BOOMERANG, B_ITEM_BOMB, B_ITEM_ARROW, B_ITEM_NONE,
+    B_ITEM_CANDLE, B_ITEM_NONE, B_ITEM_NONE, B_ITEM_NONE, B_ITEM_ROD
+};
+
+void roomrom_set_b_item_from_inv_cursor(unsigned char cursor_slot)
+{
+    if (cursor_slot >= 9u) return;
+    s_b_item = (b_item_t)k_inv_cursor_to_b_item[cursor_slot];
+}
 static link_dir_t  s_link_dir  = LINK_DIR_NONE;  /* NES ObjDir: last active axis */
 static unsigned char s_doorway_dir = UW_WALK_DOOR_NONE; /* active UW doorway */
 static signed char s_link_grid_offset = 0;       /* NES ObjGridOffset: -8..8 */
@@ -2233,10 +2255,6 @@ void roomrom_debug_tick(void)
                 }
                 break;
             case B_ITEM_CANDLE:
-                /* Task 5.8.1 candle fire — visible flame projectile
-                 * via dedicated module (slot 8, explosion-glyph
-                 * placeholder; full red-pal NES fire CHR + 4-frame
-                 * anim deferred to 5.8.2). Plus: dark-room reveal. */
                 roomrom_candle_fire_spawn(players[0].face,
                                           players[0].x, players[0].y);
                 if (s_scene == SCENE_UW && s_cur_room_is_dark &&
@@ -2247,11 +2265,6 @@ void roomrom_debug_tick(void)
                 }
                 break;
             case B_ITEM_ROD:
-                /* Wand-extending visual deferred. Magic shot projectile
-                 * fires immediately (skipping rod state machine). NES
-                 * UpdateSwordOrRod state 3 -> spawn shot at slot $0E.
-                 * Genesis: spawn at slot 9 directly, sub-pal flashes
-                 * 0..2 per FrameCounter. */
                 if (!roomrom_magic_shot_active()) {
                     roomrom_magic_shot_fire(players[0].face,
                                             players[0].x, players[0].y);
