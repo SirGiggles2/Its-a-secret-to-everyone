@@ -130,10 +130,38 @@ static const unsigned char *bank_obj_blob(unsigned char bank, unsigned short *ou
     }
 }
 
-/* Upload current bank: BG variant blob + SCENE_OBJ content. */
+/* Upload current bank: BG variant blob + SCENE_OBJ content.
+ *
+ * Bank-0 special case (matches NES test ROM bank-0 = Common-only): the
+ * NES side has BG pattern table $1700-$1F1F all-zero (no PatternBlock
+ * loaded). To mirror exactly, zero out the scene-BG LUT slots on bank 0
+ * after orig_ow upload — any slot whose tile_id is in range $70..$F1
+ * (scene-specific BG range, per gen_chr_viewer_rom.py OFF_SCENE_BG). */
 static void upload_bank(void) {
     /* BG variant -> VRAM BG_TILE_BASE (offset 32) */
     render_chr_upload(32u, bank_bg_blob(s_bank), BG_SPARSE_BLOB_BYTES);
+
+    if (s_bank == 0u) {
+        /* Bank 0 = NES Common-only. Zero scene-BG slots so the audit
+         * sees the same all-zero pattern at tile_ids $70..$F1 that the
+         * NES test ROM exposes. Misc range $F2..$FF stays loaded
+         * (Common misc, present on NES bank 0). */
+        unsigned short tid;
+        unsigned char  sp;
+        for (tid = 0x70u; tid < 0xF2u; tid++) {
+            for (sp = 0u; sp < 4u; sp++) {
+                unsigned short slot = bg_sparse_tile_lut[tid][sp];
+                if (slot == 0xFFFFu) continue;
+                unsigned short vram_addr =
+                    (unsigned short)((1u + slot) * 32u);
+                /* 32 zero bytes at VRAM tile (1 + slot). Direct CPU
+                 * stream write inside vram_dma_upload — interrupt-safe. */
+                static const unsigned char zero32[32] = {0};
+                render_chr_upload(vram_addr, zero32, 32u);
+            }
+        }
+    }
+
     /* SCENE_OBJ content -> VRAM offset 577*32 = $4820 */
     unsigned short obj_bytes;
     const unsigned char *obj_blob = bank_obj_blob(s_bank, &obj_bytes);
