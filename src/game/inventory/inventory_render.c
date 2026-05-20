@@ -50,6 +50,15 @@ static void sat_write(unsigned char slot, unsigned short y,
 
 static unsigned char s_active = 0u;
 
+/* P6.5 cursor state — hoisted so inventory_subscreen_enter can reference. */
+#define B_ITEM_SLOT_COUNT  8u
+static unsigned char s_cursor_slot = 0u;
+static unsigned char s_prev_joy    = 0u;
+static unsigned char s_cursor_sat  = 0u;
+
+static void draw_cursor(void);   /* forward decl */
+static unsigned char b_item_owned(unsigned char slot);  /* forward decl */
+
 unsigned char inventory_subscreen_is_active(void)
 {
     return s_active;
@@ -223,12 +232,41 @@ void inventory_subscreen_enter(void)
         }
     }
 
-    /* SAT terminator — link=0 hides remaining slots. */
-    if (s_next_sat_slot < 79u) {
-        sat_write(s_next_sat_slot, 0, RENDER_SPRITE_SIZE(1, 1), 0, 0, 0);
-    }
-
+    /* P6.5: cursor takes next SAT slot in the link chain, then terminates. */
     s_active = 1u;
+    s_cursor_slot = 0u;
+    s_prev_joy = 0u;
+    s_cursor_sat = s_next_sat_slot;
+    draw_cursor();
+}
+
+/* P6.5 cursor + selection. */
+static unsigned char b_item_owned(unsigned char slot)
+{
+    switch (slot) {
+        case 0: return g_inventory.boomerang_wood;
+        case 1: return (g_inventory.bombs > 0u) ? 1u : 0u;
+        case 2: return g_inventory.bow;
+        case 3: return (g_inventory.candle > 0u) ? 1u : 0u;
+        case 4: return (g_inventory.items & ITEMS_BIT_WAND) ? 1u : 0u;
+        case 5: return (g_inventory.items & ITEMS_BIT_FLUTE) ? 1u : 0u;
+        case 6: return g_inventory.food;
+        case 7: return (g_inventory.potion > 0u) ? 1u : 0u;
+        default: return 0u;
+    }
+}
+
+static void draw_cursor(void)
+{
+    /* B-item row Y matches inventory_subscreen_enter b_row_y. Cursor sits
+     * directly under selected slot at y + 16. Use compass tile (small
+     * round shape) in PAL1 as placeholder arrow indicator. */
+    unsigned short y = 0x80u + 0x50u;  /* one row below B-item icons */
+    unsigned short x = (unsigned short)(0x40u + s_cursor_slot * 0x10u);
+    unsigned short vram_tile = (unsigned short)(ITEM_VRAM_TILE_BASE +
+                                                ROOMROM_ITEM_TILE_COMPASS);
+    unsigned short attr = RENDER_TILE_ATTR_FULL(RENDER_PAL1, 0, 0, 0, vram_tile);
+    sat_write(s_cursor_sat, y, RENDER_SPRITE_SIZE(1, 2), 0u, attr, x);
 }
 
 void inventory_subscreen_exit(void)
@@ -242,6 +280,34 @@ void inventory_subscreen_exit(void)
 
 void inventory_subscreen_tick(unsigned char joy_state)
 {
-    /* P6.5 lands cursor + selection here. V1 no-op. */
-    (void)joy_state;
+    if (!s_active) return;
+
+    /* Joy bits per SGDK joy.h: UP=$01 DOWN=$02 LEFT=$04 RIGHT=$08
+     * B=$10 C=$20 A=$40 START=$80. */
+    unsigned char pressed = (unsigned char)(joy_state & ~s_prev_joy);
+    s_prev_joy = joy_state;
+
+    /* D-pad LEFT/RIGHT cycle cursor over B-item slots; skip empty. */
+    if (pressed & 0x08u) {  /* RIGHT */
+        unsigned char tries = 0u;
+        do {
+            s_cursor_slot = (unsigned char)((s_cursor_slot + 1u) % B_ITEM_SLOT_COUNT);
+            ++tries;
+        } while (!b_item_owned(s_cursor_slot) && tries < B_ITEM_SLOT_COUNT);
+    }
+    if (pressed & 0x04u) {  /* LEFT */
+        unsigned char tries = 0u;
+        do {
+            s_cursor_slot = (unsigned char)((s_cursor_slot + B_ITEM_SLOT_COUNT - 1u) % B_ITEM_SLOT_COUNT);
+            ++tries;
+        } while (!b_item_owned(s_cursor_slot) && tries < B_ITEM_SLOT_COUNT);
+    }
+
+    /* A press selects current B-item. */
+    if (pressed & 0x40u) {
+        g_inventory.selected_b_item = s_cursor_slot;
+        nes_ram[0x0656u] = s_cursor_slot;
+    }
+
+    draw_cursor();
 }

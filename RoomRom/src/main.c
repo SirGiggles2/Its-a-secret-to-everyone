@@ -2300,8 +2300,15 @@ void roomrom_debug_tick(void)
         /* Tier 0 (plan v6) pause gate: when paused, swallow all
          * gameplay input (D-pad + combat buttons). START already
          * handled above + un-pauses. Other chord handlers (mode/
-         * teleport/movestyle) skipped while paused. */
+         * teleport/movestyle) skipped while paused.
+         *
+         * P6.5 (2026-05-19): route input to inventory subscreen tick
+         * for cursor + B-item selection. D-pad moves cursor over B-item
+         * row; A selects. Joy byte (lo 8 bits) matches SGDK BUTTON_*
+         * layout: UP=$01 DOWN=$02 LEFT=$04 RIGHT=$08 B=$10 C=$20 A=$40
+         * START=$80. */
         if (roomrom_pause_is_active()) {
+            inventory_subscreen_tick((unsigned char)(joy & 0x00FFu));
             return;
         }
 
