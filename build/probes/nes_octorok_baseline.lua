@@ -28,29 +28,37 @@ print(string.format("NES room id $%02X (expected $67 or $77)", room))
 local f = io.open(OUT, "w")
 f:write(string.format("NES OCTOROK BASELINE — room $%02X\n", room))
 f:write("Link pos: X=$" .. string.format("%02X", R(0x0070)) ..
-        " Y=$" .. string.format("%02X", R(0x0028)) .. "\n\n")
+        " Y=$" .. string.format("%02X", R(0x0028)) .. "\n")
+-- NES LevelBlockAttrsByteF $4CD — current-room flags (bit3 = edge spawn)
+local lba_f = R(0x04CD)
+f:write(string.format("LevelBlockAttrsByteF $04CD = $%02X (bit3 edge-spawn = %s)\n",
+  lba_f, (lba_f % 16 >= 8) and "SET" or "CLEAR"))
+f:write("\n")
 
--- Per-slot RAM addresses (NES Z1):
---   ObjType    $034F + slot
---   ObjX       $0070 + slot
---   ObjY       $0028 + slot
---   ObjDir     $0008 + slot (per Z_01.asm convention; verify)
---   ObjState   $0090 + slot
---   ObjFrame   $0090 + slot? (varies by enemy)
---   ObjQSpeedFrac $04A0 + slot
+-- Per-slot RAM addresses (NES Z1 per reference/aldonunez/Variables.inc):
+--   ObjTimer       $0028 + slot
+--   ObjX           $0070 + slot
+--   ObjY           $0084 + slot
+--   ObjDir         $0098 + slot
+--   ObjState       $00AC + slot
+--   ObjType        $034F + slot
+--   ObjQSpeedFrac  $03BC + slot
+--   ObjAnimFrame   $03E4 + slot
 
 local function dump_frame(label, fr)
   f:write(string.format("\n--- %s (frame %d post-room-enter) ---\n", label, fr))
-  f:write("slot | type | X    | Y    | dir | state | qspd\n")
+  f:write("slot | type | X    | Y    | dir | state | timer | qspd | aFr\n")
   for slot = 0, 11 do
     local t   = R(0x034F + slot)
     local x   = R(0x0070 + slot)
-    local y   = R(0x0028 + slot)
-    local d   = R(0x0008 + slot)
-    local s   = R(0x0090 + slot)
-    local q   = R(0x04A0 + slot)
-    f:write(string.format("  %2d |  $%02X |  $%02X |  $%02X | $%02X |  $%02X  | $%02X\n",
-      slot, t, x, y, d, s, q))
+    local y   = R(0x0084 + slot)
+    local d   = R(0x0098 + slot)
+    local s   = R(0x00AC + slot)
+    local tm  = R(0x0028 + slot)
+    local q   = R(0x03BC + slot)
+    local af  = R(0x03E4 + slot)
+    f:write(string.format("  %2d |  $%02X |  $%02X |  $%02X | $%02X |  $%02X  | $%02X | $%02X | $%02X\n",
+      slot, t, x, y, d, s, tm, q, af))
   end
 end
 

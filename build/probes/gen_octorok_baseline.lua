@@ -29,20 +29,27 @@ print(string.format("GEN room id $%02X (expected $67)", room))
 local f = io.open(OUT, "w")
 f:write(string.format("GEN OCTOROK BASELINE — room $%02X\n", room))
 f:write("Link pos: X=$" .. string.format("%02X", R(0x0070)) ..
-        " Y=$" .. string.format("%02X", R(0x0028)) .. "\n\n")
+        " Y=$" .. string.format("%02X", R(0x0028)) .. "\n")
+-- LBA_F at $6AFE+room — bit 3 = edge-spawn flag
+local lba_f = R(0x6AFE + room)
+f:write(string.format("LBA_F[$%02X] = $%02X (bit3 edge-spawn = %s)\n",
+  room, lba_f, ((lba_f and 0x08) ~= 0) and "SET" or "CLEAR"))
+f:write("\n")
 
 local function dump_frame(label, fr)
   f:write(string.format("\n--- %s (frame %d post-room-enter) ---\n", label, fr))
-  f:write("slot | type | X    | Y    | dir | state | qspd\n")
+  f:write("slot | type | X    | Y    | dir | state | timer | qspd | aFr\n")
   for slot = 0, 11 do
     local t   = R(0x034F + slot)
     local x   = R(0x0070 + slot)
-    local y   = R(0x0028 + slot)
-    local d   = R(0x0008 + slot)
-    local s   = R(0x0090 + slot)
-    local q   = R(0x04A0 + slot)
-    f:write(string.format("  %2d |  $%02X |  $%02X |  $%02X | $%02X |  $%02X  | $%02X\n",
-      slot, t, x, y, d, s, q))
+    local y   = R(0x0084 + slot)
+    local d   = R(0x0098 + slot)
+    local s   = R(0x00AC + slot)
+    local tm  = R(0x0028 + slot)
+    local q   = R(0x03BC + slot)
+    local af  = R(0x03E4 + slot)
+    f:write(string.format("  %2d |  $%02X |  $%02X |  $%02X | $%02X |  $%02X  | $%02X | $%02X | $%02X\n",
+      slot, t, x, y, d, s, tm, q, af))
   end
 end
 
