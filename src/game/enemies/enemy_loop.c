@@ -1286,11 +1286,50 @@ static void enemy_loop_arm_fix_probe(void)
     arm[1] = 0u;
 }
 
+/* Combat force-kill hook. Probe Lua writes 'DD' (damage death) at
+ * absolute $FF77E0..$FF77E4. On first tick after write, consumes
+ * magic, sets COMBAT_DAMAGE_TYPE + COMBAT_DAMAGE_AMOUNT, and calls
+ * combat_deal_damage(slot). Enables drop/death dimension testing
+ * via real combat dispatch (audit_inscope_combat probe).
+ *
+ *   $77E0 = 'D' (0x44)        magic byte 0
+ *   $77E1 = 'D' (0x44)        magic byte 1
+ *   $77E2 = slot              target enemy slot (1..11)
+ *   $77E3 = damage_type       e.g. $10 sword, $20 bomb, $08 arrow
+ *   $77E4 = damage_amount     e.g. $10 L1 sword, $20 L2, $40 L3
+ */
+extern void combat_deal_damage(unsigned int slot);
+static void enemy_loop_combat_force_kill_hook(void)
+{
+    volatile unsigned char *arm = (volatile unsigned char *)0x00FF77E0UL;
+    unsigned char m0 = arm[0];
+    unsigned char m1 = arm[1];
+    if (m0 != 0x44u || m1 != 0x44u) return;  /* not 'D','D' */
+
+    unsigned char slot      = arm[2];
+    unsigned char dmg_type  = arm[3];
+    unsigned char dmg_amt   = arm[4];
+
+    if (slot < ENEMY_LOOP_SLOT_FIRST || slot > ENEMY_LOOP_SLOT_LAST) {
+        arm[0] = 0u; arm[1] = 0u;
+        return;
+    }
+
+    RAM(0x0009u) = dmg_type;   /* COMBAT_DAMAGE_TYPE (ZP_TMP9) */
+    RAM(0x0007u) = dmg_amt;    /* COMBAT_DAMAGE_AMOUNT (ZP_TMP7) */
+    combat_deal_damage((unsigned int)slot);
+
+    arm[0] = 0u;
+    arm[1] = 0u;
+}
+
 void enemy_loop_tick(void)
 {
     unsigned int slot;
     /* enemy_fix arm-hook: check magic + consume on first call only. */
     enemy_loop_arm_fix_probe();
+    /* combat-death hook: check magic + invoke combat_deal_damage. */
+    enemy_loop_combat_force_kill_hook();
     /* Q3=(b): function-pointer table dispatch. NULL = no-op (family
      * not yet wired). Q2=(c) gating done by caller — this function is
      * ONLY called inside the scroll-stable + non-paused branch of the

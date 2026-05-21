@@ -64,13 +64,15 @@ for _, t in ipairs(IN_SCOPE) do
     f:write(string.format("T$%02X PRE  f0  hp=%02X inv=%02X shdir=%02X shdist=%02X alive=%02X\n",
         t, pre_hp, R(0x84F0+s), R(0x80C0+s), R(0x80D3+s), R(0x8492+s)))
 
-    -- Simulate sword damage: force MON_HP to lethal value + shove_dir
-    -- to right (Link facing right when adjacent). Real sword swing
-    -- collision would trigger combat_deal_damage. Simulate end state:
-    -- HP=0 -> combat_handle_monster_died fires next tick.
-    W(0x8485+s, 0x00)        -- MON_HP = 0
-    W(0x80C0+s, 0x01)        -- shove dir = right
-    W(0x80D3+s, 0x10)        -- shove dist = 16px
+    -- Real death dispatch via C-side combat_force_kill_hook ($FF77E0).
+    -- Sets COMBAT_DAMAGE_TYPE + COMBAT_DAMAGE_AMOUNT and calls
+    -- combat_deal_damage(slot). Triggers full NES death path:
+    -- enemy_death_dispatch -> drop_init -> SetUpDroppedItem.
+    W(0x77E0, 0x44)            -- magic 'D'
+    W(0x77E1, 0x44)            -- magic 'D'
+    W(0x77E2, s)               -- slot
+    W(0x77E3, 0x10)            -- damage type = sword
+    W(0x77E4, 0xFF)            -- damage amount > any HP = guaranteed kill
 
     for fr = 1, 30 do
         emu.frameadvance()
