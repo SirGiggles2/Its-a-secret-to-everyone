@@ -34,6 +34,7 @@
 #include "../../src/state/inventory.h"                   /* Task 6.10.10: rupee tick */
 #include "../../src/state/nes_ram_sync.h"                /* Plan v5a Tier-1: $FA/$FB/$66F/$670/$008C */
 #include "../../src/game/audio/audio_dispatch.h"         /* Plan v5b Tier-5 T5.5: gamemode+scene music dispatcher */
+#include "../../src/abi/audio_abi.h"                     /* Phase 8 W6/W7: audio_sfx_play */
 #include "../../src/game/world/transfer_buf_drain.h"     /* Plan v5b: TRANSFER_BUF -> CRAM bridge (unblocks Mode 11 palette cycle) */
 #include "probes/metadata_probe.h"     /* Task 5.4: Gate D in-ROM probe */
 #include "atlas/level_chr_swap.h"        /* PR-4a: scene-bank DMA state machine */
@@ -134,7 +135,9 @@ typedef enum {
     B_ITEM_BOMB      = 3,
     B_ITEM_CANDLE    = 4,
     B_ITEM_ROD       = 5,
-    B_ITEM_COUNT     = 6
+    B_ITEM_FLUTE     = 6,
+    B_ITEM_FOOD      = 7,
+    B_ITEM_COUNT     = 8
 } b_item_t;
 static b_item_t s_b_item = B_ITEM_BOOMERANG;
 
@@ -151,7 +154,7 @@ static b_item_t s_b_item = B_ITEM_BOOMERANG;
  *   cursor 8 wand      -> B_ITEM_ROD */
 static const unsigned char k_inv_cursor_to_b_item[9] = {
     B_ITEM_BOOMERANG, B_ITEM_BOMB, B_ITEM_ARROW, B_ITEM_NONE,
-    B_ITEM_CANDLE, B_ITEM_NONE, B_ITEM_NONE, B_ITEM_NONE, B_ITEM_ROD
+    B_ITEM_CANDLE, B_ITEM_FLUTE, B_ITEM_FOOD, B_ITEM_NONE, B_ITEM_ROD
 };
 
 void roomrom_set_b_item_from_inv_cursor(unsigned char cursor_slot)
@@ -2307,6 +2310,30 @@ void roomrom_debug_tick(void)
                 if (!roomrom_magic_shot_active()) {
                     roomrom_magic_shot_fire(players[0].face,
                                             players[0].x, players[0].y);
+                }
+                break;
+            case B_ITEM_FLUTE:
+                /* Phase 8 W6 LITE: SFX-only feedback. NES WieldFlute
+                 * (Z_07.asm:2449) spawns Whirlwind obj type $2D — but
+                 * Genesis port has no enemy_loop dispatch case for $2D
+                 * (conflicts with existing enemy obj type) and slot range
+                 * is 1-11 only. Full whirlwind summon = Phase 9 scope.
+                 * V1: play SFX as audible acknowledgement. */
+                if (s_scene == SCENE_OW) {
+                    audio_sfx_play(4u);  /* nearest analog to NES Tune1=$10 */
+                }
+                break;
+            case B_ITEM_FOOD:
+                /* Phase 8 W7 LITE: decrement food, SFX feedback. NES
+                 * WieldFood (Z_05.asm:2994) spawns food bait obj type $2A
+                 * at slot $0F (15) — out of Genesis enemy_loop range (1-11)
+                 * and no $2A handler. Goriya bait-seek AI also unported.
+                 * V1: decrement count + SFX. Bait sprite + enemy attraction
+                 * = Phase 9 scope. */
+                if (g_inventory.food > 0u) {
+                    g_inventory.food = 0u;
+                    nes_ram[0x065Du] = 0u;
+                    audio_sfx_play(2u);  /* placeholder SFX */
                 }
                 break;
             default:             break;
