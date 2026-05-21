@@ -74,10 +74,10 @@ for _, t in ipairs(IN_SCOPE) do
             R(0x8451+s),   -- shoot timer
             R(0x8412+s),   -- wants to shoot
             R(0x84F0+s),   -- hit reaction
-            R(0x80C0+s),   -- shove dir
-            R(0x84C9+s),   -- shove dist (approx — best guess)
-            R(0x84B8+s),   -- HP
-            R(0x84B2+s),   -- invincibility mask
+            R(0x80C0+s),   -- shove dir ($00C0 + slot)
+            R(0x80D3+s),   -- shove dist ($00D3 + slot — NES ObjShoveDistance)
+            R(0x8485+s),   -- HP ($0485 + slot — NES MON_HP / ENEMY_HP)
+            R(0x84B2+s),   -- invincibility mask ($04B2 + slot — ENEMY_INVINCIBILITY)
             R(0x8098+s),   -- facing dir (real)
             0))
         emu.frameadvance()
