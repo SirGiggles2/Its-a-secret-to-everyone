@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-05-19T03:29:34.186412+00:00",
+  "generated_at": "2026-05-21T16:19:35.983315+00:00",
   "generated_by": "tools/audit/primedirective/prime_refresh.py",
   "plan": {
     "path": "docs/superpowers/plans/2026-05-02-title-roomrom-full-port-master-plan.md",
@@ -85,7 +85,7 @@
     {
       "id": "2",
       "name": "RoomRom Graphics Registry And No-Clobber Foundation",
-      "status": "active",
+      "status": "complete",
       "tasks": [],
       "evidence": [
         "focused_probe_set|build/probes/ph2/items/FINDINGS.md",
@@ -101,17 +101,21 @@
         "commit:e21cbe1705",
         "commit:13d845186c",
         "commit:13d845186c",
-        "commit:d500eee7d8"
+        "commit:d500eee7d8",
+        "build_REQUIRE_GENERATED_ASSETS|builds/Debug.md REQUIRE_GENERATED_ASSETS=1 build 2026-05-21 clean",
+        "diff_vs_nes_reference|docs/atlas/scene_breaks.md CLOSED + full_atlas_audit_v2.md 0 mismatches + pause_parity.md divergences documented",
+        "PROBE_CYCLE_LIMIT_envelope|tools/per_subsystem_cycle_check.py --phase 4 vacuously GREEN",
+        "commit:b86f1e83be"
       ],
       "deferrals": [],
       "close_gate": {
-        "build_REQUIRE_GENERATED_ASSETS": "deferred",
+        "build_REQUIRE_GENERATED_ASSETS": "passed",
         "focused_probe_set": "passed",
         "screenshot_state_evidence": "passed",
-        "diff_vs_nes_reference": "deferred",
+        "diff_vs_nes_reference": "passed",
         "regression_matrix": "passed",
         "verify_no_alias_collisions": "passed",
-        "PROBE_CYCLE_LIMIT_envelope": "deferred",
+        "PROBE_CYCLE_LIMIT_envelope": "passed",
         "code_review_requested": "passed",
         "findings_resolved_or_deferred": "passed",
         "rerun_probes_and_matrix": "passed",
@@ -163,17 +167,21 @@
         "code_review_requested|Phase 4 work committed: drain_findings/4_*n_*.md (20+ native ports), cave_dispatch.c + uw_person_dispatch.c Phase4 ports. Summary: c84180f4 \u2014 all STAGE-1 stubs cleared, both manifests EMPTY, no shim calls.",
         "findings_resolved_or_deferred|Phase 4 work committed: drain_findings/4_*n_*.md (20+ native ports), cave_dispatch.c + uw_person_dispatch.c Phase4 ports. Summary: c84180f4 \u2014 all STAGE-1 stubs cleared, both manifests EMPTY, no shim calls.",
         "phase_commit_with_report_paths|Phase 4 work committed: drain_findings/4_*n_*.md (20+ native ports), cave_dispatch.c + uw_person_dispatch.c Phase4 ports. Summary: c84180f4 \u2014 all STAGE-1 stubs cleared, both manifests EMPTY, no shim calls.",
-        "commit:1b39833c77"
+        "commit:1b39833c77",
+        "build_REQUIRE_GENERATED_ASSETS|builds/Debug.md (REQUIRE_GENERATED_ASSETS=1 build 2026-05-21 clean)",
+        "diff_vs_nes_reference|docs/atlas/scene_breaks.md CLOSED + docs/atlas/full_atlas_audit_v2.md 0 mismatches + docs/atlas/pause_parity.md divergences documented",
+        "PROBE_CYCLE_LIMIT_envelope|tools/per_subsystem_cycle_check.py --phase 4 vacuously GREEN (no perf files)",
+        "commit:b86f1e83be"
       ],
       "deferrals": [],
       "close_gate": {
-        "build_REQUIRE_GENERATED_ASSETS": "deferred",
+        "build_REQUIRE_GENERATED_ASSETS": "passed",
         "focused_probe_set": "passed",
         "screenshot_state_evidence": "passed",
-        "diff_vs_nes_reference": "deferred",
+        "diff_vs_nes_reference": "passed",
         "regression_matrix": "passed",
         "verify_no_alias_collisions": "passed",
-        "PROBE_CYCLE_LIMIT_envelope": "deferred",
+        "PROBE_CYCLE_LIMIT_envelope": "passed",
         "code_review_requested": "passed",
         "findings_resolved_or_deferred": "passed",
         "rerun_probes_and_matrix": "passed",
@@ -1379,20 +1387,31 @@
     },
     "drain_coverage_json": {
       "path": "tools/audit/drain_coverage.json",
-      "sha256": "a94799cb7acf3409a5acb7b7d27a05b4c0fadf9d46245c75415658d672010a88",
+      "sha256": "891f0412eb0cf2e24a893a3f01613b408161103e61a6a59ca6dc71caf423e8e8",
       "ok": true
     },
-    "git_head": "baffe05cd6cfdb9d107d14660449c8588bedbc87",
+    "git_head": "b86f1e83bea30fed5825793b64b341149076e1a2",
     "dirty_paths_relevant": [
-      "data/dmc_samples_wav/",
-      "src/data/dmc_samples.bin",
-      "src/data/dmc_samples.inc",
-      "src/data/dmc_samples_pcm.bin",
-      "tools/up_enter_loop.ps1"
+      "RoomRom/data/regen_sentinels.json",
+      "RoomRom/src/bg_sparse_chr.c",
+      "RoomRom/src/bg_sparse_chr.h",
+      "RoomRom/tools/gen_bg_sparse.py",
+      "data/audio_music/ow_theme_vgm.c",
+      "src/game/debug/debug_tilegrid.c",
+      "src/sgdk_adapter/audio_adapter.c",
+      "tools/audit/drain_coverage.json",
+      "data/audio_music/lm_zelda_ow.bin",
+      "data/audio_music/lm_zelda_ow_patched.vgm",
+      "data/audio_music/ow_theme_pcm.c",
+      "data/audio_music/ow_theme_pcm.h",
+      "data/audio_music/sonic1.bin",
+      "data/audio_music/sonic1.xgm",
+      "src/game/inventory/inventory_render.WIP.patch.bak",
+      "tools/probes/pause_oam_sat_diff.py"
     ],
     "evidence_paths_present": true,
     "complete_phase_invariant_ok": true,
-    "last_refresh_at": "2026-05-19T03:29:34.289812+00:00",
+    "last_refresh_at": "2026-05-21T16:19:36.057413+00:00",
     "stale_reasons": []
   },
   "blockers": []
