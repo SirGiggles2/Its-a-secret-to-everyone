@@ -1474,7 +1474,22 @@ void enemy_loop_tick(void)
                     extern void z07_animate_object_walking(unsigned int slot);
                     extern void c_draw_object_not_mirrored_with_frame(unsigned int frame, unsigned int slot);
                     z07_animate_object_walking(slot);
-                    c_draw_object_not_mirrored_with_frame(0u, slot);
+                    /* 2026-05-22 — NES SetUpWalkingSprites (Z_07.asm:5059)
+                     * picks frame index from ObjDir:
+                     *   dir & $08 (UP)   -> frame=3
+                     *   dir & $04 (DOWN) -> frame=2
+                     *   horizontal       -> frame = ObjAnimFrame (0/1)
+                     * Without this Moblin always renders horizontal
+                     * frame regardless of facing → looked like "only
+                     * faces L/R". */
+                    unsigned char d = (unsigned char)ENEMY_DIR(slot);
+                    unsigned char draw_frame;
+                    if ((d & 0x0Cu) != 0u) {
+                        draw_frame = ((d & 0x08u) != 0u) ? 3u : 2u;
+                    } else {
+                        draw_frame = (unsigned char)ENEMY_DRAW_FRAME(slot);
+                    }
+                    c_draw_object_not_mirrored_with_frame(draw_frame, slot);
                 }
                 extern void c_check_monster_collisions(unsigned int slot);
                 c_check_monster_collisions(slot);
