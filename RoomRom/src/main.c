@@ -37,6 +37,7 @@
 #include "../../src/game/audio/audio_dispatch.h"         /* Plan v5b Tier-5 T5.5: gamemode+scene music dispatcher */
 #include "../../src/abi/audio_abi.h"                     /* Phase 8 W6/W7: audio_sfx_play */
 #include "../../src/game/world/transfer_buf_drain.h"     /* Plan v5b: TRANSFER_BUF -> CRAM bridge (unblocks Mode 11 palette cycle) */
+#include "../../src/game/world/progress_dispatch.h"      /* Tier 2: triforce fanfare driver */
 #include "probes/metadata_probe.h"     /* Task 5.4: Gate D in-ROM probe */
 #include "atlas/level_chr_swap.h"        /* PR-4a: scene-bank DMA state machine */
 #include "player_state.h"                 /* Phase 6 Task 6.1: typed players[] */
@@ -1877,6 +1878,14 @@ void roomrom_debug_tick(void)
                 nes_ram[0x04F0u]--;
             }
             inventory_rupee_tick((unsigned char)s_frame_counter);
+            /* Tier 2: drive Power Triforce fanfare. core_take_power_triforce
+             * (item_dispatch.c:48) sets POWER_TRIFORCE_FANFARE_FLAG +
+             * CURTAIN_TIMER on pickup; this check ticks the curtain +
+             * palette ash-replace + ITEM_SFX_SECONDARY each frame until
+             * the timer expires. Without this call the fanfare flag
+             * never clears and triforce pickup has no visible/audible
+             * effect. */
+            progress_check_power_triforce_fanfare();
             /* Phase 7 substrate fix 2026-05-15 — clear NES OAM mirror
              * + reset RollingSpriteIndex AT FRAME START. NES Z1 NMI
              * resets RollingSpriteIndex per frame; without that

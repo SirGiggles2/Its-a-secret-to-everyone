@@ -65,6 +65,7 @@
 
 #include "platform_abi.h"
 #include "mode_endlevel.h"
+#include "progress_dispatch.h"  /* Tier 2: native curtain effect driver */
 
 /* NES RAM cells. */
 #define M12_GAME_SUBMODE         RAM(0x0013u)
@@ -94,7 +95,14 @@
 static void mode12_hide_object_sprites(void)        { /* Z_07.asm:611 */ }
 static void mode12_draw_link_lifting_item(void)     { /* Z_07.asm:1055 */ }
 static void mode12_update_hearts_and_rupees(void)   { /* Z_07.asm:2033 */ }
-static void mode12_update_world_curtain_effect(void){ /* Z_07.asm — TBD */ }
+static void mode12_update_world_curtain_effect(void)
+{
+    /* Tier 2: wire to native progress_update_world_curtain_effect.
+     * NES Z_07.asm UpdateWorldCurtainEffect_Bank2 advances one column-
+     * pair per call when CURTAIN_TIMER hits 0. Drain MATCH per
+     * progress_runtime.c:104-117. */
+    progress_update_world_curtain_effect();
+}
 static void mode12_hide_all_sprites(void)           { /* Z_07.asm — TBD */ }
 static void mode12_end_game_mode_12(void)           { /* Z_05.asm:7487 */ }
 
