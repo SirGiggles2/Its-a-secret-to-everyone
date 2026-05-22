@@ -1337,6 +1337,14 @@ static void enemy_loop_combat_force_kill_hook(void)
 void enemy_loop_tick(void)
 {
     unsigned int slot;
+    /* 2026-05-22 — clear InvClock ($066C) per-frame. Some transpiled
+     * path sets it $01 at debug_enter (trace: $00 -> $45 -> $01 at
+     * frame 31-32). walker_move CheckStunned + flyer/wanderer DrawAnd
+     * paths gate on (InvClock | ObjStunTimer) so all non-hit enemies
+     * freeze. NES uses $066C only for magic-clock pause (always 0
+     * except when item active). Brute clear per-tick restores
+     * walker/octorok/flyer movement. */
+    RAM(0x066Cu) = 0u;
     /* enemy_fix arm-hook: check magic + consume on first call only. */
     enemy_loop_arm_fix_probe();
     /* combat-death hook: check magic + invoke combat_deal_damage. */
