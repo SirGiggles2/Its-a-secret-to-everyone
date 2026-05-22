@@ -443,10 +443,38 @@ static void set_bg_scroll(short h_scroll, short v_scroll)
     set_plane_scroll((u8)(s_active_plane ^ 1u), h_scroll, v_scroll);
 }
 
-/* Tier 1 cave-fade callbacks. cave_fade.c owns the palette ramp +
- * cave_init/cave_exit + plane fill; this side owns scene-state flip +
- * Link reposition + HUD underlay reset (which need RoomRom-local
- * statics). */
+/* Forward-decl of s_link_frame which is defined below at line ~529 with
+ * other Link movement statics. Cave fade descend handler ticks it to
+ * give Link a visible walk-cycle while sinking into the entrance. */
+extern u8 s_link_frame;
+
+/* Tier 1 cave-fade callbacks. cave_fade.c owns sequencing + cave_init/
+ * cave_exit + plane fill; this side owns Link reposition + scene flip
+ * + HUD underlay reset (which need RoomRom-local statics). */
+
+/* Per NES Z_05.asm:2308 UpdateMode10Stairs: Link Y += 1 every 4 frames.
+ * cave_fade.c calls this 16 times across the descend (step_idx 0..15). */
+static void cave_fade_descend_step_handler(unsigned char step_idx)
+{
+    (void)step_idx;
+    players[0].y = (short)(players[0].y + 1);
+    /* Mirror new Y to nes_ram $0084 so the gated sync at line 1865 (which
+     * is suppressed during cave_fade) doesn't leave Link's collision/
+     * sprite cells stale at the trigger frame's Y. */
+    nes_ram[0x0084u] = (unsigned char)players[0].y;
+
+    /* NES walk-anim cycle: NES Link_EndMoveAndAnimate ticks pose every
+     * frame; we toggle on every descend step (every 4 frames) so the
+     * legs cycle visibly during the 64-frame descend. */
+    s_link_frame ^= 1u;
+
+    /* NES also sets sprite priority bit $20 on Link upper-half sprites
+     * so the entrance arch tile covers them ("Link sinks into hole"
+     * effect). Genesis SAT priority bit is high — defer this polish:
+     * direct VDP SAT munge needs sprite_render.c hook. For now, Link
+     * walks down without arch overlay. */
+}
+
 static void cave_fade_swap_entry_handler(cave_id_t cid)
 {
     (void)cid;
@@ -472,6 +500,7 @@ static void cave_fade_swap_exit_handler(void)
 }
 
 static const cave_fade_callbacks_t k_cave_fade_callbacks = {
+    cave_fade_descend_step_handler,
     cave_fade_swap_entry_handler,
     cave_fade_swap_exit_handler
 };
@@ -506,7 +535,7 @@ static void render_room_into_slot(u8 room_id, u8 slot_x, u8 row_base)
         }
     }
 }
-static u8          s_link_frame = 0u;
+u8                 s_link_frame = 0u;      /* non-static: forward-declared at top of file for cave_fade descend handler */
 static u8          s_link_anim_tick = 0u;
 #define LINK_ANIM_PERIOD 8u
 #define LINK_GRID_SIZE   8
@@ -1531,6 +1560,14 @@ void roomrom_debug_enter(void)
     nes_ram[0x0012u] = 0x05u;
     nes_ram[0x0013u] = 0x00u;
 
+    /* Phase 7 root-cause fix 2026-05-22 — clear InvClock ($066C). NES
+     * Variables.inc: InvClock := $66C. Walker_Move CheckStunned +
+     * flyer/wanderer paths gate on (InvClock | ObjStunTimer); if
+     * InvClock = $01, ALL non-hit enemies are frozen at spawn. Genesis
+     * cold RAM may hold $01 in this cell at boot (no NES-side init zeros
+     * it). Without clearing, OW octoroks + UW walkers never move. */
+    nes_ram[0x066Cu] = 0u;
+
     s_joy_prev = 0u;
     init_video();
     /* PR-4a: init scene-bank state machine BEFORE first scene_load so the
@@ -1844,22 +1881,26 @@ void roomrom_debug_tick(void)
             return;
         }
 
-        /* Tier 1 cave-fade gate: while a cave entry/exit fade is in
-         * progress, freeze gameplay (no enemy AI, no input handlers,
-         * no cave-entry re-detect) and just advance the fade sequencer
-         * + drain CRAM records. transfer_buf_drain consumes the
-         * render_cram_fade_apply writes queued by cave_fade_tick. */
+        /* Tier 1 cave-fade tick: advance the descend / swap sequencer
+         * each frame while active. Combat / enemy AI / cave-entry
+         * detect are gated below on !cave_fade_is_active so they
+         * freeze during the animation, but sprite render +
+         * transfer_buf_drain still run so Link's per-frame Y bump
+         * (descend step) is visible. */
         if (cave_fade_is_active()) {
             cave_fade_tick();
-            transfer_buf_drain();
-            return;
         }
 
         /* Task 6.10.2: NES Z_07.asm:472 gates per-frame gameplay update on
          * `Paused != 0`. Mirror that here — projectile/combat ticks freeze
          * while paused (voluntary or involuntary). Cave + scroll handling
-         * already returned above; only the in-room update path is gated. */
-        if (!roomrom_pause_is_active()) {
+         * already returned above; only the in-room update path is gated.
+         *
+         * Tier 1: also gate on !cave_fade_is_active so cave-entry/exit
+         * animations don't get bombed by combat updates or by
+         * cave-entrance re-detection on the very tile that triggered
+         * the fade. */
+        if (!roomrom_pause_is_active() && !cave_fade_is_active()) {
             roomrom_combat_update(players[0].x, players[0].y, players[0].face);
             roomrom_boomerang_update(players[0].x, players[0].y);
             roomrom_arrow_update();
