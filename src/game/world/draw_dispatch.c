@@ -518,8 +518,13 @@ static void anim_write_specific_item_sprites(unsigned int slot,
     DRAW_LEFT_TILE = left_tile;
     DRAW_RIGHT_TILE = (uint8_t)(left_tile + 2u);
 
-    /* Narrow / wide / slim dispatch by left tile range. */
-    if (left_tile == 0xF3u || left_tile < 0x20u || left_tile >= 0x62u) {
+    /* Narrow / wide / slim dispatch by left tile range. NES Z_01.asm:
+     * 5279-5288 — narrow = ($F3) OR ($20 <= tile < $62). Previously
+     * this condition was inverted (`== $F3 || < $20 || >= $62`),
+     * sending all in-range tiles (e.g. arrow tile $28) to slim/wide
+     * dispatch which mirrored them into 2 sprites = user-visible
+     * "doubled" arrow with wrong dir. */
+    if (left_tile == 0xF3u || (left_tile >= 0x20u && left_tile < 0x62u)) {
         /* Narrow: half-width object. If status-bar flag clear,
          * shift X by +4. */
         if ((unsigned char)DRAW_STATUS_BAR_DRAW_FLAG == 0u) {
@@ -762,7 +767,13 @@ void draw_arrow(unsigned int slot)
         core_get_opposite_dir((unsigned int)OBJ_DIR(slot));
     const unsigned char y_idx = (unsigned char)((opp >> 8) & 0xFFu);
 
-    DRAW_FRAME = k_r_dir_to_weapon_frame[y_idx & 0x03u];
+    /* 2026-05-22 — NES DrawArrow (Z_07.asm:3924) stores frame in $0C
+     * (which our naming calls DRAW_MIRRORED — same cell re-used in
+     * the Anim_WriteSpecificItemSprites context per Z_01.asm:5272
+     * `ADC $0C`). DRAW_FRAME = $0D = wrong cell; writing there left
+     * $0C uninitialized → garbage tile lookup → arrow shows wrong
+     * sprite (often "doubled" by drifting into adjacent tile pair). */
+    DRAW_MIRRORED = k_r_dir_to_weapon_frame[y_idx & 0x03u];
     unsigned char attr = k_r_dir_to_weapon_base_attr[y_idx & 0x03u];
 
     if (slot < 0x0Du && (unsigned char)OBJ_TYPE(slot) == 0x5Bu) {
