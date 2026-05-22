@@ -225,6 +225,9 @@ static void anim_write_horizontally_flippable_sprite_pair(unsigned int slot);
 static void anim_write_mirrored_sprite_pair(unsigned int slot);
 static void draw_object_with_anim_and_specific_sprites(unsigned int slot);
 static void draw_object_with_anim(unsigned char frame, unsigned int slot);
+
+/* 2026-05-22 — item-context flag for ITEM_ATTR_MARKER routing. */
+extern unsigned char g_draw_in_item_context;
 static void draw_object_with_type(unsigned char frame, unsigned int slot,
                                   unsigned char anim_idx);
 
@@ -273,8 +276,14 @@ static void anim_write_sprite_pair_not_flashing(void)
          * (LEFT d3=0 + RIGHT d3=1) into the multi-latch cache so
          * natively-dispatched enemies render via enemy_render_native_sweep
          * with full 1:1 NES OAM mapping. Per-tile h_flip preserved via
-         * per-entry attrs storage. */
-        enemy_render_publish_pair_left(tile, attr, x, y);
+         * per-entry attrs storage.
+         *
+         * 2026-05-22 — OR ITEM_ATTR_MARKER ($08) into attr when we're
+         * in item-render context. translate_tile in enemy_render.c
+         * detects + routes the tile to ITEM atlas via lookup. */
+        unsigned char publish_attr = attr;
+        if (g_draw_in_item_context) publish_attr |= 0x08u;
+        enemy_render_publish_pair_left(tile, publish_attr, x, y);
 
         off = (unsigned char)DRAW_RIGHT_SPRITE_OFFSET;
 
@@ -551,6 +560,13 @@ static void anim_write_specific_item_sprites(unsigned int slot,
 
 /* Anim_WriteItemSprites (Z_01.asm:2365). Setup sprite offsets by
  * cur sprite index, then dispatch. */
+/* 2026-05-22 — set during anim_write_item_sprites call. Read by
+ * anim_write_sprite_pair_not_flashing to tag cache entries with
+ * ITEM_ATTR_MARKER so enemy_render's translate_tile routes them to
+ * ITEM atlas instead of common SPR (where NES tile IDs coincide
+ * with enemy CHR data → user saw rocks instead of arrows). */
+unsigned char g_draw_in_item_context = 0u;
+
 static void anim_write_item_sprites(unsigned int slot,
                                     unsigned int item_slot)
 {
@@ -559,7 +575,9 @@ static void anim_write_item_sprites(unsigned int slot,
     DRAW_LEFT_SPRITE_OFFSET = k_sprite_offsets[cur_idx & 0x3Fu];
     DRAW_RIGHT_SPRITE_OFFSET =
         k_sprite_offsets[(cur_idx + 1u) & 0x3Fu];
+    g_draw_in_item_context = 1u;
     anim_write_specific_item_sprites(slot, item_slot);
+    g_draw_in_item_context = 0u;
 }
 
 /* Anim_WriteStaticItemSpritesWithAttributes (Z_01.asm:2338).

@@ -237,6 +237,36 @@ static const unsigned char k_meta_spark_tiles[4] = { 0x64u, 0x62u, 0x64u, 0x62u 
  * index instead of going through common-bank translation. */
 #define ENEMY_RENDER_META_VRAM_TILE 1300u
 #define META_ATTR_MARKER            0x10u
+
+/* ITEM_ATTR_MARKER (NES OAM attr bit 3, unused). Set by anim_write_
+ * item_sprites path when publishing item tiles to enemy_render cache.
+ * translate_tile detects this + remaps NES item tile ID -> ITEM atlas
+ * tile index via k_nes_item_tile_to_atlas_idx. Without this, item
+ * tiles (arrows from Moblin, boomerangs from Goriya, etc.) route to
+ * common SPR atlas where their NES tile ID coincides with enemy CHR
+ * data → user sees octorok-rock pixels instead of arrow sprite. */
+#define ITEM_ATTR_MARKER            0x08u
+#include "../../../RoomRom/src/atlas/items_chr_x4.h"  /* ROOMROM_ATLAS_ITEMS_X4_* */
+/* NES item tile ID -> items_chr_x4 atlas index. $FF = not an item tile.
+ * Derived from RoomRom/data/item_chr_manifest.json + items_chr_x4.h
+ * extraction order; see comment in draw_arrow path. */
+static const unsigned char k_nes_item_tile_to_atlas_idx[256] = {
+    [0x20]=0,  [0x21]=1,  [0x22]=70, [0x23]=71, [0x28]=14, [0x29]=15,
+    [0x2A]=68, [0x2B]=69, [0x2C]=60, [0x2D]=61, [0x2E]=48, [0x2F]=49,
+    [0x32]=50, [0x33]=51, [0x34]=20, [0x35]=21, [0x36]=6,  [0x37]=7,
+    [0x38]=8,  [0x39]=9,  [0x3A]=10, [0x3B]=11, [0x3C]=12, [0x3D]=13,
+    [0x40]=72, [0x41]=73, [0x42]=58, [0x43]=59, [0x44]=40, [0x45]=41,
+    [0x46]=56, [0x47]=57, [0x48]=28, [0x49]=29, [0x4A]=74, [0x4B]=75,
+    [0x4C]=66, [0x4D]=67, [0x4E]=64, [0x4F]=65, [0x50]=52, [0x51]=53,
+    [0x5C]=32, [0x5D]=33, [0x5E]=34, [0x5F]=35, [0x68]=54, [0x69]=55,
+    [0x6E]=76, [0x6F]=77, [0x70]=78, [0x71]=79, [0x72]=24, [0x73]=25,
+    [0x74]=26, [0x75]=27, [0x76]=62, [0x77]=63, [0x7A]=80, [0x7B]=81,
+    [0x7C]=82, [0x7D]=83, [0x7E]=84, [0x7F]=85, [0x82]=2,  [0x83]=3,
+    [0x84]=4,  [0x85]=5,  [0x86]=16, [0x87]=17, [0x88]=18, [0x89]=19,
+    [0x9E]=36, [0x9F]=37, [0xA0]=38, [0xA1]=39, [0xCE]=44, [0xCF]=45,
+    [0xD0]=46, [0xD1]=47, [0xF0]=86, [0xF1]=87, [0xF2]=88, [0xF3]=89,
+    /* All other entries default 0 — caller must check ITEM_ATTR_MARKER first. */
+};
 static const unsigned char k_cloud_chr_subpal1[6 * 32] = {
     /* NES tile $70 -> Genesis VRAM 1300 */
     0x00u, 0x00u, 0x07u, 0x77u, 0x00u, 0x00u, 0x77u, 0x77u,
@@ -440,6 +470,14 @@ static inline unsigned short translate_tile(unsigned char nes_tile,
     if (nes_attrs & META_ATTR_MARKER) {
         return (unsigned short)(ENEMY_RENDER_META_VRAM_TILE +
                                 (unsigned short)nes_tile);
+    }
+    if (nes_attrs & ITEM_ATTR_MARKER) {
+        /* 2026-05-22 — route item tiles to ITEM atlas. NES tile ID
+         * maps to atlas index via lookup. Genesis VRAM slot =
+         * ITEM_TILE_BASE + atlas_index. */
+        unsigned char atlas_idx = k_nes_item_tile_to_atlas_idx[nes_tile];
+        return (unsigned short)(ROOMROM_ITEM_TILE_BASE +
+                                (unsigned short)atlas_idx);
     }
     if (nes_tile < NES_OWSP_BANK_FIRST) {
         /* Common sprite pattern block at SPR_BASE 1:1. */
