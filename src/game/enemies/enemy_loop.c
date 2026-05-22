@@ -1489,12 +1489,34 @@ void enemy_loop_force_spawn_typed(unsigned int slot,
     ENEMY_X(slot) = x;
     ENEMY_Y(slot) = y;
     clear_slot_scratch(slot);
-    ENEMY_DIR(slot) = dir;
+    /* NES @InitObject preamble (Z_07.asm:5541-5557): set DIR=0 so
+     * per-type init can compute it from ChaseTarget. Pre-2026-05-21
+     * the arm-hook wrote caller-supplied dir BEFORE init_fn, causing
+     * enrt_init_walker (Z_04.asm:209) early-return when DIR!=0 — and
+     * walker init's WALK_SPEED/MOVE_TIMER/STATE never landed. Result:
+     * arm-spawned enemies stuck at spawn cell with qspd=0. */
+    ENEMY_DIR(slot) = 0;
     native_init_obj_hp(slot, enemy_type);    /* NES Z_07.asm:5576 HP nibble */
     native_init_obj_attr(slot, enemy_type);  /* NES Z_07.asm:5566 @FetchAttrs */
 
+    /* NES @InitObject cloud-spawn preamble (Z_07.asm:5543-5557): for
+     * cloud-spawn types (most enemies), ObjTimer = slot (cloud-anim
+     * countdown) + ObjMetastate = $01 (cloud state). Skip for Armos
+     * ($1E), FlyingGhini ($22), and projectile types ($53+) per NES
+     * CPY/BEQ at lines 5550-5555. Without this preamble, enemy state
+     * machine sees Metastate=0 (= "running") but Timer=0 (= "no anim
+     * cadence") -> AI ticks but renders flat / doesn't animate. */
+    if (enemy_type != 0x1Eu && enemy_type != 0x22u && enemy_type < 0x53u) {
+        RAM(0x0028u + slot) = (unsigned char)slot;  /* ObjTimer = slot */
+        RAM(0x04D8u + slot) = 0x01u;                /* ObjMetastate = cloud */
+    }
+
     fn = enemy_init_fns[enemy_type];
     if (fn != 0) fn(slot);
+
+    /* Caller can still override DIR after init (e.g., probe wants
+     * fixed direction). Pass dir=0 to use chase-target computation. */
+    if (dir != 0) ENEMY_DIR(slot) = dir;
 }
 
 unsigned int enemy_loop_alive_count(void)
