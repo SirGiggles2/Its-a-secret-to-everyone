@@ -195,11 +195,16 @@ void cave_format_decimal_byte(unsigned char val);
  * pending Phase 4 native equivalent. */
 void cave_write_prices_to_dynamic_transfer_buf(unsigned char price_char);
 
+/* Copy 17 bytes of PriceListTemplateTransferBuf (Z_01.asm:295) into
+ * the dynamic transfer buf (DynTileBuf @ $0302). Native port of NES
+ * CopyPriceListTemplate (Z_01.asm:548). Used by cave_write_prices_*
+ * and the door-charge branch of cave_update_hint_or_money_game. */
+void cave_copy_price_list_template(void);
+
 /* Write all 3 ware prices into the static price-list transfer buf.
  * Mirrors NES WritePricesTransferBuf (Z_01.asm:449). Two-step:
- * copy_price_list_template (STAGE-1 STUB pending Phase 4) +
- * write_prices_to_dynamic_transfer_buf(33). Drain at
- * src/oracle/cave/cave_runtime.c:126. */
+ * copy_price_list_template + write_prices_to_dynamic_transfer_buf(33).
+ * Drain at src/oracle/cave/cave_runtime.c:126. */
 void cave_write_prices_transfer_buf(void);
 
 /* If item slot has lifetime < $F0 and Link is within 9px (Y axis

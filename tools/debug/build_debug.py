@@ -61,6 +61,7 @@ INCS = [
     ROOT / "src" / "oracle" / "room",
     ROOT / "src" / "core",
     ROOT / "data" / "audio",
+    ROOT / "data" / "audio_music",
     SGDK / "inc",
     SGDK / "res",
 ]
@@ -71,6 +72,10 @@ TITLE_C_SOURCES = [
     ("src/sgdk_adapter/audio_vblank_hook.c", "audio_vblank_hook.o"),
     ("src/sgdk_adapter/audio_adapter.c",    "audio_adapter.o"),
     ("data/audio/sfx_pcm.c",                "sfx_pcm.o"),
+    # Overworld theme: XGC binary (xgmtool output) dispatched via
+    # src/sgdk_adapter/audio_adapter.c::audio_music_play(SONG_OW=$01) →
+    # XGM_startPlay(ow_theme_vgm).
+    ("data/audio_music/ow_theme_vgm.c",     "ow_theme_vgm.o"),
     ("src/frontend/intro/intro_phase.c", "intro_phase.o"),
     ("src/frontend/intro/intro_title.c", "intro_title.o"),
     ("src/frontend/intro/intro_story.c", "intro_story.o"),
@@ -174,6 +179,7 @@ ROOMROM_C_SOURCES = [
     ("src/game/world/bg_palette.c", "world_bg_palette.o"),  # Phase 12.2 promoted
     ("src/game/world/transfer_buf_drain.c", "world_transfer_buf_drain.o"),  # Plan v5b TRANSFER_BUF -> CRAM bridge
     ("src/game/world/render/cave_palette.c", "world_cave_palette.o"),  # Tier 0 #42 cave palette swap
+    ("src/game/world/render/cave_fade.c", "world_cave_fade.o"),  # Tier 1 cave entry/exit fade sequencer
     ("src/game/world/scene_load.c", "world_scene_load.o"),  # Phase 12.2 promoted
     # Task 5.4: warp coordinator + OW metadata accessor + level/quest table + Gate D probe
     # Phase 12.2 family 6 partial: SGDK-1-clean world TUs promoted.

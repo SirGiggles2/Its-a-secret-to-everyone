@@ -2,6 +2,7 @@
 #include "roomrom_debug_runtime.h"
 #include "../../src/game/world/render/ow_render.h"  /* Phase 12.2 promoted */
 #include "../../src/game/world/render/cave_palette.h"  /* Tier 0 #42 cave palette */
+#include "../../src/game/world/render/cave_fade.h"     /* Tier 1 cave entry/exit fade */
 #include "../../src/game/dungeon/uw_render.h"        /* Phase 12.2 promoted */
 #include "../../src/game/hud/hud_runtime.h"  /* Phase 12.2 promoted */
 #include "../../src/game/world/render/sprite_render.h"
@@ -440,6 +441,39 @@ static void set_bg_scroll(short h_scroll, short v_scroll)
     set_plane_scroll(s_active_plane, h_scroll, v_scroll);
     set_plane_scroll((u8)(s_active_plane ^ 1u), h_scroll, v_scroll);
 }
+
+/* Tier 1 cave-fade callbacks. cave_fade.c owns the palette ramp +
+ * cave_init/cave_exit + plane fill; this side owns scene-state flip +
+ * Link reposition + HUD underlay reset (which need RoomRom-local
+ * statics). */
+static void cave_fade_swap_entry_handler(cave_id_t cid)
+{
+    (void)cid;
+    s_scene = SCENE_CAVE;
+    /* NES Z1 cave-entry Link spawn: bottom-center facing up. */
+    players[0].x    = 120u;
+    players[0].y    = 192u;
+    players[0].face = LINK_FACE_UP;
+}
+
+static void cave_fade_swap_exit_handler(void)
+{
+    s_scene = SCENE_OW;
+    /* Restore Link 16 px south of the cave entrance so the entrance
+     * tile is not re-triggered on the next frame. Matches the
+     * existing-instant-exit logic that lived inline at main.c:2050. */
+    players[0].x    = s_cave_return_x;
+    players[0].y    = (u8)(s_cave_return_y + 16u);
+    players[0].face = LINK_FACE_DOWN;
+    /* HUD underlay must be re-asserted after cave_fade restores the OW
+     * plane (cave_exit does not re-enter load_room). */
+    clear_hud_underlay_for_row_base(s_active_row_base);
+}
+
+static const cave_fade_callbacks_t k_cave_fade_callbacks = {
+    cave_fade_swap_entry_handler,
+    cave_fade_swap_exit_handler
+};
 
 static void anchor_active_slot(void)
 {
@@ -1809,6 +1843,17 @@ void roomrom_debug_tick(void)
             return;
         }
 
+        /* Tier 1 cave-fade gate: while a cave entry/exit fade is in
+         * progress, freeze gameplay (no enemy AI, no input handlers,
+         * no cave-entry re-detect) and just advance the fade sequencer
+         * + drain CRAM records. transfer_buf_drain consumes the
+         * render_cram_fade_apply writes queued by cave_fade_tick. */
+        if (cave_fade_is_active()) {
+            cave_fade_tick();
+            transfer_buf_drain();
+            return;
+        }
+
         /* Task 6.10.2: NES Z_07.asm:472 gates per-frame gameplay update on
          * `Paused != 0`. Mirror that here — projectile/combat ticks freeze
          * while paused (voluntary or involuntary). Cave + scroll handling
@@ -1895,25 +1940,15 @@ void roomrom_debug_tick(void)
                     s_cave_return_face = players[0].face;
                     s_cave_return_x    = (unsigned char)players[0].x;
                     s_cave_return_y    = (unsigned char)players[0].y;
-                    (void)cave_init(cid);
-                    s_scene = SCENE_CAVE;
-                    /* Position Link at bottom-center of cave room
-                     * (NES Z1 cave entry pos). */
-                    players[0].x = 120u;
-                    players[0].y = 192u;
-                    players[0].face = LINK_FACE_UP;
-                    /* Task #44 (closes T0.3 follow-up) — native NES cave
-                     * column override. Was previously calling the OW
-                     * renderer with room_id=cid which painted whatever
-                     * OW room $6A/$6B/etc. looks like (lake/road tiles).
-                     * NES Z_05.asm InitModeB pipeline overrides the OW
-                     * column directory with RoomLayoutOWCave0/1; that
-                     * override now lives in roomrom_cave_room_render_*
-                     * with palette pattern sourced from OW room $44 per
-                     * Z_05.asm:6628. */
-                    roomrom_cave_room_render_fill_plane_a((unsigned char)cid);
-                    roomrom_ow_room_render_publish_play_area_tiles();
-                    cave_palette_apply();
+                    /* Tier 1: hand off to cave_fade sequencer. fade
+                     * captures current OW palette, ramps to black over
+                     * CAVE_FADE_STEPS frames, then SWAP_ENTRY phase
+                     * calls cave_init + cave plane fill + cave palette
+                     * stamp + our swap_entry_handler (Link reposition +
+                     * scene flip). Then IN_CAVE ramps cave palette up
+                     * from black. */
+                    cave_fade_set_callbacks(&k_cave_fade_callbacks);
+                    cave_fade_begin_enter(cid);
                     return;
                 }
             }
@@ -2036,31 +2071,19 @@ void roomrom_debug_tick(void)
 
         /* SCENE_CAVE harness: tick the native cave gamemode each frame.
          * Only the C+START exit chord is honored — all other input is
-         * swallowed so the chord toggle behavior stays unambiguous. */
+         * swallowed so the chord toggle behavior stays unambiguous.
+         *
+         * Tier 1: exit hands off to cave_fade sequencer (fade out cave
+         * palette, SWAP_EXIT restores OW plane + palette + Link pos
+         * via swap_exit_handler, fade in OW palette). The cave_fade
+         * gate above already early-returns during the fade so this
+         * block only fires when SCENE_CAVE is fully active (IDLE
+         * phase). */
         if (s_scene == SCENE_CAVE) {
             cave_tick();
             if ((pressed & BUTTON_START) && (joy & BUTTON_C)) {
-                cave_exit();
-                s_scene = SCENE_OW;
-                /* T0.2 — restore Link OFF the cave-entry tile (16 px
-                 * south, facing down) so cave_entrance_check sees floor
-                 * next tick instead of re-firing $24 immediately. NES
-                 * behavior matches: exiting a cave lands Link below the
-                 * entrance, facing south. */
-                players[0].x    = s_cave_return_x;
-                players[0].y    = (unsigned char)(s_cave_return_y + 16u);
-                players[0].face = LINK_FACE_DOWN;
-                /* T0.2 — repaint OW plane so the post-cave-exit screen
-                 * shows the source room instead of the cave-clear plane. */
-                roomrom_ow_room_render_fill_plane_a(s_room_id);
-                roomrom_ow_room_render_publish_play_area_tiles();
-                /* #42 — restore OW PAL0 subpal 2+3 (cave_palette_apply
-                 * overwrote them on entry). */
-                roomrom_ow_room_render_load_palette(s_room_id);
-                /* HUD underlay retired 2026-05-15: cave_exit does not
-                 * re-enter load_room, so the staged HUD underlay must
-                 * be re-asserted explicitly here. */
-                clear_hud_underlay_for_row_base(s_active_row_base);
+                cave_fade_set_callbacks(&k_cave_fade_callbacks);
+                cave_fade_begin_exit(s_cave_return_room);
             }
             return;
         }

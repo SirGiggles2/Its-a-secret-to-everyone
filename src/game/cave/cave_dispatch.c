@@ -442,18 +442,44 @@ void cave_write_prices_to_dynamic_transfer_buf(unsigned char price_char)
     core_cue_transfer_buf_and_advance_state(10u);
 }
 
+/* NES PriceListTemplateTransferBuf (Z_01.asm:295-298). 17 bytes:
+ *   $22 $C8 $0D     -- transfer-buf header: PPU addr $22C8, length $0D=13
+ *   $21             -- "X" tile (multiplier prefix; overwritten by caller)
+ *   $24 x 12        -- 12 space tiles (overwritten by price digit writers)
+ *   $FF             -- record terminator
+ *
+ * CopyPriceListTemplate (Z_01.asm:548) copies these 17 bytes
+ * (Y=$10..0 inclusive, 17 iterations) from ROM into DynTileBuf
+ * (NES $0302 = CAVE_TRANSFER_BUF_CHAR_BASE). */
+static const unsigned char k_cave_price_list_template[17] = {
+    0x22u, 0xC8u, 0x0Du, 0x21u,
+    0x24u, 0x24u, 0x24u, 0x24u,
+    0x24u, 0x24u, 0x24u, 0x24u,
+    0x24u, 0x24u, 0x24u, 0x24u,
+    0xFFu
+};
+
+void cave_copy_price_list_template(void)
+{
+    /* NES CopyPriceListTemplate (Z_01.asm:548-557). Native port of the
+     * 30-byte-ROM-blob copy referenced in finding 3_4n_i (last deferred
+     * shim in the price-formatter chain). Replaces the
+     * z01_copy_price_list_template transpile shim that did not link
+     * into Debug.md. */
+    for (unsigned char i = 0u; i < sizeof(k_cave_price_list_template); ++i) {
+        RAM(CAVE_TRANSFER_BUF_CHAR_BASE + i) = k_cave_price_list_template[i];
+    }
+}
+
 void cave_write_prices_transfer_buf(void)
 {
     /* NES WritePricesTransferBuf (Z_01.asm:449):
-     *   JSR CopyPriceListTemplate  ; (Phase 4 stub)
+     *   JSR CopyPriceListTemplate
      *   LDA #$21                   ; "X"
      *   fall through to WritePricesToDynamicTransferBuf
      *
      * Drain at src/oracle/cave/cave_runtime.c:126. */
-
-    /* TODO Phase 4: native cave_copy_price_list_template(). The
-     * template is a fixed 30-byte ROM blob copied into the static
-     * transfer buf — not yet ported. */
+    cave_copy_price_list_template();
 
     /* Price char $21 = NES tile "X" (multiplier prefix in shop). */
     cave_write_prices_to_dynamic_transfer_buf(0x21u);
@@ -501,15 +527,13 @@ void cave_update_cave_person(unsigned int slot)
      * cue_transfer_blank_person_wares. */
     switch (CAVE_PERSON_STATE) {
         case 0u: cave_update_transfer_prices(); break;
-        case 1u: /* TODO Phase 4: native cave_update_person_state_textbox(). */
-                 break;
+        case 1u: cave_update_person_state_textbox(); break;
         case 2u: cave_update_talk_shop_or_door_charge(); break;
         case 3u: core_cue_transfer_blank_person_wares(); break;
         case 4u: cave_update_person_state_delay_then_hide(); break;
         case 5u: cave_update_hint_or_money_game(); break;
         case 6u: core_cue_transfer_blank_person_wares(); break;  /* same as state 3 */
-        case 7u: /* TODO Phase 4: same as state 1 (textbox). */
-                 break;
+        case 7u: cave_update_person_state_textbox(); break;
         case 8u: /* DoNothing */
                  break;
         default: break;
@@ -554,10 +578,12 @@ void cave_update_hint_or_money_game(void)
         return;
     }
 
-    /* Branch 2: door-charge variant (CAVE_ROOM_TYPE >= $7B). */
+    /* Branch 2: door-charge variant (CAVE_ROOM_TYPE >= $7B). NES
+     * Z_01.asm:893-902 — copy price list template, write prices with
+     * space ($24) prefix instead of "X". Both helpers now native. */
     if (cave_room_type_get() >= 0x7Bu) {
-        /* TODO Phase 4: native cave_copy_price_list_template(). */
-        /* TODO Phase 4: native cave_write_prices_to_dynamic_transfer_buf(36). */
+        cave_copy_price_list_template();
+        cave_write_prices_to_dynamic_transfer_buf(0x24u);  /* 36 = ' ' */
         CAVE_TEXT_TICK_SFX = 8u;
         progress_set_room_flag_uw_item_state();
         CAVE_PERSON_STATE  = 8u;
