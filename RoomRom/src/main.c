@@ -1560,14 +1560,6 @@ void roomrom_debug_enter(void)
     nes_ram[0x0012u] = 0x05u;
     nes_ram[0x0013u] = 0x00u;
 
-    /* Phase 7 root-cause fix 2026-05-22 — clear InvClock ($066C). NES
-     * Variables.inc: InvClock := $66C. Walker_Move CheckStunned +
-     * flyer/wanderer paths gate on (InvClock | ObjStunTimer); if
-     * InvClock = $01, ALL non-hit enemies are frozen at spawn. Genesis
-     * cold RAM may hold $01 in this cell at boot (no NES-side init zeros
-     * it). Without clearing, OW octoroks + UW walkers never move. */
-    nes_ram[0x066Cu] = 0u;
-
     s_joy_prev = 0u;
     init_video();
     /* PR-4a: init scene-bank state machine BEFORE first scene_load so the
@@ -1688,6 +1680,17 @@ unsigned char roomrom_debug_get_scene(void)
     return (unsigned char)s_scene;
 }
 
+/* 2026-05-22 — expose scroll-state for enemy_render to skip drawing
+ * enemy sprites during room transitions. Without this, scroll-completion
+ * fires enemy_loop_room_init which respawns enemies at NES spawn-list
+ * positions → user sees enemies "fly" from old to new positions in one
+ * frame. NES hides Link via sprite priority during scroll; we hide all
+ * enemies via this gate. */
+unsigned char roomrom_is_scrolling(void)
+{
+    return (unsigned char)(s_scroll_state != SCROLL_NONE);
+}
+
 unsigned char roomrom_debug_get_room_id(void)
 {
     return s_room_id;
@@ -1762,15 +1765,6 @@ void roomrom_debug_tick(void)
                 if (v != 0u) nes_ram[x] = (unsigned char)(v - 1u);
             }
         }
-
-        /* 2026-05-22 — clear InvClock ($066C) every frame. Some
-         * transpiled path (unidentified — trace shows $00 -> $45 -> $01
-         * at frame 31-32 of debug_enter) sets it non-zero and never
-         * clears. walker_move/flyer_move CheckStunned gates on
-         * (InvClock | ObjStunTimer) so enemies freeze. NES uses
-         * $066C only for magic-clock pause (always 0 except when item
-         * active). Brute clear: $066C = 0 each tick. */
-        nes_ram[0x066Cu] = 0u;
 
         /* Phase 7 root-cause fix #3 2026-05-16 — port NES Z_07.asm:499
          * @ScrambleRandom from the NES NMI handler. The drained gameplay
@@ -1999,13 +1993,18 @@ void roomrom_debug_tick(void)
                     s_cave_return_face = players[0].face;
                     s_cave_return_x    = (unsigned char)players[0].x;
                     s_cave_return_y    = (unsigned char)players[0].y;
-                    /* Tier 1: hand off to cave_fade sequencer. fade
-                     * captures current OW palette, ramps to black over
-                     * CAVE_FADE_STEPS frames, then SWAP_ENTRY phase
-                     * calls cave_init + cave plane fill + cave palette
-                     * stamp + our swap_entry_handler (Link reposition +
-                     * scene flip). Then IN_CAVE ramps cave palette up
-                     * from black. */
+                    /* Tier 1: hand off to cave_fade sequencer.
+                     * Mark 2x2 BG cells around cave-entrance arch with
+                     * high priority so Link sprite (prio=0) renders
+                     * BEHIND the arch lip during descend — NES sprite-
+                     * priority effect. plane row = (Y >> 3) + 7 HUD. */
+                    {
+                        unsigned char tile_col =
+                            (unsigned char)((unsigned char)players[0].x >> 3);
+                        unsigned char tile_row =
+                            (unsigned char)(((unsigned char)players[0].y >> 3) + 7u);
+                        cave_fade_mark_arch_hi_prio(tile_col, tile_row);
+                    }
                     cave_fade_set_callbacks(&k_cave_fade_callbacks);
                     cave_fade_begin_enter(cid);
                     return;
@@ -2607,30 +2606,21 @@ void roomrom_debug_tick(void)
 
             edge_load_or_clamp();
             if (!roomrom_combat_link_locked()) {
-                /* Tier 1: during cave descend, hide Link sprite once
-                 * he's mostly inside the entrance (step >= 4 of 16 =
-                 * 4 px down). Approximates NES sprite-priority "behind
-                 * arch" effect without per-tile BG prio setup. */
-                if (cave_fade_descend_step_idx() >= 4u) {
-                    roomrom_sprites_set_link_pose((short)-32, (short)-32,
-                                                  players[0].face, s_link_frame);
+                /* Invincibility palette flash: when LINK_STUN_TIMER > 0,
+                 * cycle Link's sprite palette index across PAL0..PAL3
+                 * keyed on FrameCounter & $03. NES Z_01.asm:5367-5371
+                 * applies sub-palette XOR; on Genesis we cycle the
+                 * sprite palette bank (PAL1 normal). */
+                unsigned char stun = nes_ram[0x04F0u];
+                if (stun != 0u) {
+                    unsigned char pal = (unsigned char)
+                        (((unsigned char)s_frame_counter) & 0x03u);
+                    roomrom_sprites_set_link_pose_pal(players[0].x, players[0].y,
+                                                      players[0].face,
+                                                      s_link_frame, pal);
                 } else {
-                    /* Invincibility palette flash: when LINK_STUN_TIMER > 0,
-                     * cycle Link's sprite palette index across PAL0..PAL3
-                     * keyed on FrameCounter & $03. NES Z_01.asm:5367-5371
-                     * applies sub-palette XOR; on Genesis we cycle the
-                     * sprite palette bank (PAL1 normal). */
-                    unsigned char stun = nes_ram[0x04F0u];
-                    if (stun != 0u) {
-                        unsigned char pal = (unsigned char)
-                            (((unsigned char)s_frame_counter) & 0x03u);
-                        roomrom_sprites_set_link_pose_pal(players[0].x, players[0].y,
-                                                          players[0].face,
-                                                          s_link_frame, pal);
-                    } else {
-                        roomrom_sprites_set_link_pose(players[0].x, players[0].y,
-                                                      players[0].face, s_link_frame);
-                    }
+                    roomrom_sprites_set_link_pose(players[0].x, players[0].y,
+                                                  players[0].face, s_link_frame);
                 }
             }
         } else {
@@ -2746,28 +2736,21 @@ void roomrom_debug_tick(void)
 
             edge_load_or_clamp();
             if (!roomrom_combat_link_locked()) {
-                /* Tier 1: hide Link during cave descend past step 4 — see
-                 * mirror at ALTTP branch above. */
-                if (cave_fade_descend_step_idx() >= 4u) {
-                    roomrom_sprites_set_link_pose((short)-32, (short)-32,
-                                                  players[0].face, s_link_frame);
+                /* Invincibility palette flash: when LINK_STUN_TIMER > 0,
+                 * cycle Link's sprite palette index across PAL0..PAL3
+                 * keyed on FrameCounter & $03. NES Z_01.asm:5367-5371
+                 * applies sub-palette XOR; on Genesis we cycle the
+                 * sprite palette bank (PAL1 normal). */
+                unsigned char stun = nes_ram[0x04F0u];
+                if (stun != 0u) {
+                    unsigned char pal = (unsigned char)
+                        (((unsigned char)s_frame_counter) & 0x03u);
+                    roomrom_sprites_set_link_pose_pal(players[0].x, players[0].y,
+                                                      players[0].face,
+                                                      s_link_frame, pal);
                 } else {
-                    /* Invincibility palette flash: when LINK_STUN_TIMER > 0,
-                     * cycle Link's sprite palette index across PAL0..PAL3
-                     * keyed on FrameCounter & $03. NES Z_01.asm:5367-5371
-                     * applies sub-palette XOR; on Genesis we cycle the
-                     * sprite palette bank (PAL1 normal). */
-                    unsigned char stun = nes_ram[0x04F0u];
-                    if (stun != 0u) {
-                        unsigned char pal = (unsigned char)
-                            (((unsigned char)s_frame_counter) & 0x03u);
-                        roomrom_sprites_set_link_pose_pal(players[0].x, players[0].y,
-                                                          players[0].face,
-                                                          s_link_frame, pal);
-                    } else {
-                        roomrom_sprites_set_link_pose(players[0].x, players[0].y,
-                                                      players[0].face, s_link_frame);
-                    }
+                    roomrom_sprites_set_link_pose(players[0].x, players[0].y,
+                                                  players[0].face, s_link_frame);
                 }
             }
         }

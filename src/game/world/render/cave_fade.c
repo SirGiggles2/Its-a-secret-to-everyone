@@ -8,6 +8,31 @@
 #include "cave_fade.h"
 #include "cave_palette.h"
 #include "ow_render.h"
+#include "render_abi.h"  /* render_vram_read_word, render_set_plane_a_word */
+
+/* Genesis Plane A VRAM base + cell stride. Per src/sgdk_adapter
+ * config (RoomRom PR-2 H64xV32 layout): plane A at $C000, 64 cells
+ * wide, 2 bytes per cell. Plane is 32 rows tall (PR-2 trimmed half
+ * of V64 to free CHR space). */
+#define CAVE_FADE_PLANE_A_BASE   0xC000u
+#define CAVE_FADE_PLANE_COLS     64u
+#define CAVE_FADE_PLANE_ROWS     32u
+#define CAVE_FADE_HUD_ROW_OFFSET 7u  /* matches ROOMROM_ROOM_FIRST_ROW */
+
+static void mark_cell_hi_prio_xy(unsigned char col, unsigned char row)
+{
+    if (col >= CAVE_FADE_PLANE_COLS || row >= CAVE_FADE_PLANE_ROWS) {
+        return;
+    }
+    unsigned short vram_addr = (unsigned short)(
+        CAVE_FADE_PLANE_A_BASE +
+        ((unsigned short)row * CAVE_FADE_PLANE_COLS + (unsigned short)col) * 2u);
+    unsigned short cur = render_vram_read_word(vram_addr);
+    if ((cur & 0x8000u) != 0u) {
+        return;  /* already high prio */
+    }
+    render_set_plane_a_word(col, row, (unsigned short)(cur | 0x8000u));
+}
 
 /* NES InitMode10 + UpdateMode10Stairs: 16 pixels down, 1 px every 4
  * frames = 64 frames total. */
@@ -63,6 +88,30 @@ cave_fade_phase_t cave_fade_phase_current(void)
 unsigned char cave_fade_descend_step_idx(void)
 {
     return (s_phase == CAVE_FADE_LINK_DESCEND) ? s_step_idx : 0u;
+}
+
+void cave_fade_mark_arch_hi_prio(unsigned char link_tile_col,
+                                 unsigned char link_tile_row)
+{
+    /* Stamp a 3-col-wide x 5-row-tall region centered on Link's tile
+     * position (rows -2..+2, cols -1..+1) with high-priority bit so
+     * the low-priority Link sprite (16x16 covering plane rows -1..+1
+     * around link_tile_row) renders BEHIND the cave entrance arch
+     * tiles that occupy this region.
+     *
+     * Wider coverage than necessary — better to over-stamp (the cave
+     * SWAP_ENTRY overwrites all cells, so prio bits are transient) than
+     * miss the arch and have Link render over it.
+     */
+    for (signed char dr = -2; dr <= 2; ++dr) {
+        for (signed char dc = -1; dc <= 1; ++dc) {
+            signed int row = (signed int)link_tile_row + (signed int)dr;
+            signed int col = (signed int)link_tile_col + (signed int)dc;
+            if (row < 0 || row >= (signed int)CAVE_FADE_PLANE_ROWS) continue;
+            if (col < 0 || col >= (signed int)CAVE_FADE_PLANE_COLS) continue;
+            mark_cell_hi_prio_xy((unsigned char)col, (unsigned char)row);
+        }
+    }
 }
 
 void cave_fade_tick(void)

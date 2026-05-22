@@ -60,12 +60,26 @@ unsigned char     cave_fade_is_active(void);
 cave_fade_phase_t cave_fade_phase_current(void);
 void              cave_fade_tick(void);
 
-/* Current descend step index (0..15). Owner uses this to decide when
- * to hide Link sprite (e.g. step >= 4 == "Link is mostly inside the
- * cave entrance" — approximates NES sprite-priority "behind arch"
- * effect without per-tile BG prio bit setup). Returns 0 if not in
+/* Current descend step index (0..15). Returns 0 if not in
  * LINK_DESCEND phase. */
 unsigned char     cave_fade_descend_step_idx(void);
+
+/* Stamp the 2x2 BG cells above Link's standing tile with high priority
+ * so the low-priority Link sprite renders BEHIND the cave entrance
+ * arch — matches NES OAM sprite-priority $20 effect on the Link
+ * upper-half sprite slots ($12, $13) during UpdateMode10Stairs.
+ *
+ * Genesis layering: low-prio sprite < high-prio BG; low-prio sprite >
+ * low-prio BG. So this gives Link "covered by arch lip, visible inside
+ * black interior". Call from owner at cave-entry trigger (BEFORE the
+ * fade starts) so the prio bit is live across descend frames.
+ *
+ * The cave-plane fill at SWAP_ENTRY overwrites all cells with prio=0
+ * cave tiles; on SWAP_EXIT, ow_render fill_plane_a repaints OW with
+ * prio=0 defaults. So the prio bit is transient — only set during
+ * the descend window. */
+void              cave_fade_mark_arch_hi_prio(unsigned char link_tile_col,
+                                              unsigned char link_tile_row);
 
 #ifdef __cplusplus
 }
