@@ -2120,22 +2120,23 @@ void roomrom_debug_tick(void)
         nes_ram_sync_input(joy, pressed);
 
         /* SCENE_CAVE harness: tick the native cave gamemode each frame.
-         * Only the C+START exit chord is honored — all other input is
-         * swallowed so the chord toggle behavior stays unambiguous.
+         * C+START exit chord hands off to cave_fade sequencer. Other
+         * input (D-pad movement, bare-START pause/inventory) falls
+         * through to the standard input handlers below so Link can
+         * walk in the cave room + open the inventory subscreen.
          *
-         * Tier 1: exit hands off to cave_fade sequencer (fade out cave
-         * palette, SWAP_EXIT restores OW plane + palette + Link pos
-         * via swap_exit_handler, fade in OW palette). The cave_fade
-         * gate above already early-returns during the fade so this
-         * block only fires when SCENE_CAVE is fully active (IDLE
-         * phase). */
+         * Tier 1 fix 2026-05-22: was returning early after cave_tick,
+         * which froze Link sprite + suppressed all input. NES caves
+         * allow walking + pause/inventory, only sword swing is
+         * swallowed (handled by combat_link_locked check below). */
         if (s_scene == SCENE_CAVE) {
             cave_tick();
             if ((pressed & BUTTON_START) && (joy & BUTTON_C)) {
                 cave_fade_set_callbacks(&k_cave_fade_callbacks);
                 cave_fade_begin_exit(s_cave_return_room);
+                return;
             }
-            return;
+            /* Fall through to D-pad / pause / sprite render below. */
         }
 
         /* Interactive-test gate. When probe Lua writes 'IT' magic at
