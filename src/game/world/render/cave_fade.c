@@ -60,6 +60,11 @@ cave_fade_phase_t cave_fade_phase_current(void)
     return s_phase;
 }
 
+unsigned char cave_fade_descend_step_idx(void)
+{
+    return (s_phase == CAVE_FADE_LINK_DESCEND) ? s_step_idx : 0u;
+}
+
 void cave_fade_tick(void)
 {
     switch (s_phase) {

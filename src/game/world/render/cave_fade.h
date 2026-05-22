@@ -60,6 +60,13 @@ unsigned char     cave_fade_is_active(void);
 cave_fade_phase_t cave_fade_phase_current(void);
 void              cave_fade_tick(void);
 
+/* Current descend step index (0..15). Owner uses this to decide when
+ * to hide Link sprite (e.g. step >= 4 == "Link is mostly inside the
+ * cave entrance" — approximates NES sprite-priority "behind arch"
+ * effect without per-tile BG prio bit setup). Returns 0 if not in
+ * LINK_DESCEND phase. */
+unsigned char     cave_fade_descend_step_idx(void);
+
 #ifdef __cplusplus
 }
 #endif
