@@ -180,6 +180,7 @@ ROOMROM_C_SOURCES = [
     ("src/game/world/transfer_buf_drain.c", "world_transfer_buf_drain.o"),  # Plan v5b TRANSFER_BUF -> CRAM bridge
     ("src/game/world/render/cave_palette.c", "world_cave_palette.o"),  # Tier 0 #42 cave palette swap
     ("src/game/world/render/cave_fade.c", "world_cave_fade.o"),  # Tier 1 cave entry/exit fade sequencer
+    ("src/game/world/mode_wingame.c", "world_mode_wingame.o"),  # Tier 4 Mode 0x13 WinGame scaffold
     ("src/game/world/scene_load.c", "world_scene_load.o"),  # Phase 12.2 promoted
     # Task 5.4: warp coordinator + OW metadata accessor + level/quest table + Gate D probe
     # Phase 12.2 family 6 partial: SGDK-1-clean world TUs promoted.
