@@ -610,6 +610,8 @@ static inline unsigned short enemy_type_to_size(unsigned char enemy_type)
     return RENDER_SPRITE_SIZE(2, 2);
 }
 
+extern unsigned char roomrom_is_scrolling(void);
+
 void enemy_render_native_sweep(void)
 {
     unsigned int slot;
@@ -618,6 +620,20 @@ void enemy_render_native_sweep(void)
     /* Phase 1 diagnostic: increment sentinel at NES $07FE per frame
      * so probe can verify this fn fires. */
     nes_ram[0x07FEu] = (unsigned char)(nes_ram[0x07FEu] + 1u);
+
+    /* 2026-05-22 — hide enemies during room scroll transition.
+     * Without this, scroll-completion fires enemy_loop_room_init
+     * which respawns enemies at NES spawn-list positions; user
+     * sees them snap from old to new pos in one frame ("flying").
+     * NES Z1 handles via sprite priority + door overlays during
+     * scroll. Park enemy SAT slots off-screen + break chain. */
+    if (roomrom_is_scrolling()) {
+        render_set_sprite_inline((unsigned short)sat_slot,
+                                 (signed short)-32, (signed short)-32,
+                                 RENDER_SPRITE_SIZE(1, 1), 0u, 0u);
+        g_enemy_render_last_sat_slot = (unsigned char)(sat_slot + 1u);
+        return;
+    }
 
 
     for (slot = ENEMY_LOOP_SLOT_FIRST; slot <= ENEMY_LOOP_SLOT_LAST; ++slot) {
