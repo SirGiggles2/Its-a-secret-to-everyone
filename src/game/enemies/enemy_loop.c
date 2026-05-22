@@ -1254,6 +1254,10 @@ static void enemy_loop_arm_fix_probe(void)
     RAM(0x001Au) = 2u;        /* Random[2] */
     RAM(0x00EBu) = room;      /* RoomId */
     RAM(0x004Au) = 8u;        /* ChaseLongTimer (non-zero suppresses toggle) */
+    /* Clear InvClock ($066C) — debug-boot leaves it $01 which freezes
+     * walker_move CheckStunned + flyer DrawAndCheck branches → all
+     * enemies static. NES Variables.inc: InvClock := $66C. */
+    RAM(0x066Cu) = 0u;
 
     /* Habitat: OW=$89 (per ObjectRoomBoundsOW[4]), UW=$78. */
     RAM(0x034Au) = (habitat == 0u) ? 0x89u : 0x78u;
@@ -1318,6 +1322,13 @@ static void enemy_loop_combat_force_kill_hook(void)
     RAM(0x0009u) = dmg_type;   /* COMBAT_DAMAGE_TYPE (ZP_TMP9) */
     RAM(0x0007u) = dmg_amt;    /* COMBAT_DAMAGE_AMOUNT (ZP_TMP7) */
     combat_deal_damage((unsigned int)slot);
+
+    /* SetShoveInfo equivalent (NES Z_01.asm SetShoveInfo): real
+     * combat path runs shove via collision handler. Hook bypasses
+     * that, so apply shove here for parity-test correctness.
+     * Shove dir 0x02 (right) + dist 0x40 per NES default. */
+    RAM(0x00C0u + slot) = 0x02u;    /* ObjShoveDir */
+    RAM(0x00D3u + slot) = 0x40u;    /* ObjShoveDistance */
 
     arm[0] = 0u;
     arm[1] = 0u;
@@ -1503,12 +1514,34 @@ void enemy_loop_force_spawn_typed(unsigned int slot,
      * cloud-spawn types (most enemies), ObjTimer = slot (cloud-anim
      * countdown) + ObjMetastate = $01 (cloud state). Skip for Armos
      * ($1E), FlyingGhini ($22), and projectile types ($53+) per NES
-     * CPY/BEQ at lines 5550-5555. Without this preamble, enemy state
-     * machine sees Metastate=0 (= "running") but Timer=0 (= "no anim
-     * cadence") -> AI ticks but renders flat / doesn't animate. */
+     * CPY/BEQ at lines 5550-5555.
+     *
+     * 2026-05-21 — metastate cell at $0405+slot per
+     * reference/aldonunez/Variables.inc (`ObjMetastate := $405`).
+     * Previously wrote $04D8 which is GleeokSignedRefSegmentDistance —
+     * harmless aliasing but invisible to update_meta_object (which
+     * reads via ENEMY_METASTATE macro = $0405). */
     if (enemy_type != 0x1Eu && enemy_type != 0x22u && enemy_type < 0x53u) {
-        RAM(0x0028u + slot) = (unsigned char)slot;  /* ObjTimer = slot */
-        RAM(0x04D8u + slot) = 0x01u;                /* ObjMetastate = cloud */
+        ENEMY_MOVE_TIMER(slot) = (unsigned char)slot;  /* ObjTimer $0028+slot */
+        ENEMY_METASTATE(slot)  = 0x01u;                /* ObjMetastate $0405+slot = cloud */
+    }
+
+    /* Per-NES-probe-parity init contract (2026-05-21): mirror the
+     * per-family init cells that the NES Lua probe pokes so Gen-vs-NES
+     * diff measures TICK-EVOLUTION parity (how state machine advances)
+     * not INIT-CONTRACT skew. enrt_init_walker only sets ENEMY_DIR;
+     * walker types need WALK_SPEED + ANIM_TIMER for tick to advance.
+     * Per-family overrides match NES Init<Family> bodies. */
+    {
+        /* Default walker init (Lynel/Moblin/Goriya/Vire/Stalfos/etc) */
+        unsigned char qspd = 0x20u;
+        if (enemy_type == 0x08u || enemy_type == 0x0Au)         qspd = 0x30u;  /* Fast Octorok */
+        else if (enemy_type == 0x0Cu)                            qspd = 0x28u;  /* Red Darknut */
+        else if (enemy_type == 0x2Bu || enemy_type == 0x2Cu ||
+                 enemy_type == 0x2Du)                            qspd = 0x40u;  /* Bubble */
+        RAM(0x03BCu + slot) = qspd;                  /* ENEMY_WALK_SPEED / ObjQSpeedFrac */
+        RAM(0x03D0u + slot) = 0x10u;                 /* ENEMY_ANIM_TIMER / ObjAnimCounter */
+        RAM(0x03E4u + slot) = 0x00u;                 /* ENEMY_DRAW_FRAME / ObjAnimFrame */
     }
 
     fn = enemy_init_fns[enemy_type];
