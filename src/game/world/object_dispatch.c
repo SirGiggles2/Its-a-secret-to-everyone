@@ -140,8 +140,7 @@ void object_move_object(unsigned short slot)
     /* NES MoveObject (Z_07.asm:2719) explicitly calls
      * @ApplyQSpeedToPosition 4× per call: "To allow a wide speed
      * range, we keep the quarter speed. Here, apply it 4 times to
-     * get the full speed." Drain mirrors with for-loop. Octorok
-     * qspd=$20 × 4 apps = $80 frac/frame → 1 px every 2 frames. */
+     * get the full speed." */
     for (int i = 0; i < 4; i++) {
         unsigned char old_frac;
         unsigned char frac;

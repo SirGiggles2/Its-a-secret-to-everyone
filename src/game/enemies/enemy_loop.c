@@ -1131,12 +1131,24 @@ void enemy_loop_room_init(unsigned char room_id, unsigned char scene_id)
         return;
     }
 
-    /* Clear all enemy slots on room load. */
+    /* Clear all enemy slots on room load. 2026-05-22 — was clearing
+     * only TYPE/ALIVE/X/Y; shove + state cells inherited from prior
+     * room's slot occupant (e.g. octorok died → set shove during death
+     * → next room spawn reused slot with stale shove $40) → first
+     * post-cloud frame c_walker_move saw SHOVE_DIR != 0 → c_obj_shove
+     * 4-pixel-per-frame loop = user-visible "fly across screen".
+     * Clear ALL state cells the per-frame walker/AI paths read. */
     for (slot = ENEMY_LOOP_SLOT_FIRST; slot <= ENEMY_LOOP_SLOT_LAST; ++slot) {
         ENEMY_TYPE(slot) = 0u;        /* type 0 = DoNothing = empty */
         ENEMY_ALIVE_FLAG(slot) = 0u;
         ENEMY_X(slot) = 0u;
         ENEMY_Y(slot) = 0u;
+        ENEMY_OBJ_SHOVE_DIR(slot) = 0u;        /* $00C0+slot */
+        OBJ(0x00D3u, slot)         = 0u;       /* shove distance */
+        OBJ(NES_OBJ_POS_FRAC, slot) = 0u;      /* $03A8+slot */
+        OBJ(NES_OBJ_GRID_OFFSET, slot) = 0u;   /* $0394+slot */
+        ENEMY_STUN_TIMER(slot)     = 0u;       /* $003D+slot */
+        ENEMY_HIT_REACTION(slot)   = 0u;       /* $04F0+slot */
     }
 
     /* Phase 7 Task 7.7 step 1+2 — wire NES InitMode_EnterRoom monster-list
