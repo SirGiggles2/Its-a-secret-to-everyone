@@ -49,7 +49,8 @@ for i, entry in ipairs(TYPES) do
   -- Force RNG deterministic
   W(0x8018, 0x40)
   for k = 1, 12 do W(0x8018 + k, 0x00) end
-  -- Teleport Link adjacent to spawn (Wallmaster/Lynel/Pols need Link close)
+  -- Link NES-RAM writes get clobbered by main.c players[0] sync each
+  -- frame (memory feedback_link_damage_works). Skip per-enemy position.
   W(0x8070, 0x90); W(0x8084, 0x88)
   -- Arm spawn
   W(0x77D0, 0x46) W(0x77D1, 0x58)
@@ -70,10 +71,11 @@ for i, entry in ipairs(TYPES) do
   local init_face = R(0x8099)
   local init_flap = R(0x8438)  -- ENEMY_FLAP_PHASE = $0437+slot
 
-  -- Sample x/y every 10 frames for 240f total; track max distance from
-  -- init. Catches enemies that hop, burrow, fly in arcs.
+  -- Sample x/y every 10 frames for 480f total; track max distance.
+  -- Leever state machine takes 175f to reach walk state, then walks 65f
+  -- before state machine cycles. 480f covers two full burrow cycles.
   local max_moved = 0
-  for k = 1, 24 do
+  for k = 1, 48 do
     idle(10)
     local cur_x, cur_y = R(0x8071), R(0x8085)
     local d = math.abs(cur_x - init_x) + math.abs(cur_y - init_y)
@@ -95,8 +97,8 @@ for i, entry in ipairs(TYPES) do
   local pass_shoot = true
   if ranged then
     pass_shoot = false
-    for s = 1, 19 do
-      local stype = R(0x8350 + s)
+    for s = 2, 19 do
+      local stype = R(0x834F + s)  -- ENEMY_TYPE = $034F+slot
       if stype >= 0x53 and stype <= 0x5F then pass_shoot = true; break end
     end
     -- Also accept if wants_shoot=1 (NES shoot-pending state)
@@ -109,17 +111,20 @@ for i, entry in ipairs(TYPES) do
   -- Arm damage hook ('DD' at $FF77E0): slot=1, damage_type=$10 (sword), amount=$10
   W(0x77E0, 0x44) W(0x77E1, 0x44)
   W(0x77E2, 0x01) W(0x77E3, 0x10) W(0x77E4, 0x10)
-  for _ = 1, 4 do emu.frameadvance() end
+  -- 2 frames: 1 for hook to fire, 1 to settle before sample.
+  emu.frameadvance(); emu.frameadvance()
 
   local hp_after = R(0x8486)
   local alive_after_damage = R(0x8493)
+  local shove_dist_after = R(0x80D4)
+  local shove_dir_after = R(0x80C1)
   -- Damage PASS: HP dropped OR enemy died OR shove fired (took the hit).
   local pass_damage = (hp_after < hp_before)
                    or (alive_after_damage == 0)
-                   or (R(0x80D4) > 0)
-  local shove_dist = R(0x80D4)
-  local shove_dir  = R(0x80C1)
-  local pass_knockback = (shove_dist > 0 or shove_dir ~= 0)
+                   or (shove_dist_after > 0)
+  -- Sample shove from values captured RIGHT after damage hook
+  -- (before subsequent ticks decay shove_dist).
+  local pass_knockback = (shove_dist_after > 0 or shove_dir_after ~= 0)
 
   -- Apply more damage until dead (up to 16 hits, bigger damage)
   for k = 1, 16 do
