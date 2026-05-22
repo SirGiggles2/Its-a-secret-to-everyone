@@ -2065,6 +2065,20 @@ void roomrom_debug_tick(void)
             return;
         }
 
+        /* Interactive-test gate. When probe Lua writes 'IT' magic at
+         * $FF77F0..1, X/Y/Z/Mode chord handlers are suppressed so the
+         * user's physical Y/Z input pass through to probe verdict
+         * capture without flipping move-style / scene / cave. */
+        {
+            volatile unsigned char *it_arm = (volatile unsigned char *)0x00FF77F0UL;
+            if (it_arm[0] == 0x49u && it_arm[1] == 0x54u) {
+                /* In interactive-test mode: no-op X/Y/Mode/scene-chord
+                 * handlers. Joypad still polls; probe Lua reads Y/Z
+                 * presses each frame. */
+                goto skip_debug_handlers;
+            }
+        }
+
         if (pressed & BUTTON_X) {
             s_mode = (s_mode == MODE_WALK) ? MODE_TELEPORT : MODE_WALK;
             return;
@@ -2380,6 +2394,8 @@ void roomrom_debug_tick(void)
             return;
         }
 
+    skip_debug_handlers:
+        ;  /* Empty stmt — labels need a stmt to attach to. */
         /* Tier 0 (plan v6) pause gate: when paused, swallow all
          * gameplay input (D-pad + combat buttons). START already
          * handled above + un-pauses. Other chord handlers (mode/
