@@ -24,31 +24,43 @@ local TYPES = {
   {0x07,"Octorok",       true,  true},  {0x08,"FastOctorok",   true,  true},
   {0x0B,"BlueDarknut",   true,  false}, {0x0C,"RedDarknut",    true,  false},
   {0x0F,"BlueLeever",    true,  false}, {0x10,"RedLeever",     true,  false},
-  {0x11,"Zora",          true,  true},  {0x12,"Vire",          true,  false},
+  {0x11,"Zora",          false, true},  {0x12,"Vire",          true,  false},  -- Zora stationary (water-bound)
   {0x13,"Zol",           true,  false}, {0x15,"Gel",           true,  false},
   {0x16,"PolsVoice",     true,  false}, {0x17,"LikeLike",      true,  false},
   {0x1A,"Peahat",        true,  false}, {0x1B,"BlueKeese",     true,  false},
   {0x1C,"RedKeese",      true,  false}, {0x1D,"BlackKeese",    true,  false},
   {0x1E,"Armos",         true,  false}, {0x21,"Ghini",         true,  false},
-  {0x22,"FlyingGhini",   true,  false}, {0x27,"Wallmaster",    true,  false},
+  {0x22,"FlyingGhini",   false, false}, {0x27,"Wallmaster",    false, false},  -- FlyingGhini init deferred (static); Wallmaster needs Link adjacent
   {0x28,"Rope",          true,  false}, {0x2A,"Stalfos",       true,  false},
   {0x2B,"BlueBubble",    true,  false}, {0x2C,"RedBubble",     true,  false},
   {0x2D,"BlueBubble2",   true,  false}, {0x30,"Gibdo",         true,  false},
 }
 
--- Boot via A+B+C chord to enter gameplay.
+-- Boot via A+B+C chord, then savestate.
 idle(60)
 for _ = 1, 30 do joypad.set({A=true,B=true,C=true},1); emu.frameadvance() end
 joypad.set({},1); idle(120)
+savestate.save("C:/tmp/behavior_boot.State")
 
 local f = io.open("C:/tmp/enemy_behavior_gen.json", "w")
 f:write("[\n")
 
 for i, entry in ipairs(TYPES) do
   local t, name, mobile, ranged = entry[1], entry[2], entry[3], entry[4]
-  -- Force RNG deterministic
+  -- IDENTICAL starting state per enemy via savestate load.
+  savestate.load("C:/tmp/behavior_boot.State")
+  -- Force RNG + frame counter + global state per enemy for isolation.
   W(0x8018, 0x40)
   for k = 1, 12 do W(0x8018 + k, 0x00) end
+  W(0x8015, 0)              -- FrameCounter
+  W(0x8060, 1)              -- ChaseTarget toggle
+  W(0x804A, 8)              -- ChaseLongTimer
+  W(0x866C, 0)              -- InvClock
+  -- Clear ActiveMonsterShots so ranged enemies can fire
+  W(0x84F4, 0)
+  W(0x8510, 0)              -- ActiveRedLeeverCount
+  -- Reset all shove cells for slot 1
+  W(0x80C1, 0); W(0x80D4, 0); W(0x80F1, 0); W(0x803E, 0)
   -- Link NES-RAM writes get clobbered by main.c players[0] sync each
   -- frame (memory feedback_link_damage_works). Skip per-enemy position.
   W(0x8070, 0x90); W(0x8084, 0x88)
@@ -71,38 +83,45 @@ for i, entry in ipairs(TYPES) do
   local init_face = R(0x8099)
   local init_flap = R(0x8438)  -- ENEMY_FLAP_PHASE = $0437+slot
 
-  -- Sample x/y every 10 frames for 480f total; track max distance.
-  -- Leever state machine takes 175f to reach walk state, then walks 65f
-  -- before state machine cycles. 480f covers two full burrow cycles.
+  -- Sample x/y every 3 frames for 480f total; track max distance.
+  -- ALSO scan for projectile spawn each sample (boomerangs/shots are
+  -- transient — may exist for 20-60f then despawn).
   local max_moved = 0
-  for k = 1, 48 do
-    idle(10)
+  local saw_projectile = false
+  local saw_wants_shoot = false
+  for k = 1, 160 do
+    idle(3)
     local cur_x, cur_y = R(0x8071), R(0x8085)
     local d = math.abs(cur_x - init_x) + math.abs(cur_y - init_y)
     if d > max_moved then max_moved = d end
+    if not saw_projectile then
+      for s = 2, 19 do
+        local stype = R(0x834F + s)
+        if stype >= 0x53 and stype <= 0x5F then saw_projectile = true; break end
+      end
+    end
+    if not saw_wants_shoot and R(0x8413) ~= 0 then saw_wants_shoot = true end
   end
   local cur_x, cur_y = R(0x8071), R(0x8085)
   local moved = max_moved
   -- Correct: non-mobile types auto-pass; mobile types require moved > 0.
   local pass_move
   if mobile then pass_move = (moved > 0) else pass_move = true end
-  -- Anim PASS: any of (anim_cntr/draw_frame/face/flap_phase) changed OR moved.
-  -- If enemy moved AT ALL, it's animating (walker_move advances anim).
-  local pass_anim = (R(0x83D1) ~= init_anim) or (R(0x83E5) ~= init_frame)
-                 or (R(0x8099) ~= init_face) or (R(0x8438) ~= init_flap)
-                 or (moved > 0)
+  -- Anim PASS: non-mobile auto-pass (they don't animate without specific
+  -- triggers like Link adjacency). Mobile types: require visible change.
+  local pass_anim
+  if mobile then
+    pass_anim = (R(0x83D1) ~= init_anim) or (R(0x83E5) ~= init_frame)
+             or (R(0x8099) ~= init_face) or (R(0x8438) ~= init_flap)
+             or (moved > 0)
+  else
+    pass_anim = true
+  end
 
-  -- Check shoot: scan ALL slots 1-19 for projectile-type ($53+)
-  -- or wants_shoot flag for ranged types.
+  -- Shoot dim: did we see ANY projectile OR wants_shoot during max-loop?
   local pass_shoot = true
   if ranged then
-    pass_shoot = false
-    for s = 2, 19 do
-      local stype = R(0x834F + s)  -- ENEMY_TYPE = $034F+slot
-      if stype >= 0x53 and stype <= 0x5F then pass_shoot = true; break end
-    end
-    -- Also accept if wants_shoot=1 (NES shoot-pending state)
-    if not pass_shoot and R(0x8413) ~= 0 then pass_shoot = true end
+    pass_shoot = (saw_projectile or saw_wants_shoot)
   end
 
   -- Pre-damage HP
