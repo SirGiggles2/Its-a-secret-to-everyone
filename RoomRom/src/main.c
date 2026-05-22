@@ -1974,7 +1974,17 @@ void roomrom_debug_tick(void)
              * hit: save OW return state, transition to SCENE_CAVE,
              * call cave_init. cave_exit (existing C+START chord)
              * restores OW + return position. */
-            if (s_scene == SCENE_OW) {
+            /* NES Z_05.asm:7240-7244 alignment gate: only check cave-
+             * entrance tile when (ObjY & $0F) == $0D. Link must be
+             * sub-tile-aligned (Y low nibble = $D = 13 px into a
+             * 16-px row) before warp-tile check runs. Without this
+             * gate, Genesis triggers at first row=3 frame (Y=$54,
+             * low nibble $4 = off-center, Link beside arch) instead
+             * of waiting until Y=$4D (low nibble $D = centered under
+             * arch entrance metatile). Verified via NES probe: NES
+             * triggers at Y=$4D, Genesis was triggering at Y=$54. */
+            if (s_scene == SCENE_OW &&
+                ((unsigned char)players[0].y & 0x0Fu) == 0x0Du) {
                 unsigned char standing_tile =
                     collision_get_collidable_tile_still(0u);
                 /* Tier 0 verify sentinel: $07FD = last standing tile
