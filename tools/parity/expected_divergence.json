@@ -1,0 +1,62 @@
+{
+  "_comment": "Per Plan v5 D3, classify divergences as expected (intentional NES↔Gen design difference) vs bug.",
+  "expected": {
+    "SCENE": {
+      "fc": "FrameCounter — NES and Gen tick at different rates due to NMI vs VBlank timing",
+      "rng": "RNG advances per NES NMI; Gen advances per SGDK frame tick — divergence expected",
+      "invclk": "InvClock derived from FrameCounter — same root timing diff",
+      "bomb_count": "Gen Debug.md loads with debug inventory; NES fresh save = empty",
+      "key_count": "Same — debug loadout",
+      "rupee_count": "Same — debug loadout",
+      "song_request": "Gen audio driver differs from NES APU"
+    },
+    "LINK": {
+      "anim": "Link animation frame tracks FrameCounter; timing-dependent",
+      "hp_cur": "Gen Debug.md preloads inventory; NES fresh save",
+      "hp_max": "Same — preload",
+      "hp_partial": "Same — preload",
+      "inv_timer": "Gen post-warp invincibility from apply_warp_outcome ramp",
+      "state": "Mode 5 init differs between NES @InitMode5Play and Gen RoomRom scene_load",
+      "x": "Gen apply_warp_outcome sets dest_link_x; NES Mode 5 picks from level data",
+      "y": "Same — Mode 5 init divergence",
+      "dir": "Same — Link face init differs"
+    },
+    "SLOTS": {
+      "mvTm": "Move timer counts down per NES OAM tick — timing dependent",
+      "tm": "ObjTimer = mvTm alias",
+      "anim": "Per-frame animation index — timing dependent",
+      "frac": "Subpixel accumulator advances per frame",
+      "grid": "GridOffset derived from frac — same",
+      "wTSh": "WhetherToShoot rolls each frame from RNG",
+      "inDir": "ObjInputDir set per @CheckChaseTarget each frame"
+    },
+    "RAM_FULL": {
+      "_note": "Many RAM cells timing-dependent. Treat RAM_FULL as opaque after enemy slots covered"
+    },
+    "CPU_REGS_NES": "Register state at probe-end frame is non-deterministic between cores",
+    "CPU_REGS_GEN": "Same — 68K registers",
+    "VRAM_TILE_SCENE_OBJ": "Gen-only — no NES equivalent in dump",
+    "BG_A_PLANE": "Gen-only — Gen plane vs NES nametable architectural diff",
+    "CHR_WINDOW": "NES-only — Gen tiles dumped in VRAM_TILE_SCENE_OBJ instead",
+    "CIRAM": "NES-only — Gen uses BG_A_PLANE",
+    "VSRAM": "Gen-only scroll regs",
+    "CRAM_RAW": "Gen raw palette — covered by reverse-translated PALRAM diff",
+    "Z80_RAM_HEAD": "Gen-only audio driver state"
+  },
+  "real_bugs_focus": {
+    "PALRAM": "Palette mismatches — fixable via per-room palette table",
+    "OAM": "Sprite render — Y/tile/attr should match NES at frame 120",
+    "SLOTS_real_cells": [
+      "t (type)",
+      "x", "y", "dir",
+      "qspd",
+      "st (state)",
+      "ms (metastate)",
+      "hp",
+      "attr",
+      "shvd", "shvt",
+      "stun",
+      "hit"
+    ]
+  }
+}

@@ -64,45 +64,42 @@ end
 -- NES palette is 6-bit; reverse via a 64-entry lookup populated from
 -- misc_palettes table. For now build from Gen color → nearest NES.
 ----------------------------------------------------------------------
-local k_nes_to_cram = nil  -- lazy-built
-local function build_cram_to_nes_map()
-  -- The Gen-side ROM has misc_palettes baked in at known symbol.
-  -- For probe, do brute reverse: enumerate 64 NES colors, convert to
-  -- Gen CRAM via known formula, build inverse map.
-  local nes_palette = {
-    -- NES master palette (standard NTSC) in approximate Gen
-    -- CRAM 12-bit format. This is the lookup that
-    -- roomrom_bg_palette_nes_to_cram uses. Hardcoded from
-    -- data/misc/palettes.c.
-    [0x00]=0x0888, [0x01]=0x0A00, [0x02]=0x0820, [0x03]=0x0840,
-    [0x04]=0x0660, [0x05]=0x0480, [0x06]=0x0080, [0x07]=0x000A,
-    [0x08]=0x000C, [0x09]=0x000A, [0x0A]=0x0008, [0x0B]=0x0008,
-    [0x0C]=0x0066, [0x0D]=0x0000, [0x0E]=0x0000, [0x0F]=0x0000,
-    [0x10]=0x0CCC, [0x11]=0x0E40, [0x12]=0x0E20, [0x13]=0x0C80,
-    [0x14]=0x0A8A, [0x15]=0x080E, [0x16]=0x00AE, [0x17]=0x028C,
-    [0x18]=0x044A, [0x19]=0x0060, [0x1A]=0x0080, [0x1B]=0x008A,
-    [0x1C]=0x008C, [0x1D]=0x0000, [0x1E]=0x0000, [0x1F]=0x0000,
-    [0x20]=0x0EEE, [0x21]=0x0E84, [0x22]=0x0E66, [0x23]=0x0E48,
-    [0x24]=0x0E6E, [0x25]=0x0C2E, [0x26]=0x06AE, [0x27]=0x08CE,
-    [0x28]=0x08EE, [0x29]=0x002E, [0x2A]=0x02CE, [0x2B]=0x06EC,
-    [0x2C]=0x0EEC, [0x2D]=0x0000, [0x2E]=0x0000, [0x2F]=0x0000,
-    [0x30]=0x0EEE, [0x31]=0x0ECA, [0x32]=0x0EAA, [0x33]=0x0EAC,
-    [0x34]=0x0EAE, [0x35]=0x0EAE, [0x36]=0x0CCE, [0x37]=0x0ACE,
-    [0x38]=0x0ACE, [0x39]=0x0AEC, [0x3A]=0x0AEC, [0x3B]=0x0CEE,
-    [0x3C]=0x0EEC, [0x3D]=0x0000, [0x3E]=0x0000, [0x3F]=0x0000,
-  }
-  local map = {}
-  for nes, gen in pairs(nes_palette) do
-    map[gen] = nes
-  end
-  return map
-end
+-- NES color → Gen CRAM word table. Extracted live from
+-- data/misc/palettes.c (first 64 colors × 2 BE bytes).
+-- Inverse used for Gen-CRAM → NES-color reverse-translation.
+local k_nes_to_cram = {
+  [0x00]=0x0888, [0x01]=0x0E00, [0x02]=0x0A00, [0x03]=0x0A24,
+  [0x04]=0x0808, [0x05]=0x020A, [0x06]=0x002A, [0x07]=0x0028,
+  [0x08]=0x0044, [0x09]=0x0080, [0x0A]=0x0060, [0x0B]=0x0060,
+  [0x0C]=0x0640, [0x0D]=0x0000, [0x0E]=0x0000, [0x0F]=0x0000,
+  [0x10]=0x0AAA, [0x11]=0x0E80, [0x12]=0x0E60, [0x13]=0x0E46,
+  [0x14]=0x0C0C, [0x15]=0x060C, [0x16]=0x004E, [0x17]=0x026C,
+  [0x18]=0x008A, [0x19]=0x00A0, [0x1A]=0x00A0, [0x1B]=0x04A0,
+  [0x1C]=0x0880, [0x1D]=0x0000, [0x1E]=0x0000, [0x1F]=0x0000,
+  [0x20]=0x0EEE, [0x21]=0x0EA4, [0x22]=0x0E86, [0x23]=0x0E88,
+  [0x24]=0x0E8E, [0x25]=0x086E, [0x26]=0x068E, [0x27]=0x04AE,
+  [0x28]=0x00AE, [0x29]=0x02EA, [0x2A]=0x06C6, [0x2B]=0x08E6,
+  [0x2C]=0x0CC0, [0x2D]=0x0888, [0x2E]=0x0000, [0x2F]=0x0000,
+  [0x30]=0x0EEE, [0x31]=0x0ECA, [0x32]=0x0EAA, [0x33]=0x0EAC,
+  [0x34]=0x0EAE, [0x35]=0x0AAE, [0x36]=0x0ACE, [0x37]=0x0ACE,
+  [0x38]=0x08CE, [0x39]=0x08EC, [0x3A]=0x0AEA, [0x3B]=0x0CEA,
+  [0x3C]=0x0EE0, [0x3D]=0x0ECE, [0x3E]=0x0000, [0x3F]=0x0000,
+}
 
+local k_cram_to_nes = nil
 local function cram_to_nes(cram_word)
-  if k_nes_to_cram == nil then k_nes_to_cram = build_cram_to_nes_map() end
-  -- Exact match first
-  if k_nes_to_cram[cram_word] then return k_nes_to_cram[cram_word] end
-  -- Fall back: $FF marker for unknown (printed as raw hex)
+  if k_cram_to_nes == nil then
+    k_cram_to_nes = {}
+    -- Build inverse. Multiple NES colors may map to same CRAM word
+    -- (e.g. $0F/$1D/$1E/$2E/$3F all → $0000); favor CANONICAL choice:
+    --   $0000 → $0F (universal black, NES standard)
+    --   else lowest NES index (most common usage)
+    for n = 0x3F, 0x00, -1 do
+      k_cram_to_nes[k_nes_to_cram[n]] = n
+    end
+    k_cram_to_nes[0x0000] = 0x0F  -- canonical universal black
+  end
+  if k_cram_to_nes[cram_word] then return k_cram_to_nes[cram_word] end
   return 0xFF
 end
 
@@ -124,20 +121,17 @@ end
 -- Warp via NES RAM mirror write
 ----------------------------------------------------------------------
 local function warp(level, room)
-  -- Arm probe-control + write warp fields + trigger.
-  -- ctrl layout: [0]=ARM0 'R', [1]=ARM1 'P', [2]=flags,
-  -- [3]=dest_scene, [4]=dest_level, [5]=dest_quest,
-  -- [6]=dest_room_id, [7]=$5A trigger.
-  -- Scene: 0=OW, 1=UW. Map level 0 -> OW, else UW with level.
+  -- Force ObjDir=$08 (UP) so AssignObjSpawnPositions picks list 3
+  -- consistently. Matches NES probe — both pick same list.
+  W(0x0098, 0x08)
   local scene = (level == 0) and 0 or 1
   memory.write_u8(PROBE_CTRL + 0, PROBE_ARM0, "68K RAM")
   memory.write_u8(PROBE_CTRL + 1, PROBE_ARM1, "68K RAM")
   memory.write_u8(PROBE_CTRL + 3, scene,      "68K RAM")
   memory.write_u8(PROBE_CTRL + 4, level,      "68K RAM")
-  memory.write_u8(PROBE_CTRL + 5, 0,          "68K RAM")  -- quest 0
+  memory.write_u8(PROBE_CTRL + 5, 0,          "68K RAM")
   memory.write_u8(PROBE_CTRL + 6, room,       "68K RAM")
-  memory.write_u8(PROBE_CTRL + 7, 0x5A,       "68K RAM")  -- fire
-  -- Wait for ack (ctrl[7] cleared) then settle for scene load
+  memory.write_u8(PROBE_CTRL + 7, 0x5A,       "68K RAM")
   for _ = 1, 30 do
     emu.frameadvance()
     if memory.read_u8(PROBE_CTRL + 7, "68K RAM") == 0 then break end
@@ -181,18 +175,31 @@ local function dump_static(out, domains, level, room)
   out:write(string.format("inv_timer=$%02X\n", R(0x04F0)))
 
   -- [PALRAM] reverse-translated from Gen CRAM.
-  -- Gen layout:
-  --   PAL0 [0..15] = NES BG palram bytes 0..15 (per load_palram_full)
-  --   PAL1 [0..15] = NES SPR palram bytes 16..31
-  -- Caveat: PAL2/PAL3 not represented in NES PALRAM format (Gen-only).
+  -- Gen layout per src/game/world/bg_palette.c:
+  --   PAL0 [0..15] = NES BG palram bytes 0..15
+  --   PAL1 [0..15] = NES SPR palram bytes 16..31 (initial load from static palram)
+  --   PAL2 [0..3]  = NES SPR sub-pal 3 (per-room patched — overrides $3F1C..F)
+  --   PAL3 [0..3]  = NES SPR sub-pal 2 (red ramp — overrides $3F18..B)
+  -- For NES PALRAM equivalence: $3F18..B = PAL3, $3F1C..F = PAL2 (post-patch).
   out:write("\n[PALRAM]\n")
-  out:write("# reverse-translated from Gen CRAM PAL0+PAL1\n")
+  out:write("# reverse-translated; sub-pals 2/3 read from PAL3/PAL2 (live patched)\n")
+  -- Helper: read NES color at logical PALRAM index
+  local function read_palram(i)
+    local cram_idx
+    if i < 16 then
+      cram_idx = i  -- BG: PAL0
+    elseif i >= 24 and i < 28 then
+      cram_idx = 48 + (i - 24)  -- sub-pal 2 → PAL3[0..3]
+    elseif i >= 28 then
+      cram_idx = 32 + (i - 28)  -- sub-pal 3 → PAL2[0..3]
+    else
+      cram_idx = 16 + (i - 16)  -- sub-pal 0/1 → PAL1[0..7]
+    end
+    return CRAM_w(cram_idx)
+  end
   for i = 0, 31 do
-    local pal_bank = (i < 16) and 0 or 1
-    local slot     = (i % 16)
-    local cram_idx = pal_bank * 16 + slot
-    local cram_w   = CRAM_w(cram_idx)
-    local nes_col  = cram_to_nes(cram_w)
+    local cram_w = read_palram(i)
+    local nes_col = cram_to_nes(cram_w)
     if nes_col == 0xFF then
       out:write(string.format("$3F%02X=?CRAM:%04X\n", i, cram_w))
     else
@@ -208,20 +215,50 @@ local function dump_static(out, domains, level, room)
     out:write("\n")
   end
 
-  -- [OAM] Gen SAT decomposed to NES OAM format
-  -- SGDK SAT typically at VRAM $F000; 4 words per entry × 80 entries
+  -- [OAM] Gen SAT decomposed to NES OAM format (oam00..63).
+  -- NES OAM byte format: y / tile / attr (vfh--pal2) / x
+  -- Gen SAT word format: Y(16) SIZE+LINK(16) PRI+PAL+FV+FH+TILE(16) X(16)
+  -- Convert each populated SAT entry to NES OAM key. NES has 64 OAM
+  -- slots so we truncate to first 64.
   out:write("\n[OAM]\n")
-  out:write("# Gen SAT decomposed (NES-OAM equiv: y/tile/attr/x per sprite)\n")
+  out:write("# Gen SAT decomposed to NES-OAM 4-byte equiv (y/tile/attr/x)\n")
+  -- Probe candidate SAT base addresses; first one with non-zero Y wins.
+  -- SGDK uses VDP reg 5 << 8 = SAT addr. H40 typically $F000, H32 $B800.
   local SAT_BASE = 0xF000
+  for _, base in ipairs({0xF000, 0xFC00, 0xB800, 0xD000, 0xE000}) do
+    local probe_y = memory.read_u16_be(base + 0, "VRAM")
+    if probe_y ~= 0 then SAT_BASE = base; break end
+  end
+  out:write(string.format("# SAT_BASE=$%04X\n", SAT_BASE))
+  local oam_idx = 0
   for i = 0, 79 do
+    if oam_idx >= 64 then break end
     local y    = memory.read_u16_be(SAT_BASE + i*8 + 0, "VRAM")
-    local size = memory.read_u16_be(SAT_BASE + i*8 + 2, "VRAM")
     local pat  = memory.read_u16_be(SAT_BASE + i*8 + 4, "VRAM")
     local x    = memory.read_u16_be(SAT_BASE + i*8 + 6, "VRAM")
-    local pal  = (pat >> 13) & 0x03
-    local link = size & 0x7F
-    out:write(string.format("sat%02d=y:%04X size:%04X pat:%04X x:%04X pal:%d link:%d\n",
-      i, y, size, pat, x, pal, link))
+    local pal      = (pat >> 13) & 0x03
+    local h_flip   = (pat >> 11) & 0x01
+    local v_flip   = (pat >> 12) & 0x01
+    local prio_gen = (pat >> 15) & 0x01
+    -- NES attr: bit5=behind-bg (Gen prio inverse), bit6=hflip, bit7=vflip, bits 0-1=pal
+    -- Gen pal 0..3 maps to NES sub-pal 0..3 (lossy: PAL2=spal3, PAL3=spal2)
+    local nes_pal
+    if pal == 0 then nes_pal = 0
+    elseif pal == 1 then nes_pal = 0  -- PAL1 = Link sub-pal 0 (route 0)
+    elseif pal == 2 then nes_pal = 3  -- PAL2 = sub-pal 3 (Blue Moblin)
+    elseif pal == 3 then nes_pal = 2  -- PAL3 = sub-pal 2 (red)
+    end
+    local nes_attr = nes_pal | (v_flip << 7) | (h_flip << 6) | (((1 - prio_gen) & 0x01) << 5)
+    local nes_y    = y & 0xFF
+    local nes_tile = pat & 0xFF
+    local nes_x    = x & 0xFF
+    out:write(string.format("oam%02d=y:$%02X t:$%02X a:$%02X x:$%02X pal:%d\n",
+      oam_idx, nes_y, nes_tile, nes_attr, nes_x, nes_pal))
+    oam_idx = oam_idx + 1
+  end
+  while oam_idx < 64 do
+    out:write(string.format("oam%02d=y:$F8 t:$00 a:$00 x:$00 pal:0\n", oam_idx))
+    oam_idx = oam_idx + 1
   end
 
   -- [SLOTS] same shape as NES

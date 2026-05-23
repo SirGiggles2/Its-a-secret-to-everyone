@@ -77,16 +77,16 @@ end
 -- Warp via RAM write
 ----------------------------------------------------------------------
 local function warp(level, room)
-  -- Pre-center Link BEFORE Mode 6 trigger so InitMode5Play sees
-  -- centered position. Post-warp recenter is too late — auto-scroll
-  -- fires within first few frames if spawn was at edge.
+  -- Pre-center Link BEFORE Mode 6 trigger.
   W(0x0070, 0x78)
   W(0x0084, 0x80)
+  -- Force ObjDir=$08 (UP) so AssignObjSpawnPositions picks list 3
+  -- consistently. Both probes do this so spawn-pos parity holds.
+  W(0x0098, 0x08)
   W(0x0010, level)
   W(0x00EB, room)
   W(0x0012, 0x06)
   idle(SETTLE_FRAMES)
-  -- If still scrolled, hard-snap back
   W(0x0070, 0x78)
   W(0x0084, 0x80)
   W(0x00EB, room)
