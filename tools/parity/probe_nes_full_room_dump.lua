@@ -17,9 +17,9 @@ local SCAN_ALL = true
 local SINGLE_LV  = 0x00
 local SINGLE_RM  = 0x73
 local OUT_BASE   = "C:/tmp/dual/nes"
-local SETTLE_FRAMES = 120
+local SETTLE_FRAMES = 240  -- give both sides time to finish spawn-cloud
 local TRACE_FRAMES  = 0
-local SCREENSHOT_FRAMES = {120}
+local SCREENSHOT_FRAMES = {240}
 
 ----------------------------------------------------------------------
 -- Helpers

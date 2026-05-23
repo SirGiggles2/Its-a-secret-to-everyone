@@ -17,7 +17,10 @@ GEN_DIR  = Path("C:/tmp/dual/gen")
 DIFF_DIR = Path("C:/tmp/dual/diff")
 EXPECTED = ROOT / "tools/parity/expected_divergence.json"
 
-REAL_BUG_SECTIONS = {"PALRAM", "OAM", "SLOTS", "LINK", "SCENE"}
+REAL_BUG_SECTIONS = {"PALRAM", "SLOTS", "LINK", "SCENE"}
+# OAM dropped: NES leaves stale data in hidden slots (y=$F8) while Gen
+# clears unused slots — convention mismatch inflates false positives.
+# Visual screenshot diff is the better OAM gate.
 
 def load_expected():
     with open(EXPECTED) as f:

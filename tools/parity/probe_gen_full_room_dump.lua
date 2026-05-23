@@ -21,7 +21,7 @@ local SCAN_ALL = true   -- full 128 OW + 9*128 UW sweep
 local SINGLE_LV  = 0x00
 local SINGLE_RM  = 0x73
 local OUT_BASE   = "C:/tmp/dual/gen"
-local SETTLE_FRAMES = 120
+local SETTLE_FRAMES = 240
 local TRACE_FRAMES  = 0
 local PROBE_CTRL = 0x73F8   -- offset within "68K RAM" domain
 local PROBE_ARM0 = 0x52     -- 'R'
@@ -90,12 +90,12 @@ local k_cram_to_nes = nil
 local function cram_to_nes(cram_word)
   if k_cram_to_nes == nil then
     k_cram_to_nes = {}
-    -- Build inverse. Multiple NES colors may map to same CRAM word
-    -- (e.g. $0F/$1D/$1E/$2E/$3F all → $0000); favor CANONICAL choice:
-    --   $0000 → $0F (universal black, NES standard)
-    --   else lowest NES index (most common usage)
-    for n = 0x3F, 0x00, -1 do
-      k_cram_to_nes[k_nes_to_cram[n]] = n
+    -- Build inverse. Multiple NES colors map to same CRAM word.
+    -- Canonical PALRAM uses HIGHER index ($30 white, $37 yellow,
+    -- $16 red, $0F black). Iterate $00→$3F so later (higher) wins.
+    for n = 0x00, 0x3F do
+      local cw = k_nes_to_cram[n]
+      if cw then k_cram_to_nes[cw] = n end
     end
     k_cram_to_nes[0x0000] = 0x0F  -- canonical universal black
   end
@@ -222,13 +222,8 @@ local function dump_static(out, domains, level, room)
   -- slots so we truncate to first 64.
   out:write("\n[OAM]\n")
   out:write("# Gen SAT decomposed to NES-OAM 4-byte equiv (y/tile/attr/x)\n")
-  -- Probe candidate SAT base addresses; first one with non-zero Y wins.
-  -- SGDK uses VDP reg 5 << 8 = SAT addr. H40 typically $F000, H32 $B800.
-  local SAT_BASE = 0xF000
-  for _, base in ipairs({0xF000, 0xFC00, 0xB800, 0xD000, 0xE000}) do
-    local probe_y = memory.read_u16_be(base + 0, "VRAM")
-    if probe_y ~= 0 then SAT_BASE = base; break end
-  end
+  -- SAT base = $F400 per RoomRom/src/main.c:618 VDP_setSpriteListAddress.
+  local SAT_BASE = 0xF400
   out:write(string.format("# SAT_BASE=$%04X\n", SAT_BASE))
   local oam_idx = 0
   for i = 0, 79 do
