@@ -789,6 +789,16 @@ void roomrom_main_apply_warp_outcome(const rr_warp_outcome_t *out)
     if (s_scene == SCENE_UW) {
         roomrom_uw_room_render_set_level(out->dest_level);
         roomrom_uw_room_render_set_quest(out->dest_quest);
+        nes_ram[0x0010u] = out->dest_level;
+        /* Plan v5 D4: install LevelBlockAttrs + LevelInfo into NES SRAM
+         * BEFORE enemy_loop_room_init reads LBA_C/D + FoeCounts. Without
+         * this LBA_C returns 0 → spawn skipped. Mirrors the regular
+         * scene-transition load_room path (main.c:1593-1598). */
+        level_info_install_uw(out->dest_level,
+                              (out->dest_quest == 0u) ? 1u : out->dest_quest);
+    } else {
+        nes_ram[0x0010u] = 0u;
+        level_info_install_ow();
     }
     s_room_id = out->dest_room_id;
     players[0].x = out->dest_link_x;
