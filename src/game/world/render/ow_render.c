@@ -224,11 +224,12 @@ unsigned char roomrom_ow_room_render_get_map(void)
 void roomrom_ow_room_render_load_palette(unsigned char room_id)
 {
     unsigned char map = (s_roomrom_map_id == ROOMROM_MAP_REDUX) ? 1u : 0u;
-    (void)room_id;
     /* Live NES PALRAM extracted from each ROM's LevelInfoOW transfer buffer.
      * Loads Gen PAL0 (NES BG sub-pals 0..3 packed) and Gen PAL1 (NES SPR
-     * sub-pals 0..3 packed). Per-room sub-pal-3 patches deferred. */
+     * sub-pals 0..3 packed). PAL2 holds NES SPR sub-pal 3 (level palette)
+     * which is per-room patched below. */
     roomrom_bg_palette_load_palram_full(g_roomrom_ow_palram[map]);
+    roomrom_ow_palette_patch_subpal3(room_id);
 }
 
 static unsigned char normalize_primary_tile(unsigned char raw)

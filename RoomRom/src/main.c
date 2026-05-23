@@ -2616,21 +2616,35 @@ void roomrom_debug_tick(void)
 
             edge_load_or_clamp();
             if (!roomrom_combat_link_locked()) {
-                /* Invincibility palette flash: when LINK_STUN_TIMER > 0,
-                 * cycle Link's sprite palette index across PAL0..PAL3
-                 * keyed on FrameCounter & $03. NES Z_01.asm:5367-5371
-                 * applies sub-palette XOR; on Genesis we cycle the
-                 * sprite palette bank (PAL1 normal). */
-                unsigned char stun = nes_ram[0x04F0u];
-                if (stun != 0u) {
-                    unsigned char pal = (unsigned char)
-                        (((unsigned char)s_frame_counter) & 0x03u);
-                    roomrom_sprites_set_link_pose_pal(players[0].x, players[0].y,
-                                                      players[0].face,
-                                                      s_link_frame, pal);
+                /* NES Z_05.asm:2328 PutLinkBehindBackground equivalent:
+                 * during cave-descend, render Link via 4-SAT-entry split
+                 * so upper half (slots 0, 1, low-prio) gets covered by
+                 * high-prio BG arch tiles while lower half (slots 2, 3,
+                 * high-prio) renders over BG. Hijacks slots 1, 2, 3
+                 * (sword/beam/boomerang) — safe during cave entry. */
+                if (cave_fade_descend_step_idx() > 0u ||
+                    cave_fade_phase_current() == CAVE_FADE_LINK_DESCEND) {
+                    roomrom_sprites_set_link_pose_split(players[0].x,
+                                                        players[0].y,
+                                                        players[0].face,
+                                                        s_link_frame);
                 } else {
-                    roomrom_sprites_set_link_pose(players[0].x, players[0].y,
-                                                  players[0].face, s_link_frame);
+                    /* Invincibility palette flash: when LINK_STUN_TIMER > 0,
+                     * cycle Link's sprite palette index across PAL0..PAL3
+                     * keyed on FrameCounter & $03. NES Z_01.asm:5367-5371
+                     * applies sub-palette XOR; on Genesis we cycle the
+                     * sprite palette bank (PAL1 normal). */
+                    unsigned char stun = nes_ram[0x04F0u];
+                    if (stun != 0u) {
+                        unsigned char pal = (unsigned char)
+                            (((unsigned char)s_frame_counter) & 0x03u);
+                        roomrom_sprites_set_link_pose_pal(players[0].x, players[0].y,
+                                                          players[0].face,
+                                                          s_link_frame, pal);
+                    } else {
+                        roomrom_sprites_set_link_pose(players[0].x, players[0].y,
+                                                      players[0].face, s_link_frame);
+                    }
                 }
             }
         } else {
@@ -2746,21 +2760,29 @@ void roomrom_debug_tick(void)
 
             edge_load_or_clamp();
             if (!roomrom_combat_link_locked()) {
-                /* Invincibility palette flash: when LINK_STUN_TIMER > 0,
-                 * cycle Link's sprite palette index across PAL0..PAL3
-                 * keyed on FrameCounter & $03. NES Z_01.asm:5367-5371
-                 * applies sub-palette XOR; on Genesis we cycle the
-                 * sprite palette bank (PAL1 normal). */
-                unsigned char stun = nes_ram[0x04F0u];
-                if (stun != 0u) {
-                    unsigned char pal = (unsigned char)
-                        (((unsigned char)s_frame_counter) & 0x03u);
-                    roomrom_sprites_set_link_pose_pal(players[0].x, players[0].y,
-                                                      players[0].face,
-                                                      s_link_frame, pal);
+                if (cave_fade_descend_step_idx() > 0u ||
+                    cave_fade_phase_current() == CAVE_FADE_LINK_DESCEND) {
+                    roomrom_sprites_set_link_pose_split(players[0].x,
+                                                        players[0].y,
+                                                        players[0].face,
+                                                        s_link_frame);
                 } else {
-                    roomrom_sprites_set_link_pose(players[0].x, players[0].y,
-                                                  players[0].face, s_link_frame);
+                    /* Invincibility palette flash: when LINK_STUN_TIMER > 0,
+                     * cycle Link's sprite palette index across PAL0..PAL3
+                     * keyed on FrameCounter & $03. NES Z_01.asm:5367-5371
+                     * applies sub-palette XOR; on Genesis we cycle the
+                     * sprite palette bank (PAL1 normal). */
+                    unsigned char stun = nes_ram[0x04F0u];
+                    if (stun != 0u) {
+                        unsigned char pal = (unsigned char)
+                            (((unsigned char)s_frame_counter) & 0x03u);
+                        roomrom_sprites_set_link_pose_pal(players[0].x, players[0].y,
+                                                          players[0].face,
+                                                          s_link_frame, pal);
+                    } else {
+                        roomrom_sprites_set_link_pose(players[0].x, players[0].y,
+                                                      players[0].face, s_link_frame);
+                    }
                 }
             }
         }
@@ -2822,6 +2844,28 @@ void roomrom_debug_tick(void)
             if (ctrl[0] == ROOMROM_DEBUG_PROBE_ARM0 &&
                 ctrl[1] == ROOMROM_DEBUG_PROBE_ARM1) {
                 roomrom_debug_publish_state_mirror();
+                /* Plan v5 Phase D1: probe-driven warp trigger for dual
+                 * NES/Gen room-sweep diff. Probe writes:
+                 *   ctrl[3]=dest_scene, ctrl[4]=dest_level,
+                 *   ctrl[5]=dest_quest, ctrl[6]=dest_room_id,
+                 *   ctrl[7]=$5A trigger
+                 * We fire roomrom_main_apply_warp_outcome() — same code
+                 * path as in-game warp coordinator, so dumped state
+                 * matches what a real player traversal would produce
+                 * (palette, CHR, enemy spawns, NES RAM mirror sync). */
+                if (ctrl[7] == 0x5Au) {
+                    rr_warp_outcome_t out;
+                    out.dest_scene      = ctrl[3];
+                    out.dest_level      = ctrl[4];
+                    out.dest_quest      = ctrl[5];
+                    out.dest_room_id    = ctrl[6];
+                    out.dest_link_x     = 120;
+                    out.dest_link_y     = 128;
+                    out.dest_link_face  = ROOMROM_MAIN_LINK_FACE_DOWN;
+                    out.dest_redux_flag = 0u;
+                    roomrom_main_apply_warp_outcome(&out);
+                    ctrl[7] = 0u;  /* ack consumed */
+                }
             }
         }
 }

@@ -64,18 +64,30 @@ void roomrom_bg_palette_load_palram_full(const unsigned char *palram32)
     }
     s_sprite_palram_loaded = 1u;
 
-    /* PAL2[0..3] = NES SPR sub-pal 1 ($3F14..$3F17). */
+    /* PAL2[0..3] = NES SPR sub-pal 3 ($3F1D..$3F1F) — LEVEL PALETTE slot.
+     * Per Z_01.asm:5357 Anim_WriteLevelPaletteSprite, enemies using anim
+     * attr=$03 (Blue Moblin, Blue Goriya, Wizzrobe, etc) draw here.
+     * OW L1 / UW L1: $0C $1C $2C = cyan / teal / light cyan = Blue Moblin.
+     *
+     * Sub-pal 1 (cloud / FX) no longer needs PAL2 — it already routes
+     * through PAL1's mid slots [5..7] via biased META_ATTR_MARKER CHR
+     * (see k_cloud_chr_subpal1 in enemy_render.c using pixel values 6/7,
+     * PAL1 loaded with full NES sprite palram has sub-pal 1 at [5..7]).
+     *
+     * Sub-pal 1 enemies (if any) that route here via subpal_routing
+     * (sub_pal 1 -> PAL2) will render with sub-pal 3 colors — acceptable
+     * since most NES "sub-pal 1" sprites are cloud/explosion which use
+     * the META path. */
     {
         unsigned short pal2[16] = {0};
-        pal2[1] = roomrom_bg_palette_nes_to_cram(palram32[16 + 5]);   /* $3F15 */
-        pal2[2] = roomrom_bg_palette_nes_to_cram(palram32[16 + 6]);   /* $3F16 */
-        pal2[3] = roomrom_bg_palette_nes_to_cram(palram32[16 + 7]);   /* $3F17 */
+        pal2[1] = roomrom_bg_palette_nes_to_cram(palram32[16 + 13]);  /* $3F1D */
+        pal2[2] = roomrom_bg_palette_nes_to_cram(palram32[16 + 14]);  /* $3F1E */
+        pal2[3] = roomrom_bg_palette_nes_to_cram(palram32[16 + 15]);  /* $3F1F */
         render_load_palette(2u, pal2);
     }
 
-    /* PAL3[0..3] = NES SPR sub-pal 2 ($3F18..$3F1B). Previously written
-     * at [1..3] only (Phase 7 enemy visibility 2026-05-15); now [0]
-     * explicitly transparent for the per-sprite pal=PAL3 routing. */
+    /* PAL3[0..3] = NES SPR sub-pal 2 ($3F18..$3F1B = red ramp).
+     * Red enemies (Octorok, Tektite, anim_attr=$02 family) render here. */
     {
         unsigned short pal3[16] = {0};
         pal3[1] = roomrom_bg_palette_nes_to_cram(palram32[16 + 9]);   /* $3F19 */

@@ -7,4 +7,13 @@
  * map index 0 = original, 1 = redux. */
 extern const unsigned char g_roomrom_ow_palram[2][32];
 
+/* Per Z_07.asm:1483-1527 @ChooseTileObjPalette OW dispatch — picks
+ * NES SPR sub-pal 3 patch per-room based on tile object + room attr.
+ * Patches CRAM PAL2[1..3]. Call after roomrom_bg_palette_load_palram_full. */
+void roomrom_ow_palette_patch_subpal3(unsigned char room_id);
+
+/* Raw 4-byte palette lookup (universal, color1, color2, color3) for
+ * the given OW room. Used by tests + probes. */
+const unsigned char *roomrom_ow_palette_get_subpal3_patched(unsigned char room_id);
+
 #endif

@@ -40,12 +40,28 @@
 #include "render_abi.h"  /* RENDER_PAL0..PAL3 */
 
 /* NES sprite sub-pal (0..3) -> Genesis OAM pal-field value.
- * Sub-pal 3 clamps to 2. Result is suitable as the first arg to
- * RENDER_TILE_ATTR_FULL(pal, ...). */
+ *
+ * Mapping (Gen has 4 PALs, NES has 4 SPR sub-pals — one must share):
+ *   0 -> PAL1 (Link green / common)
+ *   1 -> PAL2 (cloud / FX blue)
+ *   2 -> PAL3 (red enemies)
+ *   3 -> PAL2 (Blue Moblin / Blue Goriya — uses cloud-blue PAL since
+ *        NES sub-pal 3 ($0C/$1C/$2C cyan) has no dedicated Gen home.
+ *        Closer visual match than clamping to PAL3=red.)
+ *
+ * Real fix = enemy CHR 4x expansion + pack sub-pal 3 into PAL1 high
+ * slots with pixel bias; see plan
+ * docs/superpowers/plans/2026-05-02-roomrom-sprite-chr-expansion-plan.md.
+ */
 static inline unsigned char roomrom_spr_subpal_to_pal(unsigned char nes_subpal)
 {
-    unsigned char clamped = (unsigned char)((nes_subpal > 2u) ? 2u : nes_subpal);
-    return (unsigned char)(RENDER_PAL1 + clamped);
+    static const unsigned char k_subpal_to_pal[4] = {
+        RENDER_PAL1,  /* sub_pal 0 = Link green */
+        RENDER_PAL2,  /* sub_pal 1 = cloud blue */
+        RENDER_PAL3,  /* sub_pal 2 = red */
+        RENDER_PAL2,  /* sub_pal 3 = Blue Moblin -> cloud-blue (no dedicated slot) */
+    };
+    return k_subpal_to_pal[nes_subpal & 0x03u];
 }
 
 /* NES BG sub-pal (0..3) -> Genesis nametable cell pal-bits.
