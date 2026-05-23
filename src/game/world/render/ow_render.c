@@ -229,6 +229,7 @@ void roomrom_ow_room_render_load_palette(unsigned char room_id)
      * sub-pals 0..3 packed). PAL2 holds NES SPR sub-pal 3 (level palette)
      * which is per-room patched below. */
     roomrom_bg_palette_load_palram_full(g_roomrom_ow_palram[map]);
+    roomrom_ow_palette_patch_bg_per_room(room_id);
     roomrom_ow_palette_patch_subpal3(room_id);
 }
 

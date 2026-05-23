@@ -210,6 +210,7 @@ ROOMROM_C_SOURCES = [
     ("src/game/items/magic_shot.c",  "items_magic_shot.o"),
     ("src/game/world/ow_palette.c", "world_ow_palette.o"),  # Phase 12.2 promoted
     ("src/game/world/ow_subpal3_table.c", "world_ow_subpal3_table.o"),  # Plan v5: NES per-room sub-pal 3 capture
+    ("src/game/world/ow_bg_palram_table.c", "world_ow_bg_palram_table.o"),  # Plan v5: NES per-room BG palram capture
     ("src/state/palette_tick.c", "palette_tick.o"),
     # Task 6.1: PlayerState[4] shape (Phase 13 multiplayer-ready by construction).
     ("src/state/player_state.c", "player_state.o"),

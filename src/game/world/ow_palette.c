@@ -4,7 +4,8 @@
 #include "render_abi.h"    /* render_load_palette */
 #include "bg_palette.h"    /* nes_to_cram */
 #include "platform_abi.h"  /* nes_ram */
-#include "ow_subpal3_table.h"  /* k_ow_subpal3_per_room — NES truth */
+#include "ow_subpal3_table.h"     /* k_ow_subpal3_per_room — NES truth */
+#include "ow_bg_palram_table.h"   /* k_ow_bg_palram_per_room — NES truth */
 
 /* Default OW PALRAM. Sub-pal 3 ($3F1C..$3F1F) = $0F $0C $1C $2C
  * (default cyan from LevelInfoOW.dat). NES per-room patch via Z_07.asm:1423
@@ -42,4 +43,20 @@ void roomrom_ow_palette_patch_subpal3(unsigned char room_id)
     pal2[2] = roomrom_bg_palette_nes_to_cram(colors[2]);
     pal2[3] = roomrom_bg_palette_nes_to_cram(colors[3]);
     render_load_palette(2u, pal2);
+}
+
+/* Patch CRAM PAL0[0..15] with per-room NES BG palram bytes.
+ * Captured live from NES across 128 OW rooms — values vary per-room
+ * (Lost Hills brown for some, default green-OW for others).
+ * Called by ow_render after roomrom_bg_palette_load_palram_full to
+ * override the static defaults. */
+void roomrom_ow_palette_patch_bg_per_room(unsigned char room_id)
+{
+    const unsigned char *bg = k_ow_bg_palram_per_room[room_id & 0x7Fu];
+    unsigned short pal0[16] = {0};
+    unsigned char i;
+    for (i = 0u; i < 16u; ++i) {
+        pal0[i] = roomrom_bg_palette_nes_to_cram(bg[i]);
+    }
+    render_load_palette(0u, pal0);
 }

@@ -98,6 +98,10 @@ local function cram_to_nes(cram_word)
       if cw then k_cram_to_nes[cw] = n end
     end
     k_cram_to_nes[0x0000] = 0x0F  -- canonical universal black
+    k_cram_to_nes[0x0888] = 0x00  -- bg-black variant ($00 over $2D)
+    -- $36 and $37 both map to $0ACE. NES OW uses $37 at sub-pal 2/3
+    -- yellow-green positions ($3F0A/$3F0E). Prefer $37.
+    k_cram_to_nes[0x0ACE] = 0x37
   end
   if k_cram_to_nes[cram_word] then return k_cram_to_nes[cram_word] end
   return 0xFF
@@ -200,6 +204,10 @@ local function dump_static(out, domains, level, room)
   for i = 0, 31 do
     local cram_w = read_palram(i)
     local nes_col = cram_to_nes(cram_w)
+    -- SPR universal-mirror slots: NES uses $00 not $0F at $3F10/14/18/1C
+    if (i == 16 or i == 20 or i == 24 or i == 28) and nes_col == 0x0F then
+      nes_col = 0x00
+    end
     if nes_col == 0xFF then
       out:write(string.format("$3F%02X=?CRAM:%04X\n", i, cram_w))
     else

@@ -12,6 +12,11 @@ extern const unsigned char g_roomrom_ow_palram[2][32];
  * Patches CRAM PAL2[1..3]. Call after roomrom_bg_palette_load_palram_full. */
 void roomrom_ow_palette_patch_subpal3(unsigned char room_id);
 
+/* Per-room NES BG palram patch. Captured live across 128 OW rooms.
+ * Call after roomrom_bg_palette_load_palram_full to override the
+ * static OW BG defaults with NES truth. */
+void roomrom_ow_palette_patch_bg_per_room(unsigned char room_id);
+
 /* Raw 4-byte palette lookup (universal, color1, color2, color3) for
  * the given OW room. Used by tests + probes. */
 const unsigned char *roomrom_ow_palette_get_subpal3_patched(unsigned char room_id);
