@@ -421,7 +421,11 @@ print("Gen domains found:")
 for name, _ in pairs(domains) do print("  " .. name) end
 
 if SCAN_ALL then
+  -- OW (128 rooms) + UW L1..L9 (128 rooms each = 1152 max; ~636 valid)
   for room = 0, 127 do capture_room(domains, 0, room) end
+  for lv = 1, 9 do
+    for room = 0, 127 do capture_room(domains, lv, room) end
+  end
 else
   capture_room(domains, SINGLE_LV, SINGLE_RM)
 end

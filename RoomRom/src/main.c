@@ -805,11 +805,21 @@ void roomrom_main_apply_warp_outcome(const rr_warp_outcome_t *out)
     players[0].y = out->dest_link_y;
     players[0].face = (link_face_t)out->dest_link_face;
 
-    /* Step 7: CHR upload through the scene-load coordinator. */
+    /* Step 7: CHR upload through the scene-load coordinator.
+     * Plan v6-C: dispatch UW to correct scene_id per dest_level so
+     * L2..L9 get their own CHR bank (was hardcoded to L1 → garbage
+     * tiles for higher levels). Enum 4..12 = L1..L9 contiguous per
+     * roomrom_scene_vram_contracts.h. */
     upload_scene_chr();
-    roomrom_scene_load(
-        (s_scene == SCENE_UW) ? ROOMROM_SCENE_UW_L1 : ROOMROM_SCENE_OVERWORLD,
-        out->dest_redux_flag);
+    {
+        roomrom_scene_id_t scene_id = ROOMROM_SCENE_OVERWORLD;
+        if (s_scene == SCENE_UW) {
+            unsigned char lv = out->dest_level;
+            if (lv == 0u || lv > 9u) lv = 1u;  /* guard: clamp to L1 */
+            scene_id = (roomrom_scene_id_t)(ROOMROM_SCENE_UW_L1 + (lv - 1u));
+        }
+        roomrom_scene_load(scene_id, out->dest_redux_flag);
+    }
     roomrom_combat_set_redux(out->dest_redux_flag);
 
     /* Step 8: existing room-load path (palette + plane + door state). */

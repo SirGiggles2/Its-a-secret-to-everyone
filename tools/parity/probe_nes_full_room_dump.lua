@@ -318,8 +318,10 @@ print("NES domains found:")
 for name, _ in pairs(domains) do print("  " .. name) end
 
 if SCAN_ALL then
-  -- OW only for first pass; UW after Gen UW warp works.
   for room = 0, 127 do capture_room(domains, 0, room) end
+  for lv = 1, 9 do
+    for room = 0, 127 do capture_room(domains, lv, room) end
+  end
 else
   capture_room(domains, SINGLE_LV, SINGLE_RM)
 end
