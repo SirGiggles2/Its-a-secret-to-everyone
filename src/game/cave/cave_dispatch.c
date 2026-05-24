@@ -24,6 +24,7 @@
 #include "cave_dispatch.h"
 #include "cave_state.h"
 #include "combat_state.h"               /* LINK_HEARTS = RAM(0x066F) */
+#include "enemy_state.h"                /* ENEMY_THROWER_SLOT = RAM($0340) */
 #include "world/progress_dispatch.h"    /* progress_set_room_flag_uw_item_state */
 #include "world/sprite_dispatch.h"      /* sprite_anim_fetch_obj_pos */
 #include "world/draw_dispatch.h"        /* draw_object_mirrored,
@@ -516,6 +517,13 @@ void cave_update_cave_person(unsigned int slot)
      *               / AND #$01 / BNE @UpdateCavePersonDirect`. */
     const unsigned char state = CAVE_PERSON_STATE;
     if (!(state == 4u && (RAM(0x0015) & 1u))) {  /* FrameCounter = $0015 */
+        /* Set CurObjIndex ($0340 = ENEMY_THROWER_SLOT) before draw so
+         * enemy_render_publish_pair_left tags the cache entry with the
+         * cave NPC slot rather than the last-set enemy thrower slot.
+         * Mirrors enemy_loop.c:1466 pattern. Without this, NES OAM mirror
+         * gets populated but Gen SAT sweep finds s_enemy_count[1]=0 and
+         * skips the slot — verified via gen_cave_sat2.txt 2026-05-24. */
+        ENEMY_THROWER_SLOT = (unsigned char)slot;
         cave_draw_person(slot);
 
         /* Medicine-shop letter ($74) logic. NES: `LDA ObjType+1 / CMP #$74
