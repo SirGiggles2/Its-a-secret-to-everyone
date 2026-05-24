@@ -1131,6 +1131,14 @@ void enemy_loop_room_init(unsigned char room_id, unsigned char scene_id)
         return;
     }
 
+    /* 2026-05-24 — reset ROOM_MONSTER_ALL_DEAD ($034D) + ROOM_SHUTTER_TRIGGERED
+     * ($04CE) on room load. Pre-fix, $034D held stale value from prior room
+     * (e.g. $D1 garbage post-warp), causing shutter auto-trigger fix to fire
+     * immediately on room entry before enemies spawned. NES Z_05.asm InitMode4
+     * clears via @ClearRamPage in mode-transition sequence. */
+    RAM(0x034Du) = 0u;
+    RAM(0x04CEu) = 0u;
+
     /* Clear all enemy slots on room load. 2026-05-22 — was clearing
      * only TYPE/ALIVE/X/Y; shove + state cells inherited from prior
      * room's slot occupant (e.g. octorok died → set shove during death
