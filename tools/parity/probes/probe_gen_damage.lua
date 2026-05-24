@@ -89,10 +89,20 @@ for _, t in ipairs(types) do
   damage_slot(1, 0x10)  -- second hit
   local hp2 = R(0x0486)
   local alive2 = R(0x0492+1)
+  -- Kill loop: hit until dead OR 16 hits max
+  for k = 1, 16 do
+    if R(0x0492+1) == 0 then break end
+    damage_slot(1, 0x40)  -- L3 sword
+  end
+  idle(60)  -- wait for death anim to complete
+  local hp3 = R(0x0486)
+  local alive3 = R(0x0492+1)
+  local type3 = R(0x0350)
+  local ms3 = R(0x0406)
 
   local exp = expected_hp[t] or 0
-  out:write(string.format("t=$%02X spawn_t=$%02X exp_hp=$%02X hp0=$%02X hp1=$%02X hp2=$%02X alive=%d->%d->%d\n",
-    t, actual_t, exp, hp0, hp1, hp2, alive0, alive1, alive2))
+  out:write(string.format("t=$%02X spawn_t=$%02X exp_hp=$%02X hp0=$%02X hp1=$%02X hp2=$%02X alive=%d->%d->%d post60: hp=$%02X alive=%d type=$%02X ms=$%02X\n",
+    t, actual_t, exp, hp0, hp1, hp2, alive0, alive1, alive2, hp3, alive3, type3, ms3))
   out:flush()
 end
 
