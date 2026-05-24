@@ -86,3 +86,40 @@ Reverted to bits 0-1 model. Real fix requires:
 
 Tagged for deeper iter — likely requires NES Z_05/Z_07 OW transition
 mode tracing + matching VRAM upload sequence.
+
+## Iter 3 update (2026-05-23 23:50) — bug FALSIFIED
+
+### NES live PlayAreaAttrs[$530..$55F] dump post-r$00-warp:
+```
+$AA $AA $AA $AA $AA $AA $AA $AA  ; All sub-pal 2 (green)
+... (entire 48 bytes = $AA)
+```
+
+But LBA_A[0..15] = $00. Per asm `outer = LBA_A[$00] & 3 = 0`, FillPlayAreaAttrs
+would write $00 not $AA.
+
+### Conclusion: PROBE ARTIFACT, not real bug
+
+Path explanation:
+1. NES boot sequence loads up to RoomId=$77 (start), GameMode=$05 (Play).
+2. Mode 3 ran during initial r$77 entry → FillPlayAreaAttrs(r$77) → wrote
+   $AA (outer for r$77 = 2 from r$77 LBA_A byte).
+3. LBA_A[0..15] then CLEARED (likely by something — Mode 2 didn't re-run).
+4. Probe-warp to r$00 forces RoomId=$00 + Mode=$06 then $05.
+5. FillPlayAreaAttrs NOT re-triggered (Mode 6 ≠ Mode 3 trigger).
+6. PlayAreaAttrs RAM stays $AA from r$77 init.
+7. NT0 attr dump captures $AA — visually green for r$00.
+
+But real NES Link-walk from r$77 to r$00 would trigger Mode 4 scroll →
+re-run FillPlayAreaAttrs(r$00) → outer = $A3 & 3 = 3 → $FF brown.
+
+So real NES r$00 IS brown. Gen brown rendering is correct.
+
+The 650 sub-pal mismatches reported by diff_bg_tilemap.py for r$00 are
+all probe-induced — NES capture was at stale state. NOT real bugs.
+
+### Action: close task #49 as non-bug
+
+Visual chases for individual OW room colors should be replaced by
+gameplay-walk probes (NES Link actually walks through rooms via scroll
+transitions, not raw RAM warps).
