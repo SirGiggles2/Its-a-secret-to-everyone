@@ -33,8 +33,12 @@
                                          * core_abs, core_unhalt_link */
 #include "items/item_dispatch.h"        /* item_take_item */
 
-/* Asm-bound data tables (no banned prefix). */
-extern const unsigned char PersonTextAddrs[];
+/* Phase D3 (2026-05-24): correct PersonTextAddrs to its Genesis layout.
+ * The data file (src/data/person_text_data.c) emits a 38-pointer array
+ * (one pointer per text blob), not the NES-style 76-byte (lo,hi)-pair
+ * table. NES selectors $00, $02, $04, ... index pairs; Genesis indexes
+ * blobs by selector/2. */
+#include "../../data/person_text_data.h"
 
 /* NES Z_01.asm:559 TextboxCharTransferRecTemplate — 5-byte VRAM
  * transfer record template used by the textbox char-streamer to
@@ -748,7 +752,14 @@ static void cave_link_end_move_and_draw_stub(void)
 
 void cave_update_person_state_textbox(void)
 {
-    /* drain at cave_runtime.c:131-174. */
+    /* drain at cave_runtime.c:131-174.
+     *
+     * Phase D3 (2026-05-24): port the NES char-streamer to Genesis's
+     * pointer-array PersonTextAddrs layout. NES reads (lo, hi) byte
+     * pairs from a 76-byte table and reassembles a 16-bit nes_ram
+     * pointer; Genesis dereferences the pointer for the blob directly.
+     * Selector value matches NES (still byte-pair offset), so divide
+     * by 2 to index the 38-entry pointer array. */
     cave_link_end_move_and_draw_stub();
     if ((unsigned char)CAVE_DELAY_TIMER != 0u) {
         return;
@@ -764,28 +775,30 @@ void cave_update_person_state_textbox(void)
 
     unsigned char ch;
     unsigned char char_idx;
-    unsigned short ptr;
+    unsigned char raw;
+    const unsigned char *text;
     /* Skip $25 (no-op char). */
     do {
         RAM(0x0303u) = (unsigned char)CAVE_TEXT_LINE_ADDR_LO;
         CAVE_TEXT_LINE_ADDR_LO =
             (uint8_t)((unsigned char)CAVE_TEXT_LINE_ADDR_LO + 1u);
-        const unsigned char selector = (unsigned char)CAVE_TEXT_SELECTOR;
-        CAVE_TMP0 = PersonTextAddrs[selector];
-        CAVE_TMP1 = PersonTextAddrs[selector + 1u];
+        {
+            const unsigned char selector = (unsigned char)CAVE_TEXT_SELECTOR;
+            /* selector & ~1 makes the byte-pair offset NES-stable;
+             * >> 1 picks the pointer-array entry. */
+            text = PersonTextAddrs[(selector >> 1) & 0x1Fu];
+        }
         char_idx = (unsigned char)CAVE_TEXT_CHAR_INDEX;
         CAVE_TEXT_CHAR_INDEX =
             (uint8_t)((unsigned char)CAVE_TEXT_CHAR_INDEX + 1u);
-        ptr = (unsigned short)(((unsigned short)(unsigned char)CAVE_TMP1 << 8) |
-                               (unsigned char)CAVE_TMP0);
-        ch = (unsigned char)(nes_ram[ptr + char_idx] & 0x3Fu);
+        raw = text[char_idx];
+        ch = (unsigned char)(raw & 0x3Fu);
     } while (ch == 0x25u);
 
     RAM(0x0305u) = ch;
     CAVE_TEXT_TICK_SFX = 16u;
 
-    const unsigned char line_flags =
-        (unsigned char)(nes_ram[ptr + char_idx] & 0xC0u);
+    const unsigned char line_flags = (unsigned char)(raw & 0xC0u);
     if (line_flags == 0u) {
         return;
     }
