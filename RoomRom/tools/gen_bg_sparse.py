@@ -228,6 +228,19 @@ def main():
     for tid in HUD_FORCE_TILES:
         combined[tid].update([0, 1, 2])  # HUD pal context varies (white/yellow/red)
 
+    # V2.4 (2026-05-24): triforce triangle tiles + inventory box-frame for
+    # subscreen render. Sub-pal 0 only (single copy each, ~16 slots total).
+    # Plane-attr PAL field selects color at render time via PAL2 CRAM swap
+    # in inventory_palette_load_subscreen — atlas pixel-bias not needed.
+    INVENTORY_FORCE_TILES = (
+        # Triforce triangle art
+        0xE7, 0xE8, 0xEB, 0xEC, 0xED, 0xEE, 0xEF, 0xF0, 0xF1, 0xF5,
+        # Inventory box-frame ($69-$6E)
+        0x69, 0x6A, 0x6B, 0x6C, 0x6D, 0x6E,
+    )
+    for tid in INVENTORY_FORCE_TILES:
+        combined[tid].update([0])
+
     # Force-include redux automap tile range (0x30..0x4F, 32 tiles) for HUD
     # automap rendering. Sub-pals 0,1,2 cover the gray/blue/red room state.
     # Original hud_runtime.c::upload_redux_automap_chr handled this via
@@ -254,26 +267,12 @@ def main():
     # Letters $20..$23 = W X Y Z (already in HUD legacy range above for
     # sub-pals 0/1/2; harmless double-include for sub_pal 0).
     #
-    # L4 (Phase 7 v2 2026-05-20): also include sub_pal 1 (red text) for
-    # NES "INVENTORY" / "USE B BUTTON FOR THIS" + digits 0-9 (HUD-style)
-    # and sub_pal 3 (brown/yellow) for "TRIFORCE" label.
-    for tid in range(0x00, 0x24):  # digits + A..V
-        combined[tid].update([1, 3])
-    # Sprite tile $1E (small white square) — L3 cursor placeholder. NES
-    # cursor sprite uses SPRITE pattern table so this isn't strictly a BG
-    # sparse atlas concern, but route through PAL0 via sub_pal 1 if any
-    # BG-side render of $1E happens.
-    combined[0x1E].update([1, 2])
-    #
-    # V2.1 (2026-05-20): NES subscreen BG tilemap captured tiles. Box frame
-    # ($69-$6E), triforce triangle ($E7-$F1, $F5). NES sub-pals per active
-    # subscreen PALRAM: box frame = sub_pal 0 (white/blue), triangle =
-    # sub_pal 3 (brown/yellow). Force-include at sub_pal 0 (default routing)
-    # plus 3 for the brown/yellow tile variants.
-    for tid in (0x69, 0x6A, 0x6B, 0x6C, 0x6D, 0x6E):
-        combined[tid].update([0])
-    for tid in (0xE7, 0xE8, 0xEB, 0xEC, 0xED, 0xEE, 0xEF, 0xF0, 0xF1, 0xF5):
-        combined[tid].update([0, 3])
+    # L4 + V2.1 force-includes REVERTED 2026-05-20 — atlas overran
+    # SPR_TILE_BASE=533 (was 542 at P6.2b shipped, V2.1 pushed to 608
+    # corrupting Common SPR slots 533..608 = HUD digits / Link sprites /
+    # enemy tiles). Subscreen text renders sub_pal 0 (white) only;
+    # box-frame + triforce-triangle deferred until VRAM relocation
+    # bumps SPR_TILE_BASE OR scene-context atlas split lands.
 
     # Emit per-variant blobs against COMBINED usage (so LUT is universal)
     orig_ow_blob, orig_ow_lut = emit_sparse_blob(

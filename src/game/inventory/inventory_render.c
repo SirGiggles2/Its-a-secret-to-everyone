@@ -317,12 +317,26 @@ static void draw_item_icon_2x2(unsigned char tile_offset, unsigned short y, unsi
  *   all blank ($24) = sub_pal 0 */
 static unsigned char tile_subpal(unsigned short nes_row, unsigned char tid)
 {
-    /* V2.6 (2026-05-20): all routed via sub_pal 0 since sub_pal 1/3 force-
-     * includes were reverted (atlas overran SPR_TILE_BASE). Text renders
-     * white instead of NES red/brown -- accepted divergence. Triangle
-     * tiles ($E7-$F5) not in atlas at any sub-pal -> render BLANK_TILE. */
-    (void)nes_row;
-    (void)tid;
+    /* V2.4 fix (2026-05-24): per-tile NES BG sub-pal hint. Used by
+     * write_inventory_row to select Gen plane-attr PAL field (PAL0/1/2/3).
+     * PAL1/2/3 are CRAM-swapped to NES BG sub-pal 1/2/3 at subscreen-enter
+     * (inventory_palette_load_subscreen), so plane attr pal field directly
+     * selects NES BG sub-pal colors without needing pixel-bias atlas.
+     *
+     * Routing per NES PALRAM captured 2026-05-20 at MenuState=$08:
+     *   sub-pal 1 (red):    INVENTORY (row 12), USE B BUTTON (rows 18-19)
+     *   sub-pal 2 (yellow): triforce triangle tiles ($E7-$F1, $F5)
+     *   sub-pal 3 (brown):  TRIFORCE label (row 28)
+     *   sub-pal 0 (white):  box frame ($69-$6E), blank ($24), default
+     */
+    /* Triforce triangle tile range */
+    if ((tid >= 0xE7u && tid <= 0xF1u) || tid == 0xF5u) return 2u;
+    /* Letter/digit tiles ($00-$23) on text rows */
+    if (tid < 0x24u) {
+        if (nes_row == 12u) return 1u;  /* INVENTORY (red) */
+        if (nes_row == 18u || nes_row == 19u) return 1u;  /* USE B BUTTON FOR THIS */
+        if (nes_row == 28u) return 3u;  /* TRIFORCE label (brown) */
+    }
     return 0u;
 }
 
@@ -344,8 +358,13 @@ static void write_inventory_row(unsigned short gen_row)
     for (i = 0; i < 32u; ++i) {
         unsigned char tid = k_inventory_tilemap[nes_row][i];
         unsigned char sp  = tile_subpal(nes_row, tid);
-        unsigned short vram = tile_for(tid, sp);
-        cells[i] = RENDER_TILE_ATTR_FULL(0u, 0, 0, 0, vram);
+        /* tile_for() resolves via sparse LUT using sub_pal=0 only — atlas
+         * doesn't have per-sub-pal copies post-V2.6 revert. Sub-pal
+         * routing now happens via plane-attr PAL field instead (PAL1/2/3
+         * CRAM-swapped to NES BG sub-pals 1/2/3 by inventory_palette_
+         * load_subscreen). */
+        unsigned short vram = tile_for(tid, 0u);
+        cells[i] = RENDER_TILE_ATTR_FULL((unsigned char)sp, 0, 0, 0, vram);
     }
     render_plane_a_write_row(gen_row, cells, 32u);
 }
