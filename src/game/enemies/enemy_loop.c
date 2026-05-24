@@ -1528,6 +1528,10 @@ void enemy_loop_tick(void)
         room_check_has_living_monsters();
         if (RAM(0x034Du) != 0u && uw_door_state_has_shutters()) {
             uw_door_state_trigger_shutters();
+            /* Mirror NES ShutterTrigger=$01 ($04CE) for probe live-verify
+             * + NES-parity dispatch (any consumer reading $04CE sees
+             * the trigger fired). Idempotent — repeated set is fine. */
+            RAM(0x04CEu) = 1u;
         }
     }
 }
