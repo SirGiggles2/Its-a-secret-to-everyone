@@ -1961,8 +1961,13 @@ void roomrom_debug_tick(void)
          * detect are gated below on !cave_fade_is_active so they
          * freeze during the animation, but sprite render +
          * transfer_buf_drain still run so Link's per-frame Y bump
-         * (descend step) is visible. */
-        if (cave_fade_is_active()) {
+         * (descend step) is visible.
+         *
+         * APPENDIX R5 fix: gate cave_fade_tick on !pause. NES Z_07.asm:472
+         * Paused != 0 freezes EVERYTHING including Mode 10 stairs anim.
+         * Without this gate, pressing Start mid-descend freezes BG but
+         * Link sprite continues descending = visual desync. */
+        if (cave_fade_is_active() && !roomrom_pause_is_active()) {
             cave_fade_tick();
         }
 
