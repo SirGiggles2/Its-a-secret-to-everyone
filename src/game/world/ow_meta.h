@@ -26,4 +26,17 @@ unsigned char roomrom_ow_meta_is_level_selector(unsigned char selector);
  * Caller must verify roomrom_ow_meta_is_level_selector(selector) first. */
 unsigned char roomrom_ow_meta_level_from_selector(unsigned char selector);
 
+/* Per NES HandleWarpOW (Z_05.asm:7344-7353): selector $50 routes to
+ * Mode $0C (shortcut cave); all other selectors >= $40 route to
+ * Mode $0B (regular cave). Returns 1 if selector is the shortcut, 0
+ * if regular cave or non-cave. */
+unsigned char roomrom_ow_meta_is_shortcut_cave_selector(unsigned char selector);
+
+/* Cave-id derivation per NES (cave_idx 0..19 = $6A..$7D):
+ *   cave_idx = (selector - $40) >> 2
+ *   cave_id  = $6A + cave_idx
+ * Caller must verify selector >= $40 (i.e., NOT a level selector).
+ * Returns $6A..$7D. */
+unsigned char roomrom_ow_meta_cave_id_from_selector(unsigned char selector);
+
 #endif /* ROOMROM_OW_ROOM_META_H */

@@ -1,16 +1,17 @@
-/* cave_entrance.h — Tier 0 (plan v6) cave-entrance tile detection.
+/* cave_entrance.h — OW→cave entrance detection per NES Z_05.asm:HandleWarpOW.
  *
  * NES source: reference/aldonunez/Z_05.asm:7313 HandleWarpOW.
  * Drained C:  NEW (src/game/cave/cave_entrance.c).
- * Coverage:   PARTIAL — tile-range check matches NES; LBA_B cave-id
- *             lookup deferred to v6b (Tier 1 follow-up).
- * Stance:     EXTEND (composes existing cave_init + collision tile
- *             lookup; new entrance-detection wrapper).
+ * Coverage:   PARTIAL — tile-range + LBA_B selector + cave-id derivation;
+ *             Mode B vs C distinction left to cave_dispatch internals.
+ * Stance:     REPLACE (Tier 0 hardcoded cave_id $6A replaced with NES-
+ *             aligned per-room dispatch from LevelBlockAttrsB).
  *
- * MVP: returns a fixed cave_id when Link stands on a NES-Z1 cave
- * entrance tile ($24, $88, $70..$73). LBA_B per-room cave-id lookup
- * follows in a later commit; today's commit prioritizes "user can
- * enter cave" over correct cave-id selection.
+ * Returns:
+ *   - non-zero cave_id_t when tile is a warp tile AND attr_b_fc routes to
+ *     a cave (selector $40-$FC, excluding $00 and < $40 dungeons).
+ *   - 0 when tile is non-warp, OR when warp routes to a dungeon
+ *     (caller dispatches dungeon via detect_warp_ow in transition.c).
  */
 
 #ifndef SRC_GAME_CAVE_CAVE_ENTRANCE_H
@@ -18,8 +19,7 @@
 
 #include "cave_dispatch.h"  /* cave_id_t */
 
-/* Returns a non-zero cave_id_t when the tile Link is standing on is
- * a NES Z1 cave-entrance tile, else 0. */
-cave_id_t cave_entrance_check(unsigned char tile);
+/* Tier 1: per-room cave_id derivation via LevelBlockAttrsB[room_id]. */
+cave_id_t cave_entrance_check(unsigned char tile, unsigned char room_id);
 
 #endif /* SRC_GAME_CAVE_CAVE_ENTRANCE_H */

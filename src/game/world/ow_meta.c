@@ -42,3 +42,13 @@ unsigned char roomrom_ow_meta_level_from_selector(unsigned char selector)
 {
     return (unsigned char)(selector >> 2);
 }
+
+unsigned char roomrom_ow_meta_is_shortcut_cave_selector(unsigned char selector)
+{
+    return (unsigned char)(selector == 0x50u);
+}
+
+unsigned char roomrom_ow_meta_cave_id_from_selector(unsigned char selector)
+{
+    return (unsigned char)(0x6Au + ((selector - 0x40u) >> 2));
+}

@@ -1,34 +1,70 @@
-/* cave_entrance.c — Tier 0 cave-entrance tile detection.
+/* cave_entrance.c — NES-aligned OW→cave dispatch via LevelBlockAttrsB.
  *
  * NES source: reference/aldonunez/Z_05.asm:7313 HandleWarpOW.
- * Stance:     EXTEND (composes existing cave_init).
+ * Stance:     REPLACE (Tier 0 hardcoded $6A retired 2026-05-24).
  *
- * NES check (Z_05.asm:7320-7332):
+ * NES dispatch (Z_05.asm:7338-7368):
+ *
  *   CMP #$24  BEQ entrance         ; armos pad / special warp
  *   CMP #$88  BEQ entrance         ; rock pile / bombable
- *   CMP #$70  BCC  return_no_entry
- *   CMP #$74  BCS  return_no_entry
- *   STA  ObjCollidedTile = $70     ; normalize $70..$73 stairs tiles
+ *   CMP #$70  BCC return_no_entry
+ *   CMP #$74  BCS return_no_entry
+ *   STA ObjCollidedTile = $70      ; collapse $70..$73 → $70
+ * entrance:
+ *   LDY RoomId
+ *   LDA LevelBlockAttrsB, Y
+ *   AND #$FC                       ; selector
+ *   CMP #$40
+ *   BCC @LoadLevel                 ; < $40 → dungeon (handled elsewhere)
+ *   LDY #$0B                       ; default Mode $0B (regular cave)
+ *   CMP #$50
+ *   BNE :+
+ *   INY                            ; selector == $50 → Mode $0C (shortcut)
+ * :
+ *   TYA  / JMP SetTargetMode
  *
- * NES then looks up `LevelBlockAttrsB[RoomId] & $FC` to pick cave_id
- * (or level number). Tier 0 MVP returns first cave_id $6A so the
- * SCENE_CAVE transition fires; per-room cave-id lookup defers.
+ * Cave-id derivation (per OverworldPersonTextSelectors layout, Z_01.asm:53-56):
+ *   cave_idx = (selector - $40) >> 2   ; 0..19 = 20 distinct caves
+ *   cave_id  = $6A + cave_idx          ; $6A..$7D
+ *
+ * Dungeon-vs-cave split:
+ *   Dungeon path (selector < $40) is handled by detect_warp_ow in
+ *   src/game/world/transition.c via roomrom_ow_meta_is_level_selector.
+ *   This function returns 0 for dungeon selectors so the caller falls
+ *   through to the dungeon coordinator instead of firing cave entry.
  */
 
 #include "cave_entrance.h"
+#include "../world/ow_meta.h"
 
-cave_id_t cave_entrance_check(unsigned char tile)
+cave_id_t cave_entrance_check(unsigned char tile, unsigned char room_id)
 {
-    /* Z_05.asm:7320 — special-tile checks first. */
-    if (tile == 0x24u) {
-        return (cave_id_t)0x6Au;
+    unsigned char selector;
+
+    /* Z_05.asm:7320-7327 — tile range filter. */
+    if (tile != 0x24u && tile != 0x88u &&
+        !(tile >= 0x70u && tile <= 0x73u)) {
+        return (cave_id_t)0;
     }
-    if (tile == 0x88u) {
-        return (cave_id_t)0x6Au;
+
+    /* Z_05.asm:7338-7344 — per-room selector. */
+    selector = roomrom_ow_meta_level_selector(room_id);
+
+    /* Z_05.asm:7345 BCC @LoadLevel — dungeon dispatch handled by
+     * detect_warp_ow in transition.c. Return 0 so caller skips cave
+     * path and falls through to dungeon coordinator. */
+    if (roomrom_ow_meta_is_level_selector(selector)) {
+        return (cave_id_t)0;
     }
-    /* Z_05.asm:7324-7327 — stairs range $70..$73. */
-    if (tile >= 0x70u && tile <= 0x73u) {
-        return (cave_id_t)0x6Au;
+
+    /* Selector $00 falls through the level-selector check above
+     * (`selector < $40u` is true for $00). Defensive: also reject
+     * any non-cave selector explicitly. */
+    if (selector < 0x40u) {
+        return (cave_id_t)0;
     }
-    return (cave_id_t)0;
+
+    /* Z_05.asm:7346-7353 — cave dispatch (Mode B unless $50 → Mode C).
+     * Cave-id derived per the OverworldPersonTextSelectors index. */
+    return (cave_id_t)roomrom_ow_meta_cave_id_from_selector(selector);
 }

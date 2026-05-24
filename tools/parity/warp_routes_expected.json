@@ -1,0 +1,1166 @@
+{
+  "source": "reference/aldonunez/dat/LevelBlockOW.dat",
+  "nes_authority": "Z_05.asm:HandleWarpOW lines 7313-7368",
+  "table_offset_in_dat": 128,
+  "table_len": 128,
+  "summary": {
+    "no_warp": 36,
+    "dungeon": 14,
+    "cave_regular": 74,
+    "cave_shortcut": 4
+  },
+  "rows": [
+    {
+      "room_id": 0,
+      "raw_attr_b": 39,
+      "attr_b_fc": 36,
+      "category": "dungeon",
+      "mode": 2,
+      "level": 9,
+      "cave_id": null
+    },
+    {
+      "room_id": 1,
+      "raw_attr_b": 95,
+      "attr_b_fc": 92,
+      "category": "cave_regular",
+      "mode": 11,
+      "level": null,
+      "cave_id": 113
+    },
+    {
+      "room_id": 2,
+      "raw_attr_b": 107,
+      "attr_b_fc": 104,
+      "category": "cave_regular",
+      "mode": 11,
+      "level": null,
+      "cave_id": 116
+    },
+    {
+      "room_id": 3,
+      "raw_attr_b": 95,
+      "attr_b_fc": 92,
+      "category": "cave_regular",
+      "mode": 11,
+      "level": null,
+      "cave_id": 113
+    },
+    {
+      "room_id": 4,
+      "raw_attr_b": 107,
+      "attr_b_fc": 104,
+      "category": "cave_regular",
+      "mode": 11,
+      "level": null,
+      "cave_id": 116
+    },
+    {
+      "room_id": 5,
+      "raw_attr_b": 39,
+      "attr_b_fc": 36,
+      "category": "dungeon",
+      "mode": 2,
+      "level": 9,
+      "cave_id": null
+    },
+    {
+      "room_id": 6,
+      "raw_attr_b": 71,
+      "attr_b_fc": 68,
+      "category": "cave_regular",
+      "mode": 11,
+      "level": null,
+      "cave_id": 107
+    },
+    {
+      "room_id": 7,
+      "raw_attr_b": 95,
+      "attr_b_fc": 92,
+      "category": "cave_regular",
+      "mode": 11,
+      "level": null,
+      "cave_id": 113
+    },
+    {
+      "room_id": 8,
+      "raw_attr_b": 3,
+      "attr_b_fc": 0,
+      "category": "no_warp",
+      "mode": null,
+      "level": null,
+      "cave_id": null
+    },
+    {
+      "room_id": 9,
+      "raw_attr_b": 79,
+      "attr_b_fc": 76,
+      "category": "cave_regular",
+      "mode": 11,
+      "level": null,
+      "cave_id": 109
+    },
+    {
+      "room_id": 10,
+      "raw_attr_b": 75,
+      "attr_b_fc": 72,
+      "category": "cave_regular",
+      "mode": 11,
+      "level": null,
+      "cave_id": 108
+    },
+    {
+      "room_id": 11,
+      "raw_attr_b": 23,
+      "attr_b_fc": 20,
+      "category": "dungeon",
+      "mode": 2,
+      "level": 5,
+      "cave_id": null
+    },
+    {
+      "room_id": 12,
+      "raw_attr_b": 123,
+      "attr_b_fc": 120,
+      "category": "cave_regular",
+      "mode": 11,
+      "level": null,
+      "cave_id": 120
+    },
+    {
+      "room_id": 13,
+      "raw_attr_b": 107,
+      "attr_b_fc": 104,
+      "category": "cave_regular",
+      "mode": 11,
+      "level": null,
+      "cave_id": 116
+    },
+    {
+      "room_id": 14,
+      "raw_attr_b": 99,
+      "attr_b_fc": 96,
+      "category": "cave_regular",
+      "mode": 11,
+      "level": null,
+      "cave_id": 114
+    },
+    {
+      "room_id": 15,
+      "raw_attr_b": 139,
+      "attr_b_fc": 136,
+      "category": "cave_regular",
+      "mode": 11,
+      "level": null,
+      "cave_id": 124
+    },
+    {
+      "room_id": 16,
+      "raw_attr_b": 91,
+      "attr_b_fc": 88,
+      "category": "cave_regular",
+      "mode": 11,
+      "level": null,
+      "cave_id": 112
+    },
+    {
+      "room_id": 17,
+      "raw_attr_b": 99,
+      "attr_b_fc": 96,
+      "category": "cave_regular",
+      "mode": 11,
+      "level": null,
+      "cave_id": 114
+    },
+    {
+      "room_id": 18,
+      "raw_attr_b": 127,
+      "attr_b_fc": 124,
+      "category": "cave_regular",
+      "mode": 11,
+      "level": null,
+      "cave_id": 121
+    },
+    {
+      "room_id": 19,
+      "raw_attr_b": 135,
+      "attr_b_fc": 132,
+      "category": "cave_regular",
+      "mode": 11,
+      "level": null,
+      "cave_id": 123
+    },
+    {
+      "room_id": 20,
+      "raw_attr_b": 95,
+      "attr_b_fc": 92,
+      "category": "cave_regular",
+      "mode": 11,
+      "level": null,
+      "cave_id": 113
+    },
+    {
+      "room_id": 21,
+      "raw_attr_b": 123,
+      "attr_b_fc": 120,
+      "category": "cave_regular",
+      "mode": 11,
+      "level": null,
+      "cave_id": 120
+    },
+    {
+      "room_id": 22,
+      "raw_attr_b": 91,
+      "attr_b_fc": 88,
+      "category": "cave_regular",
+      "mode": 11,
+      "level": null,
+      "cave_id": 112
+    },
+    {
+      "room_id": 23,
+      "raw_attr_b": 3,
+      "attr_b_fc": 0,
+      "category": "no_warp",
+      "mode": null,
+      "level": null,
+      "cave_id": null
+    },
+    {
+      "room_id": 24,
+      "raw_attr_b": 107,
+      "attr_b_fc": 104,
+      "category": "cave_regular",
+      "mode": 11,
+      "level": null,
+      "cave_id": 116
+    },
+    {
+      "room_id": 25,
+      "raw_attr_b": 31,
+      "attr_b_fc": 28,
+      "category": "dungeon",
+      "mode": 2,
+      "level": 7,
+      "cave_id": null
+    },
+    {
+      "room_id": 26,
+      "raw_attr_b": 111,
+      "attr_b_fc": 108,
+      "category": "cave_regular",
+      "mode": 11,
+      "level": null,
+      "cave_id": 117
+    },
+    {
+      "room_id": 27,
+      "raw_attr_b": 23,
+      "attr_b_fc": 20,
+      "category": "dungeon",
+      "mode": 2,
+      "level": 5,
+      "cave_id": null
+    },
+    {
+      "room_id": 28,
+      "raw_attr_b": 87,
+      "attr_b_fc": 84,
+      "category": "cave_regular",
+      "mode": 11,
+      "level": null,
+      "cave_id": 111
+    },
+    {
+      "room_id": 29,
+      "raw_attr_b": 83,
+      "attr_b_fc": 80,
+      "category": "cave_shortcut",
+      "mode": 12,
+      "level": null,
+      "cave_id": 110
+    },
+    {
+      "room_id": 30,
+      "raw_attr_b": 95,
+      "attr_b_fc": 92,
+      "category": "cave_regular",
+      "mode": 11,
+      "level": null,
+      "cave_id": 113
+    },
+    {
+      "room_id": 31,
+      "raw_attr_b": 90,
+      "attr_b_fc": 88,
+      "category": "cave_regular",
+      "mode": 11,
+      "level": null,
+      "cave_id": 112
+    },
+    {
+      "room_id": 32,
+      "raw_attr_b": 68,
+      "attr_b_fc": 68,
+      "category": "cave_regular",
+      "mode": 11,
+      "level": null,
+      "cave_id": 107
+    },
+    {
+      "room_id": 33,
+      "raw_attr_b": 76,
+      "attr_b_fc": 76,
+      "category": "cave_regular",
+      "mode": 11,
+      "level": null,
+      "cave_id": 109
+    },
+    {
+      "room_id": 34,
+      "raw_attr_b": 24,
+      "attr_b_fc": 24,
+      "category": "dungeon",
+      "mode": 2,
+      "level": 6,
+      "cave_id": null
+    },
+    {
+      "room_id": 35,
+      "raw_attr_b": 83,
+      "attr_b_fc": 80,
+      "category": "cave_shortcut",
+      "mode": 12,
+      "level": null,
+      "cave_id": 110
+    },
+    {
+      "room_id": 36,
+      "raw_attr_b": 3,
+      "attr_b_fc": 0,
+      "category": "no_warp",
+      "mode": null,
+      "level": null,
+      "cave_id": null
+    },
+    {
+      "room_id": 37,
+      "raw_attr_b": 119,
+      "attr_b_fc": 116,
+      "category": "cave_regular",
+      "mode": 11,
+      "level": null,
+      "cave_id": 119
+    },
+    {
+      "room_id": 38,
+      "raw_attr_b": 127,
+      "attr_b_fc": 124,
+      "category": "cave_regular",
+      "mode": 11,
+      "level": null,
+      "cave_id": 121
+    },
+    {
+      "room_id": 39,
+      "raw_attr_b": 107,
+      "attr_b_fc": 104,
+      "category": "cave_regular",
+      "mode": 11,
+      "level": null,
+      "cave_id": 116
+    },
+    {
+      "room_id": 40,
+      "raw_attr_b": 134,
+      "attr_b_fc": 132,
+      "category": "cave_regular",
+      "mode": 11,
+      "level": null,
+      "cave_id": 123
+    },
+    {
+      "room_id": 41,
+      "raw_attr_b": 107,
+      "attr_b_fc": 104,
+      "category": "cave_regular",
+      "mode": 11,
+      "level": null,
+      "cave_id": 116
+    },
+    {
+      "room_id": 42,
+      "raw_attr_b": 3,
+      "attr_b_fc": 0,
+      "category": "no_warp",
+      "mode": null,
+      "level": null,
+      "cave_id": null
+    },
+    {
+      "room_id": 43,
+      "raw_attr_b": 143,
+      "attr_b_fc": 140,
+      "category": "cave_regular",
+      "mode": 11,
+      "level": null,
+      "cave_id": 125
+    },
+    {
+      "room_id": 44,
+      "raw_attr_b": 71,
+      "attr_b_fc": 68,
+      "category": "cave_regular",
+      "mode": 11,
+      "level": null,
+      "cave_id": 107
+    },
+    {
+      "room_id": 45,
+      "raw_attr_b": 135,
+      "attr_b_fc": 132,
+      "category": "cave_regular",
+      "mode": 11,
+      "level": null,
+      "cave_id": 123
+    },
+    {
+      "room_id": 46,
+      "raw_attr_b": 3,
+      "attr_b_fc": 0,
+      "category": "no_warp",
+      "mode": null,
+      "level": null,
+      "cave_id": null
+    },
+    {
+      "room_id": 47,
+      "raw_attr_b": 68,
+      "attr_b_fc": 68,
+      "category": "cave_regular",
+      "mode": 11,
+      "level": null,
+      "cave_id": 107
+    },
+    {
+      "room_id": 48,
+      "raw_attr_b": 24,
+      "attr_b_fc": 24,
+      "category": "dungeon",
+      "mode": 2,
+      "level": 6,
+      "cave_id": null
+    },
+    {
+      "room_id": 49,
+      "raw_attr_b": 0,
+      "attr_b_fc": 0,
+      "category": "no_warp",
+      "mode": null,
+      "level": null,
+      "cave_id": null
+    },
+    {
+      "room_id": 50,
+      "raw_attr_b": 3,
+      "attr_b_fc": 0,
+      "category": "no_warp",
+      "mode": null,
+      "level": null,
+      "cave_id": null
+    },
+    {
+      "room_id": 51,
+      "raw_attr_b": 104,
+      "attr_b_fc": 104,
+      "category": "cave_regular",
+      "mode": 11,
+      "level": null,
+      "cave_id": 116
+    },
+    {
+      "room_id": 52,
+      "raw_attr_b": 131,
+      "attr_b_fc": 128,
+      "category": "cave_regular",
+      "mode": 11,
+      "level": null,
+      "cave_id": 122
+    },
+    {
+      "room_id": 53,
+      "raw_attr_b": 3,
+      "attr_b_fc": 0,
+      "category": "no_warp",
+      "mode": null,
+      "level": null,
+      "cave_id": null
+    },
+    {
+      "room_id": 54,
+      "raw_attr_b": 3,
+      "attr_b_fc": 0,
+      "category": "no_warp",
+      "mode": null,
+      "level": null,
+      "cave_id": null
+    },
+    {
+      "room_id": 55,
+      "raw_attr_b": 7,
+      "attr_b_fc": 4,
+      "category": "dungeon",
+      "mode": 2,
+      "level": 1,
+      "cave_id": null
+    },
+    {
+      "room_id": 56,
+      "raw_attr_b": 3,
+      "attr_b_fc": 0,
+      "category": "no_warp",
+      "mode": null,
+      "level": null,
+      "cave_id": null
+    },
+    {
+      "room_id": 57,
+      "raw_attr_b": 2,
+      "attr_b_fc": 0,
+      "category": "no_warp",
+      "mode": null,
+      "level": null,
+      "cave_id": null
+    },
+    {
+      "room_id": 58,
+      "raw_attr_b": 71,
+      "attr_b_fc": 68,
+      "category": "cave_regular",
+      "mode": 11,
+      "level": null,
+      "cave_id": 107
+    },
+    {
+      "room_id": 59,
+      "raw_attr_b": 3,
+      "attr_b_fc": 0,
+      "category": "no_warp",
+      "mode": null,
+      "level": null,
+      "cave_id": null
+    },
+    {
+      "room_id": 60,
+      "raw_attr_b": 10,
+      "attr_b_fc": 8,
+      "category": "dungeon",
+      "mode": 2,
+      "level": 2,
+      "cave_id": null
+    },
+    {
+      "room_id": 61,
+      "raw_attr_b": 134,
+      "attr_b_fc": 132,
+      "category": "cave_regular",
+      "mode": 11,
+      "level": null,
+      "cave_id": 123
+    },
+    {
+      "room_id": 62,
+      "raw_attr_b": 3,
+      "attr_b_fc": 0,
+      "category": "no_warp",
+      "mode": null,
+      "level": null,
+      "cave_id": null
+    },
+    {
+      "room_id": 63,
+      "raw_attr_b": 3,
+      "attr_b_fc": 0,
+      "category": "no_warp",
+      "mode": null,
+      "level": null,
+      "cave_id": null
+    },
+    {
+      "room_id": 64,
+      "raw_attr_b": 0,
+      "attr_b_fc": 0,
+      "category": "no_warp",
+      "mode": null,
+      "level": null,
+      "cave_id": null
+    },
+    {
+      "room_id": 65,
+      "raw_attr_b": 0,
+      "attr_b_fc": 0,
+      "category": "no_warp",
+      "mode": null,
+      "level": null,
+      "cave_id": null
+    },
+    {
+      "room_id": 66,
+      "raw_attr_b": 31,
+      "attr_b_fc": 28,
+      "category": "dungeon",
+      "mode": 2,
+      "level": 7,
+      "cave_id": null
+    },
+    {
+      "room_id": 67,
+      "raw_attr_b": 2,
+      "attr_b_fc": 0,
+      "category": "no_warp",
+      "mode": null,
+      "level": null,
+      "cave_id": null
+    },
+    {
+      "room_id": 68,
+      "raw_attr_b": 118,
+      "attr_b_fc": 116,
+      "category": "cave_regular",
+      "mode": 11,
+      "level": null,
+      "cave_id": 119
+    },
+    {
+      "room_id": 69,
+      "raw_attr_b": 18,
+      "attr_b_fc": 16,
+      "category": "dungeon",
+      "mode": 2,
+      "level": 4,
+      "cave_id": null
+    },
+    {
+      "room_id": 70,
+      "raw_attr_b": 126,
+      "attr_b_fc": 124,
+      "category": "cave_regular",
+      "mode": 11,
+      "level": null,
+      "cave_id": 121
+    },
+    {
+      "room_id": 71,
+      "raw_attr_b": 70,
+      "attr_b_fc": 68,
+      "category": "cave_regular",
+      "mode": 11,
+      "level": null,
+      "cave_id": 107
+    },
+    {
+      "room_id": 72,
+      "raw_attr_b": 134,
+      "attr_b_fc": 132,
+      "category": "cave_regular",
+      "mode": 11,
+      "level": null,
+      "cave_id": 123
+    },
+    {
+      "room_id": 73,
+      "raw_attr_b": 82,
+      "attr_b_fc": 80,
+      "category": "cave_shortcut",
+      "mode": 12,
+      "level": null,
+      "cave_id": 110
+    },
+    {
+      "room_id": 74,
+      "raw_attr_b": 118,
+      "attr_b_fc": 116,
+      "category": "cave_regular",
+      "mode": 11,
+      "level": null,
+      "cave_id": 119
+    },
+    {
+      "room_id": 75,
+      "raw_attr_b": 106,
+      "attr_b_fc": 104,
+      "category": "cave_regular",
+      "mode": 11,
+      "level": null,
+      "cave_id": 116
+    },
+    {
+      "room_id": 76,
+      "raw_attr_b": 2,
+      "attr_b_fc": 0,
+      "category": "no_warp",
+      "mode": null,
+      "level": null,
+      "cave_id": null
+    },
+    {
+      "room_id": 77,
+      "raw_attr_b": 126,
+      "attr_b_fc": 124,
+      "category": "cave_regular",
+      "mode": 11,
+      "level": null,
+      "cave_id": 121
+    },
+    {
+      "room_id": 78,
+      "raw_attr_b": 142,
+      "attr_b_fc": 140,
+      "category": "cave_regular",
+      "mode": 11,
+      "level": null,
+      "cave_id": 125
+    },
+    {
+      "room_id": 79,
+      "raw_attr_b": 3,
+      "attr_b_fc": 0,
+      "category": "no_warp",
+      "mode": null,
+      "level": null,
+      "cave_id": null
+    },
+    {
+      "room_id": 80,
+      "raw_attr_b": 0,
+      "attr_b_fc": 0,
+      "category": "no_warp",
+      "mode": null,
+      "level": null,
+      "cave_id": null
+    },
+    {
+      "room_id": 81,
+      "raw_attr_b": 143,
+      "attr_b_fc": 140,
+      "category": "cave_regular",
+      "mode": 11,
+      "level": null,
+      "cave_id": 125
+    },
+    {
+      "room_id": 82,
+      "raw_attr_b": 3,
+      "attr_b_fc": 0,
+      "category": "no_warp",
+      "mode": null,
+      "level": null,
+      "cave_id": null
+    },
+    {
+      "room_id": 83,
+      "raw_attr_b": 138,
+      "attr_b_fc": 136,
+      "category": "cave_regular",
+      "mode": 11,
+      "level": null,
+      "cave_id": 124
+    },
+    {
+      "room_id": 84,
+      "raw_attr_b": 2,
+      "attr_b_fc": 0,
+      "category": "no_warp",
+      "mode": null,
+      "level": null,
+      "cave_id": null
+    },
+    {
+      "room_id": 85,
+      "raw_attr_b": 2,
+      "attr_b_fc": 0,
+      "category": "no_warp",
+      "mode": null,
+      "level": null,
+      "cave_id": null
+    },
+    {
+      "room_id": 86,
+      "raw_attr_b": 142,
+      "attr_b_fc": 140,
+      "category": "cave_regular",
+      "mode": 11,
+      "level": null,
+      "cave_id": 125
+    },
+    {
+      "room_id": 87,
+      "raw_attr_b": 2,
+      "attr_b_fc": 0,
+      "category": "no_warp",
+      "mode": null,
+      "level": null,
+      "cave_id": null
+    },
+    {
+      "room_id": 88,
+      "raw_attr_b": 134,
+      "attr_b_fc": 132,
+      "category": "cave_regular",
+      "mode": 11,
+      "level": null,
+      "cave_id": 123
+    },
+    {
+      "room_id": 89,
+      "raw_attr_b": 2,
+      "attr_b_fc": 0,
+      "category": "no_warp",
+      "mode": null,
+      "level": null,
+      "cave_id": null
+    },
+    {
+      "room_id": 90,
+      "raw_attr_b": 2,
+      "attr_b_fc": 0,
+      "category": "no_warp",
+      "mode": null,
+      "level": null,
+      "cave_id": null
+    },
+    {
+      "room_id": 91,
+      "raw_attr_b": 142,
+      "attr_b_fc": 140,
+      "category": "cave_regular",
+      "mode": 11,
+      "level": null,
+      "cave_id": 125
+    },
+    {
+      "room_id": 92,
+      "raw_attr_b": 2,
+      "attr_b_fc": 0,
+      "category": "no_warp",
+      "mode": null,
+      "level": null,
+      "cave_id": null
+    },
+    {
+      "room_id": 93,
+      "raw_attr_b": 2,
+      "attr_b_fc": 0,
+      "category": "no_warp",
+      "mode": null,
+      "level": null,
+      "cave_id": null
+    },
+    {
+      "room_id": 94,
+      "raw_attr_b": 122,
+      "attr_b_fc": 120,
+      "category": "cave_regular",
+      "mode": 11,
+      "level": null,
+      "cave_id": 120
+    },
+    {
+      "room_id": 95,
+      "raw_attr_b": 3,
+      "attr_b_fc": 0,
+      "category": "no_warp",
+      "mode": null,
+      "level": null,
+      "cave_id": null
+    },
+    {
+      "room_id": 96,
+      "raw_attr_b": 91,
+      "attr_b_fc": 88,
+      "category": "cave_regular",
+      "mode": 11,
+      "level": null,
+      "cave_id": 112
+    },
+    {
+      "room_id": 97,
+      "raw_attr_b": 3,
+      "attr_b_fc": 0,
+      "category": "no_warp",
+      "mode": null,
+      "level": null,
+      "cave_id": null
+    },
+    {
+      "room_id": 98,
+      "raw_attr_b": 139,
+      "attr_b_fc": 136,
+      "category": "cave_regular",
+      "mode": 11,
+      "level": null,
+      "cave_id": 124
+    },
+    {
+      "room_id": 99,
+      "raw_attr_b": 95,
+      "attr_b_fc": 92,
+      "category": "cave_regular",
+      "mode": 11,
+      "level": null,
+      "cave_id": 113
+    },
+    {
+      "room_id": 100,
+      "raw_attr_b": 106,
+      "attr_b_fc": 104,
+      "category": "cave_regular",
+      "mode": 11,
+      "level": null,
+      "cave_id": 116
+    },
+    {
+      "room_id": 101,
+      "raw_attr_b": 3,
+      "attr_b_fc": 0,
+      "category": "no_warp",
+      "mode": null,
+      "level": null,
+      "cave_id": null
+    },
+    {
+      "room_id": 102,
+      "raw_attr_b": 123,
+      "attr_b_fc": 120,
+      "category": "cave_regular",
+      "mode": 11,
+      "level": null,
+      "cave_id": 120
+    },
+    {
+      "room_id": 103,
+      "raw_attr_b": 134,
+      "attr_b_fc": 132,
+      "category": "cave_regular",
+      "mode": 11,
+      "level": null,
+      "cave_id": 123
+    },
+    {
+      "room_id": 104,
+      "raw_attr_b": 94,
+      "attr_b_fc": 92,
+      "category": "cave_regular",
+      "mode": 11,
+      "level": null,
+      "cave_id": 113
+    },
+    {
+      "room_id": 105,
+      "raw_attr_b": 2,
+      "attr_b_fc": 0,
+      "category": "no_warp",
+      "mode": null,
+      "level": null,
+      "cave_id": null
+    },
+    {
+      "room_id": 106,
+      "raw_attr_b": 94,
+      "attr_b_fc": 92,
+      "category": "cave_regular",
+      "mode": 11,
+      "level": null,
+      "cave_id": 113
+    },
+    {
+      "room_id": 107,
+      "raw_attr_b": 138,
+      "attr_b_fc": 136,
+      "category": "cave_regular",
+      "mode": 11,
+      "level": null,
+      "cave_id": 124
+    },
+    {
+      "room_id": 108,
+      "raw_attr_b": 34,
+      "attr_b_fc": 32,
+      "category": "dungeon",
+      "mode": 2,
+      "level": 8,
+      "cave_id": null
+    },
+    {
+      "room_id": 109,
+      "raw_attr_b": 34,
+      "attr_b_fc": 32,
+      "category": "dungeon",
+      "mode": 2,
+      "level": 8,
+      "cave_id": null
+    },
+    {
+      "room_id": 110,
+      "raw_attr_b": 142,
+      "attr_b_fc": 140,
+      "category": "cave_regular",
+      "mode": 11,
+      "level": null,
+      "cave_id": 125
+    },
+    {
+      "room_id": 111,
+      "raw_attr_b": 119,
+      "attr_b_fc": 116,
+      "category": "cave_regular",
+      "mode": 11,
+      "level": null,
+      "cave_id": 119
+    },
+    {
+      "room_id": 112,
+      "raw_attr_b": 115,
+      "attr_b_fc": 112,
+      "category": "cave_regular",
+      "mode": 11,
+      "level": null,
+      "cave_id": 118
+    },
+    {
+      "room_id": 113,
+      "raw_attr_b": 135,
+      "attr_b_fc": 132,
+      "category": "cave_regular",
+      "mode": 11,
+      "level": null,
+      "cave_id": 123
+    },
+    {
+      "room_id": 114,
+      "raw_attr_b": 95,
+      "attr_b_fc": 92,
+      "category": "cave_regular",
+      "mode": 11,
+      "level": null,
+      "cave_id": 113
+    },
+    {
+      "room_id": 115,
+      "raw_attr_b": 3,
+      "attr_b_fc": 0,
+      "category": "no_warp",
+      "mode": null,
+      "level": null,
+      "cave_id": null
+    },
+    {
+      "room_id": 116,
+      "raw_attr_b": 15,
+      "attr_b_fc": 12,
+      "category": "dungeon",
+      "mode": 2,
+      "level": 3,
+      "cave_id": null
+    },
+    {
+      "room_id": 117,
+      "raw_attr_b": 102,
+      "attr_b_fc": 100,
+      "category": "cave_regular",
+      "mode": 11,
+      "level": null,
+      "cave_id": 115
+    },
+    {
+      "room_id": 118,
+      "raw_attr_b": 90,
+      "attr_b_fc": 88,
+      "category": "cave_regular",
+      "mode": 11,
+      "level": null,
+      "cave_id": 112
+    },
+    {
+      "room_id": 119,
+      "raw_attr_b": 66,
+      "attr_b_fc": 64,
+      "category": "cave_regular",
+      "mode": 11,
+      "level": null,
+      "cave_id": 106
+    },
+    {
+      "room_id": 120,
+      "raw_attr_b": 106,
+      "attr_b_fc": 104,
+      "category": "cave_regular",
+      "mode": 11,
+      "level": null,
+      "cave_id": 116
+    },
+    {
+      "room_id": 121,
+      "raw_attr_b": 83,
+      "attr_b_fc": 80,
+      "category": "cave_shortcut",
+      "mode": 12,
+      "level": null,
+      "cave_id": 110
+    },
+    {
+      "room_id": 122,
+      "raw_attr_b": 3,
+      "attr_b_fc": 0,
+      "category": "no_warp",
+      "mode": null,
+      "level": null,
+      "cave_id": null
+    },
+    {
+      "room_id": 123,
+      "raw_attr_b": 71,
+      "attr_b_fc": 68,
+      "category": "cave_regular",
+      "mode": 11,
+      "level": null,
+      "cave_id": 107
+    },
+    {
+      "room_id": 124,
+      "raw_attr_b": 91,
+      "attr_b_fc": 88,
+      "category": "cave_regular",
+      "mode": 11,
+      "level": null,
+      "cave_id": 112
+    },
+    {
+      "room_id": 125,
+      "raw_attr_b": 95,
+      "attr_b_fc": 92,
+      "category": "cave_regular",
+      "mode": 11,
+      "level": null,
+      "cave_id": 113
+    },
+    {
+      "room_id": 126,
+      "raw_attr_b": 3,
+      "attr_b_fc": 0,
+      "category": "no_warp",
+      "mode": null,
+      "level": null,
+      "cave_id": null
+    },
+    {
+      "room_id": 127,
+      "raw_attr_b": 3,
+      "attr_b_fc": 0,
+      "category": "no_warp",
+      "mode": null,
+      "level": null,
+      "cave_id": null
+    }
+  ]
+}

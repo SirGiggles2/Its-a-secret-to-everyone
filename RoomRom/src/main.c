@@ -2010,7 +2010,7 @@ void roomrom_debug_tick(void)
                 /* Tier 0 verify sentinel: $07FD = last standing tile
                  * Link was on. Helps debug entrance detection. */
                 nes_ram[0x07FDu] = standing_tile;
-                cave_id_t cid = cave_entrance_check(standing_tile);
+                cave_id_t cid = cave_entrance_check(standing_tile, s_room_id);
                 if (cid != (cave_id_t)0) {
                     /* Tier 0 verify sentinel: $07FC = cave-entry fire
                      * counter. Increments each time cave entry triggers
