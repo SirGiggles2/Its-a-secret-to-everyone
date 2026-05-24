@@ -286,7 +286,6 @@ void uw_door_state_apply_walkability(void)
 void uw_door_state_patch_open_tiles(unsigned char dir)
 {
     unsigned char i;
-
     if (dir >= DOOR_DIR_COUNT) return;
 
     for (i = 0u; i < 4u; i++) {
