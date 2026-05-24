@@ -72,7 +72,9 @@ void cave_fade_begin_exit(unsigned char return_room_id)
         return;
     }
     s_return_room_id = return_room_id;
-    s_phase          = CAVE_FADE_SWAP_EXIT;
+    s_frame_counter  = 0u;
+    s_step_idx       = 0u;
+    s_phase          = CAVE_FADE_LINK_ASCEND;  /* descend-mirror exit anim */
 }
 
 unsigned char cave_fade_is_active(void)
@@ -154,6 +156,24 @@ void cave_fade_tick(void)
         }
         s_phase = CAVE_FADE_IDLE;
         break;
+
+    case CAVE_FADE_LINK_ASCEND: {
+        /* Mirror of LINK_DESCEND: Y -= 1 every 4 frames for 16 steps.
+         * NES Z_05.asm:1603+ uses same Mode 10 path for cave-exit,
+         * just with StairsTargetY = ObjY - $10 (= UP 16 px). After
+         * 16 steps, SWAP_EXIT swaps plane back to OW. */
+        s_frame_counter = (unsigned char)(s_frame_counter + 1u);
+        if ((s_frame_counter & 0x03u) == 0u) {
+            if (s_cb.on_ascend_step != 0) {
+                s_cb.on_ascend_step(s_step_idx);
+            }
+            s_step_idx = (unsigned char)(s_step_idx + 1u);
+            if (s_step_idx >= CAVE_DESCEND_PIXELS) {
+                s_phase = CAVE_FADE_SWAP_EXIT;
+            }
+        }
+        break;
+    }
 
     case CAVE_FADE_SWAP_EXIT:
         /* Instant: cave teardown + OW plane refill + OW palette

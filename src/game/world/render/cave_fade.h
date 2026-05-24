@@ -34,7 +34,8 @@ typedef enum {
     CAVE_FADE_IDLE         = 0,
     CAVE_FADE_LINK_DESCEND = 1,
     CAVE_FADE_SWAP_ENTRY   = 2,
-    CAVE_FADE_SWAP_EXIT    = 3
+    CAVE_FADE_LINK_ASCEND  = 3,  /* cave exit: Link walks UP, Y-=1 per 4 frames */
+    CAVE_FADE_SWAP_EXIT    = 4
 } cave_fade_phase_t;
 
 typedef struct {
@@ -46,6 +47,9 @@ typedef struct {
      * Link reposition (120, 192 face up) + any other RoomRom-local
      * state bookkeeping. */
     void (*on_swap_entry)(cave_id_t cid);
+    /* Called once per LINK_ASCEND tick (cave exit). Owner adjusts
+     * players[0].y -= 1 + ticks walk-anim. 16 steps total. */
+    void (*on_ascend_step)(unsigned char step_idx);
     /* Called at SWAP_EXIT. Owner sets scene = SCENE_OW + Link
      * reposition (16 px south of entrance facing down) + HUD reset. */
     void (*on_swap_exit)(void);
