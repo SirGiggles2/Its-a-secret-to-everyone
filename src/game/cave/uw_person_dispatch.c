@@ -325,10 +325,11 @@ static void uw_person_complex_state_begin(void)
         (uint8_t)((unsigned char)CAVE_PERSON_STATE + 1u);
 }
 
-/* Textbox state arm — now native. Forward decl to avoid header
- * cycle between uw_person_dispatch.h and cave_dispatch.h. */
+/* Textbox state arm — fully native via cave's char-streamer port
+ * (cave_dispatch.c:780+ post-D3). Forward decl avoids header cycle
+ * between uw_person_dispatch.h and cave_dispatch.h. */
 extern void cave_update_person_state_textbox(void);
-static inline void uw_person_state_textbox_stub(void)
+static inline void uw_person_state_textbox(void)
 {
     cave_update_person_state_textbox();
 }
@@ -372,7 +373,7 @@ void uw_person_update_person_complex(unsigned int slot)
     }
     switch (state) {
         case 0u: uw_person_complex_state_begin(); break;
-        case 1u: uw_person_state_textbox_stub(); break;
+        case 1u: uw_person_state_textbox(); break;
         case 2u: uw_person_update_complex_state_sense_link(); break;
         case 3u: core_cue_transfer_blank_person_wares(); break;
         case 4u: core_uw_person_complex_state_delay_and_quit(); break;
@@ -391,7 +392,7 @@ void uw_person_update_person_full(unsigned int slot)
     uw_person_person_draw_and_check_collisions(slot);
     switch ((unsigned char)CAVE_PERSON_STATE) {
         case 0u: core_update_person_state_reset_char_offset(); break;
-        case 1u: uw_person_state_textbox_stub(); break;
+        case 1u: uw_person_state_textbox(); break;
         case 2u: /* z01_update_person_state_do_nothing — no-op */ break;
         default: break;
     }
@@ -407,7 +408,7 @@ void uw_person_update_grumble_full(unsigned int slot)
         draw_object_not_mirrored(0u, slot);
     }
     switch (state) {
-        case 0u: uw_person_state_textbox_stub(); break;
+        case 0u: uw_person_state_textbox(); break;
         case 1u: uw_person_update_grumble1(); break;
         case 2u: core_cue_transfer_blank_person_wares(); break;
         case 3u: uw_person_update_grumble3(); break;
@@ -425,7 +426,7 @@ void uw_person_update_life_or_money_full(unsigned int slot)
     }
     switch (state) {
         case 0u: uw_person_update_life_or_money_state_0(); break;
-        case 1u: uw_person_state_textbox_stub(); break;
+        case 1u: uw_person_state_textbox(); break;
         case 2u: uw_person_update_life_or_money_state_2(); break;
         case 3u: core_cue_transfer_blank_person_wares(); break;
         case 4u: core_uw_person_complex_state_delay_and_quit(); break;

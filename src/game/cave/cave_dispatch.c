@@ -581,9 +581,16 @@ void cave_update_cave_person(unsigned int slot)
     }
 
     /* 9-state dispatch — NES UpdateCavePerson_JumpTable (Z_01.asm:359-368).
-     * Native arms invoked where ported; states 1/3/6/7 are stubs pending
-     * Phase 4 native cave_update_person_state_textbox + native
-     * cue_transfer_blank_person_wares. */
+     * All 9 arms wired (2026-05-24):
+     *   0 cave_update_transfer_prices
+     *   1 cave_update_person_state_textbox (Tier 1.2)
+     *   2 cave_update_talk_shop_or_door_charge
+     *   3 core_cue_transfer_blank_person_wares
+     *   4 cave_update_person_state_delay_then_hide
+     *   5 cave_update_hint_or_money_game
+     *   6 core_cue_transfer_blank_person_wares (same as state 3)
+     *   7 cave_update_person_state_textbox (Tier 1.2)
+     *   8 DoNothing (NES terminal state) */
     switch (CAVE_PERSON_STATE) {
         case 0u: cave_update_transfer_prices(); break;
         case 1u: cave_update_person_state_textbox(); break;
