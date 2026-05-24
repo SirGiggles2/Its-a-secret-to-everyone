@@ -389,8 +389,18 @@ static void render_one_metatile_col(unsigned char room_id,
     const unsigned char *rooms = roomrom_rooms();
     const unsigned short *heap_offsets = roomrom_heap_offsets();
     const unsigned char *secondary_squares = roomrom_secondary_squares();
-    unsigned char outer_pal = rooms[OW_ATTRS_A_OFFSET + room_id] & 0x03;
-    unsigned char inner_pal = rooms[OW_ATTRS_B_OFFSET + room_id] & 0x03;
+    /* 2026-05-23 — v6-B iter 3: NES OW PlayAreaAttrs is ALWAYS $AA
+     * (sub-pal 2) confirmed by Link-walk probe (probe_nes_walk.lua).
+     * NES LBA_A NEVER populated during OW play — FillPlayAreaAttrs
+     * doesn't run with valid data. Per-room color variation comes from
+     * PALRAM sub-pal 2 colors being patched per-room (already handled
+     * by roomrom_ow_palette_patch_bg_per_room).
+     *
+     * Original code used rooms[OW_ATTRS_A/B + room_id] & 3 which gave
+     * wrong sub-pal selection vs NES live state. Forcing sub-pal 2
+     * uniform matches NES OW attr-table layout. */
+    unsigned char outer_pal = 2u;  /* OW_ATTRS_A/B no longer read; NES is always $AA */
+    unsigned char inner_pal = 2u;
     unsigned char unique_id = rooms[OW_ATTRS_D_OFFSET + room_id] & 0x7F;
     const unsigned char *col_dirs = col_dirs_override
         ? col_dirs_override
