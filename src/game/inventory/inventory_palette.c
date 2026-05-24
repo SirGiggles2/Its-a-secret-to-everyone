@@ -37,29 +37,12 @@ const unsigned char k_inventory_subscreen_palram[32] = {
     0x00u, 0x0Fu, 0x1Cu, 0x16u
 };
 
-/* Forward decl from render_abi.h */
-extern void render_load_palette(unsigned short slot, const unsigned short *pal16);
-
 void inventory_palette_load_subscreen(void)
 {
+    /* V2.4b (2026-05-24): use BG pixel-bias atlas (PAL0[s*4+c]) for
+     * sub-pal selection on text/triforce tiles. Atlas force-includes
+     * provide biased tile variants at sub-pal 1/2/3 slots. PAL1/2/3
+     * stay as sprite ramps (unchanged) so item sprite colors preserved.
+     * V2.4a PAL1/2/3 override REVERTED — broke item sprite colors. */
     roomrom_bg_palette_load_palram_full(k_inventory_subscreen_palram);
-
-    /* V2.4 fix (2026-05-24): override PAL1/PAL2/PAL3 with NES BG sub-pals
-     * 1/2/3 so per-tile plane-attr PAL routing renders text red + triforce
-     * yellow + label brown. Gameplay sprites paused so PAL1/2/3 SPR colors
-     * unused during subscreen. load_room restores SPR colors on exit. */
-    {
-        unsigned short pal1[16] = {0};  /* NES BG1 = red ramp */
-        unsigned short pal2[16] = {0};  /* NES BG2 = yellow ramp */
-        unsigned short pal3[16] = {0};  /* NES BG3 = brown ramp */
-        unsigned char i;
-        for (i = 0; i < 4; i++) {
-            pal1[i] = roomrom_bg_palette_nes_to_cram(k_inventory_subscreen_palram[4 + i]);
-            pal2[i] = roomrom_bg_palette_nes_to_cram(k_inventory_subscreen_palram[8 + i]);
-            pal3[i] = roomrom_bg_palette_nes_to_cram(k_inventory_subscreen_palram[12 + i]);
-        }
-        render_load_palette(1u, pal1);
-        render_load_palette(2u, pal2);
-        render_load_palette(3u, pal3);
-    }
 }

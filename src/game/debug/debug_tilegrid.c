@@ -87,9 +87,9 @@ static unsigned char s_joyx_prev   = 0u;
 #define POKE_FLAG   0x07E4u
 
 /* External atlas variant blobs (header bg_sparse_chr.h). */
-extern const unsigned char bg_sparse_chr_orig_uw [17632];
-extern const unsigned char bg_sparse_chr_redux_ow[17632];
-extern const unsigned char bg_sparse_chr_redux_uw[17632];
+extern const unsigned char bg_sparse_chr_orig_uw [18784];
+extern const unsigned char bg_sparse_chr_redux_ow[18784];
+extern const unsigned char bg_sparse_chr_redux_uw[18784];
 
 /* Bank cycle matching NES test ROM (chr_viewer_rom.nes) page layout.
  * Each bank = (BG variant, SCENE_OBJ content) pair.

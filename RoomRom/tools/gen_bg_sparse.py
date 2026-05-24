@@ -228,18 +228,32 @@ def main():
     for tid in HUD_FORCE_TILES:
         combined[tid].update([0, 1, 2])  # HUD pal context varies (white/yellow/red)
 
-    # V2.4 (2026-05-24): triforce triangle tiles + inventory box-frame for
-    # subscreen render. Sub-pal 0 only (single copy each, ~16 slots total).
-    # Plane-attr PAL field selects color at render time via PAL2 CRAM swap
-    # in inventory_palette_load_subscreen — atlas pixel-bias not needed.
-    INVENTORY_FORCE_TILES = (
-        # Triforce triangle art
-        0xE7, 0xE8, 0xEB, 0xEC, 0xED, 0xEE, 0xEF, 0xF0, 0xF1, 0xF5,
-        # Inventory box-frame ($69-$6E)
-        0x69, 0x6A, 0x6B, 0x6C, 0x6D, 0x6E,
-    )
-    for tid in INVENTORY_FORCE_TILES:
+    # V2.4b (2026-05-24): inventory subscreen pixel-bias atlas. Each tile
+    # needs a sub-pal-N variant where N matches NES sub-pal context. Per
+    # captured inventory_tilemap.c + NES PALRAM at MenuState=$08:
+    #   - Letters $0A-$23 + digits $00-$09 on text rows -> sub-pal 1 (red)
+    #     for "INVENTORY", "USE B BUTTON FOR THIS", "TRIFORCE" label
+    #   - Triforce tiles $E7-$F1 + $F5 -> sub-pal 2 (yellow)
+    #   - Box frame $69-$6E -> sub-pal 0 (default, already present)
+    # Use plane attr pal=0 + pixel-bias atlas for sub-pal selection
+    # without touching sprite PAL1/2/3.
+    TRIFORCE_TILES = (0xE7, 0xE8, 0xEB, 0xEC, 0xED, 0xEE, 0xEF, 0xF0, 0xF1, 0xF5)
+    BOX_FRAME_TILES = (0x69, 0x6A, 0x6B, 0x6C, 0x6D, 0x6E)
+    # Triforce at sub-pal 2 (yellow ramp)
+    for tid in TRIFORCE_TILES:
+        combined[tid].update([2])
+    # Box frame at sub-pal 0 (default)
+    for tid in BOX_FRAME_TILES:
         combined[tid].update([0])
+    # Text labels need sub-pal 1 (red). Letters $0A-$23 already
+    # force-included at sub-pal 0 above; add sub-pal 1 variants.
+    for tid in range(0x0A, 0x24):
+        combined[tid].update([1])
+    # Digits $00-$09 also potentially needed for text (HUD covers them).
+    # TRIFORCE label specifically uses sub-pal 3 (brown) per NES PALRAM.
+    # Already in inventory text but route via sub-pal 3 too for label row.
+    for tid in range(0x0A, 0x24):
+        combined[tid].update([3])
 
     # Force-include redux automap tile range (0x30..0x4F, 32 tiles) for HUD
     # automap rendering. Sub-pals 0,1,2 cover the gray/blue/red room state.
