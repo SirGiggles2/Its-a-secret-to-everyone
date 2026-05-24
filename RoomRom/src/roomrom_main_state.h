@@ -71,6 +71,15 @@ unsigned char roomrom_main_current_link_face(void);
  * exit slice writes it. Coordinator's rule-1 precondition consumes this. */
 unsigned char roomrom_main_underground_exit_type(void);
 
+/* Read/write the master quest selector. NES Z1 analogue: QuestNumbers
+ * ($62D) for the live quest plus SaveFileAQuestNumber{0,1,2}
+ * ($651B-$651D) per save slot. Genesis mirror is a single byte:
+ * 1 = Q1 (default), 2 = Q2. Coordinator stamps save_state.dest_quest
+ * + outcome.dest_quest from the getter; the setter is invoked by the
+ * save-slot loader (Phase 9) and a future quest-selector menu. */
+unsigned char roomrom_main_current_quest(void);
+void          roomrom_main_set_quest(unsigned char quest);
+
 /* Read this-frame input dpad mask in NES `ObjInputDir` format:
  *   bit 0 = RIGHT (E)
  *   bit 1 = LEFT  (W)

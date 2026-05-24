@@ -7,6 +7,23 @@
 
 const struct levelinfo_start_room levelinfo_start_rooms[] = {
     { 1u, 1u, 0x73u },  /* L1Q1 */
+    { 1u, 2u, 0x77u },  /* L1Q2 */
+    { 2u, 1u, 0x7Du },  /* L2Q1 */
+    { 2u, 2u, 0x75u },  /* L2Q2 */
+    { 3u, 1u, 0x7Cu },  /* L3Q1 */
+    { 3u, 2u, 0x79u },  /* L3Q2 */
+    { 4u, 1u, 0x71u },  /* L4Q1 */
+    { 4u, 2u, 0x72u },  /* L4Q2 */
+    { 5u, 1u, 0x76u },  /* L5Q1 */
+    { 5u, 2u, 0x7Du },  /* L5Q2 */
+    { 6u, 1u, 0x79u },  /* L6Q1 */
+    { 6u, 2u, 0x74u },  /* L6Q2 */
+    { 7u, 1u, 0x79u },  /* L7Q1 */
+    { 7u, 2u, 0x7Fu },  /* L7Q2 */
+    { 8u, 1u, 0x7Eu },  /* L8Q1 */
+    { 8u, 2u, 0x79u },  /* L8Q2 */
+    { 9u, 1u, 0x76u },  /* L9Q1 */
+    { 9u, 2u, 0x74u },  /* L9Q2 */
 };
 
 const unsigned char levelinfo_start_rooms_count =

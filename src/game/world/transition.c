@@ -204,33 +204,37 @@ static unsigned char detect_warp_ow(unsigned char source_room_id,
     }
     level = roomrom_ow_meta_level_from_selector(selector);
 
-    /* Rule 7: manifest gate. Slice-1 quest hardcoded to 1 (no quest
-     * selector in RoomRom yet). Manifest miss = silent rejection plus
+    /* Rule 7: manifest gate. Phase B (2026-05-24) reads quest from
+     * roomrom_main_current_quest() — manifest now covers all 18
+     * (level, quest) tuples. Manifest miss = silent rejection plus
      * unsupported-selector counter bump for probes. */
-    if (!levelinfo_start_room_for(level, 1u, &dest_room)) {
-        if (s_unsupported_selector_count < 0xFFu) {
-            s_unsupported_selector_count++;
+    {
+        unsigned char quest = roomrom_main_current_quest();
+        if (!levelinfo_start_room_for(level, quest, &dest_room)) {
+            if (s_unsupported_selector_count < 0xFFu) {
+                s_unsupported_selector_count++;
+            }
+            return 0u;
         }
-        return 0u;
+
+        /* Rule 8: tile collapse for storage. */
+        save_out->version = 1u;
+        save_out->source_room_id = source_room_id;
+        save_out->source_underground_entrance_tile_raw = raw_tile;
+        save_out->source_underground_entrance_tile = collapse_warp_tile(raw_tile);
+        save_out->source_link_x = link_x;
+        save_out->source_link_y = link_y;
+        save_out->source_link_face = roomrom_main_current_link_face();
+        save_out->dest_level = level;
+        save_out->dest_quest = quest;
+        save_out->dest_room_id = dest_room;
+        save_out->dest_link_face = ROOMROM_MAIN_LINK_FACE_DOWN;
+
+        outcome_out->dest_scene = ROOMROM_MAIN_SCENE_UW;
+        outcome_out->dest_level = level;
+        outcome_out->dest_quest = quest;
+        outcome_out->dest_room_id = dest_room;
     }
-
-    /* Rule 8: tile collapse for storage. */
-    save_out->version = 1u;
-    save_out->source_room_id = source_room_id;
-    save_out->source_underground_entrance_tile_raw = raw_tile;
-    save_out->source_underground_entrance_tile = collapse_warp_tile(raw_tile);
-    save_out->source_link_x = link_x;
-    save_out->source_link_y = link_y;
-    save_out->source_link_face = roomrom_main_current_link_face();
-    save_out->dest_level = level;
-    save_out->dest_quest = 1u;
-    save_out->dest_room_id = dest_room;
-    save_out->dest_link_face = ROOMROM_MAIN_LINK_FACE_DOWN;
-
-    outcome_out->dest_scene = ROOMROM_MAIN_SCENE_UW;
-    outcome_out->dest_level = level;
-    outcome_out->dest_quest = 1u;
-    outcome_out->dest_room_id = dest_room;
     outcome_out->dest_link_x = ROOMROM_WARP_UW_SPAWN_X;
     outcome_out->dest_link_y = ROOMROM_WARP_UW_SPAWN_Y;
     outcome_out->dest_link_face = ROOMROM_MAIN_LINK_FACE_DOWN;

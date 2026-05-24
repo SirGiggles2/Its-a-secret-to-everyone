@@ -216,6 +216,13 @@ static u8          s_link_suby       = 0u;       /* ALTTP per-axis sub-pixel Y *
  * spec rather than pretending it enforces both halves. */
 static u8          s_underground_exit_type = 0u;
 
+/* Phase B (2026-05-24) — master quest selector. NES Z1 stores per-save-slot
+ * quest at SaveFileAQuestNumber{0,1,2} ($651B-$651D) and live at
+ * QuestNumbers ($62D). Genesis mirror: single byte, 1 = Q1 (default), 2 = Q2.
+ * Coordinator reads via roomrom_main_current_quest(); save-slot loader +
+ * future quest-selector menu write via roomrom_main_set_quest(). */
+static u8          s_current_quest = 1u;
+
 /* Task 5.8/5.9 perf: per-room cache of expensive lookups. Refreshed
  * in load_room on every room change. Per-tick reads are O(1) instead
  * of full master-table linear scan (uw_dark_rooms 261 rows +
@@ -874,6 +881,18 @@ unsigned char roomrom_main_current_link_face(void)
 unsigned char roomrom_main_underground_exit_type(void)
 {
     return s_underground_exit_type;
+}
+
+unsigned char roomrom_main_current_quest(void)
+{
+    return s_current_quest;
+}
+
+void roomrom_main_set_quest(unsigned char quest)
+{
+    if (quest == 1u || quest == 2u) {
+        s_current_quest = quest;
+    }
 }
 
 /* Task 5.7: input dir + mode accessors for push-block state machine.

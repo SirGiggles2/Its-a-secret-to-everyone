@@ -27,9 +27,23 @@ MANIFEST_DIR = REPO / "RoomRom" / "data"
 OUT_C = REPO / "RoomRom" / "data" / "levelinfo_start_rooms.c"
 OUT_H = REPO / "RoomRom" / "data" / "levelinfo_start_rooms.h"
 
-# Slice 1: emit only L1Q1. Future slices append (level, quest) tuples here
-# AFTER the coordinator + UW data path has been verified for each new entry.
-SLICE_1_ENABLED = [(1, 1)]
+# Phase B (2026-05-24): full 18-row expansion. L1-L9 x Q1-Q2.
+# All manifests verified present at RoomRom/data/uw_level{N}_quest{Q}_rooms.json
+# with start_room_id fields populated. The coordinator's `dest_quest`
+# is sourced from roomrom_main_current_quest() (src/game/world/quest_dispatch.h)
+# rather than hardcoded to 1u; Q2 dungeon-entrance routing requires
+# Phase A LBA_B-driven cave_entrance_check to already be landed.
+SLICE_1_ENABLED = [
+    (1, 1), (1, 2),
+    (2, 1), (2, 2),
+    (3, 1), (3, 2),
+    (4, 1), (4, 2),
+    (5, 1), (5, 2),
+    (6, 1), (6, 2),
+    (7, 1), (7, 2),
+    (8, 1), (8, 2),
+    (9, 1), (9, 2),
+]
 
 
 def parse_room_id(value) -> int:
