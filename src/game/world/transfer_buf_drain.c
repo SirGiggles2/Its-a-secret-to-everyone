@@ -3,8 +3,17 @@
 #include "transfer_buf_drain.h"
 #include "world_state.h"          /* TRANSFER_BUF_POS, TRANSFER_BUF_BYTE */
 #include "bg_palette.h"           /* roomrom_bg_palette_nes_to_cram */
-#include "render_abi.h"           /* render_cram_write_color */
+#include "render_abi.h"           /* render_cram_write_color, render_set_plane_a_word */
 #include "platform_abi.h"         /* RAM macro */
+
+/* Plane-bridge: NES PPU nametable ($2000-$2FFF) writes mapped to
+ * Genesis Plane A cells. Uses bg_sparse_tile_lut[nes_tile_id][sub_pal]
+ * to translate NES tile id to Genesis VRAM slot. Sub-palette is fixed
+ * at 0 for text writes (cave NPC dialogue, UW person text all use
+ * sub-pal 0). HUD offset = +7 plane rows for playfield region. */
+extern const unsigned short bg_sparse_tile_lut[256][4];
+#define PLANE_BRIDGE_HUD_ROWS  7u
+#define PLANE_BRIDGE_BLANK_TILE 0u
 
 /* Maximum buffer span. NES NMI clears DynTileBuf and resets length
  * each frame; the working set in our writers stays well below $40
@@ -94,6 +103,58 @@ static void emit_palette_record(unsigned char lo,
     }
 }
 
+/* NES nametable record decoder. PPU address ($hi:$lo) range $2000-$2FFF
+ * = nametable region; each NT is 32 cols × 30 rows. NES encoding sends
+ * `count` consecutive tile ids starting at the decoded (col, row).
+ *
+ * Genesis: write Plane A cells via render_set_plane_a_word. HUD takes
+ * top 7 plane rows (Window-overlaid); playfield cells = NES row + 7.
+ * NES sub-palette for text is fixed at 0 (BG_attr=0). Tile id maps
+ * via bg_sparse_tile_lut[nes_tile][0]; 0xFFFF sentinel = unmapped tile
+ * → write blank tile (slot 0).
+ *
+ * Step direction: NES PPUCTRL bit 2 selects $01 (horizontal, +1 col)
+ * vs $20 (vertical, +1 row). For text streams we assume horizontal;
+ * vertical writes are rare in NES Z1 gameplay text path. */
+static void emit_nametable_record(unsigned char hi,
+                                  unsigned char lo,
+                                  unsigned char count,
+                                  const unsigned char *src,
+                                  unsigned char src_off,
+                                  unsigned char src_end)
+{
+    /* PPU addr = ((hi & 0x0F) << 8) | lo; range $0000..$03FF = NT0 cells. */
+    unsigned short ppu_off = (unsigned short)(((hi & 0x0Fu) << 8) | lo);
+    /* Only NT0 cells (offset 0..$3BF) addressable here; attribute table
+     * ($3C0-$3FF) skipped (separate attr-format record, NES handles
+     * via different path). Wrap-out checked. */
+    if (ppu_off >= 0x3C0u) {
+        return;
+    }
+    unsigned char nes_row  = (unsigned char)(ppu_off >> 5);   /* /32 */
+    unsigned char nes_col  = (unsigned char)(ppu_off & 0x1Fu);/* mod 32 */
+    unsigned char plane_row = (unsigned char)(nes_row + PLANE_BRIDGE_HUD_ROWS);
+
+    unsigned char src_avail = (unsigned char)((src_off < src_end)
+                                              ? (src_end - src_off) : 0u);
+    if (count > src_avail) count = src_avail;
+
+    unsigned char i;
+    for (i = 0u; i < count; i++) {
+        unsigned char nes_tile = src[src_off + i];
+        unsigned short slot = bg_sparse_tile_lut[nes_tile][0];
+        if (slot == 0xFFFFu) {
+            slot = PLANE_BRIDGE_BLANK_TILE;
+        }
+        unsigned short col = (unsigned short)(nes_col + i);
+        /* Horizontal step: wrap col within plane width (64). */
+        col = (unsigned short)(col & 0x3Fu);
+        render_set_plane_a_word(col,
+                                (unsigned short)plane_row,
+                                slot);
+    }
+}
+
 /* Walk a record-formatted byte buffer up to `len`. */
 static void drain_record_buffer(const unsigned char *buf, unsigned char len)
 {
@@ -115,9 +176,10 @@ static void drain_record_buffer(const unsigned char *buf, unsigned char len)
         if (hi == 0x3Fu) {
             emit_palette_record(lo, count, buf,
                                 (unsigned char)(pos + 3u), len);
+        } else if (hi >= 0x20u && hi <= 0x2Fu) {
+            emit_nametable_record(hi, lo, count, buf,
+                                  (unsigned char)(pos + 3u), len);
         }
-        /* else $20..$2F nametable/attr: drained but not rendered yet
-         * (plane-bridge pending). */
         pos = (unsigned char)(pos + 3u + count);
     }
 }
@@ -147,10 +209,11 @@ static void drain_dynamic_buffer(void)
         if (count == 0u) {
             count = 64u;
         }
-        if (hi == 0x3Fu) {
-            /* Phase R: copy payload from TRANSFER_BUF macro into local
-             * buffer so emit_palette_record can batch via subrange
-             * upload. Avoids duplicating the slot-wrap fallback. */
+        if (hi == 0x3Fu || (hi >= 0x20u && hi <= 0x2Fu)) {
+            /* Copy payload from TRANSFER_BUF macro into local buffer
+             * so the per-record emitter can index it as a flat array
+             * (avoids duplicating wrap/avail logic between dynamic
+             * and static drain paths). */
             unsigned char payload[64];
             unsigned char i;
             unsigned char copy_len = count;
@@ -160,7 +223,11 @@ static void drain_dynamic_buffer(void)
             for (i = 0u; i < copy_len; i++) {
                 payload[i] = (unsigned char)TRANSFER_BUF_BYTE(pos + 3u + i);
             }
-            emit_palette_record(lo, copy_len, payload, 0u, copy_len);
+            if (hi == 0x3Fu) {
+                emit_palette_record(lo, copy_len, payload, 0u, copy_len);
+            } else {
+                emit_nametable_record(hi, lo, copy_len, payload, 0u, copy_len);
+            }
         }
         pos = (unsigned char)(pos + 3u + count);
     }
