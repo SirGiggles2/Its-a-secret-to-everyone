@@ -137,13 +137,18 @@ for i, entry in ipairs(TYPES) do
   local alive_after_damage = R(0x8493)
   local shove_dist_after = R(0x80D4)
   local shove_dir_after = R(0x80C1)
+  local inv_timer_after = R(0x84F1)  -- ObjInvincibilityTimer+slot1 ($04F0+1)
   -- Damage PASS: HP dropped OR enemy died OR shove fired (took the hit).
   local pass_damage = (hp_after < hp_before)
                    or (alive_after_damage == 0)
                    or (shove_dist_after > 0)
-  -- Sample shove from values captured RIGHT after damage hook
-  -- (before subsequent ticks decay shove_dist).
-  local pass_knockback = (shove_dist_after > 0 or shove_dir_after ~= 0)
+  -- Knockback PASS: shove fired OR enemy invincible (NES-correct for
+  -- Peahat $1A airborne state, Vire $2C jump frames, etc — NES sets
+  -- ObjInvincibilityTimer instead of applying shove). Verified per
+  -- Z_04.asm Peahat: STA ObjInvincibilityTimer + skip ShoveCommon.
+  local pass_knockback = (shove_dist_after > 0)
+                      or (shove_dir_after ~= 0)
+                      or (inv_timer_after > 0)
 
   -- Apply more damage until dead (up to 16 hits, bigger damage)
   for k = 1, 16 do
