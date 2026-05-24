@@ -49,6 +49,7 @@ void roomrom_sprites_set_link_pose_pal(short x, short y,
                                        link_face_t face, unsigned char frame,
                                        unsigned char pal_index);
 
+
 /* S7 v4 combat. */
 void roomrom_sprites_set_link_attack_pose(short x, short y, link_face_t face);
 

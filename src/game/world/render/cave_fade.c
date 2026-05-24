@@ -93,17 +93,23 @@ unsigned char cave_fade_descend_step_idx(void)
 void cave_fade_mark_arch_hi_prio(unsigned char link_tile_col,
                                  unsigned char link_tile_row)
 {
-    /* Stamp a 3-col-wide x 5-row-tall region centered on Link's tile
-     * position (rows -2..+2, cols -1..+1) with high-priority bit so
-     * the low-priority Link sprite (16x16 covering plane rows -1..+1
-     * around link_tile_row) renders BEHIND the cave entrance arch
-     * tiles that occupy this region.
+    /* Per APPENDIX plan revision (2026-05-22 systematic-debug rounds
+     * 1-4 review): NES PutLinkBehindBackground (Z_05.asm:2326-2331)
+     * sets behind-BG bit on BOTH Sprites+74 + Sprites+78 = ENTIRE
+     * Link sprite (slots $12/$13 in 8x16 mode = 2 OAM entries = 16x16
+     * Link). My previous "upper-only" assumption was wrong.
      *
-     * Wider coverage than necessary — better to over-stamp (the cave
-     * SWAP_ENTRY overwrites all cells, so prio bits are transient) than
-     * miss the arch and have Link render over it.
-     */
-    for (signed char dr = -2; dr <= 2; ++dr) {
+     * Genesis architecture: single low-prio Link sprite + wide BG-prio
+     * stamp. Tile content (CHR color-0 pixels) determines what shows
+     * through: cells with non-color-0 pixels cover Link; cells with
+     * color-0 (transparent) pixels let Link show through.
+     *
+     * Stamp range rows -2..+4: covers Link's full descend Y range
+     * [$4D, $5D] (plane rows 16-20) + 2 buffer rows above for the
+     * arch/ground that should cover Link's head. Math (Y >> 3) + 7
+     * HUD offset assumes Plane A vscroll = 0 (confirmed via probe).
+     * Cols -1..+1 covers Link's 16-px-wide sprite + 1 col buffer. */
+    for (signed char dr = -2; dr <= 4; ++dr) {
         for (signed char dc = -1; dc <= 1; ++dc) {
             signed int row = (signed int)link_tile_row + (signed int)dr;
             signed int col = (signed int)link_tile_col + (signed int)dc;

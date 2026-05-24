@@ -2636,19 +2636,12 @@ void roomrom_debug_tick(void)
 
             edge_load_or_clamp();
             if (!roomrom_combat_link_locked()) {
-                /* NES Z_05.asm:2328 PutLinkBehindBackground equivalent:
-                 * during cave-descend, render Link via 4-SAT-entry split
-                 * so upper half (slots 0, 1, low-prio) gets covered by
-                 * high-prio BG arch tiles while lower half (slots 2, 3,
-                 * high-prio) renders over BG. Hijacks slots 1, 2, 3
-                 * (sword/beam/boomerang) — safe during cave entry. */
-                if (cave_fade_descend_step_idx() > 0u ||
-                    cave_fade_phase_current() == CAVE_FADE_LINK_DESCEND) {
-                    roomrom_sprites_set_link_pose_split(players[0].x,
-                                                        players[0].y,
-                                                        players[0].face,
-                                                        s_link_frame);
-                } else {
+                /* Per APPENDIX plan revert (2026-05-22): single SAT entry
+                 * unconditionally. NES PutLinkBehindBackground sets behind
+                 * bit on BOTH Link halves (slots $12+$13) = whole Link
+                 * behind BG. Genesis equivalent = single low-prio sprite
+                 * + wide BG-prio stamp. Split-sprite removed. */
+                {
                     /* Invincibility palette flash: when LINK_STUN_TIMER > 0,
                      * cycle Link's sprite palette index across PAL0..PAL3
                      * keyed on FrameCounter & $03. NES Z_01.asm:5367-5371
@@ -2780,29 +2773,19 @@ void roomrom_debug_tick(void)
 
             edge_load_or_clamp();
             if (!roomrom_combat_link_locked()) {
-                if (cave_fade_descend_step_idx() > 0u ||
-                    cave_fade_phase_current() == CAVE_FADE_LINK_DESCEND) {
-                    roomrom_sprites_set_link_pose_split(players[0].x,
-                                                        players[0].y,
-                                                        players[0].face,
-                                                        s_link_frame);
+                /* Per APPENDIX plan revert: single SAT entry unconditional.
+                 * Split-sprite removed; wide BG-prio stamp handles
+                 * NES "Link behind BG" effect via tile color-0 transparency. */
+                unsigned char stun = nes_ram[0x04F0u];
+                if (stun != 0u) {
+                    unsigned char pal = (unsigned char)
+                        (((unsigned char)s_frame_counter) & 0x03u);
+                    roomrom_sprites_set_link_pose_pal(players[0].x, players[0].y,
+                                                      players[0].face,
+                                                      s_link_frame, pal);
                 } else {
-                    /* Invincibility palette flash: when LINK_STUN_TIMER > 0,
-                     * cycle Link's sprite palette index across PAL0..PAL3
-                     * keyed on FrameCounter & $03. NES Z_01.asm:5367-5371
-                     * applies sub-palette XOR; on Genesis we cycle the
-                     * sprite palette bank (PAL1 normal). */
-                    unsigned char stun = nes_ram[0x04F0u];
-                    if (stun != 0u) {
-                        unsigned char pal = (unsigned char)
-                            (((unsigned char)s_frame_counter) & 0x03u);
-                        roomrom_sprites_set_link_pose_pal(players[0].x, players[0].y,
-                                                          players[0].face,
-                                                          s_link_frame, pal);
-                    } else {
-                        roomrom_sprites_set_link_pose(players[0].x, players[0].y,
-                                                      players[0].face, s_link_frame);
-                    }
+                    roomrom_sprites_set_link_pose(players[0].x, players[0].y,
+                                                  players[0].face, s_link_frame);
                 }
             }
         }
