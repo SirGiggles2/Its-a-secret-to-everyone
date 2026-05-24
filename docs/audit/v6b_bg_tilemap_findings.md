@@ -49,3 +49,40 @@ Read NES live $6AFE.. (LevelBlockAttrsA NES RAM addr) post-r$00-transition.
 If byte != $A3, Gen extract is wrong. If = $A3, NES asm uses different bits.
 
 Either fix Gen extract OR change ow_tile_palette logic.
+
+## Iter 2 update (2026-05-23 23:30)
+
+### NES live LBA_A[0..15] post-probe-warp: ALL $00
+
+Live read via `probe_nes_lba_r00.lua`:
+```
+LBA_A[0..15]: $00 $00 ... $00
+LBA_B[0..15]: $00 $00 ... $00
+```
+
+So NES Z1 doesn't populate LBA_A during normal OW play via probe-warp.
+InitMode2 only fires on real level entry sequence.
+
+Conclusion: NES OW NT attrs come from a different source than
+LevelBlockAttrsA/B + FillPlayAreaAttrs.
+
+### H2 partial validation
+
+Changed `ow_tile_palette` to use `(byte >> 4) & 3` instead of
+`byte & 3`. Result:
+  - r$00: BROWN → GREEN ✓ (matches NES)
+  - r$04 Lynel: tan + green trees ✓ (matches NES Lost Hills entry)
+  - r$77 Start: red → GRAY (REGRESSION — NES is brown)
+  - r$67 Octorok: red → GRAY (REGRESSION — NES is brown)
+
+Concluded: NES doesn't use a single fixed bit position. Some rooms
+encode palette in low bits, some in high. Variable per-room.
+
+Reverted to bits 0-1 model. Real fix requires:
+  - Per-room palette pattern decode beyond simple bit-shift
+  - OR matching NES VRAM transfer logic exactly (find the OW attr
+    transfer path that bypasses FillPlayAreaAttrs)
+  - OR table-driven per-room sub-pal selector
+
+Tagged for deeper iter — likely requires NES Z_05/Z_07 OW transition
+mode tracing + matching VRAM upload sequence.
