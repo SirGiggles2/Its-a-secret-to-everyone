@@ -35,9 +35,16 @@ typedef struct {
     short         source_link_x;
     short         source_link_y;
     unsigned char source_link_face;
+    /* Phase C (2026-05-24): generalized destination — supports UW entry,
+     * cellar transitions, AND UW→OW dungeon exit. LOAD step reads
+     * dest_scene to dispatch (UW vs OW). dest_link_x/y replace the
+     * hardcoded ROOMROM_WARP_UW_SPAWN_X/Y when non-zero. */
+    unsigned char dest_scene;       /* ROOMROM_MAIN_SCENE_OW / SCENE_UW */
     unsigned char dest_level;
     unsigned char dest_quest;
     unsigned char dest_room_id;
+    short         dest_link_x;
+    short         dest_link_y;
     unsigned char dest_link_face;
 } rr_warp_save_state_t;
 

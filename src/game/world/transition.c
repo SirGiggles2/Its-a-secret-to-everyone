@@ -44,6 +44,16 @@ static unsigned char         s_pending_cellar_exit;
 static unsigned char         s_cellar_entry_count;
 static unsigned char         s_cellar_exit_count;
 
+/* Phase C (2026-05-24) — UET clear tracker. NES Z_07.asm:3200 clears
+ * UndergroundExitType when Link finishes a full-tile step in OW (grid
+ * offset rolls from non-zero to 0). Tracks last frame's grid offset
+ * so we detect the rollover edge. Static lifetime: per-session. */
+static signed char           s_prev_grid_offset;
+
+/* Forward declaration — defined alongside init below; called from
+ * tick IDLE state which is also below. */
+static void roomrom_world_transition_ow_step_uet_clear(unsigned char scene);
+
 
 static void clear_save_state(void)
 {
@@ -54,9 +64,12 @@ static void clear_save_state(void)
     s_save.source_link_x = 0;
     s_save.source_link_y = 0;
     s_save.source_link_face = 0u;
+    s_save.dest_scene = ROOMROM_MAIN_SCENE_UW;
     s_save.dest_level = 0u;
     s_save.dest_quest = 0u;
     s_save.dest_room_id = 0u;
+    s_save.dest_link_x = 0;
+    s_save.dest_link_y = 0;
     s_save.dest_link_face = 0u;
 }
 
@@ -67,7 +80,31 @@ void roomrom_world_transition_init(void)
     s_pending_cellar_exit = 0u;
     s_cellar_entry_count = 0u;
     s_cellar_exit_count = 0u;
+    s_prev_grid_offset = 0;
     clear_save_state();
+}
+
+/* Phase C (2026-05-24) — UET-clear edge detector for OW.
+ *
+ * NES Z_07.asm:3170-3201 truncates ObjGridOffset to 0 when grid_offset &
+ * #$07 == 0 (a full tile-step completed). Inside mode 5 (OW), the
+ * truncation path ALSO clears UndergroundExitType so the next-tile warp
+ * check is unblocked.
+ *
+ * Genesis grid_offset is signed; we look for a non-zero → zero rollover
+ * each frame while in OW scene. On detected rollover, clear UET. UW/CAVE
+ * scenes don't clear (NES holds UET non-zero while underground). */
+static void roomrom_world_transition_ow_step_uet_clear(unsigned char scene)
+{
+    signed char cur = roomrom_main_current_link_grid_offset();
+    if (scene == ROOMROM_MAIN_SCENE_OW) {
+        if (s_prev_grid_offset != 0 && cur == 0) {
+            if (roomrom_main_underground_exit_type() != 0u) {
+                roomrom_main_set_underground_exit_type(0u);
+            }
+        }
+    }
+    s_prev_grid_offset = cur;
 }
 
 unsigned char roomrom_world_transition_cellar_entry_count(void)
@@ -225,9 +262,12 @@ static unsigned char detect_warp_ow(unsigned char source_room_id,
         save_out->source_link_x = link_x;
         save_out->source_link_y = link_y;
         save_out->source_link_face = roomrom_main_current_link_face();
+        save_out->dest_scene = ROOMROM_MAIN_SCENE_UW;
         save_out->dest_level = level;
         save_out->dest_quest = quest;
         save_out->dest_room_id = dest_room;
+        save_out->dest_link_x = ROOMROM_WARP_UW_SPAWN_X;
+        save_out->dest_link_y = ROOMROM_WARP_UW_SPAWN_Y;
         save_out->dest_link_face = ROOMROM_MAIN_LINK_FACE_DOWN;
 
         outcome_out->dest_scene = ROOMROM_MAIN_SCENE_UW;
@@ -315,9 +355,12 @@ static unsigned char detect_warp_uw(unsigned char source_room_id,
         /* Exit replays save state into outcome — leave latched
          * source_* fields alone. dest_* updated to point back at the
          * source room. */
+        save_out->dest_scene = ROOMROM_MAIN_SCENE_UW;
         save_out->dest_level = level;
         save_out->dest_quest = quest;
         save_out->dest_room_id = dest_room;
+        save_out->dest_link_x = ROOMROM_WARP_UW_SPAWN_X;
+        save_out->dest_link_y = ROOMROM_WARP_UW_SPAWN_Y;
         save_out->dest_link_face = ROOMROM_MAIN_LINK_FACE_DOWN;
     } else {
         /* Entry latches: source = current room, dest = cellar. */
@@ -328,9 +371,12 @@ static unsigned char detect_warp_uw(unsigned char source_room_id,
         save_out->source_link_x = link_x;
         save_out->source_link_y = link_y;
         save_out->source_link_face = roomrom_main_current_link_face();
+        save_out->dest_scene = ROOMROM_MAIN_SCENE_UW;
         save_out->dest_level = level;
         save_out->dest_quest = quest;
         save_out->dest_room_id = dest_room;
+        save_out->dest_link_x = ROOMROM_WARP_UW_SPAWN_X;
+        save_out->dest_link_y = ROOMROM_WARP_UW_SPAWN_Y;
         save_out->dest_link_face = ROOMROM_MAIN_LINK_FACE_DOWN;
     }
 
@@ -341,6 +387,80 @@ static unsigned char detect_warp_uw(unsigned char source_room_id,
     outcome_out->dest_link_x = ROOMROM_WARP_UW_SPAWN_X;
     outcome_out->dest_link_y = ROOMROM_WARP_UW_SPAWN_Y;
     outcome_out->dest_link_face = ROOMROM_MAIN_LINK_FACE_DOWN;
+    outcome_out->dest_redux_flag = roomrom_main_current_redux_flag();
+    return 1u;
+}
+
+/* Phase C (2026-05-24) — UW→OW dungeon exit arm.
+ *
+ * Fires when Link is inside a dungeon (level 1..9), stepping on a stair
+ * tile ($70..$73) in the dungeon's entrance room (start_room_id per
+ * levelinfo_start_rooms manifest), AND the save state has a valid
+ * latched source (set by detect_warp_ow on the original OW→UW entry).
+ *
+ * NES authority: Z_05.asm:7493 EndGameMode12 path (`STA UndergroundExitType`
+ * with #$02), Z_01.asm:2990 (cave exit pattern). Genesis collapses the
+ * stair-down + restore-OW chain into a single coordinator outcome
+ * because we don't model NES game-mode dispatch separately.
+ *
+ * Returns 1 + fills save_out + outcome_out for a UW→OW dungeon exit. */
+static unsigned char detect_warp_uw_to_ow(unsigned char source_room_id,
+                                          short link_x, short link_y,
+                                          signed char grid_offset,
+                                          unsigned char underground_exit_type,
+                                          rr_warp_save_state_t *save_out,
+                                          rr_warp_outcome_t   *outcome_out)
+{
+    unsigned char tile_col;
+    unsigned char tile_row;
+    unsigned char raw_tile;
+    unsigned char level;
+    unsigned char quest;
+    unsigned char start_room = 0u;
+    short y_in_play;
+
+    /* Rule 1: UET blocks re-trigger. */
+    if (underground_exit_type != 0u) return 0u;
+    /* Rule 2: grid alignment (X). */
+    if (grid_offset != 0) return 0u;
+    /* Rule 3: X alignment. UW is not the OW $22 special-case. */
+    if (((unsigned)link_x & 0x0Fu) != 0u) return 0u;
+    /* Rule 4: Y alignment matches OW + UW. */
+    if (((unsigned)link_y & 0x0Fu) != 0x05u) return 0u;
+    /* Rule 5: must be inside a dungeon. OW (level 0) does not exit. */
+    level = roomrom_uw_room_render_get_level();
+    if (level == 0u) return 0u;
+    quest = roomrom_uw_room_render_get_quest();
+    /* Rule 6: source room must be the dungeon's entrance room. */
+    if (!levelinfo_start_room_for(level, quest, &start_room)) return 0u;
+    if (source_room_id != start_room) return 0u;
+    /* Rule 7: latched source must exist (a real OW→UW entry happened). */
+    if (save_out->source_room_id == 0u) return 0u;
+    /* Rule 8: raw tile must be a stair $70..$73 in the entrance room. */
+    if (!y_in_playfield(link_y, &y_in_play)) return 0u;
+    tile_col = (unsigned char)((link_x >> 3) & 0x1Fu);
+    tile_row = (unsigned char)((y_in_play >> 3) & 0x1Fu);
+    raw_tile = roomrom_uw_room_render_raw_tile_at_room(level, quest,
+                                                       source_room_id,
+                                                       tile_col, tile_row);
+    if (raw_tile < 0x70u || raw_tile > 0x73u) return 0u;
+
+    /* Hit: replay latched source into save's dest fields + route to OW. */
+    save_out->dest_scene = ROOMROM_MAIN_SCENE_OW;
+    save_out->dest_level = 0u;
+    save_out->dest_quest = roomrom_main_current_quest();
+    save_out->dest_room_id = save_out->source_room_id;
+    save_out->dest_link_x = save_out->source_link_x;
+    save_out->dest_link_y = save_out->source_link_y;
+    save_out->dest_link_face = save_out->source_link_face;
+
+    outcome_out->dest_scene = ROOMROM_MAIN_SCENE_OW;
+    outcome_out->dest_level = 0u;
+    outcome_out->dest_quest = roomrom_main_current_quest();
+    outcome_out->dest_room_id = save_out->source_room_id;
+    outcome_out->dest_link_x = save_out->source_link_x;
+    outcome_out->dest_link_y = save_out->source_link_y;
+    outcome_out->dest_link_face = save_out->source_link_face;
     outcome_out->dest_redux_flag = roomrom_main_current_redux_flag();
     return 1u;
 }
@@ -377,10 +497,22 @@ void roomrom_world_transition_tick(void)
                                  s_pending_cellar_exit,
                                  &s_save,
                                  &outcome);
+            /* Phase C: if no cellar hit, try dungeon-exit (UW→OW) arm. */
+            if (!hit) {
+                hit = detect_warp_uw_to_ow(rid_before,
+                                           roomrom_main_current_link_x(),
+                                           roomrom_main_current_link_y(),
+                                           roomrom_main_current_link_grid_offset(),
+                                           roomrom_main_underground_exit_type(),
+                                           &s_save,
+                                           &outcome);
+            }
         }
         if (hit) {
             s_state = RR_WARP_PREPARE;
         }
+        /* Phase C: UET clear on OW grid-aligned step (NES Z_07.asm:3200). */
+        roomrom_world_transition_ow_step_uet_clear(scene);
         return;
     }
 
@@ -399,12 +531,16 @@ void roomrom_world_transition_tick(void)
         /* fallthrough */
 
     case RR_WARP_LOAD:
-        outcome.dest_scene    = ROOMROM_MAIN_SCENE_UW;
+        /* Phase C: dest_scene + dest_link_x/y come from save state; LOAD
+         * is scene-agnostic. UW entries pick UW_SPAWN_X/Y via
+         * detect_warp_ow's save population; OW exits pick latched
+         * source_link_x/y via detect_warp_uw_to_ow's save population. */
+        outcome.dest_scene    = s_save.dest_scene;
         outcome.dest_level    = s_save.dest_level;
         outcome.dest_quest    = s_save.dest_quest;
         outcome.dest_room_id  = s_save.dest_room_id;
-        outcome.dest_link_x   = ROOMROM_WARP_UW_SPAWN_X;
-        outcome.dest_link_y   = ROOMROM_WARP_UW_SPAWN_Y;
+        outcome.dest_link_x   = s_save.dest_link_x;
+        outcome.dest_link_y   = s_save.dest_link_y;
         outcome.dest_link_face = s_save.dest_link_face;
         outcome.dest_redux_flag = roomrom_main_current_redux_flag();
 

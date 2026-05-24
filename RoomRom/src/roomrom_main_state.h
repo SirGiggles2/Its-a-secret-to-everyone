@@ -67,9 +67,20 @@ signed char roomrom_main_current_link_grid_offset(void);
 /* Read Link's face. Coordinator latches this into the save state. */
 unsigned char roomrom_main_current_link_face(void);
 
-/* Read NES UndergroundExitType analogue. Slice 1 stub: always 0; UW->OW
- * exit slice writes it. Coordinator's rule-1 precondition consumes this. */
+/* Read NES UndergroundExitType analogue. Used by the warp coordinator's
+ * rule-1 precondition to block warp re-trigger immediately after a
+ * scene transition. Phase C (2026-05-24): writer landed.
+ *
+ * NES values (Z_05.asm + Z_07.asm + Z_01.asm):
+ *   0 = OW free (warp checks fire)
+ *   1 = cave / cellar exit pending (block re-trigger on entrance tile)
+ *   2 = dungeon level exit pending (same blocking semantics; NES uses
+ *       this distinct value for EndGameMode12 path)
+ *
+ * Cleared on first OW grid-aligned step per Z_07.asm:3200 by
+ * roomrom_world_transition_tick. */
 unsigned char roomrom_main_underground_exit_type(void);
+void          roomrom_main_set_underground_exit_type(unsigned char uet);
 
 /* Read/write the master quest selector. NES Z1 analogue: QuestNumbers
  * ($62D) for the live quest plus SaveFileAQuestNumber{0,1,2}

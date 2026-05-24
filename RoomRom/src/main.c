@@ -492,6 +492,16 @@ static void cave_fade_swap_entry_handler(cave_id_t cid)
     players[0].face = LINK_FACE_UP;
 }
 
+/* NES cave-exit Mode 10 mirror: Link walks UP, Y -= 1 every 4 frames
+ * for 16 frames. Same walk-anim toggle as descend. */
+static void cave_fade_ascend_step_handler(unsigned char step_idx)
+{
+    (void)step_idx;
+    players[0].y = (short)(players[0].y - 1);
+    nes_ram[0x0084u] = (unsigned char)players[0].y;
+    s_link_frame ^= 1u;
+}
+
 static void cave_fade_swap_exit_handler(void)
 {
     s_scene = SCENE_OW;
@@ -509,6 +519,7 @@ static void cave_fade_swap_exit_handler(void)
 static const cave_fade_callbacks_t k_cave_fade_callbacks = {
     cave_fade_descend_step_handler,
     cave_fade_swap_entry_handler,
+    cave_fade_ascend_step_handler,
     cave_fade_swap_exit_handler
 };
 
@@ -839,6 +850,23 @@ void roomrom_main_apply_warp_outcome(const rr_warp_outcome_t *out)
      * per-room ObjList init. Stub returns NULL until 7.7 lands the
      * template_id table; force-spawn hook fires from probe Lua. */
     enemy_loop_room_init(s_room_id, (unsigned char)s_scene);
+
+    /* Phase C (2026-05-24) — UET state per NES dispatch (Z_01.asm:2990,
+     * Z_05.asm:6717+7493, Z_07.asm:3200).
+     *
+     *   dest UW   → UET = 2 (dungeon level marker; NES EndGameMode12)
+     *   dest CAVE → UET = 1 (cave/cellar marker; NES InitModeB_EnterCave)
+     *   dest OW   → UET = 1 (just exited underground; blocks re-trigger
+     *                        on entrance tile until first grid-aligned
+     *                        OW step clears it via the warp coordinator
+     *                        per Z_07.asm:3200). */
+    if (s_scene == SCENE_UW) {
+        s_underground_exit_type = 2u;
+    } else if (s_scene == SCENE_CAVE) {
+        s_underground_exit_type = 1u;
+    } else {
+        s_underground_exit_type = 1u;
+    }
 }
 
 /* Task 5.4: read-side accessors for the coordinator. Each is a one-line
@@ -881,6 +909,11 @@ unsigned char roomrom_main_current_link_face(void)
 unsigned char roomrom_main_underground_exit_type(void)
 {
     return s_underground_exit_type;
+}
+
+void roomrom_main_set_underground_exit_type(unsigned char uet)
+{
+    s_underground_exit_type = uet;
 }
 
 unsigned char roomrom_main_current_quest(void)
