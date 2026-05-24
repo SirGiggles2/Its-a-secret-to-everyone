@@ -756,8 +756,25 @@ void draw_sword_shot_or_magic_shot(unsigned int slot)
         k_r_dir_to_weapon_base_attr[y_idx & 0x03u];
     (void)core_anim_set_sprite_desc_attrs((unsigned int)attrs);
 
-    DRAW_FRAME = k_r_dir_to_weapon_frame[y_idx & 0x03u];
+    /* 2026-05-23 — same bug class as draw_arrow (see comment below).
+     * NES DrawSwordShotOrMagicShot (Z_07.asm:3437) stores frame in $0C
+     * (DRAW_MIRRORED), which anim_write_specific_item_sprites reads as
+     * the "frame image" param. Writing to DRAW_FRAME ($0D) left $0C
+     * uninitialized → tile_idx always reads frame 0 = vertical sword.
+     * User report: "Lynels sword sprites are always vertical. When
+     * facing horizontal the sprite should also face horizontal".
+     * Probe-confirmed via probe_gen_lynel_octo_surgical.lua showing
+     * Lynel sword shots with dir=$01/$02 (horizontal) all rendering
+     * tile $0281/$0283 (vertical pair) instead of horizontal pair. */
+    DRAW_MIRRORED = k_r_dir_to_weapon_frame[y_idx & 0x03u];
 
+    /* Clear stale DRAW_FLIP_H ($0F) — sword/magic shot frame 1 routes
+     * through anim_write_horizontally_flippable_sprite_pair which honors
+     * $0F. Without this reset, a right-facing shot inherits whatever
+     * flip flag the previous drawn sprite left in $0F (e.g. a left-
+     * facing Lynel body), producing draw-order-dependent mirroring.
+     * Mirrors draw_arrow line 789 pattern. */
+    DRAW_FLIP_H = 0u;
     if (y_idx == 2u) {
         DRAW_FLIP_H = (uint8_t)((unsigned char)DRAW_FLIP_H + 1u);
     }

@@ -64,25 +64,26 @@ void roomrom_bg_palette_load_palram_full(const unsigned char *palram32)
     }
     s_sprite_palram_loaded = 1u;
 
-    /* PAL2[0..3] = NES SPR sub-pal 3 ($3F1D..$3F1F) — LEVEL PALETTE slot.
-     * Per Z_01.asm:5357 Anim_WriteLevelPaletteSprite, enemies using anim
-     * attr=$03 (Blue Moblin, Blue Goriya, Wizzrobe, etc) draw here.
-     * OW L1 / UW L1: $0C $1C $2C = cyan / teal / light cyan = Blue Moblin.
+    /* PAL2[0..3] = NES SPR sub-pal 1 ($3F15..$3F17) — BLUE RAMP slot.
+     * Per Z_04.asm anim_attr=$01 family (Blue Lynel, Blue Octorok,
+     * Blue Tektite, Blue Zora, Blue Leever, Blue Darknut) renders
+     * sprites with sub-pal 1 = $0F/$02/$22/$30 (black/blue/blue-lt/white).
      *
-     * Sub-pal 1 (cloud / FX) no longer needs PAL2 — it already routes
-     * through PAL1's mid slots [5..7] via biased META_ATTR_MARKER CHR
-     * (see k_cloud_chr_subpal1 in enemy_render.c using pixel values 6/7,
-     * PAL1 loaded with full NES sprite palram has sub-pal 1 at [5..7]).
+     * Sub-pal 3 (anim_attr=$03 — Blue Moblin, Blue Goriya, Wizzrobe)
+     * also routes here via subpal_routing clamp; gets blue ramp instead
+     * of NES Lost Hills cyan — acceptable visual match since target
+     * intent IS blue. Census shows sub-pal 1 enemies vastly outnumber
+     * sub-pal 3 (which only exists in select UW/OW Moblin rooms).
      *
-     * Sub-pal 1 enemies (if any) that route here via subpal_routing
-     * (sub_pal 1 -> PAL2) will render with sub-pal 3 colors — acceptable
-     * since most NES "sub-pal 1" sprites are cloud/explosion which use
-     * the META path. */
+     * Probe-confirmed bug 2026-05-23: prior layout had PAL2 holding
+     * sub-pal 3 (Lost Hills $0F/$0F/$1C/$16 brown/red) causing all
+     * blue enemies to render with dark Lost Hills colors. User report:
+     * "Blue lynel and blue octorck have the wrong colors". */
     {
         unsigned short pal2[16] = {0};
-        pal2[1] = roomrom_bg_palette_nes_to_cram(palram32[16 + 13]);  /* $3F1D */
-        pal2[2] = roomrom_bg_palette_nes_to_cram(palram32[16 + 14]);  /* $3F1E */
-        pal2[3] = roomrom_bg_palette_nes_to_cram(palram32[16 + 15]);  /* $3F1F */
+        pal2[1] = roomrom_bg_palette_nes_to_cram(palram32[16 + 5]);   /* $3F15 */
+        pal2[2] = roomrom_bg_palette_nes_to_cram(palram32[16 + 6]);   /* $3F16 */
+        pal2[3] = roomrom_bg_palette_nes_to_cram(palram32[16 + 7]);   /* $3F17 */
         render_load_palette(2u, pal2);
     }
 

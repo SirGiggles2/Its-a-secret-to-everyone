@@ -32,17 +32,29 @@ const unsigned char *roomrom_ow_palette_get_subpal3_patched(unsigned char room_i
     return k_ow_subpal3_per_room[room_id & 0x7Fu];
 }
 
-/* Patch CRAM PAL2[1..3] with per-room sub-pal 3 colors. Called by
- * ow_render after roomrom_bg_palette_load_palram_full. PAL2 currently
- * holds NES SPR sub-pal 3 per bg_palette.c. */
+/* Patch CRAM PAL2[1..3] with per-room sub-pal 3 colors. DISABLED
+ * 2026-05-23: PAL2 now holds NES SPR sub-pal 1 (blue ramp) per
+ * bg_palette.c, not sub-pal 3. Sub-pal 3 enemies (Blue Moblin etc.)
+ * clamp to PAL2 via subpal_routing and render with blue ramp.
+ *
+ * Trade-off: sub-pal 3 enemies in Lost Hills rooms (where NES
+ * $3F1C..$3F1F = $0F/$1C/$16 = black/dark-cyan/red, NOT blue) will
+ * render with blue ramp instead of the captured Lost Hills colors.
+ * Known regression for Blue Moblin / Blue Goriya / Wizzrobe in OW
+ * rooms ~$00..$0F. Census shows ≤16 OW rooms affected; user-reported
+ * Blue Lynel/Octorok bug (sub-pal 1, affects 30+ OW rooms) is the
+ * dominant case so the swap is net positive.
+ *
+ * k_ow_subpal3_per_room in ow_subpal3_table.c is now dead data —
+ * retained for the eventual sprite CHR 4x expansion (Phase N per
+ * docs/superpowers/plans/2026-05-02-roomrom-sprite-chr-expansion-plan.md)
+ * which would pack all 4 sub-pals into PAL1 via pixel-bias CHR and
+ * route sub-pal 3 enemies to high PAL1 slots holding the per-room
+ * patched colors. Until then this function is a no-op to preserve
+ * the call-site API in ow_render.c. */
 void roomrom_ow_palette_patch_subpal3(unsigned char room_id)
 {
-    const unsigned char *colors = roomrom_ow_palette_get_subpal3_patched(room_id);
-    unsigned short pal2[16] = {0};
-    pal2[1] = roomrom_bg_palette_nes_to_cram(colors[1]);
-    pal2[2] = roomrom_bg_palette_nes_to_cram(colors[2]);
-    pal2[3] = roomrom_bg_palette_nes_to_cram(colors[3]);
-    render_load_palette(2u, pal2);
+    (void)room_id;
 }
 
 /* Patch CRAM PAL0[0..15] with per-room NES BG palram bytes.

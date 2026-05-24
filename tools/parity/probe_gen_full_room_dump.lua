@@ -170,7 +170,7 @@ local function dump_static(out, domains, level, room)
   out:write("\n[LINK]\n")
   out:write(string.format("x=$%02X\n", R(0x0070)))
   out:write(string.format("y=$%02X\n", R(0x0084)))
-  out:write(string.format("dir=$%02X\n", R(0x008C)))
+  out:write(string.format("dir=$%02X\n", R(0x0098)))
   out:write(string.format("state=$%02X\n", R(0x00AC)))
   out:write(string.format("anim=$%02X\n", R(0x03E4)))
   out:write(string.format("hp_cur=$%02X\n", R(0x066F)))
@@ -179,25 +179,30 @@ local function dump_static(out, domains, level, room)
   out:write(string.format("inv_timer=$%02X\n", R(0x04F0)))
 
   -- [PALRAM] reverse-translated from Gen CRAM.
-  -- Gen layout per src/game/world/bg_palette.c:
+  -- Gen layout per src/game/world/bg_palette.c (post 2026-05-23 swap):
   --   PAL0 [0..15] = NES BG palram bytes 0..15
-  --   PAL1 [0..15] = NES SPR palram bytes 16..31 (initial load from static palram)
-  --   PAL2 [0..3]  = NES SPR sub-pal 3 (per-room patched — overrides $3F1C..F)
-  --   PAL3 [0..3]  = NES SPR sub-pal 2 (red ramp — overrides $3F18..B)
-  -- For NES PALRAM equivalence: $3F18..B = PAL3, $3F1C..F = PAL2 (post-patch).
+  --   PAL1 [0..15] = NES SPR palram bytes 16..31 (full 4-subpal copy)
+  --   PAL2 [0..3]  = NES SPR sub-pal 1 (blue ramp — $3F14..F)
+  --   PAL3 [0..3]  = NES SPR sub-pal 2 (red ramp — $3F18..F)
+  -- Sub-pal 3 ($3F1C..F): clamps to PAL2 via subpal_routing (Blue Moblin
+  -- shares blue ramp; per-room sub-pal 3 patching no-op until CHR 4x).
   out:write("\n[PALRAM]\n")
-  out:write("# reverse-translated; sub-pals 2/3 read from PAL3/PAL2 (live patched)\n")
+  out:write("# reverse-translated; sub-pal 1=PAL2, sub-pal 2=PAL3; sub-pal 3 clamps to PAL2\n")
   -- Helper: read NES color at logical PALRAM index
   local function read_palram(i)
     local cram_idx
     if i < 16 then
       cram_idx = i  -- BG: PAL0
+    elseif i >= 20 and i < 24 then
+      cram_idx = 32 + (i - 20)  -- sub-pal 1 → PAL2[0..3]
     elseif i >= 24 and i < 28 then
       cram_idx = 48 + (i - 24)  -- sub-pal 2 → PAL3[0..3]
     elseif i >= 28 then
-      cram_idx = 32 + (i - 28)  -- sub-pal 3 → PAL2[0..3]
+      -- sub-pal 3: no dedicated slot; report from PAL1 fallback copy
+      -- (PAL1[12..15] holds initial load-time sub-pal 3 colors).
+      cram_idx = 16 + (i - 16)  -- = PAL1[12..15]
     else
-      cram_idx = 16 + (i - 16)  -- sub-pal 0/1 → PAL1[0..7]
+      cram_idx = 16 + (i - 16)  -- sub-pal 0 → PAL1[0..3]
     end
     return CRAM_w(cram_idx)
   end
@@ -244,11 +249,14 @@ local function dump_static(out, domains, level, room)
     local v_flip   = (pat >> 12) & 0x01
     local prio_gen = (pat >> 15) & 0x01
     -- NES attr: bit5=behind-bg (Gen prio inverse), bit6=hflip, bit7=vflip, bits 0-1=pal
-    -- Gen pal 0..3 maps to NES sub-pal 0..3 (lossy: PAL2=spal3, PAL3=spal2)
+    -- Gen pal 0..3 maps per subpal_routing.h post 2026-05-23 swap:
+    --   PAL0 unused for SPR; PAL1 = sub-pal 0; PAL2 = sub-pal 1 (Blue
+    --   Lynel/Octorok) AND clamp for sub-pal 3 (Blue Moblin); PAL3 = sub-pal 2.
+    -- Sub-pal 1 vs 3 ambiguity at PAL2 is hardware-bounded; reported as 1.
     local nes_pal
     if pal == 0 then nes_pal = 0
     elseif pal == 1 then nes_pal = 0  -- PAL1 = Link sub-pal 0 (route 0)
-    elseif pal == 2 then nes_pal = 3  -- PAL2 = sub-pal 3 (Blue Moblin)
+    elseif pal == 2 then nes_pal = 1  -- PAL2 = sub-pal 1 (blue ramp; also sub-pal 3 clamp)
     elseif pal == 3 then nes_pal = 2  -- PAL3 = sub-pal 2 (red)
     end
     local nes_attr = nes_pal | (v_flip << 7) | (h_flip << 6) | (((1 - prio_gen) & 0x01) << 5)
@@ -274,7 +282,7 @@ local function dump_static(out, domains, level, room)
       "attr:$%02X anim:$%02X df:$%02X shvd:$%02X shvt:$%02X " ..
       "stun:$%02X shTm:$%02X wTSh:$%02X hit:$%02X inDir:$%02X\n",
       s, t,
-      R(0x0070+s), R(0x0084+s), R(0x008C+s),
+      R(0x0070+s), R(0x0084+s), R(0x0098+s),
       R(0x03BC+s), R(0x03A8+s), R(0x0394+s), R(0x0028+s),
       R(0x00AC+s), R(0x0405+s), R(0x0028+s), R(0x0485+s), R(0x04F0+s),
       R(0x04BF+s), R(0x03E4+s), R(0x03D0+s),

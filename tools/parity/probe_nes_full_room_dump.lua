@@ -120,7 +120,7 @@ local function dump_static(out, domains, level, room)
   out:write("\n[LINK]\n")
   out:write(string.format("x=$%02X\n", R(0x0070)))
   out:write(string.format("y=$%02X\n", R(0x0084)))
-  out:write(string.format("dir=$%02X\n", R(0x008C)))
+  out:write(string.format("dir=$%02X\n", R(0x0098)))
   out:write(string.format("state=$%02X\n", R(0x00AC)))
   out:write(string.format("anim=$%02X\n", R(0x03E4)))
   out:write(string.format("hp_cur=$%02X\n", R(0x066F)))
@@ -155,7 +155,7 @@ local function dump_static(out, domains, level, room)
       "attr:$%02X anim:$%02X df:$%02X shvd:$%02X shvt:$%02X " ..
       "stun:$%02X shTm:$%02X wTSh:$%02X hit:$%02X inDir:$%02X\n",
       s, t,
-      R(0x0070+s), R(0x0084+s), R(0x008C+s),
+      R(0x0070+s), R(0x0084+s), R(0x0098+s),
       R(0x03BC+s), R(0x03A8+s), R(0x0394+s), R(0x0028+s),
       R(0x00AC+s), R(0x0405+s), R(0x0028+s), R(0x0485+s), R(0x04F0+s),
       R(0x04BF+s), R(0x03E4+s), R(0x03D0+s),
@@ -247,12 +247,12 @@ local function dump_trace(out)
   for f = 0, TRACE_FRAMES - 1 do
     out:write(string.format("\n[FRAME_%03d]\n", f))
     out:write(string.format("rng=$%02X linkx=$%02X linky=$%02X linkdir=$%02X linkst=$%02X linkanim=$%02X linkhp=$%02X\n",
-      R(0x0019), R(0x0070), R(0x0084), R(0x008C), R(0x00AC), R(0x03E4), R(0x066F)))
+      R(0x0019), R(0x0070), R(0x0084), R(0x0098), R(0x00AC), R(0x03E4), R(0x066F)))
     for s = 1, 11 do
       local t = R(0x034F + s)
       if t ~= 0 then
         out:write(string.format("s%d=t:$%02X x:$%02X y:$%02X dir:$%02X qspd:$%02X frac:$%02X grid:$%02X mvTm:$%02X st:$%02X ms:$%02X tm:$%02X anim:$%02X shvd:$%02X shvt:$%02X inv:$%02X hit:$%02X\n",
-          s, t, R(0x0070+s), R(0x0084+s), R(0x008C+s),
+          s, t, R(0x0070+s), R(0x0084+s), R(0x0098+s),
           R(0x03BC+s), R(0x03A8+s), R(0x0394+s), R(0x0028+s),
           R(0x00AC+s), R(0x0405+s), R(0x0028+s), R(0x03E4+s),
           R(0x00C0+s), R(0x00D3+s), R(0x04F0+s), R(0x04B2+s)))
