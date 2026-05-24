@@ -1505,13 +1505,19 @@ void enemy_loop_tick(void)
      * CheckSecretTriggerAllDead: when ROOM_MONSTER_ALL_DEAD set (room
      * has no living non-bubble enemies), TriggerShutters fires which
      * opens shutter doors via ShutterTrigger=$01. Gen previously only
-     * triggered via debug chord (RoomRom/src/main.c:2222). User report
-     * #18/19: L1 r$63 north-door blocked after clear. Add per-frame
-     * check + call to uw_door_state_trigger_shutters when condition met
-     * (idempotent — trigger fn checks "already open" internally). */
+     * triggered via debug chord (RoomRom/src/main.c:2222).
+     *
+     * Two-part fix:
+     *   1. room_check_has_living_monsters() — bumps $034D when no
+     *      non-bubble enemies (defined but never called pre-fix).
+     *   2. If flag set + room has shutters → fire trigger.
+     *
+     * Idempotent — trigger fn skips already-open internally. */
     {
+        extern void room_check_has_living_monsters(void);
         extern unsigned char uw_door_state_has_shutters(void);
         extern void uw_door_state_trigger_shutters(void);
+        room_check_has_living_monsters();
         if (RAM(0x034Du) != 0u && uw_door_state_has_shutters()) {
             uw_door_state_trigger_shutters();
         }
