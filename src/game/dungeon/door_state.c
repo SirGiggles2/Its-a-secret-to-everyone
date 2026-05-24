@@ -112,8 +112,13 @@ void uw_door_state_room_init(unsigned char level,
         unsigned char t   = s_door_types[dir];
         unsigned char bit = DOOR_DIR_BIT(dir);
         if (t == DOOR_TYPE_OPEN) {
-            /* OPEN doors: blob tiles already correct; mark for walkability. */
+            /* 2026-05-24 — patch open-door art for OPEN doors too.
+             * Prior comment claimed "blob tiles already correct" but
+             * empirical r$63 visual shows wall art at N door spot.
+             * NES Z1 blob may not pre-bake all OPEN door tiles; safer
+             * to always patch. */
             s_cur_opened |= bit;
+            uw_door_state_patch_open_tiles(dir);
         } else if ((t == DOOR_TYPE_KEY || t == DOOR_TYPE_KEY2 ||
                     t == DOOR_TYPE_BOMBABLE) && (persist_mask & bit)) {
             s_cur_opened |= bit;
