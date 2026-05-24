@@ -272,9 +272,13 @@ void cave_update_transfer_prices(void)
         CAVE_PERSON_STATE = (uint8_t)(CAVE_PERSON_STATE + 1u);
         return;
     }
-    /* TODO Phase 4: native cave_write_prices_transfer_buf — BCD digit
-     * formatter + transfer-buf writes (cavert_format_decimal_byte +
-     * cavert_write_prices_to_dynamic_transfer_buf chain). Stage-1 stub. */
+    /* Phase D4 (2026-05-24): wire the already-implemented BCD price
+     * formatter + transfer-buf writer that lives later in this TU
+     * (cave_write_prices_transfer_buf at line 514). Was a TODO Phase 4
+     * stub from Tier 0; the helper itself was landed earlier but never
+     * called from cave_update_transfer_prices. NES Z_01.asm:449
+     * WritePricesTransferBuf path. */
+    cave_write_prices_transfer_buf();
 }
 
 void cave_draw_items(void)
