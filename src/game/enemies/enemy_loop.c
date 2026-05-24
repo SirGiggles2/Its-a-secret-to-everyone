@@ -1500,6 +1500,22 @@ void enemy_loop_tick(void)
     if (armed) {
         enemy_loop_probe_publish_live();
     }
+
+    /* 2026-05-23 — UW room-clear auto-shutter trigger. NES Z_05.asm:2410
+     * CheckSecretTriggerAllDead: when ROOM_MONSTER_ALL_DEAD set (room
+     * has no living non-bubble enemies), TriggerShutters fires which
+     * opens shutter doors via ShutterTrigger=$01. Gen previously only
+     * triggered via debug chord (RoomRom/src/main.c:2222). User report
+     * #18/19: L1 r$63 north-door blocked after clear. Add per-frame
+     * check + call to uw_door_state_trigger_shutters when condition met
+     * (idempotent — trigger fn checks "already open" internally). */
+    {
+        extern unsigned char uw_door_state_has_shutters(void);
+        extern void uw_door_state_trigger_shutters(void);
+        if (RAM(0x034Du) != 0u && uw_door_state_has_shutters()) {
+            uw_door_state_trigger_shutters();
+        }
+    }
 }
 
 void enemy_loop_force_spawn_slow_octorock(unsigned int slot,
