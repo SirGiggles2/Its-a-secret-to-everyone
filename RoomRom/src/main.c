@@ -2054,9 +2054,19 @@ void roomrom_debug_tick(void)
              * low nibble $4 = off-center, Link beside arch) instead
              * of waiting until Y=$4D (low nibble $D = centered under
              * arch entrance metatile). Verified via NES probe: NES
-             * triggers at Y=$4D, Genesis was triggering at Y=$54. */
-            if (s_scene == SCENE_OW &&
-                ((unsigned char)players[0].y & 0x0Fu) == 0x0Du) {
+             * triggers at Y=$4D, Genesis was triggering at Y=$54.
+             *
+             * APPENDIX C3 fix: ALTTP move-style (8.8 fixed-point,
+             * ~1.5 px/frame, diagonal allowed) can SKIP exact $0D
+             * value. Widen tolerance to $0C..$0E (3-px window) so
+             * ALTTP players still trigger cave entry. NES-style stays
+             * exact ($0D only) by virtue of 1-px/frame walk speed
+             * matching the gate. */
+            unsigned char y_low = (unsigned char)((unsigned char)players[0].y & 0x0Fu);
+            unsigned char gate_pass = (s_move_style == MOVE_STYLE_ALTTP)
+                ? (unsigned char)(y_low >= 0x0Cu && y_low <= 0x0Eu)
+                : (unsigned char)(y_low == 0x0Du);
+            if (s_scene == SCENE_OW && gate_pass) {
                 unsigned char standing_tile =
                     collision_get_collidable_tile_still(0u);
                 /* Tier 0 verify sentinel: $07FD = last standing tile
