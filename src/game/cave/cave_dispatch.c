@@ -187,6 +187,19 @@ void cave_exit(void)
     CAVE_PERSON_STATE = 0u;
     cave_flags_set(0u);
     g_active_cave = 0u;
+
+    /* Clear bonfire slots so they don't persist into OW context.
+     * cave_init populates slot 2/3 with type=$40 (StandingFire) + alive=1;
+     * enemy_loop would otherwise tick + draw them on every OW frame after
+     * cave exit. Reset both type, alive flag, and position cells. */
+    RAM(0x034Fu + 2u) = 0u;   /* ObjType+2 = 0 */
+    RAM(0x034Fu + 3u) = 0u;   /* ObjType+3 = 0 */
+    RAM(0x0492u + 2u) = 0u;   /* ENEMY_ALIVE_FLAG+2 = 0 */
+    RAM(0x0492u + 3u) = 0u;   /* ENEMY_ALIVE_FLAG+3 = 0 */
+    RAM(0x0070u + 2u) = 0u;
+    RAM(0x0070u + 3u) = 0u;
+    RAM(0x0084u + 2u) = 0u;
+    RAM(0x0084u + 3u) = 0u;
 }
 
 cave_id_t cave_current_id(void)
