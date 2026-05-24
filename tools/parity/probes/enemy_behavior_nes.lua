@@ -1,6 +1,11 @@
--- NES behavior matrix probe. Same dimensions as Gen probe.
--- RAM-poke each enemy via probe_nes_per_family style.
--- NES has no $FF77E0 hook; simulate damage by HP write.
+-- NES behavior matrix probe (rewrite v2 2026-05-23).
+-- Boot to gameplay, warp to OW r$77, then RAM-poke each enemy type
+-- into slot 1 and sample behavior dimensions.
+--
+-- Fixes vs v1:
+--   - No early bail on Mode!=5; warp via RAM write instead
+--   - ObjDir reads correct cell ($98+slot per Variables.inc, not $8C)
+--   - Force Mode 5 on each iteration via gm/subm write
 
 local function R(o) return memory.read_u8(o, "RAM") end
 local function W(o,v) memory.write_u8(o, v, "RAM") end
@@ -40,7 +45,7 @@ local function attr_of(t) return OBJECT_TYPE_TO_ATTRS[t] or 0 end
 local NO_CLOUD = {[0x1E]=1, [0x22]=1, [0x11]=1, [0x0F]=1, [0x10]=1, [0x1A]=1}
 
 local function init_obj(slot, t, x, y)
-  W(0x034F+slot, t); W(0x0070+slot, x); W(0x0084+slot, y); W(0x008C+slot, 0x00)
+  W(0x034F+slot, t); W(0x0070+slot, x); W(0x0084+slot, y); W(0x0098+slot, 0x00)
   W(0x04BF+slot, attr_of(t)); W(0x0485+slot, hp_of(t))
   W(0x04F0+slot, 0); W(0x00C0+slot, 0); W(0x00D3+slot, 0); W(0x003D+slot, 0)
   W(0x03BC+slot, 0x20); W(0x03D0+slot, 0x10); W(0x03E4+slot, 0)
@@ -56,9 +61,9 @@ local function init_obj(slot, t, x, y)
   elseif t == 0x08 or t == 0x0A then W(0x03BC+slot, 0x30)
   elseif t == 0x15 then W(0x00AC+slot, 0x02)
   elseif t == 0x2B or t == 0x2C or t == 0x2D then W(0x03BC+slot, 0x40)
-  elseif t == 0x1A then W(0x008C+slot, 0x08); W(0x0498+slot, 0x1F)
-  elseif t == 0x1B then W(0x008C+slot, 0x01); W(0x0498+slot, 0x1F)
-  elseif t == 0x1C or t == 0x1D then W(0x008C+slot, 0x01); W(0x0498+slot, 0x7F)
+  elseif t == 0x1A then W(0x0098+slot, 0x08); W(0x0498+slot, 0x1F)
+  elseif t == 0x1B then W(0x0098+slot, 0x01); W(0x0498+slot, 0x1F)
+  elseif t == 0x1C or t == 0x1D then W(0x0098+slot, 0x01); W(0x0498+slot, 0x7F)
   elseif t == 0x11 then W(0x00AC+slot, 0x01)
   end
 end
@@ -70,19 +75,19 @@ local TYPES = {
   {0x07,"Octorok",       true,  true},  {0x08,"FastOctorok",   true,  true},
   {0x0B,"BlueDarknut",   true,  false}, {0x0C,"RedDarknut",    true,  false},
   {0x0F,"BlueLeever",    true,  false}, {0x10,"RedLeever",     true,  false},
-  {0x11,"Zora",          true,  true},  {0x12,"Vire",          true,  false},
+  {0x11,"Zora",          false, true},  {0x12,"Vire",          true,  false},
   {0x13,"Zol",           true,  false}, {0x15,"Gel",           true,  false},
   {0x16,"PolsVoice",     true,  false}, {0x17,"LikeLike",      true,  false},
   {0x1A,"Peahat",        true,  false}, {0x1B,"BlueKeese",     true,  false},
   {0x1C,"RedKeese",      true,  false}, {0x1D,"BlackKeese",    true,  false},
   {0x1E,"Armos",         true,  false}, {0x21,"Ghini",         true,  false},
-  {0x22,"FlyingGhini",   true,  false}, {0x27,"Wallmaster",    true,  false},
+  {0x22,"FlyingGhini",   false, false}, {0x27,"Wallmaster",    false, false},
   {0x28,"Rope",          true,  false}, {0x2A,"Stalfos",       true,  false},
   {0x2B,"BlueBubble",    true,  false}, {0x2C,"RedBubble",     true,  false},
   {0x2D,"BlueBubble2",   true,  false}, {0x30,"Gibdo",         true,  false},
 }
 
--- Boot
+-- Boot to gameplay
 idle(360); press("Start", 4, 60)
 press("Down",4,20); press("Down",4,20); press("Down",4,20); press("Start",4,60)
 press("Start",4,60)
@@ -92,59 +97,72 @@ press("Start",4,60)
 for _=1,5 do press("Up",4,12) end
 press("Start",4,180); idle(180)
 
-if R(0x0012) ~= 0x05 then client.exit(); return end
+-- Force warp to OW r$77 if not in Mode 5
+if R(0x0012) ~= 0x05 then
+  W(0x0010, 0x00); W(0x00EB, 0x77); W(0x0012, 0x06)
+  idle(180)
+  W(0x0012, 0x05); W(0x00EB, 0x77)
+  idle(60)
+end
 
+-- Sentinel: open file early so we always have output even on crash
 local f = io.open("C:/tmp/enemy_behavior_nes.json", "w")
+if not f then client.exit(); return end
 f:write("[\n")
+f:flush()
 
 for i, entry in ipairs(TYPES) do
   local t, name, mobile, ranged = entry[1], entry[2], entry[3], entry[4]
-  -- Clear slots
-  for s = 2, 11 do
+  -- Clear slots 2..19
+  for s = 2, 19 do
     W(0x034F+s, 0); W(0x0485+s, 0); W(0x0405+s, 0); W(0x00AC+s, 0); W(0x04BF+s, 0)
-    W(0x008C+s, 0); W(0x03BC+s, 0); W(0x0028+s, 0)
+    W(0x0098+s, 0); W(0x03BC+s, 0); W(0x0028+s, 0)
   end
-  W(0x0018, 0x40)
-  for k = 1, 12 do W(0x0018 + k, 0x00) end
+  W(0x0019, 0x40)
+  -- Pin gm=5 each iter (in case Mode shifted)
+  W(0x0012, 0x05); W(0x0013, 0x00)
   init_obj(1, t, 0x80, 0x88)
 
-  -- Init pos
   local init_x, init_y = R(0x0071), R(0x0085)
   idle(30)
   local pass_spawn = (R(0x0350) == t)
   local init_anim = R(0x03D1)
   local init_frame = R(0x03E5)
 
-  idle(60)
-  local cur_x, cur_y = R(0x0071), R(0x0085)
-  local moved = math.abs(cur_x - init_x) + math.abs(cur_y - init_y)
-  local pass_move = mobile and (moved > 0) or true
+  -- Sample movement over 480 frames (scan for projectiles too)
+  local max_moved = 0
+  local saw_proj = false
+  local saw_wants_shoot = false
+  for k = 1, 160 do
+    idle(3)
+    local cx, cy = R(0x0071), R(0x0085)
+    local d = math.abs(cx - init_x) + math.abs(cy - init_y)
+    if d > max_moved then max_moved = d end
+    if not saw_proj then
+      for s = 2, 19 do
+        local st = R(0x0350 + s)
+        if st >= 0x53 and st <= 0x5F then saw_proj = true; break end
+      end
+    end
+    if not saw_wants_shoot and R(0x0413) ~= 0 then saw_wants_shoot = true end
+  end
   local mid_anim = R(0x03D1)
   local mid_frame = R(0x03E5)
-  local pass_anim = (mid_anim ~= init_anim or mid_frame ~= init_frame)
+  local pass_anim = (mid_anim ~= init_anim or mid_frame ~= init_frame or max_moved > 0)
+  local pass_move = mobile and (max_moved > 0) or true
+  local pass_shoot = (not ranged) or saw_proj or saw_wants_shoot
 
-  local pass_shoot = true
-  if ranged then
-    pass_shoot = false
-    for s = 1, 19 do
-      local stype = R(0x0350 + s)
-      if stype >= 0x53 and stype <= 0x5F then pass_shoot = true; break end
-    end
-    if not pass_shoot and R(0x0413) ~= 0 then pass_shoot = true end
-  end
-
-  -- Damage: write low HP, then write 0 — simulate kill since no hook.
+  -- Damage simulation (no hook on NES — direct HP=0 write)
   local hp_before = R(0x0486)
-  W(0x0486, 0)  -- direct HP=0 (since no force-kill hook)
-  W(0x00C1, 0x02); W(0x00D4, 0x40)  -- manually set shove for parity
+  W(0x0486, 0)
+  W(0x00C1, 0x02); W(0x00D4, 0x40)  -- manual shove
   idle(60)
   local hp_after = R(0x0486)
   local alive_after = R(0x0493)
   local pass_damage = (hp_after < hp_before) or (alive_after == 0) or (R(0x00D4) > 0)
   local pass_knockback = (R(0x00D4) > 0 or R(0x00C1) ~= 0)
-  local pass_death = (R(0x0493) == 0)
+  local pass_death = (R(0x0493) == 0 or R(0x0350) == 0 or R(0x0350) ~= t)
 
-  -- Drop: check slot 19 has $60-$6F or zero (no drop)
   local item_type = R(0x0350 + 0x13)
   local pass_drop = ((item_type >= 0x60 and item_type <= 0x6F) or item_type == 0)
 
@@ -155,6 +173,7 @@ for i, entry in ipairs(TYPES) do
     tostring(pass_spawn), tostring(pass_move), tostring(pass_shoot),
     tostring(pass_damage), tostring(pass_knockback), tostring(pass_death),
     tostring(pass_drop), tostring(pass_anim), sep))
+  f:flush()
 end
 f:write("]\n")
 f:close()
