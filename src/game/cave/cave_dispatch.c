@@ -112,12 +112,18 @@ int cave_init(cave_id_t cave_id)
     RAM(0x03A4u + 1u) = 0x81u;            /* ObjAttr+1 = $81 */
     RAM(0x00ACu)     = 0x40u;             /* ObjState (Link) = $40 (halt) */
     /* Bonfires slot 2/3 — fixed positions flanking the NPC. */
-    RAM(0x034Fu + 2u) = 0x40u;            /* ObjType+2 = $40 (bonfire) */
-    RAM(0x034Fu + 3u) = 0x40u;            /* ObjType+3 = $40 (bonfire) */
+    RAM(0x034Fu + 2u) = 0x40u;            /* ObjType+2 = $40 (StandingFire) */
+    RAM(0x034Fu + 3u) = 0x40u;            /* ObjType+3 = $40 (StandingFire) */
     RAM(0x0070u + 2u) = 0x48u;            /* ObjX+2    = $48 */
     RAM(0x0070u + 3u) = 0xA8u;            /* ObjX+3    = $A8 */
     RAM(0x0084u + 2u) = 0x80u;            /* ObjY+2    = $80 */
     RAM(0x0084u + 3u) = 0x80u;            /* ObjY+3    = $80 */
+    /* Mark bonfires alive so enemy_loop dispatches enrt_update_standing_fire
+     * per frame. NES uses ObjType != 0 as the alive marker; Gen enemy_loop
+     * gates on ENEMY_ALIVE_FLAG ($0492+slot). Without setting alive, slot
+     * 2/3 skipped and bonfire sprites never publish. */
+    RAM(0x0492u + 2u) = 0x01u;            /* ENEMY_ALIVE_FLAG+2 */
+    RAM(0x0492u + 3u) = 0x01u;            /* ENEMY_ALIVE_FLAG+3 */
 
     /* NES InitCaveContinue (Z_01.asm:105-170) port:
      * 1) cave_idx = cave_id - $6A.
