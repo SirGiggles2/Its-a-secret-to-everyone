@@ -392,8 +392,12 @@ void cave_update_talk_shop_or_door_charge(void)
         /* Take the ware. */
         progress_set_room_flag_uw_item_state();
         RAM(0x0422 + i) = 0xFFu;  /* CAVE_WARE_ITEM(i) = 0xFF */
-        /* TODO Phase 4: native cave_take_item(item) (cross-subsystem). */
-        (void)item;
+        /* Phase D4 (2026-05-24): wire item_take_item. Sets
+         * ITEM_FREEZE_FLAG=$80 + ITEM_PICKUP_ID=item (cave is not
+         * GAME_MODE 5) so existing held-item overlay drives the
+         * cave-shop ware acquisition flash. NES TakeItem at
+         * Z_05.asm:5040. */
+        item_take_item(item);
         core_cue_transfer_buf_and_advance_state(30u);
         CAVE_DELAY_TIMER = 64u;
         cave_clear_prices_flag_inline();
