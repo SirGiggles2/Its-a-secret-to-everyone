@@ -173,14 +173,41 @@ static void load_palette_from_blob(int idx)
 
 static void load_palette_from_levelinfo(void)
 {
-    unsigned char buf[16];
-    unsigned char i;
-    unsigned short level_off = (unsigned short)(UW_LEVELINFO_BASE +
-        ((unsigned short)(s_uw_level - 1u) * UW_LEVELINFO_SIZE) +
-        UW_LEVELINFO_PAL_OFFSET);
-    for (i = 0; i < 16; i++) buf[i] = rooms_dungeons[level_off + i];
-    /* Sprite half (PAL1) preserved from prior room load. Levelinfo
-     * fallback only fires when blob lookup misses. */
+    /* Plan v6-C2 fix (2026-05-24): rooms_dungeons levelinfo block has
+     * variable per-level palette offset that depends on FoeCounts anchor
+     * shift (L1=$20 .. L9=$00 per ROOMROM_UW_LEVELINFO_FOE_COUNTS_OFFSET).
+     * Earlier static UW_LEVELINFO_PAL_OFFSET=3 was correct only for L1..L4;
+     * L5+ read shifted bytes producing brown PAL0[0]=$11 instead of $0F
+     * black backdrop (probed L9 Ganon r$42).
+     *
+     * Cheap correct fallback: BG palette is per-LEVEL constant on NES Z1.
+     * Walk g_uw_room_index for any blob entry matching current level/quest
+     * and reuse its PAL[0..15] — guaranteed correct since blob was captured
+     * live from NES PALRAM. Only falls through to zeroed buf if level has
+     * no captured rooms at all (defensive). */
+    unsigned char buf[16] = {0};
+    unsigned short i;
+    int found_idx = -1;
+    unsigned char want_map = (s_uw_map_id == ROOMROM_MAP_REDUX) ? 1u : 0u;
+    for (i = 0; i < g_uw_room_count; i++) {
+        const unsigned char *idxe = g_uw_room_index[i];
+        if (idxe[0] == want_map && idxe[1] == s_uw_quest &&
+            idxe[2] == s_uw_level) {
+            found_idx = (int)i;
+            break;
+        }
+    }
+    if (found_idx >= 0) {
+        for (i = 0; i < 16; i++) buf[i] = g_uw_room_palette[found_idx][i];
+    } else {
+        /* No captured rooms for this level/quest combo — default to
+         * NES black backdrop ($0F) + neutral grays. Better than brown. */
+        buf[0]  = 0x0Fu; buf[1]  = 0x10u; buf[2]  = 0x20u; buf[3]  = 0x30u;
+        buf[4]  = 0x0Fu; buf[5]  = 0x10u; buf[6]  = 0x20u; buf[7]  = 0x30u;
+        buf[8]  = 0x0Fu; buf[9]  = 0x10u; buf[10] = 0x20u; buf[11] = 0x30u;
+        buf[12] = 0x0Fu; buf[13] = 0x10u; buf[14] = 0x20u; buf[15] = 0x30u;
+    }
+    /* Sprite half (PAL1) preserved from prior room load. */
     roomrom_bg_palette_load_bg_only(buf);
 }
 
