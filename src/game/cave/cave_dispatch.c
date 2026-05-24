@@ -98,6 +98,26 @@ int cave_init(cave_id_t cave_id)
     CAVE_LINK_ACTION_TIMER = 0u;          /* RAM($00AC) */
     CAVE_LINK_INPUT_FLAGS  = 0u;          /* RAM($00F8) */
 
+    /* NES Z_01.asm:69-74 InitCave + :271-293 SetUpCommonCaveObjects port.
+     * Person at ($78, $80) slot 1; bonfires (type $40) slot 2/3 at
+     * ($48, $80) and ($A8, $80). Slot 1 ObjType already = cave_id via
+     * cave_room_type_set(); slot 1 ObjAttr = $81 + ObjHP = 0. Halt Link
+     * (slot 0 ObjState = $40). Without this port slot 1 OBJ_X/OBJ_Y stayed
+     * 0 → NPC drew at top-left = invisible (Plan v6-C2 follow-up
+     * 2026-05-24, probed via gen_cave_npc.png). */
+    RAM(0x0070u + 1u) = 0x78u;            /* ObjX+1  = slot 1 X */
+    RAM(0x0084u + 1u) = 0x80u;            /* ObjY+1  = slot 1 Y */
+    RAM(0x0485u + 1u) = 0x00u;            /* ObjHP+1 = 0 */
+    RAM(0x03A4u + 1u) = 0x81u;            /* ObjAttr+1 = $81 */
+    RAM(0x00ACu)     = 0x40u;             /* ObjState (Link) = $40 (halt) */
+    /* Bonfires slot 2/3 — fixed positions flanking the NPC. */
+    RAM(0x034Fu + 2u) = 0x40u;            /* ObjType+2 = $40 (bonfire) */
+    RAM(0x034Fu + 3u) = 0x40u;            /* ObjType+3 = $40 (bonfire) */
+    RAM(0x0070u + 2u) = 0x48u;            /* ObjX+2    = $48 */
+    RAM(0x0070u + 3u) = 0xA8u;            /* ObjX+3    = $A8 */
+    RAM(0x0084u + 2u) = 0x80u;            /* ObjY+2    = $80 */
+    RAM(0x0084u + 3u) = 0x80u;            /* ObjY+3    = $80 */
+
     /* NES InitCaveContinue (Z_01.asm:105-170) port:
      * 1) cave_idx = cave_id - $6A.
      * 2) sel = OverworldPersonTextSelectors[cave_idx].
