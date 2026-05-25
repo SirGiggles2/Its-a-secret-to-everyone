@@ -106,10 +106,10 @@ void sram_save_store(unsigned char slot, const void *src)
 
 void sram_options_load(struct OptionsState *out)
 {
-    /* TODO(S8a): when struct OptionsState is defined in
-     * src/state/options_state.h, replace sizeof(stub) with
-     * sizeof(struct OptionsState) and remove the void* cast.
-     * For now, read SRAM_OPTIONS_STATE_SIZE bytes at offset 0x800. */
+    /* S8a closed: struct OptionsState lives at src/game/options/
+     * options_state.h:127. SRAM_OPTIONS_STATE_SIZE is the canonical
+     * byte length; caller is responsible for passing a properly-sized
+     * struct OptionsState pointer. */
     unsigned short i;
     unsigned char *p = (unsigned char *)out;
 

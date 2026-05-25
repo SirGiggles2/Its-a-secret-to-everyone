@@ -20,9 +20,10 @@
 #ifndef SRAM_ABI_H
 #define SRAM_ABI_H
 
-/* Forward declaration: struct defined in src/state/options_state.h
- * which does not exist until S8a. The adapter uses a void* cast
- * internally to avoid pulling in the future header. */
+/* Forward declaration. struct OptionsState lives at
+ * src/game/options/options_state.h (defined at S8a close); ABI header
+ * keeps fwd-decl to avoid pulling game/-side header into the
+ * substrate.  */
 struct OptionsState;
 
 /*
@@ -47,13 +48,13 @@ void sram_save_store(unsigned char slot, const void *src);
 
 /*
  * sram_options_load: read the OptionsState region (SRAM 0x800..0x81F)
- * into *out. Stub until S8a defines struct OptionsState.
+ * into *out. Live since S8a close.
  */
 void sram_options_load(struct OptionsState *out);
 
 /*
  * sram_options_store: write *in to the OptionsState region
- * (SRAM 0x800..0x81F). Stub until S8a defines struct OptionsState.
+ * (SRAM 0x800..0x81F). Live since S8a close.
  */
 void sram_options_store(const struct OptionsState *in);
 
