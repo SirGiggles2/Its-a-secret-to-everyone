@@ -344,7 +344,7 @@ static unsigned char tile_subpal(unsigned short nes_row, unsigned char tid)
     /* Text on red rows */
     if (tid < 0x24u) {
         if (nes_row == 12u || nes_row == 18u || nes_row == 19u) return 1u;
-        if (nes_row == 28u) return 3u;  /* TRIFORCE label brown */
+        if (nes_row == 29u) return 3u;  /* TRIFORCE label brown (k_inventory_tilemap row 29 = TRIFORCE letters per line 44) */
     }
     return 0u;
 }
