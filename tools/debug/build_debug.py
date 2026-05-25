@@ -45,6 +45,7 @@ INCS = [
     ROOT / "src" / "state",
     ROOT / "src" / "game",
     ROOT / "src" / "game" / "cave",
+    ROOT / "src" / "game" / "cave" / "probes",
     ROOT / "src" / "game" / "world",
     ROOT / "src" / "game" / "core",
     ROOT / "src" / "game" / "enemies",
@@ -430,6 +431,11 @@ ROOMROM_C_SOURCES = [
     ("src/state/save_serializer.c", "state_save_serializer.o"),
     ("src/state/probes/save_serializer_probe.c", "state_save_serializer_probe.o"),
     ("src/game/enemies/probes/enemy_loop_probe.c", "game_enemy_loop_probe.o"),
+    # Phase E (2026-05-24) — Warp routes static dispatch probe. Fills
+    # debug RAM @ $FF7800 with cave_entrance_check results for all 128
+    # OW rooms so tools/debug/probes/probe_warp_routes.lua can byte-diff
+    # vs tools/parity/warp_routes_expected.json.
+    ("src/game/cave/probes/warp_routes_probe.c", "game_cave_warp_routes_probe.o"),
     # Phase J.2 (2026-05-18): legacy expanded_bg_chr.c retired. All
     # consumers (ow/uw/hud renderer + redux UW upload) migrated to
     # bg_sparse_chr + universal LUT. Saves ~120 KB ROM.

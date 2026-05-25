@@ -43,6 +43,7 @@
 #include "player_state.h"                 /* Phase 6 Task 6.1: typed players[] */
 #include "enemy_loop.h"                   /* Phase 7 Task 7.2 step 2 (WT-5) */
 #include "enemy_loop_probe.h"             /* Phase 7 Task 7.2 step 2 probe */
+#include "warp_routes_probe.h"            /* Phase E (2026-05-24) warp dispatch probe */
 #include "options_probe.h"                /* Phase 9 Task 9.1 in-ROM tests */
 #include "options_persistence_probe.h"    /* Phase 9 Task 9.2 SRAM tests */
 #include "options_persistence.h"          /* Phase 9 Task 9.4 load-or-default */
@@ -1714,6 +1715,12 @@ void roomrom_debug_enter(void)
     if (enemy_loop_probe_is_armed()) {
         enemy_loop_probe_run();            /* Heavy 11-slot in-ROM stress probe. */
     }
+    /* Phase E (2026-05-24) — Warp routes static dispatch probe. Pure
+     * functional probe over rooms_overworld[] (loaded by level_info_install_ow
+     * at line 1670). Publishes 128-byte result block at $FF7800 for
+     * tools/debug/probes/probe_warp_routes.lua to byte-diff vs
+     * tools/parity/warp_routes_expected.json. */
+    warp_routes_probe_run();
     options_probe_run();                   /* Phase 9 Task 9.1 — pure CPU-side. */
     options_persistence_probe_run();       /* Phase 9 Task 9.2 — SRAM I/O. */
     options_consumer_probe_run();          /* Phase 9 Task 9.4 — consumer wiring. */
