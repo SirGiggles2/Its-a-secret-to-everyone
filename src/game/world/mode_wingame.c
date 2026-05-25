@@ -38,6 +38,7 @@
 
 #include "platform_abi.h"
 #include "mode_wingame.h"
+#include "../../../RoomRom/src/roomrom_main_state.h"  /* quest selector */
 
 /* NES RAM aliases. */
 #define M13_GAME_SUBMODE          RAM(0x0013u)
@@ -242,10 +243,10 @@ static void mode13_sub3_credits(void)
     }
     M13_SWITCH_NT_REQ = vsc_carry;
 
-    /* Q1 quest = list[0] = $02 ; Q2 quest = list[1] = $03.
-     * QuestNumbers read happens via inventory state; for Q1 baseline
-     * use index 0. (TODO: thread quest selector from main state.) */
-    unsigned char y = 0u;
+    /* NES: LDX CurSaveSlot / LDA QuestNumbers,X / BEQ Q1 else INY.
+     * Genesis: roomrom_main_current_quest returns 1 (Q1) or 2 (Q2);
+     * map to list index 0 (Q1) or 1 (Q2). */
+    unsigned char y = (roomrom_main_current_quest() == 2u) ? 1u : 0u;
 
     if (M13_VSCROLL_ADDR_LO < k_credits_last_screen[y]) {
         return;
