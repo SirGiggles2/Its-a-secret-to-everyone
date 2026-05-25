@@ -20,25 +20,19 @@ void warp_routes_probe_run(void)
 {
     volatile unsigned char *block =
         (volatile unsigned char *)WARP_ROUTES_PROBE_BASE;
-    /* Phase E diag 2026-05-24: pre-fill the entire 392-byte block with
-     * sentinel $AA. If Lua-side reads return $AA, the bytes were never
-     * touched by the loop (probe didn't reach those slots). If they
-     * return 0, the loop wrote them OR something cleared them. */
-    {
-        unsigned int prefill;
-        for (prefill = 0u; prefill < 392u; ++prefill) {
-            block[prefill] = 0xAAu;
-        }
-    }
     unsigned int room;
     unsigned char no_warp_count = 0u;
     unsigned char dungeon_count = 0u;
     unsigned char cave_count    = 0u;
 
-    block[0] = 0x57u;                       /* 'W' */
-    block[1] = 0x52u;                       /* 'R' */
-    block[2] = WARP_ROUTES_PROBE_VERSION;
-    block[3] = 0u;                          /* filled below */
+    /* Phase E fix 2026-05-24: write magic AT THE END so Lua poll
+     * loop can't break mid-iteration. Pre-magic init clears the
+     * magic bytes to ensure Lua sees old/stale magic as not-yet-
+     * published (block stays at boot-zero state until probe completes). */
+    block[0] = 0u;
+    block[1] = 0u;
+    block[2] = 0u;
+    block[3] = 0u;
     block[4] = 0u;
     block[5] = 0u;
     block[6] = 0u;
@@ -79,4 +73,11 @@ void warp_routes_probe_run(void)
     block[3] = no_warp_count;
     block[4] = dungeon_count;
     block[5] = cave_count;
+    block[6] = 0u;
+    block[7] = 0u;
+
+    /* Publish magic LAST — Lua waits for this. */
+    block[2] = WARP_ROUTES_PROBE_VERSION;
+    block[1] = 0x52u;                       /* 'R' */
+    block[0] = 0x57u;                       /* 'W' */
 }

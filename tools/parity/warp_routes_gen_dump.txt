@@ -1,141 +1,141 @@
 # warp_routes_probe dump — Phase E Genesis-side
-# published_at_frame: 116  (published=true)
+# published_at_frame: 117  (published=true)
 # magic:        $57 $52 (expect $57 $52 = 'WR')
-# version:      $01
-# no_warp_count:$00 (0)
-# dungeon_count:$00 (0)
-# cave_count:   $00 (0)
+# version:      $02
+# no_warp_count:$24 (36)
+# dungeon_count:$0E (14)
+# cave_count:   $4E (78)
 # reserved:     $00 $00
 #
 # Per-room results (1 byte per OW room id 0x00..0x7F):
 # value 0   = no_warp OR dungeon (caller falls through)
 # value !=0 = cave_id ($6A..$7D)
 #
-room $00 = $00
-room $01 = $71
-room $02 = $74
-room $03 = $71
-room $04 = $74
-room $05 = $00
-room $06 = $6B
-room $07 = $71
-room $08 = $00
-room $09 = $6D
-room $0A = $6C
-room $0B = $00
-room $0C = $78
-room $0D = $74
-room $0E = $72
-room $0F = $7C
-room $10 = $70
-room $11 = $72
-room $12 = $79
-room $13 = $7B
-room $14 = $71
-room $15 = $78
-room $16 = $00
-room $17 = $00
-room $18 = $00
-room $19 = $00
-room $1A = $00
-room $1B = $00
-room $1C = $00
-room $1D = $00
-room $1E = $00
-room $1F = $00
-room $20 = $00
-room $21 = $00
-room $22 = $00
-room $23 = $00
-room $24 = $00
-room $25 = $00
-room $26 = $00
-room $27 = $00
-room $28 = $00
-room $29 = $00
-room $2A = $00
-room $2B = $00
-room $2C = $00
-room $2D = $00
-room $2E = $00
-room $2F = $00
-room $30 = $00
-room $31 = $00
-room $32 = $00
-room $33 = $00
-room $34 = $00
-room $35 = $00
-room $36 = $00
-room $37 = $00
-room $38 = $00
-room $39 = $00
-room $3A = $00
-room $3B = $00
-room $3C = $00
-room $3D = $00
-room $3E = $00
-room $3F = $00
-room $40 = $00
-room $41 = $00
-room $42 = $00
-room $43 = $00
-room $44 = $00
-room $45 = $00
-room $46 = $00
-room $47 = $00
-room $48 = $00
-room $49 = $00
-room $4A = $00
-room $4B = $00
-room $4C = $00
-room $4D = $00
-room $4E = $00
-room $4F = $00
-room $50 = $00
-room $51 = $00
-room $52 = $00
-room $53 = $00
-room $54 = $00
-room $55 = $00
-room $56 = $00
-room $57 = $00
-room $58 = $00
-room $59 = $00
-room $5A = $00
-room $5B = $00
-room $5C = $00
-room $5D = $00
-room $5E = $00
-room $5F = $00
-room $60 = $00
-room $61 = $00
-room $62 = $00
-room $63 = $00
-room $64 = $00
-room $65 = $00
-room $66 = $00
-room $67 = $00
-room $68 = $00
-room $69 = $00
-room $6A = $00
-room $6B = $00
-room $6C = $00
-room $6D = $00
-room $6E = $00
-room $6F = $00
-room $70 = $00
-room $71 = $00
-room $72 = $00
-room $73 = $00
-room $74 = $00
-room $75 = $00
-room $76 = $00
-room $77 = $00
-room $78 = $00
-room $79 = $00
-room $7A = $00
-room $7B = $00
-room $7C = $00
-room $7D = $00
-room $7E = $00
-room $7F = $00
+room $00 direct=$27 meta=$27 diff=$00 cid=$00
+room $01 direct=$5F meta=$5F diff=$00 cid=$71
+room $02 direct=$6B meta=$6B diff=$00 cid=$74
+room $03 direct=$5F meta=$5F diff=$00 cid=$71
+room $04 direct=$6B meta=$6B diff=$00 cid=$74
+room $05 direct=$27 meta=$27 diff=$00 cid=$00
+room $06 direct=$47 meta=$47 diff=$00 cid=$6B
+room $07 direct=$5F meta=$5F diff=$00 cid=$71
+room $08 direct=$03 meta=$03 diff=$00 cid=$00
+room $09 direct=$4F meta=$4F diff=$00 cid=$6D
+room $0A direct=$4B meta=$4B diff=$00 cid=$6C
+room $0B direct=$17 meta=$17 diff=$00 cid=$00
+room $0C direct=$7B meta=$7B diff=$00 cid=$78
+room $0D direct=$6B meta=$6B diff=$00 cid=$74
+room $0E direct=$63 meta=$63 diff=$00 cid=$72
+room $0F direct=$8B meta=$8B diff=$00 cid=$7C
+room $10 direct=$5B meta=$5B diff=$00 cid=$70
+room $11 direct=$63 meta=$63 diff=$00 cid=$72
+room $12 direct=$7F meta=$7F diff=$00 cid=$79
+room $13 direct=$87 meta=$87 diff=$00 cid=$7B
+room $14 direct=$5F meta=$5F diff=$00 cid=$71
+room $15 direct=$7B meta=$7B diff=$00 cid=$78
+room $16 direct=$5B meta=$5B diff=$00 cid=$70
+room $17 direct=$03 meta=$03 diff=$00 cid=$00
+room $18 direct=$6B meta=$6B diff=$00 cid=$74
+room $19 direct=$1F meta=$1F diff=$00 cid=$00
+room $1A direct=$6F meta=$6F diff=$00 cid=$75
+room $1B direct=$17 meta=$17 diff=$00 cid=$00
+room $1C direct=$57 meta=$57 diff=$00 cid=$6F
+room $1D direct=$53 meta=$53 diff=$00 cid=$6E
+room $1E direct=$5F meta=$5F diff=$00 cid=$71
+room $1F direct=$5A meta=$5A diff=$00 cid=$70
+room $20 direct=$44 meta=$44 diff=$00 cid=$6B
+room $21 direct=$4C meta=$4C diff=$00 cid=$6D
+room $22 direct=$18 meta=$18 diff=$00 cid=$00
+room $23 direct=$53 meta=$53 diff=$00 cid=$6E
+room $24 direct=$03 meta=$03 diff=$00 cid=$00
+room $25 direct=$77 meta=$77 diff=$00 cid=$77
+room $26 direct=$7F meta=$7F diff=$00 cid=$79
+room $27 direct=$6B meta=$6B diff=$00 cid=$74
+room $28 direct=$86 meta=$86 diff=$00 cid=$7B
+room $29 direct=$6B meta=$6B diff=$00 cid=$74
+room $2A direct=$03 meta=$03 diff=$00 cid=$00
+room $2B direct=$8F meta=$8F diff=$00 cid=$7D
+room $2C direct=$47 meta=$47 diff=$00 cid=$6B
+room $2D direct=$87 meta=$87 diff=$00 cid=$7B
+room $2E direct=$03 meta=$03 diff=$00 cid=$00
+room $2F direct=$44 meta=$44 diff=$00 cid=$6B
+room $30 direct=$18 meta=$18 diff=$00 cid=$00
+room $31 direct=$00 meta=$00 diff=$00 cid=$00
+room $32 direct=$03 meta=$03 diff=$00 cid=$00
+room $33 direct=$68 meta=$68 diff=$00 cid=$74
+room $34 direct=$83 meta=$83 diff=$00 cid=$7A
+room $35 direct=$03 meta=$03 diff=$00 cid=$00
+room $36 direct=$03 meta=$03 diff=$00 cid=$00
+room $37 direct=$07 meta=$07 diff=$00 cid=$00
+room $38 direct=$03 meta=$03 diff=$00 cid=$00
+room $39 direct=$02 meta=$02 diff=$00 cid=$00
+room $3A direct=$47 meta=$47 diff=$00 cid=$6B
+room $3B direct=$03 meta=$03 diff=$00 cid=$00
+room $3C direct=$0A meta=$0A diff=$00 cid=$00
+room $3D direct=$86 meta=$86 diff=$00 cid=$7B
+room $3E direct=$03 meta=$03 diff=$00 cid=$00
+room $3F direct=$03 meta=$03 diff=$00 cid=$00
+room $40 direct=$00 meta=$00 diff=$00 cid=$00
+room $41 direct=$00 meta=$00 diff=$00 cid=$00
+room $42 direct=$1F meta=$1F diff=$00 cid=$00
+room $43 direct=$02 meta=$02 diff=$00 cid=$00
+room $44 direct=$76 meta=$76 diff=$00 cid=$77
+room $45 direct=$12 meta=$12 diff=$00 cid=$00
+room $46 direct=$7E meta=$7E diff=$00 cid=$79
+room $47 direct=$46 meta=$46 diff=$00 cid=$6B
+room $48 direct=$86 meta=$86 diff=$00 cid=$7B
+room $49 direct=$52 meta=$52 diff=$00 cid=$6E
+room $4A direct=$76 meta=$76 diff=$00 cid=$77
+room $4B direct=$6A meta=$6A diff=$00 cid=$74
+room $4C direct=$02 meta=$02 diff=$00 cid=$00
+room $4D direct=$7E meta=$7E diff=$00 cid=$79
+room $4E direct=$8E meta=$8E diff=$00 cid=$7D
+room $4F direct=$03 meta=$03 diff=$00 cid=$00
+room $50 direct=$00 meta=$00 diff=$00 cid=$00
+room $51 direct=$8F meta=$8F diff=$00 cid=$7D
+room $52 direct=$03 meta=$03 diff=$00 cid=$00
+room $53 direct=$8A meta=$8A diff=$00 cid=$7C
+room $54 direct=$02 meta=$02 diff=$00 cid=$00
+room $55 direct=$02 meta=$02 diff=$00 cid=$00
+room $56 direct=$8E meta=$8E diff=$00 cid=$7D
+room $57 direct=$02 meta=$02 diff=$00 cid=$00
+room $58 direct=$86 meta=$86 diff=$00 cid=$7B
+room $59 direct=$02 meta=$02 diff=$00 cid=$00
+room $5A direct=$02 meta=$02 diff=$00 cid=$00
+room $5B direct=$8E meta=$8E diff=$00 cid=$7D
+room $5C direct=$02 meta=$02 diff=$00 cid=$00
+room $5D direct=$02 meta=$02 diff=$00 cid=$00
+room $5E direct=$7A meta=$7A diff=$00 cid=$78
+room $5F direct=$03 meta=$03 diff=$00 cid=$00
+room $60 direct=$5B meta=$5B diff=$00 cid=$70
+room $61 direct=$03 meta=$03 diff=$00 cid=$00
+room $62 direct=$8B meta=$8B diff=$00 cid=$7C
+room $63 direct=$5F meta=$5F diff=$00 cid=$71
+room $64 direct=$6A meta=$6A diff=$00 cid=$74
+room $65 direct=$03 meta=$03 diff=$00 cid=$00
+room $66 direct=$7B meta=$7B diff=$00 cid=$78
+room $67 direct=$86 meta=$86 diff=$00 cid=$7B
+room $68 direct=$5E meta=$5E diff=$00 cid=$71
+room $69 direct=$02 meta=$02 diff=$00 cid=$00
+room $6A direct=$5E meta=$5E diff=$00 cid=$71
+room $6B direct=$8A meta=$8A diff=$00 cid=$7C
+room $6C direct=$22 meta=$22 diff=$00 cid=$00
+room $6D direct=$22 meta=$22 diff=$00 cid=$00
+room $6E direct=$8E meta=$8E diff=$00 cid=$7D
+room $6F direct=$77 meta=$77 diff=$00 cid=$77
+room $70 direct=$73 meta=$73 diff=$00 cid=$76
+room $71 direct=$87 meta=$87 diff=$00 cid=$7B
+room $72 direct=$5F meta=$5F diff=$00 cid=$71
+room $73 direct=$03 meta=$03 diff=$00 cid=$00
+room $74 direct=$0F meta=$0F diff=$00 cid=$00
+room $75 direct=$66 meta=$66 diff=$00 cid=$73
+room $76 direct=$5A meta=$5A diff=$00 cid=$70
+room $77 direct=$42 meta=$42 diff=$00 cid=$6A
+room $78 direct=$6A meta=$6A diff=$00 cid=$74
+room $79 direct=$53 meta=$53 diff=$00 cid=$6E
+room $7A direct=$03 meta=$03 diff=$00 cid=$00
+room $7B direct=$47 meta=$47 diff=$00 cid=$6B
+room $7C direct=$5B meta=$5B diff=$00 cid=$70
+room $7D direct=$5F meta=$5F diff=$00 cid=$71
+room $7E direct=$03 meta=$03 diff=$00 cid=$00
+room $7F direct=$03 meta=$03 diff=$00 cid=$00

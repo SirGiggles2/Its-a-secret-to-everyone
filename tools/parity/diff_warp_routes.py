@@ -55,6 +55,16 @@ def load_gen() -> dict:
         m = re.match(r"room \$([0-9A-Fa-f]+) = \$([0-9A-Fa-f]+)", line)
         if m:
             rooms[int(m.group(1), 16)] = int(m.group(2), 16)
+            continue
+        # New diag format: room $XX direct=$YY meta=$ZZ diff=$WW cid=$VV
+        m = re.match(
+            r"room \$([0-9A-Fa-f]+) direct=\$([0-9A-Fa-f]+) "
+            r"meta=\$([0-9A-Fa-f]+) diff=\$([0-9A-Fa-f]+) "
+            r"cid=\$([0-9A-Fa-f]+)",
+            line,
+        )
+        if m:
+            rooms[int(m.group(1), 16)] = int(m.group(5), 16)
     return {"header": header, "rooms": rooms}
 
 
