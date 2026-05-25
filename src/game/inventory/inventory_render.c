@@ -25,15 +25,9 @@
 #include "../../state/inventory.h"
 
 /* Genesis VRAM tile for item N: ITEM_VRAM_TILE_BASE + ROOMROM_ITEM_TILE_<X>.
- * V2.4b fix (2026-05-24): use ROOMROM_ITEM_TILE_BASE constant instead of
- * hardcoded 819. Original 819 = 533 (SPR_BASE) + 238 (LINK) + 32 + 16 = was
- * SPR_TILE_BASE-relative magic number. Bumping SPR_TILE_BASE for inventory
- * atlas force-includes silently invalidated this — items rendered with
- * wrong VRAM tile slots (Gemini H2 finding). Source from
- * roomrom_vram_map.h so any future SPR_TILE_BASE shift auto-updates.
- * Adjustment: ROOMROM_ITEM_TILE_BASE is the ATLAS START; items are offset
- * 16 tiles into that bank per ITEM_VRAM offset convention. */
-#define ITEM_VRAM_TILE_BASE (unsigned short)(ROOMROM_ITEM_TILE_BASE - 1u)
+ * ITEM_VRAM_TILE_BASE = ATTACK_VRAM_TILE + 16. ATTACK = LINK + 32. LINK = SPR_BASE+238.
+ * = 533 + 238 + 32 + 16 = 819. */
+#define ITEM_VRAM_TILE_BASE 819u
 /* SAT VRAM base, gameplay context per PR-2 Option F. */
 #define SAT_VRAM_BASE_GAMEPLAY 0xF400u
 
@@ -364,13 +358,13 @@ static void write_inventory_row(unsigned short gen_row)
     for (i = 0; i < 32u; ++i) {
         unsigned char tid = k_inventory_tilemap[nes_row][i];
         unsigned char sp  = tile_subpal(nes_row, tid);
-        /* V2.4b: use pixel-bias atlas — tile_for(tid, sp) returns the
-         * sub-pal-biased slot. Atlas force-includes guarantee text/
-         * triforce/box tiles exist at sub-pals 1/2/3. Plane attr PAL
-         * field stays 0 (default PAL0 which holds all 4 NES BG sub-pals
-         * packed via pixel bias). */
-        unsigned short vram = tile_for(tid, sp);
-        cells[i] = RENDER_TILE_ATTR_FULL(0u, 0, 0, 0, vram);
+        /* tile_for() resolves via sparse LUT using sub_pal=0 only — atlas
+         * doesn't have per-sub-pal copies post-V2.6 revert. Sub-pal
+         * routing now happens via plane-attr PAL field instead (PAL1/2/3
+         * CRAM-swapped to NES BG sub-pals 1/2/3 by inventory_palette_
+         * load_subscreen). */
+        unsigned short vram = tile_for(tid, 0u);
+        cells[i] = RENDER_TILE_ATTR_FULL((unsigned char)sp, 0, 0, 0, vram);
     }
     render_plane_a_write_row(gen_row, cells, 32u);
 }

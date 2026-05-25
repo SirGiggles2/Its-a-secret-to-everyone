@@ -89,9 +89,9 @@
  * no longer applies; SUBPAL_COUNT=1 reflects sparse layout.
  * BG_TILE_COUNT_PER_PAL retained as 256 for any consumer querying the
  * NES tile ID domain (not VRAM bank size). */
-#define ROOMROM_BG_TILE_COUNT_PER_PAL   587u    /* V2.4b (2026-05-24): 532+55 inventory force-includes (triforce sub-pal 2 + text sub-pal 1+3 + box-frame) */
+#define ROOMROM_BG_TILE_COUNT_PER_PAL   551u    /* V2.4 (2026-05-24): 532+19 inventory force-includes (triforce + box-frame) */
 #define ROOMROM_BG_SUBPAL_COUNT         1u      /* sparse: no per-sub-pal copies */
-#define ROOMROM_SPR_TILE_BASE           588u    /* V2.4b (2026-05-24): 1 + 587 (was 552, originally 533) */
+#define ROOMROM_SPR_TILE_BASE           552u    /* V2.4 (2026-05-24): 1 + 551 (was 533 = 1 + 532) */
 #define ROOMROM_SPR_TILE_COUNT_PER_PAL  287u    /* common(238)+walk(32)+attack(16)=286 used, 1 slack. Reduced from 312 (-25 tiles) to make ITEM bank fit at 56 tiles/sub-pal x4 = 224 tiles after 8x16 mode parity work (bomb +1 tile, explosion +6 tiles for 16x16 mirrored). Post-Phase-B (2026-05-18): ITEM bank shrank to 70 tiles single-copy, leaving 140 headroom tiles (1382..1521) for future SPR expansion without VDP table relocation. */
 #define ROOMROM_SPR_SUBPAL_COUNT        1u      /* SPR bank stays 1x (sub-pal 0 only) physically. Phase D unblock (2026-05-18): future sprites needing sub-pal 1/2 can use this bank at 1x VRAM cost — Genesis OAM pal field selects PAL2/PAL3 (loaded with NES SPR sub-pal 1/2 colors by roomrom_bg_palette_load_palram_full per src/game/world/bg_palette.h CRAM target). Helper: ROOMROM_SUBPAL_PAL(s) in sprite_render.c maps sub_pal 0/1/2 -> PAL1/PAL2/PAL3 for any sprite renderer. No new tile copies required. */
 
