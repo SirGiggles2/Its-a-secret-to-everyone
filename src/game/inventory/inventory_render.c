@@ -25,9 +25,12 @@
 #include "../../state/inventory.h"
 
 /* Genesis VRAM tile for item N: ITEM_VRAM_TILE_BASE + ROOMROM_ITEM_TILE_<X>.
- * ITEM_VRAM_TILE_BASE = ATTACK_VRAM_TILE + 16. ATTACK = LINK + 32. LINK = SPR_BASE+238.
- * = 533 + 238 + 32 + 16 = 819. */
-#define ITEM_VRAM_TILE_BASE 819u
+ * V2.4c (2026-05-25): derived from ROOMROM_ITEM_TILE_BASE macro instead of
+ * hardcoded 819 (= old SPR_TILE_BASE 533 + LINK 238 + walk 32 + attack 16).
+ * Bumping SPR_TILE_BASE for inventory atlas force-includes silently broke
+ * hardcoded version (Gemini H2 review finding). Source from
+ * roomrom_vram_map.h for auto-update on any SPR/ITEM_BASE shift. */
+#define ITEM_VRAM_TILE_BASE (unsigned short)(ROOMROM_ITEM_TILE_BASE - 1u)
 /* SAT VRAM base, gameplay context per PR-2 Option F. */
 #define SAT_VRAM_BASE_GAMEPLAY 0xF400u
 
@@ -80,26 +83,33 @@ static void sat_write(unsigned char slot, unsigned short y,
 #define INV_SLOT_COUNT 18u
 #define INV_TILE_MISSING 0xFFFFu
 
-/* Genesis VRAM tile slot per inventory slot (post-byte-diff verification). */
+/* Genesis VRAM tile slot per inventory slot. V2.4c (2026-05-25):
+ * derived from ROOMROM_SPR_TILE_BASE + ROOMROM_ITEM_TILE_BASE macros
+ * instead of hardcoded slot numbers. Original table baked for old
+ * SPR_TILE_BASE=533 / ITEM_TILE_BASE=820. Atlas force-includes for V2.1
+ * subscreen text/triforce bumped SPR_TILE_BASE to 609 / ITEM_TILE_BASE
+ * to 896, silently invalidating the hardcoded slots (Gemini H2). */
+#define INV_SPR(off)   (unsigned short)(ROOMROM_SPR_TILE_BASE + (off))
+#define INV_ITEM(off)  (unsigned short)(ROOMROM_ITEM_TILE_BASE + (off))
 static const unsigned short k_inv_slot_to_vram_tile[INV_SLOT_COUNT] = {
-    826u,   /* 0  boomerang (NES $36 -> Gen slot 826) */
-    840u,   /* 1  bombs     (NES $34 -> Gen slot 840) */
-    573u,   /* 2  arrow     (NES $28 -> SPR_BASE+40)  */
-    575u,   /* 3  bow       (NES $2A -> SPR_BASE+42)  */
-    571u,   /* 4  candle    (NES $26 -> SPR_BASE+38)  */
-    569u,   /* 5  recorder  (NES $24 -> SPR_BASE+36)  */
-    567u,   /* 6  food      (NES $22 -> SPR_BASE+34)  */
-    898u,   /* 7  potion    (NES $40 -> Gen slot 898) */
-    856u,   /* 8  wand      (NES $4A -> Gen slot 856) */
+    INV_ITEM(6),    /* 0  boomerang (NES $36) — was hardcoded 826 = 820+6 */
+    INV_ITEM(20),   /* 1  bombs     (NES $34) — was 840 = 820+20 */
+    INV_SPR(40),    /* 2  arrow     (NES $28 -> SPR_BASE+40) */
+    INV_SPR(42),    /* 3  bow       (NES $2A -> SPR_BASE+42) */
+    INV_SPR(38),    /* 4  candle    (NES $26 -> SPR_BASE+38) */
+    INV_SPR(36),    /* 5  recorder  (NES $24 -> SPR_BASE+36) */
+    INV_SPR(34),    /* 6  food      (NES $22 -> SPR_BASE+34) */
+    INV_ITEM(78),   /* 7  potion    (NES $40) — was 898 = 820+78 */
+    INV_ITEM(36),   /* 8  wand      (NES $4A) — was 856 = 820+36 */
     INV_TILE_MISSING,  /* 9  raft (NES $6C, not extracted) */
-    884u,   /* A  book      (NES $42 -> Gen slot 884) */
+    INV_ITEM(64),   /* A  book      (NES $42) — was 884 = 820+64 */
     INV_TILE_MISSING,  /* B  ring (NES $76, not extracted) */
-    886u,   /* C  ladder    (NES $2C -> Gen slot 886) */
-    890u,   /* D  magic_key (NES $4E -> Gen slot 890) */
-    892u,   /* E  bracelet  (NES $4C -> Gen slot 892) */
+    INV_ITEM(66),   /* C  ladder    (NES $2C) — was 886 = 820+66 */
+    INV_ITEM(70),   /* D  magic_key (NES $4E) — was 890 = 820+70 */
+    INV_ITEM(72),   /* E  bracelet  (NES $4C) — was 892 = 820+72 */
     INV_TILE_MISSING,  /* F letter (NES $6A, not extracted) */
-    874u,   /* 10 compass   (NES $2E -> Gen slot 874) */
-    876u,   /* 11 map       (NES $32 -> Gen slot 876) */
+    INV_ITEM(54),   /* 10 compass   (NES $2E) — was 874 = 820+54 */
+    INV_ITEM(56),   /* 11 map       (NES $32) — was 876 = 820+56 */
 };
 
 /* Per-slot NES SPR sub-pal -> Genesis PAL (per Phase B/F routing):
@@ -317,12 +327,25 @@ static void draw_item_icon_2x2(unsigned char tile_offset, unsigned short y, unsi
  *   all blank ($24) = sub_pal 0 */
 static unsigned char tile_subpal(unsigned short nes_row, unsigned char tid)
 {
-    /* V2.6 (2026-05-20): all routed via sub_pal 0 since sub_pal 1/3 force-
-     * includes were reverted (atlas overran SPR_TILE_BASE). Text renders
-     * white instead of NES red/brown -- accepted divergence. Triangle
-     * tiles ($E7-$F5) not in atlas at any sub-pal -> render BLANK_TILE. */
-    (void)nes_row;
-    (void)tid;
+    /* V2.4c (2026-05-25): per-tile NES BG sub-pal hint, fed to
+     * bg_sparse_tile_lut[tid][sub_pal] which returns the pixel-bias
+     * variant for that sub-pal. Plane attr pal stays 0 (PAL0 holds all
+     * 4 NES BG sub-pals packed via pixel bias).
+     *
+     * Atlas force-includes (gen_bg_sparse.py V2.1 lines 246-276) provide:
+     *   - letters $0A-$23 + digits $00-$09 at sub-pals 1+3 (red+brown)
+     *   - triforce $E7-$F1+$F5 at sub-pal 3 (brown/yellow ramp)
+     *   - box frame $69-$6E at sub-pal 0 (default white/blue)
+     *
+     * SPR_TILE_BASE bumped 533→609 to accommodate growth without
+     * corrupting Common SPR slots (V2.6 revert root cause). */
+    /* Triforce triangle → sub-pal 3 (NES brown/yellow) */
+    if ((tid >= 0xE7u && tid <= 0xF1u) || tid == 0xF5u) return 3u;
+    /* Text on red rows */
+    if (tid < 0x24u) {
+        if (nes_row == 12u || nes_row == 18u || nes_row == 19u) return 1u;
+        if (nes_row == 28u) return 3u;  /* TRIFORCE label brown */
+    }
     return 0u;
 }
 
