@@ -14,6 +14,7 @@
  */
 
 #include "transition.h"
+#include "platform_abi.h"  /* nes_ram for audio cell writes */
 #include "../../../RoomRom/src/roomrom_main_state.h"
 #include "ow_meta.h"
 #include "render/ow_render.h"     /* Phase 12.2 promoted */
@@ -132,14 +133,14 @@ unsigned char roomrom_world_transition_unsupported_selector_count(void)
     return s_unsupported_selector_count;
 }
 
-/* Slice-1 stub: NES `Tune1Request = 0` / `FluteTimer = 0` post-warp.
- * RoomRom currently has no high-level audio driver wrapper; the
- * audio_driver.asm substrate isn't called from RoomRom yet. The call
- * site stays so the coordinator's apply order is NES-correct from day 1. */
+/* NES audio silence post-warp: clear Tune1Request ($0602) +
+ * FluteTimer ($003C). audio_dispatch_tick consumes these cells so
+ * writing 0 stops any in-progress death/secret tune at warp boundary
+ * (matches NES Z_05.asm warp-fade behavior). */
 void roomrom_audio_silence_for_warp(void)
 {
-    /* TODO(audio): when the RoomRom audio driver bridge lands, write
-     * Tune1Request = 0 and FluteTimer = 0 here. */
+    nes_ram[0x0602u] = 0u;  /* Tune1Request */
+    nes_ram[0x003Cu] = 0u;  /* FluteTimer */
 }
 
 /* Rule 8: NES collapses warp-stair tiles ($70/$71/$72/$73) into a single
