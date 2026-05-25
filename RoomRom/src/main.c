@@ -44,6 +44,7 @@
 #include "enemy_loop.h"                   /* Phase 7 Task 7.2 step 2 (WT-5) */
 #include "enemy_loop_probe.h"             /* Phase 7 Task 7.2 step 2 probe */
 #include "warp_routes_probe.h"            /* Phase E (2026-05-24) warp dispatch probe */
+#include "dungeon_roundtrip_probe.h"      /* Phase F (2026-05-25) dungeon round-trip */
 #include "options_probe.h"                /* Phase 9 Task 9.1 in-ROM tests */
 #include "options_persistence_probe.h"    /* Phase 9 Task 9.2 SRAM tests */
 #include "options_persistence.h"          /* Phase 9 Task 9.4 load-or-default */
@@ -636,6 +637,12 @@ static void init_video(void)
     VDP_setHScrollTableAddress(0xF000u);
     VDP_setSpriteListAddress(0xF400u);
     render_mode_set_v64();
+    /* V2.4e attempt: VDP_setWindowOnBottom(ROOMROM_HUD_ROWS) for NES-
+     * correct bottom HUD. Reverted — single-line API change alone left
+     * HUD invisible because hud_runtime.c writes tiles to Window plane
+     * rows 0-6 (top-of-plane), but Window now displays plane rows 21-27
+     * (bottom-of-plane). HUD-bottom move requires subsystem refactor of
+     * tile-write offsets in hud_runtime.c. Filed Task #60 deferred. */
     VDP_setWindowOnTop(ROOMROM_HUD_ROWS);
     /* Independent H/V scroll per plane; both planes receive the same values. */
     VDP_setScrollingMode(HSCROLL_PLANE, VSCROLL_PLANE);
@@ -1721,6 +1728,13 @@ void roomrom_debug_enter(void)
      * tools/debug/probes/probe_warp_routes.lua to byte-diff vs
      * tools/parity/warp_routes_expected.json. */
     warp_routes_probe_run();
+    /* Phase F (2026-05-25) — Dungeon round-trip synthetic verifier.
+     * Runs after Phase E so level_info_install_uw mid-sweep doesn't
+     * corrupt the OW LBA state Phase E reads. Probe restores the
+     * master quest selector on exit; LBA tables left at L9Q2 (last
+     * iteration). main.c's regular load_room() will reinstall the
+     * right level when the game enters gameplay. */
+    dungeon_roundtrip_probe_run();
     options_probe_run();                   /* Phase 9 Task 9.1 — pure CPU-side. */
     options_persistence_probe_run();       /* Phase 9 Task 9.2 — SRAM I/O. */
     options_consumer_probe_run();          /* Phase 9 Task 9.4 — consumer wiring. */

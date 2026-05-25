@@ -667,6 +667,21 @@ static void draw_cursor(void)
     unsigned short attr = RENDER_TILE_ATTR_FULL(pal, 0, 0, 0, CURSOR_VRAM_TILE);
     sat_write(s_cursor_sat, sat_y, RENDER_SPRITE_SIZE(1, 1), 0u, attr, sat_x);
 
+    /* V2.4e (2026-05-25): NES draws currently-highlighted B-item icon
+     * INSIDE the cursor box. Was missing — cursor showed empty blue square.
+     * Look up cursor_slot's VRAM tile + PAL via existing per-slot tables,
+     * emit SAT entry at same position as cursor (sprite link order ensures
+     * item draws over the cursor highlight). */
+    if (s_cursor_slot < INV_SLOT_COUNT &&
+        k_inv_slot_to_vram_tile[s_cursor_slot] != INV_TILE_MISSING &&
+        b_item_owned(s_cursor_slot)) {
+        unsigned short item_tile = k_inv_slot_to_vram_tile[s_cursor_slot];
+        unsigned char  item_pal  = k_inv_slot_to_pal[s_cursor_slot];
+        unsigned short item_attr = RENDER_TILE_ATTR_FULL(item_pal, 0, 0, 0, item_tile);
+        unsigned char  item_sat_slot = (unsigned char)(s_cursor_sat + 1u);
+        sat_write(item_sat_slot, sat_y, RENDER_SPRITE_SIZE(1, 2), 0u, item_attr, sat_x);
+    }
+
     ++s_cursor_frame;
 }
 
