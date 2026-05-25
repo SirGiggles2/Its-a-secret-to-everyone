@@ -94,13 +94,34 @@ landed in pre-session commits (`6c4c1b63`, `c4fbb2f3`, `ad8bcf21`,
 Last build: `Debug.bat` green. ROM size 2.0 MB. All five session
 commits landed cleanly on top of pre-existing WIP cave-fade work.
 
-## Phase E + F status (pending)
+## Phase E + F status (Phase E partial)
 
 Phase E (per-cave sweep, 19+1=20 caves × Q1+Q2 layouts) and Phase F
 (per-dungeon round-trip, 18 entrances) require automated runtime
-verification. Today's session built the static oracles
-(`tools/parity/warp_routes_expected.json`) and the code-side dispatch
-fixes, but neither phase ran live BizHawk captures end-to-end.
+verification. Phase E infrastructure landed (`42fdb219`):
+
+- `src/game/cave/probes/warp_routes_probe.{c,h}` — in-ROM probe at
+  $FF7C00 publishing 128-room dispatch results.
+- `tools/debug/probes/probe_warp_routes.lua` — BizHawk reader with
+  scripted A+B+C chord to advance past title; auto-exits.
+- `tools/parity/diff_warp_routes.py` — byte-diff vs oracle JSON,
+  generates `tools/parity/warp_routes_sweep_report.md`.
+
+**Partial result:** probe reached rooms $00..$15 (22 of 128
+iterations) — ALL MATCH ORACLE byte-for-byte. Direct blob read XOR
+ow_meta read = 0 (the dispatch is correct end-to-end for the path
+that runs to completion). Rooms $16+ retain $AA prefill sentinel,
+indicating the in-ROM loop terminates early.
+
+**Suspected cause:** VBlank interrupt or other early-boot interruption
+clobbers the loop state. Boot-time probes that work (options/enemy)
+are smaller; the 128-iteration loop exceeds whatever threshold the
+boot context allows. Investigation deferred. Next-session candidates:
+
+1. Disable interrupts during probe loop (`SYS_setInterruptMaskLevel`).
+2. Chunk into 16-room batches across multiple frames.
+3. Move the probe call later in `main.c` after the gameplay tick
+   stabilizes (post-debug-enter, mid-game).
 
 The blockers for an automated sweep:
 
