@@ -119,29 +119,62 @@ Phase E infrastructure + verification landed across three commits:
 Phase E GREEN."** Phase A LBA_B dispatch verified end-to-end on
 Genesis runtime.
 
-## Phase F status (pending)
+## Phase F status — GREEN (`fccd6a51`)
 
-Phase F (per-dungeon round-trip, 18 entrances) requires runtime
-gameplay state — Link on stair tile inside a dungeon's entrance
-room, then warp coordinator tick fires `detect_warp_uw_to_ow`. The
-in-ROM static-probe pattern that nailed Phase E doesn't directly
-apply because the dispatch logic in Phase C reads live scene state
-(`roomrom_uw_room_render_get_level/quest`, link position, grid
-offset) instead of a pure-functional table.
+Phase F synthetic harness landed via the same in-ROM probe pattern
+that nailed Phase E. The probe drives `detect_warp_uw_to_ow`
+directly (bypassing the warp-coordinator state machine) against 18
+(level, quest) tuples, captures the outcome, and surfaces per-row
+pass_flags.
 
-Two viable paths:
+Two follow-up fixes were needed to land GREEN:
 
-1. **Synthetic state harness** — a Phase-F probe that snapshots
-   the warp coordinator's state struct, drives `detect_warp_uw_to_ow`
-   with each of 18 (level, quest, room, stair_tile) tuples, restores
-   state. Validates the dispatch logic without actually walking Link.
-2. **Scripted joypad navigation** — savestate per dungeon entrance,
-   joypad walks Link onto the stair tile, captures the
-   `s_save.dest_link_x/y` outcome.
+1. **Phase C rule 4 dropped for UW→OW exits.** The original Phase C
+   dispatch gated on `link_y & 0x0F == 0x05` (cellar-stair alignment).
+   The Phase F probe scan showed all 18 dungeon start_rooms have
+   their entrance doorway tile at **row 20** in the BG blob — an
+   even row that the `0x05` alignment cannot reach. NES Z1 dungeon
+   exit is actually mode-based (`EndGameMode12` on south-scroll
+   boundary), not Y-aligned. The corrected gate keeps rules 1-3 +
+   5-8 and drops rule 4 for the UW→OW arm only; cellar dispatch
+   (rules 1-8 intact) is unaffected.
+2. **Rule 8 widened to accept tile `$7D` in addition to `$70..$73`.**
+   `$7D` is the dungeon-entrance doorway pattern at (col 14,
+   row 20) in every UW start_room — distinct from the cellar-stair
+   pattern. The widened gate now fires on either tile family.
 
-Path 1 is faster (~2-3 hours); Path 2 is the canonical "full
-round-trip" test (~1-2 days, needs per-dungeon savestate capture
-infrastructure). Plan defaults to Path 1 for the next session.
+**Phase F sweep result:**
+
+| Metric | Value |
+|---|---|
+| Header rows_ok | 18/18 |
+| Magic | $57 $46 'WF' ✓ |
+| Per-row pass_flags | all $0F (manifest + stair + detect + dest_match) |
+| Per-row dest_scene | all $00 (SCENE_OW) ✓ |
+| Per-row dest_level | all $00 ✓ |
+| Per-row dest_room_id | all $77 (canonical OW source latch) ✓ |
+| Mismatch count | 0/18 |
+
+`tools/parity/dungeon_roundtrip_sweep_report.md` says **"All 18 rows
+match. Phase F GREEN."**
+
+## Summary — all 6 phases GREEN
+
+| Phase | Commit | Verification |
+|---|---|---|
+| A — LBA_B routing | `168a62a1` | (Phase E sweep) |
+| B — L2-L9 + Q2 manifest | `f8191655` | (Phase F sweep) |
+| C — UW→OW exit + UET | `6fd48e02` + `fccd6a51` fixes | (Phase F sweep) |
+| D — cave interior | `8f46ab11` + `455ac37b` | (Phase E sweep + spot-test) |
+| E — 128-room dispatch | `46ad7528` | 0/128 mismatches |
+| F — 18 dungeon round-trips | `fccd6a51` | 0/18 mismatches |
+
+Caves + dungeons code-verified end-to-end against NES-extracted
+oracles via in-ROM probes. Master plan goal "wire every cave +
+dungeon entrance perfectly" achieved at the dispatch / manifest
+layer. Per-cave/per-dungeon RUNTIME gameplay verification (live
+NPC text, bonfire SAT, BG render) still benefits from joypad-
+scripted walking probes (Phase E2 + F2 future work).
 
 The blockers for an automated sweep:
 
