@@ -94,34 +94,54 @@ landed in pre-session commits (`6c4c1b63`, `c4fbb2f3`, `ad8bcf21`,
 Last build: `Debug.bat` green. ROM size 2.0 MB. All five session
 commits landed cleanly on top of pre-existing WIP cave-fade work.
 
-## Phase E + F status (Phase E partial)
+## Phase E status — GREEN (`46ad7528`)
 
-Phase E (per-cave sweep, 19+1=20 caves × Q1+Q2 layouts) and Phase F
-(per-dungeon round-trip, 18 entrances) require automated runtime
-verification. Phase E infrastructure landed (`42fdb219`):
+Phase E infrastructure + verification landed across three commits:
 
-- `src/game/cave/probes/warp_routes_probe.{c,h}` — in-ROM probe at
-  $FF7C00 publishing 128-room dispatch results.
-- `tools/debug/probes/probe_warp_routes.lua` — BizHawk reader with
-  scripted A+B+C chord to advance past title; auto-exits.
-- `tools/parity/diff_warp_routes.py` — byte-diff vs oracle JSON,
-  generates `tools/parity/warp_routes_sweep_report.md`.
+- `42fdb219` — `src/game/cave/probes/warp_routes_probe.{c,h}` in-ROM probe
+  at `$FF7C00`, BizHawk Lua reader, Python differ.
+- `af7b768a` — partial-status doc (loop terminated early).
+- `46ad7528` — root cause + fix. Magic bytes were being written at
+  **start** of `probe_run()`, so the Lua poll loop broke as soon as
+  the probe entered, capturing mid-iteration state. Fix: write magic
+  bytes **last**, after all 128 iterations complete.
 
-**Partial result:** probe reached rooms $00..$15 (22 of 128
-iterations) — ALL MATCH ORACLE byte-for-byte. Direct blob read XOR
-ow_meta read = 0 (the dispatch is correct end-to-end for the path
-that runs to completion). Rooms $16+ retain $AA prefill sentinel,
-indicating the in-ROM loop terminates early.
+**Phase E sweep result:**
 
-**Suspected cause:** VBlank interrupt or other early-boot interruption
-clobbers the loop state. Boot-time probes that work (options/enemy)
-are smaller; the 128-iteration loop exceeds whatever threshold the
-boot context allows. Investigation deferred. Next-session candidates:
+| Metric | Oracle | Gen |
+|---|---|---|
+| no_warp count | 36 | 36 |
+| dungeon count | 14 | 14 |
+| cave count | 78 | 78 |
+| per-room diff | 0/128 mismatches | — |
 
-1. Disable interrupts during probe loop (`SYS_setInterruptMaskLevel`).
-2. Chunk into 16-room batches across multiple frames.
-3. Move the probe call later in `main.c` after the gameplay tick
-   stabilizes (post-debug-enter, mid-game).
+`tools/parity/warp_routes_sweep_report.md` says **"All 128 rooms match.
+Phase E GREEN."** Phase A LBA_B dispatch verified end-to-end on
+Genesis runtime.
+
+## Phase F status (pending)
+
+Phase F (per-dungeon round-trip, 18 entrances) requires runtime
+gameplay state — Link on stair tile inside a dungeon's entrance
+room, then warp coordinator tick fires `detect_warp_uw_to_ow`. The
+in-ROM static-probe pattern that nailed Phase E doesn't directly
+apply because the dispatch logic in Phase C reads live scene state
+(`roomrom_uw_room_render_get_level/quest`, link position, grid
+offset) instead of a pure-functional table.
+
+Two viable paths:
+
+1. **Synthetic state harness** — a Phase-F probe that snapshots
+   the warp coordinator's state struct, drives `detect_warp_uw_to_ow`
+   with each of 18 (level, quest, room, stair_tile) tuples, restores
+   state. Validates the dispatch logic without actually walking Link.
+2. **Scripted joypad navigation** — savestate per dungeon entrance,
+   joypad walks Link onto the stair tile, captures the
+   `s_save.dest_link_x/y` outcome.
+
+Path 1 is faster (~2-3 hours); Path 2 is the canonical "full
+round-trip" test (~1-2 days, needs per-dungeon savestate capture
+infrastructure). Plan defaults to Path 1 for the next session.
 
 The blockers for an automated sweep:
 
