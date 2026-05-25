@@ -1,0 +1,29 @@
+# dungeon_roundtrip_probe dump — Phase F
+# published_at_frame: 339  (published=true)
+# magic:    $57 $46 (expect $57 $46 = 'WF')
+# version:  $01
+# rows_ok:  $12 (18 of 18)
+# reserved: $00 $00 $00 $00
+#
+# Per-row (level, quest) results. row_idx = (level-1)*2 + (quest-1):
+# flags bit 0=manifest_hit bit 1=stair_found bit 2=detect_fired bit 3=dest_match
+#
+# L Q  dest_scene dest_level dest_room  flags
+  1 1   $00        $00        $77       $0F
+  1 2   $00        $00        $77       $0F
+  2 1   $00        $00        $77       $0F
+  2 2   $00        $00        $77       $0F
+  3 1   $00        $00        $77       $0F
+  3 2   $00        $00        $77       $0F
+  4 1   $00        $00        $77       $0F
+  4 2   $00        $00        $77       $0F
+  5 1   $00        $00        $77       $0F
+  5 2   $00        $00        $77       $0F
+  6 1   $00        $00        $77       $0F
+  6 2   $00        $00        $77       $0F
+  7 1   $00        $00        $77       $0F
+  7 2   $00        $00        $77       $0F
+  8 1   $00        $00        $77       $0F
+  8 2   $00        $00        $77       $0F
+  9 1   $00        $00        $77       $0F
+  9 2   $00        $00        $77       $0F

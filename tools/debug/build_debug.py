@@ -47,6 +47,7 @@ INCS = [
     ROOT / "src" / "game" / "cave",
     ROOT / "src" / "game" / "cave" / "probes",
     ROOT / "src" / "game" / "world",
+    ROOT / "src" / "game" / "world" / "probes",
     ROOT / "src" / "game" / "core",
     ROOT / "src" / "game" / "enemies",
     ROOT / "src" / "game" / "enemies" / "probes",
@@ -436,6 +437,12 @@ ROOMROM_C_SOURCES = [
     # OW rooms so tools/debug/probes/probe_warp_routes.lua can byte-diff
     # vs tools/parity/warp_routes_expected.json.
     ("src/game/cave/probes/warp_routes_probe.c", "game_cave_warp_routes_probe.o"),
+    # Phase F (2026-05-25) — Dungeon round-trip synthetic verifier.
+    # Fills debug RAM @ $FF7DB0 with 18 (level, quest) outcomes after
+    # driving detect_warp_uw_to_ow with a pre-latched canonical OW
+    # source. tools/debug/probes/probe_dungeon_roundtrip.lua reads +
+    # tools/parity/diff_dungeon_roundtrip.py byte-diffs vs oracle.
+    ("src/game/world/probes/dungeon_roundtrip_probe.c", "game_world_dungeon_roundtrip_probe.o"),
     # Phase J.2 (2026-05-18): legacy expanded_bg_chr.c retired. All
     # consumers (ow/uw/hud renderer + redux UW upload) migrated to
     # bg_sparse_chr + universal LUT. Saves ~120 KB ROM.

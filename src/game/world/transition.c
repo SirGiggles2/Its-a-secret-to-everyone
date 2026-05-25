@@ -128,6 +128,58 @@ const rr_warp_save_state_t *roomrom_world_transition_save_state(void)
     return &s_save;
 }
 
+/* Phase F (2026-05-25) — probe-only writers. See transition.h for the
+ * rationale + contract. Production code MUST NOT call these. */
+
+static unsigned char collapse_warp_tile(unsigned char raw);
+
+rr_warp_save_state_t *roomrom_world_transition_save_state_mut(void)
+{
+    return &s_save;
+}
+
+void roomrom_world_transition_set_latched_source_for_probe(
+    unsigned char source_room_id,
+    short         source_link_x,
+    short         source_link_y,
+    unsigned char source_link_face,
+    unsigned char source_underground_entrance_tile_raw)
+{
+    s_save.version = 1u;
+    s_save.source_room_id = source_room_id;
+    s_save.source_link_x = source_link_x;
+    s_save.source_link_y = source_link_y;
+    s_save.source_link_face = source_link_face;
+    s_save.source_underground_entrance_tile_raw =
+        source_underground_entrance_tile_raw;
+    s_save.source_underground_entrance_tile =
+        collapse_warp_tile(source_underground_entrance_tile_raw);
+}
+
+/* Forward declaration of the file-static detector. Defined later in
+ * this TU; the forwarder below lets the probe call it without
+ * exposing the symbol via the public header. */
+static unsigned char detect_warp_uw_to_ow(unsigned char source_room_id,
+                                          short link_x, short link_y,
+                                          signed char grid_offset,
+                                          unsigned char underground_exit_type,
+                                          rr_warp_save_state_t *save_out,
+                                          rr_warp_outcome_t   *outcome_out);
+
+unsigned char roomrom_world_transition_check_uw_to_ow_for_probe(
+    unsigned char source_room_id,
+    short         link_x,
+    short         link_y,
+    signed char   grid_offset,
+    unsigned char underground_exit_type,
+    rr_warp_save_state_t *save_out,
+    rr_warp_outcome_t    *outcome_out)
+{
+    return detect_warp_uw_to_ow(source_room_id, link_x, link_y,
+                                grid_offset, underground_exit_type,
+                                save_out, outcome_out);
+}
+
 unsigned char roomrom_world_transition_unsupported_selector_count(void)
 {
     return s_unsupported_selector_count;
@@ -426,8 +478,11 @@ static unsigned char detect_warp_uw_to_ow(unsigned char source_room_id,
     if (grid_offset != 0) return 0u;
     /* Rule 3: X alignment. UW is not the OW $22 special-case. */
     if (((unsigned)link_x & 0x0Fu) != 0u) return 0u;
-    /* Rule 4: Y alignment matches OW + UW. */
-    if (((unsigned)link_y & 0x0Fu) != 0x05u) return 0u;
+    /* Rule 4 dropped for UW→OW: NES Z1 dungeon exit is mode-based
+     * (EndGameMode12 fires on south-scroll boundary), not Y-aligned
+     * like cellar stairs. The $7D entrance doorway tile sits at
+     * row 20 across all 18 start_rooms, which low-nibble-$05
+     * alignment cannot reach. Phase F probe surfaced this. */
     /* Rule 5: must be inside a dungeon. OW (level 0) does not exit. */
     level = roomrom_uw_room_render_get_level();
     if (level == 0u) return 0u;
@@ -437,14 +492,23 @@ static unsigned char detect_warp_uw_to_ow(unsigned char source_room_id,
     if (source_room_id != start_room) return 0u;
     /* Rule 7: latched source must exist (a real OW→UW entry happened). */
     if (save_out->source_room_id == 0u) return 0u;
-    /* Rule 8: raw tile must be a stair $70..$73 in the entrance room. */
+    /* Rule 8: raw tile must be either a stair ($70..$73) OR the
+     * dungeon entrance doorway tile ($7D) — Phase F probe found that
+     * all 18 start_rooms have $7D at the south-center exit doorway
+     * (col 14, row 20), not the cellar-stair $70..$73 range. NES Z1
+     * dungeon exits via mode change on south-scroll-edge from
+     * start_room; we collapse that to a tile-id check on the doorway
+     * pattern. */
     if (!y_in_playfield(link_y, &y_in_play)) return 0u;
     tile_col = (unsigned char)((link_x >> 3) & 0x1Fu);
     tile_row = (unsigned char)((y_in_play >> 3) & 0x1Fu);
     raw_tile = roomrom_uw_room_render_raw_tile_at_room(level, quest,
                                                        source_room_id,
                                                        tile_col, tile_row);
-    if (raw_tile < 0x70u || raw_tile > 0x73u) return 0u;
+    if (!((raw_tile >= 0x70u && raw_tile <= 0x73u) ||
+          raw_tile == 0x7Du)) {
+        return 0u;
+    }
 
     /* Hit: replay latched source into save's dest fields + route to OW. */
     save_out->dest_scene = ROOMROM_MAIN_SCENE_OW;

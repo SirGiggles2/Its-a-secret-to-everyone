@@ -78,4 +78,32 @@ unsigned char roomrom_world_transition_cellar_exit_count(void);
  * Defined in the .c so the call site is correct today. */
 void roomrom_audio_silence_for_warp(void);
 
+/* Phase F (2026-05-25) — probe-only writers for the synthetic dungeon
+ * round-trip harness. Let a probe TU drive detect_warp_uw_to_ow
+ * without first routing through OW→UW entry. Production game code
+ * MUST NOT call these — the warp coordinator owns the static.
+ *
+ * `set_latched_source_for_probe` populates s_save.source_* fields
+ * the UW→OW exit arm reads on rule 7. `save_state_mut` returns a
+ * non-const pointer so the probe can pass it to the static
+ * detection function. `check_uw_to_ow_for_probe` forwards to the
+ * file-local detect_warp_uw_to_ow without exposing it globally. */
+void roomrom_world_transition_set_latched_source_for_probe(
+    unsigned char source_room_id,
+    short         source_link_x,
+    short         source_link_y,
+    unsigned char source_link_face,
+    unsigned char source_underground_entrance_tile_raw);
+
+rr_warp_save_state_t *roomrom_world_transition_save_state_mut(void);
+
+unsigned char roomrom_world_transition_check_uw_to_ow_for_probe(
+    unsigned char source_room_id,
+    short         link_x,
+    short         link_y,
+    signed char   grid_offset,
+    unsigned char underground_exit_type,
+    rr_warp_save_state_t *save_out,
+    rr_warp_outcome_t    *outcome_out);
+
 #endif /* ROOMROM_WORLD_TRANSITION_H */

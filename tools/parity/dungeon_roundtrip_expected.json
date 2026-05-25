@@ -1,0 +1,186 @@
+{
+  "schema": "phase_f_dungeon_roundtrip_v1",
+  "row_count": 18,
+  "rows": [
+    {
+      "row_idx": 0,
+      "level": 1,
+      "quest": 1,
+      "start_room_id": 115,
+      "expected_dest_scene": 0,
+      "expected_dest_level": 0,
+      "expected_dest_room_id": 119,
+      "expected_pass_flags": 15
+    },
+    {
+      "row_idx": 1,
+      "level": 1,
+      "quest": 2,
+      "start_room_id": 119,
+      "expected_dest_scene": 0,
+      "expected_dest_level": 0,
+      "expected_dest_room_id": 119,
+      "expected_pass_flags": 15
+    },
+    {
+      "row_idx": 2,
+      "level": 2,
+      "quest": 1,
+      "start_room_id": 125,
+      "expected_dest_scene": 0,
+      "expected_dest_level": 0,
+      "expected_dest_room_id": 119,
+      "expected_pass_flags": 15
+    },
+    {
+      "row_idx": 3,
+      "level": 2,
+      "quest": 2,
+      "start_room_id": 117,
+      "expected_dest_scene": 0,
+      "expected_dest_level": 0,
+      "expected_dest_room_id": 119,
+      "expected_pass_flags": 15
+    },
+    {
+      "row_idx": 4,
+      "level": 3,
+      "quest": 1,
+      "start_room_id": 124,
+      "expected_dest_scene": 0,
+      "expected_dest_level": 0,
+      "expected_dest_room_id": 119,
+      "expected_pass_flags": 15
+    },
+    {
+      "row_idx": 5,
+      "level": 3,
+      "quest": 2,
+      "start_room_id": 121,
+      "expected_dest_scene": 0,
+      "expected_dest_level": 0,
+      "expected_dest_room_id": 119,
+      "expected_pass_flags": 15
+    },
+    {
+      "row_idx": 6,
+      "level": 4,
+      "quest": 1,
+      "start_room_id": 113,
+      "expected_dest_scene": 0,
+      "expected_dest_level": 0,
+      "expected_dest_room_id": 119,
+      "expected_pass_flags": 15
+    },
+    {
+      "row_idx": 7,
+      "level": 4,
+      "quest": 2,
+      "start_room_id": 114,
+      "expected_dest_scene": 0,
+      "expected_dest_level": 0,
+      "expected_dest_room_id": 119,
+      "expected_pass_flags": 15
+    },
+    {
+      "row_idx": 8,
+      "level": 5,
+      "quest": 1,
+      "start_room_id": 118,
+      "expected_dest_scene": 0,
+      "expected_dest_level": 0,
+      "expected_dest_room_id": 119,
+      "expected_pass_flags": 15
+    },
+    {
+      "row_idx": 9,
+      "level": 5,
+      "quest": 2,
+      "start_room_id": 125,
+      "expected_dest_scene": 0,
+      "expected_dest_level": 0,
+      "expected_dest_room_id": 119,
+      "expected_pass_flags": 15
+    },
+    {
+      "row_idx": 10,
+      "level": 6,
+      "quest": 1,
+      "start_room_id": 121,
+      "expected_dest_scene": 0,
+      "expected_dest_level": 0,
+      "expected_dest_room_id": 119,
+      "expected_pass_flags": 15
+    },
+    {
+      "row_idx": 11,
+      "level": 6,
+      "quest": 2,
+      "start_room_id": 116,
+      "expected_dest_scene": 0,
+      "expected_dest_level": 0,
+      "expected_dest_room_id": 119,
+      "expected_pass_flags": 15
+    },
+    {
+      "row_idx": 12,
+      "level": 7,
+      "quest": 1,
+      "start_room_id": 121,
+      "expected_dest_scene": 0,
+      "expected_dest_level": 0,
+      "expected_dest_room_id": 119,
+      "expected_pass_flags": 15
+    },
+    {
+      "row_idx": 13,
+      "level": 7,
+      "quest": 2,
+      "start_room_id": 127,
+      "expected_dest_scene": 0,
+      "expected_dest_level": 0,
+      "expected_dest_room_id": 119,
+      "expected_pass_flags": 15
+    },
+    {
+      "row_idx": 14,
+      "level": 8,
+      "quest": 1,
+      "start_room_id": 126,
+      "expected_dest_scene": 0,
+      "expected_dest_level": 0,
+      "expected_dest_room_id": 119,
+      "expected_pass_flags": 15
+    },
+    {
+      "row_idx": 15,
+      "level": 8,
+      "quest": 2,
+      "start_room_id": 121,
+      "expected_dest_scene": 0,
+      "expected_dest_level": 0,
+      "expected_dest_room_id": 119,
+      "expected_pass_flags": 15
+    },
+    {
+      "row_idx": 16,
+      "level": 9,
+      "quest": 1,
+      "start_room_id": 118,
+      "expected_dest_scene": 0,
+      "expected_dest_level": 0,
+      "expected_dest_room_id": 119,
+      "expected_pass_flags": 15
+    },
+    {
+      "row_idx": 17,
+      "level": 9,
+      "quest": 2,
+      "start_room_id": 116,
+      "expected_dest_scene": 0,
+      "expected_dest_level": 0,
+      "expected_dest_room_id": 119,
+      "expected_pass_flags": 15
+    }
+  ]
+}
