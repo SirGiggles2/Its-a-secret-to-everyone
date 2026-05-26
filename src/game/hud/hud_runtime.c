@@ -59,6 +59,8 @@ static unsigned char s_hud_pal[ROOMROM_HUD_ROWS][ROOMROM_ROOM_COLS];
  * the static transfer macro. Forward-declared here so T6.5 marker
  * refresh (defined above roomrom_hud_draw) can read it. */
 static unsigned char s_hud_id_cached = 0xFFu;
+static unsigned char s_last_room_id_cached = 0u;
+static unsigned char s_last_is_uw_cached = 0u;
 
 static const unsigned char s_hud_custom_chr[96] = {
     0x01,0x10,0x01,0x10,
@@ -201,17 +203,24 @@ static unsigned short hud_word(unsigned char raw_tile, unsigned char pal)
     return (unsigned short)(0x8000u | tile);
 }
 
-/* V2.4j (2026-05-26): HUD at top per NES Z1 gameplay layout. V2.4g
- * bottom-offset reverted. Subscreen-context bottom HUD (NES inventory
- * has bottom strip) handled separately via per-pause toggle (deferred). */
-#define HUD_WIN_ROW_BASE 0u
+/* V2.4k (2026-05-26): HUD position mode toggle.
+ *   bottom=0 (default): HUD at TOP (NES gameplay layout).
+ *     HUD_WIN_ROW_BASE = 0 + VDP_setWindowOnTop(ROOMROM_HUD_ROWS).
+ *   bottom=1 (inventory pause): HUD at BOTTOM (NES subscreen layout).
+ *     HUD_WIN_ROW_BASE = 28-HUD_ROWS = 21 + VDP_setWindowOnBottom().
+ * Toggle via roomrom_hud_set_bottom_mode() — clears old position +
+ * redraws at new offset. */
+static unsigned char s_hud_bottom = 0u;
+#define HUD_WIN_ROW_BASE  (s_hud_bottom ? (28u - ROOMROM_HUD_ROWS) : 0u)
 
 static void draw_hud_tile(unsigned char col, unsigned char row,
                           unsigned char raw_tile, unsigned char pal)
 {
     if (col >= ROOMROM_ROOM_COLS || row >= ROOMROM_HUD_ROWS)
         return;
-    render_set_window_word(col, row, hud_word(raw_tile, pal));
+    render_set_window_word(col,
+                           (unsigned short)(HUD_WIN_ROW_BASE + row),
+                           hud_word(raw_tile, pal));
 }
 
 static void draw_hud_tile_b(unsigned char col, unsigned char row,
@@ -249,7 +258,8 @@ static void clear_hud_b(void)
 
 static void clear_hud_window(void)
 {
-    render_clear_window_rect(0, 0, ROOMROM_ROOM_COLS, ROOMROM_HUD_ROWS);
+    render_clear_window_rect(0, (unsigned short)HUD_WIN_ROW_BASE,
+                              ROOMROM_ROOM_COLS, ROOMROM_HUD_ROWS);
 }
 
 static void apply_attr_byte(unsigned char attr_offset, unsigned char attr)
@@ -566,9 +576,30 @@ void roomrom_hud_draw(unsigned char hud_id, unsigned char room_id,
     s_last_marker_room  = 0xFFu;
     s_last_marker_phase = 0xFFu;
     s_hud_id_cached = hud_id;
-    (void)is_underworld;
+    s_last_room_id_cached = room_id;
+    s_last_is_uw_cached = is_underworld;
     draw_hud_dynamic(hud_id);
     (void)inventory_hud_consume_dirty();
+}
+
+/* V2.4k: HUD position toggle. */
+void roomrom_hud_set_bottom_mode(unsigned char bottom)
+{
+    if ((s_hud_bottom != 0u) == (bottom != 0u)) return;  /* no-op */
+    /* Clear old position first (HUD tiles at HUD_WIN_ROW_BASE) */
+    clear_hud_window();
+    /* Flip mode */
+    s_hud_bottom = bottom ? 1u : 0u;
+    /* Switch Window plane position */
+    if (s_hud_bottom)
+        render_set_window_on_bottom(ROOMROM_HUD_ROWS);
+    else
+        render_set_window_on_top(ROOMROM_HUD_ROWS);
+    /* Redraw HUD at new HUD_WIN_ROW_BASE if previously drawn */
+    if (s_hud_id_cached != 0xFFu) {
+        roomrom_hud_draw(s_hud_id_cached, s_last_room_id_cached,
+                         s_last_is_uw_cached);
+    }
 }
 
 /* Phase 6 Task 6.10.6 (Step A): per-frame live overlay. Repaints just

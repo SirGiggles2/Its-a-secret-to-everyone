@@ -78,6 +78,11 @@ void render_set_window_word(unsigned short col, unsigned short row,
 void render_clear_window_rect(unsigned short col, unsigned short row,
                               unsigned short w, unsigned short h);
 
+/* V2.4k Window-plane position toggle. NES Z1 gameplay HUD top;
+ * inventory subscreen HUD bottom. */
+void render_set_window_on_top(unsigned short rows);
+void render_set_window_on_bottom(unsigned short rows);
+
 /* Phase 12.2 SGDK-1 cleanup: VRAM word read. Used by src/game/dungeon/
  * uw_render for plane-readback during scroll diffs. Wraps the
  * VDP_CTRL_LONG read-control formula + VDP_DATA_WORD fetch. */

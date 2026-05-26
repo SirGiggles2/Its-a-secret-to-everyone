@@ -19,4 +19,10 @@ void roomrom_hud_refresh_marker(unsigned char room_id,
                                 unsigned char is_underworld,
                                 unsigned char frame_counter);
 
+/* V2.4k (2026-05-26): HUD position toggle. NES Z1 gameplay HUD at TOP;
+ * inventory subscreen HUD at BOTTOM. Caller toggles via this API.
+ * Switches Window plane position via VDP + repositions HUD tile writes
+ * via HUD_WIN_ROW_BASE + re-issues full HUD redraw at new row offset. */
+void roomrom_hud_set_bottom_mode(unsigned char bottom);
+
 #endif

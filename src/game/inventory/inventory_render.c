@@ -545,6 +545,15 @@ void inventory_subscreen_enter(void)
      * BG/sprite write so first rendered frame is correctly colored. */
     inventory_palette_load_subscreen();
 
+    /* V2.4k (2026-05-26): NES Z1 inventory subscreen renders HUD strip
+     * at BOTTOM (vs gameplay HUD at top). Swap Window plane position +
+     * shift HUD tile writes to bottom-of-plane. roomrom_hud_set_bottom_mode
+     * handles redraw at new position. */
+    {
+        extern void roomrom_hud_set_bottom_mode(unsigned char bottom);
+        roomrom_hud_set_bottom_mode(1u);
+    }
+
     /* Reset HSCROLL — gameplay leaves Plane A scrolled. VSRAM left
      * alone for now; row-by-row scroll-in mechanism replaces gameplay
      * rows from top down. */
@@ -694,6 +703,12 @@ void inventory_subscreen_exit(void)
     s_scroll_row   = SCROLL_TOTAL_ROWS;  /* clear from bottom up */
     /* s_active stays 1 until scroll completes; tick deactivates + signals
      * main.c to call load_room. */
+
+    /* V2.4k (2026-05-26): restore HUD to TOP for gameplay. */
+    {
+        extern void roomrom_hud_set_bottom_mode(unsigned char bottom);
+        roomrom_hud_set_bottom_mode(0u);
+    }
 }
 
 /* Query: is scroll-out done (so main.c knows to call load_room)? */

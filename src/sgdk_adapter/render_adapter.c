@@ -410,6 +410,18 @@ void render_clear_window_rect(unsigned short col, unsigned short row,
     VDP_clearTileMapRect(WINDOW, col, row, w, h);
 }
 
+/* V2.4k (2026-05-26): Window plane position toggle for per-pause HUD
+ * placement. NES Z1 gameplay HUD top; inventory subscreen HUD bottom. */
+void render_set_window_on_top(unsigned short rows)
+{
+    VDP_setWindowOnTop(rows);
+}
+
+void render_set_window_on_bottom(unsigned short rows)
+{
+    VDP_setWindowOnBottom(rows);
+}
+
 /* Open VSRAM write cursor at byte-offset slot*2.
  * Control word: 0x40000010 for slot 0; general form uses the same
  * slot*2 formula as CRAM but with VSRAM CD bits (0x40000010 base).
