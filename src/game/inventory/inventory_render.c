@@ -667,10 +667,12 @@ static void draw_cursor(void)
     /* V2.4e (2026-05-25): NES draws currently-highlighted B-item icon
      * INSIDE the cursor box. Chain order: cursor sprite (link → item),
      * item sprite (link 0 = chain end). Without chain forward link,
-     * VDP sprite scan stops at cursor + item never displayed. */
+     * VDP sprite scan stops at cursor + item never displayed.
+     * V2.4h (2026-05-25): drop b_item_owned gate — debug_unlock_all
+     * pokes NES RAM but doesn't sync g_inventory struct, so check
+     * returned false. Cursor highlights ANY slot regardless of own. */
     unsigned char  draw_item = (s_cursor_slot < INV_SLOT_COUNT &&
-                                k_inv_slot_to_vram_tile[s_cursor_slot] != INV_TILE_MISSING &&
-                                b_item_owned(s_cursor_slot));
+                                k_inv_slot_to_vram_tile[s_cursor_slot] != INV_TILE_MISSING);
     unsigned char  cursor_link = draw_item ? (unsigned char)(s_cursor_sat + 1u) : 0u;
     unsigned short attr = RENDER_TILE_ATTR_FULL(pal, 0, 0, 0, CURSOR_VRAM_TILE);
     sat_write(s_cursor_sat, sat_y, RENDER_SPRITE_SIZE(1, 1), cursor_link, attr, sat_x);
