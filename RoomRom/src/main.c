@@ -637,13 +637,12 @@ static void init_video(void)
     VDP_setHScrollTableAddress(0xF000u);
     VDP_setSpriteListAddress(0xF400u);
     render_mode_set_v64();
-    /* V2.4e attempt: VDP_setWindowOnBottom(ROOMROM_HUD_ROWS) for NES-
-     * correct bottom HUD. Reverted — single-line API change alone left
-     * HUD invisible because hud_runtime.c writes tiles to Window plane
-     * rows 0-6 (top-of-plane), but Window now displays plane rows 21-27
-     * (bottom-of-plane). HUD-bottom move requires subsystem refactor of
-     * tile-write offsets in hud_runtime.c. Filed Task #60 deferred. */
-    VDP_setWindowOnTop(ROOMROM_HUD_ROWS);
+    /* V2.4g (2026-05-25): NES Z1 HUD at bottom 7 rows (NES NT rows 22-29).
+     * VDP_setWindowOnBottom + hud_runtime.c HUD_WIN_ROW_BASE=21 offset on
+     * tile writes = HUD displays at screen bottom, NES-correct layout.
+     * Plain V2.4e revert (top) restored if BG-scroll-area-shift breaks
+     * gameplay rendering — verify post-build. */
+    VDP_setWindowOnBottom(ROOMROM_HUD_ROWS);
     /* Independent H/V scroll per plane; both planes receive the same values. */
     VDP_setScrollingMode(HSCROLL_PLANE, VSCROLL_PLANE);
     VDP_setHorizontalScroll(BG_A, 0);
