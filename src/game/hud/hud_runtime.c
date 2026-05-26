@@ -201,22 +201,17 @@ static unsigned short hud_word(unsigned char raw_tile, unsigned char pal)
     return (unsigned short)(0x8000u | tile);
 }
 
-/* V2.4g (2026-05-25): Window plane bottom-HUD offset. NES Z1 HUD lives
- * at bottom rows. RoomRom main.c calls VDP_setWindowOnBottom(ROOMROM_HUD_ROWS)
- * so VDP renders bottom-7 screen rows from Window plane rows
- * (28 - HUD_ROWS = 21)..(28-1 = 27). HUD tile writes were originally
- * for top-of-Window (rows 0-6). Shift to bottom-of-Window by adding
- * HUD_WIN_ROW_BASE = 21 to row arg before passing to VDP. */
-#define HUD_WIN_ROW_BASE (28u - ROOMROM_HUD_ROWS)
+/* V2.4j (2026-05-26): HUD at top per NES Z1 gameplay layout. V2.4g
+ * bottom-offset reverted. Subscreen-context bottom HUD (NES inventory
+ * has bottom strip) handled separately via per-pause toggle (deferred). */
+#define HUD_WIN_ROW_BASE 0u
 
 static void draw_hud_tile(unsigned char col, unsigned char row,
                           unsigned char raw_tile, unsigned char pal)
 {
     if (col >= ROOMROM_ROOM_COLS || row >= ROOMROM_HUD_ROWS)
         return;
-    render_set_window_word(col,
-                           (unsigned short)(HUD_WIN_ROW_BASE + row),
-                           hud_word(raw_tile, pal));
+    render_set_window_word(col, row, hud_word(raw_tile, pal));
 }
 
 static void draw_hud_tile_b(unsigned char col, unsigned char row,
@@ -254,8 +249,7 @@ static void clear_hud_b(void)
 
 static void clear_hud_window(void)
 {
-    render_clear_window_rect(0, (unsigned short)HUD_WIN_ROW_BASE,
-                              ROOMROM_ROOM_COLS, ROOMROM_HUD_ROWS);
+    render_clear_window_rect(0, 0, ROOMROM_ROOM_COLS, ROOMROM_HUD_ROWS);
 }
 
 static void apply_attr_byte(unsigned char attr_offset, unsigned char attr)
