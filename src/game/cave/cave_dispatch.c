@@ -66,9 +66,12 @@ const unsigned char TextboxCharTransferRecTemplate[5] = {
 static cave_id_t g_active_cave = 0;
 
 /* Cave-id range gate per NES InitCave (Z_01.asm:79-86): valid cave
- * room types are 0x6A..0x7C inclusive. Outside range = invalid call. */
+ * room types are 0x6A..0x7D inclusive (20 caves, NES Y index 0..19
+ * into OverworldPersonTextSelectors). Outside range = invalid call.
+ * 2026-05-27: was $7C — rejected cave $7D (Hint-cave / Take-any-road).
+ * Sweep cave_7D ObjType1=$38 stale, fixed by including $7D. */
 #define CAVE_ID_MIN 0x6Au
-#define CAVE_ID_MAX 0x7Cu
+#define CAVE_ID_MAX 0x7Du
 
 /* Native port of NES InitCaveContinue (Z_01.asm:105-170). Loads text
  * selector from OverworldPersonTextSelectors[cave_idx], 3 ware items
