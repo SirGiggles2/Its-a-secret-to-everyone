@@ -357,10 +357,19 @@ elseif SCENARIO_CAT == "dungeon_exit" then
         client.exit()
         return
     end
-    -- Now walk Link south through doorway $7D.
+    -- After entering, jump Link directly to doorway position to trigger
+    -- detect_warp_uw_to_ow. Per Phase F probe: $7D doorway at col 14
+    -- row 20 across all 18 start_rooms. Link position: link_x=112 (col
+    -- 14), link_y=205 (y_in_play = 205-45 = 160 = row 20 * 8).
+    -- detect_warp_uw_to_ow rule 4 (Y alignment) was DROPPED per probe
+    -- finding — only X alignment + tile-id matter.
+    write_link_xy(112, 205)
     local exited = false
     for frame = 1, 240 do
-        press({["P1 Down"]=true})
+        write_link_xy(112, 205)
+        force_uet_zero()
+        force_grid_offset_zero()
+        force_mode_walk()
         emu.frameadvance()
         if read_scene() == SCENE_OW then exited = true; break end
     end
