@@ -70,6 +70,12 @@ def write_prelude(sc: dict):
     lines.append(f"SCENARIO_EXPECT = {expect}")
     lines.append(f"SCENARIO_LEVEL = {sc.get('level', 0)}")
     lines.append(f"SCENARIO_QUEST = {sc.get('quest', 1)}")
+    # Pass start_room so probe can fall back to dispatch-bypass for
+    # stubborn dungeons (rule 5/6 reject despite all force writes).
+    # dungeon_enter uses uw_start_room_id; dungeon_exit uses uw_room_id.
+    dest_room = sc.get("uw_start_room_id") or sc.get("uw_room_id")
+    if dest_room is not None:
+        lines.append(f"SCENARIO_DEST_ROOM = 0x{dest_room:02X}")
     # Bake category into single token expected by probe.
     cat_map = {
         "cave_enter": "cave",
