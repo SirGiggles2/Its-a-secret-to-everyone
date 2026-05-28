@@ -331,6 +331,26 @@ Cost of running the differ first: minutes.
 
 ---
 
+## RULE V2 — NEVER WRITE A LUA SCRIPT WITHOUT /octo:review (user 2026-05-27)
+
+**Every Lua script (BizHawk probe, capture harness, anything `.lua`) in
+this project MUST go through `/octo:review` before it is run or trusted.**
+
+No exceptions. Write the Lua → review it → fix what review surfaces →
+only then run. Lua probes touch raw memory domains (OAM/PALRAM/CHR/VRAM/
+CRAM), force engine state (GameMode/GameSubmode/FrameCounter), and feed
+byte-diff oracles — a silent probe bug (wrong domain, stale submode,
+mid-animation capture) produces garbage goldens that look fine and
+poison every downstream verdict. Review catches these before they cost a
+full capture sweep.
+
+If `/octo:review` (the octo-code-reviewer agent) stalls or returns no
+findings, fall back to verifying EACH review concern directly against
+ground truth (working reference probe + NES asm + live read) — the review
+is not "done" until each concern is checked, by agent or by hand.
+
+---
+
 ## Red lines (halt + propose fix in same message)
 
 - Unclear state ownership between RAM mirror, VDP, SGDK adapter, drain
