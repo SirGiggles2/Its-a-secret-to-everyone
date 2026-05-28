@@ -5,6 +5,7 @@
 #include "bg_palette.h"           /* roomrom_bg_palette_nes_to_cram */
 #include "render_abi.h"           /* render_cram_write_color, render_set_plane_a_word */
 #include "platform_abi.h"         /* RAM macro */
+#include "../../../RoomRom/src/roomrom_vram_map.h" /* ROOMROM_BG_TILE_BASE */
 
 /* Plane-bridge: NES PPU nametable ($2000-$2FFF) writes mapped to
  * Genesis Plane A cells. Uses bg_sparse_tile_lut[nes_tile_id][sub_pal]
@@ -142,16 +143,23 @@ static void emit_nametable_record(unsigned char hi,
     unsigned char i;
     for (i = 0u; i < count; i++) {
         unsigned char nes_tile = src[src_off + i];
-        unsigned short slot = bg_sparse_tile_lut[nes_tile][0];
-        if (slot == 0xFFFFu) {
-            slot = PLANE_BRIDGE_BLANK_TILE;
-        }
+        unsigned short raw_slot = bg_sparse_tile_lut[nes_tile][0];
+        /* Mirror tile_word() (ow_render.c): VRAM tile = ROOMROM_BG_TILE_BASE
+         * + sparse slot; unmapped (0xFFFF) -> blank tile 0. The original
+         * code wrote the raw slot WITHOUT the +BG_BASE bias, so every text
+         * glyph rendered one VRAM tile too low -> garbled cave NPC + UW
+         * person text (chars + columns were correct; only the tile base was
+         * missing). Byte-verified: Gen Plane A row held slots $48/$6D/$6A...
+         * = I/T/S = "IT'S DANGEROUS" but displayed shifted by -1 tile. */
+        unsigned short tile = (raw_slot == 0xFFFFu)
+            ? (unsigned short)PLANE_BRIDGE_BLANK_TILE
+            : (unsigned short)(ROOMROM_BG_TILE_BASE + raw_slot);
         unsigned short col = (unsigned short)(nes_col + i);
         /* Horizontal step: wrap col within plane width (64). */
         col = (unsigned short)(col & 0x3Fu);
         render_set_plane_a_word(col,
                                 (unsigned short)plane_row,
-                                slot);
+                                tile);
     }
 }
 
