@@ -40,6 +40,15 @@
  * blobs by selector/2. */
 #include "../../data/person_text_data.h"
 
+/* LevelBlockAttrsE (cave ware ids + prices) lives in the extracted
+ * rooms_overworld[] blob — the SAME source ow_meta uses for attr_b. The
+ * NES SRAM mirror at $6A7E is NEVER populated on Genesis (no save-init
+ * SRAM copy), so the old nes_ram[$6A7E] read returned garbage -> wrong
+ * ware ids + CaveFlags missing the show-items bit ($04) -> cave items
+ * (e.g. the cave-6A wood sword) never drew. Read from the blob instead. */
+#include "../../../data/rooms/overworld_offsets.h"
+extern const unsigned char rooms_overworld[];
+
 /* NES Z_01.asm:559 TextboxCharTransferRecTemplate — 5-byte VRAM
  * transfer record template used by the textbox char-streamer to
  * stamp a single character tile into nametable. Per NES asm:
@@ -151,8 +160,10 @@ int cave_init(cave_id_t cave_id)
         unsigned char ware_off = (unsigned char)(cave_idx * 3u);
         unsigned char ware_flag_0 = 0u, ware_flag_1 = 0u, ware_flag_2 = 0u;
         for (unsigned char i = 0u; i < 3u; ++i) {
-            unsigned char ware  = nes_ram[NES_SRAM_LBA_E_BASE + ware_off + i];
-            unsigned char price = nes_ram[NES_SRAM_LBA_E_PRICE + ware_off + i];
+            unsigned char ware  = rooms_overworld[
+                ROOMROM_OW_LEVELBLOCK_ATTRS_E_OFFSET + ware_off + i];
+            unsigned char price = rooms_overworld[
+                ROOMROM_OW_LEVELBLOCK_ATTRS_E_OFFSET + 60u + ware_off + i];
             RAM(0x0422u + i) = ware;                   /* CaveItemIds */
             RAM(0x0430u + i) = price;                  /* CavePrices */
             if (i == 0u) ware_flag_0 = (unsigned char)(ware & 0xC0u);
