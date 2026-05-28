@@ -83,7 +83,17 @@ class NesBundle:
         self.ciram = data[8489:8489 + 2048] if len(data) >= 8489 + 2048 else b""
 
 class GenBundle:
-    SAT_BASE = 0xF800   # _oam_dma_flush DMA target (src/nes_io.asm:2300)
+    # LIVE displayed SAT base. The SGDK sprite engine DMAs vdpSpriteCache
+    # to slist_addr (sgdk/src/vdp.c:25 SLIST_DEFAULT=0xF400), and
+    # roomrom_vram_map.h:43 documents SAT @ $F400. genesis_shell.asm:244
+    # sets reg5=$857C ($F800) at BOOT for the TITLE screen
+    # (intro_title.c SPRITE_TABLE_VRAM=0xF800); SGDK re-points reg5 to
+    # $F400 for gameplay. The $F800 region in-cave holds the STALE title
+    # SAT (tiles $1A0-$1D6) — reading it was the cause of the bogus
+    # "$1CA block bonfire" finding. Verified live: f060 VRAM $F400 holds
+    # the cave-coherent SAT (bonfires x=72/168 y=128 tile $2BD pal3,
+    # Link y=192); $F800 holds the title logo layout.
+    SAT_BASE = 0xF400
     def __init__(self, data: bytes):
         if data[:4] != b"GCGD":
             raise ValueError("bad Gen magic")

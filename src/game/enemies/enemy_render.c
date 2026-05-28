@@ -461,6 +461,28 @@ void enemy_render_reset_oam(void)
 #define UWSP_TILES_PER_SUBPAL        34u
 #define NES_CUR_LEVEL_CELL           0x0010u
 
+/* Cave bonfire / candle flame. NES CommonSpritePatterns $5C-$5F are the
+ * always-loaded fire art ($1000-$16FF on NES; never bank-swapped). On
+ * Genesis the common SPR slot for $5C ($2BD = SPR_BASE+$5C) is CLOBBERED
+ * by the OWSP overlay: ROOMROM_SCENE_OBJ_TILE_BASE (SPR_BASE+44) overlaps
+ * the common SPR bank, so loading the OW NPC/cave-dweller bank stomps
+ * common tiles $2C-$9D (documented VRAM compaction, RoomRom/src/main.c
+ * :1650 "last-writer wins"). VRAM is too tight to relocate SCENE_OBJ
+ * (114-tile bank vs 75 free tiles before the table region).
+ *
+ * The IDENTICAL flame art is permanently resident in the ITEM atlas at
+ * ITEM_BASE+38..41 ($3A6-$3A9) — byte-verified == NES $5C-$5F via
+ * tools/parity/cave_golden f060 (uploaded by roomrom_sprites_upload_items
+ * _chr at boot + every scene_load; ITEM bank lives above the SCENE_OBJ
+ * overlap so it is never clobbered). Route the fire tiles there so the
+ * StandingFire bonfire (NES Z_01 ObjType $40) renders the flame instead
+ * of the blank clobbered common slot. NES $5C-$5F = fire art everywhere,
+ * so this route is unconditional (any sprite using these tiles wants the
+ * fire). */
+#define NES_FIRE_TILE_FIRST          0x5Cu
+#define NES_FIRE_TILE_LAST           0x5Fu
+#define ITEM_ATLAS_FLAME_IDX         38u
+
 static inline unsigned short translate_tile(unsigned char nes_tile,
                                             unsigned char nes_attrs)
 {
@@ -478,6 +500,11 @@ static inline unsigned short translate_tile(unsigned char nes_tile,
         unsigned char atlas_idx = k_nes_item_tile_to_atlas_idx[nes_tile];
         return (unsigned short)(ROOMROM_ITEM_TILE_BASE +
                                 (unsigned short)atlas_idx);
+    }
+    if (nes_tile >= NES_FIRE_TILE_FIRST && nes_tile <= NES_FIRE_TILE_LAST) {
+        /* Fire flame -> ITEM atlas (clobber-safe). See block comment above. */
+        return (unsigned short)(ROOMROM_ITEM_TILE_BASE + ITEM_ATLAS_FLAME_IDX +
+                                (unsigned short)(nes_tile - NES_FIRE_TILE_FIRST));
     }
     if (nes_tile < NES_OWSP_BANK_FIRST) {
         /* Common sprite pattern block at SPR_BASE 1:1. */
