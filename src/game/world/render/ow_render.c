@@ -380,6 +380,11 @@ static void write_square_at(unsigned char src_col, unsigned char dst_col,
  * LayoutCaveAndAvanceSubmode @ 6020). Palette pattern still comes from
  * `room_id`'s OW attrs (NES uses room $44 for caves per Z_05.asm:6628
  * "An OW room that has the same NT attributes as a cave."). */
+/* Set only while roomrom_cave_room_render_fill_plane_a is painting a cave
+ * room, so render_one_metatile_col can pick the cave wall sub-pal (3)
+ * without colliding with real OW room $44. */
+static unsigned char s_rendering_cave = 0u;
+
 static void render_one_metatile_col(unsigned char room_id,
                                     unsigned char src_col,
                                     unsigned char dst_col,
@@ -399,7 +404,18 @@ static void render_one_metatile_col(unsigned char room_id,
      * Original code used rooms[OW_ATTRS_A/B + room_id] & 3 which gave
      * wrong sub-pal selection vs NES live state. Forcing sub-pal 2
      * uniform matches NES OW attr-table layout. */
-    unsigned char outer_pal = 2u;  /* OW_ATTRS_A/B no longer read; NES is always $AA */
+    /* OW: NES PlayAreaAttrs uniformly $AA (sub-pal 2) — see above.
+     * CAVE: NES cave attr (byte-verified, nes_6A CIRAM $3C0) puts the
+     * border WALL tiles ($D8-$DB) on sub-pal 3 and the interior FLOOR
+     * ($24) on sub-pal 2. ow_tile_palette() routes the attr-block border
+     * region -> outer_pal and the interior -> inner_pal, so the cave sets
+     * outer=3 / inner=2 to paint orange/brown walls + dark floor. OW is
+     * untouched (outer=inner=2). The sparse atlas already carries the
+     * sub-pal-3 wall copies (bg_sparse_tile_lut[$D8..$DB][3] = $213/$216/
+     * $219/$21C), so no atlas regen is needed. The cave flag is set by
+     * roomrom_cave_room_render_fill_plane_a (CAVE_PALETTE_ROOM_ID $44
+     * collides with real OW room $44, so we cannot gate on room_id). */
+    unsigned char outer_pal = s_rendering_cave ? 3u : 2u;
     unsigned char inner_pal = 2u;
     unsigned char unique_id = rooms[OW_ATTRS_D_OFFSET + room_id] & 0x7F;
     const unsigned char *col_dirs = col_dirs_override
@@ -531,9 +547,11 @@ void roomrom_cave_room_render_fill_plane_a(unsigned char cave_id)
     unsigned char col;
     s_raw_tiles_stable = 0u;
     s_raw_tile_capture_active = 1u;
+    s_rendering_cave = 1u;   /* cave wall cells -> sub-pal 3 (orange/brown) */
     for (col = 0; col < 16; col++) {
         render_one_metatile_col(CAVE_PALETTE_ROOM_ID, col, col, 0, layout);
     }
+    s_rendering_cave = 0u;
     s_raw_tile_capture_active = 0u;
     s_raw_tiles_stable = 1u;
 }
