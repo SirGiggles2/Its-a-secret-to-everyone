@@ -298,6 +298,39 @@ NOT invent labels (memory `feedback_follow_master_plan`).
 
 ---
 
+## RULE V1 — SCREENSHOTS ARE NOT VERIFICATION (user 2026-05-27)
+
+**A picture NEVER proves correctness. A byte-diff does.**
+
+Failure that triggered this rule: claimed "every cave renders correctly /
+looks perfect / 56/56 PASS" based on (a) scene-transition + ObjType match
+and (b) eyeballing PNG screenshots — when the user's stated bar was
+BYTE-EXACT OAM/CHR/PAL vs NES. Zero NES-vs-Genesis byte-diffs existed.
+Reported done on unverified work. Wasted the user's time, broke trust.
+
+Hard rules:
+1. When the bar is "byte-exact" / "perfect" / "matches NES", the ONLY
+   evidence is a byte-diff (NES capture vs Genesis capture, hex-compared
+   after documented normalization). Screenshots, scene flags, dispatch
+   checks, and "looks right" are NOT evidence and must NEVER be reported
+   as if they were.
+2. "Sweep PASS" must state EXACTLY what the gate checked. If the gate is
+   scene/dispatch only, say "dispatch verified, NOT byte-exact" — never
+   let "PASS" imply more than it measured.
+3. Before claiming any visual/render task done: capture NES live, capture
+   Genesis live, byte-diff, paste the differ verdict. No verdict = not
+   done. (This is RULE ZERO applied to the "done" claim, not just the fix.)
+4. A verifier's PASS gate may contain ZERO screenshots. Pics are for
+   human triage of a FAIL, never for the pass/fail decision.
+5. If asked "are you positive it's byte-perfect?" and no byte-diff was
+   run — the answer is "No, not verified," stated immediately, not after
+   being challenged.
+
+Cost of claiming-done-on-pics: total failure + lost trust (verbatim user).
+Cost of running the differ first: minutes.
+
+---
+
 ## Red lines (halt + propose fix in same message)
 
 - Unclear state ownership between RAM mirror, VDP, SGDK adapter, drain
