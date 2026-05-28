@@ -812,6 +812,16 @@ void cave_update_person_state_textbox(void)
     RAM(0x0305u) = ch;
     CAVE_TEXT_TICK_SFX = 16u;
 
+    /* Phase J2 (2026-05-28): publish the 5-byte char transfer record so
+     * the central transfer_buf_drain (RoomRom/src/main.c:2199) flushes it
+     * to Plane A this frame. TRANSFER_BUF_POS = RAM(0x0301) is the buffer
+     * length; the record lives at $0302-$0306 (TRANSFER_BUF_BYTE base
+     * $0302). Without this the streamer wrote the record but never set the
+     * length, so drain_dynamic_buffer saw end==0 and skipped it — the
+     * old-man text never rendered. Drain resets POS=0 after, so one glyph
+     * streams per CAVE_DELAY_TIMER tick (matches NES cadence). */
+    RAM(0x0301u) = 5u;   /* TRANSFER_BUF_POS (world_state.h) = record len */
+
     const unsigned char line_flags = (unsigned char)(raw & 0xC0u);
     if (line_flags == 0u) {
         return;

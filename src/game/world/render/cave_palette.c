@@ -27,13 +27,18 @@ void cave_palette_apply(void)
     /* PAL0 starts at CRAM slot 0; subpal 2+3 occupy slots 8..15. */
     render_cram_subrange_upload(8u, cram, 8u);
 
-    /* Phase I1: upload SPR subpal 2 for bonfire colors. NES bonfire
-     * (ObjType $40 StandingFire) uses attr=2 → SPR subpal 2. Without
-     * this upload, PAL1 sub-pal 2 inherits OW state which may render
-     * incorrect fire colors. CRAM slot 24-27 = PAL1 sub-pal 2. */
+    /* Phase J1 (2026-05-28): upload SPR subpal 2 for bonfire colors.
+     * NES bonfire (ObjType $40 StandingFire) uses attr=2 → SPR subpal 2,
+     * which routes to Genesis PAL3 via roomrom_spr_subpal_to_pal(2)
+     * (subpal_routing.h:61). PAL3 occupies CRAM slots 48-51. The cave
+     * path calls ONLY cave_palette_apply (cave_fade.c:153) — it never
+     * runs load_palram_full — so PAL3 otherwise keeps stale OW SPR
+     * sub-pal 2 colors and the bonfire renders the wrong (blue) ramp.
+     * I1a wrongly uploaded to slot 24 (PAL1 sub-pal 2), which the
+     * bonfire never reads. Byte-confirmed via NES-vs-Gen pixel diff. */
     unsigned short spr_cram[4];
     for (i = 0u; i < 4u; i++) {
         spr_cram[i] = roomrom_bg_palette_nes_to_cram(k_cave_spr_subpal_2_nes[i]);
     }
-    render_cram_subrange_upload(24u, spr_cram, 4u);
+    render_cram_subrange_upload(48u, spr_cram, 4u);   /* PAL3[0..3] */
 }
