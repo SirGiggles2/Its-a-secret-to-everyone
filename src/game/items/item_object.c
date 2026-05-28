@@ -23,6 +23,7 @@
 #include "enemy_state.h"          /* ENEMY_X/Y/TYPE/ALIVE_FLAG/PLAYER_OBJ_* */
 #include "combat_state.h"         /* OBJ_STATE alias */
 #include "item_dispatch.h"        /* item_take_item */
+#include "world/draw_dispatch.h"   /* draw_animate_item_object */
 
 /* META_ITEM_LIFETIME = Item_ObjItemLifetime ($03A8+slot).
  * META_ITEM_ID       = Item_ObjItemId      ($00AC+slot, aliases OBJ_STATE).
@@ -117,11 +118,12 @@ void item_object_update(unsigned int slot)
         return;
     }
 
-    /* NES would call AnimateItemObject here to publish the item sprite.
-     * Genesis port skips: sprite_render dispatch picks up live ENEMY_TYPE
-     * + ENEMY_X/Y on its own. Per-item AnimateItemObject lookup table
-     * (NES item-sprite anim) is deferred — drop currently renders as
-     * whatever the type-$60 sprite map produces. Visual placeholder. */
+    /* NES Z_07.asm:1955 AnimateItemObject — publish item sprite via the
+     * per-item draw_animate_item_object dispatch (draw_dispatch.c:674).
+     * META_ITEM_ID(slot) holds the actual item_id ($00AC+slot, aliases
+     * OBJ_STATE). Phase I0 (2026-05-27): removed "deferred" skip per
+     * debate 058 BUG 4 — item drops were invisible without this call. */
+    draw_animate_item_object((unsigned char)META_ITEM_ID(slot), slot);
 
     /* NES: if player halted (ObjState & $C0 == $40), exit before any
      * pickup check. Mode 5 Play is deferred — Link state machine isn't

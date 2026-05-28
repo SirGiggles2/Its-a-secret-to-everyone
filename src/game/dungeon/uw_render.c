@@ -197,18 +197,30 @@ static void load_palette_from_levelinfo(void)
             break;
         }
     }
+    /* Phase I0 (2026-05-27, debate 058 BUG 1): load BG + SPR halves
+     * together via palram_full. Previously bg_only left PAL1 sprite half
+     * stale from prior OW load → enemies/bosses rendered with OW colors
+     * on first dungeon entry. If we have a sibling blob entry for this
+     * level/quest, pass its full 32-byte capture (bytes 0-15 BG + 16-31
+     * SPR per g_uw_room_palette layout at uw_render.c:170 comment). */
     if (found_idx >= 0) {
-        for (i = 0; i < 16; i++) buf[i] = g_uw_room_palette[found_idx][i];
-    } else {
-        /* No captured rooms for this level/quest combo — default to
-         * NES black backdrop ($0F) + neutral grays. Better than brown. */
-        buf[0]  = 0x0Fu; buf[1]  = 0x10u; buf[2]  = 0x20u; buf[3]  = 0x30u;
-        buf[4]  = 0x0Fu; buf[5]  = 0x10u; buf[6]  = 0x20u; buf[7]  = 0x30u;
-        buf[8]  = 0x0Fu; buf[9]  = 0x10u; buf[10] = 0x20u; buf[11] = 0x30u;
-        buf[12] = 0x0Fu; buf[13] = 0x10u; buf[14] = 0x20u; buf[15] = 0x30u;
+        roomrom_bg_palette_load_palram_full(g_uw_room_palette[found_idx]);
+        return;
     }
-    /* Sprite half (PAL1) preserved from prior room load. */
-    roomrom_bg_palette_load_bg_only(buf);
+    /* No captured rooms for this level/quest combo. Build full 32-byte
+     * palette: BG defaults (black backdrop + grays) + NES Z1 default
+     * sprite palette ($3F10-$3F1F): Link tunic, items, projectiles. */
+    unsigned char full[32];
+    full[0]  = 0x0Fu; full[1]  = 0x10u; full[2]  = 0x20u; full[3]  = 0x30u;
+    full[4]  = 0x0Fu; full[5]  = 0x10u; full[6]  = 0x20u; full[7]  = 0x30u;
+    full[8]  = 0x0Fu; full[9]  = 0x10u; full[10] = 0x20u; full[11] = 0x30u;
+    full[12] = 0x0Fu; full[13] = 0x10u; full[14] = 0x20u; full[15] = 0x30u;
+    /* NES default SPR palette (typical OW/UW used outside Z_06 patches). */
+    full[16] = 0x0Fu; full[17] = 0x29u; full[18] = 0x1Au; full[19] = 0x0Fu;
+    full[20] = 0x0Fu; full[21] = 0x02u; full[22] = 0x22u; full[23] = 0x30u;
+    full[24] = 0x0Fu; full[25] = 0x16u; full[26] = 0x27u; full[27] = 0x30u;
+    full[28] = 0x0Fu; full[29] = 0x0Cu; full[30] = 0x1Cu; full[31] = 0x2Cu;
+    roomrom_bg_palette_load_palram_full(full);
 }
 
 void roomrom_uw_room_render_load_palette(unsigned char room_id)
