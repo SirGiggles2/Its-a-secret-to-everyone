@@ -127,11 +127,15 @@ end
 --   u8 cave_id
 --   u8 s_scene (sanity: should be 2)
 --   u8 objtype_1 (nes_ram $0350 — cave_id)
---   SAT  640 bytes  (VRAM $FC00)
 --   CRAM 128 bytes
---   VRAM 0x4000 bytes ($0000..$3FFF — sprite tile patterns; cave NPC +
---                       bonfire + item tiles live here for CHR compare)
--- Total = 4 + 4 + 640 + 128 + 16384 = 17160 bytes.
+--   VRAM 0x10000 bytes (FULL 64KB). SAT lives at $F800 (512B, 64 sprites)
+--     per _oam_dma_flush (src/nes_io.asm:2300 VDP cmd $78000083 = VRAM
+--     write $F800 + DMA). Sprite tile patterns live anywhere in VRAM, so
+--     capture all of it — no address guessing.
+--   68K RAM 0x10000 bytes (FULL 64KB work RAM). NES OAM mirror @ $0200 is
+--     the SOURCE sprite list the port converts -> SAT; nes_ram state cells.
+--   VSRAM 80 bytes (vertical scroll).
+-- Total = 4 + 4 + 128 + 65536 + 65536 + 80 = 131288 bytes.
 local function vram_block(start, size)
     local buf = {}
     for i = 0, size - 1 do buf[#buf+1] = string.char(memory.read_u8(start + i, "VRAM")) end
@@ -151,9 +155,12 @@ local function capture(frame_phase)
     f:write(string.char(CAVE_ID & 0xFF))
     f:write(string.char(read_scene()))
     f:write(string.char(nes_r8(0x0350)))   -- ObjType+1
-    f:write(vram_block(0xFC00, 640))        -- SAT
-    f:write(dom_block("CRAM", 128))         -- CRAM
-    f:write(vram_block(0x0000, 0x4000))     -- sprite-tile VRAM region
+    f:write(dom_block("CRAM", 128))         -- CRAM (64 colors)
+    f:write(vram_block(0x0000, 0x10000))    -- FULL 64KB VRAM (SAT@$F800 + tiles)
+    f:write(dom_block("68K RAM", 0x10000))  -- FULL 64KB work RAM (NES OAM
+                                            -- mirror @$0200 = source sprite
+                                            -- list; nes_ram state; etc)
+    f:write(dom_block("VSRAM", 80))         -- vertical scroll
     f:close()
 end
 

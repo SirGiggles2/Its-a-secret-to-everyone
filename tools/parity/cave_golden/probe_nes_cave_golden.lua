@@ -62,6 +62,10 @@ local function PAL(o)  return memory.read_u8(o, "PALRAM") end
 -- for CHR-RAM games — the 8 KB pattern tables ($0000-$1FFF) are the "VRAM"
 -- domain (size 8192, confirmed by live memory.getmemorydomainlist()).
 local function CHR(o)  return memory.read_u8(o, "VRAM") end
+-- BG nametable (cave walls, the old-man text, AND the HUD all live here as
+-- BG tiles, NOT sprites). Domain "CIRAM (nametables)" = 2048 bytes (2 NTs),
+-- confirmed by live memory.getmemorydomainlist().
+local function NT(o)   return memory.read_u8(o, "CIRAM (nametables)") end
 local function idle(n) for _=1,n do emu.frameadvance() end end
 local function press(b, hold, settle)
     for _=1,hold do joypad.set({[b]=true}, 1); emu.frameadvance() end
@@ -151,7 +155,11 @@ end
 --   OAM   256 bytes   ($0200 shadow OAM)
 --   PALRAM 32 bytes   ($3F00..$3F1F)
 --   CHR   8192 bytes  (pattern tables $0000..$1FFF: BG + SPR banks)
--- Total = 4 + 4 + 256 + 32 + 8192 = 8488 bytes.
+--   u8 ppuctrl        (CurPpuControl_2000 $00FF: bit5=8x16 sprites,
+--                      bit3=sprite pattern table — needed to decode OAM)
+--   CIRAM 2048 bytes  (nametables: BG cave walls + person text + HUD tiles
+--                      + attribute tables — none of which are sprites)
+-- Total = 4 + 4 + 256 + 32 + 8192 + 1 + 2048 = 10537 bytes.
 local function capture(frame_phase)
     local path = string.format("%s\\f%03d.bin", OUT, frame_phase)
     local f = io.open(path, "wb")
@@ -163,6 +171,8 @@ local function capture(frame_phase)
     for i = 0, 255  do f:write(string.char(OAM(i))) end
     for i = 0, 31   do f:write(string.char(PAL(i))) end
     for i = 0, 8191 do f:write(string.char(CHR(i))) end
+    f:write(string.char(R(0x00FF)))   -- CurPpuControl_2000 (sprite mode)
+    for i = 0, 2047 do f:write(string.char(NT(i))) end   -- CIRAM nametables
     f:close()
 end
 
