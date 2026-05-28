@@ -107,15 +107,32 @@ end
 local function enter_cave()
     navigate_to_room(OW_ROOM)
     idle(30)
+    -- ARM the warp, then RELEASE. The cave-entry gate fires from OW WALK
+    -- when Link stands grid-aligned on a $24 tile; that starts cave_fade,
+    -- which runs a ~64-frame Link-descend (incrementing Link Y + changing
+    -- mode) before flipping s_scene to CAVE. The OLD loop re-forced the
+    -- tile + Link pos + WALK mode EVERY frame for the whole descend, which
+    -- FOUGHT cave_fade (pinned Y, reset mode to WALK) and re-triggered
+    -- cave_init repeatedly -> stale scattered text + duplicate flames in
+    -- every non-home cave (byte-proven: char_idx=3 but ~18 glyphs shown).
+    -- Fix: arm only until the warp fires (s_scene leaves a clean OW-WALK
+    -- baseline / the coordinator changes mode), then STOP all forcing and
+    -- let cave_fade complete uninterrupted.
+    -- Arm on EXACTLY ONE frame, then release fully. The coordinator reads
+    -- Link's standing tile + alignment + mode each gameplay tick; one
+    -- frame with the $24 tile + grid-aligned Link + WALK mode is enough to
+    -- fire cave_fade. After that, touching tile/pos/mode AT ALL re-fires
+    -- cave_init mid-descend and corrupts the SAT/nametable with stale
+    -- accumulated text + flames (the s_mode-left-WALK signal never trips —
+    -- cave entry keeps s_mode=WALK and flips s_scene only at SWAP_ENTRY,
+    -- 64 frames later). So: arm once, release, poll for scene.
     force_warp_tile(15, 9, 0x24)
-    write_link_xy(15 * 8, 9 * 8 + 0x35)     -- link_y low nibble = $D
+    write_link_xy(15 * 8, 9 * 8 + 0x35)
     force_mode_walk()
-    for _ = 1, 600 do
-        force_warp_tile(15, 9, 0x24)
-        write_link_xy(15 * 8, 9 * 8 + 0x35)
-        force_mode_walk()
+    emu.frameadvance()
+    for _ = 1, 400 do
+        if read_scene() == SCENE_CAVE then idle(8); return true end
         emu.frameadvance()
-        if read_scene() == SCENE_CAVE then return true end
     end
     return false
 end
@@ -185,6 +202,63 @@ idle(90)
 w8(0x8000 + 0x00AC, 0x40)   -- ObjState[0] Link halt (nes_ram mirror)
 w8(0x8000 + 0x00AD, 0x00)   -- CavePersonState
 idle(8)
+
+-- DEBUG (one-off, DBG_DUMP global): locate the live SAT + flame pal.
+if DBG_DUMP then
+    local dbg = io.open("C:/tmp/gen_dbg.txt", "w")
+    local ok, regs = pcall(emu.getregisters)
+    dbg:write("--- emu.getregisters ---\n")
+    if ok and regs then for k, v in pairs(regs) do
+        dbg:write(string.format("%s = %s\n", tostring(k), tostring(v))) end
+    else dbg:write("getregisters failed\n") end
+    dbg:write("--- live OAM mirror $0200 (low) ---\n")
+    for i = 0, 63 do
+        local y = r8(0x0200 + i*4); local t = r8(0x0201 + i*4)
+        local a = r8(0x0202 + i*4); local x = r8(0x0203 + i*4)
+        if y ~= 0 or t ~= 0 or x ~= 0 then
+            dbg:write(string.format("OAM[%d] y=%02X t=%02X a=%02X x=%02X\n", i, y, t, a, x)) end
+    end
+    dbg:write("--- live OAM mirror $8200 (high) ---\n")
+    for i = 0, 63 do
+        local y = r8(0x8200 + i*4); local t = r8(0x8201 + i*4)
+        local a = r8(0x8202 + i*4); local x = r8(0x8203 + i*4)
+        if y ~= 0 or t ~= 0 or x ~= 0 then
+            dbg:write(string.format("OAM8[%d] y=%02X t=%02X a=%02X x=%02X\n", i, y, t, a, x)) end
+    end
+    -- live SAT scan across candidate VRAM bases (read VRAM live)
+    for _, base in ipairs({0xF800, 0xFC00, 0xD800, 0xBC00, 0xB800}) do
+        dbg:write(string.format("--- live SAT @ $%04X ---\n", base))
+        for s = 0, 24 do
+            local o = base + s*8
+            local y = memory.read_u16_be(o, "VRAM")
+            local w2 = memory.read_u16_be(o+4, "VRAM")
+            local x = memory.read_u16_be(o+6, "VRAM")
+            if (y & 0x1FF) ~= 0 or (x & 0x1FF) ~= 0 then
+                dbg:write(string.format(" s%d y=%d x=%d pal=%d tile=%X link=%d\n",
+                    s, (y&0x1FF)-128, (x&0x1FF)-128, (w2>>13)&3, w2&0x7FF,
+                    memory.read_u8(o+3,"VRAM")&0x7F))
+            end
+        end
+    end
+    dbg:close()
+    print("DBG dumped C:/tmp/gen_dbg.txt")
+    -- Mutation test: zero each candidate SAT base, screenshot. Whichever
+    -- base makes the on-screen sprites VANISH is the VDP-displayed SAT
+    -- (reg5 base). Definitive, since genplus does not expose VDP reg5.
+    client.screenshot("C:/tmp/zero_before.png")
+    for _, base in ipairs({0xF800, 0xFC00, 0xD800, 0xBC00, 0xB800}) do
+        local orig = {}
+        for i = 0, 639 do orig[i] = memory.read_u8(base + i, "VRAM") end
+        for i = 0, 639 do memory.write_u8(base + i, 0, "VRAM") end
+        idle(3)
+        client.screenshot(string.format("C:/tmp/zero_%04X.png", base))
+        for i = 0, 639 do memory.write_u8(base + i, orig[i], "VRAM") end
+        idle(3)
+    end
+    print("DBG mutation screenshots done")
+    client.exit()
+    return
+end
 
 -- Determinism: zero the FrameCounter mirror so phase lines up with NES.
 -- (Bonfire cadence is driven by per-slot OBJ_ANIM_CNTR + matched idle

@@ -275,6 +275,18 @@ def main():
     for tid in (0xE7, 0xE8, 0xEB, 0xEC, 0xED, 0xEE, 0xEF, 0xF0, 0xF1, 0xF5):
         combined[tid].update([0, 3])
 
+    # Cave / NPC dialogue PUNCTUATION glyphs. The textbox char-streamer
+    # (src/game/cave/cave_dispatch.c, transfer_buf_drain.c) writes NES
+    # char codes straight to the BG nametable; a char code IS its BG font
+    # tile id. PersonText blobs (src/data/person_text_data.c) use
+    # punctuation $28 '(' , $29 '!', $2A ''' (apostrophe), $2C ',',
+    # $2E '.', $2F '/' — none of which appear in room nametables, so the
+    # usage audit excluded them and the sparse LUT returned 0xFFFF ->
+    # blank. Result: "IT S DANGEROUS" instead of "IT'S DANGEROUS". Force-
+    # include at sub-pal 0 (the fixed text routing in emit_nametable_record).
+    for tid in (0x28, 0x29, 0x2A, 0x2C, 0x2E, 0x2F):
+        combined[tid].update([0])
+
     # Emit per-variant blobs against COMBINED usage (so LUT is universal)
     orig_ow_blob, orig_ow_lut = emit_sparse_blob(
         combined, common_chr, overworld_bg_chr, "orig_ow")

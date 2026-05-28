@@ -86,10 +86,13 @@ static unsigned char s_joyx_prev   = 0u;
 #define POKE_8X16   0x07E3u
 #define POKE_FLAG   0x07E4u
 
-/* External atlas variant blobs (header bg_sparse_chr.h). */
-extern const unsigned char bg_sparse_chr_orig_uw [19456];
-extern const unsigned char bg_sparse_chr_redux_ow[19456];
-extern const unsigned char bg_sparse_chr_redux_uw[19456];
+/* External atlas variant blobs (header bg_sparse_chr.h). Unsized extern
+ * refs so they don't need updating when the sparse atlas regenerates
+ * (size = BG_SPARSE_BLOB_BYTES, grew 19456->19648 when cave/NPC-text
+ * punctuation glyphs were added). */
+extern const unsigned char bg_sparse_chr_orig_uw [];
+extern const unsigned char bg_sparse_chr_redux_ow[];
+extern const unsigned char bg_sparse_chr_redux_uw[];
 
 /* Bank cycle matching NES test ROM (chr_viewer_rom.nes) page layout.
  * Each bank = (BG variant, SCENE_OBJ content) pair.
