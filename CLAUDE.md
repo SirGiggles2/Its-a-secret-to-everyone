@@ -351,6 +351,41 @@ is not "done" until each concern is checked, by agent or by hand.
 
 ---
 
+## RULE V3 — ALWAYS CAPTURE ALL INFO (user 2026-05-27)
+
+**Every probe captures EVERY relevant domain, in FULL, every launch. No
+partial dumps. No assumed addresses. No assumed domain names.**
+
+The user re-drives the emulator for each capture — a probe that grabbed
+the wrong domain, the wrong address, or a partial range wastes that
+re-drive and poisons the diff. Capture everything once, correctly.
+
+Hard rules:
+1. **Enumerate domains live before reading them.** Never assume a domain
+   name exists. `memory.getmemorydomainlist()` first. (Cost of guessing:
+   Zelda is CHR-RAM, NesHawk has NO `"CHR"` domain — the 8 KB patterns
+   are the `"VRAM"` domain. Guessing `"CHR"` produced 8192 garbage
+   fallback reads + an empty golden.)
+2. **Never hardcode a structure's address — read it from the source or a
+   register.** (Cost: SAT was assumed at VRAM `$FC00` in three probes;
+   the real DMA target is `$F800` per `_oam_dma_flush`. `$FC00` was
+   `$400` past the table → empty SAT → zero sprites diffed.)
+3. **Dump FULL ranges, not windows.** Sprite tiles, room tiles, etc. can
+   live anywhere — capture all 64 KB VRAM / all 2 KB RAM / all of CIRAM,
+   not a guessed sub-range. A window that misses a high tile id silently
+   decodes garbage.
+4. **Capture the decode metadata too** — PPUCTRL (sprite size / pattern
+   table), GameMode/submode, FrameCounter, scene flags — anything the
+   differ needs to interpret the bytes. Bytes without their mode are
+   ambiguous.
+5. Pair with `feedback_one_big_probe` + `feedback_probe_track_all_data`:
+   one launch, every domain, full ranges, plus the metadata.
+
+Cost of a partial/assumed capture: a wasted re-drive + a garbage golden
+that looks fine. Cost of capturing all of it correctly: a few KB more.
+
+---
+
 ## Red lines (halt + propose fix in same message)
 
 - Unclear state ownership between RAM mirror, VDP, SGDK adapter, drain
