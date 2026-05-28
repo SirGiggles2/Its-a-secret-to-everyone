@@ -770,9 +770,19 @@ void cave_try_take_room_item(void)
  * Link_EndMoveAndAnimate native port. */
 static void cave_link_end_move_and_draw_stub(void)
 {
+    /* Freeze Link's anim timer (NES Link_EndMoveAndDraw freezes it during
+     * the textbox). Link's SPRITE is drawn every frame by the main-loop
+     * sprite_render path (fixed SAT slot, Link CHR tile $357) — see
+     * RoomRom/src/main.c gameplay tick. The NES-ported static draw below
+     * was REDUNDANT and BUGGY on Genesis: this stub fetched Link's
+     * position but never set his animation tile (the full
+     * Link_EndMoveAndAnimate chain is unported), so draw_object_mirrored
+     * inherited the LAST-drawn object's stale sprite descriptor — the
+     * bonfire's tile $5C + attr $02 — and published a phantom flame at
+     * Link's position (120,192). Verified via the live enemy_render
+     * publish cache (slot 1 entry 4 = t$5C a$02 @120,192). Drop the
+     * redundant draw; Link still renders via sprite_render. */
     OBJ_ANIM_TIMER(0) = 6u;
-    sprite_anim_fetch_obj_pos(0u);
-    draw_object_mirrored(0u, 0u);
 }
 
 void cave_update_person_state_textbox(void)
