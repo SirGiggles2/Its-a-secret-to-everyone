@@ -67,28 +67,49 @@ local function CHR(o)  return memory.read_u8(o, "VRAM") end
 -- confirmed by live memory.getmemorydomainlist().
 local function NT(o)   return memory.read_u8(o, "CIRAM (nametables)") end
 local function idle(n) for _=1,n do emu.frameadvance() end end
+-- File log (console is lost when EmuHawk auto-exits). Appends to a per-run
+-- diagnostic so a failed boot/force can be triaged after the fact.
+local function LOG(s)
+    local fh = io.open("C:/tmp/nes_dbg.txt", "a")
+    if fh then fh:write(s .. "\n"); fh:close() end
+    print(s)
+end
 local function press(b, hold, settle)
     for _=1,hold do joypad.set({[b]=true}, 1); emu.frameadvance() end
     joypad.set({}, 1)
     for _=1,settle do emu.frameadvance() end
 end
 
--- ─── Boot to gameplay (NesHawk overworld savestate) ────────────────
--- The file-select dance is unreliable on this ROM's SRAM (it overshoots
--- into REGISTER-YOUR-NAME and never reaches play). Instead load a
--- pre-made NesHawk savestate parked in overworld gameplay; force_state_cave
--- then LoadLevel-warps to the cave. State path is space-free so BizHawk's
--- loader doesn't choke. Must be a NesHawk state (savestates are
--- core-specific); config PreferredCores NES=NesHawk guarantees the core.
-local SAVESTATE = "C:\\tmp\\z1_ow.State"
+-- ─── Boot to gameplay (power-on + battery SRAM, CORE-AGNOSTIC) ──────
+-- The old approach loaded a pre-made savestate (z1_ow.State). Savestates
+-- are CORE-specific and the NES core changed (NesHawk -> quickerNES), so
+-- savestate.load aborts with a mismatch dialog -> empty capture. Long-term
+-- fix: drop the savestate entirely. Boot from power-on with the ROM's
+-- battery SRAM (loz_real.SaveRAM = a registered overworld file), then
+-- poll-press Start until GameMode reaches the play range. SRAM is raw
+-- battery RAM = core-agnostic, so this survives any core/config change.
+-- force_state_cave then LoadLevel-warps to the target cave (RoomId-forced).
 local function boot_to_gameplay()
-    savestate.load(SAVESTATE)
-    idle(8)
-    -- Sanity: a real gameplay state has GameMode in the play range
-    -- ($05 play, $06 LoadLevel transient, $07 scroll). A menu/title state
-    -- sits at $00..$04. Print so the run log shows what we loaded.
-    print(string.format("post-load gm=$%02X sub=$%02X rm=$%02X linkx=$%02X",
-        R(CELL_GAME_MODE), R(CELL_GAME_SUBMODE), R(CELL_ROOM_ID), R(0x0070)))
+    -- Poll-press Start: advances title -> file-select -> in-game. File 1 is
+    -- registered (SRAM), so Start on it enters play; no register-name dance.
+    -- Stop pressing the instant GameMode hits play ($05..$07) so we never
+    -- pause the subscreen with a stray Start.
+    LOG(string.format("boot start: gm=$%02X rm=$%02X", R(CELL_GAME_MODE), R(CELL_ROOM_ID)))
+    for f = 1, 1800 do
+        local gm = R(CELL_GAME_MODE)
+        if gm >= 0x05 and gm <= 0x07 then
+            LOG(string.format("boot: play gm=$%02X rm=$%02X at f=%d", gm, R(CELL_ROOM_ID), f))
+            idle(20); return true
+        end
+        if (f % 200) == 0 then
+            LOG(string.format("boot poll f=%d gm=$%02X rm=$%02X", f, gm, R(CELL_ROOM_ID)))
+        end
+        if (f % 16) == 0 then joypad.set({Start=true}, 1)
+        else                  joypad.set({}, 1) end
+        emu.frameadvance()
+    end
+    LOG("boot FAIL: never reached play GameMode (SRAM file empty / wrong slot?)")
+    return false
 end
 
 -- ─── Force into cave mode for CAVE_ID ───────────────────────────────
@@ -129,10 +150,15 @@ local function force_state_cave()
     W(CELL_TARGET_MODE,   cave_mode)     -- TargetMode = $0B/$0C
     W(CELL_GAME_MODE,     0x10)          -- mode $10 -> flips to cave mode
     -- mode $10 flips to cave_mode; InitModeB submode 0..8 loads the cave.
-    -- Poll until WalkCave (submode >= 8) = settled, walkable cave.
-    for _ = 1, 90 do
+    -- Poll until the cave OBJECT is set up: gm==cave_mode AND ObjType+1 ==
+    -- CAVE_ID. InitCave (submode 7) writes ObjType+1, AFTER LayoutCave
+    -- (submode 3) renders the BG -> objtype1==CAVE_ID implies submodes 0..7
+    -- all ran. (The old `submode >= 8` check only held for the frozen
+    -- savestate; via SRAM-boot+force the submode machine runs to completion
+    -- and resets to 0 for active WalkCave play, so >=8 never re-observes.)
+    for _ = 1, 120 do
         idle(4)
-        if R(CELL_GAME_MODE) == cave_mode and R(CELL_GAME_SUBMODE) >= 0x08 then break end
+        if R(CELL_GAME_MODE) == cave_mode and R(CELL_OBJTYPE_1) == CAVE_ID then break end
     end
     idle(30)                             -- settle bonfire/person post-load
     -- Re-assert Link halt + NPC slot pos for a clean static frame.
@@ -178,7 +204,9 @@ end
 
 -- ─── Main ───────────────────────────────────────────────────────────
 print(string.format("NES cave golden: cave_id=$%02X quest=%d", CAVE_ID, QUEST))
-boot_to_gameplay()
+if not boot_to_gameplay() then
+    print("BOOT FAIL — aborting, no golden written"); client.exit(); return
+end
 force_state_cave()
 
 -- PROOF we are actually inside the cave (not a stale screen with a poked
@@ -186,13 +214,16 @@ force_state_cave()
 -- (Z_05.asm:3506 InitModeB submode machine). Fail LOUD otherwise.
 do
     local gm, sub = R(CELL_GAME_MODE), R(CELL_GAME_SUBMODE)
-    print(string.format("post-force gm=$%02X sub=$%02X rm=$%02X objtype1=$%02X person=$%02X linkstate=$%02X",
+    LOG(string.format("post-force gm=$%02X sub=$%02X rm=$%02X objtype1=$%02X person=$%02X linkstate=$%02X",
         gm, sub, R(CELL_ROOM_ID), R(CELL_OBJTYPE_1), R(CELL_PERSON_STATE), R(CELL_LINK_STATE)))
-    if not ((gm == 0x0B or gm == 0x0C) and sub >= 0x08) then
-        print("!!! CAVE NOT REACHED — gm/sub wrong; bundle is NOT a cave capture !!!")
-    else
-        print("OK: inside cave (WalkCave submode reached)")
+    -- True "cave loaded" proof (debate D1): correct cave mode AND the cave's
+    -- own object id is set (InitCave ran for THIS cave). Submode is don't-care
+    -- post-init. objtype1 mismatch = wrong/empty cave -> fail loud.
+    if not ((gm == 0x0B or gm == 0x0C) and R(CELL_OBJTYPE_1) == CAVE_ID) then
+        LOG("!!! CAVE NOT REACHED — gm/objtype1 wrong; aborting, no golden written !!!")
+        client.exit(); return
     end
+    LOG("OK: inside cave (objtype1==CAVE_ID, InitCave ran)")
 end
 
 local prev = 0
