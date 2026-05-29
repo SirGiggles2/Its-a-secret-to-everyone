@@ -25,6 +25,7 @@
 #include "cave_state.h"
 #include "combat_state.h"               /* LINK_HEARTS = RAM(0x066F) */
 #include "enemy_state.h"                /* ENEMY_THROWER_SLOT = RAM($0340) */
+#include "enemy_loop.h"                  /* enemy_loop_clear_all_slots (cave-fresh objects) */
 #include "world/progress_dispatch.h"    /* progress_set_room_flag_uw_item_state */
 #include "world/sprite_dispatch.h"      /* sprite_anim_fetch_obj_pos */
 #include "world/draw_dispatch.h"        /* draw_object_mirrored,
@@ -108,6 +109,21 @@ int cave_init(cave_id_t cave_id)
         return -1;
     }
 
+    /* NES parity: entering a cave is a Mode-B transition that runs on a
+     * FRESH object page — the overworld enemies were already cleared before
+     * InitCave (Z_01.asm:69) / SetUpCommonCaveObjects (Z_01.asm:271). The
+     * Genesis cave-entry path (cave_fade swap_entry -> cave_init) never
+     * cleared the enemy slots, so a live OW enemy survived into the cave.
+     * Byte-proven (probe write-watch on $FF8416): a stale slot-4 WANDERER
+     * (e.g. octorok) ran enrt_wanderer_target_player, whose
+     * ENEMY_PUSH_TIMER(slot) cell = $0412+slot ALIASES CAVE_TEXT_CHAR_INDEX
+     * at slot 4 ($0412+4 = $0416). Every ~32 frames it zeroed the cave text
+     * char index mid-stream -> shop-cave dialogue re-streamed its prefix
+     * ("M MAS MA MAS" churn). Give-caves (quiet OW rooms, no slot-4 wanderer)
+     * were unaffected — which masqueraded as a "cave_flags bit 6" issue.
+     * Clear all enemy slots here so the cave starts NES-fresh; cave_init
+     * then re-establishes the person (slot 1) + two bonfires (slots 2/3). */
+    enemy_loop_clear_all_slots();
     cave_room_type_set(cave_id);          /* RAM($0350) */
     CAVE_PERSON_STATE      = 0u;          /* RAM($00AD) */
     CAVE_TEXT_CHAR_INDEX   = 0u;          /* RAM($0416) */

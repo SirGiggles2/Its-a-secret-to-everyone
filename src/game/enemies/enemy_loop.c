@@ -1104,6 +1104,32 @@ static void clear_slot_scratch(unsigned int slot)
     ENEMY_ALIVE_FLAG(slot)     = 1u;          /* mark slot occupied */
 }
 
+/* Public: empty-clear every enemy slot (1..11) WITHOUT respawning. Mirrors
+ * the room-load clear below (TYPE/ALIVE/pos + the scratch cells every
+ * per-frame walker/AI path reads), but with no monster-list reload. Used by
+ * cave_init so a cave starts on a NES-fresh object page: without it, a live
+ * overworld enemy survives the OW->cave transition and keeps running its AI
+ * in the cave. Critically that stops a stale slot-4 WANDERER from writing
+ * ENEMY_PUSH_TIMER ($0412+slot) over CAVE_TEXT_CHAR_INDEX ($0416 = $0412+4)
+ * and garbling shop-cave dialogue. */
+void enemy_loop_clear_all_slots(void)
+{
+    unsigned int slot;
+    for (slot = ENEMY_LOOP_SLOT_FIRST; slot <= ENEMY_LOOP_SLOT_LAST; ++slot) {
+        ENEMY_TYPE(slot)            = 0u;   /* type 0 = DoNothing = empty */
+        ENEMY_ALIVE_FLAG(slot)      = 0u;
+        ENEMY_X(slot)               = 0u;
+        ENEMY_Y(slot)               = 0u;
+        ENEMY_OBJ_SHOVE_DIR(slot)   = 0u;   /* $00C0+slot */
+        OBJ(0x00D3u, slot)          = 0u;   /* shove distance */
+        OBJ(NES_OBJ_POS_FRAC, slot) = 0u;   /* $03A8+slot */
+        OBJ(NES_OBJ_GRID_OFFSET, slot) = 0u;/* $0394+slot */
+        ENEMY_STUN_TIMER(slot)      = 0u;   /* $003D+slot */
+        ENEMY_HIT_REACTION(slot)    = 0u;   /* $04F0+slot */
+        ENEMY_PUSH_TIMER(slot)      = 0u;   /* $0412+slot (aliases cave text idx at slot 4) */
+    }
+}
+
 /* enemy_fix probe arm-hook suppression flag. Set by enemy_loop_arm_fix_probe
  * to skip the next room_init pass (otherwise natural-spawn rolls clobber
  * the force-spawned probe target). */
