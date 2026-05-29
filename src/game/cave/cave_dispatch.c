@@ -127,6 +127,14 @@ int cave_init(cave_id_t cave_id)
     cave_room_type_set(cave_id);          /* RAM($0350) */
     CAVE_PERSON_STATE      = 0u;          /* RAM($00AD) */
     CAVE_TEXT_CHAR_INDEX   = 0u;          /* RAM($0416) */
+    /* Init the text line address LOW byte (latent bug, byte-proven 2026-05-29:
+     * the streamer's first dialogue line used whatever stale value $045F held,
+     * so line 1 landed on the wrong nametable row -- e.g. cave 6C streamed its
+     * whole message onto one Gen row instead of NES's two rows 13/14). NES
+     * cave text line 1 = $21A4 (row 13) = k_textbox_line_addrs_lo[2]; the
+     * $80 line-break then advances to $C4 (row 14). The hint-cave path already
+     * sets this (cave_dispatch.c:654); give/shop caves omitted it. */
+    CAVE_TEXT_LINE_ADDR_LO = 0xA4u;       /* RAM($045F): k_textbox_line_addrs_lo[2], row 13 */
     CAVE_DELAY_TIMER       = 0u;          /* RAM($0029) */
     CAVE_LINK_ACTION_TIMER = 0u;          /* RAM($00AC) */
     CAVE_LINK_INPUT_FLAGS  = 0u;          /* RAM($00F8) */

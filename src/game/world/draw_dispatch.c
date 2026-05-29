@@ -448,6 +448,16 @@ void draw_object_mirrored(unsigned char frame, unsigned int slot)
 void draw_object_not_mirrored(unsigned char frame, unsigned int slot)
 {
     DRAW_MIRRORED = 0u;
+    /* "Not mirrored" = no horizontal flip. DRAW_FLIP_H ($0F) is a shared
+     * zero-page temp that the draw_object_with_anim chain never re-derives
+     * from facing, so it holds whatever the LAST draw left (e.g. a swung
+     * sword / magic shot sets it at draw_dispatch.c:779/798). A stale
+     * non-zero FLIP_H makes anim_write_horizontally_flippable_sprite_pair
+     * SWAP the left/right tiles -- byte-proven on the cave bonfire: NES
+     * draws $5C(left)+$5E(right), but Gen published $5E(left)+$5C(right)
+     * (SAT $3AE@x72 / $3AC@x80, the halves mirrored). Clear it so an
+     * asymmetric not-mirrored object (the flame) keeps NES tile order. */
+    DRAW_FLIP_H = 0u;
     const unsigned char anim_idx = (unsigned char)OBJ_TYPE(slot);
     draw_object_with_type(frame, slot, anim_idx);
 }

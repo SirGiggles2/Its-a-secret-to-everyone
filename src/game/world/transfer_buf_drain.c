@@ -6,6 +6,7 @@
 #include "render_abi.h"           /* render_cram_write_color, render_set_plane_a_word */
 #include "platform_abi.h"         /* RAM macro */
 #include "../../../RoomRom/src/roomrom_vram_map.h" /* ROOMROM_BG_TILE_BASE */
+#include "../../../RoomRom/src/roomrom_main_state.h" /* roomrom_main_current_scene */
 
 /* Plane-bridge: NES PPU nametable ($2000-$2FFF) writes mapped to
  * Genesis Plane A cells. Uses bg_sparse_tile_lut[nes_tile_id][sub_pal]
@@ -134,7 +135,16 @@ static void emit_nametable_record(unsigned char hi,
     }
     unsigned char nes_row  = (unsigned char)(ppu_off >> 5);   /* /32 */
     unsigned char nes_col  = (unsigned char)(ppu_off & 0x1Fu);/* mod 32 */
-    unsigned char plane_row = (unsigned char)(nes_row + PLANE_BRIDGE_HUD_ROWS);
+    /* OW/UW dynamic transfers carry PLAYFIELD-RELATIVE rows -> +7 HUD bridge.
+     * CAVE NPC-dialogue transfers carry SCREEN-ABSOLUTE NT rows (line 1 =
+     * $21A4 = row 13), so the +7 double-counts the HUD and dropped the text
+     * ~2 rows below NES (Gen row 15/20 vs NES rows 13/14). Map the absolute
+     * NT row straight to the Plane A row for caves. Byte-verified vs NES
+     * golden (tools/parity/cave_golden). */
+    unsigned char plane_row =
+        (roomrom_main_current_scene() == ROOMROM_MAIN_SCENE_CAVE)
+            ? nes_row
+            : (unsigned char)(nes_row + PLANE_BRIDGE_HUD_ROWS);
 
     unsigned char src_avail = (unsigned char)((src_off < src_end)
                                               ? (src_end - src_off) : 0u);
