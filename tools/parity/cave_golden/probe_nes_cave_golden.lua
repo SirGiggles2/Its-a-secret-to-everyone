@@ -80,7 +80,15 @@ local function press(b, hold, settle)
     for _=1,settle do emu.frameadvance() end
 end
 
--- ─── Boot to gameplay (power-on + battery SRAM, CORE-AGNOSTIC) ──────
+-- ⚠ REQUIRES NesHawk (config.ini PreferredCores NES=NesHawk). The CHR/
+-- PALRAM capture reads the "VRAM" memory domain, which exists on NesHawk
+-- but NOT on quickerNES (BizHawk's default) -- on quickerNES every CHR read
+-- spams "Unable to find domain: VRAM, falling back to current" and captures
+-- BLANK pattern data (byte-proven: cave 6C walls captured all-black under
+-- quickerNES, then matched NES exactly once the core was switched to
+-- NesHawk). The SRAM boot below is core-agnostic, but the capture domains
+-- are not -- keep the NES core pinned to NesHawk.
+-- ─── Boot to gameplay (power-on + battery SRAM) ─────────────────────
 -- The old approach loaded a pre-made savestate (z1_ow.State). Savestates
 -- are CORE-specific and the NES core changed (NesHawk -> quickerNES), so
 -- savestate.load aborts with a mismatch dialog -> empty capture. Long-term
@@ -160,7 +168,7 @@ local function force_state_cave()
         idle(4)
         if R(CELL_GAME_MODE) == cave_mode and R(CELL_OBJTYPE_1) == CAVE_ID then break end
     end
-    idle(30)                             -- settle bonfire/person post-load
+    idle(60)                             -- settle bonfire/person + CHR upload
     -- Re-assert Link halt + NPC slot pos for a clean static frame.
     W(CELL_PERSON_STATE, 0x00)
     W(CELL_LINK_STATE,   0x40)           -- halt Link
