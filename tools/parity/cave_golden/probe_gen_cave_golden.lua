@@ -68,6 +68,21 @@ local function force_mode_walk()
     for i = 0x027A, 0x027D do w8(i, 0) end        -- s_mode int = WALK
 end
 
+-- Clear the forced $24 cave-entry trigger from BOTH caches, every frame.
+-- DEFENSIVE only: keeps the stale forced tile from re-triggering the OW
+-- cave-entry gate if scene were to flip back to OW. (The shop-cave "M MAS
+-- MA MAS" text churn was NOT this — a write-watch on $FF8416 proved the
+-- writer was a stale slot-4 wanderer's ENEMY_PUSH_TIMER aliasing
+-- CAVE_TEXT_CHAR_INDEX; fixed in cave_init via enemy_loop_clear_all_slots.
+-- The clear is retained as cheap entry-hygiene.)
+local function clear_warp_tile()
+    w8(0x8000 + 0x6530 + 15 * 0x16 + 9, 0x00)     -- nes_ram play-area cache
+    w8(0x0285 + 15 * 22 + 9, 0x00)                -- s_raw_tiles[15][9]
+end
+local function idle_clear(n)
+    for _=1,n do clear_warp_tile(); emu.frameadvance() end
+end
+
 -- ─── Boot (A+B+C chord, Phase E pattern) ────────────────────────────
 local function boot_to_gameplay()
     for frame = 1, 1500 do
@@ -131,7 +146,19 @@ local function enter_cave()
     force_mode_walk()
     emu.frameadvance()
     for _ = 1, 400 do
-        if read_scene() == SCENE_CAVE then idle(8); return true end
+        if read_scene() == SCENE_CAVE then
+            -- CRITICAL: clear the forced $24 trigger from BOTH caches once
+            -- inside the cave. If left set, the warp coordinator / cave_fade
+            -- RE-TRIGGERS cave entry every ~32 frames -> re-runs cave_init
+            -- -> resets CAVE_TEXT_CHAR_INDEX mid-stream -> the dialogue
+            -- re-streams its prefix ("M MAS MA MAS" churn) + bonfires
+            -- re-spawn (scattered flames). Byte-proven via DBG_TRACE: with
+            -- the tile cleared, char_idx climbs 0->59 monotonically; with it
+            -- set, char_idx sawtooths 0->5->0. (ROM cave text engine is
+            -- correct; this was a pure probe artifact for non-home caves.)
+            clear_warp_tile()
+            idle_clear(8); return true
+        end
         emu.frameadvance()
     end
     return false
@@ -190,18 +217,118 @@ if not enter_cave() then
     print("CAVE ENTRY FAIL"); client.exit(); return
 end
 
+-- Post-entry defensive clear (see clear_warp_tile). The settle + capture
+-- loops below also re-clear every frame via idle_clear. The real shop-cave
+-- text fix lives in the ROM (cave_init enemy_loop_clear_all_slots); the
+-- INVARIANT GATE at the tail (char_idx-monotonic + no-alive-slot) is what
+-- actually proves it per cave.
+clear_warp_tile()
+
+-- DBG_WATCH (one-off, gated by global): register an M68K write-callback on
+-- the System-Bus address of nes_ram[$0416] (CAVE_TEXT_CHAR_INDEX) = $FF8416.
+-- On every write of value 0 (the mid-stream reset we're hunting), capture the
+-- M68K PC of the writing instruction. The PC -> function map pins the EXACT
+-- code zeroing char_idx (cave_init vs native reset vs transpiled corert_ vs an
+-- unknown bulk clear), which the in-RAM counters can't (they sit in a possibly
+-- per-frame-cleared region). Read-only logging.
+if DBG_WATCH then
+    local hits = {}        -- pc(hex) -> count, for writes of value 0
+    local allw = {}        -- pc(hex) -> count, for ALL writes
+    local function pcstr()
+        local ok, regs = pcall(emu.getregisters)
+        if not ok or not regs then return "noregs" end
+        -- genplus key is "M68K PC"; fall back to scanning for a PC-ish key.
+        local pc = regs["M68K PC"] or regs["PC"] or regs["m68000 PC"]
+        if pc == nil then
+            for k, v in pairs(regs) do
+                if tostring(k):find("PC") then pc = v; break end
+            end
+        end
+        return pc and string.format("%06X", pc & 0xFFFFFF) or "noPC"
+    end
+    local function on_write(addr, val)
+        local p = pcstr()
+        allw[p] = (allw[p] or 0) + 1
+        if (val or 0) == 0 then hits[p] = (hits[p] or 0) + 1 end
+    end
+    -- Try the documented bus-write registrations; genplus exposes the 68K bus.
+    local reg_ok = false
+    for _, scope in ipairs({"System Bus", "M68K BUS", nil}) do
+        local ok = pcall(function()
+            if scope then event.on_bus_write(on_write, 0xFF8416, scope)
+            else            event.on_bus_write(on_write, 0xFF8416) end
+        end)
+        if ok then reg_ok = true; break end
+    end
+    local f = io.open("C:/tmp/shop_watch.txt", "w")
+    f:write(string.format("cave=$%02X ow=$%02X reg_ok=%s -- writes to $FF8416 (char_idx)\n",
+        CAVE_ID, OW_ROOM, tostring(reg_ok)))
+    for fr = 1, 160 do clear_warp_tile(); emu.frameadvance() end
+    f:write("--- writes of VALUE 0 (the reset) by writer PC ---\n")
+    for p, c in pairs(hits) do f:write(string.format("PC=%s  count=%d\n", p, c)) end
+    f:write("--- ALL writes by PC ---\n")
+    for p, c in pairs(allw) do f:write(string.format("PC=%s  count=%d\n", p, c)) end
+    f:close()
+    print("DBG_WATCH -> C:/tmp/shop_watch.txt")
+    client.exit(); return
+end
+
+-- DBG_TRACE (one-off, gated by global): log the cave NPC state machine
+-- per frame from entry through settle, to disambiguate the shop-cave text
+-- re-stream (re-entry vs CAVE_DELAY_TIMER gate-stall vs $C0 latch). Pure
+-- read-only logging + file write; no memory writes, no logic change.
+if DBG_TRACE then
+    local function C(a) return r8(0x8000 + a) end
+    -- TEST: clear the forced $24 warp tile from BOTH caches so the warp
+    -- coordinator / cave_fade can't re-trigger cave entry from the stale
+    -- forced tile while we trace (isolates probe-persistent-tile re-entry).
+    w8(0x8000 + 0x6530 + 15 * 0x16 + 9, 0x00)
+    w8(0x0285 + 15 * 22 + 9, 0x00)
+    local f = io.open("C:/tmp/shop_trace.txt", "w")
+    f:write(string.format("cave=$%02X ow=$%02X (warp tile cleared each frame)\n", CAVE_ID, OW_ROOM))
+    -- ps=$00AD person_state, idx=$0416 char_idx, lo=$045F line_addr_lo (CORRECT
+    -- cell; $0417 prior was wrong), sel=$0415 selector, dly=$0029 delay,
+    -- initN=$07F0 cave_init counter, rstN=$07F1 reset-char-offset counter,
+    -- objt1=$0350 ObjType+1.
+    f:write("fr sc ps idx lo sel dly | initN rstN objt1\n")
+    local pinit, prst = -1, -1
+    for fr = 0, 160 do
+        local initN, rstN = C(0x07F0), C(0x07F1)
+        local mark = ""
+        if initN ~= pinit then mark = mark .. " <CAVE_INIT>" end
+        if rstN  ~= prst  then mark = mark .. " <RESET_CHAR>" end
+        pinit, prst = initN, rstN
+        f:write(string.format(
+            "%3d sc=%d ps=%d idx=%2d lo=%02X sel=%02X dly=%02X | iN=%d rN=%d ot1=%02X%s\n",
+            fr, read_scene(), C(0x00AD), C(0x0416), C(0x045F), C(0x0415), C(0x0029),
+            initN, rstN, C(0x0350), mark))
+        clear_warp_tile()   -- match capture path: hold tile clear every frame
+        emu.frameadvance()
+    end
+    f:close()
+    print("DBG_TRACE -> C:/tmp/shop_trace.txt")
+    client.exit(); return
+end
+
 -- REVIEW PASS 2 finding: enter_cave() returns at the FIRST scene==CAVE
 -- frame, which is during cave_fade SWAP_ENTRY / LINK_DESCEND. The NES
 -- side captures at submode 8 (WalkCave = fully settled). To align both
 -- to a STABLE post-init state, settle here until cave_fade finishes its
 -- descend (16 steps x 4 frames = 64) + a margin. Bonfire OBJ_ANIM_CNTR
 -- (per-slot, sprite_runtime.c:104) and Link halt are stable by then.
-idle(90)
--- Re-assert Link halt + NPC slot pos so the static frame matches the
--- NES capture's post-InitCave layout (Link halted, NPC at $78,$80).
+idle_clear(90)
+-- Mirror the NES golden's deterministic restart (probe_nes_cave_golden.lua
+-- force_state_cave tail): person_state=0 + Link halt + NPC slot pos, then a
+-- short settle. This RESTARTS the dialogue stream from char_idx 0 on BOTH
+-- platforms so the per-frame BG text byte-diff is frame-aligned. (Pre-fix
+-- this restart exposed the "M MAS MA MAS" churn, but that was a slot-4
+-- wanderer aliasing CAVE_TEXT_CHAR_INDEX, now fixed in cave_init — the
+-- stream is monotonic, so restart-then-stream matches NES exactly.)
+w8(0x8000 + 0x00AD, 0x00)   -- CAVE_PERSON_STATE = 0 (restart dialogue)
 w8(0x8000 + 0x00AC, 0x40)   -- ObjState[0] Link halt (nes_ram mirror)
-w8(0x8000 + 0x00AD, 0x00)   -- CavePersonState
-idle(8)
+w8(0x8000 + 0x0070 + 1, 0x78)  -- ObjX+1 (NPC slot)
+w8(0x8000 + 0x0084 + 1, 0x80)  -- ObjY+1 (NPC slot)
+idle_clear(8)
 
 -- DEBUG (one-off, DBG_DUMP global): locate the live SAT + flame pal.
 if DBG_DUMP then
@@ -267,10 +394,54 @@ end
 w8(OFF_FRAME_CTR, 0x00)
 local prev = 0
 for _, target in ipairs(FRAMES) do
-    idle(target - prev)
+    idle_clear(target - prev)
     prev = target
     capture(target)
 end
 client.screenshot(OUT .. "\\shot.png")
+
+-- Tier-1 INVARIANT GATE (debate K2 D4, 2026-05-28): cheapest detector for the
+-- slot-aliasing bug class that garbled shop-cave text. NO NES golden needed.
+-- Two asserts over a 150-frame post-capture window:
+--   (1) CAVE_TEXT_CHAR_INDEX ($0416) strictly NON-DECREASING. A decrease means
+--       another writer clobbered it (e.g. a stale enemy work-cell alias:
+--       ENEMY_PUSH_TIMER $0412+slot collides at slot 4 = $0416). This is the
+--       exact signature of the bug fixed in cave_init (enemy_loop_clear_all_slots).
+--   (2) NO enemy slot 4..11 ENEMY_ALIVE ($0492+slot): caves must enter on a
+--       fresh object page. A live slot means cave_init's clear regressed.
+do
+    local function C(a) return r8(0x8000 + a) end
+    local mono_ok = true
+    local prev_idx = C(0x0416)
+    local min_idx, max_idx = prev_idx, prev_idx
+    for _ = 1, 150 do
+        clear_warp_tile(); emu.frameadvance()
+        local idx = C(0x0416)
+        if idx < prev_idx then mono_ok = false end
+        prev_idx = idx
+        if idx < min_idx then min_idx = idx end
+        if idx > max_idx then max_idx = idx end
+    end
+    local alive = ""
+    for s = 4, 11 do
+        if C(0x0492 + s) ~= 0 then alive = alive .. string.format(" slot%d", s) end
+    end
+    local slots_ok = (alive == "")
+    -- (3) cave actually LOADED: ObjType+1 ($0350) must equal CAVE_ID, else the
+    --     force-warp picked the wrong/no cave (debate D1: fail loud, never
+    --     bless a silent empty/wrong-cave capture).
+    local objt1 = C(0x0350)
+    local cave_ok = (objt1 == CAVE_ID)
+    local verdict = (mono_ok and slots_ok and cave_ok) and "PASS" or "FAIL"
+    local f = io.open(OUT .. "\\invariant.txt", "w")
+    f:write(string.format(
+        "cave=$%02X %s char_idx_monotonic=%s(min=%d,max=%d) no_alive_slots4_11=%s cave_loaded=%s(objt1=$%02X)%s\n",
+        CAVE_ID, verdict, tostring(mono_ok), min_idx, max_idx, tostring(slots_ok),
+        tostring(cave_ok), objt1,
+        (alive ~= "") and (" ALIVE:" .. alive) or ""))
+    f:close()
+    print("invariant: " .. verdict)
+end
+
 print("done: " .. OUT)
 client.exit()
