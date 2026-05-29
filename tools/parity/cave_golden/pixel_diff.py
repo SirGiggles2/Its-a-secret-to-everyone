@@ -26,6 +26,14 @@ def main(argv):
     ap.add_argument("cave_dir"); ap.add_argument("--cave", default="6A")
     ap.add_argument("--hud-rows", type=int, default=8)  # 8 tile rows = 64px HUD
     ap.add_argument("--tol", type=int, default=0)       # allowed cells diff
+    # NesHawk and genplus are DIFFERENT color models: the same logical
+    # palette renders at different RGB (byte-exact brown wall = NES (87,29,0)
+    # vs Gen (136,34,0), Δ=49/ch). So a raw RGB compare floods on byte-exact
+    # content. Use a per-channel tolerance ABOVE the color-model curve (~49)
+    # but BELOW a real shape diff (black↔brown = Δ136): default 64. This makes
+    # pixel_diff a SHAPE/POSITION gate (flame shape, text row, missing sprite);
+    # exact COLOR correctness is gated separately by the CRAM byte-diff.
+    ap.add_argument("--rgb-tol", type=int, default=64)
     a = ap.parse_args(argv)
     cd = Path(a.cave_dir)
     nes = Image.open(cd / f"nes_{a.cave}" / "shot.png").convert("RGB")
@@ -48,13 +56,15 @@ def main(argv):
                     x = cx*8 + c; y = y0 + r
                     if x >= w or y >= h:
                         continue
-                    a3 = quant3(np_[x, y]); b3 = quant3(gp[x, y])
+                    n = np_[x, y]; g = gp[x, y]
                     total_px += 1
-                    if a3 != b3:
+                    if (abs(n[0]-g[0]) > a.rgb_tol or
+                        abs(n[1]-g[1]) > a.rgb_tol or
+                        abs(n[2]-g[2]) > a.rgb_tol):
                         diff_px += 1; cell_diff += 1
                         dp[x, y] = (255, 0, 0)
                     else:
-                        dp[x, y] = np_[x, y]
+                        dp[x, y] = n
             if cell_diff:
                 bad_cells.append((cx, cy, cell_diff))
     # mosaic NES | Gen | diff
