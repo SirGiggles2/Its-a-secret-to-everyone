@@ -331,15 +331,18 @@ def diff_frame(nes: bytes, gen: bytes, lut, frame, strict, report):
     HUD_ROWS = 8
     nbg = [c for c in nes_bg_cells(nb, lut) if c.y >= HUD_ROWS * 8]
     gbg = gen_bg_cells(gb)
-    # Caves are STATIC (no scroll): NES NT row R renders at the same screen
-    # row as Gen Plane A row R, so the BG grid aligns 1:1 with zero offset.
-    # detect_offset is WRONG here -- it votes on grid-position overlap (not
-    # content) and happily maps NES play rows onto Gen's blank top rows
-    # (dy=-64), comparing walls against blanks. Force 0,0.
-    bdx, bdy, bvotes = 0, 0, len(nbg)
     gbg_by_pos = {}
     for c in gbg:
         gbg_by_pos.setdefault((c.x, c.y), []).append(c)
+    # Structural vertical offset = -8 (one tile row). The Genesis cave HUD is
+    # one tile-row shorter than the NES HUD, so the cave BG sits 8px higher in
+    # Plane A storage (scroll compensates on screen). Byte-proven by col-0
+    # dumps of 6A AND 6C: NES walls $D8/$D9 begin at NT row 8; Gen $21A/$21D
+    # begin at Plane A row 7 -> NES_y - 8 = Gen_y. NOT auto-detected: the
+    # walls are periodic-2 (+/-8 give equal wall-match counts) and a big text
+    # region pulls a whole-frame min-total to the wrong sign (6C chose +8 and
+    # mis-aligned). The offset is fixed + universal across caves.
+    bdx, bdy, bvotes = 0, -8, 0
     bg_bad = 0
     bg_examples = []
     bg_missing = 0          # NES cell with NO Gen counterpart at its position
