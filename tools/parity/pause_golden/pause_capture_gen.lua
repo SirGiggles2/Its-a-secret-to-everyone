@@ -87,8 +87,9 @@ end
 --      one is unambiguous from the dump (RULE ZERO: don't trust a
 --      single guessed offset). ───────────────────────────────────────
 local function scene_guess()
-    -- best-effort: low byte of the BE int.
-    return r8(OFF_SCENE_LO)
+    -- s_scene is a C global; main.c's MODE handler mirrors it to nes_ram
+    -- [$07E8] (= 68K $87E8) after each toggle. That's the reliable read.
+    return r8(0x8000 + 0x07E8)
 end
 
 -- ─── GCGD bundle writer (cave_byte_diff GenBundle compatible) ───────
@@ -154,13 +155,13 @@ local function navigate_to_room(target)
     end
     press_for({["P1 X"]=true},8); idle(30)
 end
+-- Enter the underworld: the MODE button toggles s_scene OW<->UW
+-- (main.c BUTTON_MODE handler) and seeds UW room $73 (L1 Q1 StartRoomId).
 local function enter_dungeon()
-    navigate_to_room(0x37); idle(30)              -- L1 OW entrance room
-    force_warp_tile(15,9,0x24); write_link_xy(15*8, 9*8+0x35)
-    for i=0x027A,0x027D do w8(i,0) end            -- force WALK
-    emu.frameadvance()
-    for _=1,400 do if r8(OFF_SCENE_LO)==1 then idle(8); return true end emu.frameadvance() end
-    return false
+    press_for({["P1 Mode"]=true}, 6)
+    idle(60)
+    LOG(string.format("after MODE: scene(07E8)=%d room=$%02X", scene_guess(), read_room()))
+    return scene_guess() == 1
 end
 
 -- ─── Main ───────────────────────────────────────────────────────────
