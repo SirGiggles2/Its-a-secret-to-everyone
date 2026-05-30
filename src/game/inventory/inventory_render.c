@@ -17,6 +17,7 @@
 #include "inventory_render.h"
 #include "inventory_palette.h"
 #include "inventory_tilemap.h"
+#include "inventory_sprite_chr.h"
 #include "../../abi/platform_abi.h"
 #include "../../abi/render_abi.h"
 #include "../../../RoomRom/src/bg_sparse_chr.h"
@@ -91,6 +92,12 @@ static void sat_write(unsigned char slot, unsigned short y,
  * to 896, silently invalidating the hardcoded slots (Gemini H2). */
 #define INV_SPR(off)   (unsigned short)(ROOMROM_SPR_TILE_BASE + (off))
 #define INV_ITEM(off)  (unsigned short)(ROOMROM_ITEM_TILE_BASE + (off))
+/* Dedicated subscreen item-icon CHR uploaded to free VRAM $A000 (tile
+ * 1280) on enter — holds the live subscreen tiles absent from / wrong in
+ * the items atlas: idx 0/1 recorder $24, 2/3 candle $26, 4/5 raft $6C,
+ * 6/7 ladder $76 (inventory_sprite_chr.c). */
+#define DSPR_BASE 1280u
+#define DSPR(idx) (unsigned short)(DSPR_BASE + (idx))
 /* V3.0 (2026-05-30): byte-exact remap. The SUBSCREEN tile for each item
  * slot is Anim_ItemFrameTiles[Anim_ItemFrameOffsets[slot]] (Z_01.asm:5194-
  * 5207), NOT the item PICKUP tile the old table used. Atlas indices below
@@ -105,15 +112,15 @@ static const unsigned short k_inv_slot_to_vram_tile[INV_SLOT_COUNT] = {
     INV_ITEM(20),   /* 1  bombs      NES $34 -> atlas idx 20 (bytes $34) */
     INV_ITEM(14),   /* 2  arrow      NES $28 -> atlas idx 14 (bytes $28) */
     INV_ITEM(74),   /* 3  bow        NES $2A -> atlas idx 74 (bytes $2A) */
-    INV_TILE_MISSING,  /* 4 candle   NES $26 -> extract (subscreen icon) */
-    INV_TILE_MISSING,  /* 5 recorder NES $24 -> extract (subscreen icon) */
+    DSPR(2),        /* 4  candle    NES $26 -> dedicated CHR (live extract) */
+    DSPR(0),        /* 5  recorder  NES $24 -> dedicated CHR (live extract) */
     INV_ITEM(76),   /* 6  food       NES $22 -> atlas idx 76 (bytes $22) */
     INV_ITEM(78),   /* 7  potion     NES $40 -> atlas idx 78 (bytes $40) */
     INV_ITEM(80),   /* 8  wand       NES $4A -> atlas idx 80 (bytes $4A) */
-    INV_TILE_MISSING,  /* 9 raft     NES $6C -> extract (subscreen icon) */
+    DSPR(4),        /* 9  raft      NES $6C -> dedicated CHR (live extract) */
     INV_ITEM(64),   /* A  book       NES $42 -> atlas idx 64 (bytes $42) */
     INV_ITEM(62),   /* B  ring       NES $46 -> atlas idx 62 (bytes $46) */
-    INV_ITEM(68),   /* C  ladder     NES $76 -> atlas idx 68 (bytes $76) */
+    DSPR(6),        /* C  ladder     NES $76 -> dedicated CHR (live; atlas $76 wrong) */
     INV_ITEM(66),   /* D  magic_key  NES $2C -> atlas idx 66 (bytes $2C) */
     INV_ITEM(70),   /* E  bracelet   NES $4E -> atlas idx 70 (bytes $4E) */
     INV_ITEM(72),   /* F  letter     NES $4C -> atlas idx 72 (bytes $4C) */
@@ -610,6 +617,19 @@ void inventory_subscreen_enter(void)
     /* L4 (Phase 7 v2): swap CRAM to NES subscreen palette before any
      * BG/sprite write so first rendered frame is correctly colored. */
     inventory_palette_load_subscreen();
+
+    /* Upload the 8 live-extracted subscreen item-icon tiles to free VRAM
+     * $A000 (tile DSPR_BASE). These cover icons absent from / wrong in the
+     * items atlas: recorder $24, candle $26, raft $6C, ladder $76. */
+    {
+        unsigned char t, k;
+        render_vram_open_write(0xA000u);
+        for (t = 0u; t < 8u; ++t)
+            for (k = 0u; k < 32u; k += 2u)
+                *((volatile unsigned short *)0xC00000) =
+                    (unsigned short)(((unsigned short)k_inventory_sprite_chr[t][k] << 8) |
+                                     k_inventory_sprite_chr[t][k + 1u]);
+    }
 
     /* V2.4k (2026-05-26): NES Z1 inventory subscreen renders HUD strip
      * at BOTTOM (vs gameplay HUD at top). Swap Window plane position +
