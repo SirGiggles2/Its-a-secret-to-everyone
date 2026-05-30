@@ -496,31 +496,57 @@ static unsigned char slot_owned(unsigned char slot)
     }
 }
 
-/* Draw inventory slot as ONE 8x16 sprite at NES X+4, Y.
- *
- * Cross-search NES OAM evidence (2026-05-20):
- *   tile $28 (arrow) NES OAM X=$B0 vs SubmenuItemXs[2]=$AC -> +4 offset
- *   tile $2A (bow)   NES OAM X=$B8 vs SubmenuItemXs[3]=$B4 -> +4 offset
- *   tile $26 (candle)NES OAM X=$CC vs SubmenuItemXs[4]=$C8 -> +4 offset
- *
- * NES uses single 8x16 sprite per inventory slot (NOT pair-with-mirror).
- * V2.7/V2.8 code drew 2 sprites -> visible doubling. Fix: one sprite. */
+/* Per-slot NES SUBSCREEN tile (Anim_ItemFrameTiles[Anim_ItemFrameOffsets
+ * [slot]], Z_01.asm:5194-5207). Drives the draw-mode dispatch. */
+static const unsigned char k_inv_slot_to_nes_tile[INV_SLOT_COUNT] = {
+    0x36u,0x34u,0x28u,0x2Au,0x26u,0x24u,0x22u,0x40u,0x4Au,
+    0x6Cu,0x42u,0x46u,0x76u,0x2Cu,0x4Eu,0x4Cu,0x2Eu,0x32u
+};
+
+/* Draw one inventory slot, replicating Anim_WriteSpecificItemSprites'
+ * three draw modes (Z_01.asm:5279-5303), selected by the NES tile id:
+ *   $F3 or [$20,$62) -> @Narrow   : single 8x16 sprite, +4 X centering.
+ *   [$62,$6C)        -> @Slim/Wide : left tile + (tile+2) right, 8px apart.
+ *   >= $6C           -> @Mirrored  : left tile + same tile h-flipped right.
+ * Genesis SAT: X+128, Y+0x81 (NES +1 quirk + Gen +128). */
 static void draw_inv_slot(unsigned char slot, unsigned short nes_x, unsigned char nes_y)
 {
     if (slot >= INV_SLOT_COUNT) return;
     unsigned short vram_tile = k_inv_slot_to_vram_tile[slot];
     if (vram_tile == INV_TILE_MISSING) return;
 
-    /* +4 NES X centering offset per Anim_WriteSpecificItemSprites @Narrow.
-     * Genesis SAT: +128 (X) and +0x81 (Y +1 NES quirk + Gen +128). */
-    unsigned short sat_x = (unsigned short)(nes_x + 4u + 0x80u);
-    unsigned short sat_y = (unsigned short)(nes_y + 0x81u);
+    unsigned char  nes_tile = k_inv_slot_to_nes_tile[slot];
+    unsigned char  pal      = k_inv_slot_to_pal[slot];
+    unsigned short sat_y    = (unsigned short)(nes_y + 0x81u);
+    unsigned char  wide     = (nes_tile != 0xF3u && nes_tile >= 0x62u);
 
-    unsigned char pal = k_inv_slot_to_pal[slot];
-    unsigned short attr = RENDER_TILE_ATTR_FULL(pal, 0, 0, 0, vram_tile);
-    unsigned char link = (unsigned char)(s_next_sat_slot + 1u);
-    sat_write(s_next_sat_slot, sat_y, RENDER_SPRITE_SIZE(1, 2), link, attr, sat_x);
-    ++s_next_sat_slot;
+    if (!wide) {
+        /* @Narrow — single 8x16 at X+4. */
+        unsigned short sat_x = (unsigned short)(nes_x + 4u + 0x80u);
+        unsigned char  link  = (unsigned char)(s_next_sat_slot + 1u);
+        unsigned short attr  = RENDER_TILE_ATTR_FULL(pal, 0, 0, 0, vram_tile);
+        sat_write(s_next_sat_slot, sat_y, RENDER_SPRITE_SIZE(1, 2), link, attr, sat_x);
+        ++s_next_sat_slot;
+        return;
+    }
+
+    /* Wide: two 8x16 sprites 8px apart, no centering. Mirrored (>=$6C) uses
+     * the same tile h-flipped on the right; Slim ([$62,$6C)) uses tile+2. */
+    {
+        unsigned char  mirrored = (nes_tile >= 0x6Cu);
+        unsigned short sat_x    = (unsigned short)(nes_x + 0x80u);
+        unsigned char  link     = (unsigned char)(s_next_sat_slot + 1u);
+        unsigned short la       = RENDER_TILE_ATTR_FULL(pal, 0, 0, 0, vram_tile);
+        sat_write(s_next_sat_slot, sat_y, RENDER_SPRITE_SIZE(1, 2), link, la, sat_x);
+        ++s_next_sat_slot;
+        unsigned short rtile = mirrored ? vram_tile : (unsigned short)(vram_tile + 2u);
+        unsigned char  rhf   = mirrored ? 1u : 0u;
+        unsigned char  link2 = (unsigned char)(s_next_sat_slot + 1u);
+        unsigned short ra    = RENDER_TILE_ATTR_FULL(pal, 0, 0, rhf, rtile);
+        sat_write(s_next_sat_slot, sat_y, RENDER_SPRITE_SIZE(1, 2), link2,
+                  ra, (unsigned short)(sat_x + 8u));
+        ++s_next_sat_slot;
+    }
 }
 
 /* Draw all owned inventory item icons per NES subscreen layout. */
@@ -541,10 +567,13 @@ static void draw_item_sprites(void)
         draw_inv_slot(slot, nes_x, nes_y);
     }
 
-    /* Slot $10 compass: X=$2C Y=$9E (NES special-case). */
-    if (slot_owned(0x10u)) draw_inv_slot(0x10u, 0x2Cu, 0x9Eu);
-    /* Slot $11 map: X=$2C Y=$76. */
-    if (slot_owned(0x11u)) draw_inv_slot(0x11u, 0x2Cu, 0x76u);
+    /* Slots $10/$11 compass+map: NES draws these via HasCompass/HasMap,
+     * which test the CURRENT level's bit — present in UW (dungeon), never
+     * in OW. Gate on CurLevel ($10) so OW matches NES (no compass/map). */
+    if (nes_ram[0x0010u] != 0u) {
+        if (slot_owned(0x10u)) draw_inv_slot(0x10u, 0x2Cu, 0x9Eu);
+        if (slot_owned(0x11u)) draw_inv_slot(0x11u, 0x2Cu, 0x76u);
+    }
 
     s_cursor_sat = s_next_sat_slot;
     draw_cursor();
