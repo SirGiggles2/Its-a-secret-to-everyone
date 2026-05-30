@@ -277,6 +277,14 @@ def main():
     # renders it byte-exact. (Keep 0/3 for other scenes' usage.)
     for tid in (0xE7, 0xE8, 0xEB, 0xEC, 0xED, 0xEE, 0xEF, 0xF0, 0xF1, 0xF5):
         combined[tid].update([0, 1, 3])
+    # 2026-05-30 UW dungeon map sheet: the full door-permutation glyph range
+    # $E2-$F1 + blank $F5 + the level-map tiles $FD/$FE, all sub-pal 1 (live
+    # NT2 attribute capture). Needed for the static UW frame AND the G4
+    # dynamic map builder (any room can show any of the 16 door glyphs).
+    for tid in range(0xE2, 0xF2):
+        combined[tid].update([1])
+    for tid in (0xFD, 0xFE):
+        combined[tid].update([1])
 
     # Cave / NPC dialogue PUNCTUATION glyphs. The textbox char-streamer
     # (src/game/cave/cave_dispatch.c, transfer_buf_drain.c) writes NES
