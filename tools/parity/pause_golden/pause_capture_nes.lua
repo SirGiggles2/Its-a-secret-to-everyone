@@ -46,6 +46,11 @@ local CELL_SELECTED_SLOT = 0x0656
 -- ─── Domain readers (verified live: probe_nes_cave_golden.lua) ──────
 local function R(o)   return memory.read_u8(o, "RAM") end
 local function W(o,v) memory.write_u8(o, v, "RAM") end
+-- System Bus covers the full $0000-$FFFF map incl. the $6Bxx LevelInfo
+-- region (SRAM/WRAM) — RULE V3: $6Bxx is NOT in the 2KB "RAM" or 8KB CHR
+-- "VRAM" domains (the out-of-bounds warning). Use System Bus for those.
+local function SBr(a) memory.usememorydomain("System Bus"); return memory.read_u8(a & 0xFFFF) end
+local function SBw(a,v) memory.usememorydomain("System Bus"); memory.write_u8(a & 0xFFFF, v & 0xFF) end
 local function OAM(o) return memory.read_u8(o, "OAM") end
 local function PAL(o) return memory.read_u8(o, "PALRAM") end
 local function CHR(o) return memory.read_u8(o, "VRAM") end                 -- CHR-RAM
@@ -115,20 +120,21 @@ end
 -- CurLevel 0.) Capture proves whether the warp produced a coherent UW.
 local function force_uw()
     if CONTEXT ~= "uw" then return end
-    W(CELL_CUR_LEVEL, UW_LEVEL)
-    W(CELL_ROOM_ID,   UW_ROOM)
-    idle(8)
-    LOG(string.format("force_uw level=$%02X room=$%02X -> gm=$%02X",
-        UW_LEVEL, UW_ROOM, R(CELL_GAME_MODE)))
-    -- RULE V3: a bare CurLevel+RoomId poke does NOT run the real dungeon
-    -- level-load (CHR bankswap + PALRAM + CIRAM for that level). If CurLevel
-    -- didn't stick or the room is incoherent, ABORT LOUD — never write a
-    -- garbage UW golden that looks fine and poisons the diff. A real UW
-    -- capture requires driving through the in-ROM dungeon load (separate
-    -- step); until then OW (CONTEXT="ow") is the trusted path.
-    if R(CELL_CUR_LEVEL) == 0 then
-        LOG("!!! UW NOT REACHED (CurLevel==0) — aborting, no golden written !!!")
-        client.exit(); error("uw load failed")
+    -- Proven dungeon warp (probe_nes_uw_warp_v2): mirror SetTargetMode(2).
+    SBw(0x0010, UW_LEVEL)   -- CurLevel
+    SBw(0x005B, 0x02)       -- TargetMode = dungeon
+    SBw(0x0602, 0x02)       -- TargetMirror
+    SBw(0x0012, 0x10)       -- GameMode = transition -> real level load
+    for _ = 1, 1200 do
+        emu.frameadvance()
+        if SBr(0x0012) == 0x05 and SBr(0x0013) == 0 and SBr(0x0010) == UW_LEVEL then break end
+    end
+    idle(20)
+    LOG(string.format("force_uw L%d -> gm=$%02X sub=$%02X level=$%02X room=$%02X",
+        UW_LEVEL, SBr(0x0012), SBr(0x0013), SBr(0x0010), SBr(0x00EB)))
+    if SBr(0x0010) ~= UW_LEVEL or SBr(0x0012) ~= 0x05 then
+        LOG("!!! UW warp FAILED — aborting, no golden written !!!")
+        client.exit(); error("uw warp failed")
     end
 end
 
