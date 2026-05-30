@@ -203,6 +203,20 @@ static scroll_state_t s_scroll_state = SCROLL_IDLE;
 static unsigned char  s_scroll_row   = 0u;
 #define SCROLL_TOTAL_ROWS 28u
 
+/* Phase B (2026-05-30): REAL vertical-scroll animation replacing the
+ * row-by-row pop-in. NES slides the menu DOWN from the top: CurVScroll
+ * $EF->$41 = 174 px at 3 px/frame over 58 frames (Z_05.asm:265-294), then
+ * back up on close. Plane A is V32 in gameplay (256 px) — too short to park
+ * the 176 px menu off-screen — so the subscreen switches Plane A to V64
+ * (render_mode_set_v64; SAT lives at $F400, OUTSIDE the V64 $C000-$DFFF
+ * window, so it is unaffected; the HScroll table at $DC00 is clobbered but
+ * unused while the game is frozen). Menu sits at Plane A rows 0..21; VSRAM
+ * ramps 174 -> 0 so the menu slides down into view. Exit reverses and
+ * restores V32 before load_room repaints the room. */
+#define SCROLL_VSCROLL_TOP  174  /* menu parked off-screen above (= NES delta) */
+#define SCROLL_VSCROLL_STEP 3
+static short s_vscroll = 0;
+
 static void draw_cursor(void);   /* forward decl */
 static unsigned char b_item_owned(unsigned char slot);  /* forward decl */
 static void draw_item_sprites(void);   /* forward decl */
@@ -619,7 +633,20 @@ void inventory_subscreen_enter(void)
                                                       BLANK_TILE);
     render_plane_fill(0xE000u, blank_attr, 64u * 32u);
 
-    /* Start scroll-in state machine — tick will write rows progressively. */
+    /* Phase B: switch Plane A to V64 so the 176 px menu can park off-screen
+     * above the viewport, then slide down via VSRAM. Clear the whole V64
+     * plane (64x64) and write the FULL menu to rows 0..27 in one shot — the
+     * animation is a real VSRAM ramp, NOT progressive tile writes. */
+    render_mode_set_v64();
+    render_plane_fill(PLANE_A_BASE, blank_attr, 64u * 64u);
+    {
+        unsigned short r;
+        for (r = 0u; r < SCROLL_TOTAL_ROWS; ++r) write_inventory_row(r);
+    }
+    s_vscroll = (short)SCROLL_VSCROLL_TOP;     /* menu off-screen above */
+    render_vscroll_set((unsigned short)s_vscroll);
+
+    /* Start scroll-in: tick ramps VSRAM 174 -> 0 (menu slides down). */
     s_active       = 1u;
     s_scroll_state = SCROLL_IN;
     s_scroll_row   = 0u;
@@ -761,46 +788,33 @@ void inventory_subscreen_tick(unsigned char joy_state)
 {
     if (!s_active) return;
 
-    /* P6.3 scroll state machine. */
+    /* Phase B scroll state machine — real VSRAM ramp, 3 px/frame (NES rate). */
     if (s_scroll_state == SCROLL_IN) {
-        /* Write next inventory row each frame; advance until all 28 rows
-         * are written. ~2 rows/frame for snappy feel (NES does ~1.3
-         * rows/frame over 22 frames). */
-        write_inventory_row(s_scroll_row);
-        ++s_scroll_row;
-        if (s_scroll_row < SCROLL_TOTAL_ROWS) {
-            write_inventory_row(s_scroll_row);
-            ++s_scroll_row;
-        }
-        if (s_scroll_row >= SCROLL_TOTAL_ROWS) {
+        /* Menu slides DOWN from the top: VSRAM 174 -> 0. */
+        s_vscroll -= SCROLL_VSCROLL_STEP;
+        if (s_vscroll <= 0) {
+            s_vscroll = 0;
+            render_vscroll_set(0u);
             s_scroll_state = SCROLL_ACTIVE;
-            draw_item_sprites();  /* sprites visible once BG done */
+            draw_item_sprites();  /* sprites appear once menu is settled */
+        } else {
+            render_vscroll_set((unsigned short)s_vscroll);
         }
         return;
     }
 
     if (s_scroll_state == SCROLL_OUT) {
-        /* Clear rows from bottom up — gameplay rolls back into view. */
-        if (s_scroll_row > 0u) {
-            --s_scroll_row;
-            unsigned short cells[32];
-            unsigned short i;
-            unsigned short blank = RENDER_TILE_ATTR_FULL(SUBSCREEN_SUBPAL, 0, 0, 0,
-                                                         BLANK_TILE);
-            for (i = 0; i < 32u; ++i) cells[i] = blank;
-            render_plane_a_write_row(s_scroll_row, cells, 32u);
-            if (s_scroll_row > 0u) {
-                --s_scroll_row;
-                render_plane_a_write_row(s_scroll_row, cells, 32u);
-            }
-        }
-        if (s_scroll_row == 0u) {
+        /* Menu slides back UP off the top: VSRAM 0 -> 174. */
+        s_vscroll += SCROLL_VSCROLL_STEP;
+        if (s_vscroll >= SCROLL_VSCROLL_TOP) {
+            /* Restore gameplay scroll + V32 plane mode BEFORE main.c reloads
+             * the room (load_room repaints Plane A rows 8..29 in V32). */
+            render_vscroll_set(0u);
+            render_mode_set_h64v32();
             s_scroll_state = SCROLL_IDLE;
             s_active = 0u;
-            /* L5 (Phase 7 v2 Sonnet missing-task): clear ALL inventory SAT
-             * slots — not just cursor. Stale item-sprite link chain causes
-             * one-frame ghost sprites on unpause. Zero all 80 SAT slots so
-             * next gameplay frame's SAT writes start from clean state. */
+            /* Clear ALL 80 SAT slots so no stale item/cursor sprite ghosts
+             * onto the first gameplay frame. */
             {
                 unsigned char i;
                 render_vram_open_write(SAT_VRAM_BASE_GAMEPLAY);
@@ -811,6 +825,8 @@ void inventory_subscreen_tick(unsigned char joy_state)
                     *((volatile unsigned short *)0xC00000) = 0x0000;
                 }
             }
+        } else {
+            render_vscroll_set((unsigned short)s_vscroll);
         }
         return;
     }
