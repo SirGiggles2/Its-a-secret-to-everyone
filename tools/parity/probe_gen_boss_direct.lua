@@ -66,6 +66,12 @@ local function R(off)    return memory.read_u8(RAM_BASE + off, RAM_DOMAIN) end
 local function W(off, v) memory.write_u8(RAM_BASE + off, v, RAM_DOMAIN) end
 local function RW16(off) return R(off) * 256 + R(off + 1) end  -- BE u16
 local function idle(n)   for _=1,n do emu.frameadvance() end end
+-- NES RAM mirror cell: A4=$00FF8000 (src/abi/platform_abi.h:10), so NES
+-- address $XXXX lives at $FF8000+$XXXX => domain offset 0x8000+a. The
+-- debug ctrl/mirror blocks ($FF73F8/$FF7200) are NOT in nes_ram — they
+-- stay absolute (R/W directly). Confirmed: raw 0x034F reads .bss garbage,
+-- 0x834F reads real ObjType. (docs/audit/enemy_parity/probe_address_model.md)
+local function NES(a)    return R(0x8000 + a) end
 
 -- ---- Control / mirror offsets (68K-RAM-domain offsets) ----
 local CTRL   = 0x73F8
@@ -133,11 +139,18 @@ W(ARM0, 0x52); W(ARM1, 0x50)
 -- dest bytes + flags BEFORE the trigger byte, so no tick ever sees
 -- ctrl[7]==0x5A paired with a stale ctrl[3..6].
 local function warp(level, quest, room)
-  W(FLAGS, 0x00)                       -- disarm boss trigger for the warp
-  W(W_SCENE, 1); W(W_LEVEL, level); W(W_QUEST, quest); W(W_ROOM, room)
-  W(W_TRIG, 0x5A)                      -- fire warp (trigger byte LAST)
-  for _=1,90 do emu.frameadvance(); if R(W_TRIG) == 0 then break end end
-  idle(90)                             -- room render + enemy CHR DMA -> READY
+  -- Up to 3 attempts: the FIRST warp of a session can fire before the
+  -- gameplay runtime is ready (observed L1 landing in OW r$77). Verify
+  -- via the mirror (scene==1 UW + room match) and re-fire if it missed.
+  for attempt = 1, 3 do
+    W(FLAGS, 0x00)                     -- disarm boss trigger for the warp
+    W(W_SCENE, 1); W(W_LEVEL, level); W(W_QUEST, quest); W(W_ROOM, room)
+    W(W_TRIG, 0x5A)                    -- fire warp (trigger byte LAST)
+    for _=1,90 do emu.frameadvance(); if R(W_TRIG) == 0 then break end end
+    idle(90)                           -- room render + enemy CHR DMA -> READY
+    if R(MIR+4) == 1 and R(MIR+5) == room then return attempt end
+  end
+  return 0                             -- never verified (report in state.txt)
 end
 
 -- Kick boss CHR: set boss flag (+ heavy mirror), poke scene_id, await ack.
@@ -180,11 +193,13 @@ local function nonzero_count(domain, base, n)
   return c
 end
 
-local function dump_state(dir, b, fired, ack0, ack1)
+local function dump_state(dir, b, fired, ack0, ack1, warp_ok)
   local f = assert(io.open(dir .. "/state.txt", "w"), "cannot open state.txt")
   f:write(string.format("boss=%s level=%d room=$%02X scene_id=%d\n",
     b.name, b.lv, b.rm, b.lv + 3))
   f:write(string.format("frame=%d\n", emu.framecount()))
+  f:write(string.format("warp_verified=%s (attempt %d; 0=never landed scene1+room)\n",
+    tostring(warp_ok ~= 0), warp_ok))
   f:write(string.format("boss_kick_fired=%s ack %d->%d\n", tostring(fired), ack0, ack1))
   f:write(string.format("boss_chr_vram_nonzero=%d/%d (base $%04X)\n",
     nonzero_count(VRAM_DOMAIN, BOSS_VRAM, BOSS_VRAM_BYTES), BOSS_VRAM_BYTES, BOSS_VRAM))
@@ -198,38 +213,38 @@ local function dump_state(dir, b, fired, ack0, ack1)
   f:write(string.format("mir.uw_level=%d uw_quest=%d\n", R(MIR+16), R(MIR+17)))
   f:write(string.format("mir.enemy_chr_swap_state=%d active_scene=%d (heavy-mirror)\n",
     R(MIR+112), R(MIR+113)))
-  -- RAW NES RAM mirror cells (NES addr == 68K offset; verified $7000-$76FF
-  -- debug blocks sit above Z1 save $6000-$6FFF). Authoritative copy in
-  -- m68k_ram.bin; re-slice if any base assumption proves wrong (Phase 4).
-  f:write("--- raw NES cells (NES addr = 68K offset) ---\n")
+  -- NES RAM mirror cells via NES() = R(0x8000+a). Authoritative copy in
+  -- m68k_ram.bin (full 64 KB) — re-slice freely. ObjType $034F, X $0070,
+  -- Y $0084, Dir $008C, HP $0485 (Phase 0.A; doc's $04B8 aliases ATTR
+  -- $04BF, rejected), Attr $04BF. $6Bxx are NES SRAM ($6000+) — mapping
+  -- past the 13-bit bank is UNVERIFIED (Phase 4 re-derives), shown raw.
+  f:write("--- NES cells (mirror $FF8000+addr) ---\n")
   f:write(string.format("GameMode $12=$%02X  Level $10=$%02X  RoomId $EB=$%02X\n",
-    R(0x12), R(0x10), R(0xEB)))
-  f:write(string.format("BossRoomId $6BBC=$%02X  StartRoomId $6BAD=$%02X\n",
-    R(0x6BBC), R(0x6BAD)))
-  f:write(string.format("LBA_A $687E+rm=$%02X  LBA_C $697E+rm=$%02X\n",
-    R(0x687E + b.rm), R(0x697E + b.rm)))
-  f:write("Slots (s: type x y dir hp attr meta) — per Phase 0.A cell map:\n")
+    NES(0x12), NES(0x10), NES(0xEB)))
+  f:write(string.format("BossRoomId $6BBC=$%02X  StartRoomId $6BAD=$%02X  [SRAM: UNVERIFIED]\n",
+    NES(0x6BBC), NES(0x6BAD)))
+  f:write("Slots 0..15 (s: type x y dir state hp attr) — ObjType nonzero only:\n")
   local any = false
-  for s = 1, 19 do
-    local t = R(0x034F + s)
-    if t ~= 0 then
+  for s = 0, 15 do
+    local t = NES(0x034F + s)
+    if t ~= 0 and t ~= 0xFF then
       any = true
-      f:write(string.format("  s%02d t=$%02X x=$%02X y=$%02X dir=$%02X hp=$%02X attr=$%02X meta=$%02X\n",
-        s, t, R(0x0070+s), R(0x0084+s), R(0x0098+s), R(0x0485+s), R(0x04BF+s), R(0x0405+s)))
+      f:write(string.format("  s%02d t=$%02X x=$%02X y=$%02X dir=$%02X st=$%02X hp=$%02X attr=$%02X\n",
+        s, t, NES(0x0070+s), NES(0x0084+s), NES(0x008C+s), NES(0x00AC+s), NES(0x0485+s), NES(0x04BF+s)))
     end
   end
-  if not any then f:write("  (all slots empty)\n") end
+  if not any then f:write("  (no nonzero ObjType in slots 0..15)\n") end
   f:close()
 end
 
 for _, b in ipairs(bosses) do
   local dir = OUT .. "/" .. b.name
   os.execute('if not exist "' .. dir:gsub("/","\\") .. '" mkdir "' .. dir:gsub("/","\\") .. '"')
-  warp(b.lv, 0, b.rm)
+  local warp_ok = warp(b.lv, 0, b.rm)
   local fired, ack0, ack1 = kick_boss(b.lv)
 
   client.screenshot(dir .. "/screen.png")
-  dump_state(dir, b, fired, ack0, ack1)
+  dump_state(dir, b, fired, ack0, ack1, warp_ok)
   dump_cram_hex(dir .. "/cram.hex")
   dump_bin(dir .. "/cram.bin",      "CRAM",      0,         128)
   dump_bin(dir .. "/plane_a.bin",   VRAM_DOMAIN, 0xC000,    4096)
