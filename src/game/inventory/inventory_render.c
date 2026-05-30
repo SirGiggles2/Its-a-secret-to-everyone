@@ -400,7 +400,10 @@ static void write_inventory_row(unsigned short gen_row)
     }
     for (i = 0; i < 32u; ++i) {
         unsigned char tid = k_inventory_tilemap[nes_row][i];
-        unsigned char sp  = tile_subpal(nes_row, tid);
+        /* Per-cell sub-pal from the captured NES NT2 attribute table — the
+         * byte-exact source (the old tile_subpal() row-heuristic painted
+         * whole rows red and the triforce sub-pal 3; both wrong). */
+        unsigned char sp  = k_inventory_subpal[nes_row][i];
         unsigned short vram = tile_for(tid, sp);
         cells[i] = RENDER_TILE_ATTR_FULL(0u, 0, 0, 0, vram);
     }
