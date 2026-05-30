@@ -739,39 +739,31 @@ static unsigned short s_cursor_frame = 0u;
 
 static void draw_cursor(void)
 {
-    /* Cursor row Y: B-item slot row 1 = $36, row 2 = $46. For LITE V1,
-     * route cursor onto B-item row 1 (slot < 5) or row 2 (slot >= 5). */
+    /* Cursor Y: B-item row 1 = $36 (slot<5), row 2 = $46. */
     unsigned char  nes_y = (s_cursor_slot < 5u) ? 0x36u : 0x46u;
     unsigned short sat_y = (unsigned short)(nes_y + 0x81u);
     unsigned char  nes_x = k_submenu_cursor_xs[s_cursor_slot % 9u];
-    unsigned short sat_x = (unsigned short)(nes_x + 0x80u);
+    unsigned short lx    = (unsigned short)(nes_x + 0x80u);
 
-    /* Flash palette: NES toggles PAL5/PAL6 (sprite sub-pals 1/2) per
-     * FrameCounter bit 3 -> shift to bit 0 + add 1. Genesis SPR PAL2/PAL3. */
+    /* Flash palette: NES alternates sprite palette rows 5/6 per FrameCounter
+     * bit 3 (Z_05.asm:7990-7999) -> Genesis SPR PAL2/PAL3. */
     unsigned char  pal = (unsigned char)(((s_cursor_frame >> 3) & 1u) ?
                                           RENDER_PAL3 : RENDER_PAL2);
-    /* V2.4e (2026-05-25): NES draws currently-highlighted B-item icon
-     * INSIDE the cursor box. Chain order: cursor sprite (link → item),
-     * item sprite (link 0 = chain end). Without chain forward link,
-     * VDP sprite scan stops at cursor + item never displayed.
-     * V2.4h (2026-05-25): drop b_item_owned gate — debug_unlock_all
-     * pokes NES RAM but doesn't sync g_inventory struct, so check
-     * returned false. Cursor highlights ANY slot regardless of own. */
-    unsigned char  draw_item = (s_cursor_slot < INV_SLOT_COUNT &&
-                                k_inv_slot_to_vram_tile[s_cursor_slot] != INV_TILE_MISSING);
-    unsigned char  cursor_link = draw_item ? (unsigned char)(s_cursor_sat + 1u) : 0u;
-    unsigned short attr = RENDER_TILE_ATTR_FULL(pal, 0, 0, 0, CURSOR_VRAM_TILE);
-    sat_write(s_cursor_sat, sat_y, RENDER_SPRITE_SIZE(1, 1), cursor_link, attr, sat_x);
 
-    if (draw_item) {
-        unsigned short item_tile = k_inv_slot_to_vram_tile[s_cursor_slot];
-        unsigned char  item_pal  = k_inv_slot_to_pal[s_cursor_slot];
-        unsigned short item_attr = RENDER_TILE_ATTR_FULL(item_pal, 0, 0, 0, item_tile);
-        sat_write(cursor_link, sat_y, RENDER_SPRITE_SIZE(1, 2), 0u, item_attr, sat_x);
-    }
-    /* NOTE: s_cursor_frame is advanced ONCE per active frame by the tick
-     * (not here) — draw_cursor runs twice per frame (via draw_item_sprites
-     * + after input), so incrementing here would double the blink rate. */
+    /* NES draws the cursor as TWO $1E sprites forming the selection box:
+     * left at SubmenuCursorXs[slot], right at +8 h-flipped (Z_05.asm:7966-
+     * 8003). Each is 8x16 ($1E top + $1F bottom) in NES 8x16 mode. The
+     * highlighted item itself is already in the grid (draw_item_sprites),
+     * so the box just overlays it — do NOT redraw the item here. */
+    unsigned char  s0 = s_cursor_sat;
+    unsigned char  s1 = (unsigned char)(s0 + 1u);
+    unsigned short la = RENDER_TILE_ATTR_FULL(pal, 0, 0, 0, CURSOR_VRAM_TILE);
+    unsigned short ra = RENDER_TILE_ATTR_FULL(pal, 0, 0, 1, CURSOR_VRAM_TILE);
+    sat_write(s0, sat_y, RENDER_SPRITE_SIZE(1, 2), s1, la, lx);
+    sat_write(s1, sat_y, RENDER_SPRITE_SIZE(1, 2), 0u, ra, (unsigned short)(lx + 8u));
+    s_next_sat_slot = (unsigned char)(s1 + 1u);
+    /* s_cursor_frame advances ONCE per active frame in the tick, not here
+     * (draw_cursor runs twice/frame; incrementing here doubles blink rate). */
 }
 
 void inventory_subscreen_exit(void)

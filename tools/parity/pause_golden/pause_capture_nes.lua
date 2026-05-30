@@ -204,6 +204,14 @@ end
 LOG(string.format("ACTIVE settled MenuState=$%02X VScroll=$%02X ScrollProg=$%02X",
     R(CELL_MENU_STATE), R(CELL_CUR_VSCROLL), R(CELL_SCROLL_PROG)))
 
+-- Force SelectedItemSlot = 0 AFTER the menu's selection-ensure logic has
+-- run, so the cursor sits on slot 0 to match the Genesis default
+-- (s_cursor_slot=0). Without this the NES selection logic can land on a
+-- different slot, making the cursor byte-diff a non-bug mismatch.
+W(CELL_SELECTED_SLOT, 0x00)
+idle(6)
+LOG(string.format("forced SelectedItemSlot=$%02X", R(CELL_SELECTED_SLOT)))
+
 -- Review C8: pin blink phase before EVERY bundle so cursor-palette golden
 -- is reproducible across launches (FrameCounter bit3 drives cursor pal).
 local function advance_to_bit3(want)
