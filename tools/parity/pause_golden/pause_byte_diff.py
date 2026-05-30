@@ -266,16 +266,36 @@ def diff_scroll(nes_dir, gen_dir, report):
         report.append(f"    Gen frames to settle: {len(gl)}")
     else:
         report.append("    Gen ladder MISSING")
-    # Gate: the Gen scroll must actually animate (VSRAM changes), and the
-    # frame counts should be comparable. A flat Gen VSRAM0 = fake (row-write)
-    # animation = FAIL until Phase B.
+    # Gate (hardened per review): the Gen open ramp must (a) animate, (b) step
+    # exactly 3 px/frame like NES CurVScroll, (c) be monotonic; and the close
+    # ladder must exist and ramp back. A flat ramp = fake animation = FAIL.
+    fails = 0
     if gl:
         gv = [int(r["VSRAM0"]) for r in gl]
         if len(set(gv)) <= 1:
-            report.append("    SCROLL FAIL: Gen VSRAM0 is FLAT — no real vertical "
-                          "scroll (row-write fake). Phase B not yet applied.")
-            return 1
-    return 0
+            report.append("    SCROLL FAIL: Gen open VSRAM0 FLAT (no real scroll).")
+            fails += 1
+        else:
+            steps = [gv[i] - gv[i + 1] for i in range(len(gv) - 1) if gv[i] != gv[i + 1]]
+            bad = [s for s in steps if s != 3]
+            if bad:
+                report.append(f"    SCROLL FAIL: open ramp step != 3 px/frame: {bad[:8]}")
+                fails += 1
+            else:
+                report.append(f"    SCROLL OK: open ramp {gv[0]}->{min(gv)} "
+                              f"monotonic 3 px/frame ({len([s for s in steps if s==3])} steps).")
+    gc = read_ladder(gen_dir / "scroll_close.csv")
+    if not gc:
+        report.append("    SCROLL FAIL: Gen close ladder MISSING.")
+        fails += 1
+    else:
+        cv = [int(r["VSRAM0"]) for r in gc]
+        if len(set(cv)) <= 1:
+            report.append("    SCROLL FAIL: Gen close ladder FLAT.")
+            fails += 1
+        else:
+            report.append(f"    SCROLL OK: close ramp {cv[0]}->{max(cv)}.")
+    return fails
 
 
 def diff_sub(nes_dir, gen_dir, sub, lut, report):
