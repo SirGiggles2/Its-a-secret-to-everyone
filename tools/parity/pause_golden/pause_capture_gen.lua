@@ -32,6 +32,7 @@ local OFF_IN_GAMEPLAY = 0x0274
 local OFF_SCENE_HI     = 0x0281   -- s_scene int (BE) — candidate, verified from dump
 local OFF_SCENE_LO     = 0x0284
 local function r8(o)   return memory.read_u8(o, "68K RAM") end
+local function w8(o,v) memory.write_u8(o, v, "68K RAM") end
 local function nes_r8(a) return r8(0x8000 + a) end
 local function vsram0()
     -- VSRAM word 0 (bytes 0/1, big-endian) = plane-A vertical scroll.
@@ -135,9 +136,40 @@ local function log_ladder(csv_name, max_frames, settle_pred)
     f:close()
 end
 
+-- ─── UW (dungeon) entry — proven L1 warp (probe_gen_dungeon_golden) ──
+local function read_room() return r8(0x0041) end
+local function write_link_xy(x,y)
+    w8(0x1564,(x>>8)&0xFF) w8(0x1565,x&0xFF) w8(0x1566,(y>>8)&0xFF) w8(0x1567,y&0xFF)
+end
+local function force_warp_tile(col,row,tile)
+    w8(0x8000+0x6530+col*0x16+row, tile); w8(0x0285+col*22+row, tile)
+end
+local function navigate_to_room(target)
+    write_link_xy(0x78,0x70); press_for({["P1 X"]=true},8)
+    for _=1,64 do
+        local cur=read_room(); if cur==target then break end
+        local cc,cr=cur&0x0F,(cur>>4)&0x07; local tc,tr=target&0x0F,(target>>4)&0x07
+        if cc>tc then press_for({["P1 Left"]=true},16) elseif cc<tc then press_for({["P1 Right"]=true},16)
+        elseif cr>tr then press_for({["P1 Up"]=true},16) elseif cr<tr then press_for({["P1 Down"]=true},16) else break end
+    end
+    press_for({["P1 X"]=true},8); idle(30)
+end
+local function enter_dungeon()
+    navigate_to_room(0x37); idle(30)              -- L1 OW entrance room
+    force_warp_tile(15,9,0x24); write_link_xy(15*8, 9*8+0x35)
+    for i=0x027A,0x027D do w8(i,0) end            -- force WALK
+    emu.frameadvance()
+    for _=1,400 do if r8(OFF_SCENE_LO)==1 then idle(8); return true end emu.frameadvance() end
+    return false
+end
+
 -- ─── Main ───────────────────────────────────────────────────────────
 LOG("Gen pause golden TAG=" .. TAG)
 if not boot_to_gameplay() then print("BOOT FAIL"); client.exit(); return end
+if TAG == "uw" then
+    if not enter_dungeon() then LOG("!!! UW NOT REACHED !!!") end
+    LOG(string.format("post-dungeon scene=%d room=$%02X", scene_guess(), read_room()))
+end
 LOG(string.format("post-boot scene=%d vsram0=$%04X", scene_guess(), vsram0()))
 client.screenshot(OUT .. "\\00_pre.png")
 
