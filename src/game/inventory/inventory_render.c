@@ -17,7 +17,13 @@
 #include "inventory_render.h"
 #include "inventory_palette.h"
 #include "inventory_tilemap.h"
+#include "inventory_uw_tilemap.h"
 #include "inventory_sprite_chr.h"
+#include "../../../RoomRom/src/roomrom_main_state.h"  /* roomrom_main_current_scene */
+
+/* Scene captured on subscreen enter: 0 = OW (triforce), 1 = UW (dungeon
+ * map). Selects the tilemap/sub-pal source in write_inventory_row. */
+static unsigned char s_subscreen_uw = 0u;
 #include "../../abi/platform_abi.h"
 #include "../../abi/render_abi.h"
 #include "../../../RoomRom/src/bg_sparse_chr.h"
@@ -407,11 +413,13 @@ static void write_inventory_row(unsigned short gen_row)
         return;
     }
     for (i = 0; i < 32u; ++i) {
-        unsigned char tid = k_inventory_tilemap[nes_row][i];
-        /* Per-cell sub-pal from the captured NES NT2 attribute table — the
-         * byte-exact source (the old tile_subpal() row-heuristic painted
-         * whole rows red and the triforce sub-pal 3; both wrong). */
-        unsigned char sp  = k_inventory_subpal[nes_row][i];
+        /* Per-cell tile + sub-pal from the captured NES NT2 (OW triforce or
+         * UW dungeon). The map-sheet cells of the UW tilemap are the captured
+         * state for now; the G4 dynamic builder overrides them at runtime. */
+        unsigned char tid = s_subscreen_uw ? k_inventory_uw_tilemap[nes_row][i]
+                                           : k_inventory_tilemap[nes_row][i];
+        unsigned char sp  = s_subscreen_uw ? k_inventory_uw_subpal[nes_row][i]
+                                           : k_inventory_subpal[nes_row][i];
         unsigned short vram = tile_for(tid, sp);
         cells[i] = RENDER_TILE_ATTR_FULL(0u, 0, 0, 0, vram);
     }
@@ -639,6 +647,10 @@ static void draw_item_sprites(void)
 
 void inventory_subscreen_enter(void)
 {
+    /* Capture scene: UW (dungeon) renders the map subscreen, OW the
+     * triforce subscreen. Latched here so the whole open uses one source. */
+    s_subscreen_uw = (roomrom_main_current_scene() == ROOMROM_MAIN_SCENE_UW) ? 1u : 0u;
+
     /* L4 (Phase 7 v2): swap CRAM to NES subscreen palette before any
      * BG/sprite write so first rendered frame is correctly colored. */
     inventory_palette_load_subscreen();
