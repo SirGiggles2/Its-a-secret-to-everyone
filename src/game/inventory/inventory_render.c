@@ -203,19 +203,28 @@ static scroll_state_t s_scroll_state = SCROLL_IDLE;
 static unsigned char  s_scroll_row   = 0u;
 #define SCROLL_TOTAL_ROWS 28u
 
-/* Phase B (2026-05-30): REAL vertical-scroll animation replacing the
- * row-by-row pop-in. NES slides the menu DOWN from the top: CurVScroll
- * $EF->$41 = 174 px at 3 px/frame over 58 frames (Z_05.asm:265-294), then
- * back up on close. Plane A is V32 in gameplay (256 px) — too short to park
- * the 176 px menu off-screen — so the subscreen switches Plane A to V64
- * (render_mode_set_v64; SAT lives at $F400, OUTSIDE the V64 $C000-$DFFF
- * window, so it is unaffected; the HScroll table at $DC00 is clobbered but
- * unused while the game is frozen). Menu sits at Plane A rows 0..21; VSRAM
- * ramps 174 -> 0 so the menu slides down into view. Exit reverses and
- * restores V32 before load_room repaints the room. */
+/* Phase B (2026-05-30, hardened after multi-LLM review): REAL vertical-
+ * scroll animation replacing the row-by-row pop-in. NES slides the menu
+ * DOWN from the top: CurVScroll $EF->$41 = 174 px at 3 px/frame over 58
+ * frames (Z_05.asm:265-294), back up on close. The gameplay Plane A is
+ * ALREADY V64 (main.c:639 VDP_setPlaneSize(64,64)) — NO plane-size toggle
+ * needed. The 176 px menu parks off-screen above the V64 viewport and VSRAM
+ * ramps 174 -> 0 to slide it down. HScroll ($F000) and SAT ($F400) sit
+ * OUTSIDE the V64 window ($C000-$DFFF) so the plane fill never touches them.
+ * BG_A and BG_B share $C000 (main.c:634-635), so BOTH plane vscroll words
+ * are ramped together — else BG_B shows a static menu ghost behind BG_A. */
 #define SCROLL_VSCROLL_TOP  174  /* menu parked off-screen above (= NES delta) */
 #define SCROLL_VSCROLL_STEP 3
 static short s_vscroll = 0;
+
+/* Set BG_A AND BG_B vertical scroll (VSRAM slots 0/1) to v — both planes
+ * share $C000, so they must scroll in lockstep. */
+static void set_subscreen_vscroll(short v)
+{
+    render_vsram_open_write(0u);
+    render_vsram_write_word((unsigned short)v);   /* slot 0 = BG_A */
+    render_vsram_write_word((unsigned short)v);   /* slot 1 = BG_B */
+}
 
 static void draw_cursor(void);   /* forward decl */
 static unsigned char b_item_owned(unsigned char slot);  /* forward decl */
@@ -628,23 +637,24 @@ void inventory_subscreen_enter(void)
         }
     }
 
-    /* Also clear Plane B (gameplay sometimes uses it for room staging). */
     unsigned short blank_attr = RENDER_TILE_ATTR_FULL(SUBSCREEN_SUBPAL, 0, 0, 0,
                                                       BLANK_TILE);
-    render_plane_fill(0xE000u, blank_attr, 64u * 32u);
+    /* $E000 is the WINDOW plane (main.c:636), NOT Plane B — clearing it
+     * erases the bottom HUD strip the subscreen wants. BG_B shares $C000
+     * with BG_A (main.c:634-635), so the Plane A fill below clears both. */
 
-    /* Phase B: switch Plane A to V64 so the 176 px menu can park off-screen
-     * above the viewport, then slide down via VSRAM. Clear the whole V64
-     * plane (64x64) and write the FULL menu to rows 0..27 in one shot — the
-     * animation is a real VSRAM ramp, NOT progressive tile writes. */
-    render_mode_set_v64();
+    /* Phase B: the gameplay plane is ALREADY V64 (main.c:639) — no plane-
+     * size toggle. Clear the full V64 plane ($C000-$DFFF; HScroll $F000 +
+     * SAT $F400 are outside it) and write the FULL menu to rows 0..27 in one
+     * shot; the animation is a real VSRAM ramp, NOT progressive tile writes.
+     * Park the viewport 174 px above the menu; tick ramps it down. */
     render_plane_fill(PLANE_A_BASE, blank_attr, 64u * 64u);
     {
         unsigned short r;
         for (r = 0u; r < SCROLL_TOTAL_ROWS; ++r) write_inventory_row(r);
     }
     s_vscroll = (short)SCROLL_VSCROLL_TOP;     /* menu off-screen above */
-    render_vscroll_set((unsigned short)s_vscroll);
+    set_subscreen_vscroll(s_vscroll);
 
     /* Start scroll-in: tick ramps VSRAM 174 -> 0 (menu slides down). */
     s_active       = 1u;
@@ -759,8 +769,9 @@ static void draw_cursor(void)
         unsigned short item_attr = RENDER_TILE_ATTR_FULL(item_pal, 0, 0, 0, item_tile);
         sat_write(cursor_link, sat_y, RENDER_SPRITE_SIZE(1, 2), 0u, item_attr, sat_x);
     }
-
-    ++s_cursor_frame;
+    /* NOTE: s_cursor_frame is advanced ONCE per active frame by the tick
+     * (not here) — draw_cursor runs twice per frame (via draw_item_sprites
+     * + after input), so incrementing here would double the blink rate. */
 }
 
 void inventory_subscreen_exit(void)
@@ -790,27 +801,27 @@ void inventory_subscreen_tick(unsigned char joy_state)
 
     /* Phase B scroll state machine — real VSRAM ramp, 3 px/frame (NES rate). */
     if (s_scroll_state == SCROLL_IN) {
-        /* Menu slides DOWN from the top: VSRAM 174 -> 0. */
+        /* Menu slides DOWN from the top: VSRAM 174 -> 0 (both planes). */
         s_vscroll -= SCROLL_VSCROLL_STEP;
         if (s_vscroll <= 0) {
             s_vscroll = 0;
-            render_vscroll_set(0u);
+            set_subscreen_vscroll(0);
             s_scroll_state = SCROLL_ACTIVE;
             draw_item_sprites();  /* sprites appear once menu is settled */
         } else {
-            render_vscroll_set((unsigned short)s_vscroll);
+            set_subscreen_vscroll(s_vscroll);
         }
         return;
     }
 
     if (s_scroll_state == SCROLL_OUT) {
-        /* Menu slides back UP off the top: VSRAM 0 -> 174. */
+        /* Menu slides back UP off the top: VSRAM 0 -> 174 (both planes). */
         s_vscroll += SCROLL_VSCROLL_STEP;
         if (s_vscroll >= SCROLL_VSCROLL_TOP) {
-            /* Restore gameplay scroll + V32 plane mode BEFORE main.c reloads
-             * the room (load_room repaints Plane A rows 8..29 in V32). */
-            render_vscroll_set(0u);
-            render_mode_set_h64v32();
+            /* Reset scroll to 0 before main.c's load_room repaints the room.
+             * The plane is already V64 (gameplay default) — do NOT toggle to
+             * V32 here (that left gameplay in the wrong plane mode). */
+            set_subscreen_vscroll(0);
             s_scroll_state = SCROLL_IDLE;
             s_active = 0u;
             /* Clear ALL 80 SAT slots so no stale item/cursor sprite ghosts
@@ -885,4 +896,5 @@ void inventory_subscreen_tick(unsigned char joy_state)
     }
 
     draw_cursor();
+    ++s_cursor_frame;   /* advance blink ONCE per active frame (8-frame cadence) */
 }
