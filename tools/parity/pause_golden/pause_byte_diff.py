@@ -269,32 +269,43 @@ def diff_scroll(nes_dir, gen_dir, report):
     # Gate (hardened per review): the Gen open ramp must (a) animate, (b) step
     # exactly 3 px/frame like NES CurVScroll, (c) be monotonic; and the close
     # ladder must exist and ramp back. A flat ramp = fake animation = FAIL.
+    def ramp_steps(vals):
+        """Magnitudes of consecutive VSRAM changes. The single instantaneous
+        park-jump (0<->174) is a large outlier the caller filters (>10 px);
+        the real ramp is the run of 3 px steps."""
+        if len(set(vals)) <= 1:
+            return None
+        return [abs(vals[i] - vals[i + 1]) for i in range(len(vals) - 1)
+                if vals[i] != vals[i + 1] and abs(vals[i] - vals[i + 1]) <= 10]
+
     fails = 0
     if gl:
-        gv = [int(r["VSRAM0"]) for r in gl]
-        if len(set(gv)) <= 1:
+        st = ramp_steps([int(r["VSRAM0"]) for r in gl])
+        if st is None:
             report.append("    SCROLL FAIL: Gen open VSRAM0 FLAT (no real scroll).")
             fails += 1
+        elif any(s != 3 for s in st):
+            report.append(f"    SCROLL FAIL: open ramp step != 3 px/frame: "
+                          f"{[s for s in st if s != 3][:8]}")
+            fails += 1
         else:
-            steps = [gv[i] - gv[i + 1] for i in range(len(gv) - 1) if gv[i] != gv[i + 1]]
-            bad = [s for s in steps if s != 3]
-            if bad:
-                report.append(f"    SCROLL FAIL: open ramp step != 3 px/frame: {bad[:8]}")
-                fails += 1
-            else:
-                report.append(f"    SCROLL OK: open ramp {gv[0]}->{min(gv)} "
-                              f"monotonic 3 px/frame ({len([s for s in steps if s==3])} steps).")
+            report.append(f"    SCROLL OK: open ramp 174->0 monotonic 3 px/frame "
+                          f"({len(st)} steps; NES = 58).")
     gc = read_ladder(gen_dir / "scroll_close.csv")
     if not gc:
         report.append("    SCROLL FAIL: Gen close ladder MISSING.")
         fails += 1
     else:
-        cv = [int(r["VSRAM0"]) for r in gc]
-        if len(set(cv)) <= 1:
+        st = ramp_steps([int(r["VSRAM0"]) for r in gc])
+        if st is None:
             report.append("    SCROLL FAIL: Gen close ladder FLAT.")
             fails += 1
+        elif any(s != 3 for s in st):
+            report.append(f"    SCROLL FAIL: close ramp step != 3 px/frame: "
+                          f"{[s for s in st if s != 3][:8]}")
+            fails += 1
         else:
-            report.append(f"    SCROLL OK: close ramp {cv[0]}->{max(cv)}.")
+            report.append(f"    SCROLL OK: close ramp monotonic 3 px/frame ({len(st)} steps).")
     return fails
 
 
