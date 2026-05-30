@@ -1,0 +1,105 @@
+
+src/game/inventory/inventory_render.c
+  @@ -223,12 +223,20 @@ void inventory_subscreen_enter(void)
+  -    /* SAT terminator — link=0 hides remaining slots. */
+  -    if (s_next_sat_slot < 79u) {
+  -        sat_write(s_next_sat_slot, 0, RENDER_SPRITE_SIZE(1, 1), 0, 0, 0);
+  -    }
+  -
+  +    /* P6.5: initial cursor render at slot 0 (boomerang). Cursor occupies
+  +     * the next free SAT slot at end of the link chain. */
+       s_active = 1u;
+  +    s_cursor_slot = 0u;
+  +    s_prev_joy = 0u;
+  +    /* Patch last item SAT entry's link to point at cursor slot so VDP
+  +     * walks the chain through to cursor. */
+  +    if (s_next_sat_slot > 0u) {
+  +        /* Last drawn item entry was at slot (s_next_sat_slot - 1) with
+  +         * link = s_next_sat_slot. That's already correct since each
+  +         * draw_item_icon set link = next slot. */
+  +    }
+  +    s_cursor_sat = s_next_sat_slot;
+  +    draw_cursor();
+   }
+   
+   void inventory_subscreen_exit(void)
+  @@ -240,8 +248,85 @@ void inventory_subscreen_exit(void)
+  +/* P6.5 cursor state — index into 8-slot B-item row. */
+  +#define B_ITEM_SLOT_COUNT  8u
+  +static unsigned char s_cursor_slot = 0u;
+  +static unsigned char s_prev_joy = 0u;
+  +
+  +/* B-item slot ownership check — used to skip empty slots when cursor moves. */
+  +static unsigned char b_item_owned(unsigned char slot)
+  +{
+  +    switch (slot) {
+  +        case 0: return g_inventory.boomerang_wood;
+  +        case 1: return (g_inventory.bombs > 0u) ? 1u : 0u;
+  +        case 2: return g_inventory.bow;
+  +        case 3: return (g_inventory.candle > 0u) ? 1u : 0u;
+  +        case 4: return (g_inventory.items & ITEMS_BIT_WAND) ? 1u : 0u;
+  +        case 5: return (g_inventory.items & ITEMS_BIT_FLUTE) ? 1u : 0u;
+  +        case 6: return g_inventory.food;
+  +        case 7: return (g_inventory.potion > 0u) ? 1u : 0u;
+  +        default: return 0u;
+  +    }
+  +}
+  +
+  +/* Draw cursor sprite at the current slot's screen position. Uses last
+  + * SAT slot of the subscreen sprite block to avoid stepping on item icons. */
+  +/* Cursor sprite occupies SAT slot s_cursor_sat (set during enter to be
+  + * the next slot after item icons). Link chain runs: items -> cursor -> 0. */
+  +static unsigned char s_cursor_sat = 0u;
+  +
+  +static void draw_cursor(void)
+  +{
+  +    /* B-item slot X positions match draw_item_icon calls in
+  +     * inventory_subscreen_enter. y same as b_row_y. */
+  +    unsigned short b_row_y = 0x80u + 0x40u;
+  +    unsigned short x = (unsigned short)(0x40u + s_cursor_slot * 0x10u);
+  +    /* Cursor uses a Z1 inventory pointer-style tile. For V1 we reuse
+  +     * the BIG_KEY tile (rectangular block) as a placeholder. Real Z1
+  +     * uses a small flashing arrow tile (subscreen-specific CHR). */
+  +    unsigned short vram_tile = (unsigned short)(ITEM_VRAM_TILE_BASE +
+  +                                                ROOMROM_ITEM_TILE_BIG_KEY);
+  +    unsigned short attr = RENDER_TILE_ATTR_FULL(RENDER_PAL2, 0, 0, 0, vram_tile);
+  +    /* link=0 = end-of-chain terminator (cursor is last sprite in chain). */
+  +    sat_write(s_cursor_sat, b_row_y, RENDER_SPRITE_SIZE(1, 2), 0u, attr, x);
+  +}
+  +
+   void inventory_subscreen_tick(unsigned char joy_state)
+   {
+  -    /* P6.5 lands cursor + selection here. V1 no-op. */
+  -    (void)joy_state;
+  +    if (!s_active) return;
+  +
+  +    /* Joy bit layout (joy_state parameter is the consolidated byte from
+  +     * main.c joy_read6 base output — match JB_* bits in debug_tilegrid.c):
+  +     *   bit 0 = UP, 1 = DOWN, 2 = LEFT, 3 = RIGHT,
+  +     *   bit 4 = B,  5 = C,    6 = A,    7 = START.
+  +     * Genesis pad reading via roomrom-side gives us standard bits. */
+  +    unsigned char pressed = (unsigned char)(joy_state & ~s_prev_joy);
+  +    s_prev_joy = joy_state;
+  +
+  +    /* D-pad LEFT/RIGHT cycle cursor over B-item slots. Skip unowned. */
+  +    if (pressed & 0x08u) {  /* RIGHT */
+  +        unsigned char tries = 0u;
+  +        do {
+  +            s_cursor_slot = (unsigned char)((s_cursor_slot + 1u) % B_ITEM_SLOT_COUNT);
+  +            ++tries;
+  +        } while (!b_item_owned(s_cursor_slot) && tries < B_ITEM_SLOT_COUNT);
+  +    }
+  +    if (pressed & 0x04u) {  /* LEFT */
+  +        unsigned char tries = 0u;
+  +        do {
+  +            s_cursor_slot = (unsigned char)((s_cursor_slot + B_ITEM_SLOT_COUNT - 1u) % B_ITEM_SLOT_COUNT);
+  +            ++tries;
+  +        } while (!b_item_owned(s_cursor_slot) && tries < B_ITEM_SLOT_COUNT);
+  +    }
+  +
+  +    /* A press selects current B-item — writes inventory + NES $656 mirror. */
+  +    if (pressed & 0x40u) {
+
+... (more changes truncated)
+  +84 -7
+[full diff: rtk git diff --no-compact]

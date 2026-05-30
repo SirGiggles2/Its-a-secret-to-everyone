@@ -20,6 +20,7 @@
 #include "inventory_uw_tilemap.h"
 #include "inventory_sprite_chr.h"
 #include "../../../RoomRom/src/roomrom_main_state.h"  /* roomrom_main_current_scene */
+#include "../dungeon/uw_render.h"  /* roomrom_uw_room_render_get_level */
 
 /* Scene captured on subscreen enter: 0 = OW (triforce), 1 = UW (dungeon
  * map). Selects the tilemap/sub-pal source in write_inventory_row. */
@@ -592,6 +593,42 @@ static void draw_inv_slot(unsigned char slot, unsigned short nes_x, unsigned cha
 }
 
 /* Draw all owned inventory item icons per NES subscreen layout. */
+/* UW position marker: $3E dot (DSPR(8), 8x16) at NES (nes_x, nes_y). */
+static void draw_marker_sprite(unsigned short nes_x, unsigned short nes_y,
+                               unsigned char pal)
+{
+    unsigned short attr = RENDER_TILE_ATTR_FULL(pal, 0, 0, 0, DSPR(8));
+    unsigned char  link = (unsigned char)(s_next_sat_slot + 1u);
+    sat_write(s_next_sat_slot, (unsigned short)(nes_y + 0x81u),
+              RENDER_SPRITE_SIZE(1, 2), link, attr, (unsigned short)(nes_x + 0x80u));
+    ++s_next_sat_slot;
+}
+
+/* UW compass/map icon. wide!=0 -> mirrored pair (left + h-flip 8px right);
+ * else single narrow 8x16 with +4 X centering. */
+static void draw_uw_item(unsigned short vram, unsigned short nes_x,
+                         unsigned short nes_y, unsigned char pal, unsigned char wide)
+{
+    unsigned short sat_y = (unsigned short)(nes_y + 0x81u);
+    if (!wide) {
+        unsigned char lk = (unsigned char)(s_next_sat_slot + 1u);
+        sat_write(s_next_sat_slot, sat_y, RENDER_SPRITE_SIZE(1, 2), lk,
+                  RENDER_TILE_ATTR_FULL(pal, 0, 0, 0, vram),
+                  (unsigned short)(nes_x + 4u + 0x80u));
+        ++s_next_sat_slot;
+        return;
+    }
+    unsigned short sx = (unsigned short)(nes_x + 0x80u);
+    unsigned char  lk = (unsigned char)(s_next_sat_slot + 1u);
+    sat_write(s_next_sat_slot, sat_y, RENDER_SPRITE_SIZE(1, 2), lk,
+              RENDER_TILE_ATTR_FULL(pal, 0, 0, 0, vram), sx);
+    ++s_next_sat_slot;
+    unsigned char lk2 = (unsigned char)(s_next_sat_slot + 1u);
+    sat_write(s_next_sat_slot, sat_y, RENDER_SPRITE_SIZE(1, 2), lk2,
+              RENDER_TILE_ATTR_FULL(pal, 0, 0, 1, vram), (unsigned short)(sx + 8u));
+    ++s_next_sat_slot;
+}
+
 static void draw_item_sprites(void)
 {
     s_next_sat_slot = 0u;
@@ -616,24 +653,36 @@ static void draw_item_sprites(void)
     /* Slots $10/$11 compass+map: NES draws these via HasCompass/HasMap,
      * which test the CURRENT level's bit — present in UW (dungeon), never
      * in OW. Gate on CurLevel ($10) so OW matches NES (no compass/map). */
-    if (nes_ram[0x0010u] != 0u) {
-        if (slot_owned(0x10u)) draw_inv_slot(0x10u, 0x2Cu, 0x9Eu);
-        if (slot_owned(0x11u)) draw_inv_slot(0x11u, 0x2Cu, 0x76u);
-    }
-
-    /* Player position marker (tile $3E) on the status-bar map, per NES
-     * UpdatePlayerPositionMarker (Z_01.asm:4083): X = (room&$0F)*4 + $11,
-     * Y = (room&$70)>>2 + $17, scrolled down 176 px with the menu. 8x16
-     * ($3E top + $3F bottom), Link sub-pal 0 -> Genesis PAL1. */
     {
-        unsigned char  room = nes_ram[0x00EBu];
-        unsigned short mx   = (unsigned short)(((room & 0x0Fu) << 2) + 0x11u);
-        unsigned short my   = (unsigned short)(((room & 0x70u) >> 2) + 0x17u + 175u);
-        unsigned short attr = RENDER_TILE_ATTR_FULL(RENDER_PAL1, 0, 0, 0, DSPR(8));
-        unsigned char  link = (unsigned char)(s_next_sat_slot + 1u);
-        sat_write(s_next_sat_slot, (unsigned short)(my + 0x81u),
-                  RENDER_SPRITE_SIZE(1, 2), link, attr, (unsigned short)(mx + 0x80u));
-        ++s_next_sat_slot;
+        unsigned char room = nes_ram[0x00EBu];
+        if (!s_subscreen_uw) {
+            /* OW status-bar map marker: X=(room&$0F)*4+$11, Y=(room&$70)>>2
+             * +$17, scrolled 175 px with the menu (Z_01.asm:4083). */
+            draw_marker_sprite((unsigned short)(((room & 0x0Fu) << 2) + 0x11u),
+                               (unsigned short)(((room & 0x70u) >> 2) + 0x17u + 175u),
+                               RENDER_PAL1);
+        } else {
+            /* UW dungeon-map markers (Z_05.asm:295-355) + compass/map. */
+            /* CurLevel ($0010) is set reliably on the MODE toggle (s_uw_level
+             * is not), so index the per-level map config by it. */
+            unsigned char  level = nes_ram[0x0010u];
+            unsigned char  rot   = (level >= 1u && level <= 9u)
+                                 ? (unsigned char)(k_uw_map_rotation[level] & 0x0Fu) : 0u;
+            unsigned short rx  = (rot < 8u)
+                ? (unsigned short)(rot << 3)
+                : (unsigned short)(0u - (unsigned short)((16u - rot) << 3));
+            /* Player marker on the map sheet (final scroll-end position). */
+            draw_marker_sprite((unsigned short)(((room & 0x0Fu) << 3) + rx + 0x62u),
+                               (unsigned short)(((room & 0xF0u) >> 1) + 0x69u), RENDER_PAL1);
+            /* Status-bar map marker (UW cols *8 + $12; Y scrolled). */
+            draw_marker_sprite((unsigned short)(((room & 0x0Fu) << 3) + 0x12u),
+                               (unsigned short)(((room & 0x70u) >> 2) + 0x17u + 175u),
+                               RENDER_PAL1);
+            /* Compass ($6A mirrored) at ($2C,$9E); map ($4C narrow) at
+             * ($2C,$76) — UW-extracted tiles, NES SPR sub-pal 2 -> PAL3. */
+            if (slot_owned(0x10u)) draw_uw_item(DSPR(10), 0x2Cu, 0x9Eu, RENDER_PAL3, 1u);
+            if (slot_owned(0x11u)) draw_uw_item(DSPR(12), 0x2Cu, 0x76u, RENDER_PAL3, 0u);
+        }
     }
 
     /* B-item box: NES @DrawBreakoutItem (Z_05.asm:7949-7954) redraws the
@@ -661,7 +710,7 @@ void inventory_subscreen_enter(void)
     {
         unsigned char t, k;
         render_vram_open_write(0xA000u);
-        for (t = 0u; t < 10u; ++t)
+        for (t = 0u; t < 14u; ++t)
             for (k = 0u; k < 32u; k += 2u)
                 *((volatile unsigned short *)0xC00000) =
                     (unsigned short)(((unsigned short)k_inventory_sprite_chr[t][k] << 8) |
