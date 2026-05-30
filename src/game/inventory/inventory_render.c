@@ -593,11 +593,12 @@ static void draw_inv_slot(unsigned char slot, unsigned short nes_x, unsigned cha
 }
 
 /* Draw all owned inventory item icons per NES subscreen layout. */
-/* UW position marker: $3E dot (DSPR(8), 8x16) at NES (nes_x, nes_y). */
+/* UW position marker: $3E dot (8x16) at NES (nes_x, nes_y), tile = DSPR(8)
+ * (sub-pal 0/1/2 via PAL1) or DSPR(14) (PAL0-biased for SPR sub-pal 3). */
 static void draw_marker_sprite(unsigned short nes_x, unsigned short nes_y,
-                               unsigned char pal)
+                               unsigned char pal, unsigned short tile)
 {
-    unsigned short attr = RENDER_TILE_ATTR_FULL(pal, 0, 0, 0, DSPR(8));
+    unsigned short attr = RENDER_TILE_ATTR_FULL(pal, 0, 0, 0, tile);
     unsigned char  link = (unsigned char)(s_next_sat_slot + 1u);
     sat_write(s_next_sat_slot, (unsigned short)(nes_y + 0x81u),
               RENDER_SPRITE_SIZE(1, 2), link, attr, (unsigned short)(nes_x + 0x80u));
@@ -662,7 +663,7 @@ static void draw_item_sprites(void)
              * +$17, scrolled 175 px with the menu (Z_01.asm:4083). */
             draw_marker_sprite((unsigned short)(((room & 0x0Fu) << 2) + 0x11u),
                                (unsigned short)(((room & 0x70u) >> 2) + 0x17u + 175u),
-                               RENDER_PAL1);
+                               RENDER_PAL1, DSPR(8));
         } else {
             /* UW dungeon-map markers (Z_05.asm:295-355) + compass/map. */
             /* CurLevel ($0010) is set reliably on the MODE toggle (s_uw_level
@@ -675,11 +676,12 @@ static void draw_item_sprites(void)
                 : (unsigned short)(0u - (unsigned short)((16u - rot) << 3));
             /* Player marker on the map sheet (final scroll-end position). */
             draw_marker_sprite((unsigned short)(((room & 0x0Fu) << 3) + rx + 0x62u),
-                               (unsigned short)(((room & 0xF0u) >> 1) + 0x69u), RENDER_PAL1);
+                               (unsigned short)(((room & 0xF0u) >> 1) + 0x69u),
+                               RENDER_PAL1, DSPR(8));
             /* Status-bar map marker (UW cols *8 + $12; Y scrolled). */
             draw_marker_sprite((unsigned short)(((room & 0x0Fu) << 3) + 0x12u),
                                (unsigned short)(((room & 0x70u) >> 2) + 0x17u + 175u),
-                               RENDER_PAL1);
+                               RENDER_PAL1, DSPR(8));
             /* Triforce/compass map marker: status-bar formula on
              * TriforceRoomId (NES sub-pal 3 -> PAL3). */
             {
@@ -687,7 +689,7 @@ static void draw_item_sprites(void)
                                  ? k_uw_triforce_room[level] : 0u;
                 draw_marker_sprite((unsigned short)(((tr & 0x0Fu) << 3) + 0x12u),
                                    (unsigned short)(((tr & 0x70u) >> 2) + 0x17u + 175u),
-                                   RENDER_PAL3);
+                                   RENDER_PAL0, DSPR(14));
             }
             /* Compass ($6A mirrored) at ($2C,$9E); map ($4C narrow) at
              * ($2C,$76) — UW-extracted tiles, NES SPR sub-pal 2 -> PAL3. */
@@ -721,7 +723,7 @@ void inventory_subscreen_enter(void)
     {
         unsigned char t, k;
         render_vram_open_write(0xA000u);
-        for (t = 0u; t < 14u; ++t)
+        for (t = 0u; t < 16u; ++t)
             for (k = 0u; k < 32u; k += 2u)
                 *((volatile unsigned short *)0xC00000) =
                     (unsigned short)(((unsigned short)k_inventory_sprite_chr[t][k] << 8) |
