@@ -595,6 +595,10 @@ static void draw_item_sprites(void)
     unsigned char slot;
     for (slot = 1u; slot <= 0x0Fu; ++slot) {
         if (!slot_owned(slot)) continue;
+        /* NES skips the letter slot ($0F) when a potion is owned — the
+         * potion sprite was already emitted at slot 7 (Z_05.asm:7855-7858).
+         * Without this Gen draws potion twice at the same cell. */
+        if (slot == 0x0Fu && g_inventory.potion > 0u) continue;
         unsigned short nes_x = k_submenu_item_xs[slot];
         unsigned char  nes_y = slot_to_nes_y(slot);
         draw_inv_slot(slot, nes_x, nes_y);
@@ -607,6 +611,11 @@ static void draw_item_sprites(void)
         if (slot_owned(0x10u)) draw_inv_slot(0x10u, 0x2Cu, 0x9Eu);
         if (slot_owned(0x11u)) draw_inv_slot(0x11u, 0x2Cu, 0x76u);
     }
+
+    /* B-item box: NES @DrawBreakoutItem (Z_05.asm:7949-7954) redraws the
+     * currently-SELECTED item inside the box at fixed ($40,$36) — the
+     * "USE B BUTTON" equipped indicator. */
+    draw_inv_slot(s_cursor_slot, 0x40u, 0x36u);
 
     s_cursor_sat = s_next_sat_slot;
     draw_cursor();
