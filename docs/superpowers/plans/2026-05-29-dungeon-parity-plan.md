@@ -30,12 +30,31 @@ RULE V2 (review every `.lua`), WT-5 (no new `RoomRom/src` files; code in
   `Z_05.asm`/`Z_06.asm` (mode transitions, room load, Q2 PatchQ2Rooms
   237-267), `reference/aldonunez/dat/*.dat` (UW CHR/room/level data).
 
-## Known blocker (found 2026-05-29, byte-proven)
-**Live OW→dungeon entry is NOT wired.** OW gate `RoomRom/src/main.c:2099`
-only dispatches caves (`cave_entrance_check`→`cave_fade_begin_enter`); a
-dungeon entrance returns 0 (selector<$40) and nothing fires — scene stays OW.
-Phase F verified only the synthetic dispatch. Everything below is blocked on
-Phase 1.
+## CORRECTION (2026-05-30): the "live entry not wired" blocker was a PROBE BUG
+The earlier "live OW→dungeon entry NOT wired" finding was WRONG. `detect_warp_ow`
+(`src/game/world/transition.c:221`) runs in the warp-coordinator tick every
+frame; the cave gate only returns-early for caves (cid!=0), so a dungeon
+entrance (cid==0) falls through to the coordinator → UW. The probe couldn't
+*trigger* it because detect_warp_ow needs Rule3 (`link_x&0x0F==0`) + Rule4
+(`link_y&0x0F==0x05`) + Rule5 (render stable) alignment that a teleport-force
+doesn't satisfy. Capture uses the **probe-warp ctrl interface** ($FF73F8 ARM
+'R'/'P' + dest scene/level/quest/room + $5A trigger → `roomrom_main_apply_
+warp_outcome()`, the same load path), which sidesteps the alignment. Live
+OW-walk entry to be confirmed separately (Phase 6 round-trip).
+
+## STATUS 2026-05-30 — Phase 1+2 L1 start room: **BG BYTE-EXACT PASS**
+- Gen golden: `probe_gen_dungeon_golden.lua` (probe-warp) → `gen_L1Q1_R73`.
+- NES golden: `probe_nes_dungeon_golden.lua` (NEW) → `nes_L1Q1_R73`. Entry =
+  HandleWarpOW @LoadLevel replica (CurLevel=1 + TargetMode=$02 + ObjCollided
+  =$70 + GameMode=$10 → mode 2 loads L1 CHR/palette/LevelInfo), then force
+  RoomId=$73 + $6BAD=$73 + mode $04 re-decode (the SRAM save is an OW save so
+  the load resolved the start room back to the save's OW room $77 — re-entry
+  fixes RoomId). Asserts gm play + CurLevel==1 + RoomId==$73.
+- `cave_byte_diff.py --nes nes_L1Q1_R73 --gen gen_L1Q1_R73`: **GATE PASS,
+  0 BG divergences** (CRAM palette byte-exact + every NES play-cell has a Gen
+  tile). Sprites: 68 info-only divergences (not gated) — partly capture-path
+  mismatch (NES re-entry spawns room enemy set; Gen probe-warp spawns its own).
+  Sprite alignment = Phase 4.
 
 ---
 

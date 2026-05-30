@@ -75,16 +75,26 @@ end
 -- warp coordinator routes this OW room (selector<$40) to the UW dungeon
 -- instead of a cave. Poll for scene==UW.
 local function LOG(s) local f=io.open("C:/tmp/dun_dbg.txt","a"); if f then f:write(s.."\n"); f:close() end; print(s) end
+-- Enter via the probe-warp ctrl interface (main.c:2936-2957): arm 'R'/'P' at
+-- $FF73F8, write dest scene/level/quest/room + trigger $5A; the gameplay tick
+-- fires roomrom_main_apply_warp_outcome() -- the SAME load path as the live
+-- in-game warp coordinator (palette, CHR, enemy spawn, NES RAM mirror sync).
+-- This sidesteps detect_warp_ow's Rule3/4/5 entrance-alignment (which needs
+-- real Link movement onto the room's entrance tile) while producing the exact
+-- UW room a real traversal would. Live OW-walk entry verified separately.
 local function enter_dungeon()
-    navigate_to_room(OW_ROOM); idle(30)
-    LOG(string.format("after nav: room=$%02X scene=%d", read_room(), read_scene()))
-    force_warp_tile(15,9,0x24); write_link_xy(15*8, 9*8+0x35); force_mode_walk()
-    emu.frameadvance()
-    for k=1,400 do
-        local sc=read_scene()
-        if sc==SCENE_UW then LOG(string.format("UW reached f=%d room=$%02X",k,read_room())); idle(8); return true end
-        if (k%80)==0 then LOG(string.format("poll k=%d scene=%d room=$%02X mode=$%02X",k,sc,read_room(),r8(0x027A))) end
+    w8(0x73F8, 0x52); w8(0x73F9, 0x50)   -- ARM0='R' ARM1='P'
+    w8(0x73FB, 0x01)                     -- ctrl[3] dest_scene = SCENE_UW
+    w8(0x73FC, LEVEL)                    -- ctrl[4] dest_level
+    w8(0x73FD, QUEST)                    -- ctrl[5] dest_quest
+    w8(0x73FE, UW_ROOM)                  -- ctrl[6] dest_room_id
+    w8(0x73FF, 0x5A)                     -- ctrl[7] trigger
+    for k=1,180 do
         emu.frameadvance()
+        if read_scene()==SCENE_UW then
+            LOG(string.format("UW reached f=%d room=$%02X", k, read_room()))
+            idle(8); return true
+        end
     end
     LOG("enter_dungeon FAIL scene="..read_scene())
     return false
