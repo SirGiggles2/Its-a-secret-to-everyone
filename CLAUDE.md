@@ -92,6 +92,23 @@ scenes only.
 
 ## HARD rules (project invariants)
 
+### RULE ND-1 — ZERO DEFERRALS (user 2026-05-29)
+
+**WE NO LONGER DEFER ANYTHING. EVER.** Work is not done until it is fully
+done. No "next-session" punt. No "infrastructure landed, sweep deferred."
+No placeholder tile, stub, or `TODO` that ships as if complete. No
+"deferred" row in a parity table. If a task is N hours, do N hours.
+
+A deferral is a FAILURE. If something genuinely cannot be finished this
+session (hardware floor, missing upstream asset, blocked on user input),
+that is **halted + reported loud in the same message** with the exact
+blocker — never silently shelved and never reported as "done."
+
+When scoping any task: the bar is full completion of everything the user
+asked for, in one go. "56/56 in one go, not scaffolding + TODOs."
+Supersedes any habit of landing a frame + punting the sweep. Memory:
+`feedback_no_deferrals`.
+
 ### RoomRom freeze (WT-5, user 2026-05-09)
 
 **NEVER add new files under `RoomRom/src/`, `RoomRom/data/`, or
