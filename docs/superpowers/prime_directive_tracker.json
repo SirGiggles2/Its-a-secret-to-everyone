@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-05-21T16:19:35.983315+00:00",
+  "generated_at": "2026-05-30T05:08:12.932585+00:00",
   "generated_by": "tools/audit/primedirective/prime_refresh.py",
   "plan": {
     "path": "docs/superpowers/plans/2026-05-02-title-roomrom-full-port-master-plan.md",
@@ -1116,6 +1116,13 @@
       "stance": "REPLACE",
       "regression_matrix_run": null,
       "recorded_at": "2026-05-17T01:10:26.681350+00:00"
+    },
+    {
+      "target_phase_id": "phase8",
+      "reason": "RULE V1 byte-exact parity unverified",
+      "stance": "PARTIAL",
+      "regression_matrix_run": null,
+      "recorded_at": "2026-05-30T05:08:13.026773+00:00"
     }
   ],
   "deferrals": [
@@ -1387,31 +1394,26 @@
     },
     "drain_coverage_json": {
       "path": "tools/audit/drain_coverage.json",
-      "sha256": "891f0412eb0cf2e24a893a3f01613b408161103e61a6a59ca6dc71caf423e8e8",
+      "sha256": "a94799cb7acf3409a5acb7b7d27a05b4c0fadf9d46245c75415658d672010a88",
       "ok": true
     },
-    "git_head": "b86f1e83bea30fed5825793b64b341149076e1a2",
+    "git_head": "0d1814a484055a0e8d46fdcae60c2c0b9c37766e",
     "dirty_paths_relevant": [
-      "RoomRom/data/regen_sentinels.json",
-      "RoomRom/src/bg_sparse_chr.c",
-      "RoomRom/src/bg_sparse_chr.h",
-      "RoomRom/tools/gen_bg_sparse.py",
-      "data/audio_music/ow_theme_vgm.c",
-      "src/game/debug/debug_tilegrid.c",
-      "src/sgdk_adapter/audio_adapter.c",
-      "tools/audit/drain_coverage.json",
       "data/audio_music/lm_zelda_ow.bin",
       "data/audio_music/lm_zelda_ow_patched.vgm",
+      "data/audio_music/ow_theme.bin",
       "data/audio_music/ow_theme_pcm.c",
       "data/audio_music/ow_theme_pcm.h",
       "data/audio_music/sonic1.bin",
       "data/audio_music/sonic1.xgm",
       "src/game/inventory/inventory_render.WIP.patch.bak",
+      "tools/parity/pause_golden/",
+      "tools/probes/captures/",
       "tools/probes/pause_oam_sat_diff.py"
     ],
     "evidence_paths_present": true,
     "complete_phase_invariant_ok": true,
-    "last_refresh_at": "2026-05-21T16:19:36.057413+00:00",
+    "last_refresh_at": "2026-05-30T05:08:13.026753+00:00",
     "stale_reasons": []
   },
   "blockers": []
