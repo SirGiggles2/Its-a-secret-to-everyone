@@ -1,61 +1,55 @@
-# Phase 0.C — Boss room IDs
+# Phase 0.C — Boss room IDs (CORRECTED 2026-05-30)
 
-**Date:** 2026-05-30
-**Phase:** 8 (boss completion)
-**Source:** `tools/parity/probe_nes_known_bosses.lua` table (probe-author
-canonical; probe run 2026-05-30 against NES Z1 ROM).
+**Status:** the original table here was WRONG for 8/10 bosses — derived
+from `probe_nes_known_bosses.lua` whose mode-poke warp ($12=$06→$05) lands
+in the room but does NOT load objects (skips Z1 `InitMode4`/
+`InitMode_EnterRoom`), so its room ids were never spawn-validated and 8/10
+are not real rooms in their dungeons.
 
-## Canonical NES Z1 boss room IDs
+**Re-derived + SPAWN-VERIFIED** by warping Debug.md to each room and
+confirming the boss ObjType lands in enemy slot 1 (engine resolves the
+room's ObjList from `LevelBlockAttrsC/D`; boss room = where
+`monster_list_id` == boss ObjType per `Z_05.asm @PlaceObjects` +
+`Z_07.asm InitObject_JumpTable`). ObjTypes confirmed from that jump table.
 
-| Level | Room ($EB) | Boss | NES ObjType |
-|---|---|---|---|
-| L1 | $35 | Aquamentus | $3D |
-| L2 | $73 | Dodongo | $31/$32 |
-| L3 | $0F | Manhandla | $3C |
-| L4 | $45 | Gleeok 2-head | $43 |
-| L5 | $06 | Digdogger (1 child) | $38 |
-| L6 | $0F | Gohma Red | $33 |
-| L7 | $23 | Aquamentus #2 | $3D |
-| L8 | $1F | Gleeok 4-head | $45 |
-| L9 | $1E | Patra Red | $47 |
-| L9 | $1F | Ganon | $3E |
+## Boss rooms (✓ = spawn-verified on Genesis)
 
-## Verification path
+| Level | Room ($EB) | Boss | ObjType | Status |
+|---|---|---|---|---|
+| L1 | **$35** | Aquamentus    | $3D | ✓ slot1=$3D (+$55 fireballs) |
+| L2 | **$56** | Dodongo       | $31 | ✓ 6×$31 |
+| L3 | **$10** | Manhandla     | $3C | ✓ 5×$3C segments ($4D also has $3C) |
+| L4 | **$13** | Gleeok 2-head | $43 | ✓ slot1=$43 |
+| L5 | **?**   | Digdogger     | $38 | ✗ GAP — absent from port LBA |
+| L6 | **?**   | Gohma Red     | $33 | ✗ GAP — absent from port LBA |
+| L7 | **$2A** | Aquamentus #2 | $3D | ✓ slot1=$3D |
+| L8 | **$3C** | Gleeok 4-head | $45 | ✓ slot1=$45 |
+| L9 | **$52** | Patra Red     | $47 | ✓ slot1=$47 (+$25 children) |
+| L9 | **?**   | Ganon         | $3E | ✗ $42 (LBA $3E) did not spawn |
 
-Probe `tools/parity/probe_nes_known_bosses.lua` iterates all 10 bosses
-forcing `$10 = level`, `$EB = room`, `$12 = $06` (LoadLevel) then
-`$12 = $05` (Play). Captures slot table `$034F+s` per slot for
-`s = 1..19`. Output `C:/tmp/nes_known_bosses.txt`.
+Old (wrong) ids for reference: L2 $73, L3 $0F, L4 $45, L5 $06, L6 $0F,
+L7 $23, L8 $1F, L9 $1E/$1F. Only L1 $35 was correct.
 
-Iteration ran cleanly — all 10 entries produced output sections,
-matching screenshots emitted to `C:/tmp/nes_boss_<name>.png`.
+## The 3 gaps — port data, not logic
 
-**Caveat:** `$6BBC LevelInfo_BossRoomId` mirror reads `$00` for every
-forced level because the force-write path skips the natural file-load
-flow that populates the mirror. The probe **table values are the
-authoritative input** (room ID + level pair); the live `$6BBC` read is
-diagnostic only and confirms the mirror is uninitialized under
-force-warp.
+`level_info_install_uw` installs `LevelBlockAttrs` as SHARED blocks
+(block 0 = L1-L6 Q1, block 1 = L7-L9 Q1; verified byte-identical across
+L2/L5 captures). Block 0 contains L1-L4 boss placements but NOT $38
+(Digdogger) or $33 (Gohma); block 1 lacks a spawning Ganon. So
+`data/rooms/dungeons.c` `rooms_dungeons[]` is **missing L5/L6/Ganon boss
+object data** — re-extract those levels' LevelBlockAttrs C/D from the NES
+ROM (`reference/aldonunez/dat/`), then the engine spawns them like the
+other 7.
 
-## Genesis-side validation
+## Derivation tooling
 
-Same room IDs are written to `$EB` by `tools/parity/probe_gen_real_bosses.lua`
-which logs `$FF6BBC` after Debug.md install_uw runs. Phase B per-boss
-probes inherit this room list.
+- `tools/parity/probe_gen_boss_direct.lua` — warp + slot-1 spawn check.
+- `tools/parity/probe_gen_boss_scan_l56.lua` — scans list-type rooms.
+- LBA read: `nes_ram[$697E+room]` (C) / `[$69FE+room]` (D), Genesis mirror
+  at `$8000+addr`. ObjType ranges (boss): $31-34, $38-3E, $41-48.
 
-## Phase B per-boss probe scaffolding
-
-Each `tools/parity/probe_{nes,gen}_boss_<name>.lua` warps to the room
-above for capture-frame baseline. L7 (Aquamentus-2) inherits the same
-boss-type ObjType `$3D` as L1 but uses **Bank3468** CHR per
-`BossPatternBlockSrcAddrs[6]` (per Z_03.asm:24-34). Phase A
-`level_chr_boss_request(level)` must dispatch by **level**, not by
-ObjType.
-
-## Outstanding
-
-- Genesis `$FF6BBC` mirror verify needs to run via
-  `probe_gen_real_bosses.lua` once Debug.md install_uw path is
-  exercised. Schedule before Phase F matrix gate.
-- L9 hosts both Patra ($1E) and Ganon ($1F). Two separate boss-room
-  entries in matrix.
+## Known downstream issues (separate from room ids)
+- Non-L1 boss rooms render black: absent from `g_uw_room_nt` visual blob.
+- Boss sprites draw garbage: `translate_tile` (`enemy_render.c:521`) uses
+  enemy base $8E; boss bank loads NES $C0+ at the same VRAM slot 659 →
+  needs a boss-bank-active branch (base $C0). Confirm via CHR byte-diff.
