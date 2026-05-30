@@ -124,3 +124,64 @@ one-liner.
   Investigate BLOCKER A via `/chuckle` (warp render of normal vs boss room).
 - **P2:** still wire `level_chr_boss_request` into `scene_load.c` (BLOCKER C).
 - **P3+:** per-boss AI only after A+B+C give a visible, spawned, correct boss.
+
+---
+
+## UPDATE — Phase 1.5 root-causes (2026-05-30, same session)
+
+Deeper investigation resolved A and exposed a foundational data error.
+
+### BLOCKER A — root-caused + partial fix landed
+Two causes (both real):
+1. **Quest-index bug (FIXED).** The UW room blob `g_uw_room_lookup` is
+   indexed under **quest 1** (quest-0 table is empty: 0 rooms; quest-1 =
+   171 first-quest rooms; quest-2 = 147 second-quest). The PROBE_CTRL warp
+   set `s_uw_quest=0` via `roomrom_uw_room_render_set_quest(dest_quest=0)`
+   while `level_info_install_uw` normalizes 0→1 — inconsistent. So
+   `find_blob_entry` looked up quest 0 → always −1 → `fill_one_col_at`
+   (`uw_render.c:578`) took the non-blob branch → **wrote no tiles** →
+   black playfield. Fix: `main.c` `apply_warp_outcome` now normalizes the
+   render quest to match (0→1). Rebuilds clean (exit 0).
+2. **Wrong boss room IDs (see below).** Even with the quest fixed, 8/10
+   boss rooms in `boss_room_ids.md` are absent from the blob → still black
+   until the IDs are corrected.
+
+(OW warps always rendered because `roomrom_ow_room_render_fill_plane_a`
+re-fills every frame and OW room IDs are valid; UW has no per-frame
+re-fill, so a missed blob entry stays blank.)
+
+### `boss_room_ids.md` is WRONG (8/10) — prior-session RULE-ZERO miss
+The blob's real per-level room IDs are tight clusters; the doc's boss IDs
+match only **L1 $35** and **L8 $1F**. The other 8 ($73/$0F/$45/$06/$0F/
+$23/$1E/$1F) are not rooms in their dungeons at all (e.g. L2 lives in cols
+C–F, so $73 cannot be Dodongo). Both probes + `diff_boss.py BOSS_TABLE`
+inherited these bad IDs → 8/10 captures hit non-rooms (black + empty
+slots). **Correct IDs must be re-derived from NES data.**
+
+### NES object-placement spec decoded (RULE D1) — the ID + spawn oracle
+`Z_05.asm @PlaceObjects` (1700-1811): per room,
+`monster_list_id = (LevelBlockAttrsC[room]&0x3F) | (LevelBlockAttrsD[room]&0x80 ? 0x40:0)`.
+- list_id in `[$32,$62)` ⇒ count forced to 1, ObjType = list_id (a boss /
+  unique object). list_id `[1,$32)` ⇒ all `count` slots = list_id
+  (repeated enemy). list_id `>=$62` ⇒ list of distinct types from
+  `ObjListAddrs[(id-$62)*2]` → `ObjLists.dat`.
+- **Boss room = the room whose `monster_list_id` equals the boss
+  ObjType.** This is the authoritative source for BOTH the correct room
+  IDs and the expected spawn (BLOCKER B oracle).
+
+LevelBlockAttrs is **shared-block, NOT per-level**: `level_info_install_uw`
+installs block 0 for L1-L6 Q1, block 1 for L7-L9 Q1 (Z1 dungeon rooms
+share a 128-room map; each level occupies a disjoint region). C=`$697E`,
+D=`$69FE` (`Variables.inc:324-329`). NES SRAM `$6xxx` mapping into the
+Genesis `nes_ram` mirror is NOT simply `$8000+addr` (reads past the 13-bit
+bank) — decode boss IDs from the **static** `data/rooms/dungeons.c`
+(`rooms_dungeons[]`, the LBA source) instead, via the offsets in
+`level_info_install.c:94-119`.
+
+### Next (corrected)
+1. Decode `rooms_dungeons[]` LBA blocks (offset 0 = L1-L6, 768 = L7-L9) →
+   correct boss room ID per level + expected ObjType. Ground boss ObjType
+   values against the NES update-fn dispatch (not the suspect table).
+2. Fix `boss_room_ids.md`, both probes, `diff_boss.py BOSS_TABLE`.
+3. Re-capture (quest fix already in) → confirm boss rooms render + spawn.
+4. Then BLOCKER C (boss CHR request gated on boss-room) → per-boss AI.

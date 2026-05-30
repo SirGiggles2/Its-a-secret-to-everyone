@@ -488,9 +488,12 @@ static void cave_fade_swap_entry_handler(cave_id_t cid)
 {
     (void)cid;
     s_scene = SCENE_CAVE;
-    /* NES Z1 cave-entry Link spawn: bottom-center facing up. */
-    players[0].x    = 120u;
-    players[0].y    = 192u;
+    /* NES Z1 cave-entry Link spawn (Z_01.asm:2965 InitModeB_EnterCave_Bank5):
+     * ObjX=$70 (112), ObjY=$DD (221), facing up. Byte-verified vs NES via
+     * cave_transition_diff (2026-05-30): Gen was (120,192)=($78,$C0); NES
+     * cave-bottom ObjY=$DD before the 48-px emerge walk-up. */
+    players[0].x    = 0x70u;   /* 112 */
+    players[0].y    = 0xDDu;   /* 221 */
     players[0].face = LINK_FACE_UP;
 }
 
@@ -812,7 +815,13 @@ void roomrom_main_apply_warp_outcome(const rr_warp_outcome_t *out)
     s_scene = (scene_t)out->dest_scene;
     if (s_scene == SCENE_UW) {
         roomrom_uw_room_render_set_level(out->dest_level);
-        roomrom_uw_room_render_set_quest(out->dest_quest);
+        /* Quest must match level_info_install_uw's normalization below
+         * (dest_quest 0 -> first quest 1). The UW room blob + find_blob_entry
+         * are indexed under quest 1 (quest 0 table is empty); leaving
+         * s_uw_quest=0 made find_blob_entry return -1 for every warped UW
+         * room -> fill_one_col_at drew no tiles -> black playfield. */
+        roomrom_uw_room_render_set_quest(
+            (out->dest_quest == 0u) ? 1u : out->dest_quest);
         nes_ram[0x0010u] = out->dest_level;
         /* Plan v5 D4: install LevelBlockAttrs + LevelInfo into NES SRAM
          * BEFORE enemy_loop_room_init reads LBA_C/D + FoeCounts. Without
