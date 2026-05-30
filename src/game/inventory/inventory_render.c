@@ -91,25 +91,34 @@ static void sat_write(unsigned char slot, unsigned short y,
  * to 896, silently invalidating the hardcoded slots (Gemini H2). */
 #define INV_SPR(off)   (unsigned short)(ROOMROM_SPR_TILE_BASE + (off))
 #define INV_ITEM(off)  (unsigned short)(ROOMROM_ITEM_TILE_BASE + (off))
+/* V3.0 (2026-05-30): byte-exact remap. The SUBSCREEN tile for each item
+ * slot is Anim_ItemFrameTiles[Anim_ItemFrameOffsets[slot]] (Z_01.asm:5194-
+ * 5207), NOT the item PICKUP tile the old table used. Atlas indices below
+ * are keyed by NES tile id (the atlas idx whose extracted bytes ARE that
+ * NES tile), so the misleading ROOMROM_ITEM_TILE_* *names* are irrelevant —
+ * what matters is the byte content. Derived from pause_byte_diff active
+ * capture (tiles + sub-pals) + the NES Anim tables. Three subscreen icons
+ * ($24 recorder, $26 candle, $6C raft) are NOT in the items atlas yet and
+ * are extracted in inventory_subscreen_chr (see below). */
 static const unsigned short k_inv_slot_to_vram_tile[INV_SLOT_COUNT] = {
-    INV_ITEM(6),    /* 0  boomerang (NES $36) — was hardcoded 826 = 820+6 */
-    INV_ITEM(20),   /* 1  bombs     (NES $34) — was 840 = 820+20 */
-    INV_SPR(40),    /* 2  arrow     (NES $28 -> SPR_BASE+40) */
-    INV_SPR(42),    /* 3  bow       (NES $2A -> SPR_BASE+42) */
-    INV_SPR(38),    /* 4  candle    (NES $26 -> SPR_BASE+38) */
-    INV_SPR(36),    /* 5  recorder  (NES $24 -> SPR_BASE+36) */
-    INV_SPR(34),    /* 6  food      (NES $22 -> SPR_BASE+34) */
-    INV_ITEM(78),   /* 7  potion    (NES $40) — was 898 = 820+78 */
-    INV_ITEM(36),   /* 8  wand      (NES $4A) — was 856 = 820+36 */
-    INV_TILE_MISSING,  /* 9  raft (NES $6C, not extracted) */
-    INV_ITEM(64),   /* A  book      (NES $42) — was 884 = 820+64 */
-    INV_TILE_MISSING,  /* B  ring (NES $76, not extracted) */
-    INV_ITEM(66),   /* C  ladder    (NES $2C) — was 886 = 820+66 */
-    INV_ITEM(70),   /* D  magic_key (NES $4E) — was 890 = 820+70 */
-    INV_ITEM(72),   /* E  bracelet  (NES $4C) — was 892 = 820+72 */
-    INV_TILE_MISSING,  /* F letter (NES $6A, not extracted) */
-    INV_ITEM(54),   /* 10 compass   (NES $2E) — was 874 = 820+54 */
-    INV_ITEM(56),   /* 11 map       (NES $32) — was 876 = 820+56 */
+    INV_ITEM(6),    /* 0  boomerang  NES $36 -> atlas idx 6  (BOOMERANG) */
+    INV_ITEM(20),   /* 1  bombs      NES $34 -> atlas idx 20 (bytes $34) */
+    INV_ITEM(14),   /* 2  arrow      NES $28 -> atlas idx 14 (bytes $28) */
+    INV_ITEM(74),   /* 3  bow        NES $2A -> atlas idx 74 (bytes $2A) */
+    INV_TILE_MISSING,  /* 4 candle   NES $26 -> extract (subscreen icon) */
+    INV_TILE_MISSING,  /* 5 recorder NES $24 -> extract (subscreen icon) */
+    INV_ITEM(76),   /* 6  food       NES $22 -> atlas idx 76 (bytes $22) */
+    INV_ITEM(78),   /* 7  potion     NES $40 -> atlas idx 78 (bytes $40) */
+    INV_ITEM(80),   /* 8  wand       NES $4A -> atlas idx 80 (bytes $4A) */
+    INV_TILE_MISSING,  /* 9 raft     NES $6C -> extract (subscreen icon) */
+    INV_ITEM(64),   /* A  book       NES $42 -> atlas idx 64 (bytes $42) */
+    INV_ITEM(62),   /* B  ring       NES $46 -> atlas idx 62 (bytes $46) */
+    INV_ITEM(68),   /* C  ladder     NES $76 -> atlas idx 68 (bytes $76) */
+    INV_ITEM(66),   /* D  magic_key  NES $2C -> atlas idx 66 (bytes $2C) */
+    INV_ITEM(70),   /* E  bracelet   NES $4E -> atlas idx 70 (bytes $4E) */
+    INV_ITEM(72),   /* F  letter     NES $4C -> atlas idx 72 (bytes $4C) */
+    INV_ITEM(54),   /* 10 compass    NES $2E -> atlas idx 54 (COMPASS) */
+    INV_ITEM(56),   /* 11 map        NES $32 -> atlas idx 56 (MAP) */
 };
 
 /* Per-slot NES SPR sub-pal -> Genesis PAL (per Phase B/F routing):
@@ -127,25 +136,27 @@ static const unsigned short k_inv_slot_to_vram_tile[INV_SLOT_COUNT] = {
  *   slot $E bracelet ($4C): sub_pal 1   slot $10 compass ($2E): sub_pal 0
  *   slot $11 map ($32):     sub_pal 0
  */
+/* V3.0: sub-pals read from the pause_byte_diff active OAM capture (NES SPR
+ * sub-pal p -> Genesis PAL(p+1): p0->PAL1, p1->PAL2, p2->PAL3). */
 static const unsigned char k_inv_slot_to_pal[INV_SLOT_COUNT] = {
-    RENDER_PAL2,  /* 0  boomerang (NES sub_pal 1) */
-    RENDER_PAL2,  /* 1  bombs */
-    RENDER_PAL2,  /* 2  arrow */
-    RENDER_PAL1,  /* 3  bow (NES sub_pal 0) */
-    RENDER_PAL3,  /* 4  candle (NES sub_pal 2) */
-    RENDER_PAL3,  /* 5  recorder */
-    RENDER_PAL3,  /* 6  food */
-    RENDER_PAL3,  /* 7  potion */
-    RENDER_PAL2,  /* 8  wand */
-    RENDER_PAL1,  /* 9  raft (sub_pal 0) */
-    RENDER_PAL3,  /* A  book */
-    RENDER_PAL3,  /* B  ring */
-    RENDER_PAL3,  /* C  ladder */
-    RENDER_PAL3,  /* D  magic_key */
-    RENDER_PAL2,  /* E  bracelet */
-    RENDER_PAL1,  /* F  letter */
-    RENDER_PAL1,  /* 10 compass (sub_pal 0) */
-    RENDER_PAL1,  /* 11 map (sub_pal 0) */
+    RENDER_PAL2,  /* 0  boomerang $36 p1 */
+    RENDER_PAL2,  /* 1  bombs     $34 p1 */
+    RENDER_PAL2,  /* 2  arrow     $28 p1 */
+    RENDER_PAL1,  /* 3  bow       $2A p0 */
+    RENDER_PAL3,  /* 4  candle    $26 p2 */
+    RENDER_PAL3,  /* 5  recorder  $24 p2 */
+    RENDER_PAL3,  /* 6  food      $22 p2 */
+    RENDER_PAL3,  /* 7  potion    $40 p2 */
+    RENDER_PAL2,  /* 8  wand      $4A p1 */
+    RENDER_PAL1,  /* 9  raft      $6C p0 */
+    RENDER_PAL3,  /* A  book      $42 p2 */
+    RENDER_PAL3,  /* B  ring      $46 p2 */
+    RENDER_PAL1,  /* C  ladder    $76 p0 */
+    RENDER_PAL3,  /* D  magic_key $2C p2 */
+    RENDER_PAL3,  /* E  bracelet  $4E p2 */
+    RENDER_PAL2,  /* F  letter    $4C p1 */
+    RENDER_PAL1,  /* 10 compass   $2E p0 */
+    RENDER_PAL1,  /* 11 map       $32 p0 */
 };
 
 /* NES tile bottom-half = tile+1 (8x16 mode). Genesis VRAM has both tiles
