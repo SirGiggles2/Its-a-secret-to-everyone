@@ -37,7 +37,22 @@ const unsigned char k_inventory_subscreen_palram[32] = {
     0x00u, 0x0Fu, 0x1Cu, 0x16u
 };
 
-void inventory_palette_load_subscreen(void)
+/* UW (dungeon) subscreen PALRAM, captured live (nes_uw/active.bin, L1Q1).
+ * Differs from OW in BG PAL2/PAL3 (map-sheet colors $0C/$1C/$2C) + SPR
+ * index-0 ($0F vs $00). */
+const unsigned char k_inventory_uw_palram[32] = {
+    0x0Fu, 0x30u, 0x00u, 0x12u,
+    0x0Fu, 0x16u, 0x27u, 0x36u,
+    0x0Fu, 0x0Cu, 0x1Cu, 0x2Cu,
+    0x0Fu, 0x12u, 0x1Cu, 0x2Cu,
+    0x0Fu, 0x29u, 0x27u, 0x17u,
+    0x0Fu, 0x02u, 0x22u, 0x30u,
+    0x0Fu, 0x16u, 0x27u, 0x30u,
+    0x0Fu, 0x0Cu, 0x1Cu, 0x2Cu
+};
+
+void inventory_palette_load_subscreen(unsigned char uw)
 {
-    roomrom_bg_palette_load_palram_full(k_inventory_subscreen_palram);
+    roomrom_bg_palette_load_palram_full(uw ? k_inventory_uw_palram
+                                           : k_inventory_subscreen_palram);
 }

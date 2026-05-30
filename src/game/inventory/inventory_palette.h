@@ -12,8 +12,10 @@
  * Defined in inventory_palette.c. */
 extern const unsigned char k_inventory_subscreen_palram[32];
 
-/* Load subscreen palette into Genesis CRAM PAL0-PAL3 via the existing
- * bg_palette dispatcher. */
-void inventory_palette_load_subscreen(void);
+extern const unsigned char k_inventory_uw_palram[32];
+
+/* Load subscreen palette into Genesis CRAM PAL0-PAL3. uw!=0 selects the
+ * UW (dungeon) palette, else the OW (triforce) palette. */
+void inventory_palette_load_subscreen(unsigned char uw);
 
 #endif

@@ -653,7 +653,7 @@ void inventory_subscreen_enter(void)
 
     /* L4 (Phase 7 v2): swap CRAM to NES subscreen palette before any
      * BG/sprite write so first rendered frame is correctly colored. */
-    inventory_palette_load_subscreen();
+    inventory_palette_load_subscreen(s_subscreen_uw);
 
     /* Upload the 8 live-extracted subscreen item-icon tiles to free VRAM
      * $A000 (tile DSPR_BASE). These cover icons absent from / wrong in the
