@@ -87,77 +87,71 @@ local function boot_to_gameplay()
     return false
 end
 
--- ─── Force the NES into UW level LEVEL, start room (RULE ZERO entry) ─
+local function SB(a)   return memory.read_u8(a, "System Bus") end  -- $6BAD = cart WRAM
+local function SBW(a,v) memory.write_u8(a, v, "System Bus") end
+
+-- ─── load_level(): bring in LEVEL's CHR + LevelInfo palette + data (ONCE) ─
 -- Replicates HandleWarpOW @LoadLevel (Z_05.asm:7358) EXACTLY, the same way
 -- the cave probe replicates @cave: directly poking GameMode=$02 does NOT
 -- enter mode 2's init (the mode machine ignores a bare GameMode write —
 -- proven: poke $02 left rm=$77 OW). The real path is the mode-$10 stairs
--- transition: @LoadLevel sets CurLevel=selector>>2 + TargetMode=$02, then
--- SetTargetMode (7284) writes GameMode=$10. UpdateMode10Stairs_Full
--- (Z_05.asm:2308) with ObjCollidedTile=$70 (stairs, not $24) skips the
--- Link-descend and flips GameMode -> TargetMode($02) via EndGameMode (which
--- resets the submode so mode 2 init runs). Mode 2 loads level CHR+data, mode
--- 3 Unfurl (Z_07.asm:1409) sets RoomId=LevelInfo_StartRoomId for UW.
-local function force_state_dungeon()
-    W(CELL_CUR_QUEST, QUEST)             -- CurQuest (Q2 -> PatchQ2Rooms layouts)
-    W(CELL_CUR_LEVEL, LEVEL)             -- @LoadLevel: CurLevel = selector>>2
+-- transition: @LoadLevel sets CurLevel + TargetMode=$02, SetTargetMode (7284)
+-- writes GameMode=$10. UpdateMode10Stairs_Full (Z_05.asm:2308) with
+-- ObjCollidedTile=$70 (stairs, not $24) skips the Link-descend and flips
+-- GameMode -> $02 via EndGameMode (resets submode so mode 2 init runs). Mode 2
+-- loads CHR+data; mode 3 Unfurl runs. (The SRAM save is an OW save so the
+-- load resolves the start room back to the save's OW room — enter_room() then
+-- forces the actual UW room. We only need the level's CHR/palette/data here.)
+local function load_level()
+    W(CELL_CUR_QUEST, QUEST)
+    W(CELL_CUR_LEVEL, LEVEL)
     idle(4)
-    W(CELL_COLLIDED_TILE, 0x70)          -- stairs -> mode $10 skips descend anim
-    W(CELL_UG_ENTRANCE,   0x70)          -- UndergroundEntranceTile = stairs
-    W(CELL_TARGET_MODE,   0x02)          -- TargetMode = $02 (load level)
-    W(CELL_GAME_MODE,     0x10)          -- mode $10 -> flips GameMode to $02
-    local function SB(a) return memory.read_u8(a, "System Bus") end  -- $6BAD = cart WRAM
-    LOG(string.format("FORCE: gm=$%02X tgt=$%02X tile=$%02X lvl=%d rm=$%02X startroom=$%02X upd=$%02X",
-        R(CELL_GAME_MODE), R(CELL_TARGET_MODE), R(CELL_COLLIDED_TILE),
-        R(CELL_CUR_LEVEL), R(CELL_ROOM_ID), SB(0x6BAD), R(0x11)))
-    -- Per-frame trace: mode 2 (load) -> mode 3 (Unfurl sub1: RoomId=StartRoomId)
-    -- -> 4/5 play. Log every frame so the submode sequence + RoomId change show.
-    local last = ""
-    for it = 1, 200 do
+    W(CELL_COLLIDED_TILE, 0x70)
+    W(CELL_UG_ENTRANCE,   0x70)
+    W(CELL_TARGET_MODE,   0x02)
+    W(CELL_GAME_MODE,     0x10)
+    for _ = 1, 240 do
         idle(1)
-        local gm  = R(CELL_GAME_MODE)
-        local key = string.format("gm=$%02X sub=$%02X upd=$%02X lvl=%d rm=$%02X startroom=$%02X",
-            gm, R(CELL_GAME_SUBMODE), R(0x11), R(CELL_CUR_LEVEL),
-            R(CELL_ROOM_ID), SB(0x6BAD))
-        if key ~= last then LOG(string.format("  f=%d %s", it, key)); last = key end
+        local gm = R(CELL_GAME_MODE)
         if gm >= 0x05 and gm <= 0x07 and R(CELL_CUR_LEVEL) == LEVEL then break end
     end
-    -- The mode-2 load brought in L1 CHR + palette + LevelInfo (startroom hit
-    -- $73 at the end of mode 2), but the forced entry landed in the OW room
-    -- slot ($77) because the SRAM save's current room is overworld. Now force
-    -- the target UW room and re-decode it via mode 4 (InitMode_EnterRoom,
-    -- Z_05.asm:1543 — decodes + lays out the room) with the level already
-    -- loaded. Write StartRoomId first (memory feedback_redux_automap_room_reset:
-    -- forced room reloads must write $6BAD before $EB).
-    memory.write_u8(0x6BAD, UW_ROOM, "System Bus")   -- LevelInfo_StartRoomId
-    W(CELL_ROOM_ID, UW_ROOM)
+    LOG(string.format("load_level L%d: gm=$%02X lvl=%d rm=$%02X startroom=$%02X",
+        LEVEL, R(CELL_GAME_MODE), R(CELL_CUR_LEVEL), R(CELL_ROOM_ID), SB(0x6BAD)))
+end
+
+-- ─── enter_room(room): force + re-decode a specific UW room ─────────
+-- Level already loaded. Force RoomId + LevelInfo_StartRoomId ($6BAD, memory
+-- feedback_redux_automap_room_reset: write $6BAD before $EB) then re-decode
+-- via mode 4 (InitMode_EnterRoom, Z_05.asm:1543 — decodes + lays out the
+-- room) so CIRAM/OAM reflect this room. Returns true once gm=play & rm=room.
+local function enter_room(room)
+    SBW(0x6BAD, room)                    -- LevelInfo_StartRoomId
+    W(CELL_ROOM_ID, room)
     W(CELL_GAME_SUBMODE, 0x00)
-    W(CELL_GAME_MODE, 0x04)              -- InitMode4/EnterRoom: decode room UW_ROOM
-    last = ""
-    for it = 1, 200 do
+    W(CELL_GAME_MODE, 0x04)              -- InitMode4/EnterRoom: decode `room`
+    local ok = false
+    for _ = 1, 200 do
         idle(1)
-        local gm  = R(CELL_GAME_MODE)
-        local key = string.format("gm=$%02X sub=$%02X upd=$%02X rm=$%02X",
-            gm, R(CELL_GAME_SUBMODE), R(0x11), R(CELL_ROOM_ID))
-        if key ~= last then LOG(string.format("  re-enter f=%d %s", it, key)); last = key end
-        if gm >= 0x05 and gm <= 0x07 and R(CELL_ROOM_ID) == UW_ROOM then break end
+        local gm = R(CELL_GAME_MODE)
+        if gm >= 0x05 and gm <= 0x07 and R(CELL_ROOM_ID) == room then ok = true; break end
     end
     idle(60)                             -- settle room render + CHR/palette upload
     W(CELL_LINK_STATE, 0x40)             -- halt Link for a clean static frame
     idle(8)
     W(CELL_FRAME_COUNTER, 0x00)          -- determinism: frame_phase N == FrameCounter N
+    return ok and R(CELL_ROOM_ID) == room
 end
 
 -- ─── Bundle writer (NCGD layout, shared with the cave golden) ───────
--- 8-byte header: "NCGD" + frame_phase + UW_ROOM + game_mode + CurLevel,
--- then OAM(256) + PALRAM(32) + CHR(8192) + ppuctrl(1) + CIRAM(2048).
--- Same byte offsets as the cave NCGD so cave_byte_diff.py reads it as-is.
-local function capture(frame_phase)
-    local path = string.format("%s\\f%03d.bin", OUT, frame_phase)
+-- 8-byte header: "NCGD" + frame_phase + room + game_mode + CurLevel, then
+-- OAM(256) + PALRAM(32) + CHR(8192) + ppuctrl(1) + CIRAM(2048). Same byte
+-- offsets as the cave NCGD so cave_byte_diff.py reads it as-is.
+local function capture(out, room, frame_phase)
+    local path = string.format("%s\\f%03d.bin", out, frame_phase)
     local f = io.open(path, "wb")
     f:write("NCGD")
     f:write(string.char(frame_phase & 0xFF))
-    f:write(string.char(UW_ROOM & 0xFF))
+    f:write(string.char(room & 0xFF))
     f:write(string.char(R(CELL_GAME_MODE)))
     f:write(string.char(R(CELL_CUR_LEVEL)))
     for i = 0, 255  do f:write(string.char(OAM(i))) end
@@ -169,32 +163,30 @@ local function capture(frame_phase)
 end
 
 -- ─── Main ───────────────────────────────────────────────────────────
-print(string.format("NES dungeon golden: L%dQ%d room=$%02X", LEVEL, QUEST, UW_ROOM))
+-- ROOMS (optional global): list of room ids to sweep in one launch (the
+-- level is loaded once, each room re-decoded). Defaults to {UW_ROOM}.
+local rooms = ROOMS or { UW_ROOM }
+print(string.format("NES dungeon golden: L%dQ%d rooms=%d", LEVEL, QUEST, #rooms))
 if not boot_to_gameplay() then
     print("BOOT FAIL — aborting, no golden written"); client.exit(); return
 end
-force_state_dungeon()
+load_level()
 
--- PROOF we are actually inside the UW start room (RULE V1: assert, never
--- assume). play mode + CurLevel==LEVEL + RoomId==UW_ROOM. Fail LOUD.
-do
-    local gm, lvl, rm = R(CELL_GAME_MODE), R(CELL_CUR_LEVEL), R(CELL_ROOM_ID)
-    LOG(string.format("post-force gm=$%02X sub=$%02X level=%d rm=$%02X link=($%02X,$%02X)",
-        gm, R(CELL_GAME_SUBMODE), lvl, rm, R(CELL_OBJ_X0), R(CELL_OBJ_Y0)))
-    if not (gm >= 0x05 and gm <= 0x07 and lvl == LEVEL and rm == UW_ROOM) then
-        LOG(string.format("!!! DUNGEON ROOM NOT REACHED — want L%d rm=$%02X play; aborting, no golden !!!",
-            LEVEL, UW_ROOM))
-        client.exit(); return
+for _, room in ipairs(rooms) do
+    local out = string.format("%s\\nes_L%dQ%d_R%02X", OUT_DIR, LEVEL, QUEST, room)
+    os.execute('if not exist "' .. out .. '" mkdir "' .. out .. '"')
+    if not enter_room(room) then
+        LOG(string.format("!!! L%d room $%02X NOT REACHED (gm=$%02X rm=$%02X) — skipped",
+            LEVEL, room, R(CELL_GAME_MODE), R(CELL_ROOM_ID)))
+    else
+        LOG(string.format("OK: L%d room $%02X (gm=$%02X)", LEVEL, room, R(CELL_GAME_MODE)))
+        local prev = 0
+        for _, target in ipairs(FRAMES) do
+            idle(target - prev); prev = target
+            capture(out, room, target)
+        end
+        client.screenshot(out .. "\\shot.png")
     end
-    LOG(string.format("OK: inside L%d room $%02X (play mode, CHR+palette loaded)", LEVEL, UW_ROOM))
 end
-
-local prev = 0
-for _, target in ipairs(FRAMES) do
-    idle(target - prev)
-    prev = target
-    capture(target)
-end
-client.screenshot(OUT .. "\\shot.png")
-print("done: " .. OUT)
+print("done: NES L" .. LEVEL .. "Q" .. QUEST)
 client.exit()

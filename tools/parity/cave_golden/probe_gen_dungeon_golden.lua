@@ -82,48 +82,58 @@ local function LOG(s) local f=io.open("C:/tmp/dun_dbg.txt","a"); if f then f:wri
 -- This sidesteps detect_warp_ow's Rule3/4/5 entrance-alignment (which needs
 -- real Link movement onto the room's entrance tile) while producing the exact
 -- UW room a real traversal would. Live OW-walk entry verified separately.
-local function enter_dungeon()
+local function enter_dungeon(room)
     w8(0x73F8, 0x52); w8(0x73F9, 0x50)   -- ARM0='R' ARM1='P'
     w8(0x73FB, 0x01)                     -- ctrl[3] dest_scene = SCENE_UW
     w8(0x73FC, LEVEL)                    -- ctrl[4] dest_level
     w8(0x73FD, QUEST)                    -- ctrl[5] dest_quest
-    w8(0x73FE, UW_ROOM)                  -- ctrl[6] dest_room_id
+    w8(0x73FE, room)                     -- ctrl[6] dest_room_id
     w8(0x73FF, 0x5A)                     -- ctrl[7] trigger
     for k=1,180 do
         emu.frameadvance()
         if read_scene()==SCENE_UW then
-            LOG(string.format("UW reached f=%d room=$%02X", k, read_room()))
+            LOG(string.format("UW room=$%02X reached f=%d rm41=$%02X rmEB=$%02X",
+                room, k, nes_r8(0x0041), nes_r8(0x00EB)))
             idle(8); return true
         end
     end
-    LOG("enter_dungeon FAIL scene="..read_scene())
+    LOG(string.format("enter_dungeon FAIL room=$%02X scene=%d", room, read_scene()))
     return false
 end
 
 local function vram_block(s,sz) local b={} for i=0,sz-1 do b[#b+1]=string.char(memory.read_u8(s+i,"VRAM")) end return table.concat(b) end
 local function dom_block(d,sz) local b={} for i=0,sz-1 do b[#b+1]=string.char(memory.read_u8(i,d)) end return table.concat(b) end
-local function capture(fp)
-    local path=string.format("%s\\f%03d.bin",OUT,fp)
+local function capture(out, room, fp)
+    local path=string.format("%s\\f%03d.bin",out,fp)
     local f=io.open(path,"wb")
-    f:write("GCGD"); f:write(string.char(fp&0xFF)); f:write(string.char(UW_ROOM&0xFF))
+    f:write("GCGD"); f:write(string.char(fp&0xFF)); f:write(string.char(room&0xFF))
     f:write(string.char(read_scene())); f:write(string.char(nes_r8(0x0041)))  -- RoomId
     f:write(dom_block("CRAM",128)); f:write(vram_block(0x0000,0x10000))
     f:write(dom_block("68K RAM",0x10000)); f:write(dom_block("VSRAM",80))
     f:close()
 end
 
-print(string.format("Gen dungeon golden: L%dQ%d room=$%02X ow=$%02X",LEVEL,QUEST,UW_ROOM,OW_ROOM))
+-- ROOMS (optional global): list of room ids to sweep in one launch (each
+-- warped via the probe-warp ctrl). Defaults to {UW_ROOM}.
+local rooms = ROOMS or { UW_ROOM }
+print(string.format("Gen dungeon golden: L%dQ%d rooms=%d",LEVEL,QUEST,#rooms))
 if not boot_to_gameplay() then print("BOOT FAIL"); client.exit(); return end
-if not enter_dungeon() then
-    capture(0); print("DUNGEON ENTRY FAIL (scene!=UW)"); client.exit(); return
+for _, room in ipairs(rooms) do
+    local out = string.format("%s\\gen_L%dQ%d_R%02X", OUT_DIR, LEVEL, QUEST, room)
+    os.execute('if not exist "' .. out .. '" mkdir "' .. out .. '"')
+    if not enter_dungeon(room) then
+        capture(out, room, 0)
+        LOG(string.format("DUNGEON ENTRY FAIL room=$%02X (scene!=UW) — partial", room))
+    else
+        idle(90)
+        w8(0x8000 + 0x00AC, 0x40)  -- halt Link for static frame
+        idle(8)
+        w8(OFF_FRAME_CTR, 0x00)
+        local prev=0
+        for _,t in ipairs(FRAMES) do idle(t-prev); prev=t; capture(out, room, t) end
+        client.screenshot(out .. "\\shot.png")
+        LOG(string.format("OK gen L%d room=$%02X scene=%d", LEVEL, room, read_scene()))
+    end
 end
-idle(90)
-w8(0x8000 + 0x00AC, 0x40)  -- halt Link for static frame
-idle(8)
-w8(OFF_FRAME_CTR, 0x00)
-local prev=0
-for _,t in ipairs(FRAMES) do idle(t-prev); prev=t; capture(t) end
-client.screenshot(OUT .. "\\shot.png")
-print("post-enter scene="..read_scene().." room=$"..string.format("%02X",nes_r8(0x0041)))
-print("done: "..OUT)
+print("done: Gen L"..LEVEL.."Q"..QUEST)
 client.exit()
