@@ -249,6 +249,12 @@ do
     f:write(string.format("ppuctrl $FF = $%02X (bit5 8x16=%d bit3 sprtbl=%d)\n",
         R(CELL_PPUCTRL), (R(CELL_PPUCTRL)>>5)&1, (R(CELL_PPUCTRL)>>3)&1))
     f:write(string.format("SelectedItemSlot $656 = $%02X\n", R(CELL_SELECTED_SLOT)))
+    -- Per-level map tables (System Bus — $6Bxx is SRAM/WRAM, not RAM/VRAM).
+    f:write(string.format("LevelInfo_SubmenuMapRotation $6BAB = $%02X\n", SBr(0x6BAB)))
+    f:write(string.format("LevelInfo_StatusBarMapXOffset $6BAC = $%02X\n", SBr(0x6BAC)))
+    f:write("LevelInfo_SubmenuMapMask $6BBD..$6BCC = ")
+    for k = 0, 15 do f:write(string.format("%02X ", SBr(0x6BBD + k))) end
+    f:write("\n")
     f:close()
 end
 
