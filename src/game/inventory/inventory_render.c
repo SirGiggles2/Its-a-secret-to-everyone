@@ -624,8 +624,10 @@ static void draw_uw_item(unsigned short vram, unsigned short nes_x,
               RENDER_TILE_ATTR_FULL(pal, 0, 0, 0, vram), sx);
     ++s_next_sat_slot;
     unsigned char lk2 = (unsigned char)(s_next_sat_slot + 1u);
+    /* NES mirrors the compass right half 7 px from the left (measured), not
+     * the usual 8 (Anim_WriteMirroredSpritePair separation for this item). */
     sat_write(s_next_sat_slot, sat_y, RENDER_SPRITE_SIZE(1, 2), lk2,
-              RENDER_TILE_ATTR_FULL(pal, 0, 0, 1, vram), (unsigned short)(sx + 8u));
+              RENDER_TILE_ATTR_FULL(pal, 0, 0, 1, vram), (unsigned short)(sx + 7u));
     ++s_next_sat_slot;
 }
 
@@ -678,6 +680,15 @@ static void draw_item_sprites(void)
             draw_marker_sprite((unsigned short)(((room & 0x0Fu) << 3) + 0x12u),
                                (unsigned short)(((room & 0x70u) >> 2) + 0x17u + 175u),
                                RENDER_PAL1);
+            /* Triforce/compass map marker: status-bar formula on
+             * TriforceRoomId (NES sub-pal 3 -> PAL3). */
+            {
+                unsigned char tr = (level >= 1u && level <= 9u)
+                                 ? k_uw_triforce_room[level] : 0u;
+                draw_marker_sprite((unsigned short)(((tr & 0x0Fu) << 3) + 0x12u),
+                                   (unsigned short)(((tr & 0x70u) >> 2) + 0x17u + 175u),
+                                   RENDER_PAL3);
+            }
             /* Compass ($6A mirrored) at ($2C,$9E); map ($4C narrow) at
              * ($2C,$76) — UW-extracted tiles, NES SPR sub-pal 2 -> PAL3. */
             if (slot_owned(0x10u)) draw_uw_item(DSPR(10), 0x2Cu, 0x9Eu, RENDER_PAL3, 1u);

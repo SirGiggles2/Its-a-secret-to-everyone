@@ -78,3 +78,7 @@ const unsigned char k_uw_map_mask[10][16] = {
     {0x00u,0x00u,0x00u,0x00u,0x00u,0x08u,0x2Du,0x3Fu,0x0Du,0x18u,0x10u,0x00u,0x00u,0x00u,0x00u,0x00u},
     {0},{0},{0},{0},{0},{0},{0},{0}
 };
+
+/* Per-level TriforceRoomId (NES $6BAE) for the triforce/compass map marker.
+ * L1=$36 (derived from the captured marker at (66,210)). L2-L9 by G1. */
+const unsigned char k_uw_triforce_room[10] = { 0u, 0x36u, 0u,0u,0u,0u,0u,0u,0u,0u };

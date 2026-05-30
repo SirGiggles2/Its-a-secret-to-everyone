@@ -7,4 +7,5 @@ extern const unsigned char k_inventory_uw_tilemap[30][32];
 extern const unsigned char k_inventory_uw_subpal[30][32];
 extern const unsigned char k_uw_map_rotation[10];
 extern const unsigned char k_uw_map_mask[10][16];
+extern const unsigned char k_uw_triforce_room[10];
 #endif
