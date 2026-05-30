@@ -739,6 +739,32 @@ static void load_room(u8 room_id)
     roomrom_candle_fire_room_reset();
 }
 
+/* Phase 8: request the per-level boss CHR bank when a boss object actually
+ * spawned into the room. NES Z1 loads the boss pattern block (z_03.asm:91)
+ * on boss-room entry; boss + enemy share the SCENE_OBJ VRAM slot (boss
+ * rooms hold no regular enemies), so gating on a spawned boss ObjType is
+ * safe and needs no hardcoded boss-room table. Boss ObjTypes per the Z_07
+ * InitObject jump table: Dodongo/Gohma $31-$34, Digdogger/Lamnola/
+ * Manhandla/Aquamentus/Ganon $38-$3E, Moldorm/Gleeok/GleeokHead/Patra
+ * $41-$48 (excludes $35 RupeeStash / $36 Grumble / $37 Zelda). */
+static void request_boss_chr_if_boss_room(void)
+{
+    unsigned char s;
+    if (s_scene != SCENE_UW) return;
+    for (s = 1u; s <= 11u; ++s) {
+        unsigned char t = nes_ram[0x034Fu + s];
+        if ((t >= 0x31u && t <= 0x34u) ||
+            (t >= 0x38u && t <= 0x3Eu) ||
+            (t >= 0x41u && t <= 0x48u)) {
+            unsigned char lv = roomrom_uw_room_render_get_level();
+            if (lv == 0u || lv > 9u) lv = 1u;
+            level_chr_boss_request(
+                (roomrom_scene_id_t)(ROOMROM_SCENE_UW_L1 + (lv - 1u)));
+            return;
+        }
+    }
+}
+
 /* Phase 1: pick the live-NES item-atlas variant for the current scene+map.
  * 0 = orig (vanilla Z1), 1 = redux. Read by roomrom_sprites_set_redux +
  * roomrom_combat_set_redux at boot and after every C-button toggle. */
@@ -865,6 +891,7 @@ void roomrom_main_apply_warp_outcome(const rr_warp_outcome_t *out)
      * per-room ObjList init. Stub returns NULL until 7.7 lands the
      * template_id table; force-spawn hook fires from probe Lua. */
     enemy_loop_room_init(s_room_id, (unsigned char)s_scene);
+    request_boss_chr_if_boss_room();
 
     /* Phase C (2026-05-24) — UET state per NES dispatch (Z_01.asm:2990,
      * Z_05.asm:6717+7493, Z_07.asm:3200).
@@ -1977,6 +2004,7 @@ void roomrom_debug_tick(void)
                  * Without this, ObjType[1..count] stays zero across
                  * room transitions and the world appears empty. */
                 enemy_loop_room_init(s_room_id, (unsigned char)s_scene);
+                request_boss_chr_if_boss_room();
                 s_scroll_state = SCROLL_NONE;
             } else {
                 s_scroll_frame++;
