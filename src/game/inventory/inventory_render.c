@@ -193,9 +193,10 @@ static unsigned char s_active = 0u;
 
 /* P6.5 cursor state — hoisted so inventory_subscreen_enter can reference. */
 #define B_ITEM_SLOT_COUNT  8u
-static unsigned char s_cursor_slot = 0u;
-static unsigned char s_prev_joy    = 0u;
-static unsigned char s_cursor_sat  = 0u;
+static unsigned char  s_cursor_slot  = 0u;
+static unsigned char  s_prev_joy     = 0u;
+static unsigned char  s_cursor_sat   = 0u;
+static unsigned short s_cursor_frame = 0u;  /* cursor-flash phase (bit 3) */
 
 /* P6.3 scroll state machine. NES Z_05.asm:152+ UpdateMenuCommon scrolls
  * over ~22 frames. We replicate via row-by-row replacement: each tick
@@ -612,6 +613,21 @@ static void draw_item_sprites(void)
         if (slot_owned(0x11u)) draw_inv_slot(0x11u, 0x2Cu, 0x76u);
     }
 
+    /* Player position marker (tile $3E) on the status-bar map, per NES
+     * UpdatePlayerPositionMarker (Z_01.asm:4083): X = (room&$0F)*4 + $11,
+     * Y = (room&$70)>>2 + $17, scrolled down 176 px with the menu. 8x16
+     * ($3E top + $3F bottom), Link sub-pal 0 -> Genesis PAL1. */
+    {
+        unsigned char  room = nes_ram[0x00EBu];
+        unsigned short mx   = (unsigned short)(((room & 0x0Fu) << 2) + 0x11u);
+        unsigned short my   = (unsigned short)(((room & 0x70u) >> 2) + 0x17u + 175u);
+        unsigned short attr = RENDER_TILE_ATTR_FULL(RENDER_PAL1, 0, 0, 0, DSPR(8));
+        unsigned char  link = (unsigned char)(s_next_sat_slot + 1u);
+        sat_write(s_next_sat_slot, (unsigned short)(my + 0x81u),
+                  RENDER_SPRITE_SIZE(1, 2), link, attr, (unsigned short)(mx + 0x80u));
+        ++s_next_sat_slot;
+    }
+
     /* B-item box: NES @DrawBreakoutItem (Z_05.asm:7949-7954) redraws the
      * currently-SELECTED item inside the box at fixed ($40,$36) — the
      * "USE B BUTTON" equipped indicator. */
@@ -633,7 +649,7 @@ void inventory_subscreen_enter(void)
     {
         unsigned char t, k;
         render_vram_open_write(0xA000u);
-        for (t = 0u; t < 8u; ++t)
+        for (t = 0u; t < 10u; ++t)
             for (k = 0u; k < 32u; k += 2u)
                 *((volatile unsigned short *)0xC00000) =
                     (unsigned short)(((unsigned short)k_inventory_sprite_chr[t][k] << 8) |
@@ -694,6 +710,7 @@ void inventory_subscreen_enter(void)
     s_scroll_row   = 0u;
     s_prev_joy     = 0u;
     s_cursor_slot  = 0u;
+    s_cursor_frame = 0u;   /* deterministic cursor-flash phase per open */
 }
 
 /* V2.10 (2026-05-20): NES cursor selectable slots 0..8 per
@@ -767,8 +784,6 @@ static const unsigned char k_submenu_cursor_xs[9] = {
 
 /* Frame counter for flash animation. Phase 7 v2 L3: cursor PAL alternates
  * every 8 frames per Z_05.asm:7942 (AND #$08, LSR x3, ADC #$01). */
-static unsigned short s_cursor_frame = 0u;
-
 static void draw_cursor(void)
 {
     /* Cursor Y: B-item row 1 = $36 (slot<5), row 2 = $46. */

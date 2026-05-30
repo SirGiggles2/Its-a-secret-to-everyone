@@ -113,7 +113,7 @@ idle(60)
 
 -- ---- Domain enumeration dump (once). ----
 do
-  local f = io.open(OUT .. "/domains.txt", "w")
+  local f = assert(io.open(OUT .. "/domains.txt", "w"), "cannot open domains.txt")
   f:write("ram_domain=" .. RAM_DOMAIN .. " base=" .. string.format("0x%X", RAM_BASE) .. "\n")
   f:write("vram_domain=" .. tostring(VRAM_DOMAIN) .. "\n")
   f:write("sentinel_seen=" .. tostring(sentinel_seen) .. "\n")
@@ -122,16 +122,20 @@ do
   f:close()
 end
 
--- Arm the control block (magic) once.
+-- Cold-start hygiene: clear flags + warp/boss trigger BEFORE arming the
+-- magic, so stale RAM (a leftover 0x5A trigger or 0x04 flag) cannot fire a
+-- spurious warp / boss-request the instant the magic goes live.
+W(FLAGS, 0x00); W(W_ROOM, 0x00); W(W_TRIG, 0x00)
 W(ARM0, 0x52); W(ARM1, 0x50)
 
 -- Warp to (scene=UW, level, quest, room). Boss flag MUST be clear so the
--- early boss-trigger block does not consume ctrl[6]/ctrl[7] first.
+-- early boss-trigger block does not consume ctrl[6]/ctrl[7] first. Set all
+-- dest bytes + flags BEFORE the trigger byte, so no tick ever sees
+-- ctrl[7]==0x5A paired with a stale ctrl[3..6].
 local function warp(level, quest, room)
   W(FLAGS, 0x00)                       -- disarm boss trigger for the warp
-  idle(2)
   W(W_SCENE, 1); W(W_LEVEL, level); W(W_QUEST, quest); W(W_ROOM, room)
-  W(W_TRIG, 0x5A)                      -- fire warp
+  W(W_TRIG, 0x5A)                      -- fire warp (trigger byte LAST)
   for _=1,90 do emu.frameadvance(); if R(W_TRIG) == 0 then break end end
   idle(90)                             -- room render + enemy CHR DMA -> READY
 end
@@ -151,13 +155,13 @@ local function kick_boss(level)
 end
 
 local function dump_bin(path, domain, base, n)
-  local f = io.open(path, "wb")
+  local f = assert(io.open(path, "wb"), "cannot open " .. path)
   for a = 0, n-1 do f:write(string.char(memory.read_u8(base + a, domain))) end
   f:close()
 end
 
 local function dump_cram_hex(path)
-  local h = io.open(path, "w")
+  local h = assert(io.open(path, "w"), "cannot open " .. path)
   for pal = 0, 3 do
     h:write(string.format("PAL%d:", pal))
     for c = 0, 15 do
@@ -177,7 +181,7 @@ local function nonzero_count(domain, base, n)
 end
 
 local function dump_state(dir, b, fired, ack0, ack1)
-  local f = io.open(dir .. "/state.txt", "w")
+  local f = assert(io.open(dir .. "/state.txt", "w"), "cannot open state.txt")
   f:write(string.format("boss=%s level=%d room=$%02X scene_id=%d\n",
     b.name, b.lv, b.rm, b.lv + 3))
   f:write(string.format("frame=%d\n", emu.framecount()))
