@@ -272,8 +272,11 @@ def main():
     # plus 3 for the brown/yellow tile variants.
     for tid in (0x69, 0x6A, 0x6B, 0x6C, 0x6D, 0x6E):
         combined[tid].update([0])
+    # 2026-05-30: live NT2 attribute capture (pause_golden) proves the
+    # subscreen triforce is sub-pal 1, NOT 3 — add sub-pal 1 so the menu
+    # renders it byte-exact. (Keep 0/3 for other scenes' usage.)
     for tid in (0xE7, 0xE8, 0xEB, 0xEC, 0xED, 0xEE, 0xEF, 0xF0, 0xF1, 0xF5):
-        combined[tid].update([0, 3])
+        combined[tid].update([0, 1, 3])
 
     # Cave / NPC dialogue PUNCTUATION glyphs. The textbox char-streamer
     # (src/game/cave/cave_dispatch.c, transfer_buf_drain.c) writes NES
