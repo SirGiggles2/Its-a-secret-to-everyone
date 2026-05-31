@@ -41,5 +41,9 @@ for i=0,63 do local o=sat+i*8; local at=(vr(o+4)<<8)|vr(o+5); local tile=at&0x7F
 end
 LOG("live SAT boss-bank sprites: "..(#sb>0 and table.concat(sb," ") or "NONE"))
 LOG("FULL SAT non-empty ("..#allslots.."): "..table.concat(allslots," "))
+do  -- CRAM PAL2 (slots 32..35) = where the boss (sub-pal 3) routes; should be green.
+    local function cw(slot) return (memory.read_u8(slot*2,"CRAM")<<8)|memory.read_u8(slot*2+1,"CRAM") end
+    LOG(string.format("CRAM PAL2[0..3] = %04X %04X %04X %04X", cw(32),cw(33),cw(34),cw(35)))
+end
 client.screenshot("C:\\tmp\\cave_golden\\gen_bosslive_L"..LEVEL.."_R"..string.format("%02X",UW_ROOM)..".png")
 LOG("done"); client.exit()

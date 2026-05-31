@@ -257,6 +257,49 @@ void roomrom_uw_room_render_load_palette(unsigned char room_id)
     } else {
         load_palette_from_levelinfo();
     }
+
+    /* Boss-room sprite palette (2026-05-31). NES bosses use SPR sub-pal 3
+     * (e.g. L1 Aquamentus = $0F 0C 1C 2C green) which Gen has no dedicated PAL
+     * for: subpal_routing maps NES sub-pal 3 -> PAL2 (the cloud-blue slot), so
+     * the boss renders blue/purple. A UW boss room's dominant sprite is the
+     * boss, so override PAL2[0..3] with THIS level's SPR sub-pal 3 to give the
+     * boss its NES colors. Detected from the room's static LBA_C/D template
+     * (boss types $31-34/$38-3E/$41-48), so it works at load time before the
+     * boss object spawns. */
+    {
+        unsigned char lvl = s_uw_level;
+        unsigned char q   = s_uw_quest;
+        if (lvl >= 1u && lvl <= 9u && q >= 1u && q <= 2u) {
+            unsigned int bb = ((lvl <= 6u) ? 0u : 768u) + ((q == 2u) ? 1536u : 0u);
+            unsigned char c    = rooms_dungeons[bb + 0x100u + (unsigned short)room_id];
+            unsigned char dd   = rooms_dungeons[bb + 0x180u + (unsigned short)room_id];
+            unsigned char tmpl = (unsigned char)(c & 0x3Fu);
+            if (dd & 0x80u) tmpl = (unsigned char)(tmpl + 0x40u);
+            if ((tmpl >= 0x31u && tmpl <= 0x34u) ||
+                (tmpl >= 0x38u && tmpl <= 0x3Eu) ||
+                (tmpl >= 0x41u && tmpl <= 0x48u)) {
+                /* This level's SPR sub-pal 3 (PALRAM bytes 28..31) from any
+                 * same-level captured room; NES green default if none. */
+                unsigned char sp3[4] = { 0x0Fu, 0x0Cu, 0x1Cu, 0x2Cu };
+                unsigned char want_map = (s_uw_map_id == ROOMROM_MAP_REDUX) ? 1u : 0u;
+                unsigned short i;
+                for (i = 0u; i < g_uw_room_count; ++i) {
+                    const unsigned char *e = g_uw_room_index[i];
+                    if (e[0] == want_map && e[1] == q && e[2] == lvl) {
+                        unsigned char k;
+                        for (k = 0u; k < 4u; ++k) sp3[k] = g_uw_room_palette[i][28u + k];
+                        break;
+                    }
+                }
+                unsigned short w[4];
+                unsigned char k2;
+                for (k2 = 0u; k2 < 4u; ++k2) {
+                    w[k2] = roomrom_bg_palette_nes_to_cram(sp3[k2]);
+                }
+                render_cram_subrange_upload(32u, w, 4u);  /* PAL2[0..3] */
+            }
+        }
+    }
 }
 
 void roomrom_uw_room_render_upload_chr(void)
