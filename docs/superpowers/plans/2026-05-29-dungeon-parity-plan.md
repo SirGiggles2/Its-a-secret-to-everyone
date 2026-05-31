@@ -126,6 +126,21 @@ Expect the same accepted hardware deltas (color model + HUD row).
 
 ---
 
+## Phase 4 RECON (2026-05-30, offline, byte-evidenced)
+Gen L1 $73 BG byte-exact but renders **ZERO enemies**; NES $73 has the
+Stalfos/Goriya set. Gen DOES have the spawn path: `enemy_loop_room_init`
+(`enemy_loop.c:1138`, called `RoomRom/src/main.c:893`) → `enemy_room_load_
+objects(room_id)` (`obj_lists.c:226`, reads LevelBlockAttrs C/D + LevelInfo_
+FoeCounts $6BA2) + `enemy_assign_spawn_positions`. Lead hypothesis (probe
+FIRST, RULE ZERO): `enemy_room_load_objects(0x73)` returns 0 because the UW
+LevelInfo (FoeCounts/LBA C/D) wasn't installed on entry — `level_info_install.c:14`
+documents this exact "$6BA2 saw zeros → no enemies" failure. MUST disambiguate
+**live UW entry** (does the coordinator → apply_warp_outcome call
+`level_info_install_uw`?) vs the probe-warp capture path. If live entry also
+skips the install, dungeons spawn no enemies in real play = real bug, not a
+capture artifact. Probe NES $73 enemy set + Gen FoeCounts/$034D + ObjType[1..]
+after warp before any fix.
+
 ## Phase 4 — Dungeon enemies (3-5 days)
 
 **Deliverable.** Each dungeon enemy family renders + animates like NES
