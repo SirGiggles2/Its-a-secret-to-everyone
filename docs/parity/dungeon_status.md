@@ -76,6 +76,26 @@ the install's LevelInfo slot is quest-independent (correct). Verified: Gen
 L1Q2 $63 ObjType=$2D $2D $2C $23 $24 $23 $24 (== Q1, == NES). No per-quest
 LevelInfo needed. ⇒ dungeon enemy DATA byte-exact for BOTH quests.
 
+## Phase 5 boss deep-dive (2026-05-31) — BLOCKED on clean live-NES boss capture
+Traced L1 Aquamentus end-to-end. Findings (probes: probe_nes_boss.lua,
+probe_gen_boss_live.lua):
+- Boss spawn + the $C0+ -> ROOMROM_BOSS_TILE_BASE tile remap + s_boss_bank_active
+  (template-based) all work; the boss-render path (5e23443b) exists.
+- Gen L1 $36 (the only L1 aggregate room with a boss-range template) spawns
+  ObjType $3C and renders just ONE stray boss-bank sprite ($CA, PAL3); the
+  6-sprite c_aquamentus_draw output never reaches shadow OAM $0200 even with
+  Link un-halted (live). enemy_update_fns[$3C]=enrt_update_manhandla,
+  [$3D]=enrt_update_aquamentus.
+- CONFLICT: NES InitObject_JumpTable $3C=Manhandla, $3D=Aquamentus, $3E=Ganon.
+  L1's boss is Aquamentus ($3D) but room $36's template is $3C (Manhandla) and
+  NO L1 aggregate room carries $3D. So the boss room/template mapping OR the
+  jump-table index is off by one — UNRESOLVABLE from forced/halted captures.
+- BLOCKER (RULE ZERO): need a CLEAN live-NES Aquamentus-FIGHT capture (proper
+  dungeon traversal or a per-boss savestate) to pin the true boss ObjType +
+  the 6-sprite OAM layout + palette, before any dispatch/template fix. The
+  forced mode-$10 entry + Link-halt golden do NOT reproduce a live boss fight.
+  Phase 5 = build that live-boss capture infra, then per-boss x9.
+
 ## NOT yet done
 - **Enemy render/animation per-family (Phase 4 deeper):** sprite tile + flip
   + animation cadence per family vs NES OAM (spawn data is right; per-family
