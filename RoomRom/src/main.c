@@ -2185,6 +2185,25 @@ void roomrom_debug_tick(void)
                 nes_ram[0x07FDu] = standing_tile;
                 cave_id_t cid = cave_entrance_check(standing_tile, s_room_id);
                 if (cid != (cave_id_t)0) {
+                    /* NES enters caves ONLY at a $10-aligned column:
+                     * HandleWarpOW/CheckWarps gate on ObjX&$0F==0
+                     * (Z_05.asm:7213), so the descent (Mode $10) and
+                     * InitModeB both run at the 16px-grid column ($70),
+                     * never a mid-grid X. The Gen gate fires at Link's
+                     * exact walk X ($78), so snap to the NES warp grid
+                     * HERE -- before the descent mirror (line ~475), the
+                     * arch hi-prio marking, and the saved exit-return
+                     * column -- so ObjX byte-matches NES ($78 & $F0 = $70)
+                     * across the whole descend/hold/emerge window. */
+                    players[0].x =
+                        (short)((unsigned char)players[0].x & 0xF0u);
+                    /* Mirror the aligned X into nes_ram ObjX[0] NOW: line
+                     * ~2146 already ran this tick with the pre-snap $78, and
+                     * the gated player->nes_ram sync is suppressed once
+                     * cave_fade is active (descend handler owns it) -- so
+                     * without this the mirror holds the stale $78 for the few
+                     * setup frames before the first descend_step. */
+                    nes_ram[0x0070u] = (unsigned char)players[0].x;
                     /* Tier 0 verify sentinel: $07FC = cave-entry fire
                      * counter. Increments each time cave entry triggers
                      * so the smoke probe can confirm entrance path ran
