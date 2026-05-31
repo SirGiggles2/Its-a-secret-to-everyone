@@ -33,9 +33,13 @@ local sh={}
 for i=0,63 do local t=nes(0x0200+i*4+1); local y=nes(0x0200+i*4) if t>=0xC0 and t<=0xD2 and y>0 and y<0xF0 then sh[#sh+1]=string.format("oam%d:y%02X t%02X x%02X",i,y,t,nes(0x0200+i*4+3)) end end
 LOG("shadow-OAM boss tiles ($C0-$D2): "..(#sh>0 and table.concat(sh," ") or "NONE"))
 -- live SAT ($F400) boss-bank tiles (677..695)
-local sat=0xF400; local sb={}
-for i=0,79 do local o=sat+i*8; local at=(vr(o+4)<<8)|vr(o+5); local tile=at&0x7FF; local y=((vr(o)<<8)|vr(o+1))-128
-  if tile>=677 and tile<=695 then sb[#sb+1]=string.format("spr%d:t%d(NES$%02X)pal%d",i,tile,0xC0+tile-677,(at>>13)&3) end end
+local sat=0xF400; local sb={}; local allslots={}
+for i=0,63 do local o=sat+i*8; local at=(vr(o+4)<<8)|vr(o+5); local tile=at&0x7FF
+  local y=((vr(o)<<8)|vr(o+1)); local x=((vr(o+6)<<8)|vr(o+7)); local link=vr(o+3)&0x7F
+  if tile>=677 and tile<=695 then sb[#sb+1]=string.format("spr%d:t%d(NES$%02X)pal%d",i,tile,0xC0+tile-677,(at>>13)&3) end
+  if not (y==0 and x==0 and tile==0) then allslots[#allslots+1]=string.format("s%d[y%d x%d t%d lk%d]",i,y-128,x-128,tile,link) end
+end
 LOG("live SAT boss-bank sprites: "..(#sb>0 and table.concat(sb," ") or "NONE"))
+LOG("FULL SAT non-empty ("..#allslots.."): "..table.concat(allslots," "))
 client.screenshot("C:\\tmp\\cave_golden\\gen_bosslive_L"..LEVEL.."_R"..string.format("%02X",UW_ROOM)..".png")
 LOG("done"); client.exit()
