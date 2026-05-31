@@ -495,6 +495,30 @@ static void cave_fade_swap_entry_handler(cave_id_t cid)
     players[0].x    = 0x70u;   /* 112 */
     players[0].y    = 0xDDu;   /* 221 */
     players[0].face = LINK_FACE_UP;
+    /* Mirror spawn into nes_ram ObjX/ObjY[0] so the byte-diff sees $DD at the
+     * swap frame (cave_init wrote $D0 here as its cave-spawn). The LINK_EMERGE
+     * phase then walks ObjY[0] $DD -> $D5 each frame, below. */
+    nes_ram[0x0070u] = 0x70u;
+    nes_ram[0x0084u] = 0xDDu;
+    nes_ram[0x0394u] = 0x30u;   /* ObjGridOffset budget */
+    nes_ram[0x03A8u] = 0x00u;   /* ObjPosFrac */
+}
+
+/* NES cave-ENTRY emerge step (InitMode_WalkCave). cave_fade.c runs the
+ * MoveObject math and hands us the new ObjY + ObjGridOffset + ObjPosFrac;
+ * we write players[0].y and mirror the three nes_ram cells the byte-diff
+ * tracks. Runs while cave_fade is active, so the gated cave-play path does
+ * not fight Link's position. */
+static void cave_fade_emerge_step_handler(unsigned char obj_y,
+                                          unsigned char grid,
+                                          unsigned char posfrac)
+{
+    players[0].y      = (short)obj_y;
+    nes_ram[0x0084u]  = obj_y;
+    nes_ram[0x0394u]  = grid;
+    nes_ram[0x03A8u]  = posfrac;
+    /* NES ticks the walk pose every frame during the emerge. */
+    s_link_frame ^= 1u;
 }
 
 /* NES cave-exit Mode 10 mirror: Link walks UP, Y -= 1 every 4 frames
@@ -525,7 +549,8 @@ static const cave_fade_callbacks_t k_cave_fade_callbacks = {
     cave_fade_descend_step_handler,
     cave_fade_swap_entry_handler,
     cave_fade_ascend_step_handler,
-    cave_fade_swap_exit_handler
+    cave_fade_swap_exit_handler,
+    cave_fade_emerge_step_handler
 };
 
 static void anchor_active_slot(void)
@@ -2223,7 +2248,25 @@ void roomrom_debug_tick(void)
              * into a side-channel cache; native sweep emits 1 SAT entry
              * per alive enemy from the cache. NES OAM scatter still
              * happens for downstream compat but is no longer consumed. */
-            enemy_render_native_sweep();
+            /* Phase 8: bosses draw MULTI-sprite (Aquamentus 6, Manhandla 5,
+             * etc.) via draw_write_boss_sprite into the NES OAM shadow, which
+             * the 1-SAT-per-slot native sweep does NOT consume. In a boss
+             * room (boss ObjType $31-34/$38-3E/$41-48 in a slot; UW only)
+             * there are no regular enemies, so flush the OAM shadow instead
+             * to emit the boss's full sprite set. */
+            {
+                unsigned char bs, boss_room = 0u;
+                if (s_scene == SCENE_UW) {
+                    for (bs = 1u; bs <= 11u; ++bs) {
+                        unsigned char bt = nes_ram[0x034Fu + bs];
+                        if ((bt >= 0x31u && bt <= 0x34u) ||
+                            (bt >= 0x38u && bt <= 0x3Eu) ||
+                            (bt >= 0x41u && bt <= 0x48u)) { boss_room = 1u; break; }
+                    }
+                }
+                if (boss_room) enemy_render_sweep_oam_to_sat();
+                else           enemy_render_native_sweep();
+            }
 
             /* Plan v5b — drain TRANSFER_BUF after all gameplay writers
              * have committed. world_animate_world_fading, Mode 11 dead-
