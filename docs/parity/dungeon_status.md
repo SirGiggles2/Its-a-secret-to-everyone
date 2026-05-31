@@ -93,12 +93,20 @@ Consequences:
 - Manifest boss_room_id=$35 is also wrong ($35 template=$2A=Goriya, not a boss).
 
 FIX (next, substantial): regenerate the 18 per-level UW manifests from
-AUTHORITATIVE NES per-level room membership — compute each level's true room set
-by walking the NES door graph (LevelBlockAttrs A/B door types, which ARE
-trustworthy in the live SRAM dump) from each level's real start room; then
-re-capture each level's rooms (incl. its boss room) UNDER the correct level and
-regen uw_room_blob. Then bosses render in their correct rooms (render path
-already proven to work at a $3D room). RULE ZERO: do NOT hand-guess room sets.
+AUTHORITATIVE NES per-level room membership, then re-capture each level's rooms
+(incl. its boss room) UNDER the correct level and regen uw_room_blob.
+
+ATTEMPT 1 (door-graph BFS) FAILED — do not ship: a naive BFS from start $73
+over non-WALL doors (types: OPEN0/WALL1/FALSE2/FALSE2b3/BOMBABLE4/KEY5/KEY2 6/
+SHUTTER7; only WALL=1 impassable; decode AttrsA N=(>>5)&7 S=(>>2)&7, AttrsB
+W=(>>5)&7 E=(>>2)&7) reached 20 rooms spanning rows 0-7 incl. $05=$43=DODONGO
+(L2's boss) — i.e. it BLED ACROSS level boundaries. The shared UW1 block (L1-6)
+holds door data for ALL slots; levels occupy non-overlapping map regions but the
+block's doors do NOT cleanly partition by level via a simple non-wall BFS (my
+boundary-wall assumption is wrong, or the N/S/E/W neighbor/bit mapping needs
+verification). So per-level membership needs a VERIFIED source: the NES per-
+level room list / LevelInfo bounds, or a live-NES dungeon traversal — NOT a
+hand-rolled door BFS. RULE ZERO: the decode must be byte-verified before use.
 
 ## Phase 5 boss — earlier debate notes (2 bugs; bug 1 now subsumed by the above)
 The earlier "blocked" framing was a wrong-room artifact. Debate (Sonnet+Claude
