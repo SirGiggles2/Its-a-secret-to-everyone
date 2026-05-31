@@ -51,10 +51,27 @@ divergences per room.
   pre-launch taskkill between levels when batching. NOT a parity bug — every
   level passes 100% when run cleanly.
 
-## NOT yet done (Phase 4-7)
-- **Enemies (Phase 4):** Gen dungeon rooms render BG correct but spawn ZERO
-  enemies (NES rooms are populated). Root-cause candidate: enemy_room_load_
-  objects (obj_lists.c:226) returns 0 when LevelInfo_FoeCounts==0 / template
-  ==0 — UW level-info install (FoeCounts + LBA C/D) must run on warp entry.
-  Probe live FoeCounts/$034D/ObjType[1..] after a dungeon warp before any fix.
-- Bosses (Phase 5), UW→OW exit round-trip (Phase 6), Q2 (Phase 7).
+## Phase 4 (Q1 enemy DATA): byte-exact NES — DONE
+Gen dungeon rooms rendered BG-correct but spawned wrong enemies (e.g. L1 $63
+= $2A x11; NES = $2D $2D $2C $23 $24 $23 $24, 7). Root cause: the reference
+dat/LevelBlock*.dat + dat/LevelInfo*.dat do NOT match what NES loads into
+SRAM (NES load transform; byte-proven dat LBA_C[$63]=$2A vs live $FD,
+FoeCounts dat[32] vs SRAM $6BA2/[36]). rooms_dungeons[] was built 1:1 from
+those dats → wrong LBA C/D (templates) + FoeCounts (counts).
+Fix: regenerate from LIVE NES SRAM (probe_nes_dump_levelsram.lua dumps
+$687E..$6C7D per level; regen_dungeon_blob_from_sram.py overrides the Q1
+LevelBlocks UW1/UW2 + 9 LevelInfo slots). uw_collision regenerated (derives
+from LBA), sentinel refreshed.
+- **Verified (byte-diff):** Gen runtime SRAM == NES live SRAM for L1 (UW1) +
+  L7 (UW2), 0 diffs excl. the probe-clobbered StartRoomId. $63 ObjType +
+  FoeCounts byte-exact; enemies render on-screen. BG sweep $73/$63 still PASS.
+- ⇒ every Q1 room (L1-L9) now loads NES-exact enemy templates + counts.
+
+## NOT yet done
+- **Enemy render/animation per-family (Phase 4 deeper):** sprite tile + flip
+  + animation cadence per family vs NES OAM (data is right; rendering not yet
+  byte-diffed per family).
+- **Q2 (Phase 7):** Q2 LevelBlocks [1536/2304] still dat-based (wrong
+  templates); Q2 LevelInfo can't differ from Q1 in the current blob layout
+  (install info_off is quest-independent) — needs per-quest LevelInfo slots.
+- **Bosses (Phase 5)**, **UW→OW exit round-trip live-wire (Phase 6)**.
