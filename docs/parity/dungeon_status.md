@@ -76,7 +76,26 @@ the install's LevelInfo slot is quest-independent (correct). Verified: Gen
 L1Q2 $63 ObjType=$2D $2D $2C $23 $24 $23 $24 (== Q1, == NES). No per-quest
 LevelInfo needed. ⇒ dungeon enemy DATA byte-exact for BOTH quests.
 
-## DEFINITIVE ROOT CAUSE (2026-05-31): Phase-B per-level UW manifests are WRONG
+## ✅ PHASE 5 BOSS FIXED (2026-05-31): Aquamentus renders (BUG1 BG + BUG2 sprites)
+Two fixes, both byte/probe-verified at L1 $5D (a real $3D Aquamentus room):
+- BUG1 (boss room BG black): `find_blob_entry` (uw_render.c) now falls back to a
+  same-block sibling level's capture (UW layouts are per-LevelBlock, shared
+  L1-6 / L7-9), so boss rooms the Phase-B manifest mis-assigned still render
+  their correct layout. Palette switched to the exact-level lookup so a
+  sibling-filled room keeps THIS level's palette. 171/171 BG byte-exact holds
+  (fallback only fires on exact-miss). L1 $5D BG now renders (was black).
+- BUG2 (boss = 1 sprite): the boss-room OAM-shadow->SAT sweep emitted all 6
+  sprites but never published `g_enemy_render_last_sat_slot` -> main.c's SAT
+  DMA used the stale native count -> only ~1 boss slot uploaded. Fix: boss
+  sweep sets `g_enemy_render_last_sat_slot = sat_slot+1` (matches native).
+  Verified L1 $5D SAT slots 12-17 = all 6 Aquamentus tiles
+  ($D2 $CE $C4 $CC $C8 $D0, 2x3); shot shows the dragon.
+- Remaining nuance: boss palette renders pal2 (purple) vs NES green — a
+  sub-palette routing delta ("very close"; follow-up). The root-cause analysis
+  below (manifest mis-assignment) was REAL but is now handled at the render
+  layer by the sibling fallback rather than a full manifest regen.
+
+## (root-cause analysis, now handled by the render-layer fix above) Phase-B per-level UW manifests are WRONG
 L1's manifest room-graph (BFS from start $73 over its `edges`) = the 17 rooms
 {$22 $23 $33 $35 $36 $41-45 $52-54 $63 $72 $73 $74} — which INCLUDES $36 =
 template $3C = MANHANDLA (L3's boss) and contains NO Aquamentus ($3D) room.
