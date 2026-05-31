@@ -63,12 +63,21 @@ def emit_c(blob):
     return "\n".join(lines) + "\n"
 
 
+FOECOUNTS_OFF = 36   # LevelInfo offset of FoeCounts[0..3] ($6BA2 - $6B7E)
+FOECOUNTS_LEN = 4
+
+
 def main():
     dumps = {lvl: load_dump(lvl) for lvl in range(1, 10)}
 
-    # Fix the probe-clobbered StartRoomId (LevelInfo offset 47).
-    for lvl in range(1, 10):
-        dumps[lvl][768 + 47] = manifest_start_room(lvl)
+    # The forced mode-$10 probe entry leaves the LevelBlock (LBA A-F) clean
+    # (verified: $63 ObjType byte-matches live NES) but CLOBBERS some LevelInfo
+    # post-palette fields (StartRoomId offset 47 -> OW save room; BossRoomId
+    # offset 62 reads $07 vs the dat-transform $35). So we trust the live dump
+    # ONLY for the LevelBlock + the enemy-critical FoeCounts (offset 36-39,
+    # byte-proven correct via the spawn). All other LevelInfo bytes (palette,
+    # StartRoomId, BossRoomId, ...) stay as the original blob -> no regression
+    # to BG palette (byte-exact) or boss-room/start-room logic.
 
     # Verify the shared-block invariant (L1-6 share UW1, L7-9 share UW2).
     blk_uw1 = bytes(dumps[1][0:BLOCK_BYTES])
@@ -93,11 +102,15 @@ def main():
     blob[BLOCK_BYTES:2 * BLOCK_BYTES] = list(blk_uw2)
     blob[2 * BLOCK_BYTES:3 * BLOCK_BYTES] = list(blk_uw1)
     blob[3 * BLOCK_BYTES:4 * BLOCK_BYTES] = list(blk_uw2)
-    # Override per-level LevelInfo (quest-independent slot; UW LevelInfo does
-    # not differ by quest per the dump above).
+    # Override ONLY FoeCounts in each per-level LevelInfo slot (quest-
+    # independent). The rest of LevelInfo (palette/StartRoomId/BossRoomId/...)
+    # stays as the original blob to avoid regressing on the probe-clobbered
+    # fields.
     for lvl in range(1, 10):
         off = LEVELINFO_BASE + (lvl - 1) * LEVELINFO_STRIDE
-        blob[off:off + LEVELINFO_STRIDE] = list(dumps[lvl][768:1024])
+        src = dumps[lvl]
+        blob[off + FOECOUNTS_OFF: off + FOECOUNTS_OFF + FOECOUNTS_LEN] = \
+            list(src[768 + FOECOUNTS_OFF: 768 + FOECOUNTS_OFF + FOECOUNTS_LEN])
 
     changed = sum(1 for a, b in zip(orig, blob) if a != b)
     DUN_C.write_text(emit_c(blob))
