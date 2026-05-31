@@ -83,10 +83,18 @@ def main():
     blob = parse_blob(DUN_C.read_text())
     orig = list(blob)
 
-    # Override UW1Q1 + UW2Q1 LevelBlocks.
+    # Override the UW LevelBlocks. NES PatchQ2Rooms (Z_06.asm:237) patches only
+    # OVERWORLD LevelBlockAttrsB (cave/dungeon routing), NOT underworld room
+    # contents -> dungeon interiors are quest-independent (byte-proven: live NES
+    # UW SRAM L*Q1 == L*Q2). So both quests' blocks get the same live images:
+    #   [0..767]      UW1Q1    [768..1535]   UW2Q1
+    #   [1536..2303]  UW1Q2    [2304..3071]  UW2Q2
     blob[0:BLOCK_BYTES] = list(blk_uw1)
     blob[BLOCK_BYTES:2 * BLOCK_BYTES] = list(blk_uw2)
-    # Override per-level LevelInfo (Q1).
+    blob[2 * BLOCK_BYTES:3 * BLOCK_BYTES] = list(blk_uw1)
+    blob[3 * BLOCK_BYTES:4 * BLOCK_BYTES] = list(blk_uw2)
+    # Override per-level LevelInfo (quest-independent slot; UW LevelInfo does
+    # not differ by quest per the dump above).
     for lvl in range(1, 10):
         off = LEVELINFO_BASE + (lvl - 1) * LEVELINFO_STRIDE
         blob[off:off + LEVELINFO_STRIDE] = list(dumps[lvl][768:1024])

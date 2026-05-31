@@ -67,11 +67,19 @@ from LBA), sentinel refreshed.
   FoeCounts byte-exact; enemies render on-screen. BG sweep $73/$63 still PASS.
 - ⇒ every Q1 room (L1-L9) now loads NES-exact enemy templates + counts.
 
+## Q2 dungeon interiors: quest-independent — covered by the Q1 fix
+NES PatchQ2Rooms (Z_06.asm:237) patches only OVERWORLD LevelBlockAttrsB
+(cave/dungeon routing) — NOT underworld room contents. Byte-proven: live NES
+UW SRAM L*Q1 == L*Q2 (LevelBlock + LevelInfo, 0 diffs). The regen writes the
+live UW1/UW2 images into ALL FOUR blob blocks (UW1Q1/UW2Q1/UW1Q2/UW2Q2) and
+the install's LevelInfo slot is quest-independent (correct). Verified: Gen
+L1Q2 $63 ObjType=$2D $2D $2C $23 $24 $23 $24 (== Q1, == NES). No per-quest
+LevelInfo needed. ⇒ dungeon enemy DATA byte-exact for BOTH quests.
+
 ## NOT yet done
 - **Enemy render/animation per-family (Phase 4 deeper):** sprite tile + flip
-  + animation cadence per family vs NES OAM (data is right; rendering not yet
-  byte-diffed per family).
-- **Q2 (Phase 7):** Q2 LevelBlocks [1536/2304] still dat-based (wrong
-  templates); Q2 LevelInfo can't differ from Q1 in the current blob layout
-  (install info_off is quest-independent) — needs per-quest LevelInfo slots.
-- **Bosses (Phase 5)**, **UW→OW exit round-trip live-wire (Phase 6)**.
+  + animation cadence per family vs NES OAM (spawn data is right; per-family
+  rendering not yet byte-diffed).
+- **Bosses (Phase 5)** — boss-room templates load (data fixed) but boss
+  state-machines/draw are stubs.
+- **UW→OW exit round-trip live-wire (Phase 6).**
