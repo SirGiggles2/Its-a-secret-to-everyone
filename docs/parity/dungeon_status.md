@@ -79,7 +79,19 @@ LevelInfo needed. ⇒ dungeon enemy DATA byte-exact for BOTH quests.
 ## NOT yet done
 - **Enemy render/animation per-family (Phase 4 deeper):** sprite tile + flip
   + animation cadence per family vs NES OAM (spawn data is right; per-family
-  rendering not yet byte-diffed).
-- **Bosses (Phase 5)** — boss-room templates load (data fixed) but boss
-  state-machines/draw are stubs.
+  rendering not yet byte-diffed). Needs a CLEAN NES per-room enemy capture —
+  the golden mode-4 forced entry leaves garbage OAM (sprites not ticked), so a
+  proper gameplay-entry NES capture is required for the OAM/SAT byte-diff.
+- **Bosses (Phase 5)** — boss rooms render (BG byte-exact) + their regular
+  monsters spawn correctly. The boss ENTITY does not appear. Findings:
+  - `LevelInfo_BossRoomId` ($6BBC) drives only boss AMBIENT SOUND (Z_05.asm:
+    4098), NOT the spawn — so the boss spawns via the room monster list.
+  - A boss-render path already exists (commit 5e23443b "boss VISIBLE via
+    OAM-shadow flush"), keyed off boss ObjType ranges $31-$3E/$41-$48
+    (`request_boss_chr_if_boss_room`, main.c:784).
+  - OPEN: identify the real boss room + its boss ObjType on LIVE NES. L1 $35
+    (dat BossRoomId via the +4 LevelInfo transform) renders Goriyas (template
+    $2A), no boss type; room $07 (a probe-CLOBBERED BossRoomId read, NOT a
+    real room) is black/empty. Need a clean live-NES boss-room walk to pin
+    where Aquamentus's ObjType actually lands, then wire/verify the spawn.
 - **UW→OW exit round-trip live-wire (Phase 6).**
