@@ -89,9 +89,14 @@ LevelInfo needed. ⇒ dungeon enemy DATA byte-exact for BOTH quests.
   - A boss-render path already exists (commit 5e23443b "boss VISIBLE via
     OAM-shadow flush"), keyed off boss ObjType ranges $31-$3E/$41-$48
     (`request_boss_chr_if_boss_room`, main.c:784).
-  - OPEN: identify the real boss room + its boss ObjType on LIVE NES. L1 $35
-    (dat BossRoomId via the +4 LevelInfo transform) renders Goriyas (template
-    $2A), no boss type; room $07 (a probe-CLOBBERED BossRoomId read, NOT a
-    real room) is black/empty. Need a clean live-NES boss-room walk to pin
-    where Aquamentus's ObjType actually lands, then wire/verify the spawn.
+  - PINNED: L1 boss room = **$36** (LBA_C=$3C -> template $3C, boss range).
+    Gen $36 seats ObjType[1]=$3C (count-1 boss override) AND renders a boss
+    (boss CHR + OAM-flush fire) — but as TWO grey blobs flanking Link, NOT the
+    green Aquamentus dragon. So the boss SPAWN works; the boss DRAW is wrong
+    (CHR atlas tiles / palette / multi-part layout / state machine). That is
+    the Phase 5 work, per-boss x9.
+  - MANIFEST BUG: `uw_level1_quest1_rooms.json` mislabels $35 as "boss"
+    (really Goriyas) and $36 as "triforce" (really Aquamentus). The room_tags
+    boss/triforce are swapped/wrong — fix the manifest generator's boss/
+    triforce derivation (it likely used the clobbered/raw BossRoomId).
 - **UW→OW exit round-trip live-wire (Phase 6).**
