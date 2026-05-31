@@ -2506,15 +2506,17 @@ void roomrom_debug_tick(void)
              * (NES Z1 L1 Q1 StartRoomId) so first toggle paints a real
              * room even if the table-install race ever returns zeros. */
             if (s_scene == SCENE_UW) {
-                /* G4: target UW level from debug cell $07F6 (probe-poked via
-                 * M68K BUS $FF8000+$07F6; default L1). Start room from the
-                 * live-NES-captured k_uw_map_start table; the dynamic pause
-                 * map (uw_map_build) reads the matching k_uw_* data. */
+                /* G4: target UW level from debug cell $07FA (probe-poked via
+                 * M68K BUS $FF8000+$07FA; default L1). $07F6/$07F7 are
+                 * per-frame player-X/Y sentinels (main.c:1893-1894) so they
+                 * get clobbered — use the free $07FA/$07FB pair. Start room
+                 * from the live-NES-captured k_uw_map_start table; the dynamic
+                 * pause map (uw_map_build) reads the matching k_uw_* data. */
                 extern const unsigned char k_uw_map_start[10];
-                unsigned char uw_lvl = nes_ram[0x07F6u];
+                unsigned char uw_lvl = nes_ram[0x07FAu];
                 if (uw_lvl < 1u || uw_lvl > 9u) uw_lvl = 1u;
                 nes_ram[0x0010u] = uw_lvl;          /* CurLevel for the install */
-                nes_ram[0x07F7u] = uw_lvl;          /* echo for probe verify */
+                nes_ram[0x07FBu] = uw_lvl;          /* echo for probe verify */
                 s_room_id = k_uw_map_start[uw_lvl];
                 /* Spawn Link at the south doorway of the entrance room
                  * (NES InitMode3_Sub2 entry: ObjX=$78, ObjY=$DD). */

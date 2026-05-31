@@ -43,8 +43,8 @@ local got_uw1q1, got_uw2q1 = false, false
 for L=1,9 do
     warp(L)
     local mask=""; for k=0,15 do mask=mask..string.format("%02X ",SBr(0x6BBD+k)) end
-    LOG(string.format("L%d: gm=$%02X room=$%02X rot$6BAB=$%02X tri$6BAE=$%02X start$6BAD=$%02X mask=%s",
-        L, SBr(0x0012), SBr(0x00EB), SBr(0x6BAB), SBr(0x6BAE), SBr(0x6BAD), mask))
+    LOG(string.format("L%d: gm=$%02X room=$%02X rot$6BAB=$%02X sbxoff$6BAC=$%02X tri$6BAE=$%02X start$6BAD=$%02X mask=%s",
+        L, SBr(0x0012), SBr(0x00EB), SBr(0x6BAB), SBr(0x6BAC), SBr(0x6BAE), SBr(0x6BAD), mask))
     if L<=6 and not got_uw1q1 then dump_block("uw1q1"); got_uw1q1=true end
     if L>=7 and not got_uw2q1 then dump_block("uw2q1"); got_uw2q1=true end
 end

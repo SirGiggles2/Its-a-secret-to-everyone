@@ -694,15 +694,20 @@ static void draw_item_sprites(void)
             draw_marker_sprite((unsigned short)(((room & 0x0Fu) << 3) + rx + 0x62u),
                                (unsigned short)(((room & 0xF0u) >> 1) + 0x69u),
                                RENDER_PAL1, DSPR(8));
-            /* Status-bar map marker (UW cols *8 + $12; Y scrolled). */
-            draw_marker_sprite((unsigned short)(((room & 0x0Fu) << 3) + 0x12u),
-                               (unsigned short)(((room & 0x70u) >> 2) + 0x17u + 175u),
-                               RENDER_PAL1, DSPR(8));
-            /* Triforce/compass map marker: status-bar formula on
-             * TriforceRoomId (NES sub-pal 3 -> PAL3). */
+            /* Status-bar map marker: cols*8 + $12 + per-level signed
+             * LevelInfo_StatusBarMapXOffset ($6BAC, k_uw_sbxoff) which centers
+             * each dungeon's mini-map in the status bar; Y scrolled. */
             {
+                extern const unsigned char k_uw_sbxoff[10];
+                short sbx = (level >= 1u && level <= 9u)
+                          ? (short)(signed char)k_uw_sbxoff[level] : 0;
+                draw_marker_sprite((unsigned short)(((room & 0x0Fu) << 3) + 0x12u + sbx),
+                                   (unsigned short)(((room & 0x70u) >> 2) + 0x17u + 175u),
+                                   RENDER_PAL1, DSPR(8));
+                /* Triforce/compass map marker: same status-bar formula on
+                 * TriforceRoomId (NES sub-pal 3 -> PAL3). */
                 unsigned char tr = uw_map_triforce_room(level);
-                draw_marker_sprite((unsigned short)(((tr & 0x0Fu) << 3) + 0x12u),
+                draw_marker_sprite((unsigned short)(((tr & 0x0Fu) << 3) + 0x12u + sbx),
                                    (unsigned short)(((tr & 0x70u) >> 2) + 0x17u + 175u),
                                    RENDER_PAL0, DSPR(14));
             }
