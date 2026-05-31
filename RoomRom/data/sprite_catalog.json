@@ -1,12 +1,12 @@
 {
   "schema_version": 1,
   "generated_by": "tools/atlas/gen_sprite_catalog.py",
-  "verifier_output": "verify_vram_budget: OK  BG=tiles 1..532  SPR=tiles 533..819  ITEM=tiles 820..917  BOSS=SCENE_OBJ-shared (NES parity)  HUD_BACKDROP=retired (+8 tiles freed)  headroom=618 tiles before VDP tables\n  hscroll_table_unused=1020 bytes (HSCROLL_PLANE mode uses 4 B of 1 KB allocated; available as SAT-extension scratch only)",
+  "verifier_output": "verify_vram_budget: OK  BG=tiles 1..632  SPR=tiles 633..919  ITEM=tiles 920..1017  BOSS=SCENE_OBJ-shared (NES parity)  HUD_BACKDROP=retired (+8 tiles freed)  headroom=518 tiles before VDP tables\n  hscroll_table_unused=1020 bytes (HSCROLL_PLANE mode uses 4 B of 1 KB allocated; available as SAT-extension scratch only)",
   "vram_map": {
     "BG_TILE_BASE": 1,
-    "BG_TILE_COUNT_PER_PAL": 532,
+    "BG_TILE_COUNT_PER_PAL": 632,
     "BG_SUBPAL_COUNT": 1,
-    "SPR_TILE_BASE": 533,
+    "SPR_TILE_BASE": 633,
     "SPR_TILE_COUNT_PER_PAL": 287,
     "SPR_SUBPAL_COUNT": 1,
     "ITEM_SUBPAL_COUNT": 1,
@@ -17,39 +17,39 @@
   "banks": {
     "BG": {
       "tile_base": 1,
-      "tiles_resident": 532,
+      "tiles_resident": 632,
       "tile_range": [
         1,
-        532
+        632
       ],
       "subpal_count": 1,
-      "bytes_resident": 17024,
+      "bytes_resident": 20224,
       "source": "data/chr/overworld_bg.c + data/chr/underworld_bg.c (via RoomRom/tools/expand_bg_chr.py)",
       "replication": "4x pixel-bias (Phase J selective dedup planned)"
     },
     "SPR": {
-      "tile_base": 533,
+      "tile_base": 633,
       "tiles_resident": 287,
       "tile_range": [
-        533,
-        819
+        633,
+        919
       ],
       "subpal_count": 1,
       "bytes_resident": 9184,
       "source": "data/chr/common.c (Link / sword / common sprites)",
       "replication": "1x (sub-pal 0); future sub-pal 1+ via OAM pal field",
       "scene_obj_slot": {
-        "tile_base": 577,
+        "tile_base": 677,
         "slot_size": 136,
         "occupants": "UWSP (34), OWSP (114), BOSS (64) \u2014 one at a time"
       }
     },
     "ITEM": {
-      "tile_base": 820,
+      "tile_base": 920,
       "tiles_resident": 98,
       "tile_range": [
-        820,
-        917
+        920,
+        1017
       ],
       "subpal_count": 1,
       "bytes_resident": 1045,
@@ -57,7 +57,7 @@
       "replication": "1x (Phase B collapsed from 3x on 2026-05-18)"
     },
     "BOSS": {
-      "tile_base": 577,
+      "tile_base": 677,
       "tile_count": 64,
       "subpal_count": 1,
       "residence": "transient (SCENE_OBJ slot, shared with UWSP/OWSP)",
