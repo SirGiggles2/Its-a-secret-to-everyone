@@ -707,9 +707,13 @@ static void draw_item_sprites(void)
                 /* Triforce/compass map marker: same status-bar formula on
                  * TriforceRoomId (NES sub-pal 3 -> PAL3). */
                 unsigned char tr = uw_map_triforce_room(level);
+                /* Marker tile DSPR(14) dot = pixel index 9; drawn with PAL1
+                 * whose index 9 (CRAM 25) is loaded per-level with the NES
+                 * SPR sub-pal3[1] tint on enter (the per-level dungeon accent
+                 * that has no fixed Genesis palette slot). */
                 draw_marker_sprite((unsigned short)(((tr & 0x0Fu) << 3) + 0x12u + sbx),
                                    (unsigned short)(((tr & 0x70u) >> 2) + 0x17u + 175u),
-                                   RENDER_PAL0, DSPR(14));
+                                   RENDER_PAL1, DSPR(14));
             }
             /* Compass ($6A mirrored) at ($2C,$9E); map ($4C narrow) at
              * ($2C,$76) — UW-extracted tiles, NES SPR sub-pal 2 -> PAL3. */
@@ -742,7 +746,22 @@ void inventory_subscreen_enter(void)
 
     /* L4 (Phase 7 v2): swap CRAM to NES subscreen palette before any
      * BG/sprite write so first rendered frame is correctly colored. */
-    inventory_palette_load_subscreen(s_subscreen_uw);
+    inventory_palette_load_subscreen(s_subscreen_uw, nes_ram[0x0010u]);
+
+    /* G4: load the per-level triforce-marker tint into the otherwise-free
+     * PAL1 index 9 (CRAM 25). The NES SPR sub-pal3[1] is the per-level
+     * dungeon accent — no fixed Genesis slot — so the marker (DSPR(14) dot =
+     * index 9, drawn PAL1) gets its color here, after the full-palette load. */
+    if (s_subscreen_uw) {
+        extern unsigned short roomrom_bg_palette_nes_to_cram(unsigned char);
+        extern const unsigned char k_uw_marker_color[10];
+        unsigned char lvl = nes_ram[0x0010u];
+        unsigned short c = (lvl >= 1u && lvl <= 9u)
+            ? roomrom_bg_palette_nes_to_cram(k_uw_marker_color[lvl]) : 0u;
+        *((volatile unsigned long *)0xC00004u)  = 0xC0000000UL
+                                                | ((unsigned long)(25u * 2u) << 16);
+        *((volatile unsigned short *)0xC00000u) = c;
+    }
 
     /* Upload the 8 live-extracted subscreen item-icon tiles to free VRAM
      * $A000 (tile DSPR_BASE). These cover icons absent from / wrong in the

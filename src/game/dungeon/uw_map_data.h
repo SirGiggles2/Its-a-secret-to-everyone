@@ -9,6 +9,7 @@ extern const unsigned char k_uw_map_start[10];     /* StartRoomId $6BAD */
 extern const unsigned char k_uw_map_rot[10];       /* SubmenuMapRotation $6BAB */
 extern const unsigned char k_uw_map_tri[10];       /* TriforceRoomId $6BAE */
 extern const unsigned char k_uw_sbxoff[10];        /* StatusBarMapXOffset $6BAC (signed) */
+extern const unsigned char k_uw_marker_color[10];  /* SPR sub-pal3[1] = per-level triforce-marker tint */
 extern const unsigned char k_uw_map_mask[10][16];  /* SubmenuMapMask $6BBD */
 extern const unsigned char k_uw_door_a[2][128];    /* LevelBlockAttrsA */
 extern const unsigned char k_uw_door_b[2][128];    /* LevelBlockAttrsB */

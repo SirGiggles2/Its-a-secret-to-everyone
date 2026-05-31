@@ -65,7 +65,16 @@ for _,L in ipairs(SWEEP_LEVELS) do
     nw(0x07FA, L)                          -- target level cell $07FA (free)
     if not go(1) then LOG(string.format("L%d FAIL reach UW (scene=%d)",L,scene())) end
     LOG(string.format("L%d after MODE: scene=%d CurLevel$10=%d echo$07FB=%d",L,scene(),nr(0x0010),nr(0x07FB)))
-    press_for({["P1 Start"]=true},4)
+    idle(90)                                -- let the room fully settle before opening
+    -- Open subscreen; verify VSRAM actually moved (menu scrolled in). Retry.
+    local base=vsram0()
+    for try=1,4 do
+        press_for({["P1 Start"]=true},6)
+        idle(20)
+        if vsram0()~=base then break end
+        LOG(string.format("L%d open retry %d (vsram still %d)",L,try,base))
+        idle(30)
+    end
     log_ladder("scroll_open.csv",90)
     idle(10)
     capture("active.bin"); capture("blink0.bin"); idle(8); capture("blink1.bin")
