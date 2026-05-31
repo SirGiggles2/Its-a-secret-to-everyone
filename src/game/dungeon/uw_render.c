@@ -150,7 +150,28 @@ static int find_blob_entry(unsigned char level, unsigned char room_id)
     unsigned short idx_plus_one;
     if (s_uw_quest >= 3u || level >= 10u || room_id >= 128u) return -1;
     idx_plus_one = g_uw_room_lookup[want_map][s_uw_quest][level][room_id];
-    return (idx_plus_one == 0u) ? -1 : (int)(idx_plus_one - 1u);
+    if (idx_plus_one != 0u) return (int)(idx_plus_one - 1u);
+    /* Same-block LAYOUT fallback (2026-05-31). NES UW room layouts are
+     * per-LevelBlock: levels 1-6 share LevelBlockUW1, 7-9 share UW2 (per
+     * quest). So a room captured under ANY sibling level in this block has
+     * the byte-identical layout. The Phase-B per-level capture mis-assigned
+     * some rooms across levels (e.g. L1's Aquamentus boss room got captured
+     * under L3), leaving render holes -> black BG + no boss when live play
+     * reaches them. Fill the hole from a same-block sibling so every
+     * reachable room (incl. boss rooms) renders its correct layout. Palette
+     * is handled separately (per-level) by the caller — do NOT use the
+     * sibling entry's palette. */
+    {
+        unsigned char lo  = (level <= 6u) ? 1u : 7u;
+        unsigned char hi  = (level <= 6u) ? 6u : 9u;
+        unsigned char sib;
+        for (sib = lo; sib <= hi; ++sib) {
+            if (sib == level) continue;
+            idx_plus_one = g_uw_room_lookup[want_map][s_uw_quest][sib][room_id];
+            if (idx_plus_one != 0u) return (int)(idx_plus_one - 1u);
+        }
+    }
+    return -1;
 }
 
 static int find_blob_entry_explicit(unsigned char level,
@@ -225,7 +246,12 @@ static void load_palette_from_levelinfo(void)
 
 void roomrom_uw_room_render_load_palette(unsigned char room_id)
 {
-    int idx = find_blob_entry(s_uw_level, room_id);
+    /* Palette is per-LEVEL (not per-block), so use the EXACT-level lookup
+     * here, NOT find_blob_entry's same-block layout fallback. A room filled
+     * from a sibling level (layout-correct) must still take THIS level's
+     * palette via load_palette_from_levelinfo (which reuses any same-level
+     * room's captured PALRAM — BG palette is a per-level constant on NES). */
+    int idx = find_blob_entry_explicit(s_uw_level, s_uw_quest, room_id);
     if (idx >= 0) {
         load_palette_from_blob(idx);
     } else {
