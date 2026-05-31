@@ -76,7 +76,28 @@ the install's LevelInfo slot is quest-independent (correct). Verified: Gen
 L1Q2 $63 ObjType=$2D $2D $2C $23 $24 $23 $24 (== Q1, == NES). No per-quest
 LevelInfo needed. ⇒ dungeon enemy DATA byte-exact for BOTH quests.
 
-## Phase 5 boss deep-dive (2026-05-31) — BLOCKED on clean live-NES boss capture
+## Phase 5 boss — UNBLOCKED via /octo:debate (2026-05-31), 2 real bugs found
+The earlier "blocked" framing was a wrong-room artifact. Debate (Sonnet+Claude
++ a 128-slot template scan; Codex/Gemini CLIs env-failed) resolved it:
+- Room $36 = template $3C = MANHANDLA (L3 boss), mis-attributed to L1 by the
+  shared-UW1-block room-visit aggregate. c_aquamentus_draw is correctly DEAD at
+  $36 ($3C dispatches to enrt_update_manhandla). I was probing the wrong room.
+- L1's real Aquamentus rooms (template $3D) = **$07 and $5D** (128-slot scan).
+- At the CORRECT room ($5D), the boss render path WORKS: c_aquamentus_draw runs
+  and writes all SIX Aquamentus sprites ($CC $C4 $C8 $C2 $C6 $CA) to NES shadow
+  OAM $0200 (2 rows x 3 cols). Render path is sound.
+- **BUG 1 (BG):** boss rooms $07/$5D are NOT in the render blob (nes_uw_aggregate
+  / uw_room_blob) -> black BG. The aggregate room-visit capture missed boss
+  rooms. Fix: extend the UW room capture to include every level's boss room,
+  regen uw_room_blob.
+- **BUG 2 (sprite publish):** the boss-room shadow-OAM->SAT sweep
+  (enemy_render_sweep_oam_to_sat) publishes only ~2 of the 6 boss sprites to the
+  SAT -> Aquamentus invisible. Fix: trace the sweep's slot/link handling.
+- Verification infra still needed: a per-boss savestate (build on G2
+  nes_boot_to_scenario.lua) for clean NES boss-fight byte-diff, captured across
+  the FrameCounter&$10 anim cycle at InvincibilityTimer==0.
+
+## (superseded) earlier blocked note
 Traced L1 Aquamentus end-to-end. Findings (probes: probe_nes_boss.lua,
 probe_gen_boss_live.lua):
 - Boss spawn + the $C0+ -> ROOMROM_BOSS_TILE_BASE tile remap + s_boss_bank_active
