@@ -89,17 +89,19 @@ local FLAG_HEAVY, FLAG_BOSS = 0x01, 0x04
 local BOSS_VRAM, BOSS_VRAM_BYTES = 0x5260, 2048   -- 659*32, 64 tiles
 
 -- Canonical NES boss rooms (docs/audit/boss_room_ids.md).
--- Room IDs RE-DERIVED from LevelBlockAttrs monster_list_id == boss ObjType
--- (the old boss_room_ids.md values were wrong for 8/10 — not real rooms in
--- their dungeons). Confirmed by spawn: L1 $35 spawns ObjType $3D Aquamentus.
--- digdogger/gohma rooms use ObjLists (list_id>=$62), TBD via list decode.
+-- Room IDs from LevelBlockAttrs monster_list_id == boss ObjType, cross-
+-- confirmed by LevelInfo_BossRoomId (two independent static sources agree).
+-- L5/L6 use the VARIANT objtype the room actually carries: Digdogger spawns
+-- as $39 (Digdogger2 -> morphs to $38 at runtime via InitDigdogger2), Gohma
+-- as $34 (blue) -- both in UW1Q1, the block L1-6 load. (Prior $06/$0F were
+-- mode-poke-warp guesses; not real boss rooms.)
 local bosses = {
   {name="aquamentus",   lv=1, rm=0x35, ot=0x3D},  -- confirmed (spawn $3D)
   {name="dodongo",      lv=2, rm=0x56, ot=0x31},  -- LBA $31
   {name="manhandla",    lv=3, rm=0x10, ot=0x3C},  -- LBA $3C ($4D alt)
   {name="gleeok_2head", lv=4, rm=0x13, ot=0x43},  -- LBA $43
-  {name="digdogger",    lv=5, rm=0x06, ot=0x38},  -- TBD (list)
-  {name="gohma_red",    lv=6, rm=0x0F, ot=0x33},  -- TBD (list)
+  {name="digdogger",    lv=5, rm=0x24, ot=0x39},  -- LBA $39 ->$38 runtime (xc LevelInfo $24)
+  {name="gohma",        lv=6, rm=0x1C, ot=0x34},  -- LBA $34 blue (xc LevelInfo $1C)
   {name="aquamentus_2", lv=7, rm=0x2A, ot=0x3D},  -- LBA $3D
   {name="gleeok_4head", lv=8, rm=0x3C, ot=0x45},  -- LBA $45
   {name="patra_red",    lv=9, rm=0x52, ot=0x47},  -- LBA $47 ($21/$61 alt)
