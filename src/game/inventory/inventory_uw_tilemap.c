@@ -66,19 +66,7 @@ const unsigned char k_inventory_uw_subpal[30][32] = {
     {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0},
 };
 
-/* Per-level UW map config (rotation + 16-byte SubmenuMapMask), captured live
- * from NES $6BAB/$6BBD via System Bus (the Gen LevelInfo install uses a
- * different nes_ram layout, so we cannot read it there). Indexed by level
- * 1-9; index 0 unused. L2-L9 filled by G1 captures. */
-const unsigned char k_uw_map_rotation[10] = {
-    0u, 0x04u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u
-};
-const unsigned char k_uw_map_mask[10][16] = {
-    {0},
-    {0x00u,0x00u,0x00u,0x00u,0x00u,0x08u,0x2Du,0x3Fu,0x0Du,0x18u,0x10u,0x00u,0x00u,0x00u,0x00u,0x00u},
-    {0},{0},{0},{0},{0},{0},{0},{0}
-};
-
-/* Per-level TriforceRoomId (NES $6BAE) for the triforce/compass map marker.
- * L1=$36 (derived from the captured marker at (66,210)). L2-L9 by G1. */
-const unsigned char k_uw_triforce_room[10] = { 0u, 0x36u, 0u,0u,0u,0u,0u,0u,0u,0u };
+/* Per-level UW map config (rotation / mask / triforce / start) moved to the
+ * self-contained live-NES-captured tables in src/game/dungeon/uw_map_data.c
+ * (k_uw_map_rot / k_uw_map_mask / k_uw_map_tri / k_uw_map_start), read via
+ * uw_map_rotation()/uw_map_triforce_room() + the uw_map_build glyph builder. */

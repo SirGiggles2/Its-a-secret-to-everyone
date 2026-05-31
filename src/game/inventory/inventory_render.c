@@ -21,13 +21,15 @@
 #include "inventory_sprite_chr.h"
 #include "../../../RoomRom/src/roomrom_main_state.h"  /* roomrom_main_current_scene */
 #include "../dungeon/uw_render.h"  /* roomrom_uw_room_render_get_level */
-/* NOTE: src/game/dungeon/uw_map_builder.{c,h} holds a complete NES-faithful
- * dynamic dungeon-map glyph builder (Submenu_WriteSheetMapRowTransferRecord),
- * NOT wired here: it is blocked on a substrate data bug — the regenerated
- * data/rooms/dungeons.c (commit 5931e024) LevelBlockAttrsA/B door tables
- * diverge from live NES SRAM (full NES AttrsA(128) absent from the blob;
- * AttrsA[$73] blob $06 vs NES $A2). Re-extract those tables, then wire the
- * builder + replace the hardcoded k_uw_* tables with its uw_map_*() reads. */
+#include "../dungeon/uw_map_builder.h"  /* G4 dynamic dungeon-map builder +
+                                         * uw_map_rotation/triforce, driven by
+                                         * the self-contained live-NES-captured
+                                         * uw_map_data tables (NOT dungeons.c). */
+
+/* G4: live dungeon-map glyph grid, rebuilt on each UW subscreen enter from the
+ * player's real visited/door state. Overlays the map region (tilemap rows
+ * 21-28, cols 12-27) of the static UW frame in write_inventory_row. */
+static unsigned char s_uw_map_grid[8][16];
 
 /* Scene captured on subscreen enter: 0 = OW (triforce), 1 = UW (dungeon
  * map). Selects the tilemap/sub-pal source in write_inventory_row. */
@@ -422,22 +424,18 @@ static void write_inventory_row(unsigned short gen_row)
     }
     for (i = 0; i < 32u; ++i) {
         /* Per-cell tile + sub-pal from the captured NES NT2 (OW triforce or
-         * UW dungeon). L1 map region is the byte-exact captured state.
-         *
-         * G4 dynamic glyph builder (uw_map_build) is BLOCKED: the Gen
-         * rooms_dungeons[] LevelBlockAttrsA/B door data diverges from live
-         * NES SRAM (AttrsA[$73]: blob $06 vs NES $A2; full NES AttrsA(128)
-         * absent from the blob; only 16/128 rooms match) — a substrate
-         * data-extraction bug (commit 5931e024 "regen from live NES SRAM")
-         * separate from this subscreen. Driving the glyphs from that data
-         * would corrupt the byte-exact L1 map, so the override is disabled
-         * until dungeons.c door tables are re-extracted to match NES. The
-         * per-level LevelInfo config (rotation/mask/triforce) IS correct and
-         * still drives the markers below via uw_map_*(). */
+         * UW dungeon static frame). For UW, the map glyph region (tilemap
+         * rows 21-28, cols 12-27) is overridden by the G4 dynamic builder's
+         * live grid (uw_map_build, fed by live-NES-captured door data); the
+         * surrounding frame (labels, borders, $FD/$FE ticks) stays static. */
         unsigned char tid = s_subscreen_uw ? k_inventory_uw_tilemap[nes_row][i]
                                            : k_inventory_tilemap[nes_row][i];
         unsigned char sp  = s_subscreen_uw ? k_inventory_uw_subpal[nes_row][i]
                                            : k_inventory_subpal[nes_row][i];
+        if (s_subscreen_uw && nes_row >= 21u && nes_row <= 28u
+                           && i >= 12u && i <= 27u) {
+            tid = s_uw_map_grid[nes_row - 21u][i - 12u];
+        }
         unsigned short vram = tile_for(tid, sp);
         cells[i] = RENDER_TILE_ATTR_FULL(0u, 0, 0, 0, vram);
     }
@@ -686,14 +684,9 @@ static void draw_item_sprites(void)
             /* CurLevel ($0010) is set reliably on the MODE toggle (s_uw_level
              * is not), so index the per-level map config by it. */
             unsigned char  level = nes_ram[0x0010u];
-            /* Per-level map rotation. The hardcoded k_uw_map_rotation table
-             * (L1 verified byte-exact vs NES) is the trusted source: the
-             * rooms_dungeons[] LevelInfo regen (commit 5931e024) reads back
-             * inconsistently at runtime (L1 came out rot=9, not $04), so the
-             * blob path (uw_map_rotation) is NOT used until that data is
-             * re-extracted + verified. L2-L9 entries pending those captures. */
-            unsigned char  rot   = (level >= 1u && level <= 9u)
-                                 ? (unsigned char)(k_uw_map_rotation[level] & 0x0Fu) : 0u;
+            /* Per-level map rotation from the live-NES-captured table
+             * (uw_map_rotation -> k_uw_map_rot, all 9 levels). */
+            unsigned char  rot   = uw_map_rotation(level);
             unsigned short rx  = (rot < 8u)
                 ? (unsigned short)(rot << 3)
                 : (unsigned short)(0u - (unsigned short)((16u - rot) << 3));
@@ -708,8 +701,7 @@ static void draw_item_sprites(void)
             /* Triforce/compass map marker: status-bar formula on
              * TriforceRoomId (NES sub-pal 3 -> PAL3). */
             {
-                unsigned char tr = (level >= 1u && level <= 9u)
-                                 ? k_uw_triforce_room[level] : 0u;
+                unsigned char tr = uw_map_triforce_room(level);
                 draw_marker_sprite((unsigned short)(((tr & 0x0Fu) << 3) + 0x12u),
                                    (unsigned short)(((tr & 0x70u) >> 2) + 0x17u + 175u),
                                    RENDER_PAL0, DSPR(14));
@@ -735,6 +727,13 @@ void inventory_subscreen_enter(void)
     /* Capture scene: UW (dungeon) renders the map subscreen, OW the
      * triforce subscreen. Latched here so the whole open uses one source. */
     s_subscreen_uw = (roomrom_main_current_scene() == ROOMROM_MAIN_SCENE_UW) ? 1u : 0u;
+
+    /* G4: build the live dungeon-map glyph grid from the player's real
+     * visited/door state (NES Submenu_WriteSheetMapRowTransferRecord).
+     * write_inventory_row overlays it onto the static UW frame. */
+    if (s_subscreen_uw) {
+        uw_map_build(nes_ram[0x0010u], s_uw_map_grid);
+    }
 
     /* L4 (Phase 7 v2): swap CRAM to NES subscreen palette before any
      * BG/sprite write so first rendered frame is correctly colored. */

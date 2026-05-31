@@ -164,9 +164,10 @@ ROOMROM_C_SOURCES = [
     # Plan v5b T2.7 2026-05-16 — heart-container 3-frame scale-up anim.
     ("src/game/hud/heart_container_anim.c", "heart_container_anim.o"),
     ("src/game/dungeon/uw_render.c", "dungeon_uw_render.o"),  # Phase 12.2 promoted
-    # uw_map_builder.c NOT built: complete NES-faithful dynamic dungeon-map
-    # glyph builder, blocked on the dungeons.c LevelBlockAttrs regen bug
-    # (door tables diverge from live NES SRAM). Wire once data is re-extracted.
+    # G4 dynamic dungeon-map builder + its self-contained live-NES-captured
+    # door/LevelInfo data (independent of the dungeons.c LevelBlockAttrs regen).
+    ("src/game/dungeon/uw_map_builder.c", "dungeon_uw_map_builder.o"),
+    ("src/game/dungeon/uw_map_data.c", "dungeon_uw_map_data.o"),
     ("RoomRom/src/uw_room_blob.c", "uw_room_blob.o"),
     ("RoomRom/src/uw_collision_data.c", "uw_collision_data.o"),
     # Phase 12.2 family 7: dungeon meta promoted to src/game/dungeon/.

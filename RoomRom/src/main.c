@@ -2542,8 +2542,22 @@ void roomrom_debug_tick(void)
             /* 2026-05-17 — level_info_install_* RESTORED; mirror writes
              * to $FF867E..$FF8C7D land in SGDK heap free-pool. */
             if (s_scene == SCENE_UW) {
-                nes_ram[0x0010u] = 1u;
-                level_info_install_uw(1u, 1u);
+                /* CurLevel ($0010) was set from cell $07F6 in the seed block. */
+                level_info_install_uw(nes_ram[0x0010u], 1u);
+                /* G4: the flat level_info_install leaves the room-flags
+                 * pointer ($6BAF/$6BB0) misaligned. Force it to a clean
+                 * post-LevelInfo scratch array ($6C80, just past the 256-byte
+                 * LevelInfo block at $6B7E..$6C7D), clear it, and mark ONLY
+                 * the start room visited — the NES fresh-dungeon-entry state.
+                 * uw_map_build + gameplay room_mark_room_visited both deref
+                 * this pointer, so the dynamic map stays consistent. */
+                nes_ram[0x6BAFu] = 0x80u;
+                nes_ram[0x6BB0u] = 0x6Cu;
+                {
+                    unsigned short r;
+                    for (r = 0u; r < 0x80u; ++r) nes_ram[0x6C80u + r] = 0u;
+                    nes_ram[(unsigned short)(0x6C80u + s_room_id)] = 0x20u;
+                }
             } else {
                 nes_ram[0x0010u] = 0u;
                 level_info_install_ow();

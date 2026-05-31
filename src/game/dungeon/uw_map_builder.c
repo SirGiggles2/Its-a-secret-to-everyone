@@ -1,26 +1,14 @@
-/* uw_map_builder.c — see uw_map_builder.h for the NES references. */
+/* uw_map_builder.c — see uw_map_builder.h for the NES references.
+ *
+ * Data is self-contained (src/game/dungeon/uw_map_data.{c,h}, captured live
+ * from NES SRAM) — NOT data/rooms/dungeons.c, whose LevelBlockAttrs regen
+ * diverges from live NES. Visited state is read live from the savefile
+ * room-flags pointer (the path gameplay uses), so the map tracks real
+ * exploration. */
 #include "uw_map_builder.h"
-#include "../../abi/platform_abi.h"          /* nes_ram, NES_SRAM_BASE,
-                                                NES_SRAM_ROOM_FLAGS_PTR_LO/HI */
-#include "../../../data/rooms/dungeons_offsets.h"  /* FoeCounts offsets */
-
-extern const unsigned char rooms_dungeons[];
-
-/* rooms_dungeons[] layout (data/rooms/dungeons_offsets.h). */
-#define LI_BASE        0x0C00u   /* LevelInfoUW1 */
-#define LI_STRIDE      0x0100u   /* 256 bytes / level */
-
-/* Field offsets RELATIVE to the per-level FoeCounts anchor ($6BA2):
- *   rotation  $6BAB - $6BA2 = 0x09
- *   triforce  $6BAE - $6BA2 = 0x0C
- *   map mask  $6BBD - $6BA2 = 0x1B  (16 bytes) */
-#define LI_ROT_REL     0x09u
-#define LI_TRI_REL     0x0Cu
-#define LI_MASK_REL    0x1Bu
-
-/* Installed LevelBlock attr tables in nes_ram (byte-aligned install). */
-#define LBA_A_BASE     0x687Eu
-#define LBA_B_BASE     0x68FEu
+#include "uw_map_data.h"
+#include "../../abi/platform_abi.h"   /* nes_ram, NES_SRAM_BASE,
+                                        NES_SRAM_ROOM_FLAGS_PTR_LO/HI */
 
 /* NES MapRowMasks[row] = $80 >> row (Z_05.asm:7527). */
 #define MAP_ROW_MASK(row) ((unsigned char)(0x80u >> (row)))
@@ -28,36 +16,30 @@ extern const unsigned char rooms_dungeons[];
 /* CalcOpenDoorwayMask LevelMasks (dir index 0..3 -> single bit). */
 static const unsigned char k_dir_masks[4] = { 0x01u, 0x02u, 0x04u, 0x08u };
 
-/* Blob index of the current level's FoeCounts anchor. */
-static unsigned short uw_foe_anchor(unsigned char level)
-{
-    return (unsigned short)(LI_BASE
-        + (unsigned short)(level - 1u) * LI_STRIDE
-        + ROOMROM_UW_LEVELINFO_FOE_COUNTS_OFFSET[level - 1u]);
-}
-
 unsigned char uw_map_rotation(unsigned char level)
 {
     if (level < 1u || level > 9u) return 0u;
-    return (unsigned char)(rooms_dungeons[uw_foe_anchor(level) + LI_ROT_REL] & 0x0Fu);
+    return (unsigned char)(k_uw_map_rot[level] & 0x0Fu);
 }
 
 unsigned char uw_map_triforce_room(unsigned char level)
 {
     if (level < 1u || level > 9u) return 0u;
-    return rooms_dungeons[uw_foe_anchor(level) + LI_TRI_REL];
+    return k_uw_map_tri[level];
 }
 
 /* NES FindDoorAttrByDoorBit (Z_05.asm:4520) collapsed to the 4 cardinal
- * door bits. Direction-bit -> which installed attr byte + nibble:
+ * door bits, reading the live-NES-captured door block for this level:
  *   up    $08 -> AttrsA bits 5-7
  *   down  $04 -> AttrsA bits 2-4
  *   left  $02 -> AttrsB bits 5-7
  *   right $01 -> AttrsB bits 2-4 */
-static unsigned char uw_door_attr(unsigned char room, unsigned char dirbit)
+static unsigned char uw_door_attr(unsigned char level, unsigned char room,
+                                  unsigned char dirbit)
 {
-    const unsigned char a = nes_ram[LBA_A_BASE + room];
-    const unsigned char b = nes_ram[LBA_B_BASE + room];
+    const unsigned char blk = UW_DOOR_BLOCK(level);
+    const unsigned char a = k_uw_door_a[blk][room];
+    const unsigned char b = k_uw_door_b[blk][room];
     switch (dirbit) {
         case 0x08u: return (unsigned char)((a >> 5) & 7u);
         case 0x04u: return (unsigned char)((a >> 2) & 7u);
@@ -67,19 +49,18 @@ static unsigned char uw_door_attr(unsigned char room, unsigned char dirbit)
 }
 
 /* Live world flags for an arbitrary room, via the savefile room-flags
- * pointer ($6BAF/$6BB0) — the path gameplay (room_get_room_flags) uses,
- * so the builder tracks the player's real exploration. */
+ * pointer ($6BAF/$6BB0) — the path gameplay (room_get_room_flags) uses. */
 static unsigned char uw_room_flags(unsigned char room)
 {
     const unsigned short ptr =
         (unsigned short)nes_ram[NES_SRAM_BASE + NES_SRAM_ROOM_FLAGS_PTR_LO]
       | (unsigned short)((unsigned short)
             nes_ram[NES_SRAM_BASE + NES_SRAM_ROOM_FLAGS_PTR_HI] << 8);
-    return nes_ram[ptr + room];
+    return nes_ram[(unsigned short)(ptr + room)];
 }
 
 /* NES Submenu_WriteScanningMapRoomMark + CalcOpenDoorwayMask for one room. */
-static unsigned char uw_room_glyph(unsigned char room)
+static unsigned char uw_room_glyph(unsigned char level, unsigned char room)
 {
     const unsigned char flags = uw_room_flags(room);
     /* Unvisited: OpenDoorwayMask defaults to $13 -> $13+$E2 = $F5 blank. */
@@ -92,7 +73,7 @@ static unsigned char uw_room_glyph(unsigned char room)
     unsigned char mask = 0u;
     unsigned char i;
     for (i = 0u; i < 4u; ++i) {
-        const unsigned char attr = uw_door_attr(room, dirbit[i]);
+        const unsigned char attr = uw_door_attr(level, room, dirbit[i]);
         unsigned char is_open;
         if (attr < 4u) {
             is_open = (attr == 0u) ? 1u : 0u;          /* open vs wall */
@@ -117,11 +98,11 @@ void uw_map_build(unsigned char level, unsigned char out[8][16])
     /* 1. Raw glyph per room (room id = row<<4 | col). */
     for (row = 0u; row < 8u; ++row)
         for (col = 0u; col < 16u; ++col)
-            out[row][col] = uw_room_glyph((unsigned char)((row << 4) | col));
+            out[row][col] = uw_room_glyph(level, (unsigned char)((row << 4) | col));
 
     /* 2. Rotate each row RIGHT by SubmenuMapRotation (Z_05.asm @Rotate). */
     {
-        const unsigned char rot = uw_map_rotation(level);
+        const unsigned char rot = (unsigned char)(k_uw_map_rot[level] & 0x0Fu);
         if (rot != 0u) {
             unsigned char tmp[16];
             for (row = 0u; row < 8u; ++row) {
@@ -133,10 +114,9 @@ void uw_map_build(unsigned char level, unsigned char out[8][16])
     }
 
     /* 3. Mask: blank cols where SubmenuMapMask[col] & MapRowMasks[row]==0
-     *    (Z_05.asm @MaskRooms). Mask read FoeCounts-anchored from the blob. */
+     *    (Z_05.asm @MaskRooms). */
     {
-        const unsigned char *mask16 =
-            &rooms_dungeons[uw_foe_anchor(level) + LI_MASK_REL];
+        const unsigned char *mask16 = k_uw_map_mask[level];
         for (row = 0u; row < 8u; ++row)
             for (col = 0u; col < 16u; ++col)
                 if ((mask16[col] & MAP_ROW_MASK(row)) == 0u)
