@@ -21,6 +21,13 @@
 #include "inventory_sprite_chr.h"
 #include "../../../RoomRom/src/roomrom_main_state.h"  /* roomrom_main_current_scene */
 #include "../dungeon/uw_render.h"  /* roomrom_uw_room_render_get_level */
+/* NOTE: src/game/dungeon/uw_map_builder.{c,h} holds a complete NES-faithful
+ * dynamic dungeon-map glyph builder (Submenu_WriteSheetMapRowTransferRecord),
+ * NOT wired here: it is blocked on a substrate data bug — the regenerated
+ * data/rooms/dungeons.c (commit 5931e024) LevelBlockAttrsA/B door tables
+ * diverge from live NES SRAM (full NES AttrsA(128) absent from the blob;
+ * AttrsA[$73] blob $06 vs NES $A2). Re-extract those tables, then wire the
+ * builder + replace the hardcoded k_uw_* tables with its uw_map_*() reads. */
 
 /* Scene captured on subscreen enter: 0 = OW (triforce), 1 = UW (dungeon
  * map). Selects the tilemap/sub-pal source in write_inventory_row. */
@@ -415,8 +422,18 @@ static void write_inventory_row(unsigned short gen_row)
     }
     for (i = 0; i < 32u; ++i) {
         /* Per-cell tile + sub-pal from the captured NES NT2 (OW triforce or
-         * UW dungeon). The map-sheet cells of the UW tilemap are the captured
-         * state for now; the G4 dynamic builder overrides them at runtime. */
+         * UW dungeon). L1 map region is the byte-exact captured state.
+         *
+         * G4 dynamic glyph builder (uw_map_build) is BLOCKED: the Gen
+         * rooms_dungeons[] LevelBlockAttrsA/B door data diverges from live
+         * NES SRAM (AttrsA[$73]: blob $06 vs NES $A2; full NES AttrsA(128)
+         * absent from the blob; only 16/128 rooms match) — a substrate
+         * data-extraction bug (commit 5931e024 "regen from live NES SRAM")
+         * separate from this subscreen. Driving the glyphs from that data
+         * would corrupt the byte-exact L1 map, so the override is disabled
+         * until dungeons.c door tables are re-extracted to match NES. The
+         * per-level LevelInfo config (rotation/mask/triforce) IS correct and
+         * still drives the markers below via uw_map_*(). */
         unsigned char tid = s_subscreen_uw ? k_inventory_uw_tilemap[nes_row][i]
                                            : k_inventory_tilemap[nes_row][i];
         unsigned char sp  = s_subscreen_uw ? k_inventory_uw_subpal[nes_row][i]
@@ -669,6 +686,12 @@ static void draw_item_sprites(void)
             /* CurLevel ($0010) is set reliably on the MODE toggle (s_uw_level
              * is not), so index the per-level map config by it. */
             unsigned char  level = nes_ram[0x0010u];
+            /* Per-level map rotation. The hardcoded k_uw_map_rotation table
+             * (L1 verified byte-exact vs NES) is the trusted source: the
+             * rooms_dungeons[] LevelInfo regen (commit 5931e024) reads back
+             * inconsistently at runtime (L1 came out rot=9, not $04), so the
+             * blob path (uw_map_rotation) is NOT used until that data is
+             * re-extracted + verified. L2-L9 entries pending those captures. */
             unsigned char  rot   = (level >= 1u && level <= 9u)
                                  ? (unsigned char)(k_uw_map_rotation[level] & 0x0Fu) : 0u;
             unsigned short rx  = (rot < 8u)
