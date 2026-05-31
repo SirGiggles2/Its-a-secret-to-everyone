@@ -50,6 +50,26 @@ makes BG render for ALL rooms, permanently.
    gate); boss rooms (L2 $05, L9 $17, …) now render their BG; Aquamentus +
    other bosses render room + sprites + palette.
 
+## DERIVED so far (2026-05-31, tools/builder/derive_uw_nt.py)
+- Decoder VERIFIED: decoding room $73 (uid=62 from LBA_D&0x3F) via
+  extract_uw_collision's `decode_heap_column` yields a 12-col × 7-square grid
+  whose tile families ($24/$68/$74/$94/$B4/$F4) all appear in the real NES
+  CIRAM — the decode half is correct.
+- WriteSquareUW addressing (from Z_05.asm pointer math): with play-area ptr P,
+  TL=P+0, BL=P+1, TR=P+$16(22), BR=P+$17(23) -> the play-area buffer is
+  COLUMN-MAJOR with 22 rows/col (+1 = down a row, +22 = right a col = the 22
+  play rows). LayoutUWFloor: P0=$658C; +2 per square down a column; +$1E after
+  7 squares -> column stride = 14+$1E = $2C (44). So square[c][r] TL buffer
+  offset = ($658C-$6500) + c*$2C + r*2 = $8C + c*$2C + r*2.
+- OPEN (final calibration): naive 2x2 placement scored only ~30% vs CIRAM
+  because (a) $74 floor is ubiquitous (weak signal) and (b) the base $8C +
+  column-order needs matching against the CAPTURED blob (row-major 22x32, what
+  blit_blob consumes), not CIRAM. NEXT: emulate the exact P arithmetic into a
+  32x22 column-major buffer, index blob[row][col]=buffer[col*22+row], and
+  byte-diff vs the captured uw_room_blob nt for $73 (+ a few) until 0-diff;
+  THEN sweep all 171 captured rooms (Gate A). Distinctive-tile rooms (arches
+  $94/$B4, stairs $68) give a stronger alignment signal than $74.
+
 ## Verification
 - Gate A (offline): generated nt == captured nt for all 171 rooms (0 byte diff).
 - Gate B (live): `run_dungeon_sweep.py` L1-L9 still 171/171; spot-probe boss
