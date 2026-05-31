@@ -3006,7 +3006,15 @@ void roomrom_debug_tick(void)
                         s_link_anim_tick = 0u;
                     }
                     link_nes_move_object(moving_dir);
-                } else {
+                } else if (!cave_fade_is_active()) {
+                    /* Idle reset of the walk pose to frame 0 — but NOT during
+                     * cave_fade: the descent/emerge walk animation is owned by
+                     * cave_fade_anim_tick_handler (6-frame ObjAnimFrame cadence,
+                     * s_link_frame). With no D-pad input the cave_fade descent
+                     * would hit this branch every frame and clobber s_link_frame
+                     * back to 0, freezing Link in the standing pose (the real
+                     * cause of the static frame-0 sprite during the sink). Let
+                     * the anim_tick frame survive to the set_link_pose draw. */
                     s_link_frame = 0u;
                     s_link_anim_tick = 0u;
                 }

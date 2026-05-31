@@ -68,6 +68,19 @@ static unsigned char         s_emerge_grid    = 0u;
  * down-counts; on roll past 1 it resets to 6 and toggles the frame — a
  * 6-frame walk-pose period (Z_07.asm:5045 AnimateObjectWalking). */
 #define CAVE_ANIM_PERIOD  6u
+/* Walk-pose ENTRY seed for the descend. The 6-frame cadence is correct, but the
+ * FIRST pose-flip must land where NES's does. NES (cave $6A live capture) flips
+ * ObjAnimFrame 0->1 at descent fr3 and 1->0 at fr9; the position anchor between
+ * the NES (GameMode=$10) and Gen (cave_fade arm) captures is +2 frames (Tier-A
+ * byte-verified). Gen's first flip lands at frame (1 + seed): seed=6 flips at
+ * fr7. The metric is the VISIBLE pose (NES OAM hflip / Gen SAT tile), not the
+ * ObjAnimFrame cell (NES's sprite pose lags that cell ~1 frame). Measured: NES
+ * OAM pose flips at descent fr4; the position anchor between the captures is +2
+ * (Tier-A byte-verified); Gen's SAT pose flips at frame (2 + seed). seed=4 =>
+ * Gen flips at fr6 = NES fr4 + 2 => visible pose byte-aligns with NES at the
+ * same +2 anchor as position. (Real-gameplay entry phase varies +-1 within NES's
+ * own range, so this is the capture-matching choice, not an overfit.) */
+#define CAVE_ANIM_ENTRY_SEED 4u
 static unsigned char         s_anim_counter   = CAVE_ANIM_PERIOD;
 static unsigned char         s_anim_frame     = 0u;
 /* Cave-load hold: NES holds Link at the descent-end Y while GameMode $0B
@@ -92,7 +105,7 @@ void cave_fade_begin_enter(cave_id_t cid)
     s_pending_cid   = cid;
     s_frame_counter = 0u;
     s_step_idx      = 0u;
-    s_anim_counter  = CAVE_ANIM_PERIOD;
+    s_anim_counter  = CAVE_ANIM_ENTRY_SEED;   /* align first pose-flip to NES */
     s_anim_frame    = 0u;
     s_phase         = CAVE_FADE_LINK_DESCEND;
 }
