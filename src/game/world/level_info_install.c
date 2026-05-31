@@ -117,4 +117,26 @@ void level_info_install_uw(unsigned char level, unsigned char quest)
     copy_to_nes_ram(NES_LEVEL_INFO_BASE,
                     &rooms_dungeons[info_off],
                     NES_LEVEL_INFO_BYTES);
+
+    /* LevelInfo_WorldFlagsAddr ($6BAF/$6BB0, Variables.inc:338) is a pointer
+     * the NES resolves AT SAVE-LOAD to the live WorldFlags region ($067F);
+     * GetRoomFlags (Z_07.asm:763) derefs it as flags[RoomId]. The static UW
+     * LevelInfo blocks hold only a garbage placeholder ($FFFF / $A672 —
+     * byte-verified), so room_get_room_flags read garbage and non-recurring
+     * bosses (Digdogger $39, Patra $47) randomly tripped the $C0 "all-defeated"
+     * gate in modify_count_by_history_uw -> never spawned. LevelInfoOW already
+     * carries the correct $067F, which is why OW worked. Point UW at $067F too
+     * (NES uses one live region per world, content swapped on transition), and
+     * zero the 128-byte room-flag array so a fresh level-enter has no room
+     * marked cleared. (The port has no UW save persistence; this is
+     * fresh-visit semantics, matching a first dungeon entry.) */
+    {
+        const unsigned short wf = 0x067Fu;   /* Variables.inc:267 WorldFlags */
+        unsigned int k;
+        nes_ram[0x6BAFu] = (unsigned char)(wf & 0xFFu);
+        nes_ram[0x6BB0u] = (unsigned char)(wf >> 8);
+        for (k = 0u; k < 128u; ++k) {
+            nes_ram[wf + k] = 0u;
+        }
+    }
 }

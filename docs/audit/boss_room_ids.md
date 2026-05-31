@@ -16,20 +16,24 @@ room's ObjList from `LevelBlockAttrsC/D`; boss room = where
 
 | Level | Room ($EB) | Boss | ObjType | Status |
 |---|---|---|---|---|
-| L1 | **$35** | Aquamentus    | $3D | ✓ slot1=$3D (+$55 fireballs) |
-| L2 | **$56** | Dodongo       | $31 | ✓ 6×$31 |
-| L3 | **$10** | Manhandla     | $3C | ✓ 5×$3C segments ($4D also has $3C) |
-| L4 | **$13** | Gleeok 2-head | $43 | ✓ slot1=$43 |
-| L5 | **$24** | Digdogger     | $39 | ★ LBA $39 (Digdogger2→$38) + LevelInfo BossRoomId $24 |
-| L6 | **$1C** | Gohma (blue)  | $34 | ★ LBA $34 (Gohma) + LevelInfo BossRoomId $1C |
-| L7 | **$2A** | Aquamentus #2 | $3D | ✓ slot1=$3D |
-| L8 | **$3C** | Gleeok 4-head | $45 | ✓ slot1=$45 |
-| L9 | **$52** | Patra Red     | $47 | ✓ slot1=$47 (+$25 children) ($21/$61 dup) |
-| L9 | **$42** | Ganon         | $3E | ★ LBA $3E + LevelInfo BossRoomId $42 (Genesis verify pending) |
+ALL 10 LIVE SPAWN-VERIFIED 2026-05-31 (gen_boss_direct, Debug.md byte-diff)
+after the Q1-LBA fix (519b9949) + WorldFlagsAddr fix. slot-1 ObjType below is
+the live Genesis read, byte-matching the NES boss ObjType:
 
-★ = static, cross-confirmed by TWO independent sources (LBA monster_list_id
-in `reference/aldonunez/dat/LevelBlockUW{1,2}Q1.dat` AND
-`LevelInfo_BossRoomId`), no live capture needed.
+| L1 | **$35** | Aquamentus    | $3D | ✓ slot1=$3D (+$55 fireballs) |
+| L2 | **$56** | Dodongo       | $31 | ✓ slot1=$31 (×3) |
+| L3 | **$10** | Manhandla     | $3C | ✓ 5×$3C segments |
+| L4 | **$13** | Gleeok 2-head | $43 | ✓ slot1=$43 (+$56) |
+| L5 | **$24** | Digdogger     | $39 | ✓ slot1=$38 (Digdogger2 $39 morphs →$38 InitDigdogger2) |
+| L6 | **$1C** | Gohma (blue)  | $34 | ✓ slot1=$34 (+$56) |
+| L7 | **$2A** | Aquamentus #2 | $3D | ✓ slot1=$3D (+$55) |
+| L8 | **$3C** | Gleeok 4-head | $45 | ✓ slot1=$45 (+$56) |
+| L9 | **$52** | Patra Red     | $47 | ✓ slot1=$47 (+8×$25 children) ($21/$61 dup) |
+| L9 | **$42** | Ganon         | $3E | ✓ slot1=$3E |
+
+Room ids + ObjTypes cross-confirmed by TWO static sources (LBA monster_list_id
+in `reference/aldonunez/dat/LevelBlockUW{1,2}Q1.dat` AND `LevelInfo_BossRoomId`)
+THEN live-spawn-verified on Genesis.
 
 Old (wrong) ids for reference: L2 $73, L3 $0F, L4 $45, L5 $06, L6 $0F,
 L7 $23, L8 $1F, L9 $1E/$1F. Only L1 $35 was correct.
