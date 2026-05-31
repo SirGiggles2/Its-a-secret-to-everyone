@@ -483,6 +483,13 @@ void enemy_render_reset_oam(void)
 #define NES_FIRE_TILE_LAST           0x5Fu
 #define ITEM_ATLAS_FLAME_IDX         38u
 
+/* Phase 8: set per-frame by enemy_render_sweep_oam_to_sat when a boss
+ * ObjType occupies a slot (boss types $31-48 only spawn in UW boss rooms,
+ * which load the boss CHR bank into the SCENE_OBJ VRAM slot). Boss draw
+ * routines emit raw NES tiles $C0+ (PPU $0C00 bank); translate_tile remaps
+ * those to ROOMROM_BOSS_TILE_BASE when this is set. */
+static unsigned char s_boss_bank_active = 0u;
+
 static inline unsigned short translate_tile(unsigned char nes_tile,
                                             unsigned char nes_attrs)
 {
@@ -505,6 +512,15 @@ static inline unsigned short translate_tile(unsigned char nes_tile,
         /* Fire flame -> ITEM atlas (clobber-safe). See block comment above. */
         return (unsigned short)(ROOMROM_ITEM_TILE_BASE + ITEM_ATLAS_FLAME_IDX +
                                 (unsigned short)(nes_tile - NES_FIRE_TILE_FIRST));
+    }
+    if (s_boss_bank_active && nes_tile >= 0xC0u) {
+        /* Boss CHR bank resident at ROOMROM_BOSS_TILE_BASE = NES PPU $0C00
+         * (tile $C0) per z_03.asm:91 FetchPatternBlockUWBoss. Boss draw
+         * routines (e.g. c_aquamentus_draw) emit raw NES tiles $C0+; the
+         * generic $8E-relative bank math below would mis-map them by
+         * ($C0-$8E)=50. Map NES $C0 -> boss bank tile 0. */
+        return (unsigned short)(ROOMROM_BOSS_TILE_BASE +
+                                (unsigned short)(nes_tile - 0xC0u));
     }
     if (nes_tile < NES_OWSP_BANK_FIRST) {
         /* Common sprite pattern block at SPR_BASE 1:1. */
@@ -565,6 +581,24 @@ void enemy_render_sweep_oam_to_sat(void)
     /* Phase 1 diagnostic: increment sentinel at NES $07FE per frame
      * so probe can verify this fn fires. */
     nes_ram[0x07FEu] = (unsigned char)(nes_ram[0x07FEu] + 1u);
+
+    /* Phase 8: detect boss-room (boss CHR bank loaded) by scanning slots
+     * 1..11 for a boss ObjType. Boss types $31-34/$38-3E/$41-48 (Z_07
+     * InitObject_JumpTable) only spawn in UW boss rooms, so this also
+     * gates the $C0-base remap in translate_tile to UW boss rooms. */
+    {
+        unsigned int s;
+        s_boss_bank_active = 0u;
+        for (s = 1u; s <= 11u; ++s) {
+            unsigned char t = nes_ram[0x034Fu + s];
+            if ((t >= 0x31u && t <= 0x34u) ||
+                (t >= 0x38u && t <= 0x3Eu) ||
+                (t >= 0x41u && t <= 0x48u)) {
+                s_boss_bank_active = 1u;
+                break;
+            }
+        }
+    }
 
     unsigned int i;
     unsigned int sat_slot = ROOMROM_SPRITE_SLOT_ENEMY_FIRST;
