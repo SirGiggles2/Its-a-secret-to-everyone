@@ -76,7 +76,31 @@ the install's LevelInfo slot is quest-independent (correct). Verified: Gen
 L1Q2 $63 ObjType=$2D $2D $2C $23 $24 $23 $24 (== Q1, == NES). No per-quest
 LevelInfo needed. ⇒ dungeon enemy DATA byte-exact for BOTH quests.
 
-## Phase 5 boss — UNBLOCKED via /octo:debate (2026-05-31), 2 real bugs found
+## DEFINITIVE ROOT CAUSE (2026-05-31): Phase-B per-level UW manifests are WRONG
+L1's manifest room-graph (BFS from start $73 over its `edges`) = the 17 rooms
+{$22 $23 $33 $35 $36 $41-45 $52-54 $63 $72 $73 $74} — which INCLUDES $36 =
+template $3C = MANHANDLA (L3's boss) and contains NO Aquamentus ($3D) room.
+L1's real boss is Aquamentus; rooms with $3D = $07/$5D, and the aggregate tags
+$07->L9 and $5D->L3/L5/L8, never L1. So the Phase-B manifests mis-assign rooms
+across levels: L1 inherited L3's $36 and lost its own Aquamentus room.
+
+Consequences:
+- "171/171 BG byte-exact" still TRUE per room-slot (layouts are shared across
+  levels, so each swept room matched NES) — but the LEVEL MEMBERSHIP is wrong.
+- The UW render data is keyed (level,quest,room); because the manifest-driven
+  capture never visited L1's Aquamentus room UNDER L1, L1 lacks that room ->
+  black BG + no boss when live play reaches it.
+- Manifest boss_room_id=$35 is also wrong ($35 template=$2A=Goriya, not a boss).
+
+FIX (next, substantial): regenerate the 18 per-level UW manifests from
+AUTHORITATIVE NES per-level room membership — compute each level's true room set
+by walking the NES door graph (LevelBlockAttrs A/B door types, which ARE
+trustworthy in the live SRAM dump) from each level's real start room; then
+re-capture each level's rooms (incl. its boss room) UNDER the correct level and
+regen uw_room_blob. Then bosses render in their correct rooms (render path
+already proven to work at a $3D room). RULE ZERO: do NOT hand-guess room sets.
+
+## Phase 5 boss — earlier debate notes (2 bugs; bug 1 now subsumed by the above)
 The earlier "blocked" framing was a wrong-room artifact. Debate (Sonnet+Claude
 + a 128-slot template scan; Codex/Gemini CLIs env-failed) resolved it:
 - Room $36 = template $3C = MANHANDLA (L3 boss), mis-attributed to L1 by the
