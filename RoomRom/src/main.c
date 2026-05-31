@@ -467,15 +467,16 @@ static void cave_fade_descend_step_handler(unsigned char step_idx)
 {
     (void)step_idx;
     players[0].y = (short)(players[0].y + 1);
-    /* Mirror new Y to nes_ram $0084 so the gated sync at line 1865 (which
-     * is suppressed during cave_fade) doesn't leave Link's collision/
-     * sprite cells stale at the trigger frame's Y. */
+    /* Mirror Link X+Y to nes_ram ObjX[0]/$0070 + ObjY[0]/$0084 so the byte-diff
+     * (and any collision/sprite reader) tracks the real Link position during the
+     * descent — the gated player->nes_ram sync is suppressed while cave_fade is
+     * active, otherwise nes_ram $70 holds the stale pre-descent (teleport-spawn)
+     * X while players[0].x is already the entrance column. */
+    nes_ram[0x0070u] = (unsigned char)players[0].x;
     nes_ram[0x0084u] = (unsigned char)players[0].y;
 
-    /* NES walk-anim cycle: NES Link_EndMoveAndAnimate ticks pose every
-     * frame; we toggle on every descend step (every 4 frames) so the
-     * legs cycle visibly during the 64-frame descend. */
-    s_link_frame ^= 1u;
+    /* Walk pose is driven by cave_fade_anim_tick_handler on the NES 6-frame
+     * cadence (ObjAnimCounter), NOT toggled here per 4-frame step. */
 
     /* NES also sets sprite priority bit $20 on Link upper-half sprites
      * so the entrance arch tile covers them ("Link sinks into hole"
@@ -517,18 +518,28 @@ static void cave_fade_emerge_step_handler(unsigned char obj_y,
     nes_ram[0x0084u]  = obj_y;
     nes_ram[0x0394u]  = grid;
     nes_ram[0x03A8u]  = posfrac;
-    /* NES ticks the walk pose every frame during the emerge. */
-    s_link_frame ^= 1u;
+    /* Walk pose driven by cave_fade_anim_tick_handler (6-frame cadence). */
 }
 
-/* NES cave-exit Mode 10 mirror: Link walks UP, Y -= 1 every 4 frames
- * for 16 frames. Same walk-anim toggle as descend. */
+/* NES cave-exit Mode 10 mirror: Link walks UP, Y -= 1 every 4 frames. */
 static void cave_fade_ascend_step_handler(unsigned char step_idx)
 {
     (void)step_idx;
     players[0].y = (short)(players[0].y - 1);
     nes_ram[0x0084u] = (unsigned char)players[0].y;
-    s_link_frame ^= 1u;
+}
+
+/* NES walk-anim cadence (Z_07.asm:5045 AnimateObjectWalking): cave_fade.c runs
+ * the 6-frame ObjAnimCounter down-count + frame toggle and hands them here
+ * every frame. Drive the visible Link pose + mirror nes_ram ObjAnimCounter
+ * ($3D0) / ObjAnimFrame ($3E4) so the byte-diff (Tier A) + sprite cadence
+ * (Tier B) match NES. */
+static void cave_fade_anim_tick_handler(unsigned char counter,
+                                        unsigned char frame)
+{
+    s_link_frame      = frame;
+    nes_ram[0x03D0u]  = counter;
+    nes_ram[0x03E4u]  = frame;
 }
 
 static void cave_fade_swap_exit_handler(void)
@@ -550,7 +561,8 @@ static const cave_fade_callbacks_t k_cave_fade_callbacks = {
     cave_fade_swap_entry_handler,
     cave_fade_ascend_step_handler,
     cave_fade_swap_exit_handler,
-    cave_fade_emerge_step_handler
+    cave_fade_emerge_step_handler,
+    cave_fade_anim_tick_handler
 };
 
 static void anchor_active_slot(void)
@@ -1493,6 +1505,19 @@ static void edge_load_or_clamp(void)
     /* Don't re-trigger while a scroll is already running. */
     if (s_scroll_state != SCROLL_NONE) return;
 
+    /* Caves are single-screen: clamp Link to the cave playfield, NEVER
+     * scroll/transition (cave exit is the stairs tile, handled separately).
+     * South floor = $D5 (213) — the NES InitMode_WalkCave emerge rest Y,
+     * byte-verified vs Z1 cave $6A — not the dungeon south edge $D0 (208),
+     * which was pulling the emerged Link 5 px too high. */
+    if (s_scene == SCENE_CAVE) {
+        if (players[0].x < UW_WALK_EDGE_WEST_X)  players[0].x = UW_WALK_EDGE_WEST_X;
+        if (players[0].x > UW_WALK_EDGE_EAST_X)  players[0].x = UW_WALK_EDGE_EAST_X;
+        if (players[0].y < UW_WALK_EDGE_NORTH_Y) players[0].y = UW_WALK_EDGE_NORTH_Y;
+        if (players[0].y > 0xD5)                 players[0].y = 0xD5;
+        return;
+    }
+
     /* Capture pre-edge position before clamping/snapping. */
     short pre_x = players[0].x;
     short pre_y = players[0].y;
@@ -2183,6 +2208,16 @@ void roomrom_debug_tick(void)
                             (unsigned char)(((unsigned char)players[0].y >> 3) + 7u);
                         cave_fade_mark_arch_hi_prio(tile_col, tile_row);
                     }
+                    /* NES InitMode10 fires the stairs SFX at the cave-entry
+                     * trigger (EffectRequest=$08, Z_05.asm:1408). Play the
+                     * Genesis synth stairs SFX (#8 -> XGM id 71). We do NOT
+                     * mirror the NES EffectRequest cell ($0603): on NES it is a
+                     * transient request the sound engine consumes+clears next
+                     * frame ($80->$08->$00); the SGDK-XGM path has no such cell,
+                     * so a static write would DIVERGE worse than leaving it. SFX
+                     * parity is functional (audio_sfx_play + the $07F0 sentinel);
+                     * EffectRequest is REPORTED, not byte-gated (like GameMode). */
+                    audio_sfx_play(8u);
                     cave_fade_set_callbacks(&k_cave_fade_callbacks);
                     cave_fade_begin_enter(cid);
                     return;
@@ -2452,11 +2487,16 @@ void roomrom_debug_tick(void)
              * (NES Z1 L1 Q1 StartRoomId) so first toggle paints a real
              * room even if the table-install race ever returns zeros. */
             if (s_scene == SCENE_UW) {
-                /* 2026-05-17 — bootstrap default $73 (NES Z1 L1 Q1
-                 * StartRoomId). level_info_install_uw below populates
-                 * the SRAM tables; subsequent toggles can read the
-                 * actual StartRoomId at $6BAD if needed. */
-                s_room_id = 0x73u;
+                /* G4: target UW level from debug cell $07F6 (probe-poked via
+                 * M68K BUS $FF8000+$07F6; default L1). Start room from the
+                 * live-NES-captured k_uw_map_start table; the dynamic pause
+                 * map (uw_map_build) reads the matching k_uw_* data. */
+                extern const unsigned char k_uw_map_start[10];
+                unsigned char uw_lvl = nes_ram[0x07F6u];
+                if (uw_lvl < 1u || uw_lvl > 9u) uw_lvl = 1u;
+                nes_ram[0x0010u] = uw_lvl;          /* CurLevel for the install */
+                nes_ram[0x07F7u] = uw_lvl;          /* echo for probe verify */
+                s_room_id = k_uw_map_start[uw_lvl];
                 /* Spawn Link at the south doorway of the entrance room
                  * (NES InitMode3_Sub2 entry: ObjX=$78, ObjY=$DD). */
                 players[0].x = 0x78;

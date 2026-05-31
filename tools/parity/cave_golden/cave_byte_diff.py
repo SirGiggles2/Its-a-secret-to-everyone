@@ -141,54 +141,74 @@ class Cell:
     def __init__(self, x, y, px, src):
         self.x = x; self.y = y; self.px = px; self.src = src
 
-def nes_sprites(nb: NesBundle, lut) -> list[Cell]:
+def nes_sprites_with_chr(oam: bytes, chr_: bytes, palram: bytes,
+                         ppuctrl: int, lut, slots=None) -> list[Cell]:
+    """Decode NES OAM sprites to CRAM-word Cells. CHR/PALRAM/ppuctrl passed
+    explicitly so callers with a separate CHR ref (transition bundles) can
+    reuse this. `slots` = iterable of OAM indices to include (None = all 64);
+    pass range(0x10, 0x14) for Link-only."""
+    sprite_8x16 = bool(ppuctrl & 0x20)
+    spr_table = 1 if (ppuctrl & 0x08) else 0
+    idxs = range(64) if slots is None else slots
     cells = []
-    for i in range(64):
-        y, tile, attr, x = nb.oam[i*4:i*4+4]
+    for i in idxs:
+        y, tile, attr, x = oam[i*4:i*4+4]
         if y >= 0xEF:  # off-screen / unused
             continue
         sx = x; sy = (y + 1) & 0xFF
         subpal = attr & 3
         hflip = (attr >> 6) & 1
         vflip = (attr >> 7) & 1
-        if nb.sprite_8x16:
+        if sprite_8x16:
             top_tile = tile & 0xFE
             table = tile & 1
             tiles = [(top_tile, table, 0), (top_tile + 1, table, 8)]
         else:
-            tiles = [(tile, nb.spr_table, 0)]
+            tiles = [(tile, spr_table, 0)]
         for t, table, dy in tiles:
-            grid = nes_tile_2bpp(nb.chr, t, table)
+            grid = nes_tile_2bpp(chr_, t, table)
             px = [[None]*8 for _ in range(8)]
             for r in range(8):
                 for c in range(8):
                     idx = grid[r][c]
                     if idx == 0:
                         continue  # transparent
-                    nes_col = nb.palram[0x10 + subpal*4 + idx]
+                    nes_col = palram[0x10 + subpal*4 + idx]
                     px[r][c] = nes_to_cram(lut, nes_col)
             if hflip:
                 px = [list(reversed(row)) for row in px]
             if vflip:
                 px = list(reversed(px))
-            cells.append(Cell(sx, (sy + dy) & 0x1FF, px, f"OAM{i}t${t:02X}p{subpal}"))
+            cells.append(Cell(sx, (sy + dy) & 0x1FF, px,
+                              f"OAM{i}t${t:02X}p{subpal}f{hflip}{vflip}"))
     return cells
 
-def gen_sprites(gb: GenBundle, lut) -> list[Cell]:
+def nes_sprites(nb: NesBundle, lut) -> list[Cell]:
+    return nes_sprites_with_chr(nb.oam, nb.chr, nb.palram, nb.ppuctrl, lut)
+
+def _cram_word_raw(cram: bytes, slot: int) -> int:
+    return (cram[slot*2] << 8) | cram[slot*2 + 1]
+
+def gen_sprites_with_vram(sat: bytes, vram: bytes, cram: bytes) -> list[Cell]:
+    """Decode Genesis SAT sprites to CRAM-word Cells. SAT (>=512B at the VDP
+    SAT base), VRAM (full 64KB ref), CRAM (128B) passed explicitly so callers
+    with a separate VRAM ref (transition bundles) can reuse this."""
     cells = []
     # Walk the SAT link chain from slot 0 (active sprites only).
     slot = 0
     seen = set()
     order = []
-    while slot not in seen and slot < 64:
+    # 7-bit link field → valid slots 0..127 (MD H40 = up to 80 sprites). The
+    # prior `< 64` cap silently dropped slots 64..79; use the full link range.
+    while slot not in seen and slot < 128:
         seen.add(slot)
         order.append(slot)
-        link = gb.sat[slot*8 + 3] & 0x7F
+        link = sat[slot*8 + 3] & 0x7F
         if link == 0:
             break
         slot = link
     for s in order:
-        b = gb.sat[s*8:s*8+8]
+        b = sat[s*8:s*8+8]
         yy = ((b[0] << 8) | b[1]) & 0x3FF
         vsize = (b[2] & 3) + 1
         hsize = ((b[2] >> 2) & 3) + 1
@@ -206,14 +226,14 @@ def gen_sprites(gb: GenBundle, lut) -> list[Cell]:
         for cx in range(hsize):
             for cy in range(vsize):
                 t = (tile + cx * vsize + cy) & 0x7FF
-                grid = gen_tile_4bpp(gb.vram, t)
+                grid = gen_tile_4bpp(vram, t)
                 px = [[None]*8 for _ in range(8)]
                 for r in range(8):
                     for c in range(8):
                         idx = grid[r][c]
                         if idx == 0:
                             continue
-                        px[r][c] = gb.cram_word(pal*16 + idx)
+                        px[r][c] = _cram_word_raw(cram, pal*16 + idx)
                 gcx, gcy = cx, cy
                 if hflip:
                     gcx = hsize - 1 - cx
@@ -222,8 +242,11 @@ def gen_sprites(gb: GenBundle, lut) -> list[Cell]:
                     gcy = vsize - 1 - cy
                     px = list(reversed(px))
                 cells.append(Cell(sx + gcx*8, sy + gcy*8, px,
-                                  f"SAT{s}t${t:03X}p{pal}"))
+                                  f"SAT{s}t${t:03X}p{pal}f{hflip}{vflip}"))
     return cells
+
+def gen_sprites(gb: GenBundle, lut) -> list[Cell]:
+    return gen_sprites_with_vram(gb.sat, gb.vram, gb.cram)
 
 # --------------------------------------------------------- BG cells ------
 def nes_bg_cells(nb: NesBundle, lut) -> list[Cell]:

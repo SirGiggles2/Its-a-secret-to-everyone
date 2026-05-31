@@ -10,6 +10,7 @@
 
 #include "audio_adapter.h"
 #include "sfx_pcm.h"
+#include "../../data/audio/sfx_pcm_stairs.h"  /* NES cave stairs SFX (#8 / XGM id 71), synth */
 #include "platform_abi.h"   /* nes_ram (A4-pinned) for probe sentinels */
 #include "../../data/audio_music/ow_theme_vgm.h"
 #include <z80_ctrl.h>
@@ -45,6 +46,9 @@ void audio_xgm_init(void)
                    sfx_pcm_table[i].data,
                    sfx_pcm_table[i].len);
     }
+    /* SFX #8 = NES cave stairs (XGM id 71 = SFX_PCM_ID_BASE + 7), synthesized
+     * separately from the DMC bank (it is an APU-noise sound, not a sample). */
+    XGM_setPCM(SFX_PCM_STAIRS_ID, sfx_pcm_stairs, SFX_PCM_STAIRS_LEN);
 }
 
 void audio_music_play(unsigned char song)
@@ -72,7 +76,9 @@ void audio_music_play(unsigned char song)
 void audio_sfx_play(unsigned char sfx)
 {
     if (!xgm_initialized) audio_xgm_init();
-    if (sfx == 0 || sfx > SFX_PCM_COUNT) return;
+    /* 1..SFX_PCM_COUNT = DMC bank; SFX_PCM_COUNT+1 (=8) = synth stairs SFX,
+     * which maps to SFX_PCM_ID_BASE+(8-1)=71=SFX_PCM_STAIRS_ID below. */
+    if (sfx == 0 || sfx > SFX_PCM_COUNT + 1) return;
 
     SoundPCMChannel chan = (SoundPCMChannel)(SOUND_PCM_CH2 + sfx_next_channel);
     sfx_next_channel = (sfx_next_channel + 1) % 3;
