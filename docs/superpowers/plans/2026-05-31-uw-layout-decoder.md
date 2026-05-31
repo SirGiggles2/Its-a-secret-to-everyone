@@ -70,6 +70,45 @@ makes BG render for ALL rooms, permanently.
   THEN sweep all 171 captured rooms (Gate A). Distinctive-tile rooms (arches
   $94/$B4, stairs $68) give a stronger alignment signal than $74.
 
+## CRACKED (2026-05-31) — decoder verified byte-exact, RULE ZERO
+
+The LayoutUWFloor decode is SOLVED + byte-verified against the captured blob
+(ground truth), no ROM launch. Tools: `tools/builder/match_uw_nt.py` (single
+room align) + `tools/builder/verify_uid_offset.py` (all-blocks sweep).
+
+**Two bugs were blocking it:**
+1. `extract_uw_collision.decode_heap_column` does `pos += 1` past the high-bit
+   COLUMN-MARKER byte before the row loop — but NES `@FoundColumn` sets `$04`
+   AT the marker and `@LoopSquareRow` reads it as ROW 0. Off-by-one: the
+   shipping decoder drops the first row descriptor. Corrected decoder backs
+   `pos -= 1` so the marker IS row 0.
+2. The unique_room_id that indexes `RoomLayoutsUW` is NOT
+   `LBA_D[room]&0x3F` straight from dungeons.c — it needs **+22**, and LBA_D
+   must be read from the CORRECT per-(block,quest) LevelBlock sub-table D
+   (`LevelBlockUW{1|2}Q{1|2}` +0x180), not a flat `data[0x180+room]`.
+
+**The proven rule (UNANIMOUS, delta=22 across all 4 blocks):**
+```
+uid = (data[LevelBlock{UW1|UW2}Q{1|2}.off + 0x180 + room] & 0x3F) + 22
+cols[c] = decode_marker_inclusive(ColumnHeapUW{hi}, lo)  for desc in RoomLayoutsUW[uid*12 : +12]
+square[c][r] (c 0..11, r 0..6), WriteSquareUW expand:
+  Type1 ($70<=p<$F3): TL=p, BL(+1 down)=p+1, TR(+$16 right)=p+2, BR=p+3
+  Type2: all four = p
+place into 22x32 blob: corner (dx,dy) -> nt[(4+2r+dy)*32 + (4+2c+dx)]
+```
+**Verified:** exact floor match 202/202 (UW1Q1), 164/164 (UW1Q2), 112/112
+(UW2Q1), 108/108 (UW2Q2) = 586/586 rooms whose floor has no door/stair
+intrusion. The remaining 40 captured rooms match the floor but have
+doors/stairs that intrude the 4..27 x 4..17 interior — those need the door/
+stair OVERLAY layer (next), not a different uid (still du+22).
+
+**Remaining for a full byte-exact generator (Gate A vs all 626 blobs):**
+- WALL/border template (rows 0-3,18-21 + cols 0-3,28-31): constant per block;
+  lift from a captured sibling or port the room-frame writer.
+- DOOR/stair overlay: per-room door type from LevelBlock sub-tables ->
+  port WriteDoor/stair tiles into the wall bands + (for the 40) interior.
+- Then regen the blob INCLUDING uncaptured boss rooms; black rooms gone.
+
 ## Verification
 - Gate A (offline): generated nt == captured nt for all 171 rooms (0 byte diff).
 - Gate B (live): `run_dungeon_sweep.py` L1-L9 still 171/171; spot-probe boss
