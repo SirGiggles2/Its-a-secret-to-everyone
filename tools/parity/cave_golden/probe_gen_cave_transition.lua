@@ -20,8 +20,17 @@
 -- Genesis domains (genplus-gx): "68K RAM" (NES mirror @ $8000+addr),
 -- "VRAM" (SAT @ $F800 per _oam_dma_flush; planes $C000/$E000), "CRAM" (128B).
 --
--- Globals (run_*_transition.py prelude or manual):
---   CAVE_ID, QUEST, OUT_DIR, OW_ROOM.
+-- Globals (CAVE_ID/QUEST/OW_ROOM/OUT_DIR). Read a PLAIN-TEXT cfg
+-- C:\tmp\_cave_cfg.txt = "<cave_hex> <ow_hex>" via io.open+match (NOT dofile —
+-- dofile is broken in this NLua build; io.open works). Launch probe DIRECTLY.
+do
+    local cf = io.open("C:\\tmp\\_cave_cfg.txt", "r")
+    if cf then
+        local line = cf:read("*l") or ""; cf:close()
+        local c, o = line:match("(%x+)%s+(%x+)")
+        if c then CAVE_ID = tonumber(c, 16); OW_ROOM = tonumber(o, 16) end
+    end
+end
 
 CAVE_ID = CAVE_ID or 0x6A
 QUEST   = QUEST   or 1

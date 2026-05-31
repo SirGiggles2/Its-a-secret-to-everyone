@@ -26,8 +26,20 @@
 -- ⚠ REQUIRES NesHawk (config.ini PreferredCores NES=NesHawk): the CHR
 -- reference dump reads the "VRAM" domain (CHR-RAM), absent on quickerNES.
 --
--- Globals (run_*_transition.py prelude or manual):
---   CAVE_ID (0x6A..0x7D), QUEST (1/2), OW_ROOM (host OW room), OUT_DIR.
+-- Globals (CAVE_ID/QUEST/OW_ROOM/OUT_DIR). The sweep runner writes a PLAIN-TEXT
+-- cfg C:\tmp\_cave_cfg.txt = "<cave_hex> <ow_hex>" (e.g. "6B 06") which this
+-- probe reads with io.open+match. NOT dofile — dofile is broken in this NLua
+-- build (both --lua-prelude->dofile and probe->dofile produce no output), but
+-- io.open works (it's how the probe writes its bundles). Launch the probe
+-- DIRECTLY as --lua (the path proven for $6A).
+do
+    local cf = io.open("C:\\tmp\\_cave_cfg.txt", "r")
+    if cf then
+        local line = cf:read("*l") or ""; cf:close()
+        local c, o = line:match("(%x+)%s+(%x+)")
+        if c then CAVE_ID = tonumber(c, 16); OW_ROOM = tonumber(o, 16) end
+    end
+end
 
 CAVE_ID = CAVE_ID or 0x6A
 QUEST   = QUEST   or 1
