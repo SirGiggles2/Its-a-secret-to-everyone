@@ -1514,7 +1514,14 @@ static void edge_load_or_clamp(void)
         if (players[0].x < UW_WALK_EDGE_WEST_X)  players[0].x = UW_WALK_EDGE_WEST_X;
         if (players[0].x > UW_WALK_EDGE_EAST_X)  players[0].x = UW_WALK_EDGE_EAST_X;
         if (players[0].y < UW_WALK_EDGE_NORTH_Y) players[0].y = UW_WALK_EDGE_NORTH_Y;
-        if (players[0].y > 0xD5)                 players[0].y = 0xD5;
+        /* Floor clamp $D5 — but NOT during the cave_fade emerge: LINK_EMERGE
+         * walks players[0].y UP from the $DD spawn to the $D5 floor, and the
+         * spawn ($DD=221) is BELOW $D5 (213), so clamping here teleports the
+         * sprite straight to the floor on emerge frame 0 (the RAM ObjY still
+         * animates via the emerge handler -> Tier-A ObjY passed, but the
+         * on-screen Link never walked up). Let cave_fade own Y until it
+         * releases; clamp only applies to normal in-cave gameplay. */
+        if (!cave_fade_is_active() && players[0].y > 0xD5) players[0].y = 0xD5;
         return;
     }
 
