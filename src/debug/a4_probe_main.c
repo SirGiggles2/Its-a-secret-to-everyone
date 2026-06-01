@@ -6,13 +6,15 @@
 #include "intro_phase.h"
 #include "render_abi.h"
 #include "roomrom_debug_runtime.h"
+#include "roomrom_main_state.h"   /* roomrom_main_set_quest */
 
 #define A4_EXPECTED 0x00FF8000UL
 #define PROBE_BASE ((volatile u8 *) 0x00FF7000UL)
 #define ABS_RAM ((volatile u8 *) 0x00FF8000UL)
 #define VDP_CTRL_WORD (*(volatile u16 *) 0x00C00004UL)
 #define PASS_FRAME_LIMIT 180U
-#define CHORD_DEBUG (BUTTON_A | BUTTON_B | BUTTON_C)
+#define CHORD_DEBUG    (BUTTON_A | BUTTON_B | BUTTON_C)  /* boot quest 1 */
+#define CHORD_DEBUG_Q2 (BUTTON_X | BUTTON_Y | BUTTON_Z)  /* boot quest 2 */
 
 /* 2026-05-19 — MODE button at title enters debug tile-grid scene for
  * atlas byte-diff against the custom NES test ROM. Pattern mirrors
@@ -122,6 +124,8 @@ static void debug_poll_title(void)
     u16 joy;
     u16 was_chord;
     u16 is_chord;
+    u16 was_q2;
+    u16 is_q2;
 
     probe_check(2U);
     SYS_doVBlankProcess();
@@ -133,6 +137,8 @@ static void debug_poll_title(void)
     joy = JOY_readJoypad(JOY_1);
     was_chord = (u16)(s_prev_joy & CHORD_DEBUG);
     is_chord = (u16)(joy & CHORD_DEBUG);
+    was_q2 = (u16)(s_prev_joy & CHORD_DEBUG_Q2);
+    is_q2 = (u16)(joy & CHORD_DEBUG_Q2);
 
     /* C+START chord edge-press -> debug tile-grid scene (never returns).
      * Both buttons are 3-button readable so works in BizHawk default
@@ -153,8 +159,13 @@ static void debug_poll_title(void)
     }
     s_prev_joy = joy;
 
-    if (is_chord == CHORD_DEBUG && was_chord != CHORD_DEBUG)
     {
+        unsigned char abc_edge = (is_chord == CHORD_DEBUG && was_chord != CHORD_DEBUG) ? 1u : 0u;
+        unsigned char xyz_edge = (is_q2 == CHORD_DEBUG_Q2 && was_q2 != CHORD_DEBUG_Q2) ? 1u : 0u;
+    if (abc_edge || xyz_edge)
+    {
+        /* X+Y+Z (6-button pad) boots into 2nd quest; A+B+C boots 1st. */
+        roomrom_main_set_quest(xyz_edge ? 2u : 1u);
         s_state = COMBINED_STATE_ROOMROM;
         probe_publish();
         roomrom_debug_enter();
@@ -173,6 +184,7 @@ static void debug_poll_title(void)
          * the L1Q1 dungeon song. Real per-level dispatch lands when
          * roomrom_debug_enter exposes its level/quest selection. */
         music_play(0x40);  /* NES Z1 SongRequest bit 6 = dungeon song */
+    }
     }
 }
 

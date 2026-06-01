@@ -1763,7 +1763,7 @@ void roomrom_debug_enter(void)
      * so seed it here too (0=OW, 1=UW L1). */
     if (s_scene == SCENE_UW) {
         nes_ram[0x0010u] = 1u;  /* CurLevel = 1 (UW L1) */
-        level_info_install_uw(1u, 1u);
+        level_info_install_uw(1u, s_current_quest);  /* X+Y+Z boot -> quest 2 */
     } else {
         nes_ram[0x0010u] = 0u;  /* CurLevel = 0 (OW) */
         level_info_install_ow();
@@ -2570,8 +2570,8 @@ void roomrom_debug_tick(void)
             /* 2026-05-17 — level_info_install_* RESTORED; mirror writes
              * to $FF867E..$FF8C7D land in SGDK heap free-pool. */
             if (s_scene == SCENE_UW) {
-                /* CurLevel ($0010) was set from cell $07F6 in the seed block. */
-                level_info_install_uw(nes_ram[0x0010u], 1u);
+                /* CurLevel ($0010) was set from cell $07FA in the seed block. */
+                level_info_install_uw(nes_ram[0x0010u], s_current_quest);
                 /* G4: the flat level_info_install leaves the room-flags
                  * pointer ($6BAF/$6BB0) misaligned. Force it to a clean
                  * post-LevelInfo scratch array ($6C80, just past the 256-byte
