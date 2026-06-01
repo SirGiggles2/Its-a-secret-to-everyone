@@ -3013,16 +3013,20 @@ void roomrom_debug_tick(void)
                         s_link_anim_tick = 0u;
                     }
                     link_nes_move_object(moving_dir);
-                } else if (!cave_fade_is_active()) {
-                    /* Idle reset of the walk pose to frame 0 — but NOT during
-                     * cave_fade: the descent/emerge walk animation is owned by
-                     * cave_fade_anim_tick_handler (6-frame ObjAnimFrame cadence,
-                     * s_link_frame). With no D-pad input the cave_fade descent
-                     * would hit this branch every frame and clobber s_link_frame
-                     * back to 0, freezing Link in the standing pose (the real
-                     * cause of the static frame-0 sprite during the sink). Let
-                     * the anim_tick frame survive to the set_link_pose draw. */
-                    s_link_frame = 0u;
+                } else {
+                    /* NES AnimateObjectWalking (Z_07.asm:5045) advances
+                     * ObjAnimCounter only while the object is MOVING; on stop it
+                     * FREEZES the walk pose at the current frame — it does NOT
+                     * snap to frame 0 (live-proven: cave emerge settle holds
+                     * ObjAnimCounter=5 / ObjAnimFrame=1 frozen). Match that: hold
+                     * s_link_frame, reset only the sub-frame tick so the next
+                     * walk re-times cleanly. Fixes two things:
+                     *  - cave_fade descent: the anim is owned by
+                     *    cave_fade_anim_tick_handler; the old `s_link_frame = 0`
+                     *    clobbered it every no-input frame (static frame-0 sink).
+                     *  - cave post-emerge settle: NES holds the last emerge walk
+                     *    frame while Link stands; the old reset snapped Gen to
+                     *    frame 0 (the bulk of the emerge sprite diff). */
                     s_link_anim_tick = 0u;
                 }
             }
