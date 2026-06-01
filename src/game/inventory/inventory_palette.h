@@ -17,6 +17,7 @@ extern const unsigned char k_inventory_uw_palram_lv[10][32];
 
 /* Load subscreen palette into Genesis CRAM PAL0-PAL3. uw!=0 selects the UW
  * (dungeon) palette for `level` (1..9, per-level dungeon tint); else OW. */
-void inventory_palette_load_subscreen(unsigned char uw, unsigned char level);
+void inventory_palette_load_subscreen(unsigned char uw, unsigned char level,
+                                      unsigned char quest);
 
 #endif

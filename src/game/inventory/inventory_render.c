@@ -21,6 +21,7 @@
 #include "inventory_sprite_chr.h"
 #include "../../../RoomRom/src/roomrom_main_state.h"  /* roomrom_main_current_scene */
 #include "../dungeon/uw_render.h"  /* roomrom_uw_room_render_get_level */
+#include "../dungeon/uw_map_data.h"     /* UW_QI / UW_DOOR_BLOCK + tables */
 #include "../dungeon/uw_map_builder.h"  /* G4 dynamic dungeon-map builder +
                                          * uw_map_rotation/triforce, driven by
                                          * the self-contained live-NES-captured
@@ -684,9 +685,9 @@ static void draw_item_sprites(void)
             /* CurLevel ($0010) is set reliably on the MODE toggle (s_uw_level
              * is not), so index the per-level map config by it. */
             unsigned char  level = nes_ram[0x0010u];
-            /* Per-level map rotation from the live-NES-captured table
-             * (uw_map_rotation -> k_uw_map_rot, all 9 levels). */
-            unsigned char  rot   = uw_map_rotation(level);
+            unsigned char  quest = roomrom_main_current_quest();  /* 1 or 2 */
+            /* Per-level/quest map rotation from the live-NES-captured table. */
+            unsigned char  rot   = uw_map_rotation(level, quest);
             unsigned short rx  = (rot < 8u)
                 ? (unsigned short)(rot << 3)
                 : (unsigned short)(0u - (unsigned short)((16u - rot) << 3));
@@ -698,15 +699,15 @@ static void draw_item_sprites(void)
              * LevelInfo_StatusBarMapXOffset ($6BAC, k_uw_sbxoff) which centers
              * each dungeon's mini-map in the status bar; Y scrolled. */
             {
-                extern const unsigned char k_uw_sbxoff[10];
+                extern const unsigned char k_uw_sbxoff[2][10];
                 short sbx = (level >= 1u && level <= 9u)
-                          ? (short)(signed char)k_uw_sbxoff[level] : 0;
+                          ? (short)(signed char)k_uw_sbxoff[UW_QI(quest)][level] : 0;
                 draw_marker_sprite((unsigned short)(((room & 0x0Fu) << 3) + 0x12u + sbx),
                                    (unsigned short)(((room & 0x70u) >> 2) + 0x17u + 175u),
                                    RENDER_PAL1, DSPR(8));
                 /* Triforce/compass map marker: same status-bar formula on
                  * TriforceRoomId (NES sub-pal 3 -> PAL3). */
-                unsigned char tr = uw_map_triforce_room(level);
+                unsigned char tr = uw_map_triforce_room(level, quest);
                 /* Marker tile DSPR(14) dot = pixel index 9; drawn with PAL1
                  * whose index 9 (CRAM 25) is loaded per-level with the NES
                  * SPR sub-pal3[1] tint on enter (the per-level dungeon accent
@@ -741,12 +742,13 @@ void inventory_subscreen_enter(void)
      * visited/door state (NES Submenu_WriteSheetMapRowTransferRecord).
      * write_inventory_row overlays it onto the static UW frame. */
     if (s_subscreen_uw) {
-        uw_map_build(nes_ram[0x0010u], s_uw_map_grid);
+        uw_map_build(nes_ram[0x0010u], roomrom_main_current_quest(), s_uw_map_grid);
     }
 
     /* L4 (Phase 7 v2): swap CRAM to NES subscreen palette before any
      * BG/sprite write so first rendered frame is correctly colored. */
-    inventory_palette_load_subscreen(s_subscreen_uw, nes_ram[0x0010u]);
+    inventory_palette_load_subscreen(s_subscreen_uw, nes_ram[0x0010u],
+                                     roomrom_main_current_quest());
 
     /* G4: load the per-level triforce-marker tint into the otherwise-free
      * PAL1 index 9 (CRAM 25). The NES SPR sub-pal3[1] is the per-level
@@ -754,10 +756,11 @@ void inventory_subscreen_enter(void)
      * index 9, drawn PAL1) gets its color here, after the full-palette load. */
     if (s_subscreen_uw) {
         extern unsigned short roomrom_bg_palette_nes_to_cram(unsigned char);
-        extern const unsigned char k_uw_marker_color[10];
+        extern const unsigned char k_uw_marker_color[2][10];
         unsigned char lvl = nes_ram[0x0010u];
+        unsigned char qi  = UW_QI(roomrom_main_current_quest());
         unsigned short c = (lvl >= 1u && lvl <= 9u)
-            ? roomrom_bg_palette_nes_to_cram(k_uw_marker_color[lvl]) : 0u;
+            ? roomrom_bg_palette_nes_to_cram(k_uw_marker_color[qi][lvl]) : 0u;
         *((volatile unsigned long *)0xC00004u)  = 0xC0000000UL
                                                 | ((unsigned long)(25u * 2u) << 16);
         *((volatile unsigned short *)0xC00000u) = c;

@@ -5,6 +5,8 @@
 -- = "M68K BUS" @ $FF8000+off (NO "68K RAM"); BG/CRAM use VRAM/CRAM domains.
 OUT_DIR = OUT_DIR or "C:/tmp/pause_golden"
 SWEEP_LEVELS = SWEEP_LEVELS or {1,2,3,4,5,6,7,8,9}
+BOOT_CHORD = BOOT_CHORD or "abc"   -- "abc" -> quest 1, "xyz" -> quest 2
+local QSUF = (BOOT_CHORD == "xyz") and "_q2" or ""
 -- Work-RAM domain varies by core: genplus = "68K RAM" (64KB, nes_ram@$8000);
 -- Waterbox genplus = "M68K BUS" (16MB, nes_ram@$FF8000). Detect at runtime
 -- (after the core is up) — never assume (RULE V3).
@@ -26,7 +28,10 @@ local OFF_IN_GAMEPLAY=0x0274
 
 local function boot()
     for f=1,1500 do
-        if f>=30 and f<=700 and (f%30)==0 then joypad.set({["P1 A"]=true,["P1 B"]=true,["P1 C"]=true}) end
+        if f>=30 and f<=700 and (f%30)==0 then
+            if BOOT_CHORD=="xyz" then joypad.set({["P1 X"]=true,["P1 Y"]=true,["P1 Z"]=true})
+            else joypad.set({["P1 A"]=true,["P1 B"]=true,["P1 C"]=true}) end
+        end
         emu.frameadvance()
         if lr(OFF_IN_GAMEPLAY)==1 then joypad.set({}); idle(60); return true end
     end
@@ -59,7 +64,7 @@ LOG("=== gen_sweep start dom="..tostring(WD).." ===")
 if not boot() then LOG("BOOT FAIL"); client.exit(); return end
 LOG("booted in_gameplay="..lr(OFF_IN_GAMEPLAY).." scene="..scene())
 for _,L in ipairs(SWEEP_LEVELS) do
-    OUT=string.format("%s/gen_uw_L%d",OUT_DIR,L)
+    OUT=string.format("%s/gen_uw%s_L%d",OUT_DIR,QSUF,L)
     os.execute('if not exist "'..OUT:gsub("/","\\")..'" mkdir "'..OUT:gsub("/","\\")..'"')
     if not go(0) then LOG(string.format("L%d FAIL reach OW (scene=%d)",L,scene())) end
     nw(0x07FA, L)                          -- target level cell $07FA (free)

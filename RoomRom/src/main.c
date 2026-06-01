@@ -2519,12 +2519,13 @@ void roomrom_debug_tick(void)
                  * get clobbered — use the free $07FA/$07FB pair. Start room
                  * from the live-NES-captured k_uw_map_start table; the dynamic
                  * pause map (uw_map_build) reads the matching k_uw_* data. */
-                extern const unsigned char k_uw_map_start[10];
+                extern const unsigned char k_uw_map_start[2][10];
                 unsigned char uw_lvl = nes_ram[0x07FAu];
+                unsigned char uw_qi  = (s_current_quest == 2u) ? 1u : 0u;
                 if (uw_lvl < 1u || uw_lvl > 9u) uw_lvl = 1u;
                 nes_ram[0x0010u] = uw_lvl;          /* CurLevel for the install */
                 nes_ram[0x07FBu] = uw_lvl;          /* echo for probe verify */
-                s_room_id = k_uw_map_start[uw_lvl];
+                s_room_id = k_uw_map_start[uw_qi][uw_lvl];
                 /* Spawn Link at the south doorway of the entrance room
                  * (NES InitMode3_Sub2 entry: ObjX=$78, ObjY=$DD). */
                 players[0].x = 0x78;

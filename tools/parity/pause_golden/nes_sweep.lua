@@ -5,6 +5,8 @@
 -- reviewed pause_capture_nes.lua.
 OUT_DIR = OUT_DIR or "C:/tmp/pause_golden"
 SWEEP_LEVELS = SWEEP_LEVELS or {1,2,3,4,5,6,7,8,9}
+QN = QN or 0                  -- QuestNumbers: 0 = 1st quest, 1 = 2nd
+local QSUF = (QN == 0) and "" or ("_q" .. (QN + 1))
 
 local CELL_FRAME_COUNTER=0x0015; local CELL_CUR_LEVEL=0x0010; local CELL_GAME_MODE=0x0012
 local CELL_ROOM_ID=0x00EB; local CELL_SCROLL_PROG=0x005E; local CELL_MENU_STATE=0x00E1
@@ -38,6 +40,8 @@ local function poke_full_inventory()
     W(0x0670,0xFF) W(0x0671,0xFF) W(0x0674,0x01) W(0x0675,0x01) W(0x0676,0x02) W(0x067C,0x10)
     W(0x0656,0x00) idle(2) end
 local function warp(L)
+    SBw(0x062D,QN); SBw(0x062E,QN); SBw(0x062F,QN)
+    SBw(0x651B,QN); SBw(0x651C,QN); SBw(0x651D,QN)
     SBw(0x0010,L); SBw(0x005B,0x02); SBw(0x0602,0x02); SBw(0x0012,0x10)
     for _=1,300 do emu.frameadvance()
         if SBr(0x0012)==0x05 and SBr(0x0013)==0 and SBr(0x0010)==L then break end end
@@ -68,7 +72,7 @@ if not boot_to_gameplay() then HB("BOOT FAIL"); client.exit(); return end
 HB("booted gm=$"..string.format("%02X",R(CELL_GAME_MODE)))
 poke_full_inventory()
 for _,L in ipairs(SWEEP_LEVELS) do
-    OUT = string.format("%s/nes_uw_L%d", OUT_DIR, L)
+    OUT = string.format("%s/nes_uw%s_L%d", OUT_DIR, QSUF, L)
     os.execute('if not exist "'..OUT:gsub("/","\\")..'" mkdir "'..OUT:gsub("/","\\")..'"')
     HB(string.format("L%d begin",L))
     local ok,err = pcall(function()

@@ -67,9 +67,12 @@ const unsigned char k_inventory_uw_palram_lv[10][32] = {
     {0x0Fu,0x30u,0x00u,0x12u,0x0Fu,0x16u,0x27u,0x36u,0x0Fu,0x00u,0x10u,0x30u,0x0Fu,0x16u,0x10u,0x30u,0x0Fu,0x29u,0x27u,0x17u,0x0Fu,0x02u,0x22u,0x30u,0x0Fu,0x16u,0x27u,0x30u,0x0Fu,0x0Fu,0x10u,0x30u},
 };
 
-void inventory_palette_load_subscreen(unsigned char uw, unsigned char level)
+void inventory_palette_load_subscreen(unsigned char uw, unsigned char level,
+                                      unsigned char quest)
 {
     const unsigned char *p;
+    (void)quest;  /* subscreen palette is level-indexed; identical Q1/Q2 (the
+                   * per-level tint is by dungeon number, not quest). */
     if (!uw)                             p = k_inventory_subscreen_palram;
     else if (level >= 1u && level <= 9u) p = k_inventory_uw_palram_lv[level];
     else                                 p = k_inventory_uw_palram;  /* fallback L1 */

@@ -26,15 +26,14 @@
 #ifndef UW_MAP_BUILDER_H
 #define UW_MAP_BUILDER_H
 
-/* Fill out[8][16] with the live dungeon-map glyph grid for `level` (1..9).
- * out[row][col] indexes room (row<<4 | col) in display space (post-rotate,
- * post-mask). Levels out of range -> all-blank ($F5). */
-void uw_map_build(unsigned char level, unsigned char out[8][16]);
+/* Fill out[8][16] with the live dungeon-map glyph grid for (level 1..9,
+ * quest 1..2). out[row][col] indexes room (row<<4 | col) in display space
+ * (post-rotate, post-mask). Out of range -> all-blank ($F5). */
+void uw_map_build(unsigned char level, unsigned char quest, unsigned char out[8][16]);
 
-/* Per-level LevelInfo fields, read FoeCounts-anchored from the shipped
- * rooms_dungeons[] blob (single source of truth; replaces the old
- * hand-captured L1-only tables). level 1..9; out-of-range -> 0. */
-unsigned char uw_map_rotation(unsigned char level);       /* low nibble */
-unsigned char uw_map_triforce_room(unsigned char level);  /* $6BAE */
+/* Per-level/quest LevelInfo fields from the live-NES-captured tables
+ * (uw_map_data). level 1..9, quest 1..2; out-of-range -> 0. */
+unsigned char uw_map_rotation(unsigned char level, unsigned char quest);     /* low nibble */
+unsigned char uw_map_triforce_room(unsigned char level, unsigned char quest);
 
 #endif /* UW_MAP_BUILDER_H */
