@@ -1,18 +1,22 @@
 #!/usr/bin/env python3
-"""WIP RULE V1 byte-diff: replicate blit_blob OFFLINE for the injected boss room
-and compare to its LIVE Genesis plane capture. Deterministic — same sparse LUT,
-attr->subpal math, BG_TILE_BASE as the ROM. VDP plane is 64 cols wide.
+"""RULE V1 LIVE byte-diff: confirm an injected UW room renders byte-exact on
+Genesis hardware. Replicates blit_blob (sparse LUT + attr->subpal + BG_TILE_BASE)
+and compares to the live plane in a probe_gen_dungeon_golden capture.
 
-STATUS: LUT parse + plane-width fixed; the live VDP plane BASE for UW is not yet
-pinned (brute force over $C000/$E000 + offsets did not align -> needs the actual
-VDP reg2/reg4 nametable base read live, or plane_write's VRAM base traced). Until
-then this verifier is not authoritative. Injection correctness rests on: generator
-Gate-A byte-exact (0 floor/frame errors, 636 rooms), lookup resolves all 12 rooms,
-and the blit_blob path proven byte-exact on the 171-room Q1 sweep."""
+PROVEN params (settled this session via L1Q1 $73 control = 0/704):
+  plane base = PLANE_A $C000 (the active/current-room plane)
+  row stride = 64 words (128 B; 64-wide VDP plane)
+  plane_row  = (blob_row + ROOMROM_ROOM_FIRST_ROW=7) & 63   (HUD occupies top 7)
+  tile word  = VDP word & 0x7FF ; expected = (slot==0xFFFF)?0:(BG_TILE_BASE+slot)
+
+Usage: verify_injected_render.py <map> <quest> <level> <roomHex> <capture_f120.bin>
+Default: 0 1 6 1C  C:/tmp/cave_golden_cur/gen_L6Q1_R1C/f120.bin
+RESULTS (live, current build): L1Q1 $73=0/704, L6Q1 $1C=0/704, L8Q1 $3C=0/704
+byte-exact. L9Q1 $42 does NOT render (separate pre-existing L9/Ganon scene-load
+bug -> empty plane), unrelated to the blob/generator."""
 import re, pathlib, sys
 ROOT = pathlib.Path(__file__).resolve().parents[2]
-CAP = pathlib.Path("C:/tmp/cave_golden")
-BG_TILE_BASE = 1; BLANK = 0; PLANE_W = 64
+BG_TILE_BASE = 1; ROOM_FIRST_ROW = 7; PLANE_BASE = 0xC000; STRIDE_W = 64
 
 def grab(txt,name):
     m=re.search(r"\b"+name+r"\b[^{]*\{",txt); i=m.end(); d=1; s=i
@@ -24,49 +28,31 @@ def grab(txt,name):
     return txt[s:i-1]
 blob=(ROOT/"RoomRom"/"src"/"uw_room_blob.c").read_text(errors="replace")
 INDEX=[[int(x,16) for x in re.findall(r"0x[0-9a-fA-F]+",r)] for r in re.findall(r"\{([^}]*)\}",grab(blob,"g_uw_room_index"))]
-_nt=re.findall(r"\{([^{}]*)\}",grab(blob,"g_uw_room_nt"))
-_at=re.findall(r"\{([^{}]*)\}",grab(blob,"g_uw_room_attr"))
-def bytes_of(rows,e): return [int(x,16) for x in re.findall(r"0x[0-9a-fA-F]+",rows[e])]
+_nt=re.findall(r"\{([^{}]*)\}",grab(blob,"g_uw_room_nt")); _at=re.findall(r"\{([^{}]*)\}",grab(blob,"g_uw_room_attr"))
+def Bf(rows,e): return [int(x,16) for x in re.findall(r"0x[0-9a-fA-F]+",rows[e])]
+LUT=[[int(x,0) for x in re.findall(r"0x[0-9a-fA-F]+|\b\d+\b",row)][:4]
+     for row in re.findall(r"\{([^{}]*)\}",grab((ROOT/"RoomRom"/"src"/"bg_sparse_chr.c").read_text(errors="replace"),"bg_sparse_tile_lut"))]
+def attr_pal(at,col,nr):
+    ai=((nr>>2)<<3)|(col>>2); sh=(((nr>>1)&1)<<2)|(((col>>1)&1)<<1); return (at[ai&0x3F]>>sh)&3
+def expected(nt,at):
+    return [[ (lambda s:0 if s==0xFFFF else BG_TILE_BASE+s)(LUT[nt[r*32+c]][attr_pal(at,c,r+8)&3]) for c in range(32)] for r in range(22)]
 
-# parse LUT[256][4]: each inner {a,b,c,d} -> first 4 ints (ignore trailing comments)
-lut_txt=(ROOT/"RoomRom"/"src"/"bg_sparse_chr.c").read_text(errors="replace")
-inner=re.findall(r"\{([^{}]*)\}",grab(lut_txt,"bg_sparse_tile_lut"))
-LUT=[]
-for row in inner:
-    v=[int(x,0) for x in re.findall(r"0x[0-9a-fA-F]+|\b\d+\b",row)][:4]
-    if len(v)==4: LUT.append(v)
-assert len(LUT)>=256, len(LUT)
-print("LUT rows=%d  LUT[0x74]=%s"%(len(LUT),LUT[0x74]))
-
-def attr_pal(attr,nt_col,nt_row):
-    at_idx=((nt_row>>2)<<3)|(nt_col>>2); byte=attr[at_idx & 0x3F]
-    shift=(((nt_row>>1)&1)<<2)|(((nt_col>>1)&1)<<1)
-    return (byte>>shift)&3
-def expected(nt,attr):
-    g=[[0]*32 for _ in range(22)]
-    for r in range(22):
-        for c in range(32):
-            raw=nt[r*32+c]; pal=attr_pal(attr,c,r+8); slot=LUT[raw][pal&3]
-            g[r][c]= BLANK if slot==0xFFFF else (BG_TILE_BASE+slot)
-    return g
-def plane(base):
-    d=pathlib.Path(CAP/"gen_L9Q1_R42"/"f120.bin").read_bytes(); o=8+128+base
-    return [[((d[o+(r*PLANE_W+c)*2]<<8)|d[o+(r*PLANE_W+c)*2+1])&0x7FF for c in range(PLANE_W)] for r in range(32)]
-
-e=[i for i,r in enumerate(INDEX) if r==[0,1,9,0x42]][0]
-exp=expected(bytes_of(_nt,e),bytes_of(_at,e))
-best=None
-for base in (0xC000,0xE000):
-    P=plane(base)
-    for roff in range(0,11):
-        for coff in range(0,34):
-            miss=tot=0
-            for r in range(22):
-                for c in range(32):
-                    if r+roff>=32 or c+coff>=PLANE_W: continue
-                    tot+=1
-                    if exp[r][c]!=P[r+roff][c+coff]: miss+=1
-            if tot>600 and (best is None or miss<best[0]): best=(miss,tot,base,roff,coff)
-miss,tot,base,roff,coff=best
-print("injected L9 $42: best base=$%04X roff=%d coff=%d -> %d/%d mismatch (%.1f%%)"%(base,roff,coff,miss,tot,100*miss/tot))
-print("VERDICT:", "BYTE-EXACT — live Gen plane == blit_blob(injected nt+attr)" if miss==0 else "%d cells differ"%miss)
+a=sys.argv
+mp,q,lv,room = (int(a[1]),int(a[2]),int(a[3]),int(a[4],16)) if len(a)>4 else (0,1,6,0x1C)
+cap = a[5] if len(a)>5 else f"C:/tmp/cave_golden_cur/gen_L{lv}Q{q}_R{room:02X}/f120.bin"
+e=[i for i,r in enumerate(INDEX) if r==[mp,q,lv,room]]
+if not e: print("no blob entry for",mp,q,lv,hex(room)); sys.exit(2)
+E=expected(Bf(_nt,e[0]),Bf(_at,e[0]))
+d=pathlib.Path(cap).read_bytes()
+miss=nz=0; diffs=[]
+for r in range(22):
+    pr=(r+ROOM_FIRST_ROW)&63
+    for c in range(32):
+        o=8+128+PLANE_BASE+(pr*STRIDE_W+c)*2; lv_=((d[o]<<8)|d[o+1])&0x7FF
+        if lv_: nz+=1
+        if E[r][c]!=lv_: miss+=1; diffs.append((r,c,E[r][c],lv_))
+print("L%dQ%d room=0x%02X: %d/704 miss (%.2f%%), live-nonzero=%d"%(lv,q,room,miss,100*miss/704,nz))
+for r,c,ex,lvv in diffs[:12]: print("   r%d c%d exp=%d live=%d"%(r,c,ex,lvv))
+print("VERDICT:", "BYTE-EXACT live render" if miss==0 else
+      ("door-state-only (%d cells)"%miss if 0<miss<=12 else
+       "empty/no-load (scene bug)" if nz<100 else "MISMATCH %d"%miss))

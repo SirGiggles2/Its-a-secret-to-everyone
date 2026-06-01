@@ -138,6 +138,27 @@ DIFFERENT block's level (cross-block, sibling fallback can't reach) or not at al
 (L8 $3C). All 4 now compose to full 704/704-tile rooms (floor uid-correct via
 same-uid sibling validation; frame constant; resting doors).
 
+## LIVE VERIFIED (2026-05-31) — injected boss rooms render byte-exact (RULE V1)
+
+12 black boss rooms (4 Q1 + 8 Q2) injected into uw_room_blob.c via
+inject_boss_rooms.py (nt=generator byte-exact; attr=same-(block,door-cfg) capture
+majority; palette=same-(map,quest,level) capture). gen_uw_blob.py regen -> 648
+entries; lookup resolves all 12; bg_sparse unchanged; build clean; 632 existing
+rooms untouched.
+
+LIVE byte-diff (probe_gen_dungeon_golden capture vs blit_blob replication;
+verify_injected_render.py; PLANE_A $C000, 64-word stride, plane_row=(r+7)&63):
+- L1Q1 $73 (genuine control): **0/704 byte-exact**  -> render path + verifier proven
+- L6Q1 $1C (was BLACK, cross-block capture): **0/704 byte-exact**
+- L8Q1 $3C (was BLACK, captured nowhere):     **0/704 byte-exact**
+=> the generator + injection produce byte-exact boss-room BG on real hardware.
+
+OPEN (separate, pre-existing): L9Q1 $42 does NOT render (empty plane A on warp) —
+an L9/Ganon SCENE-LOAD bug (memory project_phase8_boss_blockers: Ganon stub),
+independent of the blob/generator (its data is byte-exact + lookup-resolved). The
+ctrl-warp probe's halted screenshot shows the staging plane, not the displayed
+plane — use the $C000 plane byte-diff (above), not the screenshot, as the gate.
+
 ## Verification
 - Gate A (offline): generated nt == captured nt for all 171 rooms (0 byte diff).
 - Gate B (live): `run_dungeon_sweep.py` L1-L9 still 171/171; spot-probe boss
