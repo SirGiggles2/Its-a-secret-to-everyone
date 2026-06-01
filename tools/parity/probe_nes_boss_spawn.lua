@@ -67,9 +67,12 @@ local CIRAM_BASE, ATTR_BASE = 0x0000, 0x03C0
 local MAX_BOOT_FRAMES, MAX_WARP_FRAMES, MAX_SETTLE_FRAMES, STABLE_WINDOW = 20000, 1200, 1500, 12
 
 -- Per-level boss ObjType(s) (Z_07 InitObject_JumpTable). L9 = Patra + Ganon.
+-- L5 Digdogger room carries list_id $39 (Digdogger2 -> morphs $38 at runtime);
+-- L6 Gohma carries $34 (blue). Search the room's list_id ($39/$34) AND the
+-- runtime/red variants ($38/$33). Cross-confirmed vs LevelInfo_BossRoomId.
 local BOSS_OT = {
-  [1]={0x3D}, [2]={0x31}, [3]={0x3C}, [4]={0x43}, [5]={0x38},
-  [6]={0x33}, [7]={0x3D}, [8]={0x45}, [9]={0x47,0x3E},
+  [1]={0x3D}, [2]={0x31}, [3]={0x3C}, [4]={0x43}, [5]={0x39,0x38},
+  [6]={0x34,0x33}, [7]={0x3D}, [8]={0x45}, [9]={0x47,0x3E},
 }
 local function is_boss_ot(t)
   return (t>=0x31 and t<=0x34) or (t>=0x38 and t<=0x3E) or (t>=0x41 and t<=0x48)
