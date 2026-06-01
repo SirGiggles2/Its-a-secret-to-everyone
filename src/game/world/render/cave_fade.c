@@ -81,6 +81,12 @@ static unsigned char         s_emerge_grid    = 0u;
  * same +2 anchor as position. (Real-gameplay entry phase varies +-1 within NES's
  * own range, so this is the capture-matching choice, not an overfit.) */
 #define CAVE_ANIM_ENTRY_SEED 4u
+/* Emerge re-seed: NES InitMode_WalkCave restarts the walk anim at the emerge
+ * (ObjAnimFrame=0, ObjAnimCounter re-seeded) so Link holds pose 0 through the
+ * short walk-up and flips to pose 1 right as he settles at the $D5 floor.
+ * Without re-seeding, the Gen emerge carries the frozen descent-end frame
+ * (pose 1) and runs 1 pose ahead of NES for the whole emerge walk. */
+#define CAVE_ANIM_EMERGE_SEED 4u
 static unsigned char         s_anim_counter   = CAVE_ANIM_PERIOD;
 static unsigned char         s_anim_frame     = 0u;
 /* Cave-load hold: NES holds Link at the descent-end Y while GameMode $0B
@@ -239,6 +245,10 @@ void cave_fade_tick(void)
         s_emerge_y       = CAVE_EMERGE_SPAWN_Y;
         s_emerge_posfrac = 0u;
         s_emerge_grid    = CAVE_EMERGE_GRID0;
+        /* Re-seed the walk anim for the emerge (NES InitMode_WalkCave restarts
+         * it): hold pose 0 through the walk-up, flip to pose 1 at the settle. */
+        s_anim_frame     = 0u;
+        s_anim_counter   = CAVE_ANIM_EMERGE_SEED;
         s_phase          = CAVE_FADE_LINK_EMERGE;
         break;
 
