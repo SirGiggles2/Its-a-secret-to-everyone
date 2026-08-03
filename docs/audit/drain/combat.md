@@ -22,10 +22,10 @@
 | `src/game/combat/combat_runtime.c` | `roomrom_combat_set_redux` | 105 | no |
 | `src/game/combat/combat_runtime.c` | `roomrom_combat_set_uw` | 97 | no |
 | `src/game/combat/combat_runtime.c` | `roomrom_combat_try_swing` | 196 | no |
-| `src/game/combat/combat_runtime.c` | `roomrom_combat_update` | 286 | no |
-| `src/game/combat/combat_runtime.c` | `spawn_beam` | 275 | no |
+| `src/game/combat/combat_runtime.c` | `roomrom_combat_update` | 284 | no |
+| `src/game/combat/combat_runtime.c` | `spawn_beam` | 273 | no |
 | `src/game/combat/combat_runtime.c` | `sword_blocked_by_bubble` | 190 | no |
-| `src/game/combat/combat_runtime.c` | `sword_style_allows_beam` | 260 | no |
+| `src/game/combat/combat_runtime.c` | `sword_style_allows_beam` | 258 | no |
 | `src/game/combat/combat_runtime.c` | `sword_subpal_for_items` | 82 | no |
 | `src/game/combat/combat_runtime.c` | `update_beam` | 227 | no |
 | `src/oracle/combat/collision_runtime.c` | `colrt_check_monster_arrow_or_rod_collision` | 167 | no |

@@ -25,6 +25,11 @@
       "system": "perf",
       "axis": "DATA",
       "reason": "Performance measurement owns no assets; frame timing is not a data-parity question."
+    },
+    {
+      "system": "builder",
+      "axis": "DATA",
+      "reason": "The builder produces NES-derived assets, it does not own any. Every asset it emits is audited on the DATA axis of the system that consumes it (caves, dungeons, overworld, enemies, ...). Auditing them again here would double-count, and a builder-owned DATA cell has no NES counterpart to byte-diff against."
     }
   ]
 }

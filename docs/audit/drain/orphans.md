@@ -274,9 +274,11 @@
 | `src/oracle/enemies/enemy_projectile_runtime.c` | `enrt_init_monster_shot_unknown54` | enemies |
 | `src/oracle/enemies/enemy_projectile_runtime.c` | `enrt_shoot_fireball` | enemies |
 | `src/oracle/enemies/enemy_projectile_runtime.c` | `enrt_shoot_fireball_55` | enemies |
+| `src/oracle/enemies/enemy_projectile_runtime.c` | `enrt_update_arrow_or_boomerang` | enemies |
 | `src/oracle/enemies/enemy_projectile_runtime.c` | `enrt_update_boulder_set` | enemies |
 | `src/oracle/enemies/enemy_projectile_runtime.c` | `enrt_update_candle` | enemies |
 | `src/oracle/enemies/enemy_projectile_runtime.c` | `enrt_update_fireball` | enemies |
+| `src/oracle/enemies/enemy_projectile_runtime.c` | `enrt_update_monster_arrow` | enemies |
 | `src/oracle/enemies/enemy_projectile_runtime.c` | `enrt_update_monster_shot` | enemies |
 | `src/oracle/enemies/enemy_runtime.c` | `enrt_animate_and_draw_common_object` | enemies |
 | `src/oracle/enemies/enemy_runtime.c` | `enrt_find_empty_monster_slot` | enemies |
@@ -352,11 +354,8 @@
 | `src/game/hud/hud_runtime.c` | `roomrom_hud_draw` | hud |
 | `src/game/hud/hud_runtime.c` | `roomrom_hud_refresh_dynamic` | hud |
 | `src/game/hud/hud_runtime.c` | `roomrom_hud_refresh_marker` | hud |
+| `src/game/hud/hud_runtime.c` | `roomrom_hud_set_bottom_mode` | hud |
 | `src/game/hud/hud_runtime.c` | `roomrom_hud_upload_chr` | hud |
-| `src/game/hud/hud_runtime.c` | `upload_common_hud_chr` | hud |
-| `src/game/hud/hud_runtime.c` | `upload_common_hud_tile` | hud |
-| `src/game/hud/hud_runtime.c` | `upload_common_hud_tile_range` | hud |
-| `src/game/hud/hud_runtime.c` | `upload_redux_automap_chr` | hud |
 | `src/oracle/hud/hud_runtime.c` | `hudrt_copy_triplet_to_text_buf` | hud |
 | `src/oracle/hud/hud_runtime.c` | `hudrt_format_decimal_count_byte` | hud |
 | `src/oracle/hud/hud_runtime.c` | `hudrt_format_decimal_count_byte_in_text_buf` | hud |
