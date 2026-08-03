@@ -1,0 +1,30 @@
+{
+  "schema_version": 1,
+  "_comment": "N/A eligibility is data, not prose. Adding an entry here is a reviewable diff. See docs/superpowers/specs/2026-08-03-completion-tracker-design.md section 4 rule 6.",
+  "required_evidence_fields": [
+    "system",
+    "axis",
+    "verdict",
+    "artifact",
+    "artifact_sha256",
+    "command",
+    "verdict_line",
+    "run_signature",
+    "manifest_emitted_by",
+    "inputs"
+  ],
+  "max_artifact_bytes": 1048576,
+  "artifact_root": "docs/",
+  "na_allowlist": [
+    {
+      "system": "modes",
+      "axis": "DATA",
+      "reason": "Game-mode dispatch owns no assets or data tables; DATA parity is meaningless for this system."
+    },
+    {
+      "system": "perf",
+      "axis": "DATA",
+      "reason": "Performance measurement owns no assets; frame timing is not a data-parity question."
+    }
+  ]
+}
