@@ -102,3 +102,6 @@ reference/external/
 docs/bug_reports/*.avi
 docs/bug_reports/*.mp4
 docs/bug_reports/*.mov
+
+# Completion-tracker evidence signing key (per-repo, never committed)
+tools/audit/completion/.evidence_key
