@@ -93,35 +93,86 @@ def validate_rom(rom_path: Path) -> int:
     return 0
 
 
-def run_extractors(rom_path: Path) -> int:
-    """Run audio + CHR extractors against the user ROM.
+# How each extractor receives the ROM. Probed from the sources, not
+# assumed — the conventions are NOT uniform, and the previous code passed
+# "--rom" to all of them. Only extract_nes_banks.py accepts that flag;
+# the argparse-less scripts silently ignored it and fell back to their own
+# lookup, so the user's ROM was never actually reaching them.
+#
+#   "env"  — reads ZELDA_NES_ROM, falls back to a repo-root path
+#   "argv" — takes the ROM as sys.argv[1]
+#   "flag" — takes --rom <path>
+#   "none" — needs no ROM (reads the committed disassembly reference tree)
+EXTRACTORS: tuple[tuple[str, str], ...] = (
+    # PRG banks first: later extractors read the dat sidecars it emits.
+    ("extract_nes_banks.py", "flag"),
+    ("extract_dat_sidecars.py", "env"),
+    ("extract_chr.py", "env"),
+    ("extract_rooms.py", "env"),
+    ("extract_enemies.py", "env"),
+    ("extract_audio.py", "env"),
+    ("extract_dmc_samples.py", "argv"),
+    ("extract_frontend.py", "env"),
+    ("extract_misc.py", "env"),
+    ("extract_demo_text.py", "env"),
+    ("extract_intro_assets.py", "none"),
+)
 
-    Phase 17 scaffold: enumerates the extractors that exist as Phase
-    17.1 deliverables. Implementations land per follow-up PR.
+# Needs a CHR-RAM dump captured live from Zelda Redux, not the base ROM.
+# Cannot run unattended from a ROM path alone; see tools/extract_fs_assets.py.
+MANUAL_EXTRACTORS: tuple[tuple[str, str], ...] = (
+    (
+        "extract_fs_assets.py",
+        "requires a live CHR-RAM dump from Zelda Redux (manual capture step)",
+    ),
+)
+
+
+def run_extractors(rom_path: Path) -> int:
+    """Regenerate every ROM-derived asset from the user's NES ROM.
+
+    Sets ZELDA_NES_ROM for the whole subprocess environment so the
+    env-convention extractors see the ROM the user actually supplied
+    rather than whatever happens to sit at the repo-root fallback path.
     """
-    extractors = [
-        ROOT / "tools" / "extract_audio.py",
-        # Add CHR extractor + room blob extractor as they land.
-    ]
-    for ext in extractors:
+    env = dict(os.environ)
+    env["ZELDA_NES_ROM"] = str(rom_path)
+
+    failures: list[str] = []
+    for name, convention in EXTRACTORS:
+        ext = ROOT / "tools" / name
         if not ext.exists():
-            print(f"  skip: {ext.name} not present")
+            print(f"  MISSING: {name} — cannot regenerate its assets",
+                  file=sys.stderr)
+            failures.append(f"{name} (missing)")
             continue
-        print(f"Running {ext.name}...")
-        # Per Phase 17 plan, each extractor takes the ROM path.
-        # Implementations vary; this is a placeholder dispatch.
+
+        if convention == "flag":
+            argv = [sys.executable, str(ext), "--rom", str(rom_path)]
+        elif convention == "argv":
+            argv = [sys.executable, str(ext), str(rom_path)]
+        else:  # "env" and "none" both take no ROM argument
+            argv = [sys.executable, str(ext)]
+
+        print(f"Running {name} ({convention})...")
         try:
-            r = subprocess.run(
-                [sys.executable, str(ext), "--rom", str(rom_path)],
-                cwd=ROOT,
-                check=False,
-            )
-            if r.returncode != 0:
-                print(f"  {ext.name} exited {r.returncode}", file=sys.stderr)
-                return 1
-        except Exception as e:
-            print(f"  {ext.name} failed: {e}", file=sys.stderr)
-            return 1
+            r = subprocess.run(argv, cwd=ROOT, env=env, check=False)
+        except Exception as e:  # noqa: BLE001 — report and continue
+            print(f"  {name} failed: {e}", file=sys.stderr)
+            failures.append(f"{name} ({e})")
+            continue
+        if r.returncode != 0:
+            print(f"  {name} exited {r.returncode}", file=sys.stderr)
+            failures.append(f"{name} (exit {r.returncode})")
+
+    for name, why in MANUAL_EXTRACTORS:
+        print(f"  SKIP {name}: {why}")
+
+    if failures:
+        print(f"\n{len(failures)} extractor(s) failed:", file=sys.stderr)
+        for f in failures:
+            print(f"  - {f}", file=sys.stderr)
+        return 1
     return 0
 
 

@@ -73,16 +73,56 @@ Does NOT own:
 
 ```yaml evidence
 - system: builder
+  axis: CODE
+  verdict: GREEN
+  artifact: docs/audit/extractor_coverage_status.md
+  artifact_sha256: daa13bfefcdf0be8ef060585dc41cb4619e220767717be76696986348290bffd
+  command: python tools/builder/extractor_coverage_gate.py --emit-evidence builder
+  verdict_line: 'extractor_coverage: 11 extractor(s) wired into build.py, 1 documented
+    as manual, 12 on disk, 0 unwired'
+  manifest_emitted_by: tools/builder/extractor_coverage_gate.py
+  run_signature: 6b973c63349a009cb704d1b54e843d410f7de45d1570368b270e0d53a052cbb3
+  inputs:
+  - path: tools/builder/build.py
+    sha256: f4e8f69eaa867bce0c09d97eee6613f07191a413b2a79fa214bd4d58d62bdf78
+  - path: tools/builder/extractor_coverage_gate.py
+    sha256: 51c4a9d63b3bcd5c27b158ee2c1023dbbc6bb084ba79bf308e377c3ccadb9024
+  - path: tools/extract_nes_banks.py
+    sha256: 22d99e39ae057889bd546b24f5402321d33be1d6e9d778bfaed4e4fb15d04a84
+  - path: tools/extract_dat_sidecars.py
+    sha256: 9ff900d17c8a6c3975e7f7cb7a8893e0e7eb44b1624fa25de8fde3c51ffac0e7
+  - path: tools/extract_chr.py
+    sha256: c9719abfd1cfecb5a1e4bf22a486c722efc91e43a630bd1848e1150c5b1b7f22
+  - path: tools/extract_rooms.py
+    sha256: ba73a748709ee5a5685c040a5672576f4573b9596768dfe52a8ef69d1730f3f0
+  - path: tools/extract_enemies.py
+    sha256: 7ead21ef8f1734c827844a030d4d21c7c461b637ffdb5490231b5bef67c0da47
+  - path: tools/extract_audio.py
+    sha256: 004ef3b4124cab8923919c8d629ad45bc29f70abe62180003e18abc1a829034b
+  - path: tools/extract_dmc_samples.py
+    sha256: 12cb80af69fac7bb2dbfe7545b854bd3fb6df1b229ad5477649210604fe234be
+  - path: tools/extract_frontend.py
+    sha256: b72c6b659a99f0654e3a6f04dbb144ed64af2f1f427dfbadd9af49925fd4c532
+  - path: tools/extract_misc.py
+    sha256: 4dcd1bd924984e492ba417f95ab8b926a37f580ab6f1909c5b9663d213956bb8
+  - path: tools/extract_demo_text.py
+    sha256: 802b96e7d4f8f7e281d20ae624c03fe1bfde8d668b71e29554e10224adf08269
+  - path: tools/extract_intro_assets.py
+    sha256: 9f6a32a741efcafb953e9afe37540983735f86ee6bcee1738d67abed3f36b8dc
+```
+
+```yaml evidence
+- system: builder
   axis: DATA
   verdict: N/A
   reason: The builder produces NES-derived assets, it does not own any. Every asset
     it emits is audited on the DATA axis of the consuming system.
 ```
 
-PLAYABLE and CODE have no evidence block. Both are RED — see the gap
-list. That is deliberate: RED with a named gap is the honest state, and
-inventing an N/A allowlist entry to make the grid look better is exactly
-what the allowlist mechanism exists to prevent.
+PLAYABLE has no evidence block. It is RED — see the gap list. That is
+deliberate: RED with a named gap is the honest state, and inventing an
+N/A allowlist entry to make the grid look better is exactly what the
+allowlist mechanism exists to prevent.
 
 ## Gap list
 
@@ -94,44 +134,43 @@ without one from Jake.
 
 Blocked on: a NES Zelda 1 ROM at a known path.
 
-### CODE — RED. `build.py` wires 1 extractor of 12.
+### CODE — CLOSED 2026-08-03.
 
-`tools/builder/build.py:102-105` lists exactly one extractor:
-
-```python
-extractors = [
-    ROOT / "tools" / "extract_audio.py",
-    # Add CHR extractor + room blob extractor as they land.
-]
-```
-
-Twelve extractors exist under `tools/`: `extract_audio`, `extract_chr`,
-`extract_dat_sidecars`, `extract_demo_text`, `extract_dmc_samples`,
-`extract_enemies`, `extract_frontend`, `extract_fs_assets`,
-`extract_intro_assets`, `extract_misc`, `extract_nes_banks`,
-`extract_rooms`.
-
-Consequence, and it is the product-defining one: the shipped package
-excludes generated Nintendo-derived assets (correctly — `package_check`
-blocks 107 files), but `build.py` can only regenerate the audio subset
-from the user's ROM. A user who unpacks the public package and drags in
-their ROM cannot reconstruct CHR, rooms, enemies, frontend, intro, or
-file-select assets. `build.py:112` still calls its dispatch a
+Was RED: `build.py` wired 1 extractor of 12, and passed `--rom` to it —
+a flag only `extract_nes_banks.py` accepts. The argparse-less scripts
+silently ignored it and fell back to their own lookup, so the user's ROM
+never reached them. `build.py:112` called its own dispatch a
 "placeholder".
 
-This was invisible because the two gates that would have caught it —
-`from_scratch_gate.py` and `strict_build_check.py` — have never been run
-together against a clean tree.
+Fixed:
 
-To close:
+- All 11 ROM-relevant extractors wired, each with the calling convention
+  probed from its source rather than assumed. Three conventions exist:
+  `ZELDA_NES_ROM` env (8), `sys.argv[1]` (1), `--rom` (1), plus one that
+  needs no ROM and reads the committed disassembly tree.
+- `run_extractors()` sets `ZELDA_NES_ROM` for the subprocess environment,
+  so the env-convention extractors see the ROM the user actually supplied
+  instead of whatever sits at the repo-root fallback path.
+- Four extractors that only had the hardcoded fallback
+  (`extract_dat_sidecars`, `extract_demo_text`, `extract_frontend`,
+  `extract_misc`) now honour `ZELDA_NES_ROM` like the rest.
+- `extract_nes_banks.py:12` defaulted to an absolute path on one
+  developer's machine — impossible in a shipped builder. Now env-then-
+  repo-root.
+- `extract_fs_assets.py` is documented as manual: it needs a live CHR-RAM
+  dump from Zelda Redux, not the base ROM, so it cannot run unattended.
+- `extractor_coverage_gate.py` guards against recurrence. Adding
+  `tools/extract_foo.py` without wiring it turns the cell RED. Verified
+  by adding a canary extractor: gate exited 1, naming it.
 
-1. Wire the remaining 11 extractors into `run_extractors()`, with the
-   argument convention each one actually takes (they are not uniform —
-   `build.py` currently assumes `--rom`, which needs verifying per tool).
-2. Replace the placeholder dispatch with per-extractor invocation.
-3. Run `strict_build_check.py` on a tree with generated assets deleted;
-   require zero `STRICT GATE FAIL` lines.
-4. Run `from_scratch_gate.py <rom>` and require byte-identical A/B.
+The CODE evidence hashes all 11 extractors plus `build.py`, so editing
+any of them drops the cell to RED until re-verified.
+
+### Still open beyond this system
+
+`strict_build_check.py` has not been run against a tree with the
+generated assets deleted. That belongs to PLAYABLE, since it needs a
+real ROM to regenerate them.
 
 ## Tolerance
 

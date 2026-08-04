@@ -797,7 +797,11 @@ def main():
     z02_path = os.path.join(project_root, "reference", "aldonunez", "Z_02.asm")
     z06_path = os.path.join(project_root, "reference", "aldonunez", "Z_06.asm")
     vars_path = os.path.join(project_root, "reference", "aldonunez", "Variables.inc")
-    rom_path = os.path.join(project_root, "Legend of Zelda, The (USA).nes")
+    rom_path_env = os.environ.get("ZELDA_NES_ROM", "")
+    if rom_path_env and os.path.isfile(rom_path_env):
+        rom_path = rom_path_env
+    else:
+        rom_path = os.path.join(project_root, "Legend of Zelda, The (USA).nes")
 
     for required_path in [z02_path, z06_path, vars_path, rom_path]:
         if not os.path.exists(required_path):

@@ -190,7 +190,11 @@ def main():
 
     script_dir = os.path.dirname(os.path.abspath(__file__))
     project_root = os.path.dirname(script_dir)
-    rom_path = os.path.join(project_root, "Legend of Zelda, The (USA).nes")
+    rom_path_env = os.environ.get("ZELDA_NES_ROM", "")
+    if rom_path_env and os.path.isfile(rom_path_env):
+        rom_path = rom_path_env
+    else:
+        rom_path = os.path.join(project_root, "Legend of Zelda, The (USA).nes")
 
     if not os.path.exists(rom_path):
         print(f"ERROR: ROM not found: {rom_path}")
