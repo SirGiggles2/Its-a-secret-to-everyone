@@ -105,6 +105,17 @@ TITLE_C_SOURCES = [
     # Phase 9 Task 9.3 — File Select OPTIONS submenu (compile-only; FS
     # frontend wire-up into Debug.md gameplay path is a follow-up task).
     ("src/frontend/fs/fs_options.c", "fs_options.o"),
+    # File Select: the implementation existed but only the options
+    # submenu was linked, so Debug.md had no FS at all.
+    ("src/frontend/fs/fs_main.c",   "fs_main.o"),
+    ("src/frontend/fs/fs_render.c", "fs_render.o"),
+    ("src/frontend/fs/fs_input.c",  "fs_input.o"),
+    ("src/frontend/fs/fs_phase.c",  "fs_phase.o"),
+    ("src/frontend/fs/fs_handoff.c","fs_handoff.o"),
+    ("data/fs/fs_bg_chr_full.c",    "fs_bg_chr_full.o"),
+    ("data/fs/fs_link_sprite_chr.c","fs_link_sprite_chr.o"),
+    ("data/fs/fs_heart_cursor_chr.c","fs_heart_cursor_chr.o"),
+    ("data/fs/fs_palette.c",        "fs_palette.o"),
     ("src/frontend/fs/fs_options_render.c", "fs_options_render.o"),
     # 2026-05-19 — title-MODE-button debug tile-grid scene for atlas audit.
     ("src/game/debug/debug_tilegrid.c", "debug_tilegrid.o"),
