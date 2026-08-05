@@ -3,14 +3,6 @@
   "nes_rom_sha256": "8f72dc2e98572eb4ba7c3a902bca5f69c448fc4391837e5f8f0d4556280440ac",
   "blocks": [
     {
-      "name": "DemoTextFields",
-      "file": "demo_text.c",
-      "var_name": "text_demo_text",
-      "byte_offset": 0,
-      "byte_size": 531,
-      "ff_terminated_records": 29
-    },
-    {
       "name": "DemoLineTextAddrs",
       "file": "demo_text.c",
       "var_name": "text_demo_text",
@@ -18,6 +10,14 @@
       "byte_size": 58,
       "entry_count": 29,
       "format": "u16le_nes_cpu_addr"
+    },
+    {
+      "name": "DemoTextFields",
+      "file": "demo_text.c",
+      "var_name": "text_demo_text",
+      "byte_offset": 0,
+      "byte_size": 531,
+      "ff_terminated_records": 29
     },
     {
       "name": "ModeFTitleTransferBuf",
