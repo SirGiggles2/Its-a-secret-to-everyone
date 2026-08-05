@@ -37,11 +37,11 @@ Does NOT own:
   axis: LEGAL
   verdict: GREEN
   artifact: docs/audit/package_check_status.md
-  artifact_sha256: 09ce5a9f7ca128545d3a57e1739893d56a8e3b2820b75ebb81d7c55e53eca4f9
+  artifact_sha256: 72b23053d5a9ac8255ff4b1eb3cee5a0ace718c2e50aa1e923b8b459dac0bd08
   command: python tools/builder/package_check.py --emit-evidence builder
-  verdict_line: 'package_check: 107 banned file(s) excluded, 12576 would ship'
+  verdict_line: 'package_check: 107 banned file(s) excluded, 12597 would ship'
   manifest_emitted_by: tools/builder/package_check.py
-  run_signature: 624b06a2e50713e891a0f0f71450108502179850ae2ece17b78b1b3938dd344e
+  run_signature: c75f01d43ad7d92ea6319a7a5d65079ea0c4da56f10b1fc632120e1950a00df4
   inputs:
   - path: tools/builder/package_check.py
     sha256: c3d3e8fc1669dd15d60f19cd25530de9d1ad1b677d07358d1a0c031d9fb87498

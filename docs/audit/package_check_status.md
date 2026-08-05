@@ -4,4 +4,4 @@
 > Counts only. Banned paths are not listed here: this file is an
 > evidence artifact and must stay a verdict document (spec §8.1).
 
-package_check: 107 banned file(s) excluded, 12576 would ship
+package_check: 107 banned file(s) excluded, 12597 would ship
