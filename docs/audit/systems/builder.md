@@ -212,16 +212,59 @@ All three files were restored (`git checkout`); freshness re-verified
 `0b176550f8df15173dfb8c65d8c31e2d376bf4ef8e27a1ee950e5bfac33f71be`,
 identical to the determinism baseline. The tree is clean.
 
-To close:
+### ROOT CAUSE FOUND AND FIXED IN THE GENERATOR — 2026-08-03
 
-1. Establish the true per-level `LevelInfo_FoeCounts` by reading the ROM
-   at the verified LevelInfo table offsets. Do not trust either the
-   committed constant or the current extractor output. This is a
-   dungeons-system correctness question as much as a builder one:
-   FoeCounts drives `RoomFoeCount`, which gates room-clear and therefore
-   shutter doors and item drops.
-2. Fix `extract_rooms.py` to place FoeCounts at in-block offset 36 with
-   those values.
+`LEVEL_INFO_SIZE` was `0x100`. The real ROM record is **252 bytes**. The
+walk therefore drifted 4 bytes per level, so `LevelInfoUW<n>` was read
+`4*(n-1)` bytes late and every field landed at the wrong offset.
+
+Byte-verified against live NES SRAM (`k_uw_map_*` in
+`src/game/dungeon/uw_map_data.c`, captured by
+`tools/parity/pause_golden/uw_capture_all_levels.lua`):
+
+| Field | in-block offset | stride 252 @ PRG $193FC | stride 256 @ $19400 |
+|---|---|---|---|
+| `StartRoomId` (`$6BAD`) | 47 | `73 7d 7c 71 76 79 79 7e 76` ✅ | `01 ff ff 00 00 c0 00 20 ff` ❌ |
+| `TriforceRoomId` (`$6BAE`) | 48 | matches all 9 ✅ | ❌ |
+| `SubmenuMapRotation` (`$6BAB`) | 45 | matches all 9 ✅ | ❌ |
+| `LevelNumber` (`$6BB1`) | 51 | `1 2 3 4 5 6 7 8 9` ✅ | garbage ❌ |
+
+The record opens with its transfer-buffer descriptor (`3f 00 20` — PPU
+palette RAM `$3F00`, length `$20`), which the 256-byte walk skipped
+entirely. That skipped header is the whole 4-byte drift.
+
+`FoeCounts` @36 reads `03 05 06 08` for **all nine dungeons** under the
+corrected layout — so the committed value was right all along, and the
+earlier suspicion that it was an L1 copy-paste was wrong. It is genuinely
+uniform in Zelda 1.
+
+Fix applied to `tools/extract_rooms.py`: advance the walk by 252 (the
+real record size) while emitting 256 bytes per block, so the blob layout
+and `level_info_install.c` are unchanged. Q1 LevelBlockAttrs verified
+still byte-identical to `LevelBlockUW{1,2}Q1.dat` afterwards.
+
+**The corrected data is NOT yet committed.** Regenerating changes what
+the runtime installs at `$6B7E` for all nine dungeons — StartRoomId,
+TriforceRoomId, BossRoomId, MapRotation, DeathPaletteSeries. Per RULE V1
+that is a runtime change and needs a runtime probe, not a byte-diff
+alone. Tree left at the known-good state: freshness 8/8, `Debug.md`
+sha256 `0b176550...` unchanged.
+
+This also explains why `uw_map_data.c` exists and says of itself
+*"NOT derived from data/rooms/dungeons.c (whose ... regen diverges from
+live NES)"*, and why `RoomRom/data/levelinfo_start_rooms.c` exists. Both
+are workarounds for this single off-by-four. Fixing it at the source
+should let both be retired.
+
+### Remaining to close PLAYABLE
+
+1. Cut over the corrected LevelInfo data: regenerate `dungeons.c` +
+   `overworld.c`, regen the `uw_collision` / `redux_roomrom` /
+   `bg_sparse` sentinels, then **probe the runtime in BizHawk** to
+   confirm all nine dungeons still load, start in the right room, and
+   spawn the right boss. Only then commit the data.
+2. Retire `levelinfo_start_rooms.c` and the `uw_map_data.c` StartRoomId
+   workaround if the probe confirms the source is now correct.
 3. Preserve the `fix_dungeons_q1_lba.py` header provenance comment in
    `extract_rooms.py`'s own output, so the generator documents its own
    guarantees instead of relying on a post-hoc patch.
