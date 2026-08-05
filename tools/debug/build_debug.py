@@ -137,6 +137,7 @@ ROOMROM_C_SOURCES = [
     ("src/game/world/mode_continue_question.c", "world_mode_continue_question.o"),
     ("src/game/world/mode_death.c",             "world_mode_death.o"),
     ("src/game/world/mode_endlevel.c",          "world_mode_endlevel.o"),
+    ("src/game/world/mode_save.c",              "world_mode_save.o"),
     ("src/game/world/mode_dispatch.c",          "world_mode_dispatch.o"),
     # Substrate fix 2026-05-15 — install NES SRAM LBA + LevelInfo at boot.
     ("src/game/world/level_info_install.c",     "level_info_install.o"),
@@ -148,6 +149,13 @@ ROOMROM_C_SOURCES = [
     # different mirror ($FF6000). save_game.c owns the copy between them,
     # which is why save_slot_serialize had no callers before now.
     ("src/state/save_game.c",                   "save_game.o"),
+    # Cart SRAM backend. sram_adapter.c's _sram_* externs claimed to come
+    # from src/nes_io.asm, which is NOT linked into Debug.md (nor is
+    # genesis_shell.asm, which called _sram_load_save_slots at boot), so
+    # Debug.md had no cart SRAM at all. Implemented on SGDK's SRAM API in
+    # the adapter layer per SGDK-1 rather than linking 142 KB of ASM.
+    ("src/sgdk_adapter/sram_backend.c",         "sram_backend.o"),
+    ("src/sgdk_adapter/sram_adapter.c",         "sram_adapter.o"),
     # Plan v5b Tier-5 T5.5 2026-05-16 — audio dispatcher: gamemode+scene
     # tuple change -> single music_play() per docs/audit/audio_routing.md.
     ("src/game/audio/audio_dispatch.c",         "audio_dispatch.o"),
