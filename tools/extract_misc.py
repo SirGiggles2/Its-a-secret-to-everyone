@@ -295,6 +295,29 @@ def nes_color_index_to_genesis(color_index):
         (0, 252, 252), (248, 216, 248), (0, 0, 0), (0, 0, 0),
     ]
 
+    # Verified overrides. The gamma-quantized conversion below is right for
+    # the palette as a whole but wrong for these three entries, each fixed
+    # by hand against the NES master RGB after a visible regression:
+    #
+    #   $17 brown        commit 5f909fda — formula gave $026C, a blue tint.
+    #                    NES master (7C,0F,00) is R-dominant red-brown.
+    #   $36 orange-light commit 7cd7fe1e — formula gave $0ACE, a duplicate of
+    #                    $37. NES master (FF,D6,5C).
+    #   $37 yellow-light commit 5f909fda — formula gave $0ACE, washed cream.
+    #                    NES master (FF,E6,9F) quantizes to R=7 G=7 B=4.
+    #
+    # These lived only in the generated data/misc/palettes.c, so any
+    # regeneration silently reverted them (triforce rendered pale tan again).
+    # Encoding them here is what makes the generator's output correct rather
+    # than something that needs patching afterwards.
+    CRAM_OVERRIDES = {
+        0x17: 0x004E,
+        0x36: 0x046E,
+        0x37: 0x08EE,
+    }
+    if color_index in CRAM_OVERRIDES:
+        return CRAM_OVERRIDES[color_index]
+
     red, green, blue = nes_rgb_palette[color_index]
 
     red_level = nes_level_to_genesis((red / 255.0) ** 0.9)
