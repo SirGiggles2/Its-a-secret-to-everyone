@@ -126,13 +126,66 @@ allowlist mechanism exists to prevent.
 
 ## Gap list
 
-### PLAYABLE — RED. The drag-and-drop path has never been executed.
+### PLAYABLE — RED. The extractors regress committed data.
 
-`from_scratch_gate.py` has never run. It requires a user-supplied NES
-ROM, which is correctly absent from the repo, so this cannot be closed
-without one from Jake.
+**Executed 2026-08-03** against `roms/Legend of Zelda, The (USA).nes`
+(sha256 `8f72dc2e98572eb4ba7c3a902bca5f69c448fc4391837e5f8f0d4556280440ac`,
+131088 bytes). This is no longer "never run" — it ran, and it failed for
+a concrete reason.
 
-Blocked on: a NES Zelda 1 ROM at a known path.
+What worked:
+
+- ROM hash validated.
+- All 11 wired extractors executed and exited 0. The CODE-axis wiring is
+  confirmed against a real ROM, not just statically.
+- `build.py` correctly propagated the downstream failure (exit 3).
+
+What failed — `check_generated_freshness` 2 of 8 specs:
+
+```
+uw_collision:    expected 706fa5bc1b43..., got bbd0d8d7b0b1...
+bg_palette_blob: expected 0fdddf3b7b91..., got 2d8642914da2...
+```
+
+Root cause: regenerating from the ROM **overwrites committed generated
+data with different content**. Three tracked files changed:
+
+| File | Change |
+|---|---|
+| `data/rooms/dungeons.c` | 25 lines; the Q1-LBA fix header was stripped |
+| `data/misc/palettes.c` | 4 lines |
+| `data/text/MANIFEST.json` | 319 lines deleted |
+
+The `dungeons.c` regression is the serious one, and the committed file
+warns about it in its own header: the Q1 UW LevelBlockAttrs were restored
+from `LevelBlockUW{1,2}Q1.dat` by `tools/parity/fix_dungeons_q1_lba.py`
+precisely because *"the prior SRAM-capture regen wrote QUEST-2 tables
+into the Q1 slots"*. `extract_rooms.py` re-introduces that bug. Running
+the builder as shipped would silently revert the Q1 dungeon fix that all
+171/171 BG byte-exact results depend on.
+
+All three files were restored (`git checkout`); freshness re-verified
+8/8 OK, and `builds/Debug.md` rebuilt to sha256
+`0b176550f8df15173dfb8c65d8c31e2d376bf4ef8e27a1ee950e5bfac33f71be`,
+identical to the determinism baseline. The tree is clean.
+
+To close:
+
+1. Make `extract_rooms.py` emit the Q1 LevelBlockAttrs that
+   `fix_dungeons_q1_lba.py` produces, so the fix survives regeneration
+   instead of being a post-hoc patch. A generator whose output must be
+   hand-corrected is not a generator.
+2. Reconcile `extract_misc.py` output with `data/misc/palettes.c`.
+3. Reconcile `extract_*` output with `data/text/MANIFEST.json` (319
+   lines dropped — determine whether the manifest gained entries the
+   extractor does not know about).
+4. Re-run `python tools/builder/build.py <rom>`; require exit 0 and
+   `check_generated_freshness` 8/8.
+5. Then `from_scratch_gate.py <rom>` for byte-identical A/B.
+
+This is the single highest-value gap in the project: until it closes,
+"drag in your ROM and get a Genesis ROM" produces a *worse* ROM than the
+repo builds, and no third party can reproduce `Debug.md` at all.
 
 ### CODE — CLOSED 2026-08-03.
 
