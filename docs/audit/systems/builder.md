@@ -156,13 +156,56 @@ data with different content**. Three tracked files changed:
 | `data/misc/palettes.c` | 4 lines |
 | `data/text/MANIFEST.json` | 319 lines deleted |
 
-The `dungeons.c` regression is the serious one, and the committed file
-warns about it in its own header: the Q1 UW LevelBlockAttrs were restored
-from `LevelBlockUW{1,2}Q1.dat` by `tools/parity/fix_dungeons_q1_lba.py`
-precisely because *"the prior SRAM-capture regen wrote QUEST-2 tables
-into the Q1 slots"*. `extract_rooms.py` re-introduces that bug. Running
-the builder as shipped would silently revert the Q1 dungeon fix that all
-171/171 BG byte-exact results depend on.
+**CORRECTION (same session).** The first reading of this — that
+`extract_rooms.py` reintroduces the Q1/Q2 LevelBlockAttrs bug — was
+wrong, and was based on the stripped header comment rather than the
+bytes. Byte-diff says the opposite:
+
+```
+regen[0:768]    == LevelBlockUW1Q1.dat : True
+regen[768:1536] == LevelBlockUW2Q1.dat : True
+```
+
+The extractor emits the **correct** Q1 LevelBlockAttrs. Only the header
+comment was lost, which is cosmetic. The Q1-LBA fix is not at risk.
+
+The real divergence is 35 bytes at `0x0c24-0x1427`, entirely inside
+`LevelInfoUW1..UW9`, and at exactly one field position in each:
+**in-block offsets 36-39**.
+
+Ground truth, `reference/aldonunez/Variables.inc`:
+
+```
+LevelInfo_PalettesTransferBuf := $6B7E   (block base)
+LevelInfo_FoeCounts           := $6BA2   -> offset $24 = 36
+```
+
+So offsets 36-39 are `LevelInfo_FoeCounts`, the 4-entry table
+`Z_05.asm:1726` indexes with a 2-bit per-room group id. This is the field
+`fix_dungeons_q1_lba.py` explicitly declined to touch: *"LevelInfo (incl.
+FoeCounts at SRAM offset 36) is NOT touched here — its dat layout differs
+(FoeCounts at dat offset 32). Tracked separately for regular-room
+counts."*
+
+Neither side is verified correct:
+
+| | L1 | L2 | L6 |
+|---|---|---|---|
+| committed | `03 05 06 08` | `03 05 06 08` | `03 05 06 08` |
+| regenerated | `dd c9 ac 89` | `2c 0a b0 7d` | `ff ff 1c 00` |
+
+- The **regenerated** values are garbage — the extractor copies
+  `LevelInfoUW{n}.dat[36:40]`, but the dats carry FoeCounts at offset 32,
+  so it lands four bytes late and picks up neighbouring fields.
+- The **committed** values are identical across all nine dungeons, which
+  is implausible for per-level data and matches
+  `LevelInfoUW1.dat[32:36]` exactly. That looks like L1's values were
+  copied to every level.
+
+So the extractor is definitely wrong, and the committed data is probably
+also wrong — just wrong in a way that happens to be harmless-looking.
+Resolving it needs the real per-level FoeCounts read from the ROM at the
+verified LevelInfo table offsets.
 
 All three files were restored (`git checkout`); freshness re-verified
 8/8 OK, and `builds/Debug.md` rebuilt to sha256
@@ -171,17 +214,31 @@ identical to the determinism baseline. The tree is clean.
 
 To close:
 
-1. Make `extract_rooms.py` emit the Q1 LevelBlockAttrs that
-   `fix_dungeons_q1_lba.py` produces, so the fix survives regeneration
-   instead of being a post-hoc patch. A generator whose output must be
-   hand-corrected is not a generator.
-2. Reconcile `extract_misc.py` output with `data/misc/palettes.c`.
-3. Reconcile `extract_*` output with `data/text/MANIFEST.json` (319
+1. Establish the true per-level `LevelInfo_FoeCounts` by reading the ROM
+   at the verified LevelInfo table offsets. Do not trust either the
+   committed constant or the current extractor output. This is a
+   dungeons-system correctness question as much as a builder one:
+   FoeCounts drives `RoomFoeCount`, which gates room-clear and therefore
+   shutter doors and item drops.
+2. Fix `extract_rooms.py` to place FoeCounts at in-block offset 36 with
+   those values.
+3. Preserve the `fix_dungeons_q1_lba.py` header provenance comment in
+   `extract_rooms.py`'s own output, so the generator documents its own
+   guarantees instead of relying on a post-hoc patch.
+4. Reconcile `extract_misc.py` output with `data/misc/palettes.c`
+   (4 bytes).
+5. Reconcile the text extractor with `data/text/MANIFEST.json` (319
    lines dropped — determine whether the manifest gained entries the
    extractor does not know about).
-4. Re-run `python tools/builder/build.py <rom>`; require exit 0 and
+6. Re-run `python tools/builder/build.py <rom>`; require exit 0 and
    `check_generated_freshness` 8/8.
-5. Then `from_scratch_gate.py <rom>` for byte-identical A/B.
+7. Then `from_scratch_gate.py <rom>` for byte-identical A/B.
+
+Also found while probing: `fix_dungeons_q1_lba.py:39` parses the blob
+with `text[text.find("{")+1:]`, but the header it writes itself contains
+`LevelBlockUW{1,2}Q1.dat`. The first `{` is therefore inside a comment,
+so the script cannot be re-run on its own output — it is documented
+"Re-runnable" and is not.
 
 This is the single highest-value gap in the project: until it closes,
 "drag in your ROM and get a Genesis ROM" produces a *worse* ROM than the
