@@ -40,10 +40,20 @@ def discover() -> set[str]:
 
 
 def load_wiring() -> tuple[dict[str, str], dict[str, str]]:
+    """Return ({name: convention}, {name: why-manual}).
+
+    EXTRACTORS rows are (name, convention, extra_flags); the flags are
+    reported in the artifact but do not affect coverage.
+    """
     sys.path.insert(0, str(ROOT / "tools" / "builder"))
     import build  # noqa: PLC0415
 
-    return dict(build.EXTRACTORS), dict(build.MANUAL_EXTRACTORS)
+    wired = {}
+    for row in build.EXTRACTORS:
+        name, convention = row[0], row[1]
+        extra = row[2] if len(row) > 2 else ()
+        wired[name] = convention + (" " + " ".join(extra) if extra else "")
+    return wired, dict(build.MANUAL_EXTRACTORS)
 
 
 def run_gate() -> tuple[int, str]:
@@ -54,7 +64,7 @@ def run_gate() -> tuple[int, str]:
     unwired = sorted(on_disk - accounted)
     phantom = sorted(accounted - on_disk)
     bad_conv = sorted(
-        n for n, c in wired.items() if c not in VALID_CONVENTIONS
+        n for n, c in wired.items() if c.split()[0] not in VALID_CONVENTIONS
     )
 
     problems: list[str] = []

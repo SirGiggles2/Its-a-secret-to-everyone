@@ -5,4 +5,4 @@
 > reproduction from a user ROM — that is `from_scratch_gate.py`,
 > which has never been run.
 
-determinism_gate: deterministic rebuild byte-identical, 2097152 bytes, sha256 0b176550f8df15173dfb8c65d8c31e2d376bf4ef8e27a1ee950e5bfac33f71be (NOT from-scratch reproduction; see from_scratch_gate.py)
+determinism_gate: deterministic rebuild byte-identical, 2097152 bytes, sha256 0e2f06dbdd7762a78a644bc4923bd6fd6e5c292792b389269bfefed2e3172d44 (NOT from-scratch reproduction; see from_scratch_gate.py)

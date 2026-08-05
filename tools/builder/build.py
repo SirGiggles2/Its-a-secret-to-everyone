@@ -103,19 +103,25 @@ def validate_rom(rom_path: Path) -> int:
 #   "argv" — takes the ROM as sys.argv[1]
 #   "flag" — takes --rom <path>
 #   "none" — needs no ROM (reads the committed disassembly reference tree)
-EXTRACTORS: tuple[tuple[str, str], ...] = (
+# Third element: extra flags the extractor needs to emit everything the build
+# consumes. --legacy-inc is NOT optional for a from-scratch build: it is what
+# writes src/data/music_blob.{dat,inc} (included by src/audio_driver.asm) and
+# the reference/aldonunez/dat/*.dat sidecars. Without it the gate deletes
+# music_blob.dat during its cache wipe and nothing regenerates it, so the
+# assembler fails with "file not found: src/data/music_blob.dat".
+EXTRACTORS: tuple[tuple[str, str, tuple[str, ...]], ...] = (
     # PRG banks first: later extractors read the dat sidecars it emits.
-    ("extract_nes_banks.py", "flag"),
-    ("extract_dat_sidecars.py", "env"),
-    ("extract_chr.py", "env"),
-    ("extract_rooms.py", "env"),
-    ("extract_enemies.py", "env"),
-    ("extract_audio.py", "env"),
-    ("extract_dmc_samples.py", "argv"),
-    ("extract_frontend.py", "env"),
-    ("extract_misc.py", "env"),
-    ("extract_demo_text.py", "env"),
-    ("extract_intro_assets.py", "none"),
+    ("extract_nes_banks.py", "flag", ()),
+    ("extract_dat_sidecars.py", "env", ()),
+    ("extract_chr.py", "env", ("--legacy-inc",)),
+    ("extract_rooms.py", "env", ("--legacy-inc",)),
+    ("extract_enemies.py", "env", ("--legacy-inc",)),
+    ("extract_audio.py", "env", ("--legacy-inc",)),
+    ("extract_dmc_samples.py", "argv", ()),
+    ("extract_frontend.py", "env", ("--legacy-inc",)),
+    ("extract_misc.py", "env", ("--legacy-inc",)),
+    ("extract_demo_text.py", "env", ()),
+    ("extract_intro_assets.py", "none", ()),
 )
 
 # Needs a CHR-RAM dump captured live from Zelda Redux, not the base ROM.
@@ -139,7 +145,7 @@ def run_extractors(rom_path: Path) -> int:
     env["ZELDA_NES_ROM"] = str(rom_path)
 
     failures: list[str] = []
-    for name, convention in EXTRACTORS:
+    for name, convention, extra in EXTRACTORS:
         ext = ROOT / "tools" / name
         if not ext.exists():
             print(f"  MISSING: {name} — cannot regenerate its assets",
@@ -153,8 +159,10 @@ def run_extractors(rom_path: Path) -> int:
             argv = [sys.executable, str(ext), str(rom_path)]
         else:  # "env" and "none" both take no ROM argument
             argv = [sys.executable, str(ext)]
+        argv.extend(extra)
 
-        print(f"Running {name} ({convention})...")
+        print(f"Running {name} ({convention})"
+              f"{' ' + ' '.join(extra) if extra else ''}...")
         try:
             r = subprocess.run(argv, cwd=ROOT, env=env, check=False)
         except Exception as e:  # noqa: BLE001 — report and continue

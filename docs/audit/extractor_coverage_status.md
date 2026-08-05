@@ -13,13 +13,13 @@ extractor_coverage: 11 extractor(s) wired into build.py, 1 documented as manual,
 |---|---|
 | `extract_nes_banks.py` | flag |
 | `extract_dat_sidecars.py` | env |
-| `extract_chr.py` | env |
-| `extract_rooms.py` | env |
-| `extract_enemies.py` | env |
-| `extract_audio.py` | env |
+| `extract_chr.py` | env --legacy-inc |
+| `extract_rooms.py` | env --legacy-inc |
+| `extract_enemies.py` | env --legacy-inc |
+| `extract_audio.py` | env --legacy-inc |
 | `extract_dmc_samples.py` | argv |
-| `extract_frontend.py` | env |
-| `extract_misc.py` | env |
+| `extract_frontend.py` | env --legacy-inc |
+| `extract_misc.py` | env --legacy-inc |
 | `extract_demo_text.py` | env |
 | `extract_intro_assets.py` | none |
 

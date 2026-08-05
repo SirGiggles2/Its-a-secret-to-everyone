@@ -52,13 +52,13 @@ Does NOT own:
   axis: BEHAVIOR
   verdict: GREEN
   artifact: docs/audit/determinism_status.md
-  artifact_sha256: e05a9f2aee5889a4b64e1d4e9f7b1d6d3934dd7d4b3232c4312a3e88ab647465
+  artifact_sha256: 7ed078b67674bba29e5180153041b703f4d9ae8e7d354ee2100587f83d88b2ab
   command: python tools/builder/determinism_gate.py --emit-evidence builder
   verdict_line: 'determinism_gate: deterministic rebuild byte-identical, 2097152 bytes,
-    sha256 0b176550f8df15173dfb8c65d8c31e2d376bf4ef8e27a1ee950e5bfac33f71be (NOT from-scratch
+    sha256 0e2f06dbdd7762a78a644bc4923bd6fd6e5c292792b389269bfefed2e3172d44 (NOT from-scratch
     reproduction; see from_scratch_gate.py)'
   manifest_emitted_by: tools/builder/determinism_gate.py
-  run_signature: 3bc2ff0dba0eb14b73488213a9d487d81de767cd291aab0f4942527efc905569
+  run_signature: fb4285b39b1e2171dc90bb7ceb3386326f7c9f2249c4d68438fa38e391c074e0
   tolerance: 'Zero tolerance: the two builds must be byte-identical. No accepted deltas.
     Scope is deterministic rebuild only; from-scratch reproduction from a user ROM
     is unproven and tracked as a RED gap on the PLAYABLE axis.'
@@ -76,17 +76,17 @@ Does NOT own:
   axis: CODE
   verdict: GREEN
   artifact: docs/audit/extractor_coverage_status.md
-  artifact_sha256: daa13bfefcdf0be8ef060585dc41cb4619e220767717be76696986348290bffd
+  artifact_sha256: 9d38a742356984920374afe2500649f20d1f7786b621c7c98e28cbf86a14ca14
   command: python tools/builder/extractor_coverage_gate.py --emit-evidence builder
   verdict_line: 'extractor_coverage: 11 extractor(s) wired into build.py, 1 documented
     as manual, 12 on disk, 0 unwired'
   manifest_emitted_by: tools/builder/extractor_coverage_gate.py
-  run_signature: cdabe459e9784eea5ae56c33ef633eaaf86094cc3b028f564d29d0bfd63e499b
+  run_signature: db0639750f362fc5ecb7fa9ed3560da6f9569f29d89dcf84da06a1c73f4de7b2
   inputs:
   - path: tools/builder/build.py
-    sha256: f4e8f69eaa867bce0c09d97eee6613f07191a413b2a79fa214bd4d58d62bdf78
+    sha256: 2d917e01912a5700d04a2624d00295e1ff685a01f4008f32e1986e0fe0fce77a
   - path: tools/builder/extractor_coverage_gate.py
-    sha256: 51c4a9d63b3bcd5c27b158ee2c1023dbbc6bb084ba79bf308e377c3ccadb9024
+    sha256: 8e01c849aaf7bc9e3028372198ba6031cbf572e4e4f24a594460aff64316b1f4
   - path: tools/extract_nes_banks.py
     sha256: 22d99e39ae057889bd546b24f5402321d33be1d6e9d778bfaed4e4fb15d04a84
   - path: tools/extract_dat_sidecars.py
@@ -109,6 +109,27 @@ Does NOT own:
     sha256: ddb7244fcaf89e688c0edb82a31ddef4aa7c9dfa7a042c27e59251706e3fa302
   - path: tools/extract_intro_assets.py
     sha256: 9f6a32a741efcafb953e9afe37540983735f86ee6bcee1738d67abed3f36b8dc
+```
+
+```yaml evidence
+- system: builder
+  axis: PLAYABLE
+  verdict: GREEN
+  artifact: docs/audit/from_scratch_status.md
+  artifact_sha256: 0cd994a872eb6df781b83feeab11a2faee8fb1b3383a7ef5597407f3d26d9ca3
+  command: python tools/builder/from_scratch_gate.py <rom> --emit-evidence builder
+  verdict_line: 'from_scratch_gate: byte-identical reproduction from a user ROM, 2097152
+    bytes, sha256 0e2f06dbdd7762a78a644bc4923bd6fd6e5c292792b389269bfefed2e3172d44'
+  manifest_emitted_by: tools/builder/from_scratch_gate.py
+  run_signature: 570b86cd12e2efaed4ebbd4ad439d778f6168baa84698ea9621a8251687ae5a8
+  rom_identity: 8f72dc2e98572eb4ba7c3a902bca5f69c448fc4391837e5f8f0d4556280440ac
+  inputs:
+  - path: tools/builder/from_scratch_gate.py
+    sha256: 2270d2c2c7c42460c9937d37f21288f307df00d628c981fd7e99b007ae3d4eeb
+  - path: tools/builder/build.py
+    sha256: 2d917e01912a5700d04a2624d00295e1ff685a01f4008f32e1986e0fe0fce77a
+  - path: tools/debug/build_debug.py
+    sha256: 683e37c905276f82ecdb7b662c024d32beaf688f0bbaeb58b6b7e762238c2ee3
 ```
 
 ```yaml evidence
