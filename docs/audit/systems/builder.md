@@ -81,7 +81,7 @@ Does NOT own:
   verdict_line: 'extractor_coverage: 11 extractor(s) wired into build.py, 1 documented
     as manual, 12 on disk, 0 unwired'
   manifest_emitted_by: tools/builder/extractor_coverage_gate.py
-  run_signature: 6b973c63349a009cb704d1b54e843d410f7de45d1570368b270e0d53a052cbb3
+  run_signature: cdabe459e9784eea5ae56c33ef633eaaf86094cc3b028f564d29d0bfd63e499b
   inputs:
   - path: tools/builder/build.py
     sha256: f4e8f69eaa867bce0c09d97eee6613f07191a413b2a79fa214bd4d58d62bdf78
@@ -94,7 +94,7 @@ Does NOT own:
   - path: tools/extract_chr.py
     sha256: c9719abfd1cfecb5a1e4bf22a486c722efc91e43a630bd1848e1150c5b1b7f22
   - path: tools/extract_rooms.py
-    sha256: ba73a748709ee5a5685c040a5672576f4573b9596768dfe52a8ef69d1730f3f0
+    sha256: 5477de1e21086f0cf4d8dc9b7f853ad9b4f442426e9e639f291598613c3faf8d
   - path: tools/extract_enemies.py
     sha256: 7ead21ef8f1734c827844a030d4d21c7c461b637ffdb5490231b5bef67c0da47
   - path: tools/extract_audio.py
@@ -102,11 +102,11 @@ Does NOT own:
   - path: tools/extract_dmc_samples.py
     sha256: 12cb80af69fac7bb2dbfe7545b854bd3fb6df1b229ad5477649210604fe234be
   - path: tools/extract_frontend.py
-    sha256: b72c6b659a99f0654e3a6f04dbb144ed64af2f1f427dfbadd9af49925fd4c532
+    sha256: c6ad683511335d6532a92e78a383f0762759d7e62e966338d7b1cc7ca0c0b799
   - path: tools/extract_misc.py
-    sha256: 4dcd1bd924984e492ba417f95ab8b926a37f580ab6f1909c5b9663d213956bb8
+    sha256: 0b1f7b2245e8e7847ecc81c9334567cebe5326c2d7a5d2b5d1ab7e5aae6dde90
   - path: tools/extract_demo_text.py
-    sha256: 802b96e7d4f8f7e281d20ae624c03fe1bfde8d668b71e29554e10224adf08269
+    sha256: ddb7244fcaf89e688c0edb82a31ddef4aa7c9dfa7a042c27e59251706e3fa302
   - path: tools/extract_intro_assets.py
     sha256: 9f6a32a741efcafb953e9afe37540983735f86ee6bcee1738d67abed3f36b8dc
 ```
