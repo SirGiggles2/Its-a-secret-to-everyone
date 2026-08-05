@@ -9,4 +9,10 @@
 
 void fs_main(void);
 
+/* Frame-driven alternative to fs_main() for hosts that own the main loop.
+ * fs_enter() does the one-shot init; fs_tick() advances exactly one frame
+ * and does NOT wait for vblank — the caller does. */
+void fs_enter(void);
+void fs_tick(void);
+
 #endif

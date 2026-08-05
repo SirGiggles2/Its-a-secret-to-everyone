@@ -157,3 +157,21 @@ void fs_main(void) {
         fs_input_dispatch(fs_input_pressed());
     }
 }
+
+/* ---- Frame-driven entry, for hosts that own the main loop ----
+ *
+ * fs_main() blocks forever, which is fine for the proof ROM but useless
+ * to Debug.md: its loop in src/debug/a4_probe_main.c has to keep running
+ * so control can come BACK when the player picks a slot. These two split
+ * fs_main into "set up once" and "advance one frame", with the caller
+ * owning vblank. fs_main() is left untouched so the proof ROM path is
+ * unaffected. */
+void fs_enter(void) {
+    fs_init();
+    render_display_enable(1);
+}
+
+void fs_tick(void) {
+    fs_phase_step();
+    fs_input_dispatch(fs_input_pressed());
+}

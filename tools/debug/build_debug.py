@@ -116,6 +116,10 @@ TITLE_C_SOURCES = [
     ("data/fs/fs_link_sprite_chr.c","fs_link_sprite_chr.o"),
     ("data/fs/fs_heart_cursor_chr.c","fs_heart_cursor_chr.o"),
     ("data/fs/fs_palette.c",        "fs_palette.o"),
+    ("data/fs/fs_static_tilemap.c", "fs_static_tilemap.o"),
+    ("data/fs/fs_static_attr.c",    "fs_static_attr.o"),
+    ("data/fs/fs_font_chr.c",       "fs_font_chr.o"),
+    ("data/fs/fs_border_chr.c",     "fs_border_chr.o"),
     ("src/frontend/fs/fs_options_render.c", "fs_options_render.o"),
     # 2026-05-19 — title-MODE-button debug tile-grid scene for atlas audit.
     ("src/game/debug/debug_tilegrid.c", "debug_tilegrid.o"),

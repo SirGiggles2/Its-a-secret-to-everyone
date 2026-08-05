@@ -3,6 +3,7 @@
 #undef RAM
 #endif
 #include "platform_abi.h"
+#include "audio_abi.h"
 #include "intro_phase.h"
 #include "render_abi.h"
 #include "roomrom_debug_runtime.h"
@@ -22,9 +23,19 @@
 #include "../game/debug/debug_tilegrid.h"
 #include "../game/items/debug_unlock_all.h"  /* P6.1 */
 
+/* File Select. Declared here rather than including fs_main.h /
+ * fs_handoff.h: those headers pull in the proof-ROM stdint typedefs,
+ * which collide with SGDK's types.h (conflicting types for u32/s32/s8)
+ * in this TU. The three symbols are stable and plain. */
+extern void fs_enter(void);
+extern void fs_tick(void);
+extern unsigned char g_fs_handoff_requested;
+extern unsigned char g_fs_handoff_slot;
+
 typedef enum {
     COMBINED_STATE_TITLE = 0,
-    COMBINED_STATE_ROOMROM = 1
+    COMBINED_STATE_ROOMROM = 1,
+    COMBINED_STATE_FS = 2
 } combined_state_t;
 
 extern u32 debug_get_a4(void);
@@ -157,6 +168,22 @@ static void debug_poll_title(void)
             /* unreachable */
         }
     }
+    /* START alone (edge) -> File Select. Checked AFTER the C+START chord
+     * above so the tile-grid shortcut still wins when C is held; that
+     * chord returns via debug_tilegrid_main() and never reaches here. */
+    {
+        unsigned char start_now  = (joy & BUTTON_START) ? 1u : 0u;
+        unsigned char start_prev = (s_prev_joy & BUTTON_START) ? 1u : 0u;
+        unsigned char c_held     = (joy & BUTTON_C) ? 1u : 0u;
+        if (start_now && !start_prev && !c_held)
+        {
+            s_prev_joy = joy;
+            s_state = COMBINED_STATE_FS;
+            fs_enter();
+            return;
+        }
+    }
+
     s_prev_joy = joy;
 
     {
@@ -183,13 +210,12 @@ static void debug_poll_title(void)
          * = per-level dungeon song. Boot-room defaults to L1Q1; play
          * the L1Q1 dungeon song. Real per-level dispatch lands when
          * roomrom_debug_enter exposes its level/quest selection. */
-        music_play(0x40);  /* NES Z1 SongRequest bit 6 = dungeon song */
+        audio_music_play(0x40);  /* NES Z1 SongRequest bit 6 = dungeon song */
     }
     }
 }
 
 extern void audio_vblank_hook_install(void);
-extern void audio_xgm_init(void);
 extern void music_play(unsigned char song_bitmap);
 
 /* 2026-05-15 perf fix: per-frame probe_check(4U) was unconditional,
@@ -229,6 +255,40 @@ int debug_main_after_a4(bool hardReset)
         if (s_state == COMBINED_STATE_TITLE)
         {
             debug_poll_title();
+        }
+        else if (s_state == COMBINED_STATE_FS)
+        {
+            SYS_doVBlankProcess();
+            ++s_frame;
+            fs_tick();
+
+            /* The File Select sets this when the player commits to a
+             * slot; CurSaveSlot ($0016) is already seeded by then. This
+             * is the real New Game / Continue entry, so unlike the A+B+C
+             * debug chord it does NOT unlock every item — the player
+             * starts with whatever the chosen slot actually holds. */
+            if (g_fs_handoff_requested)
+            {
+                g_fs_handoff_requested = 0u;
+
+                /* fs_handoff_to_transpiled tears the screen down for the
+                 * jump it used to make: display off, planes cleared, mode
+                 * forced to V64. The gameplay runtime expects the V32
+                 * layout debug_enter_title establishes, and nothing in
+                 * roomrom_debug_enter re-enables display — so without
+                 * this the handoff produced a black screen with no room
+                 * loaded. Restore the same video state the title path
+                 * hands to gameplay. */
+                render_mode_set_v32();
+                render_window_v_set(0u);
+                render_display_enable(1);
+
+                roomrom_main_set_quest(1u);
+                s_state = COMBINED_STATE_ROOMROM;
+                probe_publish();
+                roomrom_debug_enter();
+                audio_music_play(0x01);  /* SONG_OW — FS exits to overworld */
+            }
         }
         else
         {
