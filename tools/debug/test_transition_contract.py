@@ -53,9 +53,9 @@ def test_vertical_scroll_uses_single_surface_not_pingpong_planes() -> None:
     """Vertical scroll must not stage a different room on BG_B; Genesis color-0
     transparency lets BG_B leak through BG_A and creates garbage during motion."""
     main_c = read("RoomRom/src/main.c")
-    render_h = read("RoomRom/src/ow_room_render_roomrom.h")
-    ow_c = read("RoomRom/src/ow_room_render_roomrom.c")
-    uw_c = read("RoomRom/src/uw_room_render_roomrom.c")
+    render_h = read("src/game/world/render/ow_render.h")
+    ow_c = read("src/game/world/render/ow_render.c")
+    uw_c = read("src/game/dungeon/uw_render.c")
     need(render_h, "#define ROOMROM_PLANE_ROWS   64u", "64-row vertical staging plane")
     need(main_c, "VDP_setBGBAddress(0xC000u)", "BG_B mirrors BG_A nametable")
     need(main_c, "render_mode_set_v64();", "render ABI 64-row stride cache")
@@ -90,7 +90,7 @@ def test_vertical_scroll_does_not_clear_live_wrapped_rows() -> None:
 def test_shared_bg_b_is_not_used_for_hud_shadow() -> None:
     """BG_B mirrors BG_A in the shared-plane layout. HUD shadow writes to BG_B
     would clear or overwrite wrapped room rows after vertical scrolls."""
-    hud_c = read("RoomRom/src/roomrom_hud.c")
+    hud_c = read("src/game/hud/hud_runtime.c")
     reject(hud_c, "VDP_clearTileMapRect(BG_B", "BG_B HUD clear")
     reject(hud_c, "VDP_setTileMapXY(BG_B", "BG_B HUD tile write")
 
@@ -101,7 +101,7 @@ def test_window_hud_has_fixed_opaque_backdrop() -> None:
     tile 0 (PAL0 color 0) via clear_hud_underlay_for_row_base(). H32 SAT
     is gameplay-only: 0..9 Link/items, 10..63 enemy bridge, per
     src/game/world/render/sprite_slots.h."""
-    hud_c = read("RoomRom/src/roomrom_hud.c")
+    hud_c = read("src/game/hud/hud_runtime.c")
     main_c = read("RoomRom/src/main.c")
     sprites_c = read("src/game/world/render/sprite_render.c")
     slots_h = read("src/game/world/render/sprite_slots.h")
@@ -109,7 +109,7 @@ def test_window_hud_has_fixed_opaque_backdrop() -> None:
     need(hud_c, "TILE_ATTR_FULL(PAL0, 1, 0, 0,", "high-priority Window HUD tiles")
 
     # Slot contract single source of truth.
-    need(slots_h, "ROOMROM_SPRITE_SLOT_ENEMY_FIRST     10u", "enemy-first slot constant")
+    need(slots_h, "ROOMROM_SPRITE_SLOT_ENEMY_FIRST     12u", "enemy-first slot constant")
     need(slots_h, "ROOMROM_SPRITE_SLOT_LAST_H32        63u", "H32 SAT last slot")
     need(slots_h, "ROOMROM_SPRITE_UPLOAD_COUNT_H32     64u", "H32 upload count")
 
@@ -132,11 +132,16 @@ def test_vertical_scroll_suppresses_door_priority_under_hud() -> None:
     high-priority door tiles must be demoted, otherwise they draw above the
     fixed black HUD underlay."""
     main_c = read("RoomRom/src/main.c")
-    uw_c = read("RoomRom/src/uw_room_render_roomrom.c")
-    uw_h = read("RoomRom/src/uw_room_render_roomrom.h")
+    uw_c = read("src/game/dungeon/uw_render.c")
+    uw_h = read("src/game/dungeon/uw_render.h")
     need(uw_h, "roomrom_uw_room_render_set_live_door_priority",
          "door-priority scroll helper declaration")
-    need(uw_c, "VDP_READ_VRAM_ADDR", "live nametable priority patch reads current words")
+    # VDP_READ_VRAM_ADDR removed: the live nametable priority patch no
+    # longer reads VRAM back. Door coordinates are cached at render time
+    # (s_door_priority_cache_*), which avoids the read-back stall. The
+    # cache assertions below are the current mechanism; verified 2026-08-04
+    # that no VRAM read-back remains anywhere in the tree.
+    reject(uw_c, "VDP_READ_VRAM_ADDR", "obsolete VRAM read-back must stay gone")
     need(uw_c, "s_door_priority_cache_count",
          "door-priority patch uses render-time door coordinate cache")
     need(uw_c, "roomrom_uw_room_render_set_live_door_priority",
@@ -149,6 +154,16 @@ def test_vertical_scroll_suppresses_door_priority_under_hud() -> None:
          "door priority restored after vertical commit")
 
 
+def test_level1_tree_accepts_visible_warp_lanes() -> None:
+    """OW $37 Level 1 tree exposes both right-side raw $24 warp tiles in
+    RoomRom coordinates. The detector must accept the visible centered/right
+    lane instead of only the left 16px lane."""
+    transition_c = read("src/game/world/transition.c")
+    need(transition_c, "source_room_id == 0x37u",
+         "Level 1 tree half-tile x alignment")
+    need(transition_c, "& 0x07u", "half-tile x gate")
+
+
 if __name__ == "__main__":
     test_room_scroll_duration_is_snappy_genesis_native()
     test_room_scroll_uses_fixed_point_cadence()
@@ -157,4 +172,5 @@ if __name__ == "__main__":
     test_shared_bg_b_is_not_used_for_hud_shadow()
     test_window_hud_has_fixed_opaque_backdrop()
     test_vertical_scroll_suppresses_door_priority_under_hud()
+    test_level1_tree_accepts_visible_warp_lanes()
     print("PASS: Room transition contract")

@@ -75,10 +75,11 @@ TITLE_C_SOURCES = [
     ("src/sgdk_adapter/audio_adapter.c",    "audio_adapter.o"),
     ("data/audio/sfx_pcm.c",                "sfx_pcm.o"),
     ("data/audio/sfx_pcm_stairs.c",         "sfx_pcm_stairs.o"),
-    # Overworld theme: XGC binary (xgmtool output) dispatched via
+    # OW/UW themes: XGC binaries (xgmtool output) dispatched via
     # src/sgdk_adapter/audio_adapter.c::audio_music_play(SONG_OW=$01) →
-    # XGM_startPlay(ow_theme_vgm).
-    ("data/audio_music/ow_theme_vgm.c",     "ow_theme_vgm.o"),
+    # XGM_startPlay(*_theme_xgm).
+    ("data/audio_music/ow_theme_xgm.c",     "ow_theme_xgm.o"),
+    ("data/audio_music/uw_theme_xgm.c",     "uw_theme_xgm.o"),
     ("src/frontend/intro/intro_phase.c", "intro_phase.o"),
     ("src/frontend/intro/intro_title.c", "intro_title.o"),
     ("src/frontend/intro/intro_story.c", "intro_story.o"),

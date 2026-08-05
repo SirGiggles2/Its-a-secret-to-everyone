@@ -59,6 +59,7 @@ Four buckets per master plan Task 12.1:
 | `redux_overworld_bg.c`            | generated-asset    | `data/redux/redux_overworld_bg.c`          | Redux OW BG. |
 | `redux_uw_bg.c`                   | generated-asset    | `data/redux/redux_uw_bg.c`                 | Redux UW BG. |
 | `redux_hud_chr.c`                 | generated-asset    | `data/redux/redux_hud_chr.c`               | Redux HUD CHR. |
+| `bg_sparse_chr.c`                 | generated-asset    | `data/chr/bg_sparse_chr.c`                 | 5330-line sparse BG atlas, emitted by `RoomRom/tools/gen_bg_sparse.py`. Absorbs the HUD CHR ranges and the redux automap range that Phase J.2 removed from `hud_runtime.c`. |
 
 Counts: 2 harness-only, 27 shared-gameplay, 7 generated-asset, 0
 obsolete-debug.

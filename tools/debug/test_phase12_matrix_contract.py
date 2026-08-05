@@ -59,6 +59,9 @@ def test_gate_tool_exists_and_exits_zero() -> None:
         cwd=ROOT,
         capture_output=True,
         text=True,
+        # stdin must be explicit: under pytest capture with an
+        # unusable parent stdin, handle inheritance fails on Windows.
+        stdin=subprocess.DEVNULL,
     )
     if r.returncode != 0:
         raise AssertionError(

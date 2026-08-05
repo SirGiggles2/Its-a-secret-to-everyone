@@ -74,7 +74,7 @@ def test_debug_a4_probe_contract() -> None:
     assert_contains(main_c, "SYS_doVBlankProcess();", "vblank survival probe")
     assert_contains(main_c, "roomrom_debug_enter();", "RoomRom entry chord")
     assert_contains(main_c, "roomrom_debug_tick();", "RoomRom frame tick")
-    assert_contains(main_c, "CHORD_DEBUG (BUTTON_A | BUTTON_B | BUTTON_C)", "A+B+C gate")
+    assert_contains(main_c, "CHORD_DEBUG    (BUTTON_A | BUTTON_B | BUTTON_C)", "A+B+C gate")
     assert_contains(main_c, "RAM(0x0012)", "A4-backed RAM write")
     assert_contains(main_c, "0x00FF8000UL", "Debug A4 NES RAM page")
     assert_contains(main_c, "0x00FF7000UL", "Lua-visible probe marker")
