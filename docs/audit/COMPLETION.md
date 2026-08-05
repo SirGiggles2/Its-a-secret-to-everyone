@@ -103,9 +103,15 @@
 - `perf` / LEGAL — no evidence block for this cell
 - `builder` / PLAYABLE — no evidence block for this cell
 - `builder` / CODE — input hash drift: tools/extract_rooms.py
+- `builder` / CODE — input hash drift: tools/extract_frontend.py
+- `builder` / CODE — input hash drift: tools/extract_misc.py
+- `builder` / CODE — input hash drift: tools/extract_demo_text.py
 
 ## Drift
 
 These cells went RED because a hashed input changed.
 
 - `builder` / CODE — tools/extract_rooms.py
+- `builder` / CODE — tools/extract_frontend.py
+- `builder` / CODE — tools/extract_misc.py
+- `builder` / CODE — tools/extract_demo_text.py

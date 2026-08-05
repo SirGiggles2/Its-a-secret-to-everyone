@@ -256,6 +256,57 @@ live NES)"*, and why `RoomRom/data/levelinfo_start_rooms.c` exists. Both
 are workarounds for this single off-by-four. Fixing it at the source
 should let both be retired.
 
+### Status after the 2026-08-03 ROM runs
+
+`python tools/builder/build.py <rom>` now regenerates every ROM-derived
+asset, and the output matches the committed tree except for one file.
+
+| File | Divergence |
+|---|---|
+| `data/rooms/dungeons.c` | **none** — LevelInfo fix committed (`542a5ea1`), reproduces exactly |
+| `data/rooms/overworld.c` | **0 bytes** — line-ending churn only |
+| `data/text/MANIFEST.json` | **none** — block set identical; key-ordering churn only |
+| `data/misc/palettes.c` | **84 bytes** — the CRAM override cutover, below |
+
+Fixed along the way, each verified against the real ROM:
+
+- `extract_rooms.py` LevelInfo record size (`b5582ffb`, runtime-probed in
+  `542a5ea1`).
+- `extract_misc.py` now carries the three verified CRAM overrides
+  (`32463018`) instead of losing them on every regeneration.
+- `extract_frontend.py` / `extract_demo_text.py` merge the shared text
+  manifest instead of clobbering it (`10c1dd48`) — that was the −319
+  lines; a full run left 2 blocks of 47.
+
+### The one remaining blocker — palette LUT cutover
+
+`build.py` exits 3 on a single freshness sentinel, `bg_palette_blob`,
+downstream of `data/misc/palettes.c`.
+
+The generator is correct; the data is not cut over. The override applies
+the three verified corrections everywhere the colors appear, not only the
+two triforce entries that were patched by hand in `5f909fda`:
+
+| Committed | Corrected | Occurrences |
+|---|---|---|
+| `$026C` blue-tint | `$004E` (`$17` brown) | 22 |
+| `$0ACE` | `$046E` (`$36` orange) | 17 |
+| `$0ACE` | `$08EE` (`$37` yellow) | 3 |
+
+Why this is gated rather than just committed:
+`tools/parity/cave_golden/cave_byte_diff.py` maps NES PALRAM to Genesis
+CRAM **through this LUT**, so the 20/20 cave and 171/171 dungeon BG
+byte-exact results were computed against the current values. Changing 42
+colour words invalidates that evidence until the sweep is re-run, and the
+NES goldens are not cached — it needs fresh captures across 20 caves and
+171 rooms.
+
+Closing it: re-run `tools/parity/cave_golden/run_full_diff.py` for caves
+and UW with the override applied, require the same 20/20 and 171/171,
+regenerate the `bg_palette_blob` sentinel, then commit the data. If the
+sweep degrades, the override is wrong somewhere and the per-colour
+evidence in `5f909fda` needs revisiting.
+
 ### Remaining to close PLAYABLE
 
 1. Cut over the corrected LevelInfo data: regenerate `dungeons.c` +
