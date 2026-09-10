@@ -32,6 +32,11 @@ extern void fs_tick(void);
 extern unsigned char g_fs_handoff_requested;
 extern unsigned char g_fs_handoff_slot;
 
+/* Persistent save (src/state/save_game.h). Declared rather than included
+ * for the same reason as the FS symbols above. */
+extern unsigned char save_game_slot_is_valid(unsigned char slot_idx);
+extern unsigned char save_game_read_slot(unsigned char slot_idx);
+
 typedef enum {
     COMBINED_STATE_TITLE = 0,
     COMBINED_STATE_ROOMROM = 1,
@@ -287,6 +292,22 @@ int debug_main_after_a4(bool hardReset)
                 s_state = COMBINED_STATE_ROOMROM;
                 probe_publish();
                 roomrom_debug_enter();
+
+                /* Continue vs New Game. roomrom_debug_enter seeds the
+                 * default profile, so the restore has to run AFTER it or
+                 * the defaults would overwrite the save — same ordering
+                 * reason debug_unlock_all_items runs after enter on the
+                 * A+B+C path.
+                 *
+                 * save_game_read_slot validates magic + checksum and
+                 * returns 0 without touching live RAM if the slot is
+                 * blank or corrupt, so an empty cart falls through to a
+                 * clean New Game instead of loading garbage. */
+                if (save_game_slot_is_valid(g_fs_handoff_slot))
+                {
+                    (void) save_game_read_slot(g_fs_handoff_slot);
+                }
+
                 audio_music_play(0x01);  /* SONG_OW — FS exits to overworld */
             }
         }

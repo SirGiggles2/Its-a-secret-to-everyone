@@ -1,0 +1,12 @@
+ram_domain=M68K BUS base=0xFF0000
+vram_domain=VRAM
+sentinel_seen=true
+--- domains ---
+Z80 RAM
+MD CART
+SRAM
+CRAM
+VSRAM
+VRAM
+M68K BUS
+Waterbox PageData

@@ -1,0 +1,181 @@
+[0m
+> build · big-pickle
+[0m
+[0m✱ [0mGrep "HandleWarpOW"[90m in ..\..\..\reference\aldonunez · 2 matches[0m
+[0m✱ [0mGrep "InitModeB_EnterCave"[90m in ..\..\..\reference\aldonunez · 5 matches[0m
+[0m✱ [0mGrep "InitMode_WalkCave"[90m in ..\..\..\reference\aldonunez · 3 matches[0m
+[0m✱ [0mGrep "UpdateMode10Stairs_Full"[90m in ..\..\..\reference\aldonunez · 4 matches[0m
+[0m→ [0mRead ..\..\..\reference\aldonunez\Z_01.asm[90m [offset=2956, limit=30][0m
+[0m→ [0mRead ..\..\..\reference\aldonunez\Z_05.asm[90m [offset=2308, limit=50][0m
+[0m→ [0mRead ..\..\..\reference\aldonunez\Z_05.asm[90m [offset=6643, limit=30][0m
+[0m→ [0mRead ..\..\..\reference\aldonunez\Z_05.asm[90m [offset=7313, limit=30][0m
+[0m→ [0mRead ..\..\..\reference\aldonunez\Z_01.asm[90m [offset=2985, limit=10][0m
+[0m✱ [0mGrep "StairsTargetY"[90m in ..\..\..\reference\aldonunez · 5 matches[0m
+[0m✱ [0mGrep "cave_fade|LINK_ASCEND|LINK_DESCEND"[90m in ..\..\..\src\game · 0 matches[0m
+[0m→ [0mRead ..\..\..\reference\aldonunez\Z_05.asm[90m [offset=1405, limit=20][0m
+[0m→ [0mRead ..\..\..\reference\aldonunez\Z_05.asm[90m [offset=1595, limit=20][0m
+[0m✱ [0mGrep "UndergroundExitType"[90m in ..\..\..\reference\aldonunez · 13 matches[0m
+[0m→ [0mRead ..\..\..\reference\aldonunez\Z_07.asm[90m [offset=1685, limit=50][0m
+[0m→ [0mRead ..\..\..\reference\aldonunez\Z_05.asm[90m [offset=1560, limit=50][0m
+[0m✱ [0mGrep "StepOutside:"[90m in ..\..\..\reference\aldonunez · 1 match[0m
+[0m→ [0mRead ..\..\..\reference\aldonunez\Z_05.asm[90m [offset=6708, limit=20][0m
+[0m→ [0mRead ..\..\..\reference\aldonunez\Z_07.asm[90m [offset=1735, limit=50][0m
+[0m✱ [0mGlob "src/game/cave/**"[90m 0 matches[0m
+[0m✱ [0mGrep "cave_fade_begin_exit|cave_fade_swap|LINK_ASCEND"[90m in ..\..\..\src\game · 3 matches[0m
+[0m✱ [0mGrep "cave_fade|LINK_ASCEND"[90m in ..\..\..\src\game · 16 matches[0m
+[0m→ [0mRead ..\..\..\src\game\world\render\cave_fade.c
+[0m✱ [0mGrep "Sprites,|sprite.*size|PPUCTRL|\$2000"[90m in ..\..\..\reference\aldonunez · 15 matches[0m
+[0m✱ [0mGrep "STA \$2000|PPU_CTRL|PPUCTRL|Sprite8x16|sprite.*8x16|#\$20.*\$2000"[90m in ..\..\..\reference\aldonunez · 0 matches[0m
+[0m✱ [0mGrep "2000"[90m in ..\..\..\reference\aldonunez · 34 matches[0m
+[0m✱ [0mGrep "CurPpuControl_2000"[90m in ..\..\..\reference\aldonunez · 20 matches[0m
+[0m✱ [0mGrep "CurPpuControl_2000.*=.*\$|\.BYTE.*CurPpu|CurPpuControl_2000:"[90m in ..\..\..\reference\aldonunez · 0 matches[0m
+[0m
+[0m$ [0mrg -n "CurPpuControl_2000" "C:/Users/Jake Diggity/Documents/GitHub/FINAL TRY/reference/aldonunez/CommonVars.inc" 2>/dev/null || echo "not in commonvars"
+not in commonvars
+[0m
+[0m→ [0mRead ..\..\..\reference\aldonunez\Z_06.asm[90m [offset=580, limit=20][0m
+[0m✱ [0mGrep "#\$90.*2000|#\$80.*2000|#\$08.*2000|#\$10.*2000"[90m in ..\..\..\reference\aldonunez · 0 matches[0m
+[0m✱ [0mGlob "reference/aldonunez/CommonVars*"[90m 0 matches[0m
+[0m
+[0m$ [0mrg -n "LDA.*#.*2000|2000.*= " "C:/Users/Jake Diggity/Documents/GitHub/FINAL TRY/reference/aldonunez/" --include "*.asm" | head -30
+rg: unrecognized flag --include
+
+similar flags that are available: --include-zero
+[0m
+[0m✱ [0mGrep "ora.*#\$(10|20)|#\$10|#\$20"[90m in ..\..\..\reference\aldonunez\Z_07.asm · 43 matches[0m
+[0m
+[0m$ [0mrg -n "PpuControl_2000|CurPpuControl|\.BYTE.*\$.{2}" "C:/Users/Jake Diggity/Documents/GitHub/FINAL TRY/reference/aldonunez/" --glob "*.inc" 2>/dev/null | head -20
+C:/Users/Jake Diggity/Documents/GitHub/FINAL TRY/reference/aldonunez/Variables.inc:79:CurPpuControl_2000 := $FF
+C:/Users/Jake Diggity/Documents/GitHub/FINAL TRY/reference/aldonunez/Variables.inc:269:PpuControl_2000 := $2000
+[0m
+[0m$ [0mrg -n "PpuControl_2000" "C:/Users/Jake Diggity/Documents/GitHub/FINAL TRY/reference/aldonunez/CommonVars.inc" 2>/dev/null; rg -n "PpuControl_2000" "C:/Users/Jake Diggity/Documents/GitHub/FINAL TRY/reference/aldonunez/" --glob "*.i" 2>/dev/null | head -20
+(no output)
+[0m
+[0m$ [0mls "C:/Users/Jake Diggity/Documents/GitHub/FINAL TRY/reference/aldonunez/"*.inc
+C:/Users/Jake Diggity/Documents/GitHub/FINAL TRY/reference/aldonunez/BeginEndVars.inc
+C:/Users/Jake Diggity/Documents/GitHub/FINAL TRY/reference/aldonunez/CaveVars.inc
+C:/Users/Jake Diggity/Documents/GitHub/FINAL TRY/reference/aldonunez/CommonVars.inc
+C:/Users/Jake Diggity/Documents/GitHub/FINAL TRY/reference/aldonunez/ObjVars.inc
+C:/Users/Jake Diggity/Documents/GitHub/FINAL TRY/reference/aldonunez/Variables.inc
+[0m
+[0m$ [0mrg -n "STA PpuControl_2000|STA CurPpuControl_2000" "C:/Users/Jake Diggity/Documents/GitHub/FINAL TRY/reference/aldonunez/Z_07.asm" | head -20
+356:    STA PpuControl_2000
+357:    STA CurPpuControl_2000
+389:    STA CurPpuControl_2000
+391:    STA PpuControl_2000
+467:    STA PpuControl_2000
+531:    STA PpuControl_2000
+532:    STA CurPpuControl_2000
+542:    STA PpuControl_2000
+543:    STA CurPpuControl_2000
+558:    STA PpuControl_2000
+559:    STA CurPpuControl_2000
+5925:    STA PpuControl_2000         ; Set the PPU to a base state with no NMI.
+[0m
+[0m→ [0mRead ..\..\..\reference\aldonunez\Z_07.asm[90m [offset=348, limit=20][0m
+[0m→ [0mRead ..\..\..\reference\aldonunez\Z_07.asm[90m [offset=5920, limit=15][0m
+[0m✱ [0mGrep "EffectRequest"[90m in ..\..\..\reference\aldonunez\Z_05.asm · 3 matches[0m
+[0m→ [0mRead ..\..\..\reference\aldonunez\Z_05.asm[90m [offset=1395, limit=30][0m
+[0m→ [0mRead ..\..\..\reference\aldonunez\Z_05.asm[90m [offset=2090, limit=20][0m
+[0m✱ [0mGrep "^MoveObject:|MoveObject"[90m in ..\..\..\reference\aldonunez · 23 matches[0m
+[0m→ [0mRead ..\..\..\reference\aldonunez\Z_07.asm[90m [offset=2719, limit=30][0m
+[0m
+[0m$ [0mrg -n "ObjGridOffset|GridOffset" "C:/Users/Jake Diggity/Documents/GitHub/FINAL TRY/reference/aldonunez/Z_07.asm" | head -20
+1697:    JMP GoToNextModeResetGridOffset    ; go to next mode, and reset Link's relative position.
+1711:    LDA ObjGridOffset
+1712:    BEQ GoToNextModeResetGridOffset
+1714:    BEQ GoToNextModeResetGridOffset
+1716:    BEQ GoToNextModeResetGridOffset
+1732:GoToNextModeResetGridOffset:
+1734:    STA ObjGridOffset
+2087:    LDA ObjGridOffset, X
+2300:    LDA ObjGridOffset, X
+2355:    LDA ObjGridOffset, X
+2404:    LDA ObjGridOffset, X
+2407:    STA ObjGridOffset, X
+2412:    BEQ @SetGridOffset
+2417:@SetGridOffset:
+2418:    STA ObjGridOffset, X
+2586:    LDA ObjGridOffset
+2817:    BNE @CheckGridOffset
+2825:@CheckGridOffset:
+2828:    LDA ObjGridOffset, X
+2957:    LDA ObjGridOffset
+[0m
+[0m→ [0mRead ..\..\..\reference\aldonunez\Z_07.asm[90m [offset=2810, limit=50][0m
+[0m
+[0m$ [0mrg -n "DEC ObjGridOffset|INC ObjGridOffset|STA ObjGridOffset" "C:/Users/Jake Diggity/Documents/GitHub/FINAL TRY/reference/aldonunez/" --glob "*.asm" | head -20
+C:/Users/Jake Diggity/Documents/GitHub/FINAL TRY/reference/aldonunez/Z_01.asm:2521:    STA ObjGridOffset, X
+C:/Users/Jake Diggity/Documents/GitHub/FINAL TRY/reference/aldonunez/Z_01.asm:2986:    STA ObjGridOffset
+C:/Users/Jake Diggity/Documents/GitHub/FINAL TRY/reference/aldonunez/Z_01.asm:3495:    STA ObjGridOffset, X
+C:/Users/Jake Diggity/Documents/GitHub/FINAL TRY/reference/aldonunez/Z_01.asm:3531:    STA ObjGridOffset, X
+C:/Users/Jake Diggity/Documents/GitHub/FINAL TRY/reference/aldonunez/Z_01.asm:3602:    STA ObjGridOffset, X
+C:/Users/Jake Diggity/Documents/GitHub/FINAL TRY/reference/aldonunez/Z_01.asm:3613:    STA ObjGridOffset, X
+C:/Users/Jake Diggity/Documents/GitHub/FINAL TRY/reference/aldonunez/Z_01.asm:3972:    STA ObjGridOffset, X
+C:/Users/Jake Diggity/Documents/GitHub/FINAL TRY/reference/aldonunez/Z_07.asm:1734:    STA ObjGridOffset
+C:/Users/Jake Diggity/Documents/GitHub/FINAL TRY/reference/aldonunez/Z_07.asm:2407:    STA ObjGridOffset, X
+C:/Users/Jake Diggity/Documents/GitHub/FINAL TRY/reference/aldonunez/Z_07.asm:2418:    STA ObjGridOffset, X
+C:/Users/Jake Diggity/Documents/GitHub/FINAL TRY/reference/aldonunez/Z_07.asm:3191:    STA ObjGridOffset
+C:/Users/Jake Diggity/Documents/GitHub/FINAL TRY/reference/aldonunez/Z_07.asm:3436:    STA ObjGridOffset, X
+C:/Users/Jake Diggity/Documents/GitHub/FINAL TRY/reference/aldonunez/Z_07.asm:4062:    STA ObjGridOffset, X
+C:/Users/Jake Diggity/Documents/GitHub/FINAL TRY/reference/aldonunez/Z_07.asm:4107:    STA ObjGridOffset, X
+C:/Users/Jake Diggity/Documents/GitHub/FINAL TRY/reference/aldonunez/Z_07.asm:4567:    STA ObjGridOffset, X
+C:/Users/Jake Diggity/Documents/GitHub/FINAL TRY/reference/aldonunez/Z_07.asm:4633:    STA ObjGridOffset, X
+C:/Users/Jake Diggity/Documents/GitHub/FINAL TRY/reference/aldonunez/Z_07.asm:4643:    STA ObjGridOffset, X
+C:/Users/Jake Diggity/Documents/GitHub/FINAL TRY/reference/aldonunez/Z_04.asm:324:    STA ObjGridOffset, X
+C:/Users/Jake Diggity/Documents/GitHub/FINAL TRY/reference/aldonunez/Z_04.asm:452:    STA ObjGridOffset, X
+C:/Users/Jake Diggity/Documents/GitHub/FINAL TRY/reference/aldonunez/Z_04.asm:1310:    STA ObjGridOffset, Y
+[0m
+[0m✱ [0mGrep "120|192|0x70|0xDD"[90m in ..\..\..\src\game\world\render · 4 matches[0m
+[0m✱ [0mGrep "120|192|#define.*C.*|cave.*spawn|CAVE.*X|CAVE.*Y"[90m in ..\..\..\src\game · 102 matches[0m
+[0m→ [0mRead ..\..\..\src\game\world\render\cave_fade.h[90m [offset=40, limit=20][0m
+[0m→ [0mRead ..\..\..\src\game\cave\cave_dispatch.c[90m [offset=113, limit=30][0m
+[0m
+[0m$ [0mls -la "C:/Users/Jake Diggity/Documents/GitHub/FINAL TRY/tools/probes/captures/" 2>/dev/null | head -20
+total 1305
+drwxr-xr-x 1 Jake Diggity 197609       0 May 30 17:06 .
+drwxr-xr-x 1 Jake Diggity 197609       0 May 22 11:40 ..
+-rw-r--r-- 1 Jake Diggity 197609 1193601 May 30 17:04 _rev_codex.err
+-rw-r--r-- 1 Jake Diggity 197609     173 May 30 17:04 _rev_codex.txt
+-rw-r--r-- 1 Jake Diggity 197609      96 May 30 17:08 _rev_copilot.err
+-rw-r--r-- 1 Jake Diggity 197609   17202 May 30 17:08 _rev_copilot.txt
+-rw-r--r-- 1 Jake Diggity 197609     325 May 30 16:57 _rev_gemini.err
+-rw-r--r-- 1 Jake Diggity 197609    4758 May 30 16:57 _rev_gemini.txt
+-rw-r--r-- 1 Jake Diggity 197609    2962 May 30 17:01 _rev_opencode.err
+-rw-r--r-- 1 Jake Diggity 197609    9856 May 30 17:02 _rev_opencode.txt
+-rw-r--r-- 1 Jake Diggity 197609    9549 May 30 17:10 _rev_opencode2.err
+-rw-r--r-- 1 Jake Diggity 197609      90 May 30 17:07 _rev_opencode2.txt
+-rw-r--r-- 1 Jake Diggity 197609     133 May 30 16:57 _rev_qwen.err
+-rw-r--r-- 1 Jake Diggity 197609       0 May 30 16:57 _rev_qwen.txt
+-rw-r--r-- 1 Jake Diggity 197609    8634 May 30 16:56 _review_prompt.md
+-rw-r--r-- 1 Jake Diggity 197609   27514 May 22 11:40 cave_diff_report.txt
+[0m
+[0m✱ [0mGrep "cave"[90m in .. · 39 matches[0m
+[0m→ [0mRead cave_diff_report.txt[90m [limit=100][0m
+[0m→ [0mRead ..\probe_cave_fade_gen.lua
+[0m→ [0mRead cave_diff_report.txt[90m [offset=100, limit=100][0m
+[0m
+[0m$ [0mrg -n "OAM|SAT|sprite|Sprite|Link.*y|Link.*x|attr|priority|OAM attr" "C:/Users/Jake Diggity/Documents/GitHub/FINAL TRY/tools/probes/captures/cave_diff_report.txt" | head -20
+422:== Per-frame OAM Link-slot diffs ($10..$13) ==
+424:  OAM[10].0 (b40) NES=$F8 GEN=$00
+425:  OAM[10].1 (b41) NES=$D4 GEN=$00
+426:  OAM[10].2 (b42) NES=$02 GEN=$00
+427:  OAM[10].3 (b43) NES=$64 GEN=$00
+428:  OAM[11].0 (b44) NES=$F8 GEN=$00
+429:  OAM[11].1 (b45) NES=$D4 GEN=$00
+430:  OAM[11].2 (b46) NES=$02 GEN=$00
+431:  OAM[11].3 (b47) NES=$90 GEN=$00
+432:  OAM[12].0 (b48) NES=$50 GEN=$00
+433:  OAM[12].1 (b49) NES=$0E GEN=$00
+434:  OAM[12].2 (b4A) NES=$40 GEN=$00
+435:  OAM[12].3 (b4B) NES=$40 GEN=$00
+436:  OAM[13].0 (b4C) NES=$50 GEN=$00
+437:  OAM[13].1 (b4D) NES=$0C GEN=$00
+438:  OAM[13].2 (b4E) NES=$40 GEN=$00
+439:  OAM[13].3 (b4F) NES=$48 GEN=$00
+441:  OAM[10].0 (b40) NES=$F8 GEN=$00
+442:  OAM[10].1 (b41) NES=$D4 GEN=$00
+443:  OAM[10].2 (b42) NES=$02 GEN=$00
+[0m
+[0m→ [0mRead cave_diff_report.txt[90m [offset=700, limit=70][0m
+[0m→ [0mRead cave_diff_report.txt[90m [offset=410, limit=30][0m

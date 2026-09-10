@@ -1,0 +1,83 @@
+== cave_transition_sprite_diff: TIER B (Link sprite, pixel-exact) ==
+nes frames=130 gen frames=130 shift=2 offset=(dx=8,dy=-3)
+
+Link cells compared=392  OK=192  PX-DIFF=121  MISSING=79  (NES-Link-offscreen frames=30)
+
+65 frames with Link sprite divergence:
+  fr  0: ok=0 px-diff=2 missing=2
+      PX-DIFF: NES(120,144) OAM18t$0Cp0f00  vs  GEN(128,141) SAT0t$371p1f00
+      PX-DIFF: NES(120,152) OAM18t$0Dp0f00  vs  GEN(128,149) SAT0t$372p1f00
+      MISSING: NES(128,144) OAM19t$0Ep0f00  vs  GEN <none>
+      MISSING: NES(128,152) OAM19t$0Fp0f00  vs  GEN <none>
+  fr  4: ok=2 px-diff=2 missing=0
+      PX-DIFF: NES(112,153) OAM18t$0Fp0f10  vs  GEN(120,150) SAT0t$370p1f00
+      PX-DIFF: NES(120,153) OAM19t$0Dp0f10  vs  GEN(128,150) SAT0t$372p1f00
+  fr  5: ok=2 px-diff=2 missing=0
+      PX-DIFF: NES(112,153) OAM18t$0Fp0f10  vs  GEN(120,150) SAT0t$370p1f00
+      PX-DIFF: NES(120,153) OAM19t$0Dp0f10  vs  GEN(128,150) SAT0t$372p1f00
+  fr  6: ok=2 px-diff=2 missing=0
+      PX-DIFF: NES(112,153) OAM18t$0Fp0f10  vs  GEN(120,150) SAT0t$370p1f00
+      PX-DIFF: NES(120,153) OAM19t$0Dp0f10  vs  GEN(128,150) SAT0t$372p1f00
+  fr  7: ok=2 px-diff=2 missing=0
+      PX-DIFF: NES(112,154) OAM18t$0Fp0f10  vs  GEN(120,151) SAT0t$370p1f00
+      PX-DIFF: NES(120,154) OAM19t$0Dp0f10  vs  GEN(128,151) SAT0t$372p1f00
+  fr  8: ok=2 px-diff=2 missing=0
+      PX-DIFF: NES(112,154) OAM18t$0Fp0f10  vs  GEN(120,151) SAT0t$370p1f00
+      PX-DIFF: NES(120,154) OAM19t$0Dp0f10  vs  GEN(128,151) SAT0t$372p1f00
+  fr  9: ok=2 px-diff=2 missing=0
+      PX-DIFF: NES(112,154) OAM18t$0Fp0f10  vs  GEN(120,151) SAT0t$370p1f00
+      PX-DIFF: NES(120,154) OAM19t$0Dp0f10  vs  GEN(128,151) SAT0t$372p1f00
+  fr 16: ok=2 px-diff=2 missing=0
+      PX-DIFF: NES(112,156) OAM18t$0Fp0f10  vs  GEN(120,153) SAT0t$370p1f00
+      PX-DIFF: NES(120,156) OAM19t$0Dp0f10  vs  GEN(128,153) SAT0t$372p1f00
+  fr 17: ok=2 px-diff=2 missing=0
+      PX-DIFF: NES(112,156) OAM18t$0Fp0f10  vs  GEN(120,153) SAT0t$370p1f00
+      PX-DIFF: NES(120,156) OAM19t$0Dp0f10  vs  GEN(128,153) SAT0t$372p1f00
+  fr 18: ok=2 px-diff=2 missing=0
+      PX-DIFF: NES(112,156) OAM18t$0Fp0f10  vs  GEN(120,153) SAT0t$370p1f00
+      PX-DIFF: NES(120,156) OAM19t$0Dp0f10  vs  GEN(128,153) SAT0t$372p1f00
+  fr 19: ok=2 px-diff=2 missing=0
+      PX-DIFF: NES(112,157) OAM18t$0Fp0f10  vs  GEN(120,154) SAT0t$370p1f00
+      PX-DIFF: NES(120,157) OAM19t$0Dp0f10  vs  GEN(128,154) SAT0t$372p1f00
+  fr 20: ok=2 px-diff=2 missing=0
+      PX-DIFF: NES(112,157) OAM18t$0Fp0f10  vs  GEN(120,154) SAT0t$370p1f00
+      PX-DIFF: NES(120,157) OAM19t$0Dp0f10  vs  GEN(128,154) SAT0t$372p1f00
+  fr 21: ok=2 px-diff=2 missing=0
+      PX-DIFF: NES(112,157) OAM18t$0Fp0f10  vs  GEN(120,154) SAT0t$370p1f00
+      PX-DIFF: NES(120,157) OAM19t$0Dp0f10  vs  GEN(128,154) SAT0t$372p1f00
+  fr 28: ok=2 px-diff=2 missing=0
+      PX-DIFF: NES(112,159) OAM18t$0Fp0f10  vs  GEN(120,156) SAT0t$370p1f00
+      PX-DIFF: NES(120,159) OAM19t$0Dp0f10  vs  GEN(128,156) SAT0t$372p1f00
+  fr 29: ok=2 px-diff=2 missing=0
+      PX-DIFF: NES(112,159) OAM18t$0Fp0f10  vs  GEN(120,156) SAT0t$370p1f00
+      PX-DIFF: NES(120,159) OAM19t$0Dp0f10  vs  GEN(128,156) SAT0t$372p1f00
+  fr 30: ok=2 px-diff=2 missing=0
+      PX-DIFF: NES(112,159) OAM18t$0Fp0f10  vs  GEN(120,156) SAT0t$370p1f00
+      PX-DIFF: NES(120,159) OAM19t$0Dp0f10  vs  GEN(128,156) SAT0t$372p1f00
+  fr 31: ok=2 px-diff=2 missing=0
+      PX-DIFF: NES(112,160) OAM18t$0Fp0f10  vs  GEN(120,157) SAT0t$370p1f00
+      PX-DIFF: NES(120,160) OAM19t$0Dp0f10  vs  GEN(128,157) SAT0t$372p1f00
+  fr 32: ok=2 px-diff=2 missing=0
+      PX-DIFF: NES(112,160) OAM18t$0Fp0f10  vs  GEN(120,157) SAT0t$370p1f00
+      PX-DIFF: NES(120,160) OAM19t$0Dp0f10  vs  GEN(128,157) SAT0t$372p1f00
+  fr 33: ok=2 px-diff=2 missing=0
+      PX-DIFF: NES(112,160) OAM18t$0Fp0f10  vs  GEN(120,157) SAT0t$370p1f00
+      PX-DIFF: NES(120,160) OAM19t$0Dp0f10  vs  GEN(128,157) SAT0t$372p1f00
+  fr 40: ok=2 px-diff=2 missing=0
+      PX-DIFF: NES(112,162) OAM18t$0Fp0f10  vs  GEN(120,159) SAT0t$370p1f00
+      PX-DIFF: NES(120,162) OAM19t$0Dp0f10  vs  GEN(128,159) SAT0t$372p1f00
+  fr 41: ok=2 px-diff=2 missing=0
+      PX-DIFF: NES(112,162) OAM18t$0Fp0f10  vs  GEN(120,159) SAT0t$370p1f00
+      PX-DIFF: NES(120,162) OAM19t$0Dp0f10  vs  GEN(128,159) SAT0t$372p1f00
+  fr 42: ok=2 px-diff=2 missing=0
+      PX-DIFF: NES(112,162) OAM18t$0Fp0f10  vs  GEN(120,159) SAT0t$370p1f00
+      PX-DIFF: NES(120,162) OAM19t$0Dp0f10  vs  GEN(128,159) SAT0t$372p1f00
+  fr 43: ok=2 px-diff=2 missing=0
+      PX-DIFF: NES(112,163) OAM18t$0Fp0f10  vs  GEN(120,160) SAT0t$370p1f00
+      PX-DIFF: NES(120,163) OAM19t$0Dp0f10  vs  GEN(128,160) SAT0t$372p1f00
+  fr 44: ok=2 px-diff=2 missing=0
+      PX-DIFF: NES(112,163) OAM18t$0Fp0f10  vs  GEN(120,160) SAT0t$370p1f00
+      PX-DIFF: NES(120,163) OAM19t$0Dp0f10  vs  GEN(128,160) SAT0t$372p1f00
+    ... +41 more frames
+
+== TIER B VERDICT: FAIL ==

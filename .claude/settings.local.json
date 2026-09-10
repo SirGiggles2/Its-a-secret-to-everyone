@@ -45,7 +45,17 @@
       "Bash(cp \"builds/Debug.md\" /c/tmp/Debug.md)",
       "Bash(rm -f /c/tmp/bm_probe/*)",
       "Read(//c/tmp/**)",
-      "Bash(taskkill //F //IM EmuHawk.exe)"
+      "Bash(taskkill //F //IM EmuHawk.exe)",
+      "Bash(rtk grep *)",
+      "Bash(python3)",
+      "Read(//c/Users/Jake Diggity/.claude/plans/**)",
+      "Bash(rtk read *)",
+      "Bash(rtk wc *)",
+      "Bash(rtk find *)",
+      "Bash(rtk git *)",
+      "Bash(python tools/audit/primedirective/prime_status.py --brief)",
+      "Bash(python tools/audit/primedirective/prime_refresh.py)",
+      "Bash(not exist *)"
     ]
   }
 }

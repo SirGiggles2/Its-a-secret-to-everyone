@@ -1,0 +1,170 @@
+# Adversarial Review: Cave-Entry Plan
+
+Let me verify the asm citations before diving in.
+Now I have complete evidence for my review. Let me read the remaining diff report sections for sprite data completeness:
+# Adversarial Review: Cave-Entry Animation Plan
+
+**Reviewer stance:** adversarial senior engineer, byte-parity mandate, NES spec as ground truth.
+
+I verified every asm citation — all four check out at the exact lines claimed. I also read the existing `cave_fade.c`, `cave_fade.h`, both Lua probes, and the live diff report. Below is the full analysis.
+
+---
+
+## BLOCKER 1 — GameMode mismatch undermines the entire frame window ($05 vs $10)
+
+**File:** `cave_diff_report.txt:410-420` + `probe_cave_fade_gen.lua:170-171`
+
+The plan asserts a "64+1+48 frame window" anchored on NES Mode $10. But every captured Genesis frame shows `GameMode=$05` while NES runs `$10→$0B`. The Genesis probe doc itself says this is "expected divergence."
+
+**Why this is BLOCKER:** The plan's verification gate is "byte-exact on RAM {GameMode, Submode}" — but GameMode will ALWAYS differ. More critically:
+- **State setup:** NES InitMode10 (Z_05.asm:1400) sets `SongEnvelopeSelector=0`, `EffectRequest=$08` (stairs sound), `StairsTargetY=ObjY+$10`. Genesis runs none of this.
+- **Dispatch:** NES dispatch reads `GameMode=$10` → `UpdateMode10Stairs_Full`. Genesis dispatches `$05` → completely different code path. There is no Genesis equivalent of `UpdateMode10Stairs_Full` that the plan references.
+- **Scroll/palette mode:** Mode $10 on NES has specific scroll behavior. Mode $05 (Play) is a different context.
+
+**Fix:** The plan must add a step before Step 2 that either (a) ports Mode $10 entrance-animation dispatching to Genesis, or (b) explicitly accepts GameMode divergence and documents which fields will diverge vs converge. The current byte-exact-on-GameMode gate is impossible as written.
+
+---
+
+## BLOCKER 2 — Palette fade contradicts "atomic swap" claim
+
+**Evidence:** `probe_cave_fade_gen.lua:168-174` explicitly documents:
+- CRAM[8..15] "progressively darken to $0000" during fade-out
+- After swap, "CRAM[8..15] ramps up from black to cave palette"
+
+The plan's narrative says "NO per-frame fade, single atomic palette swap" and Step 8 says "No code change expected." But the live Genesis code DOES a fade (documented in the probe the plan itself references). Either:
+1. NES also fades → the plan's "atomic swap" assertion is wrong → need to ADD a fade to Genesis, not remove
+2. NES does NOT fade → Genesis already implements the WRONG behavior → the plan's Step 8 "no code change expected" contradicts its own Step 1 evidence
+
+**Fix:** Remove the pre-judgment from Step 8. The NES PALRAM capture may show stable colors (no NES fade) or a per-frame fade. Until Step 8 captures NES, don't assert either. If NES has no fade, the Genesis code's fade must be REMOVED — this is a code change the plan currently says is unnecessary.
+
+---
+
+## BLOCKER 3 — The −7px Y delta might be a GLOBAL overworld Y offset, not a cave-entry bug
+
+**Evidence:** The plan cites `Z_05.asm:1590-1591` — `ADC #$4D` is the base Y for "where Link comes out of underground." The same $4D appears in the diff report as the NES cave-entry starting Y. But this is likely Link's STANDING Y anywhere on the overworld, not specific to cave entry.
+
+**Risk:** If every overworld frame has Y=$4D on NES vs Y=$54 on Genesis, fixing the Y only in the cave-entry code is WRONG — the offset is in the coordinate system or HUD-row math (`ROOMROM_ROOM_FIRST_ROW=7`).
+
+**Fix:** Step 2 must ADD a non-cave overworld capture. Walk Link on regular overworld ground (not touching an entrance tile), capture ObjY, compare against NES. If the Y delta is the same −7px on non-cave frames, the fix belongs in the coordinate-system substrate, not the cave-entry code.
+
+---
+
+## MAJOR 4 — Probe captures only 24 of 113 frames
+
+**Evidence:** `probe_cave_fade_gen.lua:31` — `CAPTURE_FRAMES = 24`. NES sequence is 64 (descent) + 1 (swap) + 48 (ascend) = 113 frames. The probe covers only 24 frames of the descent, nothing of the swap frame or ascend.
+
+**Fix:** Step 1 must extend `CAPTURE_FRAMES` to at least 120 (with margin). The OAM/CRAM/RAM comparison across ALL 113 frames is the only acceptable gate. Without this, the plan cannot verify ascend behavior (Step 4), walk-pose cadence (Step 5), or behind-BG priority (Step 6) because it never sees those frames.
+
+---
+
+## MAJOR 5 — Probe doesn't capture OAM/SAT for sprites before or after the swap
+
+**Evidence:** The existing probe reads CRAM, RAM($12/$13/$051C/$0301), and a transfer-buf window. It reads ZERO sprite data. The diff report confirms Genesis OAM = $00 across all frames — not because Link is off-screen, but because the SAT read at VRAM $F800 is wrong or the DMA hasn't flushed.
+
+**Fix:** Step 1 must add SAT reads (VRAM $F800 region, per `_oam_dma_flush` DMA target) and NES OAM reads ($0200-$02FF or equivalent) to BOTH probes. Without SAT data, Steps 5 (walk-pose cadence), 6 (behind-BG priority), and the "Link SAT {y,x,attr,tile}" gate are unverifiable.
+
+---
+
+## MAJOR 6 — PutLinkBehindBackground is called EVERY frame, not only every 4th
+
+**Evidence:** Z_05.asm:2308-2334 — `UpdateMode10Stairs_Full` calls `Link_EndMoveAndAnimate` on EVERY frame (line 2326, after the `BNE` branch), then falls through to `PutLinkBehindBackground` which ORs $20 into attr. The behind-BG bit is present on ALL frames, including non-movement frames.
+
+**Implication:** The plan's Step 5 mentions "per-frame anim tick" but doesn't mention the behind-BG bit must also be set on every frame, not just on movement-step frames. The current Genesis code may set priority stamps only on step frames (every 4th). The diff shows NES OAM[12].2 attr toggling between $40 (front) and $60 (behind) every frame — partially from walk-pose animation, with the behind-BG applied on top. Genesis needs the same per-frame priority behavior.
+
+**Fix:** Step 5 must add: "OR behind-BG priority on every tick frame, not only every 4th. Confirm via per-frame SAT attr byte diff."
+
+---
+
+## MAJOR 7 — Exit ascend cadence unspecified
+
+**Evidence:** NES exit ascend (Z_07.asm:1738-1767 StepOutside) is 16 pixels up at 1px/4frames = 64 frames. This is a different cadence than the entry ascend (48px×1fpp). The plan's Step 7 says "fire cave_fade_begin_exit" but doesn't specify what happens AFTER the transition — is the exit ascend 16px×4fpp (matching NES) or does it reuse the 48px×1fpp entry-ascend path?
+
+**Fix:** Step 7 must add explicit exit-ascend behavior: "After plane swap to overworld, position Link at (entrance_X, entrance_Y+$10), set StairsTargetY = entrance_Y, and run 16px ascend at 1px/4frames (64 frames total)." Or if `cave_fade_begin_exit` already handles this, document which NES function implements it.
+
+---
+
+## MAJOR 8 — FrameCounter alignment methodology ambiguous
+
+**Evidence:** ±1 frame tolerance is described for SAT but FrameCounter ($10) is an incrementing counter — even 1 frame phase-shift produces non-matching values for ALL subsequent frames.
+
+**Fix:** Specify alignment anchor explicitly: "Align capture windows by the frame where GameMode changes (NES $10→$0B at frame 63). All per-frame offsets are relative to this anchor. FrameCounter is compared as delta-from-anchor, not raw value."
+
+---
+
+## MAJOR 9 — Sound effects completely omitted
+
+**Evidence:** NES plays `EffectRequest=$08` at BOTH entry (Z_05.asm:1407-1408) and exit (Z_05.asm:1607-1608). The plan mentions zero sound-effect parity.
+
+**Fix:** Add a step: "Capture NES `$4015` APU status or `EffectRequest` ($012D) across entry/exit window. If NES plays SFX $08 on entry and exit, mirror in Genesis via SGDK XGM or PSG." (Or accept divergence if audio is out-of-scope — but document it.)
+
+---
+
+## MAJOR 10 — "Stairs tile" exit trigger is a hedge
+
+**Evidence:** Step 7 says "or captured Y/grid condition" — this is an escape hatch that defers the real question to "some future capture."
+
+**Fix:** Step 7 must commit: "Capture NES GameMode transition $0B→$10. On the frame before transition, record ObjCollidedTile, ObjY, ObjX, ObjGridOffset, and the stair-tile ID in the cave nametable. The exit trigger is: {exact condition from capture}." Remove the hedge.
+
+---
+
+## MAJOR 11 — InitModeB_EnterCave_Bank5 also resets InvObjState + runs InitMode_EnterRoom
+
+**Evidence:** Z_01.asm:2959-2962 — before the ObjX/Y/Dir/GridOffset setup:
+```
+JSR InitMode_EnterRoom
+JSR ResetInvObjState
+```
+
+The plan's Step 3 repositions Link but doesn't mention the InitMode_EnterRoom call (which sets up the cave room, clears certain state, etc.) or ResetInvObjState (resets item/inventory object state). If Genesis omits these, the cave room state may diverge.
+
+**Fix:** Step 3's "cave-bottom reposition" must audit that `cave_init(s_pending_cid)` or the swap_entry callback calls the equivalent of InitMode_EnterRoom + ResetInvObjState.
+
+---
+
+## MINOR 12 — C+START fallback is a runtime check that pollutes state
+
+**Evidence:** If C+START runs its own `cave_fade_begin_exit` path, it modifies `s_phase` and potentially produces GameMode/Submode/ObjGridOffset values that differ from NES (which has no chord).
+
+**Fix:** Gate the fallback behind `#ifdef DEBUG_CAVE_EXIT_FALLBACK` (compile-time only). In release/parity-sweep builds, the chord must do nothing. Accept that debug builds may differ.
+
+---
+
+## MINOR 13 — WT-5 tension with editing main.c four times
+
+**Evidence:** The plan edits main.c for spawn coords, frame-0 Y, anim cadence, and SCENE_CAVE auto-exit. That's 4 scattered changes to the one file that should be touched minimally.
+
+**Fix:** Move the spawn-coord constant and frame-0 Y correction into `cave_fade.h` or a new `src/game/cave/cave_constants.h`. The auto-exit logic can live in `src/game/cave/cave_dispatch.c` with one call-site in main.c. Follow the pattern in the house rules: "file goes in src/game/<subsystem>/."
+
+---
+
+## MINOR 14 — Frame-0 `$4D` Y is from capture of one specific entrance
+
+**Evidence:** Z_05.asm:1400-1414 — `InitMode10` reads `ObjY` dynamically (the current Y when Link touches tile $24). Different entrance tiles at different Y positions produce different StairsTargetY. The plan asserts $4D as if universal.
+
+**Fix:** Step 2 should say: "In our test capture (room $77 cave entrance), NES ObjY=$4D. Other entrances may differ. The fix reads current ObjY dynamically (matching NES InitMode10), not hardcoding $4D." If the current Genesis code hardcodes a Y value, that's the bug.
+
+---
+
+## MINOR 15 — Plan ignores the Mode $0C shortcut path
+
+**Evidence:** HandleWarpOW (Z_05.asm:7337-7342) checks `LevelBlockAttrsB & $FC` — values >= $40 mean cave entry (Mode $0B), values < $40 mean level entry (Mode $0C shortcut). The plan mentions this in "Context" but never addresses whether the Genesis code handles the shortcut path.
+
+**Fix:** Add a note: "Mode $0C (level shortcut) is out-of-scope for this plan. Document that the entrance detection at main.c must NOT fire cave_fade for dungeon shortcuts."
+
+---
+
+## VERDICT: REWORK
+
+Single highest-priority fix: **Add a Step 0 that reconciles the GameMode $05 vs $10 architectural mismatch before any position/palette/animation work.** Without this, the entire 113-frame window is comparing apples to oranges — NES dispatches through `UpdateMode10Stairs_Full` (64-frame descent with specific behind-BG, sound, scroll), while Genesis dispatches through `cave_fade_tick` from Mode $05 Play context. The frame numbering, palette state, scroll state, and mode dispatch all diverge at the architectural level. Position and animation fixes (Steps 2-7) cannot produce byte-parity until the mode context is aligned or the divergence is explicitly accepted and documented in the verification gate.
+
+In order of impact:
+1. **BLOCKER:** GameMode $05 vs $10 — entire frame window misaligned
+2. **BLOCKER:** Palette fade contradicts atomic-swap claim — pre-judgment in Step 8
+3. **BLOCKER:** −7px Y may be global — must capture non-cave frame
+4. **MAJOR:** Probe captures only 24 of 113 frames
+5. **MAJOR:** Probe reads zero OAM/SAT data
+6. **MAJOR:** Behind-BG must be set every frame, not only every 4th
+7. **MAJOR:** Exit ascend cadence not specified
+8. **MAJOR:** FrameCounter alignment methodology missing
+9. **MAJOR:** Sound effects omitted
+10. **MAJOR:** Stairs-exit trigger condition hedged

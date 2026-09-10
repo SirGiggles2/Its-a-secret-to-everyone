@@ -1,0 +1,18 @@
+boss=dodongo level=2 room=$56 scene_id=5
+frame=784
+warp_verified=true (attempt 1; 0=never landed scene1+room)
+boss_kick_fired=true ack 0->1
+boss_chr_vram_nonzero=1211/2048 (base $5260)
+--- mirror (VERIFIED, $FF7200) ---
+mirror_magic=5750 (expect 5750)
+mir.frame=281 scene=1 room=$56
+mir.link_x=120 link_y=128 face=0
+mir.uw_level=2 uw_quest=1
+mir.enemy_chr_swap_state=5 active_scene=5 (heavy-mirror)
+--- NES cells (mirror $FF8000+addr) ---
+GameMode $12=$05  Level $10=$02  RoomId $EB=$56
+BossRoomId $6BBC=$83  StartRoomId $6BAD=$FF  [SRAM: UNVERIFIED]
+Slots 0..15 (s: type x y dir state hp attr) — ObjType nonzero only:
+  s01 t=$31 x=$50 y=$7D dir=$AD st=$00 hp=$F0 attr=$89
+  s02 t=$31 x=$50 y=$BD dir=$00 st=$00 hp=$F0 attr=$89
+  s03 t=$31 x=$A0 y=$BD dir=$00 st=$00 hp=$F0 attr=$89

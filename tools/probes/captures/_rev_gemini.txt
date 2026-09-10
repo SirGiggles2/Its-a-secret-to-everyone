@@ -1,0 +1,30 @@
+I have reviewed the implementation plan. Here are my findings:
+
+**BLOCKER** — **Underspecified Ground Truth / Contradictory Descent Mechanics** — The plan's "Context" states a "forced 64-frame walk-down descent (Link sinks behind the arch)," but the cited NES ground truth (`Z_05.asm:2308 UpdateMode10Stairs_Full`) for descent movement (`INC ObjY` every 4 frames) implies a total vertical travel of only 16 pixels over those 64 frames. This directly contradicts the spirit of a "64-frame descent" as a counterpart to the "48px×1fpp" ascend. This fundamental characteristic for the descent is either misstated or unverified for byte-exact parity.
+**Fix:** Before Step 4, definitively clarify the exact total pixel movement and pixel-per-frame cadence for the descent, backed by specific ASM or an explicit NES probe capture. Update the plan's description of the descent to reflect this verified ground truth, noting any asymmetry with the 48px ascend if applicable.
+
+**MAJOR** — **Omission: Shortcut Mode $0C Path** — The plan cites `Z_05.asm:7313 HandleWarpOW` as distinguishing between `Mode $0B` (general cave) and `Mode $0C` (shortcut). The plan subsequently focuses entirely on `Mode $0B` and makes no provisions for probing, verifying, or implementing the `Mode $0C` shortcut path for cave entry/exit. "Full parity" demands handling all distinct entry/exit behaviors.
+**Fix:** Add a new sub-step (e.g., Step 7a) to the plan to:
+1.  Probe NES behavior specifically for `Mode $0C` entry/exit, capturing relevant state and animation.
+2.  Implement parity for this distinct shortcut path, reusing existing Genesis scaffolding where possible.
+
+**MAJOR** — **Omission: Sound Effects & EffectRequest** — NES cave entry/exit sequences invariably involve specific sound effects and potentially other system-level effects triggered via `EffectRequest` (e.g., screen flashes or state changes not covered by RAM variables). The plan entirely omits consideration for these audio and visual/state events.
+**Fix:** Add a new step (e.g., Step 7b) to the plan to:
+1.  Probe NES for specific sound effect triggers and `EffectRequest` values during the entire 64+1+48 frame animation window.
+2.  Implement corresponding sound playback and any associated effects in the Genesis port at byte-exact timings.
+
+**MINOR** — **Underspecified Ground Truth: Frame-0 ObjY** — The initial `NES Link Y=$4D` for frame-0 is asserted in the "Context" but is not explicitly backed by a direct ASM citation in the "NES ground truth cited" section. While Step 2 commits to pinning this value from a captured byte, its initial presentation is a minor Rule Zero violation.
+**Fix:** Ensure Step 1's NES probe instructions explicitly include capturing `ObjY` on the exact frame Link triggers the cave entrance, and clearly state that this capture will serve as the canonical source for Step 2.
+
+**MINOR** — **Ordering Hazard / Underspecified Ground Truth: Walk-pose Animation Cadence** — Step 5's premise, "NES ticks pose every frame," is an assertion not explicitly cited in ASM. This claim requires verification from the updated NES probe in Step 1. If the probe reveals a different cadence, Step 5 would be based on incorrect ground truth.
+**Fix:** Explicitly state in Step 5 that its implementation is contingent upon and must align with the verified outcome of the NES probe for Link's sprite animation cadence (tile/H-flip changes) conducted in Step 1.
+
+**MINOR** — **Omission: Scroll Lock During Animation** — NES character animations, especially forced ones, typically involve temporarily locking screen scrolling. The plan does not mention verifying this NES behavior or implementing its parity in the Genesis port.
+**Fix:** Add a sub-point to Step 7 (e.g., Step 7c) to verify NES screen scroll lock behavior during the animation window and ensure Genesis mirrors it, checking relevant PPU/VRAM scrolling registers in the NES probe.
+
+---
+**VERDICT: REWORK**
+
+**Highest Priority Fix:**
+BLOCKER — The "64-frame walk-down descent" in the Context is contradicted by the cited `Z_05.asm:2308 UpdateMode10Stairs_Full` which implies 16 pixels of vertical movement (1px every 4 frames for 64 frames). This fundamental characteristic of the descent animation is misstated or unverified, leading to an incorrect foundation for implementation parity.
+**Fix:** Clarify and explicitly state the exact total pixel movement and pixel-per-frame cadence for the descent, backed by specific ASM or a new NES probe result. This must be resolved before proceeding with movement-related implementation steps (e.g., Step 4). The plan should then update the description of the descent to reflect this verified ground truth, noting any asymmetry with the 48px ascend if applicable.

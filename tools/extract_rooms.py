@@ -289,15 +289,22 @@ def find_bank6_level_data(prg_data: bytes, z06_blocks: dict) -> dict:
         print(f"    {label}: ROM ${rom_offset:05X}, {LEVEL_BLOCK_SIZE} bytes")
         offset += LEVEL_BLOCK_SIZE
 
+    # Records are 252 bytes and packed back-to-back, but the section the
+    # next block starts after is allotted 10 * 256. The 40-byte difference
+    # is slack before CommonDataBlock_Bank6, which sits at a fixed address
+    # (verified: only the 256-stride walk reproduces
+    # reference/aldonunez/dat/CommonDataBlock_Bank6.dat byte-for-byte).
+    # So: read at stride 252, advance the walk by 256.
     level_infos = {}
-    for label in LEVEL_INFO_LABELS:
-        rom_offset = bank6_offset + offset
+    info_base = offset
+    for idx, label in enumerate(LEVEL_INFO_LABELS):
+        rom_offset = bank6_offset + info_base + idx * LEVEL_INFO_SIZE
         level_infos[label] = prg_data[rom_offset : rom_offset + LEVEL_INFO_EMIT]
         print(
             f"    {label}: ROM ${rom_offset:05X}, record {LEVEL_INFO_SIZE} bytes, "
             f"emit {LEVEL_INFO_EMIT}"
         )
-        offset += LEVEL_INFO_SIZE
+    offset = info_base + len(LEVEL_INFO_LABELS) * LEVEL_INFO_EMIT
 
     common_data_rom_offset = bank6_offset + offset
     common_data = prg_data[

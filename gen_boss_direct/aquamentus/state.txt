@@ -1,0 +1,22 @@
+boss=aquamentus level=1 room=$35 scene_id=4
+frame=595
+warp_verified=true (attempt 2; 0=never landed scene1+room)
+boss_kick_fired=true ack 0->1
+boss_chr_vram_nonzero=1211/2048 (base $5260)
+--- mirror (VERIFIED, $FF7200) ---
+mirror_magic=5750 (expect 5750)
+mir.frame=138 scene=1 room=$35
+mir.link_x=120 link_y=128 face=0
+mir.uw_level=1 uw_quest=1
+mir.enemy_chr_swap_state=5 active_scene=4 (heavy-mirror)
+--- NES cells (mirror $FF8000+addr) ---
+GameMode $12=$05  Level $10=$01  RoomId $EB=$35
+BossRoomId $6BBC=$00  StartRoomId $6BAD=$01  [SRAM: UNVERIFIED]
+Slots 0..15 (s: type x y dir state hp attr) — ObjType nonzero only:
+  s01 t=$3D x=$AE y=$80 dir=$46 st=$00 hp=$60 attr=$89
+  s06 t=$55 x=$B2 y=$7F dir=$00 st=$00 hp=$00 attr=$00
+  s07 t=$55 x=$B2 y=$81 dir=$00 st=$00 hp=$00 attr=$00
+  s08 t=$55 x=$B2 y=$80 dir=$00 st=$00 hp=$00 attr=$00
+  s09 t=$55 x=$17 y=$46 dir=$00 st=$10 hp=$00 attr=$00
+  s10 t=$55 x=$17 y=$BA dir=$00 st=$10 hp=$00 attr=$00
+  s11 t=$55 x=$17 y=$80 dir=$40 st=$10 hp=$00 attr=$00

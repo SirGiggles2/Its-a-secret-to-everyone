@@ -1,0 +1,14 @@
+[0m
+> build · big-pickle
+[0m
+[0m→ [0mRead ..\..\parity\cave_golden\probe_nes_cave_transition.lua
+[0m→ [0mRead ..\..\parity\cave_golden\probe_gen_cave_transition.lua
+[0m• [0mCheck GEN port collision tile read source[90m Explore Agent[0m
+[0m✓ [0mCheck GEN port collision tile read source[90m Explore Agent[0m
+[0m
+[0m# [0mTodos
+[x] Review probe_nes_cave_transition.lua
+[x] Review probe_gen_cave_transition.lua
+[x] Cross-reference GEN port hotspot formula vs NES
+[ ] Compile final verdict with prioritized fixes
+[0m

@@ -1,0 +1,20 @@
+Adversarial review of TWO Python scripts for a Zelda 1 NES→Sega Genesis byte-parity tool, BEFORE first run (project RULE V2 extended to all scripts). These decode the LINK sprite from NES OAM and Genesis SAT each frame of the cave-entry transition and byte-compare it. A silent decode bug produces a false PASS/FAIL and poisons the parity verdict — find every such bug.
+
+## Context / ground truth (verified)
+- NES OAM: 64 sprites × 4 bytes {y, tile, attr, x}. Sprite on-screen if y < $EF. NES screen Y is OAM_y+1. 8x16 sprite mode when ppuctrl bit5 set: tile pairs (tile&$FE, table=tile&1) top + (+1) bottom 8px down; else 8x8 with table = ppuctrl bit3. attr: subpal=bits0-1, hflip=bit6, vflip=bit7. Sprite palette = PALRAM[$10 + subpal*4 + idx]. NES Link = OAM slots $10-$13.
+- Genesis SAT (Mega Drive): 8 bytes/sprite {y(10b BE), size(vsize=b2&3+1, hsize=(b2>>2)&3+1), link=b3&$7F, attr-word(pal=bits13-14,vflip=12,hflip=11,tile=0-10), x(9b BE)}. Screen x=xx-128, y=yy-128. x==0 = masked. VDP sprite cells are COLUMN-MAJOR: tile + col*vsize + row. Active sprites = SAT link chain from slot 0 (stop when link==0). Gameplay SAT base = VRAM $F400.
+- NES→Gen color: misc_palettes LUT (nes_to_cram). Both decode to 8x8 grids of CRAM words (None=transparent), flip baked in — a grid match proves tile+flip+pixels+palette.
+- Transition bundles (per-frame): NCTB = magic(4)+frame(1)+13 state bytes+OAM 256@18+PALRAM 32@274; ppuctrl@16. GCTB = magic(4)+frame(1)+scene(1)+linkxy(4)+12 state+SAT 2048@22+CRAM 128@2070+OAM-mirror 256@2198. chr_ref.bin="NCHR"(4)+CHR 8192+CIRAM 2048. vram_ref.bin="GVRM"(4)+VRAM 65536.
+- Anchor: NES frame0=GameMode$10, Gen frame0=arm; Gen frame compared to NES N is N+shift (default 2).
+
+## Check specifically (severity BLOCKER/MAJOR/MINOR/NIT + fix)
+1. cave_byte_diff.py refactor: I split nes_sprites→nes_sprites_with_chr(oam,chr_,palram,ppuctrl,lut,slots) and gen_sprites→gen_sprites_with_vram(sat,vram,cram), keeping old funcs as wrappers. Did the refactor preserve EXACT behavior (8x16 pairing, spr_table from ppuctrl bit3, subpal math, flip order, column-major Gen cells, chain-walk termination)? Any off-by-one or dropped logic vs the originals?
+2. Link-slot isolation: nes uses slots=range(0x10,0x14). Correct for NES Link in 8x16? (Link is OAM $10-$13.) On Gen there's no slot filter — gen_sprites_with_vram returns ALL chain sprites (Link + NPC + 2 bonfires in caves). The differ then position-matches NES-Link cells to Gen cells at (nx+dx,ny+dy). Is matching ALL gen cells by position sound, or could a bonfire/NPC cell alias a Link position and give a false match?
+3. Offset detection: detect_offset votes (dx,dy) maximizing position matches, run on (nes_link, gen_ALL) per frame, summed across frames, fallback (0,-8). Is voting on nes-Link vs gen-ALL robust, or do the 2 static bonfires + NPC dominate the vote and pick a wrong global offset? Should it vote nes-Link vs gen-Link-candidates only?
+4. Bundle offsets: confirm N_OAM=18, N_PAL=274, N_PPU=16 for NCTB and G_SAT=22, G_CRAM=2070 for GCTB against the documented layouts. chr_ref slice [4:4+8192], vram_ref [4:4+65536].
+5. SAT window: GCTB stores a 2048-byte window from $F400. gen_sprites_with_vram walks slot*8 from sat[0]=$F400. Correct that sat[0] is the gameplay SAT base? Any risk it reads the $F800 title SAT inside the window?
+6. grid_key / px compare: comparing tuple-of-tuples of CRAM words (None for transparent). Does this correctly treat transparent vs color-0? Any aliasing where two different sprites hash equal?
+7. Verdict logic: PASS iff px-diff==0 AND missing==0 AND compared>0. Frames where NES Link has 0 cells (upper-half off-screen at Y=$F8 during descent) are skipped — is skipping correct, or does it hide real divergence? Could the whole run skip every frame (compared==0) and falsely... (it guards compared>0 → FAIL). Verify.
+8. Crashes: index errors if a bundle is short, chr_ref/vram_ref wrong size, empty votes (fallback ok?), gen_by_pos collisions (dict overwrite — two gen cells same pos).
+
+Full source of both files below. End with VERDICT: APPROVE / APPROVE-WITH-CHANGES / REWORK + the single highest-priority fix.

@@ -1,0 +1,16 @@
+boss=digdogger level=5 room=$24 scene_id=8
+frame=1349
+warp_verified=true (attempt 1; 0=never landed scene1+room)
+boss_kick_fired=true ack 0->1
+boss_chr_vram_nonzero=1228/2048 (base $5260)
+--- mirror (VERIFIED, $FF7200) ---
+mirror_magic=5750 (expect 5750)
+mir.frame=696 scene=1 room=$24
+mir.link_x=120 link_y=128 face=0
+mir.uw_level=5 uw_quest=1
+mir.enemy_chr_swap_state=5 active_scene=8 (heavy-mirror)
+--- NES cells (mirror $FF8000+addr) ---
+GameMode $12=$05  Level $10=$05  RoomId $EB=$24
+BossRoomId $6BBC=$FB  StartRoomId $6BAD=$00  [SRAM: UNVERIFIED]
+Slots 0..15 (s: type x y dir state hp attr) — ObjType nonzero only:
+  s01 t=$38 x=$73 y=$5C dir=$7D st=$00 hp=$F0 attr=$A9

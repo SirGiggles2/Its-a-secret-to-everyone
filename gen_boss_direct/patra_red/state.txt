@@ -1,0 +1,24 @@
+boss=patra_red level=9 room=$52 scene_id=12
+frame=2098
+warp_verified=true (attempt 1; 0=never landed scene1+room)
+boss_kick_fired=true ack 0->1
+boss_chr_vram_nonzero=1301/2048 (base $5260)
+--- mirror (VERIFIED, $FF7200) ---
+mirror_magic=5750 (expect 5750)
+mir.frame=1182 scene=1 room=$52
+mir.link_x=120 link_y=128 face=0
+mir.uw_level=9 uw_quest=1
+mir.enemy_chr_swap_state=5 active_scene=12 (heavy-mirror)
+--- NES cells (mirror $FF8000+addr) ---
+GameMode $12=$05  Level $10=$09  RoomId $EB=$52
+BossRoomId $6BBC=$67  StartRoomId $6BAD=$FF  [SRAM: UNVERIFIED]
+Slots 0..15 (s: type x y dir state hp attr) — ObjType nonzero only:
+  s01 t=$47 x=$80 y=$70 dir=$60 st=$00 hp=$B0 attr=$81
+  s02 t=$25 x=$8C y=$7A dir=$00 st=$01 hp=$60 attr=$C3
+  s03 t=$25 x=$76 y=$97 dir=$00 st=$01 hp=$60 attr=$C3
+  s04 t=$25 x=$4A y=$A7 dir=$00 st=$01 hp=$60 attr=$C3
+  s05 t=$25 x=$0F y=$E6 dir=$00 st=$01 hp=$60 attr=$C3
+  s06 t=$25 x=$86 y=$00 dir=$00 st=$01 hp=$60 attr=$C3
+  s07 t=$25 x=$80 y=$44 dir=$00 st=$01 hp=$60 attr=$C3
+  s08 t=$25 x=$80 y=$44 dir=$00 st=$01 hp=$60 attr=$C3
+  s09 t=$25 x=$9C y=$60 dir=$00 st=$10 hp=$60 attr=$C3

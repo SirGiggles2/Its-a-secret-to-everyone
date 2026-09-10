@@ -12,7 +12,8 @@
 #include "sfx_pcm.h"
 #include "../../data/audio/sfx_pcm_stairs.h"  /* NES cave stairs SFX (#8 / XGM id 71), synth */
 #include "platform_abi.h"   /* nes_ram (A4-pinned) for probe sentinels */
-#include "../../data/audio_music/ow_theme_vgm.h"
+#include "../../data/audio_music/ow_theme_xgm.h"
+#include "../../data/audio_music/uw_theme_xgm.h"
 #include <z80_ctrl.h>
 #include <snd/sound.h>
 #include <snd/xgm.h>
@@ -21,6 +22,7 @@ extern void music_play(unsigned char song_bitmap);
 extern void music_tick(void);
 
 static u8 xgm_initialized = 0;
+static u8 s_current_xgm_song = 0;
 static u8 sfx_next_channel = 0;  /* round-robin index 0..2 → CH2..CH4 */
 
 /* XGM-driver song ownership flag, shared with src/audio_driver.asm's
@@ -31,8 +33,18 @@ static u8 sfx_next_channel = 0;  /* round-robin index 0..2 → CH2..CH4 */
  * NOT tick while this is set, or its tick_sq1 writes will race the
  * Z80's chip accesses. Cleared when XGM_stopPlay hands ownership back. */
 static volatile u8 * const xgm_owns_chip_ptr = (volatile u8 *)0x00FFE02CUL;
+static volatile u8 * const music_song_ptr = (volatile u8 *)0x00FFE000UL;
+static volatile u8 * const music_song_req_ptr = (volatile u8 *)0x00FFE001UL;
 
 #define SONG_OW_BITMAP  0x01u
+#define SONG_UW_BITMAP  0x40u
+
+static const u8 *xgm_blob_for_song(unsigned char song)
+{
+    if (song == SONG_OW_BITMAP) return ow_theme_xgm;
+    if (song == SONG_UW_BITMAP) return uw_theme_xgm;
+    return 0;
+}
 
 void audio_xgm_init(void)
 {
@@ -53,14 +65,26 @@ void audio_xgm_init(void)
 
 void audio_music_play(unsigned char song)
 {
-    /* XGM Z80 driver natively accepts VGM blobs (per sgdk/inc/z80_ctrl.h:144
-     * Z80_DRIVER_XGM doxygen). Overworld theme is supplied as a VGM file
-     * embedded at data/audio_music/ow_theme_vgm.c and dispatched here. */
-    if (song == SONG_OW_BITMAP) {
+    const u8 *xgm_song = xgm_blob_for_song(song);
+
+    /* OW and UW route through SGDK's XGM Z80 driver. The checked-in
+     * ow_theme_xgm.c and uw_theme_xgm.c arrays are compiled XGC-style
+     * blobs produced by xgmtool from the source VGMs. */
+    if (xgm_song) {
         if (!xgm_initialized) audio_xgm_init();
-        if (!*xgm_owns_chip_ptr) {
+
+        /* Keep legacy debug/probe song cells coherent even while the
+         * legacy tick is gated off and cannot consume m_song_req itself. */
+        *music_song_ptr = song;
+        *music_song_req_ptr = 0;
+
+        if (!*xgm_owns_chip_ptr || s_current_xgm_song != song) {
+            if (*xgm_owns_chip_ptr) {
+                XGM_stopPlay();
+            }
             *xgm_owns_chip_ptr = 1;       /* gate legacy music_tick BEFORE Z80 starts */
-            XGM_startPlay(ow_theme_vgm);
+            XGM_startPlay(xgm_song);
+            s_current_xgm_song = song;
         }
         return;
     }
@@ -69,6 +93,7 @@ void audio_music_play(unsigned char song)
     if (*xgm_owns_chip_ptr) {
         XGM_stopPlay();
         *xgm_owns_chip_ptr = 0;
+        s_current_xgm_song = 0;
     }
     music_play(song);
 }

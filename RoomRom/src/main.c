@@ -929,6 +929,7 @@ void roomrom_main_apply_warp_outcome(const rr_warp_outcome_t *out)
      * template_id table; force-spawn hook fires from probe Lua. */
     enemy_loop_room_init(s_room_id, (unsigned char)s_scene);
     request_boss_chr_if_boss_room();
+    audio_music_play((s_scene == SCENE_UW) ? 0x40 : 0x01);
 
     /* Phase C (2026-05-24) — UET state per NES dispatch (Z_01.asm:2990,
      * Z_05.asm:6717+7493, Z_07.asm:3200).
@@ -2608,10 +2609,7 @@ void roomrom_debug_tick(void)
              * — music_play is in audio_driver.asm + linked into
              * Debug.md via tools/debug/build_debug.py compile_asm
              * MRI path (commit 6191e911). */
-            {
-                extern void music_play(unsigned char song_bitmap);
-                music_play((s_scene == SCENE_UW) ? 0x40 : 0x01);
-            }
+            audio_music_play((s_scene == SCENE_UW) ? 0x40 : 0x01);
             return;
         }
 

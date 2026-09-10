@@ -1,0 +1,762 @@
+# cave_diff_report  NES vs Genesis cave-entry byte-diff
+# NES records: 64, GEN records: 80
+
+== Frame 0 alignment check ==
+NES fr 0: GM=$10 Link=($40,$4D)
+GEN fr 0: GM=$05 Link=($40,$54)
+  Y delta = NES_Y - GEN_Y = $4D - $54 = -7
+
+== Trigger-frame nametable cells (col 8, rows 0-10) ==
+== NES nametable $24 tile locations (cave entrance candidates) ==
+  NES NT($24) at row=0 col=0
+  NES NT($24) at row=0 col=1
+  NES NT($24) at row=0 col=2
+  NES NT($24) at row=0 col=3
+  NES NT($24) at row=0 col=4
+  NES NT($24) at row=0 col=5
+  NES NT($24) at row=0 col=6
+  NES NT($24) at row=0 col=7
+  NES NT($24) at row=0 col=8
+  NES NT($24) at row=0 col=9
+  NES NT($24) at row=0 col=10
+  NES NT($24) at row=0 col=11
+  NES NT($24) at row=0 col=12
+  NES NT($24) at row=0 col=13
+  NES NT($24) at row=0 col=14
+  NES NT($24) at row=0 col=15
+  NES NT($24) at row=0 col=16
+  NES NT($24) at row=0 col=17
+  NES NT($24) at row=0 col=18
+  NES NT($24) at row=0 col=19
+  NES NT($24) at row=0 col=20
+  NES NT($24) at row=0 col=21
+  NES NT($24) at row=0 col=22
+  NES NT($24) at row=0 col=23
+  NES NT($24) at row=0 col=24
+  NES NT($24) at row=0 col=25
+  NES NT($24) at row=0 col=26
+  NES NT($24) at row=0 col=27
+  NES NT($24) at row=0 col=28
+  NES NT($24) at row=0 col=29
+  NES NT($24) at row=0 col=30
+  NES NT($24) at row=0 col=31
+  NES NT($24) at row=1 col=0
+  NES NT($24) at row=1 col=1
+  NES NT($24) at row=1 col=2
+  NES NT($24) at row=1 col=3
+  NES NT($24) at row=1 col=4
+  NES NT($24) at row=1 col=5
+  NES NT($24) at row=1 col=6
+  NES NT($24) at row=1 col=7
+  NES NT($24) at row=1 col=8
+  NES NT($24) at row=1 col=9
+  NES NT($24) at row=1 col=10
+  NES NT($24) at row=1 col=11
+  NES NT($24) at row=1 col=12
+  NES NT($24) at row=1 col=13
+  NES NT($24) at row=1 col=14
+  NES NT($24) at row=1 col=15
+  NES NT($24) at row=1 col=16
+  NES NT($24) at row=1 col=17
+  NES NT($24) at row=1 col=18
+  NES NT($24) at row=1 col=19
+  NES NT($24) at row=1 col=20
+  NES NT($24) at row=1 col=21
+  NES NT($24) at row=1 col=22
+  NES NT($24) at row=1 col=23
+  NES NT($24) at row=1 col=24
+  NES NT($24) at row=1 col=25
+  NES NT($24) at row=1 col=26
+  NES NT($24) at row=1 col=27
+  NES NT($24) at row=1 col=28
+  NES NT($24) at row=1 col=29
+  NES NT($24) at row=1 col=30
+  NES NT($24) at row=1 col=31
+  NES NT($24) at row=2 col=0
+  NES NT($24) at row=2 col=1
+  NES NT($24) at row=2 col=2
+  NES NT($24) at row=2 col=3
+  NES NT($24) at row=2 col=4
+  NES NT($24) at row=2 col=5
+  NES NT($24) at row=2 col=6
+  NES NT($24) at row=2 col=7
+  NES NT($24) at row=2 col=8
+  NES NT($24) at row=2 col=9
+  NES NT($24) at row=2 col=10
+  NES NT($24) at row=2 col=11
+  NES NT($24) at row=2 col=12
+  NES NT($24) at row=2 col=13
+  NES NT($24) at row=2 col=14
+  NES NT($24) at row=2 col=15
+  NES NT($24) at row=2 col=16
+  NES NT($24) at row=2 col=17
+  NES NT($24) at row=2 col=18
+  NES NT($24) at row=2 col=19
+  NES NT($24) at row=2 col=20
+  NES NT($24) at row=2 col=21
+  NES NT($24) at row=2 col=22
+  NES NT($24) at row=2 col=23
+  NES NT($24) at row=2 col=24
+  NES NT($24) at row=2 col=25
+  NES NT($24) at row=2 col=26
+  NES NT($24) at row=2 col=27
+  NES NT($24) at row=2 col=28
+  NES NT($24) at row=2 col=29
+  NES NT($24) at row=2 col=30
+  NES NT($24) at row=2 col=31
+  NES NT($24) at row=3 col=0
+  NES NT($24) at row=3 col=1
+  NES NT($24) at row=3 col=10
+  NES NT($24) at row=3 col=14
+  NES NT($24) at row=3 col=21
+  NES NT($24) at row=3 col=22
+  NES NT($24) at row=3 col=29
+  NES NT($24) at row=3 col=30
+  NES NT($24) at row=3 col=31
+  NES NT($24) at row=4 col=0
+  NES NT($24) at row=4 col=1
+  NES NT($24) at row=4 col=10
+  NES NT($24) at row=4 col=11
+  NES NT($24) at row=4 col=12
+  NES NT($24) at row=4 col=13
+  NES NT($24) at row=4 col=14
+  NES NT($24) at row=4 col=16
+  NES NT($24) at row=4 col=19
+  NES NT($24) at row=4 col=21
+  NES NT($24) at row=4 col=22
+  NES NT($24) at row=4 col=23
+  NES NT($24) at row=4 col=24
+  NES NT($24) at row=4 col=25
+  NES NT($24) at row=4 col=26
+  NES NT($24) at row=4 col=27
+  NES NT($24) at row=4 col=28
+  NES NT($24) at row=4 col=29
+  NES NT($24) at row=4 col=30
+  NES NT($24) at row=4 col=31
+  NES NT($24) at row=5 col=0
+  NES NT($24) at row=5 col=1
+  NES NT($24) at row=5 col=10
+  NES NT($24) at row=5 col=14
+  NES NT($24) at row=5 col=16
+  NES NT($24) at row=5 col=19
+  NES NT($24) at row=5 col=21
+  NES NT($24) at row=5 col=22
+  NES NT($24) at row=5 col=23
+  NES NT($24) at row=5 col=24
+  NES NT($24) at row=5 col=25
+  NES NT($24) at row=5 col=26
+  NES NT($24) at row=5 col=27
+  NES NT($24) at row=5 col=28
+  NES NT($24) at row=5 col=29
+  NES NT($24) at row=5 col=30
+  NES NT($24) at row=5 col=31
+  NES NT($24) at row=6 col=0
+  NES NT($24) at row=6 col=1
+  NES NT($24) at row=6 col=10
+  NES NT($24) at row=6 col=14
+  NES NT($24) at row=6 col=21
+  NES NT($24) at row=6 col=25
+  NES NT($24) at row=6 col=26
+  NES NT($24) at row=6 col=27
+  NES NT($24) at row=6 col=28
+  NES NT($24) at row=6 col=29
+  NES NT($24) at row=6 col=30
+  NES NT($24) at row=6 col=31
+  NES NT($24) at row=7 col=0
+  NES NT($24) at row=7 col=1
+  NES NT($24) at row=7 col=2
+  NES NT($24) at row=7 col=3
+  NES NT($24) at row=7 col=4
+  NES NT($24) at row=7 col=5
+  NES NT($24) at row=7 col=6
+  NES NT($24) at row=7 col=7
+  NES NT($24) at row=7 col=8
+  NES NT($24) at row=7 col=9
+  NES NT($24) at row=7 col=10
+  NES NT($24) at row=7 col=11
+  NES NT($24) at row=7 col=12
+  NES NT($24) at row=7 col=13
+  NES NT($24) at row=7 col=14
+  NES NT($24) at row=7 col=15
+  NES NT($24) at row=7 col=16
+  NES NT($24) at row=7 col=17
+  NES NT($24) at row=7 col=18
+  NES NT($24) at row=7 col=19
+  NES NT($24) at row=7 col=20
+  NES NT($24) at row=7 col=21
+  NES NT($24) at row=7 col=22
+  NES NT($24) at row=7 col=23
+  NES NT($24) at row=7 col=24
+  NES NT($24) at row=7 col=25
+  NES NT($24) at row=7 col=26
+  NES NT($24) at row=7 col=27
+  NES NT($24) at row=7 col=28
+  NES NT($24) at row=7 col=29
+  NES NT($24) at row=7 col=30
+  NES NT($24) at row=7 col=31
+  NES NT($24) at row=11 col=8
+  NES NT($24) at row=11 col=9
+== Genesis Plane A row by row tile-id maps (rows 7-15, cols 0-15) ==
+  gen_row= 7: 401P 201P 401P 201P 401P 201P 401P 201P 401P 201P 401P 201P 401P 201P 600. 600. 
+  gen_row= 8: 701P 501P 701P 501P 701P 501P 701P 501P 701P 501P 701P 501P 701P 501P 600. 600. 
+  gen_row= 9: 401P 201P 401P 201P 401P 201P 401P 201P 402. 402. 401P 201P 001P 601P 600. 600. 
+  gen_row=10: 701P 501P 701P 501P 701P 501P 701P 501P 300. 300. 701P 501P 301P 101P 600. 600. 
+  gen_row=11: 401P 201P 401P 201P 401P 201P 001P 601P 600. 600. 600. 600. 600. 600. 600. 600. 
+  gen_row=12: 701P 501P 701P 501P 701P 501P 301P 101P 600. 600. 600. 600. 600. 600. 600. 600. 
+  gen_row=13: 401P 201P 401P 201P 001P 601P 600. 600. 600. 600. 600. 600. 600. 600. 600. 600. 
+  gen_row=14: 701P 501P 701P 501P 301P 101P 600. 600. 600. 600. 600. 600. 600. 600. 600. 600. 
+  gen_row=15: 401P 201P 001P 601P 600. 600. 600. 680. 680. 680. 600. 600. 600. 600. 600. 600. 
+
+== Genesis PlayAreaTiles ($6530+, col-major: col*0x16 + row) ==
+  PAT col  0: r00=D8 r01=D9 r02=D8 r03=D9 r04=D8 r05=D9 r06=D8 r07=D9 r08=D8 r09=D9 r10=26 
+  PAT col  1: r00=DA r01=DB r02=DA r03=DB r04=DA r05=DB r06=DA r07=DB r08=DA r09=DB r10=26 
+  PAT col  2: r00=D8 r01=D9 r02=D8 r03=D9 r04=D8 r05=D9 r06=D8 r07=D9 r08=DC r09=DD r10=26 
+  PAT col  3: r00=DA r01=DB r02=DA r03=DB r04=DA r05=DB r06=DA r07=DB r08=DE r09=DF r10=26 
+  PAT col  4: r00=D8 r01=D9 r02=D8 r03=D9 r04=D8 r05=D9 r06=DC r07=DD r08=26 r09=26 r10=26 
+  PAT col  5: r00=DA r01=DB r02=DA r03=DB r04=DA r05=DB r06=DE r07=DF r08=26 r09=26 r10=26 
+  PAT col  6: r00=D8 r01=D9 r02=D8 r03=D9 r04=DC r05=DD r06=26 r07=26 r08=26 r09=26 r10=26 
+  PAT col  7: r00=DA r01=DB r02=DA r03=DB r04=DE r05=DF r06=26 r07=26 r08=26 r09=26 r10=26 
+  PAT col  8: r00=D8 r01=D9 r02=F3 r03=24 r04=26 r05=26 r06=26 r07=26 r08=26 r09=26 r10=26 
+  PAT col  9: r00=DA r01=DB r02=F3 r03=24 r04=26 r05=26 r06=26 r07=26 r08=26 r09=26 r10=26 
+  PAT col 10: r00=D8 r01=D9 r02=D8 r03=D9 r04=26 r05=26 r06=26 r07=26 r08=26 r09=26 r10=26 
+  PAT col 11: r00=DA r01=DB r02=DA r03=DB r04=26 r05=26 r06=26 r07=26 r08=26 r09=26 r10=26 
+  PAT col 12: r00=D8 r01=D9 r02=DC r03=DD r04=26 r05=26 r06=26 r07=26 r08=26 r09=26 r10=26 
+  PAT col 13: r00=DA r01=DB r02=DE r03=DF r04=26 r05=26 r06=26 r07=26 r08=26 r09=26 r10=26 
+  PAT col 14: r00=26 r01=26 r02=26 r03=26 r04=26 r05=26 r06=26 r07=26 r08=26 r09=26 r10=26 
+  PAT col 15: r00=26 r01=26 r02=26 r03=26 r04=26 r05=26 r06=26 r07=26 r08=26 r09=26 r10=26 
+
+== Per-frame STATE diffs (frame 0 .. min(NES, GEN)) ==
+-- fr 000 --
+  STATE $0012 GameMode           NES=$10 GEN=$05
+  STATE $0084 ObjY[0]            NES=$4D GEN=$54
+-- fr 001 --
+  STATE $0012 GameMode           NES=$10 GEN=$05
+  STATE $0084 ObjY[0]            NES=$4D GEN=$54
+-- fr 002 --
+  STATE $0012 GameMode           NES=$10 GEN=$05
+  STATE $0084 ObjY[0]            NES=$4D GEN=$54
+-- fr 003 --
+  STATE $0012 GameMode           NES=$10 GEN=$05
+  STATE $0084 ObjY[0]            NES=$4E GEN=$54
+-- fr 004 --
+  STATE $0012 GameMode           NES=$10 GEN=$05
+  STATE $0084 ObjY[0]            NES=$4E GEN=$55
+-- fr 005 --
+  STATE $0012 GameMode           NES=$10 GEN=$05
+  STATE $0084 ObjY[0]            NES=$4E GEN=$55
+-- fr 006 --
+  STATE $0012 GameMode           NES=$10 GEN=$05
+  STATE $0084 ObjY[0]            NES=$4E GEN=$55
+-- fr 007 --
+  STATE $0012 GameMode           NES=$10 GEN=$05
+  STATE $0084 ObjY[0]            NES=$4F GEN=$55
+-- fr 008 --
+  STATE $0012 GameMode           NES=$10 GEN=$05
+  STATE $0084 ObjY[0]            NES=$4F GEN=$56
+-- fr 009 --
+  STATE $0012 GameMode           NES=$10 GEN=$05
+  STATE $0084 ObjY[0]            NES=$4F GEN=$56
+-- fr 010 --
+  STATE $0012 GameMode           NES=$10 GEN=$05
+  STATE $0084 ObjY[0]            NES=$4F GEN=$56
+-- fr 011 --
+  STATE $0012 GameMode           NES=$10 GEN=$05
+  STATE $0084 ObjY[0]            NES=$50 GEN=$56
+-- fr 012 --
+  STATE $0012 GameMode           NES=$10 GEN=$05
+  STATE $0084 ObjY[0]            NES=$50 GEN=$57
+-- fr 013 --
+  STATE $0012 GameMode           NES=$10 GEN=$05
+  STATE $0084 ObjY[0]            NES=$50 GEN=$57
+-- fr 014 --
+  STATE $0012 GameMode           NES=$10 GEN=$05
+  STATE $0084 ObjY[0]            NES=$50 GEN=$57
+-- fr 015 --
+  STATE $0012 GameMode           NES=$10 GEN=$05
+  STATE $0084 ObjY[0]            NES=$51 GEN=$57
+-- fr 016 --
+  STATE $0012 GameMode           NES=$10 GEN=$05
+  STATE $0084 ObjY[0]            NES=$51 GEN=$58
+-- fr 017 --
+  STATE $0012 GameMode           NES=$10 GEN=$05
+  STATE $0084 ObjY[0]            NES=$51 GEN=$58
+-- fr 018 --
+  STATE $0012 GameMode           NES=$10 GEN=$05
+  STATE $0084 ObjY[0]            NES=$51 GEN=$58
+-- fr 019 --
+  STATE $0012 GameMode           NES=$10 GEN=$05
+  STATE $0084 ObjY[0]            NES=$52 GEN=$58
+-- fr 020 --
+  STATE $0012 GameMode           NES=$10 GEN=$05
+  STATE $0084 ObjY[0]            NES=$52 GEN=$59
+-- fr 021 --
+  STATE $0012 GameMode           NES=$10 GEN=$05
+  STATE $0084 ObjY[0]            NES=$52 GEN=$59
+-- fr 022 --
+  STATE $0012 GameMode           NES=$10 GEN=$05
+  STATE $0084 ObjY[0]            NES=$52 GEN=$59
+-- fr 023 --
+  STATE $0012 GameMode           NES=$10 GEN=$05
+  STATE $0084 ObjY[0]            NES=$53 GEN=$59
+-- fr 024 --
+  STATE $0012 GameMode           NES=$10 GEN=$05
+  STATE $0084 ObjY[0]            NES=$53 GEN=$5A
+-- fr 025 --
+  STATE $0012 GameMode           NES=$10 GEN=$05
+  STATE $0084 ObjY[0]            NES=$53 GEN=$5A
+-- fr 026 --
+  STATE $0012 GameMode           NES=$10 GEN=$05
+  STATE $0084 ObjY[0]            NES=$53 GEN=$5A
+-- fr 027 --
+  STATE $0012 GameMode           NES=$10 GEN=$05
+  STATE $0084 ObjY[0]            NES=$54 GEN=$5A
+-- fr 028 --
+  STATE $0012 GameMode           NES=$10 GEN=$05
+  STATE $0084 ObjY[0]            NES=$54 GEN=$5B
+-- fr 029 --
+  STATE $0012 GameMode           NES=$10 GEN=$05
+  STATE $0084 ObjY[0]            NES=$54 GEN=$5B
+-- fr 030 --
+  STATE $0012 GameMode           NES=$10 GEN=$05
+  STATE $0084 ObjY[0]            NES=$54 GEN=$5B
+-- fr 031 --
+  STATE $0012 GameMode           NES=$10 GEN=$05
+  STATE $0084 ObjY[0]            NES=$55 GEN=$5B
+-- fr 032 --
+  STATE $0012 GameMode           NES=$10 GEN=$05
+  STATE $0084 ObjY[0]            NES=$55 GEN=$5C
+-- fr 033 --
+  STATE $0012 GameMode           NES=$10 GEN=$05
+  STATE $0084 ObjY[0]            NES=$55 GEN=$5C
+-- fr 034 --
+  STATE $0012 GameMode           NES=$10 GEN=$05
+  STATE $0084 ObjY[0]            NES=$55 GEN=$5C
+-- fr 035 --
+  STATE $0012 GameMode           NES=$10 GEN=$05
+  STATE $0084 ObjY[0]            NES=$56 GEN=$5C
+-- fr 036 --
+  STATE $0012 GameMode           NES=$10 GEN=$05
+  STATE $0084 ObjY[0]            NES=$56 GEN=$5D
+-- fr 037 --
+  STATE $0012 GameMode           NES=$10 GEN=$05
+  STATE $0084 ObjY[0]            NES=$56 GEN=$5D
+-- fr 038 --
+  STATE $0012 GameMode           NES=$10 GEN=$05
+  STATE $0084 ObjY[0]            NES=$56 GEN=$5D
+-- fr 039 --
+  STATE $0012 GameMode           NES=$10 GEN=$05
+  STATE $0084 ObjY[0]            NES=$57 GEN=$5D
+-- fr 040 --
+  STATE $0012 GameMode           NES=$10 GEN=$05
+  STATE $0084 ObjY[0]            NES=$57 GEN=$5E
+-- fr 041 --
+  STATE $0012 GameMode           NES=$10 GEN=$05
+  STATE $0084 ObjY[0]            NES=$57 GEN=$5E
+-- fr 042 --
+  STATE $0012 GameMode           NES=$10 GEN=$05
+  STATE $0084 ObjY[0]            NES=$57 GEN=$5E
+-- fr 043 --
+  STATE $0012 GameMode           NES=$10 GEN=$05
+  STATE $0084 ObjY[0]            NES=$58 GEN=$5E
+-- fr 044 --
+  STATE $0012 GameMode           NES=$10 GEN=$05
+  STATE $0084 ObjY[0]            NES=$58 GEN=$5F
+-- fr 045 --
+  STATE $0012 GameMode           NES=$10 GEN=$05
+  STATE $0084 ObjY[0]            NES=$58 GEN=$5F
+-- fr 046 --
+  STATE $0012 GameMode           NES=$10 GEN=$05
+  STATE $0084 ObjY[0]            NES=$58 GEN=$5F
+-- fr 047 --
+  STATE $0012 GameMode           NES=$10 GEN=$05
+  STATE $0084 ObjY[0]            NES=$59 GEN=$5F
+-- fr 048 --
+  STATE $0012 GameMode           NES=$10 GEN=$05
+  STATE $0084 ObjY[0]            NES=$59 GEN=$60
+-- fr 049 --
+  STATE $0012 GameMode           NES=$10 GEN=$05
+  STATE $0084 ObjY[0]            NES=$59 GEN=$60
+-- fr 050 --
+  STATE $0012 GameMode           NES=$10 GEN=$05
+  STATE $0084 ObjY[0]            NES=$59 GEN=$60
+-- fr 051 --
+  STATE $0012 GameMode           NES=$10 GEN=$05
+  STATE $0084 ObjY[0]            NES=$5A GEN=$60
+-- fr 052 --
+  STATE $0012 GameMode           NES=$10 GEN=$05
+  STATE $0084 ObjY[0]            NES=$5A GEN=$61
+-- fr 053 --
+  STATE $0012 GameMode           NES=$10 GEN=$05
+  STATE $0084 ObjY[0]            NES=$5A GEN=$61
+-- fr 054 --
+  STATE $0012 GameMode           NES=$10 GEN=$05
+  STATE $0084 ObjY[0]            NES=$5A GEN=$61
+-- fr 055 --
+  STATE $0012 GameMode           NES=$10 GEN=$05
+  STATE $0084 ObjY[0]            NES=$5B GEN=$61
+-- fr 056 --
+  STATE $0012 GameMode           NES=$10 GEN=$05
+  STATE $0084 ObjY[0]            NES=$5B GEN=$62
+-- fr 057 --
+  STATE $0012 GameMode           NES=$10 GEN=$05
+  STATE $0084 ObjY[0]            NES=$5B GEN=$62
+-- fr 058 --
+  STATE $0012 GameMode           NES=$10 GEN=$05
+  STATE $0084 ObjY[0]            NES=$5B GEN=$62
+-- fr 059 --
+  STATE $0012 GameMode           NES=$10 GEN=$05
+  STATE $0084 ObjY[0]            NES=$5C GEN=$62
+-- fr 060 --
+  STATE $0012 GameMode           NES=$10 GEN=$05
+  STATE $0084 ObjY[0]            NES=$5C GEN=$63
+-- fr 061 --
+  STATE $0012 GameMode           NES=$10 GEN=$05
+  STATE $0084 ObjY[0]            NES=$5C GEN=$63
+-- fr 062 --
+  STATE $0012 GameMode           NES=$10 GEN=$05
+  STATE $0084 ObjY[0]            NES=$5C GEN=$63
+-- fr 063 --
+  STATE $0012 GameMode           NES=$0B GEN=$05
+  STATE $0084 ObjY[0]            NES=$5D GEN=$63
+
+== Per-frame OAM Link-slot diffs ($10..$13) ==
+-- fr 000 --
+  OAM[10].0 (b40) NES=$F8 GEN=$00
+  OAM[10].1 (b41) NES=$D4 GEN=$00
+  OAM[10].2 (b42) NES=$02 GEN=$00
+  OAM[10].3 (b43) NES=$64 GEN=$00
+  OAM[11].0 (b44) NES=$F8 GEN=$00
+  OAM[11].1 (b45) NES=$D4 GEN=$00
+  OAM[11].2 (b46) NES=$02 GEN=$00
+  OAM[11].3 (b47) NES=$90 GEN=$00
+  OAM[12].0 (b48) NES=$50 GEN=$00
+  OAM[12].1 (b49) NES=$0E GEN=$00
+  OAM[12].2 (b4A) NES=$40 GEN=$00
+  OAM[12].3 (b4B) NES=$40 GEN=$00
+  OAM[13].0 (b4C) NES=$50 GEN=$00
+  OAM[13].1 (b4D) NES=$0C GEN=$00
+  OAM[13].2 (b4E) NES=$40 GEN=$00
+  OAM[13].3 (b4F) NES=$48 GEN=$00
+-- fr 001 --
+  OAM[10].0 (b40) NES=$F8 GEN=$00
+  OAM[10].1 (b41) NES=$D4 GEN=$00
+  OAM[10].2 (b42) NES=$02 GEN=$00
+  OAM[10].3 (b43) NES=$64 GEN=$00
+  OAM[11].0 (b44) NES=$F8 GEN=$00
+  OAM[11].1 (b45) NES=$D4 GEN=$00
+  OAM[11].2 (b46) NES=$02 GEN=$00
+  OAM[11].3 (b47) NES=$90 GEN=$00
+  OAM[12].0 (b48) NES=$4F GEN=$00
+  OAM[12].1 (b49) NES=$0E GEN=$00
+  OAM[12].2 (b4A) NES=$40 GEN=$00
+  OAM[12].3 (b4B) NES=$40 GEN=$00
+  OAM[13].0 (b4C) NES=$4F GEN=$00
+  OAM[13].1 (b4D) NES=$0C GEN=$00
+  OAM[13].2 (b4E) NES=$40 GEN=$00
+  OAM[13].3 (b4F) NES=$48 GEN=$00
+-- fr 002 --
+  OAM[10].0 (b40) NES=$F8 GEN=$00
+  OAM[10].1 (b41) NES=$D4 GEN=$00
+  OAM[10].2 (b42) NES=$02 GEN=$00
+  OAM[10].3 (b43) NES=$64 GEN=$00
+  OAM[11].0 (b44) NES=$F8 GEN=$00
+  OAM[11].1 (b45) NES=$D4 GEN=$00
+  OAM[11].2 (b46) NES=$02 GEN=$00
+  OAM[11].3 (b47) NES=$90 GEN=$00
+  OAM[12].0 (b48) NES=$4F GEN=$00
+  OAM[12].1 (b49) NES=$0E GEN=$00
+  OAM[12].2 (b4A) NES=$40 GEN=$00
+  OAM[12].3 (b4B) NES=$40 GEN=$00
+  OAM[13].0 (b4C) NES=$4F GEN=$00
+  OAM[13].1 (b4D) NES=$0C GEN=$00
+  OAM[13].2 (b4E) NES=$40 GEN=$00
+  OAM[13].3 (b4F) NES=$48 GEN=$00
+-- fr 003 --
+  OAM[10].0 (b40) NES=$F8 GEN=$00
+  OAM[10].1 (b41) NES=$D4 GEN=$00
+  OAM[10].2 (b42) NES=$02 GEN=$00
+  OAM[10].3 (b43) NES=$64 GEN=$00
+  OAM[11].0 (b44) NES=$F8 GEN=$00
+  OAM[11].1 (b45) NES=$D4 GEN=$00
+  OAM[11].2 (b46) NES=$02 GEN=$00
+  OAM[11].3 (b47) NES=$90 GEN=$00
+  OAM[12].0 (b48) NES=$4F GEN=$00
+  OAM[12].1 (b49) NES=$0E GEN=$00
+  OAM[12].2 (b4A) NES=$60 GEN=$00
+  OAM[12].3 (b4B) NES=$40 GEN=$00
+  OAM[13].0 (b4C) NES=$4F GEN=$00
+  OAM[13].1 (b4D) NES=$0C GEN=$00
+  OAM[13].2 (b4E) NES=$60 GEN=$00
+  OAM[13].3 (b4F) NES=$48 GEN=$00
+-- fr 004 --
+  OAM[10].0 (b40) NES=$F8 GEN=$00
+  OAM[10].1 (b41) NES=$D4 GEN=$00
+  OAM[10].2 (b42) NES=$02 GEN=$00
+  OAM[10].3 (b43) NES=$64 GEN=$00
+  OAM[11].0 (b44) NES=$F8 GEN=$00
+  OAM[11].1 (b45) NES=$D4 GEN=$00
+  OAM[11].2 (b46) NES=$02 GEN=$00
+  OAM[11].3 (b47) NES=$90 GEN=$00
+  OAM[12].0 (b48) NES=$50 GEN=$00
+  OAM[12].1 (b49) NES=$0E GEN=$00
+  OAM[12].2 (b4A) NES=$60 GEN=$00
+  OAM[12].3 (b4B) NES=$40 GEN=$00
+  OAM[13].0 (b4C) NES=$50 GEN=$00
+  OAM[13].1 (b4D) NES=$0C GEN=$00
+  OAM[13].2 (b4E) NES=$60 GEN=$00
+  OAM[13].3 (b4F) NES=$48 GEN=$00
+-- fr 005 --
+  OAM[10].0 (b40) NES=$F8 GEN=$00
+  OAM[10].1 (b41) NES=$D4 GEN=$00
+  OAM[10].2 (b42) NES=$02 GEN=$00
+  OAM[10].3 (b43) NES=$64 GEN=$00
+  OAM[11].0 (b44) NES=$F8 GEN=$00
+  OAM[11].1 (b45) NES=$D4 GEN=$00
+  OAM[11].2 (b46) NES=$02 GEN=$00
+  OAM[11].3 (b47) NES=$90 GEN=$00
+  OAM[12].0 (b48) NES=$50 GEN=$00
+  OAM[12].1 (b49) NES=$0E GEN=$00
+  OAM[12].2 (b4A) NES=$60 GEN=$00
+  OAM[12].3 (b4B) NES=$40 GEN=$00
+  OAM[13].0 (b4C) NES=$50 GEN=$00
+  OAM[13].1 (b4D) NES=$0C GEN=$00
+  OAM[13].2 (b4E) NES=$60 GEN=$00
+  OAM[13].3 (b4F) NES=$48 GEN=$00
+-- fr 006 --
+  OAM[10].0 (b40) NES=$F8 GEN=$00
+  OAM[10].1 (b41) NES=$D4 GEN=$00
+  OAM[10].2 (b42) NES=$02 GEN=$00
+  OAM[10].3 (b43) NES=$64 GEN=$00
+  OAM[11].0 (b44) NES=$F8 GEN=$00
+  OAM[11].1 (b45) NES=$D4 GEN=$00
+  OAM[11].2 (b46) NES=$02 GEN=$00
+  OAM[11].3 (b47) NES=$90 GEN=$00
+  OAM[12].0 (b48) NES=$50 GEN=$00
+  OAM[12].1 (b49) NES=$0C GEN=$00
+  OAM[12].2 (b4A) NES=$20 GEN=$00
+  OAM[12].3 (b4B) NES=$40 GEN=$00
+  OAM[13].0 (b4C) NES=$50 GEN=$00
+  OAM[13].1 (b4D) NES=$0E GEN=$00
+  OAM[13].2 (b4E) NES=$20 GEN=$00
+  OAM[13].3 (b4F) NES=$48 GEN=$00
+-- fr 007 --
+  OAM[10].0 (b40) NES=$F8 GEN=$00
+  OAM[10].1 (b41) NES=$D4 GEN=$00
+  OAM[10].2 (b42) NES=$02 GEN=$00
+  OAM[10].3 (b43) NES=$64 GEN=$00
+  OAM[11].0 (b44) NES=$F8 GEN=$00
+  OAM[11].1 (b45) NES=$D4 GEN=$00
+  OAM[11].2 (b46) NES=$02 GEN=$00
+  OAM[11].3 (b47) NES=$90 GEN=$00
+  OAM[12].0 (b48) NES=$50 GEN=$00
+  OAM[12].1 (b49) NES=$0C GEN=$00
+  OAM[12].2 (b4A) NES=$20 GEN=$00
+  OAM[12].3 (b4B) NES=$40 GEN=$00
+  OAM[13].0 (b4C) NES=$50 GEN=$00
+  OAM[13].1 (b4D) NES=$0E GEN=$00
+  OAM[13].2 (b4E) NES=$20 GEN=$00
+  OAM[13].3 (b4F) NES=$48 GEN=$00
+-- fr 008 --
+  OAM[10].0 (b40) NES=$F8 GEN=$00
+  OAM[10].1 (b41) NES=$D4 GEN=$00
+  OAM[10].2 (b42) NES=$02 GEN=$00
+  OAM[10].3 (b43) NES=$64 GEN=$00
+  OAM[11].0 (b44) NES=$F8 GEN=$00
+  OAM[11].1 (b45) NES=$D4 GEN=$00
+  OAM[11].2 (b46) NES=$02 GEN=$00
+  OAM[11].3 (b47) NES=$90 GEN=$00
+  OAM[12].0 (b48) NES=$51 GEN=$00
+  OAM[12].1 (b49) NES=$0C GEN=$00
+  OAM[12].2 (b4A) NES=$20 GEN=$00
+  OAM[12].3 (b4B) NES=$40 GEN=$00
+  OAM[13].0 (b4C) NES=$51 GEN=$00
+  OAM[13].1 (b4D) NES=$0E GEN=$00
+  OAM[13].2 (b4E) NES=$20 GEN=$00
+  OAM[13].3 (b4F) NES=$48 GEN=$00
+-- fr 009 --
+  OAM[10].0 (b40) NES=$F8 GEN=$00
+  OAM[10].1 (b41) NES=$D4 GEN=$00
+  OAM[10].2 (b42) NES=$02 GEN=$00
+  OAM[10].3 (b43) NES=$64 GEN=$00
+  OAM[11].0 (b44) NES=$F8 GEN=$00
+  OAM[11].1 (b45) NES=$D4 GEN=$00
+  OAM[11].2 (b46) NES=$02 GEN=$00
+  OAM[11].3 (b47) NES=$90 GEN=$00
+  OAM[12].0 (b48) NES=$51 GEN=$00
+  OAM[12].1 (b49) NES=$0C GEN=$00
+  OAM[12].2 (b4A) NES=$20 GEN=$00
+  OAM[12].3 (b4B) NES=$40 GEN=$00
+  OAM[13].0 (b4C) NES=$51 GEN=$00
+  OAM[13].1 (b4D) NES=$0E GEN=$00
+  OAM[13].2 (b4E) NES=$20 GEN=$00
+  OAM[13].3 (b4F) NES=$48 GEN=$00
+-- fr 010 --
+  OAM[10].0 (b40) NES=$F8 GEN=$00
+  OAM[10].1 (b41) NES=$D4 GEN=$00
+  OAM[10].2 (b42) NES=$02 GEN=$00
+  OAM[10].3 (b43) NES=$64 GEN=$00
+  OAM[11].0 (b44) NES=$F8 GEN=$00
+  OAM[11].1 (b45) NES=$D4 GEN=$00
+  OAM[11].2 (b46) NES=$02 GEN=$00
+  OAM[11].3 (b47) NES=$90 GEN=$00
+  OAM[12].0 (b48) NES=$51 GEN=$00
+  OAM[12].1 (b49) NES=$0C GEN=$00
+  OAM[12].2 (b4A) NES=$20 GEN=$00
+  OAM[12].3 (b4B) NES=$40 GEN=$00
+  OAM[13].0 (b4C) NES=$51 GEN=$00
+  OAM[13].1 (b4D) NES=$0E GEN=$00
+  OAM[13].2 (b4E) NES=$20 GEN=$00
+  OAM[13].3 (b4F) NES=$48 GEN=$00
+-- fr 011 --
+  OAM[10].0 (b40) NES=$F8 GEN=$00
+  OAM[10].1 (b41) NES=$D4 GEN=$00
+  OAM[10].2 (b42) NES=$02 GEN=$00
+  OAM[10].3 (b43) NES=$64 GEN=$00
+  OAM[11].0 (b44) NES=$F8 GEN=$00
+  OAM[11].1 (b45) NES=$D4 GEN=$00
+  OAM[11].2 (b46) NES=$02 GEN=$00
+  OAM[11].3 (b47) NES=$90 GEN=$00
+  OAM[12].0 (b48) NES=$51 GEN=$00
+  OAM[12].1 (b49) NES=$0C GEN=$00
+  OAM[12].2 (b4A) NES=$20 GEN=$00
+  OAM[12].3 (b4B) NES=$40 GEN=$00
+  OAM[13].0 (b4C) NES=$51 GEN=$00
+  OAM[13].1 (b4D) NES=$0E GEN=$00
+  OAM[13].2 (b4E) NES=$20 GEN=$00
+  OAM[13].3 (b4F) NES=$48 GEN=$00
+-- fr 012 --
+  OAM[10].0 (b40) NES=$F8 GEN=$00
+  OAM[10].1 (b41) NES=$D4 GEN=$00
+  OAM[10].2 (b42) NES=$02 GEN=$00
+  OAM[10].3 (b43) NES=$64 GEN=$00
+  OAM[11].0 (b44) NES=$F8 GEN=$00
+  OAM[11].1 (b45) NES=$D4 GEN=$00
+  OAM[11].2 (b46) NES=$02 GEN=$00
+  OAM[11].3 (b47) NES=$90 GEN=$00
+  OAM[12].0 (b48) NES=$52 GEN=$00
+  OAM[12].1 (b49) NES=$0E GEN=$00
+  OAM[12].2 (b4A) NES=$60 GEN=$00
+  OAM[12].3 (b4B) NES=$40 GEN=$00
+  OAM[13].0 (b4C) NES=$52 GEN=$00
+  OAM[13].1 (b4D) NES=$0C GEN=$00
+  OAM[13].2 (b4E) NES=$60 GEN=$00
+  OAM[13].3 (b4F) NES=$48 GEN=$00
+-- fr 013 --
+  OAM[10].0 (b40) NES=$F8 GEN=$00
+  OAM[10].1 (b41) NES=$D4 GEN=$00
+  OAM[10].2 (b42) NES=$02 GEN=$00
+  OAM[10].3 (b43) NES=$64 GEN=$00
+  OAM[11].0 (b44) NES=$F8 GEN=$00
+  OAM[11].1 (b45) NES=$D4 GEN=$00
+  OAM[11].2 (b46) NES=$02 GEN=$00
+  OAM[11].3 (b47) NES=$90 GEN=$00
+  OAM[12].0 (b48) NES=$52 GEN=$00
+  OAM[12].1 (b49) NES=$0E GEN=$00
+  OAM[12].2 (b4A) NES=$60 GEN=$00
+  OAM[12].3 (b4B) NES=$40 GEN=$00
+  OAM[13].0 (b4C) NES=$52 GEN=$00
+  OAM[13].1 (b4D) NES=$0C GEN=$00
+  OAM[13].2 (b4E) NES=$60 GEN=$00
+  OAM[13].3 (b4F) NES=$48 GEN=$00
+-- fr 014 --
+  OAM[10].0 (b40) NES=$F8 GEN=$00
+  OAM[10].1 (b41) NES=$D4 GEN=$00
+  OAM[10].2 (b42) NES=$02 GEN=$00
+  OAM[10].3 (b43) NES=$64 GEN=$00
+  OAM[11].0 (b44) NES=$F8 GEN=$00
+  OAM[11].1 (b45) NES=$D4 GEN=$00
+  OAM[11].2 (b46) NES=$02 GEN=$00
+  OAM[11].3 (b47) NES=$90 GEN=$00
+  OAM[12].0 (b48) NES=$52 GEN=$00
+  OAM[12].1 (b49) NES=$0E GEN=$00
+  OAM[12].2 (b4A) NES=$60 GEN=$00
+  OAM[12].3 (b4B) NES=$40 GEN=$00
+  OAM[13].0 (b4C) NES=$52 GEN=$00
+  OAM[13].1 (b4D) NES=$0C GEN=$00
+  OAM[13].2 (b4E) NES=$60 GEN=$00
+  OAM[13].3 (b4F) NES=$48 GEN=$00
+-- fr 015 --
+  OAM[10].0 (b40) NES=$F8 GEN=$00
+  OAM[10].1 (b41) NES=$D4 GEN=$00
+  OAM[10].2 (b42) NES=$02 GEN=$00
+  OAM[10].3 (b43) NES=$64 GEN=$00
+  OAM[11].0 (b44) NES=$F8 GEN=$00
+  OAM[11].1 (b45) NES=$D4 GEN=$00
+  OAM[11].2 (b46) NES=$02 GEN=$00
+  OAM[11].3 (b47) NES=$90 GEN=$00
+  OAM[12].0 (b48) NES=$52 GEN=$00
+  OAM[12].1 (b49) NES=$0E GEN=$00
+  OAM[12].2 (b4A) NES=$60 GEN=$00
+  OAM[12].3 (b4B) NES=$40 GEN=$00
+  OAM[13].0 (b4C) NES=$52 GEN=$00
+  OAM[13].1 (b4D) NES=$0C GEN=$00
+  OAM[13].2 (b4E) NES=$60 GEN=$00
+  OAM[13].3 (b4F) NES=$48 GEN=$00
+-- fr 016 --
+  OAM[10].0 (b40) NES=$F8 GEN=$00
+  OAM[10].1 (b41) NES=$D4 GEN=$00
+  OAM[10].2 (b42) NES=$02 GEN=$00
+  OAM[10].3 (b43) NES=$64 GEN=$00
+  OAM[11].0 (b44) NES=$F8 GEN=$00
+  OAM[11].1 (b45) NES=$D4 GEN=$00
+  OAM[11].2 (b46) NES=$02 GEN=$00
+  OAM[11].3 (b47) NES=$90 GEN=$00
+  OAM[12].0 (b48) NES=$53 GEN=$00
+  OAM[12].1 (b49) NES=$0E GEN=$00
+  OAM[12].2 (b4A) NES=$60 GEN=$00
+  OAM[12].3 (b4B) NES=$40 GEN=$00
+  OAM[13].0 (b4C) NES=$53 GEN=$00
+  OAM[13].1 (b4D) NES=$0C GEN=$00
+  OAM[13].2 (b4E) NES=$60 GEN=$00
+  OAM[13].3 (b4F) NES=$48 GEN=$00
+-- fr 017 --
+  OAM[10].0 (b40) NES=$F8 GEN=$00
+  OAM[10].1 (b41) NES=$D4 GEN=$00
+  OAM[10].2 (b42) NES=$02 GEN=$00
+  OAM[10].3 (b43) NES=$64 GEN=$00
+  OAM[11].0 (b44) NES=$F8 GEN=$00
+  OAM[11].1 (b45) NES=$D4 GEN=$00
+  OAM[11].2 (b46) NES=$02 GEN=$00
+  OAM[11].3 (b47) NES=$90 GEN=$00
+  OAM[12].0 (b48) NES=$53 GEN=$00
+  OAM[12].1 (b49) NES=$0E GEN=$00
+  OAM[12].2 (b4A) NES=$60 GEN=$00
+  OAM[12].3 (b4B) NES=$40 GEN=$00
+  OAM[13].0 (b4C) NES=$53 GEN=$00
+  OAM[13].1 (b4D) NES=$0C GEN=$00
+  OAM[13].2 (b4E) NES=$60 GEN=$00
+  OAM[13].3 (b4F) NES=$48 GEN=$00
+-- fr 018 --
+  OAM[10].0 (b40) NES=$F8 GEN=$00
+  OAM[10].1 (b41) NES=$D4 GEN=$00
+  OAM[10].2 (b42) NES=$02 GEN=$00
+  OAM[10].3 (b43) NES=$64 GEN=$00
+  OAM[11].0 (b44) NES=$F8 GEN=$00
+  OAM[11].1 (b45) NES=$D4 GEN=$00
+  OAM[11].2 (b46) NES=$02 GEN=$00
+  OAM[11].3 (b47) NES=$90 GEN=$00
+  OAM[12].0 (b48) NES=$53 GEN=$00
+  OAM[12].1 (b49) NES=$0C GEN=$00
+  OAM[12].2 (b4A) NES=$20 GEN=$00
+  OAM[12].3 (b4B) NES=$40 GEN=$00
+  OAM[13].0 (b4C) NES=$53 GEN=$00
+  OAM[13].1 (b4D) NES=$0E GEN=$00
+  OAM[13].2 (b4E) NES=$20 GEN=$00
+  OAM[13].3 (b4F) NES=$48 GEN=$00
+-- fr 019 --
+  OAM[10].0 (b40) NES=$F8 GEN=$00
+  OAM[10].1 (b41) NES=$D4 GEN=$00
+  OAM[10].2 (b42) NES=$02 GEN=$00
+  OAM[10].3 (b43) NES=$64 GEN=$00
+  OAM[11].0 (b44) NES=$F8 GEN=$00
+  OAM[11].1 (b45) NES=$D4 GEN=$00
+  OAM[11].2 (b46) NES=$02 GEN=$00
+  OAM[11].3 (b47) NES=$90 GEN=$00
+  OAM[12].0 (b48) NES=$53 GEN=$00
+  OAM[12].1 (b49) NES=$0C GEN=$00
+  OAM[12].2 (b4A) NES=$20 GEN=$00
+  OAM[12].3 (b4B) NES=$40 GEN=$00
+  OAM[13].0 (b4C) NES=$53 GEN=$00
+  OAM[13].1 (b4D) NES=$0E GEN=$00
+  OAM[13].2 (b4E) NES=$20 GEN=$00
+  OAM[13].3 (b4F) NES=$48 GEN=$00
