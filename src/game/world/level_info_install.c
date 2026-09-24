@@ -51,6 +51,7 @@
 
 #include "level_info_install.h"
 #include "platform_abi.h"
+#include "../../../data/rooms/dungeons_offsets.h"
 
 extern const unsigned char rooms_overworld[];
 extern const unsigned char rooms_dungeons[];
@@ -89,6 +90,20 @@ void level_info_install_ow(void)
                     NES_LEVEL_INFO_BYTES);
 }
 
+void level_info_apply_q2_patch(unsigned char level)
+{
+    /* NES: LDY Sizes-1,X / @loop LDA ($00),Y / STA $6BA7,Y / DEY / BPL.
+     * Copies Sizes[level-1]+1 bytes (one past the array, as the NES does). */
+    const unsigned char *sizes = &rooms_dungeons[ROOMROM_UW_Q2_LI_REPL_SIZES_OFF];
+    unsigned int src = ROOMROM_UW_Q2_LI_REPL_BASE_OFF;
+    unsigned int k;
+    unsigned int count;
+    if (level == 0u || level > 9u) return;
+    for (k = 1u; k < level; ++k) src += sizes[k - 1u];
+    count = (unsigned int)sizes[level - 1u] + 1u;
+    copy_to_nes_ram(ROOMROM_UW_Q2_LI_PATCH_DEST, &rooms_dungeons[src], count);
+}
+
 void level_info_install_uw(unsigned char level, unsigned char quest)
 {
     /* Dungeons blob layout:
@@ -117,6 +132,15 @@ void level_info_install_uw(unsigned char level, unsigned char quest)
     copy_to_nes_ram(NES_LEVEL_INFO_BASE,
                     &rooms_dungeons[info_off],
                     NES_LEVEL_INFO_BYTES);
+
+    /* Z_06.asm UpdateMode2Load_Full: second quest overwrites LevelInfo from
+     * $6BA7 (shortcut/item positions, map rotation/offset, start + triforce
+     * room, world-flags pointer, level number, cellars, boss room, map mask,
+     * status-bar map). ROM-verified 2026-09-24: reproduces all Q2 start,
+     * rotation, triforce, status-bar X offset and marker values. */
+    if (quest == 2u) {
+        level_info_apply_q2_patch(level);
+    }
 
     /* LevelInfo_WorldFlagsAddr ($6BAF/$6BB0) comes from the ROM record
      * unmodified. ROM-verified 2026-09-24 (pointer-read, 252-byte records):

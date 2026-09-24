@@ -19,5 +19,8 @@
 
 void level_info_install_ow(void);
 void level_info_install_uw(unsigned char level, unsigned char quest);
+/* Second-quest LevelInfo patch for UW level 1..9 (Z_06 UpdateMode2Load_Full);
+ * called by level_info_install_uw when quest == 2. */
+void level_info_apply_q2_patch(unsigned char level);
 
 #endif

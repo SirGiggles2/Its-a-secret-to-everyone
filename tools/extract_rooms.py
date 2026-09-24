@@ -337,10 +337,21 @@ def find_bank6_level_data(prg_data: bytes, z06_blocks: dict) -> dict:
         f"(ROM ${bank6_offset + q2_patch_pos:05X})"
     )
 
+    # LevelInfoUWQ2ReplacementAddrs (9 x .ADDR) sits immediately before
+    # LevelInfoUWQ2ReplacementSizes in Z_06.asm.
+    q2_sizes = bytes(z06_blocks["LevelInfoUWQ2ReplacementSizes"]["bytes"])
+    q2_sizes_pos = find_unique_pattern(bank6_data, q2_sizes, "Q2 LevelInfo replacement sizes")
+    q2_repl_addrs = bank6_data[q2_sizes_pos - 18:q2_sizes_pos]
+    first = int.from_bytes(q2_repl_addrs[0:2], "little") - 0x8000
+    if bank6_data[first:first + len(z06_blocks["LevelInfoUWQ2Replacements1"]["bytes"])] != bytes(
+            z06_blocks["LevelInfoUWQ2Replacements1"]["bytes"]):
+        raise ValueError("LevelInfoUWQ2ReplacementAddrs[0] does not point at Replacements1")
+
     return {
         "level_blocks": level_blocks,
         "level_infos": level_infos,
         "common_data": common_data,
+        "q2_repl_addrs": q2_repl_addrs,
     }
 
 
@@ -602,6 +613,13 @@ def build_dungeons_blob(bank6_data: dict, bank5_data: dict, z06_blocks: dict) ->
     )
     for label in Q2_REPLACEMENT_LABELS:
         add_block(label, bytes(z06_blocks[label]["bytes"]))
+    # NES UpdateMode2Load_Full copies Sizes[L]+1 bytes (DEY/BPL from Sizes[L]
+    # down to 0), i.e. one byte past each replacement array. Arrays are
+    # contiguous in ROM, so that byte is the next array's first byte; for
+    # level 9 it is the first byte of LevelInfoUWQ2ReplacementAddrs. Emit the
+    # 18-byte pointer table (read from the ROM, it is .ADDR data) so the
+    # runtime copy stays inside the blob and matches the NES byte-for-byte.
+    add_block("LevelInfoUWQ2ReplacementAddrs", bank6_data["q2_repl_addrs"])
 
     return bytes(blob), blocks_info
 

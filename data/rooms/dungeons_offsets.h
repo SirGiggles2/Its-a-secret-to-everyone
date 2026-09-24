@@ -51,6 +51,15 @@
 #define ROOMROM_UW_LEVELBLOCK_UW2Q2_BASE    0x0900u
 
 #define ROOMROM_UW_LEVELINFO_BASE           0x0C00u
+
+/* Q2 LevelInfo patch tables (Z_06.asm UpdateMode2Load_Full). Replacement
+ * arrays 1..9 are contiguous (as in ROM) starting at REPL_BASE; the 18-byte
+ * LevelInfoUWQ2ReplacementAddrs table follows array 9 so the NES's
+ * Sizes[L]+1-byte copy never leaves the blob. Offsets match
+ * data/rooms/MANIFEST.json (checked by tools/audit/test_q2_levelinfo.py). */
+#define ROOMROM_UW_Q2_LI_REPL_SIZES_OFF     0x1930u  /* 6448, 9 bytes */
+#define ROOMROM_UW_Q2_LI_REPL_BASE_OFF      0x1939u  /* 6457 */
+#define ROOMROM_UW_Q2_LI_PATCH_DEST         0x6BA7u  /* LevelInfo_ShortcutOrItemPosArray */
 #define ROOMROM_UW_LEVELINFO_BLOCK_BYTES    0x100u   /* 256 */
 
 /* LevelInfo internal layout — fields are at fixed offsets from a

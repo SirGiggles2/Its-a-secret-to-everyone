@@ -382,6 +382,14 @@
       "var_name": "rooms_dungeons",
       "byte_offset": 6948,
       "byte_size": 74
+    },
+    {
+      "category": "dungeons",
+      "name": "LevelInfoUWQ2ReplacementAddrs",
+      "file": "dungeons.c",
+      "var_name": "rooms_dungeons",
+      "byte_offset": 7022,
+      "byte_size": 18
     }
   ],
   "ow_heap_offsets": [

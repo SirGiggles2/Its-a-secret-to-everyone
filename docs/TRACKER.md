@@ -46,10 +46,11 @@ Status: `TODO` · `ACTIVE` · `BLOCKED` · `REVIEW` · `DONE`. Plan ref = task I
 | ID | Task | Plan ref | Status | Owner | Scope | Acceptance / evidence |
 |---|---|---|---|---|---|---|
 | T-001 | Build + boot the merged tree | P0.2 | TODO | Astra | build only | `Debug.bat` clean; regression matrix GREEN 12/12; Ganon→Zelda `reward.lua` passes; Aquamentus consumer passes; File Select→New Game; save survives hard reset (`probe_save_persistence.lua`). Record ROM SHA here. Any failure → new T row, fix before S1 |
-| T-002 | Quest 2 installed LevelInfo check (offline) | P0.12 | ACTIVE | Claude | `level_info_install.c`, `room_dispatch.c` (Q2 branch), `tools/extract_rooms.py`, `data/rooms/*`, `dungeons_offsets.h` | Run `level_info_install_uw` logic in Python from `data/rooms/dungeons.c`. Installed `$6B9E/$6BAB/$6BAC/$6BAD/$6BAE` for L1–9 Q2 must equal the retired capture (Q2 start `77 75 79 72 7D 74 7F 79 74`, rot `00 05 0D 06 0A 04 0C 0C 04`, tri `08 20 1B 00 4F 16 2D 1B 07`, sbx `E0 00 C8 10 B0 00 C0 C0 00`, marker `0C 02 0B 0F 0A 08 0A 00 0F`). Mismatch = install bug |
+| T-002 | Quest 2 LevelInfo patch (was missing from the active install path) | P0.12 | REVIEW | Claude → Astra | done | **Found:** `level_info_install_uw` ignored quest, so every Q2 dungeon ran with Q1 LevelInfo from $6BA7 on (start room, map, triforce, cellars, boss room, map mask). **Fixed:** `level_info_apply_q2_patch` (NES `UpdateMode2Load_Full`, Sizes+1 bytes) from the ROM-extracted blob; `room_dispatch` Q2 branch uses it, hardcoded tables deleted. **Offline evidence:** `python tools/audit/test_q2_levelinfo.py` → 18/18 byte-exact vs ROM pointers (Python mirror of the C). **Astra:** after T-001, boot Q2 (X+Y+Z), enter L1: start room $77, pause map matches NES |
 | T-003 | World-flag regions (`$067F` OW, `$06FF` L1–6, `$077F` L7–9) | P7.2 / P5.4 | TODO | Claude → Astra | `level_info_install.c`, `save_game.c`, `save_serializer.c` | Code: new game zeroes all three, SRAM save/load keeps all three. Runtime (Astra): kill Digdogger + Patra, leave, re-enter → no respawn; OW secret still open after a dungeon |
 | T-004 | Room generator: Ganon room `$42` | P0.14 | TODO | Claude | `tools/builder/gen_uw_room_tiles.py` | Generator output for L9Q1 `$42` byte-equal to the live capture in `uw_room_blob.c` (240 NT bytes differ today). Then 331/331 → builder no longer needs live captures |
 | T-005 | Triforce/pause tint after palette LUT change | P7.1a | TODO | Astra | `tools/extract_misc.py` | Aug CRAM overrides `$17/$36/$37` were dropped for the Sep NES-reference LUT. Byte-compare triforce + L1 pause palette vs NES; fix in generator if wrong |
+| T-007 | Q2 overworld LevelBlock patch in active path | P9.2 | TODO | Claude | `level_info_install.c` | `level_info_install_ow` ignores quest; NES `@PatchQ2Rooms` (8 AttrsB bytes + 7 fixed writes) only exists in unlinked `room_dispatch` path. Apply on OW install for Q2; offline byte test like T-002 |
 | T-006 | Retire competing trackers | — | DONE | Claude | `.claude/skills/primedirective`, `docs/superpowers/prime_directive_*` | PD skill reads `docs/TRACKER.md` for next action; its Phase 8 "next action" pointer no longer claims authority |
 
 ### S1 — Quest 1 route (the test driver; controller-only; checkpoint with SRAM saves, not savestates)
@@ -85,6 +86,10 @@ Each failure inside a segment = new `T-1xx` bug row (owner fixes at the owning f
 | T-080 | Builder: clean-staging build from user ROM, no live captures, drag-and-drop shell, reproducibility | P10 | TODO |
 
 ## Handoff log (newest first)
+
+**2026-09-24 · Claude** — T-002: Q2 dungeons were installing Q1 LevelInfo (patch existed only in an unlinked drained path with
+hardcoded game bytes). Added `level_info_apply_q2_patch` from the ROM blob (+18-byte addr table so the NES's one-byte overrun is exact),
+`tools/audit/test_q2_levelinfo.py` 18/18 PASS. Found T-007 (same bug for Q2 overworld). Needs Astra runtime check after T-001.
 
 **2026-09-24 · Claude** — Committed 13 days of uncommitted Sep work (`2dffd36f`), removed stale `.git/index.lock` (2026-09-14).
 Merged `feat/cave-entry-transition-parity` (`3586d1e3`): SRAM saves, linked File Select, builder gates, room generator.
