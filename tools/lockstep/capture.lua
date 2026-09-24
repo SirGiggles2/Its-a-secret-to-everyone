@@ -20,6 +20,14 @@
 local OUT = "@OUT@"
 local MAXF = tonumber("@MAXF@")
 dofile("@PRESET@")
+-- Seed alignment (T-101): NES RNG/FrameCounter state at gameplay start
+-- depends on how many frames the NES title/file menus ran; Genesis uses a
+-- deliberately custom title/FS and reseeds at entry. The runner captures
+-- NES first and passes its sync-frame values of FrameCounter $15, Random
+-- $18..$24 and StunCycle $26 here; they are written into Genesis at sync.
+-- From then on each console advances them with its own per-frame code.
+SEED = {}
+@SEED@
 
 local errf = nil
 local function fail(msg)
@@ -90,7 +98,18 @@ for i = 1, 1500 do
     idle(1)
 end
 if sync < 0 then fail(string.format("GameMode never reached $05 (last $%02X)", gm())) return end
-meta:write(string.format("sync_after_menu_frames=%d\n", sync))
+-- Sync on the first LIVE gameplay tick: FrameCounter ($15) advancing.
+-- Genesis installs the room a few frames before its tick starts.
+local live = -1
+for i = 1, 300 do
+    local before = memory.read_u8(RAM_BASE + 0x15, RAM_DOM)
+    idle(1)
+    if memory.read_u8(RAM_BASE + 0x15, RAM_DOM) ~= before then live = i; break end
+end
+if live < 0 then fail("FrameCounter never advanced after GameMode $05") return end
+local seeded = 0
+for a, v in pairs(SEED) do memory.write_u8(RAM_BASE + a, v, RAM_DOM); seeded = seeded + 1 end
+meta:write(string.format("sync_after_menu_frames=%d live_after=%d seeded=%d\n", sync, live, seeded))
 
 -- 4. script + per-frame RAM dump
 local function btns(s)

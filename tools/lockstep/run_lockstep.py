@@ -41,14 +41,20 @@ def main() -> int:
     preset_lua = out / "preset.lua"
     preset_lua.write_text(presets.to_lua(p), encoding="utf-8")
 
+    seed = ""
     for plat, rom in (("nes", NES_ROM), ("gen", GEN_ROM)):
         prefix = (out / plat).as_posix()
         r = subprocess.run([sys.executable, str(ROOT / "tools" / "debug" / "run_probe.py"),
                             str(HERE / "capture.lua"), str(out / f"run_{plat}"),
                             "--rom", str(rom), "--timeout", "300",
                             "--subst", f"PRESET={preset_lua.as_posix()}",
-                            f"OUT={prefix}", f"MAXF={a.frames}"])
+                            f"OUT={prefix}", f"MAXF={a.frames}", f"SEED={seed}"])
         print(f"{plat}: runner exit {r.returncode}")
+        if plat == "nes":
+            ram = (out / "nes.ram").read_bytes()[:0x800] if (out / "nes.ram").exists() else b""
+            if len(ram) == 0x800:
+                cells = [0x15, *range(0x18, 0x25), 0x26]
+                seed = " ".join(f"SEED[0x{a:02X}]=0x{ram[a]:02X}" for a in cells)
     return diff.main(out)
 
 

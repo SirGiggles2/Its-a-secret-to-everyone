@@ -61,7 +61,11 @@ Status: `TODO` · `ACTIVE` · `BLOCKED` · `REVIEW` · `DONE`. Plan ref = task I
 | T-091 | Boot probes (options/persistence/serializer/warp/roundtrip/metadata) run only when armed; none write SRAM on normal boot | DONE | Claude | **Was corrupting play:** `save_serializer_probe_run` left `$30..$57` in Items `$0657..$067E` on every New Game (write-watch PCs → symbols). Gated on `ROOMROM_DEBUG_PROBE_SELFTEST $08`. After: 0 probe writes on FS New Game, entry 229 frames sooner; armed self-tests 5/5, 22/22, 10/10, 34/34, 8/8, warp 0/128, roundtrip 0/18 (`builds/reports/recovery/t091-selftest-gate/`) |
 | T-092 | NES new-game init on FS path: no seeded sword, keys 0, no default B-item, NES start facing; B-item only via pause. **Lockstep `newgame` diff (after T-091):** GEN Items[0] sword `01` (NES `00`), HeartValues `$33` (NES `$22`), MaxBombs `00` (NES `08`); preset slot not loaded on GEN (check SRAM write timing vs load). Also FrameCounter `$15` frozen at 0 and Random `$18+` unseeded on GEN → new T-101 | TODO | | Inventory + Link RAM byte-diff vs NES new-game capture |
 | T-094 | Music driver state at fixed `$FFE000/$FFE100` = `nes_ram[$6000/$6100]` (NES SaveRAM) under A4 `$FF8000`: save wrote `$5A/$A5` into `m_song/m_song_req` | DONE | Claude | `builds/reports/recovery/t094-music-sram/`: before = overlap, after = save image stable + music state at linker symbol `$FF00EC`; save persistence 7/7 |
-| T-101 | NES FrameCounter `$15` never advances on Genesis; Random `$18..$24` not seeded/advanced. NES timers/animation/spawns key off both | TODO | | Lockstep: `$15` increments per frame like NES; RNG sequence matches NES from equal seed |
+| T-101 | FrameCounter/Random/StunCycle parity | DONE | Claude | Not a game bug: Genesis starts them at gameplay entry (custom title/FS). Harness now syncs on first live tick and copies NES `$15/$18-$24/$26` at sync; then 266/266 frames byte-equal → per-frame port verified |
+| T-102 | Play-tick order: Genesis runs weapons+enemies BEFORE Link moves and mirrors `$70/$84` at tick start (NES `UpdateMode5Play`: UpdatePlayer → chase target → weapons → objects). Enemies/NES code see Link 1 frame stale | TODO | | Fold into T-095 `mode_play.c` in NES order; lockstep `ObjX/ObjY` equal same frame |
+| T-103 | Link turn between grid points (`Link_ModifyDirOnGridLine`): opposite input reverses now; perpendicular <4px reverses to grid point with mirrored offset | DONE | Claude | Lockstep `newgame` f189: GEN now steps right 1px to `$38` then up (was 7px left to `$30`), identical to NES |
+| T-104 | OW collision sampler used HUD origin `$38` + one column; NES `GetCollidableTile` = origin `$40`, two columns vertical | DONE | Claude | OW now uses shared NES sampler. Lockstep `newgame`: GEN stops at Y `$5D` on tile `$DE` like NES (was walking to `$55`) |
+| T-105 | OW room scroll: trigger Y `$39` vs NES `$3D`; GEN stays GameMode `$05` (NES `$07`); ~32 vs ~80 frames; arrival Y `$CD` vs NES `$DD`; grid offset not re-phased → Link off-grid after every vertical change (walks through walls after) | TODO | | Lockstep `ow_walk` equal through room `$77`→`$67` and after |
 | T-093 | Build warnings: macro redefinitions `LINK_X`/`LINK_Y` (world_state.h), `OBJ_STATE` (object/world/combat_state.h), `CUR_LEVEL` (room_load_runtime.c). Prove each pair same address or fix the wrong one | TODO | | 0 redefinition warnings; any address change byte-verified |
 
 ### S0c — Native game-mode spine (finish plan Phase 2)
@@ -117,6 +121,10 @@ Each failure inside a segment = new `T-1xx` bug row (owner fixes at the owning f
 | T-080 | Builder: clean-staging build from user ROM, no live captures, drag-and-drop shell, reproducibility | P10 | TODO |
 
 ## Handoff log (newest first)
+
+**2026-09-24 · Claude** — Lockstep-driven fixes: T-103 turn-between-grid rule and T-104 OW collision origin/2-column sampler (both
+byte-verified vs NES). T-101 closed as harness artifact (seed alignment added). New: T-102 tick order, T-105 room scroll
+(trigger/arrival/length/grid phase), found by new preset `ow_walk`. Next: T-105.
 
 **2026-09-24 · Claude** — Lockstep differ live: `python tools/lockstep/run_lockstep.py tools/lockstep/presets/newgame.json`
 (NES save-file cheat card + Genesis slot, per-frame 2 KB RAM on both, named diff). First runs found T-091 (self-tests corrupting

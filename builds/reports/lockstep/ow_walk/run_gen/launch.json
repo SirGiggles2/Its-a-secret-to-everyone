@@ -2,7 +2,7 @@
   "rom": "C:\\Users\\Jake Diggity\\Documents\\GitHub\\FINAL TRY\\builds\\Debug.md",
   "rom_sha256": "6e7eaed78bc661dca1b6bde15e08a97f13c5f94e3016fd897d95ee08c212e80e",
   "script": "C:\\Users\\Jake Diggity\\Documents\\GitHub\\FINAL TRY\\tools\\lockstep\\capture.lua",
-  "script_sha256": "6e79bde97464fc68a244209228b154477da2917b31821ad37453277468374f0f",
+  "script_sha256": "2fca692b317ecfee89a54dc93c53706867159a20d0150f6f761f6ce22ea3e9a4",
   "symbols": {},
   "exit_code": 0,
   "collected": []

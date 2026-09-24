@@ -1,37 +1,23 @@
 frames compared: 266  (nes 266, gen 266)
 
-== sync frame 0: 136 unmasked cells differ ==
-  $0015 FrameCounter                     NES 2B  GEN 00
-  $0018 Random                           NES 9E  GEN 40
-  $0019 Random+1                         NES F5  GEN 00
-  $001A Random+2                         NES C8  GEN 00
-  $001B Random+3                         NES 23  GEN 00
-  $001C Random+4                         NES B3  GEN 00
-  $001D Random+5                         NES F4  GEN 00
-  $001E Random+6                         NES 93  GEN 00
-  $001F Random+7                         NES 7A  GEN 00
-  $0020 Random+8                         NES 5C  GEN 00
-  $0021 Random+9                         NES A8  GEN 00
-  $0022 Random+10                        NES 11  GEN 00
-  $0023 Random+11                        NES 41  GEN 00
-  $0024 Random+12                        NES 63  GEN 00
-  $0026 StunCycle                        NES 01  GEN 00
-  $0028 ObjTimer                         NES 03  GEN 00
-  $0029 ObjTimer+1                       NES 00  GEN 01
-  $002A ObjTimer+2                       NES 00  GEN 02
-  $002B ObjTimer+3                       NES 00  GEN 03
-  $002C ObjTimer+4                       NES 00  GEN 04
-  $002D ObjTimer+5                       NES 00  GEN 05
-  $002E ObjTimer+6                       NES 00  GEN 06
-  $002F ObjTimer+7                       NES 00  GEN 07
-  $0030 ObjTimer+8                       NES 00  GEN 08
-  $0031 ObjTimer+9                       NES 00  GEN 09
-  $0032 ObjTimer+10                      NES 00  GEN 0A
-  $0033 ObjTimer+11                      NES 00  GEN 0B
-  $0070 ObjX                             NES 78  GEN 00
+== sync frame 0: 122 unmasked cells differ ==
+  $0011 IsUpdatingMode                   NES 01  GEN 00
+  $0014 TileBufSelector                  NES 7A  GEN 00
+  $0028 ObjTimer                         NES 02  GEN 00
+  $002A ObjTimer+2                       NES 00  GEN 01
+  $002B ObjTimer+3                       NES 00  GEN 02
+  $002C ObjTimer+4                       NES 00  GEN 03
+  $002D ObjTimer+5                       NES 00  GEN 04
+  $002E ObjTimer+6                       NES 00  GEN 05
+  $002F ObjTimer+7                       NES 00  GEN 06
+  $0030 ObjTimer+8                       NES 00  GEN 07
+  $0031 ObjTimer+9                       NES 00  GEN 08
+  $0032 ObjTimer+10                      NES 00  GEN 09
+  $0033 ObjTimer+11                      NES 00  GEN 0A
+  $0060 ChaseOtherTarget                 NES 00  GEN 01
+  $0061 ChaseTargetX                     NES 00  GEN 87
+  $0062 ChaseTargetY                     NES 00  GEN 72
   $007D ObjX+13                          NES 21  GEN 00
-  $0084 ObjY                             NES 8D  GEN 00
-  $0098 ObjRoomItemId                    NES 08  GEN 00
   $00E8 CurColumn                        NES FF  GEN 00
   $00EF CurOpenedDoors+1                 NES 02  GEN 00
   $00F4 InitializedGame                  NES 01  GEN 00
@@ -42,6 +28,7 @@ frames compared: 266  (nes 266, gen 266)
   $0340 CurObjIndex                      NES 0B  GEN 00
   $0343 LeftSpriteOffset                 NES 48  GEN 00
   $0344 RightSpriteOffset                NES 4C  GEN 00
+  $034D RoomAllDead                      NES 00  GEN 01
   $03BC Moldorm_ObjBounceDir             NES 60  GEN 00
   $03D0 ObjAnimCounter                   NES 03  GEN 00
   $0493 ObjUninitialized+1               NES FF  GEN 00
@@ -55,6 +42,8 @@ frames compared: 266  (nes 266, gen 266)
   $049B ObjUninitialized+9               NES FF  GEN 00
   $049C ObjUninitialized+10              NES FF  GEN 00
   $049D ObjUninitialized+11              NES FF  GEN 00
+  $049E ObjCollidedTile                  NES 00  GEN 26
+  $04CE ShutterTrigger                   NES 00  GEN 01
   $0525 CurEdgeSpawnCell                 NES 40  GEN 00
   $0526 CaveSourceRoomId                 NES FF  GEN 00
   $0528 SkippedDemo                      NES 5A  GEN 00
@@ -134,28 +123,19 @@ frames compared: 266  (nes 266, gen 266)
   $064F Names+23                         NES 24  GEN 00
   $0650 SaveSlotHearts                   NES 22  GEN 00
   $0651 SaveSlotHearts+1                 NES FF  GEN 00
-  $0657 Items                            NES 00  GEN 01
-  $066F HeartValues                      NES 22  GEN 33
-  $067C MaxBombs                         NES 08  GEN 00
 
-== cells equal at frame 0 that diverge later: 16 ==
-  f=   1 $0011 IsUpdatingMode                   NES 01  GEN 00
-  f=   1 $0014 TileBufSelector                  NES 7A  GEN 00
-  f=   2 $004A ChaseLongTimer                   NES 05  GEN 00
-  f=   2 $0060 ChaseOtherTarget                 NES 01  GEN 00
-  f=   2 $0061 ChaseTargetX                     NES 87  GEN 00
-  f=   2 $0062 ChaseTargetY                     NES 72  GEN 00
-  f=   2 $0341 RollingSpriteIndex               NES 01  GEN 00
-  f=   2 $0342 FirstSpriteIndex                 NES 01  GEN 00
-  f=   9 $034D RoomAllDead                      NES 00  GEN 01
-  f=   9 $049E ObjCollidedTile                  NES 00  GEN 26
-  f=   9 $04CE ShutterTrigger                   NES 00  GEN 01
+== cells equal at frame 0 that diverge later: 10 ==
+  f=   1 $0341 RollingSpriteIndex               NES 01  GEN 00
+  f=   1 $0342 FirstSpriteIndex                 NES 01  GEN 00
+  f= 121 $0070 ObjX                             NES 76  GEN 78
+  f= 121 $0098 ObjRoomItemId                    NES 02  GEN 08
   f= 121 $0394 ObjRemDistance                   NES FE  GEN 00
   f= 121 $03A8 Item_ObjItemLifetime             NES 80  GEN 00
   f= 121 $03F8 ObjInputDir                      NES 02  GEN 00
   f= 123 $03E4 ObjAnimFrame                     NES 01  GEN 00
   f= 125 $0065 UndergroundEntranceTile          NES 26  GEN 00
+  f= 190 $0084 ObjY                             NES 8C  GEN 8D
 
-masked cells differing at frame 0: 384 (not evaluated)
+masked cells differing at frame 0: 386 (not evaluated)
 
-VERDICT: DIVERGE (152 unmasked cells ever differ)
+VERDICT: DIVERGE (132 unmasked cells ever differ)

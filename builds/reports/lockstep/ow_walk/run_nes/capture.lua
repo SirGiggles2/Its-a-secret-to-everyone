@@ -1,7 +1,7 @@
 -- tools/lockstep/capture.lua — one lockstep capture, NES or Genesis.
 --
--- Runner substitutes: C:/Users/Jake Diggity/Documents/GitHub/FINAL TRY/builds/reports/lockstep/newgame/preset.lua (absolute path of generated preset .lua),
--- C:/Users/Jake Diggity/Documents/GitHub/FINAL TRY/builds/reports/lockstep/newgame/nes (absolute output prefix, forward slashes), 100000 (frames to
+-- Runner substitutes: C:/Users/Jake Diggity/Documents/GitHub/FINAL TRY/builds/reports/lockstep/ow_walk/preset.lua (absolute path of generated preset .lua),
+-- C:/Users/Jake Diggity/Documents/GitHub/FINAL TRY/builds/reports/lockstep/ow_walk/nes (absolute output prefix, forward slashes), 100000 (frames to
 -- record after sync). Genesis runs also get @SYM:...@ tokens resolved.
 --
 -- 1. Enumerate memory domains live (RULE V3). Refuse to guess a name.
@@ -17,9 +17,9 @@
 --    GEN NES RAM = 68K $FF8000 + off (platform_abi.h A4 base).
 -- Output <OUT>.err on any failure; the differ treats missing files as ERROR.
 
-local OUT = "C:/Users/Jake Diggity/Documents/GitHub/FINAL TRY/builds/reports/lockstep/newgame/nes"
+local OUT = "C:/Users/Jake Diggity/Documents/GitHub/FINAL TRY/builds/reports/lockstep/ow_walk/nes"
 local MAXF = tonumber("100000")
-dofile("C:/Users/Jake Diggity/Documents/GitHub/FINAL TRY/builds/reports/lockstep/newgame/preset.lua")
+dofile("C:/Users/Jake Diggity/Documents/GitHub/FINAL TRY/builds/reports/lockstep/ow_walk/preset.lua")
 -- Seed alignment (T-101): NES RNG/FrameCounter state at gameplay start
 -- depends on how many frames the NES title/file menus ran; Genesis uses a
 -- deliberately custom title/FS and reseeds at entry. The runner captures

@@ -2,7 +2,7 @@ parsing command-line flags: --gdi --config=C:\tmp\claude_probe\run_gen\config.in
 Using SDL2 for host input (keyboard + gamepads)
 Connected SDL gamepad, device index 0, instance ID 1, name Xbox 360 Controller
 Game was not in DB. CRC: F76F5D0F MD5: BC0626F39D3C82C288D7D529F23615C5
-MemoryBlock created for address 36f00000000:36f034ff000 with mirror 1bbf9990000:1bbfce8f000
+MemoryBlock created for address 36f00000000:36f034ff000 with mirror 1e0c4a10000:1e0c7f0f000
 Mouting `gpgx.wbx` @36f00000000
   Sections:
     @0:0     `` 0 bytes

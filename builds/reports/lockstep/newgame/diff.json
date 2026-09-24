@@ -3,189 +3,105 @@
  "verdict": "DIVERGE",
  "frame0": [
   {
-   "addr": "$0015",
-   "name": "FrameCounter",
-   "nes": 43,
-   "gen": 0
-  },
-  {
-   "addr": "$0018",
-   "name": "Random",
-   "nes": 158,
-   "gen": 64
-  },
-  {
-   "addr": "$0019",
-   "name": "Random+1",
-   "nes": 245,
-   "gen": 0
-  },
-  {
-   "addr": "$001A",
-   "name": "Random+2",
-   "nes": 200,
-   "gen": 0
-  },
-  {
-   "addr": "$001B",
-   "name": "Random+3",
-   "nes": 35,
-   "gen": 0
-  },
-  {
-   "addr": "$001C",
-   "name": "Random+4",
-   "nes": 179,
-   "gen": 0
-  },
-  {
-   "addr": "$001D",
-   "name": "Random+5",
-   "nes": 244,
-   "gen": 0
-  },
-  {
-   "addr": "$001E",
-   "name": "Random+6",
-   "nes": 147,
-   "gen": 0
-  },
-  {
-   "addr": "$001F",
-   "name": "Random+7",
-   "nes": 122,
-   "gen": 0
-  },
-  {
-   "addr": "$0020",
-   "name": "Random+8",
-   "nes": 92,
-   "gen": 0
-  },
-  {
-   "addr": "$0021",
-   "name": "Random+9",
-   "nes": 168,
-   "gen": 0
-  },
-  {
-   "addr": "$0022",
-   "name": "Random+10",
-   "nes": 17,
-   "gen": 0
-  },
-  {
-   "addr": "$0023",
-   "name": "Random+11",
-   "nes": 65,
-   "gen": 0
-  },
-  {
-   "addr": "$0024",
-   "name": "Random+12",
-   "nes": 99,
-   "gen": 0
-  },
-  {
-   "addr": "$0026",
-   "name": "StunCycle",
+   "addr": "$0011",
+   "name": "IsUpdatingMode",
    "nes": 1,
+   "gen": 0
+  },
+  {
+   "addr": "$0014",
+   "name": "TileBufSelector",
+   "nes": 122,
    "gen": 0
   },
   {
    "addr": "$0028",
    "name": "ObjTimer",
-   "nes": 3,
+   "nes": 2,
    "gen": 0
-  },
-  {
-   "addr": "$0029",
-   "name": "ObjTimer+1",
-   "nes": 0,
-   "gen": 1
   },
   {
    "addr": "$002A",
    "name": "ObjTimer+2",
    "nes": 0,
-   "gen": 2
+   "gen": 1
   },
   {
    "addr": "$002B",
    "name": "ObjTimer+3",
    "nes": 0,
-   "gen": 3
+   "gen": 2
   },
   {
    "addr": "$002C",
    "name": "ObjTimer+4",
    "nes": 0,
-   "gen": 4
+   "gen": 3
   },
   {
    "addr": "$002D",
    "name": "ObjTimer+5",
    "nes": 0,
-   "gen": 5
+   "gen": 4
   },
   {
    "addr": "$002E",
    "name": "ObjTimer+6",
    "nes": 0,
-   "gen": 6
+   "gen": 5
   },
   {
    "addr": "$002F",
    "name": "ObjTimer+7",
    "nes": 0,
-   "gen": 7
+   "gen": 6
   },
   {
    "addr": "$0030",
    "name": "ObjTimer+8",
    "nes": 0,
-   "gen": 8
+   "gen": 7
   },
   {
    "addr": "$0031",
    "name": "ObjTimer+9",
    "nes": 0,
-   "gen": 9
+   "gen": 8
   },
   {
    "addr": "$0032",
    "name": "ObjTimer+10",
    "nes": 0,
-   "gen": 10
+   "gen": 9
   },
   {
    "addr": "$0033",
    "name": "ObjTimer+11",
    "nes": 0,
-   "gen": 11
+   "gen": 10
   },
   {
-   "addr": "$0070",
-   "name": "ObjX",
-   "nes": 120,
-   "gen": 0
+   "addr": "$0060",
+   "name": "ChaseOtherTarget",
+   "nes": 0,
+   "gen": 1
+  },
+  {
+   "addr": "$0061",
+   "name": "ChaseTargetX",
+   "nes": 0,
+   "gen": 135
+  },
+  {
+   "addr": "$0062",
+   "name": "ChaseTargetY",
+   "nes": 0,
+   "gen": 114
   },
   {
    "addr": "$007D",
    "name": "ObjX+13",
    "nes": 33,
-   "gen": 0
-  },
-  {
-   "addr": "$0084",
-   "name": "ObjY",
-   "nes": 141,
-   "gen": 0
-  },
-  {
-   "addr": "$0098",
-   "name": "ObjRoomItemId",
-   "nes": 8,
    "gen": 0
   },
   {
@@ -247,6 +163,12 @@
    "name": "RightSpriteOffset",
    "nes": 76,
    "gen": 0
+  },
+  {
+   "addr": "$034D",
+   "name": "RoomAllDead",
+   "nes": 0,
+   "gen": 1
   },
   {
    "addr": "$03BC",
@@ -325,6 +247,18 @@
    "name": "ObjUninitialized+11",
    "nes": 255,
    "gen": 0
+  },
+  {
+   "addr": "$049E",
+   "name": "ObjCollidedTile",
+   "nes": 0,
+   "gen": 38
+  },
+  {
+   "addr": "$04CE",
+   "name": "ShutterTrigger",
+   "nes": 0,
+   "gen": 1
   },
   {
    "addr": "$0525",
@@ -799,81 +733,28 @@
    "name": "SaveSlotHearts+1",
    "nes": 255,
    "gen": 0
-  },
-  {
-   "addr": "$0657",
-   "name": "Items",
-   "nes": 0,
-   "gen": 1
-  },
-  {
-   "addr": "$066F",
-   "name": "HeartValues",
-   "nes": 34,
-   "gen": 51
-  },
-  {
-   "addr": "$067C",
-   "name": "MaxBombs",
-   "nes": 8,
-   "gen": 0
   }
  ],
  "later": [
   {
    "frame": 1,
-   "addr": "$0011",
-   "name": "IsUpdatingMode"
-  },
-  {
-   "frame": 1,
-   "addr": "$0014",
-   "name": "TileBufSelector"
-  },
-  {
-   "frame": 2,
-   "addr": "$004A",
-   "name": "ChaseLongTimer"
-  },
-  {
-   "frame": 2,
-   "addr": "$0060",
-   "name": "ChaseOtherTarget"
-  },
-  {
-   "frame": 2,
-   "addr": "$0061",
-   "name": "ChaseTargetX"
-  },
-  {
-   "frame": 2,
-   "addr": "$0062",
-   "name": "ChaseTargetY"
-  },
-  {
-   "frame": 2,
    "addr": "$0341",
    "name": "RollingSpriteIndex"
   },
   {
-   "frame": 2,
+   "frame": 1,
    "addr": "$0342",
    "name": "FirstSpriteIndex"
   },
   {
-   "frame": 9,
-   "addr": "$034D",
-   "name": "RoomAllDead"
+   "frame": 121,
+   "addr": "$0070",
+   "name": "ObjX"
   },
   {
-   "frame": 9,
-   "addr": "$049E",
-   "name": "ObjCollidedTile"
-  },
-  {
-   "frame": 9,
-   "addr": "$04CE",
-   "name": "ShutterTrigger"
+   "frame": 121,
+   "addr": "$0098",
+   "name": "ObjRoomItemId"
   },
   {
    "frame": 121,
@@ -899,6 +780,11 @@
    "frame": 125,
    "addr": "$0065",
    "name": "UndergroundEntranceTile"
+  },
+  {
+   "frame": 190,
+   "addr": "$0084",
+   "name": "ObjY"
   }
  ]
 }

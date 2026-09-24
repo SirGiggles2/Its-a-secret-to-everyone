@@ -208,6 +208,7 @@ static void roomrom_hud_b_item_update(void)
 static link_dir_t  s_link_dir  = LINK_DIR_NONE;  /* NES ObjDir: last active axis */
 static unsigned char s_doorway_dir = UW_WALK_DOOR_NONE; /* active UW doorway */
 static signed char s_link_grid_offset = 0;       /* NES ObjGridOffset: -8..8 */
+static unsigned char s_link_go_straight = 0u;    /* NES Link_GoStraight ($57) */
 static u8          s_link_pos_frac   = 0u;       /* NES single-axis sub-pixel */
 static u8          s_link_subx       = 0u;       /* ALTTP per-axis sub-pixel X */
 static u8          s_link_suby       = 0u;       /* ALTTP per-axis sub-pixel Y */
@@ -661,6 +662,43 @@ static void link_nes_finish_grid_cell(void)
     if (link_nes_grid_at_limit()) {
         s_link_grid_offset = 0;
     }
+}
+
+static link_dir_t link_nes_opposite(link_dir_t d)
+{
+    switch (d) {
+    case LINK_DIR_LEFT:  return LINK_DIR_RIGHT;
+    case LINK_DIR_RIGHT: return LINK_DIR_LEFT;
+    case LINK_DIR_UP:    return LINK_DIR_DOWN;
+    case LINK_DIR_DOWN:  return LINK_DIR_UP;
+    default:             return LINK_DIR_NONE;
+    }
+}
+
+/* NES source: Z_05.asm:Link_ModifyDirOnGridLine (grid offset != 0).
+ * Same direction: keep going. Opposite: turn now. Perpendicular: keep
+ * going if Link_GoStraight or |offset| >= 4 (half a cell); otherwise,
+ * if Link is still short of the next grid point in his facing direction,
+ * reverse toward the one he left and mirror the offset (-1 -> 7,
+ * 3 -> -5). Lockstep newgame f189: NES at X $37 (offset -1, facing
+ * left) + Up steps right to $38 then up; Genesis previously walked on
+ * to $30. Sign: left/up decrement the offset, right/down increment. */
+static void link_nes_modify_dir_on_grid_line(link_dir_t input_dir)
+{
+    signed char off = s_link_grid_offset;
+    unsigned char mag = (unsigned char)(off < 0 ? -off : off);
+    unsigned char neg_facing;
+
+    if (input_dir == s_link_dir) return;
+    if (input_dir == link_nes_opposite(s_link_dir)) {
+        s_link_dir = input_dir;
+        return;
+    }
+    if (s_link_go_straight || mag >= 4u) return;
+    neg_facing = (s_link_dir == LINK_DIR_LEFT || s_link_dir == LINK_DIR_UP) ? 1u : 0u;
+    if (neg_facing ? (off >= 0) : (off < 0)) return;
+    s_link_dir = link_nes_opposite(s_link_dir);
+    s_link_grid_offset = (signed char)((off < 0) ? (8 + off) : (-8 + off));
 }
 
 static void link_nes_move_object(link_dir_t dir)
@@ -1499,61 +1537,24 @@ static void uw_doorway_adjust_velocity(s8 *vx, s8 *vy)
  * OW keeps the existing direction-dependent metatile probe. */
 static unsigned char link_walkable_at(short x, short y, link_dir_t dir)
 {
-    short base_x = x;                       /* sprite left, NES ObjX */
-    short base_y = (short)(y + 0x0B);       /* foot row, NES ObjY+$0B */
-    short hot_x, hot_y;
-    int col, row;
-    short offset;
+    uw_walk_probe_t probe;
 
     if (s_scene == SCENE_UW) {
-        uw_walk_probe_t probe;
         if (uw_doorway_passable(dir, x, y)) return 1u;
         uw_walk_collidable_probe((unsigned char)dir, x, y, &probe);
         return uw_walk_tile_passable(&probe,
                                      roomrom_uw_room_render_walkable_tile_at);
     }
 
-    switch (dir) {
-        case LINK_DIR_RIGHT: offset = 0x10; break;
-        case LINK_DIR_DOWN:  offset = 0x08; break;
-        default:             offset = -8;   break;  /* LEFT, UP, NONE */
-    }
-
-    if (dir == LINK_DIR_DOWN || dir == LINK_DIR_UP) {
-        hot_x = base_x;                     /* NES takes ObjX as-is */
-        if (dir == LINK_DIR_DOWN && base_y >= 0xDD) {
-            hot_y = base_y;                 /* NES @AsIsX clamp */
-        } else {
-            hot_y = (short)(base_y + offset);
-        }
-    } else {
-        hot_y = base_y;                     /* foot row */
-        if (dir == LINK_DIR_LEFT && base_x < 0x10) {
-            hot_x = base_x;                 /* NES @CheckLeftBoundary skip */
-        } else if (dir == LINK_DIR_RIGHT && base_x >= 0xF0) {
-            hot_x = base_x;                 /* NES right-boundary skip */
-        } else if (dir == LINK_DIR_LEFT) {
-            hot_x = base_x;
-        } else if (dir == LINK_DIR_RIGHT) {
-            hot_x = (short)(base_x + offset);
-        } else {
-            hot_x = (short)(base_x + offset);
-        }
-    }
-
-    if (hot_y < ROOMROM_PLAYFIELD_TOP_PX) return 0u;
-    /* T6 NES-faithful: sample at 8x8 BG-tile granularity instead of
-     * 16x16 metatile. NES GetCollidableTile uses the actual BG tile id
-     * at hot point; metatile-granularity blocked legal exits like the
-     * $67 north gap where row-1 metatile is tree+path mixed (top-left
-     * tile is tree, top-right is path — Link's hot lands on path). */
-    {
-        int tc = (int)hot_x / 8;
-        int tr = (int)(hot_y - ROOMROM_PLAYFIELD_TOP_PX) / 8;
-        if (tc < 0 || tc > 31 || tr < 0 || tr > 21) return 1u;
-        return roomrom_ow_room_render_walkable_tile_at(
-            (unsigned char)tc, (unsigned char)tr);
-    }
+    /* NES Z_07.asm:GetCollidingTileMoving/GetCollidableTile is one routine
+     * for OW and UW: playfield origin NES Y $40 and, for vertical moves,
+     * both 8px columns under Link. The previous OW-only copy used the
+     * Genesis HUD origin (7 rows = $38) and one column, so moving up it
+     * sampled one row low: lockstep newgame f227 NES stops at Y $5D on
+     * tile $DE, Genesis walked on to $55. Walkable map row 0 = NES Y $40
+     * (22 rows x 8px, same as the UW cache). */
+    uw_walk_collidable_probe((unsigned char)dir, x, y, &probe);
+    return uw_walk_tile_passable(&probe, roomrom_ow_room_render_walkable_tile_at);
 }
 
 /* S4: edge-triggered room transition. Both OW and UW use the same 16x8 grid
@@ -3030,9 +3031,13 @@ void roomrom_debug_tick(void)
 
                 if (input != 0u) {
                     if (s_link_grid_offset == 0 || s_link_dir == LINK_DIR_NONE) {
+                        /* Link_ModifyDirAtGridPoint: two input axes set
+                         * Link_GoStraight for the next grid line. */
+                        s_link_go_straight = (h_dir && v_dir) ? 1u : 0u;
                         s_link_dir = input_dir;
                         moving_dir = input_dir;
                     } else {
+                        link_nes_modify_dir_on_grid_line(input_dir);
                         moving_dir = s_link_dir;
                     }
                 }
