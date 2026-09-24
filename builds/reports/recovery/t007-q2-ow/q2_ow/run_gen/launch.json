@@ -1,0 +1,9 @@
+{
+  "rom": "C:\\Users\\Jake Diggity\\Documents\\GitHub\\FINAL TRY_claude_marker\\builds\\Debug.md",
+  "rom_sha256": "986e8b5fbeb5053da636e22b6ffa6992452f6ae4195f0aa13d6a030a76f6d095",
+  "script": "C:\\Users\\Jake Diggity\\Documents\\GitHub\\FINAL TRY_claude_marker\\tools\\lockstep\\capture.lua",
+  "script_sha256": "96e636624aadef887570c165ea44c4b1693141ab6b30fa841ef3a2eb2e631a38",
+  "symbols": {},
+  "exit_code": 0,
+  "collected": []
+}

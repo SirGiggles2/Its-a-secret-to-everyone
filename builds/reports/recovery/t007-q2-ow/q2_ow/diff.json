@@ -1,0 +1,906 @@
+{
+ "frames": 60,
+ "verdict": "DIVERGE",
+ "frame0": [
+  {
+   "addr": "$0011",
+   "name": "IsUpdatingMode",
+   "nes": 1,
+   "gen": 0
+  },
+  {
+   "addr": "$0014",
+   "name": "TileBufSelector",
+   "nes": 122,
+   "gen": 0
+  },
+  {
+   "addr": "$0028",
+   "name": "ObjTimer",
+   "nes": 2,
+   "gen": 0
+  },
+  {
+   "addr": "$002B",
+   "name": "ObjTimer+3",
+   "nes": 0,
+   "gen": 1
+  },
+  {
+   "addr": "$002C",
+   "name": "ObjTimer+4",
+   "nes": 0,
+   "gen": 2
+  },
+  {
+   "addr": "$002D",
+   "name": "ObjTimer+5",
+   "nes": 0,
+   "gen": 3
+  },
+  {
+   "addr": "$002E",
+   "name": "ObjTimer+6",
+   "nes": 0,
+   "gen": 4
+  },
+  {
+   "addr": "$002F",
+   "name": "ObjTimer+7",
+   "nes": 0,
+   "gen": 5
+  },
+  {
+   "addr": "$0030",
+   "name": "ObjTimer+8",
+   "nes": 0,
+   "gen": 6
+  },
+  {
+   "addr": "$0031",
+   "name": "ObjTimer+9",
+   "nes": 0,
+   "gen": 7
+  },
+  {
+   "addr": "$0032",
+   "name": "ObjTimer+10",
+   "nes": 0,
+   "gen": 8
+  },
+  {
+   "addr": "$0033",
+   "name": "ObjTimer+11",
+   "nes": 0,
+   "gen": 9
+  },
+  {
+   "addr": "$007D",
+   "name": "ObjX+13",
+   "nes": 33,
+   "gen": 0
+  },
+  {
+   "addr": "$00E8",
+   "name": "CurColumn",
+   "nes": 255,
+   "gen": 0
+  },
+  {
+   "addr": "$00EF",
+   "name": "CurOpenedDoors+1",
+   "nes": 2,
+   "gen": 0
+  },
+  {
+   "addr": "$00F4",
+   "name": "InitializedGame",
+   "nes": 1,
+   "gen": 0
+  },
+  {
+   "addr": "$00F5",
+   "name": "TransferredCommonPatterns",
+   "nes": 90,
+   "gen": 0
+  },
+  {
+   "addr": "$00F6",
+   "name": "TransferredDemoPatterns",
+   "nes": 16,
+   "gen": 0
+  },
+  {
+   "addr": "$00FE",
+   "name": "CurPpuMask_2001",
+   "nes": 30,
+   "gen": 0
+  },
+  {
+   "addr": "$00FF",
+   "name": "CurPpuControl_2000",
+   "nes": 180,
+   "gen": 0
+  },
+  {
+   "addr": "$0340",
+   "name": "CurObjIndex",
+   "nes": 11,
+   "gen": 0
+  },
+  {
+   "addr": "$0343",
+   "name": "LeftSpriteOffset",
+   "nes": 72,
+   "gen": 0
+  },
+  {
+   "addr": "$0344",
+   "name": "RightSpriteOffset",
+   "nes": 76,
+   "gen": 0
+  },
+  {
+   "addr": "$034D",
+   "name": "RoomAllDead",
+   "nes": 0,
+   "gen": 2
+  },
+  {
+   "addr": "$03BC",
+   "name": "Moldorm_ObjBounceDir",
+   "nes": 96,
+   "gen": 0
+  },
+  {
+   "addr": "$03D0",
+   "name": "ObjAnimCounter",
+   "nes": 3,
+   "gen": 0
+  },
+  {
+   "addr": "$0493",
+   "name": "ObjUninitialized+1",
+   "nes": 255,
+   "gen": 0
+  },
+  {
+   "addr": "$0494",
+   "name": "ObjUninitialized+2",
+   "nes": 255,
+   "gen": 0
+  },
+  {
+   "addr": "$0495",
+   "name": "ObjUninitialized+3",
+   "nes": 255,
+   "gen": 0
+  },
+  {
+   "addr": "$0496",
+   "name": "ObjUninitialized+4",
+   "nes": 255,
+   "gen": 0
+  },
+  {
+   "addr": "$0497",
+   "name": "ObjUninitialized+5",
+   "nes": 255,
+   "gen": 0
+  },
+  {
+   "addr": "$0498",
+   "name": "ObjUninitialized+6",
+   "nes": 255,
+   "gen": 0
+  },
+  {
+   "addr": "$0499",
+   "name": "ObjUninitialized+7",
+   "nes": 255,
+   "gen": 0
+  },
+  {
+   "addr": "$049A",
+   "name": "ObjUninitialized+8",
+   "nes": 255,
+   "gen": 0
+  },
+  {
+   "addr": "$049B",
+   "name": "ObjUninitialized+9",
+   "nes": 255,
+   "gen": 0
+  },
+  {
+   "addr": "$049C",
+   "name": "ObjUninitialized+10",
+   "nes": 255,
+   "gen": 0
+  },
+  {
+   "addr": "$049D",
+   "name": "ObjUninitialized+11",
+   "nes": 255,
+   "gen": 0
+  },
+  {
+   "addr": "$049E",
+   "name": "ObjCollidedTile",
+   "nes": 0,
+   "gen": 38
+  },
+  {
+   "addr": "$04CE",
+   "name": "ShutterTrigger",
+   "nes": 0,
+   "gen": 1
+  },
+  {
+   "addr": "$0525",
+   "name": "CurEdgeSpawnCell",
+   "nes": 64,
+   "gen": 0
+  },
+  {
+   "addr": "$0526",
+   "name": "CaveSourceRoomId",
+   "nes": 255,
+   "gen": 0
+  },
+  {
+   "addr": "$0528",
+   "name": "SkippedDemo",
+   "nes": 90,
+   "gen": 0
+  },
+  {
+   "addr": "$0530",
+   "name": "PlayAreaAttrs",
+   "nes": 170,
+   "gen": 0
+  },
+  {
+   "addr": "$0531",
+   "name": "PlayAreaAttrs+1",
+   "nes": 170,
+   "gen": 0
+  },
+  {
+   "addr": "$0532",
+   "name": "PlayAreaAttrs+2",
+   "nes": 170,
+   "gen": 0
+  },
+  {
+   "addr": "$0533",
+   "name": "PlayAreaAttrs+3",
+   "nes": 170,
+   "gen": 0
+  },
+  {
+   "addr": "$0534",
+   "name": "PlayAreaAttrs+4",
+   "nes": 170,
+   "gen": 0
+  },
+  {
+   "addr": "$0535",
+   "name": "PlayAreaAttrs+5",
+   "nes": 170,
+   "gen": 0
+  },
+  {
+   "addr": "$0536",
+   "name": "PlayAreaAttrs+6",
+   "nes": 170,
+   "gen": 0
+  },
+  {
+   "addr": "$0537",
+   "name": "PlayAreaAttrs+7",
+   "nes": 170,
+   "gen": 0
+  },
+  {
+   "addr": "$0538",
+   "name": "PlayAreaAttrs+8",
+   "nes": 170,
+   "gen": 0
+  },
+  {
+   "addr": "$0539",
+   "name": "PlayAreaAttrs+9",
+   "nes": 170,
+   "gen": 0
+  },
+  {
+   "addr": "$053A",
+   "name": "PlayAreaAttrs+10",
+   "nes": 170,
+   "gen": 0
+  },
+  {
+   "addr": "$053B",
+   "name": "PlayAreaAttrs+11",
+   "nes": 170,
+   "gen": 0
+  },
+  {
+   "addr": "$053C",
+   "name": "PlayAreaAttrs+12",
+   "nes": 170,
+   "gen": 0
+  },
+  {
+   "addr": "$053D",
+   "name": "PlayAreaAttrs+13",
+   "nes": 170,
+   "gen": 0
+  },
+  {
+   "addr": "$053E",
+   "name": "PlayAreaAttrs+14",
+   "nes": 170,
+   "gen": 0
+  },
+  {
+   "addr": "$053F",
+   "name": "PlayAreaAttrs+15",
+   "nes": 170,
+   "gen": 0
+  },
+  {
+   "addr": "$0540",
+   "name": "PlayAreaAttrs+16",
+   "nes": 170,
+   "gen": 0
+  },
+  {
+   "addr": "$0541",
+   "name": "PlayAreaAttrs+17",
+   "nes": 170,
+   "gen": 0
+  },
+  {
+   "addr": "$0542",
+   "name": "PlayAreaAttrs+18",
+   "nes": 170,
+   "gen": 0
+  },
+  {
+   "addr": "$0543",
+   "name": "PlayAreaAttrs+19",
+   "nes": 170,
+   "gen": 0
+  },
+  {
+   "addr": "$0544",
+   "name": "PlayAreaAttrs+20",
+   "nes": 170,
+   "gen": 0
+  },
+  {
+   "addr": "$0545",
+   "name": "PlayAreaAttrs+21",
+   "nes": 170,
+   "gen": 0
+  },
+  {
+   "addr": "$0546",
+   "name": "PlayAreaAttrs+22",
+   "nes": 170,
+   "gen": 0
+  },
+  {
+   "addr": "$0547",
+   "name": "PlayAreaAttrs+23",
+   "nes": 170,
+   "gen": 0
+  },
+  {
+   "addr": "$0548",
+   "name": "PlayAreaAttrs+24",
+   "nes": 170,
+   "gen": 0
+  },
+  {
+   "addr": "$0549",
+   "name": "PlayAreaAttrs+25",
+   "nes": 170,
+   "gen": 0
+  },
+  {
+   "addr": "$054A",
+   "name": "PlayAreaAttrs+26",
+   "nes": 170,
+   "gen": 0
+  },
+  {
+   "addr": "$054B",
+   "name": "PlayAreaAttrs+27",
+   "nes": 170,
+   "gen": 0
+  },
+  {
+   "addr": "$054C",
+   "name": "PlayAreaAttrs+28",
+   "nes": 170,
+   "gen": 0
+  },
+  {
+   "addr": "$054D",
+   "name": "PlayAreaAttrs+29",
+   "nes": 170,
+   "gen": 0
+  },
+  {
+   "addr": "$054E",
+   "name": "PlayAreaAttrs+30",
+   "nes": 170,
+   "gen": 0
+  },
+  {
+   "addr": "$054F",
+   "name": "PlayAreaAttrs+31",
+   "nes": 170,
+   "gen": 0
+  },
+  {
+   "addr": "$0550",
+   "name": "PlayAreaAttrs+32",
+   "nes": 170,
+   "gen": 0
+  },
+  {
+   "addr": "$0551",
+   "name": "PlayAreaAttrs+33",
+   "nes": 170,
+   "gen": 0
+  },
+  {
+   "addr": "$0552",
+   "name": "PlayAreaAttrs+34",
+   "nes": 170,
+   "gen": 0
+  },
+  {
+   "addr": "$0553",
+   "name": "PlayAreaAttrs+35",
+   "nes": 170,
+   "gen": 0
+  },
+  {
+   "addr": "$0554",
+   "name": "PlayAreaAttrs+36",
+   "nes": 170,
+   "gen": 0
+  },
+  {
+   "addr": "$0555",
+   "name": "PlayAreaAttrs+37",
+   "nes": 170,
+   "gen": 0
+  },
+  {
+   "addr": "$0556",
+   "name": "PlayAreaAttrs+38",
+   "nes": 170,
+   "gen": 0
+  },
+  {
+   "addr": "$0557",
+   "name": "PlayAreaAttrs+39",
+   "nes": 170,
+   "gen": 0
+  },
+  {
+   "addr": "$0558",
+   "name": "PlayAreaAttrs+40",
+   "nes": 170,
+   "gen": 0
+  },
+  {
+   "addr": "$0559",
+   "name": "PlayAreaAttrs+41",
+   "nes": 170,
+   "gen": 0
+  },
+  {
+   "addr": "$055A",
+   "name": "PlayAreaAttrs+42",
+   "nes": 170,
+   "gen": 0
+  },
+  {
+   "addr": "$055B",
+   "name": "PlayAreaAttrs+43",
+   "nes": 170,
+   "gen": 0
+  },
+  {
+   "addr": "$055C",
+   "name": "PlayAreaAttrs+44",
+   "nes": 170,
+   "gen": 0
+  },
+  {
+   "addr": "$055D",
+   "name": "PlayAreaAttrs+45",
+   "nes": 170,
+   "gen": 0
+  },
+  {
+   "addr": "$055E",
+   "name": "PlayAreaAttrs+46",
+   "nes": 170,
+   "gen": 0
+  },
+  {
+   "addr": "$055F",
+   "name": "PlayAreaAttrs+47",
+   "nes": 170,
+   "gen": 0
+  },
+  {
+   "addr": "$062D",
+   "name": "QuestNumbers",
+   "nes": 1,
+   "gen": 0
+  },
+  {
+   "addr": "$0633",
+   "name": "IsSaveSlotActive",
+   "nes": 1,
+   "gen": 0
+  },
+  {
+   "addr": "$0636",
+   "name": "IsRegisterSaveFileOptionEnabled",
+   "nes": 1,
+   "gen": 0
+  },
+  {
+   "addr": "$0637",
+   "name": "IsEliminateSaveFileOptionEnabled",
+   "nes": 1,
+   "gen": 0
+  },
+  {
+   "addr": "$0638",
+   "name": "Names",
+   "nes": 21,
+   "gen": 0
+  },
+  {
+   "addr": "$0639",
+   "name": "Names+1",
+   "nes": 18,
+   "gen": 0
+  },
+  {
+   "addr": "$063A",
+   "name": "Names+2",
+   "nes": 23,
+   "gen": 0
+  },
+  {
+   "addr": "$063B",
+   "name": "Names+3",
+   "nes": 20,
+   "gen": 0
+  },
+  {
+   "addr": "$063C",
+   "name": "Names+4",
+   "nes": 36,
+   "gen": 0
+  },
+  {
+   "addr": "$063D",
+   "name": "Names+5",
+   "nes": 36,
+   "gen": 0
+  },
+  {
+   "addr": "$063E",
+   "name": "Names+6",
+   "nes": 36,
+   "gen": 0
+  },
+  {
+   "addr": "$063F",
+   "name": "Names+7",
+   "nes": 36,
+   "gen": 0
+  },
+  {
+   "addr": "$0640",
+   "name": "Names+8",
+   "nes": 36,
+   "gen": 0
+  },
+  {
+   "addr": "$0641",
+   "name": "Names+9",
+   "nes": 36,
+   "gen": 0
+  },
+  {
+   "addr": "$0642",
+   "name": "Names+10",
+   "nes": 36,
+   "gen": 0
+  },
+  {
+   "addr": "$0643",
+   "name": "Names+11",
+   "nes": 36,
+   "gen": 0
+  },
+  {
+   "addr": "$0644",
+   "name": "Names+12",
+   "nes": 36,
+   "gen": 0
+  },
+  {
+   "addr": "$0645",
+   "name": "Names+13",
+   "nes": 36,
+   "gen": 0
+  },
+  {
+   "addr": "$0646",
+   "name": "Names+14",
+   "nes": 36,
+   "gen": 0
+  },
+  {
+   "addr": "$0647",
+   "name": "Names+15",
+   "nes": 36,
+   "gen": 0
+  },
+  {
+   "addr": "$0648",
+   "name": "Names+16",
+   "nes": 36,
+   "gen": 0
+  },
+  {
+   "addr": "$0649",
+   "name": "Names+17",
+   "nes": 36,
+   "gen": 0
+  },
+  {
+   "addr": "$064A",
+   "name": "Names+18",
+   "nes": 36,
+   "gen": 0
+  },
+  {
+   "addr": "$064B",
+   "name": "Names+19",
+   "nes": 36,
+   "gen": 0
+  },
+  {
+   "addr": "$064C",
+   "name": "Names+20",
+   "nes": 36,
+   "gen": 0
+  },
+  {
+   "addr": "$064D",
+   "name": "Names+21",
+   "nes": 36,
+   "gen": 0
+  },
+  {
+   "addr": "$064E",
+   "name": "Names+22",
+   "nes": 36,
+   "gen": 0
+  },
+  {
+   "addr": "$064F",
+   "name": "Names+23",
+   "nes": 36,
+   "gen": 0
+  },
+  {
+   "addr": "$0650",
+   "name": "SaveSlotHearts",
+   "nes": 34,
+   "gen": 0
+  },
+  {
+   "addr": "$0651",
+   "name": "SaveSlotHearts+1",
+   "nes": 255,
+   "gen": 0
+  },
+  {
+   "addr": "$0657",
+   "name": "Items",
+   "nes": 0,
+   "gen": 3
+  },
+  {
+   "addr": "$0658",
+   "name": "InvBombs",
+   "nes": 0,
+   "gen": 16
+  },
+  {
+   "addr": "$0659",
+   "name": "InvArrow",
+   "nes": 0,
+   "gen": 2
+  },
+  {
+   "addr": "$065A",
+   "name": "Bow",
+   "nes": 0,
+   "gen": 1
+  },
+  {
+   "addr": "$065B",
+   "name": "InvCandle",
+   "nes": 0,
+   "gen": 2
+  },
+  {
+   "addr": "$065C",
+   "name": "InvCandle+1",
+   "nes": 0,
+   "gen": 1
+  },
+  {
+   "addr": "$065D",
+   "name": "InvFood",
+   "nes": 0,
+   "gen": 1
+  },
+  {
+   "addr": "$065E",
+   "name": "Potion",
+   "nes": 0,
+   "gen": 2
+  },
+  {
+   "addr": "$065F",
+   "name": "Potion+1",
+   "nes": 0,
+   "gen": 1
+  },
+  {
+   "addr": "$0660",
+   "name": "InvRaft",
+   "nes": 0,
+   "gen": 1
+  },
+  {
+   "addr": "$0661",
+   "name": "InvBook",
+   "nes": 0,
+   "gen": 1
+  },
+  {
+   "addr": "$0662",
+   "name": "InvRing",
+   "nes": 0,
+   "gen": 2
+  },
+  {
+   "addr": "$0663",
+   "name": "InvLadder",
+   "nes": 0,
+   "gen": 1
+  },
+  {
+   "addr": "$0664",
+   "name": "InvMagicKey",
+   "nes": 0,
+   "gen": 1
+  },
+  {
+   "addr": "$0665",
+   "name": "InvBracelet",
+   "nes": 0,
+   "gen": 1
+  },
+  {
+   "addr": "$0666",
+   "name": "InvLetter",
+   "nes": 0,
+   "gen": 2
+  },
+  {
+   "addr": "$0667",
+   "name": "InvCompass",
+   "nes": 0,
+   "gen": 255
+  },
+  {
+   "addr": "$0668",
+   "name": "InvMap",
+   "nes": 0,
+   "gen": 255
+  },
+  {
+   "addr": "$0669",
+   "name": "InvCompass9",
+   "nes": 0,
+   "gen": 255
+  },
+  {
+   "addr": "$066A",
+   "name": "InvMap9",
+   "nes": 0,
+   "gen": 255
+  },
+  {
+   "addr": "$066D",
+   "name": "InvRupees",
+   "nes": 0,
+   "gen": 255
+  },
+  {
+   "addr": "$066E",
+   "name": "InvKeys",
+   "nes": 0,
+   "gen": 99
+  },
+  {
+   "addr": "$066F",
+   "name": "HeartValues",
+   "nes": 34,
+   "gen": 255
+  },
+  {
+   "addr": "$0671",
+   "name": "InvTriforce",
+   "nes": 0,
+   "gen": 255
+  },
+  {
+   "addr": "$0674",
+   "name": "InvBoomerang",
+   "nes": 0,
+   "gen": 1
+  },
+  {
+   "addr": "$0675",
+   "name": "InvMagicBoomerang",
+   "nes": 0,
+   "gen": 1
+  },
+  {
+   "addr": "$0676",
+   "name": "InvMagicShield",
+   "nes": 0,
+   "gen": 1
+  },
+  {
+   "addr": "$067C",
+   "name": "MaxBombs",
+   "nes": 8,
+   "gen": 16
+  }
+ ],
+ "later": [
+  {
+   "frame": 1,
+   "addr": "$0341",
+   "name": "RollingSpriteIndex"
+  },
+  {
+   "frame": 1,
+   "addr": "$0342",
+   "name": "FirstSpriteIndex"
+  }
+ ]
+}

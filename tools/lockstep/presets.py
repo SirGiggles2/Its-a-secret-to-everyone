@@ -121,7 +121,8 @@ def build(spec: dict) -> dict:
     return {"name": spec["name"], "nes_wram": nes, "gen_slot0": gen,
             "items": items, "script": spec.get("script", []),
             "stage_at": int(spec.get("stage_at", -1)),
-            "stage": spec.get("stage", "")}
+            "stage": spec.get("stage", ""),
+            "gen_entry": spec.get("gen_entry", "fs")}
 
 
 def to_lua(p: dict) -> str:
@@ -131,7 +132,8 @@ def to_lua(p: dict) -> str:
     items = ",".join(f"0x{b:02X}" for b in p["items"])
     stage = p.get("stage", "") or ""
     return (f'PRESET={{name="{p["name"]}",nes_wram={{{nes}}},gen_slot0={{{gen}}},'
-            f'items={{{items}}},script={{{script}}},stage_at={p.get("stage_at", -1)}}}\n'
+            f'items={{{items}}},script={{{script}}},stage_at={p.get("stage_at", -1)},'
+            f'gen_entry="{p.get("gen_entry", "fs")}"}}\n'
             f'function PRESET.stage(rd, wr, log)\n{stage}\nend\n')
 
 

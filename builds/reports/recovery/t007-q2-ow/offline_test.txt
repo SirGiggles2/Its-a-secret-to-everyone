@@ -1,0 +1,6 @@
+fixed-write code sequence in PRG: 1 hit(s) ['0x1813b']
+ROM offsets: 0e 0f 22 34 3c 45 74 8b  ROM values: 7b 83 84 0f 0b 12 7a 2f
+blob@0x1920/0x1928 == ROM tables: True
+header offsets == MANIFEST: True
+C immediates == ROM code: True [('0x7b', '0x6a09'), ('0x7b', '0x6a3a'), ('0x5a', '0x6a72'), ('0x72', '0x68ba'), ('0x72', '0x68f2'), ('0x1', '0x6b3a'), ('0x0', '0x6b72')]
+PASS

@@ -52,6 +52,7 @@
 #include "level_info_install.h"
 #include "platform_abi.h"
 #include "../../../data/rooms/dungeons_offsets.h"
+#include "../../../RoomRom/src/roomrom_main_state.h"  /* roomrom_main_current_quest */
 
 extern const unsigned char rooms_overworld[];
 extern const unsigned char rooms_dungeons[];
@@ -80,6 +81,26 @@ static void copy_to_nes_ram(unsigned short dst_nes_addr,
     }
 }
 
+/* NES Z_06.asm UpdateMode2Load_Full @PatchQ2Rooms: 8 LevelBlockAttrsB
+ * replacements from the ROM tables (LDY #7 .. BPL), then 7 immediate
+ * writes. Called after the OW LevelBlock copy whenever Q2 is active. */
+void level_info_apply_q2_ow_patch(void)
+{
+    const unsigned char *offs = &rooms_dungeons[ROOMROM_OW_Q2_ATTRB_REPL_OFFSETS_OFF];
+    const unsigned char *vals = &rooms_dungeons[ROOMROM_OW_Q2_ATTRB_REPL_VALUES_OFF];
+    signed char i;
+    for (i = 7; i >= 0; --i) {
+        nes_ram[NES_LBA_A_BASE + 0x80u + offs[i]] = vals[i];   /* AttrsB $68FE */
+    }
+    nes_ram[NES_LBA_A_BASE + 0x180u + 11u]  = 0x7Bu;   /* AttrsD+11  */
+    nes_ram[NES_LBA_A_BASE + 0x180u + 60u]  = 0x7Bu;   /* AttrsD+60  */
+    nes_ram[NES_LBA_A_BASE + 0x180u + 116u] = 0x5Au;   /* AttrsD+116 */
+    nes_ram[NES_LBA_A_BASE + 60u]           = 0x72u;   /* AttrsA+60  */
+    nes_ram[NES_LBA_A_BASE + 116u]          = 0x72u;   /* AttrsA+116 */
+    nes_ram[NES_LBA_A_BASE + 0x280u + 60u]  = 0x01u;   /* AttrsF+60  */
+    nes_ram[NES_LBA_A_BASE + 0x280u + 116u] = 0x00u;   /* AttrsF+116 */
+}
+
 void level_info_install_ow(void)
 {
     copy_to_nes_ram(NES_LBA_A_BASE,
@@ -88,6 +109,11 @@ void level_info_install_ow(void)
     copy_to_nes_ram(NES_LEVEL_INFO_BASE,
                     &rooms_overworld[BLOB_OW_LEVELINFO_OFF],
                     NES_LEVEL_INFO_BYTES);
+    /* T-007: the active OW install ignored the quest, so Q2 overworld ran
+     * with Q1 room attributes (secret/cave/door data of 8+7 cells). */
+    if (roomrom_main_current_quest() == 2u) {
+        level_info_apply_q2_ow_patch();
+    }
 }
 
 void level_info_apply_q2_patch(unsigned char level)

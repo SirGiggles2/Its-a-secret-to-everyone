@@ -60,6 +60,10 @@
 #define ROOMROM_UW_Q2_LI_REPL_SIZES_OFF     0x1930u  /* 6448, 9 bytes */
 #define ROOMROM_UW_Q2_LI_REPL_BASE_OFF      0x1939u  /* 6457 */
 #define ROOMROM_UW_Q2_LI_PATCH_DEST         0x6BA7u  /* LevelInfo_ShortcutOrItemPosArray */
+/* Q2 overworld room patch tables (Z_06.asm @PatchQ2Rooms), ROM-extracted
+ * into rooms_dungeons; offsets match data/rooms/MANIFEST.json. */
+#define ROOMROM_OW_Q2_ATTRB_REPL_OFFSETS_OFF 0x1920u /* 6432, 8 bytes */
+#define ROOMROM_OW_Q2_ATTRB_REPL_VALUES_OFF  0x1928u /* 6440, 8 bytes */
 #define ROOMROM_UW_LEVELINFO_BLOCK_BYTES    0x100u   /* 256 */
 
 /* LevelInfo internal layout — fields are at fixed offsets from a

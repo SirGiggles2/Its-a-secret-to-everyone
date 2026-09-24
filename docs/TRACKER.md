@@ -50,7 +50,7 @@ Status: `TODO` · `ACTIVE` · `BLOCKED` · `REVIEW` · `DONE`. Plan ref = task I
 | T-003 | World-flag regions (`$067F` OW, `$06FF` L1–6, `$077F` L7–9) | P7.2 / P5.4 | TODO | Claude → Astra | `level_info_install.c`, `save_game.c`, `save_serializer.c` | Code: new game zeroes all three, SRAM save/load keeps all three. Runtime (Astra): kill Digdogger + Patra, leave, re-enter → no respawn; OW secret still open after a dungeon |
 | T-004 | Room generator: Ganon room `$42` | P0.14 | TODO | Claude | `tools/builder/gen_uw_room_tiles.py` | Generator output for L9Q1 `$42` byte-equal to the live capture in `uw_room_blob.c` (240 NT bytes differ today). Then 331/331 → builder no longer needs live captures |
 | T-005 | Triforce/pause tint after palette LUT change | P7.1a | TODO | Astra | `tools/extract_misc.py` | Aug CRAM overrides `$17/$36/$37` were dropped for the Sep NES-reference LUT. Byte-compare triforce + L1 pause palette vs NES; fix in generator if wrong |
-| T-007 | Q2 overworld LevelBlock patch in active path | P9.2 | TODO | Claude | `level_info_install.c` | `level_info_install_ow` ignores quest; NES `@PatchQ2Rooms` (8 AttrsB bytes + 7 fixed writes) only exists in unlinked `room_dispatch` path. Apply on OW install for Q2; offline byte test like T-002 |
+| T-007 || DONE | Claude | `level_info_install.c` | `level_info_install_ow` ignores quest; NES `@PatchQ2Rooms` (8 AttrsB bytes + 7 fixed writes) only exists in unlinked `room_dispatch` path. Apply on OW install for Q2; offline byte test like T-002. **Done:** `level_info_apply_q2_ow_patch` (ROM tables from blob `$1920/$1928`, 7 NES immediates) on the active OW install when quest=2; room_dispatch hardcoded copy removed. `tools/audit/test_q2_ow_patch.py` PASS (tables + immediates == ROM code at PRG `$1813B`). Runtime: lockstep `q2_ow` OW LevelBlock 768 + LevelInfo 256 bytes = 0 diffs vs NES Q2 (NES Q1↔Q2 differ in 13 cells, so the check discriminates) |
 | T-006 | Retire competing trackers | — | DONE | Claude | `.claude/skills/primedirective`, `docs/superpowers/prime_directive_*` | PD skill reads `docs/TRACKER.md` for next action; its Phase 8 "next action" pointer no longer claims authority |
 
 ### S0b — Ship-path hygiene (finish plan Phase 1)
@@ -124,6 +124,10 @@ Each failure inside a segment = new `T-1xx` bug row (owner fixes at the owning f
 | T-080 | Builder: clean-staging build from user ROM, no live captures, drag-and-drop shell, reproducibility | P10 | TODO |
 
 ## Handoff log (newest first)
+
+**2026-09-24 · Claude** — T-007 DONE: Q2 overworld room patch now applied on the active install (ROM-derived), byte-exact
+vs NES Q2 (1024 bytes, 0 diffs). Lockstep capture now dumps NES Battery RAM + full 68K RAM; preset `gen_entry: "xyz"` boots
+Genesis Q2 via the debug chord (disclosed). Next: T-002 runtime (Q2 L1 LevelInfo/pause map) with the same method.
 
 **2026-09-24 · Claude** — T-093 DONE (0 macro redefinitions; LINK_X vs ChaseTarget ambiguity and CUR_LEVEL=16 bug removed).
 T-108 DONE: Tektite jump direction + fall speed now match NES frame-for-frame (lockstep staging hook `stage_at`/`stage` in presets).

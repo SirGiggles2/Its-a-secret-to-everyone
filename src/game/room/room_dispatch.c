@@ -363,35 +363,9 @@ void room_update_hearts_and_rupees(void)
     hud_world_change_rupees();
 }
 
-/* Q2 (second quest) BlockAttrsB room patches — Z_06 + room_patches.inc.
- * 8 specific RAM writes overlaying SRAM-loaded room data after bank load. */
-static const unsigned char k_lblock_attrs_b_q2_offsets[8] = {
-    0x0Eu, 0x0Fu, 0x22u, 0x34u, 0x3Cu, 0x45u, 0x74u, 0x8Bu
-};
-static const unsigned char k_lblock_attrs_b_q2_values[8] = {
-    0x7Bu, 0x83u, 0x84u, 0x0Fu, 0x0Bu, 0x12u, 0x7Au, 0x2Fu
-};
-
 /* Q2 UW level-info replacement: data comes from the ROM-extracted
  * rooms_dungeons blob via level_info_apply_q2_patch (single owner,
  * src/game/world/level_info_install.c). */
-
-/* Q2 path: patch_q2_rooms (room_load_runtime.c:284-297). */
-static void room_patch_q2_rooms(void)
-{
-    for (signed char i = 7; i >= 0; --i) {
-        const unsigned char off = k_lblock_attrs_b_q2_offsets[i];
-        const unsigned char val = k_lblock_attrs_b_q2_values[i];
-        nes_ram[NES_SRAM_BASE + 0x08FEu + off] = val;
-    }
-    nes_ram[NES_SRAM_BASE + 0x0A09u] = 123u;
-    nes_ram[NES_SRAM_BASE + 0x0A3Au] = 123u;
-    nes_ram[NES_SRAM_BASE + 0x0A72u] = 90u;
-    nes_ram[NES_SRAM_BASE + 0x08BAu] = 114u;
-    nes_ram[NES_SRAM_BASE + 0x08F2u] = 114u;
-    nes_ram[NES_SRAM_BASE + 0x0B3Au] = 1u;
-    nes_ram[NES_SRAM_BASE + 0x0B72u] = 0u;
-}
 
 void room_update_mode2_load(void)
 {
@@ -412,8 +386,8 @@ void room_update_mode2_load(void)
     } else {
         const unsigned char level = (unsigned char)CUR_LEVEL;
         if (level == 0u) {
-            /* Q2 overworld — Block-attr patches. */
-            room_patch_q2_rooms();
+            /* Q2 overworld — Block-attr patches (ROM tables, single owner). */
+            level_info_apply_q2_ow_patch();
         } else {
             /* Q2 underworld level — Z_06 UpdateMode2Load_Full patch of
              * LevelInfo from $6BA7 (Sizes[L]+1 bytes, NES-exact). */
