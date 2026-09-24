@@ -53,7 +53,10 @@ def main() -> int:
         if plat == "nes":
             ram = (out / "nes.ram").read_bytes()[:0x800] if (out / "nes.ram").exists() else b""
             if len(ram) == 0x800:
-                cells = [0x15, *range(0x18, 0x25), 0x26]
+                # $4A ChaseLongTimer, $60-$62 chase flag/target: NES runs an
+                # init frame before its first update; Genesis toggles the chase
+                # flag on its first tick (before seeding). Align them too (T-107).
+                cells = [0x15, *range(0x18, 0x25), 0x26, 0x4A, 0x60, 0x61, 0x62]
                 seed = " ".join(f"SEED[0x{a:02X}]=0x{ram[a]:02X}" for a in cells)
     return diff.main(out)
 
