@@ -1,0 +1,17 @@
+Phase 9 Task 9.7 save serializer probe (v1: round-trip + validate gates)
+========================================================================
+
+magic     = $00 $00 (expect 'S'=$53 'V'=$56)
+version   = 0 (expect 1)
+total     = 0 (expect 5)
+passes    = 0 (expect 5)
+mask      = $00 (expect $1F)
+
+  bit0  round_trip                     FAIL
+  bit1  magic_validate                 FAIL
+  bit2  bad_magic_rejected             FAIL
+  bit3  bad_checksum_rejected          FAIL
+  bit4  cross_slot_isolation           FAIL
+
+frame_counter at $FF7202..03 = 0
+VERDICT: save serializer probe regressed.

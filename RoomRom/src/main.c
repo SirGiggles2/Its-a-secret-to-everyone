@@ -1876,7 +1876,11 @@ void roomrom_debug_enter(void)
     enemy_loop_room_init(s_room_id, (unsigned char)s_scene,
                 s_scene == SCENE_UW ? roomrom_uw_room_render_get_level() : 0u,
                 s_scene == SCENE_UW ? roomrom_uw_room_render_get_quest() : 0u);  /* Phase 7 Task 7.2 */
-    roomrom_probe_metadata_run();          /* Task 5.4 Gate D: in-ROM probe */
+    const unsigned char run_selftests =
+        roomrom_debug_probe_flag(ROOMROM_DEBUG_PROBE_SELFTEST);
+    if (run_selftests) {
+        roomrom_probe_metadata_run();      /* Task 5.4 Gate D: in-ROM probe */
+    }
 
     /* Cave diagnostics must not enter/exit a cave during gameplay boot:
      * those calls overwrite object slots, text state and Link's halt state.
@@ -1889,6 +1893,7 @@ void roomrom_debug_enter(void)
      * at line 1670). Publishes 128-byte result block at $FF7800 for
      * tools/debug/probes/probe_warp_routes.lua to byte-diff vs
      * tools/parity/warp_routes_expected.json. */
+    if (run_selftests) {
     warp_routes_probe_run();
     /* Phase F (2026-05-25) — Dungeon round-trip synthetic verifier.
      * Runs after Phase E so level_info_install_uw mid-sweep doesn't
@@ -1902,6 +1907,7 @@ void roomrom_debug_enter(void)
     options_consumer_probe_run();          /* Phase 9 Task 9.4 — consumer wiring. */
     hud_format_probe_run();                /* Phase 9 Task 9.5 — HUD format contract. */
     save_serializer_probe_run();           /* Phase 9 Task 9.7 — save serializer round-trip. */
+    }
     if (saved_options_len == OPTIONS_STATE_SIZE) {
         (void)options_runtime_apply(saved_options, OPTIONS_STATE_SIZE);
     }

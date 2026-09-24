@@ -58,9 +58,10 @@ Status: `TODO` · `ACTIVE` · `BLOCKED` · `REVIEW` · `DONE`. Plan ref = task I
 | ID | Task | Status | Owner | Acceptance |
 |---|---|---|---|---|
 | T-090 | Runtime `debug_session` gate: set only by title A+B+C / X+Y+Z chord; all gameplay debug inputs (X/Y/MODE/C/Z+START/B+Z+C/A+B+C+START in `RoomRom/src/main.c`) require it | TODO | | FS New Game: every debug input inert (RAM trace) |
-| T-091 | Boot probes (options/persistence/serializer/warp/roundtrip/metadata) run only when armed; none write SRAM on normal boot | TODO | | SRAM bytes unchanged across normal boot (before/after dump) |
-| T-092 | NES new-game init on FS path: no seeded sword, keys 0, no default B-item, NES start facing; B-item only via pause. **Seen T-001:** FS New Game HUD LIFE empty (NES = 3 hearts), Link not visible at +60f | TODO | | Inventory + Link RAM byte-diff vs NES new-game capture |
+| T-091 | Boot probes (options/persistence/serializer/warp/roundtrip/metadata) run only when armed; none write SRAM on normal boot | DONE | Claude | **Was corrupting play:** `save_serializer_probe_run` left `$30..$57` in Items `$0657..$067E` on every New Game (write-watch PCs → symbols). Gated on `ROOMROM_DEBUG_PROBE_SELFTEST $08`. After: 0 probe writes on FS New Game, entry 229 frames sooner; armed self-tests 5/5, 22/22, 10/10, 34/34, 8/8, warp 0/128, roundtrip 0/18 (`builds/reports/recovery/t091-selftest-gate/`) |
+| T-092 | NES new-game init on FS path: no seeded sword, keys 0, no default B-item, NES start facing; B-item only via pause. **Lockstep `newgame` diff (after T-091):** GEN Items[0] sword `01` (NES `00`), HeartValues `$33` (NES `$22`), MaxBombs `00` (NES `08`); preset slot not loaded on GEN (check SRAM write timing vs load). Also FrameCounter `$15` frozen at 0 and Random `$18+` unseeded on GEN → new T-101 | TODO | | Inventory + Link RAM byte-diff vs NES new-game capture |
 | T-094 | Music driver state at fixed `$FFE000/$FFE100` = `nes_ram[$6000/$6100]` (NES SaveRAM) under A4 `$FF8000`: save wrote `$5A/$A5` into `m_song/m_song_req` | DONE | Claude | `builds/reports/recovery/t094-music-sram/`: before = overlap, after = save image stable + music state at linker symbol `$FF00EC`; save persistence 7/7 |
+| T-101 | NES FrameCounter `$15` never advances on Genesis; Random `$18..$24` not seeded/advanced. NES timers/animation/spawns key off both | TODO | | Lockstep: `$15` increments per frame like NES; RNG sequence matches NES from equal seed |
 | T-093 | Build warnings: macro redefinitions `LINK_X`/`LINK_Y` (world_state.h), `OBJ_STATE` (object/world/combat_state.h), `CUR_LEVEL` (room_load_runtime.c). Prove each pair same address or fix the wrong one | TODO | | 0 redefinition warnings; any address change byte-verified |
 
 ### S0c — Native game-mode spine (finish plan Phase 2)
@@ -116,6 +117,11 @@ Each failure inside a segment = new `T-1xx` bug row (owner fixes at the owning f
 | T-080 | Builder: clean-staging build from user ROM, no live captures, drag-and-drop shell, reproducibility | P10 | TODO |
 
 ## Handoff log (newest first)
+
+**2026-09-24 · Claude** — Lockstep differ live: `python tools/lockstep/run_lockstep.py tools/lockstep/presets/newgame.json`
+(NES save-file cheat card + Genesis slot, per-frame 2 KB RAM on both, named diff). First runs found T-091 (self-tests corrupting
+Items on New Game, fixed) and T-101 (FrameCounter/RNG). Shared probe entry `tools/debug/probes/lib/enter_gameplay.lua`; 5 self-test
+probes were silently broken since Title START → File Select; fixed. 2 stale options tests aligned with load-resets-defaults.
 
 **2026-09-24 · Claude** — T-094 DONE: audio driver RAM moved from fixed `$FFE000/$FFE100` (aliased NES SaveRAM `$6000/$6100`)
 to linker-owned `audio_music_state`/`audio_dmc_state` (aligned 4). Proven live before/after. New `tools/debug/run_probe.py`

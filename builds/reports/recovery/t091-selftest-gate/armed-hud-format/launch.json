@@ -1,0 +1,11 @@
+{
+  "rom": "C:\\Users\\Jake Diggity\\Documents\\GitHub\\FINAL TRY\\builds\\Debug.md",
+  "rom_sha256": "bf957780e51f7f4f73dec151384a098cd32ab15ccae1188909032ace78c4a513",
+  "script": "tools\\debug\\probes\\probe_hud_format.lua",
+  "script_sha256": "9a606315019bc5d1713a78925fba8fbfcff6470143b99d2d967e3bb5277a4b51",
+  "symbols": {},
+  "exit_code": 0,
+  "collected": [
+    "hud_format_probe_report.txt"
+  ]
+}

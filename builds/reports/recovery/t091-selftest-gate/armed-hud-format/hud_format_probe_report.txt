@@ -1,0 +1,34 @@
+Phase 9 Task 9.5 HUD format probe (v4: heart row + decimals + anim tick + inv-edge)
+====================================================================================
+
+magic     = $00 $00 (expect 'H'=$48 'F'=$46)
+version   = 0 (expect 4)
+total     = 0 (expect 22)
+passes    = 0 (expect 22)
+mask      = $000000 (expect $3FFFFF)
+
+  bit0  template_loaded                          FAIL
+  bit1  hearts_3_full                            FAIL
+  bit2  hearts_3_max_1_cur                       FAIL
+  bit3  hearts_8_max_3_cur_high_partial          FAIL
+  bit4  hearts_8_max_3_cur_low_partial           FAIL
+  bit5  hearts_15_full                           FAIL
+  bit6  hearts_zero                              FAIL
+  bit7  hearts_7_full                            FAIL
+  bit8  rupees_42                                FAIL
+  bit9  rupees_0                                 FAIL
+  bit10 rupees_255                               FAIL
+  bit11 bombs_8                                  FAIL
+  bit12 bombs_99                                 FAIL
+  bit13 keys_5_no_mkey                           FAIL
+  bit14 master_key_dash                          FAIL
+  bit15 anim_buf_select_skip                     FAIL
+  bit16 anim_high_bit_clear_skip                 FAIL
+  bit17 anim_odd_frame_skip                      FAIL
+  bit18 anim_credit_tick                         FAIL
+  bit19 anim_debit_tick                          FAIL
+  bit20 anim_zero_clears_delta                   FAIL
+  bit21 anim_max_clears_rta                      FAIL
+
+frame_counter at $FF7202..03 = 0
+VERDICT: HUD format probe regressed.

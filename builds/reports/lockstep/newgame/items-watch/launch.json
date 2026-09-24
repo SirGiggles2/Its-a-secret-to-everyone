@@ -1,0 +1,11 @@
+{
+  "rom": "C:\\Users\\Jake Diggity\\Documents\\GitHub\\FINAL TRY\\builds\\Debug.md",
+  "rom_sha256": "19b6c0e660248cfb3f9528b54c8a46090e8baff61a99952c1ee26d2242148d97",
+  "script": "tools\\debug\\probes\\probe_items_write_watch.lua",
+  "script_sha256": "6d4e5183dd61d887090e011b635676719c6dad0a114a2d7b94eecc706fef538d",
+  "symbols": {},
+  "exit_code": 0,
+  "collected": [
+    "items_write_watch.txt"
+  ]
+}

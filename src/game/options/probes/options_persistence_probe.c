@@ -155,13 +155,13 @@ static unsigned char test_load_with_blank_returns_zero(void)
     sram_options_io_write(blank, OPTIONS_STATE_SIZE);
 
     options_runtime_init();
-    /* Bake a non-default value so we can detect that load_or_default
-     * did NOT overwrite it (since SRAM is blank, defaults stay). */
+    /* Dirty the live state: load_or_default must reset it to defaults
+     * (it seeds options_runtime_init() first so a blank cart never leaves
+     * garbage such as 0 start hearts) and report "nothing loaded". */
     options_set(OPTION_ID_AUTOMAP, 1u);
 
     if (options_persistence_load_or_default() != 0u) return 0u;
-    /* Live state untouched. */
-    if (options_get(OPTION_ID_AUTOMAP) != 1u) return 0u;
+    if (options_get(OPTION_ID_AUTOMAP) != 0u) return 0u;
     return 1u;
 }
 
@@ -180,8 +180,10 @@ static unsigned char test_load_with_corrupt_returns_zero(void)
     options_set(OPTION_ID_DUNGEON_COLORS, 1u);
 
     if (options_persistence_load_or_default() != 0u) return 0u;
-    /* Defaults preserved (we keep what was set after init). */
-    if (options_get(OPTION_ID_DUNGEON_COLORS) != 1u) return 0u;
+    /* Corrupt image rejected; live state reset to defaults, and the
+     * automap value inside the corrupt image was not applied. */
+    if (options_get(OPTION_ID_DUNGEON_COLORS) != 0u) return 0u;
+    if (options_get(OPTION_ID_AUTOMAP) != 0u) return 0u;
     return 1u;
 }
 

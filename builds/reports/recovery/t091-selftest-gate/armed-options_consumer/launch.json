@@ -1,0 +1,11 @@
+{
+  "rom": "C:\\Users\\Jake Diggity\\Documents\\GitHub\\FINAL TRY\\builds\\Debug.md",
+  "rom_sha256": "bf957780e51f7f4f73dec151384a098cd32ab15ccae1188909032ace78c4a513",
+  "script": "tools\\debug\\probes\\probe_options_consumer.lua",
+  "script_sha256": "60841063ac6b1a6f35494d32221be6230a7f92b7c7deb0c28a2894379f258caa",
+  "symbols": {},
+  "exit_code": 0,
+  "collected": [
+    "options_consumer_probe_report.txt"
+  ]
+}

@@ -1,0 +1,11 @@
+{
+  "rom": "C:\\Users\\Jake Diggity\\Documents\\GitHub\\FINAL TRY\\builds\\Debug.md",
+  "rom_sha256": "0e2967fec1e4732d2da5c010af8b963e99b3ee15c5d406cac19e538ec741bb42",
+  "script": "tools\\debug\\probes\\probe_dungeon_roundtrip.lua",
+  "script_sha256": "bedf1922c248a866bb69f39922f3711b273f221416cf08b5a41d3ebabefdc5b8",
+  "symbols": {},
+  "exit_code": 0,
+  "collected": [
+    "dungeon_roundtrip_gen_dump.txt"
+  ]
+}

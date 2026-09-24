@@ -1,0 +1,11 @@
+{
+  "rom": "C:\\Users\\Jake Diggity\\Documents\\GitHub\\FINAL TRY\\builds\\Debug.md",
+  "rom_sha256": "bf957780e51f7f4f73dec151384a098cd32ab15ccae1188909032ace78c4a513",
+  "script": "tools\\debug\\probes\\probe_save_serializer.lua",
+  "script_sha256": "5058721b55a8afbe972612b81743550ad9f35600b85d9b581b0f29f06fa2f1a5",
+  "symbols": {},
+  "exit_code": 0,
+  "collected": [
+    "save_serializer_probe_report.txt"
+  ]
+}

@@ -65,11 +65,18 @@ def main() -> int:
     ap.add_argument("--timeout", type=int, default=120)
     ap.add_argument("--rom", type=Path, default=ROOT / "builds" / "Debug.md")
     ap.add_argument("--collect", nargs="*", default=[])
+    ap.add_argument("--subst", nargs="*", default=[],
+                    help="KEY=VALUE: replace @KEY@ in the Lua before launch")
     a = ap.parse_args()
 
     out = a.out.resolve()
     out.mkdir(parents=True, exist_ok=True)
     text = a.lua.read_text(encoding="utf-8")
+    for kv in a.subst:
+        key, _, val = kv.partition("=")
+        if f"@{key}@" not in text:
+            raise SystemExit(f"@{key}@ not in {a.lua.name}")
+        text = text.replace(f"@{key}@", val)
     syms = elf_symbols(set(SYM_RE.findall(text)))
     text = SYM_RE.sub(lambda m: f"0x{syms[m.group(1)]:06X}", text)
 
@@ -97,7 +104,11 @@ def main() -> int:
     si = subprocess.STARTUPINFO()
     si.dwFlags |= subprocess.STARTF_USESHOWWINDOW
     si.wShowWindow = 0
-    cmd = [short(EMU), "--gdi", f"--config={config}", f"--lua={probe}", short(a.rom.resolve())]
+    rom_dir = stage / "rom"
+    rom_dir.mkdir()
+    rom_copy = rom_dir / ("game" + a.rom.suffix)  # space/comma-free name for EmuHawk argv
+    shutil.copy2(a.rom, rom_copy)
+    cmd = [short(EMU), "--gdi", f"--config={config}", f"--lua={probe}", str(rom_copy)]
     with (out / "emuhawk.log").open("w", encoding="utf-8") as log:
         p = subprocess.Popen(cmd, cwd=EMU.parent, stdout=log, stderr=subprocess.STDOUT, startupinfo=si)
         try:

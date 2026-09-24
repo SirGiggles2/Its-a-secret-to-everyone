@@ -146,6 +146,12 @@ unsigned char roomrom_debug_warp_unsupported_count(void);
 #define ROOMROM_DEBUG_PROBE_HEAVY_MIRROR 0x01u
 #define ROOMROM_DEBUG_PROBE_ENEMY_STRESS 0x02u
 #define ROOMROM_DEBUG_PROBE_BOSS_TRIGGER 0x04u
+/* Boot self-tests in roomrom_debug_enter (metadata, warp routes, dungeon
+ * round-trip, options x3, HUD format, save serializer). They write test
+ * patterns into live NES RAM/SRAM (T-091: save serializer left $30..$57 in
+ * Items $0657..$067E on every New Game), so they run only when a probe
+ * arms this flag before gameplay entry. */
+#define ROOMROM_DEBUG_PROBE_SELFTEST     0x08u
 
 void roomrom_debug_publish_state_mirror(void);
 

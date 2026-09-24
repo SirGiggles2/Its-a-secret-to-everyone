@@ -1,0 +1,9 @@
+{
+  "rom": "C:\\Users\\Jake Diggity\\Documents\\GitHub\\FINAL TRY\\builds\\Debug.md",
+  "rom_sha256": "0e2967fec1e4732d2da5c010af8b963e99b3ee15c5d406cac19e538ec741bb42",
+  "script": "C:\\Users\\Jake Diggity\\Documents\\GitHub\\FINAL TRY\\tools\\lockstep\\capture.lua",
+  "script_sha256": "45ccb08ad8017291dba93c11c9c29ff09d4d9f7af7c2c61e2cb7d5be288fd5be",
+  "symbols": {},
+  "exit_code": 0,
+  "collected": []
+}
