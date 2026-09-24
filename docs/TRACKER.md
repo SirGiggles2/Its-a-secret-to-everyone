@@ -45,13 +45,32 @@ Status: `TODO` · `ACTIVE` · `BLOCKED` · `REVIEW` · `DONE`. Plan ref = task I
 
 | ID | Task | Plan ref | Status | Owner | Scope | Acceptance / evidence |
 |---|---|---|---|---|---|---|
-| T-001 | Build + boot the merged tree | P0.2 | TODO | Astra | build only | `Debug.bat` clean; regression matrix GREEN 12/12; Ganon→Zelda `reward.lua` passes; Aquamentus consumer passes; File Select→New Game; save survives hard reset (`probe_save_persistence.lua`). Record ROM SHA here. Any failure → new T row, fix before S1 |
+| T-001 | Build + boot the merged tree | P0.2 | ACTIVE | Claude (Windows host) | build only | `Debug.bat` clean; regression matrix GREEN 12/12; Ganon→Zelda `reward.lua` passes; Aquamentus consumer passes; File Select→New Game; save survives hard reset (`probe_save_persistence.lua`). Record ROM SHA here. Any failure → new T row, fix before S1 |
 | T-002 | Quest 2 LevelInfo patch (was missing from the active install path) | P0.12 | REVIEW | Claude → Astra | done | **Found:** `level_info_install_uw` ignored quest, so every Q2 dungeon ran with Q1 LevelInfo from $6BA7 on (start room, map, triforce, cellars, boss room, map mask). **Fixed:** `level_info_apply_q2_patch` (NES `UpdateMode2Load_Full`, Sizes+1 bytes) from the ROM-extracted blob; `room_dispatch` Q2 branch uses it, hardcoded tables deleted. **Offline evidence:** `python tools/audit/test_q2_levelinfo.py` → 18/18 byte-exact vs ROM pointers (Python mirror of the C). **Astra:** after T-001, boot Q2 (X+Y+Z), enter L1: start room $77, pause map matches NES |
 | T-003 | World-flag regions (`$067F` OW, `$06FF` L1–6, `$077F` L7–9) | P7.2 / P5.4 | TODO | Claude → Astra | `level_info_install.c`, `save_game.c`, `save_serializer.c` | Code: new game zeroes all three, SRAM save/load keeps all three. Runtime (Astra): kill Digdogger + Patra, leave, re-enter → no respawn; OW secret still open after a dungeon |
 | T-004 | Room generator: Ganon room `$42` | P0.14 | TODO | Claude | `tools/builder/gen_uw_room_tiles.py` | Generator output for L9Q1 `$42` byte-equal to the live capture in `uw_room_blob.c` (240 NT bytes differ today). Then 331/331 → builder no longer needs live captures |
 | T-005 | Triforce/pause tint after palette LUT change | P7.1a | TODO | Astra | `tools/extract_misc.py` | Aug CRAM overrides `$17/$36/$37` were dropped for the Sep NES-reference LUT. Byte-compare triforce + L1 pause palette vs NES; fix in generator if wrong |
 | T-007 | Q2 overworld LevelBlock patch in active path | P9.2 | TODO | Claude | `level_info_install.c` | `level_info_install_ow` ignores quest; NES `@PatchQ2Rooms` (8 AttrsB bytes + 7 fixed writes) only exists in unlinked `room_dispatch` path. Apply on OW install for Q2; offline byte test like T-002 |
 | T-006 | Retire competing trackers | — | DONE | Claude | `.claude/skills/primedirective`, `docs/superpowers/prime_directive_*` | PD skill reads `docs/TRACKER.md` for next action; its Phase 8 "next action" pointer no longer claims authority |
+
+### S0b — Ship-path hygiene (finish plan Phase 1)
+
+| ID | Task | Status | Owner | Acceptance |
+|---|---|---|---|---|
+| T-090 | Runtime `debug_session` gate: set only by title A+B+C / X+Y+Z chord; all gameplay debug inputs (X/Y/MODE/C/Z+START/B+Z+C/A+B+C+START in `RoomRom/src/main.c`) require it | TODO | | FS New Game: every debug input inert (RAM trace) |
+| T-091 | Boot probes (options/persistence/serializer/warp/roundtrip/metadata) run only when armed; none write SRAM on normal boot | TODO | | SRAM bytes unchanged across normal boot (before/after dump) |
+| T-092 | NES new-game init on FS path: no seeded sword, keys 0, no default B-item, NES start facing; B-item only via pause | TODO | | Inventory + Link RAM byte-diff vs NES new-game capture |
+
+### S0c — Native game-mode spine (finish plan Phase 2)
+
+| ID | Task | Status | Owner | Acceptance |
+|---|---|---|---|---|
+| T-095 | `src/game/modes/mode_machine.c` owns frame; Mode 5 = play tick extracted from `roomrom_debug_tick` | TODO | | GameMode/Submode trace matches NES across boot→play |
+| T-096 | Modes 4/6/7/$10 wrap `transition.c`/`cellar_meta.c` with NES mode values | TODO | | Mode trace byte-diff on scroll, cave, stairs |
+| T-097 | Mode $11 death (CurSaveSlot `$16`, DeathCounts `$630`, visuals) + $08 continue→3/D/0 | TODO | | Death→continue/save/retry RAM trace vs NES |
+| T-098 | Mode $12 end-level exit; Mode $13 ending text/draw/credits/reset | TODO | | Trace + VRAM diff vs NES ending |
+| T-099 | Modes 0–3 load/unfurl; $E/$F register/elimination in custom FS; real slot occupancy | TODO | | FS shows real slots; copy/erase works |
+| T-100 | Full NES SaveRAM profile per slot (name, inventory, quest, deaths, world flags), versioned | TODO | | SRAM decode vs NES SaveRAM decode after save/reset/continue |
 
 ### S1 — Quest 1 route (the test driver; controller-only; checkpoint with SRAM saves, not savestates)
 
@@ -76,6 +95,12 @@ Each failure inside a segment = new `T-1xx` bug row (owner fixes at the owning f
 | T-051 | Ending renderer stubs (sprites, credits, finalize) | P7.4 / P8.3 | TODO | |
 | T-052 | Items/secrets table | P4.1–4.3 | TODO | |
 | T-053 | Death/continue lifecycle | P7.3 | TODO | |
+| T-054 | OW/UW secret objects `$61–$68` (dock, rocks/graves, bomb walls, tree, UW push block) + bombs open UW bombable doors | P4.3/P5.3 | TODO | |
+| T-055 | Flute: whirlwind `$2E`, FluteTimer `$3C`, `$5E` update (Digdogger, L7 entrance) | P4 | TODO | |
+| T-056 | `Link_EndMoveAndAnimate`: ladder, raft, water | P4 | TODO | |
+| T-057 | Bait object, potion on B, candle relight | P4 | TODO | |
+| T-058 | Cellar pairs + push-block rows for all 18 dungeons generated from ROM (only L1Q1 today) | P5.3 | TODO | |
+| T-059 | HUD map/compass/visited overlay; remaining cave-person/text states; boss death cry; placeholder item art | P5.4/P7.1 | TODO | |
 
 ### S3 — Quest 2 · S4 — Audio (last) · S5 — Release
 
@@ -83,6 +108,9 @@ Each failure inside a segment = new `T-1xx` bug row (owner fixes at the owning f
 |---|---|---|---|
 | T-060 | Q2 connected route (X+Y+Z boot) | P9 | TODO |
 | T-070 | Audio: `audio_init` not called on active boot; event wiring before driver changes | P7.5 | TODO (after S1–S3) |
+| T-071 | Audio request cells `$0600–$0604` consumed while XGM owns chip; fix wrong writers (death/GameOver `$89/$8B`, Gleeok `$10`), L9/Ganon/Zelda song selection | P7.5 | TODO |
+| T-072 | User song slot table: `songs/<id>_<name>.vgm` → xgmtool → linked by NES song ID, NES fallback. **User supplies songs; SFX stay NES** | P7.5 | TODO |
+| T-075 | Redux as Options row (replace debug C toggle); fix `gen_redux_roomrom.py` path → `reference/Zelda1-Redux`. More enhancements only after Q1+Q2 run | P11 | TODO |
 | T-080 | Builder: clean-staging build from user ROM, no live captures, drag-and-drop shell, reproducibility | P10 | TODO |
 
 ## Handoff log (newest first)
